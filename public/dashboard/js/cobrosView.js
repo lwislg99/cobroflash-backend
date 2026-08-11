@@ -112,13 +112,36 @@ var COBROS_SIN_METODO = { clave: 'sin-metodo', rotulo: COBROS_COPY.filtroSinMeto
  *
  * Se recorta la pasarela ANTES de mirar, y `COBROS_METODOS` sigue siendo la ÚNICA lista de qué
  * valor cae en qué cubo: aquí no se copia nada.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * 🔴 ESTO ES UNA SEGUNDA COPIA DELIBERADA DE `partirMetodo`, Y CONSTA COMO TAL.
+ *
+ * La partición `<metodo>:<pasarela>` ya vive en `src/modules/billing/domain/metodoDeCobro.ts`.
+ * La regla dura 4 —vanilla, sin bundler— impide que esta pantalla lo importe: es TypeScript
+ * compilado a `dist/` para el servidor, y aquí no hay build que lo traiga. La copia es
+ * inevitable; **que nadie la haya contado, no.**
+ *
+ * Por eso `tests/scrum474-dos-copias-atadas.test.mjs` las ata: mismo corpus, mismo veredicto,
+ * y el corpus se DERIVA de `PAID_VIA` en vez de escribirse a mano, así que tocar una sola de
+ * las dos sale en rojo. Si esta función y `partirMetodo` divergen, es un fallo, no una
+ * diferencia de criterio.
+ *
+ * Se devuelve `null` —y no la base— cuando la pasarela viene VACÍA (`card:`), porque es lo que
+ * hace `partirMetodo` (`metodoDeCobro.ts:45`) y porque `esMetodoValido('card:')` es `false`: el
+ * guard de `psp.routes.ts:110` RECHAZA ese valor al escribirlo. Un lector que lo clasificara
+ * como tarjeta estaría contradiciendo al escritor sobre el mismo dato. Cae en «Método no
+ * registrado», que sigue en el listado: no desaparece ningún cobro.
  */
 function metodoSinPasarela(metodo) {
   if (typeof metodo !== 'string') return null;
   var limpio = metodo.trim().toLowerCase();
   if (limpio === '') return null;
   var i = limpio.indexOf(':');
-  return i === -1 ? limpio : limpio.slice(0, i);
+  if (i === -1) return limpio;
+  var base = limpio.slice(0, i);
+  var pasarela = limpio.slice(i + 1);
+  if (base === '' || pasarela === '') return null;
+  return base;
 }
 
 /** A qué cubo de filtro cae un cobro. `null` → «no consta». */

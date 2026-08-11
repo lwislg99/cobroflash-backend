@@ -137,3 +137,150 @@ Buscado por contenido y no por número de ticket, sobre **todas** las cabezas re
   respecto a `main`**: es una etiqueta vacía, no trabajo duplicado.
 - Única rama con commit propio que toca alguno de estos ficheros: `scrum-245-fuera-listas-blancas`
   (`psp.routes.ts`), sin relación con el vocabulario de método.
+
+---
+
+# APÉNDICE · SCRUM-474 (2) · el LECTOR: el filtro deja de partir las tarjetas
+
+> Segunda entrada en este fichero, por SCRUM-273: el registro de un ticket va en UN solo fichero
+> y lo que ya había NO se borra (precedente: `SCRUM-244.md`). Lo de arriba es la LECTURA de lo
+> mergeado, del 11-ago-2026; esto es el trabajo que la completa.
+
+> **EL CÓDIGO DEL ARREGLO NO ES MÍO.** `metodoSinPasarela()` y su test los escribió **Luis** en el
+> commit **`79248b55`** («SCRUM-474: el filtro de Cobros deja de partir las tarjetas en dos cubos»,
+> 11-ago-2026 20:44:12 +0200), en la rama `scrum-474-filtro-cobros`, que **sigue intacta y sin
+> mergear**. Aquí se trae con `cherry-pick`, así que su autoría consta en el historial: el commit
+> `63530890` de esta rama lleva `Author: Luis`.
+>
+> Lo de esta sesión es lo que va **encima**: la enmienda del caso `card:` (§4), el test que ata las
+> dos copias y el trinquete estructural (§3), y este documento.
+
+**Medido contra:** `origin/main` = `8371d1b9870a1d09e2d58653d64b33b4a817dc1d`
+**Rama:** `scrum-474-filtro-cobros-al-dia`, salida de `main`.
+**Antecedentes:** `docs/master/SCRUM-473.md` (el censo de escritores) y `docs/master/SCRUM-474.md`
+(la lectura de lo mergeado, que dejó dicho en su §4 lo que faltaba para poder mergear esto).
+
+---
+
+### 1. El defecto, tal como lo ve el profesional
+
+`Charge.method` guarda dos cosas que no son sinónimos: la **preferencia** que elige el profesional
+al crear el cobro (`card`, `charges.routes.ts:39`) y el **hecho consumado** que escribe la pasarela
+(`card:stripe`, `stripe.routes.ts` y `receipt.routes.ts`).
+
+`cuboDeMetodo` (`public/dashboard/js/cobrosView.js`) comparaba el valor **entero** contra la lista
+de cada cubo. `card:stripe` no casaba con `['card']`, así que caía en «Método no registrado».
+
+**Medido en producción el 11-ago-2026** (cifra de Luis, tomada de `79248b55`; no la he reproducido
+y no tengo acceso a producción): `card` en 28 cobros y `card:stripe` en 10. **El profesional filtra
+por tarjeta y ve 28 de 38.** Los otros diez no desaparecen de la pantalla —salen bajo «Método no
+registrado»—, pero ese rótulo afirma que de ellos no consta cómo entró el dinero, y sí consta.
+
+### 2. El arreglo
+
+Se recorta la pasarela **antes** de mirar. `COBROS_METODOS` sigue siendo la única lista de qué valor
+cae en qué cubo: no se copia la tabla, y por eso `transfer:mercadopago` funciona sin tocarla.
+
+**Sin migrar un solo dato**: `card` y `card:stripe` se siguen guardando tal cual, con su pasarela.
+Ninguna fila histórica se toca y el esquema no cambia.
+
+---
+
+### 3. 🔴 LAS DOS COPIAS DE LA PARTICIÓN — declaradas y contadas
+
+    COPIAS_DE_LA_PARTICION = 2
+
+| # | dónde | función |
+|---|---|---|
+| 1 | `src/modules/billing/domain/metodoDeCobro.ts:37` | `partirMetodo` |
+| 2 | `public/dashboard/js/cobrosView.js:135` | `metodoSinPasarela` |
+
+**Por qué son dos y no una.** La regla dura 4 —frontend vanilla, sin bundler— impide que
+`cobrosView.js` importe `metodoDeCobro.ts`, que es TypeScript compilado a `dist/` para el servidor.
+No hay build en el navegador que lo traiga. **La copia es inevitable; que nadie la cuente, no.**
+
+`metodoParaAgrupar` **no** es una tercera implementación: llama a `partirMetodo` y filtra por
+`PAID_VIA`. Medido con AST sobre 350 ficheros de `src/`, `public/` y `scripts/` — el censo da
+**dos**, y calibrar el trinquete en tres lo habría hecho nacer con holgura justo para la siguiente.
+
+### El trinquete: `tests/scrum474-dos-copias-atadas.test.mjs`
+
+Dos mecanismos, porque uno solo no basta:
+
+- **① Comportamiento.** Las dos copias, mismo corpus, mismo veredicto. El corpus se **deriva de
+  `PAID_VIA`** en vez de escribirse a mano, así que si el conjunto cerrado crece, el corpus crece
+  con él. Caza que una copia **derive** de la otra.
+- **② Estructural (AST).** Cuenta las implementaciones de la partición en el árbol y las compara
+  con el registro. Caza que **nazca una tercera**, y la nombra con fichero, línea y función.
+
+> 🔴 **Por qué hacen falta los dos.** Un test de comportamiento **aprueba la bifurcación el día
+> exacto en que se introduce**: ese día la copia nueva todavía coincide con las viejas, pasa en
+> verde, y solo salta meses después, cuando ya divergieron. Medido en **SCRUM-361** (11-ago-2026):
+> se reimplementó a mano una comparación y los **cuatro** tests de comportamiento siguieron verdes;
+> solo cayó el guard estructural.
+>
+> En SCRUM-361 la salida fue **delegar en vez de copiar** —«importar es leer, una divergencia
+> imposible gana a una vigilada»—. **Aquí esa salida no existe** (regla 4). Por eso: se copia, se
+> cuenta, y se pone trinquete.
+
+El trinquete **no impide** añadir una tercera copia: impide añadirla **en silencio**. Quien la
+declare en `PARTICIONES_DECLARADAS` tiene que poder decir por qué no delega en una de las dos.
+
+Y el detector lleva su propio **control positivo**: se le da una partición sintética y tiene que
+verla, y una función que no parte por `:` y tiene que ignorarla. Sin eso, «no hay una tercera copia»
+y «el detector está ciego» darían el mismo verde.
+
+---
+
+### 4. 🔴 La enmienda de esta sesión: el caso `card:`
+
+Al comparar las dos copias sobre 93 casos, **6 divergían**, todas por el mismo mecanismo: la
+pasarela vacía (`card:`, `transfer:`, `cash:`…).
+
+| valor | servidor (`partirMetodo`) | navegador, según `79248b55` |
+|---|---|---|
+| `card:` | `null` — no cumple la forma | `card` — cubo «tarjeta» |
+
+`partirMetodo` rechaza la pasarela vacía (`metodoDeCobro.ts:45`); `metodoSinPasarela` recortaba y se
+quedaba con la base sin comprobarlo. **Se ha alineado el navegador con el servidor**, no al revés,
+por tres razones:
+
+1. `metodoDeCobro.ts` es la fuente de verdad de la FORMA, decidida por el fundador. La copia del
+   navegador **obedece, no legisla**.
+2. `esMetodoValido('card:')` es `false`, así que el guard de `psp.routes.ts:110` **ya rechaza ese
+   valor al escribirlo**. Un lector que lo clasificara como tarjeta estaría contradiciendo al
+   escritor sobre el mismo dato.
+3. Tocar `partirMetodo` para lo contrario habría sido modificar el dominio del servidor, del que
+   cuelga `esMetodoValido` en el camino del dinero. Fuera de alcance.
+
+**El suelo se mantiene:** `card:` cae en «Método no registrado», que sigue en el listado. No
+desaparece ningún cobro de la pantalla — solo cambia de cubo, y al que dice la verdad.
+
+---
+
+### 5. Los controles
+
+| control | qué prueba |
+|---|---|
+| **POSITIVO** | 28 cobros `card` + 10 `card:stripe` → el filtro «tarjeta» de la pantalla devuelve **38**. Ejercido **pulsando el botón** en `renderCobrosView` con el banco de vistas, no reimplementando el filtro. |
+| **NEGATIVO** | `bizum` (huérfano) **no** se funde con `bizum_manual`. Son dos cadenas de evidencia distintas —una la confirma una persona (`chargesAdmin.routes.ts:51`), la otra un webhook— y fundirlas sería peor que el defecto que se arregla. |
+| **SUELO** | Un método que no se reconoce **no desaparece del listado ni se cuela en otro cubo**: sale como lo que es, no clasificado. Un cobro que desaparece de una pantalla de dinero es peor que uno mal etiquetado. |
+| **ROJO POR EL MECANISMO** | Quitando la partición, el test cae diciendo que **el filtro esconde diez cobros al profesional** — no «falla el filtro». |
+
+---
+
+### 6. Lo que NO se ha tocado, y por qué
+
+- **`metodoParaAgrupar` sigue sin llamantes.** Es el hallazgo (b) de `docs/master/SCRUM-473.md` §4.
+  **No se cablea aquí**: es alcance de SCRUM-473 y depende de la decisión de esquema pendiente
+  —las dos columnas— que el fundador aún no ha tomado. Queda **declarado, no arreglado**.
+- **`prisma/schema.prisma`**, ninguna fila histórica y el camino de emisión (regla 38).
+- **El conjunto cerrado `PAID_VIA` no se amplía** (regla 22).
+- **La rama de Luis, `scrum-474-filtro-cobros`, no se ha tocado**: sigue en `79248b55`. Lo suyo se
+  trajo aquí con `cherry-pick`.
+- **Ningún rótulo nuevo** (regla 30): los seis filtros siguen siendo los que aprobó el asesor el
+  10-ago-2026, y `tests/scrum285-pantalla-cobros.test.mjs` los comprueba carácter a carácter.
+- Los huecos que `docs/master/SCRUM-473.md` §5 dejó abiertos —`charges.routes.ts:39` escribiendo
+  `'mp'`, `mpWebhook.routes.ts:107`, `dev.routes.ts:26` con `'SCTinst'`— **siguen abiertos**. Son
+  del lado escritor y de otro carril.
+
