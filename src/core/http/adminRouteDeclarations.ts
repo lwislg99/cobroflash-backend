@@ -39,6 +39,9 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // de administración. Y al revés: dejarlo admin-only dejaría SIN MEDIR justo a los técnicos, que
   // son los que más van a obra y por tanto los que más riesgo tienen de perder una firma.
   { method: 'POST', path: '/admin/entorno', why: 'Marca el entorno de su PROPIA sesión; el operario es quien más va a obra y sin él el recuento de riesgo sale sesgado' },
+  // SCRUM-406. Pedir ayuda NO es una capacidad de administracion, y dejarlo admin-only callaria
+  // justo al operario que esta en la obra, que es quien mas lo necesita. Mismo criterio que /admin/entorno.
+  { method: 'POST', path: '/admin/soporte', why: 'Escribirnos desde dentro del producto; el operario en obra es quien mas lo necesita y no es capacidad de admin' },
   { method: 'GET', path: '/admin/merchant', why: 'Perfil del negocio REDUCIDO para técnico (sin NIF/IBAN/serie); el recorte vive en app.ts' },
 
   // Clientes — S1: "clientes crear-ver" ✅ (el BORRADO es admin, ver customersAdmin.routes.ts)
