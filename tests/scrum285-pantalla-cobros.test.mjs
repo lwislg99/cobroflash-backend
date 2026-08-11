@@ -174,17 +174,26 @@ test('SCRUM-285 · ⑤ los rótulos son los APROBADOS, carácter a carácter', a
     '🔴 el título de la pantalla no es «Cobros».');
 });
 
-test('SCRUM-285 · ⑤ «Método no registrado» y NO «Otro» — y la fila dice «No registrado»', async () => {
+test('SCRUM-285 · ⑤ «Método no registrado» y NO «Otro» — y la fila lo dice igual que la pestaña', async () => {
   // «Otro» AFIRMA que hubo un método distinto. Aquí no consta ninguno, y esa es exactamente la
   // distinción que obligó a crear el cubo: si el rótulo miente, el cubo deja de servir para nada.
+  //
+  // 🔸 SCRUM-481 (11-ago-2026) · ANTES ESTA FILA DECÍA «No registrado», que era un SEGUNDO nombre
+  // para lo mismo: la pestaña de al lado ya decía «Método no registrado». Dos rótulos para el
+  // mismo hecho en la misma pantalla, que es el defecto que 481 vino a quitar. La microcopy nueva
+  // (asesor + fundador) unifica en el rótulo de la pestaña. **No se afloja la comprobación**: se
+  // exige el literal EXACTO en vez de una subcadena, que es más estricto que antes.
   const banco = cargarDashboard(RAIZ, { datos: COBROS });
   const r = await pintarVista(banco, 'renderCobrosView');
   const todo = textos(r.contenedor).join(' | ');
   assert.ok(!/\bOtro\b/.test(todo),
     '🔴 la pantalla dice «Otro» en algún sitio. «Otro» afirma un método distinto; lo que pasa es ' +
     'que NO CONSTA ninguno.');
-  assert.match(todo, /No registrado/,
-    '🔴 el cobro sin método no dice «No registrado» en su fila.');
+  const celdas = textos(r.contenedor).filter((t) => /registrado/i.test(t));
+  assert.ok(celdas.length >= 2 && celdas.every((t) => t === 'Método no registrado'),
+    `🔴 el cobro sin método no dice «Método no registrado» en su fila: ${JSON.stringify(celdas)}. ` +
+    'Se esperan al menos dos apariciones —la pestaña y la fila— y todas con el MISMO texto: si la ' +
+    'columna y el filtro vuelven a divergir, la pantalla vuelve a hablar dos idiomas.');
 });
 
 test('SCRUM-285 · ⑤ los días de deuda: DOS formas, y las dos con singular', async () => {
