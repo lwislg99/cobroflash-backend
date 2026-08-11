@@ -291,7 +291,77 @@ export function porLlamada(guiones) {
   };
 }
 
-/** Los cuatro modos de FALLO, para recorrerlos en un test sin escribirlos a mano. */
+/** Lo que contesta un servidor según el código, para que el `statusText` no sea inventado. */
+const TEXTO_DE_ESTADO = {
+  400: 'Bad Request', 401: 'Unauthorized', 403: 'Forbidden', 404: 'Not Found',
+  409: 'Conflict', 429: 'Too Many Requests',
+  500: 'Internal Server Error', 502: 'Bad Gateway', 503: 'Service Unavailable',
+};
+
+/**
+ * ⑦ FALLO DEL SERVIDOR — la petición LLEGA, y el servidor la RECHAZA.
+ *
+ * 🔴 NO ES LO MISMO QUE UN FALLO DE RED, y ésa es la razón de existir de este escenario. Hasta
+ * SCRUM-362 (residuales) los seis escenarios del banco respondían `ok:true, status:200`: **no había
+ * forma de poner el producto detrás de un 500 a través del banco**. Lo que había —`scrum356:140`—
+ * inyectaba un `throw` en el subidor, y eso recorre otro camino:
+ *
+ *   · un `throw` entra por el `catch` del `fetch` de `_pedir` y sale marcado **`sinRed`**;
+ *   · un 500 de verdad **resuelve**, entra por la rama `!res.ok`, se le lee el cuerpo, se mira si
+ *     es `trial_expired`, y sale con `status`, `code` y `data` — y **sin** la marca `sinRed`.
+ *
+ * La diferencia le cambia la vida al profesional: `sinRed` significa «espera a tener cobertura» y
+ * un 500 significa «esto no se arregla esperando» (SCRUM-404). Un banco que no sabe producir un
+ * 500 no puede comprobar que el producto los distingue.
+ *
+ * @param status  el código. Por defecto 500.
+ * @param cuerpo  objeto → se entrega como JSON. Cadena → `json()` REVIENTA, que es lo que pasa
+ *                cuando el 500 lo pinta un proxy en HTML y no llega a nuestro servidor.
+ */
+export function falloDelServidor(status = 500, cuerpo = { error: 'internal_error' }) {
+  const b = base({ onLine: true });
+  const esJson = cuerpo !== null && typeof cuerpo === 'object';
+  let rechazadas = 0;
+  return {
+    ...b,
+    nombre: `fallo del servidor (${status}${esJson ? '' : ', cuerpo no JSON'})`,
+    rechazadas: () => rechazadas,
+    describir: () => `${b.describir()} · ${rechazadas} rechazadas por el servidor`,
+    fetch: async (url, opts) => {
+      // Se guarda el cuerpo enviado: con un 500 el servidor PUDO procesarla antes de reventar, así
+      // que un test de H tiene que poder mirar qué se estaba subiendo, igual que en ③.
+      b.reg.peticiones.push({ url: String(url), opts, cuerpo: opts && opts.body, status });
+      b.reg.resueltas++;
+      rechazadas++;
+      return {
+        ok: false,
+        status,
+        statusText: TEXTO_DE_ESTADO[status] || 'Error',
+        headers: {
+          get: (h) => (String(h).toLowerCase() === 'content-type'
+            ? (esJson ? 'application/json' : 'text/html; charset=utf-8')
+            : null),
+        },
+        json: async () => {
+          if (!esJson) throw new SyntaxError('Unexpected token < in JSON at position 0');
+          b.reg.cuerposEntregados++;
+          return cuerpo;
+        },
+        text: async () => (esJson ? JSON.stringify(cuerpo) : String(cuerpo)),
+        blob: async () => ({ size: 1 }),
+      };
+    },
+  };
+}
+
+/**
+ * Los cuatro modos de FALLO, para recorrerlos en un test sin escribirlos a mano.
+ *
+ * ⚠️ `falloDelServidor` NO entra aquí a propósito: `scrum362-banco-sin-cobertura` recorre este
+ * objeto y su test se llama «los CUATRO escenarios». Ampliarlo dejaría ese título mintiendo sobre
+ * lo que recorre, y ese fichero está en `main` y no es de este ticket. El recorrido con el quinto
+ * vive en `scrum362-residuales`.
+ */
 export const ESCENARIOS = { redNormal, portalCautivo, aceptaYNoEntrega, corteAMediaSubida };
 
 export { HTML_DEL_PORTAL };
