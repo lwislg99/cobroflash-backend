@@ -54,8 +54,19 @@ const round2 = (n) => Math.round(n * 100) / 100;
 // Total de una línea = base + IVA (line.tax es FRACCIÓN, p.ej. 0.21 = 21% — convención del código, quotesView.js).
 const lineTotal = (l) => round2(Number(l.qty) * Number(l.price) * (1 + Number(l.tax || 0)));
 const linesTotal = (lines) => round2(lines.reduce((a, l) => a + lineTotal(l), 0));
-// Firma de muestra (PNG 1x1 válido) — placeholder visual; el rótulo "✅ Firmado digitalmente" es el que manda.
-const SAMPLE_SIGNATURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+// 🔴 SCRUM-472 · AQUÍ VIVÍA `SAMPLE_SIGNATURE`, UN PNG DE 1×1 PX QUE SE ESCRIBÍA COMO FIRMA.
+//
+// Se escribía en `Quote.signatureUrl` y en un `Albaran` con `estado: 'firmado'`, saltándose las dos
+// rutas legítimas —que exigen `data:image/(png|jpeg);base64,` y construyen el sobre de evidencias—.
+// En producción dejó `albaranes.id = 5` (merchant 22, 16-jun-2026): 118 caracteres, un lienzo vacío.
+//
+// El motivo por el que no vuelve no es de estilo: **una firma fabricada, una vez en la columna, es
+// indistinguible de una real** —mismo formato, misma columna, mismo estado— y la fortaleza
+// probatoria de un albarán depende de la integridad de su firma. La semilla puede inventarse un
+// importe o un nombre; no puede inventarse el trazo de una persona.
+//
+// Si el vídeo necesita un documento firmado, se firma **por la ruta**.
+// Guard: `tests/scrum472-seed-no-fabrica-firmas.test.mjs`.
 // PNG 1x1 (bytes) para una foto adjunta de solicitud (la galería muestra miniatura).
 const SAMPLE_PHOTO = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
 
@@ -437,10 +448,15 @@ async function seed() {
           rejectedAt: q.status === 'rejected' ? decidedAt : null,
           decisionChannel: isDecided ? 'whatsapp' : null,
           rejectionReason: q.status === 'rejected' ? (q.rejectionReason ?? null) : null,
-          // Evidencia + firma plausibles para los aceptados (coherente con el flujo real).
-          signatureUrl: q.status === 'accepted' ? SAMPLE_SIGNATURE : null,
+          // SCRUM-472 · aceptado SIN TRAZO, que es un camino REAL del producto y no una simulación:
+          // `method: 'checkbox'` es «Acepto sin firmar», y así lo pinta el expediente
+          // (`invoicesAdmin.routes.ts:317` → «Aceptación expresa sin trazo»). Antes se sembraba un
+          // `signatureUrl` inventado y `method: 'signature'`: eso afirmaba que un cliente firmó.
+          // De `Quote.signatureUrl` deriva el libro registro su «presupuesto firmado»
+          // (`libroRegistro.repo.ts`), así que la mentira no se quedaba en la pantalla.
+          signatureUrl: null,
           evidence: q.status === 'accepted'
-            ? { ts: decidedAt?.toISOString(), method: 'signature', channel: 'whatsapp', ua: 'seed/video' }
+            ? { ts: decidedAt?.toISOString(), method: 'checkbox', channel: 'whatsapp', ua: 'seed/video' }
             : (q.status === 'rejected'
               ? { ts: decidedAt?.toISOString(), method: 'reject', channel: 'whatsapp' }
               : undefined),
@@ -535,17 +551,24 @@ async function seed() {
     // 7a) ALBARANES (pantalla en el detalle del Trabajo) — sobre los jobs terminado/en_curso.
     if (jobByKey['aseo']) {
       const j = jobByKey['aseo'];
-      // Firmado (congelado)
-      const numFirmado = await allocateAlbaranNumber(tx, mid);
+      // 🔴 SCRUM-472 · EMITIDO, NO FIRMADO. Aquí se sembraba `estado: 'firmado'` con `firmadoAt` y
+      // una firma de 1×1 px, sin pasar por ninguna de las dos rutas de firma —que validan la imagen
+      // y construyen el sobre de evidencias (SCRUM-462)—. Eso deja en la BD una fila que, mirada de
+      // frente, es idéntica a un albarán firmado de verdad: misma columna, mismo estado, mismo
+      // formato. En producción quedó `albaranes.id = 5`.
+      //
+      // `emitido` es el estado real de un albarán que espera firma, así que el vídeo sigue teniendo
+      // su pantalla de albaranes con contenido. Si hiciera falta uno FIRMADO, se firma por la ruta.
+      const numEmitido = await allocateAlbaranNumber(tx, mid);
       await tx.albaran.create({
         data: {
-          merchantId: mid, jobId: j.id, numero: numFirmado, fecha: daysAgo(30),
+          merchantId: mid, jobId: j.id, numero: numEmitido, fecha: daysAgo(30),
           lineas: [
             { concepto: 'Retirada de aparatos y demolición de alicatado', cantidad: 1, unidad: 'jornada' },
             { concepto: 'Montaje de plato de ducha e inodoro', cantidad: 1, unidad: 'ud' },
           ],
-          estado: 'firmado', version: 2, signatureUrl: SAMPLE_SIGNATURE, firmadoAt: daysAgo(29),
-          notas: 'Primera fase de obra ejecutada. Conforme el cliente.', pdfUrl: null,
+          estado: 'emitido', version: 2,
+          notas: 'Primera fase de obra ejecutada. Pendiente de firma del cliente.', pdfUrl: null,
           createdAt: daysAgo(30), updatedAt: daysAgo(29),
         },
       });
