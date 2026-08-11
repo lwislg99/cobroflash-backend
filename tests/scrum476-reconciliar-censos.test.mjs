@@ -20,8 +20,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { avisoDeDesfase, diagnosticar } from './_desfase-node-modules.mjs';
 import {
+  ERRNOS_BENIGNOS,
   QUE_CUENTA,
   censoDeDirectoriosNodeModules,
+  errnoBenigno,
   exigenciasDe,
   informe,
   reconciliar,
@@ -73,8 +75,14 @@ test('SCRUM-476 · CONTROL POSITIVO: la reconciliación contesta, y el árbol do
     '🔴 población CERO. «No hay árboles» y «no supe listarlos» darían el mismo verde, y el segundo ' +
     'deja a alguien reconciliando el conjunto vacío consigo mismo.');
 
-  const real = fs.realpathSync.native(RAIZ).toLowerCase();
-  const dentro = r.filas.some((f) => fs.realpathSync.native(f.raiz).toLowerCase() === real);
+  // La caja se normaliza SOLO donde el sistema de ficheros no la distingue. Bajarla siempre haría
+  // el control positivo más laxo en Linux —dos rutas distintas podrían empatar—, que es el mismo
+  // género de defecto que tumbó el suelo en el CI: dar por universal algo que es de esta máquina.
+  const misma = (a, b) => (process.platform === 'win32'
+    ? a.toLowerCase() === b.toLowerCase()
+    : a === b);
+  const real = fs.realpathSync.native(RAIZ);
+  const dentro = r.filas.some((f) => misma(fs.realpathSync.native(f.raiz), real));
   assert.ok(dentro,
     '🔴 el árbol donde corre la suite NO sale en la población: los dos censos estarían hablando de ' +
     'otro conjunto, que es justo el defecto que este ticket viene a cerrar.');
@@ -255,6 +263,183 @@ test('SCRUM-476 · SUELO: el censo de directorios `node_modules` no puede dar ce
     '🔴 CERO directorios `node_modules` en el árbol donde corre la suite. Eso no es un censo ' +
     'vacío: es un barrido ciego, y «cero» y «no supe mirar» nunca son el mismo número.');
   assert.deepEqual(c.ilegibles, [], `🔴 hay rutas que no se han podido leer: ${c.ilegibles.join(' · ')}`);
+});
+
+test('SCRUM-476 · SUELO DEL SUELO: el contador SÍ puede dar cero, así que el `> 0` significa algo', () => {
+  // Sin esto, el assert de arriba podría ser cierto por construcción y no estaría comprobando nada.
+  const vacio = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum476-vacio-'));
+  try {
+    const c = censoDeDirectoriosNodeModules([vacio]);
+    assert.equal(c.directoriosNodeModules, 0);
+    assert.deepEqual(c.ilegibles, [], '🔴 un directorio vacío y legible no puede producir ilegibles.');
+  } finally {
+    fs.rmSync(vacio, { recursive: true, force: true });
+  }
+});
+
+// ── 🔴 LA TERCERA MÁQUINA: EL ERRNO ES EL CRITERIO, Y LA LISTA ES CERRADA ────────────────────
+
+test('SCRUM-476 · 🔴 QUE NO SE HA RELAJADO: un fallo de lectura DE VERDAD sigue tumbando el suelo', () => {
+  // Sin este test, el arreglo de `ENOTDIR` es indistinguible de haber desactivado el suelo. Se
+  // provoca el fallo por la MISMA llamada (`readdirSync`) y por algo que NO es «no es un
+  // directorio»: una ruta que el runtime rechaza. Su `code` no está en la lista cerrada.
+  //
+  // El NUL vale en las tres máquinas: lo rechaza la validación de argumentos de Node, antes de
+  // cualquier syscall, así que no depende del sistema de ficheros. Windows no deja provocar
+  // EACCES/EPERM sin elevación, y ésta es la forma de hacer fallar la MISMA llamada por algo que
+  // no es la ausencia — el mismo recurso que usa el suelo de SCRUM-351.
+  const ilegible = `${path.sep}x${String.fromCharCode(0)}y`;
+  const c = censoDeDirectoriosNodeModules([ilegible]);
+  assert.equal(c.ilegibles.length, 1,
+    '🔴 UNA RUTA QUE NO SE HA PODIDO LEER PASA COMO SI NADA. El arreglo de `ENOTDIR` se ha comido ' +
+    'el suelo entero, y entonces «cero» y «no supe mirar» vuelven a dar el mismo verde.');
+  assert.match(c.ilegibles[0], /x/, '🔴 el ilegible no dice ni qué ruta era.');
+  assert.equal(c.directoriosNodeModules, 0);
+});
+
+test('SCRUM-476 · 🔴 la lista de errnos benignos es CERRADA y falla cerrado', () => {
+  // Lo benigno se enumera; lo demás es ceguera. Un `code` nuevo —o ausente— NO se asume benigno:
+  // así es exactamente como se cuela el siguiente fallo específico de una máquina.
+  for (const bueno of ['ENOENT', 'ENOTDIR']) {
+    assert.equal(errnoBenigno(bueno), true, `🔴 ${bueno} debería ser benigno.`);
+    assert.ok(ERRNOS_BENIGNOS[bueno]?.length > 20, `🔴 ${bueno} está en la lista SIN decir por qué.`);
+  }
+  for (const ciego of ['EACCES', 'EPERM', 'EIO', 'ELOOP', 'EMFILE', 'ERR_INVALID_ARG_VALUE']) {
+    assert.equal(errnoBenigno(ciego), false,
+      `🔴 ${ciego} se considera benigno. Eso NO es «esto no es un directorio»: es no haber podido ` +
+      'mirar, y tragárselo es relajar el suelo.');
+  }
+  for (const raro of [undefined, null, '', 0, {}, 'enotdir']) {
+    assert.equal(errnoBenigno(raro), false,
+      `🔴 con code=${JSON.stringify(raro)} se contesta «benigno». La lista tiene que fallar CERRADA.`);
+  }
+});
+
+test('SCRUM-476 · CONTROL POSITIVO: lo que NO es un directorio no es ni ilegible ni un `node_modules`', () => {
+  // El caso del CI en su forma portable: `readdir` sobre algo que no es un directorio da ENOTDIR
+  // en las dos plataformas (medido aquí: Windows lo da igual que Linux). Un fichero suelto dentro
+  // del árbol —y el árbol mismo siendo un fichero— tienen que salir en silencio.
+  const b = banco();
+  try {
+    const arbol = b.arbol('conFicheros', null);
+    fs.mkdirSync(path.join(arbol, 'node_modules'));
+    fs.writeFileSync(path.join(arbol, 'node_modules', 'yaqu.cmd'), '@echo off');
+    fs.writeFileSync(path.join(arbol, 'suelto.txt'), 'x');
+
+    const c = censoDeDirectoriosNodeModules([arbol]);
+    assert.deepEqual(c.ilegibles, [],
+      `🔴 un fichero dentro del árbol se cuenta como ruta ilegible: ${c.ilegibles.join(' · ')}. Es ` +
+      'el defecto del CI —recorrer lo que no es un directorio— y volvería a poner la tanda en rojo.');
+    assert.equal(c.directoriosNodeModules, 1, '🔴 un fichero se ha contado como directorio, o no se ve el real.');
+
+    // Y el árbol siendo ÉL un fichero: ENOTDIR, silencio, cero.
+    const soloFichero = censoDeDirectoriosNodeModules([path.join(arbol, 'suelto.txt')]);
+    assert.deepEqual(soloFichero.ilegibles, [], '🔴 `readdir` sobre un fichero se cuenta como ceguera.');
+    assert.equal(soloFichero.directoriosNodeModules, 0);
+  } finally {
+    b.limpiar();
+  }
+});
+
+test('SCRUM-476 · CONTROL POSITIVO: un ENLACE A FICHERO —el caso literal del CI— no ensucia el censo', (t) => {
+  // El `.bin/<algo>` de Linux, con el mecanismo real. En Windows crear un symlink a FICHERO exige
+  // elevación o modo desarrollador: medido en esta máquina, `EPERM`. Cuando no se puede, el caso
+  // SE DECLARA saltado con su motivo (SCRUM-456) en vez de desaparecer en un verde — la prueba
+  // portable del mismo mecanismo es la de arriba, que sí corre en las tres máquinas.
+  const b = banco();
+  try {
+    const arbol = b.arbol('conBin', null);
+    const bin = path.join(arbol, 'node_modules', '.bin');
+    fs.mkdirSync(bin, { recursive: true });
+    const destino = path.join(arbol, 'node_modules', 'tsc.js');
+    fs.writeFileSync(destino, '// x');
+    try {
+      fs.symlinkSync(destino, path.join(bin, 'tsc'), 'file');
+    } catch (err) {
+      t.skip(`no se puede crear un enlace a fichero en esta máquina (${err.code}): en Windows exige ` +
+        'elevación o modo desarrollador. El mismo mecanismo (ENOTDIR) queda cubierto por el control ' +
+        'positivo portable de arriba, que sí corre aquí.');
+      return;
+    }
+
+    const c = censoDeDirectoriosNodeModules([arbol]);
+    assert.deepEqual(c.ilegibles, [],
+      `🔴 EL CASO EXACTO DEL CI VUELVE A ENSUCIAR EL CENSO: ${c.ilegibles.join(' · ')}`);
+    assert.equal(c.enlaces, 1, '🔴 el enlace a fichero no se cuenta como enlace.');
+    assert.equal(c.directoriosNodeModules, 1, '🔴 un enlace a fichero se ha contado como `node_modules`.');
+  } finally {
+    b.limpiar();
+  }
+});
+
+test('SCRUM-476 · 🔴 LA CURA, PROBADA AQUÍ: el barrido NO ATRAVIESA ningún enlace', () => {
+  // Ésta es la propiedad que hace IMPOSIBLE el fallo del CI, y se puede provocar en Windows —con
+  // junctions, que no piden elevación— aunque el enlace-a-fichero de Linux no. Si no se atraviesa
+  // NINGÚN enlace, un enlace a fichero jamás llega a `readdir` y `ENOTDIR` no puede volver a
+  // aparecer por esa vía. Además evita contar dos veces el mismo árbol.
+  const b = banco();
+  try {
+    const destino = b.arbol('destino', null);
+    fs.mkdirSync(path.join(destino, 'node_modules', 'paquete', 'node_modules'), { recursive: true });
+
+    const espejo = b.arbol('espejo', null);
+    fs.symlinkSync(path.join(destino, 'node_modules'), path.join(espejo, 'node_modules'), 'junction');
+
+    const c = censoDeDirectoriosNodeModules([espejo]);
+    assert.deepEqual(c.ilegibles, []);
+    assert.equal(c.enlaces, 1, '🔴 el enlace no se cuenta como enlace.');
+    assert.equal(c.directoriosNodeModules, 1,
+      '🔴 SE HA ATRAVESADO EL ENLACE: cuenta también los `node_modules` del destino, que no son de ' +
+      'este árbol. Y si se atraviesan los enlaces a directorio, también se atravesarían los enlaces ' +
+      'a FICHERO — que es exactamente como el CI acabó con 24 `ENOTDIR`.');
+
+    // Un enlace COLGANDO tampoco es ceguera: la lectura contesta que ahí ya no hay nada.
+    const colgado = b.arbol('colgado', null);
+    fs.symlinkSync(path.join(b.base, 'no-existe'), path.join(colgado, 'node_modules'), 'junction');
+    const d = censoDeDirectoriosNodeModules([colgado]);
+    assert.deepEqual(d.ilegibles, [], '🔴 un enlace colgando se cuenta como ruta ilegible.');
+    assert.equal(d.enlaces, 1);
+  } finally {
+    b.limpiar();
+  }
+});
+
+test('SCRUM-476 · 🔴 EL QUE CIERRA EL CÍRCULO: el veredicto NO cambia por tener enlaces `.bin`', () => {
+  // Si el resultado dependiera de si el árbol tiene `.bin` enlazados, el censo seguiría siendo
+  // dependiente de la máquina — que es el defecto que este ticket entero documenta. Dos árboles
+  // iguales salvo por eso tienen que dar el MISMO veredicto.
+  const b = banco();
+  try {
+    const conBin = b.arbol('conBin', { alfa: '1.0.0' });
+    b.instalar(conBin, { alfa: '1.0.0' });
+    fs.mkdirSync(path.join(conBin, 'node_modules', '.bin'), { recursive: true });
+    fs.writeFileSync(path.join(conBin, 'node_modules', '.bin', 'alfa.cmd'), '@echo off');
+    try {
+      fs.symlinkSync(path.join(conBin, 'node_modules', 'alfa', 'package.json'),
+        path.join(conBin, 'node_modules', '.bin', 'alfa'), 'file');
+    } catch { /* Windows sin elevación: queda el `.cmd`, que produce el MISMO ENOTDIR */ }
+
+    const sinBin = b.arbol('sinBin', { alfa: '1.0.0' });
+    b.instalar(sinBin, { alfa: '1.0.0' });
+
+    const r = reconciliar({ raices: [conBin, sinBin] });
+    assert.ok(r.ok, `🔴 ${r.motivo}`);
+    assert.deepEqual(r.sinExplicar, [], '🔴 los `.bin` han producido una discrepancia inexplicable.');
+    assert.equal(r.grupos.length, 2, '🔴 dos árboles independientes no salen como dos destinos.');
+    assert.match(informe(r), /✔ RECONCILIADOS/,
+      '🔴 EL VEREDICTO DEPENDE DE SI EL ÁRBOL TIENE `.bin` ENLAZADOS. Entonces sigue siendo una ' +
+      'propiedad de la máquina, y este ticket no ha arreglado nada.');
+
+    // Y los dos censos de directorios, idénticos salvo por los enlaces que se cuentan aparte.
+    const a = censoDeDirectoriosNodeModules([conBin]);
+    const c = censoDeDirectoriosNodeModules([sinBin]);
+    assert.deepEqual(a.ilegibles, []);
+    assert.deepEqual(c.ilegibles, []);
+    assert.equal(a.directoriosNodeModules, c.directoriosNodeModules,
+      '🔴 el recuento de `node_modules` cambia por tener `.bin`: el censo mide la máquina, no el árbol.');
+  } finally {
+    b.limpiar();
+  }
 });
 
 // ── QUE LA CONTRADICCIÓN NO SE REPITA ────────────────────────────────────────────────────────

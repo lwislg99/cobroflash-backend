@@ -167,7 +167,68 @@ contra él. Lo que la suite exige es que **no sea cero** (cero es ceguera, no va
 donde corre esté dentro — control positivo **derivado**, no literal. El número de hoy vive aquí, con
 fecha; el de mañana se saca con el método.
 
-## Los tests — `tests/scrum476-reconciliar-censos.test.mjs` (12, en `npm test`)
+## 🔴 LA TERCERA MÁQUINA: el CI, y el suelo de este ticket se cayó por su propio defecto
+
+**La primera versión de esto pasaba en Windows y caía en CI**, con **24 rutas `ENOTDIR`**, todas
+`node_modules/.bin/<algo>`. En Linux ésos son **enlaces a ficheros**; el barrido recorría todo lo
+que fuera enlace y les hacía `readdir`. En Windows los mismos `.bin` son ficheros `.cmd`, así que
+ni se rozaban.
+
+**Un ticket sobre dos censos que discrepan por correr en máquinas distintas, tumbado por eso
+mismo.** Y la máquina que faltaba no era exótica: es la que corre la tanda de verdad. La lección
+del ticket no era «hay dos hosts», era **«el recuento describe el disco donde se tomó»** — y eso
+incluye el disco que nadie mira porque no es de nadie.
+
+Se anota como tercera población, con lo que sí se sabe de ella:
+
+| host | árboles | `.bin` | quién la mide |
+|---|---|---|---|
+| `DESKTOP-T5MONF5` | `wt-<n>`, con junctions | ficheros `.cmd` | la sesión de SCRUM-471 |
+| `DESKTOP-A24926K` | `cobroflash-b<n>`, propios | ficheros `.cmd` | SCRUM-351 y ésta |
+| **CI (Linux)** | uno, efímero | **enlaces a ficheros** | **nadie, hasta este rojo** |
+
+### Los errnos benignos, y por qué la lista es CERRADA
+
+`ENOTDIR` **no es ceguera**: la lectura funcionó y contestó «esto no es un directorio». Eso es un
+**tipo**, no un fallo. Pero un `try/catch` que se lo tragase todo habría relajado el suelo, que es
+la mitad del valor del ticket. Así que se discrimina **por errno**, con lista cerrada y **fallando
+cerrado**: lo que no está en ella es ceguera, incluido un `code` ausente o que no sea una cadena.
+
+| errno | benigno | por qué |
+|---|---|---|
+| `ENOTDIR` | **sí** | la lectura funcionó y contestó un tipo. Es el caso de los 24 `.bin` del CI |
+| `ENOENT` | **sí** | la entrada ya no está: enlace colgando, o borrada entre el `readdir` y el `lstat`. **Pasa de verdad**: `npm test` corre los ficheros en paralelo y `scrum471` crea y borra `.tmp-471-*` dentro de este mismo árbol mientras esto barre |
+| `EACCES` `EPERM` `EIO` `ELOOP` `EMFILE` … | **no** | no se ha podido mirar. Siguen tumbando el suelo |
+
+**Y el arreglo de fondo no es la lista: es no atravesar lo que no es un directorio.** Un enlace se
+cuenta y **no se recorre** — ni a fichero (el caso del CI) ni a directorio, que además contaría dos
+veces el mismo árbol. La lista es la regla escrita para que nadie la relaje; la travesía quita la
+causa.
+
+> 🔸 **Honestidad sobre esa puerta: NO da rojo al quitarla.** Sin ella, `readdir` sobre un fichero
+> da `ENOTDIR`, que es benigno, y el resultado es idéntico. Se queda por **coste**, medido:
+> **1.130 ms con la puerta · 6.114 ms sin ella** (5,4×) sobre este árbol, mismo resultado. Un
+> comprobador que se nota en la tanda se desactiva al primer roce (SCRUM-351), y además mantiene la
+> vía de excepción para lo excepcional en vez de dispararla miles de veces por tanda. **La capa de
+> correción es la lista de errnos, y ésa sí da rojo.**
+
+## Las otras dependencias de máquina en mis asserts, repasadas
+
+Misma pregunta a todo lo nuevo: ¿depende de cómo es el disco de esta máquina?
+
+| assert | veredicto |
+|---|---|
+| el barrido de directorios | 🔴 **era el defecto.** Corregido |
+| control positivo, comparación de rutas | 🔸 bajaba la caja **siempre**. En Linux eso hace la comprobación más laxa (dos rutas distintas podrían empatar). **Corregido**: se normaliza solo en `win32`, como hace `clave()` |
+| la ruta ilegible del suelo | 🔸 estaba escrita con forma de Windows (`C:\…`). **Corregido** a una neutra: lo que la hace fallar es el NUL, que rechaza la validación de argumentos de Node antes de cualquier syscall — vale en las tres |
+| `symlinkSync(…, 'junction')` | ✔ en Linux el tipo se ignora y sale un symlink normal. Es lo que ya hace SCRUM-351 y pasa CI |
+| `symlinkSync(…, 'file')` | 🔸 **EPERM en Windows** sin elevación ni modo desarrollador (medido aquí). El caso **se declara saltado con su motivo** (SCRUM-456) y **corre en CI**, que es donde vivía el defecto. El mismo mecanismo tiene además una prueba portable que corre en las tres |
+| `os.tmpdir()` | ✔ resuelto con `realpathSync.native` en el banco (macOS lo redirige a `/private/var`) |
+| separadores | ✔ `path.join` en todo |
+| cabecera de 471 leída por líneas | ✔ solo busca subcadenas; CRLF no le afecta |
+| `toString()` sobre las funciones | ✔ es de V8, no del sistema de ficheros |
+
+## Los tests — `tests/scrum476-reconciliar-censos.test.mjs` (19, en `npm test`)
 
 * **control positivo** — contesta sobre el árbol real y el árbol donde corre la suite está dentro;
 * **🔴 EL QUE DECIDE** — sobre el mismo árbol, lo que difiere está explicado (`sinExplicar` vacío), y
@@ -181,6 +242,20 @@ fecha; el de mañana se saca con el método.
   difieren **y se dice por qué**;
 * **suelo ×4** — población vacía · censo que dice OK con cero árboles · fuera de un repo git · el
   barrido de directorios no puede dar cero;
+* **suelo del suelo** — el contador **sí puede** dar cero sobre un árbol vacío, así que el `> 0` de
+  arriba comprueba algo y no es cierto por construcción;
+* **🔴 que no se ha relajado** — una ruta que de verdad no se puede leer **sigue** tumbando el suelo.
+  Sin este test, arreglar `ENOTDIR` sería indistinguible de desactivarlo;
+* **🔴 la lista de errnos es cerrada** — los dos benignos lo son **y llevan motivo**; `EACCES`,
+  `EPERM`, `EIO`, `ELOOP`, `EMFILE` y `ERR_INVALID_ARG_VALUE` no lo son; y `undefined`, `null`, `''`,
+  `0`, `{}` y `'enotdir'` tampoco: **falla cerrado**;
+* **control positivo ×2** — un fichero dentro del árbol (y el árbol siendo un fichero) no es ni ruta
+  ilegible ni `node_modules`; y el **enlace a fichero**, el caso literal del CI, tampoco *(saltado
+  aquí con su motivo: EPERM en Windows; corre en CI)*;
+* **🔴 la cura, probada aquí** — el barrido **no atraviesa ningún enlace**, provocado con junctions,
+  que Windows sí deja crear. Si no se atraviesa ninguno, un enlace a fichero jamás llega a `readdir`;
+* **🔴 el que cierra el círculo** — el veredicto es el mismo en un árbol con `.bin` y en uno sin
+  ellos. Si dependiera de eso, seguiría siendo una propiedad de la máquina;
 * **el censo de 471 no alimenta a su comprobador** (comportamiento + cuerpo de las funciones);
 * **la cabecera de 471** manda a medir y remite aquí.
 
@@ -197,6 +272,10 @@ Sobre el código ya escrito, restaurando entre cada una:
 | el informe firma «RECONCILIADOS» siempre | **1 rojo** |
 | el barrido de directorios devuelve cero | **1 rojo** |
 | cabecera de 471 **sin corregir** (la de `HEAD`) | **1 rojo** |
+| **atravesar los enlaces** (el defecto del CI, reintroducido) | **1 rojo** |
+| `errnoBenigno` devuelve `true` siempre (tragárselo todo) | **2 rojos** |
+| meter `EACCES` en la lista de benignos | **1 rojo** |
+| quitar la puerta `isDirectory` | **19/19 VERDE** 🔸 — y se queda igual, por coste medido (arriba) |
 
 **La cuarta no daba rojo.** Con la lista vacía la topología ya sale por su propia puerta
 (`ok:false`), así que la rama «me han contestado que sí y no traen ni un árbol» **no la ejercitaba
@@ -250,15 +329,17 @@ como el estado del proyecto, y así se llegó aquí.
 
 ## Verificación
 
-Todo lo de abajo, **después del último cambio** y con `main` fusionado dentro (`Already up to
-date`: `main` = `dd5416f0`, no se movió entre el `fetch` del PASO 0 y el cierre).
+Todo lo de abajo, **después del último cambio** y con `main` fusionado dentro — entró SCRUM-475
+(«un solo emisor») mientras se cerraba el arreglo del suelo, y el merge fue **limpio**: `main` pasó
+de `dd5416f0` a **`f546e27b`**, y ninguno de los ocho ficheros que trae toca esta zona.
 
-* `npm test` — **3.189 tests · 3.113 pass · 0 fail · 76 skipped**, `rc=0`. Los 76 son los gateados
-  de siempre: **este ticket no añade ni un salto**. Sobre los 3.177 que midió SCRUM-351 son
-  **+12**, que son exactamente los de `scrum476`.
+* `npm test` — **3.203 tests · 3.126 pass · 0 fail · 77 skipped**, `rc=0`. De los 77, **76 son los
+  gateados de siempre y el 77.º es MÍO y va declarado**: el enlace a fichero, que Windows no deja
+  crear sin elevación. **Corre en CI**, que es donde vivía el defecto.
 * `npm run guards:entrada` — **17 tests, 4 guards, 0 fail**, `rc=0`.
 * `npm run topologia` — **4 árboles, NO COMPARTEN**, sin ningún árbol ciego, `rc=0`.
-* Barrido de marcadores de conflicto sobre el árbol entero: **1.589 ficheros leídos, 0 ilegibles,
-  0 · 0 · 0**.
-* Los 7 rojos por mutación de la tabla de arriba, restaurando el fichero entre cada uno y
-  volviendo a 12/12 al final.
+* **Marcadores de conflicto con el guard oficial** (`tests/scrum393-marcadores-de-conflicto.test.mjs`,
+  no un barrido a mano): **6 tests, 0 fail** — ningún marcador en el árbol, con su control negativo
+  y sus dos positivos.
+* Los **11 rojos por mutación** de las dos tablas, restaurando el fichero entre cada uno y volviendo
+  a **19/19** al final. Dos de ellos no salieron a la primera y los dos están dichos.

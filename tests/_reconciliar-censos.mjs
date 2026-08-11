@@ -274,37 +274,88 @@ export function informe(r) {
   return l.join('\n');
 }
 
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 LA TERCERA MÁQUINA — el CI, que no midió nadie
+//
+// Este fichero nació para explicar por qué dos censos del mismo hecho discrepaban al correr en
+// máquinas distintas… **y su propio suelo se cayó por eso mismo.** Verde en Windows, rojo en CI
+// con 24 rutas `ENOTDIR`, todas `node_modules/.bin/<algo>`: en Linux ésos son ENLACES A FICHEROS,
+// y el barrido, que recorría todo lo que fuera enlace, les hacía `readdir`. En Windows los mismos
+// `.bin` son ficheros `.cmd`, así que ni se rozaban. **Dos discos, dos respuestas** — la misma
+// forma de defecto que el ticket documenta, cometida dentro del ticket.
+//
+// EL ERRNO ES EL CRITERIO, Y LA LISTA ES CERRADA
+//
+// `ENOTDIR` **no es ceguera**: la lectura funcionó y contestó «esto no es un directorio». Eso es
+// un TIPO, no un fallo. `EACCES` / `EPERM` / `EIO` / `ELOOP` **sí** son ceguera y tienen que
+// seguir cayendo. Por eso no hay ningún `try/catch` que se trague todo: hay una lista **cerrada**
+// de errnos benignos, y **lo que no está en ella cae** — incluido un `code` ausente o que no sea
+// una cadena, que es como se cuela un fallo nuevo. Falla cerrado.
+//
+// Y el arreglo de fondo no es la lista: es **no atravesar lo que no es un directorio**. La lista
+// es la regla escrita para que nadie la relaje; la travesía es lo que quita la causa.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+
+/** Los ÚNICOS errnos que no son ceguera, cada uno con por qué. Cerrada a propósito. */
+export const ERRNOS_BENIGNOS = Object.freeze({
+  ENOENT: 'la entrada ya no está: se borró entre el `readdir` y el `lstat`, o es un enlace ' +
+    'colgando. La lectura funcionó; la respuesta es «aquí ya no hay». No es no-haber-podido-mirar. ' +
+    '(Pasa de verdad: la suite corre los ficheros en paralelo y `scrum471` crea y borra `.tmp-471-*` ' +
+    'dentro de este mismo árbol mientras esto barre.)',
+  ENOTDIR: 'la lectura funcionó y contestó «esto no es un directorio». Es un TIPO, no un fallo. ' +
+    'Es el caso de los 24 `node_modules/.bin/<algo>` del CI, que en Linux son enlaces a ficheros.',
+});
+
+/** ¿Es este `code` uno de los benignos? Falla CERRADO: lo desconocido es ceguera. */
+export function errnoBenigno(code) {
+  return typeof code === 'string' && Object.hasOwn(ERRNOS_BENIGNOS, code);
+}
+
 /**
  * El censo de HOY sobre este disco, derivado. Es lo que sustituye a un número escrito a mano:
  * un puntero al método no caduca, un recuento sí.
+ *
+ * Cuenta toda entrada llamada `node_modules` —sea directorio real o enlace, porque en las dos
+ * formas HAY un `node_modules` ahí— y lleva los enlaces aparte. **No atraviesa enlaces**: ni los
+ * que van a un fichero (el defecto del CI), ni los que van a un directorio, que además harían
+ * contar dos veces el mismo árbol y podrían dar vueltas.
  */
 export function censoDeDirectoriosNodeModules(raices) {
   let total = 0;
   let enlaces = 0;
   const ilegibles = [];
+  const anotar = (p, err) => {
+    if (!errnoBenigno(err.code)) ilegibles.push(`${p}: ${err.code || err.message}`);
+  };
+
   const visitar = (dir, prof) => {
     let entradas;
     try {
       entradas = fs.readdirSync(dir, { withFileTypes: true });
     } catch (err) {
-      if (err.code !== 'ENOENT') ilegibles.push(`${dir}: ${err.code || err.message}`);
+      anotar(dir, err);
       return;
     }
     for (const e of entradas) {
-      if (!e.isDirectory() && !e.isSymbolicLink()) continue;
       const p = path.join(dir, e.name);
       let st;
       try {
         st = fs.lstatSync(p);
       } catch (err) {
-        ilegibles.push(`${p}: ${err.code || err.message}`);
+        anotar(p, err);
         continue;
       }
-      if (st.isSymbolicLink()) enlaces++;
+      if (st.isSymbolicLink()) {
+        enlaces++;
+        if (e.name === 'node_modules') total++;
+        continue;   // ← 🔴 no se atraviesa: aquí es donde el CI se caía
+      }
+      if (!st.isDirectory()) continue;   // ficheros: ni se cuentan ni se recorren
       if (e.name === 'node_modules') total++;
       if (prof < 12) visitar(p, prof + 1);
     }
   };
+
   for (const r of raices) visitar(r, 0);
   return { directoriosNodeModules: total, enlaces, ilegibles };
 }
