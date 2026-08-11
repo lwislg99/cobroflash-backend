@@ -22,9 +22,23 @@
 // ⚠️ Y por qué esto no es paranoia: `--accept-data-loss` **NO protege a `db execute --file`**
 // (medido en SCRUM-395). Esa bandera es de `db push`. `db execute` corre lo que le des.
 
+// 🔴 TERCERA FORMA · `CREATE TABLE` — añadida el 11-ago-2026 por SCRUM-475 (fase 2), a
+// conciencia y con su caso, que es lo que esta cabecera pide. La tabla `email_messages` no se
+// podía aplicar: la lista solo conocía columnas e índices, y una TABLA NUEVA no es ninguna
+// de las dos.
+//
+// POR QUÉ ES ADMISIBLE, y no por ser «aditiva» a ojo: **no existe forma de `CREATE TABLE` que
+// toque datos existentes.** Crea un objeto que antes no estaba. Si la tabla ya existe, sin
+// `IF NOT EXISTS` la sentencia FALLA —que es el lado seguro— y con él no hace nada.
+//
+// SE ACOTA A LA FORMA CON DEFINICIÓN DE COLUMNAS, `CREATE TABLE … ( … )`, que es la que genera
+// `prisma migrate diff`. Queda FUERA `CREATE TABLE … AS SELECT`: tampoco destruye, pero copia
+// datos y esta herramienta no la necesita. Si algún día hace falta, se añade aquí con su caso —
+// no se ensancha la regex de paso.
 export const PERMITIDAS = Object.freeze([
   { nombre: 'ALTER TABLE … ADD COLUMN', re: /^ALTER\s+TABLE\s+\S+\s+ADD\s+COLUMN\s+(IF\s+NOT\s+EXISTS\s+)?[\s\S]+$/i },
   { nombre: 'CREATE [UNIQUE] INDEX',    re: /^CREATE\s+(UNIQUE\s+)?INDEX\s+(CONCURRENTLY\s+)?(IF\s+NOT\s+EXISTS\s+)?[\s\S]+$/i },
+  { nombre: 'CREATE TABLE … ( … )',     re: /^CREATE\s+TABLE\s+(IF\s+NOT\s+EXISTS\s+)?"?[\w.]+"?\s*\([\s\S]+$/i },
 ]);
 
 /** Quita comentarios CONSERVANDO las líneas, para que el número que se reporte sea el real. */
