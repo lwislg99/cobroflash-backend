@@ -149,25 +149,48 @@ test('SCRUM-463 · CONTROL NEGATIVO: el banco SÍ ve el contenido cuando una vis
 
 // ── CAMINO 2 · LA PÁGINA PÚBLICA — el móvil del cliente ──────────────────────────────────
 
-test('SCRUM-463 · LA PÚBLICA sí pinta las líneas y el cliente — pero NO el importe', () => {
+test('SCRUM-463 · LA PÚBLICA sí pinta las líneas y el cliente (y desde SCRUM-468, los importes)', () => {
   // Aquí no hace falta banco: la página se construye en el servidor y su marcado está en el
   // fuente. Lo que se mide es qué HAY en el HTML que se le manda al cliente.
+  //
+  // ⚠️ ENMIENDA SCRUM-468 (11-ago-2026), hecha como pedía el propio assert de abajo —«actualízala
+  // en vez de borrarla»—. Aquella medición decía que la pública NO enseñaba importes, y era cierta.
+  // Lo que ha cambiado es la decisión, no la medida: para un albarán **VALORADO** la pantalla
+  // enseña lo MISMO que su PDF, porque el PDF ya los llevaba desde SCRUM-65 y **firmar una pantalla
+  // sin importes para quedar obligado por un papel con Base y Total no prueba nada**. Es el defecto
+  // que SCRUM-466 §2 midió y aparcó como «otro carril»: este.
+  //
+  // Se mantiene TAL CUAL lo que sigue sin haber (cuota de IVA, serie, QR) y lo que ve el
+  // SIN_VALORAR. El pad de obra (`signaturePad.js`) NO entra aquí: su regla es la de SCRUM-466.
   const publica = fs.readFileSync(path.join(RAIZ, 'src/modules/jobs/app/routes/albaranPublic.routes.ts'), 'utf8');
+  // El marcado de la tabla vive desde SCRUM-468 en su propio módulo, para poder EJECUTARLO contra
+  // el PDF en vez de leerlo (`tests/scrum468-firma-ve-lo-que-firma.test.mjs`).
+  const vista = fs.readFileSync(path.join(RAIZ, 'src/modules/jobs/app/routes/albaranPublicVista.ts'), 'utf8');
 
   // Lo que SÍ: la tabla de líneas y el nombre del cliente.
-  assert.match(publica, /class="lines-table"/,
+  assert.match(vista, /class="lines-table"/,
     '🔴 la página pública ha dejado de pintar la tabla de líneas: el cliente firmaría a ciegas.');
-  assert.match(publica, /l\?\.concepto/, '🔴 la tabla ya no pinta el concepto de cada línea.');
-  assert.match(publica, /l\?\.cantidad/, '🔴 la tabla ya no pinta la cantidad de cada línea.');
+  assert.match(vista, /l\?\.concepto/, '🔴 la tabla ya no pinta el concepto de cada línea.');
+  assert.match(vista, /l\?\.cantidad/, '🔴 la tabla ya no pinta la cantidad de cada línea.');
+  assert.match(publica, /renderLineasAlbaran\(albaran\.lineas, albaran\.modoValoracion\)/,
+    '🔴 la página ya no llama a la vista de líneas: el módulo existiría sin que lo pinte nadie.');
   assert.match(publica, /Hola, \$\{customerName\}/,
     '🔴 la página ya no saluda al cliente por su nombre: no consta a quién se le enseña.');
 
-  // 🔴 Y lo que NO: ni precio unitario, ni totales, ni el modo de valoración. Un albarán VALORADO
-  // se firma sin que el cliente vea un solo importe.
-  for (const ausente of ['precioUnitario', 'calcAlbaranTotales', 'totales']) {
-    assert.ok(!publica.includes(ausente),
-      `🔴 la página pública ya menciona «${ausente}». Si ahora enseña importes, esta medición ha ` +
-      'cambiado: actualízala en `docs/master/SCRUM-463.md` en vez de borrar el assert.');
+  // 🔴 Y lo que sigue SIN haber, que es lo que separa un parte de trabajo de una factura (regla 24).
+  //
+  // ⚠️ Sobre CÓDIGO, no sobre el fichero: la primera versión de este bucle salió roja contra el
+  // comentario de la propia vista que dice «sin serie fiscal y sin QR». El guard de texto se caza
+  // a sí mismo en la frase que explica la prohibición — es el motivo de `_guard-texto.mjs`.
+  const vistaCodigo = leerFuente(path.join(RAIZ, 'src/modules/jobs/app/routes/albaranPublicVista.ts'));
+  assert.ok(vistaCodigo.includes('calcAlbaranTotales'),
+    '🔴 SUELO: el código de la vista se ha leído vacío o sin su contenido, y entonces los cuatro ' +
+    '`!includes` de abajo pasan por vacío — el verde hueco de siempre.');
+  for (const ausente of ['cuotaCents', 'tipoIva', 'qr', 'serie']) {
+    assert.ok(!vistaCodigo.includes(ausente),
+      `🔴 la página pública ya menciona «${ausente}». Enseñar importes NO la convierte en una ` +
+      'factura: sin desglose de cuota de IVA, sin serie fiscal y sin QR. Si esto ha cambiado, ' +
+      'actualízalo en `docs/master/SCRUM-463.md` en vez de borrar el assert.');
   }
 });
 
