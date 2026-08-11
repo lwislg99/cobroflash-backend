@@ -488,10 +488,20 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
         // Se le pasan los CUATRO que ya sellamos en v:3 —líneas, cliente, fecha y lugar—, porque
         // «no se sella lo que no se enseña, y no se enseña menos de lo que se sella».
         //
-        // 🔴 Y NI UN IMPORTE: no se pasa `precioUnitario`, ni `totales`, ni `modoValoracion`. Un
-        // albarán no lleva importes (regla del producto) — quien firma en obra puede no ser quien
-        // acordó el precio. Que no LLEGUEN hasta aquí es lo que hace imposible que se pinten por
-        // descuido, igual que en SCRUM-452 con el PDF.
+        // 🔴 Y NI UN IMPORTE: no se pasa `precioUnitario`, ni `totales`, ni `modoValoracion`. Que
+        // no LLEGUEN hasta aquí es lo que hace imposible que se pinten por descuido, igual que en
+        // SCRUM-452 con el PDF.
+        //
+        // ⚠️ SCRUM-468 · ESTO **DIVERGE A PROPÓSITO** DEL ENLACE REMOTO, que desde hoy SÍ enseña
+        // importes. No es un olvido y no se «unifica» (decisión del fundador, 11-ago-2026):
+        //
+        //   · en el enlace remoto firma **el cliente** —le llegó a su WhatsApp—, y no puede firmar
+        //     viendo menos de lo que se sella: su PDF lleva Base y Total;
+        //   · **aquí firma quien esté delante** —el portero, la pareja, el encargado— y enseñarle
+        //     precios es revelar condiciones comerciales a un tercero. Lo que se firma en obra
+        //     acredita la **ENTREGA**, no el precio.
+        //
+        // Fijado en `tests/scrum468-firma-ve-lo-que-firma.test.mjs`, con el motivo dentro del rojo.
         albaran: {
           cliente: (alb.customer && alb.customer.name) || '',
           fecha: alb.fecha ? new Date(alb.fecha).toLocaleDateString('es-ES') : '',

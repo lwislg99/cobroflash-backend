@@ -39,6 +39,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
 import { fileURLToPath } from 'node:url';
+import { leerFuente } from './_guard-texto.mjs';
 import {
   renderLineasAlbaran,
   LEYENDA_IMPORTES_ORIENTATIVOS,
@@ -239,6 +240,61 @@ test('SCRUM-468 · CONTROL NEGATIVO: sigue sin ser una factura (regla 24)', () =
     !/\bF1\b|\bR1\b|FAC-\d|\bserie\b/i.test(html),
     '🔴 asoma una serie fiscal en la pantalla de firma. El albarán numera ALB-, y no es un documento fiscal.',
   );
+});
+
+test('SCRUM-468 · LOS DOS CANALES ENSEÑAN COSAS DISTINTAS, Y ES DELIBERADO', () => {
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+  // DECISIÓN DEL FUNDADOR, 11-ago-2026. NO ES UN OLVIDO. NO SE «ARREGLA» ALINEÁNDOLOS.
+  //
+  // Un mismo albarán VALORADO se firma contra DOS pantallas que enseñan cosas distintas:
+  //
+  //   · REMOTO (móvil del cliente, enlace con token) → **SÍ enseña importes**. Quien abre ese
+  //     enlace ES el cliente: le llegó a su WhatsApp. No puede firmar viendo menos de lo que se
+  //     sella, porque el PDF que se lleva trae Base y Total.
+  //
+  //   · PAD DE OBRA (móvil del profesional) → **NO los enseña, y se queda así**. Allí firma quien
+  //     esté delante —el portero, la pareja, el encargado—, y enseñarle precios es **revelar
+  //     condiciones comerciales a un tercero**. Lo que se firma en obra acredita la **ENTREGA**,
+  //     no el precio.
+  //
+  // Este test existe para que dentro de seis meses nadie lea la diferencia como un descuido y la
+  // «unifique». Si alguien la unifica —por cualquiera de los dos lados—, sale rojo con el motivo.
+  //
+  // Se solapa a propósito con el guard de SCRUM-466 sobre el llamador del pad: allí es la regla de
+  // aquel ticket, aquí es la MITAD de una divergencia que solo se entiende viendo los dos lados
+  // juntos. Duplicar el assert es más barato que perder el porqué.
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+  const pdf = pdfValorado();
+
+  // LADO A · el remoto enseña importes.
+  const remoto = renderLineasAlbaran(LINEAS, 'VALORADO');
+  assert.ok(
+    remoto.includes(pdf.fmtMoney(LINEAS[0].precioUnitario)),
+    '🔴 EL CANAL REMOTO HA DEJADO DE ENSEÑAR IMPORTES. Quien abre ese enlace es el cliente, y el ' +
+      'PDF que recibe lleva Base y Total: firmaría viendo menos de lo que se sella.',
+  );
+
+  // LADO B · al pad de obra no le LLEGAN. Lo que no se recibe no se puede pintar por descuido.
+  const vista = leerFuente(path.join(RAIZ, 'public/dashboard/js/albaranDetailView.js'));
+  const i = vista.indexOf('openSignaturePad({');
+  assert.ok(i > 0, '🔴 SUELO: no se encuentra la llamada al pad; este lado del guard está ciego.');
+  const bloque = vista.slice(i, vista.indexOf('onConfirm', i));
+  assert.ok(bloque.length > 40, `🔴 SUELO: el bloque del pad se ha leído con ${bloque.length} caracteres.`);
+  for (const debe of ['concepto', 'cantidad', 'cliente', 'lugar']) {
+    assert.ok(bloque.includes(debe),
+      `🔴 SUELO: la llamada al pad ya no le pasa «${debe}». Sin esto, el bucle de abajo pasaría por vacío.`);
+  }
+  for (const prohibido of ['precioUnitario', 'totales', 'modoValoracion', 'tipoIva']) {
+    assert.ok(
+      !bloque.includes(prohibido),
+      `🔴 SE LE ESTÁ PASANDO «${prohibido}» AL PAD DE OBRA.\n\n` +
+        '  Si vienes de SCRUM-468 pensando que «la pantalla debe enseñar lo mismo que el PDF»: eso\n' +
+        '  vale para el enlace REMOTO, donde firma el cliente. En obra firma quien esté delante —el\n' +
+        '  portero, la pareja, el encargado— y enseñarle precios REVELA CONDICIONES COMERCIALES A UN\n' +
+        '  TERCERO. Allí la firma acredita la ENTREGA, no el precio.\n' +
+        '  La divergencia entre los dos canales es una decisión del fundador (11-ago-2026), no un olvido.',
+    );
+  }
 });
 
 test('SCRUM-468 · el PDF y la pantalla beben de la MISMA aritmética, no de dos parecidas', () => {
