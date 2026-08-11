@@ -754,22 +754,39 @@ combate — por eso, con la campaña cerrada, se documentó en vez de recontar: 
 >
 >    ⚠️ **Falso positivo nº2 — un comando de este runbook que "no existe" es el binario
 >    equivocado.** `npx prisma` usa el binario LOCAL **solo si el worktree tiene `node_modules`**
->    (aquí, por junction). Sin él, `npx` se baja del registro una versión **mayor distinta** de la
+>    —cuando se escribió esto, aquí llegaba por junction; el 11-ago-2026 cada worktree tiene el
+>    suyo (SCRUM-351: `npm run topologia` lo dice hoy, en vez de dejarlo escrito otra vez). Sin
+>    dependencias en el árbol, `npx` se baja del registro una versión **mayor distinta** de la
 >    fijada en `package.json` (`prisma ^6.18.0`), y su CLI no es la misma: en Prisma 7 el flag
 >    `--from-url` **ya no existe** (`"was removed"`), que es como se descubrió esto. Parece que el
->    runbook está obsoleto y **no lo está**. Crea el junction, o invoca el binario local directo:
+>    runbook está obsoleto y **no lo está**. Instala las dependencias de ESTE árbol (`npm ci`) o
+>    invoca el binario local directo:
 >    `node node_modules/prisma/build/index.js` (es lo que hace `preflight-schema-drift.mjs`).
+>
+>    *(Aquí ponía «**Crea el junction**». Retirado en SCRUM-351 y NO se vuelve a añadir: hoy esa
+>    instrucción construiría el `node_modules` compartido del que salió ese ticket — el montaje
+>    que hizo que «no regeneres el cliente» se aplicara donde no tocaba.)*
 >
 >    (Los dos costaron tiempo en los pushes de SCRUM-145, 24-jul. Nota: la primera versión de
 >    este apunte se escribió con un script que interpretó el retorno de carro y partió el
 >    párrafo en `main`; reparado aquí.)
-> 5. **Regenerar el cliente DESPUÉS del push, nunca antes.** `node_modules` está compartido por
->    junction entre worktrees: un cliente con columnas que la BD todavía no tiene rompe **cualquier
->    lectura** de esa tabla (`SELECT` de columna inexistente) — incluidos los tests gateados de las
->    OTRAS sesiones, que no han tocado nada. Y ojo al reverso: si otra sesión regeneró el
->    cliente desde un `main` ANTERIOR a tu merge, el cliente compartido se queda **viejo** y una
->    lectura falla con «Unknown field» aunque la columna SÍ esté en la BD — pasó al verificar el
->    push a prod de SCRUM-145. Regenerar después del push arregla ambos lados.
+> 5. **Regenerar el cliente DESPUÉS del push, nunca antes.** Un cliente con columnas que la BD
+>    todavía no tiene rompe **cualquier lectura** de esa tabla (`SELECT` de columna inexistente).
+>    Eso te lo rompe **en tu propio árbol**, y ése es el motivo de la regla — que por tanto vale
+>    compartas o no.
+>
+>    ⚠️ **SCRUM-351 · aquí ponía «`node_modules` está compartido por junction entre worktrees»,
+>    en presente y sin fecha, y ésa era la justificación entera de la regla.** De esa frase salió
+>    la restricción «no regeneres, que regeneras para todos», y el 11-ago-2026 los cuatro
+>    worktrees vivos tienen `node_modules` PROPIO: regenerar aquí no toca a nadie (medido: solo se
+>    movió la marca del árbol donde se regeneró). **No se escribe aquí el estado nuevo, porque
+>    caducaría igual** — se pregunta: `npm run topologia`, que dice si compartes y CON QUIÉN.
+>
+>    **Si SÍ compartes**, el daño se extiende a los tests gateados de las OTRAS sesiones, que no
+>    han tocado nada — y ojo al reverso: si otra sesión regeneró el cliente desde un `main`
+>    ANTERIOR a tu merge, el cliente compartido se queda **viejo** y una lectura falla con
+>    «Unknown field» aunque la columna SÍ esté en la BD — pasó al verificar el push a prod de
+>    SCRUM-145. Regenerar después del push arregla ambos lados.
 >
 > Prod va aparte: su propio preview y su propio GO (`bash scripts/db-push-prod`).
 

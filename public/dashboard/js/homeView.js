@@ -24,6 +24,17 @@ async function renderHomeView(container) {
            no ocupa ni una línea. -->
       <div id="home-firmas-pendientes"></div>
 
+      <!-- SCRUM-469 (H5 mide → H2 pinta) · Firmas que el móvil YA se ha llevado.
+           Va DESPUÉS del contador de pendientes y no antes, a propósito: cuando hay desalojo el
+           contador de arriba dice «no hemos podido comprobar…» o se queda a cero —la cola se fue
+           con el almacén—, así que el orden de lectura es «lo que creías que tenías» y luego «lo
+           que ha pasado con ello». Tampoco lleva atributo data-home-block: un aviso de pérdida
+           que se puede quitar desde «Personalizar» no es un aviso.
+           (Sin comillas invertidas aquí dentro: esto vive en un template literal y cerrarían la
+           cadena, que es el defecto que dejó la home EN BLANCO y documenta SCRUM-356.)
+           Cuando no se ha perdido nada no ocupa ni una línea. -->
+      <div id="home-desalojo"></div>
+
       <!-- Número héroe: lo que te deben (foco principal) -->
       <div id="home-hero" data-home-block="hero"></div>
 
@@ -131,6 +142,12 @@ async function renderHomeView(container) {
   // SCRUM-356 (H2) · FUERA del try/catch a propósito: si las métricas fallan —que es justo cuando
   // quedan firmas sin subir— este aviso es lo único que no puede desaparecer.
   pintarFirmasPendientesEnHome();
+
+  // SCRUM-469 · Y por el mismo motivo, el de desalojo. Si además la home se monta ANTES de que la
+  // medida de `resistenciaAlArrancar` esté lista, aquí no se pinta nada y la repinta `app.js`
+  // cuando llega: los dos órdenes acaban con el aviso en pantalla, que es la única propiedad que
+  // importa.
+  pintarDesalojoEnHome();
 }
 
 /**
@@ -150,6 +167,29 @@ async function pintarFirmasPendientesEnHome() {
   caja.innerHTML = window.pintarPendientesDeSubir(await window.pendientesDeSubir());
 }
 window.pintarFirmasPendientesEnHome = pintarFirmasPendientesEnHome;
+
+/**
+ * SCRUM-469 (H5 → H2) · El aviso de desalojo en la home.
+ *
+ * 🔴 VA FUERA DEL `try` DE LAS MÉTRICAS, igual que el de firmas pendientes y por una razón aún
+ * más fuerte: el desalojo se lleva el almacén entero, así que el escenario en el que este aviso
+ * hace falta es exactamente aquel en el que el resto de la home puede estar fallando.
+ *
+ * ⚠️ SIN ARGUMENTO USA LA ÚLTIMA MEDIDA CONOCIDA, y si todavía no hay ninguna pinta cadena vacía
+ * — no un aviso. La medida llega sin `await` desde `app.js` (no puede bloquear el arranque), así
+ * que la home puede montarse antes; cuando llegue, `app.js` vuelve a llamar aquí. Inventar un
+ * aviso mientras no se sabe sería justo la acusación falsa que `pintarDesalojo` evita.
+ *
+ * No lanza nunca: sin caja o sin `pintarDesalojo` no hace nada, y `pintarDesalojo` es puro.
+ */
+function pintarDesalojoEnHome(medida) {
+  const caja = document.getElementById('home-desalojo');
+  if (!caja || typeof window.pintarDesalojo !== 'function') return;
+  caja.innerHTML = window.pintarDesalojo(
+    medida !== undefined ? medida : window.resistenciaUltimoResultado,
+  );
+}
+window.pintarDesalojoEnHome = pintarDesalojoEnHome;
 
 function setNavBadge(id, count, max99 = true) {
   const badge = document.getElementById(id);

@@ -14,9 +14,16 @@
 //
 // ⚠️ SCRUM-461 · esto ANTES se afirmaba como un hecho —«se comparte por JUNCTION entre todos»—. Se
 // midió el 10-ago con `fs.realpathSync` sobre los cuatro worktrees vivos: **ninguno lo era**, los
-// cuatro son directorios propios. Comprobarlo cuesta una línea, y no comprobarlo ya costó una
-// decisión equivocada (se desaconsejó un `npm install` por un riesgo que no existía):
-//     node -e "console.log(require('fs').lstatSync('node_modules').isSymbolicLink())"
+// cuatro son directorios propios. No comprobarlo ya costó una decisión equivocada en cada dirección
+// (se desaconsejó un `npm install` por un riesgo que no existía; y una sesión estuvo a punto de no
+// arreglar cuatro `ERR_MODULE_NOT_FOUND` por respetar una restricción que no aplicaba).
+//
+// ⚠️ SCRUM-351 · Y NO SE SUSTITUYE POR LA AFIRMACIÓN CONTRARIA. «Son independientes» vuelve a ser
+// una premisa falsa en cuanto alguien recree un worktree, cambie de máquina o instale de otra
+// forma — que es exactamente cómo llegamos aquí. La respuesta se DERIVA cada vez, y cubre los tres
+// montajes de una sola pasada (propio · enlazado · sin `node_modules`, que resuelve hacia arriba
+// sin dejar ningún enlace que inspeccionar):
+//     npm run topologia
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // SCRUM-235 · POR QUÉ EL CRITERIO ANTERIOR DABA FALSO VERDE
@@ -67,8 +74,9 @@
 //
 // LO QUE ESTO NO HACE: no compara contra la BASE, solo contra `schema.prisma`. Si la base y el
 // schema divergen (un `db push` pendiente), esto no lo ve — para eso está
-// `scripts/preflight-schema-drift.mjs`. Y no arregla la causa de fondo, el `node_modules`
-// compartido: convierte media hora tirada en un aborto de dos segundos.
+// `scripts/preflight-schema-drift.mjs`. Y no arregla ninguna de las dos causas de fondo —el cambio
+// de rama (A) y un `node_modules` compartido (B), *si* lo está—: convierte media hora tirada en un
+// aborto de dos segundos.
 // ─────────────────────────────────────────────────────────────────────────────────────────
 //
 // MENSAJE ÚNICO Y SALIDA INMEDIATA: se informa de la PRIMERA diferencia y se para. Veinte
@@ -162,8 +170,8 @@ export function modelosDelSchema(textoSchema) {
 
 /**
  * Campos del cliente generado, sacados de su DMMF. `rutaCliente` permite apuntar a OTRO cliente
- * —un directorio generado aparte—, que es como se prueba este guard en rojo sin tocar el
- * `node_modules` que comparten todos los worktrees.
+ * —un directorio generado aparte—, que es como se prueba este guard en rojo sin tocar ningún
+ * `node_modules` de verdad: ni el propio, ni el de otro worktree si resultara estar compartido.
  *
  * @returns {Promise<Map<string, Map<string, string>>>} modelo → (campo → columna)
  */
@@ -284,13 +292,20 @@ export function mensaje(d) {
     '         cliente que tenías se queda viejo sin que nadie más haya tocado nada.',
     '         Compruébalo:  git log -1 --format=%h -- prisma/schema.prisma',
     '',
-    '     (B) OTRO WORKTREE, si tu `node_modules` es un JUNCTION al de otro. Entonces el',
-    '         cliente es de todos y quien regenera último manda.',
-    '         Compruébalo:  (Get-Item node_modules).LinkType     ← vacío = es tuyo, no compartido',
+    '     (B) OTRO WORKTREE, si tu `node_modules` acaba siendo el mismo que el suyo — por un',
+    '         enlace (junction o symlink), o porque no tengas ninguno propio y Node resuelva el',
+    '         del padre. Entonces el cliente es de todos y quien regenera último manda.',
+    '         Compruébalo:  npm run topologia',
+    '         (el `(Get-Item node_modules).LinkType` de antes solo ve el enlace: cuando no hay',
+    '          `node_modules` que inspeccionar sale vacío y eso NO significa que sea tuyo.)',
     '',
     '   Arreglo, en los dos casos:  npm run prisma:generate   (desde ESTE worktree)',
     '',
     '   ⚠️ Y si es (B), regenerar ARREGLA EL TUYO Y ROMPE EL DE LOS DEMÁS: avisa antes.',
+    '      SCRUM-351: esto ANTES se daba por hecho, y de darlo por hecho salió la restricción',
+    '      «no regeneres» que en los cuatro worktrees de hoy NO aplica. Míralo, no lo supongas —',
+    '      ni en un sentido ni en el otro. `npm run topologia` nombra con quién compartes, si',
+    '      compartes, y dice NO SUPE MIRAR cuando no ha podido leerlo.',
     '',
   ].join('\n');
 }

@@ -80,8 +80,12 @@ Cada carril es DUEÑO de sus módulos. El dueño puede tocarlos sin preguntar; e
 2. **Cada uno en SU máquina/carpeta.** Jamás dos sesiones de Claude Code sobre el mismo checkout (lección del 13-jul: colisión 14/43). Si un mismo humano necesita 2 sesiones: worktrees.
 
    > ⚠️ **RETIRAR un worktree: deshacer sus ENLACES primero** (incidente #11, 27-jul-2026, ver
-   > `docs/ERRORES_ASESOR.md`). Los worktrees llevan un junction `node_modules → <repo>/node_modules`
-   > para no duplicar 271 paquetes por copia. `git worktree remove` **entra por el enlace y borra
+   > `docs/ERRORES_ASESOR.md`). Aquel montaje llevaba en cada worktree un junction
+   > `node_modules → <repo>/node_modules` para no duplicar 271 paquetes por copia — **y esa frase
+   > estaba aquí en presente, como si fuera una propiedad del proyecto** (SCRUM-351): el 11-ago-2026
+   > los cuatro worktrees vivos lo tienen PROPIO. La regla de abajo NO depende de eso y sigue
+   > entera: **si hay enlace, deshazlo primero**. Para saber si lo hay, `npm run topologia` — no se
+   > escribe aquí la respuesta, porque volvería a caducar. `git worktree remove` **entra por el enlace y borra
    > el contenido del destino**: una limpieza rutinaria de 37 worktrees dejó sin dependencias a
    > TODAS las sesiones a la vez, y ningún comando falló. Orden obligatorio, probado en los dos
    > sentidos (con enlace → el destino se vacía; con `rmdir` antes → sobrevive):
@@ -114,6 +118,30 @@ Cada carril es DUEÑO de sus módulos. El dueño puede tocarlos sin preguntar; e
    > efecto: el runner gateado toma una huella de `dist/`, `tests/` y el cliente de Prisma
    > antes y después, y si algo cambió sale con **código 4** diciendo que sus números no son
    > evidencia de nada — ni el verde ni el rojo (`scripts/_artefactos-guard.mjs`).
+
+   > 📏 **SEGUNDA MEDICIÓN — 11-ago-2026 (SCRUM-351).** La de arriba **no se corrige**: era cierta
+   > el día que se tomó, y una medición fechada que se reescribe deja de ser un registro. Se
+   > supera poniéndole al lado una más reciente.
+   >
+   > **Resultado de hoy: los worktrees vivos NO comparten `node_modules`.** Cada uno tiene el
+   > suyo — ni junction, ni symlink, ni resolución hacia arriba. Con lo cual **la restricción que
+   > se dedujo de la tabla de arriba —«no regeneres el cliente de Prisma, que regeneras para
+   > todos»— hoy no aplica**, y aplicarla ya costó dinero en las dos direcciones (se desaconsejó
+   > un `npm install` por un riesgo inexistente; y una sesión estuvo a punto de no arreglar una
+   > tanda rota por respetarla).
+   >
+   > ⚠️ **AQUÍ NO SE ESCRIBE NINGÚN RECUENTO, y es deliberado.** Cuántos worktrees hay y cuántos
+   > comparten es un dato que caduca — dentro de tres semanas sería exactamente la premisa falsa
+   > que este ticket vino a matar, cometida por su propio arreglo. La respuesta de hoy, el día que
+   > la necesites, se saca así:
+   >
+   > ```bash
+   > npm run topologia    # dice si comparten y CON QUIÉN; si no puede leerlo, dice NO SUPE MIRAR
+   > ```
+   >
+   > Cubre los tres montajes —propio, enlazado y **ausente** (la vía ② de arriba, la que no deja
+   > enlace que inspeccionar)— y **nunca** cuenta un fallo de lectura como «son independientes».
+   > Un puntero al método no caduca; un recuento sí.
 3. **Empezar SIEMPRE con `git checkout main && git pull`.** Rebase de main a la rama si pasa de 1 día.
 4. **Anunciar zona roja:** antes de empezar un ticket, comentar en él qué archivos de zona roja tocará. El otro carril lo lee antes de arrancar el suyo.
 5. **El segundo reconcilia:** si dos PRs tocan lo mismo, el que mergea segundo resuelve conflictos rebasando sobre main (patrón del PR #10). Los merges los hace Luis con "Create a merge commit" si hay 2+ commits.
