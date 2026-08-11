@@ -243,11 +243,16 @@ equivocada en las dos direcciones.
 | `docs/MIGRATIONS_PENDING.md` :1149 | bloque `SCRUM-145 · ✅ APLICADO en prod (2026-07-24)`, cerrado con `Estado: staging ✅ (24-jul) · prod ✅ (24-jul)` | el ⚠️ es parte del registro de **aquella** migración, ya aplicada |
 | `docs/PLAN_EJECUCION_Y_PARALELO.md` :95-106 | `📏 QUÉ COMPARTEN DE VERDAD LOS WORKTREES — **medido, no supuesto** (SCRUM-182, 27-jul-2026, sobre los 24 worktrees vivos)` | la tabla `dist` NO / `node_modules` SÍ por dos vías |
 
-> 🔸 **El bloque 📏 se deja íntegro, y conviene saber lo que eso cuesta:** lleva su fecha en la
-> cabecera, así que es historia por el criterio — pero dice «3 worktrees **hoy**» y se lee en un
-> documento de plan, donde se busca el estado actual. **No se ha tocado a propósito**: cambiarlo
-> sería reescribir una medición. Si el fundador quiere cerrar ese filo, la salida que NO falsifica
-> nada es **añadir** debajo una segunda medición fechada — no editar la primera.
+> ✅ **El bloque 📏 se deja íntegro — y se le añade DEBAJO una segunda medición fechada**
+> (aprobado por el fundador). Lleva su fecha en la cabecera, así que es historia por el criterio,
+> pero dice «3 worktrees **hoy**» y se lee en un documento de plan, donde se busca el estado
+> actual. **La historia no se corrige: se supera poniéndole al lado algo más reciente.**
+>
+> 🔴 **Y la segunda medición NO ESCRIBE UN RECUENTO.** Poner «hoy son cuatro worktrees» sería, en
+> tres semanas, exactamente la premisa falsa que este ticket vino a matar — la regla del ticket
+> vuelta contra él. Dice **la fecha**, **el resultado** («no comparten»; la restricción deducida
+> de la tabla de arriba hoy no aplica) y, sobre todo, **cómo se obtiene la respuesta de hoy**:
+> `npm run topologia`. **Un puntero al método no caduca; un recuento sí.**
 
 ## PREMISA — corregido (2 bloques, en 2 documentos)
 
@@ -257,9 +262,14 @@ equivocada en las dos direcciones.
 | `docs/QA/SUITE_REGRESION.md` :757-760 | «`npx prisma` usa el binario LOCAL solo si el worktree tiene `node_modules` **(aquí, por junction)**» + la instrucción **«Crea el junction»** | el paréntesis se fecha; y el remedio pasa a `npm ci` en ESTE árbol o el binario local directo — mandar a crear un junction hoy **construiría** el montaje compartido que el repo acaba de medir que no tiene |
 | `docs/QA/SUITE_REGRESION.md` :766-767 | «`node_modules` **está** compartido por junction entre worktrees», presente y sin fecha, como **justificación entera** de «regenerar después del push, nunca antes» | la regla **sobrevive con su motivo verdadero** —un cliente por delante de la BD rompe la lectura **en tu propio árbol**, compartas o no—, y el daño a terceros queda bajo «**si** SÍ compartes» |
 
-⚠️ **Un cambio de conducta, señalado para que se pueda vetar:** en `SUITE_REGRESION.md:760` se ha
-retirado el consejo *«Crea el junction»*. No es prosa: es una instrucción que hoy produciría
-exactamente el montaje del que salió este ticket.
+✅ **Un cambio de conducta, aprobado por el fundador:** en `SUITE_REGRESION.md:760` se ha retirado
+el consejo *«Crea el junction»*. No es prosa: es una instrucción que hoy produciría exactamente el
+montaje del que salió este ticket.
+
+**Y se deja UNA LÍNEA de motivo en el punto del cambio, no solo aquí.** Una instrucción que
+desaparece sin rastro es una instrucción que alguien vuelve a añadir — y quien la reescriba dentro
+de dos meses no va a leer antes esta entrada. El paréntesis que queda en el runbook dice qué había,
+quién lo quitó y por qué no se vuelve a poner.
 
 ## Lo que este censo NO cambia
 

@@ -763,6 +763,10 @@ combate — por eso, con la campaña cerrada, se documentó en vez de recontar: 
 >    invoca el binario local directo:
 >    `node node_modules/prisma/build/index.js` (es lo que hace `preflight-schema-drift.mjs`).
 >
+>    *(Aquí ponía «**Crea el junction**». Retirado en SCRUM-351 y NO se vuelve a añadir: hoy esa
+>    instrucción construiría el `node_modules` compartido del que salió ese ticket — el montaje
+>    que hizo que «no regeneres el cliente» se aplicara donde no tocaba.)*
+>
 >    (Los dos costaron tiempo en los pushes de SCRUM-145, 24-jul. Nota: la primera versión de
 >    este apunte se escribió con un script que interpretó el retorno de carro y partió el
 >    párrafo en `main`; reparado aquí.)
