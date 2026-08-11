@@ -225,3 +225,112 @@ esperó a su columna. Y `exportData.ts:248` deja de usar `updatedAt` cuando A es
 entonces su comentario sigue siendo verdad y no se toca.
 
 **No se ha tocado:** `prisma/schema.prisma` · el camino de emisión · ninguna factura emitida.
+
+---
+
+# SCRUM-397 · PASO 0 · ¿fuente de verdad o copia? — **ni una cosa ni la otra**
+
+**Medido contra:** `origin/main` = `fbcea8428bd5c5ea62babce22465a90bc9cb5683` · `2026-08-11T18:55:41+02:00`
+**Rama:** `scrum-397-paid-at-fuente-o-copia` · No se ha tocado código: esto es la respuesta a la
+pregunta de diseño.
+
+## Respuesta corta, sin rodeos
+
+**NO es una copia de `Invoice.paidAt`.** La pediste bien.
+
+**Pero la pregunta se hizo un modelo demasiado pronto: el hecho YA tiene casa**, y no es ninguna de
+las dos. Es `Event{type:'paid'}.ts` — y ahí está el defecto de verdad, que es peor que una columna
+vacía: **tres consumidores leen la fecha de cobro de tres sitios distintos y dos se equivocan.**
+
+## 1 · Por qué NO es una copia: ninguno de los dos conjuntos contiene al otro
+
+| | |
+|---|---|
+| **Charge SIN Invoice** | `charges.routes.ts:39` crea el cobro **sin factura**. Al pagarse, solo nace una si `AUTO_INVOICE_ON_PAID` está en ON (`env.ts:46`, y exige literalmente `'true'`/`'1'`: **apagada salvo que se ponga**) o si ya había una ligada. Si no: **cobro pagado, factura ninguna, y ningún sitio guarda cuándo entró el euro.** |
+| **Invoice SIN Charge** | el dinero marcado a mano no crea `Charge` (SCRUM-441). Ahí `Invoice.paidAt` es la única fuente. |
+
+Así que no hay «dos sitios donde vive el mismo hecho»: **hay dos hechos distintos que a veces
+coinciden.** Cuando coinciden, `chargeId` los vincula (SCRUM-445, ya en `main`).
+
+🔴 **Lo que decide el tamaño de esto no está en el código, sino en Railway:** el valor de
+`AUTO_INVOICE_ON_PAID` en producción. Si está **OFF**, *todos* los cobros por enlace pagados están
+sin factura y la columna es la **única** fuente posible. Es un dato que tú puedes leer y yo no.
+
+## 2 · El hallazgo, que cambia el trabajo: el hecho ya está escrito
+
+Censo COMPLETO de escrituras a `Charge` en `src/` — **ocho**, derivado, no de memoria:
+
+| sitio | qué escribe |
+|---|---|
+| `charges.routes.ts:39` | crea (`status: 'pending'`) |
+| `mpWebhook:99` · `psp:83` | **`status: 'paid'`** ← los dos únicos |
+| `mpWebhook:216` · `psp:274` · `psp:285` | `failed` / `expired` |
+| `payMp:62` | `intentId` |
+| `invoicing.ts:150` | `receiptToken` |
+
+**Ninguno escribe `paidAt`: el ticket tiene razón, son cero.** Pero los dos que marcan `paid` crean
+**en la misma operación** un `Event{type:'paid'}` cuyo `ts` es `@default(now())`. El instante del
+cobro **sí se guarda**, en una tabla que además **nunca se edita**.
+
+### Y tres consumidores no se ponen de acuerdo
+
+| quién | de dónde saca «cuándo se pagó» | |
+|---|---|---|
+| `receipt.routes.ts:208` | el evento `paid` **más reciente** | 🔴 **y el duplicado es más reciente**: `psp.routes.ts:32-38` crea otro `paid` (con `duplicate: true`) si el webhook se repite. El recibo del cliente enseñaría la fecha del reintento. |
+| `exports.routes.ts:489` | el **primer** evento `paid`, con `updatedAt` de reserva | ✅ el más correcto de los tres |
+| `exportData.ts:248` | **`updatedAt`** | 🔴 el defecto original del ticket, con su comentario reconociéndolo |
+
+**Eso es el ticket de verdad.** La columna vacía es el síntoma; el desacuerdo es la enfermedad.
+
+## 3 · El camino manual, que es donde la fecha importa
+
+`POST /admin/charges/:id/confirm-bizum` (`chargesAdmin.routes.ts:15`) no escribe el cobro: reenvía a
+`/webhooks/psp` **y ya manda un `ts`** (línea 41). `PSPWebhookSchema` **no lo lee**: acaba dentro del
+`payload` del evento, sin que nadie lo mire, y el `ts` del evento vuelve a ser la hora de proceso.
+
+O sea: un Bizum recibido el **31 de marzo** y confirmado por el PRO el **2 de abril** queda fechado
+en abril **también por el lado del cobro**. Es la víctima exacta del ticket — la misma que
+`fechaDeCobro.ts` ya resuelve para las facturas, y que aquí no se aplica.
+
+## 4 · Recomendación
+
+**Sí a la columna, pero no como «la fuente»: como el ÚNICO sitio donde los tres consumidores miran.**
+
+- Se escribe en las **dos** transiciones a `paid`, con **el mismo instante** que el evento (no con un
+  `new Date()` aparte, que ya serían dos relojes).
+- **Sin backfill.** `null` = «no consta cuándo», que es la verdad de todo lo anterior. `updated_at`
+  es «la última vez que alguien tocó la fila», no «cuándo entró el dinero».
+- El camino manual (`confirm-bizum`) pasa a llevar **fecha declarada** por `resolverFechaDeCobro`,
+  que ya existe, ya está aprobada y hoy no cubre este lado.
+- Y un guard que impida que `paid_at` y el evento discrepen: **la columna no puede convertirse en la
+  cuarta respuesta distinta.**
+
+**Por qué columna y no derivarlo del evento:** `Event` solo tiene `@@index([chargeId, type])`. Filtrar
+«los cobros de este trimestre» por el evento es un barrido de toda la tabla — que es justo el motivo
+por el que `exportData.ts` acabó usando `updatedAt`.
+
+## 5 · La consulta que NO he ejecutado
+
+Tu número (cuántos `Charge` sin `Invoice`) necesita una base real, y en esta tanda no toco ninguna.
+Queda escrita para que la corras tú:
+
+```sql
+-- Cobros PAGADOS que no tienen ninguna factura: ahi paid_at seria la unica fuente.
+SELECT COUNT(*) FROM "charges" c
+WHERE c."status" = 'paid'
+  AND NOT EXISTS (SELECT 1 FROM "invoices" i WHERE i."charge_id" = c."id");
+
+-- Y de esos, cuantos tienen su evento (= el instante SI esta guardado, solo que no en la columna).
+SELECT COUNT(*) FROM "charges" c
+WHERE c."status" = 'paid'
+  AND NOT EXISTS (SELECT 1 FROM "invoices" i WHERE i."charge_id" = c."id")
+  AND EXISTS (SELECT 1 FROM "events" e WHERE e."charge_id" = c."id" AND e."type" = 'paid');
+```
+
+⚠️ **Al leer la primera:** `invoices.charge_id` solo se escribe desde SCRUM-445 (mergeado hoy), así
+que las facturas ANTERIORES creadas desde un cobro tienen `charge_id` NULL y **inflarán ese
+recuento**. La segunda acota lo que de verdad importa: si sale ~igual que la primera, el instante ya
+está guardado en todos y la columna es un índice, no un dato nuevo.
+
+**No se ha tocado:** `prisma/schema.prisma` · `invoicesAdmin.routes.ts:924` · el camino de emisión ·
+los cinco sitios de `Invoice.paidAt`.
