@@ -32,9 +32,41 @@
 //
 // LO QUE SE SIGUE SIN CUBRIR — ver la lista completa al final del fichero (HUECOS).
 // ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-454 (a) — LAS TRES EXCEPCIONES DE SCRUM-176 ERAN TRES FORMAS, NO EL HECHO
+//
+// SCRUM-176 dejó de mirar el blob entero y pasó a descontar heredoc, here-string y `-m`. Son
+// tres FORMAS concretas de escribir texto. El hecho —«el literal está dentro de un argumento,
+// no es lo que se invoca»— tiene infinitas formas más, y tres de ellas se midieron bloqueando
+// el 11-ago-2026 con el hook real:
+//
+//   · `node medir.mjs "git push --force origin main"`      ← medir el propio guard
+//   · `node hook.mjs '{"tool_input":{"command":"…db push"}}'` ← probar el propio guard
+//   · `grep -n "rm -rf /" docs/RUNBOOKS.md`                 ← BUSCAR LA REGLA EN EL RUNBOOK
+//
+// El tercero es el que define el problema: **la barrera impide leer la documentación de la
+// barrera**. Y es peor que un incordio — es un prerrequisito de SCRUM-454: cada patrón nuevo
+// que se añada multiplica los sitios donde verificarla queda bloqueado, y lo que se abandona
+// entonces no es el patrón nuevo, es la verificación entera.
+//
+// EL CRITERIO NUEVO, que sí es el hecho: **una coincidencia solo cuenta si toca al menos un
+// carácter que NO venía de dentro de unas comillas.** La línea se tokeniza como la tokenizaría
+// un shell y se lleva una máscara de «esto venía entrecomillado»; los cuatro patrones son los
+// mismos de siempre y se aplican al mismo texto de siempre — lo único que cambia es que un
+// acierto enteramente dentro de un argumento entrecomillado ya no cuenta.
+//
+// Y NO abre un agujero, porque el argumento entrecomillado que SÍ se ejecuta se sigue mirando,
+// por dos caminos que son mecanismo y no lista:
+//   · ENVOLTORIOS (`bash -c "…"`, `cmd /c "…"`, `eval`): su argumento se vuelve a analizar
+//     como línea de comando (recursión), así que `bash -c "npx prisma db push"` sigue cayendo.
+//   · SUSTITUCIÓN (`$(…)`, backticks): se extrae de la línea ORIGINAL y se analiza aparte, así
+//     que `git commit -m "$(npx prisma db push)"` sigue cayendo.
+// Los dos casos son exactamente los que SCRUM-176 puso en verde, y siguen en verde por
+// construcción, no por suerte.
+// ─────────────────────────────────────────────────────────────────────────────────────────
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
@@ -95,13 +127,352 @@ export function descontarTexto(comando) {
   return s;
 }
 
+// ── SCRUM-454 · TOKENIZADO: separar lo que se INVOCA de lo que se ARRASTRA como argumento ──
+
+/** Programas cuyo argumento entrecomillado ES una línea de comando y se vuelve a analizar. */
+// Ampliar esta lista solo puede hacer que el guard bloquee MÁS, nunca menos: por eso se puede
+// ampliar sin ceremonia. Es lo contrario de una lista blanca.
+const ENVOLTORIOS = new Set(['bash', 'sh', 'zsh', 'dash', 'cmd', 'cmd.exe', 'powershell', 'powershell.exe', 'pwsh', 'eval']);
+
+const SEPARADORES = new Set([';', '|', '&', '&&', '||', '\n']);
+/** Redirecciones que TRUNCAN el destino. `>>` (añadir) y `>&` (duplicar descriptor) no. */
+const TRUNCANTES = new Set(['>', '>|', '&>']);
+
+/**
+ * Parte una línea en tokens como lo haría un shell, guardando por cada carácter si venía de
+ * dentro de unas comillas. Esa máscara es todo el mecanismo: sin ella no hay forma de
+ * distinguir ejecutar de mencionar.
+ */
+export function tokenizar(linea) {
+  const tokens = [];
+  let palabra = null;
+  const cerrar = () => {
+    if (palabra) tokens.push(palabra);
+    palabra = null;
+  };
+  const anadir = (texto, entrecomillado) => {
+    if (!palabra) palabra = { texto: '', mascara: [], entrecomillado: false };
+    palabra.texto += texto;
+    for (let k = 0; k < texto.length; k++) palabra.mascara.push(entrecomillado);
+    if (entrecomillado) palabra.entrecomillado = true;
+  };
+  // Un descriptor pegado a la redirección (`2>`) es parte del operador, no una palabra suelta.
+  const soltarDescriptor = () => {
+    if (palabra && /^\d+$/.test(palabra.texto)) palabra = null;
+    else cerrar();
+  };
+
+  let i = 0;
+  while (i < linea.length) {
+    const c = linea[i];
+    if (c === '\\' && i + 1 < linea.length) { anadir(linea[i + 1], false); i += 2; continue; }
+    if (c === '"' || c === "'") {
+      const fin = linea.indexOf(c, i + 1);
+      const corte = fin === -1 ? linea.length : fin;
+      anadir(linea.slice(i + 1, corte), true);
+      i = corte + 1;
+      continue;
+    }
+    if (c === '\n') { cerrar(); tokens.push({ operador: '\n' }); i++; continue; }
+    // Un comentario no se ejecuta. Solo cuenta si abre palabra (`x #y` es comentario, `a#b` no).
+    if (c === '#' && !palabra) { const fin = linea.indexOf('\n', i); i = fin === -1 ? linea.length : fin; continue; }
+    if (/\s/.test(c)) { cerrar(); i++; continue; }
+
+    const dos = linea.slice(i, i + 2);
+    if (dos === '&&' || dos === '||') { cerrar(); tokens.push({ operador: dos }); i += 2; continue; }
+    if (dos === '&>') { cerrar(); tokens.push({ operador: dos }); i += 2; continue; }
+    if (dos === '>&') {
+      // Duplicar descriptor (`2>&1`): ni trunca nada ni deja un `1` suelto haciendo de argumento.
+      soltarDescriptor();
+      tokens.push({ operador: dos });
+      i += 2;
+      while (i < linea.length && /[\d-]/.test(linea[i])) i++;
+      continue;
+    }
+    if (dos === '>>' || dos === '>|') { soltarDescriptor(); tokens.push({ operador: dos }); i += 2; continue; }
+    if (c === '>') { soltarDescriptor(); tokens.push({ operador: '>' }); i++; continue; }
+    if (c === '<') { cerrar(); tokens.push({ operador: '<' }); i++; continue; }
+    if (c === ';' || c === '|' || c === '&') { cerrar(); tokens.push({ operador: c }); i++; continue; }
+
+    anadir(c, false);
+    i++;
+  }
+  cerrar();
+  return tokens;
+}
+
+/** Reconstruye una acción (un comando simple) a partir de sus tokens. */
+function construir(tokens) {
+  const palabras = [];
+  const redirecciones = [];
+  let texto = '';
+  let mascara = [];
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (t.operador) {
+      const destino = tokens[i + 1];
+      if (TRUNCANTES.has(t.operador) && destino && !destino.operador) redirecciones.push(destino.texto);
+      continue;
+    }
+    if (texto.length) { texto += ' '; mascara.push(false); }
+    texto += t.texto;
+    mascara = mascara.concat(t.mascara);
+    palabras.push(t);
+  }
+  // El programa: la primera palabra que no sea una asignación de entorno (`VAR=x cmd`).
+  const util = palabras.filter((p) => !/^[A-Za-z_][A-Za-z0-9_]*=/.test(p.texto));
+  const programa = util.length ? path.basename(util[0].texto).toLowerCase() : '';
+  return { texto, mascara, palabras: util, redirecciones, programa };
+}
+
+/**
+ * Todas las acciones que una línea llega a EJECUTAR: cada comando simple, más lo que se
+ * ejecuta dentro de un envoltorio o de una sustitución de comando.
+ */
+export function acciones(comando, profundidad = 0) {
+  const salida = [];
+  if (profundidad > 3) return salida; // cota: una línea no se anida sola hasta el infinito
+  let actual = [];
+  const cerrar = () => {
+    if (actual.length) salida.push(construir(actual));
+    actual = [];
+  };
+  for (const t of tokenizar(comando)) {
+    if (t.operador && SEPARADORES.has(t.operador)) cerrar();
+    else actual.push(t);
+  }
+  cerrar();
+
+  // 1) Envoltorios: su argumento entrecomillado es una línea de comando de verdad.
+  for (const a of [...salida]) {
+    if (!ENVOLTORIOS.has(a.programa)) continue;
+    for (const p of a.palabras) if (p.entrecomillado) salida.push(...acciones(p.texto, profundidad + 1));
+  }
+  // 2) Sustitución de comando: se ejecuta esté donde esté, también dentro de comillas.
+  for (const m of comando.matchAll(/\$\(([\s\S]*?)\)|`([\s\S]*?)`/g)) {
+    salida.push(...acciones(m[1] ?? m[2] ?? '', profundidad + 1));
+  }
+  return salida;
+}
+
+/**
+ * ¿El patrón acierta sobre ALGO QUE SE INVOCA? Un acierto que cae entero dentro de un argumento
+ * entrecomillado no cuenta: eso es mencionar, no ejecutar.
+ */
+export function coincide(re, accion) {
+  const g = new RegExp(re.source, re.flags.includes('g') ? re.flags : `${re.flags}g`);
+  for (const m of accion.texto.matchAll(g)) {
+    for (let k = m.index; k < m.index + m[0].length; k++) {
+      if (!accion.mascara[k]) return true;
+    }
+  }
+  return false;
+}
+
+// ── SCRUM-454 (b) · LA FAMILIA QUE LA BARRERA NO MIRABA ─────────────────────────────────────
+//
+// Medido con el hook real el 11-ago-2026: `git checkout --`, `git restore`, `git clean`,
+// `git reset --hard` y `>` sobre una ruta existente PASABAN los cinco. Es decir, los cuatro
+// trabajos perdidos ese día se perdieron por mecanismos que la barrera no miraba. No faltaba
+// una barrera: faltaba ESTA FAMILIA dentro de la que ya existía.
+//
+// EL DIAGNÓSTICO QUE MANDA, de la sesión que perdió el cuarto: «la comprobación estaba en el
+// propio comando y me llegó DESPUÉS de haber escrito — el orden era el error». Eso descarta la
+// solución que parece obvia (encadenar `git status &&` delante): el fallo no es que falte la
+// comprobación, es que llega tarde. Por eso vive aquí, en un PreToolUse, que es el único sitio
+// donde llega antes por construcción y no por disciplina.
+//
+// EL CRITERIO: **no se bloquea el comando, se bloquea la pérdida.** Cada regla comprueba el
+// estado ANTES y solo bloquea si hay algo que perder. Un `>` sobre un fichero nuevo, un
+// `git checkout --` con el árbol limpio o un `git restore --staged` no caen — y eso no es un
+// detalle: una barrera que bloquea lo legítimo la desactiva entera alguien con prisa, y entonces
+// protege menos que ninguna.
+//
+// JURISDICCIÓN, declarada: lo que git considera suyo y no ignora. Un fichero fuera del repo, o
+// uno que el `.gitignore` cubre (`dist/`, salidas de scripts), NO se protege — desde aquí no hay
+// forma de distinguir un borrador de un artefacto, y equivocarse por exceso ahí es lo que
+// convierte la barrera en ruido.
+
+export const SENTINEL_DESTRUCTIVO_POR_DEFECTO = path.join(AQUI, '..', 'allow-destructivo');
+
+const RUTAS_INERTES = /^(\/dev\/|nul$|con$|\/proc\/)/i;
+
+function correrGit(args, cwd) {
+  const r = spawnSync('git', args, { cwd, encoding: 'utf8', windowsHide: true });
+  if (r.error || typeof r.status !== 'number') return null; // no se pudo preguntar
+  return { code: r.status, salida: (r.stdout || '').trim() };
+}
+
+const esEnlace = (p) => {
+  try {
+    return fs.lstatSync(p).isSymbolicLink();
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Desde dónde se ejecuta. Un `cd X && …` al principio es la forma normal de trabajar en este
+ * repo con cuatro worktrees, y sin esto el guard miraría el árbol equivocado — que es peor que
+ * no mirar: diría «limpio» de otro sitio.
+ */
+export function cwdDelComando(comando, base) {
+  for (const a of acciones(comando)) {
+    if (a.programa === 'cd' && a.palabras.length >= 2) {
+      const destino = a.palabras[1].texto;
+      return path.isAbsolute(destino) ? destino : path.resolve(base, destino);
+    }
+  }
+  return base;
+}
+
+/** ¿La redirección trunca algo que git considera trabajo? Devuelve la ruta, o null. */
+function ficheroQueSePierde(destino, cwd) {
+  if (RUTAS_INERTES.test(destino)) return null;
+  const abs = path.isAbsolute(destino) ? destino : path.resolve(cwd, destino);
+  let st;
+  try {
+    st = fs.lstatSync(abs);
+  } catch {
+    return null; // NO EXISTE: es el control negativo, y no puede caer nunca.
+  }
+  if (!st.isFile()) return null;
+  const ig = correrGit(['check-ignore', '-q', '--', abs], cwd);
+  if (ig === null || ig.code === 0 || ig.code > 1) return null; // ignorado, o fuera de jurisdicción
+  return abs;
+}
+
+const flags = (a) => a.palabras.map((p) => p.texto).filter((t) => t.startsWith('-'));
+const sinFlags = (a, desde) => a.palabras.slice(desde).map((p) => p.texto).filter((t) => !t.startsWith('-'));
+
+/**
+ * Las tres formas de descartar con git, y lo que hay que preguntar ANTES en cada una.
+ * Devuelve `null` si el comando no es de esta familia.
+ */
+function descarteGit(a) {
+  if (a.programa !== 'git' || a.palabras.length < 2) return null;
+  const sub = a.palabras[1].texto;
+  const todas = a.palabras.map((p) => p.texto);
+
+  if (sub === 'checkout') {
+    // Cambiar de rama no descarta nada. La forma que descarta es la de rutas: `--` o `.`.
+    const corte = todas.indexOf('--');
+    if (corte === -1) return todas.includes('.') ? { que: 'git checkout .', rutas: ['.'] } : null;
+    return { que: 'git checkout --', rutas: todas.slice(corte + 1) };
+  }
+  if (sub === 'restore') {
+    // `--staged` a secas solo saca del índice: no toca el árbol, no pierde nada.
+    const f = flags(a);
+    if (f.includes('--staged') && !f.includes('--worktree') && !f.includes('-W')) return null;
+    return { que: 'git restore', rutas: sinFlags(a, 2) };
+  }
+  if (sub === 'reset' && flags(a).some((f) => f === '--hard')) {
+    return { que: 'git reset --hard', rutas: [] };
+  }
+  return null;
+}
+
+/**
+ * Las reglas 5-7. Devuelve `{motivo}` si hay algo que perder, o `null`.
+ * ⚠️ Si algo revienta aquí dentro, el llamante deja pasar: esta familia es cobertura NUEVA, y
+ * un fallo mío parando a las cuatro sesiones es peor que volver al estado de ayer.
+ */
+function perdidaInminente(lista, cwd) {
+  for (const a of lista) {
+    // 5) Redirección que trunca un fichero existente. El caso del 11-ago: `> SCRUM-447.md`.
+    for (const destino of a.redirecciones) {
+      const victima = ficheroQueSePierde(destino, cwd);
+      if (victima) {
+        return {
+          motivo:
+            `'> ${destino}' TRUNCA un fichero que ya existe y que git no ignora (${victima}).\n`
+            + '  El 11-ago-2026 asi se sobrescribio docs/master/SCRUM-447.md entero.\n'
+            + "  Si quieres anadir, usa '>>'. Si de verdad quieres reemplazarlo, mira antes que hay dentro\n"
+            + '  y crea .claude/allow-destructivo (un solo uso) para el siguiente intento.',
+        };
+      }
+    }
+
+    // 6) Descartar cambios del arbol de trabajo. Solo bloquea si HAY cambios que descartar.
+    const descarte = descarteGit(a);
+    if (descarte) {
+      const args = ['status', '--porcelain', '--untracked-files=no'];
+      if (descarte.rutas.length) args.push('--', ...descarte.rutas);
+      const estado = correrGit(args, cwd);
+      if (estado === null || estado.code !== 0) {
+        return {
+          motivo:
+            `'${descarte.que}' y NO se pudo comprobar el estado del arbol desde ${cwd}.\n`
+            + '  "No hay nada que perder" y "no supe mirar" son la misma respuesta con significados\n'
+            + '  opuestos, asi que este se trata como el peor.',
+        };
+      }
+      if (estado.salida) {
+        return {
+          motivo:
+            `'${descarte.que}' DESCARTA cambios sin commitear. Esto es lo que se perderia:\n`
+            + estado.salida.split('\n').slice(0, 20).map((l) => `      ${l}`).join('\n')
+            + '\n  Commitealo, guardalo con `git stash`, o —si de verdad sobra— crea\n'
+            + '  .claude/allow-destructivo (un solo uso) y repite. La comprobacion llega ANTES a\n'
+            + '  proposito: encadenarla en el mismo comando es justo el orden que fallo.',
+        };
+      }
+    }
+
+    // 6b) `git clean`: lo que se pierde son los NO rastreados, asi que se pregunta en seco.
+    if (a.programa === 'git' && a.palabras.length >= 2 && a.palabras[1].texto === 'clean') {
+      const seco = ['clean', '-n', '-d'];
+      if (flags(a).some((f) => /^-[a-zA-Z]*x/.test(f))) seco.push('-x');
+      const previo = correrGit(seco, cwd);
+      if (previo === null || previo.code !== 0) {
+        return { motivo: `'git clean' y NO se pudo comprobar que borraria desde ${cwd}. Se trata como el peor caso.` };
+      }
+      if (previo.salida) {
+        return {
+          motivo:
+            'git clean BORRA ficheros no rastreados. Esto es lo que se llevaria:\n'
+            + previo.salida.split('\n').slice(0, 20).map((l) => `      ${l}`).join('\n')
+            + '\n  Si sobran, crea .claude/allow-destructivo (un solo uso) y repite.',
+        };
+      }
+    }
+
+    // 7) Cadenas de junction (SCRUM-429). `git worktree remove` siguio una y vacio el
+    //    node_modules COMPARTIDO, dos veces. La comprobacion previa es igual de barata: mirar
+    //    si eso es un enlace o una carpeta de verdad.
+    const texto = a.texto;
+    const esBorradoDeArbol =
+      (a.programa === 'git' && /\bworktree\b[\s\S]*\bremove\b/.test(texto))
+      || (a.programa === 'rm' && flags(a).some((f) => /^-[a-zA-Z]*r/i.test(f)))
+      || (/\brmdir\b/.test(texto) && /\s\/s\b/i.test(texto));
+    if (esBorradoDeArbol) {
+      for (const ruta of a.palabras.slice(1).map((p) => p.texto).filter((t) => !t.startsWith('-') && !t.startsWith('/'))) {
+        const abs = path.isAbsolute(ruta) ? ruta : path.resolve(cwd, ruta);
+        const victima = esEnlace(abs) ? abs : esEnlace(path.join(abs, 'node_modules')) ? path.join(abs, 'node_modules') : null;
+        if (victima) {
+          return {
+            motivo:
+              `'${ruta}' contiene un ENLACE (junction): ${victima}.\n`
+              + '  Un borrado recursivo lo SIGUE y se lleva el destino, que es compartido. Asi se vacio\n'
+              + '  el node_modules comun dos veces (SCRUM-429).\n'
+              + `  Quita antes el enlace SIN seguirlo:  cmd /c rmdir "${victima.replace(/\//g, '\\')}"  (sin /s).`,
+          };
+        }
+      }
+    }
+  }
+  return null;
+}
+
 /**
  * Las CUATRO reglas de AA2. Los patrones son los mismos que tenía la versión en bash: lo que
  * cambia es el texto sobre el que se aplican, no lo que se considera peligroso.
  */
-function reglas(objetivo, sentinelPath) {
+function reglas(lista, sentinelPath, entorno = {}) {
+  const enAlguna = (re) => lista.some((a) => coincide(re, a));
+
   // 1) prisma migrate dev — PROHIBIDO siempre (regla 3: Prisma sin TTY)
-  if (/prisma[^"]{0,40}migrate +dev/.test(objetivo)) {
+  if (enAlguna(/prisma[^"]{0,40}migrate +dev/)) {
     return {
       bloqueado: true,
       motivo:
@@ -120,7 +491,7 @@ function reglas(objetivo, sentinelPath) {
   //    que no ejecutó nada y tenía que volver a darlo — o peor, creerse que lo había gastado.
   //    Es un fallo PREEXISTENTE (venía de la versión en bash, con el mismo orden) que la
   //    portación a .mjs conservó tal cual; lo encontró la sesión 1 comparando implementaciones.
-  const pideDbPush = /prisma[^"]{0,40}db +push/.test(objetivo);
+  const pideDbPush = enAlguna(/prisma[^"]{0,40}db +push/);
   if (pideDbPush && !fs.existsSync(sentinelPath)) {
     return {
       bloqueado: true,
@@ -130,7 +501,7 @@ function reglas(objetivo, sentinelPath) {
   }
 
   // 3) --force (git push --force, npm --force, prisma --force...)
-  if (/(^|[^A-Za-z-])--force(-with-lease)?\b/.test(objetivo)) {
+  if (enAlguna(/(^|[^A-Za-z-])--force(-with-lease)?\b/)) {
     return {
       bloqueado: true,
       motivo:
@@ -139,7 +510,7 @@ function reglas(objetivo, sentinelPath) {
   }
 
   // 4) rm -rf fuera del workspace (ruta absoluta, unidad o ~). Relativo dentro del repo se permite.
-  if (/rm +-[a-zA-Z]*[rR][a-zA-Z]*[fF][a-zA-Z]* +("?(\/|~|[A-Za-z]:))/.test(objetivo)) {
+  if (enAlguna(/rm +-[a-zA-Z]*[rR][a-zA-Z]*[fF][a-zA-Z]* +("?(\/|~|[A-Za-z]:))/)) {
     return {
       bloqueado: true,
       motivo:
@@ -155,7 +526,22 @@ function reglas(objetivo, sentinelPath) {
   // el comando llegue a correr (el usuario aún puede denegarlo en el prompt de permisos). En
   // ese caso el sentinel sí se habrá gastado. Es el comportamiento de siempre y no se toca
   // aquí: desde el hook no hay forma de saber qué pasa después.
+  // 5-7) SCRUM-454. Va después de las cuatro de AA2 a propósito: si un comando cae por `--force`
+  // no hace falta preguntarle a git nada, y el mensaje que llega sigue siendo el de siempre.
+  let perdida = null;
+  try {
+    perdida = perdidaInminente(lista, entorno.cwd || process.cwd());
+  } catch {
+    perdida = null; // cobertura NUEVA: un fallo mío no puede parar a las cuatro sesiones.
+  }
+  const sentinelDestructivo = entorno.sentinelDestructivo || SENTINEL_DESTRUCTIVO_POR_DEFECTO;
+  const autorizado = perdida !== null && fs.existsSync(sentinelDestructivo);
+  if (perdida && !autorizado) return { bloqueado: true, motivo: perdida.motivo };
+
+  // Solo aquí se gastan las autorizaciones, y por la misma razón que en la regla 2: un permiso
+  // de un solo uso se consume cuando algo se va a ejecutar, no cuando se mira.
   if (pideDbPush) fs.rmSync(sentinelPath, { force: true });
+  if (autorizado) fs.rmSync(sentinelDestructivo, { force: true });
 
   return { bloqueado: false, motivo: '' };
 }
@@ -164,12 +550,20 @@ function reglas(objetivo, sentinelPath) {
  * Decide sobre el JSON crudo del tool call. `sentinelPath` es inyectable para que los tests
  * NUNCA toquen el sentinel de verdad (otra sesión puede estar a mitad de su flujo de db push).
  */
-export function evaluar(crudo, sentinelPath = SENTINEL_POR_DEFECTO) {
+export function evaluar(crudo, sentinelPath = SENTINEL_POR_DEFECTO, opciones = {}) {
   const comando = extraerComando(crudo);
+  const entorno = {
+    cwd: opciones.cwd ? opciones.cwd : cwdDelComando(comando || '', opciones.base || process.cwd()),
+    sentinelDestructivo: opciones.sentinelDestructivo,
+  };
   // FAIL-CLOSED: si el JSON no se deja leer, se vuelve al comportamiento antiguo —mirar el
-  // blob entero— en vez de dejar pasar. Ruidoso, pero nunca ciego.
-  const objetivo = comando === null ? crudo : descontarTexto(comando);
-  return reglas(objetivo, sentinelPath);
+  // blob entero, SIN máscara— en vez de dejar pasar. Ruidoso, pero nunca ciego: un blob de
+  // JSON es casi todo comillas, así que aplicarle el criterio de SCRUM-454 lo dejaría ciego
+  // justo en el caso en el que no sabemos qué se va a ejecutar.
+  if (comando === null) {
+    return reglas([{ texto: crudo, mascara: [], palabras: [], redirecciones: [], programa: '' }], sentinelPath, entorno);
+  }
+  return reglas(acciones(descontarTexto(comando)), sentinelPath, entorno);
 }
 
 // ── CLI ──────────────────────────────────────────────────────────────────────────────────
@@ -206,4 +600,19 @@ if (invocadoDirectamente) {
 //     llega nunca al hook, así que ni bloquea ni protege. Es un hueco simétrico y benigno.
 //   · Herramientas que NO son Bash/PowerShell: el hook está matcheado solo a esas dos en
 //     .claude/settings.json. Un `db push` lanzado por otra vía no pasa por aquí.
+//
+// SCRUM-454 — lo que la familia destructiva NO cubre, y por qué se decidió así:
+//   · FUERA DEL REPO. Un `>` sobre un fichero de fuera del árbol de git no se toca: desde aquí
+//     no hay forma de distinguir un borrador del fundador de una salida temporal, y bloquear
+//     por si acaso en todo el disco es lo que convierte una barrera en ruido. Lo mismo con lo
+//     que el `.gitignore` cubre.
+//   · EL QUINTO MECANISMO, declarado fuera de alcance a propósito: si el trabajo MERECÍA
+//     conservarse. Los cuatro de arriba son mecanismo y se comprueban; ése es criterio, y no
+//     lo sabe una máquina. Se protege lo que se puede medir, no lo que haría falta adivinar.
+//   · Un editor, un script de Node (`fs.writeFileSync`) o cualquier herramienta que no sea
+//     Bash/PowerShell sobrescribe sin pasar por aquí. El hueco es el mismo de siempre y no lo
+//     cierra este ticket: lo que se cierra es la vía por la que se perdieron los cuatro.
+//   · Si algo revienta dentro de la familia nueva, se DEJA PASAR (try/catch en `reglas`). Es
+//     cobertura nueva: un fallo mío parando a las cuatro sesiones sería peor que el estado de
+//     ayer. Las cuatro reglas de AA2 no llevan esa red — ésas nunca dejan de mirar.
 // ─────────────────────────────────────────────────────────────────────────────────────────
