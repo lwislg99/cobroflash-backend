@@ -32,6 +32,37 @@
 //
 // LO QUE SE SIGUE SIN CUBRIR — ver la lista completa al final del fichero (HUECOS).
 // ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-454 (a) — LAS TRES EXCEPCIONES DE SCRUM-176 ERAN TRES FORMAS, NO EL HECHO
+//
+// SCRUM-176 dejó de mirar el blob entero y pasó a descontar heredoc, here-string y `-m`. Son
+// tres FORMAS concretas de escribir texto. El hecho —«el literal está dentro de un argumento,
+// no es lo que se invoca»— tiene infinitas formas más, y tres de ellas se midieron bloqueando
+// el 11-ago-2026 con el hook real:
+//
+//   · `node medir.mjs "git push --force origin main"`      ← medir el propio guard
+//   · `node hook.mjs '{"tool_input":{"command":"…db push"}}'` ← probar el propio guard
+//   · `grep -n "rm -rf /" docs/RUNBOOKS.md`                 ← BUSCAR LA REGLA EN EL RUNBOOK
+//
+// El tercero es el que define el problema: **la barrera impide leer la documentación de la
+// barrera**. Y es peor que un incordio — es un prerrequisito de SCRUM-454: cada patrón nuevo
+// que se añada multiplica los sitios donde verificarla queda bloqueado, y lo que se abandona
+// entonces no es el patrón nuevo, es la verificación entera.
+//
+// EL CRITERIO NUEVO, que sí es el hecho: **una coincidencia solo cuenta si toca al menos un
+// carácter que NO venía de dentro de unas comillas.** La línea se tokeniza como la tokenizaría
+// un shell y se lleva una máscara de «esto venía entrecomillado»; los cuatro patrones son los
+// mismos de siempre y se aplican al mismo texto de siempre — lo único que cambia es que un
+// acierto enteramente dentro de un argumento entrecomillado ya no cuenta.
+//
+// Y NO abre un agujero, porque el argumento entrecomillado que SÍ se ejecuta se sigue mirando,
+// por dos caminos que son mecanismo y no lista:
+//   · ENVOLTORIOS (`bash -c "…"`, `cmd /c "…"`, `eval`): su argumento se vuelve a analizar
+//     como línea de comando (recursión), así que `bash -c "npx prisma db push"` sigue cayendo.
+//   · SUSTITUCIÓN (`$(…)`, backticks): se extrae de la línea ORIGINAL y se analiza aparte, así
+//     que `git commit -m "$(npx prisma db push)"` sigue cayendo.
+// Los dos casos son exactamente los que SCRUM-176 puso en verde, y siguen en verde por
+// construcción, no por suerte.
+// ─────────────────────────────────────────────────────────────────────────────────────────
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -95,13 +126,157 @@ export function descontarTexto(comando) {
   return s;
 }
 
+// ── SCRUM-454 · TOKENIZADO: separar lo que se INVOCA de lo que se ARRASTRA como argumento ──
+
+/** Programas cuyo argumento entrecomillado ES una línea de comando y se vuelve a analizar. */
+// Ampliar esta lista solo puede hacer que el guard bloquee MÁS, nunca menos: por eso se puede
+// ampliar sin ceremonia. Es lo contrario de una lista blanca.
+const ENVOLTORIOS = new Set(['bash', 'sh', 'zsh', 'dash', 'cmd', 'cmd.exe', 'powershell', 'powershell.exe', 'pwsh', 'eval']);
+
+const SEPARADORES = new Set([';', '|', '&', '&&', '||', '\n']);
+/** Redirecciones que TRUNCAN el destino. `>>` (añadir) y `>&` (duplicar descriptor) no. */
+const TRUNCANTES = new Set(['>', '>|', '&>']);
+
+/**
+ * Parte una línea en tokens como lo haría un shell, guardando por cada carácter si venía de
+ * dentro de unas comillas. Esa máscara es todo el mecanismo: sin ella no hay forma de
+ * distinguir ejecutar de mencionar.
+ */
+export function tokenizar(linea) {
+  const tokens = [];
+  let palabra = null;
+  const cerrar = () => {
+    if (palabra) tokens.push(palabra);
+    palabra = null;
+  };
+  const anadir = (texto, entrecomillado) => {
+    if (!palabra) palabra = { texto: '', mascara: [], entrecomillado: false };
+    palabra.texto += texto;
+    for (let k = 0; k < texto.length; k++) palabra.mascara.push(entrecomillado);
+    if (entrecomillado) palabra.entrecomillado = true;
+  };
+  // Un descriptor pegado a la redirección (`2>`) es parte del operador, no una palabra suelta.
+  const soltarDescriptor = () => {
+    if (palabra && /^\d+$/.test(palabra.texto)) palabra = null;
+    else cerrar();
+  };
+
+  let i = 0;
+  while (i < linea.length) {
+    const c = linea[i];
+    if (c === '\\' && i + 1 < linea.length) { anadir(linea[i + 1], false); i += 2; continue; }
+    if (c === '"' || c === "'") {
+      const fin = linea.indexOf(c, i + 1);
+      const corte = fin === -1 ? linea.length : fin;
+      anadir(linea.slice(i + 1, corte), true);
+      i = corte + 1;
+      continue;
+    }
+    if (c === '\n') { cerrar(); tokens.push({ operador: '\n' }); i++; continue; }
+    // Un comentario no se ejecuta. Solo cuenta si abre palabra (`x #y` es comentario, `a#b` no).
+    if (c === '#' && !palabra) { const fin = linea.indexOf('\n', i); i = fin === -1 ? linea.length : fin; continue; }
+    if (/\s/.test(c)) { cerrar(); i++; continue; }
+
+    const dos = linea.slice(i, i + 2);
+    if (dos === '&&' || dos === '||') { cerrar(); tokens.push({ operador: dos }); i += 2; continue; }
+    if (dos === '&>') { cerrar(); tokens.push({ operador: dos }); i += 2; continue; }
+    if (dos === '>&') {
+      // Duplicar descriptor (`2>&1`): ni trunca nada ni deja un `1` suelto haciendo de argumento.
+      soltarDescriptor();
+      tokens.push({ operador: dos });
+      i += 2;
+      while (i < linea.length && /[\d-]/.test(linea[i])) i++;
+      continue;
+    }
+    if (dos === '>>' || dos === '>|') { soltarDescriptor(); tokens.push({ operador: dos }); i += 2; continue; }
+    if (c === '>') { soltarDescriptor(); tokens.push({ operador: '>' }); i++; continue; }
+    if (c === '<') { cerrar(); tokens.push({ operador: '<' }); i++; continue; }
+    if (c === ';' || c === '|' || c === '&') { cerrar(); tokens.push({ operador: c }); i++; continue; }
+
+    anadir(c, false);
+    i++;
+  }
+  cerrar();
+  return tokens;
+}
+
+/** Reconstruye una acción (un comando simple) a partir de sus tokens. */
+function construir(tokens) {
+  const palabras = [];
+  const redirecciones = [];
+  let texto = '';
+  let mascara = [];
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (t.operador) {
+      const destino = tokens[i + 1];
+      if (TRUNCANTES.has(t.operador) && destino && !destino.operador) redirecciones.push(destino.texto);
+      continue;
+    }
+    if (texto.length) { texto += ' '; mascara.push(false); }
+    texto += t.texto;
+    mascara = mascara.concat(t.mascara);
+    palabras.push(t);
+  }
+  // El programa: la primera palabra que no sea una asignación de entorno (`VAR=x cmd`).
+  const util = palabras.filter((p) => !/^[A-Za-z_][A-Za-z0-9_]*=/.test(p.texto));
+  const programa = util.length ? path.basename(util[0].texto).toLowerCase() : '';
+  return { texto, mascara, palabras: util, redirecciones, programa };
+}
+
+/**
+ * Todas las acciones que una línea llega a EJECUTAR: cada comando simple, más lo que se
+ * ejecuta dentro de un envoltorio o de una sustitución de comando.
+ */
+export function acciones(comando, profundidad = 0) {
+  const salida = [];
+  if (profundidad > 3) return salida; // cota: una línea no se anida sola hasta el infinito
+  let actual = [];
+  const cerrar = () => {
+    if (actual.length) salida.push(construir(actual));
+    actual = [];
+  };
+  for (const t of tokenizar(comando)) {
+    if (t.operador && SEPARADORES.has(t.operador)) cerrar();
+    else actual.push(t);
+  }
+  cerrar();
+
+  // 1) Envoltorios: su argumento entrecomillado es una línea de comando de verdad.
+  for (const a of [...salida]) {
+    if (!ENVOLTORIOS.has(a.programa)) continue;
+    for (const p of a.palabras) if (p.entrecomillado) salida.push(...acciones(p.texto, profundidad + 1));
+  }
+  // 2) Sustitución de comando: se ejecuta esté donde esté, también dentro de comillas.
+  for (const m of comando.matchAll(/\$\(([\s\S]*?)\)|`([\s\S]*?)`/g)) {
+    salida.push(...acciones(m[1] ?? m[2] ?? '', profundidad + 1));
+  }
+  return salida;
+}
+
+/**
+ * ¿El patrón acierta sobre ALGO QUE SE INVOCA? Un acierto que cae entero dentro de un argumento
+ * entrecomillado no cuenta: eso es mencionar, no ejecutar.
+ */
+export function coincide(re, accion) {
+  const g = new RegExp(re.source, re.flags.includes('g') ? re.flags : `${re.flags}g`);
+  for (const m of accion.texto.matchAll(g)) {
+    for (let k = m.index; k < m.index + m[0].length; k++) {
+      if (!accion.mascara[k]) return true;
+    }
+  }
+  return false;
+}
+
 /**
  * Las CUATRO reglas de AA2. Los patrones son los mismos que tenía la versión en bash: lo que
  * cambia es el texto sobre el que se aplican, no lo que se considera peligroso.
  */
-function reglas(objetivo, sentinelPath) {
+function reglas(lista, sentinelPath) {
+  const enAlguna = (re) => lista.some((a) => coincide(re, a));
+
   // 1) prisma migrate dev — PROHIBIDO siempre (regla 3: Prisma sin TTY)
-  if (/prisma[^"]{0,40}migrate +dev/.test(objetivo)) {
+  if (enAlguna(/prisma[^"]{0,40}migrate +dev/)) {
     return {
       bloqueado: true,
       motivo:
@@ -120,7 +295,7 @@ function reglas(objetivo, sentinelPath) {
   //    que no ejecutó nada y tenía que volver a darlo — o peor, creerse que lo había gastado.
   //    Es un fallo PREEXISTENTE (venía de la versión en bash, con el mismo orden) que la
   //    portación a .mjs conservó tal cual; lo encontró la sesión 1 comparando implementaciones.
-  const pideDbPush = /prisma[^"]{0,40}db +push/.test(objetivo);
+  const pideDbPush = enAlguna(/prisma[^"]{0,40}db +push/);
   if (pideDbPush && !fs.existsSync(sentinelPath)) {
     return {
       bloqueado: true,
@@ -130,7 +305,7 @@ function reglas(objetivo, sentinelPath) {
   }
 
   // 3) --force (git push --force, npm --force, prisma --force...)
-  if (/(^|[^A-Za-z-])--force(-with-lease)?\b/.test(objetivo)) {
+  if (enAlguna(/(^|[^A-Za-z-])--force(-with-lease)?\b/)) {
     return {
       bloqueado: true,
       motivo:
@@ -139,7 +314,7 @@ function reglas(objetivo, sentinelPath) {
   }
 
   // 4) rm -rf fuera del workspace (ruta absoluta, unidad o ~). Relativo dentro del repo se permite.
-  if (/rm +-[a-zA-Z]*[rR][a-zA-Z]*[fF][a-zA-Z]* +("?(\/|~|[A-Za-z]:))/.test(objetivo)) {
+  if (enAlguna(/rm +-[a-zA-Z]*[rR][a-zA-Z]*[fF][a-zA-Z]* +("?(\/|~|[A-Za-z]:))/)) {
     return {
       bloqueado: true,
       motivo:
@@ -167,9 +342,11 @@ function reglas(objetivo, sentinelPath) {
 export function evaluar(crudo, sentinelPath = SENTINEL_POR_DEFECTO) {
   const comando = extraerComando(crudo);
   // FAIL-CLOSED: si el JSON no se deja leer, se vuelve al comportamiento antiguo —mirar el
-  // blob entero— en vez de dejar pasar. Ruidoso, pero nunca ciego.
-  const objetivo = comando === null ? crudo : descontarTexto(comando);
-  return reglas(objetivo, sentinelPath);
+  // blob entero, SIN máscara— en vez de dejar pasar. Ruidoso, pero nunca ciego: un blob de
+  // JSON es casi todo comillas, así que aplicarle el criterio de SCRUM-454 lo dejaría ciego
+  // justo en el caso en el que no sabemos qué se va a ejecutar.
+  if (comando === null) return reglas([{ texto: crudo, mascara: [], palabras: [], redirecciones: [], programa: '' }], sentinelPath);
+  return reglas(acciones(descontarTexto(comando)), sentinelPath);
 }
 
 // ── CLI ──────────────────────────────────────────────────────────────────────────────────
