@@ -11,7 +11,30 @@ export async function listInvoicesAdmin(
   dateFrom?: Date | null,
   dateTo?: Date | null,
 ) {
-  const where: Prisma.InvoiceWhereInput = { merchantId };
+  /**
+   * SCRUM-442 · EL LISTADO DE «FACTURAS» ENSEÑA SOLO FACTURAS.
+   *
+   * Facturas y justificantes viven en la MISMA tabla y se distinguen por `type`
+   * (`invoicesAdmin.routes.ts:126` escribe `'F1'`, `:142` escribe `'JUST'`). Este `where` tenía
+   * CUATRO criterios —merchant, estado, búsqueda, fechas— y `type` no estaba en ninguno, así que
+   * los justificantes salían mezclados: **44 de 55 documentos en producción (10-ago-2026) no eran
+   * facturas**. Cuatro de cada cinco.
+   *
+   * Un justificante de cobro **no es una factura** —vive fuera de toda serie fiscal, V0-0— y el
+   * profesional los estaba contando como si lo fueran.
+   *
+   * ⚠️ ESTO CAMBIA QUÉ SE LISTA, JAMÁS QUÉ SE GUARDA (regla 29). Ni una fila se toca.
+   *
+   * 🔴 Y NO LOS ESCONDE: su sitio es **Cobros** (diseño §B4). Comprobado ANTES de excluirlos, que
+   * era el suelo de este ticket: `cobros.service.ts` lista **la unión** de todo `Charge` MÁS toda
+   * `Invoice` con `chargeId: null` —que hoy son todas, porque nadie escribe ese campo— y **no
+   * filtra por `type`**. Los 44 siguen alcanzables.
+   *
+   * Si Cobros listara solo `Charge`, excluirlos aquí los habría borrado del producto: un cobro por
+   * transferencia o efectivo **no crea `Charge`** (SCRUM-441). Ese módulo ya lo dice con todas las
+   * letras — «una pantalla que lista solo `Charge` no está incompleta: miente por omisión».
+   */
+  const where: Prisma.InvoiceWhereInput = { merchantId, type: { not: 'JUST' } };
 
   if (status && status !== 'all') {
     where.status = status;
