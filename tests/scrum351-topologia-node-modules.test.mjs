@@ -205,6 +205,24 @@ test('SCRUM-351 · SUELO: un enlace ROTO sale CIEGO, no «propio»', () => {
   }
 });
 
+test('SCRUM-351 · SUELO: un fallo al MIRAR no se traga como «aquí no hay»', () => {
+  // 🔴 ESTE CASO SE AÑADIÓ PORQUE LA MUTACIÓN NO DABA ROJO. Cambiando el `if (err.code ===
+  // 'ENOENT')` por un `if (true)` —o sea, tragándose CUALQUIER fallo de lectura como una ausencia
+  // y siguiendo a mirar al padre— los 10 tests seguían en verde. El caso estaba mal elegido: el
+  // del enlace roto entra por `realpath`, no por `lstat`, así que esa rama no la ejercitaba nadie.
+  //
+  // Las causas realistas de esa rama son EACCES / EPERM / EIO, y Windows no deja provocarlas sin
+  // elevación. Lo que sí se puede es hacer fallar la MISMA llamada por algo que no sea la
+  // ausencia, que es exactamente la distinción que el código tiene que respetar.
+  const raizIlegible = `C:${path.sep}x${String.fromCharCode(0)}y`;
+  const r = resolverNodeModules(raizIlegible);
+  assert.ok(r.ciego,
+    `🔴 un fallo al leer se ha respondido como "${r.via}". Seguir subiendo tras un error que NO es ` +
+    'ENOENT convierte «no pude mirar» en «aquí no había», y de ahí sale un veredicto sobre un ' +
+    'árbol que nadie ha leído.');
+  assert.match(r.ciego, /node_modules/, '🔴 el ciego no dice ni qué ruta no se pudo leer.');
+});
+
 test('SCRUM-351 · SUELO: si git no contesta, se dice NO SUPE MIRAR', () => {
   const fuera = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum351-nogit-'));
   try {
