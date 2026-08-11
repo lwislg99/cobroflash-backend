@@ -1,122 +1,43 @@
-# SCRUM-442 · B4 · punto 1 — «Menú Facturas = solo facturas»
+# SCRUM-442 · El listado de «Facturas» mezclaba facturas y justificantes
 
-**Fecha:** 10-ago-2026 · **Carril:** B (UI) · **Gate:** sin gate, corre en `npm test`
-**Medido contra:** `origin/main` = `44a93a3547e45827f613d17fb036617f176607cc` · 2026-08-10T19:52:07+02:00
-**Tanda:** 2720 tests · 2646 pass · **0 fail** · 74 gateados · `npm test` exit **0**
+**Medido contra:** `origin/main` = `9d52ddb9bed8cf527e336d5b64df8a6e8bbc25d7` · 2026-08-11T17:37:21+02:00
+**Rama:** `scrum-442-solo-facturas`
 
-> 🔴 **DEPENDENCIA DE ORDEN DE MERGE, y es dura:** esta rama sale de
-> `scrum-285-pantalla-cobros`, **no de `main`**, porque la pantalla que recoge los justificantes
-> **todavía no está en `main`**. Si esto entrara antes que SCRUM-285, los `J-` saldrían de Facturas
-> y no tendrían dónde ir. **285 primero, 442 después.**
+## El defecto
 
-## PASO 0
+Los dos documentos viven en la MISMA tabla, discriminados por `type` (`invoicesAdmin.routes.ts:126`
+escribe `F1`, `:142` escribe `JUST`). El `where` de `listInvoicesAdmin` (`invoiceAdmin.ts:14`) tenía
+**cuatro criterios** —merchant, estado, búsqueda, fechas— y **`type` no estaba en ninguno**.
 
-**ENTRADA.** El listado se carga en **un solo sitio**: `invoicesView.js:45`, `fetch('/admin/invoices')`
-dentro de `fetchInvoices`. Censado el resto de `public/`: la única otra mención es un **POST** de
-crear factura (`nuevaFacturaModal.js:211`), que no es una lista.
+**44 de 55 documentos en producción no eran facturas** (10-ago-2026). Cuatro de cada cinco. Un
+justificante vive fuera de toda serie fiscal, y el profesional los contaba como facturas.
 
-**MECANISMO: existe entero, no se rehace.** La distinción está construida y en uso —
-`tipoDeFactura` (`jobDocsReparto.js:34`) ya reparte la pila del Trabajo, alimenta el bloque DINERO
-del rail y ordena la pantalla de Cobros. El trabajo es **usarla aquí**, no escribir otra.
+## 🔴 El suelo del ticket, comprobado ANTES de excluir
 
-### 🔴 Antes de filtrar: ¿los justificantes tienen dónde ir? — SÍ, medido
+Excluirlos solo es legítimo si su sitio existe. `cobros.service.ts` lista **la unión** de todo
+`Charge` **más** toda `Invoice` con `chargeId: null` —que hoy son todas— y **no filtra por `type`**.
+**Los 44 siguen alcanzables.**
 
-Sacar un documento de donde no le toca no puede significar sacarlo del producto (el defecto de
-SCRUM-420 al revés). Dos mediciones:
+Si Cobros listara solo `Charge`, excluirlos aquí los habría **borrado del producto**: un cobro por
+transferencia o efectivo no crea `Charge` (SCRUM-441). Ese módulo ya lo dice: «una pantalla que
+lista solo `Charge` no está incompleta: miente por omisión».
 
-1. **`Invoice.chargeId` no lo escribe NADIE en todo el árbol.** `ensureInvoiceForCharge`
-   (`lib/invoicing.ts`) crea la factura del cobro con `merchantId, customerId, quoteId, number,
-   type, total, currency, lines, pdfUrl, qrData` — **sin `chargeId`**. Barrido el resto: las demás
-   apariciones son `where`, `Quote.chargeId` o logs.
-2. Como `listarCobros` recoge las `Invoice` con `chargeId: null`, **los justificantes entran**.
+## El arreglo
 
-Y comprobado **con el banco, no razonándolo**: un justificante real (`type: 'JUST'`,
-`J-20260802-AB12`) se pinta en Cobros con su número y clasificado como `justificante`.
+Un quinto criterio: `type: { not: JUST }`. **Exclusión, no lista blanca** — con `type: 'F1'` se
+caerían del listado las rectificativas R1 y cualquier tipo futuro.
 
-## Lo que se construye
+**Regla 29: cambia qué se lista, jamás qué se guarda.** Ni una fila tocada. Sin microcopy nueva: el
+menú Cobros ya existe (diseño §B4), así que no hay rótulo que aprobar.
 
-Una función con nombre en la vista de Facturas:
+## Verificación
 
-```js
-function soloFacturas(documentos) {
-  return documentos.filter((doc) => tipoDeFactura(doc) !== 'justificante');
-}
-```
+| | |
+|---|---|
+| **SUELO** | si no se localiza el `where`, falla declarándose ciego |
+| **El vector** | el `where` excluye `JUST`; el rojo dice `SE HA COLADO EL JUSTIFICANTE` (caen 2) |
+| **Control positivo** | se comprueba que es exclusión y no `type: 'F1'`, que se llevaría las R1 |
+| **Control negativo** | los otros cuatro criterios siguen enteros — un `where` de cinco que rompa estado o fechas es regresión |
+| **El suelo del ticket** | Cobros sigue listando `invoice` y NO excluye `JUST`: si algún día lo hiciera, cae |
 
-y `fetchInvoices` devuelve `soloFacturas(await res.json())`.
-
-**Se clasifica con `tipoDeFactura`, nunca con una copia** — es la restricción que gobierna el
-ticket. Un `startsWith('J-')` aquí sería la cuarta forma de decidir lo mismo.
-
-**Se llama SIN guarda `typeof`.** Si `tipoDeFactura` no estuviera, esto tiene que reventar: un
-filtro que se desactiva solo devolvería la lista mezclada **en silencio**, que es el defecto que
-este cambio cierra.
-
-**Las RECTIFICATIVAS se quedan.** Una `R1` es una factura; sacarla la dejaría sin sitio igual que al
-justificante. Hay test.
-
-**No se toca el servidor.** `GET /admin/invoices` sigue devolviendo los dos documentos a propósito:
-los usan el detalle y los exports. **El que separa es quien pinta la lista.** Filtrar en servidor,
-además, habría obligado a usar `isReceiptNumber` (backend) — o sea, una segunda forma de clasificar,
-justo lo prohibido.
-
-## 🔴 El verde hueco que apareció construyendo esto, y cómo se cazó
-
-La primera versión del test **pintaba la vista** con el banco y comprobaba que el `J-` ya no estaba.
-**Pasaba en verde, y por avería:** `renderInvoicesView` **revienta en el banco** (`Cannot read
-properties of null` — el mini-DOM no representa su marcado anidado; es una de las cinco del hueco
-declarado en SCRUM-417). El árbol salía vacío, así que «el justificante ya no está» era cierto **por
-la razón equivocada**.
-
-**Lo cazó el control positivo** —«la factura tampoco está»—, que es exactamente para lo que estaba.
-Por eso el filtro es una función **con nombre y publicada**: así se prueba de verdad, sin depender
-de una vista que el banco todavía no sabe pintar. Y como *mencionar no es hacer*, hay un test aparte
-de que la carga **pasa por ella**.
-
-## Verificado
-
-**El test que decide, con las dos mitades EN EL MISMO TEST:** el `J-` **sale de Facturas** y **sigue
-en Cobros**, con su número y su tipo. Por separado, cada mitad puede pasar mientras el documento se
-pierde. Y la mitad A lleva su propio control dentro (`pasan.length > 0`), porque una lista vacía
-también hace verdad «el justificante ya no está».
-
-| # | qué se rompe | qué sale |
-|---|---|---|
-| **R1** | se quita el filtro de la carga | 🔴 «**EL LISTADO VUELVE A MEZCLAR** facturas con justificantes **en 1 de 1 carga(s)**: `invoicesView.js:45`» |
-| **R2** | aparece una segunda forma de clasificar `J-` | 🔴 «hay **2** sitios que deciden si algo es un justificante sin pasar por `tipoDeFactura`, y el tope es 1: `quotesListView.js:4`» |
-| **R3** | *(control negativo)* una lista sin justificantes | ✅ no cambia nada — el filtro quita solo lo que sobra |
-
-Las dos inyecciones llevan **post-condición**: comprueban que cambió **el fichero que digo** y que
-la cadena ya no está; si no, abortan.
-
-**Suelos:** si el escáner no encuentra el filtro ni la definición de `tipoDeFactura`, falla · si el
-censo de cargas no encuentra ni la de `invoicesView`, se declara ciego · si el detector de copias no
-ve **ni la conocida**, se declara ciego.
-
-**Control negativo del detector:** el comentario de `jobRailBlocks.js:122` que *explica* por qué no
-se repite el `startsWith('J-')` **no cuenta como copia**. Cobrárselo sería el impuesto sobre la
-claridad que quitó SCRUM-349.
-
-### El trinquete nace en 1 y no en 0, a propósito
-
-Medido: **ya existía una copia a mano**, `invoiceDetailView.js:79`
-(`invoice.type === 'JUST' || String(invoice.number||'').startsWith('J-')`), anterior a este ticket.
-Exigir 0 hoy pondría el guard **rojo por algo que no es mío**, y un guard que nace rojo lo apaga
-alguien en una hora (la lección de SCRUM-402). Lo que sí impide desde hoy: **que aparezca la
-siguiente**. Y solo puede bajar: si alguien retira esa copia, el tope baja en el mismo commit.
-
-## Lo que NO cubre
-
-* **La vista de Facturas no se pinta en el banco**, así que no se comprueba el árbol pintado: se
-  comprueba la función y que la carga pase por ella. Ampliar el banco hasta que `invoicesView`
-  monte es el hueco de SCRUM-417 y es otro carril.
-* **`invoiceDetailView.js:79` sigue clasificando a mano.** Declarada en el trinquete, sin ticket.
-* **El contador de la cabecera** («Cargando…» → N facturas) sale de la lista ya filtrada, así que
-  cuenta bien — pero **no se ha verificado en el navegador**, por lo mismo de arriba.
-* **Los exports y el detalle NO cambian**: siguen viendo los dos documentos, a propósito.
-* **AB6:** no hay cambio visual más allá de que la lista trae menos filas. Sin capturas.
-
-## Ficheros
-
-* `public/dashboard/js/invoicesView.js` — `soloFacturas` y su uso en `fetchInvoices`.
-* `tests/scrum442-facturas-sin-justificantes.test.mjs` (nuevo, 8).
+Suite: 3042 tests · 2966 pass · 0 fail · 76 skip · `npm ci` exit 0 antes de medir.
