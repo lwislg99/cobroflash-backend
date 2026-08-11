@@ -50,13 +50,63 @@ test('SCRUM-451 · el plazo son 10 s, en UNA constante con nombre, en el camino 
   }
 
   // Y en NINGUNA otra parte del panel: si vuelve a nacer un plazo dentro de una vista, esto cae.
+  //
+  // 🔴 SCRUM-465 · LO QUE SE PROHÍBE ES DUPLICAR EL VALOR, NO MENCIONAR LA CONSTANTE.
+  //
+  // La primera versión de esta regla decía `\bPLAZO_[A-Z_]*_MS\b`, y ese patrón casa con
+  // `PLAZO_RED_MS` — la constante COMPARTIDA. O sea que prohibía **consumirla**: cualquier vista
+  // que quisiera reusar la decisión caía por reusarla, que es exactamente lo contrario de lo que
+  // el guard existe para conseguir. Un guard que impide usar lo que protege empuja al siguiente a
+  // copiar el número a mano, que es el defecto que vigila.
+  //
+  // La distinción es toda la diferencia: `PLAZO_RED_MS` es REUSAR; `PLAZO_FIRMA_MS = 8000` es
+  // duplicar la decisión con otro nombre.
   const dir = path.join(RAIZ, 'public/dashboard/js');
-  const conPlazoPropio = fs.readdirSync(dir).filter((f) => f.endsWith('.js') && f !== 'api.js')
-    .filter((f) => /_PLAZO_MS\b|\bPLAZO_[A-Z_]*_MS\b/.test(
-      fs.readFileSync(path.join(dir, f), 'utf8').replace(/\/\/[^\n]*|\/\*[^]*?\*\//g, '')));
+  const sinComentarios = (f) => fs.readFileSync(path.join(dir, f), 'utf8').replace(/\/\/[^\n]*|\/\*[^]*?\*\//g, '');
+  const otros = fs.readdirSync(dir).filter((f) => f.endsWith('.js') && f !== 'api.js');
+
+  const conPlazoPropio = otros.filter((f) => {
+    const codigo = sinComentarios(f);
+    // Cualquier constante de plazo que NO sea la compartida.
+    const propia = /\b(?:[A-Z][A-Z0-9_]*_)?PLAZO_[A-Z0-9_]*_MS\b/g;
+    for (const m of codigo.matchAll(propia)) if (m[0] !== 'PLAZO_RED_MS') return true;
+    return false;
+  });
   assert.deepEqual(conPlazoPropio, [],
     `🔴 estas vistas se han hecho su propio plazo: ${conPlazoPropio.join(', ')}. El segundo sitio ` +
-    'donde se copia una decisión es donde deja de ser una decisión y pasa a ser una costumbre.');
+    'donde se copia una decisión es donde deja de ser una decisión y pasa a ser una costumbre.\n\n' +
+    '  Reusar `PLAZO_RED_MS` SÍ vale — para eso está. Lo que no vale es un plazo propio.');
+});
+
+test('SCRUM-465 · 🔴 el guard distingue REUSAR la constante de DUPLICAR el valor', () => {
+  // Los dos controles que definen el arreglo, sobre fuente sintética: el guard no puede depender
+  // de qué ficheros existan hoy en el panel.
+  const propia = /\b(?:[A-Z][A-Z0-9_]*_)?PLAZO_[A-Z0-9_]*_MS\b/g;
+  const tienePlazoPropio = (codigo) => {
+    for (const m of codigo.matchAll(propia)) if (m[0] !== 'PLAZO_RED_MS') return true;
+    return false;
+  };
+
+  // ✅ CONTROL NEGATIVO: consumir la compartida NO cae. Es el caso que hoy está bloqueado y que
+  // impide a SCRUM-459 darle plazo a los POST.
+  assert.equal(tienePlazoPropio('const t = setTimeout(() => ctrl.abort(), PLAZO_RED_MS);'), false,
+    '🔴 un fichero que REUSA `PLAZO_RED_MS` sigue cayendo. El guard bloquea a quien quiere ' +
+    'consumir la constante que él mismo protege, y empuja a copiar el número a mano.');
+
+  // 🔴 CONTROL POSITIVO: un plazo propio SÍ cae, con o sin prefijo.
+  assert.equal(tienePlazoPropio('const PLAZO_FIRMA_MS = 8000;'), true,
+    '🔴 una constante de plazo PROPIA ya no se detecta: el guard ha dejado de vigilar lo suyo.');
+  assert.equal(tienePlazoPropio('const COLA_PLAZO_DRENADO_MS = 3000;'), true,
+    '🔴 un plazo propio con prefijo se escapa.');
+
+  // Y el número a mano, que es la otra forma de duplicar la decisión.
+  // `[\s\S]*?` y no `[^)]*`: la primera versión no cruzaba el `)` de `ctrl.abort()`, así que el
+  // caso REAL —el único que importa— se le escapaba. Lo cazó su propio control positivo.
+  const numeroAMano = /setTimeout\([\s\S]*?,\s*\d{4,}\s*\)/;
+  assert.ok(numeroAMano.test('setTimeout(() => ctrl.abort(), 10000)'),
+    '🔴 no se detecta el plazo escrito a mano dentro de un setTimeout.');
+  assert.ok(!numeroAMano.test('setTimeout(() => ctrl.abort(), PLAZO_RED_MS)'),
+    '🔴 reusar la constante se está contando como número a mano.');
 });
 
 // ═══ ② CORTA DE VERDAD — lo que 448 no pudo tener ════════════════════════════════════════
