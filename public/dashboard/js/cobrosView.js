@@ -278,8 +278,36 @@ function renderCobrosView(container) {
       var tdDoc = document.createElement('td');
       tdDoc.className = 'cell-id'; // en la card: arriba, pequeño y apagado — es lo que es
       var clasifica = (typeof tipoDeFactura === 'function') ? tipoDeFactura : null;
-      if (c.numero && clasifica) tdDoc.textContent = clasifica({ number: c.numero, type: c.tipo }) + ' ' + c.numero;
-      else tdDoc.textContent = c.numero || '—';
+      var etiquetaDoc = (c.numero && clasifica)
+        ? clasifica({ number: c.numero, type: c.tipo }) + ' ' + c.numero
+        : (c.numero || '—');
+
+      // SCRUM-285 (§B4) · COBRO → FACTURA. El sentido contrario —factura→cobro— se decidió SIN
+      // enlace a propósito, porque NO existe ficha de cobro (`charge-detail` no está en el
+      // dispatch). Éste sí tiene destino: `invoice-detail` existe, y `invoiceId` YA viajaba en el
+      // payload (`cobros.service.ts:79`) sin que nadie lo usara.
+      //
+      // ⚠️ Y va condicionado: el dinero marcado A MANO no tiene factura y llega con
+      // `invoiceId: null` (`cobros.service.ts:190`). Un enlace ahí no llevaría a ninguna parte —
+      // o está el destino, o no está el enlace.
+      if (c.invoiceId != null) {
+        var aDoc = document.createElement('a');
+        aDoc.href = '#invoice-detail';
+        aDoc.textContent = etiquetaDoc;
+        aDoc.style.cssText = 'color:inherit;text-decoration:underline';
+        aDoc.addEventListener('click', function (ev) {
+          ev.preventDefault();
+          // Mismo mecanismo que el resto del dashboard (`jobDetailView.js:84`): estado + render.
+          // No se inventa navegación: se reutiliza la que ya existe.
+          if (window.renderAppView) {
+            window.appState.invoiceId = c.invoiceId;
+            window.renderAppView('invoice-detail');
+          }
+        });
+        tdDoc.appendChild(aDoc);
+      } else {
+        tdDoc.textContent = etiquetaDoc;
+      }
       tr.appendChild(tdDoc);
 
       // SIN COBRAR. Columna propia: es lo que se barre con la vista.
