@@ -46,8 +46,19 @@ const R = analizar(RAIZ);
  * **8 → 7 · 10-ago-2026 · SCRUM-460.** Ése es este commit: `precarga.service.ts` ya se alcanza
  * desde `GET /admin/precarga` (`precargaAdmin.routes.ts`, montado en `app.ts`). El número estuvo
  * en 8 exactamente lo que duró la deuda, que es para lo que sirve.
+ *
+ * **7 → 8 · 11-ago-2026 · SCRUM-359 (H4).** `src/modules/jobs/domain/ventanaDeFirma.ts`: la
+ * ventana verificable de los tres relojes, construida y probada con 16 tests, que **nadie puede
+ * llamar todavía** por dos gates que no son míos. ① Guardar dos de los tres relojes necesita
+ * columnas nuevas y `prisma/schema.prisma` es del fundador — el diff está preparado en
+ * `docs/master/SCRUM-359.md` §4. ② Cablearlo obliga a añadir una escritura al endpoint que
+ * SELLA, y en el diff eso no se distingue de tocar el sellado (regla 38): va con GO explícito.
+ *
+ * Cablearlo a la fuerza para que este número no subiera habría sido justo lo que la cabecera de
+ * arriba prohíbe, y además saltándose un STOP. **Baja a 7 el commit que le ponga consumidor**, que
+ * es el paso 3 de `docs/master/SCRUM-359.md` §5.
  */
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 7;
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 8;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 
