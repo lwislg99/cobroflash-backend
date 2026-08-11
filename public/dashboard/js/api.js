@@ -120,6 +120,36 @@ async function _enviar(url, finalOptions, ctrl) {
   }
 }
 
+/**
+ * SCRUM-459 · el error de una MUTACIÓN vencida. `incierto`, y **sin `sinRed`**.
+ *
+ * La diferencia no es de matiz: `sinRed` significa «no hay cobertura, no salió», y sobre una
+ * mutación eso es una afirmación que no podemos hacer — la petición pudo llegar entera y morir la
+ * respuesta. Quien lea esta marca tiene que poder decir «no lo sé» y ofrecer reintentar, cosa que
+ * solo es segura porque el camino de firma viaja con `claveIdempotencia` (SCRUM-358/425).
+ */
+function errorDeMutacionIncierta(causa) {
+  const e = new Error('no se pudo confirmar si la petición llegó');
+  e.incierto = true;
+  e.vencido = true;
+  e.causaOriginal = causa;
+  return e;
+}
+
+/** Una MUTACIÓN, con plazo. Mismo corte que las lecturas; distinto significado al vencer. */
+async function _enviarMutacion(url, finalOptions, ctrl) {
+  const opciones = ctrl ? { ...finalOptions, signal: ctrl.signal } : finalOptions;
+  const plazo = ctrl ? setTimeout(() => ctrl.abort(), PLAZO_RED_MS) : null;
+  try {
+    return await _pedir(url, opciones);
+  } catch (e) {
+    if (ctrl && ctrl.signal && ctrl.signal.aborted) throw errorDeMutacionIncierta(e);
+    throw e;
+  } finally {
+    if (plazo) clearTimeout(plazo);
+  }
+}
+
 async function apiRequest(path, options = {}) {
   const url = API_BASE_URL + path;
 
@@ -132,8 +162,25 @@ async function apiRequest(path, options = {}) {
   };
 
   const metodo = String(finalOptions.method || 'GET').toUpperCase();
-  // Mutación: camino de siempre, sin plazo y sin secuencia. Ver el bloque de arriba.
-  if (metodo !== 'GET' || finalOptions.body) return _pedir(url, finalOptions);
+
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+  // SCRUM-459 · LAS MUTACIONES TAMBIÉN TIENEN PLAZO, Y SU VENCIMIENTO SIGNIFICA OTRA COSA
+  //
+  // Hasta hoy salían «sin plazo y sin secuencia», y un POST contra una red que ACEPTA la conexión
+  // y no entrega **no vuelve nunca**: no da error, da silencio. El profesional que acaba de
+  // recoger una firma en una obra se queda mirando la pantalla sin saber si llegó.
+  //
+  // 🔴 PERO UN POST VENCIDO NO ES «FALLÓ»: ES «NO LO SÉ». Son TRES estados —llegó, no llegó, y no
+  // se sabe— y por eso NO se reutiliza `errorDeRedVencido`, que marca `sinRed`. Las vistas que se
+  // bifurcan por esa marca dirían «no hay cobertura» sobre algo que puede estar guardado, y eso
+  // invita a repetir la operación. «No se envió» cuando sí se envió es peor que «no sé si se envió».
+  //
+  // La secuencia por ruta NO se aplica aquí: descartar una mutación por vieja sería tirar una
+  // escritura que el profesional dio por hecha.
+  if (metodo !== 'GET' || finalOptions.body) {
+    const ctrlMut = typeof AbortController === 'function' ? new AbortController() : null;
+    return _enviarMutacion(url, finalOptions, ctrlMut);
+  }
 
   let mia = (_secuenciaPorRuta[path] = (_secuenciaPorRuta[path] || 0) + 1);
   const ctrl = typeof AbortController === 'function' ? new AbortController() : null;
