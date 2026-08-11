@@ -284,3 +284,58 @@ desaparece ningún cobro de la pantalla — solo cambia de cubo, y al que dice l
   `'mp'`, `mpWebhook.routes.ts:107`, `dev.routes.ts:26` con `'SCTinst'`— **siguen abiertos**. Son
   del lado escritor y de otro carril.
 
+
+---
+
+### 7. Los tres rojos, con el mensaje LITERAL que sacan
+
+Probados **sobre código ya commiteado** (`25ba2028`) y devueltos con el editor. `git checkout --`
+lo bloqueó el hook `guard-dangerous`, que hizo exactamente su trabajo: es el error que el propio
+Luis dejó anotado en `79248b55` («inyecté el rojo ANTES de comitear y `git checkout --` se llevó
+el fichero entero»). El árbol se restauró y se comprobó limpio con `git diff HEAD` entre uno y otro.
+
+| # | qué se rompe | qué cae, y diciendo qué |
+|---|---|---|
+| ① | `cuboDeMetodo` vuelve a comparar el valor **entero** (el defecto original) | 5 tests. El que decide: `🔴 EL FILTRO LE ESCONDE COBROS AL PROFESIONAL: filtra por tarjeta y ve 28 de 38. Los 10 que faltan están cobrados con tarjeta y guardados como «card:stripe» — la pasarela, no otro método.` → `28 !== 38` |
+| ② | nace una **tercera** implementación de la partición | 1 test, el trinquete: `🔴 HAY UNA IMPLEMENTACIÓN NUEVA DE LA PARTICIÓN, Y NADIE LA HA CONTADO` + `['public/dashboard/js/cobrosView.js:148 metodoBaseOtraVez()']` |
+| ③ | una copia cambia y la otra no (se quita el rechazo de la pasarela vacía) | 1 test, el atado: `🔴 LAS DOS COPIAS DE LA PARTICIÓN HAN DIVERGIDO` + los 6 valores, `«card:» → servidor=null navegador="card"` … |
+
+#### 🔴 El dato que justifica el trinquete, medido en este propio código
+
+Con el rojo ② inyectado —una tercera copia recién nacida— **los 12 tests de comportamiento
+siguieron VERDES**. Solo cayó el estructural:
+
+    # pass 12
+    # fail 1     ← ② TRINQUETE: no hay una TERCERA implementación de la partición
+
+Es la reproducción exacta del hallazgo de SCRUM-361: un test de comportamiento **aprueba la
+bifurcación el día en que nace**, porque ese día la copia nueva todavía coincide. Sin el trinquete,
+esa tercera copia habría entrado sin que saltara nada.
+
+### 8. Verificación
+
+- `npm test` → **3237 tests, 0 fallos, 77 saltados.**
+  Línea base **medida** corriendo la tanda sin mis dos ficheros: **3224**. 3224 + 13 = 3237 — no es
+  una resta de cabeza. Los 77 saltos declaran su motivo y **ninguno es de este ticket**: todos son
+  `QA_DB_TEST=1` o `LIBRO_PG_URL`.
+- `npm run guards:entrada` → **4 guards, 17 tests, rc=0.**
+- Marcadores de conflicto por el guard **oficial** (`tests/scrum393-marcadores-de-conflicto.test.mjs`)
+  → **6 tests, 0 fallos**: 0 marcadores `<<<`, 0 `===`, 0 `>>>`.
+- Vecindario en verde tras meter `main` dentro (`92afeed3`): los 39 tests de
+  `scrum474-dos-copias-atadas`, `scrum474-filtro-cobros-un-cubo`, `scrum473-metodo-validado` y
+  `scrum285-pantalla-cobros`.
+
+### 9. Huecos declarados
+
+1. **La cifra de producción (28 `card` + 10 `card:stripe`) se CITA, no se remide.** Es de Luis, del
+   11-ago-2026. No hay acceso a producción desde esta sesión y no se ha buscado.
+2. **`card:` no es alcanzable hoy por ningún escritor vivo** —medido: `charges.routes.ts:39` escribe
+   `card`/`mp`/`transfer`, `mpWebhook:107` escribe `mp`, y el guard de `psp.routes.ts:110` rechaza
+   lo que no cumple la forma—. Si existe en filas históricas, no se ha comprobado: haría falta mirar
+   producción. La enmienda §4 cambia su cubo de «tarjeta» a «Método no registrado» por coherencia
+   con el servidor, y ese es el alcance del cambio.
+3. **El trinquete vigila `src/`, `public/` y `scripts/`.** No mira `tests/`: un test que parta por
+   `:` no es un consumidor del vocabulario de método. Si alguien mete la tercera copia en un
+   *helper* de `tests/`, el trinquete no la ve. Queda declarado.
+4. **La verificación es en Node, no en yaqu.app.** El banco de vistas monta el dashboard con un
+   mini-DOM; no sustituye a abrir la pantalla en producción tras el merge (AA1.3).
