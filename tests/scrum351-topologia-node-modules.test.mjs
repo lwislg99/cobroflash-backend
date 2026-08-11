@@ -1,0 +1,246 @@
+// tests/scrum351-topologia-node-modules.test.mjs — SCRUM-351
+//
+// EL TEST QUE DECIDE SI ESTE TICKET SIRVE es el del junction. Probar el comprobador SOLO en la
+// configuración de hoy —cuatro `node_modules` propios— sería fijar la premisa otra vez, en la
+// dirección contraria: un método que siempre contesta «no comparten» acierta hoy y miente el día
+// que alguien enlace un worktree, que es el día en que hace falta.
+//
+// Por eso las dos configuraciones se PROVOCAN sobre árboles de mentira, con el mecanismo real
+// (`fs.symlinkSync(..., 'junction')`, que es lo que hace `mklink /J` y no necesita privilegios):
+//   · enlazados            → tiene que decir COMPARTEN, y NOMBRAR cuáles;
+//   · sin `node_modules`   → resuelven hacia arriba: COMPARTEN también, y es el caso invisible;
+//   · propios              → no comparten.
+//
+// Y el suelo, que es la otra mitad: un árbol que no se puede leer sale como CIEGO. «Cero» y «no
+// supe mirar» nunca son el mismo número.
+//
+// ⚠️ NO se toca el `node_modules` de nadie: todo ocurre bajo `os.tmpdir()`.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {
+  resolverNodeModules,
+  topologia,
+  veredicto,
+  worktreesDelRepo,
+} from '../scripts/topologia-node-modules.mjs';
+
+const RAIZ = path.resolve(import.meta.dirname, '..');
+
+/** Un banco de árboles de mentira. Devuelve la base y una función para hacer worktrees. */
+function banco() {
+  const base = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'scrum351-')));
+  const arbol = (nombre) => {
+    const d = path.join(base, nombre);
+    fs.mkdirSync(d, { recursive: true });
+    return d;
+  };
+  return { base, arbol, limpiar: () => fs.rmSync(base, { recursive: true, force: true, maxRetries: 3 }) };
+}
+
+/** `node_modules` propio, con un marcador dentro para que sea un directorio de verdad. */
+function conNodeModulesPropio(arbol) {
+  const nm = path.join(arbol, 'node_modules');
+  fs.mkdirSync(nm, { recursive: true });
+  fs.writeFileSync(path.join(nm, '.marca'), 'x');
+  return nm;
+}
+
+// ── CONTROL POSITIVO DEL LECTOR ──────────────────────────────────────────────────────────────
+
+test('SCRUM-351 · CONTROL POSITIVO: git lista los worktrees y este árbol está entre ellos', () => {
+  const wt = worktreesDelRepo(RAIZ);
+  assert.ok(wt.ok, `🔴 no se ha podido listar los worktrees: ${wt.motivo}. Sin esto, lo de abajo no mide nada.`);
+  const real = fs.realpathSync.native(RAIZ).toLowerCase();
+  const estan = wt.raices.map((r) => fs.realpathSync.native(r).toLowerCase());
+  assert.ok(estan.includes(real),
+    '🔴 el árbol donde corre la suite NO sale en el listado de worktrees: el lector está ciego y ' +
+    'cualquier veredicto sobre «quién comparte con quién» estaría hablando de otro conjunto.');
+});
+
+// ── 🔴 EL ROJO POR EL MECANISMO ①: ENLAZADOS ─────────────────────────────────────────────────
+
+test('SCRUM-351 · 🔴 con un JUNCTION, dice COMPARTEN y NOMBRA cuáles', () => {
+  const b = banco();
+  try {
+    const wtA = b.arbol('wtA');
+    const wtB = b.arbol('wtB');
+    const wtC = b.arbol('wtC');
+    const nmA = conNodeModulesPropio(wtA);
+    conNodeModulesPropio(wtC);
+    // El montaje que este proyecto usó de verdad: `mklink /J`. `fs.symlinkSync` con tipo
+    // 'junction' crea EXACTAMENTE eso en Windows, y sin necesitar elevación.
+    fs.symlinkSync(nmA, path.join(wtB, 'node_modules'), 'junction');
+
+    const t = topologia({ raices: [wtA, wtB, wtC] });
+    assert.ok(t.ok, `🔴 no se ha podido medir: ${t.motivo}`);
+    assert.equal(t.ciegos.length, 0, '🔴 algún árbol de juguete ha salido ciego: el caso no se ha llegado a probar.');
+
+    assert.equal(t.comparten.length, 1,
+      '🔴 CON UN JUNCTION DELANTE, EL COMPROBADOR NO VE QUE SE COMPARTA. Es el ticket entero: un ' +
+      'método que solo acierta en la configuración de hoy vuelve a fijar la premisa, y el día que ' +
+      'alguien enlace un worktree dirá «regenera tranquilo» mientras rompe la tanda de otro.');
+
+    const grupo = t.comparten[0];
+    assert.deepEqual([...grupo.raices].sort(), [wtA, wtB].sort(),
+      '🔴 no nombra a los DOS que comparten. «Alguien comparte» no sirve: hay que saber a quién avisar.');
+    assert.ok(!grupo.raices.includes(wtC), '🔴 mete en el grupo a un árbol que tiene el suyo propio.');
+
+    // Y por vías, que es lo que se lee en el informe.
+    const via = Object.fromEntries(t.arboles.map((a) => [a.raiz, a.via]));
+    assert.equal(via[wtA], 'propio');
+    assert.equal(via[wtB], 'enlace', '🔴 el enlace no se reconoce como enlace.');
+    assert.equal(via[wtC], 'propio');
+
+    const texto = veredicto(t);
+    assert.match(texto, /COMPARTEN/, '🔴 el veredicto no dice que comparten.');
+    assert.ok(texto.includes(wtB), '🔴 el veredicto no nombra el worktree enlazado.');
+  } finally {
+    b.limpiar();
+  }
+});
+
+// ── 🔴 EL ROJO POR EL MECANISMO ②: SIN `node_modules` — EL INVISIBLE ─────────────────────────
+
+test('SCRUM-351 · 🔴 sin `node_modules` propio se resuelve HACIA ARRIBA, y eso también es compartir', () => {
+  // No hay ningún enlace que inspeccionar: un método basado en `lstat` diría «no existe» y se
+  // quedaría tan ancho. Node, en cambio, cargará el del padre — y dos hermanos así comparten
+  // cliente de Prisma sin que nada lo delate. Está documentado en docs/PLAN_EJECUCION_Y_PARALELO.md
+  // como la vía peor, justo por eso.
+  const b = banco();
+  try {
+    const padre = b.arbol('repo');
+    conNodeModulesPropio(padre);
+    const wtX = path.join(padre, 'sub', 'wtX');
+    const wtY = path.join(padre, 'sub', 'wtY');
+    fs.mkdirSync(wtX, { recursive: true });
+    fs.mkdirSync(wtY, { recursive: true });
+
+    const t = topologia({ raices: [wtX, wtY, padre] });
+    assert.ok(t.ok, `🔴 no se ha podido medir: ${t.motivo}`);
+    assert.equal(t.comparten.length, 1,
+      '🔴 dos worktrees SIN `node_modules` dentro del mismo repo usan el del padre y el comprobador ' +
+      'no lo ve. Es el mecanismo que no deja huella, y por eso es el que muerde.');
+    assert.deepEqual([...t.comparten[0].raices].sort(), [padre, wtX, wtY].sort(),
+      '🔴 no nombra a los tres que acaban en el mismo `node_modules`.');
+    const via = Object.fromEntries(t.arboles.map((a) => [a.raiz, a.via]));
+    assert.equal(via[wtX], 'ascendente', '🔴 no distingue «resuelve hacia arriba» de «tiene el suyo».');
+  } finally {
+    b.limpiar();
+  }
+});
+
+// ── EL CONTROL NEGATIVO: LA CONFIGURACIÓN DE HOY ─────────────────────────────────────────────
+
+test('SCRUM-351 · CONTROL NEGATIVO: con `node_modules` propios NO dice que compartan', () => {
+  const b = banco();
+  try {
+    const arboles = ['w1', 'w2', 'w3'].map((n) => {
+      const d = b.arbol(n);
+      conNodeModulesPropio(d);
+      return d;
+    });
+    const t = topologia({ raices: arboles });
+    assert.ok(t.ok);
+    assert.equal(t.ciegos.length, 0);
+    assert.equal(t.comparten.length, 0,
+      '🔴 dice que comparten tres árboles independientes: nacería en rojo y se desactivaría en una tarde.');
+    assert.match(veredicto(t), /NO COMPARTEN/, '🔴 el veredicto no afirma lo que sí ha medido.');
+  } finally {
+    b.limpiar();
+  }
+});
+
+test('SCRUM-351 · CONTROL NEGATIVO: sobre el árbol de verdad contesta, y sin coste', () => {
+  // 🔴 A PROPÓSITO NO SE COMPRUEBA **QUÉ** CONTESTA. Exigir «independientes» pondría la suite en
+  // rojo el día que el fundador enlace los worktrees — que es una decisión suya y una configuración
+  // legítima. Eso sería fijar la premisa otra vez, solo que al revés. Lo que sí se exige es que
+  // conteste algo y que no sea ciego.
+  const t0 = process.hrtime.bigint();
+  const t = topologia({ cwd: RAIZ });
+  const ms = Number(process.hrtime.bigint() - t0) / 1e6;
+
+  assert.ok(t.ok, `🔴 NO SUPE MIRAR sobre el árbol real: ${t.motivo}`);
+  assert.equal(t.ciegos.length, 0,
+    `🔴 hay árboles que no se han podido leer: ${t.ciegos.map((c) => c.ciego).join(' · ')}`);
+  assert.ok(t.arboles.length >= 1, '🔴 no se ha medido ni un árbol.');
+  assert.ok(veredicto(t).length > 0);
+  assert.ok(ms < 2000,
+    `🔴 ha tardado ${Math.round(ms)} ms. Un comprobador que se nota en la tanda se desactiva al ` +
+    'primer roce, y entonces no comprueba nada.');
+});
+
+// ── EL SUELO: «NO SUPE MIRAR» NUNCA ES «SON INDEPENDIENTES» ──────────────────────────────────
+
+test('SCRUM-351 · SUELO: un enlace ROTO sale CIEGO, no «propio»', () => {
+  // El enlace está y el destino no: es lo que queda cuando alguien borra el compartido, y aquí ya
+  // pasó dos veces (docs/ERRORES_ASESOR.md). Llamarlo «propio» invitaría a regenerar sobre un
+  // montaje que no se conoce, que es el desenlace más caro de todos.
+  const b = banco();
+  try {
+    const destino = b.arbol('destino');
+    const nmDestino = conNodeModulesPropio(destino);
+    const roto = b.arbol('roto');
+    fs.symlinkSync(nmDestino, path.join(roto, 'node_modules'), 'junction');
+    fs.rmSync(nmDestino, { recursive: true, force: true });
+
+    const r = resolverNodeModules(roto);
+    assert.ok(r.ciego,
+      `🔴 un enlace roto se ha respondido como "${r.via}". Un fallo de lectura contado como ` +
+      'respuesta es literalmente el fallo que este comprobador viene a matar.');
+
+    const sano = b.arbol('sano');
+    conNodeModulesPropio(sano);
+    const t = topologia({ raices: [roto, sano] });
+    assert.equal(t.ciegos.length, 1, '🔴 el ciego no se cuenta como ciego.');
+    const texto = veredicto(t);
+    assert.doesNotMatch(texto, /NO COMPARTEN/,
+      '🔴 CON UN ÁRBOL SIN MEDIR, EL VEREDICTO AFIRMA «no comparten». Es una afirmación sobre un ' +
+      'conjunto en el que hay alguien a quien no se ha mirado: el cambiazo de siempre.');
+    assert.match(texto, /NO SE HAN PODIDO MIRAR|NO SUPE MIRAR/, '🔴 el veredicto no avisa de que faltan árboles por medir.');
+  } finally {
+    b.limpiar();
+  }
+});
+
+test('SCRUM-351 · SUELO: si git no contesta, se dice NO SUPE MIRAR', () => {
+  const fuera = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum351-nogit-'));
+  try {
+    const t = topologia({ cwd: fuera });
+    assert.equal(t.ok, false, '🔴 fuera de un repo git el comprobador devuelve un veredicto: se lo está inventando.');
+    assert.match(veredicto(t), /NO SUPE MIRAR/,
+      '🔴 no se declara ciego. «Cero worktrees» y «no supe leer el listado» darían la misma respuesta.');
+    assert.doesNotMatch(veredicto(t), /✔/, '🔴 un fallo de lectura no puede llevar un visto bueno.');
+  } finally {
+    fs.rmSync(fuera, { recursive: true, force: true });
+  }
+});
+
+test('SCRUM-351 · SUELO: cero árboles que medir no es «no comparte nadie»', () => {
+  const t = topologia({ raices: [] });
+  assert.equal(t.ok, false, '🔴 con la lista vacía se contesta que no comparten: dos conjuntos vacíos son iguales.');
+  assert.match(veredicto(t), /NO SUPE MIRAR/);
+});
+
+// ── QUE LA CORRECCIÓN NO SE DESHAGA ──────────────────────────────────────────────────────────
+
+test('SCRUM-351 · el mensaje del guard de Prisma manda a MEDIR, no afirma el montaje', async () => {
+  // Requisito POSITIVO, no una lista de frases prohibidas: se exige que el remedio nombre el
+  // comprobador. Un guard de texto que persiguiera la frase falsa se cazaría a sí mismo en el
+  // comentario que explica la prohibición — y encima envejecería con cada reescritura.
+  const { mensaje } = await import('../scripts/_prisma-client-guard.mjs');
+  const texto = mensaje({ direccion: 'falta', tipo: 'campo', modelo: 'Invoice', campo: 'x', columna: 'x' });
+  assert.match(texto, /npm run topologia/,
+    '🔴 el mensaje que se lee al fallar no dice CÓMO comprobar si el `node_modules` se comparte. ' +
+    'De un mensaje que lo daba por hecho salió la regla «no regeneres», y esa regla costó una ' +
+    'decisión equivocada en cada dirección (SCRUM-461).');
+});
+
+test('SCRUM-351 · el comprobador corre desde npm', () => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(RAIZ, 'package.json'), 'utf8'));
+  assert.ok(pkg.scripts?.topologia?.includes('topologia-node-modules'),
+    '🔴 no hay `npm run topologia`. Un método que hay que recordar de memoria no se usa, y lo que ' +
+    'se vuelve a usar es la frase escrita — que es como se llegó aquí.');
+});
