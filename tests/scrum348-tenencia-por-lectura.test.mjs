@@ -57,6 +57,7 @@ const CENSO = {
   'src/modules/jobs/app/routes/jobs.routes.ts::customer.findUnique': { veredicto: 'PROCEDENCIA', nota: '`job.customerId` de un Job ya acotado (detalle y enriquecido de SCRUM-292)' },
   'src/modules/system/app/routes/quotesAdmin.routes.ts::teamMember.findUnique': { veredicto: 'PROCEDENCIA', nota: '`quote.teamMemberId` de un presupuesto ya leído en la misma ruta' },
   'src/modules/exports/app/routes/exports.routes.ts::charge.findMany': { veredicto: 'PLATAFORMA', nota: 'cobros de TODA la plataforma a propósito (marcador de Connect, C1-2)' },
+
 };
 
 // ── ① EL SUELO ───────────────────────────────────────────────────────────────────────────────

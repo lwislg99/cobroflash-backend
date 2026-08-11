@@ -239,7 +239,13 @@ function openHelpGuide() {
         </div>
       </div>
     `).join('')}
-    <p style="margin-top:18px;font-size:13px;color:#6b756f">¿Necesitas más ayuda? Escríbenos a <a href="mailto:hola@yaqu.app" style="color:#16a34a">hola@yaqu.app</a></p>
+    <div id="tut-soporte" style="margin-top:18px;border-top:1px solid #e7e9e5;padding-top:16px">
+      <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#0f1c17">Escríbenos</p>
+      <label for="tut-soporte-txt" style="display:block;font-size:13px;color:#6b756f;margin-bottom:6px">¿Qué ha pasado?</label>
+      <textarea id="tut-soporte-txt" rows="4" maxlength="4000" style="width:100%;box-sizing:border-box;padding:10px 12px;font:inherit;font-size:14px;color:#0f1c17;background:#fff;border:1px solid #cdd2cb;border-radius:10px;resize:vertical"></textarea>
+      <button id="tut-soporte-enviar" type="button" style="margin-top:8px;width:100%;min-height:44px;padding:11px;font:inherit;font-size:15px;font-weight:700;color:#fff;background:#16a34a;border:none;border-radius:10px;cursor:pointer">Enviar</button>
+      <p id="tut-soporte-estado" role="status" aria-live="polite" style="margin:10px 0 0;font-size:13px;line-height:1.5;color:#6b756f"></p>
+    </div>
   `;
   backdrop.appendChild(panel);
   document.body.appendChild(backdrop);
@@ -255,5 +261,88 @@ function openHelpGuide() {
       body.style.display = open ? 'none' : 'block';
       b.querySelector('span:last-child').textContent = open ? '+' : '−';
     });
+  });
+
+  montarEscribenos(panel);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-406 · «ESCRÍBENOS» — el mensaje llega a alguien, y el contexto viaja con él.
+//
+// Aquí había un `mailto:`, y un `mailto:` **abre el cliente de correo del móvil** —que en un móvil
+// de trabajo puede no estar configurado— y se lleva el hilo a la bandeja personal del profesional,
+// fuera del producto para siempre. Además llegaba sin nada: ni quién, ni desde dónde.
+//
+// El `mailto:` NO desaparece: sigue ahí como salida cuando el envío no sale (abajo). Lo que cambia
+// es cuál es el camino normal.
+//
+// MICROCOPY (regla 30): los cuatro textos —«Escríbenos», «¿Qué ha pasado?», «Enviar» y la
+// confirmación— están APROBADOS y se escriben literales. La confirmación **no promete plazo** a
+// propósito: «en 24 h» es una promesa que hoy no hay quien sostenga.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+
+/** Confirmación APROBADA. Solo se pinta si el servidor dijo que salió. */
+const SOPORTE_OK = 'Lo hemos recibido. Te contestamos por correo.';
+/**
+ * El fallo NO es texto nuevo: es el literal de `SEND_FAILURE_MESSAGES.email_send_failed`
+ * (`src/lib/sendOutcome.ts`, SCRUM-126), que el servidor ya devuelve en `message`. Aquí solo se
+ * necesita para cuando el servidor **no contesta**. El guard comprueba que los dos son idénticos:
+ * copy aprobada duplicada es copy que acaba divergiendo.
+ */
+const SOPORTE_FALLO = 'No se pudo enviar el email. Puedes reintentarlo.';
+
+function montarEscribenos(panel) {
+  const caja = panel.querySelector('#tut-soporte-txt');
+  const boton = panel.querySelector('#tut-soporte-enviar');
+  const estado = panel.querySelector('#tut-soporte-estado');
+  if (!caja || !boton || !estado) return;
+
+  /** La salida de siempre, por si el envío no sale. El texto que escribió NO se borra. */
+  const conSalida = (texto) => {
+    const dir = window.CONTACTO_YAQU || 'hola@yaqu.app';
+    estado.style.color = '#b45309';
+    estado.innerHTML = '';
+    estado.appendChild(document.createTextNode(texto + ' '));
+    const a = document.createElement('a');
+    a.href = 'mailto:' + dir;
+    a.textContent = dir;
+    a.style.color = '#16a34a';
+    estado.appendChild(a);
+  };
+
+  boton.addEventListener('click', async () => {
+    const mensaje = (caja.value || '').trim();
+    if (!mensaje) { caja.focus(); return; }
+    boton.disabled = true;
+    try {
+      const r = await apiRequest('/admin/soporte', {
+        method: 'POST',
+        // La PANTALLA es lo único que aporta el cliente: el resto del contexto —quién, y si va
+        // instalada o en pestaña— lo lee el servidor de donde ya vive (SCRUM-360 fase 2).
+        body: JSON.stringify({ mensaje, pantalla: location.hash || '/' }),
+      });
+      // 🔴 `sent` es la ÚNICA verdad sobre si salió (SCRUM-126). `ok` no la sustituye: el servidor
+      // responde 200 también cuando el correo no ha salido, y confundirlos es exactamente cómo se
+      // construye un formulario que dice «recibido» sin haber recibido nada.
+      if (r && r.sent === true) {
+        estado.style.color = '#166534';
+        estado.textContent = SOPORTE_OK;
+        caja.value = '';
+        caja.disabled = true;
+        boton.style.display = 'none';
+        return;
+      }
+      conSalida((r && r.message) || SOPORTE_FALLO);
+      boton.disabled = false;
+    } catch (e) {
+      // ⚠️ DECISIÓN, no descuido: SCRUM-459 marca la mutación vencida como `incierto` —«no sé si
+      // llegó»— y avisa de que decir «no salió» invita a repetir. Aquí se trata como fallo IGUAL,
+      // porque lo que se repite es **un correo de soporte**: recibirlo dos veces no cuesta nada, y
+      // callarse deja al profesional sin saber si alguien le va a contestar. En una firma o un
+      // cobro la decisión sería la contraria. Si el fundador quiere un tercer texto para este
+      // estado, es una línea — hoy no existe copy aprobada para él y no se inventa (regla 30).
+      conSalida(SOPORTE_FALLO);
+      boton.disabled = false;
+    }
   });
 }

@@ -131,15 +131,15 @@ test('SCRUM-128: ninguna declaración (ni pendiente) apunta a una ruta que ya no
   );
 });
 
-test('SCRUM-128: los 8 endpoints con contrato de sendOutcome.ts están TODOS declarados', () => {
+test('SCRUM-128: los 9 endpoints con contrato de sendOutcome.ts están TODOS declarados', () => {
   // Suelo exacto, no ">=": si alguien borra una entrada por error, esto lo dice de
   // inmediato en vez de esperar a que la enumeración (que sí podría no verla si además
   // se borra la ruta) lo note por otra vía. Mismo espíritu que RUTAS_MIN de scrum55,
   // aplicado a una lista mucho más pequeña y por eso exacto en vez de suelo con margen.
   assert.equal(
-    SEND_ENDPOINTS_DECLARED.length, 8,
-    `\n\n🔴 SEND_ENDPOINTS_DECLARED tiene ${SEND_ENDPOINTS_DECLARED.length} entradas, se esperaban 8 ` +
-      `(los 8 endpoints con contrato de cuerpo de SCRUM-126 — el 9º, el fire-and-forget de ` +
+    SEND_ENDPOINTS_DECLARED.length, 9,
+    `\n\n🔴 SEND_ENDPOINTS_DECLARED tiene ${SEND_ENDPOINTS_DECLARED.length} entradas, se esperaban 9 ` +
+      `(los 9 endpoints con contrato de cuerpo de SCRUM-126 — el 9º, el fire-and-forget de ` +
       `quotes.routes.ts:568, no tiene contrato que declarar). Si añadiste un endpoint de envío ` +
       `NUEVO, este número sube a propósito: actualízalo aquí mismo, en el mismo commit.\n`,
   );

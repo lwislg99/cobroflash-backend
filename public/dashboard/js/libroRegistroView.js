@@ -37,7 +37,8 @@
   // usan las páginas legales y la guía de inicio. ⚠️ Está escrito a mano en 6 sitios (privacidad ×3,
   // términos, tutorial.js y aquí): el día que cambie hay que cambiarlo en todos, y el que se olvide
   // deja un canal muerto sin que nadie se entere. Unificarlo es hallazgo aparte, no se hace aquí.
-  const CONTACTO = 'hola@yaqu.app';
+  // SCRUM-406 · una sola fuente (). El aviso de aquí arriba era exacto y ya no aplica.
+  const CONTACTO = window.CONTACTO_YAQU;
   /** Marca una ranura de copy sin decidir. El texto va DETRÁS, para que se pueda leer y juzgar. */
   function rotulo(t) { return MARCADOR + ' ' + t; }
 
