@@ -174,3 +174,79 @@ junto con la declaración de los tres overlays propios.
   el FAB a `350`. Quien arregle solo el primero verá desaparecer el síntoma en 24 de 27 sitios.
 - **12 cabeceras pasarán de `span`/`div` a `<h3>`**: cambia lo que anuncia un lector de pantalla, y
   va declarado como tal (AB6), no escondido bajo «refactor».
+
+
+---
+
+# SCRUM-446 · cuarta entrega: 24/24 y el guard NACE VERDE
+
+**Medido contra:** `origin/main` = `79e74f6f1aa85401de20ee1e70b46b11eb514e3a` · 2026-08-11T13:37:10+02:00
+**Rama:** `scrum-446-cabecera-modal`
+
+**24 de 24 migradas · 0 escritas a mano · guard 6/6 en verde.**
+
+## Control positivo: ninguna cambió de texto ni de id
+
+Listadas las 24 llamadas y contrastadas contra el censo previo: **mismo título y mismo id en todas**.
+Las dos que no tenían botón (`customerDetailView`, una de `quotesView`) **siguen sin él**; las tres
+con `aria-labelledby` conservan su `idTitulo`.
+
+**El único texto que cambia de forma** es el de `invoiceDetailView`: pasaba por `escAnul()` para
+meterlo en una plantilla, y el constructor usa `textContent` — escaparlo ahí mostraría `&amp;` al
+usuario. Va sin escapar, y **en pantalla se ve exactamente lo mismo**.
+
+## 🔴 Sexta diferencia, y llegó a ser una regresión REAL
+
+`invoiceDetailView` llevaba `id="anul-t"` en el título, y el modal lo referencia con
+`aria-labelledby`. **Mi migración lo perdió en `jobDetailView` y `settingsView`**: la referencia
+quedó apuntando a nada y esos dos modales se quedaron **sin nombre accesible**, en silencio. Es
+exactamente la regresión muda contra la que avisaba el ticket, y **la cazó medir, no leer el diff**.
+
+Constructor: `idTitulo`. Y un test que exige que **todo `aria-labelledby` apunte a un id declarado**
+— derivado, no una lista.
+
+## Un intento fallido, descartado a tiempo
+
+Mi transformación automática **rompió `expensesView` e `invoiceDetailView`**: buscaba el fin de la
+plantilla con el primer acento grave, y esos literales llevan **acentos graves anidados dentro de
+`${…}`**. Se restauraron del backup y se hicieron a mano. **Ningún fichero quedó roto**, y las otras
+14 se verificaron con `node --check` una a una.
+
+## Los rojos — cinco, por `$?`
+
+| | inyectado | resultado |
+|---|---|---|
+| ① | cabecera a mano en un fichero | cae **nombrando** `plansView.js (1 en marcado, 0 en DOM)` |
+| ② | una que **sí** pasa por el constructor | no cae |
+| ③ | algo que **no** es cabecera de modal | no cae |
+| ④ | el título deja de ser `<h3>` | cae |
+| ⑤ | se pierde el `idTitulo` de un `aria-labelledby` | cae: *«…y NADIE declara ese id»* |
+
+## Lo que cambia de lo que se OYE — declarado, no escondido
+
+**12 cabeceras pasan de `<span>`/`<div>` a `<h3>`** y ahora se anuncian como encabezado. Ninguna
+deja de anunciarse. Es AB6 y va dicho con esas palabras.
+
+## Los tres overlays propios: declarados, no unificados
+
+`signaturePad`, `onboardingView`, `tutorial`. Y **los dos mecanismos de ocultación**, vigilados
+**donde viven** — que no es donde supuse al escribir el test: **no están en el CSS, están en línea
+en el JS**.
+
+| mecanismo | dónde |
+|---|---|
+| los modales compartidos: la ayuda **oculta** | `display:none !important` en `styles.css` |
+| la firma: la ayuda **no oculta, DEBAJO** | `signaturePad.js:36` → `z-index:1200` · FAB en `tutorial.js:196` → `350` |
+
+Quien arregle solo el primero verá desaparecer el síntoma en 24 de 27 sitios y lo dará por resuelto.
+
+## 📌 Reportado, no arreglado (regla 9): `origin/main` está ROJA
+
+Cinco tests fallan **en `origin/main` sin tocar nada**: `scrum356-tres-estados`, `scrum358-drenado`,
+`scrum358-encolar-firma`, `scrum360-desalojo`, `scrum455-almacen-local` — todos de la cola offline.
+Comprobado haciendo checkout de `origin/main` limpio. **No son de este ticket**, y esta rama no
+añade ni uno.
+
+## Lo que NO toca
+
+La ayuda (**SCRUM-416**) · los tres overlays propios · ni una palabra que se vea.
