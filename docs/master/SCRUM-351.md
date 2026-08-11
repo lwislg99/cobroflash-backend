@@ -202,11 +202,8 @@ una tanda rota. Se retira como regla general y queda como **condición que se co
    **no ve la vía ausente**. Hoy no muerde porque falla cerrado (sin `node_modules` no hay binario
    de Prisma que ejecutar), y por eso **no se ha tocado**. Si algún día vuelve a haber worktrees
    dentro del repo, ese comprobador contestará que el cliente es privado cuando no lo es.
-3. 🔸 **Cinco documentos operativos** (`ERRORES_ASESOR`, `MIGRATIONS_PENDING`,
-   `PLAN_EJECUCION_Y_PARALELO`, `QA/SUITE_REGRESION`, `YAQU_MASTER`) describen el montaje con
-   junctions como el estado actual. **No entran en este PR**: es prosa de proceso, no una premisa
-   que un guard lea, y reescribirla a mano volvería a producir exactamente lo que este ticket viene
-   a evitar. La salida es que citen `npm run topologia`.
+3. ✅ **Los cinco documentos operativos ya están clasificados y corregidos** — ver la sección final.
+   (Este punto se cerró en la segunda vuelta: estaba DENTRO del encargo, no fuera de carril.)
 4. 🔸 **`docs/master/SCRUM-471.md` no existe**, aunque su test está en `main` desde ayer.
 5. 🔸 **El método solo mira lo que `git worktree list` declara.** Copias sueltas y worktrees
    retirados a medias quedan fuera **a propósito** (barrer el disco haría lento el comando y un
@@ -220,3 +217,52 @@ una tanda rota. Se retira como regla general y queda como **condición que se co
 * Barrido de marcadores de conflicto sobre el árbol entero: **1.586 ficheros leídos, 0 ilegibles,
   0 · 0 · 0**.
 * `git merge origin/main` dentro de la rama: *Already up to date*.
+
+---
+
+# Censo de los cinco documentos operativos, clasificados
+
+**El criterio, y es el mismo que separó el código:**
+
+* **medición FECHADA → HISTORIA. No se toca.** Reescribir una medición con fecha es falsificar el
+  registro: el número era cierto el día que se tomó, y el documento existe para conservarlo.
+* **afirmación EN PRESENTE y SIN FECHA → PREMISA. Se corrige.** Nadie la lee como un dato de
+  ayer: la lee como el estado del proyecto, y decide con ella. Así se llegó a este ticket.
+
+**La unidad que encaja en el criterio es el BLOQUE, no el fichero.** Dos de los cinco documentos
+contienen los dos grupos a la vez, y clasificarlos «de fichero» habría dado la respuesta
+equivocada en las dos direcciones.
+
+## HISTORIA — no se toca (3 documentos + 1 bloque)
+
+| dónde | qué lo fecha | qué dice |
+|---|---|---|
+| `docs/YAQU_MASTER.md` :1175, :1192, :1211, :1212, :1444 | cinco entradas `✅ SCRUM-nnn · … (fecha)` del registro | las citas viven dentro del relato de SCRUM-182/235/205/206/219 |
+| `docs/ERRORES_ASESOR.md` :214, :216, :220, :222 | el encabezado `### 2026-07-27 · #11` | el incidente de los 37 worktrees. La **regla derivada** de :222 («deshacer *sus* enlaces») es **condicional**: no afirma que los haya |
+| `docs/ERRORES_ASESOR.md` :429 | bloque de incidentes fechados | «faltaba la junction y `tsc` no existía» — narración de lo que pasó |
+| `docs/MIGRATIONS_PENDING.md` :1149 | bloque `SCRUM-145 · ✅ APLICADO en prod (2026-07-24)`, cerrado con `Estado: staging ✅ (24-jul) · prod ✅ (24-jul)` | el ⚠️ es parte del registro de **aquella** migración, ya aplicada |
+| `docs/PLAN_EJECUCION_Y_PARALELO.md` :95-106 | `📏 QUÉ COMPARTEN DE VERDAD LOS WORKTREES — **medido, no supuesto** (SCRUM-182, 27-jul-2026, sobre los 24 worktrees vivos)` | la tabla `dist` NO / `node_modules` SÍ por dos vías |
+
+> 🔸 **El bloque 📏 se deja íntegro, y conviene saber lo que eso cuesta:** lleva su fecha en la
+> cabecera, así que es historia por el criterio — pero dice «3 worktrees **hoy**» y se lee en un
+> documento de plan, donde se busca el estado actual. **No se ha tocado a propósito**: cambiarlo
+> sería reescribir una medición. Si el fundador quiere cerrar ese filo, la salida que NO falsifica
+> nada es **añadir** debajo una segunda medición fechada — no editar la primera.
+
+## PREMISA — corregido (2 bloques, en 2 documentos)
+
+| dónde | qué afirmaba | qué se ha hecho |
+|---|---|---|
+| `docs/PLAN_EJECUCION_Y_PARALELO.md` :83 | «Los worktrees **llevan** un junction `node_modules → <repo>/node_modules`» — la fecha del bloque etiqueta el **incidente #11**, no la topología, y la frase sostiene una regla vigente | pasa a pretérito con su fecha; **la regla se conserva entera** («si hay enlace, deshazlo primero») porque no dependía de la afirmación, y se manda a `npm run topologia` |
+| `docs/QA/SUITE_REGRESION.md` :757-760 | «`npx prisma` usa el binario LOCAL solo si el worktree tiene `node_modules` **(aquí, por junction)**» + la instrucción **«Crea el junction»** | el paréntesis se fecha; y el remedio pasa a `npm ci` en ESTE árbol o el binario local directo — mandar a crear un junction hoy **construiría** el montaje compartido que el repo acaba de medir que no tiene |
+| `docs/QA/SUITE_REGRESION.md` :766-767 | «`node_modules` **está** compartido por junction entre worktrees», presente y sin fecha, como **justificación entera** de «regenerar después del push, nunca antes» | la regla **sobrevive con su motivo verdadero** —un cliente por delante de la BD rompe la lectura **en tu propio árbol**, compartas o no—, y el daño a terceros queda bajo «**si** SÍ compartes» |
+
+⚠️ **Un cambio de conducta, señalado para que se pueda vetar:** en `SUITE_REGRESION.md:760` se ha
+retirado el consejo *«Crea el junction»*. No es prosa: es una instrucción que hoy produciría
+exactamente el montaje del que salió este ticket.
+
+## Lo que este censo NO cambia
+
+* **Ninguna entrada de máster se ha tocado** (y además sería un STOP).
+* **Ninguna regla operativa se ha retirado.** Las dos que se apoyaban en la afirmación falsa siguen
+  en pie, con el motivo correcto debajo: son buenas reglas que estaban mal justificadas.

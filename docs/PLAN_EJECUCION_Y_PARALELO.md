@@ -80,8 +80,12 @@ Cada carril es DUEÑO de sus módulos. El dueño puede tocarlos sin preguntar; e
 2. **Cada uno en SU máquina/carpeta.** Jamás dos sesiones de Claude Code sobre el mismo checkout (lección del 13-jul: colisión 14/43). Si un mismo humano necesita 2 sesiones: worktrees.
 
    > ⚠️ **RETIRAR un worktree: deshacer sus ENLACES primero** (incidente #11, 27-jul-2026, ver
-   > `docs/ERRORES_ASESOR.md`). Los worktrees llevan un junction `node_modules → <repo>/node_modules`
-   > para no duplicar 271 paquetes por copia. `git worktree remove` **entra por el enlace y borra
+   > `docs/ERRORES_ASESOR.md`). Aquel montaje llevaba en cada worktree un junction
+   > `node_modules → <repo>/node_modules` para no duplicar 271 paquetes por copia — **y esa frase
+   > estaba aquí en presente, como si fuera una propiedad del proyecto** (SCRUM-351): el 11-ago-2026
+   > los cuatro worktrees vivos lo tienen PROPIO. La regla de abajo NO depende de eso y sigue
+   > entera: **si hay enlace, deshazlo primero**. Para saber si lo hay, `npm run topologia` — no se
+   > escribe aquí la respuesta, porque volvería a caducar. `git worktree remove` **entra por el enlace y borra
    > el contenido del destino**: una limpieza rutinaria de 37 worktrees dejó sin dependencias a
    > TODAS las sesiones a la vez, y ningún comando falló. Orden obligatorio, probado en los dos
    > sentidos (con enlace → el destino se vacía; con `rmdir` antes → sobrevive):
