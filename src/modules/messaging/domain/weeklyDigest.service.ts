@@ -3,7 +3,7 @@
 import { prisma } from '../../../core/db/prisma';
 import { config } from '../../../core/config/env';
 import { maskEmail } from '../../../core/utils/utils';
-import { enviarCorreo, ResultadoCorreo } from '../../../integrations/enviarCorreo';
+import { enviarCorreo, ResultadoCorreo, resultadoSinDestino } from '../../../integrations/enviarCorreo';
 
 // SCRUM-475 · el POST propio se retira: emisor único, y la respuesta se devuelve con su acuse.
 // 🔴 SIGUE LANZANDO CUANDO NO SALE, Y ES DELIBERADO (SCRUM-475).
@@ -16,7 +16,7 @@ import { enviarCorreo, ResultadoCorreo } from '../../../integrations/enviarCorre
 // Esta fase unifica el EMISOR y rescata el ACUSE; cambiar la semántica de fallo de cinco módulos
 // es otra cosa y no se cuela aquí de tapadillo.
 async function sendEmail(to: string, subject: string, html: string): Promise<ResultadoCorreo> {
-  if (!to || !to.includes('@')) return { enviado: false, motivo: 'sin_destino' };
+  if (!to || !to.includes('@')) return resultadoSinDestino();
   const r = await enviarCorreo({ to, subject, html, origen: 'weeklyDigest' });
   if (!r.enviado) throw new Error(`no se pudo enviar el email (${r.motivo || 'desconocido'})`);
   return r;
