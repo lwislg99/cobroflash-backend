@@ -1,6 +1,14 @@
-// scripts/guard-caja-avisos.mjs — SCRUM-469: la caja del aviso de desalojo, MEDIDA EN NAVEGADOR.
+// scripts/guard-caja-avisos.mjs — la caja de los avisos de la home, MEDIDA EN NAVEGADOR.
+//   · SCRUM-469 · el aviso de desalojo
+//   · SCRUM-357 · los TRES de la precarga (lo que llevas / no hay nada / no se pudo)
 //
 // Uso:  npm run guard:caja-avisos
+//
+// ── POR QUÉ SCRUM-357 ENTRA AQUÍ Y NO ESTRENA SU PROPIO MEDIDOR ──────────────
+// Este fichero ya tiene servidor que lee del disco, suelos de «¿estoy midiendo lo que creo?» y un
+// control negativo que demuestra que el detector caza lo que se sale. Un segundo script sería una
+// segunda copia de todo eso, y la copia que se queda vieja es siempre la que nadie ejecuta. Se
+// añaden nodos a la misma página; **no se relaja ni una comprobación de las que ya había**.
 //
 // ── POR QUÉ EN NAVEGADOR Y NO CON ARITMÉTICA ─────────────────────────────────
 // SCRUM-460 midió su microcopy a mano —ancho útil del `.view-container`, `.alert` a 13,5 px,
@@ -40,7 +48,11 @@ const ANCHOS = [390, 320];
 
 /** Lo que la página necesita del árbol, en el orden en que lo necesita. */
 const CSS = ['/tokens.css', '/dashboard/css/styles.css'];
-const JS = ['/dashboard/js/resistenciaAlmacen.js', '/dashboard/js/estadoFirma.js'];
+// `almacenLocal.js` entra por SCRUM-357: publica los TRES estados de la precarga, y pasarle al
+// pintor `window.PRECARGADO` en vez de la cadena 'PRECARGADO' es lo que evita que esta página tenga
+// su propia copia del vocabulario. Si el medidor y el producto se separan, se separan en silencio.
+const JS = ['/dashboard/js/almacenLocal.js', '/dashboard/js/resistenciaAlmacen.js',
+  '/dashboard/js/estadoFirma.js'];
 
 const TIPOS = { '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/html' };
 
@@ -58,6 +70,9 @@ ${CSS.map((c) => `<link rel="stylesheet" href="${c}">`).join('\n')}
 </head><body>
 <div class="view-container">
   <div id="home-desalojo"></div>
+  <div id="precarga-lleva"></div>
+  <div id="precarga-nada"></div>
+  <div id="precarga-averia"></div>
   <div id="ref-pendientes"></div>
   <div id="ref-sin-partir"></div>
   <div id="control-negativo"></div>
@@ -68,6 +83,16 @@ ${JS.map((j) => `<script src="${j}"></script>`).join('\n')}
   // cambia el pintado, esto mide lo cambiado.
   document.getElementById('home-desalojo').innerHTML =
     window.pintarDesalojo({ estado: window.POSIBLE_PERDIDA });
+  // SCRUM-357 · LOS TRES DE LA PRECARGA, cada uno por su lado: son tres cajas distintas en la
+  // misma home y la que desborde tiene que decir CUAL es. Se pintan con la funcion del producto y
+  // con los estados que publica almacenLocal.js, no con cadenas copiadas aqui.
+  // (Sin comillas invertidas aqui dentro: esto vive en un template literal y cerrarian la cadena.)
+  document.getElementById('precarga-lleva').innerHTML =
+    window.pintarPrecarga({ estado: window.PRECARGADO, n: 3 });
+  document.getElementById('precarga-nada').innerHTML =
+    window.pintarPrecarga({ estado: window.NADA_QUE_PRECARGAR, n: 0 });
+  document.getElementById('precarga-averia').innerHTML =
+    window.pintarPrecarga({ estado: window.NO_SE_PUDO, n: 0 });
   // REFERENCIA (no falla): el aviso vecino, que es el que motivó partir el texto en dos campos.
   document.getElementById('ref-pendientes').innerHTML =
     window.pintarPendientesDeSubir({ sabemos: true, n: 2, texto: window.textoDelContador(2) });
@@ -165,6 +190,17 @@ try {
         sinPartir: mirar('ref-sin-partir'),
         controlNegativo: mirar('control-negativo'),
         textoOficial: window.TEXTO_DESALOJO,
+        // SCRUM-357
+        precarga: {
+          lleva: mirar('precarga-lleva'),
+          nada: mirar('precarga-nada'),
+          averia: mirar('precarga-averia'),
+        },
+        textoPrecargaOficial: {
+          lleva: window.textoDeLoQueLlevas(3),
+          nada: window.TEXTO_PRECARGA.nada,
+          averia: window.TEXTO_PRECARGA.noSePudo,
+        },
       };
     });
     await page.close();
@@ -187,6 +223,22 @@ try {
         + 'Su verde sobre el aviso de verdad no significaría nada.');
       continue;
     }
+    // SCRUM-357 · los mismos suelos para los tres de la precarga: si uno no está en la página o su
+    // texto no es el que publica `estadoFirma.js`, esto NO da un número — dice que no supo mirar.
+    const normal = (s) => String(s).replace(/\s+/g, ' ').trim();
+    let precargaCiega = false;
+    for (const [k, nodo] of Object.entries(m.precarga)) {
+      if (!nodo) { ciego.push(`${ancho}px · el aviso de precarga «${k}» NO ESTÁ EN LA PÁGINA.`); precargaCiega = true; continue; }
+      if (nodo.fontSize !== '13.5px') {
+        ciego.push(`${ancho}px · «${k}» computa ${nodo.fontSize} y en el árbol son 13.5px: la página medida NO es la del repo.`);
+        precargaCiega = true; continue;
+      }
+      if (normal(nodo.texto) !== normal(m.textoPrecargaOficial[k])) {
+        ciego.push(`${ancho}px · el texto de «${k}» en pantalla no es el aprobado que publica \`estadoFirma.js\`.`);
+        precargaCiega = true;
+      }
+    }
+    if (precargaCiega) continue;
 
     // ── LA MEDIDA ─────────────────────────────────────────────────────────────────────────
     const a = m.aviso;
@@ -203,12 +255,27 @@ try {
     }
     if (a.top < 0) fallos.push(`${ancho}px · el aviso nace por encima del borde superior: inalcanzable.`);
 
+    // SCRUM-357 · y los tres de la precarga, con los mismos criterios y diciendo CUÁL falla.
+    for (const [k, nodo] of Object.entries(m.precarga)) {
+      if (nodo.left < 0 || nodo.right > m.viewport + 0.5) {
+        fallos.push(`${ancho}px · el aviso de precarga «${k}» SE SALE de la pantalla (x de `
+          + `${nodo.left.toFixed(1)} a ${nodo.right.toFixed(1)}, viewport ${m.viewport}). Con `
+          + '`overflow-x: clip` en html/body no hay scroll que lo alcance.');
+      }
+      if (nodo.desbordaH) fallos.push(`${ancho}px · «${k}» desborda su caja en horizontal.`);
+      if (nodo.desbordaV) fallos.push(`${ancho}px · «${k}» está RECORTADO en vertical: sobra texto que nadie lee.`);
+      if (nodo.top < 0) fallos.push(`${ancho}px · «${k}» nace por encima del borde superior: inalcanzable.`);
+    }
+
     medidas.push({ ancho, util: Math.round(m.util), altoAviso: Math.round(a.alto),
       lineasAviso: Math.round(a.lineas), anchoAviso: Math.round(a.ancho),
       altoReferencia: m.referencia ? Math.round(m.referencia.alto) : null,
       lineasReferencia: m.referencia ? Math.round(m.referencia.lineas) : null,
       lineasSinPartir: m.sinPartir ? Math.round(m.sinPartir.lineas) : null,
-      altoSinPartir: m.sinPartir ? Math.round(m.sinPartir.alto) : null });
+      altoSinPartir: m.sinPartir ? Math.round(m.sinPartir.alto) : null,
+      precarga: Object.fromEntries(Object.entries(m.precarga).map(([k, n]) => [k, {
+        alto: Math.round(n.alto), lineas: Math.round(n.lineas), caracteres: n.texto.length,
+      }])) });
   }
 } finally {
   await navegador.close();
@@ -216,13 +283,17 @@ try {
 }
 
 // ── EL INFORME ───────────────────────────────────────────────────────────────────────────
-console.log('SCRUM-469 · caja del aviso de desalojo, medida en Edge\n');
+console.log('caja de los avisos de la home, medida en Edge — SCRUM-469 (desalojo) + SCRUM-357 (precarga)\n');
 console.log(`servidos del disco: ${[...servidos.keys()].join(', ')}\n`);
+const ROTULO = { lleva: 'precarga · LO QUE LLEVAS ', nada: 'precarga · NO HAY NADA   ', averia: 'precarga · NO SE PUDO    ' };
 for (const m of medidas) {
   console.log(`  ${m.ancho} px · caja del .alert ${m.anchoAviso} px (útil ${m.util - 28} px de texto)`);
   console.log(`           AVISO PARTIDO EN DOS CAMPOS   ${m.altoAviso} px · ${m.lineasAviso} líneas`);
   console.log(`           [ref] el mismo, SIN partir    ${m.altoSinPartir} px · ${m.lineasSinPartir} líneas`);
   console.log(`           [ref] aviso de pendientes     ${m.altoReferencia} px · ${m.lineasReferencia} líneas`);
+  for (const [k, p] of Object.entries(m.precarga)) {
+    console.log(`           ${ROTULO[k]}    ${p.alto} px · ${p.lineas} líneas · ${p.caracteres} car.`);
+  }
 }
 
 if (ciego.length) {

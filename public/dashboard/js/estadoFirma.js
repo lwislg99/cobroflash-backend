@@ -156,6 +156,38 @@ const TEXTO_DESALOJO = Object.freeze({
 const TEXTO_SIN_ESPACIO_PARA_FIRMA = 'No cabe otra firma en este móvil. Conéctate para subir las '
   + 'que tienes pendientes.';
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-357 (H1 · cierre) · QUÉ LLEVA ENCIMA EL PROFESIONAL — microcopy **APROBADA** (regla 30).
+//
+// SCRUM-460 dejó la precarga devolviendo TRES resultados —precargué N, no había nada, no supe
+// mirar— y su propio comentario lo dijo: *«El resultado se GUARDA, no se pinta… es lo que H2 va a
+// leer»*. Un sprint después `window.precargaUltimoResultado` seguía con **cero consumidores**
+// (medido el 11-ago-2026): el producto sabía qué llevaba el móvil y el profesional no.
+//
+// 🔴 LA REGLA QUE SEPARA EL SEGUNDO DEL TERCERO, QUE ES EL TICKET ENTERO.
+// «No había nada que llevarte» y «no hemos podido prepararlo» dejan al profesional **igual** —en
+// el sótano, sin albarán— y significan lo contrario. El segundo es tranquilo y CORRECTO: no hay
+// trabajo abierto, no hay nada que bajar, y con los datos de producción del 10-ago (0 agendados
+// hoy o mañana) es el caso NORMAL. El tercero es una avería NUESTRA y tiene que sonar a eso.
+// Colapsarlos es cómo se le dice «todo en orden» a quien va a bajar con las manos vacías.
+//
+// 🔴 POR QUÉ EL TEXTO VIVE AQUÍ Y NO EN `almacenLocal.js`, QUE ES QUIEN PRECARGA.
+// La misma frontera que impuso SCRUM-469 para el desalojo: **quien mide no pinta**. `almacenLocal.js`
+// no publica ni un `window.TEXTO_*` —comprobado— y no va a empezar por esto. Además cae donde ya
+// vive todo lo que el profesional lee sobre sus albaranes y sus firmas, que es un solo sitio.
+//
+// ⚠️ AQUÍ NO SE COPIA EL «TÍTULO + CUERPO» DE SCRUM-469, Y SE DICE POR QUÉ.
+// Aquel aviso son dos campos porque **el asesor aprobó dos campos**. Estos tres los aprobó como
+// UNA frase cada uno, y partirlos para parecerse al vecino sería reescribir microcopy aprobada
+// (regla 30) — que es una regla dura, mientras que «dos campos» era la forma de aquel texto, no
+// una norma de la casa. Y la medida de SCRUM-469 ya desmintió que partir sea lo que hace caber:
+// a 390 y a 320 px ocupaba lo mismo partido que sin partir. Lo que sí se copia es lo que importa:
+// fuente única, `.alert` del inventario, y la caja medida con el CSS real ejecutando la pantalla.
+const TEXTO_PRECARGA = Object.freeze({
+  nada: 'No hay nada que llevarte: no tienes trabajos abiertos ni agendados.',
+  noSePudo: 'No hemos podido preparar tus albaranes. Vuelve a entrar con cobertura.',
+});
+
 /**
  * ¿Esta respuesta es una CONFIRMACIÓN del servidor?
  *
@@ -218,6 +250,18 @@ async function estadoTrasIntentarSubir(intento) {
 function textoDelContador(n) {
   if (n === 1) return 'Te queda 1 firma por subir';
   return `Te quedan ${n} firmas por subir`;
+}
+
+/**
+ * SCRUM-357 · El texto de lo que llevas precargado. Singular y plural, los dos APROBADOS.
+ *
+ * 🔴 EL NÚMERO CUENTA ALBARANES GUARDADOS EN ESTE MÓVIL, y sólo los que su transacción CONFIRMÓ:
+ * `precargarAlbaranes` degrada a «no se pudo» si guardó a medias (SCRUM-460), así que cuando este
+ * texto se pinta el `n` es el número de albaranes que de verdad se pueden abrir en el sótano.
+ */
+function textoDeLoQueLlevas(n) {
+  if (n === 1) return 'Llevas 1 albarán listo para firmar sin cobertura.';
+  return `Llevas ${n} albaranes listos para firmar sin cobertura.`;
 }
 
 /**
@@ -349,6 +393,53 @@ function pintarDesalojo(medida) {
     + `<strong>${escapar(TEXTO_DESALOJO.titulo)}</strong><br>${escapar(TEXTO_DESALOJO.cuerpo)}</div>`;
 }
 
+/**
+ * SCRUM-357 · El aviso de qué llevas encima. **TRES entradas, TRES salidas distintas.**
+ *
+ * 🔴 EL SUELO, Y NO ES UNA FORMALIDAD DE CIERRE: TODO LO QUE NO SE RECONOZCA ES EL TERCERO.
+ * Un estado que no es ninguno de los tres, un `null`, un `PRECARGADO` sin número creíble — nada de
+ * eso es «no había nada que llevarte». No haber podido saberlo es una avería nuestra y sale del
+ * lado que no tranquiliza. «Vacío» y «no supe mirar» son el mismo cero con significados opuestos,
+ * y el barato de equivocarse es éste: un falso «no hemos podido» cuesta que el pro vuelva a entrar
+ * con cobertura; un falso «no hay nada» cuesta el albarán.
+ *
+ * ⚠️ `undefined` ES LA ÚNICA EXCEPCIÓN, y no contradice el suelo: significa **la medida todavía no
+ * ha llegado**, no «no se sabe». La precarga sale sin `await` desde `app.js` para no bloquear el
+ * arranque, así que la home puede montarse antes; cuando llega, `app.js` vuelve a llamar aquí.
+ * Pintar el tercero en ese hueco daría un fallo parpadeante en CADA carga y enseñaría a ignorarlo.
+ * Y para que ese `undefined` no pueda quedarse para siempre, `app.js` anota `NO_SE_PUDO` cuando el
+ * precargador ni siquiera está — que sí es no saber, y sí se dice.
+ *
+ * 🔴 Y LOS TRES CANALES SON DISTINTOS, no sólo los tres textos: `ok`+`status` lo que llevas,
+ * `info`+`status` el vacío legítimo, `warning`+`alert` la avería. Si alguien colapsa dos textos por
+ * descuido, el color y el rol siguen separándolos — y al revés, un color no afirma nada solo: el
+ * texto va siempre, que es la regla que ya sostiene `pintarEstadoDeFirma`.
+ */
+function pintarPrecarga(resultado) {
+  if (resultado === undefined) return '';
+
+  const w = (n, porDefecto) => (typeof window !== 'undefined' && window[n]) || porDefecto;
+  const caja = (variante, rol, texto) =>
+    `<div class="alert ${variante}" role="${rol}">${escapar(texto)}</div>`;
+
+  const estado = resultado && resultado.estado;
+
+  if (estado === w('PRECARGADO', 'PRECARGADO')) {
+    const n = Number(resultado.n);
+    // Decir «llevas 0 albaranes listos» sería el aviso más peligroso de los tres: afirma que va
+    // preparado. `precargarAlbaranes` no puede producirlo, y si algún día lo produce esto NO lo
+    // convierte en una buena noticia.
+    if (Number.isInteger(n) && n >= 1) return caja('ok', 'status', textoDeLoQueLlevas(n));
+    return caja('warning', 'alert', TEXTO_PRECARGA.noSePudo);
+  }
+
+  if (estado === w('NADA_QUE_PRECARGAR', 'NADA_QUE_PRECARGAR')) {
+    return caja('info', 'status', TEXTO_PRECARGA.nada);
+  }
+
+  return caja('warning', 'alert', TEXTO_PRECARGA.noSePudo);
+}
+
 // Frontend vanilla, sin bundler: se publica en `window` como el resto del dashboard.
 window.FIRMA_SOLO_EN_ESTE_MOVIL = FIRMA_SOLO_EN_ESTE_MOVIL;
 window.FIRMA_SUBIENDO = FIRMA_SUBIENDO;
@@ -358,6 +449,9 @@ window.TEXTO_NO_SE_PUDO_COMPROBAR = TEXTO_NO_SE_PUDO_COMPROBAR;
 window.TEXTO_SUBEN_AL_ABRIR = TEXTO_SUBEN_AL_ABRIR;
 window.TEXTO_DESALOJO = TEXTO_DESALOJO;
 window.TEXTO_SIN_ESPACIO_PARA_FIRMA = TEXTO_SIN_ESPACIO_PARA_FIRMA;
+window.TEXTO_PRECARGA = TEXTO_PRECARGA;                 // SCRUM-357
+window.textoDeLoQueLlevas = textoDeLoQueLlevas;         // SCRUM-357
+window.pintarPrecarga = pintarPrecarga;                 // SCRUM-357
 window.pintarDesalojo = pintarDesalojo;
 window.confirmaElServidor = confirmaElServidor;
 window.estadoDeLaFirma = estadoDeLaFirma;

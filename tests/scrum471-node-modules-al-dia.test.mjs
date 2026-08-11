@@ -2,12 +2,24 @@
 //
 // Que la suite se DECLARE CIEGA en vez de dar cinco rojos que parecen del producto.
 //
-// PASO 0 medido el 11-ago-2026 sobre los 200 árboles del repo:
+// PASO 0 medido el 11-ago-2026 (commit `b5a45714`, 17:32 +0200) sobre los 200 árboles **de la
+// máquina de aquella sesión**:
 //   · dependencias directas que main exige: 27
 //   · 53 sin `node_modules` · 147 con (91 de ellos por junction)
 //   · **3 al día · 144 desfasados**
 //   · 🔴 y el que decide el tamaño: **el compartido de los junctions está DESFASADO** (le falta
 //     `fake-indexeddb`). Los 91 enlazados NO están protegidos: arrastran el mismo hueco de golpe.
+//
+// 🔴 ESE RECUENTO NO DESCRIBE ESTE DISCO, Y NO ES UN ERROR DE NADIE (SCRUM-476). El MISMO día,
+// 3 h 50 m después, otra sesión midió en `DESKTOP-A24926K` **cuatro árboles y cero enlaces** —y
+// ahí ningún subconjunto puede dar 91 junctions, porque no hay ni uno—. Son dos poblaciones, en
+// dos hosts. Lo que sobra arriba no es el número: es que **no decía de qué población hablaba**, y
+// así se lee como el estado del proyecto. La medición se conserva; el recuento de HOY se saca con
+// `npm run topologia` (topología) y con este mismo comprobador (contenido).
+//
+// **NADA DE ESTE FICHERO SE APOYA EN ESOS NÚMEROS.** El comprobador lee el árbol donde corre —lock
+// contra instalado— y no consume ningún censo: probado en `tests/scrum476-reconciliar-censos.test.mjs`
+// sobre el CUERPO de las funciones, no sobre este comentario. No hay nada calibrado que caduque.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

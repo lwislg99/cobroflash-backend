@@ -35,6 +35,17 @@ async function renderHomeView(container) {
            Cuando no se ha perdido nada no ocupa ni una línea. -->
       <div id="home-desalojo"></div>
 
+      <!-- SCRUM-357 (H1 · cierre) · QUÉ LLEVAS ENCIMA para el sótano.
+           Va DETRÁS de los dos de arriba a propósito: aquéllos hablan de trabajo que puedes
+           PERDER y éste de trabajo que puedes HACER, y una pérdida se lee antes que una
+           capacidad. Tampoco lleva data-home-block — que el pro pueda ocultar desde
+           «Personalizar» el único sitio donde se le dice que baja con las manos vacías sería
+           devolverle el fallo mudo que este ticket cierra.
+           A diferencia de sus dos vecinos, este aviso SÍ habla cuando todo va bien: «no hay nada
+           que llevarte» es información que el profesional necesita ANTES de bajar, no ruido.
+           Lo único que no pinta es el hueco en que la medida aún no ha llegado. -->
+      <div id="home-precarga"></div>
+
       <!-- Número héroe: lo que te deben (foco principal) -->
       <div id="home-hero" data-home-block="hero"></div>
 
@@ -148,6 +159,11 @@ async function renderHomeView(container) {
   // cuando llega: los dos órdenes acaban con el aviso en pantalla, que es la única propiedad que
   // importa.
   pintarDesalojoEnHome();
+
+  // SCRUM-357 · Y el de qué llevas encima, fuera del `try` por el mismo motivo que los dos de
+  // arriba: el escenario en el que hace falta saber qué llevas al sótano es exactamente aquel en
+  // el que la red va mal y las métricas de la home se han caído por el `catch`.
+  pintarPrecargaEnHome();
 }
 
 /**
@@ -190,6 +206,26 @@ function pintarDesalojoEnHome(medida) {
   );
 }
 window.pintarDesalojoEnHome = pintarDesalojoEnHome;
+
+/**
+ * SCRUM-357 (H1 · cierre) · El aviso de qué llevas encima, en la home.
+ *
+ * Mismo reparto que el de desalojo, y por las mismas razones: sin argumento usa la última medida
+ * conocida, y si todavía no hay ninguna `pintarPrecarga` devuelve cadena vacía — no un aviso. La
+ * precarga sale sin `await` desde `app.js` (no puede bloquear el arranque), así que los dos
+ * órdenes son posibles: si la home se monta antes, la pinta `app.js` al terminar; si la medida ya
+ * estaba, la pinta esta llamada. Lo único que importa es que acabe en pantalla por los dos.
+ *
+ * No lanza nunca: sin caja o sin `pintarPrecarga` no hace nada, y `pintarPrecarga` es puro.
+ */
+function pintarPrecargaEnHome(resultado) {
+  const caja = document.getElementById('home-precarga');
+  if (!caja || typeof window.pintarPrecarga !== 'function') return;
+  caja.innerHTML = window.pintarPrecarga(
+    resultado !== undefined ? resultado : window.precargaUltimoResultado,
+  );
+}
+window.pintarPrecargaEnHome = pintarPrecargaEnHome;
 
 function setNavBadge(id, count, max99 = true) {
   const badge = document.getElementById(id);
