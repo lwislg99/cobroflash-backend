@@ -2395,3 +2395,25 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    las dos formas.
    ════════════════════════════════════════════════════════════ */
 .jobdet-alb-estado { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+/* ── El «?» dentro de la cabecera del modal — SCRUM-416 ────────────────────────
+   La ayuda vive DENTRO. El FAB global sigue escondiéndose con la modal abierta,
+   que es la decisión del 6-jul y no se toca: lo que cambia es que ahora hay
+   dónde pedirla sin cerrar lo que estabas haciendo.
+   Sin lenguaje visual nuevo: mismos tokens y el mismo tamaño que `.modal-close`,
+   para que las dos piezas de la esquina se lean como una pareja. */
+.modal-ayuda {
+  appearance: none;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px 10px;
+  margin-left: auto;          /* empuja la pareja ?/× a la derecha */
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+.modal-ayuda:hover { color: var(--ink); }
+.modal-ayuda + .modal-close { margin-left: 0; }

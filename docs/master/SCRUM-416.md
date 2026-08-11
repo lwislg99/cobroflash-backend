@@ -68,3 +68,71 @@ Cuando el constructor esté en main, el «?» dentro de la cabecera resuelve **l
 Ni una línea de construcción · ni un «?» nuevo · ni microcopy (si el «?» necesita texto, se propone;
 hoy el FAB usa `title="Guía de inicio"`, que ya existe) · no se ha tocado el CSS ni el z-index de
 nadie.
+
+
+---
+
+# SCRUM-416 · entrega: la ayuda vive DENTRO — y DOS pantallas siguen sin ella
+
+**Medido contra:** `origin/main` = `5122bfc097e9cdbfd46fcc8915a504981a2542c6` · 2026-08-11T14:29:32+02:00
+**Rama:** `scrum-416-ayuda-dentro`
+
+## (a) desbloqueado, comprobado
+
+`13b855a7` **y** `67dd208d` están los dos en `origin/main`, y `modalHeader.js` también. El arreglo
+del ancla entró.
+
+Y **`main` está VERDE: 3040 tests, 0 fail.** Mi reporte de ayer era falso: los 5 rojos eran
+`fake-indexeddb`, que main estrenó con SCRUM-455 y mi `node_modules` no tenía. **Un `npm ci` los
+arregló todos.** Lo que medí era mi entorno, no el repo — y lo di como hallazgo de main.
+
+## Lo entregado: el «?» en la cabecera, y NO destapa el FAB
+
+El botón entra **una vez**, en `cabeceraModal`, y llega a los **24** modales. La decisión del 6-jul
+—que el FAB no pise las modales— **sigue intacta**: no se ha tocado ni el CSS que lo oculta ni el
+z-index del FAB.
+
+Abre **`window.openHelpGuide`**, que es **la misma guía** del FAB. Dos guías se separarían el día
+que alguien mejore una, y nadie lo notaría.
+
+### 🔴 Dos cosas que lo habrían dejado inútil, encontradas midiendo
+
+1. **`openHelpGuide` no era global.** Un botón que no puede llamar a nada.
+2. **El panel de ayuda vivía en z-index 360 y los modales van a 500.** Se habría abierto **detrás
+   de la modal desde la que acabas de pedir ayuda**: un «?» que no enseña nada es peor que no
+   tenerlo, porque además parece que el producto está roto. **Subido a 600** — la ayuda va encima de
+   lo que explica. Sigue por debajo de la firma (1200), que es uno de los casos declarados.
+
+## 🔴 LO QUE NO ESTÁ RESUELTO, por su nombre
+
+| pantalla | estado | por qué |
+|---|---|---|
+| **24 modales compartidos** | **resuelto** | el «?» va en la cabecera |
+| **la firma** (`signaturePad.js`) | **SIGUE IGUAL** | su overlay es propio (z-index 1200), **no lleva cabecera de modal**, así que el constructor no le llega. Es **la pantalla donde firma el cliente** |
+| **el onboarding** (`onboardingView.js`) | **SIGUE IGUAL** | overlay propio a 300, **por debajo** del FAB (350): ahí **no falta ayuda, sobra FAB** — el defecto va al revés, y arreglarlo es otra decisión |
+
+**Esto no es «resuelto».** Es 24 de 27, y los otros dos tienen test propio que se pone rojo el día
+que cambien —en cualquier dirección— para que nadie lo descubra en la pantalla de la firma.
+
+## Microcopy (regla 30)
+
+**No se ha inventado texto.** El botón usa `title` y `aria-label` = **`Guía de inicio`**, que es
+**el literal que el FAB ya usa** desde que existe. Se reutiliza, igual que se hizo con
+`aria-label="Cerrar"` en SCRUM-446. **Si quieres otro, es una línea.**
+
+## Verificado en rojo — cuatro, por `$?`
+
+quitar el «?» de la cabecera · devolver el panel a 360 (*«el panel de ayuda (360) NO está por encima
+del modal (500)»*) · dejar de exponer `openHelpGuide` · y que la firma pase a usar la cabecera
+compartida — que **también** cae, porque entonces hay que **actualizar la declaración** en vez de
+dejarla mintiendo.
+
+## Y un defecto mío, en el test que vigila ese defecto
+
+La primera versión del test del z-index usaba una **ventana fija de 400 caracteres**, y **el
+comentario que yo acababa de escribir empujó el número fuera**. Es exactamente SCRUM-435, cometido
+dentro del guard que lo persigue. Corregido: se lee el código **sin comentarios** y se ancla en la
+asignación, no en una distancia.
+
+Ficheros: `public/dashboard/js/modalHeader.js` · `public/dashboard/js/tutorial.js` ·
+`public/dashboard/css/styles.css` · `tests/scrum416-ayuda-dentro.test.mjs` (nuevo).

@@ -201,11 +201,21 @@ function ensureHelpButton() {
   document.body.appendChild(btn);
 }
 
+// SCRUM-416 · se expone para que la ayuda del modal abra ESTA misma guía y no otra. Si hubiera
+// dos, la del modal se quedaría atrás el día que alguien mejore la del FAB — y nadie lo notaría.
+window.openHelpGuide = openHelpGuide;
+
 function openHelpGuide() {
   if (document.getElementById('tut-guide-backdrop')) return;
   const backdrop = document.createElement('div');
   backdrop.id = 'tut-guide-backdrop';
-  backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:360;display:flex;justify-content:flex-end';
+  // SCRUM-416 · 600 y no 360. Los modales van a 500 (`styles.css`), así que a 360 este panel se
+  // abría DETRÁS de la modal desde la que lo acabas de pedir: un «?» que no enseña nada es peor que
+  // no tener «?». La ayuda va encima de lo que explica.
+  //
+  // ⚠️ Sigue por DEBAJO del overlay de la firma (1200), que es uno de los dos casos declarados sin
+  // resolver en `docs/master/SCRUM-416.md`.
+  backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:600;display:flex;justify-content:flex-end';
 
   const panel = document.createElement('div');
   panel.style.cssText = `
