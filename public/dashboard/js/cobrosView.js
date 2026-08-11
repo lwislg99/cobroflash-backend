@@ -100,11 +100,56 @@ var COBROS_METODOS = [
  */
 var COBROS_SIN_METODO = { clave: 'sin-metodo', rotulo: COBROS_COPY.filtroSinMetodo, casa: [] };
 
+/**
+ * 🔴 SCRUM-474 · LA PASARELA NO CAMBIA EL MÉTODO, Y ASÍ ESTABA PARTIENDO LAS TARJETAS EN DOS.
+ *
+ * `Charge.method` guarda `<metodo>` o `<metodo>:<pasarela>`: `card` lo escribe el selector de pago
+ * (`charges.routes.ts`) y `card:stripe` lo escribe la pasarela. **Son el mismo método** — uno es la
+ * preferencia y el otro el hecho consumado. La comparación exacta metía `card:stripe` en «Método no
+ * registrado», así que el profesional filtraba por tarjeta y veía la mitad de sus cobros.
+ *
+ * Medido en producción el 11-ago-2026: **38 de 51 cobros** repartidos entre esas dos etiquetas.
+ *
+ * Se recorta la pasarela ANTES de mirar, y `COBROS_METODOS` sigue siendo la ÚNICA lista de qué
+ * valor cae en qué cubo: aquí no se copia nada.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * 🔴 ESTO ES UNA SEGUNDA COPIA DELIBERADA DE `partirMetodo`, Y CONSTA COMO TAL.
+ *
+ * La partición `<metodo>:<pasarela>` ya vive en `src/modules/billing/domain/metodoDeCobro.ts`.
+ * La regla dura 4 —vanilla, sin bundler— impide que esta pantalla lo importe: es TypeScript
+ * compilado a `dist/` para el servidor, y aquí no hay build que lo traiga. La copia es
+ * inevitable; **que nadie la haya contado, no.**
+ *
+ * Por eso `tests/scrum474-dos-copias-atadas.test.mjs` las ata: mismo corpus, mismo veredicto,
+ * y el corpus se DERIVA de `PAID_VIA` en vez de escribirse a mano, así que tocar una sola de
+ * las dos sale en rojo. Si esta función y `partirMetodo` divergen, es un fallo, no una
+ * diferencia de criterio.
+ *
+ * Se devuelve `null` —y no la base— cuando la pasarela viene VACÍA (`card:`), porque es lo que
+ * hace `partirMetodo` (`metodoDeCobro.ts:45`) y porque `esMetodoValido('card:')` es `false`: el
+ * guard de `psp.routes.ts:110` RECHAZA ese valor al escribirlo. Un lector que lo clasificara
+ * como tarjeta estaría contradiciendo al escritor sobre el mismo dato. Cae en «Método no
+ * registrado», que sigue en el listado: no desaparece ningún cobro.
+ */
+function metodoSinPasarela(metodo) {
+  if (typeof metodo !== 'string') return null;
+  var limpio = metodo.trim().toLowerCase();
+  if (limpio === '') return null;
+  var i = limpio.indexOf(':');
+  if (i === -1) return limpio;
+  var base = limpio.slice(0, i);
+  var pasarela = limpio.slice(i + 1);
+  if (base === '' || pasarela === '') return null;
+  return base;
+}
+
 /** A qué cubo de filtro cae un cobro. `null` → «no consta». */
 function cuboDeMetodo(metodo) {
-  if (!metodo) return COBROS_SIN_METODO.clave;
+  var base = metodoSinPasarela(metodo);
+  if (!base) return COBROS_SIN_METODO.clave;
   for (var i = 0; i < COBROS_METODOS.length; i++) {
-    if (COBROS_METODOS[i].casa.indexOf(metodo) !== -1) return COBROS_METODOS[i].clave;
+    if (COBROS_METODOS[i].casa.indexOf(base) !== -1) return COBROS_METODOS[i].clave;
   }
   return COBROS_SIN_METODO.clave;
 }
@@ -401,5 +446,5 @@ if (typeof window !== 'undefined') {
   window.diasDeDeudaCobro = diasDeDeudaCobro;
 }
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { renderCobrosView, COBROS_COPY, COBROS_METODOS, COBROS_SIN_METODO, cuboDeMetodo, diasDeDeudaCobro };
+  module.exports = { renderCobrosView, COBROS_COPY, COBROS_METODOS, COBROS_SIN_METODO, cuboDeMetodo, metodoSinPasarela, diasDeDeudaCobro };
 }

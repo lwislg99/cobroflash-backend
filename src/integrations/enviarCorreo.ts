@@ -27,6 +27,11 @@ import axios from 'axios';
 import { config } from '../core/config/env';
 import { maskEmail } from '../core/utils/utils';
 import { createMailer } from './mailer';
+// SCRUM-475 (fase 2): el VOCABULARIO de qué consta. Módulo puro —sin BD, sin red— y por eso puede
+// vivir aquí sin arrastrar nada. Misma dirección que `whatsapp.ts` → `whatsappLog.service`.
+import {
+  constanciaDeEnvio, constanciaDeFallo, type Constancia,
+} from '../modules/messaging/domain/constanciaCorreo';
 
 export interface CorreoSuelto {
   to: string;
@@ -66,6 +71,18 @@ export interface ResultadoCorreo {
   via?: 'resend' | 'smtp';
   /** El acuse del proveedor. `null` por SMTP, que no da ninguno. */
   acuse?: AcuseProveedor | null;
+  /**
+   * 🔴 SCRUM-475 (fase 2) · QUÉ CONSTA DE ESTE ENVÍO. **Obligatorio a propósito.**
+   *
+   * El `acuse` de la fase 1 dice que el proveedor lo ACEPTÓ; no dice que llegara. Sin este campo,
+   * quien lea `acuse.id` no tiene nada que le impida entenderlo como «entregado» — y un id de
+   * mensaje *parece* un acuse de recibo.
+   *
+   * Y no es opcional porque **opcional se olvida**: si mañana alguien añade un séptimo camino de
+   * salida a este fichero y no pone constancia, no compila. Es la misma elección que en el resto
+   * de la casa — una divergencia IMPOSIBLE gana a una vigilada por un guard.
+   */
+  constancia: Constancia;
 }
 
 /**
@@ -105,18 +122,37 @@ export async function enviarPorResend(c: CorreoSuelto): Promise<ResultadoCorreo>
       evento: 'enviado', via: 'resend', id, origen: c.origen || null,
       to: maskEmail(c.to), asunto: c.subject,
     }));
-    return { enviado: true, via: 'resend', acuse: { id, crudo: cuerpo } };
+    // La constancia se deriva de LA MISMA respuesta de la que sale el acuse — no de un segundo
+    // sitio que pudiera decir otra cosa. `aceptado_sin_confirmacion` si hubo id;
+    // `aceptado_sin_identificador` si el proveedor contestó sin él. Nunca `entregado`.
+    return { enviado: true, via: 'resend', acuse: { id, crudo: cuerpo }, constancia: constanciaDeEnvio(cuerpo) };
   } catch (e) {
     console.error('[correo]', JSON.stringify({
       evento: 'fallo', via: 'resend', origen: c.origen || null,
       to: maskEmail(c.to), error: (e as { message?: string })?.message || String(e),
     }));
-    return { enviado: false, motivo: 'fallo_envio' };
+    return { enviado: false, motivo: 'fallo_envio', constancia: constanciaDeFallo(e) };
   }
 }
 
+/**
+ * «No hay a quién mandarlo», en UN solo sitio.
+ *
+ * Existe porque tres emisores (`lifecycle`, `merchantNotifications`, `weeklyDigest`) filtran el
+ * destinatario ANTES de llamar aquí —con un criterio más estricto: exigen la `@`— y construían su
+ * propio `{ enviado: false, motivo: 'sin_destino' }`. Al volverse obligatoria la constancia, el
+ * compilador los señaló a los tres: eran cuatro sitios diciendo lo mismo. Ahora es uno.
+ */
+export function resultadoSinDestino(): ResultadoCorreo {
+  return {
+    enviado: false,
+    motivo: 'sin_destino',
+    constancia: constanciaDeFallo({ code: 'sin_destino', message: 'destinatario vacío' }),
+  };
+}
+
 export async function enviarCorreo(c: CorreoSuelto): Promise<ResultadoCorreo> {
-  if (!c.to || !c.to.trim()) return { enviado: false, motivo: 'sin_destino' };
+  if (!c.to || !c.to.trim()) return resultadoSinDestino();
 
   if (config.RESEND_API_KEY) return enviarPorResend(c);
 
@@ -137,16 +173,21 @@ export async function enviarCorreo(c: CorreoSuelto): Promise<ResultadoCorreo> {
         evento: 'enviado', via: 'smtp', id: null, origen: c.origen || null,
         to: maskEmail(c.to), asunto: c.subject,
       }));
-      return { enviado: true, via: 'smtp', acuse: null };
+      // SMTP acepta y no da identificador: `aceptado_sin_identificador` lo dice con esas palabras,
+      // en vez de dejar un hueco que se lea como «no pasó nada».
+      return { enviado: true, via: 'smtp', acuse: null, constancia: constanciaDeEnvio(null) };
     } catch (e) {
       console.error('[correo]', JSON.stringify({
         evento: 'fallo', via: 'smtp', origen: c.origen || null,
         to: maskEmail(c.to), error: (e as { message?: string })?.message || String(e),
       }));
-      return { enviado: false, motivo: 'fallo_envio' };
+      return { enviado: false, motivo: 'fallo_envio', constancia: constanciaDeFallo(e) };
     }
   }
 
   // Ni Resend ni SMTP: no hay por dónde salir. Se dice, no se disfraza.
-  return { enviado: false, motivo: 'sin_transporte' };
+  return {
+    enviado: false, motivo: 'sin_transporte',
+    constancia: constanciaDeFallo({ code: 'sin_transporte', message: 'no hay transporte configurado' }),
+  };
 }
