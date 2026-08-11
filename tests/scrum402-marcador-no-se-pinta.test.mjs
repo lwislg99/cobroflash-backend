@@ -52,6 +52,11 @@ const MARCA = '[PENDIENTE';
  * a otra tiene que verse, y un total lo escondería (la lección del suelo por FUNCIÓN de SCRUM-392).
  */
 const CENSO = Object.freeze({
+  // SCRUM-421 · A CONCIENCIA: el registro de acciones del presupuesto trae 12 rotulos, TODOS sin
+  // aprobar (regla 30). El marcador se ve EN PANTALLA a proposito: es la unica forma de que nadie
+  // encienda por descuido texto que el fundador no ha firmado. Se cuenta 1: los doce salen de una
+  // sola constante `MARCA_MICROCOPY`, asi que aprobar el copy los apaga todos de golpe.
+  'quoteActionsRegistry.js': 1,
   // SCRUM-404 (7-ago-2026) · SUBIDAS A CONCIENCIA, las dos, y con su motivo:
   //
   //   `albaranDetailView.js` +1 → el mensaje de «el servidor rechazó la firma». El fundador

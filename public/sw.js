@@ -42,6 +42,7 @@ const SHELL = [
   // orden que en el shell HTML, porque el registro lee sus globales al cargarse.
   '/dashboard/js/patronDetalleAcciones.js',
   '/dashboard/js/invoiceActionsRegistry.js',
+  '/dashboard/js/quoteActionsRegistry.js',
   '/dashboard/js/invoiceDetailView.js',
   '/dashboard/js/jobActionsRegistry.js', // SCRUM-316 (G1)
   '/dashboard/js/jobDocsReparto.js', // SCRUM-319 (G4)
