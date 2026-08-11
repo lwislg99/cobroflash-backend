@@ -31,7 +31,7 @@ test('A12.2b: dedupe por wamid de Meta (reintentos del webhook entrante)', async
   assert.equal(isDuplicateWamid(''), false, 'sin id no bloquea');
 });
 
-test('A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integración)', { skip: !DB }, async (t) => {
+test('A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integración)', { skip: !DB && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const { internalHeaders } = await import('../dist/core/http/internalAuth.js'); // P0-SEC-1: /webhooks/psp exige el secreto interno

@@ -219,3 +219,94 @@ Sin sacar conclusiones de diseño, que no son de este ticket:
 
 Nada. Ni el mecanismo de firma, ni el service worker, ni `prisma/schema.prisma`, ni el camino de
 emisión. No se ha consultado ninguna base de datos. Ni una línea de producto.
+
+---
+
+# TRAMO 2 — la pregunta añadida, y la verificación de vigencia
+
+**Medido contra:** `origin/main` = `c47d03655aacd7fe78044f89e7c55a7d467cbb5b` · 2026-08-10T18:59:45+01:00
+
+**10-ago-2026** · sesión 1 · **cero construcción de producto**, igual que el tramo 1.
+
+⚠️ **H0 ya estaba hecho.** El paso 0 lo cazó: `21e843a8` (7-ago) y el PR #538, con este mismo
+documento en `main` contestando P1–P8. **No se ha vuelto a medir lo ya medido.** Este tramo hace
+sólo dos cosas: contestar la pregunta que el fundador añadió, y comprobar que lo de hace tres días
+sigue siendo verdad.
+
+## P9 · ¿Se puede DETECTAR hoy si la app está instalada en la pantalla de inicio?
+
+⚠️ **YA ESTABA CONTESTADA, y eso va antes que la respuesta.** El tramo 1 la dejó escrita dentro de
+P2:
+
+> *«Y la instalación en pantalla de inicio ya se sabe detectar, aunque no se registre:
+> `voiceInput.js:19-21` (`isStandalonePWA()`, con el `navigator.standalone` de Safari iOS).»*
+
+Así que el núcleo de esta pregunta **no es un hallazgo de este tramo**. Lo que sigue la confirma y
+añade **un matiz que no estaba** y que sí cambia el trabajo de H5: la función existe, pero **no se
+puede llamar desde fuera**.
+
+**`[MEDIDO]`** — **SÍ se detecta, y con las dos vías que hacen falta para iPhone.**
+
+* `public/dashboard/js/voiceInput.js:19-22` — `isStandalonePWA()`:
+  * `window.matchMedia('(display-mode: standalone)').matches` — el estándar;
+  * `window.navigator.standalone === true` — **la vía de Safari iOS**, que es el caso peor de P2 y
+    la única que responde en iPhone.
+* `public/manifest.json:6` declara `"display": "standalone"`, así que la app **puede** instalarse y
+  el modo es el que esa detección busca.
+
+🔴 **Pero la función NO es reutilizable tal cual: vive dentro de la IIFE de `voiceInput.js` y no se
+publica en `window`.** Está probada y en producción —`voiceSupportProbe()` la usa para apagar el
+dictado en iOS instalado, donde la API está declarada pero rota—, así que la técnica está validada
+en el aparato que importa. Lo que no existe es una forma de preguntarlo desde otro sitio.
+
+**Para H5 esto significa:** la mitigación del borrado de origen de iOS a los 7 días **se puede
+medir hoy**, y sacar `isStandalonePWA` a un sitio compartido es trabajo pequeño y conocido — no una
+incógnita. Lo que **no** se ha medido es si el borrado ocurre de verdad en un iPhone real: eso sigue
+siendo el hueco de aparato del tramo 1.
+
+## Verificación de vigencia — qué sigue igual y qué ha derivado
+
+Derivado otra vez, con suelo en cada apartado. **Cero suelos disparados.**
+
+| respuesta | estado |
+|---|---|
+| **P4** · `computeAlbaranContentHash` | **SIGUE VIGENTE.** Definición en `src/modules/jobs/domain/albaran.service.ts:459`, sigue importando `crypto` de Node. |
+| **P5** · precache del SW | 🔴 **HA DERIVADO: 50 → 54 rutas.** |
+| **P5** · rutas autenticadas | **SIGUE VIGENTE**: `sw.js:96-98` sigue mandando `/admin/`, `/auth/`, `/version` y `/health` a red directa. Cero `Authorization` en el SW. |
+| **IndexedDB** | **SIGUE VIGENTE**: cero ficheros en `public/` y `src/`. Sigue siendo pieza nueva entera. |
+| **P7** · canvas de firma | **SIGUE VIGENTE**: sólo `toDataURL('image/png')`. Ni presión, ni fuerza, ni tiempos. |
+| **P8** · purga al cerrar sesión | **SIGUE VIGENTE**: `app.js` es el único con cierre de sesión y **no purga** Cache API ni IndexedDB. |
+
+### 🔴 La deriva de P5, con nombre
+
+Entraron cuatro ficheros al precache y no salió ninguno:
+
+```
++ /dashboard/js/quotesTabs.js
++ /dashboard/js/cobrosView.js
++ /dashboard/js/terminadoSinCobrar.js
++ /dashboard/js/paidViaEtiquetas.js
+```
+
+**No cambia ninguna conclusión del tramo 1** —siguen siendo estáticos, siguen sin haber rutas de
+datos, y lo que el bloque H necesita sigue sin existir—, pero el número del documento estaba viejo
+a los tres días. Queda corregido y con su causa: el precache crece con cada pantalla nueva.
+
+### Un falso positivo que conviene dejar escrito
+
+El derivador encontró `computeAlbaranContentHash` **nombrado en `public/dashboard/js/jobDetailView.js`**
+(líneas 403 y 1209), lo que parecía contradecir P4. **Son COMENTARIOS**, no llamadas: explican qué
+sella el hash. **Mencionar no es hacer**, y por eso se comprobó en vez de darlo por bueno en
+ninguna de las dos direcciones.
+
+## Lo que sigue sin poderse medir
+
+Lo mismo que declaró el tramo 1: **todo lo que exige un iPhone real**. No hay aparato en esta
+sesión, así que ni el borrado de origen a los 7 días, ni el comportamiento de la firma sin red en
+Safari, ni la instalación en pantalla de inicio se han probado en hardware. Se dice con esas
+palabras en vez de estimarlo.
+
+## Lo que no se ha tocado
+
+Nada de producto. Ni el service worker, ni el mecanismo de firma, ni `prisma/schema.prisma`, ni el
+camino de emisión. El derivador de este tramo vive en el scratchpad y no se ha añadido al árbol.

@@ -3,6 +3,123 @@
 // Si el backend sirve el dashboard desde el mismo dominio, base = "".
 const API_BASE_URL = ""; // mismo origin (http://localhost:3000)
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-451 · EL PLAZO DE RED VIVE AQUÍ, Y CORTA
+//
+// LA VÍCTIMA: un profesional con mala cobertura abre una pantalla, la petición se queda en el
+// aire, y la pantalla espera PARA SIEMPRE. Ni datos, ni error, ni nada. En SCRUM-448 se midió que
+// de 10 vistas que el banco pinta con la petición colgada, **nueve se quedan mudas**.
+//
+// SCRUM-448 puso el primer plazo de la casa DENTRO de una vista, y dejó dicho que ése era el
+// momento de decidir: o baja a un sitio común, o las otras nueve crecen cada una el suyo. Baja.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 EL PLAZO ES **SOLO PARA GET**, Y ESO NO ES PEREZA: ESTÁ MEDIDO
+//
+// Censo por AST sobre `public/` entero (136 llamadas a `apiRequest`, 31 ficheros):
+//   · **58 GET «pelados»** —sin opciones, o solo `method:'GET'`—. Cero GET con `headers` o `body`,
+//     así que dos peticiones a la misma ruta son LA MISMA petición, sin ambigüedad.
+//   · **78 MUTACIONES** (POST 56 · PATCH 10 · PUT 8 · DELETE 4).
+//   · Las 4 descargas pesadas (ZIP de portabilidad, XML VeriFactu) NO pasan por aquí: van por
+//     `descargarBinario`, con su propio `fetch`. **No les toca este plazo**, y no se les pone uno
+//     a ojo: un ZIP de evidencias y un listado de cobros no aguantan lo mismo.
+//
+// Abortar un GET no cuesta nada: es idempotente y se vuelve a pedir. **Abortar una MUTACIÓN es
+// otra cosa**: el servidor ha podido procesarla ya, el profesional ve un error, lo repite, y sale
+// una segunda factura. Eso es dinero y es el camino de emisión, así que no se decide aquí.
+// Queda PARADO y propuesto al fundador. Las 78 mutaciones siguen exactamente como estaban.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// EL NÚMERO: 10 s, el mismo que ya decidió el fundador en SCRUM-448, y por lo mismo. No hay p95
+// de estas rutas en producción y no se inventa; es el umbral clásico a partir del cual una
+// persona deja de creer que el sistema trabaja y empieza a creer que está roto. Referencia
+// general, no dato nuestro. **Un sitio, una constante**: `cobrosView` ya no tiene el suyo.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/** El plazo, en milisegundos. `var` a propósito: así un test puede acortarlo desde `window`. */
+var PLAZO_RED_MS = (typeof window !== 'undefined' && window.PLAZO_RED_MS) || 10000;
+
+/**
+ * SCRUM-358 (H3 · fase 3) · ESPERAR A LA RED LO QUE LA CASA HAYA DECIDIDO ESPERAR — sin abortar.
+ *
+ * Vive AQUÍ, junto a la constante, y no en quien la usa. El drenado de la cola de firmas necesita
+ * rendirse con una firma para poder pasar a la siguiente —si no, contra una red que acepta y no
+ * entrega la primera petición no vuelve nunca y las demás no suben jamás—, y su primera versión se
+ * declaró su propio plazo. **El guard de SCRUM-451 lo cazó y tenía razón**: el mecanismo era otro,
+ * pero la decisión era la misma —cuánto espera el producto a la red— y ésa vive en un sitio para
+ * que el día que se mida cambie en una línea.
+ *
+ * ⚠️ NO ABORTA NADA, y por eso no es el plazo del `POST`. Abortar una mutación puede duplicar una
+ * factura y eso está PARADO (SCRUM-459): aquí sólo se deja de esperar. La petición sigue su curso;
+ * si llegó, el reintento se encontrará el 409 del documento ya firmado.
+ *
+ * Devuelve `{ valor }`, `{ error }` o `{ vencio: true }` — tres salidas, porque significan cosas
+ * distintas y quien llama tiene que poder separarlas.
+ */
+function esperarLoQueLaRed(promesa, ms) {
+  const tope = ms || PLAZO_RED_MS;
+  return new Promise((resolver) => {
+    let vivo = true;
+    const t = setTimeout(() => { if (vivo) { vivo = false; resolver({ vencio: true }); } }, tope);
+    if (t && t.unref) t.unref();
+    promesa.then(
+      (valor) => { if (vivo) { vivo = false; clearTimeout(t); resolver({ valor }); } },
+      (error) => { if (vivo) { vivo = false; clearTimeout(t); resolver({ error }); } },
+    );
+  });
+}
+if (typeof window !== 'undefined') window.esperarLoQueLaRed = esperarLoQueLaRed;
+
+/**
+ * 🔴 QUÉ RESPUESTA MANDA: la de la ÚLTIMA petición lanzada para esa ruta, y solo ésa.
+ *
+ * Abortar NO quita la necesidad de esto: el aborto no es instantáneo, y una respuesta que ya venía
+ * de camino puede llegar DESPUÉS de otra más nueva y pintar encima una lista más vieja, sin que
+ * nada lo diga. Es el defecto que nadie ve hasta que muerde.
+ *
+ * ⚠️ Y NO SE DESCARTA LA VIEJA EN SILENCIO, que era lo primero que pensé: está medido que **22
+ * rutas se piden desde más de un sitio** —`/admin/jobs/{}` desde 7, `/admin/merchant` desde 6,
+ * `/admin/metrics/home` desde 2 en la MISMA vista—. Descartar dejaría a un llamador legítimo sin
+ * su respuesta para siempre, y eso es una avería nueva, no un arreglo. Lo que se hace es
+ * **compartir**: al que se quedó atrás se le entrega el resultado de la MÁS NUEVA. Nadie se queda
+ * sin respuesta y nadie pinta datos viejos.
+ */
+const _secuenciaPorRuta = Object.create(null);
+const _ultimaPorRuta = Object.create(null);
+
+/** Marca el error de un plazo vencido con la MISMA señal que un fallo de red (SCRUM-404). */
+function errorDeRedVencido(causa) {
+  // No se inventa microcopy: se marca. `sinRed` porque para el profesional es el mismo hecho
+  // —no hay cobertura— y las vistas que ya se bifurcan por esa marca siguen valiendo.
+  const e = new Error('la petición ha superado el plazo de red');
+  e.sinRed = true;
+  e.vencido = true;
+  e.causaOriginal = causa;
+  return e;
+}
+
+/** Una petición, de principio a fin. El plazo cubre TAMBIÉN la descarga del cuerpo. */
+async function _enviar(url, finalOptions, ctrl) {
+  const opciones = ctrl ? { ...finalOptions, signal: ctrl.signal } : finalOptions;
+  // 🔴 EL PLAZO CUBRE TAMBIÉN EL CUERPO, y de eso depende que corte algo: `fetch` vuelve con las
+  // CABECERAS y el cuerpo se sigue bajando después, así que un plazo que muriera al resolver el
+  // `fetch` dejaría vivo justo lo que gasta los datos del profesional.
+  //
+  // ⚠️ Lo que lo sostiene es el `await` de aquí abajo, no el de dentro de `_pedir`: el `finally`
+  // corre cuando `_enviar` sale, y sin ese `await` saldría con la promesa todavía en la mano —
+  // limpiando el plazo antes de bajar nada—. Probado en rojo: quitarlo pone el test del cuerpo en
+  // rojo; quitar el `await` de `res.json()` NO, porque `_pedir` encadena su promesa igual.
+  const plazo = ctrl ? setTimeout(() => ctrl.abort(), PLAZO_RED_MS) : null;
+  try {
+    return await _pedir(url, opciones);
+  } catch (e) {
+    if (ctrl && ctrl.signal && ctrl.signal.aborted) throw errorDeRedVencido(e);
+    throw e;
+  } finally {
+    if (plazo) clearTimeout(plazo);
+  }
+}
+
 async function apiRequest(path, options = {}) {
   const url = API_BASE_URL + path;
 
@@ -14,6 +131,32 @@ async function apiRequest(path, options = {}) {
     ...options,
   };
 
+  const metodo = String(finalOptions.method || 'GET').toUpperCase();
+  // Mutación: camino de siempre, sin plazo y sin secuencia. Ver el bloque de arriba.
+  if (metodo !== 'GET' || finalOptions.body) return _pedir(url, finalOptions);
+
+  let mia = (_secuenciaPorRuta[path] = (_secuenciaPorRuta[path] || 0) + 1);
+  const ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+  const promesa = _enviar(url, finalOptions, ctrl);
+  _ultimaPorRuta[path] = promesa;
+
+  let resultado; let fallo = null;
+  try { resultado = await promesa; } catch (e) { fallo = e; }
+
+  // Si mientras tanto salió otra para esta misma ruta, la que manda es la suya — y se espera, para
+  // que quien preguntó primero también reciba lo último. El bucle cubre el caso de que la más
+  // nueva quede a su vez superada mientras se la espera.
+  while (_secuenciaPorRuta[path] !== mia) {
+    mia = _secuenciaPorRuta[path];
+    try { resultado = await _ultimaPorRuta[path]; fallo = null; }
+    catch (e) { fallo = e; resultado = undefined; }
+  }
+
+  if (fallo) throw fallo;
+  return resultado;
+}
+
+async function _pedir(url, finalOptions) {
   // SCRUM-404 · UN FALLO DE RED Y UN RECHAZO DEL SERVIDOR PIDEN COSAS DISTINTAS AL PROFESIONAL:
   // esperar a tener cobertura, o llamar por teléfono. Sin envolver el `fetch` los dos llegaban
   // igual —un `TypeError: Failed to fetch`, en inglés— y quien mostrara el error no podía
@@ -227,6 +370,58 @@ function uiMarkFieldError(el, scope) {
   el.addEventListener('input', clear);
 }
 window.uiMarkFieldError = uiMarkFieldError;
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-360 (H5 · fase 1) · ¿ESTÁ LA APLICACIÓN INSTALADA EN LA PANTALLA DE INICIO?
+//
+// No es una curiosidad: **es la mitigación entera de H5**. iOS borra el origen completo —service
+// worker, caché e IndexedDB— cuando pasan 7 días sin abrir la aplicación, y con él se llevaría una
+// firma pendiente de subir. **Las aplicaciones añadidas a la pantalla de inicio están EXENTAS de
+// ese borrado; una pestaña normal, no.** Así que saber en cuál estamos es saber si hay riesgo.
+//
+// ⚠️ VIVE AQUÍ, Y NO EN UN FICHERO NUEVO, por dos motivos medidos: `api.js` es el PRIMER script del
+// dashboard —así que la función existe antes que cualquier vista— y ya está en el precache del
+// service worker (`sw.js:23`). Un fichero nuevo habría que meterlo en ese precache, y el service
+// worker no se toca en esta fase.
+//
+// 🔴 TRES ESTADOS, NO DOS, y ésta es la decisión que sostiene el dato:
+//
+//   · `instalada`   — se pudo evaluar y la respuesta es sí;
+//   · `pestana`     — se pudo evaluar y la respuesta es no;
+//   · `desconocido` — **NO SE PUDO EVALUAR**.
+//
+// «No está instalada» y «no supe mirar» son lo CONTRARIO: el primero dice que hay riesgo, el
+// segundo no dice nada. Colapsarlos en un booleano daría un recuento tranquilo y falso — parecería
+// que sabemos que N están en pestaña cuando en realidad no pudimos preguntárselo a nadie.
+
+/** Los tres estados posibles. Cerrado a propósito: quien lo lea no tiene que adivinar. */
+var ENTORNO_INSTALADA = 'instalada';
+var ENTORNO_PESTANA = 'pestana';
+var ENTORNO_DESCONOCIDO = 'desconocido';
+
+/**
+ * En qué contexto se está ejecutando la aplicación.
+ *
+ * Dos vías, y las dos hacen falta: `display-mode: standalone` es el estándar, y
+ * `navigator.standalone` es **la única que responde en Safari de iPhone** — que es el caso peor
+ * del parque medido en H0 y justo el que sufre el borrado a los 7 días.
+ */
+function entornoDeLaApp() {
+  var puedeMatchMedia = typeof window !== 'undefined' && typeof window.matchMedia === 'function';
+  var tieneLegacy = typeof window !== 'undefined' && window.navigator
+    && typeof window.navigator.standalone === 'boolean';
+
+  // Si NINGUNA de las dos vías se puede consultar, no se contesta: se dice que no se sabe.
+  if (!puedeMatchMedia && !tieneLegacy) return ENTORNO_DESCONOCIDO;
+
+  if (puedeMatchMedia && window.matchMedia('(display-mode: standalone)').matches) return ENTORNO_INSTALADA;
+  if (tieneLegacy && window.navigator.standalone === true) return ENTORNO_INSTALADA;
+  return ENTORNO_PESTANA;
+}
+window.entornoDeLaApp = entornoDeLaApp;
+window.ENTORNO_INSTALADA = ENTORNO_INSTALADA;
+window.ENTORNO_PESTANA = ENTORNO_PESTANA;
+window.ENTORNO_DESCONOCIDO = ENTORNO_DESCONOCIDO;
 
 // P-A66-3: dinero SIEMPRE en formato español también dentro del BO — espejo
 // del formatMoneyEs del servidor (core/utils). "2.383,70 €", nunca "2383.70 EUR".

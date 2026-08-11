@@ -78,6 +78,14 @@ firma del cliente → cobro de señal/total → (post SIF-1) factura VeriFactu. 
 npm run dev              # hot reload; carga .env.local con prioridad (BD local + DISABLE_CRONS=true)
 npm run build            # tsc → dist/
 npm test                 # compila + node --test (tests/*.test.mjs contra dist/)
+# ⚠️ `npm test` NO LO CORRE TODO, y su «0 fallos» no incluye lo que saltó (SCRUM-419/456).
+# Los saltos DECLARAN su motivo: búscalos con el reporter TAP, porque `spec` NO lo imprime.
+node --test --test-force-exit --test-reporter=tap tests/*.test.mjs | grep "# SKIP"
+npm run test:staging:gated   # los gateados por QA_DB_TEST / A55_DB_TEST / BOT_SUITE_TEST.
+                             # Toma el TURNO de staging y lo suelta (detalle en RUNBOOKS y en
+                             # docs/QA/SUITE_REGRESION.md). NO lo lances con `| tail`.
+# Los de LIBRO_PG_URL piden un Postgres DESECHABLE — loopback y base terminada en `_test`, que es
+# lo que sus guards exigen antes de tocar nada (crean y BORRAN filas). Receta en docs/RUNBOOKS.md.
 # preview OBLIGATORIO antes de db push (SCRUM-385). Lleva CONTROL POSITIVO dentro: si la
 # herramienta no responde lo DICE, en vez de devolver un «no hay cambios» que no sabe.
 # ⚠️ NO usar `npx prisma migrate diff` a pelo: si falta el CLI local, `npx` se baja otro de la

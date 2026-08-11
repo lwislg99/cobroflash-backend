@@ -9,6 +9,9 @@ import crypto from 'crypto';
 import { prisma } from '../../../core/db/prisma';
 import { albaranesDir } from '../../../core/storage/dirs';
 import { generateAlbaranPdf } from '../infra/albaranPdf.service';
+// SCRUM-438 (v:3): UN solo sitio declara de dónde sale cada uno de los cinco campos, y LANZA ante
+// una versión desconocida. Sustituye la rama por defecto de `obraSegunVersion`.
+import { contenidoSegunVersion, type ContenidoCongelado } from './albaranContenidoFuentes';
 
 export const ALBARAN_ESTADOS = ['borrador', 'emitido', 'firmado'] as const;
 export type AlbaranEstado = (typeof ALBARAN_ESTADOS)[number];
@@ -317,6 +320,16 @@ export interface FirmaEvidencia {
   // siguen siendo válidas tal cual — por eso son opcionales y NUNCA se rellenan a posteriori.
   firmadoPorNombre?: string | null;
   firmadoPorCalidad?: string | null;
+  /**
+   * SCRUM-438 (v:3): LOS CINCO campos que hasta v:2 se leían de filas VIVAS, sellados aquí dentro.
+   *
+   * 🔴 AUSENTE en v:1 y v:2, que siguen siendo válidas tal cual, y **NUNCA se rellena a
+   * posteriori** — ni siquiera para «mejorarlas» (regla 29). Rellenarlo después sería inventar el
+   * valor que había el día de la firma, que es justo lo que nadie puede saber ya.
+   *
+   * TODO O NADA: las cinco claves o no existe. Ver `validarContenidoCongelado`.
+   */
+  contenidoCongelado?: ContenidoCongelado;
 }
 
 /**
@@ -327,7 +340,7 @@ export interface FirmaEvidencia {
  * cambia lo que significa un campo ya sellado, y eso exige versión nueva: sin ella, dos hashes
  * calculados con reglas distintas serían indistinguibles.
  */
-export const ALBARAN_CONTENIDO_VERSION_ACTUAL = 2;
+export const ALBARAN_CONTENIDO_VERSION_ACTUAL = 3;
 
 export interface AlbaranContenidoParams {
   numero: string;
@@ -344,6 +357,11 @@ export interface AlbaranContenidoParams {
   fechaEntrega?: Date | string | null;
   firmadoPorNombre?: string | null;
   firmadoPorCalidad?: string | null;
+  /**
+   * SCRUM-438 · SOLO v:3. Los cinco campos, para SELLARLOS dentro del sobre. En v:1 y v:2 se
+   * ignora por completo: sus objetos canónicos no lo tienen y no pueden tenerlo.
+   */
+  contenidoCongelado?: ContenidoCongelado;
 }
 
 /** Las líneas, en su forma canónica. Idéntica en v:1 y v:2 — no ha cambiado. */
@@ -441,6 +459,49 @@ function contenidoCanonico(params: AlbaranContenidoParams, version: number): unk
     };
   }
 
+  if (version === 3) {
+    // ── SCRUM-438 · v:3 ────────────────────────────────────────────────────────────────────
+    // Los CINCO campos salen del BLOQUE CONGELADO del sobre, no de las filas vivas. Es el
+    // defecto que cierra: hasta v:2 el hash dependía de que nadie corrigiera la razón social de
+    // un cliente ni renombrara un Trabajo, y una corrección legítima hacía que el verificador
+    // dijera «no coincide» sobre un documento intacto (SCRUM-431).
+    //
+    // El ORDEN de claves es el MISMO que v:2. Lo que cambia es de dónde salen sus valores — y eso
+    // es exactamente lo que obliga a una versión nueva: sin ella, dos hashes calculados con reglas
+    // distintas serían indistinguibles.
+    const c = contenidoSegunVersion(3, {
+      jobDireccion: null,
+      lugarEntrega: null,
+      referenciaTrabajo: null,
+      cliente: null,
+      emisor: null,
+      emisorNif: null,
+      contenidoCongelado: params.contenidoCongelado,
+    });
+    const fechaEntrega =
+      params.fechaEntrega instanceof Date
+        ? params.fechaEntrega.toISOString()
+        : params.fechaEntrega
+          ? String(params.fechaEntrega)
+          : null;
+    return {
+      v: 3,
+      numero: params.numero,
+      fecha,
+      modoValoracion: params.modoValoracion,
+      obra: c.obra,
+      referenciaTrabajo: c.referenciaTrabajo,
+      cliente: c.cliente,
+      emisor: c.emisor,
+      emisorNif: c.emisorNif,
+      notas: params.notas ?? null,
+      lineas: lineasCanonicas(params.lineas),
+      fechaEntrega,
+      firmadoPorNombre: params.firmadoPorNombre ?? null,
+      firmadoPorCalidad: params.firmadoPorCalidad ?? null,
+    };
+  }
+
   // Una versión que no conocemos NO se aproxima con la más parecida: se dice. Un verificador
   // que «hace lo que puede» con una versión futura devolvería «no coincide» sobre un documento
   // intacto, y eso se lee como una falsificación que no ha ocurrido.
@@ -472,12 +533,31 @@ export function computeAlbaranContentHash(
  *
  * `version` null/undefined = albarán SIN FIRMAR todavía → manda el campo de hoy.
  */
+/**
+ * 🔴 SCRUM-438 · RETIRADA. Era `if (version === 1) → jobDireccion; si no → lugarEntrega`, o sea
+ * un despachador con **rama por defecto**: `3`, `99`, `null` y `NaN` caían en silencio a la de
+ * v:2. Un despachador que elige rama para una versión que no reconoce **está adivinando**, y un
+ * valor adivinado en un documento firmado coincide por accidente hasta el día que no.
+ *
+ * La sustituye `contenidoSegunVersion` (`albaranContenidoFuentes.ts`), que resuelve **los cinco**
+ * campos —no solo `obra`— y **LANZA** ante una versión desconocida. Se cambió de raíz porque el
+ * PDF, que es su llamador vivo, imprimía **cuatro** campos vivos más sin pasar por ningún
+ * despachador: arreglar solo `obra` habría dejado el papel diciendo una cosa y el sello
+ * certificando otra en los otros cuatro.
+ */
 export function obraSegunVersion(
   version: number | null | undefined,
-  fuentes: { lugarEntrega: string | null; jobDireccion: string | null },
+  fuentes: { lugarEntrega: string | null; jobDireccion: string | null; contenidoCongelado?: unknown },
 ): string | null {
-  if (version === 1) return fuentes.jobDireccion || null;
-  return fuentes.lugarEntrega || null;
+  return contenidoSegunVersion(version, {
+    jobDireccion: fuentes.jobDireccion ?? null,
+    lugarEntrega: fuentes.lugarEntrega ?? null,
+    referenciaTrabajo: null,
+    cliente: null,
+    emisor: null,
+    emisorNif: null,
+    contenidoCongelado: fuentes.contenidoCongelado,
+  }).obra;
 }
 
 /**
@@ -557,6 +637,30 @@ export async function buildFirmaEvidencia(params: {
   const cliente = customer?.legalName || customer?.name || null;
   const firmadoPorNombre = params.firmadoPorNombre ?? null;
   const firmadoPorCalidad = params.firmadoPorCalidad ?? null;
+  // ── SCRUM-438 (v:3) · EL BLOQUE CONGELADO SE CONSTRUYE **UNA SOLA VEZ** ────────────────────
+  //
+  // 🔴 Y es lo más importante de este diff: lo que se SELLA y lo que se GUARDA salen del MISMO
+  // objeto. Construirlo dos veces —una para el hash y otra para el sobre— es exactamente cómo se
+  // consigue que el sello certifique algo distinto de lo que el sobre dice haber sellado, y eso
+  // no se detectaría hasta que alguien verificara, meses después.
+  //
+  // Las cinco resoluciones son LAS DE SIEMPRE, copiadas sin tocar una: `obra` desde
+  // `Albaran.lugarEntrega` (v:2, SCRUM-300), y las otras cuatro con los mismos `||` de antes.
+  // Cambiar un `||` por un `??` aquí movería el hash sin que nadie lo pidiera.
+  //
+  // ⚠️ CERO CONSULTAS NUEVAS: `job`, `customer` y `merchant` ya estaban leídos arriba.
+  const contenidoCongelado: ContenidoCongelado = {
+    // 🔴 `|| null`, y NO `?? null`. v:2 resolvía esto como `obraSegunVersion(2, { lugarEntrega:
+    // a.lugarEntrega ?? null, … })`, y esa función colapsaba con `||`: el efecto era
+    // `a.lugarEntrega || null`. Con `??` a secas, un `lugarEntrega` vacío se CONGELARÍA como `''`
+    // donde v:2 congelaba `null` — un cambio de hash que nadie pidió, en la única línea del ticket
+    // que toca el sellado. Es exactamente lo que avisa el párrafo de arriba.
+    obra: a.lugarEntrega || null,
+    referenciaTrabajo: job?.titulo || null,
+    cliente,
+    emisor: merchant?.legalName || merchant?.name || null,
+    emisorNif: merchant?.taxId || null,
+  };
   const contentHash = computeAlbaranContentHash(
     {
       numero: a.numero,
@@ -564,16 +668,15 @@ export async function buildFirmaEvidencia(params: {
       modoValoracion: a.modoValoracion,
       lineas: (Array.isArray(a.lineas) ? a.lineas : []) as unknown as AlbaranLinea[],
       notas: a.notas ?? null,
-      // SCRUM-300: la obra ya NO sale de `Job.direccion` (que nadie escribe) sino del campo del
-      // albarán. Es un cambio de FUENTE de un campo ya sellado → por eso la versión sube a 2.
-      obra: obraSegunVersion(ALBARAN_CONTENIDO_VERSION_ACTUAL, {
-        lugarEntrega: a.lugarEntrega ?? null,
-        jobDireccion: job?.direccion || null,
-      }),
-      referenciaTrabajo: job?.titulo || null,
-      cliente,
-      emisor: merchant?.legalName || merchant?.name || null,
-      emisorNif: merchant?.taxId || null,
+      // SCRUM-438: en v:3 estos cinco los IGNORA el canónico —los toma del bloque congelado—, y se
+      // siguen pasando porque `computeAlbaranContentHash` es el mismo para las tres versiones y
+      // v:1/v:2 sí los usan. Sus valores son los del bloque: una sola fuente, no dos.
+      obra: contenidoCongelado.obra,
+      referenciaTrabajo: contenidoCongelado.referenciaTrabajo,
+      cliente: contenidoCongelado.cliente,
+      emisor: contenidoCongelado.emisor,
+      emisorNif: contenidoCongelado.emisorNif,
+      contenidoCongelado,
       // SCRUM-300 · campo nº 1 del ticket: el día que se ENTREGÓ, distinto del de emisión. Entra
       // en el contenido sellado, así que queda protegido por la firma como cualquier otra línea.
       fechaEntrega: a.fechaEntrega ?? null,
@@ -597,6 +700,10 @@ export async function buildFirmaEvidencia(params: {
     contentHash,
     firmadoPorNombre,
     firmadoPorCalidad,
+    // SCRUM-438 (v:3): el MISMO objeto con el que se calculó el hash. Un sobre autocontenido —que
+    // reproduce su contenido él solo, sin leer ninguna otra tabla— es más fuerte que uno que
+    // necesita que otra fila siga estando y siga bloqueada.
+    contenidoCongelado,
   };
 }
 
@@ -674,22 +781,55 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
     emisionAt: albaran.createdAt, // SCRUM-67: fecha de emisión ≠ fecha de entrega/ejecución
     version: albaran.version,
     modoValoracion,
-    merchant: merchant ?? { name: '—', legalName: null, taxId: null, address: null, logoUrl: null, whatsappPhone: null },
-    customer: customer
-      ? { name: customer.name, legalName: customer.legalName, taxId: customer.taxId }
-      : { name: null, legalName: null, taxId: null },
-    // SCRUM-300: el PDF imprime la obra QUE SE SELLÓ, y eso depende de la versión de la
-    // evidencia. Un albarán v:1 se selló con `Job.direccion`; uno v:2, con `Albaran.lugarEntrega`.
-    // Imprimir la fuente de hoy en un documento firmado ayer haría que el papel dijera una cosa
-    // y su hash certificara otra. Sin firmar (v = undefined) manda el campo de hoy.
-    obra: obraSegunVersion((albaran.evidenciaFirma as any)?.v, {
-      lugarEntrega: albaran.lugarEntrega ?? null,
-      jobDireccion: job?.direccion || null,
-    }),
+    // 🔴 SCRUM-452: aquí ya SOLO viaja lo que el sobre NO congela. El nombre del emisor, su NIF y
+    // el nombre del cliente salen del bloque de abajo, resueltos por versión. Que ni siquiera
+    // lleguen por aquí es lo que impide que el PDF vuelva a pintarlos en vivo por descuido.
+    //
+    // `address`, `whatsappPhone`, `logoUrl` y el `taxId` DEL CLIENTE se leen de la fila de hoy, y
+    // es correcto: el sello no los nombra, así que no puede contradecir al papel. Queda declarado
+    // en `docs/master/SCRUM-452.md`. ⚠️ `logoUrl` no tiene arreglo posible por esta vía ni en un
+    // v:4: congelar la URL no congela la imagen que hay detrás de ella.
+    merchant: merchant ?? { address: null, logoUrl: null, whatsappPhone: null },
+    customer: { taxId: customer?.taxId ?? null },
+    // ── SCRUM-300 + SCRUM-438 · EL PDF IMPRIME LO QUE SE SELLÓ, Y AHORA SON LOS CINCO ────────
+    //
+    // SCRUM-300 pasó `obra` por el despachador porque un v:1 se selló con `Job.direccion` y un
+    // v:2 con `Albaran.lugarEntrega`: imprimir la fuente de hoy en un documento firmado ayer hace
+    // que el papel diga una cosa y su hash certifique otra.
+    //
+    // 🔴 Lo que faltaba, medido en SCRUM-438: **los otros CUATRO campos vivos se imprimían
+    // igualmente en vivo** —`referenciaTrabajo`, y el cliente y el emisor por sus objetos— sin
+    // pasar por ningún despachador. Con v:3 sellándolos, arreglar solo `obra` habría dejado el
+    // mismo defecto en cuatro campos.
+    //
+    // ✅ SCRUM-452 · YA SON LOS CINCO. Antes eran dos —`obra` y `referenciaTrabajo`— y los otros
+    // tres se imprimían EN VIVO por los objetos `customer` y `merchant`. Consecuencia, medida y
+    // ahora cerrada: en un albarán **v:3** cuyo cliente corrigiera su razón social después de
+    // firmar, el papel imprimía la NUEVA mientras el sello certificaba la ANTIGUA — y el
+    // verificador decía «cuadra», porque el sello no mentía: mentía el papel.
+    //
+    // 🔴 Y v:1 y v:2 NO CAMBIAN NI UN BYTE. No tienen bloque congelado, así que para ellos
+    // `contenidoSegunVersion` devuelve las MISMAS fuentes vivas que se resolvían aquí abajo, con
+    // las mismas cadenas `||`. Cambia por qué puerta entran, no lo que valen.
+    //
+    // Sin firmar (`v` undefined) manda el campo de hoy: es un borrador, no una versión rara.
+    ...(() => {
+      const sellado = contenidoSegunVersion((albaran.evidenciaFirma as any)?.v, {
+        jobDireccion: job?.direccion || null,
+        lugarEntrega: albaran.lugarEntrega ?? null,
+        referenciaTrabajo: job?.titulo || null,
+        cliente: customer?.legalName || customer?.name || null,
+        emisor: merchant?.legalName || merchant?.name || null,
+        emisorNif: merchant?.taxId || null,
+        contenidoCongelado: (albaran.evidenciaFirma as any)?.contenidoCongelado,
+      });
+      // Los CINCO, tal cual. Se devuelve el objeto entero y no campo a campo: el día que el bloque
+      // gane un sexto, olvidarlo aquí sería otra vez el papel diciendo una cosa y el sello otra.
+      return sellado;
+    })(),
     // SCRUM-300 · campo nº 1 del ticket. null en todo lo anterior a esta tarea: entonces el PDF
     // no imprime la línea, en vez de imprimir un rótulo con un hueco al lado.
     fechaEntrega: albaran.fechaEntrega ?? null,
-    referenciaTrabajo: job?.titulo || null, // SCRUM-67: referencia al Trabajo/presupuesto origen
     lineas,
     totales: modoValoracion === 'VALORADO' ? calcAlbaranTotales(lineas) : null,
     notas: albaran.notas,

@@ -19,7 +19,7 @@ import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-25: exports admin-only, CSVs nuevos, base+IVA, rango y audit', { skip: !ENABLED }, async (t) => {
+test('SCRUM-25: exports admin-only, CSVs nuevos, base+IVA, rango y audit', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 

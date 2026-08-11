@@ -36,7 +36,7 @@ async function sesionDe(prisma, merchantId, teamMemberId) {
   return token;
 }
 
-test('SCRUM-148: el filtro por operario NO le da a un técnico la llave de los trabajos ajenos', { skip: !ENABLED }, async () => {
+test('SCRUM-148: el filtro por operario NO le da a un técnico la llave de los trabajos ajenos', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 
@@ -97,7 +97,7 @@ test('SCRUM-148: el filtro por operario NO le da a un técnico la llave de los t
   });
 });
 
-test('SCRUM-148: el filtro de presupuestos distingue "del propietario" de "sin filtrar"', { skip: !ENABLED }, async () => {
+test('SCRUM-148: el filtro de presupuestos distingue "del propietario" de "sin filtrar"', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { listQuotesAdmin } = await import('../dist/modules/system/quoteAdmin.js');
 

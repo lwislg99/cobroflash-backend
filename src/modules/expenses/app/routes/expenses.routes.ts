@@ -4,6 +4,9 @@ import {
   getExpenseSummary, getQuoteMargin, EXPENSE_CATEGORIES, ExpenseRefError,
 } from '../../domain/expenses.service';
 import { requireRole } from '../../../../core/http/authMiddleware';
+import { prisma } from '../../../../core/db/prisma';
+// SCRUM-324 (E3) · la regla fiscal vive en el dominio, no en cada pantalla que da de alta un gasto.
+import { clasificarJustificante } from '../../domain/justificante';
 
 const router = Router();
 
@@ -86,7 +89,10 @@ router.get('/margin/:quoteId', requireRole('admin'), async (req, res) => {
 // POST /admin/expenses
 router.post('/', async (req, res) => {
   try {
-    const { quoteId, providerId, concept, amount, currency, category, date, notes, receiptData } = req.body || {};
+    // SCRUM-324 (E3) · los cinco del desglose. Sin ellos el gasto se guarda igual, pero el libro
+    // de facturas recibidas lo EXCLUYE (`libroRecibidas.ts:98`) y sale sin un solo asiento.
+    const { quoteId, providerId, concept, amount, currency, category, date, notes, receiptData, nifProveedor,
+            baseAmount, vatRate, vatAmount, providerInvoiceNumber, providerInvoiceDate } = req.body || {};
     if (!concept || typeof concept !== 'string') return res.status(400).json({ error: 'concept_required' });
     if (amount == null || Number.isNaN(Number(amount))) return res.status(400).json({ error: 'amount_required' });
     if (Number(amount) <= 0) return res.status(400).json({ error: 'amount_invalid' });
@@ -104,8 +110,41 @@ router.post('/', async (req, res) => {
       // SCRUM-109: autoría — quien registra el gasto AHORA, no heredada de nada (a
       // diferencia de Job.operarioId, que se congela desde el presupuesto en el accept).
       teamMemberId: req.teamMemberId ?? null,
+      nifProveedor: nifProveedor ? String(nifProveedor) : null,
+      // SCRUM-324 (E3) · EL DESGLOSE. `?? null` y no `x ? … : null`: un **0** legítimo —tipo 0%,
+      // operación exenta— es falsy, y el atajo lo convertiría en «no se sabe». Cero y vacío no son
+      // el mismo dato, y aquí la diferencia decide si el asiento entra en el libro.
+      baseAmount:  baseAmount  ?? null,
+      vatRate:     vatRate     ?? null,
+      vatAmount:   vatAmount   ?? null,
+      providerInvoiceNumber: providerInvoiceNumber ? String(providerInvoiceNumber) : null,
+      providerInvoiceDate:   providerInvoiceDate ? new Date(providerInvoiceDate) : null,
     });
-    return res.status(201).json({ ok: true, item: expense });
+
+    // SCRUM-324 (E3) · el veredicto viaja CON el gasto recién creado.
+    //
+    // Se calcula aquí y no en el navegador porque es una regla fiscal: si viviera en el front,
+    // cada pantalla que diera de alta un gasto tendría su propia copia y se desincronizarían — y el
+    // día que difieran, una le diría a un profesional que puede deducir algo que no puede.
+    //
+    // El NIF se lee del PROVEEDOR, que es donde vive, y no de lo que acaba de teclear el usuario:
+    // si el proveedor ya tenía uno, ese es el bueno (ver `guardarNifDelProveedor`).
+    const proveedor = expense.providerId
+      ? await prisma.provider.findFirst({
+          where: { id: expense.providerId, merchantId: req.merchantId },
+          select: { taxId: true },
+        })
+      : null;
+    const justificante = clasificarJustificante({
+      amount: expense.amount,
+      date: expense.date,
+      nifProveedor: proveedor?.taxId ?? null,
+      vatRate: expense.vatRate,
+      vatAmount: expense.vatAmount,
+      providerInvoiceNumber: expense.providerInvoiceNumber,
+      vatDeducible: expense.vatDeducible,
+    });
+    return res.status(201).json({ ok: true, item: expense, justificante });
   } catch (err) {
     if (err instanceof ExpenseRefError) return res.status(400).json(refErrorBody(err));
     console.error('[POST /admin/expenses]', err);
@@ -118,7 +157,8 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) return res.status(400).json({ error: 'invalid_id' });
-    const { concept, amount, currency, category, date, notes, quoteId, providerId, receiptData } = req.body || {};
+    const { concept, amount, currency, category, date, notes, quoteId, providerId, receiptData,
+            baseAmount, vatRate, vatAmount, providerInvoiceNumber, providerInvoiceDate } = req.body || {};
     const patch: any = {};
     if (concept     !== undefined) patch.concept     = String(concept).trim();
     if (amount      !== undefined) patch.amount      = Number(amount);
@@ -129,6 +169,13 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
     if (quoteId     !== undefined) patch.quoteId     = quoteId ? Number(quoteId) : null;
     if (providerId  !== undefined) patch.providerId  = providerId ? Number(providerId) : null;
     if (receiptData !== undefined) patch.receiptData = receiptData ? String(receiptData) : null;
+      // SCRUM-324 (E3) · en la edición se distingue «no lo mandes» (`undefined`, no se toca) de
+      // «bórralo» (`null`). Sin esa distinción, abrir el modal y guardar borraría el desglose.
+      if (baseAmount  !== undefined) patch.baseAmount  = baseAmount  ?? null;
+      if (vatRate     !== undefined) patch.vatRate     = vatRate     ?? null;
+      if (vatAmount   !== undefined) patch.vatAmount   = vatAmount   ?? null;
+      if (providerInvoiceNumber !== undefined) patch.providerInvoiceNumber = providerInvoiceNumber ? String(providerInvoiceNumber) : null;
+      if (providerInvoiceDate   !== undefined) patch.providerInvoiceDate   = providerInvoiceDate ? new Date(providerInvoiceDate) : null;
     if (!Object.keys(patch).length) return res.status(400).json({ error: 'empty_update' });
     const updated = await updateExpense(req.merchantId, id, patch);
     if (!updated) return res.status(404).json({ error: 'not_found' });

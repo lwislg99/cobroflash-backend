@@ -127,6 +127,7 @@ model AuthSession {
   expiresAt    DateTime  @map("expires_at")
   usedAt       DateTime? @map("used_at")
   createdAt    DateTime  @default(now()) @map("created_at")
+  instaladaPwa Boolean? @map("instalada_pwa") // el último entorno visto; null = no se pudo saber
 
   merchant   Merchant    @relation(fields: [merchantId], references: [id])
   teamMember TeamMember? @relation(fields: [teamMemberId], references: [id])

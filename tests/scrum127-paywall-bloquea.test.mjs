@@ -32,7 +32,7 @@ const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJA
 const FUTURA = () => new Date(Date.now() + 30 * 24 * 3600 * 1000);
 const PASADA = () => new Date(Date.now() - 24 * 3600 * 1000);
 
-test('SCRUM-127: requireActivePlan bloquea de verdad las 4 rutas gateadas (y solo con trial vencido)', { skip: !ENABLED }, async () => {
+test('SCRUM-127: requireActivePlan bloquea de verdad las 4 rutas gateadas (y solo con trial vencido)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);

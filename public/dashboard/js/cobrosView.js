@@ -69,6 +69,19 @@ var COBROS_COPY = {
  * profesional piensa en cuatro. La distinción no se pierde: se lee en la fila de cada cobro.
  * Filtrar por cuatro, leer los cinco.
  */
+/**
+ * SCRUM-451 · EL PLAZO Y EL NÚMERO DE SECUENCIA YA NO VIVEN AQUÍ.
+ *
+ * SCRUM-448 los estrenó en esta vista, y dejó dicho por qué era provisional: **el segundo sitio
+ * donde se copia una decisión es donde deja de ser una decisión y pasa a ser una costumbre.** Los
+ * dos bajaron a `apiRequest` (`api.js`), que es por donde pasan las 136 peticiones del panel, y
+ * allí además **cortan de verdad** con `AbortController` — cosa que aquí no se podía hacer.
+ *
+ * Lo que esta vista conserva es lo suyo: **sus tres estados y su texto**. Cuando el plazo vence,
+ * `apiRequest` rechaza con `err.vencido`, cae por el `catch` de siempre y se pinta el aviso ya
+ * aprobado en SCRUM-285. Ni un texto genérico ni un plazo propio.
+ */
+
 var COBROS_METODOS = [
   { clave: 'bizum', rotulo: 'Bizum', casa: ['bizum_auto', 'bizum_manual'] },
   { clave: 'card', rotulo: 'tarjeta', casa: ['card'] },
@@ -128,6 +141,22 @@ function renderCobrosView(container) {
 
   var filtro = 'all';
   var datos = [];
+  // 🔴 SCRUM-448 · EL TERCER ESTADO: «TODAVÍA NO LO SABEMOS».
+  //
+  // SCRUM-285 separó con cuidado los dos vacíos —«no hay ninguno» y «tu filtro los esconde»— y se
+  // dejó el tercero fuera sin verlo: mientras la respuesta no ha llegado, `datos` está vacío y la
+  // pantalla caía en el primero. Con mala cobertura, el profesional abría Cobros y leía **«Todavía
+  // no hay cobros registrados»**: le afirmábamos que no le debe nadie nada. En la pantalla del
+  // dinero eso no es impreciso, es falso — y se cierra tranquilo.
+  //
+  // Lo encontró el banco de SCRUM-362 en su primer uso, con el escenario «acepta y no entrega».
+  //
+  // 🔴 TRES ESTADOS EXPLÍCITOS, y no dos banderas. Con `cargado` a secas apareció un agujero al
+  // añadir el plazo: tras el aviso, pulsar un filtro volvía a llamar a `pintarFilas()` con la lista
+  // vacía y **la pantalla decía otra vez «no hay cobros»** — el defecto de este ticket colándose
+  // por la puerta del plazo. Con el estado nombrado, cada uno pinta lo suyo y no hay combinación
+  // que caiga en el vacío por descarte.
+  var estado = 'cargando'; // 'cargando' | 'listo' | 'sin-respuesta'
 
   var tablaScroll = document.createElement('div');
   tablaScroll.className = 'table-scroll';
@@ -184,6 +213,16 @@ function renderCobrosView(container) {
   function pintarFilas() {
     tbody.innerHTML = '';
     var lista = visibles();
+
+    // 🔴 MIENTRAS NO SE SABE, NO SE AFIRMA NADA. Ni «no hay cobros» ni «tu filtro los esconde»:
+    // las dos son afirmaciones sobre unos datos que todavía no han llegado. La tabla se queda sin
+    // filas —vacía y muda— y quien contesta cuando la respuesta no llega es el plazo de abajo.
+    if (estado === 'cargando') return;
+
+    // Y si la respuesta no llegó, se sigue diciendo eso — también al filtrar. Repintar el aviso en
+    // vez de recalcular un vacío es lo que impide que un clic en un filtro convierta «no sabemos»
+    // en «no hay».
+    if (estado === 'sin-respuesta') { pintarAviso(); return; }
 
     if (!lista.length) {
       // 🔴 DOS ESTADOS VACÍOS, Y NO SON INTERCAMBIABLES. Si no hay NINGÚN cobro, la pantalla lo
@@ -281,10 +320,8 @@ function renderCobrosView(container) {
   pintarFiltros();
   pintarFilas();
 
-  apiRequest('/admin/cobros').then(function (r) {
-    datos = Array.isArray(r) ? r : [];
-    pintarFilas();
-  }).catch(function () {
+  /** Pinta el aviso. Mismo texto aprobado para el fallo y para el plazo: es el mismo hecho. */
+  function pintarAviso() {
     tbody.innerHTML = '';
     var tr = document.createElement('tr');
     var td = document.createElement('td');
@@ -292,6 +329,38 @@ function renderCobrosView(container) {
     td.textContent = COBROS_COPY.errorCarga;
     tr.appendChild(td);
     tbody.appendChild(tr);
+  }
+
+  function pintarNoSePudo() {
+    if (estado === 'listo') return; // ya llegó: no se pisa lo que el profesional está leyendo
+    estado = 'sin-respuesta';
+    pintarAviso();
+  }
+
+  // 🔴 EL CASO QUE DECIDE EL DISEÑO: ¿y si la respuesta NO LLEGA NUNCA?
+  //
+  // Es lo que hace una red que acepta y no entrega: la promesa no resuelve **ni rechaza**, así que
+  // sin plazo ni el `then` ni el `catch` correrían jamás y la tabla se quedaría muda para siempre.
+  // Un indicador de carga eterno tampoco sirve: no miente, pero deja al profesional sin saber qué
+  // hacer.
+  //
+  // SCRUM-451 · EL PLAZO LO PONE `apiRequest`, no esta vista. Al vencer, rechaza —con `sinRed` y
+  // `vencido`— y esto cae por el `catch` de siempre. Se dice lo mismo que cuando falla, con el
+  // texto YA APROBADO en SCRUM-285 —«No hemos podido cargar los cobros. Vuelve a intentarlo.»—,
+  // porque para quien mira es el mismo hecho: no están sus datos y puede reintentar.
+  //
+  // Y el número de secuencia también es suyo: si mientras tanto salió otra petición para
+  // `/admin/cobros`, la que manda es la última, y a ésta se le entrega ESE resultado. Aquí no hay
+  // nada que comparar porque ya no puede llegar una respuesta vieja.
+  apiRequest('/admin/cobros').then(function (r) {
+    // 🔴 EL DATO GANA AL MENSAJE: si venció el plazo y la respuesta llega DESPUÉS, se pinta y
+    // sustituye al aviso. Lo que vence no puede acabar contándose como «no hay cobros» — eso es el
+    // defecto entero de SCRUM-448, y colarlo por la puerta del plazo sería reintroducirlo.
+    datos = Array.isArray(r) ? r : [];
+    estado = 'listo';
+    pintarFilas();
+  }).catch(function () {
+    pintarNoSePudo();
   });
 }
 

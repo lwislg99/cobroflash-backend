@@ -16,6 +16,14 @@ async function renderHomeView(container) {
         ${window.appUserRole === 'admin' ? '<button class="btn-ghost btn-sm" id="btn-home-prefs" title="Elige qué bloques ves en tu Home">⚙ Personalizar</button>' : ''}
       </header>
 
+      <!-- SCRUM-356 (H2) · Firmas que aún no están a salvo.
+           Va ANTES del héroe y SIN atributo data-home-block a propósito: el héroe habla del dinero que
+           te deben, esto de un albarán que puedes perder, y no es un bloque que se pueda quitar
+           desde «Personalizar». Un aviso de riesgo ocultable no es un aviso.
+           Se rellena aparte para no retrasar el resto de la home, y cuando no hay nada pendiente
+           no ocupa ni una línea. -->
+      <div id="home-firmas-pendientes"></div>
+
       <!-- Número héroe: lo que te deben (foco principal) -->
       <div id="home-hero" data-home-block="hero"></div>
 
@@ -119,7 +127,29 @@ async function renderHomeView(container) {
     const af = document.getElementById("activity-feed");
     if (af) af.innerHTML = "";   // detener los skeletons que quedaban cargando
   }
+
+  // SCRUM-356 (H2) · FUERA del try/catch a propósito: si las métricas fallan —que es justo cuando
+  // quedan firmas sin subir— este aviso es lo único que no puede desaparecer.
+  pintarFirmasPendientesEnHome();
 }
+
+/**
+ * SCRUM-356 (H2) · El aviso de firmas pendientes en la home.
+ *
+ * 🔴 VA FUERA DEL `try` DE LAS MÉTRICAS, y se llama también cuando ésas fallan: si la red está mal
+ * —que es justo cuando quedan firmas sin subir— el `catch` de arriba se lleva la home entera, y
+ * este aviso es lo ÚNICO que no puede desaparecer en ese momento. Perderlo ahí sería quitar el
+ * salvavidas cuando el barco se hunde.
+ *
+ * No lanza nunca: `pendientesDeSubir` ya traduce cualquier fallo a «no hemos podido comprobar»,
+ * que es un texto DISTINTO de «no queda nada» y ésa es toda la gracia.
+ */
+async function pintarFirmasPendientesEnHome() {
+  const caja = document.getElementById('home-firmas-pendientes');
+  if (!caja || typeof window.pendientesDeSubir !== 'function') return;
+  caja.innerHTML = window.pintarPendientesDeSubir(await window.pendientesDeSubir());
+}
+window.pintarFirmasPendientesEnHome = pintarFirmasPendientesEnHome;
 
 function setNavBadge(id, count, max99 = true) {
   const badge = document.getElementById(id);
@@ -635,7 +665,7 @@ function openQuickQuoteModal(prefill) {
   backdrop.className = "modal-overlay";
   backdrop.id = "qq-modal-backdrop";
   backdrop.innerHTML = `
-    <div class="modal qq-modal">
+    <div class="modal qq-modal">
 
       <div class="qq-modal-body">
         <!-- Cliente -->
@@ -711,8 +741,6 @@ function openQuickQuoteModal(prefill) {
                   </div>
                 </div>
               </div>`;
-  // SCRUM-446: la cabecera sale del constructor compartido.
-  backdrop.querySelector('.modal').prepend(cabeceraModal({ titulo: `${qNew} ${qFast}`, idCierre: "qq-close" }));
             }).join('')}
           </div>
           <p class="qq-help">El cliente elige una opción y esa se convierte en su presupuesto.</p>
@@ -747,6 +775,10 @@ function openQuickQuoteModal(prefill) {
     </div>
   `;
 
+  // SCRUM-446: la cabecera sale del constructor compartido.
+  backdrop.querySelector('.modal').prepend(cabeceraModal({
+    titulo: `${qNew} ${qFast}`, idCierre: 'qq-close',
+  }));
   document.body.appendChild(backdrop);
 
   document.getElementById("qq-close").addEventListener("click", closeQuickQuote);

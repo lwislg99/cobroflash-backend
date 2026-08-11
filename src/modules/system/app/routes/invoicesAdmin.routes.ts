@@ -29,6 +29,7 @@ import { ensureInvoicePdf, ensureChargeReceiptToken } from '../../../../lib/invo
 import { sendSuccessBody, sendFailureBody, SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 import { esErrorSinSellar, ERROR_SIN_SELLAR } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206
 import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
+import { resolverFechaDeCobro } from '../../../billing/domain/fechaDeCobro'; // SCRUM-397
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-289 (C7)
 import { puedeRectificarse } from '../../../invoicing/domain/rectificabilidad'; // SCRUM-308
@@ -356,7 +357,16 @@ PDF del presupuesto firmado y del justificante: disponibles desde el panel (se a
 /**
  * POST /admin/invoices/bulk-paid
  * Marca múltiples facturas como pagadas en una sola operación.
- * Body: { ids: number[] }
+ * Body: { ids: number[], paidAt?: string }
+ *
+ * SCRUM-397 · LA FECHA LA DICE QUIEN MARCA, no el reloj. Antes iba `new Date()` a fuego, así que
+ * conciliar el 2 de abril un pago del 31 de marzo lo fechaba en ABRIL -- cruce de trimestre, y con
+ * criterio de caja el euro declarado en el periodo que no toca. En LOTE, multiplicado por la
+ * seleccion.
+ *
+ * UNA fecha para todo el lote, y es decision escrita: la accion ES una sola afirmacion. Si se
+ * cobraron en dias distintos son dos hechos y van en dos operaciones. Lo que no puede pasar es que
+ * el producto ponga la misma fecha SIN que nadie lo haya dicho.
  */
 router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
   try {
@@ -364,20 +374,27 @@ router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
     if (ids.length === 0) return res.status(400).json({ error: 'no_ids' });
     if (ids.length > 100) return res.status(400).json({ error: 'too_many', max: 100 });
 
+    // Sin fecha en el cuerpo -> hoy. Eso NO es el defecto: es el valor por defecto que la pantalla
+    // propone y la persona puede cambiar. El defecto era que no se podia cambiar.
+    const fecha = resolverFechaDeCobro(req.body?.paidAt);
+    if (!fecha.ok) return res.status(400).json({ error: fecha.error, message: fecha.message });
+
     const result = await prisma.invoice.updateMany({
       where: {
         id: { in: ids },
         merchantId: req.merchantId,
         status: { not: 'paid' }, // solo las que aún no están pagadas
       },
-      data: { status: 'paid', paidAt: new Date() },
+      data: { status: 'paid', paidAt: fecha.fecha },
     });
 
     // A11.1 (S2): marcar pagado a mano queda auditado (quién, desde dónde, qué)
     recordAudit({
       merchantId: req.merchantId, teamMemberId: req.teamMemberId ?? null,
       action: 'marcar_pagado_manual', entityType: 'invoice',
-      meta: { ids, updated: result.count, via: 'bulk' }, ip: requestIp(req),
+      // SCRUM-397: queda escrito que la fecha la AFIRMO una persona (y si la eligio o la heredo
+      // de por defecto), no que el sistema la dedujo.
+      meta: { ids, updated: result.count, via: 'bulk', paidAt: fecha.fecha.toISOString(), fechaOrigen: fecha.origen }, ip: requestIp(req),
     });
 
     return res.json({ ok: true, updated: result.count });

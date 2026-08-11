@@ -187,7 +187,7 @@ test('calcAlbaranTotales: SIN_VALORAR (líneas sin precioUnitario) da 0, no NaN'
 // ── Tenancy + flujo HTTP real (gateado, patrón tenancy-permisos.test.mjs) ───
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-14: tenancy del albarán + lock de firmado end-to-end', { skip: !ENABLED }, async () => {
+test('SCRUM-14: tenancy del albarán + lock de firmado end-to-end', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);
@@ -316,7 +316,7 @@ test('SCRUM-14: tenancy del albarán + lock de firmado end-to-end', { skip: !ENA
 // Playwright MCP contra staging (no hay librería de parseo de PDF en el repo);
 // aquí se blinda la MECÁNICA: validación 400, candado del modo tras emitir 409,
 // y que el PDF se sigue generando (200 + application/pdf) en ambos modos.
-test('SCRUM-65: albarán VALORADO — validación, candado de modo y PDF en ambos modos', { skip: !ENABLED }, async () => {
+test('SCRUM-65: albarán VALORADO — validación, candado de modo y PDF en ambos modos', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);

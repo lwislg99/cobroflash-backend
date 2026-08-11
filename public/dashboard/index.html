@@ -285,6 +285,14 @@
   <script src="./js/globalSearch.js"></script>
   <script src="./js/csvImport.js"></script>
   <script src="./js/tutorial.js"></script>
+  <!-- SCRUM-455 · antes que `app.js`: su `logout()` purga a través de este fichero. -->
+  <script src="./js/almacenLocal.js"></script>
+  <!-- SCRUM-356 · despues del almacen: lee la cola de firmas. -->
+  <script src="./js/estadoFirma.js"></script>
+  <!-- SCRUM-358 (H3 fase 2) · el productor de la cola: usa el almacen y el modelo de estados. -->
+  <script src="./js/colaDeFirmas.js"></script>
+  <!-- SCRUM-360 fase 3 · lee la cola y marca fuera de IndexedDB: despues del almacen y de la cola. -->
+  <script src="./js/resistenciaAlmacen.js"></script>
   <script src="./js/app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {

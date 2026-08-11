@@ -103,6 +103,55 @@ const ROTULOS_ALBARAN = {
 // nuestro, no suyo. Él necesita saber qué tiene delante.
 const COPY_DUPLICADO_CREADO = 'Duplicado creado. Trae las líneas y las notas del original; la firma y las fotos no se copian nunca.';
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-460 · LOS DOS TEXTOS DE «SIN COBERTURA» — **APROBADOS** por el asesor el 11-ago-2026.
+//
+// ⚠️ LA (a) DICE «NO ESTÁ DESCARGADO», NO «NO SE DESCARGÓ», y el matiz es la corrección del
+// asesor: **no falló nada**. Simplemente la política de precarga no eligió este albarán. «No se
+// descargó» insinúa una avería nuestra y manda al profesional a buscar un culpable que no existe.
+//
+// LA CAJA, MEDIDA CON EL CSS REAL:
+//   `.view-container` padding 12 px a cada lado (≤768 px) + `.alert` padding 14 px a cada lado
+//   → ancho útil: **338 px a 390** · **268 px a 320**
+//   `.alert` font-size 13,5 px · line-height 1,5 → **~20 px de alto por línea**
+//   Con Inter a 13,5 px (avance medio ~0,50 em ≈ 6,8 px/carácter): **~49 caracteres/línea a 390**
+//   y **~39 a 320**.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+const COPY_ALBARAN_SIN_PRECARGA = 'Este albarán no está descargado y ahora no hay cobertura. '
+  + 'Podrás abrirlo cuando tengas señal.';
+const COPY_SIN_RED_NO_SE_CREA = 'Sin cobertura no puedes crear albaranes, solo firmar los que ya '
+  + 'llevas descargados.';
+
+/**
+ * El albarán precargado, si lo hay. Devuelve `null` cuando no está o no se pudo mirar el almacén.
+ *
+ * ⚠️ NO LANZA: esto corre dentro del `catch` de la carga, y un fallo aquí dejaría al profesional
+ * con una excepción en vez de con un aviso — peor que el problema que viene a resolver.
+ */
+async function albaranDesdePrecarga(albaranId) {
+  try {
+    if (typeof window.leerAlbaranPrecargado !== 'function') return null;
+    const r = await window.leerAlbaranPrecargado(albaranId);
+    if (!r || !r.albaran) return null;
+    const a = r.albaran;
+    // 🔴 EL PAQUETE Y LA PANTALLA NO TIENEN LA MISMA FORMA, y sin traducirlo el profesional abre en
+    // el sótano una ficha que dice «Cliente —» y «Trabajo —». Lo cazó el test de modo avión, no una
+    // lectura: el paquete es PLANO por minimización (`clienteNombre`, `jobTitulo`) y el rail lee
+    // `alb.customer.name` y `alb.job.titulo`.
+    //
+    // ⚠️ Lo que NO viaja se deja AUSENTE a propósito: `estadoFacturacion` y `pendientes` no están en
+    // el paquete —son contexto de cobro, no de firma (SCRUM-458)— y el rail ya pinta «—» para lo
+    // que falta. Inventar un `'no facturado'` aquí sería afirmar algo que nadie ha comprobado.
+    return {
+      ...a,
+      job: { id: a.jobId, titulo: a.jobTitulo ?? null, direccion: null },
+      customer: { name: a.clienteNombre ?? '' },
+    };
+  } catch (_e) {
+    return null;
+  }
+}
+
 // LOS RÓTULOS DEL RAIL — APROBADOS por el fundador el 6-ago-2026 (regla 30). Una palabra cada uno.
 //
 // `presupuesto` es «Presupuesto», NO «Presupuesto origen», y el motivo lleva un paso más allá el
@@ -203,19 +252,44 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   };
 
   let alb;
+  let sinRed = false;
   try {
     alb = await apiRequest(`/admin/albaranes/${albaranId}`);
   } catch (e) {
-    // SCRUM-379 · LOS DOS CAMINOS POR LOS QUE FALLA UNA RECARGA, y este es el probable.
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-460 (H1 · fase 3) · SI NO HAY RED, SE MIRA LO PRECARGADO ANTES DE RENDIRSE.
     //
-    // Cuando esta vista se invoca PARA REFRESCAR tras una acción, un GET que falla no es «no se
-    // pudo abrir la ficha»: la acción del profesional YA OCURRIÓ. Decirle aquí «No se pudo cargar
-    // el albarán» le informa de la lectura y le calla lo único que necesita saber —que su acción
-    // salió— así que vuelve a pulsar. Quien invoca sabe en qué caso está y pasa el aviso.
-    if (opciones.avisoSiNoCarga) { setStatus('info', opciones.avisoSiNoCarga); return; }
-    setStatus('error', 'No se pudo cargar el albarán: ' + (e?.data?.message || e.message));
-    return;
+    // Es el punto entero del bloque H: el profesional está en un sótano y lo único que necesita es
+    // abrir el albarán y que se lo firmen. Si bajó, se abre.
+    //
+    // ⚠️ El albarán precargado trae MENOS campos que el del servidor, y a propósito (minimización
+    // del art. 32, SCRUM-458): no vienen presupuesto, estado de facturación ni pendientes. Por eso
+    // se marca `sinRed`: lo que falta es ausencia, no un cero, y pintarlo como cero sería afirmar.
+    const precargado = await albaranDesdePrecarga(albaranId);
+    if (precargado) {
+      alb = precargado;
+      sinRed = true;
+    } else {
+      // SCRUM-379 · LOS DOS CAMINOS POR LOS QUE FALLA UNA RECARGA, y este es el probable.
+      //
+      // Cuando esta vista se invoca PARA REFRESCAR tras una acción, un GET que falla no es «no se
+      // pudo abrir la ficha»: la acción del profesional YA OCURRIÓ. Decirle aquí «No se pudo cargar
+      // el albarán» le informa de la lectura y le calla lo único que necesita saber —que su acción
+      // salió— así que vuelve a pulsar. Quien invoca sabe en qué caso está y pasa el aviso.
+      if (opciones.avisoSiNoCarga) { setStatus('info', opciones.avisoSiNoCarga); return; }
+      // 🔴 EL CONTROL NEGATIVO DEL TICKET: sin red y sin precarga, se DICE. Ni pantalla en blanco,
+      // ni formulario vacío que invite a firmar algo que no se ha cargado.
+      if (e && e.sinRed) { setStatus('error', COPY_ALBARAN_SIN_PRECARGA); return; }
+      setStatus('error', 'No se pudo cargar el albarán: ' + (e?.data?.message || e.message));
+      return;
+    }
   }
+
+  // 🔴 EL LÍMITE SE CUENTA CUANDO IMPORTA. Crear albaranes sin red quedó FUERA DE ALCANCE POR
+  // DECISIÓN, y un límite que no se cuenta se vive como una avería: el profesional que busca el
+  // botón de «+ Nuevo albarán» estando en el sótano cree que el producto está roto. Se dice justo
+  // aquí, que es el único momento en que está mirando una copia descargada.
+  if (sinRed) setStatus('info', COPY_SIN_RED_NO_SE_CREA);
 
   const recargar = () => renderAlbaranDetailView(container, albaranId, { avisoSiNoCarga: COPY_ALBARAN_SIN_REFRESCO });
 
@@ -261,6 +335,32 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     (alb.estadoFacturacion && alb.estadoFacturacion !== 'sin_facturar'
       ? `<span class="status-pill">${esc(alb.estadoFacturacion)}</span>` : '');
   page.appendChild(chips);
+
+  // ── SCRUM-356 (H2) · DÓNDE ESTÁ LA FIRMA, que no es lo mismo que «guardada» ──────────────
+  //
+  // «Firmado» dice que hay firma; no dice si está a salvo. Un pro que lee «firmado» y se va de la
+  // obra está suponiendo ③ —confirmada por el servidor—, y hasta que H3 encole eso es cierto,
+  // porque hoy la firma va directa a la API. El día que haya cola dejará de serlo, y en silencio
+  // si nadie lo pinta.
+  //
+  // La cola se CONSULTA, no se produce: encolar y drenar son de H3 (SCRUM-358). Y sólo puede
+  // DEGRADAR a ①, nunca ascender — entre «el servidor lo tiene» y «este móvil cree que aún debe
+  // subirlo», gana la lectura que no promete nada.
+  if (alb.estado === 'firmado') {
+    let enCola = [];
+    try {
+      const cola = await window.leerFirmasPendientes();
+      if (cola && cola.estado === window.GUARDADO) enCola = cola.firmas || [];
+    } catch (_e) {
+      // Sin almacén no hay cola que degrade nada: el estado lo declara el servidor, que ya habló.
+    }
+    const cajaFirma = document.createElement('div');
+    cajaFirma.style.cssText = 'margin:0 0 16px';
+    cajaFirma.innerHTML = window.pintarEstadoDeFirma(
+      window.estadoDeLaFirmaDelAlbaran(alb.id, true, enCola),
+    );
+    page.appendChild(cajaFirma);
+  }
 
   // ── ACCIONES · una primaria, dos secundarias, el resto en «⋮» ───────────────────────────
   const acts = document.createElement('div');
@@ -377,6 +477,28 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
       if (!window.openSignaturePad) { setStatus('error', 'El componente de firma no está cargado.'); return; }
       window.openSignaturePad({
         title: 'Firma del cliente',
+        // ── SCRUM-466 · EL FIRMANTE VE LO QUE FIRMA ──────────────────────────────────────
+        //
+        // Medido en SCRUM-463: desde aquí se firmaba SIN VER NADA del albarán. Esta pantalla ni
+        // siquiera leía `alb.lineas` —cero apariciones en código—, así que el cliente ponía su
+        // firma sobre un documento que no tenía delante. Un albarán firmado sirve para ganar la
+        // discusión de «yo no pedí eso»; si quien firma no vio las líneas, prueba mucho menos de
+        // lo que le vendemos al profesional.
+        //
+        // Se le pasan los CUATRO que ya sellamos en v:3 —líneas, cliente, fecha y lugar—, porque
+        // «no se sella lo que no se enseña, y no se enseña menos de lo que se sella».
+        //
+        // 🔴 Y NI UN IMPORTE: no se pasa `precioUnitario`, ni `totales`, ni `modoValoracion`. Un
+        // albarán no lleva importes (regla del producto) — quien firma en obra puede no ser quien
+        // acordó el precio. Que no LLEGUEN hasta aquí es lo que hace imposible que se pinten por
+        // descuido, igual que en SCRUM-452 con el PDF.
+        albaran: {
+          cliente: (alb.customer && alb.customer.name) || '',
+          fecha: alb.fecha ? new Date(alb.fecha).toLocaleDateString('es-ES') : '',
+          lugar: alb.lugarEntrega || '',
+          lineas: (Array.isArray(alb.lineas) ? alb.lineas : [])
+            .map((l) => ({ concepto: l && l.concepto, cantidad: l && l.cantidad, unidad: l && l.unidad })),
+        },
         // SCRUM-300 (C5): QUIÉN firma y EN CALIDAD DE QUÉ. `sugerencia` es eso —una sugerencia—:
         // el campo se pinta VACÍO y el chip lo rellena de un toque. Prerrellenarlo pondría en
         // boca del firmante una declaración que no ha hecho; si firma el encargado y nadie lo
@@ -393,13 +515,34 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
           //
           // ⚠️ Antes hacía `setStatus(...); return;`: se tragaba el error, el pad ya se había
           // cerrado antes de llamar aquí, y la firma se perdía.
+          // SCRUM-358 (H3 · fase 2) · LA FIRMA ENTRA EN LA COLA ANTES DE INTENTAR SUBIR.
+          //
+          // El orden no es indiferente: si se subiera primero y se encolara al fallar, habría una
+          // ventana en la que el proceso puede morir —el pro cierra la app, iOS la mata— con la
+          // firma ni subida ni encolada. Y esa ventana no dura milisegundos: el POST de firmar no
+          // tiene plazo (el de SCRUM-451 cubre sólo GET), así que contra una red que acepta y no
+          // entrega no vuelve nunca. Dura lo que el pro tarde en cerrar la aplicación.
+          //
+          // El riesgo del orden elegido es el fantasma —encolada y ya subida—, y lo para el propio
+          // servidor: `firmado` es terminal y devuelve 409 `albaran_locked` sin escribir nada.
+          //
+          // 🔴 Y SCRUM-404 SIGUE MANDANDO: el error SUBE. Que la firma esté a salvo en la cola no
+          // autoriza a cerrar el pad en silencio — el pro se iría creyendo que subió, que es
+          // exactamente el fallo mudo que el bloque H existe para evitar. Sin confirmación del
+          // servidor no hay ③, así que se relanza el mensaje aprobado y el trazo sigue en pantalla.
+          const cuerpo = Object.assign({ signatureData: dataUri }, declaracion || {});
+          let resultado;
           try {
-            await apiRequest(`/admin/albaranes/${alb.id}/firmar`, {
-              method: 'POST',
-              body: JSON.stringify(Object.assign({ signatureData: dataUri }, declaracion || {})),
-            });
+            resultado = await window.firmarConRedDeSeguridad(alb.id, cuerpo, () =>
+              apiRequest(`/admin/albaranes/${alb.id}/firmar`, {
+                method: 'POST',
+                body: JSON.stringify(cuerpo),
+              }));
           } catch (e) {
             throw new Error(mensajeDeFalloAlFirmar(e));
+          }
+          if (resultado.estado !== window.FIRMA_A_SALVO) {
+            throw new Error(mensajeDeFalloAlFirmar(resultado.error));
           }
           // SCRUM-379 · el peor de los cinco para el profesional, aunque los datos aguanten: sin
           // aviso vuelve a pulsar «Firmar aquí mismo», le pide al cliente que firme POR SEGUNDA VEZ

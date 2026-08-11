@@ -128,8 +128,12 @@ export function mensajeArbolMovido(cambios) {
     '   recibí 501" sobre un arreglo que ya estaba en el árbol).\n\n' +
     '   Causas habituales, en orden de probabilidad:\n' +
     '     1. otra tanda o un `npm run build` en ESTE mismo árbol (npm test compila antes de correr);\n' +
-    '     2. un `npx prisma generate` en otro worktree: node_modules se comparte por junction Y\n' +
-    '        por resolución hacia arriba en los worktrees de .claude/worktrees/;\n' +
+    // SCRUM-461: esta causa DEPENDE DEL MONTAJE y antes se daba por hecha. Medido el 10-ago, los
+    // cuatro worktrees vivos tienen `node_modules` PROPIO — sin enlace, regenerar en otro no toca
+    // a éste. Se deja como causa posible, pero con su comprobación al lado.
+    '     2. un `npx prisma generate` en otro worktree — SÓLO si tu node_modules es un enlace al\n' +
+    '        suyo, o se resuelve hacia arriba (worktrees de .claude/worktrees/). Compruébalo:\n' +
+    '        node -e "console.log(require(\'fs\').lstatSync(\'node_modules\').isSymbolicLink())";\n' +
     '     3. una edición de tests/ a mitad de la tanda.\n\n' +
     '   R6 («un solo trabajo contra staging a la vez») serializa la BD, NO las compilaciones.\n' +
     '   Espera a tener el árbol para ti y vuelve a lanzarla entera.\n'

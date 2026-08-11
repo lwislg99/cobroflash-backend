@@ -29,10 +29,15 @@ const { verificarSobre, RECETAS_POR_VERSION, versionesSoportadas } =
   await import('../dist/modules/jobs/domain/albaranVerificacion.js');
 
 /**
- * Las fuentes llevan LAS DOS procedencias de `obra` a la vez —`jobDireccion` (v:1) y
- * `lugarEntrega` (v:2)—, que es el contrato de `FuentesContenido`: elegir es trabajo de la receta.
- * Y son DISTINTAS a propósito: si fuesen iguales, las dos recetas darían el mismo hash y este
- * fichero entero mediría una coincidencia en vez de un despacho.
+ * Las fuentes llevan A LA VEZ todas las procedencias que alguna versión declara: `jobDireccion`
+ * (v:1), `lugarEntrega` (v:2) y el bloque congelado del sobre (v:3). Es el contrato de
+ * `FuentesContenido` —elegir es trabajo de la receta— y aquí es además el SUELO del fichero: unas
+ * fuentes que no ejercieran el delta entre versiones harían que todo lo de abajo midiera una
+ * coincidencia en vez de un despacho.
+ *
+ * 🔴 SCRUM-438: las cinco del bloque son DISTINTAS de sus homólogas vivas a propósito. Si fueran
+ * iguales, una receta v:3 que se equivocara y leyera una fila viva daría el mismo hash y nadie lo
+ * vería. Que sean distintas convierte «lee del sobre» en algo comprobable.
  */
 const FUENTES = Object.freeze({
   numero: 'ALB-415-1',
@@ -49,6 +54,14 @@ const FUENTES = Object.freeze({
   fechaEntrega: new Date('2026-05-13T10:00:00.000Z'),
   firmadoPorNombre: 'Ana Pérez',
   firmadoPorCalidad: 'cliente',
+  // ← lo que lee v:3, y solo v:3
+  contenidoCongelado: Object.freeze({
+    obra: 'SELLADO: Nave 4',
+    referenciaTrabajo: 'SELLADO: Obra 415',
+    cliente: 'SELLADO: Cliente SL',
+    emisor: 'SELLADO: YaQu QA',
+    emisorNif: 'SELLADO: B00000000',
+  }),
 });
 
 const sobre = (v, contentHash) => ({ evidencia: { v, hashAlg: 'sha256', contentHash }, contenido: FUENTES });
@@ -109,6 +122,71 @@ test('SCRUM-415 · los sellos v:1 —los de producción— siguen verificando', 
 
   const r2 = verificarSobre(sobre(2, RECETAS_POR_VERSION[2](FUENTES)));
   assert.equal(r2.cuadra, true, `🔴 un sello v:2 correcto ya no verifica: ${r2.mensaje}`);
+});
+
+// ── ⑦ SCRUM-438 · EL BUCLE CRUZADO, YA CON TRES RECETAS ──────────────────────────────────────
+//
+// v:3 no añade «una receta»: añade una receta Y N comparaciones cruzadas más. El bucle prueba cada
+// receta contra cada sobre, así que con tres versiones hay el doble de sondeos que con dos. Lo que
+// hay que demostrar es que SIGUE SEPARANDO las dos cosas —«manipulado» y «hash de otra versión»—
+// con tres, y no solo con dos: un sondeo más ancho tiene más ocasiones de confundirlas.
+
+test('SCRUM-415 · ⑦ 🔴 con TRES recetas el bucle sigue separando «manipulado» de «otra versión»', () => {
+  const vs = versionesSoportadas();
+  assert.ok(vs.length >= 3,
+    `🔴 el recetario despacha ${vs.length} versión(es). Este test existe para probar el bucle cruzado ` +
+    'con TRES, y con menos no prueba lo que dice probar.');
+
+  // Cada versión, declarada bajo el número de OTRA. Las N×(N-1) parejas, no una muestra.
+  const cruces = [];
+  for (const declarada of vs) {
+    for (const real of vs) {
+      if (declarada === real) continue;
+      const r = verificarSobre(sobre(declarada, RECETAS_POR_VERSION[real](FUENTES)));
+      cruces.push(`v:${declarada} con hash de v:${real} → ${r.cuadra ? 'cuadra' : r.motivo}`);
+      assert.equal(r.motivo, 'hash_de_otra_version',
+        `🔴 un sobre que declara v:${declarada} con el hash de v:${real} sale como «${r.motivo}». ` +
+        'Con tres versiones el bucle tiene más parejas que comprobar y no puede perder ninguna: ' +
+        'cada una que se le escape se convierte en una acusación de manipulación contra un ' +
+        'documento intacto.');
+      assert.match(r.mensaje, new RegExp(`v:${real}`),
+        `🔴 el mensaje no NOMBRA la versión con la que sí cuadra (v:${real}). Sin ese dato, «algo ` +
+        'pasa» no llega a ser «esto pasa y así se arregla», que es todo el valor de este motivo.');
+    }
+  }
+  assert.equal(cruces.length, vs.length * (vs.length - 1),
+    `🔴 SUELO: solo se han probado ${cruces.length} cruces de los ${vs.length * (vs.length - 1)} que ` +
+    'hay. El bucle de este test se ha quedado corto y su verde no cubre lo que dice cubrir.');
+
+  // 🔴 EL CONTROL, y sin él lo de arriba no vale: con TRES recetas sondeando, una manipulación de
+  // verdad tiene tres ocasiones de colarse como «problema de metadatos». No puede colarse.
+  const manipulado = verificarSobre(sobre(3, 'ff'.padEnd(64, '0')));
+  assert.equal(manipulado.motivo, 'hash_no_coincide',
+    `🔴 una alteración real sale como «${manipulado.motivo}» con tres recetas vivas. El sondeo se ha ` +
+    'vuelto tan ancho que se traga las falsificaciones: es peor que no tenerlo.');
+  assert.match(manipulado.mensaje, /YA NO ES EL QUE SE FIRM/);
+});
+
+test('SCRUM-415 · ⑦ v:3 NO lee las fuentes vivas: cambiarlas las seis no mueve su hash', () => {
+  // Es lo que hace que el bucle cruzado con tres recetas signifique algo: si v:3 leyera en vivo,
+  // «cuadra con la receta de v:3» no distinguiría nada de v:2.
+  const antes = RECETAS_POR_VERSION[3](FUENTES);
+  const conLasVivasCambiadas = RECETAS_POR_VERSION[3]({
+    ...FUENTES,
+    jobDireccion: 'OTRA COSA', lugarEntrega: 'OTRA COSA', referenciaTrabajo: 'OTRA COSA',
+    cliente: 'OTRA COSA', emisor: 'OTRA COSA', emisorNif: 'OTRA COSA',
+  });
+  assert.equal(conLasVivasCambiadas, antes,
+    '🔴 la receta de v:3 se mueve al cambiar una fila viva: sigue leyendo fuera del sobre, que es ' +
+    'el defecto entero que v:3 vino a cerrar.');
+
+  // CONTROL: cambiando el BLOQUE sí se mueve. Si no, este test compararía dos constantes iguales.
+  const conElBloqueCambiado = RECETAS_POR_VERSION[3]({
+    ...FUENTES, contenidoCongelado: { ...FUENTES.contenidoCongelado, cliente: 'OTRO CLIENTE' },
+  });
+  assert.notEqual(conElBloqueCambiado, antes,
+    '🔴 cambiar el bloque congelado no mueve el hash de v:3: entonces la receta no lo lee y el test ' +
+    'de arriba pasaba por no medir nada.');
 });
 
 test('SCRUM-415 · el sondeo no inventa versiones: una receta que revienta no dice nada', () => {

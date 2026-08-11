@@ -22,24 +22,44 @@ export async function generateAlbaranPdf(params: {
   emisionAt: Date;          // SCRUM-67: fecha de emisión del documento (Albaran.createdAt)
   version: number;
   modoValoracion: AlbaranModoValoracion;
+  // ── LO QUE **NO** VIAJA EN EL SOBRE ────────────────────────────────────────────────────────
+  //
+  // 🔴 SCRUM-452: aquí ya NO están `name`, `legalName` ni `taxId` del emisor, ni el nombre del
+  // cliente. No es limpieza: es la corrección. Esos cuatro SÍ los sella v:3, así que llegan
+  // resueltos por el bloque de abajo — y quitarlos de aquí hace **imposible por construcción** que
+  // este fichero vuelva a imprimir el valor VIVO mientras el sello certifica otro. Un campo que no
+  // se recibe no se puede pintar por descuido.
+  //
+  // Lo que queda aquí es lo que el sobre NO congela, y por eso se lee en vivo con toda razón: sobre
+  // ello el sello no afirma nada, así que no puede contradecir al papel.
   merchant: {
-    name: string | null;
-    legalName?: string | null;
-    taxId?: string | null;
     address?: string | null;
     logoUrl?: string | null;
     whatsappPhone?: string | null;
   };
-  customer: { name: string | null; legalName?: string | null; taxId?: string | null };
-  // SCRUM-300: LUGAR DE ENTREGA. Lo resuelve `obraSegunVersion` en el llamador según la versión
-  // del sello (v:1 → Job.direccion; v:2 → Albaran.lugarEntrega), para que el papel diga lo mismo
-  // que certifica su hash. ⚠️ null se imprime como VACÍO: jamás se sustituye por el domicilio
-  // fiscal — una dirección equivocada en un documento de entrega es peor que ninguna.
+  customer: { taxId?: string | null };
+  // ── LOS CINCO QUE EL SOBRE CONGELA, YA RESUELTOS POR EL LLAMADOR ───────────────────────────
+  //
+  // Los cinco salen de `contenidoSegunVersion` en `ensureAlbaranPdf`, que elige según la versión
+  // del sello: v:3 los toma del bloque congelado del sobre; v:1 y v:2 —que no tienen bloque— los
+  // toman de las filas vivas, EXACTAMENTE COMO HOY; y un albarán sin firmar toma los de hoy.
+  //
+  // Van juntos y en bloque a propósito: son «lo que el papel dice que se firmó», y separarlos
+  // invitaría a resolver uno por su cuenta, que es justo el defecto que SCRUM-452 cierra.
+  //
+  // ⚠️ `obra` con null se imprime VACÍO: jamás se sustituye por el domicilio fiscal — una dirección
+  // equivocada en un documento de entrega es peor que ninguna.
   obra: string | null;
+  referenciaTrabajo: string | null; // SCRUM-67: Job.titulo (referencia al Trabajo/presupuesto origen)
+  /** El RECEPTOR. `null` se imprime como `—`, igual que cuando se derivaba de `customer`. */
+  cliente: string | null;
+  /** El EMISOR. `null` se imprime como `—`, igual que cuando se derivaba de `merchant`. */
+  emisor: string | null;
+  /** El NIF del emisor. `null` NO imprime la línea, igual que antes. */
+  emisorNif: string | null;
   // SCRUM-300 (C5) · campo nº 1 del ticket: un albarán se PREPARA un día y se ENTREGA otro.
   // null en todo lo anterior a esta tarea → la línea no se imprime (retrocompatibilidad).
   fechaEntrega?: Date | null;
-  referenciaTrabajo: string | null; // SCRUM-67: Job.titulo (referencia al Trabajo/presupuesto origen)
   lineas: AlbaranLinea[];
   totales: { base: number; cuota: number; total: number } | null; // solo en modo VALORADO
   notas?: string | null;
@@ -115,18 +135,31 @@ export async function generateAlbaranPdf(params: {
   doc.moveDown(1);
 
   // ── Emisor / Receptor / Obra / Referencia ────────────────────────────────
-  const merchantName = params.merchant.legalName || params.merchant.name || '—';
+  // 🔴 SCRUM-452: el emisor y el receptor se IMPRIMEN DE LO QUE SE SELLÓ, no de la fila de hoy.
+  // Antes salían de `merchant.legalName || merchant.name` y `customer.legalName || customer.name`,
+  // resueltos aquí mismo. En un albarán v:3 eso hacía que el papel dijera la razón social CORREGIDA
+  // mientras su hash certificaba la ANTIGUA — y el verificador daba «cuadra», porque el sello no
+  // miente: el que mentía era el papel.
+  //
+  // El `|| '—'` se CONSERVA, y no es un detalle: el sobre congela `null` cuando no había nombre, y
+  // el papel lleva imprimiendo `—` desde SCRUM-67. Quitarlo cambiaría lo que ve un cliente en un
+  // documento que firma.
+  const merchantName = params.emisor || '—';
   doc.fontSize(11).font('Helvetica-Bold').fillColor(INK).text(`Emisor: `, { continued: true })
     .font('Helvetica').fillColor(BODY).text(merchantName);
-  if (params.merchant.taxId) doc.fillColor(BODY).text(`NIF: ${params.merchant.taxId}`);
+  if (params.emisorNif) doc.fillColor(BODY).text(`NIF: ${params.emisorNif}`);
   if (params.merchant.address) doc.fillColor(BODY).text(params.merchant.address);
   if (params.merchant.whatsappPhone) doc.fillColor(BODY).text(`WhatsApp ${params.merchant.whatsappPhone}`);
   doc.moveDown(0.5);
   // SCRUM-67: receptor "ídem" (snapshot) — nombre + NIF si el cliente lo tiene registrado
   // (Customer.legalName/taxId, A20.4). No hay domicilio de cliente en el modelo hoy (el
   // propio PDF de factura fiscal tampoco lo imprime); se añade cuando exista la fuente.
+  //
+  // ⚠️ El NOMBRE sale del sobre (SCRUM-452); el NIF del cliente NO, porque el sobre no lo congela.
+  // Es deliberado y está declarado: sobre un campo que el sello no nombra, el papel no puede
+  // contradecirlo. El día que se decida congelarlo, será un v:4 y esta línea cambiará con él.
   doc.font('Helvetica-Bold').fillColor(INK).text('Receptor: ', { continued: true })
-    .font('Helvetica').fillColor(BODY).text(params.customer.legalName || params.customer.name || '—');
+    .font('Helvetica').fillColor(BODY).text(params.cliente || '—');
   if (params.customer.taxId) doc.fillColor(BODY).text(`NIF: ${params.customer.taxId}`);
   // SCRUM-300 (C5): el rótulo pasa de «Obra» a «Lugar de entrega» — el nombre que la ley usa para
   // este dato en un albarán. El VALOR lo resuelve `obraSegunVersion` en el llamador según la
