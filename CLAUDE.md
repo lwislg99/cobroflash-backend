@@ -58,6 +58,17 @@ firma del cliente → cobro de señal/total → (post SIF-1) factura VeriFactu. 
    `node scripts/comprobar-claves-bd.mjs` (mapa y guard en `scripts/_clave-vs-destino.mjs`; en un
    árbol de trabajo NO vive producción, y desde SCRUM-418 el guard lo hace cumplir por DESTINO).
    `loadEnv.ts` sigue dando prioridad a `.env.local` **si aparece**.
+   **⚠️ REMEDICIÓN 11-ago-2026 (SCRUM-418), y sale al revés.** La de arriba midió **cuatro
+   árboles**; el repo tiene **199**. Censo completo: **12** llevan fichero de entorno y **11
+   apuntan a PRODUCCIÓN** (host `autorack`), uno de ellos el **checkout principal**; existe **un**
+   `.env.local` (localhost). Las tres afirmaciones de arriba son falsas fuera de esos cuatro.
+   **Por qué el comprobador no lo vio:** `comprobar-claves-bd.mjs` está bien hecho y tiene suelo,
+   pero **solo mira el árbol desde el que se lanza** — en uno limpio dice «no se leyó ni una sola
+   cadena», que es correcto y ciego a los once. Desde SCRUM-418 la puerta vive en el **punto de
+   conexión** (`src/core/db/puertaDeProduccion.ts`): decide por **HOST** —`autorack` = producción,
+   `acela` = staging/dev— y exige `YAQU_DESTINO_PRODUCCION`, que solo está en Railway producción.
+   **Arregla tu propio `.env`** (los ajenos no se tocan): `node scripts/comprobar-claves-bd.mjs`
+   dentro de TU worktree, y apunta `DATABASE_URL` a staging o dev.
 4. **Frontend vanilla** (sin React/Tailwind/bundler/build). `DESIGN.md` es la única fuente de
    tokens visuales; cambios de UI = una pantalla/componente, jamás rediseño total (Parte AB).
 5. **Estados (L), flags (P) y microcopy (N5/K1) son CERRADOS.** Lo que no está en el master
