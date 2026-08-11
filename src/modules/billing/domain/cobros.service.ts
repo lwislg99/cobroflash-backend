@@ -163,7 +163,16 @@ export function fundirCobros(entrada: {
   // ⚠️ Solo se quitan las que tienen charge. Un cobro marcado A MANO —transferencia, efectivo— no
   // genera ni `Charge` ni evento, así que no está en este conjunto y SIGUE saliendo. Desduplicar
   // no puede volver a esconder el dinero que la fase 1 sacó a la luz.
-  const sueltas = candidatas.filter((inv) => !yaLasTraeSuCharge.has(inv.id));
+  // SCRUM-445 · EL VINCULO MANDA SOBRE EL EVENTO. Desde que `ensureInvoiceForCharge` escribe
+  // `Invoice.chargeId`, una factura que nacio de un cobro lo dice ella misma. La consulta ya filtra
+  // por esa columna; se comprueba TAMBIEN aqui a proposito, porque la decision —quien sale y quien
+  // se cae— es lo que este modulo existe para poder probar sin base de datos.
+  //
+  // ⚠️ Sigue mirando el evento: los cobros ANTERIORES al arreglo tienen `chargeId` nulo y su unico
+  // vinculo es el `Event`. Quitar esa via desduplicaria peor que antes para todo el historico.
+  const vinculada = (inv: InvoiceParaCobro) =>
+    (inv as { chargeId?: number | null }).chargeId != null || yaLasTraeSuCharge.has(inv.id);
+  const sueltas = candidatas.filter((inv) => !vinculada(inv));
 
   const deCharge: Cobro[] = charges.map((ch) => ({
     origen: 'charge',

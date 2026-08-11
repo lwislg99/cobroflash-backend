@@ -119,3 +119,72 @@ desduplique bien no prueba que alguien le pase los eventos. Se comprueba que `li
 
 * `src/modules/billing/domain/cobros.service.ts` — `fundirCobros` (nueva, pura) y el cruce por evento.
 * `tests/scrum445-cobros-sin-duplicar.test.mjs` (nuevo, 7).
+
+
+---
+
+# SCRUM-445 · segunda entrega: las dos consultas (sin ejecutar) y el vínculo escrito
+
+## 1 · LAS CONSULTAS — SOLO LECTURA, **NO EJECUTADAS**
+
+Nombres leídos del schema real. Ojo al detalle que se presta a error: **`invoices` NO mapea
+`merchantId` ni `createdAt`** (columnas en camelCase) **y sí mapea `charge_id`**; `charges` y
+`events` sí usan snake_case. Escribirlo de memoria habría dado un error de columna inexistente —
+o peor, un cero que se lee igual de bien que la verdad.
+
+```sql
+-- ① ¿ESTÁ PASANDO? — Charges con factura que NO tienen su Event{invoiced}.
+-- Cada fila es un cobro que hoy se pinta DOS VECES: una por su Charge y otra por su Invoice.
+--   0  → el defecto es real pero NO está ocurriendo; el arreglo pasa a ser preventivo.
+--  >0  → está ocurriendo, y ese número son los cobros duplicados en pantalla.
+SELECT COUNT(*) AS charges_con_factura_sin_evento
+FROM "charges" c
+WHERE EXISTS (
+        SELECT 1 FROM "invoices" i
+        WHERE i."merchantId" = c."merchant_id"
+          AND i."customerId" = c."customerId"
+          AND i."createdAt" >= c."created_at"
+      )
+  AND NOT EXISTS (
+        SELECT 1 FROM "events" e
+        WHERE e."charge_id" = c."id" AND e."type" = 'invoiced'
+      );
+
+-- El detalle, para poder mirar tres a mano antes de decidir nada:
+SELECT c."id" AS charge_id, c."merchant_id", c."created_at", c."amount", c."method"
+FROM "charges" c
+WHERE NOT EXISTS (
+        SELECT 1 FROM "events" e
+        WHERE e."charge_id" = c."id" AND e."type" = 'invoiced'
+      )
+ORDER BY c."created_at" DESC
+LIMIT 20;
+
+-- ② EL TAMAÑO DEL BACKFILL — Invoices con charge_id NULL que SÍ tienen Charge por el evento.
+-- El vínculo ya existe en el Event; lo que falta es la columna. Se rellenaría SIN inventar nada.
+--   0  → nada que rellenar: basta con cubrir lo nuevo.
+--  >0  → hay histórico vinculable, y con ese número se decide el backfill.
+SELECT COUNT(*) AS invoices_vinculables_por_evento
+FROM "invoices" i
+WHERE i."charge_id" IS NULL
+  AND EXISTS (
+        SELECT 1 FROM "events" e
+        WHERE e."type" = 'invoiced'
+          AND (e."payload" ->> 'invoice_id') = i."id"::text
+      );
+
+-- ⚠️ Y el que NO se puede rellenar: sin charge_id y SIN evento. Aquí el vínculo no existe en
+-- ningún sitio, así que rellenarlo sería DEDUCIRLO. Se mide para declararlo, no para arreglarlo.
+SELECT COUNT(*) AS invoices_sin_vinculo_ninguno
+FROM "invoices" i
+WHERE i."charge_id" IS NULL
+  AND NOT EXISTS (
+        SELECT 1 FROM "events" e
+        WHERE e."type" = 'invoiced'
+          AND (e."payload" ->> 'invoice_id') = i."id"::text
+      );
+```
+
+⚠️ **Al leer la última**: incluye **todas** las facturas legítimas sin cobro por pasarela
+—transferencia, efectivo, Bizum manual—. Un número alto ahí **no es un defecto**: es el dinero
+marcado a mano, que no crea `Charge` (SCRUM-441) y que **no debe vincularse a ninguno**.
