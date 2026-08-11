@@ -92,6 +92,14 @@ const CLAVES_LOCALES = [
       + 'profesional, y quien coja el móvil después puede ser su competencia.',
   },
   {
+    // SCRUM-360 fase 3 · la marca de «este navegador llegó a tener firmas en cola».
+    patron: /^yaqu_hubo_cola$/, almacen: 'localStorage', purga: true,
+    motivo: 'SE PURGA, y el motivo no es de privacidad: es que el logout YA vacía '
+      + '`firmasPendientes` a propósito. Si la marca sobreviviera, al volver a entrar veríamos '
+      + '«hubo cola» + «almacén vacío» y le diríamos al profesional que ha PERDIDO algo que '
+      + 'borramos nosotros. Un aviso que grita en falso se ignora, y entonces no avisa del bueno.',
+  },
+  {
     patron: /^yaqu_tips_shown$/, almacen: 'localStorage', purga: false,
     motivo: 'SOBREVIVE. Es el «no me lo vuelvas a enseñar» de los consejos: no hay dato personal '
       + 'ni de negocio, no lleva merchant, y es una preferencia DEL APARATO. Purgarlo devolvería '
