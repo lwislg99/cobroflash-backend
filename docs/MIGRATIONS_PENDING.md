@@ -1786,3 +1786,31 @@ bloque que le toca a `prisma/schema.prisma` —dominio del fundador— es exacta
 
 Y tras editarlo, `npx prisma generate` **desde un worktree al día** (no desde el checkout
 compartido, que va por detrás) o el cliente quedará describiendo otro schema.
+
+### Ampliación 11-ago-2026 · la CUARTA columna: `charges.paid_at` (SCRUM-397)
+
+Se suma al mismo lote y al mismo fichero. **Recuento del lote completo, contado sobre el SQL sin
+comentarios:** `ADD COLUMN 4` · `CREATE INDEX 0` · `DROP 0` · `ALTER COLUMN 0` · `NOT NULL 0` ·
+`DEFAULT 0` · **4 sentencias**.
+
+**PASO 0 (11-ago-2026), medido sobre `origin/main`:** ninguna de las cuatro existe donde va.
+`Provider` no tiene `legalName` —los dos del schema son de `Merchant` (`:15`) y `Customer`
+(`:143`)—; `Merchant` no tiene ninguno de los dos del asesor; y **`Charge` no tiene `paidAt`** —el
+único del schema es de `Invoice`—.
+
+**Verificación al catálogo, la cuarta:**
+
+```sql
+SELECT count(*) FILTER (WHERE table_name='charges' AND column_name='paid_at') AS charges_paid_at
+FROM information_schema.columns;
+```
+
+| Base | Host (así se distingue) | Estado |
+| --- | --- | --- |
+| **Producción** | `autorack…` | ⬜ **PENDIENTE** — a mano por el fundador |
+| **Staging** | `acela…` / entorno «production» (el nombre miente) | ⬜ **PENDIENTE** — a mano por el fundador |
+| **Dev** | `acela…` / `yaqu_dev_javier` | ⬜ **PENDIENTE** — la corre Javier |
+
+⚠️ **El orden no se invierte, y el motivo está medido:** `assertSchemaSinDeriva` **solo falla cuando
+FALTA una columna, nunca cuando sobra**. Primero las bases, después `schema.prisma`. Al revés,
+Prisma **enumera** columnas y una declarada que la base no tiene **mata la query** — no degrada.

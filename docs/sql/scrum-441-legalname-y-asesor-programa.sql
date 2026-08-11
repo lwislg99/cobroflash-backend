@@ -39,3 +39,20 @@ ALTER TABLE "merchants"
 -- E2 · qué contestó. NULL con `preguntado_at` puesto = se le preguntó y pasó.
 ALTER TABLE "merchants"
   ADD COLUMN IF NOT EXISTS "asesor_programa" TEXT;
+
+-- ─────────────────────────────────────────────────────────────────────────────────────────
+-- SCRUM-397 · LA FECHA DE COBRO DEL COBRO. Añadida al lote el 11-ago-2026.
+--
+-- 🔴 `Charge` NO tiene fecha de cobro, y el propio producto lo dice por escrito:
+-- `exportData.ts:248` — «El cobro no guarda paidAt: cuando está pagado, updatedAt es el momento
+-- del cobro». `updated_at` es CUALQUIER última modificación, no el pago. Y `modelo303.ts:236`
+-- avisa de que tres de las cinco formas de cobro se marcan A MANO, así que el estado dice
+-- «alguien lo dio por cobrado», no «el euro entró este día».
+--
+-- Con esta columna, «sabemos exactamente cuándo entró cada euro» deja de ser cierto solo para
+-- tarjeta (hoy `Invoice.paid_at` lo escriben los webhooks de PSP y nada más).
+--
+-- Nullable y SIN DEFAULT como las otras tres: los cobros ya existentes no tienen fecha real, y
+-- ponerles `updated_at` sería inventarla. «No se sabe» es NULL y tiene que poder distinguirse.
+ALTER TABLE "charges"
+  ADD COLUMN IF NOT EXISTS "paid_at" TIMESTAMP;
