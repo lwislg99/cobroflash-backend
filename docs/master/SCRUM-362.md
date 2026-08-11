@@ -259,14 +259,15 @@ nada de `src/` · nada de `public/` · `tests/scrum362-banco-sin-cobertura.test.
 
 ## Verificación
 
-Con `main` (`687d262b`) dentro — `Already up to date`.
+Con `main` dentro. Se movió dos veces mientras se cerraba —`687d262b` → **`96c14054`** (SCRUM-474)—
+y los dos merges fueron limpios; los números de abajo son **los de después del último**.
 
 **La línea base, MEDIDA APARTE y no restada de cabeza:**
 
 | | tests | pass | fail | skipped |
 |---|---|---|---|---|
-| **línea base** — el conjunto de tests **de `main`**, corrido sobre este árbol | **3.224** | **3.147** | **0** | **77** |
-| **después** — la tanda entera de esta rama | **3.235** | **3.158** | **0** | **77** |
+| **línea base** — el conjunto de tests **de `main`**, corrido sobre este árbol | **3.237** | **3.160** | **0** | **77** |
+| **después** — la tanda entera de esta rama | **3.248** | **3.171** | **0** | **77** |
 | diferencia | **+11** | **+11** | 0 | **0** |
 
 Los +11 son exactamente los de `scrum362-residuales`, y **los saltos no se mueven: este ticket no
