@@ -2,7 +2,8 @@
 // Página PÚBLICA de firma REMOTA del albarán: GET /albaran/:token (revisar + firmar en el móvil
 // del cliente) y POST /albaran/:token/firmar (emitido → firmado + auto-envío de la copia firmada).
 // SIN auth: la autoriza el TOKEN OPACO (Albaran.firmaToken, 128 bits; findUnique). Documento NO
-// fiscal (regla 24): sin importes/precios (concepto/cantidad/unidad). Molde: quoteDecisionLanding
+// fiscal (regla 24). SCRUM-468: el VALORADO SI ensena importes -- los mismos que su PDF, sin
+// desglose de cuota de IVA. El SIN_VALORAR sigue con concepto/cantidad/unidad. Molde: quoteDecisionLanding
 // (página + canvas de firma) + el token opaco de customerPortal. Tenancy = el token.
 import { Router, Request, Response } from 'express';
 import { prisma } from '../../../../core/db/prisma';
@@ -10,6 +11,7 @@ import { esc } from '../../../../core/utils/utils';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { rateLimit } from '../../../../core/http/rateLimit';
 import { buildFirmaEvidencia, canTransitionAlbaran, ensureAlbaranPdf } from '../../domain/albaran.service';
+import { renderLineasAlbaran } from './albaranPublicVista';
 // SCRUM-300 (C5): microcopy del firmante en su fuente única (regla 30) — aquí no se escribe copy.
 import {
   ALBARAN_ROTULOS,
@@ -62,6 +64,15 @@ function renderPage(title: string, body: string): string {
   .lines-table td{padding:6px 6px;border-bottom:1px solid #f1f2ee}
   .lines-table th:nth-child(2),.lines-table td:nth-child(2),
   .lines-table th:nth-child(3),.lines-table td:nth-child(3){text-align:right;white-space:nowrap}
+  /* SCRUM-468 · columnas de importe y totales del albarán VALORADO. Solo casan con marcado que
+     el SIN_VALORAR NO genera (.num / .totales), así que esa pantalla no cambia ni un píxel.
+     Cero colores nuevos: los tres son los que ya usa este mismo fichero. */
+  .lines-table th.num,.lines-table td.num{text-align:right;white-space:nowrap}
+  .totales{text-align:right;margin-top:-4px}
+  .totales p{margin:2px 0}
+  .totales .base{font-size:14px;color:#3f4a45}
+  .totales .total{font-size:18px;font-weight:800;color:#0f1c17}
+  .totales .leyenda{font-size:11px;color:#8b948e;line-height:1.45;margin-top:6px}
   .divider{border:none;border-top:1px solid #e7e9e5;margin:16px 0}
   .sig-label{font-size:13px;font-weight:600;color:#333c37;margin-bottom:6px;display:block}
   .sig-sub{font-size:12px;color:#6b756f;margin-bottom:8px}
@@ -237,12 +248,17 @@ router.get('/:token', async (req: Request, res: Response) => {
     return html('Parte de trabajo', `${hero}<div class="status-ok"><strong>Este parte de trabajo aún no está listo para firmar.</strong><br/>El profesional te avisará.</div>`);
   }
 
-  const lineas: any[] = Array.isArray(albaran.lineas) ? (albaran.lineas as any[]) : [];
-  const linesHtml = lineas.length
-    ? `<table class="lines-table"><thead><tr><th>Concepto</th><th>Cant.</th><th>Unidad</th></tr></thead><tbody>${
-        lineas.map((l) => `<tr><td>${esc(l?.concepto ?? '')}</td><td>${esc(l?.cantidad ?? '')}</td><td>${esc(l?.unidad ?? '')}</td></tr>`).join('')
-      }</tbody></table>`
-    : '<p class="meta">Sin líneas.</p>';
+  /**
+   * SCRUM-468 · LA PANTALLA ENSEÑA LO MISMO QUE EL PDF, y para el VALORADO eso incluye importes.
+   *
+   * Hasta aquí ocultaba precios a TODOS los albaranes: regla de cuando solo existía SIN_VALORAR.
+   * SCRUM-65 metió el modo valorado en el PDF y **no tocó esta pantalla**, así que el cliente
+   * firmaba una pantalla sin importes y quedaba vinculado a un papel con Base y Total.
+   *
+   * El QUÉ se pinta vive en `albaranPublicVista.ts` — aparte para poder ejecutarlo en un test
+   * contra el PDF, campo por campo. Aquí solo se llama.
+   */
+  const linesHtml = renderLineasAlbaran(albaran.lineas, albaran.modoValoracion);
 
   return html('Firmar parte de trabajo', `
     ${hero}

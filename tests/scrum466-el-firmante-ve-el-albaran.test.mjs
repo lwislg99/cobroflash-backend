@@ -223,20 +223,28 @@ test('SCRUM-466 · los dos textos son los APROBADOS, y salen de su fuente única
 
 // ── REGRESIÓN · LA PÁGINA PÚBLICA SIGUE ENSEÑANDO LO SUYO ────────────────────────────────
 
-test('SCRUM-466 · REGRESIÓN: la página pública sigue enseñando líneas y cliente, y sigue sin importes', () => {
+test('SCRUM-466 · REGRESIÓN: la página pública sigue enseñando líneas y cliente', () => {
   // Ya lo hacía antes de este ticket (medido en SCRUM-463). El cambio del panel no puede
   // quitárselo de paso.
+  //
+  // ⚠️ ENMIENDA SCRUM-468 (11-ago-2026). Este bloque pedía además que la pública NO mencionara
+  // importes. **Eso era justo el defecto que este ticket midió y aparcó** (§2 de
+  // `docs/master/SCRUM-466.md`): el firmante veía una pantalla sin importes y recibía un PDF con
+  // `Base` y `Total`. SCRUM-468 lo cierra por el lado de la PANTALLA —el PDF firmado va sellado y
+  // no se reescribe (regla 29)—, así que la prohibición se levanta AQUÍ, y solo aquí.
+  //
+  // 🔴 LO QUE NO SE MUEVE: el pad de obra (`signaturePad.js`) ni lo que su llamador le pasa. Esa es
+  // LA decisión de SCRUM-466 —quien firma en obra no es necesariamente quien acordó el precio— y
+  // sus dos guards siguen intactos, arriba en este mismo fichero.
   const publica = fs.readFileSync(path.join(RAIZ, 'src/modules/jobs/app/routes/albaranPublic.routes.ts'), 'utf8');
+  const vista = fs.readFileSync(path.join(RAIZ, 'src/modules/jobs/app/routes/albaranPublicVista.ts'), 'utf8');
   assert.ok(publica.length > 5000, `🔴 solo se han leído ${publica.length} caracteres: el guard está ciego.`);
-  assert.match(publica, /class="lines-table"/, '🔴 la página pública ha dejado de pintar la tabla de líneas.');
-  assert.match(publica, /l\?\.concepto/, '🔴 ya no pinta el concepto de cada línea.');
-  assert.match(publica, /l\?\.cantidad/, '🔴 ya no pinta la cantidad de cada línea.');
+  assert.ok(vista.length > 500, `🔴 solo se han leído ${vista.length} caracteres de la vista: guard ciego.`);
+  assert.match(vista, /class="lines-table"/, '🔴 la página pública ha dejado de pintar la tabla de líneas.');
+  assert.match(vista, /l\?\.concepto/, '🔴 ya no pinta el concepto de cada línea.');
+  assert.match(vista, /l\?\.cantidad/, '🔴 ya no pinta la cantidad de cada línea.');
   assert.match(publica, /Hola, \$\{customerName\}/, '🔴 ya no saluda al cliente por su nombre.');
-
-  for (const ausente of ['precioUnitario', 'calcAlbaranTotales', 'totales']) {
-    assert.ok(!publica.includes(ausente),
-      `🔴 la página pública ha empezado a mencionar «${ausente}»: un albarán no lleva importes.`);
-  }
+  assert.match(publica, /renderLineasAlbaran\(/, '🔴 la página ya no llama a la vista de líneas.');
 });
 
 // ── SIN RED · EL CASO DEL BLOQUE H ───────────────────────────────────────────────────────
