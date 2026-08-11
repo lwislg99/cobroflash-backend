@@ -69,31 +69,106 @@ Eso descarta de entrada la solución que parece obvia: **encadenar la comprobaci
 comando no vale**, porque el fallo no es que falte la comprobación, es que llega tarde. La barrera
 tiene que estar **antes**, y en un sitio que no dependa de que alguien la escriba.
 
-## Lo que propongo, y lo que NO
+---
 
-**NO propongo avisar.** La regla existe, se conoce y se ha saltado cuatro veces; repetirla es lo que
-este ticket dice que no funciona.
+# CONSTRUIDO · el diseño, con las tres condiciones
 
-**Propongo ampliar `guard-dangerous.mjs`** —que ya es un mecanismo, no una costumbre— para que ante
-un comando de la familia **compruebe el estado ANTES** y bloquee solo si **hay algo que perder**:
+**NO se avisa: se bloquea la pérdida, no el comando.** Cada regla comprueba el estado **antes** y
+solo bloquea si hay algo que perder. Un `>` sobre un fichero nuevo, un `git checkout --` con el
+árbol limpio o un `git restore --staged` **no caen**.
 
-- `git checkout -- X` / `git restore X` / `git clean` / `reset --hard` → bloquear **si**
-  `git status --porcelain` no está vacío para esa ruta;
-- `> X` → bloquear **si** `X` ya existe.
+## Condición 3 primero, porque era prerrequisito (commit 1/2)
 
-⚠️ **CONTROL NEGATIVO OBLIGATORIO, y es el que decide si esto vale**: un `>` sobre un fichero
-**nuevo** no puede caer, y un `git checkout --` con el árbol limpio tampoco. Una barrera que bloquea
-lo legítimo se desactiva entera en una semana, y entonces protege menos que ninguna.
+SCRUM-176 ya había atacado esto y **se quedó en la forma**: descontaba heredoc, here-string y el
+argumento de `-m` — tres maneras concretas de escribir texto. El hecho tiene más:
 
-**No lo he construido en esta tanda**: el hook es infraestructura compartida por las cuatro sesiones
-y un falso bloqueo las para a todas. Pido GO con el diseño delante.
+| medido con el hook real, ANTES | |
+|---|---|
+| `node medir.mjs "git push --force origin main"` | BLOQUEADO |
+| `node hook.mjs '{"tool_input":{"command":"…db push"}}'` | BLOQUEADO |
+| `grep -n "rm -rf /" docs/RUNBOOKS.md` | BLOQUEADO |
 
-## Los dos tickets que salen de aquí (cap 3, gasto 2)
+El tercero lo define: **la barrera impedía leer la documentación de la barrera.**
 
-1. **La autorreferencia de la barrera** — que no se dispare con comandos que solo *mencionan* el
-   patrón. Hoy impide verificarla, y una barrera que castiga a quien la comprueba deja de
-   comprobarse.
-2. **`git worktree remove` y las cadenas de junction** — SCRUM-429 midió que hay cadenas
-   (`wt-215-probe`, `wt-216-consolidar`, `wt-248-fixtures` → `wt-209-conflicto`) y que un
-   `worktree remove` siguió una y **vació el `node_modules` compartido, dos veces**. Es la misma
-   familia —destructivo sin comprobación previa— pero el mecanismo es distinto y merece su ticket.
+**Mecanismo:** la línea se tokeniza como la tokenizaría un shell, con una máscara de «esto venía
+entrecomillado». Una coincidencia **solo cuenta si toca al menos un carácter no entrecomillado**.
+Los cuatro patrones y el texto sobre el que se aplican son los mismos.
+
+Y no abre agujero **por construcción**: lo entrecomillado que sí se ejecuta se sigue mirando por dos
+caminos — los **envoltorios** (`bash -c`, `cmd /c`, `eval`) se re-analizan como línea de comando, y
+la **sustitución** (`$(…)`) se extrae de la línea original. Son exactamente los dos casos que
+SCRUM-176 puso en verde.
+
+## Condición 1 · los once controles negativos, primero
+
+| no puede caer | |
+|---|---|
+| `> nuevo.txt` (fichero **nuevo**) | PASA |
+| `git checkout -- limpio.txt` (árbol **limpio**) | PASA |
+| `> ignorado/salida.txt` (git lo ignora) | PASA |
+| `>> sucio.txt` (añadir, no truncar) | PASA |
+| `> /dev/null` | PASA |
+| `git restore --staged` (no toca el árbol) | PASA |
+| `git checkout otra-rama` (no es descarte) | PASA |
+| `git clean` sin nada no rastreado | PASA |
+| `git reset --hard` con el árbol limpio | PASA |
+| `git worktree remove` con `node_modules` **real** | PASA |
+| `git status` | PASA |
+
+## Condición 2 · los cinco de la tabla, medidos con el hook real
+
+| | ANTES | DESPUÉS (con algo que perder) |
+|---|---|---|
+| `git checkout -- sucio.txt` | PASA | **BLOQUEA** y enseña qué se perdía |
+| `git restore sucio.txt` | PASA | **BLOQUEA** |
+| `git reset --hard` | PASA | **BLOQUEA** |
+| `git clean -fd` | PASA | **BLOQUEA** y lista qué se llevaría |
+| `> fichero-existente` | PASA | **BLOQUEA** |
+| **+ el junction** (`worktree remove` / `rm -rf` / `rmdir /s`) | PASA | **BLOQUEA** nombrando el enlace |
+
+**29/29** en el banco (11 negativos + 8 de la familia + 4 de autorreferencia + 6 que ya bloqueaban y
+siguen bloqueando). Ejecutando **el hook real** por subproceso, nunca un extractor — el mío ya me
+mintió una vez sacando un patrón mutilado.
+
+## Lo que hace que el orden no se pueda deshacer
+
+El diagnóstico de la sesión del cuarto caso era: *«la comprobación estaba en el propio comando y me
+llegó DESPUÉS»*. Por eso el permiso es un **sentinel de un solo uso** (`.claude/allow-destructivo`,
+el mismo diseño que `allow-db-push`) y **crearlo en la misma línea no sirve**: el hook juzga antes de
+que nada se ejecute, así que un `touch … && git checkout --` sigue bloqueado. Hay test.
+
+Y el bloqueo **enseña lo que se perdería** (`git status --porcelain`, o el `git clean -n`): un
+bloqueo que no muestra el daño obliga a repetir el comando para enterarse, que es el orden que falló.
+
+## Verificado EN ROJO, una por una
+
+| defecto inyectado | |
+|---|---|
+| la máscara deja de contar | 🔴 5 fallos |
+| el envoltorio deja de re-analizarse | 🔴 4 fallos |
+| la redirección deja de mirar si el fichero existe | 🔴 2 fallos |
+| el descarte deja de preguntar por el árbol | 🔴 6 fallos |
+| `git clean` deja de mirar qué se llevaría | 🔴 1 fallo |
+| el enlace deja de distinguirse de una carpeta | 🔴 1 fallo |
+| **bloquear de MÁS** (ignorar lo que git ignora) | 🔴 1 fallo |
+| mirar el árbol equivocado (ignorar el `cd`) | 🔴 1 fallo |
+
+Los dos últimos importan tanto como los otros: el guard tiene que caer **también** cuando bloquea de
+más o cuando juzga desde el árbol que no es — que con cuatro worktrees diría «limpio» de otro sitio.
+
+## Lo que NO cubre, declarado
+
+- **Fuera del repo y lo que el `.gitignore` cubre.** Desde el hook no se distingue un borrador de una
+  salida temporal, y bloquear en todo el disco es lo que convierte una barrera en ruido.
+- **El quinto mecanismo —si el trabajo *merecía* conservarse— queda fuera a propósito.** Es criterio,
+  no mecanismo, y no se automatiza.
+- Un editor o un `fs.writeFileSync` sobrescriben sin pasar por aquí: el hook solo ve Bash/PowerShell.
+- Si algo revienta **dentro de la familia nueva**, se deja pasar (las cuatro reglas de AA2 no llevan
+  esa red). Es cobertura nueva: un fallo mío parando a las cuatro sesiones sería peor que el estado
+  de ayer.
+
+⚠️ **Esto entra en vigor para las cuatro sesiones en el MERGE**, no antes: el hook que corre es el
+del checkout principal, no el de mi worktree.
+
+**Suite:** 3101 tests, **0 fail** · `npm run guards:entrada` → 0 · Tickets nuevos abiertos: **0** (el
+junction entró aquí, como se pidió).

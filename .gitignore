@@ -143,6 +143,11 @@ vite.config.ts.timestamp-*
 # guard-dangerous: sentinel de autorizacion de db push (un solo uso, nunca commitear)
 .claude/allow-db-push
 
+# SCRUM-454: el mismo diseno para la familia destructiva (descartar cambios, truncar un fichero
+# existente, seguir un junction). Un solo uso, y NUNCA commiteado: si viajara con la rama, la
+# autorizacion de una sesion autorizaria a las otras tres.
+.claude/allow-destructivo
+
 # SCRUM-161: recibo de la tanda gateada. LOCAL Y NUNCA COMMITEADO, igual que el sentinel de
 # arriba y por el mismo motivo: si viajara con la rama seria un artefacto que se COPIA entre
 # ramas, y una prueba que se copia deja de probar nada. Lo escribe scripts/test-staging-gated.mjs.
