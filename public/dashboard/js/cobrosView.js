@@ -100,11 +100,33 @@ var COBROS_METODOS = [
  */
 var COBROS_SIN_METODO = { clave: 'sin-metodo', rotulo: COBROS_COPY.filtroSinMetodo, casa: [] };
 
+/**
+ * 🔴 SCRUM-474 · LA PASARELA NO CAMBIA EL MÉTODO, Y ASÍ ESTABA PARTIENDO LAS TARJETAS EN DOS.
+ *
+ * `Charge.method` guarda `<metodo>` o `<metodo>:<pasarela>`: `card` lo escribe el selector de pago
+ * (`charges.routes.ts`) y `card:stripe` lo escribe la pasarela. **Son el mismo método** — uno es la
+ * preferencia y el otro el hecho consumado. La comparación exacta metía `card:stripe` en «Método no
+ * registrado», así que el profesional filtraba por tarjeta y veía la mitad de sus cobros.
+ *
+ * Medido en producción el 11-ago-2026: **38 de 51 cobros** repartidos entre esas dos etiquetas.
+ *
+ * Se recorta la pasarela ANTES de mirar, y `COBROS_METODOS` sigue siendo la ÚNICA lista de qué
+ * valor cae en qué cubo: aquí no se copia nada.
+ */
+function metodoSinPasarela(metodo) {
+  if (typeof metodo !== 'string') return null;
+  var limpio = metodo.trim().toLowerCase();
+  if (limpio === '') return null;
+  var i = limpio.indexOf(':');
+  return i === -1 ? limpio : limpio.slice(0, i);
+}
+
 /** A qué cubo de filtro cae un cobro. `null` → «no consta». */
 function cuboDeMetodo(metodo) {
-  if (!metodo) return COBROS_SIN_METODO.clave;
+  var base = metodoSinPasarela(metodo);
+  if (!base) return COBROS_SIN_METODO.clave;
   for (var i = 0; i < COBROS_METODOS.length; i++) {
-    if (COBROS_METODOS[i].casa.indexOf(metodo) !== -1) return COBROS_METODOS[i].clave;
+    if (COBROS_METODOS[i].casa.indexOf(base) !== -1) return COBROS_METODOS[i].clave;
   }
   return COBROS_SIN_METODO.clave;
 }
@@ -401,5 +423,5 @@ if (typeof window !== 'undefined') {
   window.diasDeDeudaCobro = diasDeDeudaCobro;
 }
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { renderCobrosView, COBROS_COPY, COBROS_METODOS, COBROS_SIN_METODO, cuboDeMetodo, diasDeDeudaCobro };
+  module.exports = { renderCobrosView, COBROS_COPY, COBROS_METODOS, COBROS_SIN_METODO, cuboDeMetodo, metodoSinPasarela, diasDeDeudaCobro };
 }
