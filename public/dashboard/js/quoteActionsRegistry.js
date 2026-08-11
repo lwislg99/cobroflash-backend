@@ -1,0 +1,60 @@
+// public/dashboard/js/quoteActionsRegistry.js — SCRUM-421
+//
+// LA TABLA DEL PRESUPUESTO. Solo la tabla: la LEY (destinos, reglas, resolutor, marcador de
+// microcopy) vive en `patronDetalleAcciones.js`, la misma que usan albarán y factura. Un cuarto
+// registro con reglas propias habrían sido las cuatro listas de siempre.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// LOS SEIS ESTADOS, cerrados y verificados uno a uno por la sesión que especificó el ticket
+//
+//   draft · pending_approval · sent · accepted · rejected · expired
+//
+// ⚠️ `already_accepted` y `already_rejected` NO son estados: son CUERPOS DE RESPUESTA HTTP
+// (`res.json({ ok: true, status: … })`), el patrón de idempotencia del proyecto. Meterlos en esta
+// tabla habría creado dos columnas que el modelo no tiene, y entonces ninguna transición cuadra.
+//
+// ⚠️ Y `Quote.status` es un **String LIBRE**, no un enum: el modelo no cierra el conjunto. Por eso
+// la tabla sola no basta y viene con su escáner (`tests/scrum421-registro-acciones-presupuesto`),
+// que lee `src/` por AST y falla si alguien escribe un estado que no esté aquí. Registro y guard
+// son UNA SOLA PIEZA: una tabla que promete cobertura sin nada que la contraste es peor que no
+// empezarla, porque parece hecha.
+
+const QUOTE_STATES = ['draft', 'pending_approval', 'sent', 'accepted', 'rejected', 'expired'];
+
+// id                    draft         pending_approval   sent          accepted      rejected      expired
+const QUOTE_ACTION_REGISTRY = [
+  // ── El siguiente paso de cada estado. Uno por columna, y ninguna columna sin él. ────────────
+  { id: 'btnEnviarAprobacion', destinos: { draft: 'oculta',     pending_approval: 'oculta',     sent: 'oculta',      accepted: 'oculta',    rejected: 'oculta',    expired: 'oculta' },
+    cuando: 'requiere-aprobacion' },
+  { id: 'btnEnviar',           destinos: { draft: 'primaria',   pending_approval: 'oculta',     sent: 'oculta',      accepted: 'oculta',    rejected: 'oculta',    expired: 'oculta' } },
+  // `pending_approval` es el presupuesto que espera el visto bueno de dentro de la empresa: su
+  // siguiente paso NO es enviarlo, es aprobarlo. Sin esta fila, ese estado se quedaba sin primaria
+  // y era un callejón sin salida en el primer documento del ciclo.
+  { id: 'btnAprobar',          destinos: { draft: 'oculta',     pending_approval: 'primaria',   sent: 'oculta',      accepted: 'oculta',    rejected: 'oculta',    expired: 'oculta' } },
+  // En `sent` la pelota está en el cliente y el profesional no puede aceptar por él: lo que sí
+  // puede es recordárselo. Es la acción que mueve el dinero desde aquí.
+  { id: 'btnRecordar',         destinos: { draft: 'oculta',     pending_approval: 'oculta',     sent: 'primaria',    accepted: 'oculta',    rejected: 'oculta',    expired: 'oculta' } },
+  // Aceptado: el siguiente paso es cobrar/trabajar. Es el único sitio donde nace el Trabajo.
+  { id: 'btnCrearTrabajo',     destinos: { draft: 'oculta',     pending_approval: 'oculta',     sent: 'oculta',      accepted: 'primaria',  rejected: 'oculta',    expired: 'oculta' } },
+  // Rechazado y caducado comparten salida: **duplicar y volver a intentarlo**. Es lo único que
+  // hace avanzar el dinero desde ahí, y sin ella los dos estados eran un final.
+  { id: 'btnDuplicar',         destinos: { draft: 'overflow',   pending_approval: 'overflow',   sent: 'overflow',    accepted: 'overflow',  rejected: 'primaria',  expired: 'primaria' } },
+
+  // ── Secundarias: como mucho dos por estado (regla 2). ──────────────────────────────────────
+  { id: 'btnPdf',              destinos: { draft: 'secundaria', pending_approval: 'secundaria', sent: 'secundaria',  accepted: 'secundaria', rejected: 'secundaria', expired: 'secundaria' } },
+  { id: 'btnEditarLineas',     destinos: { draft: 'secundaria', pending_approval: 'secundaria', sent: 'oculta',      accepted: 'oculta',    rejected: 'oculta',    expired: 'oculta' } },
+  { id: 'btnWhatsApp',         destinos: { draft: 'oculta',     pending_approval: 'oculta',     sent: 'secundaria',  accepted: 'secundaria', rejected: 'oculta',    expired: 'secundaria' } },
+
+  // ── El resto, al «⋮» (regla 3). ────────────────────────────────────────────────────────────
+  { id: 'btnVerCliente',       destinos: { draft: 'overflow',   pending_approval: 'overflow',   sent: 'overflow',    accepted: 'overflow',  rejected: 'overflow',  expired: 'overflow' } },
+  { id: 'btnMarcarRechazado',  destinos: { draft: 'oculta',     pending_approval: 'oculta',     sent: 'overflow',    accepted: 'oculta',    rejected: 'oculta',    expired: 'oculta' } },
+  { id: 'btnBorrar',           destinos: { draft: 'overflow',   pending_approval: 'overflow',   sent: 'oculta',      accepted: 'oculta',    rejected: 'overflow',  expired: 'overflow' } },
+];
+
+if (typeof window !== 'undefined') {
+  window.QUOTE_ACTION_REGISTRY = QUOTE_ACTION_REGISTRY;
+  window.QUOTE_STATES = QUOTE_STATES;
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { QUOTE_ACTION_REGISTRY, QUOTE_STATES };
+}
