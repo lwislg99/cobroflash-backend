@@ -635,11 +635,7 @@ function openQuickQuoteModal(prefill) {
   backdrop.className = "modal-overlay";
   backdrop.id = "qq-modal-backdrop";
   backdrop.innerHTML = `
-    <div class="modal qq-modal">
-      <div class="modal-header">
-        <span class="modal-title">${qNew} ${qFast}</span>
-        <button class="modal-close" id="qq-close">&times;</button>
-      </div>
+    <div class="modal qq-modal">
 
       <div class="qq-modal-body">
         <!-- Cliente -->
@@ -715,6 +711,8 @@ function openQuickQuoteModal(prefill) {
                   </div>
                 </div>
               </div>`;
+  // SCRUM-446: la cabecera sale del constructor compartido.
+  backdrop.querySelector('.modal').prepend(cabeceraModal({ titulo: `${qNew} ${qFast}`, idCierre: "qq-close" }));
             }).join('')}
           </div>
           <p class="qq-help">El cliente elige una opción y esa se convierte en su presupuesto.</p>

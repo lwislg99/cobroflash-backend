@@ -9,11 +9,7 @@ function openAiSuggestModal(addLinesFn) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal" style="max-width:500px">
-      <div class="modal-header">
-        <h3 class="modal-title">✨ Sugerir líneas con IA</h3>
-        <button class="modal-close" id="ai-modal-close">&times;</button>
-      </div>
+    <div class="modal" style="max-width:500px">
       <div class="modal-body">
         <p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">
           Describe el trabajo con tus propias palabras y Claude sugerirá las líneas del presupuesto usando tu catálogo de productos.
@@ -34,6 +30,8 @@ function openAiSuggestModal(addLinesFn) {
       </div>
     </div>
   `;
+  // SCRUM-446: la cabecera sale del constructor compartido.
+  overlay.querySelector('.modal').prepend(cabeceraModal({ titulo: "✨ Sugerir líneas con IA", idCierre: "ai-modal-close" }));
   document.body.appendChild(overlay);
 
   const closeModal = () => overlay.remove();
@@ -142,11 +140,7 @@ function openAiMessageModal({ customerName, concept, total, currency, onCopy }) 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal" style="max-width:440px">
-      <div class="modal-header">
-        <h3 class="modal-title">✨ Mensaje WhatsApp con IA</h3>
-        <button class="modal-close" id="ai-msg-close">&times;</button>
-      </div>
+    <div class="modal" style="max-width:440px">
       <div class="modal-body">
         <p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">
           Claude redactará un mensaje personalizado para enviar a ${escHtml(customerName)} junto con el presupuesto.
@@ -168,6 +162,8 @@ function openAiMessageModal({ customerName, concept, total, currency, onCopy }) 
       </div>
     </div>
   `;
+  // SCRUM-446: la cabecera sale del constructor compartido.
+  overlay.querySelector('.modal').prepend(cabeceraModal({ titulo: "✨ Mensaje WhatsApp con IA", idCierre: "ai-msg-close" }));
   document.body.appendChild(overlay);
 
   const closeModal = () => overlay.remove();

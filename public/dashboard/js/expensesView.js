@@ -268,10 +268,6 @@ function openExpenseModal(expense, opts) {
   backdrop.id = 'exp-modal';
   backdrop.innerHTML = `
     <div class="modal" style="max-width:480px">
-      <div class="modal-header">
-        <span class="modal-title">${isEdit ? 'Editar gasto' : 'Nuevo gasto'}</span>
-        <button class="modal-close" id="exp-close">&times;</button>
-      </div>
       <div class="modal-body" style="gap:12px">
         <div class="field">
           <label>Concepto *</label>
@@ -323,6 +319,10 @@ function openExpenseModal(expense, opts) {
     </div>
   `;
 
+  // SCRUM-446: la cabecera sale del constructor compartido.
+  backdrop.querySelector('.modal').prepend(cabeceraModal({
+    titulo: isEdit ? 'Editar gasto' : 'Nuevo gasto', idCierre: 'exp-close',
+  }));
   document.body.appendChild(backdrop);
 
   document.getElementById('exp-close').addEventListener('click', closeExpModal);

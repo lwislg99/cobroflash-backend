@@ -118,11 +118,7 @@ function renderProductsView(container) {
           ov.className = 'modal-overlay';
           ov.style.display = 'none';
           ov.innerHTML = `
-            <div class="modal" style="max-width:560px">
-              <div class="modal-header">
-                <span class="modal-title">Editar producto</span>
-                <button class="modal-close" type="button" id="pf-edit-close">&times;</button>
-              </div>
+            <div class="modal" style="max-width:560px">
               <div class="modal-body" style="gap:12px">
                 <div class="quote-form-row">
                   <div class="field"><label>Nombre *</label><input name="name"/></div>
@@ -139,6 +135,8 @@ function renderProductsView(container) {
               </div>
             </div>
           `;
+          // SCRUM-446: la cabecera sale del constructor compartido.
+          ov.querySelector('.modal').prepend(cabeceraModal({ titulo: "Editar producto", idCierre: "pf-edit-close" }));
           document.body.appendChild(ov);
 
           ov.querySelector('#pf-edit-close').addEventListener('click', closeEditModal);
