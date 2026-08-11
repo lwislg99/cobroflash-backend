@@ -9,6 +9,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { BASE_URL } from '../../../../core/config/env';
 import { internalHeaders } from '../../../../core/http/internalAuth';
 import { isFlagEnabled } from '../../../../core/flags';
+import { resolverFechaDeCobro } from '../../domain/fechaDeCobro'; // SCRUM-397
 
 const router = Router();
 
@@ -30,6 +31,19 @@ router.post('/:id/confirm-bizum', async (req, res) => {
       return res.status(409).json({ error: 'bizum_disabled' });
     }
 
+    // SCRUM-397 · LA FECHA LA DICE QUIEN CONFIRMA, NO EL RELOJ.
+    //
+    // Éste es el único camino donde una PERSONA marca un cobro, y por tanto el único donde el
+    // instante de proceso podía no ser el del dinero: un Bizum recibido el 31 de marzo y
+    // confirmado el 2 de abril quedaba fechado en abril — **cruza de trimestre**, y con criterio
+    // de caja es el euro declarado en el periodo que no toca.
+    //
+    // El criterio (futura no, hacia atrás sin límite) y sus dos textos son los APROBADOS el
+    // 10-ago-2026 para el mismo problema en facturas: se reutilizan, no se inventan (regla 30).
+    // Sin fecha, `ahora` — que no es el defecto: el defecto era no poder cambiarla.
+    const fecha = resolverFechaDeCobro((req.body as any)?.paid_at ?? (req.body as any)?.fecha);
+    if (!fecha.ok) return res.status(400).json({ error: fecha.error, message: fecha.message });
+
     // Misma cadena post-pago que el PSP (P0-3: factura ligada → paid, WA, email)
     await axios.post(`${BASE_URL}/webhooks/psp`, {
       event: 'payment.confirmed',
@@ -38,10 +52,11 @@ router.post('/:id/confirm-bizum', async (req, res) => {
       bank_ref: `bizum-manual-${Date.now()}`,
       amount: Number(charge.amount),
       currency: charge.currency,
-      ts: new Date().toISOString(),
+      // `ts` ya estaba en el esquema del webhook y no lo leía nadie. Ahora es la fecha del cobro.
+      ts: fecha.fecha.toISOString(),
     }, { timeout: 10_000, headers: internalHeaders() });
 
-    return res.json({ ok: true, status: 'paid', paid_via: 'bizum_manual' });
+    return res.json({ ok: true, status: 'paid', paid_via: 'bizum_manual', paid_at: fecha.fecha.toISOString() });
   } catch (err: any) {
     console.error('[POST /admin/charges/:id/confirm-bizum]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });

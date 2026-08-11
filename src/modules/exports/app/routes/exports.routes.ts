@@ -16,6 +16,7 @@ import {
   flagsFiscalesDe,
 } from '../../../system/audit.service';
 import { estadoCobroFor } from '../../../jobs/domain/job.service';
+import { fechaDeCobroDeCharge } from '../../../billing/domain/instanteDeCobro'; // SCRUM-397
 // SCRUM-25 (B): paquete ZIP. `archiver` hace streaming real (.pipe + backpressure);
 // jszip se descartó porque carga todo en memoria.
 // ⚠️ archiver 8 cambió la API: ya NO exporta la función `archiver('zip', opts)` de v5/v6,
@@ -486,12 +487,18 @@ router.get('/fees.csv', async (req, res) => {
         (e) => e.type === 'card_session_created' && (e as any).payload?.connect === true,
       );
       if (!viaConnect) continue; // pagos en la cuenta de plataforma (demo/test): sin fee
-      const paidEv = (ch.events || []).find((e) => e.type === 'paid');
+      // SCRUM-397: de los tres consumidores éste era el que ya hacía lo correcto (el PRIMER evento
+      // `paid`). Pasa por el mismo lector que los otros dos para que sigan siendo tres respuestas
+      // iguales — antes coincidía por criterio propio, que es lo que se desincronizó una vez.
+      const fechaPago = fechaDeCobroDeCharge(ch);
       const amount = Number(ch.amount);
       const fee = feeOf(amount);
       totalFees += fee;
       rows.push(csvRow([
-        (paidEv ? new Date((paidEv as any).ts ?? ch.updatedAt) : ch.updatedAt).toISOString().slice(0, 10),
+        // Sin reserva a `updatedAt`: si la regla es que esa fecha no es la del cobro, no puede
+        // tener una excepción aquí. En la práctica no se ve vacío —toda fila de este CSV pasó por
+        // Connect y por tanto tiene su evento `paid`—, pero vacío es la respuesta honesta.
+        fechaPago ? fechaPago.toISOString().slice(0, 10) : '',
         ch.id,
         ch.merchant?.legalName || ch.merchant?.name || ch.merchantId,
         ch.concept,

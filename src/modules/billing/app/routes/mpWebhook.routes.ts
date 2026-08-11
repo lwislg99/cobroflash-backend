@@ -11,6 +11,7 @@ import { sendPaymentConfirmationInvoice, notifyMerchantPaid } from '../../../../
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { recalcJobCobradoForCharge } from '../../../jobs/domain/job.service'; // SCRUM-13
+import { datosDeCobroPagado } from '../../domain/instanteDeCobro'; // SCRUM-397
 
 const router = Router();
 
@@ -96,18 +97,15 @@ router.post('/', async (req, res) => {
     const mpStatus = payment.status;
 
     if (mpStatus === 'approved' && charge.status !== 'paid') {
+      // SCRUM-397 · el mismo generador que `/webhooks/psp`: columna y evento con UN solo instante.
+      // Aquí no hay fecha declarada —lo confirma Mercado Pago, no una persona—, así que el
+      // instante es el de proceso, que es lo correcto para un aviso automático.
       const updated = await prisma.charge.update({
         where: { id: chargeId },
         data: {
-          status: 'paid',
+          ...datosDeCobroPagado(new Date(), { mp_payment_id: mpPaymentId, mp_status: mpStatus, ...payment }),
           method: 'mp',
           reference: mpPaymentId,
-          events: {
-            create: {
-              type: 'paid',
-              payload: { mp_payment_id: mpPaymentId, mp_status: mpStatus, ...payment } as any,
-            },
-          },
           reconciliations: {
             create: { bankRef: mpPaymentId, matched: true },
           },

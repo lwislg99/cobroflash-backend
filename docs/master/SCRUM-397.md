@@ -334,3 +334,93 @@ está guardado en todos y la columna es un índice, no un dato nuevo.
 
 **No se ha tocado:** `prisma/schema.prisma` · `invoicesAdmin.routes.ts:924` · el camino de emisión ·
 los cinco sitios de `Invoice.paidAt`.
+
+---
+
+# SCRUM-397 · CONSTRUIDO · un solo instante para un solo hecho
+
+**Medido contra:** `origin/main` = `68ea282b32031c36547ab668ac4138db584636e4` · `2026-08-11T19:23:10+02:00`
+**Rama:** `scrum-397-paid-at-fuente-o-copia`
+
+## Lo que se ha hecho, y por qué el guard es la pieza que decide
+
+**No hay dos sitios donde escribir el instante.** `datosDeCobroPagado(fecha, payload)` devuelve el
+estado, la columna **y** el evento con **el mismo objeto `Date`**. La columna no puede discrepar del
+evento porque no hay dónde hacerlo — no es un test que compare dos literales «que se parecen».
+
+| | |
+|---|---|
+| **NUEVO** `src/modules/billing/domain/instanteDeCobro.ts` | puro: el generador + el lector |
+| **MOD** `psp.routes.ts` · `mpWebhook.routes.ts` | los dos únicos sitios que marcan `paid`, por el generador |
+| **MOD** `chargesAdmin.routes.ts` (`confirm-bizum`) | fecha **declarada**, validada con el criterio ya aprobado |
+| **MOD** `receipt.routes.ts` · `exportData.ts` · `exports.routes.ts` | los tres consumidores, un solo lector |
+| **NUEVO** `tests/_censo-marcado-de-cobro.mjs` + `tests/scrum397-instante-de-cobro.test.mjs` | el guard, por AST |
+
+**Sin backfill.** Los cobros anteriores nacen con `paid_at` NULL, y el lector recupera su instante
+del evento `paid` **más antiguo** — que no es inventarlo, es leerlo donde sí estaba. Si no hay
+evento, `null`: nunca `updatedAt`.
+
+## Los tres consumidores, y lo que cambia para quien los mira
+
+| | antes | ahora |
+|---|---|---|
+| **el recibo del CLIENTE** | el evento `paid` **más reciente** → en un cobro con reintento de webhook, **enseñaba la fecha del reintento** | la columna, o el evento más antiguo |
+| `cobros.csv` («Cobrado en») | `updatedAt` — un cobro del 31-mar editado el 2-abr salía como de abril | la fecha real, o **vacío** si no consta |
+| export de fees | el primer evento `paid` (ya era lo correcto) | el mismo lector que los otros dos |
+
+⚠️ **Cambia lo que sale en `cobros.csv` para cobros antiguos**, y es a mejor: los que tienen evento
+pasan a la fecha real; los que no, a vacío. **Vacío es la respuesta honesta** — mezclar «no consta»
+con una fecha cualquiera es lo que producía la cifra que no significa nada.
+
+⚠️ Y quité la reserva a `updatedAt` que el export de fees tenía: si la regla es que esa fecha no es
+la del cobro, no puede tener una excepción. En la práctica no se ve vacío (toda fila de ese CSV pasó
+por Connect y tiene su evento).
+
+## El cruce de trimestre: la mitad construida y la que falta
+
+`confirm-bizum` ya validaba nada y mandaba la hora de proceso. Ahora acepta `paid_at` en el cuerpo,
+lo valida con `resolverFechaDeCobro` —futura no, hacia atrás sin límite— y lo manda en el `ts` que
+**ya estaba en `PSPWebhookSchema` y no leía nadie**. El webhook lo lee y lo escribe en la columna y
+en el evento.
+
+🔴 **Lo que NO he construido, y sin esto el PRO todavía no puede declarar la fecha:** el campo en la
+pantalla. Es microcopy y va con tu OK (regla 30). **Propuesta, no puesta:**
+
+> etiqueta del campo: **«¿Qué día lo recibiste?»** · texto de ayuda: **«Si no lo pones, se guarda
+> con la fecha de hoy.»**
+
+Los dos textos de error ya están aprobados y se reutilizan tal cual (`COPY_FECHA_FUTURA`,
+`COPY_FECHA_ILEGIBLE`). Hasta que la pantalla mande el campo, el camino manual sigue guardando
+«ahora» — que es el comportamiento de antes, no una regresión.
+
+## `AUTO_INVOICE_ON_PAID`: construido para los dos casos
+
+No hace falta el dato. `paid_at` se escribe **en la transición del cobro**, exista factura o no: si
+la flag está en ON el cobro tiene su factura y ambos guardan su fecha; si está en OFF, el cobro es
+la **única** fuente y ahora sí la tiene. El arreglo no depende del valor.
+
+## Verificado EN ROJO, seis defectos uno a uno
+
+| defecto inyectado | |
+|---|---|
+| un webhook vuelve a marcar el cobro por su cuenta (dos relojes) | 🔴 |
+| el generador fecha el evento aparte | 🔴 |
+| el lector vuelve al evento más reciente (el del reintento) | 🔴 |
+| `cobros.csv` vuelve a `updatedAt` | 🔴 |
+| el camino manual vuelve a mandar la hora de proceso | 🔴 |
+| el webhook vuelve a ignorar la fecha declarada | 🔴 |
+
+⚠️ **Y el primer intento de este rojo salió VERDE seis veces**: mi arnés leía `# fail`, que
+`node --test` no imprime. El instrumento estaba ciego, no el guard. Corregido y repetido — un rojo
+que no se comprueba se lee igual que un guard que no vigila nada.
+
+## Regla 38 · medido, no supuesto
+
+El módulo del instante es **puro**: sin `prisma`, sin `emitInvoice`, sin `allocateInvoiceNumber`,
+sin `applyVeriFactu`, sin `sellar*`. Hay test que lo fija: el día que importe cualquiera de esos,
+cae y el ticket pasa a ser STOP. **Marcar un cobro no es emitir.**
+
+**No se ha tocado:** `prisma/schema.prisma` (la columna ya estaba) · `invoicesAdmin.routes.ts:924` ·
+los cinco sitios de `Invoice.paidAt` · las tres ramas con «397» en el nombre.
+
+**Suite:** 3119 tests, **0 fail**.

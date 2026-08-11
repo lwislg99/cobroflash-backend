@@ -11,6 +11,7 @@ import { stripe } from '../../../../integrations/stripe';
 import { BASE_URL, config } from '../../../../core/config/env';
 import { internalHeaders } from '../../../../core/http/internalAuth';
 import { ensureInvoicePdf } from '../../../../lib/invoicing';
+import { fechaDeCobroDeCharge } from '../../domain/instanteDeCobro'; // SCRUM-397
 
 const router = Router();
 
@@ -204,9 +205,13 @@ router.get('/:token', async (req, res) => {
     ((req.query as any).card === 'success' || (req.query as any).celebrate === '1');
 
   // R-1 (N3): en el recibo PAGADO mostrar fecha + método del pago.
-  const paidEvent = (ch.events || [])
-    .filter((e) => e.type === 'paid')
-    .sort((a, b) => +new Date(b.ts) - +new Date(a.ts))[0];
+  //
+  // 🔴 SCRUM-397 · ESTO ENSEÑABA LA FECHA DEL REINTENTO. Cogía el evento `paid` MÁS RECIENTE, y
+  // `psp.routes.ts` crea otro evento `paid` (marcado `duplicate: true`) cada vez que el webhook se
+  // repite. En un cobro con reintento, el documento que se lleva el CLIENTE fechaba el pago el día
+  // del reintento. Ahora sale del mismo sitio que la exportación y que el resto: la columna, y
+  // para los cobros anteriores a ella el evento MÁS ANTIGUO — que es cuando se pagó.
+  const fechaPago = fechaDeCobroDeCharge(ch);
   const methodLabel = (m?: string | null): string => {
     const s = String(m || '').toLowerCase();
     if (!s) return '';
@@ -219,8 +224,8 @@ router.get('/:token', async (req, res) => {
   const paidMeta =
     ch.status === 'paid'
       ? [
-          paidEvent
-            ? `Pagado el ${new Date(paidEvent.ts).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}`
+          fechaPago
+            ? `Pagado el ${fechaPago.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}`
             : 'Pagado',
           methodLabel(ch.method),
         ]
