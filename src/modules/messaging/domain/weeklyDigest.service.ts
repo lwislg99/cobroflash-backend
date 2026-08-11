@@ -5,21 +5,25 @@ import { prisma } from '../../../core/db/prisma';
 import { createMailer } from '../../../integrations/mailer';
 import { config } from '../../../core/config/env';
 import { maskEmail } from '../../../core/utils/utils';
+import { constanciaDeEnvio, constanciaDeFallo, type Constancia } from './constanciaCorreo'; // SCRUM-475
 
-async function sendEmail(to: string, subject: string, html: string): Promise<void> {
-  if (!to || !to.includes('@')) return;
+// SCRUM-475: la respuesta ya no se tira, y «no había con qué enviar» deja de parecerse a «enviado».
+async function sendEmail(to: string, subject: string, html: string): Promise<Constancia> {
+  if (!to || !to.includes('@')) return constanciaDeFallo({ message: 'destinatario sin email' });
   if (config.RESEND_API_KEY) {
-    await axios.post(
+    const respuesta = await axios.post(
       'https://api.resend.com/emails',
       { from: config.EMAIL_FROM, to: [to], subject, html },
       { headers: { Authorization: `Bearer ${config.RESEND_API_KEY}`, 'Content-Type': 'application/json' }, timeout: 10_000 }
     );
-    return;
+    return constanciaDeEnvio(respuesta);
   }
   if (config.SMTP_URL) {
     const mailer = createMailer();
     await mailer.sendMail({ from: config.EMAIL_FROM, to, subject, html });
+    return constanciaDeEnvio(null);
   }
+  return constanciaDeFallo({ message: 'sin RESEND_API_KEY ni SMTP_URL: no se envió' });
 }
 
 function fmt(n: number, currency = '') {

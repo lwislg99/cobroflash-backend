@@ -8,20 +8,24 @@ import axios from 'axios';
 import { prisma } from '../../../core/db/prisma';
 import { config } from '../../../core/config/env';
 import { maskEmail } from '../../../core/utils/utils';
+import { constanciaDeEnvio, constanciaDeFallo, type Constancia } from './constanciaCorreo'; // SCRUM-475
 
 const DASHBOARD_URL = `${config.PUBLIC_BASE_URL || 'https://yaqu.app'}/dashboard/`;
 
-async function sendEmail(to: string, subject: string, html: string): Promise<void> {
-  if (!to || !to.includes('@')) return;
+// SCRUM-475: la respuesta ya no se tira. Y los dos caminos que NO envían devuelven `fallo_envio`
+// con su motivo — hoy salían por un `return` mudo, que se lee igual que un envío bueno.
+async function sendEmail(to: string, subject: string, html: string): Promise<Constancia> {
+  if (!to || !to.includes('@')) return constanciaDeFallo({ message: 'destinatario sin email' });
   if (!config.RESEND_API_KEY) {
     console.log(`[lifecycle] (sin RESEND) email a ${maskEmail(to)}: ${subject}`); // SCRUM-101
-    return;
+    return constanciaDeFallo({ message: 'sin RESEND_API_KEY: no se envió' });
   }
-  await axios.post(
+  const respuesta = await axios.post(
     'https://api.resend.com/emails',
     { from: config.EMAIL_FROM, to: [to], subject, html },
     { headers: { Authorization: `Bearer ${config.RESEND_API_KEY}`, 'Content-Type': 'application/json' }, timeout: 10_000 },
   );
+  return constanciaDeEnvio(respuesta);
 }
 
 // Plantilla con cabecera de marca YaQu

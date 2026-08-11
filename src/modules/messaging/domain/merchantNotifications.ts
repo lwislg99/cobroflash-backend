@@ -4,12 +4,16 @@
 import axios from 'axios';
 import { createMailer } from '../../../integrations/mailer';
 import { config } from '../../../core/config/env';
+import { constanciaDeEnvio, constanciaDeFallo, type Constancia } from './constanciaCorreo'; // SCRUM-475
 
-async function sendEmail(to: string, subject: string, html: string): Promise<void> {
-  if (!to || !to.includes('@')) return;
+// SCRUM-475: aquí vive el aviso de COBRO al profesional, que es el que se tragaba su fallo sin
+// una línea (`.catch(() => {})` en `psp.routes.ts`). La respuesta ya no se tira, y el camino sin
+// SMTP —que no envía nada— deja de parecerse a un envío bueno.
+async function sendEmail(to: string, subject: string, html: string): Promise<Constancia> {
+  if (!to || !to.includes('@')) return constanciaDeFallo({ message: 'destinatario sin email' });
 
   if (config.RESEND_API_KEY) {
-    await axios.post(
+    const respuesta = await axios.post(
       'https://api.resend.com/emails',
       { from: config.EMAIL_FROM, to: [to], subject, html },
       {
@@ -17,13 +21,15 @@ async function sendEmail(to: string, subject: string, html: string): Promise<voi
         timeout: 10_000,
       },
     );
-    return;
+    return constanciaDeEnvio(respuesta);
   }
 
   if (config.SMTP_URL) {
     const mailer = createMailer();
     await mailer.sendMail({ from: config.EMAIL_FROM, to, subject, html });
+    return constanciaDeEnvio(null);
   }
+  return constanciaDeFallo({ message: 'sin RESEND_API_KEY ni SMTP_URL: no se envió' });
 }
 
 // ── Pago recibido ──────────────────────────────────────────────────────────

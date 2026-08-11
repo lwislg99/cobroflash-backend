@@ -9,6 +9,7 @@ import { config, BASE_URL } from '../../../core/config/env';
 import { ensureInvoicePdf } from '../../../lib/invoicing';
 import { ensureQuoteDecisionToken } from '../../quotes/domain/quoteToken.service'; // SCRUM-95
 import { renderEmailLayout, escEmail } from './emailLayout';
+import { constanciaDeEnvio } from './constanciaCorreo'; // SCRUM-475
 
 /**
  * Envía la factura al cliente con el PDF adjunto.
@@ -53,7 +54,7 @@ export async function sendInvoiceEmail(args: {
 
   // ── Producción: Resend (HTTP API) con adjunto base64 ──────────────────────
   if (config.RESEND_API_KEY) {
-    await axios.post(
+    const respuesta = await axios.post(
       'https://api.resend.com/emails',
       {
         from,
@@ -65,7 +66,7 @@ export async function sendInvoiceEmail(args: {
       },
       { headers: { Authorization: `Bearer ${config.RESEND_API_KEY}`, 'Content-Type': 'application/json' }, timeout: 15_000 },
     );
-    return { ok: true, resend: true };
+    return { ok: true, resend: true, constancia: constanciaDeEnvio(respuesta) };
   }
 
   // ── Dev / sin RESEND: SMTP si hay SMTP_URL; si no, .eml en /public/outbox ──
@@ -87,10 +88,10 @@ export async function sendInvoiceEmail(args: {
   if (Buffer.isBuffer((mail as any)?.message)) {
     const file = path.join(outboxDir, `invoice-${inv.number}.eml`);
     fs.writeFileSync(file, (mail as any).message);
-    return { ok: true, eml: `/outbox/invoice-${inv.number}.eml`, smtp: false };
+    return { ok: true, eml: `/outbox/invoice-${inv.number}.eml`, smtp: false, constancia: constanciaDeEnvio(null) };
   }
 
-  return { ok: true, smtp: true };
+  return { ok: true, smtp: true, constancia: constanciaDeEnvio(null) };
 }
 
 /**
@@ -144,7 +145,7 @@ export async function sendQuoteEmail(args: { quoteId: number; prisma: PrismaClie
   });
 
   if (config.RESEND_API_KEY) {
-    await axios.post(
+    const respuesta = await axios.post(
       'https://api.resend.com/emails',
       {
         from: config.EMAIL_FROM,
@@ -155,7 +156,7 @@ export async function sendQuoteEmail(args: { quoteId: number; prisma: PrismaClie
       },
       { headers: { Authorization: `Bearer ${config.RESEND_API_KEY}`, 'Content-Type': 'application/json' }, timeout: 15_000 },
     );
-    return { ok: true, resend: true };
+    return { ok: true, resend: true, constancia: constanciaDeEnvio(respuesta) };
   }
 
   // Dev sin Resend: SMTP o .eml a outbox (mismo patrón que sendInvoiceEmail)
@@ -178,7 +179,7 @@ export async function sendQuoteEmail(args: { quoteId: number; prisma: PrismaClie
   if (Buffer.isBuffer((mail as any)?.message)) {
     const file = path.join(outboxDir, `quote-${quote.id}.eml`);
     fs.writeFileSync(file, (mail as any).message);
-    return { ok: true, eml: `/outbox/quote-${quote.id}.eml`, smtp: false };
+    return { ok: true, eml: `/outbox/quote-${quote.id}.eml`, smtp: false, constancia: constanciaDeEnvio(null) };
   }
-  return { ok: true, smtp: true };
+  return { ok: true, smtp: true, constancia: constanciaDeEnvio(null) };
 }

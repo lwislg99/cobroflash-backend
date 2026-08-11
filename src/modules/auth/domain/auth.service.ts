@@ -7,21 +7,26 @@ import { sendWelcomeEmail } from '../../messaging/domain/lifecycle.service';
 import { renderEmailLayout, escEmail } from '../../messaging/domain/emailLayout';
 import { generateUniqueReferralCode, resolveReferrer } from './referral.service';
 import { maskEmail } from '../../../core/utils/utils';
+import { constanciaDeEnvio, type Constancia } from '../../messaging/domain/constanciaCorreo'; // SCRUM-475
 
 const MAGIC_LINK_TTL_MS = 15 * 60 * 1000;
 const SESSION_TTL_MS    = 30 * 24 * 60 * 60 * 1000; // 30 días
 
-async function sendEmail(params: { to: string; subject: string; html: string }) {
+// SCRUM-475: la respuesta del proveedor ya no se tira — trae el identificador del mensaje, que es
+// lo único con lo que se puede seguir un correo después. El estado NO se inventa: sin identificador
+// se dice `aceptado_sin_identificador`, y por SMTP no hay ninguno que valga.
+async function sendEmail(params: { to: string; subject: string; html: string }): Promise<Constancia> {
   if (config.RESEND_API_KEY) {
-    await axios.post(
+    const respuesta = await axios.post(
       'https://api.resend.com/emails',
       { from: config.EMAIL_FROM, to: [params.to], subject: params.subject, html: params.html },
       { headers: { Authorization: `Bearer ${config.RESEND_API_KEY}`, 'Content-Type': 'application/json' }, timeout: 10_000 }
     );
-    return;
+    return constanciaDeEnvio(respuesta);
   }
   const mailer = createMailer();
   await mailer.sendMail({ from: config.EMAIL_FROM, to: params.to, subject: params.subject, html: params.html });
+  return constanciaDeEnvio(null);
 }
 
 function generateToken() {
