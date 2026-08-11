@@ -51,10 +51,35 @@ const QUOTE_ACTION_REGISTRY = [
   { id: 'btnBorrar',           destinos: { draft: 'overflow',   pending_approval: 'overflow',   sent: 'oculta',      accepted: 'oculta',    rejected: 'overflow',  expired: 'overflow' } },
 ];
 
+// ── RÓTULOS · REGLA 30: NINGUNO ESTÁ APROBADO ────────────────────────────────────────────────
+//
+// Van con marcador visible, como hicieron `albaranesView` y la pantalla del Libro registro antes
+// de que el asesor los firmara. El marcador NO es un recordatorio para el equipo: **se ve en
+// pantalla a propósito**, para que nadie encienda por descuido texto que nadie ha aprobado.
+//
+// El texto entre paréntesis es una PROPUESTA. Lo aprueba el fundador y entonces se quitan las
+// marcas — no antes.
+const MARCA_MICROCOPY = '[PENDIENTE microcopy oficial]';
+const QUOTE_ACTION_ROTULOS = {
+  btnEnviarAprobacion: MARCA_MICROCOPY + ' Enviar a aprobación',
+  btnEnviar:           MARCA_MICROCOPY + ' Enviar al cliente',
+  btnAprobar:          MARCA_MICROCOPY + ' Aprobar',
+  btnRecordar:         MARCA_MICROCOPY + ' Recordar al cliente',
+  btnCrearTrabajo:     MARCA_MICROCOPY + ' Crear trabajo',
+  btnDuplicar:         MARCA_MICROCOPY + ' Duplicar',
+  btnPdf:              MARCA_MICROCOPY + ' PDF',
+  btnEditarLineas:     MARCA_MICROCOPY + ' Editar líneas',
+  btnWhatsApp:         MARCA_MICROCOPY + ' WhatsApp',
+  btnVerCliente:       MARCA_MICROCOPY + ' Ver cliente',
+  btnMarcarRechazado:  MARCA_MICROCOPY + ' Marcar como rechazado',
+  btnBorrar:           MARCA_MICROCOPY + ' Borrar',
+};
+
 if (typeof window !== 'undefined') {
   window.QUOTE_ACTION_REGISTRY = QUOTE_ACTION_REGISTRY;
   window.QUOTE_STATES = QUOTE_STATES;
+  window.QUOTE_ACTION_ROTULOS = QUOTE_ACTION_ROTULOS;
 }
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { QUOTE_ACTION_REGISTRY, QUOTE_STATES };
+  module.exports = { QUOTE_ACTION_REGISTRY, QUOTE_STATES, QUOTE_ACTION_ROTULOS };
 }

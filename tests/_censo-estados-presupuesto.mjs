@@ -103,6 +103,33 @@ function valoresDe(expr, sf) {
  *
  * @returns {{escrituras:{fichero:string,linea:number,valores:string[]}[], sinResolver:{fichero:string,linea:number,texto:string}[], ficherosMirados:number}}
  */
+/**
+ * ¿Este `status:` cuelga de una ESCRITURA a `quote`, o de otra cosa?
+ *
+ * 🔴 ANTES SE MIRABAN 400 CARACTERES HACIA ATRÁS, y por eso `quotes.routes.ts:216` —un
+ * `status: quote.status` dentro de un `res.json`— se contaba como escritura: la ventana alcanzaba
+ * el `create` de más arriba. **La respuesta no era agrandar ni encoger la ventana.** Ajustar una
+ * distancia a ojo es cómo un escáner deja de ver lo que sí importa, y es la tercera ventana fija
+ * que falla en este repo en dos días.
+ *
+ * Distinguir una escritura a Prisma de un cuerpo de respuesta es una pregunta de ESTRUCTURA:
+ * se sube por los padres hasta la PRIMERA llamada que envuelve al nodo y se mira a quién llama.
+ * `res.json({ status })` da `res.json`; `prisma.quote.update({ data: { status } })` da
+ * `prisma.quote.update`. Sin distancias, sin umbrales y sin nada que calibrar.
+ *
+ * La primera que envuelve, no cualquiera: es la que de verdad recibe ese objeto.
+ */
+function dentroDeEscrituraQuote(nodo) {
+  for (let p = nodo.parent; p; p = p.parent) {
+    if (!ts.isCallExpression(p)) continue;
+    // ⚠️ `.quote.` y no `prisma.quote.`: dentro de una `$transaction` el cliente se llama `tx`, y
+    // la escritura que decide este ticket —`tx.quote.create` con `status: initialStatus`, la ruta
+    // principal de creación— quedaría fuera del censo.
+    return /(^|\.)quote\.(create|update|updateMany|upsert)$/.test(p.expression.getText());
+  }
+  return false;
+}
+
 export function censarEstadosDePresupuesto(raiz) {
   const escrituras = [];
   const sinResolver = [];
@@ -125,9 +152,7 @@ export function censarEstadosDePresupuesto(raiz) {
           // `tx`, y la escritura que ESTE ticket señaló como la que decide —`tx.quote.create` con
           // `status: initialStatus`, la ruta principal de creación— quedaba fuera del censo. El
           // guard habría nacido con el agujero dentro, que es justo contra lo que se avisó.
-          const enQuote = /\.quote\.(create|update|updateMany|upsert)/.test(
-            nodo.getSourceFile().text.slice(Math.max(0, nodo.pos - 400), nodo.pos),
-          );
+          const enQuote = dentroDeEscrituraQuote(nodo);
           if (enQuote) {
             const { line } = sf.getLineAndCharacterOfPosition(nodo.getStart(sf));
             const vals = valoresDe(nodo.initializer, sf);
