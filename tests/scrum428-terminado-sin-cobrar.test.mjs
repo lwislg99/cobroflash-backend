@@ -154,8 +154,8 @@ test('SCRUM-428 · 🔴 el nombre del helper no puede chocar con otro script del
   // SyntaxError EN PARSEO y el segundo fichero no se ejecuta entero — la pantalla desaparece sin
   // un 500 ni una línea de log. `num` ya existe en jobCobroHuecos.js:25 y me mordió aquí.
   const mio = leer('public/dashboard/js/terminadoSinCobrar.js');
-  // ⚠️ El `` de la primera versión de esta regex entró en el fichero como el CARÁCTER de
-  // retroceso (0x08), no como el metacarácter: `/…num/` no puede casar con nada y este guard
+  // ⚠️ El `\b` de la primera versión de esta regex entró en el fichero como el CARÁCTER de
+  // retroceso (0x08), no como el metacarácter: `/…num\b/` no puede casar con nada y este guard
   // habría pasado SIEMPRE. Lo descubrí al inyectar el rojo — un guard que nunca falla no es un
   // guard, y sólo se distingue de uno bueno probándolo en rojo.
   assert.doesNotMatch(mio, /^(function|const|let|var)[ 	]+num[^A-Za-z0-9_]/m,
