@@ -79,6 +79,80 @@ export function censarEmisores() {
 }
 
 /**
+ * CENSO A-bis (SCRUM-475, sesión 2) · LOS NOMBRES DE LOS EMISORES, DERIVADOS DEL ÁRBOL.
+ *
+ * 🔴 POR QUÉ EXISTE ESTA FUNCIÓN: la sesión 1 pasaba al censo B una lista escrita A MANO
+ * (`['sendInvoiceEmail', 'sendQuoteEmail', 'sendMagicLink', 'sendMail', 'sendMerchantPaymentEmail']`).
+ * Funcionaba el día que se escribió. Cuando SCRUM-406 entró en `main` con `enviarCorreo()` y su
+ * llamador en `soporteAdmin.routes.ts`, el censo B **no los vio** — no porque el análisis fallara,
+ * sino porque el nombre no estaba en la lista. El censo A, que SÍ deriva del árbol, cazó el mismo
+ * fichero sin ayuda.
+ *
+ * Es la misma lección de la casa una vez más: **lo enumerado a mano se queda viejo en silencio**,
+ * y su silencio se lee igual que un verde. Así que la lista se deriva.
+ *
+ * Una función es EMISORA si alcanza una llamada al proveedor: o la hace ella, o llama a otra del
+ * mismo fichero que la hace (se propaga hasta punto fijo). Se devuelven las EXPORTADAS, que son
+ * las que un router puede llamar.
+ */
+export function nombresDeEmisor() {
+  const nombres = new Set();
+  for (const fichero of ficherosTs(path.join(RAIZ, 'src'))) {
+    const texto = fs.readFileSync(fichero, 'utf8');
+    // Atajo barato: si el fichero no nombra al proveedor ni manda por SMTP, no hay nada que sacar.
+    if (!texto.includes(HOST_PROVEEDOR) && !texto.includes('sendMail')) continue;
+    const sf = ts.createSourceFile(path.basename(fichero), texto, ts.ScriptTarget.Latest, true);
+
+    const fns = new Map(); // nombre → { exportada, emisora, llama:Set<string> }
+    const declaraciones = [];
+    (function walk(n) {
+      let nombre = null;
+      let exportada = false;
+      if (ts.isFunctionDeclaration(n) && n.name) {
+        nombre = n.name.text;
+        exportada = !!(ts.getCombinedModifierFlags(n) & ts.ModifierFlags.Export);
+      } else if ((ts.isArrowFunction(n) || ts.isFunctionExpression(n))
+                 && n.parent && ts.isVariableDeclaration(n.parent) && ts.isIdentifier(n.parent.name)) {
+        nombre = n.parent.name.text;
+        exportada = !!(ts.getCombinedModifierFlags(n.parent) & ts.ModifierFlags.Export);
+      }
+      if (nombre && n.body) declaraciones.push({ nombre, exportada, nodo: n });
+      ts.forEachChild(n, walk);
+    })(sf);
+
+    for (const { nombre, exportada, nodo } of declaraciones) {
+      let emisora = false;
+      const llama = new Set();
+      (function walk(n) {
+        if (ts.isCallExpression(n)) {
+          // ¿Llama al proveedor por HTTP? (por el DESTINO, no por el nombre del cliente)
+          if (n.arguments.length && ts.isStringLiteralLike(n.arguments[0])
+              && n.arguments[0].text.includes(HOST_PROVEEDOR)) emisora = true;
+          // ¿O manda por SMTP?
+          if (ts.isPropertyAccessExpression(n.expression) && n.expression.name.text === 'sendMail') emisora = true;
+          if (ts.isIdentifier(n.expression)) llama.add(n.expression.text);
+        }
+        ts.forEachChild(n, walk);
+      })(nodo.body);
+      fns.set(nombre, { exportada, emisora, llama });
+    }
+
+    // Propagación hasta punto fijo: quien llama a una emisora del mismo fichero, emite.
+    for (let cambio = true; cambio; ) {
+      cambio = false;
+      for (const f of fns.values()) {
+        if (f.emisora) continue;
+        for (const destino of f.llama) {
+          if (fns.get(destino)?.emisora) { f.emisora = true; cambio = true; break; }
+        }
+      }
+    }
+    for (const [nombre, f] of fns) if (f.emisora && f.exportada) nombres.add(nombre);
+  }
+  return [...nombres].sort();
+}
+
+/**
  * CENSO B · quién llama a un emisor, y qué hace si revienta.
  *
  * Cuatro veredictos, y la diferencia entre los dos primeros me la enseñó equivocarme:

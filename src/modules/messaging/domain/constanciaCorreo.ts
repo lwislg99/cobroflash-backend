@@ -5,13 +5,21 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // EL DEFECTO, MEDIDO (no contado)
 //
-//   · **6 de 6** llamadas al proveedor **descartan lo que contesta** — `await axios.post(…)` como
-//     sentencia suelta. El identificador del mensaje llega y se tira.
-//   · **4 de 7** llamadores **se tragan el fallo**, y uno es MUDO del todo:
-//     `sendMerchantPaymentEmail(…).catch(() => {})` — el correo que le dice al PROFESIONAL que le
-//     han pagado. Si falla, no queda ni una línea de log.
+// Sesión 1, contra `main` = `fd2f0e4a`:
+//   · **6 de 6** llamadas al proveedor **descartaban lo que contesta** — `await axios.post(…)`
+//     como sentencia suelta. El identificador del mensaje llegaba y se tiraba.
+//   · **4 de 7** llamadores **se tragan el fallo**, y uno es MUDO del todo.
 //   · Los dos que SÍ avisan (`invoicesAdmin`, `quotesAdmin`) son trabajo de SCRUM-126 y contestan
 //     `200 + sent:false`. El usuario se entera **y no queda constancia de nada**.
+//
+// Sesión 2, contra `main` = `cffde532` (2026-08-11), rehecho entero. Dos correcciones:
+//   · Son **7** emisores, no 6: SCRUM-406 metió `src/integrations/enviarCorreo.ts` en `main`
+//     después de aquella medición, tirando la respuesta como los demás. **Lo cazó el guard solo**
+//     al traer `main`, nombrándolo — porque el censo A se deriva del árbol y no de una lista.
+//   · Y son **4 mudos, no 1**. Los otros tres no los rompió nadie: el censo B recibía una lista
+//     de emisores **escrita a mano** y no miraba donde ellos viven. Derivada, la superficie pasa
+//     de 7 llamadores a 21. Los cuatro mudos son la MISMA cosa — el aviso al PROFESIONAL de que
+//     le han pagado o de que le han aceptado el presupuesto — y los cuatro mueren en silencio.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // EL CRITERIO QUE DECIDE ESTE FICHERO: NO SE INVENTA UN ESTADO QUE NO CONSTA
