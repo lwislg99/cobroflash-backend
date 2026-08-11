@@ -117,22 +117,35 @@ la microcopy (`ALBARAN_ROTULOS`) · el pad de obra · ningún albarán de produc
 solo casa con marcado que el `SIN_VALORAR` no genera (`.num`, `.totales`) y **no introduce ni un
 color nuevo**: los tres ya estaban en ese mismo fichero.
 
-## 9 · 🔴 Queda abierto, y es decisión del fundador
+## 9 · La divergencia entre canales es DELIBERADA y está declarada
 
-**El pad de obra sigue sin importes.** Con esto cerrado, un mismo albarán VALORADO se firma contra
-**dos pantallas distintas** según el canal: la remota coincide con su PDF, la de obra no.
+Se planteó como pregunta abierta y **el fundador la resolvió el 11-ago-2026**: los dos canales
+enseñan cosas distintas **a propósito**, y no se unifican.
 
-Bajo el propio principio de SCRUM-466 —*«no se enseña menos de lo que se sella»*— el pad queda a
-deber. Bajo el otro principio del mismo ticket —*«quien firma en obra no es necesariamente quien
-acordó el precio»*— está bien como está. **Las dos frases son suyas y apuntan a lados distintos**:
-no se resuelve aquí. Lo que sí es medida: hoy, `modoValoracion === 'VALORADO'` significa
-exactamente *«el papel que se lleva el cliente lleva importes»*.
+| Canal | ¿Importes? | Por qué |
+| --- | --- | --- |
+| **Remoto** (móvil del cliente, enlace con token) | **sí** | quien abre ese enlace **es el cliente** —le llegó a su WhatsApp— y no puede firmar viendo menos de lo que se sella: su PDF lleva Base y Total |
+| **Pad de obra** (móvil del profesional) | **no** | allí firma **quien esté delante** —el portero, la pareja, el encargado— y enseñarle precios es **revelar condiciones comerciales a un tercero**. Lo que se firma en obra acredita la **ENTREGA**, no el precio |
+
+**Fijada en un test, no en un comentario suelto:** `SCRUM-468 · LOS DOS CANALES ENSEÑAN COSAS
+DISTINTAS, Y ES DELIBERADO` cae por **los dos lados**, y el rojo trae el motivo dentro:
+
+| Se «unifica»… | El guard dice… |
+| --- | --- |
+| pasándole importes al pad de obra | *«SE LE ESTÁ PASANDO «totales» AL PAD DE OBRA… enseñarle precios REVELA CONDICIONES COMERCIALES A UN TERCERO… es una decisión del fundador, no un olvido»* |
+| quitándoselos al remoto | *«FALTA LA COLUMNA «PRECIO UD.» EN LA PANTALLA»* (+1) |
+
+El mismo motivo queda escrito **donde se decide** —el llamador del pad, `albaranDetailView.js`—
+porque es ahí donde alguien lo leerá antes de «arreglarlo».
+
+Y lo que sí es medida, no decisión: hoy `modoValoracion === 'VALORADO'` significa exactamente *«el
+papel que se lleva el cliente lleva importes»*.
 
 ## 10 · Tests que corren
 
-- `tests/scrum468-firma-ve-lo-que-firma.test.mjs` — 5 tests (suelo, campo por campo, control
+- `tests/scrum468-firma-ve-lo-que-firma.test.mjs` — 6 tests (suelo, campo por campo, control
   positivo `SIN_VALORAR`, control negativo regla 24, aritmética compartida)
 - `tests/scrum463-firmante-ve-el-contenido.test.mjs` — enmendado
 - `tests/scrum466-el-firmante-ve-el-albaran.test.mjs` — enmendado (solo el bloque de la pública)
 
-Suite completa: **3.066 tests, 0 fallos**. `npm run guards:entrada`, `npm run guard:prisma` en verde.
+Suite completa: **3.067 tests, 0 fallos**. `npm run guards:entrada`, `npm run guard:prisma` en verde.

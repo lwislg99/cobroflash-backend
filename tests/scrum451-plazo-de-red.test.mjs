@@ -231,25 +231,57 @@ test('SCRUM-451 · al que se quedó atrás se le da lo ÚLTIMO, no se le deja si
 
 // ═══ ⑤ NO PASARSE: LAS MUTACIONES NO SE TOCAN ════════════════════════════════════════════
 
-test('SCRUM-451 · una MUTACIÓN no lleva plazo y NO se aborta', async () => {
-  // Abortar un POST convierte «no sé si se guardó» en un error visible: el profesional lo repite y
-  // sale una segunda factura. Eso es dinero y es el camino de emisión, así que está PARADO y
-  // propuesto al fundador. Este test es lo que impide que se cuele sin decidirlo.
+test('SCRUM-459 · 🔴 una MUTACIÓN vencida se ABORTA, y NO se marca como sinRed', async () => {
+  // Este test decía lo CONTRARIO: congelaba «las mutaciones no llevan plazo» hasta que el fundador
+  // decidiera. Ya decidió (11-ago-2026), y el motivo de la inversión importa: un POST contra una red
+  // que acepta y no entrega NO VUELVE NUNCA, y dejar al profesional sin ninguna información es peor
+  // que darle una incierta.
+  //
+  // Lo que hacía indecidible esto era el miedo a que repitiera y saliera una segunda factura. Ya no
+  // aplica en el camino que importa: la firma viaja con «claveIdempotencia» (SCRUM-358/425), así
+  // que un reintento NO duplica. Y el vencimiento NO se marca como «sinRed» — son tres estados:
+  // llegó, no llegó, y NO SE SABE.
   const red = aceptaYNoEntrega();
   const banco = cargarDashboard(RAIZ, { red });
   banco.ctx.PLAZO_RED_MS = 5;
-  let acabó = false;
-  banco.ctx.apiRequest('/admin/invoices', { method: 'POST', body: '{}' })
-    .then(() => { acabó = true; }, () => { acabó = true; });
-  await new Promise((r) => setTimeout(r, 60));
+  let fallo = null;
+  const RUTA = '/admin/albaranes/1/firmar';
+  const p = banco.ctx.apiRequest(RUTA, { method: 'POST', body: '{}' })
+    .then(() => null, (e) => { fallo = e; });
+
+  // 🔴 LA ESPERA VA ACOTADA, Y ESTO NO ES PULCRITUD.
+  //
+  // Si la mutación se queda sin plazo, esta promesa NO SE RESUELVE NUNCA — es el defecto mismo del
+  // ticket. Un `await p` a secas convertía el rojo en un CUELGUE: la suite se queda parada y con
+  // ella el CI de TODAS las PRs. Un test que cuelga no informa de nada y bloquea a todo el mundo.
+  //
+  // Con el tope, el mismo defecto sale como un fallo que NOMBRA la petición.
+  const TOPE_MS = 2000;
+  const seQuedoColgada = Symbol('colgada');
+  const veredicto = await Promise.race([
+    p,
+    new Promise((r) => setTimeout(() => r(seQuedoColgada), TOPE_MS)),
+  ]);
+  assert.notEqual(veredicto, seQuedoColgada,
+    `🔴 LA PETICIÓN «POST ${RUTA}» SE QUEDÓ SIN PLAZO: ${TOPE_MS} ms después sigue sin volver ` +
+    `(${red.describir()}). Es exactamente el defecto de este ticket — un POST contra una red que ` +
+    'acepta y no entrega no da error, da silencio — y el profesional se queda mirando la pantalla.');
 
   assert.equal(red.reg.peticiones.length, 1, `suelo: el POST tiene que haber salido (${red.describir()}).`);
-  assert.equal(red.reg.abortadas, 0,
-    `🔴 se ha abortado una MUTACIÓN (${red.describir()}). El servidor ha podido procesarla ya; ` +
-    'cortarla le enseña un error al profesional por algo que quizá sí se guardó, lo repite, y sale ' +
-    'una segunda factura. No se decide aquí.');
-  assert.equal(acabó, false,
-    '🔴 la mutación ha terminado sola: alguien le ha puesto un plazo por la puerta de atrás.');
+  assert.equal(red.reg.abortadas, 1,
+    `🔴 LA MUTACIÓN NO SE HA ABORTADO (${red.describir()}): sigue en el aire, y el profesional que ` +
+    'acaba de recoger una firma en una obra no sabrá nunca si llegó. Un POST contra una red que ' +
+    'acepta y no entrega no da error: da silencio.');
+
+  assert.ok(fallo, '🔴 la mutación no ha terminado: el plazo no la ha cortado.');
+  assert.equal(fallo.incierto, true,
+    '🔴 el vencimiento de una mutación no se marca como INCIERTO. Es el estado que este ticket ' +
+    'existe para nombrar: no se sabe si llegó.');
+  // 🔴 EL CONTROL QUE IMPORTA: no puede decir «no hay red».
+  assert.notEqual(fallo.sinRed, true,
+    '🔴 una mutación vencida se está marcando como «sinRed». Las vistas que se bifurcan por esa ' +
+    'marca dirían «no hay cobertura» sobre algo que PUEDE estar guardado, y eso invita a repetir ' +
+    'la operación. «No se envió» cuando sí se envió es peor que «no sé si se envió».');
 });
 
 // ═══ ⑥ EL CENSO: CUÁNTAS PETICIONES SE SALTAN EL CAMINO COMÚN ════════════════════════════
