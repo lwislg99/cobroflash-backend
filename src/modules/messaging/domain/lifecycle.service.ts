@@ -4,24 +4,35 @@
 //  - Día 3 / 7 / 12 / expirado / inactivo: cron diario (runLifecycleEmails)
 //  - Primer pago: al confirmar suscripción (sendFirstPaymentEmail)
 // Evita duplicados con el campo Merchant.lifecycleEmailsSent (Json).
-import axios from 'axios';
 import { prisma } from '../../../core/db/prisma';
 import { config } from '../../../core/config/env';
 import { maskEmail } from '../../../core/utils/utils';
+import { enviarCorreo, ResultadoCorreo } from '../../../integrations/enviarCorreo';
 
 const DASHBOARD_URL = `${config.PUBLIC_BASE_URL || 'https://yaqu.app'}/dashboard/`;
 
-async function sendEmail(to: string, subject: string, html: string): Promise<void> {
-  if (!to || !to.includes('@')) return;
+// SCRUM-475 · el POST propio se retira: hay UN emisor, y su respuesta se DEVUELVE con el acuse del
+// proveedor en vez de tirarse. Antes esto era `Promise<void>` — quien llamaba no podía saber si el
+// correo había salido, ni con qué id.
+// 🔴 SIGUE LANZANDO CUANDO NO SALE, Y ES DELIBERADO (SCRUM-475).
+//
+// Antes el `axios.post` lanzaba ante un error HTTP, y de eso dependía el control de flujo de sus
+// llamadores. Devolver un resultado sin lanzar habría roto DOS cosas en silencio:
+//   · los `.catch()` de los llamadores quedarían muertos — un fallo dejaría de registrarse;
+//   · y `markSent()` marcaría como ENVIADO un correo que no salió: el merchant no lo recibe
+//     nunca y el sistema cree que sí, que es justo lo que no puede pasar en el ciclo de vida.
+// Esta fase unifica el EMISOR y rescata el ACUSE; cambiar la semántica de fallo de cinco módulos
+// es otra cosa y no se cuela aquí de tapadillo.
+async function sendEmail(to: string, subject: string, html: string): Promise<ResultadoCorreo> {
+  if (!to || !to.includes('@')) return { enviado: false, motivo: 'sin_destino' };
+  // SCRUM-101: el aviso de dev se conserva. Lo que cambia es que ya no ABANDONA aquí: si hay SMTP
+  // configurado, `enviarCorreo` lo usa — antes este emisor era el único que ni lo intentaba.
   if (!config.RESEND_API_KEY) {
-    console.log(`[lifecycle] (sin RESEND) email a ${maskEmail(to)}: ${subject}`); // SCRUM-101
-    return;
+    console.log(`[lifecycle] (sin RESEND) email a ${maskEmail(to)}: ${subject}`);
   }
-  await axios.post(
-    'https://api.resend.com/emails',
-    { from: config.EMAIL_FROM, to: [to], subject, html },
-    { headers: { Authorization: `Bearer ${config.RESEND_API_KEY}`, 'Content-Type': 'application/json' }, timeout: 10_000 },
-  );
+  const r = await enviarCorreo({ to, subject, html, origen: 'lifecycle' });
+  if (!r.enviado) throw new Error(`no se pudo enviar el email (${r.motivo || 'desconocido'})`);
+  return r;
 }
 
 // Plantilla con cabecera de marca YaQu
