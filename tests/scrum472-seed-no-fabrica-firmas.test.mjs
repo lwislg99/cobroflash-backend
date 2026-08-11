@@ -286,8 +286,17 @@ test('SCRUM-472 · CONTROL NEGATIVO: el seed sigue sembrando lo mismo', () => {
   // Un seed que deja de sembrar no sirve. Este ticket le quita DOS cosas —el estado firmado y la
   // firma inventada— y no puede llevarse nada más por delante.
   //
-  // ⚠️ Lo que esto NO es: una ejecución. El seed escribe en una BD y no se ha corrido contra
-  // ninguna (crea un merchant). Lo que se fija aquí es el INVENTARIO de lo que siembra.
+  // ⚠️ 🔴 LO QUE ESTE CONTROL NO PRUEBA, Y LO DIGO YO ANTES QUE NADIE.
+  //
+  // Esto es un INVENTARIO DEL CÓDIGO, no una ejecución: el seed escribe en una BD y crea un
+  // merchant, así que no se ha corrido contra ninguna. **Lo descubrió su propio rojo**: al
+  // desactivar el bloque de albaranes con `if (false && …)` este test siguió VERDE, porque las
+  // llamadas seguían en el árbol. Un censo por AST no sabe qué se ejecuta.
+  //
+  // Se tapa el hueco por donde se cuela de verdad —el bloque desactivado— con el assert de
+  // condiciones constantes de abajo. Lo que quedaría por hacer para tener la prueba entera es
+  // correr el seed contra una BD desechable y contar filas; hace falta un Postgres local, y el
+  // portable que había en la máquina está incompleto (sin `share/`, `initdb` no arranca).
   const { escrituras } = escriturasDeScripts();
   const delSeed = escrituras.filter((e) => e.fichero === SEED);
   const modelos = [...new Set(delSeed.map((e) => e.modelo))].sort();
@@ -308,5 +317,37 @@ test('SCRUM-472 · CONTROL NEGATIVO: el seed sigue sembrando lo mismo', () => {
   assert.match(
     src, /Retirada de aparatos y demolición de alicatado/,
     '🔴 han desaparecido las líneas del albarán sembrado: eso es contenido del vídeo, no la firma.',
+  );
+
+  // Y el hueco que destapó el rojo: un bloque puede seguir en el árbol y no ejecutarse nunca.
+  const sf = ts.createSourceFile('x.ts', src, ts.ScriptTarget.Latest, true);
+  const apagados = [];
+  // ⚠️ Por TIPO DE NODO, no por texto. El primer intento buscaba `false|0` con una expresión
+  // regular y acusó a `merchantCount === 0`, `p.cost > 0` y `(i % 2 === 0)`: salía rojo con el
+  // árbol limpio, y un guard que acusa a los inocentes se desactiva al primer roce.
+  const esConstanteFalsa = (e) => e.kind === ts.SyntaxKind.FalseKeyword
+    || (ts.isNumericLiteral(e) && e.text === '0');
+  const apagadoPor = (cond) => {
+    if (esConstanteFalsa(cond)) return true;
+    return ts.isBinaryExpression(cond)
+      && cond.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+      && esConstanteFalsa(cond.left);
+  };
+  const visitar = (n) => {
+    const cond = ts.isIfStatement(n) ? n.expression
+      : ts.isConditionalExpression(n) ? n.condition : null;
+    if (cond && apagadoPor(cond)) {
+      apagados.push(`línea ${sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1}: ${cond.getText(sf).slice(0, 60)}`);
+    }
+    ts.forEachChild(n, visitar);
+  };
+  visitar(sf);
+  assert.deepEqual(
+    apagados, [],
+    '🔴 HAY UN BLOQUE DEL SEED DESACTIVADO CON UNA CONDICIÓN CONSTANTE.\n\n' +
+      '  El código sigue ahí y no se ejecuta nunca: para el inventario de arriba «sigue sembrando»,\n' +
+      '  y en la BD no aparece nada. Es la forma en que este control negativo se queda ciego, y por\n' +
+      '  eso se mira aparte.\n' +
+      `  ${apagados.join('\n  ')}`,
   );
 });

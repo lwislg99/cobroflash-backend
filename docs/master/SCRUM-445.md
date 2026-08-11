@@ -132,6 +132,32 @@ Nombres leídos del schema real. Ojo al detalle que se presta a error: **`invoic
 `events` sí usan snake_case. Escribirlo de memoria habría dado un error de columna inexistente —
 o peor, un cero que se lee igual de bien que la verdad.
 
+> ## 🔴 CORRECCIÓN, 11-ago-2026 (desde SCRUM-472)
+>
+> **La ① falló en producción con `column c.customerId does not exist`.** El aviso de aquí arriba
+> era correcto **y no se aplicó a sí mismo**: avisaba sobre `invoices` y el error estaba en
+> `charges`. Dos columnas mal, las dos del mismo lado:
+>
+> | Escrito | Real (`charges`) |
+> | --- | --- |
+> | `c."customerId"` | **`c."customer_id"`** |
+> | `c."amount"` | **`c."importe"`** |
+>
+> La segunda no había dado la cara porque la ① revienta antes de llegar a ella. **Un aviso sobre
+> una tabla no protege de la de al lado**, y el fallo estaba justo donde la nota decía que no
+> había problema. El bloque de abajo va corregido y **sigue sin ejecutarse**.
+>
+> Columnas usadas, verificadas una a una contra `prisma/schema.prisma`:
+>
+> | Tabla | tal cual (sin `@map`) | mapeadas (`@map`) |
+> | --- | --- | --- |
+> | `charges` | `id`, `method`, `status` | `merchant_id`, `customer_id`, `created_at`, `importe` |
+> | `invoices` | `id`, `merchantId`, `customerId`, `createdAt` | `charge_id` |
+> | `events` | `id`, `type`, `payload` | `charge_id` |
+>
+> ⚠️ `payload ->> 'invoice_id'` **no es una columna** y no se ha vuelto a derivar: viene de la
+> medición ① de este mismo ticket. Si la ② y la ③ dan cero, eso es lo primero que hay que mirar.
+
 ```sql
 -- ① ¿ESTÁ PASANDO? — Charges con factura que NO tienen su Event{invoiced}.
 -- Cada fila es un cobro que hoy se pinta DOS VECES: una por su Charge y otra por su Invoice.
@@ -142,7 +168,7 @@ FROM "charges" c
 WHERE EXISTS (
         SELECT 1 FROM "invoices" i
         WHERE i."merchantId" = c."merchant_id"
-          AND i."customerId" = c."customerId"
+          AND i."customerId" = c."customer_id"   -- SCRUM-472: era c."customerId" y no existe
           AND i."createdAt" >= c."created_at"
       )
   AND NOT EXISTS (
@@ -151,7 +177,9 @@ WHERE EXISTS (
       );
 
 -- El detalle, para poder mirar tres a mano antes de decidir nada:
-SELECT c."id" AS charge_id, c."merchant_id", c."created_at", c."amount", c."method"
+-- SCRUM-472: `c."amount"` no existe — la columna se llama `importe` (el campo Prisma es `amount`).
+SELECT c."id" AS charge_id, c."merchant_id", c."created_at",
+       c."importe" AS amount, c."method", c."status"
 FROM "charges" c
 WHERE NOT EXISTS (
         SELECT 1 FROM "events" e
