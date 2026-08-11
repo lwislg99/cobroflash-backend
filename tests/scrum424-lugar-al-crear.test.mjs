@@ -75,11 +75,18 @@ test('SCRUM-424 · y `fechaEntrega` también: era el MISMO defecto, no un campo 
   );
 });
 
-test('SCRUM-424 · no queda NINGÚN campo del PATCH sin escribir al crear (salvo `fecha`)', () => {
+test('SCRUM-424 · no queda NINGÚN campo del PATCH sin escribir al crear (salvo los declarados)', () => {
   const { patch, post } = conjuntos();
-  // `fecha` es la excepción declarada: el documento SIEMPRE tiene una y la pone el `@default(now())`
-  // del schema. No se pierde nada — el resto sí se perdería.
-  const perdidos = patch.filter((c) => !post.includes(c) && c !== 'fecha');
+  // LAS EXCEPCIONES SE DECLARAN CON SU MOTIVO, que es lo que pide el mensaje de abajo.
+  //
+  // · `fecha`: el documento SIEMPRE tiene una y la pone el `@default(now())` del schema.
+  // · `version` (SCRUM-361 · H6 fase 2): **no es un campo que el profesional escriba**, y por eso
+  //   no se pierde nada al crear. Es el testigo de concurrencia — el PATCH lo LEE para comprobar
+  //   contra qué versión venía editando y rechazar si otro guardó por medio. Lo pone el schema
+  //   (`version Int @default(1)`, prisma/schema.prisma:848), igual que `fecha`. Escribirlo en el
+  //   `create` sería, de hecho, el defecto: dejaría al cliente fijar la versión inicial.
+  const DECLARADOS_FUERA = ['fecha', 'version'];
+  const perdidos = patch.filter((c) => !post.includes(c) && !DECLARADOS_FUERA.includes(c));
   assert.deepEqual(
     perdidos, [],
     `🔴 HAY CAMPOS QUE EL PATCH GUARDA Y EL CREATE NO: ${perdidos.join(', ')}\n\n` +

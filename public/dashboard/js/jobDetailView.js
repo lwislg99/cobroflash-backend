@@ -2002,7 +2002,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
       const overlay = document.createElement('div');
       overlay.className = 'modal-overlay';
       overlay.innerHTML = `
-        <div class="modal" style="max-width:520px" role="dialog" aria-modal="true" aria-labelledby="voz-t">
+        <div class="modal" style="max-width:520px" role="dialog" aria-modal="true" aria-labelledby="voz-t">
           <div class="modal-body">
             <p style="font-size:13px;color:var(--muted);margin:0 0 10px">
               Cuenta lo que has hecho, como se lo contarías a un compañero. Luego lo repasas.
@@ -2232,7 +2232,12 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
       }
       out.push(linea);
     }
-    const body = { lineas: out, notas: notas.value };
+    // SCRUM-361 (H6 · fase 2): la versión que ESTE editor abrió viaja con el guardado. Sin ella el
+    // servidor no tiene contra qué comparar y la segunda de dos ediciones a la vez pisa a la
+    // primera en silencio. `alb.version` viene de `serializeAlbaran` — ya venía, no se añade campo.
+    // ⚠️ Es la de cuando se abrió el editor, NO una releída al guardar: releerla aquí volvería a
+    // dar siempre «coincide» y el mecanismo entero no serviría para nada.
+    const body = { lineas: out, notas: notas.value, version: alb.version };
     // SCRUM-300: se mandan SIEMPRE que el bloque exista, también vacíos — vaciar el lugar de
     // entrega es una decisión legítima del pro y el backend la respeta ('' → null). No tocan
     // `fecha`, que sigue siendo la del documento.

@@ -28,6 +28,8 @@ import { allocateAlbaranNumber } from '../../domain/albaranNumber.service'; // S
 import { datosDuplicado } from '../../domain/albaranDuplicado'; // SCRUM-302: qué viaja al duplicado
 // SCRUM-300 (C5): microcopy y normalización del firmante, en su fuente única.
 import { exigirNombreFirmante, normalizarLugarEntrega, resolverCalidadFirmante } from '../../domain/albaranFirmante';
+// SCRUM-361 (H6 · fase 2): dos editores a la vez dejaban de existir el uno para el otro.
+import { puedeEditarEstaVersion } from '../../domain/albaranEdicion';
 import { fotoYaSubida } from '../../domain/fotoDuplicada'; // SCRUM-382: la misma foto no se guarda dos veces
 import { getPendientesFacturar } from '../../domain/pendientesFacturar.service'; // SCRUM-69
 // SCRUM-301 (C1): el listado global. Dominio puro + lector inyectable (la tenencia se ejercita).
@@ -405,6 +407,28 @@ router.patch('/:id', async (req, res) => {
     const { albaran } = found;
     if (albaran.estado === 'firmado') {
       return res.status(409).json({ error: 'albaran_locked', message: 'Un albarán firmado está congelado: no se puede editar.' });
+    }
+
+    // ── 🔴 SCRUM-361 (H6 · fase 2) · ¿SIGUE SIENDO EL ALBARÁN QUE ESTE EDITOR ABRIÓ? ──────────
+    //
+    // Aquí abajo se hacía `version: { increment: 1 }` A CIEGAS. Dos pestañas —o dos personas del
+    // mismo equipo— abrían el mismo albarán, y la segunda en guardar PISABA a la primera sin que
+    // nada lo dijera: ni error, ni aviso, ni rastro. El AuditLog registraba «de v:3 a v:4» como si
+    // hubiera sido una edición normal. **El último que escribe ganaba, en silencio.**
+    //
+    // Se comprueba ANTES de validar líneas y fechas a propósito: si el documento ya no es el que
+    // este editor tenía delante, lo que traiga da igual — y devolver primero el 400 de una fecha
+    // mal escrita mandaría a corregir un formulario que de todas formas no se va a guardar.
+    //
+    // ⚠️ NO se recalcula ningún hash, ni aquí ni en el navegador: la fase 1 midió por qué (H0 ·
+    // SCRUM-355 · P4) y esta fase no cambia esa decisión. `Albaran.version` ya es «el contenido
+    // cambió», y el editor solo tiene que devolver el entero que se le mandó.
+    const mismaVersion = puedeEditarEstaVersion(req.body?.version, albaran.version);
+    if (!mismaVersion.ok) {
+      // Sin `message`: el texto que lee el PROFESIONAL lo aprueba el asesor (regla 30) y todavía
+      // no está aprobado. El dashboard cae a su texto de siempre —«No se pudo guardar el
+      // albarán.»—, que es cierto. Propuesta en `docs/master/SCRUM-361.md` § fase 2.
+      return res.status(409).json({ error: mismaVersion.error });
     }
 
     const data: any = {};
