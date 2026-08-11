@@ -185,6 +185,13 @@ ninguna credencial.
 **Medido contra:** `origin/main` = `cffde532a0912803cdf5bea415505f90757874b2` · 2026-08-11
 **Instrumentos:** AST (`typescript` 5.9.2). Cada censo lleva su control positivo dentro.
 
+> ⚠️ **`main` se movió DOS VECES mientras duraba esta sesión** — `cffde532` → `c039e7bd` →
+> `dd5416f0` (PRs #706 SCRUM-469 y #707 SCRUM-351), y el árbol final tiene `dd5416f0` mergeado.
+> **La medición sigue vigente, y no por ser reciente:** ninguno de esos commits toca `src/` ni
+> `prisma/` (`git diff --name-only cffde532..dd5416f0 -- src/ prisma/` sale **vacío**). El objeto
+> medido no se movió, así que el número no caduca. Ésta es la comprobación que la sesión 1 no
+> pudo hacer: a ella SÍ le movieron el objeto debajo, y por eso contaba seis emisores.
+
 ## PASO 0 — el arranque encontró una rama del mismo ticket
 
 El encargo pedía crear `scrum-475-rastro-del-correo` desde `main`. **No se creó.** Ya existía
