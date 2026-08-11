@@ -47,9 +47,11 @@
 //   ② ESPACIOS. El formateador ALINEA los campos en columnas y el repo no siempre. Es la mayor
 //      parte de esos 957 bytes de diferencia, y no cambia ni un tipo.
 //   ③ COMENTARIOS (`//…`). Se recortan A PROPÓSITO, y no es solo cosmética: sin esto, cambiar un
-//      comentario del schema pondría en rojo la suite de TODOS los worktrees —comparten
-//      `node_modules` por junction— por algo que no altera el cliente ni una coma. Un guard que
-//      grita sobre un árbol sano se desactiva en una tarde.
+//      comentario del schema pondría en rojo la suite por algo que no altera el cliente ni una
+//      coma — y de golpe la de todos los worktrees que compartan `node_modules`, si es que
+//      comparten (SCRUM-351: se comprueba con `npm run topologia`, no se supone; hoy no comparten
+//      y el motivo de recortar sigue en pie igual). Un guard que grita sobre un árbol sano se
+//      desactiva en una tarde.
 //      Comprobado que es seguro CONTÁNDOLO, no razonándolo: el schema tiene **273 cadenas
 //      entrecomilladas y NINGUNA contiene `//`**, así que recortar no puede partir un valor.
 //   ④ ORDEN DE LOS ATRIBUTOS. El formateador los canonicaliza: `@db.Text @map("x")` en el repo
@@ -126,9 +128,15 @@ export function normalizarSchema(texto) {
 
 /**
  * Dónde guardó Prisma la copia del schema. Se resuelve por el MISMO camino que usa la app para
- * cargar el cliente (`require.resolve('.prisma/client')`) y no por una ruta escrita a mano: con
- * `node_modules` compartido por junction entre ~79 worktrees, la ruta literal y el módulo que se
- * carga de verdad pueden no ser el mismo sitio. Se compara contra el cliente que se USA.
+ * cargar el cliente (`require.resolve('.prisma/client')`) y no por una ruta escrita a mano: en
+ * cuanto `node_modules` sea un enlace —o ni siquiera esté, y Node resuelva hacia arriba—, la ruta
+ * literal y el módulo que se carga de verdad dejan de ser el mismo sitio. Se compara contra el
+ * cliente que se USA.
+ *
+ * ⚠️ SCRUM-351 · aquí ponía «con `node_modules` compartido por junction entre ~79 worktrees», dado
+ * por hecho. Hoy son CUATRO worktrees y ninguno comparte. Da igual: el motivo de resolver por el
+ * camino real no es cuántos comparten, es que **no hay que saberlo para acertar**. Si alguna vez
+ * hace falta saberlo:  npm run topologia
  *
  * @returns {{ ok: true, ruta: string } | { ok: false, motivo: string }}
  */
@@ -241,9 +249,11 @@ export function mensaje(r) {
   // Ya no se AFIRMA el montaje: se dice cómo comprobarlo, que es cierto con junction y sin él.
   partes.push(
     '   Remedio: `npx prisma generate`. (En Windows, si el DLL queda bloqueado, matar node antes.)\n' +
-    '   ¿Afecta a otros worktrees? Depende de si tu `node_modules` es propio o un enlace:\n' +
-    '     node -e "console.log(require(\'fs\').lstatSync(\'node_modules\').isSymbolicLink())"\n' +
-    '   `false` = es tuyo, regenerar no toca a nadie. `true` = es compartido, y entonces sí.',
+    '   ¿Afecta a otros worktrees? Míralo, no lo supongas:\n' +
+    '     npm run topologia\n' +
+    '   Dice si compartes y CON QUIÉN, y cubre también el caso sin enlace que inspeccionar (un\n' +
+    '   worktree sin `node_modules` propio usa el del padre). Si no puede leerlo, lo dice: un\n' +
+    '   fallo de lectura no se cuenta como «no compartes» (SCRUM-351).',
   );
   return partes.join('\n');
 }

@@ -10,13 +10,17 @@
 // Los dos dicen lo mismo: la tanda se ejecutó contra un árbol distinto del que hay ahora.
 //
 // El ticket sospechaba de un `dist` COMPARTIDO por junction entre worktrees. **Se midió y no
-// es así**: de los 24 worktrees vivos, ninguno tiene `dist` como junction — todos lo tienen
-// propio. Lo que sí se comparte es `node_modules`, y por DOS mecanismos distintos, lo que
-// hace la superficie mayor de lo que decía el ticket:
+// es así**: de los 24 worktrees vivos EN JULIO-2026, ninguno tenía `dist` como junction — todos
+// propio. Lo que sí se compartía entonces era `node_modules`, por DOS mecanismos distintos, lo
+// que hacía la superficie mayor de lo que decía el ticket:
 //   · junction explícito (wt-scrum-114, wt-scrum-162, wt-scrum-178 → node_modules del repo);
 //   · resolución hacia arriba de Node: los worktrees bajo `.claude/worktrees/` viven DENTRO
 //     del repo y ni siquiera tienen `node_modules`; resuelven el del padre sin que haya
 //     ningún enlace que lo delate. Este segundo es peor justo porque no se ve.
+//
+// ⚠️ SCRUM-351 · ESO ERA UNA MEDICIÓN, NO UNA PROPIEDAD DEL PROYECTO, y aquí se leía en presente.
+// Ninguno de esos tres worktrees existe ya: el 11-ago-2026 quedan CUATRO y ninguno comparte. No se
+// escribe aquí el número nuevo —caducaría igual—: se pregunta cuando haga falta, `npm run topologia`.
 //
 // Y el solapamiento NO necesita worktrees para ocurrir: `npm test` es `build && node --test`,
 // así que dos tandas en el MISMO árbol ya se pisan el `dist` la una a la otra.
