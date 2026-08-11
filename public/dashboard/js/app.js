@@ -654,20 +654,43 @@ function startVersionWatch() {
 const PRECARGA_MIN_ENTRE_INTENTOS_MS = 5 * 60 * 1000;
 let precargaUltimoIntento = 0;
 
+/**
+ * 🔴 SCRUM-357 · Y AHORA EL RESULTADO SE PINTA. Hasta este ticket los tres valores se guardaban en
+ * `window.precargaUltimoResultado` y **nadie los leía** —cero consumidores, medido el 11-ago-2026—:
+ * el producto sabía qué llevaba el móvil al sótano y el profesional no. Distinguir «no había nada»
+ * de «no supe mirar» en una variable que no lee nadie deja al pro exactamente igual de ciego que
+ * colapsarlas, con el coste de haberlas separado.
+ *
+ * Se pinta por `window` y con guarda: la home puede no estar montada todavía, y entonces la pinta
+ * ella al montarse leyendo esta misma variable (`pintarPrecargaEnHome`). Los dos órdenes acaban con
+ * el aviso en pantalla, que es la única propiedad que importa.
+ */
+function anotarPrecarga(resultado) {
+  window.precargaUltimoResultado = resultado;
+  if (typeof window.pintarPrecargaEnHome === 'function') window.pintarPrecargaEnHome(resultado);
+  return resultado;
+}
+
 async function precargarSiTocaAhora() {
-  if (typeof window.precargarAlbaranes !== 'function') return null;
+  // 🔴 SCRUM-357 · Que el precargador NO ESTÉ es «no supe mirar», y se dice. Antes esto devolvía
+  // `null` en silencio y `precargaUltimoResultado` se quedaba sin valor **para siempre**: el único
+  // caso en que el hueco de «la medida aún no ha llegado» dejaba de ser un hueco y pasaba a ser
+  // mudez permanente, justo en el fallo más grave —no hay ni precargador—.
+  if (typeof window.precargarAlbaranes !== 'function') {
+    return anotarPrecarga({ estado: 'NO_SE_PUDO', n: 0, motivo: 'no hay precargador en esta página' });
+  }
   const ahora = Date.now();
+  // Sin tocar el resultado: el anterior sigue siendo la última medida válida y pisarlo con un
+  // «no se pudo» convertiría el límite de frecuencia en un fallo que no ha ocurrido.
   if (ahora - precargaUltimoIntento < PRECARGA_MIN_ENTRE_INTENTOS_MS) return null;
   precargaUltimoIntento = ahora;
   try {
-    // El resultado se GUARDA, no se pinta: los tres valores —precargué N, no había nada, no supe
-    // mirar— son lo que H2 va a leer, y colapsarlos aquí destruiría la distinción.
-    window.precargaUltimoResultado = await window.precargarAlbaranes();
-    return window.precargaUltimoResultado;
+    // Los tres valores —precargué N, no había nada, no supe mirar— llegan enteros a quien pinta:
+    // colapsarlos aquí destruiría la distinción que el productor se molestó en hacer.
+    return anotarPrecarga(await window.precargarAlbaranes());
   } catch (_e) {
     // Ni siquiera un fallo inesperado del precargador puede impedir que la app arranque.
-    window.precargaUltimoResultado = { estado: 'NO_SE_PUDO', n: 0, motivo: 'el precargador falló' };
-    return window.precargaUltimoResultado;
+    return anotarPrecarga({ estado: 'NO_SE_PUDO', n: 0, motivo: 'el precargador falló' });
   }
 }
 
