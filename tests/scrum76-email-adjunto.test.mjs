@@ -19,7 +19,7 @@ import path from 'node:path';
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-76: el email adjunta el PDF en TODAS las ramas (outbox .eml materializado + fallback de presupuesto)', { skip: !ENABLED }, async (t) => {
+test('SCRUM-76: el email adjunta el PDF en TODAS las ramas (outbox .eml materializado + fallback de presupuesto)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { config } = await import('../dist/core/config/env.js');
   // El fallback (donde vivían los defectos) solo se ejerce sin Resend. Con clave → path Resend, no aplica.

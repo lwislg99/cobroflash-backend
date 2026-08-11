@@ -66,26 +66,39 @@ const CENSO = Object.freeze({
   //
   // Los otros DOS de SCRUM-404 sí se escribieron, porque sí estaban aprobados: «No se ha podido
   // conectar…» y «No se ha recogido el trazo…». Por eso esto sube 2 y no 4.
+  // SCRUM-460 (10-ago-2026) · `albaranDetailView.js` 1 → 3. SUBIDA A CONCIENCIA, y el motivo es
+  // que **el mecanismo no existe sin texto**: son los dos avisos de «sin cobertura» de H1 fase 3.
+  //
+  //   +1 → el albarán NO está precargado y no hay red. Es el CONTROL NEGATIVO del ticket: sin él
+  //        la pantalla se queda en blanco, que es peor — invita a reintentar y a firmar a ciegas.
+  //   +1 → crear albaranes sin red quedó FUERA DE ALCANCE POR DECISIÓN, y un límite que no se
+  //        cuenta se vive como una avería: el pro busca «+ Nuevo albarán» en el sótano y cree que
+  //        el producto está roto.
+  //
+  // Los dos textos están MEDIDOS y PROPUESTOS al asesor con la caja real (338 px a 390, 268 a 320;
+  // `.alert` 13,5 px / 1,5), y salen con marcador porque **no se inventa microcopy** (regla 30).
+  // Bajan a 1 el commit que los apruebe.
+  // SCRUM-460 (11-ago-2026) · 3 → 1: el asesor APROBÓ los dos textos, con un retoque en el
+  // primero —«no está descargado» en vez de «no se descargó»: no falló nada, la política
+  // simplemente no lo eligió—. Un trinquete que no se aprieta cuando puede deja de serlo.
   'albaranDetailView.js': 1,
   'signaturePad.js': 1,
-  // SCRUM-405 (+1, 7-ago-2026, A CONCIENCIA): el mensaje de «esto no es tu fichero». Vive en la
-  // forma común y no en la vista PORQUE LO USAN DOS —`exportView` y `reportsView`—, y en scripts
-  // clásicos una constante duplicada en dos ficheros es SyntaxError en parseo. Es el único
-  // marcador de `api.js` y sale por `showToast`, así que sí se pinta: cuenta.
-  'api.js': 1,
-  // SCRUM-285 (+1, 10-ago-2026, A CONCIENCIA): la pantalla de Cobros nace con UN marcador
-  // —`COBROS_MARCA`— y lo pinta en varios sitios: título de la pantalla, cabeceras de la tabla,
-  // estado vacío, el rótulo del filtro «sin método registrado» y la etiqueta de los días de deuda.
+  // SCRUM-285 (10-ago-2026): `cobrosView.js` ENTRÓ y SALIÓ del censo el mismo día. La pantalla de
+  // Cobros nació con nueve ranuras marcadas —no había copy aprobada para ninguna— y el asesor las
+  // aprobó todas: los ocho textos primero, y las seis cabeceras después al partir en dos la quinta
+  // columna. Cero marcadores, así que la entrada se BORRA en vez de bajar a 0: `censoActual()` solo
+  // lista ficheros con marcador, y un 0 escrito aquí sería una bajada permanente sin anotar.
+  // Mismo trato que `jobRailBlocks.js` con SCRUM-424. El trinquete APRIETA.
   //
-  // Sube a conciencia y el motivo es el de siempre, invertido: el diseño §B4 solo NOMBRA dos cosas
-  // —el menú «Cobros» y los cuatro métodos «Bizum · tarjeta · transferencia · efectivo»—, y ésos
-  // se escriben literales porque están aprobados. Todo lo demás de esta pantalla es redacción
-  // nueva que NADIE ha aprobado, y la alternativa a marcarla no era escribirla: era no entregar
-  // la pantalla. Un marcador visible es feo y honesto; un texto inventado es bonito y falso.
+  // SCRUM-405 (−1, 10-ago-2026): `api.js` SALE del censo. Su único marcador era el mensaje de
+  // «esto no es tu fichero», y el asesor aprobó su microcopy (regla 30) — que resultó ser DOS
+  // textos y no uno: hasta hoy las dos causas (`esHtml` y `!cuadra`) pintaban el MISMO, así que
+  // cuando era la segunda el texto MENTÍA, culpaba a la wifi de la obra y mandaba al profesional
+  // a gastar datos móviles por algo que no estaba en su red.
   //
-  // Baja a 0 —o sea, esta línea se borra— cuando el asesor apruebe la lista de microcopy que va
-  // con la entrega.
-  'cobrosView.js': 1,
+  // La entrada se BORRA en vez de bajar a 0, siguiendo lo que dejó escrito SCRUM-424 aquí mismo:
+  // `censoActual()` sólo lista ficheros CON marcadores, así que un 0 sería una bajada permanente
+  // sin anotar. Y salir del censo NO saca de la vigilancia — lo fija R4b.
   // SCRUM-405 (−4, 7-ago-2026): al pasar las tres descargas por la forma común desaparecieron
   // cuatro ramas de error que pintaban marcador. El trinquete APRIETA: 15 → 11.
   // 11 → 5 el 10-ago-2026: SCRUM-244 trajo los ocho textos APROBADOS de la card de portabilidad

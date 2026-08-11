@@ -154,6 +154,37 @@ async function fetchInvoiceDetail(id) {
       `<div class="detail-total-amount">${fmtInvMoney(invoice.total, invoice.currency)}</div>`;
     summaryRow.appendChild(totalBlock);
 
+    // SCRUM-285 (§B4, punto 3) · BLOQUE «Cobro»: contexto, NO botón.
+    //
+    // El detalle de factura SABÍA que había un cobro —`invoice.chargeId` decidía qué botones
+    // pintar en cinco sitios— y no enseñaba NADA de él. El comentario de más abajo llamaba
+    // «callejón» a ese estado, y lo era: el profesional tenía que salir del documento e ir a
+    // Cobros a buscar a mano cuándo entró su dinero.
+    //
+    // ⚠️ NO ENLAZA, y no es un olvido: **la ficha de detalle de cobro NO EXISTE**. `charge-detail`
+    // no está en el dispatch de `app.js` (25 `case` enumerados, ninguno) y `appState.chargeId` no
+    // existe. Si algún día se construye esa pantalla, ESTE bloque es el sitio natural del enlace.
+    //
+    // ⚠️ Y LA FECHA ES LA DE PROCESO, NO LA DEL INGRESO (SCRUM-397): `paidAt` se escribe con
+    // `new Date()` en los tres sitios que lo tocan. Desde SCRUM-397 lo marcado va bien; los cobros
+    // ANTIGUOS conservan la fecha vieja y NO se tocan. Que nadie lo lea como un fallo nuevo.
+    if (invoice.chargeId) {
+      const cobroBlock = document.createElement('div');
+      cobroBlock.className = 'detail-cobro';
+      cobroBlock.style.textAlign = 'right';
+      cobroBlock.style.marginTop = '10px';
+      const cuando = invoice.paidAt
+        ? new Date(invoice.paidAt).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' })
+        : '';
+      cobroBlock.innerHTML =
+        '<div class="detail-total-label">Cobro</div>'
+        + `<div class="detail-cobro-importe">${fmtInvMoney(invoice.total, invoice.currency)}</div>`
+        + (cuando ? `<div class="detail-cobro-fecha">${cuando}</div>` : '');
+      summaryRow.appendChild(cobroBlock);
+    }
+    // Si NO hay cobro no se pinta nada: un bloque «Cobro» vacío en la pantalla del dinero se lee
+    // como un fallo de carga. O está el dato, o no está la sección.
+
     // Badges de recordatorios
     if (invoice.reminder7SentAt || invoice.reminder14SentAt) {
       const remDiv = document.createElement('div');

@@ -109,7 +109,7 @@ test('calcAlbaranTotales: líneas con IVA mixto suman en céntimos enteros', () 
 // ── Flujo HTTP real (gateado) ────────────────────────────────────────────────
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, tenancy', { skip: !ENABLED }, async () => {
+test('SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, tenancy', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);

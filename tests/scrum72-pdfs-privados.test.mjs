@@ -21,7 +21,7 @@ import path from 'node:path';
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto + auth + tenancy)', { skip: !ENABLED }, async (t) => {
+test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto + auth + tenancy)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const { invoicesDir } = await import('../dist/core/storage/dirs.js');

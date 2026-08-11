@@ -610,3 +610,39 @@ Si además el disparador solo escribe en un log, nadie se entera.
 Cuando se acerque, las salidas son `pg_dump` (formato físico, sin este límite) o sacar los ficheros
 de Postgres a R2. Lo vigila con número `tests/scrum242-backup-codec.test.mjs`: si alguien cambia el
 códec y el factor sube, sale rojo antes de que el techo se desplome en silencio.
+
+### Los tests de `LIBRO_PG_URL` — el banco DESECHABLE (SCRUM-419 / SCRUM-456)
+
+**No son los de staging.** Los gateados por `QA_DB_TEST` usan la base de staging y van por
+`npm run test:staging:gated` (arriba). Éstos son otros **7**, y piden un Postgres **de usar y
+tirar**: crean y **borran** filas, y prueban tenencia contra el motor real.
+
+> 🔴 **Sus guards exigen `127.0.0.1`/`localhost` y una base terminada en `_test`, y no se
+> relajan.** No es burocracia: `exigirBancoDesechable` es lo único que impide que una tanda que
+> BORRA se ejecute contra algo que importe. Lo que se arregla es saber montar el banco, no el guard.
+
+CI ya lo hace en cada PR (`ci.yml`, servicio `postgres:16-alpine`). En local, la misma receta:
+
+```bash
+# 1) un Postgres desechable en loopback (cualquier vía: contenedor, instalación local…)
+# 2) la base, con el nombre que los guards exigen
+psql "postgresql://postgres@127.0.0.1:55432/postgres" -c 'CREATE DATABASE yaqu_libro_test'
+# 3) el esquema. `migrate diff --from-empty` NO toca ninguna base: escribe el DDL a un fichero.
+#    Se evita `db push` a propósito: es el mecanismo reservado a las bases del proyecto (regla 3).
+npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > /tmp/esquema.sql
+psql "postgresql://postgres@127.0.0.1:55432/yaqu_libro_test" -q -f /tmp/esquema.sql
+# 4) la tanda, con la variable puesta
+LIBRO_PG_URL="postgresql://postgres@127.0.0.1:55432/yaqu_libro_test" npm test
+```
+
+**Cómo saber qué NO se ha ejecutado.** `npm test` termina en «0 fallos» tanto si un test pasó como
+si saltó, y el reporter por defecto (`spec`) **no imprime el motivo del salto**. Por eso nadie vio
+durante meses que 67 tests se apagaban en silencio. Para verlos:
+
+```bash
+node --test --test-force-exit --test-reporter=tap tests/*.test.mjs | grep "# SKIP"
+```
+
+Todo salto **declara su motivo** y el comando que lo arregla; que siga siendo así lo vigila
+`tests/scrum419-ci-declara-lo-que-no-corre.test.mjs`, que corre **sin gate** — el guard que vigila a
+los gateados no puede estar gateado él mismo.

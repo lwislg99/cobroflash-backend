@@ -6,6 +6,11 @@ async function initApp() {
   try { me = await apiRequest('/admin/me'); }
   catch { window.location.href = '/login.html'; return; }
 
+  // SCRUM-360 (H5 fase 2) · SE MANDA EL ENTORNO, y va aquí porque aquí ya sabemos que la sesión
+  // es buena. SUELTO Y SIN `await`: es telemetría, y nada de esto puede retrasar ni tumbar el
+  // arranque. Quién lo consume es la fase siguiente; lo que esta fase cierra es que el dato LLEGUE.
+  enviarEntornoDeLaApp();
+
   window.appMerchantId = me.merchantId;
   window.appUserRole   = me.userRole || 'admin';
   window.appUserName   = me.name || '';
@@ -451,9 +456,62 @@ async function initApp() {
   } else {
     renderView(window.appState.view || 'home');
   }
+
+  // 9. SCRUM-358 (H3 · fase 3) · LA COLA DE FIRMAS SE VACÍA AL ABRIR.
+  //
+  // Éste es el único momento que tenemos: en iOS no hay Background Sync (0 % en Safari, medido en
+  // H0) y el push está descartado (regla 36), así que el navegador no nos despierta nunca. Si no
+  // se drena aquí, una firma hecha sin cobertura se queda en el móvil hasta que el profesional
+  // vuelva a firmar ese albarán a mano.
+  //
+  // Va DESPUÉS del render y SIN `await`: pintar el dashboard no puede esperar a la red. El aviso
+  // se repinta solo cuando el drenado termina — `drenarAlAbrir` se encarga, y no lanza nunca.
+  if (typeof window.drenarAlAbrir === 'function') window.drenarAlAbrir();
+
+  // 10. SCRUM-360 (H5 · fase 3) · QUE iOS NO SE LLEVE UNA FIRMA EN SILENCIO.
+  //
+  // WebKit borra el origen entero —service worker, Cache API e IndexedDB— tras 7 días de usar
+  // Safari sin visitar el sitio (medido en H0). Los web apps añadidos a la pantalla de inicio
+  // están exentos; una pestaña normal, NO. Se pide persistencia —y se MIRA la respuesta, que
+  // pedirla sin mirarla no sirve de nada— y se comprueba si el almacén se ha vaciado solo.
+  //
+  // Va sin `await` y no puede tumbar el arranque: esto informa, no bloquea.
+  if (typeof window.resistenciaAlArrancar === 'function') window.resistenciaAlArrancar();
+}
+
+/**
+ * SCRUM-360 (H5 fase 2) · Manda al servidor el ÚLTIMO ENTORNO VISTO de esta sesión.
+ *
+ * 🔴 EL FILTRO DE «SOLO SI CAMBIA» ESTÁ EN EL SERVIDOR, NO AQUÍ, y no es un detalle de reparto: el
+ * navegador **no sabe** qué hay guardado en la fila. Hacérselo recordar en `localStorage` sería otra
+ * clave que purgar (SCRUM-457) y encima mentiría en cuanto alguien cierre sesión en ese móvil.
+ *
+ * NUNCA LANZA. Si falla, no pasa nada: es un dato de telemetría, y perderlo cuesta precisión en un
+ * recuento — no cuesta el trabajo de nadie.
+ */
+async function enviarEntornoDeLaApp() {
+  try {
+    if (typeof window.entornoDeLaApp !== 'function') return null;
+    return await apiRequest('/admin/entorno', {
+      method: 'POST',
+      body: JSON.stringify({ entorno: window.entornoDeLaApp() }),
+    });
+  } catch (_e) {
+    return null;
+  }
 }
 
 async function logout() {
+  // SCRUM-455 · EL PURGADO VA PRIMERO, y el orden no es indiferente.
+  //
+  // Es local y no depende de la red; el POST puede colgarse minutos en un sótano. Si el pro mata la
+  // pestaña mientras la petición espera, los datos de sus clientes ya se han ido del móvil. Al
+  // revés se quedarían.
+  //
+  // Y NO bloquea la salida: cerrar sesión tiene que funcionar siempre, también si el almacén no
+  // está disponible. Quién mira este resultado y qué le dice al profesional es de H2 (SCRUM-356);
+  // aquí no se pinta nada.
+  try { await window.purgarDatosLocales(); } catch (_e) { /* sin almacén no hay nada que purgar */ }
   await fetch('/auth/logout', { method: 'POST' }).catch(() => {});
   window.location.href = '/login.html';
 }
@@ -550,4 +608,54 @@ function startVersionWatch() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => { initApp(); startVersionWatch(); });
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-460 (H1 · fase 3) · CUÁNDO SE PRECARGA. Es una decisión, no un detalle.
+//
+// 🔴 SOLO AL ARRANCAR NO VALE, y no es una preferencia: sería pedirle al profesional que se
+// acuerde de recargar la app antes de meterse en un sótano — justo lo que la política de precarga
+// venía a evitar. El caso que se escapa es el normal: abre la app en casa por la mañana, la oficina
+// emite el albarán a las diez, y él no vuelve a recargar en todo el día.
+//
+// LOS DOS MOMENTOS, medidos sobre lo que el panel ya tiene:
+//   ① `DOMContentLoaded` — el arranque.
+//   ② `visibilitychange` → `visible` — sacar el móvil del bolsillo. Es el gesto que ocurre JUSTO
+//      ANTES de entrar a la obra, y ya lo usa el vigilante de versión, así que no se estrena nada.
+//
+// ⚠️ LO QUE ESTO DEJA FUERA, DICHO: si el profesional no trae la app al frente **con cobertura**
+// entre que el albarán se emite y él baja al sótano, no se precarga nada. No hay tercer momento
+// disponible: `Periodic Background Sync` no existe en Safari/iOS y el push tampoco está montado.
+// Y no se usa `navigator.onLine` para decidir —miente en este escenario exacto, y tiene CERO usos
+// en el árbol a propósito (SCRUM-356)—: se intenta y se mira el resultado.
+//
+// El intento es silencioso y NO bloquea nada: si falla, la app sigue igual. Quién le cuenta al
+// profesional que hoy no lleva nada precargado es H2 (SCRUM-356), no esto.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/** No se reintenta más seguido que esto: volver a la pestaña doce veces no son doce paquetes. */
+const PRECARGA_MIN_ENTRE_INTENTOS_MS = 5 * 60 * 1000;
+let precargaUltimoIntento = 0;
+
+async function precargarSiTocaAhora() {
+  if (typeof window.precargarAlbaranes !== 'function') return null;
+  const ahora = Date.now();
+  if (ahora - precargaUltimoIntento < PRECARGA_MIN_ENTRE_INTENTOS_MS) return null;
+  precargaUltimoIntento = ahora;
+  try {
+    // El resultado se GUARDA, no se pinta: los tres valores —precargué N, no había nada, no supe
+    // mirar— son lo que H2 va a leer, y colapsarlos aquí destruiría la distinción.
+    window.precargaUltimoResultado = await window.precargarAlbaranes();
+    return window.precargaUltimoResultado;
+  } catch (_e) {
+    // Ni siquiera un fallo inesperado del precargador puede impedir que la app arranque.
+    window.precargaUltimoResultado = { estado: 'NO_SE_PUDO', n: 0, motivo: 'el precargador falló' };
+    return window.precargaUltimoResultado;
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') precargarSiTocaAhora();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  initApp(); startVersionWatch(); precargarSiTocaAhora();
+});

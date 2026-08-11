@@ -17,7 +17,7 @@ import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-104 (fase 2): clientes.csv del paquete = los referenciados, ni más ni menos', { skip: !ENABLED }, async (t) => {
+test('SCRUM-104 (fase 2): clientes.csv del paquete = los referenciados, ni más ni menos', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { construirCsvsDelPaquete, buildClientes } =
     await import('../dist/modules/exports/domain/exportData.js');

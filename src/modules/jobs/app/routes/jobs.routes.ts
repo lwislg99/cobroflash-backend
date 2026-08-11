@@ -35,6 +35,7 @@ import {
 } from '../../domain/jobDireccion';
 // SCRUM-170: derivación del estado de cobro (parcial) — nunca un flag almacenado.
 import { estadoCobroAlbaran, facturadoPorLinea, pendientePorLinea } from '../../domain/albaranFacturacion';
+import { normalizarLugarEntrega } from '../../domain/albaranFirmante'; // SCRUM-424
 import { emitirRecapitulativas } from '../../domain/recapitulativa.service'; // SCRUM-171a: emisión compartida
 // SCRUM-423: el eje de ENTREGA (C6 · SCRUM-305) llega por fin a la pantalla. El cálculo NO se
 // toca: esto sólo resuelve sus tres entradas con datos que este serializador ya tiene cargados.
@@ -796,6 +797,16 @@ router.post('/:id/albaranes', async (req, res) => {
     }
     const notas = req.body?.notas !== undefined ? String(req.body.notas || '').slice(0, 2000) || null : null;
 
+    // SCRUM-424 · la fecha de entrega, con el MISMO criterio que el PATCH: admite vaciarse
+    // (undefined o '' -> null, el documento puede no tenerla) y una ilegible NO se guarda como
+    // hoy en silencio: se rechaza. Inventar una fecha de entrega es el defecto de SCRUM-397.
+    let fechaEntregaAlCrear: Date | null = null;
+    if (req.body?.fechaEntrega !== undefined && String(req.body.fechaEntrega ?? '').trim() !== '') {
+      const d = new Date(String(req.body.fechaEntrega).trim());
+      if (isNaN(d.getTime())) return res.status(400).json({ error: 'invalid_date' });
+      fechaEntregaAlCrear = d;
+    }
+
     // ── SCRUM-358 (H3) · EL ALTA, IDEMPOTENTE ────────────────────────────────────────────
     //
     // La clave la acuña el CLIENTE al pulsar crear (una vez, y se persiste con el elemento de la
@@ -843,6 +854,21 @@ router.post('/:id/albaranes', async (req, res) => {
           modoValoracion,
           lineas,
           notas,
+          // ── SCRUM-424 · LO QUE SE ESCRIBE AL CREAR SE PERDÍA EN SILENCIO ──────────────────
+          //
+          // El PATCH guarda `lugarEntrega` y `fechaEntrega` (albaranes.routes.ts:474-486) y este
+          // create NO los escribía: **cero apariciones**. El campo está pintado, con su rótulo
+          // aprobado, y lo que el profesional teclea al crear no llegaba a la fila.
+          //
+          // 🔴 Y NO ES «UN CAMPO MÁS»: `lugarEntrega` entra en el HASH DEL SOBRE v:2. Un albarán
+          // creado y firmado sin él queda **SELLADO** sin él, y sellado no se edita (regla 29). No
+          // es un dato que se pueda añadir después.
+          //
+          // Se lee IGUAL que en el PATCH —mismo helper, mismas reglas— en vez de inventar una
+          // segunda forma: `normalizarLugarEntrega` (vacío → NULL, **nunca** el domicilio fiscal).
+          // Dos formas de leer el mismo campo acaban divergiendo.
+          lugarEntrega: normalizarLugarEntrega(req.body?.lugarEntrega),
+          fechaEntrega: fechaEntregaAlCrear,
           claveIdempotencia: clave,
         },
       });

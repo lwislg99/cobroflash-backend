@@ -76,7 +76,7 @@ async function renderReportsView(container) {
         nombrePorDefecto: `verifactu_${year}.xml`,
       });
     } catch (e) {
-      if (e && e.code === ERROR_NO_ES_FICHERO) { showToast(MSG_DESCARGA_NO_ES_FICHERO, 'error'); return; }
+      if (e && e.code === ERROR_NO_ES_FICHERO) { showToast(mensajeDescargaFallida(e), 'error'); return; }
       showToast('Error de red al descargar el XML.', 'error');
     } finally {
       btnVf.disabled = false;

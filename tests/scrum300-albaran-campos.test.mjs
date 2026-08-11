@@ -47,8 +47,16 @@ function params(extra = {}) {
     version: 1,
     modoValoracion: 'SIN_VALORAR',
     // El emisor SÍ tiene domicilio fiscal: es lo que hace posible la confusión que vigila el suelo.
-    merchant: { name: 'Fontanería Torres', legalName: 'Torres SL', taxId: 'B12345678', address: DOMICILIO_FISCAL },
-    customer: { name: 'Ana Pérez', legalName: null, taxId: null },
+    // 🔴 SCRUM-452: `merchant` y `customer` ya SOLO llevan lo que el sobre NO congela. El nombre
+    // del emisor, su NIF y el nombre del cliente llegan resueltos por versión —`emisor`,
+    // `emisorNif`, `cliente`— desde `contenidoSegunVersion`, igual que `obra` desde SCRUM-300.
+    // `address` sigue aquí porque el sello no lo nombra, y es justo lo que mide el suelo de abajo:
+    // que el domicilio fiscal NO se cuele como lugar de entrega.
+    merchant: { address: DOMICILIO_FISCAL },
+    customer: { taxId: null },
+    emisor: 'Torres SL',
+    emisorNif: 'B12345678',
+    cliente: 'Ana Pérez',
     obra: LUGAR,
     fechaEntrega: new Date('2026-08-02T00:00:00Z'),
     referenciaTrabajo: 'Fuga en cocina',
@@ -123,4 +131,35 @@ test('SCRUM-300 · control del control: el domicilio fiscal SÍ sigue en el bloq
   // estaría probando nada.
   const txt = await textoDelPdf({ obra: null });
   assert.ok(contiene(txt, DOMICILIO_FISCAL), 'el domicilio fiscal debe seguir imprimiéndose donde le toca');
+});
+
+// ── 🔴 UN HUECO QUE SALIÓ AL HACER SCRUM-452, Y NO ERA PEQUEÑO ───────────────────────────
+//
+// Al cambiar de dónde saca el PDF el emisor y el receptor, el papel salió con «Emisor:» y
+// «Receptor:» VACÍOS con la fixture vieja — y LA TANDA ENTERA SIGUIÓ VERDE. Ningún test
+// comprobaba los dos campos que identifican a las partes del documento: quién entrega y quién
+// recibe. Se comprobaba el lugar de entrega, la referencia, las fechas, el firmante… y no ellos.
+//
+// Va aquí y no en el fichero de 452 porque no es de v:3: es del PDF del albarán, sea de la versión
+// que sea. Que estuviera vacío no lo habría dicho nadie.
+
+test('SCRUM-300 · el papel IMPRIME el emisor y el receptor, que son las partes del documento', async () => {
+  const txt = await textoDelPdf();
+
+  assert.ok(contiene(txt, 'Torres SL'),
+    '🔴 EL PAPEL NO IMPRIME EL EMISOR. Un albarán sin quién entrega no identifica a una de las dos ' +
+    'partes: es el documento que el profesional le enseña al cliente para que lo firme.');
+  assert.ok(contiene(txt, 'B12345678'),
+    '🔴 el papel no imprime el NIF del emisor.');
+  assert.ok(contiene(txt, 'Ana Pérez'),
+    '🔴 EL PAPEL NO IMPRIME EL RECEPTOR. Sin quién recibe, la entrega no consta contra nadie.');
+
+  // CONTROL: los rótulos existen aunque el valor faltara, así que buscarlos no demuestra nada por
+  // sí solo. Se exige que el VALOR vaya pegado a su rótulo y no en cualquier parte del papel.
+  const i = txt.indexOf('Emisor:');
+  assert.ok(i >= 0 && contiene(txt.slice(i, i + 60), 'Torres SL'),
+    `🔴 «Torres SL» no está junto al rótulo «Emisor:». Trozo: ${JSON.stringify(txt.slice(i, i + 60))}`);
+  const j = txt.indexOf('Receptor:');
+  assert.ok(j >= 0 && contiene(txt.slice(j, j + 60), 'Ana Pérez'),
+    `🔴 «Ana Pérez» no está junto al rótulo «Receptor:». Trozo: ${JSON.stringify(txt.slice(j, j + 60))}`);
 });

@@ -69,7 +69,7 @@ const mediaMsg = (type = 'image', id = wamid()) => ({ from: reqPhone(), id, type
 const locMsg = (id = wamid()) => ({ from: reqPhone(), id, type: 'location', location: { latitude: 40.4319, longitude: -3.7036, name: 'Chamberí, Madrid' } });
 const metaEnvelope = (msg) => ({ object: 'whatsapp_business_account', entry: [{ id: '0', changes: [{ field: 'messages', value: { messaging_product: 'whatsapp', messages: [msg] } }] }] });
 
-test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED }, async () => {
+test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED && 'sin BOT_SUITE_TEST=1 · npm run test:staging:gated' }, async () => {
   const { app } = await import('../dist/app.js');
   const { prisma } = await import('../dist/core/db/prisma.js');
 

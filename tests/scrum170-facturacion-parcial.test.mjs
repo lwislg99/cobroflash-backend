@@ -88,7 +88,7 @@ test('SCRUM-170: cantidades absurdas y líneas repetidas se rechazan, no se inte
   assert.equal(validarPeticionParcial([], pend).error, 'seleccion_vacia');
 });
 
-test('SCRUM-170: emitir parte, ver el pendiente, y que la consolidación NO se lo trague', { skip: !ENABLED }, async (t) => {
+test('SCRUM-170: emitir parte, ver el pendiente, y que la consolidación NO se lo trague', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 

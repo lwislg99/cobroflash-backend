@@ -165,7 +165,21 @@ Sistema **estratificado pero suave**: las superficies descansan planas con un bo
 ## 5. Components
 
 ### Buttons
-- **Shape:** pastilla (radius full, 9999px). Altura cómoda al pulgar (≥44px en móvil).
+- **Shape:** pastilla (radius full, 9999px). Altura cómoda al pulgar: **≥44px en móvil** (el
+  escritorio se queda en 36px a propósito — con ratón cumple, y subirlo sería un cambio de aspecto
+  que nadie ha pedido).
+  **Única excepción, y es deliberada: `btn-sm`, que se queda en 30px también en móvil.** Un botón
+  pequeño que subiera a 44 dejaría de ser pequeño. Y la exención se escribe en el CSS como
+  `:not(.btn-sm)` por una razón medida, no por gusto: sin ella un `btn-primary btn-sm` **suelto**
+  saltaría a 44 mientras su gemelo `btn btn-primary btn-sm` se queda en 30 — `.btn.btn-sm` es
+  (0,2,0) y gana, `.btn-sm` a secas es (0,1,0) y pierde por orden. Dos botones idénticos con
+  alturas distintas según cómo se escribiera su clase.
+  **La frontera que hace aceptable la excepción:** una acción **primaria de pantalla nunca usa la
+  variante pequeña**, así que ningún target de 30px es la acción que el profesional necesita pulsar
+  (SCRUM-412). Sin esa frontera, la excepción sería un agujero.
+  ⚠️ Esta lista de exenciones **está atada al CSS**: `tests/scrum352-target-tactil-variantes` compara
+  lo escrito aquí con los `:not(...)` de la regla de móvil y **cae si divergen**. Una excepción
+  documentada que no está atada al código vuelve a divergir en un mes.
 - **Primary:** fondo Verde Confianza (#16a34a), texto blanco, peso 700, padding 12px 20px. Hover #15803d + leve `translateY(-1px)`.
 - **Primary (small):** fondo Verde Tinte Tinta (`{colors.brand-tint-ink}`), texto blanco. **La variante pequeña del botón primario no usa el Verde Confianza.** Dos motivos, y el segundo pesa más que el primero: ① con texto de 12,5px el blanco sobre Verde Confianza da 3,30:1 y no llega a AA, y a un botón pequeño no se le puede poner la letra de 18,66px que salva al grande sin dejar de ser pequeño (este token da **5,48:1**); ② el pequeño y el grande en el mismo verde **compiten**, y eso incumple la Regla de Una Sola Voz de más abajo — con el tono oscuro aparece una escalera (relleno oscuro › contorno › texto plano) y el primario grande manda sin discusión.
 - **Secondary:** superficie blanca, texto Tinta, borde 1px Borde. Hover fondo Fondo (#f6f7f5).
