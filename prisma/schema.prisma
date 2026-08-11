@@ -29,6 +29,11 @@ model Merchant {
   albaranSeriesYear  Int? @map("albaran_series_year")
   logoUrl              String? @map("logo_url")
   whatsappPhone        String? @map("whatsapp_phone")
+  // SCRUM-441 (E2) · el programa del asesor. SON DOS Y NO UNA: con solo la respuesta, `null`
+  // significaria a la vez "no se le pregunto" y "se le pregunto y paso" — el mismo valor con dos
+  // sentidos opuestos. La fecha dice SI se pregunto; el texto, QUE contesto.
+  asesorProgramaPreguntadoAt DateTime? @map("asesor_programa_preguntado_at")
+  asesorPrograma             String?   @map("asesor_programa")
   googleReviewUrl      String? @map("google_review_url")
 
   // CONNECT-1 (C1-0): cuenta Stripe Connect Express del merchant. El estado lo
@@ -222,6 +227,11 @@ model Charge {
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt      @map("updated_at")
+  // SCRUM-397 · CUANDO ENTRO EL EURO, y no cuando se toco la fila. Hasta hoy el cobro no tenia
+  // fecha propia: `exportData.ts:248` usaba `updated_at`, que es CUALQUIER modificacion, y
+  // `modelo303.ts:236` avisa de que tres de las cinco formas se marcan a mano. Nullable y sin
+  // default: los cobros ya existentes no la tienen y ponerles `updated_at` seria inventarla.
+  paidAt    DateTime? @map("paid_at")
   Quote     Quote[]
   invoices  Invoice[]
 
@@ -538,6 +548,9 @@ model Provider {
   name     String
   phone    String?
   email    String?
+  // SCRUM-441 (E4) · la razon social del proveedor. `Provider` tenia `tax_id` pero no el nombre
+  // fiscal: sin el, el libro de recibidas identifica al proveedor por el mote de la libreta.
+  legalName String? @map("legal_name")
   notes    String?
   // E4 · el NIF del proveedor. `Provider` no tenía HOY NINGÚN campo fiscal (medido: 0), y sin
   // NIF no hay asiento de compra. Nullable: los proveedores ya dados de alta no lo tienen y
