@@ -245,10 +245,27 @@ test('SCRUM-459 · 🔴 una MUTACIÓN vencida se ABORTA, y NO se marca como sinR
   const banco = cargarDashboard(RAIZ, { red });
   banco.ctx.PLAZO_RED_MS = 5;
   let fallo = null;
-  const p = banco.ctx.apiRequest('/admin/albaranes/1/firmar', { method: 'POST', body: '{}' })
+  const RUTA = '/admin/albaranes/1/firmar';
+  const p = banco.ctx.apiRequest(RUTA, { method: 'POST', body: '{}' })
     .then(() => null, (e) => { fallo = e; });
-  await new Promise((r) => setTimeout(r, 60));
-  await p;
+
+  // 🔴 LA ESPERA VA ACOTADA, Y ESTO NO ES PULCRITUD.
+  //
+  // Si la mutación se queda sin plazo, esta promesa NO SE RESUELVE NUNCA — es el defecto mismo del
+  // ticket. Un `await p` a secas convertía el rojo en un CUELGUE: la suite se queda parada y con
+  // ella el CI de TODAS las PRs. Un test que cuelga no informa de nada y bloquea a todo el mundo.
+  //
+  // Con el tope, el mismo defecto sale como un fallo que NOMBRA la petición.
+  const TOPE_MS = 2000;
+  const seQuedoColgada = Symbol('colgada');
+  const veredicto = await Promise.race([
+    p,
+    new Promise((r) => setTimeout(() => r(seQuedoColgada), TOPE_MS)),
+  ]);
+  assert.notEqual(veredicto, seQuedoColgada,
+    `🔴 LA PETICIÓN «POST ${RUTA}» SE QUEDÓ SIN PLAZO: ${TOPE_MS} ms después sigue sin volver ` +
+    `(${red.describir()}). Es exactamente el defecto de este ticket — un POST contra una red que ` +
+    'acepta y no entrega no da error, da silencio — y el profesional se queda mirando la pantalla.');
 
   assert.equal(red.reg.peticiones.length, 1, `suelo: el POST tiene que haber salido (${red.describir()}).`);
   assert.equal(red.reg.abortadas, 1,
