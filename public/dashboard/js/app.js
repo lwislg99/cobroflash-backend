@@ -476,7 +476,26 @@ async function initApp() {
   // pedirla sin mirarla no sirve de nada— y se comprueba si el almacén se ha vaciado solo.
   //
   // Va sin `await` y no puede tumbar el arranque: esto informa, no bloquea.
-  if (typeof window.resistenciaAlArrancar === 'function') window.resistenciaAlArrancar();
+  //
+  // 🔴 SCRUM-469 · Y EL RESULTADO SE GUARDA Y SE PINTA. Hasta este ticket esta línea llamaba y
+  // **tiraba lo que devolvía**: el mecanismo sabía que el navegador se había llevado firmas sin
+  // subir y no había ninguna superficie donde decirlo. Un fallo medido y no dicho es un fallo
+  // mudo, que es contra lo que existe el bloque H entero.
+  //
+  // Se guarda en `window` con el patrón que ya dejó SCRUM-460 (`precargaUltimoResultado`) porque
+  // los dos órdenes son posibles: si la home se monta antes de que la medida llegue, la pinta
+  // este `then`; si llega antes, la pinta la home al montarse leyendo esta misma variable.
+  if (typeof window.resistenciaAlArrancar === 'function') {
+    window.resistenciaAlArrancar()
+      .then((r) => {
+        window.resistenciaUltimoResultado = r;
+        if (typeof window.pintarDesalojoEnHome === 'function') window.pintarDesalojoEnHome(r);
+      })
+      // `resistenciaAlArrancar` no lanza nunca (SCRUM-360, y hay test). El `catch` está para que
+      // el día que alguien rompa esa promesa el desenlace no sea un rechazo sin gestionar durante
+      // el arranque del dashboard.
+      .catch(() => { window.resistenciaUltimoResultado = null; });
+  }
 }
 
 /**

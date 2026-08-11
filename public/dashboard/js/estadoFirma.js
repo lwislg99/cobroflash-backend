@@ -96,6 +96,66 @@ const TEXTO_NO_SE_PUDO_COMPROBAR = 'No hemos podido comprobar si te queda algo p
 // No hay Background Sync en iOS ni push, así que el drenado no ocurre por su cuenta.
 const TEXTO_SUBEN_AL_ABRIR = 'Las firmas pendientes suben cuando abres YaQu. Si no la abres, se quedan aquí.';
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-469 · EL AVISO DE DESALOJO — microcopy **APROBADA** por el asesor (regla 30).
+//
+// H5 (SCRUM-360, fase 3) lleva un sprint sabiendo que el navegador se ha llevado firmas sin
+// subir: `detectarDesalojo` devuelve `POSIBLE_PERDIDA` cuando hubo cola **y** el almacén está
+// vacío. Y no había ninguna superficie donde decirlo — `app.js` llamaba a
+// `resistenciaAlArrancar()` y **tiraba el resultado**. El bloque H entero existe para que un
+// fallo no sea MUDO, y éste lo era: el mecanismo sabía que se habían perdido firmas y el
+// profesional no.
+//
+// 🔴 POR QUÉ EL TEXTO VIVE AQUÍ Y NO EN `resistenciaAlmacen.js`, QUE ES QUIEN LO MIDE.
+// **H5 mide, H2 pinta**, y esa frontera no es una preferencia: la sostiene un guard ajeno.
+// `tests/scrum360-desalojo.test.mjs` falla si `resistenciaAlmacen.js` publica un `window.TEXTO_*`
+// —«si ha ganado una pantalla, la microcopy la aprueba el asesor y hay que decirlo aquí»—. Se
+// CUMPLE en vez de relajarlo, y encima cae donde ya vive el resto de lo que el profesional lee
+// sobre sus firmas. (⚠️ El comentario final de `resistenciaAlmacen.js` dice que estos textos «se
+// escribirán aquí»; contradice a su propio guard y queda REPORTADO, no arreglado — regla 9.)
+//
+// 🔴 SON DOS CAMPOS Y NO UNA CADENA — y la razón MEDIDA no es la que se suponía.
+//
+// El encargo lo justificaba por la caja: «el original eran 148 caracteres en una frase y el aviso
+// de pendientes ya ocupaba 4 líneas a 320 px con 97». **Medido en Edge, eso no se reproduce**
+// (`npm run guard:caja-avisos`, 11-ago-2026):
+//
+//     ancho útil del `.alert`   338 px a 390 · 268 px a 320   (coincide con SCRUM-460)
+//     este aviso, PARTIDO       3 líneas · 82,8 px   a 390 Y a 320
+//     el MISMO texto SIN partir 3 líneas · 82,8 px   a 390 Y a 320   ← la partición no cambia nada
+//     el vecino de pendientes   3 líneas (106 car), no 4
+//
+// O sea: a los dos anchos que soportamos **cabe igual partido que sin partir**, y nada se sale
+// (`scrollWidth == innerWidth` a 390, 320 y hasta 240). Los dos campos se mantienen porque **así
+// los aprobó el asesor** (regla 30, no se reescribe ni una palabra) y porque un título en
+// `<strong>` se lee antes que un párrafo corrido — no porque sin ellos se desborde. Escribirlo al
+// revés sería dejar en el árbol un número que nadie ha medido.
+//
+// ⚠️ Y el `<br>` no es gratis: por debajo de ~240 px el salto forzado cuesta una línea de más
+// (5 frente a 4). Fuera de los anchos que soportamos, pero conviene saberlo antes de partir el
+// siguiente aviso «porque cabe mejor».
+const TEXTO_DESALOJO = Object.freeze({
+  titulo: 'El móvil ha borrado firmas sin subir',
+  cuerpo: 'Revisa tus albaranes: los que no salgan firmados hay que volver a firmarlos.',
+});
+
+/**
+ * ⚠️ APROBADA Y **SIN CONSUMIDOR**, a propósito y declarado (SCRUM-469).
+ *
+ * Es el aviso de «no cabe otra firma», y NO SE PINTA todavía porque
+ * `hayEspacioParaOtraFirma` (SCRUM-360) **no está cableada al encolado**: nadie consulta el tope
+ * antes de guardar una firma. Pintar este texto hoy sería anunciar un rechazo que no ocurre; y
+ * rechazar la firma sin poder decir por qué sería peor todavía.
+ *
+ * Vive aquí, en la fuente única, para que el ticket que cablee el tope no tenga que volver a
+ * pasar por el asesor. `tests/scrum469-aviso-desalojo.test.mjs` vigila el hueco: exige que el
+ * texto siga existiendo Y que siga sin consumidor, de modo que el día que se cablee haya que
+ * venir a retirar la aserción — una declaración que nadie tiene que retirar no es un hueco, es
+ * una promesa.
+ */
+const TEXTO_SIN_ESPACIO_PARA_FIRMA = 'No cabe otra firma en este móvil. Conéctate para subir las '
+  + 'que tienes pendientes.';
+
 /**
  * ¿Esta respuesta es una CONFIRMACIÓN del servidor?
  *
@@ -261,6 +321,34 @@ function pintarPendientesDeSubir(resultado) {
   return `<div class="alert warning" role="status">${cuerpo}</div>`;
 }
 
+/**
+ * SCRUM-469 · El aviso de desalojo. Cadena vacía en todo lo que no sea `POSIBLE_PERDIDA`.
+ *
+ * 🔴 EL CONTROL QUE DECIDE SI ESTO SIRVE ES EL NEGATIVO, no el positivo: **un profesional recién
+ * instalado NO VE NADA**. Su almacén también está vacío, y decirle que ha perdido trabajo el día
+ * que se registra es la forma más rápida de enseñarle a ignorar el aviso — y entonces no avisa el
+ * día que sí. Quien los separa es `detectarDesalojo` con la marca `yaqu_hubo_cola`: quien nunca
+ * encoló no la tiene. Aquí se respeta ese veredicto **sin ampliarlo**.
+ *
+ * 🔴 Y `NO_SE_SABE` NO PINTA ESTE AVISO. No haber podido leer la cola no es haber perdido nada;
+ * convertir un fallo de lectura en «el móvil ha borrado firmas» es una acusación falsa. «Vacía» y
+ * «no supe mirarla» son el mismo cero con significados opuestos, y esto sale del lado prudente.
+ *
+ * ⚠️ ACEPTA LA MEDIDA ENTERA O SU VEREDICTO. `resistenciaAlArrancar` devuelve
+ * `{persistencia, desalojo}`, y pasar ese objeto por descuido devolvería `''` — o sea SILENCIO,
+ * que es exactamente el fallo que este ticket cierra. Se admiten los dos en vez de fallar callando.
+ */
+function pintarDesalojo(medida) {
+  const v = (medida && medida.desalojo) ? medida.desalojo : medida;
+  const perdida = (typeof window !== 'undefined' && window.POSIBLE_PERDIDA) || 'POSIBLE_PERDIDA';
+  if (!v || v.estado !== perdida) return '';
+  // `error` y no `warning`: el vecino ámbar dice «te queda trabajo por subir» y esto dice «ese
+  // trabajo YA NO ESTÁ». Y `role="alert"` en vez de `status` por lo mismo — no es un contador que
+  // se actualiza, es una pérdida consumada que hay que leer ahora.
+  return '<div class="alert error" role="alert">'
+    + `<strong>${escapar(TEXTO_DESALOJO.titulo)}</strong><br>${escapar(TEXTO_DESALOJO.cuerpo)}</div>`;
+}
+
 // Frontend vanilla, sin bundler: se publica en `window` como el resto del dashboard.
 window.FIRMA_SOLO_EN_ESTE_MOVIL = FIRMA_SOLO_EN_ESTE_MOVIL;
 window.FIRMA_SUBIENDO = FIRMA_SUBIENDO;
@@ -268,6 +356,9 @@ window.FIRMA_A_SALVO = FIRMA_A_SALVO;
 window.TEXTO_FIRMA = TEXTO_FIRMA;
 window.TEXTO_NO_SE_PUDO_COMPROBAR = TEXTO_NO_SE_PUDO_COMPROBAR;
 window.TEXTO_SUBEN_AL_ABRIR = TEXTO_SUBEN_AL_ABRIR;
+window.TEXTO_DESALOJO = TEXTO_DESALOJO;
+window.TEXTO_SIN_ESPACIO_PARA_FIRMA = TEXTO_SIN_ESPACIO_PARA_FIRMA;
+window.pintarDesalojo = pintarDesalojo;
 window.confirmaElServidor = confirmaElServidor;
 window.estadoDeLaFirma = estadoDeLaFirma;
 window.estadoTrasIntentarSubir = estadoTrasIntentarSubir;
