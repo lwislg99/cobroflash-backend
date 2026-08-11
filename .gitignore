@@ -179,3 +179,10 @@ public/invoices/
 # SCRUM-48: PDFs de albarán fuera de public/ (privados, se sirven por endpoint auth).
 # Anclado a la raíz (/) para NO ignorar src/core/storage/ ni otros "storage" del árbol.
 /storage/
+
+# SCRUM-473: salidas del MCP de Playwright (capturas y volcados de la página que deja el navegador
+# al verificar UI). NO lo cubría SCRUM-454 —aquello fue el sentinel `.claude/allow-destructivo` y la
+# familia destructiva del hook, no el árbol de trabajo—. Los `console-*.log` de dentro ya caían por
+# el `*.log` de arriba; los .png y los .yml no, y por eso el directorio llevaba tres sesiones
+# apareciendo suelto. Censo del 11-ago-2026: 35 ficheros no trackeados y no ignorados, los 35 aquí.
+.playwright-mcp/
