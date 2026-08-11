@@ -110,3 +110,160 @@ Queda como **hueco humano (AB6)**, con matriz de dispositivos, y no se cierra co
 * `tests/_banco-red.mjs` (nuevo) — los cuatro escenarios, con registro y suelo.
 * `tests/scrum362-banco-sin-cobertura.test.mjs` (nuevo, 8).
 * `tests/_banco-vistas.mjs` — dos líneas: `fetch` y `navigator` salen del escenario si lo hay.
+
+---
+
+# SCRUM-362 · RESIDUALES (12-ago-2026) — los dos escenarios que faltaban
+
+**Medido contra:** `origin/main` = `687d262b9ef2409cc9613a1b72844f60f6907c00` · 2026-08-12T00:36:11+01:00
+
+**Rama:** `scrum-362-residuales` · sin gate, corre en `npm test`
+
+> **Nada de `4d93f916` se rehace**: está en `main` y es bueno. `_banco-red.mjs` **solo se amplía**.
+> Ni una línea de producto — este ticket construye el instrumento, no la medida (regla 38).
+
+## El censo de los cinco, contra `main` — y por qué eran exactamente dos
+
+| # | escenario | antes | dónde estaba cubierto |
+|---|---|---|---|
+| ① | portal cautivo | ✔ **×4** | `362 ①` · `356:150` · `358-encolar:165` · `358-drenado:155` |
+| ② | **fallo del servidor** | 🔸 **a medias** | → **lo cierra esto** |
+| ③ | red intermitente / corte a media subida | ✔ | `362 ③` · `460` |
+| ④ | **muerte del proceso a media subida** | ❌ | → **su mitad automatizable, aquí** |
+| ⑤ | idempotencia de la cola | ✔ **×3** | `358-encolar:105` y `:208` · `358-drenado:169` |
+
+## ② Por qué «ya había un test de servidor en error» no bastaba
+
+`scrum356:140` inyecta `async () => { throw new Error('500') }` en el subidor. **Eso no es un 500:
+es una excepción**, y el producto los trata por sitios distintos (`api.js:_pedir`):
+
+| | una excepción | un 500 de verdad |
+|---|---|---|
+| por dónde entra | el `catch` del `fetch` | la rama `!res.ok` |
+| se le lee el cuerpo | no | **sí** (`res.json()`, y `trial_expired`) |
+| sale con | `sinRed = true` | `status`, `code`, `data` y **sin `sinRed`** |
+
+Y la marca decide qué se le dice al profesional: `sinRed` es «espera a tener cobertura», y un 500
+**no se arregla esperando** (SCRUM-404). **Hasta hoy ningún escenario del banco podía producir un
+500**: los seis respondían `ok:true, status:200`.
+
+`falloDelServidor(status = 500, cuerpo)` lo cierra. Si `cuerpo` es una cadena, `json()` **revienta**
+— el 502 que pinta un proxy en HTML y nunca llega a nuestro servidor.
+
+> ⚠️ **No entra en `ESCENARIOS`** a propósito: `scrum362-banco-sin-cobertura` recorre ese objeto y su
+> test se llama «los CUATRO escenarios». Ampliarlo dejaría mintiendo un título de un fichero que está
+> en `main` y no es de este ticket. El recorrido con el quinto vive en `scrum362-residuales`.
+
+## ④ Esto **no** se llama «muerte del proceso», y no es un matiz
+
+No se puede matar un proceso desde la tanda. Lo que sí se prueba, y es lo que le importa al
+profesional, es **DURABILIDAD DEL ALMACÉN**:
+
+> tras una **carga nueva sin apagado limpio**, la cola sigue **completa** y **nada** quedó tratado
+> como enviado.
+
+Se monta con **un solo `IDBFactory` y dos montajes** del dashboard: el segundo es «abrir la app otra
+vez» —contexto JS nuevo, mismo almacén físico—. Entre los dos **no se drena, no se cierra y no se
+purga nada**: eso es lo abrupto.
+
+**«Marcado como enviado» aquí es literal:** la cola **no tiene campo de estado**. La marca de enviado
+es SALIR de la cola (`quitarFirmaPendiente`, y sólo con confirmación del servidor). Así que se
+comprueba que sigue dentro, que el trazo sobrevive, que el contador que ve el profesional la sigue
+contando (`pendientesDeSubir().n === 1` **y** `.sabemos === true`, que es el suelo de SCRUM-356), y
+que **la entrada no ha ganado ningún campo** que `encolarFirma` no pusiera.
+
+🔴 **Lo que sigue SIN cubrir, y va declarado:** que el **sistema operativo** mate la app a media
+escritura, y el **desalojo de WebKit a los 7 días**. Eso es plan humano, no tanda.
+
+## Qué camino del producto recorre cada escenario nuevo
+
+Si un escenario no recorre ningún camino, es decoración. Los dos recorren el de firma **entero**:
+
+| escenario | camino recorrido |
+|---|---|
+| `falloDelServidor` | `apiRequest` → `_pedir` → rama `!res.ok` → composición del error (`status`/`code`/`data`, SCRUM-151) → `firmarConRedDeSeguridad` → la firma **se queda en la cola** |
+| durabilidad | `firmarConRedDeSeguridad` → `encolarFirma` → IndexedDB real → **segundo montaje** → `leerFirmasPendientes` y `pendientesDeSubir` |
+
+## Los tests — `tests/scrum362-residuales.test.mjs` (11, en `npm test`)
+
+Suelo ×2 (el camino se monta o CIEGO · el escenario sin usar se declara ciego) · el banco sabe dar
+un 500 · **el 500 no se marca `sinRed`** · la firma se queda en la cola · el 502 con cuerpo HTML no
+revienta el producto · **la cola sobrevive a una carga nueva** · **nada quedó tratado como enviado**
+· control negativo con red normal (sube, y la cola queda vacía **y sigue vacía tras recargar**) ·
+control negativo de coste · y que el escenario nuevo **no se confunde** con el corte a media subida.
+
+**Ninguno cuelga:** los 11 corren en **309 ms**, y aun así cada uno lleva plazo de 3 s que falla
+NOMBRANDO el escenario. «Un rojo que tarda 60 segundos y no dice nada no es un rojo: es un cuelgue.»
+
+### 🔴 EL ROJO POR MUTACIÓN — y el harness mintió dos veces antes de que saliera uno solo
+
+| mutación | resultado |
+|---|---|
+| `ok: true` — el banco vuelve a no saber dar un 500 | **4 rojos** |
+| **el 500 se LANZA en vez de resolver** (= el `throw` inyectado de `scrum356`) | **4 rojos**, y entre ellos el de `sinRed` |
+| el `statusText` se inventa | **1 rojo** |
+| el cuerpo no-JSON deja de reventar en `json()` | **11/11 VERDE** 🔴 → con la línea añadida, **1 rojo** |
+| el registro de peticiones deja de contar (suelo ciego) | **4 rojos** |
+| la segunda vida NO comparte almacén | **2 rojos** |
+
+**La segunda fila es la que justifica el ticket:** prueba que el test nuevo distingue un 500 real de
+la excepción inyectada, que era exactamente el agujero.
+
+🔴 **Y dos avisos de método, porque casi cuelan dos no-rojos falsos:**
+
+1. **Las dos primeras mutaciones no se aplicaron** y dieron «verde» sin haber cambiado nada. Causa:
+   el fichero está en **CRLF** y los patrones con `\n` y con `$` no casan. Un «no dio rojo» de una
+   mutación que nunca ocurrió es peor que no probarla: parece medida.
+2. **La primera post-condición tampoco valía.** Usaba `git diff`, y como el fichero tiene cambios sin
+   commitear decía «71 líneas» pasara lo que pasara. La buena compara **contra la copia de
+   seguridad**, no contra `HEAD`.
+
+   La cuarta fila —la que sí dio verde de verdad— se descubrió **gracias** a arreglar eso.
+
+## El hueco humano, y su puerta
+
+🔸 **`docs/PRUEBA-IPHONE-BLOQUE-H.md` NO EXISTE.** Comprobado el 12-ago-2026: no está en `main`, ni
+en el árbol, ni en ninguna rama remota (`git grep` por contenido sobre todas las refs). **No se
+nombra en ninguna entrada a propósito**: el guard de SCRUM-242 rechaza citar un documento
+inexistente, y esa es justo la protección que impide que una promesa se lea como una referencia.
+
+**Cuando el fundador lo commitee, aquí va el mapa bloque→escenario.** Los seis que necesitan mano
+humana, para que ese documento los cubra: modo avión real · iPhone real (Safari, Background Sync 0 %)
+· instalación en pantalla de inicio · **desalojo a 7 días** · **el sistema mata la app a media
+escritura** · cuota agotada en un móvil de verdad.
+
+`docs/master/SCRUM-307.md` §8 ya dice que **esa pasada es el gate de cierre del bloque H** — hoy no
+lo decía nadie.
+
+## 🔸 La pregunta que no decido: cómo sabremos EN PRODUCCIÓN que esto funciona
+
+**Propuesta, y paro** (regla 30 · decide el fundador). La frase que lo resume: **si nunca llega nada
+con retraso, o el offline no se usa, o se está perdiendo.**
+
+| idea | qué mide | coste |
+|---|---|---|
+| **① contador de «lo que llegó con retraso»** | firmas confirmadas cuyo `encoladaEn` es anterior a la subida. **Es la señal madre**: distingue las dos mitades de la frase | el dato ya viaja en la cola; hace falta dónde apuntarlo al drenar |
+| **② aviso al reconectar** — «he recuperado N cosas» | que el profesional **sepa** que se recuperó, en vez de deducirlo | superficie nueva → **microcopy, y la aprueba el asesor** |
+| **③ distinguir «no se usa» de «se está perdiendo»** | ① a cero puede ser buenísimo o pésimo. Se separan cruzando ① con «cuántas veces se encoló algo» | necesita ① y un segundo contador |
+
+**Mi recomendación:** ① primero y solo. Es la que convierte «no llega nada con retraso» de silencio
+en dato, no tiene superficie y por tanto no necesita microcopy. ② y ③ dependen de ella.
+
+⚠️ **Las tres piden dónde persistir un contador, y eso es schema — del fundador.** Ninguna se
+construye aquí.
+
+## Lo que NO se ha tocado
+
+`prisma/schema.prisma` · la cola (H3) · el almacenamiento (H5) · la precarga (H1) · el sellado ·
+nada de `src/` · nada de `public/` · `tests/scrum362-banco-sin-cobertura.test.mjs` y su `ESCENARIOS`.
+
+## Verificación
+
+* `npm test` — **línea base y después, medidas APARTE, no restadas de cabeza** (números abajo).
+* `npm run guards:entrada` · marcadores con el guard oficial `tests/scrum393-marcadores-de-conflicto.test.mjs`.
+
+## Ficheros (residuales)
+
+* `tests/_banco-red.mjs` — **ampliado**: `falloDelServidor()` y `TEXTO_DE_ESTADO`. Nada reescrito.
+* `tests/scrum362-residuales.test.mjs` (nuevo, 11).
+* `docs/master/SCRUM-307.md` — §8 nuevo: el gate de cierre del bloque.
