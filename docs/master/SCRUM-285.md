@@ -346,3 +346,63 @@ cubre el bloque DINERO del rail** (G3/G4). Se queda con `requireRole('admin')`.
 * `tests/_banco-vistas.mjs` — los oyentes se guardan y se pueden disparar, y el mini-DOM representa
   las etiquetas con `class`/`data-*`, no solo las que llevan `id`. Sin las dos cosas, los dos
   estados vacíos no se podían distinguir: hacía falta PULSAR un filtro y LEER un `data-`.
+
+---
+
+# SCRUM-285 (fase 2) · el bloque «Cobro» del detalle de factura — §B4 punto 3
+
+**Fecha:** 11-ago-2026 · **Carril:** B · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `79e74f6f1aa85401de20ee1e70b46b11eb514e3a` · 2026-08-11T01:05:00+02:00
+
+> Apéndice a la entrada de arriba, que decía **«ESTA ENTREGA NO CIERRA SCRUM-285»**. Esto es esa
+> fase 2. No se toca una palabra de lo anterior.
+
+## Lo que faltaba, y lo que se ha hecho
+
+El detalle de factura **sabía** que había un cobro —`invoice.chargeId` decidía qué botones pintar
+en cinco sitios— y **no enseñaba nada de él**. El propio fichero llamaba «callejón» a ese estado.
+Ahora la columna derecha pinta el bloque **«Cobro»** (rótulo aprobado) con **importe y fecha**.
+
+**Contexto, no botón**, como pedía el ticket.
+
+## 🔴 NO ENLAZA, Y NO ES UN OLVIDO
+
+**La ficha de detalle de cobro NO EXISTE.** Medido: `charge-detail` no está en el dispatch de
+`app.js` (25 `case` enumerados, ninguno) y **`appState.chargeId` no existe**; solo hay
+`case 'cobros'`, que es la LISTA. Enlazar «a ESE cobro» exigiría **crear una pantalla nueva**, que
+es otro ticket.
+
+**Si algún día se construye esa pantalla, este bloque es el sitio natural del enlace.** Queda
+escrito para que nadie lo lea como un descuido.
+
+## ⚠️ La fecha que verá es la de PROCESO, no la del ingreso
+
+`paidAt` se escribe con `new Date()` en los tres sitios que lo tocan (SCRUM-397). Desde SCRUM-397
+lo marcado va bien; **los cobros ANTIGUOS conservan la fecha vieja y NO se tocan**. Que nadie lo
+descubra creyendo que es un fallo nuevo.
+
+## El método de cobro: no se pinta, y por qué
+
+Se pedía «el método si está disponible **sin consulta extra**». Medido: el objeto que recibe la
+vista trae `total`, `currency`, `paidAt` y `chargeId` — **no trae el método**. Pintarlo exigiría
+una petición más, así que **no se pinta**. La condición del encargo se cumple: no había.
+
+## Verificación
+
+| | |
+| --- | --- |
+| POSITIVO | factura con cobro → bloque con importe y fecha |
+| **NEGATIVO (el que más pesa)** | factura sin cobro → **nada**. Un «Cobro» vacío en la pantalla del dinero se lee como fallo de carga |
+| SUELO | si no encuentra las anclas de la columna derecha, **falla declarándose ciego** |
+
+Rojos probados **confirmando antes que la mutación se aplicó**:
+
+| Inyección | Resultado |
+| --- | --- |
+| se quita el `appendChild` del bloque | cae, nombrando el bloque «Cobro» |
+| el bloque se pinta SIEMPRE (`if (true)`) | cae el control NEGATIVO |
+
+**Honestidad sobre lo no probado:** el cuarto test —que el TOTAL siga pintándose— **no se ha
+probado en rojo**: la inyección no llegó a aplicarse y un rojo que no se aplica no cuenta. El test
+existe por un motivo real: **al insertar el bloque borré esa línea sin querer**, y lo cazó la
+relectura. Queda pendiente probarlo en rojo.
