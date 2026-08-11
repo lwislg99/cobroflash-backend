@@ -1,6 +1,6 @@
 # SCRUM-416 · PASO 0: paro en (a), y la medición de (b) encuentra un TERCER estado
 
-**Medido contra:** `origin/main` = `0a40bfbf32067ecd6c7d630f92b35c5fd574cedd` · `2026-08-11T13:56:25+02:00`
+**Medido contra:** `origin/main` = `0a40bfbf32067ecd6c7d630f92b35c5fd574cedd` · 2026-08-11T13:56:25+02:00
 **Rama:** `scrum-446-cabecera-modal` (no se abre rama propia: no hay nada que construir todavía)
 
 ## (a) 🔴 PARO: el constructor NO está en main
