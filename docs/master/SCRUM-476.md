@@ -329,9 +329,12 @@ como el estado del proyecto, y así se llegó aquí.
 
 ## Verificación
 
-Todo lo de abajo, **después del último cambio** y con `main` fusionado dentro — entró SCRUM-475
-(«un solo emisor») mientras se cerraba el arreglo del suelo, y el merge fue **limpio**: `main` pasó
-de `dd5416f0` a **`f546e27b`**, y ninguno de los ocho ficheros que trae toca esta zona.
+Todo lo de abajo, **después del último cambio** y con `main` fusionado dentro. `main` se movió
+**dos veces** mientras se cerraba esto —`dd5416f0` → `f546e27b` (SCRUM-475, «un solo emisor») →
+**`8371d1b9`** (SCRUM-473/474)— y los dos merges fueron **limpios**: ninguno de esos ficheros toca
+esta zona. Que se moviera solo entre comandos es lo normal aquí y está documentado: los worktrees
+comparten refs, así que otra sesión que haga `fetch` mueve el `main` local de todos
+(`docs/ERRORES_ASESOR.md`, R10).
 
 * `npm test` — **3.203 tests · 3.126 pass · 0 fail · 77 skipped**, `rc=0`. De los 77, **76 son los
   gateados de siempre y el 77.º es MÍO y va declarado**: el enlace a fichero, que Windows no deja
