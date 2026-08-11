@@ -124,3 +124,53 @@ porque **nacería rojo con 22 sin migrar**, y el ticket exige que nazca verde ·
 propios**, que se declaran cuando el guard exista · **la ayuda**, que es SCRUM-416.
 
 **Nada roto:** suite en verde con la migración parcial.
+
+
+---
+
+# SCRUM-446 · tercera entrega: las 7 imperativas migradas · 17 pendientes
+
+**Rama:** `scrum-446-cabecera-modal` · **11-ago-2026**
+
+`etiquetaCierre` y el `aria-label` unificado quedaron aprobados. Migradas **las 7 cabeceras
+imperativas**, que eran las que justificaban la decisión ① (nodo y no cadena):
+
+| fichero | cuántas | nota |
+|---|---|---|
+| `customersView` | 1 | helper local; conserva `modalTitleEl` vía `querySelector` |
+| `nuevaFacturaModal` | 1 | mantiene su **marcador** de microcopy en `etiquetaCierre` |
+| `jobDetailView` | 3 | misma forma exacta las tres |
+| `quotesView` | 2 | una de ellas **sin botón de cierre**, y se queda sin él |
+
+**Quedan 17**, todas de la misma clase: HTML dentro de una plantilla.
+
+## 🔴 Por qué las 17 no van en esta tanda
+
+Intenté una transformación automática y **la descarté antes de aplicarla**: metía las opciones del
+constructor como JSON dentro de un atributo del propio literal, y ahí `${…}` y las comillas se
+pelean. Era «demasiado lista» para un refactor cuyo único requisito es **no cambiar nada**.
+
+La forma correcta es la aburrida, y es una edición **a mano por sitio**: quitar el marcado de la
+plantilla y anteponer el nodo tras el `innerHTML`, con
+`raiz.querySelector('.modal').prepend(cabeceraModal({…}))`. No es mecanizable con confianza porque
+**cada fichero llama distinto a su raíz** y alguno no usa `.modal` como contenedor.
+
+**No las dejo a medias:** 17 ediciones a mano sin margen para verificarlas una a una es donde se
+cuelan las regresiones mudas que este ticket avisa dos veces. El estado de hoy es **coherente y
+verde**: las 7 migradas funcionan, las 17 siguen exactamente como estaban.
+
+## El guard sigue sin escribirse, a propósito
+
+**Nacería rojo con 17 sin migrar**, y el ticket exige que nazca verde. Va en la tanda que las cierre,
+junto con la declaración de los tres overlays propios.
+
+## Lo que hay que recordar para esa tanda
+
+- **Los 3 overlays propios NO se unifican, se DECLARAN**: `signaturePad`, `onboardingView`,
+  `tutorial`.
+- Y con **los dos mecanismos de ocultación distintos**, que es lo que impide dar SCRUM-416 por
+  resuelto a medias: los modales compartidos se ocultan con `display:none !important`
+  (`styles.css:2173`); **la firma no está oculta, está DEBAJO** — su overlay va a `z-index: 1200` y
+  el FAB a `350`. Quien arregle solo el primero verá desaparecer el síntoma en 24 de 27 sitios.
+- **12 cabeceras pasarán de `span`/`div` a `<h3>`**: cambia lo que anuncia un lector de pantalla, y
+  va declarado como tal (AB6), no escondido bajo «refactor».

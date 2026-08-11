@@ -91,12 +91,10 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   modal.className = "modal";
   modal.style.maxWidth = "860px";
 
-  const mHeader = document.createElement("div");
-  mHeader.className = "modal-header";
-  const mTitle = document.createElement("span");
-  mTitle.className = "modal-title";
-  mTitle.textContent = `Presupuesto #${displayNum} generado`;
-  mHeader.appendChild(mTitle);
+  // SCRUM-446: cabecera del constructor compartido. SIN botón de cierre: hoy no lo tiene, y este
+  // refactor no decide comportamiento — si su ausencia era deliberada se respeta, y si fue descuido
+  // es otro ticket con su propia víctima.
+  const mHeader = cabeceraModal({ titulo: `Presupuesto #${displayNum} generado`, sinCierre: true });
   modal.appendChild(mHeader);
 
   const mBody = document.createElement("div");
@@ -1960,18 +1958,9 @@ conceptInput.addEventListener("input", () => {
     modal.setAttribute("aria-modal", "true");
     modal.setAttribute("aria-label", "Ajustes de la línea");
 
-    const header = document.createElement("div");
-    header.className = "modal-header";
-    const titulo = document.createElement("h3");
-    titulo.className = "modal-title";
-    titulo.textContent = "Ajustes de la línea";
-    const cerrar = document.createElement("button");
-    cerrar.type = "button";
-    cerrar.className = "modal-close";
-    cerrar.setAttribute("aria-label", "Cerrar");
-    cerrar.innerHTML = "&times;";
-    header.appendChild(titulo);
-    header.appendChild(cerrar);
+    // SCRUM-446: cabecera del constructor compartido.
+    const header = cabeceraModal({ titulo: "Ajustes de la línea" });
+    const cerrar = header.querySelector(".modal-close");
 
     const body = document.createElement("div");
     body.className = "modal-body";
