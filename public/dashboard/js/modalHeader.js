@@ -47,6 +47,32 @@
     titulo.textContent = opciones.titulo == null ? '' : String(opciones.titulo);
     header.appendChild(titulo);
 
+    // ── SCRUM-416 · LA AYUDA, DENTRO DEL MODAL ────────────────────────────────────────────
+    //
+    // El «?» ya existía: es el FAB global de `tutorial.js` (`ensureHelpButton`, z-index 350). Y que
+    // se esconda con la modal abierta **fue una decisión del fundador**, escrita en el CSS:
+    // «Feedback fundador 6-jul: el botón flotante ? no debe pisar las modales». Esa decisión sigue
+    // en pie — esto no destapa el FAB, le da a la ayuda un sitio DENTRO.
+    //
+    // Abre `window.openHelpGuide()`, que es LA MISMA guía del FAB. Dos guías se separarían el día
+    // que alguien mejore una, y nadie lo notaría.
+    //
+    // MICROCOPY (regla 30): `Guía de inicio` **no es texto nuevo** — es el literal que el FAB ya
+    // usa en su `title` desde que existe. Se reutiliza, no se inventa. Si el fundador quiere otro,
+    // es una línea.
+    if (!opciones.sinAyuda) {
+      const ayuda = document.createElement('button');
+      ayuda.className = 'modal-ayuda';
+      ayuda.type = 'button';
+      ayuda.textContent = '?';
+      ayuda.title = 'Guía de inicio';
+      ayuda.setAttribute('aria-label', 'Guía de inicio');
+      ayuda.addEventListener('click', function () {
+        if (typeof window.openHelpGuide === 'function') window.openHelpGuide();
+      });
+      header.appendChild(ayuda);
+    }
+
     if (!opciones.sinCierre) {
       const cerrar = document.createElement('button');
       cerrar.className = 'modal-close';
