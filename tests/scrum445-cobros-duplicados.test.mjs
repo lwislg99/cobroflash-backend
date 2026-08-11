@@ -27,6 +27,7 @@
 // exactamente lo que este proyecto no hace.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fsMod from 'node:fs';
 import { fundirCobros } from '../dist/modules/billing/domain/cobros.service.js';
 
 const charge = (id) => ({
@@ -97,3 +98,57 @@ test('SCRUM-445 · el dinero marcado A MANO no puede desaparecer al desduplicar'
     '🔴 dos cobros distintos del mismo importe se están tomando por duplicado: eso es un falso '
     + 'positivo, y un guard que da falsos positivos se acaba silenciando.');
 });
+
+// ═══ EL ARREGLO: el vínculo escrito ═══════════════════════════════════════════════════════
+
+test('SCRUM-445 · con `chargeId` escrito, el cobro sale UNA vez SIN necesitar el evento', () => {
+  // 🔴 EL ARREGLO. `ensureInvoiceForCharge` ahora escribe `Invoice.chargeId`, así que la factura
+  // dice ella misma de qué cobro nació. La desduplicación deja de colgar de un solo canal frágil.
+  const r = fundirCobros({
+    charges: [charge(7)],
+    candidatas: [{ ...invoice(42), chargeId: 7 }],
+    invoiced: [], // sin evento: antes duplicaba, ahora no hace falta
+  });
+  assert.equal(r.length, 1,
+    '🔴 con el vínculo escrito sigue duplicando: la fusión no está mirando `chargeId`');
+  assert.deepEqual(duplicados(r), []);
+});
+
+test('SCRUM-445 · el HISTÓRICO sigue desduplicando por el evento', () => {
+  // Los cobros anteriores al arreglo tienen `chargeId` nulo y su único vínculo es el `Event`.
+  // Quitar esa vía desduplicaría PEOR que antes para todo lo ya emitido.
+  const r = fundirCobros({
+    charges: [charge(7)],
+    candidatas: [invoice(42)], // sin chargeId, como el histórico
+    invoiced: [{ payload: { invoice_id: 42 } }],
+  });
+  assert.equal(r.length, 1, '🔴 se ha perdido la desduplicación por evento: el histórico vuelve a duplicar');
+});
+
+test('SCRUM-445 · CONTROL NEGATIVO: dos cobros legítimos del mismo importe siguen siendo DOS', () => {
+  // Es mi propio falso positivo, convertido en test. Dos transferencias de 121 € al mismo cliente
+  // son dos cobros, no un duplicado — y ninguna tiene `chargeId`, porque el dinero marcado a mano
+  // no crea `Charge` (SCRUM-441).
+  const r = fundirCobros({
+    charges: [], candidatas: [invoice(42), invoice(43, '2026-CF-0002')], invoiced: [],
+  });
+  assert.equal(r.length, 2,
+    '🔴 se han fundido dos cobros distintos en uno: el arreglo se está comiendo dinero real');
+});
+
+test('SCRUM-445 · ROJO POR EL MECANISMO: la escritura de `chargeId` sigue ahí', () => {
+  // Los tests de arriba prueban la DECISIÓN (la fusión). Éste prueba que alguien escribe el dato:
+  // sin la escritura, la fusión es correcta y la pantalla vuelve a duplicar igual, porque ninguna
+  // factura nueva llevaría el vínculo. Es el hueco entre «está bien programado» y «funciona».
+  const fs = require$$fs();
+  const s = fs.readFileSync(new URL('../src/lib/invoicing.ts', import.meta.url), 'utf8');
+  const sinComentarios = s.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.match(sinComentarios, /tx\.invoice\.create\(\{[\s\S]{0,400}?chargeId:\s*ch\.id/,
+    '🔴 `ensureInvoiceForCharge` ha DEJADO DE ESCRIBIR `Invoice.chargeId`.\n\n'
+    + '  Sin ese vínculo, cada cobro por pasarela vuelve a salir DOS VECES en la pantalla de\n'
+    + '  Cobros: una por su `Charge` y otra por su `Invoice`, porque nada las relaciona. La\n'
+    + '  desduplicación volvería a colgar solo del `Event{invoiced}`, que es de donde venía el\n'
+    + '  defecto.');
+});
+
+function require$$fs() { return globalThis.__nodeFs || (globalThis.__nodeFs = fsMod); }

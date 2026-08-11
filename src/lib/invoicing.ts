@@ -321,6 +321,18 @@ export async function ensureInvoiceForCharge(
     });
     return tx.invoice.create({
       data: {
+        // SCRUM-445 · EL VINCULO, ESCRITO. `Invoice.chargeId` existia y no lo escribia nadie, asi
+        // que la pantalla de Cobros no tenia con que saber que este Charge y esta Invoice son EL
+        // MISMO dinero: los pintaba dos veces. Toda la desduplicacion colgaba de que existiera un
+        // `Event{invoiced}` y de que su payload pasara un filtro de tipo — un solo canal fragil.
+        //
+        // Se escribe AQUI porque es el unico punto donde el Charge produce la Invoice: aqui el
+        // vinculo se SABE. Deducirlo despues seria inventarselo.
+        //
+        // ⚠️ Esto NO toca el dinero marcado a mano: una transferencia o un efectivo no pasan por
+        // aqui —no crean `Charge`— asi que su factura sigue con `chargeId` nulo y SIGUE SALIENDO
+        // en Cobros. Desduplicar no puede volver a esconder lo que la fase anterior saco a la luz.
+        chargeId: ch.id,
         merchantId: ch.merchantId,
         customerId: ch.customerId ?? (() => { throw new Error('missing_customer_in_charge'); })(),
         quoteId: quote?.id ?? null,
