@@ -55,6 +55,11 @@ export const CATEGORIAS = {
   // ⚪ Código que ejecuta su propio módulo; el `export` es superficie que nadie de fuera consume,
   // normalmente para que su test pueda fijar la regla sin pasar por la ruta entera.
   PIEZA_INTERNA_EXPORTADA: 'vivo dentro, exportado de más',
+  // ⚪ El `export` NO sobra: está puesto a propósito y DICHO en la cabecera del módulo, para que las
+  // fixtures deriven de él en vez de escribir el dato a mano y quedarse atrás en el próximo cambio.
+  // Se separa de `PIEZA_INTERNA_EXPORTADA` porque «exportado de más» y «exportado a propósito» piden
+  // cosas distintas de quien lo lea.
+  EXPORTADO_PARA_LAS_FIXTURES: 'exportado a propósito para que las fixtures deriven de él',
   // 🟡 La regla vive DOS veces a propósito: el frontend es vanilla y no puede importar de `src/`.
   // El backend queda sin importador sin estar muerto. Consta como copia en el propio fichero de
   // `public/`, y por eso es una categoría y no un hallazgo.
@@ -110,6 +115,10 @@ export const DECLARADOS = [
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'El vocabulario de deuda; su lector de hoy es su test.',
     exports: ['ESTADOS_DEUDA'] },
+  { modulo: 'src/modules/billing/domain/cobros.service.ts',
+    cat: 'EXPORTADO_PARA_LAS_FIXTURES', desde: '2026-08-12',
+    motivo: 'Lo declara su propia cabecera: «SE EXPORTA PARA QUE LAS FIXTURES DERIVEN DE ELLA», porque la fixture de SCRUM-474 escrita a mano se quedó atrás en cuanto el serializador estrenó `metodoCubo` y el test acusó al filtro de un fallo que no era suyo. Entró en `main` el 12-ago-2026 y la cazó este trinquete en su primer merge.',
+    exports: ['camposDeMetodo'] },
   { modulo: 'src/modules/billing/domain/fechaDeCobro.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
@@ -123,9 +132,13 @@ export const DECLARADOS = [
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
     exports: ['FOUNDING_PRICE', 'PLAZA_OCUPADA'] },
   { modulo: 'src/modules/billing/domain/metodoDeCobro.ts',
-    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
-    motivo: 'Agrupar cobros por método fiable: construido y sin pantalla. Nombrado por SCRUM-484 como uno de los seis que un profesional nota.',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: '🔴 DEJÓ DE SER UN MOTOR EN ESPERA EL 12-ago-2026, y se anota porque es la mejora: SCRUM-484 lo nombró entre los seis que un profesional nota («agrupar sus cobros por método fiable: la validación existe y no se aplica»), y ese mismo día SCRUM-474 fase 2 entró en `main` con `cuboDeCobro`, que sí lo llama. El export sigue sin importador de fuera, pero el código YA se ejecuta.',
     exports: ['metodoParaAgrupar'] },
+  { modulo: 'src/modules/billing/domain/metodoDeCobro.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'La clave del cubo «no consta» (SCRUM-474 fase 2). Entró en `main` el 12-ago-2026 y la cazó este trinquete en su primer merge: se declara, no se cablea. Su rótulo hermano `ROTULO_SIN_METODO` sí tiene importador; la clave la consume su propio módulo.',
+    exports: ['CUBO_SIN_METODO'] },
   { modulo: 'src/modules/billing/domain/metodoDeCobro.ts',
     cat: 'REGLA_COPIADA_AL_FRONT', desde: '2026-08-12',
     motivo: 'La regla vive DOS veces a propósito: `public/dashboard/js/cobrosView.js:117` lo declara («ESTO ES UNA SEGUNDA COPIA DELIBERADA DE `partirMetodo`, Y CONSTA COMO TAL»). El backend no la importa porque el navegador no puede importarla.',
@@ -412,7 +425,7 @@ export const DECLARADOS = [
     exports: ['avisarPlanSinCanal', 'isQuietHoursMadrid', 'seleccionarLotes'] },
   { modulo: 'src/modules/maintenance/domain/maintenance.service.ts',
     cat: 'SIN_LECTOR_NI_TEST', desde: '2026-08-12',
-    motivo: '🔴 Ni código vivo, ni test, ni documento lo mencionan en todo el repo. Es el único de los 190 del que no consta ni para qué se escribió.',
+    motivo: '🔴 Ni código vivo, ni test, ni documento lo mencionan en todo el repo. Es el único del censo del que no consta ni para qué se escribió.',
     exports: ['maintenanceEurInMonth'] },
   { modulo: 'src/modules/maintenance/domain/maintenance.service.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
@@ -491,12 +504,12 @@ export const DECLARADOS = [
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
     exports: ['PREFIJO_TELEFONO_DEMO'] },
   { modulo: 'src/modules/system/domain/borradoMerchant.ts',
-    cat: 'PROMESA_SIN_CABLE', desde: '2026-08-12',
-    motivo: 'La página de privacidad promete que un profesional puede pedir que le borren la cuenta, y NADIE llama a esto. Su ticket (SCRUM-244, RGPD-1) está CERRADO. Nadie lo hace en su lugar. Tiene ticket propio de otra sesión: SCRUM-485.',
+    cat: 'SUPLANTADO_POR_UNA_COPIA', desde: '2026-08-12',
+    motivo: '🔴 LA PREMISA ERA FALSA Y SE CORRIGE AQUÍ. Se declaró como PROMESA_SIN_CABLE, y midiendo NO lo es: `borrarMerchant` sigue con cero llamadores, pero la supresión real la hace `suprimirMerchant` (`supresionMerchant.service.ts:34`), que SÍ tiene ruta montada — comprobado en `supresion.routes.ts:56`. Lo midió SCRUM-485 y lo he verificado con mi propio instrumento antes de reclasificarlo. El profesional PUEDE, así que no es una promesa rota: es la función vieja, superada y sin retirar.',
     exports: ['borrarMerchant'] },
   { modulo: 'src/modules/system/domain/borradoMerchant.ts',
-    cat: 'PROMESA_SIN_CABLE', desde: '2026-08-12',
-    motivo: 'La lista de lo que el barrido genérico NO debe tocar, escrita para `borrarMerchant`. Sin su función no la lee nadie: cae con ella (SCRUM-485).',
+    cat: 'SUPLANTADO_POR_UNA_COPIA', desde: '2026-08-12',
+    motivo: 'La lista de lo que el barrido genérico NO debe tocar, escrita para `borrarMerchant`. Sigue a su función: si aquélla está superada por `suprimirMerchant`, ésta también. Cae con ella cuando SCRUM-485 decida (aquí se cuenta, no se retira).',
     exports: ['FUERA_DEL_BARRIDO_GENERICO'] },
   { modulo: 'src/modules/system/domain/importarClientes.service.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',

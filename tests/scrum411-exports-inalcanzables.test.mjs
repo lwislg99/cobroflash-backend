@@ -294,12 +294,29 @@ test('SCRUM-411 · cada declaración lleva categoría CONOCIDA, fecha y motivo',
   }
 });
 
-test('SCRUM-411 · 🔴 la clase que duele NO se diluye: `borrarMerchant` sigue contado y nombrado', () => {
-  // Es de otro equipo (SCRUM-485): aquí se cuenta, no se arregla. Pero si un día desaparece de esta
-  // lista sin que su ticket lo cierre, quiero enterarme por aquí.
+test('SCRUM-411 · 🔴 `borrarMerchant` sigue contado, y con la premisa MEDIDA, no la heredada', () => {
+  // Se declaró como PROMESA_SIN_CABLE repitiendo el encargo. Midiendo NO lo es: la supresión real la
+  // hace `suprimirMerchant`, que tiene ruta montada (`supresion.routes.ts:56`). Lo midió SCRUM-485 y
+  // se comprobó aquí antes de reclasificar. Es de otro equipo: aquí se cuenta, no se arregla.
+  //
+  // Este test fija la CORRECCIÓN, no la acusación: si alguien lo devuelve a «promesa rota» sin medir,
+  // vuelve a entrar en la entrada una premisa que ya se comprobó falsa.
   const g = DECLARADOS_PARES.get('src/modules/system/domain/borradoMerchant.ts::borrarMerchant');
   assert.ok(g, '🔴 `borrarMerchant` ya no está declarado como huérfano y nadie lo ha cableado.');
-  assert.equal(g.cat, 'PROMESA_SIN_CABLE',
-    '🔴 `borrarMerchant` ha cambiado de categoría. Es RGPD-1 con el ticket CERRADO y la promesa ' +
-    'escrita en la página de privacidad: mientras nadie lo llame, es una promesa sin cable.');
+  assert.equal(g.cat, 'SUPLANTADO_POR_UNA_COPIA',
+    '🔴 `borrarMerchant` ha cambiado de categoría. Sigue sin llamadores, pero el profesional SÍ puede ' +
+    'pedir que le supriman la cuenta: lo hace `suprimirMerchant`. No es una promesa rota — es la ' +
+    'función vieja sin retirar. Si vas a volver a llamarlo promesa rota, MÍDELO antes.');
+});
+
+test('SCRUM-411 · `PROMESA_SIN_CABLE` puede estar VACÍA, y que lo esté es la noticia', (t) => {
+  // Hoy no hay ninguno: los dos candidatos que parecían serlo resultaron estar servidos por otra
+  // función. La categoría se queda DEFINIDA a propósito — es donde tiene que aterrizar el siguiente,
+  // y sin ella volvería a repartirse entre las blandas. Que esté vacía se dice, no se borra.
+  const cuantos = DECLARADOS.filter((g) => g.cat === 'PROMESA_SIN_CABLE')
+    .reduce((a, g) => a + g.exports.length, 0);
+  t.diagnostic(`PROMESA_SIN_CABLE: ${cuantos}`);
+  assert.ok(CATEGORIAS.PROMESA_SIN_CABLE,
+    '🔴 se ha borrado la categoría `PROMESA_SIN_CABLE` porque hoy está vacía. Es la que hace que el ' +
+    'siguiente «el producto lo ofrece y no ocurre» tenga dónde caer en vez de diluirse.');
 });
