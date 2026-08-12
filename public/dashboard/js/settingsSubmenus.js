@@ -25,7 +25,7 @@
  * (`equipo`) lo abrió el fundador al colocar `approvalThreshold`, que no cabía en ninguno.
  */
 var SUBMENUS = [
-  'empresa', 'facturacion', 'numeracion', 'cobro', 'avisos',
+  'empresa', 'facturacion', 'cobro', 'avisos',
   'publica', 'marca', 'datos', 'cumplimiento', 'equipo',
 ];
 
@@ -50,7 +50,6 @@ var MARCA_MICROCOPY_SUBMENU = '[PENDIENTE microcopy oficial]';
 var ROTULOS = {
   empresa: 'Empresa',
   facturacion: 'Facturación',
-  numeracion: 'Numeración',
   cobro: 'Cobros',
   avisos: 'Avisos',
   publica: 'Tu página pública',
@@ -81,7 +80,7 @@ var ASIGNACION_SUBMENU = {
   country: 'empresa',
   // ── numeracion ── el ticket coloca el prefijo en DOS submenús a la vez: es una contradicción
   // interna, no una opción. Manda el nombre del submenú — una serie va en Numeración.
-  invoiceSeriesPrefix: 'numeracion',
+  invoiceSeriesPrefix: 'facturacion',
   // ── cobro ──
   iban: 'cobro',
   bizumPhone: 'cobro',
