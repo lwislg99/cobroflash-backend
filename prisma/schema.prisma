@@ -10,54 +10,54 @@ datasource db {
 model Merchant {
   id Int @id @default(autoincrement())
 
-  name        String
-  email       String?  @unique
-  legalName   String?  @map("legal_name")
-  taxId       String?  @map("tax_id")
-  address     String?  @map("address")
-  trade       String?  @map("trade")  // electricista|fontanero|reformista|pintor|cerrajero|climatizacion|otro
+  name      String
+  email     String? @unique
+  legalName String? @map("legal_name")
+  taxId     String? @map("tax_id")
+  address   String? @map("address")
+  trade     String? @map("trade") // electricista|fontanero|reformista|pintor|cerrajero|climatizacion|otro
 
-  defaultCurrency      String  @default("EUR") @map("default_currency")
-  invoiceSeriesPrefix  String  @default("CF")  @map("invoice_series_prefix")
-  nextInvoiceNumber    Int     @default(1)      @map("next_invoice_number")
-  invoiceSeriesYear    Int?    @map("invoice_series_year") // año de la serie en curso; al cambiar de año el contador vuelve a 1 (serie anual: 2026-CF-001)
-  nextRectInvoiceNumber Int    @default(1) @map("next_rect_invoice_number") // contador de la serie de rectificativas (2026-CF-R-001), también se resetea por año
-  nextQuoteNumber       Int    @default(1) @map("next_quote_number") // A1.2: contador de presupuestos por merchant (sin serie anual: no es doc fiscal)
+  defaultCurrency            String    @default("EUR") @map("default_currency")
+  invoiceSeriesPrefix        String    @default("CF") @map("invoice_series_prefix")
+  nextInvoiceNumber          Int       @default(1) @map("next_invoice_number")
+  invoiceSeriesYear          Int?      @map("invoice_series_year") // año de la serie en curso; al cambiar de año el contador vuelve a 1 (serie anual: 2026-CF-001)
+  nextRectInvoiceNumber      Int       @default(1) @map("next_rect_invoice_number") // contador de la serie de rectificativas (2026-CF-R-001), también se resetea por año
+  nextQuoteNumber            Int       @default(1) @map("next_quote_number") // A1.2: contador de presupuestos por merchant (sin serie anual: no es doc fiscal)
   // SCRUM-14: serie NO fiscal de albaranes (ALB-YYYY-NNN), independiente de la de
   // facturas; reset anual (mismo patrón que invoiceSeriesYear).
-  nextAlbaranNumber  Int  @default(1) @map("next_albaran_number")
-  albaranSeriesYear  Int? @map("albaran_series_year")
-  logoUrl              String? @map("logo_url")
-  whatsappPhone        String? @map("whatsapp_phone")
+  nextAlbaranNumber          Int       @default(1) @map("next_albaran_number")
+  albaranSeriesYear          Int?      @map("albaran_series_year")
+  logoUrl                    String?   @map("logo_url")
+  whatsappPhone              String?   @map("whatsapp_phone")
   // SCRUM-441 (E2) · el programa del asesor. SON DOS Y NO UNA: con solo la respuesta, `null`
   // significaria a la vez "no se le pregunto" y "se le pregunto y paso" — el mismo valor con dos
   // sentidos opuestos. La fecha dice SI se pregunto; el texto, QUE contesto.
   asesorProgramaPreguntadoAt DateTime? @map("asesor_programa_preguntado_at")
   asesorPrograma             String?   @map("asesor_programa")
-  googleReviewUrl      String? @map("google_review_url")
+  googleReviewUrl            String?   @map("google_review_url")
 
   // CONNECT-1 (C1-0): cuenta Stripe Connect Express del merchant. El estado lo
   // gobierna el webhook account.updated según charges_enabled (D3 del master).
-  stripeAccountId      String? @map("stripe_account_id")
-  connectStatus        String  @default("none") @map("connect_status") // none|pending|active|restricted
+  stripeAccountId    String? @map("stripe_account_id")
+  connectStatus      String  @default("none") @map("connect_status") // none|pending|active|restricted
   // C1-4: móvil para Bizum manual asistido (default en UI: whatsappPhone, editable)
-  bizumPhone           String? @map("bizum_phone")
+  bizumPhone         String? @map("bizum_phone")
   // A10.2 (EXT3, Parte L): estado de la suscripción de Stripe — ok|past_due|canceled.
   // plan conserva QUÉ plan es; esto conserva CÓMO está (banner past_due + portal).
-  subscriptionStatus   String? @map("subscription_status") // active | past_due | canceled
+  subscriptionStatus String? @map("subscription_status") // active | past_due | canceled
 
   // A14 (EXT3, PERFIL-1): perfil público /p/:slug · flag PUBLIC_PROFILE_ENABLED (OFF)
-  slug            String?   @unique
-  slugChangedAt   DateTime? @map("slug_changed_at") // editable 1 vez/30d
-  profileZones    Json?     @map("profile_zones")   // chips de zonas
-  profileYears    Int?      @map("profile_years")   // años de experiencia (opc.)
+  slug          String?   @unique
+  slugChangedAt DateTime? @map("slug_changed_at") // editable 1 vez/30d
+  profileZones  Json?     @map("profile_zones") // chips de zonas
+  profileYears  Int?      @map("profile_years") // años de experiencia (opc.)
 
   // Parte P: overrides de flags POR MERCHANT (precedencia merchant > país > env).
   // La lee core/flags.ts; nace para los opt-in PERFIL-1/MANT-1. {FLAG_NAME: bool}
-  flags           Json?     @map("flags")
+  flags Json? @map("flags")
 
   // A6.7: preferencias de la Home (bloques visibles) — {hero,quick,kpis,week,activity,tops}: bool
-  homePrefs            Json?   @map("home_prefs")
+  homePrefs Json? @map("home_prefs")
 
   // SCRUM-102: segundo factor para el gate "owner" (isVerifiedPlatformOwner, env.ts) —
   // dato multi-tenant sensible (fees.csv, platform-funnel) no puede depender SOLO de
@@ -65,11 +65,11 @@ model Merchant {
   // webhook faltó en prod sin que nadie lo supiera). default false: requiere UPDATE
   // manual explícito en el merchant del fundador tras el db push — deliberado, un
   // flag de BD no se activa "por accidente" como sí puede pasar con una env var.
-  isPlatformOwner      Boolean   @default(false)  @map("is_platform_owner")
+  isPlatformOwner Boolean @default(false) @map("is_platform_owner")
 
   // Auth / plan
-  onboardingCompleted  Boolean   @default(false)  @map("onboarding_completed")
-  plan                 String    @default("trial")             // trial | basic | pro | empresa
+  onboardingCompleted  Boolean   @default(false) @map("onboarding_completed")
+  plan                 String    @default("trial") // trial | basic | pro | empresa
   planExpiresAt        DateTime? @map("plan_expires_at")
   stripeCustomerId     String?   @map("stripe_customer_id")
   stripeSubscriptionId String?   @map("stripe_subscription_id")
@@ -85,12 +85,12 @@ model Merchant {
   acquisitionSource String? @map("acquisition_source")
 
   // Preferencias de notificaciones por email
-  notifyEmailOnPaid            Boolean @default(true)  @map("notify_email_on_paid")
-  notifyEmailOnQuoteAccepted   Boolean @default(false) @map("notify_email_on_quote_accepted")
-  notifyEmailWeeklyDigest      Boolean @default(false) @map("notify_email_weekly_digest")
+  notifyEmailOnPaid          Boolean @default(true) @map("notify_email_on_paid")
+  notifyEmailOnQuoteAccepted Boolean @default(false) @map("notify_email_on_quote_accepted")
+  notifyEmailWeeklyDigest    Boolean @default(false) @map("notify_email_weekly_digest")
 
   // Lifecycle emails ya enviados, ej: { "welcome": 1, "day3": 1 } — evita duplicados
-  lifecycleEmailsSent          Json?   @map("lifecycle_emails_sent")
+  lifecycleEmailsSent Json? @map("lifecycle_emails_sent")
 
   // Sistema de referidos
   referralCode       String?   @unique @map("referral_code")
@@ -99,25 +99,41 @@ model Merchant {
   referralRewardedAt DateTime? @map("referral_rewarded_at")
 
   // Enterprise: branding custom + workflow de aprobación
-  brandColor         String?   @map("brand_color")         // hex, ej "#1a56db"
-  brandAccentColor   String?   @map("brand_accent_color")
-  approvalThreshold  Decimal?  @map("approval_threshold") @db.Decimal(12, 2) // null = sin aprobación
+  brandColor        String?  @map("brand_color") // hex, ej "#1a56db"
+  brandAccentColor  String?  @map("brand_accent_color")
+  approvalThreshold Decimal? @map("approval_threshold") @db.Decimal(12, 2) // null = sin aprobación
 
-  charges        Charge[]
-  Quote          Quote[]
-  Invoice        Invoice[]
-  Product        Product[]
-  Provider       Provider[]
-  Customer       Customer[]
-  AuthSession    AuthSession[]
-  Expense        Expense[]
-  TeamMember     TeamMember[]
-  QuoteTemplate  QuoteTemplate[]
-  QuoteRequest   QuoteRequest[]
-  CustomerEvent  CustomerEvent[]
+  charges       Charge[]
+  Quote         Quote[]
+  Invoice       Invoice[]
+  Product       Product[]
+  Provider      Provider[]
+  Customer      Customer[]
+  AuthSession   AuthSession[]
+  Expense       Expense[]
+  TeamMember    TeamMember[]
+  QuoteTemplate QuoteTemplate[]
+  QuoteRequest  QuoteRequest[]
+  CustomerEvent CustomerEvent[]
+
+  // SCRUM-293 (A2) · RETENCIÓN DE IRPF. Autorización expresa del fundador para ESTAS DOS LÍNEAS.
+  //
+  // DOS columnas y no una, porque hay TRES estados que no pueden colapsar:
+  //   declarada=false, tipo NULL  → NO CONSTA: no lo ha dicho todavía
+  //   declarada=true,  tipo NULL  → DECLARA QUE NO RETIENE
+  //   declarada=true,  tipo=7|15|19 → RETIENE, y a ese porcentaje
+  // Con un solo campo anulable, «no lo ha dicho» y «dice que no» serían el mismo valor — y ése es
+  // exactamente el defecto que `retencionIrpf.ts` existe para impedir: emitir sin la retención de
+  // quien SÍ retiene es un fallo fiscal MUDO. La factura sale, el cliente la paga, y el descuadre
+  // aparece meses después en el 111.
+  //
+  // ⚠️ Las columnas YA EXISTEN en producción y staging (verificado por `information_schema`), así
+  // que esto NO abre deriva: el esquema alcanza a las bases, no al revés.
+  retencionIrpfDeclarada Boolean @default(false) @map("retencion_irpf_declarada")
+  retencionIrpfTipo      Int?    @map("retencion_irpf_tipo")
 
   createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt      @map("updated_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([country])
   @@map("merchants")
@@ -128,11 +144,11 @@ model AuthSession {
   merchantId   Int       @map("merchant_id")
   teamMemberId Int?      @map("team_member_id") // null = propietario (admin implícito)
   token        String    @unique
-  type         String    @default("session")    // magic_link | session
+  type         String    @default("session") // magic_link | session
   expiresAt    DateTime  @map("expires_at")
   usedAt       DateTime? @map("used_at")
   createdAt    DateTime  @default(now()) @map("created_at")
-  instaladaPwa Boolean? @map("instalada_pwa") // el último entorno visto; null = no se pudo saber
+  instaladaPwa Boolean?  @map("instalada_pwa") // el último entorno visto; null = no se pudo saber
 
   merchant   Merchant    @relation(fields: [merchantId], references: [id])
   teamMember TeamMember? @relation(fields: [teamMemberId], references: [id])
@@ -149,7 +165,7 @@ model Customer {
   legalName String? @map("legal_name")
   taxId     String? @map("tax_id")
 
-  id         Int  @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   merchantId  Int     @default(1) @map("merchant_id")
   name        String
   phone       String?
@@ -184,14 +200,14 @@ model Customer {
   /// validación, y añadir un valor no obliga a migrar un tipo de Postgres.
   billingPeriodicity String @default("NINGUNA") @map("billing_periodicity")
 
-  merchant      Merchant       @relation(fields: [merchantId], references: [id])
-  charges       Charge[]
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt      @map("updated_at")
-  Quote         Quote[]
-  Invoice       Invoice[]
-  QuoteRequest  QuoteRequest[]
-  events        CustomerEvent[]
+  merchant     Merchant        @relation(fields: [merchantId], references: [id])
+  charges      Charge[]
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  Quote        Quote[]
+  Invoice      Invoice[]
+  QuoteRequest QuoteRequest[]
+  events       CustomerEvent[]
 
   @@index([merchantId])
   @@map("customers")
@@ -226,7 +242,7 @@ model Charge {
   reconciliations Reconciliation[]
 
   createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt      @map("updated_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
   // SCRUM-397 · CUANDO ENTRO EL EURO, y no cuando se toco la fila. Hasta hoy el cobro no tenia
   // fecha propia: `exportData.ts:248` usaba `updated_at`, que es CUALQUIER modificacion, y
   // `modelo303.ts:236` avisa de que tres de las cinco formas se marcan a mano. Nullable y sin
@@ -279,7 +295,7 @@ model Quote {
   // manda: la FK que importaria aqui es `onDelete`, y eso ya se decidio en SCRUM-192 (opcion B,
   // servicio de borrado derivado del schema, no cascadas). La integridad Quote.jobId -> Job.id
   // la sostiene el CODIGO, y quien la respeta al borrar es el servicio de SCRUM-192.
-  jobId        Int?    @map("job_id")
+  jobId       Int?     @map("job_id")
   // SCRUM-195 · LA MITAD PENDIENTE: `jobId` dice A QUÉ TRABAJO pertenece, pero no SI ES EL
   // ORIGINAL O UN ADICIONAL — un adicional aceptado tiene el mismo `jobId` que el original, así
   // que el rol NO se puede deducir de ahí. `sendQuote.service.ts:31` lo dice literalmente:
@@ -288,11 +304,11 @@ model Quote {
   //
   // Nullable y SIN `@default`: los presupuestos anteriores no tienen rol asignado, y `null`
   // («no se sabe») no es `false` («se decidió que es el original»).
-  esAdicional  Boolean? @map("es_adicional")
+  esAdicional Boolean? @map("es_adicional")
 
   // EXT3: origin (A15: maintenance) · validUntil (A16.2: caducidad, default 30d en código)
   // · docFields (A20.4: qué datos del cliente muestra el documento)
-  origin     String?   // null|manual … | maintenance
+  origin     String? // null|manual … | maintenance
   validUntil DateTime? @map("valid_until")
   docFields  Json?     @map("doc_fields") // {name,phone,taxId,email}: bool
 
@@ -310,28 +326,28 @@ model Quote {
   // ["card","bizum","transfer"]). null = todos los que el merchant tenga activos.
   payMethods Json? @map("pay_methods")
 
-  status       String  @default("draft")
-  total        Decimal @db.Decimal(12, 2)
-  currency     String  @db.VarChar(3)
-  lines        Json
-  acceptedAt   DateTime?
-  paymentTerms String?
-  customBillingPlan Json? @map("custom_billing_plan") // SCRUM-27: [{percentage, label}] plan de tramos personalizado (fracción 0-1; índice = orden)
+  status            String    @default("draft")
+  total             Decimal   @db.Decimal(12, 2)
+  currency          String    @db.VarChar(3)
+  lines             Json
+  acceptedAt        DateTime?
+  paymentTerms      String?
+  customBillingPlan Json?     @map("custom_billing_plan") // SCRUM-27: [{percentage, label}] plan de tramos personalizado (fracción 0-1; índice = orden)
   // V0-3: telemetría quote_created_via ('text' | 'voice' con VOZ-1)
-  createdVia   String? @map("created_via")
-  rejectedAt   DateTime?
-  decisionChannel String?
-  decisionComment String?
-  rejectionReason String?
-  pdfUrl          String?   @db.Text
-  signatureUrl    String?   @db.Text
-  tiers           Json?
-  selectedTierId  String?
-  internalNotes   String?   @db.Text @map("internal_notes") // Notas privadas del profesional, nunca visibles al cliente
-  evidence        Json?
-  chargeId        Int?
-  reminderSentAt  DateTime?
-  teamMemberId    Int?      @map("team_member_id") // técnico que creó la cotización (null = propietario)
+  createdVia        String?   @map("created_via")
+  rejectedAt        DateTime?
+  decisionChannel   String?
+  decisionComment   String?
+  rejectionReason   String?
+  pdfUrl            String?   @db.Text
+  signatureUrl      String?   @db.Text
+  tiers             Json?
+  selectedTierId    String?
+  internalNotes     String?   @map("internal_notes") @db.Text // Notas privadas del profesional, nunca visibles al cliente
+  evidence          Json?
+  chargeId          Int?
+  reminderSentAt    DateTime?
+  teamMemberId      Int?      @map("team_member_id") // técnico que creó la cotización (null = propietario)
 
   // SCRUM-95: token OPACO para las páginas/acciones públicas del cliente (patrón
   // Charge.receiptToken SCRUM-74, Albaran.firmaToken SCRUM-49). Quote.id es autoincremental
@@ -387,7 +403,7 @@ model Invoice {
   stageLabel    String?   @map("stage_label") // SCRUM-27: etiqueta del tramo, congelada al crear la factura
 
   // Líneas de detalle (copiadas del Quote o del Charge al crear la factura)
-  lines Json?
+  lines       Json?
   // SCRUM-17 (FISCAL-2): operaciones agrupadas en una recapitulativa — [{albaranId, numero, fecha}].
   // La factura debe identificar los albaranes origen (art. 6 Reglamento + advertencia TEAC).
   albaranRefs Json? @map("albaran_refs")
@@ -425,9 +441,9 @@ model Invoice {
   //   pendiente_de_sellado · nació y aún no entró en la cadena. NO produce PDF ni QR.
   //   sellado              · tiene huella y está encadenada.
   //   no_aplica            · justificante `J-` o merchant no-ES: nunca entra en la cadena.
-  vfEstado   String  @default("pendiente_de_sellado") @map("vf_estado")
-  vfHash     String? @map("vf_hash")      // huella SHA-256 de esta factura
-  vfPrevHash String? @map("vf_prev_hash") // huella de la factura anterior en la cadena
+  vfEstado        String    @default("pendiente_de_sellado") @map("vf_estado")
+  vfHash          String?   @map("vf_hash") // huella SHA-256 de esta factura
+  vfPrevHash      String?   @map("vf_prev_hash") // huella de la factura anterior en la cadena
   // SCRUM-145: instante EXACTO (con huso) que entró en el cálculo de la huella. Sin él, el
   // registro emite `FechaHoraHusoGenRegistro` con el momento de la FACTURA, que no es el que
   // se hasheó → un tercero no puede recomputar la huella y verificarla. Es dato del REGISTRO,
@@ -446,7 +462,7 @@ model Invoice {
   vfAnulPrevHash  String?   @map("vf_anul_prev_hash")
 
   // Recordatorios de pago automáticos
-  reminder7SentAt  DateTime? @map("reminder_7_sent_at")  // fecha 1er recordatorio (7 días)
+  reminder7SentAt  DateTime? @map("reminder_7_sent_at") // fecha 1er recordatorio (7 días)
   reminder14SentAt DateTime? @map("reminder_14_sent_at") // fecha 2º recordatorio (14 días)
 
   createdAt DateTime @default(now())
@@ -466,18 +482,18 @@ model Invoice {
 }
 
 model Expense {
-  id         Int      @id @default(autoincrement())
-  merchantId Int      @map("merchant_id")
-  quoteId    Int?     @map("quote_id")
-  providerId Int?     @map("provider_id")
+  id         Int  @id @default(autoincrement())
+  merchantId Int  @map("merchant_id")
+  quoteId    Int? @map("quote_id")
+  providerId Int? @map("provider_id")
 
-  concept     String
-  amount      Decimal  @db.Decimal(12, 2)
-  currency    String   @default("EUR") @db.VarChar(3)
-  category    String   @default("otros") // materiales|desplazamiento|herramientas|subcontrata|otros
-  date        DateTime @default(now())
-  notes       String?
-  receiptData String?  @db.Text @map("receipt_data")
+  concept               String
+  amount                Decimal   @db.Decimal(12, 2)
+  currency              String    @default("EUR") @db.VarChar(3)
+  category              String    @default("otros") // materiales|desplazamiento|herramientas|subcontrata|otros
+  date                  DateTime  @default(now())
+  notes                 String?
+  receiptData           String?   @map("receipt_data") @db.Text
   // ─────────────────────────────────────────────────────────────────────────────────────
   // SCRUM-403 / A5 / E4 · EL GASTO NO DICE SI LLEVA IVA, Y TRES CIFRAS DEPENDEN DE ESO.
   //
@@ -490,16 +506,16 @@ model Expense {
   // suposición y la haría INDISTINGUIBLE de un dato real — que es exactamente el defecto que
   // SCRUM-403 denuncia. NO HAY BACKFILL: deducir la base de `amount` exige saber si lleva IVA
   // y a qué tipo, y eso no está escrito en ninguna parte.
-  baseAmount    Decimal?  @db.Decimal(12, 2) @map("base_amount")
+  baseAmount            Decimal?  @map("base_amount") @db.Decimal(12, 2)
   // Tipo en ENTERO DE PORCENTAJE (21/10/4/0) — la convención de `AlbaranLinea.tipoIva`, NO la
   // fracción de `Quote.lines[].tax`. Mezclar las dos multiplica el IVA por cien sin que nada falle.
-  vatRate       Int?      @map("vat_rate")
+  vatRate               Int?      @map("vat_rate")
   // La cuota SE GUARDA, no se recalcula: un redondeo distinto entre pantalla y libro es una
   // discrepancia que después nadie sabe explicar.
-  vatAmount     Decimal?  @db.Decimal(12, 2) @map("vat_amount")
+  vatAmount             Decimal?  @map("vat_amount") @db.Decimal(12, 2)
   // `null` = nunca clasificado · `false` = se decidió que NO. No son lo mismo, y por eso no lleva
   // `@default` (convención de `Customer.tipoDestinatario`, SCRUM-69).
-  vatDeducible  Boolean?  @map("vat_deducible")
+  vatDeducible          Boolean?  @map("vat_deducible")
   // El nº y serie de la factura DEL PROVEEDOR: es lo que identifica el asiento de compra (E4).
   providerInvoiceNumber String?   @map("provider_invoice_number")
   // Fecha de EXPEDICIÓN del proveedor. `Expense.date` es la del apunte, y no son la misma.
@@ -510,10 +526,10 @@ model Expense {
   // Quote.teamMemberId / Job.operarioId (SCRUM-52): sin relación Prisma declarada a propósito
   // (ese es el patrón ya asentado). Se rellena en createExpense con el teamMemberId de la
   // sesión. NO se usa aún para filtrar/mostrar — eso es la V2 de SCRUM-107, carril B (Javier).
-  teamMemberId Int?     @map("team_member_id")
+  teamMemberId Int? @map("team_member_id")
 
   createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt      @map("updated_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   merchant Merchant  @relation(fields: [merchantId], references: [id])
   quote    Quote?    @relation(fields: [quoteId], references: [id])
@@ -540,7 +556,7 @@ model Product {
   isActive    Boolean  @default(true) @map("is_active")
 
   createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt      @map("updated_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   merchant Merchant  @relation(fields: [merchantId], references: [id])
   provider Provider? @relation(fields: [providerId], references: [id])
@@ -556,21 +572,21 @@ model Provider {
   id         Int @id @default(autoincrement())
   merchantId Int @map("merchant_id")
 
-  name     String
-  phone    String?
-  email    String?
+  name      String
+  phone     String?
+  email     String?
   // SCRUM-441 (E4) · la razon social del proveedor. `Provider` tenia `tax_id` pero no el nombre
   // fiscal: sin el, el libro de recibidas identifica al proveedor por el mote de la libreta.
   legalName String? @map("legal_name")
-  notes    String?
+  notes     String?
   // E4 · el NIF del proveedor. `Provider` no tenía HOY NINGÚN campo fiscal (medido: 0), y sin
   // NIF no hay asiento de compra. Nullable: los proveedores ya dados de alta no lo tienen y
   // no se puede deducir de nada.
-  taxId    String? @map("tax_id")
-  isActive Boolean @default(true) @map("is_active")
+  taxId     String? @map("tax_id")
+  isActive  Boolean @default(true) @map("is_active")
 
   createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt      @map("updated_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   merchant Merchant  @relation(fields: [merchantId], references: [id])
   Product  Product[]
@@ -581,9 +597,9 @@ model Provider {
 }
 
 model QuoteRequest {
-  id          Int    @id @default(autoincrement())
-  merchantId  Int    @map("merchant_id")
-  customerId  Int    @map("customer_id")
+  id         Int @id @default(autoincrement())
+  merchantId Int @map("merchant_id")
+  customerId Int @map("customer_id")
 
   description String @db.Text
   status      String @default("pending") // pending | read | done
@@ -607,31 +623,31 @@ model QuoteRequest {
 // estados de K1). Expira a las 24h (ventana de servicio de Meta).
 model BotSession {
   id         Int      @id @default(autoincrement())
-  phone      String   // normalizado (normalizePhone)
+  phone      String // normalizado (normalizePhone)
   merchantId Int?     @map("merchant_id")
   state      String   @default("menu") // menu|choosing_merchant|asking_description|asking_zone|done|handoff (K1)
   data       Json?
   expiresAt  DateTime @map("expires_at")
 
   createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt      @map("updated_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([phone, expiresAt])
   @@map("bot_sessions")
 }
 
 model QuoteTemplate {
-  id         Int    @id @default(autoincrement())
-  merchantId Int    @map("merchant_id")
+  id         Int @id @default(autoincrement())
+  merchantId Int @map("merchant_id")
 
   name         String
   currency     String  @default("EUR") @db.VarChar(3)
-  lines        Json                        // Array de líneas igual que en Quote
-  tiers        Json?                       // Opcional: Good/Better/Best
+  lines        Json // Array de líneas igual que en Quote
+  tiers        Json? // Opcional: Good/Better/Best
   paymentTerms String? @map("payment_terms") // FULL_UPFRONT | FIFTY_FIFTY | MANUAL
 
   createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt      @map("updated_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   merchant Merchant @relation(fields: [merchantId], references: [id])
 
@@ -640,19 +656,19 @@ model QuoteTemplate {
 }
 
 model TeamMember {
-  id         Int    @id @default(autoincrement())
-  merchantId Int    @map("merchant_id")
+  id         Int @id @default(autoincrement())
+  merchantId Int @map("merchant_id")
 
   name   String
-  email  String  @unique
-  role   String  @default("tecnico") // admin | tecnico
-  status String  @default("invited") // invited | active | suspended
+  email  String @unique
+  role   String @default("tecnico") // admin | tecnico
+  status String @default("invited") // invited | active | suspended
 
   merchant     Merchant      @relation(fields: [merchantId], references: [id])
   authSessions AuthSession[]
 
   createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt      @map("updated_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([merchantId])
   @@map("team_members")
@@ -660,11 +676,11 @@ model TeamMember {
 
 // ENT-3: historial de comunicaciones/actividad por cliente (timeline en Customer 360).
 model CustomerEvent {
-  id         Int      @id @default(autoincrement())
-  merchantId Int      @map("merchant_id")
-  customerId Int      @map("customer_id")
+  id         Int @id @default(autoincrement())
+  merchantId Int @map("merchant_id")
+  customerId Int @map("customer_id")
 
-  type   String  // quote_sent | quote_accepted | quote_rejected | invoice_issued | payment_received | reminder_sent | quote_requested | review_requested
+  type   String // quote_sent | quote_accepted | quote_rejected | invoice_issued | payment_received | reminder_sent | quote_requested | review_requested
   title  String
   detail String?
   meta   Json?
@@ -684,11 +700,11 @@ model CustomerEvent {
 // escribe captura el error si aún no existe en prod (patrón ENT-3). El waMessageId mapea
 // los webhooks de estado (rama `statuses`) de vuelta al mensaje.
 model WhatsAppMessage {
-  id         Int    @id @default(autoincrement())
-  merchantId Int    @map("merchant_id")
-  customerId Int?   @map("customer_id")
+  id         Int  @id @default(autoincrement())
+  merchantId Int  @map("merchant_id")
+  customerId Int? @map("customer_id")
 
-  type         String  // 'template' | 'service'
+  type         String // 'template' | 'service'
   templateName String? @map("template_name")
   waMessageId  String? @unique @map("wa_message_id") // id que devuelve Meta (wamid.*)
 
@@ -699,10 +715,10 @@ model WhatsAppMessage {
   relatedType String? @map("related_type")
   relatedId   Int?    @map("related_id")
 
-  costEstimate Decimal? @db.Decimal(8, 4) @map("cost_estimate") // € estimados (utility ES ~0,023)
+  costEstimate Decimal? @map("cost_estimate") @db.Decimal(8, 4) // € estimados (utility ES ~0,023)
 
   createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt      @map("updated_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([merchantId, createdAt])
   @@index([relatedType, relatedId])
@@ -744,8 +760,8 @@ model Job {
   // direccion sin fuente hoy (ni Quote ni Customer la tienen) → se llenará en la UI (tarea futura).
   titulo         String?
   direccion      String?
-  totalAceptado  Decimal?  @db.Decimal(12, 2) @map("total_aceptado")
-  totalCobrado   Decimal   @default(0) @db.Decimal(12, 2) @map("total_cobrado")
+  totalAceptado  Decimal?  @map("total_aceptado") @db.Decimal(12, 2)
+  totalCobrado   Decimal   @default(0) @map("total_cobrado") @db.Decimal(12, 2)
   // SCRUM-52 (carril A, base de SCRUM-22): autoría del operario en el Trabajo =
   // creador del presupuesto (quote.teamMemberId) congelado en el accept. Distinto de
   // assignedUserId (el asignado a ejecutar). Int? con null = propietario, misma
@@ -759,7 +775,7 @@ model Job {
   // la bandera es SCRUM-17; aquí solo se guarda la elección del pro (editable mientras esté abierto).
   tipoOperacion  String    @default("TRABAJO_UNICO") @map("tipo_operacion")
   createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt      @map("updated_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
   @@index([merchantId, status])
   @@index([merchantId, scheduledAt])
@@ -781,7 +797,7 @@ model MaintenancePlan {
   lastProposedAt DateTime? @map("last_proposed_at")
   rejectedStreak Int       @default(0) @map("rejected_streak")
   createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt      @map("updated_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
   @@index([merchantId, active, nextDueAt])
   @@map("maintenance_plans")
@@ -820,8 +836,8 @@ model Attachment {
   entityId   Int      @map("entity_id")
   url        String
   kind       String   @default("photo") // photo | audio (audio = F2, no F1)
-  data       Bytes?   // MEDIA-1: bytes del fichero en Postgres (bytea) — fallback persistente sin R2
-  mime       String?  // MEDIA-1: content-type (image/jpeg, image/png…)
+  data       Bytes? // MEDIA-1: bytes del fichero en Postgres (bytea) — fallback persistente sin R2
+  mime       String? // MEDIA-1: content-type (image/jpeg, image/png…)
   createdAt  DateTime @default(now()) @map("created_at")
 
   @@index([merchantId, entityType, entityId])
@@ -835,30 +851,30 @@ model Attachment {
 // (version++ con traza en AuditLog); firmado = congelado. Fotos vía Attachment
 // entityType:'albaran'. Estados Parte L: borrador | emitido | firmado.
 model Albaran {
-  id           Int       @id @default(autoincrement())
-  merchantId   Int       @map("merchant_id")
-  jobId        Int       @map("job_id")
-  numero       String    // ALB-YYYY-NNN, serie propia por merchant (no fiscal)
-  fecha        DateTime  @default(now()) // fecha de la visita/entrega (editable en borrador)
+  id                 Int       @id @default(autoincrement())
+  merchantId         Int       @map("merchant_id")
+  jobId              Int       @map("job_id")
+  numero             String // ALB-YYYY-NNN, serie propia por merchant (no fiscal)
+  fecha              DateTime  @default(now()) // fecha de la visita/entrega (editable en borrador)
   // SCRUM-300 (C5): un albarán se PREPARA un día y se ENTREGA otro, y hasta hoy solo existía
   // `fecha`. `fechaEntrega` es el día real de la entrega. null = no se pidió (todo lo anterior
   // a esta tarea) y entonces se muestra `fecha`, que es lo único que llegamos a saber.
-  fechaEntrega DateTime? @map("fecha_entrega")
+  fechaEntrega       DateTime? @map("fecha_entrega")
   // SCRUM-300 (C5): DÓNDE se entregó. NO es `Job.direccion` —que no la escribe nadie: medido,
   // ningún schema de validación la acepta y sus únicas apariciones son lecturas— ni el domicilio
   // del cliente, que ni siquiera existe en `Customer`. Es un campo PROPIO del albarán, porque el
   // lugar del trabajo puede no ser el domicilio de quien paga.
   // ⚠️ Entra en el CONTENIDO SELLADO por la firma → sube `evidenciaFirma.v` a 2.
-  lugarEntrega String?   @map("lugar_entrega")
+  lugarEntrega       String?   @map("lugar_entrega")
   // SCRUM-65: SIN_VALORAR (hoy, sin precios) | VALORADO (líneas con precioUnitario+tipoIva
   // opcionales). Aditivo, default SIN_VALORAR = comportamiento actual intacto. Editable solo
   // en 'borrador' (mismo candado que lineas/notas/fecha); congelado desde 'emitido'.
-  modoValoracion String  @default("SIN_VALORAR") @map("modo_valoracion")
-  lineas       Json      // [{concepto, cantidad, unidad, precioUnitario?, tipoIva?}] (SCRUM-65)
-  estado       String    @default("borrador") // borrador | emitido | firmado (Parte L)
-  version      Int       @default(1)
-  signatureUrl String?   @db.Text @map("signature_url") // data-URI (patrón Quote.signatureUrl)
-  firmadoAt    DateTime? @map("firmado_at")
+  modoValoracion     String    @default("SIN_VALORAR") @map("modo_valoracion")
+  lineas             Json // [{concepto, cantidad, unidad, precioUnitario?, tipoIva?}] (SCRUM-65)
+  estado             String    @default("borrador") // borrador | emitido | firmado (Parte L)
+  version            Int       @default(1)
+  signatureUrl       String?   @map("signature_url") @db.Text // data-URI (patrón Quote.signatureUrl)
+  firmadoAt          DateTime? @map("firmado_at")
   // SCRUM-300 (C5): QUIÉN firmó, y EN CALIDAD DE QUÉ. Hasta ahora se guardaba el trazo
   // (`signatureUrl`) y nada más: una rúbrica anónima no identifica a nadie, así que el albarán
   // firmado valía poco como prueba de entrega.
@@ -868,27 +884,27 @@ model Albaran {
   // Por lo mismo, `firmadoPorCalidad` no tiene default: ninguna opción viene marcada.
   // null = no se pidió al firmar (albaranes anteriores a esta tarea). AMBOS entran en el
   // contenido sellado → `evidenciaFirma.v` = 2.
-  firmadoPorNombre  String? @map("firmado_por_nombre")
-  firmadoPorCalidad String? @map("firmado_por_calidad")
+  firmadoPorNombre   String?   @map("firmado_por_nombre")
+  firmadoPorCalidad  String?   @map("firmado_por_calidad")
   // SCRUM-49: firma REMOTA. `firmaToken` = token OPACO de la página pública /albaran/:token
   // (patrón Customer.portalToken, crypto.randomBytes(16).hex; null hasta enviar "para firmar";
   // @unique para el lookup findUnique). FSM SIN cambios (opción A): "esperando firma" se deriva
   // de `enviadoParaFirmaAt != null && estado === 'emitido'`, no es un estado nuevo (Parte L intacta).
-  firmaToken   String?   @unique @map("firma_token")
+  firmaToken         String?   @unique @map("firma_token")
   enviadoParaFirmaAt DateTime? @map("enviado_para_firma_at")
   // SCRUM-68: evidencias probatorias de la firma — { v, canal(remoto|in_situ), firmadoAt, ip, ua,
   // tokenId, firmante, hashAlg, contentHash }. El hash es del CONTENIDO canónico (no del PDF, §1.3).
   // ⚠️ IP y UA son datos personales → viven SOLO aquí; NUNCA se exponen (ni PDF, ni HTML público,
   // ni serializer/API del cliente). Aditivo, Json nullable.
-  evidenciaFirma Json?   @map("evidencia_firma")
-  notas        String?   @db.Text
-  pdfUrl       String?   @map("pdf_url")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt      @map("updated_at")
+  evidenciaFirma     Json?     @map("evidencia_firma")
+  notas              String?   @db.Text
+  pdfUrl             String?   @map("pdf_url")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
   // SCRUM-17 (FISCAL-2): factura recapitulativa que consolidó este albarán (null = no facturado).
   // El badge "Facturado" se DERIVA de invoiceId != null (sin flag manual; FSM Parte L intacta, regla 27).
-  invoiceId    Int?      @map("invoice_id")
-  claveIdempotencia String? @map("clave_idempotencia") @db.VarChar(64)
+  invoiceId          Int?      @map("invoice_id")
+  claveIdempotencia  String?   @map("clave_idempotencia") @db.VarChar(64)
 
   @@unique([merchantId, claveIdempotencia])
   @@unique([merchantId, numero])
