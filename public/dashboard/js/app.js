@@ -59,6 +59,11 @@ async function initApp() {
   // viajaban con los cobros, la barra de filtros desaparecía si la red fallaba, y esa pantalla es
   // el dinero del negocio.
   window.appCobrosCubos = Array.isArray(me.cobrosCubos) ? me.cobrosCubos : [];
+  // SCRUM-441 · los metodos que el profesional puede DECLARAR al marcar cobrada a mano. Derivados
+  // de PAID_VIA en el servidor, igual que los cubos de arriba y por el mismo motivo: el navegador
+  // no decide que metodos existen. Vacio si no llegan, y entonces el selector no se pinta — que es
+  // exactamente el comportamiento de hoy, sin selector.
+  window.appMetodosDeclarables = Array.isArray(me.metodosDeclarables) ? me.metodosDeclarables : [];
 
   // A10.2 (Parte L): past_due → banner global "Hay un problema con tu pago"
   // + portal de Stripe. La cuenta sigue funcionando (gracia); solo avisa.
