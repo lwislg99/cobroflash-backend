@@ -18,6 +18,7 @@ import {
   exigirLibroLegible, filasLibroExpedidas, filasLibroRecibidas, avisosLibroRecibidas,
   type DatosDestinatario, type DatosProveedor, type FilaLibro,
 } from './librosAeat';
+import { criterioDelMerchantParaElLibro } from '../../invoicing/domain/criterioDelMerchant'; // SCRUM-294 fase C
 
 export interface ClienteDeLibros extends ClienteDelLibro {
   customer: { findMany(args: any): Promise<any[]> };
@@ -38,7 +39,9 @@ export async function leerLibroExpedidasDelTrimestre(
   const { desde, hasta } = rangoTrimestre(params.año, params.trimestre);
   const { merchantId } = params;
 
-  const libro = await leerLibroRegistro(db, { merchantId, desde, hasta });
+  // SCRUM-294 (fase C) · el criterio de caja del merchant, igual que en el 303.
+  const criterio = await criterioDelMerchantParaElLibro(db as never, merchantId);
+  const libro = await leerLibroRegistro(db, { merchantId, desde, hasta, ...criterio });
   // El suelo va ANTES de mirar los asientos: si el libro no se pudo leer, no se resuelve ningún
   // cliente ni se emite nada. Ver `exigirLibroLegible`.
   exigirLibroLegible(libro);

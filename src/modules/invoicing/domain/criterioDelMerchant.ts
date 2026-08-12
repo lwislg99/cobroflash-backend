@@ -49,7 +49,10 @@ export interface MerchantParaCriterio {
  *
  * @throws si el merchant no se pudo leer. NO devuelve `{}`: ver el suelo, arriba.
  */
-export function criterioParaElLibro(
+// NO SE EXPORTA: su superficie publica es `criterioDelMerchantParaElLibro`, que es lo que llaman
+// los tres repos del libro. Exportarla ademas dejaba una puerta que nadie de fuera usa —lo cazo el
+// censo de SCRUM-411— y hacia que su test midiera un ayudante interno en vez del contrato.
+function criterioParaElLibro(
   merchant: MerchantParaCriterio | null | undefined,
 ): { criterioCaja?: boolean } {
   if (merchant === null || merchant === undefined) {
@@ -69,4 +72,27 @@ export function criterioParaElLibro(
   // Y un valor que no es booleano tampoco se interpreta: se deja pasar TAL CUAL para que
   // `campoDeDevengo()` —que ya sabe rechazarlo— lance. Traducirlo aquí sería decidir dos veces.
   return { criterioCaja: declarado };
+}
+
+/** Lo mínimo que hace falta del cliente de datos. Tipar de más ataría esto a Prisma. */
+export interface ClienteParaCriterio {
+  merchant: { findUnique: (args: { where: { id: number } }) => Promise<unknown> };
+}
+
+/**
+ * LEE el criterio del merchant y devuelve lo que se le añade al rango del libro.
+ *
+ * ⚠️ Se lee la fila ENTERA a propósito, sin `select`: mientras la columna no esté en el modelo de
+ * Prisma, un `select: { criterioCaja: true }` fallaría. Sin `select`, esto funciona HOY —devuelve
+ * `{}`, o sea el comportamiento de siempre— y empieza a funcionar solo el día que el campo entre en
+ * `schema.prisma`, sin tocar ni una línea más.
+ *
+ * @throws si el merchant no existe. Ver el suelo: no se degrada a «sin criterio de caja».
+ */
+export async function criterioDelMerchantParaElLibro(
+  db: ClienteParaCriterio,
+  merchantId: number,
+): Promise<{ criterioCaja?: boolean }> {
+  const fila = await db.merchant.findUnique({ where: { id: merchantId } });
+  return criterioParaElLibro(fila as MerchantParaCriterio | null);
 }
