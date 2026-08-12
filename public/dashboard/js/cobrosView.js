@@ -186,9 +186,13 @@ function renderCobrosView(container) {
 
   var filtro = 'all';
   var datos = [];
-  // SCRUM-474 fase 2 · los cubos del filtro los manda el servidor, derivados de `PAID_VIA`. Vacío
-  // hasta que llegue la respuesta: mientras tanto solo se ofrece «Todos», que es lo único cierto.
-  var cubos = [];
+  // SCRUM-474 fase 2 · LOS CUBOS DEL FILTRO, derivados de `PAID_VIA` en el servidor (regla 22) y
+  // servidos EN EL ARRANQUE (`/admin/me` → `window.appCobrosCubos`), no con la lista de cobros.
+  //
+  // 🔴 Son CONSTANTES, y por eso no dependen de esta petición: con mala cobertura el profesional
+  // abre Cobros, la lista no llega… y la barra de filtros sigue estando. Cuando los cubos viajaban
+  // dentro de la respuesta, desaparecía — en la pantalla del dinero, justo cuando peor va la red.
+  var cubos = Array.isArray(window.appCobrosCubos) ? window.appCobrosCubos : [];
   // 🔴 SCRUM-448 · EL TERCER ESTADO: «TODAVÍA NO LO SABEMOS».
   //
   // SCRUM-285 separó con cuidado los dos vacíos —«no hay ninguno» y «tu filtro los esconde»— y se
@@ -242,9 +246,10 @@ function renderCobrosView(container) {
     // tenía su propia lista (`COBROS_METODOS`) que decidía qué valor cae en qué cubo: el conjunto
     // cerrado de la regla 22, duplicado donde no lo vigila nadie.
     //
-    // `cubos` llega vacío mientras la respuesta no ha llegado, y entonces solo se pinta «Todos» —
-    // no se inventa una lista de repuesto: un desplegable con opciones que el servidor no ha
-    // confirmado es exactamente la lista a mano volviendo por la puerta de atrás.
+    // Vienen del arranque, así que la barra se pinta ENTERA desde el primer repintado —haya
+    // respuesta o no—. Si el arranque tampoco las trajo, solo sale «Todos»: no se inventa una
+    // lista de repuesto, porque unas opciones que el servidor no ha confirmado son exactamente la
+    // lista a mano volviendo por la puerta de atrás.
     var todos = [{ clave: 'all', rotulo: COBROS_COPY.filtroTodos }].concat(cubos);
     todos.forEach(function (m) {
       var b = document.createElement('button');
@@ -336,7 +341,10 @@ function renderCobrosView(container) {
       //
       // No se pierde nada de lo que hoy se ve, y la asimetría es informativa: ver «· Stripe» en
       // unas filas y no en otras dice de un vistazo cuáles entraron por ahí.
-      tdMetodo.textContent = c.metodoEtiqueta || COBROS_COPY.metodoSinRegistrar;
+      // ⚠️ LA COLUMNA ES DE SCRUM-481 (otro carril, regla 9), y se queda como está en `main`. Que
+      // aquí ponga «card:stripe» mientras el filtro de arriba dice «tarjeta» es SU defecto, no el
+      // de este ticket: yo solo agrupo, no traduzco. Tocarla desde aquí sería pisar su rama.
+      tdMetodo.textContent = c.metodo || COBROS_COPY.metodoSinRegistrar;
       tr.appendChild(tdMetodo);
 
       // DOCUMENTO. El tipo lo dice `tipoDeFactura`, no una copia.
@@ -449,13 +457,11 @@ function renderCobrosView(container) {
     // 🔴 EL DATO GANA AL MENSAJE: si venció el plazo y la respuesta llega DESPUÉS, se pinta y
     // sustituye al aviso. Lo que vence no puede acabar contándose como «no hay cobros» — eso es el
     // defecto entero de SCRUM-448, y colarlo por la puerta del plazo sería reintroducirlo.
-    // SCRUM-474 fase 2 · la respuesta pasa de array a `{ cobros, cubos }`. Se acepta también el
-    // array por si un despliegue deja el front por delante del servidor un rato: en ese caso hay
-    // cobros y NO hay cubos, así que solo se pinta «Todos» — que es verdad, no una lista inventada.
-    datos = Array.isArray(r) ? r : (Array.isArray(r && r.cobros) ? r.cobros : []);
-    cubos = (r && Array.isArray(r.cubos)) ? r.cubos : [];
+    // SCRUM-474 fase 2 · la respuesta sigue siendo un ARRAY: los cubos del filtro no viajan aquí,
+    // llegan en el arranque. Son constantes, y meter un dato constante en el sobre de uno variable
+    // es lo que dejaba la pantalla del dinero sin filtros cuando la red fallaba.
+    datos = Array.isArray(r) ? r : [];
     estado = 'listo';
-    pintarFiltros();
     pintarFilas();
   }).catch(function () {
     pintarNoSePudo();

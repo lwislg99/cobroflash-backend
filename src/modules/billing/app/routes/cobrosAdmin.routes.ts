@@ -8,15 +8,6 @@
 import { Router } from 'express';
 import { requireRole } from '../../../../core/http/authMiddleware';
 import { listarCobros } from '../../domain/cobros.service';
-import { cubosDeMetodo } from '../../domain/metodoDeCobro';
-
-/**
- * El rótulo del cubo de «no consta», APROBADO por el asesor el 10-ago-2026 (regla 30).
- *
- * NO es «Otro»: «otro» AFIRMA que hubo un método distinto, y aquí no consta ninguno. Viaja desde
- * aquí para que la vista no tenga que conocer ni un texto de esta clasificación.
- */
-const ROTULO_SIN_METODO = 'Método no registrado';
 
 const router = Router();
 
@@ -34,16 +25,20 @@ const router = Router();
 router.get('/', requireRole('admin'), async (req, res) => {
   try {
     const cobros = await listarCobros((req as { merchantId: number }).merchantId);
-    // SCRUM-474 fase 2 · LOS CUBOS VIAJAN CON LOS COBROS, y por eso la forma pasa de array a
-    // objeto. Las opciones del filtro son el CONJUNTO CERRADO (`PAID_VIA`), no lo que haya en los
-    // datos: derivarlas de los cobros le quitaría el filtro de Bizum a quien todavía no ha cobrado
-    // por Bizum, y no podría distinguir «no tengo» de «no existe la opción».
+    // 🔴 SCRUM-474 fase 2 · LOS CUBOS NO VIAJAN AQUÍ, y esto es la corrección de un error de
+    // diseño: metí un dato CONSTANTE dentro del sobre de un dato VARIABLE. El conjunto cerrado de
+    // métodos no cambia entre peticiones —es configuración del producto, no parte de una lista— y
+    // por eso se sirve en el ARRANQUE (`/admin/me`), donde ya viajan los rótulos del albarán por
+    // el mismo motivo (SCRUM-300).
     //
-    // Censado por AST ANTES de cambiar la forma: el ÚNICO consumidor es `cobrosView.js:428` —los
-    // otros tres usos de la ruta son el montaje, un log y una URL de mentira en un doble de red—.
-    // Y ese consumidor hace `Array.isArray(r) ? r : []`, así que si alguien no adaptara el front
-    // se quedaría con cero cobros: el cambio no puede pasar desapercibido.
-    res.json({ cobros, cubos: cubosDeMetodo(ROTULO_SIN_METODO) });
+    // Lo que lo decidió: con los cubos aquí, la barra de filtros solo existía si la respuesta
+    // llegaba. Nuestro profesional está en una azotea con una raya de cobertura —el bloque H
+    // entero existe por eso—, y una pantalla de DINERO que se queda sin filtros justo cuando la
+    // red va mal es lo contrario del producto que decimos ser. Lo cazaron los tres SUELOS de
+    // SCRUM-448, que miden la pantalla con la petición en vuelo y tras el fallo.
+    //
+    // La respuesta se queda como estaba —un array—, así que ningún consumidor cambia de forma.
+    res.json(cobros);
   } catch (err) {
     console.error('[GET /admin/cobros]', err);
     res.status(500).json({ error: 'internal_error' });

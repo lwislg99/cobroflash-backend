@@ -282,22 +282,22 @@ export function scriptsDelDashboard(raiz) {
  * @param opciones.rol    `window.appUserRole` (varias vistas se bifurcan por él)
  */
 /**
- * SCRUM-474 fase 2 · `/admin/cobros` devuelve `{ cobros, cubos }`, no un array.
+ * SCRUM-474 fase 2 · LOS CUBOS DEL FILTRO DE COBROS, por donde llegan de verdad.
  *
- * Los tests que ya existían pasan un array de cobros, y seguir sirviéndoselo tal cual haría que
- * midieran una respuesta **que ningún servidor devuelve** — un banco infiel es un verde que no
- * significa nada. Aquí se envuelve, y los cubos salen de `cubosDeMetodo` **importada de `dist`**:
- * la misma función que usa la ruta, no una lista copiada en el banco.
+ * En el producto los recibe `app.js` en el ARRANQUE (`/admin/me`) y los deja en
+ * `window.appCobrosCubos`, así que el banco los pone en el contexto igual. Servirlos con la
+ * respuesta de `/admin/cobros` mediría una pantalla que ningún navegador pinta.
+ *
+ * Salen de `cubosDeMetodo` **importada de `dist`** —la misma función que sirve la ruta—, no de una
+ * lista escrita aquí: un banco con su propia lista es un verde que no significa nada.
  */
-const ROTULO_SIN_METODO_BANCO = 'Método no registrado';
-let _cubosDeMetodo = null;
-function envolverCobros(ruta, datos) {
-  if (!String(ruta).includes('/admin/cobros') || !Array.isArray(datos)) return datos;
-  if (!_cubosDeMetodo) {
-    // eslint-disable-next-line global-require
-    ({ cubosDeMetodo: _cubosDeMetodo } = require('../dist/modules/billing/domain/metodoDeCobro.js'));
+let _cubosDelArranque = null;
+function cubosDelArranque() {
+  if (!_cubosDelArranque) {
+    const m = require('../dist/modules/billing/domain/metodoDeCobro.js');
+    _cubosDelArranque = m.cubosDeMetodo(m.ROTULO_SIN_METODO);
   }
-  return { cobros: datos, cubos: _cubosDeMetodo(ROTULO_SIN_METODO_BANCO) };
+  return _cubosDelArranque;
 }
 
 export function cargarDashboard(raiz, opciones = {}) {
@@ -348,13 +348,13 @@ export function cargarDashboard(raiz, opciones = {}) {
     // MISMA forma que el servidor —y los cubos salen de la MISMA función, importada de `dist`, no
     // de una lista escrita aquí— para que un test que pase un array siga midiendo la pantalla real
     // y no una respuesta que ningún servidor devuelve.
-    apiRequest: async (ruta) => envolverCobros(ruta, typeof opciones.datos === 'function' ? opciones.datos() : (opciones.datos ?? {})),
+    apiRequest: async (ruta) => (typeof opciones.datos === 'function' ? opciones.datos() : (opciones.datos ?? {})),
     // SCRUM-362 (H7): con escenario de red, el `fetch` es el suyo. Sin él, el de siempre —una red
     // que responde bien— para no cambiar lo que ya miden los demás tests.
     fetch: opciones.red?.fetch ?? (async (url, opts) => ({
       ok: true, status: 200,
       headers: { get: () => 'application/json' },
-      json: async () => envolverCobros(String(url), typeof opciones.datos === 'function' ? opciones.datos(String(url), opts) : (opciones.datos ?? {})),
+      json: async () => (typeof opciones.datos === 'function' ? opciones.datos(String(url), opts) : (opciones.datos ?? {})),
       blob: async () => ({}), text: async () => '',
     })),
     setTimeout, clearTimeout, setInterval, clearInterval, queueMicrotask,
@@ -368,6 +368,10 @@ export function cargarDashboard(raiz, opciones = {}) {
     alert() {}, confirm: () => true, prompt: () => null, open: () => ({ focus() {} }),
     matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
     appUserRole: opciones.rol ?? 'admin',
+    // SCRUM-474 fase 2 · lo que `app.js` deja aquí al arrancar. Va SIEMPRE, también con escenario
+    // de red caída: en el producto llega antes de que la vista pida nada, y esa es justamente la
+    // propiedad que los suelos de SCRUM-448 miden — la barra de filtros existe aunque la red no.
+    appCobrosCubos: opciones.cobrosCubos ?? cubosDelArranque(),
   };
   // 🔴 En el navegador `window` ES el objeto global. Sin esto, un `function f(){}` de nivel
   // superior no aparecería en `window` y el banco diría que la vista no publica su función.

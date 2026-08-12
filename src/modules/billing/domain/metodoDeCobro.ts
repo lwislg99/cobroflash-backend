@@ -79,23 +79,19 @@ export function metodoParaAgrupar(valor: unknown): PaidVia | null {
 export const CUBO_SIN_METODO = 'sin-metodo';
 
 /**
- * Los RÓTULOS aprobados por el asesor el 10-ago-2026 (regla 30). No se reescriben aquí.
+ * El rótulo de ese cubo, APROBADO por el asesor el 10-ago-2026 (regla 30).
  *
- * `bizum_auto` y `bizum_manual` comparten el rótulo «Bizum» a propósito: la distinción es NUESTRA
- * —confirmado por la pasarela frente a dicho por el profesional— y el diseño nombra cuatro métodos
- * porque el profesional piensa en cuatro. La distinción no se pierde: se lee en la fila.
+ * NO es «Otro»: «otro» AFIRMA que hubo un método distinto, y aquí no consta ninguno. Vive UNA vez
+ * —lo consumen el arranque y el servicio— porque dos copias de un texto es cómo dos pantallas
+ * acaban llamando cosas distintas a lo mismo.
  */
-const ROTULOS: Readonly<Record<string, string>> = Object.freeze({
-  card: 'tarjeta',
-  bizum_auto: 'Bizum',
-  bizum_manual: 'Bizum',
-  transfer: 'transferencia',
-  cash: 'efectivo',
-});
+export const ROTULO_SIN_METODO = 'Método no registrado';
 
 export interface CuboDeMetodo {
   clave: string;
   rotulo: string;
+  /** En qué posición se pinta en la barra de filtros. Es propiedad DEL CUBO, no del método. */
+  orden: number;
 }
 
 /**
@@ -117,59 +113,64 @@ export interface CuboDeMetodo {
  * «Método no registrado», que es lo que de verdad pasa.
  */
 /**
- * 🔴 EL ORDEN ES PARTE DE LO APROBADO, y no es el de `PAID_VIA`.
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * EN QUÉ CUBO CAE CADA MÉTODO — y ahí dentro, su rótulo y su orden.
  *
- * El diseño §B4 los nombra «Bizum · tarjeta · transferencia · efectivo» y así los aprobó el asesor;
- * `PAID_VIA` empieza por `card` porque su orden responde a otra cosa —el vocabulario fiscal— y no
- * a cómo se le enseñan al profesional. Derivar el orden de ahí cambiaba la barra de filtros sin que
- * nadie lo hubiera decidido, y lo cazó el test de SCRUM-285 que compara la lista carácter a carácter.
+ * 🔴 ESTO NO ES UNA SEGUNDA LISTA DE `PAID_VIA`. Es una TABLA INDEXADA POR ÉL: `Record<PaidVia,…>`
+ * está tipado contra el conjunto, así que si `PAID_VIA` estrena un valor **esto no compila** hasta
+ * que alguien diga en qué cubo cae y en qué orden se pinta. La pertenencia se sigue resolviendo
+ * contra `PAID_VIA` —lo que el guard de SCRUM-473 protege—; aquí solo vive lo que el conjunto NO
+ * sabe: cómo se le enseña al profesional. Un `as const` con los mismos valores sí habría sido la
+ * copia, porque nada lo ataría al original.
  *
- * La PERTENENCIA sigue derivándose de `PAID_VIA`: esto solo dice en qué orden se pintan. Un valor
- * del conjunto que no esté aquí no desaparece — se queda sin sitio en la barra y eso salta abajo.
+ * **El orden es propiedad del CUBO, no del método**, y no es el de `PAID_VIA`: el diseño §B4 los
+ * nombra «Bizum · tarjeta · transferencia · efectivo» y así los aprobó el asesor (regla 30), mientras
+ * que `PAID_VIA` empieza por `card` porque su orden responde al vocabulario fiscal. Derivar el orden
+ * de ahí cambiaba la barra sin que nadie lo hubiera decidido, y lo cazó el test de SCRUM-285 que
+ * compara la lista carácter a carácter.
+ *
+ * Los dos Bizum comparten cubo, rótulo y orden a propósito: la distinción —confirmado por la
+ * pasarela frente a dicho por el profesional— es NUESTRA, y el diseño nombra cuatro métodos porque
+ * el profesional piensa en cuatro. La distinción no se pierde: se lee en la fila.
  */
-const ORDEN_APROBADO = ['bizum_auto', 'bizum_manual', 'card', 'transfer', 'cash'] as const;
+const CUBO_DE: Readonly<Record<PaidVia, CuboDeMetodo>> = Object.freeze({
+  bizum_auto:   { clave: 'bizum',    rotulo: 'Bizum',         orden: 1 },
+  bizum_manual: { clave: 'bizum',    rotulo: 'Bizum',         orden: 1 },
+  card:         { clave: 'card',     rotulo: 'tarjeta',       orden: 2 },
+  transfer:     { clave: 'transfer', rotulo: 'transferencia', orden: 3 },
+  cash:         { clave: 'cash',     rotulo: 'efectivo',      orden: 4 },
+});
 
 export function cubosDeMetodo(rotuloSinMetodo: string): CuboDeMetodo[] {
-  const vistos = new Set<string>();
-  const out: CuboDeMetodo[] = [];
-  // Se recorre el orden aprobado, pero solo entran los que el conjunto cerrado reconoce: si alguien
-  // quita un valor de `PAID_VIA`, su filtro desaparece de la barra en vez de quedarse huérfano.
-  const enOrden = ORDEN_APROBADO.filter((v) => (PAID_VIA as readonly string[]).includes(v));
-  // Y si `PAID_VIA` estrena un valor que nadie ha ordenado, va al final: no se pierde en silencio.
-  const sinOrdenar = (PAID_VIA as readonly string[]).filter((v) => !(ORDEN_APROBADO as readonly string[]).includes(v));
-  for (const via of [...enOrden, ...sinOrdenar]) {
-    const rotulo = ROTULOS[via];
-    if (!rotulo || vistos.has(rotulo)) continue;   // «Bizum» sale una vez, no dos
-    vistos.add(rotulo);
-    out.push({ clave: via === 'bizum_auto' || via === 'bizum_manual' ? 'bizum' : via, rotulo });
+  // Se recorre `PAID_VIA` —el conjunto manda quién existe— y cada valor trae su cubo de la tabla.
+  // Dos métodos que caen en el mismo cubo lo pintan UNA vez: «Bizum» sale una, no dos.
+  const porClave = new Map<string, CuboDeMetodo>();
+  for (const via of PAID_VIA) {
+    const cubo = CUBO_DE[via];
+    if (cubo && !porClave.has(cubo.clave)) porClave.set(cubo.clave, cubo);
   }
-  out.push({ clave: CUBO_SIN_METODO, rotulo: rotuloSinMetodo });
+  const out = [...porClave.values()].sort((a, b) => a.orden - b.orden);
+  // `sin-metodo` va SIEMPRE y el ÚLTIMO: un cobro cuyo método no consta no puede desaparecer de una
+  // pantalla de dinero. No sale de la tabla porque no es un método — es la ausencia de uno.
+  out.push({ clave: CUBO_SIN_METODO, rotulo: rotuloSinMetodo, orden: out.length + 1 });
   return out;
 }
 
 /**
- * A qué cubo cae un cobro, y con qué texto se pinta su celda.
+ * EN QUÉ CUBO CAE UN COBRO — la clave, y solo la clave.
  *
- * 🔴 SCRUM-481 · LA COLUMNA Y EL FILTRO HABLABAN DOS IDIOMAS. La celda enseñaba el valor CRUDO
- * —«card:stripe»— mientras el filtro de al lado decía «tarjeta»: el profesional pulsaba «tarjeta»
- * y le salían filas que ponían `card`. Enseñarle el valor de la columna de la base de datos no es
- * un rótulo que falta: es hablarle en el idioma de la tabla.
+ * Es lo que necesita el filtro: `card` y `card:stripe` devuelven `'card'`, y por eso pulsar
+ * «tarjeta» los trae a los dos. Lo que no se pueda clasificar cae en `sin-metodo` y NO desaparece
+ * de la pantalla.
  *
- * El texto aprobado es «tarjeta · Stripe» cuando hay pasarela y «tarjeta» a secas cuando no. **No
- * se pierde ningún dato que hoy exista**, y la asimetría es informativa: ver «· Stripe» en unas
- * filas y no en otras dice de un vistazo cuáles entraron por ahí.
+ * ⚠️ NO devuelve el texto de la celda. Cómo se PINTA el método —traducir «card:stripe» a algo que
+ * el profesional entienda— es SCRUM-481 y va por otro carril (regla 9): dos ramas escribiendo el
+ * mismo rótulo es exactamente la divergencia que este fichero existe para impedir.
  */
-export function cuboYEtiqueta(valor: unknown, rotuloSinMetodo: string): { cubo: string; etiqueta: string } {
+export function cuboDeCobro(valor: unknown): string {
   const agrupado = metodoParaAgrupar(valor);
-  if (!agrupado) return { cubo: CUBO_SIN_METODO, etiqueta: rotuloSinMetodo };
-
-  const clave = agrupado === 'bizum_auto' || agrupado === 'bizum_manual' ? 'bizum' : agrupado;
-  const rotulo = ROTULOS[agrupado];
-  const pasarela = partirMetodo(valor)?.pasarela ?? null;
-  // La pasarela se enseña con su inicial en mayúscula: es un nombre propio («Stripe»), no una
-  // etiqueta interna. El valor guardado NO se toca — esto es solo cómo se pinta.
-  const bonita = pasarela ? pasarela.charAt(0).toUpperCase() + pasarela.slice(1) : null;
-  return { cubo: clave, etiqueta: bonita ? `${rotulo} · ${bonita}` : rotulo };
+  if (!agrupado) return CUBO_SIN_METODO;
+  return CUBO_DE[agrupado]?.clave ?? CUBO_SIN_METODO;
 }
 
 /**

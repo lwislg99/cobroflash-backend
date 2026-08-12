@@ -59,18 +59,18 @@
 // ninguno es la fecha en que entró el dinero (hallazgo E0 del censo de este mismo ticket), y para
 // la deuda ni siquiera hacen falta.
 import { prisma } from '../../../core/db/prisma';
-import { cuboYEtiqueta } from './metodoDeCobro';
+import { cuboDeCobro } from './metodoDeCobro';
 
 /**
- * El rótulo de «no consta», APROBADO por el asesor el 10-ago-2026 (regla 30). NO es «Otro»:
- * «otro» AFIRMA que hubo un método distinto, y aquí no consta ninguno.
+ * La clave derivada, para que las dos poblaciones pasen por el MISMO sitio.
+ *
+ * 🔴 SE EXPORTA PARA QUE LAS FIXTURES DERIVEN DE ELLA. La de SCRUM-474 construía el cobro a mano y
+ * se quedó atrás en cuanto este serializador estrenó `metodoCubo`: la vista filtraba por un campo
+ * que la fixture no tenía, así que el test veía 0 filas y acusaba al filtro. Una fixture escrita a
+ * mano vuelve a quedarse atrás la próxima vez; una que llama a esta función, no.
  */
-const ROTULO_SIN_METODO = 'Método no registrado';
-
-/** Las dos claves derivadas, para que las dos poblaciones pasen por el MISMO sitio. */
-function cuboYEtiquetaDe(metodo: string | null): { metodoCubo: string; metodoEtiqueta: string } {
-  const r = cuboYEtiqueta(metodo, ROTULO_SIN_METODO);
-  return { metodoCubo: r.cubo, metodoEtiqueta: r.etiqueta };
+export function camposDeMetodo(metodo: string | null): { metodoCubo: string } {
+  return { metodoCubo: cuboDeCobro(metodo) };
 }
 
 /** Un cobro, venga de donde venga. Forma ÚNICA para que la pantalla no sepa de dónde salió. */
@@ -85,19 +85,16 @@ export type Cobro = {
   /** `null` = no consta. NO es «otro»: es que nadie lo registró. Se conserva CRUDO. */
   metodo: string | null;
   /**
-   * SCRUM-474 fase 2 · el método AGRUPADO y su texto, derivados de `PAID_VIA` **en el servidor**.
+   * SCRUM-474 fase 2 · el método AGRUPADO, derivado de `PAID_VIA` **en el servidor**.
    *
-   * El crudo se queda —`card:stripe` no se pierde ni se migra— y al lado viajan las dos cosas que
-   * la pantalla necesita para no decidir nada fiscal: en qué cubo cae y cómo se escribe. Antes la
-   * vista tenía su propia lista de cubos y su propia regla, o sea el conjunto cerrado duplicado en
-   * un sitio donde nadie lo vigila.
+   * El crudo se queda al lado —`card:stripe` no se pierde ni se migra— y esto es lo único que la
+   * pantalla necesita para filtrar sin decidir nada fiscal: en qué cubo cae. Antes la vista tenía
+   * su propia lista de cubos y su propia regla, o sea el conjunto cerrado duplicado en un sitio
+   * donde no lo vigila nadie.
    *
-   * `metodoEtiqueta` es lo que se PINTA (SCRUM-481): «tarjeta · Stripe» con pasarela, «tarjeta»
-   * sin ella. Hasta hoy la celda enseñaba el valor crudo mientras el filtro de al lado decía
-   * «tarjeta» — la pantalla hablaba dos idiomas, y el profesional pulsaba «tarjeta» y veía `card`.
+   * ⚠️ Aquí NO viaja el texto de la celda: cómo se pinta el método es SCRUM-481, otro carril.
    */
   metodoCubo: string;
-  metodoEtiqueta: string;
   estado: string;
   referencia: string | null;
   /** Número del documento, si lo hay. La pantalla lo clasifica con `tipoDeFactura`. */
@@ -210,7 +207,7 @@ export function fundirCobros(entrada: {
     importe: String(ch.amount),
     moneda: ch.currency,
     metodo: ch.method ?? null,
-    ...cuboYEtiquetaDe(ch.method ?? null),
+    ...camposDeMetodo(ch.method ?? null),
     estado: ch.status,
     referencia: ch.reference ?? null,
     numero: null,
@@ -233,7 +230,7 @@ export function fundirCobros(entrada: {
     // `Invoice` no tenga método, el filtro no puede separar una transferencia marcada a mano de un
     // cobro del que de verdad no se sabe nada.
     metodo: null,
-    ...cuboYEtiquetaDe(null),
+    ...camposDeMetodo(null),
     estado: inv.status,
     referencia: null,
     numero: inv.number,
