@@ -8,6 +8,8 @@ import { prisma } from '../../../../core/db/prisma';
 import { handleStripeDispute } from '../../../payments/disputes.service'; // A21.1 (R14)
 import { rewardReferralOnFirstPayment } from '../../../auth/domain/referral.service';
 import { sendFirstPaymentEmail } from '../../../messaging/domain/lifecycle.service';
+// SCRUM-475: un aviso que no sale deja constancia -- y sin poder tumbar la activacion del plan.
+import { conConstancia } from '../../../messaging/domain/avisoConstancia';
 
 export const rawBody = express.raw({ type: 'application/json' });
 export const router = express.Router();
@@ -68,18 +70,26 @@ router.post('/', async (req, res) => {
         const merchantId = Number(s.metadata?.merchant_id);
         const planId = String(s.metadata?.plan || '');
         if (Number.isInteger(merchantId) && planId && s.customer) {
-          await prisma.merchant.update({
+          // SCRUM-475: el `select` es para saber a QUIÉN no se le avisó si el correo no sale. Un
+          // rastro que no identifica el caso no es constancia: es ruido.
+          const activado = await prisma.merchant.update({
             where: { id: merchantId },
             data: { stripeCustomerId: String(s.customer), plan: planId, subscriptionStatus: 'active' }, // A10.2 (L)
+            select: { email: true },
           });
           // Recompensa de referido (mes gratis al referidor) — idempotente
           await rewardReferralOnFirstPayment(merchantId).catch((e) =>
             console.error('[stripe] referral reward:', e?.message),
           );
           // Email de activación "primer pago / bienvenido a Pro" — idempotente
-          await sendFirstPaymentEmail(merchantId).catch((e) =>
-            console.error('[stripe] firstPayment email:', e?.message),
-          );
+          //
+          // SCRUM-475 · ⚠️ SE QUITA EL `await`, Y ES DELIBERADO: el plan ya está activo en la línea
+          // de arriba. Esperar aquí hacía que un correo lento o caído retrasara la respuesta a
+          // Stripe —que reintenta el webhook— por un aviso que no puede deshacer nada. El `.catch()`
+          // que había no sobraba por ser `catch`: sobraba por no dejar constancia de a qué
+          // profesional se le activó el Pro sin decírselo, y por no cubrir el canal del VALOR (el
+          // fallo DEVUELTO sin excepción, que no disparaba ese `.catch` nunca).
+          conConstancia('primer_pago', activado.email ?? '', sendFirstPaymentEmail(merchantId));
         }
       }
 
