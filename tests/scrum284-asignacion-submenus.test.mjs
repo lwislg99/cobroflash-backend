@@ -33,7 +33,11 @@ test('SCRUM-284 · SUELO: el guard tenía campos y submenús que revisar', () =>
   assert.ok(CLAVES.length >= 25,
     `🔴 el censo devolvió ${CLAVES.length} campos (esperados ≥25): el guard estaría dando verde ` +
     'sobre una lista vacía.');
-  assert.equal(SUBMENUS.length, 10,
+  // SCRUM-483 · DIEZ pasan a NUEVE. No se relaja el guard: se re-declara un número que una
+  // DECISIÓN ESCRITA cambió — el veto de `Numeración` está en la descripción de SCRUM-277,
+  // sección «Rótulos · ESTADO CERRADO DE LA APROBACIÓN», que es la fuente soberana. La prueba
+  // de que esto no es aflojar: se puede señalar la decisión. Si no se pudiera, sería aflojar.
+  assert.equal(SUBMENUS.length, 9,
     `🔴 la lista de submenús tiene ${SUBMENUS.length} entradas y el ticket cierra en diez. Si el ` +
     'conjunto cambia, es una decisión de estructura y se anota; no se mueve de refilón.');
   assert.ok(REVISION.asignados >= 22,

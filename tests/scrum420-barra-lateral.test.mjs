@@ -206,7 +206,8 @@ test('SCRUM-420 · ③ `operarios` es excepción CONOCIDA y cita SCRUM-433', () 
 
 test('SCRUM-420 · ④ los submenús de Configuración siguen intactos y alcanzables', async () => {
   const mapa = (await import('../public/dashboard/js/settingsSubmenus.js')).default;
-  assert.equal(mapa.SUBMENUS.length, 10,
+  // SCRUM-483 · nueve, no diez: `Numeración` se retiró por el veto escrito en SCRUM-277.
+  assert.equal(mapa.SUBMENUS.length, 9,
     '🔴 esta barra NO rehace Configuración: los diez submenús de B1 están construidos y ' +
     'alcanzables, y se quedan como están.');
   assert.ok(vistasEnBarra.has('settings'),
