@@ -135,12 +135,29 @@ ${params.description}`;
   const parsed = JSON.parse(jsonMatch[0]);
   if (!Array.isArray(parsed)) throw new Error('ai_invalid_format');
 
-  return parsed.map((l: any) => ({
-    concept: String(l.concept || '').trim(),
-    qty: Math.max(0.01, Number(l.qty) || 1),
-    price: Math.max(0, Number(l.price) || 0),
-    tax: Math.min(1, Math.max(0, Number(l.tax) || 0)),
-  }));
+  return parsed.map((l: any) => {
+    // SCRUM-507 · QUÉ SE INVENTÓ LA IA, DECLARADO — y los VALORES no se tocan.
+    //
+    // El defecto de fondo no es que la cantidad ilegible valga 1: es que **una cantidad propuesta
+    // por la IA es hoy indistinguible de una que escribió el profesional**. Sea cual sea la
+    // decisión (0 · 1 marcado · no proponer la línea), lo primero que hace falta es SABER cuál se
+    // inventó — así que esto se puede construir sin esperar a esa decisión, y no la condiciona.
+    //
+    // ⚠️ Y no es solo `qty`: son TRES. `price` y `tax` caen a 0 por el mismo `|| 0`, en silencio.
+    // El de `tax` es el que más pesa —una línea con IVA ilegible se propone como 0 %— aunque aquí
+    // haya un humano revisando antes de que eso llegue a un documento.
+    const supuestos: Array<'qty' | 'price' | 'tax'> = [];
+    if (!Number.isFinite(Number(l.qty)) || Number(l.qty) <= 0) supuestos.push('qty');
+    if (!Number.isFinite(Number(l.price)) || Number(l.price) < 0) supuestos.push('price');
+    if (!Number.isFinite(Number(l.tax)) || Number(l.tax) < 0) supuestos.push('tax');
+    return {
+      concept: String(l.concept || '').trim(),
+      qty: Math.max(0.01, Number(l.qty) || 1),
+      price: Math.max(0, Number(l.price) || 0),
+      tax: Math.min(1, Math.max(0, Number(l.tax) || 0)),
+      supuestos,
+    };
+  });
 }
 
 // ─── Suggest albarán lines (SCRUM-71 · VOZ-ALB V1) ─────────────────────────
