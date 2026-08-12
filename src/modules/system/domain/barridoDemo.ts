@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // EL DEFECTO, medido y confirmado dos veces
 //
-// `wipeDemo` borraba una lista escrita a mano: **10 de los 21 modelos con `merchantId`**. Los
+// `wipeDemo` borraba una lista escrita a mano: **10 de los 22 modelos con `merchantId`**. Los
 // once que se quedaban fuera —derivación propia sobre `schema.prisma`, y coincide con el delta
 // de SCRUM-310— eran:
 //
@@ -67,7 +67,7 @@ export async function barridoDemo(
     porModelo[modelo] = await contar(prisma, modelo, { charge: { merchantId: demoId } });
   }
 
-  // 2) Los 21 con `merchantId`, en el orden declarado (hijos antes que padres).
+  // 2) Los 22 con `merchantId`, en el orden declarado (hijos antes que padres).
   for (const modelo of ORDEN_BORRADO_MERCHANT) {
     modelos.push(modelo);
     porModelo[modelo] = await contar(prisma, modelo, { merchantId: demoId });

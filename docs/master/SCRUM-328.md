@@ -659,7 +659,7 @@ un número que no significa nada.
   roto: eso lo dice QA, no un grafo.
 
 
----
+
 
 # SCRUM-328 · F1 · EL AVISO DEL FALLO MUDO DE BIZUM
 
@@ -716,3 +716,110 @@ bloque del aviso**, no al fichero.
 `false` y encenderlo es decision de Luis. **Ninguna base consultada. Ninguna cadena de conexion.**
 No se ha tocado `public/index.html`, ni el camino de emision, ni `prisma/schema.prisma`, ni
 `payBizum`, ni la logica de confirmacion, ni `BIZUM_AUTO`.
+=======
+
+# SCRUM-328 · F1 · ¿SE PUEDE ENCENDER `BIZUM_MANUAL_ENABLED` HOY?
+
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-328-bizum-medido` · `HEAD` = `01025aafdb065b682f0da1b70141aa7baebf3a4f` · 2026-08-12T13:52:42+02:00
+**Que se midio:** `src/`, `public/`, `tests/` y `prisma/schema.prisma`. **Ningun flag tocado,
+ninguna base consultada, ni una cadena de conexion en ningun sitio.**
+
+## VEREDICTO, EN UNA LINEA
+
+> ✅ **SE PUEDE ENCENDER.** El camino esta completo de punta a punta y `bizum_manual` ya es un
+> metodo de primera clase del vocabulario de cobros. **Con UNA condicion por merchant, que no es
+> codigo: el telefono Bizum** — sin el, la pagina de pago del cliente **no ofrece Bizum**, y ahi
+> nadie avisa de por que.
+
+---
+
+## 1 · TODO LO QUE HAY DETRAS DEL FLAG, con fichero:linea
+
+| # | donde | que gatea |
+|---|---|---|
+| 1 | `src/core/flags.ts:19` | el default: `false`, «OFF hasta C1-4» |
+| 2 | `src/app.ts:380` | `/admin/me` manda `bizumManualEnabled` al navegador — **el veredicto lo da el servidor, el front no lo reimplementa** |
+| 3 | `src/modules/billing/app/routes/chargesAdmin.routes.ts:30` | `POST /admin/charges/:id/confirm-bizum` → **409 `bizum_disabled`** si esta apagado |
+| 4 | `src/modules/billing/app/routes/payBizum.routes.ts:146` | la pagina de pago por Bizum del CLIENTE (exige ademas telefono) |
+| 5 | `src/modules/billing/app/routes/payInvoice.routes.ts:71` | la opcion «Bizum» en el selector de pago publico (exige telefono **y** importe ≤ 1000 €) |
+| 6 | `src/modules/payments/connect/connect.routes.ts:23` | expone `bizumEnabled` en el estado de Connect |
+| 7 | `public/dashboard/js/app.js:23` | `window.appBizumManualEnabled` — lo que apaga los botones |
+| 8 | `public/dashboard/js/invoiceDetailView.js:487` | boton «Confirmar Bizum» del detalle de factura (doble toque) |
+| 9 | `public/dashboard/js/jobDetailView.js:1612` | el mismo boton en el detalle del Trabajo |
+| 10 | `tests/flags.test.mjs:15,55,57` | que el flag existe, que el env lo enciende y que **el override por merchant gana al env** |
+
+**CONTROL POSITIVO del instrumento:** el mismo barrido encuentra lo gateado por
+`VOICE_QUOTE_ENABLED` en `src/app.ts`, `core/flags.ts`, `public/dashboard/js/aiQuoteAssistant.js` y
+`app.js`. No devuelve cero para otro flag, asi que **el 10 de arriba no es «no supe mirar»**.
+
+**SEGUNDO INSTRUMENTO, para no afirmar la ausencia con uno solo:** el censo de alcance
+(`_alcance-dominio.mjs`) no marca **ningun** modulo de Bizum como inalcanzable — ni
+`payBizum.routes`, ni `chargesAdmin.routes`, ni `paidVia`. Es decir: **no hay motor de Bizum
+huerfano esperando cable.** Los dos instrumentos coinciden.
+
+## 2 · ¿ESTA COMPLETO? — el camino entero, y NO se corta
+
+1. El pro abre la factura o el Trabajo → **el boton existe** si el servidor dijo que si (7, 8, 9).
+2. **Doble toque** → `POST /admin/charges/:id/confirm-bizum` (3): valida tenencia, que el cobro este
+   `pending` y el flag.
+3. Reenvia a `/webhooks/psp` con `method: 'bizum_manual'` **y la fecha declarada** (SCRUM-397).
+4. El webhook marca el cobro `paid` con su instante, dispara la MISMA cadena que un PSP —factura
+   ligada a `paid`, WhatsApp, email, recibo— y recalcula el total cobrado del Trabajo.
+5. **Cobros e Informes lo entienden**: `paidVia.ts:23` declara
+   `['card','bizum_auto','bizum_manual','transfer','cash']`. **`bizum_manual` es un valor de primera
+   clase del vocabulario**, no un desconocido que caiga a un cubo «sin metodo».
+
+**No encontre ningun corte en el camino del pro.** El unico punto donde se cae es **fuera de el**:
+
+🔴 **La pagina de pago del CLIENTE exige `merchants.bizum_phone`** (5, `payInvoice.routes.ts:69-71`:
+cae a `whatsappPhone` si no hay). Sin telefono, **no aparece la opcion Bizum** y el cliente no ve
+por que. Eso no es codigo que falte: es **un dato por merchant**. Y hay un segundo limite escrito
+ahi mismo: **importe ≤ 1000 €**.
+
+## 3 · `BIZUM_AUTO_ENABLED` — son DOS COSAS, no una
+
+**No es el hermano del otro: es otra historia y depende de terceros.** `paidVia.ts:8-16` lo dice:
+`bizum_auto` existe porque la pasarela puede cobrar Bizum **por si sola**, y entonces «nadie
+confirmo a mano» — por eso no se reutilizo `bizum_manual`, que seria **falso**, ni `card`, que era
+el bug. Depende de que la **capability `bizum_payments`** este activa en la pasarela, y eso ademas
+cae bajo la regla 18 (tarjeta/pasarela real solo con Connect activo, hoy `false`).
+
+> **El manual se enciende con una decision nuestra. El automatico depende de un tercero.** Mezclarlos
+> en la misma frase de la landing es parte del problema que destapo la fase 2.
+
+## 4 · ¿QUE SE ROMPE SI SE ENCIENDE?
+
+**Nada que yo haya podido medir, y digo exactamente que mire.** El flag solo **abre** caminos: los
+seis sitios de servidor devuelven hoy 409/ocultan la opcion, y los tres de navegador **no pintan el
+boton**. No hay ninguna rama que cambie de comportamiento *al reves* — ningun `if (!flag)` que haga
+otra cosa distinta de negar.
+
+**Y el riesgo real esta escrito en el propio codigo, no lo invento yo:** `payBizum.routes.ts:7` lo
+declara — **«confirmacion declarativa (como efectivo)»**. El pro confirma que el dinero llego; el
+producto **no lo verifica contra ningun banco**. Eso no se rompe al encenderlo: **es lo que es**, y
+es una decision de negocio, no un defecto.
+
+**Lo que NO puedo contestar sin la base, y no la consulto:** cuantos merchants tienen
+`bizum_phone` puesto. Si un merchant lo enciende sin telefono, **sus clientes no veran Bizum** y el
+pro creera que esta activo.
+
+```sql
+-- ¿Cuantos merchants podrian ofrecer Bizum de verdad el dia que se encienda el flag?
+-- (solo lectura; el fallback a whatsapp_phone esta en payInvoice.routes.ts:69)
+SELECT COUNT(*)                                                        AS merchants,
+       COUNT(bizum_phone)                                              AS con_bizum_phone,
+       COUNT(*) FILTER (WHERE bizum_phone IS NULL AND whatsapp_phone IS NOT NULL) AS solo_con_whatsapp,
+       COUNT(*) FILTER (WHERE bizum_phone IS NULL AND whatsapp_phone IS NULL)     AS SIN_NINGUNO
+FROM   "merchants";
+```
+
+**El que decide es la ultima columna:** esos merchants encenderian el flag y **su cliente seguiria
+sin ver Bizum**.
+
+## 5 · LO QUE NO SE HA HECHO
+
+No se ha encendido ningun flag, en ningun entorno y por ningun medio. No se ha consultado ninguna
+base. No se ha tocado `public/index.html`, el camino de emision, ninguna factura ni
+`prisma/schema.prisma`.
+
+

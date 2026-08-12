@@ -17,6 +17,8 @@ import { conConstancia } from '../../../messaging/domain/avisoConstancia';
 import { esMetodoValido } from '../../domain/metodoDeCobro';
 import { recalcJobCobradoForCharge } from '../../../jobs/domain/job.service'; // SCRUM-13
 import { datosDeCobroPagado, resolverInstanteDeCobro } from '../../domain/instanteDeCobro'; // SCRUM-397
+// SCRUM-502: la guarda de anulada se CONSUME de donde vive, no se reescribe aqui.
+import { puedeCobrarPorPasarela } from '../../../system/invoiceAdmin';
 
 
 const router = Router();
@@ -136,14 +138,24 @@ router.post('/', async (req, res) => {
               ...(linkedQuote ? [{ quoteId: linkedQuote.id }] : []),
             ],
           },
-          select: { id: true, number: true },
+          // SCRUM-502 · el ESTADO entra en el select porque sin el no se puede aplicar la guarda.
+          select: { id: true, number: true, status: true },
         });
         if (linkedInvoice) {
           paidInvoiceNumber = linkedInvoice.number;
+          // 🔴 SCRUM-502 · UNA ANULADA NO VUELVE, TAMPOCO POR AQUI. Este `findFirst` no filtra por
+          // estado, y el enlace sobrevive a la anulacion —anular escribe SOLO `status`—, asi que un
+          // pago que llegue despues resucitaba el documento como COBRADO. Y aqui no pulsa nadie un
+          // boton: se dispara con lo que llegue por la red.
+          //
+          // La guarda va sobre la ESCRITURA y no sobre el `where`: asi lo demas —el numero para la
+          // confirmacion al cliente— se comporta exactamente igual que hoy.
+          if (puedeCobrarPorPasarela(linkedInvoice)) {
           await prisma.invoice.update({
             where: { id: linkedInvoice.id },
             data: { status: 'paid', paidAt: new Date() },
           });
+          }
         }
       } catch (e) {
         console.error('[psp] P0-3 marcar factura pagada (robusto) error', (e as any)?.message || 'error desconocido'); // SCRUM-105
@@ -152,11 +164,16 @@ router.post('/', async (req, res) => {
       // 👇 NUEVO: intentamos emitir / asegurar la factura
         // 👇 NUEVO: intentamos emitir / asegurar la factura
   let invoiceId: number | null = null;
+  // SCRUM-502 · el estado de esa misma factura, para poder aplicar la guarda de anulada abajo.
+  // `ensureInvoiceForCharge` puede DEVOLVER una existente —busca por el evento `invoiced` y por
+  // `quoteId`, las dos SIN filtro de estado (`lib/invoicing.ts`)—, asi que puede ser una anulada.
+  let invoiceEstado: string | null = null;
 
   if (config.AUTO_INVOICE_ON_PAID) {
     try {
       const inv = await ensureInvoiceForCharge(updated.id, prisma);
       invoiceId = inv.id;
+      invoiceEstado = (inv as { status?: string }).status ?? null;
 
       // P0-4: enviar el email de la factura SIEMPRE (sendInvoiceEmail genera el
       // PDF bajo demanda si falta y envía por Resend con adjunto). Antes se
@@ -181,7 +198,8 @@ router.post('/', async (req, res) => {
 
 
         // 👇 NUEVO: si hemos conseguido una factura, la marcamos como PAGADA
-        if (invoiceId) {
+        // 🔴 SCRUM-502 · misma guarda que arriba: una anulada no se marca cobrada.
+        if (invoiceId && puedeCobrarPorPasarela({ status: invoiceEstado ?? '' })) {
           try {
             await prisma.invoice.update({
               where: { id: invoiceId },

@@ -147,7 +147,16 @@ function resFalso() {
  * probar «no se toco nada» — un contador a cero tambien lo da un doble que nadie instalo.
  */
 function doblarCliente(diario, impl = {}) {
-  const modelos = ['merchant', 'customer', 'auditLog'];
+  // 🔴 SCRUM-497 · LOS MODELOS A DOBLAR SE DERIVAN DE `CAMPOS_PERSONALES`, no se escriben aquí.
+  //
+  // Estaban a mano —`['merchant', 'customer', 'auditLog']`— y al añadir `emailMessage` a la lista de
+  // anonimización la ruta llamó a un doble que no existía: el `throw` de abajo la tumbó y este test
+  // dio 500 esperando 200. El criterio era bueno; el FIXTURE estaba atado a la lista de aquel día.
+  //
+  // ⚠️ Se deriva el DOBLE, no la EXPECTATIVA: los `assert.deepEqual(res.body.redactados, …)` siguen
+  // escritos a mano. Derivar también lo esperado haría el test tautológico —cuadraría solo— y
+  // dejaría de avisar el día que cambie QUÉ se redacta, que es lo que hay que vigilar.
+  const modelos = [...new Set([...Object.keys(CAMPOS_PERSONALES), 'auditLog'])];
   const original = {};
   for (const m of modelos) {
     original[m] = prisma[m];
@@ -212,6 +221,8 @@ test('SCRUM-244 · con el nombre escrito: ANOTA primero y redacta despues, en es
     'auditLog.create': async () => ({ id: 1 }),
     'merchant.updateMany': async () => ({ count: 1 }),
     'customer.updateMany': async () => ({ count: 3 }),
+    // SCRUM-497: la supresión también redacta la dirección de `email_messages` (la fila se conserva).
+    'emailMessage.updateMany': async () => ({ count: 5 }),
   });
   try {
     const res = resFalso();
@@ -222,7 +233,11 @@ test('SCRUM-244 · con el nombre escrito: ANOTA primero y redacta despues, en es
       `🔴 el orden real fue ${diario.join(' → ')}. La anotacion va ANTES de tocar un solo dato: si se ` +
       'anotara despues, un fallo a mitad dejaria datos borrados sin constancia de quien lo pidio.');
     assert.ok(diario.indexOf('auditLog.create') < diario.indexOf('merchant.updateMany'));
-    assert.deepEqual(res.body.redactados, [{ modelo: 'merchant', filas: 1 }, { modelo: 'customer', filas: 3 }]);
+    // SCRUM-497: escrito a mano A PROPÓSITO (ver `doblarCliente`). Si mañana cambia QUÉ se redacta,
+    // este aserto tiene que caer y obligar a mirarlo — derivarlo lo volvería tautológico.
+    assert.deepEqual(res.body.redactados, [
+      { modelo: 'merchant', filas: 1 }, { modelo: 'customer', filas: 3 }, { modelo: 'emailMessage', filas: 5 },
+    ]);
   } finally { restaurar(); delete process.env.MERCHANT_DELETE_ENABLED; }
 });
 

@@ -126,8 +126,14 @@ model EmailMessage {
     'exactamente lo que pasa HOY con las doce.');
 
   const texto = mensajeDeViejas(r);
-  assert.match(texto, /src\/app\.ts:\d+  dice 21 y son 22/,
-    `🔴 el rojo no NOMBRA qué frase se quedó vieja ni dónde. Dijo:\n${texto}`);
+  // 🔴 SCRUM-497 · LAS CIFRAS DE ESTE ASERTO SE DERIVAN, y antes estaban escritas a mano
+  // (`dice 21 y son 22`). El día D llegó —`EmailMessage` ya está en el esquema, así que las frases
+  // dicen 22 y el ensayo cuenta 23— y este aserto se quedó viejo: **el mismo defecto que este
+  // fichero existe para cazar, dentro de él**. Derivado del recuento, el ensayo vale en cualquier
+  // árbol; la forma exigida —fichero, línea y «dice X y son Y»— no se relaja.
+  const esperado = new RegExp(`src/app\\.ts:\\d+  dice ${DERIVADO} y son ${DERIVADO + 1}`);
+  assert.match(texto, esperado,
+    `🔴 el rojo no NOMBRA qué frase se quedó vieja ni dónde. Se esperaba ${esperado}. Dijo:\n${texto}`);
   for (const { fichero } of AFIRMACIONES) {
     assert.ok(texto.includes(fichero), `🔴 «${fichero}» no aparece en el rojo del día D.`);
   }
