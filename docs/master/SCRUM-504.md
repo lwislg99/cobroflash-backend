@@ -140,3 +140,124 @@ descuadre entre el papel y la cuenta**, que es peor que el defecto original.
 
 `vat.service.ts` ni ninguna de las otras cuatro · `prisma/schema.prisma` · el sellado · la cadena de
 huellas · el recargo · el criterio de caja · A2.
+
+---
+
+# SCRUM-504 (parte 2) · Arreglado, con GO de regla 38
+
+**POBLACIÓN MEDIDA** · host `DESKTOP-T5MONF5` · `2026-08-12T12:35:00Z`
+
+**Medido contra:** `origin/main` = `bf54914117fb99e596aa7d638c9ebac8ac809564` · 2026-08-12T12:35:00Z
+
+> **GO acotado del fundador**, con su motivo medido: `INVOICING_ES_ENABLED` está en `false` para los
+> 13 merchants de producción, sin un solo override. **No se está sellando nada**, así que el riesgo
+> de tocar la función de la que el sellado saca su base está en su mínimo — y no va a repetirse.
+
+## 1 · Los cinco sitios, y por qué van juntos
+
+La misma línea estaba copiada en cinco: el cálculo del IVA, la factura final, el reparto por tramos
+y **dos veces el PDF** (la fila y el subtotal).
+
+Arreglar solo el cálculo dejaría **el papel enseñando 1 donde la cuenta dice 0**. Eso no es medio
+arreglo: es un descuadre entre el documento que recibe el cliente y el importe que se le cobra —
+**peor que el defecto original**.
+
+## 2 · La semántica NO se ha inventado
+
+`quotesView.js:1079` ya hacía `Number.isFinite(qty) ? qty : 0`. **El dominio se alinea con lo que el
+profesional ya ve.** Ni fallar, ni rechazar la línea: **0**, que es lo que la pantalla dice desde
+antes de este ticket.
+
+## 3 · Una sola fuente, no cinco copias
+
+```ts
+export function cantidadDeLinea(valor: unknown): number {
+  const n = Number(valor);
+  return Number.isFinite(n) ? n : 0;
+}
+```
+
+**Cinco copias de `Number.isFinite` divergirían igual que divergieron las cinco de `|| 1`.** Lo que
+impide que el papel y la cuenta se separen no es que hoy coincidan: es que **solo haya una fuente**.
+Hay guard que lo exige, con su suelo (≥ 5 usos: si alguno deja de llamarla, ese sitio puede volver a
+inventarse la cantidad sin que nadie lo vea).
+
+| Entrada | Antes | Ahora |
+| --- | --- | --- |
+| `1` (una persona) | 1 | **1** |
+| `0` (una persona, a propósito) | 🔴 **1** | **0** |
+| `''` (input rechazado por el navegador) | 🔴 **1** | **0** |
+| `'x'`, `null`, `undefined`, `NaN` | 🔴 **1** | **0** |
+
+## 4 · Los cuatro rojos
+
+| Se rompe… | El guard dice… |
+| --- | --- |
+| vuelve el `\|\| 1` al cálculo | *«SE HA COLADO UN IMPORTE… Base esperada: 200,00 €. Base obtenida: 540,00 €. Diferencia: 340,00 € facturados por una unidad que nadie escribió»* — **nombra la línea y el importe** |
+| 🔴 el PDF vuelve y el cálculo no | *«HA VUELTO UN `\|\| <n>` SOBRE UNA CANTIDAD: pdf.service.ts:225»* — el descuadre papel/cuenta, cazado por fichero y línea |
+| 🔴 el helper deja de respetar el `0` de una persona | *«UN CERO ESCRITO A PROPÓSITO SE ESTÁ CONVIRTIENDO EN OTRA COSA»* |
+| el helper vuelve a confundir vacío con uno | la misma |
+
+## 5 · El control negativo que exigía el ticket, demostrado
+
+El «1» de una persona y el «1» inventado por el `||` **se distinguen dentro del test**:
+
+```
+cantidadDeLinea(1)  === 1     ← el uno de una persona
+cantidadDeLinea('') === 0     ← lo que el || convertía en uno
+assert.notEqual(cantidadDeLinea(''), cantidadDeLinea(1))
+```
+
+Con `||` los dos eran el mismo falsy y acababan en 1: **indistinguibles**. Ese `notEqual` es
+literalmente el ticket.
+
+Y el grande: **una factura normal calcula exactamente lo de antes** — base 850,00, cuota 151,00 y
+sus dos tramos, el mismo caso que ya vigila `scrum294-recargo-caja.test.mjs` sobre el desglose que
+va al XML.
+
+## 6 · El test que justifica el alcance
+
+`PDF y cálculo dan LO MISMO sobre la línea defectuosa`: los dos dan **0,00 €**. Y con una cantidad
+legítima **también coinciden** — sin esa segunda mitad, el test pasaría por dar cero en los dos
+lados sin calcular nada.
+
+## 7 · Los 45 `||`, cerrados
+
+**38 declarados CORRECTOS** con su motivo y no se vuelven a mirar: 33 con defecto `0` —*sustituyen
+un cero por un cero*— y 5 sobre `process.env` —*una env ausente es `''` y debe caer al defecto: ése
+es su contrato*—.
+
+**De los 7 restantes:**
+
+| | |
+| --- | --- |
+| `vat.service.ts` · `finalInvoice.service.ts` · `invoiceLines.service.ts` · `pdf.service.ts` ×2 | ✅ **arreglados aquí** |
+| `modelo303.ts:227` `Math.trunc(params.trimestre) \|\| 1` | ✅ **CORRECTO, declarado**: un trimestre `0` no existe y la línea siguiente lo acota a 1-4 |
+| `ai.service.ts:140` `Math.max(0.01, Number(l.qty) \|\| 1)` | 🔴 **fuera del GO** — ver §8 |
+
+**Total: 44 cerrados, 1 reportado.**
+
+## 8 · 🔴 Reportado y NO arreglado: `ai.service.ts:140`
+
+Queda **fuera del GO**, que cubría los cinco de la línea copiada. Y no es el mismo caso: **inventa**
+una cantidad que el modelo no dio, en una propuesta que un humano revisa en pantalla antes de
+enviarla. Es más suave que el original —hay un par de ojos en medio— pero sigue siendo el mismo
+patrón: `Number('') || 1`.
+
+⚠️ Y hay una consecuencia que conviene ver junta: desde hoy, una línea con cantidad ilegible vale
+**0** en el cálculo y en el PDF, pero si viene de la IA vale **1**. Dos respuestas distintas al mismo
+dato en el mismo producto. Merece su ticket.
+
+## 9 · Lo que este arreglo cambia sin querer, y está bien
+
+`invoiceLines.service.ts:114` tenía justo debajo `if (!Number.isFinite(qty) || qty === 0) return src;`
+— una guarda que **nunca se disparaba**, porque el `|| 1` garantizaba que `qty` jamás fuera 0.
+Ahora sí se dispara: una línea sin cantidad legible deja de usarse para cuadrar el total del tramo,
+que es exactamente lo que esa guarda quería.
+
+## 10 · Lo que NO se ha tocado
+
+El sellado · la cadena de huellas · el XML · la numeración · ninguna otra regla de cálculo ·
+`prisma/schema.prisma` · el recargo · el criterio de caja · A2.
+
+**Suite completa con `main` dentro: 3.513 tests · 3.436 pasan · 0 fallos · 77 saltados.**

@@ -5,6 +5,7 @@ import axios from 'axios';
 import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
 import { invoicesDir } from '../../../../core/storage/dirs';
+import { cantidadDeLinea } from '../../domain/vat.service'; // SCRUM-504: una sola cantidad
 import { getLocale } from '../../../../core/i18n/locales';
 
 /** Descarga el logo del merchant como Buffer para PDFKit.
@@ -221,7 +222,7 @@ export async function generateInvoicePdf(params: {
 
     // Filas
     lines.forEach((l, i) => {
-      const qty    = Number(l.qty)   || 1;
+      const qty    = cantidadDeLinea(l.qty); // SCRUM-504
       const price  = Number(l.price) || 0;
       const taxR   = Number(l.tax)   || 0;
       const lineTotal = qty * price * (1 + taxR);
@@ -260,7 +261,7 @@ export async function generateInvoicePdf(params: {
     const vatMap: Record<string, VatGroup> = {};
     let subtotal = 0;
     lines.forEach((l) => {
-      const qty  = Number(l.qty)   || 1;
+      const qty  = cantidadDeLinea(l.qty); // SCRUM-504
       const p    = Number(l.price) || 0;
       const t    = Number(l.tax)   || 0;
       const base = qty * p;
