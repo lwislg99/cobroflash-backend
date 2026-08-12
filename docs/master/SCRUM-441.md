@@ -210,8 +210,40 @@ test falla si no las ve. Hay además un **control negativo** (escribir el métod
 profesional, leer la columna, o nombrar `charges` en otra sentencia **no** saltan: un guard que grita
 por lo legítimo acaba desactivado) y la **ALLOWLIST vacía y visible**.
 
-### Probado en rojo, por inyección
+### Probado en rojo DOS VECES, por inyección
 
-No basta con que esté verde. Se metió un backfill real en `src/` y se comprobó que el guard cae
-**nombrándolo** — fichero, línea y de dónde copiaba. Ver el bloque de verificación de la sección
-siguiente.
+No basta con que esté verde. Se inyectaron dos backfills **reales**, no fixtures, y en los dos casos
+el guard cayó nombrando fichero, línea y de dónde copiaba:
+
+**① En TypeScript**, en el sitio exacto donde de verdad se escribiría (`invoiceAdmin.ts`, el marcado
+a mano), con la forma más plausible: `paidVia: cargo?.method ?? null`.
+
+```
+rc=1
+🔴 HAY UN BACKFILL DE `paid_via` DESDE `Charge`:
+    src/modules/system/invoiceAdmin.ts:173 · asignación · paidVia: cargo?.method ?? null
+```
+
+**② En SQL, con un fichero de verdad en `docs/sql/`** — y esta segunda inyección se hizo por un
+motivo concreto: la fixture del suelo prueba que el detector *entiende* ese SQL, pero **no** que el
+barrido lo *recoja del disco*. Si `recoger()` no llegara a esa carpeta, el detector estaría bien y el
+guard sería ciego igual.
+
+```
+rc=1
+🔴 HAY UN BACKFILL DE `paid_via` DESDE `Charge`:
+    docs/sql/_rojo-temporal-441.sql:1 · SQL · UPDATE invoices i SET paid_via = c.method
+    FROM charges c WHERE c.id = i.charge_id
+```
+
+Revertidas las dos → rc=0, y el árbol limpio (`git status --porcelain` → 0 líneas).
+
+### Verificación
+
+- `npm test` → **3301 tests, 0 fallos, 77 saltados**, rc leído del propio comando.
+- El guard, solo: **4 tests, rc=0**.
+- **La línea base NO se pudo medir quitando el fichero**, y eso es un hallazgo, no un fallo: al
+  apartarlo, `tests/scrum391-guards-declarados-presentes.test.mjs` se puso rojo con
+  *«SCRUM-441.md declara tests/scrum441-paidvia-sin-copia.test.mjs, que NO está en el árbol»*. La
+  casa ya tiene atada la entrada de máster a su guard. Así que la aportación no se resta de cabeza:
+  se mide corriendo el fichero solo, y son **4**.
