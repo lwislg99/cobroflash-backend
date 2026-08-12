@@ -921,3 +921,27 @@ model AlbaranLineaFacturada {
   @@index([merchantId, invoiceId])
   @@map("albaran_lineas_facturadas")
 }
+
+model EmailMessage {
+  id         Int     @id @default(autoincrement())
+  merchantId Int     @map("merchant_id")
+  customerId Int?    @map("customer_id")
+
+  kind       String                                    // invoice | quote | magic_link | digest | ...
+  toEmail    String  @map("to_email")
+  providerId String? @unique @map("provider_id")       // id de Resend; NULL = no consta
+
+  // ESTADOS_CORREO (constanciaCorreo.ts). `aceptado_*` NO es «entregado».
+  status String  @default("aceptado_sin_identificador")
+  error  String?
+
+  relatedType String? @map("related_type")             // invoice | quote | charge
+  relatedId   Int?    @map("related_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
+
+  @@index([merchantId, createdAt])
+  @@index([relatedType, relatedId])
+  @@map("email_messages")
+}
