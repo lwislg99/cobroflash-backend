@@ -247,3 +247,78 @@ Revertidas las dos → rc=0, y el árbol limpio (`git status --porcelain` → 0 
   *«SCRUM-441.md declara tests/scrum441-paidvia-sin-copia.test.mjs, que NO está en el árbol»*. La
   casa ya tiene atada la entrada de máster a su guard. Así que la aportación no se resta de cabeza:
   se mide corriendo el fichero solo, y son **4**.
+
+---
+
+# Apéndice · CENSO: cuántas puertas hay al estado de cobro de una factura (12-ago-2026)
+
+**Medido contra:** `origin/main` = `934ce4699d2729bb187725106cc7f2dd14f85f06` · 2026-08-12T13:40:00+02:00
+**Rama:** `scrum-441-metodo-en-invoice` · **Ninguna base tocada, tampoco en lectura.**
+
+Encargo: «el censo de escrituras a `Invoice` que NO pasan por `updateInvoiceStatusAdmin`.
+`bulk-paid` es una; quiero saber si hay más puertas al mismo dato».
+
+## 1. El recuento, con los dos instrumentos de acuerdo
+
+| | AST | barrido de texto |
+|---|---|---|
+| escrituras de `Invoice` | **26** | **26** |
+| SQL crudo que escriba `invoices` | **0** | **0** |
+
+Los dos coincidieron **solo después de perseguir una discrepancia**, y merece quedar escrito: el
+primer barrido dio **37**, no 26. La causa no era un hueco del AST sino **mi patrón**, que casaba
+`invoice.updatedAt` y `invoice.createdAt` por prefijo (`invoice\.update` es prefijo de
+`invoice.updatedAt`). Con el paréntesis obligatorio, 26 y 26.
+
+Y las **3 líneas de `$executeRaw`** que el barrido señaló resultaron ser
+`SELECT pg_advisory_xact_lock(...)`: **no escriben nada**. El AST tenía razón; se comprobó en vez de
+suponerlo.
+
+## 2. Las OCHO puertas al estado de cobro, y las SIETE sin reglas
+
+De las 26 escrituras, **8 tocan `status`, `paidAt` o `paidVia`**:
+
+| puerta | qué es | ¿pasa por `updateInvoiceStatusAdmin`? |
+|---|---|---|
+| `system/invoiceAdmin.ts:193` | el marcado a mano | **SÍ — es LA puerta con reglas** |
+| `system/app/routes/invoicesAdmin.routes.ts:382` | `bulk-paid` (`updateMany`) | **NO** |
+| `system/app/routes/invoicesAdmin.routes.ts:791` | cambia `status` | **NO** |
+| `system/app/routes/invoicesAdmin.routes.ts:915` | `create` con `paidAt` | **NO** (nace, no transiciona) |
+| `billing/app/routes/psp.routes.ts:143` y `:186` | pasarela | **NO** |
+| `billing/app/routes/mpWebhook.routes.ts:151` | webhook MercadoPago | **NO** |
+| `invoicing/app/routes/invoice.routes.ts:108` | cobro por pasarela | **NO** |
+
+`updateInvoiceStatusAdmin` es la única que aplica: la guarda de **anulada** (SCRUM-153), la de
+**regla 29** (una factura emitida no se des-paga) y, desde este ticket, el método declarado.
+
+## 3. 🔴 HALLAZGO · `bulk-paid` puede resucitar una factura ANULADA como pagada
+
+Su `where` es:
+
+```ts
+where: { id: { in: ids }, merchantId: req.merchantId, status: { not: 'paid' } }
+```
+
+**`{ not: 'paid' }` incluye `annulled`.** Y el fichero no aplica ninguna guarda de anulada en ese
+bloque (medido: `grep annulled` en el tramo de la ruta → sin coincidencias; el control positivo es
+que esa guarda **sí** existe, cuatro veces, en `invoiceAdmin.ts`).
+
+Es **el mismo defecto que SCRUM-153 cerró** en la puerta de una factura, **todavía abierto en la de
+cien**: un documento dado de baja ante la AEAT, con su registro de anulación sellado y encadenado,
+reapareciendo como cobrado. Y por `updateMany`, sin auditoría por fila.
+
+**NO LO ARREGLO: es STOP CONDITION.** Toca el estado de un documento fiscal ya emitido (regla 29) y
+el arreglo es una decisión del fundador, no un «de paso» dentro del ticket del método.
+
+### Lo que NO está medido, dicho en voz alta
+
+- **No he comprobado si la pantalla deja seleccionar una anulada.** El agujero está en el endpoint,
+  que acepta los `ids` que le manden; que la UI lo ofrezca o no es otra medición.
+- `mpWebhook.routes.ts` y `psp.routes.ts` **no nombran `annulled` ni una vez** (0 coincidencias), así
+  que muy probablemente comparten el agujero. **No lo afirmo**: no he trazado si un webhook puede
+  llegar sobre una factura anulada. Es la siguiente medición, no una conclusión de ésta.
+
+## 4. Siguiente acción concreta
+
+Un ticket para llevar la guarda de anulada a las puertas que no la tienen, empezando por `bulk-paid`
+que es la medida y la más grave (cien filas de golpe). **Gate:** GO del fundador, por regla 29.
