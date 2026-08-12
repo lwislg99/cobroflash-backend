@@ -171,6 +171,30 @@ test('SCRUM-242 · 🔴 el volcado cae en una carpeta que `.gitignore` IGNORA', 
     + `  Líneas parecidas en .gitignore: ${ignore.filter((l) => /backup/i.test(l)).join(' · ') || '(ninguna)'}`);
 });
 
+test('SCRUM-242 · 🛑 producción no se vuelca, y el destino se comprueba VACÍO antes de escribir', () => {
+  const src = leer(ORQ);
+
+  // 🛑 Producción no se toca ni para leer: un volcado se lleva la base de clientes entera a disco.
+  assert.match(src, /parseBDSegura\(urlOrigen\)\.host === PROD_HOST/,
+    '🔴 EL SCRIPT PUEDE VOLCAR PRODUCCIÓN. Basta con que alguien exporte una variable. Un volcado '
+    + 'de prod es una decisión del fundador en cada ocasión, no un efecto de la configuración.');
+  assert.match(src, /parseBDSegura\(urlVerif\)\.host === PROD_HOST/,
+    '🔴 el destino de restauración puede ser producción, y se restaura con `--clean`.');
+
+  // 🔴 Y el que evita lo irreversible: se cuenta ANTES de escribir, y si no está vacío, se para.
+  const iRestore = src.indexOf("pg_restore', ['--clean'");
+  const iCuenta = src.indexOf('const yaHabia = contarTablas');
+  assert.ok(iCuenta > 0, '🔴 no se comprueba si el destino estaba vacío.');
+  assert.ok(iCuenta < iRestore,
+    '🔴 LA COMPROBACIÓN DE «DESTINO VACÍO» VA DESPUÉS DE RESTAURAR. Comprobar después de escribir '
+    + 'no evita nada: `--clean` ya ha borrado lo que hubiera, y eso no se deshace.');
+  assert.match(src, /if \(yaHabia > 0\)[\s\S]{0,200}?abortar\(/,
+    '🔴 se detecta que el destino no estaba vacío y NO se aborta.');
+  assert.match(src, /if \(yaHabia === null\)[\s\S]{0,200}?abortar\(/,
+    '🔴 «no se pudo contar el destino» se está tratando como «estaba vacío». Sin saberlo no se '
+    + 'escribe: `--clean` es destructivo y no se deshace.');
+});
+
 test('SCRUM-242 · SUELO: el orquestador existe y sale con ERROR cuando no puede demostrarlo', () => {
   const src = leer(ORQ);
   assert.ok(src.length > 2000, `🔴 el orquestador tiene ${src.length} caracteres: no se está leyendo.`);
