@@ -8,7 +8,7 @@ import { notFoundPageHtml } from './core/http/publicNotFound';
 import { isFlagEnabled } from './core/flags';
 // SCRUM-300 (C5): microcopy del albarán servida al dashboard vanilla desde su fuente única.
 import { ALBARAN_AYUDAS, ALBARAN_ROTULOS, firmanteCalidadOpciones } from './modules/jobs/domain/albaranFirmante';
-import { cubosDeMetodo, ROTULO_SIN_METODO } from './modules/billing/domain/metodoDeCobro';
+import { cubosDeMetodo, opcionesDeMetodoDeclarable, ROTULO_SIN_METODO } from './modules/billing/domain/metodoDeCobro';
 // ⚠️ FUSIÓN: C5 importaba `puedeCrearFacturaSuelta`, que SCRUM-346 (A0.5) RETIRÓ de `main`.
 // Medido antes de resolver: ya no se exporta, y `appFacturaSueltaDisponible` tiene CERO
 // consumidores en `public/`. No son dos cosas que hagan lo mismo — es una que evolucionó, así
@@ -416,6 +416,11 @@ app.get('/admin/me', async (req, res) => {
     // DINERO que se queda sin filtros justo entonces es lo contrario del producto que decimos ser.
     // Lo cazaron los tres suelos de SCRUM-448, que miden la pantalla con la petición en vuelo.
     cobrosCubos: cubosDeMetodo(ROTULO_SIN_METODO),
+    // SCRUM-441 · LO QUE EL PROFESIONAL PUEDE ELEGIR al marcar una factura cobrada A MANO.
+    // Mismo criterio y mismo sitio que los cubos del filtro: derivado de `PAID_VIA` en el servidor
+    // (regla 22) y servido en el ARRANQUE, porque es CONSTANTE. El navegador no tiene lista propia
+    // de metodos — esa duplicacion es la que SCRUM-474 arranco de `cobrosView.js`.
+    metodosDeclarables: opcionesDeMetodoDeclarable(),
     // A10.2 (Parte L): estado de la suscripción para el banner past_due
     subscriptionStatus: owner ? 'active' : ((session.merchant as any).subscriptionStatus ?? null),
     // SCRUM-313 (D2): ¿todavia se le puede preguntar por su numeracion? Mismo patron que la
