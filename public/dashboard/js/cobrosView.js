@@ -31,8 +31,12 @@
 var COBROS_COPY = {
   titulo: 'Cobros',
   filtroTodos: 'Todos',
+  // 🔴 SCRUM-481 · AQUÍ HABÍA UN SEGUNDO NOMBRE PARA LO MISMO: `metodoSinRegistrar: 'No
+  // registrado'`, que pintaba la columna mientras la pestaña de al lado decía «Método no
+  // registrado». Dos rótulos para el mismo hecho en la misma pantalla es el defecto de este
+  // ticket en miniatura, así que se retira y queda UNO. Si alguien necesita una versión corta,
+  // que se apruebe como tal en vez de renacer por comodidad.
   filtroSinMetodo: 'Método no registrado',
-  metodoSinRegistrar: 'No registrado',
   errorCarga: 'No hemos podido cargar los cobros. Vuelve a intentarlo.',
   vacioSinCobros: 'Todavía no hay cobros registrados.',
   vacioPorFiltro: 'Ningún cobro coincide con este filtro.',
@@ -62,12 +66,29 @@ var COBROS_COPY = {
 };
 
 /**
- * Los filtros de método que pide el diseño: «Bizum · tarjeta · transferencia · efectivo».
- *
- * CUATRO botones, no cinco: `bizum_auto` y `bizum_manual` son una distinción NUESTRA —confirmado
+ * CUATRO cubos, no cinco: `bizum_auto` y `bizum_manual` son una distinción NUESTRA —confirmado
  * por la pasarela frente a dicho por el profesional— y el diseño nombra cuatro métodos porque el
  * profesional piensa en cuatro. La distinción no se pierde: se lee en la fila de cada cobro.
- * Filtrar por cuatro, leer los cinco.
+ * **Filtrar por cuatro, leer los cinco** — y desde SCRUM-481 la fila lo cumple de verdad, con
+ * «Bizum · automático» y «Bizum · manual» (`COBROS_MATICES`). Mientras los dos se leyeron «Bizum»,
+ * esta frase describía un mecanismo que no existía.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * 🔴 ESTA LISTA YA NO PINTA LA BARRA, Y SIGUE HACIENDO TRES COSAS. SCRUM-474 fase 2 se llevó al
+ * servidor quién decide los cubos (`cubosDeMetodo`, derivado de `PAID_VIA`) y en cuál cae cada
+ * cobro (`c.metodoCubo`) — que es lo correcto: el conjunto cerrado de la regla 22 no puede vivir
+ * duplicado en el front. Lo que queda aquí no es aquella copia:
+ *
+ *   ① `casa` — qué valores del conjunto cerrado pertenecen a cada cubo. Es lo que ata
+ *      `tests/scrum474-dos-copias-atadas.test.mjs` contra `PAID_VIA`: si el conjunto crece y esto
+ *      no, sale en rojo. Borrarla apagaría ese guard.
+ *   ② el SUELO de `cuboDeMetodo`, para una fila que llegue sin `metodoCubo` — una respuesta que el
+ *      Service Worker guardó antes del despliegue. Sin él, esos cobros se leerían «Método no
+ *      registrado» teniendo método.
+ *   ③ la GRAFÍA de la columna cuando el arranque no trajo los cubos (ver `rotuloDeMetodo`).
+ *
+ * Los tres son de LECTURA de un dato que ya vino decidido. Ninguno vuelve a ofrecer un filtro que
+ * el servidor no haya confirmado, que es lo que la fase 2 vino a impedir.
  */
 /**
  * SCRUM-451 · EL PLAZO Y EL NÚMERO DE SECUENCIA YA NO VIVEN AQUÍ.
@@ -152,6 +173,129 @@ function cuboDeMetodo(metodo) {
     if (COBROS_METODOS[i].casa.indexOf(base) !== -1) return COBROS_METODOS[i].clave;
   }
   return COBROS_SIN_METODO.clave;
+}
+
+/**
+ * 🔴 SCRUM-481 · LA PASARELA, SIN VOLVER A PARTIR POR «:».
+ *
+ * Ya hay DOS copias contadas de la partición (`partirMetodo` en el servidor y `metodoSinPasarela`
+ * aquí) y el trinquete de `tests/scrum474-dos-copias-atadas.test.mjs` está calibrado en **2 a
+ * propósito**: «un trinquete calibrado de más es un trinquete que autoriza una copia más». Escribir
+ * aquí otro `indexOf(':')` sería la tercera, y no tendría la excusa de la regla 4.
+ *
+ * Así que esto **no parte nada**: le pide la cabeza a `metodoSinPasarela` —la copia declarada— y se
+ * queda con lo que sobra detrás. Si mañana cambia la regla de partición, cambia en un solo sitio y
+ * esto la sigue sin enterarse. **Delegar, que es lo que el mensaje del trinquete pide.**
+ */
+function pasarelaDeMetodo(metodo) {
+  var base = metodoSinPasarela(metodo);
+  if (!base) return null;                       // `card:` incluido: no consta el método, ni pasarela
+  var limpio = String(metodo).trim().toLowerCase();
+  if (limpio.length === base.length) return null;   // venía sin pasarela
+  return limpio.slice(base.length + 1);             // lo de detrás del separador, sea cual sea
+}
+
+/**
+ * Cómo escribe su nombre cada pasarela. **No es la partición ni una tabla de métodos:** el conjunto
+ * de pasarelas es ABIERTO a propósito (`metodoDeCobro.ts`: «inventarlo cerraría la puerta a la
+ * siguiente»), así que aquí solo viven las marcas cuya grafía está aprobada.
+ *
+ * 🔸 Una pasarela que no esté aquí **no se pinta a medias ni se inventa**: se pinta solo el método.
+ * Capitalizar por las bravas daría «Mercadopago», que no es como se escribe la marca — y escribir
+ * `mercadopago` en crudo sería el defecto que este ticket viene a quitar. Queda declarado en la
+ * entrada: la tercera pasarela necesita que se apruebe su grafía, no código nuevo.
+ */
+var COBROS_PASARELAS = { stripe: 'Stripe', mercadopago: 'MercadoPago' };
+
+/**
+ * 🔴 SCRUM-481 · EL MATIZ DE LA CASA — lo que distingue `bizum_auto` de `bizum_manual` EN LA FILA.
+ *
+ * SCRUM-285 dejó esta distinción viviendo justo aquí: «filtrar por cuatro, leer los cinco»
+ * (`COBROS_METODOS`, arriba). Y no es cosmética — `paidVia.ts:17`: «uno lo confirma una PERSONA,
+ * el otro un WEBHOOK. Son dos cadenas de evidencia distintas ante una inspección». Si la columna
+ * los pinta los dos «Bizum», esa frase pasa a ser falsa y el comentario de arriba explica un
+ * mecanismo que ya no existe.
+ *
+ * Grafía aprobada (asesor + fundador, 12-ago-2026): «Bizum · automático» y «Bizum · manual».
+ *
+ * 🔸 Ocupa la MISMA ranura que la pasarela y **gana cuando hay las dos**: la ranura es una sola en
+ * el formato aprobado, y entre la marca de la pasarela y la cadena de evidencia, la que un
+ * inspector pregunta es la segunda. Hoy es una situación imposible —solo `card` lleva pasarela—,
+ * así que esto no elige por nadie: deja dicho qué pasa si algún día llega `bizum_auto:algo`.
+ */
+var COBROS_MATICES = { bizum_auto: 'automático', bizum_manual: 'manual' };
+
+/**
+ * La grafía aprobada de una clave, o `null`. **Solo propiedades PROPIAS y solo cadenas.**
+ *
+ * 🔸 Sin esto, `card:constructor` se leía «tarjeta · function Object() { [native code] }»: un
+ * `mapa[clave]` heredado del prototipo es truthy y se concatenaba tal cual. Medido en este ticket
+ * sobre el código ya mergeado. El valor no puede llegar de un escritor nuestro —`esMetodoValido`
+ * lo rechaza— pero la columna pinta lo que venga en el payload, y una celda de dinero no se pone
+ * a enseñar fontanería de JavaScript el día que alguien escriba por otro camino.
+ */
+function grafiaAprobada(mapa, clave) {
+  if (typeof clave !== 'string') return null;
+  if (!Object.prototype.hasOwnProperty.call(mapa, clave)) return null;
+  return typeof mapa[clave] === 'string' && mapa[clave] !== '' ? mapa[clave] : null;
+}
+
+/**
+ * 🔴 EL RÓTULO DE LA COLUMNA «MÉTODO», DEL MISMO SITIO QUE LA PESTAÑA DE AL LADO.
+ *
+ * Hasta SCRUM-481 la celda pintaba `c.metodo` TAL CUAL: `card:stripe`, `card`, `transfer`. Tres
+ * centímetros más arriba las pestañas ya decían «tarjeta», «transferencia». **La pantalla hablaba
+ * dos idiomas**, y el agravante nació con SCRUM-474: arreglado el filtro, el profesional pulsa
+ * «tarjeta» y las filas que le salen dicen `card`.
+ *
+ * No hay tabla de traducción de métodos. Desde SCRUM-474 fase 2 el rótulo del cubo lo manda el
+ * SERVIDOR (`cubosDeMetodo`, derivado de `PAID_VIA`) y en qué cubo cae cada cobro también
+ * (`c.metodoCubo`). Esta función **consume las dos cosas, no las recalcula**: por eso columna y
+ * pestaña no pueden discrepar — no es que se parezcan, es que es el mismo dato.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * 🔸 EL SUELO ES LOCAL, Y NO ES LA LISTA A MANO POR LA PUERTA DE ATRÁS.
+ *
+ * Si el arranque no trajo los cubos (`/admin/me` viejo o caído) o la fila no trae `metodoCubo`
+ * (respuesta servida por el Service Worker desde antes del despliegue), se cae a `cuboDeMetodo` y
+ * `COBROS_METODOS`, que son de esta casa.
+ *
+ * La barra de filtros hace lo contrario a propósito —sin cubos del servidor solo pinta «Todos»— y
+ * es la decisión correcta ALLÍ: una opción que el servidor no ha confirmado ofrece filtrar por algo
+ * que quizá no existe. **Aquí no se ofrece nada: se describe un dato que el servidor YA mandó.**
+ * Sin suelo, 51 cobros con método conocido se leerían «Método no registrado» — decirle al
+ * profesional que no consta cómo entró su dinero, que es la mentira que este cubo existe para no
+ * contar. Traducir con grafía aprobada un valor confirmado no inventa nada; callarlo sí.
+ *
+ * Formato aprobado (asesor + fundador, 11 y 12-ago-2026): `<método> · <calificador>`, y sin
+ * calificador solo el método. **Nunca «tarjeta · » colgando.** El calificador es la marca de la
+ * pasarela (`tarjeta · Stripe`) o el matiz de la casa (`Bizum · manual`) — una ranura, nunca dos.
+ *
+ * @param metodo  el valor CRUDO del cobro (`c.metodo`), que es de donde sale el calificador
+ * @param cubo    `c.metodoCubo`, la clave que decidió el servidor. Sin ella, se deduce aquí
+ * @param cubos   `window.appCobrosCubos`, los cubos del arranque con su rótulo aprobado
+ */
+function rotuloDeMetodo(metodo, cubo, cubos) {
+  var clave = (typeof cubo === 'string' && cubo !== '') ? cubo : cuboDeMetodo(metodo);
+  if (clave === COBROS_SIN_METODO.clave) return COBROS_SIN_METODO.rotulo;
+
+  var rotulo = null;
+  var lista = Array.isArray(cubos) ? cubos : [];
+  for (var i = 0; i < lista.length; i++) {
+    if (lista[i] && lista[i].clave === clave && typeof lista[i].rotulo === 'string') {
+      rotulo = lista[i].rotulo; break;
+    }
+  }
+  for (var j = 0; !rotulo && j < COBROS_METODOS.length; j++) {
+    if (COBROS_METODOS[j].clave === clave) rotulo = COBROS_METODOS[j].rotulo;
+  }
+  // El suelo del suelo: un cubo que no tiene rótulo en ningún sitio NO se cae a la cadena vacía ni
+  // al valor crudo «por si acaso». Se dice que no consta, que es lo único cierto.
+  if (!rotulo) return COBROS_SIN_METODO.rotulo;
+
+  var calificador = grafiaAprobada(COBROS_MATICES, metodoSinPasarela(metodo))
+    || grafiaAprobada(COBROS_PASARELAS, pasarelaDeMetodo(metodo));
+  return calificador ? rotulo + ' · ' + calificador : rotulo;
 }
 
 /** Días que lleva pendiente. `null` si ya está cobrado: un cobro cobrado no tiene deuda. */
@@ -326,18 +470,22 @@ function renderCobrosView(container) {
         ? fmtMoneyEs(c.importe, c.moneda) : (c.importe + ' ' + c.moneda);
       tr.appendChild(tdImporte);
 
-      // MÉTODO: el valor de la casa TAL CUAL, sin traducir. Traducirlo sería microcopy nueva, y
-      // además `bizum_auto`/`bizum_manual` es la distinción que aquí SÍ se lee.
+      // MÉTODO: el rótulo APROBADO, y sale del MISMO sitio que la pestaña de arriba — `c.metodoCubo`
+      // y `cubos`, los dos del servidor. Ya no se pinta `c.metodo` en crudo: eso era enseñarle al
+      // profesional el valor de la base.
+      //
+      // 🔴 SE LE PASA EL CUBO DEL SERVIDOR, no se recalcula aquí. Desde SCRUM-474 fase 2 quien
+      // decide en qué cubo cae un cobro es `cuboDeCobro` en el servidor, y el filtro de arriba
+      // compara contra ESE campo. Si la columna volviera a deducirlo por su cuenta, tendríamos otra
+      // vez dos cálculos sobre el mismo dato — que es el defecto entero de este ticket, movido de
+      // sitio en lugar de arreglado.
       //
       // `col-hide-mobile`: en la card no hay cabecera que lo explique (el `thead` se oculta a
       // ≤640px), y un `transfer` suelto no dice nada. Es el reparto de la casa — `invoicesView`
       // esconde cuatro y `quotesListView` dos por lo mismo.
       var tdMetodo = document.createElement('td');
       tdMetodo.className = 'col-hide-mobile';
-      // ⚠️ LA COLUMNA ES DE SCRUM-481 (otro carril, regla 9) y se queda EXACTAMENTE como está en
-      // `main`. Que aquí ponga «card:stripe» mientras el filtro de arriba dice «tarjeta» es lo que
-      // arregla ESE ticket, no éste: aquí solo se agrupa, no se traduce.
-      tdMetodo.textContent = c.metodo || COBROS_COPY.metodoSinRegistrar;
+      tdMetodo.textContent = rotuloDeMetodo(c.metodo, c.metodoCubo, cubos);
       tr.appendChild(tdMetodo);
 
       // DOCUMENTO. El tipo lo dice `tipoDeFactura`, no una copia.
@@ -467,8 +615,11 @@ if (typeof window !== 'undefined') {
   window.COBROS_METODOS = COBROS_METODOS;
   window.COBROS_SIN_METODO = COBROS_SIN_METODO;
   window.cuboDeMetodo = cuboDeMetodo;
+  window.rotuloDeMetodo = rotuloDeMetodo;
+  window.COBROS_PASARELAS = COBROS_PASARELAS;
+  window.COBROS_MATICES = COBROS_MATICES;
   window.diasDeDeudaCobro = diasDeDeudaCobro;
 }
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { renderCobrosView, COBROS_COPY, COBROS_METODOS, COBROS_SIN_METODO, cuboDeMetodo, metodoSinPasarela, diasDeDeudaCobro };
+  module.exports = { renderCobrosView, COBROS_COPY, COBROS_METODOS, COBROS_SIN_METODO, cuboDeMetodo, metodoSinPasarela, pasarelaDeMetodo, rotuloDeMetodo, COBROS_PASARELAS, COBROS_MATICES, diasDeDeudaCobro };
 }
