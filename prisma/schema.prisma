@@ -168,6 +168,24 @@ model Customer {
   // escribe de vuelta a la BD. Editable en la ficha del cliente, sin banner ni prompt forzado.
   tipoDestinatario String? @map("tipo_destinatario")
 
+  // SCRUM-294-a (A3) · REGIMEN DE RECARGO DE EQUIVALENCIA DEL CLIENTE.
+  //
+  // `Boolean?` SIN `@default`, y es la decision entera: un `@default(false)` convertiria a TODOS
+  // los clientes de hoy en «declarado que NO lo lleva», y eso no lo ha dicho nadie. Los tres
+  // estados son nativos del tipo:
+  // NULL  = no consta (todos los clientes existentes)
+  // false = el profesional declara que NO
+  // true  = el profesional declara que SI
+  //
+  // La columna `recargo_equivalencia` YA EXISTE en produccion y staging (verificado por
+  // information_schema): esto es el esquema poniendose al dia, no una migracion.
+  //
+  // 🛑 NO ESTA CABLEADA AL TOTAL, y no es un olvido: el recargo cambia lo que el cliente paga
+  // —base + cuota + recargo— y por tanto el numero que se SELLA. Eso es camino de emision
+  // (regla 38) y no entra con este dato. El calculo existe y espera en
+  // `invoicing/domain/recargoEquivalencia.ts`.
+  recargoEquivalencia Boolean? @map("recargo_equivalencia")
+
   /// SCRUM-171b (FACT-2d): periodicidad PACTADA de facturación — `NINGUNA | QUINCENAL | MENSUAL`.
   ///
   /// SIRVE PARA AVISAR, NO PARA FACTURAR SOLO. Decisión del fundador (27-jul-2026): un cron que

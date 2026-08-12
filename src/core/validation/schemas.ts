@@ -221,6 +221,11 @@ export const customerCreateSchema = z.object({
   // para facturar sola (regla 28: un envío automático nuevo exigiría su entrada en la tabla J6).
   // Lista cerrada aquí; el default de la BD es 'NINGUNA' = sin aviso, que es lo de hoy.
   billingPeriodicity: z.enum(['NINGUNA', 'QUINCENAL', 'MENSUAL']).optional(),
+  // SCRUM-294-a (A3): recargo de equivalencia del CLIENTE. `nullable().optional()` da los tres
+  // estados sin inventar ninguno: ausente = no se toca · null = no consta · true/false = declarado.
+  // 🔴 Nunca se coacciona a false: false es un valor LEGITIMO («declara que no»), asi que degradar
+  // a false una lectura fallida seria el peor sitio para hacerlo — nadie notaria el fallo (SCRUM-271).
+  recargoEquivalencia: z.boolean().nullable().optional(),
 });
 
 export const customerUpdateSchema = customerCreateSchema.partial();
