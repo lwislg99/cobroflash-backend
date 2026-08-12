@@ -315,3 +315,28 @@ cadena de conexión en ningún sitio, ni real ni de ejemplo.
 
 **Y hay un guard que lo sostiene**: `vat.service.ts` no puede mencionar los suplidos en su código —
 con el suelo que exige que, al quitarle los comentarios, siga quedando código que mirar.
+
+## 9 · Los cinco rojos, con el SHA de la red puesta antes de saltar
+
+**Commit previo a cualquier inyección: `c42de52b28b6122026d5525523ee9f2af915a9c8`** — empujado, así
+que ninguna de las cinco mutaciones podía costar trabajo. El arnés **falla si no encuentra su ancla**
+(la cuenta y exige exactamente una), y después comprueba que la mutación **está dentro del fichero**;
+en las cuatro de TypeScript, además, dentro del `dist/` recompilado. Un rojo que se «aplica» sin
+cambiar el comportamiento no es un rojo.
+
+| # | Se rompe… | Y el test dice… |
+| --- | --- | --- |
+| 1 | el suplido entra en la base imponible | *«SE HA COLADO UN SUPLIDO EN LA BASE IMPONIBLE DE F-2026-0041 · Base esperada 800,00 €. Base obtenida 850,00 €. Diferencia: 50,00 €»* — **nombra la factura, el concepto y el importe** |
+| 2 | una marca ilegible pasa por «no es suplido» | *«la marca "sí" se ha interpretado en vez de declararse ilegible»* |
+| 3 | el total se come el suplido (regla ③) | *«EL TOTAL DE F-2026-0041 NO INCLUYE EL SUPLIDO · pide 50,00 € menos de los que el profesional ha adelantado»* |
+| 4 | el front deja de forzar `tax: 0` | *«una línea marcada como suplido ha salido hacia el servidor con IVA 0.21»* |
+| 5 | se quita `suplido` del schema de zod | **no compila**: `TS2339: Property 'suplido' does not exist` |
+
+El 5 salió más fuerte de lo previsto: quitar la marca del validador **ni siquiera llega a
+ejecutarse**, porque el `superRefine` que la lee deja de tipar. Aun así, la frase que justificaba el
+campo —«zod borra en silencio lo que no declara»— **no se queda en prosa**: hay una aserción
+permanente que mete una clave inventada y comprueba que desaparece del resultado. El mecanismo se
+demuestra, no se afirma.
+
+**Cada rojo se revirtió reescribiendo y recompilando**, y con `git diff` vacío contra el commit de
+arriba antes de pasar al siguiente.

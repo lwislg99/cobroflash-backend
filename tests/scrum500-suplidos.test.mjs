@@ -382,6 +382,17 @@ test('SCRUM-500 · 🔴 LA PUERTA · el servidor rechaza un suplido con IVA, y l
     '🔴 el validador ha BORRADO la marca de suplido. zod quita las claves que no conoce, así que '
     + 'declararla no es cosmética: es lo único que hace que la casilla sirva para algo.');
 
+  // Y el MECANISMO de esa frase, demostrado en vez de afirmado: una clave que NO está declarada
+  // desaparece sin decir nada. Ése es exactamente el destino que tendría la marca si alguien la
+  // quitara del schema — no un error, no un aviso: se esfuma entre la pantalla y la base.
+  const conIntrusa = CreateQuoteSchema.parse({
+    ...base,
+    lines: [{ ...base.lines[0], inventada: true }],
+  });
+  assert.equal(conIntrusa.lines[0].inventada, undefined,
+    '🔴 zod ha dejado pasar una clave no declarada: entonces el motivo por el que `suplido` está '
+    + 'en el schema no es el que dice el comentario, y hay que volver a mirarlo.');
+
   // ② Y un suplido con IVA se rechaza EN LA PUERTA. El front ya fuerza `tax: 0`, pero el front no
   // es el único que llama a esta ruta.
   const conIva = { ...base, lines: [{ ...base.lines[0], tax: 0.21 }] };
