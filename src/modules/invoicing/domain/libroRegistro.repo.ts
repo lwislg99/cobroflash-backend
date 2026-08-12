@@ -35,6 +35,8 @@ import {
   type FacturaParaLibro,
   type AlbaranVivo,
 } from './libroRegistro';
+// SCRUM-294 (fase B): qué fecha devenga. Se importa el criterio, no se copia la regla.
+import { campoDeDevengo, CAMPO_EMISION } from './devengoPorCaja';
 
 /**
  * Lo mínimo del cliente Prisma que el lector usa. Se pide por parámetro (no se importa el
@@ -51,6 +53,17 @@ export interface RangoLibro {
   merchantId: number;
   desde?: Date;
   hasta?: Date;
+  /**
+   * SCRUM-294 (fase B) · la configuración de criterio de caja **del merchant**, tal cual se lea.
+   *
+   * **AUSENTE** = no se preguntó, y el libro se comporta como siempre: por fecha de emisión. Es el
+   * estado de hoy, porque la columna del merchant todavía no existe (ver la entrada del ticket).
+   *
+   * **PRESENTE** = se preguntó, y entonces manda `campoDeDevengo()`: si el valor no se puede leer,
+   * **LANZA**. No se degrada a emisión — «sin criterio de caja» es un valor legítimo y degradar a
+   * él esconde el fallo para siempre.
+   */
+  criterioCaja?: unknown;
 }
 
 /** Las columnas que el libro necesita. Explícitas: un `select` abierto traería la firma. */
@@ -59,6 +72,9 @@ const CAMPOS_FACTURA = {
   merchantId: true,
   number: true,
   createdAt: true,
+  // SCRUM-294 (fase B): la fecha del COBRO. Es la que devenga con criterio de caja, y sin traerla
+  // no se puede decidir en qué trimestre cae la factura de un merchant acogido al RECC.
+  paidAt: true,
   type: true,
   total: true,
   currency: true,
@@ -83,15 +99,25 @@ export async function leerLibroRegistro(
   if (rango.desde) fecha.gte = rango.desde;
   if (rango.hasta) fecha.lte = rango.hasta;
 
+  // 🔴 SCRUM-294 (fase B) · QUÉ FECHA DECIDE EL TRIMESTRE.
+  //
+  // Con criterio de caja, el IVA se devenga al COBRAR: una factura emitida en un trimestre y
+  // cobrada en otro declara en el del cobro. Aquí eso es, literalmente, por qué columna se filtra.
+  //
+  // Si nadie pregunta por el criterio (`criterioCaja` ausente) se filtra por emisión, que es lo que
+  // este libro ha hecho siempre. Si alguien pregunta, manda `campoDeDevengo` — y una lectura
+  // fallida LANZA en vez de caer a emisión.
+  const campo = 'criterioCaja' in rango ? campoDeDevengo(rango.criterioCaja) : CAMPO_EMISION;
+
   const facturas = (await db.invoice.findMany({
     where: {
       merchantId: rango.merchantId,
-      ...(Object.keys(fecha).length > 0 ? { createdAt: fecha } : {}),
+      ...(Object.keys(fecha).length > 0 ? { [campo]: fecha } : {}),
     },
     select: CAMPOS_FACTURA,
     // Por fecha y, a igualdad, por número: dos facturas del mismo día tienen que salir en el
     // orden en que se emitieron, que es el de la serie.
-    orderBy: [{ createdAt: 'asc' }, { number: 'asc' }],
+    orderBy: [{ [campo]: 'asc' }, { number: 'asc' }],
   })) as unknown as (FacturaParaLibro & { id: number })[];
 
   const idsFactura = facturas.map((f) => f.id).filter((n) => typeof n === 'number');

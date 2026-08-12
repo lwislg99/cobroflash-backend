@@ -243,7 +243,16 @@ test('SCRUM-294 · nadie los llama todavía, y eso es el estado correcto', () =>
         // Y el falso positivo no era ruido: empujaba a romper algo para callarlo, y lo único
         // «rompible» era justo lo que la regla 38 prohíbe tocar. Un guard atado a la FORMA
         // (mencionar) se cae con cualquier cambio correcto; atado al HECHO (importar), no.
-        const importa = /(?:from|import|require)\s*\(?\s*['"][^'"]*\/(?:recargoEquivalencia|criterioCaja)['"]/.test(c);
+        // ⚠️ SCRUM-294 (fase B) · `criterioCaja` SALE de esta vigilancia, con GO del fundador
+        // (12-ago-2026) y EN EL MISMO COMMIT que su cableado, como pedía el mensaje de abajo.
+        //
+        // El motivo por el que estaba aquí no le aplicaba: enchufar el RECARGO cambia el TOTAL que
+        // se sella y el XML del desglose —las dos cosas STOP—, pero el criterio de caja **no toca
+        // ninguna de las dos**. Solo decide POR QUÉ FECHA se agrupa una factura ya emitida: el
+        // número sellado no se mueve ni un céntimo, y ninguna factura se emite ni se reescribe.
+        //
+        // `recargoEquivalencia` se queda vigilado, y esa mitad no se ha tocado.
+        const importa = /(?:from|import|require)\s*\(?\s*['"][^'"]*\/recargoEquivalencia['"]/.test(c);
         if (importa) llamadores.push(path.relative(RAIZ, p).replace(/\\/g, '/'));
       }
     }
