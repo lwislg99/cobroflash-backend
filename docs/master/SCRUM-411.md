@@ -773,3 +773,196 @@ para qué se escribió**: ni código vivo, ni test, ni documento lo nombran en t
 * `tests/scrum411-exports-inalcanzables.test.mjs` — se le AÑADE la segunda población; el tope de 8 y
   todo lo anterior quedan sin tocar.
 * `docs/master/SCRUM-411.md` — este apéndice.
+
+---
+
+# APÉNDICE · SCRUM-411 (fase 2b) — ¿llega desde una entrada viva? Y una etiqueta mía que estaba mal
+
+**Medido contra:** `origin/main` = `3cbf6794199525956d9b4a7893a4596136f8b189` · 2026-08-12T10:21:07+01:00
+**Fecha:** 12-ago-2026 · **Carril:** guards · **Gate:** sin gate, corre en `npm test`
+**Cero cables, cero borrados, cero schema.** Esto contesta una pregunta y corrige una clasificación.
+
+**Paso 0:** cuatro worktrees. La rama del otro equipo que mide lo mismo es
+`scrum-485-borrar-cuenta`, último commit `e4a8f0b7` (Luis, 2026-08-12 09:26:50 +0100). `main` al
+ramificar `db820c35`, al cerrar `3cbf6794`.
+
+---
+
+## 1 · 🔴 LA PREGUNTA: `ensureReferralCode` SÍ es alcanzable
+
+`ensureReferralCode` no lo importa nadie, pero lo llama por dentro `getReferralStats`. La pregunta
+era si **ese llamador** está vivo: si estuviera muerto, la cadena entera lo estaría y **el defecto
+existiría** — un merchant antiguo no obtendría nunca su código de referido.
+
+**No es el caso.** La cadena, medida y nombrada entera para que se pueda contrastar:
+
+```
+src/app.ts                                   ← entrada viva
+  └─ app.get('/admin/referral', …)           ← ruta MONTADA (app.ts:498)
+       └─ getReferralStats                   ← único importador: src/app.ts (app.ts:104)
+            └─ ensureReferralCode            ← llamada interna (referral.service.ts:42)
+```
+
+El código de referido se genera con **backfill perezoso** la primera vez que el profesional abre
+Configuración → Referidos. **No hay ticket que abrir.**
+
+### «Entrada viva», definido ANTES de contestar
+
+| | Entrada | Por qué |
+|---|---|---|
+| ① | `src/index.ts` | el arranque del proceso, y donde se registran los crons |
+| ② | `src/app.ts` | donde se montan las rutas |
+| ③ | los `scripts/*.mjs` que **`package.json` declara** | derivados del `package.json`, no listados a mano: un script que nadie invoca sigue muerto |
+
+**`tests/` NO es una entrada viva.** Y es **la misma definición** que ya usaba la primera población
+(`ENTRADAS` + `entradasDeComando` de `_alcance-dominio.mjs`), reutilizada a propósito: si dos
+mediciones partieran de entradas distintas, comparar sus números no significaría nada.
+
+## 2 · El método, con el detalle para poder arbitrarlo contra otra medición
+
+`tests/_alcance-desde-entradas.mjs`. Tres pasos:
+
+1. **Qué ficheros toca el proceso.** BFS desde las entradas vivas siguiendo imports estáticos,
+   dinámicos y las traducciones `dist/**.js → src/**.ts` (se reutiliza `importsDe`, no se reescribe).
+2. **Qué exports ata un fichero alcanzable.** 🔴 Aquí está lo que afina: cada import se resuelve a
+   **(módulo, nombre)**, y se exige además que el nombre **se USE en el cuerpo** del importador.
+3. **Qué llama eso por dentro.** Propagación por el grafo interno del fichero desde los exports que
+   entraron por (2). Este tercer paso es el que contesta la pregunta de `ensureReferralCode`.
+
+### 🔴 Por qué hacía falta un instrumento nuevo y no valía el de 411
+
+`_alcance-dominio.mjs` indexa los importadores **por NOMBRE, global**: un export `X` de A cuenta
+como vivo si algún fichero alcanzable importa un nombre `X` **de donde sea**, aunque sea de B.
+
+Para su pregunta —«¿hay un huérfano nuevo?»— ese sesgo **sobre-marca vivos**, así que nunca inventa
+deuda: es un sesgo seguro, y por eso **su guard no se toca** (regla 9; se AÑADE un instrumento).
+Para *esta* pregunta el mismo sesgo es el peligroso, porque diría «alcanzable» de una cadena muerta.
+
+### 🔴 El suelo es un TERCER veredicto, no un booleano
+
+`ALCANZABLE` · `NO_ALCANZABLE` · **`NO_SE_PUDO_DETERMINAR`**.
+
+Un `import * as`, un `export * from` o un import dinámico no dicen **qué** nombres se usan. Ahí el
+instrumento dice que no sabe. **«No se pudo determinar» y «no es alcanzable» son opuestos**, y
+confundirlos fabrica un defecto que no consta.
+
+**Control real, no sintético:** el falso positivo ya conocido —`sendQuoteEmail`, que llama
+`quotesAdmin.routes.ts` por import dinámico— sale **`NO_SE_PUDO_DETERMINAR`**. Si saliera
+`NO_ALCANZABLE`, el instrumento estaría afirmando que un correo de presupuesto no se manda.
+
+### Los números
+
+| | |
+|---|---|
+| exports censados en `src/` | **800** |
+| ficheros alcanzables desde entradas vivas | **240** |
+| `ALCANZABLE` · `NO_ALCANZABLE` · `NO_SE_PUDO_DETERMINAR` | **690 · 108 · 2** |
+| de los **192** huérfanos declarados | 158 alcanzables · 33 no · 1 indeterminado |
+
+**Autoprueba antes de creerse el número**, sobre fuente sintética con la respuesta conocida: uno
+alcanzable por import, uno alcanzable **solo por llamada interna** (el caso de `ensureReferralCode`
+en pequeño), uno muerto, y un módulo opaco que tiene que salir indeterminado **y no muerto**.
+
+---
+
+## 3 · 🔴 LA RECLASIFICACIÓN, y la etiqueta mala era mía
+
+`borrarMerchant` ha pasado por dos categorías equivocadas: `PROMESA_SIN_CABLE` (repitiendo el
+encargo) y **`SUPLANTADO_POR_UNA_COPIA`, que la puse yo**. No es ninguna de las dos.
+
+**Verificado por mí antes de copiar al otro equipo**, leyendo lo que sus tests *afirman*:
+
+| Guard | Llamadas | Qué comprueba **en la función** |
+|---|---|---|
+| `scrum192-borrado-merchant.test.mjs` | **4** (L119, 124, 140, 163) | `event` cae ANTES que los charges · `merchant` se borra el ÚLTIMO · el recorrido filtrado es igual a `ORDEN_BORRADO_MERCHANT` |
+| `scrum244-colgados-de-otro-modelo.test.mjs` | **3** (L135, 152, 170) | `reconciliation` se borra **ANTES** que `charge` (la FK es RESTRICT) · cada colgado se filtra por su padre · **ningún `where` vacío** |
+
+Los dos la **CORREN** contra un prisma falso y comprueban la **secuencia**. Con cero FK en cascada,
+**ese orden ES la garantía**, y no está escrito en ningún otro sitio.
+
+Y `suprimirMerchant` **no puede heredarlos**, comprobado: **anonimiza** con un único `updateMany` —
+no borra. Su propia cabecera dice que un borrado completo *«se llevaría por delante la propia
+anotación»* de `auditLog`. **No tiene orden de borrado que verificar.**
+
+> 🔴 **Por qué esto no es taxonomía.** Una copia superada **se acaba borrando** — ésa es la conducta
+> correcta para una copia, y la que aquí destruye la única comprobación del orden de borrado seguro.
+> **Mi etiqueta era una invitación a limpiarlo dentro de seis meses.** Entra
+> `ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE`, y hay un test que fija la categoría con ese motivo
+> escrito en el rojo.
+
+`FUERA_DEL_BARRIDO_GENERICO` va con ella, y no por arrastre: `scrum192` la comprueba **directamente**
+(*«tiene que estar declarada FUERA, no simplemente ausente»*), que es la diferencia entre un modelo
+que se decidió dejar fuera y uno que se olvidó.
+
+### 🔴 Contraste con el otro equipo — porque si sale distinto, uno de los dos está ciego
+
+Coincidimos en `scrum192` = **4**. En `scrum244` ellos dicen **2** y yo mido **3**.
+
+Doy las líneas exactas para que se pueda arbitrar sin repetir el trabajo: `L135`, `L152` y `L170` de
+`tests/scrum244-colgados-de-otro-modelo.test.mjs`, contadas como **`CallExpression` por AST**, no por
+`grep` — que contaría igual una mención en un comentario y el literal `'borrarMerchant'` dentro de la
+lista de prohibidos de `scrum244-puerta-portabilidad.test.mjs:80`. **La conclusión no cambia con 2 o
+con 3**; lo que cambia es si el instrumento del otro lado ve todas las llamadas.
+
+### Repasé los demás: solo éste
+
+**12** huérfanos son sujeto de un test **y** no alcanzables desde una entrada viva. Sólo uno entra en
+la categoría nueva, y el discriminante **no es «tiene test»**: casi todos son `MOTOR_EN_ESPERA` y su
+test es cobertura normal de un motor que espera cable (`avanzar`, `filtrarAlbaranes`,
+`avisaDeSimplificado`, `isAlbaranNumber`, `getStageAmount`, `esPaidViaValido`, `esDelTecnico`,
+`baseDeFacturables`, `solicitudesPendientes`, `fechaLimite`, `diasTranscurridos`).
+
+Lo que distingue a `borrarMerchant` es que **no le va a llegar consumidor** —otro sirve ya la
+capacidad— **y aun así no se puede borrar**.
+
+## 4 · El reparto, que ahora SUMA
+
+| categoría | cuántos |
+|---|---|
+| `VOCABULARIO_DEL_MODULO` | 94 |
+| `PIEZA_INTERNA_EXPORTADA` | 71 |
+| `MOTOR_EN_ESPERA` | 18 |
+| `REGLA_COPIADA_AL_FRONT` | 2 |
+| `SUPLANTADO_POR_UNA_COPIA` | 2 |
+| `ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE` | **2** (nueva) |
+| `EXPORTADO_PARA_LAS_FIXTURES` | 1 |
+| `SIN_LECTOR_NI_TEST` | 1 |
+| `FALSO_POSITIVO_MEDIDO` | 1 |
+| `PROMESA_SIN_CABLE` | **0** (definida a propósito, con test que impide borrarla) |
+
+**192 declarados = 192 medidos = 192 repartidos.** Hay un test nuevo que lo exige: *un censo cuyas
+partes no suman su total no es un censo*.
+
+## 5 · Verificación
+
+| | |
+|---|---|
+| 🔴 El trinquete cae en los DOS sentidos | plantado real en `soporte.ts:108` → rojo nombrándolo · declaración fantasma → rojo con sus dos causas |
+| 🔴 AUTOPRUEBA del alcance | sobre fuente sintética, antes de creerse el número |
+| 🔴 SUELO | lo opaco sale `NO_SE_PUDO_DETERMINAR` y **nunca** `NO_ALCANZABLE` |
+| 🔴 Las categorías suman | 192 = 192 = 192 |
+| Guards ajenos | el tope de 8 y `_alcance-dominio.mjs`, **intactos** |
+
+**Suite:** línea base **3.306 · 3.229 pasan · 0 fallos · 77 saltados** (medida aparte restaurando los
+dos ficheros a su versión de `main`; la reversión se guardó con `git stash`, no se borró nada).
+
+## 6 · Huecos declarados
+
+* **La respuesta es sobre `main` de hoy.** Si mañana alguien quita `GET /admin/referral`, la cadena
+  muere y el defecto aparece. El test lo fija: si el importador deja de ser `src/app.ts`, cae.
+* **El paso 3 propaga por identificadores de nivel superior.** Una llamada por tabla de despacho o
+  por miembro calculado no se sigue: en ese caso el veredicto se queda corto **hacia
+  `NO_ALCANZABLE`**, que es el sesgo que acusa de más. No se ha medido cuántos casos hay.
+* **`NO_SE_PUDO_DETERMINAR` es de grano grueso:** si un módulo se ata con `import * as`, **todos**
+  sus exports quedan indeterminados, no solo los que de verdad se usen por el namespace.
+* **Los 108 `NO_ALCANZABLE` de `src/` no se clasifican aquí.** Este apéndice contesta una pregunta y
+  corrige una etiqueta; los 192 huérfanos declarados sí están cruzados con su alcance.
+* **No se ha cableado ni borrado nada.** Ni un export — y menos `borrarMerchant`, que resulta ser
+  una especificación.
+
+## 7 · Ficheros
+
+* `tests/_alcance-desde-entradas.mjs` (nuevo) — el instrumento y su autoprueba.
+* `tests/_huerfanos-declarados.mjs` — categoría nueva y las dos reclasificaciones.
+* `tests/scrum411-exports-inalcanzables.test.mjs` — 6 tests más (23 en total).
+* `docs/master/SCRUM-411.md` — este apéndice.
