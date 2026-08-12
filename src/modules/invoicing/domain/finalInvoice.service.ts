@@ -19,7 +19,7 @@
 // CUÁNDO se emite una final, ni cuándo nace un anticipo, ni con qué fecha de devengo. Aquí solo
 // vive la ARITMÉTICA de la compensación, que es idéntica sea cual sea la respuesta del asesor.
 // Por eso este fichero se puede escribir hoy y aquello no.
-import { calcVatBreakdown, type VatLine } from './vat.service';
+import { calcVatBreakdown, type VatLine, cantidadDeLinea } from './vat.service';
 import { grossOfLines, type InvoiceLine } from './invoiceLines.service';
 
 /** Documento ya emitido que la final descuenta (tramo/anticipo previo del mismo presupuesto). */
@@ -116,7 +116,7 @@ export function buildFinalInvoice(params: {
 
   const lines = [...operacion, ...negativas];
   const deducidoBruto = round2(negativas.reduce((s, l) => {
-    const qty = Number(l.qty) || 1;
+    const qty = cantidadDeLinea(l.qty); // SCRUM-504
     const price = Number(l.price) || 0;
     return s + qty * price * (1 + (Number(l.tax) || 0));
   }, 0));
