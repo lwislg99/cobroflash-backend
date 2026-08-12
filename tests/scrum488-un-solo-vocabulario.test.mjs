@@ -151,6 +151,17 @@ test('SCRUM-488 · ① CENSO: el mismo valor, las dos pantallas, y las divergenc
     // mismo hecho, y ésta es la peor de las cuatro: una dice que no consta y la otra que consta
     // que lo marcó una persona.
     'manual',
+    // 🔴 `desconocido`, RE-MEDIDA EL 12-ago-2026 (SCRUM-503): «Método no registrado» (Cobros) vs
+    // «Método sin especificar» (Informes). El censo sube de 4 a 5 y **eso es lo que tiene que
+    // pasar**: este guard existe para que una divergencia nueva se vea, no para que no las haya.
+    //
+    // ⚠️ Y ésta no es de grafía: SCRUM-503 le dio a Informes un texto para el desconocido DECLARADO
+    // —se preguntó y no consta— mientras Cobros lo sigue metiendo en el cubo `sin-metodo` y
+    // llamándolo «Método no registrado», que afirma la AUSENCIA. O sea que Cobros borra justo la
+    // distinción que 503 existe para hacer. Arreglarlo pide un rótulo nuevo en el vocabulario de
+    // Cobros, que es microcopy y la aprueba el asesor (regla 30): queda declarado aquí y en
+    // `docs/master/SCRUM-503.md`, no escondido.
+    'desconocido',
   ];
   assert.deepEqual(distintas.map((f) => f.valor), esperadas,
     '🔴 EL CENSO DE DIVERGENCIAS HA CAMBIADO. Las dos pantallas se han separado más, o se han\n' +

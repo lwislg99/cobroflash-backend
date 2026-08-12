@@ -53,7 +53,36 @@ var ETIQUETAS_HEREDADAS = {
   // NO es un valor de la base: lo fabrica `reports.routes.ts:164` al leer (`inv.charge?.method ||
   // 'manual'`) cuando la factura se marcó pagada sin crear `Charge`. Es la AUSENCIA de método, y
   // por eso se nombra como lo que es.
+  //
+  // ⚠️ SCRUM-491 le quitó su productor: el informe ya no lo fabrica. Se queda porque una base
+  // puede traerlo escrito y porque el guard de SCRUM-398 lo exige — retirarlo es cambio de master.
   manual: '✍️ Marcado a mano',
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+  // 🔴 SCRUM-503 · EL DESCONOCIDO **DECLARADO** — la única entrada nueva de este ticket
+  //
+  // `desconocido` (`METODO_DESCONOCIDO`, `metodoDeCobro.ts`) NO es un valor roto ni un método que
+  // nadie reconozca: es una AFIRMACIÓN, y dice que se preguntó y no consta. Sin esta línea caía en
+  // «⚠️ Método no reconocido (desconocido)», que le contesta al profesional que su propia
+  // respuesta no la entendemos — y de paso le enseña el valor crudo de la base.
+  //
+  // Son TRES estados y no pueden compartir salida:
+  //     ausencia (`null`, `''`) → nadie registró nada      → «⚠️ Sin método»
+  //     `desconocido`           → SE PREGUNTÓ y no consta  → esta línea
+  //     valor fuera de PAID_VIA → alguien escribió algo que no existe → «no reconocido (x)»
+  //
+  // QUIÉN LO ESCRIBE HOY, medido sobre `main` el 12-ago-2026 (los dos con llamante vivo):
+  //   · `charges.routes.ts:44` → `metodoDesdePreferencia('mp')`: MercadoPago es una PASARELA, no un
+  //     método, y al CREAR el cobro nadie sabe todavía con qué pagará el cliente (SCRUM-486).
+  //   · `integrations/mercadopago.ts:89` → `metodoDesdeMercadoPago(...)` cuando MP no manda
+  //     `payment_type_id` (SCRUM-489).
+  //
+  // Va en los HEREDADOS y no en el conjunto cerrado a propósito: `desconocido` **no está en
+  // `PAID_VIA`** —`esMetodoValido` lo devuelve `false` adrede— y ampliarlo sería cambio de la regla
+  // 22. Meterlo arriba tumbaría el guard de SCRUM-398, que exige que las claves de (1) sean
+  // exactamente las del conjunto.
+  //
+  // Microcopy APROBADA por el asesor (regla 30). No se adorna ni se acorta.
+  desconocido: '⚠️ Método sin especificar',
 };
 
 /**
