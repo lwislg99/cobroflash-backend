@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { desglosarPorEmpleado } from '../../domain/desgloseEmpleado'; // SCRUM-228
+import { agruparCobrosPorCubo, type CobroDelInforme } from '../../domain/cobrosPorCubo'; // SCRUM-488
 import { leerLibroRegistro } from '../../../invoicing/domain/libroRegistro.repo'; // SCRUM-389: un solo agregador
 import { rangoTrimestre } from '../../../fiscal/modelo303/modelo303'; // SCRUM-389: un solo criterio de fechas
 
@@ -156,15 +157,18 @@ router.get('/x2', async (req, res) => {
       },
     });
 
-    // Cobros por método (paid_via): charge.method; sin charge = marcado a mano
-    const byMethodMap = new Map<string, { eur: number; count: number }>();
+    // Cobros por método (paid_via): charge.method; sin charge = marcado a mano.
+    //
+    // 🔴 SCRUM-488 fase 2 — la clave de agrupación es el CUBO, no el valor crudo. Antes, `card` y
+    // `card:stripe` eran dos filas distintas del informe **etiquetadas las dos «💳 Tarjeta»**: el
+    // profesional veía dos filas idénticas con importes distintos y en ninguna parte el total de lo
+    // cobrado con tarjeta. Lo que `cuboDeCobro` no clasifica NO se agrupa: sale exactamente como
+    // salía, con su rótulo de hoy. El reparto vive en el dominio para poder ejercerlo en la tanda.
+    const cobros: CobroDelInforme[] = [];
     let reminderEur = 0;
     const H72 = 72 * 3600 * 1000;
     for (const inv of paid) {
-      const method = inv.charge?.method || 'manual';
-      const cur = byMethodMap.get(method) ?? { eur: 0, count: 0 };
-      cur.eur += Number(inv.total); cur.count += 1;
-      byMethodMap.set(method, cur);
+      cobros.push({ metodo: inv.charge?.method || 'manual', total: inv.total });
       // € por recordatorios: pagó ≤72h después de CUALQUIERA de los dos avisos.
       // ⚠️ SCRUM-117: `reminderXSentAt` solo significa «se envió» DESDE SCRUM-116 (deploy
       // 2026-07-23 15:22 UTC). Antes se marcaba aunque el WhatsApp fallara, así que una fecha
@@ -179,9 +183,7 @@ router.get('/x2', async (req, res) => {
       const after = (d: Date | null) => !!d && paidTs >= new Date(d).getTime() && paidTs - new Date(d).getTime() <= H72;
       if (after(inv.reminder7SentAt) || after(inv.reminder14SentAt)) reminderEur += Number(inv.total);
     }
-    const byMethod = [...byMethodMap.entries()]
-      .map(([method, v]) => ({ method, eur: Math.round(v.eur * 100) / 100, count: v.count }))
-      .sort((a, b) => b.eur - a.eur);
+    const byMethod = agruparCobrosPorCubo(cobros);
 
     // Pendiente por antigüedad (foto de HOY, no del año)
     const pending = await prisma.invoice.findMany({

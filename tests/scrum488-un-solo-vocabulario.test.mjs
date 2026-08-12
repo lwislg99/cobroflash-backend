@@ -12,21 +12,30 @@
 //   · INFORMES (SCRUM-398) — `paidViaEtiquetas.js`: «📲 Bizum (confirmado a mano)», «💳 Tarjeta».
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// 🔴 ESTE FICHERO NO PINTA NADA, Y ESO ES EL ENCARGO (regla 30)
+// FASE 1 (medición) + FASE 2 (el arreglo). Qué hace cada mitad de este fichero
 //
-// La grafía única se PROPONE en `docs/master/SCRUM-488.md` y la aprueba el asesor. Lo que se hace
-// aquí es MEDIR: censar los dos vocabularios, nombrar cada divergencia, y dejar un guard que
-// impida que se separen más mientras alguien decide. El mecanismo propuesto se ejerce **dentro de
-// este test** —para poder enseñar el control positivo— y NO existe en `public/`: si viviera allí,
-// sería texto nuevo pintado sin aprobar.
+// · **La fase 1 mide y NO pinta**: censa los dos vocabularios, nombra cada divergencia y deja un
+//   guard que impide que se separen más. Cambiar un rótulo es microcopy y lo aprueba el asesor
+//   (regla 30), así que ni un texto se toca — sigue siendo verdad después de la fase 2.
+// · **La fase 2 arregla lo que la fase 1 encontró debajo**, que no era vocabulario sino
+//   AGRUPACIÓN: el informe agrupaba por el valor CRUDO de `paid_via`.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// 🔴 Y LO QUE APARECIÓ MIDIENDO, QUE ES MÁS GORDO QUE LA GRAFÍA
+// 🔴 EL DEFECTO QUE CIERRA LA FASE 2
 //
-// `reports.routes.ts:164` agrupa por `inv.charge?.method` **CRUDO**. `card` y `card:stripe` son
+// `reports.routes.ts:164` agrupaba por `inv.charge?.method` **CRUDO**. `card` y `card:stripe` eran
 // filas SEPARADAS del informe, y las dos se etiquetan «💳 Tarjeta» —lo exige el propio guard de
-// SCRUM-398—. El profesional ve **dos filas idénticas con importes distintos** y no tiene en
-// pantalla el total de lo cobrado con tarjeta. Está medido abajo, y va al documento.
+// SCRUM-398—. El profesional veía **dos filas idénticas con importes distintos** y no tenía en
+// pantalla el total de lo cobrado con tarjeta. Ahora la clave es el CUBO (`agruparCobrosPorCubo`).
+//
+// 🔴 Y LO QUE **NO** HACE LA FASE 2, porque son decisiones tomadas y no descuidos:
+//
+//   · **Informes NO compone** «💳 tarjeta · Stripe» como Cobros. La propuesta de la fase 1 se
+//     descartó: Cobros cuenta COBROS INDIVIDUALES —ahí cabe el matiz— e Informes cuenta FAMILIAS.
+//     Dos rótulos para el mismo dato no chocan cuando las pantallas cuentan unidades distintas.
+//   · **Cero cambios de rótulo**: `paidViaEtiquetas.js` y el guard de SCRUM-398 no se tocan.
+//   · **`manual` se queda EXACTAMENTE como estaba** (es SCRUM-491), y el valor crudo del «no
+//     reconocido» también (lo cierran SCRUM-486/489 por el lado de quién escribe).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -43,9 +52,18 @@ const { ETIQUETAS_PAID_VIA, ETIQUETAS_HEREDADAS, etiquetaMetodoCobro } =
   require_(path.join(RAIZ, 'public/dashboard/js/paidViaEtiquetas.js'));
 const { rotuloDeMetodo, COBROS_MATICES } =
   require_(path.join(RAIZ, 'public/dashboard/js/cobrosView.js'));
-const { cubosDeMetodo, cuboDeCobro, ROTULO_SIN_METODO } =
+const { cubosDeMetodo, cuboDeCobro, ROTULO_SIN_METODO, CUBO_SIN_METODO } =
   await import('../dist/modules/billing/domain/metodoDeCobro.js');
 const { PAID_VIA } = await import('../dist/modules/billing/domain/paidVia.js');
+// FASE 2 · el reparto DE VERDAD, el que corre en la ruta. No una copia escrita aquí.
+//
+// 🔴 Se importa SOLO el contrato. `claveDeAgrupacion` y `representanteDelCubo` son ayudantes
+// internos a propósito (SCRUM-411 / precedente de SCRUM-441), así que todo lo de abajo se mide por
+// donde se mide de verdad: por las filas que acaban en la pantalla.
+const { agruparCobrosPorCubo } = await import('../dist/modules/reports/domain/cobrosPorCubo.js');
+
+/** Las filas que produce el reparto que CORRE, para unos métodos dados (un cobro de 1 € cada uno). */
+const filasDe = (...metodos) => agruparCobrosPorCubo(metodos.map((m) => ({ metodo: m, total: '1.00' })));
 
 const CUBOS = cubosDeMetodo(ROTULO_SIN_METODO);
 
@@ -226,116 +244,308 @@ test('SCRUM-488 · ② `paidViaEtiquetas.js` NO es una tercera copia de la parti
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
-// ③ 🔴 EL HALLAZGO QUE MANDA — INFORMES AGRUPA POR EL VALOR CRUDO
+// ③ FASE 2 · EL INFORME YA NO AGRUPA POR EL VALOR CRUDO — con DOS instrumentos separados
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
+const RUTA_DOMINIO = 'src/modules/reports/domain/cobrosPorCubo.ts';
+
 /**
- * ¿Con qué clave agrupa el informe «Cómo te pagan»? Se lee del AST de la ruta, no del texto: lo
- * que se busca es la expresión que alimenta `byMethodMap`.
+ * INSTRUMENTO A · el AST de la RUTA: ¿QUIÉN construye las filas del informe?
+ *
+ * No basta con que exista un agrupador: **mencionar no es hacer**. Lo que se busca es que la ruta
+ * lo LLAME y que su resultado sea lo que viaja como `byMethod`, y que el mapa a mano —el que
+ * agrupaba por el crudo— ya no esté.
  */
-function claveDeAgrupacionDeInformes() {
+function agrupadorDeLaRuta() {
   const ruta = path.join(RAIZ, RUTA_INFORMES);
   const sf = ts.createSourceFile(RUTA_INFORMES, fs.readFileSync(ruta, 'utf8'), ts.ScriptTarget.Latest, true);
-  const claves = [];
+  const llamadas = [];
+  let alimentaByMethod = false;
+  let mapaAMano = false;
   (function rec(n) {
-    // `byMethodMap.set(<clave>, …)` / `.get(<clave>)`
-    if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression)
-      && ['set', 'get'].includes(n.expression.name.text)
-      && n.expression.expression.getText(sf) === 'byMethodMap' && n.arguments[0]) {
-      claves.push(n.arguments[0].getText(sf));
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression)) llamadas.push(n.expression.text);
+    // `const byMethod = <algo>(…)` — de dónde salen de verdad las filas de la respuesta.
+    if (ts.isVariableDeclaration(n) && n.name.getText(sf) === 'byMethod' && n.initializer
+      && ts.isCallExpression(n.initializer) && ts.isIdentifier(n.initializer.expression)
+      && n.initializer.expression.text === 'agruparCobrosPorCubo') alimentaByMethod = true;
+    if (ts.isIdentifier(n) && n.text === 'byMethodMap') mapaAMano = true;
+    ts.forEachChild(n, rec);
+  })(sf);
+  return { llamadas, alimentaByMethod, mapaAMano };
+}
+
+/** INSTRUMENTO B · el AST del DOMINIO: ¿la clave sale de `cuboDeCobro` o de otro sitio? */
+function cuerpoDeClaveDeAgrupacion() {
+  const ruta = path.join(RAIZ, RUTA_DOMINIO);
+  const sf = ts.createSourceFile(RUTA_DOMINIO, fs.readFileSync(ruta, 'utf8'), ts.ScriptTarget.Latest, true);
+  let llamadas = null;
+  (function rec(n) {
+    if (ts.isFunctionDeclaration(n) && n.name && n.name.text === 'claveDeAgrupacion' && n.body) {
+      llamadas = [];
+      (function dentro(x) {
+        if (ts.isCallExpression(x) && ts.isIdentifier(x.expression)) llamadas.push(x.expression.text);
+        ts.forEachChild(x, dentro);
+      })(n.body);
     }
     ts.forEachChild(n, rec);
   })(sf);
-  return claves;
+  return llamadas;
 }
 
-test('SCRUM-488 · ③ SUELO: se localiza la agrupación del informe, o este bloque no mide nada', () => {
-  const claves = claveDeAgrupacionDeInformes();
-  assert.ok(claves.length >= 2,
-    `🔴 ESCÁNER CIEGO: no se encuentra cómo agrupa \`byMethodMap\` en ${RUTA_INFORMES} (se vieron ` +
-    `${claves.length} usos). Si la ruta cambió de forma, ARREGLA EL DETECTOR: un cero aquí se ` +
-    'leería como «no agrupa por el crudo», que es la conclusión contraria a la verdadera.');
+test('SCRUM-488 · ③ SUELO: los DOS detectores encuentran su código, o este bloque no mide nada', () => {
+  // Un cero aquí se leería como «ya no agrupa por el crudo», que es la conclusión contraria a la
+  // verdadera si lo que pasa es que el escáner se quedó ciego.
+  const { llamadas } = agrupadorDeLaRuta();
+  assert.ok(llamadas.length >= 3,
+    `🔴 ESCÁNER CIEGO: el AST de ${RUTA_INFORMES} ve ${llamadas.length} llamadas. Si el fichero ` +
+    'cambió de forma, ARREGLA EL DETECTOR.');
+  assert.ok(Array.isArray(cuerpoDeClaveDeAgrupacion()),
+    `🔴 ESCÁNER CIEGO: no se encuentra \`claveDeAgrupacion\` en ${RUTA_DOMINIO}. Si se renombró, ` +
+    'el detector tiene que seguirla — no borrarse.');
+  // Autoprueba: el detector de la ruta sabe DECIR QUE NO cuando el agrupador no está.
+  const sinAgrupador = ts.createSourceFile('x.ts', 'const byMethod = otraCosa(1);', ts.ScriptTarget.Latest, true);
+  let visto = false;
+  (function rec(n) {
+    if (ts.isVariableDeclaration(n) && n.name.getText(sinAgrupador) === 'byMethod' && n.initializer
+      && ts.isCallExpression(n.initializer) && ts.isIdentifier(n.initializer.expression)
+      && n.initializer.expression.text === 'agruparCobrosPorCubo') visto = true;
+    ts.forEachChild(n, rec);
+  })(sinAgrupador);
+  assert.equal(visto, false, '🔴 el detector daría por bueno cualquier constructor de `byMethod`.');
 });
 
-test('SCRUM-488 · ③ 🔴 el informe agrupa por el método CRUDO, y por eso el total de tarjeta va PARTIDO', () => {
-  const claves = claveDeAgrupacionDeInformes();
-  const fuente = fs.readFileSync(path.join(RAIZ, RUTA_INFORMES), 'utf8');
+test('SCRUM-488 · ③ 🔴 INSTRUMENTO A: la ruta DELEGA en el agrupador por cubo, y el mapa a mano ya no está', () => {
+  const { llamadas, alimentaByMethod, mapaAMano } = agrupadorDeLaRuta();
+  assert.ok(llamadas.includes('agruparCobrosPorCubo'),
+    `🔴 ${RUTA_INFORMES} no llama a \`agruparCobrosPorCubo\`. Que la función exista no prueba que ` +
+    'nadie la use: el informe volvería a repartir por su cuenta.');
+  assert.equal(alimentaByMethod, true,
+    '🔴 `byMethod` —lo que viaja a la pantalla— NO sale de `agruparCobrosPorCubo`. Hay un segundo ' +
+    'reparto en medio, y entonces lo que se pinta no es lo que este test comprueba.');
+  assert.equal(mapaAMano, false,
+    '🔴 `byMethodMap` ha vuelto a la ruta: era el mapa que agrupaba por el valor CRUDO y partía el ' +
+    'total de la tarjeta en dos filas con el mismo nombre.');
+});
 
-  // ① La clave de agrupación sale del método crudo, sin pasar por el normalizador del servidor.
-  assert.ok(claves.every((c) => c === 'method'),
-    `🔴 la clave de agrupación ha cambiado: ${JSON.stringify(claves)}. Si ahora normaliza, este ` +
-    'hallazgo está ARREGLADO y hay que rehacer la medición del documento — no borrar el test.');
-  assert.match(fuente, /const method = inv\.charge\?\.method \|\| 'manual'/,
-    '🔴 ha cambiado la línea que fabrica la clave. Vuelve a medir antes de fiarte del documento.');
-  assert.doesNotMatch(fuente, /metodoParaAgrupar|cuboDeCobro/,
-    '🔴 el informe YA normaliza el método. Es el arreglo de este hallazgo: quítalo del documento ' +
-    'como pendiente y re-mide los totales.');
+test('SCRUM-488 · ③ 🔴 INSTRUMENTO B: la clave de agrupación sale de `cuboDeCobro`, no de un mapa nuevo', () => {
+  const llamadas = cuerpoDeClaveDeAgrupacion();
+  assert.ok(llamadas.includes('cuboDeCobro'),
+    `🔴 \`claveDeAgrupacion\` ya no consulta \`cuboDeCobro\`: ${JSON.stringify(llamadas)}. Si el ` +
+    'informe decide por su cuenta qué va con qué, hay DOS reglas de agrupación y el filtro de ' +
+    'Cobros y el informe pueden contar cosas distintas.');
 
-  // ② LA CONSECUENCIA, con las funciones de verdad: dos claves que el informe cuenta por separado
-  // y que la pantalla etiqueta IGUAL. Dos filas idénticas, importes distintos.
-  assert.notEqual('card', 'card:stripe');
-  assert.equal(enInformes('card'), enInformes('card:stripe'),
-    '🔴 si estas dos dejaran de compartir etiqueta, el defecto sería otro (dos nombres) y no éste ' +
-    '(dos filas iguales). Re-mide.');
-  assert.equal(cuboDeCobro('card'), cuboDeCobro('card:stripe'),
-    '🔴 y el servidor SÍ sabe que son el mismo método: `cuboDeCobro` los une para el filtro de ' +
-    'Cobros. El informe tiene la función al lado y no la usa.');
+  // Y el comportamiento, medido POR EL CONTRATO: las dos tarjetas salen en UNA fila.
+  assert.deepEqual(filasDe('card', 'card:stripe').map((f) => [f.method, f.metodos, f.count]),
+    [['card', ['card', 'card:stripe'], 2]],
+    '🔴 `card:stripe` vuelve a tener fila propia: es el defecto entero de este ticket.');
+  assert.equal(filasDe('bizum_auto', 'bizum_manual').length, 1,
+    '🔴 los dos Bizum se han vuelto a separar en el informe.');
+  // 🔴 Y lo que `cuboDeCobro` NO clasifica se queda con SU valor: ni se agrupa ni se inventa «otros».
+  assert.deepEqual(filasDe('manual').map((f) => [f.method, f.cubo]), [['manual', CUBO_SIN_METODO]],
+    '🔴 `manual` ha entrado en un cubo. Es SCRUM-491 y su fila se queda EXACTAMENTE como estaba.');
+  assert.equal(cuboDeCobro('manual'), CUBO_SIN_METODO,
+    '🔴 ha cambiado lo que `cuboDeCobro` devuelve para `manual`: re-mide antes de fiarte de esto.');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
-// ④ EL MECANISMO PROPUESTO — se ejerce AQUÍ, no se pinta (STOP 4)
+// ④ FASE 2 · LAS POST-CONDICIONES DEL ARREGLO
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
 /**
- * LA PROPUESTA, en una función, para poder enseñar el control positivo sin pintar nada.
- *
- * **Una sola grafía, servida desde donde ya se sirve el rótulo del cubo** (`cubosDeMetodo`, en el
- * servidor, derivada de `PAID_VIA`), más el matiz que ya existe en Cobros. Informes deja de tener
- * mapa propio y consume lo mismo. El emoji **se queda como decoración de Informes**, delante del
- * texto: es lo único de su vocabulario que no es vocabulario.
- *
- * 🔴 Vive en el test A PROPÓSITO. Ponerla en `public/` sería pintar texto nuevo sin aprobar
- * (regla 30), que es el STOP 4 de este encargo. El texto lo decide el asesor; esto solo demuestra
- * que **con un mecanismo único las dos pantallas no pueden discrepar**.
+ * El importe con el formato que pinta el informe. Espejo de `fmtMoneyEs` (`api.js:475`) sin el
+ * símbolo: `useGrouping: 'always'` es lo que fuerza el punto de los miles, que es justo lo que hay
+ * que enseñar para que la tabla del documento y la de aquí sean el mismo número.
  */
-const EMOJI_PROPUESTO = { bizum: '📲', card: '💳', transfer: '🏦', cash: '💶', 'sin-metodo': '⚠️' };
-function grafiaUnicaPropuesta(valor, { conEmoji = false } = {}) {
-  const texto = enCobros(valor);              // ← la MISMA composición que ya usa Cobros
-  if (!conEmoji) return texto;
-  const emoji = EMOJI_PROPUESTO[cuboDeCobro(valor)];
-  return emoji ? `${emoji} ${texto}` : texto;
+const eur = (n) => new Intl.NumberFormat('es-ES',
+  { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: 'always' }).format(n);
+
+/**
+ * `n` cobros de un método que suman EXACTAMENTE `totalEur`. En céntimos, para que la tabla del
+ * documento y la del test sean el mismo número y no «casi».
+ */
+function cobrosDe(metodo, n, totalEur) {
+  const total = Math.round(totalEur * 100);
+  const base = Math.floor(total / n);
+  const out = [];
+  for (let i = 0; i < n; i += 1) {
+    out.push({ metodo, total: ((i === n - 1 ? total - base * (n - 1) : base) / 100).toFixed(2) });
+  }
+  return out;
 }
 
-test('SCRUM-488 · ④ CONTROL POSITIVO: con el mecanismo propuesto, las dos pantallas dicen lo mismo', () => {
-  const distintas = CORPUS.filter((v) =>
-    divergen(grafiaUnicaPropuesta(v), grafiaUnicaPropuesta(v, { conEmoji: true })));
-  assert.deepEqual(distintas, [],
-    `🔴 el mecanismo propuesto NO unifica: ${JSON.stringify(distintas)}. Si la versión con emoji y ` +
-    'la de sin dicen cosas distintas, no es una grafía única con decoración: son dos otra vez.');
+/**
+ * LA LÍNEA DE AYER, escrita aquí para poder enseñar el ANTES: la clave era el método CRUDO.
+ * Es una réplica declarada del código retirado, no una segunda implementación viva.
+ */
+function agruparComoAntes(cobros) {
+  const m = new Map();
+  for (const c of cobros) {
+    const cur = m.get(c.metodo) ?? { centimos: 0, count: 0 };
+    cur.centimos += Math.round(Number(c.total) * 100);
+    cur.count += 1;
+    m.set(c.metodo, cur);
+  }
+  return [...m.entries()]
+    .map(([method, v]) => ({ method, eur: v.centimos / 100, count: v.count }))
+    .sort((a, b) => b.eur - a.eur);
+}
 
-  // Y uno por uno, con el texto delante, para que el asesor lea lo que aprobaría.
-  assert.equal(grafiaUnicaPropuesta('bizum_manual'), 'Bizum · manual');
-  assert.equal(grafiaUnicaPropuesta('bizum_manual', { conEmoji: true }), '📲 Bizum · manual');
-  assert.equal(grafiaUnicaPropuesta('card:stripe', { conEmoji: true }), '💳 tarjeta · Stripe');
-  assert.equal(grafiaUnicaPropuesta('manual', { conEmoji: true }), '⚠️ Método no registrado');
+/** Lo que el profesional LEE en cada fila: la vista resuelve `etiquetaMetodoCobro(m.method)`. */
+const pintada = (fila) => etiquetaMetodoCobro(fila.method);
+
+/** Etiquetas que se repiten entre filas distintas, con las claves que las comparten. */
+function etiquetasDuplicadas(filas) {
+  const por = new Map();
+  for (const f of filas) {
+    const e = pintada(f);
+    por.set(e, [...(por.get(e) ?? []), f.method]);
+  }
+  return [...por.entries()].filter(([, m]) => m.length > 1);
+}
+
+/** El corpus de ④, con un desconocido sintético: lo que de verdad puede llegar a la pantalla. */
+const DESCONOCIDO = 'sepa_transfer_instantanea_por_pasarela_desconocida';
+const CORPUS_PINTABLE = [...CORPUS, DESCONOCIDO];
+
+test('SCRUM-488 · ④ SUELO + AUTOPRUEBA: el detector de etiquetas repetidas SABE ver una', () => {
+  // 🔴 Control positivo DENTRO del test: una lista vacía hace verdad cualquier «ya no hay
+  // duplicados». Y el detector se prueba contra el ANTES, que es donde SÍ había uno.
+  assert.deepEqual(etiquetasDuplicadas([]), [],
+    '🔴 el detector inventa duplicados donde no hay filas.');
+  const antes = agruparComoAntes(CORPUS_PINTABLE.map((v) => ({ metodo: v, total: '1.00' })));
+  assert.ok(antes.length >= 7, `🔴 el ANTES trae ${antes.length} filas: no se está midiendo nada.`);
+  const dup = etiquetasDuplicadas(antes);
+  assert.deepEqual(dup, [['💳 Tarjeta', ['card', 'card:stripe']]],
+    '🔴 el detector NO ve el duplicado que la fase 1 midió en pantalla («💳 Tarjeta» dos veces). ' +
+    'Ciego así, el test de abajo daría verde diga lo que diga el código.');
 });
 
-test('SCRUM-488 · ④ 🔴 CONTROL NEGATIVO: la unificación NO cambia ningún agrupamiento', () => {
-  // Lo que protege el dinero: cambiar CÓMO SE LLAMA una cosa no puede cambiar EN QUÉ CUBO cae ni
-  // cuánto suma. El mecanismo propuesto solo compone texto; el cubo lo sigue decidiendo
-  // `cuboDeCobro`, que no se toca.
-  for (const v of CORPUS) {
-    const antes = cuboDeCobro(v);
-    grafiaUnicaPropuesta(v, { conEmoji: true });
-    assert.equal(cuboDeCobro(v), antes,
-      `🔴 el cubo de «${v}» ha cambiado al componer su rótulo. Un rótulo NO puede mover dinero de ` +
-      'cubo: eso sería cambiar un total, no un texto.');
+test('SCRUM-488 · ④ 🔴 ESTRUCTURAL: ninguna fila del informe comparte etiqueta con otra', () => {
+  // ESTRUCTURAL y no de comportamiento a propósito: se recorre TODO lo que puede llegar a la
+  // pantalla —el conjunto cerrado, los heredados y un desconocido—, no una muestra de datos. Hoy
+  // dos filas coinciden por accidente; un test de comportamiento no cazaría la bifurcación el día
+  // que nazca (una pasarela nueva, un valor heredado más).
+  const filas = agruparCobrosPorCubo(CORPUS_PINTABLE.map((v) => ({ metodo: v, total: '1.00' })));
+  assert.ok(filas.length >= 5,
+    `🔴 el reparto devuelve ${filas.length} filas sobre ${CORPUS_PINTABLE.length} valores: con la ` +
+    'lista corta, «no hay duplicados» sería trivialmente cierto.');
+  const dup = etiquetasDuplicadas(filas);
+  assert.deepEqual(dup, [],
+    '🔴 DOS FILAS DEL INFORME DICEN LO MISMO:\n' +
+    dup.map(([e, m]) => `    «${e}» ← ${m.join(' + ')}`).join('\n') +
+    '\n  Es el defecto de este ticket volviendo: el profesional ve dos filas idénticas con importes\n' +
+    '  distintos y en ninguna parte el total de esa forma de cobro. Filas pintadas hoy:\n' +
+    filas.map((f) => `    ${f.method.padEnd(52)} «${pintada(f)}»`).join('\n'));
+});
+
+test('SCRUM-488 · ④ 🔴 la tabla de la fase 1, ANTES y DESPUÉS: el total de la familia es la SUMA', () => {
+  // Los números son los MEDIDOS en la fase 1 sobre la pantalla pintada (`docs/master/SCRUM-488.md`),
+  // metidos por la puerta del reparto de verdad. Se añade el par de Bizum, que agrupa por el mismo
+  // motivo y que la fase 1 no llegó a pintar.
+  const cobros = [
+    ...cobrosDe('card', 9, 3210.40),
+    ...cobrosDe('card:stripe', 7, 2870.15),
+    ...cobrosDe('bizum_auto', 4, 640.00),
+    ...cobrosDe('bizum_manual', 2, 210.50),
+    ...cobrosDe('manual', 3, 900.00),
+  ];
+  assert.equal(cobros.length, 25, '🔴 el banco de prueba no tiene los cobros que dice tener.');
+
+  const antes = agruparComoAntes(cobros);
+  const despues = agruparCobrosPorCubo(cobros);
+
+  // ANTES: las dos tarjetas SEPARADAS, con los importes que la fase 1 midió en pantalla.
+  const tarjetasAntes = antes.filter((f) => pintada(f) === '💳 Tarjeta');
+  assert.deepEqual(tarjetasAntes.map((f) => [eur(f.eur), f.count]), [['3.210,40', 9], ['2.870,15', 7]],
+    '🔴 el ANTES ya no reproduce la medición de la fase 1: la tabla del documento hay que rehacerla.');
+
+  // DESPUÉS: UNA fila, y su total es la suma exacta de las dos que absorbió.
+  const tarjetasDespues = despues.filter((f) => pintada(f) === '💳 Tarjeta');
+  assert.equal(tarjetasDespues.length, 1,
+    `🔴 la tarjeta sigue partida en ${tarjetasDespues.length} filas.`);
+  const tarjeta = tarjetasDespues[0];
+  assert.deepEqual(tarjeta.metodos, ['card', 'card:stripe'],
+    '🔴 la fila de tarjeta no absorbió las dos etiquetas que la fase 1 encontró partidas.');
+  assert.equal(Math.round(tarjeta.eur * 100),
+    tarjetasAntes.reduce((a, f) => a + Math.round(f.eur * 100), 0),
+    `🔴 la familia suma ${eur(tarjeta.eur)} € y sus partes ${tarjetasAntes.map((f) => eur(f.eur)).join(' + ')}. ` +
+    'Un total que no cuadra con sus partes es peor que no tener informe.');
+  assert.equal(eur(tarjeta.eur), '6.080,55');
+  assert.equal(tarjeta.count, 16, '🔴 el nº de cobros de la familia no es la suma de los dos trozos.');
+
+  // Bizum, por el mismo mecanismo, y con el rótulo DEL CUBO (no el de una de las dos mitades).
+  const bizum = despues.filter((f) => cuboDeCobro(f.method) === 'bizum');
+  assert.equal(bizum.length, 1, '🔴 los dos Bizum siguen en filas separadas.');
+  assert.equal(pintada(bizum[0]), '📲 Bizum',
+    `🔴 la fila de la familia Bizum dice «${pintada(bizum[0])}», que es el nombre de UNA de las dos ` +
+    'y no el de la familia.');
+  assert.equal(eur(bizum[0].eur), '850,50');
+  assert.equal(bizum[0].count, 6);
+
+  // Y NINGÚN euro se ha perdido por el camino: el total del informe es el mismo antes y después.
+  assert.equal(
+    despues.reduce((a, f) => a + Math.round(f.eur * 100), 0),
+    antes.reduce((a, f) => a + Math.round(f.eur * 100), 0),
+    '🔴 agrupar ha cambiado el total del informe. Reagrupar mueve filas, NUNCA dinero.');
+  assert.equal(despues.reduce((a, f) => a + f.count, 0), cobros.length,
+    '🔴 se han perdido o duplicado cobros al agrupar.');
+});
+
+test('SCRUM-488 · ④ 🔴 CONTROL NEGATIVO: lo que `cuboDeCobro` NO clasifica sale EXACTAMENTE como hoy', () => {
+  // Lo que este test protege es que el arreglo NO se haya llevado por delante lo que no le tocaba:
+  // `manual` es SCRUM-491 y el valor crudo del desconocido lo cierran SCRUM-486/489.
+  const sinClasificar = ['manual', 'desconocido', DESCONOCIDO];
+  for (const v of sinClasificar) {
+    assert.equal(cuboDeCobro(v), CUBO_SIN_METODO,
+      `🔴 «${v}» ha pasado a estar clasificado: re-mide, porque su fila deja de ser la de hoy.`);
+    assert.deepEqual(filasDe(v).map((f) => f.method), [v],
+      `🔴 «${v}» ya no viaja con su propio valor: se le ha buscado un nombre de familia a algo que ` +
+      'no es una familia, sino la ausencia de una.');
   }
-  // Y el reparto de Informes tampoco se toca: sigue agrupando por el crudo (③). La propuesta de
-  // grafía **no arregla** el total partido — se dice para que nadie lo dé por arreglado.
-  assert.notEqual(cuboDeCobro('card'), 'card:stripe');
-  assert.equal(claveDeAgrupacionDeInformes().every((c) => c === 'method'), true,
-    '🔴 el agrupamiento del informe ha cambiado en este ticket. Aquí NO se toca: se mide (STOP).');
+  const filas = filasDe(...sinClasificar);
+  assert.deepEqual(filas.map((f) => f.method).sort(), [...sinClasificar].sort(),
+    '🔴 los valores sin clasificar se han fundido entre ellos: el profesional vería un importe ' +
+    'agregado sin saber de qué.');
+  assert.equal(pintada(filas.find((f) => f.method === 'manual')), '✍️ Marcado a mano',
+    '🔴 ha cambiado lo que lee el profesional en la fila de `manual`. Es SCRUM-491, no este ticket.');
+  assert.equal(pintada(filas.find((f) => f.method === DESCONOCIDO)),
+    `⚠️ Método no reconocido (${DESCONOCIDO})`,
+    '🔴 ha cambiado la fila del desconocido: el valor crudo NO se toca en este ticket.');
+
+  // Y el reverso del control negativo: agrupar no mueve ningún cobro de cubo. Un reparto puede
+  // juntar filas; lo que NO puede es cambiar en qué familia cae un cobro.
+  for (const v of CORPUS_PINTABLE) {
+    const antes = cuboDeCobro(v);
+    agruparCobrosPorCubo([{ metodo: v, total: '1.00' }]);
+    assert.equal(cuboDeCobro(v), antes, `🔴 el cubo de «${v}» ha cambiado al agrupar.`);
+  }
+});
+
+test('SCRUM-488 · ④ 🔴 ANCLA: la etiqueta del REPRESENTANTE es la del CUBO, y la vista sigue pintando `m.method`', () => {
+  // El representante sale del ORDEN de `PAID_VIA`. Reordenar el conjunto no debería poder
+  // rebautizar una familia en silencio: si `bizum_manual` pasara delante, la fila diría «📲 Bizum
+  // (confirmado a mano)», que es el nombre de una de las dos mitades. Esto lo caza.
+  const conFamilia = CUBOS.filter((c) => c.clave !== CUBO_SIN_METODO);
+  assert.ok(conFamilia.length >= 4, `🔴 solo se ven ${conFamilia.length} cubos con familia.`);
+  for (const cubo of conFamilia) {
+    // Se entra por el contrato: TODOS los valores del conjunto que caen en ese cubo, agrupados.
+    const dentro = PAID_VIA.filter((v) => cuboDeCobro(v) === cubo.clave);
+    assert.ok(dentro.length >= 1, `🔴 el cubo «${cubo.clave}» se ha quedado sin ningún método dentro.`);
+    const filas = filasDe(...dentro);
+    assert.equal(filas.length, 1,
+      `🔴 «${cubo.clave}» sale en ${filas.length} filas para ${dentro.length} métodos de la misma familia.`);
+    assert.ok(!divergen(pintada(filas[0]), cubo.rotulo),
+      `🔴 la familia «${cubo.clave}» se pinta «${pintada(filas[0])}» y su rótulo es «${cubo.rotulo}». ` +
+      `El representante (${filas[0].method}) ya no es el que lleva el nombre de la familia.`);
+  }
+
+  // ANCLA con SCRUM-398, que NO se toca: lo que este fichero calcula con `etiquetaMetodoCobro` es
+  // literalmente la expresión que resuelve la celda en la vista. Si la vista dejara de usarla,
+  // todo lo de arriba mediría una pantalla que no existe.
+  const vista = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/reportsView.js'), 'utf8');
+  assert.match(vista, /etiquetaMetodoCobro\(m\.method\)/,
+    '🔴 la vista ya no resuelve la etiqueta con `etiquetaMetodoCobro(m.method)`: este test estaría ' +
+    'comprobando un texto que nadie pinta.');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════

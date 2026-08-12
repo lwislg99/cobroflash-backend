@@ -144,10 +144,10 @@ export const DECLARADOS = [
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: '🔴 DEJÓ DE SER UN MOTOR EN ESPERA EL 12-ago-2026, y se anota porque es la mejora: SCRUM-484 lo nombró entre los seis que un profesional nota («agrupar sus cobros por método fiable: la validación existe y no se aplica»), y ese mismo día SCRUM-474 fase 2 entró en `main` con `cuboDeCobro`, que sí lo llama. El export sigue sin importador de fuera, pero el código YA se ejecuta.',
     exports: ['metodoParaAgrupar'] },
-  { modulo: 'src/modules/billing/domain/metodoDeCobro.ts',
-    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
-    motivo: 'La clave del cubo «no consta» (SCRUM-474 fase 2). Entró en `main` el 12-ago-2026 y la cazó este trinquete en su primer merge: se declara, no se cablea. Su rótulo hermano `ROTULO_SIN_METODO` sí tiene importador; la clave la consume su propio módulo.',
-    exports: ['CUBO_SIN_METODO'] },
+  // 🔴 `CUBO_SIN_METODO` ESTUVO DECLARADO AQUÍ Y SE RETIRA EL 12-ago-2026, en el mismo commit que
+  // lo cableó (SCRUM-488 fase 2): `reports/domain/cobrosPorCubo.ts` lo importa para saber cuándo
+  // `cuboDeCobro` NO ha clasificado un método y hay que dejar la fila del informe como estaba. La
+  // deuda duró lo que duró —de la mañana a la tarde del mismo día— y esta línea es su constancia.
   { modulo: 'src/modules/billing/domain/metodoDeCobro.ts',
     cat: 'REGLA_COPIADA_AL_FRONT', desde: '2026-08-12',
     motivo: 'La regla vive DOS veces a propósito: `public/dashboard/js/cobrosView.js:117` lo declara («ESTO ES UNA SEGUNDA COPIA DELIBERADA DE `partirMetodo`, Y CONSTA COMO TAL»). El backend no la importa porque el navegador no puede importarla.',
