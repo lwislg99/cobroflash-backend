@@ -580,6 +580,10 @@ de emisión fiscal y el sellado · `public/dashboard/js/`.
 > **No se aplica NADA.** Este trabajo no escribe en ninguna base, no pide ninguna credencial de
 > producción y no toca el modelo. Solo PRUEBA que las tres copias del mismo diseño concuerdan, y lo
 > deja escrito en un test que corre en `npm test`.
+>
+> 🔴 **Y encontró algo que hay que leer antes de mergear:** el esquema y las bases **sí** concuerdan,
+> pero las 24 líneas dejan **11 tests en rojo** en tres registros derivados de la casa. Ni uno es de
+> este trabajo — `main` está verde y la rama del fundador, sola, ya da los 11. Está en el **§3**.
 
 ## 0 · PASO 0
 
@@ -688,7 +692,59 @@ test cayó diciendo:
 Nombra la columna y **pone las dos versiones delante**, que es lo que hace falta para reportar sin
 arreglar. Revertido y comprobado con `git diff --stat`: vacío.
 
-## 3 · Los tres hallazgos de hoy, una línea cada uno
+## 3 · 🔴 EL HALLAZGO QUE BLOQUEA EL MERGE: las 24 líneas dejan **11 rojos**
+
+Los dos instrumentos dicen que el esquema y las bases concuerdan. Lo que **no** concuerda es el
+esquema con los **registros derivados de la casa**: `npm test` sobre la rama del fundador da **11
+fallos**, y ninguno es mío. Atribución medida en tres árboles, no deducida:
+
+| Árbol | tests | pass | **fail** |
+| --- | --- | --- | --- |
+| `main` = `aa743fe3` | 3.385 | 3.308 | **0** |
+| `origin/scrum-475-schema-emailmessage` = `56a5e462`, **sin nada mío** | 3.366 | 3.278 | **11** |
+| esta rama (aquélla + mi commit + `main` nuevo dentro) | 3.390 | 3.302 | **11** — los MISMOS |
+
+**`main` está verde y la rama del fundador no.** Mi commit añade 5 tests y 0 fallos.
+
+### No son 11 problemas: son TRES registros que el esquema dejó atrás
+
+Todos derivan de `prisma/schema.prisma`, y todos saltan porque `EmailMessage` tiene `merchantId` o
+porque añade una tabla:
+
+| Registro | Rojos | Qué exige | Dónde se toca |
+| --- | --- | --- | --- |
+| `MODELOS_POR_MERCHANT` | **8** (SCRUM-172 ×5, 192, 314 ×2) | declarar `emailMessage` respetando el orden de dependencias | `tests/_merchant-fixture.mjs` |
+| `docs/sql/deriva-prod.sql` | **2** (SCRUM-222, 461) | **regenerar**: 350 → **362** columnas, 24 → **25** tablas | `node scripts/generar-sql-deriva.mjs` |
+| `TABLES` de `backup-dump.mjs` | **1** (SCRUM-241) | añadir `email_messages` | `scripts/backup-dump.mjs` |
+
+Los mensajes, en sus palabras, porque explican la consecuencia mejor que un resumen:
+
+* SCRUM-172: *«Modelo(s) con `merchantId` que NADIE barre: emailMessage […] las filas de ese modelo
+  sobreviven al merchant efímero y quedan huérfanas EN SILENCIO en las tres BD.»*
+* SCRUM-241: *«FALTAN (el dump lógico NO las volcaría): email_messages […] Si una tabla no debe ir al
+  backup, es una decisión de máster, no un hueco en el array.»*
+* SCRUM-461: *«EL CENSO SE HA ENCOGIDO: estas columnas están en `prisma/schema.prisma` y NO en
+  `docs/sql/deriva-prod.sql`»* — y lista las once.
+
+### 🔴 Por qué NO los arreglo aquí, y no es pereza
+
+1. **Cada uno es una decisión de otro carril, no una declaración mecánica.** Meter `emailMessage` en
+   `MODELOS_POR_MERCHANT` decide **qué filas mueren con un merchant** y en qué orden: es tenencia
+   (¿se borra la constancia de los correos de un merchant borrado?, ¿antes o después de qué?). Meter
+   `email_messages` en `TABLES` decide **qué se volca en el backup**, y el propio guard dice que la
+   excepción «es una decisión de máster».
+2. **Un arreglo PARCIAL sería el peor de los tres resultados.** Los tres registros son un mismo paso
+   de integración. Regenerar el `deriva-prod.sql` —que es lo único puramente mecánico— dejaría la
+   rama **igual de roja** y con la apariencia de que el esquema ya está integrado.
+3. **Arreglarlo aquí escondería la señal.** Este ticket acredita el esquema; si lo pongo verde, nadie
+   se enteraría de que las 24 líneas necesitan tres decisiones más antes de poder mergear. El valor
+   de este hallazgo es que llega **antes** del merge, con los tres sitios y el comando exacto.
+
+**Lo que sí está medido y no hay que volver a medir:** los números del `deriva-prod.sql` (350 → 362
+columnas, 24 → 25 tablas) salen del propio rojo de SCRUM-222, y ese fichero se **genera**, no se
+edita a mano — su cabecera lo dice.
+
+## 4 · Los tres hallazgos de hoy, una línea cada uno
 
 * La caja **Data → Query** de Railway añade un `LIMIT` por detrás: **solo sirve para `SELECT`**; el
   DDL va por **Console → `psql`**.
@@ -698,7 +754,7 @@ arreglar. Revertido y comprobado con `git diff --stat`: vacío.
 * **`updated_at` es `NOT NULL` sin default:** cualquier `INSERT` que no venga de Prisma falla, porque
   el `@updatedAt` lo rellena el cliente y no la base.
 
-## 4 · Lo que se ha escrito
+## 5 · Lo que se ha escrito
 
 | Fichero | Qué |
 | --- | --- |
@@ -707,7 +763,16 @@ arreglar. Revertido y comprobado con `git diff --stat`: vacío.
 | `docs/sql/scrum-475-email-messages.sql` | cabecera: el discriminador viejo **marcado superado y fechado**, y al lado el de hoy |
 | `docs/master/SCRUM-475.md` FASE 4 | esta sección |
 
-## 5 · Lo que NO se ha tocado, y es la mitad del encargo
+**Números, con `main` = `aa743fe3` dentro y medidos DESPUÉS de la última edición:** 3.390 tests ·
+3.302 pasan · **11 fallos** · 77 saltados. Los **11 son los del §3** y no son de este trabajo:
+`main` da 0 y la rama del fundador sola da los mismos 11. `npm run guards:entrada` → 4 guards, 17
+tests, 0 fallos. Mis 5 tests: **5/5 en verde**.
+
+⚠️ **Se entrega con 11 rojos a propósito, y es la entrega correcta:** el encargo era acreditar y
+dejarlo escrito, no integrar el modelo. Ponerlos verdes exigía tomar tres decisiones de otros
+carriles (§3) y habría borrado la única señal que avisa antes del merge.
+
+## 6 · Lo que NO se ha tocado, y es la mitad del encargo
 
 `prisma/schema.prisma` — **cero líneas**: el modelo es de los fundadores y la base ya está escrita.
 Ninguna base de datos: ni `migrate dev`, ni `migrate deploy`, ni `db push`, ni `db execute`, ni
@@ -716,8 +781,10 @@ instrumento ② se le pasa el **nombre** de la variable, y `--from-url`/`--to-ur
 ningún sitio. `src/` · `public/` · la fase 2 del webhook (necesita un secreto que aún no está fuera
 del panel).
 
-## 6 · Huecos declarados
+## 7 · Huecos declarados
 
+* 🔴 **La rama NO se puede mergear todavía**, y no por lo que este ticket construye: por los tres
+  registros del §3. Van con nombre, con recuento y con el sitio donde se tocan.
 * **Producción no la he mirado yo.** Lo que hay de producción es el `\d` del fundador y el
   discriminador `charges` = 51. Correcto: no hay credencial de producción en este árbol y no se pide.
 * **El instrumento ② no comprueba columnas ni tipos**, solo existencia de tabla e índices. La
