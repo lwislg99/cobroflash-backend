@@ -436,9 +436,14 @@ node --test --test-force-exit $(git ls-tree -r --name-only main -- tests | grep 
 
 | | tests | pass | fail | skipped |
 | --- | --- | --- | --- | --- |
-| línea base — el conjunto de tests **de `main`** (`eb681bf6`), medido aparte | 3.315 | 3.238 | **0** | 77 |
+| línea base — el conjunto de tests **de `main`**, medido aparte | 3.315 | 3.238 | **0** | 77 |
 | después — la tanda entera de esta rama | 3.315 | 3.238 | **0** | 77 |
 | diferencia | **0** | **0** | 0 | **0** |
+
+⚠️ `main` **se movió una vez más** mientras se cerraba —`eb681bf6` → **`3be9a2ea`** (SCRUM-483)—, se
+trajo dentro y **la línea base se volvió a medir después del merge**: da los mismos cuatro números,
+así que el cero de la diferencia sigue siendo un cero medido y no uno heredado. El ancla de arriba
+apunta al `main` contra el que se hizo el PASO 0, que es lo que el ancla significa.
 
 **Cero diferencia es el resultado correcto aquí**: un documento no añade tests. Si hubiera cambiado
 algo, sería que este encargo ha tocado código, y tenía prohibido tocarlo.
