@@ -246,6 +246,48 @@ un índice ausente no rompe ninguna consulta, solo la degrada cuando la tabla cr
 * **La ausencia en un reflog no prueba que algo no se hiciera aquí**: un rebase reescribe el SHA y
   rompe el enlace. Por eso ① lleva su control de sensibilidad (47/50) y no se apoya en el silencio.
 
+## SCRUM-441 · `invoices.paid_via` — ✅ APLICADO en staging y producción (12-ago-2026)
+
+**Lo aplicó el FUNDADOR, no esta sesión.** Se registra lo que él reportó, y con eso queda dicho el
+límite: **esta sesión no ha tocado ninguna base, tampoco en lectura**, así que no ha verificado la
+columna contra ningún host. El registro es del hecho, no de una medición propia. `yaqu_dev_javier`
+es carril B y se le pide a Javier.
+
+```sql
+ALTER TABLE "invoices" ADD COLUMN "paid_via" TEXT;
+```
+
+Es la columna que le faltaba a la mitad del dinero: `Charge` guarda el método de lo que pasa por
+pasarela, pero **una transferencia o un pago en efectivo no crean `Charge`**, así que en la pantalla
+de Cobros salían como «Método no registrado» — indistinguibles de un cobro del que de verdad no se
+sabe nada.
+
+> 🔴 **ENTRA VACÍA, Y NO SE RELLENA POR COPIA DESDE `Charge.method`.** Ese campo guardó a la vez la
+> intención del profesional (`card`) y el hecho que escribió la pasarela (`card:stripe`), y mirando
+> una fila **no se puede saber cuál de las dos es**. Copiarlo no movería ese defecto: lo DUPLICARÍA,
+> y de forma irreversible — una vez copiadas las filas, ya nadie podría distinguir cuáles se
+> copiaron. **Cero backfill de históricos.** Lo impide un guard que corre en `npm test`
+> (`tests/scrum441-paidvia-sin-copia.test.mjs`), probado en rojo por inyección.
+
+> ⚠️ **NOMBRE EN `snake_case`, y no por costumbre: por recuento.** La tabla `invoices` mezcla los dos
+> estilos de verdad. Contadas las columnas resolviendo `@map` —que es lo que acaba en Postgres— y
+> descartando relaciones y palabras sueltas: **`snake_case` 16, `camelCase` 7**. Las 7 `camelCase`
+> son las más antiguas (claves foráneas y `createdAt`); las `vf_*` y `reminder_*`, posteriores, ya
+> son `snake_case`. La tabla ya se estaba moviendo hacia ahí.
+
+> ⚠️ **`prisma/schema.prisma` SÍ lo lleva ya, y esta vez es lo correcto**, al revés que en
+> SCRUM-449: las bases se aplicaron ANTES, así que el esquema va detrás y no por delante.
+> `paidVia String? @map("paid_via")`. Nada de `prisma migrate diff` contra ninguna base desde aquí.
+
+**Sin `NOT NULL` y sin `DEFAULT`, a propósito:** `NULL` significa «no consta», que es la verdad de
+todas las filas de antes de hoy, y el lector ya lo trata bien (cae en «Método no registrado» sin
+inventarse nada). Un `DEFAULT` convertiría «no consta» en una afirmación sobre cómo se cobró.
+
+**El cable:** `updateInvoiceStatusAdmin` (`invoiceAdmin.ts`) acepta el método como **4º parámetro
+opcional** y `PUT /admin/invoices/:id/status` lo pasa desde `req.body.paidVia`. Opcional a
+propósito: **marcar cobrada sin indicar método sigue funcionando exactamente igual que antes**, y
+eso está medido, no supuesto (`tests/scrum441-metodo-declarado.test.mjs`, 10 tests).
+
 ## SCRUM-475 (fase 2) · tabla nueva `email_messages` — ✅ APLICADO **solo en DEV** (11-ago-2026)
 
 **REGISTRO de lo que se ejecutó y se verificó el 11-ago-2026.** No es una afirmación sobre el estado
@@ -1803,3 +1845,40 @@ ALTER TABLE "merchants" ADD COLUMN "flags" JSONB;
   (precedencia merchant > país > env > default). Escritura solo manual/fundador.
 - Primer uso: PUBLIC_PROFILE_ENABLED=true SOLO en demo (id=1). Ningún otro merchant
   tiene flags (verificado count=0).
+
+## 12-ago-2026 — customers.recargo_equivalencia (SCRUM-294-a) — SIN PUSH: la columna YA ESTABA ✅
+
+```prisma
+recargoEquivalencia Boolean? @map("recargo_equivalencia")   // en `model Customer`
+```
+
+🔴 **NO HAY `db push` QUE APROBAR, Y ESO ES LO QUE HAY QUE REGISTRAR.** La columna
+`customers.recargo_equivalencia` **ya existe en producción y en staging** —verificado por el
+fundador contra `information_schema`—, así que lo que cambia aquí es **el esquema poniéndose al día
+con la base**, no la base poniéndose al día con el esquema. Es el caso inverso al habitual y por eso
+se anota: quien lea esta lista buscando qué falta por aplicar, no encontrará nada que aplicar.
+
+- **`Boolean?` SIN `@default`, y es la decisión entera.** Un `@default(false)` convertiría a **todos
+  los clientes existentes** en «declarado que NO lleva recargo», y eso **no lo ha dicho nadie**. Los
+  tres estados salen del tipo, sin inventar ninguno:
+  `NULL` = no consta · `false` = declara que no · `true` = declara que sí.
+- **Aditiva por definición**: no se crea nada, no se borra nada, no se toca ninguna fila.
+- 🛑 **NO está cableada al total.** El recargo cambia lo que el cliente paga —base + cuota +
+  recargo— y por tanto **el número que se sella**: eso es camino de emisión (regla 38) y no entra
+  con este dato. El cálculo ya existe y espera sin llamadores en
+  `src/modules/invoicing/domain/recargoEquivalencia.ts` (censado en SCRUM-484 como `MOTOR_EN_ESPERA`).
+## SCRUM-293 (A2) · retención de IRPF — 12-ago-2026
+
+`Merchant.retencionIrpfDeclarada` (`retencion_irpf_declarada`, boolean, default false) y
+`Merchant.retencionIrpfTipo` (`retencion_irpf_tipo`, int, nullable).
+
+**NO se ha ejecutado ningún `db push`, y no es un olvido: las dos columnas YA EXISTEN en producción
+y en staging**, verificado contra `information_schema` por otro carril. Lo que iba por detrás era
+el `schema.prisma`, no las bases — así que este commit hace que el esquema **alcance** a la
+realidad, no al revés.
+
+`guard:prisma` en verde tras `prisma generate`: el cliente coincide con el esquema en los dos
+sentidos (529 líneas comparadas). Si algún día una base no las tuviera, `assertSchemaSinDeriva`
+lo cantaría al arrancar — que es exactamente su trabajo.
+
+Aditivo puro: una columna con default y otra anulable. No reescribe ninguna fila existente.

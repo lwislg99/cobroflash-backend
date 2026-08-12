@@ -463,9 +463,19 @@ router.get('/', async (req, res) => {
     // veía TODOS los Trabajos del merchant. `seesOnlyOwnJobs` complementa un allowlist de
     // 'admin', así que un rol desconocido queda RESTRINGIDO — misma lección que SCRUM-55 dejó
     // escrita en consolidar-albaranes (:470) y que aquí no se había aplicado.
-    const where: { merchantId: number; operarioId?: number | null } = { merchantId: req.merchantId };
+    // SCRUM-467 · LOS DOS EJES, y NO son el mismo campo — lo declara el schema de `Job`:
+    // `operarioId` es AUTORÍA (quien creó el presupuesto, congelada al aceptar — SCRUM-52) y
+    // `assignedUserId` es QUIEN LO EJECUTA (SCRUM-10). Filtrar solo por el primero dejaba fuera
+    // los Trabajos que a alguien le ASIGNAN: **asignar un trabajo no hacía que el técnico lo
+    // viera**, y había 6 con `assignedUserId` escrito que no miraba nadie.
+    // No se unifican los campos —son dos ideas distintas—: se filtra por LOS DOS.
+    const where: {
+      merchantId: number;
+      operarioId?: number | null;
+      OR?: Array<{ operarioId?: number | null; assignedUserId?: number | null }>;
+    } = { merchantId: req.merchantId };
     const restringido = seesOnlyOwnJobs(req.userRole);
-    if (restringido) where.operarioId = req.teamMemberId;
+    if (restringido) where.OR = [{ operarioId: req.teamMemberId }, { assignedUserId: req.teamMemberId }];
 
     // SCRUM-148: ?operarioId=<id> | 'owner' → Trabajos de ESE operario, para el detalle por
     // miembro del hub de Equipo.

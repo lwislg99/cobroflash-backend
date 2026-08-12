@@ -204,6 +204,57 @@ export function canalDeFallo() {
   return canal;
 }
 
+/**
+ * CENSO A-quater (SCRUM-475) · 🔴 ENVOLTORIO DE PROGRAMACIÓN vs EMISOR EN EL CAMINO DEL CORREO.
+ *
+ * EL DEFECTO QUE ESTO CIERRA, Y NO ES CHICO: `nombresDeEmisor()` marca como emisora a toda función
+ * que ALCANCE al proveedor, y eso mete en el mismo cubo dos cosas distintas.
+ *
+ *   · `sendWelcomeEmail(id)` manda un correo **al llamarla**. Si su llamador tira el resultado, el
+ *     fallo de ese correo se pierde. Es el defecto.
+ *   · `startCronJobs()` **no manda nada al llamarla**: registra callbacks que enviarán dentro de
+ *     horas o de días. Tirar su resultado no pierde el fallo de ningún correo — de hecho devolvía
+ *     `void`, así que no había resultado que tirar.
+ *
+ * Contarlos juntos hace que `ignora-resultado: 8` sume dos cosas que no son la misma, y el número
+ * deja de significar «ocho avisos pierden su fallo».
+ *
+ * ⚠️ SE DERIVA, NO SE LISTA. El criterio es la FORMA —¿el envío ocurre ahora o queda programado?—:
+ * se propaga «alcanza al proveedor» **por segunda vez**, esta vez SIN atravesar los callbacks que se
+ * le pasan a un programador. Lo que es emisora por el camino largo y NO por el corto, envía DESPUÉS.
+ * Una lista escrita a mano se quedaría vieja en silencio, que es la lección de esta casa.
+ */
+export function emisorasDiferidas() {
+  const nodos = construirGrafo();
+  const diferidas = new Set();
+  for (const f of nodos.values()) {
+    if (f.exportada && f.emisora && !f.emisoraAhora) diferidas.add(f.nombre);
+  }
+  return diferidas;
+}
+
+/**
+ * ¿Está `n` dentro de un callback que se le pasa a un PROGRAMADOR? Entonces lo que haya ahí no
+ * ocurre al llamar a la función que lo contiene: ocurre cuando el programador lo dispare.
+ *
+ * Los nombres (`schedule`, `setTimeout`, `setInterval`) son la API que existe; lo que se mide es la
+ * forma: una función pasada como argumento a algo que la ejecutará más tarde.
+ */
+const PROGRAMADORES = new Set(['schedule', 'setTimeout', 'setInterval', 'setImmediate']);
+
+function dentroDeCallbackProgramado(n, limite) {
+  for (let p = n.parent; p && p !== limite; p = p.parent) {
+    if (!(ts.isArrowFunction(p) || ts.isFunctionExpression(p))) continue;
+    const llamada = p.parent;
+    if (!llamada || !ts.isCallExpression(llamada) || !llamada.arguments.includes(p)) continue;
+    const nombre = ts.isPropertyAccessExpression(llamada.expression)
+      ? llamada.expression.name.text
+      : (ts.isIdentifier(llamada.expression) ? llamada.expression.text : '');
+    if (PROGRAMADORES.has(nombre)) return true;
+  }
+  return false;
+}
+
 /** El grafo de funciones del árbol, con sus llamadas resueltas ENTRE FICHEROS. */
 function construirGrafo() {
   // ── 1 · Un nodo por función del árbol, con sus llamadas RESUELTAS a fichero+nombre ──────
@@ -250,29 +301,33 @@ function construirGrafo() {
 
     for (const { nombre, exportada, nodo } of declaraciones) {
       let emisora = false;
+      let emisoraAhora = false; // SCRUM-475: ¿envía AL LLAMARLA, o solo lo deja programado?
       let lanza = false;
       const llama = new Set();
+      const llamaAhora = new Set();       // las que NO están dentro de un callback programado
       const llamaSinProteger = new Set(); // las que NO están dentro de un try de esta función
       (function walk(n) {
         // ¿Un `throw` que SALE de esta función? Uno dentro de su propio `try` no sale.
         if (ts.isThrowStatement(n) && !dentroDeTry(n, nodo)) lanza = true;
         if (ts.isCallExpression(n)) {
+          const diferida = dentroDeCallbackProgramado(n, nodo);
           // ¿Llama al proveedor por HTTP? (por el DESTINO, no por el nombre del cliente)
           if (n.arguments.length && ts.isStringLiteralLike(n.arguments[0])
-              && n.arguments[0].text.includes(HOST_PROVEEDOR)) emisora = true;
+              && n.arguments[0].text.includes(HOST_PROVEEDOR)) { emisora = true; if (!diferida) emisoraAhora = true; }
           // ¿O manda por SMTP?
-          if (ts.isPropertyAccessExpression(n.expression) && n.expression.name.text === 'sendMail') emisora = true;
+          if (ts.isPropertyAccessExpression(n.expression) && n.expression.name.text === 'sendMail') { emisora = true; if (!diferida) emisoraAhora = true; }
           if (ts.isIdentifier(n.expression)) {
             const imp = importado.get(n.expression.text);
             const clave = imp ? `${imp.destino}::${imp.original}` : `${fichero}::${n.expression.text}`;
             llama.add(clave);
+            if (!diferida) llamaAhora.add(clave);
             // Una excepción de la callee solo sale de aquí si la llamada NO está protegida.
             if (!dentroDeTry(n, nodo) && !tieneCatchPegado(n)) llamaSinProteger.add(clave);
           }
         }
         ts.forEachChild(n, walk);
       })(nodo.body);
-      nodos.set(`${fichero}::${nombre}`, { nombre, exportada, emisora, lanza, llama, llamaSinProteger });
+      nodos.set(`${fichero}::${nombre}`, { nombre, exportada, emisora, emisoraAhora, lanza, llama, llamaAhora, llamaSinProteger });
     }
   }
 
@@ -289,6 +344,13 @@ function construirGrafo() {
       if (!f.emisora) {
         for (const destino of f.llama) {
           if (nodos.get(destino)?.emisora) { f.emisora = true; cambio = true; break; }
+        }
+      }
+      // SCRUM-475 · LA MISMA propagación SIN atravesar callbacks programados. Lo que sale emisora
+      // por el camino largo y no por éste, no envía al llamarlo: envía cuando el cron lo dispare.
+      if (!f.emisoraAhora) {
+        for (const destino of f.llamaAhora) {
+          if (nodos.get(destino)?.emisoraAhora) { f.emisoraAhora = true; cambio = true; break; }
         }
       }
       if (!f.lanza) {

@@ -420,7 +420,10 @@ router.put('/:id/status', requireRole('admin'), async (req, res) => {
       return res.status(400).json({ error: 'invalid_status' });
     }
 
-    const updated = await updateInvoiceStatusAdmin(id, status, req.merchantId);
+    // SCRUM-441 · CÓMO dice el profesional que entró el dinero. OPCIONAL: si el cuerpo no lo trae,
+    // esta ruta hace exactamente lo de siempre. Lo que llegue lo valida el DOMINIO contra `PAID_VIA`
+    // (regla 22) — aquí no se reimplementa el conjunto cerrado, que es como se acaba teniendo dos.
+    const updated = await updateInvoiceStatusAdmin(id, status, req.merchantId, req.body?.paidVia);
     if (!updated) {
       return res.status(404).json({ error: 'not_found' });
     }

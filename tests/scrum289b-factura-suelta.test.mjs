@@ -319,6 +319,13 @@ test('SCRUM-289b · SUELO del guard de microcopy: encuentra literales visibles d
  */
 const APROBADOS = {
   '+ Nuevo justificante': 'fundador, 6-ago-2026 (SCRUM-346 / A0.5)',
+  // SCRUM-483 (A2) · TRES rótulos salen del marcador porque su texto está APROBADO en la fuente:
+  // SCRUM-277 en Jira, sección «Rótulos · ESTADO CERRADO DE LA APROBACIÓN». Esto NO relaja el
+  // guard —sigue cayendo ante cualquier texto plausible que no esté aquí—: solo declara que estos
+  // tres dejaron de ser provisionales, y se puede señalar la decisión que lo hizo.
+  Cliente: 'fundador, 11-ago-2026 (SCRUM-277 · título de bloque)',
+  'Líneas': 'fundador, 11-ago-2026 (SCRUM-277 · título de bloque)',
+  'Emitir factura': 'fundador, 11-ago-2026 (SCRUM-277 · acción primaria)',
 };
 
 test('SCRUM-346 · SUELO: el guard VE las dos ramas de un ternario', () => {

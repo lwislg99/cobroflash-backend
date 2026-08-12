@@ -104,7 +104,20 @@ router.post('/', async (req, res) => {
         where: { id: chargeId },
         data: {
           ...datosDeCobroPagado(new Date(), { mp_payment_id: mpPaymentId, mp_status: mpStatus, ...payment }),
-          method: 'mp',
+          // SCRUM-489 · aquí se escribía `'mp'` a fuego, y `'mp'` NO está en `PAID_VIA`. No era una
+          // preferencia: es el `update` que marca el cobro como PAGADO, así que el `paid_via` que
+          // quedaba registrado era falso — la familia de SCRUM-191, sobre la columna que viaja al
+          // CSV del asesor fiscal.
+          //
+          // 🔴 Y no hace falta traductor nuevo: `getMpPayment()` (arriba) YA devuelve el método
+          // traducido al vocabulario de la casa. SCRUM-474 arregló el TRADUCTOR y no a su
+          // CONSUMIDOR, así que llevaba desde entonces devolviendo el valor bueno para que nadie lo
+          // mirara. Esto solo deja de tirarlo.
+          //
+          // El caso difícil ya lo resuelve él: si MercadoPago manda un `payment_type_id` que no
+          // conocemos —o no lo manda—, devuelve el DESCONOCIDO DECLARADO. Decir que no consta, no
+          // adivinar; y aquí pesa más que en ningún otro sitio porque el cobro ya está cerrado.
+          method: payment.method,
           reference: mpPaymentId,
           reconciliations: {
             create: { bankRef: mpPaymentId, matched: true },

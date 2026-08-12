@@ -233,7 +233,18 @@ test('SCRUM-294 · nadie los llama todavía, y eso es el estado correcto', () =>
       if (e.isDirectory()) andar(p);
       else if (e.name.endsWith('.ts') && !p.endsWith('recargoEquivalencia.ts') && !p.endsWith('criterioCaja.ts')) {
         const c = fs.readFileSync(p, 'utf8');
-        if (/recargoEquivalencia|criterioCaja/.test(c)) llamadores.push(path.relative(RAIZ, p).replace(/\\/g, '/'));
+        // 🔴 SE BUSCA EL IMPORT, NO LA MENCIÓN — y el cambio lo pagó SCRUM-294-a (12-ago-2026).
+        //
+        // Esto buscaba la CADENA `recargoEquivalencia` en cualquier `.ts` de `src/`. Cuando el
+        // recargo pasó a ser un campo del CLIENTE, la palabra apareció en `schemas.ts` (la
+        // validación) y en `customerAdmin.ts` (el `select` de la ficha) — dos ficheros que **no
+        // importan este módulo**: llevan la palabra porque es el NOMBRE DEL CAMPO.
+        //
+        // Y el falso positivo no era ruido: empujaba a romper algo para callarlo, y lo único
+        // «rompible» era justo lo que la regla 38 prohíbe tocar. Un guard atado a la FORMA
+        // (mencionar) se cae con cualquier cambio correcto; atado al HECHO (importar), no.
+        const importa = /(?:from|import|require)\s*\(?\s*['"][^'"]*\/(?:recargoEquivalencia|criterioCaja)['"]/.test(c);
+        if (importa) llamadores.push(path.relative(RAIZ, p).replace(/\\/g, '/'));
       }
     }
   };

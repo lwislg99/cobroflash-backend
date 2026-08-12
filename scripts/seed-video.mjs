@@ -477,7 +477,17 @@ async function seed() {
           const amount = stageAmounts[stage.index];
           const paid = q.stagesPaid[i];
           const paidAt = paid ? thisMonthDay(q.stagesPaidDay[i]) : null;
-          const method = (i % 2 === 0) ? 'bizum' : 'transfer';
+          // 🔴 SCRUM-489 · aquí ponía `'bizum'` A SECAS, y `'bizum'` NO está en `PAID_VIA`: el
+          // conjunto cerrado tiene `bizum_auto` y `bizum_manual`, y la diferencia no es de estilo
+          // —uno lo confirma un WEBHOOK y el otro una PERSONA, que son dos cadenas de evidencia
+          // distintas ante una inspección (SCRUM-191)—. Este seed no pasa por ninguna pasarela:
+          // sus cobros los da por pagados el propio script, así que lo que corresponde es el
+          // MANUAL. Sembrar un valor fuera del conjunto metía en la base un método que ningún
+          // camino del producto puede producir.
+          //
+          // ⚠️ Las filas YA SEMBRADAS se quedan como están: ningún backfill. Lo histórico se
+          // documenta, no se reinterpreta.
+          const method = (i % 2 === 0) ? 'bizum_manual' : 'transfer';
 
           // Cobro (Charge) en BD, estado ya resuelto (sin Stripe).
           const charge = await tx.charge.create({
