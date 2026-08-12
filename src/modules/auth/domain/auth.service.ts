@@ -1,8 +1,11 @@
 import crypto from 'crypto';
 import { prisma } from '../../../core/db/prisma';
-import { enviarCorreo } from '../../../integrations/enviarCorreo';
+import { enviarCorreo, type ResultadoCorreo } from '../../../integrations/enviarCorreo';
 import { config } from '../../../core/config/env';
 import { sendWelcomeEmail } from '../../messaging/domain/lifecycle.service';
+// SCRUM-475 · un aviso que no sale deja constancia -- y sin poder tumbar el registro.
+import { conConstancia, dejarConstancia } from '../../messaging/domain/avisoConstancia';
+import { constanciaDeFallo } from '../../messaging/domain/constanciaCorreo';
 import { renderEmailLayout, escEmail } from '../../messaging/domain/emailLayout';
 import { generateUniqueReferralCode, resolveReferrer } from './referral.service';
 import { maskEmail } from '../../../core/utils/utils';
@@ -52,13 +55,22 @@ function logMagicLink(tag: string, to: string, link: string) {
 // derivan req.merchantId/req.userRole de esa fila) quedan INTACTOS: no hay lógica de
 // rol/tenancy nueva que pueda equivocarse, solo un segundo punto de entrada que crea
 // la fila con la forma ya probada.
+/**
+ * 🔴 SCRUM-475 · DEVUELVE LO QUE PASÓ CON EL CORREO, y sigue SIN LANZAR.
+ *
+ * Lo segundo es tan importante como lo primero: `POST /auth/login` está envuelto en un `try/catch`
+ * que contesta `500 internal_error`. Si esto empezara a lanzar cuando el correo no sale, **cambiaría
+ * la respuesta que ve un usuario sin sesión** — microcopy que aprueba el asesor (regla 30) — y
+ * además le revelaría que su email existe. Así que el fallo se sigue capturando aquí; lo que cambia
+ * es que ahora VIAJA como valor hacia quien pueda dejar constancia de él.
+ */
 async function issueLoginLink(params: {
   merchantId: number;
   teamMemberId: number | null;
   email: string;
   recipientName: string;
   businessName?: string | null;
-}): Promise<void> {
+}): Promise<ResultadoCorreo> {
   const token = generateToken();
   const expiresAt = new Date(Date.now() + MAGIC_LINK_TTL_MS);
 
@@ -74,7 +86,7 @@ async function issueLoginLink(params: {
     : 'Toca el botón y entras directo a tu cuenta. Sin contraseñas.';
 
   try {
-    await sendEmail({
+    const r = await sendEmail({
       to: params.email,
       subject: 'Tu enlace de acceso a YaQu',
       // A6.4: layout de marca compartido (emailLayout.ts)
@@ -88,16 +100,22 @@ async function issueLoginLink(params: {
       }),
     });
     console.log(`[magic-link] email enviado OK a ${maskEmail(params.email)}`); // SCRUM-101
+    return r;
   } catch (emailErr: any) {
     console.error(`[magic-link] ERROR enviando email a ${maskEmail(params.email)}:`, emailErr?.message || emailErr); // SCRUM-101
+    return { enviado: false, motivo: 'fallo_envio', constancia: constanciaDeFallo(emailErr) };
   }
 }
 
-export async function requestMagicLink(email: string): Promise<void> {
+/**
+ * SCRUM-475 · devuelve lo que pasó con el envío. `null` = NO SE INTENTÓ NINGUNO, y es el caso que
+ * este ticket NO puede convertir en constancia de fallo: un email que no está registrado no genera
+ * aviso, y decir lo contrario sería inventar un intento que no hubo. Ya deja su propia línea de log.
+ */
+export async function requestMagicLink(email: string): Promise<ResultadoCorreo | null> {
   const merchant = await prisma.merchant.findUnique({ where: { email } });
   if (merchant) {
-    await issueLoginLink({ merchantId: merchant.id, teamMemberId: null, email, recipientName: merchant.name });
-    return;
+    return issueLoginLink({ merchantId: merchant.id, teamMemberId: null, email, recipientName: merchant.name });
   }
 
   // SCRUM-92: si el email no es un Merchant, probar TeamMember (operario). Sin esto,
@@ -115,12 +133,12 @@ export async function requestMagicLink(email: string): Promise<void> {
     // SCRUM-101: el email en SÍ es el dato que este log no debe guardar en claro — la
     // respuesta HTTP ya no lo revela al usuario; el log de Railway tampoco debe hacerlo.
     console.log(`[magic-link] intento de login con email no registrado: ${maskEmail(email)}`);
-    return;
+    return null;
   }
   if (teamMember.status === 'suspended') {
     // Mismo trato que "no existe": jamás confirmar el estado de una cuenta ajena.
     console.log(`[magic-link] intento de login de TeamMember SUSPENDIDO: ${maskEmail(email)} (id=${teamMember.id}, merchantId=${teamMember.merchantId})`); // SCRUM-101
-    return;
+    return null;
   }
   // status 'invited' se deja pasar a propósito: verifyMagicLink ya activa cualquier
   // AuthSession con teamMemberId al canjearla (mismo camino que aceptar la invitación
@@ -130,7 +148,7 @@ export async function requestMagicLink(email: string): Promise<void> {
     where: { id: teamMember.merchantId },
     select: { name: true },
   });
-  await issueLoginLink({
+  return issueLoginLink({
     merchantId: teamMember.merchantId,
     teamMemberId: teamMember.id,
     email,
@@ -275,7 +293,10 @@ export async function registerMerchant(params: {
 }): Promise<void> {
   const existing = await prisma.merchant.findUnique({ where: { email: params.email } });
   if (existing) {
-    await requestMagicLink(params.email);
+    // SCRUM-475 · se MIRA lo que devolvió. Quien se registra con un email que ya existe recibe un
+    // enlace de acceso en vez de una cuenta nueva; si ese correo no sale, se queda mirando un
+    // «Revisa tu email» que no va a llegar nunca. Antes de esto no quedaba ni una línea de ello.
+    dejarConstancia('enlace_de_acceso', params.email, await requestMagicLink(params.email));
     return;
   }
 
@@ -311,7 +332,14 @@ export async function registerMerchant(params: {
   });
 
   // Email de bienvenida (no bloquea el registro si falla)
-  sendWelcomeEmail(created.id).catch((e) => console.error('[register] welcome email:', e?.message));
+  //
+  // SCRUM-475 · ⚠️ SIGUE SIN `await`: la cuenta ya está creada y un aviso que no sale NO puede
+  // tumbar el registro. Lo que cambia es que el `.catch()` que solo escribía el mensaje del error
+  // —sin decir a QUIÉN no se le dio la bienvenida, y que no se disparaba cuando el fallo venía
+  // DEVUELTO en vez de lanzado— pasa a ser constancia de los dos canales.
+  conConstancia('bienvenida', params.email, sendWelcomeEmail(created.id));
 
-  await requestMagicLink(params.email);
+  // SCRUM-475 · el enlace con el que el recién registrado entra por primera vez. Si no sale, tiene
+  // una cuenta y ninguna forma de acceder a ella, y hasta hoy eso no dejaba rastro.
+  dejarConstancia('enlace_de_acceso', params.email, await requestMagicLink(params.email));
 }

@@ -210,40 +210,44 @@ test('SCRUM-477 · 🔴 ningún aviso al profesional pierde su fallo, y el rojo 
 });
 
 test('SCRUM-477 · el conjunto de avisos es CERRADO', () => {
-  assert.deepEqual([...AVISOS].sort(),
-    ['pago_recibido', 'presupuesto_aceptado', 'presupuesto_aprobado_tecnico'].sort(),
+  // ⚠️ SCRUM-475 (los ocho que ignoraban el resultado) AÑADIÓ CINCO. No es relajar el conjunto: es
+  // que los siete avisos que se arreglaron allí tuvieron que NOMBRARSE aquí para poder registrarse,
+  // que es exactamente lo que este aserto existe para forzar. Los tres de este ticket siguen.
+  assert.deepEqual([...AVISOS].sort(), [
+    'pago_recibido', 'presupuesto_aceptado', 'presupuesto_aprobado_tecnico', // SCRUM-477
+    'bienvenida', 'primer_pago', 'enlace_de_acceso', 'resumen_semanal', 'ciclo_de_vida', // SCRUM-475
+  ].sort(),
     '🔴 ha cambiado el conjunto de avisos. Uno nuevo se nombra aquí para que pase por el mismo '
     + 'registro; si no, nace con el defecto que este ticket cierra.');
 });
 
 // ── 5 · EL TRINQUETE de lo que SIGUE perdiendo el fallo — nombrado, no escondido ─────────
 
-test('SCRUM-477 · 🔴 TRINQUETE: ocho sitios más pierden el fallo, y van NOMBRADOS', () => {
+test('SCRUM-477 · 🔴 TRINQUETE: de los ocho queda UNO, y va NOMBRADO', () => {
   // ⚠️ ESTE NÚMERO SUBIÓ DE 4 A 12 AL COMPLETAR EL CRITERIO, Y NADIE EMPEORÓ NADA: el censo
-  // anterior solo miraba el canal de la excepción. Cuatro se arreglan en este ticket; estos ocho
-  // quedan escritos con su nombre.
+  // anterior solo miraba el canal de la excepción. Cuatro se arreglaron en este ticket y los otros
+  // ocho quedaron escritos con su nombre.
   //
-  // NO SE ARREGLAN AQUÍ (regla 37): son de otros carriles —el arranque de los crons y el enlace
-  // mágico de acceso—, no bloquean este ticket, y el del enlace mágico además toca la respuesta
-  // que ve un usuario sin sesión, que es decisión de producto (regla 30).
+  // ⚠️ Y DE ESOS OCHO YA SOLO QUEDA UNO. Los siete restantes los arregló SCRUM-475 (los ocho que
+  // ignoraban el resultado): los tres del arranque, los dos del enlace de acceso disparados por un
+  // REGISTRO, la bienvenida y el primer pago de Stripe. La bajada de 8 a 1 no se acepta por el
+  // recuento —eso es exactamente cómo se perdieron los cuatro mudos—: `scrum475-ignoran-el-resultado`
+  // exige VER las ocho llamadas una a una y que siete hayan pasado a `mira-resultado`.
+  //
+  // El que queda NO se arregla (regla 37 + regla 30): `POST /auth/login` contesta un texto a un
+  // usuario SIN SESIÓN, y ese texto lo aprueba el asesor.
   const perdidos = LLAMADORES.filter((l) => l.veredicto === 'ignora-resultado' || l.veredicto === 'traga-mudo');
   const detalle = perdidos.map((p) => `${p.fichero}:${p.linea}  ${p.emisor}`).join('\n    ');
 
-  assert.equal(perdidos.length, 8,
-    `🔴 el censo da ${perdidos.length} sitios que pierden el fallo y eran 8:\n    ${detalle}\n\n`
+  assert.equal(perdidos.length, 1,
+    `🔴 el censo da ${perdidos.length} sitios que pierden el fallo y tiene que quedar 1:\n    ${detalle}\n\n`
     + '  Si SUBE, alguien ha escrito un envío nuevo cuyo fallo no mira nadie: nómbralo y pásalo\n'
     + '  por `conConstancia`. Si BAJA, comprueba PRIMERO que no sea el censo el que dejó de ver —\n'
     + '  pasó exactamente eso al unificar el emisor (SCRUM-475), y el número cayó a cero solo.');
 
-  assert.deepEqual(perdidos.map((p) => p.emisor).sort(), [
-    'requestMagicLink',      // auth.routes: el enlace de acceso
-    'requestMagicLink',      // auth.service ×2
-    'requestMagicLink',
-    'runLifecycleEmails',    // cron: arranque
-    'sendFirstPaymentEmail', // stripe.routes
-    'sendWeeklyDigests',     // cron: arranque
-    'sendWelcomeEmail',      // auth.service
-    'startCronJobs',         // index: arranque
-  ].sort(), `🔴 han cambiado CUÁLES pierden el fallo:\n    ${detalle}\n\n`
+  assert.deepEqual(perdidos.map((p) => `${p.fichero} ${p.emisor}`), [
+    // auth.routes: el enlace de acceso pedido desde la pantalla de login. Fuera por regla 30.
+    'src/modules/auth/app/routes/auth.routes.ts requestMagicLink',
+  ], `🔴 han cambiado CUÁLES pierden el fallo:\n    ${detalle}\n\n`
     + '  El recuento solo no lo vería. Vuelve a medir cuál entró, cuál salió y por qué.');
 });

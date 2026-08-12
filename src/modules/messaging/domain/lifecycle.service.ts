@@ -8,6 +8,8 @@ import { prisma } from '../../../core/db/prisma';
 import { config } from '../../../core/config/env';
 import { maskEmail } from '../../../core/utils/utils';
 import { enviarCorreo, ResultadoCorreo, resultadoSinDestino } from '../../../integrations/enviarCorreo';
+// SCRUM-475 · un aviso que no sale deja constancia, y NO se marca como enviado.
+import { dejarConstancia, parteNuevo, type ParteDeAvisos } from './avisoConstancia';
 
 const DASHBOARD_URL = `${config.PUBLIC_BASE_URL || 'https://yaqu.app'}/dashboard/`;
 
@@ -64,28 +66,75 @@ function daysSince(date: Date): number {
   return Math.floor((Date.now() - new Date(date).getTime()) / 86_400_000);
 }
 
+/**
+ * 🔴 SCRUM-475 · ¿SALIÓ ESE AVISO? Anota lo que pasó y contesta si se puede marcar como enviado.
+ *
+ * EL DEFECTO QUE CIERRA: el patrón que había era `await sendEmail(...)` como sentencia suelta y
+ * `markSent(...)` en la línea siguiente, y eso **marcaba como ENVIADO un correo que no se había
+ * mandado**. No por el canal que todos vigilaban:
+ *
+ *   · si `sendEmail` LANZA, el `catch` de fuera corta antes de `markSent`. Ese caso estaba bien.
+ *   · si `sendEmail` **DEVUELVE** `sin_destino` —el correo del merchant sin `@`, y no lanza— la
+ *     ejecución seguía y `markSent` escribía `day3: 1`. El merchant no lo recibe nunca, el sistema
+ *     cree que sí, **y no se reintenta jamás porque `alreadySent` ya dice que se mandó**.
+ *
+ * Es la mentira exacta que SCRUM-475 fase 1 se negó a introducir («`markSent()` marcaría como
+ * ENVIADO un correo que no existe») y que estaba viva por el otro canal. Cinco avisos la tenían.
+ *
+ * ⚠️ POR QUÉ ESTO DEVUELVE UN BOOLEANO EN VEZ DE HACER EL `markSent` ÉL MISMO, que sería más
+ * limpio: `tests/_censo-aviso-vs-bloqueo.mjs` (SCRUM-337, guard AJENO) deriva CUÁLES son los avisos
+ * del ciclo de vida buscando cada `markSent(…, 'clave')` **dentro de `runLifecycleEmails`**, con la
+ * clave como literal. Al extraerlo a un helper, ese censo pasó a ver CERO avisos y su suelo cantó
+ * rojo: *«cero avisos no significa "no hay correos que prometan nada": significa que la derivación
+ * está ciega»*. Tenía razón — es la misma lección que SCRUM-475 fase 2 aprendió al revés—, así que
+ * el `markSent` se queda donde el guard ajeno lo busca y lo que se extrae es la decisión.
+ */
+function anotarEnvio(parte: ParteDeAvisos, destinatario: string, r: ResultadoCorreo): boolean {
+  parte.intentados += 1;
+  if (r.enviado) { parte.entregados += 1; return true; }
+  const registro = dejarConstancia('ciclo_de_vida', destinatario, r);
+  if (registro) parte.perdidos.push(registro);
+  return false;
+}
+
 // ── Emails individuales ───────────────────────────────────────────────────
-export async function sendWelcomeEmail(merchantId: number): Promise<void> {
+/**
+ * 🔴 SCRUM-475 · DEVUELVE LO QUE PASÓ. Antes era `Promise<void>` con un `.catch()` inline que se
+ * comía el fallo, y `markSent` corría **después de ese catch**: la bienvenida se marcaba como
+ * enviada aunque no hubiera salido. Quien llama lo pasa por `conConstancia`, que anota los dos
+ * canales con identidad.
+ *
+ * `null` = NO HUBO ENVÍO del que dejar constancia (ya constaba enviada, o el merchant no existe).
+ * Es distinto de «salió» y de «falló», y por eso no se finge un `ResultadoCorreo`.
+ */
+export async function sendWelcomeEmail(merchantId: number): Promise<ResultadoCorreo | null> {
   const m = await prisma.merchant.findUnique({
     where: { id: merchantId },
     select: { id: true, email: true, name: true, lifecycleEmailsSent: true },
   });
-  if (!m?.email || alreadySent(m, 'welcome')) return;
+  if (!m || alreadySent(m, 'welcome')) return null;
+  // Sin correo NO se manda nada, y eso ahora se DICE: `sin_destino` es un dato, no un hueco.
+  if (!m.email) return resultadoSinDestino();
   const html = wrap(`
     <p>¡Hola ${m.name || ''}! 👋</p>
     <p>Bienvenido a <strong>YaQu</strong>. A partir de ahora vas a cotizar por WhatsApp, cobrar antes de empezar y olvidarte del papeleo.</p>
     <p>Para arrancar solo necesitas 3 cosas: tu catálogo de servicios, un cliente y pulsar enviar. En 30 segundos tu primera cotización está en camino.</p>
   `, { label: 'Crear mi primera cotización', url: DASHBOARD_URL });
-  await sendEmail(m.email, '¡Bienvenido a YaQu! 🎉', html).catch((e) => console.error('[lifecycle] welcome:', e?.message));
-  await markSent(m.id, m.lifecycleEmailsSent, 'welcome');
+  // 🔴 El `.catch()` inline se retira: era lo que impedía que el fallo llegara a quien llama, y lo
+  // que dejaba correr el `markSent` de abajo sobre un correo que no salió.
+  const r = await sendEmail(m.email, '¡Bienvenido a YaQu! 🎉', html);
+  if (r.enviado) await markSent(m.id, m.lifecycleEmailsSent, 'welcome');
+  return r;
 }
 
-export async function sendFirstPaymentEmail(merchantId: number): Promise<void> {
+/** SCRUM-475 · mismo cambio y mismo motivo que `sendWelcomeEmail`. */
+export async function sendFirstPaymentEmail(merchantId: number): Promise<ResultadoCorreo | null> {
   const m = await prisma.merchant.findUnique({
     where: { id: merchantId },
     select: { id: true, email: true, name: true, lifecycleEmailsSent: true },
   });
-  if (!m?.email || alreadySent(m, 'firstPayment')) return;
+  if (!m || alreadySent(m, 'firstPayment')) return null;
+  if (!m.email) return resultadoSinDestino();
   const html = wrap(`
     <p>¡Gracias por confiar en YaQu, ${m.name || ''}! 🚀</p>
     <p>Ya tienes el plan <strong>Pro</strong> activo. 5 cosas que quizá no sabías:</p>
@@ -97,12 +146,21 @@ export async function sendFirstPaymentEmail(merchantId: number): Promise<void> {
       <li>Puedes invitar a tu equipo con roles.</li>
     </ul>
   `, { label: 'Ir a mi panel', url: DASHBOARD_URL });
-  await sendEmail(m.email, 'Bienvenido al plan Pro de YaQu', html).catch((e) => console.error('[lifecycle] firstPayment:', e?.message));
-  await markSent(m.id, m.lifecycleEmailsSent, 'firstPayment');
+  const r = await sendEmail(m.email, 'Bienvenido al plan Pro de YaQu', html);
+  if (r.enviado) await markSent(m.id, m.lifecycleEmailsSent, 'firstPayment');
+  return r;
 }
 
 // ── Evaluador diario ──────────────────────────────────────────────────────
-export async function runLifecycleEmails(): Promise<void> {
+/**
+ * 🔴 SCRUM-475 · DEVUELVE UN PARTE, Y ANTES ERA `Promise<void>`.
+ *
+ * El censo lo marcaba `ignora-resultado` en `cron.ts:71`. La verdad era peor que «nadie mira lo que
+ * devolvió»: **no había nada que mirar**, y los cinco avisos de dentro marcaban `markSent` sobre
+ * correos que podían no haber salido. Ver `enviarAvisoDeCiclo`.
+ */
+export async function runLifecycleEmails(): Promise<ParteDeAvisos> {
+  const parte = parteNuevo();
   const merchants = await prisma.merchant.findMany({
     where: { status: 'active', email: { not: null } },
     select: { id: true, email: true, name: true, plan: true, createdAt: true, lifecycleEmailsSent: true },
@@ -136,8 +194,8 @@ export async function runLifecycleEmails(): Promise<void> {
               <li>Envíala por WhatsApp: la mayoría de clientes responde en menos de 2 horas.</li>
             </ol>
           `, { label: 'Enviar mi primera cotización', url: DASHBOARD_URL });
-          await sendEmail(m.email, '¿Te ayudamos a empezar con YaQu?', html);
-          await markSent(m.id, m.lifecycleEmailsSent, 'day3');
+          const r = await sendEmail(m.email, '¿Te ayudamos a empezar con YaQu?', html);
+          if (anotarEnvio(parte, m.email, r)) await markSent(m.id, m.lifecycleEmailsSent, 'day3');
           continue;
         }
       }
@@ -148,8 +206,8 @@ export async function runLifecycleEmails(): Promise<void> {
           <p>Hola ${m.name || ''},</p>
           <p>Tu prueba de YaQu expira en unos 7 días. ¿Qué tal va todo? Si tienes dudas, respóndenos a este correo y te ayudamos.</p>
         `, { label: 'Ver mi panel', url: DASHBOARD_URL });
-        await sendEmail(m.email, 'Tu prueba de YaQu expira en 7 días', html);
-        await markSent(m.id, m.lifecycleEmailsSent, 'day7');
+        const r = await sendEmail(m.email, 'Tu prueba de YaQu expira en 7 días', html);
+        if (anotarEnvio(parte, m.email, r)) await markSent(m.id, m.lifecycleEmailsSent, 'day7');
         continue;
       }
 
@@ -173,8 +231,8 @@ export async function runLifecycleEmails(): Promise<void> {
           <p>Hola ${m.name || ''},</p>
           <p>Te quedan unos 2 días de prueba. Si activas el plan Pro, sigues con cotizaciones y facturas ilimitadas, cobro integrado y soporte. Si no, dejarás de poder crear presupuestos nuevos y de enviar presupuestos y albaranes por WhatsApp. El resto del panel sigue funcionando: tus cobros, tus clientes y tus datos siguen ahí.</p>
         `, { label: 'Activar plan Pro', url: `${DASHBOARD_URL}#plans` });
-        await sendEmail(m.email, 'Solo 2 días de prueba en YaQu', html);
-        await markSent(m.id, m.lifecycleEmailsSent, 'day12');
+        const r = await sendEmail(m.email, 'Solo 2 días de prueba en YaQu', html);
+        if (anotarEnvio(parte, m.email, r)) await markSent(m.id, m.lifecycleEmailsSent, 'day12');
         continue;
       }
 
@@ -184,8 +242,8 @@ export async function runLifecycleEmails(): Promise<void> {
           <p>Hola ${m.name || ''},</p>
           <p>Tu prueba de YaQu ha terminado, pero tus datos siguen aquí. Activa el plan Pro cuando quieras y retomas justo donde lo dejaste.</p>
         `, { label: 'Continuar con YaQu', url: `${DASHBOARD_URL}#plans` });
-        await sendEmail(m.email, 'Tus datos te esperan en YaQu', html);
-        await markSent(m.id, m.lifecycleEmailsSent, 'trialExpired');
+        const r = await sendEmail(m.email, 'Tus datos te esperan en YaQu', html);
+        if (anotarEnvio(parte, m.email, r)) await markSent(m.id, m.lifecycleEmailsSent, 'trialExpired');
         continue;
       }
 
@@ -199,12 +257,18 @@ export async function runLifecycleEmails(): Promise<void> {
             <p>Hola ${m.name || ''},</p>
             <p>Hace un par de semanas que no te vemos por YaQu. ¿En qué fallamos? Respóndenos a este correo: leemos todo y nos ayuda muchísimo a mejorar.</p>
           `, { label: 'Volver a mi panel', url: DASHBOARD_URL });
-          await sendEmail(m.email, '¿Qué ha pasado? Cuéntanos', html);
-          await markSent(m.id, m.lifecycleEmailsSent, 'inactive');
+          const r = await sendEmail(m.email, '¿Qué ha pasado? Cuéntanos', html);
+          if (anotarEnvio(parte, m.email, r)) await markSent(m.id, m.lifecycleEmailsSent, 'inactive');
         }
       }
     } catch (err: any) {
+      // SCRUM-475 · el OTRO canal. `anotarEnvio` cubre el fallo DEVUELTO; aquí llega el que LANZA
+      // —`sendEmail` lanza cuando el envío revienta— y también un fallo de BD, que igualmente deja
+      // al merchant sin su aviso. En los dos casos el aviso no salió, y eso es lo que consta.
       console.error(`[lifecycle] merchant ${m.id}:`, err?.message);
+      const registro = dejarConstancia('ciclo_de_vida', m.email, { error: err });
+      if (registro) parte.perdidos.push(registro);
     }
   }
+  return parte;
 }
