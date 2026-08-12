@@ -150,3 +150,90 @@ profesional nota**, con su fichero:
 
 **Cero cables**: no he enchufado ninguno de los 8, ni tocado `prisma/schema.prisma`, ni el camino de
 emisión, ni el guard de SCRUM-411. **No he retirado nada**: ningún módulo salió como muerto.
+
+
+---
+
+# SCRUM-484 · CONTINUACIÓN · los 56 sin motivo escrito, clasificados
+
+**Medido contra:** `origin/main` = `3d8c1d7d91d151d87d960aa9b1927dedc9cddab4` · 2026-08-12T10:50:12+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · **Cero cables, cero schema, cero emisión.**
+
+## 🔴 Los números CAMBIARON, y no por un error: `main` se movió
+
+La partición anterior (131/59 sobre 190) se midió contra otro `main` — que ya incluye, entre otras
+cosas, mi propia entrada de SCRUM-485. **Recuento de ahora, con la suma hecha por el instrumento:**
+
+| | exports | módulos |
+|---|---|---|
+| con motivo escrito en su fichero | **136** | 44 |
+| **sin** motivo escrito | **56** | 22 |
+| **total** | **192** | 66 |
+
+`136 + 56 = 192`. **CUADRA.** Y ocho módulos inalcanzables enteros, como antes.
+
+## La sexta clase resultó ser DETECTABLE, y se lleva 41 de los 56
+
+Con `especificación ejecutable sin superficie` sobre la mesa, la pregunta se vuelve mecánica:
+**¿lo consume un guard?** Si `tests/` lo usa, no es olvido — es una especificación que se ejecuta
+aunque no tenga superficie. Es exactamente la clase que `borrarMerchant` estrenó.
+
+| de los 56 | |
+|---|---|
+| **especificación ejecutable sin superficie** (la consume un guard) | **41** |
+| **olvido de verdad** — ni producción, ni guard, ni motivo escrito en fichero **ni en su entrada de máster** | **15** |
+
+`41 + 15 = 56`. **CUADRA.**
+
+## 🔴 Y el detector dio CERO antes de dar 41 — tercera vez hoy con la misma causa
+
+La primera pasada dijo **«especificación ejecutable: 0»**. No me lo creí, porque un cero es la forma
+exacta de un detector ciego. Con el segundo instrumento (`grep` sobre `tests/`) salió que
+`aggregateWaRows`, `shouldApplyStatus`, `calcularSemaforo`, `normalizarCabecera` y `ratioContraste`
+**sí están en los tests**.
+
+**La causa: el heredoc del shell se comió las barras invertidas** de `…`, y el patrón quedó en
+un carácter de retroceso que no casa nunca. Es la tercera vez hoy —el mismo mecanismo que me mordió
+en el censo de llamadores y en el arnés de rojos—. Ahora el script **lleva su propio control dentro**:
+un nombre que seguro está y otro que seguro no; si no los distingue, **sale por CIEGO sin números**.
+
+## Los 15 OLVIDOS — mirados en el fichero Y en su entrada de máster
+
+| export | qué no puede hacer hoy un profesional |
+|---|---|
+| `auth/referral.service → ensureReferralCode` | un merchant antiguo **nunca obtiene su código de referido**: el backfill perezoso existe y no lo invoca nadie |
+| `team.service → listTeamMembers` | listar su equipo por esta vía |
+| `quoteRequests/attachment.service → listQuoteRequestAttachments` | ver los adjuntos de una solicitud de presupuesto |
+| `jobs/presupuestosDelTrabajo → tieneTramoPendiente` | saber si a un trabajo le queda **tramo pendiente de facturar** |
+| `invoicing/portonDocumento → estaSellada` | (su hermano `puedeSalirDocumento` sí lo ejercita un guard; esta comprobación suelta, no) |
+| `system/importarClientes → CAMPOS_CLIENTE`, `ETIQUETA_CAMPO` | las etiquetas del importador no las usa la superficie: el usuario no ve nombrados los campos que va a mapear |
+| `messaging/whatsappLog → WA_WINDOW_SAFETY_MS`, `DELIVERED_OR_MORE`, `SENT_OR_MORE` | el margen de la ventana de 24 h y los umbrales de entrega **no los aplica nadie** |
+| `jobs/albaranIdempotencia → ERROR_CLAVE_INVALIDA` | recibir ese error con su nombre |
+| `jobs/albaranContenidoFuentes → VERSIONES_CON_FUENTES` | — (declaración de versiones sin consumidor) |
+| `billing/stripePrices → PRICE_LOOKUP_KEYS` | — (lista de claves de precio sin comprobador) |
+| `system/qrPagina → luminanciaRelativa` | ⚠️ **probable falso positivo**: `ratioContraste` sí lo ejercita un guard y **la llama por dentro**. Un export usado solo internamente sale como huérfano |
+| `system/soporte → SOPORTE_MENSAJE_MAX` | que el tope del mensaje de soporte se aplique de verdad |
+
+⚠️ **El caso de `luminanciaRelativa` es una clase que no estaba en la lista y hay que contarla:**
+*export usado solo dentro de su propio módulo*. No es olvido ni especificación — es un export que no
+necesitaba serlo. **No he barrido los 15 buscando este patrón**, así que **de los 15, uno está
+identificado como probable falso positivo y los otros 14 no están comprobados contra ese patrón.**
+
+## Recuento honesto de lo leído
+
+* Clasificados **a mano** hasta hoy: **8 módulos enteros** + **6 exports** (SCRUM-484) + **1** el de
+  supresión (SCRUM-485) + **los 15 de aquí** = **22 exports y 8 módulos**.
+* Clasificados **por derivación** (con su control): **41** como especificación ejecutable y **136**
+  como «con motivo escrito» — éstos últimos **sin leer uno por uno**.
+* **Sin leer individualmente: 136.** Lo digo con el número, que es lo que pide el suelo.
+
+## Límites, arrastrados y declarados otra vez
+
+`nombresImportados` solo lee imports **estáticos** (1 falso positivo acotado) · `import * as` da el
+módulo por vivo entero → **192 es SUELO, no techo** · el **frontend vanilla** no entra en el grafo ·
+y el nuevo: **un export usado solo dentro de su módulo aparece como huérfano**.
+
+## Lo que NO se ha hecho
+
+No he enchufado nada, no he retirado nada —`borrarMerchant` **se queda**, reclasificado—, cero
+schema, cero emisión, y no he tocado ningún guard ajeno.
