@@ -395,3 +395,106 @@ Ficheros: `scripts/_backup-codec.mjs` (nuevo) · `scripts/backup-dump.mjs` ·
 `scripts/backup-restore.mjs` · `tests/scrum242-backup-codec.test.mjs` (nuevo) ·
 `tests/scrum242-restauracion-cubre-todos-los-tipos.test.mjs` · `docs/RUNBOOKS.md` §R14.6 ·
 `docs/evidencias/scrum242-restauracion.md`.
+
+---
+
+# SCRUM-242 (parte 5) · El backup lo hace el código, y trae su restauración dentro
+
+**POBLACIÓN MEDIDA** · host `DESKTOP-T5MONF5` · `2026-08-12T10:03:30Z`
+
+**Medido contra:** `origin/main` = `423a9c9c0a6b6e13847ff669d2e24d6360960ddf` · 2026-08-12T10:03:30Z
+
+> Cambia de categoría: la copia automática de Railway exige plan Pro, así que la hace el código.
+> Y al hacerla nosotros, lo que de verdad importa deja de ser opcional.
+
+## 1 · 🔴 El corazón: tres veredictos, no dos
+
+**Un backup que no se ha restaurado nunca no es un backup, es un fichero.** Un volcado que EXISTE no
+prueba nada: puede estar truncado, ser de otra base, o venir de un `pg_dump` incompatible con el
+servidor y traer la mitad de las tablas. **Las tres cosas producen un fichero con bytes dentro y
+fecha de hoy.**
+
+| Veredicto | Cuándo | Salida |
+| --- | --- | --- |
+| **VERIFICADO** | se restauró en una base vacía **y el recuento de tablas cuadra** | `exit 0` |
+| **NO_VERIFICADO** | el volcado se puede leer, pero **nadie lo ha restaurado** | **`exit 1`** |
+| **CIEGO** | no se pudo ni comprobar (sin binario, sin base de pruebas, inventario ilegible…) | **`exit 1`** |
+
+El del medio es el que impide la mentira. Y los dos malos **salen con error a propósito**: un script
+que avisa y devuelve 0 se mete en un cron que lo da por bueno.
+
+## 2 · Qué comprueba, y por qué no vale `existsSync`
+
+1. **El volcado** — `pg_dump -Fc -Z 9`. Formato `custom`: ya viene comprimido **y tiene inventario**.
+2. **¿Se puede LEER?** — `pg_restore --list`, que abre el fichero, lo descomprime y recorre su tabla
+   de contenidos. Un volcado truncado falla **aquí**, no el día que haga falta.
+3. **¿Cuadra?** — tablas del inventario vs tablas de la base de origen. Si el volcado declara 3 y la
+   base tiene 24, eso es un `pg_dump` que murió a medias y dejó bytes.
+4. **La restauración** — `pg_restore --clean` en `BACKUP_VERIFICACION_URL` y recuento otra vez.
+
+⚠️ **La base de verificación no puede ser la de origen**, y el script se niega: restaura con
+`--clean`, así que apuntar al origen **borraría la base que se acaba de copiar**.
+
+## 3 · 🛑 El destino externo NO lo elige el código
+
+`BACKUP_DESTINO_TIPO` y `BACKUP_DESTINO_RUTA`. Sin ellas el volcado **queda en disco y no se sube a
+ninguna parte**, y el script lo dice —una copia en la misma máquina no es una copia—.
+
+**Contratar almacenamiento es coste recurrente (regla 36) y lo decide el fundador.** Hay guard: el
+fuente no puede nombrar ningún proveedor, y sin variables no puede haber destino por defecto.
+
+## 4 · 🔴 Ninguna cadena de conexión, ni de ejemplo
+
+Todo lo que toca una URL pasa por `_db-guard.mjs`: `describirBD()` para el log (`host/base` y nada
+más), `partirBDParaHijo()` para el hijo (URL sin contraseña en argv, contraseña en su entorno) y
+`redactarSecretos()` **sobre el objeto** antes de imprimir cualquier error ajeno — porque la URL
+viaja en `e.input` y en `e.spawnargs`, no solo en `.message`.
+
+Y hay dos guards para que siga así:
+
+* **ni una URL de Postgres en el fuente, comentarios incluidos.** La de ejemplo es la que alguien
+  copia y rellena con datos reales.
+* **por AST: ningún `console` recibe la URL ni la contraseña.** `describirBD(url)` sí; `${url}` no.
+
+## 5 · Variables, para cuando se decida el destino
+
+| Variable | Qué es |
+| --- | --- |
+| `DATABASE_URL` / `BACKUP_BD_URL` | qué base se copia |
+| `BACKUP_PG_BIN` | carpeta con `pg_dump`/`pg_restore`/`psql`. Sin ella no hay backup |
+| `BACKUP_VERIFICACION_URL` | 🔴 base **vacía y desechable** donde restaurar. Sin ella el resultado es NO_VERIFICADO |
+| `BACKUP_DESTINO_TIPO` / `_RUTA` | 🛑 decisión del fundador |
+| `BACKUP_DIR` | dónde deja el fichero (por defecto `.backups/`) |
+
+## 6 · 🔴 EL HUECO, DECLARADO: no he demostrado el camino bueno
+
+Lo que **sí** está demostrado: los 8 tests del núcleo en verde, y el script **sale con error** sin
+URL de base (ejecutado: `exit 1`, sin imprimir nada sensible).
+
+Lo que **NO**: la ejecución completa —volcar, restaurar, cuadrar— **no se ha hecho en esta máquina**,
+y digo exactamente por qué:
+
+* `pg_dump`/`pg_restore`/`psql` existen (portable 16.4), pero **no hay servidor Postgres local**: esa
+  instalación está incompleta —solo `bin/` y `lib/`, sin `share/`— así que `initdb` no arranca y no
+  hay dónde restaurar. Medido en SCRUM-480.
+* Y las bases que existen son **staging y producción**. Volcar producción se lleva la base de
+  clientes entera a disco, y restaurar es destructivo por definición: **eso no se hace sin GO**.
+
+**Así que el ticket entrega el mecanismo, no la prueba de fuego.** Para cerrarlo del todo hace falta
+una decisión tuya: una base desechable donde restaurar (Railway permite crear una), y el GO para
+volcar staging. Con eso, el script se demuestra a sí mismo en una ejecución.
+
+> Es la misma honestidad que el propio script exige: sin restauración, NO_VERIFICADO. No voy a
+> reclamar de mi entrega lo que su guard le prohíbe reclamar a un volcado.
+
+## 7 · Un fallo que cazó el control positivo del propio lector
+
+El lector del inventario contaba **4 tablas donde hay 3**: su patrón casaba también las líneas
+`TABLE DATA` —que son contenido, no definición— y capturaba `DATA` como si fuera el esquema. Un
+recuento inflado **puede cuadrar con el origen por casualidad**, que es la peor forma de estar mal.
+Lo cazó el assert que comprueba que el lector NO cuenta `TABLE DATA`, no una relectura.
+
+## 8 · Lo que NO se ha hecho
+
+Ninguna base tocada · ningún fichero subido a ninguna parte · ningún proveedor elegido · ninguna
+credencial leída ni impresa · `.backups/` no se comitea.
