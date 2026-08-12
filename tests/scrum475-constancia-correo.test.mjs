@@ -92,31 +92,29 @@ test('SCRUM-475 f2 · 🔴 la derivación CRUZA FICHEROS, que es lo que se rompi
 
 // ── 1 · EL CENSO DE MUDOS ────────────────────────────────────────────────────────────────
 
-test('SCRUM-475 f2 · 🔴 CUATRO avisos al PROFESIONAL se tragan el fallo sin una línea', () => {
-  // Los cuatro son la MISMA cosa: el correo que le dice AL PROFESIONAL que algo bueno pasó —le han
-  // pagado, le han aceptado el presupuesto, se lo han aprobado—. Se mandan fire-and-forget y, si
-  // fallan, no queda ni una línea. El profesional cree que le avisamos.
+test('SCRUM-475 f2 · 🔴 REGRESIÓN: ningún envío se traga el fallo sin una línea (los 4 se cerraron en SCRUM-477)', () => {
+  // ⚠️ ESTE TEST EXIGÍA «exactamente 4 mudos» Y AHORA EXIGE CERO. No es relajarlo — es que los
+  // cuatro se arreglaron (SCRUM-477): los avisos al profesional pasan por `conConstancia`, que
+  // anota los DOS canales. Exigir cero es MÁS fuerte que exigir cuatro.
   //
-  // NO SE ARREGLAN AQUÍ (regla 37: no es mi zona, no me bloquea, son cuatro rutas ajenas; y regla
-  // 30: si hay que decirle algo al profesional, el texto lo aprueba el asesor). Van con la tabla,
-  // que es donde el fallo tendrá dónde constar.
+  // Y el trinquete no ha desaparecido: se mudó y CRECIÓ. SCRUM-477 completó el criterio —un fallo
+  // también viaja como VALOR devuelto, no solo como excepción— y con él los sitios que pierden el
+  // fallo pasaron de 4 a 12. Los ocho que quedan van nombrados uno a uno en
+  // `tests/scrum477-avisos-con-constancia.test.mjs`.
   const mudos = censarLlamadores(EMISORES).filter((l) => l.veredicto === 'traga-mudo');
   const detalle = mudos.map((m) => `${m.fichero}:${m.linea}  ${m.emisor}`).join('\n    ');
 
-  assert.equal(mudos.length, 4,
-    `🔴 el censo da ${mudos.length} envíos MUDOS y eran exactamente 4:\n    ${detalle}\n\n`
-    + '  Si ha aparecido otro, alguien ha escrito `.catch(() => {})` sobre un envío: NÓMBRALO y\n'
-    + '  arréglalo, no subas el número. Si ha desaparecido, comprueba primero que no sea el censo\n'
-    + '  el que dejó de verlo — es lo que pasó al unificar el emisor.');
+  assert.deepEqual(mudos, [],
+    `🔴 HA VUELTO A APARECER UN ENVÍO MUDO:\n    ${detalle}\n\n`
+    + '  Alguien ha escrito `.catch(() => {})` sobre un envío: el fallo no deja ni una línea.\n'
+    + '  Pásalo por `conConstancia(<aviso>, <destinatario>, <envío>)` (SCRUM-477).');
 
-  // Los cuatro, POR NOMBRE. Si cambia CUÁL es mudo sin cambiar cuántos, el recuento no lo vería.
-  assert.deepEqual(mudos.map((m) => m.emisor).sort(), [
-    'sendMerchantPaymentEmail',       // psp: le han pagado
-    'sendMerchantQuoteAcceptedEmail', // quotes: le han aceptado el presupuesto
-    'sendMerchantQuoteAcceptedEmail', // whatsappIncoming: idem, aceptado por WhatsApp
-    'sendTechQuoteApprovedEmail',     // quotesAdmin: al técnico, su presupuesto aprobado
-  ].sort(), `🔴 han cambiado CUÁLES son los mudos:\n    ${detalle}\n\n`
-    + '  El recuento solo no lo habría visto. Vuelve a medir cuál entró, cuál salió y por qué.');
+  // 🔴 SUELO, y hace falta porque el cero de arriba lo cumpliría un censo ciego — que es
+  // EXACTAMENTE lo que pasó al traer el emisor único: 4 mudos → 0 sin que nadie arreglara nada.
+  const total = censarLlamadores(EMISORES).length;
+  assert.ok(total >= 31,
+    `🔴 el censo solo ve ${total} llamadas a un emisor y eran 31. El cero de arriba no significa `
+    + '«ninguno se traga el fallo», significa «no supe mirar».');
 });
 
 // ── 2 · EL CRITERIO: no se inventa un estado que no consta ───────────────────────────────

@@ -16,6 +16,8 @@ import { isFlagEnabled } from '../../../../core/flags';
 import { getDeliveryStatus } from '../../../messaging/domain/whatsappLog.service';
 import { recordCustomerEvent } from '../../customerEvents.service';
 import { sendTechQuoteApprovedEmail } from '../../../messaging/domain/merchantNotifications';
+// SCRUM-477: un aviso que no sale deja constancia -- y sin poder tumbar la operacion.
+import { conConstancia } from '../../../messaging/domain/avisoConstancia';
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
@@ -631,14 +633,16 @@ router.post('/:id/approve', requireRole('admin'), async (req, res) => {
         select: { email: true, name: true },
       }).catch(() => null);
       if (tech?.email) {
-        sendTechQuoteApprovedEmail({
+        // SCRUM-477 · ⚠️ SIGUE SIN `await`: la aprobación ya está hecha y un aviso que no sale NO
+        // puede tumbarla. Lo que cambia es que ahora deja constancia de a qué técnico no se avisó.
+        conConstancia('presupuesto_aprobado_tecnico', tech.email, sendTechQuoteApprovedEmail({
           techEmail: tech.email,
           techName: tech.name || '',
           quoteId: quote.quoteNumber ?? quote.id, // A1.2: solo display en el email
           customerName: quote.customer?.name || 'el cliente',
           total: Number(quote.total).toFixed(2),
           currency: quote.currency,
-        }).catch(() => {});
+        }));
       }
     }
 

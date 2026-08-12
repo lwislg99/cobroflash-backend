@@ -105,15 +105,49 @@ test('SCRUM-425 · 🔴 ROJO: lo que la lista blanca NO conoce se rechaza — in
   }
 });
 
-test('SCRUM-425 · la lista es BLANCA: solo dos formas declaradas, y el rojo las enumera', () => {
+test('SCRUM-425 · la lista es BLANCA: solo tres formas declaradas, y el rojo las enumera', () => {
   assert.deepEqual(
     PERMITIDAS.map((p) => p.nombre),
-    ['ALTER TABLE … ADD COLUMN', 'CREATE [UNIQUE] INDEX'],
+    ['ALTER TABLE … ADD COLUMN', 'CREATE [UNIQUE] INDEX', 'CREATE TABLE … ( … )'],
     '🔴 la lista de formas permitidas ha cambiado. Ampliarla es una decisión a conciencia: si de ' +
     'verdad hace falta otra forma, actualiza este test CON su caso — no al revés.',
   );
   const r = revisar('VACUUM FULL;', { ruta: 'x.sql' });
   assert.match(r.mensaje, /Solo se aceptan/, '🔴 el rojo no dice qué SÍ se acepta: un rechazo sin la alternativa deja al que lo lee sin salida (SCRUM-273)');
+});
+
+// ── LA TERCERA FORMA · SCRUM-475 (11-ago-2026) ──────────────────────────────────────────────
+//
+// EL CASO que la trajo: `docs/sql/scrum-475-email-messages.sql`, la tabla `email_messages` que
+// genera `prisma migrate diff`. No se podía aplicar porque la lista solo conocía columnas e
+// índices, y una TABLA NUEVA no es ninguna de las dos.
+
+test('SCRUM-475 · CREATE TABLE con definición de columnas SE ACEPTA', () => {
+  const sql = 'CREATE TABLE IF NOT EXISTS "email_messages" (\n  "id" SERIAL NOT NULL,\n'
+    + '  "merchant_id" INTEGER NOT NULL,\n  CONSTRAINT "email_messages_pkey" PRIMARY KEY ("id")\n);';
+  const r = revisar(sql, { ruta: 'x.sql' });
+  assert.equal(r.ok, true, `🔴 la forma que trajo esta ampliación no pasa: ${r.mensaje}`);
+  assert.equal(r.permitidas[0].forma, 'CREATE TABLE … ( … )');
+
+  // Y sin `IF NOT EXISTS` también: es la salida literal de `prisma migrate diff`.
+  assert.equal(revisar('CREATE TABLE "x" ("id" SERIAL NOT NULL);', { ruta: 'x.sql' }).ok, true);
+});
+
+test('SCRUM-475 · 🔴 y la ampliación NO abre la puerta a nada más', () => {
+  // La regla de la casa es que lo desconocido se rechaza. Ampliar una lista blanca es donde eso
+  // se pierde en silencio: se comprueba que lo de al lado sigue cayendo.
+  const casos = [
+    ['DROP TABLE "email_messages";', 'un DROP con el mismo nombre de tabla'],
+    ['CREATE TABLE "copia" AS SELECT * FROM "invoices";', 'la forma AS SELECT, fuera a propósito'],
+    ['CREATE TABLE "x" ("id" INT); DROP TABLE "invoices";', 'un DROP escondido tras una forma válida'],
+    ['CREATETABLE "x" ("id" INT);', 'una palabra clave pegada que no es la sentencia'],
+    ['ALTER TABLE "email_messages" DROP COLUMN "error";', 'DROP COLUMN sobre la tabla nueva'],
+  ];
+  for (const [sentencia, porque] of casos) {
+    assert.equal(revisar(sentencia, { ruta: 'x.sql' }).ok, false,
+      `🔴 PASA algo que no debería (${porque}): «${sentencia}». La ampliación de SCRUM-475 se ` +
+      'acotó a `CREATE TABLE … ( … )` justamente para que esto siguiera cayendo.');
+  }
 });
 
 // ── 🔴 ROJO DE DESTINO, y el `--go` ──────────────────────────────────────────────────────────

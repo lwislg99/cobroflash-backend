@@ -281,3 +281,128 @@ quién lo quitó y por qué no se vuelve a poner.
 * **Ninguna entrada de máster se ha tocado** (y además sería un STOP).
 * **Ninguna regla operativa se ha retirado.** Las dos que se apoyaban en la afirmación falsa siguen
   en pie, con el motivo correcto debajo: son buenas reglas que estaban mal justificadas.
+
+---
+
+# SCRUM-351 · SEGUNDA PIEZA · el diagnóstico POR ÁRBOL, y la frase donde se lee
+
+**Medido contra:** `origin/main` = `2794f7415669548b3de4acfe13211ac22773eea3` · 2026-08-12T09:19:53+02:00
+**Rama:** `scrum-351-worktrees-node-modules`
+
+> La primera pieza contestó **quién comparte con quién** (`npm run topologia`). Ésta contesta la
+> otra mitad: **qué árbol tiene las dependencias al día**. No se repite ninguna medición: se juntan
+> dos instrumentos que ya existían y que **nadie había juntado**.
+
+## El hueco que quedaba, y por qué costaba dinero
+
+`scripts/topologia-node-modules.mjs` sabe qué árboles hay y de dónde sale el `node_modules` de cada
+uno. `tests/_desfase-node-modules.mjs` sabe comparar lock contra instalado… **en el árbol donde
+corre**. Con las dos por separado, la pregunta que costó cinco rojos esta semana —«¿es este árbol el
+que miente?»— había que contestarla yendo uno por uno a mano.
+
+**Un árbol con el código al día y las dependencias viejas miente MEJOR que un árbol viejo**, porque
+el defecto está en lo que falta y lo que falta no aparece en ningún diff.
+
+## `npm run diagnostico:deps` — SOLO LEE
+
+Por cada árbol: su `package-lock.json` contra el `node_modules` que **ese** árbol usa de verdad.
+Cuatro veredictos: `al dia` · `desfasado` (nombrando qué falta y qué versión no cuadra) ·
+`sin dependencias` · **`no legible`** — que es una **fila del informe**, no un error que se traga.
+
+**No ejecuta `npm`, no escribe un byte, no borra un enlace.** Hay sesiones trabajando dentro de esos
+árboles y un `npm ci` ajeno a mitad de una tanda la rompe sin que nadie sepa por qué. El arreglo lo
+ejecuta su sesión o el fundador.
+
+**Dos instrumentos antes de decir «al día»:** ① presencia (el caso `fake-indexeddb`) y ② versión (el
+caso que la presencia sola no ve). Un árbol es «al día» solo si pasa los dos.
+
+### Pasada de hoy, en esta máquina
+
+**201 árboles mirados · 176 al día · 0 desfasados · 25 sin dependencias · 0 no legibles.**
+
+⚠️ Y los 25 «sin dependencias» **no son un problema disimulado**: son `wt-*` sin `node_modules` ni
+en ellos ni en ningún ancestro. No mienten — no arrancan.
+
+## 🔴 El cero no se cree sin control, y el control encontró un fallo MÍO
+
+**La primera pasada dio 5 desfasados con «faltan 25 de 25»** — un número absurdo que delataba al
+instrumento, no a los árboles. Los cinco tienen un `node_modules` **propio y vacío**, y yo me paraba
+en el más cercano. **Node no se para:** resuelve **por paquete** y sigue subiendo por los ancestros,
+así que esos árboles —que viven dentro del repo— funcionan con las dependencias del padre.
+
+**Aquella versión habría mandado a alguien a reinstalar cinco árboles que están bien.** Corregido
+(`versionResuelta` sube como Node) y **con test de regresión**, que es lo que impide que vuelva.
+
+## El suelo: control positivo Y negativo, en la suite
+
+`tests/scrum351-diagnostico-dependencias.test.mjs` (7, sin gate) le da al script árboles
+**sintéticos en temporales** donde la respuesta se conoce de antemano:
+
+| árbol | veredicto exigido | por qué |
+|---|---|---|
+| todo instalado y en su versión | **al día** | control positivo |
+| le falta un paquete | **desfasado**, y lo NOMBRA | es el caso `fake-indexeddb` |
+| paquete presente, versión distinta | **desfasado** | lo que un solo instrumento no ve |
+| sin `package-lock.json` | **no legible** | «no supe mirar» ≠ «al día» |
+| sin `node_modules` en ningún ancestro | **sin dependencias** | ≠ desfasado: no hay nada que comparar |
+| `node_modules` propio VACÍO dentro de un padre completo | **al día** | la regresión de arriba |
+
+Ningún test toca un worktree: todo ocurre en directorios temporales que el propio test borra.
+
+## La frase, donde la lee quien abre el repo
+
+`README.md` tenía **dos líneas**. Ahora lleva arriba `npm ci` **antes de medir nada**, con el caso
+real que lo justifica, los tres comandos, qué comparten los worktrees **y qué no**, y el aviso de no
+borrar un worktree con borrado recursivo (entra por el enlace y arrasa el destino compartido).
+
+⚠️ **Nada de eso se escribe como hecho fijo.** La topología cambia en cuanto alguien recrea un
+worktree o cambia de máquina — que es exactamente cómo llegamos aquí. El README manda **preguntar**.
+
+## Lo que NO se ha hecho
+
+* **No se ha ejecutado NADA dentro del árbol de otra sesión.** Ni `npm ci`, ni borrar enlaces, ni
+  leer un `.env`. Lectura sobre los demás; escritura solo en el mío.
+* **No se ha tocado la disposición de los worktrees** ni ningún `node_modules` ajeno.
+* **No se corrige la medición fechada de SCRUM-182**: era cierta el día que se tomó. Se supera
+  poniéndole al lado una más reciente, que es lo que ya hacía la primera pieza.
+
+## 🔴 LA RECONCILIACIÓN QUE FALTABA: los tres censos son ciertos, y ninguno decía de qué máquina hablaba
+
+SCRUM-476 (cerrada anoche) midió **4 worktrees, 60 directorios `node_modules` y CERO enlaces**, y
+concluyó que el «200 árboles · 91 junctions» de la cabecera de SCRUM-471 no se sostenía.
+
+**Medido hoy en esta máquina, leyendo y sin tocar nada:**
+
+| | |
+|---|---|
+| árboles vistos | **201** |
+| con `node_modules` por **ENLACE** | **91** |
+| destino de esos enlaces | `cobroflash-backend\node_modules` (y tres a `wt-209-conflicto\node_modules`) |
+
+**El 91 no estaba falsificado: estaba sin población.** Coincide exactamente con la cifra que el
+encargo me dijo que olvidara — porque describía **este host**, no el de la sesión 3
+(`DESKTOP-A24926K`, donde no queda ni un `wt-*`).
+
+**Dos instrumentos, y el segundo es el de la propia SCRUM-476** para que la comparación sea justa:
+
+```
+lstat symlink : true
+realpathSync.native('…/wt-153/node_modules') → D:\MILLONARIO\cobroFlash\cobroflash-backend\node_modules
+```
+
+> **Ninguno de los tres censos estaba roto. Lo que estaba roto es que un recuento sin población se
+> lee como el estado del proyecto.** Por eso el informe de este script imprime ahora **host y hora**
+> en la primera línea: es el dato que convertía tres medidas correctas en una contradicción.
+
+⚠️ **Y esto es de seguridad, no de contabilidad.** Si alguien toma «cero junctions» como hecho
+global y retira un worktree de ESTA máquina con borrado recursivo, **entra por uno de esos 91
+enlaces y arrasa el `node_modules` compartido** — el incidente de SCRUM-429, otra vez, por creerse
+un número medido en otro sitio.
+
+## La autoprueba: el cero no se publica sin demostrar que el detector ve
+
+Mis desfasados bajaron de **5 a 0** al corregir mi propio falso positivo. **Un recuento que baja es
+sospecha, no mejora**, así que el script **se prueba a sí mismo antes de imprimir nada**: construye
+en el temporal un árbol completo, uno al que le falta un paquete y uno con la versión cambiada, y si
+no los distingue **sale por «CIEGO» sin publicar ni un número**. Anoche un guard de este repo cantó
+cero porque un refactor lo había dejado ciego; esto es lo que impide contar esa historia otra vez.

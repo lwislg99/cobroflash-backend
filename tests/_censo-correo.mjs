@@ -58,6 +58,39 @@ function seAprovechaElValor(llamada) {
 }
 
 /**
+ * 🔴 SCRUM-477 · ¿SE USA EL RESULTADO RESUELTO? — distinto de `seAprovechaElValor`, y hace falta.
+ *
+ * `seAprovechaElValor` contesta «¿se aprovecha la EXPRESIÓN?», y para el censo A basta. Aquí no:
+ * `sendMerchantPaymentEmail(...).catch(() => {})` aprovecha la expresión —hay un `.catch` colgado—
+ * pero **nadie mira lo que devolvió**. Con aquel criterio los cuatro salían `mira-resultado`, que
+ * es exactamente lo contrario de lo que pasa. Medido: por eso existe esta segunda función.
+ *
+ * Aquí se atraviesan los eslabones de promesa (`await`, `.then`, `.catch`, `.finally`) y se
+ * pregunta por el VALOR: si al final de la cadena la expresión es una sentencia suelta, el
+ * resultado se tiró. Un `.then(r => …)` con parámetro **sí** lo consume; `.catch`/`.finally` no
+ * lo reciben nunca.
+ */
+export function seUsaElResultado(llamada) {
+  let n = llamada;
+  for (;;) {
+    const p = n.parent;
+    if (!p) return false;
+    if (ts.isAwaitExpression(p)) { n = p; continue; }
+    if (ts.isPropertyAccessExpression(p) && ['then', 'catch', 'finally'].includes(p.name.text)
+        && p.parent && ts.isCallExpression(p.parent)) {
+      if (p.name.text === 'then') {
+        const cb = p.parent.arguments[0];
+        if (cb && (ts.isArrowFunction(cb) || ts.isFunctionExpression(cb)) && cb.parameters.length) return true;
+      }
+      n = p.parent;
+      continue;
+    }
+    // Fin de la cadena: si es una sentencia suelta, el valor no fue a ninguna parte.
+    return !ts.isExpressionStatement(p);
+  }
+}
+
+/**
  * CENSO A, EL NÚCLEO · sobre un TEXTO, no sobre el disco.
  *
  * 🔴 Está separado para poder AUTOPROBAR el analizador. «Ninguna respuesta se tira» y «mi detector
@@ -130,8 +163,51 @@ export function censarEmisores() {
  * contra un mudo conocido ANTES de creerse ningún cero.
  */
 export function nombresDeEmisor() {
+  const nodos = construirGrafo();
+  const nombres = new Set();
+  for (const f of nodos.values()) if (f.emisora && f.exportada) nombres.add(f.nombre);
+  return [...nombres].sort();
+}
+
+/**
+ * CENSO A-ter (SCRUM-477) · POR QUÉ CANAL VIAJA EL FALLO DE CADA EMISOR.
+ *
+ * 🔴 EL CRITERIO QUE FALTABA, Y POR QUÉ SIN ÉL EL CENSO MIRABA A OTRO LADO.
+ *
+ * `censarLlamadores` clasificaba por lo que pasa **si la llamada LANZA**: ¿hay `catch`?, ¿contesta?,
+ * ¿loguea? Eso es correcto para `sendMerchantPaymentEmail`, que lanza. Pero `enviarCorreo` **no
+ * lanza nunca**: captura dentro y DEVUELVE `{ enviado:false, constancia }`. Para sus llamadores la
+ * pregunta «¿hay catch?» no significa nada — no hay excepción que capturar—, así que salían como
+ * `sube`, que se lee como «alguien se entera» cuando puede no enterarse nadie.
+ *
+ * No era un fallo del análisis: **medía otra cosa**. Un fallo puede caerse por dos canales
+ * distintos y el censo solo vigilaba uno.
+ *
+ *   · **lanza**    → el fallo viaja como EXCEPCIÓN. Se pierde si un `catch` se la come.
+ *   · **devuelve** → el fallo viaja como VALOR. Se pierde si nadie mira lo que devolvió.
+ *
+ * ⚠️ SE PROPAGA, y hace falta: los tres emisores mudos tienen `throw = 0` en su propio cuerpo.
+ * Lanzan porque llaman a un `sendEmail` local que sí lanza. Medido por AST: quedarse en el cuerpo
+ * propio los habría clasificado a los tres como `devuelve` y cambiado su veredicto sin motivo.
+ *
+ * ⚠️ Y ANTE LA DUDA, `devuelve`: un `throw` dentro de un `try` de la propia función no sale de
+ * ella, así que no cuenta. Equivocarse hacia `devuelve` produce un FALSO POSITIVO —alguien mira un
+ * sitio que estaba bien—; equivocarse hacia `lanza` esconde un fallo que no se registra. El error
+ * barato va donde alguien lo ve.
+ */
+export function canalDeFallo() {
+  const nodos = construirGrafo();
+  const canal = new Map();
+  for (const f of nodos.values()) {
+    if (f.exportada && f.emisora) canal.set(f.nombre, f.lanza ? 'lanza' : 'devuelve');
+  }
+  return canal;
+}
+
+/** El grafo de funciones del árbol, con sus llamadas resueltas ENTRE FICHEROS. */
+function construirGrafo() {
   // ── 1 · Un nodo por función del árbol, con sus llamadas RESUELTAS a fichero+nombre ──────
-  const nodos = new Map(); // "fichero::nombre" → { exportada, emisora, llama:Set<clave> }
+  const nodos = new Map(); // "fichero::nombre" → { exportada, emisora, lanza, llama:Set<clave> }
 
   for (const fichero of ficherosTs(path.join(RAIZ, 'src'))) {
     const texto = fs.readFileSync(fichero, 'utf8');
@@ -174,8 +250,12 @@ export function nombresDeEmisor() {
 
     for (const { nombre, exportada, nodo } of declaraciones) {
       let emisora = false;
+      let lanza = false;
       const llama = new Set();
+      const llamaSinProteger = new Set(); // las que NO están dentro de un try de esta función
       (function walk(n) {
+        // ¿Un `throw` que SALE de esta función? Uno dentro de su propio `try` no sale.
+        if (ts.isThrowStatement(n) && !dentroDeTry(n, nodo)) lanza = true;
         if (ts.isCallExpression(n)) {
           // ¿Llama al proveedor por HTTP? (por el DESTINO, no por el nombre del cliente)
           if (n.arguments.length && ts.isStringLiteralLike(n.arguments[0])
@@ -184,29 +264,72 @@ export function nombresDeEmisor() {
           if (ts.isPropertyAccessExpression(n.expression) && n.expression.name.text === 'sendMail') emisora = true;
           if (ts.isIdentifier(n.expression)) {
             const imp = importado.get(n.expression.text);
-            llama.add(imp ? `${imp.destino}::${imp.original}` : `${fichero}::${n.expression.text}`);
+            const clave = imp ? `${imp.destino}::${imp.original}` : `${fichero}::${n.expression.text}`;
+            llama.add(clave);
+            // Una excepción de la callee solo sale de aquí si la llamada NO está protegida.
+            if (!dentroDeTry(n, nodo) && !tieneCatchPegado(n)) llamaSinProteger.add(clave);
           }
         }
         ts.forEachChild(n, walk);
       })(nodo.body);
-      nodos.set(`${fichero}::${nombre}`, { nombre, exportada, emisora, llama });
+      nodos.set(`${fichero}::${nombre}`, { nombre, exportada, emisora, lanza, llama, llamaSinProteger });
     }
   }
 
   // ── 2 · Propagación hasta punto fijo, SOBRE EL ÁRBOL ENTERO ────────────────────────────
+  //
+  // Dos propagaciones, y son distintas a propósito:
+  //   · EMISORA  — por `llama`: quien llama a un emisor manda un correo, lo proteja o no.
+  //   · LANZA    — por `llamaSinProteger`: una excepción solo sube si NADIE la captura por el
+  //                camino. Si la llamada va dentro de un `try` o lleva `.catch()` pegado, el fallo
+  //                deja de viajar por ese canal y quien está más arriba no lo verá.
   for (let cambio = true; cambio; ) {
     cambio = false;
     for (const f of nodos.values()) {
-      if (f.emisora) continue;
-      for (const destino of f.llama) {
-        if (nodos.get(destino)?.emisora) { f.emisora = true; cambio = true; break; }
+      if (!f.emisora) {
+        for (const destino of f.llama) {
+          if (nodos.get(destino)?.emisora) { f.emisora = true; cambio = true; break; }
+        }
+      }
+      if (!f.lanza) {
+        for (const destino of f.llamaSinProteger) {
+          if (nodos.get(destino)?.lanza) { f.lanza = true; cambio = true; break; }
+        }
       }
     }
   }
 
-  const nombres = new Set();
-  for (const f of nodos.values()) if (f.emisora && f.exportada) nombres.add(f.nombre);
-  return [...nombres].sort();
+  return nodos;
+}
+
+/**
+ * ¿Se ESPERA esta llamada? Un `try` solo captura la excepción de lo que se espera: una promesa que
+ * nadie aguarda rechaza después de que el bloque haya terminado, y su `catch` nunca la ve.
+ */
+function estaEsperada(n) {
+  for (let p = n.parent; p; p = p.parent) {
+    if (ts.isAwaitExpression(p)) return true;
+    // Salir de la expresión: si llegamos a una sentencia sin haber visto `await`, no se espera.
+    if (ts.isStatement(p)) return false;
+    // Entrar en otra función (callback) corta la cadena del `await` de fuera.
+    if (ts.isArrowFunction(p) || ts.isFunctionExpression(p) || ts.isFunctionDeclaration(p)) return false;
+  }
+  return false;
+}
+
+/** ¿Está `n` dentro de un `try` de la función `limite`? (no se sale de esa función al subir) */
+function dentroDeTry(n, limite) {
+  for (let p = n.parent; p && p !== limite; p = p.parent) {
+    if (ts.isTryStatement(p) && p.catchClause
+        && p.tryBlock.getStart() <= n.getStart() && n.getEnd() <= p.tryBlock.getEnd()) return true;
+  }
+  return false;
+}
+
+/** ¿La llamada lleva un `.catch(...)` pegado? Entonces su excepción tampoco sube. */
+function tieneCatchPegado(n) {
+  return !!(n.parent && ts.isPropertyAccessExpression(n.parent) && n.parent.name.text === 'catch'
+    && n.parent.parent && ts.isCallExpression(n.parent.parent));
 }
 
 /** Resuelve un import relativo a un fichero `.ts` del árbol. `null` si no apunta a uno nuestro. */
@@ -234,7 +357,7 @@ function resolverModulo(desde, spec) {
  * lleva nueve variantes cazando: el guard atado a la FORMA en vez de al HECHO. El hecho es
  * «¿se entera alguien?», y eso se mide mirando si el `catch` produce una RESPUESTA.
  */
-export function censarLlamadores(nombresDeEmisor) {
+export function censarLlamadores(nombresDeEmisor, canales = canalDeFallo()) {
   const salida = [];
   for (const fichero of ficherosTs(path.join(RAIZ, 'src'))) {
     const sf = ts.createSourceFile(path.basename(fichero), fs.readFileSync(fichero, 'utf8'), ts.ScriptTarget.Latest, true);
@@ -251,7 +374,17 @@ export function censarLlamadores(nombresDeEmisor) {
           cuerpoManejador = arg ? arg.getText(sf) : '';
         }
         // Si no, ¿hay un try/catch por encima que capture ESTA llamada?
-        if (cuerpoManejador === null) {
+        //
+        // 🔴 SCRUM-477 · SOLO SI SE ESPERA CON `await`, Y ESTO ME DIO UN VERDE FALSO.
+        //
+        // Al envolver los cuatro avisos en `conConstancia(...)` —sin `await`, para que un correo
+        // que no sale no pueda tumbar el cobro— el censo los marcó `avisa`: había subido hasta el
+        // `try` de la ruta, que sí contesta. **Pero ese `try` no captura nada de esto.** La llamada
+        // no se espera, así que el rechazo de la promesa viaja por su cuenta y el bloque `try` ya
+        // ha terminado cuando llega. El veredicto era bueno por un motivo que no existe.
+        //
+        // La regla es general y no cuesta nada: un `try` solo ve la excepción de lo que se espera.
+        if (cuerpoManejador === null && estaEsperada(n)) {
           let p = n.parent;
           while (p) {
             if (ts.isTryStatement(p) && p.catchClause && p.tryBlock.getStart(sf) <= n.getStart(sf)
@@ -269,7 +402,27 @@ export function censarLlamadores(nombresDeEmisor) {
             : avisa ? 'avisa'
             : /console\.(error|warn|log)/.test(cuerpo) ? 'traga-log' : 'traga-mudo';
         }
+
+        // ── 🔴 SCRUM-477 · EL SEGUNDO CANAL ────────────────────────────────────────────────
+        //
+        // Todo lo de arriba contesta a «¿qué pasa si esto LANZA?». Para un emisor que NO lanza
+        // —captura dentro y devuelve `{ enviado:false, constancia }`— esa pregunta no significa
+        // nada: no hay excepción, así que sale `sube` («alguien se entera») cuando puede no
+        // enterarse nadie. El fallo se cae por el OTRO canal, y por ahí nadie miraba.
+        //
+        // Para esos, el hecho es: **¿alguien mira lo que devolvió?**
+        //
+        // ⚠️ Y VA ANTES QUE EL CANAL, no después: si el valor se ENTREGA a otra función, esa función
+        // se hace cargo de los dos canales —del valor y del rechazo— y este censo, que mira una
+        // llamada cada vez, no puede ni debe decidir por ella. Lo que sí exige la casa es que esa
+        // receptora esté probada: `conConstancia` lo está, caso por caso, en
+        // `scrum477-avisos-con-constancia.test.mjs`.
+        const canal = canales.get(n.expression.text) || 'lanza';
+        if (seUsaElResultado(n)) veredicto = 'mira-resultado';
+        else if (canal === 'devuelve') veredicto = 'ignora-resultado';
+
         salida.push({
+          canal,
           fichero: rel(fichero),
           linea: sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1,
           emisor: n.expression.text,

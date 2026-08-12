@@ -246,6 +246,119 @@ un índice ausente no rompe ninguna consulta, solo la degrada cuando la tabla cr
 * **La ausencia en un reflog no prueba que algo no se hiciera aquí**: un rebase reescribe el SHA y
   rompe el enlace. Por eso ① lleva su control de sensibilidad (47/50) y no se apoya en el silencio.
 
+## SCRUM-475 (fase 2) · tabla nueva `email_messages` — ✅ APLICADO **solo en DEV** (11-ago-2026)
+
+**REGISTRO de lo que se ejecutó y se verificó el 11-ago-2026.** No es una afirmación sobre el estado
+de hoy: es lo que se midió ese día, con su método. **Staging y producción están PENDIENTES** y las
+aplica el fundador.
+
+Es la tabla donde consta **qué pasó con cada correo**. Sin ella, el vocabulario de
+`constanciaCorreo.ts` está construido y probado pero **no se persiste nada**, y el webhook del
+proveedor no tiene dónde escribir. El modelo lo diseñó la sesión de SCRUM-475
+(`docs/master/SCRUM-475.md` §4) y aquí se ha copiado **sin rediseñarlo**.
+
+Fichero: **`docs/sql/scrum-475-email-messages.sql`**. **Aditivo y re-ejecutable** (`IF NOT EXISTS`):
+correrlo dos veces sobre una base ya aplicada no hace nada y no falla — **comprobado en dev**, se
+aplicó dos veces y la tabla quedó intacta.
+
+> 🔴 **EL SQL NO ESTÁ ESCRITO A MANO.** Lo generó `prisma migrate diff` a través de
+> `scripts/preview-migracion.mjs` (**CLI local por ruta, nunca `npx`** — la sustitución silenciosa
+> del binario fue el incidente del 5-ago), con su **control positivo delante**: el esquema entero
+> contra vacío devolvió **24 `CREATE TABLE`**, así que la herramienta estaba contestando.
+> Lo **único** añadido a su salida son los `IF NOT EXISTS`, por la convención de esta casa
+> (SCRUM-425, SCRUM-449); la estructura —columnas, tipos, defaults, nombres de índice— es la suya
+> carácter a carácter.
+
+> ⚠️ **`prisma/schema.prisma` NO SE HA TOCADO** (cero líneas de diff): es dominio exclusivo del
+> fundador y se edita **al final**, cuando las tres bases estén. El diff se hizo contra una copia
+> temporal que se retiró. Mientras dure esa ventana, **las bases van por delante del esquema a
+> propósito** y **no se corre `prisma migrate diff` contra ninguna**: propondría BORRAR la tabla.
+
+> ⚠️ **NOMBRES DE LA BASE (snake_case), no del modelo.** Salen de los `@@map`/`@map`, y los de los
+> índices son los que Prisma DERIVA. No se «corrigen».
+
+**100 % ADITIVO, comprobado sobre el SQL generado y no prometido:** 1 `CREATE TABLE`, 3 índices,
+**cero** columnas tocadas, **cero** `NOT NULL` sobre datos existentes, y **ninguna** de
+`DROP` · `ALTER COLUMN` · `SET NOT NULL` · `TRUNCATE` · `DELETE` · `RENAME`. No toca ninguna otra
+tabla. **Si al aplicarlo algo pidiera `--accept-data-loss`, el diff no es éste: parar.**
+
+**SIN BACKFILL:** los correos ya enviados no tienen fila y **no se les inventa una** — de ellos no
+consta nada, que es la verdad.
+
+### La lista blanca del aplicador tuvo que crecer, y consta
+
+`scripts/aplicar-sql-dev.mjs` **rechazó este fichero**: su lista blanca solo conocía
+`ALTER TABLE … ADD COLUMN` y `CREATE [UNIQUE] INDEX`, y una **tabla nueva** no es ninguna de las
+dos. Se añadió la tercera forma —`CREATE TABLE … ( … )`— **a conciencia y con su caso**, que es lo
+que pide su propia cabecera y lo que exige `tests/scrum425-aplicador-sql-dev.test.mjs`.
+
+Es admisible porque **no existe forma de `CREATE TABLE` que toque datos existentes**: crea un objeto
+que antes no estaba, y si ya existe o falla (lado seguro) o no hace nada. Se **acotó** a la forma con
+definición de columnas; `CREATE TABLE … AS SELECT` queda **fuera** a propósito. Dos tests nuevos:
+uno que acepta la forma real y **otro que comprueba que la ampliación no abrió la puerta a nada más**
+—`DROP TABLE`, `AS SELECT`, un `DROP` escondido detrás de una sentencia válida y `DROP COLUMN` siguen
+cayendo—.
+
+### Por qué `db execute` y no `db push`
+
+`db push` sincroniza la base **con el schema**, y el schema todavía no tiene la tabla: pediría lo
+contrario de lo que se quiere. Además `npm run db:push` y sus envoltorios están **rotos** (SCRUM-223).
+Y `--accept-data-loss` **protege a `db push`, NO a `db execute --file`** (SCRUM-395): por eso dev se
+aplicó con `scripts/aplicar-sql-dev.mjs`, que enseña el fichero línea a línea y solo aplica formas de
+la lista blanca. Se corrió **primero en ensayo** (sin `--go`).
+
+| Base | Host · nombre | Cómo se aplicó | Verificación |
+| --- | --- | --- | --- |
+| **Producción** | `autorack…` / `railway` (55 filas en `invoices`) | ⏳ **PENDIENTE** — la aplica el fundador a mano | — |
+| **Staging** | `acela.proxy.rlwy.net` / `railway` (7 filas) | ⏳ **PENDIENTE** — la aplica el fundador a mano | — |
+| **Dev** | `acela.proxy.rlwy.net` / `yaqu_dev_javier` (0 filas) | **esta sesión (SCRUM-475 paso A)** con `node scripts/aplicar-sql-dev.mjs --file docs/sql/scrum-475-email-messages.sql --go`, tras el ensayo | ✅ **tabla 1 · idx 1 · idx 1 · unique 1** |
+
+**La consulta de verificación —UNA sola, UNA fila, y es la que manda.** Se lee el CATÁLOGO, nunca el
+mensaje del comando. Una fila con todas las columnas obliga a verlas juntas: con cuatro consultas, un
+número se esconde detrás de otro.
+
+```sql
+SELECT
+  (SELECT COUNT(*) FROM invoices)::int AS invoices_discriminador,
+  (SELECT COUNT(*) FROM information_schema.tables
+     WHERE table_schema = 'public' AND table_name = 'email_messages')::int AS tabla,
+  (SELECT COUNT(*) FROM pg_indexes
+     WHERE schemaname = 'public' AND tablename = 'email_messages'
+       AND indexname = 'email_messages_merchant_id_created_at_idx')::int AS idx_merchant_created,
+  (SELECT COUNT(*) FROM pg_indexes
+     WHERE schemaname = 'public' AND tablename = 'email_messages'
+       AND indexname = 'email_messages_related_type_related_id_idx')::int AS idx_related,
+  (SELECT COUNT(*) FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid
+     WHERE c.relname = 'email_messages_provider_id_key' AND i.indisunique)::int AS unique_provider_id,
+  (SELECT COUNT(*) FROM information_schema.tables
+     WHERE table_schema = 'public' AND table_name = 'invoices')::int AS control_positivo;
+```
+
+Se puede correr sin pegar la URL en ningún sitio — **solo lee**, y el nombre de la variable nunca es
+su valor:
+
+```bash
+node scripts/verificar-email-messages.mjs --clave DATABASE_URL_STAGING
+```
+
+**Lo medido en dev el 11-ago-2026**, antes y después, que es lo que prueba que el verificador no dice
+que sí siempre:
+
+| | invoices | tabla | idx_merchant_created | idx_related | unique_provider_id | control_positivo |
+|---|---|---|---|---|---|---|
+| **antes** | 0 | **0** | **0** | **0** | **0** | 1 |
+| **después** | 0 | **1** | **1** | **1** | **1** | 1 |
+
+> 🔴 **`control_positivo` es la mitad que impide un falso «no está»**: es la MISMA pregunta sobre
+> `invoices`, que existe seguro. Si saliera 0, el verificador estaría roto y el `tabla: 0` de al lado
+> no significaría «no está» sino **«no supe mirar»** — y son cosas opuestas. Por eso el script sale
+> con código 2 y el texto «NO SUPE MIRAR» cuando la consulta ni siquiera se puede ejecutar.
+
+> 🔴 **DISCRIMINADOR ANTES DE APLICAR, y no es el nombre de la base.** `SELECT current_database()`
+> devuelve `railway` en staging **Y** en producción. Lo que las separa es la **cuenta de `invoices`**:
+> dev 0 · staging 7 · producción 55. ⚠️ El **0 de dev lo he medido yo** hoy; los de staging y
+> producción salen de este mismo fichero, **medidos el 7-ago-2026**, y son estado que caduca.
+
 ## LOTE ÚNICO · 9 columnas en 4 tablas (SCRUM-403 · A5 · E4 · SCRUM-195 · SCRUM-16/142) — 🔴 SIN APLICAR en ninguna de las tres
 
 **Medido contra:** `origin/main` = `ff5698f` · 2026-08-10 · rama `scrum-lote-migracion-unica`

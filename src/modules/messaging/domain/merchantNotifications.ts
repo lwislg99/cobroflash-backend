@@ -28,7 +28,7 @@ export async function sendMerchantPaymentEmail(params: {
   amount: string;
   currency: string;
   invoiceNumber?: string | null;
-}): Promise<void> {
+}): Promise<ResultadoCorreo> {
   const { merchantEmail, merchantName, customerName, amount, currency, invoiceNumber } = params;
 
   const subject = `💰 Pago recibido: ${amount} ${currency} de ${customerName}`;
@@ -63,9 +63,10 @@ export async function sendMerchantPaymentEmail(params: {
   </div>
 </div>`;
 
-  await sendEmail(merchantEmail, subject, html).catch((e) =>
-    console.error('[merchantNotifications] Error enviando email pago:', e?.message)
-  );
+  // SCRUM-477: se DEVUELVE el resultado en vez de tragarlo con un `console.error` que no decía
+  // PARA QUIÉN era —y que además no se disparaba cuando `sendEmail` devolvía el fallo sin lanzar—.
+  // Quien llama lo pasa por `conConstancia`, que anota los dos canales con identidad.
+  return sendEmail(merchantEmail, subject, html);
 }
 
 // ── Presupuesto aceptado ───────────────────────────────────────────────────
@@ -76,7 +77,7 @@ export async function sendMerchantQuoteAcceptedEmail(params: {
   quoteId: number;
   total: string;
   currency: string;
-}): Promise<void> {
+}): Promise<ResultadoCorreo> {
   const { merchantEmail, merchantName, customerName, quoteId, total, currency } = params;
 
   const subject = `✅ Presupuesto #${quoteId} aceptado por ${customerName}`;
@@ -113,9 +114,8 @@ export async function sendMerchantQuoteAcceptedEmail(params: {
   </div>
 </div>`;
 
-  await sendEmail(merchantEmail, subject, html).catch((e) =>
-    console.error('[merchantNotifications] Error enviando email aceptación:', e?.message)
-  );
+  // SCRUM-477: igual que el de pago — el resultado sale, y la constancia la deja quien llama.
+  return sendEmail(merchantEmail, subject, html);
 }
 
 // ── ENT-2: un admin aprobó el presupuesto → avisar al técnico que lo creó ──
@@ -126,9 +126,11 @@ export async function sendTechQuoteApprovedEmail(params: {
   customerName: string;
   total: string;
   currency: string;
-}): Promise<void> {
+}): Promise<ResultadoCorreo> {
   const { techEmail, techName, quoteId, customerName, total, currency } = params;
-  if (!techEmail) return;
+  // SCRUM-477: esto era `return;` a secas — sin correo del técnico no se mandaba nada Y NO QUEDABA
+  // RASTRO de que no se mandó. El tipo obligó a decirlo: `sin_destino` es un dato, no un hueco.
+  if (!techEmail) return resultadoSinDestino();
 
   const subject = `✅ Tu presupuesto #${quoteId} fue aprobado`;
   const html = `
@@ -161,7 +163,6 @@ export async function sendTechQuoteApprovedEmail(params: {
   </div>
 </div>`;
 
-  await sendEmail(techEmail, subject, html).catch((e) =>
-    console.error('[merchantNotifications] Error email aprobación técnico:', e?.message)
-  );
+  // SCRUM-477: ídem. El técnico también tiene derecho a que su aviso perdido deje rastro.
+  return sendEmail(techEmail, subject, html);
 }
