@@ -131,3 +131,100 @@ tienen que seguir escribiéndose **sin fricción**. `psp.routes.ts:100` ya valid
 
 Ni una línea de código · `PAID_VIA` sin ampliar · ningún backfill · ninguna consulta ejecutada ·
 `mpWebhook` y `psp.routes` sin tocar · el guard de 473 sin copiar.
+
+---
+
+# SCRUM-486 (parte 2) · Cerrado: la preferencia `mp` se declara desconocida
+
+**POBLACIÓN MEDIDA** · host `DESKTOP-T5MONF5` · `2026-08-12T09:43:23Z`
+
+**Medido contra:** `origin/main` = `3cbf6794199525956d9b4a7893a4596136f8b189` · 2026-08-12T09:43:23Z
+
+> ⚠️ **PR DEPENDIENTE.** Sale de `scrum-489-mp-webhook-consume-traductor`, no de `main`, para
+> **consumir** su censo en vez de copiarlo. Se mergea después de 489.
+
+## 1 · Lo que cambió respecto al PASO 0
+
+El PASO 0 midió que `Charge.method` es `String` NOT NULL y paró ahí. **La medición era correcta y
+la conclusión no:** el desconocido declarado **es un valor, no un `null`**. Ya existe como
+convención (`METODO_DESCONOCIDO`), `esMetodoValido` lo devuelve `false` a propósito, y **cabe en esa
+columna tal como está**. Sin schema.
+
+## 2 · El arreglo: se le añade la regla que faltaba
+
+```ts
+// antes, en charges.routes.ts:39
+methodPref === 'card' ? 'card' : methodPref === 'mp' ? 'mp' : 'transfer'
+```
+
+`bank → transfer` ✓ · `card → card` ✓ · **`mp → mp` sin traducir** 🔴
+
+**A un traductor en línea no se le nota que le falta un caso**: parece que ese caso no necesita
+traducción. Por eso el arreglo de `bank → transfer` (SCRUM-474), hecho **en esa misma línea y tres
+tokens después**, no lo cazó.
+
+Ahora la traducción entera vive en `metodoDesdePreferencia()`, **junto al vocabulario que se
+guarda** y no en la ruta, que es donde se pierde de vista que hay DOS vocabularios:
+
+| Preferencia (entrada) | Se guarda |
+| --- | --- |
+| `card` | `card` |
+| **`mp`** | **`desconocido`** — el declarado |
+| `bank`, ausente, vacío, cualquier otra | `transfer` |
+
+**Por qué `mp` no se traduce a ningún método** (decisión del fundador, 12-ago): MercadoPago es una
+**pasarela**, no un método, y **al crear el cobro nadie sabe con qué pagará el cliente** — puede
+acabar en tarjeta, en transferencia o en efectivo en un kiosco. Traducirlo a `card` sería inventar
+el dato más probable, que es lo que la regla 22 prohíbe.
+
+## 3 · Los cinco rojos, y dos son del control negativo
+
+Control positivo previo: árbol limpio, compila; suite **3.316 · 3.239 pasan · 0 fallos**.
+
+| Se rompe… | El guard dice… |
+| --- | --- |
+| `mp` vuelve a escribirse tal cual | *«LA PREFERENCIA `mp` NO SE ESTÁ DECLARANDO DESCONOCIDA»* |
+| `mp` se inventa como `card` | la misma — inventar y no traducir caen igual |
+| 🔴 **se mueve el caso por defecto** | *«`bank` ha dejado de traducirse a `transfer` — es el caso POR DEFECTO y el más frecuente»* |
+| 🔴 **`card` deja de ser `card`** | *«la preferencia `card` ha dejado de guardarse como `card`»* |
+| la ruta vuelve a traducir a mano | *«VUELVE A TRADUCIR A MANO: `methodPref === 'card' ? …`»* con fichero y línea |
+
+**El control negativo va primero en el fichero**, no al final: es el que protege los cobros que hoy
+funcionan. Un arreglo del caso raro que mueva el caso normal se revierte el lunes.
+
+> ⚠️ Los cuatro primeros rojos **no se probaron a la primera**: mis anclas multilínea usaban `\n` y
+> el árbol está en **CRLF** (medido en SCRUM-480), así que no casaban y los rojos se habrían quedado
+> sin probar en silencio. El arnés ahora ancla con `\r?\n` y **comprueba que la inyección cambió el
+> fichero de verdad** antes de creerse nada.
+
+## 4 · El censo de puertas, COMPLETO
+
+**11 escrituras de `Charge`** · 6 escriben `method` · 5 no · **suma 11 = 11** · el censo ve la
+**forma abreviada** (`method,`), que es donde se escondía la línea de este ticket.
+
+| Puerta | Qué escribe | Estado |
+| --- | --- | --- |
+| `charges.routes.ts:44` | `metodoDesdePreferencia(methodPref)` | ✅ **este ticket** |
+| `mpWebhook.routes.ts:120` | `payment.method` | ✅ SCRUM-489 |
+| `psp.routes.ts:100` | `esMetodoValido(body.method) ? … : charge.method` | ✅ ya validaba |
+| `seed-demo.mjs:283` | variable | ✅ del conjunto |
+| `seed-demo.mjs:352` | `'card'` | ✅ |
+| `seed-video.mjs:490` | `bizum_manual` / `transfer` | ✅ SCRUM-489 |
+
+**No quedan más puertas.** Y el guard lo mantiene: *ninguna* escritura de `Charge` de todo el árbol
+puede escribir un literal que no esté en `PAID_VIA` o sea el desconocido declarado.
+
+## 5 · Anotado y NO arreglado hoy
+
+🔴 **`method_preference` y `PAID_VIA` comparten columna siendo vocabularios distintos.** La entrada
+es `bank | card | mp` (`schemas.ts:112`); lo que se guarda es `PAID_VIA`. Hoy hay un traductor
+nombrado en la frontera, que es mucho mejor que la ternaria, **pero la columna sigue recibiendo dos
+alfabetos**. Es la enfermedad de SCRUM-474 un piso más arriba, y **no se arregla en este ticket**
+(decisión del fundador).
+
+## 6 · Lo que NO se ha hecho
+
+`PAID_VIA` sin ampliar (regla 22) · `prisma/schema.prisma` intacto · **ningún backfill**: las filas
+históricas con `'mp'` o `'bizum'` se quedan como están y se documentan · el guard de 473 se
+**actualiza con su motivo, no se borra** — sus patrones para los dos ficheros tocados pasan a los
+nuevos, y avisó las dos veces, que es su trabajo.
