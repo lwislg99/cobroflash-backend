@@ -124,26 +124,43 @@ migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script
 **24**, el número esperado: la herramienta ve el esquema entero y contesta. Por lo tanto, si el diff
 de abajo es corto, es **porque el cambio es corto**, no porque la herramienta esté muda.
 
+### El NOMBRE, decidido — y el ESTILO, medido
+
+**El campo se llama `paidVia`, no `method`** (decisión del fundador, 12-ago-2026). El motivo es el
+ticket entero: `method` hereda el nombre del campo que hacía dos trabajos, y **el nombre es lo que
+invita a repetirlo**. `paidVia` es además el vocabulario que la casa ya usa para *cómo se pagó*
+(`PAID_VIA`, `paidVia.ts`): dice **hecho**, no intención.
+
+Y el estilo del nombre de columna **no se decidió a ojo ni por analogía con otra tabla: se contó.**
+La tabla real es `invoices` (`@@map`), y mezcla los dos estilos de verdad. Contadas las columnas
+resolviendo `@map` —que es lo que acaba en Postgres—, y separando las relaciones (no son columnas) y
+las de una sola palabra (`id`, `total`, `status`… no distinguen estilo):
+
+| estilo | nº | cuáles |
+|---|---|---|
+| **`snake_case`** | **16** | `charge_id`, `paid_at`, `client_comment`, `stage_label`, `albaran_refs`, `deducts_refs`, `rectifies_id`, `vf_estado`, `vf_hash`, `vf_prev_hash`, `vf_timestamp`, `vf_anul_hash`, `vf_anul_timestamp`, `vf_anul_prev_hash`, `reminder_7_sent_at`, `reminder_14_sent_at` |
+| `camelCase` | 7 | `merchantId`, `customerId`, `quoteId`, `pdfUrl`, `qrData`, `registerId`, `createdAt` |
+
+**De las 23 que distinguen estilo, la mayoría es `snake_case`, 16 a 7.** Así que la columna se llama
+**`paid_via`**, y el campo de Prisma la mapea. Nota de contexto: las 7 `camelCase` son las columnas
+más antiguas (claves foráneas y `createdAt`); las `vf_*` y las `reminder_*`, todas posteriores, son
+`snake_case`. La tabla ya se estaba moviendo hacia ahí.
+
 ```sql
--- SCRUM-441 · Invoice: cómo entró el dinero. NO APLICADO.
+-- SCRUM-441 · invoices: cómo entró el dinero. NO APLICADO.
 -- Aditivo, nullable, sin DEFAULT y SIN BACKFILL: la columna entra VACÍA (§3).
-ALTER TABLE "Invoice" ADD COLUMN "method" TEXT;
+ALTER TABLE "invoices" ADD COLUMN "paid_via" TEXT;
 ```
 
 Una sola sentencia, aditiva, sin reescritura de tabla y sin bloqueo largo en Postgres (una columna
 nullable sin default no reescribe las filas).
 
-### Decisión que NO tomo yo: el NOMBRE de la columna
+Y la línea que irá en `prisma/schema.prisma` **AL FINAL**, cuando las dos bases estén aplicadas y
+verificadas:
 
-`prisma/schema.prisma` es dominio exclusivo del fundador, y el nombre importa más de lo que parece:
-
-- **`method`** — igual que `Charge.method`. Ventaja: un solo vocabulario. **Riesgo: hereda el nombre
-  del campo que hacía dos trabajos**, y el nombre es justo lo que invita a repetirlo.
-- **`paidVia`** — el vocabulario que la casa ya usa para *cómo se pagó* (`PAID_VIA`, `paidVia.ts`).
-  Dice **hecho**, no intención, y por construcción no invita a meter ahí una preferencia.
-
-**Recomiendo `paidVia`**, precisamente porque este ticket existe para no repetir la ambigüedad. Pero
-la elección es tuya, y el SQL de arriba cambia una palabra según lo que decidas.
+```prisma
+paidVia  String?  @map("paid_via")
+```
 
 ---
 
@@ -166,6 +183,67 @@ la elección es tuya, y el SQL de arriba cambia una palabra según lo que decida
    pero **no** se ha leído qué caso de negocio son. No se afirma que escriban o no el método.
 3. **El censo es de escrituras por Prisma.** Un `$executeRaw` que tocara `Invoice` no lo ve el
    instrumento A. No se ha barrido eso: si el GO llega, es lo primero que hay que añadir.
-4. **No hay guard todavía.** Este documento es una medición, no un mecanismo. El guard que impida
-   que la columna se rellene por copia desde `Charge` **no existe** y habría que escribirlo con el
-   ticket, no después.
+4. **El guard NO cubre una base ya escrita.** Vigila el árbol —`src/`, `docs/sql/`, `scripts/`—, que
+   es por donde entraría un backfill. Un `UPDATE` tecleado a mano en una consola contra producción
+   no lo ve nadie, y eso no lo arregla un test.
+
+---
+
+## 7. EL GUARD, que va con el ticket y no después
+
+`tests/scrum441-paidvia-sin-copia.test.mjs` + `tests/_censo-backfill-paidvia.mjs`. Corre en
+`npm test`: **4 tests, rc=0.**
+
+Impide lo que §3 prohíbe: que `invoices.paid_via` se rellene copiándolo de `Charge.method`. Detecta
+las cuatro formas en que entraría —`UPDATE … FROM charges` en un `.sql`, `data: { paidVia:
+charge.method }` en TypeScript, SQL crudo dentro de un `$executeRaw`, y la asignación indirecta a
+través de un objeto intermedio—.
+
+**No es un `grep`.** El código se mira por **AST**, que no ve comentarios; el SQL, quitándoselos
+antes. Es la trampa que ha mordido cuatro veces a esta casa: un guard de texto se caza a sí mismo en
+el comentario que explica la prohibición.
+
+**Tiene SUELO, y aquí es imprescindible:** hoy la columna todavía no existe, así que el barrido sobre
+el árbol da **cero por construcción** — un cero que no distingue «no hay backfill» de «no sé mirar».
+Por eso el detector se prueba primero contra fixtures que SÍ lo tienen, en las cuatro formas, y el
+test falla si no las ve. Hay además un **control negativo** (escribir el método declarado por el
+profesional, leer la columna, o nombrar `charges` en otra sentencia **no** saltan: un guard que grita
+por lo legítimo acaba desactivado) y la **ALLOWLIST vacía y visible**.
+
+### Probado en rojo DOS VECES, por inyección
+
+No basta con que esté verde. Se inyectaron dos backfills **reales**, no fixtures, y en los dos casos
+el guard cayó nombrando fichero, línea y de dónde copiaba:
+
+**① En TypeScript**, en el sitio exacto donde de verdad se escribiría (`invoiceAdmin.ts`, el marcado
+a mano), con la forma más plausible: `paidVia: cargo?.method ?? null`.
+
+```
+rc=1
+🔴 HAY UN BACKFILL DE `paid_via` DESDE `Charge`:
+    src/modules/system/invoiceAdmin.ts:173 · asignación · paidVia: cargo?.method ?? null
+```
+
+**② En SQL, con un fichero de verdad en `docs/sql/`** — y esta segunda inyección se hizo por un
+motivo concreto: la fixture del suelo prueba que el detector *entiende* ese SQL, pero **no** que el
+barrido lo *recoja del disco*. Si `recoger()` no llegara a esa carpeta, el detector estaría bien y el
+guard sería ciego igual.
+
+```
+rc=1
+🔴 HAY UN BACKFILL DE `paid_via` DESDE `Charge`:
+    docs/sql/_rojo-temporal-441.sql:1 · SQL · UPDATE invoices i SET paid_via = c.method
+    FROM charges c WHERE c.id = i.charge_id
+```
+
+Revertidas las dos → rc=0, y el árbol limpio (`git status --porcelain` → 0 líneas).
+
+### Verificación
+
+- `npm test` → **3301 tests, 0 fallos, 77 saltados**, rc leído del propio comando.
+- El guard, solo: **4 tests, rc=0**.
+- **La línea base NO se pudo medir quitando el fichero**, y eso es un hallazgo, no un fallo: al
+  apartarlo, `tests/scrum391-guards-declarados-presentes.test.mjs` se puso rojo con
+  *«SCRUM-441.md declara tests/scrum441-paidvia-sin-copia.test.mjs, que NO está en el árbol»*. La
+  casa ya tiene atada la entrada de máster a su guard. Así que la aportación no se resta de cabeza:
+  se mide corriendo el fichero solo, y son **4**.
