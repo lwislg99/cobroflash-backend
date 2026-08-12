@@ -354,6 +354,10 @@ async function fetchInvoiceDetail(id) {
     // PAGADA» —porque el ternario solo miraba si era `paid`—, ofreciendo resucitar un
     // documento fiscal dado de baja. El backend ya lo rechaza (409), pero un botón que
     // siempre falla es peor que no tenerlo: enseña que la pantalla miente.
+    // SCRUM-441 · el selector de metodo. Se declara aqui y se pinta abajo, con la barra de
+    // acciones ya montada: el manejador de mas abajo lo captura por cierre. `null` mientras no se
+    // pinte, y `cuerpoConMetodo` con `null` devuelve el cuerpo de siempre.
+    let selMetodo = null;
     const btnTogglePaid = document.createElement('button');
     btnTogglePaid.className = 'btn-secondary btn-sm';
     btnTogglePaid.textContent = '[PENDIENTE microcopy oficial]';
@@ -401,7 +405,13 @@ async function fetchInvoiceDetail(id) {
         const res = await fetch(`/admin/invoices/${invoice.id}/status`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: targetStatus }),
+          // SCRUM-441 · el metodo viaja SOLO si el profesional lo eligio, y solo al marcar cobrada.
+          // Con «sin especificar» el cuerpo sale identico al de siempre y la columna no se toca.
+          body: JSON.stringify(
+            targetStatus === 'paid' && typeof window.cuerpoConMetodo === 'function'
+              ? window.cuerpoConMetodo({ status: targetStatus }, selMetodo)
+              : { status: targetStatus },
+          ),
         });
 
         const data = await res.json();
@@ -650,6 +660,13 @@ async function fetchInvoiceDetail(id) {
     // Ensamblar la barra en orden: primaria (regla 1) · secundarias (regla 2) · «⋮» (regla 3). El
     // «⋮» reutiliza overflowMenu de AB3 (a11y, teclado, hoja inferior ≤640px). Si no está cargado,
     // las acciones del overflow se pintan sueltas: perder el menú no puede costar una acción (SCRUM-31).
+    // SCRUM-441 · «Como lo has cobrado?», solo cuando el gesto disponible es MARCAR COBRADA. En
+    // una factura ya pagada no se pregunta: no habria nada que hacer con la respuesta. Las opciones
+    // las sirve el arranque derivadas de PAID_VIA; si no llegaron, esto devuelve `null` y la
+    // pantalla se comporta exactamente como antes de existir el selector.
+    if (estadoFactura === 'pending' && typeof window.pintarSelectorMetodo === 'function') {
+      selMetodo = window.pintarSelectorMetodo(actions, { id: 'metodo-cobro-factura' });
+    }
     cubosAcc.primaria.forEach((b) => actions.appendChild(b));
     cubosAcc.secundaria.forEach((b) => actions.appendChild(b));
     if (cubosAcc.overflow.length) {

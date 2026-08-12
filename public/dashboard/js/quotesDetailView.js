@@ -703,6 +703,9 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       });
 
       if (inv.status === 'pending') {
+        // SCRUM-441 · mismo selector que el detalle de factura, MISMA pieza. Dos desplegables de
+        // metodos escritos por separado serian dos listas, que es justo lo que este ticket evita.
+        let selMetodo = null;
         const btnPaid = document.createElement('button');
         btnPaid.className = 'btn-secondary btn-sm';
         btnPaid.style.marginTop = '6px';
@@ -719,7 +722,13 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
             const res = await fetch(`/admin/invoices/${inv.id}/status`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ status: 'paid' }),
+              // El metodo viaja SOLO si lo eligio. Con «sin especificar», cuerpo identico al de
+              // siempre y la columna sin tocar.
+              body: JSON.stringify(
+                typeof window.cuerpoConMetodo === 'function'
+                  ? window.cuerpoConMetodo({ status: 'paid' }, selMetodo)
+                  : { status: 'paid' },
+              ),
             });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
@@ -735,6 +744,9 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
             btnPaid.textContent = original;
           }
         });
+        if (typeof window.pintarSelectorMetodo === 'function') {
+          selMetodo = window.pintarSelectorMetodo(div, { id: 'metodo-cobro-inv-' + inv.id });
+        }
         div.appendChild(btnPaid);
       }
       invList.appendChild(div);
