@@ -56,8 +56,15 @@ function prismaEspia({ modelos = null } = {}) {
 test('SCRUM-314 · el barrido cubre TODOS los modelos con merchantId, derivados del schema', async () => {
   const derivados = modelosConTenancy(SCHEMA).map((d) => camel(d.modelo));
   // SUELO: si la derivación no ve modelos, la comparación de abajo sería un verde hueco.
+  //
+  // ⚠️ SCRUM-498 · el `>= 20` NO se toca, y no es un descuido: el trabajo de este suelo es cazar
+  // CEGUERA, y para eso un mínimo es la forma correcta —un exacto obliga a tocarlo en cada PR ajeno
+  // hasta que alguien lo desactiva, que es el argumento escrito en `portabilidadCompleta.ts:111`—.
+  // Lo que sí cambia es el MENSAJE: decía «y son 21», un número escrito a mano que el día que entre
+  // `EmailMessage` pasa a ser falso sin que nada caiga. Ahora se CUENTA.
   assert.ok(derivados.length >= 20,
-    `🔴 ESCÁNER CIEGO: la derivación ve ${derivados.length} modelos con merchantId y son 21`);
+    `🔴 ESCÁNER CIEGO: la derivación ve ${derivados.length} modelos con merchantId y son ` +
+    `${modelosConTenancy(SCHEMA).length}`);
 
   const p = prismaEspia();
   const { modelos } = await barridoDemo(p, DEMO_ID);

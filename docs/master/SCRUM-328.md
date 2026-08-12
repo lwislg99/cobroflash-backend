@@ -359,3 +359,302 @@ Lo que esta decisión les entrega es lo único que puede entregarles: **qué se 
 (la obligación del lector, con fecha) y qué sigue prohibido (todo lo que hable de YaQu)**. Si alguno
 de los tres necesitaba una frase concreta aprobada, **sigue bloqueado por la regla 30**, y eso lo
 desbloquea el fundador escribiéndola, no este documento.
+
+
+
+
+# SCRUM-328 · F1 FASE 2 · CONTRASTE: lo que la landing PROMETE contra lo que el producto HACE
+
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-328-contraste-landing` · `HEAD` = `84f60528e626f6bc569c43e08e635497fc351d13` · 2026-08-12T13:40:30+02:00
+**Fuente de las promesas:** `public/index.html` (600 lineas), leida entera. **NO se ha tocado.**
+**Fuente de los veredictos:** el inventario de la fase 1, arriba en este mismo fichero.
+
+**SUELO DEL EXTRACTOR:** salen **20 promesas** de siete zonas distintas (hero, tres pasos, seis
+herramientas, plan, FAQ, CTA, pie). Si hubieran salido 0 o 2, el resultado seria «no supe leerla»,
+no «la landing no promete nada» — y lo diria aqui antes que nadie.
+
+## 🔴 LO PRIORITARIO · LA SQL DE LOS OVERRIDES, PARA QUE LA EJECUTE LUIS
+
+Los overrides por merchant viven en **`merchants.flags`**, columna **JSONB** con forma
+`{"FLAG_NAME": true|false}` (`prisma/schema.prisma`, `model Merchant`; la lee `src/core/flags.ts`
+con precedencia **merchant > pais > env > default**).
+
+```sql
+-- ① ¿Hay algun override, y de quien? (solo lectura)
+SELECT id, name, flags
+FROM   "merchants"
+WHERE  flags IS NOT NULL AND flags::text <> '{}'
+ORDER  BY id;
+
+-- ② LO QUE DECIDE LO DE BIZUM: el estado real de los cuatro que apagan cobro y facturacion.
+--    NULL en una columna = ese merchant NO lo tiene override -> manda el default (false).
+SELECT id,
+       name,
+       flags -> 'BIZUM_MANUAL_ENABLED'     AS bizum_manual,
+       flags -> 'BIZUM_AUTO_ENABLED'       AS bizum_auto,
+       flags -> 'PAYMENTS_CONNECT_ENABLED' AS tarjeta_connect,
+       flags -> 'INVOICING_ES_ENABLED'     AS facturacion_es
+FROM   "merchants"
+ORDER  BY id;
+
+-- ③ SUELO DE LA CONSULTA, y hace falta: si ① sale vacio Y ③ dice 0 merchants, no es que no
+--    haya overrides — es que no estas mirando la base que crees.
+SELECT COUNT(*) AS merchants_totales,
+       COUNT(flags) AS con_flags_no_nulo
+FROM   "merchants";
+```
+
+**Por que importa:** `BIZUM_MANUAL_ENABLED` y `BIZUM_AUTO_ENABLED` estan en `false` por defecto. Si
+en produccion tampoco hay override, **hoy nadie puede cobrar por Bizum** — y la landing lo promete
+tres veces. **No he consultado ninguna base.**
+
+## LAS 20 PROMESAS, una por linea
+
+### CIERTA — 9 (el inventario las respalda)
+
+| # | cita literal | donde | evidencia |
+|---|---|---|---|
+| 1 | «Crea el presupuesto en 30 segundos» | hero | A) vista `quotes-new` → `/admin/quotes` |
+| 2 | «tu cliente lo firma desde el movil» | hero | A) firma del presupuesto; `quotes-detail` + token publico |
+| 3 | «Le llega como un mensaje normal con un boton. Lo abre, lo revisa y firma con el dedo» | paso 2 | A) + `WHATSAPP_TEMPLATES_ENABLED = true` (el unico encendido) |
+| 4 | «Fichas, historial y contactos de todos, siempre a mano y ligados a sus documentos» | herramienta 4 | A) `customers` · `customer-360` · `providers` |
+| 5 | «Tus precios y servicios listos para reutilizar en cada presupuesto» | herramienta 5 | A) `products` → `/admin/products` |
+| 6 | «Margenes por trabajo, gastos y resumen semanal» | herramienta 6 | A) `reports` · `expenses` |
+| 7 | «Y tu equipo con roles (admin / tecnico)» | herramienta 6 | A) `team` → `/admin/team`, y los roles gobiernan de verdad (SCRUM-467) |
+| 8 | «quedan – plazas» (oferta fundadores) | precios | A) contador de plazas vivo (`founding`), servido por `/admin/billing` |
+| 9 | «se exportan en CSV cuando quieras» | FAQ | A) `export` → `/admin/exports`, seis CSV medidos en la fase 1 |
+
+### FALSA — 8 (el inventario la contradice, o vive tras un flag apagado)
+
+| # | cita literal | donde | por que es falsa |
+|---|---|---|---|
+| 10 | «El ERP por WhatsApp para los oficios» | hero, primera linea | 🔴 **contradice un VETO PERMANENTE del master**: «YaQu NO es un ERP ni un CRM» (parte Z). No es un flag: es la identidad del producto |
+| 11 | «y te paga — con tarjeta, Bizum o transferencia» | hero | tarjeta: `PAYMENTS_CONNECT_ENABLED = false` · Bizum: `BIZUM_MANUAL_ENABLED = false` **y** `BIZUM_AUTO_ENABLED = false`. De las tres vias solo transferencia queda en pie |
+| 12 | «llevas clientes, gastos y **facturas** en el mismo sitio» | hero | `INVOICING_ES_ENABLED = false` (regla 24). Hay pantalla de facturas y se emiten justificantes; **facturar** para un merchant ES real, no |
+| 13 | «O se lo dictas a la IA» | paso 1 | `VOICE_QUOTE_ENABLED = false` |
+| 14 | «Tarjeta, Bizum o transferencia — el elige, tu cobras» | paso 3 | mismos dos flags que la 11 |
+| 15 | «deja que el bot atienda a tus clientes y recoja solicitudes de presupuesto solo» | herramienta 3 | `BOT_INBOUND_ENABLED = false` **y** `BOT_AI_ENABLED = false` |
+| 16 | «Cobro con tarjeta, Bizum y transferencia» (lista del plan) | precios | idem 11 — y aqui es **lo que se cobra por**, no un adorno |
+| 17 | «Solo si cobras con tarjeta: 0,9 %» | precios | el cobro con tarjeta exige Connect activo, que esta en `false` |
+
+### FUTURA — 0
+
+**Ninguna.** La landing esta escrita **entera en presente de indicativo**: «firma», «cobra»,
+«llevas», «te paga». No hay «proximamente», ni condicional, ni tiempo futuro en ninguna de las 20.
+
+> **Y eso es un hallazgo, no una casilla vacia:** el matiz que salvaria a siete de las ocho falsas
+> —decirlas en futuro— **no existe en el texto**. No hay nada que reinterpretar a favor.
+
+### NO SE — 3 (con su motivo, sin rellenar por simetria)
+
+| # | cita literal | por que no lo se |
+|---|---|---|
+| 18 | «firmalos por WhatsApp con **validez legal**» | es una afirmacion JURIDICA sobre la firma, no una funcionalidad. Si la firma que guardamos tiene validez legal lo dice un dictamen, no un censo de codigo. **Lo traigo, no lo clasifico** |
+| 19 | «Los pendientes se reclaman solos» · «recordatorios que persiguen solos» | hay crons diarios y un digest semanal, pero **no he medido cual manda el recordatorio de cobro ni con que condiciones**. Afirmar que persigue seria suponer |
+| 20 | «14 dias gratis · Sin tarjeta» | es una promesa COMERCIAL sobre el alta y la facturacion de la suscripcion. No la he medido y no se mide leyendo vistas |
+
+## LAS CUENTAS
+
+**9 CIERTA + 8 FALSA + 0 FUTURA + 3 NO SE = 20.** Suman el total de promesas extraidas. ✅
+
+---
+
+# 🔴 LA RESPUESTA: que tiene que salir de la landing HOY
+
+**Tres cosas, y una no es un flag.** Lo primero que tiene que salir es **«El ERP por WhatsApp»**:
+no esta apagado en ningun sitio, esta prohibido en el master, y es la **primera linea que lee un
+visitante**. Lo segundo es **el cobro**: la landing promete tarjeta y Bizum **cinco veces** entre el
+hero, el paso 3, las herramientas y la lista del plan —y encima cobra un 0,9 % por una via que hoy
+no se puede usar—; con los tres flags en `false`, **de las tres formas de cobrar que anuncia solo
+sobrevive la transferencia**, y eso cambia la frase entera, no una palabra. Lo tercero son **las dos
+promesas de automatismo** —el dictado por IA y el bot que atiende solo—, que son justo las que un
+profesional probaria el primer dia y no encontraria. La palabra **«facturas»** del hero es un caso
+aparte y mas delicado: el producto **si** guarda y exporta documentos de cobro, asi que no es una
+mentira completa, pero mientras la facturacion ES este apagada **no puede aparecer en la misma frase
+que «clientes» y «gastos» como si fuera una capacidad mas**. Y lo que **si** puede sostener la
+landing entera sin tocar nada es el recorrido que de verdad funciona hoy: **presupuesto en 30
+segundos → WhatsApp → firma del cliente → gestion completa de clientes, productos, gastos, informes
+y equipo**, que son nueve promesas ciertas con su ruta y su pantalla.
+
+**Lo que NO he hecho:** no he tocado `public/index.html` ni he propuesto texto — **que cambiar y
+como decirlo es decision de Luis**, y la enmienda al master viene despues de que el elija.
+=======
+---
+
+# SCRUM-328 · F1 fase 1 · INVENTARIO MEDIDO de lo que el producto hace HOY
+
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-328-inventario-medido` · `HEAD` =
+`84f60528e626f6bc569c43e08e635497fc351d13` (= `origin/main` de las 13:22 CEST) ·
+**2026-08-12T13:22:58+02:00**
+
+**Qué se midió y dónde:** la superficie (`public/dashboard/`), el dominio (`src/`), los flags
+(`src/core/flags.ts`) y los montajes de `src/app.ts`. **Cero código tocado.**
+
+**Dos instrumentos independientes**, cada uno con su control positivo — porque una ausencia
+afirmada por uno solo no vale:
+
+| instrumento | de dónde sale | control positivo |
+|---|---|---|
+| **superficie** — `tests/_censo-vistas-dispatch.mjs` (SCRUM-433) | el `switch` de `renderView`, la barra lateral y quién abre cada vista | encuentra **25 vistas con camino**; si diera 0 en las dos columnas, estaría ciego |
+| **dominio** — `tests/_alcance-dominio.mjs` (SCRUM-411) | grafo de imports desde `index.ts`, `app.ts` y los scripts de `package.json`, **por export** | encuentra **99 módulos alcanzables** de 107 |
+
+---
+
+# 🔴 LA RESPUESTA A LA PREGUNTA QUE IMPORTA
+
+> **«¿Qué puede prometer la landing HOY sin mentir?»**
+
+**Se puede prometer:** presupuestar en el móvil, mandarlo por WhatsApp, que el cliente lo **firme**,
+convertirlo en **trabajo**, el **albarán/parte firmado**, la ficha de **clientes**, **productos y
+proveedores**, **gastos**, **informes**, el **libro de registro** por trimestre y **descargar tus
+datos**.
+
+**NO se puede prometer, y son tres cosas, no una:**
+
+1. **Facturar.** `INVOICING_ES_ENABLED = false` (y `SIF_ENABLED = false`). Es la regla 24 y no hay
+   discusión.
+2. **Cobrar con tarjeta.** `PAYMENTS_CONNECT_ENABLED = false` → sin Connect activo no se procesan
+   pagos de clientes finales (regla 18).
+3. **Cobrar por Bizum.** `BIZUM_MANUAL_ENABLED = false` **y** `BIZUM_AUTO_ENABLED = false`. Esto es
+   lo que **no esperaba encontrar**: la vía que el máster describe como «mientras tanto,
+   transferencia/Bizum manual» **está apagada por defecto**.
+
+> **Doce de los trece flags del producto están en `false`.** El único encendido es
+> `WHATSAPP_TEMPLATES_ENABLED`. Cualquier promesa de la landing que no sea presupuesto, firma,
+> albarán o gestión interna **hay que comprobarla contra esa lista antes de escribirla**.
+
+---
+
+# A) VIVO Y ALCANZABLE — 25 de 25 vistas tienen camino
+
+**Población: las 25 vistas del `switch` de `renderView`.** 17 están en la barra lateral; las 8
+restantes se abren desde otra vista (detalle). **Ninguna se queda sin camino** — y ese cero **sí se
+puede creer** porque el mismo instrumento encuentra las 25 que sí lo tienen.
+
+| vista | cómo se llega | ruta de servidor |
+|---|---|---|
+| `home` | barra | `/admin/metrics` |
+| `quote-requests` | barra | `/admin/quote-requests` · `/admin/attachments` |
+| `quotes-new` · `quotes-list` · `quotes-detail` | barra (2) + detalle | `/admin/quotes` |
+| `jobs` · `jobs-detail` | barra + detalle | `/admin/jobs` |
+| `albaranes` · `albaran-detail` | barra + detalle | `/admin/albaranes` |
+| `invoices` · `invoice-detail` | barra + detalle | `/admin/invoices` |
+| `cobros` | barra | `/admin/cobros` · `/admin/charges` |
+| `customers` · `customer-360` | barra + detalle | `/admin/customers` |
+| `products` · `providers` | barra | `/admin/products` · `/admin/providers` |
+| `expenses` | barra | `/admin/expenses` |
+| `reports` | barra | `/admin/reports` |
+| `libro-registro` | barra | `/admin/libro-registro` · `/admin/libros` |
+| `team` (+ alias `operarios`) | barra | `/admin/team` |
+| `plans` | barra | `/admin/billing` |
+| `settings` | barra | `/admin` |
+| `export` | desde Configuración | `/admin/exports` |
+| `templates` | desde otra vista | `/admin/templates` |
+
+**A = 25.**
+
+---
+
+# B) MOTOR SIN SUPERFICIE — 8 módulos + 3 rutas
+
+**Población: los 107 módulos de dominio de `src/`.** El instrumento encuentra **99 alcanzables**
+(control positivo) y **8 que ningún camino de usuario alcanza**:
+
+| motor | qué NO puede hacer hoy un profesional |
+|---|---|
+| `invoicing/recargoEquivalencia` | facturar bien a un cliente en recargo — **el dato del cliente ya se guarda (SCRUM-294-a), el cable no** |
+| `invoicing/retencionIrpf` | facturar a empresa con retención: sale por el bruto |
+| `invoicing/criterioCaja` | ver qué IVA le toca declarar este trimestre |
+| `invoicing/finalInvoice.service` | emitir la factura final **descontando la señal** ya cobrada |
+| `invoicing/huecosSerie` | enterarse de que en su serie **falta un número** |
+| `jobs/albaranSerie` | ver qué número tendrá su siguiente albarán |
+| `jobs/ventanaDeFirma` | que una firma hecha sin cobertura **no quede fechada el día que sube** |
+| `system/flagFiscal.service` | encender su facturación **dejando rastro** (hoy es un UPDATE a mano) |
+
+Y **tres rutas montadas que ninguna pantalla pide** — medido barriendo `public/`:
+`/admin/modelo-303` · `/admin/evidencias.zip` · `libros/recibidas.csv` (la UI solo pide
+`expedidas.csv`; **sin recibidas no hay IVA soportado**).
+
+**B = 8 módulos + 3 rutas.**
+
+---
+
+# C) ESPECIFICACIÓN EJECUTABLE SIN SUPERFICIE — 1 canónico
+
+`system/borradoMerchant.ts → borrarMerchant`: **cero llamadores en producción**, pero es el **sujeto
+ejecutable** de dos guards (`scrum192` verifica el ORDEN de borrado; `scrum244`, que
+`reconciliation` se borra antes que sus charges). No es código muerto: es la **especificación
+ejecutable** del orden de borrado seguro para las claves ajenas. La supresión real la hace
+`suprimirMerchant`, que **anonimiza y conserva el asiento**.
+
+**C = 1.**
+
+---
+
+# D) DETRÁS DE FLAG — 13, y 12 apagados
+
+| flag | estado | qué apaga |
+|---|---|---|
+| `WHATSAPP_TEMPLATES_ENABLED` | **true** | las plantillas de WhatsApp — **lo único encendido** |
+| `INVOICING_ES_ENABLED` | false | **facturación fiscal** (regla 24) |
+| `SIF_ENABLED` | false | la remisión a la AEAT |
+| `PAYMENTS_CONNECT_ENABLED` | false | **cobro con tarjeta** de clientes finales (regla 18) |
+| `BIZUM_MANUAL_ENABLED` · `BIZUM_AUTO_ENABLED` | false · false | **cobro por Bizum**, las dos vías |
+| `VOICE_QUOTE_ENABLED` · `VOICE_ALBARAN_ENABLED` | false · false | dictar presupuesto y albarán |
+| `BOT_INBOUND_ENABLED` · `BOT_AI_ENABLED` | false · false | el bot de WhatsApp entrante |
+| `MERCHANT_DELETE_ENABLED` | false | ejecutar la supresión de cuenta (ruta montada, responde 404) |
+| `PUBLIC_PROFILE_ENABLED` | false | el perfil público |
+| `MAINTENANCE_ENABLED` | false | los recordatorios de mantenimiento |
+
+**D = 13.**
+
+⚠️ **Un flag en `false` por defecto puede estar encendido por merchant** (Parte P: overrides en
+`Merchant.flags`). **Esto es un «no sé» honesto:** el estado real por merchant vive en la base y
+**no he consultado ninguna**. La landing no habla de un merchant: habla del producto, y para el
+producto el valor por defecto es el que manda.
+
+---
+
+# E) NO SÉ — 4, con su motivo
+
+1. **Si algún merchant real tiene flags encendidos por override.** Vive en la base y no consulto
+   ninguna. Lo puede mirar el fundador en un minuto.
+2. **Si el bot de WhatsApp funciona de punta a punta.** Sus dos flags están en `false`, así que
+   **no he podido observar el camino completo**; el código existe.
+3. **Si las 25 vistas funcionan de verdad para un usuario.** Este censo demuestra que **hay
+   camino**, no que la pantalla haga lo que promete: eso es QA con navegador, no un censo.
+4. **Cuánto de la landing actual coincide con esto.** **No he abierto `public/index.html`** — me
+   dijiste que no la toco, y tampoco la he leído para no contaminar el inventario con lo que ya
+   dice. Comparar las dos cosas es la fase 2.
+
+**E = 4.**
+
+---
+
+# LAS CUENTAS, y cada población suma la suya
+
+**No hay un único total: hay tres poblaciones, y mezclarlas sería el defecto que este censo
+persigue.** Cada una suma lo suyo:
+
+| población | total | reparto |
+|---|---|---|
+| **vistas del dispatch** | **25** | A) 25 con camino + 0 sin camino = **25** ✅ |
+| **módulos de dominio** | **107** | alcanzables 99 + B) 8 inalcanzables = **107** ✅ |
+| **flags** | **13** | D) 1 encendido + 12 apagados = **13** ✅ |
+
+**C (1) y E (4)** no pertenecen a esas poblaciones: C es un export dentro de un módulo vivo, y E son
+preguntas, no funcionalidades. **Se cuentan aparte a propósito** — meterlos en una suma común daría
+un número que no significa nada.
+
+---
+
+# LO QUE NO CUBRE ESTE INVENTARIO, declarado
+
+* **`import * as` esconde huérfanos** (`_alcance-dominio.mjs`): los 8 son un **suelo**, no un techo.
+* El **import dinámico por nombre** tiene 1 falso positivo conocido y declarado.
+* **No he abierto la landing** ni tocado `public/index.html`.
+* **No he consultado ninguna base**, ni de producción ni de staging.
+* **No se ha tocado** el camino de emisión, ninguna factura ni `prisma/schema.prisma`.
+* Esto mide **qué existe y quién llega**, no **si funciona bien**. Un camino que existe puede estar
+  roto: eso lo dice QA, no un grafo.
+
