@@ -177,7 +177,12 @@ export async function updateInvoiceStatusAdmin(
   // Va ANTES de la guarda de des-pagar porque es más fuerte: aquella depende del tipo de
   // documento, esta no admite excepción — ni siquiera para un justificante `J-`, porque anular
   // un justificante también deja su registro.
-  if (existing.status === ESTADO_ANULADA && status !== ESTADO_ANULADA) {
+  // ⚠️ EL LITERAL SE QUEDA AQUI A PROPOSITO. El guard de SCRUM-153
+  // (`scrum153b-annulled-vistas`) comprueba esta linea POR SU TEXTO, y es de otro carril (regla 9):
+  // cambiarla por la constante lo puso en rojo sin que el HECHO cambiara ni un apice. Que el
+  // literal y `ESTADO_ANULADA` no puedan separarse lo garantiza un test de SCRUM-496, que compara
+  // los dos — asi la fuente sigue siendo una sola sin romper el guard ajeno.
+  if (existing.status === 'annulled' && status !== 'annulled') {
     throw new UnpayNotAllowedError(
       'Esta factura está ANULADA y su anulación ya está registrada: no puede volver a otro ' +
         'estado. Si la operación existió y hay que cobrarla, emite una factura nueva.',

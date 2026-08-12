@@ -92,11 +92,20 @@ test('SCRUM-496 · la ruta CONSUME el conjunto, no escribe una copia', () => {
     "🔴 ha vuelto `status: { not: 'paid' }`, que INCLUYE `annulled`.");
 });
 
-test('SCRUM-496 · la guarda de UNA factura y la del lote hablan del MISMO estado', () => {
-  const servicio = fs.readFileSync(path.join(RAIZ, 'src/modules/system/invoiceAdmin.js'.replace('.js', '.ts')), 'utf8');
-  assert.match(servicio, /existing\.status === ESTADO_ANULADA/,
-    '🔴 la guarda de una sola factura ha vuelto a un literal suelto. Entonces el lote y ella pueden ' +
-    'dejar de hablar del mismo estado sin que nada salte.');
+test('SCRUM-496 · 🔴 la guarda de UNA factura y la del lote NO pueden separarse', () => {
+  // El literal de la guarda de SCRUM-153 se queda escrito a mano **a propósito**: su test lo
+  // comprueba POR EL TEXTO y es de otro carril (regla 9). Al sustituirlo por la constante, ese
+  // guard se puso rojo sin que el HECHO cambiara — su rojo era de FORMA.
+  //
+  // Como no se puede tocar, se ata aquí: si alguien cambia uno de los dos, esto salta. La fuente
+  // sigue siendo efectivamente una sola, con mecanismo en vez de con buena voluntad.
+  const servicio = fs.readFileSync(path.join(RAIZ, 'src/modules/system/invoiceAdmin.ts'), 'utf8');
+  const enLaGuarda = /existing\.status === '([a-z_]+)'/.exec(servicio);
+  assert.ok(enLaGuarda, '🔴 no encuentro la guarda de estado ORIGEN: el suelo de este test no vale.');
+  assert.equal(enLaGuarda[1], ESTADO_ANULADA,
+    `🔴 la guarda de UNA factura compara con «${enLaGuarda[1]}» y el lote usa «${ESTADO_ANULADA}». ` +
+    'Las dos puertas del mismo documento han dejado de hablar del mismo estado, y ninguna de las ' +
+    'dos lo notaría por su cuenta.');
   assert.ok((NO_SE_MARCAN_PAGADAS_EN_LOTE || []).includes(ESTADO_ANULADA),
     '🔴 el conjunto del lote ya no contiene el estado anulada.');
 });
