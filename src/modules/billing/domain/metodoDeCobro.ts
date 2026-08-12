@@ -196,3 +196,40 @@ export function metodoDesdeMercadoPago(tipo: string | null | undefined): string 
       return METODO_DESCONOCIDO;
   }
 }
+
+/**
+ * SCRUM-486 · La PREFERENCIA con la que se crea un cobro → el vocabulario que se guarda.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * SON DOS VOCABULARIOS DISTINTOS, Y ÉSTA ES LA FRONTERA
+ *
+ * Lo que llega en `method_preference` es `bank | card | mp` (`schemas.ts`), un vocabulario de
+ * ENTRADA. Lo que se guarda en `Charge.method` es `PAID_VIA`. La traducción existía **en línea y a
+ * medias** en `charges.routes.ts`: hacía `bank → transfer` y `card → card`, y dejaba `mp → mp`
+ * pasar sin traducir. Un traductor al que le falta una regla no se ve: parece que no traduce ese
+ * caso porque no hace falta.
+ *
+ * 🔴 `mp` NO SE TRADUCE A NINGÚN MÉTODO, y ésa es la decisión (fundador, 12-ago-2026):
+ * **MercadoPago es una PASARELA, no un método**, y al CREAR el cobro nadie sabe todavía con qué
+ * pagará el cliente — puede acabar pagando con tarjeta, con transferencia o en efectivo en un
+ * kiosco. Traducirlo a `card` sería inventar el dato más probable, que es exactamente lo que la
+ * regla 22 prohíbe. Se declara que no consta.
+ *
+ * ⚠️ Y el desconocido declarado **es un valor, no un hueco**: cabe en `Charge.method` tal como
+ * está (`String`, NOT NULL) y `esMetodoValido` lo devuelve `false` a propósito. Un `mp` inventado
+ * y un `desconocido` declarado están los dos fuera de `PAID_VIA` y son lo contrario: uno afirma un
+ * método que nadie ha visto, el otro dice que no se sabe.
+ *
+ * ⚠️ El caso por defecto sigue siendo `transfer` y NO se toca (SCRUM-474): `bank` era el valor por
+ * defecto del contrato de entrada y su equivalente en el conjunto cerrado es la transferencia.
+ */
+export function metodoDesdePreferencia(preferencia: string | null | undefined): string {
+  switch ((preferencia || '').toLowerCase().trim()) {
+    case 'card':
+      return 'card';
+    case 'mp':
+      return METODO_DESCONOCIDO;
+    default:
+      return 'transfer';
+  }
+}

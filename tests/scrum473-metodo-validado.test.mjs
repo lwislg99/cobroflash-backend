@@ -40,7 +40,11 @@ test('SCRUM-473 · SUELO: los NUEVE escritores siguen siendo los que el censo en
   // Si aparece un escritor nuevo, este número deja de cuadrar y alguien tiene que mirarlo. El
   // censo se hizo con DOS instrumentos porque el AST solo veía 2 de los 9.
   const escritores = [
-    ['src/modules/billing/app/routes/charges.routes.ts', /methodPref === 'card'/],
+    // SCRUM-486 · era `/methodPref === 'card'/`, la ternaria en línea. Aquella traducía
+    // `bank → transfer` y `card → card` y dejaba `mp → mp` SIN TRADUCIR — a un traductor en línea
+    // no se le nota que le falta un caso. Ahora la traducción vive en `metodoDesdePreferencia`,
+    // junto al vocabulario que se guarda. Sigue siendo el mismo escritor.
+    ['src/modules/billing/app/routes/charges.routes.ts', /metodoDesdePreferencia\(methodPref\)/],
     ['src/modules/billing/app/routes/receipt.routes.ts', /method: 'card:stripe'/],
     ['src/modules/billing/app/routes/stripe.routes.ts', /method: 'card:stripe'/],
     // SCRUM-489 · era `/method: 'mp'/`. Ese literal se escribía en el `update` que marca el cobro
