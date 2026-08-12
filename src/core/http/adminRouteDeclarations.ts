@@ -34,6 +34,14 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // paquete que recibe va FILTRADO a sus trabajos —los que se le asignaron o los que creó él—,
   // porque darle el merchant entero era lo peor por RGPD: su móvil llevaría la cartera completa.
   { method: 'GET', path: '/admin/precarga', why: 'Lo que necesita llevarse a la obra para firmar sin red; FILTRADO a sus trabajos (SCRUM-464)' },
+  // SCRUM-467. DECISIÓN DE PERMISOS, no un trámite, y **RE-DECLARA la de SCRUM-301 (C1)**: aquel
+  // ticket cerró este listado por ser GLOBAL —le diría al técnico de qué obras AJENAS hay partes,
+  // de qué clientes y con qué fechas— y dejó escrito que abrirlo era decisión de producto. Se ha
+  // tomado, y con un motivo de campo: a SCRUM-464 le precargamos los albaranes en el móvil y **no
+  // tenía ninguna pantalla desde la que abrirlos**. Lo que se abre NO es el listado global: va
+  // FILTRADO a sus Trabajos —los que creó y los que le asignaron, los DOS ejes— y el filtro va en
+  // la query. Un admin sigue viéndolo todo.
+  { method: 'GET', path: '/admin/albaranes', why: 'Los partes de SUS obras, FILTRADO a sus Trabajos por los dos ejes (SCRUM-467); el listado global sigue siendo de admin' },
   // SCRUM-360 (H5 fase 2). DECISIÓN DE PERMISOS, no un trámite: escribe el entorno de LA PROPIA
   // sesión y de ninguna otra —el id sale de la cookie del que llama—, así que no es una capacidad
   // de administración. Y al revés: dejarlo admin-only dejaría SIN MEDIR justo a los técnicos, que

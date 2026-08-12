@@ -47,11 +47,15 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   { method: 'POST', path: '/admin/connect/onboard' },
   // Supervisión por operario (SCRUM-24): S1 → equipo/supervisión es Admin
   { method: 'GET', path: '/admin/metrics/operarios' },
-  // SCRUM-301 (C1): el listado GLOBAL de albaranes. Un técnico solo ve SUS Trabajos (SCRUM-147,
-  // `seesOnlyOwnJobs`), y los albaranes cuelgan de Trabajos: enseñárselos todos le diría de qué
-  // obras ajenas hay partes, de qué clientes y con qué fechas. Aquí queda su 403 EXIGIDO, no
-  // solo declarado — que es la diferencia entre una decisión de permisos y una intención.
-  { method: 'GET', path: '/admin/albaranes' },
+  // SCRUM-301 (C1) declaró aquí el listado GLOBAL de albaranes, y **SCRUM-467 RE-DECLARA la
+  // regla**: el técnico pasa a verlo FILTRADO a sus Trabajos, porque se le precargan los albaranes
+  // en el móvil y no tenía ninguna pantalla desde la que abrirlos. `GET /admin/albaranes` se MUEVE
+  // a `TECNICO_ALLOWED` con su motivo escrito.
+  //
+  // ⚠️ EL CONTROL NO SE QUITA, y no hizo falta añadir nada: el montaje YA conserva su muestra de
+  // 403 con el `POST /admin/albaranes/consolidar` que ya estaba declarado abajo — admin-only de
+  // verdad, porque consolidar partes en una factura es dinero. Borrar esta entrada sin mirar si
+  // quedaba otra habría dejado el montaje sin ningún 403 comprobado (invariante de SCRUM-158).
   // SCRUM-55: su hermana /team salía 200 a un Operario en PRODUCCIÓN. Mismo criterio de S1
   // ("equipo ❌ Técnico") y mismo router; estaba aparcada como "Nivel 2" por descuido, no
   // por duda. Aquí queda su 403 exigido.

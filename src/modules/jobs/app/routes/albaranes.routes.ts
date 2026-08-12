@@ -30,6 +30,7 @@ import { datosDuplicado } from '../../domain/albaranDuplicado'; // SCRUM-302: qu
 import { exigirNombreFirmante, normalizarLugarEntrega, resolverCalidadFirmante } from '../../domain/albaranFirmante';
 // SCRUM-361 (H6 · fase 2): dos editores a la vez dejaban de existir el uno para el otro.
 import { puedeEditarEstaVersion } from '../../domain/albaranEdicion';
+import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-467
 import { fotoYaSubida } from '../../domain/fotoDuplicada'; // SCRUM-382: la misma foto no se guarda dos veces
 import { getPendientesFacturar } from '../../domain/pendientesFacturar.service'; // SCRUM-69
 // SCRUM-301 (C1): el listado global. Dominio puro + lector inyectable (la tenencia se ejercita).
@@ -73,6 +74,33 @@ const router = Router();
  * Vive aquí —y no en el dominio— para que `albaranesListado.ts` siga sin tocar Prisma y su tenencia
  * se pueda ejercitar con una tienda falsa en la suite, sin base de datos.
  */
+/**
+ * SCRUM-467 · LOS TRABAJOS QUE UN TÉCNICO PUEDE VER: los que creó **y** los que le asignaron.
+ *
+ * Los dos ejes, porque el schema los declara distintos: `operarioId` es AUTORÍA (congelada al
+ * aceptar, SCRUM-52) y `assignedUserId` es QUIEN EJECUTA (SCRUM-10). No se unifican.
+ */
+async function jobIdsVisiblesPara(merchantId: number, teamMemberId: number | null): Promise<number[]> {
+  const jobs = await prisma.job.findMany({
+    where: { merchantId, OR: [{ operarioId: teamMemberId }, { assignedUserId: teamMemberId }] },
+    select: { id: true },
+  });
+  return jobs.map((j) => j.id);
+}
+
+/** El mismo lector, pero acotado a esos Trabajos — el filtro va EN LA QUERY. */
+const lectorAcotado = (jobIds: number[]): LectorListado => ({
+  ...lectorPrismaListado,
+  albaranes: ({ merchantId }) => prisma.albaran.findMany({
+    where: { merchantId, jobId: { in: jobIds } },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true, merchantId: true, jobId: true, numero: true, fecha: true,
+      createdAt: true, estado: true, lineas: true, invoiceId: true,
+    },
+  }),
+});
+
 const lectorPrismaListado: LectorListado = {
   albaranes: ({ merchantId }) => prisma.albaran.findMany({
     where: { merchantId },
@@ -111,24 +139,31 @@ const lectorPrismaListado: LectorListado = {
  * inyectable: así la tenencia se prueba EJERCITANDO el camino con dos merchants, y no fiándose de
  * que el fichero mencione `merchantId` (SCRUM-348).
  *
- * 🔴 ADMIN-ONLY, y no es una precaución de más. SCRUM-147 midió y cerró que **un técnico solo ve
- * SUS Trabajos** (`seesOnlyOwnJobs`: allowlist de 'admin', rol desconocido restringido). Los
- * albaranes cuelgan de Trabajos, así que un listado global le enseñaría de qué obras AJENAS hay
- * partes, de qué clientes y con qué fechas — lo que la puerta principal le niega, servido por la
- * puerta de atrás.
+ * 🔴 ERA ADMIN-ONLY, Y SCRUM-467 LO RE-DECLARA — no lo abre sin más.
  *
- * El criterio de «la misma información, agrupada» (el que abre `consolidables` al técnico) vale
- * cuando la información YA era visible; aquí no lo era. Abrir de más no se deshace: haría falta
- * saber quién lo usó mientras tanto.
+ * SCRUM-301 lo cerró con este motivo, que sigue siendo bueno: los albaranes cuelgan de Trabajos,
+ * así que un listado GLOBAL le enseñaría al técnico de qué obras AJENAS hay partes, de qué clientes
+ * y con qué fechas. Aquel ticket dejó escrito que abrirlo era **decisión de producto** y que el
+ * mecanismo ya existía. **Esa decisión se tomó (SCRUM-467) y llegó con un motivo de campo:** al
+ * técnico se le precargan los albaranes en el móvil y **no tenía ninguna pantalla desde la que
+ * abrirlos**.
  *
- * Si algún día el técnico debe ver los partes de SUS obras, el mecanismo ya existe y es barato
- * —`seesOnlyOwnJobs(req.userRole)` + prefiltrar los `jobId` con `operarioId = req.teamMemberId`,
- * como hace `GET /admin/jobs`—, pero **qué debe ver exactamente es una decisión de producto**, no
- * un detalle de implementación: se decide en su ticket, no aquí.
+ * Lo que se abre es **el listado FILTRADO A LOS SUYOS**, nunca el global: el `where` lleva sus
+ * `jobId` — filtro EN LA QUERY, jamás ocultando en el front datos ya enviados. Un admin sigue
+ * viendo todo, y ése es el control negativo que decide si este cambio vale.
+ *
+ * ⚠️ Y la declaración NO se borra: se MUEVE. `GET /admin/albaranes` pasa de `ADMIN_ONLY_ROUTES` a
+ * `TECNICO_ALLOWED` con su motivo, y el montaje conserva su muestra de 403 con
+ * `POST /admin/albaranes/consolidar`. Quitar la entrada habría perdido justo la comprobación que
+ * impedía que esta ruta se abriera sola.
  */
-router.get('/', requireRole('admin'), async (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const listado = await listarAlbaranesDelMerchant(req.merchantId!, lectorPrismaListado);
+    const soloLosSuyos = seesOnlyOwnJobs(req.userRole);
+    const lector = soloLosSuyos
+      ? lectorAcotado(await jobIdsVisiblesPara(req.merchantId!, req.teamMemberId ?? null))
+      : lectorPrismaListado;
+    const listado = await listarAlbaranesDelMerchant(req.merchantId!, lector);
     return res.json(listado);
   } catch (err: any) {
     console.error('[GET /admin/albaranes]', err?.message || err);
@@ -552,8 +587,26 @@ router.get('/:id', async (req, res) => {
 
     const job = await prisma.job.findFirst({
       where: { id: albaran.jobId, merchantId: req.merchantId },
-      select: { id: true, titulo: true, direccion: true, customerId: true, quoteId: true },
+      select: {
+        id: true, titulo: true, direccion: true, customerId: true, quoteId: true,
+        operarioId: true, assignedUserId: true, // SCRUM-467: los dos ejes de «es suyo»
+      },
     });
+
+    // 🔴 SCRUM-467 · AQUÍ NO SE FILTRABA NADA, Y ES LO QUE ESTE TICKET CIERRA.
+    //
+    // Bastaba el id —enteros consecutivos— para que un técnico abriera CUALQUIER albarán del
+    // negocio y se llevara el **nombre del cliente y la dirección de la obra** de un Trabajo que no
+    // es suyo. La puerta principal se lo niega (`GET /admin/jobs` filtra desde SCRUM-23/147) y esta
+    // se lo servía por detrás.
+    //
+    // 404 y no 403 a propósito: es la misma respuesta que da un albarán de otro merchant tres
+    // líneas más arriba, así que el código de estado no le dice si el documento existe.
+    if (seesOnlyOwnJobs(req.userRole)) {
+      const suyo = job != null
+        && (job.operarioId === req.teamMemberId || job.assignedUserId === req.teamMemberId);
+      if (!suyo) return res.status(404).json({ error: 'not_found' });
+    }
     const customer = job?.customerId
       ? await prisma.customer.findFirst({
           where: { id: job.customerId, merchantId: req.merchantId },
