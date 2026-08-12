@@ -57,13 +57,17 @@ const { cubosDeMetodo, cuboDeCobro, ROTULO_SIN_METODO, CUBO_SIN_METODO } =
 const { PAID_VIA } = await import('../dist/modules/billing/domain/paidVia.js');
 // FASE 2 · el reparto DE VERDAD, el que corre en la ruta. No una copia escrita aquí.
 //
-// 🔴 Se importa SOLO el contrato. `claveDeAgrupacion` y `representanteDelCubo` son ayudantes
-// internos a propósito (SCRUM-411 / precedente de SCRUM-441), así que todo lo de abajo se mide por
-// donde se mide de verdad: por las filas que acaban en la pantalla.
-const { agruparCobrosPorCubo } = await import('../dist/modules/reports/domain/cobrosPorCubo.js');
+// 🔴 Se importa SOLO el contrato. `claveDeAgrupacion`, `representanteDelCubo` y
+// `agruparCobrosPorCubo` son piezas internas a propósito (SCRUM-411 / precedente de SCRUM-441), así
+// que todo lo de abajo se mide por donde se mide de verdad: por las filas que acaban en la
+// pantalla. Desde SCRUM-491 la puerta es `filasDelInforme`, que es lo que llama la ruta — o sea que
+// estos tests entran por el MISMO sitio que el profesional.
+const { filasDelInforme } = await import('../dist/modules/reports/domain/cobrosPorCubo.js');
 
+/** Facturas de 1 € con `Charge`, para poder hablar de un método concreto. */
+const facturasDe = (...metodos) => metodos.map((m) => ({ charge: { method: m }, total: '1.00' }));
 /** Las filas que produce el reparto que CORRE, para unos métodos dados (un cobro de 1 € cada uno). */
-const filasDe = (...metodos) => agruparCobrosPorCubo(metodos.map((m) => ({ metodo: m, total: '1.00' })));
+const filasDe = (...metodos) => filasDelInforme(facturasDe(...metodos)).byMethod;
 
 const CUBOS = cubosDeMetodo(ROTULO_SIN_METODO);
 
@@ -256,6 +260,19 @@ const RUTA_DOMINIO = 'src/modules/reports/domain/cobrosPorCubo.ts';
  * lo LLAME y que su resultado sea lo que viaja como `byMethod`, y que el mapa a mano —el que
  * agrupaba por el crudo— ya no esté.
  */
+const PUERTA_DEL_REPARTO = 'filasDelInforme';
+
+/** ¿Esta declaración saca `byMethod` de la puerta del reparto? Vale `const x = f()` y `const {byMethod} = f()`. */
+function sacaByMethodDe(n, sf) {
+  if (!ts.isVariableDeclaration(n) || !n.initializer) return false;
+  if (!ts.isCallExpression(n.initializer) || !ts.isIdentifier(n.initializer.expression)) return false;
+  if (n.initializer.expression.text !== PUERTA_DEL_REPARTO) return false;
+  if (ts.isIdentifier(n.name)) return n.name.text === 'byMethod';
+  // `const { byMethod, marcadosAMano } = filasDelInforme(paid)` — SCRUM-491.
+  return ts.isObjectBindingPattern(n.name)
+    && n.name.elements.some((e) => (e.propertyName ?? e.name).getText(sf) === 'byMethod');
+}
+
 function agrupadorDeLaRuta() {
   const ruta = path.join(RAIZ, RUTA_INFORMES);
   const sf = ts.createSourceFile(RUTA_INFORMES, fs.readFileSync(ruta, 'utf8'), ts.ScriptTarget.Latest, true);
@@ -264,10 +281,7 @@ function agrupadorDeLaRuta() {
   let mapaAMano = false;
   (function rec(n) {
     if (ts.isCallExpression(n) && ts.isIdentifier(n.expression)) llamadas.push(n.expression.text);
-    // `const byMethod = <algo>(…)` — de dónde salen de verdad las filas de la respuesta.
-    if (ts.isVariableDeclaration(n) && n.name.getText(sf) === 'byMethod' && n.initializer
-      && ts.isCallExpression(n.initializer) && ts.isIdentifier(n.initializer.expression)
-      && n.initializer.expression.text === 'agruparCobrosPorCubo') alimentaByMethod = true;
+    if (sacaByMethodDe(n, sf)) alimentaByMethod = true;
     if (ts.isIdentifier(n) && n.text === 'byMethodMap') mapaAMano = true;
     ts.forEachChild(n, rec);
   })(sf);
@@ -302,26 +316,32 @@ test('SCRUM-488 · ③ SUELO: los DOS detectores encuentran su código, o este b
   assert.ok(Array.isArray(cuerpoDeClaveDeAgrupacion()),
     `🔴 ESCÁNER CIEGO: no se encuentra \`claveDeAgrupacion\` en ${RUTA_DOMINIO}. Si se renombró, ` +
     'el detector tiene que seguirla — no borrarse.');
-  // Autoprueba: el detector de la ruta sabe DECIR QUE NO cuando el agrupador no está.
-  const sinAgrupador = ts.createSourceFile('x.ts', 'const byMethod = otraCosa(1);', ts.ScriptTarget.Latest, true);
-  let visto = false;
-  (function rec(n) {
-    if (ts.isVariableDeclaration(n) && n.name.getText(sinAgrupador) === 'byMethod' && n.initializer
-      && ts.isCallExpression(n.initializer) && ts.isIdentifier(n.initializer.expression)
-      && n.initializer.expression.text === 'agruparCobrosPorCubo') visto = true;
-    ts.forEachChild(n, rec);
-  })(sinAgrupador);
-  assert.equal(visto, false, '🔴 el detector daría por bueno cualquier constructor de `byMethod`.');
+  // Autoprueba del detector sobre fuente sintética, en los DOS sentidos: tiene que decir que NO
+  // cuando el reparto no está, y que SÍ en las dos formas que la ruta ha tenido (asignación
+  // directa y desestructuración, SCRUM-491). Sin esto, «la ruta delega» y «el detector se ha
+  // quedado ciego» dan el mismo verde — que es justo lo que pasó al cambiar la forma.
+  const ve = (codigo) => {
+    const sf = ts.createSourceFile('x.ts', codigo, ts.ScriptTarget.Latest, true);
+    let visto = false;
+    (function rec(n) { if (sacaByMethodDe(n, sf)) visto = true; ts.forEachChild(n, rec); })(sf);
+    return visto;
+  };
+  assert.equal(ve('const byMethod = otraCosa(1);'), false,
+    '🔴 el detector daría por bueno cualquier constructor de `byMethod`.');
+  assert.equal(ve('const { byMethod } = otraCosa(1);'), false,
+    '🔴 el detector se traga una desestructuración de otra función.');
+  assert.equal(ve(`const byMethod = ${PUERTA_DEL_REPARTO}(x);`), true);
+  assert.equal(ve(`const { byMethod, marcadosAMano } = ${PUERTA_DEL_REPARTO}(x);`), true);
 });
 
 test('SCRUM-488 · ③ 🔴 INSTRUMENTO A: la ruta DELEGA en el agrupador por cubo, y el mapa a mano ya no está', () => {
   const { llamadas, alimentaByMethod, mapaAMano } = agrupadorDeLaRuta();
-  assert.ok(llamadas.includes('agruparCobrosPorCubo'),
-    `🔴 ${RUTA_INFORMES} no llama a \`agruparCobrosPorCubo\`. Que la función exista no prueba que ` +
+  assert.ok(llamadas.includes(PUERTA_DEL_REPARTO),
+    `🔴 ${RUTA_INFORMES} no llama a \`${PUERTA_DEL_REPARTO}\`. Que la función exista no prueba que ` +
     'nadie la use: el informe volvería a repartir por su cuenta.');
   assert.equal(alimentaByMethod, true,
-    '🔴 `byMethod` —lo que viaja a la pantalla— NO sale de `agruparCobrosPorCubo`. Hay un segundo ' +
-    'reparto en medio, y entonces lo que se pinta no es lo que este test comprueba.');
+    `🔴 \`byMethod\` —lo que viaja a la pantalla— NO sale de \`${PUERTA_DEL_REPARTO}\`. Hay un ` +
+    'segundo reparto en medio, y entonces lo que se pinta no es lo que este test comprueba.');
   assert.equal(mapaAMano, false,
     '🔴 `byMethodMap` ha vuelto a la ruta: era el mapa que agrupaba por el valor CRUDO y partía el ' +
     'total de la tarjeta en dos filas con el mismo nombre.');
@@ -368,7 +388,10 @@ function cobrosDe(metodo, n, totalEur) {
   const base = Math.floor(total / n);
   const out = [];
   for (let i = 0; i < n; i += 1) {
-    out.push({ metodo, total: ((i === n - 1 ? total - base * (n - 1) : base) / 100).toFixed(2) });
+    out.push({
+      charge: { method: metodo },
+      total: ((i === n - 1 ? total - base * (n - 1) : base) / 100).toFixed(2),
+    });
   }
   return out;
 }
@@ -377,13 +400,14 @@ function cobrosDe(metodo, n, totalEur) {
  * LA LÍNEA DE AYER, escrita aquí para poder enseñar el ANTES: la clave era el método CRUDO.
  * Es una réplica declarada del código retirado, no una segunda implementación viva.
  */
-function agruparComoAntes(cobros) {
+function agruparComoAntes(facturas) {
   const m = new Map();
-  for (const c of cobros) {
-    const cur = m.get(c.metodo) ?? { centimos: 0, count: 0 };
-    cur.centimos += Math.round(Number(c.total) * 100);
+  for (const f of facturas) {
+    const metodo = f.charge?.method || 'manual';   // ← la línea de ayer, entera
+    const cur = m.get(metodo) ?? { centimos: 0, count: 0 };
+    cur.centimos += Math.round(Number(f.total) * 100);
     cur.count += 1;
-    m.set(c.metodo, cur);
+    m.set(metodo, cur);
   }
   return [...m.entries()]
     .map(([method, v]) => ({ method, eur: v.centimos / 100, count: v.count }))
@@ -419,7 +443,7 @@ test('SCRUM-488 · ④ SUELO + AUTOPRUEBA: el detector de etiquetas repetidas SA
   // duplicados». Y el detector se prueba contra el ANTES, que es donde SÍ había uno.
   assert.deepEqual(etiquetasDuplicadas([]), [],
     '🔴 el detector inventa duplicados donde no hay filas.');
-  const antes = agruparComoAntes(CORPUS_PINTABLE.map((v) => ({ metodo: v, total: '1.00' })));
+  const antes = agruparComoAntes(facturasDe(...CORPUS_PINTABLE));
   assert.ok(antes.length >= 7, `🔴 el ANTES trae ${antes.length} filas: no se está midiendo nada.`);
   const dup = etiquetasDuplicadas(antes);
   assert.deepEqual(dup, [['💳 Tarjeta', ['card', 'card:stripe']]],
@@ -432,7 +456,7 @@ test('SCRUM-488 · ④ 🔴 ESTRUCTURAL: ninguna fila del informe comparte etiqu
   // pantalla —el conjunto cerrado, los heredados y un desconocido—, no una muestra de datos. Hoy
   // dos filas coinciden por accidente; un test de comportamiento no cazaría la bifurcación el día
   // que nazca (una pasarela nueva, un valor heredado más).
-  const filas = agruparCobrosPorCubo(CORPUS_PINTABLE.map((v) => ({ metodo: v, total: '1.00' })));
+  const filas = filasDe(...CORPUS_PINTABLE);
   assert.ok(filas.length >= 5,
     `🔴 el reparto devuelve ${filas.length} filas sobre ${CORPUS_PINTABLE.length} valores: con la ` +
     'lista corta, «no hay duplicados» sería trivialmente cierto.');
@@ -459,7 +483,7 @@ test('SCRUM-488 · ④ 🔴 la tabla de la fase 1, ANTES y DESPUÉS: el total de
   assert.equal(cobros.length, 25, '🔴 el banco de prueba no tiene los cobros que dice tener.');
 
   const antes = agruparComoAntes(cobros);
-  const despues = agruparCobrosPorCubo(cobros);
+  const despues = filasDelInforme(cobros).byMethod;
 
   // ANTES: las dos tarjetas SEPARADAS, con los importes que la fase 1 midió en pantalla.
   const tarjetasAntes = antes.filter((f) => pintada(f) === '💳 Tarjeta');
@@ -523,7 +547,7 @@ test('SCRUM-488 · ④ 🔴 CONTROL NEGATIVO: lo que `cuboDeCobro` NO clasifica 
   // juntar filas; lo que NO puede es cambiar en qué familia cae un cobro.
   for (const v of CORPUS_PINTABLE) {
     const antes = cuboDeCobro(v);
-    agruparCobrosPorCubo([{ metodo: v, total: '1.00' }]);
+    filasDe(v);
     assert.equal(cuboDeCobro(v), antes, `🔴 el cubo de «${v}» ha cambiado al agrupar.`);
   }
 });
