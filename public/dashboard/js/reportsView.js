@@ -366,6 +366,29 @@ async function renderReportsView(container) {
   loadX2(x2Card, currentYear); // A16.1
 }
 
+/**
+ * SCRUM-499 · EL PIE DEL REGISTRO — cuántos de estos cobros los apuntó una PERSONA.
+ *
+ * Devuelve el `<p>` del pie, o cadena vacía cuando no hay ninguno.
+ *
+ * 🔴 Microcopy APROBADA (regla 30) y LITERAL: «Marcados a mano: {n} cobros · {importe}», en
+ * singular «Marcado a mano: 1 cobro · {importe}». No se adorna ni se traduce.
+ *
+ * 🔴 CON CERO NO SE PINTA. Mismo criterio que la celda vacía de Cobros (SCRUM-285): un hecho que no
+ * existe no ocupa sitio hablando de sí mismo. Y `undefined` —un servidor que todavía no manda el
+ * campo— se comporta igual que el cero: la pantalla no inventa un «0 cobros».
+ *
+ * El formateador entra por parámetro para poder ejercer esta función sin navegador.
+ */
+function pieDeMarcadosAMano(marcadosAMano, fmtMoney) {
+  var n = marcadosAMano && Number(marcadosAMano.count);
+  if (!n || n < 1) return '';
+  var uno = n === 1;
+  return '<p style="margin:10px 0 0;font-size:12.5px;color:var(--muted)">'
+    + (uno ? 'Marcado' : 'Marcados') + ' a mano: ' + n + ' ' + (uno ? 'cobro' : 'cobros')
+    + ' · ' + fmtMoney(marcadosAMano.eur) + '</p>';
+}
+
 // ── A16.1 (X2): cómo te pagan + € por recordatorios + pendiente por antigüedad ──
 async function loadX2(card, year) {
   let d;
@@ -388,6 +411,28 @@ async function loadX2(card, year) {
       <span style="width:130px;flex:none;text-align:right;font-size:13px;font-variant-numeric:tabular-nums">${fmtMoneyEs(m.eur)} <span style="color:var(--muted)">(${m.count})</span></span>
     </div>`).join('');
 
+  // ── SCRUM-499 · EL PIE DEL REGISTRO ───────────────────────────────────────────────────────
+  //
+  // Cuántos de estos cobros los apuntó una PERSONA en vez de una pasarela. Hasta SCRUM-491 ese
+  // hecho ocupaba la columna del MÉTODO —salía «✍️ Marcado a mano» donde va por dónde entró el
+  // dinero—, y desde entonces viajaba sin sitio donde vivir. Éste es su sitio.
+  //
+  // 🔴 VA EN UN PIE, NO EN UNA FILA, y no es estética: es una propiedad del CONJUNTO. Una fila más
+  // dentro de la lista se leería como un método más y su importe se sumaría dos veces —esos euros
+  // YA están repartidos entre las filas de arriba, por su método—. Fuera de la lista no se puede
+  // confundir con dinero que se cuenta otra vez.
+  //
+  // 🔴 CON CERO NO SE PINTA. Mismo criterio que la celda vacía de Cobros (SCRUM-285): un hecho que
+  // no existe no ocupa sitio hablando de sí mismo.
+  //
+  // Microcopy APROBADA (regla 30) y literal: «Marcados a mano: {n} cobros · {importe}», en singular
+  // «Marcado a mano: 1 cobro · {importe}». No se adorna.
+  //
+  // Vive en una función y no suelto dentro de `loadX2` para que la tanda pueda EJERCERLO —el
+  // singular, el plural y el cero— en vez de comprobarlo con una expresión regular sobre el
+  // fuente: una regex dice que el texto está escrito, no que se pinte cuando toca.
+  const pieMarcados = pieDeMarcadosAMano(d.marcadosAMano, fmtMoneyEs);
+
   const agingRows = (d.aging || []).map((b) => `
     <div class="kpi-card" style="text-align:center">
       <div class="kpi-label">${b.label}</div>
@@ -399,6 +444,7 @@ async function loadX2(card, year) {
     <h3 style="margin:0 0 4px;font-size:13px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em">Cómo te pagan · ${year}</h3>
     <p style="margin:0 0 14px;font-size:12.5px;color:var(--muted)">Cobros completados por método de pago.</p>
     ${methodRows || '<p style="font-size:13px;color:var(--muted)">Aún no hay cobros este año.</p>'}
+    ${pieMarcados}
     ${d.reminderEur > 0 ? `
       <div style="margin-top:12px;background:var(--brand-tint);border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;font-size:13px;color:var(--ink)">
         ⏰ <strong>${fmtMoneyEs(d.reminderEur)}</strong> cobrados en las 72 h siguientes a un recordatorio automático — dinero que el sistema fue a buscar solo.
@@ -940,4 +986,10 @@ function buildDesgloseEmpleado(filas, year, fmt, currency) {
   box.appendChild(tableWrap);
   pintar();
   return box;
+}
+
+// SCRUM-499 · el pie se exporta para que la tanda pueda EJERCERLO (singular, plural y cero) sobre
+// la funcion que corre, no sobre una copia. Mismo patron que `cobrosView.js` y `paidViaEtiquetas.js`.
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { pieDeMarcadosAMano };
 }
