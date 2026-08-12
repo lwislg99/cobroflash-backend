@@ -234,9 +234,14 @@ test('SCRUM-411 · SUELO 2ª población: sin árbol que mirar, el censo se DECLA
 test('SCRUM-411 · 🔴 EL TEST QUE DECIDE: un huérfano NUEVO sin declarar cae NOMBRADO con fichero y línea', () => {
   // Se planta uno que no está declarado y se comprueba que el trinquete (a) lo caza y (b) lo dice
   // con fichero y línea. Sin esto, todo lo demás es un número más grande.
+  //
+  // ⚠️ Se comprueba que el plantado ESTÁ ENTRE los cazados, no que sea el único. Lo aprendí
+  // plantando un huérfano de verdad en `soporte.ts`: con `assert.equal(nuevos.length, 1)` este test
+  // fallaba diciendo «el trinquete NO caza nada» **justo cuando acababa de cazar dos**. Un rojo que
+  // miente sobre su causa manda a quien lo lee a arreglar el guard en vez del código.
   const plantado = { modulo: 'src/modules/x/domain/motor.ts', nombre: 'motorHuerfano', linea: 4 };
   const nuevos = nuevosSinDeclarar([...C.filas, plantado], DECLARADOS_PARES);
-  assert.equal(nuevos.length, 1,
+  assert.ok(nuevos.some((f) => clave(f.modulo, f.nombre) === clave(plantado.modulo, plantado.nombre)),
     '🔴 el trinquete NO caza un huérfano nuevo sin declarar: no vigila nada.');
   const texto = nombrar(nuevos);
   assert.match(texto, /src\/modules\/x\/domain\/motor\.ts:4/,
