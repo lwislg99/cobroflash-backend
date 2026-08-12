@@ -34,6 +34,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // SCRUM-451 · `querySelector` DE VERDAD — el hueco que dejó ciegas a dos vistas
@@ -279,6 +281,25 @@ export function scriptsDelDashboard(raiz) {
  * @param opciones.datos  qué devuelve `apiRequest` (por defecto `{}`)
  * @param opciones.rol    `window.appUserRole` (varias vistas se bifurcan por él)
  */
+/**
+ * SCRUM-474 fase 2 · LOS CUBOS DEL FILTRO DE COBROS, por donde llegan de verdad.
+ *
+ * En el producto los recibe `app.js` en el ARRANQUE (`/admin/me`) y los deja en
+ * `window.appCobrosCubos`, así que el banco los pone en el contexto igual. Servirlos con la
+ * respuesta de `/admin/cobros` mediría una pantalla que ningún navegador pinta.
+ *
+ * Salen de `cubosDeMetodo` **importada de `dist`** —la misma función que sirve la ruta—, no de una
+ * lista escrita aquí: un banco con su propia lista es un verde que no significa nada.
+ */
+let _cubosDelArranque = null;
+function cubosDelArranque() {
+  if (!_cubosDelArranque) {
+    const m = require('../dist/modules/billing/domain/metodoDeCobro.js');
+    _cubosDelArranque = m.cubosDeMetodo(m.ROTULO_SIN_METODO);
+  }
+  return _cubosDelArranque;
+}
+
 export function cargarDashboard(raiz, opciones = {}) {
   // `selectoresNoSoportados`: SCRUM-451 · lo que el mini-DOM NO sabe resolver. Un banco que no sabe
   // algo se declara ciego; devolver `null` y callarse es lo que dejó dos vistas sin medir.
@@ -322,7 +343,12 @@ export function cargarDashboard(raiz, opciones = {}) {
     // —sus errores tipados, su `res.json()`, su trato del 204— en vez de saltárselo.
     //
     // `datos` puede ser un valor (igual para toda ruta) o una función `(ruta, opciones)`.
-    apiRequest: async () => (typeof opciones.datos === 'function' ? opciones.datos() : (opciones.datos ?? {})),
+    //
+    // SCRUM-474 fase 2 · `/admin/cobros` pasó de array a `{ cobros, cubos }`. El banco sirve la
+    // MISMA forma que el servidor —y los cubos salen de la MISMA función, importada de `dist`, no
+    // de una lista escrita aquí— para que un test que pase un array siga midiendo la pantalla real
+    // y no una respuesta que ningún servidor devuelve.
+    apiRequest: async (ruta) => (typeof opciones.datos === 'function' ? opciones.datos() : (opciones.datos ?? {})),
     // SCRUM-362 (H7): con escenario de red, el `fetch` es el suyo. Sin él, el de siempre —una red
     // que responde bien— para no cambiar lo que ya miden los demás tests.
     fetch: opciones.red?.fetch ?? (async (url, opts) => ({
@@ -342,6 +368,10 @@ export function cargarDashboard(raiz, opciones = {}) {
     alert() {}, confirm: () => true, prompt: () => null, open: () => ({ focus() {} }),
     matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
     appUserRole: opciones.rol ?? 'admin',
+    // SCRUM-474 fase 2 · lo que `app.js` deja aquí al arrancar. Va SIEMPRE, también con escenario
+    // de red caída: en el producto llega antes de que la vista pida nada, y esa es justamente la
+    // propiedad que los suelos de SCRUM-448 miden — la barra de filtros existe aunque la red no.
+    appCobrosCubos: opciones.cobrosCubos ?? cubosDelArranque(),
   };
   // 🔴 En el navegador `window` ES el objeto global. Sin esto, un `function f(){}` de nivel
   // superior no aparecería en `window` y el banco diría que la vista no publica su función.
