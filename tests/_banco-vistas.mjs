@@ -34,6 +34,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // SCRUM-451 · `querySelector` DE VERDAD — el hueco que dejó ciegas a dos vistas
@@ -279,6 +281,25 @@ export function scriptsDelDashboard(raiz) {
  * @param opciones.datos  qué devuelve `apiRequest` (por defecto `{}`)
  * @param opciones.rol    `window.appUserRole` (varias vistas se bifurcan por él)
  */
+/**
+ * SCRUM-474 fase 2 · `/admin/cobros` devuelve `{ cobros, cubos }`, no un array.
+ *
+ * Los tests que ya existían pasan un array de cobros, y seguir sirviéndoselo tal cual haría que
+ * midieran una respuesta **que ningún servidor devuelve** — un banco infiel es un verde que no
+ * significa nada. Aquí se envuelve, y los cubos salen de `cubosDeMetodo` **importada de `dist`**:
+ * la misma función que usa la ruta, no una lista copiada en el banco.
+ */
+const ROTULO_SIN_METODO_BANCO = 'Método no registrado';
+let _cubosDeMetodo = null;
+function envolverCobros(ruta, datos) {
+  if (!String(ruta).includes('/admin/cobros') || !Array.isArray(datos)) return datos;
+  if (!_cubosDeMetodo) {
+    // eslint-disable-next-line global-require
+    ({ cubosDeMetodo: _cubosDeMetodo } = require('../dist/modules/billing/domain/metodoDeCobro.js'));
+  }
+  return { cobros: datos, cubos: _cubosDeMetodo(ROTULO_SIN_METODO_BANCO) };
+}
+
 export function cargarDashboard(raiz, opciones = {}) {
   // `selectoresNoSoportados`: SCRUM-451 · lo que el mini-DOM NO sabe resolver. Un banco que no sabe
   // algo se declara ciego; devolver `null` y callarse es lo que dejó dos vistas sin medir.
@@ -322,13 +343,18 @@ export function cargarDashboard(raiz, opciones = {}) {
     // —sus errores tipados, su `res.json()`, su trato del 204— en vez de saltárselo.
     //
     // `datos` puede ser un valor (igual para toda ruta) o una función `(ruta, opciones)`.
-    apiRequest: async () => (typeof opciones.datos === 'function' ? opciones.datos() : (opciones.datos ?? {})),
+    //
+    // SCRUM-474 fase 2 · `/admin/cobros` pasó de array a `{ cobros, cubos }`. El banco sirve la
+    // MISMA forma que el servidor —y los cubos salen de la MISMA función, importada de `dist`, no
+    // de una lista escrita aquí— para que un test que pase un array siga midiendo la pantalla real
+    // y no una respuesta que ningún servidor devuelve.
+    apiRequest: async (ruta) => envolverCobros(ruta, typeof opciones.datos === 'function' ? opciones.datos() : (opciones.datos ?? {})),
     // SCRUM-362 (H7): con escenario de red, el `fetch` es el suyo. Sin él, el de siempre —una red
     // que responde bien— para no cambiar lo que ya miden los demás tests.
     fetch: opciones.red?.fetch ?? (async (url, opts) => ({
       ok: true, status: 200,
       headers: { get: () => 'application/json' },
-      json: async () => (typeof opciones.datos === 'function' ? opciones.datos(String(url), opts) : (opciones.datos ?? {})),
+      json: async () => envolverCobros(String(url), typeof opciones.datos === 'function' ? opciones.datos(String(url), opts) : (opciones.datos ?? {})),
       blob: async () => ({}), text: async () => '',
     })),
     setTimeout, clearTimeout, setInterval, clearInterval, queueMicrotask,

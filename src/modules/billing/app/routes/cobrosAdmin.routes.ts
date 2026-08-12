@@ -8,6 +8,15 @@
 import { Router } from 'express';
 import { requireRole } from '../../../../core/http/authMiddleware';
 import { listarCobros } from '../../domain/cobros.service';
+import { cubosDeMetodo } from '../../domain/metodoDeCobro';
+
+/**
+ * El rótulo del cubo de «no consta», APROBADO por el asesor el 10-ago-2026 (regla 30).
+ *
+ * NO es «Otro»: «otro» AFIRMA que hubo un método distinto, y aquí no consta ninguno. Viaja desde
+ * aquí para que la vista no tenga que conocer ni un texto de esta clasificación.
+ */
+const ROTULO_SIN_METODO = 'Método no registrado';
 
 const router = Router();
 
@@ -25,7 +34,16 @@ const router = Router();
 router.get('/', requireRole('admin'), async (req, res) => {
   try {
     const cobros = await listarCobros((req as { merchantId: number }).merchantId);
-    res.json(cobros);
+    // SCRUM-474 fase 2 · LOS CUBOS VIAJAN CON LOS COBROS, y por eso la forma pasa de array a
+    // objeto. Las opciones del filtro son el CONJUNTO CERRADO (`PAID_VIA`), no lo que haya en los
+    // datos: derivarlas de los cobros le quitaría el filtro de Bizum a quien todavía no ha cobrado
+    // por Bizum, y no podría distinguir «no tengo» de «no existe la opción».
+    //
+    // Censado por AST ANTES de cambiar la forma: el ÚNICO consumidor es `cobrosView.js:428` —los
+    // otros tres usos de la ruta son el montaje, un log y una URL de mentira en un doble de red—.
+    // Y ese consumidor hace `Array.isArray(r) ? r : []`, así que si alguien no adaptara el front
+    // se quedaría con cero cobros: el cambio no puede pasar desapercibido.
+    res.json({ cobros, cubos: cubosDeMetodo(ROTULO_SIN_METODO) });
   } catch (err) {
     console.error('[GET /admin/cobros]', err);
     res.status(500).json({ error: 'internal_error' });

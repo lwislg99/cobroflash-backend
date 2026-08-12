@@ -75,6 +75,103 @@ export function metodoParaAgrupar(valor: unknown): PaidVia | null {
   return (PAID_VIA as readonly string[]).includes(p.metodo) ? (p.metodo as PaidVia) : null;
 }
 
+/** La clave del cubo de «no consta». Un valor sin clasificar cae aquí, y NO desaparece. */
+export const CUBO_SIN_METODO = 'sin-metodo';
+
+/**
+ * Los RÓTULOS aprobados por el asesor el 10-ago-2026 (regla 30). No se reescriben aquí.
+ *
+ * `bizum_auto` y `bizum_manual` comparten el rótulo «Bizum» a propósito: la distinción es NUESTRA
+ * —confirmado por la pasarela frente a dicho por el profesional— y el diseño nombra cuatro métodos
+ * porque el profesional piensa en cuatro. La distinción no se pierde: se lee en la fila.
+ */
+const ROTULOS: Readonly<Record<string, string>> = Object.freeze({
+  card: 'tarjeta',
+  bizum_auto: 'Bizum',
+  bizum_manual: 'Bizum',
+  transfer: 'transferencia',
+  cash: 'efectivo',
+});
+
+export interface CuboDeMetodo {
+  clave: string;
+  rotulo: string;
+}
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * LAS OPCIONES DEL FILTRO, DERIVADAS DE `PAID_VIA` — SCRUM-474 fase 2
+ *
+ * Vive aquí y no en la vista por dos motivos que ya costaron un ticket:
+ *
+ *  ① `cobrosView.js` tenía una lista escrita a mano (`COBROS_METODOS`) que decidía qué valor cae
+ *     en qué cubo. Eso es el conjunto cerrado de la regla 22 **duplicado en el front**, donde no lo
+ *     vigila nadie — y el front no puede decidir nada fiscal.
+ *
+ *  ② Las cuatro opciones salen SIEMPRE, haya o no cobros de cada una. Derivarlas de los datos le
+ *     quitaría el filtro de Bizum a quien todavía no ha cobrado por Bizum, y entonces no podría
+ *     distinguir **«no tengo»** de **«no existe la opción»**.
+ *
+ * `sin-metodo` va SIEMPRE y el último: un cobro cuyo método no consta no puede desaparecer de una
+ * pantalla de dinero. Su rótulo no es «Otro» —«otro» AFIRMA que hubo un método distinto— sino
+ * «Método no registrado», que es lo que de verdad pasa.
+ */
+/**
+ * 🔴 EL ORDEN ES PARTE DE LO APROBADO, y no es el de `PAID_VIA`.
+ *
+ * El diseño §B4 los nombra «Bizum · tarjeta · transferencia · efectivo» y así los aprobó el asesor;
+ * `PAID_VIA` empieza por `card` porque su orden responde a otra cosa —el vocabulario fiscal— y no
+ * a cómo se le enseñan al profesional. Derivar el orden de ahí cambiaba la barra de filtros sin que
+ * nadie lo hubiera decidido, y lo cazó el test de SCRUM-285 que compara la lista carácter a carácter.
+ *
+ * La PERTENENCIA sigue derivándose de `PAID_VIA`: esto solo dice en qué orden se pintan. Un valor
+ * del conjunto que no esté aquí no desaparece — se queda sin sitio en la barra y eso salta abajo.
+ */
+const ORDEN_APROBADO = ['bizum_auto', 'bizum_manual', 'card', 'transfer', 'cash'] as const;
+
+export function cubosDeMetodo(rotuloSinMetodo: string): CuboDeMetodo[] {
+  const vistos = new Set<string>();
+  const out: CuboDeMetodo[] = [];
+  // Se recorre el orden aprobado, pero solo entran los que el conjunto cerrado reconoce: si alguien
+  // quita un valor de `PAID_VIA`, su filtro desaparece de la barra en vez de quedarse huérfano.
+  const enOrden = ORDEN_APROBADO.filter((v) => (PAID_VIA as readonly string[]).includes(v));
+  // Y si `PAID_VIA` estrena un valor que nadie ha ordenado, va al final: no se pierde en silencio.
+  const sinOrdenar = (PAID_VIA as readonly string[]).filter((v) => !(ORDEN_APROBADO as readonly string[]).includes(v));
+  for (const via of [...enOrden, ...sinOrdenar]) {
+    const rotulo = ROTULOS[via];
+    if (!rotulo || vistos.has(rotulo)) continue;   // «Bizum» sale una vez, no dos
+    vistos.add(rotulo);
+    out.push({ clave: via === 'bizum_auto' || via === 'bizum_manual' ? 'bizum' : via, rotulo });
+  }
+  out.push({ clave: CUBO_SIN_METODO, rotulo: rotuloSinMetodo });
+  return out;
+}
+
+/**
+ * A qué cubo cae un cobro, y con qué texto se pinta su celda.
+ *
+ * 🔴 SCRUM-481 · LA COLUMNA Y EL FILTRO HABLABAN DOS IDIOMAS. La celda enseñaba el valor CRUDO
+ * —«card:stripe»— mientras el filtro de al lado decía «tarjeta»: el profesional pulsaba «tarjeta»
+ * y le salían filas que ponían `card`. Enseñarle el valor de la columna de la base de datos no es
+ * un rótulo que falta: es hablarle en el idioma de la tabla.
+ *
+ * El texto aprobado es «tarjeta · Stripe» cuando hay pasarela y «tarjeta» a secas cuando no. **No
+ * se pierde ningún dato que hoy exista**, y la asimetría es informativa: ver «· Stripe» en unas
+ * filas y no en otras dice de un vistazo cuáles entraron por ahí.
+ */
+export function cuboYEtiqueta(valor: unknown, rotuloSinMetodo: string): { cubo: string; etiqueta: string } {
+  const agrupado = metodoParaAgrupar(valor);
+  if (!agrupado) return { cubo: CUBO_SIN_METODO, etiqueta: rotuloSinMetodo };
+
+  const clave = agrupado === 'bizum_auto' || agrupado === 'bizum_manual' ? 'bizum' : agrupado;
+  const rotulo = ROTULOS[agrupado];
+  const pasarela = partirMetodo(valor)?.pasarela ?? null;
+  // La pasarela se enseña con su inicial en mayúscula: es un nombre propio («Stripe»), no una
+  // etiqueta interna. El valor guardado NO se toca — esto es solo cómo se pinta.
+  const bonita = pasarela ? pasarela.charAt(0).toUpperCase() + pasarela.slice(1) : null;
+  return { cubo: clave, etiqueta: bonita ? `${rotulo} · ${bonita}` : rotulo };
+}
+
 /**
  * Traduce el `payment_type_id` de MercadoPago a nuestro vocabulario.
  *
