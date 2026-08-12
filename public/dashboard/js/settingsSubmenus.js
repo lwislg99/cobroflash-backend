@@ -227,11 +227,13 @@ var PENDIENTES_DE_DECISION = {};
  * ⚠️ `equipo` NO está aquí, y esa es la corrección que hizo el propio mecanismo: el encargo lo
  * listaba como vacío, pero `approvalThreshold` ya estaba colocado ahí por el fundador.
  */
-var VACIOS_DECLARADOS = {
-  facturacion:
-    'reglas de emisión (IVA por defecto, lugar de negocio). El prefijo, lo único que existe hoy, se ' +
-    'va a Numeración por el nombre del submenú. Se llena con SCRUM-17 y siguientes.',
-};
+// SCRUM-483 · `facturacion` SALE de aquí, y no por una decisión: por un HECHO MEDIDO. Su texto
+// decía que el prefijo —lo único que existía— «va a Numeración por el nombre del submenú». En
+// este mismo commit el prefijo SE MUDÓ aquí, así que ese submenú ya tiene contenido y la
+// declaración de hueco pasó a ser FALSA. Una declaración falsa se lee igual que una cierta,
+// que es exactamente el motivo por el que esta lista existe.
+// ⚠️ `cumplimiento` NO se toca: no está en esta lista y aquí no se decide nada sobre él.
+var VACIOS_DECLARADOS = {};
 
 // ⚠️ `datos` ESTUVO AQUÍ y se ha retirado (SCRUM-420, B1 · incremento 2, 10-ago-2026). Su motivo
 // decía que «aquí solo cambiará de dónde se enlaza, y eso es el incremento de la sidebar» — y ese
