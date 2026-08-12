@@ -12,6 +12,8 @@ import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { recalcJobCobradoForCharge } from '../../../jobs/domain/job.service'; // SCRUM-13
 import { datosDeCobroPagado } from '../../domain/instanteDeCobro'; // SCRUM-397
+// SCRUM-502: la guarda de anulada se CONSUME de donde vive, no se reescribe aqui.
+import { puedeCobrarPorPasarela } from '../../../system/invoiceAdmin';
 
 const router = Router();
 
@@ -128,10 +130,15 @@ router.post('/', async (req, res) => {
 
       // Factura automática
       let invoiceId: number | null = null;
+      // SCRUM-502 · el estado, para la guarda de anulada. `ensureInvoiceForCharge` puede devolver
+      // una factura EXISTENTE (busca por el evento `invoiced` y por `quoteId`, sin filtro de
+      // estado), asi que lo que llega aqui puede estar anulado.
+      let invoiceEstado: string | null = null;
       if (config.AUTO_INVOICE_ON_PAID) {
         try {
           const inv = await ensureInvoiceForCharge(chargeId, prisma);
           invoiceId = inv.id;
+          invoiceEstado = (inv as { status?: string }).status ?? null;
 
           // P0-4: email SIEMPRE (sendInvoiceEmail genera el PDF si falta y envía por Resend)
           if (config.AUTO_EMAIL_INVOICE_ON_PAID && updated.customer?.email) {
@@ -147,7 +154,10 @@ router.post('/', async (req, res) => {
         }
       }
 
-      if (invoiceId) {
+      // 🔴 SCRUM-502 · UNA ANULADA NO VUELVE. Esta puerta actualizaba por `id` sin mirar el estado.
+      // ⚠️ El `.catch(() => {})` de abajo se traga el fallo de escritura y NO se toca en esta tanda:
+      // es otro defecto, esta reportado, y una cosa por tanda.
+      if (invoiceId && puedeCobrarPorPasarela({ status: invoiceEstado ?? '' })) {
         await prisma.invoice.update({
           where: { id: invoiceId },
           data: { status: 'paid', paidAt: new Date() },

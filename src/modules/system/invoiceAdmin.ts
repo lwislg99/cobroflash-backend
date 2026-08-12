@@ -136,6 +136,26 @@ export const ESTADO_ANULADA = 'annulled';
 export const NO_SE_MARCAN_PAGADAS_EN_LOTE = ['paid', ESTADO_ANULADA] as const;
 
 /**
+ * SCRUM-502 · ¿Puede una PASARELA marcar cobrado este documento?
+ *
+ * Lo unico que se prohibe aqui es la ANULADA, y por eso no reusa
+ * `NO_SE_MARCAN_PAGADAS_EN_LOTE`: ese conjunto excluye tambien `paid`, y para una pasarela volver a
+ * escribir `paid` sobre una ya pagada es IDEMPOTENTE y pasa de verdad —los webhooks se reintentan—.
+ * Excluirla cambiaria el comportamiento del cobro, y el GO era solo la guarda de anulada.
+ *
+ * PURA a proposito: se ejercita con filas de verdad, sin base de datos ni webhook, que es la unica
+ * forma de que el rojo hable del HECHO y no de la forma del `where`.
+ *
+ * 🔴 Las tres puertas de pasarela llamaban a `update` sin mirar el estado. La diferencia con
+ * `bulk-paid` no es de grado: alli alguien pulsa un boton, aqui **se dispara solo** con lo que
+ * llegue por la red. Y el enlace sobrevive a la anulacion — anular escribe SOLO `status`
+ * (`invoicesAdmin.routes.ts`), asi que `chargeId` y `quoteId` siguen apuntando.
+ */
+export function puedeCobrarPorPasarela(documento: { status: string }): boolean {
+  return documento.status !== ESTADO_ANULADA;
+}
+
+/**
  * ¿Puede este documento pasar a `paid` por el marcado masivo? PURA: se prueba con filas de verdad,
  * sin base de datos, que es la unica forma de que el rojo hable del HECHO y no de la forma del
  * filtro. Un test atado a `notIn` seguiria verde si alguien cambiara el filtro por otro equivalente
