@@ -463,6 +463,32 @@ function renderSettingsView(container) {
     );
     colocar("bizumPhone", fBizumPhone.wrapper);
 
+    // SCRUM-328 · EL AVISO DEL FALLO MUDO, Y VA AQUI POR ESO: éste es el campo que lo arregla.
+    //
+    // Sin teléfono, la página de pago del cliente NO pinta la opción Bizum (`payInvoice.routes.ts`)
+    // y el profesional concluye que el producto está roto. Un aviso en un log —o en una pantalla
+    // que no visita— no es un aviso: tiene que salir donde puede arreglarlo, y en el momento en
+    // que está mirando ese campo.
+    //
+    // ⚠️ EL VEREDICTO NO SE CALCULA AQUI. Lo da `/admin/me` (`window.appBizumSinTelefono`) con el
+    // MISMO criterio que usa la página del cliente —los dos teléfonos, con su fallback—. Si el
+    // navegador lo reimplementara, acabaríamos avisando a quien no toca, y un aviso que sale
+    // cuando no debe se aprende a ignorar.
+    //
+    // MICROCOPY: marcador, sin aprobar (regla 30). Y no es cosmético — es lo único que separa «me
+    // falta rellenar un campo» de «esto no funciona».
+    var estadoBizum = window.appBizumSinTelefono;
+    if (estadoBizum === "falta_telefono" || estadoBizum === "no_se_pudo_leer") {
+      var avisoBizum = document.createElement("p");
+      avisoBizum.className = "aviso-bizum-sin-telefono";
+      avisoBizum.setAttribute("role", "status");
+      avisoBizum.style.cssText = "font-size:12.5px;font-weight:600;color:var(--warn,#b45309);margin:2px 0 6px";
+      avisoBizum.textContent = estadoBizum === "falta_telefono"
+        ? "[PENDIENTE microcopy oficial · sin este móvil tu cliente no ve la opción Bizum]"
+        : "[PENDIENTE microcopy oficial · no hemos podido comprobar tu móvil de Bizum]";
+      fBizumPhone.wrapper.appendChild(avisoBizum);
+    }
+
     // C1-1: card "Cobros con tarjeta" (Stripe Connect Express) — solo si el
     // flag PAYMENTS_CONNECT_ENABLED está activo (lo dice /admin/connect/status)
     const connectBlock = document.createElement("div");
