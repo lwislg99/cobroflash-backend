@@ -174,6 +174,48 @@ export function cuboDeCobro(valor: unknown): string {
 }
 
 /**
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * SCRUM-441 · LO QUE EL PROFESIONAL DECLARA AL MARCAR UNA FACTURA COBRADA A MANO
+ *
+ * Vale lo que cumple la forma `<metodo>[:<pasarela>]` con el método en `PAID_VIA` (regla 22), y
+ * además el desconocido DECLARADO — que no es lo mismo que `null`: `null` es «nadie dijo nada» y
+ * `desconocido` es «se preguntó y no consta». La diferencia importa en una pantalla de dinero.
+ *
+ * Cualquier otra cosa devuelve `null` y **la columna no se toca**. Fallar cerrado: escribir un
+ * método inventado es peor que no escribir ninguno, porque el segundo se ve y el primero no.
+ */
+export function metodoDeclarado(valor: unknown): string | null {
+  if (typeof valor !== 'string') return null;
+  const limpio = valor.trim().toLowerCase();
+  if (limpio === '') return null;
+  if (limpio === METODO_DESCONOCIDO) return limpio;
+  return esMetodoValido(limpio) ? limpio : null;
+}
+
+/**
+ * QUÉ SE ESCRIBE EN `invoices.paid_via` al cambiar el estado de una factura. Función PURA: se puede
+ * probar entera sin base de datos, que es la única forma de que el control negativo signifique algo.
+ *
+ * Tres casos, y el de en medio es el que protege lo que ya funcionaba:
+ *
+ *  · `paid` **con** método declarado → se escribe.
+ *  · `paid` **sin** método (o con uno que el conjunto cerrado no reconoce) → `{}`, o sea **no se
+ *    toca la columna**. Marcar cobrada sin indicar método sigue funcionando exactamente igual que
+ *    antes de que esta columna existiera.
+ *  · `pending` (deshacer el pago) → `null`. Si ya no está cobrada, «cómo se cobró» dejó de ser
+ *    cierto. No es política nueva: es la que ya tenía `paidAt`, aplicada al campo que la acompaña.
+ *
+ * 🔴 Lo que NUNCA hace: mirar `Charge`. El valor sale de lo que el profesional dice EN ESE MOMENTO,
+ * y las filas históricas no se tocan (ver `tests/scrum441-paidvia-sin-copia.test.mjs`).
+ */
+export function campoPaidViaAlMarcar(status: string, declarado: unknown): { paidVia?: string | null } {
+  if (status === 'pending') return { paidVia: null };
+  if (status !== 'paid') return {};
+  const v = metodoDeclarado(declarado);
+  return v ? { paidVia: v } : {};
+}
+
+/**
  * Traduce el `payment_type_id` de MercadoPago a nuestro vocabulario.
  *
  * ⚠️ `mercadopago.ts` guardaba ese campo **CRUDO** cuando venía, así que por ahí podía entrar

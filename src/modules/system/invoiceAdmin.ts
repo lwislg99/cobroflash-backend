@@ -2,6 +2,8 @@
 import { prisma } from '../../core/db/prisma';
 import { Prisma } from '@prisma/client';
 import { recalcJobCobradoForInvoice } from '../jobs/domain/job.service'; // SCRUM-28
+// SCRUM-441: el conjunto cerrado de métodos se CONSUME desde su dueño. Aquí no se copia ni un valor.
+import { campoPaidViaAlMarcar } from '../billing/domain/metodoDeCobro';
 
 // Listado para el BO (con filtros)
 export async function listInvoicesAdmin(
@@ -113,10 +115,20 @@ export async function getInvoiceDetailAdmin(id: number, merchantId?: number) {
 // "deshacer pago" (→pending) SOLO pre-SIF: justificantes (J-…) o tipo JUST;
 // una factura F1 real jamás se des-paga a mano — para eso está la R1 (regla 29).
 export class UnpayNotAllowedError extends Error {}
+
 export async function updateInvoiceStatusAdmin(
   id: number,
   status: string,
   merchantId?: number,
+  /**
+   * CÓMO dice el profesional que entró el dinero, al marcarla a mano. **Opcional a propósito**:
+   * sin él, esta función se comporta EXACTAMENTE como antes — marcar cobrada sin indicar método
+   * sigue funcionando igual, y esa es la mitad del contrato de este cambio.
+   *
+   * 🔴 Solo se escribe lo que el profesional declara EN ESE MOMENTO. Nunca se deduce, nunca se
+   * copia de `Charge.method`, y las filas históricas no se tocan.
+   */
+  paidVia?: unknown,
 ) {
   const existing = await prisma.invoice.findFirst({
     where: { id, ...(merchantId != null ? { merchantId } : {}) },
@@ -164,11 +176,26 @@ export async function updateInvoiceStatusAdmin(
   }
   // para 'expired' dejamos paidAt como esté
 
+  // SCRUM-441 · EL MÉTODO SIGUE A `paidAt`, y no se inventa.
+  //
+  // · Se escribe SOLO al pasar a `paid` y SOLO si el profesional lo declaró aquí y ahora. Si no
+  //   dijo nada, el campo NO se toca: marcar cobrada sin indicar método funciona exactamente igual
+  //   que siempre, y un `undefined` en `data` de Prisma es «no toques esta columna».
+  // · Al deshacer el pago se BORRA, en el mismo gesto en que `paidAt` se pone a `null`: si ya no
+  //   está cobrada, «cómo se cobró» dejó de ser cierto. No es política nueva — es la que ya tiene
+  //   la fecha, aplicada al campo que la acompaña.
+  // · Un valor que el conjunto cerrado no reconoce se descarta y la columna se queda como estaba.
+  //   Fallar cerrado: escribir basura en la pantalla del dinero es peor que no escribir nada.
+  // La decisión vive en el dominio del método y es PURA, así que se prueba entera sin base de
+  // datos. Un objeto VACÍO significa «no toques la columna», que es el caso de siempre.
+  const campoMetodo = campoPaidViaAlMarcar(status, paidVia);
+
   const updated = await prisma.invoice.update({
     where: { id },
     data: {
       status,
       paidAt,
+      ...campoMetodo,
     },
   });
   // SCRUM-28 (COBROS-2): el cobro MANUAL (Bizum/transferencia) también materializa
