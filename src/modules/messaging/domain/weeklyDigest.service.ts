@@ -4,6 +4,8 @@ import { prisma } from '../../../core/db/prisma';
 import { config } from '../../../core/config/env';
 import { maskEmail } from '../../../core/utils/utils';
 import { enviarCorreo, ResultadoCorreo, resultadoSinDestino } from '../../../integrations/enviarCorreo';
+// SCRUM-475 · un aviso que no sale deja constancia, y su fallo VIAJA hasta el cron.
+import { dejarConstancia, parteNuevo, type ParteDeAvisos } from './avisoConstancia';
 
 // SCRUM-475 · el POST propio se retira: emisor único, y la respuesta se devuelve con su acuse.
 // 🔴 SIGUE LANZANDO CUANDO NO SALE, Y ES DELIBERADO (SCRUM-475).
@@ -26,7 +28,17 @@ function fmt(n: number, currency = '') {
   return n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + (currency ? ' ' + currency : '');
 }
 
-export async function sendWeeklyDigests(): Promise<void> {
+/**
+ * 🔴 SCRUM-475 · DEVUELVE UN PARTE, Y ANTES ERA `Promise<void>`.
+ *
+ * El censo lo marcaba `ignora-resultado` en `cron.ts:61` —«nadie mira lo que devolvió»— y la verdad
+ * era peor: **no había nada que mirar**. El fallo de cada merchant moría en el `console.error` de
+ * abajo, en prosa, sin decir a QUÉ profesional se quedó sin su resumen; y el cron, que es el único
+ * que podría enterarse, recibía `undefined`. Un resumen semanal que no sale no lo echa de menos
+ * nadie: no hay pantalla donde se vea su ausencia.
+ */
+export async function sendWeeklyDigests(): Promise<ParteDeAvisos> {
+  const parte = parteNuevo();
   const now      = new Date();
   const weekAgo  = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   weekAgo.setHours(0, 0, 0, 0);
@@ -43,24 +55,39 @@ export async function sendWeeklyDigests(): Promise<void> {
     },
   });
 
-  if (!merchants.length) return;
+  if (!merchants.length) return parte;
   console.log(`[weeklyDigest] Enviando ${merchants.length} resumen(es)…`);
 
   for (const merchant of merchants) {
+    parte.intentados += 1;
+    // Los DOS canales, porque el fallo se cae por cualquiera de ellos: `sendEmail` LANZA cuando el
+    // envío revienta y DEVUELVE `sin_destino` —sin lanzar— cuando el correo del merchant no tiene
+    // `@`. El `console.error` de antes solo veía el primero, y el segundo no dejaba nada.
+    let resultado: ResultadoCorreo;
     try {
-      await sendDigestForMerchant(merchant, weekAgo, now);
+      resultado = await sendDigestForMerchant(merchant, weekAgo, now);
     } catch (e: any) {
       console.error(`[weeklyDigest] Error merchant ${merchant.id}:`, e?.message);
+      const registro = dejarConstancia('resumen_semanal', merchant.email ?? '', { error: e });
+      if (registro) parte.perdidos.push(registro);
+      continue;
     }
+    if (resultado.enviado) { parte.entregados += 1; continue; }
+    const registro = dejarConstancia('resumen_semanal', merchant.email ?? '', resultado);
+    if (registro) parte.perdidos.push(registro);
   }
+  return parte;
 }
 
 async function sendDigestForMerchant(
   merchant: { id: number; name: string; email: string | null; defaultCurrency: string },
   from: Date,
   to: Date,
-): Promise<void> {
-  if (!merchant.email) return;
+): Promise<ResultadoCorreo> {
+  // SCRUM-475 · era `return;` a secas: un merchant sin correo no recibía el resumen y no quedaba
+  // rastro de que no se le mandó. `sin_destino` es un dato, no un hueco (mismo arreglo que le hizo
+  // SCRUM-477 a `sendTechQuoteApprovedEmail`).
+  if (!merchant.email) return resultadoSinDestino();
 
   const [paidInvoices, newInvoices, acceptedQuotes, newQuotes, newCustomers, pendingInvoices] = await Promise.all([
     // Facturas cobradas esta semana
@@ -138,8 +165,13 @@ async function sendDigestForMerchant(
   </div>
 </div>`;
 
-  await sendEmail(merchant.email, subject, html);
-  console.log(`[weeklyDigest] ✓ enviado a ${maskEmail(merchant.email)}`); // SCRUM-101
+  const r = await sendEmail(merchant.email, subject, html);
+  // 🔴 SCRUM-475 · EL «✓ enviado» SOLO SI SALIÓ. Esto es lo que la fase 1 de SCRUM-475 anticipó
+  // como riesgo («el log dejaría de ser una medición y pasaría a ser un adorno») y estaba VIVO por
+  // el otro canal: `sendEmail` DEVUELVE `sin_destino` sin lanzar cuando el correo no tiene `@`, así
+  // que esta línea imprimía «✓ enviado» sobre un correo que no se intentó mandar.
+  if (r.enviado) console.log(`[weeklyDigest] ✓ enviado a ${maskEmail(merchant.email)}`); // SCRUM-101
+  return r;
 }
 
 // Generar preview del digest para un merchant (sin enviar)

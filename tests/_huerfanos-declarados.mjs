@@ -46,6 +46,15 @@ export const CATEGORIAS = {
   // 🟠 Sin llamador porque la misma consulta o regla se rehízo en otro sitio. La capacidad SÍ se
   // sirve; lo que hay es una copia, y dos sitios donde divergir.
   SUPLANTADO_POR_UNA_COPIA: 'lo hace otro, copiado',
+  // 🟣 NO TIENE LLAMADOR EN PRODUCCIÓN Y NO SE PUEDE BORRAR NUNCA. No espera cable —otro sirve ya
+  // la capacidad— pero es el SUJETO EJECUTABLE de un guard: un test lo CORRE contra un doble y
+  // comprueba en él una regla que no está escrita en ningún otro sitio. Retirarlo no quita código
+  // muerto: quita la única comprobación de esa regla.
+  //
+  // 🔴 Por qué es una categoría y no un matiz de `SUPLANTADO_POR_UNA_COPIA`: **una copia superada se
+  // acaba borrando**. Ésa es la conducta correcta para una copia y la equivocada para esto. La
+  // etiqueta de más era una invitación a limpiarlo dentro de seis meses, y por eso se separa.
+  ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE: 'el test lo CORRE: es la regla, y borrarlo la borra',
   // 🔵 Deliberado y declarado: espera un diff de esquema, su fase siguiente, o una decisión. Tres de
   // los cinco que el fundador nombró viven aquí. Borrarlos sería tirar trabajo pagado.
   MOTOR_EN_ESPERA: 'construido a propósito antes que su consumidor',
@@ -504,12 +513,12 @@ export const DECLARADOS = [
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
     exports: ['PREFIJO_TELEFONO_DEMO'] },
   { modulo: 'src/modules/system/domain/borradoMerchant.ts',
-    cat: 'SUPLANTADO_POR_UNA_COPIA', desde: '2026-08-12',
-    motivo: '🔴 LA PREMISA ERA FALSA Y SE CORRIGE AQUÍ. Se declaró como PROMESA_SIN_CABLE, y midiendo NO lo es: `borrarMerchant` sigue con cero llamadores, pero la supresión real la hace `suprimirMerchant` (`supresionMerchant.service.ts:34`), que SÍ tiene ruta montada — comprobado en `supresion.routes.ts:56`. Lo midió SCRUM-485 y lo he verificado con mi propio instrumento antes de reclasificarlo. El profesional PUEDE, así que no es una promesa rota: es la función vieja, superada y sin retirar.',
+    cat: 'ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE', desde: '2026-08-12',
+    motivo: '🔴 SEGUNDA CORRECCIÓN, Y LA ANTERIOR ERA MÍA. Pasó por PROMESA_SIN_CABLE (repitiendo el encargo) y por SUPLANTADO_POR_UNA_COPIA (mío, y también mal). Medido: sigue con cero llamadores en producción, PERO ES EL SUJETO EJECUTABLE de dos guards que lo CORREN contra un prisma falso y comprueban la SECUENCIA — `scrum192` (4 llamadas: `event` antes que los charges, `merchant` el último, y el recorrido igual a `ORDEN_BORRADO_MERCHANT`) y `scrum244-colgados` (3 llamadas: `reconciliation` ANTES que `charge` porque la FK es RESTRICT, y ningún `where` vacío). Con cero FK en cascada, ESE ORDEN ES LA GARANTÍA, y no está escrito en ningún otro sitio. Y `suprimirMerchant` NO puede heredarlos: ANONIMIZA con un `updateMany`, no borra, así que no tiene orden de borrado que verificar. No es una copia superada: **borrarlo borra la única comprobación del orden de borrado seguro.**',
     exports: ['borrarMerchant'] },
   { modulo: 'src/modules/system/domain/borradoMerchant.ts',
-    cat: 'SUPLANTADO_POR_UNA_COPIA', desde: '2026-08-12',
-    motivo: 'La lista de lo que el barrido genérico NO debe tocar, escrita para `borrarMerchant`. Sigue a su función: si aquélla está superada por `suprimirMerchant`, ésta también. Cae con ella cuando SCRUM-485 decida (aquí se cuenta, no se retira).',
+    cat: 'ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE', desde: '2026-08-12',
+    motivo: 'La lista de lo que el barrido genérico NO debe tocar. No es accesoria de `borrarMerchant`: `scrum192` la comprueba directamente («tiene que estar declarada FUERA, no simplemente ausente»), que es la diferencia entre un modelo que se decidió dejar fuera y uno que se olvidó. Misma categoría que su función y por el mismo motivo: borrarla borra la comprobación.',
     exports: ['FUERA_DEL_BARRIDO_GENERICO'] },
   { modulo: 'src/modules/system/domain/importarClientes.service.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',

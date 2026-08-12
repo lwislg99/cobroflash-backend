@@ -5,6 +5,7 @@ import { CreateChargeSchema } from '../../../../core/validation/schemas';
 import { normalizePhone, makeReference } from '../../../../core/utils/utils';
 import { BASE_URL } from '../../../../core/config/env';
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
+import { metodoDesdePreferencia } from '../../domain/metodoDeCobro'; // SCRUM-486
 
 const router = Router();
 
@@ -36,7 +37,11 @@ router.post('/', async (req, res) => {
     const methodPref = body.method_preference;
     // SCRUM-474 · «bank» NO está en PAID_VIA y era el caso POR DEFECTO: todo lo que no fuera
     // tarjeta ni MercadoPago caía ahí. El valor del conjunto cerrado para eso es «transfer».
-    const method = methodPref === 'card' ? 'card' : methodPref === 'mp' ? 'mp' : 'transfer';
+    //
+    // SCRUM-486 · y a esa traduccion le faltaba una regla: `mp` se quedaba SIN TRADUCIR y entraba
+    // tal cual en la columna. Ahora la traduccion entera vive en `metodoDesdePreferencia`, junto
+    // al vocabulario que se guarda -- no aqui, que es donde se pierde de vista que hay DOS.
+    const method = metodoDesdePreferencia(methodPref);
 
     const charge = await prisma.charge.create({
       data: {

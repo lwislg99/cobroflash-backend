@@ -301,3 +301,158 @@ defectos que no existían (SCRUM-471).
 * `tests/_banco-red.mjs` — **ampliado**: `falloDelServidor()` y `TEXTO_DE_ESTADO`. Nada reescrito.
 * `tests/scrum362-residuales.test.mjs` (nuevo, 11).
 * `docs/master/SCRUM-307.md` — §8 nuevo: el gate de cierre del bloque.
+
+---
+
+# SCRUM-362 · H7 (12-ago-2026) — el hueco humano deja de ser una promesa
+
+**Medido contra:** `origin/main` = `eb681bf6a0f685a20fea6b1865d6b825e0236386` · 2026-08-12T11:24:43+02:00
+
+**Rama:** `scrum-362-h7-prueba-iphone` · **encargo de FICHERO, no de código**
+
+> **Cero líneas de `src/` y cero de `public/`.** Y cero de tests: esto no construye instrumento ni
+> medida — pone en el repo el **procedimiento humano** que las dos secciones de arriba declararon
+> como hueco y no podían cerrar desde la tanda.
+
+## 1 · Qué cierra, exactamente
+
+La sección RESIDUALES de arriba (§ *El hueco humano, y su puerta*) dice:
+
+> 🔸 **`docs/PRUEBA-IPHONE-BLOQUE-H.md` NO EXISTE.** […] **Cuando el fundador lo commitee, aquí va el
+> mapa bloque→escenario.**
+
+**Ya existe.** El documento entra **verbatim**, tal como se aprobó, en `docs/PRUEBA-IPHONE-BLOQUE-H.md`.
+Aquella frase **no se borra** —era cierta el 12-ago-2026 cuando se midió—: queda arriba y esta
+sección es la que la supera.
+
+## 2 · PASO 0 · la premisa, verificada por CONTENIDO y no por número
+
+`main` = `eb681bf6` antes del `fetch` y **`eb681bf6` después**: no se movió.
+
+| Qué se buscó | Dónde | Resultado |
+| --- | --- | --- |
+| el fichero `docs/PRUEBA-IPHONE-BLOQUE-H.md` | **todas** las refs de `origin`, una a una | **no existe en ninguna** |
+| «Prueba en iPhone real» (su título) | todas las refs de `origin` | **cero** |
+| `navigator.storage.persisted` | todas las refs de `origin` | **cero** |
+| `display-mode: standalone` | `main` | 5 apariciones, **ninguna es un procedimiento**: son `api.js`, su test, y dos entradas que lo citan |
+| «modo avión» | `docs/` de `main` | 8 apariciones, **todas dentro de otras entradas**; las dos de SCRUM-307 y SCRUM-362 son justamente las que declaran el hueco |
+| `PRUEBA-IPHONE` | `main` | **2**, y las dos son la DECLARACIÓN de que no existe (`SCRUM-307.md:225`, `SCRUM-362.md:225`) |
+
+**La premisa se sostiene:** no había procedimiento escrito para probar sin cobertura en un aparato
+real. Lo que había eran dos entradas diciendo que faltaba.
+
+Ramas del ticket, con su punta:
+
+| Rama | Último commit | Autor | Hora |
+| --- | --- | --- | --- |
+| `scrum-362-banco-sin-cobertura` | `4d93f916` | Javier Pereira Fernández | 10-ago 19:46 +0100 |
+| `scrum-362-residuales` | `8f0f127b` | Javier Pereira Fernández | 11-ago 22:34 +0100 |
+
+Las dos están **ya en `main`** (`git merge-base --is-ancestor`, comprobado), así que no hay trabajo
+ajeno sin empujar que este documento pueda pisar.
+
+## 3 · Qué cubre el documento
+
+Tres bloques, y el orden es deliberado: lo que se puede hacer **sin nada** va primero.
+
+| Bloque | Qué mide | Necesita |
+| --- | --- | --- |
+| **A** (~25 min) | modo avión REAL desde el icono y desde pestaña · instalación en pantalla de inicio · navegar cinco pantallas sin red · intentar firmar · volver | solo un iPhone |
+| **B** (~30 min) | `display-mode`/`standalone` en aparato real · entradas del precache · **la prueba de SCRUM-453** (`caches.match` con y sin `?v=`) · `storage.estimate/persisted` · `indexedDB.databases()` | Mac con cable |
+| **C** (2 min) | **arranca el reloj del desalojo a 8 días** — instalada vs pestaña | 8 días y un dueño que colabore |
+
+Tres cosas del documento que son método, no contenido, y por eso se conservan intactas:
+
+* **Tres respuestas, no dos:** SÍ · NO · **NO SUPE MIRAR**. Es la misma regla que gobierna los
+  suelos de esta casa —«cero» y «no supe mirar» nunca son el mismo número— escrita para una persona.
+* **«O hay foto, o no pasó.»** Una medición sin evidencia no es una medición.
+* **A3 es la única prueba que puede invalidar trabajo ya hecho**, y el documento lo dice con esas
+  palabras: si la app no abre en modo avión desde el icono, el bloque H se está diseñando sobre arena.
+
+## 4 · Qué NO cubre — y esto es del propio documento, no mío
+
+Lo declara él en su sección *Lo que este documento NO cubre*:
+
+* **La muerte del proceso.** Que iOS mate la app en segundo plano con firmas sin subir dentro. No se
+  puede provocar de forma fiable a mano y el procedimiento no lo intenta. Es exactamente el mismo
+  hueco que RESIDUALES declaró para `④` («esto **no** se llama muerte del proceso»): el instrumento
+  cubre la DURABILIDAD DEL ALMACÉN y este documento tampoco alcanza al sistema operativo.
+* **Android y Chrome.** Todo es Safari sobre iOS y no se puede extrapolar ni un dato.
+
+Y lo que no cubre **por ser un documento**: nada de esto está medido todavía. Entra el
+procedimiento, no el resultado. La plantilla está en blanco a propósito.
+
+## 5 · El mapa bloque→escenario, que es lo que RESIDUALES dejó pendiente
+
+Los seis que necesitaban mano humana, y dónde los recoge el documento:
+
+| El hueco humano (RESIDUALES) | Dónde se cubre |
+| --- | --- |
+| modo avión real | **A3** (desde el icono) y **A4** (desde pestaña) |
+| iPhone real / Safari, Background Sync 0 % | **A5** y **A6** — cinco pantallas y el intento de firma |
+| instalación en pantalla de inicio | **A2**, y **B1** lo comprueba por código |
+| **desalojo a 7 días** | **C** — el reloj, con las tres condiciones que hay que pedirle al dueño |
+| **el sistema mata la app a media escritura** | 🔸 **NO se cubre**, y el documento lo declara |
+| cuota agotada en un móvil de verdad | **B4** (`estimate`) — parcial: mide el espacio, no lo agota |
+
+Dos de los seis quedan abiertos, y aquí se dicen: la muerte del proceso (nada) y la cuota agotada
+(medida, no provocada).
+
+## 6 · Lo que me pareció un error y NO he tocado
+
+El contenido es verbatim (era STOP). Estas dos cosas se reportan y se dejan:
+
+1. **El documento dice «8 días» y las dos entradas de arriba dicen «7 días»** (`H0`: *«el borrado de
+   origen de iOS a los 7 días»*). El plazo real de WebKit son 7 días de no-uso, así que **8 es un
+   margen y probablemente deliberado** —esperar 8 para medir un plazo de 7—; pero el título del
+   bloque C dice «el reloj de los 8 días» y el hueco declarado dice 7. Quien lea las dos cosas verá
+   dos números. No lo cambio: el contenido está aprobado.
+2. **B2 dice «¿Salen 54 entradas?»** y el propio documento añade la salvaguarda buena —*«si sale
+   otro, el número del repo ha cambiado y hay que volver a contarlo antes de llamarlo divergencia»*—.
+   **No he verificado el 54 contra el árbol**: verificarlo sería medir, y este encargo es de fichero.
+   La salvaguarda hace que un 54 desactualizado no produzca un falso hallazgo, que era el riesgo.
+
+## 7 · Comprobado antes de empujar
+
+* **El documento no referencia NINGÚN documento.** Medido, no supuesto: `grep` de `.md`, `docs/`,
+  `tests/`, `src/` y `public/` sobre el fichero → **cero coincidencias**. Solo cita **tickets**, con
+  enlace a Jira (4 enlaces: SCRUM-453, SCRUM-448, SCRUM-451 y SCRUM-360). No los he comprobado
+  porque **no tengo acceso a Jira**, y el encargo lo anticipaba: se dejan tal cual.
+* El guard de SCRUM-242 vigila las rutas `docs/**.md` que nombran los **scripts** de `scripts/`, no
+  las de un documento — leído para no suponerlo. Este fichero no le añade nada que vigilar.
+* **Esta entrada sí nombra el documento**, y ahora puede: existe en el mismo commit.
+
+## 8 · Números — la tanda va DESPUÉS de la última edición del documento
+
+Ese orden costó un rojo esta semana (`SCRUM-284.md:123`), así que se respeta: primero el fichero
+terminado, después medir.
+
+La línea base se mide **sin borrar nada**, corriendo el conjunto de tests que `main` declara — el
+método que RESIDUALES dejó escrito arriba (§ *cómo NO se mide una línea base*):
+
+```
+node --test --test-force-exit $(git ls-tree -r --name-only main -- tests | grep '\.test\.mjs$')
+```
+
+| | tests | pass | fail | skipped |
+| --- | --- | --- | --- | --- |
+| línea base — el conjunto de tests **de `main`**, medido aparte | 3.315 | 3.238 | **0** | 77 |
+| después — la tanda entera de esta rama | 3.315 | 3.238 | **0** | 77 |
+| diferencia | **0** | **0** | 0 | **0** |
+
+⚠️ `main` **se movió una vez más** mientras se cerraba —`eb681bf6` → **`3be9a2ea`** (SCRUM-483)—, se
+trajo dentro y **la línea base se volvió a medir después del merge**: da los mismos cuatro números,
+así que el cero de la diferencia sigue siendo un cero medido y no uno heredado. El ancla de arriba
+apunta al `main` contra el que se hizo el PASO 0, que es lo que el ancla significa.
+
+**Cero diferencia es el resultado correcto aquí**: un documento no añade tests. Si hubiera cambiado
+algo, sería que este encargo ha tocado código, y tenía prohibido tocarlo.
+
+* `npm run guards:entrada` — **4 guards · 17 tests · 0 fail**.
+* `tests/scrum393-marcadores-de-conflicto.test.mjs` — **6 tests · 0 fail**.
+
+## 9 · Lo que NO se ha tocado
+
+`prisma/schema.prisma` · nada de `src/` · nada de `public/` · ningún test · `_banco-red.mjs` y sus
+escenarios · el contenido aprobado del documento (verbatim, sin una coma cambiada) · las dos
+secciones anteriores de esta entrada, que se conservan enteras.

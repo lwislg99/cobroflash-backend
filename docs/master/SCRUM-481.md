@@ -1,10 +1,17 @@
 # SCRUM-481 · La columna MÉTODO habla el mismo idioma que el filtro de al lado
 
-**Medido contra:** `origin/main` = `1117b313984a91f0ef33caabbdef45d5579595e3` · 2026-08-12T10:40:00+01:00
+**Medido contra:** `origin/main` = `3be9a2eaceacdf0f93b340aaf64f6e74c79ac872` · 2026-08-12T12:20:00+01:00
 
 **Y con `origin/scrum-474-fase2-filtro` = `037ff52a` mergeada dentro**, que es el contrato de debajo
 que cambió a mitad del ticket. El ancla de arriba va sola en su línea a propósito: partirla para
 meter esta segunda referencia es lo que tumbó el guard de SCRUM-267 (abajo, en la corrección propia).
+
+> 🔴 **TERCERA MEDICIÓN, y el motivo es que esta rama lleva días sin poder entrar.** Cada vez que se
+> intenta mergear, `main` se ha vuelto a mover — **cinco veces solo el 12-ago**. Los números de abajo
+> están rehechos contra `3be9a2ea`, que ya trae dentro SCRUM-441, 467, 483, 485, 486 y 489. La
+> resolución de la columna MÉTODO **no ha cambiado**: es la misma desde que entró la fase 2 del
+> filtro, y este merge de `main` ya **no la vuelve a plantear** —la base de merge la incluye—, así
+> que el conflicto que renacía está cerrado de raíz y no por repetir la resolución a mano.
 
 **12-ago-2026** · **Carril:** Cobros · **Gate:** sin gate, corre en `npm test`
 
@@ -310,23 +317,36 @@ persiga creyendo que sigue abierto.
 
 ## Verificación de la tanda — REHECHA sobre el árbol fusionado
 
-Con `main` (`1117b313`) y `scrum-474-fase2-filtro` (`037ff52a`) dentro. **Un solo conflicto**, en la
-celda de MÉTODO, y su lado decía literalmente «la columna es de SCRUM-481 y se queda como está en
-`main`»: gana el mío, que es de quien es el carril. **Prisma regenerado y `dist/` recompilado antes
-de medir.**
+Con **`main` = `3be9a2ea`** dentro (12-ago, 12:20), que ya trae `scrum-474-fase2-filtro` mergeada por
+su propio camino. **Prisma regenerado desde este worktree y `dist/` recompilado antes de medir.**
+
+> 🔴 **EL CONFLICTO QUE RENACÍA YA NO RENACE, y no por repetir la resolución a mano.** Cuando la fase
+> 2 del filtro entró en `main`, este merge la encontró **ya resuelta en la base de merge**: git no
+> vuelve a plantear la celda de MÉTODO. Comprobado sobre el resultado, no supuesto —`0` marcadores,
+> `0` apariciones del comentario ajeno, y la celda pinta `rotuloDeMetodo(c.metodo, c.metodoCubo,
+> cubos)` en `cobrosView.js:488`—.
+>
+> Y la trampa que dejaba el otro lado, medida en todo el árbol: **`COBROS_COPY.metodoSinRegistrar`
+> tiene CERO usos de código**. Las dos únicas apariciones —`cobrosView.js:34` y
+> `scrum481-…test.mjs:441`— son **comentarios** que explican por qué se retiró. Si hubiera quedado
+> uno vivo, la celda pintaría `undefined` en la pantalla del dinero.
 
 > **No se rebasa, se mergea DENTRO.** La rama está empujada, y rebasar exigiría `--force`, prohibido
 > en esta casa. El resultado es el mismo contrato, con la historia intacta.
 
 **Línea base MEDIDA APARTE, y sin borrar ficheros del disco** —eso dio un falso rojo anoche
 (`docs/master/SCRUM-362.md`)—: se corre el conjunto de tests que **`main` declara** (`git ls-tree`,
-435 ficheros) sobre este árbol; el fichero 436 es el de este ticket.
+437 ficheros) sobre este árbol; el 438 es el de este ticket.
 
 | | tests | pass | fail | skipped |
 |---|---|---|---|---|
-| **línea base** (los 435 tests de `main`, este árbol) | **3.296** | **3.219** | **0** | **77** |
-| **después** (tanda entera, 436) | **3.316** | **3.239** | **0** | **77** |
+| **línea base** (los 437 tests de `main`, este árbol) | **3.315** | **3.238** | **0** | **77** |
+| **después** (tanda entera, 438) | **3.335** | **3.258** | **0** | **77** |
 | diferencia | **+20** | **+20** | **0** | **0** |
+
+> 🔸 Los números suben respecto a la medición de las 10:40 (3.296 / 3.316) porque `main` ha traído
+> **SCRUM-441, 467, 483, 485, 486 y 489** por el camino. **Los +20 de este ticket son los mismos**:
+> la rama aporta lo que aportaba, medido contra la base de hoy y no restado de cabeza.
 
 * `npm run guards:entrada` — **17 tests, 4 guards, 0 fail**.
 * **Marcadores con el guard oficial** `tests/scrum393-marcadores-de-conflicto.test.mjs` — **6 tests,
