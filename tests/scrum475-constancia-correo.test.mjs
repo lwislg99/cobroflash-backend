@@ -117,6 +117,42 @@ test('SCRUM-475 f2 · 🔴 REGRESIÓN: ningún envío se traga el fallo sin una 
     + '«ninguno se traga el fallo», significa «no supe mirar».');
 });
 
+/**
+ * Los veredictos DECLARADOS. Lista cerrada y escrita a mano a propósito — ver abajo.
+ * Derivados hoy de `_censo-correo.mjs`: `sube` · `avisa` · `traga-log` · `traga-mudo`
+ * (clasificación por el HECHO, SCRUM-475) y `mira-resultado` · `ignora-resultado` (el fallo que
+ * viaja como VALOR devuelto, SCRUM-477).
+ */
+const VEREDICTOS_DECLARADOS = ['sube', 'avisa', 'traga-log', 'traga-mudo', 'mira-resultado', 'ignora-resultado'];
+
+test('SCRUM-478 · toda llamada cae en un cubo DECLARADO, y los cubos suman el total', () => {
+  // Regla de la casa (12-ago-2026): **un censo cuyas categorías no suman su total no es un censo**.
+  //
+  // 🔴 Y CUIDADO CON CÓMO SE ESCRIBE. La primera versión de este test construía los cubos DESDE la
+  // propia lista y sumaba: eso cuadra siempre, por tautología, y no puede ponerse rojo jamás. Un
+  // guard que no puede fallar es peor que ninguno, porque ocupa su sitio.
+  //
+  // Lo que sí vigila: que todo veredicto esté en una lista CERRADA escrita aquí. El día que alguien
+  // añada un séptimo a `censarLlamadores` y no lo declare, esto cae — y ese día es cuando el
+  // informe empezaría a cuadrar a ojo mientras las llamadas del veredicto nuevo no las mira nadie.
+  const llamadas = censarLlamadores(EMISORES);
+  assert.ok(llamadas.length > 0, '🔴 censo vacío: no hay nada que cuadrar.');
+
+  const sinDeclarar = [...new Set(llamadas.map((l) => l.veredicto))]
+    .filter((v) => !VEREDICTOS_DECLARADOS.includes(v));
+  assert.deepEqual(sinDeclarar, [],
+    `🔴 VEREDICTO SIN DECLARAR: ${sinDeclarar.join(', ')}.\n`
+    + '  Añádelo a VEREDICTOS_DECLARADOS con su significado. Un cubo que nadie ha declarado es un\n'
+    + '  cubo que nadie mira, y esto es un censo sobre llamadas que PIERDEN FALLOS.');
+
+  const suma = VEREDICTOS_DECLARADOS
+    .map((v) => llamadas.filter((l) => l.veredicto === v).length)
+    .reduce((a, b) => a + b, 0);
+  assert.equal(suma, llamadas.length,
+    `🔴 LOS CUBOS DECLARADOS NO SUMAN EL TOTAL: ${suma} ≠ ${llamadas.length}. Hay llamadas que no `
+    + 'caen en ninguno.');
+});
+
 // ── 2 · EL CRITERIO: no se inventa un estado que no consta ───────────────────────────────
 
 test('SCRUM-475 f2 · 🔴 «aceptado» NO es «entregado»', () => {
