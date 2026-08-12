@@ -32,6 +32,9 @@ import { createMailer } from './mailer';
 import {
   constanciaDeEnvio, constanciaDeFallo, type Constancia,
 } from '../modules/messaging/domain/constanciaCorreo';
+// SCRUM-501: UNA fila por envío. `registrarEnvio` NO LANZA y NO SE CUELGA — la invariante vive allí
+// dentro, no en un `try` repetido en cada salida de este fichero.
+import { registrarEnvio, type ContextoDeEnvio } from '../modules/messaging/domain/registroDeEnvios';
 
 export interface CorreoSuelto {
   to: string;
@@ -47,6 +50,15 @@ export interface CorreoSuelto {
   origen?: string;
   /** Timeout propio (el PDF adjunto tarda más que un aviso de texto). */
   timeoutMs?: number;
+  /**
+   * 🔴 SCRUM-501 · DE QUIÉN Y DE QUÉ es este envío, para poder escribir su fila.
+   *
+   * OPCIONAL a propósito, y no por comodidad: `merchant_id` y `kind` son `NOT NULL` en la tabla, así
+   * que **sin este contexto no hay fila** — e inventar un merchant para poder escribirla sería peor
+   * que no tenerla. Los emisores que hoy no lo pasan quedan declarados en
+   * `docs/master/SCRUM-501.md`; su correo sale igual, simplemente no deja fila todavía.
+   */
+  registro?: ContextoDeEnvio | null;
 }
 
 /**
@@ -125,13 +137,21 @@ export async function enviarPorResend(c: CorreoSuelto): Promise<ResultadoCorreo>
     // La constancia se deriva de LA MISMA respuesta de la que sale el acuse — no de un segundo
     // sitio que pudiera decir otra cosa. `aceptado_sin_confirmacion` si hubo id;
     // `aceptado_sin_identificador` si el proveedor contestó sin él. Nunca `entregado`.
-    return { enviado: true, via: 'resend', acuse: { id, crudo: cuerpo }, constancia: constanciaDeEnvio(cuerpo) };
+    const constancia = constanciaDeEnvio(cuerpo);
+    // 🔴 SCRUM-501 · LA FILA, con el `provider_id` que el webhook usará para encontrarla. Va DESPUÉS
+    // del envío y de su log: si esto no se pudiera escribir, el correo ya salió y sale igual.
+    await registrarEnvio({ contexto: c.registro, to: c.to, constancia });
+    return { enviado: true, via: 'resend', acuse: { id, crudo: cuerpo }, constancia };
   } catch (e) {
     console.error('[correo]', JSON.stringify({
       evento: 'fallo', via: 'resend', origen: c.origen || null,
       to: maskEmail(c.to), error: (e as { message?: string })?.message || String(e),
     }));
-    return { enviado: false, motivo: 'fallo_envio', constancia: constanciaDeFallo(e) };
+    const constancia = constanciaDeFallo(e);
+    // También del fallo queda fila: «se intentó y no salió» es constancia, y es la que hace falta
+    // para poder reintentar. `provider_id` va nulo porque no hubo respuesta que lo trajera.
+    await registrarEnvio({ contexto: c.registro, to: c.to, constancia });
+    return { enviado: false, motivo: 'fallo_envio', constancia };
   }
 }
 
@@ -175,19 +195,26 @@ export async function enviarCorreo(c: CorreoSuelto): Promise<ResultadoCorreo> {
       }));
       // SMTP acepta y no da identificador: `aceptado_sin_identificador` lo dice con esas palabras,
       // en vez de dejar un hueco que se lea como «no pasó nada».
-      return { enviado: true, via: 'smtp', acuse: null, constancia: constanciaDeEnvio(null) };
+      const constancia = constanciaDeEnvio(null);
+      // SCRUM-501: fila también por SMTP, y con `provider_id` NULO porque SMTP no da acuse. El
+      // webhook nunca la encontrará por id, y eso es correcto: no hay proveedor que avise de ella.
+      await registrarEnvio({ contexto: c.registro, to: c.to, constancia });
+      return { enviado: true, via: 'smtp', acuse: null, constancia };
     } catch (e) {
       console.error('[correo]', JSON.stringify({
         evento: 'fallo', via: 'smtp', origen: c.origen || null,
         to: maskEmail(c.to), error: (e as { message?: string })?.message || String(e),
       }));
-      return { enviado: false, motivo: 'fallo_envio', constancia: constanciaDeFallo(e) };
+      const constancia = constanciaDeFallo(e);
+      await registrarEnvio({ contexto: c.registro, to: c.to, constancia });
+      return { enviado: false, motivo: 'fallo_envio', constancia };
     }
   }
 
   // Ni Resend ni SMTP: no hay por dónde salir. Se dice, no se disfraza.
-  return {
-    enviado: false, motivo: 'sin_transporte',
-    constancia: constanciaDeFallo({ code: 'sin_transporte', message: 'no hay transporte configurado' }),
-  };
+  const constancia = constanciaDeFallo({ code: 'sin_transporte', message: 'no hay transporte configurado' });
+  // SCRUM-501: y queda fila. «Nos pidieron mandarlo y no había por dónde» es exactamente lo que hay
+  // que poder contestar después, y sin fila solo vive en un log de Railway que rota.
+  await registrarEnvio({ contexto: c.registro, to: c.to, constancia });
+  return { enviado: false, motivo: 'sin_transporte', constancia };
 }

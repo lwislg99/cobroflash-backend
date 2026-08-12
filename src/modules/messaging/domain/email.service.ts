@@ -68,6 +68,17 @@ export async function sendInvoiceEmail(args: {
       from,
       origen: 'factura',
       timeoutMs: 15_000,
+      // 🔴 SCRUM-501 · EL CONTEXTO DE LA FILA. Este emisor lo sabe todo —tiene la factura leída— y
+      // es el que responde a la pregunta que motiva la tabla: «¿se le envió la factura F-2026-014 y
+      // cuándo?». `kind` distingue el justificante de la factura porque el copy también lo
+      // distingue (reglas 24/26) y una fila que los mezclara no podría contestarla.
+      registro: {
+        merchantId: inv.merchantId,
+        kind: isJust ? 'justificante' : 'invoice',
+        customerId: inv.customerId ?? null,
+        relatedType: 'invoice',
+        relatedId: inv.id,
+      },
       // pdfBase64 garantizado no-null por el guard de arriba → el adjunto SIEMPRE viaja.
       adjuntos: [{ filename: `${inv.number}.pdf`, content: pdfBase64 }],
     });
@@ -159,6 +170,14 @@ export async function sendQuoteEmail(args: { quoteId: number; prisma: PrismaClie
       html,
       origen: 'presupuesto',
       timeoutMs: 15_000,
+      // SCRUM-501 · ídem: el presupuesto también deja fila, con su cliente y su documento.
+      registro: {
+        merchantId: quote.merchantId,
+        kind: 'quote',
+        customerId: quote.customerId ?? null,
+        relatedType: 'quote',
+        relatedId: quote.id,
+      },
       // En el presupuesto el adjunto es best-effort: el CTA al enlace /pay/quote es la vía fiable.
       adjuntos: pdfBase64
         ? [{ filename: `presupuesto-${(quote as any).quoteNumber ?? quote.id}.pdf`, content: pdfBase64 }]
