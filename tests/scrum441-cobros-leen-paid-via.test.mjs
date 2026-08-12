@@ -99,10 +99,19 @@ test('SCRUM-441 (fase 2) · el cubo sale de la MISMA función que los demás, no
   // Si alguien escribiera el cubo a dedo aquí, dejaría de moverse el día que la clasificación
   // cambie — y esa divergencia no da error, solo un filtro que cuenta mal.
   const src = fs.readFileSync(path.join(RAIZ, 'src/modules/billing/domain/cobros.service.ts'), 'utf8');
-  assert.match(src, /metodo: metodoDeclarado\(inv\.paidVia\),\s*\r?\n\s*\.\.\.camposDeMetodo\(metodoDeclarado\(inv\.paidVia\)\)/,
-    '🔴 la factura ya no pasa por `camposDeMetodo`, o no lee `paidVia` a través de '
-    + '`metodoDeclarado`. El cubo tiene que salir de la misma función que el de los `Charge`, y el '
+  // 🔴 SCRUM-499 · EL NOMBRE DE LA LECTURA CAMBIÓ, LA EXIGENCIA NO — y se APRIETA en vez de
+  // aflojarse. La copia privada `metodoDeclarado` que vivía en este fichero se retiró: era idéntica
+  // a la de `metodoDeCobro.ts`, y ahora las TRES pantallas (Cobros, Informes y el paquete de
+  // evidencia de disputa) leen por `metodoDeUnCobro`. Antes se exigía «pasa por el normalizador»;
+  // ahora se exige, además, que sea el normalizador COMPARTIDO y que no vuelva la copia.
+  assert.match(src, /metodo: metodoDeUnCobro\(inv\),\s*\r?\n\s*\.\.\.camposDeMetodo\(metodoDeUnCobro\(inv\)\)/,
+    '🔴 la factura ya no pasa por `camposDeMetodo`, o no lee `paidVia` a través de la lectura única '
+    + '`metodoDeUnCobro`. El cubo tiene que salir de la misma función que el de los `Charge`, y el '
     + 'valor crudo tiene que estar normalizado: `?? null` deja pasar la cadena vacía.');
+  assert.doesNotMatch(src, /function metodoDeclarado\b/,
+    '🔴 HA VUELTO LA COPIA PRIVADA de la normalización a este fichero. Era idéntica a la compartida '
+    + 'y por eso se retiró en SCRUM-499: dos funciones iguales no fallan el día que se escriben, '
+    + 'fallan el día que alguien arregla una.');
   // Y el comentario viejo no puede seguir afirmando lo contrario: es lo que hizo durar el defecto.
   assert.doesNotMatch(src, /\*\*`Invoice` NO guarda método de cobro\*\*/,
     '🔴 SIGUE EL COMENTARIO QUE AFIRMA QUE `Invoice` NO GUARDA MÉTODO. Era cierto y dejó de serlo; '

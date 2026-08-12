@@ -270,3 +270,123 @@ No es de este ticket y no lo toco, pero el otro carril que persigue «los ocho»
 cableado · `recargoEquivalencia.ts` sigue sin llamadores · `grossOfLines` y `registro.builder.ts`
 sin tocar (los dos son STOP) · cero microcopy · los porcentajes (5,2 / 1,4 / 0,5) **siguen sin
 confirmar** — P13.1 del asesor, y el mecanismo es correcto aunque los números cambien.
+
+---
+
+# SCRUM-294 (fase B) · El criterio de caja mueve el dato, no pinta una casilla
+
+**POBLACIÓN MEDIDA** · host `DESKTOP-T5MONF5` · `2026-08-12T11:28:34Z`
+
+**Medido contra:** `origin/main` = `bf54914117fb99e596aa7d638c9ebac8ac809564` · 2026-08-12T11:28:34Z
+
+**PASO 0:** `main` mergeada DENTRO de la rama y **fase A confirmada dentro** —
+`7446da308e6242bb8821333c1b555216d69f795a` es ancestro (`merge-base --is-ancestor`). El recargo de
+equivalencia **no se ha tocado**: ni campo, ni guard, ni UI, ni tests.
+
+## 1 · Lo que decide el ticket, y pasa
+
+> «Una factura de un merchant con criterio de caja, EMITIDA en un trimestre y COBRADA en otro, queda
+> asociada al TRIMESTRE DEL COBRO.»
+
+`F-2026-001`, emitida el **15-feb (Q1)** y cobrada el **20-may (Q2)**: con RECC sale en el libro del
+**Q2** y **no** en el del Q1. El rojo nombra la factura y las dos fechas, no «falta un campo».
+
+**Dónde estaba el enganche, medido:** el periodo lo decidía `Invoice.createdAt` —
+`libroRegistro.repo.ts` filtra por esa columna— y de ese libro sale el 303. Cambiar la fecha que
+manda **es** cambiar en qué declaración cae el euro. Ahora la columna por la que se filtra la elige
+`campoDeDevengo()`.
+
+## 2 · Por qué esto no es una casilla
+
+El competidor solo puede ofrecer el RECC como casilla informativa: no sabe cuándo cobras, así que su
+usuario acaba llevando en una libreta qué facturas ha cobrado para poder liquidar. **Aquí el cobro
+está dentro**, así que el criterio mueve el dato — y A5 podrá calcular el 303 contra cobros reales.
+
+⚠️ Y lo que sigue sin poder afirmarse, que ya midió la fase 1: `paidAt` es el instante en que
+**alguien marcó** el cobro. Los webhooks lo ponen al recibir el aviso y el marcado manual guarda
+desde SCRUM-397 la fecha que declara la persona. **Es la mejor fecha que hay y es la que se usa; lo
+que no se hace es fingir que es otra cosa.**
+
+## 3 · 🔴 El suelo: no se degrada a «sin criterio de caja»
+
+Una lectura fallida **LANZA**. Es el peor sitio del mundo para degradar: «sin RECC» es un valor
+legítimo —la mayoría de los merchants— así que un fallo convertido en «no tiene» produce un 303 que
+**se parece al de todos los demás** y no lo nota nadie. Un 303 que no se puede calcular es un
+problema visible; uno calculado con el criterio equivocado se descubre en una inspección.
+
+Probado con `null`, `undefined`, `'sí'`, `1`, `0` y `{}` — y con los dos legítimos, que **no**
+lanzan: si lanzara con todo, el guard no probaría nada.
+
+## 4 · Control negativo, que va primero en el fichero
+
+| | |
+| --- | --- |
+| merchant sin RECC | devenga por **emisión**, exactamente como hoy |
+| libro **sin preguntar** por el criterio | filtra por `createdAt`, byte a byte como siempre |
+| factura con RECC **sin cobrar** | **no cae en ningún trimestre** — no devenga, y meterla por su fecha de emisión sería declarar un IVA no cobrado |
+
+Ese último tiene su control positivo dentro: sin RECC esa misma factura **sí** sale en Q1, así que
+el «no aparece» de arriba no es que la fixture esté vacía.
+
+## 5 · 🔴 LO QUE QUEDÓ BLOQUEADO, y no paré por ello
+
+**La casilla en Configuración › Empresa necesita una columna en `Merchant`, y `prisma/schema.prisma`
+no se toca.** Así que esa mitad no entra. Lo escribo, lo salto y sigo — que es lo que da valor a la
+otra mitad: el enganche está construido y probado, y el día que exista la columna solo hay que
+pasársela al libro.
+
+**Preview, ESCRITO Y NO APLICADO** (CLI local, con su control positivo delante: `--from-empty`
+devuelve **24 `CREATE TABLE`**):
+
+```sql
+-- AlterTable
+ALTER TABLE "merchants" ADD COLUMN     "criterio_caja" BOOLEAN;
+```
+
+**Una sola columna**, y por el mismo motivo que el recargo: `leerCriterioCaja` es booleano de tres
+estados y `Boolean?` los expresa nativos — `NULL` no consta · `false` no acogido · `true` acogido.
+**Sin `@default`**: un `false` por defecto convertiría a todos los merchants en «declarado que no»,
+que no lo ha dicho nadie. 100 % aditivo, 0 filas afectadas.
+
+> ⚠️ **El preview salió VACÍO a la primera y era mentira de mi script**, no del árbol: mi ancla
+> tenía dos espacios y la línea real tiene uno, así que la sustitución no se aplicó y el diff
+> comparó el schema consigo mismo. **Lo destapó el control positivo** — la herramienta veía 24
+> tablas, luego el vacío no era suyo. Es la lección de SCRUM-385 aplicada a mi propia mano.
+
+## 6 · Hallazgo derivado y NO arreglado (SCRUM-271, regla 9)
+
+`Number("")` es `0`, y `0 || 1` da `1` en silencio. **Derivado por AST, no enumerado**: 235 ficheros,
+1.051 expresiones `||` vistas, control positivo del detector ✓, y **45 `||` sobre una lectura
+numérica**. Entre ellos:
+
+```
+src/modules/invoicing/domain/vat.service.ts:24   Number(l?.qty) || 1
+src/modules/invoicing/domain/vat.service.ts:25   Number(l?.price) || 0
+src/modules/invoicing/domain/finalInvoice.service.ts:119-121
+src/modules/invoicing/domain/invoiceLines.service.ts:79,80,83,114,115
+```
+
+🛑 **`vat.service.ts` es el camino de emisión** —de ahí sale la base que el sellado manda al XML— así
+que **se reporta y no se toca** (regla 38). Y no es teórico: una línea con cantidad `0` o vacía se
+factura como **1**.
+
+## 7 · Los guards de la casa me corrigieron tres veces, y las tres tenían razón
+
+1. **SCRUM-411** — al cablear `criterioCaja` dejó de ser inalcanzable: el trinquete **BAJA de 8 a
+   7**, en el mismo commit. *El trinquete solo baja.*
+2. **SCRUM-411, segunda vuelta** — con el módulo ya alcanzable, sus OTROS exports quedaron al
+   descubierto. Son el motor de A5 (`clasificarPorCobro`, `ADVERTENCIA_CAJA`): **declarados** en
+   `_huerfanos-declarados.mjs` con su motivo, no escondidos.
+3. **SCRUM-294 fase 1** — su test exigía que nadie llamara a estos módulos, y decía qué hacer con
+   GO: se **estrecha** para que siga vigilando `recargoEquivalencia` —que sí es STOP— y suelte
+   `criterioCaja`, con el motivo escrito: el criterio **no toca el total sellado ni el XML**, solo
+   decide por qué fecha se agrupa una factura ya emitida.
+
+## 8 · Lo que NO se ha tocado
+
+`prisma/schema.prisma` · el recargo de equivalencia (fase A) · A2 retención · el 303 (A5, que
+consumirá esto) · el mecanismo de cobro · el camino de emisión · ninguna microcopy.
+
+## 9 · Estado
+
+Suite completa con `main` dentro: **3.442 tests · 3.365 pasan · 0 fallos · 77 saltados**.
