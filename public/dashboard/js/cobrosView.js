@@ -191,6 +191,39 @@ function pasarelaDeMetodo(metodo) {
 var COBROS_PASARELAS = { stripe: 'Stripe', mercadopago: 'MercadoPago' };
 
 /**
+ * 🔴 SCRUM-481 · EL MATIZ DE LA CASA — lo que distingue `bizum_auto` de `bizum_manual` EN LA FILA.
+ *
+ * SCRUM-285 dejó esta distinción viviendo justo aquí: «filtrar por cuatro, leer los cinco»
+ * (`COBROS_METODOS`, arriba). Y no es cosmética — `paidVia.ts:17`: «uno lo confirma una PERSONA,
+ * el otro un WEBHOOK. Son dos cadenas de evidencia distintas ante una inspección». Si la columna
+ * los pinta los dos «Bizum», esa frase pasa a ser falsa y el comentario de arriba explica un
+ * mecanismo que ya no existe.
+ *
+ * Grafía aprobada (asesor + fundador, 12-ago-2026): «Bizum · automático» y «Bizum · manual».
+ *
+ * 🔸 Ocupa la MISMA ranura que la pasarela y **gana cuando hay las dos**: la ranura es una sola en
+ * el formato aprobado, y entre la marca de la pasarela y la cadena de evidencia, la que un
+ * inspector pregunta es la segunda. Hoy es una situación imposible —solo `card` lleva pasarela—,
+ * así que esto no elige por nadie: deja dicho qué pasa si algún día llega `bizum_auto:algo`.
+ */
+var COBROS_MATICES = { bizum_auto: 'automático', bizum_manual: 'manual' };
+
+/**
+ * La grafía aprobada de una clave, o `null`. **Solo propiedades PROPIAS y solo cadenas.**
+ *
+ * 🔸 Sin esto, `card:constructor` se leía «tarjeta · function Object() { [native code] }»: un
+ * `mapa[clave]` heredado del prototipo es truthy y se concatenaba tal cual. Medido en este ticket
+ * sobre el código ya mergeado. El valor no puede llegar de un escritor nuestro —`esMetodoValido`
+ * lo rechaza— pero la columna pinta lo que venga en el payload, y una celda de dinero no se pone
+ * a enseñar fontanería de JavaScript el día que alguien escriba por otro camino.
+ */
+function grafiaAprobada(mapa, clave) {
+  if (typeof clave !== 'string') return null;
+  if (!Object.prototype.hasOwnProperty.call(mapa, clave)) return null;
+  return typeof mapa[clave] === 'string' && mapa[clave] !== '' ? mapa[clave] : null;
+}
+
+/**
  * 🔴 EL RÓTULO DE LA COLUMNA «MÉTODO», DERIVADO DE LA MISMA PARTICIÓN QUE EL FILTRO.
  *
  * Hasta SCRUM-481 la celda pintaba `c.metodo` TAL CUAL: `card:stripe`, `card`, `transfer`. Tres
@@ -202,8 +235,9 @@ var COBROS_PASARELAS = { stripe: 'Stripe', mercadopago: 'MercadoPago' };
  * filtro**— y de `COBROS_METODOS`, que sigue siendo la única lista. Columna y pestaña no pueden
  * discrepar porque es el mismo cálculo, no dos que se parecen.
  *
- * Formato aprobado (asesor + fundador, 11-ago-2026): `<método> · <pasarela>`, y sin pasarela solo
- * el método. **Nunca «tarjeta · » colgando.**
+ * Formato aprobado (asesor + fundador, 11 y 12-ago-2026): `<método> · <calificador>`, y sin
+ * calificador solo el método. **Nunca «tarjeta · » colgando.** El calificador es la marca de la
+ * pasarela (`tarjeta · Stripe`) o el matiz de la casa (`Bizum · manual`) — una ranura, nunca dos.
  */
 function rotuloDeMetodo(metodo) {
   var clave = cuboDeMetodo(metodo);
@@ -215,8 +249,9 @@ function rotuloDeMetodo(metodo) {
   // El suelo: si la partición resuelve a un cubo que no tiene rótulo, NO se cae a la cadena vacía
   // ni al valor crudo «por si acaso». Se dice que no consta, que es lo único cierto.
   if (!rotulo) return COBROS_SIN_METODO.rotulo;
-  var marca = COBROS_PASARELAS[pasarelaDeMetodo(metodo)];
-  return marca ? rotulo + ' · ' + marca : rotulo;
+  var calificador = grafiaAprobada(COBROS_MATICES, metodoSinPasarela(metodo))
+    || grafiaAprobada(COBROS_PASARELAS, pasarelaDeMetodo(metodo));
+  return calificador ? rotulo + ' · ' + calificador : rotulo;
 }
 
 /** Días que lleva pendiente. `null` si ya está cobrado: un cobro cobrado no tiene deuda. */
@@ -516,8 +551,9 @@ if (typeof window !== 'undefined') {
   window.cuboDeMetodo = cuboDeMetodo;
   window.rotuloDeMetodo = rotuloDeMetodo;
   window.COBROS_PASARELAS = COBROS_PASARELAS;
+  window.COBROS_MATICES = COBROS_MATICES;
   window.diasDeDeudaCobro = diasDeDeudaCobro;
 }
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { renderCobrosView, COBROS_COPY, COBROS_METODOS, COBROS_SIN_METODO, cuboDeMetodo, metodoSinPasarela, pasarelaDeMetodo, rotuloDeMetodo, COBROS_PASARELAS, diasDeDeudaCobro };
+  module.exports = { renderCobrosView, COBROS_COPY, COBROS_METODOS, COBROS_SIN_METODO, cuboDeMetodo, metodoSinPasarela, pasarelaDeMetodo, rotuloDeMetodo, COBROS_PASARELAS, COBROS_MATICES, diasDeDeudaCobro };
 }
