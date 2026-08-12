@@ -27,6 +27,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+// 🔴 EL BANCO DE LA CASA, y gana él. Hay una forma de pintar esta vista que YA existe y corre
+// dentro de `npm test` (`_banco-vistas.mjs`, el mismo que usa SCRUM-481): montar un servidor y un
+// navegador aparte habría medido lo mismo peor y fuera de la tanda.
+import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { redNormal } from './_banco-red.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const require_ = createRequire(import.meta.url);
@@ -221,6 +226,39 @@ test('SCRUM-506 · ④ 🔴 devolver el desconocido al rótulo de la ausencia se
   }
   assert.equal(enCobros(METODO_DESCONOCIDO), 'Método sin especificar',
     '🔴 no se ha restaurado el rótulo: el resto de la tanda mediría una vista envenenada.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// ⑤ LA PANTALLA PINTADA — con el banco de la casa, dentro de la tanda
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/** Un cobro como lo serializa el servidor: el crudo AL LADO del cubo derivado, nunca a mano. */
+const cobroServido = (id, metodo) => ({
+  origen: 'charge', id, fecha: '2026-08-01T10:00:00.000Z', cliente: `Cliente ${id}`,
+  concepto: 'Trabajo', importe: '100.00', moneda: 'EUR', metodo, metodoCubo: cuboDeCobro(metodo),
+  estado: 'paid', referencia: null, numero: null, tipo: null, invoiceId: null, chargeId: id,
+});
+
+/** Los textos de la columna MÉTODO, leídos de la tabla pintada. */
+const celdasDeMetodo = (nodo) => todos(nodo)
+  .filter((x) => x.tagName === 'TD' && x.className === 'col-hide-mobile')
+  .map((x) => x.textContent);
+
+test('SCRUM-506 · ⑤ 🔴 EN LA TABLA PINTADA: las dos filas salen, y dicen cosas distintas', async () => {
+  // Lo que de verdad ve el profesional. Que las funciones devuelvan lo correcto no prueba que la
+  // celda lo pinte: el banco monta la vista entera con la respuesta del servidor.
+  const datos = [cobroServido(1, METODO_DESCONOCIDO), cobroServido(2, null), cobroServido(3, 'transfer')];
+  const b = cargarDashboard(RAIZ, { red: redNormal(datos) });
+  const r = await pintarVista(b, 'renderCobrosView');
+  assert.equal(r.error, null, `🔴 la vista revienta: ${r.error && r.error.message}`);
+
+  const celdas = celdasDeMetodo(r.contenedor);
+  // Control positivo del instrumento: si no lee celdas, lo de abajo pasaría sobre una lista vacía.
+  assert.equal(celdas.length, datos.length,
+    `🔴 ESCÁNER CIEGO: se leen ${celdas.length} celdas de método sobre ${datos.length} cobros.`);
+  assert.deepEqual(celdas, ['Método sin especificar', 'Método no registrado', 'transferencia'],
+    `🔴 la columna MÉTODO pinta ${JSON.stringify(celdas)}. Los dos primeros son un DATO y un HUECO: ` +
+    'si dicen lo mismo, el profesional no puede saber de cuál de los dos cobros consta algo.');
 });
 
 test('SCRUM-506 · ④ el paquete de evidencia de disputa sigue SIN traducir (SCRUM-499)', () => {
