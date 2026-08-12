@@ -66,15 +66,17 @@ export function telefonosDe(merchantId) {
  * operación va aislada y `limpiarMerchant` REINTENTA la pasada entera —, pero un orden
  * razonable evita la mayoría de los reintentos.
  *
- * Son los 21 modelos con `merchantId` del schema (SCRUM-170 sumó `albaranLineaFacturada`). La
+ * Son los 22 modelos con `merchantId` del schema (SCRUM-170 sumó `albaranLineaFacturada`;
+ * SCRUM-495 sumó `emailMessage`, medido: 22 con `merchantId`, y él **sin relación declarada**, así
+ * que entra en el grupo de columna suelta y son 12 con FK + 10 sueltos). La
  * red de seguridad NO es uniforme (censo SCRUM-172), y saberlo importa:
  *   · 12 tienen FK a Merchant, todas RESTRICT: si uno se sale de la lista, el `merchant.delete`
  *     del fixture falla RUIDOSO y el error nombra la tabla. Red real. MEDIDO, no inferido del
  *     schema: `pg_constraint` en dev Y en staging (SCRUM-192) da 12 constraints, todas
  *     `confdeltype='r'` (RESTRICT). Los otros números que rondaron (0 y 2) eran mediciones
  *     erróneas — no lo vuelvas a medir, el dato ya está confirmado en dos BD con el mismo método.
- *   · 9 son COLUMNA SUELTA, sin FK (WhatsAppMessage, LegalAcceptance, Job, MaintenancePlan,
- *     AuditLog, Attachment, Albaran, AlbaranLineaFacturada + BotSession). Para estos NO hay red:
+ *   · 10 son COLUMNA SUELTA, sin FK (WhatsAppMessage, LegalAcceptance, Job, MaintenancePlan,
+ *     AuditLog, Attachment, Albaran, AlbaranLineaFacturada, EmailMessage + BotSession). NO hay red:
  *     `merchant.delete` «tiene éxito» dejando huérfanos. Fallo MUDO. Su única protección es estar
  *     en esta lista con el predicado correcto. OJO — NO son «logs»: `Job` es el Trabajo, la
  *     entidad CENTRAL del producto, y Albaran/AlbaranLineaFacturada/Attachment/MaintenancePlan
@@ -87,6 +89,17 @@ const MODELOS_POR_MERCHANT = [
   // ninguna FK lo cascadea (patrón multi-tenant de columna). Si no se barre antes que ellos,
   // quedan filas huérfanas que nadie ve fallar (justo lo que documenta SCRUM-172).
   'albaranLineaFacturada',
+  // SCRUM-495 · `emailMessage` va con los de COLUMNA SUELTA y ANTES de `customer`: tiene
+  // `merchant_id` y `customer_id` **sin FK ninguna** (el modelo no declara relaciones), así que
+  // `merchant.delete` «tiene éxito» dejando sus filas huérfanas — fallo MUDO, el peor de los dos.
+  //
+  // ⚠️ ESTO NO ES EL CAMINO DE RGPD, y confundirlos sería grave: esta lista es la limpieza del
+  // merchant EFÍMERO de los tests (`limpiarMerchant` hace `deleteMany`), y ahí borrar es lo
+  // correcto — son datos de prueba que no deben sobrevivir a su test. La supresión de un merchant
+  // REAL va por `suprimirMerchant`, que **anonimiza** (`CAMPOS_PERSONALES`) y conserva el asiento
+  // (art. 17.3.b RGPD). Que `to_email` se anonimice en ese camino es otro registro y NO está hecho:
+  // ver `docs/master/SCRUM-495.md`.
+  'emailMessage',
   'auditLog', 'whatsAppMessage', 'legalAcceptance', 'customerEvent', 'attachment',
   'albaran', 'maintenancePlan', 'invoice', 'charge', 'job', 'quote', 'quoteRequest',
   'botSession', 'quoteTemplate', 'expense', 'product', 'provider', 'authSession',
