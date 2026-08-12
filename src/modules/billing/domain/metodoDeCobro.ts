@@ -209,13 +209,48 @@ export function cuboDeCobro(valor: unknown): string {
  * desaparecer en un `null` que lo convertiría en «no consta». Son dos afirmaciones distintas y
  * tragarse una es perder el rastro del dato raro justo cuando hace falta.
  *
- * 🔸 Semántica IDÉNTICA a la de `metodoDeclarado` de `cobros.service.ts` en la rama
- * `scrum-441-cobros-leen-paid-via` (`c2e540d3`), a propósito: mientras esa rama no entre, las dos
- * pantallas hacen lo mismo aunque por dos sitios; cuando entre, Cobros consume ÉSTA y la copia
- * desaparece en una línea.
+ * 🔸 Nació con la semántica IDÉNTICA a la de `metodoDeclarado` de `cobros.service.ts`
+ * (`c2e540d3`) a propósito, para que unificarlas fuese una línea en cuanto las dos ramas
+ * estuvieran en `main`. **SCRUM-499 las unificó**: aquella se retiró y ésta se quedó.
+ *
+ * NO SE EXPORTA: su superficie pública es `metodoDeUnCobro`, que es la que llaman las tres
+ * pantallas. Lo cazó el guard de SCRUM-411/494 en cuanto dejó de tener importador de fuera — y el
+ * patrón es el de SCRUM-441: se prueba por el contrato, no por la pieza.
  */
-export function metodoDeclaradoEnFactura(paidVia: unknown): string | null {
+function metodoDeclaradoEnFactura(paidVia: unknown): string | null {
   return typeof paidVia === 'string' && paidVia.trim() !== '' ? paidVia : null;
+}
+
+/** Lo mínimo que hace falta para saber por dónde entró el dinero de un cobro. */
+export interface CobroConMetodo {
+  charge?: { method: string | null } | null;
+  paidVia?: string | null;
+}
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * SCRUM-499 · POR DÓNDE ENTRÓ EL DINERO — la lectura ÚNICA de las TRES pantallas
+ *
+ * Cobros, Informes y el paquete de evidencia de disputa contestan la misma pregunta y ahora la
+ * contestan **desde aquí**, no cada una por su cuenta. No es higiene: la tercera pantalla es un
+ * documento que se le manda a un banco, y que diga una cosa distinta de la que ve el profesional en
+ * su panel es lo que convierte una disputa ganada en una perdida.
+ *
+ *   · `Charge.method` MANDA cuando están los dos. No es un empate: uno lo confirma un WEBHOOK y el
+ *     otro lo dice una PERSONA (`paidVia.ts:17`), y ante una inspección son dos cadenas de
+ *     evidencia distintas. Gana el hecho consumado.
+ *   · `null`, `''` y ausente son la MISMA ausencia (`metodoDeclaradoEnFactura`).
+ *   · **`null` = NO CONSTA**, y no se rellena: SIN BACKFILL. Las facturas marcadas a mano antes de
+ *     que existiera `Invoice.paidVia` no tienen el dato, y escribir «suele ser transferencia» es
+ *     exactamente el bug que `paidVia.ts` cierra.
+ *
+ * ⚠️ `|| ` y no `??` en el primer caso: un `Charge.method` en blanco tampoco es un método, y cae al
+ * siguiente igual que la ausencia.
+ */
+export function metodoDeUnCobro(cobro: CobroConMetodo): string | null {
+  const delCharge = cobro.charge?.method || null;
+  if (delCharge) return delCharge;
+  return metodoDeclaradoEnFactura(cobro.paidVia);
 }
 
 /**

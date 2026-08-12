@@ -76,7 +76,7 @@
 // céntimos enteros no se pierde nada y la suma cuadra por construcción — y el test puede exigir
 // igualdad estricta en vez de una tolerancia, que es donde se esconden los fallos.
 import { PAID_VIA } from '../../billing/domain/paidVia';
-import { cuboDeCobro, CUBO_SIN_METODO, metodoDeclaradoEnFactura } from '../../billing/domain/metodoDeCobro';
+import { cuboDeCobro, CUBO_SIN_METODO, metodoDeUnCobro } from '../../billing/domain/metodoDeCobro';
 
 /** Un cobro tal y como lo lee el informe: el método ya resuelto y el importe de la factura. */
 export interface CobroDelInforme {
@@ -216,11 +216,10 @@ export interface RegistroAMano {
  * era el defecto de este ticket.
  */
 function metodoDelCobro(factura: FacturaDelInforme): string {
-  // `|| ` y no `??`: un `Charge.method` en blanco tampoco es un método, y hasta hoy caía al
-  // siguiente caso exactamente igual.
-  const delCharge = factura.charge?.method || null;
-  if (delCharge) return delCharge;
-  return metodoDeclaradoEnFactura(factura.paidVia) ?? METODO_NO_CONSTA;
+  // 🔴 SCRUM-499 · la regla NO vive aquí: es la misma que leen Cobros y el paquete de disputa.
+  // Este módulo solo la traduce a la clave de agrupación que necesita el informe (la ausencia es
+  // una cadena, no un `null`, porque con ella se agrupa).
+  return metodoDeUnCobro(factura) ?? METODO_NO_CONSTA;
 }
 
 /**

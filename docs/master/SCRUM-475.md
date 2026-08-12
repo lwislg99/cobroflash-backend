@@ -301,6 +301,177 @@ la fase 1 · el embudo de WhatsApp.
 
 ---
 
+# FASE 2A · La firma del aviso: que el «entregado» venga de quien dice venir
+
+**Medido contra:** `origin/main` = `db820c35fffa526187057330457593e8b5315aeb` · 2026-08-12T10:04:32+01:00
+**Fecha:** 12-ago-2026 · **Carril:** infraestructura de envío · **Gate:** sin gate, corre en `npm test`
+
+**12-ago-2026** · Las fases 1 y 2 (arriba) **no se tocan**: son de otras sesiones y son historia.
+Aquí solo va la mitad que se podía construir hoy.
+
+**Paso 0:** cuatro worktrees vivos; `b2` está en `scrum-475-ignoran-el-resultado`, cuyo último
+commit (`3d8c1d7d`, lwislg99, 2026-08-12 09:40) es **un merge de `main` sin trabajo propio todavía**.
+Búsqueda por contenido de `svix` en todo el árbol: **cero coincidencias** — nadie había construido
+esto. `main` al ramificar: `90e810ad`; al cerrar: `db820c35` (se mueve solo, porque los cuatro
+worktrees comparten refs).
+
+## 0 · Por qué esta mitad y no la otra
+
+La fase 2 completa necesita la tabla `EmailMessage` —el diff está en §4, **preparado y sin
+aplicar**, y es del fundador— y el secreto del panel de Resend. **La verificación de firma, en
+cambio, es PURA**: se construye y se prueba hoy con un secreto de prueba. Cuando la tabla entre,
+esto ya estará probado.
+
+> 🔴 **Lo que protege, y no es un check más.** `entregado`, `rebotado` y `reclamado` son los tres
+> estados que **nuestro propio envío NO puede producir** — `constanciaCorreo.ts` lo fija con un test
+> desde la fase 2. Solo los produce un aviso del proveedor. Si la firma no se comprueba, **cualquiera
+> con la URL nos dice que una factura se entregó y el producto se lo cree**. La constancia entera
+> pasa a valer cero, y peor que cero: parece que la tienes.
+
+## 1 · 🔴 El cuerpo crudo, y cuál de los dos precedentes se reutiliza
+
+La firma cubre **los bytes tal cual llegaron**. Un `express.json()` parsea y re-serializa —espacios,
+orden de claves, escape de no-ASCII— y con eso la firma deja de casar. Se leyeron los dos
+precedentes de la casa:
+
+| | Dónde | Forma |
+|---|---|---|
+| ① | `src/app.ts:147` | `express.json({ verify })` guarda `rawBody` **solo si la URL empieza por `/webhooks/whatsapp`**, dentro del parser GLOBAL |
+| ② | `stripe.routes.ts:12` · `connectWebhook.routes.ts:20` | `express.raw({ type: 'application/json' })` exportado por el propio router y montado antes del global |
+
+**Se reutiliza ②**, y el motivo no es preferencia. **① es un retrofit**: el webhook de WhatsApp
+necesita *además* `req.body` ya parseado (lo recorre entero tras validar), así que su raw body tuvo
+que colarse dentro del parser global, y el precio es **una lista de URLs dentro de un middleware por
+el que pasa toda la aplicación**, que hay que ampliar cada vez. ② es self-contained: el webhook trae
+su propio parser y no toca nada de nadie — por eso Stripe lo usa **dos veces**, y es la forma que la
+casa ya eligió para un webhook *nuevo*. Añadir `/webhooks/resend` a la lista de ① sería editar el
+parser por el que pasa todo para no ganar nada.
+
+**Aquí no se monta ninguna ruta** (es la fase 2B). Lo que esa decisión fija **hoy** es la firma de la
+función: recibe `Buffer`, y **nada más que `Buffer`**.
+
+## 2 · 🔴 Los cuatro rechazos salen cada uno por su camino
+
+No se comprueba «que algo falla»: se comprueba **qué** falla. Un test compara el **mapa entero** de
+los cuatro escenarios y exige cuatro salidas distintas.
+
+| Escenario | Clase / motivo |
+|---|---|
+| firma incorrecta (la cabecera no trae nada comparable) | `RECHAZADO/firma_ilegible` |
+| cabecera ausente | `NO_SE_PUDO_COMPROBAR/falta_cabecera` — **nombrando cuál de las tres** |
+| repetición (aviso legítimo de ayer, con su firma buena) | `RECHAZADO/fuera_de_ventana` |
+| cuerpo alterado después de firmar | `RECHAZADO/firma_no_coincide` |
+
+**La ventana se comprueba ANTES del HMAC, a propósito.** Una firma válida lo sigue siendo para
+siempre: si se comprobara después, un aviso repetido pasaría el HMAC y solo entonces se miraría la
+hora — que es el orden en el que se cuela el fallo el día que alguien «optimice» saliendo antes.
+
+### El límite, dicho y no fingido
+
+Una firma **bien formada pero falsa** es indistinguible de un **cuerpo alterado**: las dos son
+`firma_no_coincide`. Eso es lo que *es* un MAC, y **no se inventa una distinción ahí** — hacerlo
+sería peor que no tenerla, porque haría creer que el log separa un ataque de un fallo nuestro. Lo que
+sí queda es el diagnóstico de **qué se firmó** (id, timestamp, bytes), y hay un test que exige que el
+detalle lo declare.
+
+## 3 · 🔴 El suelo es una CLASE, no un comentario
+
+| Clase | Qué significa |
+|---|---|
+| `RECHAZADO` | se comprobó y salió que no. Alguien manda basura |
+| `NO_SE_PUDO_COMPROBAR` | no había con qué: falta el secreto, falta una cabecera, o el cuerpo no llegó crudo. **Es un fallo NUESTRO** |
+
+Los dos rechazan igual —fail-closed, como `isValidSignature` de WhatsApp (SCRUM-99)—, pero **dicen
+cosas distintas**. Sin esa separación, el día que el secreto de Railway esté mal pegado el log dirá
+«firma inválida» y se buscará el fallo en Resend durante horas. El precedente de la casa devuelve un
+`boolean` y distingue solo por el `console.error`; aquí la distinción está **en el tipo**, que es lo
+que impide que el siguiente que lo lea la pierda. **Ese guard es ajeno y no se ha tocado** (regla 9).
+
+## 4 · Los dos controles que no son de rutina
+
+* **EL FORMATO ESTÁ FIJADO.** Una firma calculada sobre `ts.id.cuerpo` en vez de `id.ts.cuerpo`
+  **no vale**. Sin este control, módulo y test podrían estar de acuerdo en un formato equivocado y
+  los dos en verde — hasta el primer aviso real. Por lo mismo, la firma de los tests **se construye
+  a mano** con `node:crypto`: si se la pidiera al módulo, probaría que está de acuerdo consigo mismo.
+* **RE-SERIALIZAR EL MISMO JSON ROMPE LA FIRMA, medido.** Se firma un cuerpo con espacios, se
+  re-serializa igual que haría `express.json()` y la firma cae. La razón del `Buffer` deja de ser
+  prosa y pasa a ser un test.
+
+## 5 · Ni dependencia ni SDK — medido, no supuesto
+
+HMAC-SHA256 sobre `id.timestamp.cuerpo`, secreto en base64 tras `whsec_`. Son ~40 líneas de
+`node:crypto`, así que **no se añade `svix` ni el SDK de Resend**: la regla 36 ni se activa.
+`timingSafeEqual` va envuelto en `try/catch` — lanza si los buffers miden distinto —, **mismo patrón
+que `mercadopago.ts:129` y `whatsappIncoming.routes.ts`**.
+
+Y los bytes se concatenan como bytes (`Buffer.concat`), no como cadenas: con una plantilla de texto
+habría que elegir una codificación, y el primer asunto con eñe dejaría de casar. Hay test con
+acentos y emoji.
+
+## 6 · Ningún secreto, en ningún sitio
+
+El módulo **no lee configuración**: el secreto entra por parámetro. No hay ninguno escrito en el
+código, ni en los tests, ni de ejemplo, ni en un comentario — el de prueba se genera con
+`randomBytes` **en cada test**.
+
+## 7 · Los rojos por el mecanismo, probados uno a uno
+
+| Mutación | Cae diciendo | Tests que caen |
+|---|---|---|
+| se quita la comprobación del HMAC | *«🔴 CUALQUIERA PUEDE MANDARNOS UN AVISO DE ENTREGA … la constancia entera pasa a valer cero, y peor que cero, porque parece que la tienes»* | 6 |
+| se quita la ventana de repetición | *«los cuatro rechazos NO están saliendo cada uno por su camino»* + la ventana | 2 |
+| «falta el secreto» pasa a reportarse como firma inválida | *«son cosas distintas: una es nuestra configuración y la otra es alguien mandando basura … imposible depurar el día que el secreto esté mal puesto en Railway»* | 1 |
+
+## 8 · Verificación
+
+| | Qué | |
+|---|---|---|
+| **CONTROL POSITIVO** | firma válida aceptada · cuerpo con acentos y emoji · dos firmas durante una rotación | ✅ |
+| **🔴 LOS CUATRO** | cuatro escenarios → cuatro salidas distintas, comparadas como mapa | ✅ |
+| **🔴 SUELO** | sin secreto · secreto mal pegado · cuerpo ya parseado → `NO_SE_PUDO_COMPROBAR`, nunca «firma inválida» | ✅ |
+| **🔴 FORMATO** | firmar en otro orden no vale | ✅ |
+| **🔴 CUERPO CRUDO** | re-serializar el mismo JSON rompe la firma | ✅ |
+| **VENTANA** | corta por los dos lados; el borde se acepta; el futuro no | ✅ |
+| **ORDEN** | nada se parsea antes de verificar | ✅ |
+| **VOCABULARIO** | los 4 eventos hablan `constanciaCorreo.ts`; uno desconocido da `null`, no un estado por defecto | ✅ |
+| **Guards ajenos** | fase 1 + fase 2 **22/22** · SCRUM-411 **17/17** (sigue en 8 módulos y 192 huérfanos) | ✅ |
+
+**Suite:** línea base **3.306 tests · 3.229 pasan · 0 fallos · 77 saltados**, medida aparte apartando
+el fichero nuevo del glob (no se borró nada del disco).
+
+## 9 · Lo que NO se ha tocado
+
+`prisma/schema.prisma` (cero líneas de diff) · **ninguna tabla: no existe todavía** · nada se
+persiste · **ninguna ruta montada** · `app.ts` · el camino de emisión y el sellado · el guard de «una
+sola llamada a Resend» · `constanciaCorreo.ts` (se **consume**, no se modifica) · cero dependencias
+nuevas en `package.json`.
+
+## 10 · Huecos declarados
+
+* **No hay ruta.** Es la fase 2B, y necesita la tabla. Lo que esta fase deja listo es la función y la
+  decisión de raw body **escrita y probada**, no montada.
+* **`avanzar()` sigue sin llamador.** Verificar la firma no avanza ningún embudo: quién avanza y
+  sobre qué fila necesita la tabla. Sigue siendo deliberado, y sigue dicho.
+* 🔴 **Este módulo no queda vigilado por SCRUM-411**, y se dice en vez de dejarlo implícito. Vive en
+  `src/integrations/` —donde la casa ya pone la verificación de firma de un proveedor
+  (`mercadopago.ts`)— y el censo de 411 solo recorre `src/modules/*/domain/`. Se eligió por
+  precedente, no para esquivar el guard: **se comprobó que 411 sigue en 8 módulos y 192 huérfanos**.
+  Un módulo de dominio habría subido el tope a 9 y habría que declararlo con su motivo; éste no
+  aparece en ninguna de las dos poblaciones, así que **lo único que lo mantiene visible es esta
+  línea**.
+* **Solo los nombres `svix-*`.** El esquema estandarizado admite además alias `webhook-id` /
+  `webhook-timestamp` / `webhook-signature`. Lo verificado en el encargo son las tres `svix-*`, y es
+  lo único implementado: **no se codifica lo que no se ha medido**.
+* **No verificado contra Resend de verdad.** No se ha recibido ni un aviso real: todo se prueba con
+  firmas construidas según el esquema documentado. El primer aviso real es de la fase 2B.
+* **Firma bien formada pero falsa == cuerpo alterado.** Ver §2.
+* **Microcopy: ninguna.** Un webhook no tiene superficie.
+
+## 11 · Ficheros
+
+* `src/integrations/firmaResend.ts` (nuevo) — la verificación y el mapeo de eventos al vocabulario.
+* `tests/scrum475-firma-del-webhook.test.mjs` (nuevo) — 18 tests.
+* `docs/master/SCRUM-475.md` — esta fase, **añadida**; las fases 1 y 2 quedan intactas.
 # FASE 3 · Los ocho del trinquete, y la trampa de que fueran ocho
 
 **Medido contra:** `origin/main` = `22c79b5739e572ed1b9b9dd0f38a9c63bd43a253` · 2026-08-12T11:01:00+02:00
@@ -549,3 +720,78 @@ de emisión fiscal y el sellado · `public/dashboard/js/`.
 * **Aislar el registro de cada cron** — declarado en §5, con su motivo (guard ajeno de SCRUM-371).
 * **No verificado en `yaqu.app`.** No se ha provocado un fallo de correo real ni se ha visto un
   arranque con un cron sin montar: todo lo de arriba se prueba con la suite.
+
+---
+
+# FASE 2B · PASO 0 — el receptor está BLOQUEADO, y el motivo está medido
+
+**Medido contra:** `origin/main` = `84f60528e626f6bc569c43e08e635497fc351d13` · 2026-08-12T14:30:00+02:00
+**Rama:** `scrum-475-firma-del-webhook` (main mergeado DENTRO, nunca rebase — AA2)
+**Suite de partida, antes de escribir una línea:** **3454 tests · fail 0 · 77 saltados** · rc=0.
+
+## 0 · PASO 0 por CONTENIDO, no por nombre de rama
+
+Tres instrumentos sobre las **288 refs remotas**:
+
+| instrumento | resultado |
+|---|---|
+| `git grep -l "webhooks/resend"` en todas las refs | 1 acierto, y es un **comentario** dentro de `firmaResend.ts` |
+| ficheros con «resend» en el nombre, en cualquier rama | solo `src/integrations/firmaResend.ts` |
+| `git grep -l "svix"` en todas las refs | solo `firmaResend.ts` |
+
+**No hay receptor en ninguna rama.** La fase 2A es la única pieza que existe.
+
+## 1 · Qué verifica exactamente la fase 2A (leída entera, no de memoria)
+
+`verificarFirmaResend({ cabeceras, cuerpoCrudo, secreto, ahora? })` → `Veredicto`:
+
+- **acepta** → `{ ok: true, id, emitidoEn, cuerpo }`, con `cuerpo` ya parseado (o `null` si el JSON
+  viene roto con firma buena: eso no es un ataque y lo decide quien consuma).
+- **rechaza en dos CLASES distintas**, que es su mejor idea: `NO_SE_PUDO_COMPROBAR`
+  (`sin_secreto`, `secreto_ilegible`, `falta_cabecera`, `cuerpo_no_crudo`) frente a `RECHAZADO`
+  (`timestamp_ilegible`, `fuera_de_ventana`, `firma_ilegible`, `firma_no_coincide`). Los cuatro
+  escenarios del test salen **cada uno por su camino**, y hay un assert de que no comparten salida.
+- HMAC-SHA256 sobre **bytes** `id.ts.<cuerpo>`, ventana de **5 min por los dos lados** comprobada
+  **antes** del HMAC (contra repetición), varias firmas `v1,` durante una rotación, y
+  `timingSafeEqual` protegido contra buffers de distinta longitud.
+- `estadoDelAviso(evento)` mapea los cuatro eventos al vocabulario CERRADO y devuelve `null` para
+  lo desconocido — no inventa estado.
+
+Sus 18 tests **construyen la firma a mano con `node:crypto`**, no pidiéndosela al módulo, y fijan el
+formato con un caso que firma `ts.id.cuerpo` y **no puede valer**. Sin eso, módulo y test podrían
+estar de acuerdo en un esquema equivocado. Ningún secreto real en ninguna parte: se generan al vuelo.
+
+**¿Encaja con el receptor que hace falta? SÍ, y sin adaptador.** Expone justo lo que un receptor
+necesita, deja fijada la arquitectura (`express.raw({ type: 'application/json' })` propio del router,
+como Stripe — NO el retrofit del parser global de WhatsApp) y el secreto entra por parámetro, así que
+el receptor lo lee de entorno y lo pasa. **No hay que reescribir nada.**
+
+## 2 · 🛑 EL BLOQUEO, con sus tres medidas
+
+El encargo dice «actualiza la fila por `provider_id`». **No hay fila, ni modelo, ni tabla fuera de dev:**
+
+1. **`EmailMessage` NO está en `prisma/schema.prisma`.** Dos instrumentos (por `model` y por
+   `@@map`) → 0 aciertos, con control positivo: el mismo instrumento ve **24 modelos**. Sin modelo,
+   `prisma.emailMessage.update(...)` **ni siquiera compila**.
+2. **La tabla está aplicada SOLO EN DEV** (`MIGRATIONS_PENDING.md:291`, 11-ago-2026). Ni staging ni
+   producción la tienen.
+3. **Nadie escribe una fila hoy.** `idDeLaRespuesta` —el que saca el `provider_id` de la respuesta
+   del proveedor— tiene **un solo consumidor: la propia `constanciaCorreo.ts:64`**. El id se calcula
+   y no se persiste, así que aunque hubiera tabla, el `UPDATE ... WHERE provider_id` no encontraría
+   ninguna fila que actualizar.
+
+**El diff del modelo YA ESTABA PREPARADO** en esta misma entrada (§4, `model EmailMessage`), de la
+sesión anterior. No se reescribe y **no se aplica**: `prisma/schema.prisma` es dominio exclusivo del
+fundador, y ésa es la condición que él mismo puso para este ticket.
+
+## 3 · Lo que desbloquea esto, en orden
+
+1. El fundador mete `model EmailMessage` en `prisma/schema.prisma` (diff en §4).
+2. La tabla se aplica a **staging y producción** (hoy solo dev), con su registro.
+3. **Alguien escribe la fila al enviar** — es la pieza que falta y no es del receptor: sin ella el
+   webhook verificaría avisos perfectos y no tendría qué actualizar.
+4. Entonces el receptor: `express.raw` propio + `verificarFirmaResend` + `estadoDelAviso` +
+   `avanzar()` sobre la fila. La fase 2A ya lo deja todo servido.
+
+⚠️ **No se ha construido un receptor «a medias».** Un endpoint que verifique y descarte sería otro
+motor sin superficie — la enfermedad que este ticket vino a cerrar, cometida en su arreglo.

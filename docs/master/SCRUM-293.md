@@ -280,3 +280,79 @@ construcción, porque `grossOfLines()` no se modifica en absoluto: la retención
 `prisma/schema.prisma` **intacto** · ninguna migración aplicada a ninguna base · ni una línea de
 cableado · `retencionIrpf.ts` sigue sin llamadores · `calcVatBreakdown`, `grossOfLines` y el camino
 de emisión, sin tocar · cero microcopy nueva.
+
+---
+
+# SCRUM-293 (293-a, parte 1) · el control negativo, puesto ANTES del cable
+
+**Fecha:** 12-ago-2026 · **Carril:** B · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `01025aafdb065b682f0da1b70141aa7baebf3a4f` · 2026-08-12T09:30:00+02:00
+
+## Por qué éste va primero
+
+`retencionIrpf.ts` lleva desde el 7-ago construido, probado y **sin un solo llamador**. Este fichero
+**congela cómo sale la factura hoy** para un merchant con `retencionIrpfDeclarada = false` —o sea,
+**todos los que existen ahora mismo**— para que el día que llegue el cable, cualquier céntimo que se
+mueva en esa población caiga aquí.
+
+Escribirlo después del cable habría congelado el resultado del cable. **La red se pone bajo el
+trapecio antes de subir.**
+
+## Los vectores, medidos contra el árbol
+
+```
+base  302,25 = 136,50 + 120,00 + 45,75
+cuota  58,44 =  53,86 (21 % s/256,50) + 4,58 (10 % s/45,75)
+BRUTO 360,69 = base + cuota   ← lo que acaba en `Invoice.total`
+```
+
+**Rojo demostrado con UN CÉNTIMO**, y con la mutación **verificada como aplicada antes de creerse el
+rojo** (lección del rojo falso de esta mañana: un `1 → 1` no es una inyección). Cae diciendo que *se
+ha alterado el importe de la factura de un merchant que no ha declarado nada*.
+
+Restaurado **recompilando**, no copiando — el canon vale igual para deshacer.
+
+## Tres cosas que el SUELO cazó, y no la aserción
+
+1. **La forma de línea no era la mía.** `grossOfLines` devolvía **0** con `{quantity, unitPrice,
+   vatRate}`; la real es `{qty, price, tax}`. Con el bruto en 0, la igualdad habría comparado nada
+   con nada **y habría pasado**.
+2. **`tax` va en FRACCIÓN**, no en porcentaje. Con `tax: 21` salía un IVA del **2100 %** — 5.386,50 €
+   de cuota sobre 256,50 € de base. No chirría hasta que lo miras.
+3. **El vector no puede recalcularse en el propio test.** El primer borrador hacía
+   `const CONGELADO = JSON.stringify(calcVatBreakdown(LINEAS))` y comparaba el árbol consigo mismo:
+   **un vector que se regenera no es un vector.**
+
+## 🔴 Hallazgo: un caso VIVO del defecto de SCRUM-271
+
+`src/modules/invoicing/domain/vat.service.ts:24`
+
+```ts
+const qty = Number(l?.qty) || 1;
+```
+
+Una línea con `qty: 0` —o con la cadena vacía que devuelve un `<input type="number">` cuando el
+navegador rechaza la entrada— **se factura como cantidad 1**. `Number("")` es `0`, y `0 || 1` da `1`
+en silencio. Está en el cálculo de la factura, que este ticket **no toca**: se reporta (regla 9).
+
+**El censo derivado completo de ese patrón queda pendiente**, y este caso demuestra que no es
+teórico.
+
+## Lo que queda de SCRUM-293, en orden
+
+1. **`TIPOS_RETENCION` → CUBO** con rótulo por tipo, mismo mecanismo que `CUBO_DE` en
+   `metodoDeCobro.ts`. El selector se pinta **recorriendo el cubo**: cero literales de porcentaje en
+   el front. Control positivo obligatorio: **inyectar un tipo sin rótulo y enseñar el `tsc` en rojo**
+   nombrando el valor que falta y su `fichero:línea`.
+2. **Los tres estados**, sin cruzar la semántica: `declarada=false` → `null` → **NO CONSTA** ·
+   `declarada=true, tipo NULL` → `false` → **DECLARA QUE NO RETIENE** · `declarada=true, tipo=N` →
+   **RETIENE**. `retencionIrpfDeclarada` es «HA declarado», no «declara que retiene».
+3. **Suelo ruidoso**: si falla la lectura del defecto del perfil, **no** se degrada a «sin retención»
+   en silencio. Es un valor legítimo, y por eso es el peor sitio del producto para degradar: nadie
+   notaría el fallo.
+4. **El cable**: una línea. `retencionIrpf.ts` se consume, no se toca.
+5. **El censo derivado de SCRUM-271** — cualquier `||` sobre lectura de input numérico. Derivado, no
+   enumerado. Ya hay un caso confirmado (arriba).
+
+**Descartado y por qué:** el `19 %` no existe —`TIPOS_RETENCION = [15, 7, 2, 1]`— y los suplidos
+salen a **SCRUM-500**, porque necesitan columna en `Invoice` y el schema no se toca aquí.

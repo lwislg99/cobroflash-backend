@@ -7,6 +7,7 @@ import {
   listInvoicesAdmin,
   getInvoiceDetailAdmin,
   updateInvoiceStatusAdmin,
+  NO_SE_MARCAN_PAGADAS_EN_LOTE,
   markInvoicePaidAdmin,
   markInvoicePendingAdmin,
 } from '../../invoiceAdmin';
@@ -17,6 +18,9 @@ import { applyVeriFactu, applyVeriFactuAnulacion } from '../../../invoicing/doma
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { isDemoMerchant, DEMO_WATERMARK } from '../../../invoicing/domain/emission.service';
 import { getDeliveryStatus } from '../../../messaging/domain/whatsappLog.service';
+// SCRUM-499 · la MISMA lectura del método que Cobros e Informes, y el rótulo del «no consta» que
+// ya vive una sola vez (SCRUM-474, aprobado por el asesor el 10-ago-2026).
+import { metodoDeUnCobro, ROTULO_SIN_METODO } from '../../../billing/domain/metodoDeCobro';
 import { recordCustomerEvent } from '../../customerEvents.service';
 import { generateInvoicePdf } from '../../../../lib/pdf';
 
@@ -329,7 +333,7 @@ router.get('/:id/dispute-package', requireRole('admin'), async (req, res) => {
 
 <h2>3 · Cobro y referencia del procesador</h2>
 <table>
-  <tr><th>Método</th><td>${esc(invoice.charge?.method ?? 'manual')}</td></tr>
+  <tr><th>Método</th><td>${esc(metodoDeUnCobro(invoice) ?? ROTULO_SIN_METODO)}</td></tr>
   <tr><th>Referencia (payment intent)</th><td>${esc(invoice.charge?.intentId ?? invoice.charge?.reference ?? '—')}</td></tr>
   <tr><th>Estado del cobro</th><td>${esc(invoice.charge?.status ?? '—')}</td></tr>
 </table>
@@ -383,7 +387,14 @@ router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
       where: {
         id: { in: ids },
         merchantId: req.merchantId,
-        status: { not: 'paid' }, // solo las que aún no están pagadas
+        // SCRUM-496 · ANTES decia `{ not: 'paid' }`, y eso INCLUIA `annulled`: una factura dada de
+        // baja ante la AEAT —con su registro de anulacion sellado y encadenado— podia volver a
+        // salir como COBRADA, y por `updateMany`, sin auditoria por fila. Es el mismo defecto que
+        // SCRUM-153 cerro en la puerta de UNA factura, que seguia abierto en la de CIEN.
+        //
+        // El conjunto se CONSUME de `invoiceAdmin.ts`, donde vive la guarda de una sola factura: no
+        // se escribe aqui una segunda lista de estados, que es como dos puertas acaban discrepando.
+        status: { notIn: [...NO_SE_MARCAN_PAGADAS_EN_LOTE] },
       },
       data: { status: 'paid', paidAt: fecha.fecha },
     });

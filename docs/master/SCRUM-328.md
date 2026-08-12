@@ -360,6 +360,125 @@ Lo que esta decisión les entrega es lo único que puede entregarles: **qué se 
 de los tres necesitaba una frase concreta aprobada, **sigue bloqueado por la regla 30**, y eso lo
 desbloquea el fundador escribiéndola, no este documento.
 
+
+
+
+# SCRUM-328 · F1 FASE 2 · CONTRASTE: lo que la landing PROMETE contra lo que el producto HACE
+
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-328-contraste-landing` · `HEAD` = `84f60528e626f6bc569c43e08e635497fc351d13` · 2026-08-12T13:40:30+02:00
+**Fuente de las promesas:** `public/index.html` (600 lineas), leida entera. **NO se ha tocado.**
+**Fuente de los veredictos:** el inventario de la fase 1, arriba en este mismo fichero.
+
+**SUELO DEL EXTRACTOR:** salen **20 promesas** de siete zonas distintas (hero, tres pasos, seis
+herramientas, plan, FAQ, CTA, pie). Si hubieran salido 0 o 2, el resultado seria «no supe leerla»,
+no «la landing no promete nada» — y lo diria aqui antes que nadie.
+
+## 🔴 LO PRIORITARIO · LA SQL DE LOS OVERRIDES, PARA QUE LA EJECUTE LUIS
+
+Los overrides por merchant viven en **`merchants.flags`**, columna **JSONB** con forma
+`{"FLAG_NAME": true|false}` (`prisma/schema.prisma`, `model Merchant`; la lee `src/core/flags.ts`
+con precedencia **merchant > pais > env > default**).
+
+```sql
+-- ① ¿Hay algun override, y de quien? (solo lectura)
+SELECT id, name, flags
+FROM   "merchants"
+WHERE  flags IS NOT NULL AND flags::text <> '{}'
+ORDER  BY id;
+
+-- ② LO QUE DECIDE LO DE BIZUM: el estado real de los cuatro que apagan cobro y facturacion.
+--    NULL en una columna = ese merchant NO lo tiene override -> manda el default (false).
+SELECT id,
+       name,
+       flags -> 'BIZUM_MANUAL_ENABLED'     AS bizum_manual,
+       flags -> 'BIZUM_AUTO_ENABLED'       AS bizum_auto,
+       flags -> 'PAYMENTS_CONNECT_ENABLED' AS tarjeta_connect,
+       flags -> 'INVOICING_ES_ENABLED'     AS facturacion_es
+FROM   "merchants"
+ORDER  BY id;
+
+-- ③ SUELO DE LA CONSULTA, y hace falta: si ① sale vacio Y ③ dice 0 merchants, no es que no
+--    haya overrides — es que no estas mirando la base que crees.
+SELECT COUNT(*) AS merchants_totales,
+       COUNT(flags) AS con_flags_no_nulo
+FROM   "merchants";
+```
+
+**Por que importa:** `BIZUM_MANUAL_ENABLED` y `BIZUM_AUTO_ENABLED` estan en `false` por defecto. Si
+en produccion tampoco hay override, **hoy nadie puede cobrar por Bizum** — y la landing lo promete
+tres veces. **No he consultado ninguna base.**
+
+## LAS 20 PROMESAS, una por linea
+
+### CIERTA — 9 (el inventario las respalda)
+
+| # | cita literal | donde | evidencia |
+|---|---|---|---|
+| 1 | «Crea el presupuesto en 30 segundos» | hero | A) vista `quotes-new` → `/admin/quotes` |
+| 2 | «tu cliente lo firma desde el movil» | hero | A) firma del presupuesto; `quotes-detail` + token publico |
+| 3 | «Le llega como un mensaje normal con un boton. Lo abre, lo revisa y firma con el dedo» | paso 2 | A) + `WHATSAPP_TEMPLATES_ENABLED = true` (el unico encendido) |
+| 4 | «Fichas, historial y contactos de todos, siempre a mano y ligados a sus documentos» | herramienta 4 | A) `customers` · `customer-360` · `providers` |
+| 5 | «Tus precios y servicios listos para reutilizar en cada presupuesto» | herramienta 5 | A) `products` → `/admin/products` |
+| 6 | «Margenes por trabajo, gastos y resumen semanal» | herramienta 6 | A) `reports` · `expenses` |
+| 7 | «Y tu equipo con roles (admin / tecnico)» | herramienta 6 | A) `team` → `/admin/team`, y los roles gobiernan de verdad (SCRUM-467) |
+| 8 | «quedan – plazas» (oferta fundadores) | precios | A) contador de plazas vivo (`founding`), servido por `/admin/billing` |
+| 9 | «se exportan en CSV cuando quieras» | FAQ | A) `export` → `/admin/exports`, seis CSV medidos en la fase 1 |
+
+### FALSA — 8 (el inventario la contradice, o vive tras un flag apagado)
+
+| # | cita literal | donde | por que es falsa |
+|---|---|---|---|
+| 10 | «El ERP por WhatsApp para los oficios» | hero, primera linea | 🔴 **contradice un VETO PERMANENTE del master**: «YaQu NO es un ERP ni un CRM» (parte Z). No es un flag: es la identidad del producto |
+| 11 | «y te paga — con tarjeta, Bizum o transferencia» | hero | tarjeta: `PAYMENTS_CONNECT_ENABLED = false` · Bizum: `BIZUM_MANUAL_ENABLED = false` **y** `BIZUM_AUTO_ENABLED = false`. De las tres vias solo transferencia queda en pie |
+| 12 | «llevas clientes, gastos y **facturas** en el mismo sitio» | hero | `INVOICING_ES_ENABLED = false` (regla 24). Hay pantalla de facturas y se emiten justificantes; **facturar** para un merchant ES real, no |
+| 13 | «O se lo dictas a la IA» | paso 1 | `VOICE_QUOTE_ENABLED = false` |
+| 14 | «Tarjeta, Bizum o transferencia — el elige, tu cobras» | paso 3 | mismos dos flags que la 11 |
+| 15 | «deja que el bot atienda a tus clientes y recoja solicitudes de presupuesto solo» | herramienta 3 | `BOT_INBOUND_ENABLED = false` **y** `BOT_AI_ENABLED = false` |
+| 16 | «Cobro con tarjeta, Bizum y transferencia» (lista del plan) | precios | idem 11 — y aqui es **lo que se cobra por**, no un adorno |
+| 17 | «Solo si cobras con tarjeta: 0,9 %» | precios | el cobro con tarjeta exige Connect activo, que esta en `false` |
+
+### FUTURA — 0
+
+**Ninguna.** La landing esta escrita **entera en presente de indicativo**: «firma», «cobra»,
+«llevas», «te paga». No hay «proximamente», ni condicional, ni tiempo futuro en ninguna de las 20.
+
+> **Y eso es un hallazgo, no una casilla vacia:** el matiz que salvaria a siete de las ocho falsas
+> —decirlas en futuro— **no existe en el texto**. No hay nada que reinterpretar a favor.
+
+### NO SE — 3 (con su motivo, sin rellenar por simetria)
+
+| # | cita literal | por que no lo se |
+|---|---|---|
+| 18 | «firmalos por WhatsApp con **validez legal**» | es una afirmacion JURIDICA sobre la firma, no una funcionalidad. Si la firma que guardamos tiene validez legal lo dice un dictamen, no un censo de codigo. **Lo traigo, no lo clasifico** |
+| 19 | «Los pendientes se reclaman solos» · «recordatorios que persiguen solos» | hay crons diarios y un digest semanal, pero **no he medido cual manda el recordatorio de cobro ni con que condiciones**. Afirmar que persigue seria suponer |
+| 20 | «14 dias gratis · Sin tarjeta» | es una promesa COMERCIAL sobre el alta y la facturacion de la suscripcion. No la he medido y no se mide leyendo vistas |
+
+## LAS CUENTAS
+
+**9 CIERTA + 8 FALSA + 0 FUTURA + 3 NO SE = 20.** Suman el total de promesas extraidas. ✅
+
+---
+
+# 🔴 LA RESPUESTA: que tiene que salir de la landing HOY
+
+**Tres cosas, y una no es un flag.** Lo primero que tiene que salir es **«El ERP por WhatsApp»**:
+no esta apagado en ningun sitio, esta prohibido en el master, y es la **primera linea que lee un
+visitante**. Lo segundo es **el cobro**: la landing promete tarjeta y Bizum **cinco veces** entre el
+hero, el paso 3, las herramientas y la lista del plan —y encima cobra un 0,9 % por una via que hoy
+no se puede usar—; con los tres flags en `false`, **de las tres formas de cobrar que anuncia solo
+sobrevive la transferencia**, y eso cambia la frase entera, no una palabra. Lo tercero son **las dos
+promesas de automatismo** —el dictado por IA y el bot que atiende solo—, que son justo las que un
+profesional probaria el primer dia y no encontraria. La palabra **«facturas»** del hero es un caso
+aparte y mas delicado: el producto **si** guarda y exporta documentos de cobro, asi que no es una
+mentira completa, pero mientras la facturacion ES este apagada **no puede aparecer en la misma frase
+que «clientes» y «gastos» como si fuera una capacidad mas**. Y lo que **si** puede sostener la
+landing entera sin tocar nada es el recorrido que de verdad funciona hoy: **presupuesto en 30
+segundos → WhatsApp → firma del cliente → gestion completa de clientes, productos, gastos, informes
+y equipo**, que son nueve promesas ciertas con su ruta y su pantalla.
+
+**Lo que NO he hecho:** no he tocado `public/index.html` ni he propuesto texto — **que cambiar y
+como decirlo es decision de Luis**, y la enmienda al master viene despues de que el elija.
+=======
 ---
 
 # SCRUM-328 · F1 fase 1 · INVENTARIO MEDIDO de lo que el producto hace HOY
@@ -540,7 +659,6 @@ un número que no significa nada.
   roto: eso lo dice QA, no un grafo.
 
 
----
 
 # SCRUM-328 · F1 · ¿SE PUEDE ENCENDER `BIZUM_MANUAL_ENABLED` HOY?
 
@@ -645,3 +763,4 @@ sin ver Bizum**.
 No se ha encendido ningun flag, en ningun entorno y por ningun medio. No se ha consultado ninguna
 base. No se ha tocado `public/index.html`, el camino de emision, ninguna factura ni
 `prisma/schema.prisma`.
+
