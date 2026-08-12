@@ -7,6 +7,7 @@ import {
   listInvoicesAdmin,
   getInvoiceDetailAdmin,
   updateInvoiceStatusAdmin,
+  NO_SE_MARCAN_PAGADAS_EN_LOTE,
   markInvoicePaidAdmin,
   markInvoicePendingAdmin,
 } from '../../invoiceAdmin';
@@ -383,7 +384,14 @@ router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
       where: {
         id: { in: ids },
         merchantId: req.merchantId,
-        status: { not: 'paid' }, // solo las que aún no están pagadas
+        // SCRUM-496 · ANTES decia `{ not: 'paid' }`, y eso INCLUIA `annulled`: una factura dada de
+        // baja ante la AEAT —con su registro de anulacion sellado y encadenado— podia volver a
+        // salir como COBRADA, y por `updateMany`, sin auditoria por fila. Es el mismo defecto que
+        // SCRUM-153 cerro en la puerta de UNA factura, que seguia abierto en la de CIEN.
+        //
+        // El conjunto se CONSUME de `invoiceAdmin.ts`, donde vive la guarda de una sola factura: no
+        // se escribe aqui una segunda lista de estados, que es como dos puertas acaban discrepando.
+        status: { notIn: [...NO_SE_MARCAN_PAGADAS_EN_LOTE] },
       },
       data: { status: 'paid', paidAt: fecha.fecha },
     });

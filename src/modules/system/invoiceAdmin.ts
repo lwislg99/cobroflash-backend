@@ -116,6 +116,35 @@ export async function getInvoiceDetailAdmin(id: number, merchantId?: number) {
 // una factura F1 real jamás se des-paga a mano — para eso está la R1 (regla 29).
 export class UnpayNotAllowedError extends Error {}
 
+/**
+ * SCRUM-153 / SCRUM-496 · EL ESTADO DEL QUE NO SE SALE, con nombre y en UN solo sitio.
+ *
+ * La Parte L declara `pending -> annulled` y **no declara ninguna transicion que salga de
+ * `annulled`**. Vivia como literal suelto dentro de la guarda de abajo, asi que la puerta masiva no
+ * podia reutilizarlo sin copiarlo — y copiarlo es como dos puertas acaban discrepando sobre el
+ * mismo documento.
+ */
+export const ESTADO_ANULADA = 'annulled';
+
+/**
+ * Estados desde los que un marcado MASIVO no puede llevar a `paid`.
+ *
+ * `paid` porque ya lo esta; `annulled` porque **no se sale de ahi**. Es el conjunto que el `where`
+ * del lote consume: la regla vive aqui, al lado de la guarda de una sola factura, y no en el filtro
+ * de una consulta donde nadie la lee.
+ */
+export const NO_SE_MARCAN_PAGADAS_EN_LOTE = ['paid', ESTADO_ANULADA] as const;
+
+/**
+ * ¿Puede este documento pasar a `paid` por el marcado masivo? PURA: se prueba con filas de verdad,
+ * sin base de datos, que es la unica forma de que el rojo hable del HECHO y no de la forma del
+ * filtro. Un test atado a `notIn` seguiria verde si alguien cambiara el filtro por otro equivalente
+ * y roto.
+ */
+export function puedeMarcarsePagadaEnLote(documento: { status: string }): boolean {
+  return !(NO_SE_MARCAN_PAGADAS_EN_LOTE as readonly string[]).includes(documento.status);
+}
+
 export async function updateInvoiceStatusAdmin(
   id: number,
   status: string,
@@ -148,7 +177,7 @@ export async function updateInvoiceStatusAdmin(
   // Va ANTES de la guarda de des-pagar porque es más fuerte: aquella depende del tipo de
   // documento, esta no admite excepción — ni siquiera para un justificante `J-`, porque anular
   // un justificante también deja su registro.
-  if (existing.status === 'annulled' && status !== 'annulled') {
+  if (existing.status === ESTADO_ANULADA && status !== ESTADO_ANULADA) {
     throw new UnpayNotAllowedError(
       'Esta factura está ANULADA y su anulación ya está registrada: no puede volver a otro ' +
         'estado. Si la operación existió y hay que cobrarla, emite una factura nueva.',
