@@ -65,7 +65,10 @@ const R = analizar(RAIZ);
  * arriba prohíbe, y además saltándose un STOP. **Baja a 7 el commit que le ponga consumidor**, que
  * es el paso 3 de `docs/master/SCRUM-359.md` §5.
  */
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 8;
+// SCRUM-294 (fase B): BAJA de 8 a 7. `criterioCaja` deja de ser inalcanzable -- lo consume
+// `devengoPorCaja.ts`, que decide que fecha devenga, y ese lo consume el libro de registro.
+// El trinquete solo baja: si alguien cablea otro, baja otra vez en el mismo commit.
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 7;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 
@@ -99,7 +102,8 @@ const esInalcanzable = (frag) => R.inalcanzables.some((m) => m.modulo.includes(f
 const huerfanosDe = (frag) => (R.modulos.find((m) => m.modulo.includes(frag))?.huerfanos ?? []);
 
 test('SCRUM-411 · CONTROL POSITIVO: los cuatro conocidos salen', () => {
-  for (const frag of ['retencionIrpf', 'recargoEquivalencia', 'criterioCaja', 'flagFiscal.service']) {
+  // SCRUM-294 (fase B): `criterioCaja` sale de esta lista -- ya NO es inalcanzable.
+  for (const frag of ['retencionIrpf', 'recargoEquivalencia', 'flagFiscal.service']) {
     assert.ok(esInalcanzable(frag),
       `🔴 «${frag}» NO sale como inalcanzable, y se midió que lo es. El detector no mide lo que dice medir.`);
   }
