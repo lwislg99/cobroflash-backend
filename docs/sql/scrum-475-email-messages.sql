@@ -32,6 +32,33 @@
 --   ⚠️ El **0 de dev lo he medido yo** (11-ago-2026). Los de staging y producción salen de
 --   `docs/MIGRATIONS_PENDING.md`, medidos el 7-ago-2026: son estado y caducan.
 --
+-- ═══════════════════════════════════════════════════════════════════════════════════════════
+-- ⬆️ EL BLOQUE DE ARRIBA ESTÁ SUPERADO · medido el 7-ago-2026, caducado el 12-ago-2026
+--
+-- No se borra: era cierto cuando se escribió, y borrar una medición vieja deja al siguiente sin
+-- saber que el número se movió. Se marca y se fecha. **Los números de arriba NO se usen**: para
+-- eso están los de abajo.
+--
+-- 🔴 DISCRIMINADOR MEDIDO HOY · 12-ago-2026 · `SELECT COUNT(*) FROM charges`
+--
+--        staging 3  ·  producción 51
+--
+-- Si el número no es el que esperas, ESTÁS EN OTRA BASE: para antes de aplicar nada.
+--
+-- ⚠️ Y LO QUE SE APRENDIÓ APLICÁNDOLO, QUE ES EL MOTIVO DE QUE HAGA FALTA UN NÚMERO:
+--
+--   **EL NOMBRE MIENTE EN LAS DOS CAPAS, Y EL NÚMERO NO.**
+--     · `SELECT current_database()` devuelve `railway` en staging Y en producción.
+--     · El ENTORNO de Railway se llama «production» en las DOS.
+--   Dos capas distintas, las dos con el mismo nombre para bases distintas. Quien se guíe por el
+--   nombre creerá estar en staging estando en producción. La cuenta de filas es lo único que las
+--   separa, y por eso va DELANTE de cualquier DDL.
+--
+-- ⚠️ El `invoices` del bloque viejo sigue dando 7 en staging (comprobado hoy con
+-- `scripts/verificar-email-messages.mjs`), así que no estaba equivocado: estaba SIN COMPROBAR, que
+-- no es lo mismo. El de producción (55) no se ha vuelto a medir aquí — no hay credencial de
+-- producción en este árbol, ni se pide.
+--
 -- VERIFICACIÓN (una consulta, una fila, con control positivo dentro):
 --   node scripts/verificar-email-messages.mjs --clave DATABASE_URL_STAGING
 -- La URL nunca va en `argv`: se pasa el NOMBRE de la variable.

@@ -97,12 +97,18 @@ function hasPgDump() {
 // tests/scrum241-backup-tablas.test.mjs (deriva las tablas de @@map / nombre de modelo). Un modelo
 // nuevo cuya tabla no esté aquí sale ROJO — antes esta lista derivaba en silencio y el dump lógico
 // perdía tablas mudamente (`wa_messages` no existía; faltaban albaranes y bot_sessions).
+//
+// SCRUM-495 · `email_messages` ENTRA, y el motivo importa porque el guard admite excepciones:
+// **es el único sitio donde consta si una factura llegó a su destinatario.** Un backup que no la
+// lleva restaura un sistema que ha olvidado qué mandó — y entonces la pregunta «¿se le envió la
+// factura F-2026-014 y cuándo?» deja de tener respuesta justo después de una restauración, que es
+// cuando más falta hace. Decisión del asesor, 12-ago-2026: no hay excepción.
 const TABLES = [
   'merchants', 'customers', 'quotes', 'invoices', 'charges', 'events', 'expenses',
   'products', 'providers', 'team_members', 'auth_sessions', 'quote_templates',
   'quote_requests', 'customer_events', 'reconciliations', 'whatsapp_messages',
   'legal_acceptances', 'jobs', 'maintenance_plans', 'audit_log', 'attachments',
-  'bot_sessions', 'albaranes', 'albaran_lineas_facturadas',
+  'bot_sessions', 'albaranes', 'albaran_lineas_facturadas', 'email_messages',
 ];
 
 async function logicalDump(prisma) {
