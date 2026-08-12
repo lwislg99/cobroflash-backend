@@ -91,8 +91,19 @@ test('SCRUM-284 · ④ cuenta LAS DOS POBLACIONES: una superficie también deja 
   // preguntarse qué pasaría si fuese a «Tus datos», el guard respondía que nada.
   const claves = Object.keys(ASIGNACION);
   const mapaSup = mapa.ASIGNACION_SUPERFICIE;
+  // SCRUM-483 · LA LISTA PUEDE VACIARSE LEGÍTIMAMENTE, y eso NO es lo mismo que borrarla.
+  // Un guard que no distingue las dos cosas se queda ciego el día que se limpia bien — y este
+  // se quedó ciego exactamente así. Lo que se le enseña no es a callarse: es a exigir que el
+  // vacío esté DECLARADO POR ESCRITO en el mapa. Sin declaración, sigue en rojo.
   const vacioDeclarado = Object.keys(VACIOS_DECLARADOS)[0];
-  assert.ok(vacioDeclarado, '🔴 no hay ningún vacío declarado contra el que probar esto.');
+  if (!vacioDeclarado) {
+    assert.ok(mapa.VACIOS_DECLARADOS_VACIA_PORQUE,
+      '🔴 `VACIOS_DECLARADOS` está VACÍA y NADA explica por qué.\n\n' +
+      '  «ya no quedan huecos» y «alguien borró la lista» se leen igual, y la segunda deja este\n' +
+      '  guard sin nada que vigilar sin que nadie se entere. Si el vacío es real, decláralo en\n' +
+      '  `VACIOS_DECLARADOS_VACIA_PORQUE` diciendo QUÉ salió y POR QUÉ.');
+    return; // estado terminal legítimo: no hay caso que inyectar, y queda dicho.
+  }
 
   // Control: hoy ese submenú no tiene ni campos ni superficies, y el trinquete calla.
   assert.deepEqual(revisarAsignacion(claves).vaciosQueYaNoLoEstan, [],

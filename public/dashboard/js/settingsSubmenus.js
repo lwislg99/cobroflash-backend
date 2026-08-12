@@ -235,6 +235,15 @@ var PENDIENTES_DE_DECISION = {};
 // ⚠️ `cumplimiento` NO se toca: no está en esta lista y aquí no se decide nada sobre él.
 var VACIOS_DECLARADOS = {};
 
+// ⚠️ ESTÁ VACÍA A PROPÓSITO, Y ESTO ES LA DECLARACIÓN QUE LO DICE.
+// Sin esta constante, «vacía porque ya no quedan huecos» y «vacía porque alguien la borró» se
+// leen igual — y el guard de SCRUM-284 no puede distinguirlas, así que tiene que caer.
+// El último hueco era `facturacion`, y salió al mudarse aquí `invoiceSeriesPrefix` (SCRUM-483).
+// El otro, `numeracion`, se retiró por el veto escrito en la descripción de SCRUM-277.
+var VACIOS_DECLARADOS_VACIA_PORQUE =
+  'No quedan submenús vacíos: `numeracion` se retiró (veto de SCRUM-277) y `facturacion` dejó ' +
+  'de estarlo al recibir `invoiceSeriesPrefix` (SCRUM-483). Estado terminal, no una lista borrada.';
+
 // ⚠️ `datos` ESTUVO AQUÍ y se ha retirado (SCRUM-420, B1 · incremento 2, 10-ago-2026). Su motivo
 // decía que «aquí solo cambiará de dónde se enlaza, y eso es el incremento de la sidebar» — y ese
 // incremento es éste: `renderDescargarDatosCard` ya coloca el enlace en el panel, así que el hueco
@@ -333,13 +342,14 @@ if (typeof window !== 'undefined') {
   window.MARCA_MICROCOPY_SUBMENU = MARCA_MICROCOPY_SUBMENU;
   window.ASIGNACION_SUBMENU = ASIGNACION_SUBMENU;
   window.VACIOS_DECLARADOS = VACIOS_DECLARADOS;
+  window.VACIOS_DECLARADOS_VACIA_PORQUE = VACIOS_DECLARADOS_VACIA_PORQUE;
   window.submenuDeCampo = submenuDeCampo;
   window.submenuDeSuperficie = submenuDeSuperficie;
   window.rotuloDeSubmenu = rotuloDeSubmenu;
   window.ASIGNACION_SUPERFICIE = ASIGNACION_SUPERFICIE;
 }
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
+  module.exports = { VACIOS_DECLARADOS_VACIA_PORQUE,
     SUBMENUS: SUBMENUS,
     MARCA_MICROCOPY_SUBMENU: MARCA_MICROCOPY_SUBMENU,
     ASIGNACION_SUBMENU: ASIGNACION_SUBMENU,
