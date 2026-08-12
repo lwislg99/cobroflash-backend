@@ -339,3 +339,75 @@ esa tercera copia habría entrado sin que saltara nada.
    *helper* de `tests/`, el trinquete no la ve. Queda declarado.
 4. **La verificación es en Node, no en yaqu.app.** El banco de vistas monta el dashboard con un
    mini-DOM; no sustituye a abrir la pantalla en producción tras el merge (AA1.3).
+
+---
+
+# Apéndice · FASE 2 — la superficie del lector (sesión 2, 12-ago-2026)
+
+**Medido contra:** `origin/main` = `75b2b01820f71bdb1bf2b3244b19f801d69e24f6` · 2026-08-12T10:23:23+02:00
+**Rama:** `scrum-474-fase2-filtro` · **HEAD** `8a8d956a3cb8f6cee18e6e9815ba6e3715e3e17a`
+
+Esto SÍ es trabajo propio, a diferencia del cuerpo de arriba. La fase 1 dejó el motor
+(`metodoParaAgrupar`) **con cero llamadores**: un clasificador correcto que no tocaba ninguna
+pantalla. La fase 2 lo conecta al filtro de Cobros.
+
+## 1. Las opciones del filtro se derivan de `PAID_VIA`, en el servidor
+
+`cobrosView.js` tenía su propia lista (`COBROS_METODOS`) decidiendo qué valor cae en qué cubo: el
+conjunto cerrado de la regla 22 **duplicado en el front**, donde no lo vigila nadie. Ahora la
+partición la produce `cubosDeMetodo` en el dominio y viaja servida.
+
+Las cuatro opciones salen **siempre**, haya o no cobros de cada una. Derivarlas de los datos le
+quitaría el filtro de Bizum a quien todavía no ha cobrado por Bizum, y entonces no podría distinguir
+**«no tengo»** de **«no existe la opción»**.
+
+## 2. 🔴 EL ERROR DE DISEÑO Y QUIÉN LO CAZÓ
+
+La primera versión metió los cubos **dentro de la respuesta de `/admin/cobros`** — un dato
+CONSTANTE en el sobre de uno VARIABLE. Consecuencia en la pantalla: **la barra de filtros solo
+existía si la respuesta llegaba.** Con mala cobertura, el profesional abre la pantalla del DINERO y
+se queda sin filtros; el bloque H entero existe porque ese profesional está en una azotea con una
+raya.
+
+No lo encontró una revisión: lo cazaron **los tres SUELOS de `scrum448-cobros-estado-de-carga`**,
+que miden la pantalla con la petición en vuelo y tras el fallo. Sin ellos, esto se mergea.
+
+La corrección: los cubos viajan en el **arranque** (`/admin/me` → `window.appCobrosCubos`), y
+`/admin/cobros` vuelve a devolver un array. El sitio **no se inventó, se midió**: `initApp()`
+corre en `DOMContentLoaded` antes que ninguna vista, y **ya había precedente escrito** — SCRUM-300
+manda por ahí los rótulos del albarán con este mismo argumento («una segunda copia es cómo dos
+textos divergen sin que nadie se entere»). La casa tenía la respuesta antes que nosotros.
+
+## 3. La fixture derivada, y el rojo que la delató
+
+`scrum474-filtro-cobros-un-cubo` daba **0 filas de 51** al filtrar por tarjeta, y el mensaje acusaba
+al filtro. El filtro estaba bien: la fixture construía el cobro **a mano** y no tenía `metodoCubo`,
+así que la vista filtraba por `undefined`. El suelo (51 sin filtrar) pasaba, y eso fue lo que
+permitió localizarlo — la pantalla pintaba.
+
+Ahora la fixture llama a `camposDeMetodo`, la misma función por la que pasan las dos poblaciones en
+`listarCobros`. **Una divergencia imposible gana a una vigilada**, y salió más barata que el guard
+de repuesto que se había pedido para el caso contrario.
+
+## 4. Frontera de carril
+
+**SCRUM-481 (traducir la columna a castellano) NO está aquí.** La celda queda **byte a byte como en
+`main`** —verificado en el diff: es línea de contexto— y el dominio expone `cuboDeCobro`, que
+devuelve la clave y **no** el texto. Dos ramas escribiendo el mismo rótulo es exactamente la
+divergencia que este ticket denuncia.
+
+## 5. Verificación
+
+- `npm test` → **3296 tests, 0 fallos, 77 saltados**, rc leído del propio comando.
+  El recuento **sube** desde 3289 y la causa está medida: el rebase trajo 4 commits de `main`.
+- `npx tsc --noEmit` → rc=0.
+- Rebase sobre `main` limpio (rc=0) y **suite repetida entera después**, no antes.
+
+## 6. Huecos declarados
+
+1. **Verificado en Node, no en yaqu.app.** El banco monta el dashboard con un mini-DOM. Falta abrir
+   la pantalla tras el merge (AA1.3).
+2. **`COBROS_METODOS` y `cuboDeMetodo` siguen vivos** en `cobrosView.js:85` y `:148`, ya sin usarse
+   para pintar la barra. **No se borran a propósito:** SCRUM-481 aterriza antes y puede apoyarse en
+   ellos (regla 9). Queda como decisión de quien mergee después.
+3. **Las cifras de producción (28 `card` + 10 `card:stripe`) se siguen CITANDO, no remidiendo.**
