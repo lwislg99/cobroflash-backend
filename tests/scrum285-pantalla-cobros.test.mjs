@@ -158,6 +158,16 @@ test('SCRUM-285 · ④ los dos Bizum caen en UN filtro, y la fila conserva cuál
   assert.ok(!claves.includes('bizum_auto') && !claves.includes('bizum_manual'),
     '🔴 la barra de filtros expone la distinción interna: le añade al profesional un concepto ' +
     'que no tiene. Se lee en la fila, no se filtra por ella.');
+
+  // 🔴 SCRUM-481 · Y LA SEGUNDA MITAD DEL TÍTULO, QUE HASTA HOY NO SE COMPROBABA. «La fila conserva
+  // cuál es» era una promesa que este test no medía: comprobaba los cubos y los botones, y no lo
+  // que la fila dice. Mientras tanto la columna pintaba el valor CRUDO, y con el arreglo a medias
+  // habría pasado a decir «Bizum» dos veces sin que cayera nada. Se endurece: los dos rótulos de
+  // fila tienen que existir y ser DISTINTOS (`paidVia.ts:17` — persona frente a webhook).
+  const leidos = ['bizum_auto', 'bizum_manual'].map((v) => banco.ctx.rotuloDeMetodo(v));
+  assert.deepEqual(leidos, ['Bizum · automático', 'Bizum · manual'],
+    `🔴 la fila lee ${JSON.stringify(leidos)}: o no distingue los dos Bizum —y entonces la ` +
+    'distinción de evidencia no se lee en ningún sitio— o usa una microcopy sin aprobar.');
 });
 
 // ═══ ⑤ MICROCOPY (regla 30) ══════════════════════════════════════════════════════════════
