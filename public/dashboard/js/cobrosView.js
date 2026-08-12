@@ -122,6 +122,42 @@ var COBROS_METODOS = [
 var COBROS_SIN_METODO = { clave: 'sin-metodo', rotulo: COBROS_COPY.filtroSinMetodo, casa: [] };
 
 /**
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * 🔴 SCRUM-506 · DENTRO DE ESE CUBO HAY DOS HECHOS, Y NO SON EL MISMO
+ *
+ *   ausencia (`null`, `''`) → **NADIE registró nada**. Es un hueco, y no se sabrá nunca.
+ *   `desconocido`           → **el sistema SÍ dejó constancia**: el cobro nació en una pasarela que
+ *                             todavía no sabía con qué iba a pagar el cliente (SCRUM-486/489).
+ *
+ * Uno es un hueco y el otro es un dato. Llamarlos igual —«Método no registrado»— le dice al
+ * profesional que de ese cobro no consta nada, cuando lo que consta es justo que no se sabe. Es la
+ * misma distinción que separó el MÉTODO del REGISTRO (SCRUM-491) y el desconocido del ERROR
+ * (SCRUM-503), y hasta hoy Cobros la borraba: Informes ya decía «Método sin especificar» y aquí se
+ * leía otra cosa — el mismo cobro, dos pantallas, dos lecturas, que es lo que SCRUM-488 cerró.
+ *
+ * 🔴 EL CUBO NO CAMBIA: **un cubo, dos rótulos.** `desconocido` no está en `PAID_VIA`, así que el
+ * servidor lo sigue metiendo en `sin-metodo` y **el filtro sigue teniendo una sola pestaña**. Es la
+ * decisión que ya tomó SCRUM-285 con Bizum —«filtrar por cuatro, leer los cinco»—: la distinción se
+ * LEE en la fila, no se OFRECE como filtro. Ofrecerla obligaría a ampliar el conjunto cerrado
+ * (regla 22) para un valor que no es un método.
+ *
+ * ⚠️ EL LITERAL ESTÁ COPIADO DEL BACKEND A PROPÓSITO, y consta: es `METODO_DESCONOCIDO`
+ * (`src/modules/billing/domain/metodoDeCobro.ts`). El frontend es vanilla y no puede importar de
+ * `src/` —medido en SCRUM-499: cero importaciones en todo el árbol—, así que la copia es la única
+ * salida. NO se queda sin vigilar: el test de SCRUM-506 compara este literal con el del backend
+ * importado de `dist`, o sea las dos fuentes de verdad, no una expectativa escrita a mano.
+ *
+ * Microcopy APROBADA por el asesor (regla 30). Sin emoji: Cobros no los usa. Y con LAS MISMAS
+ * PALABRAS que Informes, porque usar otras aquí recrearía la divergencia que este ticket cierra.
+ */
+var COBROS_DESCONOCIDO = { valor: 'desconocido', rotulo: 'Método sin especificar' };
+
+/** ¿Este valor crudo es el desconocido DECLARADO? Se compara ya normalizado, como el resto. */
+function esDesconocidoDeclarado(metodo) {
+  return typeof metodo === 'string' && metodo.trim().toLowerCase() === COBROS_DESCONOCIDO.valor;
+}
+
+/**
  * 🔴 SCRUM-474 · LA PASARELA NO CAMBIA EL MÉTODO, Y ASÍ ESTABA PARTIENDO LAS TARJETAS EN DOS.
  *
  * `Charge.method` guarda `<metodo>` o `<metodo>:<pasarela>`: `card` lo escribe el selector de pago
@@ -277,7 +313,12 @@ function grafiaAprobada(mapa, clave) {
  */
 function rotuloDeMetodo(metodo, cubo, cubos) {
   var clave = (typeof cubo === 'string' && cubo !== '') ? cubo : cuboDeMetodo(metodo);
-  if (clave === COBROS_SIN_METODO.clave) return COBROS_SIN_METODO.rotulo;
+  // 🔴 SCRUM-506 · dentro del cubo «sin método» hay DOS hechos. El desconocido DECLARADO se
+  // distingue del hueco ANTES de caer al rótulo del cubo, que es donde se fundían: el cubo sigue
+  // siendo el mismo —y la pestaña también—, solo cambia lo que se lee en la fila.
+  if (clave === COBROS_SIN_METODO.clave) {
+    return esDesconocidoDeclarado(metodo) ? COBROS_DESCONOCIDO.rotulo : COBROS_SIN_METODO.rotulo;
+  }
 
   var rotulo = null;
   var lista = Array.isArray(cubos) ? cubos : [];
@@ -614,6 +655,7 @@ if (typeof window !== 'undefined') {
   window.COBROS_COPY = COBROS_COPY;
   window.COBROS_METODOS = COBROS_METODOS;
   window.COBROS_SIN_METODO = COBROS_SIN_METODO;
+  window.COBROS_DESCONOCIDO = COBROS_DESCONOCIDO;
   window.cuboDeMetodo = cuboDeMetodo;
   window.rotuloDeMetodo = rotuloDeMetodo;
   window.COBROS_PASARELAS = COBROS_PASARELAS;
@@ -621,5 +663,5 @@ if (typeof window !== 'undefined') {
   window.diasDeDeudaCobro = diasDeDeudaCobro;
 }
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { renderCobrosView, COBROS_COPY, COBROS_METODOS, COBROS_SIN_METODO, cuboDeMetodo, metodoSinPasarela, pasarelaDeMetodo, rotuloDeMetodo, COBROS_PASARELAS, COBROS_MATICES, diasDeDeudaCobro };
+  module.exports = { renderCobrosView, COBROS_COPY, COBROS_METODOS, COBROS_SIN_METODO, COBROS_DESCONOCIDO, esDesconocidoDeclarado, cuboDeMetodo, metodoSinPasarela, pasarelaDeMetodo, rotuloDeMetodo, COBROS_PASARELAS, COBROS_MATICES, diasDeDeudaCobro };
 }
