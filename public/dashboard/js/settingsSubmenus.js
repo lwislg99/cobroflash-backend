@@ -25,7 +25,7 @@
  * (`equipo`) lo abrió el fundador al colocar `approvalThreshold`, que no cabía en ninguno.
  */
 var SUBMENUS = [
-  'empresa', 'facturacion', 'numeracion', 'cobro', 'avisos',
+  'empresa', 'facturacion', 'cobro', 'avisos',
   'publica', 'marca', 'datos', 'cumplimiento', 'equipo',
 ];
 
@@ -50,7 +50,6 @@ var MARCA_MICROCOPY_SUBMENU = '[PENDIENTE microcopy oficial]';
 var ROTULOS = {
   empresa: 'Empresa',
   facturacion: 'Facturación',
-  numeracion: 'Numeración',
   cobro: 'Cobros',
   avisos: 'Avisos',
   publica: 'Tu página pública',
@@ -81,7 +80,7 @@ var ASIGNACION_SUBMENU = {
   country: 'empresa',
   // ── numeracion ── el ticket coloca el prefijo en DOS submenús a la vez: es una contradicción
   // interna, no una opción. Manda el nombre del submenú — una serie va en Numeración.
-  invoiceSeriesPrefix: 'numeracion',
+  invoiceSeriesPrefix: 'facturacion',
   // ── cobro ──
   iban: 'cobro',
   bizumPhone: 'cobro',
@@ -228,11 +227,22 @@ var PENDIENTES_DE_DECISION = {};
  * ⚠️ `equipo` NO está aquí, y esa es la corrección que hizo el propio mecanismo: el encargo lo
  * listaba como vacío, pero `approvalThreshold` ya estaba colocado ahí por el fundador.
  */
-var VACIOS_DECLARADOS = {
-  facturacion:
-    'reglas de emisión (IVA por defecto, lugar de negocio). El prefijo, lo único que existe hoy, se ' +
-    'va a Numeración por el nombre del submenú. Se llena con SCRUM-17 y siguientes.',
-};
+// SCRUM-483 · `facturacion` SALE de aquí, y no por una decisión: por un HECHO MEDIDO. Su texto
+// decía que el prefijo —lo único que existía— «va a Numeración por el nombre del submenú». En
+// este mismo commit el prefijo SE MUDÓ aquí, así que ese submenú ya tiene contenido y la
+// declaración de hueco pasó a ser FALSA. Una declaración falsa se lee igual que una cierta,
+// que es exactamente el motivo por el que esta lista existe.
+// ⚠️ `cumplimiento` NO se toca: no está en esta lista y aquí no se decide nada sobre él.
+var VACIOS_DECLARADOS = {};
+
+// ⚠️ ESTÁ VACÍA A PROPÓSITO, Y ESTO ES LA DECLARACIÓN QUE LO DICE.
+// Sin esta constante, «vacía porque ya no quedan huecos» y «vacía porque alguien la borró» se
+// leen igual — y el guard de SCRUM-284 no puede distinguirlas, así que tiene que caer.
+// El último hueco era `facturacion`, y salió al mudarse aquí `invoiceSeriesPrefix` (SCRUM-483).
+// El otro, `numeracion`, se retiró por el veto escrito en la descripción de SCRUM-277.
+var VACIOS_DECLARADOS_VACIA_PORQUE =
+  'No quedan submenús vacíos: `numeracion` se retiró (veto de SCRUM-277) y `facturacion` dejó ' +
+  'de estarlo al recibir `invoiceSeriesPrefix` (SCRUM-483). Estado terminal, no una lista borrada.';
 
 // ⚠️ `datos` ESTUVO AQUÍ y se ha retirado (SCRUM-420, B1 · incremento 2, 10-ago-2026). Su motivo
 // decía que «aquí solo cambiará de dónde se enlaza, y eso es el incremento de la sidebar» — y ese
@@ -332,13 +342,14 @@ if (typeof window !== 'undefined') {
   window.MARCA_MICROCOPY_SUBMENU = MARCA_MICROCOPY_SUBMENU;
   window.ASIGNACION_SUBMENU = ASIGNACION_SUBMENU;
   window.VACIOS_DECLARADOS = VACIOS_DECLARADOS;
+  window.VACIOS_DECLARADOS_VACIA_PORQUE = VACIOS_DECLARADOS_VACIA_PORQUE;
   window.submenuDeCampo = submenuDeCampo;
   window.submenuDeSuperficie = submenuDeSuperficie;
   window.rotuloDeSubmenu = rotuloDeSubmenu;
   window.ASIGNACION_SUPERFICIE = ASIGNACION_SUPERFICIE;
 }
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
+  module.exports = { VACIOS_DECLARADOS_VACIA_PORQUE,
     SUBMENUS: SUBMENUS,
     MARCA_MICROCOPY_SUBMENU: MARCA_MICROCOPY_SUBMENU,
     ASIGNACION_SUBMENU: ASIGNACION_SUBMENU,
