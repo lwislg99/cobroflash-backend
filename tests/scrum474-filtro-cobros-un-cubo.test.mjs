@@ -18,10 +18,24 @@ const require_ = createRequire(import.meta.url);
 const { cuboDeMetodo, metodoSinPasarela, COBROS_METODOS } =
   require_(path.join(RAIZ, 'public/dashboard/js/cobrosView.js'));
 
-/** Un cobro con la forma que sirve el servicio, para poder pintarlo de verdad. */
+/**
+ * Un cobro con la forma que sirve el servicio, para poder pintarlo de verdad.
+ *
+ * 🔴 LOS CAMPOS DEL MÉTODO SE DERIVAN, NO SE ESCRIBEN A MANO, y esta línea es la corrección de un
+ * rojo real. La versión anterior los enumeraba, así que cuando el servicio estrenó `metodoCubo` la
+ * fixture se quedó atrás: la vista filtraba por un campo **que la fixture no tenía**, salían 0 filas
+ * de 51 y el rojo acusaba al filtro. El filtro estaba bien — el que mentía era el banco.
+ *
+ * Llamando a `camposDeMetodo` —la MISMA función por la que pasan las dos poblaciones en
+ * `listarCobros`— eso no puede repetirse: si mañana cambia lo que el servicio deriva del método,
+ * esta fixture cambia con él en el mismo commit.
+ */
+const { camposDeMetodo } = require_(path.join(RAIZ, 'dist/modules/billing/domain/cobros.service.js'));
+
 const cobro = (id, metodo) => ({
   origen: 'charge', id, fecha: '2026-08-01T10:00:00.000Z', cliente: `Cliente ${id}`,
   concepto: 'Trabajo', importe: '100.00', moneda: 'EUR', metodo, estado: 'paid',
+  ...camposDeMetodo(metodo),
   referencia: null, numero: null, tipo: null, invoiceId: null, chargeId: id,
 });
 

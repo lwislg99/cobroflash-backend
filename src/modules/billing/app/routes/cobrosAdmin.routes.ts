@@ -25,6 +25,19 @@ const router = Router();
 router.get('/', requireRole('admin'), async (req, res) => {
   try {
     const cobros = await listarCobros((req as { merchantId: number }).merchantId);
+    // 🔴 SCRUM-474 fase 2 · LOS CUBOS NO VIAJAN AQUÍ, y esto es la corrección de un error de
+    // diseño: metí un dato CONSTANTE dentro del sobre de un dato VARIABLE. El conjunto cerrado de
+    // métodos no cambia entre peticiones —es configuración del producto, no parte de una lista— y
+    // por eso se sirve en el ARRANQUE (`/admin/me`), donde ya viajan los rótulos del albarán por
+    // el mismo motivo (SCRUM-300).
+    //
+    // Lo que lo decidió: con los cubos aquí, la barra de filtros solo existía si la respuesta
+    // llegaba. Nuestro profesional está en una azotea con una raya de cobertura —el bloque H
+    // entero existe por eso—, y una pantalla de DINERO que se queda sin filtros justo cuando la
+    // red va mal es lo contrario del producto que decimos ser. Lo cazaron los tres SUELOS de
+    // SCRUM-448, que miden la pantalla con la petición en vuelo y tras el fallo.
+    //
+    // La respuesta se queda como estaba —un array—, así que ningún consumidor cambia de forma.
     res.json(cobros);
   } catch (err) {
     console.error('[GET /admin/cobros]', err);

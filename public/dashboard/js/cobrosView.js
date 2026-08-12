@@ -186,6 +186,13 @@ function renderCobrosView(container) {
 
   var filtro = 'all';
   var datos = [];
+  // SCRUM-474 fase 2 · LOS CUBOS DEL FILTRO, derivados de `PAID_VIA` en el servidor (regla 22) y
+  // servidos EN EL ARRANQUE (`/admin/me` → `window.appCobrosCubos`), no con la lista de cobros.
+  //
+  // 🔴 Son CONSTANTES, y por eso no dependen de esta petición: con mala cobertura el profesional
+  // abre Cobros, la lista no llega… y la barra de filtros sigue estando. Cuando los cubos viajaban
+  // dentro de la respuesta, desaparecía — en la pantalla del dinero, justo cuando peor va la red.
+  var cubos = Array.isArray(window.appCobrosCubos) ? window.appCobrosCubos : [];
   // 🔴 SCRUM-448 · EL TERCER ESTADO: «TODAVÍA NO LO SABEMOS».
   //
   // SCRUM-285 separó con cuidado los dos vacíos —«no hay ninguno» y «tu filtro los esconde»— y se
@@ -235,7 +242,15 @@ function renderCobrosView(container) {
 
   function pintarFiltros() {
     barra.innerHTML = '';
-    var todos = [{ clave: 'all', rotulo: COBROS_COPY.filtroTodos }].concat(COBROS_METODOS, [COBROS_SIN_METODO]);
+    // SCRUM-474 fase 2 · LAS OPCIONES LAS MANDA EL SERVIDOR, derivadas de `PAID_VIA`. Esta vista
+    // tenía su propia lista (`COBROS_METODOS`) que decidía qué valor cae en qué cubo: el conjunto
+    // cerrado de la regla 22, duplicado donde no lo vigila nadie.
+    //
+    // Vienen del arranque, así que la barra se pinta ENTERA desde el primer repintado —haya
+    // respuesta o no—. Si el arranque tampoco las trajo, solo sale «Todos»: no se inventa una
+    // lista de repuesto, porque unas opciones que el servidor no ha confirmado son exactamente la
+    // lista a mano volviendo por la puerta de atrás.
+    var todos = [{ clave: 'all', rotulo: COBROS_COPY.filtroTodos }].concat(cubos);
     todos.forEach(function (m) {
       var b = document.createElement('button');
       b.type = 'button';
@@ -252,7 +267,10 @@ function renderCobrosView(container) {
 
   function visibles() {
     if (filtro === 'all') return datos;
-    return datos.filter(function (c) { return cuboDeMetodo(c.metodo) === filtro; });
+    // 🔴 SE FILTRA POR EL CUBO QUE MANDA EL SERVIDOR, no por `c.metodo` en crudo. Comparar el
+    // valor de la base era lo que metía `card:stripe` en «Método no registrado»; y derivarlo aquí
+    // otra vez sería la regla duplicada en el front, que es lo que SCRUM-473 prohíbe.
+    return datos.filter(function (c) { return c.metodoCubo === filtro; });
   }
 
   function pintarFilas() {
@@ -316,6 +334,9 @@ function renderCobrosView(container) {
       // esconde cuatro y `quotesListView` dos por lo mismo.
       var tdMetodo = document.createElement('td');
       tdMetodo.className = 'col-hide-mobile';
+      // ⚠️ LA COLUMNA ES DE SCRUM-481 (otro carril, regla 9) y se queda EXACTAMENTE como está en
+      // `main`. Que aquí ponga «card:stripe» mientras el filtro de arriba dice «tarjeta» es lo que
+      // arregla ESE ticket, no éste: aquí solo se agrupa, no se traduce.
       tdMetodo.textContent = c.metodo || COBROS_COPY.metodoSinRegistrar;
       tr.appendChild(tdMetodo);
 
@@ -429,6 +450,9 @@ function renderCobrosView(container) {
     // 🔴 EL DATO GANA AL MENSAJE: si venció el plazo y la respuesta llega DESPUÉS, se pinta y
     // sustituye al aviso. Lo que vence no puede acabar contándose como «no hay cobros» — eso es el
     // defecto entero de SCRUM-448, y colarlo por la puerta del plazo sería reintroducirlo.
+    // SCRUM-474 fase 2 · la respuesta sigue siendo un ARRAY: los cubos del filtro no viajan aquí,
+    // llegan en el arranque. Son constantes, y meter un dato constante en el sobre de uno variable
+    // es lo que dejaba la pantalla del dinero sin filtros cuando la red fallaba.
     datos = Array.isArray(r) ? r : [];
     estado = 'listo';
     pintarFilas();

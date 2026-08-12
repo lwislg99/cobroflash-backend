@@ -59,6 +59,19 @@
 // ninguno es la fecha en que entró el dinero (hallazgo E0 del censo de este mismo ticket), y para
 // la deuda ni siquiera hacen falta.
 import { prisma } from '../../../core/db/prisma';
+import { cuboDeCobro } from './metodoDeCobro';
+
+/**
+ * La clave derivada, para que las dos poblaciones pasen por el MISMO sitio.
+ *
+ * 🔴 SE EXPORTA PARA QUE LAS FIXTURES DERIVEN DE ELLA. La de SCRUM-474 construía el cobro a mano y
+ * se quedó atrás en cuanto este serializador estrenó `metodoCubo`: la vista filtraba por un campo
+ * que la fixture no tenía, así que el test veía 0 filas y acusaba al filtro. Una fixture escrita a
+ * mano vuelve a quedarse atrás la próxima vez; una que llama a esta función, no.
+ */
+export function camposDeMetodo(metodo: string | null): { metodoCubo: string } {
+  return { metodoCubo: cuboDeCobro(metodo) };
+}
 
 /** Un cobro, venga de donde venga. Forma ÚNICA para que la pantalla no sepa de dónde salió. */
 export type Cobro = {
@@ -69,8 +82,19 @@ export type Cobro = {
   concepto: string | null;
   importe: string;
   moneda: string;
-  /** `null` = no consta. NO es «otro»: es que nadie lo registró. */
+  /** `null` = no consta. NO es «otro»: es que nadie lo registró. Se conserva CRUDO. */
   metodo: string | null;
+  /**
+   * SCRUM-474 fase 2 · el método AGRUPADO, derivado de `PAID_VIA` **en el servidor**.
+   *
+   * El crudo se queda al lado —`card:stripe` no se pierde ni se migra— y esto es lo único que la
+   * pantalla necesita para filtrar sin decidir nada fiscal: en qué cubo cae. Antes la vista tenía
+   * su propia lista de cubos y su propia regla, o sea el conjunto cerrado duplicado en un sitio
+   * donde no lo vigila nadie.
+   *
+   * ⚠️ Aquí NO viaja el texto de la celda: cómo se pinta el método es SCRUM-481, otro carril.
+   */
+  metodoCubo: string;
   estado: string;
   referencia: string | null;
   /** Número del documento, si lo hay. La pantalla lo clasifica con `tipoDeFactura`. */
@@ -183,6 +207,7 @@ export function fundirCobros(entrada: {
     importe: String(ch.amount),
     moneda: ch.currency,
     metodo: ch.method ?? null,
+    ...camposDeMetodo(ch.method ?? null),
     estado: ch.status,
     referencia: ch.reference ?? null,
     numero: null,
@@ -199,7 +224,13 @@ export function fundirCobros(entrada: {
     concepto: null,
     importe: String(inv.total),
     moneda: inv.currency,
-    metodo: null, // no consta: la Invoice no guarda método. No se inventa.
+    // No consta: la Invoice no guarda método. No se inventa — y por eso pasa por la MISMA función
+    // que los demás en vez de escribir aquí el cubo a mano: un `sin-metodo` puesto a dedo dejaría
+    // de moverse el día que la clasificación cambie. Ver el límite declarado en SCRUM-441: mientras
+    // `Invoice` no tenga método, el filtro no puede separar una transferencia marcada a mano de un
+    // cobro del que de verdad no se sabe nada.
+    metodo: null,
+    ...camposDeMetodo(null),
     estado: inv.status,
     referencia: null,
     numero: inv.number,
