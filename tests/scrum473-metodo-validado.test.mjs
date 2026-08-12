@@ -43,7 +43,11 @@ test('SCRUM-473 · SUELO: los NUEVE escritores siguen siendo los que el censo en
     ['src/modules/billing/app/routes/charges.routes.ts', /methodPref === 'card'/],
     ['src/modules/billing/app/routes/receipt.routes.ts', /method: 'card:stripe'/],
     ['src/modules/billing/app/routes/stripe.routes.ts', /method: 'card:stripe'/],
-    ['src/modules/billing/app/routes/mpWebhook.routes.ts', /method: 'mp'/],
+    // SCRUM-489 · era `/method: 'mp'/`. Ese literal se escribía en el `update` que marca el cobro
+    // como PAGADO, y `'mp'` no está en `PAID_VIA`: era un `paid_via` falso, no una preferencia.
+    // Ahora consume el método que `getMpPayment()` ya traducía tres líneas antes. El escritor
+    // sigue siendo el mismo fichero — lo que cambió es que dejó de inventarse el valor.
+    ['src/modules/billing/app/routes/mpWebhook.routes.ts', /method: payment\.method/],
     ['src/modules/billing/app/routes/psp.routes.ts', /esMetodoValido\(body\.method\)/],
     ['src/modules/billing/app/routes/chargesAdmin.routes.ts', /method: 'bizum_manual'/],
     ['src/integrations/mercadopago.ts', /metodoDesdeMercadoPago\(/],
