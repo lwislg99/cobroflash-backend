@@ -156,6 +156,17 @@ export const DECLARADOS = [
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
     exports: ['METODO_DESCONOCIDO'] },
+  // SCRUM-294 (fase B) · el criterio de caja se CABLEA hoy: 'leerCriterioCaja' lo consume
+  // 'devengoPorCaja.ts', y ese lo consume el libro de registro. Lo que queda huerfano es la otra
+  // mitad -- la que CLASIFICA los asientos por cobro para el 303, que es A5 y va por otro carril.
+  { modulo: 'src/modules/invoicing/domain/criterioCaja.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
+    motivo: 'Clasificar los asientos por cobro y su advertencia son de A5 (el 303 contra cobros reales), que no es este ticket. La lectura del criterio SI esta cableada.',
+    exports: ['ADVERTENCIA_CAJA', 'clasificarPorCobro'] },
+  { modulo: 'src/modules/invoicing/domain/devengoPorCaja.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'CAMPO_COBRO es el vocabulario del modulo -- lo consume su propio codigo y su test; el libro solo necesita CAMPO_EMISION. fechaDeDevengo decide la fecha de UNA factura y lo consumira A5 al agrupar; hoy el libro filtra por columna en la consulta.',
+    exports: ['CAMPO_COBRO', 'fechaDeDevengo'] },
   { modulo: 'src/modules/billing/domain/paidVia.ts',
     cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
     motivo: 'La validación del método de cobro existe y no se aplica en ningún camino vivo (SCRUM-484).',
