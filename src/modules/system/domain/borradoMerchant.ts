@@ -65,7 +65,22 @@ export const ORDEN_BORRADO_MERCHANT: readonly string[] = [
   // las variables REDACTADOS, y `plantilla`+`version`+`hash` intactos.
   // La decide el fundador con el asesor. Hasta entonces el comportamiento NO se cambia: se
   // sigue borrando todo, igual que antes, para no dejar a medias una política de conservación.
-  'auditLog', 'whatsAppMessage', 'legalAcceptance', 'customerEvent', 'attachment',
+  //
+  // SCRUM-497 · `emailMessage` va en este bloque y ANTES de `invoice`/`quote`/`customer`: sus
+  // `related_type`/`related_id` apuntan a una factura o a un presupuesto, y su `customer_id` a un
+  // cliente, **todo sin FK ninguna** (el modelo no declara relaciones). Si cayera después, quedarían
+  // filas apuntando a ids que ya no existen y nada protestaría.
+  //
+  // ⚠️ AQUÍ SE BORRA, Y NO CONTRADICE QUE LA SUPRESIÓN DEL ART. 17 LO ANONIMICE. Son dos caminos
+  // distintos y esta lista no es el del art. 17:
+  //   · `suprimirMerchant` (el camino RGPD vivo) NO usa esta lista: usa `CAMPOS_PERSONALES`, y ahí
+  //     `toEmail` se ANONIMIZA conservando la fila, porque la fila es la constancia del envío.
+  //   · esta lista la usan `borrarMerchant` —gateado OFF, y su retirada la paró SCRUM-485— y
+  //     `barridoDemo`, que resetea los datos de EJEMPLO para que el seed los vuelva a poner.
+  //     MEDIDO: `barridoDemo` no es una supresión del art. 17 y el merchant demo sobrevive; dejar
+  //     filas redactadas acumulándose ahí haría MENTIR al botón «Eliminar datos de ejemplo», que es
+  //     justo el defecto que SCRUM-314 cerró. Para el demo, borrar de verdad es lo correcto.
+  'auditLog', 'whatsAppMessage', 'legalAcceptance', 'customerEvent', 'attachment', 'emailMessage',
   // Documentos: albarán antes que factura (el albarán apunta a la factura que lo consolidó).
   'albaran', 'maintenancePlan', 'invoice', 'charge', 'job', 'quote', 'quoteRequest',
   // Catálogo y operativa: nadie cuelga de ellos a estas alturas.

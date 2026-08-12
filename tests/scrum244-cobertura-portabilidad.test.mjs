@@ -88,7 +88,7 @@ test('SCRUM-244 · un modelo NUEVO con merchantId entra solo, sin tocar ninguna 
 });
 
 test('SCRUM-244 · se deriva por el NOMBRE DEL CAMPO, no por el de la columna (la trampa de 205)', () => {
-  // De los 21 modelos con merchantId, DOS mapean la columna en camelCase — `Quote` e `Invoice`.
+  // De los 22 modelos con merchantId, DOS mapean la columna en camelCase — `Quote` e `Invoice`.
   // Una derivación que buscara la columna `merchant_id` los perdería EN SILENCIO: un export de
   // portabilidad sin las facturas ni los presupuestos, sin ningún aviso.
   const columnaDe = (modelo) => {
