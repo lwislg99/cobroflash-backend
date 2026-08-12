@@ -76,11 +76,11 @@
 // céntimos enteros no se pierde nada y la suma cuadra por construcción — y el test puede exigir
 // igualdad estricta en vez de una tolerancia, que es donde se esconden los fallos.
 import { PAID_VIA } from '../../billing/domain/paidVia';
-import { cuboDeCobro, CUBO_SIN_METODO } from '../../billing/domain/metodoDeCobro';
+import { cuboDeCobro, CUBO_SIN_METODO, metodoDeclaradoEnFactura } from '../../billing/domain/metodoDeCobro';
 
 /** Un cobro tal y como lo lee el informe: el método ya resuelto y el importe de la factura. */
 export interface CobroDelInforme {
-  /** `charge.method`, o el `manual` que la ruta fabrica cuando la factura no tiene `Charge`. */
+  /** El método resuelto por `metodoDelCobro`. Cadena vacía = **no consta**. */
   metodo: string;
   /** `Invoice.total` — Decimal de Prisma, string o number. */
   total: unknown;
@@ -138,8 +138,12 @@ function representanteDelCubo(clave: string): string | null {
  *
  * Función pura: ni red ni BD, para que el guard de SCRUM-488 pueda ejercer la agrupación de verdad
  * —la que corre— en vez de una copia escrita a mano en el test.
+ *
+ * NO SE EXPORTA desde SCRUM-491: la superficie pública del módulo es `filasDelInforme`, que es lo
+ * que la ruta llama. El guard de SCRUM-411 lo cazó en cuanto dejó de tener importador de fuera, y
+ * la lección es la misma que en SCRUM-441: el test entra por el contrato, no por una pieza.
  */
-export function agruparCobrosPorCubo(cobros: readonly CobroDelInforme[]): FilaDelInforme[] {
+function agruparCobrosPorCubo(cobros: readonly CobroDelInforme[]): FilaDelInforme[] {
   const porClave = new Map<string, { cubo: string; metodos: Set<string>; centimos: number; count: number }>();
   for (const c of cobros) {
     const clave = claveDeAgrupacion(c.metodo);
@@ -162,4 +166,98 @@ export function agruparCobrosPorCubo(cobros: readonly CobroDelInforme[]): FilaDe
       count: v.count,
     }))
     .sort((a, b) => b.eur - a.eur);
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-491 · EL MÉTODO SALE DE `Invoice.paidVia`, Y EL REGISTRO DEJA DE OCUPAR SU COLUMNA
+// ═════════════════════════════════════════════════════════════════════════════════════════
+//
+// El informe fabricaba `'manual'` al leer una factura pagada SIN `Charge` (`inv.charge?.method ||
+// 'manual'`) y lo metía en la columna del método, donde se pintaba «✍️ Marcado a mano». Eso NO
+// contesta la pregunta de esa columna:
+//
+//   · **MÉTODO** — por dónde entró el dinero. Vive en `Charge.method` o, desde SCRUM-441, en
+//     `Invoice.paidVia` cuando el profesional lo declara al marcar la factura cobrada.
+//   · **REGISTRO** — quién lo apuntó. Que no haya `Charge` significa que lo marcó una persona.
+//
+// Son dos hechos distintos y los dos son CIERTOS; el defecto era que el segundo ocupaba el sitio
+// del primero. El profesional elegía «Bizum» al marcar el cobro y su informe seguía diciéndole
+// «Marcado a mano», que es la respuesta a una pregunta que no hizo.
+//
+// 🔴 SIN BACKFILL, y por eso hay un tercer caso. Las facturas marcadas a mano ANTES de que la
+// columna existiera no tienen el dato, y **no se les inventa uno**: salen como «no consta». Un
+// método por defecto —«suele ser transferencia»— es exactamente el bug que `paidVia.ts` cierra.
+//
+// ⚠️ `Charge.method` MANDA sobre `Invoice.paidVia` cuando están los dos. No es un empate: uno lo
+// confirma un WEBHOOK y el otro lo dice una persona (`paidVia.ts:17`), y ante una inspección son
+// dos cadenas de evidencia distintas. La del hecho consumado gana.
+
+/** La ausencia de método, para el informe. Es lo que `etiquetaMetodoCobro` ya pinta «⚠️ Sin método». */
+const METODO_NO_CONSTA = '';
+
+/** Una factura cobrada, con lo que el informe necesita para leerle el método y el registro. */
+export interface FacturaDelInforme {
+  total: unknown;
+  /** SCRUM-441 · lo que el profesional DECLARA al marcar la factura cobrada a mano. */
+  paidVia?: string | null;
+  charge?: { method: string | null } | null;
+}
+
+/** Lo que el informe cuenta aparte: cobros que apuntó una persona, no una pasarela. */
+export interface RegistroAMano {
+  count: number;
+  eur: number;
+}
+
+/**
+ * POR DÓNDE ENTRÓ EL DINERO en una factura cobrada. **Cadena vacía = no consta.**
+ *
+ * Nunca devuelve `'manual'`: eso no es un método, es cómo se registró el cobro — y contestarlo aquí
+ * era el defecto de este ticket.
+ */
+function metodoDelCobro(factura: FacturaDelInforme): string {
+  // `|| ` y no `??`: un `Charge.method` en blanco tampoco es un método, y hasta hoy caía al
+  // siguiente caso exactamente igual.
+  const delCharge = factura.charge?.method || null;
+  if (delCharge) return delCharge;
+  return metodoDeclaradoEnFactura(factura.paidVia) ?? METODO_NO_CONSTA;
+}
+
+/**
+ * ¿LO APUNTÓ UNA PERSONA? Una factura pagada sin `Charge` se marcó a mano en el panel.
+ *
+ * 🔴 Este hecho NO SE BORRA aunque hoy no se pinte: es real y útil —dice qué parte de la caja no
+ * pasó por ninguna pasarela— y el sitio donde se le enseña al profesional es microcopy, que aprueba
+ * el asesor (regla 30). Hasta entonces viaja en la respuesta, contado y con su importe, para que
+ * nadie tenga que volver a deducirlo.
+ */
+function seRegistroAMano(factura: FacturaDelInforme): boolean {
+  return !factura.charge;
+}
+
+/**
+ * LAS FILAS DEL INFORME desde las facturas cobradas, y el registro contado aparte.
+ *
+ * Una sola función para las dos cosas porque salen del MISMO recorrido: separar el método del
+ * registro es un solo cambio de lectura, y partirlo en dos sitios es cómo uno de los dos se queda
+ * atrás cuando alguien toque el otro.
+ */
+export function filasDelInforme(facturas: readonly FacturaDelInforme[]): {
+  byMethod: FilaDelInforme[];
+  marcadosAMano: RegistroAMano;
+} {
+  const cobros: CobroDelInforme[] = [];
+  let centimosAMano = 0;
+  let countAMano = 0;
+  for (const f of facturas) {
+    cobros.push({ metodo: metodoDelCobro(f), total: f.total });
+    if (seRegistroAMano(f)) {
+      centimosAMano += Math.round(Number(f.total) * 100);
+      countAMano += 1;
+    }
+  }
+  return {
+    byMethod: agruparCobrosPorCubo(cobros),
+    marcadosAMano: { count: countAMano, eur: centimosAMano / 100 },
+  };
 }

@@ -44,12 +44,18 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 🔴 EL MÉTODO NO SE PUEDE SABER DE LA MITAD, Y NO SE INVENTA
 //
-// `Charge.method` existe. **`Invoice` NO guarda método de cobro** — medido sobre el esquema: no hay
-// `paidVia` ni equivalente. Así que de un cobro marcado a mano **no consta cómo entró el dinero**.
+// `Charge.method` existe. Y desde SCRUM-441 (fase 2), `Invoice.paidVia` TAMBIÉN: un cobro marcado a mano
+// puede decir cómo entró el dinero, y esta fusión lo lee.
 //
-// No se rellena con un valor por defecto. Escribir «transferencia» porque suele serlo es
-// exactamente el bug que `paidVia.ts` cierra («ante lo desconocido, no se toca el método del cobro
-// y se grita en el log»). Sale con `metodo: null` y la pantalla lo agrupa aparte, DICIÉNDOLO.
+// ⚠️ ESTE PÁRRAFO DECÍA LO CONTRARIO —«`Invoice` NO guarda método de cobro»— y era cierto cuando se
+// escribió. La columna llegó por otro carril y **el comentario siguió aquí afirmando lo viejo
+// mientras el código mapeaba un `null` a fuego**: el dato se escribía y no lo leía nadie.
+//
+// Lo que NO cambia: `null` sigue siendo un valor legítimo —«no consta»— y no se rellena con un
+// valor por defecto. Escribir «transferencia» porque suele serlo es exactamente el bug que
+// `paidVia.ts` cierra («ante lo desconocido, no se toca el método del cobro y se grita en el
+// log»). Sin `paidVia`, el cobro sale con `metodo: null` y la pantalla lo agrupa aparte,
+// DICIÉNDOLO.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // LA FECHA DE LA DEUDA es `createdAt`, y es la fiable
@@ -71,6 +77,20 @@ import { cuboDeCobro } from './metodoDeCobro';
  */
 export function camposDeMetodo(metodo: string | null): { metodoCubo: string } {
   return { metodoCubo: cuboDeCobro(metodo) };
+}
+
+/**
+ * SCRUM-441 (fase 2) · el método DECLARADO en un cobro marcado a mano, normalizado a «no consta».
+ *
+ * Una cadena vacía no es un método: es la misma ausencia que `null`, escrita de otra forma. Se
+ * unifican aquí y no en cada llamador, porque **dos maneras de decir «no consta» divergen en cuanto
+ * alguien filtre por una de ellas**.
+ *
+ * Lo cazó el control negativo de este mismo ticket: `?? null` deja pasar `''`, porque `??` solo
+ * cubre `null` y `undefined`.
+ */
+function metodoDeclarado(valor: string | null | undefined): string | null {
+  return typeof valor === 'string' && valor.trim() !== '' ? valor : null;
 }
 
 /** Un cobro, venga de donde venga. Forma ÚNICA para que la pantalla no sepa de dónde salió. */
@@ -115,6 +135,13 @@ export type ChargeParaCobro = {
 export type InvoiceParaCobro = {
   id: number; createdAt: Date; total: unknown; currency: string; status: string;
   number: string | null; type?: string | null;
+  /**
+   * SCRUM-441 (fase 2) · CÓMO ENTRÓ EL DINERO en un cobro marcado a mano.
+   *
+   * `null` = **no consta**, y se guarda así: la columna es nullable, sin `@default`, y no se
+   * rellena por copia desde `Charge.method`. Un método por defecto sería inventarse el dato.
+   */
+  paidVia?: string | null;
   customer?: { name: string | null } | null;
 };
 
@@ -224,13 +251,24 @@ export function fundirCobros(entrada: {
     concepto: null,
     importe: String(inv.total),
     moneda: inv.currency,
-    // No consta: la Invoice no guarda método. No se inventa — y por eso pasa por la MISMA función
-    // que los demás en vez de escribir aquí el cubo a mano: un `sin-metodo` puesto a dedo dejaría
-    // de moverse el día que la clasificación cambie. Ver el límite declarado en SCRUM-441: mientras
-    // `Invoice` no tenga método, el filtro no puede separar una transferencia marcada a mano de un
-    // cobro del que de verdad no se sabe nada.
-    metodo: null,
-    ...camposDeMetodo(null),
+    // 🔴 SCRUM-441 (fase 2) · AQUÍ HABÍA UN `null` A FUEGO, Y SU MOTIVO DEJÓ DE SER CIERTO.
+    //
+    // Decía «la Invoice no guarda método», y era verdad cuando se escribió. Ya no: existe
+    // `Invoice.paidVia` y otro carril la ESCRIBE al marcar un cobro a mano. El `null` fijo hacía
+    // que ese dato se escribiera y **no lo leyera nadie** — el cobro seguía saliendo en el cubo
+    // «sin método» con su método delante.
+    //
+    // ⚠️ Y `null` SIGUE SIENDO POSIBLE, que es la mitad que no se toca: una factura sin `paidVia`
+    // —las históricas, y las que se marquen sin elegir— sale igual que antes. `null` es «no
+    // consta», no un hueco que rellenar: escribir «transferencia» porque suele serlo es el bug que
+    // `paidVia.ts` cierra. Por eso pasa por la MISMA función que los demás y no se escribe el cubo
+    // a mano: un `sin-metodo` a dedo dejaría de moverse el día que la clasificación cambie.
+    // ⚠️ `?? null` NO basta: una cadena VACÍA no es un método, y `??` solo cubre null/undefined.
+    // Lo cazó el control negativo —`paidVia: ''` salía como `metodo: ''`—. En una pantalla de
+    // dinero, «» y `null` significan lo mismo y tienen que verse igual desde el primer día: dos
+    // formas de decir «no consta» divergen en cuanto alguien filtre por una de ellas.
+    metodo: metodoDeclarado(inv.paidVia),
+    ...camposDeMetodo(metodoDeclarado(inv.paidVia)),
     estado: inv.status,
     referencia: null,
     numero: inv.number,
