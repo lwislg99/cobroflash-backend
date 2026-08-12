@@ -660,6 +660,64 @@ un número que no significa nada.
 
 
 
+
+# SCRUM-328 · F1 · EL AVISO DEL FALLO MUDO DE BIZUM
+
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-328-aviso-bizum-mudo` · `HEAD` = `0b248809b06d8a38e5ddeaf2d07fbce9a209ef7c` · 2026-08-12T14:27:30+02:00
+
+## VEREDICTO, EN UNA LINEA
+
+> ✅ **Un profesional sin telefono de Bizum ahora SE ENTERA, y se entera EN EL CAMPO QUE LO
+> ARREGLA** — no en un log, no en una pantalla que no visita.
+
+## 1 · QUE PASABA HOY, en los dos lados
+
+| lado | que veia | fichero:linea |
+|---|---|---|
+| **el CLIENTE** | **nada**. `hasBizum` exige flag **y** telefono **y** ≤1000 €; sin telefono la opcion **no se pinta**. Sin error y sin aviso: no esta. Desde fuera es indistinguible de «este producto no hace Bizum» | `payInvoice.routes.ts:69-71` |
+| **el PROFESIONAL** | **nada. Y peor:** el paso «Configura como cobras» se da por HECHO con `iban \|\| bizumPhone`, asi que **quien puso solo el IBAN ve un ✅** y no tiene ningun motivo para sospechar | `homeView.js:309` |
+
+## 2 · EL AVISO, donde se arregla
+
+Va **colgado del campo «Movil de Bizum»** en Configuracion › Cobro (`settingsView.js`, junto a
+`fBizumPhone`). Es el sitio y el momento: el profesional esta mirando exactamente el campo que le
+falta.
+
+**El veredicto lo da el SERVIDOR** (`/admin/me` → `bizumSinTelefono`), con el **mismo criterio que
+la pagina del cliente** —los dos telefonos, con su fallback a WhatsApp—. Si el navegador lo
+reimplementara habria dos reglas para el mismo hecho, y discrepar aqui significa **avisar a quien no
+toca** (y entonces el aviso se ignora) o **callar a quien si**.
+
+**Microcopy: dos marcadores sin aprobar** (regla 30). No es cosmetico: es lo unico que separa «me
+falta rellenar un campo» de «esto no funciona».
+
+## 3 · LOS CONTROLES
+
+* **CONTROL NEGATIVO, primero:** un merchant **con** telefono —propio o el de WhatsApp— **no ve
+  nada** y todo funciona igual que hoy. Y con el flag apagado tampoco se avisa: hoy nadie puede usar
+  Bizum, asi que avisar de lo que falta para algo que no esta encendido es ruido.
+* **SUELO, en el peor sitio posible:** un telefono **ilegible** NO se degrada a «tiene telefono».
+  Ese valor es justo el que **hace desaparecer el aviso**, asi que degradar ahi seria el fallo mudo
+  con una capa mas de silencio — el producto creeria que ha avisado. Sale por su propia puerta
+  (`no_se_pudo_leer`) **y tambien avisa**.
+* **SEIS ROJOS por exit code**, incluido el que pide el encargo: quitado el aviso, el guard cae
+  diciendo que **un merchant sin telefono no se entera**.
+
+## 4 · DOS VECES ME CORRIGIO MI PROPIO GUARD, y las dos por lo mismo
+
+Un backtick dentro de un template literal tumbo el fichero entero; y mi asercion «la vista no mira
+los dos telefonos» acusaba a **codigo inocente**, porque la pantalla de Configuracion **tiene los dos
+campos en su formulario**. Otra vez el guard atado a la FORMA en vez de al HECHO: se acoto **al
+bloque del aviso**, no al fichero.
+
+## 5 · LO QUE NO SE HA HECHO
+
+**Ningun flag encendido**, en ningun entorno y por ningun medio — `BIZUM_MANUAL_ENABLED` sigue en
+`false` y encenderlo es decision de Luis. **Ninguna base consultada. Ninguna cadena de conexion.**
+No se ha tocado `public/index.html`, ni el camino de emision, ni `prisma/schema.prisma`, ni
+`payBizum`, ni la logica de confirmacion, ni `BIZUM_AUTO`.
+=======
+
 # SCRUM-328 · F1 · ¿SE PUEDE ENCENDER `BIZUM_MANUAL_ENABLED` HOY?
 
 **Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-328-bizum-medido` · `HEAD` = `01025aafdb065b682f0da1b70141aa7baebf3a4f` · 2026-08-12T13:52:42+02:00
@@ -763,4 +821,5 @@ sin ver Bizum**.
 No se ha encendido ningun flag, en ningun entorno y por ningun medio. No se ha consultado ninguna
 base. No se ha tocado `public/index.html`, el camino de emision, ninguna factura ni
 `prisma/schema.prisma`.
+
 

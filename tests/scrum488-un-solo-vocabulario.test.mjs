@@ -151,17 +151,18 @@ test('SCRUM-488 · ① CENSO: el mismo valor, las dos pantallas, y las divergenc
     // mismo hecho, y ésta es la peor de las cuatro: una dice que no consta y la otra que consta
     // que lo marcó una persona.
     'manual',
-    // 🔴 `desconocido`, RE-MEDIDA EL 12-ago-2026 (SCRUM-503): «Método no registrado» (Cobros) vs
-    // «Método sin especificar» (Informes). El censo sube de 4 a 5 y **eso es lo que tiene que
-    // pasar**: este guard existe para que una divergencia nueva se vea, no para que no las haya.
+    // 🔴 `desconocido` ESTUVO AQUÍ MEDIO DÍA Y SE RETIRA — SCRUM-506, 12-ago-2026.
     //
-    // ⚠️ Y ésta no es de grafía: SCRUM-503 le dio a Informes un texto para el desconocido DECLARADO
-    // —se preguntó y no consta— mientras Cobros lo sigue metiendo en el cubo `sin-metodo` y
-    // llamándolo «Método no registrado», que afirma la AUSENCIA. O sea que Cobros borra justo la
-    // distinción que 503 existe para hacer. Arreglarlo pide un rótulo nuevo en el vocabulario de
-    // Cobros, que es microcopy y la aprueba el asesor (regla 30): queda declarado aquí y en
-    // `docs/master/SCRUM-503.md`, no escondido.
-    'desconocido',
+    // Entró con SCRUM-503, que le dio a Informes un texto para el desconocido DECLARADO mientras
+    // Cobros lo seguía llamando «Método no registrado», o sea afirmando la AUSENCIA de un dato que
+    // SÍ consta. **El censo subió a 5 y se declaró en vez de esconderse**, que es para lo que este
+    // guard existe. SCRUM-506 le dio a Cobros su rótulo —«Método sin especificar», las MISMAS
+    // palabras— y las dos pantallas vuelven a decir lo mismo: **de 5 a 4**.
+    //
+    // 🔸 Un recuento que BAJA es sospecha, no mejora (⑤). Aquí la bajada es legítima y se puede
+    // comprobar: el test de SCRUM-506 exige que los dos rótulos existan, sean DISTINTOS entre sí y
+    // compartan cubo. Si alguien «arreglara» la divergencia borrando el rótulo nuevo, aquel test
+    // cae antes que éste.
   ];
   assert.deepEqual(distintas.map((f) => f.valor), esperadas,
     '🔴 EL CENSO DE DIVERGENCIAS HA CAMBIADO. Las dos pantallas se han separado más, o se han\n' +
@@ -169,9 +170,12 @@ test('SCRUM-488 · ① CENSO: el mismo valor, las dos pantallas, y las divergenc
     filas.map((f) => `    ${f.valor.padEnd(14)} COBROS «${f.cobros}»  ·  INFORMES «${f.informes}»`)
       .join('\n'));
 
-  // Y el reverso: los que YA coinciden tienen que seguir coincidiendo.
+  // Y el reverso: los que YA coinciden tienen que seguir coincidiendo. 🔴 Es la otra mitad de la
+  // misma medición y por eso `desconocido` tiene que APARECER aquí al salir de las divergentes: si
+  // solo se quitara de arriba, el censo diría que hay una divergencia menos sin decir dónde ha ido
+  // — y «se ha unificado» y «se ha caído del corpus» darían el mismo 4.
   const iguales = filas.filter((f) => !divergen(f.cobros, f.informes)).map((f) => f.valor);
-  assert.deepEqual(iguales, ['card', 'transfer', 'cash'],
+  assert.deepEqual(iguales, ['card', 'transfer', 'cash', 'desconocido'],
     `🔴 ha cambiado el conjunto de valores que las dos pantallas ya dicen igual: ${iguales.join(', ')}.`);
 });
 

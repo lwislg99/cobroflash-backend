@@ -134,7 +134,14 @@ const CENSO = Object.freeze({
   // CONCIENCIA. Son 4 literales —el rotulo y sus TRES opciones— y el texto NO esta aprobado:
   // explicarle a un profesional si le conviene el RECC es asesorarle, y eso lo dictamina el
   // asesor (regla 30). El dato se PIDE ya; el texto entra cuando el asesor lo apruebe.
-  'settingsView.js': 5,
+  // SCRUM-328 (12-ago-2026) · SUBE DE 1 A 3, A CONCIENCIA: los dos textos del aviso de «Bizum sin
+  // telefono». Salen con marcador A PROPOSITO — ese aviso es lo unico que separa «me falta rellenar
+  // un campo» de «esto no funciona», y su texto no lo ha firmado el fundador (regla 30). Se apagan
+  // el dia que lo firme.
+  // 🔴 CONFLICTO RESUELTO SUMANDO, no eligiendo: los dos tickets subieron este mismo contador en
+  // paralelo (SCRUM-294 +4, SCRUM-328 +2, sobre la base de 1). Quedarse con uno habria borrado en
+  // silencio los marcadores del otro y el trinquete habria dejado de verlos.
+  'settingsView.js': 7,
 });
 
 /** Marcadores que viven en un LITERAL (los que pueden pintarse). Los comentarios no son literales. */

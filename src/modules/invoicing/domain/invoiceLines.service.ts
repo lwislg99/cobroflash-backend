@@ -32,7 +32,7 @@
 // presupuesto en **1-2 céntimos** (2,05 % de los presupuestos de la muestra; desviación máxima
 // 2 céntimos). Es visible, explicable y NO toca la cadena de huellas. Ver también
 // `docs/COMO_FUNCIONA_YAQU.md` (explicación para el usuario) y la nota de SCRUM-32 en el máster.
-import { calcVatBreakdown, type VatLine } from './vat.service';
+import { calcVatBreakdown, type VatLine, cantidadDeLinea } from './vat.service';
 
 /** Línea de factura: `tax` en FRACCIÓN (0.21), igual que en `Quote.lines`/`Invoice.lines`. */
 export type InvoiceLine = VatLine & { [key: string]: unknown };
@@ -111,7 +111,7 @@ export function reconcileToTarget<T extends InvoiceLine>(lines: T[], targetGross
 
   const lastIdx = src.length - 1;
   const last = src[lastIdx];
-  const qty = Number(last.qty) || 1;
+  const qty = cantidadDeLinea(last.qty); // SCRUM-504
   const basePrice = Number(last.price) || 0;
   if (!Number.isFinite(qty) || qty === 0) return src;
 
