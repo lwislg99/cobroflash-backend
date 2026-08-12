@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { desglosarPorEmpleado } from '../../domain/desgloseEmpleado'; // SCRUM-228
-import { agruparCobrosPorCubo, type CobroDelInforme } from '../../domain/cobrosPorCubo'; // SCRUM-488
+import { filasDelInforme } from '../../domain/cobrosPorCubo'; // SCRUM-488 / SCRUM-491
 import { leerLibroRegistro } from '../../../invoicing/domain/libroRegistro.repo'; // SCRUM-389: un solo agregador
 import { rangoTrimestre } from '../../../fiscal/modelo303/modelo303'; // SCRUM-389: un solo criterio de fechas
 
@@ -153,22 +153,29 @@ router.get('/x2', async (req, res) => {
       select: {
         total: true, paidAt: true,
         reminder7SentAt: true, reminder14SentAt: true,
+        // SCRUM-491 · lo que el profesional DECLARA al marcar la factura cobrada a mano
+        // (SCRUM-441 lo escribe). Sin esta línea el dato se escribía y no lo leía nadie.
+        paidVia: true,
         charge: { select: { method: true } },
       },
     });
 
-    // Cobros por método (paid_via): charge.method; sin charge = marcado a mano.
+    // Cobros por método (paid_via) — el reparto vive en el dominio para poder ejercerlo en la tanda.
     //
     // 🔴 SCRUM-488 fase 2 — la clave de agrupación es el CUBO, no el valor crudo. Antes, `card` y
     // `card:stripe` eran dos filas distintas del informe **etiquetadas las dos «💳 Tarjeta»**: el
     // profesional veía dos filas idénticas con importes distintos y en ninguna parte el total de lo
-    // cobrado con tarjeta. Lo que `cuboDeCobro` no clasifica NO se agrupa: sale exactamente como
-    // salía, con su rótulo de hoy. El reparto vive en el dominio para poder ejercerlo en la tanda.
-    const cobros: CobroDelInforme[] = [];
+    // cobrado con tarjeta. Lo que `cuboDeCobro` no clasifica NO se agrupa: sale como salía.
+    //
+    // 🔴 SCRUM-491 — el MÉTODO sale de `Charge.method` o de `Invoice.paidVia`, y el REGISTRO («lo
+    // marcó una persona») deja de ocupar esa columna: aquí se fabricaba un `'manual'` que se
+    // pintaba «✍️ Marcado a mano» en el sitio donde va por dónde entró el dinero. Sale contado
+    // aparte en `marcadosAMano` — el hecho es real y no se borra; DÓNDE se enseña es microcopy.
+    const { byMethod, marcadosAMano } = filasDelInforme(paid);
+
     let reminderEur = 0;
     const H72 = 72 * 3600 * 1000;
     for (const inv of paid) {
-      cobros.push({ metodo: inv.charge?.method || 'manual', total: inv.total });
       // € por recordatorios: pagó ≤72h después de CUALQUIERA de los dos avisos.
       // ⚠️ SCRUM-117: `reminderXSentAt` solo significa «se envió» DESDE SCRUM-116 (deploy
       // 2026-07-23 15:22 UTC). Antes se marcaba aunque el WhatsApp fallara, así que una fecha
@@ -183,7 +190,6 @@ router.get('/x2', async (req, res) => {
       const after = (d: Date | null) => !!d && paidTs >= new Date(d).getTime() && paidTs - new Date(d).getTime() <= H72;
       if (after(inv.reminder7SentAt) || after(inv.reminder14SentAt)) reminderEur += Number(inv.total);
     }
-    const byMethod = agruparCobrosPorCubo(cobros);
 
     // Pendiente por antigüedad (foto de HOY, no del año)
     const pending = await prisma.invoice.findMany({
@@ -206,6 +212,13 @@ router.get('/x2', async (req, res) => {
     return res.json({
       year,
       byMethod,
+      // 🔴 SCRUM-491 · EL REGISTRO, SIN PINTAR TODAVÍA — y sin borrar. Cuánto de la caja lo apuntó
+      // una persona en vez de una pasarela es un hecho REAL y útil, y hasta SCRUM-491 salía en la
+      // columna del método diciendo «✍️ Marcado a mano», que contesta otra pregunta. DÓNDE se le
+      // enseña al profesional es microcopy y lo aprueba el asesor (regla 30): viaja aquí, contado y
+      // con su importe, para que quien lo decida no tenga que volver a deducirlo. La vista NO lo
+      // lee — si algún día lo pinta, el texto pasa antes por el asesor.
+      marcadosAMano,
       reminderEur: Math.round(reminderEur * 100) / 100,
       aging: buckets.map(({ bucket, label, count, eur }) => ({ bucket, label, count, eur: Math.round(eur * 100) / 100 })),
       pendingTotal: Math.round(pending.reduce((a, i) => a + Number(i.total), 0) * 100) / 100,

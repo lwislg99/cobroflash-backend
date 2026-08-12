@@ -191,6 +191,35 @@ export function cuboDeCobro(valor: unknown): string {
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────────────────
+ * SCRUM-491 · LO QUE UNA FACTURA MARCADA A MANO DICE QUE FUE SU MÉTODO — al LEERLA
+ *
+ * `campoPaidViaAlMarcar` decide qué se ESCRIBE en `invoices.paid_via`; esto decide qué se LEE.
+ * Son las dos mitades del mismo dato y viven juntas a propósito: **las DOS pantallas que enseñan
+ * cobros tienen que leerlo igual**, y dos normalizaciones parecidas en dos ficheros es exactamente
+ * cómo dos pantallas acaban contando cosas distintas del mismo cobro.
+ *
+ * 🔴 UNA CADENA VACÍA NO ES UN MÉTODO: es la misma ausencia que `null`, escrita de otra forma. Se
+ * unifican aquí y no en cada llamador, porque **dos maneras de decir «no consta» divergen en
+ * cuanto alguien filtre por una de ellas**. `?? null` NO basta: `??` solo cubre `null` y
+ * `undefined`, y deja pasar el `''`.
+ *
+ * ⚠️ NO VALIDA contra `PAID_VIA`, y es deliberado. Quien valida al escribir es `metodoDeclarado`
+ * (arriba, privado): al leer, un valor que el conjunto ya no reconozca **tiene que llegar a la
+ * pantalla diciéndose** —para eso está «⚠️ Método no reconocido (…)» de SCRUM-398— y no
+ * desaparecer en un `null` que lo convertiría en «no consta». Son dos afirmaciones distintas y
+ * tragarse una es perder el rastro del dato raro justo cuando hace falta.
+ *
+ * 🔸 Semántica IDÉNTICA a la de `metodoDeclarado` de `cobros.service.ts` en la rama
+ * `scrum-441-cobros-leen-paid-via` (`c2e540d3`), a propósito: mientras esa rama no entre, las dos
+ * pantallas hacen lo mismo aunque por dos sitios; cuando entre, Cobros consume ÉSTA y la copia
+ * desaparece en una línea.
+ */
+export function metodoDeclaradoEnFactura(paidVia: unknown): string | null {
+  return typeof paidVia === 'string' && paidVia.trim() !== '' ? paidVia : null;
+}
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────────────────
  * SCRUM-441 · LO QUE EL PROFESIONAL DECLARA AL MARCAR UNA FACTURA COBRADA A MANO
  *
  * Vale lo que cumple la forma `<metodo>[:<pasarela>]` con el método en `PAID_VIA` (regla 22), y
