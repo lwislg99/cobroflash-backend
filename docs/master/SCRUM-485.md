@@ -123,3 +123,96 @@ no puede significar «bórralo todo» — y **dónde está exactamente esa raya 
 **No he construido el borrado**, no he tocado el flag, **no he tocado una coma de `privacidad.html`
 ni de ninguna página legal**, cero schema, cero emisión. **No he retirado `borrarMerchant`**: que un
 motor sustituido siga en el árbol es una decisión, y de ella sale un ticket, no un `git rm` mío.
+
+---
+
+# SCRUM-485 · SEGUNDA ENTREGA · la retirada que PARO, y el primer paso sobre los 189
+
+
+## 🛑 1 · NO he retirado `borrarMerchant`, y el motivo es nuevo
+
+La decisión estaba tomada y era mía de proponer. **Al ejecutarla apareció algo que no estaba sobre
+la mesa cuando se decidió**, así que paro antes de un borrado irreversible:
+
+**`borrarMerchant` es el SUJETO EJECUTABLE de dos guards**, no solo del control de SCRUM-411:
+
+| guard | qué verifica **ejecutándolo** |
+|---|---|
+| `tests/scrum192-borrado-merchant.test.mjs` (4 llamadas) | *«borra en el ORDEN declarado, no en otro»* — corre la función contra un `prisma` falso y comprueba la secuencia |
+| `tests/scrum244-colgados-de-otro-modelo.test.mjs` (2 llamadas) | *«`reconciliation` se borra, y ANTES que sus charges»* — el orden que impide que la FK RESTRICT tumbe el borrado |
+| `tests/scrum411-exports-inalcanzables.test.mjs` | el control «un módulo vivo por una CONSTANTE esconde una función muerta» |
+
+**Cero llamadores en producción sigue siendo cierto.** Lo que cambia es la etiqueta: **no es código
+muerto, es la especificación EJECUTABLE del orden de borrado seguro para las claves ajenas.** Y
+`suprimirMerchant` **no puede heredar esos guards**: anonimiza con `updateMany`, no borra, así que no
+tiene orden de borrado que verificar.
+
+**Si se retira, se retira con ella la única comprobación de ese orden** — y ese orden es lo que hace
+que un borrado real no falle a mitad dejando datos personales dentro.
+
+### Las tres salidas, para que decidas con esto delante
+
+1. **Se queda, reclasificado** — no como «muerto», sino como *especificación ejecutable sin
+   superficie*. Cuesta cero y conserva la comprobación. **Es lo que recomiendo.**
+2. **Se retira y se retiran los dos guards** — se pierde la verificación del orden de borrado.
+3. **Se retira y se reescriben 192/244** contra otro sujeto. Hoy no existe: nada más borra.
+
+⚠️ Y el control de 411 habría que mudarlo en cualquier caso a otro ejemplo con la misma forma
+(módulo vivo + función huérfana): `team.service.ts → listTeamMembers` sirve. **No lo he tocado**: es
+el guard de otra sesión y solo se muda si se retira la función.
+
+---
+
+## 2 · Los 189, primer paso DERIVADO — y lo que NO he hecho
+
+**El criterio duro del encargo aplicado a máquina:** *deliberado solo si su motivo está ESCRITO*. Se
+busca en el fichero de cada export si consta un motivo con las frases de la casa (`no lo llama
+nadie`, `deliberado`, `a propósito`, `STOP`, `regla 24/38`, `espera schema/migración/dictamen`,
+`entrega parcial`, `no se enciende`, `flag`…).
+
+| | exports | módulos |
+|---|---|---|
+| **con MOTIVO ESCRITO** en su fichero | **131** | 43 |
+| **SIN motivo escrito** → candidatos a **OLVIDO** | **59** | 23 |
+| **total** | **190** | 66 |
+
+**Aritmética comprobada por el propio instrumento: 131 + 59 = 190. CUADRA.** (190 incluye el falso
+positivo medido en SCRUM-484 — `sendQuoteEmail` —, así que los reales son **189**.)
+
+### 🔴 Lo que esto NO es
+
+**No es la clasificación en las cinco clases.** He derivado la **primera bifurcación** —la que tu
+criterio duro convierte en mecánica— y **no he leído uno por uno los 183 restantes**. Clasificados a
+mano hasta hoy: **8 módulos enteros** (SCRUM-484) y **6 exports** (SCRUM-484) + el de supresión
+(SCRUM-485). **El resto sigue sin leer, y lo digo con el número.**
+
+Una clasificación que pareciera completa sin serlo es peor que ésta: por eso va el recuento exacto.
+
+### Los 23 módulos sin motivo escrito — los que más pesan
+
+| exports | módulo |
+|---|---|
+| 6 | `jobs/domain/albaranContenidoFuentes.ts` · `messaging/domain/whatsappLog.service.ts` |
+| 5 | `auth/domain/entornoApp.service.ts` · `jobs/domain/pendientesFacturar.service.ts` · `system/domain/qrPagina.service.ts` |
+| 3 | `billing/domain/fechaDeCobro.ts` · `billing/domain/metodoDeCobro.ts` · `system/domain/importarClientes.service.ts` |
+
+⚠️ **«Sin motivo escrito» no es «olvido» todavía**: es *candidato*. Un módulo puede tener su motivo
+en su entrada de máster y no en el fichero — y esa distinción hay que leerla, no derivarla. Lo que
+sí afirma la máquina es dónde **no** está escrito **en el sitio donde lo leería quien toca el
+fichero**, que es la mitad que importa.
+
+---
+
+## Los límites, otra vez declarados (se arrastran de SCRUM-484)
+
+* `nombresImportados` solo lee imports **estáticos**: un `const { X } = await import(…)` no ata el
+  nombre. **Acotado: 1 falso positivo, nombrado.**
+* `import * as x` da el módulo por vivo entero → **189 es SUELO, no techo.**
+* El **frontend vanilla** no entra en el grafo.
+* **Y el nuevo, de Javier, aplicado:** las categorías suman su total, y la suma la hace el
+  instrumento, no yo.
+
+## Lo que NO se ha hecho
+
+No he retirado `borrarMerchant` (paro declarado arriba), no he tocado los guards de 192, 244 ni 411,
+no he encendido ningún flag, cero schema, cero emisión.
