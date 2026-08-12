@@ -59,6 +59,19 @@
 // ninguno es la fecha en que entró el dinero (hallazgo E0 del censo de este mismo ticket), y para
 // la deuda ni siquiera hacen falta.
 import { prisma } from '../../../core/db/prisma';
+import { cuboYEtiqueta } from './metodoDeCobro';
+
+/**
+ * El rótulo de «no consta», APROBADO por el asesor el 10-ago-2026 (regla 30). NO es «Otro»:
+ * «otro» AFIRMA que hubo un método distinto, y aquí no consta ninguno.
+ */
+const ROTULO_SIN_METODO = 'Método no registrado';
+
+/** Las dos claves derivadas, para que las dos poblaciones pasen por el MISMO sitio. */
+function cuboYEtiquetaDe(metodo: string | null): { metodoCubo: string; metodoEtiqueta: string } {
+  const r = cuboYEtiqueta(metodo, ROTULO_SIN_METODO);
+  return { metodoCubo: r.cubo, metodoEtiqueta: r.etiqueta };
+}
 
 /** Un cobro, venga de donde venga. Forma ÚNICA para que la pantalla no sepa de dónde salió. */
 export type Cobro = {
@@ -69,8 +82,22 @@ export type Cobro = {
   concepto: string | null;
   importe: string;
   moneda: string;
-  /** `null` = no consta. NO es «otro»: es que nadie lo registró. */
+  /** `null` = no consta. NO es «otro»: es que nadie lo registró. Se conserva CRUDO. */
   metodo: string | null;
+  /**
+   * SCRUM-474 fase 2 · el método AGRUPADO y su texto, derivados de `PAID_VIA` **en el servidor**.
+   *
+   * El crudo se queda —`card:stripe` no se pierde ni se migra— y al lado viajan las dos cosas que
+   * la pantalla necesita para no decidir nada fiscal: en qué cubo cae y cómo se escribe. Antes la
+   * vista tenía su propia lista de cubos y su propia regla, o sea el conjunto cerrado duplicado en
+   * un sitio donde nadie lo vigila.
+   *
+   * `metodoEtiqueta` es lo que se PINTA (SCRUM-481): «tarjeta · Stripe» con pasarela, «tarjeta»
+   * sin ella. Hasta hoy la celda enseñaba el valor crudo mientras el filtro de al lado decía
+   * «tarjeta» — la pantalla hablaba dos idiomas, y el profesional pulsaba «tarjeta» y veía `card`.
+   */
+  metodoCubo: string;
+  metodoEtiqueta: string;
   estado: string;
   referencia: string | null;
   /** Número del documento, si lo hay. La pantalla lo clasifica con `tipoDeFactura`. */
@@ -183,6 +210,7 @@ export function fundirCobros(entrada: {
     importe: String(ch.amount),
     moneda: ch.currency,
     metodo: ch.method ?? null,
+    ...cuboYEtiquetaDe(ch.method ?? null),
     estado: ch.status,
     referencia: ch.reference ?? null,
     numero: null,
@@ -199,7 +227,13 @@ export function fundirCobros(entrada: {
     concepto: null,
     importe: String(inv.total),
     moneda: inv.currency,
-    metodo: null, // no consta: la Invoice no guarda método. No se inventa.
+    // No consta: la Invoice no guarda método. No se inventa — y por eso pasa por la MISMA función
+    // que los demás en vez de escribir aquí el cubo a mano: un `sin-metodo` puesto a dedo dejaría
+    // de moverse el día que la clasificación cambie. Ver el límite declarado en SCRUM-441: mientras
+    // `Invoice` no tenga método, el filtro no puede separar una transferencia marcada a mano de un
+    // cobro del que de verdad no se sabe nada.
+    metodo: null,
+    ...cuboYEtiquetaDe(null),
     estado: inv.status,
     referencia: null,
     numero: inv.number,
