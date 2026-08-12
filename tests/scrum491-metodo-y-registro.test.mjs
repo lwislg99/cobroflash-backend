@@ -31,7 +31,16 @@ import { createRequire } from 'node:module';
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const require_ = createRequire(import.meta.url);
 const RUTA_INFORMES = 'src/modules/reports/app/routes/reports.routes.ts';
+const DOMINIO_INFORMES = 'src/modules/reports/domain/cobrosPorCubo.ts';
 const VISTA_INFORMES = 'public/dashboard/js/reportsView.js';
+/**
+ * EL CAMINO DE LECTURA ENTERO, y son DOS ficheros a propósito.
+ *
+ * 🔴 Lo enseñó el rojo por el mecanismo: con el detector mirando solo la ruta, devolver `'manual'`
+ * desde el dominio tiraba ocho tests de comportamiento y **dejaba el detector de AST en verde**. Un
+ * escáner que solo mira la mitad del camino da un verde que no significa lo que parece.
+ */
+const CAMINO_DE_LECTURA = [RUTA_INFORMES, DOMINIO_INFORMES];
 
 // ── LAS FUENTES, tal y como corren ───────────────────────────────────────────────────────────
 const { etiquetaMetodoCobro } = require_(path.join(RAIZ, 'public/dashboard/js/paidViaEtiquetas.js'));
@@ -134,6 +143,15 @@ test('SCRUM-491 · ① SUELO + AUTOPRUEBA: los dos detectores de la ruta ven y D
     '🔴 el detector no ve el `manual` fabricado.');
   assert.deepEqual(fabricaManual('const m = inv.charge?.method; // manual'), [],
     '🔴 el detector marca la palabra dentro de un comentario: mediría prosa, no código.');
+
+  // Y el SUELO del alcance: si el camino se queda en un fichero, el detector estaría mirando la
+  // mitad — que es exactamente lo que pasó al probar el rojo.
+  assert.ok(CAMINO_DE_LECTURA.length >= 2,
+    '🔴 el camino de lectura declara menos ficheros de los que tiene: un verde sobre media ' +
+    'superficie no es un verde.');
+  for (const f of CAMINO_DE_LECTURA) {
+    assert.ok(fs.existsSync(path.join(RAIZ, f)), `🔴 ESCÁNER CIEGO: no existe ${f}.`);
+  }
 });
 
 test('SCRUM-491 · ① 🔴 la ruta PIDE `Invoice.paidVia`, y ya no fabrica el `manual` al leer', () => {
@@ -144,11 +162,18 @@ test('SCRUM-491 · ① 🔴 la ruta PIDE `Invoice.paidVia`, y ya no fabrica el `
     'línea el dato se ESCRIBE y no lo lee nadie: el profesional elige «Bizum» al marcar el cobro y ' +
     'su informe no se entera. Que la columna exista no prueba que la pantalla la lea.');
 
-  assert.deepEqual(fabricaManual(codigo), [],
-    '🔴 LA RUTA VUELVE A FABRICAR `manual`, y eso es AFIRMAR CÓMO SE REGISTRÓ EL COBRO —lo marcó ' +
-    'una persona— EN LA COLUMNA DONDE VA POR DÓNDE ENTRÓ EL DINERO. No es que falte un campo: es ' +
-    'que se está contestando otra pregunta. El método sale de `Charge.method` o de ' +
-    '`Invoice.paidVia`; el registro se cuenta aparte, en `marcadosAMano`.');
+  // 🔴 Los DOS ficheros del camino, no solo la ruta: el rojo por el mecanismo enseñó que una
+  // mutación en el dominio dejaba este detector en verde mientras la pantalla ya mentía.
+  const fabricantes = CAMINO_DE_LECTURA
+    .map((f) => [f, fabricaManual(fs.readFileSync(path.join(RAIZ, f), 'utf8'))])
+    .filter(([, sitios]) => sitios.length > 0)
+    .map(([f]) => f);
+  assert.deepEqual(fabricantes, [],
+    `🔴 EL CAMINO DE LECTURA VUELVE A FABRICAR \`manual\` (${fabricantes.join(', ')}), y eso es ` +
+    'AFIRMAR CÓMO SE REGISTRÓ EL COBRO —lo marcó una persona— EN LA COLUMNA DONDE VA POR DÓNDE ' +
+    'ENTRÓ EL DINERO. No es que falte un campo: es que se está contestando otra pregunta. El ' +
+    'método sale de `Charge.method` o de `Invoice.paidVia`; el registro se cuenta aparte, en ' +
+    '`marcadosAMano`.');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
