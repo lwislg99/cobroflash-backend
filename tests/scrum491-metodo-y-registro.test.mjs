@@ -45,7 +45,10 @@ const CAMINO_DE_LECTURA = [RUTA_INFORMES, DOMINIO_INFORMES];
 // ── LAS FUENTES, tal y como corren ───────────────────────────────────────────────────────────
 const { etiquetaMetodoCobro } = require_(path.join(RAIZ, 'public/dashboard/js/paidViaEtiquetas.js'));
 const { rotuloDeMetodo } = require_(path.join(RAIZ, 'public/dashboard/js/cobrosView.js'));
-const { cubosDeMetodo, cuboDeCobro, ROTULO_SIN_METODO, CUBO_SIN_METODO, metodoDeclaradoEnFactura } =
+// 🔴 SCRUM-499 · se entra por `metodoDeUnCobro`, que es la superficie pública. La normalización
+// (`metodoDeclaradoEnFactura`) dejó de exportarse cuando las tres pantallas pasaron a leer por la
+// puerta común: se prueba por el contrato, no por la pieza.
+const { cubosDeMetodo, cuboDeCobro, ROTULO_SIN_METODO, CUBO_SIN_METODO, metodoDeUnCobro } =
   await import('../dist/modules/billing/domain/metodoDeCobro.js');
 // La PUERTA del informe: lo que llama la ruta. Se entra por aquí y no por una pieza suelta.
 const { filasDelInforme } = await import('../dist/modules/reports/domain/cobrosPorCubo.js');
@@ -244,11 +247,13 @@ test('SCRUM-491 · ③ 🔴 SIN BACKFILL: a una factura histórica no se le inve
   // transferencia» es exactamente el bug que `paidVia.ts` cierra.
   const [fila] = filasDelInforme([aMano(null, '25.00')]).byMethod;
   assert.equal(fila.cubo, CUBO_SIN_METODO);
-  assert.equal(metodoDeclaradoEnFactura(null), null, '🔴 `null` ha dejado de ser «no consta».');
-  assert.equal(metodoDeclaradoEnFactura(''), null,
+  // Por el contrato: las cuatro formas de la ausencia, y una declarada de verdad.
+  assert.equal(metodoDeUnCobro({ paidVia: null }), null, '🔴 `null` ha dejado de ser «no consta».');
+  assert.equal(metodoDeUnCobro({ paidVia: '' }), null,
     '🔴 la cadena vacía se cuela como método. `??` solo cubre `null` y `undefined`.');
-  assert.equal(metodoDeclaradoEnFactura('   '), null, '🔴 los espacios en blanco pasan por método.');
-  assert.equal(metodoDeclaradoEnFactura('transfer'), 'transfer');
+  assert.equal(metodoDeUnCobro({ paidVia: '   ' }), null, '🔴 los espacios en blanco pasan por método.');
+  assert.equal(metodoDeUnCobro({}), null, '🔴 una factura sin el campo se inventa un método.');
+  assert.equal(metodoDeUnCobro({ paidVia: 'transfer' }), 'transfer');
 
   // Y no adopta el de la factura de al lado: dos facturas, dos destinos.
   const { byMethod } = filasDelInforme([aMano('transfer', '300.00'), aMano(null, '25.00')]);
@@ -345,15 +350,34 @@ test('SCRUM-491 · ⑤ el registro NO se borra: se cuenta aparte, con su importe
   assert.equal(filasDelInforme(esperadas).marcadosAMano.count, esperadas.length);
 });
 
-test('SCRUM-491 · ⑤ 🔴 STOP declarado: la vista NO pinta `marcadosAMano` — el texto lo aprueba el asesor', () => {
-  // DÓNDE se le enseña al profesional que un cobro lo apuntó una persona es microcopy (regla 30).
-  // Este guard existe para que ese hueco no se rellene de camino: si alguien lo pinta, que sea con
-  // el texto aprobado y borrando esta línea a sabiendas, no sin enterarse.
+test('SCRUM-491 · ⑤ 🔴 EL MARCADOR, CON EL SENTIDO CAMBIADO (SCRUM-499): la vista lo pinta, y SOLO en el pie', () => {
+  // 🔴 ESTE GUARD NO SE HA BORRADO AL CUMPLIRSE, SE HA DADO LA VUELTA. Nació exigiendo que la vista
+  // NO nombrase `marcadosAMano` mientras el asesor decidía dónde va (regla 30). El asesor lo aprobó
+  // en SCRUM-499 —un PIE bajo la lista— así que ahora exige lo contrario: que lo pinte, por la
+  // función del pie, y **una sola vez**. Un marcador que desaparece al cumplirse deja de proteger
+  // lo que protegía: sin esto, mañana el registro puede volver a ser una fila de la lista.
   const vista = fs.readFileSync(path.join(RAIZ, VISTA_INFORMES), 'utf8');
-  assert.doesNotMatch(vista, /marcadosAMano/,
-    `🔴 ${VISTA_INFORMES} ha empezado a pintar \`marcadosAMano\`. El dato viaja a propósito y sin ` +
-    'pintar: el rótulo con el que se le enseña al profesional lo aprueba el asesor (regla 30). ' +
-    'Si ya está aprobado, quita este guard EN EL MISMO COMMIT y deja dicho quién lo aprobó.');
-  // Control positivo del instrumento: la regex casa cuando el patrón está de verdad.
-  assert.match('<span>${d.marcadosAMano.count}</span>', /marcadosAMano/);
+
+  assert.match(vista, /pieDeMarcadosAMano\(d\.marcadosAMano, fmtMoneyEs\)/,
+    `🔴 ${VISTA_INFORMES} ha dejado de pintar el registro por la función del pie. El hecho —cuántos ` +
+    'cobros apuntó una persona— vuelve a no constar en ninguna parte, que es de donde venía.');
+
+  const usos = (vista.match(/d\.marcadosAMano/g) || []).length;
+  assert.equal(usos, 1,
+    `🔴 \`d.marcadosAMano\` se consume ${usos} veces en la vista. Va SOLO en el pie: es una ` +
+    'propiedad del CONJUNTO, y una segunda lectura es cómo acaba siendo también una fila de la ' +
+    'lista, con su importe sumándose dos veces.');
+
+  // 🔴 Y no está DENTRO de las filas: los euros del pie YA están repartidos por método ahí arriba.
+  // El recorte termina en el `.join('')` de las filas, NO en la siguiente declaración: entre medias
+  // vive el comentario que explica por qué el pie no es una fila, y nombrarlo ahí no lo convierte
+  // en una. Un recorte generoso mediría la prosa en vez del código.
+  const abre = vista.indexOf('const methodRows');
+  const bloqueFilas = vista.slice(abre, vista.indexOf(".join('')", abre));
+  assert.doesNotMatch(bloqueFilas, /marcadosAMano|Marcados? a mano/,
+    '🔴 el registro se ha metido en el bloque de FILAS del informe. Ahí se lee como un método más y ' +
+    'su importe se cuenta dos veces.');
+  // Control positivo del recorte: el bloque que se inspecciona no está vacío.
+  assert.match(bloqueFilas, /etiquetaMetodoCobro\(m\.method\)/,
+    '🔴 el recorte del bloque de filas no ha encontrado las filas: estaría comprobando la nada.');
 });

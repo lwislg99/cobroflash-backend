@@ -65,7 +65,7 @@
 // ninguno es la fecha en que entró el dinero (hallazgo E0 del censo de este mismo ticket), y para
 // la deuda ni siquiera hacen falta.
 import { prisma } from '../../../core/db/prisma';
-import { cuboDeCobro } from './metodoDeCobro';
+import { cuboDeCobro, metodoDeUnCobro } from './metodoDeCobro';
 
 /**
  * La clave derivada, para que las dos poblaciones pasen por el MISMO sitio.
@@ -83,15 +83,16 @@ export function camposDeMetodo(metodo: string | null): { metodoCubo: string } {
  * SCRUM-441 (fase 2) · el método DECLARADO en un cobro marcado a mano, normalizado a «no consta».
  *
  * Una cadena vacía no es un método: es la misma ausencia que `null`, escrita de otra forma. Se
- * unifican aquí y no en cada llamador, porque **dos maneras de decir «no consta» divergen en cuanto
- * alguien filtre por una de ellas**.
+ * unifican una sola vez, porque **dos maneras de decir «no consta» divergen en cuanto alguien filtre
+ * por una de ellas**. Lo cazó el control negativo de SCRUM-441: `?? null` deja pasar `''`, porque
+ * `??` solo cubre `null` y `undefined`.
  *
- * Lo cazó el control negativo de este mismo ticket: `?? null` deja pasar `''`, porque `??` solo
- * cubre `null` y `undefined`.
+ * 🔴 SCRUM-499 · ESTA FUNCIÓN VIVÍA AQUÍ Y SE HA RETIRADO. Era idéntica a
+ * `metodoDeclaradoEnFactura` de `metodoDeCobro.ts` (SCRUM-491) —a propósito: se escribieron con la
+ * misma semántica para que unificarlas fuese UNA LÍNEA en cuanto las dos ramas estuvieran en
+ * `main`—. Dos funciones iguales en dos ficheros no fallan el día que se escriben: fallan el día
+ * que alguien arregla una. Ahora las TRES pantallas que enseñan un método leen por el mismo sitio.
  */
-function metodoDeclarado(valor: string | null | undefined): string | null {
-  return typeof valor === 'string' && valor.trim() !== '' ? valor : null;
-}
 
 /** Un cobro, venga de donde venga. Forma ÚNICA para que la pantalla no sepa de dónde salió. */
 export type Cobro = {
@@ -267,8 +268,13 @@ export function fundirCobros(entrada: {
     // Lo cazó el control negativo —`paidVia: ''` salía como `metodo: ''`—. En una pantalla de
     // dinero, «» y `null` significan lo mismo y tienen que verse igual desde el primer día: dos
     // formas de decir «no consta» divergen en cuanto alguien filtre por una de ellas.
-    metodo: metodoDeclarado(inv.paidVia),
-    ...camposDeMetodo(metodoDeclarado(inv.paidVia)),
+    // 🔴 SCRUM-499 · la lectura es la de `metodoDeCobro.ts`, la MISMA que leen Informes y el paquete
+    // de evidencia de disputa. Antes vivía aquí copiada con la misma semántica; ahora hay una sola.
+    // Estas facturas vienen por construcción SIN `Charge` (`chargeId: null`), así que la regla se
+    // reduce a lo declarado — y aun así se entra por la puerta común, para que el día que la regla
+    // cambie no haya que acordarse de este sitio.
+    metodo: metodoDeUnCobro(inv),
+    ...camposDeMetodo(metodoDeUnCobro(inv)),
     estado: inv.status,
     referencia: null,
     numero: inv.number,
