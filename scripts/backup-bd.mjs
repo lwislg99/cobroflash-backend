@@ -42,7 +42,12 @@ import {
   tablasDelInventario, veredictoDelBackup, destinoDeclarado, VERIFICADO, NO_VERIFICADO, CIEGO,
 } from './_backup-nucleo.mjs';
 
-const SALIDA = process.env.BACKUP_DIR || path.join(process.cwd(), '.backups');
+// 🔴 `backups/` y NO `.backups/`: es la carpeta que `.gitignore` YA ignora, con su motivo escrito
+// al lado —«dumps cifrados locales (datos de prod — JAMÁS al repo)»—. Mi primer valor por defecto
+// llevaba punto y **no estaba ignorado**: un volcado de la base de clientes habría entrado en el
+// repo en el siguiente `git add -A`. Reutilizar la convención que ya existe es más seguro que
+// añadir una segunda y acordarse de ignorarla.
+const SALIDA = process.env.BACKUP_DIR || path.join(process.cwd(), 'backups');
 
 function abortar(motivo) {
   console.error(`\n🔴 ${motivo}`);

@@ -155,6 +155,22 @@ test('SCRUM-242 · 🛑 el destino externo se LEE del entorno, no se elige en el
 
 // ── EL SUELO DEL PROPIO GUARD ────────────────────────────────────────────────────────────
 
+test('SCRUM-242 · 🔴 el volcado cae en una carpeta que `.gitignore` IGNORA', () => {
+  // Un dump lleva la base de clientes entera. Si su carpeta no está ignorada, entra en el repo en
+  // el siguiente `git add -A` — y esto pasó: el primer valor por defecto era `.backups/` (con
+  // punto) y `.gitignore` ignora `backups/` (sin punto). Se parecen lo bastante como para no verlo.
+  const src = leer(ORQ);
+  const m = src.match(/BACKUP_DIR \|\| path\.join\(process\.cwd\(\), '([^']+)'\)/);
+  assert.ok(m, '🔴 no se encuentra la carpeta de salida por defecto en el orquestador.');
+  const carpeta = m[1];
+  const ignore = leer('.gitignore').split(/\r?\n/).map((l) => l.trim());
+  const ignorada = ignore.includes(carpeta) || ignore.includes(`${carpeta}/`) || ignore.includes(`/${carpeta}`);
+  assert.ok(ignorada,
+    `🔴 EL VOLCADO CAE EN «${carpeta}/» Y \`.gitignore\` NO LA IGNORA.\n\n`
+    + '  Un dump es la base de clientes entera. Sin ignorar, el siguiente `git add -A` lo comitea.\n'
+    + `  Líneas parecidas en .gitignore: ${ignore.filter((l) => /backup/i.test(l)).join(' · ') || '(ninguna)'}`);
+});
+
 test('SCRUM-242 · SUELO: el orquestador existe y sale con ERROR cuando no puede demostrarlo', () => {
   const src = leer(ORQ);
   assert.ok(src.length > 2000, `🔴 el orquestador tiene ${src.length} caracteres: no se está leyendo.`);
