@@ -388,6 +388,17 @@ model Invoice {
 
   status        String    @default("pending") @map("status")
   paidAt        DateTime? @map("paid_at")
+  // SCRUM-441 · CÓMO entró el dinero de una factura marcada A MANO. `Charge` ya lo guarda para lo
+  // que pasa por pasarela; esto es para lo que NO pasa —transferencia, efectivo, Bizum confirmado
+  // por una persona—, que hasta hoy salía en la pantalla del dinero como «Método no registrado».
+  //
+  // 🔴 NULLABLE, SIN DEFAULT, Y NUNCA RELLENADO POR COPIA DESDE `Charge.method`: ese campo guardó a
+  // la vez la intención (`card`) y el hecho (`card:stripe`), y mirando una fila no se puede saber
+  // cuál de las dos es. Copiarlo duplicaría el defecto en vez de moverlo, y de forma irreversible.
+  // `NULL` = «no consta», que es la verdad. Lo impide `tests/scrum441-paidvia-sin-copia.test.mjs`.
+  //
+  // El estilo del nombre no se eligió a ojo: en esta tabla `snake_case` gana 16 a 7 (medido).
+  paidVia       String?   @map("paid_via")
   clientComment String?   @map("client_comment")
   stageLabel    String?   @map("stage_label") // SCRUM-27: etiqueta del tramo, congelada al crear la factura
 

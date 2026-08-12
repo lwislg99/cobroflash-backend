@@ -246,6 +246,48 @@ un índice ausente no rompe ninguna consulta, solo la degrada cuando la tabla cr
 * **La ausencia en un reflog no prueba que algo no se hiciera aquí**: un rebase reescribe el SHA y
   rompe el enlace. Por eso ① lleva su control de sensibilidad (47/50) y no se apoya en el silencio.
 
+## SCRUM-441 · `invoices.paid_via` — ✅ APLICADO en staging y producción (12-ago-2026)
+
+**Lo aplicó el FUNDADOR, no esta sesión.** Se registra lo que él reportó, y con eso queda dicho el
+límite: **esta sesión no ha tocado ninguna base, tampoco en lectura**, así que no ha verificado la
+columna contra ningún host. El registro es del hecho, no de una medición propia. `yaqu_dev_javier`
+es carril B y se le pide a Javier.
+
+```sql
+ALTER TABLE "invoices" ADD COLUMN "paid_via" TEXT;
+```
+
+Es la columna que le faltaba a la mitad del dinero: `Charge` guarda el método de lo que pasa por
+pasarela, pero **una transferencia o un pago en efectivo no crean `Charge`**, así que en la pantalla
+de Cobros salían como «Método no registrado» — indistinguibles de un cobro del que de verdad no se
+sabe nada.
+
+> 🔴 **ENTRA VACÍA, Y NO SE RELLENA POR COPIA DESDE `Charge.method`.** Ese campo guardó a la vez la
+> intención del profesional (`card`) y el hecho que escribió la pasarela (`card:stripe`), y mirando
+> una fila **no se puede saber cuál de las dos es**. Copiarlo no movería ese defecto: lo DUPLICARÍA,
+> y de forma irreversible — una vez copiadas las filas, ya nadie podría distinguir cuáles se
+> copiaron. **Cero backfill de históricos.** Lo impide un guard que corre en `npm test`
+> (`tests/scrum441-paidvia-sin-copia.test.mjs`), probado en rojo por inyección.
+
+> ⚠️ **NOMBRE EN `snake_case`, y no por costumbre: por recuento.** La tabla `invoices` mezcla los dos
+> estilos de verdad. Contadas las columnas resolviendo `@map` —que es lo que acaba en Postgres— y
+> descartando relaciones y palabras sueltas: **`snake_case` 16, `camelCase` 7**. Las 7 `camelCase`
+> son las más antiguas (claves foráneas y `createdAt`); las `vf_*` y `reminder_*`, posteriores, ya
+> son `snake_case`. La tabla ya se estaba moviendo hacia ahí.
+
+> ⚠️ **`prisma/schema.prisma` SÍ lo lleva ya, y esta vez es lo correcto**, al revés que en
+> SCRUM-449: las bases se aplicaron ANTES, así que el esquema va detrás y no por delante.
+> `paidVia String? @map("paid_via")`. Nada de `prisma migrate diff` contra ninguna base desde aquí.
+
+**Sin `NOT NULL` y sin `DEFAULT`, a propósito:** `NULL` significa «no consta», que es la verdad de
+todas las filas de antes de hoy, y el lector ya lo trata bien (cae en «Método no registrado» sin
+inventarse nada). Un `DEFAULT` convertiría «no consta» en una afirmación sobre cómo se cobró.
+
+**El cable:** `updateInvoiceStatusAdmin` (`invoiceAdmin.ts`) acepta el método como **4º parámetro
+opcional** y `PUT /admin/invoices/:id/status` lo pasa desde `req.body.paidVia`. Opcional a
+propósito: **marcar cobrada sin indicar método sigue funcionando exactamente igual que antes**, y
+eso está medido, no supuesto (`tests/scrum441-metodo-declarado.test.mjs`, 10 tests).
+
 ## SCRUM-475 (fase 2) · tabla nueva `email_messages` — ✅ APLICADO **solo en DEV** (11-ago-2026)
 
 **REGISTRO de lo que se ejecutó y se verificó el 11-ago-2026.** No es una afirmación sobre el estado

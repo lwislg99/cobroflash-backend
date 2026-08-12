@@ -237,3 +237,56 @@ y el nuevo: **un export usado solo dentro de su módulo aparece como huérfano**
 
 No he enchufado nada, no he retirado nada —`borrarMerchant` **se queda**, reclasificado—, cero
 schema, cero emisión, y no he tocado ningún guard ajeno.
+
+
+---
+
+# SCRUM-484 · CONTINUACION 3 · los tres sin lector: contestados, y NO retirados
+
+**Medido contra:** `origin/main` = `423a9c9c0a6b6e13847ff669d2e24d6360960ddf` · 2026-08-12T11:57:40+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · **Cero retiradas, cero cables, cero schema.**
+
+## La respuesta a «que NO puede hacer hoy un profesional»
+
+| export | que pasa hoy | veredicto |
+|---|---|---|
+| `team.service → listTeamMembers` | **El profesional SI ve su equipo**: lo sirve `GET /admin/team` → `getTeamOverview()` → `teamOverview.service.ts:58` | **no hay victima** — es la misma consulta escrita dos veces |
+| `attachment.service → listQuoteRequestAttachments` | **SI ve los adjuntos** de una solicitud: `quoteRequests.routes.ts:25` hace el mismo `findMany` **inline** | **no hay victima** — copia |
+| `maintenance.service → maintenanceEurInMonth` | calcula los **€ cobrados de presupuestos nacidos del ciclo de mantenimiento** (A15.3). La funcion de mantenimiento existe en el producto (los recordatorios estan en `quotesDetailView.js:1170`), pero **ese numero no lo ensena ni lo pide nadie** | 🔴 **DUDO, y por eso no lo retiro** |
+
+Para el tercero, la victima que se puede nombrar: **nadie puede ver cuanto ha facturado gracias a
+los recordatorios de mantenimiento**. La capacidad de recordar existe; la de saber si sirve, no. **Lo
+traigo, no lo decido.**
+
+## 🛑 Y LOS DOS PRIMEROS TAMPOCO SE PUEDEN RETIRAR HOY — el motivo es nuevo
+
+Los tres estan **DECLARADOS** en `tests/_huerfanos-declarados.mjs` (SCRUM-487, que entro en `main`
+despues de mi medicion), con categoria, fecha y motivo:
+
+* `listTeamMembers` → `SUPLANTADO_POR_UNA_COPIA`
+* `listQuoteRequestAttachments` → `SUPLANTADO_POR_UNA_COPIA`
+* `maintenanceEurInMonth` → `SIN_LECTOR_NI_TEST` — *«el unico del censo del que no consta ni para
+  que se escribio»*
+
+Y ese guard **cae en los dos sentidos**: un huerfano declarado que ya no toca **tambien sale en
+rojo**, porque bajar es sospecha. **Retirar el codigo sin retirar su declaracion pone `main` en
+rojo**; retirar la declaracion exige tocar `_huerfanos-declarados.mjs`, que es del otro carril y
+tengo prohibido tocar.
+
+> **La retirada es correcta y no es mia:** va en UN commit que quite el codigo **y** su declaracion
+> a la vez, y ese commit lo tiene que hacer quien posee el fichero de declaraciones.
+
+## Los dos instrumentos convergen, y eso es lo que vale del turno
+
+Llegue a los mismos veredictos **por otro camino y sin leer su fichero**: el equipo se sirve por
+`getTeamOverview` y los adjuntos por un `findMany` inline. Su declaracion ademas **anade dos sitios
+mas** que yo no habia encontrado para el equipo (`jobs.routes.ts:133`, `reports.routes.ts:99`).
+
+**Dos censos independientes, la misma respuesta.** Donde antes discrepabamos —yo decia «al menos
+tres sin lector», ellos «uno»— la diferencia era de CATEGORIA, no de hecho: los otros dos si tienen
+lector, pero es una copia de su consulta.
+
+## Lo que NO se ha hecho
+
+No he retirado nada, no he tocado `_huerfanos-declarados.mjs` ni `_alcance-dominio.mjs`, ni he
+enchufado ninguno de los tres. Cero schema, cero emision.
