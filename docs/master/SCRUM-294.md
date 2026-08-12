@@ -130,3 +130,143 @@ y qué exige el RECC de la fecha de cobro) y por los campos de schema, que se de
 * `src/modules/invoicing/domain/criterioCaja.ts` (nuevo) — aislado, sin imports.
 * `docs/legal/PREGUNTAS_ASESOR.md` — **P13**, con lo ya medido separado de lo que se pregunta.
 * `tests/scrum294-recargo-caja.test.mjs` (15, sin gate).
+
+---
+
+# SCRUM-294 (parte 2) · PASO 0 al día: el mapa del cable y el campo en `Customer`
+
+**POBLACIÓN MEDIDA** · host `DESKTOP-T5MONF5` · `2026-08-12T08:33:46Z` · HEAD
+`72294230f9c1fecd9ac0316f2d131eb9b76e76f6` · CLI de Prisma **local**, nunca `npx` (SCRUM-385)
+
+**Medido contra:** `origin/main` = `72294230f9c1fecd9ac0316f2d131eb9b76e76f6` · 2026-08-12T08:33:46Z
+
+> **Esto es el MAPA, no el cable.** Cero código. `prisma/schema.prisma` intacto y nada aplicado a
+> ninguna base. El PASO 0 de la parte 1 (7-ago) no se repite: se verifica y se le añade lo que
+> faltaba —el campo con su preview—.
+
+## 1 · Qué hay hoy, verificado
+
+| | |
+| --- | --- |
+| `recargo` en `prisma/schema.prisma` | **0 apariciones** |
+| `recargoEquivalencia.ts` | existe desde el 7-ago, probado |
+| llamadores | **cero**, comprobado hoy en todo `src/` |
+
+Sigue siendo lo que la parte 1 declaró: **un motor sin cable**, a propósito.
+
+## 2 · 🔴 Dónde toca el camino de emisión — y aquí A3 y A2 se separan
+
+La diferencia con A2 está medida y no se vuelve a medir:
+
+| | A2 · retención IRPF | A3 · recargo |
+| --- | --- | --- |
+| ¿Cambia lo que paga el cliente? | **no** — es pago a cuenta del pagador | **sí**: `base + cuota + recargo` |
+| ¿Se mueve `Invoice.total`? | **no** | **SÍ** → cambia **el número que se sella** |
+| ¿Toca `calcVatBreakdown`? | no | **no** *(el XSD de la AEAT: el recargo cuelga de la MISMA base, no hay `BaseRecargo`)* |
+| ¿Toca el XML? | no | **SÍ**: `TipoRecargoEquivalencia` y `CuotaRecargoEquivalencia` |
+
+**Los dos sitios de A3 son STOP** (`grossOfLines` y `registro.builder.ts`) y **no se tocan sin GO
+explícito**. Este documento no los toca.
+
+## 3 · Por dónde entraría el cable — ESCRITO, NO PUESTO
+
+En orden de riesgo, y los dos últimos con su bandera:
+
+1. **La ficha del cliente** — una casilla y su `PATCH`. Riesgo nulo: no entra en ningún cálculo.
+   Necesita **microcopy** (marcador `[PENDIENTE microcopy oficial]` y guard).
+2. **La lectura, al emitir** — `leerRecargoDelCliente(customer.recargoEquivalencia)`. El `{ok:false}`
+   es **impedimento para emitir**, no un cero: quien no pueda leerlo se para.
+3. 🛑 **El total** — `grossOfLines()` pasaría a `base + cuota + recargo`. **STOP, regla 38.**
+4. 🛑 **El desglose del XML** — los dos elementos del XSD en `registro.builder.ts`. **STOP.**
+
+**El adaptador no existe y no hace falta**: `leerRecargoDelCliente` ya espera exactamente
+`null | true | false`, que es lo que da la columna. El módulo **no se toca**.
+
+## 4 · 🔴 UNA sola columna, y aquí sí — la diferencia con A2, explicada
+
+En A2 hicieron falta **dos** columnas porque el dato era un *tipo* (`Int?`) y «declaro que no
+retengo» se quedaba sin representación: colapsaba con «no consta» en el mismo `NULL`.
+
+**Aquí el dato es booleano, y `Boolean?` expresa los tres estados de forma nativa:**
+
+| Columna | `leerRecargoDelCliente` | Significado |
+| --- | --- | --- |
+| `NULL` | `{ ok:false, motivo }` | **no consta → no se puede emitir** |
+| `false` | `{ ok:true, aplica:false }` | declarado que NO lo lleva |
+| `true` | `{ ok:true, aplica:true }` | lo lleva |
+
+**Sin `@default`, y es deliberado.** Un `@default(false)` convertiría a los clientes existentes en
+«declarado que NO lo lleva» — una afirmación que nadie ha hecho. `NULL` dice la verdad: no consta.
+Es la misma decisión que en A2 y por el mismo motivo, con la diferencia de que allí el default
+`false` iba en la columna de *declaración*, no en la del dato.
+
+```prisma
+model Customer {
+  …
+  tipoDestinatario String? @map("tipo_destinatario")
+  // SCRUM-294 (A3) · recargo de equivalencia: condición de QUIÉN COMPRA, no de la factura.
+  // NULL = no consta (impide emitir) · false = declarado que NO · true = lo lleva.
+  recargoEquivalencia Boolean? @map("recargo_equivalencia")
+  …
+}
+```
+
+Va en `Customer` y no en `Invoice` porque **es condición del comprador**, como fija
+`docs/diseno/bloque-a.md` § A3.
+
+## 5 · EL PREVIEW — salida real, con su control positivo delante
+
+```
+node ./node_modules/prisma/build/index.js migrate diff \
+  --from-schema-datamodel prisma/schema.prisma \
+  --to-schema-datamodel   <scratchpad>/schema-con-recargo.prisma \
+  --script
+```
+
+```sql
+-- AlterTable
+ALTER TABLE "customers" ADD COLUMN     "recargo_equivalencia" BOOLEAN;
+```
+
+**Control positivo antes de creerme un diff de una línea** (canon desde hoy): `--from-empty` contra
+el schema real devuelve **24 `CREATE TABLE`**. La herramienta ve el schema; el diff es de una línea
+porque el cambio es de una línea. Sin ese control, «diff corto» y «herramienta ciega» se leen igual.
+
+### Aditividad, criterio a criterio
+
+| | |
+| --- | --- |
+| `DROP` de tabla o columna | ninguno |
+| `ALTER` sobre columna existente | ninguno |
+| `NOT NULL` sobre datos existentes | **ninguno** — la columna es nullable y sin default |
+| Índices o constraints | ninguno |
+| Filas afectadas | **0** — todas quedan en `NULL`, que es «no consta» |
+
+**100 % aditivo.** No debería pedir `--accept-data-loss`; si lo pide, el diff no es éste y hay que
+parar.
+
+## 6 · El orden de ejecución
+
+El mismo que A2, y por el mismo motivo: **staging → verificar → producción → verificar →
+`schema.prisma` AL FINAL**. `assertSchemaSinDeriva()` (`src/index.ts:23`) falla ante columnas
+**ausentes**; columnas de más no son deriva. Al revés, producción arranca en deriva.
+
+⚠️ **Y esta migración va SOLA.** A2 y A3 son dos lotes distintos aunque se decidan el mismo día:
+dos cosas en una migración es lo que ha ido mal esta semana.
+
+## 7 · Reportado y no arreglado (regla 9) — el censo de correo tiene ENVOLTORIOS
+
+No es de este ticket y no lo toco, pero el otro carril que persigue «los ocho» tiene que saberlo:
+
+> **Entre los 17 emisores derivados del censo de correo hay ENVOLTORIOS** —`startCronJobs`,
+> `registerMerchant`, `requestMagicLink`—, **y por eso `ignora-resultado: 8` mezcla dos cosas.**
+> Ignorar el resultado de *arrancar los crons* (`src/index.ts:30`) no es perder el fallo de un
+> correo. **Los ocho que importan son los del trinquete de `tests/scrum477-avisos-con-constancia.test.mjs`,
+> no éstos.**
+
+## 8 · Lo que NO se ha hecho
+
+`prisma/schema.prisma` intacto · ninguna migración aplicada a ninguna base · ni una línea de
+cableado · `recargoEquivalencia.ts` sigue sin llamadores · `grossOfLines` y `registro.builder.ts`
+sin tocar (los dos son STOP) · cero microcopy · los porcentajes (5,2 / 1,4 / 0,5) **siguen sin
+confirmar** — P13.1 del asesor, y el mecanismo es correcto aunque los números cambien.

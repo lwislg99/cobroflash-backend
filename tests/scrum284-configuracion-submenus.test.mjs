@@ -130,7 +130,10 @@ test('SCRUM-284 · colocar un campo que el mapa no conoce LANZA (ruidoso, no mud
 
 // ── MICROCOPY (regla 30) ─────────────────────────────────────────────────────────────────────
 //
-// Los diez rótulos están APROBADOS por el fundador (5-ago-2026). No eran redacción nueva: los nueve
+// SCRUM-483 · NUEVE, no diez: `Numeración` se retiró por el veto escrito en SCRUM-277 («no es
+// que el rótulo esté mal: es que detrás no hay habitación»). Su ajuste `invoiceSeriesPrefix` NO
+// se perdió: se mudó a `Facturación`. Se re-declara el número, no se toca lo que comprueba.
+// Los rótulos están APROBADOS por el fundador (5-ago-2026). No eran redacción nueva: los nueve
 // primeros vienen escritos en la descripción del ticket y el décimo es el nombre que usó al colocar
 // `approvalThreshold`. Aterrizarlos no fue escribir microcopy, fue dejar de usar el marcador.
 //
@@ -141,7 +144,6 @@ test('SCRUM-284 · colocar un campo que el mapa no conoce LANZA (ruidoso, no mud
 const ROTULOS_APROBADOS = {
   empresa: 'Empresa',
   facturacion: 'Facturación',
-  numeracion: 'Numeración',
   cobro: 'Cobros',
   avisos: 'Avisos',
   publica: 'Tu página pública',
@@ -151,7 +153,7 @@ const ROTULOS_APROBADOS = {
   equipo: 'Equipo',
 };
 
-test('SCRUM-284 · los diez rótulos dicen EXACTAMENTE el texto aprobado (regla 30)', () => {
+test('SCRUM-284 · los rótulos dicen EXACTAMENTE el texto aprobado (regla 30)', () => {
   assert.deepEqual([...mapa.SUBMENUS].sort(), Object.keys(ROTULOS_APROBADOS).sort(),
     '🔴 el juego de submenús no es el que tiene rótulo aprobado: uno sin rótulo no lo vigila nadie.');
   const distintos = mapa.SUBMENUS

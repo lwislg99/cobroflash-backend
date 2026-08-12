@@ -19,6 +19,16 @@
 // arregle uno sepa que existe el otro.
 const NF_PENDIENTE = '[PENDIENTE microcopy oficial]';
 
+// SCRUM-483 (A2) · DOS CLASES SALEN DE `NF_PENDIENTE` porque su texto YA ESTÁ APROBADO.
+// Fuente: SCRUM-277 en Jira, sección «Rótulos · ESTADO CERRADO DE LA APROBACIÓN». Ninguna copia.
+//
+// ⚠️ Lo que NO se hace aquí: partir las otras cinco clases (placeholders, `aria-label`, errores,
+// lista vacía, toast). Sus dieciocho textos NO están aprobados, así que se quedan con el marcador
+// —que es donde tienen que estar— y se partirán el día que se aprueben, partiendo y rellenando en
+// el mismo commit. Cinco constantes vacías esperando no protegen de nada.
+const NF_TITULO_BLOQUE = { cliente: 'Cliente', lineas: 'Líneas' };
+const NF_ACCION_PRIMARIA = 'Emitir factura';
+
 function nfEsc(v) {
   return String(v == null ? '' : v)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -58,7 +68,7 @@ function openNuevaFacturaModal(onCreated) {
   // `req.merchantId`: la tenencia (regla 2) la garantiza el servidor, no este `select`.
   const labCliente = document.createElement('label');
   labCliente.className = 'field-label';
-  labCliente.textContent = NF_PENDIENTE;
+  labCliente.textContent = NF_TITULO_BLOQUE.cliente;
   body.appendChild(labCliente);
 
   const buscador = document.createElement('input');
@@ -108,7 +118,7 @@ function openNuevaFacturaModal(onCreated) {
   // ── Líneas ─────────────────────────────────────────────────────────────────────────────
   const labLineas = document.createElement('label');
   labLineas.className = 'field-label';
-  labLineas.textContent = NF_PENDIENTE;
+  labLineas.textContent = NF_TITULO_BLOQUE.lineas;
   labLineas.style.marginTop = '14px';
   body.appendChild(labLineas);
 
@@ -170,7 +180,7 @@ function openNuevaFacturaModal(onCreated) {
   const emitir = document.createElement('button');
   emitir.type = 'button';
   emitir.className = 'btn-primary';
-  emitir.textContent = NF_PENDIENTE;
+  emitir.textContent = NF_ACCION_PRIMARIA;
   footer.append(cancelar, emitir);
   modal.appendChild(footer);
 
