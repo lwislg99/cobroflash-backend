@@ -43,6 +43,7 @@ const require_ = createRequire(import.meta.url);
 const VISTA = 'public/dashboard/js/cobrosView.js';
 const {
   COBROS_METODOS, COBROS_SIN_METODO, COBROS_PASARELAS, COBROS_MATICES,
+  COBROS_DESCONOCIDO,   // SCRUM-506 · el segundo hecho del cubo «sin método»
   cuboDeMetodo, rotuloDeMetodo, pasarelaDeMetodo,
 } = require_(path.join(RAIZ, VISTA));
 
@@ -256,7 +257,13 @@ test('SCRUM-481 · 🔴 SUELO: una fila SIN `metodoCubo` se lee igual de bien', 
 test('SCRUM-481 · 🔴 un método NO reconocido no desaparece y no se cuela en otro cubo', async () => {
   // Censo de huérfanos de SCRUM-473 §2 y §5. Un cobro que desaparece de una pantalla de dinero es
   // peor que uno mal etiquetado: el profesional cuenta lo que ve.
-  const HUERFANOS = ['bank', 'mp', 'bizum', 'desconocido', 'SCTinst', 'card:', '', null, 42];
+  //
+  // 🔴 SCRUM-506 · `desconocido` SALE DE ESTA LISTA, y el guard se APRIETA al sacarlo. Estaba aquí
+  // con los huérfanos de verdad —valores que nadie reconoce— y no lo es: es una declaración del
+  // sistema («se preguntó y no consta»), así que tiene rótulo propio. Lo que este control negativo
+  // protege NO era el texto: era que ninguno DESAPAREZCA ni se cuele en otro cubo. Eso sigue igual
+  // para los dos grupos, y ahora se exige ADEMÁS que sus rótulos NO se confundan entre sí.
+  const HUERFANOS = ['bank', 'mp', 'bizum', 'SCTinst', 'card:', '', null, 42];
   for (const h of HUERFANOS) {
     assert.equal(rotulo(h), COBROS_SIN_METODO.rotulo,
       `🔴 «${String(h)}» se lee «${rotulo(h)}» en vez de «${COBROS_SIN_METODO.rotulo}».`);
@@ -264,6 +271,17 @@ test('SCRUM-481 · 🔴 un método NO reconocido no desaparece y no se cuela en 
       `🔴 «${String(h)}» se cuela en el cubo «${cuboDeCobro(h)}»: el profesional lo contaría como ` +
       'un método que no es.');
   }
+
+  // EL DESCONOCIDO DECLARADO: mismo cubo —una sola pestaña, SCRUM-506— y rótulo DISTINTO.
+  assert.equal(cuboDeCobro(COBROS_DESCONOCIDO.valor), COBROS_SIN_METODO.clave,
+    '🔴 el desconocido declarado ha cambiado de cubo: eso sería una pestaña nueva en el filtro y ' +
+    'ampliar el conjunto cerrado (regla 22), que NO es lo que hace SCRUM-506.');
+  assert.equal(rotulo(COBROS_DESCONOCIDO.valor), COBROS_DESCONOCIDO.rotulo,
+    `🔴 el desconocido declarado se lee «${rotulo(COBROS_DESCONOCIDO.valor)}»: vuelve a decir que ` +
+    'no consta nada cuando lo que consta es que no se sabe.');
+  assert.notEqual(COBROS_DESCONOCIDO.rotulo, COBROS_SIN_METODO.rotulo,
+    '🔴 los dos hechos han vuelto a compartir rótulo dentro del mismo cubo: un hueco y un dato ' +
+    'leyéndose igual.');
 
   // Y siguen EN LA LISTA: no se cae ninguna fila.
   const datos = ['bank', 'mp', null, 'card:'].map((m, i) => cobro(i + 1, m));
