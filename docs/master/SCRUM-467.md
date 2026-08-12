@@ -1,4 +1,4 @@
-# SCRUM-467 · PASO 0 medido y los tres puntos de cambio — **NO cerrado, y digo por qué**
+# SCRUM-467 · PASO 0 medido y los tres puntos de cambio
 
 **Medido contra:** `origin/main` = `db820c35fffa526187057330457593e8b5315aeb` · 2026-08-12T11:19:30+02:00
 **Medido en:** host `DESKTOP-T5MONF5` · **Cero código escrito.**
@@ -59,3 +59,42 @@ declaración y su guard.
 
 **No se ha tocado:** ni una línea de código, `prisma/schema.prisma`, el filtro de precarga de
 SCRUM-464, ni el camino de emisión.
+
+
+---
+
+# SCRUM-467 · CERRADO · los tres construidos
+
+**Suite:** 3311 tests, **0 fail** ·  0 · ficheros borrados por la rama: ninguno.
+
+## Los tres, con su verificación EN ESTE ORDEN
+
+| | |
+|---|---|
+| **1 · CONTROL NEGATIVO** | un ADMIN sigue recibiendo el lector **sin filtrar** en el listado, y el corte del detalle vive DENTRO de . Inyectado al revés —acotar tambien al admin— el guard **cae**. |
+| **2 · ROJO POR EL MECANISMO** | quitada la comprobacion de pertenencia, el guard cae diciendo **«UN OPERARIO PUEDE LEER EL CLIENTE Y LA DIRECCION DE UN TRABAJO QUE NO ES SUYO»**, no «403 esperado». |
+| **3 · POSITIVO** | los DOS ejes en las dos rutas: quitar  de la lista cae diciendo que **asignar un trabajo no hace que el tecnico lo vea**. |
+
+**Cinco rojos, todos por .** Y el listado filtra **en la QUERY** (),
+nunca ocultando en el front datos ya enviados.
+
+## 🔴 El quinto rojo NO salio a la primera, y lo que destapo era un defecto mio
+
+Inyecte «se quita el control en vez de re-declararlo» borrando la entrada de
+ que yo mismo habia anadido… y el guard **siguio verde**.
+
+Motivo: **mi entrada era un DUPLICADO.**  ya estaba declarado en
+esa lista desde antes, asi que el montaje nunca se quedo sin su muestra de 403 — y yo habia anadido
+una segunda declaracion del mismo hecho, que es justo lo que estas listas existen para evitar.
+
+**Retirado el duplicado**, el comentario apunta a la entrada que ya existia, y el rojo —apuntado
+ahora a la entrada REAL— sale. El rojo que no sale a la primera no siempre acusa al guard: esta vez
+acuso al cambio.
+
+## La re-declaracion, no la retirada del control
+
+ **sale** de  y **entra** en  con su
+motivo escrito; el montaje conserva su 403 comprobado. Mismo criterio que los submenus:
+re-declarar porque una decision escrita cambio es legitimo; quitar el control, no.
+
+**No se ha tocado:** la precarga de SCRUM-464,  ni el camino de emision.
