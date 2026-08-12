@@ -130,7 +130,11 @@ const CENSO = Object.freeze({
   'quotesView.js': 1,
   'semaforoFiscal.js': 1,
   'settingsSubmenus.js': 1,
-  'settingsView.js': 1,
+  // SCRUM-294 (fase C) · 1 -> 5: el criterio de caja entra en Configuracion con marcador A
+  // CONCIENCIA. Son 4 literales —el rotulo y sus TRES opciones— y el texto NO esta aprobado:
+  // explicarle a un profesional si le conviene el RECC es asesorarle, y eso lo dictamina el
+  // asesor (regla 30). El dato se PIDE ya; el texto entra cuando el asesor lo apruebe.
+  'settingsView.js': 5,
 });
 
 /** Marcadores que viven en un LITERAL (los que pueden pintarse). Los comentarios no son literales. */

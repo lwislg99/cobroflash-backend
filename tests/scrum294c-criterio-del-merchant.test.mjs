@@ -150,3 +150,61 @@ test('SCRUM-294c · 🔴 LOS TRES repos del libro pasan el criterio, y ninguno s
     'aparecido más, hay un llamador nuevo sin criterio; si menos, el instrumento se ha quedado ' +
     'ciego. Se lee la LISTA, no el número.');
 });
+
+// ── LA CASILLA Y LA PERSISTENCIA ────────────────────────────────────────────────────────────
+
+test('SCRUM-294c · 🔴 la pantalla ofrece TRES opciones, no una casilla', async () => {
+  const fs = await import('node:fs');
+  const vista = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/settingsView.js'), 'utf8');
+
+  assert.match(vista, /id="merchant-criterio-caja"|merchant-criterio-caja/,
+    '🔴 no hay control de criterio de caja en Configuración › Empresa.');
+
+  // TRES opciones. Con dos, «no consta» y «declara que no» serían lo mismo en pantalla.
+  const bloque = vista.slice(vista.indexOf('fCriterioCaja.innerHTML'), vista.indexOf('criterioWrapper.appendChild'));
+  const opciones = (bloque.match(/<option /g) || []).length;
+  assert.equal(opciones, 3,
+    `🔴 el control tiene ${opciones} opciones y tienen que ser TRES. Una casilla —o un select de ` +
+    'dos— leería «no consta» como «declara que no», que es el estado de todos los merchants de hoy.');
+
+  // Y «no consta» viaja como NULL, no como `false` ni como cadena vacía.
+  assert.match(vista, /criterioCaja: fCriterioCaja\.value === "si" \? true : fCriterioCaja\.value === "no" \? false : null/,
+    '🔴 «no consta» no viaja como NULL. Si viajara como `false`, la pantalla estaría declarando ' +
+    'por el profesional algo que él no ha dicho.');
+
+  // MICROCOPY sin aprobar: marcador visible (regla 30). Si alguien escribe texto definitivo sin
+  // pasar por el asesor, esto cae.
+  assert.match(vista, /PENDIENTE microcopy oficial · criterio de caja/,
+    '🔴 el rótulo del criterio de caja ya no lleva marcador. Explicarle a un profesional si le ' +
+    'conviene el RECC es asesorarle, y ese texto lo aprueba el asesor (regla 30).');
+});
+
+test('SCRUM-294c · 🔴 el campo se PERSISTE, y los tres estados sobreviven al validador', async () => {
+  const { merchantProfileUpdateSchema } = require_(path.join(RAIZ, 'dist/core/validation/schemas.js'));
+
+  // Los tres estados pasan la validación y salen tal cual.
+  assert.equal(merchantProfileUpdateSchema.safeParse({ criterioCaja: true }).data.criterioCaja, true);
+  assert.equal(merchantProfileUpdateSchema.safeParse({ criterioCaja: false }).data.criterioCaja, false);
+  assert.equal(merchantProfileUpdateSchema.safeParse({ criterioCaja: null }).data.criterioCaja, null,
+    '🔴 «no consta» no sobrevive al validador: se guardaría otra cosa distinta de la que el ' +
+    'profesional eligió.');
+
+  // AUSENTE ≠ null: si la pantalla no lo manda, no se toca la columna.
+  assert.equal('criterioCaja' in merchantProfileUpdateSchema.safeParse({}).data, false,
+    '🔴 no mandar el campo se convierte en un valor: cualquier guardado de otro dato del perfil ' +
+    'sobrescribiría el criterio de caja.');
+
+  // Y lo que no es booleano se rechaza: el conjunto es cerrado.
+  assert.equal(merchantProfileUpdateSchema.safeParse({ criterioCaja: 'si' }).success, false,
+    '🔴 una cadena pasa como criterio de caja. Lo que llega del navegador se valida, no se cree.');
+});
+
+test('SCRUM-294c · 🔴 el campo existe en el esquema, con los tres estados', async () => {
+  const fs = await import('node:fs');
+  const schema = fs.readFileSync(path.join(RAIZ, 'prisma/schema.prisma'), 'utf8');
+  const linea = /criterioCaja\s+Boolean\?\s+@map\("criterio_caja"\)/.exec(schema);
+  assert.ok(linea, '🔴 `criterioCaja Boolean? @map("criterio_caja")` no está en el esquema.');
+  assert.equal(/criterioCaja[^\n]*@default/.test(schema), false,
+    '🔴 el campo lleva `@default`. Con un valor por defecto, NULL —«no consta»— deja de existir y ' +
+    'los tres estados se quedan en dos.');
+});

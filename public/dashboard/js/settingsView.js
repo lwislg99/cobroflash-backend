@@ -277,6 +277,30 @@ function renderSettingsView(container) {
     const fLegalName = createField("Razón social", "legalName", "text", true);
     const fTaxId = createField("NIF/CIF", "taxId", "text", true);
     const fAddress = createField("Dirección fiscal", "address", "text", true);
+
+    // SCRUM-294 (fase C) · CRITERIO DE CAJA. Un <select> de TRES opciones, no una casilla: el
+    // dato tiene tres estados nativos en la base (NULL / false / true) y una casilla solo sabe
+    // dos, asi que leeria «no consta» como «declara que no». Mismo patron que el recargo de
+    // equivalencia de la fase A, y por el mismo motivo.
+    //
+    // MICROCOPY: marcador (regla 30). Explicarle a un profesional si le conviene el criterio de
+    // caja es asesorarle, y eso es dictamen del asesor, no producto. El dato se PIDE, no se explica.
+    const criterioWrapper = document.createElement("div");
+    criterioWrapper.className = "field";
+    const criterioLabel = document.createElement("label");
+    criterioLabel.textContent = "[PENDIENTE microcopy oficial · criterio de caja]";
+    criterioLabel.htmlFor = "merchant-criterio-caja";
+    const fCriterioCaja = document.createElement("select");
+    fCriterioCaja.id = "merchant-criterio-caja";
+    fCriterioCaja.name = "criterioCaja";
+    fCriterioCaja.className = "input";
+    fCriterioCaja.style.minHeight = "44px"; // AB6
+    fCriterioCaja.innerHTML =
+      '<option value="">[PENDIENTE microcopy oficial · no consta]</option>' +
+      '<option value="si">[PENDIENTE microcopy oficial · si]</option>' +
+      '<option value="no">[PENDIENTE microcopy oficial · no]</option>';
+    criterioWrapper.appendChild(criterioLabel);
+    criterioWrapper.appendChild(fCriterioCaja);
     const fWhatsappPhone = createField(
       "Teléfono WhatsApp (E.164 sin +)",
       "whatsappPhone",
@@ -330,6 +354,7 @@ function renderSettingsView(container) {
     colocar("legalName", fLegalName.wrapper);
     colocar("taxId", fTaxId.wrapper);
     colocar("address", fAddress.wrapper);
+    colocar("criterioCaja", criterioWrapper);
     colocar("whatsappPhone", fWhatsappPhone.wrapper);
     colocar("country", fCountryWrapper);
     colocar("defaultCurrency", fDefaultCurrency.wrapper);
@@ -695,6 +720,10 @@ function renderSettingsView(container) {
         fLegalName.input.value = merchant.legalName || "";
         fTaxId.input.value = merchant.taxId || "";
         fAddress.input.value = merchant.address || "";
+        // Los tres estados, sin colapsar: `true` -> «si», `false` -> «no», y cualquier otra cosa
+        // —`null` o el campo ausente— es «no consta», que es la opcion vacia.
+        fCriterioCaja.value = merchant.criterioCaja === true ? "si"
+          : merchant.criterioCaja === false ? "no" : "";
         fWhatsappPhone.input.value = merchant.whatsappPhone || "";
         fDefaultCurrency.input.value = merchant.defaultCurrency || "EUR";
         fInvoiceSeriesPrefix.input.value = merchant.invoiceSeriesPrefix || "";
@@ -733,6 +762,9 @@ function renderSettingsView(container) {
         legalName: fLegalName.input.value.trim(),
         taxId: fTaxId.input.value.trim(),
         address: fAddress.input.value.trim(),
+        // «no consta» viaja como NULL, no como `false` ni como cadena vacia: es un valor que el
+        // negocio elige, y la base lo guarda distinto de «declara que no».
+        criterioCaja: fCriterioCaja.value === "si" ? true : fCriterioCaja.value === "no" ? false : null,
         whatsappPhone: fWhatsappPhone.input.value.trim(),
         defaultCurrency: fDefaultCurrency.input.value.trim() || "EUR",
         invoiceSeriesPrefix: fInvoiceSeriesPrefix.input.value.trim(),
@@ -1267,7 +1299,8 @@ function montarDatosDeEjemplo(merchant) {
     // sabe leer. Con concatenación el pie existía pero sus botones eran invisibles para ese guard
     // — y un pie que el censo ve a medias es un modal que su arreglo de CSS no cubre.
     overlay.innerHTML = `
-      <div class="modal" style="max-width:460px" role="dialog" aria-modal="true" aria-labelledby="de-t">
+      <div class="modal" style="max-width:460px" role="dialog" aria-modal="true" aria-labelledby="de-t">
+
         <div class="modal-body">
           <p>Vamos a borrar los clientes, presupuestos y facturas de ejemplo. Esto no se puede deshacer.</p>
         </div>
