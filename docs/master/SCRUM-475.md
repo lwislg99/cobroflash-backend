@@ -298,3 +298,248 @@ la fase 1 · el embudo de WhatsApp.
   correo real ni se ha mirado un rebote de verdad.
 * **Microcopy: ninguna.** Esta fase no tiene superficie. Si al arreglar los mudos hay que avisar al
   profesional, el texto lo aprueba el asesor (regla 30).
+
+---
+
+# FASE 3 · Los ocho del trinquete, y la trampa de que fueran ocho
+
+**Medido contra:** `origin/main` = `22c79b5739e572ed1b9b9dd0f38a9c63bd43a253` · 2026-08-12T11:01:00+02:00
+
+**12-ago-2026** · Las fases 1 y 2 (arriba) **no se tocan**. Esto cierra los ocho que la fase 2 dejó
+nombrados y que SCRUM-477 volvió a nombrar cuando completó el criterio.
+
+## 0 · PASO 0
+
+`git worktree list` da cuatro árboles vivos; este trabajo va en `cobroflash-b2`. Búsqueda **por
+contenido** (`conConstancia`, `canalDeFallo`, `registroDeAviso`, `resultadoSinDestino`) sobre el
+listado completo de `git ls-remote --heads origin`: el mecanismo solo vive en `main` y en las cuatro
+ramas de SCRUM-475 ya mergeadas o cerradas. Las relacionadas, con su última punta:
+
+| Rama | Último commit | Autor | Hora |
+| --- | --- | --- | --- |
+| `scrum-475-constancia-correo` | `68518cf4` | Javier Pereira Fernández | 11-ago 20:56 +0100 |
+| `scrum-475-emisor-unico` | `24b2c1de` | Luis | 11-ago 21:13 +0200 |
+| `scrum-475-constancia-sobre-emisor-unico` | `8c447809` | Javier Pereira Fernández | 11-ago 22:27 +0100 |
+| `scrum-475-sql-email-messages` | `5c281680` | Javier Pereira Fernández | 11-ago 23:08 +0100 |
+
+`main` se movió **tres veces** durante la sesión —`1117b313` → `3d8c1d7d` → `90e810ad` →
+`22c79b57`— y se ha traído dentro las tres. Verificado además que SCRUM-477 (`3dc9015a`) **ya es
+ancestro de `main`**: el mecanismo que esto consume está mergeado, no es trabajo mío sin empujar.
+
+## 1 · LOS OCHO, del trinquete de SCRUM-477, con fichero y línea
+
+Sacados de `tests/scrum477-avisos-con-constancia.test.mjs` §5 y **re-medidos** con el instrumento de
+`main` antes de tocar nada:
+
+| # | Sitio | Emisor | Aviso que se pierde |
+| --- | --- | --- | --- |
+| 1 | `src/core/cron/cron.ts:61` | `sendWeeklyDigests` | resumen semanal |
+| 2 | `src/core/cron/cron.ts:71` | `runLifecycleEmails` | ciclo de vida (día 3/7/12/expirado/inactivo) |
+| 3 | `src/index.ts:30` | `startCronJobs` | — (ver §3: no es un aviso) |
+| 4 | `src/modules/auth/domain/auth.service.ts:278` | `requestMagicLink` | enlace de acceso |
+| 5 | `src/modules/auth/domain/auth.service.ts:314` | `sendWelcomeEmail` | bienvenida |
+| 6 | `src/modules/auth/domain/auth.service.ts:316` | `requestMagicLink` | enlace de acceso |
+| 7 | `src/modules/billing/app/routes/stripe.routes.ts:80` | `sendFirstPaymentEmail` | primer pago (plan Pro) |
+| 8 | `src/modules/auth/app/routes/auth.routes.ts:23` | `requestMagicLink` | enlace de acceso — **FUERA** |
+
+## 2 · 🔴 UNA PREMISA DEL ENCARGO ERA FALSA, Y LO DIGO CON LA FUENTE
+
+A mitad de sesión llegó una corrección: *«te dije que tus ocho eran los `ignora-resultado` del censo;
+era falso. Tus ocho son los del trinquete de SCRUM-477. Son otros ocho.»*
+
+**No son otros ocho: son los mismos.** El trinquete de SCRUM-477 no es una lista escrita a mano —se
+**deriva** de esa misma clasificación, en su propia línea:
+
+```js
+const perdidos = LLAMADORES.filter((l) => l.veredicto === 'ignora-resultado' || l.veredicto === 'traga-mudo');
+assert.equal(perdidos.length, 8, …)
+```
+
+Con `traga-mudo: 0` (medido), «los ocho del trinquete» y «los ocho `ignora-resultado`» son la misma
+lista por construcción, nombre por nombre. Lo confirma la propia entrada de SCRUM-477 §2: *«los ocho
+que quedan son de otros carriles —el arranque de los crons, el enlace mágico de acceso, el primer
+pago de Stripe—»*, que son exactamente estos.
+
+Se dice porque el encargo pedía PARAR si no salían ocho, y salen ocho: los de la tabla de arriba.
+
+**La otra mitad de la corrección sí era buena, y era importante**, así que está construida: ver §3.
+
+## 3 · 🔴 ENVOLTORIO DE PROGRAMACIÓN vs EMISOR EN EL CAMINO DEL CORREO
+
+El aviso de la corrección: `nombresDeEmisor()` marca emisora a **toda** función que ALCANCE al
+proveedor, y con eso `ignora-resultado: 8` sumaba dos cosas distintas.
+
+**Se deriva, no se lista** (`emisorasDiferidas()` en `tests/_censo-correo.mjs`): se propaga «alcanza
+al proveedor» una **segunda vez**, esta vez sin atravesar los callbacks que se le entregan a un
+programador (`cron.schedule`, `setTimeout`…). Lo que es emisora por el camino largo y no por el
+corto, **envía después**.
+
+Medido sobre los 17 emisores derivados: **exactamente uno** sale diferido.
+
+| | |
+| --- | --- |
+| **Envía al llamarlo** (16) | `enviarCorreo` · `enviarPorResend` · `sendWelcomeEmail` · `sendFirstPaymentEmail` · `requestMagicLink` · `sendWeeklyDigests` · `runLifecycleEmails` · `registerMerchant` · … |
+| **Solo lo deja programado** (1) | **`startCronJobs`** |
+
+Así que de los ocho, **siete** son llamadas cuyo fallo de correo se perdía de verdad, y **uno**
+—`index.ts:30`— no lo era. La corrección apuntaba también a `registerMerchant` y `requestMagicLink`
+como envoltorios; **medido, no lo son**: el envío ocurre DENTRO de la llamada (`requestMagicLink` →
+`issueLoginLink` → `await sendEmail`), así que tirar su resultado sí perdía el fallo. Sus dos
+llamadores están arreglados.
+
+## 4 · 🔴 EL PEOR DE LOS OCHO NO ERA UN AVISO PERDIDO: ERA UNO PERDIDO PARA SIEMPRE
+
+En el ciclo de vida el patrón era `await sendEmail(...)` como sentencia suelta y `markSent(...)` en
+la línea siguiente. Cinco avisos lo tenían.
+
+* si `sendEmail` **LANZA**, el `catch` de fuera corta antes de `markSent`. Ese caso estaba bien.
+* si `sendEmail` **DEVUELVE** `sin_destino` —el correo del merchant sin `@`, y ahí no lanza— la
+  ejecución seguía y `markSent` escribía `day3: 1`. **El merchant no lo recibe nunca, el sistema cree
+  que sí, y no se reintenta jamás porque `alreadySent` ya dice que se mandó.**
+
+Es la mentira exacta que la fase 1 se negó a introducir (*«`markSent()` marcaría como ENVIADO un
+correo que no existe»*, §3 de arriba) y estaba **viva por el otro canal**. El mismo defecto tenía el
+`console.log('✓ enviado')` del digest semanal, que afirmaba un envío que no se había intentado.
+
+## 5 · Qué entra
+
+| Pieza | Dónde |
+| --- | --- |
+| Cinco avisos nuevos en el conjunto CERRADO | `avisoConstancia.ts` · `AVISOS` |
+| `dejarConstancia()` — la constancia cuando ya se sabe lo que pasó | `avisoConstancia.ts` |
+| `ParteDeAvisos` + `resumenDelParte()` — el fallo VIAJA hasta el cron | `avisoConstancia.ts` |
+| Los dos emisores del cron DEVUELVEN parte | `weeklyDigest.service.ts` · `lifecycle.service.ts` |
+| `markSent` solo si salió, y constancia si no | `lifecycle.service.ts` (7 sitios) |
+| El enlace de acceso y la bienvenida dejan constancia | `auth.service.ts` |
+| El primer pago, por `conConstancia` y sin `await` | `stripe.routes.ts` |
+| El parte de programación, DERIVADO | `cron.ts` · `index.ts` |
+| Envoltorio diferido vs emisor inmediato | `tests/_censo-correo.mjs` · `emisorasDiferidas()` |
+
+### El caso que NO encaja en el patrón, y cómo se resolvió (`index.ts:30`)
+
+`startCronJobs` devolvía `void`: «nadie mira el resultado» era cierto **y vacío**. Lo que sí se
+perdía ahí es otra cosa, y es real: su última línea era **prosa escrita a mano** —*«Jobs registrados:
+recordatorio cotizaciones…, digest semanal…»*— que afirmaba seis jobs sin haber medido ninguno. Si
+alguien borra un `cron.schedule`, esa línea sigue diciendo que está, y lo que se pierde no es un
+correo: son **todos** los de ese canal, para siempre, sin que nadie los eche de menos —un resumen
+semanal que no llega no tiene pantalla donde se vea su ausencia—.
+
+Ahora la lista se **deriva** (cada nombre se anota en la misma sentencia que registra su job, así que
+no se puede borrar el registro y dejar viva la afirmación) y `index.ts` lee el parte: si el job del
+resumen semanal o el del ciclo de vida no quedó montado, **deja constancia al arrancar**, que es
+cuando se puede arreglar.
+
+**Lo que NO se hizo, y por qué:** aislar cada `cron.schedule` en su propio `try` para que un fallo de
+registro no impida los siguientes. Exige pasar el callback a un helper, y `tests/scrum371` (guard
+AJENO) busca `*.schedule(<expr>, <arrow literal>)` para comprobar que el barrido de sellos está
+programado: al meterlo en un helper dejaría de verlo. **Gana el guard ajeno.** Queda declarado.
+
+## 6 · Verificación
+
+| | Qué | |
+| --- | --- | --- |
+| **🔴 AUTOPRUEBA** | el criterio distingue «se mira» de «se tira» sobre fuente sintético — 8 formas — antes de creerse ningún número | ✅ |
+| **🔴 AUTOPRUEBA (2)** | el criterio «envía ahora / lo deja programado» probado sobre fuente sintético | ✅ |
+| **🔴 AUTOPRUEBA (3)** | el detector de `markSent` probado sobre las cuatro formas, buena y malas | ✅ |
+| **🔴 SUELO** | el censo tiene que VER las OCHO llamadas una a una, o su número no significa nada | ✅ |
+| **🔴 SUELO (2)** | 17 emisores y 31 llamadas: con menos, «ninguno pierde el fallo» es «no supe mirar» | ✅ |
+| **🔴 CERO ES SOSPECHA** | si el trinquete baja a 0, falla: el único admitido está declarado fuera | ✅ |
+| **🔴 EL TEST QUE DECIDE** | cada aviso arreglado deja rastro con QUÉ, POR QUÉ y PARA QUIÉN, enmascarado y estable | ✅ |
+| **🔴 `markSent`** | ningún aviso se marca ENVIADO sin que la decisión dependa del envío | ✅ |
+| **CONTROL POSITIVO** | un aviso que SÍ sale no escribe nada y no paga fricción | ✅ |
+| **CONTROL POSITIVO (2)** | `avisosSinProgramar` con los jobs reales del árbol no nombra ninguno | ✅ |
+| **🔴 CONTROL NEGATIVO** | un aviso que revienta NO tumba el registro de la cuenta ni la activación del plan | ✅ |
+| **Guard de la fase 1** | `scrum475-un-solo-emisor.test.mjs` · **7/7**, sin tocar | ✅ |
+
+### Los rojos por el mecanismo — probados por INYECCIÓN, no por lectura
+
+| Mutación | Cae diciendo |
+| --- | --- |
+| `stripe.routes.ts` vuelve a `sendFirstPaymentEmail(merchantId);` | *«HAY AVISOS QUE VUELVEN A PERDER SU FALLO: stripe.routes.ts:92 sendFirstPaymentEmail → se pierde el aviso «primer_pago». Veredicto visto: sube»* |
+| `cron.ts` vuelve a `await sendWeeklyDigests();` | *«… cron.ts:110 sendWeeklyDigests → se pierde el aviso «resumen_semanal». Veredicto visto: ignora-resultado»* |
+| `markSent` vuelve a correr sin condición | *«UN AVISO SE MARCA COMO ENVIADO SIN COMPROBAR QUE SALIÓ (línea 198 (envío visto: r))»* |
+
+### 🔴 Y el verde falso que me salió, que es lo que más importa de esta sesión
+
+La primera versión del guard buscaba `ignora-resultado` y `traga-mudo`, igual que el de SCRUM-477.
+Se probó en rojo devolviendo `stripe.routes.ts` a tirar el resultado — el defecto exacto del ticket —
+y **pasó en verde**.
+
+El motivo: al arreglarlos, dos de estos emisores perdieron su `.catch()` inline y pasaron de canal
+`devuelve` a canal `lanza`. Y `censarLlamadores` solo etiqueta `ignora-resultado` cuando el canal es
+`devuelve`; con `lanza` y sin `catch` alrededor, la misma llamada tirada sale **`sube`**, que aquí es
+mentira —un fire-and-forget sin `.catch` de un emisor que lanza no lo recoge nadie: es una promesa
+rechazada sin manejador—.
+
+> **Arreglar el sitio cambió la categoría por la que se le vigilaba**, y un guard escrito en negativo
+> se quedó mirando un cubo por el que la regresión ya no pasa. La versión que hay exige el veredicto
+> BUENO (`mira-resultado`): eso cierra `sube`, `traga-log` y `avisa` de una vez, sin enumerar formas
+> de fallar. Lo destapó el rojo, no una relectura.
+
+Y me pasó **una segunda vez, al revés**: mi propio detector de `markSent` exigía que el `if`
+mencionara la palabra `enviado`, y se puso rojo sobre código correcto —los cinco avisos delegan la
+decisión en `anotarEnvio(parte, correo, r)`—. Atado a la FORMA en vez de al HECHO, el defecto que
+esta casa lleva nueve variantes cazando. Ahora exige que **la condición use la variable donde cayó el
+resultado del envío**, lea el `.enviado` o se lo pase a quien decide.
+
+## 7 · 🔴 Un guard AJENO se quedó ciego por mi refactor, y él lo cantó
+
+`tests/scrum337-aviso-atado-al-bloqueo.test.mjs` deriva CUÁLES son los avisos del ciclo de vida
+buscando cada `markSent(…, 'clave')` **dentro de `runLifecycleEmails`**, con la clave como literal.
+Al extraer los cinco a un helper, ese censo pasó a ver **cero avisos** — y en vez de callarse, su
+suelo cantó: *«cero avisos no significa "no hay correos que prometan nada": significa que la
+derivación está ciega»*.
+
+**Tenía razón, y no se relaja.** Es la misma lección de la fase 2 al revés, y esta vez me la aplicó
+otro guard a mí. El `markSent` se ha devuelto a donde el guard ajeno lo busca; lo que se extrae es la
+decisión (`anotarEnvio`), no la marca.
+
+**Las cinco huellas congeladas de ese guard SÍ se han rehecho**, y es lo que ese guard existe para
+forzar: mirar el otro lado antes de darlas por buenas. Mirado y comprobado en el diff: lo único que
+cambia es `await sendEmail(...)` → `const r = await sendEmail(...)` y el `if` alrededor del
+`markSent`. **Ningún asunto, ningún cuerpo, ningún botón y ninguna condición** (`age >= 12`,
+`isTrial`, `quoteCount === 0`, `recent === 0`) se ha tocado, así que ninguna promesa se ha movido y
+las dos ataduras (`censo de montajes`, `censo de borrados`) siguen verdes. El motivo queda escrito
+dentro del propio fichero, junto a las huellas.
+
+## 8 · Números
+
+| | |
+| --- | --- |
+| **Línea base**, medida aparte en `main` = `1117b313` con árbol limpio | **3.296 tests · 3.219 pasan · 0 fallos · 77 saltados** |
+| **Esta rama**, con `main` = `22c79b57` dentro | **3.321 tests · 3.244 pasan · 0 fallos · 77 saltados** |
+| `guards:entrada` | 4 guards · 17 tests · verde |
+| `tests/scrum393` (marcadores de conflicto) | 0 · 0 · 0 |
+
+El censo, con el criterio completo: **17 emisores · 31 llamadas · `avisa: 3` · `traga-log: 3` ·
+`traga-mudo: 0` · `mira-resultado: 24` · `ignora-resultado: 1`**. Suman 31 — eran **cinco**
+categorías y el resumen que llegó traía cuatro; no faltaba ninguna llamada por explicar.
+
+Recorrido del trinquete: **4** (SCRUM-475 f2, criterio incompleto) → **12** (SCRUM-477, criterio
+completo) → **8** (arreglados los cuatro avisos al profesional) → **1** (esto).
+
+## 9 · Lo que NO se ha tocado
+
+`prisma/schema.prisma` (cero líneas de diff) · el emisor único `enviarCorreo.ts` (**cero líneas**) ·
+`constanciaCorreo.ts` y sus estados · el guard de la fase 1 · la semántica de `throw` de los cinco
+emisores migrados · el embudo de WhatsApp · el contenido y el asunto de **ningún** correo · el camino
+de emisión fiscal y el sellado · `public/dashboard/js/`.
+
+## 10 · Huecos declarados
+
+* **La constancia sigue siendo un log, no una fila.** Misma frontera que las fases 1 y 2: la tabla
+  `EmailMessage` está PREPARADA Y SIN APLICAR en §4 de la fase 2, y `prisma/schema.prisma` es del
+  fundador (SCRUM-479). `registroDeAviso()` es exactamente la fila que habrá que escribir.
+* **`auth.routes.ts:23` sigue perdiendo el fallo, y queda NOMBRADO.** Es el enlace de acceso pedido
+  desde la pantalla de login: `POST /auth/login` contesta *«Si el email está registrado recibirás el
+  enlace en breve»* a un usuario **sin sesión**, y decirle ahí que el correo no salió es microcopy
+  del asesor (regla 30) — además de revelarle que su email existe, que es justo lo que esa respuesta
+  genérica evita. El trinquete impide que se cuele un noveno y exige que ése siga siendo el único.
+* **Al profesional no se le DICE nada todavía.** Esto deja constancia; avisarle es lo siguiente y su
+  texto lo aprueba el asesor. La propuesta sigue sin implementar en SCRUM-477 §8.
+* **Los tres `traga-log` no se tocan** (`mpWebhook.routes.ts:125`, `psp.routes.ts:62` y `:167`, los
+  tres `sendInvoiceEmail`). No estaban en los ocho, son otro carril y su fallo **sí** deja una línea.
+  Reportados, no arreglados (regla 37).
+* **Aislar el registro de cada cron** — declarado en §5, con su motivo (guard ajeno de SCRUM-371).
+* **No verificado en `yaqu.app`.** No se ha provocado un fallo de correo real ni se ha visto un
+  arranque con un cron sin montar: todo lo de arriba se prueba con la suite.
