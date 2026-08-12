@@ -52,6 +52,12 @@ const MARCA = '[PENDIENTE';
  * a otra tiene que verse, y un total lo escondería (la lección del suelo por FUNCIÓN de SCRUM-392).
  */
 const CENSO = Object.freeze({
+  // SCRUM-294-a (12-ago-2026) · SUBIDA A CONCIENCIA: el campo del recargo de equivalencia en la
+  // ficha del cliente sale con marcador en su rotulo y en sus tres opciones. Es deliberado y no
+  // provisional por descuido: decirle en pantalla a que REGIMEN FISCAL pertenece su cliente es
+  // asesorarle, y eso es dictamen del asesor, no producto (regla 30). El dato se pide; no se
+  // explica. Se apaga el dia que el fundador firme los cuatro textos.
+  'customersView.js': 2,
   // SCRUM-421 · A CONCIENCIA: el registro de acciones del presupuesto trae 12 rotulos, TODOS sin
   // aprobar (regla 30). El marcador se ve EN PANTALLA a proposito: es la unica forma de que nadie
   // encienda por descuido texto que el fundador no ha firmado. Se cuenta 1: los doce salen de una

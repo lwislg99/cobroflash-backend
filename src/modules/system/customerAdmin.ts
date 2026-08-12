@@ -18,6 +18,7 @@ const CUSTOMER_SELECT_NO_TOKEN = {
   legalName: true, taxId: true, waOptOut: true, createdAt: true, updatedAt: true,
   tipoDestinatario: true, // SCRUM-69: para editar en la ficha y para la bandeja de facturación
   billingPeriodicity: true, // SCRUM-171b: periodicidad pactada (solo para AVISAR, ver bandeja)
+  recargoEquivalencia: true, // SCRUM-294-a: el dato del cliente; NO cableado al total (regla 38)
 } as const;
 
 export async function listCustomers(merchantId: number, search?: string) {
