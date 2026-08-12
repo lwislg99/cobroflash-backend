@@ -21,6 +21,7 @@ const SHELL = [
   '/tokens.css',
   '/dashboard/css/styles.css',
   '/dashboard/js/api.js',
+  '/dashboard/js/selectorMetodoCobro.js',
   '/dashboard/js/contacto.js',
   '/dashboard/js/modalHeader.js', // SCRUM-446
   '/dashboard/js/jobNextAction.js',

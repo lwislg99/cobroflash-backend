@@ -1845,3 +1845,40 @@ ALTER TABLE "merchants" ADD COLUMN "flags" JSONB;
   (precedencia merchant > país > env > default). Escritura solo manual/fundador.
 - Primer uso: PUBLIC_PROFILE_ENABLED=true SOLO en demo (id=1). Ningún otro merchant
   tiene flags (verificado count=0).
+
+## 12-ago-2026 — customers.recargo_equivalencia (SCRUM-294-a) — SIN PUSH: la columna YA ESTABA ✅
+
+```prisma
+recargoEquivalencia Boolean? @map("recargo_equivalencia")   // en `model Customer`
+```
+
+🔴 **NO HAY `db push` QUE APROBAR, Y ESO ES LO QUE HAY QUE REGISTRAR.** La columna
+`customers.recargo_equivalencia` **ya existe en producción y en staging** —verificado por el
+fundador contra `information_schema`—, así que lo que cambia aquí es **el esquema poniéndose al día
+con la base**, no la base poniéndose al día con el esquema. Es el caso inverso al habitual y por eso
+se anota: quien lea esta lista buscando qué falta por aplicar, no encontrará nada que aplicar.
+
+- **`Boolean?` SIN `@default`, y es la decisión entera.** Un `@default(false)` convertiría a **todos
+  los clientes existentes** en «declarado que NO lleva recargo», y eso **no lo ha dicho nadie**. Los
+  tres estados salen del tipo, sin inventar ninguno:
+  `NULL` = no consta · `false` = declara que no · `true` = declara que sí.
+- **Aditiva por definición**: no se crea nada, no se borra nada, no se toca ninguna fila.
+- 🛑 **NO está cableada al total.** El recargo cambia lo que el cliente paga —base + cuota +
+  recargo— y por tanto **el número que se sella**: eso es camino de emisión (regla 38) y no entra
+  con este dato. El cálculo ya existe y espera sin llamadores en
+  `src/modules/invoicing/domain/recargoEquivalencia.ts` (censado en SCRUM-484 como `MOTOR_EN_ESPERA`).
+## SCRUM-293 (A2) · retención de IRPF — 12-ago-2026
+
+`Merchant.retencionIrpfDeclarada` (`retencion_irpf_declarada`, boolean, default false) y
+`Merchant.retencionIrpfTipo` (`retencion_irpf_tipo`, int, nullable).
+
+**NO se ha ejecutado ningún `db push`, y no es un olvido: las dos columnas YA EXISTEN en producción
+y en staging**, verificado contra `information_schema` por otro carril. Lo que iba por detrás era
+el `schema.prisma`, no las bases — así que este commit hace que el esquema **alcance** a la
+realidad, no al revés.
+
+`guard:prisma` en verde tras `prisma generate`: el cliente coincide con el esquema en los dos
+sentidos (529 líneas comparadas). Si algún día una base no las tuviera, `assertSchemaSinDeriva`
+lo cantaría al arrancar — que es exactamente su trabajo.
+
+Aditivo puro: una columna con default y otra anulable. No reescribe ninguna fila existente.

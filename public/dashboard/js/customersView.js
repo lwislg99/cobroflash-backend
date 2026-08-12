@@ -133,6 +133,7 @@ function renderCustomersView(container) {
   let fieldName, fieldPhone, fieldEmail, fieldNotes;
   let fieldWaOptOut = null; // J3: baja manual de WhatsApp desde la ficha
   let fieldTipoDestinatario = null; // SCRUM-69: plazo legal de la recapitulativa (art. 13 RD 1619/2012)
+  let fieldRecargo = null; // SCRUM-294-a: recargo de equivalencia del cliente (tres estados)
   let modalTitleEl = null;
   let modalSaveBtn = null;
 
@@ -175,12 +176,38 @@ function renderCustomersView(container) {
     tipoWrapper.appendChild(tipoLabel);
     tipoWrapper.appendChild(fieldTipoDestinatario);
 
+    // SCRUM-294-a (A3) · EL RECARGO DE EQUIVALENCIA ES UNA PROPIEDAD DEL CLIENTE, no una casilla
+    // que alguien marca en cada factura: un cliente en recargo lo esta SIEMPRE, y preguntarlo por
+    // factura es pedirle al profesional que recuerde el regimen fiscal de su cliente.
+    //
+    // 🔴 UN SELECT DE TRES ESTADOS, Y NO UNA CASILLA. Una casilla solo sabe decir si/no, asi que
+    // «no consta» se leeria como «declara que no» — y false es un valor LEGITIMO, el peor sitio
+    // donde degradar en silencio (SCRUM-271: la casilla que se lee mal no puede caer a false).
+    // Con el select, «no consta» es una opcion explicita y NULL viaja como NULL.
+    //
+    // MICROCOPY: marcador. Decirle en pantalla a que regimen pertenece su cliente es asesorarle, y
+    // eso es dictamen del asesor, no producto. El dato se PIDE, no se explica.
+    const recargoWrapper = createElement("div", "field");
+    const recargoLabel = document.createElement("label");
+    recargoLabel.textContent = "[PENDIENTE microcopy oficial · recargo de equivalencia]";
+    fieldRecargo = document.createElement("select");
+    fieldRecargo.name = "recargoEquivalencia";
+    fieldRecargo.className = "input";
+    fieldRecargo.innerHTML = `
+      <option value="">[PENDIENTE microcopy oficial · no consta]</option>
+      <option value="si">[PENDIENTE microcopy oficial · si]</option>
+      <option value="no">[PENDIENTE microcopy oficial · no]</option>
+    `;
+    recargoWrapper.appendChild(recargoLabel);
+    recargoWrapper.appendChild(fieldRecargo);
+
     body.appendChild(fieldName.wrapper);
     body.appendChild(fieldPhone.wrapper);
     body.appendChild(fieldEmail.wrapper);
     body.appendChild(fieldLegalName.wrapper);
     body.appendChild(fieldTaxId.wrapper);
     body.appendChild(tipoWrapper);
+    body.appendChild(recargoWrapper);
     body.appendChild(fieldNotes.wrapper);
 
     // J3: baja manual de WhatsApp (hasta WA-0b el "BAJA" entrante no se procesa solo)
@@ -239,6 +266,9 @@ function renderCustomersView(container) {
       fieldTaxId.input.value = editingCustomer.taxId || "";
       fieldWaOptOut.checked = !!editingCustomer.waOptOut;
       fieldTipoDestinatario.value = editingCustomer.tipoDestinatario || ""; // SCRUM-69
+      // SCRUM-294-a: los tres estados NO colapsan. `|| ""` habria mandado el `false` a «no consta».
+      fieldRecargo.value = editingCustomer.recargoEquivalencia === true ? "si"
+        : editingCustomer.recargoEquivalencia === false ? "no" : "";
     }
 
     modalBackdrop.style.display = "flex";
@@ -265,6 +295,9 @@ function renderCustomersView(container) {
       taxId: fieldTaxId.input.value.trim() || null,
       waOptOut: !!(fieldWaOptOut && fieldWaOptOut.checked), // J3
       tipoDestinatario: fieldTipoDestinatario.value || null, // SCRUM-69
+      // SCRUM-294-a: «» → null (no consta). NUNCA false por defecto: eso seria DECLARAR por el
+      // profesional que su cliente no lleva recargo, y eso no lo ha dicho nadie.
+      recargoEquivalencia: fieldRecargo.value === "si" ? true : fieldRecargo.value === "no" ? false : null,
     };
 
     if (!payload.name) {
