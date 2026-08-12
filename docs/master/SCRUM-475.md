@@ -278,6 +278,25 @@ model EmailMessage {
 los correos ya enviados no tienen fila y **no se les inventa una** — de ellos no consta nada, que es
 la verdad. El `@unique` en `providerId` es lo que permitirá que el webhook encuentre la fila.
 
+> ### ✅ YA ESTÁ APLICADO · 12-ago-2026 — el «SIN APLICAR» del título de arriba está SUPERADO
+>
+> **El título no se corrige: se supera poniéndole al lado algo más reciente.** Era cierto cuando se
+> escribió, y borrarlo dejaría este documento diciendo que la tabla nació aplicada, que es falso.
+>
+> | Qué | Cuándo · quién |
+> | --- | --- |
+> | `docs/sql/scrum-475-email-messages.sql` aplicado a **staging** y a **producción** | 12-ago-2026, **a mano por el fundador** desde la consola de Railway (`Console` → `psql`) |
+> | El modelo de arriba pegado en `prisma/schema.prisma` | 12-ago-2026, el fundador · `git diff --numstat` = **24 añadidas, 0 borradas**, un solo fichero |
+> | Verificado con `\d email_messages` en las DOS bases | 12 columnas, mismos tipos, mismos defaults, **4 índices** (`pkey`, el UNIQUE de `provider_id` y los dos compuestos) |
+>
+> Antes de aplicarlo, `to_regclass('public.email_messages')` daba **NULL en las dos**: la tabla no
+> existía en ninguna, así que no hubo nada que pisar.
+>
+> **Lo que ACREDITA que las tres copias dicen lo mismo** —esquema, fichero SQL y bases— es
+> `tests/scrum475-schema-vs-sql.test.mjs`, y el detalle de cómo se probó está en la **FASE 4** al
+> final de este documento. No es una afirmación: es un test que corre en `npm test` y que se ha
+> puesto en rojo a propósito para comprobar que sabe caerse.
+
 ## 5 · Lo que NO se ha tocado
 
 `prisma/schema.prisma` (cero líneas de diff) · ninguna tabla · la semántica de fallo de los emisores
@@ -723,6 +742,231 @@ de emisión fiscal y el sellado · `public/dashboard/js/`.
 
 ---
 
+# FASE 4 · Acreditar que `schema.prisma` y las bases dicen LO MISMO
+
+**Medido contra:** `origin/main` = `d5fdedaf25ab16e2fea17e5a9c33cf3c1149e35c` · 2026-08-12T10:59:34+01:00
+
+**Rama:** `scrum-475-acreditar-schema-bases`, sobre `scrum-475-schema-emailmessage` (la del fundador)
+
+> **No se aplica NADA.** Este trabajo no escribe en ninguna base, no pide ninguna credencial de
+> producción y no toca el modelo. Solo PRUEBA que las tres copias del mismo diseño concuerdan, y lo
+> deja escrito en un test que corre en `npm test`.
+>
+> 🔴 **Y encontró algo que hay que leer antes de mergear:** el esquema y las bases **sí** concuerdan,
+> pero las 24 líneas dejan **11 tests en rojo** en tres registros derivados de la casa. Ni uno es de
+> este trabajo — `main` está verde y la rama del fundador, sola, ya da los 11. Está en el **§3**.
+
+## 0 · PASO 0
+
+`main` = `d5fdedaf` **antes** del `fetch` y `d5fdedaf` **después**: no se movió.
+
+Búsqueda por CONTENIDO de `EmailMessage` y `email_messages` sobre `prisma/schema.prisma`, ref por ref:
+
+| Dónde | Resultado |
+| --- | --- |
+| `main` | **NO aparece** — el modelo no está en `main` todavía |
+| `origin/scrum-475-schema-emailmessage` | **SÍ**: `model EmailMessage` en la línea 925, `@@map("email_messages")` en la 946 |
+| las **demás** refs de `origin` (barrido una a una) | **ninguna** |
+
+La rama del fundador: `56a5e462` · Javier Pereira Fernández · 12-ago 11:05 +0100 ·
+*«SCRUM-475: modelo EmailMessage en schema.prisma»*. `git diff --numstat main` → **24 añadidas, 0
+borradas, un solo fichero**, que es exactamente lo que el encargo declaraba. **La premisa se
+sostiene.**
+
+## 1 · Los dos instrumentos, y qué encontró CADA UNO por separado
+
+### ① Sin base de datos — **es el que manda**, porque no necesita credencial
+
+`tests/scrum475-schema-vs-sql.test.mjs`. Genera lo que `schema.prisma` produciría **contra vacío**
+con la herramienta de la casa —`scripts/preview-migracion.mjs`, CLI **local por ruta**, nunca `npx`—
+y lo compara con `docs/sql/scrum-475-email-messages.sql`, que es lo que está aplicado.
+
+> **El encargo sugería comparar «la parte de `email_messages`» de la salida. La casa tiene
+> herramienta y gana ella:** `preview-migracion.mjs` exporta `ejecutorLocal()` y `controlPositivo()`,
+> así que el test los CONSUME en vez de invocar el CLI por su cuenta. Eso hereda gratis las dos
+> protecciones que ese fichero existe para dar: el binario resuelto por ruta y el control positivo
+> delante de cualquier vacío.
+
+| Qué se comparó | Resultado |
+| --- | --- |
+| las **12 columnas**: nombre, tipo, nulabilidad y default | **idénticas** |
+| la `PRIMARY KEY` y su nombre (`email_messages_pkey`) | **idéntica** |
+| los **3** `CREATE INDEX`: nombre, unicidad y columnas | **idénticos** |
+| el UNIQUE de `provider_id`, comprobado aparte | `email_messages_provider_id_key` sobre `provider_id` ✅ |
+| el modelo del esquema contra el bloque ```prisma de la FASE 2 §4 | **idéntico**, línea a línea |
+
+**Cero diferencias.** Y como el `\d` del fundador ya probó que staging y producción SON ese fichero,
+la cadena se cierra por transitividad: **esquema = fichero = las dos bases.**
+
+### 🔴 Qué se normaliza antes de comparar, y por qué exactamente eso
+
+Escrito en el propio test porque una normalización sin motivo es una excepción disfrazada:
+
+1. **`IF NOT EXISTS`** — los añade el fundador a mano para que el fichero sea re-ejecutable
+   (convención de la casa, declarada en la cabecera del propio `.sql`). La herramienta no los emite.
+   Sin normalizarlos, **las cuatro sentencias darían diferencia falsa** — y una diferencia falsa
+   acaba con alguien relajando el guard.
+2. **Espacios, sangría y líneas en blanco** — medido, no supuesto: la herramienta deja una línea
+   vacía antes del `CONSTRAINT` y el fichero no.
+3. **Comentarios `--`** — la herramienta emite `-- CreateTable`; el fichero tiene su cabecera.
+
+**Y NADA MÁS.** Tipos, nulabilidad, defaults y nombres de índice no se tocan: son justamente lo que
+se compara. Por eso la comparación es **estructurada** (columnas e índices como datos) y no una
+igualdad de texto: así el rojo dice *qué* difiere en vez de *que* difiere.
+
+### ② Contra staging — **sí se pudo correr**
+
+`node scripts/verificar-email-messages.mjs --clave DATABASE_URL_STAGING` (se pasa el **nombre** de la
+variable, nunca su valor). Solo lee: ni un `INSERT`, ni un `UPDATE`, ni DDL.
+
+```
+destino: acela.proxy.rlwy.net/railway
+invoices_discriminador   7        ← staging, confirmado
+tabla                    1
+idx_merchant_created     1
+idx_related              1
+unique_provider_id       1
+control_positivo         1        ← encuentra `invoices`, así que un 0 significaría 0
+```
+
+**Los dos instrumentos NO se contradicen** (era el quinto STOP): ① dice que la estructura del fichero
+es la del esquema, y ② dice que staging tiene esa tabla con sus tres índices.
+
+🔸 **Y lo que ② NO prueba, que hay que decirlo:** su consulta comprueba la EXISTENCIA de la tabla y de
+los tres índices, **no las 12 columnas ni sus tipos**. Eso lo probó el `\d` del fundador, no yo.
+`producción` no la he mirado: no hay credencial de producción en este árbol y no se pide.
+
+## 2 · 🔴 El suelo y la autoprueba — porque «coinciden» y «no supe mirar» son el mismo verde
+
+| Comprobación | Qué pasa si se rompe |
+| --- | --- |
+| **SUELO** · el control positivo de la herramienta responde (25 tablas con el modelo dentro) | *«NO SUPE MIRAR — la herramienta no responde»*, nunca «coinciden» |
+| **SUELO** · el extractor encuentra el `CREATE TABLE` en los DOS lados | *«NO SUPE MIRAR: no encuentro `CREATE TABLE "email_messages"`… un "coinciden" sobre dos vacíos es el peor verde posible»* |
+| **SUELO** · el fichero declara 12 columnas y 3 `CREATE INDEX` | los números que el `\d` contó, exigidos aquí |
+| **🔴 AUTOPRUEBA** · cinco diferencias sintéticas, sobre copias en memoria | ver abajo |
+
+La autoprueba mete las cinco diferencias que de verdad podrían pasar y comprueba que el comparador
+las caza **una a una**: un **tipo** cambiado (`TEXT`→`VARCHAR(50)`), una **nulabilidad** perdida, un
+**default** cambiado (`aceptado_sin_identificador`→`entregado`, que sería grave de verdad: convertiría
+cada fila nueva en una mentira), un **índice renombrado** y un **índice que falta**.
+
+### El rojo por el mecanismo, probado sobre el ÁRBOL y no solo en memoria
+
+Se cambió `"kind" TEXT NOT NULL` por `"kind" VARCHAR(50) NOT NULL` en el fichero `.sql` real y el
+test cayó diciendo:
+
+```
+🔴 `schema.prisma` Y LAS BASES NO DICEN LO MISMO:
+    kind.tipo — schema: TEXT · aplicado: VARCHAR(50)
+```
+
+Nombra la columna y **pone las dos versiones delante**, que es lo que hace falta para reportar sin
+arreglar. Revertido y comprobado con `git diff --stat`: vacío.
+
+## 3 · 🔴 EL HALLAZGO QUE BLOQUEA EL MERGE: las 24 líneas dejan **11 rojos**
+
+Los dos instrumentos dicen que el esquema y las bases concuerdan. Lo que **no** concuerda es el
+esquema con los **registros derivados de la casa**: `npm test` sobre la rama del fundador da **11
+fallos**, y ninguno es mío. Atribución medida en tres árboles, no deducida:
+
+| Árbol | tests | pass | **fail** |
+| --- | --- | --- | --- |
+| `main` = `aa743fe3` | 3.385 | 3.308 | **0** |
+| `origin/scrum-475-schema-emailmessage` = `56a5e462`, **sin nada mío** | 3.366 | 3.278 | **11** |
+| esta rama (aquélla + mi commit + `main` nuevo dentro) | 3.390 | 3.302 | **11** — los MISMOS |
+
+**`main` está verde y la rama del fundador no.** Mi commit añade 5 tests y 0 fallos.
+
+### No son 11 problemas: son TRES registros que el esquema dejó atrás
+
+Todos derivan de `prisma/schema.prisma`, y todos saltan porque `EmailMessage` tiene `merchantId` o
+porque añade una tabla:
+
+| Registro | Rojos | Qué exige | Dónde se toca |
+| --- | --- | --- | --- |
+| `MODELOS_POR_MERCHANT` | **8** (SCRUM-172 ×5, 192, 314 ×2) | declarar `emailMessage` respetando el orden de dependencias | `tests/_merchant-fixture.mjs` |
+| `docs/sql/deriva-prod.sql` | **2** (SCRUM-222, 461) | **regenerar**: 350 → **362** columnas, 24 → **25** tablas | `node scripts/generar-sql-deriva.mjs` |
+| `TABLES` de `backup-dump.mjs` | **1** (SCRUM-241) | añadir `email_messages` | `scripts/backup-dump.mjs` |
+
+Los mensajes, en sus palabras, porque explican la consecuencia mejor que un resumen:
+
+* SCRUM-172: *«Modelo(s) con `merchantId` que NADIE barre: emailMessage […] las filas de ese modelo
+  sobreviven al merchant efímero y quedan huérfanas EN SILENCIO en las tres BD.»*
+* SCRUM-241: *«FALTAN (el dump lógico NO las volcaría): email_messages […] Si una tabla no debe ir al
+  backup, es una decisión de máster, no un hueco en el array.»*
+* SCRUM-461: *«EL CENSO SE HA ENCOGIDO: estas columnas están en `prisma/schema.prisma` y NO en
+  `docs/sql/deriva-prod.sql`»* — y lista las once.
+
+### 🔴 Por qué NO los arreglo aquí, y no es pereza
+
+1. **Cada uno es una decisión de otro carril, no una declaración mecánica.** Meter `emailMessage` en
+   `MODELOS_POR_MERCHANT` decide **qué filas mueren con un merchant** y en qué orden: es tenencia
+   (¿se borra la constancia de los correos de un merchant borrado?, ¿antes o después de qué?). Meter
+   `email_messages` en `TABLES` decide **qué se volca en el backup**, y el propio guard dice que la
+   excepción «es una decisión de máster».
+2. **Un arreglo PARCIAL sería el peor de los tres resultados.** Los tres registros son un mismo paso
+   de integración. Regenerar el `deriva-prod.sql` —que es lo único puramente mecánico— dejaría la
+   rama **igual de roja** y con la apariencia de que el esquema ya está integrado.
+3. **Arreglarlo aquí escondería la señal.** Este ticket acredita el esquema; si lo pongo verde, nadie
+   se enteraría de que las 24 líneas necesitan tres decisiones más antes de poder mergear. El valor
+   de este hallazgo es que llega **antes** del merge, con los tres sitios y el comando exacto.
+
+**Lo que sí está medido y no hay que volver a medir:** los números del `deriva-prod.sql` (350 → 362
+columnas, 24 → 25 tablas) salen del propio rojo de SCRUM-222, y ese fichero se **genera**, no se
+edita a mano — su cabecera lo dice.
+
+## 4 · Los tres hallazgos de hoy, una línea cada uno
+
+* La caja **Data → Query** de Railway añade un `LIMIT` por detrás: **solo sirve para `SELECT`**; el
+  DDL va por **Console → `psql`**.
+* El detector de «acción destructiva» de Railway se puso **rojo sobre este SQL porque su CABECERA
+  nombra `DROP`/`DELETE`/`TRUNCATE`** al certificar que NO están: atado a la forma, no al hecho — el
+  mismo defecto que esta casa lleva nueve variantes cazando, esta vez en una herramienta ajena.
+* **`updated_at` es `NOT NULL` sin default:** cualquier `INSERT` que no venga de Prisma falla, porque
+  el `@updatedAt` lo rellena el cliente y no la base.
+
+## 5 · Lo que se ha escrito
+
+| Fichero | Qué |
+| --- | --- |
+| `tests/scrum475-schema-vs-sql.test.mjs` | **nuevo, 5 tests** — el comparador, su suelo y su autoprueba |
+| `docs/master/SCRUM-475.md` FASE 2 §4 | **añadido debajo, sin borrar nada**: la constancia de la aplicación, con fecha y con el `to_regclass` NULL previo |
+| `docs/sql/scrum-475-email-messages.sql` | cabecera: el discriminador viejo **marcado superado y fechado**, y al lado el de hoy |
+| `docs/master/SCRUM-475.md` FASE 4 | esta sección |
+
+**Números, con `main` = `aa743fe3` dentro y medidos DESPUÉS de la última edición:** 3.390 tests ·
+3.302 pasan · **11 fallos** · 77 saltados. Los **11 son los del §3** y no son de este trabajo:
+`main` da 0 y la rama del fundador sola da los mismos 11. `npm run guards:entrada` → 4 guards, 17
+tests, 0 fallos. Mis 5 tests: **5/5 en verde**.
+
+⚠️ **Se entrega con 11 rojos a propósito, y es la entrega correcta:** el encargo era acreditar y
+dejarlo escrito, no integrar el modelo. Ponerlos verdes exigía tomar tres decisiones de otros
+carriles (§3) y habría borrado la única señal que avisa antes del merge.
+
+## 6 · Lo que NO se ha tocado, y es la mitad del encargo
+
+`prisma/schema.prisma` — **cero líneas**: el modelo es de los fundadores y la base ya está escrita.
+Ninguna base de datos: ni `migrate dev`, ni `migrate deploy`, ni `db push`, ni `db execute`, ni
+`--accept-data-loss`. Ninguna cadena de conexión se ha escrito, pedido, impreso ni inventado — al
+instrumento ② se le pasa el **nombre** de la variable, y `--from-url`/`--to-url` no aparecen en
+ningún sitio. `src/` · `public/` · la fase 2 del webhook (necesita un secreto que aún no está fuera
+del panel).
+
+## 7 · Huecos declarados
+
+* 🔴 **La rama NO se puede mergear todavía**, y no por lo que este ticket construye: por los tres
+  registros del §3. Van con nombre, con recuento y con el sitio donde se tocan.
+* **Producción no la he mirado yo.** Lo que hay de producción es el `\d` del fundador y el
+  discriminador `charges` = 51. Correcto: no hay credencial de producción en este árbol y no se pide.
+* **El instrumento ② no comprueba columnas ni tipos**, solo existencia de tabla e índices. La
+  igualdad columna a columna la sostiene ① (contra el fichero) más el `\d` del fundador (fichero
+  contra bases).
+* **La transitividad depende de una medición humana.** Si el `\d` se leyó mal, ① seguiría verde: está
+  comparando el esquema con el FICHERO, no con la base. Cerrarlo del todo pediría un `②` que compare
+  las 12 columnas contra `information_schema`, y eso es otro ticket — se reporta, no se hace aquí.
+* **`dev` no se ha comprobado en esta sesión.** El fichero dice `dev ✅` del 11-ago; no lo re-mido.
+* **Nada de esto prueba que el producto ESCRIBA en la tabla.** No hay ni un `INSERT` en `src/`
+  todavía: `registroDeAviso()` sigue siendo un log, como declara la FASE 3.
 # FASE 2B · PASO 0 — el receptor está BLOQUEADO, y el motivo está medido
 
 **Medido contra:** `origin/main` = `84f60528e626f6bc569c43e08e635497fc351d13` · 2026-08-12T14:30:00+02:00
@@ -795,3 +1039,16 @@ fundador, y ésa es la condición que él mismo puso para este ticket.
 
 ⚠️ **No se ha construido un receptor «a medias».** Un endpoint que verifique y descarte sería otro
 motor sin superficie — la enfermedad que este ticket vino a cerrar, cometida en su arreglo.
+
+### ✅ SUPERADO · 12-ago-2026, misma tarde — dos de los tres bloqueos ya no existen
+
+**El §2 no se corrige: se supera.** Era cierto cuando se midió, y borrarlo dejaría este
+documento sin la razón por la que el receptor no se construyó ese día.
+
+| Bloqueo del §2 | Estado |
+| --- | --- |
+| 1 · `EmailMessage` no está en `schema.prisma` | ✅ **RESUELTO** — entra en `main` con el merge de SCRUM-495/497 |
+| 2 · la tabla solo en dev | ⚠️ **YA ERA FALSO AL ESCRIBIRLO** — aplicada a staging y a producción el 12-ago por la mañana, verificada con `\d` en las dos (FASE 4). La cita de `MIGRATIONS_PENDING.md:291` estaba caducada: es exactamente el defecto del número en prosa sin fecha visible |
+| 3 · nadie escribe una fila | 🔴 **EN PIE** — es SCRUM-501, y es el único que queda |
+
+El orden del §3 se mantiene tal cual: cuando SCRUM-501 esté, el receptor tiene qué actualizar.
