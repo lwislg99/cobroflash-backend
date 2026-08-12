@@ -19,6 +19,7 @@ import {
   censarAlcance, quienLoImporta, llamadasEnTests, autoprueba as autopruebaAlcance,
   ALCANZABLE, NO_ALCANZABLE, NO_SE_PUDO_DETERMINAR,
 } from './_alcance-desde-entradas.mjs';
+import { clasificador, consejoPara } from './_export-que-sobra.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const R = analizar(RAIZ);
@@ -192,6 +193,23 @@ const declaracionesCaducadas = (filas, pares) => {
 /** 🔴 Con FICHERO Y LÍNEA: un guard que obliga a buscar a mano lo que ha cazado se acaba apagando. */
 const nombrar = (filas) => filas.map((f) => `   ${f.modulo}:${f.linea}  ${f.nombre}`).join('\n');
 
+/**
+ * 🔴 SCRUM-494 · Y CON EL CONSEJO QUE TOCA A CADA UNO.
+ *
+ * El mensaje de un guard **no es documentación: es la instrucción que la siguiente persona va a
+ * ejecutar.** Este trinquete cazó `metodoDeclarado` minutos después de nacer —la detección es
+ * buena y no se toca— pero le dijo que lo DECLARARA, y la respuesta correcta era quitarle el
+ * `export`: su consumidor real estaba dentro de su módulo y de fuera solo entraba su test.
+ *
+ * Aconsejar «declara» a un ayudante de test llena el registro de ruido y lo deja de señalar lo que
+ * importa. Así que el consejo se calcula por export, no se escribe una vez para todos.
+ */
+const clasificarExport = clasificador(RAIZ);
+const nombrarConConsejo = (filas) => filas.map((f) => {
+  const c = clasificarExport(f.modulo, f.nombre);
+  return `   ${f.modulo}:${f.linea}  ${f.nombre}\n     → ${consejoPara(c)}`;
+}).join('\n\n');
+
 // ── AUTOPRUEBA · antes de creerse ningún número ──────────────────────────────────────────
 
 test('SCRUM-411 · 🔴 AUTOPRUEBA: el detector se prueba sobre fuente SINTÉTICA antes de creerse su número', () => {
@@ -257,13 +275,13 @@ test('SCRUM-411 · 🔴 CONTROL POSITIVO: los 190 de hoy, DECLARADOS, no hacen r
   t.diagnostic(`huérfanos en módulos vivos: ${C.total} en ${C.modulosConHuerfanos} módulos · declarados: ${DECLARADOS_PARES.size}`);
   const nuevos = nuevosSinDeclarar(C.filas, DECLARADOS_PARES);
   assert.deepEqual(nuevos.map((f) => clave(f.modulo, f.nombre)), [],
-    `🔴 HAY ${nuevos.length} EXPORT(S) HUÉRFANO(S) QUE NADIE HA DECLARADO:\n\n${nombrar(nuevos)}\n\n` +
+    `🔴 HAY ${nuevos.length} EXPORT(S) HUÉRFANO(S) QUE NADIE HA DECLARADO:\n\n${nombrarConConsejo(nuevos)}\n\n` +
     '  Un export sin llamador pasa todos los tests y entra verde: desde fuera es indistinguible de\n' +
     '  una función entregada, su ticket se cierra, y lo que falta deja de estar en ninguna lista.\n' +
     '  Así estuvo meses `borrarMerchant` (RGPD-1), con la promesa escrita en la página de privacidad.\n\n' +
-    '  NO hace falta cablearlo ni borrarlo. Hace falta DECLARARLO: añádelo a `_huerfanos-declarados.mjs`\n' +
-    '  con su categoría y su motivo, igual que un módulo de la primera población «se sube con su\n' +
-    '  fecha y su motivo en vez de cablearlo a la fuerza». Lo que no vale es que entre en silencio.');
+    '  🔴 EL CONSEJO VA ARRIBA, UNO POR EXPORT, y no es el mismo para todos: declarar un ayudante de\n' +
+    '  test llena el registro de ruido y lo deja de señalar lo que importa. Lo que NO vale, en\n' +
+    '  ningún caso, es que entre en silencio.');
 });
 
 test('SCRUM-411 · 🔴 el trinquete AL REVÉS: una declaración que ya no corresponde a ningún huérfano también cae', () => {
