@@ -25,6 +25,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { censo, tomasDeMerchantEn } from './_censo-merchant-de-la-url.mjs';
+// SCRUM-497: los modelos que hay que doblar se DERIVAN de la lista real (ver `doblarCliente`).
+import { CAMPOS_PERSONALES } from '../dist/modules/system/domain/anonimizarMerchant.js';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 
@@ -55,7 +57,11 @@ function resFalso() {
  * fallara, el test cae ahí y no sale una sola consulta hacia la URL de producción.
  */
 function doblarCliente(diario, impl = {}) {
-  const modelos = ['merchant', 'customer', 'auditLog'];
+  // 🔴 SCRUM-497 · DERIVADO de `CAMPOS_PERSONALES`, antes estaba a mano. Al añadir `emailMessage` a
+  // la lista de anonimización, la ruta llamó a un doble que no existía y este CONTROL POSITIVO dio
+  // 500: decía «el dueño ya no puede pedir su supresión» cuando lo único roto era su propio fixture.
+  // Se deriva el DOBLE; las expectativas del test siguen escritas a mano.
+  const modelos = [...new Set([...Object.keys(CAMPOS_PERSONALES), 'auditLog'])];
   const original = {};
   for (const m of modelos) {
     original[m] = prisma[m];
@@ -111,6 +117,8 @@ test('SCRUM-440 · CONTROL POSITIVO: el merchant PROPIO sí puede pedir su supre
     'auditLog.create': async () => ({ id: 1 }),
     'merchant.updateMany': async () => ({ count: 1 }),
     'customer.updateMany': async () => ({ count: 3 }),
+    // SCRUM-497: la supresión también redacta la dirección de `email_messages` (la fila se conserva).
+    'emailMessage.updateMany': async () => ({ count: 2 }),
   });
   try {
     const res = resFalso();

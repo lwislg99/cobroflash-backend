@@ -113,29 +113,31 @@ test('SCRUM-495 · el barrido recorre la lista en ORDEN, y `emailMessage` va ant
     + 'FK: si el cliente se borra primero, quedan filas apuntando a un id inexistente y nada avisa.');
 });
 
-// ── 2 · 🔴 EL HUECO DE RGPD, MEDIDO Y DECLARADO — no se silencia ───────────────────────────
+// ── 2 · EL HUECO DE RGPD · CERRADO POR SCRUM-497 ───────────────────────────────────────────
+//
+// 🔴 AQUÍ VIVÍA EL TEST QUE DECLARABA EL HUECO, Y SE HA IDO PORQUE HIZO SU TRABAJO.
+//
+// Afirmaba lo que HABÍA —`CAMPOS_PERSONALES` cubría `merchant` y `customer`, y la dirección de
+// `email_messages` se quedaba en claro tras una supresión— y estaba escrito para CAER el día que
+// alguien lo arreglase, con el mensaje *«ENHORABUENA: el hueco ya no existe. Borra este test»*.
+//
+// Cayó. Lo arregló SCRUM-497, y su sitio lo ocupa ahora algo mejor que una declaración: un guard
+// atado al HECHO en `tests/scrum497-dato-personal-no-sobrevive.test.mjs`, que exige que NINGUNA
+// columna con dato personal quede sin clasificar — no solo ésta. Y que trajo su propio hallazgo:
+// quince datos personales más que hoy sobreviven a una supresión, nombrados uno a uno.
+//
+// No se sustituye por otro aserto: duplicar la vigilancia aquí sería un segundo vigilante del mismo
+// hecho, y el bueno vive en el fichero de SCRUM-497.
 
-test('SCRUM-495 · 🔴 la anonimización de un merchant real NO cubre `toEmail`, y queda MEDIDO', () => {
-  // Este test NO exige que esté: exige que el hueco sea VISIBLE y no se olvide. Si alguien mete
-  // `emailMessage` en `CAMPOS_PERSONALES` (que es lo que hay que hacer, en `src/`), este test CAE
-  // y obliga a venir aquí a borrarlo — que es justo cuando el hueco deja de existir.
-  //
-  // Se afirma lo que HAY, no lo que debería haber: el camino de supresión de la casa anonimiza
-  // `merchant` y `customer`, y la dirección que guarda `email_messages` se queda en claro.
-  assert.deepEqual(Object.keys(CAMPOS_PERSONALES).sort(), ['customer', 'merchant'],
-    '🔴 HA CAMBIADO LA LISTA DE ANONIMIZACIÓN.\n\n'
-    + '  Si es porque se ha añadido `emailMessage`, ENHORABUENA: el hueco que este test declara ya\n'
-    + '  no existe. Borra este test y quita el apartado del hueco en `docs/master/SCRUM-495.md`.\n'
-    + '  Si es por otra cosa, mídela antes de tocar nada.');
-
-  assert.ok(!('emailMessage' in CAMPOS_PERSONALES),
-    '🔴 `emailMessage` ya está en CAMPOS_PERSONALES: actualiza este test y la entrada.');
-
-  // Y el suelo del propio aserto: que la lista NO esté vacía. Con `CAMPOS_PERSONALES` vacío las
-  // dos afirmaciones de arriba se cumplirían solas y no dirían nada.
-  assert.ok(CAMPOS_PERSONALES.merchant?.length >= 5 && CAMPOS_PERSONALES.customer?.length >= 5,
-    '🔴 NO SUPE MIRAR: `CAMPOS_PERSONALES` viene casi vacía, así que «no cubre toEmail» no '
-    + 'significa nada. Medido el 12-ago-2026: 6 campos en `merchant` y 6 en `customer`.');
+test('SCRUM-495 · la lista de anonimización YA cubre `toEmail` (lo cerró SCRUM-497)', () => {
+  // Lo que queda aquí es el eslabón entre los dos tickets: si alguien deshiciera SCRUM-497, este
+  // fichero —que es el que documenta los tres registros— también lo dice.
+  assert.ok('emailMessage' in CAMPOS_PERSONALES,
+    '🔴 `emailMessage` ha salido de `CAMPOS_PERSONALES`: la dirección de correo de los clientes '
+    + 'vuelve a sobrevivir a una supresión del art. 17. Lo cerró SCRUM-497; el guard que lo vigila '
+    + 'está en `tests/scrum497-dato-personal-no-sobrevive.test.mjs`.');
+  assert.deepEqual([...CAMPOS_PERSONALES.emailMessage], ['toEmail'],
+    '🔴 han cambiado los campos personales de `emailMessage`.');
 });
 
 // ── 3 · REGISTRO 2 · el censo de deriva pregunta por las 12 columnas nuevas ────────────────

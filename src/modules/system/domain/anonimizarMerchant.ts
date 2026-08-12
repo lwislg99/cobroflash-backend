@@ -36,6 +36,19 @@ export const REDACTADO = '[borrado a petición del interesado]';
 export const CAMPOS_PERSONALES: Readonly<Record<string, readonly string[]>> = Object.freeze({
   merchant: ['name', 'email', 'legalName', 'taxId', 'address', 'whatsappPhone'],
   customer: ['name', 'phone', 'email', 'legalName', 'taxId', 'notes'],
+  // SCRUM-497 · `email_messages` guarda la DIRECCIÓN a la que se mandó cada correo, y hasta hoy
+  // sobrevivía intacta a una supresión: quedaba constancia de que el profesional ejerció su
+  // derecho y las direcciones de sus clientes seguían en claro.
+  //
+  // 🔴 SE ANONIMIZA, NO SE BORRA, y es el mismo criterio que el resto de esta lista: la FILA es la
+  // constancia de que se envió algo, cuándo y con qué resultado (art. 17.3.b), y eso sobrevive. Lo
+  // que desaparece es la dirección. Un registro de envíos sin destinatario sigue acreditando el
+  // envío, que es para lo que existe.
+  //
+  // ⚠️ Solo `toEmail`. `providerId` es el identificador que da el proveedor —no es un dato del
+  // interesado y es lo que permite cruzar un rebote con su fila—, y `kind`/`status`/las fechas son
+  // el hecho, no la persona.
+  emailMessage: ['toEmail'],
 });
 
 /** Lo que NUNCA se toca, con su motivo. Sirve de documentación y de guard a la vez. */
