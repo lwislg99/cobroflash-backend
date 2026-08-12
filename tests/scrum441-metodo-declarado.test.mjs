@@ -15,8 +15,22 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const { PAID_VIA } = await import('../dist/modules/billing/domain/paidVia.js');
-const { metodoDeclarado, campoPaidViaAlMarcar, METODO_DESCONOCIDO } =
+const { campoPaidViaAlMarcar, METODO_DESCONOCIDO } =
   await import('../dist/modules/billing/domain/metodoDeCobro.js');
+
+/**
+ * Todo se mide por la SUPERFICIE PUBLICA. El validador de dentro (`metodoDeclarado`) no se
+ * exporta: probarlo directo medía un ayudante interno en vez del contrato, y ademas dejaba un
+ * `export` que nadie de fuera consume — lo cazo el guard de SCRUM-411 y tenia razon.
+ *
+ * `declarado(v)` es «que metodo se escribiria al marcar cobrada con este valor», o `null` si
+ * ninguno. Se deriva de lo que la funcion publica devuelve: si un dia cambia el contrato, cambia
+ * esto con el.
+ */
+const declarado = (v) => {
+  const campo = campoPaidViaAlMarcar('paid', v);
+  return Object.prototype.hasOwnProperty.call(campo, 'paidVia') ? campo.paidVia : null;
+};
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 
@@ -24,6 +38,9 @@ test('SCRUM-441 · SUELO: el conjunto cerrado se lee de verdad', () => {
   assert.ok(PAID_VIA.length >= 5,
     `🔴 PAID_VIA trae ${PAID_VIA.length} valores: no se ha leído bien, y lo de abajo no probaría nada.`);
   assert.equal(typeof campoPaidViaAlMarcar, 'function', '🔴 la decisión no está exportada.');
+  // Y el instrumento del test funciona: si `declarado` no supiera leer el campo, todo lo de abajo
+  // saldría `null` y los rechazos pasarían por el motivo equivocado.
+  assert.equal(declarado('transfer'), 'transfer', '🔴 el lector del test no lee el campo.');
 });
 
 // ── LO QUE SE ACEPTA, DERIVADO DE `PAID_VIA` Y NO DE UNA LISTA A MANO ────────────────────────
@@ -31,22 +48,22 @@ test('SCRUM-441 · SUELO: el conjunto cerrado se lee de verdad', () => {
 test('SCRUM-441 · 🔴 TODO valor de PAID_VIA es declarable, sin excepción', () => {
   // Se recorre el conjunto: si mañana entra un método nuevo, este test lo exige solo.
   for (const v of PAID_VIA) {
-    assert.equal(metodoDeclarado(v), v,
+    assert.equal(declarado(v), v,
       `🔴 «${v}» está en PAID_VIA y el profesional no puede declararlo. El conjunto cerrado y lo ` +
       'que la pantalla deja decir han dejado de ser la misma cosa.');
   }
 });
 
 test('SCRUM-441 · el desconocido DECLARADO no es lo mismo que el silencio', () => {
-  assert.equal(metodoDeclarado(METODO_DESCONOCIDO), METODO_DESCONOCIDO,
+  assert.equal(declarado(METODO_DESCONOCIDO), METODO_DESCONOCIDO,
     '🔴 no se puede declarar «no consta». `null` es «nadie dijo nada» y esto es «se preguntó y no ' +
     'se sabe»: en una pantalla de dinero, la diferencia importa.');
   assert.notEqual(METODO_DESCONOCIDO, null);
 });
 
 test('SCRUM-441 · la forma `<metodo>:<pasarela>` sigue valiendo, y se normaliza', () => {
-  assert.equal(metodoDeclarado('card:stripe'), 'card:stripe');
-  assert.equal(metodoDeclarado('  TRANSFER  '), 'transfer', '🔴 no recorta ni baja a minúsculas.');
+  assert.equal(declarado('card:stripe'), 'card:stripe');
+  assert.equal(declarado('  TRANSFER  '), 'transfer', '🔴 no recorta ni baja a minúsculas.');
 });
 
 // ── CONTROL NEGATIVO: NADA DE LITERALES NUEVOS ───────────────────────────────────────────────
@@ -54,7 +71,7 @@ test('SCRUM-441 · la forma `<metodo>:<pasarela>` sigue valiendo, y se normaliza
 test('SCRUM-441 · 🔴 un literal que el conjunto cerrado no reconoce NO se escribe', () => {
   // `bank` y `mp` viven en el árbol y NO están en PAID_VIA (censo SCRUM-473): son el caso real.
   for (const malo of ['bank', 'mp', 'paypal', 'bizum', 'card:', ':stripe', '', '   ', null, undefined, 42, {}]) {
-    assert.equal(metodoDeclarado(malo), null,
+    assert.equal(declarado(malo), null,
       `🔴 «${String(malo)}» se acepta como método. Escribir un valor inventado en la pantalla del ` +
       'dinero es peor que no escribir nada: lo segundo se ve, lo primero no.');
   }

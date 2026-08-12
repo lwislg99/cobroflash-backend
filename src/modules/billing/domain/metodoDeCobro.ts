@@ -181,10 +181,14 @@ export function cuboDeCobro(valor: unknown): string {
  * además el desconocido DECLARADO — que no es lo mismo que `null`: `null` es «nadie dijo nada» y
  * `desconocido` es «se preguntó y no consta». La diferencia importa en una pantalla de dinero.
  *
+ * NO SE EXPORTA a proposito: su superficie publica es `campoPaidViaAlMarcar`, que es lo que de
+ * verdad decide que se escribe. Exportarla ademas anadia una puerta que nadie de fuera usa —lo cazo
+ * el guard de SCRUM-411— y hacia que su test midiera un ayudante interno en vez del contrato.
+ *
  * Cualquier otra cosa devuelve `null` y **la columna no se toca**. Fallar cerrado: escribir un
  * método inventado es peor que no escribir ninguno, porque el segundo se ve y el primero no.
  */
-export function metodoDeclarado(valor: unknown): string | null {
+function metodoDeclarado(valor: unknown): string | null {
   if (typeof valor !== 'string') return null;
   const limpio = valor.trim().toLowerCase();
   if (limpio === '') return null;
