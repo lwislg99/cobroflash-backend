@@ -2,7 +2,7 @@
 
 **Fecha:** 12-ago-2026 · **Carril:** infraestructura de envío · **Gate:** sin gate, corre en `npm test`
 
-**Medido contra:** `origin/main` = `6193be8069b2a812cf90c14213b19f8735cb5f1f` · 2026-08-12T13:24:21+01:00
+**Medido contra:** `origin/main` = `e18b0005d98bb4f5374e74ed248b39d6d86a2823` · 2026-08-12T13:41:39+01:00
 
 > **Cero líneas de `prisma/schema.prisma`, cero backfill y ningún comando contra una base.** El
 > modelo ya estaba; lo que faltaba era que alguien escribiera.
@@ -166,8 +166,8 @@ error de sintaxis. Las dos con respaldo del fichero y post-condición de que el 
 
 | | tests | pass | fail | skipped |
 | --- | --- | --- | --- | --- |
-| **línea base** — el conjunto de tests **de `main`** sobre este árbol, medida aparte | 3.535 | 3.458 | **0** | 77 |
-| **después** — la tanda entera de esta rama | 3.547 | 3.470 | **0** | 77 |
+| **línea base** — el conjunto de tests **de `main`** sobre este árbol, medida aparte | 3.562 | 3.485 | **0** | 77 |
+| **después** — la tanda entera de esta rama | 3.574 | 3.497 | **0** | 77 |
 | diferencia | **+12** | **+12** | 0 | **0** |
 
 Los **+12 son exactamente** los de `tests/scrum501-una-fila-por-envio.test.mjs`. Ni un salto nuevo.
