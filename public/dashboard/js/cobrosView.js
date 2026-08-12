@@ -334,16 +334,9 @@ function renderCobrosView(container) {
       // esconde cuatro y `quotesListView` dos por lo mismo.
       var tdMetodo = document.createElement('td');
       tdMetodo.className = 'col-hide-mobile';
-      // 🔴 SCRUM-481 · LA CELDA HABLABA EL IDIOMA DE LA TABLA. Pintaba `c.metodo` en crudo —«card»,
-      // «card:stripe»— mientras el filtro de al lado decía «tarjeta»: el profesional pulsaba
-      // «tarjeta» y le salían filas que ponían `card`. Ahora se pinta la etiqueta que manda el
-      // servidor: «tarjeta · Stripe» con pasarela, «tarjeta» sin ella.
-      //
-      // No se pierde nada de lo que hoy se ve, y la asimetría es informativa: ver «· Stripe» en
-      // unas filas y no en otras dice de un vistazo cuáles entraron por ahí.
-      // ⚠️ LA COLUMNA ES DE SCRUM-481 (otro carril, regla 9), y se queda como está en `main`. Que
-      // aquí ponga «card:stripe» mientras el filtro de arriba dice «tarjeta» es SU defecto, no el
-      // de este ticket: yo solo agrupo, no traduzco. Tocarla desde aquí sería pisar su rama.
+      // ⚠️ LA COLUMNA ES DE SCRUM-481 (otro carril, regla 9) y se queda EXACTAMENTE como está en
+      // `main`. Que aquí ponga «card:stripe» mientras el filtro de arriba dice «tarjeta» es lo que
+      // arregla ESE ticket, no éste: aquí solo se agrupa, no se traduce.
       tdMetodo.textContent = c.metodo || COBROS_COPY.metodoSinRegistrar;
       tr.appendChild(tdMetodo);
 
