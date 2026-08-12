@@ -237,3 +237,71 @@ y el nuevo: **un export usado solo dentro de su módulo aparece como huérfano**
 
 No he enchufado nada, no he retirado nada —`borrarMerchant` **se queda**, reclasificado—, cero
 schema, cero emisión, y no he tocado ningún guard ajeno.
+
+
+---
+
+# SCRUM-484 · CONTINUACION 2 · el filtro de "usado solo por dentro" mata 12 de los 15
+
+**Medido contra:** `origin/main` = `db820c35fffa526187057330457593e8b5315aeb` · 2026-08-12T11:08:17+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · **Cero cables, cero schema, cero emision.**
+
+## El filtro, con su control dentro
+
+Control antes que numeros: `luminanciaRelativa` **si** se usa por dentro (5 apariciones,
+`ratioContraste` la llama) y `listTeamMembers` **no** (1: solo su declaracion). El filtro los
+distingue, asi que se publica; si no, salia por CIEGO.
+
+⚠️ Se lee el fichero **sin comentarios**: un nombre citado en su propia explicacion no es un uso
+(SCRUM-203, y hoy ya iba por la tercera).
+
+| de los 15 «olvidos» | |
+|---|---|
+| **usado SOLO POR DENTRO** — no era huerfano de verdad, es un export que no necesitaba serlo | **12** |
+| **olvido que SOBREVIVE al filtro** | **3** |
+
+`12 + 3 = 15`. **CUADRA.**
+
+> **El numero que pediste: de 15 sobreviven 3.** Y vale mas que el 15 porque los 12 no habia que
+> mirarlos: su modulo ya los usa.
+
+## 🔴 Y el filtro se lleva por delante MI PROPIO TICKET
+
+**`ensureReferralCode` es uno de los 12.** Su fichero lo llama en la linea 42 —`getReferralStats`
+lo invoca—, y `getReferralStats` **esta vivo**: lo importa `src/app.ts:104` y lo usa en `:500`.
+
+**La cadena entera esta viva, asi que la victima que describi NO EXISTE:** un merchant antiguo
+**si** obtiene su codigo de referido, en cuanto se le piden sus estadisticas.
+
+**RETIRO la propuesta de ticket.** No la escribo, y lo digo con el mismo enfasis con que la propuse
+ayer: era una afirmacion sacada de un censo sin pasarle este filtro — exactamente el error que el
+filtro existe para evitar.
+
+## Los 3 que sobreviven — al mapa, sin ticket
+
+| export | que pasa hoy |
+|---|---|
+| `team.service → listTeamMembers` | declarado y nunca usado, **ni por su modulo ni por nadie**: la ruta de equipo resuelve por otro camino |
+| `quoteRequests/attachment.service → listQuoteRequestAttachments` | idem: no hay forma de listar los adjuntos de una solicitud por esta via |
+| `system/importarClientes → ETIQUETA_CAMPO` | las etiquetas legibles de los campos del importador no las consume nadie (su hermano `CAMPOS_CLIENTE` **si** se usa por dentro) |
+
+**Ninguno de los tres tiene victima clara todavia**, y por eso van al mapa y no a un ticket: hay que
+mirar si su camino se resuelve de otra forma —como acaba de pasar con el referido— antes de
+llamarlo agujero.
+
+## Recuento honesto, actualizado
+
+* A mano: **8 modulos** + **22 exports** + **los 15 pasados por el filtro**.
+* Por derivacion con control: **41** especificacion ejecutable · **12** usados solo por dentro.
+* **Sin leer uno por uno: 136** (los «con motivo escrito»). Sigue siendo el numero pendiente.
+
+## Limites, arrastrados
+
+Imports estaticos solamente (1 falso positivo acotado) · `import * as` esconde huerfanos (**192 es
+SUELO**) · frontend vanilla fuera del grafo · y el patron nuevo, **ya aplicado a los 15 pero NO a
+los 41 ni a los 136**.
+
+## Lo que NO se ha hecho
+
+No he escrito el ticket del referido —su premisa esta falsificada—, no he enchufado nada, no he
+retirado nada, cero schema, cero emision.
