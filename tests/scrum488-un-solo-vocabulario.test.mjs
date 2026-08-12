@@ -393,12 +393,19 @@ function agruparComoAntes(cobros) {
 /** Lo que el profesional LEE en cada fila: la vista resuelve `etiquetaMetodoCobro(m.method)`. */
 const pintada = (fila) => etiquetaMetodoCobro(fila.method);
 
-/** Etiquetas que se repiten entre filas distintas, con las claves que las comparten. */
+/**
+ * Etiquetas que se repiten entre filas distintas, con los VALORES que cada fila absorbió.
+ *
+ * 🔴 Los valores, y no el `method` de la fila: al provocar el rojo se vio que dos filas partidas
+ * viajan las dos con el REPRESENTANTE de su cubo, así que el mensaje decía «card + card» y no
+ * «card + card:stripe» — un guard que dice que algo se rompió sin decir el qué obliga a repetir la
+ * medición entera. `agruparComoAntes` no trae `metodos`, y por eso el respaldo.
+ */
 function etiquetasDuplicadas(filas) {
   const por = new Map();
   for (const f of filas) {
     const e = pintada(f);
-    por.set(e, [...(por.get(e) ?? []), f.method]);
+    por.set(e, [...(por.get(e) ?? []), (f.metodos ?? [f.method]).join(' & ')]);
   }
   return [...por.entries()].filter(([, m]) => m.length > 1);
 }
@@ -435,7 +442,7 @@ test('SCRUM-488 · ④ 🔴 ESTRUCTURAL: ninguna fila del informe comparte etiqu
     dup.map(([e, m]) => `    «${e}» ← ${m.join(' + ')}`).join('\n') +
     '\n  Es el defecto de este ticket volviendo: el profesional ve dos filas idénticas con importes\n' +
     '  distintos y en ninguna parte el total de esa forma de cobro. Filas pintadas hoy:\n' +
-    filas.map((f) => `    ${f.method.padEnd(52)} «${pintada(f)}»`).join('\n'));
+    filas.map((f) => `    ${f.metodos.join(' & ').padEnd(52)} «${pintada(f)}»`).join('\n'));
 });
 
 test('SCRUM-488 · ④ 🔴 la tabla de la fase 1, ANTES y DESPUÉS: el total de la familia es la SUMA', () => {
