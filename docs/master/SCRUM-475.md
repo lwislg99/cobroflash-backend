@@ -720,3 +720,78 @@ de emisión fiscal y el sellado · `public/dashboard/js/`.
 * **Aislar el registro de cada cron** — declarado en §5, con su motivo (guard ajeno de SCRUM-371).
 * **No verificado en `yaqu.app`.** No se ha provocado un fallo de correo real ni se ha visto un
   arranque con un cron sin montar: todo lo de arriba se prueba con la suite.
+
+---
+
+# FASE 2B · PASO 0 — el receptor está BLOQUEADO, y el motivo está medido
+
+**Medido contra:** `origin/main` = `84f60528e626f6bc569c43e08e635497fc351d13` · 2026-08-12T14:30:00+02:00
+**Rama:** `scrum-475-firma-del-webhook` (main mergeado DENTRO, nunca rebase — AA2)
+**Suite de partida, antes de escribir una línea:** **3454 tests · fail 0 · 77 saltados** · rc=0.
+
+## 0 · PASO 0 por CONTENIDO, no por nombre de rama
+
+Tres instrumentos sobre las **288 refs remotas**:
+
+| instrumento | resultado |
+|---|---|
+| `git grep -l "webhooks/resend"` en todas las refs | 1 acierto, y es un **comentario** dentro de `firmaResend.ts` |
+| ficheros con «resend» en el nombre, en cualquier rama | solo `src/integrations/firmaResend.ts` |
+| `git grep -l "svix"` en todas las refs | solo `firmaResend.ts` |
+
+**No hay receptor en ninguna rama.** La fase 2A es la única pieza que existe.
+
+## 1 · Qué verifica exactamente la fase 2A (leída entera, no de memoria)
+
+`verificarFirmaResend({ cabeceras, cuerpoCrudo, secreto, ahora? })` → `Veredicto`:
+
+- **acepta** → `{ ok: true, id, emitidoEn, cuerpo }`, con `cuerpo` ya parseado (o `null` si el JSON
+  viene roto con firma buena: eso no es un ataque y lo decide quien consuma).
+- **rechaza en dos CLASES distintas**, que es su mejor idea: `NO_SE_PUDO_COMPROBAR`
+  (`sin_secreto`, `secreto_ilegible`, `falta_cabecera`, `cuerpo_no_crudo`) frente a `RECHAZADO`
+  (`timestamp_ilegible`, `fuera_de_ventana`, `firma_ilegible`, `firma_no_coincide`). Los cuatro
+  escenarios del test salen **cada uno por su camino**, y hay un assert de que no comparten salida.
+- HMAC-SHA256 sobre **bytes** `id.ts.<cuerpo>`, ventana de **5 min por los dos lados** comprobada
+  **antes** del HMAC (contra repetición), varias firmas `v1,` durante una rotación, y
+  `timingSafeEqual` protegido contra buffers de distinta longitud.
+- `estadoDelAviso(evento)` mapea los cuatro eventos al vocabulario CERRADO y devuelve `null` para
+  lo desconocido — no inventa estado.
+
+Sus 18 tests **construyen la firma a mano con `node:crypto`**, no pidiéndosela al módulo, y fijan el
+formato con un caso que firma `ts.id.cuerpo` y **no puede valer**. Sin eso, módulo y test podrían
+estar de acuerdo en un esquema equivocado. Ningún secreto real en ninguna parte: se generan al vuelo.
+
+**¿Encaja con el receptor que hace falta? SÍ, y sin adaptador.** Expone justo lo que un receptor
+necesita, deja fijada la arquitectura (`express.raw({ type: 'application/json' })` propio del router,
+como Stripe — NO el retrofit del parser global de WhatsApp) y el secreto entra por parámetro, así que
+el receptor lo lee de entorno y lo pasa. **No hay que reescribir nada.**
+
+## 2 · 🛑 EL BLOQUEO, con sus tres medidas
+
+El encargo dice «actualiza la fila por `provider_id`». **No hay fila, ni modelo, ni tabla fuera de dev:**
+
+1. **`EmailMessage` NO está en `prisma/schema.prisma`.** Dos instrumentos (por `model` y por
+   `@@map`) → 0 aciertos, con control positivo: el mismo instrumento ve **24 modelos**. Sin modelo,
+   `prisma.emailMessage.update(...)` **ni siquiera compila**.
+2. **La tabla está aplicada SOLO EN DEV** (`MIGRATIONS_PENDING.md:291`, 11-ago-2026). Ni staging ni
+   producción la tienen.
+3. **Nadie escribe una fila hoy.** `idDeLaRespuesta` —el que saca el `provider_id` de la respuesta
+   del proveedor— tiene **un solo consumidor: la propia `constanciaCorreo.ts:64`**. El id se calcula
+   y no se persiste, así que aunque hubiera tabla, el `UPDATE ... WHERE provider_id` no encontraría
+   ninguna fila que actualizar.
+
+**El diff del modelo YA ESTABA PREPARADO** en esta misma entrada (§4, `model EmailMessage`), de la
+sesión anterior. No se reescribe y **no se aplica**: `prisma/schema.prisma` es dominio exclusivo del
+fundador, y ésa es la condición que él mismo puso para este ticket.
+
+## 3 · Lo que desbloquea esto, en orden
+
+1. El fundador mete `model EmailMessage` en `prisma/schema.prisma` (diff en §4).
+2. La tabla se aplica a **staging y producción** (hoy solo dev), con su registro.
+3. **Alguien escribe la fila al enviar** — es la pieza que falta y no es del receptor: sin ella el
+   webhook verificaría avisos perfectos y no tendría qué actualizar.
+4. Entonces el receptor: `express.raw` propio + `verificarFirmaResend` + `estadoDelAviso` +
+   `avanzar()` sobre la fila. La fase 2A ya lo deja todo servido.
+
+⚠️ **No se ha construido un receptor «a medias».** Un endpoint que verifique y descarte sería otro
+motor sin superficie — la enfermedad que este ticket vino a cerrar, cometida en su arreglo.
