@@ -54,8 +54,48 @@ function round2(n: number): number {
 export const TIPOS_RETENCION = [15, 7, 2, 1] as const;
 export type TipoRetencion = (typeof TIPOS_RETENCION)[number];
 
+/**
+ * EL CUBO — cada tipo con su rótulo, y el rótulo NO es opcional.
+ *
+ * Mismo mecanismo que `CUBO_DE` en `metodoDeCobro.ts`: un `Record<Union, …>` exige una entrada por
+ * cada miembro del tipo, así que **añadir un tipo a `TIPOS_RETENCION` sin declarar su rótulo no
+ * compila**. No es un convenio ni un recordatorio en un comentario: lo impide el compilador.
+ *
+ * 🔴 POR QUÉ EL RÓTULO VIVE AQUÍ Y NO EN LA PANTALLA. Un `<option>` escrito a mano en el front es
+ * un número suelto que nadie relaciona con esta lista: el día que se añada o se quite un tipo, la
+ * pantalla se queda diciendo lo de antes y **nada avisa**. Con el cubo, el selector se pinta
+ * RECORRIÉNDOLO — cero literales de porcentaje en el front — y una lista que cambia se ve sola.
+ *
+ * ⚠️ El `19 %` NO está y no vuelve: no es un tipo de retención de actividades profesionales.
+ */
+export interface CuboDeRetencion {
+  /** El tipo, en porcentaje entero. Es la clave y el valor: se usa tal cual al calcular. */
+  tipo: TipoRetencion;
+  /** Lo que lee el profesional. Regla 30: lo aprueba el fundador, derivado de este cubo. */
+  rotulo: string;
+  /** En qué orden se pinta. Propiedad DEL CUBO, no del tipo. */
+  orden: number;
+}
+
+export const CUBO_DE_RETENCION: Readonly<Record<TipoRetencion, CuboDeRetencion>> = Object.freeze({
+  15: { tipo: 15, rotulo: '15 %', orden: 1 },
+  7: { tipo: 7, rotulo: '7 %', orden: 2 },
+  2: { tipo: 2, rotulo: '2 %', orden: 3 },
+  1: { tipo: 1, rotulo: '1 %', orden: 4 },
+});
+
+/**
+ * Los tipos en el ORDEN en que se pintan. La pantalla usa esto y no `TIPOS_RETENCION`: el orden es
+ * del cubo, y leer la lista cruda deja el orden al azar de cómo se escribió.
+ */
+export function tiposDeRetencionOrdenados(): CuboDeRetencion[] {
+  return Object.values(CUBO_DE_RETENCION).sort((a, b) => a.orden - b.orden);
+}
+
 export function esTipoRetencionValido(tipo: unknown): tipo is TipoRetencion {
-  return typeof tipo === 'number' && (TIPOS_RETENCION as readonly number[]).includes(tipo);
+  // Se pregunta AL CUBO, no a la lista: si algún día divergen, la que manda es la que tiene rótulo
+  // —porque es la única que se puede pintar—. Y con el `Record` no pueden divergir.
+  return typeof tipo === 'number' && Object.prototype.hasOwnProperty.call(CUBO_DE_RETENCION, tipo);
 }
 
 /**
