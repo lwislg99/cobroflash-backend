@@ -15,6 +15,10 @@ import path from 'node:path';
 import { analizar, exportsDe, nombresImportados } from './_alcance-dominio.mjs';
 import { censar, autoprueba, clave } from './_huerfanos-en-modulos-vivos.mjs';
 import { CATEGORIAS, DECLARADOS, paresDeclarados } from './_huerfanos-declarados.mjs';
+import {
+  censarAlcance, quienLoImporta, llamadasEnTests, autoprueba as autopruebaAlcance,
+  ALCANZABLE, NO_ALCANZABLE, NO_SE_PUDO_DETERMINAR,
+} from './_alcance-desde-entradas.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const R = analizar(RAIZ);
@@ -294,19 +298,38 @@ test('SCRUM-411 · cada declaración lleva categoría CONOCIDA, fecha y motivo',
   }
 });
 
-test('SCRUM-411 · 🔴 `borrarMerchant` sigue contado, y con la premisa MEDIDA, no la heredada', () => {
-  // Se declaró como PROMESA_SIN_CABLE repitiendo el encargo. Midiendo NO lo es: la supresión real la
-  // hace `suprimirMerchant`, que tiene ruta montada (`supresion.routes.ts:56`). Lo midió SCRUM-485 y
-  // se comprobó aquí antes de reclasificar. Es de otro equipo: aquí se cuenta, no se arregla.
+test('SCRUM-411 · 🔴 `borrarMerchant` NO SE PUEDE BORRAR: es la especificación ejecutable del orden', () => {
+  // Ha pasado por dos etiquetas equivocadas, y la segunda era mía: PROMESA_SIN_CABLE (repitiendo el
+  // encargo) y SUPLANTADO_POR_UNA_COPIA. Medido, no es ninguna de las dos.
   //
-  // Este test fija la CORRECCIÓN, no la acusación: si alguien lo devuelve a «promesa rota» sin medir,
-  // vuelve a entrar en la entrada una premisa que ya se comprobó falsa.
+  // 🔴 Y esto no es taxonomía: **una copia superada se acaba borrando**, que es la conducta correcta
+  // para una copia y la que aquí destruye la única comprobación del orden de borrado seguro. La
+  // etiqueta equivocada era una invitación a limpiarlo dentro de seis meses.
   const g = DECLARADOS_PARES.get('src/modules/system/domain/borradoMerchant.ts::borrarMerchant');
   assert.ok(g, '🔴 `borrarMerchant` ya no está declarado como huérfano y nadie lo ha cableado.');
-  assert.equal(g.cat, 'SUPLANTADO_POR_UNA_COPIA',
-    '🔴 `borrarMerchant` ha cambiado de categoría. Sigue sin llamadores, pero el profesional SÍ puede ' +
-    'pedir que le supriman la cuenta: lo hace `suprimirMerchant`. No es una promesa rota — es la ' +
-    'función vieja sin retirar. Si vas a volver a llamarlo promesa rota, MÍDELO antes.');
+  assert.equal(g.cat, 'ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE',
+    '🔴 `borrarMerchant` ha cambiado de categoría, y las dos alternativas llevan a borrarlo.\n\n' +
+    '  Sigue con CERO llamadores en producción — eso es cierto — pero `scrum192` y `scrum244` lo\n' +
+    '  CORREN contra un prisma falso y comprueban la SECUENCIA de borrado: `event` antes que los\n' +
+    '  charges, `merchant` el último, `reconciliation` antes que `charge` (la FK es RESTRICT).\n' +
+    '  Con cero FK en cascada, ESE ORDEN ES LA GARANTÍA, y no está escrito en ningún otro sitio.\n' +
+    '  `suprimirMerchant` no puede heredarlo: ANONIMIZA con `updateMany`, no borra.\n\n' +
+    '  Si vas a reclasificarlo, MÍDELO antes — ya se ha etiquetado mal dos veces.');
+});
+
+test('SCRUM-411 · 🔴 las categorías SUMAN el total: un censo cuyas partes no suman no es un censo', (t) => {
+  const porCat = new Map();
+  for (const g of DECLARADOS) porCat.set(g.cat, (porCat.get(g.cat) ?? 0) + g.exports.length);
+  const suma = [...porCat.values()].reduce((a, b) => a + b, 0);
+  t.diagnostic([...porCat].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}=${v}`).join(' · '));
+
+  assert.equal(suma, DECLARADOS_PARES.size,
+    `🔴 las categorías suman ${suma} y hay ${DECLARADOS_PARES.size} pares declarados. O un export ` +
+    'está declarado dos veces, o un grupo repite un nombre: en los dos casos el reparto por ' +
+    'categoría deja de poder leerse, y es lo único que este registro entrega además de la lista.');
+  assert.equal(suma, C.total,
+    `🔴 se declaran ${suma} y el censo mide ${C.total}. Las categorías tienen que sumar LO MEDIDO, ` +
+    'no una lista que quedó de antes.');
 });
 
 test('SCRUM-411 · `PROMESA_SIN_CABLE` puede estar VACÍA, y que lo esté es la noticia', (t) => {
@@ -319,4 +342,89 @@ test('SCRUM-411 · `PROMESA_SIN_CABLE` puede estar VACÍA, y que lo esté es la 
   assert.ok(CATEGORIAS.PROMESA_SIN_CABLE,
     '🔴 se ha borrado la categoría `PROMESA_SIN_CABLE` porque hoy está vacía. Es la que hace que el ' +
     'siguiente «el producto lo ofrece y no ocurre» tenga dónde caer en vez de diluirse.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// TERCERA PREGUNTA (fase 2b) — ¿LLEGA ESTO DESDE UNA ENTRADA VIVA?
+//
+// Las dos poblaciones de arriba contestan «¿lo importa alguien?» y «¿lo alcanza un export vivo de
+// su fichero?». Con las dos, `ensureReferralCode` salía huérfano PERO ejecutado — y quedaba la
+// pregunta que de verdad decide si hay defecto: **el que lo llama por dentro, ¿está vivo?**
+//
+// «ENTRADA VIVA» está definido en `_alcance-desde-entradas.mjs` y es la MISMA que usa la primera
+// población: `src/index.ts`, `src/app.ts` y los `scripts/*.mjs` que declara `package.json`. Si dos
+// mediciones partieran de entradas distintas, comparar sus números no significaría nada.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+const A = censarAlcance(RAIZ);
+
+test('SCRUM-411 · 🔴 AUTOPRUEBA del alcance: sobre fuente sintética, antes de creerse el número', () => {
+  const a = autopruebaAlcance();
+  assert.ok(a.porImport, '🔴 no ve alcanzable lo que importa directamente una ruta viva.');
+  assert.ok(a.porLlamadaInterna,
+    '🔴 no ve alcanzable lo que NO importa nadie pero llama por dentro un export que sí entra desde ' +
+    'una entrada viva. Ése es exactamente el caso de `ensureReferralCode`: sin este salto, el ' +
+    'instrumento contestaría que no llega y se abriría un ticket falso.');
+  assert.ok(a.muerto, '🔴 da por alcanzable un export al que no llega nada: entonces nunca dirá que no.');
+  assert.ok(a.opacoIndeterminado,
+    '🔴 un módulo atado con `import * as` NO se está declarando indeterminado.');
+  assert.ok(a.opacoNoEsMuerto,
+    '🔴 EL SUELO: lo que no se puede determinar sale como NO_ALCANZABLE. Son opuestos — uno dice ' +
+    '«no llega» y el otro «no sé», y confundirlos fabrica un defecto que no consta.');
+});
+
+test('SCRUM-411 · SUELO del alcance: el grafo se recorre de verdad', () => {
+  assert.ok(A.ficherosAlcanzables >= 100,
+    `🔴 solo ${A.ficherosAlcanzables} ficheros alcanzables desde las entradas vivas: el grafo no se ` +
+    'está recorriendo, y entonces TODO saldría no alcanzable.');
+  assert.ok(A.total >= 400, `🔴 solo ${A.total} exports censados: el instrumento está mirando otra cosa.`);
+  assert.ok(A.alcanzables > A.noAlcanzables,
+    '🔴 hay más exports no alcanzables que alcanzables. En una base viva eso no es un hallazgo: es ' +
+    'un detector roto.');
+});
+
+test('SCRUM-411 · 🔴 LA RESPUESTA: `ensureReferralCode` SÍ llega, y por dónde', () => {
+  // La pregunta era: si el llamador estuviera muerto, la cadena entera lo estaría y el defecto SÍ
+  // existiría — un merchant antiguo no obtendría nunca su código de referido. Medido: no es el caso.
+  const v = A.veredictos.get('src/modules/auth/domain/referral.service.ts::ensureReferralCode');
+  assert.ok(v, '🔴 `ensureReferralCode` ya no está en el censo de alcance.');
+  assert.equal(v.estado, ALCANZABLE,
+    `🔴 «${v?.estado}» — si de verdad dejó de llegar, un merchant antiguo NO obtiene su código de ` +
+    'referido y hay que abrir el ticket. Compruébalo antes de tocar este test.');
+
+  // Y la cadena, nombrada, para que se pueda contrastar a mano contra otra medición.
+  const importadores = quienLoImporta(RAIZ, 'src/modules/auth/domain/referral.service.ts', 'getReferralStats');
+  assert.deepEqual(importadores, ['src/app.ts'],
+    '🔴 la cadena ha cambiado. Era: `src/app.ts` (entrada) → la ruta montada `GET /admin/referral` ' +
+    `→ \`getReferralStats\` → \`ensureReferralCode\`. Ahora la importan: ${importadores.join(', ') || '(nadie)'}`);
+  assert.deepEqual(
+    quienLoImporta(RAIZ, 'src/modules/auth/domain/referral.service.ts', 'ensureReferralCode'), [],
+    '🔴 ahora alguien SÍ importa `ensureReferralCode` de fuera. Buena noticia, pero este test ' +
+    'documentaba el caso contrario: actualízalo con su motivo.');
+});
+
+test('SCRUM-411 · 🔴 el falso positivo conocido sale como INDETERMINADO, no como muerto', () => {
+  // `sendQuoteEmail` lo llama `quotesAdmin.routes.ts` por import DINÁMICO. El instrumento de la
+  // segunda población no puede atar ese nombre y lo cuenta como huérfano (declarado). Éste, en vez
+  // de acusarlo, dice que NO SABE — que es la única respuesta honesta y la que evita el ticket falso.
+  const v = A.veredictos.get('src/modules/messaging/domain/email.service.ts::sendQuoteEmail');
+  assert.equal(v?.estado, NO_SE_PUDO_DETERMINAR,
+    `🔴 «${v?.estado}». Si sale NO_ALCANZABLE, el instrumento está afirmando que un correo de ` +
+    'presupuesto no se manda, y sí se manda: lo llama un import dinámico. «No se pudo determinar» y ' +
+    '«no es alcanzable» son opuestos.');
+});
+
+test('SCRUM-411 · 🔴 lo que un test CORRE no es código muerto, y se cuenta por AST', () => {
+  // `grep` cuenta igual una mención en un comentario, un nombre dentro de una lista de prohibidos y
+  // una llamada de verdad. Aquí se cuentan CallExpression.
+  const usos = llamadasEnTests(RAIZ, 'borrarMerchant');
+  const total = usos.reduce((a, u) => a + u.llamadas, 0);
+  assert.equal(total, 7,
+    '🔴 `borrarMerchant` ya no se ejerce 7 veces desde los tests.\n' +
+    `   medido ahora: ${usos.map((u) => `${u.fichero}=${u.llamadas}`).join(' · ') || '(ninguna)'}\n` +
+    '   Si BAJA, alguien está retirando la especificación ejecutable del orden de borrado seguro.');
+  assert.deepEqual(usos.map((u) => u.fichero), [
+    'tests/scrum192-borrado-merchant.test.mjs',
+    'tests/scrum244-colgados-de-otro-modelo.test.mjs',
+  ], '🔴 han cambiado los guards que lo CORREN. Son ellos los que hacen que no se pueda borrar.');
 });
