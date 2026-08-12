@@ -247,3 +247,171 @@ Revertidas las dos → rc=0, y el árbol limpio (`git status --porcelain` → 0 
   *«SCRUM-441.md declara tests/scrum441-paidvia-sin-copia.test.mjs, que NO está en el árbol»*. La
   casa ya tiene atada la entrada de máster a su guard. Así que la aportación no se resta de cabeza:
   se mide corriendo el fichero solo, y son **4**.
+
+---
+
+# SCRUM-441 (fase 2) · La columna se escribía y no la leía nadie
+
+**POBLACIÓN MEDIDA** · host `DESKTOP-T5MONF5` · `2026-08-12T10:53:27Z`
+
+**Medido contra:** `origin/main` = `bf54914117fb99e596aa7d638c9ebac8ac809564` · 2026-08-12T10:53:27Z
+
+> La fase 1 añadió `Invoice.paidVia` y el selector que la escribe. Esto es la otra mitad: que la
+> pantalla de Cobros la LEA. Toca dinero, así que va con ceremonia completa.
+
+## 1 · El defecto, y por qué duró
+
+`cobros.service.ts` mapeaba las facturas sueltas con **`metodo: null` a fuego**, y encima llevaba un
+comentario que lo justificaba:
+
+> *«`Charge.method` existe. **`Invoice` NO guarda método de cobro** — medido sobre el esquema: no
+> hay `paidVia` ni equivalente.»*
+
+**Era cierto cuando se escribió.** La columna llegó por la fase 1 y el comentario se quedó
+afirmando lo viejo tres líneas por encima del `null`.
+
+Resultado para el profesional: elige «Bizum» al marcar el cobro a mano, se guarda… y ese cobro sale
+en la pantalla dentro del cubo **«Método no registrado»**, con su método en la fila de al lado.
+
+> **Un comentario que envejece mal no rompe nada. Por eso dura.** Y por eso el guard exige que esa
+> frase ya no esté: mientras estuvo, nadie miró el `null` que tenía debajo.
+
+Esto cierra el límite que la propia fase 1 declaró: *«mientras `Invoice` no tenga método, el filtro
+no puede separar una transferencia marcada a mano de un cobro del que de verdad no se sabe nada»*.
+
+## 2 · Lo que cambia, y lo que no
+
+| | |
+| --- | --- |
+| **Cambia** | las facturas sueltas leen `inv.paidVia` y pasan por `camposDeMetodo`, igual que los `Charge` |
+| **NO cambia** | sin `paidVia`, el cobro sigue saliendo `metodo: null` en el cubo «sin método» |
+| **NO cambia** | los cobros con `Charge` no se tocan |
+| **NO se toca** | `cobrosView.js` — ver §5 |
+
+`null` sigue siendo un valor legítimo: **«no consta»**. No se rellena con un valor por defecto —
+escribir «transferencia» porque suele serlo es el bug que `paidVia.ts` cierra.
+
+## 3 · 🔴 Un fallo que cazó el control negativo: `?? null` deja pasar `''`
+
+La primera versión mapeaba `inv.paidVia ?? null`. **`??` solo cubre `null` y `undefined`**, así que
+una cadena vacía salía como `metodo: ''`.
+
+En una pantalla de dinero, `''` y `null` significan lo mismo —«no consta»— y **dos formas de decir
+lo mismo divergen en cuanto alguien filtre por una de ellas**. Ahora pasa por `metodoDeclarado()`,
+que normaliza vacío y espacios a `null`.
+
+Lo encontró el control negativo, que probaba los tres sabores de ausencia. Si solo hubiera probado
+`null`, habría pasado.
+
+## 4 · Y una expectativa mía que estaba mal
+
+Mi test esperaba que `bizum_manual` cayera en el cubo `bizum_manual`. **Cae en `bizum`, y es
+correcto**: `CUBO_DE` agrupa `bizum_auto` y `bizum_manual` bajo la misma clave para que pulsar
+«Bizum» los traiga a los dos. Lo que no se colapsa es el **valor guardado** —uno lo confirma una
+persona, el otro un webhook—. La equivocada era mi expectativa, no el código.
+
+## 5 · Coordinación: `cobrosView.js` NO se toca
+
+El encargo pedía avisar antes de tocarlo porque hay tres carriles ahí esta semana. **No hace falta
+tocarlo**: la vista ya es genérica sobre `metodoCubo` (SCRUM-481 puso los cubos, el filtro y la
+celda). El arreglo es de servidor, en la fusión — así que este PR **no roza** el fichero en disputa.
+
+## 6 · Los cuatro rojos
+
+Control positivo previo: árbol limpio, compila.
+
+| Se rompe… | El guard dice… |
+| --- | --- |
+| vuelve el `null` a fuego | *«LA COLUMNA `paid_via` SE ESCRIBE Y NO LA LEE NADIE»* |
+| 🔴 se inventa un método por defecto | *«"No consta" no se rellena… es el bug que `paidVia.ts` cierra»* |
+| la cadena vacía se cuela | *«`paidVia: ""` no se está tratando como "no consta"»* |
+| el cubo se escribe a mano | *«el cobro tiene método y sigue cayendo en el cubo de "sin método"»* |
+
+## 7 · Un tropiezo de nomenclatura, declarado
+
+Abrí esto como `SCRUM-483` y **ese número ya es de otro ticket** (los rótulos aprobados, con su
+entrada y su rama). Renombrado a `SCRUM-441 (fase 2)`, que es el ticket cuyo límite declarado
+levanta y el que la fase 1 dejó escrito en el propio código. Rama, fichero de test y referencias,
+todo movido.
+
+## 8 · Antes de declarar verde
+
+`main` mergeada dentro de la rama y **la suite entera**: **3.398 tests · 3.321 pasan · 0 fallos ·
+77 saltados**. No un guard: la suite.
+
+Y el trinquete de SCRUM-411 me corrigió por el camino — exporté `metodoDeclarado` sin consumidor
+externo y lo cazó. Es un helper interno: deja de exportarse. **El trinquete no sube.**
+=======
+# Apéndice · CENSO: cuántas puertas hay al estado de cobro de una factura (12-ago-2026)
+
+**Medido contra:** `origin/main` = `934ce4699d2729bb187725106cc7f2dd14f85f06` · 2026-08-12T13:40:00+02:00
+**Rama:** `scrum-441-metodo-en-invoice` · **Ninguna base tocada, tampoco en lectura.**
+
+Encargo: «el censo de escrituras a `Invoice` que NO pasan por `updateInvoiceStatusAdmin`.
+`bulk-paid` es una; quiero saber si hay más puertas al mismo dato».
+
+## 1. El recuento, con los dos instrumentos de acuerdo
+
+| | AST | barrido de texto |
+|---|---|---|
+| escrituras de `Invoice` | **26** | **26** |
+| SQL crudo que escriba `invoices` | **0** | **0** |
+
+Los dos coincidieron **solo después de perseguir una discrepancia**, y merece quedar escrito: el
+primer barrido dio **37**, no 26. La causa no era un hueco del AST sino **mi patrón**, que casaba
+`invoice.updatedAt` y `invoice.createdAt` por prefijo (`invoice\.update` es prefijo de
+`invoice.updatedAt`). Con el paréntesis obligatorio, 26 y 26.
+
+Y las **3 líneas de `$executeRaw`** que el barrido señaló resultaron ser
+`SELECT pg_advisory_xact_lock(...)`: **no escriben nada**. El AST tenía razón; se comprobó en vez de
+suponerlo.
+
+## 2. Las OCHO puertas al estado de cobro, y las SIETE sin reglas
+
+De las 26 escrituras, **8 tocan `status`, `paidAt` o `paidVia`**:
+
+| puerta | qué es | ¿pasa por `updateInvoiceStatusAdmin`? |
+|---|---|---|
+| `system/invoiceAdmin.ts:193` | el marcado a mano | **SÍ — es LA puerta con reglas** |
+| `system/app/routes/invoicesAdmin.routes.ts:382` | `bulk-paid` (`updateMany`) | **NO** |
+| `system/app/routes/invoicesAdmin.routes.ts:791` | cambia `status` | **NO** |
+| `system/app/routes/invoicesAdmin.routes.ts:915` | `create` con `paidAt` | **NO** (nace, no transiciona) |
+| `billing/app/routes/psp.routes.ts:143` y `:186` | pasarela | **NO** |
+| `billing/app/routes/mpWebhook.routes.ts:151` | webhook MercadoPago | **NO** |
+| `invoicing/app/routes/invoice.routes.ts:108` | cobro por pasarela | **NO** |
+
+`updateInvoiceStatusAdmin` es la única que aplica: la guarda de **anulada** (SCRUM-153), la de
+**regla 29** (una factura emitida no se des-paga) y, desde este ticket, el método declarado.
+
+## 3. 🔴 HALLAZGO · `bulk-paid` puede resucitar una factura ANULADA como pagada
+
+Su `where` es:
+
+```ts
+where: { id: { in: ids }, merchantId: req.merchantId, status: { not: 'paid' } }
+```
+
+**`{ not: 'paid' }` incluye `annulled`.** Y el fichero no aplica ninguna guarda de anulada en ese
+bloque (medido: `grep annulled` en el tramo de la ruta → sin coincidencias; el control positivo es
+que esa guarda **sí** existe, cuatro veces, en `invoiceAdmin.ts`).
+
+Es **el mismo defecto que SCRUM-153 cerró** en la puerta de una factura, **todavía abierto en la de
+cien**: un documento dado de baja ante la AEAT, con su registro de anulación sellado y encadenado,
+reapareciendo como cobrado. Y por `updateMany`, sin auditoría por fila.
+
+**NO LO ARREGLO: es STOP CONDITION.** Toca el estado de un documento fiscal ya emitido (regla 29) y
+el arreglo es una decisión del fundador, no un «de paso» dentro del ticket del método.
+
+### Lo que NO está medido, dicho en voz alta
+
+- **No he comprobado si la pantalla deja seleccionar una anulada.** El agujero está en el endpoint,
+  que acepta los `ids` que le manden; que la UI lo ofrezca o no es otra medición.
+- `mpWebhook.routes.ts` y `psp.routes.ts` **no nombran `annulled` ni una vez** (0 coincidencias), así
+  que muy probablemente comparten el agujero. **No lo afirmo**: no he trazado si un webhook puede
+  llegar sobre una factura anulada. Es la siguiente medición, no una conclusión de ésta.
+
+## 4. Siguiente acción concreta
+
+Un ticket para llevar la guarda de anulada a las puertas que no la tienen, empezando por `bulk-paid`
+que es la medida y la más grave (cien filas de golpe). **Gate:** GO del fundador, por regla 29.
+
