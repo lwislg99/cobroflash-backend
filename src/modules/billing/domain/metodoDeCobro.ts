@@ -94,6 +94,21 @@ export interface CuboDeMetodo {
   orden: number;
 }
 
+/** Una entrada de la tabla: el cubo al que cae el método, más lo que solo sabe el método. */
+interface EntradaDeMetodo extends CuboDeMetodo {
+  /**
+   * ¿Puede una PERSONA declarar este método al marcar una factura cobrada a mano?
+   *
+   * No todos: `bizum_auto` significa **confirmado por la pasarela**, y nadie puede afirmarlo a
+   * mano — hacerlo inventaría una cadena de evidencia que no existe. El Bizum que teclea el
+   * profesional es `bizum_manual`, que es otra cosa y por eso son dos valores y no uno.
+   *
+   * Está aquí, en la tabla tipada contra `PAID_VIA`, y no en una lista aparte: si el conjunto
+   * estrena un método, **esto no compila** hasta que alguien diga si se puede declarar a mano.
+   */
+  declarableAMano: boolean;
+}
+
 /**
  * ─────────────────────────────────────────────────────────────────────────────────────────
  * LAS OPCIONES DEL FILTRO, DERIVADAS DE `PAID_VIA` — SCRUM-474 fase 2
@@ -133,12 +148,13 @@ export interface CuboDeMetodo {
  * pasarela frente a dicho por el profesional— es NUESTRA, y el diseño nombra cuatro métodos porque
  * el profesional piensa en cuatro. La distinción no se pierde: se lee en la fila.
  */
-const CUBO_DE: Readonly<Record<PaidVia, CuboDeMetodo>> = Object.freeze({
-  bizum_auto:   { clave: 'bizum',    rotulo: 'Bizum',         orden: 1 },
-  bizum_manual: { clave: 'bizum',    rotulo: 'Bizum',         orden: 1 },
-  card:         { clave: 'card',     rotulo: 'tarjeta',       orden: 2 },
-  transfer:     { clave: 'transfer', rotulo: 'transferencia', orden: 3 },
-  cash:         { clave: 'cash',     rotulo: 'efectivo',      orden: 4 },
+const CUBO_DE: Readonly<Record<PaidVia, EntradaDeMetodo>> = Object.freeze({
+  // `bizum_auto` NO se puede declarar a mano: significa «lo confirmó la pasarela».
+  bizum_auto:   { clave: 'bizum',    rotulo: 'Bizum',         orden: 1, declarableAMano: false },
+  bizum_manual: { clave: 'bizum',    rotulo: 'Bizum',         orden: 1, declarableAMano: true },
+  card:         { clave: 'card',     rotulo: 'tarjeta',       orden: 2, declarableAMano: true },
+  transfer:     { clave: 'transfer', rotulo: 'transferencia', orden: 3, declarableAMano: true },
+  cash:         { clave: 'cash',     rotulo: 'efectivo',      orden: 4, declarableAMano: true },
 });
 
 export function cubosDeMetodo(rotuloSinMetodo: string): CuboDeMetodo[] {
@@ -194,6 +210,40 @@ function metodoDeclarado(valor: unknown): string | null {
   if (limpio === '') return null;
   if (limpio === METODO_DESCONOCIDO) return limpio;
   return esMetodoValido(limpio) ? limpio : null;
+}
+
+/** Una opción del selector: el valor que se guarda y el texto que lee el profesional. */
+export interface OpcionDeMetodo {
+  valor: string;
+  rotulo: string;
+}
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * LO QUE EL PROFESIONAL PUEDE ELEGIR al marcar una factura cobrada a mano — SCRUM-441
+ *
+ * Se DERIVA recorriendo `PAID_VIA`, igual que la barra de filtros: el front no tiene ni puede
+ * tener su propia lista de métodos. Esa duplicación es el defecto que SCRUM-474 arrancó de
+ * `cobrosView.js`, y volver a plantarla aquí sería cometerlo en el arreglo del ticket siguiente.
+ *
+ * Salen **cuatro**, no cinco: los dos Bizum comparten rótulo y solo `bizum_manual` es declarable
+ * por una persona, así que el profesional ve «Bizum» una vez y lo que se guarda es el valor que
+ * dice la verdad — que lo confirmó él, no la pasarela.
+ *
+ * ⚠️ Aquí NO va «sin especificar». Esa opción existe en la pantalla y **no escribe nada**: no es
+ * un método, es la ausencia de uno. Meterla en esta lista la convertiría en un valor guardable.
+ */
+export function opcionesDeMetodoDeclarable(): OpcionDeMetodo[] {
+  const porRotulo = new Map<string, OpcionDeMetodo & { orden: number }>();
+  for (const via of PAID_VIA) {
+    const e = CUBO_DE[via];
+    if (!e || !e.declarableAMano) continue;
+    if (porRotulo.has(e.rotulo)) continue;
+    porRotulo.set(e.rotulo, { valor: via, rotulo: e.rotulo, orden: e.orden });
+  }
+  return [...porRotulo.values()]
+    .sort((a, b) => a.orden - b.orden)
+    .map(({ valor, rotulo }) => ({ valor, rotulo }));
 }
 
 /**

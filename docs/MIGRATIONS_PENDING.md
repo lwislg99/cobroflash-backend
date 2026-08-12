@@ -1867,3 +1867,18 @@ se anota: quien lea esta lista buscando qué falta por aplicar, no encontrará n
   recargo— y por tanto **el número que se sella**: eso es camino de emisión (regla 38) y no entra
   con este dato. El cálculo ya existe y espera sin llamadores en
   `src/modules/invoicing/domain/recargoEquivalencia.ts` (censado en SCRUM-484 como `MOTOR_EN_ESPERA`).
+## SCRUM-293 (A2) · retención de IRPF — 12-ago-2026
+
+`Merchant.retencionIrpfDeclarada` (`retencion_irpf_declarada`, boolean, default false) y
+`Merchant.retencionIrpfTipo` (`retencion_irpf_tipo`, int, nullable).
+
+**NO se ha ejecutado ningún `db push`, y no es un olvido: las dos columnas YA EXISTEN en producción
+y en staging**, verificado contra `information_schema` por otro carril. Lo que iba por detrás era
+el `schema.prisma`, no las bases — así que este commit hace que el esquema **alcance** a la
+realidad, no al revés.
+
+`guard:prisma` en verde tras `prisma generate`: el cliente coincide con el esquema en los dos
+sentidos (529 líneas comparadas). Si algún día una base no las tuviera, `assertSchemaSinDeriva`
+lo cantaría al arrancar — que es exactamente su trabajo.
+
+Aditivo puro: una columna con default y otra anulable. No reescribe ninguna fila existente.
