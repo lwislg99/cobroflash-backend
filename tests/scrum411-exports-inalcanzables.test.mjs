@@ -13,6 +13,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { analizar, exportsDe, nombresImportados } from './_alcance-dominio.mjs';
+import { censar, autoprueba, clave } from './_huerfanos-en-modulos-vivos.mjs';
+import { CATEGORIAS, DECLARADOS, paresDeclarados } from './_huerfanos-declarados.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const R = analizar(RAIZ);
@@ -158,4 +160,163 @@ test('SCRUM-411 · los módulos de dominio inalcanzables NO crecen', (t) => {
     `🔴 el tope (${MODULOS_DOMINIO_INALCANZABLES_MAX}) ya no coincide con la realidad ` +
     `(${lista.length}). Si has cableado uno, BAJA el tope en el mismo commit: así queda constancia ` +
     'de la mejora — un tope con holgura es el descuadre silencioso.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// LA SEGUNDA POBLACIÓN — exports huérfanos DENTRO de módulos vivos
+//
+// Todo lo de arriba cuenta MÓDULOS enteros que nadie alcanza: 8, con tope. Un módulo está vivo en
+// cuanto UNO de sus exports tiene llamador, así que dentro de un módulo vivo caben funciones que no
+// llama nadie — y ésa es una población distinta, de 190, que hasta hoy no vigilaba nadie. Por ahí
+// se coló `borrarMerchant` (RGPD-1, ticket CERRADO, y la promesa está en la página de privacidad).
+//
+// 🔴 AQUÍ EL GUARD NO ES UN NÚMERO, y el porqué está entero en `_huerfanos-declarados.mjs`: con 190
+// y una base viva, un tope o bloquea trabajo legítimo o se sube sin mirar. Lo que se vigila es que
+// **nadie entre en esta población en silencio**. Se AÑADE una población; el tope de arriba no se
+// toca, y `_alcance-dominio.mjs` tampoco.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+const C = censar(RAIZ);
+const DECLARADOS_PARES = paresDeclarados();
+
+/** El veredicto del trinquete: qué entró sin declarar, y qué está declarado y ya no toca. */
+const nuevosSinDeclarar = (filas, pares) => filas.filter((f) => !pares.has(clave(f.modulo, f.nombre)));
+const declaracionesCaducadas = (filas, pares) => {
+  const vivos = new Set(filas.map((f) => clave(f.modulo, f.nombre)));
+  return [...pares.keys()].filter((k) => !vivos.has(k));
+};
+/** 🔴 Con FICHERO Y LÍNEA: un guard que obliga a buscar a mano lo que ha cazado se acaba apagando. */
+const nombrar = (filas) => filas.map((f) => `   ${f.modulo}:${f.linea}  ${f.nombre}`).join('\n');
+
+// ── AUTOPRUEBA · antes de creerse ningún número ──────────────────────────────────────────
+
+test('SCRUM-411 · 🔴 AUTOPRUEBA: el detector se prueba sobre fuente SINTÉTICA antes de creerse su número', () => {
+  // Un censo medido solo contra el repo real no distingue «no hay huérfanos nuevos» de «me he
+  // quedado ciego»: las dos salen como una lista que no crece. Así que primero se le da un árbol
+  // con la respuesta conocida de antemano y se comprueba que la acierta EXACTA.
+  const a = autoprueba();
+  assert.ok(a.ok,
+    '🔴 el detector NO acierta sobre fuente sintética, así que su número sobre el repo real no vale ' +
+    `nada.\n   esperaba: ${a.esperados.join(', ')}\n   vio:      ${a.vistos.join(', ')}`);
+  assert.ok(a.plantadoConLinea,
+    '🔴 el huérfano plantado no sale con su línea correcta: el trinquete no podría nombrarlo.');
+  assert.ok(a.noMarcaAlVivo,
+    '🔴 CONTROL NEGATIVO: marca como huérfano un export que SÍ importa una ruta alcanzable.');
+  assert.ok(a.noMarcaAlIndirecto,
+    '🔴 CONTROL NEGATIVO (el que importa): marca un export cuyo llamante es INDIRECTO —lo importa ' +
+    'otro módulo de dominio que a su vez es alcanzable—. Ahí es donde se equivoca un detector ' +
+    'ingenuo, y con ese fallo la lista se llena de ruido y deja de poder atenderse.');
+  assert.ok(a.distingueEjecutado,
+    '🔴 no distingue «el `export` sobra pero el código lo ejecuta su módulo» de «esto no lo corre ' +
+    'nadie». Sin esa señal, los 190 no se pueden clasificar y el censo vuelve a ser un número.');
+});
+
+// ── SUELO ────────────────────────────────────────────────────────────────────────────────
+
+test('SCRUM-411 · SUELO 2ª población: cero huérfanos es CEGUERA, no limpieza', () => {
+  assert.ok(C.total >= 100,
+    `🔴 el censo de huérfanos devuelve ${C.total}, y el 12-ago-2026 eran 190 en 66 módulos vivos. ` +
+    'Una caída así no es que se hayan cableado 90 funciones en un día: es que el detector se ha ' +
+    'roto. «Cero» y «no supe mirar» nunca son el mismo número — arréglalo antes de creerte la lista.');
+  assert.ok(C.modulosConHuerfanos >= 30,
+    `🔴 solo ${C.modulosConHuerfanos} módulos vivos con huérfanos: el censo está mirando otra cosa.`);
+});
+
+test('SCRUM-411 · SUELO 2ª población: sin árbol que mirar, el censo se DECLARA ciego', () => {
+  const vacio = censar(path.join(RAIZ, 'tests'));
+  assert.equal(vacio.sinSrc, true, '🔴 el censo de un árbol sin `src/` no se declara como tal.');
+  assert.equal(vacio.total, 0);
+  assert.ok(!(vacio.total >= 100), '🔴 un árbol vacío pasaría el suelo: entonces el suelo no es un suelo.');
+});
+
+// ── EL TRINQUETE ─────────────────────────────────────────────────────────────────────────
+
+test('SCRUM-411 · 🔴 EL TEST QUE DECIDE: un huérfano NUEVO sin declarar cae NOMBRADO con fichero y línea', () => {
+  // Se planta uno que no está declarado y se comprueba que el trinquete (a) lo caza y (b) lo dice
+  // con fichero y línea. Sin esto, todo lo demás es un número más grande.
+  //
+  // ⚠️ Se comprueba que el plantado ESTÁ ENTRE los cazados, no que sea el único. Lo aprendí
+  // plantando un huérfano de verdad en `soporte.ts`: con `assert.equal(nuevos.length, 1)` este test
+  // fallaba diciendo «el trinquete NO caza nada» **justo cuando acababa de cazar dos**. Un rojo que
+  // miente sobre su causa manda a quien lo lee a arreglar el guard en vez del código.
+  const plantado = { modulo: 'src/modules/x/domain/motor.ts', nombre: 'motorHuerfano', linea: 4 };
+  const nuevos = nuevosSinDeclarar([...C.filas, plantado], DECLARADOS_PARES);
+  assert.ok(nuevos.some((f) => clave(f.modulo, f.nombre) === clave(plantado.modulo, plantado.nombre)),
+    '🔴 el trinquete NO caza un huérfano nuevo sin declarar: no vigila nada.');
+  const texto = nombrar(nuevos);
+  assert.match(texto, /src\/modules\/x\/domain\/motor\.ts:4/,
+    `🔴 el trinquete caza pero no NOMBRA fichero y línea. Dijo: «${texto}»`);
+  assert.match(texto, /motorHuerfano/, '🔴 el trinquete no nombra el export que ha cazado.');
+});
+
+test('SCRUM-411 · 🔴 CONTROL POSITIVO: los 190 de hoy, DECLARADOS, no hacen ruido', (t) => {
+  t.diagnostic(`huérfanos en módulos vivos: ${C.total} en ${C.modulosConHuerfanos} módulos · declarados: ${DECLARADOS_PARES.size}`);
+  const nuevos = nuevosSinDeclarar(C.filas, DECLARADOS_PARES);
+  assert.deepEqual(nuevos.map((f) => clave(f.modulo, f.nombre)), [],
+    `🔴 HAY ${nuevos.length} EXPORT(S) HUÉRFANO(S) QUE NADIE HA DECLARADO:\n\n${nombrar(nuevos)}\n\n` +
+    '  Un export sin llamador pasa todos los tests y entra verde: desde fuera es indistinguible de\n' +
+    '  una función entregada, su ticket se cierra, y lo que falta deja de estar en ninguna lista.\n' +
+    '  Así estuvo meses `borrarMerchant` (RGPD-1), con la promesa escrita en la página de privacidad.\n\n' +
+    '  NO hace falta cablearlo ni borrarlo. Hace falta DECLARARLO: añádelo a `_huerfanos-declarados.mjs`\n' +
+    '  con su categoría y su motivo, igual que un módulo de la primera población «se sube con su\n' +
+    '  fecha y su motivo en vez de cablearlo a la fuerza». Lo que no vale es que entre en silencio.');
+});
+
+test('SCRUM-411 · 🔴 el trinquete AL REVÉS: una declaración que ya no corresponde a ningún huérfano también cae', () => {
+  // Que el recuento BAJE es SOSPECHA, no mejora: o alguien lo cableó (y entonces la constancia de
+  // la mejora va en el mismo commit) o el detector se quedó ciego. Las dos se ven igual desde fuera
+  // si nadie las separa, y por eso esto es rojo y no un aviso.
+  const caducadas = declaracionesCaducadas(C.filas, DECLARADOS_PARES);
+  assert.deepEqual(caducadas, [],
+    `🔴 HAY ${caducadas.length} DECLARACIÓN(ES) QUE YA NO CORRESPONDEN A NINGÚN HUÉRFANO:\n\n` +
+    `   ${caducadas.join('\n   ')}\n\n` +
+    '  Hay exactamente dos causas y ninguna es rutina:\n' +
+    '   ① LO HAS CABLEADO — enhorabuena: borra su línea en ESTE MISMO commit, así el registro queda\n' +
+    '     como la constancia de que la deuda duró exactamente lo que duró.\n' +
+    '   ② EL DETECTOR SE HA QUEDADO CIEGO y ha dejado de verlo. Entonces la lista entera vale menos\n' +
+    '     de lo que parece y esto es lo único que te va a avisar.\n\n' +
+    '  Bajar sin mirar es la avería que este registro existe para impedir.');
+});
+
+// ── QUE EL REGISTRO NO SE PUDRA ──────────────────────────────────────────────────────────
+
+test('SCRUM-411 · cada declaración lleva categoría CONOCIDA, fecha y motivo', () => {
+  for (const g of DECLARADOS) {
+    assert.ok(CATEGORIAS[g.cat],
+      `🔴 «${g.modulo}» se declara con la categoría «${g.cat}», que no existe. Si midiendo sale una ` +
+      'categoría nueva, invéntala Y explícala en `CATEGORIAS` — pero no la dejes sin definir.');
+    assert.match(g.desde, /^\d{4}-\d{2}-\d{2}$/,
+      `🔴 «${g.modulo}» (${g.cat}) no lleva fecha: sin ella no se puede saber cuánto lleva esperando.`);
+    assert.ok(g.motivo && g.motivo.length >= 30,
+      `🔴 «${g.modulo}» (${g.cat}) no declara MOTIVO. Un registro de nombres sin porqués es un tope ` +
+      'numérico escrito largo, y vuelve a subirse sin mirar.');
+    assert.ok(g.exports.length > 0, `🔴 «${g.modulo}» (${g.cat}) declara un grupo vacío.`);
+  }
+});
+
+test('SCRUM-411 · 🔴 `borrarMerchant` sigue contado, y con la premisa MEDIDA, no la heredada', () => {
+  // Se declaró como PROMESA_SIN_CABLE repitiendo el encargo. Midiendo NO lo es: la supresión real la
+  // hace `suprimirMerchant`, que tiene ruta montada (`supresion.routes.ts:56`). Lo midió SCRUM-485 y
+  // se comprobó aquí antes de reclasificar. Es de otro equipo: aquí se cuenta, no se arregla.
+  //
+  // Este test fija la CORRECCIÓN, no la acusación: si alguien lo devuelve a «promesa rota» sin medir,
+  // vuelve a entrar en la entrada una premisa que ya se comprobó falsa.
+  const g = DECLARADOS_PARES.get('src/modules/system/domain/borradoMerchant.ts::borrarMerchant');
+  assert.ok(g, '🔴 `borrarMerchant` ya no está declarado como huérfano y nadie lo ha cableado.');
+  assert.equal(g.cat, 'SUPLANTADO_POR_UNA_COPIA',
+    '🔴 `borrarMerchant` ha cambiado de categoría. Sigue sin llamadores, pero el profesional SÍ puede ' +
+    'pedir que le supriman la cuenta: lo hace `suprimirMerchant`. No es una promesa rota — es la ' +
+    'función vieja sin retirar. Si vas a volver a llamarlo promesa rota, MÍDELO antes.');
+});
+
+test('SCRUM-411 · `PROMESA_SIN_CABLE` puede estar VACÍA, y que lo esté es la noticia', (t) => {
+  // Hoy no hay ninguno: los dos candidatos que parecían serlo resultaron estar servidos por otra
+  // función. La categoría se queda DEFINIDA a propósito — es donde tiene que aterrizar el siguiente,
+  // y sin ella volvería a repartirse entre las blandas. Que esté vacía se dice, no se borra.
+  const cuantos = DECLARADOS.filter((g) => g.cat === 'PROMESA_SIN_CABLE')
+    .reduce((a, g) => a + g.exports.length, 0);
+  t.diagnostic(`PROMESA_SIN_CABLE: ${cuantos}`);
+  assert.ok(CATEGORIAS.PROMESA_SIN_CABLE,
+    '🔴 se ha borrado la categoría `PROMESA_SIN_CABLE` porque hoy está vacía. Es la que hace que el ' +
+    'siguiente «el producto lo ofrece y no ocurre» tenga dónde caer en vez de diluirse.');
 });

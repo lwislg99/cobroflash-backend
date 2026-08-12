@@ -503,3 +503,273 @@ regenerarlo desde el suyo — y ése es el efecto que hay que saber, no descubri
 * `docs/diseno/bloque-d.md` (nuevo) — copia verbatim de la epic SCRUM-279.
 * `docs/diseno/bloque-g.md` (nuevo) — copia verbatim de la epic SCRUM-282.
 * `docs/master/SCRUM-411.md` — esta entrada.
+
+---
+
+# APÉNDICE · SCRUM-411 (2ª entrega) — LA SEGUNDA POBLACIÓN: los exports huérfanos dentro de módulos vivos
+
+**Medido contra:** `origin/main` = `72294230f9c1fecd9ac0316f2d131eb9b76e76f6` · 2026-08-12T09:38:36+01:00
+(primera medición: `1117b313…` a las 09:30 → **190**. Al mezclar `main` subió a **192**, y por qué
+subió está contado abajo — es la mejor prueba que tiene esta entrega.)
+**Fecha:** 12-ago-2026 · **Carril:** guards · **Gate:** sin gate, corre en `npm test`
+**Cero cables, cero borrados, cero schema, cero emisión.** Esto cuenta, clasifica y VIGILA.
+
+## Qué faltaba, exactamente
+
+La primera entrega vigila **módulos enteros** que nadie alcanza: 8, con tope. Pero un módulo está
+vivo en cuanto **uno solo** de sus exports tiene llamador, así que dentro de un módulo vivo caben
+funciones que no llama nadie. Ésa es **la otra población: 190 exports en 66 módulos vivos** (192 al cierre de esta entrada), y no la
+vigilaba nadie.
+
+SCRUM-484 (mergeado en `917bf2c7`) la **midió** y nombró seis. Lo que entregó fue un censo fechado —
+un documento— y lo dice él mismo: *«No he clasificado los 189»*. Lo que faltaba no era el número:
+era **el método**. Esto es el método.
+
+> 🔴 **La víctima que motivó el encargo — y su premisa, MEDIDA:**
+> `system/domain/borradoMerchant.ts → borrarMerchant` no lo llama nadie, y su ticket RGPD
+> (SCRUM-244) está CERRADO. Eso es cierto y sigue siéndolo. **Lo que NO es cierto es la consecuencia
+> que el encargo le atribuía** («un profesional no puede pedir que le borren la cuenta»): la
+> supresión real la hace **otra** función, `suprimirMerchant`
+> (`supresionMerchant.service.ts:34`), que **sí tiene ruta montada** —
+> `supresion.routes.ts:56`. Lo midió SCRUM-485 y **se ha comprobado aquí con el instrumento propio
+> antes de reclasificarlo**: no es una promesa rota, es la función vieja superada y sin retirar.
+>
+> **El encargo sigue en pie igual, y por un motivo mejor:** que la premisa concreta se cayera no
+> cambia que el defecto existía —un export con cero llamadores estuvo meses siendo indistinguible de
+> una función entregada— y que **no lo encontró ningún instrumento, sino un censo lanzado a mano
+> buscando otra cosa.** Es exactamente lo que este trinquete viene a impedir. (SCRUM-485 es de otro
+> equipo: aquí se cuenta, no se arregla.)
+
+## 🔴 Por qué NO es un tope numérico, que era el ticket entero
+
+Un trinquete que diga «no más de 192» no sirve. En una base viva **se escribe un export antes que su
+consumidor constantemente**, así que un tope sólo tiene dos finales: o bloquea trabajo legítimo, o se
+sube sin mirar hasta que deja de significar nada. Las dos acaban en un guard que nadie atiende.
+
+Lo que se vigila aquí **no es el número**: es que **nadie entre en esta población en silencio**. Un
+huérfano nuevo tiene que **declararse**, con su fecha y su motivo — exactamente el contrato que la
+primera población ya tiene escrito (*«se sube con su fecha y su motivo en vez de cablearlo a la
+fuerza»*). Ese contrato se **respeta y se extiende**; no se cambia. El tope de 8 y
+`_alcance-dominio.mjs` quedan **intactos**: se añade una población, no se cambia la que hay.
+
+Y cae **en los dos sentidos**. Que el recuento BAJE es sospecha, no mejora: o alguien lo cableó —y
+entonces la constancia va en el mismo commit— o el detector se quedó ciego, y desde fuera las dos se
+ven igual.
+
+## Los tres instrumentos, POR SEPARADO — porque uno solo miente
+
+| instrumento | qué vio | en qué se equivocó |
+|---|---|---|
+| **① AST / grafo de alcance** (`_alcance-dominio.mjs`, reutilizado) | **190** huérfanos en **66** módulos vivos (192 tras mezclar `main`) | No ve el import dinámico por nombre (`sendQuoteEmail`, ya medido por SCRUM-484) ni `public/`, que es vanilla y no entra en el grafo |
+| **② TEXTUAL**, 1.258 ficheros, incluido `public/` | 12 menciones en `public/`, 21 «cero menciones», 121 «sólo tests» | **Sobre-marca con palabras genéricas**: `PENDIENTE`, `FALTA`, `AVISOS`, `avanzar` son ruido de prosa castellana. De sus 12 hits en `public/`, **2 son reales**. Y daba por muertos a `ensureReferralCode` y `funnelForPeriod`, que se llaman dentro de su propio módulo |
+| **③ GRAFO INTERNO del fichero** (nuevo) | **35 de 190** no los alcanza ningún export vivo de su módulo (34 tras el merge: uno se cableó) | Un uso en **posición de tipo** no cuenta como ejecución (por eso `JOB_STATES` sale en los 35 sin ser un fallo). Es correcto para esta pregunta, pero hay que saberlo |
+
+**Lo que sacó cada uno que los otros no podían:**
+
+* El ② encontró los **2 hallazgos que el AST no puede ver**: `partirMetodo` y `JOB_DIRECCION_MAX`
+  están **copiados a propósito** en el frontend vanilla, que no puede importar de `src/`. El propio
+  `public/dashboard/js/cobrosView.js:117` lo declara: *«ESTO ES UNA SEGUNDA COPIA DELIBERADA DE
+  `partirMetodo`, Y CONSTA COMO TAL»*. No están muertos: viven dos veces.
+* El ③ **corrigió al ②**, que había dado por muertos dos que se llaman dentro de su propio módulo, y
+  es el que hace posible la clasificación: separa «el `export` sobra» de «esto no lo corre nadie».
+
+## 🔴 La autoprueba: el detector se prueba antes de que nadie se crea su número
+
+Un censo medido sólo contra el repo real no distingue «no hay huérfanos nuevos» de «me he quedado
+ciego»: las dos salen como una lista que no crece. Así que antes de creerse ningún número, el detector se
+mide contra un árbol **sintético escrito en disco** con la respuesta conocida:
+
+```
+index.ts → app.ts → x.routes.ts → domain/motor.ts → domain/ayuda.ts
+```
+
+* `motorVivo` lo importa la ruta → **no debe salir**
+* `ayudaIndirecta` lo importa `motor.ts`, que a su vez es alcanzable → 🔴 **llamada INDIRECTA a
+  través de otro módulo: no debe salir.** Ahí es donde se equivoca un detector ingenuo
+* `motorHuerfano` no lo importa nadie → **sí sale, con su línea**
+* `SEMILLA` no lo importa nadie pero `motorVivo` lo usa dentro del fichero → sale con
+  `loEjecutaAlguien: true`, que es la señal que hace posible clasificar
+
+Sólo vale si acierta **exacto**. Y el **suelo**: si el censo devuelve cero o cae por debajo de 100,
+**falla declarándose ciego** — sabemos que hay 192.
+
+## Los rojos, probados sobre el árbol real (no prometidos)
+
+1. **Huérfano nuevo sin declarar.** Se plantó `pruebaDeRojoScrum411` en `system/domain/soporte.ts` y
+   el guard cayó nombrándolo: `src/modules/system/domain/soporte.ts:108  pruebaDeRojoScrum411`.
+   Retirado en el acto; `git status` de `src/` limpio.
+2. **El sentido inverso.** Se declaró un huérfano que no existe y cayó el trinquete al revés, con sus
+   dos causas escritas en el rojo (① lo has cableado → borra la línea; ② el detector se quedó ciego).
+3. 🔴 **Y el rojo me corrigió a mí:** con el huérfano real plantado, «EL TEST QUE DECIDE» fallaba
+   diciendo *«el trinquete NO caza nada»* justo cuando acababa de cazar dos, porque exigía
+   `length === 1`. Un rojo que miente sobre su causa manda a quien lo lee a arreglar el guard en vez
+   del código. Corregido a «el plantado está ENTRE los cazados», con el motivo escrito en el test.
+
+## 🔴 Y entonces entró un merge de `main`, y el guard lo cazó en el acto
+
+Esto no es un ejemplo inventado: pasó **mientras se escribía esta entrada**. Medido a las 09:30
+contra `1117b313` había **190**. Al traer `main` (`72294230`, que incorpora SCRUM-474 fase 2 y
+SCRUM-485), el trinquete cayó **nombrando dos exports huérfanos nuevos con su fichero y su línea**:
+
+```
+   src/modules/billing/domain/cobros.service.ts:72  camposDeMetodo
+   src/modules/billing/domain/metodoDeCobro.ts:79   CUBO_SIN_METODO
+```
+
+Entraron en verde, como entra todo lo de esta población. **Ninguno es un fallo** —los dos declaran su
+razón en su propia cabecera— y **ninguno se ha cableado ni borrado**: se han DECLARADO, que es
+exactamente el camino que este mecanismo pide y la razón de que no sea un tope numérico. Un tope
+habría dicho «191, 192» y nadie habría mirado cuáles.
+
+`camposDeMetodo` obligó además a una **categoría nueva**, `EXPORTADO_PARA_LAS_FIXTURES`: su cabecera
+dice literalmente *«SE EXPORTA PARA QUE LAS FIXTURES DERIVEN DE ELLA»*, porque una fixture escrita a
+mano se quedó atrás y el test acusó al filtro de un fallo que no era suyo. Eso no es «exportado de
+más»; es exportado a propósito, y pedirle lo mismo a las dos cosas sería gastar el rojo.
+
+### Y una BAJA, que es la que de verdad importa
+
+En la misma medición, **`metodoParaAgrupar` dejó de estar sin ejecutar**. SCRUM-484 lo nombró el día
+antes entre los seis que un profesional nota — *«agrupar sus cobros por método fiable: la validación
+existe y no se aplica»*— y ese mismo día SCRUM-474 fase 2 entró en `main` con `cuboDeCobro`, que sí
+lo llama. Su declaración **baja de `MOTOR_EN_ESPERA` a `PIEZA_INTERNA_EXPORTADA` con la fecha y el
+motivo escritos**, en vez de desaparecer sin más: así el registro queda como la constancia de que la
+deuda duró exactamente lo que duró. Es lo mismo que hace el tope de la primera población cuando baja,
+y por eso el contrato se extendía en vez de reinventarse.
+
+## La clasificación de los 192
+
+### 🔴 Antes de la tabla: una premisa que se cayó midiendo, y era la mía
+
+`borrarMerchant` y su constante entraron aquí como `PROMESA_SIN_CABLE` **repitiendo el encargo**.
+Midiendo, no lo son: pasan a `SUPLANTADO_POR_UNA_COPIA` por lo que está escrito arriba. Con eso,
+**`PROMESA_SIN_CABLE` se queda HOY EN CERO** — y eso es una noticia, no un hueco:
+
+* La categoría **se queda definida a propósito**. Es donde tiene que aterrizar el siguiente «el
+  producto lo ofrece y no ocurre», y sin ella volvería a repartirse entre las blandas. Hay un test
+  que impide borrarla por estar vacía.
+* Y no significa «no hay nada que mirar». Significa que **de los 192, ninguno resultó ser una
+  capacidad que el producto ofrezca y nadie sirva** — porque los dos que lo parecían los sirve otra
+  función. Lo que sí queda es `SIN_LECTOR_NI_TEST` con un miembro, abajo.
+
+| categoría | qué significa | cuántos |
+|---|---|---|
+| `PROMESA_SIN_CABLE` | el producto lo ofrece y no ocurre | **0** |
+| `SIN_LECTOR_NI_TEST` | nadie lo nombra en ningún sitio del repo | **1** |
+| `SUPLANTADO_POR_UNA_COPIA` | lo hace otro, copiado | **4** |
+| `MOTOR_EN_ESPERA` | construido a propósito antes que su consumidor | **18** |
+| `REGLA_COPIADA_AL_FRONT` | duplicada en public/ porque el front no puede importar | **2** |
+| `FALSO_POSITIVO_MEDIDO` | tiene llamador que el instrumento no ve | **1** |
+| `EXPORTADO_PARA_LAS_FIXTURES` | exportado a propósito para que las fixtures deriven de él | **1** |
+| `VOCABULARIO_DEL_MODULO` | la única fuente de un término | **94** |
+| `PIEZA_INTERNA_EXPORTADA` | vivo dentro, exportado de más | **71** |
+
+**Total: 192** en 66 módulos vivos.
+
+### `PROMESA_SIN_CABLE` — 0
+
+
+### `SIN_LECTOR_NI_TEST` — 1
+
+* `maintenance/domain/maintenance.service.ts:490` → **`maintenanceEurInMonth`** — 🔴 Ni código vivo, ni test, ni documento lo mencionan en todo el repo. Es el único del censo del que no consta ni para qué se escribió.
+
+### `SUPLANTADO_POR_UNA_COPIA` — 4
+
+* `quoteRequests/domain/attachment.service.ts:40` → **`listQuoteRequestAttachments`** — La galería de adjuntos se sirve, pero con un `prisma.attachment.findMany` inline en `quoteRequests.routes.ts:25` en vez de con esta función. Misma consulta, dos sitios.
+* `system/domain/borradoMerchant.ts:129` → **`borrarMerchant`** — 🔴 LA PREMISA ERA FALSA Y SE CORRIGE AQUÍ. Se declaró como PROMESA_SIN_CABLE, y midiendo NO lo es: `borrarMerchant` sigue con cero llamadores, pero la supresión real la hace `suprimirMerchant` (`supresionMerchant.service.ts:34`), que SÍ tiene ruta montada — comprobado en `supresion.routes.ts:56`. Lo midió SCRUM-485 y lo he verificado con mi propio instrumento antes de reclasificarlo. El profesional PUEDE, así que no es una promesa rota: es la función vieja, superada y sin retirar.
+* `system/domain/borradoMerchant.ts:83` → **`FUERA_DEL_BARRIDO_GENERICO`** — La lista de lo que el barrido genérico NO debe tocar, escrita para `borrarMerchant`. Sigue a su función: si aquélla está superada por `suprimirMerchant`, ésta también. Cae con ella cuando SCRUM-485 decida (aquí se cuenta, no se retira).
+* `team/domain/team.service.ts:4` → **`listTeamMembers`** — El profesional SÍ ve su equipo: lo sirven `teamOverview.service.ts:58` y consultas inline en rutas (`jobs.routes.ts:133`, `reports.routes.ts:99`). No es una promesa rota, es la misma consulta escrita en varios sitios, con varios sitios donde divergir.
+
+### `MOTOR_EN_ESPERA` — 18
+
+* `billing/domain/cobros.service.ts:129` → **`diasDeDeuda`** — Los días de deuda; ni código vivo ni test lo leen, solo consta en documentos.
+* `billing/domain/cobros.service.ts:124` → **`esDeuda`** — El predicado de deuda, construido y sin llamador vivo.
+* `billing/domain/paidVia.ts:49` → **`esPaidViaValido`** — La validación del método de cobro existe y no se aplica en ningún camino vivo (SCRUM-484).
+* `expenses/domain/justificante.ts:196` → **`avisaDeSimplificado`** — E3: el aviso de que con un ticket NO se puede deducir el IVA. El veredicto está construido y ninguna pantalla lo enseña (SCRUM-484).
+* `exports/domain/portabilidadRegistro.ts:79` → **`diasTranscurridos`** — Ídem: la cuenta de días del plazo, sin consumidor vivo.
+* `exports/domain/portabilidadRegistro.ts:72` → **`fechaLimite`** — El plazo legal de la portabilidad, en la misma espera que `solicitudesPendientes`.
+* `exports/domain/portabilidadRegistro.ts:163` → **`solicitudesPendientes`** — Ver si una solicitud de portabilidad se atendió dentro de plazo. Construido, sin pantalla (SCRUM-484).
+* `invoicing/domain/selladoEstado.ts:82` → **`estadoAlNacer`** — Decide el estado de sellado al nacer un documento. Su constante `SELLADO_NO_APLICA` SÍ la usa código vivo; la función no la llama nadie. Cablearla es tocar el sellado → STOP (regla 38).
+* `jobs/domain/albaran.service.ts:571` → **`recomputarHashDeEvidencia`** — La otra mitad de la verificación de evidencia, en la misma espera y con el mismo STOP.
+* `jobs/domain/albaran.service.ts:605` → **`verificarEvidenciaAlbaran`** — Comprobar que la evidencia de una firma no se ha alterado. Construido y sin cable (SCRUM-484). Cablearlo toca el camino de sellado → GO explícito (regla 38).
+* `jobs/domain/albaranAFactura.ts:270` → **`baseDeFacturables`** — La base de líneas facturables de un albarán; ningún export vivo del módulo la alcanza.
+* `jobs/domain/albaranesListado.ts:126` → **`filtrarAlbaranes`** — C1 (SCRUM-301): el filtro por los dos ejes del listado global de albaranes. Su hermano `listarAlbaranesDelMerchant` sí está cableado; el filtro no lo aplica nadie todavía.
+* `jobs/domain/albaranNumber.service.ts:16` → **`isAlbaranNumber`** — El reconocedor de números de albarán; su serie está construida y sin cable (SCRUM-484 lo cuenta entre los 8 por el módulo hermano `albaranSerie.ts`).
+* `jobs/domain/precarga.service.ts:193` → **`esDelTecnico`** — H1 fase 2 (SCRUM-458/460): el paquete de precarga está cableado por `GET /admin/precarga`, pero esta condición concreta no la alcanza ese camino.
+* `messaging/domain/constanciaCorreo.ts:114` → **`avanzar`** — SCRUM-475/478: saber si el correo llegó. La tabla `email_messages` está parada A PROPÓSITO (su SQL se aplicó a DEV el 12-ago-2026); el consumidor es la fase siguiente.
+* `messaging/domain/constanciaCorreo.ts:36` → **`ESTADOS_CORREO`** — El vocabulario de estados de `avanzar`, en la misma espera (SCRUM-475/478).
+* `quotes/domain/billingPlan.ts:99` → **`getNextBillingStage`** — El siguiente tramo del plan de cobro: construido, sin llamador vivo.
+* `quotes/domain/billingPlan.ts:139` → **`getStageAmount`** — El importe de un tramo del plan de cobro: construido, y ningún export vivo del módulo lo alcanza.
+
+### `REGLA_COPIADA_AL_FRONT` — 2
+
+* `billing/domain/metodoDeCobro.ts:37` → **`partirMetodo`** — La regla vive DOS veces a propósito: `public/dashboard/js/cobrosView.js:117` lo declara («ESTO ES UNA SEGUNDA COPIA DELIBERADA DE `partirMetodo`, Y CONSTA COMO TAL»). El backend no la importa porque el navegador no puede importarla.
+* `jobs/domain/jobDireccion.ts:32` → **`JOB_DIRECCION_MAX`** — El tope está duplicado como literal `300` en `public/dashboard/js/jobDetailView.js:803`, que lo dice en un comentario. La constante del backend es la fuente; el front la copia porque es vanilla y no puede importarla.
+
+### `FALSO_POSITIVO_MEDIDO` — 1
+
+* `messaging/domain/email.service.ts:109` → **`sendQuoteEmail`** — 🔴 NO es huérfano: lo llama `quotesAdmin.routes.ts` por import DINÁMICO, y `nombresImportados` solo lee imports estáticos, así que no ata el nombre. Medido y nombrado por SCRUM-484. Se declara aquí para que el trinquete no lo cuente como hallazgo — arreglar el instrumento es el ticket de 411, no éste.
+
+### `EXPORTADO_PARA_LAS_FIXTURES` — 1
+
+* `billing/domain/cobros.service.ts:72` → **`camposDeMetodo`** — Lo declara su propia cabecera: «SE EXPORTA PARA QUE LAS FIXTURES DERIVEN DE ELLA», porque la fixture de SCRUM-474 escrita a mano se quedó atrás en cuanto el serializador estrenó `metodoCubo` y el test acusó al filtro de un fallo que no era suyo. Entró en `main` el 12-ago-2026 y la cazó este trinquete en su primer merge.
+
+### Las dos categorías de volumen (165 de 192), sin listar una a una
+
+* **`VOCABULARIO_DEL_MODULO` (94)** — constantes, copy y errores exportados para ser la **única
+  fuente** de un término. Su lector de hoy es su propio módulo y su test. No es deuda: es cómo se
+  evita que el término se escriba a mano en cinco sitios.
+* **`PIEZA_INTERNA_EXPORTADA` (71)** — código que **sí ejecuta** su propio módulo; el `export` es
+  superficie que nadie de fuera consume, normalmente para que su test pueda fijar la regla sin pasar
+  por la ruta entera.
+
+Los 192 están declarados **uno a uno** en `tests/_huerfanos-declarados.mjs`, con categoría, fecha y
+motivo. La lista completa es ese fichero; aquí se resume.
+
+## Lo que cambió respecto a las categorías propuestas
+
+El encargo proponía tres (deliberados documentados · infraestructura para tests · promesa
+incumplida). **Midiendo salieron nueve**, y dos de las nuevas son las que ganan información:
+
+* 🟠 **`SUPLANTADO_POR_UNA_COPIA`** — la que faltaba, y la que acabó absorbiendo a `borrarMerchant`. `listTeamMembers` y
+  `listQuoteRequestAttachments` no tienen llamador **porque la misma consulta se rehízo inline en
+  otro sitio** (`teamOverview.service.ts:58`, `jobs.routes.ts:133`, `reports.routes.ts:99`;
+  `quoteRequests.routes.ts:25`). **No son promesas rotas** —el profesional sí ve su equipo y sus
+  fotos— pero tampoco son higiene: es la misma regla en dos sitios, con dos sitios donde divergir.
+  Meterlas en el saco de `borrarMerchant` habría sido acusar de más y habría gastado el rojo.
+* 🟡 **`REGLA_COPIADA_AL_FRONT`** — el frontend es vanilla y no puede importar de `src/`, así que la
+  regla vive dos veces **a propósito y declarado**. Sin esta categoría, `partirMetodo` parecía muerto.
+
+Y una que preferiría no haber necesitado: 🔴 **`SIN_LECTOR_NI_TEST`**, con un solo miembro —
+`maintenance.service.ts:490 → maintenanceEurInMonth`. Es el único del censo del que **no consta ni
+para qué se escribió**: ni código vivo, ni test, ni documento lo nombran en todo el repo.
+
+## Lo que NO cubre, declarado
+
+* **`import * as x` sigue dando el módulo por vivo entero** (límite heredado de
+  `_alcance-dominio.mjs`, que él declara). **El 192 es un suelo, no un techo.**
+* **El import dinámico por nombre** sigue sin atarse: 1 falso positivo medido y **declarado**
+  (`sendQuoteEmail`). Arreglar el instrumento es el ticket de 411, no éste — no se toca un guard
+  ajeno (regla 9).
+* **`public/` no entra en el grafo.** Se barrió con el instrumento textual, que sobre-marca; los 2
+  hallazgos reales están confirmados a mano, pero **no se ha medido export por export**.
+* **La clasificación de los 157 que sí ejecuta código vivo es por SEÑAL, no por lectura.** Los **34**
+  que hoy no alcanza ningún export vivo sí están leídos y clasificados **uno a uno**.
+* **No se ha cableado ni retirado nada.** Ni un export. Tres de los deliberados esperan un diff de
+  esquema y borrarlos sería tirar trabajo pagado.
+* **`borrarMerchant` no se arregla aquí**: es SCRUM-485, de otro equipo. Se cuenta y se nombra.
+* **Nada de `public/dashboard/js/` se ha tocado** (zona ajena, dos sesiones dentro).
+
+## Tests
+
+* `tests/scrum411-exports-inalcanzables.test.mjs` — el trinquete de las **dos** poblaciones (17 tests:
+  los 8 de la primera, INTACTOS, + los 9 de ésta).
+* `tests/_huerfanos-en-modulos-vivos.mjs` — el instrumento y su autoprueba sobre fuente sintética.
+* `tests/_huerfanos-declarados.mjs` — el registro: los 192, con categoría, fecha y motivo.
+
+## Ficheros
+
+* `tests/_huerfanos-en-modulos-vivos.mjs` (nuevo) — el censo de la segunda población + autoprueba.
+* `tests/_huerfanos-declarados.mjs` (nuevo) — las declaraciones, que son el guard.
+* `tests/scrum411-exports-inalcanzables.test.mjs` — se le AÑADE la segunda población; el tope de 8 y
+  todo lo anterior quedan sin tocar.
+* `docs/master/SCRUM-411.md` — este apéndice.
