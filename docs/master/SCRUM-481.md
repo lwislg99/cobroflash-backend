@@ -1,7 +1,10 @@
 # SCRUM-481 · La columna MÉTODO habla el mismo idioma que el filtro de al lado
 
-**Medido contra:** `origin/main` = `1117b313984a91f0ef33caabbdef45d5579595e3` **+
-`origin/scrum-474-fase2-filtro` = `037ff52a`, mergeada dentro** · 2026-08-12T10:40+01:00
+**Medido contra:** `origin/main` = `1117b313984a91f0ef33caabbdef45d5579595e3` · 2026-08-12T10:40:00+01:00
+
+**Y con `origin/scrum-474-fase2-filtro` = `037ff52a` mergeada dentro**, que es el contrato de debajo
+que cambió a mitad del ticket. El ancla de arriba va sola en su línea a propósito: partirla para
+meter esta segunda referencia es lo que tumbó el guard de SCRUM-267 (abajo, en la corrección propia).
 
 **12-ago-2026** · **Carril:** Cobros · **Gate:** sin gate, corre en `npm test`
 
@@ -348,6 +351,21 @@ emoji: `bizum_auto: '📲 Bizum'`, `bizum_manual: '📲 Bizum (confirmado a mano
 **No se toca aquí**, y no por comodidad: son dos microcopys **aprobadas por separado** para dos
 sitios distintos, y unificarlas es cambio de microcopy (regla 30), no refactor. Se deja dicho para
 quien decida si el vocabulario de cobro debe ser uno solo.
+
+## 🔴 Corrección propia — la tanda se corrió ANTES del último cambio, y eso dejó un rojo dentro
+
+La primera entrega de esta rama partió el ancla en dos líneas para meter la referencia a la rama
+ajena, y el guard de **SCRUM-267** la tumbó: *«falta la HORA (la fecha sola no dice si caducó)»*. El
+regex exige el ancla **completa en una línea que termine en la fecha**.
+
+**No lo cazó la tanda porque la tanda se corrió antes de editar este documento** — que es
+exactamente el orden que el encargo prohíbe («`npm test` después del último cambio»). Los 3.316
+tests que se declararon eran ciertos sobre el árbol de ese momento, y ese árbol duró hasta la
+siguiente edición. **Es el mismo modo de fallo que documenta `SCRUM-284.md:123`**, y por eso la
+casa lo pide en ese orden.
+
+Arreglado en esta rama —el ancla vuelve a una sola línea, con segundos— y **re-corrida la tanda
+entera después del arreglo**, con los números de abajo.
 
 ## Ficheros
 
