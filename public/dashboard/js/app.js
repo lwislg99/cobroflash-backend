@@ -21,6 +21,8 @@ async function initApp() {
   // pinta. Fallar cerrado es lo correcto aquí: no pintarlo cuando se podría es un botón de menos;
   // pintarlo cuando no se puede es lo que este ticket viene a quitar.
   window.appBizumManualEnabled = me.bizumManualEnabled === true;
+  // SCRUM-328: el veredicto del aviso lo da el servidor; aqui solo se guarda para pintarlo.
+  window.appBizumSinTelefono = me.bizumSinTelefono || null;
   // SCRUM-289 (A0.3) · SCRUM-346 (A0.5): veredicto YA CALCULADO por el servidor
   // (`modoDocumentoSuelto`). El navegador no reimplementa el modo de emisión: lo recibe.
   // Son TRES valores —'factura' | 'justificante' | 'no'— porque el profesional español real no

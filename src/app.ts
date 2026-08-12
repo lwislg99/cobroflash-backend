@@ -6,6 +6,7 @@ import { outboxDir } from './core/storage/dirs'; // SCRUM-72: invoicesDir ya no 
 import { jsonError } from './core/http/jsonError';
 import { notFoundPageHtml } from './core/http/publicNotFound';
 import { isFlagEnabled } from './core/flags';
+import { decidirAvisoBizum } from './modules/billing/domain/avisoBizumSinTelefono'; // SCRUM-328
 // SCRUM-300 (C5): microcopy del albarán servida al dashboard vanilla desde su fuente única.
 import { ALBARAN_AYUDAS, ALBARAN_ROTULOS, firmanteCalidadOpciones } from './modules/jobs/domain/albaranFirmante';
 import { cubosDeMetodo, opcionesDeMetodoDeclarable, ROTULO_SIN_METODO } from './modules/billing/domain/metodoDeCobro';
@@ -317,7 +318,10 @@ app.get('/admin/me', async (req, res) => {
     where: { id: session.merchantId },
     // SCRUM-289: `email` y `flags` los necesita `modoDocumentoSuelto` — el modo de emisión
     // (V0-0) se resuelve con merchant demo (por email) + flag por merchant, no solo con el país.
-    select: { country: true, logoUrl: true, email: true, flags: true, invoiceSeriesYear: true },
+    // SCRUM-328: los dos telefonos entran para poder decidir el aviso de Bizum sin telefono
+    // con EL MISMO criterio que usa la pagina de pago del cliente (que cae a `whatsappPhone`).
+    select: { country: true, logoUrl: true, email: true, flags: true, invoiceSeriesYear: true,
+      bizumPhone: true, whatsappPhone: true },
   });
 
   // SCRUM-298 (A8) · UN SOLO objeto para las dos preguntas de modo. `documentoSuelto` (qué se
@@ -379,6 +383,20 @@ app.get('/admin/me', async (req, res) => {
     // `documentoSuelto` y `modoEmision` — dos sitios decidiendo lo mismo acaban discrepando.
     bizumManualEnabled: isFlagEnabled('BIZUM_MANUAL_ENABLED', {
       merchant: { id: session.merchantId, country: merchantFull?.country },
+    }),
+    // SCRUM-328 · EL FALLO MUDO: con el Bizum encendido pero SIN telefono, la pagina de pago del
+    // cliente no pinta la opcion —`payInvoice.routes.ts:69-71`— y el profesional concluye que el
+    // producto esta roto. Nadie le dice que le falta un campo.
+    //
+    // El veredicto se calcula AQUI, con el mismo criterio que el cliente (los DOS telefonos, con
+    // su fallback), y el navegador solo lo pinta. Si lo decidiera el front, tendriamos dos reglas
+    // para el mismo hecho y discreparian: avisar a quien no toca o callar a quien si.
+    bizumSinTelefono: decidirAvisoBizum({
+      flagBizum: isFlagEnabled('BIZUM_MANUAL_ENABLED', {
+        merchant: { id: session.merchantId, country: merchantFull?.country },
+      }),
+      bizumPhone: merchantFull?.bizumPhone,
+      whatsappPhone: merchantFull?.whatsappPhone,
     }),
     // SCRUM-289 (A0.3): el botón «Nueva factura» solo existe cuando lo que se va a crear ES una
     // factura. El veredicto se calcula AQUÍ, con la MISMA función que gatea `POST /admin/invoices`

@@ -130,7 +130,11 @@ const CENSO = Object.freeze({
   'quotesView.js': 1,
   'semaforoFiscal.js': 1,
   'settingsSubmenus.js': 1,
-  'settingsView.js': 1,
+  // SCRUM-328 (12-ago-2026) · SUBE DE 1 A 3, A CONCIENCIA: los dos textos del aviso de «Bizum sin
+  // telefono». Salen con marcador A PROPOSITO — ese aviso es lo unico que separa «me falta rellenar
+  // un campo» de «esto no funciona», y su texto no lo ha firmado el fundador (regla 30). Se apagan
+  // el dia que lo firme.
+  'settingsView.js': 3,
 });
 
 /** Marcadores que viven en un LITERAL (los que pueden pintarse). Los comentarios no son literales. */
