@@ -1,5 +1,6 @@
 # SCRUM-507 · Distinguir lo que se inventa la IA de lo que escribe una persona
 
+**Medido contra:** `origin/main` = `a5d678203e39c04772ee1f659842d13002de990c` · 2026-08-12T14:49:43+02:00
 **Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-507-cantidad-supuesta` · `HEAD` = `a5d678203e39c04772ee1f659842d13002de990c` · 2026-08-12T14:49:21+02:00
 
 ## 1 · Que hace hoy `ai.service.ts:140`, y de donde saca la cantidad
