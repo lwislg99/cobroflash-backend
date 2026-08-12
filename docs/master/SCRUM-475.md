@@ -504,10 +504,16 @@ dentro del propio fichero, junto a las huellas.
 
 ## 8 · Números
 
+Las dos líneas base están medidas **aparte**, con el árbol limpio y en `main`. Hay dos porque `main`
+se movió cuatro veces durante la sesión: la primera es la del arranque y la segunda es la única con
+la que el delta significa algo (el ABSOLUTO caduca cuando su objeto se mueve; el DELTA sobrevive).
+
 | | |
 | --- | --- |
-| **Línea base**, medida aparte en `main` = `1117b313` con árbol limpio | **3.296 tests · 3.219 pasan · 0 fallos · 77 saltados** |
-| **Esta rama**, con `main` = `22c79b57` dentro | **3.321 tests · 3.244 pasan · 0 fallos · 77 saltados** |
+| Línea base al arrancar · `main` = `1117b313` | 3.296 tests · 3.219 pasan · 0 fallos · 77 saltados |
+| **Línea base comparable** · `main` = `db820c35` | **3.306 tests · 3.229 pasan · 0 fallos · 77 saltados** |
+| **Esta rama**, con ese `main` dentro | **3.321 tests · 3.244 pasan · 0 fallos · 77 saltados** |
+| **Delta** | **+15 tests · +15 pasan · 0 fallos · 0 saltados nuevos** — son exactamente los 15 de `tests/scrum475-ignoran-el-resultado.test.mjs` |
 | `guards:entrada` | 4 guards · 17 tests · verde |
 | `tests/scrum393` (marcadores de conflicto) | 0 · 0 · 0 |
 
