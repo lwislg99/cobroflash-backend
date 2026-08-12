@@ -322,3 +322,58 @@ el arreglo es una decisión del fundador, no un «de paso» dentro del ticket de
 
 Un ticket para llevar la guarda de anulada a las puertas que no la tienen, empezando por `bulk-paid`
 que es la medida y la más grave (cien filas de golpe). **Gate:** GO del fundador, por regla 29.
+
+---
+
+# SCRUM-496 · La guarda de anulada en el lote, y el censo de las otras seis puertas
+
+**Medido contra:** `origin/main` = `84f60528e626f6bc569c43e08e635497fc351d13` · 2026-08-12T15:10:00+02:00
+**Rama:** `scrum-475-firma-del-webhook` (main mergeado dentro) · **GO del fundador, con límite exacto.**
+
+## 1 · La pregunta que importa más que el arreglo: ¿hay una tercera puerta?
+
+**No hay «una tercera»: hay TRES más, y dos son PEORES que `bulk-paid`.**
+
+| puerta | cómo elige la fila | ¿excluye anuladas? |
+|---|---|---|
+| `invoicesAdmin.routes.ts:382` (`bulk-paid`) | `status: { not: 'paid' }` | **NO** — `not: 'paid'` incluye `annulled`. **ARREGLADA aquí.** |
+| `psp.routes.ts:143` | `findFirst` por `chargeId`/`quoteId`, **sin filtro de estado**, → `update` a `paid` | **NO, y sin filtro ninguno** |
+| `psp.routes.ts:186` | misma forma | **NO** |
+| `mpWebhook.routes.ts:151` | `update({ where: { id: invoiceId } })` **sin mirar el estado**, con `.catch(() => {})` | **NO, y se traga el error** |
+| `invoice.routes.ts:108` | nombra `annulled` una vez — **sin verificar si guarda esta transición** | a medir |
+| `invoicesAdmin.routes.ts:791` | toca `status`, no `paidAt` | a medir |
+| `invoicesAdmin.routes.ts:915` | `create` — nace, no transiciona | no aplica |
+
+`bulk-paid` al menos excluía las ya pagadas. **`psp` y `mpWebhook` no excluyen nada**: si el aviso de
+una pasarela llega sobre una factura anulada, la marcan cobrada sin que nada salte — y `mpWebhook`
+además se come el error. **No las toco: el GO era solo el lote**, y son camino de pasarela.
+
+⚠️ **Lo que NO está medido:** si un webhook puede llegar de hecho sobre una anulada. Que el código no
+lo impida está medido; que ocurra, no. Es la siguiente medición, no una conclusión de ésta.
+
+## 2 · El arreglo, con la guarda REUTILIZADA
+
+`ESTADO_ANULADA` y `NO_SE_MARCAN_PAGADAS_EN_LOTE` viven en `invoiceAdmin.ts`, **al lado de la guarda
+de una sola factura**, y la guarda de siempre pasa a consumir la constante en vez del literal suelto.
+Una sola fuente para las dos puertas: era literal suelto, y por eso el lote no podía reutilizarlo sin
+copiarlo.
+
+## 3 · El test se ata al HECHO, no a la forma del filtro
+
+La regla es **pura** (`puedeMarcarsePagadaEnLote`) y se ejercita sobre filas de verdad: se aplica a
+una población `[pending, paid, annulled, expired, pending]` y se mira **qué queda**. Un test atado a
+`notIn` seguiría verde si alguien cambiara el filtro por otro equivalente y roto.
+
+- **Control positivo:** una `pending` SÍ se puede marcar — sin él, una regla que dijera «no» a todo
+  pasaría todos los asserts.
+- **Control negativo:** `pending`, `expired`, `draft` y `sent` siguen entrando. El arreglo no puede
+  costar el marcado masivo.
+- **Suelo del caso:** se afirma que la fixture contiene una anulada; si no, el assert pasaría vacío.
+
+**Probado en rojo:** quitando `ESTADO_ANULADA` del conjunto, cae con *«UNA FACTURA ANULADA SE PUEDE
+MARCAR COMO COBRADA EN LOTE»* (rc=1). Revertido → rc=0, árbol limpio.
+
+## 4 · Límite del GO, respetado
+
+**No se ha tocado lógica de emisión, sellado ni cadena de huellas.** El cambio es el filtro del lote
+y la extracción de una constante que ya existía como literal.
