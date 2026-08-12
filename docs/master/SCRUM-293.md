@@ -124,3 +124,159 @@ nadie** todavía, y eso es correcto: es el hueco esperando al campo.
 
 **Bloqueado por:** P12 en `docs/legal/PREGUNTAS_ASESOR.md` (¿el suplido entra en el ImporteTotal
 sellado?) y por SCRUM-383 (migraciones).
+
+---
+
+# SCRUM-293 (parte 2) · El diff de schema, ESCRITO Y NO APLICADO — y por dónde entra el cable
+
+**POBLACIÓN MEDIDA** · host `DESKTOP-T5MONF5` · `2026-08-12T08:06:06Z` · HEAD
+`75b2b01820f71bdb1bf2b3244b19f801d69e24f6` · CLI de Prisma **local** (`node_modules/prisma`), nunca
+`npx` (SCRUM-385)
+
+**Medido contra:** `origin/main` = `75b2b01820f71bdb1bf2b3244b19f801d69e24f6` · 2026-08-12T08:06:06Z
+
+> **NO SE HA APLICADO NADA.** Ni a producción, ni a staging, ni a dev. `prisma/schema.prisma` no se
+> ha tocado: el schema modificado vive en el scratchpad, solo para poder generar el preview.
+> `git status` limpio salvo esta entrada.
+
+## 1 · Lo que desbloquea esta parte
+
+La parte 1 (7-ago) paró por dos motivos y **los dos han caído**:
+
+| Bloqueo de entonces | Hoy |
+| --- | --- |
+| P12 del asesor | **no bloquea** — decisión del fundador: retención y suplidos son ley conocida, no dictamen |
+| SCRUM-383, migraciones congeladas | **descongeladas**: en esta sesión se preparó y aplicó un lote a staging y producción con su preview |
+
+Y el PASO 0 de hoy añade lo que faltaba: **la retención no toca el camino de emisión**.
+`Invoice.total` no se mueve y el sellado saca su base de `calcVatBreakdown`
+(`registro.builder.ts:315`), que la retención no toca. La variante que **sí** sería STOP —el
+suplido como línea marcada— es justamente la que no se construye.
+
+## 2 · 🔴 SON DOS COLUMNAS, NO UNA — y el motivo está en el módulo
+
+El encargo pedía «el campo, nullable». **Una sola columna nullable no vale**, y no es una
+preferencia: `leerTipoRetencion()` distingue **tres** estados a propósito, y su cabecera explica por
+qué —«emitir sin la retención de quien retiene es un defecto fiscal MUDO: la factura sale, el
+cliente la paga, y el descuadre aparece meses después en el 111»—.
+
+| Estado | Qué significa | Con UNA columna `Int?` |
+| --- | --- | --- |
+| **no consta** | nadie ha configurado nada → **no se puede emitir** | `NULL` |
+| **declara que NO retiene** | decisión tomada, tipo ninguno | 🔴 **también `NULL`** |
+| retiene al 15/7/2/1 % | el tipo | el número |
+
+Los dos primeros colapsarían en `NULL`, que es **exactamente el colapso que ese módulo existe para
+impedir**. Con dos columnas cada estado tiene su representación y el módulo no se toca:
+
+```prisma
+model Merchant {
+  …
+  approvalThreshold  Decimal?  @map("approval_threshold") @db.Decimal(12, 2) // null = sin aprobación
+
+  // SCRUM-293 (A2) · retención de IRPF, configurada UNA VEZ en el perfil.
+  retencionIrpfDeclarada Boolean @default(false) @map("retencion_irpf_declarada")
+  retencionIrpfTipo      Int?     @map("retencion_irpf_tipo")
+  …
+}
+```
+
+* `retencionIrpfDeclarada` — ¿el profesional ha declarado su situación? `false` por defecto para
+  **todos los merchants existentes**: nadie pasa a «declarado» por una migración.
+* `retencionIrpfTipo` — `15 | 7 | 2 | 1`, o `NULL`. Nullable, como pedías.
+
+⚠️ **El tipo NO se valida en la base a propósito.** La unión cerrada vive en `TIPOS_RETENCION`
+(`retencionIrpf.ts:54`) y `esTipoRetencionValido` la aplica. Un `CHECK` en Postgres sería una
+segunda lista que se desincroniza — el defecto de las dos listas.
+
+⚠️ **El suplido NO entra aquí.** Es un dato **por factura**, no del perfil: sería columna en
+`Invoice`, y eso es otra decisión tuya. Esta entrega es solo la retención.
+
+## 3 · EL PREVIEW — salida real de la herramienta
+
+```
+node ./node_modules/prisma/build/index.js migrate diff \
+  --from-schema-datamodel prisma/schema.prisma \
+  --to-schema-datamodel   <scratchpad>/schema-con-retencion.prisma \
+  --script
+```
+
+```sql
+-- AlterTable
+ALTER TABLE "merchants" ADD COLUMN     "retencion_irpf_declarada" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "retencion_irpf_tipo" INTEGER;
+```
+
+**Control positivo antes de creerme el diff** (SCRUM-385: un vacío con exit 0 es lo mismo que dice
+un diff legítimo sin cambios): `--from-empty` contra el schema real devuelve **24 `CREATE TABLE`**.
+La herramienta ve el schema; el diff de arriba es corto porque el cambio es corto.
+
+### Aditividad, comprobada línea a línea
+
+| Criterio | |
+| --- | --- |
+| `DROP` de tabla o columna | **ninguno** |
+| `ALTER` sobre columna existente | **ninguno** |
+| `NOT NULL` sin `DEFAULT` sobre datos existentes | **ninguno** — el único `NOT NULL` lleva `DEFAULT false` |
+| Índices o constraints nuevos | ninguno |
+| Filas afectadas | **0**: las dos columnas nacen con valor para todas las filas |
+
+**100 % aditivo.** No debería pedir `--accept-data-loss`; si lo pide, **el diff no es éste** y hay
+que parar.
+
+## 4 · El orden de ejecución — y por qué al revés arranca roto
+
+1. **staging** → aplicar
+2. **verificar en staging**: las dos columnas existen y la app arranca
+3. **producción** → aplicar
+4. **verificar en producción**: ídem
+5. **`prisma/schema.prisma` AL FINAL**, en su PR
+
+🔴 **Nunca al revés.** `assertSchemaSinDeriva()` corre en el arranque (`src/index.ts:23`) y compara
+lo que el schema DECLARA con lo que la base TIENE: falla ante **columnas ausentes**. Si el schema
+entra primero, declara dos columnas que la base no tiene todavía y **producción arranca en deriva**
+— y ese guard existe justo para impedir arrancar mintiendo (`schemaDrift.ts`, SCRUM-222).
+
+Al hacerlo en este orden, entre el paso 3 y el 5 la base tiene **columnas de más** que el schema no
+declara, y eso el guard **no** lo considera deriva. La ventana es segura por construcción.
+
+## 5 · Por dónde entraría el cable de `retencionIrpf.ts` — ESCRITO, NO CONSTRUIDO
+
+El módulo lleva desde el 7-ago probado y **sin un solo llamador** (verificado hoy: cero llamadas a
+`calcularRetencion` en `src/`). Esto es el plano, no el cable.
+
+**El adaptador es de una línea, y por eso el módulo no se toca.** `leerTipoRetencion` espera
+`null` / `false` / número, y las dos columnas mapean exacto:
+
+```ts
+// El valor que se le pasa al módulo, derivado de las dos columnas:
+const config = merchant.retencionIrpfDeclarada ? (merchant.retencionIrpfTipo ?? false) : null;
+const r = leerTipoRetencion(config);
+```
+
+| Columnas | `config` | Módulo |
+| --- | --- | --- |
+| `declarada=false` | `null` | `{ ok:false }` → **impedimento para emitir** |
+| `declarada=true, tipo=null` | `false` | `{ ok:true, tipo:null }` → no retiene |
+| `declarada=true, tipo=15` | `15` | `{ ok:true, tipo:15 }` |
+
+**Los tres puntos donde entra el cable, en orden de riesgo creciente:**
+
+1. **El perfil** (`Configuración › Empresa`) — dos controles y el `PATCH` que los guarda. Riesgo
+   nulo: no toca ningún cálculo. Necesita **microcopy** (marcador `[PENDIENTE microcopy oficial]`
+   y guard, sin inventar una palabra que hable de Hacienda).
+2. **El PDF y la pantalla de la factura** — pintar el bloque con `bloqueRetencion()`, que ya existe.
+   **`Invoice.total` NO se toca**: el líquido a percibir se **deriva al pintar** y jamás se guarda.
+3. **La emisión** — solo para tratar el `{ ok:false }` como impedimento. ⚠️ Aquí conviene mirar dos
+   veces: es lectura de configuración, no cálculo, pero vive en el camino que la regla 38 protege.
+
+**El control negativo, que es el que manda:** un merchant con `declarada=false` —o sea, **todos los
+de hoy**— tiene que producir una factura **byte a byte idéntica**. Y eso es sostenible por
+construcción, porque `grossOfLines()` no se modifica en absoluto: la retención se calcula
+**después** y se pinta **aparte**.
+
+## 6 · Lo que NO se ha hecho
+
+`prisma/schema.prisma` **intacto** · ninguna migración aplicada a ninguna base · ni una línea de
+cableado · `retencionIrpf.ts` sigue sin llamadores · `calcVatBreakdown`, `grossOfLines` y el camino
+de emisión, sin tocar · cero microcopy nueva.
