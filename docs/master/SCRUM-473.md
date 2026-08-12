@@ -256,3 +256,74 @@ medición, no un guard. El guard de este trabajo ya existe y sí corre en `npm t
   clasifica a mano: el instrumento informa, no decide.
 - El cruce de los dos es lo que da el diez. **Ninguno de los dos, solo, lo habría dado**: A no puede
   ver los emisores del webhook, y B no puede distinguir un escritor de un `<form method="post">`.
+
+---
+
+# Apéndice · El guard aguantó, y lo que costó dejarlo aguantar (sesión 2, 12-ago-2026)
+
+**Medido contra:** `origin/main` = `75b2b01820f71bdb1bf2b3244b19f801d69e24f6` · 2026-08-12T10:23:23+02:00
+**Rama:** `scrum-474-fase2-filtro` · **HEAD** `8a8d956a3cb8f6cee18e6e9815ba6e3715e3e17a`
+
+## 1. El guard hizo su trabajo contra quien lo escribió
+
+Al construir la fase 2 de SCRUM-474 hizo falta un ORDEN para las opciones del filtro — el diseño §B4
+los nombra «Bizum · tarjeta · transferencia · efectivo», que **no** es el orden de `PAID_VIA` (empieza
+por `card`, porque responde al vocabulario fiscal). La primera solución fue una lista:
+
+```ts
+const ORDEN_APROBADO = ['bizum_auto', 'bizum_manual', 'card', 'transfer', 'cash'] as const;
+```
+
+**El suelo de `scrum473-metodo-validado` la rechazó**, y tenía razón: eso es el conjunto cerrado
+copiado a mano dentro del propio fichero que existe para impedirlo. Que el motivo fuera «solo es el
+orden» no cambia el diff — una lista de valores de `PAID_VIA` que nada ata al original deriva igual.
+
+**El guard NO se aflojó.** Se cambió la estructura.
+
+## 2. La forma que sí: el orden es propiedad del CUBO
+
+Rótulo y orden viven ahora dentro de la misma estructura que produce la partición:
+
+```ts
+const CUBO_DE: Readonly<Record<PaidVia, CuboDeMetodo>> = Object.freeze({ … });
+//                       ^^^^^^^^^^^^^^^^^^^^^^^^^^ atado al conjunto por el TIPO
+```
+
+Los **cubos son el RESULTADO** de la partición, no valores de `PAID_VIA`: enumerarlos no copia el
+conjunto. La **pertenencia** se sigue resolviendo contra `PAID_VIA` —`cubosDeMetodo` lo recorre a él,
+no a la tabla—, que es justo lo que el guard protege.
+
+## 3. 🔴 Probado en rojo, no supuesto
+
+La afirmación «si `PAID_VIA` estrena un valor, esto no compila» es el mecanismo entero, así que se
+inyectó el fallo real: añadir `'giro_postal'` a `PAID_VIA` y compilar.
+
+```
+TSC rc=2
+src/modules/billing/domain/metodoDeCobro.ts(136,7): error TS2741:
+  Property 'giro_postal' is missing in type … but required in type
+  Readonly<Record<"card" | "bizum_auto" | … | "giro_postal", CuboDeMetodo>>
+```
+
+Nombra el valor que falta y la línea exacta. Revertido → rc=0. **Un `as const` con los mismos
+valores habría pasado el compilador y habría sido la copia**: la diferencia no es cosmética.
+
+## 4. La medida, con segundo instrumento
+
+El guard cuenta apariciones **entrecomilladas** de cada valor, con `card`/`transfer`/`cash` en
+allowlist visible (aparecen como claves de la tabla y en `metodoDesdeMercadoPago`). Los que deben
+salir a cero son los dos Bizum:
+
+| valor | antes | después |
+|---|---|---|
+| `bizum_auto` | 3 | **0** |
+| `bizum_manual` | 3 | **0** |
+
+Contado aparte del test, no leído de su verde.
+
+## 5. Hueco declarado
+
+El guard mide **texto entrecomillado**. Una tabla indexada por `PaidVia` no la ve —por eso `CUBO_DE`
+pasa—, y eso es correcto **solo porque el tipo la ata al conjunto**. Si alguien escribe esa misma
+tabla como `Record<string, …>`, el guard sigue verde y el compilador ya no avisa. Queda declarado:
+**la protección de `CUBO_DE` es el TIPO, no el guard.**

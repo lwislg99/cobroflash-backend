@@ -8,6 +8,7 @@ import { notFoundPageHtml } from './core/http/publicNotFound';
 import { isFlagEnabled } from './core/flags';
 // SCRUM-300 (C5): microcopy del albarán servida al dashboard vanilla desde su fuente única.
 import { ALBARAN_AYUDAS, ALBARAN_ROTULOS, firmanteCalidadOpciones } from './modules/jobs/domain/albaranFirmante';
+import { cubosDeMetodo, ROTULO_SIN_METODO } from './modules/billing/domain/metodoDeCobro';
 // ⚠️ FUSIÓN: C5 importaba `puedeCrearFacturaSuelta`, que SCRUM-346 (A0.5) RETIRÓ de `main`.
 // Medido antes de resolver: ya no se exporta, y `appFacturaSueltaDisponible` tiene CERO
 // consumidores en `public/`. No son dos cosas que hagan lo mismo — es una que evolucionó, así
@@ -405,6 +406,16 @@ app.get('/admin/me', async (req, res) => {
     albaranFirmanteOpciones: firmanteCalidadOpciones(),
     albaranRotulos: ALBARAN_ROTULOS,
     albaranAyudas: ALBARAN_AYUDAS,
+    // SCRUM-474 fase 2 · LAS OPCIONES DEL FILTRO DE COBROS, derivadas de `PAID_VIA` (regla 22).
+    // Viajan AQUÍ y no con la lista de cobros porque son CONSTANTES: el conjunto cerrado de métodos
+    // no cambia entre peticiones, así que no es parte de la respuesta de una lista — es
+    // configuración del producto, exactamente igual que los rótulos del albarán de arriba.
+    //
+    // 🔴 Y porque si dependieran de la respuesta, la barra de filtros DESAPARECERÍA cuando la red
+    // falla. Nuestro profesional está en una azotea con una raya de cobertura; una pantalla de
+    // DINERO que se queda sin filtros justo entonces es lo contrario del producto que decimos ser.
+    // Lo cazaron los tres suelos de SCRUM-448, que miden la pantalla con la petición en vuelo.
+    cobrosCubos: cubosDeMetodo(ROTULO_SIN_METODO),
     // A10.2 (Parte L): estado de la suscripción para el banner past_due
     subscriptionStatus: owner ? 'active' : ((session.merchant as any).subscriptionStatus ?? null),
     // SCRUM-313 (D2): ¿todavia se le puede preguntar por su numeracion? Mismo patron que la
