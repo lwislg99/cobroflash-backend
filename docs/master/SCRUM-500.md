@@ -146,3 +146,172 @@ son deriva. Al revés, producción arranca en deriva.
 `prisma/schema.prisma` intacto · ninguna base tocada · ninguna cadena de conexión escrita en ningún
 sitio · el cálculo de la factura sin tocar · A2 retención · A3 · el sellado · la casilla y su
 microcopy, que son el ticket siguiente y llevan marcador (regla 30).
+
+---
+
+# SCRUM-500 (A2-c, fase 2) · La casilla de suplidos, construida
+
+**Fecha:** 12-ago-2026 · **Carril:** B (fiscal) · **Gate:** sin gate, corre en `npm test`
+
+**Medido contra:** `origin/main` = `81be77352de2e4ce7f35bab9ddd6bd9247d75e74` · 2026-08-12T13:38:10+02:00
+
+> **La columna YA ESTÁ APLICADA en producción.** Comprobado por `information_schema` ANTES de
+> tocar `prisma/schema.prisma`, que es lo que pedía el encargo: `numeric` · 12 · 2 · nullable ·
+> `column_default` NULL. Con su control positivo delante —32 columnas de `invoices` visibles—,
+> porque cero filas también sería el resultado de no estar viendo la tabla.
+
+## 0 · Lo primero, porque de ahí sale el orden de todo lo demás
+
+| | |
+| --- | --- |
+| Columna en **producción** | ✅ verificada: `numeric(12,2)`, nullable, sin default |
+| Columna en **staging** | ⚠️ **NO verificada**: no tengo su URL, y no se piden por chat (regla 9) |
+
+**Se dice en vez de suponerse.** El orden de la casa es staging → producción, así que lo esperable
+es que esté; pero «lo esperable» y «lo medido» no son lo mismo, y `assertSchemaSinDeriva()` falla
+ante columnas AUSENTES: si a staging le faltara, arrancaría en deriva en cuanto entre este PR.
+**Comprobación de 10 segundos antes de mergear**, con la consulta del §4 de la entrada anterior.
+
+## 1 · Qué es un suplido, y por qué la microcopy no es cosmética
+
+Es lo que el profesional paga **por cuenta del cliente** y le repercute tal cual: **sin IVA y sin
+margen** — una tasa municipal, el visado de un colegio, una licencia de obra.
+
+Poner ahí un material propio es un **error fiscal**, no un despiste de clasificación: el material se
+compra para uno y se revende con su IVA y su margen; el suplido es dinero ajeno que solo pasa por la
+cuenta. Esa frontera es invisible desde el editor de líneas y **equivocarse no da ningún síntoma**:
+la factura sale igual de bonita. Por eso el aviso va pegado a la casilla y no en una ayuda.
+
+## 2 · 🔴 LA MEDICIÓN QUE CAMBIÓ LO QUE HABÍA QUE ENTREGAR ANTES
+
+Escribí primero, de cabeza, que un suplido metido en la base cuesta **10,50 € de IVA + 7,50 € de
+retención**. El test lo tumbó. **Depende del tipo al que esté la línea, y son dos casos distintos:**
+
+| El suplido está… | IVA de más | Retención de más |
+| --- | --- | --- |
+| ① como línea normal **al 21 %** (lo que se hace HOY) | **+10,50 €** | +7,50 € |
+| ② **al 0 %** (lo que produce la casilla desde hoy) | **0 €** | **+7,50 €** |
+
+**De ahí sale el orden del ticket, y no al revés:**
+
+- La casilla se entrega **YA** porque ① es dinero cobrado de más, y se corta con `tax: 0` **sin
+  tocar un solo número sellado**.
+- El cable sigue haciendo falta porque ② **no se cura con la casilla**: poner el IVA a 0 quita el
+  impuesto, pero **no saca el importe de la base**. La base sigue siendo 850,00 € y la retención se
+  practica sobre ella.
+
+> **El 0 % quita el IVA. No saca de la base.** Quien calcule la retención tiene que tomarla de
+> `desgloseConSuplidos().base`, nunca de `calcVatBreakdown().base`. Está escrito en el test.
+
+## 3 · 🔴 EL CASO CRUZADO, con la aritmética A MANO
+
+Factura `F-2026-0041`: mano de obra 10 × 80,00 € al 21 % + tasa municipal 1 × 50,00 € (suplido),
+merchant que retiene al 15 %.
+
+```
+base imponible      800,00   = 10 × 80,00        ← la tasa NO entra        (regla ①)
+cuota IVA 21 %      168,00   = 800,00 × 0,21     ← la tasa NO lleva IVA    (regla ②)
+suplidos             50,00   =  1 × 50,00
+────────────────────────────────────────────────────────────────────────────────────
+TOTAL FACTURA     1.018,00   = 800,00 + 168,00 + 50,00  ← el cliente SÍ lo paga (regla ③)
+retención 15 %      120,00   = 800,00 × 0,15     ← sobre la base SIN suplidos
+líquido a percibir  898,00   = 1.018,00 − 120,00
+```
+
+**Ninguno de los seis sale de llamar a la función que se está probando.** Y los tres errores
+clásicos van escritos al lado, cada uno con lo que cuesta, porque un vector que no distingue no
+prueba nada:
+
+| El error | Da | De más |
+| --- | --- | --- |
+| suplido dentro de la base (al 21 %) | cuota 178,50 | **+10,50 €** de IVA sobre un impuesto |
+| retención sobre la base con suplido | 127,50 | **+7,50 €** |
+| retención sobre el TOTAL | 152,70 | **+32,70 €** |
+
+**La regla ③ es la que se salta todo el mundo**, y por eso tiene su propio rojo: sacar el suplido de
+la base **no** es sacarlo de la factura. Una factura que se lo deja fuera pide 50,00 € menos de los
+que el profesional ya ha adelantado.
+
+## 4 · Lo construido
+
+| Pieza | Qué hace |
+| --- | --- |
+| `invoicing/domain/suplidos.ts` | el cálculo entero: partición, total de la columna, desglose |
+| `prisma/schema.prisma` | `suplidos Decimal? @map("suplidos") @db.Decimal(12, 2)` |
+| `public/dashboard/js/quoteSuplido.js` | la pieza pura del front: fuerza `tax: 0` y el rótulo |
+| `quotesView.js` | la casilla y su aviso en la hoja de ajustes; payload y borrador |
+| `core/validation/schemas.ts` | la marca sobrevive al validador, y un suplido con IVA se rechaza |
+
+**Dos detalles que no son decoración:**
+
+**① La marca hay que declararla en zod o `z.object` LA BORRA.** Sin `suplido: z.boolean()`, la
+pantalla diría «suplido» y la base guardaría una línea normal, sin que nadie se entere. Ese es el
+tipo de fallo que este repo lleva semanas persiguiendo: silencioso y con dinero dentro.
+
+**② El `tax: 0` se fuerza en `lineaParaPayload`, no en el `change` de la casilla.** Deshabilitar el
+input es la interfaz; hay **tres caminos** que rellenan una línea sin pasar por él —borrador
+restaurado, plantilla, IA—. Si el IVA se quitara solo al hacer clic, bastaría con no hacer clic. Y
+además se exige **en la puerta del servidor**: el front no es el único que llama a esa ruta.
+
+## 5 · El suelo, en el peor sitio posible para degradar
+
+«No es suplido» es el valor de la **inmensa mayoría** de las líneas. Por eso es el peor sitio del
+producto para caer en silencio: un fallo de lectura produce exactamente el resultado que se ve
+normal, y nadie lo nota nunca.
+
+```
+marca AUSENTE             → { ok: true, suplido: false }   ← contrato: la línea de siempre
+marca true / false        → { ok: true, suplido }          ← declarado
+marca PRESENTE E ILEGIBLE → { ok: false, motivo }          ← «no lo sé», y se dice
+```
+
+`'sí'`, `'true'`, `1`, `0`, `null`, `{}`, `[]` → **ilegible**, y la ilegibilidad **llega arriba**:
+`totalSuplidos` y `desgloseConSuplidos` devuelven `ok:false` con **el número de línea dentro**. Sin
+eso, un presupuesto de 12 líneas no se puede arreglar.
+
+## 6 · La columna: aplicada, y NO la escribe nadie todavía
+
+El campo Prisma entra; **el cable no**. Rellenarla exige tocar los **SIETE** `invoice.create` del
+árbol, y eso es camino de emisión (regla 38), que este ticket tiene excluido por escrito.
+
+**No se pierde nada por esperar:** la marca vive en `Invoice.lines` (Json), que es dato durable, y
+`totalSuplidos(lines)` reconstruye el valor de la columna cuando se quiera. `NULL` mientras tanto es
+literalmente lo que significa: **no consta**.
+
+> **Una sola fuente.** Quien escriba la columna llama a `totalSuplidos` y no suma por su cuenta. Dos
+> sitios que sepan cuánto suman los suplidos acaban diciendo cosas distintas — la lección de
+> SCRUM-504, cinco copias de la misma línea divergiendo.
+
+## 7 · Cinco guards ajenos se pusieron en rojo, y ninguno se apagó
+
+Esto es lo que más dice del estado del repo: **el trabajo lo vieron cinco mecanismos que no son
+míos**, y cuatro de ellos por su SUELO, no por su aserción.
+
+| Guard | Qué cazó | Qué se hizo |
+| --- | --- | --- |
+| SCRUM-461 / 222 | la columna nueva no estaba en el censo de deriva de prod | regenerado (367 columnas) |
+| **SCRUM-286** | **«0 campos por línea»**: al envolver el literal en `lineaParaPayload(...)`, el censo dejó de ver la sub-población entera | el censo desenvuelve una capa de llamada |
+| SCRUM-389 | llamador nuevo de `calcVatBreakdown` sin veredicto | censado: DOCUMENTO, y delega el IVA |
+| SCRUM-402 | marcador de microcopy nuevo y pintable | subido a `CENSO` a conciencia, con motivo |
+| **SCRUM-413** | **escáner CIEGO**: su ventana de 3.000 caracteres la desbordó mi comentario | recorta el MODELO, no un tamaño fijo |
+| SCRUM-139 F4 | el rótulo del disparador dejó de componerse en la vista | el guard sigue al código, y ahora se exige el COMPORTAMIENTO |
+
+Los dos en negrita son los que valen: **ninguno de los dos falló por su aserción**. El de SCRUM-286
+gritó porque su suelo dice «≥4 campos» y salieron 0 — sin ese suelo, la sub-población se habría
+quedado sin vigilar en verde. Y el de SCRUM-413 se declaró ciego en vez de pasar: una ventana de
+tamaño fijo caduca sola, y ahora recorta el modelo.
+
+**SCRUM-411 sube de 7 a 8**, y es la única subida. `suplidos.ts` se une a `retencionIrpf.ts` (A2) y
+`recargoEquivalencia.ts` (A3): tres piezas construidas, probadas y sin llamador **por el mismo
+gate**. Cablear cualquiera cambia la base o el total que se sellan. Subir el trinquete dice la
+verdad —el bloque fiscal tiene tres piezas esperando el mismo permiso—; cablearlo a la fuerza para
+que el contador quedara bonito habría sido saltarse un STOP.
+
+## 8 · Lo que NO se ha tocado
+
+`calcVatBreakdown` y `grossOfLines` · el sellado · la cadena de huellas · el XML · la numeración ·
+A2 retención (sesión 3) · A3 · A5 · los siete `invoice.create` · ninguna base escrita · ninguna
+cadena de conexión en ningún sitio, ni real ni de ejemplo.
+
+**Y hay un guard que lo sostiene**: `vat.service.ts` no puede mencionar los suplidos en su código —
+con el suelo que exige que, al quitarle los comentarios, siga quedando código que mirar.
