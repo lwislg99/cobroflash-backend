@@ -34,6 +34,10 @@ model Merchant {
   // sentidos opuestos. La fecha dice SI se pregunto; el texto, QUE contesto.
   asesorProgramaPreguntadoAt DateTime? @map("asesor_programa_preguntado_at")
   asesorPrograma             String?   @map("asesor_programa")
+  // SCRUM-294 (fase C) · esta el negocio acogido al criterio de caja (RECC)? TRES estados
+  // nativos y sin `@default`: NULL = no consta (nadie lo pregunto) · false = declara que no ·
+  // true = si. Colapsarlos haria que «no se pregunto» se leyera como «declara que no».
+  criterioCaja               Boolean?  @map("criterio_caja")
   googleReviewUrl            String?   @map("google_review_url")
 
   // CONNECT-1 (C1-0): cuenta Stripe Connect Express del merchant. El estado lo

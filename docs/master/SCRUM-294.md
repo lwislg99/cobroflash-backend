@@ -390,3 +390,78 @@ consumirá esto) · el mecanismo de cobro · el camino de emisión · ninguna mi
 ## 9 · Estado
 
 Suite completa con `main` dentro: **3.442 tests · 3.365 pasan · 0 fallos · 77 saltados**.
+
+---
+
+# FASE C · El campo, la casilla y el cable — SCRUM-294 CERRADO
+
+**Medido contra:** `origin/main` = `bf54914117fb99e596aa7d638c9ebac8ac809564` · 2026-08-12T18:10:00+02:00
+**Rama:** `scrum-475-firma-del-webhook` (main mergeado dentro, nunca rebase — AA2)
+**Ninguna base tocada, tampoco en lectura.** La columna la aplicó el fundador en producción y
+staging; aquí solo entra el campo de Prisma, con su diff confirmado por él antes de escribirlo.
+
+## 1 · El campo
+
+```prisma
+criterioCaja               Boolean?  @map("criterio_caja")
+```
+
+En `model Merchant`, tras `asesorPrograma`. **Sin `@default`**, y eso es el ticket entero: con un
+valor por defecto, `NULL` —«no consta»— deja de existir y los tres estados se quedan en dos.
+`prisma validate` → rc=0 (con URL de mentira: no conecta a nada). Cliente regenerado.
+
+## 2 · La casilla: TRES opciones, no un check
+
+`<select>` en Configuración › Empresa, **patrón exacto** del recargo de equivalencia de la fase A.
+Una casilla sabe dos estados y el dato tiene tres: leería **«no consta» como «declara que no»** — que
+es el estado de **todos** los merchants de hoy. «No consta» viaja como `NULL`, no como `false` ni
+como cadena vacía.
+
+**Microcopy con marcador (regla 30):** explicarle a un profesional si le conviene el criterio de caja
+es **asesorarle**, y eso lo dictamina el asesor, no el producto. El censo de SCRUM-402 sube de **1 a
+5 a conciencia** —el rótulo y sus tres opciones— con el motivo escrito al lado.
+
+## 3 · La persistencia
+
+`criterioCaja: z.boolean().nullable().optional()`. **`nullable` y `optional` no son lo mismo**, y
+hacen falta los dos: **ausente** = la pantalla no lo manda y la columna no se toca; **`null`** = el
+negocio ELIGE «no consta». Sin `optional`, guardar cualquier otro dato del perfil borraría el
+criterio. Lo que no es booleano se rechaza: el conjunto es cerrado.
+
+## 4 · El cable, y el CONTROL NEGATIVO que sigue verde
+
+`criterioDelMerchantParaElLibro` está cableado a los tres repos del libro —303, libros AEAT y paquete
+de evidencias— y **un merchant con `criterioCaja` NULL devenga por emisión exactamente como hoy**.
+Que la columna exista no cambia el comportamiento de quien no la ha rellenado, y está medido.
+
+`false` y `NULL` acaban en la misma fecha —no hay otra sin una declaración— pero **no recorren el
+mismo camino**: `false` pasa por `campoDeDevengo()`, `NULL` no pasa la clave. Cargas distintas, y un
+test que lo fija.
+
+## 5 · Rojo por el hecho
+
+**Commit de seguridad ANTES de inyectar: `683c689870a9ec5819e2b6a633773166fb561884`.** Desde hoy el
+SHA va en el informe: una regla sin mecanismo es una intención (cuatro roturas de `git checkout --`).
+
+| inyección | resultado |
+|---|---|
+| `@default(false)` en el campo | `rc=1` · *«el campo lleva `@default`… los tres estados se quedan en dos»* |
+| quitar la opción «no consta» del select | `rc=1` · *«el control tiene 2 opciones y tienen que ser TRES»* |
+| colapsar `NULL → false` en el cable | `rc=1` · *«se han colapsado dos estados que la columna guarda por separado»* |
+| desconectar el cable de un repo | `rc=1` · **nombra el repo** y qué informe se calcularía mal |
+
+Las cuatro revertidas, árbol limpio.
+
+## 6 · Tres guards de la casa me corrigieron
+
+1. **`scrum411`**: el módulo del cable era **inalcanzable** — motor sin superficie. Por eso se cableó
+   a los tres repos en vez de dejar el cerebro suelto.
+2. **El censo de deriva**: habría contestado «en sync» sobre una columna que no conocía. Regenerado.
+3. **`SCRUM-284`**: exigió declararle **sitio** al campo en Configuración. Un ajuste sin sitio
+   desaparece en la siguiente reorganización y nadie lo nota.
+
+## 7 · Hueco declarado
+
+**No se ha ejercitado contra una base.** Medido está que el campo existe en el esquema, que los tres
+estados sobreviven al validador y que el cable los lleva al libro. Un merchant real marcando la
+casilla y viendo cambiar su trimestre pide staging, y es verificación de despliegue (AA1.3).
