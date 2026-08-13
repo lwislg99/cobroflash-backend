@@ -3,6 +3,8 @@
 // SCRUM-475 · Resend o SMTP, pero la decisión ya no vive aquí: la toma el emisor único
 // (`integrations/enviarCorreo.ts`), que además DEVUELVE el acuse del proveedor.
 import { enviarCorreo, ResultadoCorreo, resultadoSinDestino } from '../../../integrations/enviarCorreo';
+// SCRUM-508: la clase de correo sale del vocabulario cerrado, no de un literal a mano.
+import { CLASES_DE_CORREO } from './registroDeEnvios';
 
 // 🔴 SIGUE LANZANDO CUANDO NO SALE, Y ES DELIBERADO (SCRUM-475).
 //
@@ -13,15 +15,27 @@ import { enviarCorreo, ResultadoCorreo, resultadoSinDestino } from '../../../int
 //     nada: el correo al merchant se perdería sin dejar rastro.
 // Esta fase unifica el EMISOR y rescata el ACUSE; cambiar la semántica de fallo de cinco módulos
 // es otra cosa y no se cuela aquí de tapadillo.
-async function sendEmail(to: string, subject: string, html: string): Promise<ResultadoCorreo> {
+// SCRUM-508 · `merchantId` entra por parámetro para poder dejar fila, y por eso sube por las tres
+// firmas exportadas hasta sus cuatro rutas: este emisor solo recibía el CORREO del profesional, y un
+// correo no identifica una cuenta. Es el único de los cinco que obligó a tocar llamadores de fuera.
+// **Sigue lanzando** cuando no sale: sus llamadores registran el fallo por la excepción.
+async function sendEmail(
+  merchantId: number, to: string, subject: string, html: string,
+): Promise<ResultadoCorreo> {
   if (!to || !to.includes('@')) return resultadoSinDestino();
-  const r = await enviarCorreo({ to, subject, html, origen: 'merchantNotifications' });
+  const r = await enviarCorreo({
+    to, subject, html, origen: 'merchantNotifications',
+    // Van AL PROFESIONAL —le pagaron, le aceptaron un presupuesto—, así que `customerId` es nulo:
+    // el cliente es de quien SE HABLA, no a quien se escribe.
+    registro: { merchantId, kind: CLASES_DE_CORREO.avisoAlProfesional },
+  });
   if (!r.enviado) throw new Error(`no se pudo enviar el email (${r.motivo || 'desconocido'})`);
   return r;
 }
 
 // ── Pago recibido ──────────────────────────────────────────────────────────
 export async function sendMerchantPaymentEmail(params: {
+  merchantId: number;
   merchantEmail: string;
   merchantName: string;
   customerName: string;
@@ -66,11 +80,12 @@ export async function sendMerchantPaymentEmail(params: {
   // SCRUM-477: se DEVUELVE el resultado en vez de tragarlo con un `console.error` que no decía
   // PARA QUIÉN era —y que además no se disparaba cuando `sendEmail` devolvía el fallo sin lanzar—.
   // Quien llama lo pasa por `conConstancia`, que anota los dos canales con identidad.
-  return sendEmail(merchantEmail, subject, html);
+  return sendEmail(params.merchantId, merchantEmail, subject, html);
 }
 
 // ── Presupuesto aceptado ───────────────────────────────────────────────────
 export async function sendMerchantQuoteAcceptedEmail(params: {
+  merchantId: number;
   merchantEmail: string;
   merchantName: string;
   customerName: string;
@@ -115,11 +130,12 @@ export async function sendMerchantQuoteAcceptedEmail(params: {
 </div>`;
 
   // SCRUM-477: igual que el de pago — el resultado sale, y la constancia la deja quien llama.
-  return sendEmail(merchantEmail, subject, html);
+  return sendEmail(params.merchantId, merchantEmail, subject, html);
 }
 
 // ── ENT-2: un admin aprobó el presupuesto → avisar al técnico que lo creó ──
 export async function sendTechQuoteApprovedEmail(params: {
+  merchantId: number;
   techEmail: string;
   techName: string;
   quoteId: number;
@@ -164,5 +180,5 @@ export async function sendTechQuoteApprovedEmail(params: {
 </div>`;
 
   // SCRUM-477: ídem. El técnico también tiene derecho a que su aviso perdido deje rastro.
-  return sendEmail(techEmail, subject, html);
+  return sendEmail(params.merchantId, techEmail, subject, html);
 }

@@ -296,6 +296,7 @@ router.post('/:token/accept', decisionLimiter, async (req, res) => {
       // SCRUM-477 · ⚠️ SIGUE SIN `await`: el presupuesto ya está aceptado y un aviso que no sale
       // NO puede tumbar la aceptación. Lo que cambia es que ahora el fallo deja constancia.
       conConstancia('presupuesto_aceptado', quote.merchant.email, sendMerchantQuoteAcceptedEmail({
+        merchantId: quote.merchantId, // SCRUM-508: para que el aviso deje fila
         merchantEmail: quote.merchant.email,
         merchantName:  quote.merchant.name || 'Tu negocio',
         customerName:  quote.customer?.name || 'Cliente',

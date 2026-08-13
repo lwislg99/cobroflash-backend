@@ -72,15 +72,51 @@ function sinCorreosEnClaro(texto: string | null): string | null {
 }
 
 /**
+ * 🔴 SCRUM-508 · LAS CLASES DE CORREO, CERRADAS. Una por emisor del árbol.
+ *
+ * Nace al cablear los cinco que faltaban: con `kind` como cadena libre, seis emisores escribiendo
+ * su literal a mano son seis oportunidades de que dos digan lo mismo con palabras distintas —y
+ * entonces la pregunta «¿se le envió el digest?» depende de acertar cómo lo escribió cada uno—.
+ *
+ * Al ser un tipo, un valor mal escrito **no compila**. Una divergencia imposible gana a una
+ * vigilada, y no hace falta guard nuevo para sostenerlo.
+ *
+ * ⚠️ Un `kind` por EMISOR, no por correo concreto: ver el hueco declarado de `lifecycle` en
+ * `docs/master/SCRUM-508.md`.
+ */
+export const CLASES_DE_CORREO = Object.freeze({
+  /** La factura al cliente, con su PDF adjunto. */
+  factura: 'invoice',
+  /** El mismo camino cuando el documento es un justificante de cobro (reglas 24/26). */
+  justificante: 'justificante',
+  /** El presupuesto al cliente, con su enlace para firmar. */
+  presupuesto: 'quote',
+  /** El enlace de acceso de un solo uso. */
+  enlaceDeAcceso: 'magic_link',
+  /** La invitación a un miembro del equipo. */
+  invitacion: 'invitacion',
+  /** Los correos del ciclo de vida: bienvenida, día 3/7/12, prueba expirada, inactivo, primer pago. */
+  cicloDeVida: 'lifecycle',
+  /** El resumen semanal de los lunes. */
+  resumenSemanal: 'digest',
+  /** Los avisos al profesional: le pagaron, le aceptaron un presupuesto, le aprobaron uno. */
+  avisoAlProfesional: 'aviso_pro',
+  /** El mensaje que el profesional manda a soporte desde el panel. */
+  soporte: 'soporte',
+} as const);
+
+export type ClaseDeCorreo = (typeof CLASES_DE_CORREO)[keyof typeof CLASES_DE_CORREO];
+
+/**
  * Lo que el EMISOR no puede saber y su llamador sí. Sin `merchantId` no hay fila: la columna es
  * `NOT NULL` y **inventar un merchant sería peor que no tener la fila**.
  *
- * `kind` es qué clase de correo es (`invoice` · `quote` · `magic_link` · `digest` …). También
- * obligatorio: una fila que no dice qué se mandó no responde a la pregunta para la que existe.
+ * `kind` es qué clase de correo es, y sale de `CLASES_DE_CORREO`. También obligatorio: una fila que
+ * no dice qué se mandó no responde a la pregunta para la que existe.
  */
 export interface ContextoDeEnvio {
   merchantId: number;
-  kind: string;
+  kind: ClaseDeCorreo;
   /** A qué cliente iba, si iba a uno. `null` cuando el destinatario es el propio profesional. */
   customerId?: number | null;
   /** `invoice` · `quote` · `charge`. Nulos si el emisor no lo sabe: no se inventa una relación. */

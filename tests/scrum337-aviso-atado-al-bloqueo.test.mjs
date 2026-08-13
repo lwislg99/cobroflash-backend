@@ -92,17 +92,29 @@ const borrados = censarBorrados(path.join(RAIZ, 'src'));
 // dicen lo mismo que decían y AHORA además solo se dan por dichas cuando salen.
 //
 // Las ataduras (`censo de montajes`, `censo de borrados`) no se han tocado y siguen verdes.
+//
+// ── HUELLAS REHECHAS OTRA VEZ EL 13-ago-2026 · SCRUM-508 (los cinco emisores dejan fila) ──
+//
+// Las cinco se movieron a la vez, por segundo día consecutivo, y este guard volvió a hacer lo que
+// existe para hacer. Mirado, y lo único que cambia en cada bloque es UN ARGUMENTO:
+//
+//   `await sendEmail(m.email, '<asunto>', html)`  →  `await sendEmail(m.id, m.email, '<asunto>', html)`
+//
+// El `merchantId` entra para que el correo deje fila en `email_messages` (SCRUM-508). NINGÚN asunto,
+// NINGÚN cuerpo, NINGÚN botón y NINGUNA condición cambian — comprobado en el diff, filtrando por
+// `wrap(`, `label:`, `url:`, `age >=`, `isTrial`, `quoteCount` y `recent ===`: solo salen las siete
+// líneas del `sendEmail`. Las cinco promesas dicen exactamente lo que decían.
 const CORRESPONDENCIA = {
   // SCRUM-337 · TEXTO CORREGIDO. Antes: «lo tienes precargado por oficio», afirmado sin condición
   // y dependiente de cuatro (oficio · que no sea «otro» · no desmarcar la casilla · que la carga
   // no falle en silencio → SCRUM-338). Ahora no afirma el estado del usuario y apunta a Productos.
   // ATADURA: promete que en Productos se pueden añadir servicios — o sea que esa escritura NO
   // caduca. Lo vigila el censo de montajes: el día que alguien gatee productos, salta.
-  day3:         { estado: 'ATADO', ticket: null, atadura: 'censo de montajes', huella: '938dc19be16799fe' },
+  day3:         { estado: 'ATADO', ticket: null, atadura: 'censo de montajes', huella: '2396cb987e042903' },
 
   // «Tu prueba expira en unos 7 días» — un hecho, y además EXACTO: la prueba es de 14 días
   // (`auth.service.ts:301`) y el aviso sale con `age >= 7`. No promete qué pasa después.
-  day7:         { estado: 'SIN_CONSECUENCIA', ticket: null, atadura: null, huella: 'fd41c565b37e492e' },
+  day7:         { estado: 'SIN_CONSECUENCIA', ticket: null, atadura: null, huella: '47f787cbd61dc10a' },
 
   // SCRUM-337 · TEXTO CORREGIDO. Antes: «perderías el acceso a tu panel», y el panel no se pierde.
   // ATADURA: el texto enumera exactamente lo que caduca, y eso son los 4 montajes de
@@ -110,15 +122,15 @@ const CORRESPONDENCIA = {
   // y el censo de montajes salta.
   // ⚠️ La enumeración de lo que SIGUE funcionando no usa el posesivo del documento fiscal: el
   // trinquete de SCRUM-299 (Parte M) lo caza como promesa, y tenía razón (reglas 24/26).
-  day12:        { estado: 'ATADO', ticket: null, atadura: 'censo de montajes', huella: '624cb7cc1a5b2de4' },
+  day12:        { estado: 'ATADO', ticket: null, atadura: 'censo de montajes', huella: 'f15c3467534c3747' },
 
   // «tus datos siguen aquí» — cierto. ¿Atado a qué? A que NADA los borra, que es una AUSENCIA.
   // Por eso la atadura es el censo de borrados de abajo (forma + sitio): sin él, esto sería
   // «verde por ausencia» y una purga por inactividad rompería el claim sin que nadie se enterase.
-  trialExpired: { estado: 'ATADO', ticket: null, atadura: 'censo de borrados', huella: '77d89728606a44a1' },
+  trialExpired: { estado: 'ATADO', ticket: null, atadura: 'censo de borrados', huella: '96b3c9e8da0b879d' },
 
   // Reenganche puro: no menciona prueba, plan ni bloqueo.
-  inactive:     { estado: 'SIN_CONSECUENCIA', ticket: null, atadura: null, huella: 'b52d95a732f66dfc' },
+  inactive:     { estado: 'SIN_CONSECUENCIA', ticket: null, atadura: null, huella: '6820609e37122b2e' },
 };
 
 // Los borrados del árbol, congelados por identidad (fichero + modelo.método + nº de ocurrencia),

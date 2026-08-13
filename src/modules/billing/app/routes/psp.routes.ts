@@ -298,6 +298,7 @@ router.post('/', async (req, res) => {
         // ⚠️ SIGUE SIN `await` a propósito: el cobro ya está registrado y un aviso que no sale NO
         // puede tumbar la confirmación del pago. Lo que cambia es que ahora deja constancia.
         conConstancia('pago_recibido', merchant.email, sendMerchantPaymentEmail({
+          merchantId: updated.merchantId, // SCRUM-508: para que el aviso deje fila
           merchantEmail: merchant.email,
           merchantName: merchant.name || 'Tu negocio',
           customerName: updated.customer?.name || 'Cliente',
