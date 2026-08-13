@@ -444,3 +444,23 @@ De 274 ramas, **39 se pueden borrar** y solo **13 contienen trabajo que `main` n
 2. **Las 9 sin resolver no son «poco importantes»**: son las que el instrumento no puede
    decidir, y una de ellas es precisamente la 300, que resultó ser la más cara del censo.
 3. **No se ha ejecutado nada.** Ni un borrado, ni un merge, ni un push a ninguna de las 33.
+
+---
+
+## FASE 4 · ENMIENDA (13-ago-2026) · un falso BORRAR, y el punto ciego que lo produjo
+
+**`scrum-245-fuera-listas-blancas` pasa de BORRAR a SIGUE SIN RESOLVER.** Los BORRAR quedan en
+**38** y los sin resolver en **10**.
+
+El instrumento la mandó a borrar con su señal correcta: **0 ficheros que main no tenga**, un AA, y
+main por delante (+1035/−368). Y aun así se equivoca, porque **el valor de esa rama es un BORRADO**
+—retira el freno del demo, las listas blancas— y **main todavía lo tiene puesto**
+(`whatsappPolicy.ts`, medido). Sus ficheros están todos en main; su *cambio*, no.
+
+> 🔴 **El punto ciego, dicho para el próximo censo: la señal AA + «main va por delante» asume que la
+> rama AÑADE. Una rama cuyo trabajo consiste en QUITAR algo se ve exactamente igual que una ya
+> mergeada.** Para esas, «está en main» hay que leerlo como «el fichero está», no «el cambio está».
+
+Se detectó porque la fase 3 la había anotado a mano como **«APARCADA · SIN mergear — no borrar»** y
+la fase 4 la contradijo. **Dos fases del mismo censo discrepando sobre la misma rama es una señal, no
+un ruido**: la contradicción se resolvió midiendo, y ganó la fase 3.
