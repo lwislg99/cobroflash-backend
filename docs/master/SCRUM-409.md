@@ -156,3 +156,180 @@ que son registro; el código se ELIGE, y se elige midiendo.
 Ninguno de los dos podía verlo — no hay nada que avise de que otra rama toca tu fichero. Este caso es
 el **argumento nº 1** del censo de ramas pendiente: el coste no es el trabajo tirado (una línea),
 es que **los dos arreglos eran correctos y solo uno podía entrar**.
+
+---
+
+# FASE 3 (13-ago-2026) · El censo de ramas que este duplicado motivó
+
+> ⚠️ Se ANEXA. Las fases 1 y 2 de arriba son de otras sesiones y NO se tocan.
+>
+> Vive aquí y no en un `CENSO-RAMAS.md` suelto porque el guard de SCRUM-273 lo impide, y tiene
+> razón: un nombre libre en `docs/master/` reintroduce por la puerta de atrás la colisión que ese
+> ticket cerró. Su casa es ésta porque **el duplicado nº 6 —el de la fase 2— es su argumento nº 1**.
+**Medido:** las **274 ramas** de `origin` (sin `main`), tras `git fetch origin --prune` (rc=0,
+ninguna ref sin fetchear).
+
+**Medido contra:** `origin/main` = `3912f3a3f35cf00200baa00da8b3016449971ee9` · 2026-08-13T19:23:11+02:00
+
+> 🛑 **Esta lista NO borra ni mergea nada.** Mide y ordena para que se ejecute a clics.
+
+## El resultado
+
+| | |
+|---|---|
+| ramas medidas | **274** |
+| ya enteras en `main` (`is-ancestor` rc=0) | **213** |
+| con commits que `main` no tiene | **61** |
+| … cuyo trabajo YA está en main con otro sha → **BORRAR** | **28** |
+| … con trabajo que `main` NO tiene → **MEDIR** | **33** |
+
+## Cómo se contestó, y por qué no vale la lista de ramas ni la fecha
+
+① `git merge-base --is-ancestor <sha> origin/main`. **rc=0 = está entera en main.** 213 lo están.
+
+② Para las 61 restantes `is-ancestor` **no basta**: un rebase o un cherry-pick reescriben el sha,
+así que una rama cuyo trabajo YA está en main sigue saliendo con «commits propios». La pregunta
+buena es **si el ASUNTO de cada commit existe en la historia de `main`**. Ese es el discriminador
+que separa BORRAR de MEDIR. Los commits de merge no cuentan: no son trabajo.
+
+**SUELO del instrumento** — si falla, se declara ciego y NO emite lista:
+
+- índice de asuntos de `main`: **2.641**. Con menos de 100 → «no se ha leído la historia».
+- **control positivo del fundador:** `scrum-474-filtro-cobros` tiene 1 commit propio. Sale.
+- **control positivo del índice:** un asunto que SÍ está en main se reconoce. Sin esto las 61
+  saldrían «no está en main» y el censo mandaría **mergear 61 ramas**.
+- barrido con **cero** ramas propias → el script **falla**: cero y «no supe mirar» no son
+  el mismo número.
+
+## 🔴 Lo que el control positivo destapó, y cambia el diagnóstico
+
+`scrum-474-filtro-cobros` —la rama «sin PR y sin dueño»— sale **BORRAR**: su commit `79248b55`
+**está en main con otro sha** (cherry-pick `63530890`). O sea: **no había trabajo perdido, había
+una rama que lo parecía.** El susto y el coste de comprobarlo son reales; la pérdida, no.
+**28 de las 61 son exactamente eso.**
+
+## 🔴 RAMAS HERMANAS: 44 tickets con más de una rama — la trampa peor
+
+El caso que costó reabrir un ticket:
+
+```
+scrum-500-suplidos-COLUMNA   → mergeada, era SOLO documento
+scrum-500-suplidos-CASILLA   → el trabajo de verdad, mergeada después
+```
+
+Se cerró el ticket creyendo que estaba dentro **porque la lista de ramas las enseña juntas y
+parecen la misma cosa**. Comparten prefijo; el contenido no comparte nada.
+
+Los peores hoy:
+
+- **SCRUM-300 · 5 ramas** — y **`scrum-300-firmado-por` NO es copia de las otras**: lleva 5
+  commits que main no tiene, con schema y rótulos APROBADOS. Nombre parecido, contenido distinto.
+- **SCRUM-304 · 4 ramas** (`-rebasada`, `-2`, `-3`) — tres BORRAR.
+- **SCRUM-284 · 4 ramas** — las cuatro BORRAR.
+- **SCRUM-242 · 4 ramas** — solo una con trabajo propio.
+
+> **La regla que sale de aquí:** un sufijo `-rebasada-N` es una rama **que no se borró tras el
+> merge**. Son mayoría entre las 28 de BORRAR, y ninguna aporta nada.
+
+## ⚠️ ARGUMENTO Nº 1 — el duplicado nº 6 del mes, de hoy mismo
+
+**Dos carriles arreglaron el MISMO guard (`scrum409-fixtures-sin-merchant-demo`) el mismo día sin
+saberlo**: uno con `split(/\r?\n/)`, otro reescribiéndolo con AST. Los dos arreglos eran correctos
+y **solo uno podía entrar**. Nada avisa de que otra rama toca tu fichero. El coste no es el código
+tirado —una línea— sino descubrirlo y decidir. Ver `docs/master/SCRUM-409.md`.
+
+## MEDIR — 33 ramas con trabajo que `main` no tiene
+
+> Ninguna se borra sin mirarla: **un BORRAR equivocado es irreversible.**
+
+| rama | comm. fuera | lleva | primer commit que main no tiene |
+|---|---|---|---|
+| `scrum-480-fin-de-linea` | 7 | MODULO ENTRADA | docs(SCRUM-480 fase 3): lo que quedo fuera, el rojo y la perdida que cuent… |
+| `scrum-300-firmado-por` | 5 | MODULO ENTRADA SCHEMA | SCRUM-300: los dos rotulos del PDF, APROBADOS por el asesor tras verlos li… |
+| `scrum-37b-agregacion-por-job` | 5 | MODULO | docs(runbooks): la regla del parseo de URLs de BD, con el camino corto don… |
+| `scrum-475-constancia-correo` | 4 | MODULO ENTRADA | docs(SCRUM-475): por qué la medición sigue en pie aunque main se movió dos… |
+| `scrum-222-deriva-prod` | 2 | MODULO | SCRUM-222: cablea el assert de arranque en index.ts + campo de deriva en /… |
+| `scrum-440-tenencia-supresion` | 2 | — | SCRUM-441+397: la cuarta columna del lote — charges.paid_at |
+| `scrum-172-tier3-tenencia-nullable` | 2 | — | SCRUM-172 (tier 3): el guard de tenencia nullable ve CUALQUIER tipo nullab… |
+| `scrum-223-wrapper-silencioso` | 2 | — | SCRUM-226: el guard senala la linea REAL, no la del fuente sin comentarios |
+| `scrum-253-adopcion-mismo-dueno` | 2 | — | docs(master): SCRUM-253 -- adopcion por mismo-dueno, fin del auto-bloqueo … |
+| `scrum-309-g0-medir-el-trabajo` | 2 | ENTRADA | SCRUM-309: el ancla del informe en ISO-8601, para que la lea una maquina |
+| `scrum-340-contador-plazas-reales` | 2 | MODULO ENTRADA | SCRUM-340: capturas AB6 (3 superficies x antes/despues x 360 y 390) + rast… |
+| `scrum-38-staging-expres` | 2 | MODULO | docs(master+flujo): SCRUM-38 -- staging expres + paso E2E automatizado pos… |
+| `scrum-397-fecha-de-cobro-rebasada` | 2 | ENTRADA | feat(SCRUM-397): el microcopy aprobado de la fecha de cobro, y el guard qu… |
+| `scrum-433-censo-un-salto` | 2 | ENTRADA | docs(master): SCRUM-433 · el censo resuelve un salto |
+| `scrum-268-p3-guard-espera-automatica` | 1 | ENTRADA | docs(registro): SCRUM-268 punto 3 -- el guard del esperador automatico |
+| `scrum-390-puerta-cliente-real` | 1 | MODULO ENTRADA | feat(guards): microcopy aprobada del aviso de la puerta (SCRUM-390) |
+| `scrum-482-contador-offline` | 1 | ENTRADA | SCRUM-482 PASO 0: no hace falta columna, y el servidor no ve la mitad de l… |
+| `chore-flujo-pr` | 1 | — | chore(flujo): main protegida -> ramas + PR (reglas AA1 + FLUJO_DE_TRABAJO.… |
+| `scrum-161-tanda-en-ci` | 1 | — | SCRUM-161: la tanda gateada corre en CI (diaria, no depende de que nadie l… |
+| `scrum-166-un-solo-comando` | 1 | — | refactor(SCRUM-166): un nombre por cosa -- test:staging ES el runner gatea… |
+| `scrum-198-spike-xsd` | 1 | — | SCRUM-198 (spike): los tres candidatos de validacion XSD, ejecutables |
+| `scrum-216-p12-contradiccion` | 1 | — | docs(legal): P12 corrige su propia premisa -- las R1 consignan el delta (I… |
+| `scrum-224-sw-revalida` | 1 | MODULO | SCRUM-224: el SW revalida el estático (network-first de verdad) + instrume… |
+| `scrum-242-backup-verificado` | 1 | — | feat(SCRUM-242): produccion no se vuelca, y el destino se comprueba VACIO … |
+| `scrum-245-fuera-listas-blancas` | 1 | MODULO | APARCADA · SCRUM-245: retirada del freno del demo, SIN mergear |
+| `scrum-270-evidencia-reunida` | 1 | ENTRADA | docs(master): SCRUM-270 — fijar como se lee el 55, y dejar la pregunta abi… |
+| `scrum-312-importador-clientes-rebasada` | 1 | MODULO | SCRUM-312 · el mensaje de la base va al LOG, nunca a la pantalla |
+| `scrum-329-legal-pagina-publica` | 1 | — | wip(legal): SCRUM-329 (F2) — mecanismo a medio hacer, PARADO por cambio de… |
+| `scrum-397-fecha-de-cobro` | 1 | ENTRADA | docs(SCRUM-397): censo de la fecha de cobro -- que es hecho, que es declar… |
+| `scrum-412-primarias-tactiles` | 1 | ENTRADA | SCRUM-412: el botón de firmar es primaria (decisión del fundador) |
+| `scrum-418-puerta-de-produccion` | 1 | MODULO | SCRUM-418: la puerta de produccion, en el punto de CONEXION |
+| `scrum-471-pretest-antes-de-la-suite` | 1 | — | SCRUM-471: el comprobador de node_modules cae en pretest, ANTES de la suit… |
+| `scrum-484-clasificar-59` | 1 | ENTRADA | SCRUM-484 (cont. 2): el filtro mata 12 de los 15 — y con ellos MI ticket |
+
+### Las que más pesan
+
+- **`scrum-480-fin-de-linea`** — 7 commits, entrada de máster + guard de `.gitattributes`. Es el
+  ticket del CRLF, y hoy ese defecto costó un rojo en `main`. **Mirar primero.**
+- **`scrum-300-firmado-por`** — 5 commits con módulo, schema y **rótulos aprobados por el asesor**.
+  Microcopy aprobada sin mergear es lo más caro de perder: no se reconstruye midiendo.
+- **`scrum-475-constancia-correo`** — 4 commits, 7 módulos. Hermana de `scrum-475-firma-del-webhook`.
+- **`scrum-245-fuera-listas-blancas`** — 11 módulos, y su propio commit dice **«APARCADA · SIN
+  mergear»**. Está declarada: no es un olvido. **No borrar.**
+- **`scrum-222-deriva-prod`** — hermana de la rama de hoy: `schemaDrift.ts` e `index.ts`.
+
+## BORRAR — 28 ramas cuyo trabajo YA está en `main`
+
+Todos sus commits (sin contar merges) tienen su **asunto en la historia de `main`**: entraron por
+rebase o cherry-pick con otro sha.
+
+| rama | commits | ya en main |
+|---|---|---|
+| `scrum-205-206-sellado` | 7 | 7/7 |
+| `scrum-300-c5-fusion-rebasada` | 7 | 7/7 |
+| `scrum-368-a1-texto-grande` | 6 | 6/6 |
+| `scrum-215-destinatarios` | 5 | 5/5 |
+| `scrum-216-consolidar` | 1 | 1/1 |
+| `scrum-284-configuracion-submenus-rebasada` | 4 | 4/4 |
+| `scrum-388-censo-contra-main-rebasada-2` | 4 | 4/4 |
+| `scrum-234-carrera-numeracion` | 3 | 3/3 |
+| `scrum-284-censo-configuracion` | 3 | 3/3 |
+| `scrum-284-configuracion-submenus` | 3 | 3/3 |
+| `scrum-388-censo-contra-main-rebasada` | 3 | 3/3 |
+| `scrum-240-sobre-duplicado-rebasada` | 2 | 2/2 |
+| `scrum-240-sobre-duplicado-rebasada-2` | 2 | 2/2 |
+| `scrum-255-migrar-sondeos` | 2 | 2/2 |
+| `scrum-275-message-en-el-acceso` | 2 | 2/2 |
+| `scrum-304-albaranes-tabla-rebasada` | 2 | 2/2 |
+| `scrum-381-sembradores` | 2 | 2/2 |
+| `scrum-388-censo-contra-main` | 2 | 2/2 |
+| `scrum-415-fixture-version` | 2 | 2/2 |
+| `scrum-205-206-sellado-rebasada` | 1 | 1/1 |
+| `scrum-304-albaranes-tabla` | 1 | 1/1 |
+| `scrum-304-albaranes-tabla-rebasada-2` | 1 | 1/1 |
+| `scrum-325-libros-por-periodo` | 1 | 1/1 |
+| `scrum-368-contraste-texto-y-guard-rebasada` | 1 | 1/1 |
+| `scrum-404-trazo-no-se-pierde` | 1 | 1/1 |
+| `scrum-405-descarga-verificada` | 1 | 1/1 |
+| `scrum-474-fase2-INCOMPLETO` | 1 | 1/1 |
+| `scrum-474-filtro-cobros` | 1 | 1/1 |
+
+## Lo que este censo NO afirma
+
+1. **Asunto igual no es contenido igual.** Un commit reescrito en un rebase puede conservar el
+   asunto y haber perdido líneas. Para las 28 de BORRAR el riesgo es bajo —son ramas de
+   tickets cerrados— pero **no está medido fichero a fichero**. Si una importa, se mira antes.
+2. **No se ha mirado si alguna rama de MEDIR está obsoleta por diseño** (una decisión posterior la
+   anuló). Eso lo sabe el fundador, no el `git log`.
+3. **No se ha ejecutado nada**: ni un borrado, ni un merge.
