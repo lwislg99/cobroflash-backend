@@ -81,7 +81,20 @@ const R = analizar(RAIZ);
 // exactamente lo que la cabecera de arriba prohíbe.
 //
 // **Baja a 7 el commit que le ponga consumidor**, y ese commit es el cable de A2-c.
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 8;
+//
+// ✅ 8 → 7 · 13-ago-2026 · SCRUM-293 (③a). ÉSTE es ese commit, y baja por la pieza que lo dejó
+// dicho: sale `src/modules/invoicing/domain/retencionIrpf.ts`. Lo alcanza `src/app.ts`, que importa
+// `tiposDeRetencionOrdenados()` para mandarle a la pantalla las opciones del CUBO.
+//
+// ⚠️ Y baja SIN tocar el camino de emisión, que es lo que hacía falta medir antes de creérselo: el
+// cable no cablea `bloqueRetencion` ni `leerTipoRetencion` —los dos que cambiarían lo que se
+// SELLA— sino la lista de rótulos que la Configuración necesita para pintar el selector. El STOP de
+// la regla 38 sigue exactamente donde estaba; lo que se ha entregado es la pantalla donde el
+// profesional DECLARA su tipo, no la aplicación del tipo a una factura.
+//
+// Quedan 7, y de las tres del bloque fiscal que SCRUM-500 nombró juntas siguen dos esperando el
+// mismo GO: `recargoEquivalencia.ts` (A3) y `suplidos.ts`. **Bajan cuando les llegue el suyo.**
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 7;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 
@@ -114,12 +127,37 @@ test('SCRUM-411 · SUELO: sin árbol que mirar, el análisis lo DICE en vez de r
 const esInalcanzable = (frag) => R.inalcanzables.some((m) => m.modulo.includes(frag));
 const huerfanosDe = (frag) => (R.modulos.find((m) => m.modulo.includes(frag))?.huerfanos ?? []);
 
-test('SCRUM-411 · CONTROL POSITIVO: los cuatro conocidos salen', () => {
+test('SCRUM-411 · CONTROL POSITIVO: los conocidos salen', () => {
   // SCRUM-294 (fase B): `criterioCaja` sale de esta lista -- ya NO es inalcanzable.
-  for (const frag of ['retencionIrpf', 'recargoEquivalencia', 'flagFiscal.service']) {
+  // SCRUM-293 (③a): `retencionIrpf` sale también, y NO se borra su renglón — se le da la vuelta
+  // justo debajo. Ver el porqué allí.
+  for (const frag of ['recargoEquivalencia', 'flagFiscal.service']) {
     assert.ok(esInalcanzable(frag),
       `🔴 «${frag}» NO sale como inalcanzable, y se midió que lo es. El detector no mide lo que dice medir.`);
   }
+});
+
+test('SCRUM-411 · 🔴 SCRUM-293 (③a): `retencionIrpf` YA NO es inalcanzable, y se dice por dónde', () => {
+  // ⚠️ ESTA DECLARACIÓN ESTÁ DADA LA VUELTA, NO BORRADA, y la diferencia es el guard entero.
+  //
+  // Hasta ③a este módulo era el ejemplar de libro de «motor sin superficie»: construido, probado y
+  // con CERO llamadores, esperando el GO del camino de emisión (regla 38). Lo declaraba el control
+  // positivo de arriba. Hoy `src/app.ts` importa `tiposDeRetencionOrdenados()` para mandarle al
+  // navegador las opciones del CUBO —sin ese cable la pantalla tendría que escribir los porcentajes
+  // a mano, que es justo lo que el cubo existe para impedir—, así que el módulo se alcanza.
+  //
+  // 🔴 SI SE HUBIERA BORRADO EL RENGLÓN Y YA, desconectar el cable mañana habría dejado el módulo
+  // inalcanzable OTRA VEZ sin que nada lo dijera por su nombre: solo lo habría acusado el tope
+  // numérico de abajo, y un número no nombra al que se cayó. Al revés SÍ tiene sujeto — y ese es el
+  // caso que hay que cazar, porque un motor fiscal que se queda sin pantalla no da ningún síntoma.
+  assert.ok(!esInalcanzable('retencionIrpf'),
+    '🔴 `retencionIrpf` ha vuelto a ser INALCANZABLE. Eso significa que alguien ha desconectado el ' +
+    'cable de ③a: `src/app.ts` ya no importa `tiposDeRetencionOrdenados()`.\n\n' +
+    '  No es cosmética. Sin ese import la pantalla de Configuración se queda sin las opciones del\n' +
+    '  cubo y el selector de retención se pinta VACÍO — el profesional no puede declarar que retiene,\n' +
+    '  y «no lo ha dicho» y «dice que no retiene» vuelven a ser el mismo estado.\n\n' +
+    '  Si el cable se ha retirado A CONCIENCIA, este test vuelve a ser un control positivo (arriba) y\n' +
+    '  el tope de abajo sube a 8 con su motivo. Lo que no vale es que se caiga en silencio.');
 });
 
 test('SCRUM-411 · CONTROL NEGATIVO: invoiceNumber.service NO sale', () => {

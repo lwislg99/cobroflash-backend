@@ -263,6 +263,40 @@ export const DECLARADOS = [
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
     exports: ['estaSellada', 'puedeSalirDocumento'] },
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 SCRUM-293 (③a) · 13-ago-2026 · ENTRAN SIETE DE GOLPE, Y NO SE ESCRIBIÓ NI UNA LÍNEA NUEVA.
+  //
+  // Los siete existían desde A2 y NINGUNO es código nuevo. Estaban INVISIBLES para este censo por
+  // una razón estructural que conviene no perder: `retencionIrpf.ts` era un módulo ENTERO
+  // inalcanzable, o sea población PRIMERA, y esta segunda población solo mira DENTRO de módulos
+  // VIVOS. Un módulo muerto no aporta huérfanos: aporta un módulo.
+  //
+  // El cable de ③a (`src/app.ts` importa `tiposDeRetencionOrdenados()`) lo pasa de muerto a vivo, y
+  // en ese salto sus otros siete exports aparecen aquí por primera vez. Por eso el tope de la
+  // primera población baja de 8 a 7 y este censo sube de 196 a 203 EN EL MISMO COMMIT: no son dos
+  // hallazgos, es un import — y si algún día se ven moverse por separado, es que algo no cuadra.
+  //
+  // ⚠️ CUATRO DE LOS SIETE VIENEN CON EL CONSEJO CONTRARIO, y queda dicho en vez de aplicado a
+  // escondidas: el clasificador aconseja QUITARLES EL `export` a `CUBO_DE_RETENCION`,
+  // `esTipoRetencionValido`, `calcularRetencion` y `liquidoAPercibir`, porque su consumidor real
+  // está dentro del módulo y de fuera solo entran sus tests. NO se hace aquí, y por dos motivos
+  // medidos: ① des-exportarlos rompe `scrum293-retencion-irpf`, `scrum293-tres-estados-retencion` y
+  // `scrum500-suplidos`, que los importan — eso es una refactorización, no una declaración; y
+  // ② tocar un módulo fiscal para que un contador quede bonito es justo lo que la cabecera del
+  // trinquete prohíbe. Se declaran con su categoría real y el cambio va a su propia tanda.
+  { modulo: 'src/modules/invoicing/domain/retencionIrpf.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-13',
+    motivo: 'La lista CERRADA de tipos de retención (regla 27) y la fuente del tipo `TipoRetencion`: un tipo libre dejaría meter un 7,5 que no existe. Su único lector interno está en posición de TIPO, que el detector no cuenta como ejecución — por eso sale huérfano sin serlo del todo.',
+    exports: ['TIPOS_RETENCION'] },
+  { modulo: 'src/modules/invoicing/domain/retencionIrpf.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-13',
+    motivo: 'Código vivo de su propio módulo los ejecuta —`tiposDeRetencionOrdenados` (que SÍ tiene importador desde ③a) y `bloqueRetencion` pasan por ellos—; el `export` es superficie que de fuera solo consumen sus tests. El clasificador aconseja retirarlo: se hará en su tanda, no en la del cable.',
+    exports: ['CUBO_DE_RETENCION', 'calcularRetencion', 'esTipoRetencionValido', 'liquidoAPercibir'] },
+  { modulo: 'src/modules/invoicing/domain/retencionIrpf.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-13',
+    motivo: '🔴 LOS DOS QUE SIGUEN SIN CABLE, y son los que importan: `bloqueRetencion` pinta la retención en el documento y `leerTipoRetencion` es el SUELO FISCAL que impide emitir sin saber si el profesional retiene. Cablear cualquiera de los dos cambia lo que se SELLA (regla 38) y necesita GO explícito del fundador. ③a entrega la pantalla donde se DECLARA el tipo; aplicarlo a una factura es otra cosa y no se ha hecho.',
+    exports: ['bloqueRetencion', 'leerTipoRetencion'] },
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
   { modulo: 'src/modules/invoicing/domain/rectificabilidad.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',

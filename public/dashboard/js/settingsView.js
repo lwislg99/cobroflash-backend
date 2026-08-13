@@ -372,6 +372,14 @@ function renderSettingsView(container) {
     const MARCA_RETENCION = "[PENDIENTE microcopy oficial]";
     const selRetencion = document.createElement("select");
     selRetencion.id = "retencion-irpf-tipo";
+    // SCRUM-293 (③a-bis) · EL `.name` NO ES DECORACIÓN: es cómo un `<select>` construido a mano
+    // DECLARA qué columna de `Merchant` persiste. Sus dos hermanos —`fCriterioCaja` y
+    // `fCountrySelect`— lo declaran, y el censo de Configuración (SCRUM-284) lee justo eso.
+    // Sin esta línea el campo era invisible para el censo y su clave en el mapa de submenús salía
+    // como fantasma: el guard acusaba de «este ajuste ya no existe en la pantalla» a un ajuste que
+    // sí está. Medido: 19 de las 20 claves de `colocar(…)` se veían; ésta era la única que no.
+    // No cambia comportamiento — el submit sigue construyendo el payload a mano desde `.value`.
+    selRetencion.name = "retencionIrpfTipo";
     selRetencion.className = "input";
     const RET_NO_CONSTA = "";      // no lo ha declarado
     const RET_NO_RETIENE = "no";   // lo ha declarado: no retiene
