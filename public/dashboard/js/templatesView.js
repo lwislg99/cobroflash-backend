@@ -156,7 +156,7 @@ function showRenameModal(tpl, onSuccess, setAlert) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal" style="max-width:380px">
+    <div class="modal" style="max-width:380px">
       <div class="modal-body">
         <div class="field">
           <label>Nombre</label>

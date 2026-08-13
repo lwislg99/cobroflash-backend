@@ -1,5 +1,5 @@
 // src/modules/products/domain/products.service.ts
-import { prisma } from '../../../core/db/prisma';
+import { prisma } from '../../../core/db/prisma';
 // SCRUM-312: el parseo de CSV vive en UN solo sitio del proyecto. Antes había dos (aquí y en
 // el importador del navegador), y no eran equivalentes.
 import { parsearLineaCsv, quitarBom, detectarSeparador } from '../../../core/csv/csv';

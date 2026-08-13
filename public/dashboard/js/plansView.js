@@ -213,7 +213,7 @@ function openAlcanceModal() {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
-      <div class="modal" style="max-width:560px">
+      <div class="modal" style="max-width:560px">
         <div class="modal-body">
           <iframe src="/legal/alcance-beta" title="Alcance de la beta"
             style="width:100%;height:320px;border:1px solid var(--neutral-200);border-radius:10px;background:#fff"></iframe>

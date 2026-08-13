@@ -2572,7 +2572,7 @@ if (Number.isFinite(n) && n >= 0) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
-      <div class="modal" style="max-width:480px">
+      <div class="modal" style="max-width:480px">
         <div class="modal-body">
           <p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">Elige una plantilla para cargar sus líneas en el presupuesto actual.</p>
           <div style="display:flex;flex-direction:column;gap:8px" id="tpl-list"></div>
@@ -2640,7 +2640,7 @@ if (Number.isFinite(n) && n >= 0) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
-      <div class="modal" style="max-width:400px">
+      <div class="modal" style="max-width:400px">
         <div class="modal-body">
           <p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">Dale un nombre a esta plantilla para reutilizarla en futuros presupuestos.</p>
           <div class="alert" id="save-tpl-alert"></div>
