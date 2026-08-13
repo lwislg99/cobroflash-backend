@@ -33,11 +33,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  censoEol, censoArbolDeTrabajo, mismoBlobEnLasDosPlataformas, clasificarBlob, CR_PERMITIDO,
+  censoEol, censoArbolDeTrabajo, mismoBlobEnLasDosPlataformas, clasificarBlob,
+  extensionesConEolLf, CR_PERMITIDO,
 } from './_censo-eol.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ATTRS = fs.readFileSync(path.join(RAIZ, '.gitattributes'), 'utf8');
+/**
+ * Las extensiones que el guard del disco vigila, DERIVADAS de `.gitattributes`. Ni una lista a
+ * mano —se separaría de las reglas en silencio— ni «todo el árbol»: hay ficheros de fuente ajena
+ * (los `.xsd` de la AEAT, `aeat-errores.properties`) que se guardan tal cual a propósito y a los
+ * que nadie ha prometido LF. El guard vigila EXACTAMENTE lo prometido.
+ */
+const EXT_LF = extensionesConEolLf(ATTRS);
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────
 // «No hay ficheros con CR» y «no supe mirar» dan el mismo verde. Este bloque los separa.
@@ -98,7 +106,7 @@ test('SCRUM-480 · 🔴 el ÁRBOL DE TRABAJO no tiene ni un `\\r` — es lo que 
   // `\r` al hacer checkout en ficheros cuyo blob lleva en LF desde siempre, así que arreglar los
   // blobs (fase 2) NO quitaba ni un `\r` de lo que un guard lee. Lo quita `eol=lf`, y esto lo
   // comprueba por EFECTO: si mañana cambia una regla o alguien clona con otra configuración, cae.
-  const r = censoArbolDeTrabajo(RAIZ);
+  const r = censoArbolDeTrabajo(RAIZ, EXT_LF);
   const ofensores = r.conCR.filter((f) => !CR_PERMITIDO[f.ruta]);
 
   assert.deepEqual(ofensores.map((f) => f.ruta).slice(0, 25), [],
@@ -114,13 +122,21 @@ test('SCRUM-480 · 🔴 el ÁRBOL DE TRABAJO no tiene ni un `\\r` — es lo que 
 });
 
 test('SCRUM-480 · SUELO: el censo del disco LEE de verdad, y sabría ver un `\\r`', () => {
-  const r = censoArbolDeTrabajo(RAIZ);
+  const r = censoArbolDeTrabajo(RAIZ, EXT_LF);
   assert.ok(r.leidos > 1000,
     `🔴 solo se han leído ${r.leidos} ficheros del disco: el verde de arriba no significaría nada.`);
   assert.ok(r.textos > 500, `🔴 solo ${r.textos} clasificados como texto en disco`);
   // Y que el clasificador SEPA acusar, con un búfer fabricado a propósito.
   assert.equal(clasificarBlob(Buffer.from('a\r\nb\n', 'latin1')).crlf, 1,
     '🔴 el clasificador no ve un CRLF que le doy en la mano: no puede acusar a nadie.');
+  // La población sale de `.gitattributes`, no de una lista escrita aquí. Si el derivador se
+  // rompiera, `EXT_LF` quedaría vacío, el censo no miraría NADA y el test de arriba pasaría solo.
+  assert.ok(EXT_LF.size >= 10,
+    `🔴 solo ${EXT_LF.size} extensiones derivadas de \`.gitattributes\`; hay 14 declaradas. Con el `
+    + 'derivador roto, el guard del disco no mira ningún fichero y pasa en verde sobre la nada.');
+  for (const ext of ['.js', '.ts', '.mjs']) {
+    assert.ok(EXT_LF.has(ext), `🔴 \`${ext}\` no sale del derivador: el guard no vigilaría el código`);
+  }
 });
 
 // ── EL MECANISMO ─────────────────────────────────────────────────────────────────────────

@@ -99,7 +99,7 @@ export function censoEol(raiz) {
  * en medio—, así que un guard que promete «miro el código, no los comentarios» acaba mirando
  * también los comentarios. Le pasó al de SCRUM-409 durante semanas, y solo en Windows.
  */
-export function censoArbolDeTrabajo(raiz) {
+export function censoArbolDeTrabajo(raiz, extensiones) {
   const rutas = execFileSync('git', ['ls-files', '-z'], {
     cwd: raiz, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024,
   }).split('\0').filter(Boolean);
@@ -109,6 +109,10 @@ export function censoArbolDeTrabajo(raiz) {
   let textos = 0;
   let leidos = 0;
   for (const ruta of rutas) {
+    // La población es EXACTAMENTE la que `.gitattributes` promete tener en LF. Ni más —acusaría a
+    // ficheros que nadie dijo que fueran a estar en LF— ni menos. Y la lista se DERIVA del propio
+    // `.gitattributes`: una copia a mano aquí se separaría de las reglas sin que nadie lo viera.
+    if (extensiones && !extensiones.has(path.extname(ruta).toLowerCase())) continue;
     let cuerpo;
     try { cuerpo = fs.readFileSync(path.join(raiz, ruta)); } catch { continue; } // no está en disco
     leidos += 1;
@@ -118,6 +122,20 @@ export function censoArbolDeTrabajo(raiz) {
     if (c.crlf || c.crSuelto) conCR.push({ ruta, ...c });
   }
   return { poblacion: rutas.length, leidos, textos, conCR };
+}
+
+/** Las extensiones que `.gitattributes` promete en LF, leídas de él mismo. */
+export function extensionesConEolLf(contenidoGitattributes) {
+  const out = new Set();
+  for (const l of contenidoGitattributes.split(/\r?\n/)) {
+    const t = l.trim().replace(/\s+/g, ' ');
+    if (!t || t.startsWith('#')) continue;
+    const [patron, ...attrs] = t.split(' ');
+    if (!attrs.includes('eol=lf')) continue;
+    if (!patron.startsWith('*.')) continue;      // `scripts/db-push-prod` no tiene extensión
+    out.add(patron.slice(1).toLowerCase());       // `*.js` → `.js`
+  }
+  return out;
 }
 
 /**
