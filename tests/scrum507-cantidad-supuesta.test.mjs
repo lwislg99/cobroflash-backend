@@ -192,6 +192,24 @@ test('SCRUM-507 · el navegador PINTA las dos cosas, y como marcador sin aprobar
     + 'no es cosmético: el texto es lo único que separa «revisa este número» de «esto está mal».');
 });
 
+test('SCRUM-507 · 🔴 nada BORRA el aviso después de pintarlo', () => {
+  // 🔴 ESTO ME PASO, y es el fallo mudo del ticket cometido al pintarlo: el aviso se insertaba
+  // ANTES de `results.innerHTML = …`, asi que el nodo se creaba, se insertaba y el `innerHTML`
+  // se lo llevaba por delante. En pantalla: nada. Y el test seguia verde porque el texto ESTABA
+  // en el fuente — otra vez el guard atado a la FORMA (que el codigo exista) y no al HECHO (que
+  // se vea). Aqui se mide el orden, que es lo que decide si se ve.
+  const vista = soloEjecutable(leer('public/dashboard/js/aiQuoteAssistant.js'));
+  const insercion = vista.indexOf('insertAdjacentElement');
+  assert.ok(insercion > 0, '🔴 el aviso ya no se inserta en la pantalla');
+  const borrados = [...vista.matchAll(/results\.innerHTML\s*=/g)].map((m) => m.index);
+  assert.ok(borrados.length > 0, '🔴 el instrumento no encuentra ningún `results.innerHTML`: no vale');
+  const ultimoBorrado = Math.max(...borrados);
+  assert.ok(insercion > ultimoBorrado,
+    '🔴 HAY UN `results.innerHTML =` DESPUÉS DE INSERTAR EL AVISO, y eso lo BORRA.\n\n'
+    + '  El nodo se crea, se inserta y desaparece: el profesional no ve que falta una línea, que\n'
+    + '  es exactamente el fallo mudo que este ticket viene a cerrar.');
+});
+
 test('SCRUM-507 · CONTROL POSITIVO del instrumento: la función hermana existe y se lee', () => {
   // Si el barrido no encontrara nada, «no hay más invenciones» significaría «no supe mirar».
   // `cantidadUtilizable` es la referencia comprobable de que sí se está leyendo el fuente.

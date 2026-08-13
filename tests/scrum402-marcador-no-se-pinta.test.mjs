@@ -52,6 +52,19 @@ const MARCA = '[PENDIENTE';
  * a otra tiene que verse, y un total lo escondería (la lección del suelo por FUNCIÓN de SCRUM-392).
  */
 const CENSO = Object.freeze({
+  // SCRUM-507 (13-ago-2026) · ENTRA A CONCIENCIA con 2, y el motivo es que **el mecanismo no
+  // existe sin texto**: son los dos avisos de lo que la IA no supo leer en el asistente de
+  // presupuesto.
+  //
+  //   +1 → la linea que NO se ha propuesto porque su IVA era ilegible, con su concepto. Sin este
+  //        aviso la linea desaparece en silencio, que es el mismo fallo mudo que cierra el ticket.
+  //   +1 → la marca por linea de «esta cantidad (o este precio) no venia y la hemos supuesto». Es
+  //        lo unico que distingue un numero que escribio el profesional de uno que se invento el
+  //        modelo, que es literalmente la condicion de cierre de SCRUM-507.
+  //
+  // Salen con marcador porque NO se inventa microcopy (regla 30), y aqui el texto no es cosmetico:
+  // separa «revisa este numero» de «esto esta mal». Bajan el dia que el fundador los firme.
+  'aiQuoteAssistant.js': 2,
   // SCRUM-294-a (12-ago-2026) · SUBIDA A CONCIENCIA: el campo del recargo de equivalencia en la
   // ficha del cliente sale con marcador en su rotulo y en sus tres opciones. Es deliberado y no
   // provisional por descuido: decirle en pantalla a que REGIMEN FISCAL pertenece su cliente es

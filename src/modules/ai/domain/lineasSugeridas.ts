@@ -54,7 +54,7 @@ export function cantidadUtilizable(bruto: unknown): number {
  * El rango es [0, 1] porque el contrato del servicio es la FRACCIÓN (0,21). Un `21` es el modelo
  * hablando en porcentaje: colarlo multiplicaría el impuesto por cien.
  */
-export function ivaLegible(bruto: unknown): number | null {
+function ivaLegible(bruto: unknown): number | null {
   const enRango = (n: number) => (Number.isFinite(n) && n >= 0 && n <= 1 ? n : null);
   if (typeof bruto === 'number') return enRango(bruto);
   if (typeof bruto === 'string' && bruto.trim() !== '') return enRango(Number(bruto.trim()));

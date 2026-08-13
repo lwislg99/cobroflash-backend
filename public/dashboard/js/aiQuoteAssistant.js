@@ -9,7 +9,7 @@ function openAiSuggestModal(addLinesFn) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal" style="max-width:500px">
+    <div class="modal" style="max-width:500px">
       <div class="modal-body">
         <p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">
           Describe el trabajo con tus propias palabras y Claude sugerirá las líneas del presupuesto usando tu catálogo de productos.
@@ -87,21 +87,29 @@ function openAiSuggestModal(addLinesFn) {
       return;
     }
 
+    // Mostrar las líneas sugeridas con checkboxes para aceptar/rechazar
+    results.innerHTML = `<p style="font-size:13px;font-weight:600;color:var(--neutral-700);margin:0 0 8px">Sugerencias (selecciona las que quieras añadir):</p>`;
+
     // SCRUM-507 · LO QUE NO SE PUDO PROPONER, DICHO. Una linea con IVA ilegible no se propone
     // —un 0 % plausible no llama la atencion de quien revisa—, pero desaparecer en silencio seria
     // otro fallo mudo: aqui sale su CONCEPTO, para que el profesional lo escriba a mano.
     // MICROCOPY: marcador sin aprobar (regla 30).
+    //
+    // 🔴 VA DESPUES DEL `innerHTML`, Y NO ES UN DETALLE DE ORDEN: lo escribi antes y el `innerHTML`
+    // de arriba BORRABA el aviso: el nodo se creaba, se insertaba y desaparecia sin que nadie lo
+    // viera. Es el mismo fallo mudo que arregla el ticket, cometido al pintarlo. El guard de orden
+    // de la suite existe por esto.
     if (descartadas.length) {
       var avisoDesc = document.createElement('p');
       avisoDesc.className = 'ai-lineas-descartadas';
       avisoDesc.style.cssText = 'font-size:12.5px;font-weight:600;color:var(--warn,#b45309);margin:0 0 8px';
-      avisoDesc.textContent = '[PENDIENTE microcopy oficial · no se han propuesto ' + descartadas.length
-        + ' linea(s) por no entender su IVA]: ' + descartadas.map(function (d) { return d.concept; }).join(' · ');
-      results.appendChild(avisoDesc);
+      // Sin contador y sin «linea(s)»: el plural de programador se lee como software a medio hacer
+      // (SCRUM-377), y aqui la cuenta sobra — lo que hace falta saber es QUE trabajo falta, y eso
+      // lo dicen los conceptos.
+      avisoDesc.textContent = '[PENDIENTE microcopy oficial · esto no se ha propuesto porque no '
+        + 'entendimos su IVA]: ' + descartadas.map(function (d) { return d.concept; }).join(' · ');
+      results.insertAdjacentElement('afterbegin', avisoDesc);
     }
-
-    // Mostrar las líneas sugeridas con checkboxes para aceptar/rechazar
-    results.innerHTML = `<p style="font-size:13px;font-weight:600;color:var(--neutral-700);margin:0 0 8px">Sugerencias (selecciona las que quieras añadir):</p>`;
 
     const list = document.createElement('div');
     list.style.cssText = 'display:flex;flex-direction:column;gap:6px';
@@ -160,7 +168,7 @@ function openAiMessageModal({ customerName, concept, total, currency, onCopy }) 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal" style="max-width:440px">
+    <div class="modal" style="max-width:440px">
       <div class="modal-body">
         <p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">
           Claude redactará un mensaje personalizado para enviar a ${escHtml(customerName)} junto con el presupuesto.

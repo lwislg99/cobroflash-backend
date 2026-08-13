@@ -167,6 +167,32 @@ del albaran la importa de alli: una fuente para el mismo hecho.
 Hay ademas un test que cae si el servicio **vuelve a mapear por su cuenta** — el mecanismo que me
 engano no se cierra con cuidado, se cierra con un rojo.
 
+## 6 · 🔴 Y EL AVISO NO SE VEIA: LO PINTABA Y ME LO BORRABA YO CUATRO LINEAS DESPUES
+
+Lo encontre releyendo la vista, no por un test. El aviso de descartadas se insertaba con
+`results.appendChild(...)` y **cuatro lineas mas abajo** venia
+`results.innerHTML = '<p>Sugerencias…</p>'`, que **se lo llevaba por delante**. El nodo se creaba,
+se insertaba y desaparecia: en pantalla, nada.
+
+> **Es el fallo mudo del ticket cometido al pintarlo.** Y el test seguia verde porque el texto
+> ESTABA en el fuente: otra vez el guard atado a la FORMA (que el codigo exista) en vez de al
+> HECHO (que se vea).
+
+Arreglado moviendo el bloque DESPUES del `innerHTML` e insertando con
+`insertAdjacentElement('afterbegin', …)` para que salga arriba del todo. Y **con su rojo**: un test
+mide que la insercion va despues del ultimo `results.innerHTML =`, y cae con exactamente el bug que
+cometi (`exit=1` comprobado, verde restaurado).
+
+## 7 · Lo que movio mi entrega en los trinquetes de la casa (los cinco, arreglados)
+
+| trinquete | que pasaba | que se hizo |
+|---|---|---|
+| **SCRUM-377** plural de programador | mi microcopy decia `linea(s)` (7 > tope 6) | **se reescribe el marcador**: fuera el contador y el `(s)` — lo que hace falta saber es QUE trabajo falta, y eso lo dicen los conceptos. Vuelve a 6, el tope NO se sube |
+| **SCRUM-402** marcadores pintables | +2 sin declarar | `'aiQuoteAssistant.js': 2` **A CONCIENCIA** en el `CENSO`, con el motivo escrito: el mecanismo no existe sin texto |
+| **SCRUM-402 R4b** | el fichero no estaba vigilado | lo cubre la misma entrada |
+| **SCRUM-411** export huerfano | `ivaLegible` exportado y sin llamador | **se deja de exportar**. Es interno al criterio: la respuesta honesta es no exportarlo, no declararlo en una allowlist |
+| **SCRUM-411** categorias suman | consecuencia del anterior | verde al quitar el export |
+
 ## Rojos: 14/14, por CODIGO DE SALIDA
 
 Todos con `build=0` (un build roto deja `dist/` con el codigo bueno y el test no mediria nada; el
@@ -198,3 +224,23 @@ arnes lo marca aparte y no lo cuenta como rojo). Verde restaurado al terminar, `
 
 **No se ha tocado:** ningun flag, el camino de emision, `prisma/schema.prisma`, el aviso de Bizum ni
 ninguna base.
+
+## Suite y hallazgo de OTRO carril (regla 9)
+
+**Suite entera con `main` dentro (`origin/main` = `12372404`, «Already up to date»): 3614 tests,
+3536 pass, 1 fail.** El unico fallo **no es mio y ya estaba en `main`**:
+
+    tests/scrum409-fixtures-sin-merchant-demo.test.mjs
+      → scrum508-los-cinco-dejan-fila.test.mjs:76
+
+**Comprobado en un worktree limpio de `origin/main`: `exit=1`, el mismo y unico fallo.** No he
+tocado ese fichero (`git diff origin/main` vacio).
+
+Y la causa es **la trampa de autorreferencia (SCRUM-203)**: la linea 76 de ese test es un
+**comentario** que dice *«7 y no 1: el guard de SCRUM-409 lee un `merchantId: 1` como el merchant
+DEMO y salta»* — y el guard **casa con el comentario que explica la prohibicion**. El codigo hace
+lo correcto (usa `merchantId: 7`); lo que salta es la explicacion de por que.
+
+**Se reporta, no se arregla** (regla 9): es de la sesion de SCRUM-508. La forma conocida de
+cerrarlo es leer el fichero **sin comentarios** (`soloEjecutable`), como ya hacen otros guards de
+la casa.
