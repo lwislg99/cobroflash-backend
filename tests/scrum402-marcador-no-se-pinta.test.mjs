@@ -161,7 +161,24 @@ const CENSO = Object.freeze({
   // 🔴 CONFLICTO RESUELTO SUMANDO, no eligiendo: los dos tickets subieron este mismo contador en
   // paralelo (SCRUM-294 +4, SCRUM-328 +2, sobre la base de 1). Quedarse con uno habria borrado en
   // silencio los marcadores del otro y el trinquete habria dejado de verlos.
-  'settingsView.js': 7,
+  //
+  // SCRUM-293 (③a) · 13-ago-2026 · 7 → 8, A CONCIENCIA. Entra el selector de RETENCIÓN DE IRPF en
+  // Configuración > Facturación, y sus rótulos NO los ha aprobado nadie (regla 30). Son tres textos
+  // visibles: la etiqueta «Retención de IRPF» y las dos opciones que NO salen del cubo — «Sin
+  // indicar» (no lo ha declarado) y «No aplico retención» (declara que no). Los rótulos de los
+  // TIPOS no llevan marcador y no es un olvido: vienen del dominio (`CUBO_DE_RETENCION`), y ahí un
+  // «15 %» no es microcopy, es el dato.
+  //
+  // El texto no puede escribirse todavía porque decirle a un profesional cuándo debe retener es
+  // asesorarle, y eso lo dictamina el asesor — el mismo motivo por el que el criterio de caja entró
+  // marcado dos líneas más arriba. **Baja a 7 el commit que los apruebe.**
+  //
+  // ⚠️ Y UNA COSA QUE EL NÚMERO NO DICE: son TRES textos marcados y este censo cuenta UNO. No es un
+  // fallo del contador sino su regla —cuenta LITERALES que contienen la marca— y el bloque factoriza
+  // la marca en una constante (`MARCA_RETENCION`) que luego concatena tres veces. Queda anotado
+  // porque significa que este censo mide marcas escritas, no superficies marcadas, y quien lea un
+  // «+1» aquí no debe deducir «un rótulo».
+  'settingsView.js': 8,
 });
 
 /** Marcadores que viven en un LITERAL (los que pueden pintarse). Los comentarios no son literales. */

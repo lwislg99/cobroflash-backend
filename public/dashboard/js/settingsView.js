@@ -359,6 +359,54 @@ function renderSettingsView(container) {
     colocar("country", fCountryWrapper);
     colocar("defaultCurrency", fDefaultCurrency.wrapper);
     colocar("invoiceSeriesPrefix", fInvoiceSeriesPrefix.wrapper);
+
+    // ── SCRUM-293 (③a) · RETENCIÓN DE IRPF ────────────────────────────────────────────
+    // Las opciones salen de `tiposDeRetencionOrdenados()` (el cubo del dominio): aquí NO se
+    // escribe ni un porcentaje ni se reordena nada. Si mañana se añade o se quita un tipo,
+    // esta pantalla lo refleja sola — y si alguien lo añadiera sin rótulo, no compilaría.
+    //
+    // La primera opción es «no consta» y NO es un tipo: es la ausencia de declaración, que
+    // es un estado distinto de «declaro que no retengo». Los tres viajan por separado.
+    // Regla 30: estos rótulos NO están aprobados. Los del CUBO sí (vienen del dominio) y por
+    // eso van sin marca; los dos de aquí son redacción nueva y la llevan.
+    const MARCA_RETENCION = "[PENDIENTE microcopy oficial]";
+    const selRetencion = document.createElement("select");
+    selRetencion.id = "retencion-irpf-tipo";
+    // SCRUM-293 (③a-bis) · EL `.name` NO ES DECORACIÓN: es cómo un `<select>` construido a mano
+    // DECLARA qué columna de `Merchant` persiste. Sus dos hermanos —`fCriterioCaja` y
+    // `fCountrySelect`— lo declaran, y el censo de Configuración (SCRUM-284) lee justo eso.
+    // Sin esta línea el campo era invisible para el censo y su clave en el mapa de submenús salía
+    // como fantasma: el guard acusaba de «este ajuste ya no existe en la pantalla» a un ajuste que
+    // sí está. Medido: 19 de las 20 claves de `colocar(…)` se veían; ésta era la única que no.
+    // No cambia comportamiento — el submit sigue construyendo el payload a mano desde `.value`.
+    selRetencion.name = "retencionIrpfTipo";
+    selRetencion.className = "input";
+    const RET_NO_CONSTA = "";      // no lo ha declarado
+    const RET_NO_RETIENE = "no";   // lo ha declarado: no retiene
+    [
+      { value: RET_NO_CONSTA, texto: MARCA_RETENCION + " Sin indicar" },
+      { value: RET_NO_RETIENE, texto: MARCA_RETENCION + " No aplico retención" },
+    ].forEach(function (o) {
+      const op = document.createElement("option");
+      op.value = o.value; op.textContent = o.texto;
+      selRetencion.appendChild(op);
+    });
+    // Del CABLE, no de una lista local: el orden y los rótulos los manda el cubo del dominio.
+    (Array.isArray(window.appRetencionOpciones) ? window.appRetencionOpciones : [])
+      .forEach(function (t) {
+        const op = document.createElement("option");
+        op.value = String(t.tipo);
+        op.textContent = t.rotulo;   // ← del CUBO, no escrito aquí
+        selRetencion.appendChild(op);
+      });
+    const wrapRetencion = document.createElement("div");
+    wrapRetencion.className = "form-group";
+    const labRetencion = document.createElement("label");
+    labRetencion.textContent = MARCA_RETENCION + " Retención de IRPF";
+    labRetencion.htmlFor = selRetencion.id;
+    wrapRetencion.appendChild(labRetencion);
+    wrapRetencion.appendChild(selRetencion);
+    colocar("retencionIrpfTipo", wrapRetencion);
     colocar("logoUrl", fLogoUrl.wrapper);
 
     // ── SCRUM-D1 · LA PUERTA DE ÚLTIMA OPORTUNIDAD ───────────────────────────
@@ -753,6 +801,11 @@ function renderSettingsView(container) {
         fWhatsappPhone.input.value = merchant.whatsappPhone || "";
         fDefaultCurrency.input.value = merchant.defaultCurrency || "EUR";
         fInvoiceSeriesPrefix.input.value = merchant.invoiceSeriesPrefix || "";
+        // SCRUM-293 · TRES estados, y el orden de las ramas importa: `declarada` primero.
+        // Con `merchant.retencionIrpfTipo || ""` se colapsarían «no consta» y «no retiene».
+        selRetencion.value = merchant.retencionIrpfDeclarada
+          ? (merchant.retencionIrpfTipo == null ? RET_NO_RETIENE : String(merchant.retencionIrpfTipo))
+          : RET_NO_CONSTA;
         fLogoUrl.input.value = merchant.logoUrl || "";
         refreshLogoUI(); // preview del logo actual (URL antigua o data-URI)
         montarDatosDeEjemplo(merchant); // SCRUM-314 (D3)
@@ -794,6 +847,13 @@ function renderSettingsView(container) {
         whatsappPhone: fWhatsappPhone.input.value.trim(),
         defaultCurrency: fDefaultCurrency.input.value.trim() || "EUR",
         invoiceSeriesPrefix: fInvoiceSeriesPrefix.input.value.trim(),
+        // SCRUM-293 · se mandan LOS DOS: `declarada` dice SI lo ha dicho, `tipo` QUÉ dijo.
+        // Mandar solo el tipo haría indistinguibles «no lo ha dicho» y «dice que no retiene».
+        retencionIrpfDeclarada: selRetencion.value !== RET_NO_CONSTA,
+        retencionIrpfTipo:
+          selRetencion.value === RET_NO_CONSTA || selRetencion.value === RET_NO_RETIENE
+            ? null
+            : Number(selRetencion.value),
         logoUrl: fLogoUrl.input.value.trim() || null,
         // A2.5: normalizar — si pegan "g.page/r/…" sin protocolo, anteponer https://
         googleReviewUrl: (function () {
