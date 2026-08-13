@@ -38,6 +38,14 @@ async function initApp() {
   window.appDocumentoSuelto =
     ['factura', 'justificante'].includes(me.documentoSuelto) ? me.documentoSuelto : 'no';
 
+  // SCRUM-293 (③a) · las opciones de retención, tal y como las manda el CUBO del dominio. El
+  // front es vanilla y no puede importar de `src/`: si esta lista no viajara, la única forma de
+  // pintar el selector sería escribir los porcentajes a mano — que es justo lo que el cubo
+  // existe para impedir. Aquí no se filtra ni se reordena: el orden es propiedad del cubo.
+  window.appRetencionOpciones = Array.isArray(me.retencionIrpfOpciones)
+    ? me.retencionIrpfOpciones
+    : [];
+
   // SCRUM-D1 · LA PUERTA DE ÚLTIMA OPORTUNIDAD. Mismo patrón: el veredicto lo da el servidor
   // (`debeOfrecerArranqueDeSerie`, la MISMA regla que usa `resolveSeriesSeq`) y aquí solo se
   // recibe. El navegador NO comprueba `invoiceSeriesYear !== año` por su cuenta: dos sitios

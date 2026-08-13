@@ -14,6 +14,7 @@ import { cubosDeMetodo, opcionesDeMetodoDeclarable, ROTULO_SIN_METODO } from './
 // Medido antes de resolver: ya no se exporta, y `appFacturaSueltaDisponible` tiene CERO
 // consumidores en `public/`. No son dos cosas que hagan lo mismo — es una que evolucionó, así
 // que conservar la de C5 habría roto la compilación contra una función que ya no existe.
+import { tiposDeRetencionOrdenados } from './modules/invoicing/domain/retencionIrpf';
 import { modoDocumentoSuelto } from './modules/invoicing/domain/facturaSuelta'; // SCRUM-289 (A0.3) · SCRUM-346 (A0.5)
 import { modoEmisionVisible } from './modules/invoicing/domain/modoVisible'; // SCRUM-298 (A8)
 import { requireAuth, requireActivePlan, requireRole } from './core/http/authMiddleware';
@@ -406,6 +407,26 @@ app.get('/admin/me', async (req, res) => {
     // `facturaSueltaDisponible` en vez de convivir con él: dos campos del mismo hecho acaban
     // divergiendo, y entonces el botón que se pinta y el documento que sale dicen cosas distintas.
     documentoSuelto: modoDocumentoSuelto(merchantParaModo),
+    // SCRUM-293 (③a) · EL CABLE. Viajan LOS DOS campos y no un valor ya resuelto: la pantalla
+    // necesita distinguir TRES estados, y un solo campo los colapsaría a dos.
+    //   declarada=false            → NO CONSTA (no lo ha dicho todavía)
+    //   declarada=true, tipo NULL  → DECLARA QUE NO RETIENE
+    //   declarada=true, tipo=N     → RETIENE al N %
+    // `retencionIrpfDeclarada` es «HA declarado», no «declara que retiene»: cruzarlo haría que
+    // «nadie lo ha dicho» significase «todos dicen que no» y, como el campo es `@default(false)`,
+    // eso serían TODOS los merchants de hoy.
+    //
+    // Va en el MISMO commit que el selector que lo consume. Sin cable, la pantalla pintaría
+    // «no consta» para todo el mundo y PARECERÍA funcionar: un fallo mudo en la configuración
+    // fiscal, que es justo la familia de defectos que este ticket persigue.
+    retencionIrpfDeclarada: (merchantFull as { retencionIrpfDeclarada?: boolean } | null)
+      ?.retencionIrpfDeclarada === true,
+    retencionIrpfTipo: (merchantFull as { retencionIrpfTipo?: number | null } | null)
+      ?.retencionIrpfTipo ?? null,
+    // Y LAS OPCIONES, derivadas del cubo. El front es vanilla y no puede importar del
+    // dominio: si esta lista no viajara, la única forma de pintar el selector sería escribir
+    // los porcentajes a mano en la pantalla — justo lo que el cubo existe para impedir.
+    retencionIrpfOpciones: tiposDeRetencionOrdenados(),
     // SCRUM-298 (A8): EL MODO DE EMISIÓN, VISIBLE. Hasta hoy `getEmissionMode` no llegaba ni una
     // vez al navegador (medido: cero consumidores en `public/`), así que dos estados que producen
     // documentos DISTINTOS se veían exactamente igual en pantalla.

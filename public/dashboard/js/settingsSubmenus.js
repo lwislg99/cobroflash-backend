@@ -83,6 +83,9 @@ var ASIGNACION_SUBMENU = {
   // ── numeracion ── el ticket coloca el prefijo en DOS submenús a la vez: es una contradicción
   // interna, no una opción. Manda el nombre del submenú — una serie va en Numeración.
   invoiceSeriesPrefix: 'facturacion',
+  // SCRUM-293 (③a) · la retención vive donde el prefijo: son las dos reglas de emisión que
+  // el profesional configura una vez y no vuelve a mirar.
+  retencionIrpfTipo: 'facturacion',
   // ── cobro ──
   iban: 'cobro',
   bizumPhone: 'cobro',
