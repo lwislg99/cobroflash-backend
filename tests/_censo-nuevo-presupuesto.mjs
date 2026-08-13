@@ -83,7 +83,13 @@ export function censarEnvioPresupuesto(fuente, ruta = 'quotesView.js') {
   // ── FORMA 2 · la sub-población de cada línea: lo que se empuja a payloadLines ─
   recorrer(sf, (n) => {
     if (nombreDeLlamada(n) !== 'push') return;
-    const obj = n.arguments[0];
+    // 🔴 SCRUM-500: el literal dejó de ser el argumento DIRECTO del `push` — ahora pasa antes por
+    // `lineaParaPayload(...)`, que es quien fuerza `tax: 0` en un suplido. Mirando solo
+    // `arguments[0]`, el censo contó CERO campos por línea. Se desenvuelve UNA capa de llamada:
+    // sin esto, envolver el literal en cualquier función deja toda la sub-población sin vigilar, y
+    // el único que lo cazó fue el suelo de «≥4 campos» — que es exactamente para lo que está.
+    let obj = n.arguments[0];
+    if (obj && ts.isCallExpression(obj) && obj.arguments.length === 1) obj = obj.arguments[0];
     if (!obj || !ts.isObjectLiteralExpression(obj)) return;
     // Solo el push que alimenta el array de líneas del envío.
     const receptor = ts.isPropertyAccessExpression(n.expression) ? n.expression.expression : null;

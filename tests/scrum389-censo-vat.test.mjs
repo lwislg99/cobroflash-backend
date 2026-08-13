@@ -76,6 +76,11 @@ const CENSO = {
   'src/modules/exports/domain/exportData.ts': { veredicto: 'DOCUMENTO', nota: 'una fila por factura en el CSV; no suma un total de periodo' },
   'src/modules/system/app/routes/invoicesAdmin.routes.ts': { veredicto: 'DOCUMENTO', nota: 'previsualización de UNA factura suelta (SCRUM-289)' },
   'src/modules/system/app/routes/quoteDecisionLanding.routes.ts': { veredicto: 'DOCUMENTO', nota: 'desglose del presupuesto que ve el cliente' },
+  // SCRUM-500 · llamador NUEVO, y del tipo bueno: desglosa UN documento y además lo hace LLAMANDO
+  // a la primitiva sobre las líneas ya filtradas, en vez de copiar el bucle «para filtrar de
+  // paso» — que habría sido la segunda cifra oficial del mismo dinero que este censo persigue.
+  // Su propio guard (`scrum500-suplidos.test.mjs` §7) exige que la llamada sea exactamente UNA.
+  'src/modules/invoicing/domain/suplidos.ts': { veredicto: 'DOCUMENTO', nota: 'el desglose de UNA factura sacando los suplidos de la base; el IVA lo delega en la primitiva' },
 };
 
 test('SCRUM-389 · SUELO: el extractor ENCUENTRA llamadores', () => {

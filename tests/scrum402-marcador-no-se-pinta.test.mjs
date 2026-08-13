@@ -76,6 +76,14 @@ const CENSO = Object.freeze({
   // encienda por descuido texto que el fundador no ha firmado. Se cuenta 1: los doce salen de una
   // sola constante `MARCA_MICROCOPY`, asi que aprobar el copy los apaga todos de golpe.
   'quoteActionsRegistry.js': 1,
+  // SCRUM-500 (12-ago-2026) · SUBIDA A CONCIENCIA: la casilla «Suplido» del editor de líneas sale
+  // con marcador en su rotulo, en su aviso y en el resumen del disparador. Y el aviso NO es
+  // decorativo: es el texto que evita un ERROR FISCAL en el segundo exacto en que se comete —
+  // marcar como suplido un material propio, que se compra para uno y se revende con su IVA. Que
+  // eso lo redacte el fundador (regla 30) es justo lo que hay que esperar, y mientras tanto se ve
+  // el marcador a proposito. Se cuenta 1: los tres textos salen de una sola constante
+  // `MARCADOR_MICROCOPY`, asi que aprobar el copy los apaga de golpe.
+  'quoteSuplido.js': 1,
   // SCRUM-404 (7-ago-2026) · SUBIDAS A CONCIENCIA, las dos, y con su motivo:
   //
   //   `albaranDetailView.js` +1 → el mensaje de «el servidor rechazó la firma». El fundador

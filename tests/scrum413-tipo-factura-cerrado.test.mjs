@@ -164,7 +164,13 @@ test('SCRUM-413 · ningún valor de `Invoice.type` se escribe sin estar declarad
 
   // Y el DEFAULT del schema es un valor más aunque nadie lo escriba a mano.
   const schema = fs.readFileSync(path.join(RAIZ, 'prisma/schema.prisma'), 'utf8');
-  const inv = schema.slice(schema.indexOf('model Invoice'), schema.indexOf('model Invoice') + 3000);
+  // 🔴 SCRUM-500: la ventana era `+ 3000` caracteres, y una columna nueva con su comentario la
+  // desbordó — el escáner se declaró CIEGO (bien) por prosa añadida, no por un cambio de modelo.
+  // Una ventana de tamaño fijo caduca sola: se recorta el MODELO, que es lo que se quería mirar.
+  const ini = schema.indexOf('model Invoice');
+  const fin = schema.indexOf('\n}', ini);
+  const inv = schema.slice(ini, fin === -1 ? schema.length : fin);
+  assert.ok(fin > ini, '🔴 ESCÁNER CIEGO: no se localiza el final del modelo `Invoice`');
   const m = /type\s+String\s+@default\("([^"]+)"\)/.exec(inv);
   assert.ok(m, '🔴 ESCÁNER CIEGO: no se localiza el `@default` de `Invoice.type` en el schema');
   assert.ok(

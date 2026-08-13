@@ -33,6 +33,7 @@ const SHELL = [
   '/dashboard/js/quotesTabs.js', // SCRUM-432
   '/dashboard/js/quotesListView.js',
   '/dashboard/js/quoteMargen.js',
+  '/dashboard/js/quoteSuplido.js',
   '/dashboard/js/quotesView.js',
   '/dashboard/js/quotesDetailView.js',
   '/dashboard/js/productsView.js',
