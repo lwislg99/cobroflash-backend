@@ -107,7 +107,8 @@ function openAiSuggestModal(addLinesFn) {
       // saldria pegado a la lista de conceptos. Un texto aprobado que se pinta de otra forma que la
       // aprobada no es el texto aprobado.
       avisoDesc.style.cssText = 'font-size:12.5px;font-weight:600;color:var(--warn,#b45309);margin:0 0 8px;white-space:pre-line';
-      // MICROCOPY OFICIAL, aprobada por el fundador el 13-ago-2026 (regla 30).
+      // MICROCOPY OFICIAL, aprobada por el fundador en SCRUM-507 · consta en
+      // `docs/master/SCRUM-507.md` (tercera entrega), con el texto literal (regla 30).
       //
       // El sujeto es «esto», no la lista: por eso la frase vale con un concepto y con diez, y el
       // fallo de concordancia que traia mi marcador —«cantidad y precio que no venia»— **no se
@@ -130,8 +131,9 @@ function openAiSuggestModal(addLinesFn) {
       // inventada por la IA era INDISTINGUIBLE de una que tecleo el profesional. El veredicto lo
       // da el servidor (`supuestos`), aqui solo se pinta.
       //
-      // MICROCOPY OFICIAL, aprobada por el fundador el 13-ago-2026 (regla 30). El sujeto es «esto»
-      // y la lista va detras de los dos puntos, asi que la frase concuerda con uno y con dos.
+      // MICROCOPY OFICIAL, aprobada por el fundador en SCRUM-507 · consta en
+      // `docs/master/SCRUM-507.md` (tercera entrega), con sus tres formas (regla 30). El sujeto es
+      // «esto» y la lista va detras de los dos puntos, asi que la frase concuerda con uno y con dos.
       var supuestos = Array.isArray(line.supuestos) ? line.supuestos : [];
       var camposSupuestos = supuestos.map(function (c) { return c === 'qty' ? 'cantidad' : 'precio'; }).join(' y ');
       item.style.cssText = 'display:flex;align-items:flex-start;gap:8px;background:var(--neutral-50);border:1px solid var(--neutral-200);border-radius:8px;padding:8px 10px;cursor:pointer;font-size:13px';
