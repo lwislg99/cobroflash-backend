@@ -52,6 +52,19 @@ const MARCA = '[PENDIENTE';
  * a otra tiene que verse, y un total lo escondería (la lección del suelo por FUNCIÓN de SCRUM-392).
  */
 const CENSO = Object.freeze({
+  // SCRUM-507 (13-ago-2026) · ENTRA A CONCIENCIA con 2, y el motivo es que **el mecanismo no
+  // existe sin texto**: son los dos avisos de lo que la IA no supo leer en el asistente de
+  // presupuesto.
+  //
+  //   +1 → la linea que NO se ha propuesto porque su IVA era ilegible, con su concepto. Sin este
+  //        aviso la linea desaparece en silencio, que es el mismo fallo mudo que cierra el ticket.
+  //   +1 → la marca por linea de «esta cantidad (o este precio) no venia y la hemos supuesto». Es
+  //        lo unico que distingue un numero que escribio el profesional de uno que se invento el
+  //        modelo, que es literalmente la condicion de cierre de SCRUM-507.
+  //
+  // Salen con marcador porque NO se inventa microcopy (regla 30), y aqui el texto no es cosmetico:
+  // separa «revisa este numero» de «esto esta mal». Bajan el dia que el fundador los firme.
+  'aiQuoteAssistant.js': 2,
   // SCRUM-294-a (12-ago-2026) · SUBIDA A CONCIENCIA: el campo del recargo de equivalencia en la
   // ficha del cliente sale con marcador en su rotulo y en sus tres opciones. Es deliberado y no
   // provisional por descuido: decirle en pantalla a que REGIMEN FISCAL pertenece su cliente es
@@ -63,6 +76,14 @@ const CENSO = Object.freeze({
   // encienda por descuido texto que el fundador no ha firmado. Se cuenta 1: los doce salen de una
   // sola constante `MARCA_MICROCOPY`, asi que aprobar el copy los apaga todos de golpe.
   'quoteActionsRegistry.js': 1,
+  // SCRUM-500 (12-ago-2026) · SUBIDA A CONCIENCIA: la casilla «Suplido» del editor de líneas sale
+  // con marcador en su rotulo, en su aviso y en el resumen del disparador. Y el aviso NO es
+  // decorativo: es el texto que evita un ERROR FISCAL en el segundo exacto en que se comete —
+  // marcar como suplido un material propio, que se compra para uno y se revende con su IVA. Que
+  // eso lo redacte el fundador (regla 30) es justo lo que hay que esperar, y mientras tanto se ve
+  // el marcador a proposito. Se cuenta 1: los tres textos salen de una sola constante
+  // `MARCADOR_MICROCOPY`, asi que aprobar el copy los apaga de golpe.
+  'quoteSuplido.js': 1,
   // SCRUM-404 (7-ago-2026) · SUBIDAS A CONCIENCIA, las dos, y con su motivo:
   //
   //   `albaranDetailView.js` +1 → el mensaje de «el servidor rechazó la firma». El fundador

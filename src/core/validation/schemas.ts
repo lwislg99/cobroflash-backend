@@ -17,6 +17,30 @@ const QuoteLineSchema = z.object({
       if (motivo) ctx.addIssue({ code: 'custom', message: `El IVA ${motivo}` });
     })
     .optional().default(0),
+  /**
+   * SCRUM-500 · LA MARCA DE SUPLIDO. Sin declararla aquí, `z.object` la BORRA en silencio —zod
+   * quita las claves que no conoce— y la casilla del editor no llegaría nunca a `Quote.lines`.
+   * Que falte significa «no es un suplido», que es lo que tienen todas las líneas de siempre.
+   */
+  suplido: z.boolean().optional(),
+}).superRefine((linea, ctx) => {
+  // 🔴 UN SUPLIDO NO LLEVA IVA, Y SE EXIGE EN LA PUERTA. La pantalla ya fuerza `tax: 0`
+  // (`quoteSuplido.js`), pero la pantalla no es la única que llama a esta ruta: quedarse solo con
+  // el front deja el impuesto sobre el impuesto a un `curl` de distancia.
+  //
+  // Y NO se corrige a 0 por las buenas: un payload que marca suplido y a la vez pide cobrar IVA
+  // está diciendo dos cosas contradictorias, y elegir cuál de las dos era la buena es inventar.
+  // Se rechaza nombrando la línea, que es lo que permite arreglarla.
+  if (linea.suplido === true && Number(linea.tax) !== 0) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['tax'],
+      message:
+        `Un suplido no lleva IVA: «${linea.concept}» viene marcada como suplido y con un IVA del ` +
+        `${Math.round(Number(linea.tax) * 100)} %. Un suplido es lo que se paga POR CUENTA del ` +
+        'cliente y se le repercute tal cual: repercutirle IVA es cobrar impuesto sobre impuesto.',
+    });
+  }
 });
 
 const QuoteTierSchema = z.object({

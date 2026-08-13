@@ -76,7 +76,9 @@ function montar(lineasAlbaran) {
   return cap;
 }
 
-const REQ = { params: { id: '1' }, body: {}, merchantId: 1, userRole: 'admin', user: { id: 1 } };
+// SCRUM-510 · merchant 7, el MISMO que devuelve `p.merchant` arriba. Estaba en 1 —el DEMO— y
+// el guard de SCRUM-409 lo eximía por el comentario que explica que este fichero lo evita.
+const REQ = { params: { id: '1' }, body: {}, merchantId: 7, userRole: 'admin', user: { id: 1 } };
 
 const LINEA_QUE_CASA = { concepto: 'Tubo multicapa 16mm', cantidad: 3, unidad: 'm', quoteLineIndex: 0 };
 
@@ -124,7 +126,10 @@ test('SCRUM-290 · CONTROL POSITIVO: con líneas fuera, se crea el adicional y l
 
     // ENGANCHADO AL TRABAJO (SCRUM-195): aceptarlo NO crea un segundo Trabajo.
     assert.equal(cap.adicionalCreado.jobId, 1, 'sin `jobId` sería un presupuesto suelto, no un adicional');
-    assert.equal(cap.adicionalCreado.merchantId, 1, 'tenencia (regla 2)');
+    // 🔴 SCRUM-510 · la expectativa se DERIVA del `REQ`, no se escribe un número. Estaba clavada a
+    // `1` —el merchant DEMO— y por eso cambiar el fixture la rompía: medía el número, no el hecho.
+    // Lo que hay que comprobar es que el adicional hereda la tenencia DE LA PETICIÓN (regla 2).
+    assert.equal(cap.adicionalCreado.merchantId, REQ.merchantId, 'tenencia (regla 2)');
     // NACE EN `draft`: no se manda solo, porque sus líneas no tienen precio todavía.
     assert.equal(cap.adicionalCreado.status, 'draft');
     assert.equal(cap.adicionalCreado.total, '0.00');

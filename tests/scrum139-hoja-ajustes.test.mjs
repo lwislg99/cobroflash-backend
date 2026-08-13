@@ -97,9 +97,21 @@ test('SCRUM-139 F4: no vuelven los selectores de tabla que F1 dejó muertos', ()
 
 test('SCRUM-139 F4: el disparador dice lo que esconde y no se disfraza de "crear"', () => {
   assert.ok(/quote-line__ajustes/.test(src), 'desaparece el disparador de la hoja: margen e IVA quedarían inalcanzables');
+  // SCRUM-500: la composición del rótulo se mudó a `resumenAjustes` (quoteSuplido.js) para que una
+  // línea de suplido lo DIGA desde fuera — «IVA 0 %» a secas confunde un suplido con una línea
+  // exenta, y no son lo mismo. La garantía es la MISMA y sigue siendo estructural; lo que cambia
+  // es que ahora vive en dos ficheros: la vista tiene que LLAMARLA, y la función tiene que
+  // componer los dos datos. El COMPORTAMIENTO (qué texto sale en cada caso) lo prueba
+  // `scrum500-suplidos.test.mjs` sobre la función pura, que es más de lo que este guard de forma
+  // podía exigir cuando el texto se armaba dentro de la vista.
+  const puro = leerFuente(path.join(raiz, 'public', 'dashboard', 'js', 'quoteSuplido.js'));
   assert.ok(
-    /resumen\.push\("Margen/.test(src) && /"IVA " \+ safeVat/.test(src),
+    /line\.ajustesBtn\.textContent = resumenAjustes\(/.test(src),
     'el disparador deja de resumir IVA y margen: obligaría a abrir la hoja línea por línea solo para consultarlos'
+  );
+  assert.ok(
+    /partes\.push\('Margen /.test(puro) && /'IVA ' \+ ivaPerc/.test(puro),
+    'el resumen del disparador deja de componer IVA y margen: el rótulo se quedaría mudo'
   );
   const chip = css.slice(css.indexOf('.quote-line__ajustes {'), css.indexOf('.quote-line__ajustes:hover'));
   assert.ok(

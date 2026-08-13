@@ -68,7 +68,20 @@ const R = analizar(RAIZ);
 // SCRUM-294 (fase B): BAJA de 8 a 7. `criterioCaja` deja de ser inalcanzable -- lo consume
 // `devengoPorCaja.ts`, que decide que fecha devenga, y ese lo consume el libro de registro.
 // El trinquete solo baja: si alguien cablea otro, baja otra vez en el mismo commit.
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 7;
+//
+// 🔴 7 → 8 · 12-ago-2026 · SCRUM-500. SUBIDA A CONCIENCIA, y es la tercera del mismo bloque
+// fiscal: `src/modules/invoicing/domain/suplidos.ts` se une a `retencionIrpf.ts` (A2) y
+// `recargoEquivalencia.ts` (A3) — las tres construidas, probadas y sin llamador POR EL MISMO
+// GATE, que no es deuda: cablear cualquiera de ellas cambia la base o el total que se SELLAN, y
+// eso es camino de emisión (regla 38), con GO explícito del fundador y el diff delante.
+//
+// ⚠️ Y este número subiendo dice algo que conviene no perder: **el bloque fiscal A2/A3 lleva tres
+// piezas esperando el mismo permiso**. Si en vez de subirlo se hubiera cableado a la fuerza para
+// no tocar el trinquete, se habría saltado un STOP para que un contador quedara bonito — que es
+// exactamente lo que la cabecera de arriba prohíbe.
+//
+// **Baja a 7 el commit que le ponga consumidor**, y ese commit es el cable de A2-c.
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 8;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 
