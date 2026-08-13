@@ -133,3 +133,144 @@ un daño diario que no existe. Lo real:
 
 Ni un fichero normalizado · `.gitattributes` sin cambiar · el experimento entero en un **clon
 desechable** del scratchpad · ninguna redirección sobre ficheros del repo.
+
+---
+
+# SCRUM-480 (fase 2) · El mecanismo, y por qué renormalizar no bastaba
+
+**Fecha:** 13-ago-2026 · **Carril:** higiene · **Gate:** sin gate, corre en `npm test`
+
+**Medido contra:** `origin/main` = `1237240417ffa623c0def283d8c4603db4b02e96` · 2026-08-13T11:09:57+02:00
+
+> La fase 1 midió y **no tocó nada**. Ésta pone el mecanismo. Y trae dos correcciones a lo que la
+> propia fase 1 dejó dicho — las dos salieron de medir, no de repensarlo.
+
+## 1 · El censo, un día después: **12 → 11**, y el que falta lo dice todo
+
+Mismo instrumento (blobs, no árbol de trabajo), población declarada: **1.700 ficheros rastreados**.
+
+| | ayer (fase 1) | hoy |
+| --- | --- | --- |
+| `public/dashboard/js/` | 10 | **9** |
+| `src/modules/products/domain/products.service.ts` | 1 | **1** |
+| `docs/legal/fuentes/aeat-errores.properties` (declarado `-text`) | 1 | 1 |
+
+**El que falta es `settingsView.js`**, y desapareció **hoy**: la sesión 1 se lo encontró
+conflictuando entero al mergear `main` y lo resolvió tomando la versión de `main` y reaplicando sus
+cuatro cambios encima. Al hacerlo, el blob quedó en LF.
+
+> **Estos ficheros no se están arreglando: se están cobrando.** Cada uno sale de la lista el día que
+> le cuesta media hora a alguien. Van 12 → 11 a ese precio.
+
+### El criterio de «texto», y por qué no hace falta lista de binarios
+
+El guard no clasifica por extensión: **un blob es texto si no contiene ningún byte NUL**. Medido
+sobre los 1.700: ese criterio deja fuera los 213 PNG/PDF/iconos que contienen CR por casualidad **y
+también** `estructura.txt` y `estructura-completa.txt`, que son **UTF-16LE** (BOM `FF FE`, salida de
+PowerShell) y por eso están llenos de NUL. Cero acusaciones en falso, sin enumerar nada.
+
+## 2 · 🔴 CORRECCIÓN A LA FASE 1: el daño no es el diff, es el MERGE
+
+La fase 1 midió que un cambio de una línea produce un diff de una línea incluso en estos ficheros, y
+concluyó **«no hay daño diario»**. El diff estaba bien medido; **la conclusión estaba mal**, porque
+midió la operación equivocada. El daño aparece cuando **dos ramas tocan el mismo fichero desde
+editores distintos**, que es lo que pasó hoy:
+
+| | rama A (editor guarda LF) | rama B (editor guarda CRLF) | al mergear |
+| --- | --- | --- | --- |
+| **hoy** (blob CRLF, sin reglas) | 168 ↔ 168 | 208 ↔ 208 | 🔴 **CONFLICTO** |
+| solo renormalizado | **1 ↔ 1** | 376 ↔ 376 | 🔴 **CONFLICTO** |
+| renormalizado **+ `.gitattributes`** | **1 ↔ 1** | **1 ↔ 1** | ✅ limpio |
+
+Medido en repos desechables del scratchpad con el contenido REAL de `templatesView.js` y ediciones
+**por número de línea** — no por búsqueda de texto: el primer intento usaba `replace('use strict')`,
+que **no casaba con el fichero**, y producía «un cambio» que era solo la conversión de saltos. Un
+vector que no cambia nada mide otra cosa.
+
+**El conflicto de la fila 1 cubre el 89 % del fichero** (337 líneas de 377). Eso es «conflictuando
+entero», con número.
+
+## 3 · 🔴 LA FILA 2 ES EL HALLAZGO: renormalizar SOLO no arregla nada
+
+Con el blob ya en LF pero sin reglas en el repo, **el primer commit desde un editor de Windows lo
+devuelve a CRLF entero** (376 ↔ 376) y el conflicto vuelve. La renormalización sin `.gitattributes`
+es un arreglo de una vez que se deshace solo — exactamente lo que el encargo excluía.
+
+## 4 · Y `* text=auto` NO basta, por un `\r\r\n`
+
+La fase 1 ya vio que 10 ficheros llevan un CR suelto y que git los clasifica `-text`. Lo que faltaba
+era **qué son esos CR** y **qué le hacen al arreglo**:
+
+```
+  <div class="modal" style="max-width:480px">\r\r\n        <div class="modal-body">\r\n
+                                             ↑↑
+                            CR CR LF: el fichero se convirtió DOS VECES
+```
+
+Es la firma de una doble conversión, y tiene una consecuencia que decide el ticket: **el filtro de
+git no es idempotente sobre `\r\r\n`**. Cada pasada se come un CR — `\r\r\n` → `\r\n` → `\n` — así
+que un fichero normalizado una vez **vuelve a cambiar en el commit siguiente**. Medido en el
+laboratorio, con el contenido real:
+
+| `.gitattributes` | fichero con `\r\r\n` | el mismo, con los CR ya quitados |
+| --- | --- | --- |
+| `* text=auto` | 🔴 no lo toca (lo ve binario) | ✅ converge e idempotente |
+| `*.js text eol=lf` | 🔴 converge **no**, idempotente **no** | ✅ converge e idempotente |
+
+**Por eso la renormalización quita TODOS los CR**, no solo los que forman pareja. Son 1-2 bytes por
+fichero, dentro de una plantilla HTML, invisibles al render — y `git diff --ignore-all-space` sigue
+saliendo vacío, que es el control negativo que exigía el ticket.
+
+## 5 · El mecanismo, y el orden importa
+
+```gitattributes
+* text=auto          ← PRIMERO: en .gitattributes manda la ÚLTIMA línea que casa
+*.js text            ← EXPLÍCITO: `text=auto` se rinde ante un CR suelto, y en silencio
+…
+docs/legal/fuentes/aeat-errores.properties -text   ← al final, para que gane
+```
+
+El `text` explícito por extensión no es cinturón y tirantes: **es lo que impide que el arreglo se
+apague solo**. Si mañana alguien vuelve a colar un `\r\r\n`, con `text=auto` a secas git decidiría
+que el fichero es binario y dejaría de normalizarlo **sin decir nada**. Con `text` explícito, la
+detección no participa.
+
+## 6 · El control que pidió el fundador, y por qué el primero salió hueco
+
+> *un fichero de esa carpeta editado desde Windows y desde Linux produce el MISMO blob*
+
+Se mide con `git hash-object --stdin --path=<ruta>` sobre el mismo contenido en CRLF y en LF.
+
+🔴 **El primer intento dio verde por el motivo equivocado.** Esta máquina tiene
+`core.autocrlf=true` a nivel *system*, así que la igualdad la producía **la configuración del
+ordenador**, no las reglas del repo — que es justo lo que el ticket quiere quitar de en medio. El
+instrumento del guard lleva **`-c core.autocrlf=false`**: así solo `.gitattributes` puede hacer que
+los dos blobs coincidan.
+
+Con la config neutralizada, los tres casos ANTES del arreglo:
+
+| ruta de prueba | ¿mismo blob? | qué demuestra |
+| --- | --- | --- |
+| `public/dashboard/js/x.js` | 🔴 **no** | el defecto, sin la máquina de por medio |
+| `scripts/algo.sh` | ✅ **sí** | **control positivo**: el instrumento SABE dar igualdad — un «no» suyo es un dato, no una avería |
+| `docs/legal/fuentes/aeat-errores.properties` | 🔴 **no**, y así debe seguir | el fichero sellado byte a byte sigue protegido |
+
+## 7 · Lo que toca este PR — para elegir el momento de mergear
+
+**10 ficheros de contenido**, todos solo en sus finales de línea:
+
+```
+public/dashboard/js/   aiQuoteAssistant · customerDetailView · jobDetailView · plansView
+                       productsView · providersView · quotesView · teamView · templatesView
+src/modules/products/domain/products.service.ts
+```
+
+⚠️ **Cualquier rama viva sobre uno de esos diez conflictuará entero al mergear esto.** No hay forma
+de evitarlo: es el mismo mecanismo del §2, una vez y en sentido contrario. Lo que sí puede elegirse
+es CUÁNDO. Los otros tres ficheros (`.gitattributes`, el guard y esta entrada) no chocan con nada.
+
+## 8 · Lo que NO toca
+
+Ningún fichero generado · el camino de emisión · `prisma/schema.prisma` · `public/index.html` ·
+la configuración de git de ninguna máquina — el arreglo vive en el repo, que es el punto entero ·
+`aeat-errores.properties`, protegido por su `-text` y con control negativo en el guard.
