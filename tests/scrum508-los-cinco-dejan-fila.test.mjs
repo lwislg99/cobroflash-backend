@@ -81,6 +81,21 @@ test('SCRUM-508 · 🔴 AUTOPRUEBA: el censo distingue una llamada CON contexto 
     + 'y la tabla seguiría medio llena.');
   assert.deepEqual(ve('await enviarPorResend({ to, registro });'), ['CON'],
     '🔴 no reconoce la forma abreviada `registro` — es la misma propiedad.');
+  assert.deepEqual(ve('await enviarCorreo({ to, registro: params.registro });'), ['CON'],
+    '🔴 no reconoce un contexto que llega por referencia; ahí lo garantiza el TIPO.');
+
+  // 🔴 EL AGUJERO QUE ME DESTAPÓ UNA MUTACIÓN, y es el que decide si este censo vale.
+  //
+  // La primera versión contaba que la propiedad EXISTIERA. Se mutó un emisor a `registro: null`
+  // —exactamente cómo dejaría de dejar fila— y **el censo siguió diciendo 6**: atado a la FORMA en
+  // vez de al HECHO, en el propio censo que vigila eso. Ahora mira el VALOR.
+  assert.deepEqual(ve('await enviarCorreo({ to, subject, html, registro: null });'), ['SIN'],
+    '🔴 EL CENSO CUENTA LA PRESENCIA DE `registro`, NO QUE LLEVE CONTEXTO.\n\n'
+    + '  `registro: null` es `sin_contexto` para `registrarEnvio`: no escribe NADA. Si esto pasa por\n'
+    + '  bueno, un emisor puede dejar de dejar fila y el censo seguirá diciendo que son seis — que es\n'
+    + '  el verde falso exacto que este aserto existe para impedir.');
+  assert.deepEqual(ve('await enviarCorreo({ to, registro: undefined });'), ['SIN'],
+    '🔴 un `undefined` explícito tampoco lleva contexto.');
 
   // 🔴 EL CASO QUE NO SE PUEDE AFIRMAR, y se dice en vez de suponerse: si el objeto llega por
   // variable o por spread, el AST no puede ver dentro. `INDIRECTO` no es «CON»: es «no lo sé».

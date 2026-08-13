@@ -66,7 +66,20 @@ export function censarLlamadasDeTexto(texto, nombreFichero = 'sintetico.ts') {
       if (arg && ts.isObjectLiteralExpression(arg)) {
         for (const p of arg.properties) {
           if ((ts.isPropertyAssignment(p) || ts.isShorthandPropertyAssignment(p))
-              && p.name && p.name.getText(sf) === 'registro') conRegistro = true;
+              && p.name && p.name.getText(sf) === 'registro') {
+            // 🔴 EL VALOR, NO LA PRESENCIA. La primera versión de esto contaba que la propiedad
+            // EXISTIERA, y se probó con la mutación `registro: null` — que es exactamente cómo un
+            // emisor dejaría de dejar fila— y **el censo siguió diciendo 6**. Atado a la forma en vez
+            // de al hecho, en el propio censo. Lo destapó el rojo, no una relectura.
+            //
+            // Un `null` o un `undefined` explícitos NO llevan contexto: `registrarEnvio` los trata
+            // como `sin_contexto` y no escribe nada. Lo que sí lo lleva es un objeto literal o una
+            // referencia (`params.registro`, `ctx`), y en ese caso lo garantiza el TIPO.
+            const valor = ts.isShorthandPropertyAssignment(p) ? p.name : p.initializer;
+            const nulo = valor.kind === ts.SyntaxKind.NullKeyword
+              || (ts.isIdentifier(valor) && valor.text === 'undefined');
+            if (!nulo) conRegistro = true;
+          }
           if (ts.isSpreadAssignment(p)) porSpread = true;
         }
       } else if (arg) {
