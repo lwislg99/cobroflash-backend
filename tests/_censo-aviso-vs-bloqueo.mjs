@@ -45,6 +45,77 @@ function ficherosTs(dir, out = []) {
  */
 const huella = (s) => crypto.createHash('sha256').update(s.replace(/\s+/g, ' ').trim()).digest('hex').slice(0, 16);
 
+/**
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * 🔴 SCRUM-509 · LA HUELLA ABARCABA MÁS DE LO QUE PROMETE, Y COBRABA PEAJE
+ *
+ * Era el texto del bloque `if` ENTERO. El bloque incluye la plomería —cómo se captura el resultado
+ * del envío, cómo se llama la variable, el `continue`— y esas cosas **no son promesas**. Resultado
+ * medido: un renombrado de variable local (`r` → `resultado`), sin tocar ni un asunto, ni un
+ * cuerpo, ni un botón, ni una condición, movía la huella y el guard saltaba diciendo
+ * «UN AVISO DEL CICLO DE VIDA HA CAMBIADO». Dos días rehaciendo huellas por eso.
+ *
+ * Este guard es de los buenos y no se afloja: se ESTRECHA AL HECHO que dice vigilar. La huella pasa
+ * a ser de las CINCO PIEZAS que forman la promesa, extraídas del AST:
+ *
+ *   · CUÁNDO   — la condición del `if` (`isTrial && age >= 12 && !alreadySent(m, 'day12')`)
+ *   · A QUIÉN  — el destinatario (1.er argumento de `sendEmail`)
+ *   · ASUNTO   — el 2.º argumento de `sendEmail`
+ *   · CUERPO   — el 1.er argumento de `wrap`
+ *   · BOTÓN    — el 2.º argumento de `wrap` (`{ label, url }`)
+ *
+ * 🔴 Y LO QUE DEJA DE CUBRIR NO SE PIERDE, está MEDIDO: la plomería que sale de aquí —que `markSent`
+ * dependa del resultado del envío— la vigila `tests/scrum475-ignoran-el-resultado.test.mjs:499`
+ * sobre el fichero REAL y con su propio suelo (≥7 llamadas), y encima con más precisión que esta
+ * huella, que solo sabía decir «algo cambió». No hay hueco: hay dos guards, cada uno en lo suyo.
+ *
+ * ⚠️ Si alguna pieza no aparece, NO se compone una huella a medias: se devuelve el motivo y el
+ * guard falla declarándose ciego. Una huella incompleta daría verde sobre un aviso sin mirar.
+ *
+ * 🔴 NO SE USAN POSICIONES DE ARGUMENTO, y me mordió escribiéndolo: la primera versión daba por
+ * hecho `sendEmail(destinatario, asunto, html)` y SCRUM-508 ya le había metido el `merchantId`
+ * delante — o sea que la huella se habría quedado **sin el asunto**, la promesa más visible, sin
+ * que nada lo dijera. Se toman TODOS los argumentos del envío MENOS el cuerpo (que entra por
+ * `wrap`), así que una firma nueva no puede dejar una promesa fuera en silencio.
+ */
+function piezasDeLaPromesa(bloque, sf) {
+  let envio = null;
+  let envoltura = null;
+  let variableDelCuerpo = null;
+  (function rec(n) {
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression)) {
+      if (n.expression.text === 'sendEmail' && !envio) envio = n;
+      if (n.expression.text === 'wrap' && !envoltura) {
+        envoltura = n;
+        // `const html = wrap(...)` — el nombre con el que el cuerpo viaja hasta el envío.
+        const decl = n.parent;
+        if (decl && ts.isVariableDeclaration(decl) && ts.isIdentifier(decl.name)) {
+          variableDelCuerpo = decl.name.text;
+        }
+      }
+    }
+    ts.forEachChild(n, rec);
+  })(bloque);
+
+  // Del envío entra TODO menos el cuerpo: a quién, con qué contexto y con qué asunto se manda son
+  // partes de la promesa. Lo que queda fuera de la huella es la PLOMERÍA — cómo se captura el
+  // resultado, cómo se llama la variable, el `continue`—, que no promete nada al usuario.
+  const argsDelEnvio = envio
+    ? envio.arguments
+      .filter((a) => !(ts.isIdentifier(a) && a.text === variableDelCuerpo))
+      .map((a) => a.getText(sf))
+    : null;
+
+  const piezas = {
+    cuando: bloque.expression ? bloque.expression.getText(sf) : null,
+    envio: argsDelEnvio && argsDelEnvio.length ? argsDelEnvio.join('␟') : null,
+    cuerpo: envoltura && envoltura.arguments[0] ? envoltura.arguments[0].getText(sf) : null,
+    boton: envoltura && envoltura.arguments[1] ? envoltura.arguments[1].getText(sf) : null,
+  };
+  const faltan = Object.entries(piezas).filter(([, v]) => v === null).map(([k]) => k);
+  return { piezas, faltan };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // CENSO A · LOS AVISOS DEL EVALUADOR DIARIO
 //
@@ -96,14 +167,19 @@ export function censarAvisos(codigo) {
       if (wraps.length > 1) break; // subimos demasiado: el `if` de arriba ya abarca varios avisos
     }
     if (!bloque) {
-      return { clave, linea: linea(nodo), bloqueEncontrado: false, envolturas, huella: null };
+      return { clave, linea: linea(nodo), bloqueEncontrado: false, envolturas, huella: null, faltan: [] };
     }
+    // SCRUM-509 · la huella es de la PROMESA, no del bloque entero.
+    const { piezas, faltan } = piezasDeLaPromesa(bloque, sf);
     return {
       clave,
       linea: linea(bloque),
       bloqueEncontrado: true,
       envolturas,
-      huella: huella(bloque.getText(sf)),
+      faltan,
+      piezas,
+      huella: faltan.length ? null
+        : huella([piezas.cuando, piezas.envio, piezas.cuerpo, piezas.boton].join('␟')),
     };
   });
 
