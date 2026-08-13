@@ -377,3 +377,36 @@ commitea.
 
 ⚠️ Al mergear, el primer `git checkout` de cada quien **reescribe su árbol de trabajo a LF**. Los
 blobs no cambian y `git status` sigue limpio: lo que cambia es lo que hay en el disco.
+
+## 7 · Lo que quedó fuera, y por qué el guard no lo persigue
+
+Tras rematerializar el árbol (**1.465 ficheros de CRLF a LF en disco**, blobs intactos, `git status`
+limpio) quedan **20 con `\r`**, y **ninguno está en una regla `eol=lf`**:
+
+| | |
+| --- | --- |
+| fuente ajena, se guarda tal cual | los **6 `.xsd`** de la AEAT · `aeat-errores.properties` |
+| sin regla y sin motivo para tenerla | 5 `.toml` · 2 `.xml` · 1 `.ps1` · `LICENSE` · `CODEOWNERS` · `.gitignore` · el propio `.gitattributes` |
+
+El guard vigila **exactamente lo que `.gitattributes` promete**, y la lista de extensiones la
+**deriva de él** (`extensionesConEolLf`) en vez de copiarla. Perseguir el resto sería acusar a
+ficheros a los que nadie ha prometido LF — y un guard que acusa en falso no se corrige: se apaga.
+
+## 8 · El rojo, y una pérdida de trabajo que cuenta el ticket entero
+
+**Rojo** (SHA de la red: `2d82ade11e6868c3d70d29435cbc4ae5023471c1`): se pasa `app.js` a CRLF **en
+disco** y el guard cae nombrándolo. Revertido borrando y pidiéndolo de vuelta — y volvió **en LF**,
+que es el `eol=lf` funcionando de punta a punta.
+
+🔴 **Y antes de eso perdí dos ediciones sin commitear.** El script que rehace el árbol borra cada
+fichero con `\r` y lo pide de vuelta a git; entre esos ficheros estaban **el propio
+`.gitattributes` y el helper que acababa de editar**. Se llevó los dos, y además dejó el arreglo sin
+efecto: sin el `.gitattributes` nuevo, el checkout devolvió CRLF **1.465 de 1.465**. El síntoma
+—«no ha funcionado»— no apuntaba a la causa.
+
+> Es la regla de siempre en su cara más tonta: **lo que no está commiteado no sobrevive a un
+> `checkout --`, y el fichero que estás editando en ese momento es justo el que se olvida.** La
+> segunda vez fue con todo commiteado y funcionó a la primera.
+
+**Suite entera, con el árbol ya en LF: 3.617 tests · 3.540 pasan · 0 fallos · 77 saltados.** Es la
+primera vez que la suite corre en esta máquina sobre texto en LF: **ningún guard dependía del CRLF.**
