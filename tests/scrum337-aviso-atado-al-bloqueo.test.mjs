@@ -22,7 +22,7 @@
 // este defecto.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// POR QUÉ LA HUELLA ES DEL BLOQUE ENTERO Y NO DEL TEXTO
+// POR QUÉ LA HUELLA ES DE LA PROMESA Y NO DEL TEXTO
 //
 // Un guard que mirase el texto («que no diga panel») sería un guard de TEXTO: se cazaría a sí
 // mismo en el comentario que explica la prohibición —este fichero la contiene— y se esquivaría
@@ -31,8 +31,11 @@
 //
 // Y sobre todo: **no me corresponde leer el texto**. La huella solo sabe decir «cambió / no
 // cambió», que es todo lo que hace falta para forzar la revisión y todo lo que se puede afirmar
-// sin invadir la microcopy del fundador. Cubre condición (`age >= 12`), asunto, cuerpo y botón,
-// porque las cuatro cambian lo que el usuario entiende que va a pasarle.
+// sin invadir la microcopy del fundador. Cubre CUÁNDO se manda (`age >= 12`), a quién y con qué
+// asunto, el cuerpo y el botón, porque todas cambian lo que el usuario entiende que va a pasarle.
+//
+// ⚠️ Hasta SCRUM-509 la huella era del BLOQUE ENTERO, y eso la hacía saltar con cualquier cambio de
+// plomería. Ver la nota de SCRUM-509 más abajo: se estrechó al hecho, no se aflojó.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // LOS DOS CENSOS SON DERIVADOS. NINGUNA LISTA A MANO.
@@ -51,6 +54,19 @@ import {
   censarAvisos, censarEjecucionDelVencimiento, censarBorrados,
   FICHERO_AVISOS, EVALUADOR_DIARIO, GATE_DEL_VENCIMIENTO,
 } from './_censo-aviso-vs-bloqueo.mjs';
+
+// 🔴 SCRUM-509 · LA HUELLA SE ESTRECHA AL HECHO, y aquí está por qué no es aflojarla.
+//
+// Era del bloque `if` ENTERO, o sea que incluía la PLOMERÍA: cómo se captura el resultado del
+// envío, cómo se llama la variable, el `continue`. Medido con el guard puesto: renombrar `r` a
+// `resultado` —sin tocar asunto, cuerpo, botón ni condición— movía la huella y este guard saltaba
+// diciendo que un aviso había cambiado. Dos días rehaciendo huellas por eso, y un guard que cobra
+// peaje por código correcto acaba apagado por alguien que lo relaja «solo esta vez».
+//
+// Ahora la huella es de las CINCO piezas de la promesa: cuándo · a quién · asunto · cuerpo · botón.
+// Lo que sale de la huella —que `markSent` dependa del resultado— NO queda sin vigilar: lo cubre
+// `tests/scrum475-ignoran-el-resultado.test.mjs:499` sobre el fichero real y con su propio suelo,
+// y con más precisión que una huella que solo sabía decir «algo cambió». Está medido, no supuesto.
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -92,17 +108,40 @@ const borrados = censarBorrados(path.join(RAIZ, 'src'));
 // dicen lo mismo que decían y AHORA además solo se dan por dichas cuando salen.
 //
 // Las ataduras (`censo de montajes`, `censo de borrados`) no se han tocado y siguen verdes.
+//
+// ── HUELLAS REHECHAS OTRA VEZ EL 13-ago-2026 · SCRUM-508 (los cinco emisores dejan fila) ──
+//
+// Las cinco se movieron a la vez, por segundo día consecutivo, y este guard volvió a hacer lo que
+// existe para hacer. Mirado, y lo único que cambia en cada bloque es UN ARGUMENTO:
+//
+//   `await sendEmail(m.email, '<asunto>', html)`  →  `await sendEmail(m.id, m.email, '<asunto>', html)`
+//
+// El `merchantId` entra para que el correo deje fila en `email_messages` (SCRUM-508). NINGÚN asunto,
+// NINGÚN cuerpo, NINGÚN botón y NINGUNA condición cambian — comprobado en el diff, filtrando por
+// `wrap(`, `label:`, `url:`, `age >=`, `isTrial`, `quoteCount` y `recent ===`: solo salen las siete
+// líneas del `sendEmail`. Las cinco promesas dicen exactamente lo que decían.
+//
+// ── 🔴 Y REHECHAS UNA TERCERA VEZ EL 13-ago-2026 · SCRUM-509 — pero por un motivo DISTINTO ──
+//
+// Las dos veces anteriores se movieron porque cambió el CÓDIGO. Esta vez **no ha cambiado ni una
+// línea de `lifecycle.service.ts`**: lo que ha cambiado es el CRITERIO con el que se calcula la
+// huella, que ha pasado del bloque entero a las piezas de la promesa (ver la nota de arriba). Por
+// eso los cinco valores son nuevos aunque los cinco correos digan exactamente lo mismo.
+//
+// Es la última vez que se mueven sin que cambie una promesa: el peaje que las movía —la plomería—
+// ya no entra en el cálculo, y hay un control positivo que exige que las cinco promesas SÍ sigan
+// moviéndolas, una a una, con el fixture derivado del propio fichero.
 const CORRESPONDENCIA = {
   // SCRUM-337 · TEXTO CORREGIDO. Antes: «lo tienes precargado por oficio», afirmado sin condición
   // y dependiente de cuatro (oficio · que no sea «otro» · no desmarcar la casilla · que la carga
   // no falle en silencio → SCRUM-338). Ahora no afirma el estado del usuario y apunta a Productos.
   // ATADURA: promete que en Productos se pueden añadir servicios — o sea que esa escritura NO
   // caduca. Lo vigila el censo de montajes: el día que alguien gatee productos, salta.
-  day3:         { estado: 'ATADO', ticket: null, atadura: 'censo de montajes', huella: '938dc19be16799fe' },
+  day3:         { estado: 'ATADO', ticket: null, atadura: 'censo de montajes', huella: 'f5e5148e8d5ddd92' },
 
   // «Tu prueba expira en unos 7 días» — un hecho, y además EXACTO: la prueba es de 14 días
   // (`auth.service.ts:301`) y el aviso sale con `age >= 7`. No promete qué pasa después.
-  day7:         { estado: 'SIN_CONSECUENCIA', ticket: null, atadura: null, huella: 'fd41c565b37e492e' },
+  day7:         { estado: 'SIN_CONSECUENCIA', ticket: null, atadura: null, huella: '9e11eaade1872fe3' },
 
   // SCRUM-337 · TEXTO CORREGIDO. Antes: «perderías el acceso a tu panel», y el panel no se pierde.
   // ATADURA: el texto enumera exactamente lo que caduca, y eso son los 4 montajes de
@@ -110,15 +149,15 @@ const CORRESPONDENCIA = {
   // y el censo de montajes salta.
   // ⚠️ La enumeración de lo que SIGUE funcionando no usa el posesivo del documento fiscal: el
   // trinquete de SCRUM-299 (Parte M) lo caza como promesa, y tenía razón (reglas 24/26).
-  day12:        { estado: 'ATADO', ticket: null, atadura: 'censo de montajes', huella: '624cb7cc1a5b2de4' },
+  day12:        { estado: 'ATADO', ticket: null, atadura: 'censo de montajes', huella: 'c4b11c8cfefc3175' },
 
   // «tus datos siguen aquí» — cierto. ¿Atado a qué? A que NADA los borra, que es una AUSENCIA.
   // Por eso la atadura es el censo de borrados de abajo (forma + sitio): sin él, esto sería
   // «verde por ausencia» y una purga por inactividad rompería el claim sin que nadie se enterase.
-  trialExpired: { estado: 'ATADO', ticket: null, atadura: 'censo de borrados', huella: '77d89728606a44a1' },
+  trialExpired: { estado: 'ATADO', ticket: null, atadura: 'censo de borrados', huella: '0626829dfe9f8ddb' },
 
   // Reenganche puro: no menciona prueba, plan ni bloqueo.
-  inactive:     { estado: 'SIN_CONSECUENCIA', ticket: null, atadura: null, huella: 'b52d95a732f66dfc' },
+  inactive:     { estado: 'SIN_CONSECUENCIA', ticket: null, atadura: null, huella: '3f8a2aa6feb71efa' },
 };
 
 // Los borrados del árbol, congelados por identidad (fichero + modelo.método + nº de ocurrencia),
@@ -174,6 +213,18 @@ test('SCRUM-337 · SUELO ① el censo de avisos ve el evaluador diario y emparej
     '\n\n  El censo busca el `if` más cercano que contenga exactamente UNA plantilla de correo. Si\n' +
     '  no lo encuentra, la estructura del evaluador ha cambiado y el emparejamiento ya no es\n' +
     '  fiable. Emparejar «a ojo» sería inventarse el censo: arregla el derivador.');
+
+  // 🔴 SCRUM-509 · la huella se compone de CINCO piezas (cuándo · a quién · asunto · cuerpo ·
+  // botón). Si alguna no aparece, NO se compone a medias: el aviso se queda sin huella y aquí se
+  // declara ciego. Una huella incompleta daría verde sobre un aviso sin mirar.
+  const incompletos = avisosDerivados.avisos
+    .filter((a) => a.bloqueEncontrado && a.faltan && a.faltan.length)
+    .map((a) => `${a.clave} (línea ${a.linea}): falta ${a.faltan.join(', ')}`);
+  assert.deepEqual(incompletos, [],
+    '🔴 NO SE HAN PODIDO EXTRAER LAS PIEZAS DE LA PROMESA:\n    ' + incompletos.join('\n    ') +
+    '\n\n  La huella cubre cuándo se manda, a quién, el asunto, el cuerpo y el botón. Si el aviso\n' +
+    '  dejó de usar `sendEmail` o `wrap`, la extracción ya no es fiable: arregla el derivador en\n' +
+    '  vez de dejar que ese aviso pase sin huella.');
 });
 
 test('SCRUM-337 · SUELO ② el censo de ejecución ve el gate y la superficie de escritura', () => {
@@ -206,6 +257,72 @@ test('SCRUM-337 · todo aviso derivado está clasificado, y toda clasificación 
     '🔴 LA CLASIFICACIÓN NOMBRA AVISOS QUE YA NO EXISTEN: ' + fantasmas.join(', ') +
     '\n\n  Se ha borrado o renombrado un correo. Si de verdad ya no se manda, quítalo de\n' +
     '  CORRESPONDENCIA en el mismo commit: un censo que describe correos ausentes deja de medir.');
+});
+
+test('SCRUM-337 · 🔴 CONTROL POSITIVO (SCRUM-509): la huella SIGUE cazando las cinco promesas', () => {
+  // 🔴 EL TEST QUE DECIDE SI SCRUM-509 ES UN ARREGLO O UN APAGÓN. Estrechar la huella al hecho solo
+  // vale si sigue moviéndose con TODO lo que es una promesa. Aquí se cambia cada pieza, una a una,
+  // sobre una COPIA sintética del evaluador, y se exige que la huella se mueva en las cinco.
+  //
+  // «Ya no da falsos positivos» y «ya no vigila» son el mismo verde. Éste los separa.
+  // 🔴 EL FIXTURE SE DERIVA DEL CÓDIGO REAL, NUNCA SE ESCRIBE A MANO. Escribiéndolo a mano me
+  // mordió mientras hacía este ticket: usé la firma `sendEmail(destinatario, asunto, html)` y
+  // SCRUM-508 ya le había metido el `merchantId` delante, así que el control positivo daba verde
+  // sobre una huella que se había quedado SIN EL ASUNTO. Un fixture desalineado del código no
+  // prueba nada, y encima lo dice en verde.
+  const fuenteReal = fs.readFileSync(path.join(RAIZ, FICHERO_AVISOS), 'utf8');
+
+  const huellaDe = (fuente) => {
+    const c = censarAvisos(fuente);
+    assert.equal(c.evaluadorEncontrado, true, '🔴 el censo no encuentra el evaluador.');
+    const aviso = c.avisos.find((a) => a.clave === 'day12');
+    assert.ok(aviso, '🔴 no se encuentra `day12` en la fuente derivada: el fixture ha dejado de servir.');
+    assert.deepEqual(aviso.faltan, [], `🔴 piezas sin extraer: ${aviso.faltan.join(', ')}`);
+    return aviso.huella;
+  };
+
+  const base = huellaDe(fuenteReal);
+  assert.ok(base, '🔴 SUELO: no se ha podido componer la huella del evaluador real.');
+
+  /** Cambia UNA cosa en la fuente real y devuelve la fuente mutada. Post-condición: cambió algo. */
+  const mutando = (viejo, nuevo) => {
+    assert.ok(fuenteReal.includes(viejo),
+      `🔴 el fixture ya no encaja con el código real: no aparece «${viejo.slice(0, 50)}…». ` +
+      'Actualízalo contra el fichero, no inventes uno que sí encaje.');
+    return fuenteReal.replace(viejo, nuevo);
+  };
+
+  // Cada una es UNA promesa distinta, tomada del bloque `day12` tal y como está escrito hoy.
+  const PROMESAS = [
+    ['CUÁNDO se manda', mutando("isTrial && age >= 12 && !alreadySent(m, 'day12')",
+      "isTrial && age >= 13 && !alreadySent(m, 'day12')")],
+    ['A QUIÉN se manda', mutando("await sendEmail(m.id, m.email, 'Solo 2 días de prueba en YaQu'",
+      "await sendEmail(m.id, m.emailFacturacion, 'Solo 2 días de prueba en YaQu'")],
+    ['el ASUNTO', mutando("'Solo 2 días de prueba en YaQu'", "'Solo 3 días de prueba en YaQu'")],
+    ['el CUERPO', mutando('Te quedan unos 2 días de prueba', 'Te quedan unos 3 días de prueba')],
+    ['el BOTÓN', mutando("{ label: 'Activar plan Pro', url: `${DASHBOARD_URL}#plans` }",
+      "{ label: 'Activar plan Empresa', url: `${DASHBOARD_URL}#plans` }")],
+  ];
+  const ciegas = PROMESAS.filter(([, fuente]) => huellaDe(fuente) === base).map(([que]) => que);
+  assert.deepEqual(ciegas, [],
+    `🔴 LA HUELLA HA DEJADO DE VER ESTAS PROMESAS: ${ciegas.join(' · ')}.\n\n` +
+    '  Eso NO es haber quitado un falso positivo: es haber apagado el guard. Cambiar cualquiera de\n' +
+    '  las cinco cambia lo que el usuario entiende que va a pasarle cuando venza su prueba, y este\n' +
+    '  guard existe para obligar a mirar el otro lado antes de darlo por bueno.');
+
+  // 🔴 Y EL CONTROL NEGATIVO, que es el ticket entero: la PLOMERÍA no la mueve. Es el caso medido
+  // en el PASO 0 de SCRUM-509, con el guard viejo puesto: renombrar `r` movía las huellas.
+  const renombrada = mutando(
+    "const r = await sendEmail(m.id, m.email, 'Solo 2 días de prueba en YaQu', html);",
+    "const resultado = await sendEmail(m.id, m.email, 'Solo 2 días de prueba en YaQu', html);")
+    .replace('if (anotarEnvio(parte, m.email, r)) await markSent(m.id, m.lifecycleEmailsSent, \'day12\');',
+      'if (anotarEnvio(parte, m.email, resultado)) await markSent(m.id, m.lifecycleEmailsSent, \'day12\');');
+  assert.equal(huellaDe(renombrada), base,
+    '🔴 renombrar una variable local sigue moviendo la huella. Es el falso positivo que SCRUM-509 ' +
+    'cierra: dos días rehaciendo huellas por un cambio que no toca ninguna promesa.');
+
+  // SUELO del propio control positivo: vaciar la lista sería la forma barata de aflojar.
+  assert.equal(PROMESAS.length, 5, '🔴 la lista de promesas ha encogido: el control se vuelve trivial.');
 });
 
 test('SCRUM-337 · si cambia lo que el correo DICE, hay que volver a mirar lo que el producto HACE', () => {

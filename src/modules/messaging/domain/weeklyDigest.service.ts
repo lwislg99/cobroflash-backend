@@ -6,6 +6,8 @@ import { maskEmail } from '../../../core/utils/utils';
 import { enviarCorreo, ResultadoCorreo, resultadoSinDestino } from '../../../integrations/enviarCorreo';
 // SCRUM-475 · un aviso que no sale deja constancia, y su fallo VIAJA hasta el cron.
 import { dejarConstancia, parteNuevo, type ParteDeAvisos } from './avisoConstancia';
+// SCRUM-508: la clase de correo sale del vocabulario cerrado, no de un literal a mano.
+import { CLASES_DE_CORREO } from './registroDeEnvios';
 
 // SCRUM-475 · el POST propio se retira: emisor único, y la respuesta se devuelve con su acuse.
 // 🔴 SIGUE LANZANDO CUANDO NO SALE, Y ES DELIBERADO (SCRUM-475).
@@ -17,9 +19,18 @@ import { dejarConstancia, parteNuevo, type ParteDeAvisos } from './avisoConstanc
 //     salió — el log dejaría de ser una medición y pasaría a ser un adorno.
 // Esta fase unifica el EMISOR y rescata el ACUSE; cambiar la semántica de fallo de cinco módulos
 // es otra cosa y no se cuela aquí de tapadillo.
-async function sendEmail(to: string, subject: string, html: string): Promise<ResultadoCorreo> {
+// SCRUM-508 · `merchantId` entra por parámetro para poder dejar fila. Es lo único que cambia de esta
+// función: **sigue lanzando** cuando el correo no sale, y eso no se toca (fase 1 de SCRUM-475).
+async function sendEmail(
+  merchantId: number, to: string, subject: string, html: string,
+): Promise<ResultadoCorreo> {
   if (!to || !to.includes('@')) return resultadoSinDestino();
-  const r = await enviarCorreo({ to, subject, html, origen: 'weeklyDigest' });
+  const r = await enviarCorreo({
+    to, subject, html, origen: 'weeklyDigest',
+    // El resumen va AL PROFESIONAL, así que `customerId` es nulo: no hay cliente al que atarlo. Y no
+    // hay documento — el digest es un resumen, no la entrega de nada.
+    registro: { merchantId, kind: CLASES_DE_CORREO.resumenSemanal },
+  });
   if (!r.enviado) throw new Error(`no se pudo enviar el email (${r.motivo || 'desconocido'})`);
   return r;
 }
@@ -165,7 +176,7 @@ async function sendDigestForMerchant(
   </div>
 </div>`;
 
-  const r = await sendEmail(merchant.email, subject, html);
+  const r = await sendEmail(merchant.id, merchant.email, subject, html);
   // 🔴 SCRUM-475 · EL «✓ enviado» SOLO SI SALIÓ. Esto es lo que la fase 1 de SCRUM-475 anticipó
   // como riesgo («el log dejaría de ser una medición y pasaría a ser un adorno») y estaba VIVO por
   // el otro canal: `sendEmail` DEVUELVE `sin_destino` sin lanzar cuando el correo no tiene `@`, así

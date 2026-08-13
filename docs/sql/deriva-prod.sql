@@ -251,6 +251,7 @@ WITH esperado (tabla, columna) AS (
     ('merchants','connect_status'),
     ('merchants','country'),
     ('merchants','created_at'),
+    ('merchants','criterio_caja'),
     ('merchants','default_currency'),
     ('merchants','email'),
     ('merchants','flags'),

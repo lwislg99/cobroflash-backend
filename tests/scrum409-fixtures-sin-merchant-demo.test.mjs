@@ -21,10 +21,33 @@
 //     merchantId: 1,  // MERCHANT DEMO A PROPOSITO (SCRUM-409): <por qué>
 //
 // No es una allowlist muda: va pegada al sitio, dice por qué, y quien la lea ve que es deliberada.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 SCRUM-509 · EL DETECTOR ESTABA ATADO A LA FORMA, Y COBRÓ PEAJE TRES VECES
+//
+// Era una expresión regular sobre el TEXTO (`merchantId:\s*1\b`, línea a línea, quitando lo que
+// hubiera detrás de `//`). Eso no mide el hecho «este fixture usa el merchant demo»: mide «en esta
+// línea hay unos caracteres». Los tres saltos, todos medidos con el guard puesto:
+//
+//   · `merchantId: 1.5` — el `\b` casa entre `1` y `.`, así que leía el PREFIJO y no el VALOR.
+//     Un merchant 1.5 no es el demo, y no existe.
+//   · `merchantId: 1` DENTRO DE UNA CADENA — la fuente sintética con la que otro guard se
+//     autoprueba. Ahí no hay ningún merchant: hay un texto que habla de uno.
+//   · 🔴 Y el que tenía la tanda EN ROJO al empezar este ticket: **un COMENTARIO**. El despojo
+//     `linea.replace(/\/\/.*$/, '')` no funciona cuando el fichero tiene finales CRLF —`$` sin
+//     flag `m` no casa antes de un `\r`—, así que el comentario entero se analizaba como código.
+//     Saltaba sobre la línea de `scrum508` que EXPLICA que este guard salta. Medido, no deducido.
+//
+// AHORA MIRA EL HECHO, por AST: una PROPIEDAD `merchantId` cuyo VALOR es 1, en el código. Un
+// comentario no es una propiedad; una cadena tampoco; y `1.5` no vale 1. Los tres desaparecen sin
+// una sola excepción escrita a mano — que es la diferencia entre estrechar y aflojar.
+//
+// ⚠️ NO se relaja nada: lo que el guard caza sigue siendo lo mismo, y hay un control positivo que
+// lo enumera uno a uno (`LOS QUE TIENE QUE SEGUIR CAZANDO`).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import ts from 'typescript';
 
 const DIR = path.resolve(import.meta.dirname);
 const DEMO_ID = 1;
@@ -37,15 +60,35 @@ const MARCA = 'MERCHANT DEMO A PROPOSITO';
 const YO = path.basename(new URL(import.meta.url).pathname);
 const ficheros = fs.readdirSync(DIR).filter((f) => /\.(mjs|js)$/.test(f) && f !== YO);
 
-/** Ocurrencias de `merchantId: 1` con su línea. Se mira el CÓDIGO, no los comentarios. */
-function usosDelDemo(texto) {
+/**
+ * Ocurrencias del merchant DEMO en un fixture, POR EL HECHO: una propiedad `merchantId` cuyo VALOR
+ * es 1, escrita en el código.
+ *
+ * Devuelve `null` si el fichero no se puede analizar — nunca una lista vacía: «no hay usos» y «no
+ * supe leerlo» tienen que salir por líneas distintas, y el SUELO de abajo lo comprueba.
+ */
+function usosDelDemo(texto, nombre = 'fixture.mjs') {
+  let sf;
+  try {
+    sf = ts.createSourceFile(nombre, texto, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  } catch {
+    return null;
+  }
+  const lineas = texto.split('\n');
   const out = [];
-  texto.split('\n').forEach((linea, i) => {
-    const sinComentario = linea.replace(/\/\/.*$/, '');
-    if (new RegExp(`merchantId:\\s*${DEMO_ID}\\b`).test(sinComentario)) {
-      out.push({ linea: i + 1, texto: linea.trim(), marcada: linea.includes(MARCA) });
+  (function rec(n) {
+    if (ts.isPropertyAssignment(n)) {
+      // La clave, tanto `merchantId:` como `'merchantId':`.
+      const clave = (ts.isIdentifier(n.name) || ts.isStringLiteralLike(n.name)) ? n.name.text : null;
+      // 🔴 EL VALOR, no el prefijo: `1.5` no vale 1, y `1.0` sí — porque ése SÍ es el demo.
+      if (clave === 'merchantId' && ts.isNumericLiteral(n.initializer)
+        && Number(n.initializer.text) === DEMO_ID) {
+        const i = sf.getLineAndCharacterOfPosition(n.getStart(sf)).line;
+        out.push({ linea: i + 1, texto: (lineas[i] ?? '').trim(), marcada: (lineas[i] ?? '').includes(MARCA) });
+      }
     }
-  });
+    ts.forEachChild(n, rec);
+  })(sf);
   return out;
 }
 
@@ -53,11 +96,12 @@ const analisis = ficheros.map((f) => {
   const texto = fs.readFileSync(path.join(DIR, f), 'utf8');
   return {
     fichero: f,
-    usos: usosDelDemo(texto),
+    usos: usosDelDemo(texto, f),
     // La lista de «prueba el demo» es DERIVADA: sale de lo que el fichero importa.
     pruebaElDemo: SENALES_IMPORT.some((s) => texto.includes(s)),
   };
 });
+const ilegibles = analisis.filter((a) => a.usos === null).map((a) => a.fichero);
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 
@@ -67,17 +111,72 @@ test('SCRUM-409 · SUELO: hay ficheros de test que auditar', () => {
     '«no supe mirar» dan la misma bandeja: si el detector no lee el directorio, no mide nada.');
 });
 
-test('SCRUM-409 · SUELO: el detector RECONOCE un uso del demo (control positivo sintético)', () => {
-  // Sin esto, «cero usos» podría significar que el reconocedor está roto.
+test('SCRUM-409 · SUELO: todos los ficheros se pueden ANALIZAR, o el guard se declara ciego', () => {
+  // 🔴 El detector nuevo lee un AST. Un fichero que no parsee devolvería «cero usos», que es
+  // indistinguible de «este fichero está limpio» — y así es como un guard deja de vigilar sin que
+  // nadie se entere. Se separan por líneas distintas a propósito.
+  assert.deepEqual(ilegibles, [],
+    `🔴 HAY FICHEROS QUE EL DETECTOR NO SABE LEER:\n   ${ilegibles.join('\n   ')}\n\n` +
+    '  No están limpios: están SIN MIRAR. Arregla el analizador antes de creerte el verde.');
+});
+
+test('SCRUM-409 · SUELO + AUTOPRUEBA: el detector ve el HECHO y DISCRIMINA los tres falsos positivos', () => {
+  // 🔴 Primero se demuestra que sabe ver; después que sabe NO ver. Sin la primera mitad, «cero
+  // usos» podría significar que el reconocedor está roto.
   const usos = usosDelDemo('const x = { merchantId: 1, nombre: "x" };');
   assert.equal(usos.length, 1, '🔴 el detector no ve un `merchantId: 1` evidente.');
   assert.equal(usos[0].marcada, false);
-  // Y no se deja engañar por un comentario que lo mencione.
-  assert.equal(usosDelDemo('// aquí NO hay merchantId: 1, es prosa').length, 0,
-    '🔴 el detector cuenta menciones en comentarios: un guard de texto cazándose a sí mismo.');
+  assert.equal(usosDelDemo("const x = { 'merchantId': 1 };").length, 1,
+    '🔴 el detector se escapa si la clave va entre comillas.');
+  assert.equal(usosDelDemo('const x = { merchantId: 1.0 };').length, 1,
+    '🔴 `1.0` SÍ es el merchant demo: el detector tiene que mirar el valor, no cómo está escrito.');
+
+  // ── LOS TRES QUE COBRABAN PEAJE, medidos en el PASO 0 de SCRUM-509 ──────────────────────
+  assert.deepEqual(usosDelDemo('const x = { merchantId: 1.5, nota: "no es el demo" };'), [],
+    '🔴 EL PREFIJO OTRA VEZ: `1.5` no vale 1, y el merchant 1.5 no existe. Un detector que lee los ' +
+    'primeros caracteres de un número no mide el hecho, mide la forma.');
+  assert.deepEqual(usosDelDemo('const fuente = "const x = { merchantId: 1 };";'), [],
+    '🔴 FUENTE SINTÉTICA: dentro de una cadena no hay ningún merchant, hay un texto que habla de ' +
+    'uno. Es lo que usan otros guards para autoprobarse, y este los castigaba por ello.');
+  assert.deepEqual(usosDelDemo('  // el guard lee un `merchantId: 1` y salta.\r\n'), [],
+    '🔴 UN COMENTARIO, y encima con final CRLF — que es el caso REAL que tenía la tanda en rojo: el ' +
+    'despojo por regex no funcionaba con `\\r` y el comentario se analizaba como código.');
 });
 
 // ── EL GUARD ─────────────────────────────────────────────────────────────────────────────────
+
+test('SCRUM-409 · 🔴 CONTROL POSITIVO: sigue cazando TODO lo que cazaba, uno a uno', () => {
+  // 🔴 EL TEST QUE DECIDE SI SCRUM-509 ES UN ARREGLO O UN APAGÓN. «Ya no da falsos positivos» y
+  // «ya no vigila» son el mismo verde, así que aquí se enumera lo que el guard existe para cazar y
+  // se comprueba que CADA UNO sigue cayendo con el detector nuevo puesto.
+  //
+  // El defecto: un fixture que asigna el merchant 1 desactiva comprobaciones sin tocar ningún
+  // guard —`whatsappPolicy` corta por su id, el PDF lleva marca de agua, la pasarela se desvía— y
+  // el test sigue verde midiendo otra cosa. Estas son las formas en que eso se escribe.
+  const DEBE_CAZAR = [
+    ['objeto literal, la forma normal', 'const f = { merchantId: 1, name: "x" };'],
+    ['clave entrecomillada', "const f = { 'merchantId': 1 };"],
+    ['escrito como decimal exacto', 'const f = { merchantId: 1.0 };'],
+    ['anidado dentro de otro objeto', 'const f = { where: { merchantId: 1 } };'],
+    ['dentro de un array de fixtures', 'const f = [{ merchantId: 1 }, { merchantId: 7 }];'],
+    ['en el argumento de una llamada', 'crearCobro({ merchantId: 1, total: "10.00" });'],
+    ['dentro de una función de fábrica', 'const mk = () => ({ merchantId: 1 });'],
+    ['en una respuesta simulada', 'red({ json: async () => ({ merchantId: 1 }) });'],
+  ];
+  const ciegos = DEBE_CAZAR.filter(([, fuente]) => (usosDelDemo(fuente) ?? []).length === 0)
+    .map(([que]) => que);
+  assert.deepEqual(ciegos, [],
+    `🔴 EL GUARD HA DEJADO DE CAZAR ESTAS FORMAS: ${ciegos.join(' · ')}.\n\n` +
+    '  Eso NO es haber quitado un falso positivo: es haber apagado el guard por la puerta de atrás.\n' +
+    '  Un fixture con el merchant demo desactiva comprobaciones sin tocar nada, y el test se queda\n' +
+    '  verde midiendo otra cosa. Si hace falta perder alguna de estas formas, es decisión del\n' +
+    '  asesor y va con su motivo escrito — no un efecto colateral de estrechar el detector.');
+
+  // Y el SUELO del propio control positivo: la lista no puede vaciarse para ponerlo verde.
+  assert.ok(DEBE_CAZAR.length >= 8,
+    `🔴 la lista de lo que hay que cazar tiene ${DEBE_CAZAR.length} casos. Vaciarla haría este ` +
+    'control trivialmente cierto, que es la forma barata de aflojar un guard sin que se note.');
+});
 
 test('SCRUM-409 · ningún fixture usa el merchant DEMO salvo donde se prueba el demo', () => {
   const infractores = [];

@@ -636,6 +636,7 @@ router.post('/:id/approve', requireRole('admin'), async (req, res) => {
         // SCRUM-477 · ⚠️ SIGUE SIN `await`: la aprobación ya está hecha y un aviso que no sale NO
         // puede tumbarla. Lo que cambia es que ahora deja constancia de a qué técnico no se avisó.
         conConstancia('presupuesto_aprobado_tecnico', tech.email, sendTechQuoteApprovedEmail({
+          merchantId: req.merchantId, // SCRUM-508: para que el aviso deje fila
           techEmail: tech.email,
           techName: tech.name || '',
           quoteId: quote.quoteNumber ?? quote.id, // A1.2: solo display en el email

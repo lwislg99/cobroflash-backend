@@ -10,6 +10,8 @@ import { maskEmail } from '../../../core/utils/utils';
 import { enviarCorreo, ResultadoCorreo, resultadoSinDestino } from '../../../integrations/enviarCorreo';
 // SCRUM-475 · un aviso que no sale deja constancia, y NO se marca como enviado.
 import { dejarConstancia, parteNuevo, type ParteDeAvisos } from './avisoConstancia';
+// SCRUM-508: la clase de correo sale del vocabulario cerrado, no de un literal a mano.
+import { CLASES_DE_CORREO } from './registroDeEnvios';
 
 const DASHBOARD_URL = `${config.PUBLIC_BASE_URL || 'https://yaqu.app'}/dashboard/`;
 
@@ -25,14 +27,23 @@ const DASHBOARD_URL = `${config.PUBLIC_BASE_URL || 'https://yaqu.app'}/dashboard
 //     nunca y el sistema cree que sí, que es justo lo que no puede pasar en el ciclo de vida.
 // Esta fase unifica el EMISOR y rescata el ACUSE; cambiar la semántica de fallo de cinco módulos
 // es otra cosa y no se cuela aquí de tapadillo.
-async function sendEmail(to: string, subject: string, html: string): Promise<ResultadoCorreo> {
+// SCRUM-508 · `merchantId` entra por parámetro para poder dejar fila. Lo único que cambia: **sigue
+// lanzando** cuando el correo no sale, y de eso depende que `markSent` no marque un envío que no
+// existió (fase 1 de SCRUM-475, y el defecto que cerró la fase 3).
+async function sendEmail(
+  merchantId: number, to: string, subject: string, html: string,
+): Promise<ResultadoCorreo> {
   if (!to || !to.includes('@')) return resultadoSinDestino();
   // SCRUM-101: el aviso de dev se conserva. Lo que cambia es que ya no ABANDONA aquí: si hay SMTP
   // configurado, `enviarCorreo` lo usa — antes este emisor era el único que ni lo intentaba.
   if (!config.RESEND_API_KEY) {
     console.log(`[lifecycle] (sin RESEND) email a ${maskEmail(to)}: ${subject}`);
   }
-  const r = await enviarCorreo({ to, subject, html, origen: 'lifecycle' });
+  const r = await enviarCorreo({
+    to, subject, html, origen: 'lifecycle',
+    // Van AL PROFESIONAL: `customerId` nulo, y no hay documento al que atarlos.
+    registro: { merchantId, kind: CLASES_DE_CORREO.cicloDeVida },
+  });
   if (!r.enviado) throw new Error(`no se pudo enviar el email (${r.motivo || 'desconocido'})`);
   return r;
 }
@@ -122,7 +133,7 @@ export async function sendWelcomeEmail(merchantId: number): Promise<ResultadoCor
   `, { label: 'Crear mi primera cotización', url: DASHBOARD_URL });
   // 🔴 El `.catch()` inline se retira: era lo que impedía que el fallo llegara a quien llama, y lo
   // que dejaba correr el `markSent` de abajo sobre un correo que no salió.
-  const r = await sendEmail(m.email, '¡Bienvenido a YaQu! 🎉', html);
+  const r = await sendEmail(m.id, m.email, '¡Bienvenido a YaQu! 🎉', html);
   if (r.enviado) await markSent(m.id, m.lifecycleEmailsSent, 'welcome');
   return r;
 }
@@ -146,7 +157,7 @@ export async function sendFirstPaymentEmail(merchantId: number): Promise<Resulta
       <li>Puedes invitar a tu equipo con roles.</li>
     </ul>
   `, { label: 'Ir a mi panel', url: DASHBOARD_URL });
-  const r = await sendEmail(m.email, 'Bienvenido al plan Pro de YaQu', html);
+  const r = await sendEmail(m.id, m.email, 'Bienvenido al plan Pro de YaQu', html);
   if (r.enviado) await markSent(m.id, m.lifecycleEmailsSent, 'firstPayment');
   return r;
 }
@@ -194,7 +205,7 @@ export async function runLifecycleEmails(): Promise<ParteDeAvisos> {
               <li>Envíala por WhatsApp: la mayoría de clientes responde en menos de 2 horas.</li>
             </ol>
           `, { label: 'Enviar mi primera cotización', url: DASHBOARD_URL });
-          const r = await sendEmail(m.email, '¿Te ayudamos a empezar con YaQu?', html);
+          const r = await sendEmail(m.id, m.email, '¿Te ayudamos a empezar con YaQu?', html);
           if (anotarEnvio(parte, m.email, r)) await markSent(m.id, m.lifecycleEmailsSent, 'day3');
           continue;
         }
@@ -206,7 +217,7 @@ export async function runLifecycleEmails(): Promise<ParteDeAvisos> {
           <p>Hola ${m.name || ''},</p>
           <p>Tu prueba de YaQu expira en unos 7 días. ¿Qué tal va todo? Si tienes dudas, respóndenos a este correo y te ayudamos.</p>
         `, { label: 'Ver mi panel', url: DASHBOARD_URL });
-        const r = await sendEmail(m.email, 'Tu prueba de YaQu expira en 7 días', html);
+        const r = await sendEmail(m.id, m.email, 'Tu prueba de YaQu expira en 7 días', html);
         if (anotarEnvio(parte, m.email, r)) await markSent(m.id, m.lifecycleEmailsSent, 'day7');
         continue;
       }
@@ -231,7 +242,7 @@ export async function runLifecycleEmails(): Promise<ParteDeAvisos> {
           <p>Hola ${m.name || ''},</p>
           <p>Te quedan unos 2 días de prueba. Si activas el plan Pro, sigues con cotizaciones y facturas ilimitadas, cobro integrado y soporte. Si no, dejarás de poder crear presupuestos nuevos y de enviar presupuestos y albaranes por WhatsApp. El resto del panel sigue funcionando: tus cobros, tus clientes y tus datos siguen ahí.</p>
         `, { label: 'Activar plan Pro', url: `${DASHBOARD_URL}#plans` });
-        const r = await sendEmail(m.email, 'Solo 2 días de prueba en YaQu', html);
+        const r = await sendEmail(m.id, m.email, 'Solo 2 días de prueba en YaQu', html);
         if (anotarEnvio(parte, m.email, r)) await markSent(m.id, m.lifecycleEmailsSent, 'day12');
         continue;
       }
@@ -242,7 +253,7 @@ export async function runLifecycleEmails(): Promise<ParteDeAvisos> {
           <p>Hola ${m.name || ''},</p>
           <p>Tu prueba de YaQu ha terminado, pero tus datos siguen aquí. Activa el plan Pro cuando quieras y retomas justo donde lo dejaste.</p>
         `, { label: 'Continuar con YaQu', url: `${DASHBOARD_URL}#plans` });
-        const r = await sendEmail(m.email, 'Tus datos te esperan en YaQu', html);
+        const r = await sendEmail(m.id, m.email, 'Tus datos te esperan en YaQu', html);
         if (anotarEnvio(parte, m.email, r)) await markSent(m.id, m.lifecycleEmailsSent, 'trialExpired');
         continue;
       }
@@ -257,7 +268,7 @@ export async function runLifecycleEmails(): Promise<ParteDeAvisos> {
             <p>Hola ${m.name || ''},</p>
             <p>Hace un par de semanas que no te vemos por YaQu. ¿En qué fallamos? Respóndenos a este correo: leemos todo y nos ayuda muchísimo a mejorar.</p>
           `, { label: 'Volver a mi panel', url: DASHBOARD_URL });
-          const r = await sendEmail(m.email, '¿Qué ha pasado? Cuéntanos', html);
+          const r = await sendEmail(m.id, m.email, '¿Qué ha pasado? Cuéntanos', html);
           if (anotarEnvio(parte, m.email, r)) await markSent(m.id, m.lifecycleEmailsSent, 'inactive');
         }
       }

@@ -18,6 +18,7 @@ import {
 } from '../../jobs/domain/albaranBarrido';
 import { verificarSobre, verificarPoblacion, type EntradaVerificacion } from '../../jobs/domain/albaranVerificacion';
 import { construirPaqueteEvidencias, type PaqueteEvidencias, type AlbaranDelPaquete } from './paquete';
+import { criterioDelMerchantParaElLibro } from '../../invoicing/domain/criterioDelMerchant'; // SCRUM-294 fase C
 
 /** Lo que el lector necesita del cliente Prisma. Inyectable: el test le pasa el suyo. */
 export interface ClienteDelPaquete extends ClienteDelLibro {
@@ -33,8 +34,11 @@ export async function leerPaqueteEvidencias(
   const { desde, hasta } = rangoTrimestre(params.año, params.trimestre);
   const { merchantId } = params;
 
+  // SCRUM-294 (fase C) · el criterio de caja del merchant. Va ANTES del Promise.all: si el
+  // merchant no se puede leer, no se arma ningun paquete de evidencias con un devengo adivinado.
+  const criterio = await criterioDelMerchantParaElLibro(db as never, merchantId);
   const [libro, modelo303, filasAlbaran, emisor] = await Promise.all([
-    leerLibroRegistro(db, { merchantId, desde, hasta }),
+    leerLibroRegistro(db, { merchantId, desde, hasta, ...criterio }),
     leerModelo303(db, { merchantId, año: params.año, trimestre: params.trimestre }),
     db.albaran.findMany({
       // Firmados y del periodo: son los que tienen sello que comprobar.

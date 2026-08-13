@@ -6,6 +6,8 @@ import { sendWelcomeEmail } from '../../messaging/domain/lifecycle.service';
 // SCRUM-475 · un aviso que no sale deja constancia -- y sin poder tumbar el registro.
 import { conConstancia, dejarConstancia } from '../../messaging/domain/avisoConstancia';
 import { constanciaDeFallo } from '../../messaging/domain/constanciaCorreo';
+// SCRUM-508: la clase de correo sale del vocabulario cerrado, no de un literal a mano.
+import { CLASES_DE_CORREO, type ContextoDeEnvio } from '../../messaging/domain/registroDeEnvios';
 import { renderEmailLayout, escEmail } from '../../messaging/domain/emailLayout';
 import { generateUniqueReferralCode, resolveReferrer } from './referral.service';
 import { maskEmail } from '../../../core/utils/utils';
@@ -26,8 +28,21 @@ const SESSION_TTL_MS    = 30 * 24 * 60 * 60 * 1000; // 30 días
  * que se registraba «email enviado OK» sobre un correo que no existía. El enlace mágico se sigue
  * imprimiendo en ese caso (SCRUM-39), que es la salida real de dev.
  */
-async function sendEmail(params: { to: string; subject: string; html: string }) {
-  const r = await enviarCorreo({ ...params, origen: 'auth' });
+// SCRUM-508 · `registro` entra por parámetro para poder dejar fila. Son DOS clases distintas —el
+// enlace de acceso y la invitación al equipo— y se distinguen porque son dos correos distintos: uno
+// devuelve a su cuenta a quien ya la tiene, el otro mete a alguien nuevo en la de otro.
+// **Sigue lanzando** cuando no sale: sus dos llamadores dependen de la excepción (fase 1 de 475).
+async function sendEmail(params: {
+  to: string; subject: string; html: string; registro: ContextoDeEnvio;
+}) {
+  // ⚠️ `registro` se pasa EXPLÍCITO y no por el `...params` que había, aunque el spread ya lo
+  // llevaría: el censo de SCRUM-508 deriva por AST quién manda su contexto, y con un spread solo
+  // puede decir «no lo sé». Un censo que tiene que adivinar no vale, y hacerlo visible cuesta una
+  // línea. El tipo de arriba sigue siendo lo que lo hace OBLIGATORIO.
+  const r = await enviarCorreo({
+    to: params.to, subject: params.subject, html: params.html, registro: params.registro,
+    origen: 'auth',
+  });
   if (!r.enviado) throw new Error(`no se pudo enviar el email (${r.motivo || 'desconocido'})`);
   return r;
 }
@@ -98,6 +113,9 @@ async function issueLoginLink(params: {
         ctaUrl: link,
         footnote: 'Este enlace es de un solo uso y caduca en 15 minutos. Si no lo solicitaste, puedes ignorar este correo.',
       }),
+      // SCRUM-508 · deja fila. Va al PROFESIONAL o a un operario suyo, nunca a un cliente:
+      // `customerId` nulo. `merchantId` es la cuenta a la que da acceso, que es lo consultable.
+      registro: { merchantId: params.merchantId, kind: CLASES_DE_CORREO.enlaceDeAcceso },
     });
     console.log(`[magic-link] email enviado OK a ${maskEmail(params.email)}`); // SCRUM-101
     return r;
@@ -216,6 +234,9 @@ export async function inviteTeamMember(params: {
         ctaUrl: link,
         footnote: 'Este enlace caduca en 7 días. Si no esperabas esta invitación, puedes ignorar este correo.',
       }),
+      // SCRUM-508 · deja fila, con SU clase: la invitación no es el enlace de acceso. Va a alguien
+      // del equipo, no a un cliente, así que `customerId` es nulo.
+      registro: { merchantId: params.merchantId, kind: CLASES_DE_CORREO.invitacion },
     });
     console.log(`[invite] email enviado OK a ${maskEmail(params.memberEmail)}`); // SCRUM-101
     return { sent: true };

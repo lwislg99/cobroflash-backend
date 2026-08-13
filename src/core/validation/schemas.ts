@@ -163,6 +163,11 @@ export const merchantProfileUpdateSchema = z.object({
   legalName: z.string().min(1).optional(),
   taxId: z.string().min(1).optional(),
   address: z.string().min(1).optional(),
+  // SCRUM-294 (fase C) · criterio de caja (RECC). `nullable` Y `optional` a proposito, y no son lo
+  // mismo: AUSENTE = la pantalla no lo manda y no se toca; `null` = el negocio elige «no consta»,
+  // que es un valor guardable y distinto de `false`. Un `z.boolean()` a secas colapsaria los tres
+  // estados en dos y «no se pregunto» se guardaria como «declara que no».
+  criterioCaja: z.boolean().nullable().optional(),
   trade: z
     .enum([
       'electricista', 'fontanero', 'reformista', 'pintor',

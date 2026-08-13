@@ -75,6 +75,8 @@ var ASIGNACION_SUBMENU = {
   legalName: 'empresa',
   taxId: 'empresa',
   address: 'empresa',
+  // SCRUM-294 (fase C): el criterio de caja es un dato del NEGOCIO, como el NIF y la direccion.
+  criterioCaja: 'empresa',
   whatsappPhone: 'empresa',
   defaultCurrency: 'empresa',
   country: 'empresa',
