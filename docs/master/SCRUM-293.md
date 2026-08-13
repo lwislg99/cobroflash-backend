@@ -356,3 +356,85 @@ teórico.
 
 **Descartado y por qué:** el `19 %` no existe —`TIPOS_RETENCION = [15, 7, 2, 1]`— y los suplidos
 salen a **SCRUM-500**, porque necesitan columna en `Invoice` y el schema no se toca aquí.
+
+---
+
+# SCRUM-293 (293-a, parte 2) · el cubo, los tres estados y el suelo que grita
+
+**Fecha:** 13-ago-2026 · **Carril:** B · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `01025aafdb065b682f0da1b70141aa7baebf3a4f` · 2026-08-13T00:15:00+02:00
+
+## El cubo · añadir un tipo sin rótulo NO COMPILA
+
+`TIPOS_RETENCION` deja de ser una lista de números y pasa a `CUBO_DE_RETENCION`, un
+`Readonly<Record<TipoRetencion, CuboDeRetencion>>` con `tipo · rotulo · orden`. Mismo mecanismo que
+`CUBO_DE` en `metodoDeCobro.ts`: **el `Record` exige una entrada por miembro del tipo**.
+
+**Por qué el rótulo vive en el dominio y no en la pantalla:** un `<option>` escrito a mano es un
+número suelto que nadie relaciona con esta lista. El día que se añada o se quite un tipo, la
+pantalla sigue diciendo lo de antes y **nada avisa**. Recorriendo el cubo, una lista que cambia se
+ve sola.
+
+**Control positivo, con el `tsc` en rojo** — se inyectó el `19`, que es justo el que el fundador
+retiró, para que el rojo demuestre el mecanismo con el caso real que lo motivó:
+
+```
+src/modules/invoicing/domain/retencionIrpf.ts(80,14): error TS2741:
+  Property '19' is missing in type 'Readonly<{ 15: …; 7: …; 2: …; 1: … }>'
+  but required in type 'Readonly<Record<1 | 2 | 7 | 15 | 19, CuboDeRetencion>>'.
+```
+
+Nombra **el valor que falta y su fichero:línea**.
+
+## ④ Los tres estados, y por qué son tres
+
+| Merchant | Adaptador | Lectura | Significado |
+| --- | --- | --- | --- |
+| `declarada=false` | `null` | `{ok:false}` | **NO CONSTA** — los 13 de hoy |
+| `declarada=true`, `tipo NULL` | `false` | `{ok:true, tipo:null}` | **DECLARA QUE NO RETIENE** |
+| `declarada=true`, `tipo=N` | `N` | `{ok:true, tipo:N}` | **RETIENE** |
+
+`retencionIrpfDeclarada` es **«HA declarado»**, no «declara que retiene». Cruzarlo haría que «nadie
+lo ha dicho todavía» significara «todos declaran que no retienen» — y como el campo es
+`@default(false)`, eso serían **todos los merchants existentes**.
+
+Un test por estado, para que el rojo diga **cuál** se rompió, más el que es el corazón del ticket:
+**① y ② no colapsan**. Son lo contrario —una pregunta sin contestar y una respuesta—, y con los dos
+iguales el producto no puede saber a quién preguntarle, y emite igual.
+
+## ⑤ El suelo ruidoso — ya estaba construido, aquí queda vigilado
+
+`leerTipoRetencion` devuelve `{ok:false, motivo}` ante `null`, `undefined`, cadena vacía, `NaN`,
+objetos y tipos desconocidos. **No degrada a «sin retención»** — y el test exige además que el fallo
+traiga **motivo**: un fallo mudo no es ruidoso.
+
+> «Sin retención» es un valor **legítimo**, y por eso es el peor sitio del producto para degradar:
+> una factura sin retención no chirría, así que **nadie notaría nunca el fallo**.
+
+## 🔴 El rojo 1, y por qué el primer intento NO contaba
+
+**Primer intento:** quité la guarda de `null`/`undefined`. La mutación **se aplicó** y **ningún test
+cayó**. No se apuntó como rojo: el módulo tiene **defensa en profundidad** —sin esa guarda, `null`
+cae igual en `esTipoRetencionValido(null)`— así que la inyección **no cambiaba el comportamiento**.
+
+**Rehecho devolviendo el estado CONTRARIO**, que es lo que prueba el colapso:
+
+```
+leerTipoRetencion(null) = {"ok":true,"tipo":null}   ← antes {ok:false, …}
+```
+
+Y caen **TRES** tests: el estado ①, la comparación ①-vs-② y el suelo. **Que caigan tres y no uno es
+el dato**: un colapso que solo se viera desde un sitio estaría mal vigilado.
+
+> **Canon:** verificar que el fichero cambió NO basta. Hay que verificar que **el comportamiento**
+> cambió. Un guard que no cae ante una mutación significa dos cosas opuestas —que vigila mal, o que
+> hay otra defensa detrás— y solo se distinguen mirando el comportamiento.
+
+## Lo que queda de SCRUM-293
+
+* **③** la pantalla recorriendo el cubo, **entera**, con su guard de «cero literales de porcentaje
+  en el front». O entra entera o no entra: a medias deja el selector con la mitad de las opciones de
+  cada fuente.
+* **⑥** el cable —una línea, `retencionIrpf.ts` se consume, no se toca— y el **censo derivado de
+  SCRUM-271** (cualquier `||` sobre lectura de input numérico; hay un caso confirmado en
+  `vat.service.ts:24`, que es SCRUM-504 y **no se toca**).
