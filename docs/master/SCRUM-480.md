@@ -410,3 +410,54 @@ efecto: sin el `.gitattributes` nuevo, el checkout devolvió CRLF **1.465 de 1.4
 
 **Suite entera, con el árbol ya en LF: 3.617 tests · 3.540 pasan · 0 fallos · 77 saltados.** Es la
 primera vez que la suite corre en esta máquina sobre texto en LF: **ningún guard dependía del CRLF.**
+
+## 9 · El merge con `main`, y por qué el fin de línea no se resuelve eligiendo líneas
+
+Conflictaron **dos** ficheros: `aiQuoteAssistant.js` (SCRUM-507, avisos de la IA) y `quotesView.js`
+(SCRUM-500, la casilla de suplidos). Los dos entraron en `main` después de que esta rama los
+renormalizara **sobre el contenido anterior**.
+
+**Resueltos tomando el contenido de `main` ENTERO** (`git checkout origin/main -- …`), sin elegir ni
+una línea. El fin de línea es una **propiedad derivada**, no contenido: no se mezcla — se coge el
+contenido bueno y se le vuelve a aplicar la normalización encima.
+
+**CONTROL, con el diff delante:**
+
+```
+git diff --ignore-all-space origin/main -- <los dos>   →  0 bytes
+git diff --numstat          origin/main -- <los dos>   →  sin filas
+```
+
+Idénticos a `main` **byte a byte**: no se perdió nada al resolver, que era lo único grave que podía
+pasar.
+
+### 🟢 Y la reaplicación resultó ser un NO-OP, que es la mejor noticia del ticket
+
+Medido: **`main` ya tiene esos dos en LF.** Los normalizaron SCRUM-507 y SCRUM-500 **al tocarlos**.
+O sea que el conflicto no era «mi LF contra su CRLF» — era **mi LF contra su LF sobre contenidos
+distintos**: los dos lados habían reescrito el fichero entero, y por eso git no podía casar líneas.
+
+Es el mecanismo de la fase 2 en directo: *estos ficheros no se arreglan, se cobran*. **Van 12 → 9**
+(`settingsView`, `aiQuoteAssistant`, `quotesView`), a media hora cada uno. `teamView.js` sigue en
+CRLF en `main`, con otros seis.
+
+## 10 · Los tres rojos, repetidos DESPUÉS del merge
+
+Red antes de inyectar: **`e2db5e92952075e8c33448b925764c41877497b3`**, árbol limpio y empujado.
+
+| # | Se rompe… | El guard dice… |
+| --- | --- | --- |
+| 1 | un blob de TEXTO con CR (inyectado en el índice con `hash-object -w` + `update-index`, saltándose los filtros) | *«HAY BLOBS DE TEXTO CON CR EN EL REPOSITORIO (1 de 1709): `tests/_prueba-crlf.mjs` (CRLF 2)»* |
+| 2 | el DISCO vuelve a tener `\r` (`quotesView.js` a CRLF, +3.061 bytes) | *«HAY 1 FICHEROS DE TEXTO CON `\r` EN EL DISCO (de 1.473 leídos)»* |
+| 3 | se quita `eol=lf` de `*.js` | *«`*.js` declara `text` pero no `eol=lf`»* |
+
+**El rojo 3 tiró además el SUELO**, y eso vale más que el propio rojo: al quitar `.js` del conjunto
+derivado, el guard del disco **dejaba de mirar el código** — y en vez de pasar sobre una población
+más pequeña, avisó. Un guard al que le encogen la población en silencio es el defecto que este
+fichero entero persigue.
+
+Revertidos: el ① con `git reset` (índice a HEAD), el ② pidiéndole el fichero a git —que lo devolvió
+**en LF**, el `eol=lf` funcionando de punta a punta— y el ③ con `git checkout --`. Verde 8/8 después
+de cada uno.
+
+**Suite entera con `main` dentro: 3.643 tests · 3.566 pasan · 0 fallos · 77 saltados.**
