@@ -1,3 +1,57 @@
+# ─────────────────────────────────────────────────────────────────────────────────────────
+# SCRUM-480 · LOS FINALES DE LÍNEA LOS DECIDE EL REPOSITORIO, NO LA MÁQUINA DE NADIE.
+#
+# QUÉ PASABA: diez ficheros tenían el blob en CRLF. Cuando dos ramas los tocaban desde editores
+# distintos, el merge conflictaba el fichero ENTERO —medido: el 89 % de `templatesView.js`— y
+# había que reaplicar los cambios a mano. Le pasó a la sesión 2 con `quotesView.js` (commit
+# 9c2c69ef, 5.144 líneas) y a la sesión 1 con `settingsView.js`, media hora cada vez.
+#
+# ⚠️ EL ORDEN DE ESTE FICHERO DECIDE: manda la ÚLTIMA línea que casa. Por eso `* text=auto` va
+# PRIMERO y las reglas específicas después; al revés las anularía todas, incluida la del fichero
+# de la AEAT, cuyo SHA-256 está citado en un documento.
+#
+# Lo sostiene `tests/scrum480-fin-de-linea.test.mjs`, que comprueba el orden Y el efecto.
+# ─────────────────────────────────────────────────────────────────────────────────────────
+* text=auto
+
+# 🔴 Y `text` EXPLÍCITO POR EXTENSIÓN, QUE NO ES REDUNDANTE CON `text=auto`.
+#
+# `auto` significa «normaliza lo que YO detecte como texto», y git da por BINARIO cualquier
+# fichero con un CR suelto. Ocho de los nueve `.js` afectados llevaban `\r\r\n` —una doble
+# conversión— y por eso `text=auto` no los habría tocado: medido, no supuesto. Con `text`
+# explícito la detección no participa, así que el día que vuelva a colarse un `\r\r\n` el
+# fichero se sigue normalizando en vez de salirse del arreglo EN SILENCIO.
+*.js     text eol=lf
+*.mjs    text eol=lf
+*.cjs    text eol=lf
+*.ts     text eol=lf
+*.json   text eol=lf
+*.css    text eol=lf
+*.html   text eol=lf
+*.md     text eol=lf
+*.sql    text eol=lf
+*.yml    text eol=lf
+*.yaml   text eol=lf
+*.prisma text eol=lf
+*.svg    text eol=lf
+*.txt    text eol=lf
+# Binarios declarados: que ningún `text=auto` futuro se anime a «normalizarlos».
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.webp binary
+*.pdf  binary
+*.woff binary
+*.woff2 binary
+*.ttf  binary
+
+# UTF-16LE (BOM FF FE, salida de PowerShell). Para git son binarios y así deben quedarse: media
+# línea de conversión los convertiría en basura. Declarados para que no dependa de la detección.
+estructura.txt -text
+estructura-completa.txt -text
+
 # Los scripts de shell (hooks de Claude Code) deben mantener LF: con CRLF bash falla.
 *.sh text eol=lf
 # SCRUM-40: helper de db push sin extensión .sh → misma regla (LF, o bash falla con \r).

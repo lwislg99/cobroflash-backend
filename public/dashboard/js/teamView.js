@@ -217,7 +217,7 @@ function showInviteModal(onSuccess, setAlert, prefill = null) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal" style="max-width:420px">
+    <div class="modal" style="max-width:420px">
       <div class="modal-body">
         <div class="alert error" id="invite-alert" style="display:none"></div>
         <form id="invite-form" style="display:flex;flex-direction:column;gap:14px">
@@ -296,7 +296,7 @@ function showEditModal(member, onSuccess, setAlert) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal" style="max-width:380px">
+    <div class="modal" style="max-width:380px">
       <div class="modal-body">
         <form id="edit-form" style="display:flex;flex-direction:column;gap:14px">
           <div class="field">

@@ -118,7 +118,7 @@ function renderProductsView(container) {
           ov.className = 'modal-overlay';
           ov.style.display = 'none';
           ov.innerHTML = `
-            <div class="modal" style="max-width:560px">
+            <div class="modal" style="max-width:560px">
               <div class="modal-body" style="gap:12px">
                 <div class="quote-form-row">
                   <div class="field"><label>Nombre *</label><input name="name"/></div>
