@@ -148,6 +148,47 @@ function ivaLegible(bruto: unknown): number | null {
 > IVA?»*. Ausente no es cero. El `21` sigue descartado aparte: el contrato es la **fraccion**
 > (0,21), y colar un porcentaje multiplicaria el impuesto por cien.
 
+## 5 · 🔴 Y EL ROJO ENCONTRO QUE MI TEST NO MEDIA EL CODIGO QUE CORRE
+
+Al inyectar los rojos, **4 de 11 se quedaron verdes**. La causa era una sola y estaba en mi test:
+el mapeo vivia DENTRO de `suggestQuoteLines`, detras de la llamada al modelo, asi que el test no
+podia ejercitarlo — **lo reproducia en un doble local**. Romper el servicio no movia el doble.
+
+> Es **el mismo defecto que persigue el ticket, cometido en el test**: dos sitios con el mismo
+> criterio. Y es exactamente lo que avisa la casa — *«un guard atado a la FORMA y no al HECHO»*.
+> Sin la tanda de rojos esto se habria mergeado con 12 tests en verde **que no median nada**.
+
+**Arreglo:** el criterio sale a `src/modules/ai/domain/lineasSugeridas.ts` — codigo puro, sin
+`prisma`, sin `config` y sin red — con `cantidadUtilizable`, `ivaLegible` y `mapearLineasSugeridas`.
+`suggestQuoteLines` queda en `return mapearLineasSugeridas(parsed)`, y el test **importa de `dist/`
+y ejercita lo que corre**. `cantidadUtilizable` se MUEVE (no se copia) al modulo nuevo, y el camino
+del albaran la importa de alli: una fuente para el mismo hecho.
+
+Hay ademas un test que cae si el servicio **vuelve a mapear por su cuenta** — el mecanismo que me
+engano no se cierra con cuidado, se cierra con un rojo.
+
+## Rojos: 14/14, por CODIGO DE SALIDA
+
+Todos con `build=0` (un build roto deja `dist/` con el codigo bueno y el test no mediria nada; el
+arnes lo marca aparte y no lo cuenta como rojo). Verde restaurado al terminar, `exit=0`.
+
+| # | rojo inyectado | cae |
+|---|---|---|
+| 1 | ausente/vacio vuelve a valer CERO → linea EXENTA | 🔴 |
+| 2 | desaparece el tope del rango → un `21` se cuela ×100 | 🔴 |
+| 3 | la linea con IVA ilegible se propone al 0 % | 🔴 |
+| 4 | la descartada pierde el concepto | 🔴 |
+| 5 | vuelve el `0,01` (se deja de reutilizar la hermana) | 🔴 |
+| 6 | se deja de declarar la cantidad supuesta | 🔴 |
+| 7 | se deja de declarar el precio supuesto | 🔴 |
+| 8 | **CONTROL NEGATIVO**: se marca una cantidad que la IA leyo BIEN | 🔴 |
+| 9 | una linea mala se lleva por delante a las buenas | 🔴 |
+| 10 | el servicio vuelve a mapear por su cuenta (la copia que me engano) | 🔴 |
+| 11 | la ruta se come las descartadas | 🔴 |
+| 12 | el navegador deja de LEER las descartadas | 🔴 |
+| 13 | la marca por linea desaparece de la pantalla | 🔴 |
+| 14 | la microcopy deja de ser marcador (regla 30) | 🔴 |
+
 ## Controles
 
 * **NEGATIVO, primero:** una propuesta con todo legible sale **identica a hoy** — `supuestos: []`,

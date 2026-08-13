@@ -5,11 +5,8 @@
 // ── EL DEFECTO DE FONDO, y no es el número ────────────────────────────────────────────────
 // SCRUM-504 alineó el producto en «una cantidad ilegible es 0». `ai.service.ts:140` quedó fuera y
 // seguía proponiendo `1`. Pero el problema no era 0-contra-1: es que **una cantidad inventada por la
-// IA era indistinguible de una que tecleó el profesional**.
-//
-// ── Y NO ERA SOLO `qty`: ERAN TRES ────────────────────────────────────────────────────────
-// `price` y `tax` caían a 0 por el mismo `|| 0`, en silencio. El de `tax` es el que más pesa: una
-// línea con IVA ilegible se proponía como **0 %**.
+// IA era indistinguible de una que tecleó el profesional**. Y no era solo `qty`: `price` y `tax`
+// caían a 0 por el mismo `|| 0`, en silencio.
 //
 // ── LA DECISIÓN DEL FUNDADOR (2-ago-2026), y por qué son DOS respuestas distintas ─────────
 //   · `qty` y `price` → **se proponen y se marcan**. Un número raro se VE: el profesional lo mira,
@@ -17,49 +14,29 @@
 //   · `tax` → **la línea NO se propone**, y se dice cuál. Un 0 % no se ve: *parece una decisión que
 //     alguien tomó*. La asimetría de coste lo cierra — una línea que falta se añade a mano en diez
 //     segundos; una exenta que no debía serlo se descubre en una inspección.
+//
+// ── 🔴 ESTE FICHERO EJERCITA EL CÓDIGO QUE CORRE, NO UNA COPIA ────────────────────────────
+// La primera versión reproducía el mapeo en un doble local, porque vivía dentro de
+// `suggestQuoteLines`, detrás de la llamada al modelo. **Lo medí y no valía**: al romper el
+// servicio a propósito, cuatro rojos que tenían que salir **seguían verdes** — el test medía la
+// copia. Por eso el criterio se sacó a `lineasSugeridas.ts`, que es puro, y aquí se importa de
+// `dist/`. Un test que mide una copia del criterio es el mismo defecto que persigue el ticket.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { soloEjecutable } from './_guard-texto.mjs';
+import { mapearLineasSugeridas } from '../dist/modules/ai/domain/lineasSugeridas.js';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const SERVICIO = 'src/modules/ai/domain/ai.service.ts';
+const CRITERIO = 'src/modules/ai/domain/lineasSugeridas.ts';
 
-/**
- * 🔴 `Number(null)`, `Number('')`, `Number(false)` y `Number([])` valen **0**: con `Number()` a
- * secas, un modelo que se calla el impuesto produce una línea EXENTA. Solo es IVA lo que ES un
- * número —o una cadena con un número dentro— y cae en [0, 1] (el contrato es la fracción, 0,21).
- */
-function ivaLegible(bruto) {
-  const enRango = (n) => (Number.isFinite(n) && n >= 0 && n <= 1 ? n : null);
-  if (typeof bruto === 'number') return enRango(bruto);
-  if (typeof bruto === 'string' && bruto.trim() !== '') return enRango(Number(bruto.trim()));
-  return null;
-}
-
-/**
- * El mapeo real del servicio, ejercitado sin red: se reproduce su decisión línea a línea.
- * Devuelve `{ descartada }` cuando la línea NO se propone, o la línea propuesta con `supuestos`.
- */
-function mapearComoElServicio(l) {
-  const tax = ivaLegible(l.tax);
-  if (tax === null) {
-    return { descartada: { concept: String(l.concept || '').trim(), motivo: 'iva_ilegible' } };
-  }
-  const qtyBruto = Number(l.qty);
-  const priceBruto = Number(l.price);
-  const supuestos = [];
-  if (!Number.isFinite(qtyBruto) || qtyBruto <= 0) supuestos.push('qty');
-  if (!Number.isFinite(priceBruto) || priceBruto < 0) supuestos.push('price');
-  return {
-    concept: String(l.concept || '').trim(),
-    qty: Number.isFinite(qtyBruto) && qtyBruto > 0 ? qtyBruto : 1,  // `cantidadUtilizable`, REUTILIZADA
-    price: Math.max(0, priceBruto || 0),
-    tax,
-    supuestos,
-  };
-}
+/** Una línea suelta por el mapeo REAL. */
+const mapear = (l) => {
+  const r = mapearLineasSugeridas([l]);
+  return r.lineas[0] ?? { descartada: r.descartadas[0] };
+};
 
 const leer = (p) => {
   try {
@@ -78,17 +55,19 @@ test('SCRUM-507 · 🔴 CONTROL NEGATIVO: una propuesta LEGIBLE sale exactamente
     { concept: 'Material vario', qty: 2.5, price: 12.4, tax: 0.1 },
     { concept: 'Suministro exento', qty: 1, price: 40, tax: 0 },   // un 0 % que SÍ dijo el modelo
   ];
-  for (const l of legibles) {
-    const r = mapearComoElServicio(l);
-    assert.equal(r.descartada, undefined,
-      `🔴 se ha DESCARTADO una línea que la IA leyó bien (${JSON.stringify(l)}). Descartar de más es `
-      + 'quitarle trabajo del presupuesto a alguien que no se va a dar cuenta.');
-    assert.equal(r.qty, l.qty, '🔴 la cantidad legible ha cambiado');
-    assert.equal(r.price, l.price, '🔴 el precio legible ha cambiado');
-    assert.equal(r.tax, l.tax, '🔴 el IVA legible ha cambiado');
-    assert.deepEqual(r.supuestos, [],
-      `🔴 se marca como SUPUESTA una línea que la IA leyó bien (${JSON.stringify(l)}). Una marca que `
-      + 'sale cuando no toca se aprende a ignorar, y entonces deja de señalar lo que sí se inventó.');
+  const { lineas, descartadas } = mapearLineasSugeridas(legibles);
+  assert.deepEqual(descartadas, [],
+    '🔴 se ha DESCARTADO una línea que la IA leyó bien. Descartar de más es quitarle trabajo del '
+    + 'presupuesto a alguien que no se va a dar cuenta de que falta.');
+  assert.equal(lineas.length, legibles.length, '🔴 se ha perdido alguna línea legible por el camino');
+  for (let i = 0; i < legibles.length; i++) {
+    assert.equal(lineas[i].concept, legibles[i].concept, '🔴 el concepto ha cambiado');
+    assert.equal(lineas[i].qty, legibles[i].qty, '🔴 la cantidad legible ha cambiado');
+    assert.equal(lineas[i].price, legibles[i].price, '🔴 el precio legible ha cambiado');
+    assert.equal(lineas[i].tax, legibles[i].tax, '🔴 el IVA legible ha cambiado');
+    assert.deepEqual(lineas[i].supuestos, [],
+      `🔴 se marca como SUPUESTA una línea que la IA leyó bien (${JSON.stringify(legibles[i])}). Una `
+      + 'marca que sale cuando no toca se aprende a ignorar, y entonces deja de señalar lo inventado.');
   }
 });
 
@@ -97,8 +76,8 @@ test('SCRUM-507 · 🔴 CONTROL NEGATIVO: una propuesta LEGIBLE sale exactamente
 test('SCRUM-507 · 🔴 la cantidad INVENTADA queda declarada, y nombrando la línea', () => {
   // Lo que el modelo devuelve cuando no entiende la cantidad: vacío, texto, cero, negativo.
   for (const qty of ['', 'dos unidades', null, undefined, 0, -4, NaN, {}]) {
-    const r = mapearComoElServicio({ concept: 'Tubo de cobre 15 mm', qty, price: 10, tax: 0.21 });
-    assert.ok(r.supuestos.includes('qty'),
+    const r = mapear({ concept: 'Tubo de cobre 15 mm', qty, price: 10, tax: 0.21 });
+    assert.ok(r.supuestos?.includes('qty'),
       `🔴 la cantidad de «Tubo de cobre 15 mm» se inventó (${JSON.stringify(qty)}) y NO se declara.\n\n`
       + '  Esa línea llega al profesional con un número que él no escribió y que no puede\n'
       + '  distinguir del suyo. Ése es el defecto, no el valor concreto.');
@@ -110,14 +89,14 @@ test('SCRUM-507 · 🔴 la rareza del 0,01 muere al REUTILIZAR la función herma
   // unidades» de algo. Dos ilegibles, dos respuestas distintas y ninguna explicable. La hermana de
   // albarán ya tenía el criterio escrito: `cantidadUtilizable` manda los dos a 1.
   for (const qty of [0, -4, -0.5]) {
-    const r = mapearComoElServicio({ concept: 'Tubo', qty, price: 10, tax: 0.21 });
+    const r = mapear({ concept: 'Tubo', qty, price: 10, tax: 0.21 });
     assert.equal(r.qty, 1, `🔴 la cantidad ${qty} no cae a 1: ha vuelto el 0,01`);
     assert.ok(r.supuestos.includes('qty'), '🔴 y sigue teniendo que constar como supuesta');
   }
 });
 
 test('SCRUM-507 · 🔴 el PRECIO inventado también se declara, y por separado', () => {
-  const r = mapearComoElServicio({ concept: 'Tubo', qty: 2, price: 'a convenir', tax: 0.21 });
+  const r = mapear({ concept: 'Tubo', qty: 2, price: 'a convenir', tax: 0.21 });
   assert.deepEqual(r.supuestos, ['price'],
     '🔴 un precio ilegible cae a 0 en silencio y no se declara. Y `supuestos` tiene que decir QUÉ '
     + 'campo — «esta línea tiene algo inventado» no le dice al profesional dónde mirar.');
@@ -132,40 +111,58 @@ test('SCRUM-507 · 🔴 una línea con IVA ILEGIBLE no se propone', () => {
   // línea EXENTA — el caso más caro, y el único que no se ve.
   for (const tax of ['el normal', null, '', false, [], undefined, NaN, -0.1, 1.5, 21, {}]) {
     const l = { concept: 'Instalación caldera', qty: 1, price: 1200, tax };
-    const r = mapearComoElServicio(l);
-    assert.deepEqual(r.descartada, { concept: 'Instalación caldera', motivo: 'iva_ilegible' },
+    const { lineas, descartadas } = mapearLineasSugeridas([l]);
+    assert.deepEqual(descartadas, [{ concept: 'Instalación caldera', motivo: 'iva_ilegible' }],
       `🔴 SE HA VUELTO A PROPONER UNA LÍNEA CON IVA ILEGIBLE (tax=${JSON.stringify(tax)}).\n\n`
       + '  Sale al 0 %, y un 0 % *parece una decisión que alguien tomó*: una cantidad rara se ve, un\n'
       + '  IVA a cero no. La asimetría de coste lo cierra — una línea que falta se añade a mano en\n'
       + '  diez segundos; una exenta que no debía serlo se descubre en una inspección.');
-    assert.equal(r.qty, undefined, '🔴 la línea descartada no se propone: no lleva valores');
+    assert.deepEqual(lineas, [], '🔴 la línea descartada se propone igualmente');
   }
   // 🔴 EL 21 NO ES UN DESPISTE DE LA LISTA: el contrato del servicio es la FRACCIÓN (0,21). Un `21`
   // es el modelo hablando en porcentaje, y colarlo multiplicaría el impuesto por cien.
 });
 
 test('SCRUM-507 · 🔴 el concepto de la descartada NO se pierde', () => {
-  const r = mapearComoElServicio({ concept: 'Descalcificador', qty: 1, price: 690, tax: null });
-  assert.equal(r.descartada.concept, 'Descalcificador',
+  const { descartadas } = mapearLineasSugeridas([{ concept: 'Descalcificador', qty: 1, price: 690, tax: null }]);
+  assert.equal(descartadas[0]?.concept, 'Descalcificador',
     '🔴 la línea desaparece SIN DECIR de qué era. Desaparecer en silencio es otro fallo mudo con la '
     + 'misma forma que el que arregla este ticket: el profesional tiene que saber QUÉ trabajo no se '
     + 'propuso para poder escribirlo a mano.');
 });
 
-// ── 4 · EL SERVICIO Y LA RUTA LO HACEN DE VERDAD ──────────────────────────────────────────
+test('SCRUM-507 · una propuesta MIXTA no contamina: cae la mala y salen las buenas', () => {
+  const { lineas, descartadas } = mapearLineasSugeridas([
+    { concept: 'Mano de obra', qty: 3, price: 35, tax: 0.21 },
+    { concept: 'Junta tórica', qty: null, price: 2, tax: 0.21 },
+    { concept: 'Instalación caldera', qty: 1, price: 1200, tax: null },
+  ]);
+  assert.deepEqual(lineas.map((l) => l.concept), ['Mano de obra', 'Junta tórica'],
+    '🔴 una línea mala se lleva por delante a las buenas (o al revés). El descarte es POR LÍNEA.');
+  assert.deepEqual(lineas[0].supuestos, [], '🔴 la línea legible sale marcada por culpa de otra');
+  assert.deepEqual(lineas[1].supuestos, ['qty'], '🔴 la línea con cantidad inventada no queda marcada');
+  assert.deepEqual(descartadas, [{ concept: 'Instalación caldera', motivo: 'iva_ilegible' }]);
+});
 
-test('SCRUM-507 · el servicio DESCARTA por IVA y DECLARA lo supuesto', () => {
+// ── 4 · EL CRITERIO ESTÁ DONDE SE PUEDE MEDIR, Y LLEGA HASTA LA PANTALLA ───────────────────
+
+test('SCRUM-507 · el servicio USA el criterio, no lo reimplementa', () => {
+  // Si `suggestQuoteLines` volviera a mapear por su cuenta, este fichero seguiría verde midiendo un
+  // módulo que ya no manda — que es exactamente cómo se me escapó la primera vez.
   const src = soloEjecutable(leer(SERVICIO));
-  assert.match(src, /supuestos,/,
-    '🔴 EL SERVICIO HA DEJADO DE DECLARAR LO QUE SE INVENTA.\n\n'
-    + '  Sin ese campo, una cantidad propuesta por la IA vuelve a ser indistinguible de una que\n'
-    + '  escribió el profesional — que es la condición de cierre de este ticket.');
+  assert.match(src, /return mapearLineasSugeridas\(parsed\)/,
+    '🔴 EL SERVICIO HA VUELTO A MAPEAR POR SU CUENTA. Dos sitios decidiendo lo mismo discrepan, y '
+    + 'los tests se quedan midiendo el que no corre.');
+  assert.ok(!/supuestos\.push/.test(src),
+    '🔴 el servicio ha recuperado su propia copia del criterio: una fuente para el mismo hecho.');
+});
+
+test('SCRUM-507 · el criterio DESCARTA por IVA y DECLARA lo supuesto', () => {
+  const src = soloEjecutable(leer(CRITERIO));
   assert.match(src, /qty: cantidadUtilizable\(l\?\.qty\)/,
     '🔴 la cantidad ha dejado de salir de `cantidadUtilizable`. Esa función YA resolvía la '
     + 'incoherencia del 0,01, y duplicar el criterio es tener dos fuentes para el mismo hecho: '
     + 'discreparán, y el día que discrepen nadie mirará aquí.');
-  assert.match(src, /descartadas\.push\(\{ concept, motivo: 'iva_ilegible' \}\)/,
-    '🔴 UNA LÍNEA CON IVA ILEGIBLE HA VUELTO A PROPONERSE, o se descarta sin dejar rastro de cuál.');
   assert.match(src, /const tax = ivaLegible\(l\?\.tax\)/,
     '🔴 el IVA ha vuelto a leerse con `Number()`. `Number(null)`, `Number("")`, `Number(false)` y '
     + '`Number([])` valen **0**: con eso, un modelo que se calla el impuesto vuelve a producir una '
@@ -173,7 +170,7 @@ test('SCRUM-507 · el servicio DESCARTA por IVA y DECLARA lo supuesto', () => {
 });
 
 test('SCRUM-507 · la ruta DEVUELVE las descartadas al navegador', () => {
-  // Si el servicio las aparta y la ruta no las manda, el descarte es indistinguible de que el
+  // Si el criterio las aparta y la ruta no las manda, el descarte es indistinguible de que el
   // modelo nunca leyera esa línea: se habría cambiado un fallo mudo por otro.
   const ruta = soloEjecutable(leer('src/modules/ai/app/routes/ai.routes.ts'));
   assert.match(ruta, /descartadas: propuesta\.descartadas/,
@@ -182,9 +179,13 @@ test('SCRUM-507 · la ruta DEVUELVE las descartadas al navegador', () => {
 
 test('SCRUM-507 · el navegador PINTA las dos cosas, y como marcador sin aprobar (regla 30)', () => {
   const vista = leer('public/dashboard/js/aiQuoteAssistant.js');
-  assert.match(soloEjecutable(vista), /descartadas/,
-    '🔴 el aviso de líneas descartadas ha desaparecido de la pantalla: el profesional no se entera.');
-  assert.match(soloEjecutable(vista), /ai-linea-supuesta/,
+  const ejecutable = soloEjecutable(vista);
+  assert.match(ejecutable, /descartadas = data\.descartadas/,
+    '🔴 el navegador ha dejado de LEER las descartadas de la respuesta: la lista se queda vacía y el '
+    + 'aviso no sale nunca. El profesional no se entera de que falta una línea.');
+  assert.match(ejecutable, /ai-lineas-descartadas/,
+    '🔴 el aviso de líneas descartadas ha desaparecido de la pantalla.');
+  assert.match(ejecutable, /ai-linea-supuesta/,
     '🔴 la marca por línea ha desaparecido: vuelve a ser indistinguible lo suyo de lo inventado.');
   assert.equal((vista.match(/\[PENDIENTE microcopy oficial/g) || []).length, 2,
     '🔴 los dos textos tienen que ser MARCADORES hasta que el fundador los firme (regla 30). Y aquí '
@@ -192,9 +193,8 @@ test('SCRUM-507 · el navegador PINTA las dos cosas, y como marcador sin aprobar
 });
 
 test('SCRUM-507 · CONTROL POSITIVO del instrumento: la función hermana existe y se lee', () => {
-  // Si el barrido no encontrara nada en este fichero, «no hay más invenciones» significaría «no supe
-  // mirar». `cantidadUtilizable` es la referencia comprobable de que sí se está leyendo el fuente.
-  const src = leer(SERVICIO);
-  assert.match(src, /function cantidadUtilizable/,
+  // Si el barrido no encontrara nada, «no hay más invenciones» significaría «no supe mirar».
+  // `cantidadUtilizable` es la referencia comprobable de que sí se está leyendo el fuente.
+  assert.match(leer(CRITERIO), /export function cantidadUtilizable/,
     '🔴 el instrumento no encuentra la función hermana: el censo de «dónde inventa la IA» no vale.');
 });

@@ -13,6 +13,7 @@ import { anthropic } from '../../../integrations/claude';
 import { geminiComplete, isGeminiConfigured } from '../../../integrations/gemini';
 import { config } from '../../../core/config/env';
 import { prisma } from '../../../core/db/prisma';
+import { cantidadUtilizable, mapearLineasSugeridas } from './lineasSugeridas';
 
 // ¿Hay algún proveedor de IA disponible? (lo usa la ruta para el 503 digno)
 export function isAiConfigured(): boolean {
@@ -135,50 +136,10 @@ ${params.description}`;
   const parsed = JSON.parse(jsonMatch[0]);
   if (!Array.isArray(parsed)) throw new Error('ai_invalid_format');
 
-  // SCRUM-507 · LA DECISION DEL FUNDADOR, APLICADA: (b) para `qty` y `price`, (c) para `tax`.
-  //
-  //   · `qty` y `price` mantienen su valor y la linea sale MARCADA como supuesta.
-  //   · `tax` ILEGIBLE -> la linea NO SE PROPONE. Un IVA a cero *parece una decision que alguien
-  //     tomo*: una cantidad rara se ve, un 0 % no. Y la asimetria de coste lo cierra — una linea
-  //     que falta se anade a mano en diez segundos; una linea exenta que no debia serlo se
-  //     descubre en una inspeccion.
-  //
-  // ⚠️ LO DESCARTADO NO DESAPARECE: viaja en `descartadas` con su concepto y su motivo, y el
-  // navegador lo pinta. Quitar una linea en silencio seria otro fallo mudo.
-  const lineas: Array<{ concept: string; qty: number; price: number; tax: number; supuestos: string[] }> = [];
-  const descartadas: Array<{ concept: string; motivo: 'iva_ilegible' }> = [];
-
-  for (const l of parsed as any[]) {
-    const concept = String(l?.concept || '').trim();
-
-    // (c) El IVA es lo unico que descarta la linea entera.
-    const tax = ivaLegible(l?.tax);
-    if (tax === null) {
-      descartadas.push({ concept, motivo: 'iva_ilegible' });
-      continue;
-    }
-
-    // (b) Lo demas se propone, con su valor de siempre y DECLARANDO lo que se invento.
-    //
-    // `qty` sale de `cantidadUtilizable`, que YA EXISTIA para el albaran: con ella `0` y `-4` caen
-    // los dos a 1 y muere el «0,01 unidades» que producia `Math.max(0.01, Number(x) || 1)`. Una
-    // fuente para el mismo hecho, no dos (SCRUM-504).
-    const qtyBruto = Number(l?.qty);
-    const priceBruto = Number(l?.price);
-    const supuestos: string[] = [];
-    if (!Number.isFinite(qtyBruto) || qtyBruto <= 0) supuestos.push('qty');
-    if (!Number.isFinite(priceBruto) || priceBruto < 0) supuestos.push('price');
-
-    lineas.push({
-      concept,
-      qty: cantidadUtilizable(l?.qty),
-      price: Math.max(0, priceBruto || 0),
-      tax,
-      supuestos,
-    });
-  }
-
-  return { lineas, descartadas };
+  // SCRUM-507 · El criterio vive en `./lineasSugeridas`, NO aqui: aqui hay red y `prisma`, y un
+  // test no podia ejercitarlo sin copiarlo. Una copia del criterio es el mismo defecto que este
+  // ticket persigue — se comprobo rompiendo el servicio a proposito y viendo la copia seguir verde.
+  return mapearLineasSugeridas(parsed);
 }
 
 // ─── Suggest albarán lines (SCRUM-71 · VOZ-ALB V1) ─────────────────────────
@@ -223,40 +184,6 @@ export function normalizarUnidad(bruto: unknown): UnidadAlbaran {
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, ''); // tildes fuera: "metros cúbicos" → "metroscubicos"
   return SINONIMOS_UNIDAD[clave] ?? 'ud';
-}
-
-/**
- * Cantidad utilizable a partir de lo que devuelva el modelo.
- *
- * Todo lo que no sea un número POSITIVO cae a 1, que es la regla que ya se le pide al modelo
- * ("si no se dice, 1"). Se hace explícito en vez de heredar el `Math.max(0.01, Number(x) || 1)`
- * del extractor de presupuesto, que es incoherente: con ese, un 0 acaba en 1 (porque 0 es
- * falsy) pero un -4 acaba en **0,01** — "0,01 unidades" de algo, impreso en un documento que
- * firma el cliente. Cero y negativo son la misma clase de basura de dictado y merecen la misma
- * respuesta.
- */
-function cantidadUtilizable(bruto: unknown): number {
-  const n = Number(bruto);
-  return Number.isFinite(n) && n > 0 ? n : 1;
-}
-
-/**
- * El IVA que devuelve el modelo, o `null` si NO SE PUEDE LEER (SCRUM-507).
- *
- * 🔴 NO VALE `Number(bruto)`, y este es el filo entero del ticket: `Number(null)`, `Number('')`,
- * `Number(false)` y `Number([])` valen **0**. Con ese criterio, un modelo que se calla el impuesto
- * produce una línea **exenta**, y una exenta no se ve — parece una decisión que alguien tomó.
- * Por eso solo se acepta lo que ES un número: un `number` finito, o una cadena con un número
- * dentro. Ausente, vacío o de otro tipo son "no se sabe", y la línea no se propone.
- *
- * El rango es [0, 1] porque el contrato del servicio es la FRACCIÓN (0,21). Un `21` es el modelo
- * hablando en porcentaje: colarlo multiplicaría el impuesto por cien.
- */
-function ivaLegible(bruto: unknown): number | null {
-  const enRango = (n: number) => (Number.isFinite(n) && n >= 0 && n <= 1 ? n : null);
-  if (typeof bruto === 'number') return enRango(bruto);
-  if (typeof bruto === 'string' && bruto.trim() !== '') return enRango(Number(bruto.trim()));
-  return null;
 }
 
 export interface LineaAlbaranSugerida {
