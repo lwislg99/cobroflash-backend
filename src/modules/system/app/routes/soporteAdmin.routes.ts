@@ -14,6 +14,8 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { enviarCorreo } from '../../../../integrations/enviarCorreo';
+// SCRUM-508: la clase de correo sale del vocabulario cerrado, no de un literal a mano.
+import { CLASES_DE_CORREO } from '../../../messaging/domain/registroDeEnvios';
 import { construirCorreoSoporte, exigirMensaje } from '../../domain/soporte';
 import { sendFailureBody, sendSuccessBody } from '../../../../lib/sendOutcome';
 
@@ -52,7 +54,10 @@ router.post('/', async (req, res) => {
     instaladaPwa: sesion?.instaladaPwa ?? null,
   });
 
-  const r = await enviarCorreo(correo);
+  // SCRUM-508 · deja fila. El destinatario es soporte (la casa), no un cliente: `customerId` va
+  // nulo, y no hay documento al que atarlo. El `merchantId` es de QUIÉN escribió, que es lo que hay
+  // que poder consultar después.
+  const r = await enviarCorreo({ ...correo, registro: { merchantId, kind: CLASES_DE_CORREO.soporte } });
 
   // 🔴 EL SUELO DEL TICKET. `sent` es la única verdad sobre si salió (SCRUM-126), y aquí no se
   // adorna: si el correo no ha salido, el profesional lo lee y se va con el texto en la mano. Decir

@@ -9,6 +9,8 @@ import { ensureInvoicePdf } from '../../../lib/invoicing';
 import { ensureQuoteDecisionToken } from '../../quotes/domain/quoteToken.service'; // SCRUM-95
 import { renderEmailLayout, escEmail } from './emailLayout';
 import { enviarPorResend } from '../../../integrations/enviarCorreo'; // SCRUM-475: el emisor unico
+// SCRUM-508: la clase de correo sale del vocabulario cerrado, no de un literal a mano.
+import { CLASES_DE_CORREO } from './registroDeEnvios';
 
 /**
  * Envía la factura al cliente con el PDF adjunto.
@@ -74,7 +76,7 @@ export async function sendInvoiceEmail(args: {
       // distingue (reglas 24/26) y una fila que los mezclara no podría contestarla.
       registro: {
         merchantId: inv.merchantId,
-        kind: isJust ? 'justificante' : 'invoice',
+        kind: isJust ? CLASES_DE_CORREO.justificante : CLASES_DE_CORREO.factura,
         customerId: inv.customerId ?? null,
         relatedType: 'invoice',
         relatedId: inv.id,
@@ -173,7 +175,7 @@ export async function sendQuoteEmail(args: { quoteId: number; prisma: PrismaClie
       // SCRUM-501 · ídem: el presupuesto también deja fila, con su cliente y su documento.
       registro: {
         merchantId: quote.merchantId,
-        kind: 'quote',
+        kind: CLASES_DE_CORREO.presupuesto,
         customerId: quote.customerId ?? null,
         relatedType: 'quote',
         relatedId: quote.id,

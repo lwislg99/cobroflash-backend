@@ -480,6 +480,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
       // SCRUM-477 · ⚠️ SIGUE SIN `await`: el presupuesto ya se aceptó por WhatsApp y un aviso que
       // no sale NO puede tumbar esa aceptación. Lo que cambia es que ahora deja constancia.
       conConstancia('presupuesto_aceptado', merchant.email, sendMerchantQuoteAcceptedEmail({
+        merchantId: quote.merchantId, // SCRUM-508: para que el aviso deje fila
         merchantEmail: merchant.email,
         merchantName:  merchant.name || 'Tu negocio',
         customerName:  customer?.name || 'Cliente',
