@@ -303,3 +303,48 @@ comparacion descuidada y llegaria asi a la pantalla.
 escrito SCRUM-424 y SCRUM-405 ahi mismo: `censoActual()` solo lista ficheros CON marcadores, asi
 que un `0` seria una bajada permanente sin anotar. **Y salir del censo no saca de la vigilancia**,
 que es lo que fija R4b.
+
+## 🔴 SCRUM-387 me cazo: puse CUANDO se aprobo, no DONDE consta
+
+Escribi *«aprobada por el fundador el 13-ago-2026»*. El trinquete de SCRUM-387 lo tumbo (9 → 10) y
+tiene toda la razon: **una fecha sola no dice donde mirar**, y es exactamente la forma que tenian
+las seis marcas que acabaron contradiciendose. Las dos marcas citan ahora **SCRUM-507** y
+`docs/master/SCRUM-507.md`, donde esta el texto literal. Verde: 5/5.
+
+## SCRUM-480: el disco de este worktree no se habia rematerializado
+
+La suite salio en rojo por `scrum480-fin-de-linea`: **1.387 ficheros con `\r` en el disco**. Medido
+antes de tocar nada, porque «es mio» y «es del entorno» son dos diagnosticos distintos:
+
+| medicion | resultado |
+|---|---|
+| el mismo guard en un worktree LIMPIO de `origin/main`, en esta maquina | **verde, 8/8** → no es del entorno |
+| ficheros con `\r` **seguidos por git** / **basura local** | **1.387 / 0** → son del repo, y ninguno lo he tocado |
+| el `\r`, ¿esta en el INDICE o solo en el DISCO? | **indice LF en todos**; solo el disco tenia CRLF |
+| `git diff --numstat` | **vacio**: ni un cambio de contenido |
+
+O sea: **lo que empujo estaba bien desde el principio**. Lo que faltaba era la reescritura de disco
+que el fundador dio por esperada — y que en este worktree no ocurrio porque el merge solo
+rematerializa los ficheros **cuyo blob cambia**, y estos ya estaban en LF en el repo.
+
+Dos cosas que aprendi peleandome con el instrumento:
+
+* **`git checkout-index -f` NO reescribe un fichero que ya existe.** Medido: `-f` lo deja en CRLF;
+  borrarlo y volver a sacarlo lo deja en LF. Se rematerializa escribiendo el blob directamente,
+  que ademas nunca deja el fichero ausente a medio camino.
+* **Solo las extensiones con `eol=lf` DECLARADO**, leidas de `.gitattributes` (no copiadas a mano).
+  Un `.toml` cae en `* text=auto` y su forma en el arbol de trabajo **es CRLF** —comprobado en el
+  worktree limpio—, asi que escribirle LF me alejaria del checkout limpio en vez de acercarme.
+
+Reescritos **1.366**; 2 se quedan porque el `\r` esta **en su propio blob** (son del repo, no mios).
+Despues: `git add -A` deja **0 ficheros staged** y el status limpio — el ` M` de 1.367 lineas era
+la **cache de `stat`**, no un cambio: `git diff` estaba vacio y los bytes de disco e indice son
+identicos.
+
+## Verificacion de la tercera entrega
+
+* **Rojos: 10/10 por codigo de salida**, repetidos sobre el estado final (el fichero cambio de EOL
+  y de comentarios despues de la primera tanda). Verde restaurado, `exit=0`.
+* **Suite entera: 3651 tests, 3574 pass, 0 fail.** `guards:entrada` 17/17.
+* El fallo de SCRUM-409 que reporte en la entrega anterior **ya no sale**: `main` avanzo a
+  `9666e464` y viene resuelto de su carril.
