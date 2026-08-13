@@ -796,3 +796,76 @@ que la ruta signifique una sola cosa. Se resuelve a favor del guard **en este ca
 porque el coste para la persona es un `git show` de más, y el coste del otro lado es un mecanismo
 que deja de vigilar sin avisar. Si algún día el coste se invierte —una entrada donde la ruta sea
 imprescindible para entender qué pasó—, esto se vuelve a discutir en vez de aplicarse por inercia.
+
+---
+
+# APÉNDICE (13-ago-2026) · Veredicto de `scrum-300-firmado-por`, la rama más cara del censo
+
+> ⚠️ Se ANEXA. Nada de lo de arriba se toca.
+
+**Medido contra:** `origin/main` = `3912f3a3f35cf00200baa00da8b3016449971ee9` · 2026-08-13T20:10:00+02:00
+**Rama medida:** `scrum-300-firmado-por` = `eb023c0ec8f9d7e84e428cfaccdf9ce857261d9f`
+**No se ha mergeado ni borrado nada.** El merge se hizo en una rama LOCAL de medición, ya eliminada.
+
+## Veredicto en una línea
+
+> **NO es mergeable, y tampoco hace falta: su trabajo YA está en `main`, más evolucionado.**
+> **Pasa de MEDIR a BORRAR.**
+
+## Cómo se llegó, y por qué el censo la había puesto en MEDIR
+
+El censo la clasificó por el **asunto** de sus 5 commits: ninguno aparece en la historia de `main`,
+así que salió como «trabajo que main no tiene». **Ese discriminador tiene un punto ciego, y es
+éste: distinto asunto, MISMO contenido.** Lo declaré como hueco del censo en su forma inversa
+(«asunto igual no es contenido igual»); aquí mordió por el otro lado.
+
+Lo que lo destapó: al mergear `main` dentro salieron **13 conflictos**, dos de ellos `AA`
+—añadido en los dos lados— sobre `albaranFirmante.ts` y sobre esta misma entrada. Un `AA` significa
+que **los dos lados crearon el mismo fichero por separado**: la señal de que el trabajo entró por
+otra rama.
+
+## Las tres medidas que lo cierran
+
+**① El módulo.** `albaranFirmante.ts`, rama contra main: **57 inserciones y 284 borrados**. O sea,
+**main tiene 284 líneas que la rama no**. La versión de `main` no es otra: es la MISMA evolucionada.
+
+**② El schema.** `main` ya tiene las columnas del albarán (`lugar_entrega`, `firmado_por`, …).
+**No hay diff que preparar ni `ALTER TABLE` que pedir**: el punto 3 del encargo se queda sin objeto.
+
+**③ La copy aprobada — lo único que no se reconstruye midiendo.** Se extrajeron los **12 literales**
+de copy del módulo de la rama y se buscó cada uno en `main` (fichero y árbol entero), con control
+positivo del instrumento. **8 están.** Los **4 que no**, están SUSTITUIDOS por versión nueva:
+
+| en la rama (5-ago) | en `main` hoy |
+|---|---|
+| `Un familiar o alguien que vive en el domicilio` | `Un familiar o conviviente` |
+| `Portero o conserje del edificio` | `Portero o conserje` |
+| `La calidad de quien firma no es una de las opciones válidas.` | `Esa opción no existe. Recarga la página y vuelve a intentarlo.` |
+| `Al elegir «Otro», escribe en calidad de qué firma.` | `Si eliges «Otro», escribe en calidad de qué firma.` |
+
+**Ninguna copy aprobada se pierde.** Las cuatro tienen sustituta en `main`, y `main` además ofrece
+**cinco** calidades de firmante y dos rótulos de PDF (`Firmado por: `, `En calidad de: `) que la
+rama no tenía. Mergearla sería **retroceder** el texto que el asesor aprobó después.
+
+## Las cuatro hermanas, medidas
+
+| rama | `is-ancestor` | commits propios | qué aporta |
+|---|---|---|---|
+| `scrum-300-c5-fusion` | rc=0 | 0 | nada: está entera en main |
+| `scrum-300-c5-fusion-al-dia` | rc=0 | 0 | nada: está entera en main |
+| `scrum-300-c5-fusion-rebasada-2` | rc=0 | 0 | nada: está entera en main |
+| `scrum-300-c5-fusion-rebasada` | rc=1 | 7 | sus 7 asuntos SÍ están en main con otro sha → BORRAR |
+| `scrum-300-firmado-por` | rc=1 | 5 | **contenido superado por main** → BORRAR |
+
+**Ninguna de las cinco aporta nada que `main` no tenga.** Las cinco se pueden borrar.
+
+## Lo que este apéndice corrige del censo
+
+El censo dio **33 MEDIR**. La primera que se mira en serio resulta ser BORRAR, así que **el 33 es
+un techo, no una cuenta**: parte de esas 33 serán lo mismo. La lección para las 32 restantes es que
+**el conflicto `AA` al mergear es una señal barata y fuerte** de «esto ya entró por otro sitio», y
+mirarla cuesta un minuto por rama.
+
+**Y lo que NO se afirma:** no se ha comprobado fichero a fichero que las 284 líneas de más de `main`
+contengan TODO lo que hacían las 57 de la rama. Se ha comprobado lo que el ticket declara como
+irrecuperable —la copy aprobada— y el schema. Si alguien sospecha de una función concreta, se mira.
