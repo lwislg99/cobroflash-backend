@@ -40,7 +40,12 @@ const ficheros = fs.readdirSync(DIR).filter((f) => /\.(mjs|js)$/.test(f) && f !=
 /** Ocurrencias de `merchantId: 1` con su línea. Se mira el CÓDIGO, no los comentarios. */
 function usosDelDemo(texto) {
   const out = [];
-  texto.split('\n').forEach((linea, i) => {
+// 13-ago-2026 · SE PARTE POR /\r?\n/ Y NO POR '\n': con CRLF cada linea se quedaba
+// con un retorno de carro al final, y entonces el replace del comentario NO CASABA (el punto de
+// la regex no incluye ese caracter y el $ sin flag m exige fin de cadena). El comentario entraba
+// ENTERO, asi que este guard se cazaba a si mismo en la frase que explica la prohibicion.
+// Estuvo ciego en TODO fichero con CRLF. Encontrado con main en rojo por scrum508:76.
+  texto.split(/\r?\n/).forEach((linea, i) => {
     const sinComentario = linea.replace(/\/\/.*$/, '');
     if (new RegExp(`merchantId:\\s*${DEMO_ID}\\b`).test(sinComentario)) {
       out.push({ linea: i + 1, texto: linea.trim(), marcada: linea.includes(MARCA) });
