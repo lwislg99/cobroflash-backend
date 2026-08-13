@@ -244,3 +244,62 @@ lo correcto (usa `merchantId: 7`); lo que salta es la explicacion de por que.
 **Se reporta, no se arregla** (regla 9): es de la sesion de SCRUM-508. La forma conocida de
 cerrarlo es leer el fichero **sin comentarios** (`soloEjecutable`), como ya hacen otros guards de
 la casa.
+
+
+---
+
+# SCRUM-507 · TERCERA ENTREGA · los dos textos APROBADOS, sin marcador
+
+**Medido contra:** `origin/main` = `9666e464049e6059cfa39aa7d53ce17abdc0fb12` · 2026-08-13T19:32:23+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-507-tax-no-se-propone`
+
+El fundador firmo los dos textos. Se ponen literales, se quitan los dos marcadores y **el
+trinquete de SCRUM-402 APRIETA**.
+
+## Los dos textos, tal cual entran
+
+**TEXTO 1** — `aiQuoteAssistant.js`, arriba del modal de sugerencias, solo si hubo descartadas:
+
+    Esto no lo hemos añadido porque no sabíamos qué IVA ponerle: <conceptos>
+    Añádelo tú si va en el presupuesto.
+
+**TEXTO 2** — por linea, debajo de «Cantidad · Precio · IVA», solo en las lineas con algo supuesto:
+
+    Esto lo hemos puesto nosotros: cantidad. Revísalo antes de enviar.
+    Esto lo hemos puesto nosotros: precio. Revísalo antes de enviar.
+    Esto lo hemos puesto nosotros: cantidad y precio. Revísalo antes de enviar.
+
+## 🔴 EL BUG DE CONCORDANCIA NO SE ARREGLA: DEJA DE SER POSIBLE
+
+Mi marcador decia «cantidad y precio **que no venia** y hemos supuesto» — sujeto plural, verbo
+singular. Lo señale como una falta de concordancia; **el fundador vio el fallo de fondo**: la frase
+DEPENDIA DEL NUMERO DE CAMPOS, y por eso podia no concordar.
+
+En los textos aprobados el sujeto es **«esto»**, no la lista. La lista es un complemento detras de
+los dos puntos, asi que la frase concuerda con uno, con dos y con los que hicieran falta. **No es
+que el bug este corregido: es que ya no se puede escribir.** Un guard de la suite lo fija — el
+texto se compone SIEMPRE con el mismo esqueleto, y las tres formas se comprueban una a una.
+
+## El salto de linea del TEXTO 1 tiene que VERSE
+
+El texto aprobado lleva `\n` («Añádelo tú si va en el presupuesto.» va en su propia linea). Un `\n`
+dentro de un `textContent` **no se ve**: HTML colapsa el salto y la frase saldria pegada. Se anade
+`white-space:pre-line` al parrafo, y hay un rojo que cae si desaparece — un texto aprobado que se
+pinta de otra forma que la aprobada no es el texto aprobado.
+
+⚠️ Se sigue usando `textContent` y NO `innerHTML` para este aviso: los conceptos vienen del
+modelo, y son lo unico de esta pantalla que no ha escrito ni el producto ni el profesional.
+
+## Tildes: comprobadas por codigo, no a ojo
+
+Se me fueron dos en la tanda anterior. El guard exige los caracteres acentuados **por punto de
+codigo** (`sabíamos`, `Añádelo`, `Revísalo`), asi que un `sabiamos` sin tilde cae en rojo. Se
+comprueba ademas que el fichero sigue en UTF-8 sin BOM: una mojibake (`sabÃ­amos`) pasaria una
+comparacion descuidada y llegaria asi a la pantalla.
+
+## SCRUM-402: la entrada se BORRA, no baja a 0
+
+`aiQuoteAssistant.js` sale del `CENSO`. Se borra en vez de escribir `0`, que es lo que dejaron
+escrito SCRUM-424 y SCRUM-405 ahi mismo: `censoActual()` solo lista ficheros CON marcadores, asi
+que un `0` seria una bajada permanente sin anotar. **Y salir del censo no saca de la vigilancia**,
+que es lo que fija R4b.
