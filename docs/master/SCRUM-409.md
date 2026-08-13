@@ -444,3 +444,174 @@ De 274 ramas, **39 se pueden borrar** y solo **13 contienen trabajo que `main` n
 2. **Las 9 sin resolver no son «poco importantes»**: son las que el instrumento no puede
    decidir, y una de ellas es precisamente la 300, que resultó ser la más cara del censo.
 3. **No se ha ejecutado nada.** Ni un borrado, ni un merge, ni un push a ninguna de las 33.
+
+---
+
+# SCRUM-409 (fase 5) · Las tres ramas pesadas, leídas una a una
+
+**Fecha:** 13-ago-2026 · **Carril:** higiene de repositorio · **Gate:** ninguno, es medición
+
+**Medido contra:** `origin/main` = `9e845ded8e526f4cf3b35e1931f55530c559f1c3`
+
+> Trato manual, el de la 300: **leer qué llevan** y si `main` tiene algo equivalente **y más
+> evolucionado**. Sin instrumento automático, media tanda por rama.
+> 🛑 **Nada mergeado, nada borrado.** Todo se midió sobre las refs `origin/*`, sin crear una sola
+> rama local ni tocar ninguna de las tres.
+
+## 0 · El punto ciego, respondido primero
+
+*«Una rama cuyo valor es un BORRADO se ve idéntica a una ya mergeada.»* La pregunta va por delante
+porque cambia cómo se lee todo lo demás:
+
+| rama | ¿su aportación es añadir o quitar? |
+| --- | --- |
+| `scrum-340` | **añadir** — 391 inserciones / 23 borrados en 6 ficheros, y 17 ficheros nuevos |
+| `scrum-198` | **añadir** — 10 ficheros nuevos, ni uno modificado |
+| `scrum-222` | **añadir** — 6 ficheros nuevos, 2 modificados |
+
+**Ninguna de las tres retira nada.** `git diff --name-status` no devuelve **un solo `D`** en las
+tres. El instrumento habitual no miente aquí.
+
+## 1 · `scrum-222-deriva-prod` → **BORRAR**
+
+**Qué lleva** (3 commits, base del 30-jul, **1.492 commits por detrás**):
+
+| fichero | qué hace |
+| --- | --- |
+| `prisma/schema-manifest.json` | la lista de columnas esperadas, **versionada como fichero** |
+| `scripts/gen-schema-manifest.mjs` + `_schema-manifest.mjs` | lo regeneran a mano |
+| `src/core/db/schemaDrift.ts` | el assert que compara BD contra ese manifiesto |
+| `src/index.ts` · `health.routes.ts` | lo cablean al arranque y a `/health` |
+| 2 ficheros de test | 9 tests |
+
+**Qué tiene `main` hoy:** lo mismo, **cableado y por otro camino**.
+
+| | rama | `main` |
+| --- | --- | --- |
+| de dónde salen las columnas esperadas | `fs.readFileSync('prisma/schema-manifest.json')` | **`Prisma.dmmf.datamodel`** |
+| ¿hay que regenerar algo a mano? | **sí** | no: sale del cliente generado |
+| `schemaDrift.ts` | 161 líneas | **279** |
+| tests | 9 | **23** (`scrum222-deriva-arranque.test.mjs`) |
+| ¿cableado en el arranque? | sí | **sí** (`src/index.ts:25`) |
+
+> **El diff va a favor de `main`, y por el motivo que importa: una fuente de verdad menos.** El
+> manifiesto es un fichero que hay que acordarse de regenerar; el DMMF **sale del propio
+> `schema.prisma`** al compilar. Mergear la rama reintroduciría exactamente la clase de segunda
+> lista que este repo lleva semanas desmontando.
+
+**La señal que lo sostiene:** el merge simulado (`git merge-tree`, sin tocar nada) da
+**`CONFLICT (add/add)` en `src/core/db/schemaDrift.ts`** — el mismo fichero escrito dos veces, por
+dos caminos, y ganó el de `main` por estar cableado y derivado. Es el patrón de la 300 confirmado
+**en la dirección que sospechabas**.
+
+### ⚠️ Lo único que se pierde al borrarla, y merece ticket propio (no merge)
+
+`main` **no expone la deriva en `/health`**; la rama sí, con un razonamiento que no está en ningún
+otro sitio: *el chequeo de runtime es INFORMATIVO y no puede poner el status en rojo, porque si el
+healthcheck de Railway mata un contenedor sano por deriva, al reiniciar el assert de arranque falla
+sobre el MISMO build → bucle de reinicio y producción caída.*
+
+Ese razonamiento vale; el código no, porque cuelga del manifiesto. **Rehacerlo sobre el camino del
+DMMF es media hora**, y no justifica arrastrar 1.492 commits de retraso.
+
+## 2 · `scrum-198-spike-xsd` → **BORRAR**
+
+**Qué lleva** (1 commit, 29-jul, **1.617 commits por detrás**): la carpeta `spike/` con tres
+candidatos ejecutables para validar el XML de VeriFactu contra el XSD — `xmllint-wasm`,
+`libxml2-wasm` y `libxmljs2` — con su `package.json` **aparte a propósito** (elegir dependencia es
+del fundador, regla 36) y dos XML de muestra.
+
+**Un spike no se juzga como código: se juzga por si su PREGUNTA sigue abierta.** Está cerrada:
+
+| lo que el spike iba a decidir | dónde está hoy en `main` |
+| --- | --- |
+| qué librería | **`"xmllint-wasm": "^5.2.0"` en `package.json`** — el candidato 1 |
+| el validador de verdad | `tests/_xsd-verifactu.mjs` |
+| el test que el LEEME decía que «nacerá» | `tests/scrum145-verifactu-xsd.test.mjs`, **8 tests en `npm test`** |
+| y el propio 198 | `tests/scrum198-consumidores-xml.test.mjs` |
+
+Y la comparativa de los tres **está escrita en `main`**, en la cabecera de `_xsd-verifactu.mjs`:
+*«Se eligió sobre `libxml2-wasm` (API de input provider marcada `@alpha`) y sobre `libxmljs2`
+(nativo, 9,3 MB, un prebuild por plataforma) — decisión del fundador, regla 36.»* Palabra por
+palabra el veredicto del spike.
+
+**La señal que lo sostiene:** es la única de las tres que **no da ni un conflicto** —son todo
+ficheros nuevos bajo `spike/`—, así que si fuera valiosa entraría gratis. Y aun así no debe entrar:
+mergearla añade **una segunda raíz npm con tres librerías de XML** al repositorio, superficie de
+dependencias para una pregunta ya respondida.
+
+### ⚠️ El matiz honesto, porque el propio LEEME lo argumenta en contra
+
+Dice: *«se commitea a propósito: el 29-jul se perdió trabajo por dejarlo en un scratchpad efímero.
+Un spike que no se puede volver a ejecutar es una opinión.»* Es un buen argumento, y borrar la rama
+**hace inalcanzable el commit**.
+
+Lo que hace que aun así sea BORRAR: **lo que había que conservar era el veredicto, y el veredicto ya
+está en `main`** con sus tres motivos. Si quieres conservar además el material ejecutable, la forma
+barata **no es mergear**: es un `git tag spike-198 e893d322` — ancla el commit para siempre sin
+meter nada en el árbol. Un comando, cero superficie.
+
+## 3 · `scrum-340-contador-plazas-reales` → **LE FALTA ESTO**
+
+Ésta es la distinta: **no está superada — va por delante de `main` en una mitad, y le contradice en
+la otra.** Y hay tres horas de diferencia entre las dos.
+
+**Qué lleva** (2 commits, 5-ago **06:38**, 1.191 commits por detrás): `founding.ts` reescrito
+(44 → 135 líneas), el contador en landing y precios, `plansView.js`, `subscriptions.routes.ts`,
+**205 líneas de test** y 16 capturas AB6 con su entrada de máster.
+
+**Qué tiene `main`:** SCRUM-330, entrado el 5-ago **09:44** — **tres horas después** del último
+commit de la rama. Las dos arreglan el mismo bug de partida (`plan: 'founding'` a secas contaba a
+quien no había pagado) y **se separan en qué es una plaza ocupada**:
+
+| caso | `main` (SCRUM-330) | rama (SCRUM-340) |
+| --- | --- | --- |
+| `active` | cuenta | cuenta |
+| `trialing` | no cuenta | no cuenta |
+| **`past_due`** | **no cuenta** — «el cobro FALLÓ» | **cuenta** — «pagó, y ahora le falla un cobro» |
+| **canceló después de pagar** | **no cuenta** | **cuenta**, vía `lifecycleEmailsSent.firstPayment` |
+
+### 🔴 Y el defecto que la rama cierra SIGUE VIVO en `main` — comprobado hoy, no supuesto
+
+`stripe.routes.ts:138` y `:151` de `origin/main` devuelven al merchant a
+`plan: 'trial', subscriptionStatus: 'canceled'` al cancelar. Con la regla de `main`
+(`{plan:'founding', subscriptionStatus:'active'}`), un fundador que cancela **deja de contar**:
+
+> **el número de plazas que quedan SUBE.** «Quedan 17» → «quedan 18». Un contador de escasez que va
+> hacia atrás en una landing es lo que hace pensar que está inventado — y es literalmente el bug que
+> la rama nombra.
+
+La rama lo resuelve con un **proxy declarado y con su límite escrito**: `firstPayment`, la marca que
+escribe `sendFirstPaymentEmail` desde un solo sitio y que **nada borra nunca**, así que sobrevive a
+la cancelación. Y descarta los otros cuatro candidatos uno a uno con su motivo —
+`stripeCustomerId` se escribe **antes** de pagar, `stripeSubscriptionId` se borra al cancelar,
+`canceled` a secas **no distingue** a quien pagó de quien nunca llegó a pagar (`stripe.routes.ts`
+escribe ese mismo valor para `canceled` y para `incomplete_expired`).
+
+### Por qué NO es MERGEABLE HOY
+
+1. **Contradice una decisión posterior y registrada.** `main` decide en `past_due` lo contrario, y
+   con su motivo escrito: contarlo sería *prueba social falsa en material publicado*. Las dos
+   lecturas son defendibles y **no las reconcilio yo**: son dinero y son claim de landing.
+2. **Toca superficie pública.** `public/index.html` y `public/precios.html` — STOP.
+3. **Conflictos reales**, simulados sin tocar nada: `public/index.html`, `public/precios.html` y
+   `src/modules/billing/domain/founding.ts` (que `main` reescribió entero en SCRUM-330). Los 16 PNG,
+   la entrada y el test entran limpios.
+
+**Lo que le falta, en orden:** ① que decidas `past_due` — ¿«pagó alguna vez» o «está pagando
+ahora»?; ② merge de `main` resolviendo `founding.ts` a mano, que es semántico y no textual;
+③ rehacer las capturas, que son de una landing de hace 1.191 commits.
+
+**Y si la respuesta a ① es la de `main`**, la rama **sigue teniendo valor**: la mitad de
+«la plaza no se libera» es independiente del debate de `past_due`, y es un defecto vivo.
+
+## 4 · Resumen
+
+| rama | veredicto | la señal que lo sostiene |
+| --- | --- | --- |
+| `scrum-222-deriva-prod` | **BORRAR** | `add/add` en `schemaDrift.ts`; `main` deriva del DMMF (una fuente menos), 279 líneas vs 161 y 23 tests vs 9 |
+| `scrum-198-spike-xsd` | **BORRAR** | su veredicto está en `main`: `xmllint-wasm` en `package.json` y 8 tests corriendo. Antes de borrar: `git tag spike-198 e893d322` |
+| `scrum-340-contador-plazas-reales` | **LE FALTA ESTO** | no está superada: cierra un defecto **vivo** en `main` (la plaza se libera al cancelar y el contador sube), pero contradice a SCRUM-330 en `past_due` y toca superficie pública |
+
+**Ninguna toca `prisma/schema.prisma`** — comprobado en las tres: cero ficheros. No hay diff de
+schema que preparar.
