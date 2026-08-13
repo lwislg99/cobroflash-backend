@@ -438,3 +438,142 @@ el dato**: un colapso que solo se viera desde un sitio estaría mal vigilado.
 * **⑥** el cable —una línea, `retencionIrpf.ts` se consume, no se toca— y el **censo derivado de
   SCRUM-271** (cualquier `||` sobre lectura de input numérico; hay un caso confirmado en
   `vat.service.ts:24`, que es SCRUM-504 y **no se toca**).
+
+---
+
+# SCRUM-293 · ③a-bis — las declaraciones que el cable dejó viejas, y la que no lo era
+
+**Fecha:** 13-ago-2026 · **Carril:** B · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `9e845ded8e526f4cf3b35e1931f55530c559f1c3` · 2026-08-13T20:15:24+02:00
+**Tanda:** tests 3652 pass 3574 fail 1 skipped 77 — el único fail es AMBIENTAL (SCRUM-480, ver §4)
+
+> **Encargo:** poner al día las declaraciones que ③a dejó caducas y medir el rojo del `\r`.
+> **No se escribió funcionalidad**, con UNA excepción de una línea, aprobada explícitamente por el
+> fundador, y que es justo el hallazgo de la tanda (§3).
+
+## §0 · El recuento heredado se midió antes de creérselo
+
+El encargo decía «seis». Medido con ejecución propia sobre `4b982ad2`: **3647 tests, 3563 pass,
+7 fail**. De los 7, **seis son de la rama y uno es ambiental**; y esos seis salen de **CINCO
+causas distintas**, porque el censo de huérfanos rompe DOS tests con un solo origen. El recuento
+del encargo era correcto en tests, no en causas — y la diferencia importa, porque arreglar «seis
+cosas» habría hecho buscar una sexta causa que no existe.
+
+## §1 · Las cuatro que sí eran declaraciones caducas
+
+La regla de la tanda: **se ACTUALIZA cuando se puede NOMBRAR el cambio que la provoca; si no se
+puede, sería relajar, y eso está prohibido.** Las cuatro se pueden nombrar, y tres comparten causa.
+
+| Declaración | Estaba | Queda | El cambio que la provoca |
+|---|---|---|---|
+| `scrum411` · control positivo | «`retencionIrpf` es inalcanzable» | afirma lo CONTRARIO | `src/app.ts` importa `tiposDeRetencionOrdenados()` |
+| `scrum411` · tope 1ª población | 8 | 7 | el mismo import |
+| `scrum411` · censo 2ª población | 196 declarados | 203 | el mismo import |
+| `scrum402` · censo regla 30 | `settingsView.js: 7` | 8 | tres rótulos nuevos sin aprobar |
+
+**Las tres primeras son UN import, no tres hallazgos.** `retencionIrpf.ts` era un módulo entero
+inalcanzable —población PRIMERA— y esta segunda población solo mira DENTRO de módulos VIVOS. El
+cable lo pasa de muerto a vivo, y en ese salto sus otros **siete exports** se hacen visibles sin
+que se escriba una sola línea nueva. Por eso el tope baja y el censo sube **en el mismo commit**:
+si algún día se les ve moverse por separado, algo no cuadra.
+
+**El renglón del control positivo NO se borra: se le da la vuelta.** Borrarlo habría dejado que
+desconectar el cable mañana volviera a matar el módulo **sin sujeto** —solo lo acusaría el tope
+numérico, y un número no dice a quién se le cayó la pantalla—. Ver §5.
+
+**Y baja SIN tocar el camino de emisión**, que era lo que había que medir antes de creérselo: lo
+cableado son los RÓTULOS del cubo, no `bloqueRetencion` ni `leerTipoRetencion`, que son los que
+cambiarían lo que se SELLA. El STOP de la regla 38 sigue exactamente donde estaba.
+
+De los siete huérfanos declarados, **cuatro traen el consejo de QUITARLES el `export`**
+(`CUBO_DE_RETENCION`, `calcularRetencion`, `esTipoRetencionValido`, `liquidoAPercibir`). Queda
+**dicho y no aplicado**: des-exportarlos rompe `scrum293-retencion-irpf`,
+`scrum293-tres-estados-retencion` y `scrum500-suplidos`, que los importan. Eso es refactor de un
+módulo fiscal, no una declaración, y va a su propia tanda.
+
+## §2 · Lo que el censo de marcadores NO dice, y conviene no perder
+
+`settingsView.js` sube a 8 por el selector de retención, cuyos rótulos no ha aprobado nadie
+(regla 30). **Son TRES textos visibles y el censo cuenta UNO**: no es un fallo del contador sino su
+regla —cuenta LITERALES que contienen la marca— y el bloque factoriza la marca en una constante
+que concatena tres veces. Queda anotado porque significa que **ese censo mide marcas escritas, no
+superficies marcadas**, y quien lea un «+1» ahí no debe deducir «un rótulo».
+
+## §3 · 🔴 LA QUE NO ERA UNA DECLARACIÓN CADUCA — un defecto escondido entre cuatro legítimas
+
+`scrum284` decía: «`retencionIrpfTipo` está en el mapa pero YA NO existe en la pantalla». Antes de
+tocar nada se **midió por AST**:
+
+```
+claves de colocar(...)      20
+las ve el censo             19
+invisibles                   1   ← retencionIrpfTipo
+
+selects construidos a mano:
+  fCriterioCaja  (l.293) → SÍ declara .name
+  fCountrySelect (l.329) → SÍ declara .name
+  selRetencion   (l.373) → NO declara .name
+```
+
+**El mapa no mentía: el que se salía del patrón era el selector.** Y quitar la clave del mapa no
+era opción — `submenuDeCampo` LANZA si falta, así que habría roto la pantalla entera.
+
+Había dos salidas y solo una es legítima:
+
+* **Ensanchar el censo con una quinta forma** (reconocer los campos por `colocar(…)`). Rechazada:
+  el guard promete que **cada control DECLARA qué columna persiste**, y enseñarle a aceptar uno que
+  no lo declara no arregla el defecto — **amplía el instrumento hasta que el defecto quepa dentro**.
+  Medido además que habría duplicado el censo de 26 a 45 (la deduplicación es por `origen:clave`).
+* **Que el selector declare su `.name`**, como ya hacen sus dos hermanos. Elegida, **con OK
+  explícito del fundador**, porque toca el bloque que ③a había dejado cerrado:
+
+```js
+selRetencion.name = "retencionIrpfTipo";
+```
+
+No cambia comportamiento: el submit sigue construyendo el payload a mano desde `.value`. Lo que
+añade es la **declaración** de qué columna de `Merchant` persiste ese control.
+
+> **Canon:** una lista de «declaraciones caducas» recibida de fuera **no es una medición propia**.
+> Cuatro de las cinco lo eran; la quinta era un defecto real, y el peor sitio donde esconderse es
+> entre cambios correctos. Si no se hubiera medido una por una, entraba hoy tapado por los otros.
+
+## §4 · El séptimo rojo: AMBIENTAL, y probado con dos controles
+
+`SCRUM-480` acusa **1433 ficheros de texto con `\r` (de 1474)**. No se arregla dentro de la rama, y
+la razón no es una suposición:
+
+| Control | Resultado |
+|---|---|
+| Blobs commiteados de los 4 ficheros de la rama | **CR = 0** (todos en LF) |
+| Checkout LIMPIO de `origin/main` en worktree nuevo | guard **8/8 verde**, cero `\r` |
+| Checkout LIMPIO de `4b982ad2` (**esta misma rama**) | guard **8/8 verde** |
+
+**Mismo contenido, árbol de trabajo distinto.** El `\r` es de este worktree —materializado antes de
+que la normalización entrara—, no de la rama ni de su commit. La hipótesis inicial («son los cuatro
+ficheros que tocó ③a») quedó descartada por el primer control, y la segunda («`core.autocrlf=true`
+de nivel *system* lo provoca siempre») por el segundo: con esa misma config, un checkout nuevo sale
+limpio. **Es operación de entorno y no se toca aquí.**
+
+## §5 · El control que importa: el guard queda ATADO, no silenciado
+
+Con todo commiteado (`4d8980f5`), se desconectó el cable —fuera el `import` y fuera
+`retencionIrpfOpciones` de `/admin/me`— y **cayeron cuatro tests**:
+
+```
+✖ SCRUM-411 · 🔴 SCRUM-293 (③a): `retencionIrpf` YA NO es inalcanzable, y se dice por dónde
+✖ SCRUM-411 · los módulos de dominio inalcanzables NO crecen
+✖ SCRUM-411 · 🔴 el trinquete AL REVÉS: una declaración que ya no corresponde a ningún huérfano
+✖ SCRUM-411 · 🔴 las categorías SUMAN el total
+```
+
+Y el primero cae **nombrando la causa y la consecuencia**, no un número:
+
+> 🔴 `retencionIrpf` ha vuelto a ser INALCANZABLE. Eso significa que alguien ha desconectado el
+> cable de ③a: `src/app.ts` ya no importa `tiposDeRetencionOrdenados()`. […] el selector de
+> retención se pinta VACÍO […] y «no lo ha dicho» y «dice que no retiene» vuelven a ser el mismo
+> estado.
+
+**Que caigan CUATRO y no uno es el dato**: el trinquete al revés demuestra que las siete
+declaraciones nuevas están atadas al hecho —si el módulo vuelve a morir, sus huérfanos desaparecen
+y las declaraciones se acusan solas de caducas—. Revertido el cable, `24/24 verde`.
