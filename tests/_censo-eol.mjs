@@ -23,6 +23,8 @@
 // PowerShell) y por eso van llenos de NUL. Cero acusaciones en falso sin enumerar nada — y una
 // lista de extensiones envejece en silencio, que es lo que este ticket viene a impedir.
 import { execFileSync, spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
 
 /**
  * EXCEPCIONES DECLARADAS Y VISIBLES, nunca silenciosas.
@@ -81,6 +83,41 @@ export function censoEol(raiz) {
     if (c.crlf || c.crSuelto) conCR.push({ ruta, ...c });
   }
   return { poblacion: rutas.length, textos, conCR };
+}
+
+/**
+ * EL MISMO CENSO, PERO SOBRE EL DISCO — que es lo que leen los guards.
+ *
+ * 🔴 POR QUÉ HACE FALTA ADEMÁS DEL DE BLOBS, Y ES EL AGUJERO DE LA FASE 2 DE ESTE TICKET. Un
+ * guard no abre el repositorio: hace `readFileSync` del árbol de trabajo. Y con
+ * `core.autocrlf=true` el checkout mete `\r` en ficheros cuyo blob lleva en LF desde siempre —
+ * medido: `src/app.ts`, `public/dashboard/js/app.js`, `scripts/_db-guard.mjs`. O sea que
+ * **renormalizar los blobs no quita ni un `\r` de lo que un guard lee**. Eso lo hace `eol=lf`.
+ *
+ * Y no es incomodidad de merges: **ciega guards en silencio**. `linea.replace(/\/\/.*$/, '')`
+ * sobre una línea que arrastra `\r` NO HACE NADA —sin `m`, `$` exige fin de cadena y el `\r` está
+ * en medio—, así que un guard que promete «miro el código, no los comentarios» acaba mirando
+ * también los comentarios. Le pasó al de SCRUM-409 durante semanas, y solo en Windows.
+ */
+export function censoArbolDeTrabajo(raiz) {
+  const rutas = execFileSync('git', ['ls-files', '-z'], {
+    cwd: raiz, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024,
+  }).split('\0').filter(Boolean);
+  if (rutas.length === 0) throw new Error('🔴 CIEGO: `git ls-files` no devolvió ningún fichero');
+
+  const conCR = [];
+  let textos = 0;
+  let leidos = 0;
+  for (const ruta of rutas) {
+    let cuerpo;
+    try { cuerpo = fs.readFileSync(path.join(raiz, ruta)); } catch { continue; } // no está en disco
+    leidos += 1;
+    const c = clasificarBlob(cuerpo);
+    if (!c.texto) continue;
+    textos += 1;
+    if (c.crlf || c.crSuelto) conCR.push({ ruta, ...c });
+  }
+  return { poblacion: rutas.length, leidos, textos, conCR };
 }
 
 /**

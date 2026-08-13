@@ -21,21 +21,20 @@
 # conversión— y por eso `text=auto` no los habría tocado: medido, no supuesto. Con `text`
 # explícito la detección no participa, así que el día que vuelva a colarse un `\r\r\n` el
 # fichero se sigue normalizando en vez de salirse del arreglo EN SILENCIO.
-*.js     text
-*.mjs    text
-*.cjs    text
-*.ts     text
-*.json   text
-*.css    text
-*.html   text
-*.md     text
-*.sql    text
-*.yml    text
-*.yaml   text
-*.prisma text
-*.svg    text
-*.txt    text
-
+*.js     text eol=lf
+*.mjs    text eol=lf
+*.cjs    text eol=lf
+*.ts     text eol=lf
+*.json   text eol=lf
+*.css    text eol=lf
+*.html   text eol=lf
+*.md     text eol=lf
+*.sql    text eol=lf
+*.yml    text eol=lf
+*.yaml   text eol=lf
+*.prisma text eol=lf
+*.svg    text eol=lf
+*.txt    text eol=lf
 # Binarios declarados: que ningún `text=auto` futuro se anime a «normalizarlos».
 *.png  binary
 *.jpg  binary

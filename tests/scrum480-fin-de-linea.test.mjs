@@ -32,7 +32,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { censoEol, mismoBlobEnLasDosPlataformas, clasificarBlob, CR_PERMITIDO } from './_censo-eol.mjs';
+import {
+  censoEol, censoArbolDeTrabajo, mismoBlobEnLasDosPlataformas, clasificarBlob, CR_PERMITIDO,
+} from './_censo-eol.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ATTRS = fs.readFileSync(path.join(RAIZ, '.gitattributes'), 'utf8');
@@ -87,6 +89,38 @@ test('SCRUM-480 · 🔴 ningún blob de TEXTO lleva CR (salvo lo declarado)', ()
       + '`CR_PERMITIDO` en este mismo commit: una excepción que sobrevive a su causa deja de ser '
       + 'una nota y pasa a ser un permiso.');
   }
+});
+
+// ── 🔴 LO QUE RENORMALIZAR NO CURA: LA CEGUERA ───────────────────────────────────────────
+
+test('SCRUM-480 · 🔴 el ÁRBOL DE TRABAJO no tiene ni un `\\r` — es lo que leen los guards', () => {
+  // Un guard no abre el repositorio: hace `readFileSync` del disco. Y `core.autocrlf=true` mete
+  // `\r` al hacer checkout en ficheros cuyo blob lleva en LF desde siempre, así que arreglar los
+  // blobs (fase 2) NO quitaba ni un `\r` de lo que un guard lee. Lo quita `eol=lf`, y esto lo
+  // comprueba por EFECTO: si mañana cambia una regla o alguien clona con otra configuración, cae.
+  const r = censoArbolDeTrabajo(RAIZ);
+  const ofensores = r.conCR.filter((f) => !CR_PERMITIDO[f.ruta]);
+
+  assert.deepEqual(ofensores.map((f) => f.ruta).slice(0, 25), [],
+    `🔴 HAY ${ofensores.length} FICHEROS DE TEXTO CON \`\\r\` EN EL DISCO (de ${r.textos} leídos):\n`
+    + ofensores.slice(0, 25).map((f) => `   · ${f.ruta}`).join('\n')
+    + (ofensores.length > 25 ? `\n   … y ${ofensores.length - 25} más` : '') + '\n\n'
+    + '  Esto NO es cosmética: CIEGA GUARDS EN SILENCIO. `linea.replace(/\\/\\/.*$/, \'\')` sobre\n'
+    + '  una línea que arrastra `\\r` no hace NADA —sin `m`, `$` exige fin de cadena y el `\\r`\n'
+    + '  está en medio—, así que un guard que promete «miro el código, no los comentarios» acaba\n'
+    + '  mirando también los comentarios. Le pasó al de SCRUM-409 durante semanas, y solo en\n'
+    + '  Windows: en el CI, que es Linux, pasaba en verde.\n\n'
+    + '  Se arregla con `eol=lf` en `.gitattributes` y un `git checkout` que rematerialice.');
+});
+
+test('SCRUM-480 · SUELO: el censo del disco LEE de verdad, y sabría ver un `\\r`', () => {
+  const r = censoArbolDeTrabajo(RAIZ);
+  assert.ok(r.leidos > 1000,
+    `🔴 solo se han leído ${r.leidos} ficheros del disco: el verde de arriba no significaría nada.`);
+  assert.ok(r.textos > 500, `🔴 solo ${r.textos} clasificados como texto en disco`);
+  // Y que el clasificador SEPA acusar, con un búfer fabricado a propósito.
+  assert.equal(clasificarBlob(Buffer.from('a\r\nb\n', 'latin1')).crlf, 1,
+    '🔴 el clasificador no ve un CRLF que le doy en la mano: no puede acusar a nadie.');
 });
 
 // ── EL MECANISMO ─────────────────────────────────────────────────────────────────────────
@@ -160,6 +194,13 @@ test('SCRUM-480 · 🔴 `.gitattributes`: el orden decide, y las reglas selladas
       + '  Con solo `text=auto`, el día que vuelva a colarse un `\\r\\r\\n` git clasificará ese\n'
       + '  fichero como BINARIO y dejará de normalizarlo EN SILENCIO — que es exactamente cómo\n'
       + '  llegaron aquí los nueve `.js` de este ticket.');
+    // 🔴 Y `eol=lf`, que es lo que gobierna EL DISCO. `text` a secas normaliza lo que se GUARDA;
+    // el árbol de trabajo seguiría en CRLF con `autocrlf`, y es el árbol lo que leen los guards.
+    assert.ok(attrs.includes('eol=lf'),
+      `🔴 \`${ext}\` declara \`text\` pero no \`eol=lf\` (declara: ${attrs.join(' ')}).\n\n`
+      + '  Sin `eol=lf` el checkout sigue metiendo `\\r` en el disco, y ahí es donde el CRLF\n'
+      + '  CIEGA GUARDS: la fase 2 arregló los blobs y dejó la ceguera intacta. Medido: con\n'
+      + '  `*.ts text` el fichero rematerializado sale en CRLF; con `text eol=lf`, en LF.');
   }
   // Y el suelo del propio parseador: si `atributosDe` devolviera siempre algo, el bucle de arriba
   // pasaría con cualquier fichero.
