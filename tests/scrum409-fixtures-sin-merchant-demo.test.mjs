@@ -43,6 +43,31 @@
 //
 // ⚠️ NO se relaja nada: lo que el guard caza sigue siendo lo mismo, y hay un control positivo que
 // lo enumera uno a uno (`LOS QUE TIENE QUE SEGUIR CAZANDO`).
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 SCRUM-510 · Y EL MISMO DEFECTO SEGUÍA VIVO EN LA EXENCIÓN, LIBRANDO A 16 FICHEROS
+//
+// SCRUM-509 ató el DETECTOR al hecho y dejó la EXENCIÓN atada a la forma: un fichero quedaba
+// exento si su TEXTO contenía una señal —`texto.includes('isDemoMerchant')`—, **aunque fuese en un
+// comentario**. Medido sobre los 538 ficheros de este directorio: **18 exentos por mención contra
+// 2 que la usan de verdad**. Dieciséis librados de mirarlos gratis.
+//
+// Y no era teórico. De esos 16, DOS clavaban el merchant demo:
+//
+//   scrum290-adicional.test.mjs:79          const REQ = { …, merchantId: 1, … }
+//   scrum290-endpoint-convertir.test.mjs:88 const REQ = (id = 1) => ({ …, merchantId: 1, … })
+//
+// 🔴 Y la exención se la había dado **el propio comentario que explicaba que evitaban el demo**.
+// El segundo lo dice con todas las letras: «la primera versión de este fichero tenía ese `id: 1` y
+// por eso el caso del justificante salía 201: el dato de prueba tapaba la comprobación, no el
+// código». Arreglaron el merchant de la BD (`id: 7`), dejaron el `req` en 1, y el guard los libró
+// por haberlo contado. Los dos arreglados en este mismo commit.
+//
+// AHORA LA EXENCIÓN MIRA EL USO: la señal tiene que aparecer como IDENTIFICADOR en el AST. Un
+// comentario no es un identificador; una cadena tampoco. **Cero exenciones escritas a mano**: de
+// los 16 que la pierden, 14 no tenían ningún uso del demo —ni se enteran— y los 2 restantes eran
+// hallazgos de verdad. Si hubiera hecho falta exentar a mano a los 16, la señal estaría mal
+// elegida y eso sería una decisión del asesor, no de este ticket.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -92,16 +117,44 @@ function usosDelDemo(texto, nombre = 'fixture.mjs') {
   return out;
 }
 
+/**
+ * ¿Este fichero USA el mecanismo del demo? — SCRUM-510.
+ *
+ * El HECHO es que la señal aparezca como IDENTIFICADOR en el código: importada, llamada o leída.
+ * Un comentario que la nombre no es usarla, y una cadena tampoco. Devuelve `null` si el fichero no
+ * se puede analizar, para que el suelo lo separe de «no la usa».
+ */
+function usaElMecanismoDelDemo(texto, nombre) {
+  let sf;
+  try {
+    sf = ts.createSourceFile(nombre, texto, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  } catch {
+    return null;
+  }
+  let usa = false;
+  (function rec(n) {
+    if (usa) return;
+    if (ts.isIdentifier(n) && SENALES_IMPORT.includes(n.text)) { usa = true; return; }
+    ts.forEachChild(n, rec);
+  })(sf);
+  return usa;
+}
+
 const analisis = ficheros.map((f) => {
   const texto = fs.readFileSync(path.join(DIR, f), 'utf8');
   return {
     fichero: f,
     usos: usosDelDemo(texto, f),
-    // La lista de «prueba el demo» es DERIVADA: sale de lo que el fichero importa.
-    pruebaElDemo: SENALES_IMPORT.some((s) => texto.includes(s)),
+    // La lista de «prueba el demo» es DERIVADA, y desde SCRUM-510 sale del USO real —no de que el
+    // nombre aparezca escrito—, que es el mismo criterio que ya aplica el detector de arriba.
+    pruebaElDemo: usaElMecanismoDelDemo(texto, f),
+    // Se conserva para el censo: cuántos quedaban exentos con el criterio VIEJO.
+    loMenciona: SENALES_IMPORT.some((s) => texto.includes(s)),
   };
 });
-const ilegibles = analisis.filter((a) => a.usos === null).map((a) => a.fichero);
+const ilegibles = analisis
+  .filter((a) => a.usos === null || a.pruebaElDemo === null)
+  .map((a) => a.fichero);
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 
@@ -144,6 +197,52 @@ test('SCRUM-409 · SUELO + AUTOPRUEBA: el detector ve el HECHO y DISCRIMINA los 
 });
 
 // ── EL GUARD ─────────────────────────────────────────────────────────────────────────────────
+
+test('SCRUM-510 · SUELO + AUTOPRUEBA: la exención mira el USO, y DISCRIMINA la mención', () => {
+  // 🔴 Primero se demuestra que sabe ver el uso; después que sabe NO ver la mención. Sin la
+  // primera mitad, «cero exentos» podría significar que el reconocedor está roto.
+  assert.equal(usaElMecanismoDelDemo("import { isDemoMerchant } from '../dist/x.js';", 'a.mjs'), true,
+    '🔴 la exención no reconoce una importación de la señal: dejaría sin exención a quien SÍ prueba el demo.');
+  assert.equal(usaElMecanismoDelDemo('if (isDemoMerchant(m)) return;', 'a.mjs'), true,
+    '🔴 no reconoce una llamada a la señal.');
+  assert.equal(usaElMecanismoDelDemo('const x = DEMO_MERCHANT_ID;', 'a.mjs'), true,
+    '🔴 no reconoce la lectura de la constante.');
+
+  // ── Y LO QUE YA NO EXIME, que es el ticket ──────────────────────────────────────────────
+  assert.equal(usaElMecanismoDelDemo('// ojo: `isDemoMerchant` es id === 1, aquí usamos otro\n', 'a.mjs'), false,
+    '🔴 UN COMENTARIO SIGUE EXIMIENDO. Es el defecto entero: el fichero queda libre de mirarse por ' +
+    'haber nombrado la señal, y encima suele ser el comentario que explica que EVITA el demo.');
+  assert.equal(usaElMecanismoDelDemo('const t = "isDemoMerchant";', 'a.mjs'), false,
+    '🔴 una cadena con el nombre dentro sigue eximiendo: mencionar no es usar.');
+  assert.equal(usaElMecanismoDelDemo('const otro = 1;', 'a.mjs'), false);
+});
+
+test('SCRUM-510 · 🔴 EL CENSO CUADRA, y dice cuántos eximía de más el criterio viejo', (t) => {
+  const total = analisis.length;
+  const porUso = analisis.filter((a) => a.pruebaElDemo);
+  const porMencion = analisis.filter((a) => a.loMenciona);
+  const deMas = porMencion.filter((a) => !a.pruebaElDemo);
+  t.diagnostic(`total ${total} · exentos por USO ${porUso.length} · lo mencionan ${porMencion.length} · ` +
+    `eximía de más ${deMas.length}`);
+
+  // 🔴 SUELO: si el censo de exentos devuelve cero, el guard vigila un caso que no existe y su
+  // verde no significa nada. Cero y «no supe mirar» por líneas distintas.
+  assert.ok(porUso.length > 0,
+    '🔴 NINGÚN fichero usa el mecanismo del demo. O el reconocedor está ciego, o ya nadie prueba ' +
+    'ese comportamiento — y entonces esta exención sobra. Compruébalo antes de creerlo.');
+
+  // 🔴 LAS CATEGORÍAS SUMAN SU TOTAL. Un censo cuyas partes no suman no es un censo.
+  assert.equal(porUso.length + analisis.filter((a) => !a.pruebaElDemo).length, total,
+    '🔴 exentos + no exentos ≠ total: el censo se está dejando ficheros por el camino.');
+  assert.equal(porMencion.length, porUso.length + deMas.length,
+    '🔴 los que mencionan no son los que usan más los que eximía de más: las categorías no cierran.');
+
+  // Usar implica mencionar. Si esto se rompe, uno de los dos instrumentos miente.
+  const usanSinMencionar = porUso.filter((a) => !a.loMenciona).map((a) => a.fichero);
+  assert.deepEqual(usanSinMencionar, [],
+    `🔴 HAY FICHEROS QUE USAN LA SEÑAL SIN MENCIONARLA: ${usanSinMencionar.join(', ')}. Es ` +
+    'imposible por construcción, así que uno de los dos instrumentos está midiendo mal.');
+});
 
 test('SCRUM-409 · 🔴 CONTROL POSITIVO: sigue cazando TODO lo que cazaba, uno a uno', () => {
   // 🔴 EL TEST QUE DECIDE SI SCRUM-509 ES UN ARREGLO O UN APAGÓN. «Ya no da falsos positivos» y

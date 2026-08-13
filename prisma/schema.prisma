@@ -426,6 +426,37 @@ model Invoice {
 
   // Líneas de detalle (copiadas del Quote o del Charge al crear la factura)
   lines       Json?
+
+  // SCRUM-500 (A2-c) · SUPLIDOS: lo pagado POR CUENTA del cliente y repercutido tal cual, sin IVA
+  // y sin margen — una tasa municipal, el visado de un colegio, una licencia de obra. Poner ahí un
+  // material propio es un error FISCAL: el material se compra para uno y se revende con su IVA.
+  //
+  // UNA columna y no dos (el patrón del recargo, no el de la retención), y el motivo es del TIPO
+  // de dato: esto es un IMPORTE, y un importe tiene un cero legítimo, así que los tres estados
+  // caben en una sola columna anulable:
+  //   NULL  = no consta (todas las facturas anteriores a la casilla)
+  //   0.00  = declarado: esta factura no lleva suplidos
+  //   > 0   = el importe repercutido
+  // La retención necesitó DOS porque su dato era un TIPO y «declaro que no retengo» no tenía
+  // representación: colapsaba con «no consta» en el mismo NULL.
+  //
+  // SIN @default a propósito: un 0.00 por defecto convertiría todas las facturas históricas en
+  // «declarado que no hay suplidos», que no lo ha dicho nadie.
+  //
+  // El estilo del nombre no se eligió a ojo. En esta tabla `snake_case` gana 18 a 13, pero el
+  // corte que decide es otro: las 13 en camelCase son las columnas ORIGINALES y las 18 en snake
+  // las AÑADIDAS —`paid_via`, `retencion_irpf_*`, `recargo_equivalencia`—. Para una columna NUEVA
+  // la convención no está 18-13: está 18-0.
+  //
+  // ⚠️ La columna YA EXISTE en producción (verificado por `information_schema` el 12-ago-2026:
+  // `numeric` 12,2, nullable, sin default): esto es el esquema poniéndose al día, no una
+  // migración.
+  //
+  // 🛑 NO LA ESCRIBE NADIE TODAVÍA, y no es un olvido: rellenarla exige tocar los SIETE
+  // `invoice.create` del árbol, que son camino de emisión (regla 38). Su valor sale siempre de
+  // `totalSuplidos(lines)` (`invoicing/domain/suplidos.ts`) y nunca de una suma escrita aparte:
+  // dos sitios que sepan cuánto suman los suplidos acaban diciendo cosas distintas.
+  suplidos    Decimal? @map("suplidos") @db.Decimal(12, 2)
   // SCRUM-17 (FISCAL-2): operaciones agrupadas en una recapitulativa — [{albaranId, numero, fecha}].
   // La factura debe identificar los albaranes origen (art. 6 Reglamento + advertencia TEAC).
   albaranRefs Json? @map("albaran_refs")

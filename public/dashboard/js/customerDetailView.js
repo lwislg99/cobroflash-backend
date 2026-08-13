@@ -294,7 +294,7 @@ function openEdit360Modal(customer, customerId, container) {
   const modal = document.createElement('div');
   modal.className = 'modal';
   modal.style.maxWidth = '440px';
-  modal.innerHTML = `
+  modal.innerHTML = `
     <div class="modal-body" style="flex-direction:column;gap:10px">
       <div class="field"><label>Nombre</label><input type="text" id="e360-name"/></div>
       <div class="field"><label>Teléfono (E.164 sin +)</label><input type="text" id="e360-phone"/></div>

@@ -13,6 +13,7 @@ import { anthropic } from '../../../integrations/claude';
 import { geminiComplete, isGeminiConfigured } from '../../../integrations/gemini';
 import { config } from '../../../core/config/env';
 import { prisma } from '../../../core/db/prisma';
+import { cantidadUtilizable, mapearLineasSugeridas } from './lineasSugeridas';
 
 // ¿Hay algún proveedor de IA disponible? (lo usa la ruta para el 503 digno)
 export function isAiConfigured(): boolean {
@@ -94,7 +95,7 @@ export async function suggestQuoteLines(params: {
   merchantId: number;
   country: string;
   currency: string;
-}): Promise<Array<{ concept: string; qty: number; price: number; tax: number }>> {
+}): Promise<{ lineas: Array<{ concept: string; qty: number; price: number; tax: number; supuestos: string[] }>; descartadas: Array<{ concept: string; motivo: string }> }> {
   // Catálogo del merchant para dar contexto de precios
   const products = await prisma.product.findMany({
     where: { merchantId: params.merchantId, isActive: true },
@@ -135,29 +136,10 @@ ${params.description}`;
   const parsed = JSON.parse(jsonMatch[0]);
   if (!Array.isArray(parsed)) throw new Error('ai_invalid_format');
 
-  return parsed.map((l: any) => {
-    // SCRUM-507 · QUÉ SE INVENTÓ LA IA, DECLARADO — y los VALORES no se tocan.
-    //
-    // El defecto de fondo no es que la cantidad ilegible valga 1: es que **una cantidad propuesta
-    // por la IA es hoy indistinguible de una que escribió el profesional**. Sea cual sea la
-    // decisión (0 · 1 marcado · no proponer la línea), lo primero que hace falta es SABER cuál se
-    // inventó — así que esto se puede construir sin esperar a esa decisión, y no la condiciona.
-    //
-    // ⚠️ Y no es solo `qty`: son TRES. `price` y `tax` caen a 0 por el mismo `|| 0`, en silencio.
-    // El de `tax` es el que más pesa —una línea con IVA ilegible se propone como 0 %— aunque aquí
-    // haya un humano revisando antes de que eso llegue a un documento.
-    const supuestos: Array<'qty' | 'price' | 'tax'> = [];
-    if (!Number.isFinite(Number(l.qty)) || Number(l.qty) <= 0) supuestos.push('qty');
-    if (!Number.isFinite(Number(l.price)) || Number(l.price) < 0) supuestos.push('price');
-    if (!Number.isFinite(Number(l.tax)) || Number(l.tax) < 0) supuestos.push('tax');
-    return {
-      concept: String(l.concept || '').trim(),
-      qty: Math.max(0.01, Number(l.qty) || 1),
-      price: Math.max(0, Number(l.price) || 0),
-      tax: Math.min(1, Math.max(0, Number(l.tax) || 0)),
-      supuestos,
-    };
-  });
+  // SCRUM-507 · El criterio vive en `./lineasSugeridas`, NO aqui: aqui hay red y `prisma`, y un
+  // test no podia ejercitarlo sin copiarlo. Una copia del criterio es el mismo defecto que este
+  // ticket persigue — se comprobo rompiendo el servicio a proposito y viendo la copia seguir verde.
+  return mapearLineasSugeridas(parsed);
 }
 
 // ─── Suggest albarán lines (SCRUM-71 · VOZ-ALB V1) ─────────────────────────
@@ -202,21 +184,6 @@ export function normalizarUnidad(bruto: unknown): UnidadAlbaran {
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, ''); // tildes fuera: "metros cúbicos" → "metroscubicos"
   return SINONIMOS_UNIDAD[clave] ?? 'ud';
-}
-
-/**
- * Cantidad utilizable a partir de lo que devuelva el modelo.
- *
- * Todo lo que no sea un número POSITIVO cae a 1, que es la regla que ya se le pide al modelo
- * ("si no se dice, 1"). Se hace explícito en vez de heredar el `Math.max(0.01, Number(x) || 1)`
- * del extractor de presupuesto, que es incoherente: con ese, un 0 acaba en 1 (porque 0 es
- * falsy) pero un -4 acaba en **0,01** — "0,01 unidades" de algo, impreso en un documento que
- * firma el cliente. Cero y negativo son la misma clase de basura de dictado y merecen la misma
- * respuesta.
- */
-function cantidadUtilizable(bruto: unknown): number {
-  const n = Number(bruto);
-  return Number.isFinite(n) && n > 0 ? n : 1;
 }
 
 export interface LineaAlbaranSugerida {

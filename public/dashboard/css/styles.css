@@ -1260,6 +1260,25 @@ html, body { overflow-x: clip; }
   box-shadow: 0 0 0 3px rgba(34,197,94,.30);
 }
 
+/* SCRUM-500 · la casilla de SUPLIDO dentro de la hoja de ajustes.
+   Deshacer la regla de arriba NO es opcional: `.quote-ajustes-campos input` pone `width:100%` y
+   `min-height:44px` —pensado para los dos campos numéricos— y sin esto el checkbox saldría como
+   una caja de 44 px de alto a todo lo ancho. El target de 44 px (AB6) lo da la ETIQUETA entera,
+   que es lo que se pulsa. El aviso usa el mismo `--muted` y el mismo cuerpo que los demás textos
+   de apoyo: es una advertencia que se lee, no un cartel que grita. */
+.quote-ajustes-campos .quote-line__suplido input[type="checkbox"] {
+  width: auto; min-width: 20px; height: 20px; min-height: 0; padding: 0; flex: 0 0 auto;
+}
+.quote-line__suplido { margin: 0; }
+.quote-line__suplido label { min-height: 44px; align-items: center; }
+.quote-line__suplido-aviso {
+  margin: 2px 0 0; font-size: 12px; line-height: 1.45; color: var(--muted, #6b756f);
+}
+/* El IVA bloqueado tiene que PARECER bloqueado: un 0 editable y un 0 impuesto se leen igual. */
+.quote-ajustes-campos input:disabled {
+  background: var(--neutral-100, #f4f6f4); color: var(--muted, #6b756f); cursor: not-allowed;
+}
+
 /* ≥768 px: la MISMA tarjeta en una fila — el escritorio recupera la densidad de la tabla
    sin recuperar su scroll lateral ni obligar a mantener un segundo DOM. */
 @media (min-width: 768px) {

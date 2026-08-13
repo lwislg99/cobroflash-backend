@@ -978,6 +978,9 @@ blockDelivery.appendChild(descWrapper);
         price: l.priceInput.value || "",
         markup: l.markupInput ? l.markupInput.value : "0",
         vat: l.vatInput.value || "",
+        // SCRUM-500: sin esto, recuperar el borrador devolvía la línea con su IVA y sin la marca
+        // — o sea, un suplido convertido en línea normal por el simple hecho de recargar.
+        suplido: !!(l.suplidoCheck && l.suplidoCheck.checked),
       })),
     };
     // No guardar borradores vacíos
@@ -1104,10 +1107,15 @@ blockDelivery.appendChild(descWrapper);
       if (line.subirBtn) line.subirBtn.disabled = idx === 0;
       if (line.bajarBtn) line.bajarBtn.disabled = idx === lines.length - 1;
 
+      // SCRUM-500: el rótulo lo compone `resumenAjustes` (quoteSuplido.js) para que una línea de
+      // suplido lo DIGA desde fuera. Con «IVA 0 %» a secas, un suplido y una línea exenta se leen
+      // igual en la lista, y no son lo mismo.
       if (line.ajustesBtn) {
-        const resumen = ["IVA " + safeVat + " %"];
-        if (safeMarkup > 0) resumen.push("Margen " + safeMarkup + " %");
-        line.ajustesBtn.textContent = resumen.join(" · ");
+        line.ajustesBtn.textContent = resumenAjustes(
+          !!(line.suplidoCheck && line.suplidoCheck.checked),
+          safeVat,
+          safeMarkup,
+        );
       }
 
       base += lineBase;
@@ -2108,6 +2116,52 @@ markupTd.appendChild(markupInput);
     }
     vatTd.appendChild(vatInput);
 
+    /**
+     * SCRUM-500 · LA CASILLA «SUPLIDO», con su aviso.
+     *
+     * Va en la hoja de ajustes, pegada al IVA, porque lo que hace es JUSTO ESO: quitarle el IVA a
+     * la línea. Arriba, en la fila, quedaría separada del número que cambia.
+     *
+     * 🔴 EL AVISO NO ES DECORACIÓN. La frontera entre un suplido y un material propio es invisible
+     * desde aquí y equivocarse no da ningún síntoma: la factura sale igual de bonita. El texto
+     * tiene que estar en el momento exacto de marcar, no en una ayuda que nadie abre. Microcopy
+     * PENDIENTE de aprobación (regla 30): el marcador viaja DELANTE del texto.
+     */
+    const suplidoTd = document.createElement("div");
+    suplidoTd.className = "field inline-checkbox quote-line__suplido";
+    const suplidoLabel = document.createElement("label");
+    const suplidoCheck = document.createElement("input");
+    suplidoCheck.type = "checkbox";
+    suplidoCheck.checked = !!(initial && initial.suplido === true);
+    suplidoLabel.appendChild(suplidoCheck);
+    suplidoLabel.appendChild(document.createTextNode(" " + ROTULO_SUPLIDO));
+    suplidoTd.appendChild(suplidoLabel);
+    const suplidoAviso = document.createElement("p");
+    suplidoAviso.className = "quote-line__suplido-aviso";
+    suplidoAviso.textContent = AVISO_SUPLIDO;
+    suplidoTd.appendChild(suplidoAviso);
+
+    /**
+     * Marcada = 0 % y el input de IVA bloqueado. Al desmarcar se DEVUELVE el IVA que había, no se
+     * inventa uno: quien marcó por error recupera su línea tal cual estaba, y el general del
+     * merchant no tiene por qué ser el de esa línea (podía venir de una plantilla o de la IA).
+     *
+     * ⚠️ Esto es la INTERFAZ. Que el IVA acabe en 0 lo garantiza `lineaParaPayload`, que se aplica
+     * a toda línea marcada venga de donde venga — de un borrador restaurado, de una plantilla o de
+     * la IA, que no pasan por este `change`.
+     */
+    function aplicarSuplido() {
+      if (suplidoCheck.checked) {
+        if (!vatInput.disabled) vatInput.dataset.pfVatAntes = vatInput.value;
+        vatInput.value = "0";
+        vatInput.disabled = true;
+      } else if (vatInput.disabled) {
+        vatInput.disabled = false;
+        if (vatInput.dataset.pfVatAntes != null) vatInput.value = vatInput.dataset.pfVatAntes;
+      }
+    }
+    if (suplidoCheck.checked) aplicarSuplido();
+
     // Total de la línea: Regla del Importe (DESIGN.md) — Tinta, ≥700, tabular. Con su etiqueta,
     // porque sin cabecera de tabla una cifra suelta no dice qué es.
     const totalTd = document.createElement("div");
@@ -2193,6 +2247,10 @@ markupTd.appendChild(markupInput);
      */
     const ajustesCampos = document.createElement("div");
     ajustesCampos.className = "quote-ajustes-campos";
+    // SCRUM-500: el suplido va PRIMERO. Es la decisión que manda sobre las otras dos —marcarlo
+    // deja el IVA a 0 y bloqueado—, así que leerlo después de haber tocado el IVA sería leer el
+    // orden al revés.
+    ajustesCampos.appendChild(suplidoTd);
     ajustesCampos.appendChild(markupTd);
     ajustesCampos.appendChild(vatTd);
 
@@ -2225,6 +2283,8 @@ markupTd.appendChild(markupInput);
       // NO cambian: `markupInput` y `vatInput` siguen siendo los mismos elementos.
       ajustesCampos,
       ajustesBtn,
+      // SCRUM-500 — la casilla de suplido de esta línea. La leen el payload y el borrador.
+      suplidoCheck,
       // SCRUM-139 F5 — el menú de acciones y sus dos ítems de orden (se habilitan/deshabilitan
       // según la posición de la línea, no se ocultan: criterio de SCRUM-89).
       menuBtn: menuBtn || removeBtn,
@@ -2285,6 +2345,12 @@ if (Number.isFinite(n) && n >= 0) {
     
     vatInput.addEventListener("input", onChange);
     markupInput.addEventListener("input", onChange);
+    // SCRUM-500: marcar suplido cambia el IVA de la línea, así que recalcula como cualquier otro
+    // campo. Sin esto, el total del pie se quedaría con el IVA de antes hasta el siguiente toque.
+    suplidoCheck.addEventListener("change", function () {
+      aplicarSuplido();
+      onChange();
+    });
 
     
 
@@ -2572,7 +2638,7 @@ if (Number.isFinite(n) && n >= 0) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
-      <div class="modal" style="max-width:480px">
+      <div class="modal" style="max-width:480px">
         <div class="modal-body">
           <p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">Elige una plantilla para cargar sus líneas en el presupuesto actual.</p>
           <div style="display:flex;flex-direction:column;gap:8px" id="tpl-list"></div>
@@ -2640,7 +2706,7 @@ if (Number.isFinite(n) && n >= 0) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
-      <div class="modal" style="max-width:400px">
+      <div class="modal" style="max-width:400px">
         <div class="modal-body">
           <p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">Dale un nombre a esta plantilla para reutilizarla en futuros presupuestos.</p>
           <div class="alert" id="save-tpl-alert"></div>
@@ -2902,12 +2968,16 @@ try {
 
       
 
-payloadLines.push({
+// SCRUM-500: la línea pasa por `lineaParaPayload` (quoteSuplido.js) — es quien FUERZA el
+// `tax: 0` de un suplido. No se confía a que el input esté deshabilitado: un borrador
+// restaurado, una plantilla o la IA pueden dejar un IVA puesto sin tocar la casilla.
+payloadLines.push(lineaParaPayload({
   concept: conceptForPdf,
   qty: safeQty,
   price: finalPrice,
   tax: safeVat / 100,
-});
+  suplido: !!(line.suplidoCheck && line.suplidoCheck.checked),
+}));
 
     });
 
