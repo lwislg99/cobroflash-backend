@@ -85,7 +85,10 @@ function montar({ albaran, quote = { id: 7, quoteNumber: 'P-1', lines: PRESUPUES
   return capturado;
 }
 
-const REQ = (id = 1) => ({ params: { id: String(id) }, body: {}, merchantId: 1, userRole: 'admin', user: { id: 1 } });
+// SCRUM-510 · merchant 7, el MISMO que devuelve `p.merchant` arriba. El `id = 1` es el del
+// ALBARÁN y se queda. El `merchantId` estaba en 1 —el DEMO— justo en el fichero que cuenta
+// que «el dato de prueba tapaba la comprobación»: la exención por mención lo libró.
+const REQ = (id = 1) => ({ params: { id: String(id) }, body: {}, merchantId: 7, userRole: 'admin', user: { id: 1 } });
 
 const ALBARAN_FIRMADO = {
   id: 1, jobId: 1, numero: 'A-2026-0001', fecha: new Date('2026-08-01'),
