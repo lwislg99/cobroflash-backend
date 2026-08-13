@@ -244,3 +244,107 @@ lo correcto (usa `merchantId: 7`); lo que salta es la explicacion de por que.
 **Se reporta, no se arregla** (regla 9): es de la sesion de SCRUM-508. La forma conocida de
 cerrarlo es leer el fichero **sin comentarios** (`soloEjecutable`), como ya hacen otros guards de
 la casa.
+
+
+---
+
+# SCRUM-507 · TERCERA ENTREGA · los dos textos APROBADOS, sin marcador
+
+**Medido contra:** `origin/main` = `9666e464049e6059cfa39aa7d53ce17abdc0fb12` · 2026-08-13T19:32:23+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-507-tax-no-se-propone`
+
+El fundador firmo los dos textos. Se ponen literales, se quitan los dos marcadores y **el
+trinquete de SCRUM-402 APRIETA**.
+
+## Los dos textos, tal cual entran
+
+**TEXTO 1** — `aiQuoteAssistant.js`, arriba del modal de sugerencias, solo si hubo descartadas:
+
+    Esto no lo hemos añadido porque no sabíamos qué IVA ponerle: <conceptos>
+    Añádelo tú si va en el presupuesto.
+
+**TEXTO 2** — por linea, debajo de «Cantidad · Precio · IVA», solo en las lineas con algo supuesto:
+
+    Esto lo hemos puesto nosotros: cantidad. Revísalo antes de enviar.
+    Esto lo hemos puesto nosotros: precio. Revísalo antes de enviar.
+    Esto lo hemos puesto nosotros: cantidad y precio. Revísalo antes de enviar.
+
+## 🔴 EL BUG DE CONCORDANCIA NO SE ARREGLA: DEJA DE SER POSIBLE
+
+Mi marcador decia «cantidad y precio **que no venia** y hemos supuesto» — sujeto plural, verbo
+singular. Lo señale como una falta de concordancia; **el fundador vio el fallo de fondo**: la frase
+DEPENDIA DEL NUMERO DE CAMPOS, y por eso podia no concordar.
+
+En los textos aprobados el sujeto es **«esto»**, no la lista. La lista es un complemento detras de
+los dos puntos, asi que la frase concuerda con uno, con dos y con los que hicieran falta. **No es
+que el bug este corregido: es que ya no se puede escribir.** Un guard de la suite lo fija — el
+texto se compone SIEMPRE con el mismo esqueleto, y las tres formas se comprueban una a una.
+
+## El salto de linea del TEXTO 1 tiene que VERSE
+
+El texto aprobado lleva `\n` («Añádelo tú si va en el presupuesto.» va en su propia linea). Un `\n`
+dentro de un `textContent` **no se ve**: HTML colapsa el salto y la frase saldria pegada. Se anade
+`white-space:pre-line` al parrafo, y hay un rojo que cae si desaparece — un texto aprobado que se
+pinta de otra forma que la aprobada no es el texto aprobado.
+
+⚠️ Se sigue usando `textContent` y NO `innerHTML` para este aviso: los conceptos vienen del
+modelo, y son lo unico de esta pantalla que no ha escrito ni el producto ni el profesional.
+
+## Tildes: comprobadas por codigo, no a ojo
+
+Se me fueron dos en la tanda anterior. El guard exige los caracteres acentuados **por punto de
+codigo** (`sabíamos`, `Añádelo`, `Revísalo`), asi que un `sabiamos` sin tilde cae en rojo. Se
+comprueba ademas que el fichero sigue en UTF-8 sin BOM: una mojibake (`sabÃ­amos`) pasaria una
+comparacion descuidada y llegaria asi a la pantalla.
+
+## SCRUM-402: la entrada se BORRA, no baja a 0
+
+`aiQuoteAssistant.js` sale del `CENSO`. Se borra en vez de escribir `0`, que es lo que dejaron
+escrito SCRUM-424 y SCRUM-405 ahi mismo: `censoActual()` solo lista ficheros CON marcadores, asi
+que un `0` seria una bajada permanente sin anotar. **Y salir del censo no saca de la vigilancia**,
+que es lo que fija R4b.
+
+## 🔴 SCRUM-387 me cazo: puse CUANDO se aprobo, no DONDE consta
+
+Escribi *«aprobada por el fundador el 13-ago-2026»*. El trinquete de SCRUM-387 lo tumbo (9 → 10) y
+tiene toda la razon: **una fecha sola no dice donde mirar**, y es exactamente la forma que tenian
+las seis marcas que acabaron contradiciendose. Las dos marcas citan ahora **SCRUM-507** y
+`docs/master/SCRUM-507.md`, donde esta el texto literal. Verde: 5/5.
+
+## SCRUM-480: el disco de este worktree no se habia rematerializado
+
+La suite salio en rojo por `scrum480-fin-de-linea`: **1.387 ficheros con `\r` en el disco**. Medido
+antes de tocar nada, porque «es mio» y «es del entorno» son dos diagnosticos distintos:
+
+| medicion | resultado |
+|---|---|
+| el mismo guard en un worktree LIMPIO de `origin/main`, en esta maquina | **verde, 8/8** → no es del entorno |
+| ficheros con `\r` **seguidos por git** / **basura local** | **1.387 / 0** → son del repo, y ninguno lo he tocado |
+| el `\r`, ¿esta en el INDICE o solo en el DISCO? | **indice LF en todos**; solo el disco tenia CRLF |
+| `git diff --numstat` | **vacio**: ni un cambio de contenido |
+
+O sea: **lo que empujo estaba bien desde el principio**. Lo que faltaba era la reescritura de disco
+que el fundador dio por esperada — y que en este worktree no ocurrio porque el merge solo
+rematerializa los ficheros **cuyo blob cambia**, y estos ya estaban en LF en el repo.
+
+Dos cosas que aprendi peleandome con el instrumento:
+
+* **`git checkout-index -f` NO reescribe un fichero que ya existe.** Medido: `-f` lo deja en CRLF;
+  borrarlo y volver a sacarlo lo deja en LF. Se rematerializa escribiendo el blob directamente,
+  que ademas nunca deja el fichero ausente a medio camino.
+* **Solo las extensiones con `eol=lf` DECLARADO**, leidas de `.gitattributes` (no copiadas a mano).
+  Un `.toml` cae en `* text=auto` y su forma en el arbol de trabajo **es CRLF** —comprobado en el
+  worktree limpio—, asi que escribirle LF me alejaria del checkout limpio en vez de acercarme.
+
+Reescritos **1.366**; 2 se quedan porque el `\r` esta **en su propio blob** (son del repo, no mios).
+Despues: `git add -A` deja **0 ficheros staged** y el status limpio — el ` M` de 1.367 lineas era
+la **cache de `stat`**, no un cambio: `git diff` estaba vacio y los bytes de disco e indice son
+identicos.
+
+## Verificacion de la tercera entrega
+
+* **Rojos: 10/10 por codigo de salida**, repetidos sobre el estado final (el fichero cambio de EOL
+  y de comentarios despues de la primera tanda). Verde restaurado, `exit=0`.
+* **Suite entera: 3651 tests, 3574 pass, 0 fail.** `guards:entrada` 17/17.
+* El fallo de SCRUM-409 que reporte en la entrega anterior **ya no sale**: `main` avanzo a
+  `9666e464` y viene resuelto de su carril.
