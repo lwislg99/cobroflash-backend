@@ -117,6 +117,37 @@ no se pudo proponer y puede escribirlo a mano.
 El campo `supuestos` de la primera entrega llega hasta la lista de sugerencias y **cada linea con
 algo inventado sale marcada**. Microcopy: **marcador sin aprobar** (regla 30).
 
+## 4 · 🔴 EL TEST ENCONTRO QUE MI PRIMER FILTRO NO CERRABA EL CASO CARO
+
+El descarte lo escribi asi, que es lo que pide el cuerpo:
+
+```ts
+const tax = Number(l?.tax);
+if (!Number.isFinite(tax) || tax < 0 || tax > 1) { /* descartar */ }
+```
+
+**Y dejaba pasar justo el caso peor.** `Number(null)`, `Number('')`, `Number(false)` y `Number([])`
+valen **0** — un cero perfectamente finito y perfectamente dentro de rango. Es decir: **un modelo
+que directamente se calla el impuesto producia una linea EXENTA**, que es exactamente el motivo por
+el que el fundador eligio (c). El caso que el ticket queria cerrar entraba por la puerta de al lado.
+
+Lo caza el test con `tax: null` y `tax: ''`, y el filtro pasa a preguntar por el TIPO, no por lo que
+`Number()` acepte convertir:
+
+```ts
+function ivaLegible(bruto: unknown): number | null {
+  const enRango = (n: number) => (Number.isFinite(n) && n >= 0 && n <= 1 ? n : null);
+  if (typeof bruto === 'number') return enRango(bruto);
+  if (typeof bruto === 'string' && bruto.trim() !== '') return enRango(Number(bruto.trim()));
+  return null;   // ausente, vacio o de otro tipo: no es un IVA, es un «no se sabe»
+}
+```
+
+> Es **otra vez el guard atado a la FORMA y no al HECHO**, en miniatura y dentro de mi propio
+> parche: `Number()` mide *«¿se puede convertir a numero?»*, y el hecho es *«¿dijo el modelo un
+> IVA?»*. Ausente no es cero. El `21` sigue descartado aparte: el contrato es la **fraccion**
+> (0,21), y colar un porcentaje multiplicaria el impuesto por cien.
+
 ## Controles
 
 * **NEGATIVO, primero:** una propuesta con todo legible sale **identica a hoy** — `supuestos: []`,

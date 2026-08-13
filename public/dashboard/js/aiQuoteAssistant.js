@@ -61,12 +61,14 @@ function openAiSuggestModal(addLinesFn) {
     results.innerHTML = '';
 
     let lines;
+    let descartadas = []; // SCRUM-507
     try {
       const data = await apiRequest('/admin/ai/suggest-quote', {
         method: 'POST',
         body: JSON.stringify({ description }),
       });
       lines = data.lines;
+      descartadas = data.descartadas || [];
     } catch (err) {
       const msg = err?.data?.error === 'ai_not_configured'
         ? 'La IA no está configurada. Añade GEMINI_API_KEY (gratis) en Railway.'
@@ -85,6 +87,19 @@ function openAiSuggestModal(addLinesFn) {
       return;
     }
 
+    // SCRUM-507 · LO QUE NO SE PUDO PROPONER, DICHO. Una linea con IVA ilegible no se propone
+    // —un 0 % plausible no llama la atencion de quien revisa—, pero desaparecer en silencio seria
+    // otro fallo mudo: aqui sale su CONCEPTO, para que el profesional lo escriba a mano.
+    // MICROCOPY: marcador sin aprobar (regla 30).
+    if (descartadas.length) {
+      var avisoDesc = document.createElement('p');
+      avisoDesc.className = 'ai-lineas-descartadas';
+      avisoDesc.style.cssText = 'font-size:12.5px;font-weight:600;color:var(--warn,#b45309);margin:0 0 8px';
+      avisoDesc.textContent = '[PENDIENTE microcopy oficial · no se han propuesto ' + descartadas.length
+        + ' linea(s) por no entender su IVA]: ' + descartadas.map(function (d) { return d.concept; }).join(' · ');
+      results.appendChild(avisoDesc);
+    }
+
     // Mostrar las líneas sugeridas con checkboxes para aceptar/rechazar
     results.innerHTML = `<p style="font-size:13px;font-weight:600;color:var(--neutral-700);margin:0 0 8px">Sugerencias (selecciona las que quieras añadir):</p>`;
 
@@ -93,6 +108,10 @@ function openAiSuggestModal(addLinesFn) {
 
     lines.forEach((line, i) => {
       const item = document.createElement('label');
+      // SCRUM-507 · LA MARCA DE «SUPUESTO», que es el defecto de fondo: hasta hoy una cantidad
+      // inventada por la IA era INDISTINGUIBLE de una que tecleo el profesional. El veredicto lo
+      // da el servidor (`supuestos`), aqui solo se pinta. Microcopy: marcador (regla 30).
+      var supuestos = Array.isArray(line.supuestos) ? line.supuestos : [];
       item.style.cssText = 'display:flex;align-items:flex-start;gap:8px;background:var(--neutral-50);border:1px solid var(--neutral-200);border-radius:8px;padding:8px 10px;cursor:pointer;font-size:13px';
       item.innerHTML = `
         <input type="checkbox" checked style="margin-top:2px;flex-shrink:0" data-idx="${i}"/>
@@ -101,6 +120,7 @@ function openAiSuggestModal(addLinesFn) {
           <div style="color:var(--neutral-500)">
             Cantidad: ${line.qty} · Precio: ${fmtMoneyEs(line.price, (window.appLocale && window.appLocale.currency) || 'EUR')} · IVA: ${(line.tax * 100).toFixed(0)}%
           </div>
+          ${supuestos.length ? `<div class="ai-linea-supuesta" style="color:var(--warn,#b45309);font-weight:600;margin-top:2px">[PENDIENTE microcopy oficial · ${supuestos.map(function (c) { return c === 'qty' ? 'cantidad' : 'precio'; }).join(' y ')} que no venia y hemos supuesto]</div>` : ''}
         </div>
       `;
       list.appendChild(item);
