@@ -68,3 +68,61 @@ marcador sin aprobar (regla 30).
 
 **No se ha tocado:** ningun flag, el camino de emision, `prisma/schema.prisma`, el aviso de Bizum, ni
 ninguna base. **Suite: 3558, 0 fail.**
+
+
+---
+
+# SCRUM-507 · SEGUNDA ENTREGA · la decision aplicada: (b) para qty y price, (c) para tax
+
+**Medido contra:** `origin/main` = `1237240417ffa623c0def283d8c4603db4b02e96` · 2026-08-13T13:01:34+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-507-tax-no-se-propone`
+
+## La decision del fundador, y por que cierra el ticket
+
+* **`qty` y `price` → (b)**: se mantiene el valor y **la linea viene MARCADA como supuesta**.
+* **`tax` → (c)**: **la linea NO se propone**.
+
+El argumento que la cierra es la **asimetria de coste**: una linea que falta se anade a mano en diez
+segundos; **una linea exenta que no debia serlo se descubre en una inspeccion**. Y un IVA a cero
+*parece una decision que alguien tomo* — una cantidad rara se ve, un 0 % no.
+
+## 1 · LA HERMANA SE REUTILIZA, no se copia
+
+`cantidadUtilizable(bruto)` ya existia para el albaran:
+
+```ts
+const n = Number(bruto);
+return Number.isFinite(n) && n > 0 ? n : 1;
+```
+
+**Ya resuelve la rareza que encontre**, y por eso no se escribe nada nuevo: con ella `0` y `-4` caen
+**los dos a 1**, y desaparece el `0,01 unidades` que producia `Math.max(0.01, Number(x) || 1)` —
+absurdo que el comentario de la propia hermana ya criticaba. **Una fuente para el mismo hecho**, que
+es la leccion de SCRUM-504.
+
+> Esto contesta el punto 3 del encargo **arreglandolo**, no declarandolo: la incoherencia entre `0`
+> y `-4` muere al reutilizar la funcion que ya la tenia resuelta.
+
+## 2 · `tax` ILEGIBLE: la linea no se propone, y NO desaparece en silencio
+
+`suggestQuoteLines` pasa a devolver `{ lineas, descartadas }`. Cada descartada lleva **su concepto y
+su motivo**, y el navegador **lo pinta**: desaparecer sin decirlo seria otro fallo mudo, que es lo
+que llevamos el mes cazando.
+
+⚠️ **El concepto no se tira**: viaja en la descartada, asi que el profesional sabe **que trabajo**
+no se pudo proponer y puede escribirlo a mano.
+
+## 3 · `qty` y `price` MARCADOS EN LA PANTALLA
+
+El campo `supuestos` de la primera entrega llega hasta la lista de sugerencias y **cada linea con
+algo inventado sale marcada**. Microcopy: **marcador sin aprobar** (regla 30).
+
+## Controles
+
+* **NEGATIVO, primero:** una propuesta con todo legible sale **identica a hoy** — `supuestos: []`,
+  `descartadas: []` y ninguna marca en pantalla.
+* **Rojo por el hecho:** el test cae **nombrando la linea** cuya cantidad se invento, y cae tambien
+  si una linea con IVA ilegible **vuelve a proponerse**.
+
+**No se ha tocado:** ningun flag, el camino de emision, `prisma/schema.prisma`, el aviso de Bizum ni
+ninguna base.
