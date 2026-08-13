@@ -333,3 +333,114 @@ rebase o cherry-pick con otro sha.
 2. **No se ha mirado si alguna rama de MEDIR está obsoleta por diseño** (una decisión posterior la
    anuló). Eso lo sabe el fundador, no el `git log`.
 3. **No se ha ejecutado nada**: ni un borrado, ni un merge.
+
+---
+
+# FASE 4 (13-ago-2026) · Las 33 de MEDIR, resueltas con la señal AA
+
+> ⚠️ Se ANEXA. Las fases 1-3 no se tocan.
+
+**Medido contra:** `origin/main` = `1237240417ffa623c0def283d8c4603db4b02e96` · 2026-08-13T20:40:00+02:00
+**Nada mergeado, nada borrado, y el árbol no se tocó ni una vez.**
+
+## El instrumento: el AA se calcula, no se merguea
+
+Un conflicto **«añadido en los dos lados»** es, por definición, un fichero que existe en la rama
+**y** en `main` y **no** en su base común. Eso son tres `ls-tree`: **sin checkout, sin merge y sin
+riesgo**. Treinta y dos merges reales darían lo mismo y dejarían el árbol sucio treinta y dos veces.
+
+**SUELO:** si en 33 ramas no apareciera **ni un AA**, el script falla declarándose ciego — porque
+en la primera rama mirada a mano salieron dos. **Encontrados: 27 ficheros AA.**
+
+## 🔴 La calibración, que corrigió al instrumento
+
+La primera versión daba **MERGEAR** a `scrum-300-firmado-por`… que yo había medido a mano como
+BORRAR. Sus únicos ficheros exclusivos son **dos tests** de un trabajo que `main` ya tiene y más
+evolucionado (+6.284/−1.417). **Mergearla sería retroceder.**
+
+> **La regla que sale:** si lo único exclusivo de una rama son tests o documentos, y `main` va por
+> delante en lo demás, el veredicto **no se decide solo**: pasa a SIGUE SIN RESOLVER y se mira.
+> Sin esa calibración el censo habría mandado mergear la rama que el fundador ya sabía que no.
+
+## BORRAR — 11 ramas
+
+| rama | señal |
+|---|---|
+| `scrum-480-fin-de-linea` | todo lo que toca ya está en main y main va por delante (+154/-5) |
+| `scrum-37b-agregacion-por-job` | AA en 1 fichero(s) y main va por delante (+1327/-364) |
+| `scrum-475-constancia-correo` | AA en 4 fichero(s) y main va por delante (+2012/-681) |
+| `scrum-223-wrapper-silencioso` | AA en 1 fichero(s) y main va por delante (+66/-24) |
+| `scrum-38-staging-expres` | AA en 3 fichero(s) y main va por delante (+2138/-44) |
+| `scrum-268-p3-guard-espera-automatica` | AA en 3 fichero(s) y main va por delante (+181/-54) |
+| `chore-flujo-pr` | AA en 1 fichero(s) y main va por delante (+1048/-28) |
+| `scrum-216-p12-contradiccion` | todo lo que toca ya está en main y main va por delante (+128/-72) |
+| `scrum-245-fuera-listas-blancas` | AA en 1 fichero(s) y main va por delante (+1035/-368) |
+| `scrum-397-fecha-de-cobro` | AA en 1 fichero(s) y main va por delante (+388/-80) |
+| `scrum-412-primarias-tactiles` | todo lo que toca ya está en main y main va por delante (+100/-44) |
+
+Incluye **`scrum-480-fin-de-linea`**, la que la fase 3 marcaba «mirar primero»: **entró en `main`
+mientras se escribía este censo**. Su guard es el que hoy pone en rojo todo worktree anterior a
+su `.gitattributes` — rojo de entorno, no de código.
+
+## MERGEAR — 13 ramas con ficheros que `main` NO tiene
+
+> «MERGEAR» aquí significa **candidata**: aporta ficheros que no existen en `main`. No es una
+> orden de mergear a ciegas — la calibración de arriba demuestra por qué.
+
+| rama | aporta |
+|---|---|
+| `scrum-340-contador-plazas-reales` | 18 fichero(s): docs/master/SCRUM-340.md, docs/master/evidencias/scrum340/scrum340-landing-announce-ANTES-360.png, … |
+| `scrum-198-spike-xsd` | 10 fichero(s): spike/.gitignore, spike/LEEME.md, … |
+| `scrum-222-deriva-prod` | 5 fichero(s): prisma/schema-manifest.json, scripts/_schema-manifest.mjs, … |
+| `scrum-397-fecha-de-cobro-rebasada` | 2 fichero(s): scripts/_guard-microcopy-mecanismo.mjs, tests/scrum397-microcopy-fecha-cobro.test.mjs |
+| `scrum-418-puerta-de-produccion` | 2 fichero(s): src/core/db/puertaDeProduccion.ts, tests/scrum418-puerta-de-produccion.test.mjs |
+| `scrum-440-tenencia-supresion` | 1 fichero(s): docs/sql/scrum-441-legalname-y-asesor-programa.sql |
+| `scrum-172-tier3-tenencia-nullable` | 1 fichero(s): tests/scrum172-tenencia-nullable.test.mjs |
+| `scrum-253-adopcion-mismo-dueno` | 1 fichero(s): tests/scrum253-adopcion-mismo-dueno.test.mjs |
+| `scrum-482-contador-offline` | 1 fichero(s): docs/master/SCRUM-482.md |
+| `scrum-161-tanda-en-ci` | 1 fichero(s): .github/workflows/tanda-diaria.yml |
+| `scrum-166-un-solo-comando` | 1 fichero(s): tests/scrum166-un-solo-comando.test.mjs |
+| `scrum-224-sw-revalida` | 1 fichero(s): tests/scrum224-sw-revalida.test.mjs |
+| `scrum-471-pretest-antes-de-la-suite` | 1 fichero(s): scripts/_node-modules-al-dia.mjs |
+
+**Las que más pesan:** `scrum-340-contador-plazas-reales` (18 ficheros, entrada + evidencias),
+`scrum-198-spike-xsd` (un *spike* entero de validación XSD, 10 ficheros) y `scrum-222-deriva-prod`
+(manifiesto de esquema y assert de arranque — **hermana de la rama desde la que escribo esto**).
+
+## SIGUE SIN RESOLVER — 9 ramas
+
+> Un techo declarado vale más que una cuenta inventada. Estas necesitan ojo, no instrumento.
+
+| rama | por qué no se resuelve sola |
+|---|---|
+| `scrum-300-firmado-por` | solo aporta 2 test/doc y main va por delante (+6284/-1417) — el caso de la 300 |
+| `scrum-309-g0-medir-el-trabajo` | AA en 1 pero main NO va claramente por delante (+173/-265) |
+| `scrum-433-censo-un-salto` | ni AA ni ficheros exclusivos: hay que leerla |
+| `scrum-390-puerta-cliente-real` | ni AA ni ficheros exclusivos: hay que leerla |
+| `scrum-242-backup-verificado` | ni AA ni ficheros exclusivos: hay que leerla |
+| `scrum-270-evidencia-reunida` | ni AA ni ficheros exclusivos: hay que leerla |
+| `scrum-312-importador-clientes-rebasada` | ni AA ni ficheros exclusivos: hay que leerla |
+| `scrum-329-legal-pagina-publica` | AA en 1 pero main NO va claramente por delante (+0/-0) |
+| `scrum-484-clasificar-59` | ni AA ni ficheros exclusivos: hay que leerla |
+
+## Recuento del censo entero (fases 3 + 4)
+
+| | |
+|---|---|
+| ramas del remoto | **274** |
+| ya enteras en `main` | **213** |
+| BORRAR (fase 3, por asunto) | **28** |
+| BORRAR (fase 4, por AA) | **11** |
+| **BORRAR en total** | **39** |
+| MERGEAR (candidatas) | **13** |
+| SIGUE SIN RESOLVER | **9** |
+
+De 274 ramas, **39 se pueden borrar** y solo **13 contienen trabajo que `main` no tiene**.
+
+## Lo que NO se afirma
+
+1. **«MERGEAR» no es «mergeable hoy».** Es «tiene ficheros que main no tiene». Cada una necesita
+   lo que se le hizo a la 300: mirar si lo que main tiene ya la supera.
+2. **Las 9 sin resolver no son «poco importantes»**: son las que el instrumento no puede
+   decidir, y una de ellas es precisamente la 300, que resultó ser la más cara del censo.
+3. **No se ha ejecutado nada.** Ni un borrado, ni un merge, ni un push a ninguna de las 33.
