@@ -577,3 +577,114 @@ Y el primero cae **nombrando la causa y la consecuencia**, no un número:
 **Que caigan CUATRO y no uno es el dato**: el trinquete al revés demuestra que las siete
 declaraciones nuevas están atadas al hecho —si el módulo vuelve a morir, sus huérfanos desaparecen
 y las declaraciones se acusan solas de caducas—. Revertido el cable, `24/24 verde`.
+
+---
+
+# SCRUM-293 · ③b — cero literales de porcentaje en el front, y el suelo que impide el verde hueco
+
+**Fecha:** 13-ago-2026 · **Carril:** B · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `e42eedf20a3f3964f792bcdf930a2f2a90b6dd29` · 2026-08-13T20:39:16+02:00
+**Tanda:** tests 3658 pass 3580 fail 1 skipped 77 — el único fail es el `\r` AMBIENTAL de este
+worktree, demostrado en ③a-bis con dos checkouts limpios y ajeno a la rama
+
+> **Última pieza del plan de acción de SCRUM-293.** Cierra la propiedad que el dominio prometió en
+> su cabecera desde A2: «cero literales de porcentaje en el front».
+
+## §1 · Qué impide, y por qué no es higiene
+
+El selector de ③a se pinta RECORRIENDO `CUBO_DE_RETENCION`. **Esa es la propiedad**: añadir o
+quitar un tipo se ve solo en pantalla. Un `<option>` escrito a mano la rompe entera — el día que el
+cubo cambie, la pantalla seguirá ofreciendo el tipo de ayer y **nada avisará**.
+
+Y el fallo no da síntomas por el camino: el profesional elige un tipo retirado, la factura sale, el
+cliente la paga, y el descuadre aparece en el 111 **meses después**, cuando la factura ya no se
+puede corregir (regla 29).
+
+## §2 · El diseño salió de MEDIR el corpus, y eso le cambió la forma dos veces
+
+Medido sobre los 60 `.js` de `public/dashboard/js` antes de escribir una línea de guard:
+
+| Lo que se midió | Resultado | Qué decidió |
+|---|---|---|
+| `15`/`7`/`2`/`1` como literal NUMÉRICO | **230 apariciones en 41 ficheros** | **NO se vigilan.** Un guard así nace inatendible |
+| Literales de TEXTO con forma «N %» | **63, y ninguno es una retención** | Sí se vigilan — es la superficie que se lee en pantalla |
+| ¿Alguno contiene un rótulo como subcadena? | **Sí: «IVA 21 %» contiene «1 %»** | Obliga a FRONTERA IZQUIERDA `(?<![\d.,])` |
+
+Sin esa frontera el guard **habría nacido acusando al IVA**. Un rojo en falso el primer día es un
+guard que alguien apaga en una hora, y con razón. La medición no fue un trámite: fue lo que
+distinguió un guard que se puede sostener de uno que no.
+
+**Y los tipos no se escriben en el test:** entran de `tiposDeRetencionOrdenados()`. Si el cubo
+estrena un tipo, la vigilancia lo cubre sola. Una lista a mano se habría quedado atrás justo el día
+que importa — que es exactamente el defecto que el cubo existe para impedir.
+
+## §3 · Por AST, y por el mismo motivo de siempre
+
+Un guard de TEXTO **se caza a sí mismo en el comentario que explica la prohibición**: este fichero
+tiene que poder escribir «15 %» para decir qué prohíbe. Con AST los comentarios no son nodos de
+literal y quedan fuera **por construcción**, no por una lista de excepciones. Mismo mecanismo que
+`scrum402-marcador-no-se-pinta`. Se miran los tres sabores de literal, y las plantillas **por
+trozos** — el `%` puede quedar pegado a una interpolación y el texto entero no existe como una
+sola cadena.
+
+## §4 · 🔴 EL SUELO, que es la mitad del fichero
+
+«Cero literales» y «no encontré los ficheros» dan **exactamente el mismo verde**. Esta semana pasó
+en las dos direcciones: el guard de SCRUM-480 **avisó** cuando se le encogió la población, y el
+censo de deriva contestó «en sync» sobre columnas que ni había leído. La diferencia no fue la
+suerte: fue que uno tenía suelo.
+
+| Capa | Qué exige |
+|---|---|
+| ① Autoprueba | Sobre fuente SINTÉTICA: caza el rótulo, la forma sin espacio y el literal dentro de plantilla; y **NO** caza `width:100%`, `IVA 21 %`, `0,9 %`, `50%` ni el numérico suelto |
+| ② Población | Hubo ficheros que leer (≥40; hoy 60) **y está `settingsView.js`**, que es LA pantalla donde puede aparecer el defecto |
+| ③ Instrumento | El cubo llegó con tipos —sin tipos no hay patrones y sin patrones todo pasa— **y cada rótulo del cubo lo caza el patrón de su propio tipo** |
+| ④ Ceguera declarada | Un directorio VACIADO y uno BORRADO se declaran **por separado**, y se comprueba que ese cero NO pasaría el suelo de ② |
+
+La capa ③ tiene un lazo que conviene no perder: si mañana el rótulo pasara de «15 %» a «15 por
+ciento», el patrón dejaría de describirlo y **el guard vigilaría una forma que ya nadie escribe,
+en verde**. Esa comprobación lo impide.
+
+Y un **CONTROL POSITIVO sobre el árbol REAL**: se copian los 60 ficheros a un temporal, se planta
+el rótulo del cubo en `settingsView.js` y se comprueba que cae. El cero de arriba prueba que hoy no
+hay nada; esto prueba que el detector funciona.
+
+## §5 · Los dos rojos, medidos con todo commiteado (`9bf44156`)
+
+**ROJO 1 — un «15 %» escrito a mano.** Cae NOMBRANDO fichero y línea, no con un error genérico:
+
+```
+🔴 HAY 1 LITERAL(ES) DE PORCENTAJE DE RETENCIÓN ESCRITO(S) A MANO:
+
+   public/dashboard/js/settingsView.js:1442  (tipo 15)  «15 %»
+```
+
+Verificado que la línea 1442 es exactamente la inyectada. Revertido → 6/6 verde.
+
+**ROJO 2 — quitarle los ficheros que vigila.** Es el que más vale, y su resultado es la prueba de
+por qué el suelo existe:
+
+```
+✔ SCRUM-293 ③b · 🔴 CERO literales de porcentaje de retención en el front   ← ¡PASA!
+✖ SCRUM-293 ③b · 🔴 SUELO: había ficheros que leer, y está el que pinta el selector
+   🔴 CIEGO: solo 0 ficheros .js leídos, y el 13-ago-2026 eran 60. Una caída así no es
+   limpieza: es que el guard ha dejado de encontrar lo que vigila.
+```
+
+🔴 **El test principal PASA en vacío.** Sin el suelo, borrar los 60 ficheros que este guard vigila
+habría dado la suite en VERDE. Eso es el verde hueco, reproducido a propósito.
+
+Y con el directorio **borrado** en vez de vaciado, la ceguera se nombra distinta —«no existe» en
+vez de «0 leídos»—, porque no son la misma avería y confundirlas manda a arreglar lo que no es.
+
+Restaurado desde git: 60 ficheros, worktree limpio, 6/6 verde.
+
+## §6 · Lo que NO entra, declarado
+
+* El censo de marcadores de regla 30 **cuenta 1 donde hay 3 rótulos pintados** (mide marcas
+  escritas, no superficies). Hueco real de otro instrumento, **sin víctima hoy**: queda declarado,
+  no arreglado.
+* Los cuatro huérfanos que piden quitarles el `export` rompen tres tests que los importan. Es
+  **refactor de módulo fiscal** y va a su propia tanda.
+
+Ninguna de las dos se toca aquí, y las dos siguen escritas para que no se pierdan.
