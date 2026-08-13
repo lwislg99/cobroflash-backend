@@ -187,9 +187,82 @@ test('SCRUM-507 · el navegador PINTA las dos cosas, y como marcador sin aprobar
     '🔴 el aviso de líneas descartadas ha desaparecido de la pantalla.');
   assert.match(ejecutable, /ai-linea-supuesta/,
     '🔴 la marca por línea ha desaparecido: vuelve a ser indistinguible lo suyo de lo inventado.');
-  assert.equal((vista.match(/\[PENDIENTE microcopy oficial/g) || []).length, 2,
-    '🔴 los dos textos tienen que ser MARCADORES hasta que el fundador los firme (regla 30). Y aquí '
-    + 'no es cosmético: el texto es lo único que separa «revisa este número» de «esto está mal».');
+  assert.equal((vista.match(/\[PENDIENTE/g) || []).length, 0,
+    '🔴 vuelve a haber un marcador en esta pantalla. Los dos textos están APROBADOS (13-ago-2026): '
+    + 'si hace falta uno nuevo, se propone al fundador — no se escribe (regla 30).');
+});
+
+// ── 5 · LOS DOS TEXTOS APROBADOS, LETRA POR LETRA ─────────────────────────────────────────
+//
+// 🔴 SE COMPONEN DESDE EL FUENTE, no se buscan a trozos. Si alguien retoca media frase, lo que
+// cambia es el texto COMPUESTO, y la comparación cae mostrando el resultado real — que es lo que
+// leería el profesional. Buscar fragmentos sueltos dejaría pasar un cambio en el pegamento.
+
+/** El texto 1, tal y como lo firmó el fundador. */
+const TEXTO_1 = 'Esto no lo hemos añadido porque no sabíamos qué IVA ponerle: <conceptos>\n'
+  + 'Añádelo tú si va en el presupuesto.';
+
+/** El texto 2, sus TRES formas. La lista va detrás de los dos puntos: por eso concuerdan las tres. */
+const TEXTO_2 = {
+  cantidad: 'Esto lo hemos puesto nosotros: cantidad. Revísalo antes de enviar.',
+  precio: 'Esto lo hemos puesto nosotros: precio. Revísalo antes de enviar.',
+  ambos: 'Esto lo hemos puesto nosotros: cantidad y precio. Revísalo antes de enviar.',
+};
+
+test('SCRUM-507 · TEXTO 1 aprobado, compuesto desde el fuente', () => {
+  const vista = leer('public/dashboard/js/aiQuoteAssistant.js');
+  const m = vista.match(/avisoDesc\.textContent = '([^']*)'[\s\S]{0,200}?\+ '([^']*)';/);
+  assert.ok(m, '🔴 no se encuentra el aviso de descartadas: el instrumento no vale');
+  const compuesto = m[1] + '<conceptos>' + m[2].replace('\\n', '\n');
+  assert.equal(compuesto, TEXTO_1,
+    '🔴 EL TEXTO 1 YA NO ES EL QUE APROBÓ EL FUNDADOR. Se compone desde el fuente, así que esto cae '
+    + 'igual si cambia una palabra que si se pierde una tilde (regla 30).');
+});
+
+test('SCRUM-507 · TEXTO 2 aprobado, y las TRES formas concuerdan', () => {
+  const vista = leer('public/dashboard/js/aiQuoteAssistant.js');
+  const m = vista.match(/>(Esto lo hemos puesto nosotros: )\$\{(\w+)\}(\. Revísalo antes de enviar\.)</);
+  assert.ok(m, '🔴 no se encuentra la marca por línea: el instrumento no vale');
+  for (const [caso, campos] of [['cantidad', 'cantidad'], ['precio', 'precio'], ['ambos', 'cantidad y precio']]) {
+    assert.equal(m[1] + campos + m[3], TEXTO_2[caso],
+      `🔴 EL TEXTO 2 YA NO ES EL APROBADO en su forma «${caso}».`);
+  }
+  // 🔴 LA CONCORDANCIA NO SE ARREGLA: DEJA DE SER POSIBLE. Mi marcador decía «cantidad y precio QUE
+  // NO VENIA», con el sujeto en la lista — y por eso podía no concordar. El texto aprobado pone el
+  // sujeto en «esto» y la lista detrás de los dos puntos. Si alguien vuelve a meter el verbo detrás
+  // de la lista, las tres formas de arriba dejan de salir del MISMO esqueleto y esto cae.
+  assert.equal((vista.match(/Esto lo hemos puesto nosotros: /g) || []).length, 1,
+    '🔴 hay MÁS DE UNA versión de la frase. Un texto por cada caso es como vuelve el fallo de '
+    + 'concordancia: las tres formas tienen que salir del mismo esqueleto.');
+  assert.match(soloEjecutable(vista), /\.join\(' y '\)/,
+    '🔴 la lista de campos ya no se une con « y »: la forma «cantidad y precio» deja de existir.');
+});
+
+test('SCRUM-507 · 🔴 el SALTO DE LÍNEA del texto 1 se VE', () => {
+  // Un `\n` dentro de un `textContent` **no se ve**: HTML colapsa el salto y «Añádelo tú si va en
+  // el presupuesto.» saldría pegado a la lista de conceptos. Un texto aprobado que se pinta de otra
+  // forma que la aprobada no es el texto aprobado.
+  const vista = soloEjecutable(leer('public/dashboard/js/aiQuoteAssistant.js'));
+  const estilo = vista.slice(vista.indexOf('avisoDesc.style.cssText'), vista.indexOf('avisoDesc.textContent'));
+  assert.match(estilo, /white-space:\s*pre-line/,
+    '🔴 SIN `white-space:pre-line` EL SALTO DE LÍNEA NO SE VE y las dos frases salen pegadas: '
+    + '«…qué IVA ponerle: Caldera Añádelo tú si va en el presupuesto.»');
+  assert.match(vista, /\+ '\\nAñádelo/,
+    '🔴 el salto de línea ha desaparecido del texto: el fundador lo aprobó en dos líneas.');
+});
+
+test('SCRUM-507 · 🔴 las TILDES, por punto de código y con el fichero en UTF-8', () => {
+  // Se me fueron dos en la tanda anterior, así que no se miran a ojo. Y el BOM importa: una
+  // mojibake («sabÃ­amos») pasaría una comparación descuidada y llegaría así a la pantalla.
+  const bytes = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/aiQuoteAssistant.js'));
+  assert.ok(!(bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf),
+    '🔴 el fichero ha ganado un BOM: es la vía por la que un acento acaba en mojibake.');
+  const vista = bytes.toString('utf8');
+  for (const palabra of ['sabíamos', 'Añádelo', 'Revísalo', 'añadido']) {
+    assert.ok(vista.includes(palabra),
+      `🔴 falta «${palabra}» EXACTA. O se ha perdido una tilde, o el fichero ya no está en UTF-8 `
+      + '(«sabÃ­amos») — las dos llegan igual de rotas a la pantalla del profesional.');
+  }
 });
 
 test('SCRUM-507 · 🔴 nada BORRA el aviso después de pintarlo', () => {

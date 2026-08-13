@@ -52,19 +52,18 @@ const MARCA = '[PENDIENTE';
  * a otra tiene que verse, y un total lo escondería (la lección del suelo por FUNCIÓN de SCRUM-392).
  */
 const CENSO = Object.freeze({
-  // SCRUM-507 (13-ago-2026) · ENTRA A CONCIENCIA con 2, y el motivo es que **el mecanismo no
-  // existe sin texto**: son los dos avisos de lo que la IA no supo leer en el asistente de
-  // presupuesto.
+  // SCRUM-507 (13-ago-2026): `aiQuoteAssistant.js` ENTRO y SALIO del censo el mismo dia. Entro con
+  // 2 —el aviso de la linea que no se propone porque su IVA era ilegible, y la marca por linea de
+  // lo que la IA se invento— y el fundador FIRMO los dos textos en el mismo ticket.
   //
-  //   +1 → la linea que NO se ha propuesto porque su IVA era ilegible, con su concepto. Sin este
-  //        aviso la linea desaparece en silencio, que es el mismo fallo mudo que cierra el ticket.
-  //   +1 → la marca por linea de «esta cantidad (o este precio) no venia y la hemos supuesto». Es
-  //        lo unico que distingue un numero que escribio el profesional de uno que se invento el
-  //        modelo, que es literalmente la condicion de cierre de SCRUM-507.
+  // Al aprobarlos cambio la forma de la frase, y ese es el detalle que merece quedar escrito: mi
+  // marcador decia «cantidad y precio QUE NO VENIA y hemos supuesto», que no concuerda en plural.
+  // El texto aprobado pone el sujeto en «esto» y deja la lista detras de los dos puntos, asi que
+  // **la falta de concordancia no se corrige: deja de poder escribirse**.
   //
-  // Salen con marcador porque NO se inventa microcopy (regla 30), y aqui el texto no es cosmetico:
-  // separa «revisa este numero» de «esto esta mal». Bajan el dia que el fundador los firme.
-  'aiQuoteAssistant.js': 2,
+  // La entrada se BORRA en vez de bajar a 0, como dejaron escrito SCRUM-424 y SCRUM-405 aqui
+  // mismo: `censoActual()` solo lista ficheros CON marcadores, asi que un 0 seria una bajada
+  // permanente sin anotar. Y salir del censo NO saca de la vigilancia — lo fija R4b.
   // SCRUM-294-a (12-ago-2026) · SUBIDA A CONCIENCIA: el campo del recargo de equivalencia en la
   // ficha del cliente sale con marcador en su rotulo y en sus tres opciones. Es deliberado y no
   // provisional por descuido: decirle en pantalla a que REGIMEN FISCAL pertenece su cliente es
