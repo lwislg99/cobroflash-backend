@@ -274,3 +274,106 @@ es CUÁNDO. Los otros tres ficheros (`.gitattributes`, el guard y esta entrada) 
 Ningún fichero generado · el camino de emisión · `prisma/schema.prisma` · `public/index.html` ·
 la configuración de git de ninguna máquina — el arreglo vive en el repo, que es el punto entero ·
 `aeat-errores.properties`, protegido por su `-text` y con control negativo en el guard.
+
+---
+
+# SCRUM-480 (fase 3) · Lo que renormalizar NO cura: la ceguera
+
+**Fecha:** 13-ago-2026 · **Carril:** higiene → **urgente** · **Gate:** sin gate, corre en `npm test`
+
+**Medido contra:** `origin/main` = `d17e54260a953bcb19cd3382a6577d8b312f2d28` · 2026-08-13T11:47:25+02:00
+
+> La fase 2 arregló **los blobs** y el merge. Esta fase ataca lo que la sesión 1 destapó y que la
+> fase 2 **no toca**: que el CRLF **ciega guards en silencio**.
+
+## 1 · 🔴 EL AGUJERO DE MI PROPIA FASE 2
+
+Los guards no leen los blobs: leen **el árbol de trabajo**. Y el árbol está en CRLF **entero**, sin
+que importe lo que diga el blob, porque `core.autocrlf=true` convierte al hacer checkout:
+
+| fichero (blob en LF desde siempre) | en disco hoy |
+| --- | --- |
+| `src/app.ts` · `public/dashboard/js/app.js` · `scripts/_db-guard.mjs` · `tests/scrum409-…mjs` | **CRLF** |
+
+**Renormalizar los blobs no quita ni un `\r` de lo que un guard lee.** La fase 2 cerró los
+conflictos de merge y dejó la ceguera intacta.
+
+## 2 · La medición que decide, hecha sobre el repo y reversible
+
+`.gitattributes` declaraba `*.ts text`. Se cambió a `*.ts text eol=lf`, se borró `src/app.ts`, se
+recuperó con `git checkout --` y se miró el byte:
+
+```
+*.ts text eol=lf   →  src/app.ts en disco: LF   ✅  (52.059 bytes)
+*.ts text          →  src/app.ts en disco: CRLF 🔴
+```
+
+Y se dejó como estaba: `git status` limpio. **`eol=lf` es lo que quita la causa** — `text` a secas
+solo arregla lo que se guarda, no lo que se lee.
+
+## 3 · El censo de hermanos: **3.203 regex ejecutadas, 18 sensibles**
+
+Derivado, no enumerado, y **empírico**: cada literal de regex del árbol (`tests`, `scripts`, `src`,
+`public` — 908 ficheros) se EJECUTA sobre el mismo texto en LF y en CRLF, y sobre cada línea con y
+sin `\r` final. No se juzga el patrón: se mide el comportamiento.
+
+### 🔴 Dos veces me corrigió el instrumento a mí
+
+**① El control positivo cazó que yo tenía mal el diagnóstico.** Metí como caso conocido
+`/\/\/.*$/gm` —con `m`, tal cual lo escribí— y el detector dijo que era **sana**. No era un fallo
+del detector: **con `m`, `$` SÍ casa antes de un `\r`**, porque CR es un terminador de línea para el
+motor de regex. El defecto no es «`$` con CRLF»: es **`$` SIN `m` sobre una línea que arrastra el
+`\r`**, que es exactamente lo que produce `split('\n')`. Sin ese control habría censado la forma
+equivocada y habría acusado a un montón de guards sanos.
+
+**② El primer criterio marcaba 201 y casi todas eran correctas.** Marcaba «se comporta distinto», y
+`/\s+/`, `/\D/g` o `/[^A-Za-z]/g` se comportan distinto porque **`\r` ES un espacio y NO ES un
+dígito**: casan MÁS, y no pasa nada. Lo que ciega un guard es lo contrario. Criterio final:
+**casar MENOS bajo CRLF**. De 201 a 18.
+
+> Un detector que acusa a los sanos no se corrige: se desactiva. Y entonces no vigila nadie.
+
+## 4 · Los seis del patrón exacto, leídos uno a uno
+
+El recuento se contrasta; **la lista se lee**. De las 18, seis son la forma del defecto (`//.*$` y
+compañía sobre una línea). Lo que decide no es la regex: es **de dónde sale la línea**.
+
+| dónde | cómo parte el fichero | veredicto |
+| --- | --- | --- |
+| `tests/scrum372-un-dato-un-nombre.test.mjs:153` | `split(/\r?\n/)` | protegido **a mano** |
+| `tests/_afirmaciones-derivadas.mjs:64` | `split(/\r?\n/)` | protegido **a mano** |
+| `src/.../legalPages.routes.ts:21` | `split(/\r?\n/)` | protegido **a mano** |
+| `scripts/_pares-del-schema.mjs:66` | `replace(/\r\n/g,'\n')` + `split('\n')` | protegido **a mano** |
+| `scripts/_prisma-procedencia-guard.mjs:112` | `replace(/\r\n/g,'\n')` + `split('\n')` | protegido **a mano** |
+| **`tests/scrum409-…:77`** | **`split('\n')` desnudo** | 🔴 **el que estuvo ciego** |
+
+**Cinco de seis se acordaron. Uno no.** Eso no es mala suerte: es una **prohibición sin mecanismo**
+—la protección vive como costumbre, y una costumbre falla una vez de cada seis—. La familia de
+SCRUM-118/124/172/187.
+
+**El 409 ya no está ciego**, y no lo arreglé yo: la sesión 1 (SCRUM-509) lo reescribió **por AST**,
+así que los comentarios ya no participan por construcción, en vez de quitarse con una regex que
+había que acertar. Comprobado leyendo el fichero mergeado, no supuesto.
+
+## 5 · El mecanismo
+
+**① `eol=lf`** en las extensiones de fuente. Quita la causa: si el disco no tiene `\r`, ninguna
+regex puede cegarse por él, ni las 18 de hoy ni las que se escriban mañana.
+
+**② Un guard de COMPORTAMIENTO**: leer ficheros del árbol y exigir que no tengan ni un `\r`. No
+comprueba `.gitattributes` —eso es la causa— sino **el efecto**: si el día de mañana alguien cambia
+una regla, o clona con otra configuración, el guard cae. Con su suelo: se le da un búfer con `\r`
+para comprobar que sabría verlo.
+
+⚠️ **Lo que esto NO arregla, y conviene decirlo**: `eol=lf` gobierna el checkout, no lo que escribe
+un editor. Un editor configurado para guardar CRLF seguiría produciendo `\r` en su disco hasta el
+siguiente checkout. Lo que sí queda garantizado es lo que el repositorio entrega y lo que se
+commitea.
+
+## 6 · Lo que toca esta fase
+
+`.gitattributes` (14 reglas pasan de `text` a `text eol=lf`) · el guard · esta entrada.
+**Ningún fichero de contenido**: los blobs ya se renormalizaron en la fase 2, `ca983956`.
+
+⚠️ Al mergear, el primer `git checkout` de cada quien **reescribe su árbol de trabajo a LF**. Los
+blobs no cambian y `git status` sigue limpio: lo que cambia es lo que hay en el disco.
