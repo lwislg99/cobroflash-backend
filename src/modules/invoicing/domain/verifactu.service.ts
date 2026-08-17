@@ -664,14 +664,43 @@ export async function buildVerifactuRegistrosXml(
       );
     }
 
-    // ⚠️ PENDIENTE FISCAL (asesor): el XSD admite `TipoRectificativa` (S=sustitución /
-    // I=diferencias) y `ImporteRectificacion`, ambos minOccurs=0. NO se emiten porque elegir
-    // uno u otro es una calificación fiscal, no una decisión de implementación (regla: no
-    // inventar). Queda registrado en SCRUM-145 para el dictamen.
-    // SCRUM-216: la R1 ya no sale sin `TipoRectificativa` — eso era un 1114 seguro en CADA
-    // rectificativa. Omitir un campo que el esquema exige no es abstenerse: es garantizar el
-    // rechazo. Hoy `MODO_TIPO_RECTIFICATIVA` vale SIN_CONFIRMAR, así que la R1 se EXCLUYE del
-    // registro y se reporta; no se emite con un valor que nadie ha confirmado.
+    // ── `TipoRectificativa` · LA R1 SÍ ENTRA HOY EN EL REGISTRO ──────────────────────────────
+    //
+    // 🔴 AQUÍ HUBO UNA AFIRMACIÓN FALSA DURANTE 18 DÍAS, y conviene que conste por qué se
+    // corrige en vez de borrarse: este comentario decía «hoy `MODO_TIPO_RECTIFICATIVA` vale
+    // SIN_CONFIRMAR, así que la R1 se EXCLUYE del registro». Las dos mitades eran falsas desde
+    // el 30-jul-2026, cuando el fundador movió el modo a `INCREMENTAL_I`. El código cambió y la
+    // frase se quedó. Quien construyese la remisión leyendo esto habría dado por supuesto que
+    // las rectificativas no se declaran — y dejarlas fuera del registro no es un fallo de
+    // interfaz, es un incumplimiento (SCRUM-513).
+    //
+    // LO QUE PASA HOY, MEDIDO ejerciendo el camino con un doble (no leído del nombre de la
+    // constante, que es un nombre, ni de este comentario, que ya mintió una vez):
+    // una R1 con `rectifies` produce su `RegistroAlta` con `TipoRectificativa` dentro, y el
+    // paquete la cuenta. NO se excluye. Evidencia y método: `docs/master/SCRUM-513.md`.
+    //
+    // ⚠️ NO SE REPITE AQUÍ EL VALOR DEL MODO, y eso es la corrección de fondo. Duplicar la
+    // constante en prosa es lo que permitió que esta línea envejeciera en silencio: la próxima
+    // vez que alguien mueva el modo, este comentario volvería a mentir. La autoridad es
+    // `MODO_TIPO_RECTIFICATIVA` en `registro.builder.ts`, donde vive con su ratchet; lo que sí
+    // se puede decir sin caducar es qué CONSECUENCIA tiene cada modo:
+    //
+    //   · `INCREMENTAL_I`  → declara la R1 con `TipoRectificativa` = I y SIN
+    //                        `ImporteRectificacion` (AEAT 1119 lo prohíbe si no es sustitución).
+    //   · `SUSTITUTIVA_S`  → declara con S y CON `ImporteRectificacion` (AEAT 1118 lo exige).
+    //   · `SIN_CONFIRMAR`  → NO declara: `resolverTipoRectificativa` lanza y la R1 sale
+    //                        EXCLUIDA del paquete con su motivo. Es el camino de bloqueo, que se
+    //                        conserva y se prueba para el día que el dictamen obligue a parar.
+    //
+    // Omitir el campo NO es una cuarta opción: era un 1114 seguro en CADA rectificativa
+    // (SCRUM-216). Omitir un campo que el esquema exige no es abstenerse, es garantizar el
+    // rechazo — la abstención de verdad es bloquear y pedir el dato, que es `SIN_CONFIRMAR`.
+    //
+    // 🔴 PENDIENTE FISCAL, Y SIGUE ABIERTO: P12 del expediente dice que nuestras R1 «consignan el
+    // total corregido» (que sería S) y el código las crea con el total NEGADO (que es I). `I` está
+    // puesto para que la etiqueta coincida con lo que el documento ya contiene, no como dictamen.
+    // Lo reserva el máster al asesor. Si algún día se confirma `S`, no basta con mover la
+    // constante: hay que cambiar cómo se CREAN las R1. No se toca desde aquí.
     //
     // La base y la cuota SUSTITUIDAS salen de las líneas de la factura RECTIFICADA (no de la
     // R1): es lo que significa «sustituida» en `DesgloseRectificacionType`.
