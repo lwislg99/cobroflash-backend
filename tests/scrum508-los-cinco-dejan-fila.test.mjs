@@ -175,12 +175,33 @@ test('SCRUM-508 · 🔴 la fila se escribe por UN SOLO camino, no por seis parec
     + 'hay ninguna, la tabla está vacía y este ticket no ha hecho nada; y si hay y no las ve, el '
     + 'aserto de abajo pasaría en verde sobre seis formas distintas.');
 
-  assert.deepEqual(escritores.map((e) => e.fichero), [REPOSITORIO],
-    '🔴 HAY MÁS DE UN CAMINO PARA ESCRIBIR LA FILA:\n    '
+  // ⚠️ SE COMPARA EL CONJUNTO DE FICHEROS, NO LA LISTA DE LLAMADAS (actualizado 17-ago-2026).
+  //
+  // La propiedad que este guard defiende —y que su propio mensaje describe— es «no hay SEIS SITIOS
+  // escribiendo lo mismo». Hasta 2B eso coincidía con «hay una sola llamada», porque la única
+  // escritura era el `create` del envío, y el aserto se escribió sobre la lista sin deduplicar.
+  //
+  // SCRUM-475 (fase 2B) añade la SEGUNDA escritura legítima: el `update` con el que el aviso del
+  // proveedor avanza el estado de la fila. Vive en el MISMO fichero a propósito —ponerla en la ruta
+  // del webhook habría creado el segundo sitio que esto prohíbe— así que la propiedad se cumple y
+  // era el aserto el que medía otra cosa.
+  //
+  // 🔴 Y NO SE AFLOJA A CAMBIO: el número exacto se fija abajo. Una tercera escritura, aunque esté
+  // en este mismo fichero, tiene que pasar por aquí y decir por qué.
+  assert.deepEqual([...new Set(escritores.map((e) => e.fichero))], [REPOSITORIO],
+    '🔴 HAY MÁS DE UN FICHERO ESCRIBIENDO LA FILA:\n    '
     + escritores.map((e) => `${e.fichero}:${e.linea} (${e.operacion})`).join('\n    ') + '\n\n'
     + '  Es el defecto que SCRUM-475 cerró con el emisor único, un nivel más abajo: seis sitios\n'
     + '  escribiendo lo mismo son seis que hay que recordar cuando cambie qué se escribe.\n'
-    + `  Todo pasa por \`registrarEnvio\` en ${REPOSITORIO}.`);
+    + `  Todo pasa por \`registrarEnvio\`/\`aplicarAvisoDeProveedor\` en ${REPOSITORIO}.`);
+
+  assert.deepEqual(escritores.map((e) => e.operacion).sort(), ['create', 'update'],
+    '🔴 las escrituras de `email_messages` ya no son exactamente UN `create` (el envío) y UN '
+    + '`update` (el aviso del proveedor):\n    '
+    + escritores.map((e) => `${e.fichero}:${e.linea} (${e.operacion})`).join('\n    ') + '\n\n'
+    + '  Si has añadido una tercera, dilo aquí con su motivo. Si ha DESAPARECIDO el `update`, el\n'
+    + '  receptor del webhook ha dejado de escribir y un rebote vuelve a no dejar rastro — que es\n'
+    + '  el defecto entero de SCRUM-475.');
 });
 
 // ── 3 · 🔴 CONTROL POSITIVO · cada clase escribe UNA fila con su `kind` ─────────────────────

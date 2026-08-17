@@ -493,14 +493,18 @@ export const DECLARADOS = [
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'El catálogo de avisos con constancia (SCRUM-477); su lector de hoy es su test.',
     exports: ['AVISOS'] },
-  { modulo: 'src/modules/messaging/domain/constanciaCorreo.ts',
-    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
-    motivo: 'SCRUM-475/478: saber si el correo llegó. La tabla `email_messages` está parada A PROPÓSITO (su SQL se aplicó a DEV el 12-ago-2026); el consumidor es la fase siguiente.',
-    exports: ['avanzar'] },
-  { modulo: 'src/modules/messaging/domain/constanciaCorreo.ts',
-    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
-    motivo: 'El vocabulario de estados de `avanzar`, en la misma espera (SCRUM-475/478).',
-    exports: ['ESTADOS_CORREO'] },
+  // ✅ `avanzar` y `ESTADOS_CORREO` SE RETIRAN de este registro el 17-ago-2026, en el mismo commit
+  // que los cablea (SCRUM-475 fase 2B) — que es lo que este trinquete pide cuando una declaración
+  // deja de corresponder a un huérfano: «LO HAS CABLEADO: borra su línea en ESTE MISMO commit, así
+  // el registro queda como la constancia de que la deuda duró exactamente lo que duró».
+  //
+  // Estaban declarados como MOTOR_EN_ESPERA desde el 12-ago con un motivo que nombraba a su
+  // consumidor futuro: «el consumidor es la fase siguiente». La fase siguiente es el receptor del
+  // webhook: `registroDeEnvios.aplicarAvisoDeProveedor` llama a `avanzar` para que el aviso del
+  // proveedor NO retroceda el embudo, y `ESTADOS_CORREO` deja de ser huérfano porque montar la
+  // ruta hizo alcanzable a `firmaResend.ts`, que ya lo importaba desde 2A sin que nadie llegara.
+  //
+  // 🔴 La deuda duró CINCO DÍAS y consta. Eso es exactamente lo que el registro entrega.
   { modulo: 'src/modules/messaging/domain/constanciaCorreo.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',

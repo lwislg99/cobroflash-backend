@@ -37,7 +37,7 @@
 // **no se les inventa una**. De ellos no consta nada, que es la verdad.
 import { prisma as clientePorDefecto } from '../../../core/db/prisma';
 import { maskEmail } from '../../../core/utils/utils';
-import type { Constancia } from './constanciaCorreo';
+import { avanzar, type Constancia, type EstadoCorreo } from './constanciaCorreo';
 
 /**
  * Cuánto se espera a la base antes de seguir sin fila. El correo manda; la fila acompaña.
@@ -138,6 +138,25 @@ export interface ClienteDeEnvios {
 }
 
 /**
+ * El cliente que hace falta para APLICAR un aviso del proveedor (SCRUM-475 fase 2B). Se separa de
+ * `ClienteDeEnvios` a propósito: escribir la fila del envío y actualizarla cuando llega el rebote
+ * son dos capacidades distintas, y un emisor no tiene por qué poder actualizar nada.
+ */
+export interface ClienteDeAvisos {
+  emailMessage: {
+    findUnique: (args: { where: { providerId: string } })
+    => Promise<{ id: number; status: string } | null>;
+    update: (args: { where: { id: number }; data: Record<string, unknown> })
+    => Promise<{ id: number }>;
+  };
+}
+
+export type ResultadoAviso =
+  | { aplicado: true; id: number; antes: string; despues: EstadoCorreo }
+  /** `no_consta_ese_envio` NO es un error: ver la cabecera de `aplicarAvisoDeProveedor`. */
+  | { aplicado: false; motivo: 'no_consta_ese_envio' | 'fallo_escritura'; idProveedor: string };
+
+/**
  * UNA fila por envío. Devuelve qué pasó y **no lanza jamás**.
  *
  * 🔴 `provider_id` va tal cual: si el proveedor no dio identificador, va **nulo**, y el `status` lo
@@ -228,4 +247,73 @@ function anotarFallo(to: string, e: unknown): void {
     evento: 'registro_fallido', to: maskEmail(to),
     error: (e as { message?: string })?.message || String(e),
   }));
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-475 (fase 2B) · EL AVISO DEL PROVEEDOR, APLICADO SOBRE LA FILA
+//
+// 🔴 POR QUÉ ESTO VIVE AQUÍ Y NO EN LA RUTA DEL WEBHOOK, que es donde parecería tocar:
+//
+// `tests/scrum508-los-cinco-dejan-fila.test.mjs` exige que **TODAS** las escrituras de
+// `email_messages` estén en este fichero, y no es burocracia: seis sitios escribiendo la misma
+// tabla son seis que hay que recordar el día que cambie qué se escribe, y el que se olvide no dará
+// error. Un `emailMessage.update` en la ruta habría hecho caer ese guard — y habría tenido razón.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Aplica un aviso YA VERIFICADO sobre la fila de su envío. **No lanza jamás**, por lo mismo que
+ * `registrarEnvio`: un webhook que revienta hace que el proveedor reintente en bucle.
+ *
+ * 🔴 «NO CONSTA DE ESE ENVÍO» NO ES UN ERROR, y es la mitad del criterio del ticket.
+ *
+ * Si no hay fila con ese `provider_id` es porque el correo salió **antes de que existiera la
+ * tabla**, y no hay backfill a propósito (SCRUM-475 §4: «de ellos no consta nada, que es la
+ * verdad»). Entonces esto devuelve `no_consta_ese_envio` y **NO CREA NINGUNA FILA**: una fila
+ * fabricada al llegar el rebote diría que sabemos de un envío del que no sabemos nada — ni cuándo
+ * salió, ni de qué merchant, ni a cuenta de qué factura—, y `merchant_id` es `NOT NULL`, así que
+ * habría que inventarse también eso. La ruta lo acusa con un 200: el aviso se recibió y se entendió.
+ *
+ * 🔴 EL ESTADO NO RETROCEDE: se pasa por `avanzar()`, que es el mismo embudo que usa el envío. Un
+ * `delivered` que llega tarde **no borra un rebote ya constatado**. Eso hace además que aplicar dos
+ * veces el mismo aviso sea inofensivo, y por eso este receptor NO necesita la caché de eventos
+ * vistos que sí lleva Stripe: allí un duplicado re-aplicaba un cambio de plan; aquí la operación es
+ * idempotente por construcción, y una divergencia imposible gana a una vigilada.
+ */
+export async function aplicarAvisoDeProveedor(args: {
+  idProveedor: string;
+  estado: EstadoCorreo;
+  /** Motivo legible del proveedor, si el aviso lo trae. Se enmascara igual que en el envío. */
+  motivo?: string | null;
+  cliente?: ClienteDeAvisos;
+}): Promise<ResultadoAviso> {
+  const { idProveedor, estado } = args;
+  const cliente = args.cliente ?? (clientePorDefecto as unknown as ClienteDeAvisos);
+
+  try {
+    const fila = await cliente.emailMessage.findUnique({ where: { providerId: idProveedor } });
+    if (!fila) return { aplicado: false, motivo: 'no_consta_ese_envio', idProveedor };
+
+    // El estado guardado es una cadena (la columna es `TEXT`): si trajera algo fuera del
+    // vocabulario, `avanzar` lo trataría como rango `undefined` y el aviso ganaría. Es lo correcto
+    // —un valor que no está en el embudo no puede proteger nada— y queda dicho.
+    const despues = avanzar(fila.status as EstadoCorreo, estado);
+    await cliente.emailMessage.update({
+      where: { id: fila.id },
+      data: {
+        status: despues,
+        // Igual que en el envío: el motivo del proveedor suele traer la dirección dentro
+        // («550 no such user ana@obra.example») y `error` NO está cubierta por `CAMPOS_PERSONALES`.
+        ...(args.motivo ? { error: sinCorreosEnClaro(args.motivo) } : {}),
+      },
+    });
+    return { aplicado: true, id: fila.id, antes: fila.status, despues };
+  } catch (e) {
+    // Se anota con el ID DEL PROVEEDOR, no con el destinatario: aquí no lo tenemos, y pedirlo a la
+    // base solo para el log sería una consulta extra por un dato personal.
+    console.error('[correo]', JSON.stringify({
+      evento: 'aviso_no_aplicado', idProveedor, estado,
+      error: (e as { message?: string })?.message || String(e),
+    }));
+    return { aplicado: false, motivo: 'fallo_escritura', idProveedor };
+  }
 }
