@@ -132,3 +132,97 @@ la avería que este proyecto lleva semanas persiguiendo.
   cuando haga falta. Meterlo en la suite sería un segundo guard sobre lo mismo sin que nadie lo
   haya pedido.
 * **No se ha tocado el censo de SCRUM-402** ni su tope. Su número sigue siendo correcto.
+
+---
+
+# SCRUM-402 · addendum 2 — aplicadas las dos primeras pantallas, y el traspaso
+
+**Fecha:** 17-ago-2026 · **Rama:** `censo-marcadores-microcopy` · **Commit:** `8d6d1075`
+**Medido contra:** `origin/main` = `a241b6e48c6553e453375bf705ca76ac3045ac0d` · 2026-08-17T14:40:00+02:00
+**Tanda:** tests 3674 pass 3597 fail 0 skipped 77
+
+> **PARADA EN PANTALLA COMPLETA, no a mitad.** Se aplican dos pantallas enteras de las trece; el
+> resto queda intacto con su marcador. Media pantalla rotulada y media con andamios **parece
+> terminada**, y eso es peor que la de antes.
+
+## §1 · Lo aplicado (30 de los 81 textos del fichero)
+
+| Pantalla | Superficies |
+|---|---|
+| `invoiceDetailView.js` — botones de acción | 8 |
+| `nuevaFacturaModal.js` — el modal entero | 22 |
+
+Copiados **literales** de `docs/MICROCOPY_APROBADA_SIN_APLICAR.md` y comprobados **por punto de
+código**: `…` = U+2026 (un carácter), tildes U+00E9/U+00F3, sin BOM y sin mojibake. El aplicador
+aborta si encuentra cualquiera de las dos, y **no aplica nada** si una sola línea no es la esperada
+— sustituir «el primero que encuentre» es como se mete un texto en la ranura de al lado.
+
+**Dos constantes BORRADAS, no dejadas sin usar:** `NF_PENDIENTE` y `MARCA_MICRO`. Un marcador sin
+consumidores es el que alguien vuelve a enchufar sin querer. SCRUM-483 ya había dejado escrito que
+`NF_PENDIENTE` se partiría «el día que se aprueben»: ese día es hoy.
+
+## §2 · Cuatro guards actualizados, **ninguno relajado**
+
+Los cuatro exigían que el rótulo fuera **el marcador**. Su motivo seguía siendo bueno —«un renombre
+también es microcopy nueva»— y lo que cambió es que el fundador los aprobó. Así que se cambia **el
+valor esperado, no la exigencia**: un renombre sigue cayendo.
+
+* `scrum283-microcopy-marcador` — tabla `ROTULOS_APROBADOS`, los ocho uno a uno. **La inyección
+  también se actualiza**: ahora cuela «Bajar el PDF» en vez de «Descargar PDF», que era el texto que
+  antes era el defecto y ahora es el correcto.
+* `scrum283-censo-acciones-factura` — el control del toggle compara con «Marcar como cobrada».
+* `scrum289b` — las 22 entran en `APROBADOS` con su fecha y qué ranura son.
+* `scrum402` — las dos entradas se **BORRAN** del censo, no se ponen a 0 (SCRUM-424 / SCRUM-405).
+
+Y un comentario que había quedado **mintiendo**: la cabecera del modal afirmaba que todo literal
+visible es el marcador. Se corrige conservando el criterio, que sigue valiendo para la siguiente.
+
+## §3 · ⚠️ El número de SCRUM-402 y por qué no cuadrará del todo
+
+Su censo **solo mira `public/dashboard/js`**. Los textos de `src/` —el LÉEME del ZIP, la etiqueta
+del firmante, el error de dirección del trabajo— **no los vigila nadie**, así que aplicarlos **no
+moverá su número**. Si el contador no cuadra con lo aplicado, ése es el motivo y no un fallo.
+
+## §4 · 🔴 TRASPASO — lo que queda, y en qué orden
+
+**Fuente única:** `docs/MICROCOPY_APROBADA_SIN_APLICAR.md`. Nada de memoria.
+
+| Pantalla | Textos | Notas para quien siga |
+|---|---|---|
+| `quotesView.js` | 4 | Títulos de bloque |
+| `quoteActionsRegistry.js` | 12 | Salen de `MARCA_MICROCOPY` (l.62): al aplicarlos la constante queda muerta y **se borra** |
+| `quoteSuplido.js` | 3 | 🔴 **El aviso es MULTILÍNEA** — ver §5 |
+| `customersView.js` | 4 | 3 opciones dentro de un `innerHTML`: van en el mismo literal |
+| `settingsView.js` | 11 | Tres grupos: criterio de caja, retención, Bizum, modo de emisión |
+| `invoicesView.js` | 3 | La l.172 solo está marcada en la rama «factura»; la otra ya está aprobada |
+| `productsView.js` | 1 | Se inserta en un aviso ya aprobado |
+| `jobDetailView.js` | 5 | 🔴 La l.2432 pinta hoy lo mismo en sus **dos ramas** (`decidible ? MARCA : MARCA`). Cada rama lleva **su** texto: ése era el defecto |
+| `exportView.js` | 3 | ⚠️ La l.330 **NO está aprobada** (es la rama «cero facturas») y se queda marcada |
+| `albaranDetailView.js` · `signaturePad.js` | 2 | 🔴 El de `signaturePad` es **multilínea** — ver §5 |
+| `albaranFirmante.ts` · `jobDireccion.ts` · `portabilidadCompleta.ts` | 3 | Los de `src/`: no los vigila SCRUM-402 |
+
+## §5 · 🔴 LO QUE MÁS FÁCIL SE HACE MAL: los multilínea
+
+**Un texto aprobado que se pinta de otra forma que la aprobada NO es el texto aprobado.**
+
+Dos de los que quedan tienen **más de una línea** y hoy irían a un `textContent`, donde el HTML
+**colapsa el salto**: el aviso del suplido (`quoteSuplido.js`, 45-49) y el LÉEME del ZIP
+(`portabilidadCompleta.ts`, que va a un `.txt` y ahí sí se respeta).
+
+Para los que van a pantalla hace falta `white-space: pre-line` en el elemento, **y su rojo**: quitar
+la propiedad tiene que hacer caer un test que compruebe que el salto se ve. **Ya mordió en
+SCRUM-507.** Compruébalo en cada uno que tenga más de una línea.
+
+## §6 · Lo que NO se ha tocado
+
+* **Los 38 fiscales y legales.** Ni uno.
+* **`puertaClienteReal.ts`** — sus dos formas están aprobadas pero **sus cuatro cláusulas no**, y se
+  componen desde `avisoPuerta.service.ts`. Van literales en el informe de esta tanda.
+* **Control negativo, comprobado:** intactos `Emitir factura`, `+ Nuevo justificante` y los nueve
+  submenús de Configuración.
+
+## §7 · Nota sobre el commit `8d6d1075`
+
+Su mensaje perdió tres nombres —`NF_PENDIENTE`, `MARCA_MICRO`— porque los backticks se los comió el
+shell al escribirlo. **No se reescribe la historia para arreglar un mensaje** (y el hook de AA2
+bloquea `--force`, con razón): queda dicho aquí, que es donde se busca.
