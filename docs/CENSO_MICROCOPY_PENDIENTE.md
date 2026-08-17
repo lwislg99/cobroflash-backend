@@ -15,8 +15,22 @@
 | | |
 |---|---|
 | Marcas **escritas** en el código | **47** |
-| Superficies **pintadas** (lo que se ve) | **109** |
+| Superficies **pintadas** (lo que se ve) | **113** |
 | Lo que declara el guard de SCRUM-402 | **38** |
+
+> ⚠️ **CORREGIDO el 17-ago-2026, y el error era mío.** La primera versión de este documento decía
+> **109** superficies y **«23 controles no dicen nada»**, y las categorías **no sumaban su total** —
+> la tabla de debajo daba 35. Un censo cuyas partes no suman no es un censo, así que se recontó
+> pieza a pieza. Tres huecos:
+>
+> * el modal de «Nueva factura» tiene **22** superficies, no 20: faltaban el **título del modal** y
+>   la **etiqueta del botón de cerrar**, que salen los dos de la misma línea (`l.53`);
+> * la ficha de **Clientes** tiene **4**, no 2: el selector de recargo son **tres opciones** dentro
+>   de un solo literal, y el barrido contaba el literal, no las opciones;
+> * los **«a ciegas» son 40**, no 23 — más 2 que llevan una pista dentro del corchete.
+>
+> Producto pasa de 71 a **75** y el total de 109 a **113**. El número de marcas escritas (47) no
+> cambia: lo que estaba mal contado era lo que se VE, que es justo lo que hay que aprobar.
 
 **Cuadra con SCRUM-402 en lo que él mide, y por eso el suyo no está mal:** su censo declara 38 marcas
 en 17 ficheros del panel, y mi barrido ve exactamente 38 ahí. Su trinquete es correcto.
@@ -42,42 +56,53 @@ salen abajo.
 
 ## 🔴 Lo primero, si solo vas a mirar una cosa
 
-**23 controles no dicen absolutamente nada.** Su texto es la marca **y nada más**: el profesional ve
+**40 controles no dicen absolutamente nada.** Su texto es la marca **y nada más**: el profesional ve
 un botón que pone `[PENDIENTE microcopy oficial]` y no puede deducir qué hace. En el resto, la marca
 va **delante** de un texto legible, así que al menos se entiende y se puede juzgar.
 
-| Dónde | Cuántos |
-|---|---|
-| Detalle de factura / justificante — botones de acción | 8 |
-| Nueva factura (modal) — todo el formulario | 12 visibles + 8 para lector de pantalla |
-| Trabajo → revisión inicial | 4 |
-| Configuración → criterio de caja (etiqueta) | 1 |
-| Clientes → recargo de equivalencia (etiqueta) | 1 |
-| Exportar → un botón | 1 |
+| Dónde | A ciegas | Líneas |
+|---|---|---|
+| Nueva factura (modal) — el formulario entero | **22** | 44 · 53 (×2) · 77 · 78 · 85 · 97 · 108 · 134 · 135 · 140 · 141 · 146 · 147 · 152 · 153 · 159 · 169 · 179 · 212 · 216 · 221 |
+| Detalle de factura / justificante — botones de acción | **8** | 273 · 282 · 363 · 448 · 472 · 513 · 550 · 640 |
+| Trabajo → revisión inicial | **4** | 2432 · 2439 · 2461 · 2472 |
+| Exportar → botón del libro, estado vacío y error | **3** | 314 · 331 · 334 |
+| Configuración → modo de emisión (solo el respaldo) | **2** | 213 · 219 |
+| Facturas (lista) → botón de nueva factura | **1** | 172 |
+| **Suma** | **40** | |
+
+Y **2 más** que no llevan rótulo pero sí una **pista dentro del corchete**, así que se leen a medias:
+`customersView.js:192` (recargo de equivalencia) y `settingsView.js:291` (criterio de caja).
 
 ---
 
-# PARTE 1 · PRODUCTO — 71 superficies (las apruebas tú)
+# PARTE 1 · PRODUCTO — 75 superficies (las apruebas tú)
 
-## A · Nueva factura (modal) — 20 · `nuevaFacturaModal.js`
+## A · Nueva factura (modal) — 22 · `nuevaFacturaModal.js`
 
 **Toda la pantalla está sin rotular.** Es el caso más grave: no hay ni un texto legible en el modal
 entero. La constante es `NF_PENDIENTE` (l.20).
 
-| Línea | Qué es | Qué tiene que entender el profesional |
+⚠️ El botón principal **sí** tiene texto aprobado —`Emitir factura` (`NF_ACCION_PRIMARIA`, l.30)— y
+por eso no sale aquí. Lo que falta de él es solo lo que pone **mientras** emite (l.212).
+
+| Línea | Qué es | Qué hace / qué se escribe ahí |
 |---|---|---|
-| 77 | Placeholder del buscador de cliente | Que ahí escribe para buscar entre sus clientes |
-| 97 | Estado vacío de la lista | Que la búsqueda no ha encontrado ningún cliente |
-| 108 · 221 | Mensaje de error | Que la factura **no** se ha emitido, y por qué |
-| 134 | Placeholder de «concepto» de línea | Qué se factura en esa línea |
-| 140 | Placeholder de «cantidad» | Cuántas unidades |
-| 146 | Placeholder de «precio» | Precio por unidad, sin IVA |
-| 152 | Placeholder de «IVA» | El tipo de IVA de esa línea |
-| 169 | Botón | Que añade otra línea a la factura |
-| 179 | Botón | Que cierra sin emitir nada |
-| 212 | Botón principal | **Que emite la factura de verdad** — es el punto de no retorno (regla 29) |
-| 216 | Aviso tras emitir | Que la factura ya está emitida |
-| 44 · 78 · 85 · 135 · 141 · 147 · 153 · 159 | Etiquetas para lector de pantalla (`aria-label`) | Lo mismo que su campo visible; hoy un usuario con lector de pantalla oye la marca |
+| 53 | **Título del modal** | Anuncia que se va a crear una factura nueva desde cero |
+| 53 | Etiqueta del botón **✕** de cerrar | Cierra el modal sin emitir nada |
+| 77 | Placeholder del buscador de cliente | Se teclea el nombre para filtrar entre sus clientes |
+| 97 | Opción vacía del desplegable de cliente | «Ninguno elegido todavía» |
+| 108 | Mensaje de error | La **lista de clientes** no se ha podido cargar |
+| 134 | Placeholder de «concepto» | Qué se factura en esa línea |
+| 140 | Placeholder de «cantidad» | Cuántas unidades. Viene con `1` puesto |
+| 146 | Placeholder de «precio» | Precio por unidad, **sin IVA** |
+| 152 | Placeholder de «IVA» | El tipo **en porcentaje** (viene con `21`) |
+| 169 | Botón | Añade otra línea a la factura |
+| 179 | Botón secundario | Cierra sin emitir. No se cierra al tocar el fondo: solo con esto o Escape |
+| 212 | Estado **transitorio** del botón principal | Lo que pone mientras se está emitiendo |
+| 216 | Aviso emergente tras emitir | Confirma que la factura ya está emitida |
+| 221 | Mensaje de error al emitir — **solo el respaldo** | Que la factura **no** se ha emitido. Si el servidor manda motivo propio, se muestra ése |
+| 44 | `aria-label` del diálogo | Lo que oye un lector de pantalla al abrirse |
+| 78 · 85 · 135 · 141 · 147 · 153 · 159 | `aria-label` de buscador, desplegable, concepto, cantidad, precio, IVA y botón ✕ de la línea | Lo mismo que su campo visible, en voz. El ✕ de quitar línea **solo** tiene esto |
 
 ## B · Detalle de factura / justificante — 8 botones · `invoiceDetailView.js`
 
@@ -139,7 +164,7 @@ Todos con texto legible detrás de la marca. **Se pueden aprobar en bloque.**
 > ⚠️ Los rótulos de los **tipos** de retención (`15 %`, `7 %`…) **no** llevan marca y no la llevarán:
 > salen del dominio, y ahí un porcentaje es el dato, no microcopy.
 
-## G · Clientes — 2 · `customersView.js`
+## G · Clientes — 4 · `customersView.js`
 | 192 | Etiqueta de campo (**a ciegas**) | Que ahí declara si el cliente está en recargo de equivalencia |
 | 196 | Opción del selector | Que no consta el régimen de ese cliente |
 
@@ -208,13 +233,13 @@ pintados, todos por la fábrica `rotulo()` (l.43). Todos llevan texto legible de
 
 | Grupo | Superficies |
 |---|---|
-| Parte 1 · Producto (A–L) | **71** |
+| Parte 1 · Producto (A–L) | **75** |
 | Parte 2 · Fiscal y legal (M–W) | **38** |
-| **Total** | **109** |
+| **Total** | **113** |
 
 Y por clase de marca escrita: `constante` 15 + `pintado a ciegas` 11 + `marca sola en un valor` 12 +
 `marca con texto` 9 = **47**. Las dos cuentan cosas distintas y **las dos cuadran**: 47 sitios donde
-está escrita la marca, 109 sitios donde se lee.
+está escrita la marca, 113 sitios donde se lee.
 
 ## Lo que este censo NO dice
 
