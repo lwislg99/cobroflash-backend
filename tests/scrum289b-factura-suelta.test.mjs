@@ -326,6 +326,32 @@ const APROBADOS = {
   Cliente: 'fundador, 11-ago-2026 (SCRUM-277 · título de bloque)',
   'Líneas': 'fundador, 11-ago-2026 (SCRUM-277 · título de bloque)',
   'Emitir factura': 'fundador, 11-ago-2026 (SCRUM-277 · acción primaria)',
+  // 🔴 17-ago-2026 · LAS 22 RANURAS DEL MODAL, aprobadas de una vez. Hasta hoy todas salían de
+  // `NF_PENDIENTE`, que se ha BORRADO: el modal entero se pintaba con el marcador y un profesional
+  // no podía saber qué escribía en cada campo. Esto NO relaja el guard —sigue cayendo ante
+  // cualquier texto que no esté en esta tabla—: declara cuáles dejaron de ser provisionales.
+  'Nueva factura': 'fundador, 17-ago-2026 (título del modal)',
+  Cerrar: 'fundador, 17-ago-2026 (botón ✕ de la cabecera)',
+  'Crear una factura nueva': 'fundador, 17-ago-2026 (aria-label del diálogo)',
+  'Busca por nombre…': 'fundador, 17-ago-2026 (placeholder del buscador)',
+  'Buscar cliente por nombre': 'fundador, 17-ago-2026 (aria-label del buscador)',
+  'Cliente al que facturas': 'fundador, 17-ago-2026 (aria-label del desplegable)',
+  'Selecciona un cliente…': 'fundador, 17-ago-2026 (opción vacía)',
+  'No hemos podido cargar tus clientes. Inténtalo otra vez.': 'fundador, 17-ago-2026 (error al cargar)',
+  'Trabajo o material': 'fundador, 17-ago-2026 (placeholder de concepto)',
+  'Concepto de la línea': 'fundador, 17-ago-2026 (aria-label de concepto)',
+  Cantidad: 'fundador, 17-ago-2026 (placeholder de cantidad)',
+  'Cantidad de unidades': 'fundador, 17-ago-2026 (aria-label de cantidad)',
+  'Precio sin IVA': 'fundador, 17-ago-2026 (placeholder de precio)',
+  'Precio por unidad, sin IVA': 'fundador, 17-ago-2026 (aria-label de precio)',
+  'IVA %': 'fundador, 17-ago-2026 (placeholder de IVA)',
+  'Tipo de IVA en porcentaje': 'fundador, 17-ago-2026 (aria-label de IVA)',
+  'Quitar esta línea': 'fundador, 17-ago-2026 (aria-label del ✕ de la línea)',
+  'Añadir línea': 'fundador, 17-ago-2026 (botón)',
+  Cancelar: 'fundador, 17-ago-2026 (botón secundario)',
+  'Emitiendo…': 'fundador, 17-ago-2026 (estado del botón principal)',
+  'Factura emitida': 'fundador, 17-ago-2026 (aviso tras emitir)',
+  'No hemos podido emitir la factura. Inténtalo otra vez.': 'fundador, 17-ago-2026 (error al emitir)',
 };
 
 test('SCRUM-346 · SUELO: el guard VE las dos ramas de un ternario', () => {
