@@ -96,18 +96,38 @@ test('SCRUM-494 · los grupos SUMAN el total: un censo cuyas partes no suman no 
 
 // ── CONTROL NEGATIVO Y POSITIVO SOBRE EL ÁRBOL REAL ─────────────────────────────────────
 
-test('SCRUM-494 · 🔴 CONTROL NEGATIVO: `avanzar` NO cae — es una puerta declarada, no un ayudante', () => {
-  // `docs/master/SCRUM-475.md` §6 lo declara con esas palabras: «La función `avanzar()` está probada
-  // y sin llamador — es deliberado, y se dice». Si cayera aquí, el guard mandaría cerrar esa puerta.
+test('SCRUM-494 · 🔴 CONTROL NEGATIVO: `avanzar` NO cae — y desde 2B ya NO es una puerta, es una viga', () => {
+  // ⚠️ ESTA DECLARACIÓN SE ACTUALIZA, Y LA ACTUALIZACIÓN ES LA BUENA NOTICIA (17-ago-2026).
+  //
+  // Hasta hoy `avanzar` estaba en `SOLO_SU_TEST`, y el motivo estaba escrito en
+  // `docs/master/SCRUM-475.md` §6: «está probada y sin llamador — es deliberado, y se dice». Era una
+  // puerta dejada abierta a la espera de SU webhook.
+  //
+  // Ese webhook llegó: `registroDeEnvios.aplicarAvisoDeProveedor` (SCRUM-475 fase 2B) la llama para
+  // que un `delivered` que llega tarde NO borre un rebote ya constatado. Así que pasa a
+  // `CON_PRODUCCION`, que es donde acaba un motor cuando alguien lo enchufa.
+  //
+  // 🔴 Lo que NO cambia es la primera comprobación: `avanzar` sigue sin poder caer en «el export
+  // sobra». Antes porque era una puerta declarada; ahora, con más razón, porque lo llama producción.
   const cae = C.sobran.find((f) => f.nombre === 'avanzar');
   assert.equal(cae, undefined,
     '🔴 `avanzar` cae en la sub-categoría y el guard mandaría QUITARLE EL `export`. Es el motor del ' +
-    'embudo de correo, declarado a propósito sin llamador a la espera de su webhook: des-exportarlo ' +
-    'cerraría una puerta que alguien dejó abierta con su motivo escrito.');
+    'embudo de correo y desde SCRUM-475 (2B) lo llama el receptor del webhook: des-exportarlo ' +
+    'dejaría al aviso del proveedor sin la única pieza que impide que un `delivered` tardío borre ' +
+    'un rebote.');
+  // 🔴 Y AHORA NI SIQUIERA ESTÁ EN EL CENSO DE HUÉRFANOS, que es la forma más limpia de graduarse:
+  // `C.filas` son los exports sin consumidor de producción, y `avanzar` ya tiene uno.
   const f = C.filas.find((x) => x.nombre === 'avanzar');
-  assert.equal(f?.grupo, 'SOLO_SU_TEST',
-    `🔴 «avanzar» ha cambiado de grupo (${f?.grupo}). Sin uso interno y con su test como único ` +
-    'importador: ésa es la forma de un motor esperando cable.');
+  assert.equal(f, undefined,
+    `🔴 «avanzar» ha VUELTO al censo de huérfanos (grupo «${f?.grupo}»). Eso significa que alguien ` +
+    'ha desconectado el receptor del webhook: el embudo del correo vuelve a tener un solo escalón y ' +
+    'un rebote deja de dejar rastro. No lo re-declares aquí — mira quién quitó el cable.');
+
+  // Y el veredicto del clasificador, por si el censo cambiara de forma: sigue siendo de producción.
+  const veredicto = clasificador(RAIZ)('src/modules/messaging/domain/constanciaCorreo.ts', 'avanzar');
+  assert.equal(veredicto.grupo, 'CON_PRODUCCION',
+    `🔴 el clasificador dice «${veredicto.grupo}» para \`avanzar\`, y desde SCRUM-475 (2B) lo llama ` +
+    '`aplicarAvisoDeProveedor`.');
 });
 
 test('SCRUM-494 · CONTROL POSITIVO: un export con consumidor de PRODUCCIÓN nunca cae', () => {
@@ -175,6 +195,11 @@ test('SCRUM-494 · el clasificador funciona export por export, no solo sobre la 
   // ninguna lista todavía. Si solo supiera clasificar lo ya declarado, no serviría para nada.
   const clasificar = clasificador(RAIZ);
   const f = clasificar('src/modules/messaging/domain/constanciaCorreo.ts', 'avanzar');
-  assert.equal(f.grupo, 'SOLO_SU_TEST');
+  // 17-ago-2026 · `SOLO_SU_TEST` → `CON_PRODUCCION`. El ejemplo no se cambia por otro: es el MISMO
+  // export, y lo que cambió es el mundo — SCRUM-475 (2B) le puso el consumidor que esperaba. Que un
+  // caso de prueba envejezca así es exactamente lo que se quiere ver.
+  assert.equal(f.grupo, 'CON_PRODUCCION');
+  // Lo que NO cambia, y es la propiedad que este test defiende: el clasificador sabe responder
+  // sobre un export suelto —sin que esté en ninguna lista— y no aconseja quitarle el `export`.
   assert.equal(f.sobra, false);
 });

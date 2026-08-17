@@ -51,6 +51,7 @@ export const PUBLIC_PREFIXES = [
   '/pay', '/cliente', '/albaran', '/webhooks/stripe', '/webhooks/stripe-connect',
   '/health', '/auth', '/webhooks/psp', '/charges', '/quote', '/invoice', '/recibo',
   '/webhooks/mp', '/webhooks/whatsapp', '/legal', '/p', '/dev',
+  '/webhooks/resend', // SCRUM-475 (fase 2B): entregas y rebotes del correo
 ] as const;
 
 // Guard A (este archivo) SÍ excluye /dev de la exigencia de declarar categoría de
@@ -203,6 +204,16 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
     path: '/webhooks/whatsapp',
     kind: 'signed-webhook',
     reason: 'isValidSignature() rechaza (401) sin WHATSAPP_APP_SECRET (SCRUM-99; antes fail-open)',
+  },
+  {
+    method: 'POST',
+    path: '/webhooks/resend',
+    kind: 'signed-webhook',
+    reason:
+      'SCRUM-475 (2B) · verificarFirmaResend() obligatorio, HMAC-SHA256 sobre el cuerpo CRUDO. Sin ' +
+      'RESEND_WEBHOOK_SECRET no pasa nada: 503 y NO_SE_PUDO_COMPROBAR, que es fail-closed y además ' +
+      'no se confunde con una firma que no casa. Sin recurso por-tenant adivinable detrás: la fila ' +
+      'se resuelve por `provider_id` (UNIQUE, opaco, lo dio el proveedor) y si no existe NO se crea.',
   },
 ];
 

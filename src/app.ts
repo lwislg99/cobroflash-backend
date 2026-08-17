@@ -48,6 +48,12 @@ import {
   rawBody as stripeConnectRawBody,
   router as stripeConnectWebhookRouter,
 } from './modules/payments/connect/connectWebhook.routes'; // C1-2
+// SCRUM-475 (fase 2B): el receptor de entregas y rebotes. Mismo patrón que Stripe: trae su propio
+// parser porque la firma cubre los bytes crudos.
+import {
+  rawBody as resendRawBody,
+  router as resendWebhookRouter,
+} from './modules/messaging/app/routes/resendWebhook.routes';
 import mpWebhookRouter from './modules/billing/app/routes/mpWebhook.routes';
 import whatsappIncomingRouter from './modules/whatsappBot/app/routes/whatsappIncoming.routes';
 import botAdminRouter from './modules/whatsappBot/app/routes/botAdmin.routes';
@@ -136,6 +142,11 @@ app.use('/webhooks/stripe', stripeRawBody, stripeWebhookRouter);
 // CONNECT-1 (C1-2): webhook SEPARADO para cuentas conectadas (account.updated
 // + direct charges), con su propio signing secret. También raw body.
 app.use('/webhooks/stripe-connect', stripeConnectRawBody, stripeConnectWebhookRouter);
+// SCRUM-475 (fase 2B): entregas y rebotes del correo. MISMO patrón y por el mismo motivo — la
+// firma cubre los BYTES, así que el parser propio va delante del global. Si acabara detrás, el
+// verificador NO diría «firma inválida»: diría `cuerpo_no_crudo`, que es lo que hace depurable
+// ese día.
+app.use('/webhooks/resend', resendRawBody, resendWebhookRouter);
 
 // SCRUM-14: las fotos de albarán viajan en base64 (~5 MB → ~6,8 MB de JSON) y el
 // límite global de 2 MB las cortaría. Parser propio SOLO para /admin/albaranes,

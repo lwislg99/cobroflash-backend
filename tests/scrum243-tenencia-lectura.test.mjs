@@ -95,8 +95,23 @@ const CENSO_SIN_RED = [
   ['src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts', 2],
   ['src/modules/invoicing/app/routes/invoice.routes.ts', 1],
   ['src/modules/quotes/app/routes/quotes.routes.ts', 2],
+
+  // ── 🔴 SCRUM-475 (fase 2B) · 44 → 45. SUBE, y es una DECISIÓN tomada a conciencia.
+  //    El receptor del webhook de correo busca la fila de su envío por `provider_id`, y NO PUEDE
+  //    filtrar por merchant porque no hay ninguno a mano: el aviso de entrega o de rebote lo manda
+  //    el proveedor, no una sesión. No hay cookie, no hay `req.merchantId`, y no los habrá nunca.
+  //
+  //    Es la MISMA categoría que las rutas públicas por token opaco de arriba: `provider_id` lo
+  //    generó el proveedor, es `@unique` en la tabla y no es adivinable ni enumerable. Quien no
+  //    tenga ese identificador exacto no alcanza ninguna fila — y para llegar aquí ha tenido
+  //    además que firmar el aviso con nuestro secreto (`verificarFirmaResend`, fail-closed).
+  //
+  //    ⚠️ Y lo que se hace con la fila está acotado: solo AVANZA su estado por el embudo, que es
+  //    monótono. No se leen datos del merchant, no se devuelven —el receptor contesta `{ok:true}`
+  //    y nada más— y si no hay fila NO SE CREA ninguna.
+  ['src/modules/messaging/domain/registroDeEnvios.ts', 1],
 ];
-const TOTAL_SIN_RED = CENSO_SIN_RED.reduce((t, [, n]) => t + n, 0);   // 44 (eran 45 hasta SCRUM-254)
+const TOTAL_SIN_RED = CENSO_SIN_RED.reduce((t, [, n]) => t + n, 0);   // 45 (44 + el receptor de SCRUM-475 2B)
 const MINIMO_QUE_FILTRAN = 196;
 
 // ── SUELO, EN DOS MITADES ────────────────────────────────────────────────────────────────
