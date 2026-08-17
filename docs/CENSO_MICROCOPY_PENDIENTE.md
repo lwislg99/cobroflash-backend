@@ -248,3 +248,21 @@ está escrita la marca, 113 sitios donde se lee.
   la marca pueden estar bien tal cual — hace falta que lo digas.
 * **Los `aria-label`** cuentan como superficie aunque no se vean: quien usa lector de pantalla oye la
   marca en voz alta. Si prefieres tratarlos aparte, son los 8 de la sección A.
+
+---
+
+## Criterios de aprobación fijados por el fundador (17-ago-2026)
+
+Se anotan aquí porque **el motivo es lo que hay que conservar**: la lista de textos aprobados
+envejece, el criterio no. Los tres salieron al aprobar los bloques de producto.
+
+1. **Misma acción, mismas palabras.** Una acción que existe en dos pantallas se dice igual en las
+   dos. Aplicado a los rótulos de acción del presupuesto para que casen con los del detalle de
+   factura.
+2. **Los tres selectores de estado fiscal comparten forma y comparten palabras.** Recargo de
+   equivalencia, criterio de caja y retención de IRPF tienen la misma terna —no consta · sí · no—
+   y **tienen que decirla con las mismas palabras**. Si uno dijera «Sin indicar» y otro «No consta»,
+   alguien leería que son estados distintos, y este producto lleva un mes separando «no lo ha
+   dicho» de «dice que no».
+3. **No se grita.** Nada de MAYÚSCULAS para enfatizar dentro de una frase: si el sitio admite
+   negrita, negrita; si no, redonda.
