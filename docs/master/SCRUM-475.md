@@ -1052,3 +1052,129 @@ documento sin la razón por la que el receptor no se construyó ese día.
 | 3 · nadie escribe una fila | 🔴 **EN PIE** — es SCRUM-501, y es el único que queda |
 
 El orden del §3 se mantiene tal cual: cuando SCRUM-501 esté, el receptor tiene qué actualizar.
+
+---
+
+# SCRUM-475 · fase 2B — el receptor: un rebote deja rastro
+
+**Fecha:** 17-ago-2026 · **Carril:** B · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `33ec7334cd915a6c3930a59e96685b2bcac5e091` · 2026-08-17T12:13:55+02:00
+**Tanda:** tests 3674 pass 3597 fail 0 skipped 77
+
+> **Cierra SCRUM-475.** La condición era una frase: *un rebote de correo deja rastro. Hoy no deja
+> ninguno.* Ya lo deja.
+
+## §1 · El PASO 0 paró el ticket, y el hallazgo valió más que el bloqueo
+
+Los tres puntos se midieron antes de construir nada. Dos estaban; el segundo no, y **la tabla no
+estaba en staging ni en producción** — lo decía `docs/MIGRATIONS_PENDING.md`, no una suposición.
+
+🔴 **Y lo que se vio de camino es la regla que queda:** `registrarEnvio` es *best-effort* a
+propósito —no puede tumbar el envío que observa—, así que en los dos entornos que importan **cada
+correo que salía escribía en el vacío y nada se quejaba**. La propiedad que lo hace correcto es
+justo la que lo hacía invisible. Un mecanismo best-effort sobre una tabla que no existe no falla:
+**acierta en silencio sobre la nada.**
+
+El fundador aplicó y verificó el SQL en staging y producción (`tabla=1 · idx=1 · idx=1 ·
+unique=1`, control positivo 1 en las dos). Solo entonces se construyó.
+
+## §2 · Qué entra
+
+| Fichero | Papel |
+|---|---|
+| `avisoDeCorreo.ts` (nuevo, **puro**) | Qué dice un aviso: evento → estado, y dónde está el identificador |
+| `registroDeEnvios.ts` (ampliado) | `aplicarAvisoDeProveedor` — la escritura |
+| `resendWebhook.routes.ts` (nuevo) | La ruta: cuerpo crudo → firma → aplicación |
+| `app.ts` · `env.ts` · `publicAccessDeclarations.ts` | Montaje, secreto y declaración de superficie |
+
+**El aplicador vive en `registroDeEnvios.ts` y no en la ruta**, que es donde parecía tocar:
+`scrum508` exige que **todas** las escrituras de `email_messages` estén en un solo fichero. Un
+`update` en la ruta habría hecho caer ese guard, y habría tenido razón — seis sitios escribiendo la
+misma tabla son seis que recordar el día que cambie qué se escribe.
+
+**El parser crudo va delante del global**, como los dos webhooks de Stripe. La firma cubre los
+BYTES: detrás del parser global ningún aviso legítimo verificaría jamás, y el verificador no diría
+«firma inválida» sino `cuerpo_no_crudo` — que es lo único que hace depurable ese día.
+
+## §3 · Lo que NO se inventa
+
+* **Sin fila con ese `provider_id` no se crea ninguna.** Es «de ese envío no consta nada», y se
+  contesta 200. No hay backfill a propósito; una fila fabricada al llegar el rebote afirmaría que
+  sabemos de un envío del que no sabemos ni el merchant — y `merchant_id` es `NOT NULL`, así que
+  habría que inventarse también eso.
+* **El estado no retrocede** (`avanzar`): un `delivered` tardío no borra un rebote ya constatado.
+  Y eso hace la operación **idempotente**, por lo que este receptor **no necesita** la caché de
+  eventos vistos que sí lleva Stripe — allí un duplicado re-aplicaba un cambio de plan.
+* **Un evento desconocido no se traduce** a un estado parecido: se dice `evento_desconocido`.
+* **Las dos clases de rechazo no se juntan:** `503` para `NO_SE_PUDO_COMPROBAR` (fallo NUESTRO, el
+  reintento servirá) y `401` para `RECHAZADO`. El test prueba **los dos lados y que difieren** —
+  juntarlos pierde la que importa, que es la que dice que el fallo es nuestro.
+
+## §4 · Los rojos, medidos con todo commiteado (`405438e6`)
+
+**Quitado el guardado**, dejando el `aplicado: true` — el fallo mudo exacto. Cayeron **dos** guards,
+y el que decide nombra el envío:
+
+```
+🔴 LA FILA DEL ENVÍO `resend_abc123` SE HA QUEDADO SIN RASTRO: sigue en
+   «aceptado_sin_confirmacion» después de un rebote.
+   La fila EXISTE y el aviso LLEGÓ y se entendió — lo que no se ha hecho es escribir.
+   Mira quién quitó el `update` de `aplicarAvisoDeProveedor`.
+```
+
+Y `scrum508` por el otro lado: *«si ha DESAPARECIDO el `update`, el receptor ha dejado de escribir y
+un rebote vuelve a no dejar rastro»*. Revertido → 25/25 verde.
+
+**El suelo** exige que el censo de emisores vea los 7 del embudo y **se declare ciego** si devuelve
+cero; que siga habiendo **un solo fichero** escritor; que la ruta esté **montada** y **antes** del
+parser global; y que la superficie esté declarada. Lo de «montada» no es adorno: es la avería que
+esta casa lleva semanas pagando —construir el motor, no cablearlo, y que todo pase en verde—.
+
+## §5 · Cuatro declaraciones que este cable dejó viejas
+
+Las cuatro se pueden **nombrar**, que es la condición para actualizarlas:
+
+1. **`avanzar` y `ESTADOS_CORREO` salen del registro de huérfanos.** Estaban como `MOTOR_EN_ESPERA`
+   con el motivo escrito: *«el consumidor es la fase siguiente»*. Ésta es la fase siguiente. **La
+   deuda duró cinco días y consta.**
+2. **`scrum494`: `avanzar` pasa de `SOLO_SU_TEST` a `CON_PRODUCCION`**, en los dos sitios que lo
+   usaban de ejemplo. El caso no se cambia por otro: es el mismo export, y lo que cambió es el mundo.
+3. **`scrum508`: el aserto comparaba la LISTA de llamadas** cuando la propiedad que defiende es «no
+   hay más de un SITIO». Pasa a comparar el conjunto de ficheros — y **no se afloja a cambio**: se
+   fija el número exacto de operaciones (`create` + `update`), así que una tercera tiene que pasar
+   por ahí y decir por qué.
+4. **`scrum243`: 44 → 45 lecturas sin red.** SUBE a conciencia. El receptor busca por `provider_id`
+   y **no puede** filtrar por merchant porque no hay ninguno: el aviso lo manda el proveedor, no una
+   sesión. Misma categoría que las rutas públicas por token opaco — `provider_id` es `@unique`, no
+   adivinable, y para llegar hay que haber firmado con nuestro secreto. Solo avanza el estado.
+
+## §6 · 🔴 LO QUE FALTA, Y NO LO PUEDE HACER ESTA SESIÓN
+
+El código está entregado y probado. **El canal no existe hasta que el fundador lo abra en el panel
+de Resend**, y eso es suyo — aquí no se supone nada de ese panel:
+
+1. **Registrar la URL del endpoint:** `https://yaqu.app/webhooks/resend` (POST).
+2. **Activar los eventos.** El receptor entiende cuatro y **solo** cuatro: `email.delivered`,
+   `email.bounced`, `email.complained` y `email.failed`. Cualquier otro se contesta con 200 y
+   `evento_desconocido` — no se inventa un estado.
+3. **Pegar el secreto de firma** (`whsec_…`) en Railway como **`RESEND_WEBHOOK_SECRET`**, en los
+   entornos donde deba recibir. Regla 9: lo pega el fundador, nunca viaja por el chat.
+
+⚠️ **Mientras falte el secreto, el receptor rechaza TODO** (fail-closed) con `503` y
+`NO_SE_PUDO_COMPROBAR`. Es deliberado, y por eso la variable entró en `warnMissingWebhookSecrets`:
+sin ese aviso en el arranque, el síntoma —que no llega ningún aviso— es **indistinguible de «no ha
+rebotado nada»**, que es exactamente el defecto que este ticket cierra.
+
+## §7 · Huecos declarados
+
+* **Dónde viene el identificador** en el cuerpo del aviso se resuelve probando cuatro formas
+  conocidas (`data.email_id`, `data.id`, `email_id`, `id`) y diciendo `sin_identificador` si
+  ninguna trae nada. **No es una afirmación sobre el contrato del proveedor: es la lista de sitios
+  donde se ha mirado.** Si un día llega un aviso legítimo y sale `sin_identificador`, el motivo lo
+  nombra y se añade la forma que faltaba.
+* **La costura del test está dicha:** la decisión y la escritura se prueban de punta a punta con un
+  cliente falso; la ruta, por su contrato HTTP real y por AST hasta el aplicador. La suite no tiene
+  base de datos, y el cable se vigila por AST porque es justo donde un refactor dejaría el receptor
+  contestando `200 ok` sin escribir nada.
+* **`scrum-475-constancia-correo` NO se ha tocado ni borrado.** «Parece» superada y «parece» no es
+  un veredicto: queda en la lista de ramas por medir.
