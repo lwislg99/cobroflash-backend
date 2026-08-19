@@ -97,13 +97,30 @@ export function evaluarPuerta(
 }
 
 /** El aviso, ya redactado, para quien lo tenga que enseñar o registrar. */
-export function textoDelAviso(v: VeredictoPuerta): string {
-  if (!v.abierta) return '';
-  const porQue = v.motivos.includes('paga')
+/**
+ * POR QUÉ se considera abierta. Son EXACTAMENTE dos motivos aprobados y no se inventan más: si
+ * mañana hubiera una tercera forma de abrirla, su frase la aprueba el fundador (regla 30).
+ *
+ * SIN `export` (SCRUM-494): su consumidor real está en este fichero. Se prueba por la superficie
+ * pública —`mensajeParaElFundador`, que lo pinta en las dos formas— y así el test comprueba lo que
+ * de verdad importa: que el aviso ENVIADO nombra el motivo, no que exista un ayudante que sabría.
+ */
+function motivoDeApertura(v: VeredictoPuerta): string {
+  return v.motivos.includes('paga')
     ? 'hay un merchant con suscripción de Stripe'
     : 'hay más merchants que cuentas de prueba declaradas';
-  return `Ha entrado el primer cliente real (${porQue}). Estas decisiones dependían de que no lo hubiera:\n`
-    + v.clausulas.map((c) => `  · ${c}`).join('\n');
+}
+
+/**
+ * Las cláusulas, una por línea y con su viñeta. **Solo la lista**: el marco lo pone
+ * `mensajeParaElFundador`, que es quien sabe si esto es una apertura o un recordatorio.
+ *
+ * ⚠️ Antes esta función traía el marco DENTRO, y por eso las dos formas eran imposibles: el texto
+ * decía «Ha entrado el primer cliente real» aunque llevara ocho semanas abierta.
+ */
+export function textoDelAviso(v: VeredictoPuerta): string {
+  if (!v.abierta) return '';
+  return v.clausulas.map((c) => `  · ${c}`).join('\n');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════
@@ -130,25 +147,69 @@ export interface Cadencia {
   diasDesdeApertura: number | null;
 }
 
-export function debeAvisar(v: VeredictoPuerta, c: Cadencia): { avisa: boolean; motivo: string } {
-  if (!v.abierta) return { avisa: false, motivo: 'la puerta sigue cerrada' };
+/**
+ * 🔴 `dia` SALE, y hasta hoy se quedaba dentro. El día vivía **incrustado en el texto de
+ * diagnóstico** (`recordatorio semanal (día 14)`), así que para ponerlo en el aviso habría que
+ * volver a sacarlo del string con una regex — leer un dato de una frase que se escribió para
+ * humanos es como se pierden los datos. Ahora sale como número, y la frase sigue siendo la frase.
+ *
+ * `dia` es `null` cuando no se sabe desde cuándo está abierta, que es distinto de cero.
+ */
+export function debeAvisar(v: VeredictoPuerta, c: Cadencia):
+{ avisa: boolean; motivo: string; apertura: boolean; dia: number | null } {
+  if (!v.abierta) return { avisa: false, motivo: 'la puerta sigue cerrada', apertura: false, dia: null };
   const d = c?.diasDesdeApertura;
   // Sin fecha de apertura NO se calla: un aviso de más es barato; uno de menos es el ticket entero.
   if (d === null || d === undefined || !Number.isFinite(d)) {
-    return { avisa: true, motivo: 'la puerta está abierta y no se sabe desde cuándo' };
+    return {
+      avisa: true, motivo: 'la puerta está abierta y no se sabe desde cuándo',
+      // No se sabe el día, así que NO es una apertura: se avisa como recordatorio sin número. Dar
+      // por apertura lo que no consta haría que el aviso dijera «acaba de entrar» cada semana.
+      apertura: false, dia: null,
+    };
   }
-  if (d <= 0) return { avisa: true, motivo: 'la puerta acaba de abrirse' };
+  if (d <= 0) return { avisa: true, motivo: 'la puerta acaba de abrirse', apertura: true, dia: d };
   if (d % CADENCIA_RECORDATORIO_DIAS === 0) {
-    return { avisa: true, motivo: `recordatorio semanal (día ${d})` };
+    return { avisa: true, motivo: `recordatorio semanal (día ${d})`, apertura: false, dia: d };
   }
-  return { avisa: false, motivo: `ya avisado; el próximo recordatorio toca el día ${Math.ceil(d / CADENCIA_RECORDATORIO_DIAS) * CADENCIA_RECORDATORIO_DIAS}` };
+  return {
+    avisa: false, apertura: false, dia: d,
+    motivo: `ya avisado; el próximo recordatorio toca el día ${Math.ceil(d / CADENCIA_RECORDATORIO_DIAS) * CADENCIA_RECORDATORIO_DIAS}`,
+  };
 }
 
 /**
- * El texto del aviso. ⚠️ MARCADO: es microcopy nueva y **la regla 30 no tiene excepción por
- * destinatario** — que solo lo lea el fundador no lo convierte en texto aprobado. La propuesta
- * está en `docs/master/SCRUM-390.md`.
+ * El texto del aviso, APROBADO el 17-ago-2026 (regla 30). Estuvo marcado hasta hoy porque **la
+ * regla 30 no tiene excepción por destinatario**: que solo lo lea el fundador no lo convertía en
+ * texto aprobado.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * 🔴 DOS FORMAS, Y LA SEGUNDA NO EXISTÍA
+ *
+ * Hasta hoy el día de la apertura y el recordatorio de la séptima semana mandaban **el mismo
+ * mensaje**: «ha entrado el primer cliente real». Al mes eso se lee como que ha entrado otro, y lo
+ * que de verdad pasa —que sigue abierta y **nadie ha revisado nada**— no se decía en ninguna parte.
+ *
+ * Ahora la apertura anuncia el hecho y el recordatorio dice **cuántos días lleva sin revisarse**,
+ * que es la información que empuja a actuar.
+ *
+ * ⚠️ El aviso sale por WHATSAPP (`sendWhatsAppText`), no a una pantalla ni a un log: sus saltos de
+ * línea son del mensaje y llegan tal cual. No hace falta `white-space` de nada — eso es CSS, y aquí
+ * no hay DOM.
  */
-export function mensajeParaElFundador(v: VeredictoPuerta): string {
-  return '[PENDIENTE microcopy oficial] ' + textoDelAviso(v);
+export function mensajeParaElFundador(v: VeredictoPuerta, cadencia?: Cadencia): string {
+  const d = cadencia ? debeAvisar(v, cadencia) : { apertura: true, dia: 0 };
+  const cuerpo = textoDelAviso(v);
+  if (d.apertura) {
+    return `🔴 HA ENTRADO EL PRIMER CLIENTE REAL — ${motivoDeApertura(v)}.
+Estas decisiones se tomaron dando por hecho que no lo habría. Revísalas:
+${cuerpo}`;
+  }
+  // Sin día conocido no se inventa un número: se dice el hecho sin él. «día null» sería peor que
+  // no decirlo, y redondear a 0 diría que acaba de abrirse, que es justo lo contrario.
+  const dia = d.dia === null ? '' : ` — día ${d.dia}`;
+  return `🔴 LA PUERTA DE CLIENTE REAL SIGUE ABIERTA${dia} — ${motivoDeApertura(v)}.
+Estas decisiones seguían dando por hecho que no había ningún cliente real, y siguen
+sin revisar:
+${cuerpo}`;
 }

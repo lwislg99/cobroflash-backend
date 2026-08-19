@@ -83,7 +83,11 @@ test('SCRUM-390 · ① SEÑAL «PAGA»: un merchant con suscripción abre la pue
   const v = evaluarPuerta({ total: CUENTAS_DE_PRUEBA_DECLARADAS, conSuscripcion: 1 }, ['docs/YAQU_MASTER.md:1472']);
   assert.equal(v.abierta, true, '🔴 alguien está pagando y la puerta sigue cerrada.');
   assert.deepEqual(v.motivos, ['paga']);
-  assert.match(textoDelAviso(v), /suscripción de Stripe/);
+  // 17-ago-2026 · el MOTIVO se comprueba donde ahora vive: en el mensaje que se ENVÍA.
+  // `textoDelAviso` pasó a devolver solo las cláusulas, porque el marco depende de si es apertura o
+  // recordatorio — y con el marco dentro las dos formas eran imposibles. El hecho no desaparece:
+  // cambia de sitio, y el guard lo sigue.
+  assert.match(mensajeParaElFundador(v, { diasDesdeApertura: 0 }), /suscripción de Stripe/);
   assert.match(textoDelAviso(v), /YAQU_MASTER\.md:1472/,
     '🔴 el aviso no NOMBRA las cláusulas que dependían de que no hubiera cliente real. Avisar sin ' +
     'decir de qué es otro aviso que nadie atiende.');
@@ -97,7 +101,7 @@ test('SCRUM-390 · ② SEÑAL «SON MÁS DE LOS NUESTROS»: un merchant de más 
     '🔴 hay más merchants que cuentas de prueba declaradas y la puerta sigue cerrada: un cliente ' +
     'real en trial pasaría sin que nadie se entere.');
   assert.deepEqual(v.motivos, ['mas_de_los_nuestros']);
-  assert.match(textoDelAviso(v), /más merchants que cuentas de prueba/);
+  assert.match(mensajeParaElFundador(v, { diasDesdeApertura: 0 }), /más merchants que cuentas de prueba/);
 });
 
 test('SCRUM-390 · las dos señales a la vez se declaran las dos', () => {
@@ -180,8 +184,14 @@ test('SCRUM-390 · con la puerta abierta avisa al FUNDADOR, y a nadie más', asy
     '🔴 el aviso lleva merchantId: es un mensaje INTERNO, no puede colgar de ningún merchant (regla 28).');
   assert.match(mandados[0].text, /YAQU_MASTER|MIGRATIONS_PENDING/,
     '🔴 el aviso no NOMBRA las cláusulas que quedan sin cumplir.');
-  assert.match(mandados[0].text, /^\[PENDIENTE microcopy oficial\]/,
-    '🔴 el texto se presenta como aprobado y no lo está — la regla 30 no tiene excepción por destinatario.');
+  // 17-ago-2026 · APROBADO. Protegía que el texto NO se presentara como aprobado sin estarlo —«la
+  // regla 30 no tiene excepción por destinatario»—, y eso es justo lo que se cumplió: pasó por el
+  // fundador. El guard no se borra; pasa a exigir la FORMA aprobada, y con ella lo que el marcador
+  // nunca pudo vigilar: que apertura y recordatorio digan cosas DISTINTAS.
+  assert.match(mandados[0].text, /^🔴 (HA ENTRADO EL PRIMER CLIENTE REAL|LA PUERTA DE CLIENTE REAL SIGUE ABIERTA)/,
+    `🔴 el aviso no empieza por ninguna de las dos formas aprobadas. Dice: «${mandados[0].text.slice(0, 60)}…»`);
+  assert.ok(!mandados[0].text.includes('[PENDIENTE'),
+    '🔴 ha vuelto el marcador al aviso interno.');
 });
 
 test('SCRUM-390 · 🔴 si el aviso FALLA, el paso no lanza: devuelve el fallo', async () => {
@@ -220,4 +230,45 @@ test('SCRUM-390 · 🔴 EL DEFECTO DEL TICKET: la puerta tiene que estar ENGANCH
     'y ningún camino de restauración. Hoy no urge porque los datos son desechables; el día que la ' +
     'puerta se abra es letal, y además incumplimiento fiscal — es exactamente el tipo de condición ' +
     'que este mecanismo existe para no olvidar.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 LAS DOS FORMAS TIENEN QUE DECIR COSAS DISTINTAS (SCRUM-514, 17-ago-2026)
+//
+// Este guard nace de su propio rojo: al inyectar «que las dos formas pinten lo mismo», los tests
+// de arriba **siguieron en verde** — porque aceptaban CUALQUIERA de las dos formas. Aceptar una u
+// otra no es lo mismo que exigir que sean distintas, y la diferencia es todo el ticket: hasta hoy
+// el día de la apertura y el recordatorio de la octava semana mandaban EL MISMO mensaje.
+//
+// Se comprueba sobre el RESULTADO —lo que devuelve la función—, no sobre el fuente: los dos textos
+// pueden estar enteros en el `.ts` y aun así salir el mismo por el hilo.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-514 · 🔴 apertura y recordatorio NO dicen lo mismo, y el recordatorio lleva su día', () => {
+  const v = { abierta: true, motivos: ['paga'], clausulas: ['una', 'dos', 'tres', 'cuatro'] };
+  const apertura = mensajeParaElFundador(v, { diasDesdeApertura: 0 });
+  const recordatorio = mensajeParaElFundador(v, { diasDesdeApertura: 14 });
+
+  assert.notEqual(apertura, recordatorio,
+    '🔴 LA APERTURA Y EL RECORDATORIO MANDAN EL MISMO MENSAJE. Es el defecto que SCRUM-514 cerró: ' +
+    'al mes, «ha entrado el primer cliente real» se lee como que ha entrado OTRO, y lo que de ' +
+    'verdad pasa —que sigue abierta y nadie ha revisado nada— no se dice en ninguna parte.');
+  assert.match(apertura, /^🔴 HA ENTRADO EL PRIMER CLIENTE REAL/,
+    `🔴 la forma de APERTURA no es la aprobada: «${apertura.split('\n')[0]}»`);
+  assert.match(recordatorio, /^🔴 LA PUERTA DE CLIENTE REAL SIGUE ABIERTA — día 14 —/,
+    `🔴 la forma de RECORDATORIO no es la aprobada, o ha perdido su día: «${recordatorio.split('\n')[0]}»`);
+
+  // Sin fecha de apertura NO se inventa un número: se dice el hecho sin él. «día null» sería peor
+  // que no decirlo, y un 0 diría que acaba de abrirse — justo lo contrario.
+  const sinFecha = mensajeParaElFundador(v, { diasDesdeApertura: null });
+  assert.match(sinFecha, /^🔴 LA PUERTA DE CLIENTE REAL SIGUE ABIERTA — hay/,
+    `🔴 sin fecha de apertura el aviso inventa un día o cambia de forma: «${sinFecha.split('\n')[0]}»`);
+  assert.ok(!/día null|día NaN|día undefined/.test(sinFecha), '🔴 el aviso pinta un día que no consta.');
+
+  // Y las cuatro cláusulas viajan en las DOS: son lo que hay que revisar, no un adorno del marco.
+  for (const [nombre, texto] of [['apertura', apertura], ['recordatorio', recordatorio]]) {
+    for (const c of v.clausulas) {
+      assert.ok(texto.includes('  · ' + c), `🔴 la forma de ${nombre} no nombra la cláusula «${c}».`);
+    }
+  }
 });

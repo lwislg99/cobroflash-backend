@@ -97,7 +97,9 @@ export async function avisarSiEntroClienteReal(opciones: {
       };
     }
 
-    await enviar({ to: telefono, text: mensajeParaElFundador(v) });
+    // La CADENCIA viaja al texto: sin ella el recordatorio de la octava semana diría «ha entrado
+    // el primer cliente real» otra vez, que al mes se lee como que ha entrado otro.
+    await enviar({ to: telefono, text: mensajeParaElFundador(v, { diasDesdeApertura }) });
     return { abierta: true, avisado: true, motivo: decision.motivo };
   } catch (err: any) {
     // El cron sigue. Siempre.
