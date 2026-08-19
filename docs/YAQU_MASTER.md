@@ -311,6 +311,46 @@ Máx 1 recordatorio/presupuesto y 2/factura (7/14d) · mantenimientos solo con a
 Por merchant/mes: enviados/entregados/leídos/fallidos + coste €; por plantilla: tasa de entrega; alerta runbook si <90 % en 7 días.
 **✅ DONE 13-jun-26 (sobre WA-0b):** `getWhatsAppMetrics` (funnel derivado read⊃delivered⊃sent + coste sumando `costEstimate` + tasa por plantilla + alerta 7d <90% con muestra ≥10), endpoint `GET /admin/metrics/whatsapp`, tarjeta en Informes (se oculta si 0 envíos este mes). Tests `aggregateWaRows` 72/72. Datos reales en cuanto haya tráfico WhatsApp.
 
+## LAS TRES REGLAS DE LAS DEMOS SOBRE EL NÚMERO DE YAQU
+
+**Escritas el 19-ago-2026, ANTES de la primera demo de WhatsApp.**
+
+Las demos de YaQu Studio se enseñan sobre el número de WhatsApp de YaQu. Es la
+decisión práctica: es la única infraestructura compartida entre las dos líneas.
+
+**Pero ese número es el que YaQu usa con sus clientes reales.** Meta califica la
+calidad POR NÚMERO, en función de los bloqueos y denuncias de quien recibe los
+mensajes, y esa calificación gobierna el límite de conversaciones que se pueden
+iniciar al día. Y la regla del máster no deja lugar a dudas: violar la política
+antispam = ban del número = producto muerto.
+
+**1 · Sólo a quien la ha pedido.** En la misma conversación y con permiso explícito.
+Nunca en frío, nunca a una lista.
+
+**2 · Nunca en volumen.** Una demo es una visita, no una campaña.
+
+**3 · Mirar la calificación de calidad del número después de cada tanda.** Se ve en
+**WhatsApp Manager → Números de teléfono**, en la columna de calidad de cada número.
+Si baja del nivel más alto: **se paran las demos sobre ese número y se monta uno
+aparte.** Antes, no después.
+
+Y con ella se mira **el límite de mensajería** del número, en la misma pantalla: si
+baja de escalón, es la misma señal por otra vía.
+
+**Quién lo mira y cada cuánto:** **Luis**, al terminar cada tanda de demos y, como
+mínimo, una vez por semana mientras haya demos activas. _(Javier tendrá acceso al
+panel; cuando lo tenga, se revisa esta línea para nombrar suplente. Mientras tanto el
+responsable es uno, y es Luis.)_
+
+### Por qué esto no es paranoia
+
+El canal de captación decidido es la llamada en frío. Eso significa gente viendo YaQu
+por primera vez, sin contexto — exactamente el perfil que reporta un mensaje que no
+entiende. No hace falta mala fe.
+
+**El activo más frágil que tenemos es la reputación de ese número, y no se puede
+comprar de vuelta.**
+
 ---
 
 # PARTE K — BOT WHATSAPP ENTRANTE
