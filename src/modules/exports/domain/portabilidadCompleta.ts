@@ -198,4 +198,19 @@ export function datasetACsv(dataset: Dataset, campos: string[]): string {
  * esté aprobado, ponerlo es una línea, y mientras tanto quien abra el ZIP ve que falta algo en
  * vez de no ver nada. Un hueco declarado es más honesto que una ausencia silenciosa.
  */
-export const LEEME_PENDIENTE = '[PENDIENTE microcopy oficial]\n';
+export const LEEME = [
+  'Tus datos de YaQu',
+  '=================',
+  '',
+  'Este ZIP contiene una copia de tus datos en YaQu, en ficheros CSV que puedes abrir con',
+  'cualquier hoja de cálculo.',
+  '',
+  'Lo has descargado tú desde tu panel, y nadie más lo recibe.',
+  '',
+  'Dentro hay un CSV por cada tipo de dato. La primera fila de cada uno son los nombres de',
+  'las columnas.',
+  '',
+  'Para qué usamos tus datos, quién los recibe y cuánto tiempo los guardamos, lo tienes',
+  'explicado en nuestra política de privacidad: yaqu.app/privacidad',
+  '',
+].join('\n');

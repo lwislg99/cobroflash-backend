@@ -34,7 +34,7 @@ import {
 // SCRUM-244 · la PUERTA de portabilidad: cobertura derivada + registro del derecho ejercido.
 // `actorDeRequest` y `requestIp` ya vienen del import de `audit.service` de arriba.
 import {
-  construirPaquete, camposDe, datasetACsv, LEEME_PENDIENTE,
+  construirPaquete, camposDe, datasetACsv, LEEME,
 } from '../../domain/portabilidadCompleta';
 import { registrarSolicitud, registrarAtencion } from '../../domain/portabilidadRegistro';
 import { mapearConLimite } from '../../../../core/utils/concurrencia'; // SCRUM-83
@@ -774,9 +774,15 @@ router.get('/portabilidad.zip', async (req, res) => {
     for (const dataset of paquete) {
       archive.append(datasetACsv(dataset, camposDe(dataset.modelo)), { name: dataset.fichero });
     }
-    // El aviso del art. 15 va con el texto PENDIENTE de aprobación (regla 30): la pieza existe
-    // vacía a propósito, para que ponerlo sea una línea el día que esté aprobado.
-    archive.append(LEEME_PENDIENTE, { name: 'LEEME.txt' });
+    // 17-ago-2026 · texto APROBADO. Va a un `.txt`, no al DOM: sus saltos de línea son bytes del
+    // fichero y no necesitan `white-space` de nada. Lo que sí hay que sostener es que LLEGUEN, y de
+    // eso hay guard: un `.join(' ')` de más los aplanaría sin que nadie lo notara al abrir el ZIP.
+    //
+    // 🔴 NO copia el aviso del art. 15: apunta a la política de privacidad. Duplicar ahí las
+    // finalidades, los destinatarios y los plazos crearía DOS FUENTES del mismo hecho legal, y el
+    // día que una cambie la otra miente. Y NO enumera los CSV: esa lista se derivaría de lo que el
+    // ZIP mete de verdad — una escrita a mano es la siguiente que se queda vieja.
+    archive.append(LEEME, { name: 'LEEME.txt' });
     await archive.finalize();
   } catch (err) {
     console.error('[GET /admin/exports/portabilidad.zip]', err);

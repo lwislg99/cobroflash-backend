@@ -40,13 +40,21 @@
    * está cometiendo. La frontera que separa un suplido de un material propio es invisible desde
    * el editor de líneas, y equivocarse no da ningún síntoma — la factura sale igual de bonita.
    */
-  var MARCADOR_MICROCOPY = '[PENDIENTE microcopy oficial]';
-  var ROTULO_SUPLIDO = MARCADOR_MICROCOPY + ' Suplido (pagado por cuenta del cliente)';
+  // 17-ago-2026 · APROBADOS los tres, y `MARCADOR_MICROCOPY` se BORRA con ellos.
+  //
+  // ⚠️ «por cuenta» va en MINÚSCULAS. Antes iba «POR CUENTA» y el fundador lo quitó al aprobarlo:
+  // gritar en una pantalla no es énfasis. Si algún día se quiere destacar, va en negrita — este
+  // aviso es `textContent` de un `<p>`, así que HOY NO ADMITE negrita y se queda en redonda. Queda
+  // dicho para que nadie lo «arregle» devolviendo las mayúsculas.
+  //
+  // ⚠️ Y es UN SOLO PÁRRAFO: se parte en tres trozos por el ancho del fichero, no por el texto.
+  // No lleva ningún salto de línea, así que no necesita `white-space: pre-line` — ponérselo protegería un
+  // salto que no existe.
+  var ROTULO_SUPLIDO = 'Suplido (pagado por cuenta del cliente)';
   var AVISO_SUPLIDO =
-    MARCADOR_MICROCOPY +
-    ' Lo que has pagado POR CUENTA del cliente y le repercutes tal cual: una tasa, un visado, ' +
-    'una licencia. No lleva IVA ni margen. El material que compras tú NO es un suplido: ese se ' +
-    'vende con su IVA.';
+    'Lo que has pagado por cuenta del cliente y le repercutes tal cual: una tasa, un visado, una ' +
+    'licencia. No lleva IVA ni margen. El material que compras tú no es un suplido: ese se vende ' +
+    'con su IVA.';
 
   /**
    * ¿Está marcada como suplido? Solo el booleano `true` cuenta.
@@ -89,7 +97,7 @@
 
   /** Lo que el botón de ajustes dice cuando la línea es un suplido (en vez de «IVA 21 %»). */
   function resumenAjustes(marcada, ivaPerc, margenPerc) {
-    if (marcada) return MARCADOR_MICROCOPY + ' Suplido · sin IVA';
+    if (marcada) return 'Suplido · sin IVA';
     var partes = ['IVA ' + ivaPerc + ' %'];
     if (margenPerc > 0) partes.push('Margen ' + margenPerc + ' %');
     return partes.join(' · ');

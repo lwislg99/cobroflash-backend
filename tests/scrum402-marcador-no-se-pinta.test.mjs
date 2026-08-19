@@ -84,7 +84,10 @@ const CENSO = Object.freeze({
   // eso lo redacte el fundador (regla 30) es justo lo que hay que esperar, y mientras tanto se ve
   // el marcador a proposito. Se cuenta 1: los tres textos salen de una sola constante
   // `MARCADOR_MICROCOPY`, asi que aprobar el copy los apaga de golpe.
-  'quoteSuplido.js': 1,
+  // 🔴 17-ago-2026 (tanda D) · SALE DEL CENSO: aprobados los TRES textos del suplido —la casilla,
+  // el aviso y el resumen del disparador—. Esa marca pintaba TRES. El aviso es el que evita un
+  // error fiscal en el segundo en que se comete, y su texto aprobado va SIN mayúsculas: gritar
+  // en una pantalla no es énfasis. Entrada BORRADA, no puesta a 0 (SCRUM-424 / SCRUM-405).
   // SCRUM-404 (7-ago-2026) · SUBIDAS A CONCIENCIA, las dos, y con su motivo:
   //
   //   `albaranDetailView.js` +1 → el mensaje de «el servidor rechazó la firma». El fundador
