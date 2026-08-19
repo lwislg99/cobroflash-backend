@@ -425,15 +425,29 @@ test('SCRUM-500 · 🔴 la casilla y el cálculo usan LA MISMA clave', () => {
 // § 6 · REGLA 30 · LA MICROCOPY VA CON MARCADOR
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-500 · los textos nuevos llevan `[PENDIENTE microcopy oficial]` delante', () => {
-  const MARCADOR = '[PENDIENTE microcopy oficial]';
+test('SCRUM-500 · los dos textos son los APROBADOS, y el aviso sigue pudiéndose leer', () => {
+  // 17-ago-2026 · APROBADOS. Este guard exigía el marcador delante Y que el texto fuera LEGIBLE —
+  // «el aviso tiene que poder LEERSE para probarlo»—. Lo segundo es lo que de verdad protegía y se
+  // conserva entero; lo primero pasa a exigir el texto aprobado.
+  //
+  // ⚠️ Y una comprobación nueva que antes no cabía: el aviso va SIN MAYÚSCULAS. El fundador quitó
+  // «POR CUENTA» al aprobarlo porque gritar en una pantalla no es énfasis, y sin esto alguien las
+  // devuelve el día que quiera destacar la frontera.
+  const APROBADOS = {
+    ROTULO_SUPLIDO: 'Suplido (pagado por cuenta del cliente)',
+    AVISO_SUPLIDO: 'Lo que has pagado por cuenta del cliente y le repercutes tal cual: una tasa, '
+      + 'un visado, una licencia. No lleva IVA ni margen. El material que compras tú no es un '
+      + 'suplido: ese se vende con su IVA.',
+  };
   for (const [nombre, texto] of [['ROTULO_SUPLIDO', front.ROTULO_SUPLIDO], ['AVISO_SUPLIDO', front.AVISO_SUPLIDO]]) {
-    assert.ok(texto && texto.startsWith(MARCADOR),
-      `🔴 \`${nombre}\` no empieza por el marcador. Regla 30: la microcopy la aprueba el fundador, `
-      + 'y un rótulo provisional que se lee bien se queda para siempre.');
-    assert.ok(texto.length > MARCADOR.length + 20,
-      `🔴 \`${nombre}\` es solo el marcador. El aviso tiene que poder LEERSE para probarlo: es el `
-      + 'texto que evita el error fiscal en el momento exacto de cometerlo.');
+    assert.equal(texto, APROBADOS[nombre],
+      `🔴 \`${nombre}\` no es el texto aprobado. Un renombre también es microcopy nueva (regla 30).`);
+    assert.ok(!/\bPOR CUENTA\b/.test(texto),
+      `🔴 \`${nombre}\` ha vuelto a gritar «POR CUENTA». El fundador lo quitó al aprobarlo: si hay `
+      + 'que destacar, va en negrita — y este aviso es `textContent`, así que hoy no la admite.');
+    assert.ok(texto.length > 30,
+      `🔴 \`${nombre}\` se ha quedado corto. El aviso tiene que poder LEERSE: es el texto que evita `
+      + 'el error fiscal en el momento exacto de cometerlo.');
   }
   // El aviso dice la frontera que importa, no una definición de diccionario.
   assert.match(front.AVISO_SUPLIDO, /material/i,
