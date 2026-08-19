@@ -84,7 +84,41 @@ sigue ahí, y hasta hoy ningún guard lo veía. Ahora está nombrado.
 
 ## 4 · El rojo, probado por el mecanismo
 
-**SHA del commit en verde previo a la mutación: `<PENDIENTE>`.**
+**SHA del commit en verde previo a la mutación: `8737ed1c2698e016b152c26bff661940ba8a6574`.**
+Las tres mutaciones se revirtieron con `git stash` y el árbol volvió a ese commit.
+
+### Mutación 1 — el defecto real: un apéndice con el sha abreviado
+
+Se añadió a `docs/master/SCRUM-475.md` (que tiene su ancla buena) un tercer registro con
+`= \`d59d5cd\``, siete caracteres. **Es el caso del 17-ago-2026, reproducido.**
+
+| instrumento | veredicto |
+| --- | --- |
+| el guard **VIEJO** (fichero entero, `/m`) | **✅ VERDE — no ve el apéndice roto** |
+| el guard **NUEVO** (por entrada) | **🔴 ROJO**, y lo nombra |
+
+```
+SCRUM-475.md#3 (línea 1184) — el sha está ABREVIADO (hacen falta las 40 posiciones)
+    # SCRUM-475 (parte 3) · MUTACION SCRUM-516 · apendice con el sha ABREVIADO
+```
+
+Mismo fichero, mismo apéndice, dos respuestas opuestas. Eso es el ticket.
+
+### Mutación 2 — romper el troceador: que deje de saltar los bloques cercados
+
+Cae el SUELO, nombrando el mecanismo: «*el troceador cuenta como entrada un `# SCRUM-` que vive
+DENTRO de un bloque cercado. Inventaría entradas fantasma —sin ancla, porque no son entradas— y el
+guard acusaría a quien pegó un ejemplo en su registro*». Y arrastra al guard principal, porque las
+dos fantasmas de `SCRUM-480.md` aparecen como entradas sin ancla: la trampa no era teórica.
+
+### Mutación 3 — volver al comportamiento viejo (una entrada por fichero)
+
+Cae el CONTROL POSITIVO: «*el troceador no ve las dos entradas del fichero sintético*».
+
+🔴 **Y aquí está lo que justifica que ese control exista:** con esta mutación **el guard principal
+sigue VERDE**. Sin el control positivo, alguien podría revertir el arreglo entero —devolver el
+guard a mirar por fichero— y la tanda no se enteraría. Una lista vacía hace verdad cualquier «ya
+no está»; este control es lo que la obliga a significar algo.
 
 ## 5 · La evidencia que exige el encargo
 
