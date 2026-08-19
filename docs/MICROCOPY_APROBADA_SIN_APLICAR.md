@@ -239,3 +239,64 @@ Se conservan porque **la lista de textos envejece y el criterio no**:
 |---|---|
 | `src/modules/system/domain/puertaClienteReal.ts:153` | Aviso interno. **Pendiente de leer la propuesta** |
 | Los **38 fiscales y legales** | Van por otra vía; varios los dictamina el asesor |
+
+---
+
+## Addendum · aprobaciones POSTERIORES a este fichero (17-ago-2026)
+
+🔴 **Este fichero es la fuente única y estaba TRES aprobaciones por detrás.** Llegaron en los
+encargos de las tandas B y C, después de escribirlo, y nunca se anotaron aquí. Se añaden para que
+«gana el fichero» siga siendo cierto — una fuente única que no se actualiza deja de serlo, y quien
+la lea creerá que lo que falta no está aprobado.
+
+### `exportView.js:330` — estado vacío del libro · **APLICADO**
+
+```
+No hay facturas en este periodo.
+```
+
+Y si el sitio admite una segunda línea explicativa:
+
+```
+Cambia las fechas o emite una factura y vuelve a intentarlo.
+```
+
+> ⚠️ **La segunda línea NO se ha aplicado.** `infoLibro` es un `textContent` de un solo párrafo:
+> meter ahí dos frases con un salto exigiría `white-space: pre-line` **y su propio rojo**, y eso es
+> trabajo de la siguiente tanda. Hoy va la primera, que es la que dice el hecho.
+
+### `puertaClienteReal.ts:153` — las DOS formas · **SIN APLICAR**
+
+**FORMA 1 · apertura**
+
+```
+🔴 HA ENTRADO EL PRIMER CLIENTE REAL — {motivo}.
+Estas decisiones se tomaron dando por hecho que no lo habría. Revísalas:
+  · {cláusula 1}
+  · {cláusula 2}
+  · {cláusula 3}
+  · {cláusula 4}
+```
+
+**FORMA 2 · recordatorio** — *no existe todavía; hay que construirla sacando el `{N}` de `debeAvisar()`*
+
+```
+🔴 LA PUERTA DE CLIENTE REAL SIGUE ABIERTA — día {N} — {motivo}.
+Estas decisiones seguían dando por hecho que no había ningún cliente real, y siguen
+sin revisar:
+  · {cláusula 1}
+  · {cláusula 2}
+  · {cláusula 3}
+  · {cláusula 4}
+```
+
+Los `{motivo}` aprobados son **exactamente dos** y no se inventan más:
+
+```
+hay un merchant con suscripción de Stripe
+hay más merchants que cuentas de prueba declaradas
+```
+
+Las cuatro `CLAUSULAS_DEPENDIENTES` quedan aprobadas **literales**, y la corrección del 10-ago de la
+cuarta se queda **en su comentario**: la cláusula dice el hecho, el comentario dice su media verdad.
+Son dos cosas y se leen distinto.
