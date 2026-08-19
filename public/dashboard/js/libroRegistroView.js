@@ -44,7 +44,7 @@
 
   const COPY = {
     titulo: 'Libro registro de facturas expedidas',
-    menu: 'Libro registro',
+    menu: 'Libro de registro',
     cargando: 'Cargando…', // NO es de este ticket: cadena ya usada en invoicesView.js, copiada tal cual
     recuento: (n) => n + ' facturas',
     error: rotulo('No se ha podido cargar el libro. Vuelve a intentarlo.'),
@@ -66,8 +66,8 @@
     colTotal: 'Total',
     colEstado: 'Estado',
     colTrazas: rotulo('De dónde viene y dónde acabó'),
-    trazaPresupuestoFirmado: rotulo('Presupuesto firmado'),
-    trazaPresupuestoSinFirmar: rotulo('Presupuesto sin firmar'),
+    trazaPresupuestoFirmado: 'Presupuesto firmado',
+    trazaPresupuestoSinFirmar: 'Presupuesto sin firmar',
     trazaAlbaran: rotulo('Albarán'),
     trazaCobro: 'Cobro',
     trazaNoSellado: rotulo('Albarán posterior al sello'),
@@ -80,12 +80,16 @@
    * Hasta hoy esta columna pintaba el valor CRUDO de la base de datos, así que un profesional veía
    * `paid` y `pending` **en inglés** en un libro fiscal.
    *
-   * ⚠️ LO QUE NO ESTÁ AQUÍ PASA TAL CUAL, y es deliberado. `annulled` es un estado REAL de una
-   * factura —lo fija `rectificabilidad.ts:41`, que lo nombra como el tercero fuera de los dos
-   * vivos— y **no está aprobado**. Traducirlo por analogía sería inventarse microcopy fiscal: que
-   * se vea en crudo es feo y es HONESTO, y además lo mantiene visible hasta que el asesor lo fije.
+   * 19-ago-2026 · entra `annulled` (aprobado). MEDIDO que son los TRES únicos que puede tener una
+   * factura: se escriben `pending`, `paid` y `annulled`, y el libro NO filtra por estado
+   * (`libroRegistro.repo.ts:81` solo lo selecciona). `already_paid` NO cuenta — es un campo de
+   * respuesta de la API, y lo dice `librosAeat.ts:88`.
+   *
+   * ⚠️ LA PUERTA SE QUEDA ABIERTA A PROPÓSITO: lo que no esté en esta tabla pasa TAL CUAL. Hoy no
+   * sobra ninguno, pero el día que nazca un cuarto estado se verá en crudo —feo y HONESTO— en vez
+   * de caer en una traducción por analogía, que sería inventarse microcopy fiscal.
    */
-  const ESTADO_VISIBLE = { paid: 'Cobrada', pending: 'Pendiente' };
+  const ESTADO_VISIBLE = { paid: 'Cobrada', pending: 'Pendiente', annulled: 'Anulada' };
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => (

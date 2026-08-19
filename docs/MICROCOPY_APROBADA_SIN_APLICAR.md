@@ -317,7 +317,7 @@ resto de la pantalla **sigue marcado**, y el porqué está en la sección de aba
 | Ranura | Línea | Texto aprobado |
 |---|---|---|
 | `titulo` | 46 | `Libro registro de facturas expedidas` |
-| `menu` | 47 | `Libro registro` |
+| `menu` | 47 | ~~`Libro registro`~~ → **RETIRADO el 19-ago-2026**, ver abajo |
 | `recuento` | 49 | `{N} facturas` — **«facturas», no «asientos»** |
 | `colNumero` | 61 | `Número` |
 | `colFecha` | 62 | `Fecha` |
@@ -346,3 +346,32 @@ pending  → Pendiente
 * **Doce ranuras más** que no estaban en la lista aprobada: `error`, `vacioDeVerdad`, `descuadre`,
   `avisoIlegibles`, `avisoAjenas`, `avisoSinNumero`, `colTrazas`, `trazaPresupuestoFirmado`,
   `trazaPresupuestoSinFirmar`, `trazaAlbaran`, `trazaNoSellado` y `sinTrazas`.
+
+
+---
+
+## Addendum · Libro registro, segunda tanda (19-ago-2026) · **APLICADO**
+
+### Tres decisiones más
+
+| Ranura | Línea | Texto aprobado |
+|---|---|---|
+| `trazaPresupuestoFirmado` | 69 | `Presupuesto firmado` |
+| `trazaPresupuestoSinFirmar` | 70 | `Presupuesto sin firmar` |
+| Estado `annulled` | tabla `ESTADO_VISIBLE` | `Anulada` |
+
+**Los dos chips se aprueban POR SEPARADO y no se colapsan:** «firmado» y «sin firmar» no son el
+mismo hecho, y el libro existe justamente para no confundirlos.
+
+**`annulled` completa los tres estados.** Medido: son los únicos tres que puede tener una factura
+(`pending`, `paid`, `annulled`) y el libro **no filtra** por estado — `libroRegistro.repo.ts:81`
+solo lo selecciona. `already_paid` no cuenta: es un campo de respuesta de la API, y lo dice
+`librosAeat.ts:88`. La tabla **sigue dejando pasar en crudo** cualquier valor futuro.
+
+### 🔴 Aprobación RETIRADA: `menu` = «Libro registro»
+
+**Retirada el 19-ago-2026**, un día después de aprobarse. Gana el rótulo del **asesor**, aprobado el
+10-ago: **`Libro de registro`**. Se anota en vez de borrarse porque **una aprobación retirada tiene
+fecha** — y sin este renglón, dentro de un mes nadie sabría que hubo dos.
+
+El **título de pantalla** no cambia: sigue siendo `Libro registro de facturas expedidas`.

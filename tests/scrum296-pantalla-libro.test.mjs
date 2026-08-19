@@ -258,10 +258,17 @@ test('SCRUM-296 · TODA la copy de esta pantalla va marcada como PENDIENTE (regl
   // porque conviven textos decididos y textos que no lo están EN LA MISMA PANTALLA.
   const APROBADAS = {
     titulo: 'Libro registro de facturas expedidas',
-    menu: 'Libro registro',
+    // 19-ago-2026 · «Libro registro» queda RETIRADO y se alinea con el rótulo del ASESOR. Había
+    // DOS ranuras para el mismo rótulo —ésta y `index.html`— diciendo cosas distintas; gana el
+    // asesor, que es de quien era la aprobación del 10-ago.
+    menu: 'Libro de registro',
     colNumero: 'Número', colFecha: 'Fecha', colTipo: 'Tipo', colBase: 'Base',
     colCuota: 'IVA', colTotal: 'Total', colEstado: 'Estado',
     trazaCobro: 'Cobro',
+    // 19-ago-2026 · los DOS chips, aprobados por separado y SIN colapsar: «firmado» y «sin firmar»
+    // no son el mismo hecho, y el libro existe para no confundirlos.
+    trazaPresupuestoFirmado: 'Presupuesto firmado',
+    trazaPresupuestoSinFirmar: 'Presupuesto sin firmar',
   };
   for (const [ranura, texto] of Object.entries(APROBADAS)) {
     assert.equal(COPY[ranura], texto,
