@@ -11,7 +11,7 @@ se para, porque **no cumple lo que pedía este encargo**: sus comprobaciones de 
 `assert.match` **sobre el texto del fichero** (`fs.readFileSync` + `soloEjecutable`), es decir,
 exactamente el instrumento que dio verde el 13-ago-2026 con el aviso borrado.
 
-> El `docs/MICROCOPY_APROBADA_SIN_APLICAR.md` que citaba el encargo **no existe** en este árbol
+> El `docs/MICROCOPY_APROBADA_SIN_APLICAR.md` que citaba la ficha **no existe** en este árbol
 > (ni con ese nombre ni con ninguna variante de «microcopy» en `docs/`). Los números de línea sí
 > resultaron exactos: la microcopy del aviso está en `settingsView.js:559-561`. **No se ha tocado**
 > (regla 30): siguen siendo los dos marcadores `[PENDIENTE microcopy oficial · …]`.
@@ -75,11 +75,17 @@ pago del cliente), no delante de la guarda.
 | hoy | `falta_telefono` | `no_aplica` | `no_aplica` | `no_aplica` | `no_se_pudo_leer` → **avisa** |
 | con `\|\|` | `falta_telefono` | `no_aplica` | `no_aplica` | `no_aplica` | `no_aplica` → **calla** |
 
-Un colapso aguas arriba **da exactamente el mismo resultado en las cuatro filas**, así que
-**ningún test de comportamiento puede cazarlo** — tampoco el del navegador. Solo diverge en el
-suelo, donde convierte `no_se_pudo_leer` en «tiene teléfono» y **apaga el aviso**. Por eso esa
-comprobación es estructural (mira la forma de la llamada) y el test **lo demuestra antes de
-exigirlo**.
+Un colapso aguas arriba **da exactamente el mismo resultado en las cuatro filas**. Solo diverge en
+el suelo, donde convierte `no_se_pudo_leer` en «tiene teléfono» y **apaga el aviso**.
+
+**🔴 Y ésa es LA RAZÓN de que la comprobación tuviera que ser estructural, y no una manía de
+estilo:** como las cuatro filas coinciden, **ningún test de comportamiento puede cazar el
+colapso** — ni los cuatro casos del ticket, ni el guard del navegador que los mide sobre el DOM.
+Está medido arriba y comprobado con la inyección 3: con el `||` puesto en `app.ts`, `scrum328` y el
+guard de navegador siguen **los dos en verde**. Un fallo que ningún observador del comportamiento
+puede ver **solo se puede vigilar por la forma de la llamada**. Por eso el test mira que los dos
+teléfonos lleguen crudos, y **lo demuestra antes de exigirlo**: sin esa demostración, el assert
+parecería una preferencia de estilo y la primera sesión que le estorbe lo relajará.
 
 ## 3 · El rojo, visto fallar por el mecanismo
 
@@ -104,6 +110,22 @@ Las tres inyecciones se revirtieron con `git stash` y el árbol volvió a ese co
 
 Y la 3 es su espejo: el único fallo que el navegador **no** puede ver, y que solo caza el test
 estructural. Ninguno de los dos instrumentos sobra.
+
+### 🔴 LO QUE HAY QUE LEER DE LA FILA 2a, Y ES EL HALLAZGO DE ESTE TICKET
+
+`scrum328` no es un test flojo: son **7 casos, bien escritos, con sus rojos redactados**. Y ante el
+fallo exacto del 13-ago-2026 —el aviso desaparecido de la pantalla— **los siete siguen en verde**.
+
+**Siete verdes sobre el FUENTE no valen uno sobre el DOM.** No es una cuestión de grado ni de
+cobertura: un test que lee el fichero contesta «¿está escrito?», y la pregunta que importa es
+«¿está en la pantalla?». Son preguntas distintas, y la primera no aproxima a la segunda — puede dar
+verde con el usuario mirando un campo vacío. Añadir un octavo caso a `scrum328` no habría cambiado
+nada; **el instrumento estaba midiendo otra cosa**.
+
+Por eso este ticket no añadió casos: añadió un **árbitro distinto**. Quien vaya a escribir el
+próximo guard de una pantalla, que empiece por aquí: **si el test puede pasar leyendo el `.js`, no
+está vigilando la pantalla.** Esta tabla existe para que eso no haya que volver a aprenderlo con un
+aviso apagado en producción.
 
 ## 4 · El suelo
 
