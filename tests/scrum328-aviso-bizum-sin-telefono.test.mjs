@@ -131,4 +131,6 @@ test('SCRUM-328 · la microcopy del aviso es un MARCADOR sin aprobar', () => {
     assert.ok(bloque.includes(t), `🔴 falta el aviso aprobado: «${t}»`);
   }
   assert.equal((bloque.match(/\[PENDIENTE microcopy oficial/g) || []).length, 0,
+    '🔴 ha vuelto un marcador al aviso de Bizum: o hay un tercer caso sin aprobar, o se ha ' +
+    'reintroducido. Si es un caso nuevo, su texto va al censo de SCRUM-402.');
 });

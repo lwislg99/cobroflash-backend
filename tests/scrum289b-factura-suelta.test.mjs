@@ -319,6 +319,10 @@ test('SCRUM-289b · SUELO del guard de microcopy: encuentra literales visibles d
  */
 const APROBADOS = {
   '+ Nuevo justificante': 'fundador, 6-ago-2026 (SCRUM-346 / A0.5)',
+  // 17-ago-2026 · la otra rama del MISMO botón. Hasta hoy el modo «factura» salía con marcador
+  // y el modo «justificante» ya estaba aprobado: el mismo control decía una cosa o un andamio
+  // según el modo de emisión de la cuenta. Ahora las dos ramas tienen texto.
+  '+ Nueva factura': 'fundador, 17-ago-2026 (botón de la lista de facturas)',
   // SCRUM-483 (A2) · TRES rótulos salen del marcador porque su texto está APROBADO en la fuente:
   // SCRUM-277 en Jira, sección «Rótulos · ESTADO CERRADO DE LA APROBACIÓN». Esto NO relaja el
   // guard —sigue cayendo ante cualquier texto plausible que no esté aquí—: solo declara que estos

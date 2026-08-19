@@ -116,10 +116,20 @@ test('SCRUM-404 · 🔴 sin red y rechazo del servidor dicen COSAS DISTINTAS', (
 
   // El de rechazo sigue SIN aprobar: su frase prometía «avísanos» y se midió que el profesional
   // no tiene hoy ningún canal visible desde el panel. Sale con marcador hasta que se fije otro.
-  assert.match(rechazo, /\[PENDIENTE microcopy oficial/,
-    '🔴 se ha escrito el mensaje de rechazo sin aprobación. Su versión propuesta decía «avísanos» ' +
-    'y NO hay canal: `hola@yaqu.app` solo está en privacidad.html y terminos.html, y el botón «?» ' +
-    'del panel es la guía de inicio, no un contacto.');
+  // 17-ago-2026 · APROBADO «No hemos podido registrar la firma». El motivo por el que estuvo
+  // marcado se cumple en el texto aprobado y por eso se comprueba: la versión propuesta decía
+  // «avísanos» y se midió que NO hay canal visible desde el panel. La aprobada NO promete ninguno,
+  // así que el guard pasa a exigir el texto Y que siga sin prometer contacto.
+  // Empieza por el aprobado: detrás va el detalle que manda el servidor entre paréntesis, que es
+  // suyo y no microcopy nuestra («… (Este albarán ya está firmado)»).
+  assert.ok(rechazo.startsWith('No hemos podido registrar la firma'),
+    `🔴 el mensaje de rechazo no empieza por el texto aprobado. Dice «${rechazo}».`);
+  for (const promesa of ['avísanos', 'escríbenos', 'contacta', 'llámanos']) {
+    assert.ok(!rechazo.toLowerCase().includes(promesa),
+      `🔴 el mensaje promete un canal («${promesa}») y se midió que el profesional NO lo tiene: ` +
+      '`hola@yaqu.app` solo está en privacidad.html y terminos.html, y el botón «?» del panel es la ' +
+      'guía de inicio, no un contacto.');
+  }
 });
 
 test('SCRUM-404 · `api.js` MARCA el fallo de red sin cambiar el mensaje de los demás', () => {

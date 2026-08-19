@@ -233,7 +233,21 @@ test('SCRUM-292 · el censo de rótulos RECORRE LAS DOS RAMAS del ternario (con 
 
 test('SCRUM-292 · REGLA 30: todos los rótulos nuevos salen con marcador, en TODAS las ramas', () => {
   const { rotulos } = rotulosDeLaRevision();
-  const inventados = rotulos.filter((r) => !/^MARCA_A1$/.test(r.trim()));
+  // 17-ago-2026 · APROBADOS los cinco. Exigía que TODAS las ramas fueran `MARCA_A1`; ahora exige
+  // que sean uno de los cinco aprobados. No se relaja —sigue sin poder colarse un texto inventado—
+  // y sigue abriendo el ternario por los DOS lados, que fue lo que destapó que las dos ramas de la
+  // línea de estado pintaban lo mismo.
+  const APROBADOS_A1 = [
+    "'Todo listo para emitir.'",
+    "'Revisa lo que falta antes de emitir.'",
+    "'NIF del cliente (se guardará en su ficha)'",
+    "'Escribe el NIF del cliente. Sin él no se puede emitir la factura.'",
+    "'No hemos podido guardar el NIF en la ficha del cliente. Inténtalo otra vez.'",
+  ];
+  const inventados = rotulos.filter((r) => !APROBADOS_A1.includes(r.trim()));
+  assert.ok(APROBADOS_A1.slice(0, 2).every((t) => rotulos.includes(t)),
+    '🔴 la línea de estado ha vuelto a decir lo MISMO en sus dos ramas: conforme y no conforme son ' +
+    'estados distintos y la caja existe justo para separarlos. Ése era el defecto.');
   assert.deepEqual(
     inventados, [],
     '🔴 HAY TEXTO INVENTADO EN UNA RAMA DE LA REVISIÓN: ' + inventados.join(' · ') + '\n\n' +
@@ -248,8 +262,10 @@ test('SCRUM-292 · REGLA 26: ni una palabra sobre el registro, VeriFactu, la AEA
   // Mismo cuidado que arriba: extremos EJECUTABLES y los dos comprobados. Anclar en un comentario
   // sobre el texto sin comentarios da -1, y `slice(i, -1)` mide medio fichero — que fue justo lo
   // que puso este test en rojo la primera vez, por código que no es de este ticket.
-  const i = VISTA.indexOf('const MARCA_A1');
-  assert.ok(i > 0, '🔴 ESCÁNER CIEGO: no se encuentra `MARCA_A1`');
+  // El ancla era `const MARCA_A1`, borrado al aprobarse los textos. Se re-ancla en la línea que
+  // abre el bloque y NO depende de ningún microcopy: la lectura del cliente.
+  const i = VISTA.indexOf('const clienteA1');
+  assert.ok(i > 0, '🔴 ESCÁNER CIEGO: no se encuentra `clienteA1`');
   const j = VISTA.indexOf('const todas = inputs.map', i);
   assert.ok(j > i, '🔴 ESCÁNER CIEGO: no se encuentra el FINAL del bloque de la revisión');
   const bloque = VISTA.slice(i, j);
