@@ -231,3 +231,44 @@ test('SCRUM-390 · 🔴 EL DEFECTO DEL TICKET: la puerta tiene que estar ENGANCH
     'puerta se abra es letal, y además incumplimiento fiscal — es exactamente el tipo de condición ' +
     'que este mecanismo existe para no olvidar.');
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 LAS DOS FORMAS TIENEN QUE DECIR COSAS DISTINTAS (SCRUM-514, 17-ago-2026)
+//
+// Este guard nace de su propio rojo: al inyectar «que las dos formas pinten lo mismo», los tests
+// de arriba **siguieron en verde** — porque aceptaban CUALQUIERA de las dos formas. Aceptar una u
+// otra no es lo mismo que exigir que sean distintas, y la diferencia es todo el ticket: hasta hoy
+// el día de la apertura y el recordatorio de la octava semana mandaban EL MISMO mensaje.
+//
+// Se comprueba sobre el RESULTADO —lo que devuelve la función—, no sobre el fuente: los dos textos
+// pueden estar enteros en el `.ts` y aun así salir el mismo por el hilo.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-514 · 🔴 apertura y recordatorio NO dicen lo mismo, y el recordatorio lleva su día', () => {
+  const v = { abierta: true, motivos: ['paga'], clausulas: ['una', 'dos', 'tres', 'cuatro'] };
+  const apertura = mensajeParaElFundador(v, { diasDesdeApertura: 0 });
+  const recordatorio = mensajeParaElFundador(v, { diasDesdeApertura: 14 });
+
+  assert.notEqual(apertura, recordatorio,
+    '🔴 LA APERTURA Y EL RECORDATORIO MANDAN EL MISMO MENSAJE. Es el defecto que SCRUM-514 cerró: ' +
+    'al mes, «ha entrado el primer cliente real» se lee como que ha entrado OTRO, y lo que de ' +
+    'verdad pasa —que sigue abierta y nadie ha revisado nada— no se dice en ninguna parte.');
+  assert.match(apertura, /^🔴 HA ENTRADO EL PRIMER CLIENTE REAL/,
+    `🔴 la forma de APERTURA no es la aprobada: «${apertura.split('\n')[0]}»`);
+  assert.match(recordatorio, /^🔴 LA PUERTA DE CLIENTE REAL SIGUE ABIERTA — día 14 —/,
+    `🔴 la forma de RECORDATORIO no es la aprobada, o ha perdido su día: «${recordatorio.split('\n')[0]}»`);
+
+  // Sin fecha de apertura NO se inventa un número: se dice el hecho sin él. «día null» sería peor
+  // que no decirlo, y un 0 diría que acaba de abrirse — justo lo contrario.
+  const sinFecha = mensajeParaElFundador(v, { diasDesdeApertura: null });
+  assert.match(sinFecha, /^🔴 LA PUERTA DE CLIENTE REAL SIGUE ABIERTA — hay/,
+    `🔴 sin fecha de apertura el aviso inventa un día o cambia de forma: «${sinFecha.split('\n')[0]}»`);
+  assert.ok(!/día null|día NaN|día undefined/.test(sinFecha), '🔴 el aviso pinta un día que no consta.');
+
+  // Y las cuatro cláusulas viajan en las DOS: son lo que hay que revisar, no un adorno del marco.
+  for (const [nombre, texto] of [['apertura', apertura], ['recordatorio', recordatorio]]) {
+    for (const c of v.clausulas) {
+      assert.ok(texto.includes('  · ' + c), `🔴 la forma de ${nombre} no nombra la cláusula «${c}».`);
+    }
+  }
+});
