@@ -61,17 +61,31 @@ const rel = (raiz, p) => path.relative(raiz, p).split(path.sep).join('/');
 const leer = (ruta, codigo) =>
   ts.createSourceFile(ruta, codigo ?? fs.readFileSync(ruta, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
 
-/** Resuelve un especificador relativo al fichero real que designa (o `null`). */
+/**
+ * Resuelve un especificador relativo al fichero real que designa (o `null`).
+ *
+ * 🔴 SCRUM-521 · TODA SALIDA PASA POR `path.normalize`, Y ES LA ÚNICA NORMALIZACIÓN DEL FICHERO.
+ *
+ * Aquí estaba el defecto, y el sitio importa: la rama `dist/` construía su candidato a partir de
+ * `norm` —que ya venía con barras `/`— y devolvía `C:/Users/…/x.ts`, mientras la rama normal
+ * devolvía `C:\Users\…\x.ts` porque sale de `path.resolve`. **Dos separadores por la misma puerta.**
+ * Cualquiera que comparase el resultado contra un `path.join` —que en Windows produce `\`— perdía
+ * en silencio justo las aristas de la rama `dist/`, que son las de los `scripts/*.mjs`.
+ *
+ * Se arregla AQUÍ, en el único punto por el que salen todas las rutas, y no en cada comparación:
+ * normalizar en el consumidor sería repartir el defecto en tantos sitios como llamadas, y el que
+ * se olvide vuelve a fallar en silencio. Un `replace` por llamada no es un arreglo, es una copia.
+ */
 function resolver(desde, espec) {
   if (!espec.startsWith('.')) return null;
   const base = path.resolve(path.dirname(desde), espec);
   const norm = base.split(path.sep).join('/');
   if (norm.includes('/dist/')) {
     const comoSrc = norm.replace('/dist/', '/src/').replace(/\.js$/, '');
-    for (const c of [comoSrc + '.ts', path.join(comoSrc, 'index.ts')]) if (fs.existsSync(c)) return c;
+    for (const c of [comoSrc + '.ts', path.join(comoSrc, 'index.ts')]) if (fs.existsSync(c)) return path.normalize(c);
   }
   for (const c of [base + '.ts', path.join(base, 'index.ts'), base]) {
-    if (fs.existsSync(c) && fs.statSync(c).isFile()) return c;
+    if (fs.existsSync(c) && fs.statSync(c).isFile()) return path.normalize(c);
   }
   return null;
 }
@@ -221,19 +235,86 @@ export function censarAlcance(raiz) {
  */
 export function quienLoImporta(raiz, moduloRel, nombre) {
   const src = path.join(raiz, 'src');
-  if (!fs.existsSync(src)) return [];
-  const abs = path.join(raiz, moduloRel);
+  // 🔴 SUELO 1 · SIN ÁRBOL NO HAY RESPUESTA. Devolver `[]` aquí diría «no lo importa nadie» cuando
+  // lo cierto es «no he encontrado dónde mirar». Son opuestos, y el vacío los hacía iguales.
+  if (!fs.existsSync(src)) {
+    throw new Error(`🔴 quienLoImporta CIEGO: no existe ${rel(raiz, src)}. No es que nadie importe `
+      + `«${nombre}»: es que no se ha podido mirar. Un [] aquí se leería como «huérfano».`);
+  }
+  // La pregunta se traduce al separador nativo UNA vez, aquí. Esto NO es normalizar la respuesta
+  // —de eso se encarga `resolver()`, y sólo él—: es aceptar que quien pregunta escriba la ruta con
+  // `/` o con `\`. Se parte por los dos separadores para que la traducción no dependa del SO.
+  const abs = path.join(raiz, ...String(moduloRel).split(/[\\/]/).filter(Boolean));
+  // 🔴 SUELO 2 · EL MÓDULO PREGUNTADO TIENE QUE EXISTIR. Preguntar por una ruta mal escrita —o por
+  // un fichero que se movió— devolvía `[]`, y ese `[]` es indistinguible de un huérfano de verdad.
+  if (!fs.existsSync(abs)) {
+    throw new Error(`🔴 quienLoImporta CIEGO: no existe el módulo «${moduloRel}». Comprueba la ruta: `
+      + 'un módulo que no está no tiene cero importadores, tiene una pregunta mal hecha.');
+  }
   const todos = ficherosTs(src);
   const entradas = [
     ...ENTRADAS.map((r) => path.join(raiz, r)).filter((p) => fs.existsSync(p)),
     ...entradasDeComando(raiz),
   ];
+  // 🔴 SUELO 3 · SI NO HAY CORPUS, NO HAY CERO. Cero ficheros analizados produce cero importadores
+  // pase lo que pase: es el mismo verde que «lo he mirado todo y no lo importa nadie».
+  const corpus = [...new Set([...todos, ...entradas])];
+  if (!corpus.length) {
+    throw new Error('🔴 quienLoImporta CIEGO: el corpus está vacío — 0 ficheros analizados. '
+      + 'Cualquier respuesta sería inventada.');
+  }
+
   const out = [];
-  for (const p of [...todos, ...entradas]) {
-    for (const imp of importacionesDe(p).nombradas) {
-      if (imp.modulo === abs && imp.nombre === nombre) out.push(rel(raiz, p));
+  let exportaElNombre = false;
+  for (const p of corpus) {
+    let imps;
+    try { imps = importacionesDe(p).nombradas; } catch { continue; }
+    for (const imp of imps) {
+      if (!imp.modulo) continue;
+      // 🔴 COMPARACIÓN DIRECTA, A PROPÓSITO. `resolver()` ya garantiza el separador nativo y es la
+      // ÚNICA normalización de rutas resueltas del fichero. Meter aquí un `path.normalize` de
+      // rescate volvería a hacer pasar el defecto: enmascararía una salida sin normalizar de
+      // `resolver` y el guard de este ticket daría verde con el bug puesto. Lo comprobé fallando —
+      // con ese normalize de más, la mutación del rojo no tiraba ni un test.
+      if (imp.modulo === abs) {
+        exportaElNombre = exportaElNombre || imp.nombre === nombre;
+        if (imp.nombre === nombre) out.push(rel(raiz, p));
+      }
     }
   }
+  // 🔴 SUELO 4 · EL QUE DECIDE ESTE TICKET. Si NADIE importa el nombre pero el módulo SÍ está
+  // importado por alguien, el cero es sospechoso: o el nombre no existe, o el resolvedor no está
+  // atando lo que cree. Se distingue con el corpus de exports del propio módulo.
+  if (!out.length && !exportaElNombre) {
+    const exportados = exportsDelModulo(abs);
+    if (exportados.length && !exportados.includes(nombre)) {
+      throw new Error(`🔴 quienLoImporta CIEGO: «${nombre}» no es un export de «${moduloRel}». `
+        + `Exporta: ${exportados.join(', ')}.\n  Un [] habría dicho «no lo importa nadie» a una `
+        + 'pregunta que nadie puede contestar que sí — que es como un typo se convierte en un '
+        + 'huérfano declarado.');
+    }
+  }
+  return [...new Set(out)];
+}
+
+/** Los nombres que un módulo exporta. Sirve al suelo: distingue «nadie lo importa» de «no existe». */
+function exportsDelModulo(abs) {
+  let sf;
+  try { sf = leer(abs); } catch { return []; }
+  const out = [];
+  const v = (n) => {
+    if (ts.isFunctionDeclaration(n) || ts.isClassDeclaration(n)) {
+      if (n.name && n.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)) out.push(n.name.text);
+    } else if (ts.isVariableStatement(n) && n.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)) {
+      for (const d of n.declarationList.declarations) if (ts.isIdentifier(d.name)) out.push(d.name.text);
+    } else if (ts.isTypeAliasDeclaration(n) || ts.isInterfaceDeclaration(n) || ts.isEnumDeclaration(n)) {
+      if (n.name && n.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)) out.push(n.name.text);
+    } else if (ts.isExportDeclaration(n) && n.exportClause && ts.isNamedExports(n.exportClause)) {
+      for (const el of n.exportClause.elements) out.push(el.name.text);
+    }
+    ts.forEachChild(n, v);
+  };
+  ts.forEachChild(sf, v);
   return [...new Set(out)];
 }
 
