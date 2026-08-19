@@ -306,7 +306,11 @@ function renderSetupChecklist(merchant, data) {
   // cómo cobras (IBAN/Bizum), WhatsApp, reseñas y el primer presupuesto.
   const steps = [
     { label: 'Añade tu logo',              done: !!merchant.logoUrl,       action: 'settings', hint: 'Aparecerá en tus presupuestos' },
-    { label: 'Configura cómo cobras',      done: !!(merchant.iban || merchant.bizumPhone), action: 'settings', hint: 'IBAN para transferencia o Bizum' },
+    // SCRUM-519 · mismo veredicto que la tarjeta de Configuración, y por el mismo motivo: era
+    // `!!(merchant.iban || merchant.bizumPhone)` y se dejaba fuera `whatsappPhone`, que SÍ vale
+    // como móvil de Bizum. Lo decide `viasDeCobro` en el servidor; aquí solo se pinta. Si el
+    // campo no llega, el paso queda PENDIENTE — nunca se rehace el criterio a mano.
+    { label: 'Configura cómo cobras',      done: !!(merchant.viasDeCobro && merchant.viasDeCobro.cobroManual), action: 'settings', hint: 'IBAN para transferencia o Bizum' },
     { label: 'Conecta tu WhatsApp',        done: !!merchant.whatsappPhone,  action: 'settings', hint: 'Te avisamos cuando acepten o paguen' },
     { label: 'Enlace de reseñas de Google', done: !!merchant.googleReviewUrl, action: 'settings', hint: 'Se lo pedimos al cliente tras pagar' },
     { label: 'Completa NIF y dirección',   done: !!(merchant.taxId && merchant.address), action: 'settings', hint: 'Salen en tus PDF' },

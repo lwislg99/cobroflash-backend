@@ -7,6 +7,7 @@ import { jsonError } from './core/http/jsonError';
 import { notFoundPageHtml } from './core/http/publicNotFound';
 import { isFlagEnabled } from './core/flags';
 import { decidirAvisoBizum } from './modules/billing/domain/avisoBizumSinTelefono'; // SCRUM-328
+import { viasDeCobro } from './modules/billing/domain/viasDeCobro'; // SCRUM-519
 // SCRUM-300 (C5): microcopy del albarán servida al dashboard vanilla desde su fuente única.
 import { ALBARAN_AYUDAS, ALBARAN_ROTULOS, firmanteCalidadOpciones } from './modules/jobs/domain/albaranFirmante';
 import { cubosDeMetodo, opcionesDeMetodoDeclarable, ROTULO_SIN_METODO } from './modules/billing/domain/metodoDeCobro';
@@ -613,7 +614,22 @@ app.get('/admin/merchant', async (req, res, next) => {
         flags: (merchant.flags as Record<string, unknown> | null) ?? null,
       },
     });
-    return res.json({ ...merchant, publicProfileEnabled });
+    // SCRUM-519 · POR DÓNDE PUEDE COBRAR, DECIDIDO UNA VEZ Y AQUÍ. La tarjeta de readiness
+    // (`settingsView.js`) y el checklist de la Home (`homeView.js`) lo calculaban cada una por su
+    // cuenta con `iban || bizumPhone`, y las dos se dejaban fuera `whatsappPhone` — que SÍ vale
+    // como móvil de Bizum (`payInvoice.routes.ts:69`, `payBizum.routes.ts:145`). Resultado: le
+    // decían «no puedes cobrar» a quien sí podía. Mismo patrón y mismo motivo que
+    // `publicProfileEnabled` justo arriba: el navegador no reimplementa la regla, la recibe.
+    const vias = viasDeCobro({
+      iban: merchant.iban,
+      bizumPhone: merchant.bizumPhone,
+      whatsappPhone: merchant.whatsappPhone,
+      connectStatus: merchant.connectStatus,
+      flagBizum: isFlagEnabled('BIZUM_MANUAL_ENABLED', {
+        merchant: { id: merchant.id, country: merchant.country },
+      }),
+    });
+    return res.json({ ...merchant, publicProfileEnabled, viasDeCobro: vias });
   } catch (err) { return next(err); }
 });
 

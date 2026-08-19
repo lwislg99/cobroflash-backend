@@ -987,7 +987,17 @@ async function renderReadinessCard(container, mainFormCard) {
   card.style.marginTop = '0';
   container.insertBefore(card, container.firstChild);
 
-  const chargeReady = !!(m.iban || m.bizumPhone);
+  // SCRUM-519 · EL CRITERIO NO SE CALCULA AQUÍ, SE RECIBE. Esta línea era
+  // `!!(m.iban || m.bizumPhone)` y dejaba fuera `whatsappPhone`, que SÍ vale como móvil de Bizum
+  // (`payInvoice.routes.ts:69`): a quien solo tenía WhatsApp esta tarjeta le decía que no podía
+  // cobrar mientras su cliente veía el botón de Bizum. El veredicto lo da `viasDeCobro` en el
+  // servidor, la misma función que responde al checklist de la Home.
+  //
+  // 🔴 SIN VEREDICTO NO SE INVENTA UNO. Si el campo no viene —backend viejo, respuesta recortada—
+  // esto queda en `false` y la fila sale como pendiente. Reponer aquí el `||` de antes sería
+  // recrear la copia que este cambio quita, y encima en el camino que nadie mira.
+  const vias = m.viasDeCobro || null;
+  const chargeReady = !!(vias && vias.cobroManual);
   const fiscalReady = !!(m.legalName && m.taxId && m.address);
   const connect = String(m.connectStatus || 'none');
 
@@ -1002,7 +1012,14 @@ async function renderReadinessCard(container, mainFormCard) {
     {
       ok: chargeReady,
       label: 'Cobro por transferencia o Bizum',
-      okText: m.iban && m.bizumPhone ? 'IBAN y Bizum configurados' : (m.iban ? 'IBAN configurado' : 'Bizum configurado'),
+      // SCRUM-519 · LOS TRES TEXTOS SON LOS DE SIEMPRE, palabra por palabra: lo que cambia es a
+      // qué caso corresponde cada uno. Antes «Bizum configurado» exigía `bizumPhone`; ahora sale
+      // también con solo `whatsappPhone`, que es cuando el cliente ve de verdad el botón de
+      // Bizum. No se añade microcopy —eso lo aprueba el asesor (regla 30)—, se deja de aplicar
+      // mal la que ya estaba aprobada.
+      okText: vias && vias.transferencia && vias.bizum === true
+        ? 'IBAN y Bizum configurados'
+        : (vias && vias.transferencia ? 'IBAN configurado' : 'Bizum configurado'),
       koText: 'Añade tu IBAN o tu Bizum para que te puedan pagar',
       focus: 'iban',
     },
