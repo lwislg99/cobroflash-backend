@@ -83,7 +83,11 @@ test('SCRUM-390 · ① SEÑAL «PAGA»: un merchant con suscripción abre la pue
   const v = evaluarPuerta({ total: CUENTAS_DE_PRUEBA_DECLARADAS, conSuscripcion: 1 }, ['docs/YAQU_MASTER.md:1472']);
   assert.equal(v.abierta, true, '🔴 alguien está pagando y la puerta sigue cerrada.');
   assert.deepEqual(v.motivos, ['paga']);
-  assert.match(textoDelAviso(v), /suscripción de Stripe/);
+  // 17-ago-2026 · el MOTIVO se comprueba donde ahora vive: en el mensaje que se ENVÍA.
+  // `textoDelAviso` pasó a devolver solo las cláusulas, porque el marco depende de si es apertura o
+  // recordatorio — y con el marco dentro las dos formas eran imposibles. El hecho no desaparece:
+  // cambia de sitio, y el guard lo sigue.
+  assert.match(mensajeParaElFundador(v, { diasDesdeApertura: 0 }), /suscripción de Stripe/);
   assert.match(textoDelAviso(v), /YAQU_MASTER\.md:1472/,
     '🔴 el aviso no NOMBRA las cláusulas que dependían de que no hubiera cliente real. Avisar sin ' +
     'decir de qué es otro aviso que nadie atiende.');
@@ -97,7 +101,7 @@ test('SCRUM-390 · ② SEÑAL «SON MÁS DE LOS NUESTROS»: un merchant de más 
     '🔴 hay más merchants que cuentas de prueba declaradas y la puerta sigue cerrada: un cliente ' +
     'real en trial pasaría sin que nadie se entere.');
   assert.deepEqual(v.motivos, ['mas_de_los_nuestros']);
-  assert.match(textoDelAviso(v), /más merchants que cuentas de prueba/);
+  assert.match(mensajeParaElFundador(v, { diasDesdeApertura: 0 }), /más merchants que cuentas de prueba/);
 });
 
 test('SCRUM-390 · las dos señales a la vez se declaran las dos', () => {
@@ -180,8 +184,14 @@ test('SCRUM-390 · con la puerta abierta avisa al FUNDADOR, y a nadie más', asy
     '🔴 el aviso lleva merchantId: es un mensaje INTERNO, no puede colgar de ningún merchant (regla 28).');
   assert.match(mandados[0].text, /YAQU_MASTER|MIGRATIONS_PENDING/,
     '🔴 el aviso no NOMBRA las cláusulas que quedan sin cumplir.');
-  assert.match(mandados[0].text, /^\[PENDIENTE microcopy oficial\]/,
-    '🔴 el texto se presenta como aprobado y no lo está — la regla 30 no tiene excepción por destinatario.');
+  // 17-ago-2026 · APROBADO. Protegía que el texto NO se presentara como aprobado sin estarlo —«la
+  // regla 30 no tiene excepción por destinatario»—, y eso es justo lo que se cumplió: pasó por el
+  // fundador. El guard no se borra; pasa a exigir la FORMA aprobada, y con ella lo que el marcador
+  // nunca pudo vigilar: que apertura y recordatorio digan cosas DISTINTAS.
+  assert.match(mandados[0].text, /^🔴 (HA ENTRADO EL PRIMER CLIENTE REAL|LA PUERTA DE CLIENTE REAL SIGUE ABIERTA)/,
+    `🔴 el aviso no empieza por ninguna de las dos formas aprobadas. Dice: «${mandados[0].text.slice(0, 60)}…»`);
+  assert.ok(!mandados[0].text.includes('[PENDIENTE'),
+    '🔴 ha vuelto el marcador al aviso interno.');
 });
 
 test('SCRUM-390 · 🔴 si el aviso FALLA, el paso no lanza: devuelve el fallo', async () => {

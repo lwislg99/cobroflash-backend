@@ -1,7 +1,12 @@
 # Microcopy APROBADA por el fundador, pendiente de aplicar
 
-**Aprobada:** 17-ago-2026 (regla 30) · **Estado: NO APLICADA.** Se aplica en **UNA sola tanda**,
-para no tocar dos veces los mismos ficheros.
+**Aprobada:** 17-ago-2026 (regla 30) · **Estado: ✅ TODO APLICADO** (tandas A–E).
+
+> 🔴 **13 marcadores siguen vivos y NO son un descuido: son los fiscales y aparcados.** Y ojo con
+> compararlo con el 38 del censo, porque **miden cosas distintas**: el censo cuenta **superficies
+> pintadas** y esto cuenta **marcas escritas**. Una sola marca de `libroRegistroView` pinta **23**
+> rótulos. Los dos números son correctos — si alguien ve «13» donde esperaba «38», no hay nada que
+> investigar.
 
 **Base del censo:** `origin/main` = `a241b6e48c6553e453375bf705ca76ac3045ac0d`
 **De dónde salen las líneas:** `docs/CENSO_MICROCOPY_PENDIENTE.md`
@@ -255,17 +260,12 @@ la lea creerá que lo que falta no está aprobado.
 No hay facturas en este periodo.
 ```
 
-Y si el sitio admite una segunda línea explicativa:
+> 🔴 **La segunda línea queda RETIRADA** (decisión del fundador, 17-ago-2026). Decía «Cambia las
+> fechas o emite una factura y vuelve a intentarlo.» y no se aplica **ni se aplicará**: `infoLibro`
+> es el `textContent` de un párrafo, y meterla exigiría `white-space: pre-line` con su propio rojo.
+> **Pagar un mecanismo por un adorno es pagar de más.** El texto aprobado es UNA sola frase.
 
-```
-Cambia las fechas o emite una factura y vuelve a intentarlo.
-```
-
-> ⚠️ **La segunda línea NO se ha aplicado.** `infoLibro` es un `textContent` de un solo párrafo:
-> meter ahí dos frases con un salto exigiría `white-space: pre-line` **y su propio rojo**, y eso es
-> trabajo de la siguiente tanda. Hoy va la primera, que es la que dice el hecho.
-
-### `puertaClienteReal.ts:153` — las DOS formas · **SIN APLICAR**
+### `puertaClienteReal.ts:153` — las DOS formas · **APLICADO 17-ago-2026**
 
 **FORMA 1 · apertura**
 
@@ -278,7 +278,8 @@ Estas decisiones se tomaron dando por hecho que no lo habría. Revísalas:
   · {cláusula 4}
 ```
 
-**FORMA 2 · recordatorio** — *no existe todavía; hay que construirla sacando el `{N}` de `debeAvisar()`*
+**FORMA 2 · recordatorio** — construida: `debeAvisar()` devuelve ahora `dia` y `apertura` como
+datos, en vez de dejar el día incrustado en su frase de diagnóstico.
 
 ```
 🔴 LA PUERTA DE CLIENTE REAL SIGUE ABIERTA — día {N} — {motivo}.
