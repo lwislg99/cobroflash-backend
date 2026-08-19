@@ -1,6 +1,10 @@
 # Microcopy APROBADA por el fundador, pendiente de aplicar
 
-**Aprobada:** 17-ago-2026 (regla 30) · **Estado: ✅ TODO APLICADO** (tandas A–E).
+**Aprobada:** 17-ago-2026 (regla 30) · **Estado: aplicado todo lo de las tandas A–E.**
+
+> ⚠️ **El sello «TODO APLICADO» se corrige el 19-ago-2026.** Era cierto para lo aprobado hasta el
+> 17, y dejó de serlo el día que el fundador desaparcó parte del **Libro registro** (abajo). Un
+> sello que no se revisa es la siguiente mentira de la fuente única.
 
 > 🔴 **13 marcadores siguen vivos y NO son un descuido: son los fiscales y aparcados.** Y ojo con
 > compararlo con el 38 del censo, porque **miden cosas distintas**: el censo cuenta **superficies
@@ -301,3 +305,44 @@ hay más merchants que cuentas de prueba declaradas
 Las cuatro `CLAUSULAS_DEPENDIENTES` quedan aprobadas **literales**, y la corrección del 10-ago de la
 cuarta se queda **en su comentario**: la cláusula dice el hecho, el comentario dice su media verdad.
 Son dos cosas y se leen distinto.
+
+
+---
+
+## Addendum · Libro registro — desaparcado EN PARTE (19-ago-2026) · **APLICADO**
+
+`public/dashboard/js/libroRegistroView.js`. Se aprueban **11 ranuras y dos valores de estado**. El
+resto de la pantalla **sigue marcado**, y el porqué está en la sección de abajo.
+
+| Ranura | Línea | Texto aprobado |
+|---|---|---|
+| `titulo` | 46 | `Libro registro de facturas expedidas` |
+| `menu` | 47 | `Libro registro` |
+| `recuento` | 49 | `{N} facturas` — **«facturas», no «asientos»** |
+| `colNumero` | 61 | `Número` |
+| `colFecha` | 62 | `Fecha` |
+| `colTipo` | 63 | `Tipo` — **solo la CABECERA** |
+| `colBase` | 64 | `Base` |
+| `colCuota` | 65 | `IVA` |
+| `colTotal` | 66 | `Total` |
+| `colEstado` | 67 | `Estado` |
+| `trazaCobro` | 72 | `Cobro` |
+
+**Valores de la columna Estado** (antes se veían en inglés, crudos de la base):
+
+```
+paid     → Cobrada
+pending  → Pendiente
+```
+
+### ⛔ Lo que SIGUE marcado en esta pantalla, y por qué
+
+* **Los VALORES de la columna «Tipo»** (`F1`, `JUST`). `F1` es el código de tipo de factura de la
+  AEAT y `JUST` es nuestro: qué lee ahí un profesional es una decisión **FISCAL**, del asesor.
+  ⚠️ Nunca llevaron marcador — se pintan crudos desde `libroRegistro.ts:204`. Se dejan igual y el
+  motivo queda escrito en `libroRegistroView.js`, junto a donde se pintan.
+* **`annulled`**, tercer estado real de una factura (`rectificabilidad.ts:41`). **No aprobado**: se
+  sigue viendo en crudo a propósito. Traducirlo por analogía sería inventarse microcopy fiscal.
+* **Doce ranuras más** que no estaban en la lista aprobada: `error`, `vacioDeVerdad`, `descuadre`,
+  `avisoIlegibles`, `avisoAjenas`, `avisoSinNumero`, `colTrazas`, `trazaPresupuestoFirmado`,
+  `trazaPresupuestoSinFirmar`, `trazaAlbaran`, `trazaNoSellado` y `sinTrazas`.

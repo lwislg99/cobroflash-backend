@@ -252,9 +252,29 @@ test('SCRUM-296 · TODA la copy de esta pantalla va marcada como PENDIENTE (regl
   // cual. Someterla aquí la convertiría en texto oficial de pantallas que este ticket no toca.
   const DECLARADAS_FUERA = ['cargando'];
 
+  // 🔴 19-ago-2026 · EL FUNDADOR DESAPARCA ONCE RANURAS, y este guard NO se relaja: se PARTE en dos.
+  // Las aprobadas tienen que decir EXACTAMENTE su texto (un renombre sigue cayendo) y las demás
+  // siguen teniendo que llevar el marcador. Antes bastaba con una regla; ahora hacen falta las dos,
+  // porque conviven textos decididos y textos que no lo están EN LA MISMA PANTALLA.
+  const APROBADAS = {
+    titulo: 'Libro registro de facturas expedidas',
+    menu: 'Libro registro',
+    colNumero: 'Número', colFecha: 'Fecha', colTipo: 'Tipo', colBase: 'Base',
+    colCuota: 'IVA', colTotal: 'Total', colEstado: 'Estado',
+    trazaCobro: 'Cobro',
+  };
+  for (const [ranura, texto] of Object.entries(APROBADAS)) {
+    assert.equal(COPY[ranura], texto,
+      `🔴 la ranura «${ranura}» no es su texto APROBADO («${texto}») sino «${COPY[ranura]}». Un ` +
+      'renombre también es microcopy nueva y lo aprueba el fundador (regla 30).');
+  }
+  // El contador lleva parámetro, así que se comprueba aparte. «facturas», NO «asientos».
+  assert.equal(COPY.recuento(7), '7 facturas',
+    `🔴 el contador no es el aprobado: «${COPY.recuento(7)}». Se aprobó «facturas», no «asientos».`);
+
   const sinMarcar = [];
   for (const [ranura, v] of Object.entries(COPY)) {
-    if (DECLARADAS_FUERA.includes(ranura)) continue;
+    if (DECLARADAS_FUERA.includes(ranura) || ranura in APROBADAS || ranura === 'recuento') continue;
     // `[1]` y no `1`: las ranuras con parámetro reciben unas un número y otras una lista, y un
     // array vale para las dos (`.join` funciona, y concatenado da «1»). Con `1` a secas el guard
     // reventaba en `avisoIlegibles` — y un guard que revienta no es un guard rojo, es uno ciego.
@@ -304,8 +324,15 @@ test('SCRUM-296 · el título de la vista sale de LIBRO_COPY, y el rótulo del M
   // Y la propiedad que de verdad protege la pantalla sigue en pie: lo de DENTRO no está aprobado.
   // Se comprueba en la FUENTE de la vista, no en el DOM, para que este test no dependa del banco.
   const vista = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/libroRegistroView.js'), 'utf8');
-  assert.match(vista, /titulo:\s*rotulo\(/,
-    '🔴 el título DE LA PANTALLA ha dejado de pasar por `rotulo()`, que es quien le pone el ' +
-    'marcador. Lo que se aprobó el 10-ago es el rótulo de NAVEGACIÓN; el contenido del libro es ' +
-    'copy de VeriFactu y va por el guion H2 (regla 26).');
+  // 19-ago-2026 · el TÍTULO ya está aprobado, así que exigir que pase por `rotulo()` sería fijar
+  // el estado anterior como requisito — el mismo error que este fichero se corrigió en SCRUM-420.
+  // Lo que sigue protegido, y es lo que importa, está arriba: las once aprobadas dicen su texto y
+  // TODAS las demás siguen con marcador. Aquí solo se ancla que el título es el que se aprobó.
+  assert.match(vista, /titulo: 'Libro registro de facturas expedidas'/,
+    '🔴 el título de la pantalla no es el aprobado el 19-ago-2026.');
+  // ⚠️ Y los VALORES de la columna «Tipo» siguen crudos a propósito: son decisión del ASESOR
+  // (F1 es código de la AEAT, JUST es nuestro). Si alguien los traduce, cae aquí.
+  assert.match(vista, /celda\(a\.tipo \|\| '—'\)/,
+    '🔴 los valores de la columna «Tipo» han dejado de pintarse crudos. Traducir F1 o JUST es ' +
+    'microcopy FISCAL y la dictamina el asesor, no el fundador (regla 30).');
 });

@@ -43,10 +43,10 @@
   function rotulo(t) { return MARCADOR + ' ' + t; }
 
   const COPY = {
-    titulo: rotulo('Libro de facturas emitidas'),
-    menu: rotulo('Libro de registro'),
+    titulo: 'Libro registro de facturas expedidas',
+    menu: 'Libro registro',
     cargando: 'Cargando…', // NO es de este ticket: cadena ya usada en invoicesView.js, copiada tal cual
-    recuento: (n) => rotulo(n + ' asientos'),
+    recuento: (n) => n + ' facturas',
     error: rotulo('No se ha podido cargar el libro. Vuelve a intentarlo.'),
     // Los dos vacíos, que existen para NO decir lo mismo:
     vacioDeVerdad: rotulo('Todavía no has emitido ninguna factura.'),
@@ -58,21 +58,34 @@
       + 'No los tomes por cero: escríbenos y los revisamos.'),
     avisoAjenas: rotulo('Se han descartado facturas que no son de este negocio.'),
     avisoSinNumero: (n) => rotulo(n + (n === 1 ? ' factura sin número no aparece como asiento.' : ' facturas sin número no aparecen como asiento.')),
-    colNumero: rotulo('Número'),
-    colFecha: rotulo('Fecha'),
-    colTipo: rotulo('Tipo'),
-    colBase: rotulo('Base'),
-    colCuota: rotulo('IVA'),
-    colTotal: rotulo('Total'),
-    colEstado: rotulo('Estado'),
+    colNumero: 'Número',
+    colFecha: 'Fecha',
+    colTipo: 'Tipo',
+    colBase: 'Base',
+    colCuota: 'IVA',
+    colTotal: 'Total',
+    colEstado: 'Estado',
     colTrazas: rotulo('De dónde viene y dónde acabó'),
     trazaPresupuestoFirmado: rotulo('Presupuesto firmado'),
     trazaPresupuestoSinFirmar: rotulo('Presupuesto sin firmar'),
     trazaAlbaran: rotulo('Albarán'),
-    trazaCobro: rotulo('Cobro'),
+    trazaCobro: 'Cobro',
     trazaNoSellado: rotulo('Albarán posterior al sello'),
     sinTrazas: rotulo('Factura suelta'),
   };
+
+  /**
+   * 🔴 LOS DOS ESTADOS APROBADOS, Y SOLO ESOS (fundador, 19-ago-2026).
+   *
+   * Hasta hoy esta columna pintaba el valor CRUDO de la base de datos, así que un profesional veía
+   * `paid` y `pending` **en inglés** en un libro fiscal.
+   *
+   * ⚠️ LO QUE NO ESTÁ AQUÍ PASA TAL CUAL, y es deliberado. `annulled` es un estado REAL de una
+   * factura —lo fija `rectificabilidad.ts:41`, que lo nombra como el tercero fuera de los dos
+   * vivos— y **no está aprobado**. Traducirlo por analogía sería inventarse microcopy fiscal: que
+   * se vea en crudo es feo y es HONESTO, y además lo mantiene visible hasta que el asesor lo fije.
+   */
+  const ESTADO_VISIBLE = { paid: 'Cobrada', pending: 'Pendiente' };
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => (
@@ -273,6 +286,13 @@
 
         celda(a.numero, 'white-space:nowrap;font-variant-numeric:tabular-nums');
         celda(fechaCorta(a.fecha), 'white-space:nowrap');
+        // ⛔ LOS VALORES DE ESTA COLUMNA NO SE TRADUCEN, Y ES UNA DECISIÓN FISCAL, NO DE PRODUCTO.
+        // Salen crudos del dato: `F1` es el código de tipo de factura de la AEAT y `JUST` es
+        // nuestro. Qué debe leer ahí un profesional lo dictamina el ASESOR, no el fundador — por eso
+        // la CABECERA («Tipo») sí está aprobada y sus VALORES siguen esperando (regla 30).
+        //
+        // ⚠️ Y no llevan marcador porque nunca lo llevaron: se pintan tal cual desde
+        // `libroRegistro.ts:204` (`tipo: f.type`). Ponerles uno ahora sería microcopy nueva.
         celda(a.tipo || '—');
         celda(euros(a.base, a.moneda), 'white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums');
         celda(euros(a.cuota, a.moneda), 'white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums');
@@ -282,7 +302,7 @@
           tdTotal.dataset.ilegible = '1';
           tdTotal.style.color = 'var(--muted)';
         }
-        celda(a.estado || '—');
+        celda(ESTADO_VISIBLE[a.estado] || a.estado || '—');
 
         // ── La columna que ningún facturador puede pintar ───────────────────────────────────
         // SIN tope de ancho, y es una decisión MEDIDA: le puse un `max-width:280px` creyendo que
