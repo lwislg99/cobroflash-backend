@@ -12,6 +12,13 @@ no la afecta. `docs/master/SCRUM-512.md` no existía y no hay rama `scrum-512` n
 `billing/app/routes/stripe.routes.ts:138` y `:151`; la ruta real es
 `src/modules/billing/app/routes/stripe.routes.ts` y las dos líneas son las que decía.
 
+**Y el ancla se volvió a comprobar al terminar, porque `main` se movió otra vez** —a `f215ca5d`,
+diecisiete commits, entre ellos el merge de SCRUM-517—. Ninguno de los cinco ficheros sobre los que
+se midió cambió: `stripe.routes.ts`, `lifecycle.service.ts`, `founding.ts`,
+`subscriptions.routes.ts` y `team.routes.ts` están idénticos entre `d59d5cd9` y `f215ca5d`. La
+medición se sostiene sobre su ancla; se dice aquí para que quien lea no tenga que fiarse de que
+nadie tocó nada mientras tanto.
+
 ## 1 · Qué pasa hoy, exactamente, cuando un merchant cancela
 
 Recorrido el webhook entero. Hay **cinco** `prisma.merchant.update` en el fichero, extraídos
