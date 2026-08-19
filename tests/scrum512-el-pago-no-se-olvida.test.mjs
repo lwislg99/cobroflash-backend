@@ -270,6 +270,15 @@ test('SCRUM-512 · 🔴 SECUENCIA: paga → CANCELA → el rastro del pago SIGUE
   const cancela = cancelaciones(fuente);
   const pagado = pagar(merchantQuePago());
 
+  // 🔴 EL CONTROL POSITIVO VA AQUÍ DENTRO, antes de cancelar nada. Si `pagar()` dejara de
+  // escribir el rastro, el bucle de abajo fallaría igual — pero acusando a la cancelación de
+  // haber borrado algo que nunca llegó a existir. Un rojo con el diagnóstico cambiado cuesta más
+  // que no tener rojo: manda a quien lo lea a mirar el fichero equivocado.
+  assert.equal(constaQuePago(pagado), true,
+    `🔴 el control positivo de este mismo caso no se sostiene: «${pagado.name}» (merchant `
+    + `${pagado.id}) acaba de pagar y NO consta. Lo que falla es la simulación, NO la `
+    + `cancelación — no vayas a ${RUTA_STRIPE} a buscar un defecto que no está ahí.`);
+
   // Probar sólo la escritura no demuestra nada: lo que hay que ver es que aguanta el camino
   // completo, y por CADA una de las dos puertas de cancelación, no por la primera que pille.
   for (const u of cancela) {
@@ -318,8 +327,12 @@ test('SCRUM-512 · el censo de la cancelación CUADRA: escrito + intacto = la fi
       `🔴 la cancelación de :${u.linea} no escribe NINGÚN campo de la fila simulada `
       + `(escribe: ${u.claves.join(', ') || 'nada'}). La secuencia de arriba no está probando `
       + 'una cancelación: está probando que no pasa nada, que siempre sale bien.');
-    assert.ok(intactos.includes(RASTRO),
-      `🔴 \`${RASTRO}\` no aparece entre los campos que la cancelación de :${u.linea} deja `
-      + 'intactos. Es el que sostiene todo este fichero.');
+
+    // ⚠️ AQUÍ NO SE COMPRUEBA que `lifecycleEmailsSent` quede intacto, y la omisión es
+    // deliberada: de eso responde el caso de la SECUENCIA, y sólo él. Estaba puesto y se quitó
+    // — hacía que los dos casos cayeran por el mismo hecho, y entonces ninguno de los dos rojos
+    // dice ya qué se rompió. Este caso responde de una cosa: que la partición del censo sea
+    // real y sume. Si falla éste, lo roto es el instrumento; si falla el otro, lo roto es el
+    // producto.
   }
 });
