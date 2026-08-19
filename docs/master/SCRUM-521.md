@@ -2,7 +2,16 @@
 
 **Fecha:** 19-ago-2026 · **Carril:** instrumentos de alcance · **Gate:** sin gate, corre en `npm test`
 
-**Medido contra:** `origin/main` = `11636c07d991cc602175d8a0cdcc255e3b357191` · 2026-08-19T10:42:24+01:00
+**Medido contra:** `origin/main` = `32ad0a76d01f320f8ee5e20b7ddb3eff18576d99` · 2026-08-19T11:18:00+01:00
+
+> ⚠️ **El ancla se movió durante la sesión y la medición se REHÍZO, no se extrapoló.** Se midió
+> primero contra `11636c07…`; al recomprobar al cerrar, `main` había avanzado a `32ad0a76…` con
+> **SCRUM-519**, que trae `scripts/guard-vias-de-cobro.mjs` — un script nuevo que importa **dos**
+> módulos por `../dist/`, es decir, dos aristas más de las que este defecto perdía. Se integró
+> `origin/main` en la rama y se volvió a medir con la comparación vieja puesta. Qué cambió, uno a
+> uno: **aristas perdidas 3 → 5**, **módulos afectados 2 → 3**, **importadores invisibles 2 → 3**;
+> **el número de ceros falsos NO cambió: sigue siendo 1** (`textoDelAviso`), porque los dos exports
+> nuevos ya tienen importadores dentro de `src/`. El resto de la medición se mantiene.
 
 **Paso 0.** `docs/master/SCRUM-521.md` no existía. Búsqueda **por contenido** (`quienLoImporta`,
 `path.join`, el propio `_alcance-desde-entradas.mjs`): sólo lo consume
@@ -28,38 +37,43 @@ casaban las de la rama normal y **se perdían las de la rama `dist/`**.
 Medido sobre el árbol antes de tocar nada:
 
 ```
-ficheros analizados ............... 257
-ARISTAS de import (con módulo) .... 1399
-  casan con path.join (se ven) .... 1396
-  SE PIERDEN por el separador .....    3
+ficheros analizados ............... 260
+ARISTAS de import (con módulo) .... 1404
+  casan con path.join (se ven) .... 1399
+  SE PIERDEN por el separador .....    5
   ¿suman? ......................... SÍ
-módulos que pierden importadores ..    2
-importadores invisibles ...........    2
+módulos que pierden importadores ..    3
+importadores invisibles ...........    3
 ```
 
-Las tres aristas perdidas, nombradas:
+Las cinco aristas perdidas, nombradas:
 
 ```
-scripts/guard-aviso-bizum.mjs    --decidirAvisoBizum--> src/modules/billing/domain/avisoBizumSinTelefono.ts
+scripts/guard-vias-de-cobro.mjs  --viasDeCobro-------> src/modules/billing/domain/viasDeCobro.ts
+scripts/guard-vias-de-cobro.mjs  --decidirAvisoBizum-> src/modules/billing/domain/avisoBizumSinTelefono.ts
+scripts/guard-aviso-bizum.mjs    --decidirAvisoBizum-> src/modules/billing/domain/avisoBizumSinTelefono.ts
 scripts/puerta-cliente-real.mjs  --evaluarPuerta-----> src/modules/system/domain/puertaClienteReal.ts
 scripts/puerta-cliente-real.mjs  --textoDelAviso-----> src/modules/system/domain/puertaClienteReal.ts
 ```
 
-Las tres son `scripts/*.mjs` importando el **build** (`../dist/…`). Es coherente con el mecanismo:
-sólo esa rama producía `/`.
+Las cinco son `scripts/*.mjs` importando el **build** (`../dist/…`). Es coherente con el mecanismo:
+sólo esa rama producía `/`. **Y el número crece solo:** dos de las cinco las trajo SCRUM-519 esta
+misma mañana, sin que nadie lo supiera — un guard nuevo que importa el build añade aristas
+invisibles por el mero hecho de existir.
 
 > Se deja escrito porque cambia lo que hay que vigilar. Un guard construido sobre «falla siempre»
 > daría verde sin probar el caso que de verdad falla — y en una máquina Windows, que son todas.
 
 ## 2 · 🔴 EL NÚMERO QUE SE PIDIÓ ANTES DEL CÓDIGO: **1 cero falso**
 
-De las 3 aristas perdidas, sólo **una** dejaba una lista realmente vacía:
+De las 5 aristas perdidas, sólo **una** dejaba una lista realmente vacía:
 
 | export | antes | ¿era cierto? |
 | --- | --- | --- |
 | `puertaClienteReal.ts::textoDelAviso` | `[]` | **NO** — lo importa `scripts/puerta-cliente-real.mjs` |
 | `puertaClienteReal.ts::evaluarPuerta` | `["…/avisoPuerta.service.ts"]` | incompleta, no vacía |
-| `avisoBizumSinTelefono.ts::decidirAvisoBizum` | `["src/app.ts"]` | incompleta, no vacía |
+| `avisoBizumSinTelefono.ts::decidirAvisoBizum` | `["src/app.ts", "…/viasDeCobro.ts"]` | incompleta, no vacía |
+| `viasDeCobro.ts::viasDeCobro` | `["src/app.ts"]` | incompleta, no vacía |
 
 **`textoDelAviso` era el único «cero» falso vivo del árbol.** Un `[]` ahí se lee como «no lo importa
 nadie», que en un censo de alcance significa «se puede borrar».
@@ -121,8 +135,11 @@ que uno que siempre lo devuelve; `huerfano` sigue dando `[]`, sin lanzar.
 
 | | tests | pass | fail | skip |
 | --- | --- | --- | --- | --- |
-| **Base** (worktree nuevo sobre el ancla) | 3685 | 3608 | **0** | 77 |
-| **Al cerrar** | 3691 | 3614 | **0** | 77 |
+| **Base** (worktree nuevo sobre `11636c07…`) | 3685 | 3608 | **0** | 77 |
+| Tras este ticket, antes de integrar `main` | 3691 | 3614 | **0** | 77 |
+| **Al cerrar** (con `origin/main` = `32ad0a76…` integrado) | 3699 | 3622 | **0** | 77 |
+
+Los `+6` son los de este ticket; los `+8` restantes entran con SCRUM-519 al integrar `main`.
 
 `npm ci` volvió a saltarse el postinstall (`npm warn allow-scripts`); el cliente de Prisma se
 regeneró con `npm run prisma:generate` y **se comprobó** que decía «Generated Prisma Client».
