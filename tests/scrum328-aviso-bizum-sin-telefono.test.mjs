@@ -123,8 +123,14 @@ test('SCRUM-328 · el veredicto lo da el SERVIDOR, el navegador no lo reimplemen
 test('SCRUM-328 · la microcopy del aviso es un MARCADOR sin aprobar', () => {
   const vista = leer('public/dashboard/js/settingsView.js');
   const bloque = vista.slice(vista.indexOf('avisoBizum'), vista.indexOf('fBizumPhone.wrapper.appendChild(avisoBizum)'));
-  assert.equal((bloque.match(/\[PENDIENTE microcopy oficial/g) || []).length, 2,
-    '🔴 los dos textos del aviso tienen que ser marcadores (regla 30) hasta que el fundador los '
-    + 'firme. Y no es cosmético: es lo único que separa «me falta rellenar un campo» de «esto no '
-    + 'funciona».');
+  // 17-ago-2026 · FIRMADOS los dos. Lo que este guard defiende NO cambia y por eso sigue exigiendo
+  // DOS textos distintos: es lo único que separa «me falta rellenar un campo» de «esto no
+  // funciona». Antes se exigían dos marcadores; ahora, los dos textos aprobados.
+  for (const t of ['Sin este móvil, tu cliente no ve la opción de Bizum.',
+    'No hemos podido comprobar tu móvil de Bizum. Revísalo antes de cobrar por ahí.']) {
+    assert.ok(bloque.includes(t), `🔴 falta el aviso aprobado: «${t}»`);
+  }
+  assert.equal((bloque.match(/\[PENDIENTE microcopy oficial/g) || []).length, 0,
+    '🔴 ha vuelto un marcador al aviso de Bizum: o hay un tercer caso sin aprobar, o se ha ' +
+    'reintroducido. Si es un caso nuevo, su texto va al censo de SCRUM-402.');
 });

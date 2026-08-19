@@ -142,14 +142,29 @@ test('SCRUM-294-a · el rótulo es un MARCADOR sin aprobar, no microcopy inventa
   // buscaba el marcador en cualquier parte, así que alguien podía escribir el texto del rótulo y el
   // guard seguía verde con los marcadores de las TRES opciones. Un guard que se conforma con que
   // quede uno no protege a los demás.
-  assert.match(vista, /recargoLabel\.textContent = "\[PENDIENTE microcopy oficial/,
-    '🔴 el RÓTULO del campo ya no es un marcador: alguien ha escrito su texto.');
+  // 17-ago-2026 · APROBADOS los cuatro (rótulo + tres opciones). El guard NO se relaja: seguía
+  // exigiendo el marcador y ahora exige el TEXTO APROBADO, así que un renombre sigue cayendo. Y se
+  // mantiene su lección original —se comprueba el RÓTULO, no «que quede algún marcador»—: por eso
+  // debajo se cuentan las CUATRO ranuras una a una y no basta con que acierte una.
+  assert.match(vista, /recargoLabel\.textContent = "Recargo de equivalencia"/,
+    '🔴 el RÓTULO del campo ya no es el aprobado («Recargo de equivalencia»).');
   const bloque = vista.slice(vista.indexOf('recargoWrapper'), vista.indexOf('body.appendChild(recargoWrapper)'));
-  assert.equal((bloque.match(/\[PENDIENTE microcopy oficial/g) || []).length, 4,
+  for (const t of ['No consta', 'Sí, está en recargo', 'No está en recargo']) {
+    assert.ok(bloque.includes('>' + t + '<'),
+      `🔴 falta la opción aprobada «${t}» en el selector de recargo.`);
+  }
+  assert.equal((bloque.match(/\[PENDIENTE microcopy oficial/g) || []).length, 0,
     '🔴 han cambiado los marcadores de este campo: eran CUATRO (el rótulo y las tres opciones). Si '
     + 'alguno lleva ya texto aprobado, quítalo de la cuenta a propósito — no de refilón.');
-  assert.match(bloque, /\[PENDIENTE microcopy oficial/,
-    '🔴 alguien ha escrito el texto de este campo. Decirle en pantalla a qué régimen fiscal '
-    + 'pertenece su cliente es ASESORARLE, y eso es dictamen del asesor (regla 30). El dato se '
-    + 'pide; no se explica.');
+  // 🔴 ESTA COMPROBACIÓN SE DA LA VUELTA, y conviene entender por qué no es aflojar.
+  //
+  // Exigía que quedara marcador «para que nadie escriba el texto», y su motivo era bueno: decirle
+  // en pantalla a qué RÉGIMEN FISCAL pertenece su cliente es ASESORARLE. Ese motivo sigue vivo — y
+  // por eso lo aprobado NO explica nada: el rótulo nombra el campo y las tres opciones solo
+  // PREGUNTAN. El dato se pide; no se explica, que era justo la línea que no se podía cruzar.
+  for (const prohibido of ['te conviene', 'deberías', 'recomendamos', 'si facturas a']) {
+    assert.ok(!bloque.toLowerCase().includes(prohibido),
+      `🔴 el campo ha empezado a ACONSEJAR («${prohibido}»). Eso es dictamen del asesor, no `
+      + 'producto: el dato se pide, no se explica (regla 30).');
+  }
 });

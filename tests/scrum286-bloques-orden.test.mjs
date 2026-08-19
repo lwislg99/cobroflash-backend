@@ -146,14 +146,22 @@ test('SCRUM-286 · los tres campos que VIAJAN SIN PINTARSE siguen siendo esos tr
 test('SCRUM-286 · todo título de bloque sale con el marcador de microcopy pendiente', () => {
   const bloques = R.pintado.orden.filter((n) => BLOQUES_EN_ORDEN.some((b) => b.variable === n.nombre));
   assert.equal(bloques.length, BLOQUES_EN_ORDEN.length, 'no están los cuatro bloques');
+  // 17-ago-2026 · APROBADOS los cuatro, y la fábrica `TITULO_PENDIENTE` se borró con ellos.
+  // Lo que este guard protegía —que nadie cuele un rótulo que «suena bien»— sigue protegido, solo
+  // que ahora contra el TEXTO APROBADO en vez de contra el marcador: un renombre sigue cayendo.
   for (const b of bloques) {
-    assert.ok(b.tituloViaLlamada,
-      `🔴 el título de \`${b.nombre}\` se escribe directo, sin pasar por el marcador: un rótulo ` +
-      'que «suena bien» es microcopy colada por la puerta de atrás (regla 30).');
+    const esperado = BLOQUES_EN_ORDEN.find((x) => x.variable === b.nombre).borrador;
+    assert.equal(b.titulo, esperado,
+      `🔴 el título de \`${b.nombre}\` no es el aprobado («${esperado}») sino «${b.titulo}». Un ` +
+      'renombre también es microcopy nueva y lo aprueba el fundador (regla 30).');
   }
   // Y el marcador tiene que ser el de verdad, no una función que se llame parecido.
-  assert.ok(FUENTE.includes(`return "${MARCA_MICROCOPY} " + borrador;`),
-    `🔴 el marcador ya no es exactamente \`${MARCA_MICROCOPY}\`.`);
+  // La comprobación de que la FÁBRICA usaba el marcador oficial se retira: la fábrica ya no existe
+  // porque los cuatro títulos están aprobados. Lo que la sustituye es la igualdad de arriba, que es
+  // más fuerte — antes bastaba con pasar por la fábrica, ahora el texto tiene que ser EL que es.
+  assert.ok(!FUENTE.includes('[PENDIENTE microcopy oficial]'),
+    '🔴 ha vuelto un marcador a los títulos del formulario: o hay un bloque nuevo sin aprobar, o se ' +
+    'ha reintroducido la fábrica. Si es un bloque nuevo, su rótulo va al censo de SCRUM-402.');
 });
 
 test('SCRUM-286 · los borradores de título son los cuatro decididos', () => {

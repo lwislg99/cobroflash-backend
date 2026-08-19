@@ -189,14 +189,14 @@ function renderCustomersView(container) {
     // eso es dictamen del asesor, no producto. El dato se PIDE, no se explica.
     const recargoWrapper = createElement("div", "field");
     const recargoLabel = document.createElement("label");
-    recargoLabel.textContent = "[PENDIENTE microcopy oficial · recargo de equivalencia]";
+    recargoLabel.textContent = "Recargo de equivalencia";
     fieldRecargo = document.createElement("select");
     fieldRecargo.name = "recargoEquivalencia";
     fieldRecargo.className = "input";
     fieldRecargo.innerHTML = `
-      <option value="">[PENDIENTE microcopy oficial · no consta]</option>
-      <option value="si">[PENDIENTE microcopy oficial · si]</option>
-      <option value="no">[PENDIENTE microcopy oficial · no]</option>
+      <option value="">No consta</option>
+      <option value="si">Sí, está en recargo</option>
+      <option value="no">No está en recargo</option>
     `;
     recargoWrapper.appendChild(recargoLabel);
     recargoWrapper.appendChild(fieldRecargo);

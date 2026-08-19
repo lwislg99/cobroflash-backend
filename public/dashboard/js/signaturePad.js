@@ -399,7 +399,7 @@
       } catch (e) {
         // NO se cierra: el trazo sigue en el canvas y el botón vuelve a estar disponible, así que
         // se reintenta sin volver a molestar al cliente.
-        mostrarAviso((e && e.message) || '[PENDIENTE microcopy oficial · firma no enviada]');
+        mostrarAviso((e && e.message) || 'La firma no se ha enviado. No cierres esta pantalla: vuelve a intentarlo.');
         okBtn.disabled = false;
         okBtn.textContent = 'Reintentar';
         return;

@@ -174,9 +174,14 @@ test('SCRUM-294c · 🔴 la pantalla ofrece TRES opciones, no una casilla', asyn
 
   // MICROCOPY sin aprobar: marcador visible (regla 30). Si alguien escribe texto definitivo sin
   // pasar por el asesor, esto cae.
-  assert.match(vista, /PENDIENTE microcopy oficial · criterio de caja/,
-    '🔴 el rótulo del criterio de caja ya no lleva marcador. Explicarle a un profesional si le ' +
-    'conviene el RECC es asesorarle, y ese texto lo aprueba el asesor (regla 30).');
+  // 17-ago-2026 · APROBADO por el fundador. El motivo por el que llevaba marcador sigue escrito
+  // porque sigue siendo cierto: explicarle a un profesional si le CONVIENE el RECC es asesorarle.
+  // Lo aprobado es el rótulo del campo y su terna, que solo PREGUNTAN — no aconsejan.
+  assert.match(vista, /criterioLabel\.textContent = "Criterio de caja"/,
+    '🔴 el rótulo del criterio de caja ya no es el aprobado («Criterio de caja»).');
+  for (const t of ['No consta', 'Sí, estoy acogido', 'No estoy acogido']) {
+    assert.ok(vista.includes('>' + t + '<'), `🔴 falta la opción aprobada «${t}».`);
+  }
 });
 
 test('SCRUM-294c · 🔴 el campo se PERSISTE, y los tres estados sobreviven al validador', async () => {

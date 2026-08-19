@@ -32,16 +32,22 @@ test('SCRUM-339 · el toast de import existe (SUELO) y su rótulo de errores es 
   assert.match(codigoReal, /CSV importado/, '🔴 SUELO: no encuentro el toast «CSV importado» — el escáner no lee');
   const nota = notaDeErrores(codigoReal);
   assert.ok(nota, '🔴 SUELO: no encuentro la nota de errores (const errNota … data.errors) — ¿cambió de forma?');
-  assert.ok(soloMarcador(nota),
-    `🔴 el rótulo de los errores del import debe ser el marcador ${MARCA} (regla 30: el texto lo aprueba ` +
-    `el fundador). Un renombre plausible también es microcopy nueva. Nota: «${nota.trim()}»`);
+  // 17-ago-2026 · APROBADO «Con errores». El guard no se borra ni se afloja: seguía siendo cierto
+  // que «un renombre plausible también es microcopy nueva», así que ahora exige el texto aprobado.
+  assert.ok(nota.includes('Con errores'),
+    `🔴 el rótulo de los errores del import no es el aprobado («Con errores»). Un renombre plausible ` +
+    `también es microcopy nueva y lo aprueba el fundador (regla 30). Nota: «${nota.trim()}»`);
+  assert.ok(!nota.includes(MARCA),
+    '🔴 ha vuelto el marcador a la nota de errores del import.');
 });
 
 test('SCRUM-339 · INYECCIÓN: un rótulo plausible en la nota de errores hace caer el guard', () => {
-  const inyectado = notaDeErrores(codigoReal).replace(MARCA, 'errores');
-  assert.notEqual(inyectado, notaDeErrores(codigoReal), '🔴 la inyección no encontró el marcador (¿cambió de forma?)');
-  assert.equal(soloMarcador(inyectado), false,
-    '🔴 el guard NO distingue un rótulo inventado del marcador: sería ciego a un texto colado (regla 30).');
+  // La inyección se da la vuelta con el texto: antes colaba «errores» en lugar del marcador; ahora
+  // cuela un plausible en lugar del aprobado. Si no se actualizara, el rojo dejaría de probar nada.
+  const inyectado = notaDeErrores(codigoReal).replace('Con errores', 'Fallidos');
+  assert.notEqual(inyectado, notaDeErrores(codigoReal), '🔴 la inyección no encontró el rótulo aprobado (¿cambió de forma?)');
+  assert.equal(inyectado.includes('Con errores'), false,
+    '🔴 el guard NO distingue un rótulo inventado del aprobado: sería ciego a un texto colado (regla 30).');
 });
 
 test('SCRUM-339 · CONTROL NEGATIVO: un cambio ajeno al rótulo NO tumba el guard', () => {
@@ -49,6 +55,6 @@ test('SCRUM-339 · CONTROL NEGATIVO: un cambio ajeno al rótulo NO tumba el guar
   // el guard vigila el rótulo de errores, no cualquier edición del fichero.
   const ajeno = codigoReal.replace('Importando…', 'Importando el CSV…');
   assert.notEqual(ajeno, codigoReal, 'el cambio ajeno debe aplicarse (si no, el control no prueba nada)');
-  assert.equal(soloMarcador(notaDeErrores(ajeno)), true,
+  assert.equal(notaDeErrores(ajeno).includes('Con errores'), true,
     'un cambio que no toca el rótulo de errores debe dejar el guard en verde');
 });

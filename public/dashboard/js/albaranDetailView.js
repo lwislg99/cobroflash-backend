@@ -24,7 +24,7 @@
 function mensajeDeFalloAlFirmar(e) {
   if (e && e.sinRed) return 'No se ha podido conectar. La firma sigue en pantalla: inténtalo otra vez cuando tengas señal.';
   const detalle = (e && e.data && e.data.message) || '';
-  return '[PENDIENTE microcopy oficial · firma rechazada]' + (detalle ? ` (${detalle})` : '');
+  return 'No hemos podido registrar la firma' + (detalle ? ` (${detalle})` : '');
 }
 if (typeof window !== 'undefined') window.mensajeDeFalloAlFirmar = mensajeDeFalloAlFirmar;
 //

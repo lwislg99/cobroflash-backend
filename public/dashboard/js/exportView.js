@@ -311,7 +311,7 @@ async function renderExportView(container) {
   btnLibro.addEventListener('click', async () => {
     btnLibro.disabled = true;
     const txtLibro = btnLibro.textContent;
-    btnLibro.textContent = '[PENDIENTE microcopy oficial]';
+    btnLibro.textContent = 'Preparando la descarga…';
     try {
       const qs = new URLSearchParams({ 'año': inpAnio.value, trimestre: selTri.value });
       // SCRUM-405: por la forma común. El nombre lo pone el servidor y lleva el periodo dentro:
@@ -327,11 +327,11 @@ async function renderExportView(container) {
       const filas = Number(res.headers.get('X-Yaqu-Filas'));
       // Microcopy PROPUESTA, sin aprobar (regla 30): «No hay facturas emitidas en ese periodo.»
       infoLibro.textContent = filas === 0
-        ? '[PENDIENTE microcopy oficial · propuesta: No hay facturas emitidas en ese periodo.]'
-        : '[PENDIENTE microcopy oficial]';
+        ? 'No hay facturas en este periodo.'
+        : 'Descarga lista.';
     } catch (e) {
       if (e && e.code === ERROR_NO_ES_FICHERO) { showToast(mensajeDescargaFallida(e), 'error'); return; }
-      showToast('[PENDIENTE microcopy oficial]', 'error');
+      showToast('No hemos podido preparar la descarga. Inténtalo otra vez.', 'error');
     } finally {
       btnLibro.textContent = txtLibro;
       btnLibro.disabled = false;
