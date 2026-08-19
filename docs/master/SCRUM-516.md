@@ -166,6 +166,35 @@ DENTRO de un bloque cercado. Inventaría entradas fantasma —sin ancla, porque 
 guard acusaría a quien pegó un ejemplo en su registro*». Y arrastra al guard principal, porque las
 dos fantasmas de `SCRUM-480.md` aparecen como entradas sin ancla: la trampa no era teórica.
 
+### Mutación 4 — 🔴 la que vigila la DECISIÓN: un apéndice nuevo sin ancla ninguna
+
+**SHA del commit en verde previo: `910a602484d8b470c19671dd5cbf22634044dea6`.**
+
+Se añadió a `docs/master/SCRUM-467.md` un tercer registro **sin «Medido contra» en absoluto** —
+exactamente la misma forma que las 23 exentas por «el dato no existe». La pregunta que responde
+esta mutación es la única que importa para que la decisión dure: **¿puede una entrada nueva colarse
+entre las exentas alegando que es igual que las otras?**
+
+No. Caen tres tests, y el trinquete la nombra:
+
+```
+🔴 HAY ENTRADAS SIN ANCLA QUE NO ESTÁN EN LA LISTA DE EXENTAS:
+    SCRUM-467.md#3
+
+  La lista de exentas está CERRADA desde el 19-ago-2026. No se amplía: se arregla la
+  entrada nueva poniéndole su ancla, que para una entrada NUEVA siempre se puede porque
+  la mides tú al escribirla.
+
+  Y no vale «es igual que las otras 27»: aquéllas están exentas porque su dato NO EXISTE y
+  reconstruirlo sería inventarlo. La tuya no tiene ese problema — todavía no la has medido.
+```
+
+La única forma de silenciarlo es **editar `HEREDADAS_SIN_ANCLA`**, que aparece en el diff. Es la
+diferencia entre un censo cerrado y una allowlist que crece sola.
+
+**Control positivo tras revertir:** las 27 siguen exentas, los 9 tests del guard en verde, y el
+cuadre sigue cerrando (291 + 27 = 318).
+
 ### Mutación 3 — volver al comportamiento viejo (una entrada por fichero)
 
 Cae el CONTROL POSITIVO: «*el troceador no ve las dos entradas del fichero sintético*».
