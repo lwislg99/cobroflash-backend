@@ -375,3 +375,39 @@ solo lo selecciona. `already_paid` no cuenta: es un campo de respuesta de la API
 fecha** — y sin este renglón, dentro de un mes nadie sabría que hubo dos.
 
 El **título de pantalla** no cambia: sigue siendo `Libro registro de facturas expedidas`.
+
+
+---
+
+## Addendum · Libro registro, tanda final (19-ago-2026) · **APLICADO**
+
+Las **cinco últimas del fundador**. Se aprobaron **tal como estaban**: solo se les quitó el
+marcador, el texto no cambió ni una letra.
+
+| Ranura | Línea | Texto aprobado |
+|---|---|---|
+| `error` | 50 | `No se ha podido cargar el libro. Vuelve a intentarlo.` |
+| `vacioDeVerdad` | 52 | `Todavía no has emitido ninguna factura.` |
+| `colTrazas` | 68 | `De dónde viene y dónde acabó` |
+| `trazaAlbaran` | 71 | `Albarán` — el número se concatena al pintar (`:328`), así que lo aprobado, `Albarán {número}`, es el RESULTADO |
+| `sinTrazas` | 74 | `Factura suelta` |
+
+### Los dos criterios, anotados junto a las ranuras porque alguien los rediscutirá
+
+* **`colTrazas` se queda con su frase larga** porque es la **única cabecera de esa tabla que no es
+  un término fiscal**. Las otras siete —Número, Fecha, Tipo, Base, IVA, Total, Estado— las impone
+  la norma; ésta no.
+* **`Factura suelta` se aprueba** porque **ya es el vocabulario del propio código**
+  (`facturaSuelta.ts`, `modoDocumentoSuelto`). Un sinónimo nuevo habría creado dos nombres para el
+  mismo hecho — exactamente el defecto que apareció con el rótulo del menú.
+
+### 🔴 Las cinco que NO se aprueban: están en el asesor, no aquí
+
+`descuadre` · `avisoIlegibles` · `avisoAjenas` · `avisoSinNumero` · `trazaNoSellado`.
+
+**Siguen marcadas** y se han escrito como preguntas en **`docs/legal/PREGUNTAS_ASESOR.md`, punto
+21**, cada una con la condición exacta que la dispara, lo que se pinta hoy y qué tiene que decidir.
+No se reescriben ni se aprueban hasta que haya respuesta.
+
+⚠️ **Medido:** las cinco solo se pintan en **condiciones de excepción**. Ninguna aparece en un libro
+que cuadra.

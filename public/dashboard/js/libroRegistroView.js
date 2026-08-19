@@ -47,9 +47,9 @@
     menu: 'Libro de registro',
     cargando: 'Cargando…', // NO es de este ticket: cadena ya usada en invoicesView.js, copiada tal cual
     recuento: (n) => n + ' facturas',
-    error: rotulo('No se ha podido cargar el libro. Vuelve a intentarlo.'),
+    error: 'No se ha podido cargar el libro. Vuelve a intentarlo.',
     // Los dos vacíos, que existen para NO decir lo mismo:
-    vacioDeVerdad: rotulo('Todavía no has emitido ninguna factura.'),
+    vacioDeVerdad: 'Todavía no has emitido ninguna factura.',
     descuadre: (miradas) => rotulo(
       'El libro no cuadra: se han revisado ' + miradas + ' facturas y no ha salido ningún asiento. '
       + 'No lo tomes como que no has facturado.'),
@@ -65,13 +65,21 @@
     colCuota: 'IVA',
     colTotal: 'Total',
     colEstado: 'Estado',
-    colTrazas: rotulo('De dónde viene y dónde acabó'),
+    // 19-ago-2026 · APROBADA con su frase larga, y el criterio se anota porque alguien lo
+    // rediscutira: es la UNICA cabecera de esta tabla que no es un termino fiscal. Las otras siete
+    // —Numero, Fecha, Tipo, Base, IVA, Total, Estado— las impone la norma; esta no.
+    colTrazas: 'De dónde viene y dónde acabó',
     trazaPresupuestoFirmado: 'Presupuesto firmado',
     trazaPresupuestoSinFirmar: 'Presupuesto sin firmar',
-    trazaAlbaran: rotulo('Albarán'),
+    // ⚠️ El literal es solo «Albarán»: el numero se concatena al pintar (`:328`), asi que lo que
+    // se aprobo —«Albarán {número}»— es el RESULTADO, no esta cadena.
+    trazaAlbaran: 'Albarán',
     trazaCobro: 'Cobro',
     trazaNoSellado: rotulo('Albarán posterior al sello'),
-    sinTrazas: rotulo('Factura suelta'),
+    // 19-ago-2026 · APROBADA, y el criterio importa: «factura suelta» YA es el vocabulario del
+    // codigo (`facturaSuelta.ts`, `modoDocumentoSuelto`). Un sinonimo nuevo habria creado DOS
+    // nombres para el mismo hecho — el defecto que acaba de aparecer con el rotulo del menu.
+    sinTrazas: 'Factura suelta',
   };
 
   /**

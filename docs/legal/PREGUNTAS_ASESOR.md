@@ -671,3 +671,137 @@ oficios en nuestro flujo, o F1/R1 cubren todo lo que emitimos?
 >
 > Y no se ha tocado ninguna factura ya emitida (regla 29): las 5 filas de producción con tipo y
 > número contradictorios **se quedan como están**; qué hacer con ellas es parte de P16.1.
+
+---
+
+## 21 · Los cinco avisos del Libro registro que afirman algo sobre la INTEGRIDAD del libro
+
+**Planteado el 19-ago-2026.** El fundador aprobó 16 de las 21 ranuras de la pantalla del Libro
+registro (`public/dashboard/js/libroRegistroView.js`). **Estas cinco no**, y no por olvido: las
+cinco **afirman algo sobre si el libro está completo**, que es dictamen fiscal y no producto.
+
+Las cinco siguen hoy con `[PENDIENTE microcopy oficial]` delante de su texto, así que **se leen en
+pantalla pero se ven marcadas**. No se han reescrito: lo que hay abajo es lo que se pinta hoy.
+
+> ⚠️ **Las cinco solo aparecen en condiciones de EXCEPCIÓN — medido, no supuesto.** Ninguna se
+> pinta en un libro que cuadra. La condición exacta va en cada pregunta, porque **sin ella no se
+> puede decidir el texto**: un aviso de descuadre no se aprueba igual si salta por un céntimo de
+> redondeo que si salta porque falta una factura entera.
+
+### 21.1 · `descuadre` — 🔴 la que más importa, y no es un rótulo
+
+**(a) Qué la dispara.** `libroRegistroView.js:231`, dentro de `if (asientos.length === 0)` (`:229`):
+
+```js
+if (libro.miradas > 0) avisar(COPY.descuadre(libro.miradas), 'warning');
+```
+
+Es decir: **se examinaron N facturas y no salió NI UN asiento**. `miradas` está definido en
+`libroRegistro.ts:105` como «cuántas facturas se examinaron», y su comentario (`:18-20`) dice que
+existe justamente para separar «no había» de «algo está roto». Cero asientos con `miradas: 0` es un
+negocio que no ha facturado; cero asientos con `miradas: 40` es **un libro que no cuadra**.
+
+**(b) Qué se pinta hoy** (`libroRegistroView.js:53-55`):
+
+> `[PENDIENTE microcopy oficial] El libro no cuadra: se han revisado 40 facturas y no ha salido
+> ningún asiento. No lo tomes como que no has facturado.`
+
+**(c) Qué hay que decidir.**
+
+🔴 **Lo que se aprueba aquí NO es una etiqueta: es un CONSEJO.** La segunda frase —«no lo tomes
+como que no has facturado»— le dice al profesional **cómo interpretar un libro fiscal incompleto**.
+Es una instrucción, y por eso no la aprueba el fundador.
+
+Tres preguntas concretas:
+
+1. ¿Debe el producto **afirmar** que el libro no cuadra, o limitarse a decir que no se ha podido
+   construir y remitir al asesor?
+2. La frase «no lo tomes como que no has facturado» ¿se queda, se reformula o se retira?
+3. ¿Debe este aviso **impedir** algo (descargar el libro, presentarlo) o solo avisar?
+
+### 21.2 · `avisoIlegibles` — importes que no se pudieron leer
+
+**(a) Qué la dispara.** `libroRegistroView.js:223-225`:
+
+```js
+if (Array.isArray(libro.importesIlegibles) && libro.importesIlegibles.length > 0) { … }
+```
+
+`importesIlegibles` (`libroRegistro.ts:120`) son **los números de las facturas cuyo importe no se
+pudo leer**. La fila sale en el libro, pero su total va vacío y se marca en gris
+(`libroRegistroView.js`, `tdTotal.dataset.ilegible`).
+
+**(b) Qué se pinta hoy** (`:56-58`):
+
+> `[PENDIENTE microcopy oficial] Hay importes que no se han podido leer (F-2026-1, F-2026-7). No los
+> tomes por cero: escríbenos y los revisamos.`
+
+**(c) Qué hay que decidir.** Otra vez hay una instrucción dentro («no los tomes por cero») y además
+**una promesa de canal** («escríbenos y los revisamos»). ¿Se mantiene la promesa? ¿Y qué debe
+entender el profesional sobre la validez del libro mientras haya importes ilegibles?
+
+### 21.3 · `avisoAjenas` — filas descartadas por no ser de este negocio
+
+**(a) Qué la dispara.** `libroRegistroView.js:226`:
+
+```js
+if (libro.ajenas > 0) avisar(COPY.avisoAjenas, 'warning');
+```
+
+`ajenas` (`libroRegistro.ts:107`) son **filas descartadas por no pertenecer a este merchant**. Su
+comentario dice: «se cuentan, nunca se tiran en silencio».
+
+**(b) Qué se pinta hoy** (`:59`):
+
+> `[PENDIENTE microcopy oficial] Se han descartado facturas que no son de este negocio.`
+
+**(c) Qué hay que decidir.** Que esto aparezca **debería ser imposible** —significa que la consulta
+trajo datos de otro obligado tributario—. ¿Debe el profesional ver este aviso, o es un fallo interno
+que tiene que avisarnos a nosotros y no a él? Y si lo ve, ¿qué se le pide que haga?
+
+### 21.4 · `avisoSinNumero` — facturas sin número, que no son asiento
+
+**(a) Qué la dispara.** `libroRegistroView.js:227`:
+
+```js
+if (libro.sinNumero > 0) avisar(COPY.avisoSinNumero(libro.sinNumero), 'warning');
+```
+
+`sinNumero` (`libroRegistro.ts:109`) son **filas sin número de factura**. Su comentario lo razona:
+«no son asiento (el número ES la identidad fiscal), pero se declaran». Existe además su importe
+agregado, `sinNumeroImporte` (`:118`), que **hoy esta pantalla no enseña**.
+
+**(b) Qué se pinta hoy** (`:60`):
+
+> `[PENDIENTE microcopy oficial] 3 facturas sin número no aparecen como asiento.`
+> (en singular: `1 factura sin número no aparece como asiento.`)
+
+**(c) Qué hay que decidir.** ¿Basta con decir cuántas son, o **hay que decir también cuánto dinero
+suman**? El dato existe (`sinNumeroImporte`) y el propio código anota que un «hay 3 facturas fuera»
+sin decir cuánto es **no se puede revisar a mano**. Y la pregunta de fondo: ¿es correcto que una
+factura sin número quede fuera del libro y solo se avise?
+
+### 21.5 · `trazaNoSellado` — albaranes posteriores al sello
+
+**(a) Qué la dispara.** `libroRegistroView.js:332-334`, por cada fila de la tabla:
+
+```js
+if (e.albaranesNoSellados > 0) { … COPY.trazaNoSellado + ' ×' + e.albaranesNoSellados … }
+```
+
+Es decir: esa factura tiene **albaranes firmados DESPUÉS de que la factura se sellara**.
+
+**(b) Qué se pinta hoy** (`:73`), como chip ámbar dentro de la fila:
+
+> `[PENDIENTE microcopy oficial] Albarán posterior al sello ×2`
+
+**(c) Qué hay que decidir.** ¿Qué significa fiscalmente que aparezca trabajo firmado después del
+sello de la factura? ¿Es una anomalía que hay que nombrar como tal, o una situación normal (una
+segunda visita) que solo se informa? El texto de hoy no dice ninguna de las dos cosas: solo constata.
+
+---
+
+> **Nota de procedencia.** Estas cinco salen del inventario de SCRUM-514 (tanda del 19-ago-2026),
+> donde se derivaron por AST las 21 ranuras de la pantalla y se separaron las que aprueba el
+> fundador de las que necesitan dictamen fiscal. **No se han reescrito ni aprobado**: siguen con su
+> marcador hasta que haya respuesta.
