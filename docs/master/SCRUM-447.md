@@ -126,7 +126,7 @@ scratchpad y no se añaden al árbol: son de medición puntual, no de vigilancia
 # SCRUM-447 (parte 2) · el byte invisible que hacía pasar siempre a un guard
 
 **Fecha:** 11-ago-2026 · **Carril:** B · **Gate:** sin gate, corre en `npm test`
-**Medido contra:** `origin/main` = `8a57b9cd` · 2026-08-11T02:20:00+02:00
+**Medido contra:** `origin/main` = `8a57b9cd3689abb666d11f3faa96575af2e2da41` · 2026-08-11T02:20:00+02:00
 
 ## El ticket se abrió por una premisa que ya no era cierta
 
