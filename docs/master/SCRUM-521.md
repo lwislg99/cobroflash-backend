@@ -129,4 +129,48 @@ regeneró con `npm run prisma:generate` y **se comprobó** que decía «Generate
 
 ## 7 · El rojo, probado por el mecanismo
 
-**SHA del commit en verde previo a la mutación: `<PENDIENTE>`.**
+**SHA del commit en verde previo a la mutación: `bcc730463f91777db35c777b5cf0be3f3e1bada6`.**
+
+**Mutación:** devolver la comparación vieja — que la rama `dist/→src/` de `resolver()` salga sin
+normalizar. Caen **4 de 6**, y nombran qué desapareció:
+
+```
+🔴 SE HA PERDIDO EL IMPORTADOR QUE ENTRA POR `../dist/`.
+   esperado: [ 'scripts/mide.mjs' ]
+
+🔴 la rama «dist/→src/» de `resolver()` devuelve el separador AJENO «/»
+
+🔴 se esperaban 2 exports con importadores y salen 1: ["usado"]
+
+🔴 `textoDelAviso` vuelve a perder a `scripts/puerta-cliente-real.mjs`
+```
+
+### 🔴 Y un intento fallido que se queda escrito, porque es el aviso del encargo cumpliéndose
+
+La primera versión del arreglo **normalizaba dos veces**: en `resolver()` y otra vez en la
+comparación de `quienLoImporta`. Con la mutación puesta, **los 6 tests seguían en verde** — el
+`path.normalize` de rescate en el consumidor enmascaraba la salida sin normalizar del origen.
+
+Era exactamente lo que el encargo prohibía («*si acabas normalizando en tres puntos, has repartido
+el defecto en vez de quitarlo*»), y el síntoma fue justo el que delata ese error: **un guard que no
+puede fallar**. Se quitó la segunda, y la comparación es ahora directa (`imp.modulo === abs`) a
+propósito, con su comentario diciendo por qué no se le debe añadir un normalize de rescate.
+
+Y lo mismo con el test de los separadores: la primera versión comparaba preguntar con `/` contra
+preguntar con `\`, y **no podía fallar en Windows** porque `path.join` ya traduce antes de comparar.
+Verde con el defecto puesto — el aviso literal del encargo («*tu máquina te dará verde igual*»). Se
+sustituyó por el invariante que sí muerde: **las dos ramas de `resolver()` devuelven el mismo
+separador**, que es lo que el ticket arregla.
+
+## 8 · Huecos declarados
+
+1. **La traducción del separador en la PREGUNTA no es comprobable en Windows.** `quienLoImporta`
+   parte `moduloRel` por `[\\/]` para aceptar las dos formas; quitarlo **no rompe ningún test aquí**,
+   porque `path.join` de Windows ya traduce `/`. Sólo mordería en POSIX, y esta casa es Windows. Se
+   deja porque es correcto, no porque esté vigilado — y se dice, en vez de aparentar cobertura.
+2. **El suelo «el nombre no es un export» usa un extractor propio de exports.** Cubre `function`,
+   `class`, `const/let/var`, `type`, `interface`, `enum` y `export { … }`; **no** resuelve
+   `export * from`. Un módulo que sólo re-exporte con `*` no activará ese suelo.
+3. **No se ha tocado `_alcance-dominio.mjs`**, que tiene su propio `resolver` con la misma forma. No
+   consta que nadie compare su salida contra un `path.join`, así que no consta el defecto — pero no
+   se ha medido, y decir «está bien» sería afirmar lo que no he comprobado.

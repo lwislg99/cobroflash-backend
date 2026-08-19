@@ -241,7 +241,10 @@ export function quienLoImporta(raiz, moduloRel, nombre) {
     throw new Error(`🔴 quienLoImporta CIEGO: no existe ${rel(raiz, src)}. No es que nadie importe `
       + `«${nombre}»: es que no se ha podido mirar. Un [] aquí se leería como «huérfano».`);
   }
-  const abs = path.normalize(path.join(raiz, moduloRel));
+  // La pregunta se traduce al separador nativo UNA vez, aquí. Esto NO es normalizar la respuesta
+  // —de eso se encarga `resolver()`, y sólo él—: es aceptar que quien pregunta escriba la ruta con
+  // `/` o con `\`. Se parte por los dos separadores para que la traducción no dependa del SO.
+  const abs = path.join(raiz, ...String(moduloRel).split(/[\\/]/).filter(Boolean));
   // 🔴 SUELO 2 · EL MÓDULO PREGUNTADO TIENE QUE EXISTIR. Preguntar por una ruta mal escrita —o por
   // un fichero que se movió— devolvía `[]`, y ese `[]` es indistinguible de un huérfano de verdad.
   if (!fs.existsSync(abs)) {
@@ -255,7 +258,7 @@ export function quienLoImporta(raiz, moduloRel, nombre) {
   ];
   // 🔴 SUELO 3 · SI NO HAY CORPUS, NO HAY CERO. Cero ficheros analizados produce cero importadores
   // pase lo que pase: es el mismo verde que «lo he mirado todo y no lo importa nadie».
-  const corpus = [...new Set([...todos, ...entradas].map((p) => path.normalize(p)))];
+  const corpus = [...new Set([...todos, ...entradas])];
   if (!corpus.length) {
     throw new Error('🔴 quienLoImporta CIEGO: el corpus está vacío — 0 ficheros analizados. '
       + 'Cualquier respuesta sería inventada.');
@@ -268,8 +271,12 @@ export function quienLoImporta(raiz, moduloRel, nombre) {
     try { imps = importacionesDe(p).nombradas; } catch { continue; }
     for (const imp of imps) {
       if (!imp.modulo) continue;
-      // Comparación entre rutas ya normalizadas por `resolver`: mismo separador en los dos lados.
-      if (path.normalize(imp.modulo) === abs) {
+      // 🔴 COMPARACIÓN DIRECTA, A PROPÓSITO. `resolver()` ya garantiza el separador nativo y es la
+      // ÚNICA normalización de rutas resueltas del fichero. Meter aquí un `path.normalize` de
+      // rescate volvería a hacer pasar el defecto: enmascararía una salida sin normalizar de
+      // `resolver` y el guard de este ticket daría verde con el bug puesto. Lo comprobé fallando —
+      // con ese normalize de más, la mutación del rojo no tiraba ni un test.
+      if (imp.modulo === abs) {
         exportaElNombre = exportaElNombre || imp.nombre === nombre;
         if (imp.nombre === nombre) out.push(rel(raiz, p));
       }

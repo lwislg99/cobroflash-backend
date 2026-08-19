@@ -28,7 +28,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { quienLoImporta } from './_alcance-desde-entradas.mjs';
+import { quienLoImporta, importacionesDe } from './_alcance-desde-entradas.mjs';
 
 // ── FUENTE SINTÉTICA PROPIA, y por qué no se reutiliza la de SCRUM-411 ──────────────────────
 // La de 411 no tiene ningún `scripts/*.mjs` que importe vía `../dist/`, que es justo la arista que
@@ -98,19 +98,46 @@ test('SCRUM-521 · 🔴 CONTROL NEGATIVO: un export que de verdad no importa nad
 
 // ── 3 · 🔴 EL QUE DECIDE: LOS DOS SEPARADORES ───────────────────────────────────────────────
 
-test('SCRUM-521 · 🔴 el MISMO caso con `/` y con `\\` da EL MISMO RESULTADO', () => {
+test('SCRUM-521 · 🔴 LAS DOS RAMAS DE `resolver` devuelven el MISMO separador', () => {
+  // ⚠️ ÉSTE es el test que muerde, y llegar a él costó un intento fallido que conviene dejar
+  // escrito: la primera versión comparaba `quienLoImporta(raiz,'src/modules/lib.ts',…)` contra
+  // `quienLoImporta(raiz,'src\\modules\\lib.ts',…)` y **no podía fallar en Windows**, porque
+  // `path.join` de Windows ya traduce `/` a `\` antes de comparar nada. Verde con el defecto
+  // puesto: exactamente el aviso del encargo — «tu máquina te dará verde igual».
+  //
+  // El invariante que SÍ decide es el de la fuente del dato: `resolver()` tiene DOS ramas —la
+  // normal y la de `dist/→src/`— y **las dos tienen que devolver el separador nativo**. Cuando no
+  // lo hacían, cualquier comparación contra un `path.join` perdía las de la rama `dist/`.
   conArbol((raiz) => {
-    // Un test que sólo corre con el separador de esta máquina da verde con el defecto puesto: es
-    // literalmente cómo este bug sobrevivió en un repo donde todas las sesiones son Windows.
+    const ajeno = path.sep === '\\' ? '/' : '\\';
+
+    const porRamaNormal = importacionesDe(path.join(raiz, 'src/app.ts')).nombradas
+      .find((i) => i.nombre === 'usado');
+    const porRamaDist = importacionesDe(path.join(raiz, 'scripts/mide.mjs')).nombradas
+      .find((i) => i.nombre === 'soloScript');
+
+    assert.ok(porRamaNormal?.modulo, '🔴 no se resolvió el import normal (`./modules/lib`).');
+    assert.ok(porRamaDist?.modulo, '🔴 no se resolvió el import por `../dist/`.');
+
+    for (const [rama, imp] of [['normal', porRamaNormal], ['dist/→src/', porRamaDist]]) {
+      assert.ok(!imp.modulo.includes(ajeno),
+        `🔴 la rama «${rama}» de \`resolver()\` devuelve el separador AJENO «${ajeno}»:\n`
+        + `     ${imp.modulo}\n\n`
+        + '  Las dos ramas tienen que salir con el separador nativo. Cuando una devolvía `/` y la\n'
+        + '  otra `\\`, quien comparase contra `path.join` perdía en silencio las aristas de esa\n'
+        + '  rama — y son las de los `scripts/*.mjs`, que es como se declara huérfano algo vivo.');
+    }
+    assert.equal(porRamaNormal.modulo.includes(path.sep), porRamaDist.modulo.includes(path.sep),
+      '🔴 las dos ramas no coinciden en el separador que usan.');
+  });
+
+  // Y la otra mitad, que es de API y no de mecanismo: preguntar con `/` o con `\` da lo mismo.
+  conArbol((raiz) => {
     for (const nombre of ['usado', 'soloScript', 'huerfano']) {
-      const conBarra = quienLoImporta(raiz, 'src/modules/lib.ts', nombre);
-      const conContrabarra = quienLoImporta(raiz, 'src\\modules\\lib.ts', nombre);
-      assert.deepEqual(conContrabarra, conBarra,
-        `🔴 «${nombre}» da resultados DISTINTOS según cómo se escriba la ruta:\n`
-        + `     'src/modules/lib.ts'  → ${JSON.stringify(conBarra)}\n`
-        + `     'src\\modules\\lib.ts' → ${JSON.stringify(conContrabarra)}\n\n`
-        + '  La respuesta no puede depender del separador con el que se pregunte. Ésa es la\n'
-        + '  dependencia que hacía que el resolvedor perdiera aristas en Windows y sólo ahí.');
+      assert.deepEqual(
+        quienLoImporta(raiz, 'src\\modules\\lib.ts', nombre),
+        quienLoImporta(raiz, 'src/modules/lib.ts', nombre),
+        `🔴 «${nombre}» da resultados distintos según cómo se escriba la ruta al preguntar.`);
     }
   });
 });
