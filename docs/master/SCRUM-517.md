@@ -146,18 +146,38 @@ los CR se cuentan en BYTES con node**. Nunca con grep.
 
 ## 7 · Fuera de carril · se reporta, no se arregla (regla 37)
 
+Los tres tienen destino asignado por el fundador el 19-ago-2026. **Ninguno se arregla aquí**, y
+queda escrito para que la próxima sesión no los vuelva a descubrir desde cero.
+
 1. **El título del caso promete más de lo que mide.** Dice «el ÁRBOL DE TRABAJO no tiene ni un
    `\r`», pero la población es sólo la que `.gitattributes` promete en LF. Medido: `.gitattributes`
    tiene **61 CR en disco** en los tres worktrees comprobados —incluido uno materializado hoy—
    porque cae bajo `* text=auto` sin `eol=lf` y no lo mira nadie. No es un defecto del árbol: es que
    el título dice «el árbol» donde el test dice «lo prometido».
+   → **Se queda en esta línea. No se arregla.**
 2. **`cobroflash-b1` y `cobroflash-b3` están ciegos hoy.** Cualquier medición que salga de esos dos
    worktrees sobre finales de línea no vale, y nada se lo dice a quien trabaje ahí salvo el suelo de
    `tests/scrum480-fin-de-linea.test.mjs` — que ahora, al menos, nombra la causa.
+   → **Operativo. Lo lleva el fundador.**
 3. **`npm ci` no ejecutó los `postinstall`** en el worktree nuevo (`npm warn allow-scripts`), así que
    el cliente de Prisma no se generó solo pese al `postinstall` declarado en `package.json`. Hubo que
    lanzar `npm run prisma:generate` a mano. Si eso mismo pasara en Railway, el motivo por el que ese
    `postinstall` existe (SCRUM-238) dejaría de cumplirse sin avisar.
+   → **Abierto como SCRUM-518.** No se toca desde aquí.
+
+## 7b · Una corrección al encargo, y a favor del encargo
+
+El encargo daba por víctima que «`npm test` no puede estar en verde en un worktree local». **No es
+universal:** en este árbol, hoy, la tanda entera salió en verde (3.674 tests, 0 fallos, 77 gateados
+en skip). Lo que no puede estar en verde es un worktree *veterano*. Es la misma conclusión del
+ticket vista desde el otro lado: el caso 4 medía **la edad del árbol**, no la salud del repositorio.
+
+Y el hallazgo que no venía en el encargo, que salió al escribir su propia comprobación: la
+cuadratura del censo, tal como la escribí primero, **era una identidad algebraica**. Con `sinCR` y
+`binarios` derivados por resta de `leidos` y `textos`, la suma cierra siempre y el assert no puede
+fallar jamás. Un assert que no puede fallar es un adorno con forma de prueba, y habría entrado en
+este mismo commit como si fuera una verificación. Por eso los dos contadores se cuentan ahora en su
+rama del bucle: sin eso, la sección 5 de esta entrada estaría citando un rojo imposible.
 
 ## 8 · Lo que no se ha tocado
 
