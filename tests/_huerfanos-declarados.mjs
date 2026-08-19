@@ -523,7 +523,7 @@ export const DECLARADOS = [
     exports: ['DELIVERED_OR_MORE', 'SENT_OR_MORE', 'WA_UTILITY_COST_ES', 'WA_WINDOW_SAFETY_MS'] },
   { modulo: 'src/modules/billing/domain/avisoBizumSinTelefono.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
-    motivo: 'SCRUM-328: el veredicto lo consume `app.ts` por `decidirAvisoBizum`; `hayQueAvisar` es el predicado de las DOS puertas que avisan, y hoy solo lo ejercita su test. Se exporta para que la regla —«no se pudo leer» tambien avisa— quede en un sitio y no repartida en comparaciones sueltas.',
+    motivo: 'SCRUM-328: el veredicto lo consume `app.ts` por `decidirAvisoBizum`; `hayQueAvisar` es el predicado de las DOS puertas que avisan, y hoy solo lo ejercita su test. Se exporta para que la regla —«no se pudo leer» tambien avisa— quede en un sitio y no repartida en comparaciones sueltas. SCRUM-515: sigue aqui a proposito. `scripts/guard-aviso-bizum.mjs` necesita el mismo predicado, pero importarlo desde `scripts/` —que ES entrada viva para los dos censos de alcance— lo sacaria de esta lista y abriria una discrepancia sin clase en el comparador de SCRUM-493. El guard lleva su propia copia ACOTADA y `tests/scrum515-aviso-bizum-render.test.mjs` la pincha contra esta funcion.',
     exports: ['hayQueAvisar'] },
   { modulo: 'src/modules/metrics/domain/metrics.service.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
