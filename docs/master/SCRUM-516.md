@@ -44,7 +44,7 @@ de los cercados y los salta; hay un control que lo fija.
 
 El delimitador es, por tanto, **`^# SCRUM-\d+` fuera de bloque cercado**, y nada más.
 
-## 3 · 🔴 EL NÚMERO QUE PIDE EL STOP 4: caen 31 entradas
+## 3 · 🔴 EL NÚMERO QUE PIDIÓ EL STOP 4: caían 31 entradas
 
 Medido **antes** de tocar el guard, contra el ancla de arriba:
 
@@ -68,19 +68,74 @@ Por motivo:
 **`SCRUM-447.md#2` es el caso del 17-ago-2026**: el sha de 7 caracteres que motivó este ticket
 sigue ahí, y hasta hoy ningún guard lo veía. Ahora está nombrado.
 
-### Lo que NO he hecho, y por qué
+### 🔴 LA DECISIÓN DEL FUNDADOR, aplicada el 19-ago-2026
 
-- **No he tocado `RE_ANCLA`.** El listón es el mismo; lo que cambia es la unidad que se mira.
-- **No he reescrito ninguna ancla.** Reconstruir una medición que nadie tomó es inventarla, y eso
-  es peor que no tenerla.
-- **No he elegido el umbral.** El censo lleva las **31 medidas**, con nombre y motivo, no un número
-  redondo. Están declaradas **en dos categorías distintas y honestas**: 2 anteriores al propio
-  SCRUM-267, y **29 escritas con el guard ya vigente pero en apéndices, donde no miraba**.
+**El principio, y va en las dos direcciones:**
 
-> ⚠️ **DECISIÓN PENDIENTE DEL FUNDADOR**, entregada con número y lista: o se eximen las 29 por
-> fecha (y se anota aquí esa decisión), o se arreglan una a una vaciando el censo. El guard queda
-> en verde mientras tanto para no bloquear a nadie, y el censo **no puede crecer**: cualquier
-> entrada nueva que no esté en él es roja.
+> Un ancla que nadie midió **NO SE ESCRIBE NUNCA**. Reconstruir contra qué `main` se midió algo hace
+> meses es fabricar una medición — justo lo que el guard existe para impedir. Vaciar el censo
+> inventando anclas sería usar la barrera para producir el daño que previene.
+>
+> Y su reverso, para que no sea la salida fácil: **lo que SÍ se puede recuperar sin inventar, SE
+> RECUPERA.** Eximir un dato que existe y sólo está mal escrito no es prudencia, es pereza con
+> coartada.
+
+**Se arreglaron 4** (el dato existía, sólo estaba mal escrito):
+
+| entrada | qué tenía | qué se hizo |
+| --- | --- | --- |
+| `397#4`, `397#5` | fecha entre backticks | se quitaron los dos caracteres. Ni sha ni hora tocados. |
+| `290#2` | `22d8e84` | → `22d8e84d33ff6ea5684163cacc33dfc3d966285d` |
+| `447#2` | `8a57b9cd` | → `8a57b9cd3689abb666d11f3faa96575af2e2da41` |
+
+Expandir un prefijo completa, no inventa — **pero sólo si resuelve a un commit real y único**, así
+que se comprobó antes de tocar nada:
+
+```
+22d8e84   --disambiguate → 1 objeto · cat-file -t → commit · ancestro de origin/main → SÍ
+8a57b9cd  --disambiguate → 1 objeto · cat-file -t → commit · ancestro de origin/main → SÍ
+```
+
+Si alguno hubiera salido ambiguo o inexistente, se habría quedado exento.
+
+**Se eximen 27, por LISTA NOMINAL** — no por umbral ni por fecha de corte:
+
+- **23 no declaran «Medido contra»**: el dato NO EXISTE, no está mal escrito.
+- **4 lo declaran sin hora** (`268#2`, `273#2`, `406#2`, `409#2`): la fecha está, la hora no se
+  tomó. **La hora del commit que las escribió no es la hora de la medición** — usarla sería
+  inventar con apariencia de precisión, que es la peor de las dos formas de inventar.
+
+**Y la propiedad que hace que esto dure:** `🔴 LAS EXENTAS SON EXACTAMENTE ÉSTAS` falla si aparece
+una entrada sin ancla que no esté en la lista. **La lista no puede crecer**: meter la número 28
+obliga a editar `HEREDADAS_SIN_ANCLA`, y eso se ve en un diff. También falla al revés — si una
+exenta deja de necesitarlo, hay que quitarla, o el censo mentiría sobre su propio número.
+
+### Los números, REMEDIDOS tras la decisión
+
+```
+ficheros ............. 227     (226 + esta entrada)
+ENTRADAS troceadas ... 318
+con ancla ............ 291     (286 + las 4 arregladas + esta entrada)
+EXENTAS ..............  27
+¿suman? .............. SÍ      291 + 27 = 318
+```
+
+> ⚠️ **Incoherencia encontrada al expandir, y se reporta sin tocarla:** el ancla de `447#2` dice
+> medido el `2026-08-11T02:20:00+02:00`, pero el commit `8a57b9cd` se creó a las `17:34:33` de ese
+> día — **quince horas después**. El sha resuelve a un commit real y único, así que se expandió
+> conforme al criterio; pero una de las dos cifras es errónea y no hay forma de saber cuál sin
+> inventar. Queda escrito aquí en vez de corregido.
+
+### Lo que NO se ha hecho, y por qué
+
+- **No se ha tocado `RE_ANCLA`.** El listón para una entrada NUEVA sigue siendo
+  `Medido contra: origin/main = <sha40> · <ISO-8601>`, completo. Lo único que cambió es la UNIDAD
+  que se mira.
+- **No se ha inventado ni una sola ancla.** De las 31, sólo se tocaron las 4 cuyo dato ya existía:
+  dos a las que sobraban dos caracteres y dos a las que les faltaban los del sha. Las 27 restantes
+  siguen sin ancla porque **no la tuvieron nunca**.
+- **No se ha eximido por umbral ni por fecha de corte.** La lista es nominal, entrada a entrada,
+  con motivo — y cerrada.
 
 ## 4 · El rojo, probado por el mecanismo
 

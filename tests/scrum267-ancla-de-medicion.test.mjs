@@ -235,67 +235,91 @@ test('SCRUM-267 · ② el barrido encuentra entradas de verdad', () => {
 // SCRUM-244 SALIO del censo el 10-ago-2026: su seccion 1(b) trae el campo `Medido contra:`, asi
 // que el fichero ya tiene ancla y el guard lo canto solo. Quedan DOS. Este apunte es el requisito
 // del propio guard: si bajar fuese silencioso, el censo declararia tres excepciones habiendo dos.
-// ── SCRUM-516 · EL CENSO PASA DE 2 FICHEROS A 31 ENTRADAS, Y EL NÚMERO ES EL MEDIDO ──────
+// ── SCRUM-516 · LAS EXENTAS, POR LISTA NOMINAL Y CERRADA ─────────────────────────────────
 //
-// 🔴 ESTO NO ES BAJAR EL LISTÓN, Y LA DISTINCIÓN IMPORTA: **`RE_ANCLA` no se ha tocado.** Lo que
-// cambia es la UNIDAD que se mira (entrada, no fichero), y al mirar por entrada aparecen 31
-// entradas que el guard nunca había mirado. No son regresiones nuevas: son las que llevaban ahí
-// desde siempre, tapadas por el ancla buena de la primera entrada de su fichero.
+// 🔴 ESTO NO ES BAJAR EL LISTÓN: **`RE_ANCLA` no se ha tocado.** Lo que cambia es la UNIDAD que se
+// mira (entrada, no fichero). Al mirar por entrada aparecieron 31 entradas que el guard nunca había
+// mirado — no son regresiones nuevas, son las que llevaban ahí desde siempre tapadas por el ancla
+// buena de la primera entrada de su fichero.
 //
-// **Medido el 19-ago-2026 contra `origin/main` = `d59d5cd97546e394bdb027dea59c9cb6ba1f587b`:**
-// 226 ficheros · 317 entradas · 286 con ancla · **31 sin ella**, así repartidas por motivo:
+// Medido el 19-ago-2026 contra `origin/main` = `d59d5cd97546e394bdb027dea59c9cb6ba1f587b`:
+// 226 ficheros · 317 entradas · 286 con ancla · 31 sin ella. **El fundador decidió qué hacer con
+// esas 31, y la decisión se aplicó: 4 arregladas, 27 exentas.**
 //
-//   · 23 — no declaran «Medido contra» en absoluto
-//   ·  4 — lo declaran SIN HORA (`SCRUM-268#2`, `273#2`, `406#2`, `409#2`)
-//   ·  2 — con el sha ABREVIADO (`SCRUM-290#2`, `447#2`)  ← el caso exacto del 17-ago-2026
-//   ·  2 — con la fecha entre backticks (`SCRUM-397#4`, `#5`)
+// ── EL PRINCIPIO QUE DECIDE, y va en las dos direcciones ─────────────────────────────────
 //
-// ⚠️ **LA DECISIÓN DE QUÉ HACER CON ESTAS 31 ES DEL FUNDADOR, y está pendiente.** Se le dio el
-// número y la lista al entregar SCRUM-516. Quedan aquí declaradas —no arregladas, no perdonadas en
-// silencio— porque la alternativa era dejar el guard en rojo y que nadie pudiera empujar nada. Si
-// decide que se arreglan, se vacía este censo entrada por entrada; si decide eximir lo histórico
-// por fecha, se anota aquí esa decisión con su fecha. **Lo que NO se hará es reescribir las
-// anclas: reconstruir una medición que nadie tomó es inventarla, y eso es peor que no tenerla.**
+//   **Un ancla que nadie midió NO SE ESCRIBE NUNCA.** Reconstruir contra qué `main` se midió algo
+//   hace meses es FABRICAR una medición — justo lo que este guard existe para impedir. Vaciar la
+//   lista inventando anclas sería usar la barrera para producir el daño que previene.
 //
-// Las dos primeras conservan su motivo original —son anteriores al propio SCRUM-267— y las otras
-// 29 tienen el suyo, que es distinto y hay que decirlo: **se escribieron con el guard ya vigente,
-// pero en apéndices, donde no miraba.** Es el hueco que SCRUM-516 cierra.
-const HEREDADO_ANTERIOR_AL_GUARD = 'anterior a SCRUM-267 — el formato existía sin el campo';
-const HEREDADO_PUNTO_CIEGO = 'apéndice escrito mientras el guard operaba por FICHERO y no lo miraba (SCRUM-516)';
+//   Y su reverso, para que no sea la salida fácil: **lo que SÍ se puede recuperar sin inventar, SE
+//   RECUPERA.** Eximir un dato que existe y sólo está mal escrito no es prudencia, es pereza con
+//   coartada.
+//
+// ── LAS 4 QUE SE ARREGLARON (ya no están en esta lista) ──────────────────────────────────
+//
+//   · `397#4` y `397#5` — la fecha iba entre backticks. El dato estaba completo y sobraban dos
+//     caracteres: se quitaron. No se tocó ni el sha ni la hora.
+//   · `290#2` (`22d8e84`) y `447#2` (`8a57b9cd`) — sha abreviado, EXPANDIDO. Completar un prefijo
+//     no inventa nada, pero sólo vale si resuelve a un commit real y único, así que se comprobó
+//     antes: `git rev-parse --disambiguate` devuelve **1 solo objeto** para cada uno, `cat-file -t`
+//     dice **commit**, y los dos son **ancestros de `origin/main`** — que es justo lo que el ancla
+//     afirmaba. Si alguno hubiera salido ambiguo o inexistente, se habría quedado exento.
+//
+// ── POR QUÉ LAS 27 RESTANTES NO SE PUEDEN ARREGLAR ──────────────────────────────────────
+//
+//   · **23 no declaran «Medido contra» en absoluto.** El dato NO EXISTE; no está mal escrito.
+//     Escribirlo ahora sería inventarlo.
+//   · **4 lo declaran SIN HORA** (`268#2`, `273#2`, `406#2`, `409#2`). La fecha está, la hora no se
+//     tomó. ⚠️ **La hora del commit que las escribió NO es la hora de la medición** — usarla sería
+//     inventar con apariencia de precisión, que es la peor de las dos formas de inventar.
+//
+// ── CÓMO SE EXIME, y esto es lo que decide si el arreglo dura ────────────────────────────
+//
+//   ⛔ NO por umbral. NO por fecha de corte. NO por una regla «las anteriores a X pasan». Un umbral
+//      es un trinquete calibrado al número cómodo, y autoriza la copia número 28.
+//   ✅ Por LISTA EXPLÍCITA, entrada a entrada, con `fichero#índice` y motivo.
+//
+//   🔴 Y LA PROPIEDAD QUE LA CONVIERTE EN TRINQUETE DE VERDAD: **esta lista NO PUEDE CRECER.** Hay
+//   un test (`las exentas son EXACTAMENTE éstas`) que falla si aparece una entrada sin ancla que no
+//   esté aquí. Añadir una sólo se puede haciendo editar este objeto, y eso se ve en el diff — que
+//   es exactamente la diferencia entre un censo que se cierra y una allowlist que crece sola.
+const SIN_DATO = 'no declara «Medido contra» — el dato NO EXISTE, no está mal escrito: escribirlo ahora sería inventarlo';
+const SIN_HORA = 'declara la fecha pero NO la hora, y la hora no se tomó — la del commit que la escribió no es la de la medición';
+const ANTERIOR_AL_GUARD = 'anterior a SCRUM-267 — el formato existía sin el campo';
 
 const HEREDADAS_SIN_ANCLA = {
-  'SCRUM-231.md#1': HEREDADO_ANTERIOR_AL_GUARD,
-  'SCRUM-264.md#1': HEREDADO_ANTERIOR_AL_GUARD,
+  'SCRUM-231.md#1': ANTERIOR_AL_GUARD,
+  'SCRUM-264.md#1': ANTERIOR_AL_GUARD,
 
-  'SCRUM-242.md#2': HEREDADO_PUNTO_CIEGO,
-  'SCRUM-242.md#3': HEREDADO_PUNTO_CIEGO,
-  'SCRUM-242.md#4': HEREDADO_PUNTO_CIEGO,
-  'SCRUM-244.md#1': HEREDADO_PUNTO_CIEGO,
-  'SCRUM-244.md#2': HEREDADO_PUNTO_CIEGO,
-  'SCRUM-244.md#3': HEREDADO_PUNTO_CIEGO,
-  'SCRUM-244.md#4': HEREDADO_PUNTO_CIEGO,
-  'SCRUM-244.md#5': HEREDADO_PUNTO_CIEGO,
-  'SCRUM-244.md#7': HEREDADO_PUNTO_CIEGO,
-  'SCRUM-268.md#2': HEREDADO_PUNTO_CIEGO,   // sin hora
-  'SCRUM-273.md#2': HEREDADO_PUNTO_CIEGO,   // sin hora
-  'SCRUM-290.md#2': HEREDADO_PUNTO_CIEGO,   // sha abreviado
-  'SCRUM-313.md#2': HEREDADO_PUNTO_CIEGO,
-  'SCRUM-328.md#2': HEREDADO_PUNTO_CIEGO,
-  'SCRUM-328.md#3': HEREDADO_PUNTO_CIEGO,
-  'SCRUM-328.md#4': HEREDADO_PUNTO_CIEGO,
-  'SCRUM-328.md#5': HEREDADO_PUNTO_CIEGO,
-  'SCRUM-397.md#2': HEREDADO_PUNTO_CIEGO,
-  'SCRUM-397.md#3': HEREDADO_PUNTO_CIEGO,
-  'SCRUM-397.md#4': HEREDADO_PUNTO_CIEGO,   // fecha entre backticks
-  'SCRUM-397.md#5': HEREDADO_PUNTO_CIEGO,   // fecha entre backticks
-  'SCRUM-406.md#2': HEREDADO_PUNTO_CIEGO,   // sin hora
-  'SCRUM-409.md#2': HEREDADO_PUNTO_CIEGO,   // sin hora
-  'SCRUM-445.md#2': HEREDADO_PUNTO_CIEGO,
-  'SCRUM-446.md#2': HEREDADO_PUNTO_CIEGO,
-  'SCRUM-446.md#3': HEREDADO_PUNTO_CIEGO,
-  'SCRUM-447.md#2': HEREDADO_PUNTO_CIEGO,   // sha abreviado — el del 17-ago-2026
-  'SCRUM-467.md#2': HEREDADO_PUNTO_CIEGO,
-  'SCRUM-485.md#2': HEREDADO_PUNTO_CIEGO,
+  // Sin «Medido contra» (23 con las dos de arriba incluidas más abajo por fichero)
+  'SCRUM-242.md#2': SIN_DATO,
+  'SCRUM-242.md#3': SIN_DATO,
+  'SCRUM-242.md#4': SIN_DATO,
+  'SCRUM-244.md#1': SIN_DATO,
+  'SCRUM-244.md#2': SIN_DATO,
+  'SCRUM-244.md#3': SIN_DATO,
+  'SCRUM-244.md#4': SIN_DATO,
+  'SCRUM-244.md#5': SIN_DATO,
+  'SCRUM-244.md#7': SIN_DATO,
+  'SCRUM-313.md#2': SIN_DATO,
+  'SCRUM-328.md#2': SIN_DATO,
+  'SCRUM-328.md#3': SIN_DATO,
+  'SCRUM-328.md#4': SIN_DATO,
+  'SCRUM-328.md#5': SIN_DATO,
+  'SCRUM-397.md#2': SIN_DATO,
+  'SCRUM-397.md#3': SIN_DATO,
+  'SCRUM-445.md#2': SIN_DATO,
+  'SCRUM-446.md#2': SIN_DATO,
+  'SCRUM-446.md#3': SIN_DATO,
+  'SCRUM-467.md#2': SIN_DATO,
+  'SCRUM-485.md#2': SIN_DATO,
+
+  // Con fecha pero sin hora
+  'SCRUM-268.md#2': SIN_HORA,
+  'SCRUM-273.md#2': SIN_HORA,
+  'SCRUM-406.md#2': SIN_HORA,
+  'SCRUM-409.md#2': SIN_HORA,
 };
 
 // ── EL GUARD ─────────────────────────────────────────────────────────────────────────────
@@ -380,6 +404,35 @@ test('SCRUM-267 · 🔴 SUELO: el troceador VE entradas, y sabe saltar los bloqu
     + 'un trozo que nadie escribió.');
 });
 
+test('SCRUM-267 · 🔴 LAS EXENTAS SON EXACTAMENTE ÉSTAS: la lista no puede crecer', () => {
+  // 🔴 EL TRINQUETE. Sin esto, la lista de exentas es una allowlist: la entrada 28 se añade sola
+  // el día que alguien escriba un apéndice sin ancla y le moleste el rojo.
+  //
+  // La decisión del fundador (19-ago-2026) fue eximir 27 POR LISTA NOMINAL, no por umbral ni por
+  // fecha de corte: «un umbral es un trinquete calibrado al número cómodo, y autoriza la copia
+  // número 28». Este test es lo que hace que esa decisión signifique algo — para meter una entrada
+  // más hay que EDITAR `HEREDADAS_SIN_ANCLA`, y eso se ve en el diff.
+  const sinAncla = entradasTroceadas().filter((e) => motivoSinAncla(e.cuerpo)).map((e) => e.clave);
+  const exentas = Object.keys(HEREDADAS_SIN_ANCLA);
+
+  const nuevas = sinAncla.filter((c) => !exentas.includes(c));
+  assert.deepEqual(nuevas, [],
+    '🔴 HAY ENTRADAS SIN ANCLA QUE NO ESTÁN EN LA LISTA DE EXENTAS:\n    ' + nuevas.join('\n    ') +
+    '\n\n  La lista de exentas está CERRADA desde el 19-ago-2026. No se amplía: se arregla la\n' +
+    '  entrada nueva poniéndole su ancla, que para una entrada NUEVA siempre se puede porque\n' +
+    '  la mides tú al escribirla.\n\n' +
+    '  Y no vale «es igual que las otras 27»: aquéllas están exentas porque su dato NO EXISTE y\n' +
+    '  reconstruirlo sería inventarlo. La tuya no tiene ese problema — todavía no la has medido.');
+
+  // Y al revés: una exenta que ya no lo necesita tiene que salir, o el censo miente sobre sí mismo.
+  const sobran = exentas.filter((c) => !sinAncla.includes(c));
+  assert.deepEqual(sobran, [],
+    '🔴 LA LISTA DE EXENTAS NOMBRA ENTRADAS QUE YA NO LO NECESITAN:\n    ' + sobran.join('\n    ') +
+    '\n\n  O tienen ya su ancla, o han dejado de existir. En los dos casos hay que quitarlas de\n' +
+    '  `HEREDADAS_SIN_ANCLA`: un censo que se describe a sí mismo mal deja de medir nada, y el\n' +
+    '  número que declara —27— dejaría de ser comprobable.');
+});
+
 test('SCRUM-267 · 🔴 los números CUADRAN: con ancla + sin ancla + eximidas = el total', () => {
   // Un censo cuyas partes no suman no es un censo. Si el troceador perdiera entradas por el
   // camino, los tres números seguirían siendo plausibles por separado.
@@ -395,6 +448,19 @@ test('SCRUM-267 · 🔴 los números CUADRAN: con ancla + sin ancla + eximidas =
     '🔴 «eximidas» + «acusadas» no suman las que no llevan ancla.');
   assert.equal(acusadas.length, 0,
     `🔴 quedan ${acusadas.length} entradas acusadas y el guard de arriba debería haberlas cazado.`);
+
+  // 🔴 EL NÚMERO DECLARADO, COMPROBADO — no derivado por resta. Tras la decisión del 19-ago-2026
+  // (4 arregladas, 27 exentas) el censo tiene que valer 27 y CUADRAR con el total troceado. Si
+  // alguien arregla otra entrada, esto cae y le obliga a bajar el número aquí: una mejora que pasa
+  // desapercibida es cómo un censo acaba declarando 27 cuando quedan 20.
+  assert.equal(eximidas.length, 27,
+    `🔴 el censo declara 27 exentas y se han medido ${eximidas.length}.\n\n`
+    + '  Si has ARREGLADO una entrada, enhorabuena: bájalo aquí y quítala de '
+    + '`HEREDADAS_SIN_ANCLA`.\n  Si has AÑADIDO una, no es el sitio — una entrada nueva se mide '
+    + 'al escribirla.');
+  assert.equal(conAncla.length + eximidas.length, todas.length,
+    '🔴 «con ancla» + «exentas» no suman el total de entradas troceadas. O el troceador pierde '
+    + 'entradas, o hay una acusada suelta que nadie está viendo.');
 });
 
 test('SCRUM-267 · el censo heredado no crece, y si BAJA hay que anotarlo', () => {

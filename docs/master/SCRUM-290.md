@@ -141,7 +141,7 @@ Ficheros: `src/modules/jobs/domain/albaranAFactura.ts` (nuevo — el criterio) �
 
 # SCRUM-290 · SEGUNDA ENTREGA (6-ago-2026) · El endpoint, y por qué el botón SIGUE sin pintarse
 
-**Medido contra:** `origin/main` = `22d8e84` · 2026-08-06T15:20:00+02:00
+**Medido contra:** `origin/main` = `22d8e84d33ff6ea5684163cacc33dfc3d966285d` · 2026-08-06T15:20:00+02:00
 **Tanda:** 2004 tests, 1937 pass, 0 fail, 67 gateados a staging
 
 ## `POST /admin/albaranes/:id/convertir-en-factura`
