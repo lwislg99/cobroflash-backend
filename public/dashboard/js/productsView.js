@@ -608,7 +608,7 @@ function renderProductsView(container) {
         // de los errores SÍ es nuevo → marcador [PENDIENTE microcopy oficial] hasta que lo apruebe el
         // fundador (guard: tests/scrum339-microcopy-import.test.mjs). Antes las filas inválidas y los
         // duplicados normales no se veían: el recuento decía «0 y 0».
-        const errNota = (data.errors ?? 0) > 0 ? ` · [PENDIENTE microcopy oficial]: ${data.errors}` : '';
+        const errNota = (data.errors ?? 0) > 0 ? ` · Con errores: ${data.errors}` : '';
         setAlert("success", `CSV importado. Insertados: ${data.created ?? 0} · Duplicados omitidos: ${data.skipped ?? 0}${errNota}`);
         await refresh();
       } catch (err) {

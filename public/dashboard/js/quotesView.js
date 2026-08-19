@@ -340,16 +340,15 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   // `leftCard.appendChild` dentro de una función y el censo dejaría de ver el formulario —
   // habría que retocar el censo para que aceptase justo esta forma, que es medir contra lo que
   // uno acaba de escribir. Se paga la repetición y el censo sigue siendo independiente.
-  const TITULO_PENDIENTE = function (borrador) {
-    return "[PENDIENTE microcopy oficial] " + borrador;
-  };
+  // `TITULO_PENDIENTE` se BORRA el 17-ago-2026: el fundador aprobó los cuatro títulos de bloque y
+  // la fábrica se quedó sin consumidores. Un marcador sin usar es el que alguien vuelve a enchufar.
 
   const blockClient = document.createElement("div");
   blockClient.className = "quote-block";
   leftCard.appendChild(blockClient);
   const blockClientTitle = document.createElement("h3");
   blockClientTitle.className = "quote-block-title";
-  blockClientTitle.textContent = TITULO_PENDIENTE("1. Cliente");
+  blockClientTitle.textContent = "1. Cliente";
   blockClient.appendChild(blockClientTitle);
 
   const blockLines = document.createElement("div");
@@ -357,7 +356,7 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   leftCard.appendChild(blockLines);
   const blockLinesTitle = document.createElement("h3");
   blockLinesTitle.className = "quote-block-title";
-  blockLinesTitle.textContent = TITULO_PENDIENTE("2. Líneas");
+  blockLinesTitle.textContent = "2. Líneas";
   blockLines.appendChild(blockLinesTitle);
 
   const blockConditions = document.createElement("div");
@@ -365,7 +364,7 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   leftCard.appendChild(blockConditions);
   const blockConditionsTitle = document.createElement("h3");
   blockConditionsTitle.className = "quote-block-title";
-  blockConditionsTitle.textContent = TITULO_PENDIENTE("3. Condiciones");
+  blockConditionsTitle.textContent = "3. Condiciones";
   blockConditions.appendChild(blockConditionsTitle);
 
   const blockDelivery = document.createElement("div");
@@ -373,7 +372,7 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   leftCard.appendChild(blockDelivery);
   const blockDeliveryTitle = document.createElement("h3");
   blockDeliveryTitle.className = "quote-block-title";
-  blockDeliveryTitle.textContent = TITULO_PENDIENTE("4. Envío");
+  blockDeliveryTitle.textContent = "4. Envío";
   blockDelivery.appendChild(blockDeliveryTitle);
 
   const clientFormRow = document.createElement("div");

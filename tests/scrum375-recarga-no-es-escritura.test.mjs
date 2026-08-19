@@ -102,6 +102,12 @@ test('SCRUM-375 · ③ el `reload()` NO vive dentro del try del POST', () => {
 test('SCRUM-375 · la microcopy nueva va con marcador; la firmada en SCRUM-373 no se toca', () => {
   assert.equal(COPY_BULK_PAGADAS.escrituraFallida, 'No se han podido marcar como pagadas. Vuelve a intentarlo.',
     '🔴 se ha reescrito un texto FIRMADO en SCRUM-373: eso es decisión del asesor');
-  assert.ok(COPY_BULK_PAGADAS.recargaFallida.startsWith('[PENDIENTE microcopy oficial]'),
-    '🔴 el aviso de la recarga es microcopy NUEVA y sin aprobar: va con marcador hasta que se firme');
+  // 17-ago-2026 · FIRMADO. Lo que este test defiende sigue igual y por eso se comprueba el TEXTO y
+  // no la ausencia de marcador: los DOS avisos tienen que seguir diciendo cosas distintas — uno es
+  // «no se hizo» y el otro «se hizo pero no lo ves», y confundirlos es el defecto del ticket.
+  assert.equal(COPY_BULK_PAGADAS.recargaFallida,
+    'Se han marcado como pagadas, pero la lista no se ha podido actualizar. Recárgala para verla al día.',
+    '🔴 se ha reescrito el aviso de recarga, que está FIRMADO desde el 17-ago-2026');
+  assert.notEqual(COPY_BULK_PAGADAS.recargaFallida, COPY_BULK_PAGADAS.escrituraFallida,
+    '🔴 los dos avisos dicen lo mismo: se pierde la diferencia entre «no se hizo» y «se hizo pero no lo ves».');
 });

@@ -2412,10 +2412,15 @@ function openFacturarParcialSheet(alb, ctx) {
   // `const { refresh, setStatus } = ctx;` LITERAL. Añadir `customer` a esa línea la rompería.
   //
   // ⚠️ REGLA 26 · ni una palabra sobre el registro, VeriFactu, la AEAT o el calendario: esa
-  // pregunta se responde SOLO con el guion H2. Todo texto sale con marcador (regla 30).
-  // Procedencia: SCRUM-292.
+  // pregunta se responde SOLO con el guion H2. Procedencia: SCRUM-292.
+  //
+  // 17-ago-2026: los cinco textos de este bloque están APROBADOS y `MARCA_A1` se BORRA. La regla 26
+  // sigue exactamente igual de viva: ninguno de ellos nombra el registro, VeriFactu, la AEAT ni el
+  // calendario — hablan del NIF del cliente y de si falta algo para emitir, y de nada más.
+  //
+  // ⚠️ Y la línea de estado ya NO pinta lo mismo en sus dos ramas: ése era el defecto. Conforme y
+  // no conforme dicen cosas distintas, que es para lo que existe la caja.
   const clienteA1 = (ctx && ctx.customer) || {};
-  const MARCA_A1 = (typeof window !== 'undefined' && window.MICROCOPY_PENDIENTE) || '[PENDIENTE microcopy oficial]';
   const revisionInicial = revisionPreEmision(clienteA1);
 
   const cajaRevision = document.createElement('div');
@@ -2429,14 +2434,14 @@ function openFacturarParcialSheet(alb, ctx) {
     // ver el texto y pasa en verde sin comprobar nada. Procedencia: SCRUM-292.
     const linea = document.createElement('p');
     linea.className = 'preemision__linea';
-    linea.textContent = revisionInicial.decidible ? MARCA_A1 : MARCA_A1;
+    linea.textContent = revisionInicial.decidible ? 'Todo listo para emitir.' : 'Revisa lo que falta antes de emitir.';
     cajaRevision.appendChild(linea);
 
     if (revisionInicial.faltaNif) {
       const lbl = document.createElement('label');
       lbl.className = 'preemision__label';
       lbl.setAttribute('for', 'preemision-nif');
-      lbl.textContent = MARCA_A1; // procedencia: SCRUM-292
+      lbl.textContent = 'NIF del cliente (se guardará en su ficha)'; // procedencia: SCRUM-292
       const inp = document.createElement('input');
       inp.id = 'preemision-nif';
       inp.className = 'input';
@@ -2458,7 +2463,7 @@ function openFacturarParcialSheet(alb, ctx) {
       const campo = document.getElementById('preemision-nif');
       const nif = String((campo && campo.value) || '').trim();
       if (!nif) {
-        err.textContent = MARCA_A1; // procedencia: SCRUM-292
+        err.textContent = 'Escribe el NIF del cliente. Sin él no se puede emitir la factura.'; // procedencia: SCRUM-292
         err.style.display = 'block';
         return;
       }
@@ -2469,7 +2474,7 @@ function openFacturarParcialSheet(alb, ctx) {
         clienteA1.taxId = nif; // en memoria, para que la revisión deje de disparar
         revisionInicial.faltaNif = false;
       } catch {
-        err.textContent = MARCA_A1; // procedencia: SCRUM-292
+        err.textContent = 'No hemos podido guardar el NIF en la ficha del cliente. Inténtalo otra vez.'; // procedencia: SCRUM-292
         err.style.display = 'block';
         return;
       }

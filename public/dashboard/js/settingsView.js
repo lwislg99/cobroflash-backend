@@ -288,7 +288,7 @@ function renderSettingsView(container) {
     const criterioWrapper = document.createElement("div");
     criterioWrapper.className = "field";
     const criterioLabel = document.createElement("label");
-    criterioLabel.textContent = "[PENDIENTE microcopy oficial · criterio de caja]";
+    criterioLabel.textContent = "Criterio de caja";
     criterioLabel.htmlFor = "merchant-criterio-caja";
     const fCriterioCaja = document.createElement("select");
     fCriterioCaja.id = "merchant-criterio-caja";
@@ -296,9 +296,9 @@ function renderSettingsView(container) {
     fCriterioCaja.className = "input";
     fCriterioCaja.style.minHeight = "44px"; // AB6
     fCriterioCaja.innerHTML =
-      '<option value="">[PENDIENTE microcopy oficial · no consta]</option>' +
-      '<option value="si">[PENDIENTE microcopy oficial · si]</option>' +
-      '<option value="no">[PENDIENTE microcopy oficial · no]</option>';
+      '<option value="">No consta</option>' +
+      '<option value="si">Sí, estoy acogido</option>' +
+      '<option value="no">No estoy acogido</option>';
     criterioWrapper.appendChild(criterioLabel);
     criterioWrapper.appendChild(fCriterioCaja);
     const fWhatsappPhone = createField(
@@ -367,9 +367,11 @@ function renderSettingsView(container) {
     //
     // La primera opción es «no consta» y NO es un tipo: es la ausencia de declaración, que
     // es un estado distinto de «declaro que no retengo». Los tres viajan por separado.
-    // Regla 30: estos rótulos NO están aprobados. Los del CUBO sí (vienen del dominio) y por
-    // eso van sin marca; los dos de aquí son redacción nueva y la llevan.
-    const MARCA_RETENCION = "[PENDIENTE microcopy oficial]";
+    // 17-ago-2026: los tres rótulos de aquí están APROBADOS y `MARCA_RETENCION` se BORRA. Los del
+    // CUBO siguen sin marca por el mismo motivo de siempre: vienen del dominio, y ahí un «15 %» es
+    // el dato, no microcopy. «Sin indicar» pasó a «No consta» al aprobarse, para que los TRES
+    // selectores de estado fiscal —recargo, criterio de caja y retención— digan la misma terna con
+    // las mismas palabras: si uno dijera otra cosa, se leería que son estados distintos.
     const selRetencion = document.createElement("select");
     selRetencion.id = "retencion-irpf-tipo";
     // SCRUM-293 (③a-bis) · EL `.name` NO ES DECORACIÓN: es cómo un `<select>` construido a mano
@@ -384,8 +386,8 @@ function renderSettingsView(container) {
     const RET_NO_CONSTA = "";      // no lo ha declarado
     const RET_NO_RETIENE = "no";   // lo ha declarado: no retiene
     [
-      { value: RET_NO_CONSTA, texto: MARCA_RETENCION + " Sin indicar" },
-      { value: RET_NO_RETIENE, texto: MARCA_RETENCION + " No aplico retención" },
+      { value: RET_NO_CONSTA, texto: "No consta" },
+      { value: RET_NO_RETIENE, texto: "No aplico retención" },
     ].forEach(function (o) {
       const op = document.createElement("option");
       op.value = o.value; op.textContent = o.texto;
@@ -402,7 +404,7 @@ function renderSettingsView(container) {
     const wrapRetencion = document.createElement("div");
     wrapRetencion.className = "form-group";
     const labRetencion = document.createElement("label");
-    labRetencion.textContent = MARCA_RETENCION + " Retención de IRPF";
+    labRetencion.textContent = "Retención de IRPF";
     labRetencion.htmlFor = selRetencion.id;
     wrapRetencion.appendChild(labRetencion);
     wrapRetencion.appendChild(selRetencion);
@@ -557,8 +559,8 @@ function renderSettingsView(container) {
       avisoBizum.setAttribute("role", "status");
       avisoBizum.style.cssText = "font-size:12.5px;font-weight:600;color:var(--warn,#b45309);margin:2px 0 6px";
       avisoBizum.textContent = estadoBizum === "falta_telefono"
-        ? "[PENDIENTE microcopy oficial · sin este móvil tu cliente no ve la opción Bizum]"
-        : "[PENDIENTE microcopy oficial · no hemos podido comprobar tu móvil de Bizum]";
+        ? "Sin este móvil, tu cliente no ve la opción de Bizum."
+        : "No hemos podido comprobar tu móvil de Bizum. Revísalo antes de cobrar por ahí.";
       fBizumPhone.wrapper.appendChild(avisoBizum);
     }
 

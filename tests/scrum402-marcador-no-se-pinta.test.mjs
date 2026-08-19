@@ -69,12 +69,14 @@ const CENSO = Object.freeze({
   // provisional por descuido: decirle en pantalla a que REGIMEN FISCAL pertenece su cliente es
   // asesorarle, y eso es dictamen del asesor, no producto (regla 30). El dato se pide; no se
   // explica. Se apaga el dia que el fundador firme los cuatro textos.
-  'customersView.js': 2,
+  // 🔴 17-ago-2026 (tanda B) · SALE DEL CENSO: el fundador aprobó la etiqueta del recargo de equivalencia y sus tres opciones. Entrada BORRADA, no
+  // puesta a 0 (SCRUM-424 / SCRUM-405): `censoActual()` solo lista ficheros CON marcadores.
   // SCRUM-421 · A CONCIENCIA: el registro de acciones del presupuesto trae 12 rotulos, TODOS sin
   // aprobar (regla 30). El marcador se ve EN PANTALLA a proposito: es la unica forma de que nadie
   // encienda por descuido texto que el fundador no ha firmado. Se cuenta 1: los doce salen de una
   // sola constante `MARCA_MICROCOPY`, asi que aprobar el copy los apaga todos de golpe.
-  'quoteActionsRegistry.js': 1,
+  // 🔴 17-ago-2026 (tanda B) · SALE DEL CENSO: el fundador aprobó los doce rótulos de acción del presupuesto (esa marca pintaba DOCE). Entrada BORRADA, no
+  // puesta a 0 (SCRUM-424 / SCRUM-405): `censoActual()` solo lista ficheros CON marcadores.
   // SCRUM-500 (12-ago-2026) · SUBIDA A CONCIENCIA: la casilla «Suplido» del editor de líneas sale
   // con marcador en su rotulo, en su aviso y en el resumen del disparador. Y el aviso NO es
   // decorativo: es el texto que evita un ERROR FISCAL en el segundo exacto en que se comete —
@@ -112,8 +114,10 @@ const CENSO = Object.freeze({
   // SCRUM-460 (11-ago-2026) · 3 → 1: el asesor APROBÓ los dos textos, con un retoque en el
   // primero —«no está descargado» en vez de «no se descargó»: no falló nada, la política
   // simplemente no lo eligió—. Un trinquete que no se aprieta cuando puede deja de serlo.
-  'albaranDetailView.js': 1,
-  'signaturePad.js': 1,
+  // 🔴 17-ago-2026 (tanda B) · SALE DEL CENSO: el fundador aprobó el aviso de firma rechazada. Entrada BORRADA, no
+  // puesta a 0 (SCRUM-424 / SCRUM-405): `censoActual()` solo lista ficheros CON marcadores.
+  // 🔴 17-ago-2026 (tanda B) · SALE DEL CENSO: el fundador aprobó el aviso de firma no enviada. Entrada BORRADA, no
+  // puesta a 0 (SCRUM-424 / SCRUM-405): `censoActual()` solo lista ficheros CON marcadores.
   // SCRUM-285 (10-ago-2026): `cobrosView.js` ENTRÓ y SALIÓ del censo el mismo día. La pantalla de
   // Cobros nació con nueve ranuras marcadas —no había copy aprobada para ninguna— y el asesor las
   // aprobó todas: los ocho textos primero, y las seis cabeceras después al partir en dos la quinta
@@ -135,7 +139,10 @@ const CENSO = Object.freeze({
   // 11 → 5 el 10-ago-2026: SCRUM-244 trajo los ocho textos APROBADOS de la card de portabilidad
   // y del diálogo de descarga. Los 5 que quedan son de la card del LIBRO DE EMITIDAS (SCRUM-325),
   // que nació en `main` después de esa aprobación: nadie ha aprobado su copy todavía.
-  'exportView.js': 5,
+  // 🔴 17-ago-2026 (tanda B) · 5 → 1. Aprobados cuatro: el estado del botón, el vacío del periodo,
+  // «Descarga lista.» y el error de descarga. Queda UNO y con su motivo: el quinto marcador de este
+  // fichero es de la tarjeta de portabilidad, que NO estaba en la lista aprobada.
+  'exportView.js': 1,
   // 🔴 17-ago-2026 · `invoiceDetailView.js` SALE DEL CENSO (tenía 9). El fundador aprobó los ocho
   // rótulos de acción, y el noveno era `MARCA_MICRO`, una constante que ya no consumía nadie y que
   // se borra con ellos. Eran los ocho botones que un profesional veía sin saber qué hacían: la peor
@@ -144,8 +151,10 @@ const CENSO = Object.freeze({
   // La entrada se BORRA en vez de bajar a 0 — lo dejaron escrito SCRUM-424 y SCRUM-405 aquí mismo:
   // `censoActual()` solo lista ficheros CON marcadores, así que un 0 sería una bajada permanente
   // sin anotar. Y salir del censo NO saca de la vigilancia: lo fija R4b.
-  'invoicesView.js': 2,
-  'jobDetailView.js': 1,
+  // 🔴 17-ago-2026 (tanda B) · SALE DEL CENSO: el fundador aprobó el aviso de recarga y el botón «+ Nueva factura». Entrada BORRADA, no
+  // puesta a 0 (SCRUM-424 / SCRUM-405): `censoActual()` solo lista ficheros CON marcadores.
+  // 🔴 17-ago-2026 (tanda B) · SALE DEL CENSO: el fundador aprobó los cinco textos de la revisión previa (esa marca pintaba CINCO). Entrada BORRADA, no
+  // puesta a 0 (SCRUM-424 / SCRUM-405): `censoActual()` solo lista ficheros CON marcadores.
   // SCRUM-424 (−1, 10-ago-2026): `jobRailBlocks.js` SALE del censo. Su único marcador era el
   // rótulo del enlace a mapa del bloque DÓNDE, y el asesor aprobó «Abrir en mapa» (regla 30). El
   // trinquete APRIETA: la entrada se borra en vez de bajar a 0 — `censoActual()` solo lista
@@ -159,8 +168,10 @@ const CENSO = Object.freeze({
   // SCRUM-483 dejó escrito que se partiría «el día que se aprueben, partiendo y rellenando en el
   // mismo commit». Ese día es hoy, así que `NF_PENDIENTE` se borra. Entrada BORRADA, no puesta a 0.
   'patronDetalleAcciones.js': 1,
-  'productsView.js': 1,
-  'quotesView.js': 1,
+  // 🔴 17-ago-2026 (tanda B) · SALE DEL CENSO: el fundador aprobó «Con errores» del resumen de importación de CSV. Entrada BORRADA, no
+  // puesta a 0 (SCRUM-424 / SCRUM-405): `censoActual()` solo lista ficheros CON marcadores.
+  // 🔴 17-ago-2026 (tanda B) · SALE DEL CENSO: el fundador aprobó los cuatro títulos de bloque del formulario (esa marca pintaba CUATRO). Entrada BORRADA, no
+  // puesta a 0 (SCRUM-424 / SCRUM-405): `censoActual()` solo lista ficheros CON marcadores.
   'semaforoFiscal.js': 1,
   'settingsSubmenus.js': 1,
   // SCRUM-294 (fase C) · 1 -> 5: el criterio de caja entra en Configuracion con marcador A
@@ -191,7 +202,11 @@ const CENSO = Object.freeze({
   // la marca en una constante (`MARCA_RETENCION`) que luego concatena tres veces. Queda anotado
   // porque significa que este censo mide marcas escritas, no superficies marcadas, y quien lea un
   // «+1» aquí no debe deducir «un rótulo».
-  'settingsView.js': 8,
+  // 🔴 17-ago-2026 (tanda B) · 8 → 1. Aprobados: criterio de caja (etiqueta + 3 opciones), los tres
+  // de retención de IRPF y los dos avisos de Bizum. QUEDA UNO, y se queda A PROPÓSITO:
+  // `PENDIENTE_MODO_EMISION` — su rama `receipt` toca terreno de la regla 26 y esa pregunta se
+  // responde SOLO con el guion H2, así que no se aprueba de refilón con el resto de la pantalla.
+  'settingsView.js': 1,
 });
 
 /** Marcadores que viven en un LITERAL (los que pueden pintarse). Los comentarios no son literales. */

@@ -15,7 +15,7 @@ const COPY_BULK_PAGADAS = {
   // FIRMADO por el asesor en SCRUM-373. Solo se dice cuando la ESCRITURA falló.
   escrituraFallida: 'No se han podido marcar como pagadas. Vuelve a intentarlo.',
   // SIN APROBAR (regla 30): microcopy nueva de SCRUM-375, va con marcador hasta que se firme.
-  recargaFallida: '[PENDIENTE microcopy oficial] Se han marcado como pagadas, pero la lista no se ha podido actualizar. Recárgala para verla al día.',
+  recargaFallida: 'Se han marcado como pagadas, pero la lista no se ha podido actualizar. Recárgala para verla al día.',
 };
 
 /** El plural de verdad, sin `(s)`: cambia el sustantivo y el participio. */
@@ -169,7 +169,7 @@ async function fetchInvoices(options = {}) {
       // con el guion H2, y un texto que explica mal una obligación fiscal no es feo, es peligroso.
       nuevaFacturaBtn.textContent = window.appDocumentoSuelto === 'justificante'
         ? '+ Nuevo justificante'
-        : '[PENDIENTE microcopy oficial]';
+        : '+ Nueva factura';
       nuevaFacturaBtn.addEventListener('click', () => {
         openNuevaFacturaModal(() => renderInvoicesView(container));
       });

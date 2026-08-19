@@ -154,8 +154,24 @@ test('SCRUM-421 · cada fila cubre TODOS los estados (la ranura no queda vacía 
     + '\n\n  Una celda ausente no es «oculta»: es una decisión que nadie tomó.');
 });
 
-test('SCRUM-421 · los rótulos siguen marcados como microcopy sin aprobar (regla 30)', () => {
+test('SCRUM-421 · los doce rótulos son EXACTAMENTE los aprobados (regla 30)', () => {
+  // 17-ago-2026 · APROBADOS los doce. Este guard exigía el marcador «se aprueban antes de
+  // encenderse»; ya están aprobados, así que pasa a exigir el TEXTO — no se borra, porque entonces
+  // los doce rótulos se quedarían sin vigilar el día que por fin tienen texto.
+  //
+  // Tres cambiaron al aprobarse, y el criterio se conserva porque vale para el siguiente registro:
+  // MISMA ACCIÓN, MISMAS PALABRAS que en el detalle de factura.
   const src = fs.readFileSync(REGISTRO, 'utf8');
-  assert.match(src, /PENDIENTE microcopy oficial/,
-    '🔴 los rótulos han perdido el marcador de regla 30: se aprueban antes de encenderse');
+  const APROBADOS = {
+    btnEnviarAprobacion: 'Enviar a aprobación', btnEnviar: 'Enviar al cliente', btnAprobar: 'Aprobar',
+    btnRecordar: 'Enviar recordatorio', btnCrearTrabajo: 'Crear trabajo', btnDuplicar: 'Duplicar',
+    btnPdf: 'Descargar PDF', btnEditarLineas: 'Editar líneas', btnWhatsApp: 'Enviar por WhatsApp',
+    btnVerCliente: 'Ver cliente', btnMarcarRechazado: 'Marcar como rechazado', btnBorrar: 'Borrar',
+  };
+  for (const [id, texto] of Object.entries(APROBADOS)) {
+    assert.ok(src.includes(id + ':') && src.includes("'" + texto + "'"),
+      `🔴 el rótulo de \`${id}\` no es el aprobado («${texto}»). Un renombre es microcopy nueva.`);
+  }
+  assert.ok(!/PENDIENTE microcopy oficial/.test(src),
+    '🔴 queda un marcador en el registro: o hay una acción nueva sin aprobar, o se ha reintroducido.');
 });

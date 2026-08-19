@@ -57,22 +57,24 @@ const QUOTE_ACTION_REGISTRY = [
 // de que el asesor los firmara. El marcador NO es un recordatorio para el equipo: **se ve en
 // pantalla a propósito**, para que nadie encienda por descuido texto que nadie ha aprobado.
 //
-// El texto entre paréntesis es una PROPUESTA. Lo aprueba el fundador y entonces se quitan las
-// marcas — no antes.
-const MARCA_MICROCOPY = '[PENDIENTE microcopy oficial]';
+// 17-ago-2026: el fundador APROBÓ los doce rótulos, así que se quitaron las marcas y
+// `MARCA_MICROCOPY` se BORRA — dejarla sin consumidores es dejar a mano lo que alguien reenchufa.
+// Tres cambiaron al aprobarse, y el motivo se conserva porque vale para el siguiente registro de
+// acciones: MISMA ACCIÓN, MISMAS PALABRAS que en el detalle de factura. «PDF» pasó a «Descargar
+// PDF», «WhatsApp» a «Enviar por WhatsApp» y «Recordar al cliente» a «Enviar recordatorio».
 const QUOTE_ACTION_ROTULOS = {
-  btnEnviarAprobacion: MARCA_MICROCOPY + ' Enviar a aprobación',
-  btnEnviar:           MARCA_MICROCOPY + ' Enviar al cliente',
-  btnAprobar:          MARCA_MICROCOPY + ' Aprobar',
-  btnRecordar:         MARCA_MICROCOPY + ' Recordar al cliente',
-  btnCrearTrabajo:     MARCA_MICROCOPY + ' Crear trabajo',
-  btnDuplicar:         MARCA_MICROCOPY + ' Duplicar',
-  btnPdf:              MARCA_MICROCOPY + ' PDF',
-  btnEditarLineas:     MARCA_MICROCOPY + ' Editar líneas',
-  btnWhatsApp:         MARCA_MICROCOPY + ' WhatsApp',
-  btnVerCliente:       MARCA_MICROCOPY + ' Ver cliente',
-  btnMarcarRechazado:  MARCA_MICROCOPY + ' Marcar como rechazado',
-  btnBorrar:           MARCA_MICROCOPY + ' Borrar',
+  btnEnviarAprobacion: 'Enviar a aprobación',
+  btnEnviar:           'Enviar al cliente',
+  btnAprobar:          'Aprobar',
+  btnRecordar:         'Enviar recordatorio',
+  btnCrearTrabajo:     'Crear trabajo',
+  btnDuplicar:         'Duplicar',
+  btnPdf:              'Descargar PDF',
+  btnEditarLineas:     'Editar líneas',
+  btnWhatsApp:         'Enviar por WhatsApp',
+  btnVerCliente:       'Ver cliente',
+  btnMarcarRechazado:  'Marcar como rechazado',
+  btnBorrar:           'Borrar',
 };
 
 if (typeof window !== 'undefined') {
