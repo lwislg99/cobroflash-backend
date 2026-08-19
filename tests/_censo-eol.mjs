@@ -108,6 +108,13 @@ export function censoArbolDeTrabajo(raiz, extensiones) {
   const conCR = [];
   let textos = 0;
   let leidos = 0;
+  // 🔴 SCRUM-517: `binarios` y `sinCR` se CUENTAN en su rama del bucle, no se derivan restando.
+  // Derivados (`leidos - textos`) la suma cerraría siempre y la comprobación de cuadratura del
+  // test sería una identidad algebraica disfrazada de assert: verde pasara lo que pasara. Como
+  // contadores propios, el día que alguien añada un `continue` que no incremente nada, la suma
+  // deja de cerrar y el censo lo dice en vez de publicar un total que no es de nadie.
+  let binarios = 0;
+  let sinCR = 0;
   for (const ruta of rutas) {
     // La población es EXACTAMENTE la que `.gitattributes` promete tener en LF. Ni más —acusaría a
     // ficheros que nadie dijo que fueran a estar en LF— ni menos. Y la lista se DERIVA del propio
@@ -117,11 +124,11 @@ export function censoArbolDeTrabajo(raiz, extensiones) {
     try { cuerpo = fs.readFileSync(path.join(raiz, ruta)); } catch { continue; } // no está en disco
     leidos += 1;
     const c = clasificarBlob(cuerpo);
-    if (!c.texto) continue;
+    if (!c.texto) { binarios += 1; continue; }
     textos += 1;
-    if (c.crlf || c.crSuelto) conCR.push({ ruta, ...c });
+    if (c.crlf || c.crSuelto) conCR.push({ ruta, ...c }); else sinCR += 1;
   }
-  return { poblacion: rutas.length, leidos, textos, conCR };
+  return { poblacion: rutas.length, leidos, textos, binarios, sinCR, conCR };
 }
 
 /** Las extensiones que `.gitattributes` promete en LF, leídas de él mismo. */
