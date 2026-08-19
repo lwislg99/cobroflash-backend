@@ -43,10 +43,10 @@
   function rotulo(t) { return MARCADOR + ' ' + t; }
 
   const COPY = {
-    titulo: rotulo('Libro de facturas emitidas'),
-    menu: rotulo('Libro de registro'),
+    titulo: 'Libro registro de facturas expedidas',
+    menu: 'Libro de registro',
     cargando: 'Cargando…', // NO es de este ticket: cadena ya usada en invoicesView.js, copiada tal cual
-    recuento: (n) => rotulo(n + ' asientos'),
+    recuento: (n) => n + ' facturas',
     error: rotulo('No se ha podido cargar el libro. Vuelve a intentarlo.'),
     // Los dos vacíos, que existen para NO decir lo mismo:
     vacioDeVerdad: rotulo('Todavía no has emitido ninguna factura.'),
@@ -58,21 +58,38 @@
       + 'No los tomes por cero: escríbenos y los revisamos.'),
     avisoAjenas: rotulo('Se han descartado facturas que no son de este negocio.'),
     avisoSinNumero: (n) => rotulo(n + (n === 1 ? ' factura sin número no aparece como asiento.' : ' facturas sin número no aparecen como asiento.')),
-    colNumero: rotulo('Número'),
-    colFecha: rotulo('Fecha'),
-    colTipo: rotulo('Tipo'),
-    colBase: rotulo('Base'),
-    colCuota: rotulo('IVA'),
-    colTotal: rotulo('Total'),
-    colEstado: rotulo('Estado'),
+    colNumero: 'Número',
+    colFecha: 'Fecha',
+    colTipo: 'Tipo',
+    colBase: 'Base',
+    colCuota: 'IVA',
+    colTotal: 'Total',
+    colEstado: 'Estado',
     colTrazas: rotulo('De dónde viene y dónde acabó'),
-    trazaPresupuestoFirmado: rotulo('Presupuesto firmado'),
-    trazaPresupuestoSinFirmar: rotulo('Presupuesto sin firmar'),
+    trazaPresupuestoFirmado: 'Presupuesto firmado',
+    trazaPresupuestoSinFirmar: 'Presupuesto sin firmar',
     trazaAlbaran: rotulo('Albarán'),
-    trazaCobro: rotulo('Cobro'),
+    trazaCobro: 'Cobro',
     trazaNoSellado: rotulo('Albarán posterior al sello'),
     sinTrazas: rotulo('Factura suelta'),
   };
+
+  /**
+   * 🔴 LOS DOS ESTADOS APROBADOS, Y SOLO ESOS (fundador, 19-ago-2026).
+   *
+   * Hasta hoy esta columna pintaba el valor CRUDO de la base de datos, así que un profesional veía
+   * `paid` y `pending` **en inglés** en un libro fiscal.
+   *
+   * 19-ago-2026 · entra `annulled` (aprobado). MEDIDO que son los TRES únicos que puede tener una
+   * factura: se escriben `pending`, `paid` y `annulled`, y el libro NO filtra por estado
+   * (`libroRegistro.repo.ts:81` solo lo selecciona). `already_paid` NO cuenta — es un campo de
+   * respuesta de la API, y lo dice `librosAeat.ts:88`.
+   *
+   * ⚠️ LA PUERTA SE QUEDA ABIERTA A PROPÓSITO: lo que no esté en esta tabla pasa TAL CUAL. Hoy no
+   * sobra ninguno, pero el día que nazca un cuarto estado se verá en crudo —feo y HONESTO— en vez
+   * de caer en una traducción por analogía, que sería inventarse microcopy fiscal.
+   */
+  const ESTADO_VISIBLE = { paid: 'Cobrada', pending: 'Pendiente', annulled: 'Anulada' };
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => (
@@ -273,6 +290,13 @@
 
         celda(a.numero, 'white-space:nowrap;font-variant-numeric:tabular-nums');
         celda(fechaCorta(a.fecha), 'white-space:nowrap');
+        // ⛔ LOS VALORES DE ESTA COLUMNA NO SE TRADUCEN, Y ES UNA DECISIÓN FISCAL, NO DE PRODUCTO.
+        // Salen crudos del dato: `F1` es el código de tipo de factura de la AEAT y `JUST` es
+        // nuestro. Qué debe leer ahí un profesional lo dictamina el ASESOR, no el fundador — por eso
+        // la CABECERA («Tipo») sí está aprobada y sus VALORES siguen esperando (regla 30).
+        //
+        // ⚠️ Y no llevan marcador porque nunca lo llevaron: se pintan tal cual desde
+        // `libroRegistro.ts:204` (`tipo: f.type`). Ponerles uno ahora sería microcopy nueva.
         celda(a.tipo || '—');
         celda(euros(a.base, a.moneda), 'white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums');
         celda(euros(a.cuota, a.moneda), 'white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums');
@@ -282,7 +306,7 @@
           tdTotal.dataset.ilegible = '1';
           tdTotal.style.color = 'var(--muted)';
         }
-        celda(a.estado || '—');
+        celda(ESTADO_VISIBLE[a.estado] || a.estado || '—');
 
         // ── La columna que ningún facturador puede pintar ───────────────────────────────────
         // SIN tope de ancho, y es una decisión MEDIDA: le puse un `max-width:280px` creyendo que
