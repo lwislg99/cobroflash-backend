@@ -136,7 +136,14 @@ const CENSO = Object.freeze({
   // y del diálogo de descarga. Los 5 que quedan son de la card del LIBRO DE EMITIDAS (SCRUM-325),
   // que nació en `main` después de esa aprobación: nadie ha aprobado su copy todavía.
   'exportView.js': 5,
-  'invoiceDetailView.js': 9,
+  // 🔴 17-ago-2026 · `invoiceDetailView.js` SALE DEL CENSO (tenía 9). El fundador aprobó los ocho
+  // rótulos de acción, y el noveno era `MARCA_MICRO`, una constante que ya no consumía nadie y que
+  // se borra con ellos. Eran los ocho botones que un profesional veía sin saber qué hacían: la peor
+  // clase de marcador, porque un botón mudo no se puede ni juzgar.
+  //
+  // La entrada se BORRA en vez de bajar a 0 — lo dejaron escrito SCRUM-424 y SCRUM-405 aquí mismo:
+  // `censoActual()` solo lista ficheros CON marcadores, así que un 0 sería una bajada permanente
+  // sin anotar. Y salir del censo NO saca de la vigilancia: lo fija R4b.
   'invoicesView.js': 2,
   'jobDetailView.js': 1,
   // SCRUM-424 (−1, 10-ago-2026): `jobRailBlocks.js` SALE del censo. Su único marcador era el
@@ -144,7 +151,13 @@ const CENSO = Object.freeze({
   // trinquete APRIETA: la entrada se borra en vez de bajar a 0 — `censoActual()` solo lista
   // ficheros con marcadores, así que un 0 escrito aquí sería una bajada permanente sin anotar.
   'libroRegistroView.js': 1,
-  'nuevaFacturaModal.js': 1,
+  // 🔴 17-ago-2026 · `nuevaFacturaModal.js` SALE DEL CENSO (tenía 1). Esa única marca escrita
+  // pintaba **22 superficies** —el modal entero: título, botón de cerrar, cinco placeholders, ocho
+  // `aria-label`, la opción vacía, dos errores, dos botones, el estado de «emitiendo» y el aviso
+  // final—, y es el ejemplo de por qué este censo cuenta MARCAS y no RÓTULOS.
+  //
+  // SCRUM-483 dejó escrito que se partiría «el día que se aprueben, partiendo y rellenando en el
+  // mismo commit». Ese día es hoy, así que `NF_PENDIENTE` se borra. Entrada BORRADA, no puesta a 0.
   'patronDetalleAcciones.js': 1,
   'productsView.js': 1,
   'quotesView.js': 1,

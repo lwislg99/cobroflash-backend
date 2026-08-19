@@ -115,7 +115,11 @@ test('SCRUM-283 · control negativo: el toggle es UNA acción, no dos (9, no 10)
   const { acciones } = censarAccionesFactura(codigoReal);
   const toggle = acciones.filter((a) => a.id === 'btnTogglePaid');
   assert.equal(toggle.length, 1, '🔴 el toggle se cuenta dos veces: serían 10 acciones, no 9');
-  assert.ok(toggle[0].texto.includes('[PENDIENTE microcopy oficial]'), '🔴 el rótulo del toggle no es el marcador (regla 30)');
+  // 17-ago-2026 · el rótulo ya no es el marcador: el fundador aprobó «Marcar como cobrada». Lo que
+  // este control demuestra sigue siendo lo mismo —que el censo cuenta BOTONES y no textos—, así que
+  // solo cambia el valor esperado. Quien vigila el texto es `scrum283-microcopy-marcador`.
+  assert.ok(toggle[0].texto.includes('Marcar como cobrada'),
+    `🔴 el rótulo del toggle no es el aprobado: «${toggle[0].texto}»`);
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════

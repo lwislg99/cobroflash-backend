@@ -7,9 +7,13 @@
 // `const` que choque con otra global es SyntaxError EN PARSEO y tumba el fichero ENTERO — le pasó
 // a `invoicesView.js` con `copyRojo`. Por eso todo aquí lleva el prefijo `nf`.
 //
-// 🔴 MICROCOPY: TODO literal visible es EXACTAMENTE `[PENDIENTE microcopy oficial]`, regla 30, con
-// su guard en la suite. No se escriben provisionales que parezcan definitivos: un texto que «suena
-// bien» se queda, y nadie vuelve a mirarlo. Mismo mecanismo que SCRUM-244 en `exportView.js`.
+// 🔴 MICROCOPY: las 22 ranuras de esta pantalla están APROBADAS por el fundador (17-ago-2026,
+// regla 30) y su guard sigue en la suite — solo que ahora compara contra el TEXTO aprobado en vez
+// de contra el marcador (`scrum289b`, tabla `APROBADOS`). Hasta ese día todas salían de
+// `NF_PENDIENTE`, y el criterio que lo sostuvo se conserva porque sigue valiendo para la siguiente
+// pantalla: no se escriben provisionales que parezcan definitivos — un texto que «suena bien» se
+// queda, y nadie vuelve a mirarlo. Un renombre de aquí es microcopy nueva y vuelve a pasar por el
+// fundador; el guard cae si alguien lo cambia de refilón.
 //
 // SEGUNDO SELECTOR DE CLIENTE — DEUDA DECLARADA. A partir de aquí el dashboard tiene DOS: el de
 // presupuestos (`fieldCustomer`, quotesView.js:338, dentro del cierre de la vista, no exportado,
@@ -17,15 +21,10 @@
 // obligaría a tocar carril A y otra pantalla, que es justo lo que este incremento no hace. Se
 // resuelve en SCRUM-286 (B3), que es el ticket de formularios. Queda escrito para que quien
 // arregle uno sepa que existe el otro.
-const NF_PENDIENTE = '[PENDIENTE microcopy oficial]';
-
-// SCRUM-483 (A2) · DOS CLASES SALEN DE `NF_PENDIENTE` porque su texto YA ESTÁ APROBADO.
-// Fuente: SCRUM-277 en Jira, sección «Rótulos · ESTADO CERRADO DE LA APROBACIÓN». Ninguna copia.
-//
-// ⚠️ Lo que NO se hace aquí: partir las otras cinco clases (placeholders, `aria-label`, errores,
-// lista vacía, toast). Sus dieciocho textos NO están aprobados, así que se quedan con el marcador
-// —que es donde tienen que estar— y se partirán el día que se aprueben, partiendo y rellenando en
-// el mismo commit. Cinco constantes vacías esperando no protegen de nada.
+// SCRUM-483 (A2) declaró aquí `NF_PENDIENTE` y dejó escrito que sus dieciocho textos se partirían
+// «el día que se aprueben, partiendo y rellenando en el mismo commit». Ese día fue el 17-ago-2026:
+// el fundador aprobó las 22 ranuras de esta pantalla, así que **la constante se BORRA** en vez de
+// quedarse sin usar. Un marcador sin consumidores es el que alguien reutiliza sin querer.
 const NF_TITULO_BLOQUE = { cliente: 'Cliente', lineas: 'Líneas' };
 const NF_ACCION_PRIMARIA = 'Emitir factura';
 
@@ -41,7 +40,7 @@ function openNuevaFacturaModal(onCreated) {
   overlay.className = 'modal-overlay';
   overlay.setAttribute('role', 'dialog');
   overlay.setAttribute('aria-modal', 'true');
-  overlay.setAttribute('aria-label', NF_PENDIENTE);
+  overlay.setAttribute('aria-label', 'Crear una factura nueva');
 
   const modal = document.createElement('div');
   modal.className = 'modal';
@@ -50,7 +49,7 @@ function openNuevaFacturaModal(onCreated) {
 
   // SCRUM-446: cabecera del constructor compartido. La etiqueta del botón sigue siendo el MARCADOR
   // de microcopy sin aprobar, no «Cerrar»: cambiarlo resolvería en silencio una aprobación pendiente.
-  const header = cabeceraModal({ titulo: NF_PENDIENTE, etiquetaCierre: NF_PENDIENTE });
+  const header = cabeceraModal({ titulo: 'Nueva factura', etiquetaCierre: 'Cerrar' });
   const cerrarX = header.querySelector('.modal-close');
   modal.appendChild(header);
 
@@ -74,15 +73,15 @@ function openNuevaFacturaModal(onCreated) {
   const buscador = document.createElement('input');
   buscador.className = 'input';
   buscador.type = 'search';
-  buscador.placeholder = NF_PENDIENTE;
-  buscador.setAttribute('aria-label', NF_PENDIENTE);
+  buscador.placeholder = 'Busca por nombre…';
+  buscador.setAttribute('aria-label', 'Buscar cliente por nombre');
   buscador.style.cssText = 'width:100%;min-height:44px';
   body.appendChild(buscador);
 
   const selCliente = document.createElement('select');
   selCliente.className = 'input';
   selCliente.style.cssText = 'width:100%;margin-top:6px;min-height:44px';
-  selCliente.setAttribute('aria-label', NF_PENDIENTE);
+  selCliente.setAttribute('aria-label', 'Cliente al que facturas');
   body.appendChild(selCliente);
 
   let nfTimer = null;
@@ -94,7 +93,7 @@ function openNuevaFacturaModal(onCreated) {
       selCliente.innerHTML = '';
       const vacio = document.createElement('option');
       vacio.value = '';
-      vacio.textContent = NF_PENDIENTE;
+      vacio.textContent = 'Selecciona un cliente…';
       selCliente.appendChild(vacio);
       for (const c of Array.isArray(lista) ? lista : []) {
         const o = document.createElement('option');
@@ -105,7 +104,7 @@ function openNuevaFacturaModal(onCreated) {
       }
       if (previo) selCliente.value = previo;
     } catch {
-      err.textContent = NF_PENDIENTE;
+      err.textContent = 'No hemos podido cargar tus clientes. Inténtalo otra vez.';
       err.style.display = 'block';
     }
   }
@@ -131,32 +130,32 @@ function openNuevaFacturaModal(onCreated) {
     r.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;align-items:center;flex-wrap:wrap';
     const concepto = document.createElement('input');
     concepto.className = 'input nf-concepto';
-    concepto.placeholder = NF_PENDIENTE;
-    concepto.setAttribute('aria-label', NF_PENDIENTE);
+    concepto.placeholder = 'Trabajo o material';
+    concepto.setAttribute('aria-label', 'Concepto de la línea');
     concepto.style.cssText = 'flex:3;min-width:0';
     const cantidad = document.createElement('input');
     cantidad.className = 'input nf-cantidad';
     cantidad.type = 'number'; cantidad.min = '0'; cantidad.step = 'any'; cantidad.value = '1';
-    cantidad.placeholder = NF_PENDIENTE;
-    cantidad.setAttribute('aria-label', NF_PENDIENTE);
+    cantidad.placeholder = 'Cantidad';
+    cantidad.setAttribute('aria-label', 'Cantidad de unidades');
     cantidad.style.cssText = 'flex:1;min-width:64px';
     const precio = document.createElement('input');
     precio.className = 'input nf-precio';
     precio.type = 'number'; precio.min = '0'; precio.step = 'any';
-    precio.placeholder = NF_PENDIENTE;
-    precio.setAttribute('aria-label', NF_PENDIENTE);
+    precio.placeholder = 'Precio sin IVA';
+    precio.setAttribute('aria-label', 'Precio por unidad, sin IVA');
     precio.style.cssText = 'flex:1;min-width:80px';
     const iva = document.createElement('input');
     iva.className = 'input nf-iva';
     iva.type = 'number'; iva.min = '0'; iva.max = '100'; iva.step = 'any'; iva.value = '21';
-    iva.placeholder = NF_PENDIENTE;
-    iva.setAttribute('aria-label', NF_PENDIENTE);
+    iva.placeholder = 'IVA %';
+    iva.setAttribute('aria-label', 'Tipo de IVA en porcentaje');
     iva.style.cssText = 'flex:1;min-width:64px';
     const quitar = document.createElement('button');
     quitar.type = 'button';
     quitar.className = 'btn-ghost btn-sm';
     quitar.textContent = '✕';
-    quitar.setAttribute('aria-label', NF_PENDIENTE);
+    quitar.setAttribute('aria-label', 'Quitar esta línea');
     quitar.addEventListener('click', () => { if (filas.children.length > 1) r.remove(); });
     r.append(concepto, cantidad, precio, iva, quitar);
     return r;
@@ -166,7 +165,7 @@ function openNuevaFacturaModal(onCreated) {
   const anadir = document.createElement('button');
   anadir.type = 'button';
   anadir.className = 'btn-ghost btn-sm';
-  anadir.textContent = NF_PENDIENTE;
+  anadir.textContent = 'Añadir línea';
   anadir.addEventListener('click', () => filas.appendChild(nuevaFila()));
   body.appendChild(anadir);
 
@@ -176,7 +175,7 @@ function openNuevaFacturaModal(onCreated) {
   const cancelar = document.createElement('button');
   cancelar.type = 'button';
   cancelar.className = 'btn-secondary';
-  cancelar.textContent = NF_PENDIENTE;
+  cancelar.textContent = 'Cancelar';
   const emitir = document.createElement('button');
   emitir.type = 'button';
   emitir.className = 'btn-primary';
@@ -209,16 +208,16 @@ function openNuevaFacturaModal(onCreated) {
 
     emitir.disabled = true;
     const antes = emitir.textContent;
-    emitir.textContent = NF_PENDIENTE;
+    emitir.textContent = 'Emitiendo…';
     try {
       const r = await apiRequest('/admin/invoices', { method: 'POST', body: JSON.stringify(cuerpo) });
       cerrar();
-      showToast(NF_PENDIENTE);
+      showToast('Factura emitida');
       if (typeof onCreated === 'function') onCreated(r && r.factura);
     } catch (e) {
       // El servidor manda `message` legible en cada error nombrado; se muestra tal cual porque
       // es SUYO, no microcopy de esta pantalla.
-      err.textContent = (e && e.data && e.data.message) ? e.data.message : NF_PENDIENTE;
+      err.textContent = (e && e.data && e.data.message) ? e.data.message : 'No hemos podido emitir la factura. Inténtalo otra vez.';
       err.style.display = 'block';
       emitir.disabled = false;
       emitir.textContent = antes;

@@ -32,7 +32,29 @@ test('SCRUM-283 · el marcador del registro es exactamente el oficial', () => {
   assert.equal(registro.MICROCOPY_PENDIENTE, MARCA, '🔴 el marcador del registro no coincide con el oficial');
 });
 
-test('SCRUM-283 · todo rótulo de acción del patrón es el marcador (ninguno inventado)', () => {
+/**
+ * 🔴 APROBADOS el 17-ago-2026 (regla 30). ESTA TABLA SUSTITUYE AL MARCADOR, no lo relaja.
+ *
+ * Hasta hoy este guard exigía que los ocho rótulos fueran EXACTAMENTE el marcador, y su motivo
+ * seguía siendo bueno: «un renombre también es microcopy nueva, y lo aprueba el fundador, no esta
+ * tarea». Lo que ha cambiado es que **el fundador los ha aprobado**, así que el marcador dejó de ser
+ * la respuesta correcta — y borrar el guard habría dejado los ocho rótulos sin vigilar justo el día
+ * que por fin tienen texto.
+ *
+ * Se cambia el VALOR esperado, no la exigencia: siguen sin poder renombrarse sin pasar por aquí.
+ */
+const ROTULOS_APROBADOS = Object.freeze({
+  btnPdf: 'Descargar PDF',
+  btnWhatsApp: 'Enviar por WhatsApp',
+  btnTogglePaid: 'Marcar como cobrada',
+  btnDispute: 'Ver la reclamación del banco',
+  btnBizum: 'Cobrar por Bizum',
+  btnReminder: 'Enviar recordatorio de pago',
+  btnRectify: 'Emitir factura rectificativa',
+  btnRegen: 'Volver a generar el PDF',
+});
+
+test('SCRUM-283 · todo rótulo de acción del patrón es su texto APROBADO (ninguno inventado)', () => {
   const { acciones } = censarAccionesFactura(codigoReal);
   const delPatron = acciones.filter((a) => a.id !== ANULAR);
 
@@ -40,26 +62,31 @@ test('SCRUM-283 · todo rótulo de acción del patrón es el marcador (ninguno i
   assert.ok(delPatron.length >= 6, `🔴 ESCÁNER CIEGO: solo veo ${delPatron.length} rótulos del patrón (esperaba 8)`);
 
   for (const a of delPatron) {
+    const esperado = ROTULOS_APROBADOS[a.id];
+    assert.ok(esperado,
+      `🔴 la acción «${a.id}» (L${a.linea}) no tiene texto aprobado en esta tabla. Si es nueva, su ` +
+      'rótulo sale con el marcador y se añade al censo de SCRUM-402 — no se inventa aquí.');
     assert.equal(
-      desnuda(a.texto), MARCA,
-      `🔴 el rótulo de ${a.id} (L${a.linea}) NO es el marcador: «${a.texto}». Un renombre también es ` +
-        'microcopy nueva (regla 30): el rótulo lo aprueba el fundador, no esta tarea.',
+      desnuda(a.texto), esperado,
+      `🔴 el rótulo de ${a.id} (L${a.linea}) NO es el aprobado. Dice «${a.texto}» y tiene que decir ` +
+        `«${esperado}». Un renombre también es microcopy nueva (regla 30): lo aprueba el fundador, ` +
+        'no esta tarea.',
     );
   }
 });
 
 test('SCRUM-283 · INYECCIÓN: un texto plausible en un rótulo hace caer el guard', () => {
-  // Se sustituye el rótulo de btnPdf por un texto plausible; el censo debe verlo distinto del
-  // marcador (si no, el guard estaría en verde pasara lo que pasara).
+  // Se sustituye el rótulo de btnPdf por otro plausible; el censo debe verlo distinto del aprobado
+  // (si no, el guard estaría en verde pasara lo que pasara).
   const inyectado = codigoReal.replace(
-    "btnPdf.textContent = '[PENDIENTE microcopy oficial]';",
     "btnPdf.textContent = 'Descargar PDF';",
+    "btnPdf.textContent = 'Bajar el PDF';",
   );
   assert.notEqual(inyectado, codigoReal, '🔴 la inyección no encontró el rótulo de btnPdf (¿cambió de forma?)');
 
   const pdf = censarAccionesFactura(inyectado).acciones.find((a) => a.id === 'btnPdf');
   assert.notEqual(
-    desnuda(pdf.texto), MARCA,
-    '🔴 el guard NO distingue un texto inventado del marcador: sería ciego a un renombre colado.',
+    desnuda(pdf.texto), ROTULOS_APROBADOS.btnPdf,
+    '🔴 el guard NO distingue un texto inventado del aprobado: sería ciego a un renombre colado.',
   );
 });

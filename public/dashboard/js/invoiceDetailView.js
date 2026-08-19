@@ -249,7 +249,9 @@ async function fetchInvoiceDetail(id) {
       'bizum-no-disponible': !bizumDisponible,
     };
     const REGISTRO_ACC = (typeof window !== 'undefined' && window.INVOICE_ACTION_REGISTRY) || [];
-    const MARCA_MICRO = (typeof window !== 'undefined' && window.MICROCOPY_PENDIENTE) || '[PENDIENTE microcopy oficial]';
+    // `MARCA_MICRO` se BORRA el 17-ago-2026: ya no tenía ningún consumidor, y desde hoy los ocho
+    // rótulos de acción de esta pantalla están aprobados. Dejar la constante habría dejado a mano
+    // un marcador que alguien vuelve a enchufar sin querer.
     const cubosAcc = { primaria: [], secundaria: [], overflow: [] };
 
     // Coloca un botón YA CREADO (con su handler intacto) según su destino en este estado. `oculta` no
@@ -270,7 +272,7 @@ async function fetchInvoiceDetail(id) {
     // (nunca enlazar a invoice.pdfUrl directo, que puede valer 'PENDING_PDF').
     const btnPdf = document.createElement('button');
     btnPdf.className = 'btn-primary btn-sm';
-    btnPdf.textContent = '[PENDIENTE microcopy oficial]';
+    btnPdf.textContent = 'Descargar PDF';
     btnPdf.addEventListener('click', () => {
       window.open(`/admin/invoices/${invoice.id}/pdf`, '_blank');
     });
@@ -279,7 +281,7 @@ async function fetchInvoiceDetail(id) {
     // Reenviar por WhatsApp
     const btnWhatsApp = document.createElement('button');
     btnWhatsApp.className = 'btn-secondary btn-sm';
-    btnWhatsApp.textContent = '[PENDIENTE microcopy oficial]';
+    btnWhatsApp.textContent = 'Enviar por WhatsApp';
   
     const canSendWhatsApp =
       invoice.customer && invoice.customer.phone;
@@ -360,7 +362,7 @@ async function fetchInvoiceDetail(id) {
     let selMetodo = null;
     const btnTogglePaid = document.createElement('button');
     btnTogglePaid.className = 'btn-secondary btn-sm';
-    btnTogglePaid.textContent = '[PENDIENTE microcopy oficial]';
+    btnTogglePaid.textContent = 'Marcar como cobrada';
 
     btnTogglePaid.addEventListener('click', async () => {
       const targetStatus = st === 'paid' ? 'pending' : 'paid';
@@ -445,7 +447,7 @@ async function fetchInvoiceDetail(id) {
     if (invoice.chargeId) {
       const btnDispute = document.createElement('button');
       btnDispute.className = 'btn-secondary btn-sm';
-      btnDispute.textContent = '[PENDIENTE microcopy oficial]';
+      btnDispute.textContent = 'Ver la reclamación del banco';
       btnDispute.title = 'Presupuesto firmado + evidencia de aceptación + justificante + registro de mensajes, listo para responder al banco';
       btnDispute.addEventListener('click', () => {
         window.open(`/admin/invoices/${invoice.id}/dispute-package`, '_blank');
@@ -469,7 +471,7 @@ async function fetchInvoiceDetail(id) {
       const custName = (invoice.customer && invoice.customer.name) || 'el cliente';
       const btnBizum = document.createElement('button');
       btnBizum.className = 'btn-secondary btn-sm';
-      btnBizum.textContent = '[PENDIENTE microcopy oficial]';
+      btnBizum.textContent = 'Cobrar por Bizum';
       let armed = false;
       btnBizum.addEventListener('click', async () => {
         if (!armed) {
@@ -510,7 +512,7 @@ async function fetchInvoiceDetail(id) {
     if (invoice.customer?.phone) {
       const btnReminder = document.createElement('button');
       btnReminder.className = 'btn-secondary btn-sm';
-      btnReminder.textContent = '[PENDIENTE microcopy oficial]';
+      btnReminder.textContent = 'Enviar recordatorio de pago';
       btnReminder.title = 'Envía un WhatsApp recordatorio al cliente';
       btnReminder.addEventListener('click', async () => {
         btnReminder.disabled = true;
@@ -547,7 +549,7 @@ async function fetchInvoiceDetail(id) {
     if (!alreadyRectified) {
       const btnRectify = document.createElement('button');
       btnRectify.className = 'btn-danger btn-sm';
-      btnRectify.textContent = '[PENDIENTE microcopy oficial]';
+      btnRectify.textContent = 'Emitir factura rectificativa';
       btnRectify.title = 'Emite una factura rectificativa (R1) con los importes en negativo';
       btnRectify.addEventListener('click', async () => {
         const ok = window.confirm(
@@ -637,7 +639,7 @@ async function fetchInvoiceDetail(id) {
     // Botón Regenerar PDF (con VeriFactu si aplica)
     const btnRegen = document.createElement('button');
     btnRegen.className = 'btn-ghost btn-sm';
-    btnRegen.textContent = '[PENDIENTE microcopy oficial]';
+    btnRegen.textContent = 'Volver a generar el PDF';
     btnRegen.title = 'Regenera el PDF aplicando VeriFactu si el merchant tiene NIF configurado';
     btnRegen.addEventListener('click', async () => {
       btnRegen.disabled = true;
