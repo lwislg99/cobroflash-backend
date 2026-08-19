@@ -54,6 +54,63 @@ Merchant crea presupuesto (texto o voz)
 - **Lo que NO vendemos:** "software de presupuestos" (commodity a 9,99 €) ni "software de facturación" (lo regalan Billin/Alegra).
 - Dominio: yaqu.app · Repo: github.com/lwislg99/cobroflash-backend · Deploy: Railway auto-deploy desde main.
 
+## LAS DOS LÍNEAS DE NEGOCIO
+
+**Escrito el 19-ago-2026.** Primera vez que YaQu Studio aparece en el máster.
+
+La compañía opera dos líneas de negocio complementarias: una de **producto** y otra
+de **servicios**.
+
+### Línea 1 · YaQu — el producto
+
+**YaQu** es una plataforma SaaS vertical (software como servicio, multi-inquilino, en
+la nube) para profesionales y pequeñas empresas de servicios a domicilio. Integra en
+un único producto un **ERP operativo ligero** —ciclo presupuesto → aceptación →
+trabajo → cobro → factura, con numeración y control documental— y un **CRM** de
+cliente y conversación, en el que la ficha del cliente y su historial se construyen
+sobre el canal de WhatsApp.
+
+El profesional emite un presupuesto desde el móvil en menos de un minuto, el cliente
+lo recibe y lo firma digitalmente desde su teléfono, y el sistema encadena el cobro y
+la emisión de la factura sin salir del flujo. Se comercializa en régimen de
+**suscripción mensual**, sin instalación ni infraestructura por parte del cliente.
+
+⚠️ **Precisión de registro, para quien lo use fuera:** «ERP operativo» significa
+operaciones y facturación. **No hay contabilidad, ni nóminas, ni inventario.** Y el
+CRM es **ligero y orientado a la conversación**: ficha de cliente e historial, sin
+embudo comercial ni automatización de marketing.
+
+### Línea 2 · YaQu Studio — los servicios
+
+**YaQu Studio** es la línea de servicios profesionales de la compañía, **independiente
+del SaaS**. Diseña, implanta e integra soluciones digitales para terceros:
+
+1. **Sitios web y tiendas en línea**
+2. **Automatización de la atención por mensajería instantánea** (WhatsApp)
+3. **Contestador con transcripción y notificación automatizada de mensajes de voz**
+4. **Gestión automatizada de citas y agendas**
+
+Y completa la oferta con **consultoría en transformación digital y automatización de
+procesos**.
+
+🔴 **Regla estructural de Studio, decidida el 17-ago-2026:** todo se implanta **sobre
+las cuentas e infraestructura titularidad del propio cliente**, de modo que **el
+cliente conserva la propiedad de sus canales, sus datos y sus contratos**. YaQu Studio
+no aloja ni revende infraestructura.
+
+**Modelo económico:** **implantación a precio cerrado + cuota mensual de mantenimiento
+y soporte.**
+
+### Qué comparten y qué no
+
+Ambas líneas comparten equipo, tecnología y conocimiento del mismo sector: **el
+producto estandariza lo que se repite y los servicios cubren lo que cada cliente
+necesita a medida.**
+
+⚠️ **Y comparten un activo frágil: el público y el número de WhatsApp de YaQu.** Un
+fracaso de reputación en una línea se lleva la otra. Ver las tres reglas de las demos
+en la Parte J.
+
 ## A2. Modelo de negocio (DUAL)
 1. **Suscripción — UN plan público:** "YaQu Pro — 19,90 €/mes (o 199 €/año) + 0,9 % solo cuando cobras con tarjeta. Todo incluido." Founding = banner de lanzamiento (9,90 €/mes de por vida, 20 plazas, contador real). Equipo = oferta manual 59 € no listada en F1. Detalle completo: Parte W.
 2. **Take rate:** 0,9 % de cada cobro con tarjeta vía Stripe Connect (application fee). Bizum manual y transferencia: sin fee (ventaja comercial). Futuro sobre el flujo: financiación y servicios (Z).
@@ -216,6 +273,36 @@ Un plan público (Parte W): **Pro 19,90 €/mes (199 €/año) + 0,9 % solo tarj
 
 ## H3. Canales por coste/retorno
 1) Red caliente + visitas presenciales a tiendas de material (Madrid). 2) Grupos WhatsApp/Facebook de gremio (auténtico, no spam) + Habitissimo/Cronoshare como fuente de pros. 3) **Gestorías** (piloto 2-3 con pack S1-H; programa formal solo con gate Y2). 4) SEO de la ola + TikTok/Reels con la demo de voz (F2: SEO-2). 5) Distribuidores de material (F2).
+
+## ENMIENDA A H3 · EL CANAL DE CAPTACIÓN
+
+**Decidido por los fundadores el 17-ago-2026. Esta enmienda es posterior a H3 y
+prevalece sobre su orden de prioridad. H3 se conserva como historia.**
+
+| Cuándo | Canal |
+|---|---|
+| **Ahora → 100 clientes** | 📞 **Llamada en frío.** El canal principal, y **el único activo** |
+| **Siempre, en paralelo** | **Boca a boca**, pero **pasivo**: es un beneficio del buen trabajo, no un canal que se trabaja |
+| **A partir de 100 clientes** | Se estudian: marketing en redes · proveedores de material · asociaciones · gestorías |
+
+**Un canal, elegido, sin dispersión.** El umbral de 100 es un disparador, no un
+objetivo del trimestre: la puerta de este trimestre son 2 o 3 usuarios.
+
+### 🔴 Tres cosas que hay que resolver ANTES de la primera llamada
+
+1. **Lo legal, y es lo único cuyo coste si sale mal no es tiempo sino una sanción.**
+   ¿Se puede llamar en frío a un autónomo en España, y qué obligaciones trae? Lo
+   complica que **un fontanero autónomo es negocio y persona física a la vez**.
+   Pendiente de la asesoría. **No se hace la primera llamada sin esta respuesta.**
+2. **Un precio que se pueda decir en voz alta.** En una llamada en frío la tercera
+   pregunta es siempre «¿y esto cuánto me cuesta?», y «todavía no lo hemos decidido»
+   termina la llamada. Decidido: **20 plazas de precio de founder**; el importe en
+   euros sigue pendiente.
+3. **El embudo, definido antes de empezar:** llamadas hechas → descuelgan →
+   conversaciones reales → demos concedidas → altas → cobros. **Seis números.** Sin
+   ellos, a las tres semanas sólo habrá la sensación de que «va regular», que no se
+   puede arreglar. Y el plazo que se le da al canal antes de juzgarlo, decidido
+   también antes de empezar.
 
 ## H4. Plan de calle 30 días (arranca con VALIDA-0)
 **S1:** 10 conversaciones discovery (Apéndice B; no vender: preguntar) + 10 visitas a tiendas (flyer QR al vídeo; trato verbal: "30 € por alta que pague"). **S2:** cerrar 3-5 founding de red caliente con onboarding white-glove (TÚ cargas catálogo y primera cotización en 30 min). **S3:** grupos de gremio + 2 referidos por founding ("1 mes gratis por compañero"). **S4:** 2 gestorías piloto + repaso de métricas y decisión.
