@@ -11,10 +11,23 @@ se para, porque **no cumple lo que pedía este encargo**: sus comprobaciones de 
 `assert.match` **sobre el texto del fichero** (`fs.readFileSync` + `soloEjecutable`), es decir,
 exactamente el instrumento que dio verde el 13-ago-2026 con el aviso borrado.
 
-> El `docs/MICROCOPY_APROBADA_SIN_APLICAR.md` que citaba la ficha **no existe** en este árbol
-> (ni con ese nombre ni con ninguna variante de «microcopy» en `docs/`). Los números de línea sí
-> resultaron exactos: la microcopy del aviso está en `settingsView.js:559-561`. **No se ha tocado**
-> (regla 30): siguen siendo los dos marcadores `[PENDIENTE microcopy oficial · …]`.
+> **Sobre `docs/MICROCOPY_APROBADA_SIN_APLICAR.md` — corregido al cerrar, y la ficha tenía razón.**
+> Al medir (ancla `a241b6e4`) ese fichero **no existía** en el árbol, ni con ese nombre ni con
+> ninguna variante de «microcopy» en `docs/`; lo reporté como ficha equivocada. **No lo era: aún
+> no había aterrizado.** Entró en `main` durante esta sesión con el **PR #796** (`65741dea`), y su
+> contenido confirma la cita **hasta el número de línea**:
+>
+> | línea | texto aprobado |
+> | --- | --- |
+> | `settingsView.js:560` | `Sin este móvil, tu cliente no ve la opción de Bizum.` |
+> | `settingsView.js:561` | `No hemos podido comprobar tu móvil de Bizum. Revísalo antes de cobrar por ahí.` |
+>
+> **Sigue SIN APLICAR y esta sesión no lo aplica** (regla 30): en esta rama el aviso pinta los dos
+> marcadores `[PENDIENTE microcopy oficial · …]`. Para quien lo aplique: **los instrumentos de este
+> ticket son agnósticos al texto** —ni el guard ni `scrum515` asertan el literal, el guard solo lo
+> imprime— así que aplicarlo no los rompe. El que sí caerá, **y a propósito**, es
+> `scrum328:126`, que exige exactamente 2 marcadores; ése es su trinquete, y toca actualizarlo en
+> el mismo commit que aplique la microcopy.
 
 ## 1 · La línea base de `npm test`, medida antes de tocar nada
 
