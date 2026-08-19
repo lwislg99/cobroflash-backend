@@ -83,6 +83,87 @@ function entradas() {
     .map((f) => ({ nombre: f, texto: fs.readFileSync(path.join(DIR_REGISTRO, f), 'utf8') }));
 }
 
+// ── EL TROCEADOR (SCRUM-516) ─────────────────────────────────────────────────────────────
+//
+// 🔴 POR QUÉ ESTE GUARD PASA A MIRAR ENTRADA POR ENTRADA, Y NO EL FICHERO.
+//
+// Hasta el 17-ago-2026 este guard leía el fichero ENTERO y `RE_ANCLA` lleva `/m`: bastaba con que
+// UNA línea en cualquier parte llevara un ancla buena. Medido rompiendo un verde a propósito: una
+// sesión abrevió su sha a 7 caracteres y **los cuatro guards seguían dando 17/17**, porque las
+// anclas de las dos entradas anteriores del mismo fichero ya lo satisfacían.
+//
+//   >>> Un ancla mal escrita en un apéndice no la veía nadie. <<<
+//
+// Y lo grave es la INTERACCIÓN, no este guard suelto: SCRUM-273 obliga a un fichero por ticket, así
+// que un registro nuevo sobre un ticket viejo **va como apéndice al final** — justo donde este
+// guard era ciego. El que obliga a un nombre correcto conducía el trabajo al punto ciego del otro.
+// Ninguno estaba mal por separado; juntos abrían el hueco.
+//
+// ── EL DELIMITADOR, MEDIDO ANTES DE APOYARSE EN ÉL ───────────────────────────────────────
+//
+// El candidato propuesto era `---` + `# SCRUM-<n> · …`. **Medido sobre los 226 ficheros reales, NO
+// es estable**, y por eso NO se usa tal cual:
+//
+//   · `---` delante del apéndice: **7 apéndices no lo llevan** (SCRUM-244, 328 ×3, 406, 420, 447).
+//     Exigirlo daría 7 rojos que no son fallos de ancla. **No se exige.**
+//   · el `·` del título: **8 encabezados usan otra cosa** — `# SCRUM-374` a secas, `# SCRUM-415 —
+//     …`, `# SCRUM-16 / 142 · …`. **No se exige.**
+//   · el número del encabezado ≠ el del fichero: **1 caso real** (`SCRUM-441.md:420` encabeza
+//     `# SCRUM-496`). Es asunto del guard de nombres (273), no de éste. **No se exige.**
+//
+// Lo que SÍ resultó estable es `^# SCRUM-<n>` como principio de entrada: lo llevan los 226
+// ficheros y las 317 entradas. **Con una trampa real y medida:** `SCRUM-480.md` tiene dos `#
+// SCRUM-` DENTRO de un bloque cercado ``` — troceando por texto plano inventaría dos entradas
+// fantasma. Por eso el troceador lleva la cuenta de los cercados y los salta.
+//
+// El delimitador es, por tanto, **`^# SCRUM-\d+` fuera de bloque cercado**, y nada más.
+
+/** ¿Qué líneas caen dentro de un bloque cercado ``` o ~~~? */
+function lineasEnCodigo(lineas) {
+  const dentro = new Array(lineas.length).fill(false);
+  let abierto = false;
+  for (let i = 0; i < lineas.length; i++) {
+    if (/^\s*(```|~~~)/.test(lineas[i])) { abierto = !abierto; dentro[i] = true; continue; }
+    dentro[i] = abierto;
+  }
+  return dentro;
+}
+
+/**
+ * Trocea el texto de un fichero de registro en sus ENTRADAS.
+ *
+ * La primera empieza en la línea 0 —no en su encabezado— para que **nada quede fuera de alguna
+ * entrada**: si un fichero llevara preámbulo antes del primer `#`, trocear desde el encabezado lo
+ * dejaría sin vigilar, que es el defecto que este ticket viene a cerrar, en pequeño.
+ *
+ * Devuelve `[]` si no encuentra ningún encabezado. Ese caso lo trata el SUELO como CEGUERA, nunca
+ * como «no hay entradas sin ancla».
+ */
+export function trocearEntradas(texto) {
+  const lineas = texto.split('\n');
+  const enCodigo = lineasEnCodigo(lineas);
+  const cortes = [];
+  for (let i = 0; i < lineas.length; i++) {
+    if (/^# SCRUM-\d+/.test(lineas[i]) && !enCodigo[i]) cortes.push(i);
+  }
+  if (!cortes.length) return [];
+  return cortes.map((ini, k) => {
+    const desde = k === 0 ? 0 : ini;
+    const hasta = k + 1 < cortes.length ? cortes[k + 1] : lineas.length;
+    return {
+      indice: k + 1,                       // 1-based: los apéndices se añaden AL FINAL, así que no corre
+      linea: ini + 1,                      // 1-based, para el mensaje de error
+      titulo: lineas[ini].slice(0, 80),
+      cuerpo: lineas.slice(desde, hasta).join('\n'),
+    };
+  });
+}
+
+/** Todas las entradas del registro, con su fichero. La unidad que vigila este guard. */
+function entradasTroceadas() {
+  return entradas().flatMap((f) => trocearEntradas(f.texto).map((e) => ({ ...e, fichero: f.nombre, clave: `${f.nombre}#${e.indice}` })));
+}
+
 /** Devuelve el motivo por el que un texto NO lleva ancla válida, o `null` si la lleva. */
 export function motivoSinAncla(texto) {
   if (!/^\*\*Medido contra:\*\*/m.test(texto)) return 'no declara «Medido contra»';
@@ -154,18 +235,103 @@ test('SCRUM-267 · ② el barrido encuentra entradas de verdad', () => {
 // SCRUM-244 SALIO del censo el 10-ago-2026: su seccion 1(b) trae el campo `Medido contra:`, asi
 // que el fichero ya tiene ancla y el guard lo canto solo. Quedan DOS. Este apunte es el requisito
 // del propio guard: si bajar fuese silencioso, el censo declararia tres excepciones habiendo dos.
+// ── SCRUM-516 · LAS EXENTAS, POR LISTA NOMINAL Y CERRADA ─────────────────────────────────
+//
+// 🔴 ESTO NO ES BAJAR EL LISTÓN: **`RE_ANCLA` no se ha tocado.** Lo que cambia es la UNIDAD que se
+// mira (entrada, no fichero). Al mirar por entrada aparecieron 31 entradas que el guard nunca había
+// mirado — no son regresiones nuevas, son las que llevaban ahí desde siempre tapadas por el ancla
+// buena de la primera entrada de su fichero.
+//
+// Medido el 19-ago-2026 contra `origin/main` = `d59d5cd97546e394bdb027dea59c9cb6ba1f587b`:
+// 226 ficheros · 317 entradas · 286 con ancla · 31 sin ella. **El fundador decidió qué hacer con
+// esas 31, y la decisión se aplicó: 4 arregladas, 27 exentas.**
+//
+// ── EL PRINCIPIO QUE DECIDE, y va en las dos direcciones ─────────────────────────────────
+//
+//   **Un ancla que nadie midió NO SE ESCRIBE NUNCA.** Reconstruir contra qué `main` se midió algo
+//   hace meses es FABRICAR una medición — justo lo que este guard existe para impedir. Vaciar la
+//   lista inventando anclas sería usar la barrera para producir el daño que previene.
+//
+//   Y su reverso, para que no sea la salida fácil: **lo que SÍ se puede recuperar sin inventar, SE
+//   RECUPERA.** Eximir un dato que existe y sólo está mal escrito no es prudencia, es pereza con
+//   coartada.
+//
+// ── LAS 4 QUE SE ARREGLARON (ya no están en esta lista) ──────────────────────────────────
+//
+//   · `397#4` y `397#5` — la fecha iba entre backticks. El dato estaba completo y sobraban dos
+//     caracteres: se quitaron. No se tocó ni el sha ni la hora.
+//   · `290#2` (`22d8e84`) y `447#2` (`8a57b9cd`) — sha abreviado, EXPANDIDO. Completar un prefijo
+//     no inventa nada, pero sólo vale si resuelve a un commit real y único, así que se comprobó
+//     antes: `git rev-parse --disambiguate` devuelve **1 solo objeto** para cada uno, `cat-file -t`
+//     dice **commit**, y los dos son **ancestros de `origin/main`** — que es justo lo que el ancla
+//     afirmaba. Si alguno hubiera salido ambiguo o inexistente, se habría quedado exento.
+//
+// ── POR QUÉ LAS 27 RESTANTES NO SE PUEDEN ARREGLAR ──────────────────────────────────────
+//
+//   · **23 no declaran «Medido contra» en absoluto.** El dato NO EXISTE; no está mal escrito.
+//     Escribirlo ahora sería inventarlo.
+//   · **4 lo declaran SIN HORA** (`268#2`, `273#2`, `406#2`, `409#2`). La fecha está, la hora no se
+//     tomó. ⚠️ **La hora del commit que las escribió NO es la hora de la medición** — usarla sería
+//     inventar con apariencia de precisión, que es la peor de las dos formas de inventar.
+//
+// ── CÓMO SE EXIME, y esto es lo que decide si el arreglo dura ────────────────────────────
+//
+//   ⛔ NO por umbral. NO por fecha de corte. NO por una regla «las anteriores a X pasan». Un umbral
+//      es un trinquete calibrado al número cómodo, y autoriza la copia número 28.
+//   ✅ Por LISTA EXPLÍCITA, entrada a entrada, con `fichero#índice` y motivo.
+//
+//   🔴 Y LA PROPIEDAD QUE LA CONVIERTE EN TRINQUETE DE VERDAD: **esta lista NO PUEDE CRECER.** Hay
+//   un test (`las exentas son EXACTAMENTE éstas`) que falla si aparece una entrada sin ancla que no
+//   esté aquí. Añadir una sólo se puede haciendo editar este objeto, y eso se ve en el diff — que
+//   es exactamente la diferencia entre un censo que se cierra y una allowlist que crece sola.
+const SIN_DATO = 'no declara «Medido contra» — el dato NO EXISTE, no está mal escrito: escribirlo ahora sería inventarlo';
+const SIN_HORA = 'declara la fecha pero NO la hora, y la hora no se tomó — la del commit que la escribió no es la de la medición';
+const ANTERIOR_AL_GUARD = 'anterior a SCRUM-267 — el formato existía sin el campo';
+
 const HEREDADAS_SIN_ANCLA = {
-  'SCRUM-231.md': 'anterior a SCRUM-267 — el formato existía sin el campo',
-  'SCRUM-264.md': 'anterior a SCRUM-267 — el formato existía sin el campo',
+  'SCRUM-231.md#1': ANTERIOR_AL_GUARD,
+  'SCRUM-264.md#1': ANTERIOR_AL_GUARD,
+
+  // Sin «Medido contra» (23 con las dos de arriba incluidas más abajo por fichero)
+  'SCRUM-242.md#2': SIN_DATO,
+  'SCRUM-242.md#3': SIN_DATO,
+  'SCRUM-242.md#4': SIN_DATO,
+  'SCRUM-244.md#1': SIN_DATO,
+  'SCRUM-244.md#2': SIN_DATO,
+  'SCRUM-244.md#3': SIN_DATO,
+  'SCRUM-244.md#4': SIN_DATO,
+  'SCRUM-244.md#5': SIN_DATO,
+  'SCRUM-244.md#7': SIN_DATO,
+  'SCRUM-313.md#2': SIN_DATO,
+  'SCRUM-328.md#2': SIN_DATO,
+  'SCRUM-328.md#3': SIN_DATO,
+  'SCRUM-328.md#4': SIN_DATO,
+  'SCRUM-328.md#5': SIN_DATO,
+  'SCRUM-397.md#2': SIN_DATO,
+  'SCRUM-397.md#3': SIN_DATO,
+  'SCRUM-445.md#2': SIN_DATO,
+  'SCRUM-446.md#2': SIN_DATO,
+  'SCRUM-446.md#3': SIN_DATO,
+  'SCRUM-467.md#2': SIN_DATO,
+  'SCRUM-485.md#2': SIN_DATO,
+
+  // Con fecha pero sin hora
+  'SCRUM-268.md#2': SIN_HORA,
+  'SCRUM-273.md#2': SIN_HORA,
+  'SCRUM-406.md#2': SIN_HORA,
+  'SCRUM-409.md#2': SIN_HORA,
 };
 
 // ── EL GUARD ─────────────────────────────────────────────────────────────────────────────
 
 test('SCRUM-267 · toda entrada NUEVA del registro declara contra qué main se midió, y cuándo', () => {
-  const sinAncla = entradas()
-    .map((e) => ({ nombre: e.nombre, motivo: motivoSinAncla(e.texto) }))
-    .filter((e) => e.motivo && !(e.nombre in HEREDADAS_SIN_ANCLA))
-    .map((e) => `${e.nombre} — ${e.motivo}`);
+  // SCRUM-516: se recorre ENTRADA POR ENTRADA. Antes se leía el fichero entero y, con `/m`, un
+  // ancla buena en la primera entrada tapaba una rota en el apéndice — el hueco por el que se
+  // coló un sha de 7 caracteres el 17-ago-2026 con los cuatro guards en 17/17.
+  const sinAncla = entradasTroceadas()
+    .map((e) => ({ clave: e.clave, linea: e.linea, titulo: e.titulo, motivo: motivoSinAncla(e.cuerpo) }))
+    .filter((e) => e.motivo && !(e.clave in HEREDADAS_SIN_ANCLA))
+    .map((e) => `${e.clave} (línea ${e.linea}) — ${e.motivo}\n        ${e.titulo}`);
 
   assert.deepEqual(sinAncla, [],
     '🔴 HAY ENTRADAS DEL REGISTRO SIN ANCLA DE MEDICIÓN:\n    ' + sinAncla.join('\n    ') +
@@ -180,12 +346,129 @@ test('SCRUM-267 · toda entrada NUEVA del registro declara contra qué main se m
     '  El sha corto no vale: `1bb0b5e` aparece en tres ramas distintas de este repo esta semana.\n\n  Y NO ES EL UNICO que vigila una entrada del registro: son CUATRO, y cada sesion los ha\n  ido descubriendo EN ROJO despues de empujar. Compruebalos todos antes con\n  `npm run guards:entrada` (segundos: no compila ni toca la base).');
 });
 
+// ── SCRUM-516 · EL CONTROL QUE DECIDE ────────────────────────────────────────────────────
+
+test('SCRUM-267 · 🔴 un APÉNDICE con el ancla rota cae, aunque las entradas previas estén bien', () => {
+  // ÉSTE es el caso que el 17-ago-2026 pasaba en verde, y es el motivo entero de SCRUM-516.
+  // Se construye el fichero sintético con la MISMA forma que produce SCRUM-273: primera entrada
+  // impecable, apéndice al final separado por `---`, y en el apéndice el sha ABREVIADO.
+  const buena = '`origin/main` = `745955bae433854c960ccf276cce755a8b61bd6d` · 2026-08-03T18:20:00+02:00';
+  const fichero = [
+    '# SCRUM-999 · la primera entrada, impecable', '',
+    `**Medido contra:** ${buena}`, '', 'cuerpo.', '',
+    '---', '',
+    '# SCRUM-999 · el apéndice, con el sha ABREVIADO', '',
+    '**Medido contra:** `origin/main` = `745955b` · 2026-08-03T18:20:00+02:00', '', 'cuerpo.',
+  ].join('\n');
+
+  // (a) Como lo miraba el guard viejo —el fichero entero— el apéndice roto NO se ve.
+  assert.equal(motivoSinAncla(fichero), null,
+    '🔴 la premisa de SCRUM-516 ha dejado de ser cierta: el fichero entero ya NO pasa. Si el '
+    + 'defecto se arregló por otra vía, este control sobra y hay que rehacerlo, no relajarlo.');
+
+  // (b) Troceado por entradas, el apéndice cae Y SE DICE CUÁL.
+  const trozos = trocearEntradas(fichero);
+  assert.equal(trozos.length, 2, '🔴 el troceador no ve las dos entradas del fichero sintético.');
+  assert.equal(motivoSinAncla(trozos[0].cuerpo), null, '🔴 acusa a la primera entrada, que está bien.');
+  assert.match(motivoSinAncla(trozos[1].cuerpo), /ABREVIADO/,
+    '🔴 EL APÉNDICE CON EL ANCLA ROTA SIGUE PASANDO.\n\n'
+    + '  Es exactamente lo que se midió el 17-ago-2026: un sha de 7 caracteres en la tercera\n'
+    + '  entrada de un fichero, y los cuatro guards en 17/17. Sin este control, SCRUM-516 no\n'
+    + '  ha arreglado nada.');
+});
+
+test('SCRUM-267 · 🔴 SUELO: el troceador VE entradas, y sabe saltar los bloques cercados', () => {
+  // ① Que troceando el repo real salgan entradas. Cero entradas y cero entradas sin ancla son la
+  //    misma respuesta, y una de las dos es ceguera.
+  const todas = entradasTroceadas();
+  assert.ok(todas.length > 0,
+    '🔴 el troceo del registro ha devuelto CERO entradas. El verde del guard de arriba no diría '
+    + '«todas llevan ancla», diría «no se supo mirar». Un cero aquí es ceguera, no salud.');
+  assert.ok(todas.length >= entradas().length,
+    `🔴 hay ${todas.length} entradas para ${entradas().length} ficheros: el troceador está `
+    + 'perdiendo ficheros enteros. Cada fichero aporta AL MENOS una entrada.');
+
+  // ② Que no invente: un `# SCRUM-` dentro de un bloque cercado NO es una entrada. Hay dos casos
+  //    reales en `SCRUM-480.md`, así que esto no es una hipótesis de laboratorio.
+  const conCercado = ['# SCRUM-1 · de verdad', '', '**Medido contra:** `origin/main` = '
+    + '`745955bae433854c960ccf276cce755a8b61bd6d` · 2026-08-03T18:20:00+02:00', '',
+    '```', '# SCRUM-2 · esto es un EJEMPLO dentro de un bloque, no una entrada', '```', ''].join('\n');
+  assert.equal(trocearEntradas(conCercado).length, 1,
+    '🔴 el troceador cuenta como entrada un `# SCRUM-` que vive DENTRO de un bloque cercado. '
+    + 'Inventaría entradas fantasma —sin ancla, porque no son entradas— y el guard acusaría a '
+    + 'quien pegó un ejemplo en su registro.');
+
+  // ③ Que sepa decir que NO ve nada, en vez de devolver algo.
+  assert.deepEqual(trocearEntradas('sin ningun encabezado\n'), [],
+    '🔴 el troceador devuelve entradas donde no hay encabezado. Si se inventa una, el guard mide '
+    + 'un trozo que nadie escribió.');
+});
+
+test('SCRUM-267 · 🔴 LAS EXENTAS SON EXACTAMENTE ÉSTAS: la lista no puede crecer', () => {
+  // 🔴 EL TRINQUETE. Sin esto, la lista de exentas es una allowlist: la entrada 28 se añade sola
+  // el día que alguien escriba un apéndice sin ancla y le moleste el rojo.
+  //
+  // La decisión del fundador (19-ago-2026) fue eximir 27 POR LISTA NOMINAL, no por umbral ni por
+  // fecha de corte: «un umbral es un trinquete calibrado al número cómodo, y autoriza la copia
+  // número 28». Este test es lo que hace que esa decisión signifique algo — para meter una entrada
+  // más hay que EDITAR `HEREDADAS_SIN_ANCLA`, y eso se ve en el diff.
+  const sinAncla = entradasTroceadas().filter((e) => motivoSinAncla(e.cuerpo)).map((e) => e.clave);
+  const exentas = Object.keys(HEREDADAS_SIN_ANCLA);
+
+  const nuevas = sinAncla.filter((c) => !exentas.includes(c));
+  assert.deepEqual(nuevas, [],
+    '🔴 HAY ENTRADAS SIN ANCLA QUE NO ESTÁN EN LA LISTA DE EXENTAS:\n    ' + nuevas.join('\n    ') +
+    '\n\n  La lista de exentas está CERRADA desde el 19-ago-2026. No se amplía: se arregla la\n' +
+    '  entrada nueva poniéndole su ancla, que para una entrada NUEVA siempre se puede porque\n' +
+    '  la mides tú al escribirla.\n\n' +
+    '  Y no vale «es igual que las otras 27»: aquéllas están exentas porque su dato NO EXISTE y\n' +
+    '  reconstruirlo sería inventarlo. La tuya no tiene ese problema — todavía no la has medido.');
+
+  // Y al revés: una exenta que ya no lo necesita tiene que salir, o el censo miente sobre sí mismo.
+  const sobran = exentas.filter((c) => !sinAncla.includes(c));
+  assert.deepEqual(sobran, [],
+    '🔴 LA LISTA DE EXENTAS NOMBRA ENTRADAS QUE YA NO LO NECESITAN:\n    ' + sobran.join('\n    ') +
+    '\n\n  O tienen ya su ancla, o han dejado de existir. En los dos casos hay que quitarlas de\n' +
+    '  `HEREDADAS_SIN_ANCLA`: un censo que se describe a sí mismo mal deja de medir nada, y el\n' +
+    '  número que declara —27— dejaría de ser comprobable.');
+});
+
+test('SCRUM-267 · 🔴 los números CUADRAN: con ancla + sin ancla + eximidas = el total', () => {
+  // Un censo cuyas partes no suman no es un censo. Si el troceador perdiera entradas por el
+  // camino, los tres números seguirían siendo plausibles por separado.
+  const todas = entradasTroceadas();
+  const conAncla = todas.filter((e) => !motivoSinAncla(e.cuerpo));
+  const sinAncla = todas.filter((e) => motivoSinAncla(e.cuerpo));
+  const eximidas = sinAncla.filter((e) => e.clave in HEREDADAS_SIN_ANCLA);
+  const acusadas = sinAncla.filter((e) => !(e.clave in HEREDADAS_SIN_ANCLA));
+
+  assert.equal(conAncla.length + sinAncla.length, todas.length,
+    '🔴 «con ancla» + «sin ancla» no suman el total troceado.');
+  assert.equal(eximidas.length + acusadas.length, sinAncla.length,
+    '🔴 «eximidas» + «acusadas» no suman las que no llevan ancla.');
+  assert.equal(acusadas.length, 0,
+    `🔴 quedan ${acusadas.length} entradas acusadas y el guard de arriba debería haberlas cazado.`);
+
+  // 🔴 EL NÚMERO DECLARADO, COMPROBADO — no derivado por resta. Tras la decisión del 19-ago-2026
+  // (4 arregladas, 27 exentas) el censo tiene que valer 27 y CUADRAR con el total troceado. Si
+  // alguien arregla otra entrada, esto cae y le obliga a bajar el número aquí: una mejora que pasa
+  // desapercibida es cómo un censo acaba declarando 27 cuando quedan 20.
+  assert.equal(eximidas.length, 27,
+    `🔴 el censo declara 27 exentas y se han medido ${eximidas.length}.\n\n`
+    + '  Si has ARREGLADO una entrada, enhorabuena: bájalo aquí y quítala de '
+    + '`HEREDADAS_SIN_ANCLA`.\n  Si has AÑADIDO una, no es el sitio — una entrada nueva se mide '
+    + 'al escribirla.');
+  assert.equal(conAncla.length + eximidas.length, todas.length,
+    '🔴 «con ancla» + «exentas» no suman el total de entradas troceadas. O el troceador pierde '
+    + 'entradas, o hay una acusada suelta que nadie está viendo.');
+});
+
 test('SCRUM-267 · el censo heredado no crece, y si BAJA hay que anotarlo', () => {
-  const porNombre = new Map(entradas().map((e) => [e.nombre, e]));
+  const porClave = new Map(entradasTroceadas().map((e) => [e.clave, e]));
 
   // (a) Ninguna del censo puede haber desaparecido sin que se note: si alguien borra la entrada
   //     en vez de ponerle el ancla, el censo se quedaria describiendo un fichero que no existe.
-  const fantasmas = Object.keys(HEREDADAS_SIN_ANCLA).filter((n) => !porNombre.has(n));
+  const fantasmas = Object.keys(HEREDADAS_SIN_ANCLA).filter((n) => !porClave.has(n));
   assert.deepEqual(fantasmas, [],
     '🔴 el censo nombra entradas que ya no existen en docs/master/:\n    ' + fantasmas.join('\n    ') +
     '\n\n  Un censo que describe ficheros ausentes deja de medir nada. Quítalas de aquí.');
@@ -193,7 +476,7 @@ test('SCRUM-267 · el censo heredado no crece, y si BAJA hay que anotarlo', () =
   // (b) Y si alguna YA tiene su ancla, el número tiene que bajar en el censo. Sin esto, la mejora
   //     pasaría desapercibida y el censo seguiría diciendo que hay tres cuando quedan dos.
   const yaConAncla = Object.keys(HEREDADAS_SIN_ANCLA)
-    .filter((n) => porNombre.has(n) && !motivoSinAncla(porNombre.get(n).texto));
+    .filter((n) => porClave.has(n) && !motivoSinAncla(porClave.get(n).cuerpo));
 
   assert.deepEqual(yaConAncla, [],
     '🔴 ESTAS ENTRADAS DEL CENSO YA TIENEN SU ANCLA:\n    ' + yaConAncla.join('\n    ') +

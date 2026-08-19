@@ -230,7 +230,7 @@ entonces su comentario sigue siendo verdad y no se toca.
 
 # SCRUM-397 · PASO 0 · ¿fuente de verdad o copia? — **ni una cosa ni la otra**
 
-**Medido contra:** `origin/main` = `fbcea8428bd5c5ea62babce22465a90bc9cb5683` · `2026-08-11T18:55:41+02:00`
+**Medido contra:** `origin/main` = `fbcea8428bd5c5ea62babce22465a90bc9cb5683` · 2026-08-11T18:55:41+02:00
 **Rama:** `scrum-397-paid-at-fuente-o-copia` · No se ha tocado código: esto es la respuesta a la
 pregunta de diseño.
 
@@ -339,7 +339,7 @@ los cinco sitios de `Invoice.paidAt`.
 
 # SCRUM-397 · CONSTRUIDO · un solo instante para un solo hecho
 
-**Medido contra:** `origin/main` = `68ea282b32031c36547ab668ac4138db584636e4` · `2026-08-11T19:23:10+02:00`
+**Medido contra:** `origin/main` = `68ea282b32031c36547ab668ac4138db584636e4` · 2026-08-11T19:23:10+02:00
 **Rama:** `scrum-397-paid-at-fuente-o-copia`
 
 ## Lo que se ha hecho, y por qué el guard es la pieza que decide
