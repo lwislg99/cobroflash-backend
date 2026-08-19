@@ -269,6 +269,13 @@ test('SCRUM-296 · TODA la copy de esta pantalla va marcada como PENDIENTE (regl
     // no son el mismo hecho, y el libro existe para no confundirlos.
     trazaPresupuestoFirmado: 'Presupuesto firmado',
     trazaPresupuestoSinFirmar: 'Presupuesto sin firmar',
+    // 19-ago-2026 · las cinco ultimas del FUNDADOR. Se aprobaron TAL COMO ESTABAN: solo se les
+    // quito el marcador, el texto no cambio.
+    error: 'No se ha podido cargar el libro. Vuelve a intentarlo.',
+    vacioDeVerdad: 'Todavía no has emitido ninguna factura.',
+    colTrazas: 'De dónde viene y dónde acabó',
+    trazaAlbaran: 'Albarán',
+    sinTrazas: 'Factura suelta',
   };
   for (const [ranura, texto] of Object.entries(APROBADAS)) {
     assert.equal(COPY[ranura], texto,
@@ -280,6 +287,7 @@ test('SCRUM-296 · TODA la copy de esta pantalla va marcada como PENDIENTE (regl
     `🔴 el contador no es el aprobado: «${COPY.recuento(7)}». Se aprobó «facturas», no «asientos».`);
 
   const sinMarcar = [];
+  const conMarcador = [];
   for (const [ranura, v] of Object.entries(COPY)) {
     if (DECLARADAS_FUERA.includes(ranura) || ranura in APROBADAS || ranura === 'recuento') continue;
     // `[1]` y no `1`: las ranuras con parámetro reciben unas un número y otras una lista, y un
@@ -287,7 +295,29 @@ test('SCRUM-296 · TODA la copy de esta pantalla va marcada como PENDIENTE (regl
     // reventaba en `avisoIlegibles` — y un guard que revienta no es un guard rojo, es uno ciego.
     const texto = typeof v === 'function' ? v([1]) : v;
     if (!String(texto).startsWith(MARCADOR)) sinMarcar.push(`${ranura}: ${JSON.stringify(texto)}`);
+    else conMarcador.push(ranura);
   }
+
+  // 🔴 LAS DOS CARAS, y hacen falta las dos. Que 16 digan su texto no prueba que las otras cinco
+  // sigan marcadas, y que cinco sigan marcadas no prueba que sean ESAS cinco. Sin nombrarlas, el
+  // dia que alguien apruebe una sexta por su cuenta este guard no diria nada.
+  const MARCADAS_A_PROPOSITO = [
+    'descuadre', 'avisoIlegibles', 'avisoAjenas', 'avisoSinNumero', 'trazaNoSellado',
+  ];
+  assert.deepEqual(conMarcador.sort(), [...MARCADAS_A_PROPOSITO].sort(),
+    '🔴 han cambiado las ranuras que siguen SIN aprobar. Las cinco de la lista afirman algo sobre '
+    + 'la INTEGRIDAD del libro y las decide el ASESOR, no el fundador: estan planteadas en '
+    + '`docs/legal/PREGUNTAS_ASESOR.md` punto 21. Si una ha salido de aqui sin respuesta suya, se '
+    + 'ha aprobado microcopy fiscal por analogia.'
+    + ' Siguen marcadas: ' + JSON.stringify(conMarcador));
+  // 18 = las 17 de la tabla + `recuento`, que lleva parametro y se comprueba aparte. El numero se
+  // fija CONTANDO, no de memoria: si alguien anade una aprobada sin tocar este numero, cae aqui.
+  assert.equal(Object.keys(APROBADAS).length + 1, 18,
+    `🔴 la tabla de aprobadas ya no tiene 18 ranuras sino ${Object.keys(APROBADAS).length + 1}.`);
+  // Y el total cuadra: 18 aprobadas + 5 del asesor + `cargando` (declarada fuera) = todas.
+  assert.equal(Object.keys(COPY).length, 18 + MARCADAS_A_PROPOSITO.length + DECLARADAS_FUERA.length,
+    `🔴 las partes no suman el total: ${Object.keys(COPY).length} ranuras en COPY, y 18 + `
+    + `${MARCADAS_A_PROPOSITO.length} + ${DECLARADAS_FUERA.length}. Hay una ranura nueva sin clasificar.`);
 
   assert.deepEqual(sinMarcar, [],
     `🔴 estas ranuras llevan texto que NADIE ha aprobado y no lo dicen:\n   ${sinMarcar.join('\n   ')}\n\n` +
