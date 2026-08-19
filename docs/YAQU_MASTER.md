@@ -420,6 +420,97 @@ Botones: "Firmar y aceptar" · "Acepto sin firmar" · "No me interesa" · "Pagar
 | `MERCHANT_DELETE_ENABLED` | global | OFF | admin, caso a caso | ruta de supresión del merchant (RGPD art. 17) | RGPD-1 | **404: la ruta no existe** |
 Gates que NO son flags: venta fuerte/claims ⇐ SIF-1 · tarjeta real ⇐ Connect del merchant · ~~F2 ⇐ 25 pagantes~~ **(retirado 27-jul-2026, regla 13 nueva: los 25 pagantes ordenan la cola, no dan permiso para construir). Los otros dos SIGUEN vigentes: SIF-1 es fiscal y Connect es de dinero real.**
 
+## EXCEPCIÓN TEMPORAL DE FACTURACIÓN · THE PIONEER
+
+**Escrita el 19-ago-2026. Caduca en enero de 2027, o antes.**
+
+Esta excepción existe porque el paso 1 de la rama C —terminar la facturación sin
+VeriFactu y ponerla en manos de un profesional real— necesita que un merchant real
+emita facturas antes de que exista el convenio de colaboración social con la AEAT.
+
+### La regla general NO cambia
+
+`INVOICING_ES_ENABLED` sigue estando **off para merchants reales**. Esta excepción no
+la deroga: la perfora para UN merchant nombrado.
+
+### Qué se autoriza, exactamente
+
+| | |
+|---|---|
+| **Para quién** | **Únicamente** el merchant de The Pioneer, **por identificador**. Nunca de forma global. |
+| **Cómo se enciende** | **Override por merchant**, con la llave auditada `scripts/cambiar-flag-fiscal.mjs` (SCRUM-218). |
+| **Qué NO se toca** | 🔴 **La variable de entorno global.** Ver «El hueco conocido», abajo. |
+| **Quién revisa las facturas** | **Él, con su gestoría.** Es la única validación externa que tenemos. |
+| **Alcance del control** | **Vale para él y sólo para él.** Antes de un segundo merchant real con facturación hace falta OTRO control, decidido y escrito. |
+
+### 🔴 La caducidad, y es dura
+
+**La excepción termina el 31 de enero de 2027, o antes si llega el Modelo A. Lo que
+ocurra primero.**
+
+Escrito así a propósito. Dos cosas que NO dependen de lo mismo y que no se pueden
+mezclar:
+
+| | ¿Necesita a la AEAT? | Cuándo |
+|---|---|---|
+| **Encender el flag** para que The Pioneer facture (Modelo C: cada merchant remite con su propio certificado) | **NO** | **Septiembre de 2026** |
+| **Pasar a Modelo A** (YaQu remite por sus clientes, Convenio 017) | **SÍ** | Cuando llegue el convenio |
+
+Es decir: **la excepción arranca en septiembre y termina cuando exista Modelo A** — no
+al contrario.
+
+**Y por eso la fecha no puede ser condicional.** Según SCRUM-143, la AEAT dice que el
+convenio «en condiciones normales podría ser de un mes» pero **no compromete plazo**, y
+además admite que «no está en disposición de afirmar» que el convenio sirva hasta que
+salga una orden ministerial.
+
+> Si la caducidad fuese «cuando nos autorice la AEAT», **podría no caducar nunca.** Por
+> eso es: **enero, o antes si llega Modelo A.**
+
+Llegado el 31 de enero de 2027 sin Modelo A, esta excepción **no se prorroga por
+costumbre**: o se renueva por escrito con su motivo y una fecha nueva, o se apaga.
+
+### Qué se le comunica a él, y cómo queda constancia
+
+Antes de encender el flag, un fundador se lo comunica **por teléfono**, y le transmite
+cuatro cosas: que es el primer usuario real, que su facturación está en pruebas, que
+debe revisar cada factura con su gestoría, y a quién avisar si algo no cuadra.
+
+**Después de esa llamada se anota, con fecha, que se hizo y qué se le dijo.** Una
+llamada no deja constancia por sí sola, y esta excepción se apoya en que él sabe en
+qué condiciones está facturando.
+
+**No se enciende el flag antes de que esa llamada esté hecha y anotada.**
+
+### 🔴 El hueco conocido, declarado con su puerta
+
+La llave auditada de SCRUM-218 gobierna **el override POR MERCHANT**. **No gobierna el
+interruptor global** (`INVOICING_ES_ENABLED` como variable de entorno).
+
+Medido el 17-ago-2026: en producción (`cobroflash-backend`) y en `yaqu-staging` esa
+variable está **sin definir**, luego vale `false` por defecto del código. Está en
+`false` **por ausencia, no por mecanismo**.
+
+Y la precedencia es `merchant → país → env → default`, así que **si esa variable se
+pusiera en `true`, todos los merchants españoles sin override propio quedarían con la
+facturación encendida sin una sola fila `cambio_flag`.**
+
+Por tanto, mientras dure esta excepción:
+
+- **La variable global no se toca. Ni para encender, ni «para probar».**
+- El único camino autorizado para encender la facturación de un merchant es la llave
+  auditada, que deja fila en el AuditLog con valor anterior, valor nuevo, actor y
+  momento.
+- **Puerta de este hueco:** convertir esa prohibición en un mecanismo. Hasta entonces
+  es una convención humana, y **una prohibición sin mecanismo es una costumbre que
+  falla una vez de cada seis.**
+
+### Qué hay que poder demostrar el día que alguien pregunte
+
+Fecha exacta en que se encendió · quién lo hizo · con qué llave · para qué merchant ·
+qué se le comunicó a él y cuándo · y por qué existía la excepción. Todo eso vive en el
+AuditLog y en este apartado; **ninguna parte vive en la memoria de nadie.**
+
 ---
 
 # PARTE Q — QA MAESTRO `F1-doc → docs/QA_MASTER.md` (crece por sprint)
