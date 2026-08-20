@@ -8,6 +8,22 @@ description: Cerebro operativo de YaQu para sesiones de Claude Code. Usar SIEMPR
 
 # Cerebro YaQu — jerarquía: YAQU_MASTER.md > esta skill > cualquier otra
 
+## ANTES DE NADA: ¿ha llegado el encargo ENTERO? (SCRUM-565)
+Un encargo cortado NO parece cortado: parece más corto. Y lo que se pierde es el FINAL, que es
+donde van las restricciones de seguridad — o sea que **un encargo truncado es un encargo sin las
+prohibiciones**. Pasó el 20-ago y sólo se supo porque la sesión lo declaró; eso es disciplina, no
+mecanismo.
+1. ¿La ÚLTIMA línea es exactamente `=== FIN DEL ENCARGO ===`? Que aparezca no basta: la cabecera
+   lo CITA, así que buscarlo «en el texto» aprueba cualquier encargo cortado.
+2. Trae cabecera de recuento y NO termina en el marcador → **PARA** y pídelo completo. La
+   cabecera va arriba y sobrevive al corte: anunciar un cierre que no llega es prueba dura.
+3. Los recuentos de la cabecera se CONTRASTAN con lo recibido. Un desajuste **no es prueba de
+   corte** —contar a mano falla— así que se DECLARA y se PREGUNTA cuál manda; no se ajusta en
+   silencio. (En el estreno del formato la cabecera decía 4 prohibiciones habiendo 5.)
+4. Sin cabecera ni marcador (formato anterior) no se puede comprobar: dilo, no lo des por entero.
+5. 🔴 JAMÁS adivines lo que falta. Rellenar huecos de contexto es el patrón que causó esto.
+Herramienta: `npm run comprobar:encargo <fichero>` (o por tubería). Sale 1 si hay que parar.
+
 ## Al arrancar (siempre, en este orden)
 1. Lee docs/CLAUDE.md, docs/YAQU_MASTER.md (gobierna), docs/ASESOR.md, docs/ERRORES_ASESOR.md.
 2. `git ls-remote --heads origin` en listado COMPLETO (no filtrado): ¿existe ya rama o
