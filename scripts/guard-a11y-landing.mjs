@@ -32,6 +32,10 @@ import path from 'node:path';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
+// SCRUM-562 · el área que recibe el toque se mide en UN solo sitio. Aquí vivía una copia
+// con el idioma viejo (`elementsFromPoint(...).includes(el)`), que da por bueno lo que otro
+// elemento tapa. El porqué, en la cabecera de `_medidor-de-toque.mjs`.
+import { FUENTE_MEDIDOR, INTERACTIVOS } from './_medidor-de-toque.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
@@ -200,24 +204,12 @@ try {
     }
 
     // ── ③ TÁCTILES ───────────────────────────────────────────────────────────
+    await page.evaluate(FUENTE_MEDIDOR);   // instala window.__areaDeToque
     for (const t of TACTILES) {
-      const medida = await page.evaluate((sel, min) => {
-        const el = document.querySelector(sel);
-        if (!el) return { error: 'NO EXISTE' };
-        const r = el.getBoundingClientRect();
-        if (!r.height) return { error: 'no se está pintando' };
-        const cx = r.left + r.width / 2;
-        const toca = (y) => document.elementsFromPoint(cx, y).includes(el);
-        // CONTROL POSITIVO del detector: en el centro TIENE que tocar. Si no, no está midiendo
-        // el elemento que cree y su «cumple» no valdría nada.
-        if (!toca(r.top + r.height / 2)) return { error: 'el detector no alcanza el elemento ni en su centro' };
-        // CONTROL NEGATIVO: 400 px por debajo NO puede tocarlo.
-        if (toca(r.top + r.height / 2 + 400)) return { error: 'el detector dice que toca a 400px: no sabe decir que no' };
-        let top = r.top, bottom = r.bottom;
-        while (top > r.top - 60 && toca(top - 0.5)) top -= 0.5;
-        while (bottom < r.bottom + 60 && toca(bottom + 0.5)) bottom += 0.5;
-        return { caja: +r.height.toFixed(1), tocable: +(bottom - top).toFixed(1), cumple: (bottom - top) >= min };
-      }, t.sel, MINIMO_TACTIL);
+      const medida = await page.evaluate(async (sel, sel2, min) => {
+        const m = await window.__areaDeToque(document.querySelector(sel), sel2, { scroll: true });
+        return m.error ? m : { ...m, cumple: m.tocable >= min };
+      }, t.sel, INTERACTIVOS, MINIMO_TACTIL);
 
       if (medida.error) { console.error(`   🔴 NO SUPE MIRAR ${t.nombre}: ${medida.error}`); fallos++; continue; }
       if (!medida.cumple) {
