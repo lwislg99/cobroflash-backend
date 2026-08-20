@@ -72,6 +72,30 @@ firma del cliente → cobro de señal/total → (post SIF-1) factura VeriFactu. 
 10. **`CLAUDE.md` y `.claude/*` son derivados del master** (regla 35). Prohibido instalar
     plugins/skills/hooks de terceros sin revisión explícita del fundador (regla 36).
 
+## Marca de estado en los documentos (norma del repo — SCRUM-566, 20-ago-2026)
+
+**Un documento que describe algo que se VA a hacer dice qué parte TODAVÍA NO EXISTE.** Sin esa
+marca se lee igual antes y después de construirlo, y ésa es la puerta por la que entraron las 19
+afirmaciones falsas del máster (SCRUM-528) y la del `description` de una skill (SCRUM-538).
+
+- **Documento nuevo → tres etiquetas**, en la cabecera y una por sección:
+  **[NORMA]** lo que exige un tercero (AEAT, Meta, Stripe) — cierto hoy y no depende de nosotros ·
+  **[EXISTE]** construido y en el repo, verificable en el código ahora mismo ·
+  **[SE HARÁ]** decidido y diseñado. **Todavía no está.**
+- **Sección sin etiqueta = [SE HARÁ]**, y ponle la suya. El defecto por omisión cae del lado seguro.
+- **Se exige el EFECTO, no las palabras:** que quien busca *lo que hay* no pueda confundirlo con
+  *lo que habrá*. Las marcas que el repo YA usa —«PLANTILLA», «borrador», «NO publicar hasta»,
+  «ESTADO DE EJECUCIÓN», «completadas ✅», «EN DISCUSIÓN»— **son marca válida y se quedan como
+  están.** 30 de los 31 documentos con señal de plan ya marcaban su estado antes de escribirse
+  esto (medido sobre 302 `.md` de `docs/`). **No hay reetiquetado masivo**: las tres etiquetas son
+  para lo nuevo, no una pasada sobre lo vivo.
+- **Modelo copiable: `docs/SIF_SPEC_NOTES.md`** — cabecera + etiqueta por sección, sobre un
+  documento que mezcla las tres.
+- 🔴 **NO HAY GUARD: esto se cumple LEYENDO.** Se midió y se descartó construirlo (SCRUM-566): el
+  criterio automático dio **cuatro falsos positivos de cinco candidatos**, y un rojo permanente es
+  el que el segundo que lo ve desactiva (SCRUM-559). **El CI no vigila esto** — figurar como
+  cobertura sin serlo es justo el defecto de SCRUM-522.
+
 ## Comandos
 
 ```bash
