@@ -173,4 +173,51 @@ jobs:
       - name: Tests (incluidos los 7 de banco)
         env:
           LIBRO_PG_URL: postgresql://postgres@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/yaqu_libro_test
+          # SCRUM-552 · DOS REPORTERS A LA VEZ, cada uno a su destino.
+          #
+          # El log sigue siendo `spec` en stdout —4.374 líneas, legible— y el TAP completo va a un
+          # fichero que NADIE lee salvo cuando hay rojo. Medido: el TAP en stdout serían 23.136
+          # líneas (5,3× más) y un log que nadie puede leer es el mismo problema con otro nombre.
+          #
+          # 🔴 QUÉ APORTA EL TAP, y es lo que motivó el ticket: cuando un fichero cae A NIVEL DE
+          # PROCESO —no en un subtest— `spec` imprime sólo «'test failed'». El TAP añade
+          # `exitCode` y `signal`, que es lo único que distingue «salió con error» de «lo mataron»
+          # (OOM, timeout) o «crasheó». Reproducido en local: un fichero dio
+          # `exitCode: 3221226505` (0xC0000409, aborto del proceso en Windows) donde el log sólo
+          # decía «test failed».
+          #
+          # Va en NODE_OPTIONS y NO en el script `test` a propósito: `pretest`, `test` y sus
+          # hermanos llevan su historia en su //comentario y varios se ganaron a base de averías.
+          # Comprobado que no rompe el `npm run build` que `npm test` hace por dentro.
+          NODE_OPTIONS: >-
+            --test-reporter=spec --test-reporter-destination=stdout
+            --test-reporter=tap --test-reporter-destination=${{ runner.temp }}/tanda.tap
         run: npm test
+
+      # Sólo cuando hay rojo. En verde no imprime nada y no cuesta un segundo.
+      - name: Por qué cayó (del TAP, sólo si la tanda falla)
+        if: failure()
+        run: |
+          tap="${{ runner.temp }}/tanda.tap"
+          if [ ! -s "$tap" ]; then
+            echo "🔴 NO SUPE MIRAR: no hay TAP en $tap, así que el rojo de arriba es lo único que hay."
+            echo "   (¿ha cambiado el script \`test\`, o node dejó de aceptar los reporters en NODE_OPTIONS?)"
+            exit 0
+          fi
+          echo "── Lo que cayó, con su motivo ─────────────────────────────────────────"
+          echo "   Si el fallo es de un SUBTEST, aquí sale su nombre."
+          echo "   Si el fichero cayó a nivel de PROCESO, aquí salen \`exitCode\` y \`signal\`,"
+          echo "   que es justo lo que el log de arriba no dice."
+          echo
+          awk '/^not ok /{p=1} p{print} p&&/^  \.\.\./{p=0}' "$tap"
+
+      # El TAP entero, por si el bloque de arriba no basta. Se sube SIEMPRE que haya rojo:
+      # un diagnóstico que hay que pedir a mano llega un día tarde.
+      - name: Guardar el TAP completo
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tanda-tap
+          path: ${{ runner.temp }}/tanda.tap
+          retention-days: 7
+          if-no-files-found: warn
