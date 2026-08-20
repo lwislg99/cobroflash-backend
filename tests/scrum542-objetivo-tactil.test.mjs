@@ -95,9 +95,15 @@ test('SCRUM-542 · control: las cinco anclas saben decir que NO', () => {
 // ── ④ EL GUARD NO SE VACÍA POR DENTRO ──────────────────────────────────────────────────────
 // Que el fichero exista no es que siga midiendo. Estas cuatro son las que hacen que su verde
 // signifique algo; si desaparecen, el guard sigue pasando y ya no mide nada.
-const GUARD = fs.readFileSync(GUARD_RUTA, 'utf8');
+// ⚠️ SCRUM-562 · SE MIRAN LOS DOS FICHEROS, y el motivo importa más que el cambio: el árbitro,
+//    el afinado y los controles se mudaron a `scripts/_medidor-de-toque.mjs` para que este guard
+//    y el de SCRUM-543 no puedan volver a medir distinto. Las comprobaciones de abajo SIGUEN al
+//    mecanismo a su sitio nuevo; borrarlas porque «ya no están aquí» habría dejado de vigilar
+//    justo lo que se acababa de centralizar.
+const MEDIDOR_RUTA = path.join(RAIZ, 'scripts', '_medidor-de-toque.mjs');
+const GUARD = fs.readFileSync(GUARD_RUTA, 'utf8') + '\n' + fs.readFileSync(MEDIDOR_RUTA, 'utf8');
 const TRIPAS = [
-  ['const MINIMO = 44;', 'AB6 no se baja. Si algún caso no puede llegar, va a EXCEPCIONES con su motivo — no se toca el umbral.'],
+  ['MINIMO_TACTIL = 44', 'AB6 no se baja. Si algún caso no puede llegar, va a EXCEPCIONES con su motivo — no se toca el umbral. (Vive en `_medidor-de-toque.mjs` desde SCRUM-562: un solo umbral para todos los guards.)'],
   ['scrollIntoView', 'sin scroll, `elementsFromPoint` no ve el pie y el censo devuelve cero defectos por ceguera.'],
   ['.closest(INTERACTIVOS) === el', 'el árbitro. Con `.includes(el)` un elemento TAPADO cuenta como tocable.'],
   ['CIEGO: cero táctiles medidos', 'el suelo: un cero tiene que fallar, no aprobar.'],

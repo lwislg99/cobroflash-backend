@@ -109,7 +109,20 @@ test('SCRUM-543 · el guard de navegador existe y sigue registrado', () => {
   assert.equal(pkg.scripts['guard:a11y-landing'], 'node scripts/guard-a11y-landing.mjs',
     '🔴 el guard ya no está registrado: existiría el fichero y no lo lanzaría nadie.');
 
-  const fuente = fs.readFileSync(script, 'utf8');
+  // ⚠️ SCRUM-562 · el medidor del área de toque se mudó a `scripts/_medidor-de-toque.mjs`,
+  //    porque este guard y el de SCRUM-542 llevaban cada uno su copia y medían distinto. Se mira
+  //    la UNIÓN: la comprobación sigue al mecanismo, no se retira.
+  const propio = fs.readFileSync(script, 'utf8');
+  const fuente = propio + '\n' + fs.readFileSync(path.join(RAIZ, 'scripts', '_medidor-de-toque.mjs'), 'utf8');
+
+  // 🔴 Y LO QUE SCRUM-562 VINO A QUITAR: el idioma que da por bueno lo que otro elemento tapa.
+  //    Se mira sólo el CÓDIGO —sin comentarios—, porque las cabeceras lo CITAN para explicarlo.
+  const codigo = propio.split('\n').filter((l) => !/^\s*(\/\/|\*)/.test(l)).join('\n');
+  assert.doesNotMatch(codigo, /elementsFromPoint\([^)]*\)\s*\.includes/,
+    '🔴 ha vuelto `elementsFromPoint(...).includes(el)`. Eso pregunta si el elemento está en la ' +
+    'pila y contesta que sí aunque algo esté ENCIMA tapándolo: su fallo produce verdes. Usa ' +
+    '`_medidor-de-toque.mjs`.');
+
   assert.match(fuente, /elementsFromPoint/,
     '🔴 el guard ha dejado de medir QUÉ RECIBE EL TOQUE. Medir la caja daría 24 px para un enlace ' +
     'que sí es tocable en 44: mentiría hacia el lado incómodo, y peor, al revés si alguien quita ' +

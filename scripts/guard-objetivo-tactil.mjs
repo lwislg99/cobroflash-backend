@@ -44,18 +44,19 @@ import path from 'node:path';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
+// SCRUM-562 · el árbitro y el afinado viven en UN solo sitio, con su porqué. Aquí estaban
+// en línea, y una copia en línea es lo que dejó que este guard y el de SCRUM-543 midieran
+// distinto durante dos días.
+import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL } from './_medidor-de-toque.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
 const EDGE = process.env.EDGE_PATH || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 const PUERTO = 4472;
 
-/** AB6. No se baja. Si algún caso no llega, va como EXCEPCIÓN con su motivo, no como umbral. */
-const MINIMO = 44;
+/** AB6 y la definición de «pulsable» salen del medidor único: aquí no se redeclaran. */
+const MINIMO = MINIMO_TACTIL;
 const ANCHOS = [1280, 360];
-
-/** Qué cuenta como «se puede pulsar». El censo sale de aquí, no de una lista de sitios. */
-const INTERACTIVOS = 'a[href], button, [role="button"], summary, input[type="submit"], input[type="button"]';
 
 /**
  * Secciones que NACEN TAPADAS y que hay que destapar PARA MEDIR.
@@ -182,39 +183,18 @@ const MEDIDOR = `(async (INTERACTIVOS, MIN, DESTAPAR_SELS, CON_SCROLL) => {
     });
     if (!r0.width || !r0.height) { sinPintar.push({ ...ficha(), motivo: 'caja de 0×0' }); continue; }
 
-    // 🔴 EL SCROLL. Se puede desactivar SÓLO para el control que demuestra que hace falta.
-    if (CON_SCROLL) { el.scrollIntoView({ block: 'center', behavior: 'instant' }); await espera(); }
-
+    // 🔴 EL SCROLL, el árbitro y el afinado, los tres, viven en _medidor-de-toque.mjs.
+    //    (Sin acentos graves: esto va DENTRO de un literal de plantilla y los cerraría.)
+    const m = await window.__areaDeToque(el, INTERACTIVOS, { scroll: CON_SCROLL });
     const r = el.getBoundingClientRect();
-    const cx = r.left + r.width / 2;
-    const cy = r.top + r.height / 2;
-
-    // ÁRBITRO: qué activaría el dedo en ese punto. No «está en la pila», sino «es el suyo».
-    const toca = (y) => {
-      const arriba = document.elementsFromPoint(cx, y)[0];
-      return !!arriba && arriba.closest(INTERACTIVOS) === el;
-    };
-
-    if (!toca(cy)) { noTocables.push({ ...ficha(), caja: +r.height.toFixed(1), motivo: porQueNo(el, cx, cy) }); continue; }
-    // CONTROL NEGATIVO por elemento: 400 px más abajo NO puede seguir siendo suyo.
-    if (toca(cy + 400)) { noTocables.push({ ...ficha(), caja: +r.height.toFixed(1), motivo: 'el detector dice que le pertenece un punto 400px más abajo: no sabe decir que no' }); continue; }
-
-    // Barrido grueso de 0,5 px desde el centro…
-    let top = cy, bottom = cy;
-    while (top > cy - 90 && toca(top - 0.5)) top -= 0.5;
-    while (bottom < cy + 90 && toca(bottom + 0.5)) bottom += 0.5;
-    // …y AFINADO del borde. 🔴 Sin esto el medidor MIENTE POR DEFECTO: un objetivo de 44,0 px
-    // exactos puede leerse 43,5 sólo porque su borde cae entre dos muestras, y eso se lee como
-    // un defecto de CSS que no existe. Se buscó el borde real con bisección (≈0,01 px) antes de
-    // acusar a nadie. Un cuantizador tosco convierte un aprobado justo en un suspenso inventado.
-    const afinar = (bueno, malo) => {
-      for (let i = 0; i < 7; i++) { const m = (bueno + malo) / 2; if (toca(m)) bueno = m; else malo = m; }
-      return bueno;
-    };
-    top = afinar(top, top - 0.5);
-    bottom = afinar(bottom, bottom + 0.5);
-    const tocable = +(bottom - top).toFixed(1);
-    medidos.push({ ...ficha(), caja: +r.height.toFixed(1), tocable, cumple: tocable >= MIN });
+    if (m.error) {
+      const cx = r.left + r.width / 2;
+      // El medidor dice QUE no se pudo; el porqué lo averigua este guard, que es quien lo reporta.
+      const motivo = m.error.includes('no lo alcanza') ? porQueNo(el, cx, r.top + r.height / 2) : m.error;
+      noTocables.push({ ...ficha(), caja: m.caja ?? +r.height.toFixed(1), motivo });
+      continue;
+    }
+    medidos.push({ ...ficha(), caja: m.caja, tocable: m.tocable, cumple: m.tocable >= MIN });
   }
   return { medidos, sinPintar, noTocables, total: todos.length, destapados };
 })`;
@@ -229,9 +209,9 @@ for (const ancho of ANCHOS) {
   decir('════════════════════════════════════════════════════════════════════════════');
 
   // ── ⓪ CONTROL DEL SCROLL: ¿está el scroll haciendo algo, o me lo estoy creyendo? ─────────
-  const sinScroll = await page.evaluate(`${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MINIMO}, ${JSON.stringify(DESTAPAR.map((d) => d.sel))}, false)`);
+  const sinScroll = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MINIMO}, ${JSON.stringify(DESTAPAR.map((d) => d.sel))}, false)`);
   await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'load' });   // página limpia
-  const r = await page.evaluate(`${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MINIMO}, ${JSON.stringify(DESTAPAR.map((d) => d.sel))}, true)`);
+  const r = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MINIMO}, ${JSON.stringify(DESTAPAR.map((d) => d.sel))}, true)`);
 
   const pieSin = sinScroll.medidos.filter((m) => m.seccion === 'footer').length;
   const pieCon = r.medidos.filter((m) => m.seccion === 'footer').length;
