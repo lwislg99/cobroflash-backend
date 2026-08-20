@@ -164,3 +164,90 @@ export function mismoBlobEnLasDosPlataformas(raiz, ruta) {
   const linux = hash('const a = 1;\nconst b = 2;\n');
   return { igual: windows === linux, windows, linux };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-533 · LO QUE TOCA LA RAMA, QUE ES LO ÚNICO QUE EL AUTOR PUEDE ARREGLAR
+//
+// El censo del árbol entero acusa al ENTORNO: en un árbol veterano son ~1.350 ficheros, todos
+// de commits ajenos y antiguos, y ninguno se arregla editándolo. Un rojo así no se arregla, se
+// aprende a ignorar — y el día que cace un `\r` de verdad ya nadie lo mirará.
+//
+// Esto devuelve la otra población: los ficheros que ESTA rama toca. Ahí un `\r` sí es del autor,
+// sí se arregla, y el rojo vuelve a significar algo.
+
+/** El punto de partida de la rama, o `null` si no se puede resolver (CI con checkout somero). */
+export function baseDeLaRama(raiz) {
+  for (const ref of ['origin/main', 'origin/HEAD', 'main']) {
+    try {
+      const sha = execFileSync('git', ['merge-base', 'HEAD', ref], {
+        cwd: raiz, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
+      }).trim();
+      if (sha) return { sha, ref };
+    } catch { /* esa referencia no existe aquí; se prueba la siguiente */ }
+  }
+  return null;
+}
+
+/**
+ * Rutas que la rama toca: lo COMMITEADO desde su base + lo que hay sin commitear (modificado o
+ * sin rastrear). Las dos, porque el `\r` puede entrar en cualquiera de los dos momentos y el
+ * autor es el mismo.
+ *
+ * `base` puede ser `null` — en un checkout somero no hay con qué comparar. En ese caso se
+ * devuelve SOLO lo no commiteado y se DICE (`baseResuelta: false`), en vez de devolver un
+ * conjunto recortado que se lea como completo.
+ */
+export function ficherosDeLaRama(raiz) {
+  const base = baseDeLaRama(raiz);
+  const rutas = new Set();
+
+  if (base) {
+    const salida = execFileSync(
+      'git', ['diff', '--name-only', '--diff-filter=ACMR', '-z', `${base.sha}..HEAD`],
+      { cwd: raiz, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
+    );
+    for (const r of salida.split('\0')) if (r) rutas.add(r);
+  }
+
+  // Sin commitear. `--porcelain=v1 -z` no escapa rutas, así que no hay que desentrecomillar nada;
+  // los renombrados traen DOS campos (destino y origen) y hay que consumir el segundo o se leería
+  // como una ruta suelta más.
+  //
+  // 🔴 LO SIN RASTREAR (`??`) QUEDA FUERA, Y NO ES UN DESCUIDO. El censo del árbol entero mira
+  // `git ls-files`, o sea SOLO lo rastreado: incluir aquí un fichero que todavía no está en el
+  // repo haría este caso más estricto que aquel en una dimensión que `.gitattributes` nunca
+  // prometió, y lo pondría rojo por el borrador que alguien dejó en su árbol. En cuanto se hace
+  // `git add` pasa a `A ` y entra: desde ese momento es del autor y va a viajar en el commit.
+  const est = execFileSync('git', ['status', '--porcelain=v1', '-z'], {
+    cwd: raiz, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
+  }).split('\0');
+  for (let i = 0; i < est.length; i++) {
+    const linea = est[i];
+    if (!linea) continue;
+    const xy = linea.slice(0, 2);
+    const ruta = linea.slice(3);
+    if (xy[0] === 'R' || xy[0] === 'C' || xy[1] === 'R' || xy[1] === 'C') i += 1; // el origen
+    if (xy === '??') continue;                              // borrador, todavía no es del repo
+    if (xy === 'D ' || xy === ' D' || xy === 'DD') continue; // borrado: no hay disco que mirar
+    if (ruta) rutas.add(ruta);
+  }
+
+  return { base, baseResuelta: !!base, rutas: [...rutas] };
+}
+
+/** Censo del DISCO restringido a una lista de rutas. Misma clasificación que el censo entero. */
+export function censoDeRutas(raiz, rutas, extensiones) {
+  const conCR = [];
+  let leidos = 0, textos = 0, binarios = 0, sinCR = 0, fueraDeAlcance = 0;
+  for (const ruta of rutas) {
+    if (extensiones && !extensiones.has(path.extname(ruta).toLowerCase())) { fueraDeAlcance += 1; continue; }
+    let cuerpo;
+    try { cuerpo = fs.readFileSync(path.join(raiz, ruta)); } catch { continue; }
+    leidos += 1;
+    const c = clasificarBlob(cuerpo);
+    if (!c.texto) { binarios += 1; continue; }
+    textos += 1;
+    if (c.crlf || c.crSuelto) conCR.push({ ruta, ...c }); else sinCR += 1;
+  }
+  return { candidatas: rutas.length, fueraDeAlcance, leidos, textos, binarios, sinCR, conCR };
+}

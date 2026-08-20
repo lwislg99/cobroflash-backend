@@ -34,7 +34,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   censoEol, censoArbolDeTrabajo, mismoBlobEnLasDosPlataformas, clasificarBlob,
-  extensionesConEolLf, CR_PERMITIDO,
+  extensionesConEolLf, CR_PERMITIDO, ficherosDeLaRama, censoDeRutas,
 } from './_censo-eol.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -152,7 +152,7 @@ test('SCRUM-480 · 🔴 ningún blob de TEXTO lleva CR (salvo lo declarado)', ()
 // Por eso el assert es sobre EL NÚMERO: así el diff automático enseña `1386` frente a `0` —la
 // magnitud, que es el dato— y la lista baja al mensaje, con su corte DECLARADO en palabras.
 
-test('SCRUM-480 · 🔴 el ÁRBOL DE TRABAJO no tiene ni un `\\r` — es lo que leen los guards', () => {
+test('SCRUM-480 · 🔴 el ÁRBOL DE TRABAJO no tiene ni un `\\r` — es lo que leen los guards', (t) => {
   /** Cuántos ofensores se nombran. El resto se cuenta en voz alta, nunca se calla. */
   const MUESTRA = 25;
   const r = censoArbolDeTrabajo(RAIZ, EXT_LF);
@@ -185,7 +185,7 @@ test('SCRUM-480 · 🔴 el ÁRBOL DE TRABAJO no tiene ni un `\\r` — es lo que 
   const ofensores = r.conCR.filter((f) => !CR_PERMITIDO[f.ruta]);
   const muestra = ofensores.slice(0, MUESTRA);
 
-  assert.equal(ofensores.length, 0,
+  const informe = (
     `🔴 TU ÁRBOL DE TRABAJO TIENE ${ofensores.length} ${ofensores.length === 1 ? 'FICHERO' : 'FICHEROS'} DE TEXTO`
     + ` CON \`\\r\` — de `
     + `${r.textos} de texto, sobre ${r.leidos} leídos y ${r.poblacion} rastreados.\n\n`
@@ -198,7 +198,16 @@ test('SCRUM-480 · 🔴 el ÁRBOL DE TRABAJO no tiene ni un `\\r` — es lo que 
     + '\n\n'
     + '  ESTO NO ACUSA AL REPOSITORIO. Lo que se sube está limpio y lo vigila el caso de arriba,\n'
     + '  que mide blobs. Acusa a ESTE ÁRBOL: se materializó antes de que `.gitattributes` dijera\n'
-    + '  `eol=lf`, o se clonó con otra configuración de `core.autocrlf`. Y no es cosmética,\n'
+    + '  `eol=lf`, y git no reescribe en el checkout lo que no cambia, así que siguen como\n'
+    + '  nacieron.\n\n'
+    + '  🔴 NO ES `core.autocrlf`, Y ESTÁ MEDIDO (SCRUM-533, 19-ago-2026). Dos clones frescos\n'
+    + '  del MISMO commit b78a3b1f, censados con este mismo instrumento:\n'
+    + '     core.autocrlf=true  -> 0 de 1.502 ficheros de texto con CR\n'
+    + '     core.autocrlf=false -> 0 de 1.502\n'
+    + '  y este árbol veterano, también con autocrlf=true -> 1.348. La configuración NO es la\n'
+    + '  variable: `eol=lf` gana a `autocrlf` en un checkout nuevo. Cambiar el ajuste no arregla\n'
+    + '  un árbol ya materializado, y culparlo manda a quien lo lea a tocar lo que no es.\n'
+    + '  Y no es cosmética,\n'
     + '  CIEGA TUS GUARDS EN SILENCIO: `linea.replace(/\\/\\/.*$/, \'\')` sobre una línea que\n'
     + '  arrastra `\\r` no hace NADA, así que los guards que corras aquí aprueban lo que venían a\n'
     + '  prohibir. Le pasó al de SCRUM-409 durante semanas, y solo en Windows.\n\n'
@@ -210,7 +219,116 @@ test('SCRUM-480 · 🔴 el ÁRBOL DE TRABAJO no tiene ni un `\\r` — es lo que 
     + '   · en el mismo árbol, y SOLO con todo commiteado o guardado en `git stash`, porque el\n'
     + '     `reset` de la segunda línea BORRA lo que no esté en ninguno de los dos:\n'
     + '        git rm --cached -r .   &&   git reset --hard');
+
+  // ── SCRUM-533 · DÓNDE BLOQUEA ESTE CASO. DECIDIDO CON LA MEDICIÓN DELANTE ─────────────
+  //
+  // Este caso acusa al ENTORNO, no al cambio. En un árbol veterano son ~1.350 ficheros, TODOS
+  // de commits ajenos y antiguos, y ninguno se arregla editándolo: se arregla rematerializando
+  // el árbol, que NO toca el repositorio ni la historia. Bloquear por eso en local pone rojo a
+  // una persona por algo que no ha hecho y que su rama no puede arreglar — y un rojo que no se
+  // puede arreglar no se arregla: se aprende a ignorar. El día que cace un `\r` de verdad, ya
+  // nadie lo mirará. Eso es lo que este ticket viene a impedir.
+  //
+  // 🔴 PERO NO SE CALLA, Y POR ESO NO ES UN `skip`:
+  //   · EN CI BLOQUEA EXACTAMENTE IGUAL QUE ANTES. Allí el checkout es fresco y el número es
+  //     0, así que el trinquete no pierde nada — y si algún día CI se clona de otra forma, cae.
+  //   · EN LOCAL SE IMPRIME ENTERO con `diagnostic`: recuento, muestra y remedio. Lo que se le
+  //     retira es el poder de tumbar la tanda, no el aviso.
+  //   · Y EL AVISO SIGUE SIENDO CIERTO. Medido el 19-ago-2026 en este árbol: 504 ficheros de
+  //     `tests/` y 216 de `src/` llevan CR, así que los guards que corran aquí PUEDEN estar
+  //     ciegos y un «0 fallos» de un árbol con este diagnóstico no vale como evidencia. Eso no
+  //     lo cambia este ticket: lo único que cambia es a quién se le pone el rojo delante.
+  //
+  // Lo que SÍ bloquea en local es el caso de abajo: los ficheros que toca TU rama.
+  if (process.env.CI) {
+    assert.equal(ofensores.length, 0, informe);
+  } else if (ofensores.length > 0) {
+    t.diagnostic(informe);
+  }
 });
+
+// ── 🔴 SCRUM-533 · LO QUE TOCA TU RAMA — EL CASO QUE SÍ ACUSA AL CAMBIO ──────────────────
+//
+// EL PROBLEMA QUE RESUELVE, y no es de comodidad. El caso de arriba mide el árbol ENTERO, así
+// que en un árbol veterano sale rojo por ~1.350 ficheros ajenos y antiguos, SIEMPRE, y por algo
+// que la rama no puede arreglar. Un test que falla siempre por el entorno y nunca por el código
+// enseña a ignorar un rojo — y entonces deja de proteger el día que el rojo sea de verdad.
+//
+// Este caso mide la otra población: los ficheros que ESTA rama toca. Ahí un CR es del autor, se
+// arregla guardando el fichero en LF, y el rojo vuelve a significar algo.
+//
+// POR QUÉ ESTO NO ES BAJAR EL LISTÓN: no se relaja ningún umbral ni se excluye ninguna ruta. El
+// trinquete de los BLOBS sigue midiendo el repositorio entero y sigue en 0; el del árbol sigue
+// midiéndolo entero y sigue bloqueando EN CI. Lo que se añade es un caso más ESTRECHO y más
+// exigente en lo suyo: cae con UN solo fichero, el tuyo, y lo nombra.
+//
+// LA POBLACIÓN, y cada decisión está medida:
+//   · lo COMMITEADO desde la base de la rama (`merge-base` con `origin/main`) MÁS lo modificado
+//     o añadido al índice y todavía sin commitear. Un CR puede entrar en los dos momentos.
+//   · lo SIN RASTREAR queda fuera (ver `ficherosDeLaRama`): el censo del árbol mira
+//     `git ls-files`, o sea solo lo rastreado, y este caso no puede ser más estricto que aquel
+//     en una dimensión que `.gitattributes` nunca prometió. Medido: en este árbol había dos
+//     borradores ajenos sin rastrear con CRLF que lo habrían puesto rojo el primer día.
+//   · las mismas extensiones que promete `.gitattributes`, DERIVADAS de él, no escritas aquí.
+
+test('SCRUM-533 · 🔴 los ficheros que TOCA ESTA RAMA no llevan ni un CR en disco', () => {
+  const { base, rutas } = ficherosDeLaRama(RAIZ);
+  const r = censoDeRutas(RAIZ, rutas, EXT_LF);
+  const ofensores = r.conCR.filter((f) => !CR_PERMITIDO[f.ruta]);
+
+  assert.equal(ofensores.length, 0,
+    '🔴 ESTA RAMA TOCA ' + ofensores.length + ' FICHERO(S) DE TEXTO CON CR EN EL DISCO — de '
+    + r.textos + ' de texto sobre ' + r.leidos + ' leídos (' + rutas.length + ' tocados, '
+    + r.fueraDeAlcance + ' fuera de las extensiones que `.gitattributes` promete en LF).\n\n'
+    + ofensores.map((f) => '   · ' + f.ruta + '  (CRLF ' + f.crlf + ', CR sueltos ' + f.crSuelto + ')').join('\n')
+    + '\n\n'
+    + '  ESTE SÍ ES TUYO, a diferencia del censo del árbol entero: son ficheros que esta rama\n'
+    + '  toca, así que el CR viaja en tu commit. Y no es cosmética: al mergear, un fichero\n'
+    + '  guardado con CRLF contra una rama en LF produce un conflicto del fichero ENTERO —\n'
+    + '  `settingsView.js` (13-ago-2026) y `quotesView.js` (`9c2c69ef`, 5.144 líneas).\n\n'
+    + '  SE ARREGLA GUARDÁNDOLO EN LF: en el editor, fin de línea LF, guardar y volver a mirar.\n'
+    + '  Si el blob ya está bien y solo está sucio el disco, basta con rematerializar ESE\n'
+    + '  fichero. No se toca `.gitattributes` ni se añade una excepción: eso sería apagar la\n'
+    + '  alarma en el único caso en que suena por algo que has hecho tú.\n\n'
+    + '  base de la rama: ' + (base ? base.ref + ' @ ' + base.sha.slice(0, 8) : '(NO RESUELTA)'));
+});
+
+test('SCRUM-533 · SUELO: el recolector de la rama SABE ver, y el clasificador SABE acusar', () => {
+  // 🔴 SIN ESTO EL CASO DE ARRIBA ES VERDE SOBRE LA NADA. Una rama sin cambios da población
+  // vacía, y una lista vacía hace verdad cualquier «no hay ninguno». Esto separa «no hay CR»
+  // de «no supe qué mirar», que dan exactamente el mismo verde.
+  const { base, rutas } = ficherosDeLaRama(RAIZ);
+  assert.ok(Array.isArray(rutas), '🔴 el recolector no devuelve una lista de rutas');
+
+  // ① la base se resuelve. Sin ella, «0 ficheros tocados» no significa «rama limpia» sino
+  //   «no supe compararla». En un checkout somero (CI) puede no resolver, y entonces el caso
+  //   de arriba solo mira lo no commiteado y lo DICE en su mensaje; aquí se exige porque en un
+  //   árbol de trabajo normal siempre resuelve, y si deja de hacerlo hay que enterarse.
+  if (!process.env.CI) {
+    assert.ok(base && /^[0-9a-f]{40}$/.test(base.sha),
+      '🔴 CIEGO: no se ha podido resolver la base de la rama con `merge-base` contra '
+      + '`origin/main`. El caso de arriba estaría midiendo una población recortada y su verde '
+      + 'no significaría nada.');
+  }
+
+  // ② el clasificador sabe acusar Y sabe absolver, con búferes dados en la mano. Si solo se
+  //   comprobara lo primero, un clasificador que acusara SIEMPRE también pasaría.
+  assert.equal(clasificarBlob(Buffer.from('a\r\nb\n', 'latin1')).crlf, 1,
+    '🔴 el clasificador no ve un CRLF que le doy en la mano: no podría acusar a nadie.');
+  assert.equal(clasificarBlob(Buffer.from('a\nb\n', 'latin1')).crlf, 0,
+    '🔴 el clasificador acusa a un fichero en LF: acusaría a todos y acabaría desactivado.');
+
+  // ③ y el censo restringido MIRA de verdad la ruta que se le da, en vez de devolver vacío.
+  //   ⚠️ `package.json` y NO `.gitattributes`: un fichero que empieza por punto no tiene
+  //   extensión para `path.extname`, así que jamás entra en la población y el censo devolvía
+  //   0 leídos. Lo cazó este mismo suelo al escribirlo, que es para lo que está.
+  const uno = censoDeRutas(RAIZ, ['package.json'], new Set(['.json']));
+  assert.equal(uno.candidatas, 1, '🔴 el censo restringido no ha mirado la ruta que le di');
+  assert.equal(uno.leidos, 1,
+    '🔴 el censo restringido no ha llegado a LEER `package.json`, que existe siempre. Si no '
+    + 'lee, su «0 ofensores» es ceguera y no limpieza.');
+});
+
 
 test('SCRUM-480 · SUELO: el censo del disco LEE de verdad, y sabría ver un `\\r`', () => {
   const r = censoArbolDeTrabajo(RAIZ, EXT_LF);
