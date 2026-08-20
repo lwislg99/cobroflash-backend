@@ -97,8 +97,9 @@ export const SECCIONES_BLOQUE_F = {
   // leia como un hueco. `#comparativa` la cubre F5: `tests/scrum332-comparativa-anclas.test.mjs`
   // ancla FILA A FILA y exige la correspondencia en LOS DOS SENTIDOS —ninguna fila sin ancla y
   // ningun ancla sin fila—, mas el caso de que el comprobador sepa fallar. Medido el 20-ago-2026:
-  // 5 tests, 5 en verde. Lo que le falta a esta seccion es entrar en el registro de PROMESAS de
-  // aqui, no vigilancia.
+  // 5 tests, 5 en verde. Y por el otro eje, el de la aprobacion, SCRUM-561 midio que sus 20
+  // textos SI estan en `docs/MICROCOPY_BLOQUE_F_PARA_APROBAR.md` — 20 de 20, ineditos 0.
+  // Lo que le falta a esta seccion es entrar en el registro de PROMESAS de aqui, no vigilancia.
   'comparativa': { censada: false, motivo: 'la cubre F5 fila a fila (scrum332); lo que falta es su entrada en ESTE registro → SCRUM-555' },
   // 🔴 SCRUM-557 punto 2 · SALE, y sale POR EL CRITERIO, no por retirarle el atributo a mano.
   // El criterio: este censo vigila el texto del bloque F que esta EN PROPUESTA; `#contacto-publico`
