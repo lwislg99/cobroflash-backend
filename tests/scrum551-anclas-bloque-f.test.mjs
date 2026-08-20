@@ -35,6 +35,22 @@ const SIN_ANCLA_HOY = [
   'gremios[pintura]/p#1',
 ];
 
+/**
+ * SCRUM-558 · LA CUARTA, Y NO ES DE LA MISMA CLASE.
+ *
+ * `gremios[climatizacion]/p#1` tiene su ancla BIEN puesta: `runMaintenanceProposals` existe y lo
+ * dispara el cron. Y aun asi la frase es falsa para un merchant nuevo, porque
+ * `MAINTENANCE_ENABLED` nace apagado y el merchant tampoco puede encenderlo (SCRUM-207).
+ *
+ * ⚠️ POR QUE NO SE SUMA A `SIN_ANCLA_HOY` Y YA. Las dos listas se arreglan de forma distinta y
+ * mezclarlas perderia justo lo que este ticket vino a distinguir:
+ *   · SIN_ANCLA    → no hay mecanismo. Se arregla construyendolo o reescribiendo el texto.
+ *   · INALCANZABLE → el mecanismo esta. Se arregla abriendo el camino o reescribiendo el texto.
+ * El trinquete que sube de 3 a 4 es el de abajo, sobre la UNION: lo que no puede crecer es el
+ * numero de frases publicables que hoy no son ciertas.
+ */
+const INALCANZABLES_HOY = ['gremios[climatizacion]/p#1'];
+
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // SUELO · «ninguna promesa sin ancla» y «no supe leer la landing» dan el mismo verde
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -209,4 +225,24 @@ test('SCRUM-551 · el registro guarda el TEXTO, para que reescribir caduque el a
   assert.equal(r.ok, false, '🔴 se reescribió una frase y su ancla siguió valiendo');
   assert.match(r.salida, /EL TEXTO CAMBIÓ/);
   assert.match(r.salida, /gremios\[fontaneria\]/, '🔴 no dice QUÉ unidad cambió');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// EL TRINQUETE UNIDO · SCRUM-558 lo sube de 3 a 4
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-551 + SCRUM-558 · las frases que HOY no son ciertas son exactamente cuatro', () => {
+  const r = censarEnDisco(RAIZ);
+  const hoy = [...r.sinAncla.map((s) => s.id), ...r.inalcanzables.map((s) => s.id)].sort();
+  const esperado = [...SIN_ANCLA_HOY, ...INALCANZABLES_HOY].sort();
+
+  assert.equal(esperado.length, 4, '🔴 el trinquete declarado ya no son cuatro: actualiza el comentario tambien.');
+  assert.deepEqual(hoy, esperado,
+    '🔴 HA CAMBIADO EL CONJUNTO DE FRASES QUE HOY NO SON CIERTAS.\n\n'
+    + '  Las dos clases cuentan igual para este numero y se arreglan distinto:\n'
+    + '  · sin ancla    → el mecanismo NO existe.\n'
+    + '  · inalcanzable → el mecanismo existe y el usuario no llega (SCRUM-558).\n\n'
+    + '  Si ha crecido, hay un texto nuevo prometiendo algo que un merchant nuevo no tiene.\n'
+    + '  Si ha menguado, di CUAL y por que antes de bajar el numero.\n\n'
+    + `  Ahora mismo: ${JSON.stringify(hoy)}`);
 });
