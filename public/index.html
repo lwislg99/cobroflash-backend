@@ -290,6 +290,37 @@
   footer{padding:34px 0;border-top:1px solid var(--border);background:var(--bg)}
   .foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px}
   .foot .c{color:var(--muted);font-size:13px} .foot .l a{color:var(--muted);font-size:14px;margin-left:18px} .foot .l a:hover{color:var(--ink)}
+  /* SCRUM-332 (F5) · comparativa "tu método actual" vs YaQu.
+     MÓVIL PRIMERO a propósito (AB1 + la lección de SCRUM-139 F1): el apilado es el estado POR
+     DEFECTO y las tres columnas sólo aparecen a partir de 641px. Así el caso de 360px no depende
+     de que una media query sobrescriba bien un grid — es que a esa anchura el grid NO EXISTE, y
+     una comparativa de dos columnas es justo lo que peor se comporta ahí.
+     Sin tokens nuevos: todo sale de /tokens.css. */
+  .cmp{display:flex;flex-direction:column;gap:12px;max-width:940px;margin:0 auto}
+  .cmp-head{display:none}
+  .cmp-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 16px;box-shadow:var(--shadow-sm)}
+  .cmp-sit{font-weight:700;color:var(--ink);font-size:16px;line-height:1.42;margin:0 0 12px}
+  .cmp-cell{display:flex;gap:10px;align-items:flex-start;padding:10px 0;min-width:0}
+  .cmp-cell+.cmp-cell{border-top:1px solid var(--border)}
+  .cmp-cell p{margin:0;font-size:15px;line-height:1.5;color:var(--body);min-width:0;overflow-wrap:anywhere}
+  .cmp-yaqu p{color:var(--ink);font-weight:600}
+  .cmp-ic{flex:0 0 18px;width:18px;height:18px;margin-top:1px;color:var(--muted)}
+  .cmp-yaqu .cmp-ic{color:var(--brand)}
+  .cmp-lbl{display:block;font-size:11.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+  .cmp-yaqu .cmp-lbl{color:var(--brand-tint-ink)}
+  @media(min-width:641px){
+    .cmp-head{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:20px;padding:0 18px 2px}
+    .cmp-head span{font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+    .cmp-head span:last-child{color:var(--brand-tint-ink)}
+    .cmp-row{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:20px;align-items:start;padding:18px}
+    .cmp-sit{margin:0}
+    .cmp-cell,.cmp-cell+.cmp-cell{border-top:0;padding:0}
+    /* En escritorio la etiqueta la dice la cabecera de columna, así que sobra A LA VISTA — pero
+       NO al oído: la cabecera es visual y no está asociada a cada celda. Con `display:none` un
+       lector de pantalla oiría las dos celdas seguidas sin saber cuál es cuál. Se oculta sólo
+       visualmente. Es una regla de este componente, no una clase global nueva (AB3). */
+    .cmp-lbl{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  }
   .reveal{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease} .reveal.in{opacity:1;transform:none}
   @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none}}
   @media(max-width:640px){
@@ -480,6 +511,72 @@
       <div class="prod reveal"><svg class="p-bg" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="1.4"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 6.5a3 3 0 0 1 0 5.5M18.5 19a4.6 4.6 0 0 0-3-4.3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><div class="p-in"><div class="p-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 6.5a3 3 0 0 1 0 5.5M18.5 19a4.6 4.6 0 0 0-3-4.3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div><h3>Clientes y proveedores</h3><p>Fichas, historial y contactos de todos, siempre a mano y ligados a sus documentos.</p><span class="p-link">Ver más <span class="ar">→</span></span></div></div>
       <div class="prod reveal"><svg class="p-bg" viewBox="0 0 24 24" fill="none"><path d="m12 2 8 4.5v9L12 20l-8-4.5v-9L12 2Zm-8 4.5 8 4.5 8-4.5M12 20v-9" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg><div class="p-in"><div class="p-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="m12 2 8 4.5v9L12 20l-8-4.5v-9L12 2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m4 6.5 8 4.5 8-4.5M12 20v-9" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></div><h3>Productos y catálogo</h3><p>Tus precios y servicios listos para reutilizar en cada presupuesto — sin volver a teclearlos.</p><span class="p-link">Ver más <span class="ar">→</span></span></div></div>
       <div class="prod reveal"><svg class="p-bg" viewBox="0 0 24 24" fill="none"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><div class="p-in"><div class="p-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div><h3>Gastos, informes y equipo</h3><p>Márgenes por trabajo, gastos y resumen semanal. Y tu equipo con roles (admin / técnico).</p><span class="p-link">Ver más <span class="ar">→</span></span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════════════════════
+     SCRUM-332 (F5) · Comparativa "tu método actual" vs YaQu.
+
+     🛑 TODO EL TEXTO DE ESTA SECCIÓN ES UNA **PROPUESTA**, NO MICROCOPY APROBADO (regla 30).
+     Por eso la sección nace con `hidden` y con `data-propuesta`: está construida y verificada,
+     pero NO se publica. El fundador aprueba (o reescribe) los textos y entonces se quita el
+     `hidden` Y el `data-propuesta` — los dos, en el mismo commit.
+
+     No se usa el marcador `[PENDIENTE microcopy oficial]` del dashboard A PROPÓSITO: aquí es una
+     página pública, y la propia nota de `albaranDetailView.js:74-75` dice que un texto de relleno
+     que se pinta es peor que un hueco. Un hueco en la landing es dinero; un marcador de deuda
+     técnica delante de un cliente, también.
+
+     🔴 CADA FILA TIENE UN ANCLA — un mecanismo que existe HOY. El ancla NO vive aquí (no se
+     publican rutas internas en una página pública): vive en `tests/scrum332-comparativa-anclas.test.mjs`,
+     emparejada por `data-fila`. El guard exige correspondencia EN LAS DOS DIRECCIONES, así que una
+     fila nueva sin ancla no puede colarse y un ancla huérfana tampoco.
+     Motivo: art. 5 LCD (actos de engaño). No nombrar a nadie protege de que un competidor
+     denuncie; NO protege de publicidad engañosa. Una fila que no es verdad hoy es engaño aunque
+     sea verdad dentro de dos sprints.
+     ══════════════════════════════════════════════════════════════════════════════════════════ -->
+<section id="comparativa" class="sec-white" hidden data-propuesta="microcopy-sin-aprobar">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">PROPUESTA · La diferencia</span><h2>Tu libreta no firma, no cobra y no avisa.</h2><p>Seis situaciones de cualquier semana. A la izquierda, cómo se resuelven hoy.</p></div>
+    <div class="cmp">
+      <div class="cmp-head" aria-hidden="true"><span>La situación</span><span>Tu método actual</span><span>Con YaQu</span></div>
+
+      <div class="cmp-row" data-fila="firma">
+        <p class="cmp-sit">El cliente dice que él nunca autorizó ese trabajo.</p>
+        <div class="cmp-cell"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><span class="cmp-lbl">Tu método actual</span>Tu palabra contra la suya.</p></div>
+        <div class="cmp-cell cmp-yaqu"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m8 12.2 2.6 2.6L16 9.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><p><span class="cmp-lbl">Con YaQu</span>Lo aceptó con su firma y su fecha, y la firma queda dentro del PDF.</p></div>
+      </div>
+
+      <div class="cmp-row" data-fila="cobro-pendiente">
+        <p class="cmp-sit">La factura lleva tres semanas sin pagarse y te da corte insistir.</p>
+        <div class="cmp-cell"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><span class="cmp-lbl">Tu método actual</span>O llamas tú, o no llama nadie.</p></div>
+        <div class="cmp-cell cmp-yaqu"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m8 12.2 2.6 2.6L16 9.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><p><span class="cmp-lbl">Con YaQu</span>El recordatorio sale solo. Tú no tienes que ser el pesado.</p></div>
+      </div>
+
+      <div class="cmp-row" data-fila="presupuesto-sin-respuesta">
+        <p class="cmp-sit">Pasaste el presupuesto hace diez días y el cliente no ha dicho nada.</p>
+        <div class="cmp-cell"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><span class="cmp-lbl">Tu método actual</span>Se queda en la libreta hasta que te acuerdas.</p></div>
+        <div class="cmp-cell cmp-yaqu"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m8 12.2 2.6 2.6L16 9.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><p><span class="cmp-lbl">Con YaQu</span>Se le recuerda solo, y el presupuesto caduca cuando toca.</p></div>
+      </div>
+
+      <div class="cmp-row" data-fila="historial-cliente">
+        <p class="cmp-sit">«¿Cuánto me cobraste por lo del año pasado?»</p>
+        <div class="cmp-cell"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><span class="cmp-lbl">Tu método actual</span>A buscar entre hojas, si es que la guardaste.</p></div>
+        <div class="cmp-cell cmp-yaqu"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m8 12.2 2.6 2.6L16 9.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><p><span class="cmp-lbl">Con YaQu</span>Cada movimiento queda en su ficha, con su fecha.</p></div>
+      </div>
+
+      <div class="cmp-row" data-fila="margen-mes">
+        <p class="cmp-sit">Acaba el mes y no sabes si has ganado dinero.</p>
+        <div class="cmp-cell"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><span class="cmp-lbl">Tu método actual</span>Lo sabrás cuando lo diga la gestoría.</p></div>
+        <div class="cmp-cell cmp-yaqu"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m8 12.2 2.6 2.6L16 9.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><p><span class="cmp-lbl">Con YaQu</span>Lo que entró menos lo que salió, mes a mes.</p></div>
+      </div>
+
+      <div class="cmp-row" data-fila="catalogo-precios">
+        <p class="cmp-sit">Vuelves a escribir a mano los precios de siempre.</p>
+        <div class="cmp-cell"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><span class="cmp-lbl">Tu método actual</span>Los copias hoja a hoja, y alguno sale mal.</p></div>
+        <div class="cmp-cell cmp-yaqu"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m8 12.2 2.6 2.6L16 9.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><p><span class="cmp-lbl">Con YaQu</span>Salen de tu catálogo según escribes.</p></div>
+      </div>
     </div>
   </div>
 </section>
