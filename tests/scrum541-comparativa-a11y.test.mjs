@@ -53,22 +53,49 @@ test('SCRUM-541 · SUELO: el extractor encuentra las celdas y las filas', () => 
   assert.equal(filas().length, 6, '🔴 CIEGO: no se encuentran las 6 filas de la comparativa.');
 });
 
-// ── ② LA ETIQUETA, EN CADA CELDA Y SEPARADA ─────────────────────────────────
-test('SCRUM-541 · cada celda trae su etiqueta de columna, y NO pegada al texto', () => {
+// ── ② LA ETIQUETA, EN CADA CELDA ────────────────────────────────────────────
+//
+// 🔴 SCRUM-550 · EL MENSAJE DE ESTE TEST AFIRMABA ALGO QUE NADIE HABÍA MEDIDO.
+// Decía: «Medido en el árbol: sin él se oye "Tu método actualTu palabra contra la suya"». Se
+// había leído la SERIALIZACIÓN CRUDA del árbol —que concatena los nodos de texto hermanos tal
+// cual— en vez del nombre accesible computado, que es lo que un lector de pantalla anuncia.
+//
+// Al medirlo con `accname` salieron LOS CUATRO CASOS, y ninguno de los dos mecanismos es «el
+// que separa»: SON DOS REDES, y hace falta perder LAS DOS para que el texto se pegue.
+//
+//     display:block + espacio  → «TU MÉTODO ACTUAL Tu palabra contra la suya.»
+//     display:block SIN espacio→ «TU MÉTODO ACTUAL Tu palabra contra la suya.»   (el block basta)
+//     display:inline + espacio → «TU MÉTODO ACTUAL Tu palabra contra la suya.»   (el espacio basta)
+//     display:inline SIN espacio → «TU MÉTODO ACTUALTu palabra contra la suya.»  🔴 PEGADO
+//
+// (En el cuarto caso, a 1280 px sigue separando: ahí la etiqueta lleva `position:absolute` de la
+// media query, que la saca del flujo inline. El pegado sale a 360. Los dos anchos NO se comportan
+// igual, que es justo lo que el guard de navegador existe para ver.)
+//
+// Por eso se exigen LAS DOS y se dice por qué. La primera versión de este arreglo iba a retirar
+// la exigencia del espacio por «inerte» — y habría dejado el sistema con una sola red, creyendo
+// que quitaba ruido.
+test('SCRUM-541 · cada celda trae su etiqueta de columna, con sus DOS redes de separación', () => {
   const malas = [];
   for (const c of celdas()) {
     const donde = `fila "${c.fila}" · columna «${c.columna}»`;
     const m = /<span class="cmp-lbl">([^<]+)<\/span>(.?)/.exec(c.html);
     if (!m) { malas.push(`${donde}: NO tiene .cmp-lbl`); continue; }
     if (m[1].trim() !== c.columna) malas.push(`${donde}: la etiqueta dice «${m[1]}», que no es su columna`);
-    // El separador. Medido en el árbol: sin él se oye "Tu método actualTu palabra contra la suya",
-    // y un sintetizador pronuncia "actualTu" como una sola palabra.
-    if (m[2] !== ' ') malas.push(`${donde}: la etiqueta va PEGADA al texto (falta el espacio tras </span>)`);
+    if (m[2] !== ' ') malas.push(`${donde}: falta el espacio tras </span> (RED 1 de 2)`);
   }
   assert.deepEqual(malas, [],
     '🔴 CELDAS SIN SU ETIQUETA DE COLUMNA BIEN PUESTA:\n    ' + malas.join('\n    ') +
     '\n\n  En una comparativa esto no confunde: INVIERTE el mensaje. Quien no ve la tabla puede\n' +
-    '  entender que el problema es lo que ofrecemos nosotros.');
+    '  entender que el problema es lo que ofrecemos nosotros.\n' +
+    '  ⚠️ Con `.cmp-lbl` en `display:block` esta red sola no cambia nada — pero es la que queda\n' +
+    '  si mañana alguien toca ese display. No se retira: se sostienen las dos.');
+
+  assert.match(LANDING, /\.cmp-lbl\{display:block/,
+    '🔴 `.cmp-lbl` ha dejado de ser `display:block` (RED 2 de 2). Con el espacio puesto todavía se\n' +
+    '  oye separado, así que esto NO es un defecto por sí solo — pero el sistema se queda con una\n' +
+    '  sola red, y el día que se pierda también el espacio se oirá «Tu método actualTu palabra».\n' +
+    '  Medido en los cuatro casos (SCRUM-550). Compruébalo con `npm run guard:a11y-comparativa`.');
 });
 
 // ── ③ LA FILA AGRUPA, Y SU aria-labelledby RESUELVE ─────────────────────────

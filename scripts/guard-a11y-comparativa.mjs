@@ -69,25 +69,58 @@ function servidor() {
   });
 }
 
-/** Todo el texto que cuelga de un nodo del árbol de accesibilidad, concatenado. */
-function textoDelSubarbol(nodo) {
-  let t = (nodo.name || '') + ' ' + (nodo.value || '');
-  for (const h of nodo.children || []) t += ' ' + textoDelSubarbol(h);
-  return t.replace(/\s+/g, ' ').trim();
+/**
+ * 🔴 CÓMO SE MIDE «LO QUE SE OYE», Y POR QUÉ NO SE CONCATENA A MANO (SCRUM-550).
+ *
+ * Este guard nació concatenando el árbol a mano, y ESO SE VEÍA EN SU PROPIA SALIDA sin abrir el
+ * código: «TU MÉTODO ACTUAL TU MÉTODO ACTUAL Tu palabra contra la suya. Tu palabra contra la
+ * suya.» — cada texto DUPLICADO. Con `interestingOnly:false` el árbol trae el nodo genérico Y su
+ * hijo de texto con el mismo contenido, así que se contaba dos veces; y, peor, el espacio que
+ * metía el `join` entre padre e hijo **creaba la separación que este guard tiene que comprobar**.
+ * Medía su propio separador: un ruido con forma de verde.
+ *
+ * (En SCRUM-543 se probó también la variante opuesta —unir sólo las hojas SIN separador— y da
+ * ROJO PERMANENTE, porque el `name` de cada hoja viene ya recortado. Las dos formas de
+ * concatenar a mano están medidas y las dos están mal.)
+ *
+ * Lo que se oye lo decide el algoritmo **accname** del navegador, que es el que une los nodos. Se
+ * le pide a él: se le pone al nodo un rol que EXIGE nombre por contenido, se lee ese nombre y se
+ * le quita el rol. Sobre la PÁGINA CARGADA, nunca sobre el fichero.
+ *
+ * Copiado de `scripts/guard-a11y-landing.mjs` (SCRUM-543), donde ya está probado.
+ * ⚠️ DEUDA DECLARADA: cuando 543 esté en main habrá dos copias de este medidor y del arranque de
+ * Edge. Unificarlas es su propio ticket; duplicar aquí es mejor que importar de una rama abierta.
+ */
+async function loQueSeOye(page, indiceCelda) {
+  const marca = (n, poner) => page.evaluate(([i, p]) => {
+    const el = document.querySelectorAll('.cmp-cell')[i];
+    if (el) p ? el.setAttribute('role', 'button') : el.removeAttribute('role');
+  }, [n, poner]);
+  await marca(indiceCelda, true);
+  const nodo = (await page.$$('.cmp-cell'))[indiceCelda];
+  const snap = nodo ? await page.accessibility.snapshot({ root: nodo }) : null;
+  await marca(indiceCelda, false);
+  return (snap?.name || '').trim();
 }
 
 /**
- * EL DETECTOR. Toma el árbol de accesibilidad **de esa celda** —`snapshot({root})` con el nodo
- * del DOM como raíz— y comprueba qué se oye dentro.
- *
- * ⚠️ La primera versión no anclaba al DOM: buscaba en el árbol de la página el subárbol MÍNIMO
- * que contuviera el texto de la celda. Daba 0/12 en los dos anchos, y era un ROJO FALSO — el
- * subárbol mínimo que contiene el texto de una celda es el NODO DE TEXTO, y un nodo de texto
- * nunca contiene a su etiqueta, que es su hermana. El guard medía su propia heurística.
- * Anclando al DOM la pregunta es exactamente la que interesa: «esta celda, ¿trae su etiqueta?».
+ * CALIBRACIÓN del medidor, con dos casos sintéticos de respuesta CONOCIDA y el mismo patrón que
+ * las celdas: un `<span>` en `display:block` y texto. Con espacio tiene que dar «uno dos»; sin
+ * espacio, TAMBIÉN «uno dos» — porque un elemento en block ya separa por sí solo, que es
+ * justamente lo que hace inerte al separador de las celdas (medido en SCRUM-546).
+ * Lo que se exige aquí es que el medidor SEPA LEER: si devolviera vacío, no hay veredicto.
  */
-function loQueSeOyeEn(arbolDeLaCelda) {
-  return arbolDeLaCelda ? textoDelSubarbol(arbolDeLaCelda) : '';
+async function calibrar(page) {
+  await page.evaluate(() => {
+    const d = document.createElement('div');
+    d.id = 'cal-550'; d.setAttribute('role', 'button');
+    d.innerHTML = '<span style="display:block">uno</span>dos';
+    document.body.appendChild(d);
+  });
+  const n = await page.$('#cal-550');
+  const nombre = ((await page.accessibility.snapshot({ root: n }))?.name || '').trim();
+  await page.evaluate(() => document.querySelector('#cal-550')?.remove());
+  return { ok: nombre === 'uno dos', nombre };
 }
 
 /**
@@ -102,8 +135,7 @@ function loQueSeOyeEn(arbolDeLaCelda) {
  */
 const caja = (s) => s.toLocaleUpperCase('es');
 
-function celdaLlegaConSuEtiqueta(arbolDeLaCelda, textoCelda, etiqueta) {
-  const t = loQueSeOyeEn(arbolDeLaCelda);
+function celdaLlegaConSuEtiqueta(t, textoCelda, etiqueta) {
   if (!t) return { ok: false, motivo: 'la celda NO APARECE en el árbol de accesibilidad' };
   const T = caja(t);
   if (!T.includes(caja(textoCelda.slice(0, 25)))) {
@@ -175,35 +207,43 @@ try {
       fallos++; await page.close(); continue;
     }
 
-    // El árbol de accesibilidad DE CADA CELDA, con el nodo del DOM como raíz.
-    const nodos = await page.$$('.cmp-cell');
-    const arboles = [];
-    for (const n of nodos) arboles.push(await page.accessibility.snapshot({ root: n, interestingOnly: false }));
+    // ── SUELO ③ · CALIBRACIÓN: ¿el medidor SABE LEER? ────────────────────────
+    // Si `accname` devolviera vacío, todas las celdas saldrían «no aparecen en el árbol» y eso se
+    // leería como un defecto de la página en vez de como un medidor mudo.
+    const cal = await calibrar(page);
+    if (!cal.ok) {
+      console.error(`🔴 NO SUPE MIRAR a ${ancho}px: la calibración devolvió «${cal.nombre}» y se esperaba «uno dos».`);
+      fallos++; await page.close(); continue;
+    }
 
-    // ── SUELO ③ · CONTROL NEGATIVO: el detector tiene que saber decir que NO. ──
-    // Se le da el árbol de una celda REAL y una etiqueta que NO está en ella. Si dice que sí, el
-    // verde de abajo no valdría nada y es preferible no dar veredicto.
-    const prueba = celdaLlegaConSuEtiqueta(arboles[0], estado.celdas[0].texto, 'ETIQUETA QUE NO EXISTE');
+    // Lo que se oye de cada celda, preguntándoselo al algoritmo accname del navegador.
+    const seOyen = [];
+    for (let i = 0; i < estado.celdas.length; i++) seOyen.push(await loQueSeOye(page, i));
+
+    // ── SUELO ④ · CONTROL NEGATIVO: el detector tiene que saber decir que NO. ──
+    // Se le da lo que se oye en una celda REAL y una etiqueta que NO está en ella. Si dice que
+    // sí, el verde de abajo no valdría nada y es preferible no dar veredicto.
+    const prueba = celdaLlegaConSuEtiqueta(seOyen[0], estado.celdas[0].texto, 'ETIQUETA QUE NO EXISTE');
     if (prueba.ok) {
       console.error(`🔴 NO SUPE MIRAR a ${ancho}px: el detector aprueba una etiqueta INVENTADA. No sabe fallar.`);
       fallos++; await page.close(); continue;
     }
-    // ── SUELO ④: y tiene que saber decir que SÍ cuando el texto está. Sin este control
-    // positivo, un detector que devolviera siempre `false` pasaría el ③ y parecería riguroso.
-    const pruebaSi = celdaLlegaConSuEtiqueta(arboles[0], estado.celdas[0].texto, estado.celdas[0].texto.slice(0, 10));
+    // ── SUELO ⑤: y tiene que saber decir que SÍ cuando el texto está. Sin este control
+    // positivo, un detector que devolviera siempre `false` pasaría el ④ y parecería riguroso.
+    const pruebaSi = celdaLlegaConSuEtiqueta(seOyen[0], estado.celdas[0].texto, estado.celdas[0].texto.slice(0, 10));
     if (!pruebaSi.ok && !pruebaSi.motivo.includes('PEGADA')) {
       console.error(`🔴 NO SUPE MIRAR a ${ancho}px: el detector rechaza algo que SÍ está en la celda. Sólo sabe decir que no.`);
       fallos++; await page.close(); continue;
     }
 
     log(`── ${ancho}px · ${estado.filas} filas · grid: ${hayGrid ? estado.grid : 'no hay (apilado)'}`);
-    log(`   controles del detector OK: rechaza una etiqueta inventada y acepta la que sí está`);
+    log(`   calibración «${cal.nombre}» · el detector rechaza una etiqueta inventada y acepta la que sí está`);
 
     let okAncho = 0, ejemplo = '';
     for (let i = 0; i < estado.celdas.length; i++) {
       const celda = estado.celdas[i];
       const etiqueta = COLUMNAS[celda.columna];
-      const r = celdaLlegaConSuEtiqueta(arboles[i], celda.texto, etiqueta);
+      const r = celdaLlegaConSuEtiqueta(seOyen[i], celda.texto, etiqueta);
       if (r.ok) { okAncho++; if (!ejemplo) ejemplo = r.seOye; }
       else {
         console.error(`   ✖ fila "${celda.fila}" · columna «${etiqueta}» → ${r.motivo}`);
