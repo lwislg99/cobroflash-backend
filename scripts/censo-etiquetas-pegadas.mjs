@@ -24,6 +24,29 @@
 // el defecto numero 5. Lo que este fichero hace es un TRINQUETE: cuenta, y cae si el numero
 // SUBE, nombrando la ocurrencia nueva. La quinta vez deja de ser silenciosa.
 //
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 EL HALLAZGO QUE SALIO DE PROBARLO SOBRE DISCO, Y CORRIGE EL ENCUADRE DEL TICKET
+// ═════════════════════════════════════════════════════════════════════════════════════════
+//
+// La pregunta era «¿cual de estos extractores DA VERDE cuando no encuentra nada?». Medido:
+// NINGUNO. Todos se declaran ciegos o lanzan. Pero al inyectar el disparador real —añadir
+// `defer` a UNA etiqueta `<script src>` de `public/dashboard/index.html`, que es marcado
+// perfectamente correcto— sale el peligro de verdad, y no es el que se buscaba:
+//
+//   · perdida TOTAL (60 -> 0 etiquetas): los suelos SI disparan. `dashboard-colision` y
+//     `scrum417` caen declarandose ciegos. Molesto y honesto.
+//   · perdida de UNA (60 -> 59): **16/16 EN VERDE**. `jobCobroHuecos.js` deja de estar
+//     vigilado por los dos guards y ninguno dice una palabra.
+//
+// EL MOTIVO, medido: los suelos son UMBRALES CON HOLGURA. `dashboard-colision` exige >= 25
+// sobre 60 (35 de holgura) y `scrum417` exige >= 40 sobre 60 (20 de holgura). Un umbral con
+// veinte de margen no puede ver que se ha perdido una etiqueta — y perder UNA es exactamente
+// lo que produce el disparador benigno de este ticket.
+//
+// O sea que el `>` pegado no da verdes falsos por si solo: los da EN COMBINACION con un suelo
+// de umbral. Cerrar eso es fijar el recuento EXACTO donde la poblacion es estable, en vez de
+// un `>=` generoso. Es otro mecanismo y otro carril: queda REPORTADO, no construido aqui.
+//
 // LA FORMA CORRECTA cuando se arregla una, y es la convencion que ya dejo SCRUM-543:
 //     ANTES:  /<h1>([\s\S]*?)<\/h1>/          ← el `>` pegado
 //     DESPUES:/<h1[^>]*>([\s\S]*?)<\/h1>/     ← tolera atributos, y lo vigilado sigue siendo
