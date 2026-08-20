@@ -41,8 +41,13 @@ function servir(modoFounding) {
     const url = req.url.split('?')[0];
     if (url === '/public/founding-status') {
       if (modoFounding === 'roto') { res.writeHead(500); res.end('boom'); return; }
+      // 🔴 SCRUM-546 · AQUÍ FALTABA `taken`, Y ESO DEJABA AL GUARD SIN CONTROL POSITIVO.
+      // La landing solo pinta la escasez si `taken > 0` (`pintarPlazas`), así que sirviendo
+      // `{seatsLeft:7}` a secas la escasez tampoco salía en el caso «la fuente responde»: el
+      // control negativo comparaba OCULTA contra OCULTA y habría pasado en verde igual con el
+      // detector roto. Ahora el caso vivo es una venta de verdad y el número TIENE que verse.
       res.writeHead(200, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ seatsLeft: 7, seatsTotal: 20 }));
+      res.end(JSON.stringify({ price: 9.9, seatsTotal: 20, seatsLeft: 18, taken: 2 }));
       return;
     }
     const rel = url === '/' ? '/index.html' : url;
@@ -119,7 +124,7 @@ console.log('primera pantalla de la landing, medida en Edge con red 4G emulada �
 
 for (const modo of ['ok', 'roto']) {
   const { srv, puerto } = await servir(modo);
-  console.log('══ /public/founding-status ' + (modo === 'ok' ? 'RESPONDE (7 plazas)' : 'ROTO (500) — control negativo') + ' ══');
+  console.log('══ /public/founding-status ' + (modo === 'ok' ? 'RESPONDE (2 vendidas, quedan 18) — control positivo' : 'ROTO (500) — control negativo') + ' ══');
   for (const ancho of ANCHOS) {
     const r = await medir(nav, puerto, ancho);
     console.log('  ' + ancho + ' px · FCP ' + r.fcp + ' ms · LCP ' + r.lcp + ' ms · CLS ' + r.cls
@@ -127,6 +132,16 @@ for (const modo of ['ok', 'roto']) {
 
     if (r.heroesVisibles !== 1) { console.log('    🔴 hay ' + r.heroesVisibles + ' héroes visibles (de ' + r.heroes + ')'); fallos++; }
     if (r.scrollHorizontal) fallos++;
+
+    if (modo === 'ok') {
+      // CONTROL POSITIVO (SCRUM-546): con la fuente viva y una venta real, el número TIENE que
+      // salir. Sin esto, el «OCULTA ✔» de abajo lo cumpliría igual un detector que no ve nada.
+      const escasez = r.plazasAnuncio;
+      const seVe = !!(escasez && !escasez.oculto && /[0-9]/.test(escasez.texto));
+      console.log('    control positivo · escasez con la fuente viva: '
+        + (seVe ? 'VISIBLE con número ✔ («' + escasez.texto + '»)' : '🔴 NO SE VE — y entonces el control negativo no prueba nada'));
+      if (!seVe) fallos++;
+    }
 
     if (modo === 'roto') {
       const escasez = r.plazasAnuncio;
