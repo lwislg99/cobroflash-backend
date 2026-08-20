@@ -23,10 +23,22 @@ import { fileURLToPath } from 'node:url';
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const LANDING = fs.readFileSync(path.join(RAIZ, 'public', 'index.html'), 'utf8');
 
-/** Cada celda con su columna y el trozo de HTML que la forma. */
+/**
+ * Cada celda con su columna, su fila y el trozo de HTML que la forma.
+ *
+ * La fila se arrastra a propósito: el primer intento identificaba las celdas por su índice y el
+ * rojo decía «celda 7», que obliga a contar `<div>` a mano para saber cuál es. El guard de
+ * navegador ya nombraba «fila "historial-cliente" · columna «Con YaQu»»; que la red diga menos
+ * que el guard es una diferencia gratuita entre dos mensajes del mismo defecto.
+ */
 function celdas() {
-  return [...LANDING.matchAll(/<div class="cmp-cell( cmp-yaqu)?">([\s\S]*?)<\/div>/g)]
-    .map((m) => ({ columna: m[1] ? 'Con YaQu' : 'Tu método actual', html: m[2] }));
+  const out = [];
+  for (const f of [...LANDING.matchAll(/<div class="cmp-row" data-fila="([a-z-]+)"[\s\S]*?\n      <\/div>/g)]) {
+    for (const c of f[0].matchAll(/<div class="cmp-cell( cmp-yaqu)?">([\s\S]*?)<\/div>/g)) {
+      out.push({ fila: f[1], columna: c[1] ? 'Con YaQu' : 'Tu método actual', html: c[2] });
+    }
+  }
+  return out;
 }
 function filas() {
   return [...LANDING.matchAll(/<div class="cmp-row" data-fila="([a-z-]+)"([^>]*)>/g)]
@@ -44,13 +56,14 @@ test('SCRUM-541 · SUELO: el extractor encuentra las celdas y las filas', () => 
 // ── ② LA ETIQUETA, EN CADA CELDA Y SEPARADA ─────────────────────────────────
 test('SCRUM-541 · cada celda trae su etiqueta de columna, y NO pegada al texto', () => {
   const malas = [];
-  for (const [i, c] of celdas().entries()) {
+  for (const c of celdas()) {
+    const donde = `fila "${c.fila}" · columna «${c.columna}»`;
     const m = /<span class="cmp-lbl">([^<]+)<\/span>(.?)/.exec(c.html);
-    if (!m) { malas.push(`celda ${i} (${c.columna}): NO tiene .cmp-lbl`); continue; }
-    if (m[1].trim() !== c.columna) malas.push(`celda ${i}: la etiqueta dice «${m[1]}» y su columna es «${c.columna}»`);
+    if (!m) { malas.push(`${donde}: NO tiene .cmp-lbl`); continue; }
+    if (m[1].trim() !== c.columna) malas.push(`${donde}: la etiqueta dice «${m[1]}», que no es su columna`);
     // El separador. Medido en el árbol: sin él se oye "Tu método actualTu palabra contra la suya",
     // y un sintetizador pronuncia "actualTu" como una sola palabra.
-    if (m[2] !== ' ') malas.push(`celda ${i} (${c.columna}): la etiqueta va PEGADA al texto (falta el espacio tras </span>)`);
+    if (m[2] !== ' ') malas.push(`${donde}: la etiqueta va PEGADA al texto (falta el espacio tras </span>)`);
   }
   assert.deepEqual(malas, [],
     '🔴 CELDAS SIN SU ETIQUETA DE COLUMNA BIEN PUESTA:\n    ' + malas.join('\n    ') +
