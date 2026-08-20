@@ -88,6 +88,25 @@
   .btn-ghost:hover{background:var(--bg);border-color:#d7dbd5} .btn-lg{padding:15px 26px;font-size:18.66px}
 
   .announce{background:#0b3d2e;color:#e8f2ee;font-size:13.5px}
+  /* SCRUM-544 · LA BARRA GUARDA SU SITIO DESDE LA PRIMERA PINTURA.
+     Nace `hidden` y se despliega cuando responde `/public/founding-status`; al desplegarse
+     empujaba la página entera hacia abajo. Medido en Edge con 4G (SCRUM-331/544): CLS 0,386 a
+     360 px y 0,108 a 390, contra un límite de 0,1 — y el A/B lo aisló: con la fuente rota, y por
+     tanto sin barra, el CLS caía a 0,001. En un móvil, con el pulgar ya en camino a un botón, ese
+     salto es un toque en el sitio equivocado.
+     EL ARREGLO ES NO SACARLA DEL FLUJO: `hidden` deja de ser `display:none` y pasa a
+     `visibility:hidden`, así que la caja SIGUE OCUPANDO SU SITIO y al hacerse visible no mueve
+     nada. `visibility` la saca igual del árbol de accesibilidad y del orden de tabulación.
+     🔴 Y POR ESO NO HAY NINGÚN NÚMERO AQUÍ: el hueco lo calcula el navegador con el contenido
+     REAL a CADA anchura. Una altura fija a ojo no valdría — medido, la barra ocupa 112 px a 320 y
+     360, 91 de 390 a 600, 95 a 601 y 44 a 1200: cinco alturas distintas, y cambian con lo que
+     devuelva el fetch. Corta volvería a desplazar; larga dejaría hueco en blanco.
+     ⚠️ EL COSTE, dicho y medido: cuando la barra NO llega a aparecer —el fetch falla, o no quedan
+     plazas— su sitio queda vacío arriba. No es una banda verde (con `visibility` no se pinta el
+     fondo): es espacio en blanco. La alternativa era soltar la reserva en ese caso, y eso vuelve
+     a desplazar justo en el caso que el arreglo tiene que cubrir. Los dos números están en
+     `docs/master/SCRUM-544.md`; elegir entre ellos es del fundador, porque la barra es suya. */
+  .announce[hidden]{display:block;visibility:hidden}
   .announce-in{display:flex;align-items:center;justify-content:center;gap:8px 18px;flex-wrap:wrap;padding:10px 22px;text-align:center}
   .announce b{color:#bff0d0;font-weight:700} .announce .sep{opacity:.35}
   .announce a{color:#fff;font-weight:700;border-bottom:1px solid rgba(255,255,255,.45);padding-bottom:1px}
