@@ -513,6 +513,21 @@
 
 <section class="cta-band"><div class="wrap"><h2>Tu próxima cotización, lista en 30 segundos</h2><p>Únete a los profesionales que cierran más trabajos y cobran sin perseguir pagos.</p><a href="/register.html" class="btn btn-primary btn-lg">Empezar gratis</a></div></section>
 
+<!-- SCRUM-334 (F7) · CONTACTO — nace OCULTO y se activa rellenando `data-whatsapp`.
+     El número NO se inventa aquí: un canal de WhatsApp que no contesta es peor que no
+     tenerlo, y quién contesta lo decide el fundador. Con `data-whatsapp` vacío,
+     `contacto-publico.js` no pinta el enlace y este bloque no aparece.
+     ⚠️ Los textos de `data-wa-etiqueta`, `data-wa-texto` y `data-email-etiqueta` son
+     [PROPUESTA microcopy — los aprueba el fundador, regla 30]. -->
+<section id="contacto-publico" class="wrap contacto" hidden
+         data-whatsapp=""
+         data-wa-etiqueta="Escríbenos por WhatsApp"
+         data-wa-texto="Hola, tengo una duda sobre YaQu"
+         data-email="hola@yaqu.app"
+         data-email-etiqueta="Escríbenos por correo">
+  <h2>¿Tienes una duda antes de empezar?</h2>
+</section>
+
 <footer><div class="wrap foot"><div class="c">© 2026 YaQu · Hecho en Madrid para los oficios 🇪🇸</div><div class="l"><a href="#como">Cómo funciona</a><a href="#todo">Todo en uno</a><a href="#precios">Precios</a><a href="/privacidad">Privacidad</a><a href="/terminos">Términos</a></div></div></footer>
 
 <script>
@@ -596,5 +611,6 @@
 })();
 </script>
 <script src="/js/atribucion.js" defer></script>
+<script src="/js/contacto-publico.js" defer></script>
 </body>
 </html>
