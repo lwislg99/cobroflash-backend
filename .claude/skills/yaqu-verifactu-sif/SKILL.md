@@ -18,19 +18,16 @@ description: Obligatoria antes de tocar código de VeriFactu/SIF. Contiene guard
 > la única respuesta autorizada ante un cliente. Mandar a desempatar allí es mandar a la fuente
 > menos fiable de las tres.
 >
-> **Mientras no haya decisión del fundador**, para un hecho medible —qué está construido, qué
-> existe— gana **el CÓDIGO**, que es el arbitraje que él mismo fijó y el que ya aplica
-> `_guard-afirmacion-fiscal.mjs`. Si el choque no es sobre un hecho medible, se PARA y se
-> pregunta; no se elige por cuenta propia.
+> ✅ **DECIDIDO POR EL FUNDADOR EL 20-ago-2026 (SCRUM-538, punto 2): EL ÁRBITRO ES EL CÓDIGO.**
+> Y el alcance va escrito así, que no se estira:
+>   · sobre un **HECHO MEDIBLE** —«¿está construido?», «¿existe este fichero?», «¿este flag está
+>     encendido?»— **gana el CÓDIGO, sin preguntar**. No caduca y no puede mentir.
+>   · si el choque **NO** es sobre un hecho medible —posicionamiento, prioridad, criterio de
+>     producto— **la sesión PARA Y PREGUNTA**. El código no opina sobre eso, y elegir por cuenta
+>     propia ahí es inventarse una decisión que no se ha tomado.
 >
-> Candidatos medidos para la decisión, con lo que aporta cada uno:
->   · `docs/legal/AUDITORIA_CAMINO_EMISION.md` (SCRUM-525) — qué existe HOY, con fichero y
->     línea. Es lo más cercano a un árbitro, pero es una foto con fecha: caduca al construir.
->   · el CÓDIGO — no caduca nunca y no puede mentir, pero no responde preguntas de proceso
->     ni de decisión (modalidad, carriles, plazos).
->   · `docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md` (SCRUM-528) — dice qué NO creerse,
->     que no es lo mismo que decir qué es cierto.
-> **Decide el fundador (SCRUM-538, punto 2).**
+> Es el arbitraje que ya aplica `_guard-afirmacion-fiscal.mjs`: para «¿existe el envío a la
+> AEAT?» no lee un documento, lo deriva del código.
 
 ## Antes de tocar código SIF (obligatorio)
 
