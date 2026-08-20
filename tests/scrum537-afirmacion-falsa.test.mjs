@@ -204,3 +204,86 @@ test('SCRUM-537 · y SCRUM-400 sigue existiendo: esto añade, no sustituye', () 
     '🔴 ha cambiado el test que fija la conjuncion de SCRUM-400. Si se ha movido a proposito, '
     + 'revisa si este guard sigue cubriendo el hueco que dejaba.');
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// FAMILIA C · «YA SE CUMPLE» — añadida en la 2ª pasada de SCRUM-537, y por qué
+// ═════════════════════════════════════════════════════════════════════════════════════════
+//
+// 🔴 EL DEFECTO QUE LA TRAJO: se midió la cobertura de las familias A y B contra el vocabulario
+// que el asesor declara CERRADO —«conforme», «cumple», «certificado», «en certificación»,
+// «homologado» y equivalentes— con doce frases que afirman conformidad. Cazaba DOS.
+//
+//   «Facturación VeriFactu en certificación»       → caía (A)
+//   «YaQu ya cumple con VeriFactu»                 → 🔴 PASABA
+//   «Nuestra facturación es conforme a la AEAT»    → 🔴 PASABA
+//   «Sistema ya adaptado a VeriFactu»              → 🔴 PASABA
+//   «Sistema registrado ante la Agencia Tributaria»→ 🔴 PASABA
+//
+// «cumple» y «conforme» son las que un comercial escribe PRIMERO, porque suenan menos técnicas
+// que «certificado». Eran justo las que no estaban.
+//
+// Y una de las cinco no pasaba por el vocabulario sino por el ANCLA: «Agencia Tributaria»
+// escrita entera no estaba en `FISCAL`, sólo `aeat` y `hacienda`.
+
+test('SCRUM-537 · C · «ya cumple» CAE aunque el documento esté emitido', () => {
+  // El control que decide, aplicado a la familia nueva: el documento no la salva, porque no
+  // depende del documento — depende de que el envío exista, y no existe.
+  for (const frase of [
+    'YaQu ya cumple con VeriFactu',
+    'Nuestra facturación es conforme a la AEAT',
+    'Facturación con plena conformidad VeriFactu',
+    'Sistema ya adaptado a VeriFactu',
+    'Facturación validada por la AEAT',
+    'Sistema registrado ante la Agencia Tributaria',
+  ]) {
+    const r = afirmacionesFalsas(`<p>${frase}</p>`, { envioConstruido: false });
+    assert.ok(r.length > 0, `🔴 pasa en verde: «${frase}». Es el vocabulario que el asesor declara `
+      + 'CERRADO hasta que haya envío, y la multa del art. 201 bis LGT es del FABRICANTE.');
+    assert.equal(r[0].familia, 'C', `«${frase}» debería clasificarse como familia C`);
+  }
+});
+
+test('SCRUM-537 · C · CADUCA POR EL CÓDIGO, no por el documento', () => {
+  // Atarla a que exista DECLARACION_RESPONSABLE.md sería repetir el defecto que este ticket vino
+  // a arreglar. El día que el envío exista, «cumple» deja de ser falso y esta familia se calla
+  // sola — sin que nadie tenga que acordarse de venir a desactivarla.
+  const frase = '<p>YaQu ya cumple con VeriFactu</p>';
+  assert.ok(afirmacionesFalsas(frase, { envioConstruido: false }).length > 0,
+    '🔴 sin envío construido, «ya cumple» tiene que caer');
+  assert.equal(afirmacionesFalsas(frase, { envioConstruido: true }).length, 0,
+    '🔴 con el envío construido «ya cumple» seguiría cayendo: sería un rojo permanente el día que '
+    + 'se construya, y un rojo permanente es el que el segundo que lo ve desactiva.');
+});
+
+test('SCRUM-537 · C · CONTROL POSITIVO: el mensaje aprobado de F1 NO se bloquea', () => {
+  // Decisión del fundador del 20-ago-2026. Si este guard la bloqueara, estaría impidiendo
+  // publicar algo ya decidido — y el guard duraría lo que tarde alguien en desactivarlo.
+  for (const legitima of [
+    'Preparado para VeriFactu, y sin más papeleo del que ya haces.',
+    'VeriFactu no exige certificación: es una declaración responsable.',
+    'Cuando VeriFactu sea obligatorio, lo tendrás listo.',
+  ]) {
+    assert.equal(afirmacionesFalsas(`<p>${legitima}</p>`, { envioConstruido: false }).length, 0,
+      `🔴 bloquea una frase legítima: «${legitima}»`);
+  }
+});
+
+test('SCRUM-537 · C · el límite MEDIDO de un detector léxico, escrito en vez de disimulado', () => {
+  // 🔴 De doce frases que afirman conformidad, el guard caza DIEZ. Las dos que se escapan van
+  // aquí con su motivo, porque un guard que no dice lo que NO cubre se lee como si lo cubriera
+  // todo — y ése es el mismo error que este ticket vino a arreglar.
+  const SE_ESCAPAN = [
+    ['Somos un sistema de facturación certificado', 'no lleva término fiscal reconocido: «sistema '
+      + 'de facturación» a secas no ancla, y ampliarlo daría falsos positivos sobre el copy de producto'],
+    ['Tu facturación, al día con Hacienda desde hoy', '«al día con» no está en el vocabulario: en '
+      + 'imperativo («ponte al día») es legítimo, y no se distingue por léxico'],
+  ];
+  for (const [frase, motivo] of SE_ESCAPAN) {
+    assert.equal(afirmacionesFalsas(`<p>${frase}</p>`, { envioConstruido: false }).length, 0,
+      `«${frase}» ya se caza: quítala de esta lista y anota la mejora. Motivo por el que estaba: ${motivo}`);
+  }
+  // Y el aviso, para que el número no se lea como una nota al pie:
+  assert.ok(SE_ESCAPAN.length <= 2,
+    '🔴 crecen los casos que se escapan. Un detector léxico es un SUELO MÍNIMO, no un criterio: '
+    + 'si la lista sube, el camino no es alargar la regex sino cambiar de instrumento.');
+});
