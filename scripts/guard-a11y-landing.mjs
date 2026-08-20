@@ -78,11 +78,49 @@ const srv = http.createServer((req, res) => {
   res.end(fs.readFileSync(abs));          // del DISCO en cada petición
 });
 
-/** Todo el texto que cuelga de un nodo del árbol de accesibilidad. */
-function textoDelSubarbol(n) {
-  let t = (n?.name || '') + ' ' + (n?.value || '');
-  for (const h of n?.children || []) t += ' ' + textoDelSubarbol(h);
-  return t.replace(/\s+/g, ' ').trim();
+/**
+ * 🔴 CÓMO SE MIDE «LO QUE SE OYE», Y POR QUÉ NO SE CONCATENA A MANO.
+ *
+ * Dos intentos de concatenar el árbol a mano fallaron, y los dos los cazó el rojo por el
+ * mecanismo, no la lectura:
+ *   ① uniendo padre e hijos CON un espacio → FALSO VERDE: con `interestingOnly:false` el árbol
+ *      trae el genérico y su hijo de texto con el mismo contenido, y el espacio del `join`
+ *      **creaba la separación que había que comprobar**. El guard medía su propio separador.
+ *   ② uniendo sólo las hojas SIN separador → ROJO PERMANENTE: el `name` de cada hoja viene ya
+ *      recortado, así que el espacio real se perdía y todo salía pegado, con el arreglo puesto.
+ *
+ * Lo que se oye lo decide el algoritmo **accname** del navegador, que es el que une los nodos. Se
+ * le pide a él: se le pone al nodo un rol que EXIGE nombre por contenido, se lee ese nombre y se
+ * le quita el rol. Se hace sobre la PÁGINA CARGADA, nunca sobre el fichero.
+ */
+async function loQueSeOye(page, sel) {
+  await page.evaluate((s) => document.querySelector(s)?.setAttribute('role', 'button'), sel);
+  const nodo = await page.$(sel);
+  const snap = nodo ? await page.accessibility.snapshot({ root: nodo }) : null;
+  await page.evaluate((s) => document.querySelector(s)?.removeAttribute('role'), sel);
+  return (snap?.name || '').trim();
+}
+
+/**
+ * CALIBRACIÓN del medidor, con dos casos sintéticos de respuesta CONOCIDA — el mismo patrón que
+ * los casos reales: un `<b>`, un `<span>` vacío y texto. Con espacio tiene que dar «uno dos»; sin
+ * espacio, «unodos». Si el navegador dejara de distinguirlos, el guard no da veredicto.
+ */
+async function calibrar(page) {
+  await page.evaluate(() => {
+    const con = document.createElement('div'); con.id = 'cal-con'; con.setAttribute('role', 'button');
+    con.innerHTML = '<b>uno</b><span></span> dos';
+    const sin = document.createElement('div'); sin.id = 'cal-sin'; sin.setAttribute('role', 'button');
+    sin.innerHTML = '<b>uno</b><span></span>dos';
+    document.body.append(con, sin);
+  });
+  const leer = async (id) => {
+    const n = await page.$(id);
+    return ((await page.accessibility.snapshot({ root: n }))?.name || '').trim();
+  };
+  const con = await leer('#cal-con'), sin = await leer('#cal-sin');
+  await page.evaluate(() => { document.querySelector('#cal-con')?.remove(); document.querySelector('#cal-sin')?.remove(); });
+  return { ok: con === 'uno dos' && sin === 'unodos', con, sin };
 }
 function aplanar(n, acc = []) { if (!n) return acc; acc.push(n); for (const h of n.children || []) aplanar(h, acc); return acc; }
 
@@ -126,11 +164,15 @@ try {
     }
 
     // ── ① SEPARADORES ────────────────────────────────────────────────────────
+    const cal = await calibrar(page);
+    if (!cal.ok) {
+      console.error(`   🔴 NO SUPE MIRAR: la calibración falla — con espacio dio «${cal.con}» y sin espacio «${cal.sin}»; se esperaba «uno dos» y «unodos».`);
+      fallos++; await page.close(); continue;
+    }
+    log(`   calibración OK: «${cal.con}» vs «${cal.sin}» — el medidor distingue las dos`);
     for (const caso of SEPARADORES) {
-      const nodo = await page.$(caso.sel);
-      if (!nodo) { console.error(`   🔴 NO SUPE MIRAR: no encuentro ${caso.sel}`); fallos++; continue; }
-      const t = textoDelSubarbol(await page.accessibility.snapshot({ root: nodo, interestingOnly: false }));
-      if (!t) { console.error(`   🔴 NO SUPE MIRAR: ${caso.sel} no aparece en el árbol`); fallos++; continue; }
+      const t = await loQueSeOye(page, caso.sel);
+      if (!t) { console.error(`   🔴 NO SUPE MIRAR: ${caso.sel} no da nombre accesible`); fallos++; continue; }
       let mal = 0;
       for (const p of caso.pegado) {
         if (caja(t).includes(caja(p))) { console.error(`   ✖ ${caso.sel} se oye PEGADO: «…${p}…»`); fallos++; mal++; }
