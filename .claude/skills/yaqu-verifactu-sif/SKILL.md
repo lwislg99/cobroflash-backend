@@ -1,6 +1,6 @@
 ---
 name: yaqu-verifactu-sif
-description: Obligatoria al tocar CUALQUIER cosa de VeriFactu/SIF (huella, QR, registros, cola VfSubmission, envío AEAT, R1/anulación). Impone la spec de docs/SIF_SPEC_NOTES.md, la modalidad VERI*FACTU del master (S1-B) y las reglas fiscales duras (reglas 7, 17, 29).
+description: Obligatoria antes de tocar código de VeriFactu/SIF. Contiene guardarraíles de PROCESO, no el estado del producto: la lectura previa exigida (docs/SIF_SPEC_NOTES.md, U1.3 del máster, docs/AUDITORIA_RRSIF.md), las reglas fiscales duras (reglas 7, 17, 29), la modalidad VERI*FACTU decidida en S1-B, las stop conditions AA1.4 y un checklist de QA mínimo. Para saber qué está construido y qué no, la auditoría docs/legal/AUDITORIA_CAMINO_EMISION.md.
 ---
 
 # yaqu-verifactu-sif — Guardarraíles del SIF
@@ -23,12 +23,26 @@ description: Obligatoria al tocar CUALQUIER cosa de VeriFactu/SIF (huella, QR, r
 - **Huella encadenada intocable:** cualquier cambio en el cálculo (campos, orden, formato)
   exige re-validar contra `SuministroInformacion.xsd` y la Orden HAC/1177/2024, y NUNCA
   rompe la cadena de huellas ya persistida.
-- **Flujo de control AEAT:** respetar `TiempoEsperaEnvio` de cada respuesta (mín. 60 s);
-  máx 1.000 registros/envío; sin respuesta → reenviar los mismos registros.
-- **FSM `VfSubmission` (Parte L):** `pending → sent → accepted` · `sent → rejected(error)
-  → pending(retry, attempts++)` · `attempts≥5 → manual_review`. `accepted` es terminal.
-- **`SIF_ENABLED` off = seguro:** la cola pausa, la emisión local sigue; al reanudar se
-  remite lo pendiente. Jamás bloquear la emisión por un fallo de remisión (runbook R7).
+- 🔴 **NO CONSTRUIDO · flujo de control con la AEAT.** No hay envío ni respuesta que esperar
+  (auditoría `docs/legal/AUDITORIA_CAMINO_EMISION.md`, eslabones 8 y 9). Lo que esta regla
+  decía —esperar el `TiempoEsperaEnvio` de cada respuesta, mín. 60 s, y reenviar los mismos
+  registros si no llega ninguna— describe una conversación que ningún código mantiene:
+  `TiempoEsperaEnvio` sólo aparece dentro del XSD de la AEAT, no en código nuestro. Queda
+  escrito en vez de borrado para que se vea que se comprobó, no que se olvidó.
+  ⚠️ **De las tres reglas que había aquí, UNA sí rige hoy**, y no es de envío sino de
+  documento: el tope de **1.000 registros** lo impone `MAX_REGISTROS_POR_ENVIO` al construir
+  el XML (`registro.builder.ts` y `verifactu.service.ts`), que corta con un error antes de
+  generar un fichero que el XSD rechazaría.
+- 🔴 **NO CONSTRUIDO · FSM `VfSubmission`.** La entidad no existe: `VfSubmission` no está en
+  `prisma/schema.prisma` (medido). No hay cola, ni estados, ni contador de intentos, así que
+  `pending → sent → accepted`, los reintentos y `manual_review` son un diseño pendiente y no
+  un comportamiento. Gemela de la afirmación A2 del máster, que el inventario SCRUM-528 ya
+  marcó falsa.
+- 🔴 **NO CONSTRUIDO · `SIF_ENABLED` no pausa ninguna cola.** La bandera existe y se lee, pero
+  hoy lo único que hace es viajar en el sobre del registro de auditoría (`flagsFiscales`, en
+  `audit.service.ts`): no hay cola que pausar ni nada pendiente que remitir al reanudar.
+  ✅ **Lo que sí sigue vigente es la REGLA de diseño:** jamás bloquear la emisión por un fallo
+  de remisión (runbook R7).
 - **Cero claims** hasta SIF-1 8/8 (regla 7): nada de "VeriFactu" en UI/copy de venta;
   la pregunta del cliente se responde SOLO con el guion H2.
 - **Stop conditions AA1.4:** envío a PRODUCCIÓN AEAT, declaración responsable (S1-E) y
@@ -44,6 +58,12 @@ description: Obligatoria al tocar CUALQUIER cosa de VeriFactu/SIF (huella, QR, r
 ## QA mínimo por cambio (alimenta QA_MASTER §7)
 
 - [ ] Registros alta/anulación/R1 validan contra los XSD del espejo.
-- [ ] Rechazo forzado → retry con backoff → `manual_review` al 5º intento.
+- 🔴 **NO CONSTRUIDO** — «rechazo forzado → retry con backoff → `manual_review` al 5º
+  intento»: no hay envío, ni reintentos, ni ese estado (auditoría, eslabones 8 y 9). No es
+  una casilla que falte marcar: es una casilla que **nadie puede marcar**. Se deja anotada
+  para que no vuelva a añadirse como si fuera trabajo pendiente de QA.
 - [ ] `SIF_ENABLED=off` no rompe la emisión local.
-- [ ] Evidencias de pruebas AEAT → `docs/VERIFACTU_EVIDENCIAS.md`.
+- 🔴 **NO CONSTRUIDO** — «evidencias de pruebas AEAT»: no hay pruebas contra la AEAT porque no
+  hay envío, y el documento que se citaba, `docs/VERIFACTU_EVIDENCIAS.md`, **no existe**
+  (comprobado el 20-ago-2026). Cítese `docs/EVIDENCIAS_E2E.md`, que sí existe, cuando lo que
+  se quiera adjuntar sean evidencias E2E.
