@@ -204,15 +204,17 @@ las puertas por merchant, o declarar la excepción por escrito. **Es del fundado
 
 ---
 
-# APÉNDICE · 21-ago-2026 — documentar la condición (y su anulación el mismo día)
+> ⚠️ **Lo de abajo entró como fichero aparte (`SCRUM-564-condicion.md`) y pasa a APÉNDICE.**
+> `docs/master/` exige `SCRUM-<n>.md` para que dos tickets no escriban nunca en el mismo sitio
+> (SCRUM-273). Se conserva **entero, con su titular incluido**, siguiendo el precedente que el
+> propio guard cita: `SCRUM-244.md`, que lleva cuatro entradas seguidas, cada una con su H1.
+>
+> 🔴 **Y esto primero, porque lo de abajo se lee mal sin ello:** el fundador **ANULÓ esta
+> decisión** el 20-ago, después de leer la medición. **No se documenta la condición.** Lo que
+> sostiene los nueve textos es el mecanismo de **SCRUM-568**. Esta entrada se conserva porque **la
+> medida sigue siendo válida** y es lo que hará falta el día que se necesite una nota.
 
-> Se añade como apéndice y no como fichero aparte:  exige  para que
-> dos tickets no escriban nunca en el mismo sitio (SCRUM-273). No se borra nada de lo anterior.
-
-> 🔴 **Y lo primero, porque lo de abajo se lee mal sin esto:** el fundador ANULÓ esta decisión
-> el 20-ago, después de leer la medición. **No se documenta la condición.** Lo que sostiene los
-> nueve textos es el mecanismo de SCRUM-568. Esta entrada se conserva porque **la medida sigue
-> siendo válida** y es lo que hará falta el día que se necesite una nota.
+# SCRUM-564 · Documentar la condición — dónde cabe y cuántos caracteres
 
 **Medido contra:** `origin/main` = `164d092dc8e955aa1b01ce254133a24553ce91d9` · 2026-08-21T12:40:00+01:00
 
