@@ -58,7 +58,12 @@ firma del cliente → cobro de señal/total → (post SIF-1) factura VeriFactu. 
 npm run dev              # hot reload; carga .env.local con prioridad (BD local + DISABLE_CRONS=true)
 npm run build            # tsc → dist/
 npm test                 # compila + node --test (tests/*.test.mjs contra dist/)
-npx prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --script   # preview ANTES de db push
+# preview OBLIGATORIO antes de db push (SCRUM-385). Lleva CONTROL POSITIVO dentro: si la
+# herramienta no responde lo DICE, en vez de devolver un «no hay cambios» que no sabe.
+# ⚠️ NO usar `npx prisma migrate diff` a pelo: si falta el CLI local, `npx` se baja otro de la
+# red en silencio y su salida vacía se lee como «sin cambios» (incidente del 5-ago-2026).
+node scripts/preview-migracion.mjs                        # contra la BD del entorno
+node scripts/preview-migracion.mjs --desde viejo.prisma    # offline: schema viejo → actual
 npx prisma db push --accept-data-loss   # solo tras preview aditivo + confirmación
 npx prisma generate      # en Windows: matar node antes si el DLL queda bloqueado
 ```
