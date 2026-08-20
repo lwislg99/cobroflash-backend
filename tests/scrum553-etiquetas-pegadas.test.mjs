@@ -25,12 +25,47 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   censar, pegadasEn, elMayorEsDeLaEtiqueta, ETIQUETAS_HTML, AUTORREFERENCIA,
+  BUSCADORES, rangosDeBusqueda,
 } from '../scripts/censo-etiquetas-pegadas.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Medido el 20-ago-2026, DESPUES del piloto. Solo puede BAJAR. */
-const TOPE = 29;
+/**
+ * Medido el 20-ago-2026, DESPUES del piloto. Solo puede BAJAR.
+ *
+ * ── SCRUM-567 · 29 → 23, Y LA CUENTA VA ESCRITA PORQUE NO ES UNA RESTA SIMPLE ───────────────
+ *
+ *     29 con el criterio viejo  =  16 extractores de verdad  +  13 de RUIDO
+ *     23 con el criterio nuevo  =  16 extractores de verdad  +   7 QUE NO SE VEIAN
+ *
+ * Los 13 de ruido eran HTML que se CONSTRUYE, no que se busca: el segundo argumento de un
+ * `.replace()` (lo que reporto S3 tres veces) y ocho fixtures de tabla que la heuristica vieja
+ * daba por regex porque un `</td>` anterior en la linea parece `/` + texto + `<`.
+ *
+ * Los 7 nuevos son extractores REALES que el detector viejo no veia porque exigia la etiqueta y
+ * la llamada de busqueda EN LA MISMA LINEA: regex en linea de continuacion, `.exec()`, y un
+ * `.replace()` multilinea. **NO se absorben**: van nombrados aqui abajo y en `docs/master/
+ * SCRUM-567.md`, y son deuda pendiente igual que los otros 16.
+ *
+ * 🔴 EL TOPE BAJA PORQUE SE MIDIO RUIDO, NUNCA PORQUE EL NUMERO MOLESTE. Y no baja a 16 porque
+ *    16 no es lo que hay: seria un tope que el arbol no cumple, o sea main en rojo. La rebaja
+ *    honesta es de 6 —13 que se van, 7 que aparecen— y las dos mitades estan escritas.
+ */
+const TOPE = 23;
+
+/**
+ * Los 7 que el criterio viejo no veia. Estan aqui para que se puedan arreglar, NO para
+ * excusarlos: cuentan dentro del TOPE como cualquier otro.
+ */
+const NO_SE_VEIAN_ANTES = [
+  'tests/scrum331-heroe.test.mjs:163',
+  'tests/scrum331-heroe.test.mjs:164',
+  'tests/scrum541-comparativa-a11y.test.mjs:82',
+  'tests/_barra-lateral.mjs:77',
+  'tests/scrum264-copy-que-llega-al-cliente.test.mjs:74',
+  'tests/scrum363-eje-de-cobro.test.mjs:133',
+  'tests/scrum551-anclas-bloque-f.test.mjs:152',
+];
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // SUELO · «no hay extractores con el `>` pegado» y «no supe mirar» dan el mismo cero
@@ -194,4 +229,91 @@ test('SCRUM-553 · 🔴 pero CAE si se quita lo que de verdad vigila, y dice cu�
   assert.ok((otraClase.match(DOTS) || []).length < 2,
     '🔴 acepta `class="dot-grande"` como si fuera `class="dot"`: eso YA es relajar el guard, que '
     + 'es justo lo que el ticket prohíbe. Se tolera el hueco de los atributos y nada más.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-567 · EL CRITERIO POSICIONAL, EN LAS DOS DIRECCIONES
+//
+// Un extractor BUSCA en un documento; un fixture lo CONSTRUYE. Se escriben igual, asi que el
+// criterio no puede ser lexico: es DONDE esta el literal. Y las dos direcciones importan por
+// motivos distintos —dejar de ver un extractor de verdad es el fallo CARO, porque el trinquete
+// bajaria sin que nadie hubiera arreglado nada.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-567 · 🔴 un extractor de verdad con el `>` pegado SIGUE contandose', () => {
+  // La direccion cara: si esto deja de verse, el numero baja solo y el trinquete miente.
+  const CASOS = [
+    ['regex suelta', 'const m = html.match(/<td class="cell-id">/);'],
+    ['primer argumento de replace', "const x = html.replace('<script src=\"./a.js\"></script>', '');"],
+    ['primer argumento de includes', "const hay = FILA.includes('<td class=\"col\">');"],
+    ['primer argumento de indexOf', "const i = FILA.indexOf('<td class=\"cell-id\">');"],
+    ['new RegExp', "const re = new RegExp('<section id=\"x\">');"],
+    ['regex en llamada multilinea', 'assert.match(\n  detalle,\n  /<span class="pill">/,\n);'],
+    ['exec sobre una regex', 'const m = /<span class="cmp-lbl">/.exec(c.html);'],
+  ];
+  for (const [que, fuente] of CASOS) {
+    const r = pegadasEn(fuente, 'x.mjs');
+    assert.ok(r.length >= 1, `🔴 deja de ver un extractor de verdad: ${que}\n     ${fuente}`);
+  }
+});
+
+test('SCRUM-567 · 🔴 un HTML literal dentro de una cadena YA NO se cuenta', () => {
+  // Los tres modos de ruido que se midieron, cada uno con su caso.
+  const CASOS = [
+    ['el SEGUNDO argumento de replace (lo que reporto S3, tres veces)',
+      "const x = html.replace('</body>', '  <button class=\"btn\">Entrar</button>\\n</body>');"],
+    ['un fixture construido por concatenacion',
+      "const html = '<table><tr><td>Mano de obra</td><td>2.5</td></tr></table>';"],
+    ['prosa dentro de un mensaje de error',
+      "assert.ok(b.scripts.includes(f), `🔴 no esta entre los <script src> del panel.`);"],
+    ['dato de entrada que se pasa a una funcion',
+      "const n = textoPublicado('<p>tres</p>').split('\\n').length;"],
+  ];
+  for (const [que, fuente] of CASOS) {
+    const r = pegadasEn(fuente, 'x.mjs');
+    assert.deepEqual(r.map((h) => h.etiqueta), [],
+      `🔴 vuelve a contar como extractor un HTML que es DATO: ${que}\n     ${fuente}`);
+  }
+});
+
+test('SCRUM-567 · 🔴 el mismo literal cuenta en el 1.º argumento y NO en el 2.º', () => {
+  // El caso exacto de `tests/scrum551`: el MISMO texto en los dos argumentos de un `replace`.
+  // Si el criterio fuera lexico, contaria dos; si contara cero, se habria perdido el extractor.
+  const fuente = "const nuevo = html.replace(\n  '<div class=\"prod\" data-gremio=\"pintura\">',\n"
+    + "  '<div class=\"prod\" data-gremio=\"jardineria\"></div>'\n"
+    + "  + '<div class=\"prod\" data-gremio=\"pintura\">',\n);";
+  const r = pegadasEn(fuente, 'x.mjs');
+  assert.equal(r.length, 1,
+    `🔴 esperaba UNA (la del primer argumento) y salieron ${r.length}: ${JSON.stringify(r.map((h) => h.linea))}`);
+  assert.equal(r[0].linea, 2, '🔴 la que cuenta tiene que ser la del PRIMER argumento.');
+});
+
+test('SCRUM-567 · 🔴 `test` no cuenta como buscador: su primer argumento es el PAJAR', () => {
+  // En `re.test(hay)` lo que se busca es el receptor. Meter `test` en la lista habria dado por
+  // extractor cualquier literal de esa llamada — el error contrario al que este ticket arregla.
+  assert.ok(!BUSCADORES.has('test'),
+    '🔴 `test` ha entrado en la lista de buscadores: marcaria el documento entero como aguja.');
+  const r = pegadasEn("const ok = re.test('<table><tr><td>dato</td></tr></table>');", 'x.mjs');
+  assert.deepEqual(r.map((h) => h.etiqueta), [],
+    '🔴 cuenta el PAJAR de un `test` como si fuera lo que se busca.');
+});
+
+test('SCRUM-567 · los 7 que el criterio viejo no veia siguen ahi, nombrados', () => {
+  // No son una excusa: cuentan dentro del TOPE. Estan nombrados para que se puedan arreglar, y
+  // este caso avisa cuando alguien arregle uno — porque entonces el tope tiene que bajar.
+  const r = censar(RAIZ);
+  const coords = new Set(r.html.map((h) => `${h.fichero}:${h.linea}`));
+  const perdidos = NO_SE_VEIAN_ANTES.filter((c) => !coords.has(c));
+  assert.deepEqual(perdidos, [],
+    '✅/🔴 alguno de los 7 ya no aparece.\n'
+    + '  Si lo has ARREGLADO: enhorabuena — quitalo de `NO_SE_VEIAN_ANTES` y baja `TOPE` en uno.\n'
+    + '  Si NO lo has tocado: el detector ha dejado de verlo, que es el fallo caro — el numero\n'
+    + '  bajaria sin que nadie hubiera arreglado nada.\n'
+    + `  Faltan: ${JSON.stringify(perdidos)}`);
+});
+
+test('SCRUM-567 · 🔴 SUELO: un fichero que no se puede parsear NO pasa por limpio', () => {
+  // Devolver «sin tramos» diria «aqui no hay extractores», que es la conclusion comoda.
+  assert.throws(() => rangosDeBusqueda('const a = (((;', 'roto.mjs'),
+    '🔴 se ha tragado un fichero que no parsea. Un fichero ilegible no es un fichero limpio.');
 });
