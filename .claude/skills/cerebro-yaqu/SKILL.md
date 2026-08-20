@@ -29,8 +29,8 @@ Los encargos exigen «verifica con `Buffer.compare` contra el blob». Vale para 
 el otro, y creerlo universal da un verde falso. **Antes de tocar, siempre:**
 `const ORIGINAL = fs.readFileSync(F);` — los bytes de disco. Sirve en los dos casos y es gratis.
 - **CASO A · fichero NO normalizado** (`-text`, o sin regla) → `Buffer.compare(disco, blob) === 0`.
-- **CASO B · fichero NORMALIZADO** (`.gitattributes` con `text eol=lf`) → 🔴 **el blob NO sirve
-  de referencia**: git guarda LF pase lo que pase en disco, así que un fichero con 90 CR en la
+- **CASO B · fichero NORMALIZADO** (`.gitattributes` con `text eol=lf`) → 🔴 **el blob NO sirve de referencia**:
+  git guarda LF pase lo que pase en disco, así que un fichero con 90 CR en la
   copia de trabajo tiene el blob limpio y `git status` lo da por LIMPIO. Compara contra
   `ORIGINAL`. Restaurar el blob «revierte» y además NORMALIZA — un cambio que nadie pidió.
 - Y **comprobar el blob no basta**: el guard de SCRUM-533 mira EL DISCO. Se puede tener el blob

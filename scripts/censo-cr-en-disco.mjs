@@ -190,8 +190,13 @@ export function limpiar(raiz, rel) {
   const cr = contarCR(antes);
   if (cr === 0) return { ok: true, cr: 0, motivo: 'ya estaba limpio: no se ha tocado' };
 
-  const editado = spawnSync('git', ['status', '--porcelain', '--', rel],
-    { cwd: raiz, encoding: 'utf8', env: ENV }).stdout.trim();
+  // ⚠️ Puede no haber repositorio, o el fichero puede no estar seguido. En los dos casos NO hay
+  //    blob con el que contrastar, y eso se DICE — no se finge una comprobación que no se hizo.
+  const est = spawnSync('git', ['status', '--porcelain', '--', rel], { cwd: raiz, encoding: 'utf8', env: ENV });
+  const hayGit = est.status === 0;
+  const seguido = hayGit
+    && spawnSync('git', ['ls-files', '--error-unmatch', '--', rel], { cwd: raiz, encoding: 'utf8', env: ENV }).status === 0;
+  const editado = hayGit ? est.stdout.trim() : '';
 
   // Byte a byte: se copian todos MENOS los 0x0D. Nada de `.replace` sobre cadena, que pasaría
   // por una decodificación y reescribiría el fichero entero.
@@ -207,10 +212,15 @@ export function limpiar(raiz, rel) {
     return { ok: false, cr, motivo: 'lo escrito NO es «lo mismo sin CR». Se ha dejado como estaba.' };
   }
 
+  const base = cr + ' CR quitados · Buffer.compare contra «lo mismo sin CR» = 0 · la edición se conserva.';
+  if (!seguido) {
+    return { ok: true, cr, sinBlob: true,
+      motivo: base + ' ⚠️ SIN comprobación contra el blob: '
+        + (hayGit ? 'git no sigue este fichero' : 'aquí no hay repositorio') + '.' };
+  }
   if (editado) {
     return { ok: true, cr, editado: true,
-      motivo: cr + ' CR quitados · Buffer.compare contra «lo mismo sin CR» = 0 · la edición se '
-        + 'conserva. ⚠️ NO se ha podido comprobar contra el blob: git ve cambios en el fichero '
+      motivo: base + ' ⚠️ NO se ha podido comprobar contra el blob: git ve cambios en el fichero '
         + '(«' + editado.slice(0, 40) + '»), así que el blob no describe lo que debería haber.' };
   }
   const oid = spawnSync('git', ['rev-parse', ':' + rel], { cwd: raiz, encoding: 'utf8', env: ENV }).stdout.trim();
