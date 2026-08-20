@@ -27,6 +27,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+// SCRUM-548 · el solape sale de un modulo aparte para que un test estatico pueda mirarlo
+// SIN levantar navegador: la revision manual que encontro el solape de SCRUM-546 costaba
+// un conflicto de merge, y esto cuesta milisegundos.
+import { censarSolape } from './_solape-de-guards.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SOLO_CENSO = process.argv.includes('--solo-censo');
@@ -69,6 +73,27 @@ if (sinFichero.length) {
 
 console.log('');
 for (const g of navegador) console.log('   ' + g.padEnd(26) + ficheroDe(g));
+
+// ── SOLAPE · ¿cuántos pagan el arranque de un navegador por la MISMA página? ─────────────────
+{
+  const s = censarSolape(RAIZ);
+  console.log('\n── SOBRE QUÉ PÁGINA MIDE CADA UNO ─────────────────────');
+  for (const f of s.fichas) {
+    console.log('   ' + f.guard.padEnd(26) + (f.derivado ? '(no derivable: su destino sale de una variable)' : (f.rutas.join(' ') || '(sin goto)')));
+  }
+  if (s.solapes.length) {
+    console.log('\n   🟡 SOLAPES:');
+    for (const x of s.solapes) console.log('      ' + x.guards.length + ' guards sobre ' + x.ruta + ' — ' + x.guards.join(', '));
+    console.log('\n   No es un defecto por sí solo: dos guards pueden mirar cosas distintas de la misma');
+    console.log('   página. Es el sitio donde MIRAR, y hasta hoy sólo se miraba cuando un conflicto de');
+    console.log('   merge obligaba a abrir package.json a mano (SCRUM-548).');
+  }
+  if (s.noResueltos.length) {
+    console.log('\n   ⚠️ NO RESUELTOS por este detector: ' + s.noResueltos.join(', '));
+    console.log('   Su destino sale de una variable. Cualquier solape suyo es INVISIBLE aquí, y eso');
+    console.log('   se dice en vez de contarlo como «sin solape».');
+  }
+}
 
 if (SOLO_CENSO) { console.log('\n(--solo-censo: no se ejecuta ninguno)'); process.exit(0); }
 
