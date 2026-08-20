@@ -1,10 +1,23 @@
-# Dónde cabe la condición, y cuántos caracteres
+# Dónde cabría la condición, y cuántos caracteres — ARCHIVO
 
-**SCRUM-564.** El fundador decidió el 20-ago-2026 **documentar la condición** en vez de
-retirar el copy: los diez textos se quedan como están y se les añade lo que hoy falta.
+**SCRUM-564**, archivado por **SCRUM-568**.
+
+> 🔴 **LA DECISIÓN CAMBIÓ, Y ESTA MEDIDA ES LA QUE LA CAMBIÓ.** El 20-ago-2026, después de
+> leerla, el fundador decidió **no documentar la condición**: los tres medios se quedan
+> enunciados como están. *«Cuando hagamos el go para empezar a vender, todo será verdad. De
+> momento no pasa nada.»*
+>
+> ⛔ **No se escribe ninguna nota.** Ni en `precios/li#3`, ni en los tres de `#probar`, ni en
+> ningún sitio. Lo que sostiene esa decisión es el mecanismo de **SCRUM-568** —las nueve
+> afirmaciones ancladas con `tras`, cuyo veredicto cambia solo cuando los flags se
+> enciendan—, no una advertencia al visitante.
+>
+> **Entonces ¿por qué sigue esto aquí?** Porque la medida costó dos intentos y tres trampas,
+> y el día que haga falta una nota —si el go llega antes que los flags— el dato ya estará.
+> **Es un archivo, no un plan: hoy no hay que hacer nada con estos números.**
 
 > ⛔ **Aquí no hay ni una palabra de la condición.** Regla 30: el microcopy es del fundador.
-> Esto mide **dónde va y cuánto cabe**; la frase la elige él.
+> Esto mide **dónde cabría y cuánto**; la frase, si algún día hace falta, la elige él.
 
 > ⚠️ **Generado** (`node scripts/citar-hueco-condicion.mjs`) a partir de la medición en
 > navegador de `scripts/medir-hueco-condicion.mjs`. Los textos salen del censo, no de una copia.

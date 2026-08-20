@@ -1,14 +1,22 @@
 // scripts/_hueco-condicion.mjs — SCRUM-564
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// DÓNDE CABE LA CONDICIÓN, Y CUÁNTOS CARACTERES — los números, congelados
+// DÓNDE CABRÍA LA CONDICIÓN, Y CUÁNTOS CARACTERES — la medida, ARCHIVADA
 //
-// El fundador decidió el 20-ago-2026 **documentar la condición** en vez de retirar el copy: los
-// diez textos se quedan como están y se les añade lo que hoy falta. Para elegir la frase le
-// falta un dato, y es el que hay aquí: **cuántos caracteres caben en cada sitio**.
+// 🔴 LA DECISIÓN CAMBIÓ, Y ESTA MEDIDA ES LA QUE LA CAMBIÓ. El 20-ago-2026, DESPUÉS de leerla,
+// el fundador decidió **no documentar la condición**: los tres medios se quedan enunciados como
+// están. «Cuando hagamos el go para empezar a vender, todo será verdad.»
+//
+// ⛔ **NO SE ESCRIBE NINGUNA NOTA.** Ni en `precios/li#3`, ni en los tres de `#probar`, ni en
+// ningún sitio. Lo que sostiene esa decisión es el mecanismo de SCRUM-568, no una advertencia
+// al visitante.
+//
+// ENTONCES ¿POR QUÉ SIGUE ESTO AQUÍ? Porque la medida costó dos intentos y tres trampas, y el
+// día que haga falta una nota —si el go llega antes que los flags— el dato ya estará. Esto es un
+// ARCHIVO, no un plan: nadie tiene que hacer nada con estos números hoy.
 //
 // ⛔ AQUÍ NO HAY NI UNA PALABRA DE LA CONDICIÓN. Regla 30: el microcopy es del fundador. Esto
-// mide dónde va y cuánto cabe; la frase la elige él.
+// mide dónde cabría y cuánto; la frase, si algún día hace falta, la elige él.
 //
 // Los números salen de `scripts/medir-hueco-condicion.mjs`, que los mide EN NAVEGADOR. Se
 // congelan aquí para que un test pueda vigilarlos sin abrir Edge en cada `npm test`.
