@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { unidades } from '../scripts/censo-anclas-bloque-f.mjs';
 import {
   REGISTRO, APROBADO, PENDIENTE, NI_UNA_COSA_NI_OTRA, MARCADORES_DE_PENDIENTE,
-  estadoDe, revisar, reconstruir, textosDeHoy, mismoTexto, leerLanding, SECCIONES,
+  estadoDe, revisar, reconstruir, textosDeHoy, mismoTexto, leerLanding, SECCIONES, NO_APROBADAS,
 } from '../scripts/_registro-de-lo-aprobado.mjs';
 import { generar, DESTINO } from '../scripts/registro-de-lo-aprobado.mjs';
 
@@ -28,15 +28,15 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = leerLanding(RAIZ);
 
 /** Lo medido el 20-ago-2026. */
-const REGISTRADOS = 41;
-const SIN_CUBRIR = 7;
+const REGISTRADOS = 52;
+const SIN_CUBRIR = 1;
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // SUELO · un registro que no encuentra nada diría «no hay nada aprobado»
 // ═════════════════════════════════════════════════════════════════════════════════════════
 test('SUELO · el registro tiene entradas y todas resuelven en la landing', () => {
   assert.ok(REGISTRO.length > 0,
-    '🔴 CIEGO: el registro está vacío. Son 41. Un cero aquí se leería como «no hay nada aprobado».');
+    '🔴 CIEGO: el registro está vacío. Son 52. Un cero aquí se leería como «no hay nada aprobado».');
   assert.equal(REGISTRO.length, REGISTRADOS,
     `🔴 el registro tiene ${REGISTRO.length} entradas y se midieron ${REGISTRADOS}. Si se ha `
     + 'aprobado algo nuevo, se registra CON SU FECHA; si se ha quitado, se dice por qué.');
@@ -73,7 +73,7 @@ test('CONTROL POSITIVO · sin tocar nada, ninguna aprobación caduca', () => {
     '🔴 hay aprobaciones caducadas sin que nadie haya tocado la landing: el mecanismo es ruido');
   assert.deepEqual(r.sinAnclaje.map((c) => c.id), [],
     '🔴 hay identificadores registrados que ya no existen en el marcado');
-  assert.equal(r.vigentes.length, REGISTRADOS, '🔴 no están vigentes las 41');
+  assert.equal(r.vigentes.length, REGISTRADOS, '🔴 no están vigentes las 52');
 });
 
 test('CONTROL POSITIVO · el texto guardado es el literal, no una descripción', () => {
@@ -101,8 +101,12 @@ test('dado un texto cualquiera, el registro contesta aprobado / pendiente / ni u
       porque: 'vive en un atributo y también está registrada' },
     { texto: 'El ERP por WhatsApp para los oficios', espera: PENDIENTE,
       porque: 'está en #heroe-f4, que lleva marcador, y NO está registrada' },
-    { texto: 'Tu oficio', espera: PENDIENTE,
-      porque: 'es un <span> de una sección marcada: el marcador es de la sección' },
+    { texto: 'Tu oficio', espera: APROBADO,
+      porque: 'es un <span> que el esquema no alcanza, y aun así se aprobó (F6-1, 20-ago)' },
+    { texto: 'Empezar gratis →', espera: APROBADO,
+      porque: 'F6-6: no es una cadena contigua del fichero, se resuelve por el texto del elemento' },
+    { texto: 'Tu método actual', espera: PENDIENTE,
+      porque: 'es un <span> de una sección marcada y NO se aprobó por separado' },
     { texto: 'Seis herramientas. Una sola app.', espera: NI_UNA_COSA_NI_OTRA,
       porque: 'copy PUBLICADO que nadie aprobó ni marcó — el estado que no existía' },
     { texto: 'Tres pasos. Cero fricción.', espera: NI_UNA_COSA_NI_OTRA, porque: 'igual que el anterior' },
@@ -235,4 +239,61 @@ test('no se ha inventado ningún marcador nuevo en el marcado', () => {
   assert.deepEqual([...new Set(propuesta)], ['microcopy-sin-aprobar'],
     '🔴 ha aparecido un valor nuevo de `data-propuesta`: ' + JSON.stringify([...new Set(propuesta)]));
   assert.ok(SECCIONES.length === 4, '🔴 CIEGO: el registro ya no cubre las cuatro secciones');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// LAS SEIS DE LA SEGUNDA TANDA · y la séptima, que sigue fuera A PROPÓSITO
+// ═════════════════════════════════════════════════════════════════════════════════════════
+test('las seis aprobadas el 20-ago tras SCRUM-561 están registradas TAL CUAL', () => {
+  const esperadas = [
+    ['heroe-f4/a#1', 'Probar la demo', 'F4-4'],
+    ['heroe-f4/a#2', 'Empieza gratis', 'F4-5'],
+    ['comparativa/span#1', 'PROPUESTA · La diferencia', 'F5-1'],
+    ['comparativa/span#2', 'La situación', 'F5-4'],
+    ['gremios/span#1', 'Tu oficio', 'F6-1'],
+  ];
+  for (const [id, texto, doc] of esperadas) {
+    const e = REGISTRO.find((x) => x.id === id);
+    assert.ok(e, `🔴 ${doc} (${id}) no está en el registro`);
+    // TAL CUAL: aprobado no autoriza a retocar. «PROPUESTA · » sigue en F5-1 y «Tu oficio» sigue
+    // siendo «Tu oficio», que son dos decisiones abiertas del fundador y ninguna se ha tomado.
+    assert.equal(e.texto, texto, `🔴 ${doc}: el texto registrado no es el aprobado`);
+    assert.equal(Buffer.compare(Buffer.from(e.texto, 'utf8'), Buffer.from(texto, 'utf8')), 0,
+      `🔴 ${doc}: coincide como cadena y no byte a byte`);
+    assert.equal(e.via, 'texto-del-elemento', `🔴 ${doc}: vía equivocada`);
+    assert.equal(estadoDe(texto, html).estado, APROBADO, `🔴 ${doc} no sale APROBADO`);
+  }
+});
+
+test('F6-6 · las seis del marcado, resueltas por el texto del ELEMENTO y no por la cadena suelta', () => {
+  const f66 = REGISTRO.filter((e) => e.doc === 'F6-6');
+  assert.equal(f66.length, 6, '🔴 F6-6 está seis veces en el marcado y el registro no lo refleja');
+  for (const e of f66) {
+    assert.equal(e.texto, 'Empezar gratis →', `🔴 ${e.id}: el texto no es el aprobado`);
+    assert.ok(/^gremios\[[a-z]+\]\/a#1$/.test(e.id), `🔴 ${e.id}: identificador con otra forma`);
+  }
+  // 🔴 LO QUE HACE ESTE CASO DISTINTO: la cadena NO existe contigua en el fichero.
+  const bruto = fs.readFileSync(path.join(RAIZ, 'public/index.html'));
+  assert.equal(bruto.indexOf(Buffer.from('Empezar gratis →', 'utf8')), -1,
+    '🔴 si ahora SÍ es una cadena contigua, el marcado ha cambiado y hay que volver a mirarlo');
+  // y aun así resuelve y verifica byte a byte, que es lo que tenía que seguir funcionando
+  const hoy = textosDeHoy(html);
+  for (const e of f66) {
+    assert.equal(hoy.get(e.id), e.texto, `🔴 ${e.id} no se resuelve por el texto del elemento`);
+    assert.equal(Buffer.compare(Buffer.from(hoy.get(e.id), 'utf8'), Buffer.from(e.texto, 'utf8')), 0,
+      `🔴 ${e.id}: resuelve pero no byte a byte`);
+  }
+});
+
+test('🔴 F4-1 sigue PENDIENTE, y su ausencia está DECLARADA', () => {
+  const texto = 'El ERP por WhatsApp para los oficios';
+  assert.equal(REGISTRO.some((e) => mismoTexto(e.texto, texto)), false,
+    '🔴 «El ERP por WhatsApp para los oficios» se ha registrado como aprobada. No lo está: '
+    + 'necesita aprobación Y ancla, y las dos las decide el fundador.');
+  assert.equal(estadoDe(texto, html).estado, PENDIENTE, '🔴 F4-1 ya no sale PENDIENTE');
+  // Un texto que falta y uno que se dejó fuera se leen igual. Por eso está declarado.
+  const d = NO_APROBADAS.find((x) => mismoTexto(x.texto, texto));
+  assert.ok(d, '🔴 su ausencia no está declarada en `NO_APROBADAS`: se leería como un olvido');
+  assert.ok(d.motivo && d.motivo.length > 30, '🔴 declarada sin motivo');
+  assert.equal(d.id, 'heroe-f4/span#1');
 });

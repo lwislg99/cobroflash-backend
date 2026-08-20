@@ -16,15 +16,18 @@ el que se aprobó?»*, y ésa se contesta con `Buffer.compare`, no leyendo.
 
 | | |
 |---|---|
-| textos registrados como aprobados | **41** |
-| **vigentes** (el texto de hoy es el aprobado) | **41** |
+| textos registrados como aprobados | **52** |
+| **vigentes** (el texto de hoy es el aprobado) | **52** |
 | 🔴 **caducados** (alguien reescribió la frase) | **0** |
 | 🟠 sin anclaje (el identificador ya no existe) | **0** |
 
-**La aritmética, porque el encargo decía 42:** son «los 38 del esquema» + «los 4 de F7», pero
-**uno de los cuatro de F7 ya está entre los 38** (`contacto-publico/h2#1` es un `<h2>`, o sea
-unidad del esquema). Los otros tres viven en atributos. **38 + 3 = 41.** No falta ninguno:
-sobraba un recuento.
+**Dos tandas, las dos del 20-ago-2026:**
+
+- **41** · «los 38 del esquema» + «los 4 de F7» — que son 41 y no 42, porque uno de los cuatro
+  de F7 ya está entre los 38 (`contacto-publico/h2#1` es un `<h2>`, o sea unidad del esquema).
+  Los otros tres viven en atributos. **38 + 3 = 41.**
+- **11** · seis textos más, tras el censo de SCRUM-561: cinco de un nodo y «Empezar gratis →»,
+  que está seis veces en el marcado, una por gremio. **5 + 6 = 11.**
 
 ---
 
@@ -34,25 +37,24 @@ Cruce con `docs/MICROCOPY_BLOQUE_F_PARA_APROBAR.md` (**51** entradas), con `===`
 
 | | |
 |---|---|
-| cubiertas exactamente por el registro | **28** |
+| cubiertas exactamente por el registro | **34** |
 | las mismas palabras, **partidas de otra manera** | **16** |
-| 🔴 **sin cubrir por ninguna aprobación** | **7** |
+| 🔴 **sin cubrir por ninguna aprobación** | **1** |
 
 ### 🔴 Las que no cubre nadie
 
-Éstas son las que hay que mirar. Ninguna es una frase larga: son **rótulos, etiquetas de
-botón y cabeceras de columna** — justo lo que el esquema `h1|h2|h3|p|li` no alcanza
-(SCRUM-561). Y una de ellas dice qué **es** el producto.
+El 20-ago-2026 eran **siete** — rótulos, etiquetas de botón y cabeceras de columna, lo que el
+esquema `h1|h2|h3|p|li` no alcanza (SCRUM-561). **Seis se aprobaron ese mismo día** y están
+abajo, en el registro. Queda ésta:
 
 | nº en el documento | texto literal |
 |---|---|
 | `F4-1` | «El ERP por WhatsApp para los oficios» |
-| `F4-4` | «Probar la demo» |
-| `F4-5` | «Empieza gratis» |
-| `F5-1` | «PROPUESTA · La diferencia» |
-| `F5-4` | «La situación» |
-| `F6-1` | «Tu oficio» |
-| `F6-6` | «Empezar gratis →» |
+
+**Y no está fuera por olvido, está fuera por decisión.** Un texto que falta y uno que se dejó
+fuera se leen igual, así que se declara — `NO_APROBADAS` en el módulo, con su motivo:
+
+- `heroe-f4/span#1` (F4-1) — afirma la CATEGORÍA del producto. Necesita aprobación y ancla; las dos son del fundador. Citada en docs/MICROCOPY_FUERA_DEL_ESQUEMA.md.
 
 ### Las que están, pero partidas de otra manera
 
@@ -89,7 +91,8 @@ es la que no existía**, y es la que ha hecho equivocarse tres veces en un día:
 - `APROBADO` — su texto literal está en el registro, byte a byte.
 - `PENDIENTE` — vive dentro de una sección con marcador de pendiente. ⚠️ El marcador es de
   la **sección**, así que alcanza a todo lo que hay dentro, no sólo a las unidades del
-  esquema: por eso «Tu oficio», que es un `<span>`, sale `PENDIENTE` y no «ni una cosa ni otra».
+  esquema: por eso «Tu método actual», que es un `<span>`, sale `PENDIENTE` y no «ni una cosa
+  ni otra». (Su vecino «Tu oficio», también un `<span>`, sale `APROBADO`: se aprobó el 20-ago.)
 - `NI_UNA_COSA_NI_OTRA` — ni registrado ni dentro de una sección marcada. **La mayor
   parte del copy PUBLICADO está aquí** (`#como`, `#todo`, `#precios`, `#probar`, `#faq`):
   nadie lo aprobó y nadie lo marcó como pendiente. No es un fallo nuevo — es que hasta hoy
@@ -102,7 +105,7 @@ node scripts/registro-de-lo-aprobado.mjs --estado "Seis herramientas. Una sola a
 
 ---
 
-## Los 41 textos registrados
+## Los 52 textos registrados
 
 | identificador | texto literal | vía | fecha | quién |
 |---|---|---|---|---|
@@ -147,4 +150,15 @@ node scripts/registro-de-lo-aprobado.mjs --estado "Seis herramientas. Una sola a
 | `contacto-publico@data-wa-etiqueta` | «Escríbenos por WhatsApp» | atributo | 2026-08-20 | fundador |
 | `contacto-publico@data-wa-texto` | «Hola, tengo una duda sobre YaQu» | atributo | 2026-08-20 | fundador |
 | `contacto-publico@data-email-etiqueta` | «Escríbenos por correo» | atributo | 2026-08-20 | fundador |
+| `heroe-f4/a#1` | «Probar la demo» | texto-del-elemento | 2026-08-20 | fundador |
+| `heroe-f4/a#2` | «Empieza gratis» | texto-del-elemento | 2026-08-20 | fundador |
+| `comparativa/span#1` | «PROPUESTA · La diferencia» | texto-del-elemento | 2026-08-20 | fundador |
+| `comparativa/span#2` | «La situación» | texto-del-elemento | 2026-08-20 | fundador |
+| `gremios/span#1` | «Tu oficio» | texto-del-elemento | 2026-08-20 | fundador |
+| `gremios[fontaneria]/a#1` | «Empezar gratis →» | texto-del-elemento | 2026-08-20 | fundador |
+| `gremios[electricidad]/a#1` | «Empezar gratis →» | texto-del-elemento | 2026-08-20 | fundador |
+| `gremios[reformas]/a#1` | «Empezar gratis →» | texto-del-elemento | 2026-08-20 | fundador |
+| `gremios[climatizacion]/a#1` | «Empezar gratis →» | texto-del-elemento | 2026-08-20 | fundador |
+| `gremios[cerrajeria]/a#1` | «Empezar gratis →» | texto-del-elemento | 2026-08-20 | fundador |
+| `gremios[pintura]/a#1` | «Empezar gratis →» | texto-del-elemento | 2026-08-20 | fundador |
 
