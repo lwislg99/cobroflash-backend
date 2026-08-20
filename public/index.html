@@ -88,6 +88,25 @@
   .btn-ghost:hover{background:var(--bg);border-color:#d7dbd5} .btn-lg{padding:15px 26px;font-size:18.66px}
 
   .announce{background:#0b3d2e;color:#e8f2ee;font-size:13.5px}
+  /* SCRUM-544 · LA BARRA GUARDA SU SITIO DESDE LA PRIMERA PINTURA.
+     Nace `hidden` y se despliega cuando responde `/public/founding-status`; al desplegarse
+     empujaba la página entera hacia abajo. Medido en Edge con 4G (SCRUM-331/544): CLS 0,386 a
+     360 px y 0,108 a 390, contra un límite de 0,1 — y el A/B lo aisló: con la fuente rota, y por
+     tanto sin barra, el CLS caía a 0,001. En un móvil, con el pulgar ya en camino a un botón, ese
+     salto es un toque en el sitio equivocado.
+     EL ARREGLO ES NO SACARLA DEL FLUJO: `hidden` deja de ser `display:none` y pasa a
+     `visibility:hidden`, así que la caja SIGUE OCUPANDO SU SITIO y al hacerse visible no mueve
+     nada. `visibility` la saca igual del árbol de accesibilidad y del orden de tabulación.
+     🔴 Y POR ESO NO HAY NINGÚN NÚMERO AQUÍ: el hueco lo calcula el navegador con el contenido
+     REAL a CADA anchura. Una altura fija a ojo no valdría — medido, la barra ocupa 112 px a 320 y
+     360, 91 de 390 a 600, 95 a 601 y 44 a 1200: cinco alturas distintas, y cambian con lo que
+     devuelva el fetch. Corta volvería a desplazar; larga dejaría hueco en blanco.
+     ⚠️ EL COSTE, dicho y medido: cuando la barra NO llega a aparecer —el fetch falla, o no quedan
+     plazas— su sitio queda vacío arriba. No es una banda verde (con `visibility` no se pinta el
+     fondo): es espacio en blanco. La alternativa era soltar la reserva en ese caso, y eso vuelve
+     a desplazar justo en el caso que el arreglo tiene que cubrir. Los dos números están en
+     `docs/master/SCRUM-544.md`; elegir entre ellos es del fundador, porque la barra es suya. */
+  .announce[hidden]{display:block;visibility:hidden}
   /* SCRUM-543 · 10px → 12px de padding vertical. Con 10 la barra medía 44 EXACTOS, y ahí el área
      tocable del enlace no podía llegar a 44 sin salirse e invadir el header: medido, se quedaba
      en 42,6. Se probaron antes dos ajustes de decimales sobre el pseudo-elemento y los dos se
@@ -423,6 +442,48 @@
   </div>
 </section>
 
+<!-- ══════════════════════════════════════════════════════════════════════════════════════
+     SCRUM-331 (F4) · EL HÉROE — PROPUESTA. NO SE PINTA.
+
+     🛑 Ni una palabra publicada. El copy de la landing ES el máster (A22), así que cambiar el
+     héroe es cambiar el máster: lo aprueba el fundador (regla 30). Mientras esta sección lleve
+     `data-microcopy="PENDIENTE_FUNDADOR"` va `hidden`, y hay test que lo exige en las dos
+     direcciones. Aprobarla = mover lo aprobado al héroe vivo de arriba y borrar este bloque;
+     NO se publican dos héroes.
+
+     QUÉ CAMBIA, Y QUÉ NO:
+     · El posicionamiento NO se toca. El eyebrow y el h1 van COPIADOS LETRA A LETRA del héroe
+       vivo (máster A22, seis iteraciones de prototipo). Este ticket trabaja dentro de eso.
+     · Lo que cambia es la PRUEBA. El diseño original la resolvía con «capturas reales del
+       producto», y eso ya no se sostiene: medido en este ticket, la landing NO tiene ni una
+       captura (cero `<img>`), los siete PNG de `public/img/landing/` no los referencia nadie, y
+       salieron del SEED DEMO (`scripts/capture-demo.mjs:36`, «ids del seed demo»). Una captura
+       de un decorado no es prueba de producto.
+     · Con CERO clientes pagando, la prueba honesta es la DEMOSTRACIÓN: el visitante prueba el
+       producto en vez de creerse a un desconocido. La demo interactiva existe y está medida
+       (SCRUM-327 · Q3: `#probar`, 13 pasos, presupuesto→pago). Por eso pasa a acción primaria.
+     · CERO testimonios, cero logos, cero «más de X profesionales». Con cero clientes pagando eso
+       no sería marketing agresivo: sería falso.
+
+     🔴 Y LA CIFRA QUE SE CAE, que es media propuesta: el héroe vivo dice «Listo en 5 minutos».
+     Nadie lo midió, y D0 (SCRUM-310) midió que NO SE PUEDE medirlo hoy — «los segundos no son
+     medibles desde el árbol… dependen de la latencia de Resend y del filtro de spam», y el alta
+     cruza la bandeja de entrada del usuario. Aquí no está. Retirarla del héroe vivo es decisión
+     del fundador; mientras, queda declarada en el censo (`scripts/_cifras-heroe.mjs`) y con
+     trinquete para que no crezca.
+     ══════════════════════════════════════════════════════════════════════════════════════ -->
+<section class="hero" id="heroe-f4" data-microcopy="PENDIENTE_FUNDADOR" hidden>
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">El ERP por WhatsApp para los oficios</span>
+      <h1>Del presupuesto al cobro, <span class="hl">sin salir de WhatsApp.</span></h1>
+      <p class="sub">Crea el presupuesto en 30 segundos, tu cliente lo firma desde el móvil y te paga — con tarjeta, Bizum o transferencia. No hace falta que te fíes: haz tú el recorrido completo antes de dar tu correo.</p>
+      <div class="cta-row"><a href="#probar" class="btn btn-primary btn-lg">Probar la demo</a><a href="/register.html" class="btn btn-ghost btn-lg">Empieza gratis</a></div>
+      <p class="note"><b>14 días gratis</b><span class="dot"></span>Sin tarjeta</p>
+    </div>
+  </div>
+</section>
+
 <div class="trust">
   <div class="wrap trust-in">
     <div class="trust-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#16a34a" stroke-width="1.8"/><path d="m9 12 2 2 4-4" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg> Firma con <b>evidencia de quién aceptó y cuándo</b></div>
@@ -609,40 +670,40 @@
     <div class="cmp">
       <div class="cmp-head" aria-hidden="true"><span>La situación</span><span>Tu método actual</span><span>Con YaQu</span></div>
 
-      <div class="cmp-row" data-fila="firma">
-        <p class="cmp-sit">El cliente dice que él nunca autorizó ese trabajo.</p>
-        <div class="cmp-cell"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><span class="cmp-lbl">Tu método actual</span>Tu palabra contra la suya.</p></div>
-        <div class="cmp-cell cmp-yaqu"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m8 12.2 2.6 2.6L16 9.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><p><span class="cmp-lbl">Con YaQu</span>Lo aceptó con su firma y su fecha, y la firma queda dentro del PDF.</p></div>
+      <div class="cmp-row" data-fila="firma" role="group" aria-labelledby="cmp-sit-firma">
+        <p class="cmp-sit" id="cmp-sit-firma">El cliente dice que él nunca autorizó ese trabajo.</p>
+        <div class="cmp-cell"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><span class="cmp-lbl">Tu método actual</span> Tu palabra contra la suya.</p></div>
+        <div class="cmp-cell cmp-yaqu"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m8 12.2 2.6 2.6L16 9.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><p><span class="cmp-lbl">Con YaQu</span> Lo aceptó con su firma y su fecha, y la firma queda dentro del PDF.</p></div>
       </div>
 
-      <div class="cmp-row" data-fila="cobro-pendiente">
-        <p class="cmp-sit">La factura lleva tres semanas sin pagarse y te da corte insistir.</p>
-        <div class="cmp-cell"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><span class="cmp-lbl">Tu método actual</span>O llamas tú, o no llama nadie.</p></div>
-        <div class="cmp-cell cmp-yaqu"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m8 12.2 2.6 2.6L16 9.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><p><span class="cmp-lbl">Con YaQu</span>El recordatorio sale solo. Tú no tienes que ser el pesado.</p></div>
+      <div class="cmp-row" data-fila="cobro-pendiente" role="group" aria-labelledby="cmp-sit-cobro-pendiente">
+        <p class="cmp-sit" id="cmp-sit-cobro-pendiente">La factura lleva tres semanas sin pagarse y te da corte insistir.</p>
+        <div class="cmp-cell"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><span class="cmp-lbl">Tu método actual</span> O llamas tú, o no llama nadie.</p></div>
+        <div class="cmp-cell cmp-yaqu"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m8 12.2 2.6 2.6L16 9.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><p><span class="cmp-lbl">Con YaQu</span> El recordatorio sale solo. Tú no tienes que ser el pesado.</p></div>
       </div>
 
-      <div class="cmp-row" data-fila="presupuesto-sin-respuesta">
-        <p class="cmp-sit">Pasaste el presupuesto hace diez días y el cliente no ha dicho nada.</p>
-        <div class="cmp-cell"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><span class="cmp-lbl">Tu método actual</span>Se queda en la libreta hasta que te acuerdas.</p></div>
-        <div class="cmp-cell cmp-yaqu"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m8 12.2 2.6 2.6L16 9.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><p><span class="cmp-lbl">Con YaQu</span>Se le recuerda solo, y el presupuesto caduca cuando toca.</p></div>
+      <div class="cmp-row" data-fila="presupuesto-sin-respuesta" role="group" aria-labelledby="cmp-sit-presupuesto-sin-respuesta">
+        <p class="cmp-sit" id="cmp-sit-presupuesto-sin-respuesta">Pasaste el presupuesto hace diez días y el cliente no ha dicho nada.</p>
+        <div class="cmp-cell"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><span class="cmp-lbl">Tu método actual</span> Se queda en la libreta hasta que te acuerdas.</p></div>
+        <div class="cmp-cell cmp-yaqu"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m8 12.2 2.6 2.6L16 9.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><p><span class="cmp-lbl">Con YaQu</span> Se le recuerda solo, y el presupuesto caduca cuando toca.</p></div>
       </div>
 
-      <div class="cmp-row" data-fila="historial-cliente">
-        <p class="cmp-sit">«¿Cuánto me cobraste por lo del año pasado?»</p>
-        <div class="cmp-cell"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><span class="cmp-lbl">Tu método actual</span>A buscar entre hojas, si es que la guardaste.</p></div>
-        <div class="cmp-cell cmp-yaqu"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m8 12.2 2.6 2.6L16 9.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><p><span class="cmp-lbl">Con YaQu</span>Cada movimiento queda en su ficha, con su fecha.</p></div>
+      <div class="cmp-row" data-fila="historial-cliente" role="group" aria-labelledby="cmp-sit-historial-cliente">
+        <p class="cmp-sit" id="cmp-sit-historial-cliente">«¿Cuánto me cobraste por lo del año pasado?»</p>
+        <div class="cmp-cell"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><span class="cmp-lbl">Tu método actual</span> A buscar entre hojas, si es que la guardaste.</p></div>
+        <div class="cmp-cell cmp-yaqu"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m8 12.2 2.6 2.6L16 9.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><p><span class="cmp-lbl">Con YaQu</span> Cada movimiento queda en su ficha, con su fecha.</p></div>
       </div>
 
-      <div class="cmp-row" data-fila="margen-mes">
-        <p class="cmp-sit">Acaba el mes y no sabes si has ganado dinero.</p>
-        <div class="cmp-cell"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><span class="cmp-lbl">Tu método actual</span>Lo sabrás cuando lo diga la gestoría.</p></div>
-        <div class="cmp-cell cmp-yaqu"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m8 12.2 2.6 2.6L16 9.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><p><span class="cmp-lbl">Con YaQu</span>Lo que entró menos lo que salió, mes a mes.</p></div>
+      <div class="cmp-row" data-fila="margen-mes" role="group" aria-labelledby="cmp-sit-margen-mes">
+        <p class="cmp-sit" id="cmp-sit-margen-mes">Acaba el mes y no sabes si has ganado dinero.</p>
+        <div class="cmp-cell"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><span class="cmp-lbl">Tu método actual</span> Lo sabrás cuando lo diga la gestoría.</p></div>
+        <div class="cmp-cell cmp-yaqu"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m8 12.2 2.6 2.6L16 9.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><p><span class="cmp-lbl">Con YaQu</span> Lo que entró menos lo que salió, mes a mes.</p></div>
       </div>
 
-      <div class="cmp-row" data-fila="catalogo-precios">
-        <p class="cmp-sit">Vuelves a escribir a mano los precios de siempre.</p>
-        <div class="cmp-cell"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><span class="cmp-lbl">Tu método actual</span>Los copias hoja a hoja, y alguno sale mal.</p></div>
-        <div class="cmp-cell cmp-yaqu"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m8 12.2 2.6 2.6L16 9.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><p><span class="cmp-lbl">Con YaQu</span>Salen de tu catálogo según escribes.</p></div>
+      <div class="cmp-row" data-fila="catalogo-precios" role="group" aria-labelledby="cmp-sit-catalogo-precios">
+        <p class="cmp-sit" id="cmp-sit-catalogo-precios">Vuelves a escribir a mano los precios de siempre.</p>
+        <div class="cmp-cell"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><p><span class="cmp-lbl">Tu método actual</span> Los copias hoja a hoja, y alguno sale mal.</p></div>
+        <div class="cmp-cell cmp-yaqu"><svg class="cmp-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m8 12.2 2.6 2.6L16 9.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><p><span class="cmp-lbl">Con YaQu</span> Salen de tu catálogo según escribes.</p></div>
       </div>
     </div>
   </div>
@@ -676,6 +737,21 @@
 </section>
 
 <section class="cta-band" aria-labelledby="reg-cta"><div class="wrap"><h2 id="reg-cta">Tu próxima cotización, lista en 30 segundos</h2><p>Únete a los profesionales que cierran más trabajos y cobran sin perseguir pagos.</p><a href="/register.html" class="btn btn-primary btn-lg">Empezar gratis</a></div></section>
+
+<!-- SCRUM-334 (F7) · CONTACTO — nace OCULTO y se activa rellenando `data-whatsapp`.
+     El número NO se inventa aquí: un canal de WhatsApp que no contesta es peor que no
+     tenerlo, y quién contesta lo decide el fundador. Con `data-whatsapp` vacío,
+     `contacto-publico.js` no pinta el enlace y este bloque no aparece.
+     ⚠️ Los textos de `data-wa-etiqueta`, `data-wa-texto` y `data-email-etiqueta` son
+     [PROPUESTA microcopy — los aprueba el fundador, regla 30]. -->
+<section id="contacto-publico" class="wrap contacto" hidden
+         data-whatsapp=""
+         data-wa-etiqueta="Escríbenos por WhatsApp"
+         data-wa-texto="Hola, tengo una duda sobre YaQu"
+         data-email="hola@yaqu.app"
+         data-email-etiqueta="Escríbenos por correo">
+  <h2>¿Tienes una duda antes de empezar?</h2>
+</section>
 
 <footer><div class="wrap foot"><div class="c">© 2026 YaQu · Hecho en Madrid para los oficios 🇪🇸</div><div class="l"><a href="#como">Cómo funciona</a><a href="#todo">Todo en uno</a><a href="#precios">Precios</a><a href="/privacidad">Privacidad</a><a href="/terminos">Términos</a></div></div></footer>
 
@@ -760,5 +836,6 @@
 })();
 </script>
 <script src="/js/atribucion.js" defer></script>
+<script src="/js/contacto-publico.js" defer></script>
 </body>
 </html>
