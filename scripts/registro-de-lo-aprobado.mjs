@@ -12,7 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
-  REGISTRO, estadoDe, revisar, reconstruir, leerLanding, DOC_PROPUESTA,
+  REGISTRO, NO_APROBADAS, estadoDe, revisar, reconstruir, leerLanding, DOC_PROPUESTA,
   APROBADO, PENDIENTE, NI_UNA_COSA_NI_OTRA,
 } from './_registro-de-lo-aprobado.mjs';
 
@@ -21,7 +21,7 @@ export const DESTINO = 'docs/REGISTRO_DE_MICROCOPY_APROBADA.md';
 
 export function generar(html, raiz) {
   if (REGISTRO.length === 0) {
-    throw new Error('🔴 CIEGO: el registro está vacío. Son 41 textos. Un registro vacío diría '
+    throw new Error('🔴 CIEGO: el registro está vacío. Son 52 entradas. Un registro vacío diría '
       + '«no hay nada aprobado», que es la conclusión más cara que puede dar este fichero.');
   }
   const r = revisar(html);
@@ -62,10 +62,13 @@ export function generar(html, raiz) {
     }
     p();
   }
-  p('**La aritmética, porque el encargo decía 42:** son «los 38 del esquema» + «los 4 de F7», pero');
-  p('**uno de los cuatro de F7 ya está entre los 38** (`contacto-publico/h2#1` es un `<h2>`, o sea');
-  p('unidad del esquema). Los otros tres viven en atributos. **38 + 3 = 41.** No falta ninguno:');
-  p('sobraba un recuento.');
+  p('**Dos tandas, las dos del 20-ago-2026:**');
+  p();
+  p('- **41** · «los 38 del esquema» + «los 4 de F7» — que son 41 y no 42, porque uno de los cuatro');
+  p('  de F7 ya está entre los 38 (`contacto-publico/h2#1` es un `<h2>`, o sea unidad del esquema).');
+  p('  Los otros tres viven en atributos. **38 + 3 = 41.**');
+  p('- **11** · seis textos más, tras el censo de SCRUM-561: cinco de un nodo y «Empezar gratis →»,');
+  p('  que está seis veces en el marcado, una por gremio. **5 + 6 = 11.**');
   p();
   p('---');
   p();
@@ -81,13 +84,18 @@ export function generar(html, raiz) {
   p();
   p('### 🔴 Las que no cubre nadie');
   p();
-  p('Éstas son las que hay que mirar. Ninguna es una frase larga: son **rótulos, etiquetas de');
-  p('botón y cabeceras de columna** — justo lo que el esquema `h1|h2|h3|p|li` no alcanza');
-  p('(SCRUM-561). Y una de ellas dice qué **es** el producto.');
+  p('El 20-ago-2026 eran **siete** — rótulos, etiquetas de botón y cabeceras de columna, lo que el');
+  p('esquema `h1|h2|h3|p|li` no alcanza (SCRUM-561). **Seis se aprobaron ese mismo día** y están');
+  p('abajo, en el registro. Queda ésta:');
   p();
   p('| nº en el documento | texto literal |');
   p('|---|---|');
   for (const d of rec.sinCubrir) p(`| \`${d.num}\` | «${d.texto.replace(/\|/g, '\\|')}» |`);
+  p();
+  p('**Y no está fuera por olvido, está fuera por decisión.** Un texto que falta y uno que se dejó');
+  p('fuera se leen igual, así que se declara — `NO_APROBADAS` en el módulo, con su motivo:');
+  p();
+  for (const d of NO_APROBADAS) p(`- \`${d.id}\` (${d.doc}) — ${d.motivo}`);
   p();
   p('### Las que están, pero partidas de otra manera');
   p();
@@ -111,7 +119,8 @@ export function generar(html, raiz) {
   p(`- \`${APROBADO}\` — su texto literal está en el registro, byte a byte.`);
   p(`- \`${PENDIENTE}\` — vive dentro de una sección con marcador de pendiente. ⚠️ El marcador es de`);
   p('  la **sección**, así que alcanza a todo lo que hay dentro, no sólo a las unidades del');
-  p('  esquema: por eso «Tu oficio», que es un `<span>`, sale `PENDIENTE` y no «ni una cosa ni otra».');
+  p('  esquema: por eso «Tu método actual», que es un `<span>`, sale `PENDIENTE` y no «ni una cosa');
+  p('  ni otra». (Su vecino «Tu oficio», también un `<span>`, sale `APROBADO`: se aprobó el 20-ago.)');
   p(`- \`${NI_UNA_COSA_NI_OTRA}\` — ni registrado ni dentro de una sección marcada. **La mayor`);
   p('  parte del copy PUBLICADO está aquí** (`#como`, `#todo`, `#precios`, `#probar`, `#faq`):');
   p('  nadie lo aprobó y nadie lo marcó como pendiente. No es un fallo nuevo — es que hasta hoy');

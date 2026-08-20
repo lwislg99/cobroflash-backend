@@ -28,6 +28,7 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────
 import fs from 'node:fs';
 import path from 'node:path';
+import { citar } from './_citar-fuera-del-censo.mjs';
 
 /** Los tres estados. `NI_UNA_COSA_NI_OTRA` es el que hoy no existía y el que más ha costado. */
 export const APROBADO = 'APROBADO';
@@ -45,16 +46,17 @@ export const MARCADORES_DE_PENDIENTE = [
 ];
 
 /**
- * EL REGISTRO. 41 textos, no 42.
+ * EL REGISTRO. **52 entradas**, en dos tandas del mismo día:
  *
- * 🔴 La aritmética, porque el encargo dice 42 y medida son 41: son «los 38 del esquema» + «los 4
- * de F7», pero **uno de los cuatro de F7 ya está entre los 38** — `contacto-publico/h2#1`, que es
- * un `<h2>` y por tanto unidad del esquema. Los otros tres viven en atributos. 38 + 3 = 41
- * textos distintos. No falta ninguno: sobra un recuento.
+ *   · 41 · el 20-ago-2026. «Los 38 del esquema» + «los 4 de F7», que son 41 y no 42 porque uno
+ *     de los cuatro de F7 ya está entre los 38 (`contacto-publico/h2#1` es un `<h2>`, o sea
+ *     unidad del esquema). Los otros tres viven en atributos. 38 + 3 = 41.
+ *   · 11 · seis textos más, aprobados tras el censo de SCRUM-561 — cinco de un nodo y «Empezar
+ *     gratis →», que está seis veces en el marcado (una por gremio). 5 + 6 = 11.
  *
- * Cada entrada se generó DEL MARCADO (`node scripts/registro-de-lo-aprobado.mjs --datos`), no se
- * copió a mano: 41 textos con tildes y flechas copiados a mano es la manera más fácil de meter
- * una errata que mañana se lee como «el texto cambió».
+ * Cada entrada se generó DEL MARCADO, no se copió a mano: 52 textos con tildes y flechas
+ * copiados a mano es la manera más fácil de meter una errata que mañana se lee como «el texto
+ * cambió».
  */
 export const REGISTRO = [
   { id: 'heroe-f4/h1#1',
@@ -180,6 +182,77 @@ export const REGISTRO = [
   { id: 'contacto-publico@data-email-etiqueta',
     texto: 'Escríbenos por correo',
     via: 'atributo', fecha: '2026-08-20', quien: 'fundador' },
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // SEIS MÁS · aprobadas el 20-ago-2026 tras el censo de SCRUM-561
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // Son seis de las siete que el documento proponía y ninguna aprobación cubría. La séptima
+  // —«El ERP por WhatsApp para los oficios»— se queda PENDIENTE y NO está en esta lista:
+  // necesita aprobación Y ancla, y las dos las decide el fundador.
+  //
+  // 🔴 `via: 'texto-del-elemento'` ES NUEVO, y nace de un caso real: «Empezar gratis →» NO
+  // existe como secuencia contigua de bytes. En el marcado es
+  //     <a class="p-link" href="/register.html">Empezar gratis <span class="ar">→</span></a>
+  // o sea DOS nodos de texto por tarjeta, doce en total. Buscar la cadena en el fichero daría
+  // «no está», y eso se leería como «alguien cambió el texto».
+  //
+  // Se resuelve recomponiendo el TEXTO ENTERO DEL ELEMENTO que nombra el identificador —lo que
+  // el visitante lee de corrido— y comparándolo con `===` y `Buffer.compare` como todo lo
+  // demás. No se guarda un trozo ni una descripción: se guarda lo aprobado, tal cual.
+  //
+  // ⚠️ SIENTA PRECEDENTE, y por eso se escribe la regla: `texto-del-elemento` se usa cuando el
+  // texto aprobado ABARCA varios nodos del mismo elemento. NO sirve para juntar texto de
+  // elementos distintos —eso sería inventar una frontera que el marcado no tiene— ni para
+  // partir uno en trozos. Las cinco entradas de un solo nodo van igualmente por aquí porque el
+  // texto del elemento y el del nodo coinciden: una regla uniforme se comprueba, una excepción
+  // se olvida.
+  { id: 'heroe-f4/a#1',
+    texto: 'Probar la demo',
+    via: 'texto-del-elemento', fecha: '2026-08-20', quien: 'fundador', doc: 'F4-4' },
+  { id: 'heroe-f4/a#2',
+    texto: 'Empieza gratis',
+    via: 'texto-del-elemento', fecha: '2026-08-20', quien: 'fundador', doc: 'F4-5' },
+  { id: 'comparativa/span#1',
+    texto: 'PROPUESTA · La diferencia',
+    via: 'texto-del-elemento', fecha: '2026-08-20', quien: 'fundador', doc: 'F5-1' },
+  { id: 'comparativa/span#2',
+    texto: 'La situación',
+    via: 'texto-del-elemento', fecha: '2026-08-20', quien: 'fundador', doc: 'F5-4' },
+  { id: 'gremios/span#1',
+    texto: 'Tu oficio',
+    via: 'texto-del-elemento', fecha: '2026-08-20', quien: 'fundador', doc: 'F6-1' },
+  // F6-6 · la misma frase aprobada una vez, seis veces en el marcado (una por gremio).
+  { id: 'gremios[fontaneria]/a#1',
+    texto: 'Empezar gratis →',
+    via: 'texto-del-elemento', fecha: '2026-08-20', quien: 'fundador', doc: 'F6-6' },
+  { id: 'gremios[electricidad]/a#1',
+    texto: 'Empezar gratis →',
+    via: 'texto-del-elemento', fecha: '2026-08-20', quien: 'fundador', doc: 'F6-6' },
+  { id: 'gremios[reformas]/a#1',
+    texto: 'Empezar gratis →',
+    via: 'texto-del-elemento', fecha: '2026-08-20', quien: 'fundador', doc: 'F6-6' },
+  { id: 'gremios[climatizacion]/a#1',
+    texto: 'Empezar gratis →',
+    via: 'texto-del-elemento', fecha: '2026-08-20', quien: 'fundador', doc: 'F6-6' },
+  { id: 'gremios[cerrajeria]/a#1',
+    texto: 'Empezar gratis →',
+    via: 'texto-del-elemento', fecha: '2026-08-20', quien: 'fundador', doc: 'F6-6' },
+  { id: 'gremios[pintura]/a#1',
+    texto: 'Empezar gratis →',
+    via: 'texto-del-elemento', fecha: '2026-08-20', quien: 'fundador', doc: 'F6-6' },
+];
+
+/**
+ * 🔴 LA QUE NO SE APROBÓ, escrita aquí para que su ausencia sea una DECISIÓN y no un olvido.
+ *
+ * Un texto que falta del registro y uno que se decidió dejar fuera se leen igual: los dos son
+ * «no está». Ésta se dejó fuera a propósito el 20-ago-2026 — dice qué **es** el producto, y eso
+ * necesita aprobación Y ancla. Un test comprueba que sigue fuera y que sigue saliendo PENDIENTE.
+ */
+export const NO_APROBADAS = [
+  { id: 'heroe-f4/span#1', texto: 'El ERP por WhatsApp para los oficios', doc: 'F4-1',
+    motivo: 'afirma la CATEGORÍA del producto. Necesita aprobación y ancla; las dos son del '
+      + 'fundador. Citada en docs/MICROCOPY_FUERA_DEL_ESQUEMA.md.' },
 ];
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -235,6 +308,14 @@ export function textosDeHoy(html) {
       const m = new RegExp(a + '\\s*=\\s*"([^"]*)"').exec(cuerpo);
       if (m) mapa.set(`${id}@${a}`, m[1]);
     }
+  }
+  // Y los que el esquema no alcanza —rótulos en `<span>`, etiquetas en `<a>`—, resueltos por el
+  // TEXTO ENTERO DE SU ELEMENTO. Se reutiliza el censo de SCRUM-561, que ya deriva esos
+  // identificadores con el mismo esquema; montar aquí un segundo extractor sería tener dos
+  // versiones de la misma verdad y descubrir la discrepancia el día que importe.
+  for (const n of citar(html).fuera) {
+    const t = n.textoDeLaAccion || n.textoDelElemento;
+    if (t && !mapa.has(n.id)) mapa.set(n.id, t);
   }
   return mapa;
 }
