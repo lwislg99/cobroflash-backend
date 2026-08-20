@@ -25,19 +25,29 @@ test('SCRUM-543 · SUELO: la landing se lee y trae sus secciones', () => {
   assert.ok(n >= 9, `🔴 CIEGO: sólo se ven ${n} secciones. El verde de abajo no significaría nada.`);
 });
 
-// ── ② LOS SEPARADORES SIGUEN PUESTOS ────────────────────────────────────────
-// No se comprueba cómo suena (eso es del navegador), sino que el espacio no se haya perdido en
-// una edición posterior: es lo único que separa «Sin tarjeta Listo» de «Sin tarjetaListo».
-test('SCRUM-543 · los separadores del héroe y de la demo no se han perdido', () => {
+// ── ② LO QUE SEPARA EL TEXTO SIGUE PUESTO ───────────────────────────────────
+// 🔴 EL DEFECTO QUE ESTE TICKET VENÍA A ARREGLAR AQUÍ NO EXISTÍA, y conviene que quede escrito
+// para que nadie lo «arregle» otra vez: se creía que el héroe se oía «Sin tarjetaListo» y la
+// demo «presupuestoDel». Medido contra el algoritmo ACCNAME —el que usa un lector de pantalla
+// para anunciar— salen separados YA, sin tocar nada: el `<span class="dot">` tiene caja propia y
+// el `<br>` es un salto, y el algoritmo inserta separación en ambos casos.
+//
+// El origen del falso positivo fue leer la SERIALIZACIÓN CRUDA del árbol, que concatena los
+// nodos de texto hermanos tal cual, en vez del nombre accesible computado. Dos instrumentos
+// distintos sobre el mismo nodo, y sólo uno responde a «qué se oye».
+//
+// Lo que sí hay que proteger es lo que produce esa separación. Si alguien retira el `.dot` o el
+// `<br>` por limpieza visual, el texto SÍ se pega — y entonces el guard de navegador lo canta.
+test('SCRUM-543 · lo que separa el texto del héroe y de la demo sigue en su sitio', () => {
   const malos = [];
-  if (!/<\/span> Sin tarjeta<span class="dot"><\/span> Listo/.test(LANDING)) {
-    malos.push('héroe .note: falta el espacio tras alguno de los <span class="dot"> (vacíos: no aportan ninguno)');
-  }
-  const pasos = (LANDING.match(/<\/span><br> <span class="ts">/g) || []).length;
-  if (pasos !== 5) malos.push(`demo: ${pasos} de 5 pasos con espacio tras el <br> (el <br> NO separa en el árbol)`);
-  const nums = (LANDING.match(/<\/span> <span><span class="tt">/g) || []).length;
-  if (nums !== 5) malos.push(`demo: ${nums} de 5 pasos con el número separado de su título`);
-  assert.deepEqual(malos, [], '🔴 SEPARADORES PERDIDOS:\n    ' + malos.join('\n    '));
+  const dots = (LANDING.match(/<span class="dot"><\/span>/g) || []).length;
+  if (dots < 2) malos.push(`héroe .note: quedan ${dots} de 2 <span class="dot"> (son los que separan)`);
+  const brs = (LANDING.match(/<\/span><br><span class="ts">/g) || []).length;
+  if (brs !== 5) malos.push(`demo: ${brs} de 5 pasos conservan el <br> entre título y descripción`);
+  assert.deepEqual(malos, [],
+    '🔴 SE HA RETIRADO LO QUE SEPARA EL TEXTO:\n    ' + malos.join('\n    ') +
+    '\n\n  Sin eso el nombre accesible se pega («Sin tarjetaListo»). Compruébalo con ' +
+    '`npm run guard:a11y-landing`, que es el único que sabe cómo suena.');
 });
 
 // ── ③ CADA REGIÓN PUBLICADA TIENE NOMBRE, Y SU id RESUELVE ──────────────────
