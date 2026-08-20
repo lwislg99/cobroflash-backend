@@ -1,6 +1,14 @@
 #!/usr/bin/env node
 // scripts/censo-anclas-bloque-f.mjs — SCRUM-551
 //
+// SCRUM-558 · el ancla exige DOS condiciones, no una:
+//     ① que el simbolo EXISTA        (SCRUM-551)
+//     ② que el usuario pueda LLEGAR  (SCRUM-558)
+// La segunda nacio de una frase que paso la primera en verde y era falsa igualmente: el
+// mantenimiento de climatizacion esta construido y el cron lo dispara, pero nace detras de un
+// flag apagado que el merchant NO puede encender. CONSTRUIDO no es ALCANZABLE. Detalle y
+// limites del detector, en el bloque de alcanzabilidad de mas abajo.
+//
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // 🔴 ESTE GUARD EXISTE Y TODAVIA NO VIGILA — Y NO ENGANCHARLO ES UNA DECISION, NO UN OLVIDO
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -82,10 +90,16 @@ export const LANDING = 'public/index.html';
 export const SECCIONES_BLOQUE_F = {
   'heroe-f4': { censada: true },
   'gremios': { censada: true },
-  // Sus 20 unidades NUNCA han pasado por este censo (SCRUM-555). Meterlas hoy exigiria 20
+  // Sus 20 unidades NUNCA han pasado por ESTE censo (SCRUM-555). Meterlas hoy exigiria 20
   // entradas nuevas en el registro y dejaria main en rojo, que es lo que este ticket viene a
   // quitar. Queda DECLARADO fuera, con su ticket: un hueco escrito no es un hueco escondido.
-  'comparativa': { censada: false, motivo: 'sus 20 unidades nunca han pasado por el censo → SCRUM-555' },
+  // ⚠️ FUERA DE ESTE CENSO NO ES SIN VIGILAR, y el matiz importa porque la linea de arriba se
+  // leia como un hueco. `#comparativa` la cubre F5: `tests/scrum332-comparativa-anclas.test.mjs`
+  // ancla FILA A FILA y exige la correspondencia en LOS DOS SENTIDOS —ninguna fila sin ancla y
+  // ningun ancla sin fila—, mas el caso de que el comprobador sepa fallar. Medido el 20-ago-2026:
+  // 5 tests, 5 en verde. Lo que le falta a esta seccion es entrar en el registro de PROMESAS de
+  // aqui, no vigilancia.
+  'comparativa': { censada: false, motivo: 'la cubre F5 fila a fila (scrum332); lo que falta es su entrada en ESTE registro → SCRUM-555' },
   // 🔴 SCRUM-557 punto 2 · SALE, y sale POR EL CRITERIO, no por retirarle el atributo a mano.
   // El criterio: este censo vigila el texto del bloque F que esta EN PROPUESTA; `#contacto-publico`
   // es el canal de contacto de F7 y su copy no es una propuesta del bloque F. Su marcador se
@@ -179,6 +193,18 @@ export const ANCLAS_F = {
       'src/modules/maintenance/domain/maintenance.service.ts::runMaintenanceProposals',
       'src/core/cron/cron.ts::runMaintenanceProposals',
     ],
+    // 🔴 SCRUM-558 · LA PUERTA. El ancla de arriba es CIERTA y se queda: el simbolo existe y el
+    // cron lo dispara. Lo que faltaba era la segunda condicion — que el usuario pueda llegar.
+    // Medido el 20-ago-2026: `MAINTENANCE_ENABLED` nace en `false` (tabla P), `registerMerchant`
+    // no escribe `flags`, con el flag apagado la ruta da 404, el cron salta el plan con motivo
+    // `flag_off` y al aceptar el presupuesto ni se ofrece el interruptor. Y el merchant tampoco
+    // puede encenderlo: escribir `merchants.flags` es accion manual (SCRUM-207).
+    tras: [{
+      flag: 'MAINTENANCE_ENABLED',
+      porDefecto: false,
+      motivo: 'opt-in del merchant que el merchant NO puede activar (SCRUM-207: merchants.flags '
+        + 'se escribe a mano). No es «sin construir»: es construido y sin camino.',
+    }],
   },
 
   'gremios[cerrajeria]/h3#1': { texto: 'Cerrajería', anclas: SIN_CAPACIDAD },
@@ -214,6 +240,175 @@ export const MARCAS_CAPACIDAD = [
   /\bseñal\b/i, /\btramos?\b/i, /\bfirma(?:do)?\b/i, /\bacepta\b/i,
   /\bqueda anotad/i, /\bcaduca\b/i, /\bañades\b/i, /\bpresupuestas?\b/i,
 ];
+
+
+/* ════════════════════════════════════════════════════════════════════════════════════════
+   SCRUM-558 · LA SEGUNDA CONDICIÓN: QUE EL USUARIO PUEDA LLEGAR AL SÍMBOLO
+
+   El censo preguntaba «¿existe el símbolo?». Y existir no es alcanzable.
+
+   El caso que lo destapó, `gremios[climatizacion]/p#1` («la revisión del año que viene queda
+   anotada sola»), tenía su ancla BIEN puesta: `runMaintenanceProposals` existe y lo dispara el
+   cron de verdad. Y aun así la frase es falsa para todo merchant nuevo, porque
+   `MAINTENANCE_ENABLED` nace en `false` y sin ese flag la ruta da 404, el cron salta el plan y
+   ni siquiera se le ofrece el interruptor. Encenderlo es escribir `merchants.flags` a mano.
+
+   Es «apagado ≠ no construido» del revés: CONSTRUIDO ≠ ALCANZABLE. Las tres que el censo ya
+   cazaba se cazaron porque NO tenían ancla. Ésta la tenía, y es igual de falsa.
+
+   ⚠️ Y NO se generaliza a «detrás de un flag = mentira». Lo que decide es el VALOR. La tabla P
+   tiene hoy un flag encendido por defecto (`WHATSAPP_TEMPLATES_ENABLED: true`); una frase
+   detrás de él sería perfectamente cierta. Por eso aquí se LEE el valor en vez de suponerlo.
+   ════════════════════════════════════════════════════════════════════════════════════════ */
+
+export const TABLA_P = 'src/core/flags.ts';
+
+/** Lo que necesita ser cierto para que «el default de la tabla» describa a un merchant nuevo. */
+export const ALTA_DE_MERCHANT = 'src/modules/auth/domain/auth.service.ts';
+
+/**
+ * Los defaults de la tabla P, LEÍDOS de `src/core/flags.ts`.
+ *
+ * 🔴 EL SUELO ESTÁ AQUÍ, Y ES EL CARO. Si este parser no consigue leer la tabla, la respuesta
+ *    NO puede ser «doy el flag por encendido y sigo»: eso convierte cada fallo de lectura en un
+ *    aprobado silencioso, justo para las frases que más caro salen si son falsas. Devuelve
+ *    `{ ok: false, motivo }` y el censo lo canta como NO SUPE MIRAR.
+ *
+ * Se lee del FUENTE y no de `dist/`: `dist/` puede estar viejo, y un default caducado se lee
+ * igual de bien que uno vigente.
+ */
+export function defaultsDeLaTablaP(raiz) {
+  const abs = path.join(raiz, TABLA_P);
+  if (!fs.existsSync(abs)) return { ok: false, motivo: `no existe ${TABLA_P}` };
+  const src = fs.readFileSync(abs, 'utf8');
+
+  const ini = src.indexOf('export const FLAG_DEFAULTS = {');
+  if (ini < 0) return { ok: false, motivo: `no encuentro \`export const FLAG_DEFAULTS = {\` en ${TABLA_P}` };
+  const fin = src.indexOf('} as const;', ini);
+  if (fin < 0) return { ok: false, motivo: `encuentro FLAG_DEFAULTS pero no su cierre \`} as const;\` en ${TABLA_P}` };
+
+  // Los comentarios se quitan ANTES de buscar. Media tabla lleva explicación al lado, y una
+  // línea comentada que mencione un flag contaría como declaración.
+  const cuerpo = src.slice(ini, fin)
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+
+  const tabla = {};
+  for (const m of cuerpo.matchAll(/^\s*([A-Z][A-Z0-9_]*)\s*:\s*(true|false)\s*,/gm)) {
+    tabla[m[1]] = m[2] === 'true';
+  }
+
+  // Control del parser: la tabla real ronda la docena. Si salen cuatro, no es que haya cuatro:
+  // es que el formato cambió y estoy leyendo mal. Un parser que devuelve poco y no se queja es
+  // indistinguible de uno que funciona.
+  const n = Object.keys(tabla).length;
+  if (n < 8) {
+    return { ok: false, motivo: `sólo he sabido leer ${n} flags de ${TABLA_P}. La tabla P tiene más: el formato ha cambiado y este parser está leyendo mal` };
+  }
+  return { ok: true, tabla };
+}
+
+/**
+ * Los flags que vigila el FICHERO de un ancla, derivados de sus llamadas a `isFlagEnabled`.
+ *
+ * 🔴 LO QUE ESTO NO VE, Y SE DICE CON ESAS PALABRAS: mira el fichero del ancla y nada más. Una
+ *    puerta que viva sólo en la ruta que expone el símbolo —y las hay: `maintenance.routes.ts`
+ *    devuelve 404 con el flag apagado— no aparece aquí. Por eso la puerta se DECLARA en el
+ *    registro y esto es sólo la red que caza al que se olvide de declararla, no la medida de
+ *    la que sale el veredicto.
+ *
+ *    Se probó primero por MÓDULO en vez de por fichero, y se descartó MIDIENDO: `src/modules/
+ *    invoicing` comprueba `INVOICING_ES_ENABLED` y `SIF_ENABLED`, los dos apagados, y habría
+ *    marcado como inalcanzable el ancla de reformas (`invoiceLines.service.ts::stageLines`),
+ *    que no está detrás de ningún flag. Un detector que grita de más se acaba ignorando.
+ */
+export function flagsQueVigilaElFichero(rel, raiz) {
+  const abs = path.join(raiz, rel);
+  if (!fs.existsSync(abs)) return [];
+  const src = fs.readFileSync(abs, 'utf8');
+  return [...new Set([...src.matchAll(/isFlagEnabled\(\s*'([A-Z][A-Z0-9_]*)'/g)].map((m) => m[1]))];
+}
+
+/**
+ * La premisa de la que cuelga todo lo anterior: que un merchant nuevo NO lleve override propio,
+ * y por tanto le aplique el default de la tabla.
+ *
+ * Medido el 20-ago-2026: `registerMerchant` crea la fila sin tocar `flags` (la palabra no
+ * aparece ni una vez en el fichero). El día que el alta empiece a escribir flags, «el default
+ * de la tabla» deja de describir a un merchant nuevo y todo este razonamiento cambia de
+ * sentido — así que se vigila, en vez de darse por hecho para siempre.
+ */
+export function elAltaNoEscribeFlags(raiz) {
+  const abs = path.join(raiz, ALTA_DE_MERCHANT);
+  if (!fs.existsSync(abs)) return { ok: false, motivo: `no existe ${ALTA_DE_MERCHANT}` };
+  const src = fs.readFileSync(abs, 'utf8');
+  if (!src.includes('registerMerchant')) {
+    return { ok: false, motivo: `${ALTA_DE_MERCHANT} ya no contiene \`registerMerchant\`: el alta se ha movido y no sé dónde mirar` };
+  }
+  if (/\bflags\b/.test(src)) {
+    return { ok: false, motivo: `${ALTA_DE_MERCHANT} menciona \`flags\`. Si el alta escribe overrides, el default de la tabla P ya NO describe a un merchant nuevo y la alcanzabilidad de abajo está medida sobre una premisa falsa` };
+  }
+  return { ok: true };
+}
+
+/**
+ * El veredicto de alcanzabilidad de UNA unidad anclada.
+ *
+ * Devuelve la lista de problemas. Vacía = un merchant nuevo llega a lo que la frase promete.
+ */
+export function alcanzabilidad(id, reg, raiz, tablaP) {
+  const problemas = [];
+  const declarados = Array.isArray(reg.tras) ? reg.tras : [];
+
+  for (const p of declarados) {
+    if (!p || typeof p.flag !== 'string') {
+      problemas.push(`${id} — PUERTA MAL DECLARADA\n      → una entrada de \`tras\` sin \`flag\`. Declarar a medias no declara.`);
+      continue;
+    }
+    // SUELO: no saber leer el valor NO es «está encendido».
+    if (!tablaP.ok) {
+      problemas.push(`${id} — 🔴 NO SUPE MIRAR la puerta \`${p.flag}\`\n      ${tablaP.motivo}\n`
+        + '      → sin el valor por defecto no se puede decir si un merchant nuevo llega. NO se '
+        + 'da por encendido: asumir encendido es el fallo caro.');
+      continue;
+    }
+    if (!(p.flag in tablaP.tabla)) {
+      problemas.push(`${id} — 🔴 NO SUPE MIRAR la puerta \`${p.flag}\`\n`
+        + `      → el registro declara ese flag y la tabla P de ${TABLA_P} no lo tiene. O lo han `
+        + 'renombrado, o nunca existió. En ninguno de los dos casos se da por encendido.');
+      continue;
+    }
+    const real = tablaP.tabla[p.flag];
+    if (typeof p.porDefecto === 'boolean' && p.porDefecto !== real) {
+      problemas.push(`${id} — EL VALOR DECLARADO CADUCÓ (\`${p.flag}\`)\n`
+        + `      el registro dice ${p.porDefecto}, la tabla P dice ${real}\n`
+        + '      → alguien movió el default y aquí sigue la foto vieja. Vuelve a mirar la frase '
+        + 'con el valor de hoy antes de tocar este número.');
+      continue;
+    }
+    if (real === false) {
+      problemas.push(`${id} — 🔴 ANCLADA PERO INALCANZABLE (\`${p.flag}\` = false)\n`
+        + `      texto: «${String(reg.texto).slice(0, 120)}»\n`
+        + `      motivo: ${p.motivo || '(sin declarar)'}\n`
+        + '      → el símbolo existe; lo que no existe es el camino del usuario hasta él. La '
+        + 'frase es falsa para un merchant nuevo.');
+    }
+  }
+
+  // LA RED: una puerta que está en el código y NO en el registro.
+  const yaDeclarados = new Set(declarados.map((p) => p && p.flag));
+  for (const a of reg.anclas) {
+    const rel = String(a).split('::')[0];
+    for (const flag of flagsQueVigilaElFichero(rel, raiz)) {
+      if (yaDeclarados.has(flag)) continue;
+      problemas.push(`${id} — PUERTA SIN DECLARAR (\`${flag}\` en ${rel})\n`
+        + '      → el fichero del ancla comprueba ese flag y el registro no lo dice. Mira su '
+        + 'valor por defecto y decláralo en `tras` con su motivo, aunque esté encendido: lo que '
+        + 'no está escrito, la próxima vez no se mira.');
+    }
+  }
+  return problemas;
+}
 
 const limpiar = (s) => s.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
 
@@ -296,6 +491,19 @@ export function censar({ html, raiz, registro = ANCLAS_F }) {
   const us = unidades(html);
   const problemas = [];
   const sinAncla = [];
+  const inalcanzables = [];
+
+  // SCRUM-558 · se lee UNA vez y se le pasa a cada unidad. Si no se pudo leer, cada unidad con
+  // puerta declarada lo dira por su nombre en vez de dar el flag por encendido.
+  const tablaP = defaultsDeLaTablaP(raiz);
+
+  // Y la premisa de la que cuelga leer el default: que el alta no escriba overrides.
+  const alta = elAltaNoEscribeFlags(raiz);
+  if (!alta.ok) {
+    problemas.push('LA PREMISA DE LA ALCANZABILIDAD SE HA MOVIDO\n      ' + alta.motivo + '\n'
+      + '      → mientras esto no se resuelva, «default de la tabla P» y «lo que tiene un '
+      + 'merchant nuevo» han dejado de ser lo mismo.');
+  }
 
   // 🔴 SCRUM-557 · UNA SECCION DEJA DE CENSARSE CUANDO DEJA DE EXISTIR, no cuando se aprueba.
   //    Si esta declarada `censada` y no aparece en el HTML, es rojo: o se retiro de verdad —y
@@ -308,7 +516,7 @@ export function censar({ html, raiz, registro = ANCLAS_F }) {
   //    se distinguen aquí y no se dejan al llamante.
   if (bloques.length > 0 && bloques.every((b) => b.ausente)) {
     return {
-      ok: false, ciego: true, unidades: 0, sinAncla: [],
+      ok: false, ciego: true, unidades: 0, sinAncla: [], inalcanzables: [],
       salida: '🔴 CIEGO: ninguna de las secciones declaradas del bloque F ('
         + bloques.map((b) => '#' + b.id).join(', ') + ') está en el HTML. O el fichero no es la '
         + 'landing, o les han cambiado el id a todas. Un cero de unidades aquí se leería como '
@@ -335,7 +543,7 @@ export function censar({ html, raiz, registro = ANCLAS_F }) {
   // SUELO: si no se ve ninguna unidad, el cero de abajo es ceguera y no limpieza.
   if (us.length === 0 && problemas.length === 0) {
     return {
-      ok: false, ciego: true, unidades: 0, sinAncla,
+      ok: false, ciego: true, unidades: 0, sinAncla, inalcanzables: [],
       salida: '🔴 CIEGO: no se ha encontrado NI UNA unidad de texto en secciones '
         + '`data-microcopy="PENDIENTE_FUNDADOR"`. O el atributo cambió, o el extractor se rompió. '
         + 'Un cero aquí se leería como «no hay ninguna promesa sin ancla», que es la conclusión '
@@ -378,6 +586,15 @@ export function censar({ html, raiz, registro = ANCLAS_F }) {
           + 'ya no es cierta y hay que retirarla).');
       }
     }
+
+    // 🔴 SCRUM-558 · LA SEGUNDA CONDICION. El simbolo existe; ¿llega el usuario hasta el?
+    const pa = alcanzabilidad(u.id, reg, raiz, tablaP);
+    if (pa.length) {
+      problemas.push(...pa);
+      if (pa.some((p) => p.includes('INALCANZABLE'))) {
+        inalcanzables.push({ id: u.id, texto: u.texto, tras: reg.tras });
+      }
+    }
   }
 
   // La otra dirección: un ancla que ya no cubre ninguna unidad.
@@ -394,6 +611,7 @@ export function censar({ html, raiz, registro = ANCLAS_F }) {
     ciego: false,
     unidades: us.length,
     sinAncla,
+    inalcanzables,
     salida: [
       `unidades de texto en secciones de propuesta: ${us.length}`,
       `bloques: ${bloquesDePropuesta(html).map((b) => b.id).join(', ')}`,
