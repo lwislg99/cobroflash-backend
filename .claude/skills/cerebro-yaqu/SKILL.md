@@ -25,7 +25,8 @@ mecanismo.
 Herramienta: `npm run comprobar:encargo <fichero>` (o por tubería). Sale 1 si hay que parar.
 
 ## Al arrancar (siempre, en este orden)
-1. Lee docs/CLAUDE.md, docs/YAQU_MASTER.md (gobierna), docs/ASESOR.md, docs/ERRORES_ASESOR.md.
+1. Lee CLAUDE.md (en la RAÍZ, no en docs/), docs/YAQU_MASTER.md (gobierna), docs/ASESOR.md,
+   docs/ERRORES_ASESOR.md.
 2. `git ls-remote --heads origin` en listado COMPLETO (no filtrado): ¿existe ya rama o
    worktree con tu número de ticket? Si sí → PARA y repórtalo. Han pasado 4 duplicados.
 3. Worktree PROPIO siempre. Jamás trabajes en main.
@@ -61,8 +62,13 @@ se reporta, no se arregla (regla 9).
 - `gh` NO está instalado a propósito: el PR lo abre el fundador. Deja el cuerpo escrito.
 - Microcopy: solo textos oficiales del máster (regla 30). Dependencia nueva: OK del
   fundador (regla 36). Suite completa en verde.
-- Entrada en YAQU_MASTER.md al final. Conflicto ahí = conservar AMBAS entradas por nº
-  de ticket. Descripciones de Jira <1.500 caracteres.
+- Entrada del trabajo en `docs/master/SCRUM-<n>.md`, UN FICHERO POR TICKET. Si ya existe,
+  se AÑADE como apéndice al final y no se borra nada (precedente: `SCRUM-244.md`).
+  🔴 NO en `YAQU_MASTER.md`: el guard de SCRUM-273 lo BLOQUEA en CI. Esta línea mandaba
+  escribir ahí hasta el 20-ago-2026, y el 17-ago costó un PR en rojo con la entrada ya
+  escrita — la skill que se carga en toda sesión ordenaba justo lo que el CI rechaza.
+  Comprobación antes de empujar: `npm run guards:entrada` (son cuatro: 273, 267, 391, 242).
+- Descripciones de Jira <1.500 caracteres.
 
 ## Vetos permanentes
 YaQu NO es un ERP ni un CRM (parte Z) · WhatsApp = Meta Cloud API directa, jamás

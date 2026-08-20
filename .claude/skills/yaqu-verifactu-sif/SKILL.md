@@ -5,8 +5,29 @@ description: Obligatoria antes de tocar código de VeriFactu/SIF. Contiene guard
 
 # yaqu-verifactu-sif — Guardarraíles del SIF
 
-> Derivada del master U1.3 (SIF-1 v2) + `docs/SIF_SPEC_NOTES.md` (S1-0b). Si chocan,
-> gana el master. Creada en S1-0b (12-jun-2026).
+> Derivada del master U1.3 (SIF-1 v2) + `docs/SIF_SPEC_NOTES.md` (S1-0b).
+> Creada en S1-0b (12-jun-2026).
+>
+> 🔴 **EL ÁRBITRO ESTÁ SIN DECIDIR, y hasta que se decida NO es el máster.** Esta línea decía
+> «si chocan, gana el máster», y la skill `verifactu` decía lo mismo: las dos se cargan ante la
+> misma tarea, se desmienten en cuatro puntos y las dos mandaban al mismo sitio a desempatar.
+>
+> **El máster no puede arbitrar sobre el estado de VeriFactu**, y no es una opinión: el
+> inventario de **SCRUM-528** midió **61 afirmaciones** en el repo y encontró **19 FALSAS**, y
+> la zona con más falsas era el propio máster — incluido el guion H2, que la regla 26 declara
+> la única respuesta autorizada ante un cliente. Mandar a desempatar allí es mandar a la fuente
+> menos fiable de las tres.
+>
+> ✅ **DECIDIDO POR EL FUNDADOR EL 20-ago-2026 (SCRUM-538, punto 2): EL ÁRBITRO ES EL CÓDIGO.**
+> Y el alcance va escrito así, que no se estira:
+>   · sobre un **HECHO MEDIBLE** —«¿está construido?», «¿existe este fichero?», «¿este flag está
+>     encendido?»— **gana el CÓDIGO, sin preguntar**. No caduca y no puede mentir.
+>   · si el choque **NO** es sobre un hecho medible —posicionamiento, prioridad, criterio de
+>     producto— **la sesión PARA Y PREGUNTA**. El código no opina sobre eso, y elegir por cuenta
+>     propia ahí es inventarse una decisión que no se ha tomado.
+>
+> Es el arbitraje que ya aplica `_guard-afirmacion-fiscal.mjs`: para «¿existe el envío a la
+> AEAT?» no lee un documento, lo deriva del código.
 
 ## Antes de tocar código SIF (obligatorio)
 
