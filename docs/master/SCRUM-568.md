@@ -116,12 +116,34 @@ como «ninguna promesa depende de una puerta cerrada», que es justo al revés.
 **CONTROL POSITIVO** — todas las anclas vivas del bloque F siguen vivas; y lo que **no** está
 condicionado no se mueve al encender los flags.
 
-**ROJO POR EL MECANISMO** — el que decide, sobre `<SHA>`: se enciende el flag y las nueve pasan de
-INALCANZABLE a alcanzable **solas**. Se ejercita de dos formas: inyectando la tabla P (en el test,
-sin tocar nada) y **editando `src/core/flags.ts` de verdad**, con reversión byte a byte contra el
-blob.
+**ROJO POR EL MECANISMO** — el que decide, sobre `e6758fc1e52af5420ce4eea6a4c674d1f4422e26`. Se
+ejercita de dos formas: inyectando la tabla P (en el test, sin tocar nada) y **editando
+`src/core/flags.ts` de verdad**:
 
-**Tanda completa:** ver informe.
+| qué se enciende en `flags.ts` | qué dice el censo |
+|---|---|
+| nada | de las 9 condicionadas, **0** son alcanzables hoy |
+| sólo `PAYMENTS_CONNECT_ENABLED` | **2** de 9 |
+| sólo `BIZUM_MANUAL_ENABLED` | **2** de 9 |
+| **las dos** | **9** de 9 |
+
+2 + 2 + 5 = 9: las dos que dependen sólo de la tarjeta, las dos que dependen sólo de Bizum, y las
+cinco que necesitan las dos puertas. **Sin editar nada más que el fichero de flags.** Y el
+trinquete cae en los tres casos **pidiendo que se mire**, que es lo que tiene que hacer un
+registro cuando el mundo se mueve.
+
+⚠️ **Un detalle de la reversión, medido antes de tocar:** `src/core/flags.ts` **no se puede
+comparar contra su blob**. Su copia de trabajo tiene **90 CR** y `.gitattributes` declara
+`eol=lf`, así que blob y disco difieren siempre aunque `git status` lo vea limpio (git normaliza
+al comparar). La referencia de la reversión son **los bytes de disco de partida**, y la limpieza
+la dice `git status`. Las tres veces volvió byte a byte y `git status` salió limpio.
+
+🟠 **Y eso es un hallazgo que dejo dicho sin arreglar:** un fichero cuya copia de trabajo
+contradice el fin de línea declarado es la enfermedad de SCRUM-480. Hoy es inofensivo porque git
+normaliza; tocarlo sería un cambio de sólo fin de línea sobre un fichero del camino de flags, y
+eso no es de este ticket.
+
+**Tanda completa:** **3943 tests · 3866 pass · 0 fail · 77 skipped**.
 
 ## ⑧ De camino: una regla que yo mismo incumplí
 
