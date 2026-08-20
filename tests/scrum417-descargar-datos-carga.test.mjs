@@ -13,7 +13,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
-import { cargarDashboard, pintarVista, scriptsDelDashboard, nodo } from './_banco-vistas.mjs';
+import { cargarDashboard, pintarVista, scriptsDelDashboard, nodo, SCRIPTS_DEL_DASHBOARD } from './_banco-vistas.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VISTA = 'js/exportView.js';
@@ -25,9 +25,14 @@ const VISTA = 'js/exportView.js';
 
 test('SCRUM-417 · SUELO: el banco encuentra los scripts del dashboard', () => {
   const scripts = scriptsDelDashboard(RAIZ);
-  assert.ok(scripts.length >= 40,
-    `🔴 BANCO CIEGO: solo ${scripts.length} <script src> leídos de dashboard/index.html ` +
-    '(esperaba ≥40). Si el lector se rompió, «ninguna vista falla» no significa nada.');
+  // SCRUM-559: era `>= 40` sobre una población de 60 — 20 de holgura. Con eso, perder UNA
+  // etiqueta (60 → 59) pasaba en verde y esa vista dejaba de estar vigilada sin avisar. El
+  // recuento es EXACTO y su número vive en `_banco-vistas.mjs`, no aquí.
+  assert.equal(scripts.length, SCRIPTS_DEL_DASHBOARD,
+    `🔴 BANCO CIEGO: ${scripts.length} <script src> leídos de dashboard/index.html y se esperaban ` +
+    `${SCRIPTS_DEL_DASHBOARD}. Si SOBRAN, alguien añadió una vista y hay que subir el número en ` +
+    '`tests/_banco-vistas.mjs` en ese mismo commit. Si FALTAN, hay vistas que este banco ya no ' +
+    'carga: «ninguna vista falla» dejaría de significar nada.');
   assert.ok(scripts.includes(VISTA),
     `🔴 \`${VISTA}\` ya no está declarado en index.html: o cambió de nombre, o la pantalla dejó ` +
     'de servirse. Este test estaría midiendo un fichero que el navegador no carga.');
