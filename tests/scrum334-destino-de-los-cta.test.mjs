@@ -25,6 +25,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -34,8 +35,42 @@ const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
 const { app } = await import(pathToFileURL(path.join(RAIZ, 'dist', 'app.js')).href);
 const server = app.listen(0);
 await new Promise((r) => server.once('listening', r));
-const BASE = `http://127.0.0.1:${server.address().port}`;
+const PUERTO = server.address().port;
 test.after(() => server.close());
+
+/**
+ * GET a la app, por `node:http` y con `agent: false`.
+ *
+ * 🔴 NO SE USA `fetch` A PROPOSITO, y no es una preferencia de estilo: es el remedio que
+ * `scrum100-webhooks-fail-closed.test.mjs:50-57` dejo escrito y probado desde SCRUM-100.
+ * Con 3+ peticiones de undici sobre el mismo `app.listen(0)`, sus conexiones (aun con
+ * `Connection: close`) dejan el proceso en un estado que revienta una asercion nativa de libuv
+ * al cerrar — `Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)`. Este fichero pide 6
+ * rutas distintas, asi que caia dentro del patron.
+ *
+ * COMO SE VEIA (medido en SCRUM-556): los siete subtests salian `ok` y el FICHERO se marcaba
+ * fallido igual, con `exitCode 3221226505` (0xC0000409) y sin nombrar ningun subtest. No dejaba
+ * tests sin ejecutar — era un rojo con ruido, en la tanda de todo el mundo.
+ *
+ * `agent: false` es la pieza que lo evita: sin pool, cada peticion abre y cierra su conexion.
+ */
+function pedir(ruta) {
+  return new Promise((resolve) => {
+    const req = http.request(
+      { host: '127.0.0.1', port: PUERTO, path: ruta, method: 'GET', agent: false },
+      (res) => {
+        let data = '';
+        res.setEncoding('utf8');
+        res.on('data', (trozo) => { data += trozo; });
+        res.on('end', () => resolve({ status: res.statusCode, cuerpo: data }));
+      },
+    );
+    // Mismo trato que tenia el `.catch()` del `fetch`: un fallo de red es «sin respuesta», no
+    // una excepcion que tumbe el test. El assert de abajo ya distingue 0 de 404.
+    req.on('error', (e) => resolve({ status: 0, cuerpo: '', _err: e?.message }));
+    req.end();
+  });
+}
 
 /** Las paginas de la superficie publica en las que un visitante pulsa algo. */
 const PAGINAS = ['public/index.html', 'public/precios.html', 'public/register.html',
@@ -97,8 +132,8 @@ test('SCRUM-334 · ningun CTA lleva a un 404 ni a una pagina vacia', async () =>
   for (const c of CTA.filter((x) => esInterno(x.href))) {
     const ruta = c.href.split('#')[0].split('?')[0] || '/';
     if (!vistos.has(ruta)) {
-      const r = await fetch(BASE + ruta).catch((e) => ({ status: 0, _err: e?.message }));
-      const cuerpo = r.status === 200 ? await r.text() : '';
+      const r = await pedir(ruta);
+      const cuerpo = r.status === 200 ? r.cuerpo : '';
       const visible = cuerpo.replace(/<script[\s\S]*?<\/script>/gi, '')
         .replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
       vistos.set(ruta, { estado: r.status, largo: visible.length });
