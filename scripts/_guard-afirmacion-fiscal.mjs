@@ -44,10 +44,36 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 /** Terminos que situan la frase en NUESTRO terreno fiscal. Sin esto no hay afirmacion nuestra. */
-const FISCAL = /(veri\s*\*?\s*factu|verifactu|aeat|hacienda|rrsif|rd\s*1007|1007\/2023|hac\/1177|sistema inform[aá]tico de facturaci[oó]n|facturaci[oó]n electr[oó]nica|declaraci[oó]n responsable)/i;
+// ⚠️ SCRUM-537 (2ª pasada): faltaba «Agencia Tributaria» escrita entera, que es la forma NATURAL
+// de nombrarla en un texto comercial — estaban `aeat` y `hacienda`, pero no ella. Medido: «Sistema
+// registrado ante la Agencia Tributaria» pasaba en verde por esto, no por la afirmacion.
+const FISCAL = /(veri\s*\*?\s*factu|verifactu|aeat|agencia\s+tributaria|hacienda|rrsif|rd\s*1007|1007\/2023|hac\/1177|sistema inform[aá]tico de facturaci[oó]n|facturaci[oó]n electr[oó]nica|declaraci[oó]n responsable)/i;
 
 /** A · un tramite de certificacion/homologacion que NO EXISTE en este regimen. */
 const CERTIFICACION = /(en certificaci[oó]n|certificaci[oó]n|certificad[oa]s?|homologad[oa]s?|homologaci[oó]n|sello de conformidad|acreditad[oa]s?)/i;
+
+/**
+ * C · AFIRMA QUE YA SE CUMPLE. Añadida en SCRUM-537 (2ª pasada) tras MEDIR la cobertura de las
+ * dos familias anteriores contra el vocabulario que el asesor declara cerrado:
+ *
+ *   «Facturacion VeriFactu en certificacion»          → caia (A)
+ *   «Software homologado para VeriFactu»              → caia (A)
+ *   «YaQu ya cumple con VeriFactu»                    → 🔴 PASABA
+ *   «Nuestra facturacion es conforme a la AEAT»       → 🔴 PASABA
+ *   «Facturacion con plena conformidad VeriFactu»     → 🔴 PASABA
+ *   «Sistema ya adaptado a VeriFactu»                 → 🔴 PASABA
+ *   «Facturacion validada por la AEAT»                → 🔴 PASABA
+ *
+ * 2 de 12 cazadas. El aviso del encargo era exacto: una lista de palabras es un suelo minimo, y
+ * estas dos familias no cubrian «cumple» ni «conforme», que son las que un comercial escribe
+ * primero porque suenan menos técnicas que «certificado».
+ *
+ * 🔴 CADUCA POR EL CODIGO, NO POR EL DOCUMENTO, y esa eleccion ES este ticket: atarla a que
+ * exista `DECLARACION_RESPONSABLE.md` seria repetir el defecto que SCRUM-537 vino a arreglar.
+ * Mientras no haya envio a la AEAT no se cumple VeriFactu, se tenga el papel que se tenga — el
+ * arbitraje del fundador para hechos medibles es que gana el CODIGO.
+ */
+const CONFORMIDAD = /(cumpl(e|es|en|imos|o)\b|conforme\b|conformidad|adaptad[oa]s?\b|validad[oa]s?\s+por|registrad[oa]s?\s+ante)/i;
 
 /** B · «ya esta hecho, solo falta encenderlo». */
 const CONSTRUIDA = /(est[aá]\s+construid[oa]|ya\s+est[aá]\s+(construid[oa]|list[oa]|desarrollad[oa]|terminad[oa]|hech[oa])|est[aá]\s+list[oa]|est[aá]\s+desarrollad[oa]|est[aá]\s+terminad[oa]|solo\s+(hay\s+que|falta)\s+activarl[oa]|no\s+puedo\s+activarl[oa]|sin\s+activar|pendiente\s+de\s+activar)/i;
@@ -105,6 +131,18 @@ export function afirmacionesFalsas(html, { envioConstruido = false } = {}) {
           familia: 'B',
           motivo: 'afirma que la facturacion fiscal esta construida (o que solo falta activarla) '
             + 'y el envio a la AEAT NO existe en el codigo',
+        });
+        continue;
+      }
+
+      if (CONFORMIDAD.test(limpia) && !envioConstruido) {
+        fuera.push({
+          linea: i + 1,
+          texto: limpia.slice(0, 160),
+          familia: 'C',
+          motivo: 'afirma que YA SE CUMPLE (cumple / conforme / adaptado / validado) y el envio a '
+            + 'la AEAT NO existe en el codigo. Sin envio no se cumple VeriFactu, se tenga el '
+            + 'documento que se tenga: art. 201 bis LGT, 150.000 EUR/ejercicio para el FABRICANTE',
         });
       }
     }
