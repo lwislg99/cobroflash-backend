@@ -402,6 +402,48 @@
   </div>
 </section>
 
+<!-- ══════════════════════════════════════════════════════════════════════════════════════
+     SCRUM-331 (F4) · EL HÉROE — PROPUESTA. NO SE PINTA.
+
+     🛑 Ni una palabra publicada. El copy de la landing ES el máster (A22), así que cambiar el
+     héroe es cambiar el máster: lo aprueba el fundador (regla 30). Mientras esta sección lleve
+     `data-microcopy="PENDIENTE_FUNDADOR"` va `hidden`, y hay test que lo exige en las dos
+     direcciones. Aprobarla = mover lo aprobado al héroe vivo de arriba y borrar este bloque;
+     NO se publican dos héroes.
+
+     QUÉ CAMBIA, Y QUÉ NO:
+     · El posicionamiento NO se toca. El eyebrow y el h1 van COPIADOS LETRA A LETRA del héroe
+       vivo (máster A22, seis iteraciones de prototipo). Este ticket trabaja dentro de eso.
+     · Lo que cambia es la PRUEBA. El diseño original la resolvía con «capturas reales del
+       producto», y eso ya no se sostiene: medido en este ticket, la landing NO tiene ni una
+       captura (cero `<img>`), los siete PNG de `public/img/landing/` no los referencia nadie, y
+       salieron del SEED DEMO (`scripts/capture-demo.mjs:36`, «ids del seed demo»). Una captura
+       de un decorado no es prueba de producto.
+     · Con CERO clientes pagando, la prueba honesta es la DEMOSTRACIÓN: el visitante prueba el
+       producto en vez de creerse a un desconocido. La demo interactiva existe y está medida
+       (SCRUM-327 · Q3: `#probar`, 13 pasos, presupuesto→pago). Por eso pasa a acción primaria.
+     · CERO testimonios, cero logos, cero «más de X profesionales». Con cero clientes pagando eso
+       no sería marketing agresivo: sería falso.
+
+     🔴 Y LA CIFRA QUE SE CAE, que es media propuesta: el héroe vivo dice «Listo en 5 minutos».
+     Nadie lo midió, y D0 (SCRUM-310) midió que NO SE PUEDE medirlo hoy — «los segundos no son
+     medibles desde el árbol… dependen de la latencia de Resend y del filtro de spam», y el alta
+     cruza la bandeja de entrada del usuario. Aquí no está. Retirarla del héroe vivo es decisión
+     del fundador; mientras, queda declarada en el censo (`scripts/_cifras-heroe.mjs`) y con
+     trinquete para que no crezca.
+     ══════════════════════════════════════════════════════════════════════════════════════ -->
+<section class="hero" id="heroe-f4" data-microcopy="PENDIENTE_FUNDADOR" hidden>
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">El ERP por WhatsApp para los oficios</span>
+      <h1>Del presupuesto al cobro, <span class="hl">sin salir de WhatsApp.</span></h1>
+      <p class="sub">Crea el presupuesto en 30 segundos, tu cliente lo firma desde el móvil y te paga — con tarjeta, Bizum o transferencia. No hace falta que te fíes: haz tú el recorrido completo antes de dar tu correo.</p>
+      <div class="cta-row"><a href="#probar" class="btn btn-primary btn-lg">Probar la demo</a><a href="/register.html" class="btn btn-ghost btn-lg">Empieza gratis</a></div>
+      <p class="note"><b>14 días gratis</b><span class="dot"></span>Sin tarjeta</p>
+    </div>
+  </div>
+</section>
+
 <div class="trust">
   <div class="wrap trust-in">
     <div class="trust-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#16a34a" stroke-width="1.8"/><path d="m9 12 2 2 4-4" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg> Firma con <b>evidencia de quién aceptó y cuándo</b></div>
