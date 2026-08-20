@@ -401,10 +401,21 @@ export function alcanzabilidad(id, reg, raiz, tablaP) {
     const rel = String(a).split('::')[0];
     for (const flag of flagsQueVigilaElFichero(rel, raiz)) {
       if (yaDeclarados.has(flag)) continue;
+      // 🔴 EL ROJO TIENE QUE DECIR DE QUE FRASE HABLA Y COMO ESTA EL FLAG. Este mensaje decia
+      //    solo el flag y el fichero, y se midio en la demostracion de este ticket: quien lo
+      //    leyera sabia que habia una puerta y no que texto estaba en riesgo ni si el valor era
+      //    el malo. Un rojo que obliga a ir a buscar la mitad del dato se acaba archivando.
+      const valor = tablaP.ok && (flag in tablaP.tabla) ? tablaP.tabla[flag] : null;
+      const comoEsta = valor === null
+        ? 'y NO he sabido leer su valor por defecto — que no se dé por encendido'
+        : valor === false
+          ? 'y ese flag está APAGADO por defecto: si gobierna este mecanismo, la frase es falsa para un merchant nuevo'
+          : 'y ese flag está ENCENDIDO por defecto: probablemente la frase sea cierta, pero decláralo igual';
       problemas.push(`${id} — PUERTA SIN DECLARAR (\`${flag}\` en ${rel})\n`
-        + '      → el fichero del ancla comprueba ese flag y el registro no lo dice. Mira su '
-        + 'valor por defecto y decláralo en `tras` con su motivo, aunque esté encendido: lo que '
-        + 'no está escrito, la próxima vez no se mira.');
+        + `      texto: «${String(reg.texto).slice(0, 120)}»\n`
+        + `      → el fichero del ancla comprueba ese flag y el registro no lo dice, ${comoEsta}.\n`
+        + '      Decláralo en `tras` con su motivo, aunque esté encendido: lo que no está escrito, '
+        + 'la próxima vez no se mira.');
     }
   }
   return problemas;

@@ -129,14 +129,24 @@ test('SCRUM-558 · 🔴 declarar un valor que ya no es el de la tabla P no cuela
 test('SCRUM-558 · 🔴 una puerta que está en el código y NO en el registro se canta', () => {
   // Es el caso de este ticket visto desde antes: el ancla puesta, la puerta sin declarar.
   const p = alcanzabilidad('unidad/x', {
-    texto: 'Una frase.', anclas: [ANCLA_CON_PUERTA],   // sin `tras`
+    texto: 'Una frase que promete algo con una puerta sin declarar.', anclas: [ANCLA_CON_PUERTA],
   }, RAIZ, defaultsDeLaTablaP(RAIZ));
 
-  assert.ok(p.some((x) => x.includes('PUERTA SIN DECLARAR') && x.includes('MAINTENANCE_ENABLED')),
+  const aviso = p.find((x) => x.includes('PUERTA SIN DECLARAR'));
+  assert.ok(aviso && aviso.includes('MAINTENANCE_ENABLED'),
     '🔴 el ancla apunta a un fichero que comprueba `MAINTENANCE_ENABLED` y el registro no dice\n'
     + '  nada, y ha pasado. Si declarar la puerta es voluntario, el criterio nuevo sólo protege\n'
     + '  contra los casos que alguien ya se sabía.\n'
     + `  Dijo: ${JSON.stringify(p)}`);
+
+  // 🔴 Y el rojo tiene que ser accionable SIN ir a buscar la otra mitad del dato. Se midió en la
+  //    demostración de este ticket: el mensaje nombraba el flag y el fichero, y no decía qué
+  //    frase estaba en riesgo ni si el valor era el malo.
+  assert.match(aviso, /Una frase que promete/,
+    '🔴 el aviso no cita el texto: quien lo lea sabe que hay una puerta y no qué frase corregir.');
+  assert.match(aviso, /APAGADO por defecto/,
+    '🔴 el aviso no dice cómo está el flag. «Hay una puerta» y «hay una puerta cerrada» piden\n'
+    + '  acciones distintas, y el que lee el rojo no tiene por qué ir a la tabla P a averiguarlo.');
 });
 
 test('SCRUM-558 · ✅ el detector de puertas sabe decir que NO', () => {
