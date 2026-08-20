@@ -45,7 +45,12 @@ import puppeteer from 'puppeteer-core';
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
 const PUBLIC = path.join(RAIZ, 'public');
-const EDGE = process.env.EDGE_PATH || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
+import { rutaDelNavegador } from './_navegador.mjs';
+// SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
+// los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
+// hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
+// declarandose ciega en vez de devolver una ruta plausible. `EDGE_PATH` sigue mandando.
+const EDGE = rutaDelNavegador();
 const PUERTO = Number(process.env.A11Y_PUERTO || 4402);
 
 /** Los dos estados. 1280 = grid de 3 columnas; 360 = apilado, el más estrecho que soportamos. */

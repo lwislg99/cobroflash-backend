@@ -221,3 +221,65 @@ jobs:
           path: ${{ runner.temp }}/tanda.tap
           retention-days: 7
           if-no-files-found: warn
+
+  # ═══════════════════════════════════════════════════════════════════════════════════════
+  # SCRUM-522 · LOS GUARDS DE NAVEGADOR, QUE HASTA HOY NO CORRÍAN EN NINGÚN SITIO
+  # ═══════════════════════════════════════════════════════════════════════════════════════
+  #
+  # Nueve guards levantan un navegador y quedaban FUERA de `npm test` por lentos. Figuraban como
+  # cobertura y sólo protegían si alguien se acordaba de lanzarlos: medido, **ninguno corría en
+  # CI**, así que un PR podía romper lo que vigilan y mergear en verde.
+  #
+  # ── POR QUÉ UN JOB APARTE Y NO DENTRO DE `npm test` ────────────────────────────────────────
+  # El reparto del coste está MEDIDO (mediana de 5 pasadas, procesos reales): levantar el
+  # navegador son 0,96 s — 8,7 s entre los nueve, el **16 %**— y la comprobación el **84 %**. O
+  # sea que no había nada que optimizar: había que ponerlos donde protejan.
+  # Dentro de la tanda serían ~50 s más en CADA `npm test` local, o un salto por variable que
+  # puede llevar meses apagado sin que nadie lo note. Como job propio: corren en cada PR, el bucle
+  # local sigue rápido, y su rojo llega **con nombre propio** en vez de confundirse con un test.
+  #
+  # ── Y POR QUÉ NO CUESTA RELOJ ──────────────────────────────────────────────────────────────
+  # GitHub corre los jobs de un workflow EN PARALELO. Éste tarda ~50 s (medido: 49,6 · 50,6 · 54 s
+  # en la misma máquina, y 102 s con ella cargada) y el de tests tarda varios minutos entre
+  # `npm ci`, Prisma y la suite. El PR no espera más por esto.
+  #
+  # ⚠️ SIN SECRETOS, igual que el job de arriba y por el mismo motivo (regla 9). Estos nueve
+  #    guards sirven sus propias páginas estáticas y no tocan ninguna base: comprobado, ninguno
+  #    menciona `DATABASE_URL` ni Prisma.
+  guards-visuales:
+    name: guards de navegador (fuera de la tanda)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - run: npm ci
+
+      # Dos de los nueve —`vias-de-cobro` y `aviso-bizum`— importan de `dist/`, así que sin
+      # compilar se caerían por falta de módulo y el rojo diría lo que no es.
+      - name: Compilar (tsc)
+        run: npm run build
+
+      # 🔴 QUE HAYA NAVEGADOR SE COMPRUEBA ANTES, Y EN VOZ ALTA.
+      #
+      # La imagen `ubuntu-latest` trae Edge, Chrome y Chromium preinstalados (comprobado en su
+      # documentación el 20-ago-2026), y `scripts/_navegador.mjs` los busca por orden. Pero si
+      # algún día la imagen deja de traerlos, el fallo tiene que decir ESO y no parecer que los
+      # guards no encontraron defectos: el resolutor sale con código 2 declarándose ciego.
+      #
+      # Se imprime cuál resolvió para que un cambio de la imagen se vea en el log en vez de
+      # cambiar el navegador bajo los pies de la medición sin que nadie se entere.
+      # ⚠️ Bloque literal (`run: |`) y no escalar plano: el `node -e` lleva dos puntos seguidos de
+      #    espacio dentro del mensaje, y en un escalar plano YAML eso se lee como un mapa. El
+      #    fichero se rompería, y un workflow que no parsea no falla: NO CORRE.
+      - name: Qué navegador hay
+        run: |
+          node -e "import('./scripts/_navegador.mjs').then(m => { const r = m.resolverNavegador(); if (!r.ok) { console.error('NO SUPE MIRAR'); console.error(r.motivo); process.exit(2); } console.log(r.quien + ' -> ' + r.ruta); })"
+
+      - name: Guards de navegador
+        run: npm run guards:visuales
