@@ -44,7 +44,7 @@ description: Cierre de sprint de YaQu (protocolo AA1.7) — QA del sprint, docs 
    tocaron plantillas.
 4. **Done + evidencias en U.** En `docs/YAQU_MASTER.md` Parte U: marcar el done de la fila
    con motivo/evidencias (capturas, IDs, docs de evidencia que pida la tarea, p. ej.
-   `EVIDENCIAS_E2E.md`, `VERIFACTU_EVIDENCIAS.md`). **✅ con motivo; nunca borrar filas
+   `EVIDENCIAS_E2E.md`). **✅ con motivo; nunca borrar filas
    ni reescribir historia.**
 5. **Master actualizado.** Si el sprint reveló necesidad de cambios de spec → propuesta
    de cambio de master al fundador (nunca editarlo de tapadillo). CLAUDE.md y `.claude/*`

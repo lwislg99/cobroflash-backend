@@ -7,8 +7,11 @@ description: Conocimiento verificado de VeriFactu/SIF para YaQu. Úsala SIEMPRE 
 
 Todo lo que hay aquí se verificó contra fuente oficial (BOE, sede de la AEAT, esquemas XSD
 publicados) o contra el código, con fecha. **Lo que no está verificado se dice con esas
-palabras.** Si una afirmación de esta skill contradice a `docs/YAQU_MASTER.md`, **gana el
-máster** y hay que avisar de la discrepancia.
+palabras.** Si esta skill contradice al máster: **para y dilo, no elijas.** Para hechos medibles (qué
+existe, qué está construido) gana el CÓDIGO, y la auditoría
+`docs/legal/AUDITORIA_CAMINO_EMISION.md` es su lectura escrita. Para decisiones y textos de
+usuario gana el máster. Si no está claro en cuál de los dos casos estás, es que estás en el
+primero: **pregunta.**
 
 Última actualización: **19-ago-2026**.
 
@@ -86,7 +89,8 @@ SCRUM-195: un solo sitio decide la pertenencia y el resto del fichero ni se ente
 
 - `docs/legal/SEMAFORO_CALIBRACION.md` — clasifica los **códigos de error de la AEAT**. Es un
   manual de qué significa cada respuesta, **no** una comprobación previa.
-- `SEMAFORO_MAPA_EMISION.md` — mapa del camino, **con coordenadas desfasadas** (SCRUM-513).
+- `SEMAFORO_MAPA_EMISION.md` — mapa del camino. *(Tuvo coordenadas desfasadas; SCRUM-513 las
+  sustituyó por símbolos. Hoy no tiene ni un ancla a número de línea, y así debe seguir.)*
 - `semaforoFiscal` en el frontend — con marcador `PENDIENTE_ASESOR`.
 
 **Ninguno comprueba nada antes de enviar.** Todos interpretan una respuesta que hoy no puede llegar.
@@ -191,7 +195,10 @@ sin valor vacío, a diferencia del SII. `ImporteRectificacion` es **`minOccurs="
 FAQ oficial de la AEAT (*«no se deben rellenar»*) · el propio XSD · y las **validaciones 1118 y
 1119**, verificadas literales. **Hacerlo al revés produce el rechazo de la factura.**
 
-⚠️ `verifactu.service.ts:673` tiene un comentario que **miente** sobre esto (SCRUM-513).
+*(Hubo un comentario en `verifactu.service.ts` que afirmaba lo contrario. **SCRUM-513 lo corrigió
+y ya no miente.** Y dejó una lección que aplica a esta skill entera: **no cites documentación por
+número de línea** — la línea deriva y la cita se convierte en una mentira sin que nadie la toque.
+Cita símbolos.)*
 
 ---
 
@@ -268,9 +275,15 @@ Ni con esta skill, ni con la auditoría, ni con una versión propia que suene me
 - 🔴 **`prisma/schema.prisma` es de los fundadores** — se prepara el diff y se **PARA**.
 - 🔴 **Nunca inventar estados, flags ni textos que no estén en el máster.** Si falta algo, **se
   pregunta**; no se improvisa.
-- 🔴 **No creer la documentación.** Ya hay al menos dos documentos con datos falsos
-  (SCRUM-513, y el máster con afirmaciones que la auditoría desmintió → SCRUM-528). **Si un
+- 🔴 **No creer la documentación.** El inventario SCRUM-528 midió **61 afirmaciones sobre
+  VeriFactu en este repo: 19 son falsas y 16 ambiguas.** Entre las falsas está **el guion H2 del
+  máster**, que la regla 26 declara la única respuesta autorizada ante un cliente. **Si un
   documento y el código discrepan, gana el código**, y la discrepancia se anota.
+  La lista completa: `docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md`.
+- 🟡 **Hay otra skill de VeriFactu en este repo: `yaqu-verifactu-sif`.** No colisiona con ésta
+  —hace otra cosa: impone el proceso y las reglas 7/17/29, mientras ésta aporta el conocimiento
+  verificado— pero **su contenido NO se inventarió en SCRUM-528**. Si algo de ella contradice a
+  ésta, **no elijas: dilo**.
 - 🔴 **Cada afirmación con fichero y línea.** Sin coordenada → **NO MEDIDO**, con esas palabras.
 - 🔴 **Suelo de ceguera:** si el instrumento no encuentra lo que busca, **falla declarándose
   ciego**. Un «no existe» por ceguera y uno medido son la misma frase con consecuencias opuestas
