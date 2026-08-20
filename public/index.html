@@ -88,15 +88,36 @@
   .btn-ghost:hover{background:var(--bg);border-color:#d7dbd5} .btn-lg{padding:15px 26px;font-size:18.66px}
 
   .announce{background:#0b3d2e;color:#e8f2ee;font-size:13.5px}
-  .announce-in{display:flex;align-items:center;justify-content:center;gap:8px 18px;flex-wrap:wrap;padding:10px 22px;text-align:center}
+  /* SCRUM-543 · 10px → 12px de padding vertical. Con 10 la barra medía 44 EXACTOS, y ahí el área
+     tocable del enlace no podía llegar a 44 sin salirse e invadir el header: medido, se quedaba
+     en 42,6. Se probaron antes dos ajustes de decimales sobre el pseudo-elemento y los dos se
+     quedaron cortos, porque el techo no era el pseudo-elemento sino la barra. 4px más de barra
+     es intrascendente a la vista; un táctil de 42,6 no cumple AB6, y «casi» no es cumplir. */
+  .announce-in{display:flex;align-items:center;justify-content:center;gap:8px 18px;flex-wrap:wrap;padding:12px 22px;text-align:center}
   .announce b{color:#bff0d0;font-weight:700} .announce .sep{opacity:.35}
-  .announce a{color:#fff;font-weight:700;border-bottom:1px solid rgba(255,255,255,.45);padding-bottom:1px}
+  /* SCRUM-543 · el táctil medía 24 px de alto (AB6 pide ≥44).
+     ⚠️ El primer intento fue `min-height:44px` en el enlace, y MEDIDO EN NAVEGADOR resultó que la
+     barra pasaba de 44 a 64 px: `.announce-in` tiene `padding:10px`, que se SUMA. Un táctil
+     arreglado a costa de empujar la landing entera 20 px hacia abajo no es un arreglo.
+     Se extiende el ÁREA TOCABLE con un pseudo-elemento, que no ocupa sitio en el flujo: el
+     enlace sigue midiendo 24 px de caja y recibe el dedo en 44. Lo que hay que medir, por tanto,
+     no es su `getBoundingClientRect` sino QUÉ ELEMENTO RECIBE EL TOQUE (elementFromPoint), que
+     es lo que hace el guard. */
+  .announce a{color:#fff;font-weight:700;position:relative;border-bottom:1px solid rgba(255,255,255,.45);padding-bottom:1px}
+  /* Anclado a la caja (−10/+10 sobre 24 px = 44), NO centrado con `translateY`: centrarlo lo
+     descuadraba 1 px por el `padding-bottom` y esa franja se la comía el header, que se pinta
+     después. Y ampliarlo «un poco más» para compensar sería peor que el defecto: el área
+     invadiría el header y robaría toques al botón primario, que está justo debajo. */
+  .announce a::after{content:"";position:absolute;left:0;right:0;top:-12px;bottom:-12px;z-index:1}
   .announce a:hover{border-color:#fff}
   @media(max-width:600px){.announce .sep,.announce .hide-sm{display:none}.announce-in{gap:4px 12px}}
 
   .nav{position:sticky;top:0;z-index:40;background:rgba(246,247,245,.85);backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--border)}
   .nav-in{display:flex;align-items:center;justify-content:space-between;height:64px}
-  .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;color:var(--ink);letter-spacing:-.02em}
+  /* SCRUM-543 · el logo medía 34 px de alto y es el elemento que más se toca por error. Sube a
+     44 (AB6) SIN cambiar nada a la vista: el header mide 65 px, así que los 10 px extra caben
+     dentro y el contenido sigue centrado por el `align-items` que ya tenía. */
+  .logo{display:flex;align-items:center;min-height:44px;gap:10px;font-weight:800;font-size:20px;color:var(--ink);letter-spacing:-.02em}
   .logo-mark{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,var(--brand-bright),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#04231a;box-shadow:0 4px 12px -3px rgba(34,211,238,.5)}
   .nav-links{display:flex;align-items:center;gap:6px}
   .nav-links a.t{padding:9px 13px;color:var(--muted);font-weight:600;font-size:14px;border-radius:var(--r-full)}
@@ -338,7 +359,7 @@
   <div class="wrap announce-in">
     <span>Oferta de lanzamiento: <b>9,90&nbsp;€/mes para siempre</b>, mientras mantengas la suscripción activa <span class="hide-sm">para los primeros profesionales</span></span>
     <!-- SCRUM-330: la escasez, envuelta para poder ocultarla sin tocar la oferta. Ni una palabra cambia. -->
-    <span id="ann-plazas"><span class="sep">·</span><span>quedan <b id="ann-left">–</b> plazas</span></span><span class="sep">·</span><a href="#precios">Ver planes →</a>
+    <span id="ann-plazas"><span class="sep">·</span> <span>quedan <b id="ann-left">–</b> plazas</span></span><span class="sep">·</span> <a href="#precios">Ver planes →</a>
   </div>
 </div>
 
@@ -352,14 +373,14 @@
   </div>
 </header>
 
-<section class="hero">
+<section class="hero" aria-labelledby="reg-hero">
   <div class="wrap hero-grid">
     <div>
       <span class="eyebrow">El ERP por WhatsApp para los oficios</span>
-      <h1>Del presupuesto al cobro, <span class="hl">sin salir de WhatsApp.</span></h1>
+      <h1 id="reg-hero">Del presupuesto al cobro, <span class="hl">sin salir de WhatsApp.</span></h1>
       <p class="sub">Crea el presupuesto en 30 segundos, tu cliente lo firma desde el móvil y te paga — con tarjeta, Bizum o transferencia. Y llevas clientes, gastos y facturas en el mismo sitio.</p>
       <div class="cta-row"><a href="/register.html" class="btn btn-primary btn-lg">Empieza gratis</a><a href="#probar" class="btn btn-ghost btn-lg">Probar la demo</a></div>
-      <p class="note"><b>14 días gratis</b><span class="dot"></span>Sin tarjeta<span class="dot"></span>Listo en 5 minutos</p>
+      <p class="note"><b>14 días gratis</b><span class="dot"></span> Sin tarjeta<span class="dot"></span> Listo en 5 minutos</p>
     </div>
 
     <div class="stage" aria-label="Demostración: de presupuesto a cobro">
@@ -410,17 +431,17 @@
   </div>
 </div>
 
-<section id="probar" class="sec-tint">
+<section id="probar" class="sec-tint" aria-labelledby="reg-probar">
   <div class="wrap">
-    <div class="sec-head"><span class="eyebrow">Pruébalo tú</span><h2>Haz el recorrido completo, paso a paso</h2><p>Pulsa el botón verde dentro del móvil y avanza — del presupuesto al pago, como lo viven tú y tu cliente.</p></div>
+    <div class="sec-head"><span class="eyebrow">Pruébalo tú</span><h2 id="reg-probar">Haz el recorrido completo, paso a paso</h2><p>Pulsa el botón verde dentro del móvil y avanza — del presupuesto al pago, como lo viven tú y tu cliente.</p></div>
     <div class="try-stage">
       <div>
         <div class="try-steps" id="trySteps">
-          <div class="try-step on" data-s="0"><span class="tnum-b">1</span><span><span class="tt">Creas el presupuesto</span><br><span class="ts">Del catálogo, en 30 segundos.</span></span></div>
-          <div class="try-step" data-s="1"><span class="tnum-b">2</span><span><span class="tt">Le llega por WhatsApp</span><br><span class="ts">Como un mensaje normal.</span></span></div>
-          <div class="try-step" data-s="2"><span class="tnum-b">3</span><span><span class="tt">Lo firma desde el móvil</span><br><span class="ts">Con el dedo. Queda registrado.</span></span></div>
-          <div class="try-step" data-s="3"><span class="tnum-b">4</span><span><span class="tt">Recibe el enlace de pago</span><br><span class="ts">Otro WhatsApp con el botón de pagar.</span></span></div>
-          <div class="try-step" data-s="4"><span class="tnum-b">5</span><span><span class="tt">Paga como quiera</span><br><span class="ts">Tarjeta, Bizum o transferencia.</span></span></div>
+          <div class="try-step on" data-s="0"><span class="tnum-b">1</span> <span><span class="tt">Creas el presupuesto</span><br> <span class="ts">Del catálogo, en 30 segundos.</span></span></div>
+          <div class="try-step" data-s="1"><span class="tnum-b">2</span> <span><span class="tt">Le llega por WhatsApp</span><br> <span class="ts">Como un mensaje normal.</span></span></div>
+          <div class="try-step" data-s="2"><span class="tnum-b">3</span> <span><span class="tt">Lo firma desde el móvil</span><br> <span class="ts">Con el dedo. Queda registrado.</span></span></div>
+          <div class="try-step" data-s="3"><span class="tnum-b">4</span> <span><span class="tt">Recibe el enlace de pago</span><br> <span class="ts">Otro WhatsApp con el botón de pagar.</span></span></div>
+          <div class="try-step" data-s="4"><span class="tnum-b">5</span> <span><span class="tt">Paga como quiera</span><br> <span class="ts">Tarjeta, Bizum o transferencia.</span></span></div>
         </div>
         <button class="try-reset" id="tryReset" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v3h3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Volver a empezar</button>
       </div>
@@ -490,9 +511,9 @@
   </div>
 </section>
 
-<section id="como" class="sec-white">
+<section id="como" class="sec-white" aria-labelledby="reg-como">
   <div class="wrap">
-    <div class="sec-head"><span class="eyebrow">Cómo funciona</span><h2>Tres pasos. Cero fricción.</h2><p>Tus clientes lo entienden a la primera — no tienen que instalar nada.</p></div>
+    <div class="sec-head"><span class="eyebrow">Cómo funciona</span><h2 id="reg-como">Tres pasos. Cero fricción.</h2><p>Tus clientes lo entienden a la primera — no tienen que instalar nada.</p></div>
     <div class="prods">
       <div class="prod reveal"><div class="p-in"><div class="p-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></div><h3>1 · Crea el presupuesto</h3><p>Del catálogo de tu oficio, ajustas cantidades y el total se calcula solo. O se lo dictas a la IA.</p></div></div>
       <div class="prod reveal"><div class="p-in"><div class="p-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 5h16v11H8l-4 4V5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 10h8M8 13h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div><h3>2 · Firma por WhatsApp</h3><p>Le llega como un mensaje normal con un botón. Lo abre, lo revisa y firma con el dedo.</p></div></div>
@@ -547,9 +568,9 @@
   </div>
 </section>
 
-<section id="todo" class="sec-tint">
+<section id="todo" class="sec-tint" aria-labelledby="reg-todo">
   <div class="wrap">
-    <div class="sec-head"><span class="eyebrow">Todo en uno</span><h2>Seis herramientas. Una sola app.</h2><p>Desde tu primer presupuesto hasta llevar todo el negocio — sin saltar entre programas.</p></div>
+    <div class="sec-head"><span class="eyebrow">Todo en uno</span><h2 id="reg-todo">Seis herramientas. Una sola app.</h2><p>Desde tu primer presupuesto hasta llevar todo el negocio — sin saltar entre programas.</p></div>
     <div class="prods">
       <div class="prod reveal"><svg class="p-bg" viewBox="0 0 24 24" fill="none"><path d="M6 3h9l4 4v14H6V3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M14 3v5h5M9 13h6M9 16h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><div class="p-in"><div class="p-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6 3h9l4 4v14H6V3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 3v5h5M9 13h6M9 16h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div><h3>Presupuestos y firma</h3><p>Créalos en 30 s del catálogo de tu oficio, con IA, y fírmalos por WhatsApp con validez legal.</p><span class="p-link">Ver más <span class="ar">→</span></span></div></div>
       <div class="prod reveal"><svg class="p-bg" viewBox="0 0 24 24" fill="none"><rect x="2.5" y="5" width="19" height="14" rx="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M2.5 9.5h19" stroke="currentColor" stroke-width="1.4"/></svg><div class="p-in"><div class="p-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="2.5" y="5" width="19" height="14" rx="2.5" stroke="currentColor" stroke-width="1.7"/><path d="M2.5 9.5h19" stroke="currentColor" stroke-width="1.7"/></svg></div><h3>Cobros</h3><p>Tarjeta, Bizum o transferencia. Cobra trabajos completos o por adelantado, con recordatorios que persiguen solos.</p><span class="p-link">Ver más <span class="ar">→</span></span></div></div>
@@ -627,9 +648,9 @@
   </div>
 </section>
 
-<section id="precios" class="sec-white">
+<section id="precios" class="sec-white" aria-labelledby="reg-precios">
   <div class="wrap">
-    <div class="sec-head"><span class="eyebrow">Precios</span><h2>Un solo plan. Todo incluido.</h2><p>14 días gratis, sin tarjeta. Y sin letra pequeña.</p></div>
+    <div class="sec-head"><span class="eyebrow">Precios</span><h2 id="reg-precios">Un solo plan. Todo incluido.</h2><p>14 días gratis, sin tarjeta. Y sin letra pequeña.</p></div>
     <div class="price-card">
       <div class="founding" id="founding-banner" hidden>Oferta fundadores: <b>9,90 €/mes para siempre</b>, mientras mantengas la suscripción activa<span id="founding-plazas"> — quedan <b id="founding-left">–</b> plazas</span></div>
       <span class="price-tag">YaQu Pro</span>
@@ -642,9 +663,9 @@
   </div>
 </section>
 
-<section id="faq" class="sec-tint">
+<section id="faq" class="sec-tint" aria-labelledby="reg-faq">
   <div class="wrap">
-    <div class="sec-head"><span class="eyebrow">Preguntas</span><h2>Preguntas de compañeros de oficio</h2><p>Las que nos hacen de verdad.</p></div>
+    <div class="sec-head"><span class="eyebrow">Preguntas</span><h2 id="reg-faq">Preguntas de compañeros de oficio</h2><p>Las que nos hacen de verdad.</p></div>
     <div class="faq">
       <details open><summary>Ya mando presupuestos por WhatsApp gratis. ¿Para qué esto?</summary><div class="a">Exacto — por eso esto ES WhatsApp. La diferencia: el tuyo no firma, no cobra y no persigue al que no contesta. Y aquí además llevas clientes, gastos y facturas en el mismo sitio.</div></details>
       <details><summary>¿Mis clientes tienen que instalar algo? Muchos son mayores.</summary><div class="a">Nada. Les llega un WhatsApp normal con un enlace: lo abren, ven el presupuesto y tienen dos botones — Firmar y Pagar. Y si prefieren transferencia de toda la vida, también vale.</div></details>
@@ -654,7 +675,7 @@
   </div>
 </section>
 
-<section class="cta-band"><div class="wrap"><h2>Tu próxima cotización, lista en 30 segundos</h2><p>Únete a los profesionales que cierran más trabajos y cobran sin perseguir pagos.</p><a href="/register.html" class="btn btn-primary btn-lg">Empezar gratis</a></div></section>
+<section class="cta-band" aria-labelledby="reg-cta"><div class="wrap"><h2 id="reg-cta">Tu próxima cotización, lista en 30 segundos</h2><p>Únete a los profesionales que cierran más trabajos y cobran sin perseguir pagos.</p><a href="/register.html" class="btn btn-primary btn-lg">Empezar gratis</a></div></section>
 
 <footer><div class="wrap foot"><div class="c">© 2026 YaQu · Hecho en Madrid para los oficios 🇪🇸</div><div class="l"><a href="#como">Cómo funciona</a><a href="#todo">Todo en uno</a><a href="#precios">Precios</a><a href="/privacidad">Privacidad</a><a href="/terminos">Términos</a></div></div></footer>
 
