@@ -110,8 +110,13 @@ test('AUTOPRUEBA · un texto nuevo fuera del esquema tumba la comprobación', ()
   // El mecanismo se prueba metiendo un texto que NO existe y viendo que se nota. Sin esto,
   // un `deepEqual` entre dos listas vacías estaría igual de verde y no probaría nada.
   const ANCLA = '<span class="eyebrow">Tu oficio</span>';
+  // ⚠️ El intruso va en su propia constante a propósito. Escrito dentro del `.replace()`, el
+  // censo de SCRUM-553 lo contaba como un extractor con el `>` pegado — y no lo es: es HTML
+  // literal, dato de prueba, sin patrón ninguno. Reportado a S1; aquí sólo se deja escrito que
+  // esta línea no extrae nada.
+  const INTRUSO = '<span>TEXTO SINTETICO DE PRUEBA</span>';
   assert.ok(html.includes(ANCLA), '🔴 CIEGO: no se encuentra el rótulo donde inyectar la prueba');
-  const conIntruso = html.replace(ANCLA, ANCLA + '<span>TEXTO SINTETICO DE PRUEBA</span>');
+  const conIntruso = html.replace(ANCLA, ANCLA + INTRUSO);
   const m = medido(conIntruso);
   assert.equal(m.length, declarado().length + 1,
     '🔴 el mecanismo NO ve un texto nuevo fuera del esquema. Entonces su verde no significa nada.');
@@ -169,8 +174,14 @@ test('el detector de capacidad no pierde cobertura ni empieza a dar falsas alarm
   assert.equal(r.promesas, COBERTURA_DEL_DETECTOR.promesas,
     '🔴 ha cambiado el número de frases con verdad conocida: vuelve a medir antes de fiarte '
     + 'de los otros dos números');
-  assert.ok(r.escapes <= COBERTURA_DEL_DETECTOR.escapes,
-    `🔴 al detector se le escapan ahora ${r.escapes} promesas (antes ${COBERTURA_DEL_DETECTOR.escapes}): `
+  // Exacto, no `<=`. Un `<=` aquí sería un umbral con holgura de los que censa SCRUM-559: se
+  // quedaría verde si alguien «arregla» el detector por el camino equivocado —ampliando el
+  // vocabulario a las frases de hoy— y nadie se enteraría de que el número se movió. Que baje
+  // es una buena noticia, y aun así tiene que hacerse mirar y actualizar este trinquete.
+  assert.equal(r.escapes, COBERTURA_DEL_DETECTOR.escapes,
+    `🔴 al detector se le escapan ahora ${r.escapes} promesas (declaradas ${COBERTURA_DEL_DETECTOR.escapes}). `
+    + 'Si son MÁS, hay promesas nuevas que el contraste no ve. Si son MENOS, alguien tocó el '
+    + 'detector: actualiza `COBERTURA_DEL_DETECTOR` y di con qué criterio. Escapes: '
     + JSON.stringify(r.listaEscapes));
   assert.equal(r.falsosPositivos, COBERTURA_DEL_DETECTOR.falsosPositivos,
     '🔴 el detector ha empezado a saltar con frases que no prometen nada: '
