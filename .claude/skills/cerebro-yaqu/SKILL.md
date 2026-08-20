@@ -24,6 +24,20 @@ mecanismo.
 5. 🔴 JAMÁS adivines lo que falta. Rellenar huecos de contexto es el patrón que causó esto.
 Herramienta: `npm run comprobar:encargo <fichero>` (o por tubería). Sale 1 si hay que parar.
 
+## Revertir un cambio sin mentirse — el blob NO siempre es la referencia (SCRUM-570)
+Los encargos exigen «verifica con `Buffer.compare` contra el blob». Vale para UN caso y no para
+el otro, y creerlo universal da un verde falso. **Antes de tocar, siempre:**
+`const ORIGINAL = fs.readFileSync(F);` — los bytes de disco. Sirve en los dos casos y es gratis.
+- **CASO A · fichero NO normalizado** (`-text`, o sin regla) → `Buffer.compare(disco, blob) === 0`.
+- **CASO B · fichero NORMALIZADO** (`.gitattributes` con `text eol=lf`) → 🔴 **el blob NO sirve
+  de referencia**: git guarda LF pase lo que pase en disco, así que un fichero con 90 CR en la
+  copia de trabajo tiene el blob limpio y `git status` lo da por LIMPIO. Compara contra
+  `ORIGINAL`. Restaurar el blob «revierte» y además NORMALIZA — un cambio que nadie pidió.
+- Y **comprobar el blob no basta**: el guard de SCRUM-533 mira EL DISCO. Se puede tener el blob
+  con CR: 0 y la tanda caída igual. No era falso: era incompleto.
+- Medido: **1.355 ficheros del checkout tienen CR en disco y no en el blob**, 1.336 normalizados.
+  Cuál es el tuyo: `npm run cr:tecnica -- <fichero>` · quitárselo: `npm run cr:limpiar -- <fichero>`.
+
 ## Al arrancar (siempre, en este orden)
 1. Lee CLAUDE.md (en la RAÍZ, no en docs/), docs/YAQU_MASTER.md (gobierna), docs/ASESOR.md,
    docs/ERRORES_ASESOR.md.
