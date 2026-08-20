@@ -5,8 +5,32 @@ description: Obligatoria antes de tocar código de VeriFactu/SIF. Contiene guard
 
 # yaqu-verifactu-sif — Guardarraíles del SIF
 
-> Derivada del master U1.3 (SIF-1 v2) + `docs/SIF_SPEC_NOTES.md` (S1-0b). Si chocan,
-> gana el master. Creada en S1-0b (12-jun-2026).
+> Derivada del master U1.3 (SIF-1 v2) + `docs/SIF_SPEC_NOTES.md` (S1-0b).
+> Creada en S1-0b (12-jun-2026).
+>
+> 🔴 **EL ÁRBITRO ESTÁ SIN DECIDIR, y hasta que se decida NO es el máster.** Esta línea decía
+> «si chocan, gana el máster», y la skill `verifactu` decía lo mismo: las dos se cargan ante la
+> misma tarea, se desmienten en cuatro puntos y las dos mandaban al mismo sitio a desempatar.
+>
+> **El máster no puede arbitrar sobre el estado de VeriFactu**, y no es una opinión: el
+> inventario de **SCRUM-528** midió **61 afirmaciones** en el repo y encontró **19 FALSAS**, y
+> la zona con más falsas era el propio máster — incluido el guion H2, que la regla 26 declara
+> la única respuesta autorizada ante un cliente. Mandar a desempatar allí es mandar a la fuente
+> menos fiable de las tres.
+>
+> **Mientras no haya decisión del fundador**, para un hecho medible —qué está construido, qué
+> existe— gana **el CÓDIGO**, que es el arbitraje que él mismo fijó y el que ya aplica
+> `_guard-afirmacion-fiscal.mjs`. Si el choque no es sobre un hecho medible, se PARA y se
+> pregunta; no se elige por cuenta propia.
+>
+> Candidatos medidos para la decisión, con lo que aporta cada uno:
+>   · `docs/legal/AUDITORIA_CAMINO_EMISION.md` (SCRUM-525) — qué existe HOY, con fichero y
+>     línea. Es lo más cercano a un árbitro, pero es una foto con fecha: caduca al construir.
+>   · el CÓDIGO — no caduca nunca y no puede mentir, pero no responde preguntas de proceso
+>     ni de decisión (modalidad, carriles, plazos).
+>   · `docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md` (SCRUM-528) — dice qué NO creerse,
+>     que no es lo mismo que decir qué es cierto.
+> **Decide el fundador (SCRUM-538, punto 2).**
 
 ## Antes de tocar código SIF (obligatorio)
 
