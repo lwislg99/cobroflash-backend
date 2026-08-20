@@ -55,6 +55,54 @@ import { pathToFileURL } from 'node:url';
 
 export const LANDING = 'public/index.html';
 
+/**
+ * 🔴 SCRUM-557 · EL ALCANCE SALE DE LA IDENTIDAD DE LAS SECCIONES, NO DE SU MARCADOR.
+ *
+ * La primera version descubria las secciones por `data-microcopy="PENDIENTE_FUNDADOR"`, y ese
+ * atributo hacia DOS trabajos a la vez: marcar que un texto no esta aprobado, y definir el
+ * alcance de este censo. La consecuencia se ve al enunciarla: **el dia que se aprueba un texto
+ * y se retira el marcador, ese texto SALE DEL CENSO**. Aprobar apagaba la vigilancia sobre lo
+ * aprobado — justo cuando pasa a ser publicable.
+ *
+ * No es hipotetico: el fundador aprobo los 37 textos el 20-ago-2026, y registrar esa aprobacion
+ * consiste en retirar los 17 marcadores de `#heroe-f4` y `#gremios`. Con el mecanismo viejo,
+ * ese commit habria dejado 17 anclas huerfanas y las tres frases sin ancla sin vigilar.
+ *
+ * Ahora una seccion deja de censarse cuando **DEJA DE EXISTIR**, no cuando alguien la aprueba:
+ * el alcance es esta lista de IDs, y cada id censado tiene que estar en el HTML.
+ *
+ * ⚠️ LOS DOS MARCADORES NO SE FUSIONAN, y se midio antes de decidirlo (SCRUM-557 punto 1):
+ *   · `data-microcopy="PENDIENTE_FUNDADOR"` — sin aprobar Y la seccion va `hidden`, con test
+ *     en las dos direcciones (`scrum549`). Retirarlo ES registrar la aprobacion.
+ *   · `data-propuesta="microcopy-sin-aprobar"` — el de `#comparativa`, misma idea y otra
+ *     grafia.
+ * Los dos son marcadores de APROBACION, y por eso ninguno vale como alcance. Unificar su
+ * vocabulario es otro trabajo: aqui solo se deja de depender de ellos.
+ */
+export const SECCIONES_BLOQUE_F = {
+  'heroe-f4': { censada: true },
+  'gremios': { censada: true },
+  // Sus 20 unidades NUNCA han pasado por este censo (SCRUM-555). Meterlas hoy exigiria 20
+  // entradas nuevas en el registro y dejaria main en rojo, que es lo que este ticket viene a
+  // quitar. Queda DECLARADO fuera, con su ticket: un hueco escrito no es un hueco escondido.
+  'comparativa': { censada: false, motivo: 'sus 20 unidades nunca han pasado por el censo → SCRUM-555' },
+  // 🔴 SCRUM-557 punto 2 · SALE, y sale POR EL CRITERIO, no por retirarle el atributo a mano.
+  // El criterio: este censo vigila el texto del bloque F que esta EN PROPUESTA; `#contacto-publico`
+  // es el canal de contacto de F7 y su copy no es una propuesta del bloque F. Su marcador se
+  // queda donde esta — retirarlo seria registrar una aprobacion, y eso no es de este ticket.
+  // ⚠️ DISCREPANCIA DECLARADA: el comentario de SCRUM-549 en el HTML dice que sus textos SIGUEN
+  // sin aprobar (F7-1 a F7-4), mientras que el encargo lo da por aprobado el 20-ago. No se
+  // resuelve aqui: en los dos casos SALE de este censo, pero quien lo lea debe saber que las
+  // dos fuentes no dicen lo mismo.
+  'contacto-publico': { censada: false, motivo: 'F7: canal de contacto, no texto del bloque F en propuesta' },
+};
+
+/** Los dos marcadores de aprobacion que hay hoy en la landing. Ninguno define el alcance. */
+export const MARCADORES_DE_APROBACION = [
+  /data-microcopy="PENDIENTE_FUNDADOR"/,
+  /data-propuesta="microcopy-sin-aprobar"/,
+];
+
 /** Lo que un texto de propuesta puede declarar. */
 export const SIN_CAPACIDAD = 'SIN_CAPACIDAD'; // no afirma que el producto haga nada
 export const SIN_ANCLA = 'SIN_ANCLA';         // afirma una capacidad que HOY no existe
@@ -169,23 +217,49 @@ export const MARCAS_CAPACIDAD = [
 
 const limpiar = (s) => s.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
 
-/** Las secciones de propuesta, descubiertas por el atributo y no por una lista. */
+/**
+ * Las secciones del bloque F que este censo vigila, buscadas POR SU ID.
+ *
+ * ⚠️ La etiqueta se busca tolerando atributos y en varias lineas: `#contacto-publico` abre su
+ * `<section>` repartido en seis lineas, y `#heroe-f4` lleva la `class` ANTES del `id`. Asumir
+ * que la etiqueta viene desnuda o en una sola linea es el defecto de SCRUM-553.
+ */
 export function bloquesDePropuesta(html) {
   const out = [];
-  for (const m of html.matchAll(/<section\b[^>]*data-microcopy="PENDIENTE_FUNDADOR"[^>]*>/g)) {
+  for (const [id, cfg] of Object.entries(SECCIONES_BLOQUE_F)) {
+    if (!cfg.censada) continue;
+    const re = new RegExp(`<section[^>]{0,400}?\\bid="${id}"[\\s\\S]{0,400}?>`);
+    const m = re.exec(html);
+    if (!m) { out.push({ id, cuerpo: null, ausente: true }); continue; }
     const fin = html.indexOf('</section>', m.index);
-    out.push({
-      id: /id="([^"]+)"/.exec(m[0])?.[1] || '(sin-id)',
-      cuerpo: html.slice(m.index, fin === -1 ? html.length : fin),
-    });
+    out.push({ id, cuerpo: html.slice(m.index, fin === -1 ? html.length : fin) });
   }
   return out;
+}
+
+/**
+ * Secciones que llevan un marcador de aprobacion y NO estan declaradas en el alcance.
+ *
+ * Es la red de seguridad: el dia que alguien marque una seccion nueva —como paso con
+ * `#contacto-publico` en SCRUM-549— el censo NO la traga en silencio ni la ignora en silencio:
+ * obliga a decidir si entra o sale, y a escribirlo.
+ */
+export function seccionesMarcadasSinDeclarar(html) {
+  const out = [];
+  for (const m of html.matchAll(/<section([^>]{0,400}?|[\s\S]{0,400}?)>/g)) {
+    const abre = m[0];
+    if (!MARCADORES_DE_APROBACION.some((re) => re.test(abre))) continue;
+    const id = /\bid="([^"]+)"/.exec(abre)?.[1] || '(sin-id)';
+    if (!(id in SECCIONES_BLOQUE_F)) out.push(id);
+  }
+  return [...new Set(out)];
 }
 
 /** Toda unidad de texto visible dentro de las secciones de propuesta. */
 export function unidades(html) {
   const out = [];
   for (const b of bloquesDePropuesta(html)) {
+    if (!b.cuerpo) continue; // ausente: lo denuncia `censar`
     const cuenta = {};
     for (const m of b.cuerpo.matchAll(/<(h1|h2|h3|p|li)\b[^>]*>([\s\S]*?)<\/\1>/g)) {
       const texto = limpiar(m[2]);
@@ -223,8 +297,43 @@ export function censar({ html, raiz, registro = ANCLAS_F }) {
   const problemas = [];
   const sinAncla = [];
 
+  // 🔴 SCRUM-557 · UNA SECCION DEJA DE CENSARSE CUANDO DEJA DE EXISTIR, no cuando se aprueba.
+  //    Si esta declarada `censada` y no aparece en el HTML, es rojo: o se retiro de verdad —y
+  //    entonces hay que retirarla tambien de `SECCIONES_BLOQUE_F` y sus anclas— o alguien le
+  //    cambio el id y el censo se ha quedado mirando al vacio sin decirlo.
+  const bloques = bloquesDePropuesta(html);
+
+  // 🔴 CEGUERA: si NINGUNA de las secciones censadas existe, no es que el bloque F esté limpio —
+  //    es que no se ha podido mirar. Los dos dan «0 unidades» y significan lo contrario, así que
+  //    se distinguen aquí y no se dejan al llamante.
+  if (bloques.length > 0 && bloques.every((b) => b.ausente)) {
+    return {
+      ok: false, ciego: true, unidades: 0, sinAncla: [],
+      salida: '🔴 CIEGO: ninguna de las secciones declaradas del bloque F ('
+        + bloques.map((b) => '#' + b.id).join(', ') + ') está en el HTML. O el fichero no es la '
+        + 'landing, o les han cambiado el id a todas. Un cero de unidades aquí se leería como '
+        + '«ninguna promesa sin ancla», que es la conclusión más cara.',
+    };
+  }
+
+  for (const b of bloques) {
+    if (b.ausente) {
+      problemas.push(`SECCION DECLARADA QUE NO EXISTE: #${b.id}\n`
+        + '      → o le han cambiado el id (arréglalo en `SECCIONES_BLOQUE_F`), o se retiró la '
+        + 'sección (y entonces retira también sus anclas: un ancla sin sección no describe nada).');
+    }
+  }
+
+  // 🔴 LA RED DE SEGURIDAD. El dia que alguien marque una seccion nueva —como paso con
+  //    `#contacto-publico` en SCRUM-549— el censo no la traga ni la ignora en silencio.
+  for (const id of seccionesMarcadasSinDeclarar(html)) {
+    problemas.push(`SECCION MARCADA Y SIN DECLARAR: #${id}\n`
+      + '      → lleva un marcador de aprobación y no está en `SECCIONES_BLOQUE_F`. Decide si '
+      + 'entra al censo o no, y ESCRÍBELO con su motivo. No decidir es dejarla sin vigilar.');
+  }
+
   // SUELO: si no se ve ninguna unidad, el cero de abajo es ceguera y no limpieza.
-  if (us.length === 0) {
+  if (us.length === 0 && problemas.length === 0) {
     return {
       ok: false, ciego: true, unidades: 0, sinAncla,
       salida: '🔴 CIEGO: no se ha encontrado NI UNA unidad de texto en secciones '
