@@ -40,9 +40,17 @@ test('SCRUM-543 · SUELO: la landing se lee y trae sus secciones', () => {
 // `<br>` por limpieza visual, el texto SÍ se pega — y entonces el guard de navegador lo canta.
 test('SCRUM-543 · lo que separa el texto del héroe y de la demo sigue en su sitio', () => {
   const malos = [];
-  const dots = (LANDING.match(/<span class="dot"><\/span>/g) || []).length;
+  // ⚠️ SCRUM-553: el patrón era `<span class="dot">` con el `>` PEGADO. Se toleran atributos —
+  //   un `id`, un `aria-hidden`, un `data-*`— porque eso es marcado correcto y el extractor no
+  //   tiene por qué asumir que la etiqueta viene desnuda. Lo que se vigila NO se toca: sigue
+  //   exigiendo `class="dot"` EXACTO y el `</span>` inmediato, que es lo que separa el texto.
+  const dots = (LANDING.match(/<span[^>]*class="dot"[^>]*><\/span>/g) || []).length;
   if (dots < 2) malos.push(`héroe .note: quedan ${dots} de 2 <span class="dot"> (son los que separan)`);
-  const brs = (LANDING.match(/<\/span><br><span class="ts">/g) || []).length;
+  // ⚠️ SCRUM-553: igual aquí. Se tolera el hueco de atributos en el `<br>` y en el `<span>`, y
+  //   se conserva la ADYACENCIA —`</span>` pegado al `<br>` pegado al `<span class="ts">`—,
+  //   que es justamente lo que produce la separación. Tolerar atributos no es aceptar cualquier
+  //   cosa: sin `class="ts"` exacto y sin ese orden, sigue sin casar.
+  const brs = (LANDING.match(/<\/span><br[^>]*><span[^>]*class="ts"[^>]*>/g) || []).length;
   if (brs !== 5) malos.push(`demo: ${brs} de 5 pasos conservan el <br> entre título y descripción`);
   assert.deepEqual(malos, [],
     '🔴 SE HA RETIRADO LO QUE SEPARA EL TEXTO:\n    ' + malos.join('\n    ') +

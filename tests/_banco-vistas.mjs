@@ -276,6 +276,30 @@ export function scriptsDelDashboard(raiz) {
 }
 
 /**
+ * SCRUM-559 · CUÁNTOS SCRIPTS DECLARA EL INDEX DEL DASHBOARD. Recuento EXACTO, no un mínimo.
+ *
+ * 🔴 POR QUÉ EXACTO Y NO `>= N`. Dos guards vigilan esta población —el de colisiones de
+ * declaraciones y el de carga de vistas (SCRUM-417)— y los dos usaban un umbral con holgura:
+ * `>= 25` sobre 60 (35 de holgura) y `>= 40` sobre 60 (20). Medido en SCRUM-559:
+ *
+ *   · poner `defer` en las 60 (60 → 0)  → los dos suelos disparan: se declaran ciegos. Bien.
+ *   · poner `defer` en UNA  (60 → 59)   → 🔴 16/16 EN VERDE, y ese fichero deja de estar
+ *     vigilado POR LOS DOS sin que ninguno diga una palabra.
+ *
+ * Un umbral con holgura sólo detecta la ceguera TOTAL; la pérdida PARCIAL le pasa por debajo y
+ * el guard informa cero en verde, que es peor que un rojo: parece una respuesta.
+ *
+ * ⚠️ Y EL NÚMERO VIVE AQUÍ, en un solo sitio, a propósito: si cada guard fijara el suyo, el día
+ * que el index crezca uno se actualizaría y el otro no, y volveríamos a tener una población
+ * vigilada a medias — que es justo el defecto que esto cierra.
+ *
+ * SI ESTE NÚMERO TIENE QUE CAMBIAR, es porque alguien añadió o quitó un `<script>`: se actualiza
+ * AQUÍ, en el mismo commit que lo añade. Que sea una decisión explícita es el objetivo, no un
+ * efecto colateral.
+ */
+export const SCRIPTS_DEL_DASHBOARD = 60;
+
+/**
  * Monta el dashboard como lo monta el navegador y devuelve el contexto vivo.
  *
  * @param opciones.datos  qué devuelve `apiRequest` (por defecto `{}`)

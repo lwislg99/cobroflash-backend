@@ -25,6 +25,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+// SCRUM-559: sólo el RECUENTO de la población, no el extractor. Este guard sigue leyendo el
+// index con el suyo (necesita el orden y la posición); lo que se comparte es cuántos scripts
+// tiene que haber, para que este guard y el de SCRUM-417 no puedan discrepar sobre eso.
+import { SCRIPTS_DEL_DASHBOARD } from './_banco-vistas.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
@@ -93,8 +97,15 @@ function scriptsDelDashboard() {
 // el guard pasaría en verde sin haber leído un solo fichero. Verde hueco.
 test('guard-colisión · el orden de carga se lee del index y no está vacío', () => {
   const scripts = scriptsDelDashboard();
-  assert.ok(scripts.length >= 25,
-    `🔴 solo se leyeron ${scripts.length} scripts del index: la extracción del orden está rota`);
+  // SCRUM-559: era `>= 25` sobre una población de 60 — 35 de holgura, más de la mitad. Medido:
+  // quitar UNA etiqueta (60 → 59) dejaba este guard Y el de SCRUM-417 en verde, con ese fichero
+  // fuera de la vigilancia de los dos. El recuento es EXACTO y su número vive en un solo sitio,
+  // `_banco-vistas.mjs`, para que dos guards de la misma población no puedan divergir.
+  assert.equal(scripts.length, SCRIPTS_DEL_DASHBOARD,
+    `🔴 se leyeron ${scripts.length} scripts del index y se esperaban ${SCRIPTS_DEL_DASHBOARD}. ` +
+    'Si SOBRAN, alguien añadió un script y hay que subir el número en `tests/_banco-vistas.mjs` ' +
+    'en ese mismo commit. Si FALTAN, o la extracción del orden está rota, o hay scripts que este ' +
+    'guard ya no mira — y «cero colisiones» dejaría de significar nada.');
   assert.equal(scripts[0].fichero, 'api.js', 'api.js debe seguir cargando primero');
 });
 

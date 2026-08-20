@@ -111,8 +111,12 @@ test('SCRUM-557 · 🔴 borrar una sección declarada CAE, nombrándola', () => 
 test('SCRUM-557 · 🔴 una sección MARCADA y sin declarar obliga a decidir', () => {
   // Es lo que pasó con `#contacto-publico` en SCRUM-549: dos ramas correctas por separado que no
   // se conocían. Con la red de seguridad, el censo no la traga NI la ignora en silencio.
-  const nueva = html.replace('<footer>',
-    '<section id="bloque-nuevo" hidden data-propuesta="microcopy-sin-aprobar"><p>Texto nuevo.</p></section>\n<footer>');
+  // ⚠️ SCRUM-553: el ancla era `'<footer>'` con el `>` PEGADO. El día que alguien le ponga un
+  //   `id` o un `role` al pie, este `replace` deja de casar, la inyección no se aplica y la
+  //   prueba pasaría sin haber probado nada. Lo salva su post-condición de abajo, pero la
+  //   suposición sobra: se tolera el hueco de los atributos y se CONSERVA la etiqueta original.
+  const nueva = html.replace(/<footer[^>]*>/, (etiqueta) => '<section id="bloque-nuevo" hidden '
+    + 'data-propuesta="microcopy-sin-aprobar"><p>Texto nuevo.</p></section>\n' + etiqueta);
   assert.notEqual(nueva, html, '🔴 la inyección no se aplicó');
 
   assert.deepEqual(seccionesMarcadasSinDeclarar(nueva), ['bloque-nuevo']);
