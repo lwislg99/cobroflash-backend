@@ -501,6 +501,52 @@
   </div>
 </section>
 
+<!-- ══════════════════════════════════════════════════════════════════════════════════════
+     SCRUM-333 (F6) · UNA TARJETA POR GREMIO.
+
+     🛑 NO SE PINTA TODAVÍA, y el `hidden` es el mecanismo, no un olvido.
+     El texto de esta sección es una PROPUESTA: el microcopy público lo aprueba el fundador
+     (regla 30). Mientras `data-microcopy="PENDIENTE_FUNDADOR"` siga puesto, la sección va
+     `hidden` y no la ve nadie — y hay un test que lo exige (scrum333, «lo pendiente no se
+     pinta»). Para publicarla: aprobar los textos, quitar el atributo Y el `hidden`.
+
+     🔴 POR QUÉ NINGUNA TARJETA ENSEÑA CONCEPTOS NI PRECIOS DEL OFICIO. Está medido, no es
+     prudencia: SCRUM-310 (D0 · P4) midió que los literales de las capturas —«Punto de agua
+     nuevo», «Cambio de termo 80L», «Llave de paso 1/2"»— viven ÚNICAMENTE en
+     `scripts/seed-video.mjs`, escritos a mano para grabar el vídeo. Sí hay un catálogo de
+     verdad (`data/catalogs/{gremio}.json`, 155 items), pero los seis declaran
+     `status: "draft_pendiente_validacion"` y su propio `_nota` dice «Precios ORIENTATIVOS…
+     SIN VALIDAR: 2-3 profesionales reales deben confirmarlos». Un precio que suena a
+     inventado lo nota un profesional a la primera, y lo que se pierde no es una conversión:
+     es la credibilidad del resto de la página. El día que un catálogo pase a `validado`, su
+     tarjeta podrá enseñarlos SIN tocar este HTML a mano — la regla vive en
+     `scripts/_gremios-landing.mjs` y el test la hace cumplir en las dos direcciones.
+
+     ⚠️ AL APROBAR, UNA DECISIÓN VISUAL PENDIENTE (AB6): las secciones alternan blanco /
+     verde-suave, y esta entra entre dos que ya alternaban. O ésta pasa a `sec-white` y
+     `#todo` a `sec-tint`, o al revés. No se ha tocado `#todo` porque cambiaría la página
+     viva sin causa aprobada.
+
+     ⚠️ Y EL ENLACE: hoy las seis van al MISMO destino, `/register.html`. No hay una página
+     por gremio, y ponerle `utm_*` propio al enlace sería peor que no ponerlo — medido:
+     `js/atribucion.js` no pisa lo que el enlace ya trae, así que un `utm_source=landing`
+     escrito aquí BORRARÍA el origen real del visitante (google, un grupo de gremio) y el
+     embudo diría que todos vinieron de la landing. Destino por gremio = ticket propio.
+     ══════════════════════════════════════════════════════════════════════════════════════ -->
+<section id="gremios" class="sec-tint" data-microcopy="PENDIENTE_FUNDADOR" hidden>
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">Tu oficio</span><h2>El recorrido es el mismo. El trabajo, no.</h2><p>Busca el tuyo — así es un día normal con YaQu en la mano.</p></div>
+    <div class="prods">
+      <div class="prod" data-gremio="fontaneria"><div class="p-in"><div class="p-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M7 3v6a4 4 0 0 0 4 4h2a4 4 0 0 1 4 4v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4.5 3h5M15 21h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div><h3>Fontanería</h3><p>Presupuestas un desatasco desde la furgoneta, el cliente firma en su móvil y cobras al terminar — sin volver a casa a hacer papeles.</p><a class="p-link" href="/register.html">Empezar gratis <span class="ar">→</span></a></div></div>
+      <div class="prod" data-gremio="electricidad"><div class="p-in"><div class="p-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M13 2 5 13h6l-2 9 8-11h-6l2-9Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div><h3>Electricidad</h3><p>Cambias un cuadro y aparecen dos puntos de luz más. Añades las líneas en la misma escalera, el cliente acepta en el momento y no se quedan sin cobrar.</p><a class="p-link" href="/register.html">Empezar gratis <span class="ar">→</span></a></div></div>
+      <div class="prod" data-gremio="reformas"><div class="p-in"><div class="p-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 20h18M5 20V9l7-5 7 5v11" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 20v-6h4v6" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div><h3>Reformas</h3><p>Una obra de tres semanas y cuatro pagos. Cobras por tramos según avanza y cada parte firmado queda con su fecha.</p><a class="p-link" href="/register.html">Empezar gratis <span class="ar">→</span></a></div></div>
+      <div class="prod" data-gremio="climatizacion"><div class="p-in"><div class="p-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="9" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M7 18v2M12 18v2M17 18v2M6 10h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div><h3>Climatización</h3><p>Revisas la caldera antes del invierno. El presupuesto sale de la sala de máquinas y la revisión del año que viene queda anotada sola.</p><a class="p-link" href="/register.html">Empezar gratis <span class="ar">→</span></a></div></div>
+      <div class="prod" data-gremio="cerrajeria"><div class="p-in"><div class="p-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="12" r="3.2" stroke="currentColor" stroke-width="1.6"/><path d="M12 12h8m-2 0v3m-2-3v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div><h3>Cerrajería</h3><p>Una apertura a las dos de la mañana. Presupuestas en el portal, el cliente firma en su móvil y cobras antes de recoger la herramienta.</p><a class="p-link" href="/register.html">Empezar gratis <span class="ar">→</span></a></div></div>
+      <div class="prod" data-gremio="pintura"><div class="p-in"><div class="p-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 4h13v5H4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M17 6.5h3v4h-6v3m0 3v4h-2v-4a1 1 0 0 1 1-1h1Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div><h3>Pintura</h3><p>Mides el piso y mandas el presupuesto antes de bajar la escalera. La señal entra antes de que compres la pintura.</p><a class="p-link" href="/register.html">Empezar gratis <span class="ar">→</span></a></div></div>
+    </div>
+  </div>
+</section>
+
 <section id="todo" class="sec-tint">
   <div class="wrap">
     <div class="sec-head"><span class="eyebrow">Todo en uno</span><h2>Seis herramientas. Una sola app.</h2><p>Desde tu primer presupuesto hasta llevar todo el negocio — sin saltar entre programas.</p></div>
