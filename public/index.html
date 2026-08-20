@@ -744,7 +744,18 @@
      `contacto-publico.js` no pinta el enlace y este bloque no aparece.
      ⚠️ Los textos de `data-wa-etiqueta`, `data-wa-texto` y `data-email-etiqueta` son
      [PROPUESTA microcopy — los aprueba el fundador, regla 30]. -->
-<section id="contacto-publico" class="wrap contacto" hidden
+<!-- SCRUM-549 · ESTE BLOQUE LLEVA MARCADOR, Y AL PONERLO SE VE EL DEFECTO.
+     Sus textos están sin aprobar (F7-1 a F7-4 de `docs/MICROCOPY_BLOQUE_F_PARA_APROBAR.md`), así
+     que le corresponde el mismo marcador que a las otras tres secciones del bloque F. No se
+     inventa vocabulario: es el mismo valor que ya usan `#heroe-f4` y `#gremios`.
+     🔴 Y al marcarlo queda a la vista lo que estaba tapado: el comentario de arriba dice que sin
+     `data-whatsapp` el bloque «no aparece», y NO es lo que hace el código —
+     `contacto-publico.js` lo desoculta en cuanto hay UN canal, y `data-email` trae un correo.
+     MEDIDO EN EL NAVEGADOR el 20-ago-2026: `hidden=false`, `display:block`, con el titular y el
+     enlace de correo VISIBLES. O sea que hoy hay copy sin aprobar publicado.
+     No se arregla aquí: vaciar el correo o aprobar el copy es decisión del fundador. Queda en la
+     cuarentena declarada de `scripts/_censo-microcopy-sin-marcar.mjs`, con tope 1. -->
+<section id="contacto-publico" class="wrap contacto" hidden data-microcopy="PENDIENTE_FUNDADOR"
          data-whatsapp=""
          data-wa-etiqueta="Escríbenos por WhatsApp"
          data-wa-texto="Hola, tengo una duda sobre YaQu"
