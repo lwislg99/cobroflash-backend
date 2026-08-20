@@ -162,8 +162,13 @@ test('SCRUM-331 · 🔴 la propuesta copia el posicionamiento LETRA A LETRA (má
 
   const eyebrowVivo = saca(vivo, /<span class="eyebrow">([\s\S]*?)<\/span>/);
   const eyebrowProp = saca(prop, /<span class="eyebrow">([\s\S]*?)<\/span>/);
-  const h1Vivo = saca(vivo, /<h1>([\s\S]*?)<\/h1>/);
-  const h1Prop = saca(prop, /<h1>([\s\S]*?)<\/h1>/);
+  // ⚠️ SCRUM-546: el patrón era `<h1>` con el `>` pegado. SCRUM-543 le puso `id="reg-hero"` al h1
+  // del héroe vivo —es lo que hace que la sección se anuncie como región con su propio titular— y
+  // este `saca` devolvió `null`, con lo que el test cayó por «no se pudo leer», no por una
+  // diferencia de copy. Se aceptan atributos en la etiqueta; lo que se compara sigue siendo el
+  // TEXTO del h1, que es lo que este test vigila.
+  const h1Vivo = saca(vivo, /<h1[^>]*>([\s\S]*?)<\/h1>/);
+  const h1Prop = saca(prop, /<h1[^>]*>([\s\S]*?)<\/h1>/);
 
   assert.ok(eyebrowVivo && h1Vivo, '🔴 no se pudo leer el posicionamiento del héroe vivo');
   assert.equal(eyebrowProp, eyebrowVivo,

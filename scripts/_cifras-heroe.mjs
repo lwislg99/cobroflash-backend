@@ -30,9 +30,19 @@
 // documentar la procedencia de un decorado y acabaría diluyendo el censo de lo que sí afirma.
 // Lo que se vigila de la escena es OTRA cosa, y va en el test: que no se cuele ahí un testimonio.
 
-/** El bloque crudo del héroe, tal cual está en el fichero. */
+/**
+ * El bloque crudo del héroe, tal cual está en el fichero.
+ *
+ * ⚠️ SCRUM-546: se buscaba `<section class="hero">` con el `>` PEGADO, y eso ataba el extractor a
+ * que la etiqueta no tuviera ni un atributo más. SCRUM-543 le añadió `aria-labelledby` al héroe
+ * —para que la sección llegue como región con nombre— y este extractor dejó de encontrarlo: los
+ * cuatro tests de SCRUM-331 cayeron declarándose CIEGOS, que es lo que su suelo tenía que hacer.
+ * Se busca sin el `>`, así que un atributo nuevo ya no lo rompe. Sigue devolviendo el PRIMER
+ * héroe del fichero, que es el publicado; el `id="heroe-f4"` de la variante en propuesta va
+ * después y no se toca.
+ */
 export function bloqueHeroe(html) {
-  const i = String(html).indexOf('<section class="hero">');
+  const i = String(html).indexOf('<section class="hero"');
   if (i === -1) return null;
   const j = String(html).indexOf('</section>', i);
   return j === -1 ? null : String(html).slice(i, j + 10);
