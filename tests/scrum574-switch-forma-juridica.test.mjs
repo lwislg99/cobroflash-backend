@@ -23,9 +23,22 @@ const SCHEMAS = path.join(RAIZ, 'src/core/validation/schemas.ts');
 const INDEX = path.join(RAIZ, 'public/dashboard/index.html');
 
 const leer = (p) => fs.readFileSync(p, 'utf8');
-// Solo el código: quita las líneas de comentario `//`. Sin esto, un guard de texto se caza a sí
-// mismo en el comentario que explica la prohibición (cerebro-yaqu) y nunca puede dar verde.
-const soloCodigo = (s) => s.split(/\r?\n/).filter((l) => !l.trimStart().startsWith('//')).join('\n');
+// Solo el código: fuera las líneas de comentario Y LOS COMENTARIOS AL FINAL DE LÍNEA. Un guard de
+// texto se caza a sí mismo en el comentario que explica la prohibición (cerebro-yaqu), y aquí pasó
+// literalmente: la declaración
+//     let switchForma = null; // … (contactKind). NO es fieldTipoDestinatario.
+// menciona los dos campos para DECIR QUE NO SE MEZCLAN, y hacía caer al guard. Quitar solo las
+// líneas que EMPIEZAN por `//` no bastaba.
+//
+// ⚠️ Se corta desde el primer `//` sin mirar si va dentro de una cadena. Es deliberado: el error
+// posible es descartar de más —perder una mezcla escondida tras un `//` dentro de un literal, algo
+// que no existe en estos tres ficheros— y el contrario sería un guard que nadie puede dejar verde
+// y que alguien apagaría en una tarde.
+const soloCodigo = (s) => s
+  .split(/\r?\n/)
+  .filter((l) => !l.trimStart().startsWith('//'))
+  .map((l) => l.replace(/\s*\/\/.*$/, ''))
+  .join('\n');
 
 const require_ = createRequire(import.meta.url);
 const mod = require_(COMPONENTE);
@@ -85,13 +98,23 @@ test('SCRUM-574 · la lista del switch y el z.enum del backend NO pueden divergi
   );
 });
 
+// 🔴 EL PATRÓN ES INSENSIBLE A MAYÚSCULAS, Y NO POR COMODIDAD.
+//
+// La primera versión buscaba `/tipoDestinatario/` tal cual, y al probarla EN ROJO —inyectando la
+// derivación de verdad en `customersView.js`— NO SALTÓ. Motivo: en los formularios la variable se
+// llama `fieldTipoDestinatario`, con T MAYÚSCULA, así que la mezcla real que este guard existe
+// para cazar era justo la que no podía ver. El suelo tampoco lo delató, porque su trampa estaba
+// escrita con la grafía que el patrón sí veía: un caso mal elegido, no un guard de sobra.
+const MENCIONA_FISCAL = /tipo_?destinatario/i;
+const MENCIONA_FORMA = /contact_?kind/i;
+
 test('SCRUM-574 · 🔴 contactKind NO se deriva de tipoDestinatario en ningún formulario', () => {
   // LA PROHIBICIÓN DEL FUNDADOR (24-ago-2026), y la lección entera del ticket: forma jurídica ≠
   // capacidad fiscal. Un autónomo es PERSONA y EMPRESARIO a la vez, así que deducir uno del otro
   // rompe justo al cliente que abrió esto. Lo que se busca es una línea que MENCIONE los dos.
   for (const f of [LISTA, FICHA, COMPONENTE]) {
     const lineas = soloCodigo(leer(f)).split(/\r?\n/);
-    const mezcladas = lineas.filter((l) => /contactKind/.test(l) && /tipoDestinatario/.test(l));
+    const mezcladas = lineas.filter((l) => MENCIONA_FORMA.test(l) && MENCIONA_FISCAL.test(l));
     assert.deepEqual(
       mezcladas, [],
       `🔴 ${path.basename(f)} MEZCLA los dos campos en una línea:\n   ${mezcladas.join('\n   ')}`,
@@ -99,13 +122,21 @@ test('SCRUM-574 · 🔴 contactKind NO se deriva de tipoDestinatario en ningún 
   }
 });
 
-test('SCRUM-574 · SUELO del guard anterior: el detector SÍ sabe encontrar una mezcla', () => {
+test('SCRUM-574 · SUELO del guard anterior: el detector ve la mezcla CON LA GRAFÍA REAL', () => {
   // Sin esto, el test de arriba pasaría verde aunque el patrón no casara nunca — que es como se
-  // ven los guards muertos. Se le da una línea que SÍ es una mezcla y se exige que la vea.
-  const trampa = 'const k = c.tipoDestinatario === "EMPRESARIO" ? "EMPRESA" : null; c.contactKind = k;';
-  const lineas = soloCodigo(trampa).split(/\r?\n/);
-  const mezcladas = lineas.filter((l) => /contactKind/.test(l) && /tipoDestinatario/.test(l));
-  assert.equal(mezcladas.length, 1, '🔴 EL DETECTOR ESTÁ CIEGO: no ve una mezcla evidente');
+  // ven los guards muertos. Las trampas usan las grafías que de verdad aparecen en el árbol: la
+  // del formulario (`fieldTipoDestinatario`) es la que destapó el agujero al probar en rojo.
+  const trampas = [
+    "contactKind: switchForma.leer() || (fieldTipoDestinatario.value === 'EMPRESARIO' ? 'EMPRESA' : null),",
+    'const k = c.tipoDestinatario === "EMPRESARIO" ? "EMPRESA" : null; c.contactKind = k;',
+    "data.contact_kind = row.tipo_destinatario === 'EMPRESARIO' ? 'EMPRESA' : null;",
+  ];
+  for (const trampa of trampas) {
+    assert.ok(
+      MENCIONA_FORMA.test(trampa) && MENCIONA_FISCAL.test(trampa),
+      `🔴 EL DETECTOR ESTÁ CIEGO a una mezcla real:\n   ${trampa}`,
+    );
+  }
 });
 
 test('SCRUM-574 · los dos formularios llevan el switch, y sale del MISMO componente', () => {
