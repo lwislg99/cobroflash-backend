@@ -124,7 +124,25 @@ export interface GrupoPendienteFacturar {
 export interface ClientePendienteFacturar {
   customerId: number;
   customerName: string;
+  /** El tipo YA RESUELTO — con el que se ha calculado el plazo. Nunca es null (ver `resolveTipoDestinatario`). */
   tipoDestinatario: TipoDestinatario;
+  /**
+   * SCRUM-615 · LO QUE EL PROFESIONAL DECLARÓ DE VERDAD. `null` = no consta.
+   *
+   * 🔴 NO ES REDUNDANTE CON EL DE ARRIBA, y ésa es la razón de existir de este campo: aquél sale
+   * de `resolveTipoDestinatario`, que convierte `null` en `PARTICULAR` sin dejar rastro. Con solo
+   * aquél, **el cliente no puede distinguir «es un particular» de «nadie lo ha dicho»** — y esa
+   * distinción es justo la que hace falta para poder preguntar.
+   *
+   * NO ES INFORMACIÓN NUEVA: el valor crudo de la columna YA se expone en
+   * `GET /admin/customers` (`customerAdmin.ts`, `CUSTOMER_SELECT_NO_TOKEN`). Esto solo deja de
+   * ocultarlo en esta respuesta, que era la única que lo pisaba con el resuelto.
+   *
+   * Un valor que no sea uno de los dos declarables viaja como `null`: la columna es `text` sin
+   * `CHECK`, así que puede contener cualquier cosa, y una cadena que nadie reconoce **no es una
+   * declaración**. Es el mismo lado prudente que ya toma `resolveTipoDestinatario`.
+   */
+  tipoDestinatarioDeclarado: TipoDestinatario | null;
   /** SCRUM-171b: lo PACTADO con este cliente. Solo alimenta el aviso; no factura nada solo. */
   billingPeriodicity: BillingPeriodicity;
   grupos: GrupoPendienteFacturar[];
@@ -213,10 +231,20 @@ export async function getPendientesFacturar(
       };
     });
 
+    // SCRUM-615: lo DECLARADO, sin resolver. Se calcula aquí y no en `resolveTipoDestinatario`
+    // a propósito: esa función se queda EXACTAMENTE como está — es la red que sigue dando el
+    // plazo más corto mientras nadie conteste, y vaciarla de casos es el trabajo de este ticket,
+    // no borrarla.
+    const declarado: TipoDestinatario | null =
+      customer?.tipoDestinatario === 'EMPRESARIO' || customer?.tipoDestinatario === 'PARTICULAR'
+        ? customer.tipoDestinatario
+        : null;
+
     resultado.push({
       customerId,
       customerName: customer?.legalName || customer?.name || 'Cliente',
       tipoDestinatario: tipo,
+      tipoDestinatarioDeclarado: declarado,
       billingPeriodicity: periodicidad,
       grupos,
     });

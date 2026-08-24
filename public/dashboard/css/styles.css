@@ -561,6 +561,27 @@ html, body { overflow-x: clip; }
   box-shadow: none;
 }
 .field input[type="radio"] { border-radius: 50%; }
+/* ── Pedir el tipo de destinatario en la bandeja (SCRUM-615) ──────
+   El aviso (C) y la pregunta (D) van juntos, separados del resto de la tarjeta por
+   una línea, para que se lean como una cosa aparte: no son datos del grupo, son una
+   pregunta sobre el cliente. Tokens existentes, cero colores nuevos. */
+.tipo-destinatario-pendiente {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tipo-destinatario-aviso {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--neutral-600);
+}
+/* El select no ocupa el ancho entero: al lado de un importe, un campo a toda anchura
+   pesa más que el número y desordena la jerarquía de la tarjeta. */
+.tipo-destinatario-campo { max-width: 260px; }
+
 /* Fila checkbox + etiqueta: juntas y alineadas a la primera línea de texto */
 .inline-checkbox label { display: flex; gap: 8px; align-items: flex-start; }
 .inline-checkbox input[type="checkbox"],
