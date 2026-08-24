@@ -5,8 +5,25 @@ import axios from 'axios';
 import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
 import { invoicesDir } from '../../../../core/storage/dirs';
-import { cantidadDeLinea } from '../../domain/vat.service'; // SCRUM-504: una sola cantidad
+import { cantidadDeLinea, calcVatBreakdown } from '../../domain/vat.service'; // SCRUM-504: una sola cantidad
 import { getLocale } from '../../../../core/i18n/locales';
+
+/**
+ * Un importe, con sus dos decimales. SCRUM-604 (DOC-14).
+ *
+ * ⚠️ ES EL MISMO CUERPO que el `fmt` que vive DENTRO de la función del PDF de factura
+ * (`v.toLocaleString('es-ES', …)`), y no se han unificado A PROPÓSITO: el encargo de SCRUM-604
+ * dice que la factura NO se toca, y sacarle su `fmt` sería tocarla. `scrum604b` compara las dos
+ * salidas y falla si se separan — divergencia VIGILADA, que es lo que se puede hacer hoy.
+ *
+ * HALLAZGO DECLARADO, de otro carril y por tanto no arreglado aquí (regla 9): esta misma
+ * expresión está copiada en SEIS sitios más del árbol (`payBizum.routes`, `albaranPdf.service`
+ * ×2, `albaranPublicVista`, `weeklyDigest.service`, `customerPortal.routes`). No existe un
+ * formateador de dinero compartido en `src/`.
+ */
+export function fmtImporte(v: number): string {
+  return v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
 /** Descarga el logo del merchant como Buffer para PDFKit.
  *  Acepta URL http/https o data URIs base64.
@@ -639,9 +656,60 @@ doc.moveDown();
 const CONTENT_X = 50;
 const CONTENT_W = 510;
 
+/**
+ * ── DESGLOSE DEL PRESUPUESTO · SCRUM-604 (DOC-14) ────────────────────────────────────────
+ *
+ * Hasta hoy este documento imprimía UNA sola línea —«Total presupuesto: 117.60 EUR»— y nada
+ * más: sin base imponible y sin cuota. El PDF de FACTURA sí las pinta desde su bloque
+ * «4. TOTALES»; el de presupuesto no. Esto construye lo que faltaba.
+ *
+ * 🔴 LAS FILAS SON DATOS, NO DIBUJO, y es el requisito explícito del encargo: la maqueta tiene
+ * que admitir una CUARTA fila sin rehacerse. Está la pregunta abierta de si el suplido va
+ * DENTRO de la base imponible (como hoy) o FUERA, sumándose aparte — y esa segunda hipótesis
+ * necesita una fila propia (`desgloseConSuplidos` ya devuelve el campo `suplidos`, «fuera de la
+ * base, dentro del total»). Aquí NO se construye: falta su etiqueta, que es del fundador. Pero
+ * añadirla el día que se decida es empujar una entrada a este array, no tocar el pintado.
+ *
+ * MICROCOPY · CERO TEXTO NUEVO (regla 30). Los tres rótulos salen de sitios ya aprobados:
+ *   · «Base imponible:» — el MISMO literal del bloque de totales de la factura.
+ *   · el del impuesto   — `locale.vatName`, que ya existe y vale 'IVA' o 'IGV' (Perú).
+ *                         Es MÁS correcto que el de la factura, que lo lleva escrito a mano.
+ *   · «Total <quoteVerb>:» — el rótulo que este documento YA imprimía. No se toca.
+ *
+ * ⚠️ HEREDA A PROPÓSITO EL DEFECTO ① DE LA FACTURA: las filas con cuota CERO no se pintan, así
+ * que una base al 0 % (el caso del suplido) no aparece en el desglose. Se hace igual que la
+ * factura porque el encargo dice «construye la forma de TRES conceptos que hay hoy», y
+ * divergir aquí inventaría una segunda forma de documento. El defecto es de SCRUM-623 y ahora
+ * está en los DOS documentos: cuando se arregle, hay que arreglarlo en los dos.
+ *
+ * ⚠️ EL TOTAL SIGUE SALIENDO DE `params.total` —el guardado—, no de la suma de las líneas. Es
+ * el comportamiento que este documento ya tenía y no se cambia aquí (en la factura es al revés,
+ * y eso es el defecto ② / SCRUM-624). Si el guardado y la suma se separasen, este bloque no
+ * cuadraría a la vista; hoy no se ha visto separarse.
+ */
+const lineasParaDesglose = Array.isArray(params.lines) ? params.lines : [];
+const filasDeTotales: Array<{ etiqueta: string; importe: number }> = [];
+if (lineasParaDesglose.length > 0) {
+  const bd = calcVatBreakdown(lineasParaDesglose as any);
+  filasDeTotales.push({ etiqueta: 'Base imponible:', importe: bd.base });
+  for (const e of bd.entries) {
+    if (e.cuota === 0) continue; // ← el defecto ① heredado; ver la cabecera de arriba
+    filasDeTotales.push({ etiqueta: `${locale.vatName} ${e.rate}%:`, importe: e.cuota });
+  }
+}
+
+for (const fila of filasDeTotales) {
+  doc.fontSize(10).text(
+    `${fila.etiqueta} ${fmtImporte(fila.importe)} ${params.currency}`,
+    CONTENT_X,
+    doc.y,
+    { width: CONTENT_W, align: 'right' },
+  );
+}
+
 // Total (sin partirse raro)
 doc.fontSize(12).text(
-  `Total ${locale.quoteVerb}: ${params.total} ${params.currency}`,
+  `Total ${locale.quoteVerb}: ${fmtImporte(Number(params.total))} ${params.currency}`,
   CONTENT_X,
   doc.y,
   { width: CONTENT_W, align: 'right' },
