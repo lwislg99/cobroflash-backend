@@ -159,3 +159,45 @@ service worker** · **CRLF** en `customerAdmin.ts` · un fixture con **móviles 
 `public/dashboard/js/customerDetailView.js` · `public/dashboard/css/styles.css` ·
 `public/dashboard/index.html` · `public/sw.js` · `docs/sql/deriva-prod.sql` (regenerado) ·
 `tests/_banco-vistas.mjs` (60 → 61) · `tests/scrum402-marcador-no-se-pinta.test.mjs` (censo +1)
+
+---
+
+## Apéndice · el CI en rojo (24-ago-2026): qué se midió y qué era
+
+La rama bloqueaba el merge por el guard de navegador en CI. **La hipótesis que llegaba era que
+`guard-contraste` era el único de los nueve sin `--no-sandbox` y moría por el sandbox SUID.**
+
+**Medido antes de actuar, y NO era eso — al menos no como estaba escrito:**
+
+| Lo que se midió | Resultado |
+|---|---|
+| `--no-sandbox` en `scripts/guard-contraste.mjs`, mi rama | **0** |
+| `--no-sandbox` en `scripts/guard-contraste.mjs`, `main` | **0 también** |
+
+O sea que el arreglo de SCRUM-522 **no vive en ese fichero**: vive en un módulo nuevo,
+`scripts/_navegador.mjs`, que decide los flags por entorno (`env.CI ? ['--no-sandbox',
+'--disable-setuid-sandbox'] : []`) y al que `guard-contraste` pasó a delegar.
+
+**Lo que de verdad le faltaba a la rama era más que un flag:** no tenía `scripts/_navegador.mjs`,
+ni `scripts/guards-visuales.mjs`, ni las **62 líneas nuevas de `.github/workflows/ci.yml`** que
+crean el job. La rama salió 38 commits antes que `main`.
+
+**Riesgo de conflicto, medido antes de mezclar:** 19 ficheros tocados por la rama, 48 por `main`,
+**cero solape** — verificado con un control positivo (`package.json`, que sí está en la lista de
+`main`, aparece; sin ese control, un `comm` contra un fichero vacío también imprime cero).
+El merge entró **sin un solo conflicto**.
+
+**Resultado tras traer `main`: los 9 guards de navegador en VERDE**, 53,6 s en serie. Ninguno
+denuncia nada de CONT-01.
+
+> ⚠️ La primera pasada local murió con `EADDRINUSE` en el puerto 4402 y **no era un defecto**: eran
+> procesos `node` colgados de mediciones anteriores mías. El lanzador corre los nueve **en serie**,
+> así que no hay colisión de puertos por diseño. Se dice porque ese rojo, leído deprisa, se parece
+> mucho a un hallazgo.
+
+**Observación lateral (no se toca — es zona de S1, SCRUM-617):** `scripts/guards-visuales.mjs`
+lleva un **byte NUL literal** en el offset 3830, dentro de `ficheroDe(s, k) || '<NUL>'`, usado como
+centinela. Funciona, pero hace que **git trate el fichero como binario**: sus diffs no se leen y
+`git grep` no lo ve. Se reporta, no se arregla (regla 37).
+
+**Tanda con `main` dentro:** 4048 tests, 3969 pass, 0 fail, 79 skipped. `guards:entrada` verde.
