@@ -202,16 +202,52 @@ test('SCRUM-617 · 🔴 el tope de arranque POR DEFECTO no se toca', async () =>
     '🔴 ha cambiado el tope de arranque POR DEFECTO. Si es para que el CI pase, no es un arreglo:\n'
     + '  es comprar el verde con un número más grande. Si hay motivo, va escrito al lado y este\n'
     + '  número se cambia a propósito, no de paso.');
-  assert.equal(topeDeArranque({}), 30_000, '🔴 sin variable de entorno tiene que valer el de siempre.');
+  // AUSENTE — el caso NORMAL desde que se retiró la temporal, y por eso va primero y nombrado:
+  // la clave NO EXISTE en el entorno, que no es lo mismo que existir vacía.
+  assert.equal(topeDeArranque({}), 30_000,
+    '🔴 sin la variable en el entorno tiene que valer el de siempre. Éste es el caso de todos los\n'
+    + '  días desde que se retiró la pasada de medición de SCRUM-617.');
+  assert.ok(!('NAVEGADOR_TIMEOUT_MS' in {}), 'control del propio caso: la clave no está.');
+
   assert.equal(topeDeArranque({ NAVEGADOR_TIMEOUT_MS: '120000' }), 120_000,
     '🔴 la variable de medición ha dejado de mandar.');
 
   // Y que una variable basura NO deje el tope en algo raro: un tope de 0 o NaN sería «sin tope»
   // o «arranque imposible», y las dos se leerían como otra cosa.
-  for (const malo of ['', 'ochenta', '0', '-5', undefined]) {
+  for (const malo of ['', 'ochenta', '0', '-5', undefined, '  ']) {
     assert.equal(topeDeArranque({ NAVEGADOR_TIMEOUT_MS: malo }), 30_000,
       `🔴 con NAVEGADOR_TIMEOUT_MS=${JSON.stringify(malo)} el tope no cae al de siempre.`);
   }
+});
+
+test('SCRUM-617 · 🔴 el workflow NO lleva el tope de medición puesto', () => {
+  // ── POR QUÉ ESTO ES UN TEST Y NO UNA NOTA ─────────────────────────────────────────────────
+  // El 24-ago-2026 esa línea entró a `main` dentro del merge del ticket, marcada «TEMPORAL» y con
+  // su caducidad escrita. La marca no la retiró: la retiró alguien que fue a mirar. Una medida
+  // temporal con el tope cuatro veces más alto NO ROMPE NADA VISIBLE — por eso es justo la clase
+  // de línea que se queda para siempre, y por eso necesita mecanismo y no una promesa.
+  //
+  // ⚠️ SI ESTÁS HACIENDO OTRA PASADA DE MEDICIÓN y este test te molesta: eso es lo que tiene que
+  // pasar. Ponla, mide, quítala y este test vuelve a verde solo. Si de verdad hay que dejarla, se
+  // cambia ESTE test a propósito y con el motivo — que es exactamente la decisión consciente que
+  // la vez pasada no llegó a tomarse.
+  // 🔴 SE MIRA EL YAML SIN COMENTARIOS, y no es un detalle: la primera versión de este test
+  // buscaba el nombre en el fichero entero y SE CAZÓ A SÍ MISMA — el comentario que explica por
+  // qué la línea no puede estar la nombra, así que el guard salía rojo con la línea ya retirada.
+  // Es la trampa de autorreferencia que la casa tiene escrita; aquí mordió en el estreno.
+  const ciSinComentarios = CI.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n');
+
+  // ✅ CONTROL POSITIVO del filtro: si quitar comentarios se llevara medio fichero, el
+  // `doesNotMatch` de abajo pasaría sobre la nada. Tiene que seguir viéndose la invocación real.
+  assert.match(ciSinComentarios, /run: npm run guards:visuales/,
+    '🔴 al quitar comentarios se ha perdido el job: lo de abajo estaría midiendo sobre un vacío.');
+
+  assert.doesNotMatch(ciSinComentarios, /NAVEGADOR_TIMEOUT_MS/,
+    '🔴 `.github/workflows/ci.yml` vuelve a fijar NAVEGADOR_TIMEOUT_MS.\n'
+    + '  Con el tope subido, un arranque que se cuelgue DE VERDAD tarda cuatro veces más en\n'
+    + '  denunciarse, y el verde del CI deja de significar lo que parece.\n'
+    + '  El valor por defecto (TOPE_ARRANQUE_POR_DEFECTO) no lo elegimos nosotros: es el de\n'
+    + '  puppeteer, y tiene procedencia. Un valor intermedio inventado no la tiene.');
 });
 
 test('SCRUM-617 · el ARRANQUE se mide aparte del total, y la puerta lo lee', async () => {
