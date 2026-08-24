@@ -267,3 +267,66 @@ algo.** Reversión de la avería con `Buffer.compare(disco, testigo) === 0`.
 **total 4021 · pass 3944 · fail 0 · skipped 77** — mismos motivos declarados que en la entrada de
 arriba (65 `QA_DB_TEST`, 9 `LIBRO_PG_URL`, 1 `BOT_SUITE_TEST`, 1 `A55_DB_TEST`, 1 EPERM de Windows).
 `npm run guards:entrada` en verde (21 tests, 4 guards).
+
+---
+
+# SCRUM-617 · CIERRE · La temporal retirada, y el porqué QUE SIGUE ABIERTO
+
+**Fecha:** 24-ago-2026 · **Carril:** B · **Gate:** sin gate
+
+**Medido contra:** `origin/main` = `ebffe52412f2c19e838d2d648bd719d8f0391eaf` · 2026-08-24T14:17:56+01:00
+
+## 🔴 EL HUECO DECLARADO, PARA QUIEN LEA ESTO DENTRO DE DOS MESES
+
+**POR QUÉ `guard-contraste` NO ARRANCA EN EL RUNNER SIGUE SIN SABERSE.** No se ha resuelto: se ha
+dejado de tropezar con ello.
+
+- **Hipótesis A — arranque en frío del runner: EN PIE Y SIN CONFIRMAR.** Es la única viva
+  (B muy debilitada, C muerta; el detalle en el apéndice de arriba).
+- **El CI pasó, y ese verde NO la confirma.** La pasada llevaba el tope a 120 s, así que es
+  compatible con «`contraste` arrancó en 40 s» **y** con «el runner venía caliente y habría pasado
+  con los 30 s de siempre». No discrimina.
+- **Lo único que discrimina es la columna de ARRANQUE** que la puerta imprime desde la 2ª vuelta —
+  arrancar separado de comprobar, para los nueve. **Ese log no lo ha leído nadie todavía**, y
+  ninguna sesión puede leerlo desde dentro (SCRUM-618).
+
+Si algún día llega ese log, la tabla de lecturas está en el apéndice anterior.
+
+## Lo que se ha retirado, y por qué sin esperar al log
+
+`NAVEGADOR_TIMEOUT_MS: '120000'` **estaba en `origin/main`** — medido, no supuesto: aparecía en la
+línea 301 de `.github/workflows/ci.yml` en `ebffe524`. Entró dentro del merge del ticket, marcada
+«TEMPORAL» y con su caducidad escrita. **La marca no la retiró; la retiró alguien que fue a mirar.**
+
+Se quita **sin esperar al log**, y el motivo es el que hace que estas líneas se queden para siempre:
+«lo dejamos hasta que tengamos el dato» sobrevive a cualquiera que se olvide de volver. Con el tope
+cuatro veces más alto, un arranque que se cuelgue DE VERDAD tarda 120 s en denunciarse en vez de 30
+— y como **no rompe nada visible**, nadie iría a mirarlo nunca.
+
+Manda otra vez `TOPE_ARRANQUE_POR_DEFECTO` (30 000). **No se sustituye por un valor intermedio**
+(45 s, 60 s): sin el número medido, cualquier constante nueva es una hipótesis disfrazada. El de
+siempre no lo elegimos nosotros — es el defecto de puppeteer y tiene procedencia.
+
+## Y ahora tiene MECANISMO, no una marca
+
+La lección de esta vuelta es que **una medida temporal con la caducidad escrita a mano se queda**.
+`tests/scrum522-guards-fuera-de-la-tanda.test.mjs` cae si `ci.yml` vuelve a fijar el tope. Si alguien
+necesita otra pasada de medición: la pone, mide, la quita, y el test vuelve a verde solo. Si de
+verdad hay que dejarla, se cambia el test a propósito y con el motivo — que es justo la decisión
+consciente que esta vez no llegó a tomarse.
+
+⚠️ **Y el guard se cazó a sí mismo en el estreno**, que merece quedar escrito porque es la trampa que
+la casa ya tiene documentada: la primera versión buscaba el nombre de la variable en el fichero
+entero, y **el comentario que explica por qué la línea no puede estar la nombra** — salía rojo con la
+línea ya retirada. Ahora mira el YAML **sin comentarios**, y lleva control positivo para que quitar
+comentarios no pueda dejarlo midiendo sobre un vacío.
+
+## Verificado
+
+- `topeDeArranque()` cae al valor de siempre con la variable **AUSENTE** —el caso de todos los días
+  desde hoy, ahora nombrado y con su propio control— y también con vacío, texto, `0`, negativo y
+  espacios.
+- **Los dos sentidos siguen distinguiéndose:** binario que no levanta → los 9 dicen `NO ARRANCA`
+  (arranque 0,0 s); pantalla rota de verdad → `rojo(1)` nombrando el defecto (arranque 0,4 s).
+- El rojo del test nuevo se comprobó **inyectando la línea otra vez**, no suponiéndolo, con reversión
+  `Buffer.compare(disco, testigo) === 0`.
