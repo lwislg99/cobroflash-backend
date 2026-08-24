@@ -56,6 +56,34 @@ const LINEA = Object.freeze({
   concept: 'Tasa municipal', qty: 1, price: 45, tax: 0, suplido: true, [CLAVE_INVENTADA]: 'AY-2026-0044',
 });
 
+/**
+ * El vocabulario DECLARADO de una línea de presupuesto, leído del propio esquema.
+ *
+ * 🔴 NACE DE UN ROJO, y es el rojo que exigía el suelo del encargo. La primera versión medía
+ * esto POR COMPORTAMIENTO: metía una línea de prueba, parseaba y miraba qué claves salían. Al
+ * inyectar `descuentoPct` en `QuoteLineSchema` —la calibración obligatoria— **el trinquete NO
+ * cayó**: zod no inventa las claves opcionales que no vienen en la entrada, así que
+ * `Object.keys(salida)` sólo enseña lo que la SONDA traía. Yo estaba midiendo mi propia sonda.
+ *
+ * Y el fallo caía justo donde apunta el ticket: una clave nueva del bloque 2 —descuentos,
+ * etiquetas, nota interna— habría entrado sin que nada se enterase, que es exactamente el
+ * suceso que este fichero existe para cazar. Un instrumento ciego para su propio caso de uso.
+ *
+ * Ahora se lee el ESQUEMA: `lines` → array → objeto → `shape`. Y con su suelo, porque si algún
+ * día zod cambia de forma interna esto devolvería un conjunto vacío, que se leería como «el
+ * presupuesto no acepta ninguna clave» en vez de como «no supe mirar».
+ */
+function vocabularioDeclaradoPresupuesto() {
+  let n = CreateQuoteSchema.shape?.lines;
+  const pasos = [];
+  for (let i = 0; i < 8 && n; i++) {
+    pasos.push(n.constructor?.name ?? '?');
+    if (n.shape) return { ok: true, claves: Object.keys(n.shape).sort(), pasos };
+    n = n.unwrap?.() ?? n.element ?? n.innerType?.() ?? n._def?.schema ?? n._def?.innerType ?? null;
+  }
+  return { ok: false, pasos };
+}
+
 /** El vocabulario que SOBREVIVE a la puerta del presupuesto, medido por COMPORTAMIENTO. */
 function vocabularioPresupuesto(linea) {
   const r = CreateQuoteSchema.safeParse({ merchant_id: 1, customer_id: 1, currency: 'EUR', lines: [linea] });
@@ -118,8 +146,24 @@ test('SCRUM-619 · SUELO: las dos puertas responden, y las dos tiran una clave i
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // LOS DOS VOCABULARIOS, Y SU DIVERGENCIA
 // ─────────────────────────────────────────────────────────────────────────────────────────
+test('SCRUM-619 · SUELO: sé leer el vocabulario DECLARADO del esquema, no sólo mi sonda', () => {
+  const d = vocabularioDeclaradoPresupuesto();
+  assert.equal(d.ok, true,
+    `🔴 CIEGO: no he llegado al \`shape\` de la línea de presupuesto. Pasos: ${d.pasos.join(' → ')}. `
+    + 'Un conjunto vacío aquí se leería como «el presupuesto no acepta nada», que es falso.');
+  assert.ok(d.claves.length >= 4,
+    `🔴 CIEGO: sólo veo ${d.claves.length} claves declaradas (${d.claves.join(', ')})`);
+  // Lo declarado tiene que CONTENER lo que de hecho sobrevive. Si no, una de las dos
+  // mediciones está mal y no sabría cuál.
+  const sobrevive = vocabularioPresupuesto(LINEA);
+  assert.equal(sobrevive.ok, true);
+  assert.deepEqual(sobrevive.claves.filter((c) => !d.claves.includes(c)), [],
+    '🔴 sobrevive una clave que el esquema no declara: las dos mediciones se contradicen');
+});
+
 test('SCRUM-619 · 🔴 EL TRINQUETE: el vocabulario del PRESUPUESTO no crece sin que alguien decida', () => {
-  const q = vocabularioPresupuesto(LINEA);
+  const q = vocabularioDeclaradoPresupuesto();
+  assert.equal(q.ok, true, '🔴 CIEGO: sin el vocabulario declarado este trinquete no vigila nada');
   assert.deepEqual(q.claves, VOC_PRESUPUESTO,
     `🔴 HA CAMBIADO EL VOCABULARIO DE UNA LINEA DE PRESUPUESTO.\n`
     + `  antes: ${VOC_PRESUPUESTO.join(', ')}\n  ahora: ${q.claves.join(', ')}\n\n`
@@ -141,8 +185,12 @@ test('SCRUM-619 · el vocabulario de la FACTURA SUELTA sigue siendo de cuatro cl
 });
 
 test('SCRUM-619 · 🔴 LA DIVERGENCIA, NOMBRADA: hoy es `suplido`, y es exactamente una', () => {
-  const q = vocabularioPresupuesto(LINEA);
+  // Se compara lo DECLARADO por el presupuesto contra lo que la factura deja pasar: una clave
+  // recién declarada y todavía sin usar YA es divergencia, porque el día que alguien la mande
+  // se caerá. Esperar a que se use es esperar a perder el primer dato.
+  const q = vocabularioDeclaradoPresupuesto();
   const f = vocabularioFacturaSuelta(LINEA);
+  assert.equal(q.ok, true, '🔴 CIEGO: sin vocabulario declarado no puedo calcular la divergencia');
   const divergencia = q.claves.filter((c) => !f.claves.includes(c));
 
   assert.deepEqual(divergencia, DIVERGENCIA,
