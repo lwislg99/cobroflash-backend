@@ -56,6 +56,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+// SCRUM-567 · `typescript` YA es devDependency (es lo que compila el proyecto), asi que esto
+// no es una dependencia nueva. Y es lo que manda la propia skill `cerebro-yaqu`: «para
+// vigilar codigo, analisis estatico del arbol (AST), no `grep`».
+import ts from 'typescript';
 
 /** Nombres de etiqueta HTML: son las que alguien edita y a las que se les añaden atributos. */
 export const ETIQUETAS_HTML = new Set(('html,head,body,title,meta,link,script,style,section,div,'
@@ -68,8 +72,86 @@ export const ETIQUETAS_HTML = new Set(('html,head,body,title,meta,link,script,st
 const ETIQUETA = /<([a-z][a-z0-9]{0,12})((?:[^<>\n]){0,100}?)>/g;
 /** Construcciones que YA dejan hueco a los atributos. */
 const TOLERA = [/\[\^>\]/, /\.\*/, /\[\\s\\S\]/, /\\s\*/];
-/** Señales de que esa cadena se usa para BUSCAR y no es HTML de pega de un fixture. */
-const USO_EXTRACTOR = /\.(match|matchAll|includes|indexOf|split|replace|search)\s*\(|new RegExp|\.test\s*\(/;
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+   SCRUM-567 · SE DECIDE POR POSICION, NO POR LO QUE HAYA EN LA LINEA
+
+   Un extractor BUSCA en un documento. Un fixture lo CONSTRUYE. Los dos escriben `<td>` igual,
+   asi que mirar el texto no los distingue — y este censo alimenta un TRINQUETE, o sea que su
+   ruido no solo ensucia el numero: **gasta el margen**, y cuando alguien arregle extractores de
+   verdad el numero no bajara lo que deberia. La salida comoda seria subir el tope, y un
+   trinquete que se ajusta cuando molesta deja de ser un trinquete.
+
+   ── LAS DOS HEURISTICAS QUE HABIA, Y LAS DOS MENTIAN ────────────────────────────────────────
+   ① `USO_EXTRACTOR` miraba si en la LINEA habia `.replace(` (o similar). Pero en
+      `x.replace(A, B)` solo A busca: B es dato que se construye. Los literales del segundo
+      argumento contaban como extractores. Es lo que S3 reporto tres veces.
+   ② `enRegex` intentaba ver si el literal estaba dentro de una expresion regular con
+      `/\/[^/\n]*<[a-z]/` sobre lo que iba delante. Eso se dispara con CUALQUIER etiqueta de
+      cierre anterior en la linea: en `'<tr><td>Mano de obra</td><td>2.5</td>'` el `</td>` es
+      `/` + texto + `<`, o sea que ocho fixtures de tabla pasaban por extractores.
+
+   Medido: 29 aciertos = 16 extractores + 13 ruido. Las 29 lineas se abrieron UNA A UNA y la
+   clasificacion del AST coincidio con la lectura en las 29. (Aviso de SCRUM-566: un criterio
+   lexico sobre texto miente mas de lo que parece — por eso se verifico abriendo, no contando.)
+
+   ── EL CRITERIO ─────────────────────────────────────────────────────────────────────────────
+   El literal cuenta SOLO si esta en POSICION DE BUSQUEDA:
+     · dentro de un literal de expresion regular, o
+     · en el PRIMER argumento de un metodo cuyo primer argumento es la aguja, o
+     · en el primer argumento de `new RegExp(...)`.
+   Todo lo demas es dato. No hay lista de nombres que ignorar: el siguiente fixture no se cuela
+   porque no esta en posicion de busqueda, no porque alguien se acuerde de apuntarlo.
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Metodos cuyo PRIMER argumento es la AGUJA.
+ *
+ * ⚠️ `test` NO esta, y no es un olvido: en `re.test(hay)` el primer argumento es el PAJAR.
+ *    Incluirlo habria marcado el documento entero como «lo que se busca» y dado por extractor
+ *    cualquier literal de esa llamada — el error contrario al que este ticket viene a quitar.
+ */
+export const BUSCADORES = new Set(['match', 'matchAll', 'includes', 'indexOf', 'lastIndexOf',
+  'split', 'replace', 'replaceAll', 'search', 'startsWith', 'endsWith']);
+
+/**
+ * Los tramos del fuente que son POSICION DE BUSQUEDA, sacados del arbol.
+ *
+ * 🔴 SUELO: si el fichero no se puede parsear, se LANZA. Devolver «sin tramos» diria «aqui no
+ *    hay extractores», que es la conclusion comoda y la contraria a la verdad.
+ */
+export function rangosDeBusqueda(fuente, rel) {
+  const sf = ts.createSourceFile(rel, fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+
+  // 🔴 EL SUELO, Y NO ESTABA DONDE YO CREIA. `createSourceFile` **no lanza** ante un fichero
+  //    roto: se recupera y devuelve un arbol PARCIAL. O sea que la version anterior de este
+  //    suelo no existia — un fichero ilegible habria salido con cero tramos, y cero tramos se
+  //    lee como «aqui no hay extractores», la conclusion comoda. Lo canto su propio control.
+  //    El parser SI deja los errores en `parseDiagnostics`, y eso es lo que se mira.
+  const errores = sf.parseDiagnostics || [];
+  if (errores.length) {
+    throw new Error('🔴 NO SUPE PARSEAR ' + rel + ': ' + ts.flattenDiagnosticMessageText(errores[0].messageText, ' ')
+      + ' — un fichero que no se puede leer NO es un fichero limpio.');
+  }
+
+  const out = [];
+  const anda = (n) => {
+    if (ts.isRegularExpressionLiteral(n)) out.push([n.getStart(sf), n.getEnd()]);
+    else if (ts.isCallExpression(n) && n.arguments.length) {
+      const e = n.expression;
+      const nombre = ts.isPropertyAccessExpression(e) ? e.name.text : null;
+      if (nombre && BUSCADORES.has(nombre)) out.push([n.arguments[0].getStart(sf), n.arguments[0].getEnd()]);
+    } else if (ts.isNewExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'RegExp'
+      && n.arguments && n.arguments.length) {
+      out.push([n.arguments[0].getStart(sf), n.arguments[0].getEnd()]);
+    }
+    ts.forEachChild(n, anda);
+  };
+  anda(sf);
+  // En `html.matchAll(/re/g)` el MISMO tramo entra dos veces —como literal de expresion regular
+  // y como primer argumento de un buscador— y sin esto cada etiqueta se contaria dos veces.
+  return [...new Map(out.map((r) => [r[0] + ':' + r[1], r])).values()];
+}
 
 /**
  * ¿Es este `>` el de la etiqueta?
@@ -86,22 +168,28 @@ export function elMayorEsDeLaEtiqueta(hueco) {
   return abre <= cierra;
 }
 
-/** Ocurrencias de una etiqueta de apertura escrita con el `>` pegado, en una fuente. */
+/**
+ * Ocurrencias de una etiqueta de apertura escrita con el `>` pegado EN POSICION DE BUSQUEDA.
+ *
+ * Se recorren los TRAMOS que el arbol dice que buscan, no las lineas. Los comentarios quedan
+ * fuera solos —no son nodos— sin necesidad de la regla que los excluia a mano.
+ */
 export function pegadasEn(fuente, rel) {
   const out = [];
-  fuente.split('\n').forEach((linea, i) => {
-    if (/^\s*(\/\/|\*|\/\*)/.test(linea)) return; // un comentario no extrae nada
-    for (const m of linea.matchAll(ETIQUETA)) {
+  const lineaDe = (off) => fuente.slice(0, off).split('\n').length;
+  for (const [a, b] of rangosDeBusqueda(fuente, rel)) {
+    const trozo = fuente.slice(a, b);
+    for (const m of trozo.matchAll(ETIQUETA)) {
       if (!elMayorEsDeLaEtiqueta(m[2])) continue;
       if (TOLERA.some((re) => re.test(m[2]))) continue;
-      const enRegex = /\/[^/\n]*<[a-z]/.test(linea.slice(0, m.index + 1));
-      if (!(enRegex || USO_EXTRACTOR.test(linea))) continue;
+      const linea = lineaDe(a + m.index);
       out.push({
-        fichero: rel, linea: i + 1, tag: m[1], etiqueta: m[0].slice(0, 60),
-        html: ETIQUETAS_HTML.has(m[1]), texto: linea.trim().slice(0, 115),
+        fichero: rel, linea, tag: m[1], etiqueta: m[0].slice(0, 60),
+        html: ETIQUETAS_HTML.has(m[1]),
+        texto: (fuente.split('\n')[linea - 1] || '').trim().slice(0, 115),
       });
     }
-  });
+  }
   return out;
 }
 
