@@ -118,13 +118,39 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   { method: 'GET',   path: '/admin/albaranes/pendientes-facturar', why: 'SCRUM-69: bandeja de facturación, mismo criterio S1 que GET /admin/invoices ("facturas: ver sí")' },
   { method: 'GET',   path: '/admin/albaranes/consolidables', why: 'SCRUM-70: vista previa de la recapitulativa (cliente+mes). MISMO criterio que la bandeja de SCRUM-69 — es la misma información, agrupada: solo lectura y ningún dato que el técnico no vea ya ahí. NO emite.' },
 
-  // Productos — S1: "productos crear-ver" ✅. El tarifario en bloque (export/import/
-  // load-catalog) NO está clasificado: ver PENDIENTE_CLASIFICAR.
-  { method: 'GET',    path: '/admin/products', why: 'S1: productos crear-ver ✅' },
-  { method: 'GET',    path: '/admin/products/:id', why: 'S1: productos crear-ver ✅' },
-  { method: 'POST',   path: '/admin/products', why: 'S1: productos crear-ver ✅' },
-  { method: 'PUT',    path: '/admin/products/:id', why: 'Corregir un precio suelto al presupuestar' },
-  { method: 'DELETE', path: '/admin/products/:id', why: 'Simétrico del alta; una línea de catálogo, no el tarifario' },
+  // ── Productos ──────────────────────────────────────────────────────────────────────────
+  //
+  // 🔴 SCRUM-614 (24-ago-2026) · EL CATÁLOGO SE CIERRA A ESCRITURA. **El Operario SÓLO VE.**
+  //
+  // AQUÍ HABÍA TRES ENTRADAS MÁS Y NO SE HAN BORRADO POR ESTORBAR — ESTÁN DEROGADAS. Eran:
+  //
+  //     POST   /admin/products      → 'S1: productos crear-ver ✅'
+  //     PUT    /admin/products/:id  → 'Corregir un precio suelto al presupuestar'
+  //     DELETE /admin/products/:id  → 'Simétrico del alta; una línea de catálogo, no el tarifario'
+  //
+  // Las tres se declararon el 22-jul-2026 (SCRUM-55) y la de DELETE fue además el CRITERIO con
+  // el que SCRUM-365 cerró `import` y `load-catalog` («línea suelta al presupuestar → Técnico;
+  // catálogo entero → Admin»). Hoy las tres exigen `requireRole('admin')` en
+  // `products.routes.ts`, así que salen de esta lista: la red de SCRUM-55 exige que una ruta
+  // esté en EXACTAMENTE UNO de los dos sitios, y tenerlas en los dos es rojo por «declarada dos
+  // veces» — que es como se enteró este ticket de que iba bien.
+  //
+  // 🔴 POR QUÉ SE DEROGAN, que es lo único que no se puede reconstruir mirando el diff:
+  // **aquella decisión era CORRECTA con la premisa de julio.** Una fila de `products` era una
+  // línea de catálogo: un nombre y un precio de venta para autocompletar, y dejar que el
+  // operario corrigiera una al presupuestar era trabajo de campo. Con DOC-08 el coste y el
+  // margen SALEN DEL DOCUMENTO y pasan a vivir SÓLO en el catálogo, así que esa misma fila pasa
+  // a ser **donde está escrito lo que gana el merchant**. No se relajó un criterio: se le
+  // caducó el supuesto debajo, y la decisión lo sigue (fundador, 24-ago-2026).
+  //
+  // ⚠️ LA LECTURA SE QUEDA ABIERTA A PROPÓSITO. El fundador decidió el mismo día que coste y
+  // margen los ven TODOS los roles, así que los `GET` de aquí abajo NO son un resto de la lista
+  // vieja: son la otra mitad de la decisión. Cerrarlos sería ir contra ella.
+  //
+  // (El encabezado anterior decía además que el tarifario en bloque «NO está clasificado: ver
+  // PENDIENTE_CLASIFICAR». Dejó de ser cierto en SCRUM-365, que lo clasificó con `requireRole`.)
+  { method: 'GET',    path: '/admin/products', why: 'S1: productos crear-ver → ahora SOLO ver; y coste/margen los ve todo rol (fundador 24-ago-2026)' },
+  { method: 'GET',    path: '/admin/products/:id', why: 'Ídem: la ficha del producto, en lectura' },
   { method: 'GET',    path: '/admin/products/autocomplete', why: 'Autocompletar al montar el presupuesto' },
   // SCRUM-162: misma familia que el autocompletado —alimenta el mismo campo del editor— y no
   // enseña nada que el técnico no vea ya: son conceptos de los presupuestos de SU merchant,

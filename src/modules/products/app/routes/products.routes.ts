@@ -227,7 +227,25 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-614 · EL CATÁLOGO SE CIERRA A ESCRITURA. El Operario SÓLO VE.
+//
+// Esto DEROGA la decisión del 22-jul-2026 («Simétrico del alta; una línea de catálogo, no el
+// tarifario»), que abría POST/PUT/DELETE al Técnico. Aquella decisión no era un error: era
+// correcta MIENTRAS una fila del catálogo fuese una línea de catálogo — un nombre y un precio
+// de venta para autocompletar. Con DOC-08 el coste y el margen salen del documento y pasan a
+// vivir SÓLO aquí, así que la fila pasa a ser DONDE ESTÁ ESCRITO LO QUE GANA EL MERCHANT.
+// Caducó la premisa; la decisión la sigue (fundador, 24-ago-2026).
+//
+// ⚠️ LA LECTURA NO SE TOCA, y no es un olvido: el fundador decidió el 24-ago que coste y margen
+// los ven TODOS los roles. `GET /` y `GET /:id` siguen abiertos y siguen devolviendo `cost`.
+// Cerrar la lectura aquí sería ir contra esa decisión, no completarla.
+//
+// El registro de la derogación vive en `adminRouteDeclarations.ts`, donde estaba la entrada
+// vieja, y lo vigila `tests/scrum365-permisos-tarifario.test.mjs` — el mismo guard que hasta hoy
+// protegía lo contrario, INVERTIDO en este ticket en vez de borrado.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+router.post('/', requireRole('admin'), async (req, res) => {
   try {
     const { name, description, price, cost, vat, providerId, isActive } = req.body || {};
     if (!name || typeof name !== 'string') return res.status(400).json({ ok: false, error: 'name_required' });
@@ -250,7 +268,11 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+// SCRUM-614 · admin. Ver el bloque de `POST /`. Y ojo a lo que arrastra: «Desactivar» es ESTA
+// ruta con `{ isActive: false }`, así que retirar un producto pasa a ser también de admin. Es
+// coherente con la decisión —«el Operario SÓLO VE»— y se escribe aquí porque desde fuera parece
+// otro botón: no lo es, es el mismo verbo.
+router.put('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
@@ -273,7 +295,17 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+// SCRUM-614 · admin. Ver el bloque de `POST /`.
+//
+// 🛑 Y ESTA RUTA TIENE ADEMÁS UNA SEGUNDA DECISIÓN ENCIMA, TODAVÍA SIN APLICAR: el borrado
+// FÍSICO se retira y «Desactivar» ocupa su lugar (asesor, 24-ago-2026). No se ha aplicado aquí
+// y no es un olvido — depende de un cambio de `prisma/schema.prisma` que es de los fundadores y
+// está PARADO esperando su OK: hoy `@@unique([merchantId, nameSearch])` NO mira `isActive`, así
+// que un producto desactivado sigue ocupando su nombre y recrearlo revienta (el importador CSV
+// lo cuenta como `skipped`). Retirar el borrado ANTES de ese cambio dejaría al merchant sin
+// ninguna forma de liberar un nombre: cambiaría un defecto por una trampa.
+// El diff preparado y el porqué están en `docs/master/SCRUM-614.md`.
+router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
