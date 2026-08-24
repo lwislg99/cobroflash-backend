@@ -40,12 +40,11 @@ import { FUENTE_MEDIDOR, INTERACTIVOS } from './_medidor-de-toque.mjs';
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
 const PUBLIC = path.join(RAIZ, 'public');
-import { rutaDelNavegador } from './_navegador.mjs';
+import { lanzarNavegador } from './_navegador.mjs';
 // SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
 // los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
 // hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
 // declarandose ciega en vez de devolver una ruta plausible. `EDGE_PATH` sigue mandando.
-const EDGE = rutaDelNavegador();
 const PUERTO = Number(process.env.A11Y_LANDING_PUERTO || 4403);
 
 const ANCHOS = [1280, 360];
@@ -144,11 +143,12 @@ const log = (...a) => console.log(...a);
 let fallos = 0;
 
 await new Promise((r) => srv.listen(PUERTO, r));
-if (!fs.existsSync(EDGE)) {
-  console.error(`🔴 NO SUPE MIRAR: no encuentro Edge en ${EDGE}. Define EDGE_PATH.`);
-  srv.close(); process.exit(2);
-}
-const navegador = await puppeteer.launch({ executablePath: EDGE, headless: 'new', args: ['--no-sandbox'] });
+// SCRUM-617 · el arranque pasa por el módulo común: el ÚNICO sitio donde se decide cómo arranca
+// el navegador. Si no levanta, PARA con 3 («no pude arrancarlo»), que no es 2 («no lo encuentro»)
+// ni 1 («he encontrado un defecto»). La comprobación de existencia que había aquí SALE: era una
+// segunda copia del suelo, y dos sitios comprobando lo mismo divergen.
+process.on('exit', () => { try { srv.close(); } catch { /* ya cerrado */ } });
+const navegador = await lanzarNavegador(puppeteer, { headless: 'new' });
 
 try {
   log('Guard de accesibilidad de la landing PUBLICADA (SCRUM-543)');

@@ -36,7 +36,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
-import { rutaDelNavegador } from './_navegador.mjs';
+import { lanzarNavegador } from './_navegador.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
@@ -45,7 +45,6 @@ const PUBLIC = path.join(RAIZ, 'public');
 // los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
 // hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
 // declarandose ciega en vez de devolver una ruta plausible. `EDGE_PATH` sigue mandando.
-const EDGE = rutaDelNavegador();
 const PUERTO = Number(process.env.CAJA_PUERTO || 4401);
 
 /** Los anchos que se miden. 390 = iPhone estándar; 320 = el más estrecho que soportamos. */
@@ -143,17 +142,14 @@ const ciego = [];
 const { s, servidos } = servidor();
 await new Promise((r) => s.listen(PUERTO, '127.0.0.1', r));
 
-let navegador;
-try {
-  navegador = await puppeteer.launch({ executablePath: EDGE, args: ['--no-sandbox'] });
-} catch (e) {
-  s.close();
-  console.error(`🔴 NO SE PUDO ABRIR EL NAVEGADOR (${EDGE}): ${e.message}\n`
-    + '   Esto NO es «la caja está bien»: es «no supe mirar». Apunta `EDGE_PATH` a un Edge o\n'
-    + '   Chrome instalado y vuelve a lanzarlo. El mecanismo del aviso lo cubre `npm test`\n'
-    + '   (tests/scrum469-aviso-desalojo.test.mjs); esto mide la CAJA y no se puede sustituir.');
-  process.exit(2);
-}
+// SCRUM-617 · el arranque pasa por el módulo común: es el ÚNICO sitio donde se decide cómo
+// arranca el navegador. Antes cada guard lo escribía a mano y el flag de aislamiento se
+// propagó por COPIA de uno a otro — por eso el más antiguo (contraste) se quedó sin él. Y aquí
+// está lo que arregla este ticket: si no levanta, `lanzarNavegador` PARA con código 3 («no
+// pude arrancarlo»), que no es 2 («no lo encuentro») ni 1 («he encontrado un defecto»).
+// El servidor se cierra en el `exit` porque quien para ahora es el módulo común, no un catch.
+process.on('exit', () => { try { s.close(); } catch { /* ya cerrado */ } });
+const navegador = await lanzarNavegador(puppeteer, {});
 
 const medidas = [];
 try {

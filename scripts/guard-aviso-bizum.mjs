@@ -55,12 +55,11 @@ const seEsperaAviso = (veredicto) => veredicto !== 'no_aplica';
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
 const PUBLIC = path.join(RAIZ, 'public');
-import { rutaDelNavegador } from './_navegador.mjs';
+import { lanzarNavegador } from './_navegador.mjs';
 // SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
 // los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
 // hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
 // declarandose ciega en vez de devolver una ruta plausible. `EDGE_PATH` sigue mandando.
-const EDGE = rutaDelNavegador();
 const PUERTO = Number(process.env.BIZUM_PUERTO || 4402);
 
 /** Lo que la pantalla necesita del árbol, en el orden en que lo carga `index.html`. */
@@ -238,9 +237,11 @@ const filas = [];
 const { srv, servidos } = await arrancarServidor();
 let navegador;
 try {
-  navegador = await puppeteer.launch({
-    executablePath: EDGE, headless: 'new',
-    args: ['--no-sandbox', '--disable-dev-shm-usage'],
+  // SCRUM-617 · arranque común (ver `_navegador.mjs`). `--disable-dev-shm-usage` se queda aquí:
+  // es de ESTE guard, no de la política de aislamiento.
+  navegador = await lanzarNavegador(puppeteer, {
+    headless: 'new',
+    args: ['--disable-dev-shm-usage'],
   });
 
   for (const caso of CASOS) {
