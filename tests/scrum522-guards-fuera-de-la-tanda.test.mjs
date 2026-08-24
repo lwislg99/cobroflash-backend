@@ -191,6 +191,43 @@ test('SCRUM-522 · 🔴 «no lo encuentro» y «no arranca» son DOS códigos, n
   assert.equal(typeof lanzarNavegador, 'function', '🔴 no existe el arranque común.');
 });
 
+test('SCRUM-617 · 🔴 el tope de arranque POR DEFECTO no se toca', async () => {
+  // El runner mató a `guard-contraste` en el tope de arranque de puppeteer (30 000 ms). La
+  // tentación es subir el número «a ver si cuela»: eso compra el verde sin saber por qué, y el
+  // día que el arranque tarde de verdad nadie se entera. El tope se sube por ENTORNO y sólo para
+  // medir; el valor por defecto se queda donde estaba y este test es lo que lo sostiene.
+  const { TOPE_ARRANQUE_POR_DEFECTO, topeDeArranque } = await import('../scripts/_navegador.mjs');
+
+  assert.equal(TOPE_ARRANQUE_POR_DEFECTO, 30_000,
+    '🔴 ha cambiado el tope de arranque POR DEFECTO. Si es para que el CI pase, no es un arreglo:\n'
+    + '  es comprar el verde con un número más grande. Si hay motivo, va escrito al lado y este\n'
+    + '  número se cambia a propósito, no de paso.');
+  assert.equal(topeDeArranque({}), 30_000, '🔴 sin variable de entorno tiene que valer el de siempre.');
+  assert.equal(topeDeArranque({ NAVEGADOR_TIMEOUT_MS: '120000' }), 120_000,
+    '🔴 la variable de medición ha dejado de mandar.');
+
+  // Y que una variable basura NO deje el tope en algo raro: un tope de 0 o NaN sería «sin tope»
+  // o «arranque imposible», y las dos se leerían como otra cosa.
+  for (const malo of ['', 'ochenta', '0', '-5', undefined]) {
+    assert.equal(topeDeArranque({ NAVEGADOR_TIMEOUT_MS: malo }), 30_000,
+      `🔴 con NAVEGADOR_TIMEOUT_MS=${JSON.stringify(malo)} el tope no cae al de siempre.`);
+  }
+});
+
+test('SCRUM-617 · el ARRANQUE se mide aparte del total, y la puerta lo lee', async () => {
+  // El total de un guard mezcla arrancar y comprobar. Con un solo número no se puede saber cuál
+  // de las dos se disparó — que es exactamente la pregunta que dejó abierta el rojo del runner.
+  const { MARCA_ARRANQUE } = await import('../scripts/_navegador.mjs');
+  assert.ok(MARCA_ARRANQUE && MARCA_ARRANQUE.length > 3, '🔴 no hay marca de arranque.');
+
+  const puerta = fs.readFileSync(path.join(RAIZ, 'scripts', 'guards-visuales.mjs'), 'utf8');
+  assert.match(puerta, /MARCA_ARRANQUE/,
+    '🔴 la puerta ya no lee la marca: volvería a enseñar sólo el total, y el arranque de los ocho\n'
+    + '  que NO fallan no se vería (la puerta sólo vuelca la salida del que cae).');
+  assert.match(puerta, /arranque/,
+    '🔴 la tabla de la puerta ha dejado de enseñar el arranque.');
+});
+
 test('SCRUM-522 · 🔴 el aislamiento del navegador se relaja SÓLO en CI', async () => {
   // `--no-sandbox` puesto por defecto es un cambio que nadie pidió y que no se nota. Se
   // comprueba en las dos direcciones con un entorno inyectado, para no depender de dónde corra.
