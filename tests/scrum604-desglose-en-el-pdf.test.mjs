@@ -29,7 +29,7 @@
 //    está incompleto exactamente en el caso que el producto vende como ventaja (el suplido).
 //
 // ② EL TOTAL IMPRESO SE RECALCULA, Y GANA AL GUARDADO. Habiendo líneas, el PDF ignora
-//    `params.total` y pinta su propia suma. Medido: con `total: '117.10'` y unas líneas que
+//    `params.total` y pinta su propia suma. Medido: con `total: '999.99'` y unas líneas que
 //    suman 122,10, el documento imprime **122,10**. Si alguna vez el total almacenado —el que
 //    se SELLA— y esta suma se separan, el papel dice una cosa y el registro otra, y el papel
 //    no avisa.
@@ -65,6 +65,25 @@ async function textoDeFactura(sufijo, lines, total) {
   }
 }
 
+/**
+ * EL BLOQUE DE TOTALES, recortado, para poder compararlo ENTERO con `===`.
+ *
+ * 🔴 NACE DE UN ROJO. La primera versión afirmaba con `includes()` —«el texto contiene
+ * `IVA 21%:12,60 EUR`»— y al romper el cálculo a propósito el test caía **sin decir qué imprime
+ * ahora**: el mensaje sólo podía informar de que la cadena esperada no estaba. Quien lo viera en
+ * rojo tenía que ir a generar el PDF a mano para saber qué había pasado. Y además `includes()`
+ * está prohibido para verificar textos: se comparan con `===`.
+ *
+ * Comparando el bloque ENTERO, el fallo enseña las dos versiones y el defecto se lee solo.
+ */
+function bloqueDeTotales(texto) {
+  const desde = ['Base imponible', 'Total: '].map((m) => texto.indexOf(m)).filter((i) => i !== -1);
+  if (desde.length === 0) return '(NO HAY BLOQUE DE TOTALES)';
+  const ini = Math.min(...desde);
+  const fin = texto.indexOf('Escanea', ini);
+  return texto.slice(ini, fin === -1 ? undefined : fin).trim();
+}
+
 // Los tres casos. El del SUPLIDO va SIEMPRE: es el único con DOS bases, y el caso simple de un
 // tipo único no distingue un desglose correcto de uno que sólo sabe sumar.
 const UNA_TASA = [{ concept: 'Mano de obra', qty: 2, price: 30, tax: 0.21 }];
@@ -92,65 +111,55 @@ test('SCRUM-604 · SUELO: sé leer el texto de un PDF de factura', async () => {
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // LO QUE IMPRIME · las tres formas, con sus cifras
 // ─────────────────────────────────────────────────────────────────────────────────────────
-test('SCRUM-604 · un solo tipo: base, cuota y total, y las tres cuadran', async () => {
-  const texto = await textoDeFactura('A', UNA_TASA, '72.60');
-  assert.ok(texto.includes('Base imponible:60,00 EUR'), `🔴 cambió la base impresa. Texto: ${texto.slice(0, 300)}`);
-  assert.ok(texto.includes('IVA 21%:12,60 EUR'), '🔴 cambió la cuota impresa al 21 %');
-  assert.ok(texto.includes('TOTAL:72,60 EUR'), '🔴 cambió el total impreso');
+test('SCRUM-604 · un solo tipo: el bloque de totales, entero', async () => {
+  const bloque = bloqueDeTotales(await textoDeFactura('A', UNA_TASA, '72.60'));
+  assert.equal(bloque, 'Base imponible:60,00 EURIVA 21%:12,60 EURTOTAL:72,60 EUR',
+    '🔴 cambió lo que imprime el bloque de totales de una factura de un solo tipo');
 });
 
-test('SCRUM-604 · dos tipos CON cuota: sale una fila por tipo', async () => {
-  const texto = await textoDeFactura('B', DOS_TASAS, '122.10');
-  assert.ok(texto.includes('Base imponible:105,00 EUR'), '🔴 cambió la base impresa con dos tipos');
-  assert.ok(texto.includes('IVA 21%:12,60 EUR'), '🔴 falta o cambió la fila del 21 %');
-  assert.ok(texto.includes('IVA 10%:4,50 EUR'), '🔴 falta o cambió la fila del 10 %');
-  assert.ok(texto.includes('TOTAL:122,10 EUR'), '🔴 cambió el total impreso con dos tipos');
+test('SCRUM-604 · dos tipos CON cuota: una fila por tipo', async () => {
+  const bloque = bloqueDeTotales(await textoDeFactura('B', DOS_TASAS, '122.10'));
+  assert.equal(bloque, 'Base imponible:105,00 EURIVA 21%:12,60 EURIVA 10%:4,50 EURTOTAL:122,10 EUR',
+    '🔴 cambió el bloque de totales con dos tipos que sí llevan cuota');
 });
 
 test('SCRUM-604 · 🔴 DEFECTO ①: con un SUPLIDO, la base al 0 % NO se imprime', async () => {
-  const texto = await textoDeFactura('C', CON_SUPLIDO, '117.60');
+  const conSuplido = bloqueDeTotales(await textoDeFactura('C', CON_SUPLIDO, '117.60'));
 
-  // Lo que SÍ dice, y cuadra como aritmética.
-  assert.ok(texto.includes('Base imponible:105,00 EUR'), '🔴 cambió la base con suplido');
-  assert.ok(texto.includes('IVA 21%:12,60 EUR'), '🔴 cambió la cuota con suplido');
-  assert.ok(texto.includes('TOTAL:117,60 EUR'), '🔴 cambió el total con suplido');
+  // El bloque ENTERO, con `===`. Aquí está el defecto a la vista: base 105,00 con 12,60 de IVA
+  // al 21 % — y 105 × 21 % son 22,05. Los 45,00 al 0 % no salen por ningún lado del desglose.
+  assert.equal(conSuplido, 'Base imponible:105,00 EURIVA 21%:12,60 EURTOTAL:117,60 EUR',
+    'CARACTERIZACIÓN: esto es lo que hoy imprime una factura con suplido. Si ha cambiado, o se '
+    + 'arregló el defecto ① (bien, pero es un cambio en documento fiscal y necesita constar con '
+    + 'su GO) o se rompió el cálculo.');
 
-  // 🔴 Y lo que NO dice. Se afirma como CARACTERIZACIÓN, no como aprobación: el día que
-  // aparezca, este test cae — y esa caída será la buena noticia de que ① se arregló.
-  assert.equal(vecesEnPdf(texto, 'IVA 0%'), 0,
-    'CARACTERIZACIÓN: hoy la fila del 0 % NO se imprime (`if (g.vat === 0) return;`). '
-    + 'Si esto falla es que YA se imprime: bien, pero es un cambio en un documento fiscal '
-    + 'y tiene que constar con su GO.');
-  // ⚠️ ACOTADO AL BLOQUE DE TOTALES, y la primera versión de este test NO lo acotaba: decía
-  // «los 45,00 no aparecen por ningún lado» y cayó, porque SÍ aparecen — en la tabla de líneas,
-  // donde tienen que estar. La afirmación ancha era falsa y la estrecha es la que importa: el
-  // importe está en el detalle y NO en el desglose, que es justo lo que lo hace irreconstruible.
-  const bloqueTotales = texto.slice(texto.indexOf('Base imponible'));
-  assert.equal(vecesEnPdf(bloqueTotales, '45,00'), 0,
-    'CARACTERIZACIÓN: los 45,00 del suplido no aparecen en el BLOQUE DE TOTALES. Quien lea el '
-    + 'documento ve 105,00 de base y 12,60 de IVA al 21 %, y no puede reconstruir qué parte de '
-    + 'esa base lleva qué tipo.');
+  // 🔴 EL DEFECTO, DICHO COMO PROPIEDAD Y NO COMO CIFRA: un documento de DOS bases sale con la
+  // MISMA forma que uno de UNA. Es lo que hace el desglose irreconstruible, y sobrevive a
+  // cualquier cambio de importes — que es justo lo que una cifra fijada no haría.
+  const unaSola = bloqueDeTotales(await textoDeFactura('A2', UNA_TASA, '72.60'));
+  const filas = (b) => b.split('IVA ').length - 1;
+  assert.equal(filas(conSuplido), filas(unaSola),
+    'CARACTERIZACIÓN: hoy la factura con DOS bases (21 % y 0 %) imprime el MISMO número de filas '
+    + 'de IVA que la de una sola. Si esto falla, la del 0 % ya aparece — y el defecto ① está '
+    + 'resuelto.');
+  assert.equal(filas(conSuplido), 1, '🔴 cambió el número de filas de IVA del caso con suplido');
 });
 
-test('SCRUM-604 · 🔴 DEFECTO ②: el total IMPRESO se recalcula e ignora el total guardado', async () => {
-  // Se le pasa un total que NO cuadra con las líneas. Es «una base que no cuadra con sus
-  // líneas», el caso que pide el encargo — y aquí sirve para saber QUIÉN gana.
-  const texto = await textoDeFactura('D', DOS_TASAS, '999.99');
-  assert.ok(texto.includes('TOTAL:122,10 EUR'),
-    '🔴 cambió quién gana: hasta hoy el PDF recalcula desde las líneas.');
-  assert.equal(vecesEnPdf(texto, '999,99'), 0,
-    'CARACTERIZACIÓN: el total GUARDADO no se imprime cuando hay líneas. Si el total sellado y '
-    + 'la suma de las líneas se separasen, el papel diría una cosa y el registro otra — y el '
-    + 'papel no avisa. Si esto falla, es que ahora manda el guardado: es un cambio de qué '
-    + 'número ve el cliente.');
+test('SCRUM-604 · 🔴 DEFECTO ②: el total IMPRESO se recalcula e ignora el guardado', async () => {
+  // Se le pasa un total que NO cuadra con las líneas — «una base que no cuadra con sus líneas»,
+  // el caso que pide el encargo. Sirve para saber QUIÉN gana: el papel o el registro.
+  const bloque = bloqueDeTotales(await textoDeFactura('D', DOS_TASAS, '999.99'));
+  assert.equal(bloque, 'Base imponible:105,00 EURIVA 21%:12,60 EURIVA 10%:4,50 EURTOTAL:122,10 EUR',
+    'CARACTERIZACIÓN: con líneas, el PDF recalcula y el total GUARDADO (999,99) no llega al papel. '
+    + 'Si el total sellado y la suma de las líneas se separasen, el documento diría una cosa y el '
+    + 'registro otra, y el documento no avisa.');
 });
 
 test('SCRUM-604 · sin líneas, el PDF sí imprime el total guardado (el otro camino)', async () => {
-  // El `else` del bloque: facturas antiguas sin líneas copiadas. Va aquí porque es la única
-  // rama donde `params.total` llega al papel, y por tanto la que hace falsa cualquier
-  // afirmación general de «el PDF nunca usa el total guardado».
-  const texto = await textoDeFactura('E', undefined, '318.45');
-  assert.ok(texto.includes('Total: 318,45 EUR'), `🔴 cambió el camino sin líneas. Texto: ${texto.slice(0, 300)}`);
-  assert.equal(vecesEnPdf(texto, 'Base imponible'), 0,
+  // El `else` del bloque: facturas antiguas sin líneas copiadas. Va aquí porque es la única rama
+  // donde `params.total` llega al papel, y por tanto la que hace falsa cualquier afirmación
+  // general de «el PDF nunca usa el total guardado».
+  const bloque = bloqueDeTotales(await textoDeFactura('E', undefined, '318.45'));
+  assert.equal(bloque, 'Total: 318,45 EUR',
     'CARACTERIZACIÓN: sin líneas no hay desglose que imprimir — no hay de dónde sacarlo.');
 });
