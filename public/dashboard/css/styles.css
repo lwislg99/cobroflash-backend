@@ -561,6 +561,68 @@ html, body { overflow-x: clip; }
   box-shadow: none;
 }
 .field input[type="radio"] { border-radius: 50%; }
+/* ── Control segmentado (SCRUM-574) ──────────────────────────────
+   El switch «Este contacto es… Empresa | Persona». Por debajo son RADIOS de verdad
+   (exclusividad y teclado nativos); esto solo los viste de control segmentado.
+   Sin ninguno marcado —que es como se pinta un `contact_kind` NULL— los dos lados
+   se ven igual de apagados: ninguno miente diciendo que está elegido.
+   Tokens existentes, cero colores nuevos. */
+.segmented-field {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0; /* un <fieldset> trae min-width:min-content y desborda el modal sin esto */
+}
+.segmented-legend {
+  padding: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--neutral-600);
+  letter-spacing: .01em;
+}
+.segmented {
+  display: flex;
+  gap: 4px;
+  margin-top: 5px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.segmented-option {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;          /* objetivo táctil (AB6) */
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+  transition: background-color .12s, color .12s, box-shadow .12s;
+}
+/* El radio se mantiene VISIBLE (no `display:none`): es lo que anuncia el estado al
+   lector de pantalla y lo que recibe el foco del teclado. */
+.segmented-option .segmented-input { margin: 0; }
+.segmented-option:hover { color: var(--ink); }
+.segmented-option:has(.segmented-input:checked) {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+/* El anillo de foco se pinta sobre la PASTILLA, no sobre el radio de 16 px: así se ve
+   dónde está el teclado sin que el indicador quede minúsculo. */
+.segmented-option:has(.segmented-input:focus-visible) {
+  box-shadow: var(--ring);
+}
+@media (prefers-reduced-motion: reduce) {
+  .segmented-option { transition: none; }
+}
+
 /* Fila checkbox + etiqueta: juntas y alineadas a la primera línea de texto */
 .inline-checkbox label { display: flex; gap: 8px; align-items: flex-start; }
 .inline-checkbox input[type="checkbox"],

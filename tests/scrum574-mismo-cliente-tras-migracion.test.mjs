@@ -4,15 +4,17 @@
 // SIGUE SIENDO EL MISMO cliente — mismos datos, mismo id, misma fila.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// POR QUÉ ESTE FICHERO EXISTE ANTES QUE LA COLUMNA
+// ESTE FICHERO NACIÓ ANTES QUE LA COLUMNA, Y ESO ES LO MEJOR QUE TIENE
 //
-// La migración de la opción B está PREPARADA Y SIN APLICAR (`docs/sql/SCRUM-574-opcion-B.diff`):
-// el esquema es dominio de los fundadores. El fundador pidió el control «montado y listo para
-// correr en cuanto el campo exista», y eso es esto.
+// Se escribió con la migración PREPARADA Y SIN APLICAR: el esquema es dominio de los fundadores y
+// el diff (`docs/sql/SCRUM-574-opcion-B.diff`) esperaba su GO. El fundador lo autorizó el
+// 24-ago-2026 y la columna ya está aplicada en staging y en dev.
 //
-// El comparador —donde vive la lógica— se prueba ENTERO desde hoy y sin BD. Lo único gateado es
-// la pasada contra Postgres. Así el mecanismo no llega sin estrenar el día que se aplique la
-// migración: llega ya probado, incluido su rojo.
+// Que el control se escribiera ANTES importa: el comparador y sus rojos se probaron sin poder
+// mirar la respuesta, así que no están recortados a la medida de lo que la BD acabó devolviendo.
+//
+// El comparador —donde vive la lógica— se prueba ENTERO sin BD. Lo único gateado es la pasada
+// contra Postgres.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // CÓMO COMPARA, Y POR QUÉ ASÍ
@@ -29,9 +31,11 @@
 //
 // ⚠️ EL COMPARADOR NOMBRA EL CAMPO. Un control que dice «el cliente cambió» sin decir cuál obliga
 // a repetir a mano el trabajo que venía a ahorrar. El rojo de abajo comprueba justo eso.
+import './_staging-db.mjs'; // SCRUM-60: fuerza la BD del carril (fail-closed anti-prod). VA EL PRIMERO.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs';
 
 // Los campos que un cliente tiene ANTES de la migración. Escritos a mano y NO derivados del
 // modelo de Prisma a propósito: si se derivaran, la columna nueva entraría sola en la lista y el
@@ -114,8 +118,13 @@ export function describirDiffs(diffs) {
   return diffs.map((d) => `${d.campo} (${d.motivo})`).join(', ');
 }
 
+// El teléfono sale del RANGO IMPOSIBLE (`34` + `0` + 8 dígitos): ningún abonado español empieza
+// por 0, así que no puede ser de nadie. Este fixture no llega a ninguna BD, pero el guard de
+// SCRUM-262 tiene razón en no fiarse de eso — hay tres crons que mandan WhatsApp a teléfonos
+// guardados y ninguno filtra. Y `merchantId: 2` porque el 1 es el merchant DEMO (SCRUM-409), que
+// no se comporta como uno normal.
 const CLIENTE = Object.freeze({
-  id: 7, merchantId: 1, name: 'María Pérez', phone: '34600111222', email: 'm@example.com',
+  id: 7, merchantId: 2, name: 'María Pérez', phone: telefonoDePrueba(1), email: 'm@example.com',
   notes: 'Portal 3, 2ºB', legalName: null, taxId: null, waOptOut: false,
   tipoDestinatario: null, billingPeriodicity: 'NINGUNA', recargoEquivalencia: null,
   createdAt: new Date('2026-01-15T10:00:00.000Z'), updatedAt: new Date('2026-02-01T09:30:00.000Z'),
@@ -142,7 +151,7 @@ test('SCRUM-574 · 🔴 ROJO: si un campo cambia, CAE Y LO NOMBRA', () => {
   // El rojo por el mecanismo. Cada caso rompe UNA cosa y se exige que el fallo diga cuál.
   const casos = [
     ['name', { ...CLIENTE, contactKind: null, name: 'María' }],          // truncado: `includes` lo dejaría pasar
-    ['phone', { ...CLIENTE, contactKind: null, phone: '34600111223' }],
+    ['phone', { ...CLIENTE, contactKind: null, phone: telefonoDePrueba(2) }],
     ['id', { ...CLIENTE, contactKind: null, id: 8 }],
     ['notes', { ...CLIENTE, contactKind: null, notes: null }],                // dato perdido a null
     ['tipoDestinatario', { ...CLIENTE, contactKind: null, tipoDestinatario: 'PARTICULAR' }], // lo que la opción A habría hecho
@@ -280,5 +289,46 @@ test(
         `🔴 el cliente id=${c.id} tiene un tipoDestinatario fuera de la lista: ${JSON.stringify(c.tipoDestinatario)}`,
       );
     }
+  },
+);
+
+test(
+  'SCRUM-574 · ✅ CONTROL POSITIVO: se da de alta por CADA lado, y el campo fiscal no se contagia',
+  { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated (crea y BORRA un merchant efímero)' },
+  async () => {
+    // Un control que solo comprueba que «nada cambió» pasaría igual de verde con el switch
+    // desconectado. Esto es la otra mitad: que el camino de escritura FUNCIONA por los dos lados.
+    const { prisma } = await import('../dist/core/db/prisma.js');
+    const { createCustomer, getCustomer } = await import('../dist/modules/system/customerAdmin.js');
+    const { withMerchant } = await import('./_merchant-fixture.mjs');
+
+    await withMerchant(prisma, { name: 'SCRUM-574 alta por lado' }, async (merchant) => {
+      for (const lado of ['EMPRESA', 'PERSONA']) {
+        const creado = await createCustomer(merchant.id, {
+          name: `Cliente ${lado}`,
+          contactKind: lado,
+        });
+        assert.equal(creado.contactKind, lado, `🔴 el alta por el lado ${lado} no guardó la forma jurídica`);
+
+        // Y se relee de la BD: que el objeto devuelto lo traiga no prueba que se haya escrito.
+        const releido = await getCustomer(merchant.id, creado.id);
+        assert.equal(releido.contactKind, lado, `🔴 ${lado} no sobrevivió a la relectura: no se escribió`);
+
+        // 🔴 LO QUE DE VERDAD DECIDE ESTE TICKET: declarar la forma jurídica NO toca la capacidad
+        // fiscal. Si esto cayera, estaríamos en la opción A con otro nombre — y el autónomo
+        // (PERSONA + EMPRESARIO) volvería a quedarse con el plazo legal equivocado.
+        assert.equal(
+          releido.tipoDestinatario, null,
+          `🔴 dar de alta como ${lado} ha escrito tipoDestinatario=${JSON.stringify(releido.tipoDestinatario)} — los campos se están contagiando`,
+        );
+      }
+
+      // Y el caso que los 15 clientes existentes representan: un alta SIN declarar nada.
+      const sinDeclarar = await createCustomer(merchant.id, { name: 'Cliente sin declarar' });
+      assert.equal(
+        sinDeclarar.contactKind, null,
+        '🔴 un alta sin tocar el switch ha nacido declarada: YaQu estaría decidiendo por el profesional',
+      );
+    });
   },
 );
