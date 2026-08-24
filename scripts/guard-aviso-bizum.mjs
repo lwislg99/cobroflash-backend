@@ -55,7 +55,12 @@ const seEsperaAviso = (veredicto) => veredicto !== 'no_aplica';
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
 const PUBLIC = path.join(RAIZ, 'public');
-const EDGE = process.env.EDGE_PATH || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
+import { rutaDelNavegador } from './_navegador.mjs';
+// SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
+// los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
+// hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
+// declarandose ciega en vez de devolver una ruta plausible. `EDGE_PATH` sigue mandando.
+const EDGE = rutaDelNavegador();
 const PUERTO = Number(process.env.BIZUM_PUERTO || 4402);
 
 /** Lo que la pantalla necesita del árbol, en el orden en que lo carga `index.html`. */
