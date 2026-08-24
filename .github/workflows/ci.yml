@@ -281,5 +281,22 @@ jobs:
         run: |
           node -e "import('./scripts/_navegador.mjs').then(m => { const r = m.resolverNavegador(); if (!r.ok) { console.error('NO SUPE MIRAR'); console.error(r.motivo); process.exit(2); } console.log(r.quien + ' -> ' + r.ruta); })"
 
+      # ⏳ PASADA DE MEDICIÓN — SCRUM-617 (2ª vuelta). ESTO ES TEMPORAL Y SE QUITA.
+      #
+      # `guard-contraste` murió en el runner con «Timed out after 30000 ms while waiting for the
+      # WS endpoint URL». `NAVEGADOR_TIMEOUT_MS` sube el tope SÓLO PARA MEDIR — no para entregar:
+      # el valor por defecto de `_navegador.mjs` sigue siendo 30 000 y no se ha tocado.
+      #
+      # QUÉ DISCRIMINA, y por eso vale una pasada entera: la puerta ahora enseña el ARRANQUE de
+      # los NUEVE por separado del total. En local el arranque es 0,4-0,5 s en los nueve
+      # (contraste incluido), así que el log de esta pasada contesta la pregunta abierta:
+      #   · contraste arranca en ~35-45 s y el resto en ~0,5 s → es el ARRANQUE EN FRÍO del runner;
+      #   · contraste arranca en ~0,5 s → el tope no era la causa y hay que mirar otra cosa;
+      #   · vuelve a agotar el tope, ahora a 120 s → no es tiempo: es que ESE arranque no levanta.
+      #
+      # 🛑 CUANDO EL LOG LLEGUE, ESTA LÍNEA SE VA. Si se queda, habremos comprado el verde con un
+      #    número más grande, que es exactamente lo que este ticket no quiere.
       - name: Guards de navegador
+        env:
+          NAVEGADOR_TIMEOUT_MS: '120000'
         run: npm run guards:visuales

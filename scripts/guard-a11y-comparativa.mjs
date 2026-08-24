@@ -45,12 +45,11 @@ import puppeteer from 'puppeteer-core';
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
 const PUBLIC = path.join(RAIZ, 'public');
-import { rutaDelNavegador } from './_navegador.mjs';
+import { lanzarNavegador } from './_navegador.mjs';
 // SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
 // los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
 // hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
 // declarandose ciega en vez de devolver una ruta plausible. `EDGE_PATH` sigue mandando.
-const EDGE = rutaDelNavegador();
 const PUERTO = Number(process.env.A11Y_PUERTO || 4402);
 
 /** Los dos estados. 1280 = grid de 3 columnas; 360 = apilado, el más estrecho que soportamos. */
@@ -162,12 +161,15 @@ let fallos = 0;
 const srv = servidor();
 await new Promise((r) => srv.listen(PUERTO, r));
 
-if (!fs.existsSync(EDGE)) {
-  console.error(`🔴 NO SUPE MIRAR: no encuentro Edge en ${EDGE}. Define EDGE_PATH.`);
-  srv.close(); process.exit(2);
-}
-
-const navegador = await puppeteer.launch({ executablePath: EDGE, headless: 'new', args: ['--no-sandbox'] });
+// SCRUM-617 · el arranque pasa por el módulo común: es el ÚNICO sitio donde se decide cómo
+// arranca el navegador. Antes cada guard lo escribía a mano y el flag de aislamiento se
+// propagó por COPIA de uno a otro — por eso el más antiguo (contraste) se quedó sin él. Y aquí
+// está lo que arregla este ticket: si no levanta, `lanzarNavegador` PARA con código 3 («no
+// pude arrancarlo»), que no es 2 («no lo encuentro») ni 1 («he encontrado un defecto»).
+// La comprobación de existencia que había aquí SALE: era una segunda copia del suelo, y el
+// módulo común ya para con 2 si no hay navegador. Dos sitios comprobando lo mismo divergen.
+process.on('exit', () => { try { srv.close(); } catch { /* ya cerrado */ } });
+const navegador = await lanzarNavegador(puppeteer, { headless: 'new' });
 
 try {
   log('Guard de accesibilidad de la comparativa (SCRUM-541)');

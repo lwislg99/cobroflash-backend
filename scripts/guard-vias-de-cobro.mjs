@@ -41,12 +41,11 @@ import { decidirAvisoBizum } from '../dist/modules/billing/domain/avisoBizumSinT
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
 const PUBLIC = path.join(RAIZ, 'public');
-import { rutaDelNavegador } from './_navegador.mjs';
+import { lanzarNavegador } from './_navegador.mjs';
 // SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
 // los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
 // hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
 // declarandose ciega en vez de devolver una ruta plausible. `EDGE_PATH` sigue mandando.
-const EDGE = rutaDelNavegador();
 const PUERTO = Number(process.env.VIAS_PUERTO || 4403);
 
 /** La etiqueta de la fila que se mide. Es microcopy aprobada y NO se toca: se busca por ella, y
@@ -220,9 +219,12 @@ const filas = [];
 const srv = await arrancarServidor();
 let navegador;
 try {
-  navegador = await puppeteer.launch({
-    executablePath: EDGE, headless: 'new',
-    args: ['--no-sandbox', '--disable-dev-shm-usage'],
+  // SCRUM-617 · arranque común (ver `_navegador.mjs`). `--disable-dev-shm-usage` se queda aquí:
+  // es de ESTE guard, no de la política de aislamiento, y moverlo cambiaría cómo arrancan los
+  // otros ocho en local sin que nadie lo haya pedido.
+  navegador = await lanzarNavegador(puppeteer, {
+    headless: 'new',
+    args: ['--disable-dev-shm-usage'],
   });
 
   for (const caso of CASOS) {
