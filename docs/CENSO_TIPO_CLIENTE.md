@@ -117,8 +117,18 @@ declarado**. Es exactamente lo que `SCRUM-294-a` prohíbe para el recargo de equ
 | **C** | El switch es **presentación**: decide qué campos se ven, y no persiste nada | 0 columnas | 🟡 CONT-08 (filtro Empresas/Personas) necesita persistencia → habría que resolverlo ahí. |
 
 **Recomendación medida: B.** Es la única que deja el plazo legal donde está y le da al switch un
-dato propio. El ticket prohíbe añadir campo, y el propio ticket manda parar si parece necesario:
-esto es ese caso. El diff está preparado y **sin aplicar** (§5).
+dato propio.
+
+> ✅ **DECIDIDO POR EL FUNDADOR el 24-ago-2026: OPCIÓN B.** `contact_kind` para la forma jurídica;
+> `tipoDestinatario` intacto, con su plazo legal y su `z.enum`. La frase del ticket («no se añade
+> campo: se promueve el que ya existía») se aprobó creyendo que «Tipo de cliente» era una
+> clasificación genérica; medida la premisa, cae la decisión que se apoyaba en ella.
+> Descartadas: **A** por riesgo fiscal, **C** porque deja a CONT-08 sin dato que filtrar.
+> Lo que este episodio destapó tiene ticket propio: **SCRUM-615**.
+>
+> ⛔ **PROHIBICIÓN NUEVA, del fundador:** `contact_kind` y `tipoDestinatario` NO se mezclan en
+> ningún sitio — ni en la migración, ni en el formulario, ni en un valor por defecto que deduzca
+> uno del otro. Es la lección entera: **forma jurídica ≠ capacidad fiscal.**
 
 ## 4. Hallazgo lateral (otro carril — se reporta, no se arregla; regla 37)
 
@@ -131,14 +141,37 @@ DEV     : …, portal_token,                       tax_id, …
 ```
 
 El comentario de `schema.prisma` solo afirmaba producción y staging, así que **no se contradice**;
-lo que no estaba escrito es que DEV se quedó atrás. No lo toca este ticket (no bloquea, otra zona).
-Efecto práctico: cualquier consulta que lea esa columna **falla con `P2010` en DEV**.
+lo que no estaba escrito es que DEV se quedó atrás. Efecto práctico mientras duró: cualquier
+consulta que leyera esa columna **fallaba con `P2010` en DEV**.
 
-## 5. Estado del punto 4 del encargo (la migración)
+> ⚠️ **CERRADA DE PASO, y hay que decirlo: NO fue una decisión, fue un efecto de `db push`.** Al
+> aplicar la migración de este ticket (§5), `db push` sincroniza el esquema **entero**, no solo la
+> columna nueva — así que `recargo_equivalencia` entró en `yaqu_dev_javier` en la misma pasada.
+> Aditivo y nullable; ninguna fila tocada; las 11 quedan en `NULL` = «no consta», que es el valor
+> correcto. Se reporta en vez de dejarlo implícito: **estaba fuera del alcance de SCRUM-574** y
+> quien lea este censo mañana tiene que saber por qué la deriva ya no está.
 
-**NO SE HA EJECUTADO NINGUNA MIGRACIÓN, y no por falta de tiempo.** El encargo lo condiciona a que
-el PASO 0 esté medido y escrito — ya lo está, es este documento — pero la §3 abre una decisión
-fiscal que es del fundador. Migrar antes de esa decisión es elegir la opción A por omisión.
+## 5. Estado del punto 4 del encargo (la migración) — ✅ APLICADA
 
-`prisma/schema.prisma` **no se ha tocado**: es dominio de los fundadores. El diff de la opción B
-está preparado aparte, en `docs/sql/SCRUM-574-opcion-B.diff`, para revisarlo sin aplicarlo.
+**Autorización puntual del fundador (24-ago-2026)** para aplicarla esta sesión. No es regla nueva:
+`prisma/schema.prisma` sigue siendo de los fundadores y cualquier otro cambio de esquema se prepara
+y se para, como se hizo aquí antes del GO.
+
+```sql
+ALTER TABLE "customers" ADD COLUMN "contact_kind" TEXT;
+```
+
+| | |
+|---|---|
+| Preview previo | `node scripts/preview-migracion.mjs --desde <schema de main>` |
+| Control positivo | **25 `CREATE TABLE`** (esquema entero contra vacío) → la herramienta contestaba |
+| Veredicto | **aditiva**: ni `DROP`, ni `RENAME`, ni `TRUNCATE`, ni `DELETE`, ni `SET NOT NULL` |
+| Aplicada en | `acela/railway` (STAGING) y `acela/yaqu_dev_javier` (DEV), CLI local por ruta |
+| Producción | **NO**, y no puede: no hay `DATABASE_URL` en el árbol |
+| `--accept-data-loss` | **no se usó** (ni hacía falta: aditiva) |
+| Turno de staging | tomado antes, soltado después |
+
+**Migración de datos: NINGUNA.** Con los 15 clientes en `NULL` y `contact_kind` naciendo `NULL`, no
+se escribió un solo byte sobre ninguna fila existente. Verificado después con el control gateado
+`tests/scrum574-mismo-cliente-tras-migracion.test.mjs`: 15/15 con `contact_kind` `NULL`, ninguna
+fila perdida contra el número del PASO 0, y `tipo_destinatario` sin tocar.

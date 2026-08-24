@@ -1,9 +1,24 @@
-SCRUM-574 (CONT-01) · OPCIÓN B — DIFF PREPARADO, NO APLICADO
-============================================================
+SCRUM-574 (CONT-01) · OPCIÓN B — ✅ APLICADA el 24-ago-2026
+==========================================================
 
-🛑 `prisma/schema.prisma` NO SE HA TOCADO. Es dominio de los fundadores (AA1.4). Esto es el
-   preview que exige el punto 4 del encargo: «si la migración necesita tocar
-   prisma/schema.prisma: SE PREPARA EL DIFF Y SE PARA». Está parado.
+ESTE FICHERO SE ESCRIBIÓ CON LA MIGRACIÓN PARADA, y se conserva tal cual porque es el
+preview que el fundador leyó para decidir. Lo que cambia es el estado, abajo.
+
+✅ AUTORIZACIÓN PUNTUAL del fundador (24-ago-2026) para aplicarla esta sesión.
+   NO ES REGLA NUEVA: `prisma/schema.prisma` sigue siendo de los fundadores y cualquier
+   otro cambio de esquema se prepara y SE PARA, como se hizo aquí antes del GO.
+
+   Aplicada con el CLI local por ruta (nunca `npx`, nunca `npm run db:push`), con guard
+   de destino delante y SIN `--accept-data-loss`, a:
+     · acela.proxy.rlwy.net/railway          (STAGING)
+     · acela.proxy.rlwy.net/yaqu_dev_javier  (DEV)
+   Turno de staging tomado antes y soltado después.
+   PRODUCCIÓN: no, y no puede — no existe `DATABASE_URL` en un árbol de trabajo.
+
+   EFECTO LATERAL QUE HAY QUE DECIR: `db push` sincroniza el esquema ENTERO, así que en
+   DEV entró de paso `recargo_equivalencia`, que le faltaba (la deriva que encontró el
+   censo). Aditivo, nullable, ninguna fila tocada. Estaba FUERA del alcance de este
+   ticket y se reporta en vez de dejarlo implícito.
 
 POR QUÉ HAY UN DIFF SI EL TICKET DICE «NO SE AÑADE CAMPO»
 --------------------------------------------------------
@@ -70,12 +85,22 @@ MIGRACIÓN DE DATOS QUE ACOMPAÑARÍA
    La verificación es entonces trivial de sostener: si no hay UPDATE, no hay nada que comparar
    antes/después salvo la propia ausencia de escritura.
 
-⚠️ LO QUE SIGUE ABIERTO Y ES DECISIÓN DEL FUNDADOR, NO DEL DIFF
----------------------------------------------------------------
-Con `contact_kind` NULL en los 15 clientes existentes, el switch tiene que enseñar ALGO al abrir
-una ficha vieja. Las tres salidas no son equivalentes y ninguna se elige aquí:
-  (i)  el switch cae en un lado por defecto → YaQu DECLARA por el profesional algo que nadie dijo;
-  (ii) tercer estado visible «sin declarar» → contradice la exclusividad que el toggle comunica;
-  (iii) derivar la posición inicial de si hay `legal_name` → hoy son 0 de 15, así que derivaría
-        «Persona» para todos, incluidas las empresas que aún no rellenaron la razón social.
-Y con ella, la del ALTA: si un cliente nuevo puede nacer sin lado declarado o no.
+LO QUE ESTABA ABIERTO CUANDO SE ESCRIBIÓ ESTO, Y CÓMO SE RESOLVIÓ
+-----------------------------------------------------------------
+Con `contact_kind` NULL en los 15 clientes existentes, el switch tenía que enseñar ALGO al
+abrir una ficha vieja. Se escribieron tres salidas y ninguna convencía:
+  (i)  caer en un lado por defecto → YaQu DECLARA por el profesional algo que nadie dijo;
+  (ii) tercer estado visible «sin declarar» → contradice la exclusividad del toggle;
+  (iii) derivarlo de si hay `legal_name` → hoy son 0 de 15, así que daría «Persona» para
+        todos, incluidas las empresas que aún no rellenaron la razón social.
+
+✅ RESUELTO SIN NINGUNA DE LAS TRES, y el mérito es de la forma del control: por debajo el
+   switch son RADIOS DE VERDAD, y un grupo de radio SIN NINGUNO MARCADO es un estado
+   NATIVO — el que tiene cualquier formulario antes de que lo toquen. Así que un
+   `contact_kind` NULL se pinta tal cual: los dos lados apagados, ninguno mintiendo.
+
+   No es un tercer estado inventado (regla 27): es la ausencia de valor de una columna que
+   nace nullable a propósito. La (ii) habría sido inventarlo; esto es no borrarlo.
+
+   Y con ello la del ALTA: un cliente nuevo PUEDE nacer sin lado declarado, igual que hoy
+   nace sin `tipoDestinatario`. Verificado en el control positivo gateado.

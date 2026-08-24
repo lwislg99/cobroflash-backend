@@ -3,7 +3,7 @@
 > **Fecha:** 24-ago-2026 · **Rama:** `scrum-574-switch-empresa-persona`
 > **Decisión que lo enmarca:** OPCIÓN B (fundador, 24-ago-2026) — el switch guarda en
 > `contact_kind`; `tipoDestinatario` **queda intacto**. Ver `docs/CENSO_TIPO_CLIENTE.md` §3.
-> **Estado:** declaración escrita. **Nada de esto está construido todavía** — ver §5.
+> **Estado:** ✅ **construido** — el switch está en los dos formularios y la columna aplicada (§5).
 
 ## 1. De dónde sale esta lista (las tres fuentes, separadas a propósito)
 
@@ -46,7 +46,7 @@ VAT»** y **aparece «Empresa (Seleccionar compañía)»**. El resto de campos b
 ### 3.1 COMÚN — se ven en los dos lados
 
 `name` · `phone` · `email` · `notes` · `waOptOut` · `tipoDestinatario` · `recargoEquivalencia` ·
-`billingPeriodicity`
+`billingPeriodicity` · **`taxId`** (ver §4: es la única desviación de Holded)
 
 Justificación de los tres últimos, que es donde alguien podría dudar:
 
@@ -66,7 +66,6 @@ Justificación de los tres últimos, que es donde alguien podría dudar:
 | Campo | Por qué | Fuente |
 |---|---|---|
 | `legalName` — razón social | Es *la* señal de sociedad. Hoy la distinción entera vive en si está relleno; el switch existe para relevarla de ese papel. | ① + ② |
-| `taxId` — NIF/CIF | Holded quita «Identificación VAT» en Persona. **⚠️ Ver §4: no lo doy por decidido.** | ② |
 
 ### 3.3 Solo lado **PERSONA**
 
@@ -93,20 +92,52 @@ también tiene NIF**, y YaQu lo necesita: `schema.prisma` deja escrito que el NI
 es **requisito de VeriFactu** (hallazgo S1-C, F1). Esconderlo en el lado Persona significaría que
 un autónomo no puede dar su NIF — y es exactamente el cliente del ticket.
 
-Tres salidas, ninguna elegida: **(i)** el NIF es COMÚN y solo cambia su etiqueta;
-**(ii)** desaparece en Persona, como Holded, asumiendo lo de arriba; **(iii)** se queda en los dos
-con etiquetas distintas (CIF / NIF), que es CONT-19.
-**Recomendación: (i)** — es la única que no le quita a un autónomo el dato que F1 le va a exigir.
+Tres salidas: **(i)** el NIF es COMÚN y solo cambia su etiqueta; **(ii)** desaparece en Persona,
+como Holded, asumiendo lo de arriba; **(iii)** se queda en los dos con etiquetas distintas
+(CIF / NIF), que es CONT-19.
+
+> ⚠️ **CONSTRUIDO CON LA (i), Y ES LA ÚNICA DESVIACIÓN DE HOLDED QUE LLEVA ESTE TICKET.** El NIF se
+> queda en los dos lados. Se hace así porque la alternativa le quita a un autónomo el dato que F1
+> le va a exigir, y el autónomo es el cliente que abrió el ticket. **Sigue siendo tuya la decisión
+> final:** revertirlo a la (ii) es añadir `taxId` a `SOLO_EMPRESA` en `switchFormaJuridica.js` —
+> una línea, sin migración ni pérdida de datos.
 
 **Toda la microcopy sigue siendo del fundador** (regla 30): las dos etiquetas del switch, la
-pregunta que lo encabeza y cualquier etiqueta que cambie entre lados. Cuando se construyan irán con
-el marcador oficial `[PENDIENTE microcopy oficial]`, que es la convención del repo y lo que
-`scripts/censo-marcadores.mjs` cuenta — no son textos «de ejemplo».
+pregunta que lo encabeza y cualquier etiqueta que cambie entre lados. **Construidas, salen con el
+marcador oficial `[PENDIENTE microcopy oficial]` y una palabra de trabajo detrás** — no son textos
+«de ejemplo» ni provisionales por descuido: suben el censo de SCRUM-402 a conciencia (+1) y se
+apagan los tres de golpe el día que firmes el copy, porque salen de una sola constante.
 
-## 5. Estado real
+## 5. Estado real — ✅ CONSTRUIDO
 
-**Nada de este reparto está construido.** No se ha tocado `customersView.js` ni
-`customerDetailView.js`. El motivo está en `docs/master/SCRUM-574.md`: el switch necesita saber
-qué posición enseñar en una ficha existente sin lado declarado, y esa pregunta sigue abierta —
-las tres salidas posibles pasan por declarar por el profesional, inventar un tercer estado
-(regla 27), o deducirlo de otro campo (prohibido por el fundador).
+El switch está en los **dos** formularios y la columna `contact_kind` está aplicada (censo §5).
+
+| Pieza | Dónde |
+|---|---|
+| El componente | `public/dashboard/js/switchFormaJuridica.js` |
+| Alta + edición desde la lista | `public/dashboard/js/customersView.js` |
+| Edición desde la ficha 360 | `public/dashboard/js/customerDetailView.js` |
+| La regla de §3, en UN sitio | `switchFormaJuridica.aplicarLado` / `debeEsconder` |
+
+**La regla de qué se ve por lado vive en la pieza compartida, no copiada en cada vista.** Es
+deliberado y sale de §2: los dos formularios ya divergieron una vez por editarse por separado.
+
+### La pregunta que quedó abierta, y cómo se resolvió
+
+Con 15 clientes en `NULL`, el switch tenía que enseñar algo al abrir una ficha vieja. Las tres
+salidas eran: caer a un lado (**declarar por el profesional**), inventar un tercer estado
+(**regla 27**), o deducirlo de otro campo (**prohibido por el fundador**).
+
+**Ninguna de las tres. Con `NULL` no hay ningún lado marcado**, y eso no es un estado nuevo: es la
+ausencia de valor de una columna nullable, pintada tal cual. Un grupo de radio sin ninguno marcado
+es un estado **nativo** del control — el mismo que tiene cualquier formulario antes de que lo
+toquen. Por eso el switch son radios de verdad por debajo y no dos botones con una clase «activo»:
+un par de botones habría obligado a inventar el estado que los radios ya tienen.
+
+### Dos invariantes de §3 que el código sostiene
+
+① **Esconder no es borrar:** un campo oculto conserva su valor y se sigue enviando al guardar.
+② **Nunca se esconde un campo con algo escrito**, esté en el lado que esté.
+
+Los dos se ejecutan en la suite (`tests/scrum574-switch-forma-juridica.test.mjs`), no solo se
+comentan aquí.

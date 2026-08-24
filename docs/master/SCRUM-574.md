@@ -1,137 +1,161 @@
-# SCRUM-574 · CONT-01: el switch Empresa/Persona se PARA en el PASO 0 — «Tipo de cliente» es el campo fiscal de SCRUM-69
+# SCRUM-574 · CONT-01: el switch Empresa/Persona — y «Tipo de cliente» resultó ser el campo fiscal de SCRUM-69
 
-**Fecha:** 24-ago-2026 · **Carril:** producto (BLOQUE 1) · **Gate:** STOP — pendiente de GO del fundador (AA1.4, zona fiscal)
+**Fecha:** 24-ago-2026 · **Carril:** producto (BLOQUE 1) · **Gate:** STOP levantado — GO del fundador (AA1.4, zona fiscal + esquema)
 **Medido contra:** `origin/main` = `9b49190a7ab81be5c88a32b7745623ac78c8354f` · 2026-08-24T00:00:00+02:00
-**Tanda:** 3934 tests, 3857 pass, 0 fail, 77 skipped
+**Tanda:** 3954 tests, 3875 pass, 0 fail, 79 skipped
 
 > ⚠️ Esa hora es la del trabajo de esta rama, no una lectura de reloj — criterio R14.
 
-**Alcance de lo entregado:** el PASO 0 medido y escrito, el censo de dónde vive el campo, el
-hallazgo que abre la decisión, y el diff del esquema PREPARADO Y SIN APLICAR. **El switch no se
-ha construido**, y el motivo está abajo: el propio encargo manda parar en este caso exacto.
+**Lo entregado:** el PASO 0 medido, el hallazgo que tumbó la premisa del ticket, la columna nueva
+aplicada, el switch en los **dos** formularios, y los controles —incluido el positivo— en verde
+contra Postgres.
 
 ---
 
-## El defecto que el ticket quería cerrar
+## El defecto
 
-El profesional da de alta a un administrador de fincas y a un particular con el mismo formulario
-y luego no puede distinguirlos: la diferencia vive en si alguien rellenó «Razón social». El
-ticket propone un switch Empresa|Persona que declare la distinción y que **absorba el desplegable
-«Tipo de cliente», eliminándolo**, sin añadir ningún campo nuevo.
+El profesional da de alta a un administrador de fincas y a un particular con el mismo formulario y
+luego no puede distinguirlos: la diferencia vive en si alguien rellenó «Razón social».
 
 ## Lo que se midió (PASO 0 · `P-CONT-4`)
 
-Censo completo en `docs/CENSO_TIPO_CLIENTE.md`. Comando re-ejecutable y de **solo lectura**:
-`node scripts/censo-tipo-cliente.mjs`.
+Censo en `docs/CENSO_TIPO_CLIENTE.md`; comando de solo lectura `node scripts/censo-tipo-cliente.mjs`.
 
-**Las dos preguntas del encargo, que son distintas y hacían falta las dos:**
+**Las dos preguntas del encargo, que son distintas:**
 
-* **(a) Qué permite el esquema:** `customers.tipo_destinatario` es `text`, `nullable`, **sin
-  `DEFAULT` y sin `CHECK`** → la BD acepta cualquier cadena. La lista cerrada
-  (`PARTICULAR`/`EMPRESARIO`) existe **solo** en Zod, en el borde de la API.
-* **(b) Qué tienen las filas de hoy:** **15 clientes medidos, los 15 con `NULL`.**
-  STAGING (`acela/railway`) 4 de 4 · DEV (`acela/yaqu_dev_javier`) 11 de 11. Cero razón social,
-  cero NIF. **Ningún valor existente necesita mapearse.**
+* **Qué permite el esquema:** `customers.tipo_destinatario` es `text`, `nullable`, **sin `DEFAULT`
+  y sin `CHECK`**. La lista cerrada existe **solo** en Zod, en el borde de la API.
+* **Qué tienen las filas:** **15 clientes, los 15 en `NULL`** (STAGING 4/4, DEV 11/11). Cero razón
+  social, cero NIF. **Nada que mapear.**
 
-**Producción NO se midió y no puede medirse desde aquí:** no existe `DATABASE_URL` en el árbol
-(regla 3, verificado con `scripts/comprobar-claves-bd.mjs`). El censo lo declara en vez de
-afirmar un total que no tiene.
+**Producción no se midió** — no hay `DATABASE_URL` en el árbol (regla 3). **Y S1 no había
+entregado nada:** `P-CONT-4` no aparecía en `docs/` ni `.claude/`. Se dijo para que la medición no
+se leyera como dos que coinciden. *(El fundador confirmó después los mismos 15/15 desde S1.)*
 
-**No hubo segunda medición que contrastar.** El encargo avisaba de que S1 tenía encargada esta
-misma pregunta. Se buscó `P-CONT-4` en `docs/` y `.claude/`: **cero coincidencias**. Ésta es hoy
-la única medición, y se dice para que nadie la lea como una coincidencia de dos.
+## El hallazgo, que tumbó la premisa del ticket
 
-## El hallazgo, y por qué cambia el ticket
+El documento de origen declaraba **«NO SE HA ABIERTO EL REPOSITORIO»**. Abierto: «Tipo de cliente»
+es `Customer.tipoDestinatario`, el campo de **SCRUM-69 (FACT-1)**, y fija el **plazo legal de la
+recapitulativa** (art. 13.2 RD 1619/2012) — `EMPRESARIO` → día 16 del mes siguiente; `PARTICULAR` →
+último día del mes. De ahí sale el semáforo de «Pendientes de facturar».
 
-El encargo describía «Tipo de cliente» a partir de capturas, declarando que **el repositorio no
-se había abierto**. Abierto: **ese desplegable es `Customer.tipoDestinatario`, el campo fiscal de
-SCRUM-69 (FACT-1)**, y determina el **plazo legal de la factura recapitulativa** (art. 13.2
-RD 1619/2012) — `EMPRESARIO` → día 16 del mes siguiente; `PARTICULAR` → último día del mes.
-De ahí sale el semáforo de la bandeja «Pendientes de facturar».
+**Y no es la misma distinción que el switch.** Empresa/Persona es **forma jurídica**;
+PARTICULAR/EMPRESARIO es **actuar como empresario a efectos de IVA**. Un **autónomo** es PERSONA y
+a la vez EMPRESARIO.
 
-Tres razones por las que el switch **no puede absorberlo**, en orden de gravedad:
+🔴 **El caso roto era la víctima del propio ticket:** un administrador de fincas autónomo puesto en
+«Persona» —lo correcto en su ficha— habría recibido en silencio el plazo de particular, **~16 días
+más corto**, y la bandeja avisaría tarde de una factura vencida.
 
-1. **No son la misma distinción.** «Empresa/Persona» es **forma jurídica**;
-   `PARTICULAR/EMPRESARIO` es **si el destinatario actúa como empresario a efectos de IVA**. Un
-   autónomo es **PERSONA** y a la vez **EMPRESARIO**. 🔴 El caso roto es la víctima del propio
-   ticket: un *administrador de fincas* autónomo puesto en «Persona» —correcto en su ficha—
-   recibiría en silencio el plazo de particular, **~16 días más corto**, y la bandeja avisaría
-   tarde de una factura vencida.
-2. **Tres estados no caben en dos posiciones.** `NULL` · `PARTICULAR` · `EMPRESARIO`. Los 15
-   clientes medidos están **todos** en el estado que un toggle no sabe representar. Y ese `NULL`
-   es deliberado: `schema.prisma` deja escrito que «nunca se escribe de vuelta a la BD».
-3. **El alta cambiaría de comportamiento.** Hoy un cliente nace `NULL` y el código elige el plazo
-   **más corto** por seguridad. Un switch obligatorio hace que cada alta **declare** un valor: con
-   «Empresa» por defecto, YaQu afirmaría un régimen fiscal que el profesional no ha declarado —
-   justo lo que SCRUM-294-a prohíbe para el campo de al lado.
+Se paró y se reportó, que es lo que el encargo mandaba en este caso exacto.
 
-## La decisión que hace falta, y por qué no la toma esta sesión
+## La decisión, y por qué
 
-Es zona fiscal (AA1.4) y toca `prisma/schema.prisma`, dominio de los fundadores. Tres salidas, en
-`docs/CENSO_TIPO_CLIENTE.md` §3.2: **(A)** el switch escribe en `tipoDestinatario` — lo que pide el
-ticket, con la conflación fiscal dentro; **(B)** campo nuevo para la forma jurídica, dejando el
-campo fiscal intacto; **(C)** el switch como pura presentación, sin persistir — que deja a CONT-08
-(el filtro Empresas/Personas) sin dato sobre el que filtrar.
+**Fundador, 24-ago-2026: OPCIÓN B** — `contact_kind` nuevo para la forma jurídica;
+`tipoDestinatario` **intacto**. Descartadas **A** (reutilizarlo) por riesgo fiscal y **C** (switch
+sin persistir) porque deja a CONT-08 sin dato que filtrar. La frase «no se añade campo» se había
+aprobado creyendo que era una clasificación genérica; medida la premisa, cayó la decisión.
 
-**Recomendación medida: B.** El ticket dice «NO SE AÑADE CAMPO» y también dice, dos veces, que si
-parece hacer falta un estado nuevo hay que **parar y reportarlo**. Éste es ese caso.
+⛔ **Prohibición nueva del fundador:** `contact_kind` y `tipoDestinatario` **no se mezclan en ningún
+sitio** — ni migración, ni formulario, ni default que deduzca uno del otro. Lo que esto destapó
+tiene ticket propio: **SCRUM-615**.
 
-## El diff, preparado y sin aplicar
+## La migración
 
-`docs/sql/SCRUM-574-opcion-B.diff`. **`prisma/schema.prisma` NO se ha tocado.**
-Aditivo puro: `ALTER TABLE "customers" ADD COLUMN "contact_kind" TEXT;` — una sentencia, nullable,
-cero `DROP`, cero `RENAME`, sin pérdida de datos posible.
+`ALTER TABLE "customers" ADD COLUMN "contact_kind" TEXT;` — **autorización puntual** del fundador
+para aplicarla esta sesión; **no es regla nueva** y el esquema sigue siendo suyo.
 
-Generado con el **CLI local por ruta** (nunca `npx`, SCRUM-385) y con **control positivo delante**:
-el esquema entero contra vacío devolvió **25 `CREATE TABLE`**, así que la herramienta contestaba y
-el diff es interpretable. `DATABASE_URL` se fijó a una URL muerta (`127.0.0.1:1/nada`): ninguna
-base real intervino.
+Preview obligatorio **antes** de tocar nada, con **control positivo delante** (25 `CREATE TABLE`
+del esquema entero contra vacío: la herramienta contestaba). Veredicto **aditivo**: ni `DROP`, ni
+`RENAME`, ni `TRUNCATE`, ni `SET NOT NULL`. Aplicada con el **CLI local por ruta** (nunca `npx`,
+nunca `npm run db:push`), con guard de destino delante y **sin `--accept-data-loss`**, a
+`acela/railway` y `acela/yaqu_dev_javier`. Turno de staging tomado y soltado. **Producción no, y no
+puede.** Migración de datos: **ninguna** — los 15 siguen en `NULL`.
 
-**Migración de datos que acompañaría: ninguna.** Con los 15 clientes en `NULL` y `contact_kind`
-naciendo `NULL`, no se escribe un solo byte sobre ninguna fila existente — que es exactamente el
-control que pedía el encargo («sigue siendo el mismo cliente, mismo id»), sostenido por la vía más
-fuerte: no hay escritura que comparar.
+## Cómo se resolvió lo que parecía no tener salida
+
+Con 15 clientes sin lado declarado, el switch tenía que enseñar algo al abrir una ficha vieja, y
+las tres salidas eran malas: declarar por el profesional, inventar un tercer estado (regla 27), o
+deducirlo de otro campo (prohibido).
+
+**Ninguna de las tres.** Por debajo el switch son **radios de verdad**, y un grupo de radio sin
+ninguno marcado es un estado **nativo** del control. Así que `NULL` se pinta tal cual: los dos
+lados apagados, ninguno mintiendo. No es inventar un estado — es no borrar el que la columna ya
+tiene. Y los radios traen gratis la exclusividad, el teclado y el anuncio «grupo, opción 1 de 2».
 
 ## Verificado en rojo
 
-**Nada que romper todavía, y se dice en vez de simularlo.** El encargo pedía romper a propósito
-«cualquier comprobación que construyas sobre el switch». No se ha construido ninguna, porque no se
-ha construido el switch. Un rojo sobre un mecanismo inexistente sería teatro.
-Lo que sí se ejerció es el **suelo** del propio censo: el camino «la columna no existe» y el camino
-de error devuelven *NO SUPE MIRAR* en vez de `0 clientes` — la distinción que el encargo exigía.
-Se observó de verdad en DEV, donde `recargo_equivalencia` falta y la consulta cayó con `P2010`:
-el script lo declaró como ceguera en lugar de devolver un cero limpio.
+Sobre el commit `b47e8341`, revirtiendo **byte a byte contra los BYTES DE DISCO** guardados antes
+de tocar (`Buffer.compare = 0`), no contra el blob — que es lo que exige SCRUM-570 con
+`.gitattributes` normalizando.
 
-## Hallazgo lateral (otro carril — se reporta, no se arregla; regla 37)
+| Rotura inyectada | Resultado |
+|---|---|
+| Esconder un campo **con dato escrito** | ✔ cae: «SE ESTÁ ESCONDIENDO UN DATO ESCRITO» |
+| `\|\| 'PERSONA'` en el guardado | ✔ cae nombrando el fichero y el literal |
+| Derivar `contactKind` de `tipoDestinatario` | ✖ **NO CAYÓ** → ver abajo |
 
-**Deriva de esquema DEV vs STAGING:** `customers.recargo_equivalencia` (SCRUM-294-a) existe en
-STAGING y **no existe** en `yaqu_dev_javier`. El comentario de `schema.prisma` solo afirmaba
-producción y staging, así que no se contradice; lo que no estaba escrito es que DEV se quedó atrás.
-No bloquea este ticket y no es su zona.
+🔴 **El tercer rojo destapó que mi guard estaba ciego, y es lo mejor que salió de aquí.** Buscaba
+`/tipoDestinatario/` tal cual, pero en los formularios la variable se llama
+**`fieldTipoDestinatario`**, con T mayúscula: la mezcla real que el guard existe para cazar era
+justo la que no podía ver. Y el suelo no lo delató porque su trampa usaba la grafía que el patrón
+sí veía — **caso mal elegido, no guard de sobra**. Corregido a `/tipo_?destinatario/i` con el suelo
+usando las tres grafías reales del árbol.
+
+Al arreglarlo apareció el segundo defecto, el clásico: el guard **se cazaba a sí mismo** en un
+comentario al final de línea que nombra los dos campos para decir que no se mezclan. `soloCodigo`
+solo quitaba las líneas que *empiezan* por `//`.
+
+## Control positivo
+
+Alta por **cada** lado del switch, releída de la BD para probar que se escribió, y —lo que de
+verdad decide— **`tipoDestinatario` sigue `null` después**: si se contagiara, estaríamos en la
+opción A con otro nombre. Más el alta **sin declarar nada**, que nace `NULL`.
+
+## Cuatro guards del repo cazaron defectos reales míos, y los cuatro tenían razón
+
+Un **backtick dentro de un template literal** que cerraba la cadena y dejaba `customerDetailView`
+**sin parsear** (el defecto histórico de `exportView`) · el script sin declarar en el **SHELL del
+service worker** · **CRLF** en `customerAdmin.ts` · un fixture con **móviles españoles reales** y el
+**merchant demo**.
+
+## Hallazgos laterales (se reportan, no se arreglan; regla 37)
+
+* **Deriva DEV/STAGING:** a `yaqu_dev_javier` le faltaba `recargo_equivalencia`. ⚠️ **Se cerró de
+  paso y NO fue una decisión:** `db push` sincroniza el esquema entero. Aditivo, nullable, ninguna
+  fila tocada. Estaba fuera del alcance y se dice en vez de dejarlo implícito.
+* **Los dos formularios de cliente ya divergían:** el de la lista tiene «recargo de equivalencia» y
+  le falta «facturación pactada»; el de la ficha 360 al revés. Es zona de **CONT-19**. Por eso la
+  regla de campos por lado se puso en la **pieza compartida** y no copiada en cada vista.
 
 ## Lo que NO cubre
 
-* **El switch no existe.** Ni en el alta ni en la edición. Puntos 2, 3 y 5 del encargo, sin empezar.
-* **El desplegable «Tipo de cliente» sigue donde estaba**, en los dos formularios. No se ha
-  eliminado nada: eliminarlo antes de la decisión es elegir la opción A por omisión.
-* **Ninguna migración se ha ejecutado.** El encargo la condicionaba al PASO 0 medido y escrito —
-  ya lo está — pero la decisión fiscal es previa.
-* **Producción sin medir**, por diseño.
-* **Microcopy: cero.** Ni etiquetas del switch ni de los campos que cambiarían — son del fundador
-  (regla 30). El nombre `contact_kind` del diff es identificador de código, no texto de pantalla.
-* **Los duplicados de clientes no se auditaron ni se tocaron**, como pedía el encargo.
-* **`docs/DECISIONES_PENDIENTES.md` no se ha tocado**: la decisión se entrega aquí y en el censo,
-  sin duplicarla en un tercer sitio.
-* **Nada de F1 se movió:** el teléfono sigue siendo la columna que era en la lista (medido: los
-  encabezados son `ID · Nombre · Teléfono · Email · Notas · Alta`, así que Teléfono es el **tercer**
-  `<th>` y el segundo dato tras el nombre — el encargo lo llamaba «segunda columna»; se manda lo
-  medido). No se tocó el formulario de documentos ni el PDF (S2 / DOC-10).
+* **Microcopy: cero escrita.** Los tres rótulos salen con `[PENDIENTE microcopy oficial]` + palabra
+  de trabajo y **suben el censo de SCRUM-402 a conciencia (+1)**: una sola constante los apaga a
+  los tres cuando el fundador firme el copy. Van con palabra detrás porque en un control de **dos**
+  lados el marcador pelado sería inservible — los dos lados dirían lo mismo.
+* **Una desviación de Holded, declarada:** el **NIF se queda en los dos lados**. Holded lo quita en
+  Persona; en España una persona física también tiene NIF y F1 se lo va a exigir (hallazgo S1-C).
+  Revertirlo es **una línea**: añadir `taxId` a `SOLO_EMPRESA`. La decisión final sigue siendo del
+  fundador (`docs/CONTACTOS_CAMPOS_POR_LADO.md` §4).
+* **CONT-03, CONT-04, CONT-08 (SCRUM-581) y CONT-19 NO se construyen**, solo se deja el sitio.
+* **Producción sin medir ni tocar**, por diseño.
+* **Los duplicados de clientes**: ni auditados ni tocados, como pedía el encargo.
+* **No se tocó el formulario de documentos ni el PDF** (S2 / DOC-10).
+* **F1 intacto**, con una corrección de lo medido: el teléfono sigue donde estaba, pero los
+  encabezados son `ID · Nombre · Teléfono · Email · Notas · Alta`, así que es el **tercer** `<th>`,
+  no el segundo que decía el encargo.
+* **`npm run cr:tecnica` no existe en esta rama** (viene de SCRUM-570, aún no en `main`). La
+  reversión se verificó con `Buffer.compare` contra los bytes de partida.
 
 ## Ficheros
 
-* `docs/CENSO_TIPO_CLIENTE.md` — **nuevo.** El PASO 0, las dos preguntas, el hallazgo y las opciones.
-* `docs/sql/SCRUM-574-opcion-B.diff` — **nuevo.** El diff preparado, con cómo reproducirlo.
-* `scripts/censo-tipo-cliente.mjs` — **nuevo.** El censo, solo lectura, re-ejecutable, con suelo.
-* `docs/master/SCRUM-574.md` — esta entrada.
+**Nuevos:** `public/dashboard/js/switchFormaJuridica.js` · `tests/scrum574-switch-forma-juridica.test.mjs` ·
+`tests/scrum574-mismo-cliente-tras-migracion.test.mjs` · `scripts/censo-tipo-cliente.mjs` ·
+`docs/CENSO_TIPO_CLIENTE.md` · `docs/CONTACTOS_CAMPOS_POR_LADO.md` · `docs/sql/SCRUM-574-opcion-B.diff`
 
-**Ni una línea de `src/`, `public/` o `prisma/` fue modificada.**
+**Tocados:** `prisma/schema.prisma` (con GO) · `src/core/validation/schemas.ts` ·
+`src/modules/system/customerAdmin.ts` · `public/dashboard/js/customersView.js` ·
+`public/dashboard/js/customerDetailView.js` · `public/dashboard/css/styles.css` ·
+`public/dashboard/index.html` · `public/sw.js` · `docs/sql/deriva-prod.sql` (regenerado) ·
+`tests/_banco-vistas.mjs` (60 → 61) · `tests/scrum402-marcador-no-se-pinta.test.mjs` (censo +1)
