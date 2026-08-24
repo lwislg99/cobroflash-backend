@@ -297,7 +297,10 @@ export function scriptsDelDashboard(raiz) {
  * AQUÍ, en el mismo commit que lo añade. Que sea una decisión explícita es el objetivo, no un
  * efecto colateral.
  */
-export const SCRIPTS_DEL_DASHBOARD = 60;
+// SCRUM-615 (24-ago-2026) · 60 → 61: entra `tipoDestinatarioPendiente.js`, el aviso y la pregunta
+// del tipo de destinatario en la bandeja de pendientes. Se sube AQUÍ y en el mismo commit que
+// añade el `<script>`, que es lo que este número existe para forzar.
+export const SCRIPTS_DEL_DASHBOARD = 61;
 
 /**
  * Monta el dashboard como lo monta el navegador y devuelve el contexto vivo.
