@@ -33,16 +33,16 @@ import path from 'node:path';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
-import { rutaDelNavegador } from './_navegador.mjs';
+import { lanzarNavegador } from './_navegador.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
 const PUBLIC = path.join(RAIZ, 'public');
-// SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
-// los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
-// hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
-// declarandose ciega en vez de devolver una ruta plausible. `EDGE_PATH` sigue mandando.
-const EDGE = rutaDelNavegador();
+// SCRUM-522 · ni la ruta ni el arranque se escriben aqui. La ruta era de WINDOWS por defecto,
+// identica en los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu—
+// donde de verdad hacen falta. Ahora los dos pasos viven en `_navegador.mjs`: busca en los
+// sitios conocidos y PARA declarandose ciega (2) si no hay ninguno, y PARA con su propio codigo
+// (3) si lo hay y no levanta. `EDGE_PATH` sigue mandando. Se resuelve al lanzar, no al importar.
 const PUERTO = Number(process.env.GUARD_PUERTO || 4399);
 
 // Mínimo de nodos con texto para que la medición signifique algo. Si el guard mide menos que
@@ -235,18 +235,23 @@ function paginasDelProducto() {
 
 // ── Principal ───────────────────────────────────────────────────────────────
 const servidor = await servir();
-let navegador;
-try {
-  navegador = await puppeteer.launch({
-    executablePath: EDGE, headless: true,
-    args: ['--disable-gpu', '--hide-scrollbars', '--no-first-run'],
-  });
-} catch (e) {
-  servidor.close();
-  console.error('✖ No se pudo lanzar el navegador. Este guard MIDE, y sin navegador no mide.');
-  console.error('  Ajusta EDGE_PATH si Edge está en otra ruta. Detalle: ' + e.message);
-  process.exit(1);
-}
+// SCRUM-522 · el arranque pasa por el módulo común. DOS COSAS CAMBIAN, y las dos eran defectos:
+//
+//   ① era el ÚNICO de los nueve que lanzaba SIN los argumentos de aislamiento, y por eso era el
+//     que moría en el runner —el helper SUID de Chromium aborta antes de arrancar—. Los otros
+//     ocho ya los llevaban. `lanzarNavegador` los añade SÓLO en CI (ver `_navegador.mjs`).
+//   ② salía con **1** cuando no podía arrancar, el mismo código con el que sale cuando encuentra
+//     defectos de contraste DE VERDAD. La puerta lo pintaba `rojo(1)` y era indistinguible de un
+//     hallazgo. Y el mensaje decía «ajusta EDGE_PATH», que es el consejo del problema anterior:
+//     la ruta estaba bien. Ahora sale con 3 y lo dice con sus palabras.
+//
+// El servidor se cierra en el `process.on('exit')` de abajo, porque quien para ahora es el módulo
+// común y no este `catch`.
+process.on('exit', () => { try { servidor.close(); } catch { /* ya cerrado */ } });
+const navegador = await lanzarNavegador(puppeteer, {
+  headless: true,
+  args: ['--disable-gpu', '--hide-scrollbars', '--no-first-run'],
+});
 
 const paginas = paginasDelProducto();
 let nodos = 0;

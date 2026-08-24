@@ -123,12 +123,89 @@ for (const g of GUARDS) {
     assert.ok(!src.includes("EDGE_PATH || 'C:/"),
       '🔴 ha vuelto la ruta de Windows por defecto. Con eso este guard no puede correr en el\n'
       + '  runner de CI, y volvería a figurar como cobertura sin serlo.');
-    assert.equal(src.split('rutaDelNavegador()').length - 1, 1,
-      '🔴 no resuelve el navegador por el módulo común, o lo hace más de una vez.\n'
-      + '  Ahí está su suelo: `rutaDelNavegador` PARA si no hay navegador, así que ningún guard\n'
-      + '  puede llegar a decir «no hay defectos» cuando lo que pasa es que no supo mirar.');
+    // SCRUM-522 (2ª vuelta): son DOS puertas de entrada al módulo común y vale cualquiera, pero
+    // exactamente UNA. `rutaDelNavegador()` sólo resuelve; `lanzarNavegador()` resuelve Y arranca
+    // —y es la que además distingue «no arranca» (3) de «no lo encuentro» (2)—. El suelo no se
+    // relaja: las dos PARAN, así que ningún guard puede decir «no hay defectos» cuando lo que
+    // pasa es que no supo mirar. Lo que se prohíbe sigue siendo resolver por fuera del módulo.
+    const porRuta = src.split('rutaDelNavegador()').length - 1;
+    const porLanzar = src.split('lanzarNavegador(').length - 1;
+    assert.equal(porRuta + porLanzar, 1,
+      `🔴 ${g} entra al módulo común ${porRuta + porLanzar} veces (rutaDelNavegador: ${porRuta}, `
+      + `lanzarNavegador: ${porLanzar}); tiene que ser exactamente 1.\n`
+      + '  Ahí está su suelo: las dos PARAN si no hay navegador, así que ningún guard puede\n'
+      + '  llegar a decir «no hay defectos» cuando lo que pasa es que no supo mirar.');
   });
 }
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// ⑤ SCRUM-522, 2ª VUELTA · LO QUE EL CI ENSEÑÓ Y ESTE FICHERO NO VIGILABA
+//
+// El primer arreglo resolvió LA RUTA y el runner siguió en rojo, por DOS cosas distintas:
+//   · el navegador se encontraba y NO ARRANCABA (sandbox SUID del runner);
+//   · **importar la puerta la EJECUTABA**, así que este mismo fichero de test lanzaba los nueve
+//     guards y moría en su `process.exit` — 68 s y `'test failed'` sin nombrar un assert.
+// Las dos se vigilan aquí, porque las dos se colaron por debajo de lo que ya había escrito.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-522 · 🔴 IMPORTAR la puerta NO la ejecuta', async () => {
+  // El fallo que trajo el ticket de vuelta. Se ejercita EJECUTANDO —no leyendo el fuente—: un
+  // `esInvocacionDirecta` mal escrito se lee igual de bien y no hace nada (la trampa de la ruta
+  // con espacios, SCRUM-429). `EDGE_PATH` rota para que, SI se ejecutara, se note enseguida y
+  // sin abrir un solo navegador.
+  const { spawnSync } = await import('node:child_process');
+  const r = spawnSync(process.execPath,
+    ['-e', "import('./scripts/guards-visuales.mjs').then(m => console.log('IMPORT LIMPIO ' + typeof m.fueraDeLaTanda))"],
+    { cwd: RAIZ, encoding: 'utf8', env: { ...process.env, EDGE_PATH: '/no/existe/navegador' } });
+
+  assert.equal(r.status, 0,
+    `🔴 importar la puerta salió con ${r.status}. Se está EJECUTANDO al importarla, así que\n`
+    + '  cualquier test que la importe arrastra los nueve guards dentro de `npm test` y muere en\n'
+    + `  su process.exit. Lo que dijo: ${(r.stderr || '').trim().slice(0, 300)}`);
+  assert.match(r.stdout || '', /IMPORT LIMPIO function/,
+    '🔴 el import no completó, o dejó de exportar `fueraDeLaTanda`.');
+});
+
+test('SCRUM-522 · ✅ POSITIVO: lanzada COMO SCRIPT la puerta sí actúa', async () => {
+  // Sin esto, «no se ejecuta al importar» y «no se ejecuta nunca» dan el mismo verde — y el
+  // segundo deja el job de CI pasando sin correr un solo guard, que es este ticket al revés.
+  const { spawnSync } = await import('node:child_process');
+  const r = spawnSync(process.execPath, ['scripts/guards-visuales.mjs'],
+    { cwd: RAIZ, encoding: 'utf8', env: { ...process.env, EDGE_PATH: '/no/existe/navegador' } });
+
+  assert.equal(r.status, 2,
+    `🔴 lanzada como script salió con ${r.status} y no con 2. Con EDGE_PATH rota tiene que\n`
+    + '  declararse CIEGA, no pasar en silencio ni caerse por otra cosa.');
+  assert.match(r.stderr || '', /NO SUPE MIRAR/, '🔴 para, pero sin decir por qué.');
+});
+
+test('SCRUM-522 · 🔴 «no lo encuentro» y «no arranca» son DOS códigos, no uno', async () => {
+  const { SALIDA_NO_ENCONTRADO, SALIDA_NO_ARRANCA, lanzarNavegador } =
+    await import('../scripts/_navegador.mjs');
+  assert.notEqual(SALIDA_NO_ENCONTRADO, SALIDA_NO_ARRANCA,
+    '🔴 los dos diagnósticos han vuelto a compartir código de salida. Eran indistinguibles, y\n'
+    + '  por eso un guard que no midió NADA se leía como un hallazgo real.');
+  assert.notEqual(SALIDA_NO_ARRANCA, 1,
+    '🔴 «no arranca» vale 1, que es el código de «he encontrado defectos». Es exactamente la\n'
+    + '  confusión que este arreglo quita: la puerta lo pintaría `rojo(1)`.');
+  assert.equal(typeof lanzarNavegador, 'function', '🔴 no existe el arranque común.');
+});
+
+test('SCRUM-522 · 🔴 el aislamiento del navegador se relaja SÓLO en CI', async () => {
+  // `--no-sandbox` puesto por defecto es un cambio que nadie pidió y que no se nota. Se
+  // comprueba en las dos direcciones con un entorno inyectado, para no depender de dónde corra.
+  const { argsDeAislamiento } = await import('../scripts/_navegador.mjs');
+
+  assert.deepEqual(argsDeAislamiento({}), [],
+    '🔴 fuera de CI se están pasando argumentos de aislamiento. Ahí NO se relaja nada.');
+  assert.deepEqual(argsDeAislamiento({ CI: '' }), [],
+    '🔴 una `CI` vacía cuenta como CI. Sólo cuando de verdad lo es.');
+
+  const enCi = argsDeAislamiento({ CI: 'true' });
+  assert.ok(enCi.includes('--no-sandbox') && enCi.includes('--disable-setuid-sandbox'),
+    '🔴 en CI no se pasan los argumentos que hacen falta: el helper SUID del runner aborta el\n'
+    + '  arranque y los guards vuelven a no medir nada.');
+});
 
 test('SCRUM-522 · 🔴 y ese suelo común PARA de verdad, no devuelve una ruta', async () => {
   // 🔴 Se ejercita EJECUTANDO, no leyendo. Cuatro de los nueve guards no tenían comprobación

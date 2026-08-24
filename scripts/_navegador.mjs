@@ -73,5 +73,76 @@ export function rutaDelNavegador() {
   const r = resolverNavegador();
   if (r.ok) return r.ruta;
   console.error('🔴 NO SUPE MIRAR: ' + r.motivo);
-  process.exit(2);
+  process.exit(SALIDA_NO_ENCONTRADO);
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-522 (24-ago-2026) · «ENCONTRAR EL NAVEGADOR» Y «PODER ARRANCARLO» SON DOS COSAS
+//
+// El primer arreglo de este ticket resolvió LA RUTA, y el runner de CI siguió en rojo: encuentra
+// Edge, lo lanza, y MUERE DESPUÉS — en el sandbox SUID de Chromium. O sea que el módulo cubría el
+// paso anterior al que hacía falta.
+//
+// Y el diagnóstico se perdía por el camino: `guard-contraste` salía con **1** cuando no podía
+// arrancar, que es el MISMO código con el que sale cuando encuentra defectos de contraste de
+// verdad. La puerta lo pintaba como `rojo(1)`, indistinguible de un hallazgo real. Encima su
+// mensaje aconsejaba «ajusta EDGE_PATH», que es el consejo del problema ANTERIOR: la ruta estaba
+// bien. Por eso aquí hay TRES desenlaces con TRES códigos, y no dos:
+//
+//     0 · midió
+//     2 · NO SUPE MIRAR — no hay navegador en ningún sitio conocido
+//     3 · NO PUDE ARRANCARLO — lo hay, y no levanta
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+/** No hay navegador donde mirar. */
+export const SALIDA_NO_ENCONTRADO = 2;
+/** Lo hay, y no arranca. Distinto de 2 y distinto de «he encontrado defectos» (1). */
+export const SALIDA_NO_ARRANCA = 3;
+
+/**
+ * Los argumentos de AISLAMIENTO, y sólo en CI.
+ *
+ * 🔴 NUNCA POR DEFECTO NI EN LOCAL. `--no-sandbox` relaja el aislamiento del navegador, y puesto
+ * de forma global es un cambio que nadie pidió y que no se nota. Aquí va condicionado a `CI`,
+ * que GitHub Actions pone siempre, y el motivo es del ENTORNO, no de la medición:
+ *
+ *   · en el runner, el helper SUID de Chromium viene sin `root:root` + `4755` y el navegador
+ *     ABORTA a propósito antes de arrancar sin aislamiento — es el fallo exacto que trajo este
+ *     ticket de vuelta;
+ *   · lo que estos guards cargan son NUESTRAS páginas estáticas servidas desde el propio
+ *     proceso, en una máquina efímera que se destruye al terminar el job. El sandbox protege
+ *     de contenido web ajeno, y aquí no hay ninguno;
+ *   · y no toca NADA de lo que se mide: contraste, maquetado y árbol de accesibilidad son
+ *     idénticos con sandbox y sin él.
+ *
+ * La alternativa era `chown root:root` + `chmod 4755` sobre el helper en el workflow, que es lo
+ * que pide el propio error. Se descartó con motivo: esa ruta es de Edge, y `resolverNavegador`
+ * puede contestar Chrome o Chromium según lo que traiga la imagen — el `chmod` quedaría
+ * apuntando a un binario que no es el que se usa, y **no fallaría: no haría nada**. Un arreglo
+ * que se apaga solo cuando cambia la imagen es el defecto que este ticket persigue.
+ */
+export function argsDeAislamiento(env = process.env) {
+  return env.CI ? ['--no-sandbox', '--disable-setuid-sandbox'] : [];
+}
+
+/**
+ * Arranca el navegador, o PARA con el código que corresponde.
+ *
+ * `puppeteer` se recibe en vez de importarse: este módulo lo usan guards que ya lo tienen
+ * cargado, y así se puede ejercitar el desenlace de «no arranca» con un doble, sin navegador.
+ */
+export async function lanzarNavegador(puppeteer, opciones = {}) {
+  const ruta = rutaDelNavegador(); // sale con 2 si no hay ninguno
+  const args = [...(opciones.args || []), ...argsDeAislamiento()];
+  try {
+    return await puppeteer.launch({ ...opciones, executablePath: ruta, args });
+  } catch (e) {
+    console.error('🔴 NO PUDE ARRANCARLO: el navegador ESTÁ y no levanta.');
+    console.error('   binario: ' + ruta);
+    console.error('   Esto NO es «no lo encuentro» (eso sale con ' + SALIDA_NO_ENCONTRADO
+      + ') ni «he encontrado defectos» (eso sale con 1): el guard');
+    console.error('   no ha llegado a medir nada, así que su silencio no significa que esté todo bien.');
+    console.error('   Detalle: ' + (e && e.message ? e.message : e));
+    process.exit(SALIDA_NO_ARRANCA);
+  }
 }
