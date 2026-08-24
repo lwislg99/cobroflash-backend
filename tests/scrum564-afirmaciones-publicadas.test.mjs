@@ -125,8 +125,18 @@ test('🔴 las diez FALSAS lo son por la misma puerta, y se nombra cuál', () =>
   const falsas = r.veredictos.filter((v) => v.grupo === FALSA);
   assert.equal(falsas.length, 10, '🔴 ya no son diez');
   for (const v of falsas) {
-    assert.ok(v.promete && v.promete.length > 20,
+    // El motivo puede venir de dos sitios, y desde SCRUM-568 casi siempre del segundo:
+    //   · `promete` — lo escribió una persona al declarar la entrada `SIN_ANCLA`;
+    //   · `problemas` — lo DERIVA `alcanzabilidad()` (SCRUM-558) del valor de hoy del flag.
+    // Se exige lo mismo que antes o más: que el rojo diga por qué. Y cuando viene derivado, se
+    // exige además que NOMBRE EL FLAG — un rojo que no dice qué puerta está cerrada se archiva.
+    const derivado = Array.isArray(v.problemas) && v.problemas.length > 0;
+    assert.ok((v.promete && v.promete.length > 20) || derivado,
       `🔴 ${v.id} sale como falsa y no dice QUÉ promete que no existe. Un rojo sin motivo se archiva.`);
+    if (derivado) {
+      assert.match(v.problemas.join(' '), /PAYMENTS_CONNECT_ENABLED|BIZUM_MANUAL_ENABLED/,
+        `🔴 ${v.id}: el veredicto es derivado y no nombra la puerta que lo hace falso`);
+    }
   }
   // Las dos puertas están APAGADAS por defecto, que es lo que hace falsas a las diez.
   const tablaP = censoF.defaultsDeLaTablaP(RAIZ);
