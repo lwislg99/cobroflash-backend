@@ -1,0 +1,81 @@
+SCRUM-574 (CONT-01) · OPCIÓN B — DIFF PREPARADO, NO APLICADO
+============================================================
+
+🛑 `prisma/schema.prisma` NO SE HA TOCADO. Es dominio de los fundadores (AA1.4). Esto es el
+   preview que exige el punto 4 del encargo: «si la migración necesita tocar
+   prisma/schema.prisma: SE PREPARA EL DIFF Y SE PARA». Está parado.
+
+POR QUÉ HAY UN DIFF SI EL TICKET DICE «NO SE AÑADE CAMPO»
+--------------------------------------------------------
+Porque el campo que el ticket manda reutilizar —«Tipo de cliente» = `Customer.tipoDestinatario`—
+resultó ser el campo fiscal de SCRUM-69: el que fija el plazo legal de la recapitulativa
+(art. 13.2 RD 1619/2012). El razonamiento medido está en `docs/CENSO_TIPO_CLIENTE.md` §3.
+El propio encargo manda parar y reportar en este caso; esto es el material para decidir.
+
+CÓMO SE GENERÓ (reproducible)
+-----------------------------
+  CLI LOCAL por ruta, nunca `npx` (SCRUM-385: `npx` sustituye el binario en silencio y su
+  salida vacía se lee como «sin cambios»).
+
+  CONTROL POSITIVO primero — esquema entero contra vacío, que no puede salir vacío:
+    node node_modules/prisma/build/index.js migrate diff \
+      --from-empty --to-schema-datamodel prisma/schema.prisma --script
+    → 25 CREATE TABLE. La herramienta CONTESTA. Sin esto, un diff vacío no sería interpretable.
+
+  EL DIFF:
+    node node_modules/prisma/build/index.js migrate diff \
+      --from-schema-datamodel prisma/schema.prisma \
+      --to-schema-datamodel <copia con el campo propuesto> --script
+
+  DATABASE_URL se fijó a `postgresql://nadie:nadie@127.0.0.1:1/nada` — una URL que no lleva a
+  ninguna parte. El schema declara `env("DATABASE_URL")` y Prisma exige que la variable EXISTA
+  para resolverlo; dándole una muerta, la forma datamodel→datamodel no puede tocar nada por
+  accidente. Ninguna base real intervino en la generación de este diff.
+
+EL CAMBIO EN EL SCHEMA (propuesto)
+----------------------------------
+  model Customer {
+  +  // SCRUM-574 (CONT-01) · forma jurídica del contacto. EMPRESA | PERSONA.
+  +  // NO es tipoDestinatario: aquel dice si el destinatario actúa como empresario a efectos de
+  +  // IVA (plazo del art. 13.2) y un autónomo es PERSONA aquí y EMPRESARIO allí.
+  +  // Nullable y SIN @default, por el mismo motivo que sus dos vecinos (tipoDestinatario y
+  +  // recargoEquivalencia): NULL = no declarado, distinto de declarado.
+  +  contactKind String? @map("contact_kind")
+     merchant    Merchant @relation(fields: [merchantId], references: [id])
+  }
+
+EL SQL RESULTANTE
+-----------------
+-- AlterTable
+ALTER TABLE "customers" ADD COLUMN     "contact_kind" TEXT;
+
+LECTURA DEL DIFF
+----------------
+· ADITIVO PURO. Una sentencia, una columna nueva, nullable. Cero DROP, cero ALTER de columna
+  existente, cero RENAME. No hay pérdida de datos posible → `--accept-data-loss` NO haría falta
+  (y de todas formas está prohibido).
+· NO TOCA `tipo_destinatario`, ni `legal_name`, ni `tax_id`, ni `recargo_equivalencia`. El plazo
+  legal de SCRUM-69 sigue exactamente donde estaba y calculándose igual.
+· TEXT y no un enum de Postgres, igual que sus vecinos `tipoDestinatario`,
+  `billingPeriodicity` y `modoValoracion`: la lista cerrada vive en Zod, y añadir un valor no
+  obliga a migrar un tipo. ⚠️ Contrapartida, dicha porque el censo la midió: la BD NO sostiene
+  la lista — un UPDATE directo mete cualquier texto (`docs/CENSO_TIPO_CLIENTE.md` §1a).
+
+MIGRACIÓN DE DATOS QUE ACOMPAÑARÍA
+----------------------------------
+🟢 NINGUNA. Y no es una suposición: el PASO 0 midió 15 clientes y los 15 tienen
+   `tipo_destinatario = NULL`. Con `contact_kind` naciendo NULL, cada cliente existente conserva
+   su fila entera sin que se escriba un solo byte — que es justo el control que pide el encargo
+   («sigue siendo el mismo cliente: mismos datos, mismo id»).
+   La verificación es entonces trivial de sostener: si no hay UPDATE, no hay nada que comparar
+   antes/después salvo la propia ausencia de escritura.
+
+⚠️ LO QUE SIGUE ABIERTO Y ES DECISIÓN DEL FUNDADOR, NO DEL DIFF
+---------------------------------------------------------------
+Con `contact_kind` NULL en los 15 clientes existentes, el switch tiene que enseñar ALGO al abrir
+una ficha vieja. Las tres salidas no son equivalentes y ninguna se elige aquí:
+  (i)  el switch cae en un lado por defecto → YaQu DECLARA por el profesional algo que nadie dijo;
+  (ii) tercer estado visible «sin declarar» → contradice la exclusividad que el toggle comunica;
+  (iii) derivar la posición inicial de si hay `legal_name` → hoy son 0 de 15, así que derivaría
+        «Persona» para todos, incluidas las empresas que aún no rellenaron la razón social.
+Y con ella, la del ALTA: si un cliente nuevo puede nacer sin lado declarado o no.
