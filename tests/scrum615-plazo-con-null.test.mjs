@@ -168,14 +168,49 @@ test('SCRUM-615 · 🔴 el censo encuentra LAS DOS GRAFÍAS, incluida la que fal
   assert.ok(grafias.has('tipoDestinatario'), '🔴 no ve la grafía del modelo');
   assert.ok(grafias.has('fieldTipoDestinatario'), '🔴 NO VE `fieldTipoDestinatario`: el censo está corto por donde ya falló SCRUM-574');
 
-  // Y los DOS escritores medidos por S1 siguen ahí, en su sitio.
-  const escritores = usos
-    .filter((u) => u.fichero.startsWith('public/') && u.clase !== LECTURA)
-    .map((u) => `${u.fichero}:${u.linea}`);
-  for (const esperado of [
-    'public/dashboard/js/customersView.js:297',
-    'public/dashboard/js/customerDetailView.js:365',
+  // ── Y LOS DOS ESCRITORES SIGUEN AHÍ ────────────────────────────────────────────────────
+  //
+  // 🔴 SE COMPRUEBA EL FICHERO Y EL CONTENIDO DE LA LÍNEA, NUNCA SU NÚMERO.
+  //
+  // La primera versión exigía `customersView.js:297` y `customerDetailView.js:365` literales, y
+  // el CI la tumbó el 24-ago-2026. NO porque el escritor se hubiera ido: sigue ahí, con la misma
+  // grafía y sin tocarse desde `aba49043` (SCRUM-69). Lo que pasó es que al mergearse SCRUM-574
+  // (`b47e8341`, el switch Empresa/Persona) entraron líneas ENCIMA y el escritor bajó a la 328.
+  //
+  // Un número de línea no era parte de lo que costaba mirar —lo difícil era ver la grafía
+  // `fieldTipoDestinatario`— así que era precisión sin cobertura: sólo fragilidad. Esto NO es
+  // relajar el guard: comprobar que la línea encontrada ES la asignación del campo es MÁS fuerte
+  // que comprobar en qué renglón cae, porque un número casa por accidente y el contenido no.
+  const escritores = usos.filter((u) => u.fichero.startsWith('public/') && u.clase !== LECTURA);
+  for (const fichero of [
+    'public/dashboard/js/customersView.js',
+    'public/dashboard/js/customerDetailView.js',
   ]) {
-    assert.ok(escritores.includes(esperado), `🔴 el censo ya no ve el escritor ${esperado}`);
+    const deEsteFichero = escritores.filter((u) => u.fichero === fichero);
+    assert.ok(
+      deEsteFichero.length > 0,
+      `🔴 el censo ya no ve NINGÚN escritor en ${fichero}: o se ha ido, o el censo se quedó ciego`,
+    );
+    // Y que lo que ve es la asignación de verdad, no otro uso que pase por allí.
+    assert.ok(
+      deEsteFichero.some((u) => /tipoDestinatario\s*:/.test(u.texto)),
+      `🔴 en ${fichero} hay usos, pero ninguno es la asignación \`tipoDestinatario:\` — ha cambiado de forma:\n   ${deEsteFichero.map((u) => u.texto).join('\n   ')}`,
+    );
   }
+});
+
+test('SCRUM-615 · 🔴 SUELO del guard anterior: sabría ver que un escritor SE VA', () => {
+  // Sin esto, el test de arriba podría pasar en verde con el censo ciego — que es justo el modo
+  // de fallo que la versión anclada a la línea NO distinguía: «no está en la 297» y «no está» se
+  // leían igual. Se le da un censo VACÍO y se exige que el criterio lo note.
+  const vacio = [];
+  const deEsteFichero = vacio.filter((u) => u.fichero === 'public/dashboard/js/customersView.js');
+  assert.equal(deEsteFichero.length, 0, '🔴 el criterio no distingue un censo vacío');
+
+  // Y al revés: un uso que NO es la asignación no debe colar como escritor.
+  const falso = [{ fichero: 'public/dashboard/js/customersView.js', texto: 'const x = c.tipoDestinatario;' }];
+  assert.ok(
+    !falso.some((u) => /tipoDestinatario\s*:/.test(u.texto)),
+    '🔴 una LECTURA está colando como asignación: el criterio no distingue',
+  );
 });
