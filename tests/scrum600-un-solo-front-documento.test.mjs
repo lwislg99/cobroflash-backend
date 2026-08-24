@@ -47,6 +47,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { censarControles, censarCapacidades, CAPACIDADES, LOS_OCHO } from './_censo-dos-fronts.mjs';
+import { extraerRanurasVisibles, ranurasDelDocumento, RANURAS_NO_DERIVABLES } from './_ranuras-documento.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
@@ -135,5 +136,108 @@ test('SCRUM-600 · 🔴 la red cubre los OCHO — quitar uno de la lista tiene q
   for (const f of LOS_OCHO) {
     assert.ok(fs.existsSync(path.join(RAIZ, f.fichero)),
       `🔴 ${f.id} apunta a ${f.fichero}, que no existe: la red vigilaria el vacio`);
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// LAS RANURAS DE TEXTO · lo que el fundador tiene que decidir para que esto se pueda codificar.
+//
+// La lista se FIJA aqui —texto a texto, comparado con `===`— y no en un informe, porque un
+// informe no vuelve a leerse: en cuanto alguien toque un rotulo del presupuesto, la lista que
+// el fundador esta mirando deja de ser cierta SIN QUE NADIE SE ENTERE. Fijada, cae.
+//
+// 🔴 NO se fija la LINEA. Se fija la VIA y el TEXTO. Una linea cambia porque alguien anadio un
+// comentario doce lineas mas arriba, y un guard que cae por eso lo apaga el siguiente que pase.
+// Las lineas van en la entrada del master, fechadas contra su sha.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+const RANURAS_A = [
+  ["textContent", "Crear presupuesto"],
+  ["textContent", "Genera un presupuesto con varias líneas, calcula los totales y envía el link de pago por WhatsApp."],
+  ["cabeceraModal(titulo)", "Presupuesto #${displayNum} generado"],
+  ["textContent", "Revisa el PDF del presupuesto antes de enviarlo por WhatsApp al cliente."],
+  ["title", "PDF Presupuesto #${displayNum}"],
+  ["setAlert", "Presupuesto enviado por email."],
+  ["setAlert", "Presupuesto enviado por WhatsApp."],
+  ["textContent", "Solo presupuesto (facturación manual)"],
+  ["textContent", "Pasada esta fecha el presupuesto caduca solo y el cliente verá \"pide uno actualizado\"."],
+  ["textContent", "Añade los conceptos que vas a presupuestar."],
+  ["title", "Describe el trabajo y Claude sugiere las líneas del presupuesto"],
+  ["textContent", "Generar presupuesto"],
+  ["textContent", "Estado del presupuesto"],
+  ["innerHTML [const STATUS_EMPTY_HTML]", "<div class=\"quote-status-empty\">📄 Genera el presupuesto y aquí verás su número, el estado y si se ha enviado.</div>"],
+  ["innerHTML [const STATUS_EMPTY_HTML]", "<div class=\"quote-status-empty\">📄 Genera el presupuesto y aquí verás su número, el estado y si se ha enviado.</div>"],
+  ["innerHTML", "<strong>Presupuesto #${displayNum}</strong>"],
+  ["innerHTML", "KPI-TOTAL"],
+  ["innerHTML", "PIE-TOTAL"],
+  ["textContent", "Presupuesto válido durante 30 días salvo indicación en contrario."],
+  ["title", "Añadir una línea con \"${item.concepto}\" (en ${item.usos} presupuestos)"],
+  ["textContent", "en ${item.usos} presupuestos"],
+  ["innerHTML", "MODAL-USAR-PLANTILLA"],
+  ["innerHTML", "MODAL-GUARDAR-PLANTILLA"],
+  ["setAlert", "Plantilla \"${template.name}\" cargada — completa los datos del cliente y genera el presupuesto."],
+  ["new Error", "Respuesta inesperada al crear presupuesto."],
+  ["textContent", "Generar presupuesto"],
+];
+
+// Las cuatro ranuras que son BLOQUES de HTML con la frase dentro. Se fijan por la frase, no por
+// el bloque entero: el bloque lleva ademas estilos y marcado, que cambian sin que cambie el
+// texto — y entonces el guard caeria por algo que no es lo que vigila.
+const FRASES_EN_BLOQUE = {
+  'KPI-TOTAL': 'Total presupuesto',
+  'PIE-TOTAL': 'Total presupuesto',
+  'MODAL-USAR-PLANTILLA': 'Elige una plantilla para cargar sus líneas en el presupuesto actual.',
+  'MODAL-GUARDAR-PLANTILLA': 'Dale un nombre a esta plantilla para reutilizarla en futuros presupuestos.',
+};
+
+test('SCRUM-600 · SUELO: el extractor de ranuras VE las dos pantallas enteras', () => {
+  const q = extraerRanurasVisibles(leer(FRONT_PRESUPUESTO), 'quotesView.js');
+  const f = extraerRanurasVisibles(leer(FRONT_FACTURA), 'nuevaFacturaModal.js');
+  assert.ok(q.length >= 100, `🔴 EXTRACTOR CIEGO sobre el presupuesto: ${q.length} ranuras visibles`);
+  assert.ok(f.length >= 15, `🔴 EXTRACTOR CIEGO sobre la factura: ${f.length} ranuras visibles`);
+});
+
+test('SCRUM-600 · 🔴 LAS RANURAS QUE ESPERAN AL FUNDADOR: 26 posiciones, 24 textos', () => {
+  const ranuras = ranurasDelDocumento(leer(FRONT_PRESUPUESTO), 'quotesView.js');
+
+  assert.equal(ranuras.length, RANURAS_A.length,
+    `🔴 el numero de ranuras ha cambiado: eran ${RANURAS_A.length} y ahora son ${ranuras.length}. `
+    + 'La lista que el fundador esta mirando ha dejado de ser cierta — hay que volver a mandarsela.');
+
+  ranuras.forEach((r, i) => {
+    const [via, esperado] = RANURAS_A[i];
+    assert.equal(r.via, via, `ranura ${i + 1}: la via cambio de ${via} a ${r.via}`);
+    const clave = FRASES_EN_BLOQUE[esperado];
+    if (clave === undefined) {
+      // Texto EXACTO, con `===`. Nada de `includes`.
+      assert.equal(r.texto, esperado,
+        `🔴 la ranura ${i + 1} (${via}) cambio de texto.\n  antes: ${JSON.stringify(esperado)}\n  ahora: ${JSON.stringify(r.texto)}`);
+    } else {
+      // Bloque de HTML: se exige que la FRASE siga dentro, byte a byte.
+      const dentro = r.texto.split(clave).length - 1;
+      assert.equal(dentro, 1,
+        `🔴 la frase del bloque ${esperado} ya no esta (o esta ${dentro} veces): ${JSON.stringify(clave)}`);
+    }
+  });
+
+  const distintos = new Set(ranuras.map((r) => r.texto));
+  assert.equal(distintos.size, 24,
+    `🔴 textos distintos: ${distintos.size}. Eran 24: 26 posiciones menos las dos parejas que `
+    + 'comparten texto («Generar presupuesto» en el boton y al restaurarlo; el vacio del panel de '
+    + 'estado, que sale dos veces de la MISMA constante).');
+});
+
+test('SCRUM-600 · 🔴 GRUPO B: la ranura que el criterio derivado NO puede ver sigue donde se dijo', () => {
+  assert.ok(RANURAS_NO_DERIVABLES.length >= 1,
+    '🔴 el grupo B se ha vaciado: o se resolvio y hay que decirlo, o alguien lo borro');
+  for (const r of RANURAS_NO_DERIVABLES) {
+    const disco = fs.readFileSync(path.join(RAIZ, r.fichero));       // BYTES, no texto
+    const veces = disco.toString('utf8').split(r.ancla).length - 1;
+    assert.equal(veces, 1,
+      `🔴 ${r.id}: su ancla aparece ${veces} veces en ${r.fichero}. La lista a mano se ha desincronizado `
+      + 'del codigo, que es lo peor que le puede pasar a una lista a mano.');
+    // Y el criterio derivado NO la ve: si algun dia la viera, sobra del grupo B.
+    assert.equal(r.texto.toLowerCase().includes('presupuest'), false,
+      `🔴 ${r.id} SI nombra el documento, asi que el criterio derivado ya la encuentra: `
+      + 'sacala del grupo B o se contara dos veces.');
   }
 });
