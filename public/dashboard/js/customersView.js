@@ -133,6 +133,7 @@ function renderCustomersView(container) {
   let fieldName, fieldPhone, fieldEmail, fieldNotes;
   let fieldWaOptOut = null; // J3: baja manual de WhatsApp desde la ficha
   let fieldTipoDestinatario = null; // SCRUM-69: plazo legal de la recapitulativa (art. 13 RD 1619/2012)
+  let switchForma = null; // SCRUM-574: FORMA JURÍDICA (contactKind). NO es fieldTipoDestinatario.
   let fieldRecargo = null; // SCRUM-294-a: recargo de equivalencia del cliente (tres estados)
   let modalTitleEl = null;
   let modalSaveBtn = null;
@@ -201,6 +202,18 @@ function renderCustomersView(container) {
     recargoWrapper.appendChild(recargoLabel);
     recargoWrapper.appendChild(fieldRecargo);
 
+    // SCRUM-574 (CONT-01): el switch va PRIMERO — es la pregunta que decide qué campos tienen
+    // sentido debajo, así que preguntarla después sería pedir el dato y luego cambiarle el
+    // formulario bajo los pies. En Holded vive arriba a la derecha, fuera de las pestañas; aquí
+    // el modal no tiene pestañas, y «arriba del todo» es el sitio equivalente.
+    switchForma = switchFormaJuridica({
+      alCambiar: (lado) => switchFormaJuridica.aplicarLado(lado, {
+        legalName: fieldLegalName.wrapper,
+        taxId: fieldTaxId.wrapper,
+      }),
+    });
+    body.appendChild(switchForma.nodo);
+
     body.appendChild(fieldName.wrapper);
     body.appendChild(fieldPhone.wrapper);
     body.appendChild(fieldEmail.wrapper);
@@ -257,6 +270,10 @@ function renderCustomersView(container) {
 
     modalForm.reset();
 
+    // SCRUM-574: `reset()` deja los dos radios sin marcar, que es exactamente el estado de un alta
+    // nueva — nadie ha declarado nada todavía. En edición lo sobrescribe el bloque de abajo.
+    switchForma.escribir(null);
+
     if (editingCustomer) {
       fieldName.input.value = editingCustomer.name || "";
       fieldPhone.input.value = editingCustomer.phone || "";
@@ -269,7 +286,18 @@ function renderCustomersView(container) {
       // SCRUM-294-a: los tres estados NO colapsan. `|| ""` habria mandado el `false` a «no consta».
       fieldRecargo.value = editingCustomer.recargoEquivalencia === true ? "si"
         : editingCustomer.recargoEquivalencia === false ? "no" : "";
+      // SCRUM-574: la FORMA JURÍDICA sale de `contactKind` y de NADA MÁS. Nunca se deduce de
+      // `tipoDestinatario` ni de si hay razón social — deducirla es el defecto que este ticket
+      // cierra, y está prohibido expresamente (fundador, 24-ago-2026).
+      switchForma.escribir(editingCustomer.contactKind);
     }
+
+    // Se aplica DESPUÉS de rellenar los campos, no antes: la regla mira si «razón social» tiene
+    // algo escrito para no esconder un dato, y antes de rellenar todavía está vacío.
+    switchFormaJuridica.aplicarLado(switchForma.leer(), {
+      legalName: fieldLegalName.wrapper,
+      taxId: fieldTaxId.wrapper,
+    });
 
     modalBackdrop.style.display = "flex";
     fieldName.input.focus();
@@ -293,6 +321,9 @@ function renderCustomersView(container) {
       notes: fieldNotes.input.value.trim(),
       legalName: fieldLegalName.input.value.trim() || null, // A20.4
       taxId: fieldTaxId.input.value.trim() || null,
+      // SCRUM-574: forma jurídica. `null` = nadie la ha declarado, y viaja como null hasta la BD:
+      // NO se cae a un lado por defecto, que sería declarar por el profesional.
+      contactKind: switchForma.leer(),
       waOptOut: !!(fieldWaOptOut && fieldWaOptOut.checked), // J3
       tipoDestinatario: fieldTipoDestinatario.value || null, // SCRUM-69
       // SCRUM-294-a: «» → null (no consta). NUNCA false por defecto: eso seria DECLARAR por el

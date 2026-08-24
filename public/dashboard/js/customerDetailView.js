@@ -296,6 +296,13 @@ function openEdit360Modal(customer, customerId, container) {
   modal.style.maxWidth = '440px';
   modal.innerHTML = `
     <div class="modal-body" style="flex-direction:column;gap:10px">
+      <!-- SCRUM-574 (CONT-01): hueco para el switch Empresa/Persona. Va PRIMERO porque decide qué
+           campos tienen sentido debajo. El nodo se inserta después: el switch es un componente con
+           comportamiento (switchFormaJuridica.js) y una plantilla de texto no puede tenerlo.
+           SIN COMILLAS INVERSAS AQUÍ DENTRO: esto vive en un template literal y una comilla
+           inversa lo CIERRA — el navegador descarta el fichero entero. Es el defecto histórico de
+           exportView que la suite vigila en «② ROJO: backtick dentro del template». -->
+      <div id="e360-forma"></div>
       <div class="field"><label>Nombre</label><input type="text" id="e360-name"/></div>
       <div class="field"><label>Teléfono (E.164 sin +)</label><input type="text" id="e360-phone"/></div>
       <div class="field"><label>Email</label><input type="email" id="e360-email"/></div>
@@ -343,6 +350,20 @@ function openEdit360Modal(customer, customerId, container) {
   $('#e360-tipodestinatario').value = customer.tipoDestinatario || ''; // SCRUM-69
   $('#e360-periodicidad').value = customer.billingPeriodicity || 'NINGUNA'; // SCRUM-171b
   $('#e360-waoptout').checked = !!customer.waOptOut;
+
+  // SCRUM-574 (CONT-01) · el switch, en el SEGUNDO de los dos sitios que lo llevan.
+  // La forma jurídica sale de `contactKind` y de NADA MÁS: nunca se deduce de `tipoDestinatario`
+  // (que está tres campos más abajo y responde otra pregunta) ni de si hay razón social.
+  const wrapperDe = (sel) => $(sel).closest('.field');
+  const camposPorLado = { legalName: wrapperDe('#e360-legalname'), taxId: wrapperDe('#e360-taxid') };
+  const switchForma = switchFormaJuridica({
+    valor: customer.contactKind,
+    alCambiar: (lado) => switchFormaJuridica.aplicarLado(lado, camposPorLado),
+  });
+  $('#e360-forma').appendChild(switchForma.nodo);
+  // Después de rellenar los campos: la regla mira si «razón social» tiene algo para no esconderlo.
+  switchFormaJuridica.aplicarLado(switchForma.leer(), camposPorLado);
+
   $('#e360-cancel').onclick = () => overlay.remove();
 
   function showErr(msg) {
@@ -363,6 +384,10 @@ function openEdit360Modal(customer, customerId, container) {
       legalName: $('#e360-legalname').value.trim() || null, // A20.4
       taxId: $('#e360-taxid').value.trim() || null,
       tipoDestinatario: $('#e360-tipodestinatario').value || null, // SCRUM-69
+      // SCRUM-574: forma jurídica. `null` = sin declarar, y viaja como null: no se cae a un lado.
+      // Va PEGADO a `tipoDestinatario` en el payload y son campos INDEPENDIENTES — el uno no se
+      // deriva del otro ni aquí ni en ningún sitio (fundador, 24-ago-2026).
+      contactKind: switchForma.leer(),
       billingPeriodicity: $('#e360-periodicidad').value || 'NINGUNA', // SCRUM-171b
       waOptOut: $('#e360-waoptout').checked,
     };
