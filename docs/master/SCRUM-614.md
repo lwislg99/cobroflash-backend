@@ -373,3 +373,110 @@ sin sus costes ni sus márgenes. Es un hueco de portabilidad que existe con o si
 | 1 | `sin BOT_SUITE_TEST=1` |
 | 1 | `sin A55_DB_TEST=1` |
 | 1 | EPERM de Windows creando un enlace a fichero (el mismo mecanismo lo cubre un control positivo portable que sí corre) |
+
+---
+
+# SCRUM-614 · APÉNDICE 2 · Retirado el borrado físico, y el Operario sólo ve
+
+**Fecha:** 01-sep-2026 · **Carril:** B · **Gate:** sin gate — corre en `npm test`
+
+**Medido contra:** `origin/main` = `aa9309e7bdf80717373d0273f1d03f01f2008b8c` · 2026-09-01T15:11:36+01:00
+
+## Lo primero: este ticket ya estaba construido y sin mergear
+
+El censo, el cierre de los tres verbos, el guard invertido y la derogación estaban **desde el
+24-ago en esta misma rama**, empujados en `fa8e4096` y **sin mergear**. Se comprobó con
+`ls-remote` y `merge-base` antes de tocar nada, que es lo que evitó rehacerlo: es el patrón de
+SCRUM-367 —Jira decía «por hacer» y el remoto decía otra cosa— y el `ls-remote` manda.
+
+Se trajo `main` (**89 commits**, merge limpio) y la suite siguió verde: el cierre sobrevive.
+
+## Lo nuevo: el borrado físico se retira **de los tres sitios**
+
+No sólo la ruta. Los tres, y el motivo del tercero es el que se olvida:
+
+| sitio | qué se va |
+|---|---|
+| ruta | `DELETE /admin/products/:id` |
+| **servicio** | **`deleteProduct` entero** |
+| front | el botón «Borrar», su manejador y el `fetch` con `method: "DELETE"` |
+
+**Por qué también la función:** un servicio de dominio sin llamadores pasa todos los tests, entra
+verde y desde fuera es indistinguible de una función entregada — así se cerraron en falso
+`cambiarFlagFiscal` y `borrarMerchant` (SCRUM-411). Dejar un `prisma.product.delete` huérfano es
+dejar el borrado **a un `import` de distancia**.
+
+**Y NO se sustituye por un borrado lógico en esa ruta.** «Desactivar» ya *es* `PUT /:id` con
+`isActive: false`. Una segunda puerta que hiciera lo mismo sería otro sitio donde se decide lo
+mismo — justo lo que esta semana lleva desmontando.
+
+## El Operario sólo ve: **cero copy nuevo**
+
+«Editar» y «Desactivar» se **vetan** para el técnico con `lockActionForRole`, el helper de
+SCRUM-89, cuyo copy **ya está aprobado por el fundador** («Solo para administradores», 23-jul,
+marcado *«NO reformular»*). Se veta en vez de ocultar, por el criterio que ya usan export/import en
+esta misma pantalla: un botón que desaparece no explica nada.
+
+**Consecuencia: el censo de marcadores NO sube.** No hace falta ningún `[PENDIENTE microcopy
+oficial]`, porque no hay ningún texto nuevo.
+
+⚠️ Y queda escrito lo que arrastra: **«Desactivar» es el MISMO verbo que «Editar»** (`PUT` con
+`isActive`). Desde fuera parecen dos acciones; no lo son, y por eso se cierran juntas.
+
+## 🛑 La consecuencia viva, que no se tapa
+
+`@@unique([merchantId, nameSearch])` **NO mira `isActive`**. Un producto desactivado **sigue
+ocupando su nombre**: recrearlo revienta y el importador CSV lo cuenta como `skipped`. Retirado el
+borrado, **hoy no queda ninguna forma de liberar un nombre**.
+
+El diff está **PREPARADO Y PARADO** — `prisma/schema.prisma` es de los fundadores:
+
+```sql
+DROP INDEX "products_merchant_id_name_search_key";
+CREATE UNIQUE INDEX "products_merchant_id_name_search_is_active_key"
+  ON "products"("merchant_id", "name_search", "is_active");
+```
+
+Y con su pega declarada, que sigue en pie: esa forma permite **un activo y UN SOLO inactivo** con
+el mismo nombre, así que desactivar dos veces ese nombre vuelve a chocar. Lo correcto es un índice
+**parcial** (`WHERE is_active`), que Prisma no sabe declarar y que por tanto viviría fuera de lo
+que sincroniza el esquema. Es una decisión de diseño y no se toma aquí.
+
+## Dos redes de la casa se atendieron. Ninguna se relajó.
+
+- **SCRUM-337 · el censo de sitios de borrado.** Un sitio DESAPARECIÓ y el guard exige contestar su
+  pregunta en el mismo commit: *¿este borrado se disparaba al vencer la prueba o por inactividad?*
+  **No.** Era el botón manual del catálogo, sin relación con `trialExpired` ni con ningún cron.
+  Sale de `BORRADOS_DECLARADOS` con esa respuesta escrita al lado.
+- **El guard propio de SCRUM-614** pasa de exigir **tres** verbos con gate a exigir **dos**, y se le
+  añade uno nuevo que comprueba que el borrado físico no quedó en **ninguno de los tres sitios**.
+
+## El control
+
+Árbol commiteado en **`a0fa770e`** antes de inyectar.
+
+| | resultado |
+|---|---|
+| **Rojo por el mecanismo** · devolver `prisma.product.delete` al servicio | **el test CAE y lo nombra**: «queda un `prisma.product.delete` VIVO en el servicio: `await prisma.product.delete({ where: { id } });`» |
+| reversión | `Buffer.compare(disco, testigo) === 0` |
+| suite tras revertir | verde |
+
+⚠️ **Y el test se cazó a sí mismo en el estreno**, que merece quedar escrito porque es la segunda
+vez hoy: el comentario que explica la retirada **nombra `method: "DELETE"`**, así que el assert del
+front salía rojo con el borrado ya quitado. Ahora mira el fichero **sin comentarios**, y lleva
+**control positivo** (tiene que seguir viendo el `method: "POST"` que sí existe) para que quitar
+comentarios no lo deje midiendo sobre un vacío.
+
+## Lo que NO se ha podido ejecutar, y se dice
+
+El control «un usuario SIN el rol no alcanza la ruta **por el camino real**» necesita servidor y
+sesiones: en casa eso es `tests/tenancy-permisos.test.mjs`, **gateado tras `QA_DB_TEST=1`** contra
+staging. **No se ha corrido en esta pasada.** Lo que sí está probado aquí es el gate ejercitado
+—el middleware devuelve 403 a `tecnico`, `operario`, rol vacío, desconocido y ausente, y deja pasar
+a `admin`— y que el botón ya no está en la pantalla. Queda declarado como hueco, no como hecho.
+
+## Estado del árbol
+
+- **Suite: total 4148 · pass 4069 · fail 0 · skipped 79**, medida en esta rama.
+- `npm run guards:entrada` en verde.
+- No se ha borrado ningún producto para comprobar nada, ni se ha tocado `prisma/schema.prisma`.
