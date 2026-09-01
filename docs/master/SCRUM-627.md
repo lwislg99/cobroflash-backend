@@ -202,3 +202,138 @@ y cuesta diez veredictos.
 
 * `tests/scrum627-censo-ciego.test.mjs` — la medida, la demostración de la ceguera en las dos
   direcciones y la población con su cero declarado.
+
+---
+
+# APÉNDICE · 25-ago-2026 · SE EJECUTA LA OPCIÓN A
+
+**Medido contra:** `origin/main` = `57e16ca1b67905310d5ff2a0a9dda1ce27b2359e` · 2026-08-25T07:45:00+01:00
+
+> ⚠️ Esta rama está **apilada**: sale de la de SCRUM-627 (`acaea594`, que trae el detector y aún
+> no estaba mergeada) y se le mezcló `origin/main` en ese commit. El ancla es ese `origin/main`.
+> Esa hora es la del trabajo de esta rama, no una lectura de reloj — criterio R14.
+>
+> Este apéndice se **añade** al final de la entrada anterior; no se borra nada.
+
+**Decisión del fundador:** A ahora, B cuando la asesoría desbloquee 623/624.
+
+---
+
+## 1 · 🛑 La pregunta que el encargo mandaba parar a contestar: el límite ES real
+
+> *«Si el formato del censo no admite dos entradas para un fichero, PARA Y DILO: eso sería un
+> límite del censo, no un detalle de tu ticket.»*
+
+**No las admite.** El `CENSO` de SCRUM-389 es un objeto indexado **por ruta**: una clave, una
+entrada. Y hacen falta dos para `pdf.service.ts`, porque tiene dos cosas distintas —la llamada a
+la primitiva para el presupuesto y las veinte líneas de al lado que se escriben el desglose a
+mano—.
+
+**No se ha forzado el formato, y tampoco se ha parado el ticket:** la segunda cosa vive en una
+**tabla hermana**, que es la forma que el propio encargo describe («nace con la población
+declarada, como el trinquete de SCRUM-402»). Se dice aquí porque es un límite del censo, no un
+detalle: si algún día hiciera falta una tercera cosa en un fichero, volvería a aparecer.
+
+**Y el límite deja un agujero que la tabla hermana sola no tapa:** un lector de SCRUM-389 ve
+`pdf.service.ts` clasificado y deja de buscar. Por eso se ha añadido allí **una remisión
+escrita** —un comentario encima de su entrada que dice que el fichero tiene dos cosas y dónde
+está la otra—. **No cambia ni la lógica ni la tabla ni lo que aquel censo exige**: es texto. Sin
+esa remisión, la tabla hermana existiría y nadie llegaría a ella desde donde se empieza a mirar.
+
+---
+
+## 2 · Los diez veredictos
+
+Cada uno se escribió **mirando el código**, no la ruta. La pregunta es la de SCRUM-389 y no ha
+cambiado: *¿es una segunda cifra del mismo periodo?*
+
+| fichero | veredicto | por qué |
+|---|---|---|
+| `core/utils/utils.ts` | `DOCUMENTO` | `calcTotal` suma el bruto de las líneas de **un** documento y redondea una vez. Ni agrupa por tipo ni mira periodos |
+| `core/validation/schemas.ts` | `NO_ES_DINERO` | la única aritmética está **dentro del mensaje de error** del suplido, para poder decir «un IVA del 21 %». Convierte para NOMBRAR, no deriva importes |
+| `expenses/domain/justificante.ts` | `COMPROBACION` | recalcula la cuota **esperada** de un gasto para detectar que el justificante no cuadra. No sale en ningún documento, y es IVA **soportado**, no repercutido |
+| `invoicing/domain/recargoEquivalencia.ts` | `DOCUMENTO` | la cuota del **recargo de equivalencia** —otro impuesto, otra tabla de tipos— por documento. El fichero ya declaraba leer la forma de `calcVatBreakdown` «leído, nunca importado» |
+| `jobs/domain/albaran.service.ts` | `DOCUMENTO` | el valorado de **un** albarán, en céntimos y redondeando por línea. Acumula **una** base y **una** cuota, no una por tipo |
+| `jobs/domain/albaranAFactura.ts` | `DOCUMENTO` | `totalDeFacturables`, redondeando por línea **a propósito**: su comentario ya decía que dos formas de redondear la misma factura dan importes distintos |
+| `quotes/app/routes/quotes.routes.ts` | `DOCUMENTO` | `calcTierTotal`: el total de **una** opción de **un** presupuesto, que ni entra en el 303 |
+| `system/app/routes/customerPortal.routes.ts` | `DOCUMENTO` | pinta el importe de cada línea en el portal. Es **presentación** de un documento que ya existe |
+| `invoicing/domain/vat.service.ts` | `PRIMITIVA` | **es** el desglose. Su entrada aquí es por su aritmética; en SCRUM-389 está por la llamada de `calcVatCuotaTotal`. Que salga marcada es el control de que el detector reconoce lo que dice reconocer |
+| `invoicing/infra/pdf/pdf.service.ts` | `REIMPLEMENTACION` | 🔴 **las dos cosas.** La llamada (presupuesto, SCRUM-604) la clasifica SCRUM-389; el bloque de la factura, con su `vatMap`, no lo ve nadie. **No se convierte** — eso es B |
+
+**Ninguno de los ocho invisibles agrega un periodo.** Pero eso **no lo sabía nadie hasta hoy**:
+no estaban mirados porque no eran mirables.
+
+Un test exige que cada veredicto esté en un **vocabulario cerrado** y traiga un motivo de al
+menos 80 caracteres: *un veredicto sin motivo es una etiqueta*.
+
+---
+
+## 3 · 🔴 La población bajó de 9 a 8, y NO es un refinamiento silencioso
+
+El encargo avisaba: *«si al declarar la población el detector pierde ficheros respecto a tu
+barrido de ayer, ESO ES UN ROJO».* Perdió uno — **`maintenance.service.ts`**— y aquí está la
+prueba de que era un **falso positivo**, no una pérdida:
+
+```ts
+let line: QuoteLine = { concept: plan.title, qty: 1, price: 0, tax: 0 };
+const price = Number(line.price ?? 0) * Number(line.qty ?? 1);   // ← lo que se marcaba
+```
+
+El alias del impuesto nacía del **nombre de una propiedad** (`tax: 0`), así que `line` entera
+pasaba por impuesto y `line.price * line.qty` —que no toca ninguno— salía marcada. **Un objeto
+que TIENE un impuesto no ES un impuesto.**
+
+Arreglado en el detector: el nombre de una clave ya no cuenta como mención; **su valor sí**.
+Medido: era el **único** falso positivo, y quitarlo **no pierde ningún hallazgo real** — los otros
+ocho y los dos desgloses siguen exactamente donde estaban.
+
+Y no se deja a la buena voluntad: hay un **test de regresión** con las dos mitades —que `line` no
+vuelva a ser alias, y que `base * linea.tax` **sí** se siga viendo, para que el arreglo no se
+pase de frenada—. La entrada que salió queda **anotada** en la lista, no borrada a secas.
+
+---
+
+## 4 · Verificación
+
+**El control que decide**, con la reimplementación a mano dentro de `src/` (con el tipo llamado
+`t`, como la de la factura). Fichero nuevo: revertir fue borrarlo, y se comprobó que quedó
+borrado.
+
+| | árbol limpio | con la reimplementación |
+|---|---|---|
+| `scrum389-censo-vat` (llamadores) | `fail=0` | **`fail=0` — sigue sin verla** |
+| `scrum627b-censo-declara…` (forma) | `fail=0` | 🔴 **`fail=1`, y la NOMBRA** |
+
+Que el de SCRUM-389 siga en `fail=0` **es lo correcto**: no se ha relajado ni ampliado. Sigue
+vigilando lo suyo; lo que falta lo vigila el hermano.
+
+**Controles que acompañan** —los ocho tests del fichero nuevo—:
+
+* **negativo:** un fichero **declarado** no se reporta como nuevo (sin esto, un censo que dijera
+  «sin declarar» a todo pasaría el control de arriba);
+* **suelo:** ve 244 ficheros y sabe leer la tabla de al lado;
+* **trinquete al revés:** una entrada que ya no corresponde a nada también cae — *«cero» y «no
+  supe mirar» no son el mismo número*;
+* **doble entrada:** los que están en las dos tablas tienen que **decirlo**, y son exactamente
+  los dos que hacen aritmética **y** llaman;
+* **fidelidad:** la copia del criterio de SCRUM-389 reproduce su lista real. *La fidelidad se
+  mide, no se pide por fe.*
+* **suelo de la población:** con las diez entradas declaradas, la tanda nace **en verde**. Si
+  hubiera nacido en rojo, la población estaría incompleta.
+
+---
+
+## 5 · Lo que NO se ha tocado
+
+* **El cálculo de la factura.** Ni una línea. Aquí se decidió **quién lo vigila**.
+* **SCRUM-623 y SCRUM-624.** Anotados en la entrada de `pdf.service.ts` y nada más.
+* **Ninguna reimplementación se ha convertido a la primitiva.** Eso es B, y B espera a la
+  asesoría: mueve un céntimo en el 25 % de los documentos de dos tipos (medido en la entrada
+  anterior) y son las mismas veinte líneas de 623/624.
+* **El censo de SCRUM-389**: sólo se le añadió un **comentario** de remisión. Su lógica, su tabla
+  y lo que exige están intactos.
+
+## Tests que introduce este apéndice
+
+* `tests/scrum627b-censo-declara-reimplementaciones.test.mjs` — la tabla de los diez veredictos,
+  la regla de que nadie hace aritmética de IVA sin declararse, y sus controles.
