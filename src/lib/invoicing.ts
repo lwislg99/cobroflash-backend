@@ -110,7 +110,9 @@ export async function ensureInvoicePdf(
         phone: inv.merchant.whatsappPhone, // A2.4: emisor completo
         email: inv.merchant.email,
       },
-      customer: { name: inv.customer.name, email: inv.customer.email, phone: inv.customer.phone },
+      // SCRUM-577: se pasa `legalName`. Hasta hoy NO viajaba, asi que la factura no podia
+      // imprimir la denominacion legal aunque el cliente la tuviera rellena.
+      customer: { name: inv.customer.name, legalName: (inv.customer as any).legalName, email: inv.customer.email, phone: inv.customer.phone },
       currency: inv.currency,
       total: inv.total.toString(),
       qrData,
@@ -246,7 +248,8 @@ export async function ensureInvoiceForCharge(
           phone: merchant.whatsappPhone, // A2.4: emisor completo
           email: merchant.email,
         },
-        customer: { name: customer.name, email: (customer as any).email, phone: (customer as any).phone },
+        // SCRUM-577: idem — el segundo camino que arma la factura.
+        customer: { name: customer.name, legalName: (customer as any).legalName, email: (customer as any).email, phone: (customer as any).phone },
         currency: inv.currency,
         total: inv.total.toString(),
         qrData,
