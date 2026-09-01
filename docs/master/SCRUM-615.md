@@ -333,3 +333,87 @@ los dos como **CASO B, normalizados**.
 * **Cero microcopy.**
 * **El trinquete de lectores vigila `src/`, no `public/`.** Es deliberado —el front no decide
   plazos— pero significa que una copia de la regla en el navegador no lo haría caer.
+
+---
+
+# APÉNDICE · 24-ago-2026 · EJECUTADAS LAS SALIDAS D y C
+
+**Decisión del fundador:** adelante con **D** (pedir el tipo cuando el cliente entra en la bandeja)
+y **C** (aviso de red mientras el dato no esté). **A** queda descartada de la cola ejecutable: abre
+un estado nuevo del semáforo (regla 27) y exige antes **SCRUM-622** — sin arreglar el
+`|| SEMAFORO_META.verde` de `invoicesView.js:520`, quitar el implícito no deja de mentir:
+**miente en verde**.
+
+## Qué se construyó
+
+| Pieza | Dónde |
+|---|---|
+| El dato que faltaba | `pendientesFacturar.service.ts` → `tipoDestinatarioDeclarado` en el DTO |
+| La regla + el bloque | `public/dashboard/js/tipoDestinatarioPendiente.js` (nuevo) |
+| El cableado | `invoicesView.js`, en `renderGrupoCard`, debajo del importe |
+
+**Por qué hacía falta un campo nuevo en el DTO:** sólo se exponía el tipo **resuelto**, y con el
+resuelto el front **no puede distinguir «es un particular» de «nadie lo ha dicho»** — justo la
+distinción que hace falta para poder preguntar. No es información nueva: el valor crudo ya se
+expone en `GET /admin/customers`; esta respuesta era la única que lo pisaba.
+
+🔴 **`resolveTipoDestinatario` NO SE TOCA.** Sigue siendo la red que da el plazo corto mientras
+nadie conteste. D la **vacía de casos**, no la borra.
+
+## 🔴 Corrección de una cifra mía: la subida del censo es +1, no +2
+
+Declaré «+2» contando **superficies**. El censo de SCRUM-402 cuenta **marcas**: una sola constante
+`MARCADOR`, una entrada — igual que `NF_PENDIENTE` contaba 1 pintando veintidós. Mi segundo
+marcador no es un literal nuevo: es una **referencia** a la misma constante desde `invoicesView`,
+así que el AST no lo cuenta aparte, y hace bien.
+
+> **La cifra correcta: +1 MARCA · 2 SUPERFICIES** (el aviso de C · el error de guardado).
+>
+> Y una consecuencia que va escrita en el propio censo: **aprobar UN texto NO apaga las dos.** Son
+> dos textos distintos que hoy comparten marcador; el día que el fundador los escriba habrá que
+> partir la constante. Decir «se apagan de golpe» aquí sería falso.
+
+## El censo de ranuras, actualizado
+
+| | Antes | Ahora |
+|---|---|---|
+| Ranuras visibles del campo | 8 | **12** — el mismo campo se pinta en un **tercer** sitio |
+| Textos distintos del campo | 4 | **4** (reutilizados **verbatim**) |
+| Decisiones de copy del campo | 4 | **4** — cada una sirve ahora a **3** sitios |
+| Ranuras nuevas de este ticket | — | **+2 superficies / +1 marca** |
+| **🔴 Decisiones totales para el fundador** | **4** | **6** |
+
+Las dos nuevas: **(5)** el aviso de C · **(6)** el error de guardado. Ésta última no reutiliza el
+mensaje de carga que ya existe porque aquel dice «no se han podido **CARGAR**» y aquí lo que falla
+es **guardar**: enseñarlo sería un texto que no describe lo que pasó.
+
+**La QUINTA pregunta que quedó abierta sigue abierta y NO se ha construido:** si debe existir una
+ranura que explique, *en el formulario*, que este campo mueve un plazo. Choca con SCRUM-294-a («el
+dato se pide, no se explica») y va con las demás. Sería la **séptima** decisión, no la quinta —
+el número cambió al entrar las dos de arriba.
+
+## Verificado en rojo
+
+Sobre `80381c63`, revirtiendo **byte a byte contra los bytes de disco** (`Buffer.compare = 0`).
+
+| Rotura inyectada | Resultado |
+|---|---|
+| Mirar el tipo **resuelto** en vez del **declarado** | ✔ caen 7, incluido el que nombra el defecto |
+| El bloque se pinta **siempre** (se pierde el sentido negativo) | ✔ caen los dos: «se le está enseñando el aviso a quien YA contestó» y el control negativo |
+| Escribir **texto de producto** en vez del marcador | ✔ cae: «TEXTO NUEVO SIN APROBAR en pantalla» |
+
+## Lo que NO cubre
+
+* **A no se ejecuta**, y con ella el `|| SEMAFORO_META.verde` sigue ahí: **SCRUM-622**, anotado y
+  no tocado.
+* **Ninguna fila se ha escrito.** El dato lo rellena el profesional, de uno en uno.
+* **Cero microcopy.** Las dos ranuras nuevas salen **a ciegas** —marcador sin palabra de trabajo—
+  a propósito: aquí el copy no es decorado, es lo que el profesional lee para contestar sobre un
+  plazo legal.
+* **El aviso de C no es utilizable hasta que el fundador lo escriba.** Se dice claro: hoy esa caja
+  muestra el marcador.
+* **`albaranAFactura.ts` sigue con su regla huérfana**, reportada y sin cablear.
+
+**Tanda final:** 4041 tests, 3964 pass, 0 fail, 77 skipped. `guards:entrada` verde.
+**Los 9 guards de navegador verdes** (51,9 s en serie), incluida la pantalla de facturas, que es
+la que toca este cambio.
