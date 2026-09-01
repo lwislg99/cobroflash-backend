@@ -187,23 +187,42 @@ test('SCRUM-604b · 🔴 las filas del desglose son DATOS, no dibujo: cabe una c
 });
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// LA DUPLICACIÓN DECLARADA · `fmtImporte` (presupuesto) y `fmt` (factura) tienen el mismo
-// cuerpo y NO se han unificado: el encargo dice que la factura no se toca. Divergencia
-// VIGILADA, que es lo que se puede hacer hoy sin tocarla.
+// LA DUPLICACIÓN DECLARADA · ACTUALIZADA POR SCRUM-636, y hay que explicar por qué.
+//
+// Este guard nació vigilando que `fmtImporte` (presupuesto) y el `fmt` INLINE de la factura
+// tuvieran el MISMO CUERPO, porque el encargo de SCRUM-604 decía que la factura no se tocaba:
+// «divergencia VIGILADA, que es lo que se puede hacer hoy sin tocarla».
+//
+// 🔴 ESA CONDICIÓN YA NO EXISTE. SCRUM-636 es el ticket que sí podía tocarla, y las unificó: el
+// `fmt` de la factura es ahora `const fmt = fmtImporte`, y `fmtImporte` delega en el sitio único
+// `formatImporteEs`. **No hay dos cuerpos que puedan separarse: hay uno.**
+//
+// Así que el guard NO se relaja — se reescribe contra un invariante MÁS FUERTE. Antes decía
+// «que los dos cuerpos sigan siendo iguales» (vigilancia); ahora dice «que sigan siendo UNO»
+// (imposibilidad). Comparar el cuerpo viejo aquí sería fijar un comportamiento que este ticket
+// corrigió a propósito: aquel `toLocaleString` NO agrupaba los miles.
 // ─────────────────────────────────────────────────────────────────────────────────────────
-test('SCRUM-604b · los dos formateadores de importe del fichero no pueden separarse', async () => {
+test('SCRUM-604b · los dos formateadores de importe del fichero SIGUEN SIENDO UNO', async () => {
   const { fmtImporte } = await import('../dist/modules/invoicing/infra/pdf/pdf.service.js');
+  const { formatImporteEs } = await import('../dist/core/utils/utils.js');
   const fuente = fs.readFileSync(path.join(RAIZ, FUENTE), 'utf8');
 
-  // El de la factura vive DENTRO de su función y no se puede importar: se comprueba que su
-  // cuerpo siga siendo el mismo, con `===` sobre la línea exacta.
-  const cuerpoFactura = "    return v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });";
-  assert.equal(fuente.split(cuerpoFactura).length - 1, 1,
-    '🔴 el `fmt` de la factura ha cambiado de cuerpo (o se ha movido). Si ahora formatea distinto '
-    + 'que `fmtImporte`, los dos documentos empiezan a escribir el dinero de dos maneras.');
+  // ① La factura no tiene formateador propio: usa el mismo objeto.
+  assert.ok(fuente.includes('const fmt = fmtImporte;'),
+    '🔴 la factura ha vuelto a tener su PROPIO formateador. Si se separa de `fmtImporte`, los dos '
+    + 'documentos empiezan a escribir el dinero de dos maneras — que es lo que este guard impide.');
 
+  // ② Y `fmtImporte` no tiene cuerpo propio: delega en el sitio único.
+  assert.ok(fuente.includes('return formatImporteEs(v);'),
+    '🔴 `fmtImporte` ha dejado de delegar en el sitio único (SCRUM-636).');
+
+  // ③ SUELO: que el fichero no tenga NINGUNA copia del formato escrita a mano.
+  assert.equal(/toLocaleString\(\s*['"]es-ES['"],\s*\{\s*minimumFractionDigits/.test(fuente), false,
+    '🔴 ha reaparecido una copia del formato en el fichero del PDF');
+
+  // ④ Y que de verdad producen lo mismo, no sólo que lo parezca leyendo el fuente.
   for (const v of [0, 4.5, 12.6, 105, 117.6, 1234.5]) {
-    assert.equal(fmtImporte(v), v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-      `🔴 \`fmtImporte\` ya no formatea ${v} como el de la factura`);
+    assert.equal(fmtImporte(v), formatImporteEs(v),
+      `🔴 \`fmtImporte\` ya no formatea ${v} como el sitio único`);
   }
 });

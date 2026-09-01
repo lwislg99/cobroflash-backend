@@ -7,6 +7,7 @@ import QRCode from 'qrcode';
 import { invoicesDir } from '../../../../core/storage/dirs';
 import { cantidadDeLinea, calcVatBreakdown } from '../../domain/vat.service'; // SCRUM-504: una sola cantidad
 import { getLocale } from '../../../../core/i18n/locales';
+import { formatImporteEs } from '../../../../core/utils/utils'; // SCRUM-636: el sitio unico
 import { nombreParaDocumento } from '../../../../core/documentos/nombreParaDocumento'; // SCRUM-577
 import { partirConceptoYDescripcion } from './conceptoLinea'; // SCRUM-603 (DOC-13)
 
@@ -24,7 +25,9 @@ import { partirConceptoYDescripcion } from './conceptoLinea'; // SCRUM-603 (DOC-
  * formateador de dinero compartido en `src/`.
  */
 export function fmtImporte(v: number): string {
-  return v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // SCRUM-636: DELEGA en el sitio unico. Antes tenia su propio `toLocaleString`, que NO agrupa
+  // los numeros de cuatro cifras en es-ES: escribia `1000,00` donde debe poner `1.000,00`.
+  return formatImporteEs(v);
 }
 
 /** Descarga el logo del merchant como Buffer para PDFKit.
@@ -147,9 +150,9 @@ export async function generateInvoicePdf(params: {
     doc.strokeColor('#000').lineWidth(1);
   }
 
-  function fmt(v: number) {
-    return v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
+  // SCRUM-636: la copia PEGADA A MANO de la factura desaparece. Era byte a byte la misma que
+  // `fmtImporte`, y su propio comentario ya lo declaraba desde SCRUM-604.
+  const fmt = fmtImporte;
 
   function dateStr(d: Date | null | undefined) {
     if (!d) return '—';
