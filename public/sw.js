@@ -36,6 +36,7 @@ const SHELL = [
   '/dashboard/js/quotesListView.js',
   '/dashboard/js/quoteMargen.js',
   '/dashboard/js/quoteSuplido.js',
+  '/dashboard/js/quoteAtajosVencimiento.js',
   '/dashboard/js/quotesView.js',
   '/dashboard/js/quotesDetailView.js',
   '/dashboard/js/productsView.js',

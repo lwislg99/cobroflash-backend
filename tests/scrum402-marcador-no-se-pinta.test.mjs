@@ -188,6 +188,20 @@ const CENSO = Object.freeze({
   //
   // SCRUM-483 dejó escrito que se partiría «el día que se aprueben, partiendo y rellenando en el
   // mismo commit». Ese día es hoy, así que `NF_PENDIENTE` se borra. Entrada BORRADA, no puesta a 0.
+  // SCRUM-605 (25-ago-2026) · SUBIDA A CONCIENCIA: 8 → 9 ficheros. Los tres atajos de «Válido
+  // hasta» del presupuesto (7 / 14 / 30) necesitan rótulo y nombre accesible, y ése es texto que
+  // NO existe. El encargo daba por hecho que no haría falta microcopy; hace falta, porque un
+  // botón sin nombre no es accesible y un número suelto («7») no dice de qué.
+  //
+  // Se cuenta 1: los TRES botones y sus tres `aria-label` salen de una sola constante
+  // `MARCA_MICROCOPY`, así que aprobar el copy los apaga de golpe. El NÚMERO va delante del
+  // marcador y no es microcopy —es el dato del atajo—, que es lo que los mantiene
+  // distinguibles entre sí mientras el texto no llegue.
+  //
+  // Lo que NO se hizo, y merece quedar escrito: el encargo pedía `[copy: fundador]`. Ese
+  // marcador NO lo cuenta este censo (cuenta `[PENDIENTE`), así que habría sido un marcador
+  // invisible para el trinquete que existe justo para verlo. Se usa el de la casa.
+  'quoteAtajosVencimiento.js': 1,
   'patronDetalleAcciones.js': 1,
   // 🔴 17-ago-2026 (tanda B) · SALE DEL CENSO: el fundador aprobó «Con errores» del resumen de importación de CSV. Entrada BORRADA, no
   // puesta a 0 (SCRUM-424 / SCRUM-405): `censoActual()` solo lista ficheros CON marcadores.
