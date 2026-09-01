@@ -164,6 +164,30 @@ model AuthSession {
 }
 
 model Customer {
+  // SCRUM-574 (CONT-01) · FORMA JURÍDICA DEL CONTACTO: `EMPRESA | PERSONA`.
+  //
+  // 🔴 NO ES `tipoDestinatario`, Y ÉSA ES LA DECISIÓN ENTERA DE ESTE CAMPO. El ticket original
+  // mandaba reutilizar aquél («no se añade campo: se promueve el que ya existía»), y esa premisa
+  // se cayó al medirla: `tipoDestinatario` es el campo fiscal de SCRUM-69 y fija el plazo legal
+  // de la recapitulativa (art. 13.2 RD 1619/2012). Son dos preguntas distintas:
+  //
+  //   contactKind       → FORMA JURÍDICA. Qué es el contacto. Decide qué campos enseña la ficha.
+  //   tipoDestinatario  → CAPACIDAD FISCAL. Si actúa como empresario a efectos de IVA.
+  //
+  // Un AUTÓNOMO es `PERSONA` aquí y `EMPRESARIO` allí — y es justo el cliente que abrió el
+  // ticket (el administrador de fincas). Con un solo campo, ese cliente queda con el plazo legal
+  // equivocado y un control de UI pasa a mandar sobre una fecha límite fiscal.
+  //
+  // ⛔ PROHIBIDO MEZCLARLOS (fundador, 24-ago-2026): ni en la migración, ni en el formulario, ni
+  // en un valor por defecto que deduzca uno del otro. Lo que se destapó tiene ticket: SCRUM-615.
+  //
+  // Nullable y SIN `@default`, por el mismo motivo que sus dos vecinos (`tipoDestinatario` y
+  // `recargoEquivalencia`): NULL = «no declarado», distinto de declarado. Un `@default` habría
+  // convertido a los 15 clientes existentes en «declarados» sin que nadie lo dijera. String y no
+  // enum, como el resto: la lista cerrada vive en Zod y añadir un valor no obliga a migrar un
+  // tipo de Postgres.
+  contactKind String? @map("contact_kind")
+
   // A20.4 (EXT3): cliente empresa — razón social y NIF (el NIF además es
   // requisito del F1 VeriFactu futuro, hallazgo S1-C)
   legalName String? @map("legal_name")

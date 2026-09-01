@@ -239,6 +239,13 @@ export const customerCreateSchema = z.object({
   notes: z.string().max(1000).optional(),
   // J3: baja de WhatsApp (manual desde la ficha hasta WA-0b/BOT-1)
   waOptOut: z.boolean().optional(),
+  // SCRUM-574 (CONT-01): FORMA JURÍDICA del contacto — la pregunta del switch Empresa/Persona.
+  // 🔴 NO es `tipoDestinatario`, que está tres líneas más abajo y responde otra cosa (capacidad
+  // fiscal, plazo del art. 13.2). Un autónomo es PERSONA aquí y EMPRESARIO allí. Están prohibidos
+  // de mezclar: ni derivar uno del otro, ni un default que lo deduzca (fundador, 24-ago-2026).
+  // `nullable().optional()` da los tres casos sin inventar ninguno, igual que sus vecinos:
+  // ausente = no se toca · null = no declarado · 'EMPRESA'/'PERSONA' = declarado por el profesional.
+  contactKind: z.enum(['EMPRESA', 'PERSONA']).nullable().optional(),
   // A20.4 (EXT3): cliente empresa — el NIF además es requisito del VeriFactu
   // futuro (hallazgo S1-C: F1 exige NIF del destinatario)
   legalName: z.string().max(200).nullable().optional(),

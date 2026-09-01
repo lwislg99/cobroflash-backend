@@ -561,6 +561,116 @@ html, body { overflow-x: clip; }
   box-shadow: none;
 }
 .field input[type="radio"] { border-radius: 50%; }
+/* ── Control segmentado (SCRUM-574) ──────────────────────────────
+   El switch «Este contacto es… Empresa | Persona». Por debajo son RADIOS de verdad
+   (exclusividad y teclado nativos); esto solo los viste de control segmentado.
+   Sin ninguno marcado —que es como se pinta un `contact_kind` NULL— los dos lados
+   se ven igual de apagados: ninguno miente diciendo que está elegido.
+   Tokens existentes, cero colores nuevos. */
+.segmented-field {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0; /* un <fieldset> trae min-width:min-content y desborda el modal sin esto */
+}
+.segmented-legend {
+  padding: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--neutral-600);
+  letter-spacing: .01em;
+}
+.segmented {
+  display: flex;
+  gap: 4px;
+  margin-top: 5px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.segmented-option {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;          /* objetivo táctil (AB6) */
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+  transition: background-color .12s, color .12s, box-shadow .12s;
+}
+/* El radio se mantiene VISIBLE (no `display:none`): es lo que anuncia el estado al
+   lector de pantalla y lo que recibe el foco del teclado. */
+.segmented-option .segmented-input { margin: 0; }
+.segmented-option:hover { color: var(--ink); }
+.segmented-option:has(.segmented-input:checked) {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+/* El anillo de foco se pinta sobre la PASTILLA, no sobre el radio de 16 px: así se ve
+   dónde está el teclado sin que el indicador quede minúsculo. */
+.segmented-option:has(.segmented-input:focus-visible) {
+  box-shadow: var(--ring);
+}
+@media (prefers-reduced-motion: reduce) {
+  .segmented-option { transition: none; }
+}
+
+/* ── Pedir el tipo de destinatario en la bandeja (SCRUM-615) ──────
+   El aviso (C) y la pregunta (D) van juntos, separados del resto de la tarjeta por
+   una línea, para que se lean como una cosa aparte: no son datos del grupo, son una
+   pregunta sobre el cliente. Tokens existentes, cero colores nuevos. */
+.tipo-destinatario-pendiente {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tipo-destinatario-aviso {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--neutral-600);
+}
+/* El select no ocupa el ancho entero: al lado de un importe, un campo a toda anchura
+   pesa más que el número y desordena la jerarquía de la tarjeta. */
+.tipo-destinatario-campo { max-width: 260px; }
+
+/* ── Teléfono con prefijo de país (SCRUM-578) ────────────────────
+   El prefijo y el número son un solo dato partido en dos controles, así que van en
+   una fila. El selector no crece: lo que el profesional lee y corrige es el NÚMERO,
+   y un desplegable de 222 países al 50 % de ancho le robaría el sitio.
+   Tokens existentes, cero colores nuevos. */
+.campo-telefono {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.campo-telefono .prefijo-pais {
+  flex: 0 0 auto;
+  max-width: 44%;
+  min-height: 44px;   /* objetivo táctil (AB6) — aquí no hay guard que lo mire (SCRUM-628) */
+}
+.campo-telefono input {
+  flex: 1 1 auto;
+  min-width: 0;       /* sin esto un input en flex no baja de su tamaño natural y desborda */
+  min-height: 44px;
+}
+
+/* El aviso de identificador ya usado. Es un AVISO, no un error: no lleva el rojo de
+   `.alert.error` — el profesional puede guardar igual, y pintarlo de rojo diría lo
+   contrario. `hidden` manda sobre el display del `.alert`. */
+.aviso-duplicado { margin-bottom: 12px; }
+.aviso-duplicado[hidden] { display: none; }
+
 /* Fila checkbox + etiqueta: juntas y alineadas a la primera línea de texto */
 .inline-checkbox label { display: flex; gap: 8px; align-items: flex-start; }
 .inline-checkbox input[type="checkbox"],

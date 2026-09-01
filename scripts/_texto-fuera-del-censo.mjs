@@ -27,7 +27,7 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────
 import fs from 'node:fs';
 import path from 'node:path';
-import { SECCIONES_BLOQUE_F, LANDING, MARCAS_CAPACIDAD, ANCLAS_F, SIN_CAPACIDAD } from './censo-anclas-bloque-f.mjs';
+import { SECCIONES_BLOQUE_F, LANDING, MARCAS_CAPACIDAD, ANCLAS_F, SIN_CAPACIDAD, MARCADORES_DE_APROBACION } from './censo-anclas-bloque-f.mjs';
 
 /** Las cinco etiquetas de las que el censo de S1 saca sus unidades. */
 export const ETIQUETAS_DEL_CENSO = ['h1', 'h2', 'h3', 'p', 'li'];
@@ -300,4 +300,100 @@ export function medirDetector(html) {
     listaEscapes: escapes,
     listaFalsosPositivos: falsos,
   };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 EL SUELO N ≠ M · «hay N elementos con marcador y he mirado M» (SCRUM-555, punto 4)
+// ═════════════════════════════════════════════════════════════════════════════════════════
+//
+// Lo que ya existía y lo que faltaba, medido antes de escribir nada:
+//
+//   ✔ SCRUM-557 puso `seccionesMarcadasSinDeclarar()`: una sección marcada que no está en
+//     `SECCIONES_BLOQUE_F` sale en rojo. Y al revés, una declarada que no existe, también.
+//   🔴 PERO ESE CONTADOR MIRA SÓLO `<section>`. Su bucle es `/<section…>/g`. Un
+//     `data-microcopy` en un `<div>`, un `<p>` o un `<a>` **no lo ve nadie**: ni ese censo, ni
+//     éste, ni el guard de publicación. Hoy los cuatro marcadores están en `<section>` y por eso
+//     no hay nada escondido — pero el contador es ciego POR CONSTRUCCIÓN, no por suerte.
+//   🔴 Y ningún sitio SABE DECIR el número. Un rojo cuando algo falta no es lo mismo que poder
+//     contestar «son cuatro y he mirado cuatro»: sin el número, el día que sean cinco y se mire
+//     cuatro, el verde de todo lo demás sigue igual de verde. Es exactamente lo que pasó cuando
+//     el censo extraía 17 unidades y los textos eran 37.
+//
+// Esto NO es un tercer mecanismo: es el mismo alcance declarado de S1 (`SECCIONES_BLOQUE_F`),
+// contado. Y «mirado» significa **decidido por escrito**: una sección declarada `censada:false`
+// CON SU MOTIVO está mirada — alguien decidió. Lo que no puede existir es un elemento marcado
+// sobre el que nadie haya decidido nada.
+
+/**
+ * Un elemento con marcador de propuesta, sea la etiqueta que sea.
+ *
+ * ⚠️ El patrón tolera `>` DENTRO de un valor de atributo (`"[^"]*"`), que es el defecto que
+ * censó SCRUM-553: con `[^>]*` una etiqueta con un `>` en un atributo se corta por la mitad y el
+ * marcador que venga después se pierde. Y tolera saltos de línea: `#contacto-publico` abre su
+ * `<section>` repartido en seis.
+ */
+export function elementosConMarcador(html) {
+  const out = [];
+  const sinComentarios = html.replace(/<!--[\s\S]*?-->/g, ' ');
+  for (const m of sinComentarios.matchAll(/<([a-zA-Z][a-zA-Z0-9-]*)((?:[^>"]|"[^"]*")*?)>/g)) {
+    const marcador = MARCADORES.find((re) => re.test(m[2]));
+    if (!marcador) continue;
+    out.push({
+      etiqueta: m[1].toLowerCase(),
+      id: /\bid="([^"]+)"/.exec(m[2])?.[1] || null,
+      marcador: String(marcador),
+      apertura: m[0].replace(/\s+/g, ' ').slice(0, 120),
+    });
+  }
+  return out;
+}
+
+/** Los dos marcadores de propuesta. Se leen del censo de S1: si allí se añade uno, aquí llega. */
+const MARCADORES = MARCADORES_DE_APROBACION;
+
+/**
+ * El reparto: cuántos elementos llevan marcador (N) y sobre cuántos hay una decisión escrita (M).
+ *
+ * `sinDecidir` es el rojo que importa: un elemento marcado del que nadie ha dicho si entra al
+ * censo o no. `declaradosQueNoExisten` es el rojo del otro lado: una entrada del alcance que ya
+ * no está en el HTML — o le cambiaron el id, o se retiró y nadie limpió el alcance.
+ */
+export function repartoDeMarcadores(html) {
+  const marcados = elementosConMarcador(html);
+  const declarados = Object.keys(SECCIONES_BLOQUE_F);
+  const sinDecidir = marcados.filter((e) => !e.id || !(e.id in SECCIONES_BLOQUE_F));
+  const decididos = marcados.filter((e) => e.id && e.id in SECCIONES_BLOQUE_F);
+  const idsMarcados = new Set(marcados.map((e) => e.id));
+  const declaradosQueNoExisten = declarados.filter((id) => !idsMarcados.has(id));
+  return {
+    marcados,
+    N: marcados.length,
+    M: decididos.length,
+    sinDecidir,
+    declaradosQueNoExisten,
+    censados: declarados.filter((id) => SECCIONES_BLOQUE_F[id].censada && idsMarcados.has(id)),
+    fueraConMotivo: declarados.filter((id) => !SECCIONES_BLOQUE_F[id].censada && idsMarcados.has(id)),
+    // Sólo etiquetas que NO son `section`: el contador de SCRUM-557 no las mira, y saberlo es la
+    // diferencia entre «no hay ninguna» y «no las estoy buscando».
+    fueraDeSection: marcados.filter((e) => e.etiqueta !== 'section'),
+  };
+}
+
+/** La frase que el censo tiene que saber decir. Un número que nadie imprime no vigila nada. */
+export function decirElReparto(html) {
+  const r = repartoDeMarcadores(html);
+  const l = [];
+  l.push(`elementos con marcador de propuesta: ${r.N}  ·  con decisión escrita: ${r.M}`);
+  l.push(`   de los decididos · censados: ${r.censados.length} (${r.censados.join(', ') || '—'})`);
+  l.push(`                    · fuera CON MOTIVO: ${r.fueraConMotivo.length} (${r.fueraConMotivo.join(', ') || '—'})`);
+  l.push(`   marcadores fuera de <section>: ${r.fueraDeSection.length}`
+    + (r.fueraDeSection.length ? ' 🔴 — el contador de SCRUM-557 no los ve' : ''));
+  if (r.sinDecidir.length) {
+    l.push('🔴 MARCADOS Y SIN DECIDIR:');
+    for (const e of r.sinDecidir) l.push(`   <${e.etiqueta}> id=${e.id || '(sin id)'} — ${e.apertura}`);
+  }
+  if (r.declaradosQueNoExisten.length) {
+    l.push('🔴 DECLARADOS Y SIN MARCADOR EN EL HTML: ' + r.declaradosQueNoExisten.join(', '));
+  }
+  return l.join('\n');
 }

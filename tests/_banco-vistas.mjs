@@ -297,7 +297,24 @@ export function scriptsDelDashboard(raiz) {
  * AQUÍ, en el mismo commit que lo añade. Que sea una decisión explícita es el objetivo, no un
  * efecto colateral.
  */
-export const SCRIPTS_DEL_DASHBOARD = 60;
+// SCRUM-574 (24-ago-2026) · 60 → 61: entra `switchFormaJuridica.js`, el switch Empresa/Persona
+// de la ficha de cliente. Se sube AQUÍ y en el mismo commit que añade el `<script>`, que es lo
+// que este número existe para forzar.
+// SCRUM-615 (24-ago-2026) · 61 → 62: entra `tipoDestinatarioPendiente.js`, el aviso y la pregunta
+// del tipo de destinatario en la bandeja de pendientes.
+//
+// 🔴 EL MERGE DE ESTAS DOS RAMAS NO SE RESUELVE CONSERVANDO LOS DOS LADOS, y por eso queda escrito:
+// las dos subieron 60 → 61 por separado, así que los dos lados decían `61` y **git dejó esa línea
+// FUERA de los marcadores de conflicto** — sólo chocaron los comentarios. Quedarse «los dos» habría
+// dejado el número en 61 con dos scripts nuevos dentro, y el guard habría pasado en verde
+// contando mal.
+//
+// Éste no es un número que se herede de ningún lado: se DERIVA. Medido sobre el `index.html` ya
+// mezclado, `grep -c "<script src="` da 62. Un contador que dos ramas incrementan a la vez se
+// resuelve contando, no eligiendo.
+// SCRUM-578 (24-ago-2026) · 62 -> 63: entra `prefijosPais.js`, el selector de prefijo de pais
+// del formulario de clientes. Se sube AQUI y en el mismo commit que anade el `<script>`.
+export const SCRIPTS_DEL_DASHBOARD = 63;
 
 /**
  * Monta el dashboard como lo monta el navegador y devuelve el contexto vivo.

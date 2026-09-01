@@ -175,6 +175,59 @@ const PRUEBA = 'src/modules/auth/domain/auth.service.ts::planExpiresAt';
 const CSV = 'src/modules/exports/domain/exportData.ts::csvBody';
 const ANUAL = 'src/modules/billing/domain/stripePrices.ts::pro_annual';
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-568 · LAS NUEVE CONDICIONADAS A UN FLAG — ancladas, no declaradas «falsas» a mano
+// ═════════════════════════════════════════════════════════════════════════════════════════
+//
+// Decisión del fundador del 20-ago-2026, DESPUÉS de leer la medición: **no se documenta la
+// condición**. Los tres medios se quedan enunciados como están. «Cuando hagamos el go para
+// empezar a vender, todo será verdad. De momento no pasa nada.»
+//
+// Eso convierte una frase falsa-hoy en una **promesa con fecha**, y una promesa con fecha
+// necesita mecanismo. Es éste: las nueve dejan de estar declaradas a mano como `SIN_ANCLA` y
+// pasan a tener **ancla real + `tras`**, así que su veredicto lo DERIVA `alcanzabilidad()`
+// (SCRUM-558) del valor que tengan HOY los flags. Hoy salen INALCANZABLE las nueve; el día que
+// los flags se enciendan pasan a alcanzables **sin que nadie toque este fichero**.
+//
+// 🔴 POR QUÉ `tras` NO LLEVA `porDefecto` — es una desviación del encargo, y va medida:
+//
+//     con `porDefecto: false`   flag apagado   → 🔴 ANCLADA PERO INALCANZABLE
+//                               flag encendido → EL VALOR DECLARADO CADUCÓ   ← SIGUE EN ROJO
+//     sin `porDefecto`          flag apagado   → 🔴 ANCLADA PERO INALCANZABLE
+//                               flag encendido → sin problemas → ALCANZABLE  ← cambia solo
+//
+// `porDefecto` es un CENTINELA DE LA FOTO: avisa de que alguien movió el valor y hay que volver
+// a mirar la frase. Es útil — pero exige una edición para pasar a verde, que es exactamente lo
+// que el punto 2 prohíbe («si hay que editar un fichero para que cambien, NO SIRVE»). Gana el
+// punto 2. El valor observado no se pierde: está en el `motivo` y en `DEFECTOS_AL_DECLARAR`,
+// que lo vigila SIN condicionar el veredicto de nadie.
+const TARJETA = 'src/modules/billing/app/routes/payCard.routes.ts::/card/:token';
+const BIZUM = 'src/modules/billing/app/routes/payBizum.routes.ts::/bizum/:token';
+const TRANSFER = 'src/modules/billing/app/routes/payBank.routes.ts::/bank/:token';
+
+const TRAS_TARJETA = {
+  flag: 'PAYMENTS_CONNECT_ENABLED',
+  motivo: 'reglas 18 y 23: tarjeta real SOLO con Stripe Connect activo en ESE merchant. Al '
+    + 'declararla (21-ago-2026) su valor por defecto era false. El símbolo existe; lo que no '
+    + 'existe es el camino del usuario hasta él.',
+};
+const TRAS_BIZUM = {
+  flag: 'BIZUM_MANUAL_ENABLED',
+  motivo: 'OFF hasta C1-4. Al declararla (21-ago-2026) su valor por defecto era false. Mientras '
+    + 'tanto, transferencia manual.',
+};
+
+/**
+ * La foto de los defaults el día que se declararon las nueve. **No condiciona ningún veredicto**
+ * —para eso está `tras` sin `porDefecto`—: sirve para que un test pueda DECIR que el mundo se ha
+ * movido, en vez de que se mueva en silencio.
+ */
+export const DEFECTOS_AL_DECLARAR = {
+  fecha: '2026-08-21',
+  PAYMENTS_CONNECT_ENABLED: false,
+  BIZUM_MANUAL_ENABLED: false,
+};
+
 /**
  * EL REGISTRO DE ANCLAS de las 26 que quedan. Mismo formato que `ANCLAS_F`, para que se lo puedan
  * comer `anclaViva()` (SCRUM-551) y `alcanzabilidad()` (SCRUM-558) sin adaptador ninguno.
@@ -188,44 +241,47 @@ export const ANCLAS_564 = {
   'probar/span#9': { texto: 'Lo firma desde el móvil', anclas: [FIRMA] },
   'probar/div#6': { texto: 'Firma para aceptar', anclas: [FIRMA] },
 
-  // ── cobro: aquí está el problema, y es el mismo que hizo caer una fila de F5 ───────────
-  'como/h3#3': { texto: '3 · Cobra', anclas: [TRANSFERENCIA] },
+  // ── cobro · las NUEVE condicionadas a un flag. Su veredicto lo deriva `alcanzabilidad()`.
+  'como/h3#3': { texto: '3 · Cobra', anclas: [TRANSFER] },
   'como/p#4': {
     texto: 'Tarjeta, Bizum o transferencia — él elige, tú cobras. Los pendientes se reclaman solos.',
-    anclas: SIN_ANCLA,
-    promete: 'tarjeta (PAYMENTS_CONNECT_ENABLED) y Bizum (BIZUM_MANUAL_ENABLED), las dos APAGADAS '
-      + 'por defecto. De los tres medios que enumera, un merchant nuevo sólo tiene transferencia.',
+    anclas: [TARJETA, BIZUM, TRANSFER], tras: [TRAS_TARJETA, TRAS_BIZUM],
   },
   'todo/p#3': {
     texto: 'Tarjeta, Bizum o transferencia. Cobra trabajos completos o por adelantado, con recordatorios que persiguen solos.',
-    anclas: SIN_ANCLA,
-    promete: 'los mismos dos flags apagados. El final de la frase —los recordatorios— sí tiene '
-      + 'ancla viva, pero la frase entera promete tres medios de cobro y hay uno.',
+    anclas: [TARJETA, BIZUM, TRANSFER, RECORDATORIO], tras: [TRAS_TARJETA, TRAS_BIZUM],
   },
   'precios/li#3': {
     texto: 'Cobro con tarjeta, Bizum y transferencia',
-    anclas: SIN_ANCLA,
-    promete: 'los mismos dos flags. Y ésta va en la LISTA DE LO QUE INCLUYE EL PLAN, al lado del precio.',
+    anclas: [TARJETA, BIZUM, TRANSFER], tras: [TRAS_TARJETA, TRAS_BIZUM],
+    // ⚠️ Ésta va en la LISTA DE LO QUE INCLUYE EL PLAN, al lado del precio. Medido en
+    //    SCRUM-564: junto al texto caben SEIS caracteres a 1280 px. Si algún día hay que
+    //    condicionarla, ahí no cabe la condición — el dato está en `_hueco-condicion.mjs`.
   },
   'precios/p#2': {
     texto: 'Solo si cobras con tarjeta:',
-    anclas: SIN_ANCLA,
-    promete: 'PAYMENTS_CONNECT_ENABLED=false. La frase entera del elemento es «Solo si cobras con '
-      + 'tarjeta: 0,9 %. Bizum y transferencia: 0 €.»: anuncia la comisión de un medio de cobro '
-      + 'que un merchant nuevo no puede usar.',
+    anclas: [TARJETA], tras: [TRAS_TARJETA],
+    // La frase entera del elemento es «Solo si cobras con tarjeta: 0,9 %. Bizum y
+    // transferencia: 0 €.»: anuncia la comisión de un medio que hoy no se puede usar.
   },
   'precios/p#4': {
     texto: 'Bizum y transferencia:',
-    anclas: SIN_ANCLA,
-    promete: 'BIZUM_MANUAL_ENABLED=false. La transferencia sí existe; el Bizum no.',
+    anclas: [BIZUM, TRANSFER], tras: [TRAS_BIZUM],
   },
-  'probar/span#15': { texto: 'Paga como quiera', anclas: SIN_ANCLA, promete: 'los mismos dos flags: de los tres medios que el visitante ve elegir en la demo, un merchant nuevo solo tiene uno.' },
-  'probar/span#16': { texto: 'Tarjeta, Bizum o transferencia.', anclas: SIN_ANCLA, promete: 'los mismos dos flags, dentro de la demo.' },
-  'probar/span#42': { texto: 'Tarjeta', anclas: SIN_ANCLA, promete: 'PAYMENTS_CONNECT_ENABLED=false.' },
-  'probar/span#44': { texto: 'Bizum', anclas: SIN_ANCLA, promete: 'BIZUM_MANUAL_ENABLED=false.' },
-  'probar/span#46': { texto: 'Transferencia', anclas: [TRANSFERENCIA] },
-  'probar/div#9': { texto: 'Tu cliente paga desde el chat', anclas: [WHATSAPP, TRANSFERENCIA] },
-
+  'probar/span#15': {
+    texto: 'Paga como quiera',
+    anclas: [TARJETA, BIZUM, TRANSFER], tras: [TRAS_TARJETA, TRAS_BIZUM],
+    // No nombra medios: es el rótulo del paso 5 y su vecina (`span#16`) los enumera. La
+    // promesa de ELECCIÓN es suya, y elegir entre tres cuando hay uno es la misma promesa.
+  },
+  'probar/span#16': {
+    texto: 'Tarjeta, Bizum o transferencia.',
+    anclas: [TARJETA, BIZUM, TRANSFER], tras: [TRAS_TARJETA, TRAS_BIZUM],
+  },
+  'probar/span#42': { texto: 'Tarjeta', anclas: [TARJETA], tras: [TRAS_TARJETA] },
+  'probar/span#44': { texto: 'Bizum', anclas: [BIZUM], tras: [TRAS_BIZUM] },
+  'probar/span#46': { texto: 'Transferencia', anclas: [TRANSFER] },
+  'probar/div#9': { texto: 'Tu cliente paga desde el chat', anclas: [WHATSAPP, TRANSFER] },
   // ── recordatorios ─────────────────────────────────────────────────────────────────────
   'faq/div#1': {
     texto: 'Exacto — por eso esto ES WhatsApp. La diferencia: el tuyo no firma, no cobra y no persigue al que no contesta. Y aquí además llevas clientes, gastos y facturas en el mismo sitio.',
@@ -283,9 +339,12 @@ export const SIN_DECLARAR = 'SIN DECLARAR';
  * Que el grupo se derive importa: si lo escribiera yo en cada entrada, el día que alguien
  * encienda un flag la etiqueta seguiría diciendo lo de ayer.
  */
-export function veredictos(html, raiz, { anclaViva, alcanzabilidad, defaultsDeLaTablaP }) {
+export function veredictos(html, raiz, { anclaViva, alcanzabilidad, defaultsDeLaTablaP }, tablaPInyectada) {
   const c = censar(html);
-  const tablaP = defaultsDeLaTablaP(raiz);
+  // La tabla P se puede INYECTAR. No es un adorno: es lo que permite comprobar que el veredicto
+  // cambia solo al encender un flag SIN tocar  — y sin una prueba que lo
+  // ejercite, «cambia solo» seria una intencion escrita en un comentario.
+  const tablaP = tablaPInyectada || defaultsDeLaTablaP(raiz);
   const out = [];
   for (const u of c.afirman) {
     if (DESCARTADAS[u.id]) {
@@ -326,4 +385,37 @@ export function veredictos(html, raiz, { anclaViva, alcanzabilidad, defaultsDeLa
     });
   }
   return { veredictos: out, total: c.afirman.length, unidades: c.todas.length, ausentes: c.ausentes };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// EL ESTADO, EN UNA LÍNEA · SCRUM-568 punto 3
+// ═════════════════════════════════════════════════════════════════════════════════════════
+/**
+ * «De las N afirmaciones condicionadas a un flag, M son alcanzables hoy.»
+ *
+ * N se cuenta por las entradas del registro que declaran `tras` — no por una lista escrita a
+ * mano, que se quedaría vieja el día que se añada la décima. M sale de `alcanzabilidad()`.
+ *
+ * ⚠️ ESTO ES UN REGISTRO, NO UNA PUERTA. No devuelve un código de salida ni bloquea nada: un
+ * rojo permanente por una decisión de producto correcta es el que el segundo que lo ve desactiva
+ * (SCRUM-559). Lo que hace es que el estado se pueda LEER y que un trinquete lo vigile.
+ */
+export function estadoCondicionadas(html, raiz, censoF, tablaPInyectada) {
+  const condicionadas = Object.entries(ANCLAS_564).filter(([, r]) => Array.isArray(r.tras) && r.tras.length);
+  const r = veredictos(html, raiz, censoF, tablaPInyectada);
+  const porId = new Map(r.veredictos.map((v) => [v.id, v]));
+  const alcanzables = condicionadas.filter(([id]) => {
+    const v = porId.get(id);
+    return v && v.grupo === CON_ANCLA;
+  });
+  const flags = [...new Set(condicionadas.flatMap(([, r2]) => r2.tras.map((t) => t.flag)))].sort();
+  return {
+    N: condicionadas.length,
+    M: alcanzables.length,
+    ids: condicionadas.map(([id]) => id),
+    alcanzables: alcanzables.map(([id]) => id),
+    flags,
+    linea: `de las ${condicionadas.length} afirmaciones condicionadas a un flag, `
+      + `${alcanzables.length} son alcanzables hoy`,
+  };
 }

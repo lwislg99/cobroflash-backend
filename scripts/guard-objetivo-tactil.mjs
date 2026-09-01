@@ -51,8 +51,18 @@ import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL } from './_medidor-de-toque
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
-const EDGE = process.env.EDGE_PATH || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
-const PUERTO = 4472;
+import { lanzarNavegador } from './_navegador.mjs';
+import { levantarServidor } from './_servidor.mjs';
+// SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
+// los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
+// hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
+// declarandose ciega en vez de devolver una ruta plausible. `EDGE_PATH` sigue mandando.
+// SCRUM-620 (2/2) · PUERTO EFÍMERO POR DEFECTO. `0` le pide al sistema uno libre, y el que
+// toca de verdad se lee del `levantarServidor`. Quita las colisiones de raíz: contra la pasada
+// anterior del propio guard (sockets en TIME_WAIT, el caso de SCRUM-617) y contra los otros.
+// ⚠️ El efímero es HIGIENE; no sustituye al diagnóstico del commit anterior, que sigue
+// diciendo con código 4 lo que pasa si un puerto pedido está ocupado.
+let PUERTO = 0;
 
 /** AB6 y la definición de «pulsable» salen del medidor único: aquí no se redeclaran. */
 const MINIMO = MINIMO_TACTIL;
@@ -123,13 +133,20 @@ let fallos = 0;
 const decir = (s) => console.log(s);
 const mal = (s) => { console.error(s); fallos += 1; };
 
-await new Promise((r) => srv.listen(PUERTO, r));
-if (!fs.existsSync(EDGE)) {
-  console.error('🔴 NO SUPE MIRAR: no encuentro Edge en ' + EDGE + '. Pon EDGE_PATH.');
-  srv.close(); process.exit(2);
-}
-
-const navegador = await puppeteer.launch({ executablePath: EDGE, headless: 'new', args: ['--no-sandbox'] });
+// SCRUM-620 · el servidor se levanta por el módulo común: el ÚNICO sitio donde se decide
+// qué pasa si NO se puede. Antes cada guard hacía su propio `listen` sin tratar el error, y un
+// puerto ocupado subía como excepción → exit 1 → la puerta lo pintaba `rojo(1)`, o sea «he
+// encontrado un defecto». Ahora para con 4 y lo dice.
+PUERTO = await levantarServidor(srv, PUERTO);
+// SCRUM-617 · el arranque pasa por el módulo común: es el ÚNICO sitio donde se decide cómo
+// arranca el navegador. Antes cada guard lo escribía a mano y el flag de aislamiento se
+// propagó por COPIA de uno a otro — por eso el más antiguo (contraste) se quedó sin él. Y aquí
+// está lo que arregla este ticket: si no levanta, `lanzarNavegador` PARA con código 3 («no
+// pude arrancarlo»), que no es 2 («no lo encuentro») ni 1 («he encontrado un defecto»).
+// La comprobación de existencia que había aquí SALE: segunda copia del suelo; el módulo común
+// ya para con 2 si no hay navegador.
+process.on('exit', () => { try { srv.close(); } catch { /* ya cerrado */ } });
+const navegador = await lanzarNavegador(puppeteer, { headless: 'new' });
 
 /** El código que corre DENTRO de la página. Va como cadena para poder inyectarlo dos veces. */
 const MEDIDOR = `(async (INTERACTIVOS, MIN, DESTAPAR_SELS, CON_SCROLL) => {

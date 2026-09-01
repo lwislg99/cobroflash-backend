@@ -1,0 +1,172 @@
+#!/usr/bin/env node
+// scripts/guards-visuales.mjs — SCRUM-522
+//
+// LA PUERTA. Corre los guards de navegador y FALLA si alguno cae.
+//
+// ── EL PROBLEMA QUE CIERRA ───────────────────────────────────────────────────────────────────
+// Nueve guards de navegador quedaban fuera de `npm test` por lentos. Figuraban como cobertura y
+// sólo protegían si alguien se acordaba de lanzarlos a mano. Medido: **ninguno de los nueve
+// corría en CI**, así que un PR podía romper lo que vigilan y mergear en verde.
+//
+// ── POR QUÉ NO VALÍA `censo:guards-navegador`, QUE YA LOS EJECUTA ────────────────────────────
+// 🔴 Porque MIDE, no juzga. Imprime «verdes: 7 · no verdes: 2» y sale con 0. Engancharlo al
+//    workflow habría dado un job VERDE con dos guards rojos dentro — el mismo problema con una
+//    capa más de pintura. Aquí el código de salida es el producto.
+//
+// ── EL REPARTO QUE ELIGIÓ ESTA SALIDA, MEDIDO ───────────────────────────────────────────────
+// La duda era si los ~50 s son comprobación o son nueve arranques de navegador (cinco de ellos
+// para cargar el MISMO `/index.html`). Medido con procesos reales, mediana de 5:
+//
+//     levantar el navegador y cerrarlo ....... 0,96 s   → ×9 = 8,7 s = 16 % del total
+//     comprobación real ...................... 45,3 s          = 84 %
+//     cargar /index.html con el navegador ya abierto ... 0,29 s
+//     compartir una sesión para los cinco ahorraría ..... 3,84 s (7 %)
+//
+// **El coste es la comprobación, no el arranque.** Por eso la salida no es hacerlos más rápidos
+// —no hay de dónde—, sino ponerlos donde protejan. Compartir sesión ahorra un 7 % y a cambio
+// acopla nueve guards independientes: no compensa hoy.
+//
+// ── Y POR QUÉ AQUÍ Y NO DENTRO DE `npm test` ────────────────────────────────────────────────
+// Meterlos en la tanda con un salto por variable deja el bucle local el doble de largo, o un
+// salto que puede llevar meses apagado sin que nadie lo vea. Como job propio del workflow: corren
+// en CADA PR, el bucle local sigue rápido, y su rojo llega con nombre propio en vez de
+// confundirse con un test.
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { resolverNavegador, SALIDA_NO_ENCONTRADO, SALIDA_NO_ARRANCA, MARCA_ARRANQUE, topeDeArranque } from './_navegador.mjs';
+// Se REUSA en vez de escribir una tercera copia: ya vive exportada en los guards de Prisma, y
+// su import es inocuo por construccion (su propio cuerpo esta detras de esta misma guarda).
+import { esInvocacionDirecta } from './_prisma-client-guard.mjs';
+import { esDeNavegador, ficheroDe } from './_solape-de-guards.mjs';
+
+const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+const TOPE_MS = Number(process.env.GUARDS_VISUALES_TOPE_MS || 240000);
+
+const pkg = JSON.parse(fs.readFileSync(path.join(RAIZ, 'package.json'), 'utf8'));
+const scripts = pkg.scripts || {};
+
+/**
+ * Los que quedan FUERA de la tanda. Derivado, no a mano: se mira si `test` o `pretest` los
+ * mencionan. Lo que corre la tanda ya está vigilado y no hace falta repetirlo aquí.
+ */
+export function fueraDeLaTanda(s = scripts) {
+  const tanda = String(s.test || '') + ' ' + String(s.pretest || '');
+  return Object.keys(s)
+    .filter((k) => k.startsWith('guard:') && esDeNavegador(s, k))
+    .filter((k) => !tanda.includes(k) && !tanda.includes(ficheroDe(s, k) || '\x00'));
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-522 (24-ago-2026) · DE AQUÍ ABAJO SÓLO SE EJECUTA SI ESTO SE LANZA COMO SCRIPT.
+//
+// LO QUE PASABA, y es el segundo fallo que trajo este ticket de vuelta: todo esto estaba en el
+// nivel superior del módulo, y `tests/scrum522-guards-fuera-de-la-tanda.test.mjs` hace
+//
+//     import { fueraDeLaTanda } from '../scripts/guards-visuales.mjs';
+//
+// O sea que **IMPORTAR la puerta la EJECUTABA**: el test lanzaba los nueve guards y luego moría
+// en el `process.exit` del final. En el runner tardó 68 s y salió como `'test failed'` a nivel de
+// FICHERO, sin nombrar un solo assert — porque no falló ningún assert: se murió el proceso.
+//
+// Y no era «lo mismo que el fallo del navegador» aunque lo pareciera. Se midió: con `EDGE_PATH`
+// rota —un fallo DISTINTO del sandbox de CI— el fichero de test se cae exactamente igual. Son
+// dos causas, y ésta sobrevive al arreglo de la otra: sin esta guarda, importar la puerta seguiría
+// metiendo los nueve guards DENTRO de `npm test`, que es justo lo que el diseño de este fichero
+// dice que evita a propósito («por qué aquí y no dentro de npm test», arriba).
+//
+// `esInvocacionDirecta` se REUSA en vez de reescribirse: compara rutas resueltas y no texto,
+// porque `import.meta.url` viene percent-encodeada y `argv[1]` no — en cualquier ruta con un
+// espacio la comparación ingenua da `false` y el fichero se vuelve un no-op silencioso. Esa
+// trampa ya costó un `pretest` que pasaba sin comparar nada (SCRUM-429).
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+if (!esInvocacionDirecta(import.meta.url, process.argv[1])) {
+  // Importado: se exporta `fueraDeLaTanda` y NADA MÁS. Ni un spawn, ni un exit.
+} else {
+  await puerta();
+}
+
+async function puerta() {
+const lista = fueraDeLaTanda();
+
+// ── 🔴 SUELO ────────────────────────────────────────────────────────────────────────────────
+// «Todos los guards corren» y «no supe mirar los scripts» son el mismo resultado con
+// significados opuestos. Un cero aquí sería el segundo disfrazado del primero.
+if (lista.length === 0) {
+  console.error('🔴 CIEGO: cero guards de navegador fuera de la tanda.');
+  console.error('   O se han metido todos en `npm test` —y entonces esta puerta sobra y hay que');
+  console.error('   retirarla a mano—, o el detector dejó de reconocerlos por su //comentario.');
+  console.error('   No se anuncia «todo corre» sobre una lista vacía.');
+  process.exit(2);
+}
+
+// ── Y QUE HAYA NAVEGADOR, dicho antes de empezar ────────────────────────────────────────────
+const nav = resolverNavegador();
+if (!nav.ok) {
+  console.error('🔴 NO SUPE MIRAR: ' + nav.motivo);
+  process.exit(2);
+}
+
+console.log('guards de navegador FUERA de `npm test`: ' + lista.length);
+console.log('navegador: ' + nav.quien + ' → ' + nav.ruta + '\n');
+
+let fallos = 0;
+let total = 0;
+const filas = [];
+
+for (const g of lista) {
+  const f = ficheroDe(scripts, g);
+  const abs = f && path.join(RAIZ, f);
+  if (!f || !fs.existsSync(abs)) {
+    console.error('   🔴 CIEGO · ' + g + ': está declarado y su fichero no está en el disco.');
+    fallos += 1; continue;
+  }
+  const t0 = Date.now();
+  const r = spawnSync(process.execPath, [abs], { cwd: RAIZ, timeout: TOPE_MS, encoding: 'utf8' });
+  const ms = Date.now() - t0;
+  total += ms;
+
+  const cortado = r.error && r.error.code === 'ETIMEDOUT';
+  // SCRUM-522 · TRES desenlaces malos y no dos. El 3 —«lo hay y no arranca»— es nuevo y tiene
+  // nombre propio porque antes salía como `rojo(1)`, indistinguible de «he encontrado defectos»:
+  // el runner llevaba un guard que no había medido NADA y se leía como un hallazgo real.
+  const estado = cortado ? 'TOPE'
+    : (r.status === 0 ? 'verde'
+      : (r.status === SALIDA_NO_ENCONTRADO ? 'CIEGO'
+        : (r.status === SALIDA_NO_ARRANCA ? 'NO ARRANCA' : 'rojo(' + r.status + ')')));
+  const salida = (r.stdout || '') + (r.stderr || '');
+  // SCRUM-617 (2a vuelta) · el ARRANQUE, aparte del total. El total mezcla arrancar y comprobar,
+  // y con un solo numero no se sabe cual de las dos se disparo — que es justo la pregunta abierta
+  // desde que el runner mato a guard-contraste en el tope de arranque.
+  const m = salida.match(new RegExp(MARCA_ARRANQUE + ' ([0-9.]+)'));
+  const arranque = m ? Number(m[1]) : null;
+  filas.push({ g, ms, estado, arranque, salida });
+  console.log('   ' + (estado === 'verde' ? '✔' : '✖') + ' ' + g.padEnd(26)
+    + String((ms / 1000).toFixed(1)).padStart(6) + ' s'
+    + (arranque === null ? '   (arranque: ?)' : '   arranque ' + arranque.toFixed(1).padStart(5) + ' s')
+    + '   ' + estado);
+  // 🔴 CIEGO cuenta como fallo. Un guard que no supo mirar no ha vigilado nada, y dejarlo pasar
+  //    sería exactamente el hueco que este ticket viene a cerrar.
+  if (estado !== 'verde') fallos += 1;
+}
+
+console.log('\n── TOTAL ' + '─'.repeat(48));
+console.log('   ' + lista.length + ' guards · ' + (total / 1000).toFixed(1) + ' s en serie'
+  + '   ·   verdes: ' + (filas.length - filas.filter((f) => f.estado !== 'verde').length)
+  + ' · no verdes: ' + filas.filter((f) => f.estado !== 'verde').length);
+
+if (fallos) {
+  console.error('\n' + '═'.repeat(72));
+  console.error('🔴 ' + fallos + ' guard(s) de navegador no están verdes. Lo que dijeron:');
+  console.error('═'.repeat(72));
+  for (const f of filas.filter((x) => x.estado !== 'verde')) {
+    console.error('\n── ' + f.g + '  [' + f.estado + '] ' + '─'.repeat(Math.max(0, 50 - f.g.length)));
+    // Se reproduce SU salida entera: si hay que abrir el fichero del guard para saber qué pasó,
+    // el rojo llega un día tarde.
+    console.error(f.salida.trimEnd() || '   (sin salida)');
+  }
+  process.exit(1);
+}
+console.log('\n✅ los ' + lista.length + ' guards de navegador están verdes.');
+}

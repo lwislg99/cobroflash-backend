@@ -145,6 +145,24 @@ const CENSO = Object.freeze({
   // 🔴 17-ago-2026 (tanda B) · 5 → 1. Aprobados cuatro: el estado del botón, el vacío del periodo,
   // «Descarga lista.» y el error de descarga. Queda UNO y con su motivo: el quinto marcador de este
   // fichero es de la tarjeta de portabilidad, que NO estaba en la lista aprobada.
+  // SCRUM-578 (24-ago-2026) · SUBIDA A CONCIENCIA: el formulario de clientes saca con marcador
+  // el rótulo del teléfono y el aviso de identificador ya usado.
+  //
+  // El rótulo TENÍA texto —«Teléfono (E.164 sin +)»— y pasa a marcador a propósito: en cuanto el
+  // prefijo sale a un selector aparte, ese rótulo describe un campo que ya no existe. Y era, él
+  // mismo, la prueba del ticket de que una regla escrita en una etiqueta no se cumple: pedía
+  // «E.164 sin +» y se guardaron `+34 662629419` y `662629419` como dos clientes.
+  //
+  // Van SIN palabra de trabajo detrás, al revés que `switchFormaJuridica` (SCRUM-574): allí el
+  // copy era accesorio; aquí es lo que el profesional lee para decidir si está creando un
+  // duplicado, y un texto mío «provisional» ahí es justo lo que la regla 30 prohíbe.
+  //
+  // 🔴 CUENTA 1 Y PINTA 2, y la distinción no es cosmética — se midió en SCRUM-615: este censo
+  // cuenta MARCAS, y las dos superficies salen de una sola constante `MARCADOR_MICROCOPY`. Por
+  // eso **aprobar UNO de los dos textos NO apaga el otro**: son dos textos distintos que hoy
+  // comparten marcador, y habrá que partir la constante el día que el fundador escriba el
+  // primero. Decir «se apagan de golpe» aquí sería falso.
+  'customersView.js': 1,
   'exportView.js': 1,
   // 🔴 17-ago-2026 · `invoiceDetailView.js` SALE DEL CENSO (tenía 9). El fundador aprobó los ocho
   // rótulos de acción, y el noveno era `MARCA_MICRO`, una constante que ya no consumía nadie y que
@@ -176,6 +194,38 @@ const CENSO = Object.freeze({
   // 🔴 17-ago-2026 (tanda B) · SALE DEL CENSO: el fundador aprobó los cuatro títulos de bloque del formulario (esa marca pintaba CUATRO). Entrada BORRADA, no
   // puesta a 0 (SCRUM-424 / SCRUM-405): `censoActual()` solo lista ficheros CON marcadores.
   'semaforoFiscal.js': 1,
+  // SCRUM-574 (24-ago-2026) · SUBIDA A CONCIENCIA: el switch «Empresa | Persona» de la ficha de
+  // cliente sale con marcador en sus TRES rótulos — la pregunta que lo encabeza y las dos
+  // etiquetas. No están aprobados y no se inventan (regla 30): las etiquetas del switch son del
+  // fundador, y el encargo lo dice con todas las letras («ni de ejemplo ni provisional»).
+  //
+  // Se cuenta 1: los tres salen de una sola constante `MARCADOR` en `switchFormaJuridica.js`, así
+  // que aprobar el copy los apaga de golpe — la misma forma que tuvieron `MARCA_MICROCOPY`
+  // (SCRUM-421, pintaba doce) y `NF_PENDIENTE` (pintaba veintidós).
+  //
+  // 🔴 Y VAN CON PALABRA DE TRABAJO DETRÁS («[PENDIENTE microcopy oficial] Empresa»), no con la
+  // marca sola. En un control de DOS LADOS el marcador pelado sería inservible: los dos lados
+  // dirían exactamente lo mismo y el profesional no sabría cuál está eligiendo. Es la distinción
+  // que `censo-marcadores.mjs` ya hace entre el rótulo que pinta A CIEGAS y el que al menos se
+  // puede leer y juzgar.
+  'switchFormaJuridica.js': 1,
+  // SCRUM-615 (24-ago-2026) · SUBIDA A CONCIENCIA: la salida D+C pinta con marcador el aviso de
+  // «este plazo se ha calculado sin el dato» en la bandeja de pendientes, y el error de guardado.
+  //
+  // 🔴 Y VA SIN PALABRA DE TRABAJO DETRÁS, al revés que `switchFormaJuridica` (SCRUM-574). Allí el
+  // copy era ACCESORIO al ticket y el marcador pelado habría dejado dos lados del switch diciendo
+  // lo mismo. Aquí el copy ES EL TICKET: es lo que el profesional lee para decidir qué contestar
+  // sobre un PLAZO LEGAL. Un texto mío «provisional» ahí es exactamente lo que la regla 30
+  // prohíbe, así que sale a ciegas a propósito y con esta entrada delante.
+  //
+  // CUENTA 1 Y PINTA 2, y la distinción importa porque yo mismo la declaré mal antes de medirla:
+  // en el commit anterior dije «+2» contando SUPERFICIES. Este censo cuenta MARCAS —una sola
+  // constante `MARCADOR`—, igual que `NF_PENDIENTE` contaba 1 pintando veintidós. Las dos
+  // superficies son el aviso (`tipoDestinatarioPendiente.js`) y el error de guardado
+  // (`invoicesView.js`, que referencia la constante en vez de repetir el literal). Aprobar UN
+  // texto no las apaga las dos: son dos textos distintos que hoy comparten marcador, y el día que
+  // el fundador los escriba habrá que partir la constante.
+  'tipoDestinatarioPendiente.js': 1,
   'settingsSubmenus.js': 1,
   // SCRUM-294 (fase C) · 1 -> 5: el criterio de caja entra en Configuracion con marcador A
   // CONCIENCIA. Son 4 literales —el rotulo y sus TRES opciones— y el texto NO esta aprobado:

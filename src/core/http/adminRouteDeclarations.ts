@@ -57,6 +57,12 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   { method: 'POST', path: '/admin/customers', why: 'S1: clientes crear-ver ✅' },
   { method: 'GET',  path: '/admin/customers/:id', why: 'S1: clientes crear-ver ✅' },
   { method: 'PUT',  path: '/admin/customers/:id', why: 'Corregir teléfono/dirección desde la obra' },
+  // SCRUM-578 (CONT-05): va con `POST`/`PUT` de clientes, que YA son de campo. Si el aviso de
+  // duplicado fuera admin-only, el Operario podría seguir CREANDO clientes sin verlo nunca — y es
+  // justo quien más los da de alta desde la obra, con el móvil y con prisa. El aviso quedaría
+  // ciego para el único rol que lo necesita. Es SOLO LECTURA y no revela nada que no devuelva ya
+  // `GET /admin/customers`, que también es de campo.
+  { method: 'GET',  path: '/admin/customers/duplicados', why: 'Avisar del duplicado a quien da de alta desde la obra' },
   { method: 'GET',  path: '/admin/customers/:id/detail', why: 'Ficha e historial del cliente que va a visitar' },
   { method: 'GET',  path: '/admin/customers/:id/portal-url', why: 'Link del portal para dárselo al cliente en mano' },
 

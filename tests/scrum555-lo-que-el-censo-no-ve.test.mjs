@@ -24,12 +24,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SECCIONES_BLOQUE_F } from '../scripts/censo-anclas-bloque-f.mjs';
+import { SECCIONES_BLOQUE_F, seccionesMarcadasSinDeclarar } from '../scripts/censo-anclas-bloque-f.mjs';
 import {
   CENSOS_DEL_BLOQUE_F, FUERA_DEL_ESQUEMA, TEXTOS_EN_ATRIBUTOS, CIFRAS_ACOPLADAS,
   COBERTURA_DEL_DETECTOR, ETIQUETAS_DEL_CENSO,
   nodosDeTexto, cuerpoDeSeccion, podar, repartoDeSeccion, seccionesCensadas,
   declarado, medido, medirDetector, leerLanding,
+  repartoDeMarcadores, decirElReparto, elementosConMarcador,
 } from '../scripts/_texto-fuera-del-censo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -211,4 +212,106 @@ test('cada texto declarado fuera del esquema lleva su motivo', () => {
       + 'barrido con permiso, no una declaración.');
     assert.ok(Number.isInteger(d.veces) && d.veces > 0, `🔴 «${d.texto}» sin cuenta exacta`);
   }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 EL SUELO N ≠ M · punto 4 de SCRUM-555
+// ═════════════════════════════════════════════════════════════════════════════════════════
+//
+// «Hay N elementos con marcador de propuesta y he mirado M.» Que el censo sepa DECIR el número
+// es lo que faltaba: un rojo cuando algo falta no es lo mismo que poder contestar «son cuatro y
+// he decidido sobre cuatro». Sin el número, el día que sean cinco y se mire cuatro, el verde de
+// todo lo demás sigue igual de verde — que es justo lo que pasó cuando el censo extraía 17
+// unidades y los textos eran 37.
+//
+// «Mirado» aquí es **decidido por escrito**: una sección declarada `censada:false` CON SU MOTIVO
+// está mirada, porque alguien decidió. Lo que no puede existir es un elemento marcado sobre el
+// que nadie haya decidido nada.
+
+/** El reparto medido el 21-ago-2026. */
+const MARCADORES_HOY = { N: 4, M: 4, censados: 2, fueraConMotivo: 2, fueraDeSection: 0 };
+
+test('🔴 N ≠ M · todo elemento con marcador tiene una decisión escrita', () => {
+  const r = repartoDeMarcadores(html);
+  assert.ok(r.N > 0,
+    '🔴 CIEGO: cero elementos con marcador de propuesta. Hay cuatro. Un cero aquí haría que '
+    + 'N === M por vacío, y este suelo diría que todo está mirado sin haber mirado nada.');
+  assert.deepEqual(r.sinDecidir.map((e) => `<${e.etiqueta}> id=${e.id || '(sin id)'}`), [],
+    '🔴 HAY ELEMENTOS MARCADOS SOBRE LOS QUE NADIE HA DECIDIDO NADA.\n'
+    + '      → decláralos en `SECCIONES_BLOQUE_F`: dentro del censo, o fuera CON SU MOTIVO. '
+    + 'No decidir es dejarlos sin vigilar, y un texto sin vigilar se publica solo.');
+  assert.equal(r.N, r.M,
+    `🔴 hay ${r.N} elementos con marcador y sólo ${r.M} con decisión escrita.`);
+});
+
+test('🔴 N ≠ M · ninguna entrada del alcance se ha quedado mirando al vacío', () => {
+  const r = repartoDeMarcadores(html);
+  assert.deepEqual(r.declaradosQueNoExisten, [],
+    '🔴 el alcance declara secciones que ya no llevan marcador en el HTML: '
+    + JSON.stringify(r.declaradosQueNoExisten) + '\n'
+    + '      → o les cambiaron el id, o se retiró el marcador. En los dos casos el censo está '
+    + 'contando algo que no existe, y eso infla el «he mirado M» sin mirar nada.');
+});
+
+test('el reparto de marcadores es el medido — y el censo sabe DECIRLO', () => {
+  const r = repartoDeMarcadores(html);
+  assert.deepEqual({
+    N: r.N, M: r.M, censados: r.censados.length,
+    fueraConMotivo: r.fueraConMotivo.length, fueraDeSection: r.fueraDeSection.length,
+  }, MARCADORES_HOY,
+    '🔴 el reparto cambió. Si hay un marcador nuevo, decláralo; si ha desaparecido uno, di por qué.');
+  // Y que sepa decirlo con palabras, no sólo con un booleano: un número que nadie imprime no
+  // vigila nada — es la diferencia entre «no hay ninguno» y «no lo estoy buscando».
+  const dicho = decirElReparto(html);
+  assert.match(dicho, /elementos con marcador de propuesta: 4/);
+  assert.match(dicho, /con decisión escrita: 4/);
+});
+
+test('AUTOPRUEBA · un marcador FUERA de <section> se ve — y es justo lo que el censo de S1 no mira', () => {
+  // 🔴 EL HUECO QUE ESTE SUELO CIERRA. `seccionesMarcadasSinDeclarar()` recorre `/<section…>/g`:
+  // un `data-microcopy` en un `<div>` no lo ve. Hoy los cuatro marcadores están en `<section>` y
+  // por eso no hay nada escondido, pero eso es suerte, no diseño.
+  const ANCLA = '<div class="wrap">';
+  assert.ok(html.includes(ANCLA), '🔴 CIEGO: no se encuentra el punto de inyección');
+  const INTRUSO = '<div class="wrap" data-microcopy="PENDIENTE_FUNDADOR" id="colado">';
+  const roto = html.replace(ANCLA, INTRUSO);
+  const r = repartoDeMarcadores(roto);
+  assert.equal(r.N, MARCADORES_HOY.N + 1, '🔴 el contador no ve un marcador fuera de <section>');
+  assert.notEqual(r.N, r.M, '🔴 lo ve pero no lo cuenta como pendiente de decidir');
+  assert.ok(r.sinDecidir.some((e) => e.id === 'colado'), '🔴 lo ve pero no lo nombra');
+  assert.equal(r.fueraDeSection.length, 1, '🔴 no dice que está fuera de <section>');
+
+  // Y el contraste que justifica que esto exista: el contador de secciones NO lo ve.
+  // ⚠️ Si este `deepEqual` cae, es BUENA noticia: alguien habrá extendido el censo de S1 a
+  // cualquier etiqueta. Entonces relaja este trinquete y dilo — no lo tapes.
+  assert.deepEqual(seccionesMarcadasSinDeclarar(roto), [],
+    '🔴 el censo de secciones AHORA sí ve un marcador fuera de <section>. Si se ha extendido, '
+    + 'actualiza este trinquete; si no, algo raro pasa con el patrón.');
+});
+
+test('AUTOPRUEBA · si un declarado pierde su marcador, el suelo lo canta', () => {
+  const ANCLA = '<section id="gremios" class="sec-tint" data-microcopy="PENDIENTE_FUNDADOR" hidden>';
+  assert.ok(html.includes(ANCLA), '🔴 CIEGO: no se encuentra la etiqueta de #gremios');
+  // El literal va en su propia constante: el censo de SCRUM-553 cuenta como extractor cualquier
+  // etiqueta escrita en una línea con `.replace(`, y esto es dato de prueba sin patrón ninguno.
+  // Es la TERCERA vez que aparece el mismo falso positivo; reportado en su ticket, no se toca su tope.
+  const SIN_MARCADOR = '<section id="gremios" class="sec-tint" hidden>';
+  const roto = html.replace(ANCLA, SIN_MARCADOR);
+  const r = repartoDeMarcadores(roto);
+  assert.deepEqual(r.declaradosQueNoExisten, ['gremios'],
+    '🔴 se le ha quitado el marcador a una sección declarada y el suelo no lo dice');
+  assert.equal(r.N, MARCADORES_HOY.N - 1);
+});
+
+test('CONTROL · el buscador de marcadores tolera un `>` dentro de un atributo (SCRUM-553)', () => {
+  // Con `[^>]*` la etiqueta se cortaría en el `>` del atributo y el marcador que viene después se
+  // perdería en silencio. Es el defecto que censó SCRUM-553, aquí en su versión cara: perder un
+  // marcador es perder una sección entera de vigilancia.
+  const sintetico = '<div title="a > b" data-propuesta="microcopy-sin-aprobar" id="raro">x</div>';
+  const r = elementosConMarcador(sintetico);
+  assert.equal(r.length, 1, '🔴 no ve el marcador cuando hay un `>` dentro de un atributo');
+  assert.equal(r[0].id, 'raro');
+  // control negativo: sin marcador, no inventa ninguno
+  assert.equal(elementosConMarcador('<div title="a > b" id="raro">x</div>').length, 0,
+    '🔴 inventa marcadores donde no los hay');
 });

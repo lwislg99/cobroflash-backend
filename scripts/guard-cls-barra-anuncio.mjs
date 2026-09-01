@@ -40,7 +40,12 @@ import { createRequire } from 'node:module';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const puppeteer = createRequire(path.join(RAIZ, 'package.json'))('puppeteer-core');
-const EDGE = process.env.EDGE_PATH || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
+import { lanzarNavegador } from './_navegador.mjs';
+import { levantarServidor } from './_servidor.mjs';
+// SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
+// los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
+// hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
+// declarandose ciega en vez de devolver una ruta plausible. `EDGE_PATH` sigue mandando.
 
 export const ANCHOS = [360, 390];
 export const LIMITE_CLS = 0.1;
@@ -70,7 +75,11 @@ function servir(caso) {
     res.writeHead(200, { 'content-type': TIPOS[path.extname(f)] || 'application/octet-stream' });
     res.end(fs.readFileSync(f));
   });
-  return new Promise((ok) => srv.listen(0, '127.0.0.1', () => ok({ srv, puerto: srv.address().port })));
+  // SCRUM-620 · el servidor se levanta por el módulo común: el ÚNICO sitio donde se decide
+  // qué pasa si NO se puede. Antes cada guard hacía su propio `listen` sin tratar el error, y un
+  // puerto ocupado subía como excepción → exit 1 → la puerta lo pintaba `rojo(1)`, o sea «he
+  // encontrado un defecto». Ahora para con 4 y lo dice.
+  return levantarServidor(srv, 0, '127.0.0.1').then((puerto) => ({ srv, puerto }));
 }
 
 async function medir(nav, puerto, ancho) {
@@ -116,14 +125,12 @@ async function medir(nav, puerto, ancho) {
   return r;
 }
 
-let nav;
-try {
-  nav = await puppeteer.launch({ executablePath: EDGE, args: ['--no-sandbox'] });
-} catch (e) {
-  console.error('🔴 NO SUPE MIRAR: no se pudo abrir Edge (' + (e && e.message ? e.message.slice(0, 90) : '?') + ').');
-  console.error('   Esto NO es «no hay salto»: es que no se ha medido. Apunta EDGE_PATH a un Edge.');
-  process.exit(2);
-}
+// SCRUM-617 · el arranque pasa por el módulo común: es el ÚNICO sitio donde se decide cómo
+// arranca el navegador. Antes cada guard lo escribía a mano y el flag de aislamiento se
+// propagó por COPIA de uno a otro — por eso el más antiguo (contraste) se quedó sin él. Y aquí
+// está lo que arregla este ticket: si no levanta, `lanzarNavegador` PARA con código 3 («no
+// pude arrancarlo»), que no es 2 («no lo encuentro») ni 1 («he encontrado un defecto»).
+const nav = await lanzarNavegador(puppeteer, {});
 
 console.log('salto de la primera pantalla (CLS) — SCRUM-544 · Edge, 4G emulada, límite ' + LIMITE_CLS + '\n');
 let fallos = 0;

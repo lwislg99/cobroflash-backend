@@ -105,6 +105,31 @@ Fuera de eso, ejecuta con autonomía. Los hallazgos se REPORTAN como ticket nuev
 
 ---
 
+## 8.b UNA LÍNEA DEL MACHOTE DE LOS ENCARGOS ESTÁ MAL, Y HAY QUE CORREGIRLA (SCRUM-570)
+
+Todos los encargos llevan, entre las restricciones de seguridad:
+
+> «para un CR hay que quitarlo byte a byte con node y verificar con `Buffer.compare` contra el blob»
+
+🔴 **Eso sólo vale para los ficheros NO normalizados, y en este repo son la minoría.** Medido el
+20-ago-2026: **1.355 ficheros del checkout tienen CR en disco y no en el blob, y 1.336 de ellos
+están normalizados por `.gitattributes`.** En un fichero con `text eol=lf`, git guarda el blob en
+LF pase lo que pase en disco: el blob **no describe cómo estaba el disco antes de tocarlo**, así
+que compararlo contra él da un rojo cuando no has cambiado nada — y «arreglarlo» escribiendo el
+blob normaliza el fichero entero sin que nadie lo pida y sin que `git status` lo enseñe.
+
+**Lo que hay que escribir en su lugar**, y sirve para los dos casos:
+
+> «guarda los BYTES DE DISCO antes de tocar (`const ORIGINAL = fs.readFileSync(F)`) y verifica
+> con `Buffer.compare(fs.readFileSync(F), ORIGINAL) === 0`. El blob sólo sirve de referencia en
+> ficheros NO normalizados; cuál es el tuyo lo dice `npm run cr:tecnica -- <fichero>`.»
+
+Y un aviso que costó una tanda: **comprobar el blob no basta.** El guard de SCRUM-533 mira EL
+DISCO. Se puede tener el blob con CR: 0 —dos veces— y la tanda caída igual. La comprobación no
+era falsa: era incompleta.
+
+---
+
 ## 9. TONO CON LUIS
 Español, directo, honesto. Opciones con recomendación, no decidir el negocio por él. Pasos con clics concretos para herramientas que maneja menos (Railway, Stripe, Meta, GitHub). Registrar decisiones y pushbacks. Cuando delega ("elige lo mejor"), el asesor elige y deja escrito qué y por qué.
 

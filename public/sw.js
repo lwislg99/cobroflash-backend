@@ -24,11 +24,13 @@ const SHELL = [
   '/dashboard/js/selectorMetodoCobro.js',
   '/dashboard/js/contacto.js',
   '/dashboard/js/modalHeader.js', // SCRUM-446
+  '/dashboard/js/switchFormaJuridica.js', // SCRUM-574
   '/dashboard/js/jobNextAction.js',
   '/dashboard/js/semaforoFiscal.js',
   '/dashboard/js/homeView.js',
   '/dashboard/js/onboardingView.js',
   '/dashboard/js/plansView.js',
+  '/dashboard/js/prefijosPais.js', // SCRUM-578
   '/dashboard/js/customersView.js',
   '/dashboard/js/quotesTabs.js', // SCRUM-432
   '/dashboard/js/quotesListView.js',
@@ -38,6 +40,7 @@ const SHELL = [
   '/dashboard/js/quotesDetailView.js',
   '/dashboard/js/productsView.js',
   '/dashboard/js/providersView.js',
+  '/dashboard/js/tipoDestinatarioPendiente.js', // SCRUM-615
   '/dashboard/js/invoicesView.js',
   '/dashboard/js/cobrosView.js', // SCRUM-285 (B4)
   '/dashboard/js/nuevaFacturaModal.js', // SCRUM-289 (A0.3)

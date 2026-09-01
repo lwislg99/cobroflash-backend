@@ -568,6 +568,36 @@ async function fetchInvoices(options = {}) {
         + '</strong> pendiente de facturar';
       card.appendChild(importeLine);
 
+      // SCRUM-615 (salidas D y C) · si nadie ha declarado el tipo de destinatario, el plazo de
+      // arriba está calculado con el implícito `PARTICULAR`. Se avisa y se pregunta AQUÍ, que es
+      // el único sitio donde ese dato cambia algo y donde el profesional ya está mirando la fecha.
+      // Devuelve `null` cuando el dato YA está: quien contestó no vuelve a ver nada.
+      const bloqueTipo = bloqueTipoDestinatario({
+        cliente: customer,
+        alElegir: async (elegido) => {
+          try {
+            await apiRequest('/admin/customers/' + customer.customerId, {
+              method: 'PUT',
+              body: JSON.stringify({ tipoDestinatario: elegido }),
+            });
+            // Se REPINTA la bandeja entera en vez de tocar esta tarjeta: la respuesta cambia la
+            // fecha límite y el semáforo de TODOS los grupos de este cliente, no solo del de aquí.
+            // Actualizar solo lo que se ve dejaría el resto mostrando el plazo viejo.
+            await reloadPendientes();
+          } catch (err) {
+            console.error('[renderGrupoCard] guardar tipoDestinatario', err);
+            // MICROCOPY: marcador (regla 30). El mensaje de carga que ya existe abajo dice
+            // «no se han podido CARGAR», y aquí lo que ha fallado es GUARDAR: reutilizarlo sería
+            // enseñar un texto que no describe lo que pasó. Y no se inventa uno — en este ticket
+            // el copy no es accesorio. Sube el censo de SCRUM-402; va declarado en el informe.
+            pendStatusBox.textContent = tipoDestinatarioPendiente.MARCADOR;
+            pendStatusBox.className = 'alert error';
+            pendStatusBox.style.display = 'block';
+          }
+        },
+      });
+      if (bloqueTipo) card.appendChild(bloqueTipo);
+
       if (grupo.semaforo === 'rojo') {
         const warnBox = document.createElement('div');
         warnBox.style.cssText = 'margin-top:10px;padding:10px 12px;border-radius:var(--radius-md);'

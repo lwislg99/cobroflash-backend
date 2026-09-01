@@ -1,0 +1,106 @@
+SCRUM-574 (CONT-01) · OPCIÓN B — ✅ APLICADA el 24-ago-2026
+==========================================================
+
+ESTE FICHERO SE ESCRIBIÓ CON LA MIGRACIÓN PARADA, y se conserva tal cual porque es el
+preview que el fundador leyó para decidir. Lo que cambia es el estado, abajo.
+
+✅ AUTORIZACIÓN PUNTUAL del fundador (24-ago-2026) para aplicarla esta sesión.
+   NO ES REGLA NUEVA: `prisma/schema.prisma` sigue siendo de los fundadores y cualquier
+   otro cambio de esquema se prepara y SE PARA, como se hizo aquí antes del GO.
+
+   Aplicada con el CLI local por ruta (nunca `npx`, nunca `npm run db:push`), con guard
+   de destino delante y SIN `--accept-data-loss`, a:
+     · acela.proxy.rlwy.net/railway          (STAGING)
+     · acela.proxy.rlwy.net/yaqu_dev_javier  (DEV)
+   Turno de staging tomado antes y soltado después.
+   PRODUCCIÓN: no, y no puede — no existe `DATABASE_URL` en un árbol de trabajo.
+
+   EFECTO LATERAL QUE HAY QUE DECIR: `db push` sincroniza el esquema ENTERO, así que en
+   DEV entró de paso `recargo_equivalencia`, que le faltaba (la deriva que encontró el
+   censo). Aditivo, nullable, ninguna fila tocada. Estaba FUERA del alcance de este
+   ticket y se reporta en vez de dejarlo implícito.
+
+POR QUÉ HAY UN DIFF SI EL TICKET DICE «NO SE AÑADE CAMPO»
+--------------------------------------------------------
+Porque el campo que el ticket manda reutilizar —«Tipo de cliente» = `Customer.tipoDestinatario`—
+resultó ser el campo fiscal de SCRUM-69: el que fija el plazo legal de la recapitulativa
+(art. 13.2 RD 1619/2012). El razonamiento medido está en `docs/CENSO_TIPO_CLIENTE.md` §3.
+El propio encargo manda parar y reportar en este caso; esto es el material para decidir.
+
+CÓMO SE GENERÓ (reproducible)
+-----------------------------
+  CLI LOCAL por ruta, nunca `npx` (SCRUM-385: `npx` sustituye el binario en silencio y su
+  salida vacía se lee como «sin cambios»).
+
+  CONTROL POSITIVO primero — esquema entero contra vacío, que no puede salir vacío:
+    node node_modules/prisma/build/index.js migrate diff \
+      --from-empty --to-schema-datamodel prisma/schema.prisma --script
+    → 25 CREATE TABLE. La herramienta CONTESTA. Sin esto, un diff vacío no sería interpretable.
+
+  EL DIFF:
+    node node_modules/prisma/build/index.js migrate diff \
+      --from-schema-datamodel prisma/schema.prisma \
+      --to-schema-datamodel <copia con el campo propuesto> --script
+
+  DATABASE_URL se fijó a `postgresql://nadie:nadie@127.0.0.1:1/nada` — una URL que no lleva a
+  ninguna parte. El schema declara `env("DATABASE_URL")` y Prisma exige que la variable EXISTA
+  para resolverlo; dándole una muerta, la forma datamodel→datamodel no puede tocar nada por
+  accidente. Ninguna base real intervino en la generación de este diff.
+
+EL CAMBIO EN EL SCHEMA (propuesto)
+----------------------------------
+  model Customer {
+  +  // SCRUM-574 (CONT-01) · forma jurídica del contacto. EMPRESA | PERSONA.
+  +  // NO es tipoDestinatario: aquel dice si el destinatario actúa como empresario a efectos de
+  +  // IVA (plazo del art. 13.2) y un autónomo es PERSONA aquí y EMPRESARIO allí.
+  +  // Nullable y SIN @default, por el mismo motivo que sus dos vecinos (tipoDestinatario y
+  +  // recargoEquivalencia): NULL = no declarado, distinto de declarado.
+  +  contactKind String? @map("contact_kind")
+     merchant    Merchant @relation(fields: [merchantId], references: [id])
+  }
+
+EL SQL RESULTANTE
+-----------------
+-- AlterTable
+ALTER TABLE "customers" ADD COLUMN     "contact_kind" TEXT;
+
+LECTURA DEL DIFF
+----------------
+· ADITIVO PURO. Una sentencia, una columna nueva, nullable. Cero DROP, cero ALTER de columna
+  existente, cero RENAME. No hay pérdida de datos posible → `--accept-data-loss` NO haría falta
+  (y de todas formas está prohibido).
+· NO TOCA `tipo_destinatario`, ni `legal_name`, ni `tax_id`, ni `recargo_equivalencia`. El plazo
+  legal de SCRUM-69 sigue exactamente donde estaba y calculándose igual.
+· TEXT y no un enum de Postgres, igual que sus vecinos `tipoDestinatario`,
+  `billingPeriodicity` y `modoValoracion`: la lista cerrada vive en Zod, y añadir un valor no
+  obliga a migrar un tipo. ⚠️ Contrapartida, dicha porque el censo la midió: la BD NO sostiene
+  la lista — un UPDATE directo mete cualquier texto (`docs/CENSO_TIPO_CLIENTE.md` §1a).
+
+MIGRACIÓN DE DATOS QUE ACOMPAÑARÍA
+----------------------------------
+🟢 NINGUNA. Y no es una suposición: el PASO 0 midió 15 clientes y los 15 tienen
+   `tipo_destinatario = NULL`. Con `contact_kind` naciendo NULL, cada cliente existente conserva
+   su fila entera sin que se escriba un solo byte — que es justo el control que pide el encargo
+   («sigue siendo el mismo cliente: mismos datos, mismo id»).
+   La verificación es entonces trivial de sostener: si no hay UPDATE, no hay nada que comparar
+   antes/después salvo la propia ausencia de escritura.
+
+LO QUE ESTABA ABIERTO CUANDO SE ESCRIBIÓ ESTO, Y CÓMO SE RESOLVIÓ
+-----------------------------------------------------------------
+Con `contact_kind` NULL en los 15 clientes existentes, el switch tenía que enseñar ALGO al
+abrir una ficha vieja. Se escribieron tres salidas y ninguna convencía:
+  (i)  caer en un lado por defecto → YaQu DECLARA por el profesional algo que nadie dijo;
+  (ii) tercer estado visible «sin declarar» → contradice la exclusividad del toggle;
+  (iii) derivarlo de si hay `legal_name` → hoy son 0 de 15, así que daría «Persona» para
+        todos, incluidas las empresas que aún no rellenaron la razón social.
+
+✅ RESUELTO SIN NINGUNA DE LAS TRES, y el mérito es de la forma del control: por debajo el
+   switch son RADIOS DE VERDAD, y un grupo de radio SIN NINGUNO MARCADO es un estado
+   NATIVO — el que tiene cualquier formulario antes de que lo toquen. Así que un
+   `contact_kind` NULL se pinta tal cual: los dos lados apagados, ninguno mintiendo.
+
+   No es un tercer estado inventado (regla 27): es la ausencia de valor de una columna que
+   nace nullable a propósito. La (ii) habría sido inventarlo; esto es no borrarlo.
+
+   Y con ello la del ALTA: un cliente nuevo PUEDE nacer sin lado declarado, igual que hoy
+   nace sin `tipoDestinatario`. Verificado en el control positivo gateado.

@@ -5,6 +5,10 @@ import { customerCreateSchema, customerUpdateSchema } from '../../../../core/val
 import { prisma } from '../../../../core/db/prisma';
 import { listCustomerEvents } from '../../customerEvents.service';
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (D2: borrado = admin)
+// SCRUM-578 (CONT-05): el aviso de duplicado. La lista de campos identificadores vive en UN sitio.
+import {
+  buscarCoincidencias, formasBuscables, canonEmail, canonNif,
+} from '../../domain/identificadoresDuplicados';
 
 // SCRUM-312 (D1): el CSV se parsea en el SERVIDOR, con las primitivas compartidas. Antes lo
 // hacia el navegador, y eso dejaba dos parseos vivos del mismo formato que ni siquiera eran
@@ -37,6 +41,61 @@ router.get('/:id', async (req, res) => {
     res.json(customer);
   } catch (err) {
     console.error('[GET /admin/customers/:id]', err);
+    res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * GET /admin/customers/duplicados — SCRUM-578 (CONT-05, punto c).
+ *
+ * ¿Alguno de estos identificadores YA lo usa otro cliente de este merchant?
+ *
+ * 🔴 ES SOLO LECTURA Y ES UN AVISO, NO UN BLOQUEO. No impide guardar nada, y por eso vive en un
+ * GET aparte en vez de dentro del POST: hay casos legítimos —marido y mujer con el mismo móvil,
+ * dos comunidades del mismo administrador con el mismo email— y el que decide es el profesional.
+ *
+ * Va ANTES de `/:id` a propósito: `duplicados` no es un id, pero si esta ruta se registrara
+ * después, `/:id` la capturaría y devolvería `invalid_id`. Es la misma precaución que ya toma
+ * `albaranes.routes.ts` con `/pendientes-facturar`.
+ *
+ * NO se lee la tabla entera: se pregunta por las FORMAS BUSCABLES del valor —con prefijo y sin
+ * él— para que el filtro lo pueda resolver el índice. Un `findMany` sin `where` funcionaría con
+ * 15 clientes y sería una bomba con 15.000.
+ */
+router.get('/duplicados', async (req, res) => {
+  try {
+    const phone = typeof req.query.phone === 'string' ? req.query.phone : null;
+    const email = typeof req.query.email === 'string' ? req.query.email : null;
+    const taxId = typeof req.query.taxId === 'string' ? req.query.taxId : null;
+    const excluirId = Number(req.query.excluirId);
+
+    const or: any[] = [];
+    for (const forma of formasBuscables(phone)) or.push({ phone: forma });
+    if (canonEmail(email)) or.push({ email: { equals: email!.trim(), mode: 'insensitive' } });
+    if (canonNif(taxId)) or.push({ taxId: { equals: taxId!.trim(), mode: 'insensitive' } });
+    // Sin ningún identificador que buscar no se consulta: devolver «todos» sería el peor default.
+    if (or.length === 0) return res.json({ coincidencias: [] });
+
+    const candidatos = await prisma.customer.findMany({
+      where: { merchantId: req.merchantId, OR: or },
+      select: { id: true, name: true, phone: true, email: true, taxId: true },
+    });
+
+    // El filtro de arriba es AMPLIO a propósito (lo que el índice sabe resolver); quien decide de
+    // verdad es la comparación canónica, que es la que entiende que `+34 …` y `…` son lo mismo.
+    const coincidencias = buscarCoincidencias(
+      { id: Number.isNaN(excluirId) ? 0 : excluirId, phone, email, taxId },
+      candidatos,
+    );
+
+    // Se devuelve el nombre para que el aviso pueda decir CON QUIÉN choca. El texto es del
+    // fundador (regla 30): aquí sólo viajan los datos.
+    const porId = new Map(candidatos.map((c) => [c.id, c.name]));
+    res.json({
+      coincidencias: coincidencias.map((c) => ({ ...c, customerName: porId.get(c.customerId) ?? null })),
+    });
+  } catch (err) {
+    console.error('[GET /admin/customers/duplicados]', err);
     res.status(500).json({ error: 'internal_error' });
   }
 });
