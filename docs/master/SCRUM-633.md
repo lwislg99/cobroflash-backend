@@ -50,6 +50,11 @@ formateo de la landing— sobre **1.460 instantes de 2026** (365 días × 00:30,
 efecto en este Node/Windows** (las tres tandas seguían diciendo `Europe/London`), y una tanda
 que dice simular Madrid sin simularlo es un número inventado.
 
+> ⚠️ **ESA FRASE SOBRE `TZ=` ES IMPRECISA. Ver la ENMIENDA del final (§9).** Lo que no surte
+> efecto es el **prefijo de Git Bash** (`TZ=x node …`); pasada como **entorno de un proceso
+> hijo**, `TZ` funciona. La conclusión de esta sección no cambia —las zonas explícitas siguen
+> siendo lo correcto—, pero la frase no se puede citar como dato.
+
 | Rama | Navegador del pro | Servidor | Divergencias |
 |---|---|---|---|
 | main | Europe/Madrid | UTC | 0 / 1460 |
@@ -104,6 +109,12 @@ dependencia que conviene que quede escrita**, porque es la única forma de que 6
    `timeZone`, y nadie fija `TZ` en el repo. Si el proceso de Railway arranca en `Europe/Madrid`
    y el pro está en **Canarias**, el cliente lee **un día más** — 1460/1460 en la tabla de §3.
    No se arregla aquí: no es de este ticket y toca copy que ve el cliente.
+
+   > 🔴 **ESE «SI» YA NO ES UN SI, Y LA VÍCTIMA NO ES LA QUE DICE. Ver la ENMIENDA (§9).**
+   > Railway **no tiene variable `TZ`**, así que el servidor corre en **UTC**, no en Madrid. Con
+   > ese dato, **ni el peninsular ni el canario divergen**; quien lee un día de más es el
+   > profesional en **desfase NEGATIVO** (LATAM). El hallazgo —que la landing formatea sin
+   > `timeZone`— sigue siendo real; a quién le pasa, no.
 2. **`quotes` mezcla `snake_case` y `camelCase`.** `valid_until` sí es snake, pero `"createdAt"`
    y `"merchantId"` **no**: van en camelCase y **exigen comillas dobles** en Postgres. Sin ellas
    se pliegan a `createdat` y la consulta **falla**. Verificado con el DDL que emite el propio
@@ -193,3 +204,85 @@ filas interpretables. En DEV salieron 4 presupuestos de 30 días y 4 con `valid_
 Qué hacer con los presupuestos ya emitidos que salgan en la fila `DEFECTUOSO` —dejarlos,
 corregirlos, o corregir sólo los que sigan vivos— **es decisión del fundador (regla 29)**, y
 este documento no la toma ni la insinúa. Aquí sólo está el número y cómo obtenerlo.
+
+---
+
+# ENMIENDA (§9) · dos afirmaciones de arriba estaban mal, y así queda la versión correcta
+
+**Enmendado el 2026-09-01**, el mismo día, al medir el test de SCRUM-630. Se **añade**: no se
+borra nada de lo anterior, se marca en su sitio y se corrige aquí con su procedencia, que es lo
+que impide que las frases malas se vuelvan a citar como dato.
+
+## 9.1 · «`TZ=` no surte efecto en este Node/Windows» — IMPRECISO
+
+**Lo que medí:** tres tandas lanzadas con `TZ=Europe/Madrid node …`, `TZ=Atlantic/Canary node …`
+y `TZ=UTC node …` desde Git Bash, y las tres siguieron diciendo `Europe/London`.
+
+**De dónde vino el error:** de generalizar un caso a una regla. Probé **una sola** forma de
+pasar `TZ` —el prefijo de Git Bash— y escribí la conclusión como si fuera de Node.
+
+**Lo correcto, medido:** `TZ` **sí** funciona pasada como **entorno de un proceso hijo**:
+
+```
+TZ=UTC              -> el hijo dice: UTC 0
+TZ=America/New_York -> el hijo dice: America/New_York 300
+TZ=Asia/Tokyo       -> el hijo dice: Asia/Tokyo -540
+```
+
+Lo que falla es el prefijo de Git Bash, que es cosa de cómo MSYS pasa el entorno, no de Node.
+
+**Qué NO cambia:** la decisión de hacer las zonas explícitas con `Intl` sigue siendo la correcta,
+y por una razón que el `TZ` funcionando no toca: el proceso tiene **una** zona, y aquí hacen
+falta **dos a la vez** —la del navegador del pro y la del servidor—. La tabla de §3 se mantiene.
+
+**Qué SÍ cambia:** que ahora se puede correr una tanda entera con la zona forzada, que es como se
+descubrió que el test de SCRUM-630 sólo pasaba en una zona del planeta.
+
+## 9.2 · 🔴 La fila de Canarias — LA VÍCTIMA ERA OTRA
+
+**De dónde vino el error:** en §6 escribí «si el proceso de Railway arranca en `Europe/Madrid`».
+Era una **hipótesis** planteada como condicional, y en §7 la dejé como pregunta abierta — pero la
+tabla de §3 la había puesto en la misma rejilla que las demás, y una hipótesis dentro de una
+tabla de medidas se lee como medida.
+
+**El dato que faltaba, ya en firme:** producción **no tiene variable `TZ`** (27 variables
+comprobadas en Railway; ninguna coincide). Un contenedor sin `TZ` corre en **UTC**.
+
+**Rehecho con el servidor FIJADO en UTC** y el navegador en la zona del pro:
+
+| Navegador del pro | Desfase ene/jul | `main` | rama 630 |
+|---|---|---|---|
+| Europe/Madrid (península) | +1 / +2 | **0 / 1460** | **0 / 1460** |
+| Atlantic/Canary | +0 / +1 | **0 / 1460** | **0 / 1460** |
+| America/Mexico_City | −6 | **1460 / 1460** | 1460 / 1460 |
+| America/Lima (Perú) | −5 | **1460 / 1460** | 1460 / 1460 |
+| America/Bogota | −5 | 1460 / 1460 | 1460 / 1460 |
+| America/Argentina | −3 | 1460 / 1460 | 1460 / 1460 |
+
+Control positivo: forzando un día de más, caza **1460/1460 en las seis**.
+
+**Con el servidor en UTC no diverge ni el peninsular ni el canario.** Quien lee un día de más es
+el profesional en **desfase NEGATIVO** —LATAM, que el producto contempla (MercadoPago, `country`,
+`locale.vatName` con IGV)—: su `23:59:59` local cae en el día **siguiente** en UTC. **Idéntico en
+`main` y en la rama 630: preexistente, no lo trae el arreglo.**
+
+## 9.3 · Y una que NO estaba mal, pero que ahora tiene respuesta
+
+§1 decía que la zona del proceso de Railway no la fija nadie en el repo. **Sigue siendo cierto**,
+y ahora se sabe qué implica: sin `TZ`, **UTC**. Eso convierte la pregunta abierta de §7 en dato,
+y de ahí sale la regla que se aplicó en SCRUM-630 (2/2):
+
+> **Cada test fija la zona de la máquina donde ese código corre de verdad.**
+> Front (`quotesView.js`) → navegador del pro → **Europe/Madrid**.
+> Rutas (`quotes.routes.ts`, `quoteDecisionLanding.routes.ts`) → Railway → **UTC**.
+
+## 9.4 · Lo que NO se toca en esta enmienda
+
+El SQL de §7 se queda como está: sus nombres, su tipo `TIMESTAMP(3)` y su doble `AT TIME ZONE`
+son correctos y están ejecutados contra Postgres real. Lo único que conviene leer con el dato
+nuevo es su **supuesto**, ya declarado allí: asume al pro en `Europe/Madrid`. Para un pro en
+desfase negativo la firma del defecto sería otra, así que un exceso de «no encaja con la firma
+del defecto» en el censo puede significar eso y no un error de la consulta.
+
+Y **la decisión sobre los presupuestos ya emitidos sigue sin tomarse**: es del fundador
+(regla 29).
