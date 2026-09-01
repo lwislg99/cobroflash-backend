@@ -344,14 +344,9 @@ function renderProductsView(container) {
       return data.item;
     }
   
-    async function deleteProduct(merchantId, id) {
-      const res = await fetch(`/admin/products/${id}?merchantId=${encodeURIComponent(merchantId)}`, {
-        method: "DELETE",
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok || !data || !data.ok) throw new Error(data?.error || "Error borrando producto");
-      return data.deleted;
-    }
+    // SCRUM-614: aquí vivía `deleteProduct`, el `fetch` con `method: "DELETE"`. Se retira con la
+    // ruta que llamaba. Dejar el cliente sin su servidor no es inocuo: el día que alguien lo
+    // vuelva a enganchar tendría un 404 y un mensaje de error donde había un borrado.
 
     async function importProductsCsv(merchantId, csvText) {
       const res = await fetch(`/admin/products/import?merchantId=${encodeURIComponent(merchantId)}`, {
@@ -450,15 +445,35 @@ function renderProductsView(container) {
         toggleBtn.className = "btn btn-secondary btn-sm";
         toggleBtn.textContent = it.isActive ? "Desactivar" : "Activar";
 
-        const delBtn = document.createElement("button");
-        delBtn.type = "button";
-        delBtn.className = "btn btn-danger btn-sm";
-        delBtn.textContent = "Borrar";
+        // ── SCRUM-614 · EL BOTÓN «Borrar» SE RETIRA ──────────────────────────────────────
+        // Decisión del fundador delegada en el asesor (1-sep-2026). Aquí vivía un DELETE FÍSICO
+        // —`prisma.product.delete`— y «Desactivar» ya estaba justo al lado sin que nada empujara
+        // hacia la opción reversible.
+        //
+        // Lo irreversible es lo caro, y con DOC-08 esa fila pasa a ser donde está escrito el
+        // margen: `cost` no sale por NINGUNA vía que el merchant pueda usar —ni el CSV del
+        // tarifario, que lo filtra del `select`, ni los seis datasets del ZIP, que no incluyen el
+        // catálogo—, así que borrar destruía el único registro sin recuperación.
+        //
+        // 🛑 Y QUEDA UNA CONSECUENCIA VIVA, que no se tapa: `@@unique([merchantId, nameSearch])`
+        // NO mira `isActive`, así que un producto desactivado SIGUE OCUPANDO SU NOMBRE y hoy no
+        // queda ninguna forma de liberarlo. El diff que lo arregla está preparado y PARADO —
+        // `prisma/schema.prisma` es de los fundadores. Ver `docs/master/SCRUM-614.md`.
 
         actionsDiv.appendChild(editBtn);
         actionsDiv.appendChild(toggleBtn);
-        actionsDiv.appendChild(delBtn);
         actionsTd.appendChild(actionsDiv);
+
+        // SCRUM-614 · el Operario SÓLO VE: editar y retirar pasan a admin. Se VETA en vez de
+        // ocultar, con el mismo helper y el mismo copy ya aprobado que usan export/import cuatro
+        // pantallas más arriba (SCRUM-89) — un botón que desaparece no explica nada.
+        //
+        // ⚠️ «Desactivar» es `PUT` con `isActive`, o sea el MISMO verbo que «Editar». Desde fuera
+        // parecen dos cosas; no lo son, y por eso los dos se cierran juntos.
+        if (esTecnico) {
+          lockActionForRole(editBtn);
+          lockActionForRole(toggleBtn);
+        }
   
         editBtn.addEventListener("click", () => {
           setAlert(null, "");
@@ -479,18 +494,8 @@ function renderProductsView(container) {
           }
         });
   
-        delBtn.addEventListener("click", async () => {
-          if (!confirm(`¿Borrar el producto "${it.name}"?`)) return;
-          try {
-            setAlert(null, "");
-            await deleteProduct(merchantId, it.id);
-            setAlert("success", "Producto borrado.");
-            await refresh();
-          } catch (e) {
-            setAlert("error", e.message || "Error borrando.");
-          }
-        });
-  
+        // SCRUM-614: aquí colgaba el manejador del «Borrar». Se va con el botón.
+
         tbody.appendChild(tr);
       });
     }

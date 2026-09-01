@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import {
   createProduct, listProducts, getProductById, updateProduct,
-  deleteProduct, searchProducts, exportProductsCsv, importProductsCsv,
+  searchProducts, exportProductsCsv, importProductsCsv,
 } from '../../domain/products.service';
 import { prisma } from '../../../../core/db/prisma';
 import { getTradeCatalog } from '../../../../core/data/tradeCatalogs';
@@ -295,27 +295,29 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
   }
 });
 
-// SCRUM-614 · admin. Ver el bloque de `POST /`.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// 🛑 SCRUM-614 · AQUÍ VIVÍA `DELETE /admin/products/:id`, Y SE HA RETIRADO.
 //
-// 🛑 Y ESTA RUTA TIENE ADEMÁS UNA SEGUNDA DECISIÓN ENCIMA, TODAVÍA SIN APLICAR: el borrado
-// FÍSICO se retira y «Desactivar» ocupa su lugar (asesor, 24-ago-2026). No se ha aplicado aquí
-// y no es un olvido — depende de un cambio de `prisma/schema.prisma` que es de los fundadores y
-// está PARADO esperando su OK: hoy `@@unique([merchantId, nameSearch])` NO mira `isActive`, así
-// que un producto desactivado sigue ocupando su nombre y recrearlo revienta (el importador CSV
-// lo cuenta como `skipped`). Retirar el borrado ANTES de ese cambio dejaría al merchant sin
-// ninguna forma de liberar un nombre: cambiaría un defecto por una trampa.
-// El diff preparado y el porqué están en `docs/master/SCRUM-614.md`.
-router.delete('/:id', requireRole('admin'), async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
-    const deleted = await deleteProduct(req.merchantId, id);
-    if (!deleted) return res.status(404).json({ ok: false, error: 'not_found' });
-    return res.json({ ok: true, deleted });
-  } catch (err) {
-    console.error('[DELETE /admin/products/:id]', err);
-    return res.status(500).json({ ok: false, error: 'internal_error' });
-  }
-});
+// Era un borrado FÍSICO (`prisma.product.delete`) sin comprobar nada. Se retira por decisión del
+// fundador delegada en el asesor (1-sep-2026), y el motivo salió de la propia medición del
+// ticket: **«Desactivar» ya existía justo al lado** —`PUT` con `isActive`— y nada empujaba hacia
+// la opción reversible.
+//
+// Lo irreversible es lo caro. Y con DOC-08 la fila pasa a ser donde está escrito el margen:
+// `cost` NO sale por ninguna vía que el merchant pueda usar —`exportProductsCsv` lo filtra del
+// `select`, y los seis datasets de `datos.zip`/`portabilidad.zip` no incluyen el catálogo—, así
+// que un clic destruía el único registro del margen sin recuperación.
+//
+// ⚠️ NO SE SUSTITUYE POR UN BORRADO LÓGICO EN ESTA RUTA. «Desactivar» ya es `PUT /:id` con
+// `isActive: false`: una segunda puerta que hiciera lo mismo sería otro sitio donde se decide lo
+// mismo, y eso es lo que este ticket lleva toda la semana desmontando.
+//
+// 🛑 CONSECUENCIA VIVA Y DECLARADA, que no se tapa: `@@unique([merchantId, nameSearch])` **NO
+// mira `isActive`**, así que un producto desactivado SIGUE OCUPANDO SU NOMBRE — recrearlo revienta
+// y el importador CSV lo cuenta como `skipped`. Retirado el borrado, hoy **no queda ninguna forma
+// de liberar un nombre**. El diff que lo arregla está PREPARADO Y PARADO: `prisma/schema.prisma`
+// es de los fundadores. Está en `docs/master/SCRUM-614.md` con sus dos opciones y lo que cuesta
+// cada una.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
 
 export default router;

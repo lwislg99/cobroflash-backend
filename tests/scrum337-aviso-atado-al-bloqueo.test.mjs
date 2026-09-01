@@ -167,7 +167,16 @@ const BORRADOS_DECLARADOS = [
   'src/modules/expenses/domain/expenses.service.ts::expense.delete#1',
   'src/modules/maintenance/domain/maintenance.service.ts::quote.delete#1',
   'src/modules/maintenance/domain/maintenance.service.ts::quote.delete#2',
-  'src/modules/products/domain/products.service.ts::product.delete#1',
+  // SCRUM-614 (1-sep-2026) · SALE: `products.service.ts::product.delete#1` se ha RETIRADO.
+  //
+  // LA PREGUNTA QUE ESTE CENSO OBLIGA A CONTESTAR: ¿ese borrado se disparaba al vencer la prueba
+  // o por inactividad? **NO.** Era el botón «Borrar» del catálogo — una acción MANUAL del
+  // profesional sobre una fila suya, sin nada que ver con `trialExpired` ni con ningún cron. Se
+  // comprueba solo: no queda ningún llamador, porque se ha ido también la ruta que lo invocaba.
+  //
+  // Y no se ha sustituido por otro borrado en otro sitio: quien retira un producto usa
+  // `updateProduct` con `isActive: false`, que ya existía. El catálogo deja de tener borrado
+  // físico — ver `docs/master/SCRUM-614.md`.
   'src/modules/providers/domain/providers.service.ts::provider.delete#1',
   'src/modules/system/app/routes/invoicesAdmin.routes.ts::albaranLineaFacturada.deleteMany#1',
   'src/modules/system/customerAdmin.ts::customer.deleteMany#1',

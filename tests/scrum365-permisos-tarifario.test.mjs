@@ -168,13 +168,49 @@ test('SCRUM-614 · POSITIVO — la LECTURA del catálogo SIGUE siendo del Operar
   }
 });
 
-test('SCRUM-614 · los tres verbos de escritura exigen admin EN EL ROUTER, no sólo en el registro', async () => {
+test('SCRUM-614 · 🔴 el borrado FÍSICO del catálogo ya no existe en ningún sitio', async () => {
+  // No basta con que la RUTA no esté: un servicio de dominio sin llamadores pasa todos los tests
+  // y desde fuera es indistinguible de una función entregada (SCRUM-411). Se comprueban los tres
+  // sitios donde podría haber quedado.
+  const capas = await capasDelRouter('modules/products/app/routes/products.routes.js');
+  const borra = capas.filter((c) => c.metodos.includes('DELETE'));
+  assert.deepEqual(borra, [],
+    `🔴 ha vuelto una ruta DELETE al catálogo: ${JSON.stringify(borra)}.\n`
+    + '  El borrado físico se retiró el 1-sep-2026 (decisión del fundador delegada en el asesor):\n'
+    + '  «Desactivar» —`PUT` con `isActive`— ocupa su lugar, y `cost` no sale por ninguna vía que\n'
+    + '  el merchant pueda usar, así que borrar destruía el único registro del margen.');
+
+  const servicio = fs.readFileSync(path.join(RAIZ, 'src/modules/products/domain/products.service.ts'), 'utf8');
+  const vivo = servicio.split('\n').filter((l) => /prisma\.product\.delete/.test(l) && !/^\s*(\/\/|\*)/.test(l));
+  assert.deepEqual(vivo, [],
+    `🔴 queda un \`prisma.product.delete\` VIVO en el servicio: ${JSON.stringify(vivo)}.\n`
+    + '  Sin llamadores pasa en verde igual, y deja el borrado a un `import` de distancia.');
+
+  // 🔴 SIN LOS COMENTARIOS, y no es un detalle: la primera versión de este assert se cazó a sí
+  // misma — el comentario que explica la retirada nombra `method: "DELETE"`, así que salía rojo
+  // con el borrado ya quitado. Es la trampa de autorreferencia de la casa, y hoy ha mordido dos
+  // veces (aquí y en el guard del tope de arranque de SCRUM-617).
+  const vista = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/productsView.js'), 'utf8');
+  const vistaSinComentarios = vista.split('\n').filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l));
+
+  // ✅ CONTROL POSITIVO del filtro: si quitar comentarios se llevara medio fichero, el assert de
+  // abajo pasaría sobre la nada. Tiene que seguir viéndose la llamada que SÍ existe.
+  assert.ok(vistaSinComentarios.some((l) => /method:\s*["']POST["']/.test(l)),
+    '🔴 al quitar comentarios se ha perdido el código: lo de abajo mediría sobre un vacío.');
+
+  const enElFront = vistaSinComentarios.filter((l) => /method:\s*["']DELETE["']/.test(l));
+  assert.deepEqual(enElFront, [],
+    '🔴 el front vuelve a pedir un DELETE del catálogo, y ya no hay ruta que lo atienda.');
+});
+
+test('SCRUM-614 · los verbos de escritura que QUEDAN exigen admin EN EL ROUTER, no sólo en el registro', async () => {
   // El registro dice quién PUEDE; el router es quien lo IMPIDE. Sacar la entrada de la lista sin
   // poner el gate dejaría la ruta abierta y con la red de SCRUM-55 en rojo por «sin declarar»
   // — pero al revés (gate puesto, entrada olvidada) el rojo es por «declarada dos veces», y
   // ninguno de los dos dice qué mitad falta. Aquí se comprueba la mitad que cierra la puerta.
   const capas = await capasDelRouter('modules/products/app/routes/products.routes.js');
-  for (const [metodo, ruta] of [['POST', '/'], ['PUT', '/:id'], ['DELETE', '/:id']]) {
+  // DELETE ya no está: se retiró con el borrado físico (test de arriba). Quedan dos.
+  for (const [metodo, ruta] of [['POST', '/'], ['PUT', '/:id']]) {
     const capa = capas.find((c) => c.ruta === ruta && c.metodos.includes(metodo));
     assert.ok(capa, `🔴 no se encontró ${metodo} ${ruta} en el router de productos`);
     assert.equal(capa.gates.length > 0, true,
