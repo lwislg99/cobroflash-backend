@@ -34,6 +34,7 @@ import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { lanzarNavegador } from './_navegador.mjs';
+import { levantarServidor } from './_servidor.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
@@ -215,7 +216,11 @@ function servir() {
         res.end(buf);
       });
     });
-    s.listen(PUERTO, () => listo(s));
+    // SCRUM-620 · el servidor se levanta por el módulo común: el ÚNICO sitio donde se decide
+    // qué pasa si NO se puede. Antes cada guard hacía su propio `listen` sin tratar el error, y un
+    // puerto ocupado subía como excepción → exit 1 → la puerta lo pintaba `rojo(1)`, o sea «he
+    // encontrado un defecto». Ahora para con 4 y lo dice.
+    levantarServidor(s, PUERTO).then(() => listo(s));
   });
 }
 

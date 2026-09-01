@@ -56,6 +56,7 @@ const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
 const PUBLIC = path.join(RAIZ, 'public');
 import { lanzarNavegador } from './_navegador.mjs';
+import { levantarServidor } from './_servidor.mjs';
 // SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
 // los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
 // hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
@@ -136,7 +137,11 @@ function arrancarServidor() {
       res.writeHead(404); res.end('');
     }
   });
-  return new Promise((ok) => srv.listen(PUERTO, () => ok({ srv, servidos })));
+  // SCRUM-620 · el servidor se levanta por el módulo común: el ÚNICO sitio donde se decide
+  // qué pasa si NO se puede. Antes cada guard hacía su propio `listen` sin tratar el error, y un
+  // puerto ocupado subía como excepción → exit 1 → la puerta lo pintaba `rojo(1)`, o sea «he
+  // encontrado un defecto». Ahora para con 4 y lo dice.
+  return levantarServidor(srv, PUERTO).then(() => ({ srv, servidos }));
 }
 
 /**

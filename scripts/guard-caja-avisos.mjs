@@ -37,6 +37,7 @@ import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { lanzarNavegador } from './_navegador.mjs';
+import { levantarServidor } from './_servidor.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
@@ -140,7 +141,11 @@ const fallos = [];
 const ciego = [];
 
 const { s, servidos } = servidor();
-await new Promise((r) => s.listen(PUERTO, '127.0.0.1', r));
+// SCRUM-620 · el servidor se levanta por el módulo común: el ÚNICO sitio donde se decide
+// qué pasa si NO se puede. Antes cada guard hacía su propio `listen` sin tratar el error, y un
+// puerto ocupado subía como excepción → exit 1 → la puerta lo pintaba `rojo(1)`, o sea «he
+// encontrado un defecto». Ahora para con 4 y lo dice.
+await levantarServidor(s, PUERTO, '127.0.0.1');
 
 // SCRUM-617 · el arranque pasa por el módulo común: es el ÚNICO sitio donde se decide cómo
 // arranca el navegador. Antes cada guard lo escribía a mano y el flag de aislamiento se
