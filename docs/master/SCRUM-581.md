@@ -120,3 +120,111 @@ por datos, sólo por copy.
   un informe anterior: `main` se ha movido desde el último recuento.
 - `npm run guards:entrada` en verde.
 - **No se ha modificado ningún fichero de producto.**
+
+---
+
+# SCRUM-581 · APÉNDICE · Construido: pestañas y orden
+
+**Fecha:** 01-sep-2026 · **Carril:** producto · **Gate:** sin gate — corre en `npm test`
+
+**Medido contra:** `origin/main` = `d695ead49969337baa2165fbbd8a2dde4e0cc515` · 2026-09-01T14:29:14+01:00
+
+Con las tres decisiones del asesor tomadas sobre el censo de arriba.
+
+## 📌 La consecuencia asumida, escrita donde se pidió
+
+**Mientras haya NULLs, «Empresas» + «Personas» NO suma «Todos».** Está decidido así (los NULL salen
+sólo en «Todos», sin tercera pestaña) y es visible. Hoy son **15 de 15**. Explicarlo en pantalla, si
+se quiere, es microcopy del fundador — no mío.
+
+**Y no hay valor por defecto.** El filtro compara con `===` y no lleva **ni un `||` ni un `??`** para
+que una fila «caiga en algún sitio». Una fila sin declarar no aparece en ninguna de las dos, y es
+correcto: es `resolveTipoDestinatario` lo que NO se repite (SCRUM-615).
+
+## Dónde vive la decisión
+
+`public/dashboard/js/filtroClientes.js` — **sin DOM**, para que esta pantalla tenga red en
+`npm test`. Los nueve guards de navegador **no cubren el dashboard** (SCRUM-628) y aquí sólo se han
+usado como **no-regresión de la landing**: 9 verdes, puerta con código 0.
+
+## El orden: **en cliente**, y por qué
+
+Se ordena **en el cliente**, sobre el lote que ya llegó. Tres motivos, en orden de peso:
+
+1. **El defecto sigue siendo literalmente el del servidor.** `RECIENTES` no reordena nada: devuelve
+   lo que mandó `listCustomers` (`orderBy: { createdAt: 'desc' }`). Si el orden se hubiera movido al
+   servidor, el «defecto de hoy» pasaría a depender de código nuevo.
+2. **No añade una ida a la red** por cambiar de pestaña o de orden.
+3. **No toca `customerAdmin.ts`**, que es zona de servidor fuera del reparto de este ticket.
+
+`AZ` usa `localeCompare(nombre, 'es', { sensitivity: 'base' })` — que es lo que pone «Álvarez» junto
+a «alvarez», donde el usuario los busca, en vez de donde los dejaría una comparación binaria (todas
+las mayúsculas delante, los acentos al final). Y **ordena una copia**: `sort` muta, y mutar el lote
+haría que «Más recientes» dependiera de si alguien pulsó A-Z antes — un fallo que sólo aparece en la
+segunda interacción y que nadie reproduce.
+
+## El censo de marcadores: **16 → 17 marcas · 101 → 107 superficies**
+
+**+1 marca, +6 superficies.** Una sola constante `MARCADOR` en `filtroClientes.js` apaga las seis:
+3 pestañas, 2 órdenes y el vacío de pestaña.
+
+⚠️ **Y lo digo, porque es el aviso de SCRUM-615:** el censo cuenta **MARCAS, no rótulos**. Las seis
+ranuras comparten esa constante, así que **aprobar el texto de UNA pestaña no apaga las otras
+cinco** — habría que sacar esa `palabra` por separado. Declarado en `scrum402-marcador-no-se-pinta`
+para que no se descubra al aprobar el primero.
+
+**Van con palabra de trabajo detrás** (`[PENDIENTE microcopy oficial] Empresas`), no con la marca
+sola. Y aquí hay una **discrepancia con el encargo que no resuelvo en silencio**: el encargo dice
+«literal, SIN palabra de trabajo», pero la regla escrita y mergeada de la casa —en
+`switchFormaJuridica.js`, la puerta que el propio encargo me manda usar— dice lo contrario y explica
+por qué: *«en un control de dos lados el marcador solo sería inservible: los dos lados dirían lo
+mismo»*. **Con TRES pestañas el problema es peor.** He seguido la regla escrita; si el criterio es el
+otro, se cambia en una línea (`etiqueta()`).
+
+## El vacío de pestaña, que no existía
+
+Hoy «Empresas» sale vacía **con clientes en la lista**, y el vacío que ya había dice «Añade a tu
+primer cliente» — que ahí sería **falso**. El de la búsqueda tampoco vale: no se ha buscado nada.
+Por eso hay una sexta ranura marcada. Es la única superficie nueva que no estaba en el encargo, y se
+declara.
+
+## Los controles
+
+| control | resultado |
+|---|---|
+| **NEGATIVO** · «Todos» sin tocar el orden | la lista es **exactamente** la del servidor, mismo contenido y mismo orden |
+| **EL CASO DE HOY** · 15 NULL | «Todos» los enseña · «Empresas» y «Personas» **vacías** · ninguna fila en una pestaña que no le toca |
+| **ROTURA INYECTADA** · que «Empresas» devuelva también personas | **el test CAE y lo NOMBRA**: «Empresas» ha devuelto a #6 («Chus»), cuyo contactKind es `"PERSONA"` |
+| **ORDEN** · acentos y mayúsculas | «Álvarez» y «alvarez» quedan juntos y primeros; `Bermúdez`, `Zorrilla` detrás |
+| **NO MUTA** | `ordenar` no toca la lista de entrada |
+
+Árbol commiteado en **`85be346a`** antes de inyectar. Reversión: `Buffer.compare(disco, testigo) === 0`.
+
+## Cuatro redes de la casa saltaron, y se atendieron
+
+Añadir un `<script>` al dashboard tiene tres consecuencias que la casa vigila, más el trinquete:
+
+- **`SCRIPTS_DEL_DASHBOARD` 62 → 63.** 🔴 Es un valor **DERIVADO** y se ha **recalculado desde el
+  `index.html` de esta rama** (`grep -c "<script src="` → 63), no elegido. Es exactamente la lección
+  del contador: si en un merge este número saliera igual en los dos lados, git lo dejaría fuera de
+  los marcadores de conflicto y nadie se enteraría. **Se vuelve a contar después de mezclar.**
+- **El SHELL del service worker** (SCRUM-274) lleva ahora `filtroClientes.js`: si no, `addAll`
+  —que es atómico— dejaría el dashboard sin precachear.
+- **El trinquete de marcadores** (SCRUM-402), declarado arriba.
+
+## Zona respetada
+
+Sólo **la toolbar** y **`loadCustomers`/`pintar`**. El modal con `fieldPhone` —zona de S3 en
+CONT-05— **no se ha tocado**.
+
+## Pendiente de CONT-07
+
+**Filtrar por tag** sigue fuera y no se ha construido «preparado por si acaso». Depende de
+SCRUM-580.
+
+## Estado del árbol
+
+- **Suite: total 4113 · pass 4034 · fail 0 · skipped 79**, medida en esta rama.
+- **9 guards de navegador verdes** — como no-regresión de la landing, nunca como prueba de esta
+  pantalla.
+- `npm run guards:entrada` en verde.
