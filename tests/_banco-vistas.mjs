@@ -323,7 +323,30 @@ export function scriptsDelDashboard(raiz) {
 // del valor quedo fuera de los marcadores — el incidente exacto que esta cabecera cuenta del 61.
 // Se resolvio CONTANDO sobre el index ya mezclado (`grep -c "<script src=" ` → 64), no eligiendo
 // un lado. Los dos comentarios se quedan: cada uno documenta un script real.
-export const SCRIPTS_DEL_DASHBOARD = 64;
+// SCRUM-575 (24-ago-2026) · 63 -> 64: entra `nifEspanol.js`, la validacion de NIF/CIF/NIE en el
+// navegador (copia declarada de la del servidor, atada por el trinquete de scrum575).
+// SCRUM-575 (24-ago-2026) · 64 → 65: entra `nifEspanol.js`, la validación de NIF/CIF/NIE en el
+// navegador (copia declarada de la del servidor, atada por el trinquete de scrum575).
+//
+// 🔴 TERCERA VEZ QUE ESTE CONTADOR CHOCA, Y LA TERCERA CON LA MISMA FORMA: dos ramas suben el
+// número a LA VEZ, escriben el MISMO valor por scripts DISTINTOS, y git deja la línea del valor
+// **fuera de los marcadores** — sólo chocan los comentarios. Quien resuelva conservando «los dos
+// comentarios» y no toque el número deja el contador CORTO con dos scripts nuevos dentro.
+//
+// Se resuelve CONTANDO sobre el índice ya mezclado, nunca heredando de un lado:
+//     grep -c "<script src=" public/dashboard/index.html   →   65
+//
+// ⚠️ Y NO se convierte en derivado automático a propósito: subirlo tiene que seguir siendo una
+// DECISIÓN explícita, que es justo lo que hace que estos guards sirvan de algo.
+//
+// ── LA ANOMALÍA QUE SE MIDIÓ ANTES DE TOCAR NADA ─────────────────────────────────────────
+// Llegó la afirmación de que «con 64 declarado los tests pasan». **Es FALSA, y se comprobó
+// dejando 64 a propósito con 65 scripts reales:** caen los DOS guards que S2 dijo —
+// `dashboard-colisión` («se leyeron 65 y se esperaban 64») y el SUELO de SCRUM-417 («BANCO
+// CIEGO: 65 leídos y se esperaban 64»). El mecanismo NO tiene hueco.
+// Y la otra hipótesis —que el merge se hubiera comido un script— también es falsa: `nifEspanol.js`
+// y `quoteAtajosVencimiento.js` están LOS DOS en el índice y sus ficheros existen.
+export const SCRIPTS_DEL_DASHBOARD = 65;
 
 /**
  * Monta el dashboard como lo monta el navegador y devuelve el contexto vivo.

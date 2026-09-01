@@ -138,6 +138,12 @@ function renderCustomersView(container) {
   const MARCADOR_MICROCOPY = "[PENDIENTE microcopy oficial]";
   let fieldPrefijo = null;   // SCRUM-578 (a): el prefijo de pais, fuera del numero
   let avisoDuplicado = null; // SCRUM-578 (c): el aviso de identificador ya usado
+  // SCRUM-575 (CONT-02) · CONSTANTE PROPIA, no la de CONT-05, y a proposito: son tickets
+  // distintos. Compartirla ataria la aprobacion de este texto a la de los otros dos — el
+  // fundador no podria firmar uno sin firmar los tres. Una constante por ticket es lo que
+  // permite que se apaguen por separado.
+  const MARCADOR_NIF = "[PENDIENTE microcopy oficial]";
+  let avisoNif = null;       // SCRUM-575 (CONT-02): el aviso de NIF/CIF mal formado
   let fieldWaOptOut = null; // J3: baja manual de WhatsApp desde la ficha
   let fieldTipoDestinatario = null; // SCRUM-69: plazo legal de la recapitulativa (art. 13 RD 1619/2012)
   let switchForma = null; // SCRUM-574: FORMA JURÍDICA (contactKind). NO es fieldTipoDestinatario.
@@ -265,6 +271,26 @@ function renderCustomersView(container) {
     // A20.4: cliente empresa (opcional) — el NIF además lo exigirá VeriFactu
     fieldLegalName = createField("Razón social (empresa, opcional)", "legalName", "text");
     fieldTaxId = createField("NIF/CIF (opcional)", "taxId", "text");
+    // SCRUM-575 (CONT-02) · el aviso de NIF mal formado. Va PEGADO a su campo —y no arriba, como
+    // el de duplicados— porque señala un error EN ESE campo: un mensaje lejos de su causa obliga
+    // a buscarla. Nace oculto; sólo aparece con un valor escrito y mal.
+    //
+    // 🔴 EL RÓTULO «NIF/CIF (opcional)» NO CAMBIA, y es deliberado: sigue describiendo el campo
+    // con exactitud. Sólo se marca lo que es NUEVO — el mensaje de error, que es texto que el
+    // profesional no ha visto nunca. Marcar de más obliga al fundador a reescribir lo que ya
+    // estaba bien.
+    avisoNif = createElement("div", "aviso-nif");
+    avisoNif.textContent = MARCADOR_NIF;
+    avisoNif.hidden = true;
+    fieldTaxId.wrapper.appendChild(avisoNif);
+
+    // Se comprueba al SALIR del campo: en cada tecla, un NIF a medio escribir estaría mal casi
+    // siempre y el aviso parpadearía acusando mientras se teclea.
+    fieldTaxId.input.addEventListener("blur", () => {
+      // VACÍO = VÁLIDO. El campo es opcional y esta comprobación no lo convierte en obligatorio:
+      // es el control que más fácil se rompe sin querer al añadir una validación.
+      avisoNif.hidden = validarNifEspanol(fieldTaxId.input.value).valido;
+    });
     fieldNotes = createField("Notas", "notes", null, false, true);
 
     // SCRUM-69 (FACT-1): sin banner ni prompt forzado (decisión fundador 23-jul) — solo aquí,
@@ -400,6 +426,7 @@ function renderCustomersView(container) {
     // SCRUM-578: el aviso se APAGA al abrir. Sin esto arrastraria el del cliente anterior y
     // acusaria de duplicado a uno que no lo es — el peor falso positivo posible.
     if (avisoDuplicado) avisoDuplicado.hidden = true;
+    if (avisoNif) avisoNif.hidden = true; // SCRUM-575: no arrastrar el aviso del cliente anterior
     if (fieldPrefijo) fieldPrefijo.value = prefijosPais.ESPANA.prefijo;
 
     // SCRUM-574: `reset()` deja los dos radios sin marcar, que es exactamente el estado de un alta

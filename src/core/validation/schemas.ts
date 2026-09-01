@@ -1,5 +1,6 @@
 // src/core/validation/schemas.ts
 import { z } from 'zod';
+import { validarNifEspanol } from './nifEspanol'; // SCRUM-575 (CONT-02)
 import { invalidTipoIva, invalidPrefijoSerie } from './fiscalInput'; // SCRUM-217
 
 // ------- QUOTES -------
@@ -249,7 +250,12 @@ export const customerCreateSchema = z.object({
   // A20.4 (EXT3): cliente empresa — el NIF además es requisito del VeriFactu
   // futuro (hallazgo S1-C: F1 exige NIF del destinatario)
   legalName: z.string().max(200).nullable().optional(),
-  taxId: z.string().max(20).nullable().optional(),
+  // SCRUM-575 (CONT-02): forma y digito de control. VACIO SIGUE SIENDO VALIDO — validar no es
+  // obligar, y `nullable().optional()` lo garantiza antes de llegar al refine. El mensaje es un
+  // CODIGO ESTABLE y no prosa: lo que lee el profesional es del fundador (regla 30) y lo pone el
+  // formulario con su marcador. Aqui solo viaja el motivo, que ademas acaba en logs.
+  taxId: z.string().max(20).nullable().optional()
+    .refine((v) => validarNifEspanol(v).valido, { message: 'taxId_invalido' }),
   // SCRUM-69 (FACT-1): determina el plazo legal de la recapitulativa (art. 13 RD 1619/2012).
   // null = sin clasificar (se trata como PARTICULAR en el cálculo, ver resolveTipoDestinatario).
   tipoDestinatario: z.enum(['PARTICULAR', 'EMPRESARIO']).nullable().optional(),
