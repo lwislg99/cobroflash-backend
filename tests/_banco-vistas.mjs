@@ -312,7 +312,9 @@ export function scriptsDelDashboard(raiz) {
 // Éste no es un número que se herede de ningún lado: se DERIVA. Medido sobre el `index.html` ya
 // mezclado, `grep -c "<script src="` da 62. Un contador que dos ramas incrementan a la vez se
 // resuelve contando, no eligiendo.
-export const SCRIPTS_DEL_DASHBOARD = 62;
+// SCRUM-578 (24-ago-2026) · 62 -> 63: entra `prefijosPais.js`, el selector de prefijo de pais
+// del formulario de clientes. Se sube AQUI y en el mismo commit que anade el `<script>`.
+export const SCRIPTS_DEL_DASHBOARD = 63;
 
 /**
  * Monta el dashboard como lo monta el navegador y devuelve el contexto vivo.
