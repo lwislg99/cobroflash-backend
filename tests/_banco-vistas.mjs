@@ -309,10 +309,15 @@ export function scriptsDelDashboard(raiz) {
 // dejado el número en 61 con dos scripts nuevos dentro, y el guard habría pasado en verde
 // contando mal.
 //
-// Éste no es un número que se herede de ningún lado: se DERIVA. Medido sobre el `index.html` ya
-// mezclado, `grep -c "<script src="` da 62. Un contador que dos ramas incrementan a la vez se
-// resuelve contando, no eligiendo.
-export const SCRIPTS_DEL_DASHBOARD = 62;
+// SCRUM-581 (1-sep-2026) · 62 → 63: entra `filtroClientes.js`, las pestañas Todos|Empresas|Personas
+// y el orden de la lista de clientes. Va ANTES de `customersView.js`, que lo consume.
+//
+// Éste no es un número que se herede de ningún lado: se DERIVA. **Recalculado hoy sobre el
+// `index.html` de esta rama, no heredado del informe anterior:** `grep -c "<script src="` da 63.
+// Un contador que dos ramas incrementan a la vez se resuelve contando, no eligiendo — y si en un
+// merge este número aparece IGUAL en los dos lados, git lo deja fuera de los marcadores de
+// conflicto y nadie se entera. Se vuelve a contar después de mezclar, siempre.
+export const SCRIPTS_DEL_DASHBOARD = 63;
 
 /**
  * Monta el dashboard como lo monta el navegador y devuelve el contexto vivo.

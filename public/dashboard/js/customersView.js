@@ -82,6 +82,45 @@ function renderCustomersView(container) {
   searchInput.placeholder = "Buscar por nombre, teléfono o email…";
   searchInput.style.cssText = "min-width:160px;flex:1";
   toolbar.appendChild(searchInput);
+
+  // ── SCRUM-581 (CONT-08) · pestañas y orden. SE SUMAN al buscador, que no se toca ──────────
+  // La DECISIÓN vive en `filtroClientes.js` (sin DOM, probada en `npm test`); aquí sólo están
+  // los controles. Los rótulos llevan el marcador de microcopy: no hay texto aprobado.
+  const FC = window.filtroClientes;
+  let pestanaActiva = FC.POR_DEFECTO.pestana;
+  let ordenActivo = FC.POR_DEFECTO.orden;
+
+  const pestanas = createElement("div", "customers-tabs");
+  const botonesPestana = FC.PESTANAS.map((p) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "customers-tab";
+    b.dataset.pestana = p.id;
+    b.textContent = FC.etiqueta(p);
+    b.setAttribute("aria-pressed", String(p.id === pestanaActiva));
+    b.addEventListener("click", () => {
+      pestanaActiva = p.id;
+      botonesPestana.forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.pestana === p.id)));
+      pintar();
+    });
+    pestanas.appendChild(b);
+    return b;
+  });
+  toolbar.appendChild(pestanas);
+
+  const ordenSelect = document.createElement("select");
+  ordenSelect.className = "input";
+  ordenSelect.style.cssText = "max-width:220px";
+  FC.ORDENES.forEach((o) => {
+    const op = document.createElement("option");
+    op.value = o.id;
+    op.textContent = FC.etiqueta(o);
+    ordenSelect.appendChild(op);
+  });
+  ordenSelect.value = ordenActivo;
+  ordenSelect.addEventListener("change", () => { ordenActivo = ordenSelect.value; pintar(); });
+  toolbar.appendChild(ordenSelect);
+
   outerCard.appendChild(toolbar);
 
   function setCount(text) { subtitle.textContent = text; }
@@ -365,13 +404,47 @@ function renderCustomersView(container) {
     }
   }
 
+  // SCRUM-581 · el lote que mandó el servidor, TAL CUAL. `pintar()` deriva de él lo que se ve.
+  // Se guarda sin tocar para que cambiar de pestaña o de orden no vuelva a pedir a la red — y,
+  // sobre todo, para que el orden `RECIENTES` siga siendo EXACTAMENTE el del servidor.
+  let ultimoLote = [];
+  let ultimaBusqueda = "";
+
   async function loadCustomers(searchText = "") {
     setAlert(null, "");
     setCount("Cargando…");
     uiSkeletonRows(tbody, 7, 6);
     try {
-      const data = await getCustomers(searchText);
+      ultimoLote = await getCustomers(searchText);
+      ultimaBusqueda = searchText;
+      pintar();
+    } catch (err) {
+      setCount("");
+      setAlert("error", "Error cargando clientes: " + err.message);
+    }
+  }
+
+  function pintar() {
+    const searchText = ultimaBusqueda;
+    const lote = Array.isArray(ultimoLote) ? ultimoLote : [];
+    const data = FC.aplicar(lote, pestanaActiva, ordenActivo);
+    {
       tbody.innerHTML = "";
+
+      // El vacío de la PESTAÑA no es el vacío de la pantalla: hay clientes, pero ninguno
+      // clasificado así. Sin esto saldría «Añade a tu primer cliente», que ahí sería falso.
+      if (lote.length > 0 && data.length === 0) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 7;
+        td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div>'
+          + '<div class="empty-state-title"></div></div>';
+        td.querySelector('.empty-state-title').textContent = FC.etiqueta(FC.VACIO_PESTANA);
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        setCount("0 clientes");
+        return;
+      }
 
       if (!Array.isArray(data) || data.length === 0) {
         const tr = document.createElement("tr");
@@ -443,9 +516,6 @@ function renderCustomersView(container) {
 
         tbody.appendChild(tr);
       });
-    } catch (err) {
-      setCount("");
-      setAlert("error", "Error cargando clientes: " + err.message);
     }
   }
 
