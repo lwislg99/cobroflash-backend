@@ -16,6 +16,7 @@ function generatePortalToken() {
 const CUSTOMER_SELECT_NO_TOKEN = {
   id: true, merchantId: true, name: true, phone: true, email: true, notes: true,
   legalName: true, taxId: true, waOptOut: true, createdAt: true, updatedAt: true,
+  contactKind: true, // SCRUM-574: forma jurídica (EMPRESA|PERSONA). NO es tipoDestinatario.
   tipoDestinatario: true, // SCRUM-69: para editar en la ficha y para la bandeja de facturación
   billingPeriodicity: true, // SCRUM-171b: periodicidad pactada (solo para AVISAR, ver bandeja)
   recargoEquivalencia: true, // SCRUM-294-a: el dato del cliente; NO cableado al total (regla 38)

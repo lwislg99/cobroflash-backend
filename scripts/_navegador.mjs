@@ -125,6 +125,36 @@ export function argsDeAislamiento(env = process.env) {
   return env.CI ? ['--no-sandbox', '--disable-setuid-sandbox'] : [];
 }
 
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 SCRUM-617 (2ª vuelta) · EL TOPE DE ARRANQUE, Y POR QUÉ VIVE AQUÍ Y NO EN UN GUARD
+//
+// En el runner, `guard-contraste` murió con «Timed out after 30000 ms while waiting for the WS
+// endpoint URL to appear in stdout». Los 30 000 ms no los pusimos nosotros: es el DEFECTO de
+// puppeteer. Ponerlo aquí no lo sube — lo hace VISIBLE y ajustable desde un solo sitio.
+//
+// 🛑 EL VALOR POR DEFECTO NO CAMBIA (30 000). Subir el número «a ver si cuela» sería comprar el
+// verde sin saber por qué; y si la causa resulta ser el arranque en frío, el arreglo honesto es
+// declararlo, no agrandar el tope en silencio. Se sube por entorno SÓLO PARA MEDIR.
+//
+// ⚠️ Y NO HAY REINTENTOS, ni los va a haber: un guard que reintenta hasta que le sale bien es un
+// guard que ya no puede decir que algo está roto.
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+export const TOPE_ARRANQUE_POR_DEFECTO = 30_000;
+
+/** El tope efectivo. `NAVEGADOR_TIMEOUT_MS` lo sube SOLO para medir; por defecto, el de siempre. */
+export function topeDeArranque(env = process.env) {
+  const n = Number(env.NAVEGADOR_TIMEOUT_MS);
+  return Number.isFinite(n) && n > 0 ? n : TOPE_ARRANQUE_POR_DEFECTO;
+}
+
+/**
+ * Marca que la PUERTA lee para poder enseñar el tiempo de ARRANQUE de los nueve, no sólo del que
+ * falla. Hacía falta: el total de cada guard mezcla arrancar y comprobar, y con un solo número no
+ * se puede saber cuál de las dos cosas se disparó. La marca va a stderr para no ensuciar ninguna
+ * salida que alguien pudiera estar parseando.
+ */
+export const MARCA_ARRANQUE = '⟦arranque⟧';
+
 /**
  * Arranca el navegador, o PARA con el código que corresponde.
  *
@@ -134,11 +164,18 @@ export function argsDeAislamiento(env = process.env) {
 export async function lanzarNavegador(puppeteer, opciones = {}) {
   const ruta = rutaDelNavegador(); // sale con 2 si no hay ninguno
   const args = [...(opciones.args || []), ...argsDeAislamiento()];
+  const tope = topeDeArranque();
+  const t0 = Date.now();
   try {
-    return await puppeteer.launch({ ...opciones, executablePath: ruta, args });
+    const nav = await puppeteer.launch({ ...opciones, executablePath: ruta, args, timeout: tope });
+    console.error(`${MARCA_ARRANQUE} ${((Date.now() - t0) / 1000).toFixed(1)}`);
+    return nav;
   } catch (e) {
+    const s = ((Date.now() - t0) / 1000).toFixed(1);
+    console.error(`${MARCA_ARRANQUE} ${s}`);
     console.error('🔴 NO PUDE ARRANCARLO: el navegador ESTÁ y no levanta.');
     console.error('   binario: ' + ruta);
+    console.error(`   tardó ${s} s antes de rendirse, con un tope de ${tope} ms.`);
     console.error('   Esto NO es «no lo encuentro» (eso sale con ' + SALIDA_NO_ENCONTRADO
       + ') ni «he encontrado defectos» (eso sale con 1): el guard');
     console.error('   no ha llegado a medir nada, así que su silencio no significa que esté todo bien.');

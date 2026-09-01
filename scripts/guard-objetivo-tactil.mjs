@@ -51,12 +51,11 @@ import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL } from './_medidor-de-toque
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
-import { rutaDelNavegador } from './_navegador.mjs';
+import { lanzarNavegador } from './_navegador.mjs';
 // SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
 // los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
 // hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
 // declarandose ciega en vez de devolver una ruta plausible. `EDGE_PATH` sigue mandando.
-const EDGE = rutaDelNavegador();
 const PUERTO = 4472;
 
 /** AB6 y la definición de «pulsable» salen del medidor único: aquí no se redeclaran. */
@@ -129,12 +128,15 @@ const decir = (s) => console.log(s);
 const mal = (s) => { console.error(s); fallos += 1; };
 
 await new Promise((r) => srv.listen(PUERTO, r));
-if (!fs.existsSync(EDGE)) {
-  console.error('🔴 NO SUPE MIRAR: no encuentro Edge en ' + EDGE + '. Pon EDGE_PATH.');
-  srv.close(); process.exit(2);
-}
-
-const navegador = await puppeteer.launch({ executablePath: EDGE, headless: 'new', args: ['--no-sandbox'] });
+// SCRUM-617 · el arranque pasa por el módulo común: es el ÚNICO sitio donde se decide cómo
+// arranca el navegador. Antes cada guard lo escribía a mano y el flag de aislamiento se
+// propagó por COPIA de uno a otro — por eso el más antiguo (contraste) se quedó sin él. Y aquí
+// está lo que arregla este ticket: si no levanta, `lanzarNavegador` PARA con código 3 («no
+// pude arrancarlo»), que no es 2 («no lo encuentro») ni 1 («he encontrado un defecto»).
+// La comprobación de existencia que había aquí SALE: segunda copia del suelo; el módulo común
+// ya para con 2 si no hay navegador.
+process.on('exit', () => { try { srv.close(); } catch { /* ya cerrado */ } });
+const navegador = await lanzarNavegador(puppeteer, { headless: 'new' });
 
 /** El código que corre DENTRO de la página. Va como cadena para poder inyectarlo dos veces. */
 const MEDIDOR = `(async (INTERACTIVOS, MIN, DESTAPAR_SELS, CON_SCROLL) => {

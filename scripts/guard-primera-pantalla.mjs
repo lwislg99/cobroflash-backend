@@ -30,12 +30,11 @@ import { createRequire } from 'node:module';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const puppeteer = createRequire(path.join(RAIZ, 'package.json'))('puppeteer-core');
-import { rutaDelNavegador } from './_navegador.mjs';
+import { lanzarNavegador } from './_navegador.mjs';
 // SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
 // los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
 // hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
 // declarandose ciega en vez de devolver una ruta plausible. `EDGE_PATH` sigue mandando.
-const EDGE = rutaDelNavegador();
 const ANCHOS = [360, 390];
 
 const TIPOS = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.svg': 'image/svg+xml', '.json': 'application/json' };
@@ -115,14 +114,12 @@ async function medir(nav, puerto, ancho) {
   return r;
 }
 
-let nav;
-try {
-  nav = await puppeteer.launch({ executablePath: EDGE, args: ['--no-sandbox'] });
-} catch (e) {
-  console.error('🔴 CIEGO: no se pudo abrir Edge (' + (e && e.message ? e.message.slice(0, 90) : '?') + ').');
-  console.error('   Esto NO es «la primera pantalla está bien»: es «no supe mirar». Apunta EDGE_PATH a un Edge.');
-  process.exit(2);
-}
+// SCRUM-617 · el arranque pasa por el módulo común: es el ÚNICO sitio donde se decide cómo
+// arranca el navegador. Antes cada guard lo escribía a mano y el flag de aislamiento se
+// propagó por COPIA de uno a otro — por eso el más antiguo (contraste) se quedó sin él. Y aquí
+// está lo que arregla este ticket: si no levanta, `lanzarNavegador` PARA con código 3 («no
+// pude arrancarlo»), que no es 2 («no lo encuentro») ni 1 («he encontrado un defecto»).
+const nav = await lanzarNavegador(puppeteer, {});
 
 let fallos = 0;
 console.log('primera pantalla de la landing, medida en Edge con red 4G emulada — SCRUM-331 (F4)\n');

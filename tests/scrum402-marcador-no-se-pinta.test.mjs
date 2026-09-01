@@ -176,6 +176,21 @@ const CENSO = Object.freeze({
   // 🔴 17-ago-2026 (tanda B) · SALE DEL CENSO: el fundador aprobó los cuatro títulos de bloque del formulario (esa marca pintaba CUATRO). Entrada BORRADA, no
   // puesta a 0 (SCRUM-424 / SCRUM-405): `censoActual()` solo lista ficheros CON marcadores.
   'semaforoFiscal.js': 1,
+  // SCRUM-574 (24-ago-2026) · SUBIDA A CONCIENCIA: el switch «Empresa | Persona» de la ficha de
+  // cliente sale con marcador en sus TRES rótulos — la pregunta que lo encabeza y las dos
+  // etiquetas. No están aprobados y no se inventan (regla 30): las etiquetas del switch son del
+  // fundador, y el encargo lo dice con todas las letras («ni de ejemplo ni provisional»).
+  //
+  // Se cuenta 1: los tres salen de una sola constante `MARCADOR` en `switchFormaJuridica.js`, así
+  // que aprobar el copy los apaga de golpe — la misma forma que tuvieron `MARCA_MICROCOPY`
+  // (SCRUM-421, pintaba doce) y `NF_PENDIENTE` (pintaba veintidós).
+  //
+  // 🔴 Y VAN CON PALABRA DE TRABAJO DETRÁS («[PENDIENTE microcopy oficial] Empresa»), no con la
+  // marca sola. En un control de DOS LADOS el marcador pelado sería inservible: los dos lados
+  // dirían exactamente lo mismo y el profesional no sabría cuál está eligiendo. Es la distinción
+  // que `censo-marcadores.mjs` ya hace entre el rótulo que pinta A CIEGAS y el que al menos se
+  // puede leer y juzgar.
+  'switchFormaJuridica.js': 1,
   // SCRUM-615 (24-ago-2026) · SUBIDA A CONCIENCIA: la salida D+C pinta con marcador el aviso de
   // «este plazo se ha calculado sin el dato» en la bandeja de pendientes, y el error de guardado.
   //
