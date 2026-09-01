@@ -30,6 +30,7 @@ const SHELL = [
   '/dashboard/js/homeView.js',
   '/dashboard/js/onboardingView.js',
   '/dashboard/js/plansView.js',
+  '/dashboard/js/prefijosPais.js', // SCRUM-578
   '/dashboard/js/customersView.js',
   '/dashboard/js/quotesTabs.js', // SCRUM-432
   '/dashboard/js/quotesListView.js',

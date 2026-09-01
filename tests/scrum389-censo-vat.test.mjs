@@ -81,6 +81,14 @@ const CENSO = {
   // paso» — que habría sido la segunda cifra oficial del mismo dinero que este censo persigue.
   // Su propio guard (`scrum500-suplidos.test.mjs` §7) exige que la llamada sea exactamente UNA.
   'src/modules/invoicing/domain/suplidos.ts': { veredicto: 'DOCUMENTO', nota: 'el desglose de UNA factura sacando los suplidos de la base; el IVA lo delega en la primitiva' },
+  // 🔴 SCRUM-627 · ESTE FICHERO TIENE DOS COSAS, Y ESTA TABLA SÓLO PUEDE DECLARAR UNA.
+  // Lo que hay debajo clasifica la LLAMADA. Al lado, en el mismo fichero, el bloque de totales de
+  // la FACTURA se escribe el desglose a mano con su propio `vatMap` y NO llama a nadie — así que
+  // este censo, que busca llamadores, no puede verlo. Su veredicto está en la tabla hermana:
+  // `tests/scrum627b-censo-declara-reimplementaciones.test.mjs` (veredicto REIMPLEMENTACION).
+  // Se dice aquí porque el riesgo es justo éste: ver el fichero clasificado y dejar de buscar.
+  // (Este comentario NO cambia nada de lo que este censo hace ni de lo que exige.)
+  //
   // SCRUM-604 (DOC-14) · llamador NUEVO, y es de los buenos: desglosa UN presupuesto para
   // imprimirlo. NO agrega periodo — ni siquiera toca facturas: un presupuesto no entra en el 303.
   //
