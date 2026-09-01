@@ -81,6 +81,14 @@ const CENSO = {
   // paso» — que habría sido la segunda cifra oficial del mismo dinero que este censo persigue.
   // Su propio guard (`scrum500-suplidos.test.mjs` §7) exige que la llamada sea exactamente UNA.
   'src/modules/invoicing/domain/suplidos.ts': { veredicto: 'DOCUMENTO', nota: 'el desglose de UNA factura sacando los suplidos de la base; el IVA lo delega en la primitiva' },
+  // SCRUM-604 (DOC-14) · llamador NUEVO, y es de los buenos: desglosa UN presupuesto para
+  // imprimirlo. NO agrega periodo — ni siquiera toca facturas: un presupuesto no entra en el 303.
+  //
+  // Y entra LLAMANDO a la primitiva en vez de copiar el bucle, que es lo que hace el bloque de
+  // totales de la FACTURA en este mismo fichero (tiene su propio `vatMap` escrito a mano). Ése no
+  // aparece en este censo justamente porque no llama: es la segunda cifra que este censo existe
+  // para perseguir, y está declarada en SCRUM-623/624. El nuevo no repite el error.
+  'src/modules/invoicing/infra/pdf/pdf.service.ts': { veredicto: 'DOCUMENTO', nota: 'el desglose de UN presupuesto para pintarlo en su PDF (SCRUM-604); no agrega periodo' },
 };
 
 test('SCRUM-389 · SUELO: el extractor ENCUENTRA llamadores', () => {
