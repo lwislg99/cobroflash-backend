@@ -56,6 +56,23 @@ const require = createRequire(import.meta.url);
 
 const SIMPLE = /^([a-zA-Z][\w-]*)?((?:[#.][\w-]+|\[[^\]]+\])*)$/;
 
+// SCRUM-634 · un atributo del marcado: con comillas dobles, simples, o SIN VALOR
+// (`<input required>`), que en el navegador vale cadena vacía y NO `null` — que es justo la
+// diferencia entre «está puesto» y «no está».
+const ATRIBUTO = /(?:^|\s)([A-Za-z_:][\w:.-]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'))?/g;
+
+// SCRUM-634 · LOS CAMPOS QUE EN EL NAVEGADOR **REFLEJAN** un atributo del mismo nombre, con el
+// valor que `nodo()` les da de fábrica. Si uno trae algo distinto del de fábrica pero `_attrs`
+// no lo tiene, el banco TIENE el dato y la consulta NO LO VE: eso se grita, no se calla.
+//
+// FUERA A PROPÓSITO: `value` y `checked`, porque en el navegador el campo NO refleja el
+// atributo después de escribir o de marcar —ahí devolver `false` es lo FIEL, no un hueco—; e
+// `id` y `class`, que el matcher ya resuelve por su campo unas líneas más abajo.
+const REFLEJADOS = new Map([
+  ['type', ''], ['name', ''], ['href', ''], ['src', ''],
+  ['title', ''], ['placeholder', ''], ['download', ''], ['disabled', false],
+]);
+
 function casaSimple(n, sel) {
   const m = SIMPLE.exec(sel.trim());
   if (!m) return null; // no soportado
@@ -71,7 +88,25 @@ function casaSimple(n, sel) {
     const valor = a[1].startsWith('data-')
       ? n.dataset[a[1].slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase())]
       : (a[1] === 'class' ? n.className : (a[1] === 'id' ? n.id : n.getAttribute(a[1])));
-    if (valor === undefined || valor === null) return false;
+    if (valor === undefined || valor === null) {
+      // SCRUM-634 · AQUÍ VIVÍA EL NULL MUDO. Ahora solo hay dos salidas, y ninguna calla:
+      //   · el atributo no está en ninguna parte del nodo → `false`, que es la verdad;
+      //   · el nodo SÍ lleva el dato en su campo reflejado y `_attrs` no → se GRITA.
+      //
+      // El segundo caso es el único que queda tras copiar todo el marcado: un nodo hecho con
+      // `createElement` al que la vista le asigna el CAMPO (`i.name = 'x'`) en vez del atributo.
+      const defecto = REFLEJADOS.get(a[1]);
+      if (defecto !== undefined && n[a[1]] !== undefined && n[a[1]] !== defecto) {
+        throw new Error(
+          `[banco de vistas] el selector "${sel}" pregunta por el atributo "${a[1]}", que este `
+          + `<${String(n.tagName).toLowerCase()}> SÍ lleva en su campo `
+          + `(${JSON.stringify(n[a[1]])}) pero no en sus atributos. El banco no puede `
+          + `contestar y NO va a devolver null: usa setAttribute() al construir el nodo, o `
+          + `pon el atributo en el marcado. (SCRUM-634)`,
+        );
+      }
+      return false;
+    }
     if (a[2] !== undefined && String(valor) !== a[2]) return false;
   }
   return true;
@@ -248,14 +283,17 @@ export function nodo(tag, reg) {
       // un `card.innerHTML = '<div>…</div>'` seguido de `card.querySelector('div')` devolvía `null`
       // y la vista reventaba —`settingsView` lo hace— por un hueco del banco, no del producto.
       for (const m of String(v).matchAll(/<(\w+)([^>]*)>([^<]*)/g)) {
-        const attrs = m[2] || '';
         const h = nodo(m[1], reg);
-        const id = attrs.match(/\bid="([^"]+)"/);
-        const cls = attrs.match(/\bclass="([^"]+)"/);
-        if (id) { h.id = id[1]; reg.porId.set(id[1], h); }
-        if (cls) h.className = cls[1];
-        for (const d of attrs.matchAll(/\bdata-([\w-]+)="([^"]*)"/g)) {
-          h.dataset[d[1].replace(/-([a-z])/g, (_, c) => c.toUpperCase())] = d[2];
+        // SCRUM-634 · SE COPIAN **TODOS** LOS ATRIBUTOS, no solo `id`, `class` y `data-*`.
+        //
+        // Antes solo entraban esos tres. Y como el matcher SÍ da por soportado un selector
+        // como `[name="cost"]`, preguntarlo devolvía `null` EN SILENCIO: indistinguible de
+        // «ese nodo no existe». Son 36 consultas del dashboard las que caían justo ahí.
+        //
+        // Se copian vía `setAttribute` —no como campos sueltos— porque el matcher resuelve
+        // por `getAttribute`, y ese método ya refleja `id`, `class` y `data-*` a sus campos.
+        for (const a of String(m[2] || '').matchAll(ATRIBUTO)) {
+          h.setAttribute(a[1], a[2] !== undefined ? a[2] : (a[3] !== undefined ? a[3] : ''));
         }
         const texto = (m[3] || '').trim();
         if (texto) h.textContent = texto;
