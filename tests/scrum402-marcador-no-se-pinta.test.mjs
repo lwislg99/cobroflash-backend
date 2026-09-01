@@ -191,6 +191,23 @@ const CENSO = Object.freeze({
   // que `censo-marcadores.mjs` ya hace entre el rótulo que pinta A CIEGAS y el que al menos se
   // puede leer y juzgar.
   'switchFormaJuridica.js': 1,
+  // SCRUM-615 (24-ago-2026) · SUBIDA A CONCIENCIA: la salida D+C pinta con marcador el aviso de
+  // «este plazo se ha calculado sin el dato» en la bandeja de pendientes, y el error de guardado.
+  //
+  // 🔴 Y VA SIN PALABRA DE TRABAJO DETRÁS, al revés que `switchFormaJuridica` (SCRUM-574). Allí el
+  // copy era ACCESORIO al ticket y el marcador pelado habría dejado dos lados del switch diciendo
+  // lo mismo. Aquí el copy ES EL TICKET: es lo que el profesional lee para decidir qué contestar
+  // sobre un PLAZO LEGAL. Un texto mío «provisional» ahí es exactamente lo que la regla 30
+  // prohíbe, así que sale a ciegas a propósito y con esta entrada delante.
+  //
+  // CUENTA 1 Y PINTA 2, y la distinción importa porque yo mismo la declaré mal antes de medirla:
+  // en el commit anterior dije «+2» contando SUPERFICIES. Este censo cuenta MARCAS —una sola
+  // constante `MARCADOR`—, igual que `NF_PENDIENTE` contaba 1 pintando veintidós. Las dos
+  // superficies son el aviso (`tipoDestinatarioPendiente.js`) y el error de guardado
+  // (`invoicesView.js`, que referencia la constante en vez de repetir el literal). Aprobar UN
+  // texto no las apaga las dos: son dos textos distintos que hoy comparten marcador, y el día que
+  // el fundador los escriba habrá que partir la constante.
+  'tipoDestinatarioPendiente.js': 1,
   'settingsSubmenus.js': 1,
   // SCRUM-294 (fase C) · 1 -> 5: el criterio de caja entra en Configuracion con marcador A
   // CONCIENCIA. Son 4 literales —el rotulo y sus TRES opciones— y el texto NO esta aprobado:
