@@ -47,7 +47,13 @@ import { levantarServidor } from './_servidor.mjs';
 // los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
 // hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
 // declarandose ciega en vez de devolver una ruta plausible. `EDGE_PATH` sigue mandando.
-const PUERTO = Number(process.env.VIAS_PUERTO || 4403);
+// SCRUM-620 (2/2) · PUERTO EFÍMERO POR DEFECTO. `0` le pide al sistema uno libre, y el que
+// toca de verdad se lee del `levantarServidor`. Quita las colisiones de raíz: contra la pasada
+// anterior del propio guard (sockets en TIME_WAIT, el caso de SCRUM-617) y contra los otros.
+// ⚠️ `VIAS_PUERTO` SIGUE MANDANDO: quien quiera fijarlo, lo fija — y si ese puerto está ocupado, el
+// diagnóstico del commit anterior sigue diciéndolo con su código 4. El efímero es HIGIENE;
+// no sustituye al diagnóstico, y por eso entró después y en un commit propio.
+let PUERTO = Number(process.env.VIAS_PUERTO || 0);
 
 /** La etiqueta de la fila que se mide. Es microcopy aprobada y NO se toca: se busca por ella, y
  *  si cambia el guard se declara ciego en vez de dar por buena una fila que no ha encontrado. */
@@ -124,7 +130,7 @@ function arrancarServidor() {
   // qué pasa si NO se puede. Antes cada guard hacía su propio `listen` sin tratar el error, y un
   // puerto ocupado subía como excepción → exit 1 → la puerta lo pintaba `rojo(1)`, o sea «he
   // encontrado un defecto». Ahora para con 4 y lo dice.
-  return levantarServidor(srv, PUERTO).then(() => srv);
+  return levantarServidor(srv, PUERTO).then((p) => { PUERTO = p; return srv; });
 }
 
 /**

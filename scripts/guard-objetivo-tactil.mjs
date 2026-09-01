@@ -57,7 +57,12 @@ import { levantarServidor } from './_servidor.mjs';
 // los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
 // hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
 // declarandose ciega en vez de devolver una ruta plausible. `EDGE_PATH` sigue mandando.
-const PUERTO = 4472;
+// SCRUM-620 (2/2) · PUERTO EFÍMERO POR DEFECTO. `0` le pide al sistema uno libre, y el que
+// toca de verdad se lee del `levantarServidor`. Quita las colisiones de raíz: contra la pasada
+// anterior del propio guard (sockets en TIME_WAIT, el caso de SCRUM-617) y contra los otros.
+// ⚠️ El efímero es HIGIENE; no sustituye al diagnóstico del commit anterior, que sigue
+// diciendo con código 4 lo que pasa si un puerto pedido está ocupado.
+let PUERTO = 0;
 
 /** AB6 y la definición de «pulsable» salen del medidor único: aquí no se redeclaran. */
 const MINIMO = MINIMO_TACTIL;
@@ -132,7 +137,7 @@ const mal = (s) => { console.error(s); fallos += 1; };
 // qué pasa si NO se puede. Antes cada guard hacía su propio `listen` sin tratar el error, y un
 // puerto ocupado subía como excepción → exit 1 → la puerta lo pintaba `rojo(1)`, o sea «he
 // encontrado un defecto». Ahora para con 4 y lo dice.
-await levantarServidor(srv, PUERTO);
+PUERTO = await levantarServidor(srv, PUERTO);
 // SCRUM-617 · el arranque pasa por el módulo común: es el ÚNICO sitio donde se decide cómo
 // arranca el navegador. Antes cada guard lo escribía a mano y el flag de aislamiento se
 // propagó por COPIA de uno a otro — por eso el más antiguo (contraste) se quedó sin él. Y aquí
