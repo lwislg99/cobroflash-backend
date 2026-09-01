@@ -269,3 +269,143 @@ export function cuota(base: number, tipo: number) {
   assert.ok(b.otro.length + b.desglose.length + b.bruto.length >= 1,
     '🔴 el arreglo se pasó: ahora tampoco ve `base * linea.tax`, que SÍ es aritmética de IVA');
 });
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 LA REMISIÓN, ATADA · lo que convierte un comentario en un mecanismo
+//
+// El comentario que se dejó en `scrum389-censo-vat.test.mjs` —«este fichero tiene dos cosas, la
+// otra está en la tabla hermana»— es lo único que lleva a un lector de aquel censo hasta éste.
+// Y hasta aquí NADIE LO LEÍA: borrarlo dejaba la tanda entera en verde. Era una nota, y en esta
+// casa está fichado que una nota a mano no sostiene nada.
+//
+// Peor todavía, y es lo que hace que esto merezca existir: el veredicto `REIMPLEMENTACION` de
+// `pdf.service.ts` tampoco estaba atado a lo que el detector encuentra. O sea que el día que ese
+// bloque deje de reimplementar —cuando se ejecute la opción B— **el veredicto y la remisión
+// mentirían LOS DOS A LA VEZ, y en el mismo sentido**. Su acuerdo se leería como confirmación:
+// dos instrumentos que se corroboran entre sí sin tocar la realidad.
+//
+// Las dos direcciones, y las dos tienen que poder caer:
+//
+//   ① el puntero existe  ⟺  hay una entrada con veredicto REIMPLEMENTACION para ese fichero
+//   ② ese veredicto sólo se admite MIENTRAS el detector siga marcándolo como desglose completo
+// ─────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * El nombre de ESTE fichero, derivado. Si alguien lo renombra, el puntero de `scrum389` deja de
+ * nombrarlo y ① cae pidiendo que se actualice — que es lo correcto: un puntero a un fichero que
+ * ya no se llama así es exactamente la nota que miente.
+ */
+const YO = path.basename(import.meta.filename);
+
+/**
+ * Cuántos CARACTERES de comentario pegado sabe extraer el lector del `CENSO` de SCRUM-389.
+ *
+ * Se mide en caracteres y no en número de entradas, y no es un detalle: puse primero un suelo de
+ * «al menos 3 entradas con comentario» A OJO, y la realidad medida son **2** de 12 — la mayoría
+ * de las filas de aquel censo son de una línea. El suelo caía en árbol limpio por un número que
+ * me inventé. Lo que el suelo tiene que distinguir es **0 contra algo**: si el lector extrae
+ * 1.560 caracteres no está ciego, y cuántas filas los lleven es cosa de quien escriba allí.
+ */
+function charsDeComentario() {
+  const ruta = path.join(RAIZ, 'tests/scrum389-censo-vat.test.mjs');
+  const texto = fs.readFileSync(ruta, 'utf8');
+  const sf = ts.createSourceFile('scrum389.test.mjs', texto, ts.ScriptTarget.Latest, true);
+  let n = 0;
+  (function rec(nodo) {
+    if (ts.isVariableDeclaration(nodo) && ts.isIdentifier(nodo.name) && nodo.name.text === 'CENSO' && nodo.initializer) {
+      (function rec2(x) {
+        if (ts.isPropertyAssignment(x) && x.name && ts.isStringLiteral(x.name)) {
+          const rangos = ts.getLeadingCommentRanges(texto, x.getFullStart()) || [];
+          n += rangos.reduce((a, r) => a + (r.end - r.pos), 0);
+        }
+        x.forEachChild(rec2);
+      })(nodo.initializer);
+    }
+    nodo.forEachChild(rec);
+  })(sf);
+  return n;
+}
+
+/** Los ficheros del `CENSO` de SCRUM-389 cuyos comentarios PEGADOS remiten a este censo. */
+function remisionesEn389() {
+  const ruta = path.join(RAIZ, 'tests/scrum389-censo-vat.test.mjs');
+  const texto = fs.readFileSync(ruta, 'utf8');
+  const sf = ts.createSourceFile('scrum389.test.mjs', texto, ts.ScriptTarget.Latest, true);
+  const con = new Set();
+  (function rec(n) {
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.name.text === 'CENSO' && n.initializer) {
+      (function rec2(x) {
+        if (ts.isPropertyAssignment(x) && x.name && ts.isStringLiteral(x.name)) {
+          // Los comentarios que van PEGADOS a esta entrada — no en cualquier sitio del fichero.
+          // Una remisión suelta al final no lleva a nadie desde la fila que se está leyendo.
+          const rangos = ts.getLeadingCommentRanges(texto, x.getFullStart()) || [];
+          const pegado = rangos.map((r) => texto.slice(r.pos, r.end)).join('\n');
+          if (pegado.includes(YO)) con.add(x.name.text);
+        }
+        x.forEachChild(rec2);
+      })(n.initializer);
+    }
+    n.forEachChild(rec);
+  })(sf);
+  return con;
+}
+
+test('SCRUM-627b · 🔴 ① la remisión en SCRUM-389 existe SI Y SÓLO SI hay veredicto REIMPLEMENTACION', () => {
+  const conPuntero = remisionesEn389();
+  const conVeredicto = new Set(
+    Object.entries(CENSO_ARITMETICA).filter(([, e]) => e.veredicto === 'REIMPLEMENTACION').map(([f]) => f),
+  );
+
+  // 🔴 EL SUELO VIGILA AL LECTOR, NO A LA POBLACIÓN — y esto nació de un rojo mal puesto.
+  // La primera versión exigía «al menos una entrada REIMPLEMENTACION». Al provocar el control (b)
+  // —quitar esa entrada dejando la remisión— el test caía, sí, pero POR EL SUELO y no por la rama
+  // del puntero huérfano: el mensaje no decía lo que había pasado. Y peor: ese suelo habría puesto
+  // en ROJO la limpieza legítima del día que se ejecute la opción B y no quede ninguna
+  // reimplementación, que es un final CORRECTO. Un suelo no puede prohibir el buen estado final.
+  //
+  // Lo que sí hay que descartar es que el lector esté ciego: si no supiera extraer comentarios,
+  // «no hay puntero» y «no supe leerlo» serían el mismo resultado.
+  assert.ok(charsDeComentario() >= 300,
+    `🔴 LECTOR CIEGO: sólo extraigo ${charsDeComentario()} caracteres de comentario del censo de `
+    + 'SCRUM-389 (medido el 25-ago-2026: 1.560). Si no sé extraer comentarios, «no hay remisión» y '
+    + '«no supe leerla» son el mismo número, y el ⟺ de abajo pasaría en vacío.');
+
+  const faltaPuntero = [...conVeredicto].filter((f) => !conPuntero.has(f));
+  assert.deepEqual(faltaPuntero, [],
+    `🔴 FALTA EL PUNTERO en el censo de SCRUM-389 para: ${faltaPuntero.join(', ')}.\n`
+    + `  Ese fichero está declarado aquí como REIMPLEMENTACION, pero su entrada de allí no remite a\n`
+    + `  «${YO}». Sin esa remisión, quien lea aquel censo ve el fichero clasificado y deja de buscar:\n`
+    + '  el veredicto de allí cubre la LLAMADA y no las líneas de al lado. Vuelve a poner el aviso\n'
+    + '  PEGADO a su entrada (no suelto en el fichero: una nota al final no lleva a nadie).');
+
+  const punteroHuerfano = [...conPuntero].filter((f) => !conVeredicto.has(f));
+  assert.deepEqual(punteroHuerfano, [],
+    `🔴 PUNTERO QUE APUNTA A NADA: ${punteroHuerfano.join(', ')}.\n`
+    + '  La entrada de SCRUM-389 remite a este censo, pero aquí ya no hay veredicto REIMPLEMENTACION\n'
+    + '  para ese fichero. O se borró la entrada y hay que borrar la remisión EN EL MISMO COMMIT, o\n'
+    + '  el veredicto cambió y la remisión se quedó mintiendo.');
+});
+
+test('SCRUM-627b · 🔴 ② el veredicto REIMPLEMENTACION sólo vale mientras el detector lo marque', () => {
+  const hallazgos = censarAritmeticaIva(RAIZ).hallazgos;
+  const marcados = new Set(hallazgos.filter((h) => h.desgloseCompleto).map((h) => h.ruta));
+
+  // SUELO: si el detector no marcara NADA, todo lo de abajo caería por ceguera y no por defecto.
+  assert.ok(marcados.size >= 1,
+    '🔴 el detector no marca NINGÚN desglose completo, ni siquiera la primitiva: está ciego, y un '
+    + 'rojo suyo no significaría lo que este test dice que significa.');
+
+  const declarados = Object.entries(CENSO_ARITMETICA)
+    .filter(([, e]) => e.veredicto === 'REIMPLEMENTACION').map(([f]) => f);
+  const yaNoReimplementan = declarados.filter((f) => !marcados.has(f));
+
+  assert.deepEqual(yaNoReimplementan, [],
+    `🔴 EL VEREDICTO YA NO CORRESPONDE: ${yaNoReimplementan.join(', ')} está declarado como\n`
+    + '  REIMPLEMENTACION y el detector YA NO lo marca como desglose completo.\n\n'
+    + '  Si es porque se ejecutó la opción B —el bloque pasó por la primitiva—: enhorabuena, y hay\n'
+    + '  que quitar su entrada de esta tabla Y su remisión de SCRUM-389 en el MISMO commit. Dejarlas\n'
+    + '  es peor que no haberlas puesto: el veredicto y la remisión mentirían los dos a la vez y en\n'
+    + '  el mismo sentido, y su acuerdo se leería como confirmación.\n\n'
+    + '  Si NO se ha tocado ese bloque, entonces es el detector el que ha dejado de verlo — y eso es\n'
+    + '  un agujero mucho más grande que esta entrada.');
+});

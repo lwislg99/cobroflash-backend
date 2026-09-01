@@ -337,3 +337,76 @@ vigilando lo suyo; lo que falta lo vigila el hermano.
 
 * `tests/scrum627b-censo-declara-reimplementaciones.test.mjs` — la tabla de los diez veredictos,
   la regla de que nadie hace aritmética de IVA sin declararse, y sus controles.
+
+---
+
+# APÉNDICE 2 · 25-ago-2026 · LA REMISIÓN, ATADA
+
+**Medido contra:** `origin/main` = `bcf30775b0e535c9c6534eb7636558b9a4200a3e` · 2026-08-25T09:30:00+01:00
+
+> ⚠️ Esa hora es la del trabajo de esta rama, no una lectura de reloj — criterio R14.
+> Se **añade** al final; no se borra nada.
+
+**Qué cierra:** el comentario de remisión en `scrum389-censo-vat.test.mjs` era una **nota** —nadie
+lo leía: borrarlo dejaba la tanda entera en verde— y el veredicto `REIMPLEMENTACION` tampoco
+estaba atado a lo que el detector encuentra. Ahora los dos pueden caer.
+
+## Por qué merecía existir
+
+Los dos instrumentos fallaban **en el mismo sentido**. El día que se ejecute la opción B y ese
+bloque deje de reimplementar, el veredicto seguiría diciendo `REIMPLEMENTACION` y la remisión
+seguiría apuntando: **mentirían los dos a la vez, y su acuerdo se leería como confirmación.** No
+era un control que faltaba — eran dos controles corroborándose entre sí sin tocar la realidad.
+
+## Las dos direcciones
+
+| | |
+|---|---|
+| ① | el puntero existe **⟺** hay una entrada con veredicto `REIMPLEMENTACION` para ese fichero |
+| ② | ese veredicto **sólo se admite mientras** el detector siga marcándolo como desglose completo |
+
+El puntero se busca en los comentarios **pegados a esa entrada** (`getLeadingCommentRanges` sobre
+su `PropertyAssignment`), no en cualquier sitio del fichero: una remisión suelta al final no lleva
+a nadie desde la fila que se está leyendo. Y el nombre que se busca es el de **este mismo fichero,
+derivado** (`import.meta.filename`): si alguien lo renombra, ① cae pidiendo que se actualice el
+puntero — un puntero a un fichero que ya no se llama así es exactamente la nota que miente.
+
+## Los tres rojos, provocados de verdad
+
+Inyección real y reversión byte a byte con `Buffer.compare` en cada uno; árbol limpio después.
+
+| | rotura | resultado |
+|---|---|---|
+| **a** | se **borra la remisión** de `scrum389` | `fail=1` · ① cae diciendo **«FALTA EL PUNTERO»** y nombra el fichero |
+| **b** | se **quita la entrada** `REIMPLEMENTACION`, dejando la remisión | `fail=2` · ① cae diciendo **«PUNTERO QUE APUNTA A NADA»** |
+| **c** | 🔴 el **detector deja de marcarlo** —se retira `vatMap[key].vat += base * t`— con veredicto y remisión **intactos** | `fail=1` · ② cae diciendo **«EL VEREDICTO YA NO CORRESPONDE»** |
+
+**(a) es el «antes»**: hasta hoy esa misma rotura dejaba los 4111 tests en verde.
+
+**(c) se provocó sobre el fichero de producción**, no sobre una fuente sintética — precisamente
+porque el defecto que se estaba cerrando era que `desgloseCompleto` sólo aparecía sobre la fuente
+del control, y por eso el veredicto real no estaba atado a nada. Nota: **no se ha cambiado el
+cálculo**; la aritmética se retiró y se devolvió byte a byte en la misma operación.
+
+## 🔴 El suelo de ① me salió mal DOS veces, y las dos por lo mismo
+
+**Primera:** lo puse como «al menos una entrada `REIMPLEMENTACION`». El control (b) cayó, sí, pero
+**por el suelo y no por la rama del puntero huérfano**: el mensaje no decía lo que había pasado. Y
+era peor que un mensaje flojo — ese suelo habría puesto en **rojo la limpieza legítima** del día
+que se ejecute B y no quede ninguna reimplementación, que es un final **correcto**. *Un suelo no
+puede prohibir el buen estado final.*
+
+**Segunda:** al rehacerlo como «al menos 3 entradas con comentario», lo puse **a ojo**. Medido: son
+**2 de 12** — la mayoría de las filas de aquel censo son de una línea. Caía en árbol limpio por un
+número que me inventé.
+
+**Cómo quedó:** el suelo vigila **al lector, no a la población**, y se mide en **caracteres**
+(medido: 1.560). Lo que tiene que distinguir es **0 contra algo**; cuántas filas lleven comentario
+es cosa de quien escriba allí.
+
+## Lo que NO se ha tocado
+
+* El `CENSO` de SCRUM-389: ni su lógica, ni su tabla, ni lo que exige. Sigue en `fail=0`.
+* El cálculo de la factura, SCRUM-623 y SCRUM-624.
+* Ninguna reimplementación convertida a la primitiva — eso es B, con su 25 % medido encima.
+* Los diez veredictos: ni uno añadido, ni uno cambiado.
