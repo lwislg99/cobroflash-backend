@@ -312,7 +312,10 @@ export function scriptsDelDashboard(raiz) {
 // Éste no es un número que se herede de ningún lado: se DERIVA. Medido sobre el `index.html` ya
 // mezclado, `grep -c "<script src="` da 62. Un contador que dos ramas incrementan a la vez se
 // resuelve contando, no eligiendo.
-export const SCRIPTS_DEL_DASHBOARD = 62;
+// SCRUM-605 (25-ago-2026) · 62 → 63: entra `quoteAtajosVencimiento.js`, la aritmetica pura de
+// los atajos de «Válido hasta» del presupuesto. Se sube EN EL MISMO COMMIT que el <script>, que
+// es lo que estos guards piden: un contador que sube solo deja de significar algo.
+export const SCRIPTS_DEL_DASHBOARD = 63;
 
 /**
  * Monta el dashboard como lo monta el navegador y devuelve el contexto vivo.
