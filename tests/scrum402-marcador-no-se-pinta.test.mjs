@@ -162,7 +162,23 @@ const CENSO = Object.freeze({
   // eso **aprobar UNO de los dos textos NO apaga el otro**: son dos textos distintos que hoy
   // comparten marcador, y habrá que partir la constante el día que el fundador escriba el
   // primero. Decir «se apagan de golpe» aquí sería falso.
-  'customersView.js': 1,
+  // SCRUM-575 (24-ago-2026) · 1 → 2. SUBIDA A CONCIENCIA: entra el aviso de NIF/CIF mal formado
+  // (CONT-02), con CONSTANTE PROPIA y no reutilizando la de CONT-05.
+  //
+  // 🔴 Y LA CONSTANTE SEPARADA ES LA DECISIÓN, no un descuido. Reutilizar la de CONT-05 habría
+  // dejado el censo en 1 —el número no se habría movido— metiendo una superficie nueva EN
+  // SILENCIO, que es justo lo que este trinquete existe para impedir. Y peor: ataría la
+  // aprobación de este texto a la de los otros dos, así que el fundador no podría firmar uno sin
+  // firmar los tres. Una constante por ticket es lo que permite apagarlos por separado.
+  //
+  // Estado real de este fichero: 2 MARCAS · 3 SUPERFICIES.
+  //   · CONT-05 (`MARCADOR_MICROCOPY`) pinta 2: el rótulo del teléfono y el aviso de duplicado.
+  //   · CONT-02 (`MARCADOR_NIF`) pinta 1: el aviso de NIF mal formado.
+  // La de CONT-05 sigue necesitando partirse el día que se apruebe uno de sus dos textos.
+  //
+  // El rótulo «NIF/CIF (opcional)» NO se ha marcado: sigue describiendo el campo con exactitud.
+  // Sólo se marca lo NUEVO — marcar de más obliga al fundador a reescribir lo que ya estaba bien.
+  'customersView.js': 2,
   'exportView.js': 1,
   // 🔴 17-ago-2026 · `invoiceDetailView.js` SALE DEL CENSO (tenía 9). El fundador aprobó los ocho
   // rótulos de acción, y el noveno era `MARCA_MICRO`, una constante que ya no consumía nadie y que

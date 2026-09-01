@@ -314,7 +314,9 @@ export function scriptsDelDashboard(raiz) {
 // resuelve contando, no eligiendo.
 // SCRUM-578 (24-ago-2026) · 62 -> 63: entra `prefijosPais.js`, el selector de prefijo de pais
 // del formulario de clientes. Se sube AQUI y en el mismo commit que anade el `<script>`.
-export const SCRIPTS_DEL_DASHBOARD = 63;
+// SCRUM-575 (24-ago-2026) · 63 -> 64: entra `nifEspanol.js`, la validacion de NIF/CIF/NIE en el
+// navegador (copia declarada de la del servidor, atada por el trinquete de scrum575).
+export const SCRIPTS_DEL_DASHBOARD = 64;
 
 /**
  * Monta el dashboard como lo monta el navegador y devuelve el contexto vivo.
