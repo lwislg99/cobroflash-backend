@@ -634,6 +634,17 @@ export async function buildFirmaEvidencia(params: {
       : Promise.resolve(null),
     prisma.merchant.findUnique({ where: { id: a.merchantId }, select: { name: true, legalName: true, taxId: true } }),
   ]);
+  // 🔴 SCRUM-577 · ESTA LÍNEA **NO** SE LLEVA AL SITIO ÚNICO, Y NO ES UN OLVIDO.
+  //
+  // Se intentó y el guard de SCRUM-371 lo cazó: esta expresión es una **FUENTE DEL SELLADOR**, y
+  // ese guard exige que el barrido y el sellador la resuelvan con el MISMO TEXTO. El hash de los
+  // sobres v:1 y v:2 se recalcula con estas fuentes vivas, así que cambiar sólo un lado haría que
+  // el barrido dijera «no coincide» sobre albaranes INTACTOS — y sobre la población entera a la
+  // vez, que es la peor salida posible de esa herramienta.
+  //
+  // O sea: de las cinco copias de `legalName || name`, ésta **está sujeta por un guard a otra
+  // expresión en otro fichero**. Unificarla exige mover las DOS a la vez y es trabajo del ticket
+  // que toque el sellado, no de éste. Queda dicho para que nadie lo lea como un descuido.
   const cliente = customer?.legalName || customer?.name || null;
   const firmadoPorNombre = params.firmadoPorNombre ?? null;
   const firmadoPorCalidad = params.firmadoPorCalidad ?? null;

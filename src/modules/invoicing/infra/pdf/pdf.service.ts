@@ -7,6 +7,7 @@ import QRCode from 'qrcode';
 import { invoicesDir } from '../../../../core/storage/dirs';
 import { cantidadDeLinea, calcVatBreakdown } from '../../domain/vat.service'; // SCRUM-504: una sola cantidad
 import { getLocale } from '../../../../core/i18n/locales';
+import { nombreParaDocumento } from '../../../../core/documentos/nombreParaDocumento'; // SCRUM-577
 import { partirConceptoYDescripcion } from './conceptoLinea'; // SCRUM-603 (DOC-13)
 
 /**
@@ -62,7 +63,15 @@ export async function generateInvoicePdf(params: {
   merchantId: number;
   // A2.4: datos del emisor completos (teléfono/email opcionales)
   merchant: { name: string; legalName?: string | null; taxId?: string | null; address?: string | null; logoUrl?: string | null; phone?: string | null; email?: string | null };
-  customer: { name: string; email?: string | null; phone?: string | null };
+  // SCRUM-577 (CONT-04) · `legalName` ENTRA AQUÍ, y hasta hoy no estaba.
+  //
+  // 🔴 Medido antes de tocar: este tipo NO lo llevaba, así que **la factura sólo podía imprimir
+  // `name`** — mientras el PDF de presupuesto sí prefería la denominación legal desde su
+  // `legalName || name`. O sea, la asignación estaba al revés de lo que el ticket daba por hecho:
+  // «la factura quiere la denominación legal».
+  //
+  // Opcional a propósito: quien no lo pase sigue funcionando exactamente igual que antes.
+  customer: { name: string; legalName?: string | null; email?: string | null; phone?: string | null };
   currency: string;
   total: string;
   qrData: string;
@@ -202,7 +211,12 @@ export async function generateInvoicePdf(params: {
   const clientY = colY;
   doc.fontSize(8).font('Helvetica-Bold').fillColor(MUTED).text('CLIENTE', col2X, clientY, { width: colW });
   const clientTextY = clientY + 16;
-  doc.fontSize(10).font('Helvetica-Bold').fillColor(INK).text(params.customer.name, col2X, clientTextY, { width: colW });
+  // SCRUM-577: el nombre sale del SITIO UNICO, el mismo criterio que ya usaba el presupuesto.
+  // 🔴 El respaldo es `params.customer.name` y no `'—'`: aqui `name` es OBLIGATORIO en el tipo,
+  // asi que un cliente SIN legalName imprime EXACTAMENTE lo que imprimia antes. Ese es el
+  // control que manda en un cambio del camino de emision.
+  const nombreCliente = nombreParaDocumento(params.customer, params.customer.name);
+  doc.fontSize(10).font('Helvetica-Bold').fillColor(INK).text(nombreCliente, col2X, clientTextY, { width: colW });
   doc.font('Helvetica').fontSize(9).fillColor(BODY);
   let cy = clientTextY + 14;
   if (params.customer.email) { doc.text(params.customer.email, col2X, cy, { width: colW }); cy += 13; }
@@ -502,7 +516,9 @@ export async function generateQuotePdf(params: {
   // razón social manda sobre el nombre, y el NIF sale si se pide.
   const show = (k: 'name' | 'phone' | 'taxId' | 'email') =>
     !params.docFields || params.docFields[k] !== false;
-  const clientDisplay = params.customer.legalName || params.customer.name || '—';
+  // SCRUM-577: misma regla, mismo sitio unico. El respaldo `'—'` se conserva: es lo que este
+  // documento imprimia cuando no habia ninguno de los dos, y unificarlo cambiaria lo impreso.
+  const clientDisplay = nombreParaDocumento(params.customer, '—');
   if (show('name')) doc.text(`Cliente: ${clientDisplay}`);
   if (show('taxId') && params.customer.taxId) doc.text(`NIF: ${params.customer.taxId}`);
   if (show('phone') && params.customer.phone) doc.text(`Tel: ${params.customer.phone}`);
