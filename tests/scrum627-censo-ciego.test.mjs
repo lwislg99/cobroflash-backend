@@ -21,7 +21,7 @@
 // LO MEDIDO (25-ago-2026), sobre 244 ficheros de `src/`
 //
 //   12  llaman a la primitiva          ← lo único que SCRUM-389 ve
-//    9  hacen aritmética de IVA y NO llaman  ← invisibles para él
+//    8  hacen aritmética de IVA y NO llaman  ← invisibles para él (eran 9: ver la nota de `INVISIBLES`)
 //    1  reimplementa un DESGLOSE completo (base y cuota por tipo): `pdf.service.ts`
 //
 // El cero de los demás está declarado: **ningún otro** fichero del árbol reimplementa el
@@ -155,12 +155,18 @@ const INVISIBLES = [
   'src/modules/invoicing/domain/recargoEquivalencia.ts',
   'src/modules/jobs/domain/albaran.service.ts',
   'src/modules/jobs/domain/albaranAFactura.ts',
-  'src/modules/maintenance/domain/maintenance.service.ts',
+  // 🔴 SALE `maintenance.service.ts` (SCRUM-627b, 25-ago-2026) — y baja de 9 a 8. NO es un
+  // refinamiento silencioso: era un FALSO POSITIVO probado. El alias del impuesto nacía del
+  // NOMBRE de una propiedad (`let line: QuoteLine = { …, tax: 0 }`), así que `line` entera pasaba
+  // por impuesto y `line.price * line.qty` —que no toca ninguno— salía marcada. Arreglado en
+  // `_censo-aritmetica-iva.mjs`: el nombre de una propiedad ya no cuenta como mención; su VALOR
+  // sí. Medido: era el único, y quitarlo no pierde ningún hallazgo real.
+  // La entrada se anota en vez de borrarse a secas, para que la bajada no parezca una pérdida.
   'src/modules/quotes/app/routes/quotes.routes.ts',
   'src/modules/system/app/routes/customerPortal.routes.ts',
 ];
 
-test('SCRUM-627 · NUEVE ficheros hacen aritmética de IVA sin llamar a la primitiva', () => {
+test('SCRUM-627 · OCHO ficheros hacen aritmética de IVA sin llamar a la primitiva', () => {
   const invisibles = censarAritmeticaIva(RAIZ).hallazgos.filter((h) => !criterioDe389(h)).map((h) => h.ruta);
   assert.deepEqual(invisibles.sort(), [...INVISIBLES].sort(),
     '🔴 cambió la lista de los que hacen aritmética de IVA y SCRUM-389 no ve. Si ha CRECIDO, hay '

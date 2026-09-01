@@ -67,6 +67,12 @@ export function analizarFuente(texto, ruta = 'x.ts') {
     let si = false;
     (function rec(x) {
       if (si || !x) return;
+      // 🔴 EL NOMBRE DE UNA PROPIEDAD NO ES UNA MENCIÓN. Un objeto `{ concept, qty, price, tax: 0 }`
+      // no ES un impuesto: TIENE uno. Sin esta línea, la variable entera se volvía alias y
+      // `line.price * line.qty` —que no toca ningún impuesto— salía marcada. Medido: era el
+      // ÚNICO falso positivo del barrido (`maintenance.service.ts`), y quitarlo no pierde ningún
+      // hallazgo real. El valor SÍ se sigue mirando: sólo se salta la clave.
+      if (x.parent && ts.isPropertyAssignment(x.parent) && x.parent.name === x) { x.forEachChild(rec); return; }
       const t = ts.isIdentifier(x) ? x.text : (ts.isPropertyAccessExpression(x) ? x.name.text : null);
       if (t && (ES_IMPUESTO.test(t) || alias.has(t))) { si = true; return; }
       x.forEachChild(rec);
