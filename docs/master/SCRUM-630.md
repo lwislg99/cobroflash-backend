@@ -131,3 +131,153 @@ que cambia es que ahora se calculan bien.
 
 * `tests/scrum630-default-en-dias.test.mjs` — el antes/después, el control negativo sobre el año
   entero, el censo por AST con su control y la caracterización del `min`.
+
+---
+
+# APÉNDICE · SCRUM-630 (2/2) — el test medía la máquina, no el defecto
+
+**Medido contra:** esta misma rama, `aa2542c3d60d9cfe04c002d03a7e41384a5c7bd0` · 2026-09-01T20:05:00+01:00
+
+> Se AÑADE al final. No se borra nada de lo anterior; lo que quedó mal escrito se corrige aquí
+> nombrándolo.
+
+## 1 · El rojo de CI tenía razón, y su propio mensaje decía por qué
+
+```
+✖ SCRUM-630 · y de MADRUGADA sí difieren — 210 de 365
+  AssertionError: a las 00:30 difieren 0 días de 365, y estaban medidos 210.
+```
+
+El mensaje ofrecía dos explicaciones —«el defecto se arregló por otro sitio» o «estoy comparando
+la misma función consigo misma»— y **no era ninguna de las dos**: el barrido medía la **zona
+horaria de la máquina**.
+
+## 2 · 🔴 El 210 nunca fue un número de Madrid
+
+El mismo barrido de las 00:30, con la zona fijada a mano:
+
+| Zona | Desfase ene / jul | Diferencias a las 00:30 |
+|---|---|---|
+| UTC | +0 / +0 | **0 / 365** ← lo que da el runner |
+| Europe/London | +0 / +1 | **210 / 365** ← **de aquí salió el 210** |
+| **Europe/Madrid** | +1 / +2 | **365 / 365** ← la zona del producto |
+| Atlantic/Canary | +0 / +1 | 210 / 365 |
+| America/New_York | −5 / −4 | 0 / 365 |
+
+**El 210 es el número de Londres**, que era la zona efectiva de la máquina donde se escribió el
+test. Un número londinense congelado dentro de un producto español. La entrada anterior lo
+atribuye a Madrid: **eso queda corregido aquí**.
+
+Y con Madrid fijado el defecto da **365/365**, o sea **sigue intacto**: el 0 de CI era la
+máquina, no un arreglo por otro sitio.
+
+## 3 · Lo que se vio al forzar la zona de verdad
+
+`TZ` **sí** funciona pasada como entorno de un proceso HIJO. Lo que no funciona es el prefijo de
+Git Bash (`TZ=x node …`), que es lo que se probó en SCRUM-633 y llevó a escribir allí que «`TZ=`
+no surte efecto en este Node/Windows». **Impreciso, y se corrige.** Con `spawnSync` el fichero
+entero se puede correr con la zona forzada:
+
+| Zona del proceso | TEST VIEJO | TEST NUEVO |
+|---|---|---|
+| Europe/Madrid | pass 11 · **fail 1** 🔴 | pass 16 · fail 0 |
+| Europe/London | pass 12 · fail 0 | pass 16 · fail 0 |
+| UTC | pass 10 · **fail 2** 🔴 | pass 16 · fail 0 |
+| America/New_York | pass 9 · **fail 3** 🔴 | pass 16 · fail 0 |
+| Asia/Tokyo | pass 11 · **fail 1** 🔴 | pass 16 · fail 0 |
+
+**El test viejo sólo pasaba en UNA zona del planeta: la de la máquina donde se escribió** — y ni
+siquiera en la del producto. El rojo de CI era la punta: en UTC caían **dos** pruebas, y con
+desfase negativo **tres**, porque el «control negativo» de las horas normales **también** medía
+la máquina (a las 23:30 en Nueva York la aritmética vieja mueve las 365 fechas).
+
+## 4 · La regla que sale de aquí
+
+**Cada test fija la zona de la máquina donde ese código corre de verdad.**
+
+* `quotesView.js` corre en el **navegador del profesional** → **Europe/Madrid** (España-first).
+* `quotes.routes.ts`, `quoteDecisionLanding.routes.ts` corren en **Railway** → **UTC**.
+
+Y se afirman **las dos direcciones**: Madrid 365 **y** UTC 0, éste último como *resultado
+esperado*, no como fallo. Un test que no distingue las dos zonas vuelve a medir la máquina, así
+que hay una aserción explícita de que los dos números **son distintos**.
+
+## 5 · 🔴 CORRECCIÓN A SCRUM-633 · los cinco sitios NO corren en la misma máquina
+
+Producción **no tiene variable `TZ`** (27 variables comprobadas en Railway por el asesor;
+ninguna coincide), y un contenedor sin `TZ` corre en UTC. Con ese dato, lo que escribí en
+SCRUM-633 sobre Canarias **cambia**, y no en la dirección que se suponía.
+
+Rehecho con el **servidor fijado en UTC** y el navegador en la zona del pro:
+
+| Navegador del pro | Desfase ene/jul | `main` | rama 630 |
+|---|---|---|---|
+| Europe/Madrid (península) | +1 / +2 | **0 / 1460** | **0 / 1460** |
+| Atlantic/Canary | +0 / +1 | **0 / 1460** | **0 / 1460** |
+| America/Mexico_City | −6 | **1460 / 1460** | 1460 / 1460 |
+| America/Lima (Perú) | −5 | **1460 / 1460** | 1460 / 1460 |
+| America/Bogota | −5 | 1460 / 1460 | 1460 / 1460 |
+| America/Argentina | −3 | 1460 / 1460 | 1460 / 1460 |
+
+Control positivo: forzando un día de más, caza **1460/1460 en las seis**.
+
+**Con el servidor en UTC no diverge ni el peninsular ni el canario.** La víctima es el
+profesional en **desfase NEGATIVO** —LATAM, que el producto contempla (MercadoPago, `country`,
+`locale.vatName` con IGV)—: su `23:59:59` local cae en el día SIGUIENTE en UTC, y el cliente lee
+un día de más. **Las 1460 son idénticas en `main` y en la rama 630: es preexistente, no lo trae
+el arreglo.**
+
+## 6 · ⚠️ La pregunta de producto que esto abre, y que NO se decide aquí
+
+**Si el servidor corre en UTC, ¿se manifiesta el defecto de SCRUM-630 en producción?**
+
+Lo medido dice que **la pregunta se parte en dos**, porque las dos costuras no viven en la misma
+máquina:
+
+* **El valor por defecto del campo (`quotesView.js:571-572`) se calcula en el NAVEGADOR.** Ahí la
+  zona es la del profesional, no la de Railway: para un pro peninsular a las 00:xx **el defecto
+  SÍ se manifiesta** (365/365 con Madrid fijado). La UTC del servidor no lo tapa.
+* **Las costuras del SERVIDOR** (`quotes.routes.ts:166` y el respaldo legado de
+  `quoteDecisionLanding.routes.ts:343`) no formatean ninguna fecha a texto: producen un
+  **instante**. En UTC no hay desplazamiento que aplicar, así que **por ese lado no se
+  manifiesta**.
+
+Queda abierto, y depende de un dato que no se tiene: **cuántos presupuestos se crean de
+madrugada**, y **si hay merchants fuera de la península**. Sin eso no se puede decir si el
+defecto es un caso raro o uno diario. **No se decide aquí.**
+
+## Tests que introduce este apéndice
+
+* `tests/scrum630-default-en-dias.test.mjs` — reescritos los barridos con la zona EXPLÍCITA;
+  añadidos el suelo del reloj (que `instanteDe`/`paredEn` son inversos y que la zona cambia el
+  resultado), el de las dos direcciones (Madrid 365 · UTC 0 · Londres 210), el de Nueva York
+  —que documenta que el control negativo también dependía de la máquina— y el que descarta que
+  el barrido compare una función consigo misma. De 12 pruebas a 16.
+
+## 7 · 🔴 HALLAZGOS FUERA DE ALCANCE
+
+**No se tocan.** Se anotan porque son la misma familia que acaba de romper CI.
+
+1. **La suite entera bajo la zona del runner queda VERDE:** con `TZ=UTC`,
+   `tests 4182 · pass 4103 · fail 0 · skipped 79` — los mismos números que en local. El montaje
+   sabe ver fallos bajo UTC (control positivo: contra el fichero VIEJO reporta sus dos rojos),
+   así que ese 0 es un 0 de verdad.
+
+2. **Pero hay CINCO tests más que miden la máquina.** Con `TZ=America/New_York` (desfase
+   negativo) la suite baja a `pass 4098 · fail 5`:
+
+   * `SCRUM-300 · la FECHA DE ENTREGA sale impresa, y es distinta de la de emisión`
+   * `SCRUM-397 · una fecha FUTURA se rechaza: no puede ser un hecho`
+   * `calcularSemaforo: fronteras exactas 0/5/6/-1 días`
+   * `SCRUM-70 · la rotura por mes natural (art. 13) se mantiene al cruzar Trabajos`
+   * `SCRUM-70 (ruta 1): "hasta el 31" incluye el 31 ENTERO`
+
+   Con `Asia/Tokyo` (desfase positivo grande) están **las cinco en verde**, igual que en UTC y en
+   Londres. O sea: **no fallan en CI hoy**, y por eso nadie los ha visto — pero heredan la zona
+   del proceso exactamente igual que hacía éste.
+
+   Dos de ellos pisan terreno fiscal (`SCRUM-70`, la rotura por mes natural del artículo 13;
+   `SCRUM-397`, la fecha de cobro). Eso no los hace urgentes —el código que prueban corre en
+   Railway, o sea en UTC, que es donde están verdes— pero sí los hace **candidatos a la misma
+   regla del §4**: fijar la zona de la máquina donde ese código corre de verdad, que para todos
+   ellos es UTC.
