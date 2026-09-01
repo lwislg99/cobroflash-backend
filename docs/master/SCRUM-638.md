@@ -120,3 +120,50 @@ Ese número está en el log de CI y **yo no lo tengo**. Con él, esto se cierra 
    tres se desbloquean juntas.
 3. Si es **1** → hay un defecto real que sólo se da en Linux, y entonces sí hace falta reproducir
    el entorno del runner.
+
+---
+
+# APÉNDICE · 1-sep-2026 · EL CÓDIGO DEL RUNNER **NO SE PUEDE LEER DESDE AQUÍ**
+
+**`gh` no está instalado.** Comprobado en las dos shells de esta máquina, que es donde acaba el
+camino que pedía el encargo:
+
+```
+$ gh auth status
+/usr/bin/bash: line 1: gh: command not found
+EXIT REAL=127                    ← 127 = «command not found», no un fallo de autenticación
+
+PowerShell> Get-Command gh       → gh NO existe tampoco en PowerShell
+```
+
+> ⚠️ El `EXIT=0` de la primera pasada era del `head`, no de `gh`: **un pipe se come el código de
+> salida** (SCRUM-569). Se repitió redirigiendo a fichero para leer el 127 de verdad. Se anota
+> porque es justo el modo en que esta comprobación habría mentido en verde.
+
+## Y no es un fallo transitorio: es política de la casa
+
+`gh` **no está instalado A PROPÓSITO** — está en las restricciones de seguridad que acompañan a
+cada encargo: *«`gh` NO está instalado A PROPÓSITO: el PR lo abre el fundador. NO instalarlo»*.
+
+Eso cambia la lectura del resultado: **no es «reinténtalo luego», es que esta vía no va a funcionar
+nunca desde una sesión.** El número tiene que sacarlo alguien con acceso al log de Actions.
+
+## Lo que NO se ha intentado, y es deliberado
+
+Ni `curl`, ni `wget`, ni ningún script propio contra la API de GitHub. El encargo lo prohíbe
+expresamente y la prohibición es correcta: rodear una herramienta que la casa quitó a propósito es
+peor que no tener el dato.
+
+## Dónde queda la pregunta
+
+**Intacta y sin responder.** Sigue siendo el único dato que separa las dos hipótesis vivas, y la
+tabla del punto 5 sigue sirviendo para leerlo en cuanto alguien lo pegue:
+
+| Código | Qué significaría |
+|---|---|
+| **1** | defecto REAL sólo en Linux → la hipótesis de `_servidor.mjs` **cae** |
+| **4** | `_servidor.mjs` no levantó → la hipótesis **se confirma** |
+| **2 / 3** | el navegador — otro camino distinto |
+
+Basta con pegar la línea `Process completed with exit code N` de cualquiera de los tres PR. Con
+ella, y con lo ya medido en local, esto se cierra sin más trabajo.
