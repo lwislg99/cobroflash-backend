@@ -140,3 +140,111 @@ Reversión de la avería de este informe: `Buffer.compare(disco, testigo) === 0`
 - `npm run guards:entrada` en verde.
 
 No se ha modificado ningún guard.
+
+---
+
+# SCRUM-620 · APÉNDICE · La implementación: código 4, sitio único, y el efímero DESPUÉS
+
+**Fecha:** 01-sep-2026 · **Carril:** B · **Gate:** sin gate — el mecanismo corre en `npm test`
+
+**Medido contra:** `origin/main` = `bcf30775b0e535c9c6534eb7636558b9a4200a3e` · 2026-09-01T14:02:19+01:00
+
+Lo de arriba era la medición y la propuesta. Esto es la ejecución, en **dos commits y en este
+orden**, que no era negociable.
+
+## Por qué el orden importaba, y no fue decisión mía
+
+> **Si el efímero entra primero, la colisión desaparece — y con ella la única forma de demostrar
+> que el diagnóstico funciona.** Quedaría el código 4 escrito y nunca ejercitado: el defecto que
+> este ticket persigue, cometido al arreglarlo.
+
+Es del fundador, y es correcta. Por eso: **① `7eef46cc` el diagnóstico**, con sus tres controles
+ejercitados sobre la colisión real; **② `639adf3a` el efímero**, en commit propio y revertible sin
+tocar ①.
+
+## ① El diagnóstico
+
+`scripts/_servidor.mjs`, hermano de `_navegador.mjs`. El vocabulario queda así:
+
+| código | significa | quién lo dice |
+|---|---|---|
+| 0 | midió | el guard |
+| 1 | encontró un defecto | el guard |
+| 2 | NO SUPE MIRAR — no hay navegador | `_navegador.mjs` |
+| 3 | NO PUDE ARRANCARLO — lo hay y no levanta | `_navegador.mjs` |
+| **4** | **NO PUDE LEVANTAR MI SERVIDOR** | **`_servidor.mjs`** |
+
+**El 4 no reusa el 3**, y es el argumento del propio encargo: los dos fallos se parecen, y que se
+parezcan es justo lo que hay que impedir que se confunda.
+
+Devuelve **el puerto real**, para con 4 ante **cualquier** fallo de `listen` —no sólo `EADDRINUSE`—
+y **no reintenta ni espera**. Un detalle que no es cosmético: el `once('error')` va **antes** del
+`listen`, porque el evento puede llegar en el mismo tick y engancharlo después es exactamente cómo
+se convierte en el `Unhandled 'error' event` que había.
+
+**Los nueve cableados. No se ha cambiado lo que mide ninguno.**
+
+### El test propio, y por qué hacía falta
+
+`tests/scrum620-servidor-que-no-arranca.test.mjs` **provoca la colisión a propósito**. Sin él, el
+commit ② la haría desaparecer y el código 4 quedaría sin ejercitar para siempre. El test ata **como
+atan los guards** —sin host, o sea `::`— y no a `127.0.0.1`: esa distinción es la que hizo que el
+primer experimento del informe anterior no probara lo que parecía probar.
+
+## ② El efímero
+
+Los siete de puerto fijo pasan a pedir `0`. Los otros dos ya lo hacían: **el patrón bueno ya existía
+en casa, en 2 de los 9.**
+
+**La variable de entorno sigue mandando, y no es un resto: es lo que mantiene el código 4 alcanzable
+en la vida real.** Medido en las dos direcciones:
+
+| caso | resultado |
+|---|---|
+| `VIAS_PUERTO=4403` y el 4403 ocupado | **exit 4 · SIN SERVIDOR** ✅ el diagnóstico sigue vivo |
+| sin la variable, el mismo puerto ocupado | **exit 0 · verde** — se fue a uno libre |
+
+Con esto se cierran también las **dos colisiones entre guards** del censo (4402 y 4403).
+
+## Los tres controles
+
+Árbol commiteado en **`7eef46cc`** antes de inyectar nada.
+
+| control | qué se provocó | resultado |
+|---|---|---|
+| **1 · EADDRINUSE real** | puerto 4472 ocupado, atando **como ata el guard** (sin host) | **exit 4 · SIN SERVIDOR**, con sus palabras y **nombrando `EADDRINUSE`** |
+| **2 · rojo real** | los `.ibtn` de la landing a 12 px | **exit 1 · `rojo(1)`**, nombrando `12.6px < 44 · BUTTON.ibtn--wa`, y **cero** menciones de «no pude levantar» |
+| **3 · el impostor** | puerto ocupado por algo que **sí responde** (atado sólo a `127.0.0.1`) | **exit 1**, y **NO** lo clasifica como 4 ✅ |
+
+**No se confunden en ninguna de las dos direcciones.** Reversión de la avería del control 2:
+`Buffer.compare(disco, testigo) === 0`.
+
+### Sobre el impostor, con precisión
+
+Sale **1 antes y 1 después**: el `listen` **funciona** —el impostor ató sólo `127.0.0.1` y el guard
+ata `::`—, así que el servidor arranca y lo que falla es después, al navegar (`TimeoutError` de
+puppeteer). **Que el código 4 no salte ahí es lo correcto**: mentiría en la otra dirección.
+
+⚠️ **Hueco declarado, no de este ticket:** ese caso sigue saliendo como `rojo(1)`, o sea «he
+encontrado un defecto» cuando lo que pasa es que **se midió sobre contenido ajeno**. Es un tercer
+estado —«medí, pero no lo mío»— sin código propio. Con el efímero de ② es mucho menos probable, pero
+no imposible.
+
+## El enlace con SCRUM-628
+
+Las dos colisiones entre guards (**4402**: aviso-bizum + a11y-comparativa · **4403**: vias-de-cobro
++ a11y-landing) **no se notaban porque la puerta los corre EN SERIE**. La cadena va ya por ~97 s;
+SCRUM-628 propone meterle pantallas del dashboard, y **la salida obvia cuando llegue a cinco minutos
+es paralelizar** — el día que eso pase, esos dos pares chocan.
+
+**Arreglar esto antes es lo que permite plantear 628 siquiera.** Sin el ② de hoy, paralelizar habría
+producido `rojo(1)` intermitentes; y sin el ①, esos rojos se habrían leído como defectos de la
+pantalla.
+
+## Estado del árbol
+
+- **Suite: total 4107 · pass 4028 · fail 0 · skipped 79** (67 `QA_DB_TEST`, 9 `LIBRO_PG_URL`,
+  1 `BOT_SUITE_TEST`, 1 `A55_DB_TEST`, 1 EPERM de Windows).
+- **Los 9 guards en verde** con Edge real, puerta con **0** — antes y después de ②. Ninguno se cayó,
+  que era el riesgo declarado antes de empezar.
+- `npm run guards:entrada` en verde.
