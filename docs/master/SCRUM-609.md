@@ -312,3 +312,94 @@ del literal. Lo quité y **siguió fallando**. La causa era el atributo. Lo caz�
 - **El CSV del tarifario exporta `vat` pero no `cost`** (`products.service.ts:68`). Con el margen
   entrando en la pantalla, el export enseña el IVA que ya no se pide y esconde el coste del que sale
   el margen. No se toca aquí.
+
+---
+
+# SCRUM-609 · APÉNDICE 2 · El switch sigue parado: los valores NO están en el máster
+
+**Fecha:** 01-sep-2026 · **Carril:** producto · **Gate:** sin gate — no entra código
+
+**Medido contra:** `origin/main` = `775bf7e04e4c0f55ca23ad4c9bfe58a0b365c3dc` · 2026-09-01T16:10:13+01:00
+
+**No se ha construido el switch y no se ha tocado `prisma/schema.prisma`.** La columna está
+autorizada; lo que **no** lo está es qué cadenas escribe dentro, y eso es lo que faltaba comprobar.
+
+## (a) y (b) · La comprobación en el máster: **NO ESTÁN**
+
+| se buscó | resultado |
+|---|---|
+| `item_kind` / `itemKind` en `docs/YAQU_MASTER.md` | **no aparece** |
+| la pareja por CONTENIDO («Producto \| Servicio», «producto o servicio», `PRODUCTO`/`SERVICIO`) | **no aparece** |
+| `CAT-01` / `CAT-1` en el máster | **no aparece** |
+| un documento de campos del catálogo, como el que CONT-01 tiene | **no existe** (sí existe `docs/CONTACTOS_CAMPOS_POR_LADO.md`, pero es de contactos) |
+| los **rótulos de interfaz** de los dos lados | **no aparecen** |
+
+**✅ Control positivo del barrido — el cero no es ceguera:** el mismo barrido **sí** encuentra las
+partes del máster (`PARTE A — NORTE CLARO`, `B — PAÍSES Y REGULACIÓN`, `C — PRODUCTO`, `D`, `E`,
+`F`…) y **sí** encuentra la sección del catálogo por gremio (`ONBOARD-2`, línea 609). Encuentra lo
+que hay; lo que no hay es la pareja.
+
+### 🔴 Y una discrepancia del encargo que hay que decir
+
+El ticket sitúa CAT-01 en el **«bloque K»**. En `YAQU_MASTER.md`, **`PARTE K` es «BOT WHATSAPP
+ENTRANTE»** (línea 356) — el bot, no el catálogo. Y `J7. Catálogo técnico` (línea 307) tampoco es
+el catálogo de productos: es el **catálogo de plantillas de WhatsApp**.
+
+Así que el «bloque K» del ticket es el documento aprobado el 24-ago, **no una sección del máster**.
+Los valores de `item_kind` no están escritos en el máster **por ninguna de las dos vías**.
+
+> **PARA.** No invento «PRODUCTO/SERVICIO», ni «MATERIAL/MANO_DE_OBRA», ni ninguna otra pareja
+> razonable. Va al fundador.
+
+## 🛑 Y por eso tampoco se añade la columna todavía — con su motivo medido
+
+La columna está autorizada y su SQL está listo:
+
+```sql
+ALTER TABLE "products" ADD COLUMN "item_kind" TEXT;
+```
+
+**No se aplica en esta rama, y no es desobediencia: es el orden.** Medido en
+`src/core/db/schemaDrift.ts`:
+
+- la comparación del arranque es **`esperado ⊆ real`** (línea 30);
+- si `schema.prisma` nombra una columna que la base no tiene → **DERIVA → producción NO ARRANCA**
+  (líneas 224-225, 261).
+
+Y `db push` está prohibido para esta sesión «se invoque como se invoque», porque **sincroniza el
+esquema entero**, no sólo este cambio. Así que si el schema entrara hoy en la rama y el PR mergease
+antes de que el `ALTER TABLE` corriera en las tres bases, **el siguiente arranque no levantaría**.
+Es la lección de SCRUM-205, escrita allí como innegociable: **`ALTER TABLE` → luego el código.
+Nunca el código primero.**
+
+**Y hoy la columna no tendría consumidor**: el switch no se puede cablear sin los valores. Meterla
+sola sólo abre la ventana de deriva sin ganar nada.
+
+**Propuesta de orden**, para que lo decida el fundador:
+
+1. El fundador escribe **los dos valores y sus dos rótulos** (o los aprueba con marcador).
+2. Se aplica el `ALTER TABLE` a las tres bases.
+3. Entra un PR con el `schema.prisma`, el switch cableado y su test — todo junto, sin ventana de
+   deriva.
+
+Si se prefiere meter la columna antes, es viable — pero el `ALTER TABLE` tiene que correr en las
+tres bases **antes** de que ese PR mergee, no después.
+
+## Lo que sigue en pie de este ticket
+
+El **margen** y el **IVA fuera del formulario** están construidos y verificados en el apéndice
+anterior, y no se han tocado hoy. El único cambio de este apéndice es documental.
+
+## Estado del árbol
+
+- **Suite: total 4172 · pass 4093 · fail 0 · skipped 79** — sin cambios de código desde la
+  medición anterior de esta rama.
+- `prisma/schema.prisma` **intacto**.
+- `npm run guards:entrada` en verde.
+
+## HALLAZGOS FUERA DE ALCANCE
+
+- **El «bloque K» del ticket no es la Parte K del máster.** Conviene que el ticket lo diga, o el
+  siguiente que lo lea buscará CAT-01 en el bot de WhatsApp.
+- Se mantienen los dos del apéndice anterior (banco de vistas → SCRUM-634 · CSV del tarifario →
+  SCRUM-635), y no se han tocado.
