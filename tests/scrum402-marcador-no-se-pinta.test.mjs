@@ -145,6 +145,24 @@ const CENSO = Object.freeze({
   // 🔴 17-ago-2026 (tanda B) · 5 → 1. Aprobados cuatro: el estado del botón, el vacío del periodo,
   // «Descarga lista.» y el error de descarga. Queda UNO y con su motivo: el quinto marcador de este
   // fichero es de la tarjeta de portabilidad, que NO estaba en la lista aprobada.
+  // SCRUM-578 (24-ago-2026) · SUBIDA A CONCIENCIA: el formulario de clientes saca con marcador
+  // el rótulo del teléfono y el aviso de identificador ya usado.
+  //
+  // El rótulo TENÍA texto —«Teléfono (E.164 sin +)»— y pasa a marcador a propósito: en cuanto el
+  // prefijo sale a un selector aparte, ese rótulo describe un campo que ya no existe. Y era, él
+  // mismo, la prueba del ticket de que una regla escrita en una etiqueta no se cumple: pedía
+  // «E.164 sin +» y se guardaron `+34 662629419` y `662629419` como dos clientes.
+  //
+  // Van SIN palabra de trabajo detrás, al revés que `switchFormaJuridica` (SCRUM-574): allí el
+  // copy era accesorio; aquí es lo que el profesional lee para decidir si está creando un
+  // duplicado, y un texto mío «provisional» ahí es justo lo que la regla 30 prohíbe.
+  //
+  // 🔴 CUENTA 1 Y PINTA 2, y la distinción no es cosmética — se midió en SCRUM-615: este censo
+  // cuenta MARCAS, y las dos superficies salen de una sola constante `MARCADOR_MICROCOPY`. Por
+  // eso **aprobar UNO de los dos textos NO apaga el otro**: son dos textos distintos que hoy
+  // comparten marcador, y habrá que partir la constante el día que el fundador escriba el
+  // primero. Decir «se apagan de golpe» aquí sería falso.
+  'customersView.js': 1,
   'exportView.js': 1,
   // 🔴 17-ago-2026 · `invoiceDetailView.js` SALE DEL CENSO (tenía 9). El fundador aprobó los ocho
   // rótulos de acción, y el noveno era `MARCA_MICRO`, una constante que ya no consumía nadie y que

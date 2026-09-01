@@ -644,6 +644,33 @@ html, body { overflow-x: clip; }
    pesa más que el número y desordena la jerarquía de la tarjeta. */
 .tipo-destinatario-campo { max-width: 260px; }
 
+/* ── Teléfono con prefijo de país (SCRUM-578) ────────────────────
+   El prefijo y el número son un solo dato partido en dos controles, así que van en
+   una fila. El selector no crece: lo que el profesional lee y corrige es el NÚMERO,
+   y un desplegable de 222 países al 50 % de ancho le robaría el sitio.
+   Tokens existentes, cero colores nuevos. */
+.campo-telefono {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.campo-telefono .prefijo-pais {
+  flex: 0 0 auto;
+  max-width: 44%;
+  min-height: 44px;   /* objetivo táctil (AB6) — aquí no hay guard que lo mire (SCRUM-628) */
+}
+.campo-telefono input {
+  flex: 1 1 auto;
+  min-width: 0;       /* sin esto un input en flex no baja de su tamaño natural y desborda */
+  min-height: 44px;
+}
+
+/* El aviso de identificador ya usado. Es un AVISO, no un error: no lleva el rojo de
+   `.alert.error` — el profesional puede guardar igual, y pintarlo de rojo diría lo
+   contrario. `hidden` manda sobre el display del `.alert`. */
+.aviso-duplicado { margin-bottom: 12px; }
+.aviso-duplicado[hidden] { display: none; }
+
 /* Fila checkbox + etiqueta: juntas y alineadas a la primera línea de texto */
 .inline-checkbox label { display: flex; gap: 8px; align-items: flex-start; }
 .inline-checkbox input[type="checkbox"],
