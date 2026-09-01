@@ -576,6 +576,49 @@ blockDelivery.appendChild(descWrapper);
     validNote.textContent = "Pasada esta fecha el presupuesto caduca solo y el cliente verá \"pide uno actualizado\".";
     validWrapper.appendChild(validLabel);
     validWrapper.appendChild(validInput);
+
+    // ---------- SCRUM-605 (DOC-15): ATAJOS DE VENCIMIENTO ----------
+    // Hasta hoy la única forma de poner la fecha era el calendario nativo. Los atajos escriben
+    // el valor y ya está: NO se toca el `value` por defecto (+30 d) ni el `min` (+1 d), porque
+    // quien no pulse nada tiene que ver exactamente lo de antes.
+    //
+    // La aritmética NO vive aquí: está en `quoteAtajosVencimiento.js`, en funciones puras, para
+    // poder exigirle los bordes que muerden en fechas —fin de mes, cambio de año, bisiesto— que
+    // desde este fichero no se pueden probar (`node:test` no puede importar una vista).
+    //
+    // 🔴 AB3: se REUTILIZA la fila de fichas de F6 (`quote-plantillas` + `quote-plantilla-chip`),
+    // que ya trae los 44 px de objetivo táctil y el anillo de foco de AB6. Cero CSS nuevo y cero
+    // estilos en línea.
+    //
+    // Si el script no hubiera cargado, no se pinta nada y el campo queda como estaba: un atajo
+    // que falta es peor que ninguno sólo si además rompe el campo.
+    const atajosVenc = (typeof window !== 'undefined' && window.QUOTE_ATAJOS_VENCIMIENTO) || null;
+    if (atajosVenc) {
+      const atajosFila = document.createElement("div");
+      atajosFila.className = "quote-plantillas";
+      atajosVenc.DIAS_ATAJO.forEach(function (dias) {
+        const chip = document.createElement("button");
+        // `type=button` es obligatorio: sin él, dentro del <form>, el clic ENVIARÍA el
+        // presupuesto. Mismo motivo que el segundo «+ Añadir línea» (SCRUM-133).
+        chip.type = "button";
+        chip.className = "quote-plantilla-chip";
+        const rotulo = atajosVenc.rotuloDeAtajo(dias);
+        const nombre = document.createElement("span");
+        nombre.className = "quote-plantilla-chip__nombre";
+        nombre.textContent = rotulo;
+        chip.appendChild(nombre);
+        chip.setAttribute("aria-label", rotulo);
+        chip.addEventListener("click", function () {
+          const fecha = atajosVenc.fechaDeAtajo(dias);
+          // Si no se puede calcular no se escribe NADA: mejor que el campo se quede como está
+          // que meterle una fecha inventada en un documento que el cliente va a recibir.
+          if (fecha) validInput.value = fecha;
+        });
+        atajosFila.appendChild(chip);
+      });
+      validWrapper.appendChild(atajosFila);
+    }
+
     validWrapper.appendChild(validNote);
     blockConditions.appendChild(validWrapper);
 

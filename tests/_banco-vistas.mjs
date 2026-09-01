@@ -314,7 +314,16 @@ export function scriptsDelDashboard(raiz) {
 // resuelve contando, no eligiendo.
 // SCRUM-578 (24-ago-2026) · 62 -> 63: entra `prefijosPais.js`, el selector de prefijo de pais
 // del formulario de clientes. Se sube AQUI y en el mismo commit que anade el `<script>`.
-export const SCRIPTS_DEL_DASHBOARD = 63;
+// SCRUM-605 (25-ago-2026) · 63 → 64: entra `quoteAtajosVencimiento.js`, la aritmetica pura de
+// los atajos de «Válido hasta» del presupuesto. Se sube EN EL MISMO COMMIT que el <script>, que
+// es lo que estos guards piden: un contador que sube solo deja de significar algo.
+//
+// 🔴 ESTE NUMERO SALIO DE UN CONFLICTO, y por eso no se hereda de ningun lado: SCRUM-578 y
+// SCRUM-605 escribieron 63 LOS DOS, cada uno por su script. Chocaron los COMENTARIOS y la linea
+// del valor quedo fuera de los marcadores — el incidente exacto que esta cabecera cuenta del 61.
+// Se resolvio CONTANDO sobre el index ya mezclado (`grep -c "<script src=" ` → 64), no eligiendo
+// un lado. Los dos comentarios se quedan: cada uno documenta un script real.
+export const SCRIPTS_DEL_DASHBOARD = 64;
 
 /**
  * Monta el dashboard como lo monta el navegador y devuelve el contexto vivo.
