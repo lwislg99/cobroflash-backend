@@ -254,6 +254,25 @@ export function nodo(tag, reg) {
         const cls = attrs.match(/\bclass="([^"]+)"/);
         if (id) { h.id = id[1]; reg.porId.set(id[1], h); }
         if (cls) h.className = cls[1];
+        // SCRUM-609: se copia también `name`, y el motivo es el de siempre en este fichero.
+        //
+        // `casaSimple` SÍ considera soportado `input[name="cost"]` —es `[attr="valor"]`—, así que
+        // no lo anotaba como no soportado; pero el atributo nunca se copiaba, de modo que el
+        // `querySelector` devolvía **null en silencio**, indistinguible de «ese nodo no existe».
+        // Es el defecto que este banco existe para eliminar, una capa más abajo: sintaxis
+        // soportada + atributo no copiado = mentira muda.
+        //
+        // No se notó hasta hoy porque `productsView` sólo usaba esos nodos DENTRO de manejadores
+        // —que el banco no dispara—; en cuanto una vista les puso un `addEventListener` al montar,
+        // reventó. Nadie lo había mirado.
+        //
+        // ⚠️ HUECO QUE SIGUE ABIERTO Y SE DECLARA: se copian `id`, `class`, `data-*` y `name`.
+        // Cualquier OTRO atributo (`type`, `placeholder`, `min`…) sigue dando el mismo null mudo.
+        // Va por `setAttribute` y no por una propiedad suelta: `casaSimple` resuelve todo lo que
+        // no es `id`/`class`/`data-*` con `n.getAttribute(...)`, así que una propiedad `h.name`
+        // habría quedado invisible para el propio matcher.
+        const nm = attrs.match(/\bname="([^"]+)"/);
+        if (nm) h.setAttribute('name', nm[1]);
         for (const d of attrs.matchAll(/\bdata-([\w-]+)="([^"]*)"/g)) {
           h.dataset[d[1].replace(/-([a-z])/g, (_, c) => c.toUpperCase())] = d[2];
         }
@@ -323,7 +342,13 @@ export function scriptsDelDashboard(raiz) {
 // del valor quedo fuera de los marcadores — el incidente exacto que esta cabecera cuenta del 61.
 // Se resolvio CONTANDO sobre el index ya mezclado (`grep -c "<script src=" ` → 64), no eligiendo
 // un lado. Los dos comentarios se quedan: cada uno documenta un script real.
-export const SCRIPTS_DEL_DASHBOARD = 64;
+// SCRUM-609 (1-sep-2026) · 64 -> 65: entra margenCatalogo.js, la aritmetica del margen del
+// catalogo. Va ANTES de productsView.js, que la consume.
+//
+// RECALCULADO desde el index.html de esta rama, no elegido ni heredado: grep -c "<script src="
+// da 65. Es la regla de este numero — un contador que dos ramas incrementan a la vez sale del
+// conflicto SIN marcadores si las dos ponen el mismo valor, y entonces nadie se entera.
+export const SCRIPTS_DEL_DASHBOARD = 65;
 
 /**
  * Monta el dashboard como lo monta el navegador y devuelve el contexto vivo.
