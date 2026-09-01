@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import {
   createProduct, listProducts, getProductById, updateProduct,
-  deleteProduct, searchProducts, exportProductsCsv, importProductsCsv,
+  searchProducts, exportProductsCsv, importProductsCsv,
 } from '../../domain/products.service';
 import { prisma } from '../../../../core/db/prisma';
 import { getTradeCatalog } from '../../../../core/data/tradeCatalogs';
@@ -227,7 +227,25 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-614 · EL CATÁLOGO SE CIERRA A ESCRITURA. El Operario SÓLO VE.
+//
+// Esto DEROGA la decisión del 22-jul-2026 («Simétrico del alta; una línea de catálogo, no el
+// tarifario»), que abría POST/PUT/DELETE al Técnico. Aquella decisión no era un error: era
+// correcta MIENTRAS una fila del catálogo fuese una línea de catálogo — un nombre y un precio
+// de venta para autocompletar. Con DOC-08 el coste y el margen salen del documento y pasan a
+// vivir SÓLO aquí, así que la fila pasa a ser DONDE ESTÁ ESCRITO LO QUE GANA EL MERCHANT.
+// Caducó la premisa; la decisión la sigue (fundador, 24-ago-2026).
+//
+// ⚠️ LA LECTURA NO SE TOCA, y no es un olvido: el fundador decidió el 24-ago que coste y margen
+// los ven TODOS los roles. `GET /` y `GET /:id` siguen abiertos y siguen devolviendo `cost`.
+// Cerrar la lectura aquí sería ir contra esa decisión, no completarla.
+//
+// El registro de la derogación vive en `adminRouteDeclarations.ts`, donde estaba la entrada
+// vieja, y lo vigila `tests/scrum365-permisos-tarifario.test.mjs` — el mismo guard que hasta hoy
+// protegía lo contrario, INVERTIDO en este ticket en vez de borrado.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+router.post('/', requireRole('admin'), async (req, res) => {
   try {
     const { name, description, price, cost, vat, providerId, isActive } = req.body || {};
     if (!name || typeof name !== 'string') return res.status(400).json({ ok: false, error: 'name_required' });
@@ -250,7 +268,11 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+// SCRUM-614 · admin. Ver el bloque de `POST /`. Y ojo a lo que arrastra: «Desactivar» es ESTA
+// ruta con `{ isActive: false }`, así que retirar un producto pasa a ser también de admin. Es
+// coherente con la decisión —«el Operario SÓLO VE»— y se escribe aquí porque desde fuera parece
+// otro botón: no lo es, es el mismo verbo.
+router.put('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
@@ -273,17 +295,29 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
-    const deleted = await deleteProduct(req.merchantId, id);
-    if (!deleted) return res.status(404).json({ ok: false, error: 'not_found' });
-    return res.json({ ok: true, deleted });
-  } catch (err) {
-    console.error('[DELETE /admin/products/:id]', err);
-    return res.status(500).json({ ok: false, error: 'internal_error' });
-  }
-});
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// 🛑 SCRUM-614 · AQUÍ VIVÍA `DELETE /admin/products/:id`, Y SE HA RETIRADO.
+//
+// Era un borrado FÍSICO (`prisma.product.delete`) sin comprobar nada. Se retira por decisión del
+// fundador delegada en el asesor (1-sep-2026), y el motivo salió de la propia medición del
+// ticket: **«Desactivar» ya existía justo al lado** —`PUT` con `isActive`— y nada empujaba hacia
+// la opción reversible.
+//
+// Lo irreversible es lo caro. Y con DOC-08 la fila pasa a ser donde está escrito el margen:
+// `cost` NO sale por ninguna vía que el merchant pueda usar —`exportProductsCsv` lo filtra del
+// `select`, y los seis datasets de `datos.zip`/`portabilidad.zip` no incluyen el catálogo—, así
+// que un clic destruía el único registro del margen sin recuperación.
+//
+// ⚠️ NO SE SUSTITUYE POR UN BORRADO LÓGICO EN ESTA RUTA. «Desactivar» ya es `PUT /:id` con
+// `isActive: false`: una segunda puerta que hiciera lo mismo sería otro sitio donde se decide lo
+// mismo, y eso es lo que este ticket lleva toda la semana desmontando.
+//
+// 🛑 CONSECUENCIA VIVA Y DECLARADA, que no se tapa: `@@unique([merchantId, nameSearch])` **NO
+// mira `isActive`**, así que un producto desactivado SIGUE OCUPANDO SU NOMBRE — recrearlo revienta
+// y el importador CSV lo cuenta como `skipped`. Retirado el borrado, hoy **no queda ninguna forma
+// de liberar un nombre**. El diff que lo arregla está PREPARADO Y PARADO: `prisma/schema.prisma`
+// es de los fundadores. Está en `docs/master/SCRUM-614.md` con sus dos opciones y lo que cuesta
+// cada una.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
 
 export default router;

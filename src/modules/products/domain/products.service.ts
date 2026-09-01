@@ -265,10 +265,11 @@ export async function updateProduct(
 }
 
 
-export async function deleteProduct(merchantId: number, id: number) {
-  const existing = await prisma.product.findFirst({ where: { id, merchantId } });
-  if (!existing) return null;
-
-  await prisma.product.delete({ where: { id } });
-  return { id };
-}
+// 🛑 SCRUM-614 · AQUÍ VIVÍA `deleteProduct`, UN BORRADO FÍSICO. Se retira con su ruta.
+//
+// Se va la FUNCIÓN, no sólo la ruta, y es deliberado: un servicio de dominio sin llamadores pasa
+// todos los tests, entra verde y desde fuera es indistinguible de una función entregada — así se
+// cerraron en falso `cambiarFlagFiscal` y `borrarMerchant` (SCRUM-411). Dejar aquí un
+// `prisma.product.delete` huérfano sería dejar el borrado a un `import` de distancia.
+//
+// Quien retire un producto usa `updateProduct` con `isActive: false`, que ya existía.

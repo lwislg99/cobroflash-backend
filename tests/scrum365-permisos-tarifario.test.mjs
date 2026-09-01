@@ -121,15 +121,116 @@ test('SCRUM-365 · POSITIVO — un Admin SÍ pasa por las dos', async () => {
   }
 });
 
-test('SCRUM-365 · el trabajo por LÍNEA sigue siendo del Operario', () => {
-  // La otra cara: si al cerrar el bloque se hubiera cerrado también la línea suelta, el Operario
-  // no podría corregir un precio al presupuestar — que es su trabajo, y está declarado.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 SCRUM-614 (24-ago-2026) · ESTE GUARD HA CAMBIADO DE LADO. NO SE HA RELAJADO NI BORRADO.
+//
+// Hasta hoy este test exigía LO CONTRARIO: que `POST`/`PUT`/`DELETE` de `/admin/products`
+// SIGUIERAN declaradas para el Operario, para que cerrar el tarifario en bloque no se llevara
+// por delante «corregir un precio suelto al presupuestar». Era correcto, y hay que dejar dicho
+// por qué deja de serlo — un guard que desaparece de un PR es una protección perdida sin
+// constancia; uno que cambia de lado es una decisión REGISTRADA.
+//
+// LA DECISIÓN (fundador, 24-ago-2026): el catálogo se cierra a escritura. El Operario SÓLO VE.
+// LA PREMISA QUE CADUCÓ: en julio una fila de `products` era una línea de catálogo —un nombre y
+// un precio de venta para autocompletar—. Con DOC-08 el coste y el margen salen del documento y
+// pasan a vivir SÓLO en el catálogo: esa misma fila pasa a ser dónde está escrito lo que gana el
+// merchant. La decisión de julio no se equivocó; se le fue el supuesto de debajo.
+//
+// ⚠️ LO QUE ESTE TEST SIGUE SIN TOCAR, y es la mitad que hace falta no perder: **la LECTURA**.
+// Coste y margen los ven TODOS los roles (misma decisión, mismo día), así que los `GET` siguen
+// declarados para el Operario y este guard lo comprueba abajo. Si algún día alguien «termina de
+// cerrar el catálogo» cerrando también la lectura, cae por ahí.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+test('SCRUM-614 · la ESCRITURA del catálogo ya NO es del Operario (deroga a SCRUM-365)', () => {
   const decl = fs.readFileSync(path.join(RAIZ, 'src/core/http/adminRouteDeclarations.ts'), 'utf8');
   for (const [metodo, ruta] of [['POST', '/admin/products'], ['PUT', '/admin/products/:id'], ['DELETE', '/admin/products/:id']]) {
     const re = new RegExp(`method:\\s*'${metodo}'\\s*,\\s*path:\\s*'${ruta.replace(/[/:]/g, '\\$&')}'`);
+    assert.doesNotMatch(decl, re,
+      `🔴 ${metodo} ${ruta} ha vuelto a estar declarada para el Operario.\n` +
+      '  El catálogo se cerró a escritura el 24-ago-2026 porque con DOC-08 una fila de `products`\n' +
+      '  es donde vive el MARGEN, no una línea de catálogo. Si esto se ha reabierto a propósito,\n' +
+      '  la decisión se cambia donde se escribió —el bloque de Productos de\n' +
+      '  `adminRouteDeclarations.ts`— y este guard se vuelve a girar CON su motivo, no se borra.');
+  }
+});
+
+test('SCRUM-614 · POSITIVO — la LECTURA del catálogo SIGUE siendo del Operario', () => {
+  // Sin esto, «he cerrado la escritura» y «he cerrado el catálogo entero» dan el mismo verde.
+  // Y cerrar la lectura iría contra la otra mitad de la decisión del 24-ago: coste y margen los
+  // ven todos los roles. Es el mismo par positivo/negativo que ya protege a `/import`.
+  const decl = fs.readFileSync(path.join(RAIZ, 'src/core/http/adminRouteDeclarations.ts'), 'utf8');
+  for (const [metodo, ruta] of [['GET', '/admin/products'], ['GET', '/admin/products/:id'], ['GET', '/admin/products/autocomplete']]) {
+    const re = new RegExp(`method:\\s*'${metodo}'\\s*,\\s*path:\\s*'${ruta.replace(/[/:]/g, '\\$&')}'`);
     assert.match(decl, re,
-      `🔴 ${metodo} ${ruta} ya no está declarada para el Operario. Cerrar el tarifario en bloque ` +
-      'no puede llevarse por delante la corrección de una línea al presupuestar.');
+      `🔴 ${metodo} ${ruta} ya no está declarada para el Operario: se ha cerrado también la\n` +
+      '  LECTURA del catálogo. El fundador decidió el 24-ago-2026 que coste y margen los ven\n' +
+      '  TODOS los roles; cerrar la lectura no es completar esa decisión, es ir contra ella.');
+  }
+});
+
+test('SCRUM-614 · 🔴 el borrado FÍSICO del catálogo ya no existe en ningún sitio', async () => {
+  // No basta con que la RUTA no esté: un servicio de dominio sin llamadores pasa todos los tests
+  // y desde fuera es indistinguible de una función entregada (SCRUM-411). Se comprueban los tres
+  // sitios donde podría haber quedado.
+  const capas = await capasDelRouter('modules/products/app/routes/products.routes.js');
+  const borra = capas.filter((c) => c.metodos.includes('DELETE'));
+  assert.deepEqual(borra, [],
+    `🔴 ha vuelto una ruta DELETE al catálogo: ${JSON.stringify(borra)}.\n`
+    + '  El borrado físico se retiró el 1-sep-2026 (decisión del fundador delegada en el asesor):\n'
+    + '  «Desactivar» —`PUT` con `isActive`— ocupa su lugar, y `cost` no sale por ninguna vía que\n'
+    + '  el merchant pueda usar, así que borrar destruía el único registro del margen.');
+
+  const servicio = fs.readFileSync(path.join(RAIZ, 'src/modules/products/domain/products.service.ts'), 'utf8');
+  const vivo = servicio.split('\n').filter((l) => /prisma\.product\.delete/.test(l) && !/^\s*(\/\/|\*)/.test(l));
+  assert.deepEqual(vivo, [],
+    `🔴 queda un \`prisma.product.delete\` VIVO en el servicio: ${JSON.stringify(vivo)}.\n`
+    + '  Sin llamadores pasa en verde igual, y deja el borrado a un `import` de distancia.');
+
+  // 🔴 SIN LOS COMENTARIOS, y no es un detalle: la primera versión de este assert se cazó a sí
+  // misma — el comentario que explica la retirada nombra `method: "DELETE"`, así que salía rojo
+  // con el borrado ya quitado. Es la trampa de autorreferencia de la casa, y hoy ha mordido dos
+  // veces (aquí y en el guard del tope de arranque de SCRUM-617).
+  const vista = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/productsView.js'), 'utf8');
+  const vistaSinComentarios = vista.split('\n').filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l));
+
+  // ✅ CONTROL POSITIVO del filtro: si quitar comentarios se llevara medio fichero, el assert de
+  // abajo pasaría sobre la nada. Tiene que seguir viéndose la llamada que SÍ existe.
+  assert.ok(vistaSinComentarios.some((l) => /method:\s*["']POST["']/.test(l)),
+    '🔴 al quitar comentarios se ha perdido el código: lo de abajo mediría sobre un vacío.');
+
+  const enElFront = vistaSinComentarios.filter((l) => /method:\s*["']DELETE["']/.test(l));
+  assert.deepEqual(enElFront, [],
+    '🔴 el front vuelve a pedir un DELETE del catálogo, y ya no hay ruta que lo atienda.');
+});
+
+test('SCRUM-614 · los verbos de escritura que QUEDAN exigen admin EN EL ROUTER, no sólo en el registro', async () => {
+  // El registro dice quién PUEDE; el router es quien lo IMPIDE. Sacar la entrada de la lista sin
+  // poner el gate dejaría la ruta abierta y con la red de SCRUM-55 en rojo por «sin declarar»
+  // — pero al revés (gate puesto, entrada olvidada) el rojo es por «declarada dos veces», y
+  // ninguno de los dos dice qué mitad falta. Aquí se comprueba la mitad que cierra la puerta.
+  const capas = await capasDelRouter('modules/products/app/routes/products.routes.js');
+  // DELETE ya no está: se retiró con el borrado físico (test de arriba). Quedan dos.
+  for (const [metodo, ruta] of [['POST', '/'], ['PUT', '/:id']]) {
+    const capa = capas.find((c) => c.ruta === ruta && c.metodos.includes(metodo));
+    assert.ok(capa, `🔴 no se encontró ${metodo} ${ruta} en el router de productos`);
+    assert.equal(capa.gates.length > 0, true,
+      `🔴 ${metodo} /admin/products${ruta === '/' ? '' : ruta} no declara rol en el router.`);
+
+    // NEGATIVO: lo que no es admin, no pasa. Un rol vacío o inventado tampoco.
+    for (const rol of ['tecnico', 'operario', '', undefined, null, 'ADMIN', 'superadmin']) {
+      let estado = null; let siguio = false;
+      capa.gates[0]({ userRole: rol }, { status(c) { estado = c; return this; }, json() { return this; } }, () => { siguio = true; });
+      assert.equal(siguio, false, `🔴 el rol ${JSON.stringify(rol)} atraviesa el gate de ${metodo} ${ruta}`);
+      assert.equal(estado, 403, `🔴 el rol ${JSON.stringify(rol)} no recibe 403 en ${metodo} ${ruta}`);
+    }
+
+    // POSITIVO: un admin SÍ pasa. Cerrar de más y cerrar bien se ven igual en verde sin esto.
+    let estado = null; let siguio = false;
+    capa.gates[0]({ userRole: 'admin' }, { status(c) { estado = c; return this; }, json() { return this; } }, () => { siguio = true; });
+    assert.equal(siguio, true,
+      `🔴 ${metodo} ${ruta} tampoco deja pasar a un Admin: se ha cerrado a TODO EL MUNDO. ` +
+      'La ruta existe y no la puede usar nadie, que es peor que dejarla abierta porque no se nota.');
+    assert.equal(estado, null, `🔴 ${metodo} ${ruta} respondió ${estado} a un Admin en vez de seguir`);
   }
 });
 
