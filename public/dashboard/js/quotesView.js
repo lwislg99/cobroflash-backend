@@ -568,8 +568,24 @@ blockDelivery.appendChild(descWrapper);
     const validInput = document.createElement("input");
     validInput.type = "date";
     validInput.id = "quote-valid-until";
-    const defUntil = new Date(Date.now() + 30 * 86400000);
-    validInput.value = defUntil.toISOString().slice(0, 10);
+    // ── SCRUM-630: el valor por defecto, en DÍAS DE CALENDARIO ──────────────────────────
+    // Hasta hoy era `new Date(Date.now() + 30 * 86400000).toISOString().slice(0,10)`, y eso
+    // tiene dos costuras: `86400000` supone que TODOS los días duran 24 h —falso en los dos
+    // cambios de hora— y `toISOString()` formatea en UTC, así que en Madrid una hora local
+    // temprana cae en el día anterior. MEDIDO al romper SCRUM-605 a propósito: el 31 de marzo
+    // + 30 días daba el 29 de abril en vez del 30.
+    //
+    // 🔴 SE REUTILIZA la primitiva de los atajos (`quoteAtajosVencimiento.js`), NO se escribe
+    // una segunda: el defecto de familia de 617/620/625/627/629 es exactamente ese —existe una
+    // primitiva y alguien no la usa—. Así el valor por defecto y el atajo de «30» no pueden
+    // volver a dar días distintos: salen de la misma función.
+    //
+    // Si la primitiva no estuviera, el campo se queda SIN valor por defecto en vez de escribir
+    // una fecha calculada de otra manera. Es deliberado: un campo vacío es un fallo VISIBLE y
+    // una fecha mal calculada es uno SILENCIOSO, y este campo acaba impreso en un documento.
+    // El orden de carga que lo garantiza está fijado por `scrum630-default-en-dias.test.mjs`.
+    const atajosVencDefecto = (typeof window !== 'undefined' && window.QUOTE_ATAJOS_VENCIMIENTO) || null;
+    validInput.value = atajosVencDefecto ? atajosVencDefecto.fechaDeAtajo(30) : '';
     validInput.min = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
     const validNote = document.createElement("p");
     validNote.style.cssText = "font-size:12px;color:var(--muted);margin:4px 0 0";

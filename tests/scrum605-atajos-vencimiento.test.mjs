@@ -120,7 +120,15 @@ test('SCRUM-605 · ✅ el campo de siempre no se ha tocado: default +30 d, min +
   const vista = leer(VISTA);
   const trozos = [
     ['el rótulo aprobado', '    validLabel.textContent = "Válido hasta";'],
-    ['el valor por defecto (+30 d)', '    const defUntil = new Date(Date.now() + 30 * 86400000);'],
+    // 🔴 SCRUM-630 · ESTA LÍNEA CAMBIÓ, Y EL TRINQUETE HIZO SU TRABAJO. Aquí decía
+    // `const defUntil = new Date(Date.now() + 30 * 86400000);` y este test cayó al sustituirla.
+    // No se relaja: se actualiza CON LA DECISIÓN. Lo que el control negativo protege sigue
+    // intacto —el valor por defecto siguen siendo 30 días— y lo único que cambia es que ahora se
+    // calculan bien: por componentes locales, con la MISMA primitiva que los atajos, en vez de
+    // sumar 30 × 24 h y formatear en UTC. Medido: a hora normal no mueve ni una fecha en todo el
+    // año; de madrugada corregía 210 de 365 (ver `scrum630-default-en-dias.test.mjs`).
+    ['el valor por defecto (+30 d, ahora por la primitiva)',
+      '    validInput.value = atajosVencDefecto ? atajosVencDefecto.fechaDeAtajo(30) : \'\';'],
     ['el mínimo (+1 d)', '    validInput.min = new Date(Date.now() + 86400000).toISOString().slice(0, 10);'],
     ['la nota de caducidad que ve el cliente',
       '    validNote.textContent = "Pasada esta fecha el presupuesto caduca solo y el cliente verá \\"pide uno actualizado\\".";'],
