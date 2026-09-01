@@ -7,6 +7,7 @@ import QRCode from 'qrcode';
 import { invoicesDir } from '../../../../core/storage/dirs';
 import { cantidadDeLinea, calcVatBreakdown } from '../../domain/vat.service'; // SCRUM-504: una sola cantidad
 import { getLocale } from '../../../../core/i18n/locales';
+import { partirConceptoYDescripcion } from './conceptoLinea'; // SCRUM-603 (DOC-13)
 
 /**
  * Un importe, con sus dos decimales. SCRUM-604 (DOC-14).
@@ -245,10 +246,24 @@ export async function generateInvoicePdf(params: {
       const lineTotal = qty * price * (1 + taxR);
       const bg = i % 2 === 0 ? '#fff' : BG;
 
-      // Calcular altura de fila
+      // ── SCRUM-603 (DOC-13): el concepto y su DESCRIPCIÓN, separados ──────────────────
+      // La descripción viaja dentro del concepto, detrás de un salto de línea (lo compone el
+      // editor cuando el profesional marca «Incluir descripción en el PDF»). Hasta hoy esta
+      // tabla imprimía el concepto ENTERO de una vez: la descripción salía —el salto se
+      // respeta— pero con el MISMO tamaño y peso, así que no se leía como una descripción.
+      // El PDF de presupuesto ya la separaba; la partición es ahora la MISMA función para los
+      // dos (`conceptoLinea.ts`), no una segunda copia.
+      const { titulo: cTitulo, descripcion: cDesc } = partirConceptoYDescripcion(l.concept);
+      const tituloVisible = cTitulo || '—';
+
+      // Calcular altura de fila. La descripción se mide CON SU PROPIO tamaño: medirla con el
+      // del concepto dejaría la fila corta y el texto se pisaría con la de abajo.
       doc.font('Helvetica').fontSize(9);
-      const conceptH = doc.heightOfString(l.concept || '—', { width: WC });
-      const rowH = Math.max(20, conceptH + 8);
+      const conceptH = doc.heightOfString(tituloVisible, { width: WC });
+      doc.fontSize(8);
+      const descH = cDesc ? doc.heightOfString(cDesc, { width: WC }) : 0;
+      doc.fontSize(9);
+      const rowH = Math.max(20, conceptH + (cDesc ? 2 + descH : 0) + 8);
 
       // Salto de página si no cabe
       if (doc.y + rowH > PB - 80) { doc.addPage(); hLine(); }
@@ -258,7 +273,15 @@ export async function generateInvoicePdf(params: {
       doc.fillColor(BODY);
 
       doc.font('Helvetica').fontSize(9);
-      doc.text(l.concept || '—', XC, rowY + 4, { width: WC });
+      doc.text(tituloVisible, XC, rowY + 4, { width: WC });
+      if (cDesc) {
+        // Menor tamaño y tinta suave — el MISMO gris que el profesional ya ve en la vista
+        // previa del editor (`quotesView.js` la pinta con `#6b756f`), para que el documento no
+        // le enseñe otra cosa distinta de la que le prometió la pantalla.
+        doc.fontSize(8).fillColor(MUTED)
+          .text(cDesc, XC, rowY + 4 + conceptH + 2, { width: WC });
+        doc.fontSize(9).fillColor(BODY);
+      }
       doc.text(fmt(qty),              XQ,  rowY + 4, { width: WQ,  align: 'right' });
       doc.text(fmt(price),            XP,  rowY + 4, { width: WP,  align: 'right' });
       doc.text(taxR > 0 ? `${(taxR*100).toFixed(0)}%` : '—', XIV, rowY + 4, { width: WIV, align: 'right' });
@@ -591,9 +614,10 @@ params.lines.forEach((l) => {
 
   const concept = softBreakLongTokens(String(l.concept || '').trim());
 
-  const parts = concept.split('\n').map((s) => s.trim()).filter(Boolean);
-  const title = parts[0] || '';
-  const desc = parts.slice(1).join('\n'); // puede tener varias líneas
+  // SCRUM-603: la partición se COMPARTE con el bloque de la FACTURA. Aquí vivía LA copia
+  // original; al llevarla también a la factura habría habido DOS, y dos listas que se
+  // sincronizan a mano divergen (la familia de SCRUM-617/620/625/627).
+  const { titulo: title, descripcion: desc } = partirConceptoYDescripcion(concept);
 
   const qty = String(l.qty ?? '');
   const price = Number.isFinite(l.price) ? l.price.toFixed(2) : '';
