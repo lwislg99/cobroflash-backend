@@ -104,7 +104,19 @@ const R = analizar(RAIZ);
 // justo lo que prohíbe la cabecera de arriba.
 //
 // **Baja a 7 el commit que le ponga consumidor**, y ese commit es el que persista el parte.
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 8;
+//
+// 🔴 8 → 9 · 2-sep-2026 · SCRUM-655. SEGUNDA SUBIDA DEL MISMO DÍA, y las dos entradas se
+// conservan porque son dos módulos distintos esperando dos gates distintos. Entra
+// `src/modules/quotes/domain/revision.ts` — la revisión de un presupuesto (el «P2004226.1») y
+// cuál está vigente, construido y probado, SIN llamador por el mismo tipo de gate: `Quote` tiene
+// `quoteNumber Int?` y NO tiene campo de revisión, y `prisma/schema.prisma` es del fundador. El
+// diff va preparado en `docs/master/SCRUM-655.md`.
+//
+// ⚠️ El número se RECUENTA al mezclar, no se suma: mi entrada decía «7 → 8» antes de mezclar y
+// main ya había subido a 8 por su cuenta. Los dos éramos «el octavo»; el censo dice cuántos hay.
+//
+// **Baja el commit que le ponga consumidor**, y hay DOS pendientes: el parte y la revisión.
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 9;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 

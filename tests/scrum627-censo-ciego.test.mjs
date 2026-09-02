@@ -165,7 +165,11 @@ const INVISIBLES = [
   // `_censo-aritmetica-iva.mjs`: el nombre de una propiedad ya no cuenta como mención; su VALOR
   // sí. Medido: era el único, y quitarlo no pierde ningún hallazgo real.
   // La entrada se anota en vez de borrarse a secas, para que la bajada no parezca una pérdida.
-  'src/modules/quotes/app/routes/quotes.routes.ts',
+  // ✅ 2-sep-2026 · SCRUM-655 · SALE `quotes.routes.ts`, y la bajada se anota en vez de borrarse
+  // a secas: `calcTierTotal` ERA una segunda copia de `calcTotal` con la misma aritmética escrita
+  // otra vez, y ahora DELEGA. Lo destapó el compilador al hacer `qty`/`price` opcionales para las
+  // cabeceras de apartado — la copia se habría quedado sumando `undefined` mientras la de `utils`
+  // ya sabía saltarse las cabeceras. Un arreglo sin anotar se deshace solo.
   'src/modules/system/app/routes/customerPortal.routes.ts',
 ];
 
