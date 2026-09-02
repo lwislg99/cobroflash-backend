@@ -261,10 +261,11 @@ test('SCRUM-286 · el reordenado NO reintroduce la cantidad inventada de SCRUM-2
   assert.deepEqual(vivos, [],
     '🔴 una lectura de input vuelve a caer a un número distinto de cero en quotesView.js:\n' +
     vivos.map((h) => `   · ${h.ruta}:${h.linea} — \`${h.sujeto} || ${h.reserva}\``).join('\n'));
-  // Suelo MEDIDO, no elegido: hoy `quotesView.js` tiene 92 lecturas de `.value`. El margen es
+  // Suelo MEDIDO, no elegido: hoy el DETECTOR cuenta 77 lecturas de `.value` (eran 92 antes de SCRUM-598, que
+  // retiró el campo del margen y sus lecturas: el número se RECUENTA, no se hereda). El margen es
   // para que un borrado legítimo no lo tumbe, no para que quepa un detector ciego.
-  assert.ok(c.lecturasDeValue >= 80,
-    `🔴 el detector solo vio ${c.lecturasDeValue} lecturas de \`.value\` (hoy hay 92): no está ` +
+  assert.ok(c.lecturasDeValue >= 77,
+    `🔴 el detector solo vio ${c.lecturasDeValue} lecturas de \`.value\` (hoy hay 77): no está ` +
     'mirando, y un «0 hallazgos» suyo no significaría nada.');
 });
 
