@@ -806,6 +806,11 @@ router.post('/:id/albaranes', async (req, res) => {
       lineas = v.lineas;
     }
     const notas = req.body?.notas !== undefined ? String(req.body.notas || '').slice(0, 2000) || null : null;
+    // SCRUM-593 (DOC-03): el texto de cabecera se lee EXACTAMENTE igual que `notas`, su campo
+    // hermano del mismo documento — mismo tope, misma regla de vacío→NULL. Dos formas de leer
+    // el mismo tipo de campo acaban divergiendo (es la lección de SCRUM-424 con `lugarEntrega`).
+    const docHeaderText = req.body?.docHeaderText !== undefined
+      ? String(req.body.docHeaderText || '').slice(0, 2000) || null : null;
 
     // SCRUM-424 · la fecha de entrega, con el MISMO criterio que el PATCH: admite vaciarse
     // (undefined o '' -> null, el documento puede no tenerla) y una ilegible NO se guarda como
@@ -864,6 +869,9 @@ router.post('/:id/albaranes', async (req, res) => {
           modoValoracion,
           lineas,
           notas,
+          // SCRUM-593 (DOC-03): si el PATCH lo guarda y el create no, lo que el profesional
+          // teclea al crear se pierde EN SILENCIO — el defecto entero de SCRUM-424.
+          docHeaderText,
           // ── SCRUM-424 · LO QUE SE ESCRIBE AL CREAR SE PERDÍA EN SILENCIO ──────────────────
           //
           // El PATCH guarda `lugarEntrega` y `fechaEntrega` (albaranes.routes.ts:474-486) y este

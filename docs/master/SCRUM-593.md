@@ -204,3 +204,115 @@ consume nadie. Ahora dice *«que los consumirá en la fase ③»*.
 persigue aquí: necesita decisión del fundador, y la medida que decide es plantar una fila
 reconocible **desde la suite** y ver si aparece en esa base — si aparece es infraestructura, si no
 es documentación.
+
+---
+
+# ✅ FASE ③ · ESQUEMA + CABLEADO + TESTS (2-sep-2026)
+
+**Medido contra:** `origin/main` = `45a2474ce1816f6f5b6def92b5d2b1af59677082` · 2026-09-02T13:32:00Z
+
+## Producción, con su procedencia
+
+El fundador aplicó el `ALTER` sobre la base de producción (host `autorack`) el 2-sep y verificó con
+una consulta que **lleva su propio control positivo dentro**: pidió las tres columnas nuevas **y**
+`quotes.valid_until` + `albaranes.notas`. Devolvió **5 filas**. Las dos de control demuestran que la
+consulta estaba mirando esa base — sin ellas, un cero habría significado «no se pudo comprobar» y se
+habría leído como «faltan».
+
+Las **tres** bases la tienen, así que `schemaDrift` (esperado ⊆ real) ya no impide arrancar.
+
+### 🔴 Lo que la consulta del fundador NO preguntó
+
+**No preguntó por `albaranes.doc_footer_text`.** El suelo asimétrico está comprobado en las dos
+bases alcanzables y **no en producción**. Queda pendiente y se dice, porque comprobar una ausencia
+es lo único que separa «el pie se reutiliza» de una intención escrita en un comentario.
+
+La consulta está escrita y lista para pegar en la consola de producción:
+**`docs/sql/scrum-593-verificar-suelo-asimetrico.sql`**. Vive en fichero APARTE del de la migración
+y no por orden: el aplicador de la casa rechaza un `SELECT` —su lista es blanca—, así que dejarla
+dentro habría vuelto INAPLICABLE el fichero del `ALTER`. Lo cazó el propio ensayo. Lleva escrito
+cómo se interpreta, incluido el caso que se lee al revés: si faltan las DOS columnas de control, la
+ausencia de `doc_footer_text` no significa «no está» sino «no se vio nada».
+
+## El esquema
+
+Tres campos, con **`@map` explícito**: `quotes` mezcla convenciones y sin él Prisma habría buscado
+una columna `docHeaderText` que no existe. Nullable y sin default. Eso está **probado**, no supuesto:
+quitar el `@map` tumba los tres tests de viaje (tabla de rojos, abajo).
+
+**Preview offline ejecutado** (`preview-migracion.mjs --desde`, control positivo: 25 tablas): devuelve
+exactamente los tres `ADD COLUMN` ya aplicados, con **veredicto aditivo — ni DROP, ni RENAME, ni
+TRUNCATE, ni DELETE, ni SET NOT NULL.**
+
+## El cableado, y la puerta que faltaba
+
+| Dónde | Qué |
+|---|---|
+| `CreateQuoteSchema` | `nullable` **y** `optional`: omitido = «este cliente no manda el campo», `null` = «lo mandó vacío». Sin `nullable`, vaciar un texto ya escrito sería un 400 |
+| `quotes.routes.ts` · crear | se guarda en la fila |
+| `quotes.routes.ts` · PDF al crear | se pasa **desde la fila**, no desde el body |
+| `quotes.routes.ts` · PDF al aceptar con firma | idem |
+| `quotesAdmin.routes.ts` · PDF del panel | idem |
+| `albaranes.routes.ts` · PATCH | `docHeaderText`, tratado **exactamente** como `notas` |
+| `albaran.service.ts` · PDF | se pasa la cabecera; el pie sigue siendo `notas` |
+
+**🔴 EL DEFECTO QUE ESTO EVITA, Y QUE NO SE VE EN UN TEST DE PDF.** El mismo presupuesto se genera
+por **tres** puertas. Si una se olvidara de los dos textos, **aceptar un presupuesto le borraría los
+bloques del papel**: sin tocar la base, sin error, con la fila intacta, y justo en el momento en que
+el cliente firma. Un test que llama a `generateQuotePdf` directamente no lo ve nunca — le pasa lo que
+quiere. Lo que hay que mirar es **quién la llama y con qué**, y eso es una pregunta de árbol.
+
+**Tope de 2000** en los dos, el mismo que `Albaran.notas` —el campo hermano del mismo documento—.
+
+🕳️ **Asimetría declarada:** en el presupuesto **rechaza** (zod `.max`) y en el albarán **recorta**
+(`.slice`, como su hermano). El límite es el mismo; la forma de fallar, no. No se unificó porque la
+ruta del albarán no valida con zod, y añadirle un 400 nuevo tropieza con el trinquete de SCRUM-275,
+que cuenta las respuestas públicas sin texto humano.
+
+## Los tests, y qué prueba cada uno
+
+| Fichero | Tramo | Gateado |
+|---|---|---|
+| `scrum593-cabecera-y-pie-del-documento` | el PDF pinta, en su sitio, y multilínea | no |
+| `scrum593b-superficie-texto-del-documento` | la pieza de pantalla: montar y **releer** | no |
+| `scrum593c-todas-las-puertas-del-documento` | **las tres puertas** pasan los dos textos (AST) | no |
+| `scrum593d-viaje-completo-del-texto` | **base real**: se escribe → se guarda → se relee → sale | `QA_DB_TEST=1` |
+
+El tramo estructural **no** está gateado a propósito: una red que sólo funciona cuando alguien
+recuerda exportar una variable no es una red.
+
+En `scrum593d` el PDF **no** se genera con el objeto recién escrito: se hace un `findUnique` NUEVO y
+el documento se pinta con lo que la base devuelve. Con el objeto en mano, el test pasaría aunque la
+columna no existiera.
+
+### Los rojos, probados rompiendo el mecanismo
+
+| Rotura | Qué cayó |
+|---|---|
+| quitar el `@map` de `docHeaderText` | los **3** tests de viaje; el suelo asimétrico se quedó verde **con razón** — mira el catálogo, no el mapeo |
+| la puerta del panel deja de pasar los textos | **sólo** «LAS TRES puertas pasan los DOS textos» |
+| el lector de pantalla finge haber leído | los 2 suelos del lector, y sólo ésos |
+| `montar` olvida el pie | 5, incluido su propio control negativo |
+| `leer` colapsa los saltos | exactamente 2 |
+| **control negativo** · `rows` de 3 a 5 | **nada**, que es lo que debía pasar |
+
+## 🛑 PARA · LA SUPERFICIE SIGUE SIN SER ALCANZABLE, Y NO SE FUERZA
+
+Montar la pieza en el formulario exige `public/dashboard/js/quotesView.js`. **Medido hoy:**
+`origin/scrum-598-quitar-margen-del-documento` **NO está mezclada en main** y toca ese fichero en
+**175 líneas**. La instrucción era literal: *si al llegar sigue dentro, PARA y dímelo antes de tocar
+el fichero.* Sigue dentro. No se toca.
+
+**Lo que eso significa, sin adorno:** hoy los dos textos se guardan, viajan y se imprimen por las
+tres puertas — pero **ningún formulario los ofrece todavía**. El ticket **no cierra** hasta que la
+pieza esté montada; es el defecto nº 2 de la casa y no se disimula.
+
+Lo que sí queda hecho es que el día que se monte, el consumidor sólo tiene que llamar a
+`textoDelDocumentoMontar` y `textoDelDocumentoLeer`: la dependencia de carga ya está declarada en
+`DEPENDENCIAS_DE_CARGA` y el camino de vuelta ya tiene su suelo.
+
+## La factura sigue fuera, y ahora lo vigila un test
+
+`scrum593c` comprueba que `src/lib/invoicing.ts` **no** nombra estos campos, con suelo (que el
+fichero se leyó de verdad y contiene `ensureInvoicePdf`). Es SCRUM-665: `ensureInvoicePdf` regenera
+el PDF con el código de hoy, así que un bloque nuevo cambiaría **facturas ya emitidas** — regla 29.

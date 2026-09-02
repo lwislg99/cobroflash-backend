@@ -36,3 +36,4 @@ ALTER TABLE "quotes"
 
 ALTER TABLE "albaranes"
   ADD COLUMN IF NOT EXISTS "doc_header_text" TEXT;
+

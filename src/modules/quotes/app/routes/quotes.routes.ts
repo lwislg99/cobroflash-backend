@@ -211,8 +211,7 @@ router.post('/create', async (req, res) => {
         },
         customer: { name: customer.name, phone: customer.phone, email: customer.email, legalName: (customer as any).legalName, taxId: (customer as any).taxId }, // A20.4
         docFields: ((quote as any).docFields as any) ?? null, // A20.4
-        // SCRUM-593 (DOC-03): los dos textos libres, leídos de la FILA. Van desde la fila y no
-        // desde el body a propósito: el documento tiene que decir lo que quedó GUARDADO.
+        // SCRUM-593 (DOC-03): de la FILA, no del body: el papel dice lo que quedó GUARDADO.
         docHeaderText: (quote as any).docHeaderText ?? null,
         docFooterText: (quote as any).docFooterText ?? null,
         currency: quote.currency,
@@ -547,8 +546,7 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
             },
             customer: { name: customer.name, phone: customer.phone, email: customer.email, legalName: (customer as any).legalName, taxId: (customer as any).taxId }, // A20.4
         docFields: ((quote as any).docFields as any) ?? null, // A20.4
-            // SCRUM-593 (DOC-03): también al REGENERAR con firma. Si faltara aquí, aceptar un
-            // presupuesto le borraría los dos bloques del papel — y sin tocar la base.
+            // SCRUM-593 (DOC-03): también al REGENERAR con firma (el porqué, en scrum593c).
             docHeaderText: (quote as any).docHeaderText ?? null,
             docFooterText: (quote as any).docFooterText ?? null,
             currency: quote.currency,
