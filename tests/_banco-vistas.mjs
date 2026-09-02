@@ -210,6 +210,12 @@ export function nodo(tag, reg) {
     // no quita**: el test pasaría o fallaría por motivos que no son los del producto. Es la clase
     // de banco infiel que advierte la cabecera de este fichero, y por eso se corrige aquí en vez
     // de rodearlo desde el test.
+    // SCRUM-609 · `parentNode`. No existía, y por eso `productsView` REVENTABA al montarse en
+    // cuanto una vista hizo `x.parentNode.insertBefore(...)` — que es DOM de manual. El banco ya
+    // guardaba el padre en `_padre`; sólo le faltaba el nombre estándar. Se corrige AQUÍ y no se
+    // rodea desde la vista: la cabecera de este fichero lo dice — un banco infiel hace que el
+    // test mida el banco y no el producto.
+    get parentNode() { return n._padre; },
     get children() { return n.hijos; },
     get firstElementChild() { return n.hijos[0] || null; },
     get lastElementChild() { return n.hijos[n.hijos.length - 1] || null; },
@@ -297,6 +303,10 @@ export function nodo(tag, reg) {
         }
         const texto = (m[3] || '').trim();
         if (texto) h.textContent = texto;
+        // SCRUM-609 · el hijo nacido del marcado SABE QUIÉN ES SU PADRE. No lo sabía: el parser
+        // sólo lo metía en `hijos`, así que `h.parentNode` era null y cualquier vista que hiciera
+        // `x.parentNode.insertBefore(...)` —DOM de manual— reventaba al montarse.
+        h._padre = n;
         n.hijos.push(h);
       }
     },
@@ -415,7 +425,10 @@ export function scriptsDelDashboard(raiz) {
 //     grep -c "<script src=" public/dashboard/index.html   →   67
 // La flecha de esta entrada decía «64 → 65» cuando se escribió, antes de mezclar: se recalcula,
 // porque un valor DERIVADO no se hereda de un informe viejo.
-export const SCRIPTS_DEL_DASHBOARD = 67;
+// SCRUM-609 (2-sep-2026) · 67 → 68: entra `switchTipoArticulo.js`, el switch
+// Producto|Servicio del catálogo. Va ANTES de `productsView.js`, que lo consume.
+// RECONTADO sobre el índice, no sumado: grep -c "<script src=" → 68.
+export const SCRIPTS_DEL_DASHBOARD = 68;
 
 /**
  * Monta el dashboard como lo monta el navegador y devuelve el contexto vivo.

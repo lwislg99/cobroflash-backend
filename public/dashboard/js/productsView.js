@@ -58,6 +58,41 @@ if (typeof window !== 'undefined') {
   window.PV_MARCADOR_MICROCOPY = PV_MARCADOR_MICROCOPY;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-609 (CAT-01) · EL SWITCH Producto | Servicio, cableado en UN solo sitio.
+//
+// El alta y la edición son dos formularios distintos de este mismo fichero y ya divergieron
+// una vez (el IVA salió de uno antes que del otro). La regla de qué se ve en cada lado vive en
+// `switchTipoArticulo.js`; esto sólo la conecta al DOM de cada formulario.
+//
+// ⚠️ El switch se monta ANTES de los campos que oculta, porque es el que decide si se ven: un
+// control que aparece debajo de lo que gobierna se lee como si fuera un campo más.
+// ═══════════════════════════════════════════════════════════════════════════════════════
+function cablearTipoArticulo(raiz, filaCampos, valorInicial) {
+  const envoltorio = (nombre) => {
+    const entrada = raiz.querySelector(`[name="${nombre}"]`);
+    return entrada ? entrada.closest('.field') : null;
+  };
+  const campos = {
+    cost: envoltorio('cost'),
+    margen: envoltorio('margen'),
+    providerId: envoltorio('providerId'),
+  };
+  const sw = switchTipoArticulo({
+    valor: valorInicial,
+    alCambiar: (lado) => switchTipoArticulo.aplicarLado(lado, campos),
+  });
+  filaCampos.parentNode.insertBefore(sw.nodo, filaCampos);
+  // Al abrir: el lado guardado manda. Es la razón por la que este ticket paró hasta tener
+  // columna — un switch sin dónde guardarse olvida lo que elegiste en cuanto recargas.
+  switchTipoArticulo.aplicarLado(sw.leer(), campos);
+  // Se expone para que quien reescriba el valor pueda REAPLICAR: `escribir()` sólo marca el
+  // radio; sin esto el modal enseñaría el lado nuevo con los campos del anterior — el switch
+  // PARECERÍA funcionar, que es la peor forma de no funcionar.
+  sw.aplicar = () => switchTipoArticulo.aplicarLado(sw.leer(), campos);
+  return sw;
+}
+
 function renderProductsView(container) {
     container.innerHTML = "";
   
@@ -171,6 +206,7 @@ function renderProductsView(container) {
         // --- edit modal (custom modal-overlay) ---
         let editOverlay = null;
         let _editing = null; // { merchantId, id }
+        let _editSwitch = null; // SCRUM-609: el switch del modal de edición, para leerlo al guardar
 
         function buildEditModal() {
           const ov = document.createElement('div');
@@ -203,6 +239,7 @@ function renderProductsView(container) {
             ov.querySelector('[name="price"]'),
             ov.querySelector('[name="margen"]'),
           );
+          _editSwitch = cablearTipoArticulo(ov, ov.querySelector('.quote-form-row'), null);
           ov.querySelector('#pf-edit-close').addEventListener('click', closeEditModal);
           ov.querySelector('#pf-edit-cancel').addEventListener('click', closeEditModal);
           ov.addEventListener('click', (e) => { if (e.target === ov) closeEditModal(); });
@@ -228,6 +265,10 @@ function renderProductsView(container) {
               // `updateProduct` sólo toca las claves presentes. Dejar de escribir ≠ borrar.
               cost: costRaw === '' ? null : Number(costRaw),
               providerId: providerRaw === '' ? null : Number(providerRaw),
+              // SCRUM-609 · el lado elegido. Viaja SIEMPRE (aunque sea null) porque el PUT
+              // sólo toca las claves presentes: si no viajara, no se podría volver a «sin
+              // clasificar» una vez declarado.
+              itemKind: _editSwitch ? _editSwitch.leer() : null,
             };
 
             const saveBtn = ov.querySelector('#pf-edit-save');
@@ -262,6 +303,19 @@ function renderProductsView(container) {
           const mg = window.margenCatalogo.margenDesde(it.cost, it.price);
           body.querySelector('[name="margen"]').value = mg === null ? '' : String(mg);
           body.querySelector('[name="description"]').value = it.description || '';
+
+          // SCRUM-609 · EL LADO GUARDADO MANDA AL ABRIR, y esto es lo que hace que el switch
+          // sirva de algo: uno que no lee lo guardado OLVIDA lo que elegiste en cuanto
+          // recargas, y eso es peor que no tenerlo. Es la razón por la que este ticket paró
+          // hasta tener columna.
+          //
+          // Se escribe DESPUÉS de rellenar los campos a propósito: `aplicarLado` decide mirando
+          // si el campo tiene valor (invariante ② de CONT-01), así que necesita los valores ya
+          // puestos. Al revés escondería un coste que estaba a punto de aparecer.
+          if (_editSwitch) {
+            _editSwitch.escribir(it.itemKind || null);
+            _editSwitch.aplicar();
+          }
 
           const provSel = body.querySelector('[name="providerId"]');
           provSel.innerHTML = '<option value="">— Sin proveedor —</option>';
@@ -379,6 +433,10 @@ function renderProductsView(container) {
     const providerSelect = form.querySelector('select[name="providerId"]');
     const descI = form.querySelector('input[name="description"]');
     cablearMargen(costI, priceI, margenI);
+    // SCRUM-609 · el switch del ALTA. Nace SIN lado marcado: null = «nadie lo ha declarado»,
+    // y con null se ven todos los campos (invariante de CONT-01). Preseleccionar Producto
+    // aqui declararia por el profesional en cada alta, que es lo que la columna nullable evita.
+    const altaSwitch = cablearTipoArticulo(form, form.querySelector('.quote-form-row'), null);
     const createBtn = form.querySelector("#pf-create-product");
   
     // --- table ---
@@ -751,9 +809,11 @@ function renderProductsView(container) {
           description: description || null,
           price,
           // SCRUM-609: el alta DEJA DE ESCRIBIR el IVA. No se manda: no es que se mande null,
-          // es que el campo ya no existe. El  de lo que ya hay no se toca.
+          // es que el campo ya no existe. El `vat` de lo que ya hay no se toca.
           cost: costRaw === "" ? null : Number(costRaw),
           providerId: providerRaw === "" ? null : Number(providerRaw),
+          // SCRUM-609 · el lado elegido, o null si nadie tocó el switch.
+          itemKind: altaSwitch.leer(),
         };
   
         await createProduct(merchantId, payload);
