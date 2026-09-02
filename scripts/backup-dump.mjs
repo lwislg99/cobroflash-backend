@@ -109,6 +109,10 @@ const TABLES = [
   'quote_requests', 'customer_events', 'reconciliations', 'whatsapp_messages',
   'legal_acceptances', 'jobs', 'job_assignees', 'maintenance_plans', 'audit_log', 'attachments',
   'bot_sessions', 'albaranes', 'albaran_lineas_facturadas', 'email_messages',
+  // SCRUM-674: `partes_trabajo` (SCRUM-652) entra al volcado como cualquier otra tabla de
+  // negocio. Un parte firmado es la prueba de que el trabajo se hizo; que no esté en el dump
+  // se descubriria despues de restaurar, que es cuando ya no tiene arreglo.
+  'partes_trabajo',
 ];
 
 async function logicalDump(prisma) {
