@@ -441,3 +441,55 @@ aplicación. Un defecto mudo ni siquiera se puede reportar.
 `tests/scrum402-marcador-no-se-pinta.test.mjs` — la entrada se **borra**, no se pone a 0: un 0
 declararía que el fichero se vigila y tiene cero marcas, y lo cierto es que ya no hay nada que
 vigilar (precedente SCRUM-424/405).
+
+---
+
+## Addendum · Parte dictado (2-sep-2026) · **DOS APLICADAS, UNA PARADA**
+
+**Medido contra:** `origin/main` = `78f008cb1aa42678a2db06b1ac31193bf57d205a` · 2026-09-02T19:08:09+02:00
+
+**SCRUM-683** dejó tres frases propuestas. El fundador las **reescribió y aprobó** el 2-sep para que
+suenen como el resto de la casa: cortas, con **raya larga** y terminando **en la acción**. El patrón
+es el del aviso ya aprobado en `voiceInput.js:51` — «El dictado necesita conexión — escribe el
+trabajo y listo». «No hemos entendido» sonaba a excusa nuestra.
+
+| Ranura | Fichero · línea | Texto aprobado | Estado |
+|---|---|---|---|
+| `dictado_vacio` | `src/modules/jobs/domain/parteDictado.ts` · `AVISOS_DEL_DICTADO` | `No se ha entendido el dictado — vuelve a dictar o escríbelo a mano` | ✅ **APLICADA** |
+| `sin_lineas_reconocidas` | `src/modules/jobs/domain/parteDictado.ts` · `AVISOS_DEL_DICTADO` | `No se ha podido sacar ninguna línea — escríbelas tú` | ✅ **APLICADA** |
+| `cantidadesRetiradas` | — | `Faltan las cantidades — ponlas tú` | 🔴 **APROBADA, NO APLICADA** |
+
+**Van sin corchete de marcador y con la raya larga (`—`), un solo carácter.** Se copian literales, y
+hay un test que las compara con `===` (`tests/scrum683-parte-dictado.test.mjs`): un retoque «de
+paso» reabre una aprobación sin que nadie se entere.
+
+**Por qué las dos primeras suenan parecidas y NO lo son.** En `dictado_vacio` el dictado no se
+entendió, y **volver a dictar puede funcionar**. En `sin_lineas_reconocidas` el texto se entendió y
+aun así no salió ninguna línea: repetir no arregla nada, así que la única salida que sirve es
+escribirlas. Cada una nombra la acción que resuelve SU caso; darles la misma coletilla mandaría al
+técnico a repetir algo que ya se sabe que no va a funcionar.
+
+**El texto vive junto al código que lo produce** (`AVISOS_DEL_DICTADO`), no dentro de la pantalla:
+el módulo es dominio puro y **todavía no tiene pantalla**. Poniéndolo aquí, quien la construya lo
+**copia** en vez de volver a escribirlo — un texto aprobado que se reteclea deja de ser el aprobado.
+
+### 🔴 Por qué la tercera se para, y es una medición
+
+El fundador aprobó el **plural** dando por hecho que el aviso es un **resumen**, y pidió
+expresamente parar si se pinta **por línea**. Medido sobre el árbol:
+
+* `cantidadesRetiradas` es un **array con una entrada por línea**, y cada entrada lleva su propia
+  `descripcion` (`parteDictado.ts`, `interface CantidadRetirada`).
+* **Puede traer exactamente una.** Comprobado ejecutándolo, no razonándolo:
+
+  ```
+  sanearDictadoDelParte([{descripcion:'Disco duro', unds:1}], 'Sustituir el disco duro')
+    → cantidadesRetiradas.length = 1   ·   [{"descripcion":"Disco duro","propuesta":1}]
+  ```
+
+Con una sola línea, «Faltan las cantidades» **no concuerda ni siquiera como resumen**. Y hoy **nadie
+lo pinta**: el módulo no tiene consumidor, así que no hay pantalla donde ver la concordancia — que
+es justo lo que el fundador dijo que no aprueba a ciegas.
+
+**No se elige un singular por él y no se aplica el plural «a ver qué pasa».** Queda aquí, aprobado y
+sin aplicar, hasta que decida — y hay un aserto que cae si alguien lo aplica sin esa decisión.
