@@ -273,19 +273,33 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   assert.equal(tablas.length, 1, '🔴 la vista de presupuestos ya no monta su tabla.');
 });
 
-test('SCRUM-697 · CONTROL NEGATIVO: dos nodos DISTINTOS en el mismo padre siguen siendo dos', () => {
-  // El arreglo desengancha por IDENTIDAD. Si en vez de eso filtrase por parecido —misma
-  // etiqueta, misma clase— se llevaría por delante hermanos legítimos, y una lista de tres
-  // filas pasaría a tener una. Aquí se fija que no.
+test('SCRUM-697 · CONTROL NEGATIVO: mover un nodo NO se lleva a sus hermanos por delante', () => {
+  // El arreglo desengancha por IDENTIDAD. Si filtrase por parecido —misma etiqueta, misma
+  // clase— al mover un nodo se llevaría a sus hermanos iguales, y una lista de tres filas
+  // pasaría a tener una sin que nadie la tocara.
+  //
+  // ⚠️ ESTE TEST HUBO QUE ARREGLARLO: la primera versión ponía dos hermanos nuevos en un padre
+  // y comprobaba que seguían siendo dos. Pasaba SIEMPRE — `desengancha` sólo actúa cuando el
+  // nodo YA tiene padre, así que aquella versión no llegaba a ejecutar el filtro y la mutación
+  // «compara por parecido» no la tumbaba. Lo cazó la prueba de rojo: era una regla que siempre
+  // pasa. Ahora el nodo que se mueve viene CON padre y con un hermano igual al lado.
   const banco = cargarDashboard(RAIZ);
-  const p = banco.mk('div');
-  const uno = banco.mk('span');
-  const dos = banco.mk('span');
-  uno.className = 'igual';
-  dos.className = 'igual';
-  p.appendChild(uno);
-  p.appendChild(dos);
-  assert.deepEqual(p.hijos, [uno, dos],
-    '🔴 dos nodos distintos con la misma pinta se han fundido en uno: el desenganche está '
-    + 'comparando por parecido y no por identidad.');
+  const viejo = banco.mk('div');
+  const nuevo = banco.mk('div');
+  const seMueve = banco.mk('span');
+  const seQueda = banco.mk('span');
+  seMueve.className = 'igual';
+  seQueda.className = 'igual';
+  viejo.appendChild(seMueve);
+  viejo.appendChild(seQueda);
+  assert.deepEqual(viejo.hijos, [seMueve, seQueda],
+    '🔴 SUELO: los dos hermanos no llegan a estar juntos, así que mover uno no probaría nada.');
+
+  nuevo.appendChild(seMueve);
+  assert.deepEqual(nuevo.hijos, [seMueve], '🔴 el nodo movido no ha llegado a su nuevo padre.');
+  assert.deepEqual(viejo.hijos, [seQueda],
+    '🔴 al mover un nodo ha desaparecido también su HERMANO, que nadie tocó: el desenganche '
+    + 'está comparando por parecido y no por identidad.');
+  assert.equal(seQueda.parentNode, viejo,
+    '🔴 el hermano que se queda ha perdido a su padre.');
 });
