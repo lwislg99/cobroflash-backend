@@ -4,7 +4,7 @@
 
 **Medido contra:** `origin/main` = `f803ec1e4ba189041a34d017fbf890081331ce45` · 2026-09-02T22:10:48+01:00
 
-**Tanda:** 4764 tests, 4681 pass, **0 fail**, 83 skipped — medida DESPUÉS del último cambio, `ci.yml` incluido. Repetida: idéntica a la de antes del cambio, como debía ser (una condición de CI no corre en la tanda). Lo único posterior es esta línea.
+**Tanda:** 4783 tests, 4699 pass, **0 fail**, 84 skipped — medida DESPUÉS del último cambio, con `main` dentro (entraron SCRUM-672 y 692) y el conflicto de `ci.yml` ya resuelto. Lo único posterior es esta línea.
 
 ---
 
@@ -159,6 +159,81 @@ siempre.
 2. **`retention-days: 7`: es histórico CORTO, no eterno.** Sirve para mirar unos días atrás cuando el
    total baje. **No** reconstruye el pasado — el total real de los commits viejos sigue sin ser
    recuperable, porque nadie lo guardó.
+
+## Mezclado `main`: el conflicto de `ci.yml` era de SIGNIFICADO
+
+Mientras esto se medía, **SCRUM-672 entró en `main`** (con 692 detrás). Al mezclar, `ci.yml` chocó
+—y no en una línea suelta: los dos lados habían escrito **cosas distintas y las dos buenas** en el
+mismo sitio.
+
+| Lado | Qué traía | Qué se hizo |
+|---|---|---|
+| `main` | el paso `¿Ha perdido tests la tanda?` con su bloque de SCRUM-672 | **se conserva entero** (19 líneas) |
+| `main` | el comentario viejo del paso de subida: *«Se sube SIEMPRE que haya rojo»* | **se BORRA**: este ticket lo dejó falso |
+| esta rama | el comentario reescrito del paso de subida | **se conserva** (15 líneas) |
+
+Un comentario que miente sobre el paso que tiene debajo es peor que no tenerlo. Y no se pierde nada
+del viejo: su motivo —*un diagnóstico que hay que pedir a mano llega un día tarde*— ya estaba
+recogido en el nuevo.
+
+Se resolvió **extrayendo los bloques del propio fichero conflictado**, no retranscribiéndolos, y con
+controles que abortan si algún trozo no es lo que se dice que es (que el bloque de 672 lleve su paso
+y su `if: always()`, que el mío lleve el hueco declarado, que lo borrado sean exactamente 2 líneas).
+
+### 🔴 De qué lado vino el `if: always()` del paso de subida — comprobado, no supuesto
+
+Aparecía **fuera** del conflicto, y eso invita a dar por hecho que ya estaba en `main`. **No estaba.**
+Medido en las etapas del merge:
+
+    :2 (nuestro)  →  if: always()
+    :3 (main)     →  if: failure()
+
+Base `failure`, nuestro `always`, suyo `failure`: git resolvió esa línea **a nuestro favor y sin
+conflicto**, porque sólo un lado la cambió. Salió de esta rama.
+
+### ① El workflow parsea — y sin bajar un parser
+
+*«Un workflow que no parsea no falla: NO CORRE»* (`ci.yml:311`). Un YAML roto aquí no da rojo, da
+silencio: el defecto del 672 un piso más arriba. No hay parser de YAML en el árbol y **no se baja
+uno** (`npx` se trae otro CLI de la red en silencio; incidente del 5-ago-2026).
+
+La comprobación es falsable: **quitando líneas en blanco y comentarios, este fichero y el de `main`
+tienen 131 líneas de código cada uno y difiere EXACTAMENTE UNA**, la que se cambió a propósito:
+
+    main:  "        if: failure()"
+    mía :  "        if: always()"
+
+`main` corre hoy en CI, y un comentario no cambia el árbol sintáctico: mismas líneas de código, mismo
+orden, misma indentación ⇒ mismo parse. Además: **0 tabuladores** y **0 marcadores de conflicto**.
+
+### Las demás comprobaciones, con su número
+
+| # | Comprobación | Resultado |
+|---|---|---|
+| ② | los cinco guards que leen `ci.yml` | **76/76**, 0 fail |
+| ③ | paso `¿Ha perdido tests la tanda?` | **1 sola vez**, con `if: always()` |
+| ④ | paso `Guardar el TAP completo` | **1 sola vez**, con `if: always()`, comentario nuevo, **0** apariciones de «siempre que haya rojo» |
+| ⑤ | `guards-visuales`, `vigia-despliegue`, `constancia-del-alter` | los tres presentes; los dos últimos conservan su `continue-on-error: true`, **sin tocar** |
+
+### ⑥ 🔴 El suelo, contra el `main` de ahora
+
+```
+[suelo de la tanda] ✅ suelo 4766 · total actual 4783 · margen 17
+```
+
+**No canta.** Se dejó en 4766 con margen 0 —el borde exacto, y pasa: es un mínimo, no una igualdad—
+y con 672 y 692 dentro sobran **17**. **No se sube aquí**, y no hace falta para cerrar: queda el
+número dicho para quien lo suba.
+
+### El censo de EOL cazó algo, y no era el contenido
+
+La primera tanda tras resolver dio **2 rojos** en `scrum480-fin-de-linea`:
+
+    🔴 CIEGO: cabecera inesperada «:.github/workflows/ci.yml missing»
+
+El conflicto estaba resuelto **en disco pero no en el índice**, así que no había etapa 0 y el censo
+**no pudo leer el blob**. No dijo «limpio»: dijo que **no supo mirar** — que es justo lo que se le
+pide a un guard. Marcado como resuelto (`git add`), 10/10.
 
 ## 🕳️ Huecos y lo que NO se ha tocado
 
