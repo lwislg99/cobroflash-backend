@@ -4,7 +4,7 @@
 
 **Medido contra:** `origin/main` = `bdce57dc9c0eb6604ec7786cee2d2421fad8d554` · 2026-09-02T21:37:39+01:00
 
-**Tanda:** 4741 tests, 4658 pass, 0 fail, 83 skipped (los 83 declaran su motivo) — medida DESPUES del ultimo cambio, entrada incluida.
+**Tanda:** 4764 tests, 4681 pass, 0 fail, 83 skipped (los 83 declaran su motivo) — medida DESPUES del ultimo cambio, entrada incluida, y repetida tras mezclar main (antes daba 4741/4658/0).
 
 ---
 
