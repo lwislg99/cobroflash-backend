@@ -36,7 +36,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { createRequire } from 'node:module';
 // SCRUM-670 · el ÚNICO sitio del repo donde se lee un `<script>` de un marcado.
-import { scriptsDeLaPagina, rutaDelDashboard } from './_scripts-de-la-pagina.mjs';
+import { scriptsDeLaPagina, rutaDelDashboard, hojasDeLaPagina } from './_scripts-de-la-pagina.mjs';
 const require = createRequire(import.meta.url);
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -358,12 +358,18 @@ export function scriptsDelDashboard(raiz) {
 // (SCRUM-451, 444, 634): **lo que no se sabe resolver se ANOTA, no se contesta**.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-/** Las hojas de estilo LOCALES que declara el índice. Las remotas (fuentes) se ignoran. */
+/**
+ * Las hojas de estilo LOCALES que declara el índice. Las remotas (fuentes) se ignoran.
+ *
+ * SCRUM-676 · la regex que vivía aquí exigía `rel="stylesheet"` ANTES de `href` y sólo con
+ * comillas dobles. Medido: no veía la hoja remota del índice —que lleva `href` primero— ni
+ * habría visto ninguna con comillas simples, y contaba las COMENTADAS. Ahora deriva del
+ * extractor único, que es el que sabe todo eso. Sobre el índice real devuelve lo mismo que
+ * antes: eso es el control negativo del cambio, no la prueba de que la regex vieja valiera.
+ */
 export function hojasDelDashboard(raiz) {
   const html = fs.readFileSync(path.join(raiz, 'public/dashboard/index.html'), 'utf8');
-  const hrefs = [...html.matchAll(/<link[^>]*rel="stylesheet"[^>]*href="([^"]+)"/g)].map((m) => m[1]);
-  return hrefs
-    .filter((h) => !/^https?:/.test(h))
+  return hojasDeLaPagina(html).locales
     .map((h) => (h.startsWith('/') ? path.join(raiz, 'public', h.slice(1)) : path.join(raiz, 'public/dashboard', h.replace(/^\.\//, ''))));
 }
 
