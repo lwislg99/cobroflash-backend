@@ -188,3 +188,188 @@ trabajos.
 
 `operarioId` (autoría, no ejecución) · el parte de trabajo · el presupuesto · facturación · el
 camino de emisión · los tests de SCRUM-467 (**0 líneas modificadas**, verificado en cada paso).
+
+---
+
+## APÉNDICE (2-sep-2026) · El DDL que le falta a producción para arrancar
+
+**Fecha:** 2-sep-2026 · **Carril:** incidente de producción · **Alcance:** SCRUM-650 (`job_assignees`) y SCRUM-574 (`customers.contact_kind`)
+
+**Medido contra:** `origin/main` = `283143b4701f75835888e82c25f41ad34e916655` · 2026-09-02T14:35:00Z
+
+> **NO SE APLICA NADA EN PRODUCCIÓN DESDE AQUÍ** (regla 3). Este ticket genera y verifica; el
+> fundador ejecuta. `schemaDrift.ts` **no se toca, no se relaja y no se le pone excepción**: la
+> alternativa a no arrancar es reventar delante de un cliente.
+
+---
+
+## 1 · PASO 0
+
+### ENTRADA
+
+`yaqu.app` sirve hoy el código del **PR #862** (`010c05d3`, 24-ago-2026 13:27). Todo lo mergeado
+después está en `main` y **no lo ha visto ningún profesional**. La entrada del usuario existe y
+está congelada nueve días.
+
+### MECANISMO · existe y está haciendo su trabajo
+
+`src/core/db/schemaDrift.ts` para el arranque cuando la base no tiene lo que el código nombra.
+El healthcheck de `/health` no responde nunca, Railway reintenta 11 veces y declara «1/1 replicas
+never became healthy». **No hay nada que arreglar en el mecanismo: hay que darle a la base lo que
+el código nombra.**
+
+---
+
+## 2 · Qué falta, medido del ESQUEMA y no de la cabeza
+
+`node scripts/preview-migracion.mjs --desde <schema del PR #862>` — control positivo dentro
+(26 tablas), **veredicto aditivo: ni DROP, ni RENAME, ni TRUNCATE, ni DELETE, ni SET NOT NULL**.
+
+El schema desplegado se extrajo del propio commit y se comprobó que efectivamente **no contiene**
+ninguna de las dos (1026 líneas, 25 modelos, 0 apariciones de `job_assignees` y de `contact_kind`).
+
+El diff propone **cuatro** cosas; producción sólo se queja de **dos**:
+
+| lo que propone el diff | ¿lo pide Railway? | por qué |
+| --- | --- | --- |
+| `merchants.timezone` | no | **ya está** en la base |
+| `products.item_kind` | no | **ya está** en la base |
+| `customers.contact_kind` | **sí** | falta |
+| tabla `job_assignees` | **sí** | falta |
+
+🔴 **Esa diferencia no se supone, se comprueba:** `mensajeDeDeriva` construye la lista con un
+`join(', ')` sobre **todas** las que faltan y la acompaña de su contador — no trunca. Los
+contadores del log dicen `(1)` y `(1)`, así que la base tiene exactamente un hueco de cada. El
+diff contra el commit desplegado no es el diff contra la base real: **la base ha recibido parches
+manuales**, y por eso el DDL cubre sólo los dos huecos reales.
+
+### Mapeo físico, contrastado (no supuesto)
+
+`quotes` mezcla convenciones (`valid_until` con `@map`, `"createdAt"` sin él), así que los nombres
+se contrastan contra `docs/sql/deriva-prod.sql`, que es **generado** desde el esquema:
+
+* `customers.contact_kind` — línea 122. ✔
+* `job_assignees.assigned_at` · `job_id` · `team_member_id` — líneas 206-208. ✔
+
+> **Corrección a la premisa del carril:** se me dijo que `job_assignees` *no* aparecía en
+> `deriva-prod.sql`. **Sí aparece**, con sus tres columnas. El fichero se regeneró después de que
+> entrara la tabla.
+
+Y los tipos de las claves ajenas, del esquema: `Job.id` y `TeamMember.id` son `Int` →
+`jobs.id` y `team_members.id` son `INTEGER`; tablas físicas `jobs` y `team_members`.
+
+---
+
+## 3 · Cuándo entró cada una — es un censo, no una intuición
+
+| qué | commit | fecha | dónde estaba |
+| --- | --- | --- | --- |
+| desplegado hoy | `010c05d3` (PR #862) | **24-ago-2026 13:27** | — |
+| `customers.contact_kind` | `b47e8341` (SCRUM-574) | **24-ago-2026 13:01** | mergeado a `main` en el PR **#861**, el merge **siguiente** al desplegado |
+| `job_assignees` | `2135dfeb` (SCRUM-650) | **2-sep-2026 13:03** | hoy |
+
+**Ahí está la explicación de por qué el primer despliegue posterior falló.** `contact_kind` se
+escribió 26 minutos *antes* del commit que hoy sirve producción, pero se mergeó *después*: el
+siguiente despliegue ya arrancaba contra una base sin esa columna. Y desde entonces cada intento
+ha fallado por lo mismo. `job_assignees` es de hoy y se suma al mismo bloqueo.
+
+---
+
+## 4 · 🔴 Las otras dos bases — el hallazgo que explica el verde
+
+Medido el 2-sep-2026, sólo lectura sobre `information_schema`, con control positivo:
+
+| | producción | `yaqu_dev_javier` | `railway` (staging) |
+| --- | :-: | :-: | :-: |
+| `customers.contact_kind` | ❌ **falta** | ✅ está | ✅ está |
+| `job_assignees` | ❌ falta | ❌ **falta** | ❌ **falta** |
+| `merchants.timezone` | ✅ está | ✅ está | ✅ está |
+| `products.item_kind` | ✅ está | ✅ está | ✅ está |
+| control `customers.name` | — | ✅ 1 | ✅ 1 |
+| control `quotes.valid_until` | — | ✅ 1 | ✅ 1 |
+
+**Dos lecturas, y son distintas:**
+
+* **`contact_kind` sólo falta en producción.** Ésta es la respuesta a «por qué la tanda pasa en
+  verde y producción no arranca»: dev y staging la recibieron y producción no. Nadie podía verlo
+  desde el repo, porque el único sitio donde el hueco existe es la base que nadie mira desde aquí.
+* **`job_assignees` falta en LAS TRES.** Entró hoy y no se ha aplicado a ninguna. **El problema no
+  es sólo de producción**: dev y staging también están derivadas, y los tests gateados por BD
+  (`npm run test:staging:gated`) fallarían contra staging hasta que se aplique.
+
+---
+
+## 5 · Los ficheros, y por qué van separados
+
+| fichero | qué hace |
+| --- | --- |
+| `docs/sql/scrum-574-customers-contact-kind.sql` | **nuevo** · la columna |
+| `docs/sql/scrum-650-job-assignees.sql` | ya existía · la tabla, el índice, la PK y las FK |
+| `docs/sql/verificacion-deriva-produccion.sql` | **nuevo** · la comprobación, SOLO LECTURA |
+
+🔴 **La verificación vive en un fichero APARTE y no es un descuido.** La lista blanca de
+`scripts/_clasificador-sql.mjs` **rechaza un `SELECT`** — es una lista blanca de formas aditivas y
+lo que no reconoce lo rechaza por defecto. Un fichero que mezcle el `ALTER` con su comprobación
+queda **inaplicable**. Ya pasó una vez; por eso se separan.
+
+Y por el mismo motivo **las claves ajenas van INLINE dentro del `CREATE TABLE`**: el clasificador
+acepta `CREATE TABLE`, `CREATE INDEX` y `ALTER TABLE … ADD COLUMN`, pero
+`ALTER TABLE … ADD CONSTRAINT` —que es como lo emite Prisma— cae en «acción no reconocida como
+aditiva». Inline, además, la tabla nace entera o no nace: **una tabla a medias es peor que
+ninguna**.
+
+### Una divergencia corregida de paso, con su motivo
+
+Prisma emite las FK con `ON UPDATE CASCADE`; el fichero de SCRUM-650 las tenía sin cláusula, o sea
+`ON UPDATE NO ACTION`. En la práctica da igual (`autoincrement()`, nadie actualiza un id), pero
+dejaría la base diciendo una cosa y el esquema otra — y **eso no lo caza nadie**: `schemaDrift.ts`
+y `deriva-prod.sql` sólo miran que existan tabla y columna, no tipos, defaults ni claves ajenas.
+Sería deriva silenciosa creada el mismo día que se arregla una. Se alinea sin riesgo porque la
+tabla **no existe todavía en ninguna base**.
+
+---
+
+## 6 · Evidencia
+
+**Ensayo previo** (`aplicar-sql-dev.mjs` sin `--go`): los dos ficheros pasan la lista blanca —
+`job_assignees` 2 sentencias (`CREATE TABLE`, `CREATE INDEX`), `contact_kind` 1
+(`ALTER TABLE … ADD COLUMN`).
+
+**El DDL se ejecutó de verdad**, contra `yaqu_dev_javier` (la única base a la que el aplicador
+puede apuntar: está atado por DESTINO, no por variable). La verificación leída del catálogo —no
+del mensaje de la herramienta—:
+
+| | antes | después |
+| --- | :-: | :-: |
+| `job_assignees_tabla` | 0 | **1** |
+| `job_assignees_columnas` | 0 | **3** |
+| `job_assignees_pk` | 0 | **1** |
+| `job_assignees_fks` | 0 | **2** |
+| `job_assignees_fks_cascade` | 0 | **2** |
+| `job_assignees_idx` | 0 | **1** |
+
+**La verificación se demostró capaz de dar los dos resultados en la MISMA ejecución** —
+`contact_kind` a 1 (está) mientras `job_assignees` estaba a 0 (falta)— y de distinguir base por
+base: después de aplicar a dev, staging seguía en 0. Un instrumento que sólo hubiera visto ceros no
+habría probado nada.
+
+**Re-ejecutable**: segunda pasada de los dos ficheros sobre la misma base → mismos números, sin
+duplicar ni fallar. Y `contact_kind` sobre una base que ya la tiene no hace nada.
+
+**Tanda completa** después del último cambio: **4494 tests · 4415 pass · 0 fail · 79 skipped**.
+Worktree limpio, Prisma regenerado y `dist/` reconstruido desde este worktree.
+
+---
+
+## 7 · Lo que NO se ha hecho, y por qué
+
+* **No se ha tocado producción.** Regla 3. Las sentencias están listas para pegar; ejecuta el
+  fundador.
+* **No se ha aplicado a `railway` (staging)**, aunque le falta `job_assignees`. Staging tiene
+  sistema de turnos y saltárselo sin necesidad interferiría con quien lo tenga tomado. Queda
+  declarado como pendiente: mientras no se aplique, los tests gateados por BD fallarían contra ella.
+* **No se ha tocado `schemaDrift.ts`** ni el healthcheck ni ninguna variable.
+* **No se incluyen `merchants.timezone` ni `products.item_kind`** en el DDL, porque el chequeo de
+  arranque —que no trunca— dice que ya están. Si el fundador quiere cinturón y tirantes, las dos
+  sentencias con `IF NOT EXISTS` son inocuas sobre una base que ya las tiene; pero se aplica lo
+  medido, no lo temido.
