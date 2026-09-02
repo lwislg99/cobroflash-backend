@@ -332,6 +332,16 @@ test('SCRUM-362 · CONTROL NEGATIVO: el escenario nuevo no añade COSTE al banco
   const normales = [];
   for (let i = 0; i < 3; i++) normales.push(await pasada(() => redNormal({ ok: true })));
 
+  // 🔴 TERCERA PATA, Y LA PUSO UN ROJO. Con solo dos —escenario nuevo contra red normal— una
+  // degradacion que encareciera A LOS DOS pasaba en VERDE: inyecte dos lecturas de mas «cuando
+  // hay red declarada» y las dos ramas subieron igual, asi que la comparacion seguia cuadrando.
+  // El montaje PELADO no declara red, asi que no se lo lleva, y la degradacion se ve.
+  //
+  // Y sigue sin ser un absoluto: si otra rama anade un `<script>` al dashboard, las TRES suben lo
+  // mismo y esto sigue verde, que es lo correcto — ese trabajo no encarece este banco.
+  const pelados = [];
+  for (let i = 0; i < 3; i++) pelados.push(await midiendoElDisco(async () => { montarAlmacen(RAIZ, {}); }));
+
   // SUELO: si el contador no ve NADA, lo de abajo compara dos ceros y no mide nada.
   assert.ok(nuevas[0] > 0,
     '🔴 el contador de disco no ha visto ni una operación, y el banco acaba de montar el '
@@ -345,6 +355,11 @@ test('SCRUM-362 · CONTROL NEGATIVO: el escenario nuevo no añade COSTE al banco
     `🔴 el escenario NUEVO cuesta ${nuevas[0]} operaciones de disco y el de siempre `
     + `${normales[0]}. Añade trabajo, y un banco que se nota en la tanda se desactiva — `
     + 'que es exactamente lo que este control negativo existe para impedir.');
+
+  assert.equal(nuevas[0], pelados[0],
+    `🔴 declarar una red al banco cuesta ${nuevas[0]} operaciones de disco y no declararla ${pelados[0]}. `
+    + 'El escenario se paga aunque no se use, y eso encarece TODAS las pruebas del banco a la vez '
+    + '— que es como un banco deja de correrse.');
 });
 
 // ═══ QUE EL ESCENARIO NUEVO SEA DISTINGUIBLE ══════════════════════════════════════════════
