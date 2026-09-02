@@ -97,13 +97,23 @@ test('SCRUM-662 · 🔴 EL CASO QUE SE ESCAPABA: mismo TAMAÑO, contenido distin
   // ticket. Éste es ese caso, y contra la función de verdad: una lista del MISMO tamaño con un
   // script cambiado por otro.
   const real = scriptsDelDashboard(RAIZ).map(nombreDeScript);
-  const mezclado = [...real.filter((n) => n !== 'api.js'), 'tiposDeIva.js'];
+
+  // ⚠️ El intruso NO se escribe a ojo. La primera versión usaba `tiposDeIva.js` —el script real
+  // que main añadió mientras se escribía este ticket— y el merge siguiente lo declaró: el intruso
+  // dejó de ser intruso y el test cayó por envejecimiento, no por un defecto. Ahora se COMPRUEBA
+  // que el nombre no exista antes de usarlo.
+  const INTRUSO = 'scriptQueNadieHaDeclaradoJamas.js';
+  assert.ok(!SCRIPTS_DEL_DASHBOARD.includes(INTRUSO),
+    `🔴 «${INTRUSO}» ha pasado a ser un script real: elige otro nombre para el intruso, o este `
+    + 'test estará comprobando que lo declarado no está declarado.');
+
+  const mezclado = [...real.filter((n) => n !== 'api.js'), INTRUSO];
 
   assert.equal(mezclado.length, real.length,
     '🔴 el vector no reproduce el caso: los dos lados tienen que tener el MISMO tamaño.');
 
   const c = contrastarScripts(mezclado);
-  assert.deepEqual(c.sobran, ['tiposDeIva.js'],
+  assert.deepEqual(c.sobran, [INTRUSO],
     '🔴 UN SCRIPT NO DECLARADO SE HA COLADO SIN QUE NADIE LO VEA, porque el total cuadraba.\n'
     + '  Es el fallo entero de SCRUM-662: dos ramas escribieron `= 69` por scripts distintos y el\n'
     + '  merge no vio conflicto. Si esto pasa en verde, el mecanismo ha vuelto a mirar la CUENTA.');

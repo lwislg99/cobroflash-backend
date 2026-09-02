@@ -136,7 +136,18 @@ const ESTRECHAMIENTOS = Object.freeze({
   'src/modules/jobs/domain/albaranAFactura.ts': 2,
   'src/modules/jobs/domain/recapitulativa.service.ts': 1,
   'src/modules/maintenance/domain/maintenance.service.ts': 1,
-  'src/modules/products/app/routes/products.routes.ts': 1,
+  // 🔴 SCRUM-646 (2-sep-2026) · BAJA A 0, Y SE ANOTA porque el trinquete manda anotarlo: «un
+  // arreglo sin anotar se deshace solo».
+  //
+  // El estrechamiento que había aquí construía las líneas de la PLANTILLA de presupuesto del
+  // catálogo por gremio, y una de sus propiedades era `tax: vat` — el tipo impositivo derivado
+  // del PAÍS del merchant. Al retirar ese cableado (que es el objeto de SCRUM-646) la línea de
+  // la plantilla deja de llevar impuesto, y el estrechamiento desaparece con él.
+  //
+  // NO se ha «arreglado el estrechamiento»: ha desaparecido su motivo. Si alguien vuelve a
+  // construir líneas ahí, tendrá que volver a declararlo — y este comentario le dirá que lo que
+  // NO puede volver es el `tax` derivado del país (lo impide el guard de SCRUM-646).
+  // 'src/modules/products/app/routes/products.routes.ts': 1,   ← retirado, no puesto a 0
   'src/modules/system/app/routes/invoicesAdmin.routes.ts': 1,
 });
 
