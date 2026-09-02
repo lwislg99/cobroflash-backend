@@ -1,6 +1,6 @@
 # SCRUM-666 · El banco de vistas ya mira el CSS externo — y dice cuándo no sabe mirar
 
-**Medido contra:** `origin/main` = `61c906171b08a90baa29c02666d9961fb75c132b` · 2026-09-02T12:35:08Z
+**Medido contra:** `origin/main` = `fdc98cf03e82be7952d5cefb692edc3eef2eaa63` · 2026-09-02T12:57:13Z  ·  (remedido tras mezclar main por segunda vez; la anterior fue `61c90617` · 2026-09-02T12:35:08Z)
 
 > Rama apilada sobre `scrum-660-iva-defecto-del-documento`, con `origin/main` mezclado dentro.
 > El hueco lo declaré yo al entregar 660; el instrumento que lo cierra vive en el mismo banco.
@@ -129,12 +129,53 @@ rojo era del fixture. Cambiado a una clase que no aparece en ninguna hoja.
 * **No verifiqué** otros caminos de apertura de la hoja de ajustes: el control sigue usando el
   chip. Sigue abierto, como en 660.
 
-## 6 · El conflicto de `SCRIPTS_DEL_DASHBOARD`, resuelto por RECUENTO
+## 6 · El conflicto de `SCRIPTS_DEL_DASHBOARD` — dos merges, y el segundo corrige la REGLA
 
-Mezclar `main` chocó en ese contador (67 en mi rama, 68 en main). **No se eligió un lado ni se
-sumaron**: se volvió a **contar sobre el índice ya mezclado** —`grep -c "<script src="` → **69**—,
-que es la regla que ese bloque lleva cinco conflictos repitiendo, y **se conservaron los dos
-comentarios**. La entrada duplicada de SCRUM-575 sigue intacta: es SCRUM-663.
+**Primer merge (sexta colisión).** Los números chocaron —67 en la rama, 68 en main—, así que el
+conflicto se veía. Se resolvió **contando sobre el índice ya mezclado** (`grep -c "<script src="`
+→ **69**), no eligiendo un lado ni sumando, y **se conservaron los dos comentarios**.
+
+**Segundo merge (séptima colisión, y de las SILENCIOSAS).** Al volver a mezclar `main`, los dos
+lados decían `69` —main llegó ahí con SCRUM-611 y esta rama no añade ningún `<script>`—, así que
+git dejó `export const SCRIPTS_DEL_DASHBOARD = 69;` **fuera de los marcadores** y sólo chocaron
+los comentarios. Medido sobre el índice ya mezclado, sin heredar de ningún lado:
+
+| medida | resultado |
+| --- | --- |
+| `grep -c "<script src=" public/dashboard/index.html` | **69** |
+| `grep -o "<script src="` (control: dos en una línea contarían distinto) | **69** |
+| duplicados en el índice | **0** |
+| los 69 ficheros existen en disco | **sí** |
+| orden | `tiposDeIva` 247 < `quotesView` 248 · `switchTipoArticulo` 250 y `margenCatalogo` 251 < `productsView` 252 |
+
+🔴 **Y aquí se corrige la regla, que es el hallazgo.** Los dos lados documentaban **el mismo
+script** (`tiposDeIva.js`, SCRUM-611): la rama con la flecha caduca «66 → 67», escrita antes de
+mezclar; main con la «68 → 69» ya recalculada y el orden verificado por línea. La regla que el
+fichero venía repitiendo —«se conservan los comentarios de los dos lados, cada uno documenta un
+script real»— **sólo vale cuando cada lado documenta un script DISTINTO**. Aplicarla aquí habría
+dejado **dos entradas para un solo script con flechas contradictorias**.
+
+Que es exactamente la corrupción que el fichero ya arrastra con **SCRUM-575 / `nifEspanol.js`**
+(«63 -> 64» y «64 → 65»). **Ahora se sabe cómo nació**: no por un descuido de quien resolvió aquel
+merge, sino por **aplicar correctamente una regla mal enunciada**. Es un dato sobre el diseño, no
+sobre nadie.
+
+La regla, enunciada bien y escrita ya en `tests/_banco-vistas.mjs`:
+
+* lados que documentan scripts **distintos** → se conservan los dos y se recuenta el valor;
+* lados que documentan el **mismo** script → se conserva **uno**, el de la flecha recalculada sobre
+  el árbol mezclado, y se descarta el caduco. No es elegir un lado por gusto: es tirar una entrada
+  que habla de un árbol que ya no existe.
+
+**La asimetría que hace que esto importe:** el número lo vigilan dos guards, así que un valor corto
+cae en la primera tanda —comprobado: con 68 declarado y 69 reales caen `guard-colisión` y el SUELO
+de SCRUM-417, los dos nombrando la cifra—. **Al registro no lo vigila nadie**, y el daño de esta
+clase de conflicto no es un número equivocado: es una entrada falsa que se lee durante meses.
+
+Con una **lista de nombres** en vez de un recuento este conflicto no existiría: `'tiposDeIva.js'`
+aparece una vez en cada lado, la unión de los dos conjuntos es trivialmente correcta, no hay
+flechas que recalcular, y una duplicación se ve porque el nombre sale dos veces. Es **SCRUM-663**,
+y esta séptima colisión es su séptima evidencia.
 
 ## Tests que introduce esta entrada
 
