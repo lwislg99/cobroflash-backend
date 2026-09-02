@@ -251,6 +251,21 @@ puede guardar es prometer.
 El estado vacio viejo mandaba ESPERAR a un presupuesto **teniendo al lado el boton para abrir uno**:
 la pantalla se contradecia a si misma. Eso ya no pasa.
 
+## 4-bis · 🔴 SCRUM-411 pidio QUITAR el export, y aqui esa es la respuesta equivocada
+
+El trinquete de huerfanos cazo `TIPOS_INTERVENCION` —hoy solo lo leen su propio modulo y su
+test— y propuso quitarle el `export`. **No se ha hecho, y merece quedar escrito por que.**
+
+El consumidor real es **SCRUM-652**, que se esta construyendo en otra sesion. Si encuentra la
+constante sin exportar, la salida facil es declarar su propia lista — que es EXACTAMENTE lo que
+el fundador prohibio: dos listas para el mismo hecho se separan, y entonces un parte afirma sobre
+un Trabajo una palabra que el Trabajo no admite.
+
+Asi que se DECLARA en `tests/_huerfanos-declarados.mjs` (categoria `VOCABULARIO_DEL_MODULO`), que
+es justo el caso para el que ese fichero existe: *«en una base viva se escribe un export antes que
+su consumidor constantemente»*. **La linea se borra el dia que SCRUM-652 lo consuma**, y entonces
+el propio guard avisa de que ya no es huerfano.
+
 ## 5 · Hallazgos de otros carriles (regla 9) — reportados, no tocados
 
 1. **`scrum642-tramos-del-arranque` es VERDE aislado y ROJO dentro de la suite.** No es mio

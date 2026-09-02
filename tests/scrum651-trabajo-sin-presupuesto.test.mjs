@@ -331,12 +331,14 @@ test('SCRUM-651 · 🔴 UNA sola fuente del vocabulario, no dos listas', () => {
   // palabra que el Trabajo no admite. Ya paso con un rotulo que vivia en dos ranuras.
   const raiz = RAIZ;
   const sospechosos = [];
+  const visitados = [];
   const anda = (dir) => {
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
       if (['node_modules', '.git', 'dist', 'docs'].includes(e.name)) continue;
       const abs = path.join(dir, e.name);
       if (e.isDirectory()) { anda(abs); continue; }
       if (!/\.(ts|mjs|js)$/.test(e.name)) continue;
+      visitados.push(path.relative(raiz, abs).split(path.sep).join('/'));
       const rel = path.relative(raiz, abs).split(path.sep).join('/');
       if (rel.endsWith('src/modules/jobs/domain/tipoIntervencion.ts')) continue;   // LA fuente
       if (rel === `tests/${path.basename(import.meta.filename)}`) continue;        // este test
@@ -354,10 +356,20 @@ test('SCRUM-651 · 🔴 UNA sola fuente del vocabulario, no dos listas', () => {
     + ' `src/modules/jobs/domain/tipoIntervencion.ts`, no se copia: dos listas para el mismo hecho'
     + ' se separan, y la que se quede corta hara que un documento afirme algo que el otro no admite.');
 
-  // SUELO: si el barrido no encuentra NI la propia fuente, no esta midiendo nada.
-  const fuente = fs.readFileSync(path.join(raiz, 'src/modules/jobs/domain/tipoIntervencion.ts'), 'utf8');
-  assert.ok(/REPARACION_ASISTENCIA/.test(fuente) && /INSTALACION/.test(fuente),
-    '🔴 el instrumento no encuentra el vocabulario ni en su propio fichero: el cero de arriba seria ciego.');
+  // ── SUELO DE CEGUERA, Y MIDE EL ALCANCE DEL BARRIDO, NO EL DATO ─────────────────────────
+  //
+  // 🔴 LA PRIMERA VERSION DE ESTE SUELO NO VALIA, y lo destapo un rojo: comprobaba que el
+  // vocabulario siguiera en su fichero, leyendolo APARTE con `readFileSync`. Al romper la
+  // recursion del barrido —que solo mirase la raiz— el guard seguia VERDE: «no hay segunda
+  // lista» pasaba a significar «no mire en ningun sitio», que es el cero ciego de siempre.
+  //
+  // Ahora se mide POR DONDE PASO. Si el barrido no llega hasta el propio vocabulario —que vive
+  // cuatro carpetas adentro—, no puede afirmar nada sobre el resto del arbol.
+  assert.ok(visitados.includes('src/modules/jobs/domain/tipoIntervencion.ts'),
+    `🔴 EL BARRIDO NO HA LLEGADO NI A LA FUENTE DEL VOCABULARIO (${visitados.length} ficheros `
+    + 'vistos). No baja por las carpetas, asi que su «no hay segunda lista» no mide nada.');
+  assert.ok(visitados.length > 200,
+    `🔴 el barrido solo ha visto ${visitados.length} ficheros: se ha quedado corto y su cero es ciego.`);
 });
 
 // ── 7 · LA TRAZA Y EL COPY APROBADO ──────────────────────────────────────────────────────
