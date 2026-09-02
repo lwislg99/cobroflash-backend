@@ -303,3 +303,43 @@ jobs:
       # Ver `docs/master/SCRUM-617.md`.
       - name: Guards de navegador
         run: npm run guards:visuales
+
+  # ═══════════════════════════════════════════════════════════════════════════════════════════
+  # 🔴 SCRUM-677 · EL VIGÍA DEL DESPLIEGUE, EN EL PR · INFORMATIVO, NUNCA BLOQUEANTE
+  #
+  # Producción estuvo NUEVE DÍAS sin desplegar y nadie se enteró: cuando un despliegue falla el
+  # healthcheck, Railway mantiene vivo el anterior. La web funcionaba. El síntoma era «no cambia
+  # nada», indistinguible de un día tranquilo.
+  #
+  # ── POR QUÉ `continue-on-error`, Y ES LA DECISIÓN, NO UN DESCUIDO ─────────────────────────
+  # Si el vigía está en ROJO, **el arreglo LLEGA MERGEANDO**. Un check bloqueante le cerraría la
+  # puerta justo a quien viene a arreglarlo: la rama que aplica el ALTER que falta no podría
+  # entrar porque producción sigue atrasada por no tener ese ALTER. Que informe, que se lea, que
+  # NO vete.
+  #
+  # El que sí canta es `vigia-despliegue.yml` (programado cada 2 h), y ése ataca la causa real:
+  # nueve días en los que nadie mergeó nada y por eso nadie miró.
+  # ═══════════════════════════════════════════════════════════════════════════════════════════
+  vigia-despliegue:
+    name: vigía del despliegue (informativo)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # ⚠️ NO se toca: en cuanto esto sea bloqueante, deja de poder arreglarse el problema que mide.
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # El historial ENTERO: el vigía resuelve el sha que dice producción contra la historia
+          # de `main`. Con un checkout superficial, un commit de hace nueve días no estaría en el
+          # clon y el vigía se declararía ciego justo en el caso que existe para detectar.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      # Sin `npm ci` a propósito: el vigía no importa nada de `node_modules` — sólo
+      # `node:child_process` y `fetch`. Instalar aquí sería tiempo y superficie de balde.
+      - name: ¿Está producción corriendo lo que hay en main?
+        run: node scripts/vigilante-de-despliegue.mjs
