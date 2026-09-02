@@ -29,15 +29,32 @@ function domDeMentira() {
     value: '',
     setAttribute(k, v) { this.atributos[k] = v; },
     appendChild(n) { this.hijos.push(n); return n; },
+    // Sólo la forma `#id`, que es la única que usa la pieza. Un selector de juguete que
+    // aceptara más de lo que se usa daría por probado un camino que nadie recorre.
+    querySelector(sel) {
+      const id = String(sel).replace(/^#/, '');
+      const buscar = (n) => {
+        if (n.id === id) return n;
+        for (const h of n.hijos) { const r = buscar(h); if (r) return r; }
+        return null;
+      };
+      for (const h of this.hijos) { const r = buscar(h); if (r) return r; }
+      return null;
+    },
   });
   return { createElement: crear };
 }
 
+/** Un contenedor vacío del mismo DOM de mentira, para montar dentro. */
+function contenedorDe(doc) { return doc.createElement('div'); }
+
 /** Carga el módulo como lo haría el navegador: colgándolo de `window`. */
 function cargar() {
   const win = {};
+  const doc = domDeMentira();
   const fuente = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/textoDelDocumento.js'), 'utf8');
-  new Function('window', 'document', fuente)(win, domDeMentira());
+  new Function('window', 'document', fuente)(win, doc);
+  win.__doc = doc;
   return win;
 }
 
@@ -142,4 +159,104 @@ test('SCRUM-593b · 🔴 vacío es `null` («no se escribió»), no cadena vací
   assert.equal(con.docHeaderText, ' A\nB ',
     '🔴 se está recortando el texto del profesional. El `trim` sólo decide si hay algo, no lo que se guarda.');
   assert.equal(con.docFooterText, 'x');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// EL CAMINO DE VUELTA · se escribe, se relee, y sale igual
+//
+// Es la mitad del viaje que SÍ se puede probar hoy: la otra mitad —se guarda y sale en el PDF—
+// necesita las columnas y el cableado, que van en la fase ③. Se dice, no se disimula.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-593b · montar deja LOS DOS campos, en su orden', () => {
+  const w = cargar();
+  const caja = contenedorDe(w.__doc);
+  const r = w.textoDelDocumentoMontar(caja, {});
+  assert.equal(r, caja, '🔴 no devuelve el contenedor que se le dio.');
+  assert.equal(caja.hijos.length, 2, `🔴 no ha montado los dos campos: ${caja.hijos.length}`);
+  const ids = caja.hijos.map((h) => h.hijos.find((x) => x.tag === 'textarea').id);
+  assert.deepEqual(ids, ['campo-docHeaderText', 'campo-docFooterText'],
+    '🔴 no están los dos, o no en el orden del documento (cabecera primero, pie después).');
+});
+
+test('SCRUM-593b · 🔴 SE ESCRIBE Y SE RELEE: el texto vuelve ENTERO, con sus saltos', () => {
+  const w = cargar();
+  const caja = contenedorDe(w.__doc);
+  w.textoDelDocumentoMontar(caja, {});
+  const ESCRITO = 'Primera línea\nSegunda línea\n\nCuarta tras un hueco';
+  caja.querySelector('#campo-docFooterText').value = ESCRITO;
+  caja.querySelector('#campo-docHeaderText').value = 'AVISO';
+
+  const leido = w.textoDelDocumentoLeer(caja);
+  assert.equal(leido.ok, true, `🔴 no supo leer: ${leido.motivo}`);
+  assert.equal(leido.valores.docFooterText, ESCRITO,
+    '🔴 el texto no vuelve idéntico: los saltos son DATO y aquí se han perdido o normalizado.');
+  assert.equal(leido.valores.docHeaderText, 'AVISO');
+});
+
+test('SCRUM-593b · lo que se monta con valor se relee con ESE valor', () => {
+  const w = cargar();
+  const caja = contenedorDe(w.__doc);
+  w.textoDelDocumentoMontar(caja, { docHeaderText: 'A\nB', docFooterText: 'C' });
+  const leido = w.textoDelDocumentoLeer(caja);
+  assert.equal(leido.ok, true);
+  assert.equal(leido.valores.docHeaderText, 'A\nB', '🔴 el valor guardado no llega al campo.');
+  assert.equal(leido.valores.docFooterText, 'C');
+});
+
+test('SCRUM-593b · en blanco se relee como `null`, no como cadena vacía', () => {
+  const w = cargar();
+  const caja = contenedorDe(w.__doc);
+  w.textoDelDocumentoMontar(caja, {});
+  caja.querySelector('#campo-docFooterText').value = '   ';
+  const leido = w.textoDelDocumentoLeer(caja);
+  assert.equal(leido.ok, true);
+  assert.deepEqual(leido.valores, { docHeaderText: null, docFooterText: null },
+    '🔴 «no se escribió» tiene que ser null; una cadena vacía diría que se escribió algo vacío.');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 EL SUELO DEL LECTOR: un lector CIEGO no puede parecer un formulario en blanco
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-593b · 🔴 SUELO: sin los campos montados, LEER dice que está ciego', () => {
+  const w = cargar();
+  const vacio = contenedorDe(w.__doc);   // nada montado dentro
+  const leido = w.textoDelDocumentoLeer(vacio);
+
+  // Si esto devolviera {null, null} sería indistinguible de «el profesional los dejó en blanco»,
+  // y esa confusión BORRA un texto ya guardado en cuanto alguien edite desde una pantalla que no
+  // monte los campos. Es el defecto que este suelo existe para impedir.
+  assert.equal(leido.ok, false, '🔴 dice haber leído un formulario donde no hay campos.');
+  assert.equal(leido.valores, null, '🔴 devuelve valores que no ha leído de ninguna parte.');
+  assert.deepEqual(leido.faltan, ['docHeaderText', 'docFooterText'],
+    '🔴 no NOMBRA los que faltan: un fallo que no dice cuál es no es accionable.');
+});
+
+test('SCRUM-593b · 🔴 SUELO: con UNO SOLO montado tampoco da por leído el otro', () => {
+  const w = cargar();
+  const caja = contenedorDe(w.__doc);
+  // Se monta a mano SOLO la cabecera: es justo el error que `montar` existe para evitar.
+  caja.appendChild(w.textoDelDocumentoCampo(w.TD_CAMPOS[0], 'algo'));
+  const leido = w.textoDelDocumentoLeer(caja);
+  assert.equal(leido.ok, false, '🔴 con medio formulario dice haber leído el formulario entero.');
+  assert.deepEqual(leido.faltan, ['docFooterText'], '🔴 no nombra el que falta.');
+});
+
+test('SCRUM-593b · 🔴 CONTROL NEGATIVO del suelo: con los dos montados NO se declara ciego', () => {
+  // Sin esto, los rojos de arriba también saldrían si `leer` fallara siempre.
+  const w = cargar();
+  const caja = contenedorDe(w.__doc);
+  w.textoDelDocumentoMontar(caja, {});
+  assert.equal(w.textoDelDocumentoLeer(caja).ok, true,
+    '🔴 se declara ciego con el formulario entero delante: entonces sus «no supe» no significan nada.');
+  // Y una raíz que ni siquiera sabe buscar tiene su propio motivo, distinto de «faltan campos».
+  assert.equal(w.textoDelDocumentoLeer(null).motivo, 'sin-raiz');
+  assert.equal(w.textoDelDocumentoLeer({}).motivo, 'sin-raiz');
+});
+
+test('SCRUM-593b · 🔴 SUELO: montar en algo que no es contenedor devuelve null, no revienta', () => {
+  const w = cargar();
+  assert.equal(w.textoDelDocumentoMontar(null, {}), null);
+  assert.equal(w.textoDelDocumentoMontar({}, {}), null);
 });

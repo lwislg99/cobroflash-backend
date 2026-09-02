@@ -92,6 +92,46 @@ function textoDelDocumentoPintado(valor) {
   return p;
 }
 
+/**
+ * Monta LOS DOS campos en un contenedor, en su orden, de una sola llamada.
+ *
+ * Existe para que el consumidor no escriba el bucle: un formulario que recorre `TD_CAMPOS` a
+ * mano puede pintar uno y olvidarse del otro, o invertirlos, y las dos cosas pasan en verde
+ * porque cada campo por separado está bien. Aquí el orden y la totalidad son de la pieza.
+ */
+function textoDelDocumentoMontar(contenedor, valores) {
+  if (!contenedor || typeof contenedor.appendChild !== 'function') return null;
+  for (const campo of TD_CAMPOS) {
+    contenedor.appendChild(textoDelDocumentoCampo(campo, valores ? valores[campo.clave] : ''));
+  }
+  return contenedor;
+}
+
+/**
+ * El CAMINO DE VUELTA: lee lo que el profesional escribió y lo deja listo para el servidor.
+ *
+ * 🔴 Y DEVUELVE UN VEREDICTO, NO SÓLO VALORES. Si los campos no están montados, esto NO puede
+ * contestar `{ docHeaderText: null, docFooterText: null }`: eso es indistinguible de «el
+ * profesional los dejó en blanco», y esa confusión BORRA un texto guardado en cuanto alguien
+ * edite el presupuesto desde una pantalla que no los monte. Un lector ciego tiene que decir que
+ * está ciego — es el mismo suelo que se le exige a los censos de esta casa.
+ */
+function textoDelDocumentoLeer(raiz) {
+  if (!raiz || typeof raiz.querySelector !== 'function') {
+    return { ok: false, motivo: 'sin-raiz', valores: null };
+  }
+  const crudos = {};
+  const faltan = [];
+  for (const campo of TD_CAMPOS) {
+    const nodo = raiz.querySelector('#campo-' + campo.clave);
+    if (!nodo) { faltan.push(campo.clave); continue; }
+    // El valor entra TAL CUAL: los saltos son dato, no formato. El recorte lo decide el payload.
+    crudos[campo.clave] = nodo.value;
+  }
+  if (faltan.length) return { ok: false, motivo: 'faltan-campos', faltan, valores: null };
+  return { ok: true, valores: textoDelDocumentoPayload(crudos) };
+}
+
 /** Lo que se manda al servidor. Vacío o sólo espacios → `null`: «no se escribió» no es `''`. */
 function textoDelDocumentoPayload(valores) {
   const fuera = {};
@@ -110,4 +150,6 @@ if (typeof window !== 'undefined') {
   window.textoDelDocumentoCampo = textoDelDocumentoCampo;
   window.textoDelDocumentoPintado = textoDelDocumentoPintado;
   window.textoDelDocumentoPayload = textoDelDocumentoPayload;
+  window.textoDelDocumentoMontar = textoDelDocumentoMontar;
+  window.textoDelDocumentoLeer = textoDelDocumentoLeer;
 }
