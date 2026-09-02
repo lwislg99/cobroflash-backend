@@ -137,12 +137,29 @@ test('tecnosel/5 · 🔴 la ruta decide POR CAMPO, y responde ANTES de construir
     '🔴 el 409 ha dejado de decir QUÉ campo lo tumbó.');
 });
 
-test('tecnosel/5 · el móvil del técnico sigue SIN ver un importe', () => {
-  // 🔴 EL CONTROL QUE NO PUEDE CAER NUNCA. `serializeParteParaElTecnico` está escrito campo a campo
-  // a propósito para que el dinero no cruce el cable al móvil. Este trabajo NO lo toca, y aquí se
-  // comprueba que sigue siendo el que contesta al PATCH.
+test('tecnosel/5 · 🔴 el móvil del técnico sigue SIN ver un importe', () => {
+  // 🔴 EL CONTROL QUE NO PUEDE CAER NUNCA. `serializeParteParaElTecnico` está escrito campo a
+  // campo a propósito para que el dinero no cruce el cable al móvil. Este trabajo NO lo toca.
+  //
+  // 🔴 Y LA PRIMERA VERSIÓN DE ESTE ASERTO NO VALÍA: buscaba la llamada en TODO el fichero, y la
+  // ruta de firmar tiene la suya. Al romper la del PATCH a propósito, el test SEGUÍA VERDE
+  // casando con la de firmar — un guard atado a que el texto exista en alguna parte, no al hecho.
+  // Ahora se mira SOLO el bloque del PATCH, y se exigen sus DOS salidas.
   const src = soloEjecutable(leer(RUTAS));
-  assert.match(src, /return res\.json\(serializeParteParaElTecnico\(updated\)\)/,
-    '🔴 el PATCH ha dejado de responder con el serializador del técnico. Si ahora devuelve otra '
-    + 'cosa, hay que demostrar que el dinero no viaja — y este trabajo no toca ese serializador.');
+  const desde = src.indexOf("router.patch('/:id'");
+  assert.ok(desde > 0, '🔴 no encuentro el PATCH: el instrumento no vale.');
+  const hasta = src.indexOf('router.post(', desde);
+  assert.ok(hasta > desde, '🔴 no encuentro el final del bloque del PATCH.');
+  const patch = src.slice(desde, hasta);
+
+  const salidas = [...patch.matchAll(/return res\.json\(([^)]*)\)/g)].map((m) => m[1]);
+  assert.ok(salidas.length >= 2,
+    `🔴 el PATCH tiene ${salidas.length} salidas con cuerpo y se esperaban al menos dos (la de «no `
+    + 'hay nada que cambiar» y la del cambio aplicado). El instrumento no está viendo el bloque.');
+  for (const s of salidas) {
+    assert.match(s, /serializeParteParaElTecnico\(/,
+      `🔴 UNA SALIDA DEL PATCH DEVUELVE «${s}» EN VEZ DEL SERIALIZADOR DEL TÉCNICO.` + String.fromCharCode(10)
+      + '  Ese serializador está escrito campo a campo para que el dinero NO viaje al móvil.'
+      + ' Devolver la fila entera manda los precios al teléfono del técnico.');
+  }
 });

@@ -47,6 +47,20 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // — un trinquete que no se aprieta al arreglarlo deja de apretar.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 const CENSO_SERVIDOR = Object.freeze({
+  // SCRUM-684 (Tecnosel) · A CONCIENCIA, y con un motivo que merece leerse: los rótulos de los
+  // tres tipos de intervención VIVEN EN EL SERVIDOR porque el navegador no puede tener la lista.
+  //
+  // Se escribieron primero en `jobNuevoModal.js` y cayó el guard de FUENTE ÚNICA (SCRUM-651):
+  // eso era una SEGUNDA lista del vocabulario cerrado, y dos listas para el mismo hecho se
+  // separan. La casa ya tenía el patrón —`cobrosCubos`, `albaranRotulos`—: el servidor deriva y
+  // manda; el navegador recibe. Al traerlos aquí, su marcador entra en ESTE censo.
+  //
+  // Se cuenta 1 y son tres rótulos: los tres salen de una sola constante `MARCADOR_ROTULO`, así
+  // que aprobar el copy los apaga de golpe y esta entrada se BORRA (no baja a 0).
+  //
+  // ⚠️ NO llega al PDF ni a un correo: es el desplegable de «trabajo nuevo» en el panel. Por eso
+  // no entra en `EN_EL_PAPEL`.
+  'src/modules/jobs/domain/tipoIntervencion.ts': 1,
   // El rótulo de la columna de bases del desglose. 🔴 ES EL ÚNICO QUE SE IMPRIME EN EL PDF, y el
   // PDF de la factura lo ve el CLIENTE del profesional. Medido leyendo el papel, no la plantilla.
   'src/modules/invoicing/infra/pdf/pdf.service.ts': 1,
