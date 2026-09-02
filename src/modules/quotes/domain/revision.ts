@@ -178,6 +178,27 @@ export const REVISION_HEREDA = [
   'jobId', 'esAdicional', 'origin', 'validUntil', 'docFields', 'customerId', 'payMethods',
   'total', 'currency', 'lines', 'paymentTerms', 'customBillingPlan', 'tiers', 'selectedTierId',
   'internalNotes', 'teamMemberId', 'ivaModo', 'clausulasExcluidas',
+  // ── 2-sep-2026 · LA CABECERA Y EL PIE DEL DOCUMENTO (SCRUM-593, PR #931 de Javier) ────────
+  //
+  // Entraron en `Quote` desde otro carril y el guard de abajo los cazó SIN CLASIFICAR, que es
+  // exactamente para lo que está: un campo sin clasificar no viaja a la revisión, y eso no falla —
+  // se descubre cuando el cliente echa de menos algo en el PDF.
+  //
+  // DECISIÓN DEL ASESOR (2-sep-2026, SCRUM-686): LAS DOS SE HEREDAN, y ya NO es provisional.
+  //
+  // Son CONTENIDO del documento que escribió el profesional, no un hecho de la versión anterior
+  // —firma, token, envío, cobro—. Una revisión de «P2004226.1» es OTRA VERSIÓN DEL MISMO
+  // DOCUMENTO: sale con la misma cabecera y el mismo pie salvo que él los cambie. Si los pierde,
+  // el cliente recibe algo que se ve distinto de lo que aprobó. Y heredar es REVERSIBLE —se puede
+  // borrar— mientras que no heredar no lo es: el texto ya no está.
+  //
+  // 🔴 CLASIFICAR NO ES QUE VIAJEN, y por eso este bloque no basta solo. El bucle de
+  // `nuevaRevisionDe` copia `if (campo in anterior)`: si quien la llame no trae el campo en el
+  // objeto, el dato NO llega aunque esté aquí escrito. Lo prueba
+  // `tests/scrum686-cabecera-y-pie-viajan.test.mjs`, con el copiado ejercitado de verdad.
+  //
+  // `albaranes.doc_header_text` NO entra aquí: no es campo de `Quote`.
+  'docHeaderText', 'docFooterText',
 ] as const;
 
 /**
