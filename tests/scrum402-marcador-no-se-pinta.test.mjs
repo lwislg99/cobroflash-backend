@@ -337,6 +337,14 @@ const CENSO = Object.freeze({
   // el fundador los escriba habrá que partir la constante.
   'tipoDestinatarioPendiente.js': 1,
   'settingsSubmenus.js': 1,
+  // 🔴 SCRUM-654 (2-sep-2026) · `voiceInput.js` ENTRA con 1, A CONCIENCIA. Es el aviso de que el
+  // dictado necesita conexión — el fallo que hasta hoy se producía EN SILENCIO y que este ticket
+  // cierra. El texto no está aprobado (regla 30) y sale marcado hasta que el fundador lo firme.
+  //
+  // ⚠️ Aquí el marcador es lo de menos, y conviene decirlo: SIN aviso el defecto era MUDO, y un
+  // defecto mudo no se puede ni reportar. Con marcador al menos habla, aunque hable provisional.
+  // Sale del censo el commit que apruebe el texto.
+  'voiceInput.js': 1,
   // SCRUM-294 (fase C) · 1 -> 5: el criterio de caja entra en Configuracion con marcador A
   // CONCIENCIA. Son 4 literales —el rotulo y sus TRES opciones— y el texto NO esta aprobado:
   // explicarle a un profesional si le conviene el RECC es asesorarle, y eso lo dictamina el
