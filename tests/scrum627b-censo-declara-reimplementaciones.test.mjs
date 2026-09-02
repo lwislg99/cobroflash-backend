@@ -65,6 +65,16 @@ const CENSO_ARITMETICA = {
       + 'ninguna cifra que salga en un documento, y además es IVA SOPORTADO, no repercutido: no entra '
       + 'en la casilla que el censo protege.',
   },
+  'src/modules/jobs/domain/parteTrabajo.ts': {
+    veredicto: 'DOCUMENTO',
+    nota: 'SCRUM-652 (T3) · `totalesPorBloque` deriva la cuota de CADA LÍNEA de UN parte '
+      + '(`base * tipoIva / 100`, en céntimos enteros) y suma los dos bloques. No agrupa por tipo de '
+      + 'IVA, no mira periodos y no sale de ese documento: es el total de lo que tiene delante, '
+      + 'igual que `calcAlbaranTotales`. '
+      + 'Y una precisión que importa para este censo: estos importes NO entran en el sello del parte '
+      + '—el canónico no lleva precios a propósito—, así que esta aritmética no puede mover ninguna '
+      + 'huella firmada.',
+  },
   'src/modules/invoicing/domain/recargoEquivalencia.ts': {
     veredicto: 'DOCUMENTO',
     nota: 'Calcula la cuota del RECARGO DE EQUIVALENCIA sobre una base (`b * tipoRecargo / 100`). Es otro '

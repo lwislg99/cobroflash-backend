@@ -155,6 +155,9 @@ const INVISIBLES = [
   'src/modules/invoicing/domain/recargoEquivalencia.ts',
   'src/modules/jobs/domain/albaran.service.ts',
   'src/modules/jobs/domain/albaranAFactura.ts',
+  // 2-sep-2026 · SCRUM-652 (T3 fase B): nace el PARTE DE TRABAJO y deriva su IVA por documento,
+  // igual que el albarán. SUBE a conciencia y va clasificado abajo, en `scrum627b`.
+  'src/modules/jobs/domain/parteTrabajo.ts',
   // 🔴 SALE `maintenance.service.ts` (SCRUM-627b, 25-ago-2026) — y baja de 9 a 8. NO es un
   // refinamiento silencioso: era un FALSO POSITIVO probado. El alias del impuesto nacía del
   // NOMBRE de una propiedad (`let line: QuoteLine = { …, tax: 0 }`), así que `line` entera pasaba
