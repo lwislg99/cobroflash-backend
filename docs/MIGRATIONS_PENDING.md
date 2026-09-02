@@ -1917,3 +1917,50 @@ los tests. Una columna de MÁS en la base no rompe nada: la dirección que duele
 merchants de hoy son todos de prueba. Con merchants reales sería la decisión equivocada, porque
 declararía peninsular a un canario. La pregunta al profesional (salida C) sigue en el plan para
 los usuarios futuros y **el backfill no la sustituye**.
+
+## SCRUM-593 (fase ②) · los dos textos libres del documento — 2-sep-2026
+
+Tres columnas, todas `TEXT`, **nullable y SIN default**:
+`quotes.doc_header_text` · `quotes.doc_footer_text` · `albaranes.doc_header_text`.
+El SQL, aplicable y re-ejecutable, en **`docs/sql/scrum-593-cabecera-y-pie.sql`**.
+
+**Son TRES y no cuatro:** el pie del albarán ya existe —`albaranes.notas`— y ya se imprime. Ahí
+sólo cambia el rótulo, que es copy y no esquema. Un `albaranes.doc_footer_text` daría dos campos
+para lo mismo, y al día siguiente no se sabría cuál manda.
+
+### 🔴 SE NOMBRA LA BASE FÍSICA, NO LA VARIABLE — y esta migración es la razón
+
+Al medir el estado previo se destapó que **`DATABASE_URL_STAGING` y `DATABASE_URL_TESTS` son la
+misma cadena** y resuelven a la **misma base**. Escribir «aplicado en dev y staging» habría
+nombrado tres cosas donde hay dos, y habría dejado sin registrar que la base de la tanda gateada
+y la de staging son **una**. Un nombre de variable no es evidencia de a qué apunta.
+
+| Base **física** | La resuelven | Estado | Verificación |
+|---|---|---|---|
+| **`yaqu_dev_javier`** (host `acela`) | `DATABASE_URL_DEV` | ✅ aplicado | **3/3** · `text` · `is_nullable=YES` · `column_default=null` |
+| **`railway`** (host `acela`) | `DATABASE_URL_STAGING` **+** `DATABASE_URL_TESTS` | ✅ aplicado | **3/3** · `text` · `is_nullable=YES` · `column_default=null` |
+| **producción** (host `autorack`) | — | ⛔ **PENDIENTE, la aplica el fundador** | — |
+
+Producción **no se pudo tocar y no debía**: ninguna clave de un árbol de trabajo va allí, acreditado
+ANTES con `scripts/comprobar-claves-bd.mjs` (`DATABASE_URL`: ausente). Turno de staging **tomado y
+soltado** (`scripts/turno-staging.mjs`); libre al terminar.
+
+### El estado ANTES, y por qué se midió en vez de creerlo
+
+El encargo afirmaba que el `ALTER` ya estaba aplicado en las tres bases. **No lo estaba en ninguna
+de las dos alcanzables**, y por eso la orden era comprobarlo. La medición leyó **58** columnas en
+`quotes`+`albaranes` y **0/3** de las nuevas; después del `ALTER`, **61**.
+
+**Con CONTROL POSITIVO en las dos bases y en las dos pasadas**, porque un cero de un instrumento
+roto se lee igual que un cero verdadero: la misma consulta tenía que seguir viendo
+`quotes.valid_until`, `quotes.internal_notes` y `albaranes.notas`. Las vio siempre.
+
+Y un **suelo** que no es simétrico con los otros: se comprueba que `albaranes.doc_footer_text`
+**NO existe**. Es la única forma de que «se reutiliza `notas`» sea una comprobación y no una
+intención.
+
+### 🔴 EL ORDEN, y por qué `prisma/schema.prisma` sigue sin tocarse
+
+`schemaDrift.ts` compara **esperado ⊆ real** al arrancar: una columna de MÁS en la base es inocua,
+una de MENOS **impide arrancar producción** (SCRUM-220). El esquema entra en el PR ③ **cuando las
+tres bases la tengan**, junto con el cableado y los tests. **Sin partir.**

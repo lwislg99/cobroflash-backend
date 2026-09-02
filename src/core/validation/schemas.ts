@@ -138,6 +138,20 @@ export const CreateQuoteSchema = z.object({
   payMethods: z.array(z.enum(['card', 'bizum', 'transfer'])).min(1).optional(),
   // A20.4: qué datos del cliente muestra el DOCUMENTO (null = todos los presentes)
   docFields: z.object({ name: z.boolean(), phone: z.boolean(), taxId: z.boolean(), email: z.boolean() }).partial().nullable().optional(),
+  // SCRUM-593 (DOC-03) · los dos textos libres del documento.
+  //
+  // `nullable` Y `optional` son cosas DISTINTAS y las dos hacen falta: omitido = «este cliente
+  // no manda el campo» (todo lo anterior a esta tarea), `null` = «lo mandó vacío a propósito».
+  // Sin `nullable`, vaciar un texto ya escrito sería un 400.
+  //
+  // 🔴 TOPE DE 2000, el MISMO que `Albaran.notas` —el campo hermano, en el mismo documento— para
+  // que el profesional no tenga dos límites distintos para lo mismo. Aquí RECHAZA en vez de
+  // recortar, y la diferencia queda declarada en la entrada de máster: la ruta del albarán no
+  // valida con zod y añadirle un 400 nuevo tropezaría con el trinquete de SCRUM-275.
+  //
+  // NO se recorta ni se normaliza el contenido: los saltos de línea son DATO (SCRUM-655 · T6).
+  docHeaderText: z.string().max(2000).nullable().optional(),
+  docFooterText: z.string().max(2000).nullable().optional(),
   // A16.2: caducidad del presupuesto (default 30 días en el server; editable al crear)
   validUntil: z.coerce.date().optional(),
   // SCRUM-27: plan de cobro personalizado (N tramos). Presente = ignora paymentTerms.
