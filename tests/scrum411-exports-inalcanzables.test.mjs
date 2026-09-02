@@ -127,7 +127,39 @@ const R = analizar(RAIZ);
 // estaba en 8 y el parte era el octavo. Después entró `revision.ts` (SCRUM-655) y subió a 9, y
 // **ése sigue esperando su gate**. El número se RECUENTA sobre el árbol de hoy; no se resta de
 // cabeza sobre una foto vieja. Queda UNO pendiente, y es la revisión del presupuesto.
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 8;
+//
+// 🔴 9 → 10 · 2-sep-2026 · SCRUM-683. TERCERA subida por el MISMO gate y con la misma forma: entra
+// `src/modules/jobs/domain/parteDictado.ts` —el dictado del técnico convertido en las dos listas
+// del parte, con la regla INVERTIDA respecto al motor de presupuestos: una cantidad que el texto
+// no dice NO APARECE— construido y probado con 13 tests, y **sin llamador todavía**.
+//
+// Su consumidor sería la pantalla del parte, que es SCRUM-652 fase C y la está haciendo OTRA
+// sesión ahora mismo; el encargo dice explícitamente «solo el DOMINIO, sin pantalla». Cablearlo
+// desde aquí sería editar sus ficheros mientras ella los edita, y hacerlo para que este contador
+// no subiera es exactamente lo que prohíbe la cabecera de arriba.
+//
+// **Baja cuando `parteDictado.ts` tenga consumidor**, y ése es el commit que lo cablee a la
+// pantalla del parte. Sin cifra a propósito: una frase que nombra el módulo no caduca, y una que
+// lleva número sí — es lo que le pasó a la nota de fase B, que prometía un 7 que nunca llegó.
+//
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// ⚠️ 2-sep-2026 · LOS DOS BLOQUES DE ARRIBA SON DE ESTE MISMO MERGE, y van en direcciones
+// contrarias desde la misma base de 9: SCRUM-683 SUMA `parteDictado.ts` (entra sin llamador) y
+// SCRUM-652 fase C RESTA `parteTrabajo.ts` (ya lo tiene). Se conservan los dos porque los dos
+// son ciertos y hablan de módulos distintos.
+//
+// 🔴 EL NÚMERO NO SE ELIGE NI SE SUMA: se RECUENTA. Ejecutado `analizar()` —el mismo que usa
+// este fichero— sobre el árbol YA MEZCLADO: **126 módulos de dominio, 288 alcanzables, 9
+// inalcanzables**. Nueve, y `parteTrabajo.ts` ya NO está entre ellos.
+//
+// Coinciden el 10 de un lado y el 8 del otro en dar 9 al mezclarse, pero eso se sabe DESPUÉS de
+// contar. Es la tercera vez en el día que este contador se resuelve así, y las dos anteriores lo
+// dejaron escrito: «los dos éramos el octavo; el censo dice cuántos hay».
+//
+// Quedan DOS esperando su gate: `parteDictado.ts` (la pantalla del parte) y `revision.ts` (el
+// campo de revisión en el esquema).
+// ═══════════════════════════════════════════════════════════════════════════════════════
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 9;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 
