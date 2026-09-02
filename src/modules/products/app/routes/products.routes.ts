@@ -267,7 +267,16 @@ router.put('/:id', async (req, res) => {
     const updated = await updateProduct(req.merchantId, id, patch);
     if (!updated) return res.status(404).json({ ok: false, error: 'not_found' });
     return res.json({ ok: true, item: updated });
-  } catch (err) {
+  } catch (err: any) {
+    // SCRUM-641 · el MISMO criterio que `POST /` unas líneas más arriba, copiado y no inventado:
+    // una escritura de UNA fila que choca con el índice único no es un servidor roto, es un
+    // nombre cogido. Antes caía al 500 de abajo, y un 500 dice «se ha roto algo» — mensaje
+    // distinto para quien mira y arreglo distinto para quien programa.
+    //
+    // ⚠️ Las rutas MASIVAS (`POST /load-catalog`, `POST /import`) NO hacen esto y siguen igual:
+    // ahí un duplicado se SALTA y la operación entera sigue siendo un éxito. El reparto es
+    // masiva vs una sola fila, y `PUT /:id` es de las segundas.
+    if (err?.code === 'P2002') return res.status(409).json({ ok: false, error: 'name_duplicate' });
     console.error('[PUT /admin/products/:id]', err);
     return res.status(500).json({ ok: false, error: 'internal_error' });
   }
