@@ -99,9 +99,24 @@ function vocabularioFacturaSuelta(linea) {
 }
 
 // ── LO FIJADO ────────────────────────────────────────────────────────────────────────────
-const VOC_PRESUPUESTO = ['concept', 'price', 'qty', 'suplido', 'tax'];
+// 🔴 2-sep-2026 · SCRUM-655 · ENTRA `apartado`, Y LA DECISIÓN QUE ESTE GUARD EXIGE, ESCRITA:
+//
+// QUÉ HACE LA FACTURA CON ELLA: **nada, y es deliberado, no un olvido.** Un apartado es la
+// estructura de lectura del PRESUPUESTO —«1. DEMOLICIONES» y sus partidas 1.01, 1.02—, o sea
+// una decisión de cómo se presenta una OFERTA. La factura es otro documento y no la hereda.
+//
+// Consecuencia, dicha en voz alta porque es justo lo que este guard existe para que no se caiga
+// en silencio: al facturar un presupuesto con apartados, `Invoice.lines` recibe las líneas SIN
+// las cabeceras y SIN la marca. Los importes NO cambian —las cabeceras nunca sumaron— así que
+// no hay un euro en juego; lo que se pierde es el agrupamiento visual del documento.
+//
+// ⚠️ Y NO SE ARREGLA AQUÍ: tocar la puerta de la factura es camino de emisión y está fuera de
+// esta tanda (T6). Queda declarado para que la decisión sea de alguien y no del descuido.
+const VOC_PRESUPUESTO = ['apartado', 'concept', 'price', 'qty', 'suplido', 'tax'];
 const VOC_FACTURA = ['concept', 'price', 'qty', 'tax'];
-const DIVERGENCIA = ['suplido'];
+// `apartado` se une a `suplido` en la lista de lo que el presupuesto guarda y la factura no.
+// Que la lista CREZCA no es neutro: cada entrada es un dato que muere al facturar.
+const DIVERGENCIA = ['apartado', 'suplido'];
 
 /**
  * Los sitios que reconstruyen una linea con la firma EXACTA de `Invoice.lines`. Fijado POR
@@ -121,7 +136,18 @@ const ESTRECHAMIENTOS = Object.freeze({
   'src/modules/jobs/domain/albaranAFactura.ts': 2,
   'src/modules/jobs/domain/recapitulativa.service.ts': 1,
   'src/modules/maintenance/domain/maintenance.service.ts': 1,
-  'src/modules/products/app/routes/products.routes.ts': 1,
+  // 🔴 SCRUM-646 (2-sep-2026) · BAJA A 0, Y SE ANOTA porque el trinquete manda anotarlo: «un
+  // arreglo sin anotar se deshace solo».
+  //
+  // El estrechamiento que había aquí construía las líneas de la PLANTILLA de presupuesto del
+  // catálogo por gremio, y una de sus propiedades era `tax: vat` — el tipo impositivo derivado
+  // del PAÍS del merchant. Al retirar ese cableado (que es el objeto de SCRUM-646) la línea de
+  // la plantilla deja de llevar impuesto, y el estrechamiento desaparece con él.
+  //
+  // NO se ha «arreglado el estrechamiento»: ha desaparecido su motivo. Si alguien vuelve a
+  // construir líneas ahí, tendrá que volver a declararlo — y este comentario le dirá que lo que
+  // NO puede volver es el `tax` derivado del país (lo impide el guard de SCRUM-646).
+  // 'src/modules/products/app/routes/products.routes.ts': 1,   ← retirado, no puesto a 0
   'src/modules/system/app/routes/invoicesAdmin.routes.ts': 1,
 });
 

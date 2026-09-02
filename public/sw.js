@@ -38,9 +38,13 @@ const SHELL = [
   '/dashboard/js/quotesListView.js',
   '/dashboard/js/quoteMargen.js',
   '/dashboard/js/quoteSuplido.js',
+  '/dashboard/js/quoteApartados.js',
   '/dashboard/js/quoteAtajosVencimiento.js',
+  '/dashboard/js/tiposDeIva.js', // SCRUM-611 (DOC-16)
   '/dashboard/js/quotesView.js',
   '/dashboard/js/quotesDetailView.js',
+  '/dashboard/js/switchTipoArticulo.js', // SCRUM-609 (CAT-01)
+  '/dashboard/js/margenCatalogo.js', // SCRUM-609
   '/dashboard/js/productsView.js',
   '/dashboard/js/providersView.js',
   '/dashboard/js/tipoDestinatarioPendiente.js', // SCRUM-615

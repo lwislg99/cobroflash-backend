@@ -2546,3 +2546,25 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 }
 .modal-ayuda:hover { color: var(--ink); }
 .modal-ayuda + .modal-close { margin-left: 0; }
+
+/* SCRUM-655 · APARTADOS Y DESCRIPCIÓN LARGA EN EL DETALLE DEL PRESUPUESTO.
+   El apartado es un RENGLÓN DE TÍTULO a todo lo ancho, no una fila que cobre: por eso no lleva
+   importe y se separa con peso y espacio, no con color inventado.
+   ⚠️ La descripción NO usa `white-space: pre-line`, y es deliberado: cada renglón es su propio
+   elemento (`quoteApartados.js`), así que el salto es ESTRUCTURA y no depende de este fichero.
+   Poner aquí `pre-line` protegería un salto que en el HTML ya no existe — el error que esta casa
+   pagó dos veces. */
+.quote-apartado td {
+  padding-top: 14px; font-weight: 700; color: var(--ink, #0f1c17);
+  text-transform: uppercase; letter-spacing: .03em; font-size: 12.5px;
+}
+.quote-line-num {
+  display: inline-block; min-width: 42px; font-variant-numeric: tabular-nums;
+  color: var(--muted, #6b756f); font-weight: 600;
+}
+.quote-line-cel { display: flex; gap: 8px; align-items: baseline; }
+.quote-line-concepto { min-width: 0; }
+.quote-line-titulo { color: var(--ink, #0f1c17); }
+.quote-line-desc {
+  font-size: 12px; line-height: 1.45; color: var(--muted, #6b756f); margin-top: 2px;
+}

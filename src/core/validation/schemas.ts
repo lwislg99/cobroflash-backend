@@ -7,8 +7,13 @@ import { invalidTipoIva, invalidPrefijoSerie } from './fiscalInput'; // SCRUM-21
 
 const QuoteLineSchema = z.object({
   concept: z.string().min(1),
-  qty: z.number().positive(),
-  price: z.number().nonnegative(),
+  // SCRUM-655 · OPCIONALES EN EL OBJETO, OBLIGATORIAS EN EL REFINE. Una CABECERA de apartado no
+  // lleva cantidad ni precio —es un renglón de título—, así que exigirlas aquí la haría imposible.
+  // Pero relajarlas sin más debilitaría la puerta para las líneas normales, que es donde vive el
+  // dinero: el `superRefine` de abajo las vuelve a exigir a todas las que NO son cabecera, con la
+  // misma dureza de siempre (positiva y no negativa).
+  qty: z.number().positive().optional(),
+  price: z.number().nonnegative().optional(),
   // SCRUM-217 (1124): `min(0).max(1)` aceptaba CUALQUIER fracción — un 15 % pasaba sin queja, y
   // el 15 % no es un tipo de IVA español. El validador decía que sí a un impuesto inventado, y
   // ese tipo acaba en la cuota que entra en la huella. Ahora solo pasan los que existen.
@@ -24,6 +29,12 @@ const QuoteLineSchema = z.object({
    * Que falte significa «no es un suplido», que es lo que tienen todas las líneas de siempre.
    */
   suplido: z.boolean().optional(),
+  /**
+   * SCRUM-655 · LA MARCA DE CABECERA DE APARTADO. Sin declararla aquí `z.object` LA BORRA en
+   * silencio —zod quita las claves que no conoce— y el apartado no llegaría nunca a
+   * `Quote.lines`: la pantalla mostraría un apartado y la base guardaría una línea normal.
+   */
+  apartado: z.boolean().optional(),
 }).superRefine((linea, ctx) => {
   // 🔴 UN SUPLIDO NO LLEVA IVA, Y SE EXIGE EN LA PUERTA. La pantalla ya fuerza `tax: 0`
   // (`quoteSuplido.js`), pero la pantalla no es la única que llama a esta ruta: quedarse solo con
@@ -41,6 +52,34 @@ const QuoteLineSchema = z.object({
         `${Math.round(Number(linea.tax) * 100)} %. Un suplido es lo que se paga POR CUENTA del ` +
         'cliente y se le repercute tal cual: repercutirle IVA es cobrar impuesto sobre impuesto.',
     });
+  }
+
+  // ── SCRUM-655 · CABECERA DE APARTADO ───────────────────────────────────────────────────
+  const esCabecera = linea.apartado === true;
+
+  // 🔴 Una CABECERA no lleva importes. No se le limpian por las buenas: un payload que dice
+  // «esto es un título» y a la vez trae precio está diciendo dos cosas contradictorias, y elegir
+  // cuál era la buena es inventar. Se rechaza NOMBRANDO la línea, que es lo que permite
+  // arreglarla. El total ya la ignora igualmente (`apartados.ts`), así que esto no es lo que
+  // protege el dinero: es lo que impide que alguien crea que un título cobra.
+  if (esCabecera && (linea.qty !== undefined || linea.price !== undefined)) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['qty'],
+      message: `Un apartado es un título, no una línea que cobre: «${linea.concept}» viene marcada `
+        + 'como apartado y con cantidad o precio. Quítale los importes o desmárcala.',
+    });
+  }
+
+  // Y AL REVÉS: una línea normal SIGUE necesitando las dos. Es la dureza de siempre, movida aquí
+  // porque el objeto ya no puede exigirlas —si las exigiera, no cabría ninguna cabecera—.
+  if (!esCabecera) {
+    if (linea.qty === undefined) {
+      ctx.addIssue({ code: 'custom', path: ['qty'], message: `Falta la cantidad de «${linea.concept}».` });
+    }
+    if (linea.price === undefined) {
+      ctx.addIssue({ code: 'custom', path: ['price'], message: `Falta el precio de «${linea.concept}».` });
+    }
   }
 });
 
@@ -232,6 +271,19 @@ export type MerchantProfileUpdateInput = z.infer<
 >;
 
 // ------- CUSTOMERS (NUEVO) -------
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-609 (CAT-01) · EL LADO DEL CATÁLOGO: producto o servicio.
+//
+// Mismo patrón y misma forma que `contactKind` (CONT-01), que es lo que ya está mergeado:
+// mayúsculas, sin acentos, y `nullable().optional()` para dar los tres casos sin inventar
+// ninguno — ausente = no se toca · null = no declarado · declarado por el profesional.
+//
+// 🔴 NO es una etiqueta que se guarda: DECIDE QUÉ CAMPOS ENSEÑA la ficha. Un servicio no
+// tiene coste, ni margen, ni proveedor.
+export const ITEM_KIND = ['PRODUCTO', 'SERVICIO'] as const;
+export const itemKindSchema = z.enum(ITEM_KIND).nullable().optional();
+export type ItemKind = (typeof ITEM_KIND)[number];
 
 export const customerCreateSchema = z.object({
   name: z.string().min(1),

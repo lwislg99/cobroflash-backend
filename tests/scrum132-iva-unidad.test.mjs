@@ -66,7 +66,11 @@ test('SCRUM-132: el borrador repone el IVA por defecto ANTES de crear las línea
   // se crean antes de reponerlo heredan el defecto de la pantalla recién montada, no el
   // guardado. Lo arregló SCRUM-134; se vigila aquí porque es la MISMA invariante de este ticket
   // (el general siembra con el valor correcto) y quien reordene loadDraft debe verlo caer.
-  const iDefecto = src.indexOf('if (d.vatDefault) fieldVatDefault.input.value = d.vatDefault;');
+  // SCRUM-660 · el ancla cambió de FORMA, no de invariante: reponer el defecto pasó de
+  // `fieldVatDefault.input.value = …` a `tiposDeIva.ponerValor(…)`, porque el campo ya no es un
+  // input libre sino un `<select>` y asignar `.value` a pelo perdería un tipo que no esté en la
+  // lista. **El ORDEN que este test vigila se sigue comprobando igual**, que es lo suyo.
+  const iDefecto = src.indexOf('if (d.vatDefault) window.tiposDeIva.ponerValor(fieldVatDefault.input, d.vatDefault);');
   const iLineas = src.indexOf('d.lines.forEach((l) => addLine(l));');
   assert.ok(iDefecto > 0 && iLineas > 0, 'no se localizan las dos líneas de loadDraft');
   assert.ok(iDefecto < iLineas,

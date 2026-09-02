@@ -94,7 +94,29 @@ const R = analizar(RAIZ);
 //
 // Quedan 7, y de las tres del bloque fiscal que SCRUM-500 nombró juntas siguen dos esperando el
 // mismo GO: `recargoEquivalencia.ts` (A3) y `suplidos.ts`. **Bajan cuando les llegue el suyo.**
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 7;
+// 🔴 7 → 8 · 2-sep-2026 · SCRUM-652 (T3 fase B). SUBIDA A CONCIENCIA, y el motivo es un GATE que
+// no es mío: entra `src/modules/jobs/domain/parteTrabajo.ts` —el parte de trabajo, con su sello sin
+// precios y sus dos candados— construido y probado con 12 tests, y **sin llamador todavía**.
+//
+// No es deuda ni olvido: el parte necesita dónde vivir, y eso es `prisma/schema.prisma`, que es del
+// fundador. El diff está preparado en `docs/master/SCRUM-652.md`. Cablearlo a la fuerza para que
+// este número no subiera habría sido saltarse un STOP para que un contador quedara bonito — que es
+// justo lo que prohíbe la cabecera de arriba.
+//
+// **Baja a 7 el commit que le ponga consumidor**, y ese commit es el que persista el parte.
+//
+// 🔴 8 → 9 · 2-sep-2026 · SCRUM-655. SEGUNDA SUBIDA DEL MISMO DÍA, y las dos entradas se
+// conservan porque son dos módulos distintos esperando dos gates distintos. Entra
+// `src/modules/quotes/domain/revision.ts` — la revisión de un presupuesto (el «P2004226.1») y
+// cuál está vigente, construido y probado, SIN llamador por el mismo tipo de gate: `Quote` tiene
+// `quoteNumber Int?` y NO tiene campo de revisión, y `prisma/schema.prisma` es del fundador. El
+// diff va preparado en `docs/master/SCRUM-655.md`.
+//
+// ⚠️ El número se RECUENTA al mezclar, no se suma: mi entrada decía «7 → 8» antes de mezclar y
+// main ya había subido a 8 por su cuenta. Los dos éramos «el octavo»; el censo dice cuántos hay.
+//
+// **Baja el commit que le ponga consumidor**, y hay DOS pendientes: el parte y la revisión.
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 9;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 

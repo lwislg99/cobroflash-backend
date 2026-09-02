@@ -382,15 +382,35 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   const fieldCustomer = createFieldSelect("Cliente", "customer_id");
   clientFormRow.appendChild(fieldCustomer.wrapper);
 
-  const fieldVatDefault = createField(
-    "IVA por defecto (%)",
-    "vat_default",
-    "number",
-    true
-  );
-  fieldVatDefault.input.value = "21";
-  fieldVatDefault.input.min = "0";
-  fieldVatDefault.input.step = "1";
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-660 · EL IVA POR DEFECTO DEL DOCUMENTO TAMBIÉN SE ELIGE.
+  //
+  // Lo dejó escrito SCRUM-611 al cerrar el selector de la LÍNEA, y era un hueco de verdad:
+  // «el "IVA por defecto" del documento es otro campo LIBRE (quotesView.js:385)». Cerrar la
+  // lista de la línea sin cerrar ésta no cierra nada — sólo mueve la puerta de entrada un metro
+  // más arriba, porque este valor BAJA a cada línea nueva (`addLine`, L~2166) y desde ahí viaja
+  // al documento, al PDF y al importe que el cliente firma.
+  //
+  // 🔴 SE REUTILIZA `tiposDeIva`, NO SE COPIA LA LISTA. Ese módulo existe justamente para que
+  // los tipos vivan en UN SOLO SITIO el día que entre el IGIC (SCRUM-646); escribir aquí un
+  // segundo `[21, 10, 4, 0]` sería el defecto que ese fichero viene a impedir.
+  //
+  // Y NO ES CERRADO, por la misma razón que el de la línea: un borrador guardado puede traer un
+  // 16 % —`locale.defaultVat` estampa 16, 18 y 19 por país—, y esconderlo cambiaría el IVA de un
+  // documento sin que nadie lo pida. Los cuatro españoles siempre, y el valor que venga si no es
+  // ninguno de ellos.
+  //
+  // EL RÓTULO NO CAMBIA: «IVA por defecto (%)» ya estaba aprobado y las opciones son NÚMEROS,
+  // que son dato. No hay microcopy nueva, así que no hay marcador que declarar — ponerlo donde
+  // hay copy aprobada la sustituiría por un provisional, que es peor.
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  const fieldVatDefault = createFieldSelect("IVA por defecto (%)", "vat_default");
+  window.tiposDeIva.pintarOpciones(fieldVatDefault.select, window.tiposDeIva.opciones(21));
+  window.tiposDeIva.ponerValor(fieldVatDefault.select, "21");
+  // El resto del fichero lee y escribe `fieldVatDefault.input`: se mantiene el mismo nombre
+  // apuntando al `<select>` para no tocar los seis sitios que ya lo usaban. Cambiar aquí el
+  // elemento y no el nombre es lo que hace que este diff sea de UNA pieza y no de siete.
+  fieldVatDefault.input = fieldVatDefault.select;
   // SCRUM-286: el IVA por defecto NO es un dato del cliente — es el que se aplica a cada línea
   // nueva (`addLine` lo lee como reserva, L~2068/2261). Su sitio es el bloque de Líneas, delante
   // de ellas. Va en su propia `quote-form-row` para conservar el ancho de un tercio que ya tenía:
@@ -1055,7 +1075,11 @@ blockDelivery.appendChild(descWrapper);
       // líneas. `addLine` usa `fieldVatDefault.input.value` como fallback cuando una línea no
       // trae IVA propio, así que con el orden inverso las líneas del borrador heredaban el
       // defecto ANTERIOR (el de la pantalla recién montada), no el que el usuario tenía guardado.
-      if (d.vatDefault) fieldVatDefault.input.value = d.vatDefault;
+      // 🔴 SCRUM-660 · por `ponerValor`, NO por `.value`. Un borrador puede traer un 16 %
+      // —`locale.defaultVat` estampa 16, 18 y 19 por país— y asignarlo a pelo a un `<select>` lo
+      // dejaría EN BLANCO: el IVA del documento cambiaría solo, al restaurar, sin que nadie lo
+      // pida. `ponerValor` AÑADE la opción que falta, que es justo para lo que existe.
+      if (d.vatDefault) window.tiposDeIva.ponerValor(fieldVatDefault.input, d.vatDefault);
       d.lines.forEach((l) => addLine(l));
       if (d.paymentTerms) paymentSelect.value = d.paymentTerms;
       // SCRUM-27: restaurar el editor de tramos si el borrador era "Personalizado".
@@ -1753,8 +1777,24 @@ if (typeof it.price !== "undefined" && it.price !== null && it.price !== "") {
     // guardamos base
     priceInput.dataset.pfBasePrice = String(base);
 
-    // dejamos el precio visible como BASE (el cálculo final se ve en el hint "Final")
-priceInput.value = String(base.toFixed(2));
+    // El precio del catálogo es el PRECIO FINAL: desde CAT-01 (SCRUM-609) el margen NO se guarda
+    // en el catálogo, se DERIVA de coste y precio — o sea que `price` ya lo lleva dentro.
+    priceInput.value = String(base.toFixed(2));
+
+    // ── SCRUM-610 (CAT-02) · EL MARGEN DE LA LÍNEA SE PONE A CERO AL ELEGIR ────────────────
+    //
+    // 🔴 SIN ESTO SALE DOBLE MARGEN, y está MEDIDO: un producto de 121 € (coste 100, margen
+    // derivado del 21 %) en una línea que arrastraba un 20 % acababa en el documento a
+    // **145,20 €**. El margen del catálogo ya estaba dentro del precio y se volvía a aplicar.
+    //
+    // No es un caso raro: el margen de la línea se GUARDA en el borrador (`markup` en el
+    // autoguardado) y viaja también en las PLANTILLAS, así que una línea puede llegar con margen
+    // puesto antes de que nadie elija nada del catálogo.
+    //
+    // Se pone a 0 en vez de esconder el campo: el margen del documento es DOC-08 y no es este
+    // ticket. Así el pro LO VE, y si quiere margen extra sobre el precio de catálogo lo escribe
+    // después — que es lo que ya podía hacer.
+    if (markupInput) markupInput.value = "0";
   }
 }
 
@@ -1763,7 +1803,7 @@ priceInput.value = String(base.toFixed(2));
     const v = Number(it.vat);
     // SCRUM-132: el producto guarda el IVA en FRACCIÓN; el input lo quiere en porcentaje.
     // Vía `fractionToPercent` para no volver a escribir "21.000000000000004" en el campo.
-    if (Number.isFinite(v)) vatInput.value = String(fractionToPercent(v));
+    if (Number.isFinite(v)) window.tiposDeIva.ponerValor(vatInput, fractionToPercent(v));
   }
 
   hide();
@@ -2133,13 +2173,23 @@ markupTd.appendChild(markupInput);
 
 
     const vatTd = campoLinea("IVA %", "quote-line__vat");
-    const vatInput = document.createElement("input");
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-611 (DOC-16) · EL TIPO SE ELIGE, NO SE TECLEA.
+    //
+    // CAT-01 sacó el IVA del producto, así que el tipo se fija AQUÍ. Y el 10 % es habitual en
+    // obras de renovación en vivienda: teclearlo cada vez es fricción en la pantalla que el
+    // máster quiere resolver en 30 segundos.
+    //
+    // 🔴 EL SELECTOR NO ES CERRADO, Y ESO ES LO QUE HACE QUE NO CAMBIE NADA. Le llegan valores
+    // que NO son españoles —`locale.defaultVat` estampa 16, 18 y 19 en el catálogo por gremio,
+    // y el «IVA por defecto» del documento es un campo libre—. Los cuatro tipos van siempre, y
+    // el de la línea TAMBIÉN si no es ninguno de ellos: nada se ajusta al vecino más cercano.
+    // La lista vive en `tiposDeIva.js`, en UN SOLO SITIO, para el día del IGIC (SCRUM-646).
+    //
+    // El rótulo NO cambia: «IVA %» ya estaba aprobado. No hay microcopy nueva que marcar.
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    const vatInput = window.tiposDeIva.montar(null);
     attachProductAutocomplete({ conceptInput, priceInput, vatInput, markupInput });
-
-
-    vatInput.type = "number";
-    vatInput.min = "0";
-    vatInput.step = "1";
     // SCRUM-132: el IVA llega en DOS unidades según de dónde venga la línea, y antes solo se
     // leía una — por eso el "IVA por defecto" PISABA el IVA real de plantillas y de la IA:
     //   · `vat`  = PORCENTAJE (21)   → borrador de localStorage, autocompletado de producto
@@ -2148,13 +2198,13 @@ markupTd.appendChild(markupInput);
     // tocar sus call-sites (que además son zona de SCRUM-134).
     // El general SIEMBRA, nunca PISA: solo se aplica si la línea no trae IVA propio.
     if (initial && initial.vat != null) {
-      vatInput.value = initial.vat;
+      window.tiposDeIva.ponerValor(vatInput, initial.vat);
     } else if (initial && initial.tax != null) {
       // `tax: 0` es un tipo LEGÍTIMO (0 %, SCRUM-65), no "sin especificar" → no cae al default.
-      vatInput.value = String(fractionToPercent(initial.tax));
+      window.tiposDeIva.ponerValor(vatInput, fractionToPercent(initial.tax));
     } else {
       const def = fieldVatDefault.input.value || "21";
-      vatInput.value = def;
+      window.tiposDeIva.ponerValor(vatInput, def);
     }
     vatTd.appendChild(vatInput);
 
@@ -2195,11 +2245,11 @@ markupTd.appendChild(markupInput);
     function aplicarSuplido() {
       if (suplidoCheck.checked) {
         if (!vatInput.disabled) vatInput.dataset.pfVatAntes = vatInput.value;
-        vatInput.value = "0";
+        window.tiposDeIva.ponerValor(vatInput, 0);
         vatInput.disabled = true;
       } else if (vatInput.disabled) {
         vatInput.disabled = false;
-        if (vatInput.dataset.pfVatAntes != null) vatInput.value = vatInput.dataset.pfVatAntes;
+        if (vatInput.dataset.pfVatAntes != null) window.tiposDeIva.ponerValor(vatInput, vatInput.dataset.pfVatAntes);
       }
     }
     if (suplidoCheck.checked) aplicarSuplido();
@@ -2385,7 +2435,11 @@ if (Number.isFinite(n) && n >= 0) {
       onChange();
     });
     
+    // SCRUM-611 · un `<select>` avisa por `change`; el `<input>` que había avisaba por `input`.
+    // Se escuchan LOS DOS: hay código que dispara `input` a mano (el autocompletado de
+    // producto), y quitarle ese oyente lo habría dejado sin recalcular sin que nada fallara.
     vatInput.addEventListener("input", onChange);
+    vatInput.addEventListener("change", onChange);
     markupInput.addEventListener("input", onChange);
     // SCRUM-500: marcar suplido cambia el IVA de la línea, así que recalcula como cualquier otro
     // campo. Sin esto, el total del pie se quedaría con el IVA de antes hasta el siguiente toque.
@@ -2404,7 +2458,7 @@ if (Number.isFinite(n) && n >= 0) {
         qtyInput.value = "1";
         priceInput.value = "";
         markupInput.value = "0";
-        vatInput.value = fieldVatDefault.input.value || "21";
+        window.tiposDeIva.ponerValor(vatInput, fieldVatDefault.input.value || "21");
 
         conceptInput.dataset.pfProductId = "";
         conceptInput.dataset.pfProductDescription = "";
@@ -2502,7 +2556,7 @@ if (Number.isFinite(n) && n >= 0) {
 
   resetBtn.addEventListener("click", function () {
     fieldCustomer.select.value = "";
-    fieldVatDefault.input.value = "21";
+    window.tiposDeIva.ponerValor(fieldVatDefault.input, "21"); // SCRUM-660
     paymentSelect.value = "FULL_UPFRONT";
 
     linesBody.innerHTML = "";
@@ -2921,11 +2975,17 @@ if (Number.isFinite(n) && n >= 0) {
   });
 
 
-  fieldVatDefault.input.addEventListener("input", function () {
+  // SCRUM-660 · se escuchan LOS DOS eventos a propósito. Al elegir en un `<select>` el navegador
+  // dispara `change`, y los actuales disparan además `input`; quedarse sólo con `input` dejaba
+  // algo que decide el IVA de las líneas siguientes colgando de un detalle del navegador.
+  // `renderPreview` y `scheduleDraftSave` son idempotentes: oírlo dos veces no cuesta nada.
+  const alCambiarElIvaPorDefecto = function () {
     // actualizar IVA de nuevas líneas, pero no tocamos las existentes
     renderPreview();
     scheduleDraftSave();
-  });
+  };
+  fieldVatDefault.input.addEventListener("input", alCambiarElIvaPorDefecto);
+  fieldVatDefault.input.addEventListener("change", alCambiarElIvaPorDefecto);
 
 
   function pfOneLine(s) {

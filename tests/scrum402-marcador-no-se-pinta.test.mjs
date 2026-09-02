@@ -209,6 +209,26 @@ const CENSO = Object.freeze({
   // añada un código mapeado le pone SU constante, para que el fundador pueda firmar uno sin
   // firmar los dos.
   'productsView.js': 1,
+  // SCRUM-644 (2-sep-2026) · SUBIDA A CONCIENCIA: `providersView.js` ENTRA con 1. Es el MISMO
+  // defecto y el MISMO criterio que SCRUM-641 arriba —no se inventa uno nuevo—, en el otro fichero
+  // que tenía el camino COMPLETO: `throw new Error(data?.error || …)` en un extremo y `e.message`
+  // pintado en el otro. Un profesional leía `name_duplicate` en su pantalla de proveedores.
+  //
+  // Y NO en `api.js`: es zona sin marcador por decisión (SCRUM-405), ya se intentó y la tanda lo
+  // tumbó. Queda además más honesto — el texto sin firmar lo pinta ESTA pantalla.
+  //
+  // 🔴 CUENTA 1 Y MARCA 1 RÓTULO, HOY: sólo `name_duplicate` lleva marcador. El mapa tiene DOS
+  // entradas, y la otra —`provider_in_use`— NO lo lleva a propósito: su texto YA EXISTÍA en este
+  // fichero y ya se enseñaba, así que se MUDÓ al mapa sin tocarlo. Marcar texto aprobado obligaría
+  // al fundador a refirmar lo que ya firmó.
+  //
+  // ⚠️ La lección de SCRUM-575, otra vez y por escrito: las otras dos apariciones de
+  // `PRV_MARCADOR_MICROCOPY` son respaldos de ÚLTIMO RECURSO (sólo se ven si la llamada no trae
+  // respaldo en castellano), y este censo cuenta el LITERAL, que está escrito una sola vez. O sea
+  // que si el siguiente ticket añade otro código mapeado reutilizando la constante, **este número
+  // NO se moverá** y entrará una superficie sin firmar en silencio. Quien añada un código mapeado
+  // le pone SU constante, para que el fundador pueda firmar uno sin firmar los dos.
+  'providersView.js': 1,
   'customersView.js': 2,
   'exportView.js': 1,
   // 🔴 17-ago-2026 · `invoiceDetailView.js` SALE DEL CENSO (tenía 9). El fundador aprobó los ocho
@@ -269,6 +289,20 @@ const CENSO = Object.freeze({
   // dirían exactamente lo mismo y el profesional no sabría cuál está eligiendo. Es la distinción
   // que `censo-marcadores.mjs` ya hace entre el rótulo que pinta A CIEGAS y el que al menos se
   // puede leer y juzgar.
+  // SCRUM-609 (2-sep-2026) · SUBIDA A CONCIENCIA: entra `switchTipoArticulo.js`, el switch
+  // Producto|Servicio del catálogo (CAT-01). Es el ESPEJO de `switchFormaJuridica` (CONT-01) y
+  // entra con 1 por el mismo motivo que aquél: ni la pregunta que encabeza el control ni las dos
+  // etiquetas están aprobadas, y son del fundador (regla 30).
+  //
+  // VA CON PALABRA DE TRABAJO detrás («Esto es» · «Producto» · «Servicio»), no solo: en un
+  // control de DOS LADOS un marcador pelado sería inservible, porque los dos lados dirían lo
+  // mismo y el profesional no sabría qué está eligiendo.
+  //
+  // 🔴 CUENTA 1 Y PINTA 3, y la distinción no es cosmética — es la misma que se midió en
+  // SCRUM-615: este censo cuenta MARCAS, y las tres superficies salen de una sola constante
+  // `MARCADOR`. Aprobar UNO de los tres textos NO apaga los otros dos: habrá que partir la
+  // constante el día que el fundador escriba el primero. Decir «se apagan de golpe» sería falso.
+  'switchTipoArticulo.js': 1,
   'switchFormaJuridica.js': 1,
   // SCRUM-581 (1-sep-2026) · SUBIDA A CONCIENCIA, autorizada por el asesor: las pestañas
   // Todos|Empresas|Personas y el desplegable de orden de la lista de clientes. El criterio de la

@@ -1882,3 +1882,38 @@ sentidos (529 líneas comparadas). Si algún día una base no las tuviera, `asse
 lo cantaría al arrancar — que es exactamente su trabajo.
 
 Aditivo puro: una columna con default y otra anulable. No reescribe ninguna fila existente.
+
+## SCRUM-643 (fase ②) · `Merchant.timezone` — 2-sep-2026
+
+`Merchant.timezone` (`timezone`, TEXT, **nullable, SIN default**). El huso horario con el que se
+calcula el calendario del merchant — a qué día y a qué mes natural pertenece un instante.
+
+⚠️ **NO confundir con el RÉGIMEN fiscal (IVA / IGIC canario / IPSI de Ceuta y Melilla), que es
+otro dato y es SCRUM-646.** Coinciden geográficamente en Canarias pero no son lo mismo, y la
+relación no es biyectiva: Ceuta y Melilla llevan IPSI con el huso de la península.
+
+**Aplicado a mano, no con `db push`** — porque `schema.prisma` va DETRÁS a propósito (ver abajo):
+
+| Base | Antes | `ALTER` | `UPDATE` · filas tocadas | Después |
+|---|---|---|---|---|
+| **dev** (`yaqu_dev_javier`) | columna no existía · 5 merchants | aplicado | **5 / 5 esperadas** | `Europe/Madrid`=5 · 0 NULL |
+| **staging** (`railway`, host `acela`) | columna no existía · 8 merchants | aplicado | **8 / 8 esperadas** | `Europe/Madrid`=8 · 0 NULL |
+| **producción** | — | ⛔ **PENDIENTE, la aplica el fundador** | esperadas **13** | — |
+
+El número esperado se **declaró antes** de ejecutar (contando merchants en cada base) y el script
+**para y sale con código 1** si el `UPDATE` toca otra cantidad. En las dos cuadró. Acreditado
+contra `information_schema` después: `data_type=text`, `is_nullable=YES`, `column_default=null`.
+
+Turno de staging **tomado y soltado** (`scripts/turno-staging.mjs`); libre al terminar.
+
+### 🔴 EL ORDEN, y por qué `schema.prisma` NO se toca todavía
+
+`schemaDrift.ts` compara **esperado ⊆ real** al arrancar: un `schema.prisma` que nombre una
+columna que la base no tiene → **producción no arranca** (es lo que se vivió en SCRUM-220). Por
+eso primero van las **tres** bases y después el esquema, todo junto en el PR ③ con el código y
+los tests. Una columna de MÁS en la base no rompe nada: la dirección que duele es la contraria.
+
+**Backfill a `Europe/Madrid`:** vale **por el estado de los datos, no por el criterio** — los
+merchants de hoy son todos de prueba. Con merchants reales sería la decisión equivocada, porque
+declararía peninsular a un canario. La pregunta al profesional (salida C) sigue en el plan para
+los usuarios futuros y **el backfill no la sustituye**.

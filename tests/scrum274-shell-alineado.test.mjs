@@ -158,7 +158,11 @@ test('SCRUM-274 · el SHELL del service worker lleva TODOS los <script> del dash
       faltan.map((s) => `    ${s}`).join('\n') +
       '\n\n  La primera visita SIN COBERTURA se queda sin esas pantallas, y con red no se nota\n' +
       '  nada — por eso llevaba tiempo desalineado sin que saltara. Añádelos a `SHELL` en\n' +
-      '  `public/sw.js`, en el mismo orden que el HTML.',
+      '  `public/sw.js`.\n\n' +
+      '  ⚠️ SCRUM-662: aquí ponía «en el mismo orden que el HTML» y era FALSO. Este guard compara\n' +
+      '  con `new Set`: exige la misma LISTA, no la misma secuencia — y de hecho las dos secuencias\n' +
+      '  divergen desde antes de aquel ticket. Una frase que miente dentro de un error es peor que\n' +
+      '  ninguna: la lee quien está depurando a las once de la noche.',
   );
 });
 
