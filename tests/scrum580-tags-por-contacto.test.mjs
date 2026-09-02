@@ -236,27 +236,38 @@ test('SCRUM-580 · 🔴 la vista MONTA el campo, la columna y el filtro', () => 
   assert.match(v, /tags: tagsParaPayload\(/, '🔴 el payload no manda las etiquetas.');
   assert.match(v, /fieldTags\.input\.value = \(Array\.isArray\(editingCustomer\.tags\)/,
     '🔴 al editar no se rellenan: el profesional las reescribiría cada vez.');
-  assert.match(v, /\{ t: FC\.TEXTOS_ETIQUETAS\.columna, cls: "col-hide-mobile" \}/,
-    '🔴 no hay columna en la lista, o su rótulo no sale de la pieza.');
+  // SCRUM-584 · REANCLADO: la cabecera ya no es una lista literal en la vista — sale de
+  // `FC.COLUMNAS`. La INVARIANTE no cambia (existe la columna y su rótulo sale de la pieza),
+  // cambia dónde se comprueba. Y se comprueba EJECUTANDO la pieza, que es más fuerte que
+  // buscar su forma en el fuente con un regex.
+  const colEtiquetas = FC.COLUMNAS.filter((c) => c.id === 'etiquetas')[0];
+  assert.ok(colEtiquetas, '🔴 no hay columna de etiquetas en la lista de columnas.');
+  assert.equal(colEtiquetas.texto, FC.TEXTOS_ETIQUETAS.columna,
+    '🔴 la columna existe pero su rótulo no sale de la pieza.');
+  assert.equal(colEtiquetas.ocultaEnMovil, true,
+    '🔴 la columna de etiquetas ha dejado de nacer oculta en móvil: eso cambia la pantalla de '
+    + 'todo el mundo sin que nadie lo pida.');
   assert.match(v, /FC\.aplicar\(lote, pestanaActiva, ordenActivo, etiquetaActiva\)/,
     '🔴 la lista no pasa la etiqueta al filtro: el selector no filtraría nada.');
 });
 
 test('SCRUM-580 · 🔴 F1 y F3 NO se han perdido', () => {
   const v = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/customersView.js'), 'utf8');
-  const i = v.indexOf('{ t: "ID" }');
-  assert.notEqual(i, -1, '🔴 CIEGO: no encuentro las cabeceras.');
-  // Las cabeceras EN ORDEN, sean literal o expresión. F1 es una afirmación sobre la POSICIÓN, así
-  // que leer sólo los literales se saltaría la columna nueva —que ahora lee su rótulo de la
-  // pieza— y devolvería un orden falso, con el hueco cerrado sin que nada chillara.
-  const bloque = v.slice(i, v.indexOf('].forEach', i));
-  const cabeceras = [...bloque.matchAll(/\{ t: ("([^"]*)"|[^,}]+)/g)]
-    .map((m) => (m[2] !== undefined ? m[2] : m[1].trim()));
+  // SCRUM-584 · REANCLADO: las cabeceras salen de `FC.COLUMNAS`, no de una lista en el fuente.
+  // F1 es una afirmación sobre la POSICIÓN, así que se lee la lista EJECUTADA: no hay regex que
+  // pueda equivocarse, y si mañana la lista cambia de forma esto sigue midiendo lo mismo.
+  const cabeceras = FC.COLUMNAS.map((c) => c.texto);
   assert.ok(cabeceras.length >= 7,
     `🔴 CIEGO: sólo veo ${cabeceras.length} cabeceras; el orden de abajo no probaría nada.`);
   assert.deepEqual(cabeceras.slice(0, 3), ['ID', 'Nombre', 'Teléfono'],
     '🔴 F1 ROTO: el teléfono ya no es la tercera columna.');
-  assert.ok(cabeceras.includes('FC.TEXTOS_ETIQUETAS.columna'),
+  // 🔴 Y F1 dice algo más que la posición: el teléfono NACE VISIBLE. Con columnas ocultables,
+  // «estar en la lista» ya no basta — podría estar y nacer apagado.
+  const tel = FC.COLUMNAS.filter((c) => c.id === 'telefono')[0];
+  assert.equal(tel.ocultaEnMovil, false,
+    '🔴 F1 ROTO: el teléfono nace OCULTO en móvil. Es donde YaQu gana a Holded, que ni lo tiene '
+    + 'como columna: puede apagarlo el profesional, nunca el producto.');
+  assert.ok(cabeceras.includes(FC.TEXTOS_ETIQUETAS.columna),
     '🔴 no está la columna nueva, o ha dejado de leer su rótulo de la pieza.');
   for (const accion of ['Editar', 'Portal', 'Historial']) {
     assert.ok(v.includes(accion), `🔴 F3 ROTO: ha desaparecido la acción «${accion}» de la fila.`);
@@ -265,15 +276,20 @@ test('SCRUM-580 · 🔴 F1 y F3 NO se han perdido', () => {
 
 test('SCRUM-580 · 🔴 los vacíos abarcan TODAS las columnas', () => {
   const v = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/customersView.js'), 'utf8');
-  const i = v.indexOf('{ t: "ID" }');
-  const cuantas = [...v.slice(i, v.indexOf('].forEach', i)).matchAll(/\{ t:/g)].length;
-  const colspans = [...v.matchAll(/td\.colSpan = (\d+)/g)].map((m) => Number(m[1]));
-  assert.ok(colspans.length > 0, '🔴 CIEGO: no encuentro ningún colSpan.');
-  for (const c of colspans) {
-    assert.equal(c, cuantas,
-      `🔴 un estado vacío abarca ${c} columnas y la tabla tiene ${cuantas}: el vacío saldría `
-      + 'descuadrado en cuanto entra una columna nueva.');
-  }
+  // SCRUM-584 · REANCLADO, y el reanclaje ES el arreglo: antes había DOS `colSpan = 8` escritos
+  // a mano y este guard comparaba dos números copiados. Ahora el `colSpan` SALE de la misma
+  // lista que la cabecera, así que no pueden descuadrarse — pero eso hay que comprobarlo, no
+  // suponerlo: un `colSpan` a mano que vuelva sería el defecto otra vez.
+  const aMano = [...v.matchAll(/td\.colSpan = (\d+)/g)];
+  assert.deepEqual(aMano.map((m) => m[1]), [],
+    '🔴 ha vuelto un `colSpan` con un número escrito a mano: en cuanto entre una columna nueva quedará descuadrado, y un vacío descuadrado no lo ve ninguna tanda.');
+  const derivados = [...v.matchAll(/td\.colSpan = FC\.colSpanDeLaTabla\(\)/g)];
+  assert.ok(derivados.length >= 2,
+    `🔴 CIEGO: sólo ${derivados.length} vacíos derivan su colSpan de la lista; había dos.`);
+  // Y el número que devuelve la pieza es el de la cabecera. Si divergieran, el vacío saldría
+  // corto o largo y nadie lo vería.
+  assert.equal(FC.colSpanDeLaTabla(), FC.COLUMNAS.length,
+    '🔴 el `colSpan` y la cabecera ya no salen del mismo sitio.');
 });
 
 test('SCRUM-580 · la etiqueta se pinta con el componente del inventario, no con estilo inventado', () => {
@@ -316,8 +332,10 @@ test('SCRUM-580 · 🔴 las cuatro cuentan como SIN LA FIRMA DEL FUNDADOR', () =
   // Las seis de SCRUM-581 las firmó el fundador; estas cuatro las aprobó el asesor y están a la
   // espera. El contador existía valiendo 0 exactamente para este momento: que una ranura nueva no
   // entre en pantalla sin que nadie declare su estado.
-  assert.equal(FC.SIN_APROBAR, 4,
-    '🔴 el recuento de ranuras sin la firma del fundador no cuadra con las cuatro de CONT-07. Si '
+  // SCRUM-584 · SUBE A 5: entra el rótulo del selector de columnas, aprobado por el ASESOR y a
+  // la espera del fundador. Los NOMBRES de las columnas no cuentan — ya estaban en pantalla.
+  assert.equal(FC.SIN_APROBAR, 5,
+    '🔴 el recuento de ranuras sin la firma del fundador no cuadra. Si '
     + 'el fundador firma alguna, se baja AQUÍ — aprobar una no aprueba las otras tres.');
 });
 
@@ -327,7 +345,14 @@ test('SCRUM-580 · 🔴 la vista NO repite los textos: los lee de la pieza', () 
   const codigo = v.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
   assert.match(codigo, /FC\.TEXTOS_ETIQUETAS\.rotulo/, '🔴 el rótulo no sale de la pieza.');
   assert.match(codigo, /FC\.TEXTOS_ETIQUETAS\.placeholder/, '🔴 el placeholder no sale de la pieza.');
-  assert.match(codigo, /FC\.TEXTOS_ETIQUETAS\.columna/, '🔴 la columna no sale de la pieza.');
+  // SCRUM-584 · REANCLADO: la vista ya NO menciona el rótulo de la columna, porque la cabecera
+  // sale entera de `FC.COLUMNAS`. Que el texto se lee de la pieza lo fija el caso «la vista MONTA
+  // el campo, la columna y el filtro», comparándolo con `===` sobre la lista ejecutada. Aquí la
+  // invariante se cumple MÁS que antes: no es que la vista lo lea de la pieza, es que ya no lo toca.
+  assert.equal(/TEXTOS_ETIQUETAS\.columna/.test(codigo), false,
+    '🔴 la vista ha vuelto a montar la cabecera por su cuenta. La lista de columnas vive en la '
+    + 'pieza, y dos sitios que declaran las mismas columnas divergen — que es justo el defecto '
+    + 'que dejó dos `colSpan` copiados a mano.');
   assert.match(codigo, /FC\.TEXTOS_ETIQUETAS\.sinFiltro/, '🔴 la opción sin filtro no sale de la pieza.');
   assert.equal(/"Todas las etiquetas"|"comunidad, administrador/.test(codigo), false,
     '🔴 la vista repite un texto aprobado a mano. Dos copias de una microcopy divergen, y la '

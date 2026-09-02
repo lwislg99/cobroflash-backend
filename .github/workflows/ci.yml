@@ -211,6 +211,25 @@ jobs:
           echo
           awk '/^not ok /{p=1} p{print} p&&/^  \.\.\./{p=0}' "$tap"
 
+      # ═══════════════════════════════════════════════════════════════════════════════════
+      # 🔴 SCRUM-672 · UN TEST QUE DESAPARECE NO ES UN TEST QUE FALLA
+      #
+      # Medido el 2-sep: al romper un `import`, la tanda pasó de 4391 a 4377 — CATORCE tests
+      # desaparecieron. Allí hubo señal porque el import produjo rojos, pero un fichero que sale
+      # de la tanda por un patrón que deja de casarlo se lleva sus tests con `fail 0` y salida 0.
+      # Reproducido en este ticket: 4731 → 4720, verde y sin una sola queja.
+      #
+      # ⚠️ `if: always()` NO ES OPCIONAL, y es la mitad del ticket: el defecto que persigue sale
+      # VERDE. Si esto corriera sólo cuando la tanda falla, NO LO VERÍA NUNCA.
+      #
+      # Y se lee el TAP, no la consola: medido, con el reporter TAP activo la línea `tests N` de
+      # `spec` no existe — el número que imprime la consola depende de qué reporter esté puesto.
+      # El resumen del TAP lo emite el propio reporter, y ese fichero YA se escribe arriba: esto
+      # no añade nada que mantener, le da superficie.
+      # ═══════════════════════════════════════════════════════════════════════════════════
+      - name: ¿Ha perdido tests la tanda?
+        if: always()
+        run: node scripts/suelo-de-la-tanda.mjs "${{ runner.temp }}/tanda.tap"
       # El TAP entero, por si el bloque de arriba no basta. Se sube SIEMPRE que haya rojo:
       # un diagnóstico que hay que pedir a mano llega un día tarde.
       - name: Guardar el TAP completo
