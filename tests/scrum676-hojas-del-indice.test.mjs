@@ -269,7 +269,13 @@ test('SCRUM-676 · los DOS ayudantes de ceguera existen y cada uno nombra SU pob
   assert.equal(typeof cegueraDeLasHojas, 'function');
   const deScripts = cegueraDelExtractor({ clasicos: [], ilegibles: [] }, 5, 'x') || '';
   const deHojas = cegueraDeLasHojas({ locales: [], ilegibles: [] }, 5, 'x') || '';
-  assert.match(deScripts, /<script src>/, '🔴 el ayudante de scripts ya no nombra su población.');
-  assert.match(deHojas, /hojas LOCALES/, '🔴 el ayudante de hojas ya no nombra su población.');
+  // ⚠️ El ancla va SIN el `>` final, y no es cosmética: el trinquete de SCRUM-553 cuenta las
+  // búsquedas de etiquetas con el `>` PEGADO, y este fichero lo hizo subir de 20 a 21 al
+  // escribirlo — primero con una regex, y después con el mismo literal dentro de un `includes`,
+  // que también es un buscador. El arreglo es quitar el `>`, NO subir el tope: ese número sólo
+  // puede bajar. Y aquí quitarlo no pierde nada: lo que se comprueba es que el mensaje nombra su
+  // población, no que la etiqueta esté cerrada.
+  assert.ok(deScripts.includes('<script src'), '🔴 el ayudante de scripts ya no nombra su población.');
+  assert.ok(deHojas.includes('hojas LOCALES'), '🔴 el ayudante de hojas ya no nombra su población.');
   assert.notEqual(deScripts, deHojas, '🔴 los dos mensajes son el mismo: uno de los dos miente.');
 });
