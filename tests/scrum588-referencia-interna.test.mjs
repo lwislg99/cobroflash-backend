@@ -143,6 +143,42 @@ test('SCRUM-588 · los dos textos son los APROBADOS, literales', () => {
     '🔴 el placeholder lleva tres puntos en vez del carácter «…».');
 });
 
+/** El valor literal de una asignación `X.placeholder = "…";` en un fuente. */
+function placeholderDe(fuente, variable) {
+  const m = new RegExp(`${variable}\\.placeholder\\s*=\\s*"([^"]*)"`).exec(soloCodigo(fuente));
+  assert.ok(m, `🔴 no encuentro el placeholder de \`${variable}\`: el extractor está ciego.`);
+  return m[1];
+}
+
+test('SCRUM-588 · 🔴 el placeholder del BUSCADOR dice lo que el buscador HACE', () => {
+  // Decía «nombre, teléfono o email» y esta rama le añadió la referencia al `OR`. Dejarlo habría
+  // sido una frase FALSA en pantalla, que es peor que una incompleta: el profesional no probaría
+  // a buscar por su nº de expediente porque el campo le dice que no se puede.
+  const APROBADO = 'Buscar por nombre, teléfono, email o referencia…';
+
+  // 🔴 CON `===`, NO CON `includes`. Y aquí está el porqué, comprobado en este mismo test: la
+  // versión con TRES PUNTOS pasa un `includes` del texto aprobado sin los suspensivos, así que un
+  // guard laxo daría por bueno un texto que NO es el que firmó el asesor.
+  const conTresPuntos = 'Buscar por nombre, teléfono, email o referencia...';
+  assert.notEqual(conTresPuntos, APROBADO,
+    '🔴 el corpus del control no distingue las dos grafías: no prueba nada.');
+  assert.ok(conTresPuntos.includes('Buscar por nombre, teléfono, email o referencia'),
+    '🔴 SUELO: el impostor tiene que parecerse lo bastante como para colarse por un `includes`.');
+
+  assert.equal(placeholderDe(leer('public/dashboard/js/customersView.js'), 'searchInput'), APROBADO,
+    '🔴 el placeholder del buscador no es el APROBADO, literal. Ojo a los puntos suspensivos: son ' +
+    'UN carácter «…», no tres puntos.');
+});
+
+test('SCRUM-588 · 🔴 y los suspensivos son UN carácter en los DOS textos de este ticket', () => {
+  const vista = leer('public/dashboard/js/customersView.js');
+  for (const [variable, donde] of [['searchInput', 'el buscador'], ['fieldInternalRef.input', 'el campo']]) {
+    const ph = placeholderDe(vista, variable.replace('.', '\\.'));
+    assert.ok(ph.includes('…'), `🔴 ${donde} ha perdido el carácter «…».`);
+    assert.ok(!ph.includes('...'), `🔴 ${donde} lleva TRES PUNTOS en vez de «…».`);
+  }
+});
+
 test('SCRUM-588 · 🔴 NEGATIVO: no se pinta ningún marcador de microcopy en este campo', () => {
   // Los dos textos están aprobados, así que un `[PENDIENTE …]` aquí sería texto sin firmar en la
   // pantalla de un profesional — y desde que producción despliega con cada merge, a los cinco

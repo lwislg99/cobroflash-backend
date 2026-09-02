@@ -79,7 +79,12 @@ function renderCustomersView(container) {
   const searchInput = document.createElement("input");
   searchInput.type = "text";
   searchInput.className = "input";
-  searchInput.placeholder = "Buscar por nombre, teléfono o email…";
+  // SCRUM-588 (CONT-16) · el placeholder DICE LO QUE EL BUSCADOR HACE. Decía «nombre, teléfono o
+  // email» y esta misma rama le añadió la referencia interna al `OR` de `listCustomers`: dejarlo
+  // habría sido una frase falsa en pantalla, que es peor que una frase incompleta — el profesional
+  // no probaría a buscar por su nº de expediente porque el campo le dice que no se puede.
+  // Texto APROBADO por el asesor (2-sep-2026), literal y con «…» de UN carácter.
+  searchInput.placeholder = "Buscar por nombre, teléfono, email o referencia…";
   searchInput.style.cssText = "min-width:160px;flex:1";
   toolbar.appendChild(searchInput);
 
