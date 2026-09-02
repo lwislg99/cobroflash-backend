@@ -33,10 +33,10 @@
 // Sin dependencias nuevas (regla 36): `node:vm` y un DOM de mentira, como el de SCRUM-296.
 import fs from 'node:fs';
 import path from 'node:path';
-// SCRUM-670: la fuente única de los scripts del índice.
-import { nombresDelDashboard } from './_scripts-del-indice.mjs';
 import vm from 'node:vm';
 import { createRequire } from 'node:module';
+// SCRUM-670 · el ÚNICO sitio del repo donde se lee un `<script>` de un marcado.
+import { scriptsDeLaPagina, rutaDelDashboard } from './_scripts-de-la-pagina.mjs';
 const require = createRequire(import.meta.url);
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -319,12 +319,22 @@ export function nodo(tag, reg) {
 
 export function todos(n, out = []) { out.push(n); for (const h of n.hijos) todos(h, out); return out; }
 
-/** Los `<script src>` de `dashboard/index.html`, EN SU ORDEN. */
+/**
+ * Los `<script src>` LOCALES de `dashboard/index.html`, EN SU ORDEN, relativos a
+ * `public/dashboard` (`js/api.js`) — que es como este banco los abre.
+ *
+ * SCRUM-670 · YA NO TIENE REGEX PROPIA. La que había —`<script src="./X"></script>`— veía **0**
+ * ante un `defer`, un atributo de más o la etiqueta partida en dos líneas, y en cambio SÍ contaba
+ * un `<script>` COMENTADO, que el navegador no carga. Las dos cosas en silencio: la primera dejaba
+ * una vista sin cargar y sin vigilar, la segunda hacía cargar un fichero que nadie pide.
+ *
+ * Devuelve `clasicos` a propósito: los `type="module"` NO comparten ámbito global, así que
+ * ejecutarlos aquí en un solo contexto —que es lo que hace fiel a este banco para los clásicos—
+ * mediría otra cosa. Hoy no hay ninguno, y `scrum670` cae el día que entre el primero.
+ */
 export function scriptsDelDashboard(raiz) {
   const html = fs.readFileSync(path.join(raiz, 'public/dashboard/index.html'), 'utf8');
-  // SCRUM-670: una sola fuente, y no una regex propia. Se conserva el prefijo `js/` porque es
-  // el contrato que ya consumen `contrastarScripts` y el banco de SCRUM-417.
-  return nombresDelDashboard(html).map((n) => 'js/' + n);
+  return scriptsDeLaPagina(html).clasicos.map(rutaDelDashboard);
 }
 
 // ═════════════════════════════════════════════════════════════════════════════════════════

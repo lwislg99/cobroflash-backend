@@ -50,13 +50,33 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
  * 🔴 EL TOPE BAJA PORQUE SE MIDIO RUIDO, NUNCA PORQUE EL NUMERO MOLESTE. Y no baja a 16 porque
  *    16 no es lo que hay: seria un tope que el arbol no cumple, o sea main en rojo. La rebaja
  *    honesta es de 6 —13 que se van, 7 que aparecen— y las dos mitades estan escritas.
+ *
+ * ── SCRUM-670 · 23 -> 21, Y ESTA VEZ POR ARREGLO, no por medicion ───────────────────────────
+ *
+ * Habia SEIS extractores leyendo `public/dashboard/index.html`, cada uno con su idea de que es un
+ * `<script>`. Dos de ellos con el `>` PEGADO, que es lo que vigila este fichero:
+ *
+ *     tests/_banco-vistas.mjs                          <script src="./X"></script>
+ *     tests/dashboard-colision-declaraciones.test.mjs  <script src="./js/X"></script>
+ *
+ * Los dos se han retirado: los seis consumidores derivan ahora de UN extractor unico
+ * (`tests/_scripts-de-la-pagina.mjs`), que si deja hueco a los atributos. Y no era cosmetica —
+ * medido: esas dos veian 0 ante `<script src="./js/x.js" defer></script>`, o sea que esa vista se
+ * quedaba sin cargar y sin vigilar mientras el guard del shell la exigia en `sw.js`.
+ *
+ * Es el mismo defecto que este trinquete existe para frenar, cazado en su version mas cara. El
+ * propio trinquete lo pidio con estas palabras: «han bajado a 21, baja TOPE a ese numero».
  */
-// ✅ 23 → 22 · 2-sep-2026 · SCRUM-670: bajan al llevar los CINCO lectores del indice a
-// una fuente unica (`tests/_scripts-del-indice.mjs`). Las regex que exigian `></script>` pegado
-// eran justo las que perdian una etiqueta con `defer` o con comillas simples. El trinquete baja
-// en el mismo commit que lo arregla: uno que no se ajusta deja de proteger de lo siguiente.
-const TOPE = 22;
-
+// 🔴 2-sep-2026 · SCRUM-670 · RECONTADO SOBRE EL ÁRBOL MEZCLADO: 20.
+//
+// Ni el 22 de la rama ni el 21 de main: los dos son de árboles que ya no existen. Las dos
+// partes del merge bajaban este número por el mismo motivo —llevar los lectores del índice a
+// un solo extractor— y cada una contó sobre el suyo. Sumar o elegir habría dejado el tope por
+// encima de lo real, que es como un trinquete deja de proteger sin que nadie lo note.
+//
+// Y la base heredada decía 21 antes de todo esto: este contador no ha sido nunca de fiar. El
+// que vale sale de CONTAR, y el propio guard lo dice en su mensaje cuando no cuadra.
+const TOPE = 20;
 /**
  * Los 7 que el criterio viejo no veia. Estan aqui para que se puedan arreglar, NO para
  * excusarlos: cuentan dentro del TOPE como cualquier otro.

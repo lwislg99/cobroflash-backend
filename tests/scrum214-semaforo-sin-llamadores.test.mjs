@@ -27,7 +27,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { nombresDelDashboard } from './_scripts-del-indice.mjs';
+import { scriptsDeLaPagina, rutaDelDashboard } from './_scripts-de-la-pagina.mjs';
 import ts from 'typescript';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
@@ -130,7 +130,8 @@ test('SCRUM-214 · index.html carga el módulo pero no lo invoca', () => {
   const html = fs.readFileSync(path.join(RAIZ, 'public', 'dashboard', 'index.html'), 'utf8');
   // SCRUM-670: se pregunta a la fuente única en vez de exigir una forma concreta de etiqueta.
   // La regex de antes daba por AUSENTE el script en cuanto alguien le añadiera un `defer`.
-  assert.ok(nombresDelDashboard(html).includes('semaforoFiscal.js'),
+  const enElIndice = scriptsDeLaPagina(html).clasicos.map((x) => rutaDelDashboard(x).replace(/^js\//, ''));
+  assert.ok(enElIndice.includes('semaforoFiscal.js'),
     'el módulo debe seguir sirviéndose; si se retiró, este guard sobra');
 
   // Solo el contenido de los <script> EN LÍNEA, que es donde cabría una llamada. El atributo

@@ -21,8 +21,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-// SCRUM-670: la fuente única de «qué scripts declara el documento».
-import { srcsDelIndice } from './_scripts-del-indice.mjs';
+// SCRUM-670 · el UNICO sitio del repo donde se lee un <script> de un marcado.
+import { scriptsDeLaPagina } from './_scripts-de-la-pagina.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC_DIR = path.join(RAIZ, 'public');
@@ -55,8 +55,11 @@ const RE_HUELLA = new RegExp(`[?&]${PARAM_HUELLA}=[0-9a-f]{10}(?:&|$)`);
 test('SCRUM-274 · SUELO: el extractor ve las referencias que de verdad hay', () => {
   const html = htmlServido();
   const refs = referenciasDe(html, { publicDir: PUBLIC_DIR, baseUrl: BASE_URL });
-  // SCRUM-670: el recuento sale de la fuente única, no de una cuarta regex propia.
-  const scripts = srcsDelIndice(html).length;
+  // SCRUM-670 · sin regex propia. Su mensaje ya avisaba de «comillas simples, atributo partido»
+  // sabiendo el riesgo; ahora lo resuelve el extractor único, que además se declararía ILEGIBLE
+  // en vez de devolver un total menor y callarse.
+  const { clasicos, modulos, remotos } = scriptsDeLaPagina(html);
+  const scripts = clasicos.length + modulos.length + remotos.length;
   const locales = refs.filter((r) => !r.externa);
 
   assert.ok(

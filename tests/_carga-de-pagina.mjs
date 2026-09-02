@@ -44,6 +44,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
+// SCRUM-670 · el ÚNICO sitio del repo donde se lee un `<script>` de un marcado.
+import { scriptsDeLaPagina } from './_scripts-de-la-pagina.mjs';
 
 /**
  * Globales del NAVEGADOR (+ los dos de Node que usan los ficheros del navegador dentro de su guard
@@ -83,11 +85,20 @@ export function paginas(raiz) {
   return out.sort();
 }
 
-/** Los `<script src>` y `<link .css>` que la página CARGA de verdad (comentados no cuentan). */
+/**
+ * Los `<script src>` y `<link .css>` que la página CARGA de verdad (comentados no cuentan).
+ *
+ * SCRUM-670 · los `<script>` los lee el extractor ÚNICO. Éste era uno de los dos que acertaban
+ * —quitaba comentarios y aceptaba comillas simples—, así que aquí no se pierde nada: lo que se
+ * gana es que las otras cinco lecturas del repo pasen a compartir su criterio en vez de tener
+ * cada una el suyo. Se juntan las tres clases porque esta función pregunta «qué carga la página»,
+ * no «cómo se aísla cada cosa».
+ */
 export function recursosDe(html) {
   const limpio = sinComentariosHtml(html);
+  const s = scriptsDeLaPagina(html);
   return {
-    scripts: [...limpio.matchAll(/<script[^>]*\ssrc=["']([^"']+)["']/g)].map((m) => m[1]),
+    scripts: [...s.clasicos, ...s.modulos, ...s.remotos],
     hojas: [...limpio.matchAll(/<link[^>]*\shref=["']([^"']+\.css)["']/g)].map((m) => m[1]),
   };
 }

@@ -145,8 +145,24 @@ export const CAPACIDADES = [
     detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'rightCard', argumento: 'previewBox' }) },
   { id: 'F8', que: 'suplido como concepto de primera clase (viaja en la linea)',
     detecta: (sf) => hayPropiedad(sf, 'suplido') },
-  { id: 'F9', que: 'coste y margen (markup por linea)',
-    detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'markupTd', argumento: 'markupInput' }) },
+  // 🔴 F9 SE MUDA (SCRUM-598, DOC-08). NO se retira: cambia de domicilio, y la dirección nueva
+  // está al final de este mismo fichero — `F9_EN_EL_CATALOGO` / `faltaEnF9`. Esto ES el cambio
+  // de máster que este censo exige, y la mudanza es la mitad que lo hace legítimo: una retirada
+  // sin sustituto convierte una regla innegociable en una costumbre.
+  //
+  // F9 decía «coste y margen existen EN EL PRODUCTO (markup por línea)». La capacidad NO ha
+  // desaparecido: desde CAT-01 (SCRUM-609) el coste y el margen viven en el CATÁLOGO, con su
+  // propio campo y su propia aritmética (`margenCatalogo.js`). Lo que se retira es el margen del
+  // DOCUMENTO, que es otra cosa: información del profesional viviendo en el papel que le enseña
+  // a su cliente.
+  //
+  // Decisión del fundador, 24-ago-2026. Registrada en `docs/master/SCRUM-598.md`.
+  //
+  // Y el detector de F9 anclaba en `markupTd.appendChild(markupInput)` DENTRO de `quotesView.js`
+  // — o sea, medía la capacidad por su dirección vieja. Este censo compara los dos fronts del
+  // DOCUMENTO; en el documento el margen ya no vive, así que AQUÍ no hay nada que vigilar. Se
+  // vigila en su casa nueva, y se vigila: `scrum600` sigue exigiendo los OCHO, siete desde
+  // `LOS_OCHO` y F9 desde `F9_EN_EL_CATALOGO`.
   { id: 'F10', que: 'la comision se declara en el propio formulario',
     detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'payMethodsWrapper', argumento: 'pmFee' }) },
   { id: 'F11', que: 'Sugerir con IA + Usar plantilla, en primer plano',
@@ -258,10 +274,10 @@ export const LOS_OCHO = [
     fichero: 'public/dashboard/js/quotesView.js',
     ancla: '  suplido: !!(line.suplidoCheck && line.suplidoCheck.checked),',
     detecta: (sf) => hayPropiedadEnArgumentoDe(sf, { llamada: 'lineaParaPayload', clave: 'suplido' }) },
-  { id: 'F9', que: 'coste y margen existen en el producto (markup por linea)',
-    fichero: 'public/dashboard/js/quotesView.js',
-    ancla: 'markupTd.appendChild(markupInput);',
-    detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'markupTd', argumento: 'markupInput' }) },
+  // (F9 no está aquí porque SE MUDÓ, no porque se retirara: vive en `F9_EN_EL_CATALOGO`, al
+  //  final de este fichero. `LOS_OCHO` ancla por LÍNEA dentro de UN fichero, y la capacidad de
+  //  F9 ya no cabe en esa forma — está repartida entre los dos formularios del catálogo, lo que
+  //  se envía al servidor y la aritmética. Por eso su detector es propio y devuelve QUÉ falta.)
   { id: 'F10', que: 'LA COMISION SE DECLARA EN EL PROPIO FORMULARIO',
     fichero: 'public/dashboard/js/quotesView.js',
     ancla: '    payMethodsWrapper.appendChild(pmFee);',
@@ -284,6 +300,175 @@ export const LOS_OCHO = [
     ancla: '      doc.image(imgBuffer, M, doc.y, { width: 180, height: 70, fit: [180, 70] });',
     detecta: (sf) => hayLlamada(sf, { nombre: 'image', receptor: 'doc', argumento: 'imgBuffer' }) },
 ];
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 F9 · LA MUDANZA. Una regla innegociable no se retira: se le pone la DIRECCIÓN NUEVA.
+//
+// F9 dice «coste y margen existen EN EL PRODUCTO». Su detector vivía en `LOS_OCHO`, anclado a
+// `markupTd.appendChild(markupInput)` DENTRO de `quotesView.js`: medía la CAPACIDAD por la
+// DIRECCIÓN que tenía el día que se escribió. Y la dirección caducó — con CAT-01 (SCRUM-609,
+// decisión del fundador del 24-ago-2026) el coste y el margen se mudaron al CATÁLOGO, y con
+// DOC-08 (SCRUM-598) el margen salió del documento.
+//
+// 🔴 RETIRAR EL DETECTOR SIN SUSTITUTO CONVIERTE UNA REGLA EN UNA COSTUMBRE. Ese detector ERA lo
+// que hacía innegociable a F9. Sin él, mañana alguien quita el margen DEL CATÁLOGO y no salta
+// nada, y no lo sabríamos hasta que se quejara un profesional. Así que F9 no sale de la red:
+// cambia de domicilio, y éstas son las señas nuevas.
+//
+// POR IDENTIDAD, NO POR POSICIÓN — que es justo lo que caducó la vez anterior. Un campo se
+// reconoce por su `name`, que es como lo busca el propio código y como viaja al servidor.
+// Reordenar el formulario, renombrar la variable que lo sostiene o mover el bloque NO hacen caer
+// esto. Quitar el campo, SÍ.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * El HTML que PINTA un fichero: los literales que se asignan a `.innerHTML`.
+ *
+ * Los dos formularios del catálogo se escriben así —no con `createElement`—, así que el censo A
+ * de arriba no los ve: por eso este detector trae su propia población y no reusa aquél.
+ * Un comentario de JS no es un literal, o sea que queda fuera POR CONSTRUCCIÓN — la misma razón
+ * por la que el resto de este fichero mira el árbol y no la fuente.
+ *
+ * 🔴 Y LOS COMENTARIOS DE **HTML** SE QUITAN A MANO, porque el árbol NO protege de ésos: van
+ * DENTRO del literal, así que para el AST siguen siendo texto pintado. MEDIDO: con el campo
+ * «Coste» envuelto en `<!-- ... -->` el detector contestaba «no falta nada» mientras el
+ * profesional no veía el campo por ninguna parte. Es el falso verde de SCRUM-515 con otra ropa.
+ */
+function htmlPintado(sf) {
+  const bloques = [];
+  recorrer(sf, (n) => {
+    if (!ts.isBinaryExpression(n) || n.operatorToken.kind !== ts.SyntaxKind.EqualsToken) return;
+    if (!ts.isPropertyAccessExpression(n.left) || !ts.isIdentifier(n.left.name)) return;
+    if (n.left.name.text !== 'innerHTML') return;
+    const r = n.right;
+    let texto = null;
+    if (ts.isStringLiteral(r) || ts.isNoSubstitutionTemplateLiteral(r)) texto = r.text;
+    else if (ts.isTemplateExpression(r)) {
+      texto = r.head.text + r.templateSpans.map((s) => s.literal.text).join(' ');
+    }
+    if (texto !== null) bloques.push(texto.replace(/<!--[\s\S]*?-->/g, ' '));
+  });
+  return bloques;
+}
+
+/** Ese HTML pinta un control cuyo `name` es `clave`. La identidad del campo es su `name`. */
+function pintaCampo(html, clave) {
+  return new RegExp('<(?:input|select|textarea)\\b[^>]*\\bname="' + clave + '"').test(html);
+}
+
+/** Las claves de un objeto literal, como Set. */
+function clavesDe(n) {
+  return new Set(n.properties
+    .map((p) => (p.name && (ts.isIdentifier(p.name) ? p.name.text
+      : (ts.isStringLiteral(p.name) ? p.name.text : null))))
+    .filter(Boolean));
+}
+
+/**
+ * Los objetos de PRODUCTO del fichero: los que llevan `name` y `price` juntos.
+ *
+ * La población se define por la FORMA y no por la variable que los recibe (`payload`), porque
+ * renombrar una variable no es perder una capacidad — y atarse al nombre sería repetir el error
+ * que mudó a F9 de casa. Hoy son dos: el del alta y el de la edición.
+ */
+function objetosDeProducto(sf) {
+  const vistos = [];
+  recorrer(sf, (n) => {
+    if (!ts.isObjectLiteralExpression(n)) return;
+    const claves = clavesDe(n);
+    if (claves.has('name') && claves.has('price')) vistos.push(claves);
+  });
+  return vistos;
+}
+
+/** Los dos formularios del catálogo, cada uno reconocido por SU ACCIÓN: uno crea, el otro guarda. */
+const FORMULARIOS_DEL_CATALOGO = Object.freeze({
+  ALTA: 'id="pf-create-product"',
+  'EDICIÓN': 'id="pf-edit-save"',
+});
+
+/** Los dos campos que F9 declara innegociables, con el rótulo que lee el profesional. */
+const CAMPOS_DE_F9 = Object.freeze({ cost: 'Coste', margen: 'Margen %' });
+
+export const F9_EN_EL_CATALOGO = Object.freeze({
+  id: 'F9',
+  que: 'COSTE Y MARGEN EXISTEN EN EL PRODUCTO — en el CATÁLOGO, que es su casa desde CAT-01',
+  ficheros: Object.freeze({
+    vista: 'public/dashboard/js/productsView.js',
+    aritmetica: 'public/dashboard/js/margenCatalogo.js',
+  }),
+  desde: 'SCRUM-598 (DOC-08) · el domicilio anterior era quotesView.js',
+});
+
+/**
+ * QUÉ LE FALTA HOY A F9. Devuelve la lista de lo que NO está, CON NOMBRE: un rojo que dijera
+ * «se ha perdido F9» sin decir qué mitad no serviría dentro de tres meses.
+ *
+ * 🔴 SUELO: si el escáner no ve NADA —ni un bloque de HTML, ni un objeto de producto— no
+ * contesta «falta todo»: se declara CIEGO y revienta. Un cero de un instrumento roto se lee
+ * igual que un catálogo sin campos, y son la noticia contraria.
+ */
+export function faltaEnF9({ vista, aritmetica }) {
+  const sfVista = ts.createSourceFile('productsView.js', vista, ts.ScriptTarget.Latest, true);
+  const sfArit = ts.createSourceFile('margenCatalogo.js', aritmetica, ts.ScriptTarget.Latest, true);
+
+  const bloques = htmlPintado(sfVista);
+  if (bloques.length === 0) {
+    throw new Error('🔴 ESCANER CIEGO sobre el catálogo: no veo NI UN bloque de HTML en '
+      + '`productsView.js`. No es que falten los campos: es que no estoy mirando.');
+  }
+  const productos = objetosDeProducto(sfVista);
+  if (productos.length === 0) {
+    throw new Error('🔴 ESCANER CIEGO sobre el catálogo: no veo NI UN objeto de producto '
+      + '(`name` + `price`) en `productsView.js`. Sin población no hay veredicto.');
+  }
+
+  const falta = [];
+
+  // ① y ② · los dos campos, en los DOS formularios. Se miran por separado a propósito: el alta y
+  // la edición ya divergieron una vez en este mismo fichero (el IVA salió de uno antes que del
+  // otro), así que «está en el catálogo» sin decir en cuál de los dos no es una respuesta.
+  for (const [forma, sena] of Object.entries(FORMULARIOS_DEL_CATALOGO)) {
+    const html = bloques.find((b) => b.includes(sena));
+    if (html === undefined) {
+      falta.push('el formulario de ' + forma + ' del catálogo (no encuentro su acción `' + sena + '`)');
+      continue; // sin formulario, acusar de sus dos campos sería un rojo que no dice dónde mirar
+    }
+    for (const [clave, rotulo] of Object.entries(CAMPOS_DE_F9)) {
+      if (!pintaCampo(html, clave)) {
+        falta.push('el campo «' + rotulo + '» (name="' + clave + '") en el formulario de '
+          + forma + ' del catálogo');
+      }
+    }
+  }
+
+  // ③ · que el campo se PINTE no basta: el coste tiene que VIAJAR. Es la lección de F8, que
+  // empezó dando verde el día que la marca dejaba de llegar al servidor.
+  const conCoste = productos.filter((c) => c.has('cost')).length;
+  if (conCoste < productos.length) {
+    falta.push('el COSTE en lo que se ENVÍA al servidor: de ' + productos.length + ' objetos de '
+      + 'producto sólo ' + conCoste + ' llevan `cost`, así que hay un formulario que enseña el '
+      + 'campo y no lo manda');
+  }
+
+  // ④ · el margen NO se guarda: se DERIVA (CAT-01). Si el cableado desaparece, el campo sigue
+  // pintado y vacío para siempre — que es la peor forma de no funcionar.
+  if (!hayLlamada(sfVista, { nombre: 'autocompletar' })) {
+    falta.push('el cableado coste ↔ margen ↔ precio (`margenCatalogo.autocompletar`): sin él el '
+      + 'campo del margen se queda pintado y muerto mientras se teclea');
+  }
+  if (!hayLlamada(sfVista, { nombre: 'margenDesde' })) {
+    falta.push('el margen DERIVADO al abrir un producto (`margenCatalogo.margenDesde`): sin él '
+      + 'la edición enseñaría el campo vacío aunque el producto tenga coste y precio');
+  }
+
+  // ⑤ · y la aritmética, que es lo que hace que el margen exista sin guardarse.
+  for (const fn of ['margenDesde', 'precioDesde', 'autocompletar']) {
+    if (!hayPropiedad(sfArit, fn)) falta.push('`margenCatalogo.' + fn + '`, la aritmética del margen');
+  }
+
+  return falta;
+}
 
 /** El censo B: por capacidad, veredicto en cada front. */
 export function censarCapacidades(fuentes) {

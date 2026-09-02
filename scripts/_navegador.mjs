@@ -206,8 +206,16 @@ const seg = (ms) => (ms / 1000).toFixed(1);
  *
  * `puppeteer` se recibe en vez de importarse: este módulo lo usan guards que ya lo tienen
  * cargado, y así se puede ejercitar el desenlace de «no arranca» con un doble, sin navegador.
+ *
+ * ── Y EL RELOJ TAMBIÉN SE RECIBE (SCRUM-671) ────────────────────────────────────────────
+ * Por el mismo motivo y con el mismo patrón: para poder EJERCITAR el reparto sin depender de
+ * lo cargada que esté la máquina. Su test medía con reloj de pared —inyectaba 0,7 s y exigía
+ * ver «0.0» en el otro tramo— y bajo carga el otro tramo salía 0,1: **el reparto era correcto
+ * y el guard lo llamaba roto**. Con un reloj de mentira, el mismo hecho se comprueba exacto.
+ *
+ * En producción no cambia nada: por defecto es `Date.now`, y ningún llamador pasa el tercero.
  */
-export async function lanzarNavegador(puppeteer, opciones = {}) {
+export async function lanzarNavegador(puppeteer, opciones = {}, ahora = Date.now) {
   const ruta = rutaDelNavegador(); // sale con 2 si no hay ninguno
   const args = [...(opciones.args || []), ...argsDeAislamiento()];
   const tope = topeDeArranque();
@@ -223,7 +231,7 @@ export async function lanzarNavegador(puppeteer, opciones = {}) {
    * en el desglose: es el reloj parado por el tope, no lo que habría tardado.
    */
   const cortada = (tramo, desglose, e) => {
-    const s = seg(Date.now() - t0);
+    const s = seg(ahora() - t0);
     console.error(`${MARCA_ARRANQUE} ${s} s CORTADA EN «${tramo}» · ${desglose}`);
     console.error('🔴 NO PUDE ARRANCARLO: el navegador ESTÁ y no levanta.');
     console.error('   binario: ' + ruta);
@@ -237,7 +245,7 @@ export async function lanzarNavegador(puppeteer, opciones = {}) {
     process.exit(SALIDA_NO_ARRANCA);
   };
 
-  const t0 = Date.now();
+  const t0 = ahora();
   let nav;
   try {
     // `waitForInitialPage: false` NO se salta la espera de la página: la saca de aquí para poder
@@ -248,9 +256,9 @@ export async function lanzarNavegador(puppeteer, opciones = {}) {
     });
   } catch (e) {
     cortada(TRAMO_PROCESO,
-      `${TRAMO_PROCESO} ≥${seg(Date.now() - t0)} s · ${TRAMO_PAGINA} SIN MEDIR`, e);
+      `${TRAMO_PROCESO} ≥${seg(ahora() - t0)} s · ${TRAMO_PAGINA} SIN MEDIR`, e);
   }
-  const tProceso = Date.now() - t0;
+  const tProceso = ahora() - t0;
 
   try {
     await nav.waitForTarget((t) => t.type() === 'page', { timeout: tope });
@@ -259,9 +267,9 @@ export async function lanzarNavegador(puppeteer, opciones = {}) {
     // Sin esto quedaría un navegador vivo por cada guard que muriese esperando la página.
     await nav.close();
     cortada(TRAMO_PAGINA,
-      `${TRAMO_PROCESO} ${seg(tProceso)} s · ${TRAMO_PAGINA} ≥${seg(Date.now() - t0 - tProceso)} s`, e);
+      `${TRAMO_PROCESO} ${seg(tProceso)} s · ${TRAMO_PAGINA} ≥${seg(ahora() - t0 - tProceso)} s`, e);
   }
-  const tPagina = Date.now() - t0 - tProceso;
+  const tPagina = ahora() - t0 - tProceso;
 
   console.error(`${MARCA_ARRANQUE} ${seg(tProceso + tPagina)} s COMPLETA`
     + ` · ${TRAMO_PROCESO} ${seg(tProceso)} s · ${TRAMO_PAGINA} ${seg(tPagina)} s`);
