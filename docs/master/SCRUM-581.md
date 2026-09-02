@@ -204,10 +204,22 @@ declara.
 
 Añadir un `<script>` al dashboard tiene tres consecuencias que la casa vigila, más el trinquete:
 
-- **`SCRIPTS_DEL_DASHBOARD` 62 → 63.** 🔴 Es un valor **DERIVADO** y se ha **recalculado desde el
-  `index.html` de esta rama** (`grep -c "<script src="` → 63), no elegido. Es exactamente la lección
-  del contador: si en un merge este número saliera igual en los dos lados, git lo dejaría fuera de
-  los marcadores de conflicto y nadie se enteraría. **Se vuelve a contar después de mezclar.**
+- **`SCRIPTS_DEL_DASHBOARD` 65 → 66.** 🔴 Es un valor **DERIVADO**: no se hereda de un informe —ni
+  siquiera de éste—, se **recalcula**. Cuando se escribió esta entrada ponía «62 → 63», contado
+  sobre el `index.html` de la rama **sin mezclar**. **Eso ya es falso.** Al mezclar `main` el valor
+  real pasó a 66, contado sobre el árbol mezclado, que es el único que cuenta:
+
+      grep -c "<script src=" public/dashboard/index.html   →   66
+
+  66 = los 65 de `main` + `filtroClientes.js`; ni se comió ni duplicó ningún `<script>`. La flecha
+  se recalcula con el número, porque contar de dónde viene es parte del dato: la entrada de
+  `tests/_banco-vistas.mjs` dice **65 → 66**.
+
+  Y la lección del contador no era hipotética: **volvió a pasar, por cuarta vez**. Si en un merge
+  este número sale igual en los dos lados, git deja la línea del valor **fuera de los marcadores**
+  y nadie se entera. Esta vez los números sí chocaron —63 contra 65—, que es justo lo que la hizo
+  visible y menos peligrosa que las tres anteriores. **Se vuelve a contar después de mezclar,
+  siempre.**
 - **El SHELL del service worker** (SCRUM-274) lleva ahora `filtroClientes.js`: si no, `addAll`
   —que es atómico— dejaría el dashboard sin precachear.
 - **El trinquete de marcadores** (SCRUM-402), declarado arriba.
