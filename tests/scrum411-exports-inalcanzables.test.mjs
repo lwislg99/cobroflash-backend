@@ -94,7 +94,14 @@ const R = analizar(RAIZ);
 //
 // Quedan 7, y de las tres del bloque fiscal que SCRUM-500 nombró juntas siguen dos esperando el
 // mismo GO: `recargoEquivalencia.ts` (A3) y `suplidos.ts`. **Bajan cuando les llegue el suyo.**
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 7;
+// 🔴 7 → 8 · 2-sep-2026 · SCRUM-655. SUBIDA A CONCIENCIA:
+// `src/modules/quotes/domain/revision.ts` — la revisión de un presupuesto (el «P2004226.1») y
+// cuál está vigente, construido y probado, SIN llamador por un gate que no es mío: `Quote`
+// tiene `quoteNumber Int?` y NO tiene campo de revisión, y `prisma/schema.prisma` es del
+// fundador. El diff va preparado en `docs/master/SCRUM-655.md` y no se aplica aquí.
+// Mismo caso que retencionIrpf (A2), recargoEquivalencia (A3) y suplidos: el mecanismo
+// esperando su campo. **Baja a 7 el commit que le ponga consumidor.**
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 8;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 
