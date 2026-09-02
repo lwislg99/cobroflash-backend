@@ -3,6 +3,9 @@
 **Medido contra:** `origin/main` = `4b3865f8201fe24fe367f45c4f6fba34933a1de0` · 2026-09-02T16:25:07+02:00
 **Rama:** `scrum-674-schema-cinco`
 
+**Remedido tras mergear `main`** (`7bdb3a90`, sin conflicto y sin tocar ninguno de mis
+ficheros): 4495 tests, **los mismos 7 rojos**. Los 23 tests que trae `main` entran en verde.
+
 | Commit | Qué |
 |---|---|
 | `a88286baef37772a1031f0dbf61c6a2b8c7c6730` | TAREA 1 · los cuatro cambios de schema que faltaban |
