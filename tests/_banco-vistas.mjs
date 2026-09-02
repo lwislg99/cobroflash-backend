@@ -610,12 +610,12 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'teamView.js',
   'templatesView.js',
   'terminadoSinCobrar.js',
+  'textoDelDocumento.js',
   'tipoDestinatarioPendiente.js',
   'tiposDeIva.js',
   'tutorial.js',
   'voiceInput.js',
 ]);
-
 /**
  * LAS DEPENDENCIAS DE CARGA — la mitad que la cuenta NUNCA vigiló.
  *
@@ -631,6 +631,12 @@ export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   { antes: 'quoteApartados.js', despues: 'quotesDetailView.js', motivo: 'SCRUM-655: apartados, numeración y descripción' },
   { antes: 'signaturePad.js', despues: 'parteDetailView.js', motivo: 'SCRUM-652: el parte abre el pad de firma' },
   { antes: 'colaDeFirmas.js', despues: 'parteDetailView.js', motivo: 'SCRUM-652: firma con la cola que ya existe' },
+  // SCRUM-593 (DOC-03): la pieza se carga antes que sus DOS consumidores. `jobDetailView.js`
+  // YA la consume (el campo de cabecera del albaran); `quotesView.js` la consumira cuando salga
+  // SCRUM-598 de ese fichero, y la dependencia se declara igualmente: si un merge la reordenara
+  // antes de que exista el consumidor, el rojo aparecería en la pantalla del profesional.
+  { antes: 'textoDelDocumento.js', despues: 'jobDetailView.js', motivo: 'SCRUM-593: el campo de cabecera del albaran' },
+  { antes: 'textoDelDocumento.js', despues: 'quotesView.js', motivo: 'SCRUM-593: los dos textos libres (consumidor tras SCRUM-598)' },
 ]);
 
 /** Nombre a secas, venga con prefijo `js/` o sin él, y sea cadena u objeto `{fichero}`. */

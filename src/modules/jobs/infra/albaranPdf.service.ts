@@ -15,6 +15,7 @@ import type { AlbaranLinea, AlbaranModoValoracion, FirmaEvidencia } from '../dom
 // SCRUM-300: los rótulos NO se escriben aquí. Viven en un solo sitio (regla 30) y el PDF los lee.
 import { ALBARAN_ROTULOS, etiquetaCalidad } from '../domain/albaranFirmante';
 import { formatImporteEs } from '../../../core/utils/utils'; // SCRUM-636: el sitio unico
+import { TITULO_OBSERVACIONES } from '../../invoicing/infra/pdf/pdf.service'; // SCRUM-593: un solo rotulo
 
 export async function generateAlbaranPdf(params: {
   merchantId: number; // SCRUM-48: prefija el nombre de archivo (mata la colisión entre merchants)
@@ -64,6 +65,9 @@ export async function generateAlbaranPdf(params: {
   lineas: AlbaranLinea[];
   totales: { base: number; cuota: number; total: number } | null; // solo en modo VALORADO
   notas?: string | null;
+  // SCRUM-593 (DOC-03) · el texto libre de CABECERA. El PIE ya existe aqui: es `notas`, y NO se
+  // duplica con otro campo. Multilinea: PDFKit respeta los saltos en `doc.text`.
+  docHeaderText?: string | null;
   signatureData?: string | null; // data-URI (solo si estado firmado)
   firmadoAt?: Date | null;
   // SCRUM-300 (C5): quién firmó y en calidad de qué. null en todo lo firmado antes de la 300 —
@@ -185,6 +189,16 @@ export async function generateAlbaranPdf(params: {
   doc.fillColor('#000');
   doc.moveDown(1);
 
+  // ── SCRUM-593 (DOC-03) · TEXTO LIBRE bajo la cabecera ────────────────────
+  // Tras Emisor/Receptor/Obra y ANTES de la tabla: es texto del DOCUMENTO, no de una linea.
+  if (params.docHeaderText && String(params.docHeaderText).trim() !== '') {
+    // SIN RÓTULO (fundador, 2-sep-2026): en el papel va sólo el texto del profesional. El
+    // rótulo aprobado es el del FORMULARIO y vive en la pieza del dashboard.
+    doc.font('Helvetica').fillColor(BODY).text(String(params.docHeaderText), { width: W });
+    doc.fillColor('#000');
+    doc.moveDown(1);
+  }
+
   // ── Tabla de líneas ───────────────────────────────────────────────────────
   // SIN_VALORAR: concepto · cantidad · unidad (sin precios, como siempre).
   // VALORADO (SCRUM-65): + precio unitario e importe por línea. SIN desglose de
@@ -256,9 +270,12 @@ export async function generateAlbaranPdf(params: {
     doc.moveDown(1);
   }
 
-  // ── Notas ────────────────────────────────────────────────────────────────
+  // ── SCRUM-593 (DOC-03) · OBSERVACIONES ───────────────────────────────────
+  // El rotulo pasa de «Notas:» a «Observaciones»: es texto APROBADO sustituido por texto
+  // APROBADO (fundador, 2-sep-2026), no por un marcador. El CAMPO no cambia — sigue siendo
+  // `notas`, que ya existia y ya se imprimia.
   if (params.notas) {
-    doc.fontSize(10).font('Helvetica-Bold').fillColor(INK).text('Notas:');
+    doc.fontSize(10).font('Helvetica-Bold').fillColor(INK).text(TITULO_OBSERVACIONES);
     doc.font('Helvetica').fillColor(BODY).text(params.notas, { width: W });
     doc.fillColor('#000');
     doc.moveDown(1);
