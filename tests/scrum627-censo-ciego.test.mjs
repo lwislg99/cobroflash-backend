@@ -153,6 +153,18 @@ const INVISIBLES = [
   'src/core/validation/schemas.ts',
   'src/modules/expenses/domain/justificante.ts',
   'src/modules/invoicing/domain/recargoEquivalencia.ts',
+  // 🔴 2-sep-2026 · SCRUM-656 · ENTRA `pdf.service.ts`, y NO porque se haya añadido aritmética:
+  // porque se ha destapado la que ya tenía. Ese fichero pinta DOS documentos, y su bloque de
+  // totales de la FACTURA agrupa el IVA por tipo a mano —a propósito y documentado, ver el
+  // comentario «DE DÓNDE SALEN LAS CIFRAS, Y POR QUÉ NO DE calcVatBreakdown»—. Lo que lo
+  // mantenía fuera de esta lista era que el bloque del PRESUPUESTO, en el MISMO fichero, sí
+  // llamaba a la primitiva: el criterio es POR FICHERO, así que una llamada de un documento
+  // tapaba la aritmética a mano del otro.
+  //
+  // Al mover el pie del presupuesto a `quotes/domain/presentacionIva.ts` (que sí la llama), la
+  // máscara desaparece y el fichero aparece por lo que lleva haciendo desde siempre. NO se
+  // arregla aquí: es el camino de emisión de la factura (regla 38) y no es de este ticket.
+  'src/modules/invoicing/infra/pdf/pdf.service.ts',
   'src/modules/jobs/domain/albaran.service.ts',
   'src/modules/jobs/domain/albaranAFactura.ts',
   // 2-sep-2026 · SCRUM-652 (T3 fase B): nace el PARTE DE TRABAJO y deriva su IVA por documento,

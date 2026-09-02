@@ -5,11 +5,15 @@ import axios from 'axios';
 import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
 import { invoicesDir } from '../../../../core/storage/dirs';
-import { cantidadDeLinea, calcVatBreakdown } from '../../domain/vat.service'; // SCRUM-504: una sola cantidad
+import { cantidadDeLinea } from '../../domain/vat.service'; // SCRUM-504: una sola cantidad
 import { getLocale } from '../../../../core/i18n/locales';
 import { formatImporteEs } from '../../../../core/utils/utils'; // SCRUM-636: el sitio unico
 import { nombreParaDocumento } from '../../../../core/documentos/nombreParaDocumento'; // SCRUM-577
 import { partirConceptoYDescripcion } from './conceptoLinea'; // SCRUM-603 (DOC-13)
+// SCRUM-656 (T7): CÓMO se presenta el IVA de un PRESUPUESTO y sus cláusulas de cierre. El
+// cálculo sigue siendo `calcVatBreakdown`; estos módulos solo deciden qué se pinta.
+import { pieDePresupuesto, leerModoIva } from '../../../quotes/domain/presentacionIva';
+import { clausulasParaDocumento } from '../../../quotes/domain/clausulas';
 
 /**
  * Un importe, con sus dos decimales. SCRUM-604 (DOC-14) · RESUELTO en SCRUM-636.
@@ -597,6 +601,13 @@ export async function generateQuotePdf(params: {
   // SCRUM-647 · el NOMBRE del impuesto, igual que en la factura (SCRUM-623): un DATO, no una
   // constante de la maqueta. Sin él, el documento sale como hasta hoy.
   taxName?: string | null;
+  // SCRUM-656 (T7) · CÓMO se presenta el IVA en ESTE presupuesto: `sumar` pinta el desglose,
+  // `no_incluido` no pinta ninguna cuota y añade la leyenda. Ausente = como salía hasta hoy.
+  modoIva?: string | null;
+  // Las cláusulas de cierre del MERCHANT y las que este presupuesto excluye. El texto lo escribe
+  // el profesional; aquí solo se pintan.
+  clausulas?: Array<{ id: string; titulo: string; texto: string }> | null;
+  clausulasExcluidas?: string[] | null;
   tiers?: Array<{ id: string; label: string; description?: string; lines: any[]; total: number; recommended?: boolean }> | null;
 }) {
   // SCRUM-72: quoteId es el id GLOBAL (autoincrement) → ya único entre merchants, no hace
@@ -880,14 +891,17 @@ const CONTENT_W = 510;
  */
 const lineasParaDesglose = Array.isArray(params.lines) ? params.lines : [];
 const filasDeTotales: Array<{ etiqueta: string; importe: number }> = [];
-if (lineasParaDesglose.length > 0) {
-  const bd = calcVatBreakdown(lineasParaDesglose as any);
-  filasDeTotales.push({ etiqueta: 'Base imponible:', importe: bd.base });
-  for (const e of bd.entries) {
-    if (e.cuota === 0) continue; // ← el defecto ① heredado; ver la cabecera de arriba
-    filasDeTotales.push({ etiqueta: `${impuesto} ${e.rate}%:`, importe: e.cuota });
-  }
-}
+// SCRUM-656 (T7) · las filas y la leyenda las decide el DOMINIO, no la maqueta. El cálculo
+// sigue siendo `calcVatBreakdown` —dentro de `pieDePresupuesto`— y aquí no se suma nada: esta
+// función solo pinta lo que le den. Es lo que impide que «una funcioncita para el IVA del pie»
+// se convierta en la tercera copia de la aritmética (la segunda fue `calcTierTotal`, SCRUM-655).
+const modoDelDocumento = leerModoIva(params.modoIva).modo;
+const pie = pieDePresupuesto({
+  lineas: lineasParaDesglose as any,
+  modo: modoDelDocumento,
+  nombreImpuesto: impuesto,
+});
+filasDeTotales.push(...pie.filas);
 
 for (const fila of filasDeTotales) {
   doc.fontSize(10).text(
@@ -905,6 +919,19 @@ doc.fontSize(12).text(
   doc.y,
   { width: CONTENT_W, align: 'right' },
 );
+
+// 🔴 SCRUM-656 · LA LEYENDA DEL MODO «IVA NO INCLUIDO», bajo el total y solo en ese modo.
+// No es decoración: en ese modo el documento NO afirma cuánto será el impuesto, así que sin la
+// leyenda el cliente lee el total como el precio final. Es lo que dice su presupuesto real.
+if (pie.leyenda) {
+  doc.fontSize(10).fillColor('#444').text(
+    pie.leyenda,
+    CONTENT_X,
+    doc.y,
+    { width: CONTENT_W, align: 'right' },
+  );
+  doc.fillColor('black');
+}
 
 doc.moveDown(2);
 
@@ -932,6 +959,28 @@ if (params.signatureData) {
   } catch (e) {
     // Si la imagen falla, continuamos sin firma
   }
+}
+
+// ── SCRUM-656 (T7) · LAS CLÁUSULAS DE CIERRE ─────────────────────────────────────────
+// Del MERCHANT, menos las que este presupuesto excluya. El texto lo escribe el profesional;
+// aquí solo se pinta.
+//
+// 🔴 CON LA CONFIGURACIÓN VACÍA NO SE ABRE NADA: ni sección, ni título, ni un hueco. Un bloque
+// «CONDICIONES» sin cláusulas dentro es peor que no ponerlo, y un título sin texto debajo
+// —«GARANTÍA» y nada— se lee como que la garantía existe pero no dice cuál. Ausente y vacío no
+// son lo mismo, y `clausulasParaDocumento` ya descarta las que no tienen las dos cosas.
+const clausulasDelDocumento = clausulasParaDocumento(params.clausulas, params.clausulasExcluidas);
+if (clausulasDelDocumento.length > 0) {
+  if (doc.y + 80 > doc.page.height - doc.page.margins.bottom) doc.addPage();
+  doc.moveDown(1);
+  for (const c of clausulasDelDocumento) {
+    if (doc.y + 60 > doc.page.height - doc.page.margins.bottom) doc.addPage();
+    doc.fontSize(9).fillColor('black').text(c.titulo.toUpperCase(), CONTENT_X, doc.y, { width: CONTENT_W });
+    doc.moveDown(0.2);
+    doc.fontSize(8).fillColor('#444').text(c.texto, CONTENT_X, doc.y, { width: CONTENT_W, align: 'justify' });
+    doc.moveDown(0.6);
+  }
+  doc.fillColor('black');
 }
 
 // Footer centrado bien (con ancho fijo)

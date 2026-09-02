@@ -88,6 +88,21 @@ export const CATEGORIAS = {
  * `módulo::export`, no la longitud: por eso da igual cómo se agrupen las líneas.
  */
 export const DECLARADOS = [
+  // SCRUM-656 (T7) · el vocabulario del MODO DE IVA de un presupuesto. `MODOS_IVA` es además la
+  // lista contra la que se contrasta el `z.enum` del validador: si dejara de exportarse, las dos
+  // copias del conjunto cerrado podrían separarse sin que nada lo dijera.
+  { modulo: 'src/modules/quotes/domain/presentacionIva.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-02',
+    motivo: 'Constantes exportadas para ser la única fuente del término; hoy las leen su propio módulo, su test y el contraste con el `z.enum` del validador.',
+    exports: ['MODOS_IVA', 'MODO_IVA_POR_DEFECTO', 'LEYENDA_IVA_NO_INCLUIDO'] },
+  { modulo: 'src/modules/quotes/domain/presentacionIva.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-02',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['esModoIva'] },
+  { modulo: 'src/modules/quotes/domain/clausulas.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-02',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['esClausulaPintable'] },
   { modulo: 'src/modules/ai/domain/ai.service.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',

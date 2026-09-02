@@ -117,6 +117,18 @@ export const CreateQuoteSchema = z.object({
   // ADICIONAL sobre un Trabajo que ya existe, y NO se crea un Trabajo nuevo al aceptarlo.
   // Ausente = presupuesto normal, que es el comportamiento de siempre.
   job_id: z.number().int().positive().optional(),
+  // SCRUM-656 (T7) · CÓMO presenta el IVA ESTE presupuesto. Lo elige el profesional al crearlo,
+  // según el cliente que tenga delante — por eso viaja en el payload y no en Configuración.
+  //
+  // ⛔ Y NO EXISTE EN LA FACTURA: una factura lleva base, cuota y total SIEMPRE (reglamento de
+  // facturación). Esta clave vive en el presupuesto y muere ahí.
+  //
+  // Cerrado a los dos valores: un modo libre dejaría meter un 'sin_iva' que nadie pinta y el
+  // documento saldría mudo sin que fallara nada.
+  ivaModo: z.enum(['sumar', 'no_incluido']).optional(),
+  // Las cláusulas del merchant que ESTE presupuesto no lleva. Excluir no es borrar: la
+  // configuración no se toca y el siguiente presupuesto vuelve a llevarlas.
+  clausulasExcluidas: z.array(z.string()).optional(),
 });
 
 export type QuoteTier = z.infer<typeof QuoteTierSchema>;

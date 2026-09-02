@@ -146,7 +146,10 @@ test('SCRUM-647 · el documento ya no tiene DOS criterios: ni «IVA» grabado ni
   // SUELO en las dos direcciones: quitó prosa Y no se comió el código.
   assert.ok(cuerpo.includes('Canarias'), 'suelo: el comentario de este ticket existe.');
   assert.ok(!limpio.includes('Canarias'), '🔴 el desnudado NO está quitando los comentarios.');
-  assert.ok(limpio.includes('Base imponible'), '🔴 el desnudado se ha comido el código.');
+  // 2-sep-2026 · SCRUM-656: el canario era el literal 'Base imponible', y se MUDÓ — las filas del
+  // pie las construye ahora `quotes/domain/presentacionIva.ts`, que además decide cuáles se
+  // pintan según el modo de IVA del presupuesto. Se cambia por código que sigue viviendo aquí.
+  assert.ok(limpio.includes('filasDeTotales'), '🔴 el desnudado se ha comido el código.');
 
   const grabados = limpio.split('\n').map((l) => l.trim())
     .filter((t) => /['"`][^'"`]*\bIVA\b/.test(t));
@@ -172,6 +175,18 @@ test('SCRUM-647 · 🔴 TODOS los llamantes pasan el impuesto, o Perú regresa e
     }
   })(dirs[0]);
 
+  /** El texto de la llamada que empieza en `desde`, equilibrando paréntesis. */
+  const recorteDeLlamada = (src, desde) => {
+    const abre = src.indexOf('(', desde);
+    if (abre === -1) return src.slice(desde);
+    let nivel = 0;
+    for (let k = abre; k < src.length; k++) {
+      if (src[k] === '(') nivel += 1;
+      else if (src[k] === ')') { nivel -= 1; if (nivel === 0) return src.slice(desde, k + 1); }
+    }
+    return src.slice(desde);   // sin cerrar: se devuelve todo antes que mirar de menos
+  };
+
   const llamadas = [];
   for (const f of ficheros) {
     const rel = path.relative(RAIZ, f).split(path.sep).join('/');
@@ -179,7 +194,12 @@ test('SCRUM-647 · 🔴 TODOS los llamantes pasan el impuesto, o Perú regresa e
     const src = fs.readFileSync(f, 'utf8');
     let i = src.indexOf('generateQuotePdf(');
     while (i !== -1) {
-      llamadas.push({ rel, trozo: src.slice(i, i + 1400) });
+      // 🔴 2-sep-2026 · SCRUM-656 · ERA UNA VENTANA DE 1.400 CARACTERES, y caducó sola: añadir
+      // tres parámetros con su comentario a la llamada empujó `taxName` fuera del trozo y el
+      // guard acusó a una llamada que SÍ lo pasa. Una ventana de tamaño fijo mide la longitud
+      // del código, no lo que quiere vigilar. Ahora se recorta la LLAMADA, equilibrando
+      // paréntesis: crezca lo que crezca, se sigue mirando exactamente lo que se llamó.
+      llamadas.push({ rel, trozo: recorteDeLlamada(src, i) });
       i = src.indexOf('generateQuotePdf(', i + 1);
     }
   }
