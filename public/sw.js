@@ -19,13 +19,18 @@ const CACHE_NAME = 'yaqu-v4'; // último bump manual: con network-first ya no ha
 //
 // 🔴 SCRUM-670 · ESTA LISTA ES DE POBLACIÓN, NO DE ORDEN, y aquí decía lo contrario. El
 // comentario de abajo pedía añadir los scripts «en el mismo orden que el HTML», y **eso ya era
-// falso cuando se midió** (2-sep-2026): las dos listas coinciden en los 70 nombres —cero faltan,
-// cero sobran, cero duplicados— y **difieren en 9 posiciones**; la primera, `albaranActionsRegistry.js`
-// donde el índice tiene `invoiceDetailView.js`. Y da igual: el precache DESCARGA, no ejecuta.
-// El orden de ejecución lo fijan las dependencias declaradas del índice (`filtroClientes.js`
-// antes de `customersView.js`, `tiposDeIva.js` antes de `quotesView.js`, `margenCatalogo.js` y
-// `switchTipoArticulo.js` antes de `productsView.js`), y ahí sí importa.
-// Se corrige porque una frase falsa en un comentario se lee como una medición.
+// falso cuando se midió** (2-sep-2026, sobre `main` = c438ffa1): las dos listas coinciden en los
+// **71** nombres —cero faltan, cero sobran, cero duplicados— y **difieren en 9 posiciones**; la
+// primera es la 34, `albaranActionsRegistry.js` en el índice donde aquí hay `invoiceDetailView.js`.
+//
+// Y da igual, que es lo que hay que saber: **el precache DESCARGA, no ejecuta**. El orden de
+// ejecución lo fijan las dependencias declaradas del índice (`filtroClientes.js` antes de
+// `customersView.js`, `tiposDeIva.js` antes de `quotesView.js`, `margenCatalogo.js` y
+// `switchTipoArticulo.js` antes de `productsView.js`), y ahí sí importa. Quien añada uno aquí
+// puede ponerlo donde quiera: lo que no puede es olvidarse, y de eso ya avisa el guard.
+//
+// Se corrige porque una frase falsa en un comentario se lee como una medición. (El «71» de arriba
+// es un DERIVADO: si alguien lo relee, que lo vuelva a contar en vez de creérselo.)
 const SHELL = [
   '/dashboard/',
   '/tokens.css',
