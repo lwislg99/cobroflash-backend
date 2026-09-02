@@ -42,6 +42,16 @@
     if (typeof showToast === 'function') showToast(msg, 'warn');
   }
 
+  // 🔴 SCRUM-654 · MICROCOPY SIN APROBAR (regla 30): el texto lo aprueba el fundador y sale con
+  // marcador hasta que lo firme. Se propone que diga LAS DOS COSAS —que hace falta conexión y que
+  // puede escribirlo a mano—: un aviso que solo da la mala noticia deja al técnico parado.
+  //
+  // Y la coletilla es la MISMA que ya usan los otros dos avisos de este fichero («escribe el
+  // trabajo y listo»): misma situación, mismas palabras. Estrenar una redacción aquí daría dos
+  // formas de decir lo mismo en la misma pantalla.
+  var AVISO_SIN_CONEXION =
+    '[PENDIENTE microcopy oficial] El dictado necesita conexión — escribe el trabajo y listo';
+
   // Retira TODOS los micros de la página (humo fallido → fuera para la sesión)
   function killAllMics() {
     try { sessionStorage.setItem('voiceUnsupported', '1'); } catch (_e) {}
@@ -159,7 +169,28 @@
           toast('No te he oído — prueba otra vez más cerca del micro');
           return;
         }
-        // network/aborted/otros: cierre limpio; lo ya dictado se queda en el textarea
+        // 🔴 SCRUM-654 · EL FALLO MUDO, Y ERA EL QUE MÁS IBA A PASAR.
+        //
+        // `network` caía aquí abajo, en la rama de «cierre limpio», y se paraba SIN DECIR NADA.
+        // Los otros tres errores —permiso, servicio, no-speech— sí avisaban: éste era el único
+        // callado, y es el que ocurre SIEMPRE en la obra. Medido en el PASO 0 de este ticket:
+        // el reconocimiento de Chrome es server-based y no funciona sin conexión (MDN), así que
+        // en un garaje o un cuarto técnico el técnico toca el micro, no pasa nada, y no sabe por
+        // qué. La segunda vez ya no lo toca — y se pierde la función entera por un aviso que falta.
+        //
+        // ⚠️ El defecto NO era que la voz no funcione sin cobertura: eso está decidido y se acepta
+        // (el parte se escribe a mano, que es lo innegociable y ya funciona). El defecto era que no
+        // funcionara Y NO LO DIJERA.
+        //
+        // ⚠️ Y NO se retira el micro (`killAllMics`) como hacen permiso y servicio: quedarse sin
+        // cobertura es TEMPORAL. Al salir del sótano el dictado vuelve a funcionar, y un micro
+        // retirado para toda la sesión castigaría al técnico por haber entrado en un garaje.
+        if (code === 'network') {
+          stop();
+          toast(AVISO_SIN_CONEXION);
+          return;
+        }
+        // aborted/otros: cierre limpio; lo ya dictado se queda en el textarea
         stop();
       };
 
