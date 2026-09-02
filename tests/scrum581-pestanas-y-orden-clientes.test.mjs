@@ -104,15 +104,94 @@ test('SCRUM-581 · ordenar NO muta lo que mandó el servidor', () => {
   assert.deepEqual(lote.map((c) => c.id), antes, '🔴 `ordenar` ha mutado la lista de entrada.');
 });
 
-test('SCRUM-581 · MICROCOPY: los seis rótulos llevan el marcador y UNA sola constante los apaga', () => {
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 MICROCOPY · ESTE TEST SE INVIRTIÓ EL 2-sep-2026
+//
+// Exigía que los seis rótulos LLEVARAN el marcador. El fundador lo retiró de la pantalla con
+// estas palabras: «nada de marcadores en pantalla». La premisa caducó por una decisión legítima,
+// así que el test no se borra: afirma lo contrario, y sigue pudiendo fallar.
+//
+// ⚠️ Y vigila la mitad que NO cambió: los seis textos SIGUEN SIN APROBAR. Retirar el corchete
+// visible no aprueba nada, y sin este trinquete «no se pinta el marcador» se convertiría en «ya
+// está aprobado» sin que nadie lo decidiera.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-581 · 🔴 NINGÚN rótulo lleva marcador en pantalla', () => {
   const ranuras = [...FC.PESTANAS, ...FC.ORDENES, FC.VACIO_PESTANA];
-  assert.equal(ranuras.length, 6, '🔴 ha cambiado el número de ranuras con marcador; declara la subida del censo.');
+  assert.equal(ranuras.length, 6, '🔴 ha cambiado el número de ranuras de microcopy.');
   for (const r of ranuras) {
-    assert.ok(FC.etiqueta(r).startsWith(FC.MARCADOR),
-      `🔴 el rótulo «${FC.etiqueta(r)}» no lleva el marcador oficial (regla 30).`);
-    assert.ok(FC.etiqueta(r).length > FC.MARCADOR.length + 1,
-      '🔴 el rótulo lleva SÓLO la marca. Con tres pestañas eso las haría idénticas: va marca + '
-      + 'palabra de trabajo, como fija `switchFormaJuridica.js`.');
+    const rotulo = FC.etiqueta(r);
+    assert.equal(rotulo.includes('[PENDIENTE'), false,
+      `🔴 el rótulo «${rotulo}» pinta un marcador. La pantalla es de un profesional que paga: `
+      + 'un corchete de proceso interno no es cosa suya (decisión del fundador, 2-sep-2026).');
+    assert.equal(rotulo.includes('['), false, `🔴 «${rotulo}» lleva un corchete.`);
+    // SUELO: y no está vacío. «Sin marcador» y «sin rótulo» darían el mismo verde en la
+    // comprobación de arriba, y un botón sin texto es peor que uno con corchetes.
+    assert.ok(rotulo.trim().length > 0, '🔴 SUELO: hay una ranura con el rótulo VACÍO.');
   }
-  assert.equal(FC.MARCADOR, '[PENDIENTE microcopy oficial]', '🔴 el marcador no es el oficial.');
+  // CONTROL del propio detector: sabe ver un corchete cuando lo hay.
+  assert.equal('[PENDIENTE microcopy oficial] Todos'.includes('[PENDIENTE'), true,
+    '🔴 el detector no reconoce un marcador: sus «false» de arriba no significarían nada.');
+});
+
+test('SCRUM-581 · 🔴 pero los seis textos SIGUEN SIN APROBAR, y consta', () => {
+  // Quitar el marcador NO es aprobar. Si algún día se aprueban, se baja este número en la ranura
+  // que corresponda — aprobar una pestaña no aprueba las otras cinco.
+  assert.equal(FC.SIN_APROBAR, 6,
+    '🔴 alguien ha dado por aprobados textos que el fundador no ha firmado, o ha aprobado unos y '
+    + 'no ha actualizado el recuento. Los rótulos son literales PROPUESTOS por la sesión; su '
+    + 'procedencia está en la pieza y en la entrada de máster.');
+  assert.equal(FC.MARCADOR, undefined,
+    '🔴 ha vuelto la constante del marcador a la pieza: el fundador lo retiró de la pantalla.');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 EL BUSCADOR SE COMBINA CON EL FILTRO, NO SE SUSTITUYE
+//
+// Es lo que pedía el encargo y lo que NINGÚN test cubría. El buscador va al SERVIDOR
+// (`loadCustomers(searchInput.value)`) y las pestañas filtran en el navegador sobre lo que ese
+// servidor devolvió. O sea que se combinan por construcción — pero «por construcción» es
+// exactamente el tipo de afirmación que deja de ser cierta el día que alguien reordena dos
+// líneas, y entonces buscar borraría el filtro (o al revés) sin que nada chillara.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-581 · 🔴 buscar Y filtrar a la vez: el filtro se aplica SOBRE el resultado de buscar', () => {
+  // Lo que devolvería el servidor al buscar «mar»: dos empresas, una persona y un sin clasificar.
+  const loteBuscado = [
+    { id: 1, name: 'Marmoles Sur', contactKind: 'EMPRESA' },
+    { id: 2, name: 'Marta Ruiz', contactKind: 'PERSONA' },
+    { id: 3, name: 'Marina Obras', contactKind: 'EMPRESA' },
+    { id: 4, name: 'Marcos Gil', contactKind: null },
+  ];
+  const empresas = FC.aplicar(loteBuscado, 'EMPRESA', 'RECIENTES');
+
+  // SUELO CON CONTROL POSITIVO: devuelve ALGUNA. Un filtro que devuelve cero pasaría cualquier
+  // comprobación de «no salen personas» — es el patrón más caro de la casa.
+  assert.ok(empresas.length > 0,
+    '🔴 SUELO: el filtro sobre un resultado de búsqueda devuelve CERO. Entonces «no salen '
+    + 'personas» no significa nada: no sale nadie.');
+  assert.deepEqual(empresas.map((c) => c.id), [1, 3],
+    '🔴 el filtro no se aplica sobre lo que devolvió el buscador: buscar y filtrar tienen que '
+    + 'COMBINARSE, no sustituirse.');
+
+  // Y la otra mitad: el filtro NO reintroduce a nadie que la búsqueda había dejado fuera.
+  assert.equal(FC.aplicar(loteBuscado, 'EMPRESA', 'AZ').some((c) => c.id === 99), false,
+    '🔴 el filtro devuelve a alguien que la búsqueda no había traído: estaría leyendo otra lista.');
+});
+
+test('SCRUM-581 · 🔴 y el ORDEN también se combina con la búsqueda', () => {
+  // 🔴 EL CONJUNTO NO ESTÁ ORDENADO POR id: si lo estuviera, este test no distinguiría el orden
+  // alfabético del orden de inserción y pasaría con `ordenar` devolviendo la lista tal cual.
+  const loteBuscado = [
+    { id: 7, name: 'Zapata Reformas', contactKind: 'EMPRESA' },
+    { id: 3, name: 'Álvarez Instalaciones', contactKind: 'EMPRESA' },
+    { id: 9, name: 'Marmoles Sur', contactKind: 'EMPRESA' },
+  ];
+  const az = FC.aplicar(loteBuscado, 'EMPRESA', 'AZ');
+  assert.deepEqual(az.map((c) => c.name),
+    ['Álvarez Instalaciones', 'Marmoles Sur', 'Zapata Reformas'],
+    '🔴 el orden A-Z no se aplica sobre el resultado de la búsqueda.');
+  // CONTROL NEGATIVO: sin pedir A-Z, se respeta lo que mandó el servidor.
+  assert.deepEqual(FC.aplicar(loteBuscado, 'EMPRESA', 'RECIENTES').map((c) => c.id), [7, 3, 9],
+    '🔴 reordena sin que nadie se lo pida: el orden de hoy dependería de haber tocado el selector.');
 });

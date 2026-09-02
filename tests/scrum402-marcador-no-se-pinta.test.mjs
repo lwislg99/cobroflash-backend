@@ -313,14 +313,12 @@ const CENSO = Object.freeze({
   // una puerta nueva, se usa la que está abierta, y todos se apagan con la misma decisión.
   //
   // CUENTA 1 Y PINTA 6, y la distinción es la de SCRUM-615: este censo cuenta MARCAS —una sola
-  // constante `MARCADOR` en `filtroClientes.js`— no rótulos. Las seis superficies son las 3
-  // pestañas, los 2 órdenes y el vacío de pestaña. **Aprobar UN texto no las apaga las seis**:
-  // son seis textos distintos que hoy comparten marcador, y ese día habrá que sacar esa `palabra`
-  // por separado. Se dice aquí para que nadie lo descubra al aprobar el primero.
-  //
-  // 🔴 VAN CON PALABRA DE TRABAJO DETRÁS, como `switchFormaJuridica` y por el mismo motivo escrito
-  // allí: con TRES pestañas el marcador pelado las dejaría idénticas y la pantalla inservible.
-  'filtroClientes.js': 1,
+  // SCRUM-581 (2-sep-2026) · LA ENTRADA SE BORRA, no baja a 0 — la convención que dejaron
+  // escrita aquí mismo SCRUM-424 y SCRUM-405. `filtroClientes.js` entró con 1 marcador (una
+  // constante que servía a seis ranuras) y sale porque el fundador RETIRÓ el marcador de la
+  // pantalla: «nada de marcadores en pantalla». Los seis textos siguen SIN APROBAR — lo que
+  // desaparece es el corchete visible, no la aprobación—, y eso lo vigila ahora
+  // `tests/scrum581-pestanas-y-orden-clientes.test.mjs`, no este censo.
   // SCRUM-615 (24-ago-2026) · SUBIDA A CONCIENCIA: la salida D+C pinta con marcador el aviso de
   // «este plazo se ha calculado sin el dato» en la bandeja de pendientes, y el error de guardado.
   //
