@@ -67,7 +67,7 @@ ni `migrate`, ni `deploy`.** Con el CLI **del repo (6.18.0)**, nunca `npx`: `npx
 ## 🔴 EL HALLAZGO: la tabla de SCRUM-652 no puede entrar sola
 
 **La suite en la base está VERDE ENTERA: 4472 tests, 0 fallos.** Con el schema escrito se
-ponen **6 en rojo**, todos por lo mismo: `partes_trabajo` es una tabla **multi-tenant nueva**,
+ponen **7 en rojo** (6 guards, uno de ellos con dos casos), todos por lo mismo: `partes_trabajo` es una tabla **multi-tenant nueva**,
 y hay listas derivadas del schema que no la conocen. La población de modelos con `merchantId`
 pasa de **22 a 23**.
 
@@ -87,6 +87,7 @@ export/borrado»).** Necesitan GO del fundador:
 | **SCRUM-314** (×2) | `parteTrabajo` en el barrido demo | borra datos |
 | **SCRUM-498** (×2) | doce frases del árbol dicen «22» y ya son 23 | una de ellas está en `portabilidadCompleta.ts`, el camino de EXPORT |
 | **SCRUM-461** | regenerar `docs/sql/deriva-prod.sql` | es el DDL que se aplica a producción |
+| **SCRUM-222** | lo mismo por otra vía: el SQL del censo de producción queda desfasado | ídem |
 
 Las doce frases viejas, nombradas por el guard: `src/app.ts:673` ·
 `src/modules/exports/domain/portabilidadCompleta.ts:29` ·
