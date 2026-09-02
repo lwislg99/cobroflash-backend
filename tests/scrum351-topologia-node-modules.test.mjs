@@ -20,6 +20,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import ts from 'typescript';
 import {
   resolverNodeModules,
   topologia,
@@ -153,23 +154,245 @@ test('SCRUM-351 · CONTROL NEGATIVO: con `node_modules` propios NO dice que comp
   }
 });
 
+// ── EL COSTE, SIN RELOJ (SCRUM-520) ──────────────────────────────────────────────────────────
+//
+// 🔴 LO QUE HABÍA AQUÍ ERA UN CRONÓMETRO, Y MEDÍA LA MÁQUINA, NO EL COMPROBADOR.
+//
+// `assert.ok(ms < 2000)` sobre RELOJ DE PARED. Medido en SCRUM-520: 206 · 205 · 204 ms aislado
+// —diez veces por debajo del límite— y **3.508 ms dentro de la suite completa**. El mismo código,
+// el mismo día, dos veredictos opuestos; y con cuatro sesiones lanzando la suite a la vez, el rojo
+// sale a diario. Un guard que falla por la carga de la máquina no enseña a arreglar nada: enseña a
+// ignorar rojos, que es el daño que no se deshace.
+//
+// SUBIR EL LÍMITE NO LO ARREGLA: mueve el punto donde vuelve a fallar. Y el tiempo aquí nunca fue
+// el hecho — era un PROXY del hecho. Lo dice el propio mensaje del aserto que se retira:
+// «un comprobador que se NOTA EN LA TANDA se desactiva al primer roce». Lo que importaba es que el
+// comprobador **haga poco trabajo**, y eso se puede medir directamente.
+//
+// ── QUÉ SE MIDE AHORA, Y POR QUÉ ES EL MISMO HECHO ───────────────────────────────────────────
+// El trabajo de este comprobador es SUBIR por el árbol de directorios: un `lstat` por ancestro
+// hasta dar con un `node_modules`, y un `realpath` cuando lo encuentra. Eso es acotado y no
+// depende de la carga. La única forma de que este comprobador «se note» es que empiece a
+// RECORRER `node_modules` por dentro —decenas de miles de ficheros—, y eso se ve contando
+// operaciones, no cronometrando.
+//
+//   1. cero operaciones DENTRO de un `node_modules`      (lo que lo haría caro)
+//   2. el gasto cabe en su TECHO ESTRUCTURAL              (profundidad de cada ruta, calculada)
+//   3. el gasto NO CRECE con el TAMAÑO de `node_modules`  (200 paquetes cuestan lo mismo que 1)
+//   4. dos pasadas seguidas dan el MISMO número           (si no, el instrumento no vale)
+//
+// ⚠️ LÍMITE DECLARADO DEL INSTRUMENTO: el `spawnSync` de git NO se puede interceptar desde fuera
+// —`import { spawnSync }` crea un binding que ya no mira el objeto del módulo—, así que el
+// contador no lo ve. Ese hueco se tapa aparte, por AST, en el último test: git se invoca UNA vez
+// y fuera del recorrido por árbol.
+
+/** Operaciones de disco de una llamada. Sin reloj: el mismo número con la máquina vacía o llena. */
+function midiendoElGasto(fn) {
+  const ops = [];
+  const guardadas = {
+    lstatSync: fs.lstatSync,
+    statSync: fs.statSync,
+    readdirSync: fs.readdirSync,
+    readFileSync: fs.readFileSync,
+    opendirSync: fs.opendirSync,
+    native: fs.realpathSync.native,
+  };
+  const anota = (nombre, real) => (p, ...resto) => {
+    ops.push({ op: nombre, ruta: String(p) });
+    return real(p, ...resto);
+  };
+  fs.lstatSync = anota('lstat', guardadas.lstatSync);
+  fs.statSync = anota('stat', guardadas.statSync);
+  fs.readdirSync = anota('readdir', guardadas.readdirSync);
+  fs.readFileSync = anota('readFile', guardadas.readFileSync);
+  fs.opendirSync = anota('opendir', guardadas.opendirSync);
+  fs.realpathSync.native = anota('realpath', guardadas.native);
+  try {
+    const valor = fn();
+    // ENTRAR en un `node_modules` tiene DOS formas, y la primera version de esto solo veia una:
+    //
+    //   · mirar algo que CUELGA de el   → la ruta lleva algo detras;
+    //   · LISTARLO                      → la ruta es la misma, pero se pide su contenido.
+    //
+    // 🔴 LO ENCONTRO UN ROJO: con la regla anterior, meter un `readdirSync(node_modules)` en el
+    // comprobador —que es exactamente la degradacion cara que esto vigila— pasaba en VERDE,
+    // porque la ruta del listado es el propio directorio. Un `lstat` o un `realpath` SOBRE el
+    // directorio si es legitimo: es lo que este comprobador viene a hacer.
+    const LISTAR = new Set(['readdir', 'opendir']);
+    const dentro = ops.filter((o) => /node_modules[\\/]./.test(o.ruta)
+      || (LISTAR.has(o.op) && /node_modules/.test(o.ruta)));
+    return { valor, gasto: { ops, total: ops.length, dentro } };
+  } finally {
+    fs.lstatSync = guardadas.lstatSync;
+    fs.statSync = guardadas.statSync;
+    fs.readdirSync = guardadas.readdirSync;
+    fs.readFileSync = guardadas.readFileSync;
+    fs.opendirSync = guardadas.opendirSync;
+    fs.realpathSync.native = guardadas.native;
+  }
+}
+
+/** El techo NO es un número elegido: sale de la forma del árbol. Un `lstat` por ancestro, más uno. */
+function techoEstructural(arboles) {
+  return arboles.reduce(
+    (suma, a) => suma + path.resolve(a.raiz).split(/[\\/]/).filter(Boolean).length + 2,
+    0,
+  );
+}
+
+/** El reparto por tipo de operación, para que dos diferencias no se compensen entre sí. */
+function porTipo(gasto) {
+  const c = {};
+  for (const o of gasto.ops) c[o.op] = (c[o.op] || 0) + 1;
+  return JSON.stringify(c);
+}
+
 test('SCRUM-351 · CONTROL NEGATIVO: sobre el árbol de verdad contesta, y sin coste', () => {
   // 🔴 A PROPÓSITO NO SE COMPRUEBA **QUÉ** CONTESTA. Exigir «independientes» pondría la suite en
   // rojo el día que el fundador enlace los worktrees — que es una decisión suya y una configuración
   // legítima. Eso sería fijar la premisa otra vez, solo que al revés. Lo que sí se exige es que
-  // conteste algo y que no sea ciego.
-  const t0 = process.hrtime.bigint();
-  const t = topologia({ cwd: RAIZ });
-  const ms = Number(process.hrtime.bigint() - t0) / 1e6;
+  // conteste algo, que no sea ciego y que le cueste poco.
+  const { valor: t, gasto } = midiendoElGasto(() => topologia({ cwd: RAIZ }));
 
   assert.ok(t.ok, `🔴 NO SUPE MIRAR sobre el árbol real: ${t.motivo}`);
   assert.equal(t.ciegos.length, 0,
     `🔴 hay árboles que no se han podido leer: ${t.ciegos.map((c) => c.ciego).join(' · ')}`);
   assert.ok(t.arboles.length >= 1, '🔴 no se ha medido ni un árbol.');
   assert.ok(veredicto(t).length > 0);
-  assert.ok(ms < 2000,
-    `🔴 ha tardado ${Math.round(ms)} ms. Un comprobador que se nota en la tanda se desactiva al ` +
-    'primer roce, y entonces no comprueba nada.');
+
+  // SUELO DE CEGUERA DEL INSTRUMENTO. Un cero aquí se leería como «topología perfecta», y sería
+  // «no supe mirar»: si el contador no ve NADA es que el parche no llegó al `fs` que usa el script,
+  // y entonces los dos asertos de debajo pasarían sin haber medido nada.
+  assert.ok(gasto.total > 0,
+    '🔴 EL CONTADOR NO HA VISTO NI UNA OPERACIÓN DE DISCO, y el comprobador acaba de recorrer '
+    + `${t.arboles.length} árboles. El instrumento está ciego: lo que sigue no mide el coste, mide `
+    + 'nada. «Cero» y «no supe mirar» nunca son el mismo número.');
+
+  assert.deepEqual(gasto.dentro.map((o) => `${o.op} ${o.ruta}`), [],
+    '🔴 EL COMPROBADOR HA ENTRADO DENTRO DE UN `node_modules`.\n\n'
+    + '  Ahí hay decenas de miles de ficheros: es la única forma de que esto pase de milisegundos a\n'
+    + '  segundos y de que alguien acabe desactivándolo. Para decir quién comparte con quién basta\n'
+    + '  con RESOLVER la ruta; leer su contenido no aporta un dato y cuesta la tanda entera.');
+
+  const techo = techoEstructural(t.arboles);
+  assert.ok(gasto.total <= techo,
+    `🔴 ${gasto.total} operaciones de disco para ${t.arboles.length} árboles, y el techo estructural `
+    + `es ${techo}.\n\n`
+    + '  Ese techo no es un número elegido a ojo: es un `lstat` por ancestro de cada ruta más el\n'
+    + '  `realpath` final, que es exactamente lo que el método dice hacer. Pasarse significa que ha\n'
+    + '  empezado a recorrer algo, y recorrer es lo que lo vuelve caro.');
+});
+
+test('SCRUM-520 · el gasto NO CRECE con el TAMAÑO de `node_modules`', () => {
+  // Éste es el aserto que sustituye de verdad al cronómetro: si el comprobador fuera caro, lo sería
+  // POR EL TAMAÑO del árbol de dependencias. Se mide con dos árboles idénticos salvo en eso.
+  const b = banco();
+  try {
+    const flaco = b.arbol('flaco');
+    conNodeModulesPropio(flaco);
+
+    const gordo = b.arbol('gordo');
+    const nmGordo = conNodeModulesPropio(gordo);
+    for (let i = 0; i < 200; i++) fs.writeFileSync(path.join(nmGordo, `paquete-${i}`), 'x');
+
+    const a = midiendoElGasto(() => topologia({ raices: [flaco] }));
+    const z = midiendoElGasto(() => topologia({ raices: [gordo] }));
+
+    assert.ok(a.gasto.total > 0 && z.gasto.total > 0,
+      '🔴 el contador no ha visto nada en un árbol de mentira: instrumento ciego, no árbol barato.');
+    assert.equal(z.gasto.total, a.gasto.total,
+      `🔴 UN \`node_modules\` CON 200 ENTRADAS CUESTA ${z.gasto.total} OPERACIONES Y UNO CON 1 CUESTA `
+      + `${a.gasto.total}.\n\n`
+      + '  El coste dependería del tamaño del árbol de dependencias, así que crecería con el\n'
+      + '  proyecto y un día se notaría en la tanda. Resolver una ruta no puede depender de cuántos\n'
+      + '  paquetes haya detrás.');
+  } finally {
+    b.limpiar();
+  }
+});
+
+test('SCRUM-520 · la medida es DETERMINISTA sobre un conjunto FIJO', () => {
+  // La condicion de cierre del ticket. Se prueba sobre un banco propio y no sobre los worktrees
+  // del repo, y el motivo es el defecto que este ticket viene a matar:
+  //
+  // 🔴 HAY CUATRO SESIONES TRABAJANDO A LA VEZ. Si una crea o quita un worktree entre las dos
+  // pasadas, el conjunto medido cambia, el numero cambia, y este test daria ROJO por algo que no
+  // es el comprobador — exactamente la enfermedad del cronometro, con otra cara. Sobre un conjunto
+  // fijo no hay nada que se mueva por debajo.
+  const b = banco();
+  try {
+    const raices = ['a', 'b', 'c'].map((n) => {
+      const d = b.arbol(n);
+      conNodeModulesPropio(d);
+      return d;
+    });
+    const primera = midiendoElGasto(() => topologia({ raices }));
+    const segunda = midiendoElGasto(() => topologia({ raices }));
+
+    assert.ok(primera.gasto.total > 0, '🔴 el contador esta ciego: dos ceros iguales no son determinismo.');
+    assert.equal(segunda.gasto.total, primera.gasto.total,
+      `🔴 dos pasadas seguidas sobre EL MISMO conjunto dan ${primera.gasto.total} y ${segunda.gasto.total} `
+      + 'operaciones. La medida no es determinista, asi que su veredicto depende de algo que no es el '
+      + 'arbol — que es el defecto del cronometro que este ticket retira.');
+    assert.equal(porTipo(segunda.gasto), porTipo(primera.gasto),
+      '🔴 el TOTAL coincide pero el reparto por tipo de operacion no: se estan compensando dos '
+      + 'diferencias, y eso es casualidad, no determinismo.');
+  } finally {
+    b.limpiar();
+  }
+});
+
+test('SCRUM-520 · y sobre el arbol REAL, cuando nadie mueve worktrees por debajo', () => {
+  // El mismo hecho sobre el arbol de verdad. Aqui SI se puede mover el suelo —otra sesion creando
+  // o quitando un worktree—, asi que se reintenta hasta que dos pasadas midan EL MISMO conjunto.
+  // Si nunca coinciden, eso NO es no-determinismo: es trasiego de worktrees, y se dice con ese
+  // nombre en vez de acusar al comprobador.
+  const raicesDe = (t) => JSON.stringify(t.arboles.map((a) => a.raiz));
+  let primera, segunda;
+  for (let intento = 0; intento < 3; intento++) {
+    primera = midiendoElGasto(() => topologia({ cwd: RAIZ }));
+    segunda = midiendoElGasto(() => topologia({ cwd: RAIZ }));
+    if (raicesDe(primera.valor) === raicesDe(segunda.valor)) {
+      assert.ok(primera.gasto.total > 0, '🔴 el contador esta ciego sobre el arbol real.');
+      assert.equal(segunda.gasto.total, primera.gasto.total,
+        `🔴 el MISMO conjunto de ${primera.valor.arboles.length} arboles cuesta ${primera.gasto.total} y `
+        + `luego ${segunda.gasto.total} operaciones. Nada se ha movido por debajo: la medida no es determinista.`);
+      assert.equal(porTipo(segunda.gasto), porTipo(primera.gasto),
+        '🔴 el total coincide y el reparto por tipo no: eso es casualidad, no determinismo.');
+      return;
+    }
+  }
+  assert.fail(
+    '🔴 EN TRES INTENTOS NO HA HABIDO DOS PASADAS SEGUIDAS SOBRE EL MISMO CONJUNTO DE ARBOLES.\n\n'
+    + `  Ultima medida: ${primera.valor.arboles.length} y luego ${segunda.valor.arboles.length}. Alguien esta creando o\n`
+    + '  quitando worktrees continuamente. No es el comprobador el que falla, pero tampoco se puede\n'
+    + '  afirmar nada sobre el arbol mientras el suelo se mueve — y callarlo seria un verde hueco.');
+});
+
+test('SCRUM-520 · git se invoca UNA vez, y fuera del recorrido por árbol', () => {
+  // El hueco declarado del contador: `import { spawnSync }` crea un binding que ya no mira el
+  // objeto del módulo, así que parchear `child_process` desde fuera NO lo intercepta —comprobado—.
+  // Un proceso por árbol serían cientos de procesos y sí se notaría en la tanda, así que el hueco
+  // se tapa por AST: los comentarios no son nodos, de modo que esto no se caza a sí mismo
+  // explicándose (SCRUM-203).
+  const fuente = fs.readFileSync(path.join(RAIZ, 'scripts/topologia-node-modules.mjs'), 'utf8');
+  const sf = ts.createSourceFile('topologia.mjs', fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+
+  const llamadas = [];
+  (function anda(n) {
+    if (ts.isCallExpression(n) && n.expression.getText(sf) === 'spawnSync') {
+      let f = n.parent;
+      while (f && !ts.isFunctionDeclaration(f)) f = f.parent;
+      llamadas.push(f && f.name ? f.name.getText(sf) : '(fuera de función)');
+    }
+    ts.forEachChild(n, anda);
+  })(sf);
+
+  assert.deepEqual(llamadas, ['worktreesDelRepo'],
+    `🔴 \`spawnSync\` se llama desde ${JSON.stringify(llamadas)}.\n\n`
+    + '  Tiene que haber UNA sola llamada y vivir en `worktreesDelRepo`, que corre una vez. Metida\n'
+    + '  en `resolverNodeModules` —que corre por árbol— serían cientos de procesos, y ESO sí se\n'
+    + '  nota en la tanda. El contador de operaciones no puede ver esto, por eso se mira aquí.');
 });
 
 // ── EL SUELO: «NO SUPE MIRAR» NUNCA ES «SON INDEPENDIENTES» ──────────────────────────────────

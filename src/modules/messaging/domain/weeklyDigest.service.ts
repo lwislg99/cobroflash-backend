@@ -2,7 +2,7 @@
 // Resumen semanal por email: se envía los lunes a las 9h.
 import { prisma } from '../../../core/db/prisma';
 import { config } from '../../../core/config/env';
-import { maskEmail } from '../../../core/utils/utils';
+import { maskEmail, formatImporteEs } from '../../../core/utils/utils';
 import { enviarCorreo, ResultadoCorreo, resultadoSinDestino } from '../../../integrations/enviarCorreo';
 // SCRUM-475 · un aviso que no sale deja constancia, y su fallo VIAJA hasta el cron.
 import { dejarConstancia, parteNuevo, type ParteDeAvisos } from './avisoConstancia';
@@ -36,7 +36,7 @@ async function sendEmail(
 }
 
 function fmt(n: number, currency = '') {
-  return n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + (currency ? ' ' + currency : '');
+  return formatImporteEs(n) + (currency ? ' ' + currency : '');
 }
 
 /**
