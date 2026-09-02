@@ -204,7 +204,19 @@ export const TRAMOS_QUE_LA_TABLA_PINTA = ['proceso+ws', 'primera-página'];
  * de abajo se encarga.
  */
 export function leerArranque(salida, marca = MARCA_ARRANQUE) {
-  const linea = String(salida || '').split('\n').find((l) => l.includes(marca));
+  // 🔴 SCRUM-673 · LA ULTIMA, NO LA PRIMERA. Esto era `.find()`, o sea la PRIMERA marca, y las
+  // siguientes se tiraban EN SILENCIO. Con eso el informe se contradecia a si mismo: un guard
+  // que arranco bien (0,3 s) y despues murio esperando emitia DOS marcas, y la tabla pintaba
+  // «COMPLETA · proceso+ws 0.3 s» debajo de una fila que decia NO ARRANCA. Quien leia solo el
+  // desglose concluia que habia arrancado bien.
+  //
+  // El desenlace de un arranque es el ULTIMO emitido. Y desde que hay REINTENTOS (parte A)
+  // esto deja de ser raro: un arranque con dos intentos emite dos marcas SIEMPRE, y con
+  // `.find()` la tabla se quedaria congelada en el primer intento fallido.
+  const todas = String(salida || '').split(String.fromCharCode(10)).filter((l) => l.includes(marca));
+  const linea = todas.length ? todas[todas.length - 1] : undefined;
+  // Los intentos anteriores NO se tiran: se cuentan, para que la tabla diga «costo dos».
+  const intentos = todas.length;
   if (!linea) return null;
   const cabecera = linea.match(new RegExp(marca + ' ([0-9.]+) s (COMPLETA|CORTADA EN «([^»]+)»)'));
   if (!cabecera) {
@@ -213,7 +225,7 @@ export function leerArranque(salida, marca = MARCA_ARRANQUE) {
     const soloTotal = linea.match(new RegExp(marca + ' ([0-9.]+)'));
     return {
       total: soloTotal ? Number(soloTotal[1]) : null,
-      desenlace: null, cortadoEn: null, tramos: [], desconocidos: [linea.trim()],
+      desenlace: null, cortadoEn: null, tramos: [], desconocidos: [linea.trim()], intentos,
     };
   }
   const desconocidos = [];
@@ -230,7 +242,7 @@ export function leerArranque(salida, marca = MARCA_ARRANQUE) {
   return {
     total: Number(cabecera[1]),
     desenlace: cabecera[2].startsWith('CORTADA') ? 'CORTADA' : 'COMPLETA',
-    cortadoEn, tramos, desconocidos,
+    cortadoEn, tramos, desconocidos, intentos,
   };
 }
 
@@ -241,7 +253,11 @@ export function leerArranque(salida, marca = MARCA_ARRANQUE) {
 export function lineaDeTramos(a) {
   if (!a || !a.desenlace) return null;
   return '       └ arranque ' + a.desenlace + (a.cortadoEn ? ' EN «' + a.cortadoEn + '»' : '')
-    + a.tramos.map((t) => ' · ' + t.nombre + ' ' + t.valor).join('');
+    + a.tramos.map((t) => ' · ' + t.nombre + ' ' + t.valor).join('')
+    // SCRUM-673 · si costo mas de un intento, se DICE: un arranque que necesito reintentar es
+    // un runner cargado, y esa senal es la que hay que ver acumularse ANTES de que vuelva a
+    // tumbar el CI. Callarla seria volver a tirar informacion que el guard si emite.
+    + (a.intentos > 1 ? ' · ' + a.intentos + ' intentos' : '');
 }
 
 /**

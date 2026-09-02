@@ -40,6 +40,7 @@
 // escritura, y que WebKit desaloje el origen a los 7 días. Eso es plan humano, no tanda.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { IDBFactory } from 'fake-indexeddb';
@@ -290,19 +291,75 @@ test('SCRUM-362 · CONTROL NEGATIVO: con red normal la firma sube y la cola qued
     '🔴 una firma CONFIRMADA reaparece en la cola tras recargar: se subiría dos veces.');
 });
 
-test('SCRUM-362 · CONTROL NEGATIVO: los escenarios nuevos no añaden tiempo perceptible', async () => {
-  // Cinco montajes completos del dashboard con el escenario nuevo. Si esto se nota en la tanda, el
-  // banco se desactiva al primer roce y entonces no comprueba nada (SCRUM-351).
-  const t0 = process.hrtime.bigint();
-  for (let i = 0; i < 5; i++) {
-    const red = falloDelServidor(500);
+/** Las operaciones de DISCO de una pasada. Sin reloj: el mismo número con la máquina llena. */
+async function midiendoElDisco(fn) {
+  let n = 0;
+  const claves = ['readFileSync', 'existsSync', 'readdirSync', 'lstatSync', 'statSync'];
+  const guardadas = {};
+  for (const k of claves) {
+    guardadas[k] = fs[k];
+    fs[k] = (p, ...resto) => { n++; return guardadas[k](p, ...resto); };
+  }
+  try { await fn(); } finally { for (const k of claves) fs[k] = guardadas[k]; }
+  return n;
+}
+
+test('SCRUM-362 · CONTROL NEGATIVO: el escenario nuevo no añade COSTE al banco', async () => {
+  // 🔴 ESTO MEDÍA RELOJ DE PARED —`ms < 8000` sobre cinco pasadas reales— y era uno de los dos
+  // últimos de su familia (los censó SCRUM-671; SCRUM-351 y scrum642 fueron los anteriores).
+  // Su propio comentario ya citaba a SCRUM-351, que es de donde salió el número.
+  //
+  // El hecho que quería sostener NO es «tarda menos de 8 s»: es que **el banco sea barato**,
+  // porque uno que se nota en la tanda se desactiva y entonces no comprueba nada. Y «barato» se
+  // puede CONTAR: lo caro sería que el escenario nuevo hiciera MÁS TRABAJO que el de siempre.
+  //
+  // Medido: 143 operaciones de disco por pasada, idénticas en los dos escenarios. Se afirma la
+  // COMPARACIÓN y no un absoluto — un absoluto caducaría en cuanto otra rama añadiera un
+  // `<script>` al dashboard, que es trabajo legítimo y no un encarecimiento de este banco.
+  //
+  // ⚠️ CALENTAMIENTO A PROPÓSITO: la primerísima carga paga la resolución de módulos (+2 ops,
+  // medidas) y ese coste no es del escenario. Sin descartarla, la primera pasada saldría 145.
+  montarAlmacen(RAIZ, {});
+
+  const pasada = (hacerRed) => midiendoElDisco(async () => {
+    const red = hacerRed();
     const b = montarAlmacen(RAIZ, { dashboard: { red } });
     await conPlazo(subirCon(b)().then(() => null, (e) => e), red.nombre);
-  }
-  const ms = Number(process.hrtime.bigint() - t0) / 1e6;
-  assert.ok(ms < 8000,
-    `🔴 cinco pasadas del escenario nuevo han tardado ${Math.round(ms)} ms. Un banco que se nota `
-    + 'en la tanda se desactiva, y un banco desactivado no mide nada.');
+  });
+
+  const nuevas = [];
+  for (let i = 0; i < 5; i++) nuevas.push(await pasada(() => falloDelServidor(500)));
+  const normales = [];
+  for (let i = 0; i < 3; i++) normales.push(await pasada(() => redNormal({ ok: true })));
+
+  // 🔴 TERCERA PATA, Y LA PUSO UN ROJO. Con solo dos —escenario nuevo contra red normal— una
+  // degradacion que encareciera A LOS DOS pasaba en VERDE: inyecte dos lecturas de mas «cuando
+  // hay red declarada» y las dos ramas subieron igual, asi que la comparacion seguia cuadrando.
+  // El montaje PELADO no declara red, asi que no se lo lleva, y la degradacion se ve.
+  //
+  // Y sigue sin ser un absoluto: si otra rama anade un `<script>` al dashboard, las TRES suben lo
+  // mismo y esto sigue verde, que es lo correcto — ese trabajo no encarece este banco.
+  const pelados = [];
+  for (let i = 0; i < 3; i++) pelados.push(await midiendoElDisco(async () => { montarAlmacen(RAIZ, {}); }));
+
+  // SUELO: si el contador no ve NADA, lo de abajo compara dos ceros y no mide nada.
+  assert.ok(nuevas[0] > 0,
+    '🔴 el contador de disco no ha visto ni una operación, y el banco acaba de montar el '
+    + 'dashboard entero. Está ciego: «cero» y «no supe mirar» no son el mismo número.');
+
+  assert.ok(nuevas.every((x) => x === nuevas[0]),
+    `🔴 el coste CRECE entre pasadas: ${JSON.stringify(nuevas)}. Algo se acumula de una a `
+    + 'otra, y un banco que engorda acaba notándose en la tanda y lo desactiva alguien.');
+
+  assert.equal(nuevas[0], normales[0],
+    `🔴 el escenario NUEVO cuesta ${nuevas[0]} operaciones de disco y el de siempre `
+    + `${normales[0]}. Añade trabajo, y un banco que se nota en la tanda se desactiva — `
+    + 'que es exactamente lo que este control negativo existe para impedir.');
+
+  assert.equal(nuevas[0], pelados[0],
+    `🔴 declarar una red al banco cuesta ${nuevas[0]} operaciones de disco y no declararla ${pelados[0]}. `
+    + 'El escenario se paga aunque no se use, y eso encarece TODAS las pruebas del banco a la vez '
+    + '— que es como un banco deja de correrse.');
 });
 
 // ═══ QUE EL ESCENARIO NUEVO SEA DISTINGUIBLE ══════════════════════════════════════════════

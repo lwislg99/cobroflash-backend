@@ -67,8 +67,16 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
  * Es el mismo defecto que este trinquete existe para frenar, cazado en su version mas cara. El
  * propio trinquete lo pidio con estas palabras: «han bajado a 21, baja TOPE a ese numero».
  */
-const TOPE = 21;
-
+// 🔴 2-sep-2026 · SCRUM-670 · RECONTADO SOBRE EL ÁRBOL MEZCLADO: 20.
+//
+// Ni el 22 de la rama ni el 21 de main: los dos son de árboles que ya no existen. Las dos
+// partes del merge bajaban este número por el mismo motivo —llevar los lectores del índice a
+// un solo extractor— y cada una contó sobre el suyo. Sumar o elegir habría dejado el tope por
+// encima de lo real, que es como un trinquete deja de proteger sin que nadie lo note.
+//
+// Y la base heredada decía 21 antes de todo esto: este contador no ha sido nunca de fiar. El
+// que vale sale de CONTAR, y el propio guard lo dice en su mensaje cuando no cuadra.
+const TOPE = 20;
 /**
  * Los 7 que el criterio viejo no veia. Estan aqui para que se puedan arreglar, NO para
  * excusarlos: cuentan dentro del TOPE como cualquier otro.
