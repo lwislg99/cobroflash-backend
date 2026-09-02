@@ -111,3 +111,80 @@ y rompería el filtro probado de SCRUM-467.
 
 `prisma/schema.prisma` · el parte (T3) · la firma (T4) · presupuesto · facturación · camino de
 emisión. **Ni una línea de código en esta tanda**: es medición.
+
+---
+
+# FASE B (2-sep-2026) · Construido: pasos A y B. El C tiene DOS paradas declaradas.
+
+> ⚠️ Se ANEXA. El PASO 0 de arriba no se toca.
+
+**Medido contra:** `origin/main` = `5091091c973d631f22c3ceb15fdd091aebeed389` · 2026-09-02
+**Ninguna base tocada.** El `CREATE TABLE` y el backfill quedan escritos y **sin aplicar**.
+
+## PASO A · La tabla nace y se escribe en los dos sitios
+
+`JobAssignee` + su `CREATE TABLE` aditivo y re-ejecutable, con verificación de `information_schema`.
+La ruta acepta `assignedUserIds` (lista) y `assignedUserId` (uno o `null`), valida **cada** id contra
+el merchant y escribe **los dos sitios en la MISMA transacción** — si una escritura se quedara
+fuera, la discrepancia que el guard prohíbe se produciría sola.
+
+**El guard que lo hace aceptable:** la coherencia es pura, cae **nombrando el trabajo**, y cubre las
+tres formas de separarse. Más un barrido que impide escribir `assignedUserId` fuera de ese camino.
+**Suelo de ceguera:** el censo con población vacía **lanza** — un cero se lee igual que «todo
+coherente», y es el mismo cero que al técnico le dice «no tienes trabajos».
+
+### 🔴 Un guard de la casa encontró un defecto REAL de mi propuesta de schema
+
+`SCRUM-244` vio que la relación a `TeamMember` **no llevaba `onDelete`**: FK **RESTRICT**. Borrar un
+empleado —o su merchant— habría **reventado a mitad de recorrido con las tablas anteriores ya
+vacías**. Corregido a `Cascade` **en los dos padres**, en el schema y en el SQL que se aplica.
+⚠️ **El `CREATE TABLE` que apruebes es el corregido**, no el del PASO 0.
+
+## PASO B · Los tres ejes, en las dos rutas
+
+`operarioId` OR `assignedUserId` OR `job_assignees`, en el listado de Trabajos **y** en los albaranes
+del técnico (listado y detalle). Si una ruta se quedara con dos, el técnico vería su trabajo y **no
+sus albaranes**.
+
+- **Control positivo** con dos y con tres: **Israel, Miguel y Jesús.L** ven los tres el mismo
+  trabajo. Con uno solo no se distingue «asignación múltiple» de «asignación al último».
+- **Control negativo** enumerado: quien no está asignado **no lo ve**, y un trabajo **sin nadie es
+  invisible para todo técnico** — solo lo ven los admin.
+- **Regla 2:** el `OR` va **encima** de `merchantId`, nunca en su lugar.
+
+### ⚠️ Una concesión medida, y su coste declarado
+
+Escribí los tres ejes en una **función común** y hubo que **retirarla**: el guard de SCRUM-467
+comprueba **por su texto** que el `where` nombre `operarioId` y `assignedUserId`, así que la fuente
+común lo ponía en rojo **sin que la garantía cambiara ni un ápice** — rojo de FORMA. Su test es de
+otro carril y **no se toca**: el literal se queda inline.
+
+Lo que impide que las dos rutas se separen no es una función, entonces, sino el guard de
+`scrum650b`: **exige los TRES ejes en LAS DOS rutas** y cae nombrando la que se quede corta.
+**Coste:** `loVe` y `EJES_DE_VISIBILIDAD` quedan sin llamador vivo y van al censo de huérfanos **con
+ese motivo escrito**, no escondido.
+
+## 🛑 PASO C · Escrito lo que se puede, y PARO en lo que no
+
+El backfill está en `docs/sql/scrum-650-paso-c-backfill.sql`, **idempotente** y con su verificación
+(`pendientes` tiene que ser 0: si no, retirar la columna le quitaría el trabajo a algún técnico).
+**No se aplica.**
+
+Las otras dos mitades del paso C son **paradas declaradas por tus propias reglas**:
+
+1. **«el filtro deja de mirar `assignedUserId`»** → el guard de SCRUM-467 exige ese literal en el
+   filtro y en el detalle. Quitarlo **obliga a editar su test**, y tu instrucción es: *«Si tienes que
+   editarlos, PARA: significa que estás cambiando la garantía, no ampliándola.»* Aquí sí se estaría
+   cambiando: ese eje deja de existir. **Necesita tu GO explícito para tocar SCRUM-467.**
+2. **«la columna se retira»** → `DROP COLUMN` es un **cambio de schema NO aditivo**, STOP de la
+   constitución y de tu propia condición («si hace falta algo MÁS del schema, PARAS»).
+
+**El orden que propongo cuando lo autorices:** aplicar `CREATE TABLE` → dejar correr el paso A →
+backfill → verificar `pendientes = 0` → **entonces** GO para editar SCRUM-467 y `DROP COLUMN`, en
+ese orden y no antes. Retirar la columna con el filtro aún leyéndola deja a todos los técnicos sin
+trabajos.
+
+## Lo que NO se ha tocado
+
+`operarioId` (autoría, no ejecución) · el parte de trabajo · el presupuesto · facturación · el
+camino de emisión · los tests de SCRUM-467 (**0 líneas modificadas**, verificado en cada paso).
