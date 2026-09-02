@@ -84,6 +84,11 @@ desaparecieron:
 cobertura perdida sin reclamar, y es exactamente el caso que este ticket viene a hacer visible.
 **No lo persigo — no es mi carril.**
 
+> **CONTESTADO por SCRUM-695 (2-sep-2026): fue DELIBERADO, y además obligatorio.** Los cuatro
+> vigilaban un registro que SCRUM-680 dejó sin sujeto; resucitados contra el registro de hoy dan
+> **dos verdes huecos y dos rojos permanentes**. El motivo ya estaba escrito en la cabecera del
+> propio fichero. Detalle en `docs/master/SCRUM-695.md`.
+
 ## Lo construido
 
 | Pieza | Qué es |
@@ -155,3 +160,32 @@ de los caminos que el propio ticket nombra. Resultado:
    guardó.
 3. **`SUELO_TOTAL = 646` de `_evidencia-tanda.mjs` sigue rancio.** No se toca aquí: es otro carril
    (la tanda gateada) y ampliarlo sería mejorar de paso.
+
+---
+
+## Añadido el 2-sep-2026, después de que SCRUM-695 contestara la §③
+
+Aquella bajada resultó ser una **retirada correcta** — y este suelo **habría llorado igual**. Es su
+diseño (es un suelo, no un juez), pero la regla de conflicto podía leerse como si el número no
+pudiera bajar nunca, y eso dejaría a la siguiente sesión sin saber que **retirar tests con el motivo
+escrito es legítimo**.
+
+Se añade **sólo un comentario** a `scripts/_suelo-de-la-tanda.mjs` —17 líneas, ninguna de lógica, el
+número intacto— diciendo que «se queda el más alto» resuelve un choque entre ramas y no prohíbe una
+bajada deliberada; lo prohibido sigue siendo bajarlo para desatascar un rojo que no se ha mirado.
+
+**Comprobado que el comentario NO ENSOMBRECE al guard:** el test ata la cadena de la regla, y un
+comentario que la repitiera dejaría pasar el día que alguien borrara la regla de verdad. Medido: la
+cadena sale **una sola vez**, y al romper la original el test cae (`not ok 10`). Restaurada, 12/12.
+
+**Y la procedencia del número se contradecía a sí misma:** el docstring decía `bdce57dc` y la
+constante `MEDIDO_CONTRA` decía `a464d978`. Son dos merges reales de `main` separados 11 minutos.
+Manda `a464d978`, que es lo que declara también la cabecera de esta entrada. Corregido el docstring
+—un comentario, no el número—, porque una procedencia que se contradice no sirve para lo que existe.
+
+**Tanda de esta rama tras el cambio: 4766 tests, 4683 pass, 0 fail, 83 skipped.** Y el suelo, corrido
+sobre ese TAP: `✅ suelo 4766 · total actual 4766 · margen 0` — el borde exacto, ejercitado de verdad.
+
+⚠️ **`main` ha avanzado 6 commits** desde el punto de medida (`a464d978`) y esta rama no los lleva.
+Quien cierre este PR mezcla `main` y **vuelve a medir**: si la tanda crece, el suelo sube; es la
+operación de una línea que este mismo fichero describe.
