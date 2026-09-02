@@ -29,6 +29,7 @@ import ts from 'typescript';
 // index con el suyo (necesita el orden y la posición); lo que se comparte es cuántos scripts
 // tiene que haber, para que este guard y el de SCRUM-417 no puedan discrepar sobre eso.
 import { contrastarScripts } from './_banco-vistas.mjs';
+import { nombresDelDashboard } from './_scripts-del-indice.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
@@ -37,7 +38,10 @@ const INDEX = path.join(RAIZ, 'public', 'dashboard', 'index.html');
 
 /** Los `<script src="./js/X.js">` del index, EN ORDEN de carga. */
 function ordenDeCarga(html) {
-  return [...html.matchAll(/<script src="\.\/js\/([^"]+)"><\/script>/g)].map((m) => m[1]);
+  // SCRUM-670: una sola fuente. Esta regex exigía que el `src` fuera lo primero y que
+  // `</script>` fuera pegado, así que una etiqueta con `defer` la dejaba fuera EN SILENCIO —
+  // y este guard habría dicho «cero colisiones» sin haber parseado ese fichero.
+  return nombresDelDashboard(html);
 }
 
 /**

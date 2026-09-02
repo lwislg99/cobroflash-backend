@@ -23,6 +23,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { srcsDelIndice } from './_scripts-del-indice.mjs';
 import ts from 'typescript';
 
 import { ALBARAN_ESTADOS } from '../dist/modules/jobs/domain/albaran.service.js';
@@ -338,7 +339,10 @@ test('SCRUM-301 · 🏆 cada fila lleva su TRABAJO, con id para poder enlazarlo'
  */
 function scriptsCargados(html) {
   const sinComentarios = html.replace(/<!--[\s\S]*?-->/g, '');
-  return [...sinComentarios.matchAll(/<script[^>]*\ssrc=["']([^"']+)["']/g)].map((m) => m[1]);
+  // SCRUM-670: quinto lector del mismo índice, ahora a la fuente única. Su regex admitía
+  // comillas simples pero seguía exigiendo el `src` detrás de un espacio; la fuente recorre la
+  // etiqueta y no depende de cómo esté escrita.
+  return srcsDelIndice(sinComentarios);
 }
 
 test('SCRUM-301 · la sección está CABLEADA: menú, ruta y script', () => {

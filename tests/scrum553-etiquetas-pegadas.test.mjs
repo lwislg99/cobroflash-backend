@@ -51,7 +51,11 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
  *    16 no es lo que hay: seria un tope que el arbol no cumple, o sea main en rojo. La rebaja
  *    honesta es de 6 —13 que se van, 7 que aparecen— y las dos mitades estan escritas.
  */
-const TOPE = 23;
+// ✅ 23 → 22 · 2-sep-2026 · SCRUM-670: bajan al llevar los CINCO lectores del indice a
+// una fuente unica (`tests/_scripts-del-indice.mjs`). Las regex que exigian `></script>` pegado
+// eran justo las que perdian una etiqueta con `defer` o con comillas simples. El trinquete baja
+// en el mismo commit que lo arregla: uno que no se ajusta deja de proteger de lo siguiente.
+const TOPE = 22;
 
 /**
  * Los 7 que el criterio viejo no veia. Estan aqui para que se puedan arreglar, NO para

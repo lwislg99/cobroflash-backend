@@ -21,6 +21,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+// SCRUM-670: la fuente única de «qué scripts declara el documento».
+import { srcsDelIndice } from './_scripts-del-indice.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC_DIR = path.join(RAIZ, 'public');
@@ -53,7 +55,8 @@ const RE_HUELLA = new RegExp(`[?&]${PARAM_HUELLA}=[0-9a-f]{10}(?:&|$)`);
 test('SCRUM-274 · SUELO: el extractor ve las referencias que de verdad hay', () => {
   const html = htmlServido();
   const refs = referenciasDe(html, { publicDir: PUBLIC_DIR, baseUrl: BASE_URL });
-  const scripts = (html.match(/<script[^>]+src\s*=/gi) || []).length;
+  // SCRUM-670: el recuento sale de la fuente única, no de una cuarta regex propia.
+  const scripts = srcsDelIndice(html).length;
   const locales = refs.filter((r) => !r.externa);
 
   assert.ok(

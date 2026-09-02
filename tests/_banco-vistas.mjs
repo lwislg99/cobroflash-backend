@@ -33,6 +33,8 @@
 // Sin dependencias nuevas (regla 36): `node:vm` y un DOM de mentira, como el de SCRUM-296.
 import fs from 'node:fs';
 import path from 'node:path';
+// SCRUM-670: la fuente única de los scripts del índice.
+import { nombresDelDashboard } from './_scripts-del-indice.mjs';
 import vm from 'node:vm';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
@@ -320,7 +322,9 @@ export function todos(n, out = []) { out.push(n); for (const h of n.hijos) todos
 /** Los `<script src>` de `dashboard/index.html`, EN SU ORDEN. */
 export function scriptsDelDashboard(raiz) {
   const html = fs.readFileSync(path.join(raiz, 'public/dashboard/index.html'), 'utf8');
-  return [...html.matchAll(/<script src="\.\/([^"]+)"><\/script>/g)].map((m) => m[1]);
+  // SCRUM-670: una sola fuente, y no una regex propia. Se conserva el prefijo `js/` porque es
+  // el contrato que ya consumen `contrastarScripts` y el banco de SCRUM-417.
+  return nombresDelDashboard(html).map((n) => 'js/' + n);
 }
 
 // ═════════════════════════════════════════════════════════════════════════════════════════

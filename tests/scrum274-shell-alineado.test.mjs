@@ -34,6 +34,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+// SCRUM-670: la fuente única de «qué scripts carga el índice» — un recorrido de la etiqueta,
+// no una regex. Tres regex distintas leían este fichero y coincidían por casualidad.
+import { srcsLocales } from './_scripts-del-indice.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const HTML = path.join(RAIZ, 'public', 'dashboard', 'index.html');
@@ -112,10 +115,9 @@ function rutasMuertas(rutas, excepciones, raiz = RAIZ) {
 /** Los `<script src>` LOCALES del dashboard, normalizados a la URL que pide el navegador. */
 function scriptsDelHtml() {
   const html = fs.readFileSync(HTML, 'utf8');
-  return [...html.matchAll(/<script[^>]+src\s*=\s*"([^"]+)"/gi)]
-    .map((m) => m[1])
-    .filter((s) => !/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(s)) // externas fuera, por absolutas
-    .map((s) => s.replace(/^\.\//, '/dashboard/'));
+  // SCRUM-670: el filtrado de externas vive ahora en la fuente única (`srcsLocales`), que
+  // además lee la etiqueta como estructura y no por su forma.
+  return srcsLocales(html).map((s) => s.replace(/^\.\//, '/dashboard/'));
 }
 
 /** Las entradas `.js` del SHELL de sw.js. */
