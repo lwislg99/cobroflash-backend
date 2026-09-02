@@ -428,10 +428,44 @@ export function scriptsDelDashboard(raiz) {
 // SCRUM-609 (2-sep-2026) · 67 → 68: entra `switchTipoArticulo.js`, el switch
 // Producto|Servicio del catálogo. Va ANTES de `productsView.js`, que lo consume.
 // RECONTADO sobre el índice, no sumado: grep -c "<script src=" → 68.
-// SCRUM-593 (2-sep-2026) · 68 → 69: entra `textoDelDocumento.js`, los dos textos libres del
-// documento (DOC-03). Va ANTES de `quotesView.js`, que los consume.
-// RECONTADO sobre el indice, no sumado: grep -c "<script src=" → 69.
-export const SCRIPTS_DEL_DASHBOARD = 69;
+// SCRUM-611 (2-sep-2026) · 68 → 69: entra `tiposDeIva.js`, la lista de tipos del selector de la
+// línea. Va ANTES de `quotesView.js`, que la consume.
+//
+// 🔴 SEXTA VEZ QUE ESTE CONTADOR CHOCA, y de las BENIGNAS: los dos números chocaron —67 en la
+// rama, 68 en main—, así que el conflicto se ve. Las peligrosas son las cuatro en que las dos
+// ramas escribieron el MISMO valor por scripts DISTINTOS y git dejó la línea del valor FUERA de
+// los marcadores: sólo chocaban los comentarios, y quien conservaba «los dos» dejaba el contador
+// corto con dos scripts nuevos dentro.
+//
+// Se resuelve CONTANDO sobre el índice ya mezclado. Ni 67, ni 68, ni 67+1:
+//     grep -c "<script src=" public/dashboard/index.html   →   69
+//
+// Y LA FLECHA SE RECALCULA CON EL NÚMERO: esta entrada decía «66 → 67» cuando se escribió, antes
+// de mezclar. Una flecha es tan DERIVADA como el número que cuenta, y heredarla de un árbol que
+// ya no existe es el mismo error con otra forma.
+//
+// Comprobado además que los TRES scripts están en el índice mezclado Y en su sitio —`tiposDeIva`
+// en la 247 antes de `quotesView` en la 248; `switchTipoArticulo` y `margenCatalogo` en la 250 y
+// 251, antes de `productsView` en la 252—. Si el merge se hubiera comido uno, el recuento habría
+// salido bien y la vista habría reventado igual.
+//
+// 🔴 SÉPTIMA VEZ, Y LA PRIMERA DE LAS PELIGROSAS QUE SE CAZA EN CALIENTE. Las dos ramas
+// escribieron el MISMO valor —69— por scripts DISTINTOS, así que git dejó la línea del
+// contador FUERA de los marcadores y sólo chocaron los comentarios. Quien hubiera conservado
+// «los dos» se habría quedado con 69 y DOS scripts nuevos dentro. Es literalmente el caso que
+// el bloque de arriba describe como el que no se ve.
+//
+// SCRUM-593 (2-sep-2026) · 69 → 70: entra `textoDelDocumento.js`, los dos textos libres del
+// documento (DOC-03). Va ANTES de `quotesView.js`, que los consume. La flecha decía «68 → 69»
+// antes de mezclar y SE RECALCULA: es tan derivada como el número, y heredarla del árbol viejo
+// es el mismo error con otra forma —lo dice el bloque de arriba, y aquí acababa de repetirse.
+//
+// RECONTADO sobre el índice YA MEZCLADO, ni 69 ni 69+1:
+//     grep -c "<script src=" public/dashboard/index.html   →   70
+// Y comprobado que los DOS están en su sitio: `tiposDeIva` en la 247 y `textoDelDocumento` en
+// la 248, las dos ANTES de `quotesView` en la 249. Un recuento que cuadra con un script
+// perdido sigue reventando la vista.
+export const SCRIPTS_DEL_DASHBOARD = 70;
 
 /**
  * Monta el dashboard como lo monta el navegador y devuelve el contexto vivo.
@@ -524,6 +558,24 @@ export function cargarDashboard(raiz, opciones = {}) {
     TextEncoder, TextDecoder, btoa: globalThis.btoa, atob: globalThis.atob,
     console: { log() {}, warn() {}, info() {}, debug() {}, error(...a) { reg.errores.push(a.map(String).join(' ')); } },
     alert() {}, confirm: () => true, prompt: () => null, open: () => ({ focus() {} }),
+    // 🔴 SCRUM-660 · `window.addEventListener`. NO LO TENÍA, y por eso `renderQuotesView`
+    // REVENTABA a media pintada — medido: con la vista de `origin/main`, sin ningún cambio de
+    // producto, el banco daba `window.addEventListener is not a function`.
+    //
+    // La consecuencia era peor que un test menos: la pantalla de presupuestos se pintaba HASTA
+    // ese punto y luego paraba, así que sus LÍNEAS nunca llegaban a existir en el banco. Todo lo
+    // que viva en una línea —el selector de IVA de SCRUM-611, entre otras cosas— era
+    // estructuralmente inalcanzable para cualquier control de pantalla, y eso es exactamente el
+    // hueco que 611 declaró al entregar: «si alguien dejara el <select> sin insertar o tras un
+    // display:none, todos seguirían verdes».
+    //
+    // Se GUARDAN los oyentes, como hacen los nodos, en vez de tragárselos: un banco que acepta
+    // registros y luego no los puede disparar mide una pantalla que no existe.
+    _oyentes: {},
+    addEventListener(tipo, fn) { (ctx._oyentes[tipo] = ctx._oyentes[tipo] || []).push(fn); },
+    removeEventListener(tipo, fn) {
+      ctx._oyentes[tipo] = (ctx._oyentes[tipo] || []).filter((f) => f !== fn);
+    },
     matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
     appUserRole: opciones.rol ?? 'admin',
     // SCRUM-474 fase 2 · lo que `app.js` deja aquí al arrancar. Va SIEMPRE, también con escenario
