@@ -1,14 +1,14 @@
 # SCRUM-598 · DOC-08 · El margen sale del documento
 
-**Fecha:** 2-sep-2026 · **Carril:** documento (línea y pie) · **Gate:** sin gate — corre en `npm test`
+**Fecha:** 2-sep-2026 · **Carril:** documento (línea y pie) + el re-anclaje de F9 · **Gate:** sin gate — corre en `npm test`
 
-**Medido contra:** `origin/main` = `61c906171b08a90baa29c02666d9961fb75c132b` · 2026-09-02T13:35:04+01:00
+**Medido contra:** `origin/main` = `45a2474ce1816f6f5b6def92b5d2b1af59677082` · 2026-09-02T14:31:19+01:00
 
-**Tanda:** 4389 tests, 4310 pass, 0 fail, 79 skipped — medida DESPUES del ultimo cambio, entrada incluida.
+**Tanda:** 4427 tests, 4348 pass, 0 fail, 79 skipped (los 79 declaran su motivo) — medida DESPUES del ultimo cambio, entrada incluida.
 
 ---
 
-## 🛑 LO PRIMERO: UN GUARD ME PARÓ, Y ESTO ES EL CAMBIO DE MÁSTER QUE PEDÍA
+## 🛑 LO PRIMERO: F9 NO SE RETIRA, **SE MUDA**. Y ÉSTA ES LA MITAD QUE LO HACE LEGÍTIMO
 
 Al retirar el margen saltó `scrum600-un-solo-front-documento`:
 
@@ -16,18 +16,21 @@ Al retirar el margen saltó `scrum600-un-solo-front-documento`:
 > SCRUM-600 **lo declara innegociable**: si se ha quitado a propósito, **es cambio de máster ANTES
 > de codificar**, no un borrado de paso.»
 
-**Y F9 no se ha perdido: se ha MUDADO.** Dice «coste y margen existen **EN EL PRODUCTO**», y desde
-CAT-01 (SCRUM-609) el coste y el margen viven en el **catálogo**, con su campo y su aritmética
-(`margenCatalogo.js`). Lo que este ticket retira es el margen del **DOCUMENTO**, que es otra cosa.
+**El diagnóstico era correcto y sigue siéndolo:** F9 dice «coste y margen existen **EN EL
+PRODUCTO**», y desde CAT-01 (SCRUM-609) el coste y el margen viven en el **catálogo**, con su campo
+y su aritmética (`margenCatalogo.js`). Lo que este ticket retira es el margen del **DOCUMENTO**, que
+es otra cosa. Lo que caducó fue el **ancla del detector**: apuntaba a `markupTd.appendChild(markupInput)`
+dentro de `quotesView.js`, o sea que medía la capacidad **por su dirección vieja**.
 
-Lo que caducó fue el **ancla del detector**: apuntaba a `markupTd.appendChild(markupInput)` dentro
-de `quotesView.js`, o sea que medía la capacidad **por su dirección vieja**.
+**Pero ese detector ERA el mecanismo que hacía innegociable a F9.** Retirarlo sin sustituto
+convierte una regla en una costumbre: mañana alguien quita el margen **del catálogo** y no salta
+nada, y no lo sabríamos hasta que se quejara un profesional. Una retirada sin sustituto es media
+retirada.
 
-> **F9 se retira de los dos censos con su motivo y la fecha de la decisión (fundador, 24-ago-2026),
-> y esta entrada es el registro que el guard exigía.** No se ha tocado ningún umbral ni se ha
-> relajado nada: se ha retirado una entrada que medía una capacidad en el sitio donde ya no vive.
-> **Si el fundador considera que eso necesita su visto bueno explícito, es esto lo que hay que
-> mirar antes de mergear.**
+> **F9 SIGUE VIGENTE. Su detector CAMBIA DE DOMICILIO porque la capacidad cambió de domicilio.**
+> No se ha tocado ningún umbral, no se ha relajado ninguna regla y la red de SCRUM-600 sigue
+> teniendo **OCHO** entradas: siete ancladas por línea en `LOS_OCHO` y F9 con detector propio en
+> `F9_EN_EL_CATALOGO`. Decisión de fondo: fundador, 24-ago-2026 (CAT-01).
 
 ---
 
@@ -42,9 +45,15 @@ de `quotesView.js`, o sea que medía la capacidad **por su dirección vieja**.
 | la hoja «Ajustes de la línea» | el campo **Margen %**, entre SUPLIDO y el IVA |
 | el pie de totales | la fila **«Margen 18,00 € (18 %)»** |
 
-**MECANISMO.** Estaba entero y funcionando: el margen se leía de la línea, multiplicaba el precio
-base, se agregaba en el pie por `margenDeLinea`/`textoMargen` (`quoteMargen.js`) y se guardaba en el
-borrador. El trabajo era **retirarlo sin que se pierda nada por el camino**, no rehacerlo.
+Y para el re-anclaje, la **entrada nueva**: el margen del catálogo se toca desde
+`public/dashboard/js/productsView.js`, en **dos formularios distintos del mismo fichero** — el
+**alta** (`id="pf-create-product"`) y la **edición** (`id="pf-edit-save"`).
+
+**MECANISMO.** Estaba entero y funcionando en los dos sitios: en el documento el margen se leía de
+la línea, multiplicaba el precio base, se agregaba en el pie y se guardaba en el borrador; en el
+catálogo el margen **se deriva** de coste y precio (`margenCatalogo.js`) y se cablea a los dos
+formularios. El trabajo era **retirar el del documento sin que se pierda nada por el camino** y
+**darle superficie de vigilancia al del catálogo**, no rehacer ninguno de los dos.
 
 ---
 
@@ -52,40 +61,36 @@ borrador. El trabajo era **retirarlo sin que se pierda nada por el camino**, no 
 
 ### ① ¿El `markup` de un borrador VIEJO tiene efecto al restaurarlo? **SÍ — y por eso hay drenaje**
 
-Medido: el borrador guarda el **precio BASE** (`priceInput.value`, que es la base — lo fija
-`quotesView.js:1799` con `base.toFixed(2)`) y el **margen aparte**; el precio final se recomponía al
-enviar (`finalPrice = safePrice * (1 + safeMarkup / 100)`).
+Medido: el borrador guarda el **precio BASE** (`priceInput.value`, que es la base) y el **margen
+aparte**; el precio final se recomponía al enviar (`finalPrice = safePrice * (1 + safeMarkup / 100)`).
 
 **No es un doble margen diferido.** Es el caso contrario, y también es un defecto: si al restaurar
 se ignorara el margen, un borrador con base 100 y margen 20 —que valía **120**— pasaría a valer
 **100**. *El precio bajaría solo, sin que nadie lo pida.*
 
-CONT-01 manda: «nunca se esconde un campo que tiene algo escrito — un dato invisible es un dato que
-nadie va a corregir y que sigue viajando». Así que **el margen se DRENA: se incorpora al precio y la
-clave se borra.** El precio final no cambia; cambia dónde vive el número.
+CONT-01 manda: «nunca se esconde un campo que tiene algo escrito». Así que **el margen se DRENA: se
+incorpora al precio y la clave se borra.** El precio final no cambia; cambia dónde vive el número.
 
-> ⚠️ **Redondea a dos decimales, y se dice.** Es lo que hace este mismo campo con el precio del
-> catálogo. Un borrador con base 33,33 y margen 20 % enviaba 39,996 y ahora enviará **40,00** —
-> cuatro milésimas, en un campo que el profesional ve y puede tocar.
+> ⚠️ **Redondea a dos decimales, y se dice.** Un borrador con base 33,33 y margen 20 % enviaba
+> 39,996 y ahora enviará **40,00** — cuatro milésimas, en un campo que el profesional ve y puede tocar.
 
 ### ② ¿Las plantillas llevan `markup`? **NO**
 
-Cero apariciones en los módulos de plantillas y presupuestos, y su esquema es `QuoteLineSchema`, que
-**no declara `markup`** — así que zod lo borraría aunque llegara. **No hay nada que drenar ahí.**
-
-🔴 Y con esto cae una afirmación que estaba escrita en el código: el comentario de SCRUM-610 dice
-que el margen «viaja también en las PLANTILLAS». **Es falso.**
+Medido el 2-sep-2026 sobre este árbol: `markup` aparece **cero veces en todo `src/`** y cero veces
+en `templatesView.js`. Las líneas que viajan al servidor pasan por `QuoteLineSchema`, que **no lo
+declara** — y `z.object` borra las claves que no conoce (lo dice su propio comentario de SCRUM-500).
+**No hay nada que drenar ahí.**
 
 ### ③ ¿Qué pasa con lo que dejó SCRUM-610? **Su causa desaparece**
 
 SCRUM-610 ponía el margen a cero al elegir del catálogo para evitar el **doble margen**, con el
 motivo escrito «a cero y no escondido, porque el pro lo ve». Después de DOC-08 el pro **no lo ve**:
-el campo no existe. **La protección no se relaja — desaparece lo que protegía**, porque sin margen
-en la línea no hay nada que se pueda aplicar dos veces. La línea se retira, no se deja como no-op.
+el campo no existe. **La protección no se relaja — desaparece lo que protegía.** La línea se retira,
+no se deja como no-op.
 
 ---
 
-## Lo construido
+## Lo construido · ① el margen sale del documento
 
 | se quita | dónde |
 |---|---|
@@ -94,29 +99,109 @@ en la línea no hay nada que se pueda aplicar dos veces. La línea se retira, no
 | la fila **«Margen»** del pie | el `<div class="quote-totals__apoyo">` y toda su acumulación |
 
 Y con ellos: el margen deja de **guardarse** en el borrador, deja de **recomponer** el precio que
-viaja, y el aviso «Final: …» —que existía porque el precio escrito no era el que veía el cliente—
-queda vacío, porque eso ya no puede pasar.
+viaja, y el aviso «Final: …» queda vacío, porque eso ya no puede pasar.
 
 **Se queda intacto:** SUPLIDO (F8), el selector de IVA de la línea y el del documento, y las
-funciones puras de `quoteMargen.js` (sus nueve casos siguen verdes: el margen sigue existiendo, en
-el catálogo).
+funciones puras de `quoteMargen.js`.
 
-## El guard
+`tests/scrum598-el-margen-sale-del-documento.test.mjs` lo sujeta con **tres detectores separados**,
+uno por puerta, para que el rojo diga CUÁL; probado con las tres (a cada uno su defecto, y salta él
+y sólo él); control negativo (quitar SUPLIDO no lo tumba); suelo del desnudado; y el drenaje se
+**ejecuta**, no se lee.
 
-`tests/scrum598-el-margen-sale-del-documento.test.mjs`, 7 casos. **Tres detectores separados, uno
-por puerta**, para que el rojo diga CUÁL:
+---
 
-* **El rojo nombra la puerta, y está probado con las tres:** a cada detector se le da un fuente de
-  mentira con SU defecto y se comprueba que salta **él y sólo él**. Un rojo que acusa de más no dice
-  dónde mirar.
-* **Control negativo:** quitar SUPLIDO **no** lo hace caer. Un guard que se queja de cambios
-  legítimos se acaba desactivando, y entonces tampoco protege del margen.
-* **Suelo:** el desnudado quita prosa (este fichero nombra «margen» muchas veces y no puede cazarse
-  a sí mismo) **y** no se come el código.
-* **El drenaje se EJECUTA**, no se lee: se extrae la función del fuente por AST y se corre. Con su
-  control negativo — sin margen, o con margen ilegible, la línea **no se toca**.
-* Y un caso para «mencionar no es hacer»: que `drenarMargen` exista no prueba que el restaurador la
-  llame, así que se comprueba la llamada.
+## Lo construido · ② F9, RE-ANCLADO EN SU CASA NUEVA
+
+`F9_EN_EL_CATALOGO` y `faltaEnF9(...)` en `tests/_censo-dos-fronts.mjs`, con su control positivo en
+`scrum600` y **su rojo en `scrum598`**.
+
+**POR IDENTIDAD, NO POR POSICIÓN** — que es exactamente lo que caducó la vez anterior. Un campo se
+reconoce por su **`name`**: es como lo busca el propio código (`querySelector('[name="cost"]')`) y
+como viaja al servidor. Reordenar el formulario, renombrar la variable que lo sostiene o mover el
+bloque **no** hacen caer esto; quitar el campo, **sí**.
+
+Vigila seis cosas, y **devuelve QUÉ falta, no un booleano**:
+
+1. el campo **Coste** (`name="cost"`) en el formulario de **ALTA**;
+2. el campo **Margen %** (`name="margen"`) en el de **ALTA**;
+3. y los dos mismos en el de **EDICIÓN** — se miran por separado porque **el alta y la edición ya
+   divergieron una vez en este fichero** (el IVA salió de uno antes que del otro);
+4. que el **COSTE VIAJE** al servidor en los dos: no basta con pintarlo. Es la lección de F8, que
+   empezó dando verde el día que la marca dejaba de llegar;
+5. el **cableado de la derivación** (`margenCatalogo.autocompletar` y `margenCatalogo.margenDesde`):
+   sin él el campo queda pintado y muerto, que es la peor forma de no funcionar;
+6. la **aritmética** (`margenDesde` / `precioDesde` / `autocompletar` en `margenCatalogo.js`).
+
+**EL ROJO, PROBADO CON NUEVE PIEZAS.** A cada una se le da su defecto sobre una copia **en memoria**
+y se exige que el detector **caiga con UN solo hallazgo** y que lo **nombre**: con 0 sería
+decorativo, con más de 1 acusaría de más y no diría dónde mirar. Cada mutación lleva
+**post-condición**: si el trozo no aparece exactamente las veces que se dice, el caso falla en vez
+de «probar» sobre un fichero que no ha cambiado.
+
+**LOS DOS CONTROLES NEGATIVOS.**
+
+* **Que el margen salga del DOCUMENTO no lo hace caer.** Es EL control de este ticket: el guard de
+  F9 no puede quejarse justo del cambio que se ha decidido hacer. Y se dice por qué no puede: el
+  documento **no está en su población**, y eso también se comprueba.
+* **Tocar el PROVEEDOR tampoco.** Un guard que se queja de cambios legítimos acaba desactivado — y
+  entonces tampoco protege del que importa.
+
+**SUELO.** Sin población no hay veredicto: si no ve **ni un** bloque de HTML o **ni un** objeto de
+producto, se declara **CIEGO** y revienta, en vez de contestar «falta todo». Un cero de un
+instrumento roto se lee igual que un catálogo sin campos, y son la noticia contraria.
+
+**Y LA CUENTA VUELVE A SER OCHO.** `scrum600` suma `LOS_OCHO` (siete) + `F9_EN_EL_CATALOGO` y exige
+`F7…F14`. Si mañana alguien borra la entrada de F9, **esa cuenta lo dice**: es lo que impide que una
+mudanza acabe siendo una retirada silenciosa.
+
+### 🔴 La novena pieza la encontró INTERROGAR al detector, no verlo verde
+
+Con el detector ya en verde le hice la pregunta que debería saber contestar: *¿y si alguien no borra
+el campo sino que lo **comenta**?* Envolví «Coste» en `<!-- ... -->` y contestó **«no falta nada»**.
+
+El AST protege de los comentarios **de JS** —no son nodos— pero un `<!-- -->` va **dentro** del
+literal de plantilla, así que para el árbol sigue siendo texto pintado. Es el falso verde de
+SCRUM-515 con otra ropa, y **desactivar es la forma barata de perder una función**. Se quitan antes
+de mirar, y el caso queda fijado en el rojo.
+
+---
+
+## 🔴 DOS DEFECTOS MÍOS DEL COMMIT ANTERIOR, arreglados aquí
+
+Los dos estaban en ficheros de este mismo carril y los dos los introduje yo en `0affbe91`.
+
+### ① FALSO VERDE en `scrum610` — una regla «derivada de la vista» que no derivaba de nada
+
+Al retirar el ancla del margen quedó esto:
+
+```js
+const PONE_MARGEN_A_CERO = VISTA.includes(ANCLAS['🔴 SCRUM-610: el margen se pone a CERO al elegir']);
+```
+
+La clave ya **no estaba** en `ANCLAS`, así que daba `undefined`; `includes(undefined)` busca la
+**cadena `"undefined"`**, que aparece **14 veces** en `quotesView.js`; y la regla salía `true`. O
+sea: el modelo seguía simulando «el margen se pone a cero al elegir», **un comportamiento que la
+vista ya no tiene**, y los dos casos que dependían de él pasaban sin tocar la pantalla. El propio
+fichero avisa de esto en su cabecera: *«un test que no puede fallar por el cambio que dice vigilar
+es decoración con forma de aserción»*.
+
+**Se arregla el MECANISMO, no el caso.** El acceso a `ANCLAS` pasa ahora por `reglaDeLaVista()`, que
+**revienta con la clave delante** en vez de contestar en silencio; el suelo lo prueba (`assert.throws`)
+y lo verifiqué en rojo mutando el fichero. El modelo del precio se **deriva** del ancla que sí
+existe (`finalPrice = safePrice`) o se declara **CIEGO**. Y el suelo gana un contador de anclas: con
+`ANCLAS` vacío el bucle no iteraba y el suelo pasaba por no comprobar nada.
+
+Con eso, dos casos quedan **retirados con su motivo** (su sujeto —el margen en la línea— ya no
+existe) y uno se **reescribe** por el otro lado: aunque una línea llegue con `markup` puesto, el
+precio del documento es el escrito y **no se multiplica por nada**.
+
+### ② Un comentario que afirmaba en presente algo FALSO sobre el mecanismo
+
+El comentario de SCRUM-610 decía que el margen «viaja también en las **PLANTILLAS**». **Es falso**
+(medición ② de arriba). Estaba escrito en **presente** y se leía como una **observación** cuando era
+una suposición: así es como una frase falsa sobrevive al código que describía y le cuesta un carril
+al siguiente que se la crea. Se retira y se deja escrito qué se midió, cuándo y con qué.
 
 ---
 
@@ -124,50 +209,62 @@ por puerta**, para que el rojo diga CUÁL:
 
 | test | qué le pasó |
 |---|---|
-| `scrum600` + `_censo-dos-fronts` | **F9 retirado** (arriba) |
+| `scrum600` + `_censo-dos-fronts` | **F9 mudado** (arriba). El detector nuevo vive ahí y la cuenta vuelve a ocho |
 | `scrum229` ×3 | fijaban la PRESENCIA del margen en el pie; ahora fijan su **ausencia**. Los 9 casos de las funciones puras siguen intactos |
-| `scrum610` ×3 | sus anclas eran el margen de la línea; se retiran porque **desaparece su causa** |
-| `scrum132` | reancló el orden del restaurador — **misma invariante, otra forma** (ya le pasó con SCRUM-660) |
+| `scrum610` ×5 | tres anclas retiradas (desaparece su causa), el falso verde arreglado en su mecanismo y dos casos retirados/reescritos |
+| `scrum132` | reancló el orden del restaurador — **misma invariante, otra forma** |
 | `scrum139 F4` | la hoja ya no lleva `markupTd` |
 | `scrum286` | su suelo era «≥ 92 lecturas de `.value`»; **recontado a 77, con el número del DETECTOR y no con el mío** — mi propia regex decía 80 y habría dejado el suelo por encima de lo que el detector ve |
 
-🔴 **Y una rotura real que introduje y cazó la tanda:** quedó un `ajustesCampos.appendChild(markupTd)`
-sin su variable, y la pantalla de presupuestos **reventaba entera** (`markupTd is not defined`). Lo
-encontró `scrum660`, no yo. Es la diferencia entre `node --check` (sintaxis) y ejecutar.
-
----
+🔴 **Y una rotura real que introduje y cazó la tanda** (commit anterior): quedó un
+`ajustesCampos.appendChild(markupTd)` sin su variable, y la pantalla de presupuestos **reventaba
+entera**. Lo encontró `scrum660`, no yo. Es la diferencia entre `node --check` y ejecutar.
 
 ## Los huecos que declaro
 
 1. **No he verificado en navegador** ni la hoja de ajustes ni el pie: he medido el fuente y he
-   ejecutado la regla del drenaje.
+   ejecutado la regla del drenaje. **Sigue abierto.**
 2. **No he probado un borrador REAL** de `localStorage` de punta a punta: el drenaje se ejecuta como
-   función pura, y que el restaurador la llama se comprueba sobre el fuente.
+   función pura, y que el restaurador la llama se comprueba sobre el fuente. **Sigue abierto.**
 3. **El redondeo del drenaje** (dos decimales) mueve hasta cuatro milésimas el precio de un borrador
-   viejo con base no redonda. Está declarado arriba, no medido contra borradores reales.
-4. **No he medido producción.**
+   viejo con base no redonda. Declarado, no medido contra borradores reales. **Sigue abierto.**
+4. **No he medido producción.** **Sigue abierto.**
+5. 🆕 **El detector de F9 mide MARCADO, no VISIBILIDAD.** Comprueba que los campos se pintan y se
+   cablean, no que se vean en pantalla — y hay un mecanismo que **los esconde a propósito**:
+   `switchTipoArticulo` oculta coste y margen en el lado **SERVICIO** (salvo si tienen algo escrito,
+   invariante ② de CONT-01). Es correcto para lo que F9 afirma («existen en el producto»), pero
+   quien busque «¿los ve el profesional?» necesita navegador, y eso no está aquí.
+6. 🆕 **El re-anclaje no cubre el back**: F9 se vigila en el front del catálogo. Que la columna
+   `cost` siga existiendo en el modelo es de `prisma/schema.prisma`, que es del fundador y no se toca.
 
 ## Ficheros
 
-`public/dashboard/js/quotesView.js` · `tests/scrum598-el-margen-sale-del-documento.test.mjs`
-(**nuevo**) · `tests/_censo-dos-fronts.mjs` · `tests/scrum600-…` · `tests/scrum229-…` ·
-`tests/scrum610-…` · `tests/scrum132-iva-unidad.test.mjs` · `tests/scrum139-hoja-ajustes.test.mjs` ·
+**Código:** `public/dashboard/js/quotesView.js` (el margen fuera del documento + el comentario falso).
+
+**Tests:** `tests/scrum598-el-margen-sale-del-documento.test.mjs` (**nuevo** en el commit anterior;
+aquí gana el rojo de F9 y sus controles) · `tests/_censo-dos-fronts.mjs` (el detector nuevo) ·
+`tests/scrum600-un-solo-front-documento.test.mjs` · `tests/scrum229-…` · `tests/scrum610-…` ·
+`tests/scrum132-iva-unidad.test.mjs` · `tests/scrum139-hoja-ajustes.test.mjs` ·
 `tests/scrum286-bloques-orden.test.mjs` · esta entrada.
 
 **No se ha tocado:** `prisma/schema.prisma` · `pdf.service.ts` ni `src/lib/invoicing.ts` ·
-`tests/_banco-vistas.mjs` · los selectores de IVA · `QuoteLineSchema` · el catálogo.
+`tests/_banco-vistas.mjs` · `public/dashboard/sw.js` · los selectores de IVA · `QuoteLineSchema` ·
+`public/dashboard/js/quoteMargen.js` · **el margen en el catálogo**, que es su casa nueva: este
+ticket le pone un guard, no le cambia una línea.
 **Ningún microcopy nuevo:** sólo desaparecen campos. Ningún rótulo se ha reordenado ni reescrito.
 
 ## Estado del arbol
 
-* origin/main avanzo a fdc98cf0 mientras se cerraba esto (traia mi SCRUM-661). Se ha MERGEADO
-  main DENTRO de la rama —no rebase, la historia no se reescribe—, sin conflicto.
-* Cliente de Prisma regenerado y dist/ reconstruido DESPUES de mezclar main.
-* npm run guards:entrada en verde. Cero CR en disco en los nueve ficheros tocados.
+* `origin/main` avanzó **tres veces** mientras se cerraba esto (`61c90617` → `fdc98cf0` → `443a9e22`
+  → `45a2474c`). Se ha **MERGEADO main DENTRO** de la rama las dos veces —no rebase, la historia no
+  se reescribe—, sin conflicto. Lo que trajo la última (`quoteApartados.js`, `quotesDetailView.js`,
+  `_banco-vistas.mjs`) **no toca ningún fichero de este carril**: comprobado con `git diff` explícito.
+* Cliente de Prisma regenerado desde ESTE worktree y `dist/` reconstruido DESPUÉS de mezclar main.
+* `npm run guards:entrada` en verde. Cero CR en disco en los ficheros tocados.
 
 ## HALLAZGOS FUERA DE CARRIL — una línea cada uno
 
-* `priceInput.dataset.pfBasePrice` se sigue escribiendo en cinco sitios y **ya no lo lee nadie**: estado muerto.
-* El comentario de SCRUM-610 afirma que el margen «viaja también en las PLANTILLAS» y **es falso**: su esquema no lo declara.
-* `public/dashboard/js/quoteMargen.js` se sigue cargando en el índice y **el documento ya no lo consume**; sus funciones puras siguen probadas y sirven al catálogo.
-* El elemento `priceHint` («Final: …») queda **siempre vacío**: existía sólo para avisar de la diferencia que creaba el margen.
+* `priceInput.dataset.pfBasePrice` se sigue escribiendo en cinco sitios y **ya no lo lee nadie**: estado muerto (SCRUM-669).
+* `public/dashboard/js/quoteMargen.js` se sigue cargando en el índice y **el documento ya no lo consume** (SCRUM-669; colisiona con SCRUM-663).
+* El elemento `priceHint` («Final: …») queda **siempre vacío** (SCRUM-669).
+* En el árbol hay tres ficheros **sin seguimiento** que no son de este carril y llevan ahí desde antes: `docs/Sprint Scrum/SESION_ACTUAL_SCRUM-104_fase2.md`, `docs/Sprint Scrum/SESION_ACTUAL_SCRUM-118.md` y uno llamado literalmente `how f11e445e`, que tiene pinta de `git show` mal escrito.
