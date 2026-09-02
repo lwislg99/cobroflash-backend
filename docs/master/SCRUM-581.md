@@ -347,3 +347,55 @@ estuviera, el test no distinguiría orden alfabético de orden de inserción.
 2. **El filtro por TAG queda fuera**, y es el recorte del fundador: CONT-07 (SCRUM-580) no está
    construido, así que un filtro por tag sería un control que no puede filtrar por nada.
 3. **La caja de los rótulos no está medida en píxeles** (ver arriba).
+
+## ✅ MICROCOPY APROBADA POR EL FUNDADOR (2-sep-2026)
+
+Los seis textos están **firmados**. `SIN_APROBAR` baja de 6 a **0**.
+
+| Ranura | Texto aprobado |
+|---|---|
+| pestaña | `Todos` |
+| pestaña | `Empresas` |
+| pestaña | `Personas` |
+| orden | `Más recientes` |
+| orden | `Nombre A-Z` |
+| vacío · línea 1 | `Aquí no hay ningún cliente todavía.` |
+| vacío · línea 2 | `Marca cada cliente como empresa o persona al editarlo.` |
+
+**Los cinco primeros son los que propuso la sesión, tal cual.** El vacío lo **corrigió el
+fundador**, y la corrección merece quedar escrita porque es un defecto de razonamiento, no de
+estilo:
+
+> Mi propuesta era «Ningún cliente clasificado así todavía». **Miente cuando hay una búsqueda
+> activa**: ahí el motivo de que no salga nadie no es la clasificación, es la búsqueda. El texto
+> aprobado **no nombra la causa** — dice lo que se ve y ofrece la salida.
+
+### Fijados con `===`, y por qué no con `match`
+
+Los siete literales se comparan **exactos**. Un `match` o un `includes` dejaría colar una coma, un
+acento o un «Personas físicas» sin que nada chillara, y **microcopy aprobada que deriva sola es
+microcopy que deja de estar aprobada sin que nadie lo decida** (regla 30).
+
+Con **SUELO**: la lista de ranuras se comprueba entera (`deepEqual` de los cinco ids). Sin eso,
+quitar una pestaña haría que el bucle pasara sin mirarla — «todos los que hay están bien» y «no hay
+ninguno» darían el mismo verde.
+
+**`SIN_APROBAR` se queda en el fichero aunque valga 0**, a propósito: es el sitio donde una ranura
+nueva declara que nace sin firmar. Borrarlo dejaría el hueco sin sitio donde declararse y un texto
+nuevo entraría en pantalla **en silencio** — que es justo lo que el marcador impedía y lo que ya no
+se ve.
+
+### Las dos líneas del vacío, con el componente que ya existe
+
+Se pintan con `.empty-state-title` y `.empty-state-desc` de `styles.css`. **Ni un token nuevo ni un
+estilo inventado**, y con `textContent` en vez de concatenar en el `innerHTML`: el texto es de la
+pieza, no del markup, así que no hay que acordarse de escaparlo nunca.
+
+### Los rojos de esta vuelta
+
+| Rotura | Qué cayó |
+|---|---|
+| `Personas` → `Personas físicas` | «los SEIS textos son EXACTAMENTE los aprobados» |
+| vuelve el vacío **rechazado** | «el vacío son sus DOS líneas aprobadas» |
+| se añade un orden `Z-A` sin declararlo sin firmar | 2 tests, por el suelo de la lista de ranuras |
+| **control negativo** · cambiar un comentario | **nada** |
