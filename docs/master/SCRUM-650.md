@@ -545,3 +545,147 @@ sentencia ejecutable en el fichero: una segunda se ejecutaria en produccion sin 
 la hubiera visto nunca. Commit de la correccion: `ff127dd6a4589d6901b96f98111f087e430f2857`.
 
 Retirado ademas un `import { readFileSync }` muerto del envoltorio (unico uso: el propio import).
+
+---
+
+# PANTALLA (2-sep-2026) · Asignar un trabajo a VARIOS empleados
+
+> ⚠️ Se ANEXA. Nada de lo de arriba se toca.
+
+**Fecha:** 2-sep-2026 · **Carril:** trabajos · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `4982e1c2fd26454183fe1228f01426d5ee3c8a10`
+
+Fila 2 de la certificación: motor ✅, columna ✅, **pantalla 🔴**. Esto es la pantalla.
+
+## 1 · PASO 0 · no había nada hecho, y las coordenadas se verificaron
+
+```
+git ls-tree -r --name-only origin/main | grep -iE 'asignacion|job_assignees|JobAssignee'
+  src/modules/jobs/domain/asignacionDeTrabajo.ts
+  tests/_asignacion-bloques-presupuesto.mjs
+  tests/_asignacion-submenus.mjs
+  tests/scrum284-asignacion-submenus.test.mjs
+  tests/scrum650-asignacion-a-varios.test.mjs
+
+git ls-remote --heads origin | grep -iE 'asignacion|scrum-?650'
+  b83060881d02117372622cd10a4bee3ccc7b3a38  refs/heads/scrum-650-asignacion-trabajos
+```
+
+Esa rama **ya es ancestro de `origin/main`** y no aporta un solo fichero exclusivo (`git diff
+--stat origin/main...` vacío). Buscada además **la cosa** y no el número —«asignar», «asignado»,
+`assignedUser` en todo `public/`—: **cero**. Lo único que sale son «Sin asignar» de gastos y de
+informes, que es otra idea. **No hay pantalla de asignar en ninguna parte.**
+
+Coordenadas del encargo, comprobadas en el árbol:
+
+| lo que decía la certificación | medido |
+| --- | --- |
+| motor `asignacionDeTrabajo.ts:120` | ✔ `escribirAsignados` se declara en :115 y su cuerpo está en :120 |
+| columna `schema.prisma:1131` (`job_assignees`) | ✔ `model JobAssignee` ahí |
+| backfill probado | ✔ `docs/sql/scrum-650-paso-c-backfill.sql` |
+
+Y **el backend ya estaba entero**: `jobs.routes.ts:791` llama a `escribirAsignados` dentro de la
+transacción del PATCH, que admite `assignedUserIds` (lista). Faltaba la mitad de LECTURA y la
+pantalla.
+
+## 2 · El hueco de lectura, que no estaba en el encargo pero sin él no hay pantalla
+
+`serializeJob` mandaba `assignedUserId` —**uno**— y nada más. La pantalla no tenía de dónde sacar
+«Israel, Miguel y Jesús.L». Añadido `asignados: [{id, name}]` en `serializeJobDetail`:
+
+- **en el DETALLE y no en `serializeJob`**: el listado serializa POR FILA y esto sería una consulta
+  por Trabajo — el N+1 que SCRUM-58 vino a quitar;
+- **en LAS DOS salidas** del detalle, incluida la temprana. Un Trabajo manual sin presupuesto es la
+  **avería**, que es el caso que más se reparte entre varios: dejarlo fuera habría dado un selector
+  vacío justo donde más falta hace, sin ningún error;
+- **regla 2 aunque la clave ajena ya ate**: `where: { teamMember: { merchantId: job.merchantId } }`.
+  La FK garantiza que el empleado EXISTE, no que sea de este negocio.
+
+## 3 · La pantalla
+
+`public/dashboard/js/jobAsignados.js` (nuevo) + un bloque en «Datos» de `jobDetailView.js`.
+
+Va en «Datos» y **no en el rail**: el rail es contexto de SOLO LECTURA (patrón B2, regla 4) y su
+guard prohíbe que cree un `input`.
+
+🔴 **Y NO es el bloque RESPONSABLE del rail.** Aquél pinta `job.operario` — la AUTORÍA, congelada
+al aceptar el presupuesto (SCRUM-52). Esto es **quién EJECUTA** (SCRUM-10). Un presupuesto lo
+redacta uno y lo ejecutan tres. El módulo **no nombra `operarioId` en su código**, y hay un test
+que lo comprueba sobre el fichero **leído sin comentarios** — la cabecera explica la prohibición, y
+un guard por texto se cazaría a sí mismo en la explicación.
+
+Es un módulo aparte y no código dentro de la vista por una razón medible: metido en la vista, la
+única forma de probar «quitar a uno deja de enseñarle el trabajo» sería montar un navegador, y ese
+test acaba siendo uno que nadie ejecuta.
+
+**Al técnico** se le pinta en solo lectura con los nombres y el motivo — norma de SCRUM-89: un gate
+no deja UI huérfana. Y no se le pide `/admin/team`, que es `requireRole('admin')` y sería un 403
+garantizado.
+
+## 4 · 🔴 El rojo que importa, medido
+
+Tres asignados, se quita uno:
+
+| | Israel | Miguel | Jesús.L |
+| --- | :-: | :-: | :-: |
+| asignados los tres | ✔ ve | ✔ ve | ✔ ve |
+| **se quita a Miguel** | ✔ **sigue viendo** | 🔴 **deja de ver** | ✔ **sigue viendo** |
+
+**Y cae con el mecanismo viejo.** Con la columna sola —`assignedUserId`, un escalar— asignar a
+tres guarda al principal y **pierde a los otros dos sin ningún error**: lo ve UNO de tres. Y quitar
+a Miguel de la columna no cambia nada, porque nunca estuvo. Ese contraste está en el test, así que
+el verde de arriba no puede volverse un adorno.
+
+**Control positivo:** con UN solo asignado todo sigue igual, la columna vieja sigue guardando al
+principal (el filtro todavía la lee, paso A), y **la autoría sigue siendo un eje propio**: el que
+redactó el presupuesto lo ve aunque no ejecute.
+
+**El control que no puede caer:** `jobs.routes.ts:477` **no se ha tocado** — los hunks del diff
+son `@@ 338`, `@@ 411` y `@@ 487`, y el `where` de los tres ejes no aparece en el diff.
+`scrum467-tecnico-ve-lo-suyo` sigue en verde, 5/5.
+
+## 5 · 🔴 El suelo, y una corrección MEDIDA al enunciado
+
+El encargo decía: «si el listado de técnicos asignables devuelve CERO, falla declarándote ciego».
+**Midiéndolo, ese cero significa dos cosas distintas y hay que separarlas:**
+
+- **cero MIEMBROS → ciego.** `getTeamOverview` sintetiza SIEMPRE al propietario, así que una lista
+  vacía es que la petición falló o devolvió otra forma. Lanza `EquipoCiego`.
+- **cero ASIGNABLES con miembros → estado legítimo.** Y no es raro: 🔴 **el propietario tiene
+  `id: null` porque NO tiene fila en `team_members`**, así que un negocio de una sola persona tiene
+  un miembro y cero asignables. Si eso lanzara, el guard nacería rojo para todo merchant que empieza
+  solo. Se dice en pantalla, con su texto, en vez de pintar un desplegable vacío.
+
+Y por eso mismo **el propietario no se ofrece**: asignárselo revienta la clave ajena de
+`job_assignees` y el PATCH responde `invalid_assignee`. Sería un clic que siempre falla.
+
+## 6 · Microcopy: PROPUESTA, no aprobada (regla 30)
+
+Los CINCO textos salen de **una sola constante** `MARCA_ASIGNADOS`, así que aprobarlos los apaga de
+golpe. Entrada nueva en el censo de SCRUM-402 con **1** (no cinco) y su motivo — el mismo caso que
+`jobNuevoModal.js`: **el mecanismo no existe sin texto**, un selector sin rótulo no se puede usar.
+Hay un test en `scrum650d` que EXIGE que el literal con marcador sea uno solo, para que ese 1 no se
+convierta en cinco sin que salte.
+
+**Propuesta para firmar:** «Quién ejecuta este trabajo» (rótulo) · «Todavía no lo ejecuta nadie» ·
+«Solo un administrador puede cambiar quién ejecuta» · «Todavía no hay empleados a los que asignar»
+· «No se ha podido guardar quién ejecuta este trabajo».
+
+## 7 · Hallazgo de otro carril — se REPORTA, no se arregla
+
+🔴 **`apiRequest` NO serializa el `body`, y dos sitios le pasan un objeto.** Medido, no deducido:
+
+```
+lo que viaja: "[object Object]"
+con stringify: "{\"direccion\":\"Av. Rey Juan Carlos 145\"}"
+```
+
+Los dos sitios son `jobDetailView.js:791` (renombrar el Trabajo) y `:829` (dirección de la obra, de
+SCRUM-424). Con `Content-Type: application/json`, lo que llega al backend es basura: **esos dos
+campos no se guardan**. Es de otro carril (SCRUM-31 / SCRUM-424) y no bloquea esta tarea, así que
+queda escrito aquí. Mi código usa `JSON.stringify`, como el PATCH del tipo de operación.
+
+## 8 · Lo que NO se ha tocado
+
+`prisma/schema.prisma` · `jobs.routes.ts:477` y el test de SCRUM-467 · los ficheros del parte
+(`partes.routes.ts`, `parteDetailView.js`) · el dictado · el camino de emisión.

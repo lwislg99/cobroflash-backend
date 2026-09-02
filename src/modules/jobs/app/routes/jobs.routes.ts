@@ -335,6 +335,28 @@ async function serializeJobDetail(job: any) {
     });
     customer = { ...customer, email: c?.email ?? null, taxId: c?.taxId ?? null };
   }
+  // ── SCRUM-650 (T1) · QUIÉN EJECUTA, EN PLURAL ────────────────────────────────────────────
+  //
+  // El parte de papel de Tecnosel escribe «Israel, Miguel y Jesús.L» en el campo «Técnico». La
+  // tabla `job_assignees` ya lo guarda y el PATCH ya lo escribe; sin esto, la pantalla solo podía
+  // pintar UNO (`assignedUserId`, que es el principal) y el jefe no tenía cómo ver a los otros dos.
+  //
+  // ⚠️ ESTO NO ES `operarioId`. `base.operario` es la AUTORÍA —quién redactó el presupuesto,
+  // congelada al aceptarlo (SCRUM-52)— y viaja aparte, como hasta hoy. Son dos ideas distintas y
+  // el esquema las declara aparte: un presupuesto lo redacta uno y lo ejecutan tres.
+  //
+  // Va en el DETALLE y no en `serializeJob`: el listado llama al serializador POR FILA y esto
+  // sería una consulta por Trabajo (el N+1 que SCRUM-58 vino a quitar). El detalle es una sola.
+  //
+  // 🔴 REGLA 2 aunque la clave ajena ya ate: se filtra por el merchant del Trabajo. La FK
+  // garantiza que el empleado EXISTE, no que sea de este negocio.
+  const asignadosRaw = await prisma.jobAssignee.findMany({
+    where: { jobId: job.id, teamMember: { merchantId: job.merchantId } },
+    select: { teamMember: { select: { id: true, name: true } } },
+    orderBy: { teamMemberId: 'asc' },
+  });
+  const asignados = asignadosRaw.map((a) => ({ id: a.teamMember.id, name: a.teamMember.name }));
+
   // SCRUM-14 (ADITIVO): albaranes del Trabajo para la sección "Albaranes" y el timeline de
   // Documentos. Documento NO fiscal — nada de importes. SCRUM-22: la autoría del Trabajo se
   // propaga a sus documentos (albarán), derivada de Job.operarioId ya resuelto en base.
@@ -386,7 +408,11 @@ async function serializeJobDetail(job: any) {
   // fallo. Omitir el campo aquí dejaría a la pantalla sin poder distinguirlo de «no se pudo leer».
   if (quotesDelTrabajo.length === 0) {
     return {
-      ...base, customer, invoices: [], charge: null, albaranes,
+      // SCRUM-650 · `asignados` viaja TAMBIÉN por esta salida temprana. Un Trabajo manual sin
+      // presupuesto es la AVERÍA —el caso más frecuente del primer cliente real, y el que más se
+      // reparte entre varios—: dejarlo fuera de aquí habría hecho que el selector saliera vacío
+      // justo donde más falta hace, sin ningún error.
+      ...base, customer, invoices: [], charge: null, albaranes, asignados,
       entregaPendiente: entregaParaVista(entregaDelTrabajo([], albaranesRaw)),
     };
   }
@@ -458,7 +484,7 @@ async function serializeJobDetail(job: any) {
   // mira `lineas`, `estado` y `modoValoracion`, y el serializado no está obligado a conservarlos.
   const entrega = entregaParaVista(entregaDelTrabajo(quotesDelTrabajo, albaranesRaw));
 
-  return { ...base, customer, invoices, charge, albaranes, entregaPendiente: entrega };
+  return { ...base, customer, invoices, charge, albaranes, asignados, entregaPendiente: entrega };
 }
 
 // GET /admin/jobs — lista para la vista "Esta semana" (simple, por fecha)

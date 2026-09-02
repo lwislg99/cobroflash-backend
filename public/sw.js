@@ -77,6 +77,7 @@ const SHELL = [
   '/dashboard/js/jobCobroHuecos.js', // SCRUM-320 (G5)
   '/dashboard/js/facturaPreEmision.js', // SCRUM-292 (A1)
   '/dashboard/js/jobRailBlocks.js', // SCRUM-318 (G3)
+  '/dashboard/js/jobAsignados.js', // SCRUM-650 (T1): quien EJECUTA el trabajo
   '/dashboard/js/albaranActionsRegistry.js', // SCRUM-302 (C2)
   '/dashboard/js/albaranDetailView.js',
   '/dashboard/js/albaranesView.js', // SCRUM-301 (C1)
