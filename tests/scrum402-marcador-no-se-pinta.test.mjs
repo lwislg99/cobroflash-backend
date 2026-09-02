@@ -302,20 +302,18 @@ const CENSO = Object.freeze({
   // dirían exactamente lo mismo y el profesional no sabría cuál está eligiendo. Es la distinción
   // que `censo-marcadores.mjs` ya hace entre el rótulo que pinta A CIEGAS y el que al menos se
   // puede leer y juzgar.
-  // SCRUM-609 (2-sep-2026) · SUBIDA A CONCIENCIA: entra `switchTipoArticulo.js`, el switch
-  // Producto|Servicio del catálogo (CAT-01). Es el ESPEJO de `switchFormaJuridica` (CONT-01) y
-  // entra con 1 por el mismo motivo que aquél: ni la pregunta que encabeza el control ni las dos
-  // etiquetas están aprobadas, y son del fundador (regla 30).
+  // 🔴 SCRUM-667 (2-sep-2026) · `switchTipoArticulo.js` SALE DEL CENSO (tenía 1, que pintaba 3).
+  // El fundador aprobó los tres textos TAL CUAL —«Esto es» · «Producto» · «Servicio»— y se retiró
+  // el prefijo. Entrada BORRADA, no puesta a 0: el censo lista lo que QUEDA pendiente, y un 0 sería
+  // una entrada que no significa nada. El precedente es el de las once entradas del 17-ago.
   //
-  // VA CON PALABRA DE TRABAJO detrás («Esto es» · «Producto» · «Servicio»), no solo: en un
-  // control de DOS LADOS un marcador pelado sería inservible, porque los dos lados dirían lo
-  // mismo y el profesional no sabría qué está eligiendo.
+  // Y se apagaron LOS TRES A LA VEZ, que es justo lo que la entrada anterior avisaba de que NO se
+  // podía dar por hecho: salían de una sola constante `MARCADOR`, así que aprobar uno solo habría
+  // obligado a partirla. Se aprobaron los tres, así que la constante se retira entera.
   //
-  // 🔴 CUENTA 1 Y PINTA 3, y la distinción no es cosmética — es la misma que se midió en
-  // SCRUM-615: este censo cuenta MARCAS, y las tres superficies salen de una sola constante
-  // `MARCADOR`. Aprobar UNO de los tres textos NO apaga los otros dos: habrá que partir la
-  // constante el día que el fundador escriba el primero. Decir «se apagan de golpe» sería falso.
-  'switchTipoArticulo.js': 1,
+  // POR QUÉ AHORA: producción llevaba nueve días sin desplegar por deriva de esquema. Al arreglarse
+  // desapareció el hueco entre mergear y desplegar, y estos tres se estaban LEYENDO en la primera
+  // pantalla del catálogo, en producción.
   'switchFormaJuridica.js': 1,
   // SCRUM-581 (1-sep-2026) · SUBIDA A CONCIENCIA, autorizada por el asesor: las pestañas
   // Todos|Empresas|Personas y el desplegable de orden de la lista de clientes. El criterio de la
