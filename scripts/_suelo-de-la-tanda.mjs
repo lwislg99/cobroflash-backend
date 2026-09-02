@@ -51,10 +51,10 @@
  *
  * ⚠️ CONFLICTO ENTRE RAMAS: **se queda el MÁS ALTO** (ver la cabecera).
  */
-export const SUELO_TESTS = 4766;
+export const SUELO_TESTS = 4792;
 
 /** Contra qué se midió, para que el suelo no sea un número sin procedencia. */
-export const MEDIDO_CONTRA = 'origin/main = a464d978 · 2026-09-02';
+export const MEDIDO_CONTRA = 'origin/main = 80db312b · 2026-09-02';
 
 export const SALIDA_POR_DEBAJO = 1;
 export const SALIDA_NO_SUPE_MIRAR = 2;
