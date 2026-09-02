@@ -403,3 +403,159 @@ anterior, y no se han tocado hoy. El único cambio de este apéndice es document
   siguiente que lo lea buscará CAT-01 en el bot de WhatsApp.
 - Se mantienen los dos del apéndice anterior (banco de vistas → SCRUM-634 · CSV del tarifario →
   SCRUM-635), y no se han tocado.
+
+---
+
+# SCRUM-609 · APÉNDICE 3 · EL SWITCH, CONSTRUIDO
+
+**Fecha:** 2-sep-2026 · **Carril:** producto · **Gate:** sin gate — corre en `npm test`
+
+**Medido contra:** `origin/main` = `080eb4fbd3f22e42c71f6e591bf9cb1f816a0f74` · 2026-09-02T05:12:03+01:00
+
+**Tanda:** 4295 tests, 4216 pass, 0 fail, 79 skipped
+
+> 🛑 **ESTE PR NO PUEDE MERGEAR HASTA QUE PRODUCCIÓN TENGA LA COLUMNA.** `schemaDrift` compara
+> `esperado ⊆ real` al arrancar: con el `schema.prisma` de este PR dentro y sin la columna en la
+> base, **producción NO ARRANCA**. DEV y STAGING ya la tienen (abajo, con su recuento). Producción
+> la aplica Javier a mano con `prisma/backfill/scrum609-item-kind.sql`. **Está listo para dárselo.**
+
+---
+
+## Los valores: no estaban donde miré, y no era culpa mía ni suya
+
+Paré porque no estaban en el máster. **Nunca estuvieron ahí**: viven en el documento de mejoras
+aprobadas del 24-ago, del que sale el ticket. Confirmado por el fundador el 2-sep. Los dos lados
+son **Producto** y **Servicio**, y el switch **cambia los campos**:
+
+| lado | campos |
+|---|---|
+| **PRODUCTO** | Nombre · Coste · Margen % · Precio · Proveedor · Descripción |
+| **SERVICIO** | Nombre · Precio · Descripción |
+
+## ✅ El patrón de CONT-01: COMPROBADO, no supuesto
+
+El encargo pedía parar si CONT-01 no era el patrón que creía. **Lo es, y en los tres planos:**
+
+| plano | CONT-01 | lo que se ha hecho |
+|---|---|---|
+| columna | `contactKind String? @map("contact_kind")` — nullable, sin `@default` | `itemKind String? @map("item_kind")` |
+| validación | `z.enum(['EMPRESA','PERSONA']).nullable().optional()` | `z.enum(['PRODUCTO','SERVICIO']).nullable().optional()` |
+| front | `switchFormaJuridica.js` — radios, y **oculta** vía `envoltorio.hidden` | `switchTipoArticulo.js`, su espejo |
+
+## 🎯 «Un servicio con coste»: MEDIDO, y la decisión YA EXISTÍA
+
+El encargo pedía medirlo y proponer. Al leer CONT-01 aparece decidido, con su motivo escrito:
+
+> **① ESCONDER NO ES BORRAR.** Un campo oculto conserva su valor y se sigue enviando al guardar.
+> **② NUNCA SE ESCONDE UN CAMPO QUE TIENE ALGO ESCRITO.** «Un dato invisible es un dato que nadie
+> va a corregir y que sigue viajando a la factura.»
+
+**Así que no se borra el coste y tampoco se conserva oculto: se conserva VISIBLE** — la única de
+las tres opciones en la que el profesional puede enterarse y quitarlo si sobra. No hacía falta
+proponer nada: hacía falta no inventar una segunda regla para el mismo problema.
+
+## El orden, ejecutado
+
+### ② El ALTER y el backfill — con la cantidad DECLARADA ANTES
+
+Preflight en verde (`preflight-migracion.mjs`, rama comprobada). El clasificador aprueba el
+`ALTER` y **rechaza el `UPDATE` por defecto**; se autorizó **nominalmente por su huella**
+`277d1e973156`, con motivo y nombre — no hay interruptor global, y está bien que no lo haya.
+
+| base | declarado ANTES | tocó | forma acreditada contra `information_schema` |
+|---|---:|---:|---|
+| **DEV** | 8 filas | **8** ✅ | `text` · `is_nullable=YES` · `column_default=null` |
+| **STAGING** | 0 filas | **0** ✅ | `text` · `is_nullable=YES` · `column_default=null` |
+| **PRODUCCIÓN** | 58 filas (dato del fundador) | — | **pendiente, la aplica Javier** |
+
+Dentro de transacción y con `throw` si no cuadraba: un descuadre habría deshecho el cambio.
+
+> ⚠️ **STAGING NO VALIDA EL BACKFILL, y decirlo importa.** Tiene **0 productos**, así que su «0
+> filas» es correcto y a la vez **no ejercita nada**. Quien lea «staging en verde» no debe leer
+> «el backfill está probado en staging»: lo está en DEV, con 8 filas.
+
+### 🔴 El límite de la decisión, escrito para que nadie reutilice el precedente
+
+Todas nacen PRODUCTO **por el ESTADO de los datos, no por el criterio**: no hay merchants reales,
+todos son de prueba, así que el backfill no declara nada por nadie. **Con catálogos reales, un
+backfill masivo SÍ estaría declarando por el profesional** —diciendo que su catálogo son productos
+cuando quizá son servicios— y sería la decisión equivocada. Mismo límite que se dejó con `timezone`.
+
+📌 Y el efecto colateral bueno: como todas nacen PRODUCTO, **ninguna fila existente se queda sin
+sitio** donde vivir el coste y el margen que ya tiene.
+
+## El control
+
+| control | resultado |
+|---|---|
+| **el lado SOBREVIVE a la recarga** | contra DEV: creado `SERVICIO` → **releído de la base: `SERVICIO`** ✅ |
+| **NEGATIVO · un producto existente** | `itemKind=PRODUCTO`, `cost` y `vat` **intactos** |
+| **limpieza** | 8 productos antes, 8 después |
+| SERVICIO esconde coste/margen/proveedor · PRODUCTO no | la regla, **ejecutada** |
+| un campo **con valor** nunca se esconde | ejecutado |
+| `null` enseña TODO | ejecutado |
+| los valores del switch = los del `z.enum` | comparados contra el fuente del backend |
+
+**Por qué los tests que pasan, pasan** (criterio de SCRUM-639/647): los cuatro primeros ejercitan
+`debeEsconder`, que vive **sin DOM** justo para que la suite pueda ejecutarla — una regla enterrada
+en el pintado sólo podría auditarse leyendo el fuente, y leer no ejecuta.
+
+🔴 **Y un control que NO puede cazar su regresión, dicho:** el test que comprueba que la vista
+escribe el lado guardado **mira el fuente**, no la pantalla. Si alguien cambiara el orden de las
+llamadas de forma que `aplicar()` corriera antes de rellenar los campos, el fuente seguiría
+teniendo las cuatro líneas y el test seguiría verde — y el modal escondería un coste que estaba a
+punto de aparecer. **Eso necesita navegador y es del fundador.**
+
+## Dos infidelidades del banco de vistas, encontradas y corregidas
+
+`productsView` dejó de montar al añadir el switch. Dos causas, las dos del banco y no del producto:
+
+1. **`parentNode` no existía.** El banco guardaba el padre en `_padre` y le faltaba el nombre
+   estándar, así que `x.parentNode.insertBefore(...)` —DOM de manual— reventaba.
+2. **Los hijos nacidos de `innerHTML` no tenían padre.** El parser los metía en `hijos` sin
+   asignar `_padre`, así que `parentNode` devolvía `null`.
+
+Se corrigen **en el banco y no rodeándolo desde la vista**, que es lo que su propia cabecera manda:
+un banco infiel hace que el test mida el banco y no el producto.
+
+## Contadores
+
+* `SCRIPTS_DEL_DASHBOARD` **67 → 68**, **RECONTADO** sobre el índice (`grep -c "<script src="`),
+  no sumado. (En el rebase ya se había recontado 65 → 67 por lo que main traía.)
+* **Censo de marcadores: `switchTipoArticulo.js` entra con 1**, a conciencia. **CUENTA 1 Y PINTA 3**
+  —la pregunta y las dos etiquetas salen de una sola constante—, así que aprobar uno de los tres
+  textos NO apaga los otros dos.
+* `docs/sql/deriva-prod.sql` regenerado con su script (no a mano: hay un test que lo compara).
+
+## El rebase, que hacía falta
+
+La rama iba **61 commits** por detrás y `main` había tocado `productsView.js` y
+`products.routes.ts` — con **mi propio trabajo ya mergeado** (SCRUM-641) y `_banco-vistas.mjs` con
+SCRUM-634. Se rebasó. El conflicto del banco se resolvió **quedándose el arreglo GENERAL de 634 y
+retirando mi parche estrecho de `name`**, que es exactamente lo que dejé escrito en aquella entrada.
+
+## Lo que NO se ha hecho
+
+1. **Producción.** No puedo y no debo. El fichero está listo.
+2. **La verificación visual** (que el radio se pinte y los campos desaparezcan) necesita navegador.
+3. **El CSV del tarifario** (SCRUM-635), el `@@unique` (SCRUM-631) y el `vat` de los existentes
+   **no se han tocado**.
+
+## Ficheros
+
+* `prisma/schema.prisma` — `itemKind String? @map("item_kind")`.
+* `prisma/backfill/scrum609-item-kind.sql` — **el que Javier necesita para producción.**
+* `src/core/validation/schemas.ts` — `ITEM_KIND` + `itemKindSchema`.
+* `src/modules/products/domain/products.service.ts` · `.../products.routes.ts` — el lado viaja;
+  valor fuera de la lista → `400 item_kind_invalid`.
+* `public/dashboard/js/switchTipoArticulo.js` — **nuevo**, espejo de `switchFormaJuridica`.
+* `public/dashboard/js/productsView.js` — cableado en los DOS formularios.
+* `tests/scrum609b-switch-tipo-articulo.test.mjs` — **nuevo**, 7 tests.
+* `tests/_banco-vistas.mjs` — `parentNode` y el padre de los hijos del marcado.
+* `public/dashboard/index.html` · `public/sw.js` · `docs/sql/deriva-prod.sql` · el censo de marcadores.
+
+## HALLAZGOS FUERA DE ALCANCE
+
+* **STAGING tiene 0 productos**, así que no puede validar ningún backfill del catálogo.
+* Se mantienen los de los apéndices anteriores (CSV del tarifario sin `cost`, y el «bloque K» del
+  ticket que no es la Parte K del máster).
