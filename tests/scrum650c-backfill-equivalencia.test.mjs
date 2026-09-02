@@ -78,6 +78,35 @@ test('SCRUM-650c · SUELO: el banco de mentira ejecuta el MISMO SQL del fichero'
     '🔴 el SQL del backfill ya no menciona `assigned_user_id`.');
 });
 
+// ── 🔴 EL FICHERO Y LA CONSTANTE SON EL MISMO SQL ─────────────────────────
+
+test('SCRUM-650c · 🔴 el SQL del fichero y el de la constante son EXACTAMENTE el mismo', () => {
+  // POR QUÉ ESTE TRINQUETE. Se descubrió midiendo: quitando el `ON CONFLICT` de `SQL_BACKFILL`,
+  // TODOS los tests de aquí siguieron VERDES — el banco de mentira deduplica por su cuenta, así que
+  // simula el `ON CONFLICT` aunque el SQL ya no lo lleve. Contra el Postgres de verdad esa misma
+  // edición reventó con `duplicate key value violates unique constraint "job_assignees_pkey"`.
+  //
+  // Es decir: los tests en memoria NO ven lo que le pase al texto del SQL. Y hay DOS copias de ese
+  // texto — la del fichero, que es la que se pega en la consola, y la de la constante, que es la
+  // que se ejercita aquí. Dos copias sin trinquete divergen, y entonces lo probado y lo ejecutado
+  // dejan de ser lo mismo sin que nada se ponga rojo.
+  const bruto = fs.readFileSync(path.join(RAIZ, 'docs/sql/scrum-650-paso-c-backfill.sql'), 'utf8');
+  const sinComentarios = bruto.replace(/^\s*--.*$/gm, ' ');
+  const sentencias = sinComentarios.split(';').map((s) => s.replace(/\s+/g, ' ').trim()).filter(Boolean);
+
+  assert.equal(sentencias.length, 1,
+    `🔴 el fichero tiene ${sentencias.length} sentencias ejecutables y tenía que tener UNA. Lo que ` +
+    'se pega en la consola es el fichero entero: una segunda sentencia se ejecutaría en producción ' +
+    'sin que ningún test de aquí la haya visto nunca.');
+
+  assert.equal(sentencias[0], SQL_BACKFILL.replace(/\s+/g, ' ').trim(),
+    '🔴 EL FICHERO Y LA CONSTANTE YA NO DICEN LO MISMO.\n' +
+    `    fichero  : ${sentencias[0]}\n` +
+    `    constante: ${SQL_BACKFILL.replace(/\s+/g, ' ').trim()}\n` +
+    '  Los tests de este fichero ejercitan la CONSTANTE; en producción se pega el FICHERO. Si ' +
+    'divergen, lo verde y lo ejecutado son dos cosas distintas.');
+});
+
 // ── 🔴 EL SUELO DE CEGUERA ──────────────────────────────────────────────────────────────────
 
 test('SCRUM-650c · 🔴 CERO trabajos con asignado NO se lee como «nada que migrar»: PARA', async () => {

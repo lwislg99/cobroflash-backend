@@ -32,7 +32,6 @@
 //
 // ⚠️ LA URL NO SE PARSEA A MANO (regla de la casa, SCRUM-226): se valida con `parseBDSegura`, que
 // es fail-closed contra producción y staging. Sin ella, esto no arranca.
-import { readFileSync } from 'node:fs';
 import { parseBDSegura, describirBD } from './_db-guard.mjs';
 
 /** El backfill, tal cual está en `docs/sql/scrum-650-paso-c-backfill.sql`. No se reescribe aquí. */
