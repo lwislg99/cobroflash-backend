@@ -1808,9 +1808,16 @@ if (typeof it.price !== "undefined" && it.price !== null && it.price !== "") {
     // derivado del 21 %) en una línea que arrastraba un 20 % acababa en el documento a
     // **145,20 €**. El margen del catálogo ya estaba dentro del precio y se volvía a aplicar.
     //
-    // No es un caso raro: el margen de la línea se GUARDA en el borrador (`markup` en el
-    // autoguardado) y viaja también en las PLANTILLAS, así que una línea puede llegar con margen
-    // puesto antes de que nadie elija nada del catálogo.
+    // No era un caso raro: el margen de la línea se GUARDABA en el borrador (`markup` en el
+    // autoguardado), así que una línea podía llegar con margen puesto antes de que nadie
+    // eligiera nada del catálogo.
+    //
+    // 🔴 AQUÍ DECÍA ADEMÁS «y viaja también en las PLANTILLAS». ERA FALSO, y por eso se retira.
+    // MEDIDO el 2-sep-2026 (SCRUM-598): `markup` no aparece NI UNA VEZ en `src/`, y las líneas
+    // que viajan al servidor pasan por `QuoteLineSchema`, que no lo declara — o sea que zod lo
+    // borraría aunque llegara. Estaba escrito en PRESENTE y se leía como una observación del
+    // mecanismo cuando era una suposición: así es como una frase falsa sobrevive al código que
+    // describía y le cuesta un carril entero al siguiente que la crea.
     //
     // Se pone a 0 en vez de esconder el campo: el margen del documento es DOC-08 y no es este
     // ticket. Así el pro LO VE, y si quiere margen extra sobre el precio de catálogo lo escribe

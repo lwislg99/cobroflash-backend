@@ -21,6 +21,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+// SCRUM-598 · F9 no se retira, se MUDA: su detector nuevo vive en el censo, y aquí se prueba en
+// rojo. Ver el bloque «F9 · LA MUDANZA» al final de este fichero.
+import { F9_EN_EL_CATALOGO, faltaEnF9 } from './_censo-dos-fronts.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VISTA = path.join(RAIZ, 'public/dashboard/js/quotesView.js');
@@ -160,4 +163,144 @@ test('SCRUM-598 · el restaurador LLAMA al drenaje — mencionar no es hacer', (
     + 'que alguien la invoque, y el borrador viejo seguiría perdiendo su precio.');
   assert.equal(/markup:\s*l\.markupInput/.test(limpio), false,
     '🔴 el borrador vuelve a GUARDAR el margen.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 F9 · LA MUDANZA, PROBADA EN ROJO
+//
+// Retirar el margen del documento dejó sin ancla a F9 —«coste y margen existen en el
+// producto»—, que el encargo de SCRUM-600 declara INNEGOCIABLE. El detector viejo medía esa
+// capacidad por su DIRECCIÓN dentro de `quotesView.js`, y la dirección caducó: con CAT-01
+// (SCRUM-609) coste y margen se mudaron al CATÁLOGO.
+//
+// 🔴 PERO ESE DETECTOR ERA LO QUE HACÍA INNEGOCIABLE A F9. Retirarlo sin sustituto convierte una
+// regla en una costumbre: mañana alguien quita el margen del catálogo, no salta nada, y nos
+// enteramos cuando se queje un profesional. Así que F9 no se retira: se RE-ANCLA en su casa
+// nueva (`F9_EN_EL_CATALOGO` / `faltaEnF9`, en `_censo-dos-fronts.mjs`).
+//
+// Aquí va la mitad que decide si eso vale: **el rojo**. Un detector que nunca se ha visto caer
+// es una promesa. Se le rompe el catálogo A PROPÓSITO, pieza por pieza, y se exige que CAIGA y
+// que DIGA CUÁL. Y sus dos controles negativos, porque un guard que se queja de cambios
+// legítimos acaba desactivado — y entonces tampoco protege del que importa.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+const FUENTES_DEL_CATALOGO = () => ({
+  vista: fs.readFileSync(path.join(RAIZ, F9_EN_EL_CATALOGO.ficheros.vista), 'utf8'),
+  aritmetica: fs.readFileSync(path.join(RAIZ, F9_EN_EL_CATALOGO.ficheros.aritmetica), 'utf8'),
+});
+
+/**
+ * Rompe una pieza del catálogo EN MEMORIA (nunca en disco) y comprueba que de verdad ha roto
+ * algo: si el trozo no aparece exactamente donde se dice, la mutación no está probando nada y
+ * el verde que venga detrás no vale. Es la post-condición que le falta a casi toda mutación.
+ */
+function mutar(fuentes, cual, de, a = '', { veces = 1 } = {}) {
+  const antes = fuentes[cual];
+  const cuantas = antes.split(de).length - 1;
+  assert.equal(cuantas, veces,
+    `🔴 MUTACIÓN NO FIABLE: «${de}» aparece ${cuantas} veces en ${cual} y se esperaban ${veces}. `
+    + 'Estaría quitando otra cosa, o ninguna.');
+  const despues = antes.split(de).join(a);
+  assert.notEqual(despues, antes, `🔴 la mutación no ha cambiado ${cual}: no se prueba nada.`);
+  return { ...fuentes, [cual]: despues };
+}
+
+/**
+ * LAS NUEVE PIEZAS DE F9, cada una con su defecto y con el trozo del rojo que tiene que nombrarla.
+ *
+ * No se compara la frase entera a propósito: lo que este caso vigila es que el rojo DIGA CUÁL, y
+ * copiar aquí el texto completo sólo ataría el test a la redacción del mensaje.
+ */
+const PIEZAS_DE_F9 = [
+  ['el campo Coste del ALTA', /«Coste».*ALTA/,
+    (f) => mutar(f, 'vista', '<input name="cost" type="number" step="0.01" min="0" placeholder="60.00" />')],
+  ['el campo Margen % del ALTA', /«Margen %».*ALTA/,
+    (f) => mutar(f, 'vista', '<input name="margen" type="number" step="0.01" placeholder="70" />')],
+  ['el campo Coste de la EDICIÓN', /«Coste».*EDICIÓN/,
+    (f) => mutar(f, 'vista', '<input name="cost" type="number" step="0.01" min="0"/>')],
+  ['el campo Margen % de la EDICIÓN', /«Margen %».*EDICIÓN/,
+    (f) => mutar(f, 'vista', '<input name="margen" type="number" step="0.01"/>')],
+  ['el coste deja de VIAJAR al servidor', /COSTE en lo que se ENV[IÍ]A al servidor/,
+    (f) => mutar(f, 'vista', "cost: costRaw === '' ? null : Number(costRaw),")],
+  ['el cableado del margen mientras se teclea', /margenCatalogo\.autocompletar/,
+    (f) => mutar(f, 'vista', 'window.margenCatalogo.autocompletar(', 'yaNoSeCablea(')],
+  ['el margen derivado al abrir un producto', /margenCatalogo\.margenDesde/,
+    (f) => mutar(f, 'vista', 'window.margenCatalogo.margenDesde(it.cost, it.price)', 'null')],
+  ['la aritmética del margen', /margenCatalogo\.precioDesde/,
+    (f) => mutar(f, 'aritmetica', '    precioDesde: precioDesde,\n')],
+  // 🔴 LA NOVENA NACE DE UN ROJO QUE ME ENCONTRÉ INTERROGANDO AL DETECTOR, no viéndolo verde:
+  // envolví el campo «Coste» en un comentario de HTML y contestó «no falta nada». El árbol
+  // protege de los comentarios de JS —no son nodos— pero un `<!-- -->` va DENTRO del literal y
+  // para el AST sigue siendo texto pintado. Desactivar es la forma barata de perder una función.
+  ['el campo Coste COMENTADO en HTML (que no es lo mismo que borrado, y se ve igual)', /«Coste».*ALTA/,
+    (f) => mutar(f, 'vista', '<input name="cost" type="number" step="0.01" min="0" placeholder="60.00" />',
+      '<!-- <input name="cost" type="number" step="0.01" min="0" placeholder="60.00" /> -->')],
+];
+
+test('SCRUM-598 · 🔴 F9 RE-ANCLADO: el detector CAE y NOMBRA qué falta — probado con las nueve piezas', () => {
+  const base = FUENTES_DEL_CATALOGO();
+
+  // SUELO del rojo: si el catálogo ya estuviera roto, cada mutación de abajo daría más de un
+  // hallazgo y el «y sólo él» dejaría de significar nada.
+  assert.deepEqual(faltaEnF9(base), [],
+    '🔴 F9 ya está roto ANTES de mutar nada: este caso no puede medir lo que dice que mide.');
+
+  for (const [defecto, nombraA, romper] of PIEZAS_DE_F9) {
+    const falta = faltaEnF9(romper(base));
+
+    assert.equal(falta.length, 1,
+      `🔴 al quitar «${defecto}» del catálogo el detector ha dado ${falta.length} hallazgos:\n`
+      + falta.map((f) => '   · ' + f).join('\n')
+      + '\n  Con 0 es DECORATIVO: no ve su propio defecto y F9 se ha quedado sin guard.'
+      + '\n  Con más de 1 acusa de más, y un rojo que acusa de más no dice dónde mirar.');
+
+    assert.match(falta[0], nombraA,
+      `🔴 al quitar «${defecto}» el rojo NO lo nombra. Dice: «${falta[0]}».\n`
+      + '  Dentro de tres meses, quien lo vea saltar necesita el sitio, no el susto.');
+  }
+});
+
+test('SCRUM-598 · 🔴 CONTROL NEGATIVO de F9: que el margen SALGA DEL DOCUMENTO no lo hace caer', () => {
+  // Es EL control de este ticket: DOC-08 quita el margen del documento a propósito, y el guard
+  // que vigila F9 no puede quejarse justo del cambio que se ha decidido hacer.
+  const limpio = desnudar(fs.readFileSync(VISTA, 'utf8'));
+  const abiertas = Object.entries(PUERTAS).filter(([, d]) => d(limpio)).map(([n]) => n);
+  assert.deepEqual(abiertas, [],
+    'suelo: este caso sólo dice algo si el margen YA está fuera del documento');
+
+  assert.deepEqual(faltaEnF9(FUENTES_DEL_CATALOGO()), [],
+    '🔴 F9 cae con el margen fuera del documento. Son dos sitios distintos: el margen sale del '
+    + 'DOCUMENTO (DOC-08) y sigue en el CATÁLOGO (CAT-01). Un detector que no los distingue '
+    + 'obligaría a elegir entre hacer este ticket y conservar F9.');
+
+  // Y la razón por la que no puede caer, dicha por el propio detector: el documento NO está en
+  // su población. Si algún día lo estuviera, este caso dejaría de ser un control.
+  assert.equal(Object.values(F9_EN_EL_CATALOGO.ficheros).includes('public/dashboard/js/quotesView.js'),
+    false, '🔴 F9 ha vuelto a mirar al documento: es la dirección vieja, la que ya caducó una vez.');
+});
+
+test('SCRUM-598 · 🔴 CONTROL NEGATIVO de F9: un cambio LEGÍTIMO del catálogo tampoco lo hace caer', () => {
+  // El proveedor no es F9. Si el guard se quejara de tocarlo, alguien lo desactivaría — y
+  // entonces tampoco protegería del coste ni del margen, que es lo suyo.
+  const sinProveedor = mutar(FUENTES_DEL_CATALOGO(), 'vista',
+    '<select name="providerId">', '<select name="otraCosa">', { veces: 2 });
+  assert.deepEqual(faltaEnF9(sinProveedor), [],
+    '🔴 F9 se queja de que se toque el PROVEEDOR, que no es lo suyo.');
+});
+
+test('SCRUM-598 · SUELO: el detector de F9 se declara CIEGO en vez de contestar «falta todo»', () => {
+  // Un cero de un instrumento roto se lee igual que un catálogo sin campos, y son la noticia
+  // contraria. Así que sin población no hay veredicto: revienta y lo dice.
+  const base = FUENTES_DEL_CATALOGO();
+
+  assert.throws(() => faltaEnF9({ vista: 'const nada = 1;', aritmetica: base.aritmetica }),
+    /ESCANER CIEGO[\s\S]*bloque de HTML/,
+    '🔴 sin ver un solo bloque de HTML, el detector contesta en vez de declararse ciego.');
+
+  // Y con HTML pero sin un solo objeto de producto: el instrumento ve la pantalla y no la forma.
+  assert.throws(() => faltaEnF9({
+    vista: 'x.innerHTML = `<input name="cost"/><input name="margen"/>`;',
+    aritmetica: base.aritmetica,
+  }), /ESCANER CIEGO[\s\S]*objeto de producto/,
+    '🔴 sin un solo objeto de producto, el detector contesta en vez de declararse ciego.');
 });

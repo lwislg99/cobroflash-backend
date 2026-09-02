@@ -164,7 +164,7 @@ test('SCRUM-229 · NO se cambia el comportamiento de `safeMarkup` en el total', 
 });
 
 test('SCRUM-229 · ✅ RETIRADO POR SCRUM-598: el pie ya no tiene fila de Margen', () => {
-  const pie = src.slice(src.indexOf(String.fromCharCode(116)+"otalsBox.innerHTML"), src.indexOf("kpiBox.innerHTML"));
+  const pie = src.slice(src.indexOf('totalsBox.innerHTML'), src.indexOf("kpiBox.innerHTML"));
   assert.match(pie, /Base imponible/, "suelo: no encuentro el pie de totales");
   // El pie conserva Base imponible e IVA. La fila «Margen» sale por decision del fundador
   // (24-ago-2026, DOC-08): era informacion del profesional en el papel de su cliente.
