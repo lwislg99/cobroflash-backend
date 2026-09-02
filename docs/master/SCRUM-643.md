@@ -754,3 +754,49 @@ biyectiva ni estable: Ceuta y Melilla llevan **IPSI** con el huso de la penínsu
 **Compromiso para el PR ③:** si al escribir la primitiva de zona aparece la tentación de que el
 impuesto salga de ella —o al revés—, **se para y se dice** antes de escribirlo. No se resuelve de
 paso.
+
+## 10 · ✅ FASE ② APLICADA EN DEV Y STAGING (2-sep-2026)
+
+**Producción NO** — y no por cautela: ninguna de las tres claves de este árbol va a producción,
+acreditado antes de tocar nada con `scripts/comprobar-claves-bd.mjs`:
+
+```
+[destino] DATABASE_URL_STAGING → acela.proxy.rlwy.net/railway (STAGING) ✅
+[destino] DATABASE_URL_DEV     → acela.proxy.rlwy.net/yaqu_dev_javier (DESARROLLO) ✅
+[destino] DATABASE_URL_TESTS   → acela.proxy.rlwy.net/railway (BASE DE PRUEBAS) ✅
+· DATABASE_URL: ausente (correcto en un árbol de trabajo; producción no vive aquí).
+```
+
+### El preview, con la expectativa DECLARADA ANTES
+
+| Base | Columna antes | Merchants | Filas que debía tocar el `UPDATE` |
+|---|---|---|---|
+| dev (`yaqu_dev_javier`) | no existe | 5 (todos `ES`) | **5** |
+| staging (`railway`) | no existe | 8 (todos `ES`) | **8** |
+
+El número se fijó **antes** de ejecutar, y el script **para y sale con código 1** si el `UPDATE`
+toca otra cantidad. Un recuento que se lee después de aplicar no es una comprobación: es una
+narración.
+
+### Lo aplicado, y lo que devolvió
+
+| Base | `ALTER` | `UPDATE` · filas | Después (`information_schema` + reparto) |
+|---|---|---|---|
+| **dev** | aplicado | **5 / 5** ✅ | `text` · `is_nullable=YES` · `column_default=null` · `Europe/Madrid`=5 · **0 NULL** |
+| **staging** | aplicado | **8 / 8** ✅ | `text` · `is_nullable=YES` · `column_default=null` · `Europe/Madrid`=8 · **0 NULL** |
+| **producción** | ⛔ pendiente (fundador) | esperadas **13** | — |
+
+**Las dos cuadraron.** Y se acreditó lo que importa de la forma, no sólo que la columna esté:
+**nullable y SIN `column_default`**, que es la forma de CONT-01 y la razón entera de no haberla
+creado con `@default`.
+
+Turno de staging **tomado y soltado** (`scripts/turno-staging.mjs`); **libre** al terminar.
+
+### Lo que sigue SIN hacerse, y por qué
+
+**`prisma/schema.prisma` NO se ha tocado.** No es un olvido: `schemaDrift.ts` compara
+**esperado ⊆ real**, así que una columna de más en la base es inocua y una de menos **impide
+arrancar producción** (SCRUM-220). El esquema entra en el PR ③ **cuando las tres bases la
+tengan**, junto con la primitiva, los tres cálculos y los tests. **Sin partir.**
+
+El registro operativo va, como manda la casa, en `docs/MIGRATIONS_PENDING.md`.
