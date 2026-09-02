@@ -29,23 +29,32 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // El doble: un `launch` y un `waitForTarget` cuyo retraso y cuyo fallo se piden por entorno. Así
 // la MISMA lentitud se puede meter en un tramo o en el otro sin tocar el código que se mide.
 const GUION = `
-const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+// 🔴 EL RELOJ ES DE MENTIRA, Y AVANZA SOLO DONDE EL DOBLE DICE (SCRUM-671).
+//
+// Antes se dormia de verdad y se leia el reloj de pared. Bajo carga, el tramo al que NO se le
+// habia metido nada tambien tardaba —0,1 s de robo de CPU— y el guard acusaba al reparto de un
+// fallo que no existia. Ahora el tiempo lo pone el test: el reparto se comprueba EXACTO y el
+// veredicto es el mismo con la maquina vacia y con la maquina llena.
+let reloj = 1000;
+const ahora = () => reloj;
 const doble = {
-  launch: () => espera(Number(process.env.T_PROCESO || 0)).then(() => {
+  launch: () => {
+    reloj += Number(process.env.T_PROCESO || 0);
     if (process.env.MUERE_PROCESO) {
-      throw new Error('Timed out after 30000 ms while waiting for the WS endpoint URL to appear in stdout!');
+      return Promise.reject(new Error('Timed out after 30000 ms while waiting for the WS endpoint URL to appear in stdout!'));
     }
-    return {
-      waitForTarget: () => espera(Number(process.env.T_PAGINA || 0)).then(() => {
-        if (process.env.MUERE_PAGINA) throw new Error('Waiting for target failed: timeout 30000 ms exceeded');
-        return {};
-      }),
+    return Promise.resolve({
+      waitForTarget: () => {
+        reloj += Number(process.env.T_PAGINA || 0);
+        if (process.env.MUERE_PAGINA) return Promise.reject(new Error('Waiting for target failed: timeout 30000 ms exceeded'));
+        return Promise.resolve({});
+      },
       close: () => { console.log('CERRÉ EL NAVEGADOR'); return Promise.resolve(); },
-    };
-  }),
+    });
+  },
 };
 import('./scripts/_navegador.mjs')
-  .then((m) => m.lanzarNavegador(doble))
+  .then((m) => m.lanzarNavegador(doble, {}, ahora))
   .then(() => console.log('SIGUIÓ'))
   .catch((e) => { console.error('EXPLOTÓ: ' + e.message); process.exit(9); });
 `;
@@ -95,19 +104,32 @@ test('SCRUM-642 · la marca dice DÓNDE se fue el tiempo, no sólo cuánto', () 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-642 · 🔴 lentitud en «proceso+ws» → la marca señala A ESE tramo', () => {
+  // 🔴 ESTO MEDIA RELOJ DE PARED Y ERA EL SEGUNDO GUARD DE LA CASA CON ESA ENFERMEDAD
+  // (SCRUM-671; el primero fue scrum351, curado en SCRUM-520). Exigia ver «0.0» en el tramo al
+  // que no se le habia metido nada, y bajo carga ese tramo salia «0.1» por robo de CPU:
+  //
+  //     actual:   ⟦arranque⟧ 0.9 s COMPLETA · proceso+ws 0.8 s · primera-página 0.1 s
+  //     expected: /primera-página 0\.0/
+  //
+  // Medido asi, reproducido a proposito con la maquina cargada. **El reparto era CORRECTO y el
+  // guard lo llamaba roto**: acusaba al codigo de un fallo que estaba en el aserto.
+  //
+  // El hecho que se vigila no era «este tramo tarda entre 0,5 y 0,9 s» —eso es una propiedad de
+  // la maquina—: es que **el tiempo se ATRIBUYE al tramo donde de verdad ocurrio**. Con el reloj
+  // inyectado eso se comprueba EXACTO, y da lo mismo vacia que llena.
   const r = arrancar({ T_PROCESO: '700' });
-  assert.match(r.linea, /proceso\+ws 0\.[5-9]/,
-    `🔴 se metieron 0,7 s en el arranque del proceso y el tramo no los recoge: ${r.linea}`);
-  assert.match(r.linea, /primera-página 0\.0/,
-    `🔴 el tramo de la página se ha llevado un tiempo que no es suyo: ${r.linea}`);
+  assert.match(r.linea, /proceso\+ws 0\.7 s/,
+    `🔴 se metieron 700 ms en el arranque del proceso y el tramo no los recoge: ${r.linea}`);
+  assert.match(r.linea, /primera-página 0\.0 s/,
+    `🔴 el tramo de la página se ha llevado un tiempo que NO es suyo: ${r.linea}`);
 });
 
 test('SCRUM-642 · 🔴 lentitud en «primera-página» → la marca señala A ESE otro', () => {
   const r = arrancar({ T_PAGINA: '700' });
-  assert.match(r.linea, /primera-página 0\.[5-9]/,
-    `🔴 se metieron 0,7 s esperando la página y el tramo no los recoge: ${r.linea}`);
-  assert.match(r.linea, /proceso\+ws 0\.0/,
-    `🔴 el tramo del proceso se ha llevado un tiempo que no es suyo: ${r.linea}`);
+  assert.match(r.linea, /primera-página 0\.7 s/,
+    `🔴 se metieron 700 ms esperando la página y el tramo no los recoge: ${r.linea}`);
+  assert.match(r.linea, /proceso\+ws 0\.0 s/,
+    `🔴 el tramo del proceso se ha llevado un tiempo que NO es suyo: ${r.linea}`);
 });
 
 test('SCRUM-642 · 🔴 y las dos direcciones NO salen iguales', () => {
@@ -120,8 +142,10 @@ test('SCRUM-642 · 🔴 y las dos direcciones NO salen iguales', () => {
     '🔴 la misma lentitud en tramos DISTINTOS imprime la MISMA marca. La marca no distingue nada.');
 
   const total = (l) => Number(l.match(COMO_LEE_LA_PUERTA)[1]);
-  assert.ok(Math.abs(total(enProceso) - total(enPagina)) <= 0.3,
-    '🔴 los totales deberían parecerse —es la misma espera— y no se parecen:\n'
+  // Con el reloj inyectado los totales no «se parecen»: son IGUALES. La tolerancia de 0,3 que
+  // habia aqui existia solo para absorber el ruido de la maquina, y ese ruido ya no entra.
+  assert.equal(total(enProceso), total(enPagina),
+    '🔴 los totales tendrían que ser IDÉNTICOS —es la misma espera, repartida distinto— y no lo son:\n'
     + `  ${enProceso}\n  ${enPagina}`);
 });
 
