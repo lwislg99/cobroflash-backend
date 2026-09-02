@@ -28,7 +28,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { scriptsDeLaPagina, rutaDelDashboard, cegueraDelExtractor } from './_scripts-de-la-pagina.mjs';
+import { scriptsDeLaPagina, rutaDelDashboard, cegueraDelExtractor, sinComentarios } from './_scripts-de-la-pagina.mjs';
 import { scriptsDelDashboard, SCRIPTS_DEL_DASHBOARD } from './_banco-vistas.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -196,14 +196,20 @@ test('SCRUM-670 · hoy el índice no tiene aplazados, ni módulos, ni remotos, n
 // de EJECUCIÓN lo fijan las dependencias declaradas del índice, y eso es otra pregunta.
 
 test('SCRUM-670 · 🔴 NEGATIVO: reordenar los `<script>` NO cambia la población', () => {
-  const html = fs.readFileSync(INDICE, 'utf8');
-  const original = scriptsDeLaPagina(html).clasicos;
+  const crudo = fs.readFileSync(INDICE, 'utf8');
+  const original = scriptsDeLaPagina(crudo).clasicos;
   assert.ok(original.length >= MINIMO, '🔴 sin población real este control no prueba nada.');
 
   // Se reordena el marcado DE VERDAD, no una lista en memoria: cada etiqueta se sustituye por la
   // de la posición simétrica. Es la mutación que haría un PR de reordenación — y las etiquetas no
   // son contiguas en el índice (hay comentarios y líneas en blanco entre medias), así que no vale
   // con recortar un bloque y darle la vuelta.
+  //
+  // 🔴 SOBRE EL MARCADO SIN COMENTARIOS, y lo digo porque me mordió al probarlo: reordenando el
+  // HTML crudo, una etiqueta COMENTADA entra en el baile y sale de dentro del comentario —
+  // entonces la población sí cambia y este control caería acusando de algo que no ha pasado. Un
+  // negativo que se rompe con un `<!-- -->` en el índice es un futuro rojo por nada.
+  const html = sinComentarios(crudo);
   const ETIQUETA = /<script\b[^>]*\bsrc\b[^>]*>\s*<\/script>/g;
   const etiquetas = html.match(ETIQUETA) || [];
   assert.ok(etiquetas.length >= MINIMO,

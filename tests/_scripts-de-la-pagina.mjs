@@ -53,8 +53,14 @@
 // Sin dependencias nuevas (regla 36): sólo expresiones regulares.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-/** El marcado sin comentarios HTML. Un `<script>` comentado NO lo carga el navegador. */
-const sinComentarios = (html) => String(html).replace(/<!--[\s\S]*?-->/g, '');
+/**
+ * El marcado sin comentarios HTML. Un `<script>` comentado NO lo carga el navegador.
+ *
+ * Se exporta porque quien reordene o reescriba marcado tiene que poder usar EL MISMO criterio: si
+ * un consumidor decide por su cuenta qué es un comentario, vuelve a haber dos opiniones — que es
+ * el defecto entero de este ticket, sólo que una capa más abajo.
+ */
+export const sinComentarios = (html) => String(html).replace(/<!--[\s\S]*?-->/g, '');
 
 /** La etiqueta de apertura de un `<script>`, con todos sus atributos (puede ocupar varias líneas). */
 const APERTURA = /<script\b([^>]*)>/gi;
