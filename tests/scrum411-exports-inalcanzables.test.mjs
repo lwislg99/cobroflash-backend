@@ -116,7 +116,18 @@ const R = analizar(RAIZ);
 // main ya había subido a 8 por su cuenta. Los dos éramos «el octavo»; el censo dice cuántos hay.
 //
 // **Baja el commit que le ponga consumidor**, y hay DOS pendientes: el parte y la revisión.
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 9;
+// 🔴 9 → 8 · 2-sep-2026 · SCRUM-652 (T3 fase C). BAJA, y baja por el motivo por el que subió:
+// **`parteTrabajo.ts` YA TIENE CONSUMIDOR**. Es literalmente lo que decía su propia entrada de
+// arriba — «Baja a 7 el commit que le ponga consumidor, y ese commit es el que persista el parte»
+// —, y este es ese commit: `src/modules/jobs/app/routes/partes.routes.ts` lo importa y lo ejerce
+// (sella al firmar, aplica los dos candados, y sirve al técnico lo que `lineasParaElTecnico` deja
+// pasar), montado en `/admin/partes`.
+//
+// ⚠️ BAJA A 8, NO A 7, y la diferencia no es un descuido: cuando se escribió aquella nota el censo
+// estaba en 8 y el parte era el octavo. Después entró `revision.ts` (SCRUM-655) y subió a 9, y
+// **ése sigue esperando su gate**. El número se RECUENTA sobre el árbol de hoy; no se resta de
+// cabeza sobre una foto vieja. Queda UNO pendiente, y es la revisión del presupuesto.
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 8;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 

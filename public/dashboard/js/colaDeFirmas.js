@@ -63,11 +63,18 @@
  * Devuelve `null` si el id no sirve. **Sin clave no se firma** — lo dijo el `keyPath` de
  * SCRUM-455: una firma sin clave es un duplicado esperando a ocurrir.
  */
-function claveDeFirma(albaranId) {
-  if (albaranId === null || albaranId === undefined) return null;
-  const id = String(albaranId).trim();
+function claveDeFirma(documentoId, tipo) {
+  if (documentoId === null || documentoId === undefined) return null;
+  const id = String(documentoId).trim();
   if (!id || id === 'undefined' || id === 'null' || id === 'NaN') return null;
-  return `firma:albaran:${id}`;
+  // SCRUM-652 (T3 fase C) · el TIPO ya estaba en la clave («firma:albaran:7»), y por eso esto se
+  // generaliza sin migrar nada: una clave vieja SIGUE SIENDO la clave de su albarán. El default
+  // es `albaran` justo para eso — las llamadas de hoy no cambian de valor.
+  //
+  // 🔴 Y hace falta de verdad: sin el tipo, el albarán 7 y el parte 7 acuñarían LA MISMA clave, y
+  // como el `keyPath` del almacén sobrescribe por clave, encolar uno se llevaría por delante la
+  // firma del otro. Un documento firmado desapareciendo en silencio.
+  return `firma:${tipo || 'albaran'}:${id}`;
 }
 
 /**
@@ -76,16 +83,20 @@ function claveDeFirma(albaranId) {
  * Devuelve el resultado del almacén tal cual —GUARDADO, NO_DISPONIBLE o FALLO—, sin aplanarlo:
  * quien llama necesita distinguir «hay red de seguridad» de «no la hay», y son cosas distintas.
  */
-async function encolarFirma(albaranId, cuerpo) {
-  const claveIdempotencia = claveDeFirma(albaranId);
-  if (!claveIdempotencia) return { estado: window.FALLO, motivo: 'sin id de albarán' };
+async function encolarFirma(documentoId, cuerpo, tipo) {
+  const claveIdempotencia = claveDeFirma(documentoId, tipo);
+  if (!claveIdempotencia) return { estado: window.FALLO, motivo: 'sin id de documento' };
   // SCRUM-360 fase 3 · queda constancia FUERA de IndexedDB de que este navegador tuvo cola.
   // Sin esto, un desalojo se lleva la cola Y la prueba de que existió, y no hay nada que detectar.
   if (typeof window.marcarQueHuboCola === 'function') window.marcarQueHuboCola();
   return window.guardarFirmaPendiente(
     // SCRUM-358 fase 3 · `encoladaEn` lo añade el drenado para poder ORDENAR. Se pone al encolar
     // y NO se toca al reintentar: es cuándo el cliente firmó, no cuándo se intentó subir.
-    Object.assign({ claveIdempotencia, albaranId, encoladaEn: Date.now() }, cuerpo || {}),
+    // `albaranId` conserva su nombre A PROPÓSITO: es la clave con la que están guardadas las
+    // firmas que YA HAY en los móviles. Renombrarlo dejaría huérfana toda cola existente, que es
+    // justo lo que esta máquina existe para no hacer. `tipo` dice a dónde va; el default lo pone
+    // el que sube, no el que guarda.
+    Object.assign({ claveIdempotencia, albaranId: documentoId, tipo: tipo || 'albaran', encoladaEn: Date.now() }, cuerpo || {}),
   );
 }
 
@@ -108,8 +119,8 @@ async function encolarFirma(albaranId, cuerpo) {
  * la subida falla, no hay ③, y el trazo sigue en pantalla (SCRUM-404), que es lo que dice el
  * mensaje ya aprobado del camino de firma.
  */
-async function firmarConRedDeSeguridad(albaranId, cuerpo, subir) {
-  const clave = claveDeFirma(albaranId);
+async function firmarConRedDeSeguridad(documentoId, cuerpo, subir, tipo) {
+  const clave = claveDeFirma(documentoId, tipo);
   if (!clave) {
     // El suelo: sin clave no se firma. Una firma que no se puede identificar no se puede
     // desencolar, y una cola de la que no se puede sacar nada sube la misma firma para siempre.
@@ -118,7 +129,7 @@ async function firmarConRedDeSeguridad(albaranId, cuerpo, subir) {
     throw e;
   }
 
-  const encolado = await encolarFirma(albaranId, cuerpo);
+  const encolado = await encolarFirma(documentoId, cuerpo, tipo);
   const encolada = encolado && encolado.estado === window.GUARDADO;
 
   let respuesta;
@@ -198,7 +209,12 @@ function ordenDeDrenado(firmas) {
  * expone el código justo para esto.
  */
 function elServidorYaLaTiene(error) {
-  return !!error && error.status === 409 && error.code === 'albaran_locked';
+  // SCRUM-652 · `parte_locked` es el gemelo exacto de `albaran_locked`, y tiene que estar aquí o
+  // la firma de un parte reintentado NO SALDRÍA DE LA COLA JAMÁS: cada apertura daría 409, cada
+  // 409 se leería como fallo, y el contador le diría al profesional que tiene pendiente algo que
+  // lleva semanas a salvo. Se mira el código, nunca el texto.
+  return !!error && error.status === 409 &&
+    (error.code === 'albaran_locked' || error.code === 'parte_locked');
 }
 
 
@@ -287,7 +303,18 @@ function subirFirmaDeLaCola(firma) {
   for (const campo of ['firmadoPorNombre', 'firmadoPorCalidad', 'firmadoPorCalidadOtro']) {
     if (firma[campo] !== undefined) cuerpo[campo] = firma[campo];
   }
-  return window.apiRequest(`/admin/albaranes/${firma.albaranId}/firmar`, {
+  // 🔴 A SU ENDPOINT, y el default importa: una firma encolada por una versión ANTERIOR a
+  // SCRUM-652 no tiene `tipo`, y es de un albarán por construcción —era lo único que se podía
+  // firmar—. Sin el default se quedaría sin ruta y sin subir, después de haber sobrevivido a la
+  // falta de cobertura que la puso ahí.
+  const RUTAS = { albaran: '/admin/albaranes', parte: '/admin/partes' };
+  const base = RUTAS[firma.tipo || 'albaran'];
+  if (!base) {
+    // Ni se adivina ni se cae al albarán: subir la firma de un documento desconocido a la ruta
+    // equivocada es peor que no subirla. Se queda en la cola y se dice cuál.
+    return Promise.reject(Object.assign(new Error(`tipo de documento desconocido: ${firma.tipo}`), { tipoDesconocido: true }));
+  }
+  return window.apiRequest(`${base}/${firma.albaranId}/firmar`, {
     method: 'POST',
     body: JSON.stringify(cuerpo),
   });

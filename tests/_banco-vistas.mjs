@@ -580,6 +580,7 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'nuevaFacturaModal.js',
   'onboardingView.js',
   'paidViaEtiquetas.js',
+  'parteDetailView.js',
   'patronDetalleAcciones.js',
   'plansView.js',
   'prefijosPais.js',
@@ -627,6 +628,8 @@ export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   { antes: 'margenCatalogo.js', despues: 'productsView.js', motivo: 'SCRUM-609: la aritmética del margen' },
   { antes: 'switchTipoArticulo.js', despues: 'productsView.js', motivo: 'SCRUM-609: el switch Producto|Servicio' },
   { antes: 'quoteApartados.js', despues: 'quotesDetailView.js', motivo: 'SCRUM-655: apartados, numeración y descripción' },
+  { antes: 'signaturePad.js', despues: 'parteDetailView.js', motivo: 'SCRUM-652: el parte abre el pad de firma' },
+  { antes: 'colaDeFirmas.js', despues: 'parteDetailView.js', motivo: 'SCRUM-652: firma con la cola que ya existe' },
 ]);
 
 /** Nombre a secas, venga con prefijo `js/` o sin él, y sea cadena u objeto `{fichero}`. */
