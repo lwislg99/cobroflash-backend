@@ -367,6 +367,31 @@ export const customerCreateSchema = z.object({
   // SCRUM-69 (FACT-1): determina el plazo legal de la recapitulativa (art. 13 RD 1619/2012).
   // null = sin clasificar (se trata como PARTICULAR en el cálculo, ver resolveTipoDestinatario).
   tipoDestinatario: z.enum(['PARTICULAR', 'EMPRESARIO']).nullable().optional(),
+  /**
+   * SCRUM-579 (CONT-06) · LA DIRECCIÓN DE FACTURACIÓN. Una, no dos.
+   *
+   * Sin declararlas aquí, `z.object` las BORRA en silencio —igual que le pasaba a `suplido`
+   * antes de SCRUM-500— y no llegarían nunca a `customers`.
+   *
+   * 🔴 `nullable().optional()` LAS CINCO, y da los tres casos sin inventar ninguno:
+   *   ausente = no se toca · null = no consta · texto = lo declaró el profesional.
+   * Ninguna lleva `.default()`: «este cliente no tiene dirección» y «tiene la dirección en
+   * blanco» tienen que poder leerse DISTINTO, o el dato no vale para calcular nada. Es el mismo
+   * argumento por el que la columna no lleva `DEFAULT 'ES'`.
+   *
+   * ⚠️ EL PAÍS VIAJA COMO ISO-3166-1 alfa-2 (`ES`), no como nombre. Es lo que ya guarda
+   * `Merchant.country` —medido: `ES`— y lo que usa `prefijosPais.js`. El nombre lo pone el
+   * navegador con `Intl.DisplayNames`, así que guardarlo sería guardar una TRADUCCIÓN: el mismo
+   * cliente se llamaría «España» o «Spain» según quién lo diera de alta.
+   *
+   * ⛔ Esto NO es la dirección de la OBRA. El fundador cerró la P2 el 24-ago-2026: la de obra
+   * pertenece al DOCUMENTO, porque un cliente puede tener tres obras. Eso es DOC-12.
+   */
+  billingAddress: z.string().max(200).nullable().optional(),
+  billingCity: z.string().max(100).nullable().optional(),
+  billingPostalCode: z.string().max(20).nullable().optional(),
+  billingProvince: z.string().max(100).nullable().optional(),
+  billingCountry: z.string().max(2).nullable().optional(),
   // SCRUM-171b (FACT-2d): periodicidad PACTADA. Sirve para AVISAR de que toca facturar, nunca
   // para facturar sola (regla 28: un envío automático nuevo exigiría su entrada en la tabla J6).
   // Lista cerrada aquí; el default de la BD es 'NINGUNA' = sin aviso, que es lo de hoy.

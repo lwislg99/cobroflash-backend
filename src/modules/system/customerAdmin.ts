@@ -21,6 +21,23 @@ const CUSTOMER_SELECT_NO_TOKEN = {
   tipoDestinatario: true, // SCRUM-69: para editar en la ficha y para la bandeja de facturación
   billingPeriodicity: true, // SCRUM-171b: periodicidad pactada (solo para AVISAR, ver bandeja)
   recargoEquivalencia: true, // SCRUM-294-a: el dato del cliente; NO cableado al total (regla 38)
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+  // SCRUM-579 (CONT-06) · LA DIRECCIÓN DE FACTURACIÓN, Y ESTE `select` ES EL ESLABÓN QUE MÁS
+  // FÁCIL SE PIERDE.
+  //
+  // 🔴 Es EXPLÍCITO: lo que no esté aquí NO SALE, aunque esté en la columna y aunque el alta lo
+  // haya guardado. Sin estas cinco líneas, `createCustomer` guardaría la dirección y devolvería
+  // un cliente sin ella; la pantalla se recargaría vacía y el profesional volvería a escribirla.
+  // Y la tanda seguiría VERDE, porque el dato SÍ estaría en la base: el defecto sería mudo.
+  //
+  // Por eso los tests de este ticket no se conforman con «se guarda»: releen (`getCustomer`,
+  // que usa este mismo select) y exigen que siga ahí. Un `select` explícito es una lista a mano,
+  // y una lista a mano envejece en silencio cada vez que alguien añade una columna.
+  billingAddress: true,
+  billingCity: true,
+  billingPostalCode: true,
+  billingProvince: true,
+  billingCountry: true,
 } as const;
 
 export async function listCustomers(merchantId: number, search?: string) {

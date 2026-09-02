@@ -187,6 +187,9 @@ function renderCustomersView(container) {
   let fieldWaOptOut = null; // J3: baja manual de WhatsApp desde la ficha
   let fieldTipoDestinatario = null; // SCRUM-69: plazo legal de la recapitulativa (art. 13 RD 1619/2012)
   let switchForma = null; // SCRUM-574: FORMA JURÍDICA (contactKind). NO es fieldTipoDestinatario.
+  // SCRUM-579 (CONT-06): los cinco campos de la direccion de FACTURACION (no la de obra).
+  let fieldBillingAddress, fieldBillingCity, fieldBillingPostalCode, fieldBillingProvince;
+  let fieldBillingCountry = null;
   let fieldRecargo = null; // SCRUM-294-a: recargo de equivalencia del cliente (tres estados)
   let modalTitleEl = null;
   let modalSaveBtn = null;
@@ -333,6 +336,60 @@ function renderCustomersView(container) {
     });
     fieldNotes = createField("Notas", "notes", null, false, true);
 
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-579 (CONT-06) · LA DIRECCIÓN DE FACTURACIÓN DEL CLIENTE.
+    //
+    // Hasta hoy este formulario NO tenía dirección NINGUNA: un fontanero no podía guardar dónde
+    // le factura a su cliente. Y post-SIF el domicilio del destinatario es dato de factura, así
+    // que hoy es una molestia y el día que se encienda `INVOICING_ES_ENABLED` es un problema con
+    // documentos emitidos detrás.
+    //
+    // ⛔ UNA DIRECCIÓN, NO DOS. Ésta es la de FACTURACIÓN. La de la OBRA pertenece al DOCUMENTO
+    // —un cliente puede tener tres obras— y es DOC-12: decisión del fundador (P2, 24-ago-2026).
+    // Si alguien se ve añadiendo aquí una segunda dirección «de trabajo», está reconstruyendo un
+    // modelo que ya se descartó con motivo.
+    //
+    // 🔴 LOS CINCO RÓTULOS ESTÁN APROBADOS Y VAN LITERALES (regla 30, fundador 2-sep-2026):
+    // «Dirección» · «Población» · «Código postal» · «Provincia» · «País», en ese orden. NO se
+    // abrevian («CP» no vale), no se reordenan y no llevan paréntesis ni aclaraciones — la
+    // propuesta de este carril era «Dirección (calle y número)» y NO es la aprobada. Están
+    // anotados en `docs/MICROCOPY_APROBADA_SIN_APLICAR.md`; si hace falta una aclaración, se
+    // PIDE. Y hay un test que los compara con `===`.
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    fieldBillingAddress = createField("Dirección", "billingAddress", "text");
+    fieldBillingCity = createField("Población", "billingCity", "text");
+    fieldBillingPostalCode = createField("Código postal", "billingPostalCode", "text");
+    fieldBillingProvince = createField("Provincia", "billingProvince", "text");
+
+    // EL PAÍS ES UN SELECTOR, Y NO CUESTA NI UN BYTE DE DATOS NUEVOS. Se reusa la lista de
+    // `prefijosPais.js` (SCRUM-578), que ya resolvió este problema: el ISO viaja en una cadena,
+    // el NOMBRE lo pone el navegador con `Intl.DisplayNames` y la bandera se calcula. Una
+    // librería de países serían cientos de KB y además la decide el fundador (regla 36).
+    //
+    // Aquí sólo se usa `{iso, nombre}`: el prefijo telefónico no pinta nada en una dirección.
+    const paisWrapper = createElement("div", "field");
+    const paisLabel = document.createElement("label");
+    paisLabel.textContent = "País";
+    fieldBillingCountry = document.createElement("select");
+    fieldBillingCountry.name = "billingCountry";
+    fieldBillingCountry.className = "input";
+    // La opción vacía es «no consta», y NO es lo mismo que España. Va primera para que un alta
+    // sin tocar el selector no DECLARE un país que nadie ha dicho... salvo que `openModal` lo
+    // ponga en ES, que es lo aprobado para el alta. Las dos cosas conviven: el vacío existe para
+    // poder VOLVER a «no consta» y para los clientes que ya están sin país.
+    const optVacia = document.createElement("option");
+    optVacia.value = "";
+    optVacia.textContent = "—";
+    fieldBillingCountry.appendChild(optVacia);
+    for (const p of prefijosPais.listaDePrefijos()) {
+      const o = document.createElement("option");
+      o.value = p.iso;
+      o.textContent = p.nombre;
+      fieldBillingCountry.appendChild(o);
+    }
+    paisWrapper.appendChild(paisLabel);
+    paisWrapper.appendChild(fieldBillingCountry);
+
     // SCRUM-69 (FACT-1): sin banner ni prompt forzado (decisión fundador 23-jul) — solo aquí,
     // en la ficha. "Sin clasificar" = null (se trata como Particular al calcular el plazo,
     // el criterio más seguro, pero sin escribirlo en la BD hasta que el usuario lo confirme).
@@ -412,6 +469,13 @@ function renderCustomersView(container) {
     fieldEmail.input.addEventListener("blur", comprobarDuplicados);
     fieldTaxId.input.addEventListener("blur", comprobarDuplicados);
     if (fieldPrefijo) fieldPrefijo.addEventListener("change", comprobarDuplicados);
+    // SCRUM-579: el bloque va tras los datos fiscales y antes del resto. El ORDEN de los cinco
+    // entre si esta aprobado: Direccion · Poblacion · Codigo postal · Provincia · Pais.
+    body.appendChild(fieldBillingAddress.wrapper);
+    body.appendChild(fieldBillingCity.wrapper);
+    body.appendChild(fieldBillingPostalCode.wrapper);
+    body.appendChild(fieldBillingProvince.wrapper);
+    body.appendChild(paisWrapper);
     body.appendChild(tipoWrapper);
     body.appendChild(recargoWrapper);
     body.appendChild(fieldNotes.wrapper);
@@ -452,6 +516,31 @@ function renderCustomersView(container) {
     modalForm.addEventListener("submit", onModalSubmit);
   }
 
+  /**
+   * SCRUM-579 (CONT-06) · QUÉ VIAJA DE CADA CAMPO DE LA DIRECCIÓN.
+   *
+   * 🔴 VACÍO VIAJA COMO `null`, NUNCA COMO `""`. Es la regla entera, y es lo que hace que el
+   * dato sirva para algo:
+   *
+   *   null  → NO CONSTA. Nadie ha dicho dónde factura este cliente.
+   *   texto → lo declaró el profesional.
+   *   `""`  → un tercer estado que NO significa nada y que nadie ha declarado.
+   *
+   * Si se guardara `""`, un cliente sin dirección y otro con la dirección en blanco quedarían
+   * indistinguibles para cualquier lectura útil —un `IS NOT NULL` diría que el segundo TIENE
+   * dirección— y el dato dejaría de valer para lo que existe: saber a quién le falta el
+   * domicilio antes de que `INVOICING_ES_ENABLED` se encienda y sea dato de factura.
+   *
+   * Y recorta: una dirección que son tres espacios es «no consta» con disfraz.
+   *
+   * PURA y extraíble para que la suite la EJECUTE: la regla no puede vivir sólo dentro del
+   * `submit`, porque leer un `submit` no ejecuta nada.
+   */
+  function direccionParaPayload(valor) {
+    const t = String(valor == null ? '' : valor).trim();
+    return t === '' ? null : t;
+  }
+
   function openModal(mode, customer) {
     if (!modalBackdrop) {
       buildModal();
@@ -468,6 +557,11 @@ function renderCustomersView(container) {
     if (avisoDuplicado) avisoDuplicado.hidden = true;
     if (avisoNif) avisoNif.hidden = true; // SCRUM-575: no arrastrar el aviso del cliente anterior
     if (fieldPrefijo) fieldPrefijo.value = prefijosPais.ESPANA.prefijo;
+    // SCRUM-579: Espana por defecto EN EL FORMULARIO, nunca en la columna. La columna es
+    // nullable y sin DEFAULT a proposito: un default habria declarado por el profesional que
+    // sus clientes de siempre estan en Espana. Aqui es una comodidad del alta, y en edicion lo
+    // sobrescribe lo guardado — incluido el vacio, que es «no consta».
+    if (fieldBillingCountry) fieldBillingCountry.value = prefijosPais.ESPANA.iso;
 
     // SCRUM-574: `reset()` deja los dos radios sin marcar, que es exactamente el estado de un alta
     // nueva — nadie ha declarado nada todavía. En edición lo sobrescribe el bloque de abajo.
@@ -490,6 +584,15 @@ function renderCustomersView(container) {
       // SCRUM-574: la FORMA JURÍDICA sale de `contactKind` y de NADA MÁS. Nunca se deduce de
       // `tipoDestinatario` ni de si hay razón social — deducirla es el defecto que este ticket
       // cierra, y está prohibido expresamente (fundador, 24-ago-2026).
+      // SCRUM-579: la dirección guardada manda, y el VACÍO se respeta. El `|| ""` es correcto
+      // AQUÍ porque `null` y `""` se pintan igual en un input —no hay forma de pintar «no
+      // consta» distinto de «vacío»—; lo que NO puede pasar es que el ENVÍO los confunda, y de
+      // eso se encarga `direccionParaPayload`, que es donde la distinción sí es observable.
+      fieldBillingAddress.input.value = editingCustomer.billingAddress || "";
+      fieldBillingCity.input.value = editingCustomer.billingCity || "";
+      fieldBillingPostalCode.input.value = editingCustomer.billingPostalCode || "";
+      fieldBillingProvince.input.value = editingCustomer.billingProvince || "";
+      fieldBillingCountry.value = editingCustomer.billingCountry || "";
       switchForma.escribir(editingCustomer.contactKind);
     }
 
@@ -530,6 +633,15 @@ function renderCustomersView(container) {
       // SCRUM-294-a: «» → null (no consta). NUNCA false por defecto: eso seria DECLARAR por el
       // profesional que su cliente no lleva recargo, y eso no lo ha dicho nadie.
       recargoEquivalencia: fieldRecargo.value === "si" ? true : fieldRecargo.value === "no" ? false : null,
+      // SCRUM-579 (CONT-06): la dirección de FACTURACIÓN. La regla vive en
+      // `direccionParaPayload`, que la suite ejecuta: vacío → `null`, nunca `""`.
+      billingAddress: direccionParaPayload(fieldBillingAddress.input.value),
+      billingCity: direccionParaPayload(fieldBillingCity.input.value),
+      billingPostalCode: direccionParaPayload(fieldBillingPostalCode.input.value),
+      billingProvince: direccionParaPayload(fieldBillingProvince.input.value),
+      // El país pasa por la MISMA regla: «—» (la opción vacía) vale `""` y tiene que llegar como
+      // `null`, o volver a «no consta» sería imposible una vez elegido un país.
+      billingCountry: direccionParaPayload(fieldBillingCountry.value),
     };
 
     if (!payload.name) {

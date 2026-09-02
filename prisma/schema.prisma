@@ -272,6 +272,24 @@ model Customer {
   /// validación, y añadir un valor no obliga a migrar un tipo de Postgres.
   billingPeriodicity String @default("NINGUNA") @map("billing_periodicity")
 
+  // SCRUM-579 (CONT-06) · LA DIRECCION DE FACTURACION DEL CLIENTE. UNA, no dos.
+  //
+  // El prefijo `billing` no es decoracion: es lo que impide que alguien confunda esto con la
+  // direccion de la OBRA. El fundador cerro la P2 el 24-ago-2026: la direccion de obra pertenece
+  // al DOCUMENTO y no al cliente, porque un cliente puede tener tres obras. Eso es DOC-12.
+  //
+  // NULLABLE Y SIN @default, LOS CINCO — incluido el pais. Es el mismo motivo escrito en
+  // `contactKind`, `tipoDestinatario` y `recargoEquivalencia`: NULL = «no declarado», que es
+  // distinto de declarado. «Espana por defecto» es del FORMULARIO (el selector nace en ES), no de
+  // la columna: un @default("ES") convertiria a los clientes que ya existen en «declarados en
+  // Espana» sin que nadie lo haya dicho, y ademas haria indistinguible «no tiene direccion» de
+  // «tiene la direccion en blanco».
+  billingAddress    String? @map("billing_address")
+  billingCity       String? @map("billing_city")
+  billingPostalCode String? @map("billing_postal_code")
+  billingProvince   String? @map("billing_province")
+  billingCountry    String? @map("billing_country")
+
   merchant     Merchant        @relation(fields: [merchantId], references: [id])
   charges      Charge[]
   createdAt    DateTime        @default(now()) @map("created_at")
