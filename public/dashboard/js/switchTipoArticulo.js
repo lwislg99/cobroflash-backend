@@ -24,14 +24,18 @@
 // ⚠️ Y hoy NULL casi no se ve, porque el backfill de este mismo ticket puso PRODUCTO en todas las
 // filas existentes. Se sostiene igual: las filas NUEVAS nacen NULL si nadie toca el switch.
 //
-// ── MICROCOPY (regla 30) ───────────────────────────────────────────────────────────────────
-// Ni la pregunta ni las dos etiquetas están aprobadas. Salen con el marcador oficial MÁS la
-// palabra de trabajo, igual que CONT-01 y por su mismo motivo: en un control de DOS LADOS el
-// marcador solo sería inservible, porque los dos lados dirían lo mismo.
+// ── MICROCOPY · APROBADO (SCRUM-667, 2-sep-2026) ───────────────────────────────────────────
+// Los tres textos —«Esto es», «Producto», «Servicio»— los aprobó el fundador TAL CUAL estaban
+// escritos. Se retira SÓLO el prefijo `[PENDIENTE microcopy oficial]`: el texto no se toca, ni se
+// abrevia, ni se reordena, ni se le añade puntuación (regla 30 — es copy del fundador desde ahora).
+//
+// 🔴 POR QUÉ SE RETIRAN HOY Y NO CUANDO TOQUE. Producción llevaba nueve días sin desplegar por una
+// deriva de esquema; se arregló, y con ella desapareció el hueco entre mergear y desplegar que
+// hacía inofensivo un marcador. Estos tres se estaban leyendo en la PRIMERA PANTALLA del catálogo,
+// en producción. Un marcador dejó de ser una nota para el equipo el día que sale a producción con
+// el merge.
 (function () {
   'use strict';
-
-  var MARCADOR = '[PENDIENTE microcopy oficial]';
 
   // Los dos valores que la columna admite. Es la MISMA lista que el `z.enum` del backend
   // (`schemas.ts`, `ITEM_KIND`), y si divergen el guard de la suite lo dice.
@@ -56,7 +60,7 @@
 
     var leyenda = document.createElement('legend');
     leyenda.className = 'segmented-legend';
-    leyenda.textContent = MARCADOR + ' Esto es';
+    leyenda.textContent = 'Esto es';
     campo.appendChild(leyenda);
 
     var grupoEl = document.createElement('div');
@@ -79,7 +83,7 @@
 
       var texto = document.createElement('span');
       texto.className = 'segmented-text';
-      texto.textContent = MARCADOR + ' ' + ETIQUETA[valor];
+      texto.textContent = ETIQUETA[valor];
 
       etiqueta.appendChild(radio);
       etiqueta.appendChild(texto);
@@ -108,7 +112,7 @@
     }
 
     escribir(opciones.valor);
-    return { nodo: campo, leer: leer, escribir: escribir, valores: VALORES.slice(), marcador: MARCADOR };
+    return { nodo: campo, leer: leer, escribir: escribir, valores: VALORES.slice() };
   }
 
   /**
@@ -158,7 +162,6 @@
     });
   }
 
-  switchTipoArticulo.MARCADOR = MARCADOR;
   switchTipoArticulo.VALORES = VALORES.slice();
   switchTipoArticulo.aplicarLado = aplicarLado;
   switchTipoArticulo.debeEsconder = debeEsconder;
