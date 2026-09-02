@@ -25,6 +25,7 @@ const SHELL = [
   '/dashboard/js/contacto.js',
   '/dashboard/js/modalHeader.js', // SCRUM-446
   '/dashboard/js/switchFormaJuridica.js', // SCRUM-574
+  '/dashboard/js/filtroClientes.js', // SCRUM-581
   '/dashboard/js/jobNextAction.js',
   '/dashboard/js/semaforoFiscal.js',
   '/dashboard/js/homeView.js',

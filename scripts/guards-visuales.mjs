@@ -172,6 +172,91 @@ export function anuncio(v) {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-645 · LA PUERTA TIRABA LOS TRAMOS, Y ES LA SEGUNDA VEZ QUE TIRA INFORMACIÓN
+//
+// SCRUM-642 partió `⟦arranque⟧` en tramos —`proceso+ws` y `primera-página`, cada uno con su
+// propio presupuesto de tope— para poder saber DÓNDE se va el tiempo del arranque en frío. Y
+// aquí no se veía ni uno: esta puerta reproduce la salida cruda del guard **sólo cuando NO sale
+// verde**, y para los verdes pinta su propia columna con el total reformateado. Medido en una
+// tanda real con el tope a 180 s: **0 apariciones de `proceso+ws`, 9 de la columna de la puerta.**
+//
+// O sea que el guard SÍ emitía el desglose y la puerta lo tiraba. Y no es la primera: en
+// SCRUM-639 el vocabulario de códigos existía dentro y no salía fuera. Dos veces es un patrón,
+// y por eso esto no se arregla sólo pintando: se pone un TRINQUETE.
+//
+// ── EL TRINQUETE, Y POR QUÉ LA LISTA SE ESCRIBE A MANO ───────────────────────────────────────
+// 🔴 `TRAMOS_QUE_LA_TABLA_PINTA` **NO se importa de `_navegador.mjs` a propósito.** Si la puerta
+// heredara la lista de quien emite, un tramo nuevo entraría aquí solo: o se pintaría sin que
+// nadie hubiera decidido enseñarlo, o —peor— caería en un hueco y se tragaría en silencio, que
+// es exactamente el defecto que este ticket cierra. Escrita a mano, un tramo que esta tabla no
+// conoce **PARA LA TANDA** y obliga a decidir. Duplicar la lista es el precio del trinquete, y
+// se paga a sabiendas.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+/** Los tramos que esta tabla sabe pintar. Ver arriba: se escribe a mano, no se importa. */
+export const TRAMOS_QUE_LA_TABLA_PINTA = ['proceso+ws', 'primera-página'];
+
+/**
+ * Lee la línea de `⟦arranque⟧` ENTERA, no sólo el total.
+ *
+ * Devuelve `null` si el guard no emitió marca — eso no es tirar nada, es que no había. Si la
+ * emitió pero trae algo que esta tabla no sabe nombrar, sale en `desconocidos` y el trinquete
+ * de abajo se encarga.
+ */
+export function leerArranque(salida, marca = MARCA_ARRANQUE) {
+  const linea = String(salida || '').split('\n').find((l) => l.includes(marca));
+  if (!linea) return null;
+  const cabecera = linea.match(new RegExp(marca + ' ([0-9.]+) s (COMPLETA|CORTADA EN «([^»]+)»)'));
+  if (!cabecera) {
+    // Hay marca y no se entiende. NO se cae al total a secas: eso es justo tragarse lo que no
+    // se sabe leer, y volveríamos a la columna de un solo número sin que nadie se entere.
+    const soloTotal = linea.match(new RegExp(marca + ' ([0-9.]+)'));
+    return {
+      total: soloTotal ? Number(soloTotal[1]) : null,
+      desenlace: null, cortadoEn: null, tramos: [], desconocidos: [linea.trim()],
+    };
+  }
+  const desconocidos = [];
+  const cortadoEn = cabecera[3] || null;
+  if (cortadoEn && !TRAMOS_QUE_LA_TABLA_PINTA.includes(cortadoEn)) desconocidos.push(cortadoEn);
+
+  const tramos = [];
+  for (const trozo of linea.slice(cabecera.index + cabecera[0].length).split(' · ')
+    .map((t) => t.trim()).filter(Boolean)) {
+    const nombre = TRAMOS_QUE_LA_TABLA_PINTA.find((t) => trozo.startsWith(t + ' '));
+    if (nombre) tramos.push({ nombre, valor: trozo.slice(nombre.length).trim() });
+    else desconocidos.push(trozo);
+  }
+  return {
+    total: Number(cabecera[1]),
+    desenlace: cabecera[2].startsWith('CORTADA') ? 'CORTADA' : 'COMPLETA',
+    cortadoEn, tramos, desconocidos,
+  };
+}
+
+/**
+ * La segunda línea de la tabla: el desglose, TAMBIÉN para los guards verdes — que es el ticket.
+ * `null` cuando no hay marca, para no ensuciar la tabla con una línea vacía.
+ */
+export function lineaDeTramos(a) {
+  if (!a || !a.desenlace) return null;
+  return '       └ arranque ' + a.desenlace + (a.cortadoEn ? ' EN «' + a.cortadoEn + '»' : '')
+    + a.tramos.map((t) => ' · ' + t.nombre + ' ' + t.valor).join('');
+}
+
+/**
+ * EL TRINQUETE. Qué guards emitieron algo que esta tabla no sabe pintar.
+ *
+ * PURA, como `veredicto`, para que el control corra en `npm test` en milisegundos en vez de
+ * necesitar nueve navegadores — que es lo que hace que un guard así no lo ejercite nadie.
+ */
+export function loQueLaTablaNoSabePintar(filas) {
+  return filas
+    .filter((f) => f.marca && f.marca.desconocidos && f.marca.desconocidos.length > 0)
+    .map((f) => ({ g: f.g, desconocidos: f.marca.desconocidos }));
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
 // 🔴 SCRUM-522 (24-ago-2026) · DE AQUÍ ABAJO SÓLO SE EJECUTA SI ESTO SE LANZA COMO SCRIPT.
 //
 // LO QUE PASABA, y es el segundo fallo que trajo este ticket de vuelta: todo esto estaba en el
@@ -256,13 +341,19 @@ for (const g of lista) {
   // SCRUM-617 (2a vuelta) · el ARRANQUE, aparte del total. El total mezcla arrancar y comprobar,
   // y con un solo numero no se sabe cual de las dos se disparo — que es justo la pregunta abierta
   // desde que el runner mato a guard-contraste en el tope de arranque.
-  const m = salida.match(new RegExp(MARCA_ARRANQUE + ' ([0-9.]+)'));
-  const arranque = m ? Number(m[1]) : null;
-  filas.push({ g, ms, estado, codigo, arranque, salida });
+  // SCRUM-645 · se lee la línea ENTERA, no sólo el total: el desglose de SCRUM-642 llegaba aquí
+  // y se tiraba para todo el que salía verde.
+  const marca = leerArranque(salida);
+  const arranque = marca && marca.total !== null ? marca.total : null;
+  filas.push({ g, ms, estado, codigo, arranque, marca, salida });
   console.log('   ' + (estado === 'verde' ? '✔' : '✖') + ' ' + g.padEnd(26)
     + String((ms / 1000).toFixed(1)).padStart(6) + ' s'
     + (arranque === null ? '   (arranque: ?)' : '   arranque ' + arranque.toFixed(1).padStart(5) + ' s')
     + '   ' + estado);
+  // La segunda línea es el ticket: los tramos se enseñan TAMBIÉN cuando el guard pasa. Antes
+  // sólo se veían si moría, y con el tope subido morir es justo lo que deja de pasar.
+  const desglose = lineaDeTramos(marca);
+  if (desglose) console.log(desglose);
   // 🔴 CIEGO cuenta como fallo. Un guard que no supo mirar no ha vigilado nada, y dejarlo pasar
   //    sería exactamente el hueco que este ticket viene a cerrar.
   if (estado !== 'verde') fallos += 1;
@@ -272,6 +363,26 @@ console.log('\n── TOTAL ' + '─'.repeat(48));
 console.log('   ' + lista.length + ' guards · ' + (total / 1000).toFixed(1) + ' s en serie'
   + '   ·   verdes: ' + (filas.length - filas.filter((f) => f.estado !== 'verde').length)
   + ' · no verdes: ' + filas.filter((f) => f.estado !== 'verde').length);
+
+// ── 🔴 EL TRINQUETE (SCRUM-645) ─────────────────────────────────────────────────────────────
+// Va ANTES del volcado de los no verdes a propósito: si la puerta no entiende lo que lee, lo que
+// venga después ya no es de fiar. Y para con el 2 —«no supe mirar»—, que es el código que esta
+// puerta YA usa para su propia ceguera; no hace falta uno nuevo.
+const ciega = loQueLaTablaNoSabePintar(filas);
+if (ciega.length) {
+  console.error('\n' + '═'.repeat(72));
+  console.error('🔴 NO SUPE PINTAR lo que los guards SÍ dijeron. La tanda para aquí.');
+  console.error('═'.repeat(72));
+  for (const c of ciega) console.error('   ' + c.g + '  →  ' + c.desconocidos.join('  |  '));
+  console.error('\n   Un guard ha emitido en su ⟦arranque⟧ algo que esta tabla no conoce, y eso NO se');
+  console.error('   ignora. Es la SEGUNDA vez que esta puerta tira información que el guard sí emite');
+  console.error('   —la primera fue el vocabulario de códigos (SCRUM-639)—, y un campo tragado en');
+  console.error('   silencio es un verde con menos información: la peor forma de romper esto.');
+  console.error('\n   Se arregla DECIDIENDO: si el tramo nuevo hay que enseñarlo, se añade a');
+  console.error('   `TRAMOS_QUE_LA_TABLA_PINTA`, en este mismo fichero. Esa lista se escribe a mano');
+  console.error('   a propósito: importándola de `_navegador.mjs` esto no saltaría jamás.');
+  process.exit(SALIDA_NO_ENCONTRADO);
+}
 
 if (fallos) {
   console.error('\n' + '═'.repeat(72));

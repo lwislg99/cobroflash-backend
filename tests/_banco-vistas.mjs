@@ -384,7 +384,29 @@ export function scriptsDelDashboard(raiz) {
 // CIEGO: 65 leídos y se esperaban 64»). El mecanismo NO tiene hueco.
 // Y la otra hipótesis —que el merge se hubiera comido un script— también es falsa: `nifEspanol.js`
 // y `quoteAtajosVencimiento.js` están LOS DOS en el índice y sus ficheros existen.
-export const SCRIPTS_DEL_DASHBOARD = 65;
+// SCRUM-581 (1-sep-2026) · 65 → 66: entra `filtroClientes.js`, las pestañas Todos|Empresas|Personas
+// y el orden de la lista de clientes. Va ANTES de `customersView.js`, que lo consume.
+//
+// 🔴 CUARTA VEZ QUE ESTE CONTADOR CHOCA, Y LA PRIMERA CON OTRA FORMA (2-sep-2026). Las tres
+// anteriores —61, 64, 65— fueron todas iguales: dos ramas escribían el MISMO valor por scripts
+// DISTINTOS y git dejaba la línea del valor **fuera de los marcadores**, así que sólo chocaban
+// los comentarios y nadie se enteraba. Esta vez los números SÍ chocaron (63 en la rama, 65 en
+// main), lo que la hace MENOS peligrosa: el conflicto se ve.
+//
+// La regla no cambia por eso. Se resolvió CONTANDO sobre el índice ya mezclado, no eligiendo un
+// lado ni sumando ni heredando de ningún informe:
+//     grep -c "<script src=" public/dashboard/index.html   →   66
+//
+// La entrada de arriba decía «62 → 63» cuando se escribió, antes de mezclar. Se recalcula la
+// flecha porque el script entra ahora en un árbol que estaba en 65: **un valor DERIVADO no se
+// elige, se recalcula**, y eso vale igual para el número que para la flecha que lo cuenta.
+// Comprobado además que `filtroClientes.js` sigue en el índice y SIGUE yendo ANTES de
+// `customersView.js` (líneas 227 y 238): el merge no le cambió el orden.
+//
+// Y se repite lo que ya avisaba la rama, porque es lo que falló tres veces: si en un merge este
+// número aparece IGUAL en los dos lados, git lo deja fuera de los marcadores de conflicto y nadie
+// se entera. **Se vuelve a contar después de mezclar, siempre.**
+export const SCRIPTS_DEL_DASHBOARD = 66;
 
 /**
  * Monta el dashboard como lo monta el navegador y devuelve el contexto vivo.

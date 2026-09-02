@@ -609,6 +609,32 @@ function pilaDeToasts() {
   return pila;
 }
 
+// ── SCRUM-622 · UN `kind` QUE NO SE RECONOCE NO SE PINTA DE VERDE ──────────────────────────
+//
+// Aquí había `colors[kind] || colors.ok`, y esa red convertía «no sé qué es esto» en «todo ha
+// ido bien». Las dos equivocaciones NO cuestan lo mismo: pintar de verde un aviso que el código
+// no entiende le dice al profesional que está todo correcto; pintarlo de ámbar solo le dice que
+// mire. El desempate va al lado CARO.
+//
+// 🔴 NO ERA TEÓRICO, Y NO LO DESCUBRÍ YO: `productsView.js` ya tuvo que sortearlo. Su comentario
+// dice, con todas las letras, «`'info'` NO EXISTE — showToast solo admite ok|warn|error y
+// cualquier otra cosa cae al verde de éxito», y por eso eligió `'warn'`. La trampa ya había
+// condicionado código: basta un `'Error'` con mayúscula para que un fallo salga en verde.
+//
+// `'warn'` y no `'error'`: un `kind` desconocido no es necesariamente un fallo, así que gritar
+// tampoco sería honesto. Ámbar no afirma ninguna de las dos cosas. Y NO introduce nada nuevo —
+// `warn` ya existía y ya se usa.
+const TOAST_COLORES = { ok: 'var(--brand, #16a34a)', warn: '#b45309', error: '#b91c1c' };
+
+/** El color de un toast. Un `kind` que no se reconoce cae en ÁMBAR, nunca en el verde de éxito. */
+function colorDeToast(kind) {
+  if (kind === true) kind = 'warn'; // compat: llamadas antiguas `showToast(msg, true)`
+  return Object.prototype.hasOwnProperty.call(TOAST_COLORES, kind)
+    ? TOAST_COLORES[kind]
+    : TOAST_COLORES.warn;
+}
+if (typeof window !== 'undefined') window.colorDeToast = colorDeToast;
+
 function showToast(msg, kind = 'ok') {
   // Compat: llamadas antiguas showToast(msg, true) = warn
   if (kind === true) kind = 'warn';
@@ -629,7 +655,6 @@ function showToast(msg, kind = 'ok') {
     return;
   }
 
-  const colors = { ok: 'var(--brand, #16a34a)', warn: '#b45309', error: '#b91c1c' };
   const toast = document.createElement('div');
   toast.className = 'yaqu-toast';
   toast.dataset.kind = kind;
@@ -638,7 +663,7 @@ function showToast(msg, kind = 'ok') {
   toast.setAttribute('aria-live', kind === 'error' ? 'assertive' : 'polite');
   const unaLinea = String(msg == null ? '' : msg).length <= TOAST_LARGO_UNA_LINEA;
   toast.style.cssText = `
-    background:${colors[kind] || colors.ok}; color:#fff; max-width:min(92vw,480px);
+    background:${colorDeToast(kind)}; color:#fff; max-width:min(92vw,480px);
     padding:10px 20px; border-radius:${unaLinea ? '999px' : '14px'}; font-size:14px; font-weight:600;
     box-shadow:0 4px 12px rgba(0,0,0,0.2); pointer-events:auto;
     display:flex; align-items:center; gap:12px; text-align:left;
