@@ -178,6 +178,29 @@ const CENSO = Object.freeze({
   //
   // El rótulo «NIF/CIF (opcional)» NO se ha marcado: sigue describiendo el campo con exactitud.
   // Sólo se marca lo NUEVO — marcar de más obliga al fundador a reescribir lo que ya estaba bien.
+  // SCRUM-641 (1-sep-2026) · SUBIDA A CONCIENCIA: `productsView.js` ENTRA en el censo (y NO `api.js`, que salió con
+  // SCRUM-405. Entra con 1: el traductor de códigos de error del servidor a texto para una
+  // persona (`mensajeDeError`).
+  //
+  // POR QUÉ CON MARCADOR Y NO CON TEXTO: hasta hoy el aviso pintaba `e.message`, y cuando el
+  // servidor contestaba `{error:"name_duplicate"}` eso es lo que leía el profesional en su
+  // catálogo — un identificador en inglés con guion bajo. Quitarlo exige poner OTRA cosa, y esa
+  // otra cosa es la frase que le dice que el nombre está cogido: microcopy que el fundador no ha
+  // escrito (regla 30). Se ve en pantalla A PROPÓSITO, que es la única forma de que nadie
+  // encienda por descuido un texto sin firmar.
+  //
+  // VA CON PALABRA DE TRABAJO detrás («nombre ya en uso»), al revés que `customersView` (CONT-05):
+  // allí el marcador iba solo porque era UN texto; aquí es un control de VARIOS LADOS —este caso
+  // frente a todos los demás errores, que caen a su respaldo en castellano—, y un marcador pelado
+  // borraría justo la distinción que este ticket viene a dar.
+  //
+  // 🔴 CUENTA 1 Y PINTA 1, HOY. Y la advertencia, que es la lección de SCRUM-575 aplicada antes de
+  // que muerda: el mapa `M` de `mensajeDeError` tiene UNA entrada. Si el siguiente ticket añade
+  // otra reutilizando `MARCADOR_MICROCOPY`, **este número NO se moverá** y entrará una superficie
+  // nueva EN SILENCIO — que es exactamente lo que este trinquete existe para impedir. Quien
+  // añada un código mapeado le pone SU constante, para que el fundador pueda firmar uno sin
+  // firmar los dos.
+  'productsView.js': 1,
   'customersView.js': 2,
   'exportView.js': 1,
   // 🔴 17-ago-2026 · `invoiceDetailView.js` SALE DEL CENSO (tenía 9). El fundador aprobó los ocho
@@ -239,6 +262,21 @@ const CENSO = Object.freeze({
   // que `censo-marcadores.mjs` ya hace entre el rótulo que pinta A CIEGAS y el que al menos se
   // puede leer y juzgar.
   'switchFormaJuridica.js': 1,
+  // SCRUM-581 (1-sep-2026) · SUBIDA A CONCIENCIA, autorizada por el asesor: las pestañas
+  // Todos|Empresas|Personas y el desplegable de orden de la lista de clientes. El criterio de la
+  // casa se cumple — el copy NO es el objeto del ticket (el objeto es filtrar y ordenar), son
+  // pocos, y esta pantalla YA lleva marcador en producción por el switch de CONT-01: no se abre
+  // una puerta nueva, se usa la que está abierta, y todos se apagan con la misma decisión.
+  //
+  // CUENTA 1 Y PINTA 6, y la distinción es la de SCRUM-615: este censo cuenta MARCAS —una sola
+  // constante `MARCADOR` en `filtroClientes.js`— no rótulos. Las seis superficies son las 3
+  // pestañas, los 2 órdenes y el vacío de pestaña. **Aprobar UN texto no las apaga las seis**:
+  // son seis textos distintos que hoy comparten marcador, y ese día habrá que sacar esa `palabra`
+  // por separado. Se dice aquí para que nadie lo descubra al aprobar el primero.
+  //
+  // 🔴 VAN CON PALABRA DE TRABAJO DETRÁS, como `switchFormaJuridica` y por el mismo motivo escrito
+  // allí: con TRES pestañas el marcador pelado las dejaría idénticas y la pantalla inservible.
+  'filtroClientes.js': 1,
   // SCRUM-615 (24-ago-2026) · SUBIDA A CONCIENCIA: la salida D+C pinta con marcador el aviso de
   // «este plazo se ha calculado sin el dato» en la bandeja de pendientes, y el error de guardado.
   //

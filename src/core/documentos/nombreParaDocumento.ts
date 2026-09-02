@@ -8,11 +8,16 @@
 // La regla «si hay denominación legal, ésa; si no, el nombre con el que se le conoce» estaba
 // escrita **CINCO VECES A MANO**, medido el 24-ago-2026:
 //
-//   src/modules/invoicing/infra/pdf/pdf.service.ts:482   (PDF de presupuesto)
-//   src/modules/fiscal/librosAeat/librosAeat.repo.ts:58  (libro de la AEAT)
-//   src/modules/jobs/domain/albaran.service.ts:637       (albarán)
+// ⚠️ SCRUM-636 · ESTA LISTA IBA POR NÚMERO DE LÍNEA Y CADUCÓ EN VEINTICUATRO HORAS. Decía
+// `pdf.service.ts:482`, y esa línea se movió con el trabajo del propio SCRUM-577 que la escribió.
+// REFERENCIAR POR POSICIÓN CADUCA; REFERENCIAR POR IDENTIDAD NO — así que ahora van por FUNCIÓN,
+// que es lo que no se mueve al insertar código encima.
+//
+//   pdf.service.ts          · `generateQuotePdf` → `clientDisplay`
+//   librosAeat.repo.ts      · el `nombre:` del mapa de clientes
+//   albaran.service.ts      · el `const cliente` de la fuente del sellador
 //   src/modules/jobs/domain/pendientesFacturar.service.ts (bandeja de pendientes)
-//   src/modules/exports/domain/exportData.ts:150         (columna propia del CSV, caso aparte)
+//   exportData.ts           · la columna propia del CSV (caso aparte: no es la preferencia)
 //
 // Cinco copias de un criterio son cinco sitios donde divergir. Y sobre todo: **CONT-18
 // (SCRUM-589) tiene que poder elegir qué nombre sale**, y con la regla repetida cinco veces ese

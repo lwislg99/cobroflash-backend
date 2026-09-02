@@ -30,6 +30,7 @@
 // mirando el fuente, que es exactamente como se coló el defecto original.
 import { esc } from '../../../../core/utils/utils';
 import { calcAlbaranTotales, AlbaranLinea } from '../../domain/albaran.service';
+import { formatImporteEs } from '../../../../core/utils/utils'; // SCRUM-636: el sitio unico
 
 /**
  * El MISMO formato de dinero que imprime el PDF (`albaranPdf.service.ts` → `fmtMoney`).
@@ -44,7 +45,10 @@ import { calcAlbaranTotales, AlbaranLinea } from '../../domain/albaran.service';
  * intento de este ticket ya divergía del PDF sin que se notara a simple vista.
  */
 export function fmtMoneyAlbaran(v: number): string {
-  return v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+  // SCRUM-636: DELEGA en el sitio unico. Se conserva el ESPACIO NORMAL antes del simbolo: el
+  // `style:'currency'` de `formatMoneyEs` mete un espacio DURO (U+00A0), asi que usarlo aqui
+  // cambiaria los bytes de una pagina que YA se sirve. La variante sin simbolo + ' €' no.
+  return formatImporteEs(v) + ' €';
 }
 
 /** Leyenda de los importes. LITERAL del PDF (regla 30: no se escribe copy aquí). */

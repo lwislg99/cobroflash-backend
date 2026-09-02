@@ -37,6 +37,44 @@ export function normalizePhone(input?: string | null): string {
     return p;
   }
   
+  /**
+   * SCRUM-636 · EL IMPORTE **SIN SÍMBOLO**, con el mismo formato que `formatMoneyEs`.
+   *
+   * ── POR QUÉ UNA VARIANTE Y NO APLANARLO TODO ────────────────────────────────────────────
+   *
+   * Hay sitios donde el símbolo NO va en la cifra: las columnas de precio y total de un PDF lo
+   * llevan en la cabecera, no en cada fila. Forzarles `formatMoneyEs` metería un `€` por celda.
+   *
+   * Es la misma forma que tomó SCRUM-436 en el front: el formateador compartido **gana una
+   * variante** (allí `fmtMoneyEsOAusente`, para el «—» del libro) en vez de aplanar los casos
+   * legítimos. Una variante declarada es un sitio único con dos salidas; cuatro copias son cuatro
+   * sitios donde divergir.
+   *
+   * 🔴 `useGrouping: 'always'` NO ES COSMÉTICO, y es la razón de que esto exista. `es-ES` **no
+   * agrupa los números de cuatro cifras** por CLDR, así que un `toLocaleString` a pelo escribe
+   * `1000,00` y `9999,99` — justo el tramo del importe corriente de un trabajo. Cada copia del
+   * formato que se hizo por su cuenta reintrodujo ese defecto; A18.2 (AB6) lo había corregido y
+   * SCRUM-436 lo volvió a corregir en el front. Aquí se corrige en el backend.
+   *
+   * Comparte cuerpo con `formatMoneyEs` a propósito —mismo `Intl`, mismas opciones— salvo
+   * `style`. Si divergieran, el símbolo dejaría de ser lo único que las separa.
+   */
+  export function formatImporteEs(n: number | string | { toString(): string }): string {
+    const v = Number(String(n));
+    try {
+      return new Intl.NumberFormat('es-ES', {
+        style: 'decimal',
+        useGrouping: 'always' as unknown as boolean,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(v);
+    } catch {
+      // Mismo respaldo que `formatMoneyEs`: si `Intl` falla, se escribe algo legible en vez de
+      // reventar el documento entero.
+      return v.toFixed(2);
+    }
+  }
+
   // A6.6 (P1 visual): dinero CLIENT-FACING siempre en formato español —
   // "2.383,70 €" (o "1.500,00 MXN" fuera del euro), nunca "2383.70 EUR".
   export function formatMoneyEs(
