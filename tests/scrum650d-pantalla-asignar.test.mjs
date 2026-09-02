@@ -293,6 +293,62 @@ test('SCRUM-650d · equipo de UNA persona: se dice, no se pinta una lista vacía
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
+// § 3b · 🔴 EL CABLE DE LECTURA, POR AST
+//
+// LO ENCONTRÓ UN ROJO DE ESTA MISMA TANDA. Retirado `asignados` de las salidas de
+// `serializeJobDetail`, la suite entera seguía VERDE: 4567 tests, 0 fallos. O sea que el dato del
+// que vive la pantalla podía dejar de viajar sin que nada lo dijera — y la pantalla enseñaría «no
+// lo ejecuta nadie» en TODOS los trabajos, sin ningún error.
+//
+// Se comprueba por AST y no por texto: `grep` encuentra la palabra `asignados` en cualquier
+// comentario (y esta cabecera es uno). Lo que se mide son las PROPIEDADES de los objetos que la
+// función devuelve — y **TODAS** sus salidas, que es lo que importa: el detalle tiene una salida
+// temprana para el Trabajo sin presupuesto, y añadir una tercera sin el campo es exactamente cómo
+// se rompe esto sin que nadie se entere.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-650d · 🔴 TODAS las salidas de `serializeJobDetail` llevan `asignados`', async () => {
+  const ts = (await import('typescript')).default;
+  const ruta = path.join(RAIZ, 'src/modules/jobs/app/routes/jobs.routes.ts');
+  const sf = ts.createSourceFile(ruta, fs.readFileSync(ruta, 'utf8'), ts.ScriptTarget.Latest, true);
+
+  let fn = null;
+  const buscar = (n) => {
+    if (ts.isFunctionDeclaration(n) && n.name && n.name.text === 'serializeJobDetail') fn = n;
+    ts.forEachChild(n, buscar);
+  };
+  buscar(sf);
+  assert.ok(fn, '🔴 no se encuentra `serializeJobDetail`: el guard mediría el vacío.');
+
+  // Las salidas: cada `return` con un objeto literal. Las funciones anidadas no cuentan.
+  const salidas = [];
+  const recorrer = (n) => {
+    if (n !== fn && (ts.isFunctionDeclaration(n) || ts.isFunctionExpression(n) || ts.isArrowFunction(n))) return;
+    if (ts.isReturnStatement(n) && n.expression && ts.isObjectLiteralExpression(n.expression)) {
+      const props = n.expression.properties.map((pr) => (pr.name && pr.name.text)
+        || (ts.isSpreadAssignment(pr) ? '...' + pr.expression.getText() : '?'));
+      salidas.push({ linea: sf.getLineAndCharacterOfPosition(n.getStart()).line + 1, props });
+    }
+    ts.forEachChild(n, recorrer);
+  };
+  ts.forEachChild(fn, recorrer);
+
+  // SUELO: si el recorrido no ve salidas, «todas la llevan» sería verdad sin significar nada.
+  assert.ok(salidas.length >= 2,
+    `🔴 solo se han visto ${salidas.length} salidas de \`serializeJobDetail\` y tiene al menos DOS ` +
+    '(la temprana del Trabajo sin presupuesto y la normal). El recorrido no está mirando bien.');
+
+  const sinAsignados = salidas.filter((s) => !s.props.includes('asignados'));
+  assert.deepEqual(sinAsignados.map((s) => s.linea), [],
+    '🔴 UNA SALIDA DEL DETALLE NO LLEVA `asignados`:\n' +
+    sinAsignados.map((s) => `    jobs.routes.ts:${s.linea} → ${JSON.stringify(s.props)}`).join('\n') +
+    '\n  Sin ese campo el selector de QUIÉN EJECUTA se pinta vacío en esos Trabajos, y lo hace SIN\n' +
+    '  FALLAR: el jefe lee «no lo ejecuta nadie» de un trabajo que tiene tres técnicos. La salida\n' +
+    '  temprana es la del Trabajo manual sin presupuesto — la avería, que es justo el caso que más\n' +
+    '  se reparte entre varios.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
 // § 4 · REGLA 30 · EL TEXTO NO LO APRUEBO YO
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
