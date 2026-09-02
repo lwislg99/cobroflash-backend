@@ -226,3 +226,25 @@ test('SCRUM-651 · la microcopy sin aprobar sale de UNA sola constante (regla 30
     + 'aprobar el copy obliga a cazarlos uno a uno y el censo de SCRUM-402 cuenta ocho en vez de uno.');
   assert.ok(modal.includes('MARCA_651'), '🔴 ha desaparecido la constante del marcador.');
 });
+
+test('SCRUM-651 · 🔴 el Trabajo directo guarda QUIEN LO ABRE, o su autor lo pierde de vista', () => {
+  // EL FALLO MUDO QUE ESTE TICKET PUDO METER. Medido: un tecnico solo ve los Trabajos donde es
+  // `operarioId` **o** `assignedUserId` (SCRUM-467). Con `operarioId` en null, un tecnico abriria
+  // la averia y **dejaria de verla en el mismo instante** — sin error y sin aviso.
+  const datos = datosDeTrabajoDirecto({ customerId: 7 }).datos;
+  assert.equal(filaDeTrabajoDirecto(9, datos, 42).operarioId, 42,
+    '🔴 EL TRABAJO NO GUARDA QUIEN LO ABRIO. Su autor lo pierde de vista en cuanto lo crea: el '
+    + 'listado del tecnico filtra por autoria o asignacion, y este Trabajo no tendria ninguna.');
+  // Y el propietario sigue siendo `null`, la convencion de siempre: un admin lo ve todo igual.
+  assert.equal(filaDeTrabajoDirecto(9, datos, null).operarioId, null,
+    '🔴 se ha inventado un operario donde el propietario va en null (misma convencion que Quote).');
+});
+
+test('SCRUM-651 · la ruta le pasa el AUTOR de verdad, no un null fijo', () => {
+  // El nucleo puede estar bien y la ruta pasarle `null` siempre: entonces el guard de arriba
+  // seguiria verde y el fallo mudo estaria igualmente en produccion.
+  const rutas = soloEjecutable(leer(RUTAS));
+  assert.match(rutas, /filaDeTrabajoDirecto\(req\.merchantId, entrada\.datos, req\.teamMemberId \?\? null\)/,
+    '🔴 la ruta ya no pasa quien abre el Trabajo. El nucleo lo guardaria bien y daria igual: '
+    + 'llegaria null de todos modos y el tecnico perderia de vista su propia averia.');
+});
