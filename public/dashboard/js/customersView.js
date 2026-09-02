@@ -171,11 +171,46 @@ function renderCustomersView(container) {
   let modalBackdrop = null;
   let modalForm = null;
   let fieldName, fieldPhone, fieldEmail, fieldNotes;
-  // SCRUM-578: UNA sola constante para los dos rotulos sin aprobar de este ticket.
-  // ⚠️ Y una consecuencia medida en SCRUM-615 que hay que decir: el censo cuenta MARCAS, no
-  // rotulos. Estas dos superficies comparten constante, asi que aprobar UNO de los dos textos
-  // NO apaga el otro: habra que partirla el dia que el fundador escriba el primero.
-  const MARCADOR_MICROCOPY = "[PENDIENTE microcopy oficial]";
+  // ═════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-575 (2-sep-2026) · LA CONSTANTE COMPARTIDA SE PARTE EN DOS, Y ERA LO QUE FALTABA.
+  //
+  // SCRUM-578 dejó UNA constante para dos superficies —el rótulo del teléfono y el aviso de
+  // duplicado— y SCRUM-615 dejó escrito el problema: «aprobar UNO de los dos textos NO apaga el
+  // otro: habrá que partirla el día que el fundador escriba el primero». Ese día es hoy.
+  //
+  // 🔴 PARTIRLA NO ES ALCANCE EXTRA: sin partirla, poner el rótulo aprobado del teléfono le
+  // cambiaría el texto AL AVISO DE DUPLICADO, que dice otra cosa completamente distinta. Una
+  // constante por superficie es lo que permite firmar una sin firmar la otra.
+  //
+  // Los dos textos están APROBADOS (asesor, 2-sep-2026; el del aviso, provisional a la espera de
+  // confirmación del fundador). Van SIN marcador y fijados con `===` en
+  // `tests/scrum575b-nif-cableado.test.mjs`.
+  // ═════════════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * El rótulo del teléfono. A SECAS, y el motivo es medible: el rótulo viejo
+   * («Teléfono (E.164 sin +)») pedía un FORMATO que ya no se pide — lo impone el control de al
+   * lado, que muestra «🇪🇸 España +34». Y CONT-05 demostró EN ESTA MISMA PANTALLA que una regla
+   * escrita en una etiqueta no se cumple: se guardaron `+34 662629419` y `662629419` el mismo día.
+   *
+   * Se descartó «Teléfono (opcional)»: Email también es opcional y no lo dice, así que añadirlo
+   * aquí no arregla la inconsistencia — la reparte.
+   */
+  const ROTULO_TELEFONO = "Teléfono";
+
+  /**
+   * El aviso de identificador ya usado. PROVISIONAL del asesor, pendiente de confirmación del
+   * fundador (regla 30).
+   *
+   * 🔴 ES UN AVISO, NO UN BLOQUEO, Y EL TEXTO NO PUEDE SONAR A BLOQUEO. Hay casos legítimos
+   * —marido y mujer con el mismo móvil, dos comunidades del mismo administrador con el mismo
+   * email— y el que decide es el profesional: por eso dice «revísalo» y no «ya existe».
+   * Sirve para teléfono, email y NIF sin nombrar ninguno, que es lo que lo hace un solo texto.
+   *
+   * Caja: 63 caracteres sobre los ~45 por línea medidos a 360 px → dos líneas, en un aviso que
+   * vive ARRIBA del modal y donde caben.
+   */
+  const AVISO_DUPLICADO = "Ese dato ya lo tiene otro cliente. Revísalo por si es un duplicado.";
   let fieldPrefijo = null;   // SCRUM-578 (a): el prefijo de pais, fuera del numero
   let avisoDuplicado = null; // SCRUM-578 (c): el aviso de identificador ya usado
   // SCRUM-575 (CONT-02) · CONSTANTE PROPIA, no la de CONT-05, y a proposito: son tickets
@@ -309,7 +344,7 @@ function renderCustomersView(container) {
     // FALSO — y encima era la prueba del ticket de que una regla escrita en una etiqueta no se
     // cumple: pedía «E.164 sin +» y se guardaron `+34 662629419` y `662629419` igual.
     // El texto nuevo es del fundador (regla 30): sale con marcador, sin palabra de trabajo.
-    fieldPhone = createField(MARCADOR_MICROCOPY, "phone", "text");
+    fieldPhone = createField(ROTULO_TELEFONO, "phone", "text");
     // El campo NO admite espacios (punto b): se limpian al escribir, además de normalizarse en
     // servidor. Aquí es comodidad; la regla de verdad está en el servidor, que es donde el ticket
     // demostró que tenía que estar.
@@ -466,7 +501,7 @@ function renderCustomersView(container) {
     // con marcador, sin palabra de trabajo: es del fundador (regla 30) y es lo que el profesional
     // lee para decidir si está creando un duplicado.
     avisoDuplicado = createElement("div", "alert aviso-duplicado");
-    avisoDuplicado.textContent = MARCADOR_MICROCOPY;
+    avisoDuplicado.textContent = AVISO_DUPLICADO;
     avisoDuplicado.hidden = true;
     body.appendChild(avisoDuplicado);
 
