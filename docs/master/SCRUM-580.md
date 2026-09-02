@@ -245,7 +245,7 @@ etiquetas en la cartera el selector **se oculta**, en vez de ofrecer un control 
   Un vacío que abarca menos columnas de las que tiene la tabla sale descuadrado en cuanto entra
   una columna, y eso no lo ve ninguna tanda.
 
-## ⚠️ MICROCOPY PROPUESTO — pendiente de tu firma
+## ⚠️ MICROCOPY (propuesta original de la sesión — ver la aprobación al final)
 
 Va **sin marcador en pantalla** (decisión del 2-sep-2026) y su procedencia es esta entrada.
 
@@ -289,3 +289,52 @@ SCRUM-349.
 
 `docs/sql/deriva-prod.sql` **regenerado**, no editado: **412 columnas · 27 tablas** (411 + la nueva,
 sin tablas nuevas). El test que lo compara con el esquema pasa sin tocarlo a mano.
+
+---
+
+## ✅ MICROCOPY · APROBADA POR EL ASESOR (2-sep-2026) · PROVISIONAL
+
+**PROCEDENCIA:** decisión del **asesor**, 2-sep-2026, **provisional a la espera del fundador** —
+como el resto del microcopy de hoy. Los cuatro textos son los que propuso la sesión, sin cambios.
+
+| Ranura | Texto | Caracteres |
+|---|---|---|
+| rótulo del campo | `Etiquetas` | 9 |
+| cabecera de columna | `Etiquetas` | 9 |
+| placeholder | `comunidad, administrador, urgencias…` | 36 |
+| opción «sin filtro» | `Todas las etiquetas` | 19 |
+
+### 🔴 «Aprobado por el asesor» NO es «firmado por el fundador», y el contador lo dice
+
+`SIN_APROBAR` pasa de **0 a 4**. Y esto es el contador de SCRUM-581 haciendo exactamente aquello
+para lo que se dejó existiendo aunque valiera cero:
+
+> *«Se queda en el fichero aunque valga 0, y a propósito: si mañana alguien añade una pestaña o un
+> orden nuevo, la ranura nace SIN APROBAR y este número tiene que subir.»*
+
+Ha tardado un ticket en cobrarse. Las **seis** de SCRUM-581 las firmó el fundador; estas **cuatro**
+están a la espera. Que no se pinte marcador en pantalla —decisión del 2-sep— **no** las convierte
+en firmadas: quien lleva la cuenta es este número, y un test lo ata por los dos lados.
+
+### Fijados con `===`, y en UN solo sitio
+
+Los cuatro viven en `TEXTOS_ETIQUETAS` (`filtroClientes.js`), no repartidos por la vista: un texto
+suelto en cada `textContent` deriva sin que nada chille. Se comparan **literales** —ni `match` ni
+`includes`— porque un `match` dejaría colar una coma, un acento o un «Etiquetas del cliente» sin
+que nada cayera, y **microcopy aprobada que deriva sola es microcopy que deja de estar aprobada sin
+que nadie lo decida** (regla 30).
+
+**Con SUELO:** se comprueba que las ranuras son **exactamente cuatro**. Si alguien añade una quinta,
+el bucle pasaría sin mirarla y «todas las que hay están bien» daría el mismo verde que «no hay
+ninguna».
+
+### Los rojos de esta vuelta
+
+| Rotura | Qué cayó |
+|---|---|
+| `urgencias…` → `urgencias...` (**un carácter**) | «los CUATRO textos son EXACTAMENTE los aprobados» |
+| la vista repite `"Todas las etiquetas"` a mano | «la vista NO repite los textos: los lee de la pieza» |
+| `SIN_APROBAR` vuelve a 0 sin que nadie firme | **2**: el de CONT-07 y el de SCRUM-581 |
+
+El primero es el que importa: los puntos suspensivos son **un** carácter, no tres, y un `includes`
+no habría notado la diferencia.

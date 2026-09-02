@@ -231,11 +231,13 @@ test('SCRUM-580 · `tieneTag` y `tagsUsadas` del servidor, con su suelo', () => 
 
 test('SCRUM-580 · 🔴 la vista MONTA el campo, la columna y el filtro', () => {
   const v = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/customersView.js'), 'utf8');
-  assert.match(v, /fieldTags = createField\("Etiquetas"/, '🔴 no hay campo de etiquetas en el formulario.');
+  assert.match(v, /fieldTags = createField\(FC\.TEXTOS_ETIQUETAS\.rotulo/,
+    '🔴 no hay campo de etiquetas en el formulario, o su rótulo no sale de la pieza.');
   assert.match(v, /tags: tagsParaPayload\(/, '🔴 el payload no manda las etiquetas.');
   assert.match(v, /fieldTags\.input\.value = \(Array\.isArray\(editingCustomer\.tags\)/,
     '🔴 al editar no se rellenan: el profesional las reescribiría cada vez.');
-  assert.match(v, /\{ t: "Etiquetas", cls: "col-hide-mobile" \}/, '🔴 no hay columna en la lista.');
+  assert.match(v, /\{ t: FC\.TEXTOS_ETIQUETAS\.columna, cls: "col-hide-mobile" \}/,
+    '🔴 no hay columna en la lista, o su rótulo no sale de la pieza.');
   assert.match(v, /FC\.aplicar\(lote, pestanaActiva, ordenActivo, etiquetaActiva\)/,
     '🔴 la lista no pasa la etiqueta al filtro: el selector no filtraría nada.');
 });
@@ -244,10 +246,18 @@ test('SCRUM-580 · 🔴 F1 y F3 NO se han perdido', () => {
   const v = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/customersView.js'), 'utf8');
   const i = v.indexOf('{ t: "ID" }');
   assert.notEqual(i, -1, '🔴 CIEGO: no encuentro las cabeceras.');
-  const cabeceras = [...v.slice(i, v.indexOf('].forEach', i)).matchAll(/t: "([^"]*)"/g)].map((m) => m[1]);
+  // Las cabeceras EN ORDEN, sean literal o expresión. F1 es una afirmación sobre la POSICIÓN, así
+  // que leer sólo los literales se saltaría la columna nueva —que ahora lee su rótulo de la
+  // pieza— y devolvería un orden falso, con el hueco cerrado sin que nada chillara.
+  const bloque = v.slice(i, v.indexOf('].forEach', i));
+  const cabeceras = [...bloque.matchAll(/\{ t: ("([^"]*)"|[^,}]+)/g)]
+    .map((m) => (m[2] !== undefined ? m[2] : m[1].trim()));
+  assert.ok(cabeceras.length >= 7,
+    `🔴 CIEGO: sólo veo ${cabeceras.length} cabeceras; el orden de abajo no probaría nada.`);
   assert.deepEqual(cabeceras.slice(0, 3), ['ID', 'Nombre', 'Teléfono'],
     '🔴 F1 ROTO: el teléfono ya no es la tercera columna.');
-  assert.ok(cabeceras.includes('Etiquetas'), '🔴 no está la columna nueva.');
+  assert.ok(cabeceras.includes('FC.TEXTOS_ETIQUETAS.columna'),
+    '🔴 no está la columna nueva, o ha dejado de leer su rótulo de la pieza.');
   for (const accion of ['Editar', 'Portal', 'Historial']) {
     assert.ok(v.includes(accion), `🔴 F3 ROTO: ha desaparecido la acción «${accion}» de la fila.`);
   }
@@ -273,4 +283,63 @@ test('SCRUM-580 · la etiqueta se pinta con el componente del inventario, no con
     + 'skill de UI prohíbe.');
   assert.match(v, /chip\.textContent = t/,
     '🔴 la etiqueta se concatena en markup. La escribe el profesional: eso es una inyección.');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// ✅ MICROCOPY · APROBADA POR EL ASESOR (2-sep-2026), PROVISIONAL A LA ESPERA DEL FUNDADOR
+//
+// Los cuatro textos se fijan LITERALES —no con `match`, no con `includes`— para que nadie los
+// cambie sin pasar por quien los aprobó: un `match` dejaría colar una coma, un acento o un
+// «Etiquetas del cliente» sin que nada chillara, y microcopy aprobada que deriva sola es microcopy
+// que deja de estar aprobada sin que nadie lo decida (regla 30).
+//
+// ⚠️ Y «aprobada por el asesor» NO es «firmada por el fundador». Que no se pinte marcador en
+// pantalla no cambia eso: quien lleva la cuenta es `SIN_APROBAR`, y por estas cuatro vale 4.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-580 · ✅ los CUATRO textos son EXACTAMENTE los aprobados', () => {
+  const T = FC.TEXTOS_ETIQUETAS;
+  assert.equal(T.rotulo, 'Etiquetas', '🔴 el rótulo del campo no es el aprobado.');
+  assert.equal(T.columna, 'Etiquetas', '🔴 la cabecera de columna no es la aprobada.');
+  assert.equal(T.placeholder, 'comunidad, administrador, urgencias…',
+    '🔴 el placeholder no es el aprobado. Ojo al carácter final: son puntos suspensivos «…», no '
+    + 'tres puntos seguidos.');
+  assert.equal(T.sinFiltro, 'Todas las etiquetas', '🔴 la opción «sin filtro» no es la aprobada.');
+
+  // SUELO: son EXACTAMENTE cuatro ranuras. Si alguien añade una quinta, el bucle de arriba pasaría
+  // sin mirarla — «todas las que hay están bien» y «no hay ninguna» darían el mismo verde.
+  assert.deepEqual(Object.keys(T).sort(), ['columna', 'placeholder', 'rotulo', 'sinFiltro'],
+    '🔴 han cambiado las ranuras de microcopy de las etiquetas.');
+});
+
+test('SCRUM-580 · 🔴 las cuatro cuentan como SIN LA FIRMA DEL FUNDADOR', () => {
+  // Las seis de SCRUM-581 las firmó el fundador; estas cuatro las aprobó el asesor y están a la
+  // espera. El contador existía valiendo 0 exactamente para este momento: que una ranura nueva no
+  // entre en pantalla sin que nadie declare su estado.
+  assert.equal(FC.SIN_APROBAR, 4,
+    '🔴 el recuento de ranuras sin la firma del fundador no cuadra con las cuatro de CONT-07. Si '
+    + 'el fundador firma alguna, se baja AQUÍ — aprobar una no aprueba las otras tres.');
+});
+
+test('SCRUM-580 · 🔴 la vista NO repite los textos: los lee de la pieza', () => {
+  const v = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/customersView.js'), 'utf8');
+  // Sin comentarios: el porqué puede nombrar los textos, el código no debe repetirlos.
+  const codigo = v.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+  assert.match(codigo, /FC\.TEXTOS_ETIQUETAS\.rotulo/, '🔴 el rótulo no sale de la pieza.');
+  assert.match(codigo, /FC\.TEXTOS_ETIQUETAS\.placeholder/, '🔴 el placeholder no sale de la pieza.');
+  assert.match(codigo, /FC\.TEXTOS_ETIQUETAS\.columna/, '🔴 la columna no sale de la pieza.');
+  assert.match(codigo, /FC\.TEXTOS_ETIQUETAS\.sinFiltro/, '🔴 la opción sin filtro no sale de la pieza.');
+  assert.equal(/"Todas las etiquetas"|"comunidad, administrador/.test(codigo), false,
+    '🔴 la vista repite un texto aprobado a mano. Dos copias de una microcopy divergen, y la '
+    + 'segunda deja de estar aprobada sin que nadie lo decida.');
+  // CONTROL del desnudador: no se ha llevado el fichero por delante.
+  assert.match(codigo, /createField\(/, '🔴 CIEGO: al quitar comentarios ha desaparecido el código.');
+});
+
+test('SCRUM-580 · 🔴 ningún texto de etiquetas lleva marcador en pantalla', () => {
+  for (const [k, v] of Object.entries(FC.TEXTOS_ETIQUETAS)) {
+    assert.equal(v.includes('['), false,
+      `🔴 «${k}» pinta un corchete. La pantalla es de un profesional que paga.`);
+    assert.ok(v.trim().length > 0, `🔴 SUELO: «${k}» está vacío. Sin marcador y sin texto es peor.`);
+  }
 });

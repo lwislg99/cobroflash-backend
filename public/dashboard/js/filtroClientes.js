@@ -35,15 +35,19 @@
   'use strict';
 
   /**
-   * 🔴 CUÁNTAS RANURAS DE MICROCOPY SIGUEN SIN FIRMAR. **Cero: el fundador aprobó las seis el
-   * 2-sep-2026.**
+   * 🔴 CUÁNTAS RANURAS DE MICROCOPY SIGUEN SIN LA FIRMA DEL FUNDADOR.
+   *
+   * Las SEIS de SCRUM-581 las firmó él el 2-sep-2026. Las CUATRO de SCRUM-580 (CONT-07) las
+   * aprobó el ASESOR ese mismo día, **provisionalmente y a la espera del fundador** — así que
+   * cuentan aquí. Por eso este número existía aunque valiera 0: para que una ranura nueva no
+   * entrara en pantalla sin que nadie declarara su estado.
    *
    * Se queda en el fichero aunque valga 0, y a propósito: si mañana alguien añade una pestaña o
    * un orden nuevo, la ranura nace SIN APROBAR y este número tiene que subir. Borrarlo dejaría
    * el hueco sin sitio donde declararse, y el texto nuevo entraría en pantalla en silencio —
    * que es exactamente lo que el marcador impedía y lo que ya no se ve.
    */
-  var SIN_APROBAR = 0;
+  var SIN_APROBAR = 4;
 
   /**
    * Las tres pestañas. `valor` es lo que se compara contra `contactKind`, y `null` significa
@@ -68,6 +72,26 @@
   // SCRUM-580 (CONT-07) · el filtro por ETIQUETA. `null` = «no se filtra por ninguna», que NO
   // es «filtrar por la etiqueta vacía»: son cosas distintas y aquí sólo existe la primera.
   var POR_DEFECTO = { pestana: 'TODOS', orden: 'RECIENTES', etiqueta: null };
+
+  /**
+   * SCRUM-580 (CONT-07) · LOS CUATRO TEXTOS DE LAS ETIQUETAS, en un solo sitio.
+   *
+   * ✅ APROBADOS por el ASESOR el 2-sep-2026, **provisionales a la espera del fundador**.
+   * PROCEDENCIA: `docs/master/SCRUM-580.md`, sección de microcopy. Sin decir DÓNDE consta,
+   * «aprobado» es una afirmación que nadie puede comprobar (SCRUM-387).
+   *
+   * Viven aquí y no repartidos por `customersView.js` para que se puedan fijar con `===` desde un
+   * solo test: un texto suelto en cada `textContent` deriva sin que nada chille.
+   *
+   * ⚠️ SIN MARCADOR en pantalla (decisión del 2-sep-2026). Que no se pinte el corchete NO
+   * significa que estén firmados por el fundador: eso lo dice `SIN_APROBAR`, arriba.
+   */
+  var TEXTOS_ETIQUETAS = {
+    rotulo: 'Etiquetas',
+    placeholder: 'comunidad, administrador, urgencias…',
+    columna: 'Etiquetas',
+    sinFiltro: 'Todas las etiquetas',
+  };
 
   /**
    * 🔴 SCRUM-580 · LAS ETIQUETAS DE UN CLIENTE, CON SUELO.
@@ -233,6 +257,7 @@
     filtrarPorPestana: filtrarPorPestana,
     filtrarPorEtiqueta: filtrarPorEtiqueta,
     etiquetasUsadas: etiquetasUsadas,
+    TEXTOS_ETIQUETAS: TEXTOS_ETIQUETAS,
     tagsDe: tagsDe,
     ordenar: ordenar,
     aplicar: aplicar,

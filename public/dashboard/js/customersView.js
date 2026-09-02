@@ -129,8 +129,8 @@ function renderCustomersView(container) {
   // el servidor mandó, nunca de otro merchant— y se recalculan en cada pintado: una etiqueta
   // recién escrita aparece en el selector sin recargar.
   //
-  // ⚠️ MICROCOPY PROPUESTO, pendiente de firma. Sin marcador en pantalla (2-sep-2026).
-  const ETIQUETA_TODAS = "Todas las etiquetas";
+  // ✅ MICROCOPY del asesor (provisional). El texto vive en la pieza, no aquí.
+  const ETIQUETA_TODAS = FC.TEXTOS_ETIQUETAS.sinFiltro;
   const etiquetaSelect = document.createElement("select");
   etiquetaSelect.className = "input";
   etiquetaSelect.style.cssText = "max-width:220px";
@@ -186,7 +186,7 @@ function renderCustomersView(container) {
     { t: "Notas", cls: "col-hide-mobile" },
     // SCRUM-580 (CONT-07). Va aquí y no antes: F1 exige que el teléfono siga siendo la TERCERA
     // columna, así que nada se mueve por delante de él. Oculta en móvil como sus vecinas.
-    { t: "Etiquetas", cls: "col-hide-mobile" },
+    { t: FC.TEXTOS_ETIQUETAS.columna, cls: "col-hide-mobile" },
     { t: "Alta", cls: "col-hide-mobile" },
     { t: "" },
   ].forEach(({ t, cls }) => {
@@ -352,16 +352,17 @@ function renderCustomersView(container) {
     const body = createElement("div", "modal-body");
     fieldName = createField("Nombre", "name", "text", true);
     // ── SCRUM-580 (CONT-07) · LAS ETIQUETAS ───────────────────────────────────────────────
-    // ⚠️ MICROCOPY PROPUESTO POR LA SESIÓN, pendiente de firma del fundador. Va sin marcador
-    // porque la pantalla es de un profesional que paga (decisión del 2-sep-2026), y su
-    // procedencia queda en `docs/master/SCRUM-580.md` — que es donde se puede leer sin abrir
-    // la pantalla.
+    // ✅ MICROCOPY APROBADA por el ASESOR el 2-sep-2026, PROVISIONAL a la espera del fundador.
+    // Los cuatro textos viven en `filtroClientes.js` (`TEXTOS_ETIQUETAS`) y están fijados con
+    // `===` en `tests/scrum580-tags-por-contacto.test.mjs`: no se cambian sin pasar por ahí.
+    // Sin marcador en pantalla — y que no se pinte NO significa que estén firmados por el
+    // fundador: eso lo dice `SIN_APROBAR`.
     //
     // Un input de texto separado por comas, y no un componente de chips: es lo que la casa ya
     // sabe pintar (vanilla, sin dependencias) y lo que un profesional teclea más rápido en un
     // móvil. Un editor de chips es un componente nuevo y eso es propuesta de inventario (AB3).
-    fieldTags = createField("Etiquetas", "tags", "text");
-    fieldTags.input.placeholder = "comunidad, administrador, urgencias…";
+    fieldTags = createField(FC.TEXTOS_ETIQUETAS.rotulo, "tags", "text");
+    fieldTags.input.placeholder = FC.TEXTOS_ETIQUETAS.placeholder;
     body.appendChild(fieldTags.wrapper);
     // SCRUM-578 (CONT-05, punto a) · el prefijo sale a un SELECTOR y el número deja de llevarlo.
     //
