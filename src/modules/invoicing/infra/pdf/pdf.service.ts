@@ -582,6 +582,9 @@ export async function generateQuotePdf(params: {
   signatureData?: string | null;
   signedAt?: Date | null;
   country?: string | null;
+  // SCRUM-647 · el NOMBRE del impuesto, igual que en la factura (SCRUM-623): un DATO, no una
+  // constante de la maqueta. Sin él, el documento sale como hasta hoy.
+  taxName?: string | null;
   tiers?: Array<{ id: string; label: string; description?: string; lines: any[]; total: number; recommended?: boolean }> | null;
 }) {
   // SCRUM-72: quoteId es el id GLOBAL (autoincrement) → ya único entre merchants, no hace
@@ -590,6 +593,25 @@ export async function generateQuotePdf(params: {
   const outPath = path.join(invoicesDir, fileName);
 
   const locale = getLocale(params.country);
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-647 · UN SOLO CRITERIO PARA EL NOMBRE DEL IMPUESTO, Y ES EL DE LA FACTURA.
+  //
+  // Este documento tenía LOS DOS A LA VEZ: la tabla de líneas con `IVA%` grabado y el bloque
+  // de totales resolviéndolo por `locale.vatName`. El mismo papel, dos criterios — y es el que
+  // más se envía: va por WhatsApp y es el primero que ve el cliente.
+  //
+  // 🔴 Y EL QUE SE VA ES `locale.vatName`, no el otro. Está indexado por PAÍS, y Canarias es
+  // `ES`: un canario repercute IGIC y aquello le pondría «IVA». Dejarlo como respaldo dentro
+  // del documento sería meter el defecto por la puerta de atrás.
+  //
+  // ⚠️ PERO NO SE BORRA SIN MÁS, y esto se midió antes de tocarlo: los tres llamantes SÍ pasan
+  // `country`, y `locale.vatName` vale `IGV` en Perú. Quitarlo a secas habría hecho que un
+  // presupuesto peruano dejara de decir IGV — una regresión en un mercado que el registro
+  // declara. Así que la resolución por país NO desaparece: **se sube al llamante**, donde el
+  // país ya está a la vista y donde SCRUM-646 la sustituirá el día que exista el territorio.
+  // El documento deja de decidir; quien sabe, pasa.
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  const impuesto = params.taxName || NOMBRE_IMPUESTO_POR_DEFECTO;
   const QUOTE_LABEL = locale.quote; // "Presupuesto" o "Cotización"
 
   const logoBuf = await loadLogoBuffer(params.merchant.logoUrl);
@@ -730,7 +752,7 @@ function drawTableHeader() {
     .text('Concepto', X0, doc.y, { width: W_CONCEPT })
     .text('Cant.', X_QTY, doc.y - 12, { width: W_QTY, align: 'right' })
     .text('Precio', X_PRICE, doc.y - 12, { width: W_PRICE, align: 'right' })
-    .text('IVA%', X_VAT, doc.y - 12, { width: W_VAT, align: 'right' })
+    .text(`${impuesto}%`, X_VAT, doc.y - 12, { width: W_VAT, align: 'right' })
     .text('Total', X_TOTAL, doc.y - 12, { width: W_TOTAL, align: 'right' });
 
   doc.moveDown(0.3);
@@ -828,7 +850,8 @@ const CONTENT_W = 510;
  *
  * MICROCOPY · CERO TEXTO NUEVO (regla 30). Los tres rótulos salen de sitios ya aprobados:
  *   · «Base imponible:» — el MISMO literal del bloque de totales de la factura.
- *   · el del impuesto   — `locale.vatName`, que ya existe y vale 'IVA' o 'IGV' (Perú).
+ *   · el del impuesto   — `params.taxName`, resuelto arriba (SCRUM-647). Antes salía de
+ *     `locale.vatName`, que resuelve por PAÍS y por tanto miente en Canarias.
  *                         Es MÁS correcto que el de la factura, que lo lleva escrito a mano.
  *   · «Total <quoteVerb>:» — el rótulo que este documento YA imprimía. No se toca.
  *
@@ -850,7 +873,7 @@ if (lineasParaDesglose.length > 0) {
   filasDeTotales.push({ etiqueta: 'Base imponible:', importe: bd.base });
   for (const e of bd.entries) {
     if (e.cuota === 0) continue; // ← el defecto ① heredado; ver la cabecera de arriba
-    filasDeTotales.push({ etiqueta: `${locale.vatName} ${e.rate}%:`, importe: e.cuota });
+    filasDeTotales.push({ etiqueta: `${impuesto} ${e.rate}%:`, importe: e.cuota });
   }
 }
 

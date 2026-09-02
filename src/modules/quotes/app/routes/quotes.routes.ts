@@ -8,6 +8,7 @@ import {
   type QuoteTier,
 } from '../../../../core/validation/schemas';
 import { calcTotal, normalizePhone, parseToken } from '../../../../core/utils/utils';
+import { getLocale } from '../../../../core/i18n/locales'; // SCRUM-647
 import { rateLimit } from '../../../../core/http/rateLimit';
 
 function calcTierTotal(lines: Array<{qty: number; price: number; tax?: number}>): number {
@@ -202,6 +203,10 @@ router.post('/create', async (req, res) => {
         lines: canonicalLines as any,
         tiers: tiersWithTotal,
         country: merchant.country,
+        // SCRUM-647 · la resolución por PAÍS vive AQUÍ y no dentro del documento. Es la que
+        // miente en Canarias (IGIC) y en Ceuta y Melilla (IPSI): cuando SCRUM-646 traiga el
+        // territorio se cambia en este sitio, que es donde el país ya está a la vista.
+        taxName: getLocale(merchant.country).vatName,
       });
 
       await prisma.quote.update({
@@ -531,6 +536,8 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
             signatureData,
             signedAt: now,
             country: merchant.country,
+            // SCRUM-647 · ver la nota del otro envío: la resolución por país vive aquí.
+            taxName: getLocale(merchant.country).vatName,
           });
           await prisma.quote.update({ where: { id: quote.id }, data: { pdfUrl: pdf.publicUrlPath } });
         } catch (e) {
