@@ -479,7 +479,22 @@ router.get('/', async (req, res) => {
       OR?: Array<{ operarioId?: number | null; assignedUserId?: number | null }>;
     } = { merchantId: req.merchantId };
     const restringido = seesOnlyOwnJobs(req.userRole);
-    if (restringido) where.OR = [{ operarioId: req.teamMemberId }, { assignedUserId: req.teamMemberId }];
+    // SCRUM-650 (T1) paso B · LOS TRES EJES. El tercero —la tabla puente— no es cosmetico: sin el,
+    // un tecnico asignado por la tabla NUEVA no veria su trabajo, que es literalmente el defecto
+    // que SCRUM-467 arreglo. Los ejes salen de UNA fuente (`ejesDeVisibilidad`) para que esta ruta
+    // y la de albaranes no puedan quedarse con listas distintas.
+    if (restringido) {
+      where.OR = [
+        { operarioId: req.teamMemberId },
+        { assignedUserId: req.teamMemberId },
+        // SCRUM-650 (T1) paso B · EL TERCER EJE. Los dos de arriba se quedan ESCRITOS TAL CUAL: el
+        // guard de SCRUM-467 los comprueba por su texto, y sacarlos a una funcion comun lo ponia en
+        // rojo sin que la garantia cambiara. Es de otro carril y no se toca (regla 9), asi que aqui
+        // se AMPLIA. Lo que impide que las dos rutas se separen es el guard de SCRUM-650b, que
+        // exige los TRES en las dos.
+        { assignees: { some: { teamMemberId: req.teamMemberId } } },
+      ] as typeof where.OR;
+    }
 
     // SCRUM-148: ?operarioId=<id> | 'owner' → Trabajos de ESE operario, para el detalle por
     // miembro del hub de Equipo.

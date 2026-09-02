@@ -122,3 +122,53 @@ export async function escribirAsignados(
     await tx.jobAssignee.createMany({ data: ids.map((teamMemberId) => ({ jobId, teamMemberId })) });
   }
 }
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// LOS TRES EJES DE «ES SUYO» — SCRUM-650 (T1), paso B
+//
+// Un técnico ve un trabajo si se cumple CUALQUIERA de estos tres:
+//
+//   ① `operarioId`     — lo creó él (autoría congelada al aceptar el presupuesto, SCRUM-52)
+//   ② `assignedUserId` — se lo asignaron por la columna de siempre (SCRUM-10)
+//   ③ `job_assignees`  — se lo asignaron por la tabla puente (SCRUM-650)
+//
+// 🔴 EL TERCERO ES OBLIGATORIO Y NO ES COSMÉTICO. Sin él, un técnico asignado por la tabla NUEVA
+// no vería su trabajo — que es LITERALMENTE el defecto que SCRUM-467 arregló: había 6 trabajos con
+// `assignedUserId` escrito que no miraba nadie, y asignar no hacía que el técnico lo viera.
+//
+// Los ejes se declaran UNA vez y de ahí salen las dos formas de usarlos —el `where` de Prisma y la
+// decisión sobre un trabajo ya leído—, para que no puedan decir cosas distintas.
+export const EJES_DE_VISIBILIDAD = ['operarioId', 'assignedUserId', 'asignados'] as const;
+
+/** Un trabajo, mirado por los tres ejes. `asignados` son los ids de la tabla puente. */
+export interface TrabajoVisible {
+  operarioId?: number | null;
+  assignedUserId?: number | null;
+  asignados?: readonly number[];
+}
+
+/**
+ * ¿Ve este técnico este trabajo? PURA: se prueba enumerando trabajos y empleados, sin base de
+ * datos, que es la única forma de que el control positivo («los DOS lo ven») signifique algo.
+ *
+ * ⚠️ Un trabajo sin NINGUNO de los tres ejes es invisible para todo técnico. Solo lo ven los admin,
+ * que no pasan por aquí.
+ */
+export function loVe(trabajo: TrabajoVisible, teamMemberId: number | null | undefined): boolean {
+  if (teamMemberId === null || teamMemberId === undefined) return false;
+  if (trabajo.operarioId === teamMemberId) return true;
+  if (trabajo.assignedUserId === teamMemberId) return true;
+  return (trabajo.asignados ?? []).includes(teamMemberId);
+}
+
+/**
+ * ⚠️ NO HAY AQUI un constructor del `OR` de Prisma, y es deliberado.
+ *
+ * Lo escribi, y hubo que retirarlo: el guard de SCRUM-467 comprueba POR SU TEXTO que el `where` de
+ * las dos rutas nombre `operarioId` y `assignedUserId`, asi que sacarlos a una funcion comun lo
+ * ponia en rojo sin que la garantia cambiara ni un apice. Su test es de otro carril y no se toca.
+ *
+ * Lo que impide que las dos rutas se separen no es una funcion, entonces, sino el guard de
+ * `scrum650b-tres-ejes`: exige los TRES ejes en LAS DOS rutas y cae nombrando la que se quede corta.
+ * La DECISION sobre un trabajo ya leido si vive en un solo sitio: `loVe`.
+ */
