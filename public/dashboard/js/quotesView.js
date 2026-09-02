@@ -1052,6 +1052,47 @@ blockDelivery.appendChild(descWrapper);
   }
   if (typeof window !== 'undefined') window.drenarMargenDeBorrador = drenarMargen;
 
+  /**
+   * SCRUM-661 (②) · QUÉ SE ESCRIBE EN EL CAMPO «Coste» AL ELEGIR DEL CATÁLOGO.
+   *
+   * 🔴 SIN COSTE DEVUELVE CADENA VACÍA, NUNCA "0". Medido en SCRUM-609: 8 de 8 productos de
+   * desarrollo NO tienen coste, así que `null` es el caso NORMAL y no el raro. Vacío significa
+   * «no se sabe»; un 0 significaría «costó cero», que nadie ha dicho. Y `Number(null)` es 0, así
+   * que el `null` hay que atajarlo ANTES de convertir — es la trampa de este campo.
+   *
+   * Vacía también cuando el producto nuevo no tiene coste: si devolviera «lo que hubiera», la
+   * línea se quedaría con el coste del producto ANTERIOR, que es un hecho falso sobre éste.
+   *
+   * PURA y extraíble para que la suite la EJECUTE: una regla enterrada dentro de `selectItem`
+   * sólo podría auditarse leyendo el fuente, y leer no ejecuta.
+   */
+  function costeDeCatalogo(crudo) {
+    if (crudo === null || crudo === undefined || crudo === '') return '';
+    const c = Number(String(crudo).replace(',', '.').trim());
+    if (!Number.isFinite(c) || c < 0) return '';
+    return c.toFixed(2);
+  }
+
+  /**
+   * SCRUM-661 (②) · QUÉ VIAJA AL SERVIDOR DESDE EL CAMPO «Coste».
+   *
+   * 🔴 DEVUELVE UN OBJETO, NO UN NÚMERO, y ésa es toda la gracia: `{}` cuando no se sabe y
+   * `{ costeUnitario: n }` cuando se sabe. Así la CLAVE no viaja si no hay dato, y «ausente» se
+   * puede distinguir de «cero» en `Quote.lines` para siempre. Si esto devolviera 0 por defecto,
+   * el día que alguien quiera el margen real no podría saber si esa línea costó cero o si
+   * simplemente no se guardaba todavía — y las dos cosas llevan a decisiones opuestas.
+   *
+   * Acepta la coma decimal, que es como se teclea aquí. Un texto ilegible se comporta como
+   * vacío: no inventa un número.
+   */
+  function costeParaPayload(valor) {
+    const crudo = String(valor == null ? '' : valor).replace(',', '.').trim();
+    if (crudo === '') return {};
+    const n = Number(crudo);
+    if (!Number.isFinite(n) || n < 0) return {};
+    return { costeUnitario: n };
+  }
+
   function draftKey() {
     const mid = currentMerchant && currentMerchant.id ? String(currentMerchant.id) : "x";
     return `pf_quote_draft_${mid}`;
@@ -1073,6 +1114,13 @@ blockDelivery.appendChild(descWrapper);
         // SCRUM-598 · el borrador ya no guarda margen: no hay campo del que leerlo. Los
         // borradores VIEJOS que lo lleven se drenan al restaurar (ver `drenarMargen`).
         vat: l.vatInput.value || "",
+        // SCRUM-661 (②): el coste congelado sobrevive a un F5. Sin esto, recargar con el
+        // borrador puesto devolvería la línea SIN coste — y como el coste sólo se captura al
+        // ELEGIR del catálogo, no habría forma de recuperarlo salvo volviendo a elegir.
+        //
+        // Se guarda la cadena TAL CUAL (`""` si está vacío), igual que precio e IVA: el vacío
+        // se restaura como vacío, que es «no se sabe», y no como 0.
+        costeUnitario: (l.costeInput && l.costeInput.value) || "",
         // SCRUM-500: sin esto, recuperar el borrador devolvía la línea con su IVA y sin la marca
         // — o sea, un suplido convertido en línea normal por el simple hecho de recargar.
         suplido: !!(l.suplidoCheck && l.suplidoCheck.checked),
@@ -1559,7 +1607,10 @@ tr.appendChild(tdConcept);
     // ----------------------------
   // Autocomplete productos (MVP)
   // ----------------------------
-  function attachProductAutocomplete({ conceptInput, priceInput, vatInput }) {
+  // SCRUM-661 (②) · entra `costeInput`: el coste del catálogo se congela EN LA LÍNEA al elegir.
+  // Es opcional a propósito —se lee con `if (costeInput)`— para que este autocompletado siga
+  // sirviendo a quien no le pase el campo. Hoy hay UN solo sitio de llamada, medido.
+  function attachProductAutocomplete({ conceptInput, priceInput, vatInput, costeInput }) {
 
     let box = null;
     let timer = null;
@@ -1836,6 +1887,27 @@ if (typeof it.price !== "undefined" && it.price !== null && it.price !== "") {
     // Vía `fractionToPercent` para no volver a escribir "21.000000000000004" en el campo.
     if (Number.isFinite(v)) window.tiposDeIva.ponerValor(vatInput, fractionToPercent(v));
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-661 (②) · EL COSTE DEL CATÁLOGO SE CONGELA EN ESTA LÍNEA, AHORA.
+  //
+  // 🔴 POR QUÉ CONGELARLO Y NO MIRARLO DESPUÉS: `Product.cost` es MUTABLE y no tiene histórico.
+  // El día que el profesional actualice el coste de un material, se reescribe el pasado de todas
+  // las ventas que lo usaron. El coste de HOY es un hecho de hoy; leerlo mañana da otro número
+  // y nadie se entera.
+  //
+  // ⚠️ SE ESCRIBE HACIA DELANTE Y SÓLO AQUÍ. Esto corre al ELEGIR del catálogo, o sea sobre la
+  // línea que el profesional está tocando y en el momento en que la toca. Ninguna línea ya
+  // escrita se rellena con el coste de hoy: eso fabricaría un hecho histórico falso.
+  //
+  // 🔴 SIN COSTE SE VACÍA, NO SE PONE 0. Un producto sin coste (medido en SCRUM-609: 8 de 8 en
+  // desarrollo) deja el campo VACÍO, que significa «no se sabe». Un 0 diría «costó cero», que es
+  // una afirmación que nadie ha hecho — y las dos cosas tienen que leerse distinto o el dato no
+  // vale para nada. Y se vacía en vez de dejar lo que hubiera: si no, la línea se quedaría con
+  // el coste del producto ANTERIOR, que sería un hecho falso sobre este.
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  // La REGLA vive en `costeDeCatalogo`, que la suite ejecuta. Aquí sólo se aplica.
+  if (costeInput) costeInput.value = costeDeCatalogo(it.cost);
 
   hide();
 
@@ -2210,6 +2282,44 @@ priceTd.querySelector(".quote-line__label").appendChild(priceHint);
     // ═══════════════════════════════════════════════════════════════════════════════════
 
 
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-661 (②) · EL COSTE UNITARIO DE LA LÍNEA — VISIBLE Y EDITABLE.
+    //
+    // 🔴 NO SE ESCONDE, Y NO ES UNA PREFERENCIA: es CONT-01 ②, «nunca se esconde un campo que
+    // tiene algo escrito — un dato invisible es un dato que nadie va a corregir y que sigue
+    // viajando». Guardarlo en un `dataset` habría sido más barato y habría creado exactamente
+    // eso: un número que viaja al servidor y que el profesional no puede ni ver ni arreglar.
+    // Ya tenemos uno así en este mismo fichero (`pfBasePrice`, hoy estado muerto). No dos.
+    //
+    // EDITABLE, y ésa es la mitad que hace que la regla sirva. Visible-pero-bloqueado cumple
+    // «se ve» y no cumple «alguien lo va a corregir»: una línea escrita a mano no podría llevar
+    // coste nunca, y un coste mal capturado se quedaría mal para siempre.
+    //
+    // VACÍO = «NO SE SABE», y es distinto de 0. Por eso no lleva `value = "0"` ni placeholder con
+    // un número: un placeholder con cifra se lee como un valor por defecto.
+    //
+    // ⚠️ EL COSTE NO LLEGA AL PDF DEL CLIENTE. Es información del PROFESIONAL, y lo vigila
+    // `tests/scrum661-el-coste-no-llega-al-papel.test.mjs` leyendo el papel de verdad.
+    //
+    // 🛑 MICROCOPY PENDIENTE (regla 30), y el marcador viaja DELANTE del texto igual que en
+    // SUPLIDO: el rótulo «Coste» NO es inventado — es literalmente el que ya está aprobado y en
+    // pantalla en el catálogo (`productsView.js`, en el alta y en la edición), reusado para el
+    // mismo concepto. Aun así lo aprueba el asesor, y hasta entonces el nodo lo dice de sí mismo.
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    const costeTd = campoLinea("Coste", "quote-line__coste");
+    costeTd.dataset.microcopy = "PENDIENTE_FUNDADOR";
+    const costeInput = document.createElement("input");
+    costeInput.type = "number";
+    costeInput.min = "0";
+    costeInput.step = "0.01";
+    // Se acepta `costeUnitario` (como viaja y como se guarda en el borrador). Ausente ⇒ vacío:
+    // restaurar un borrador ANTERIOR a este campo no puede inventar un coste que nadie escribió.
+    costeInput.value =
+      initial && initial.costeUnitario != null && initial.costeUnitario !== ""
+        ? initial.costeUnitario
+        : "";
+    costeTd.appendChild(costeInput);
+
     const vatTd = campoLinea("IVA %", "quote-line__vat");
     // ═══════════════════════════════════════════════════════════════════════════════════
     // SCRUM-611 (DOC-16) · EL TIPO SE ELIGE, NO SE TECLEA.
@@ -2227,7 +2337,7 @@ priceTd.querySelector(".quote-line__label").appendChild(priceHint);
     // El rótulo NO cambia: «IVA %» ya estaba aprobado. No hay microcopy nueva que marcar.
     // ═══════════════════════════════════════════════════════════════════════════════════
     const vatInput = window.tiposDeIva.montar(null);
-    attachProductAutocomplete({ conceptInput, priceInput, vatInput });
+    attachProductAutocomplete({ conceptInput, priceInput, vatInput, costeInput });
     // SCRUM-132: el IVA llega en DOS unidades según de dónde venga la línea, y antes solo se
     // leía una — por eso el "IVA por defecto" PISABA el IVA real de plantillas y de la IA:
     //   · `vat`  = PORCENTAJE (21)   → borrador de localStorage, autocompletado de producto
@@ -2384,6 +2494,11 @@ priceTd.querySelector(".quote-line__label").appendChild(priceHint);
     // SCRUM-598 · aqui iba el campo del margen. La hoja se queda con SUPLIDO y con el IVA:
     // no se reordena nada, solo desaparece el de en medio (regla 30, no se toca ningun rotulo).
     ajustesCampos.appendChild(vatTd);
+    // SCRUM-661 (②) · el COSTE va DETRAS del IVA, al final. No se pone donde estaba el margen
+    // (SCRUM-598) a proposito: ese hueco se lee como «ha vuelto el margen», y el coste es otra
+    // cosa —el margen era una conclusion que salia en el papel del cliente; el coste es un HECHO
+    // del profesional que NO sale—. Anadir al final no reordena nada de lo que ya habia.
+    ajustesCampos.appendChild(costeTd);
 
     const ajustesBtn = document.createElement("button");
     ajustesBtn.type = "button";
@@ -2407,6 +2522,10 @@ priceTd.querySelector(".quote-line__label").appendChild(priceHint);
       qtyInput,
       priceInput,
       vatInput,
+      // SCRUM-661 (②) — el coste unitario congelado de ESTA línea. Lo leen el payload y el
+      // borrador, igual que `suplidoCheck`. Es el MISMO input que se ve en la hoja de ajustes:
+      // no hay copia ni espejo que sincronizar (F4 de SCRUM-139).
+      costeInput,
       totalCell: totalTd,
       priceHint,
       // SCRUM-139 F4 — dónde viven margen e IVA y quién abre su hoja. Las claves de arriba
@@ -3094,6 +3213,18 @@ const finalPrice = safePrice;
 
       
 
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-661 (②) · EL COSTE UNITARIO VIAJA — Y SU AUSENCIA TAMBIÉN SIGNIFICA ALGO.
+//
+// 🔴 AUSENTE ≠ CERO, y aquí es donde se decide. Si el campo está vacío la clave NO se pone:
+// llega una línea SIN `costeUnitario`, que se lee «no se sabe». Mandar `0` diría «costó cero»
+// —una afirmación que nadie ha hecho— y haría indistinguibles las dos cosas para siempre, que
+// es lo que dejaría el dato sin valor. Por eso es un spread condicional y no un `|| 0`.
+//
+// La REGLA vive en `costeParaPayload`, que la suite ejecuta: devuelve `{}` cuando no se sabe,
+// así que la clave NO viaja y «ausente» se puede distinguir de «cero» en `Quote.lines`.
+const costeDeLaLinea = costeParaPayload(line.costeInput && line.costeInput.value);
+
 // SCRUM-500: la línea pasa por `lineaParaPayload` (quoteSuplido.js) — es quien FUERZA el
 // `tax: 0` de un suplido. No se confía a que el input esté deshabilitado: un borrador
 // restaurado, una plantilla o la IA pueden dejar un IVA puesto sin tocar la casilla.
@@ -3103,6 +3234,7 @@ payloadLines.push(lineaParaPayload({
   price: finalPrice,
   tax: safeVat / 100,
   suplido: !!(line.suplidoCheck && line.suplidoCheck.checked),
+  ...costeDeLaLinea,
 }));
 
     });
