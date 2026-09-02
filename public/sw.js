@@ -106,6 +106,10 @@ const SHELL = [
   '/dashboard/js/almacenLocal.js',
   '/dashboard/js/estadoFirma.js',
   '/dashboard/js/colaDeFirmas.js',
+  // SCRUM-652 (T3 fase C) · la pantalla del parte se precachea POR LA MISMA RAZON que las
+  // otras piezas de firma: se firma en obra, y en obra puede no haber cobertura. Un fichero
+  // que hay que ir a buscar a la red no esta cuando hace falta.
+  '/dashboard/js/parteDetailView.js',
   '/dashboard/js/resistenciaAlmacen.js',
   '/dashboard/js/app.js',
 ];

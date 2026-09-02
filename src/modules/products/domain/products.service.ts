@@ -213,6 +213,24 @@ export async function searchProducts(merchantId: number, q: string) {
       name: true,
       description: true,
       price: true,
+      /**
+       * SCRUM-661 (①) · EL COSTE SALE HACIA EL FRONT, y sin filtro por rol.
+       *
+       * Hace falta porque el coste se CONGELA en la línea en el momento de la venta: `cost` es
+       * mutable y no tiene histórico, así que el día que alguien actualice el coste de un
+       * material se reescribe el pasado de todas las ventas que lo usaron. Sin este `select` el
+       * front no tiene el dato que tendría que congelar — medido en SCRUM-661: cero apariciones
+       * de `costeUnitario` en todo el front, porque no había de dónde sacarlo.
+       *
+       * 🔴 SIN FILTRO POR ROL, Y ES UNA DECISIÓN TOMADA, no un descuido: «Sí, el operario ve el
+       * precio de compra» (fundador, 02-sep-2026). La consecuencia —un operario que se va puede
+       * llevarse los precios de compra— está asumida y escrita. No se enmascara ni se devuelve
+       * una respuesta distinta por rol: eso sería inventar una regla que nadie ha decidido.
+       *
+       * ⚠️ `Decimal?` → llega como STRING o como `null`. `null` significa «no se sabe» (medido en
+       * SCRUM-609: 8 de 8 productos de desarrollo no tienen coste), y eso NO es cero.
+       */
+      cost: true,
       vat: true,
       providerId: true,
       isActive: true,

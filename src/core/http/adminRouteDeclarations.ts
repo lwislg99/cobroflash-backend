@@ -115,6 +115,26 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   { method: 'GET',   path: '/admin/albaranes/:id', why: 'Ver la ficha del parte que él mismo rellena y firma (SCRUM-302)' },
   { method: 'POST',  path: '/admin/albaranes/:id/emitir', why: 'Emitir ALBARÁN (no factura): documento NO fiscal' },
   { method: 'POST',  path: '/admin/albaranes/:id/firmar', why: 'Firma del cliente en el móvil del operario (SCRUM-49)' },
+
+  // ── SCRUM-652 (T3 fase C) · EL PARTE DE TRABAJO ────────────────────────────────────────
+  //
+  // ⚠️ OJO CON EL NOMBRE: las entradas de arriba llaman «parte de trabajo» a los ALBARANES, por
+  // herencia de cuando era lo único que había. Desde hoy hay un ParteTrabajo de verdad, con su
+  // tabla (`partes_trabajo`) y sus rutas. Son DOS documentos distintos.
+  //
+  // Van a TECNICO_ALLOWED y no a admin, y no es una concesión: el parte ES el trabajo de campo
+  // del Operario. Lo rellena él en la obra, lo firma el cliente delante de él, y lo hace sin
+  // cobertura. Dejarlo admin-only sería entregar una pantalla que su único usuario no puede abrir.
+  //
+  // 🔴 Y NO ABRE NINGUNA PUERTA A DINERO: `/admin/partes` no sirve ni un importe en ninguna de sus
+  // cinco rutas —`serializeParteParaElTecnico` se construye con `lineasParaElTecnico`— y no hay
+  // ruta de facturar (eso es T8, bloqueado por regla 24). La valoración vive en la pantalla de
+  // oficina, que todavía no existe y que cuando exista tendrá que declarar SU rol aquí.
+  { method: 'GET',   path: '/admin/partes', why: 'Sus partes, para retomar el que dejó a medias en la obra' },
+  { method: 'POST',  path: '/admin/partes', why: 'Abrir el parte al llegar a la obra (documento NO fiscal, sin importes)' },
+  { method: 'GET',   path: '/admin/partes/:id', why: 'Ver el parte que él mismo rellena y firma; sin importes (SCRUM-652)' },
+  { method: 'PATCH', path: '/admin/partes/:id', why: 'Rellenar el parte en la obra: horas, kilómetros, mano de obra y materiales. Sin precios: los pone la oficina después' },
+  { method: 'POST',  path: '/admin/partes/:id/firmar', why: 'Firma del cliente en el móvil del operario, con la cola sin cobertura que ya existe (SCRUM-358)' },
   { method: 'POST',  path: '/admin/albaranes/:id/duplicar', why: 'Duplicar el parte de ayer para el de hoy: el técnico rellena partes en obra, y el duplicado nace en BORRADOR sin firma ni evidencia (SCRUM-302)' },
   { method: 'GET',   path: '/admin/albaranes/:id/pdf', why: 'Enseñar/enviar el parte firmado' },
   { method: 'POST',  path: '/admin/albaranes/:id/fotos', why: 'Fotos del trabajo hecho (MEDIA-1)' },

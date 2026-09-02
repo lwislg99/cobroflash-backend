@@ -5,7 +5,7 @@
 //
 // Los censos de SCRUM-243 y SCRUM-348 miran **lecturas de modelos que tienen columna
 // `merchantId`**. Están bien para lo que miran. Pero `merchant` es el modelo RAÍZ: **no tiene esa
-// columna** (medido: 23 modelos la tienen, `merchant` no está entre ellos). Así que
+// columna** (`merchant` NO está entre los que la tienen, que es lo que importa aquí). Así que
 //
 //     prisma.merchant.findUnique({ where: { id: merchantId } })
 //

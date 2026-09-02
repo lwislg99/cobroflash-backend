@@ -336,6 +336,21 @@ const CENSO = Object.freeze({
   // texto no las apaga las dos: son dos textos distintos que hoy comparten marcador, y el día que
   // el fundador los escriba habrá que partir la constante.
   'tipoDestinatarioPendiente.js': 1,
+  // 🔴 SCRUM-652 (T3 fase C) · 2-sep-2026 · `parteDetailView.js` ENTRA con 1, A CONCIENCIA.
+  //
+  // Es la pantalla del parte en el móvil del técnico. Su microcopy NO está aprobada (regla 30):
+  // se propone con las palabras del impreso que ya rellenan —«UNDS», «Mano de obra»,
+  // «Materiales», «Entrada», «Salida», «Desplazamiento», «Kilómetros», «REF»— porque estrenar
+  // sinónimos obligaría al técnico a traducir entre el papel y la pantalla en casa de un cliente.
+  //
+  // ⚠️ EL «1» ENGAÑA SI NO SE DICE, y se dice: el censo cuenta MARCAS ESCRITAS, y aquí hay UNA
+  // sola —`var M`— concatenada a **20 rótulos**. Es exactamente el caso de `libroRegistroView`
+  // (SCRUM-514), donde una marca pintaba 23. Un 1 aquí no significa «un rótulo provisional»:
+  // significa «esta pantalla entera está sin firmar».
+  //
+  // Sale del censo el commit que apruebe los textos, y ese commit BORRA la entrada, no la pone a
+  // 0 (precedente SCRUM-424/405).
+  'parteDetailView.js': 1,
   'settingsSubmenus.js': 1,
   // SCRUM-674 (2-sep-2026) · `voiceInput.js` SALE del censo: el fundador aprobo el texto del
   // aviso de dictado sin conexion, y sale ya sin marca. La entrada se BORRA, no se pone a 0:
