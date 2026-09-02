@@ -381,9 +381,9 @@ de vistas, ni `_navegador.mjs`.
 
 ### ⏱️ Sobre la urgencia: **no hay reloj, y conviene que quede escrito**
 
-El censo de la fase anterior salió en **cero facturas afectadas**, y el dato que lo completa es
-que **en producción no hay merchants reales**: sólo prueba y demo. **Los 30 albaranes esperando
-son de la demo.**
+El censo de la fase anterior salió en **cero facturas afectadas**, y el de merchants lo completa
+(§5 bis): **13 merchants, todos de prueba sin excepción**, y los **30 albaranes** repartidos entre
+**3** de ellos. **No hay merchants reales en producción.**
 
 Eso **no cambia ni una medición** de este documento —el defecto es real, está medido y los tres
 cálculos siguen dando el mes equivocado en la franja—, pero sí cambia el marco: **no hay
@@ -476,12 +476,19 @@ ALTER TABLE "merchants" ADD COLUMN "timezone" TEXT;
 `schemaDrift.ts` compara **esperado ⊆ real** al arrancar. Un `schema.prisma` que nombre una
 columna que la base no tiene → **producción no arranca**. Por tanto:
 
-1. **decisión sobre los existentes** (§5) — porque condiciona si el ALTER va solo o con backfill;
-2. **`ALTER TABLE` en las tres bases** (dev, staging, producción);
+1. ✅ **decisión sobre los existentes** — **CERRADA en §5 bis**: backfill directo a
+   `Europe/Madrid`, porque los 13 merchants son de prueba. Deja de ser una decisión y pasa a ser
+   un `UPDATE`;
+2. **`ALTER TABLE` en las tres bases** (dev, staging, producción) **+ el `UPDATE` del backfill**;
 3. **un solo PR** con schema + código + tests.
 
-**Esta rama no hace ninguna de las tres.** Y por eso tampoco construye la primitiva: dejarla
-exportada sin consumidor la cazaría el guard de huérfanos (SCRUM-494), con razón.
+**Esta rama sigue sin hacer ② ni ③.** Y por eso tampoco construye la primitiva: dejarla exportada
+sin consumidor la cazaría el guard de huérfanos (SCRUM-494), con razón.
+
+> ⚠️ **Producción no se toca desde aquí, y no es cautela: es que no se puede.** Ningún árbol de
+> trabajo lleva `DATABASE_URL` de producción (medido en SCRUM-418, y el guard
+> `_clave-vs-destino.mjs` lo hace cumplir por DESTINO). El ALTER de producción lo aplica el
+> fundador, como en SCRUM-207.
 
 ## 4 · La consulta
 
@@ -599,6 +606,60 @@ prohibido, hecho a mano.
 Es microcopy (regla 30) → saldrá con `[PENDIENTE microcopy oficial]` y **subirá el censo de
 marcadores de 10 a 11 ficheros**, declarado en su tabla cuando se construya.
 
+## 5 bis · ✅ EL NÚMERO, y la simplificación que trae
+
+**Censo ejecutado contra producción** (control positivo **6/6**: queda demostrado en el motor que
+el país no determina la zona):
+
+| | |
+|---|---|
+| merchants | **13** |
+| país | **todos `ES`** |
+| estado | **todos `active`** |
+| **con albaranes** | **3** (2 + el *platform owner*) |
+| albaranes | **30** |
+
+Y el dato que lo cierra, confirmado por el fundador: **los 13 son de prueba, sin excepción**, y
+**los datos actuales dan igual por completo**.
+
+### 🔴 Un límite de MI censo que ese dato destapa
+
+La consulta clasificaba «de prueba» por `email LIKE '%@test.local'` — el criterio de la casa,
+verificado en `scripts/clean-staging-tests.mjs:41`. **Ese criterio se queda corto**: hay merchants
+de prueba cuyo email no lleva ese dominio, y mi censo los habría contado como «NO es de prueba».
+El fundador lo sabe por otra vía, no por la consulta.
+
+**No se cambia la consulta** —el criterio verificado es el que hay, y sirve para lo que sirve—
+pero queda escrito: **`@test.local` es una cota inferior de «cuántos son de prueba», no la
+cuenta.** Quien la vuelva a usar, que lo sepa.
+
+### La decisión para los 13: **BACKFILL DIRECTO a `Europe/Madrid`**
+
+Con datos de prueba **no se está declarando nada por nadie**, que era la única objeción a D. Así
+que para estos 13 no hay que elegir entre A, C y D: se rellenan y ya. **Simplifica el paso ①.**
+
+```sql
+-- Fase ②, DESPUÉS del ALTER. No se ejecuta en esta rama.
+UPDATE merchants SET timezone = 'Europe/Madrid' WHERE timezone IS NULL;
+```
+
+### ⚠️ EL LÍMITE DE ESTA DECISIÓN, que es lo que hay que no perder
+
+**El backfill vale por el ESTADO DE LOS DATOS, no por el criterio** — el mismo apunte que se dejó
+en CAT-01. **Con merchants reales sería la decisión equivocada**: rellenar a `Europe/Madrid` a
+ciegas declararía peninsular a un canario, y **Canarias es mercado de verdad**, no un caso raro
+que haya que soportar para que la hora no se rompa. §1 lo tiene medido: dentro de `ES` hay dos
+husos, y el error de un día cae justo en la franja de madrugada.
+
+### Y por eso **C sigue haciendo falta**
+
+**El backfill NO sustituye a C.** Resuelve a los 13 de hoy, que son de prueba; **C es para los
+usuarios FUTUROS**, que sí declararán su zona y entre los cuales habrá canarios. Sin C, el primer
+merchant real nacería con `timezone` NULL y nadie se lo preguntaría nunca.
+
+Dicho de otra forma: **① deja de ser una decisión y pasa a ser un `UPDATE`**, pero la pregunta al
+profesional sigue en el plan, en el PR ③.
+
 ## 6 · El sitio único, y los tres que derivan de él
 
 Hoy la decisión de «a qué día natural pertenece este instante» está **escrita tres veces**:
@@ -671,3 +732,25 @@ se habría movido el criterio en vez de arreglar el desfase.
   y con razón: entra en el PR ③ junto al schema y al cableado de los tres sitios.
 * **No se elige la salida de §5** — es del fundador.
 * **No se decide el nombre de §2** — también.
+
+## 9 · ⚠️ Lo que NO entra aquí y hay que no mezclar: **SCRUM-646 (el IGIC)**
+
+**Canarias es mercado de verdad**, y eso abre el impuesto: allí no se repercute IVA sino **IGIC**.
+Es **SCRUM-646** y **no se construye ni se toca** en este ticket.
+
+**Y queda escrito el punto exacto donde los dos conceptos van a querer compartir sitio**, porque
+ya nos costó un nombre una vez (§2):
+
+* `merchants.timezone` responde **«¿en qué calendario vive este merchant?»** — decide a qué día y
+  a qué mes natural pertenece un instante. Es lo de este ticket.
+* El régimen —IVA / IGIC / IPSI— responde **«¿qué impuesto repercute?»** — decide tipos, cuotas y
+  el desglose del documento. Es SCRUM-646.
+
+**Coinciden geográficamente en Canarias y NO son el mismo dato.** Un merchant canario tiene
+`Atlantic/Canary` **y** IGIC; uno peninsular, `Europe/Madrid` **y** IVA. Pero la relación no es
+biyectiva ni estable: Ceuta y Melilla llevan **IPSI** con el huso de la península, así que un
+único campo que pretendiera servir para las dos cosas ya nace roto en dos territorios españoles.
+
+**Compromiso para el PR ③:** si al escribir la primitiva de zona aparece la tentación de que el
+impuesto salga de ella —o al revés—, **se para y se dice** antes de escribirlo. No se resuelve de
+paso.
