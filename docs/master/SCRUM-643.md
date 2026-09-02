@@ -379,6 +379,18 @@ de vistas, ni `_navegador.mjs`.
 **SOLO LECTURA.** Las dos consultas son `WITH` + `SELECT`: ningún `INSERT`, `UPDATE`, `DELETE`,
 `CREATE`, `ALTER`, `DROP` ni `TRUNCATE`. La de control no toca siquiera una tabla.
 
+### ⏱️ Sobre la urgencia: **no hay reloj, y conviene que quede escrito**
+
+El censo de la fase anterior salió en **cero facturas afectadas**, y el dato que lo completa es
+que **en producción no hay merchants reales**: sólo prueba y demo. **Los 30 albaranes esperando
+son de la demo.**
+
+Eso **no cambia ni una medición** de este documento —el defecto es real, está medido y los tres
+cálculos siguen dando el mes equivocado en la franja—, pero sí cambia el marco: **no hay
+documentos de nadie en juego y no hay prisa**. Lo que hay es la ocasión de arreglarlo **antes de
+que haya usuarios**, que es cuando sale gratis. Si alguna frase de aquí abajo se lee como urgencia,
+léase como oportunidad.
+
 ---
 
 ## 1 · Por qué no basta con lo que ya hay — **medido en el motor**
@@ -399,7 +411,7 @@ Antes de pedir una columna nueva hay que descartar la que ya existe. `merchants.
 Por eso la columna es de zona, no de país, y por eso derivarla del país sería el mismo error un
 escalón más abajo.
 
-## 2 · ⚠️ EL NOMBRE, que es decisión y conviene tomarla antes del ALTER
+## 2 · ✅ EL NOMBRE — DECIDIDO: `timezone`
 
 El encargo lo llama «zona fiscal». **Ese nombre ya significa otra cosa en España**, y justo en el
 territorio que motiva el ticket: Canarias no tributa IVA sino **IGIC**, y Ceuta y Melilla **IPSI**.
@@ -409,9 +421,12 @@ Si la columna se llama `zonaFiscal` y guarda un huso horario, el día que haga f
 Y hay un segundo choque, dentro del propio modelo: `merchants.profileZones` ya existe y son
 **«chips de zonas»** del perfil público, geográficas, nada que ver con husos.
 
-**Propuesta:** que la columna se llame por lo que es —el **huso horario** con el que se calcula el
-calendario del merchant— y no por lo que decide. El diff de abajo usa `timezone`. **Si el fundador
-prefiere `zonaFiscal`, se cambia antes del ALTER**: después cuesta una migración.
+**Decidido por el fundador (2-sep-2026): la columna se llama `timezone`** — por lo que es, el huso
+horario con el que se calcula el calendario del merchant, y no por lo que decide. El diff de abajo
+ya la nombra así y **no necesita ajuste**.
+
+Y el aviso no se queda en un cambio de nombre: **el IGIC canario abre ticket propio**. Que las dos
+cosas se llamaran igual era exactamente lo que habría impedido verlas como dos.
 
 ## 3 · ⛔ EL DIFF DE ESQUEMA — PREPARADO, NO APLICADO
 
@@ -559,10 +574,14 @@ ORDER BY 6 DESC, 1, 2;
 albaranes** no notan nada haga lo que haga la decisión — la zona sólo cambia un cálculo cuando hay
 partes que agrupar. **Ése es el número que dimensiona §5**, no el total de merchants.
 
-## 5 · Las salidas para los existentes, y su consecuencia. **NO se elige aquí**
+## 5 · ✅ Las salidas para los existentes — DECIDIDO: **A + C**
 
-La columna nace vacía y el cálculo tiene que dar algo. Las cuatro salidas que hay, con lo que
-cuesta cada una:
+**Decidido por el fundador (2-sep-2026): se combinan A y C, y B queda descartada** con la
+medición de §1, no con una opinión. **Todavía no se construye:** el ALTER va después del número
+del censo, y el código va en el PR ③ (§3).
+
+La columna nace vacía y el cálculo tiene que dar algo. Las cuatro salidas que había, con lo que
+costaba cada una:
 
 | | Salida | Consecuencia |
 |---|---|---|
@@ -571,12 +590,14 @@ cuesta cada una:
 | **C** | NULL → **no se calcula**: la bandeja pide el dato donde afecta | Honesto y es el patrón que ya usa `tipoDestinatarioPendiente`. Pero deja la bandeja sin semáforo hasta contestar, y **necesita microcopy** (regla 30) |
 | **D** | Backfill masivo a una zona | 🔴 Convierte a todos en «declarados» sin que nadie lo haya dicho — lo mismo que el `@default` que el encargo prohíbe, hecho a mano |
 
-**Lo que sí aporto, sin elegir:** **A y C se pueden combinar** y es la combinación que no pierde
-nada — calcular como hoy (A) **y** pedir el dato en la bandeja donde importa (C). Nadie ve un
-cambio que no ha pedido, y el dato entra por donde el profesional ya está mirando el plazo.
+**Por qué A + C:** calcular como hoy (A) **y** pedir el dato en la bandeja donde importa (C).
+Nadie ve un cambio que no ha pedido, y el dato entra por donde el profesional ya está mirando el
+plazo. **B** la desmiente §1 para tres de los países del producto; **D** es el `@default`
+prohibido, hecho a mano.
 
-**B queda desaconsejada con medición**, no con opinión: §1 la desmiente para tres de los países
-del producto. **La elección es del fundador.**
+**Lo que C todavía necesita, y no se inventa aquí:** un texto para pedir el dato en la bandeja.
+Es microcopy (regla 30) → saldrá con `[PENDIENTE microcopy oficial]` y **subirá el censo de
+marcadores de 10 a 11 ficheros**, declarado en su tabla cuando se construya.
 
 ## 6 · El sitio único, y los tres que derivan de él
 
