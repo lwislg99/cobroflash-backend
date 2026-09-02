@@ -35,14 +35,15 @@
   'use strict';
 
   /**
-   * 🔴 LAS SEIS RANURAS Y SU ESTADO, en un solo sitio y legible sin abrir la pantalla.
+   * 🔴 CUÁNTAS RANURAS DE MICROCOPY SIGUEN SIN FIRMAR. **Cero: el fundador aprobó las seis el
+   * 2-sep-2026.**
    *
-   * `aprobado: false` en las seis: son literales PROPUESTOS, no firmados. Está aquí y no en el
-   * rótulo porque el fundador retiró el marcador de la pantalla — pero «no se pinta» no puede
-   * significar «nadie sabe que está sin aprobar». Un test lo comprueba, y el día que el fundador
-   * firme un texto se pone `true` en ESA ranura: aprobar una pestaña no aprueba las otras cinco.
+   * Se queda en el fichero aunque valga 0, y a propósito: si mañana alguien añade una pestaña o
+   * un orden nuevo, la ranura nace SIN APROBAR y este número tiene que subir. Borrarlo dejaría
+   * el hueco sin sitio donde declararse, y el texto nuevo entraría en pantalla en silencio —
+   * que es exactamente lo que el marcador impedía y lo que ya no se ve.
    */
-  var SIN_APROBAR = 6;
+  var SIN_APROBAR = 0;
 
   /**
    * Las tres pestañas. `valor` es lo que se compara contra `contactKind`, y `null` significa
@@ -70,8 +71,22 @@
    * El vacío de una PESTAÑA, que no es el vacío de la pantalla. Hace falta porque hoy «Empresas»
    * y «Personas» salen vacías con clientes en la lista, y el vacío que ya existe dice «Añade a tu
    * primer cliente» — que ahí sería falso. El de la búsqueda tampoco vale: no se ha buscado nada.
+   *
+   * ✅ APROBADO por el fundador el 2-sep-2026. PROCEDENCIA: consta en `docs/master/SCRUM-581.md`
+   * (sección «MICROCOPY APROBADA»). Una fecha sola no vale: no dice dónde mirar, y ése era el
+   * defecto de las seis marcas que se contradijeron (SCRUM-387). Viene con una corrección suya
+   * que vale la pena
+   * dejar escrita: mi propuesta era «Ningún cliente clasificado así todavía», y **miente cuando
+   * hay una búsqueda activa** — ahí el motivo de que no salga nadie no es la clasificación, es la
+   * búsqueda. El texto aprobado no nombra la causa: dice lo que se ve y ofrece la salida.
+   *
+   * DOS LÍNEAS, que se pintan con el componente que ya existe (`.empty-state-title` y
+   * `.empty-state-desc` de `styles.css`): ni un token nuevo ni un estilo inventado.
    */
-  var VACIO_PESTANA = { palabra: 'Ningún cliente clasificado así todavía' };
+  var VACIO_PESTANA = {
+    palabra: 'Aquí no hay ningún cliente todavía.',
+    ayuda: 'Marca cada cliente como empresa o persona al editarlo.',
+  };
 
   /**
    * El rótulo visible: la palabra, y nada más. Sin marcador (ver el bloque de arriba).
@@ -81,6 +96,14 @@
    * `textContent` de `customersView.js`.
    */
   function etiqueta(x) { return String((x && x.palabra) || ''); }
+
+  /**
+   * La SEGUNDA línea, cuando la ranura la tiene. Hoy sólo el vacío de pestaña.
+   *
+   * Devuelve `''` —y no `undefined`— para que quien la pinte pueda hacerlo sin preguntar: un
+   * `textContent = undefined` escribe la palabra «undefined» en la pantalla del profesional.
+   */
+  function subtitulo(x) { return String((x && x.ayuda) || ''); }
 
   /**
    * Filtra por pestaña. `TODOS` devuelve la lista TAL CUAL (misma referencia de elementos y mismo
@@ -130,6 +153,7 @@
     POR_DEFECTO: POR_DEFECTO,
     VACIO_PESTANA: VACIO_PESTANA,
     etiqueta: etiqueta,
+    subtitulo: subtitulo,
     filtrarPorPestana: filtrarPorPestana,
     ordenar: ordenar,
     aplicar: aplicar,
