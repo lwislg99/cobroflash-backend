@@ -35,12 +35,28 @@
 // silencio — que es el defecto que este fichero viene a cerrar, entrando por la puerta de atrás.
 // Si al resolver el conflicto dudas, quédate con el mayor: como mucho obliga a subirlo otra vez;
 // el otro error deja de vigilar sin decirlo.
+//
+// ── ⚠️ Y ESO NO PROHÍBE BAJARLO A PROPÓSITO (SCRUM-695) ───────────────────────────────────────
+// La regla de arriba resuelve **un choque entre dos ramas**. No dice que el número no pueda bajar
+// nunca: **retirar tests con su motivo escrito es legítimo**, y entonces bajar el suelo es la
+// operación correcta, no una trampa.
+//
+// Está medido, no supuesto. SCRUM-695 investigó la única bajada del total que hubo en 25 merges
+// —cuatro tests menos en `tests/scrum498-cifra-derivada.test.mjs`— y resultó ser una retirada
+// CORRECTA: SCRUM-680 dejó esos cuatro sin sujeto, y resucitarlos contra el registro de hoy da
+// dos verdes huecos y dos rojos permanentes. Mantenerlos habría sido peor que retirarlos.
+//
+// **Este guard habría llorado igual.** Es su diseño y está bien: es un SUELO, no un juez — no sabe
+// distinguir una retirada documentada de una pérdida silenciosa, y por eso avisa siempre y deja la
+// decisión a quien mira. Lo que se le pide a quien la tome es lo mismo que hizo SCRUM-680: que el
+// motivo quede ESCRITO donde alguien lo buscaría. Bajar el número para desatascar un rojo que no
+// se ha mirado sigue siendo lo prohibido.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
 /**
  * 🔴 EL SUELO. Es un MÍNIMO, no una igualdad.
  *
- * Medido el 2-sep-2026 sobre `origin/main` = `bdce57dc`: la tanda dio **4766** tests
+ * Medido el 2-sep-2026 sobre `origin/main` = `a464d978`: la tanda dio **4766** tests
  * — y SUBIDO a **4798** el 2-sep-2026 sobre `origin/main` = `80db312b` (rama scrum-584, con main
  * mergeado dentro), que es lo que la regla de abajo dice que hay que hacer cuando la tanda crece:
  * 4798 tests, 4714 en verde, 0 fallos, 84 saltadas. No se sube "por si acaso": es lo MEDIDO.
