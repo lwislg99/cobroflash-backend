@@ -116,7 +116,19 @@ const R = analizar(RAIZ);
 // main ya había subido a 8 por su cuenta. Los dos éramos «el octavo»; el censo dice cuántos hay.
 //
 // **Baja el commit que le ponga consumidor**, y hay DOS pendientes: el parte y la revisión.
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 9;
+//
+// 🔴 9 → 10 · 2-sep-2026 · SCRUM-683. TERCERA subida por el MISMO gate y con la misma forma: entra
+// `src/modules/jobs/domain/parteDictado.ts` —el dictado del técnico convertido en las dos listas
+// del parte, con la regla INVERTIDA respecto al motor de presupuestos: una cantidad que el texto
+// no dice NO APARECE— construido y probado con 13 tests, y **sin llamador todavía**.
+//
+// Su consumidor sería la pantalla del parte, que es SCRUM-652 fase C y la está haciendo OTRA
+// sesión ahora mismo; el encargo dice explícitamente «solo el DOMINIO, sin pantalla». Cablearlo
+// desde aquí sería editar sus ficheros mientras ella los edita, y hacerlo para que este contador
+// no subiera es exactamente lo que prohíbe la cabecera de arriba.
+//
+// **Baja a 9 el commit que le ponga consumidor**, y ése es el de la pantalla del parte.
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 10;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 
