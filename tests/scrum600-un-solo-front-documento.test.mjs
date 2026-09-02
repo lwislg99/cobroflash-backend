@@ -46,7 +46,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { censarControles, censarCapacidades, CAPACIDADES, LOS_OCHO } from './_censo-dos-fronts.mjs';
+import {
+  censarControles, censarCapacidades, CAPACIDADES, LOS_OCHO,
+  F9_EN_EL_CATALOGO, faltaEnF9,
+} from './_censo-dos-fronts.mjs';
 import { extraerRanurasVisibles, ranurasDelDocumento, RANURAS_NO_DERIVABLES } from './_ranuras-documento.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -130,13 +133,44 @@ for (const f of LOS_OCHO) {
 // un guard. Misma forma que el trinquete de SCRUM-402.
 // ─────────────────────────────────────────────────────────────────────────────────────────
 test('SCRUM-600 · 🔴 la red cubre los OCHO — quitar uno de la lista tiene que doler', () => {
-  assert.deepEqual(LOS_OCHO.map((f) => f.id),
+  // SCRUM-598: F9 ya no se ancla en `quotesView.js`, porque la capacidad se MUDÓ al catálogo con
+  // CAT-01 (decisión del fundador, 24-ago-2026). Pero siguen siendo OCHO: siete anclados por
+  // línea en `LOS_OCHO` y F9 con su detector propio. Se suman aquí a propósito — si mañana
+  // alguien borra `F9_EN_EL_CATALOGO`, esta cuenta lo dice, que es lo que impide que una
+  // mudanza acabe siendo una retirada silenciosa.
+  const vigilados = [...LOS_OCHO.map((f) => f.id), F9_EN_EL_CATALOGO.id]
+    .sort((a, b) => Number(a.slice(1)) - Number(b.slice(1)));
+  assert.deepEqual(vigilados,
     ['F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'F13', 'F14'],
     '🔴 la red de SCRUM-600 son OCHO y estan enumeradas en el encargo. Ni una menos.');
   for (const f of LOS_OCHO) {
     assert.ok(fs.existsSync(path.join(RAIZ, f.fichero)),
       `🔴 ${f.id} apunta a ${f.fichero}, que no existe: la red vigilaria el vacio`);
   }
+  for (const rel of Object.values(F9_EN_EL_CATALOGO.ficheros)) {
+    assert.ok(fs.existsSync(path.join(RAIZ, rel)),
+      `🔴 F9 apunta a ${rel}, que no existe: su casa nueva estaria vacia`);
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 F9 · EL CONTROL POSITIVO EN SU CASA NUEVA.
+//
+// El rojo probado (romper el catálogo a propósito y comprobar que este detector CAE y NOMBRA qué
+// falta) vive en `scrum598-el-margen-sale-del-documento.test.mjs`, que es el ticket que hizo la
+// mudanza. Aquí va lo que le toca a esta red: que F9 SIGUE ESTANDO.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+test(`SCRUM-600 · 🔴 F9 NO SE PIERDE: ${F9_EN_EL_CATALOGO.que}`, () => {
+  const falta = faltaEnF9({
+    vista: leer(F9_EN_EL_CATALOGO.ficheros.vista),
+    aritmetica: leer(F9_EN_EL_CATALOGO.ficheros.aritmetica),
+  });
+  assert.deepEqual(falta, [],
+    '🔴 SE HA PERDIDO F9 (coste y margen existen en el producto), y en el CATÁLOGO, que es donde '
+    + 'vive desde CAT-01. Falta esto:\n'
+    + falta.map((f) => '   · ' + f).join('\n')
+    + '\n\n  El encargo de SCRUM-600 lo declara innegociable: si se ha quitado a propósito, es '
+    + 'cambio de máster ANTES de codificar, no un borrado de paso.');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
