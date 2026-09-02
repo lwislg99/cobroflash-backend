@@ -597,22 +597,44 @@ html, body { overflow-x: clip; }
   gap: 8px;
   min-height: 44px;          /* objetivo táctil (AB6) */
   padding: 8px 10px;
+  /* SCRUM-690 · el borde se reserva en TODOS los estados con `transparent`. Si sólo lo
+     llevara el lado activo, la pastilla daría un salto de layout de 2 px al seleccionarla —
+     y un control que se mueve al tocarlo se siente roto aunque el color sea correcto. */
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
   color: var(--muted);
   text-align: center;
-  transition: background-color .12s, color .12s, box-shadow .12s;
+  transition: background-color .12s, color .12s, box-shadow .12s, border-color .12s;
 }
 /* El radio se mantiene VISIBLE (no `display:none`): es lo que anuncia el estado al
    lector de pantalla y lo que recibe el foco del teclado. */
 .segmented-option .segmented-input { margin: 0; }
 .segmented-option:hover { color: var(--ink); }
+/* 🔴 SCRUM-690 · EL LADO ACTIVO NO PUEDE DISTINGUIRSE CASI SÓLO POR LA TINTA.
+   Medido en navegador a 360 px, sobre este mismo componente y con el marcado real de sus
+   dos consumidores:
+
+       FONDO del activo contra la barra ......  1,07:1   ← prácticamente invisible
+       tinta del activo .....................  17,52:1
+       tinta del inactivo ...................   7,21:1
+
+   `--surface` (#ffffff) y `--bg` (#f6f7f5) son casi el mismo color, así que la pastilla
+   blanca NO era una señal: lo que separaba los dos lados era el color del texto, y poco
+   más. Con sol en la pantalla o el brillo bajo, un profesional no ve qué lado está puesto —
+   y aquí el lado activo CAMBIA LO QUE HACE EL FORMULARIO: en el catálogo esconde coste,
+   margen y proveedor; en la ficha de cliente cambia qué campos se piden.
+
+   Se añaden BORDE (forma, no tono) y `--shadow-md` («Elevado»): con el fondo y la tinta son
+   cuatro señales, y dos de ellas se ven sin distinguir un color. Es el patrón que SCRUM-689
+   estrenó en las pestañas de clientes, traído al componente del sistema donde vive. */
 .segmented-option:has(.segmented-input:checked) {
   background: var(--surface);
   color: var(--ink);
-  box-shadow: var(--shadow-sm);
+  border-color: var(--border);
+  box-shadow: var(--shadow-md);
 }
 /* El anillo de foco se pinta sobre la PASTILLA, no sobre el radio de 16 px: así se ve
    dónde está el teclado sin que el indicador quede minúsculo. */
