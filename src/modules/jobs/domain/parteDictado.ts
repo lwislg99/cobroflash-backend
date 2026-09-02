@@ -91,7 +91,8 @@ export interface PropuestaDelDictado {
  * el dictado no se entendió y **volver a dictar puede funcionar**; en la segunda se entendió y aun
  * así no salió ninguna línea, así que repetir no arregla nada y la salida es escribirlas.
  *
- * 🔴 FALTA LA TERCERA, la de `cantidadesRetiradas`, y falta A PROPÓSITO: ver la nota de abajo.
+ * 🔴 Y LA TERCERA ES SINGULAR PORQUE SE PINTA EN CADA LÍNEA, no como resumen: ver la nota de abajo,
+ * que cuenta cómo llegó a serlo.
  */
 export const AVISOS_DEL_DICTADO: Record<
   'dictado_vacio' | 'sin_lineas_reconocidas' | 'cantidadesRetiradas',
@@ -153,11 +154,16 @@ function normalizar(texto: string): string {
 /**
  * 🔴 EL CONTROL QUE DECIDE EL TICKET: la cantidad sólo sobrevive si el dictado la contiene.
  *
+ * ⚠️ NO SE EXPORTA, y es deliberado (SCRUM-411): su consumidor real es `sanearDictadoDelParte`,
+ * aquí dentro. Exportarla «para el test» añade superficie pública que nadie de fuera usa, y el
+ * censo de huérfanos la contaría como entregada. Se prueba POR LA SUPERFICIE: el test le pasa
+ * una cantidad al saneador y mira si sobrevive, que es lo que de verdad le pasa en producción.
+ *
  * Devuelve `undefined` —ausente, no cero— cuando el número no es utilizable o cuando el texto no
  * lo respalda. Cero y negativo son la misma clase de basura de dictado y reciben la misma
  * respuesta que lo inventado: no hay cantidad.
  */
-export function cantidadRespaldadaPorElTexto(bruto: unknown, dictado: string): number | undefined {
+function cantidadRespaldadaPorElTexto(bruto: unknown, dictado: string): number | undefined {
   const n = Number(bruto);
   if (!Number.isFinite(n) || n <= 0) return undefined;
 

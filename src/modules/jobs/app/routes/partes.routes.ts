@@ -41,6 +41,8 @@ import {
   type TipoParte,
 } from '../../domain/parteTrabajo';
 import { siguienteNumeroParte } from '../../domain/parteNumero';
+import { AVISOS_DEL_DICTADO, sanearDictadoDelParte } from '../../domain/parteDictado';
+import { isAiConfigured, suggestLineasDeParte } from '../../../ai/domain/ai.service';
 import { exigirNombreFirmante, resolverCalidadFirmante } from '../../domain/albaranFirmante';
 
 const router = Router();
@@ -392,6 +394,59 @@ router.post('/:id/firmar', async (req: any, res) => {
     return res.json(serializeParteParaElTecnico(updated));
   } catch (err: any) {
     console.error('[POST /admin/partes/:id/firmar]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * SCRUM-683 · EL DICTADO SE ORDENA, Y NO ENTRA EN EL PARTE.
+ *
+ * 🔴 ESTA RUTA NO ESCRIBE NADA. Devuelve una PROPUESTA y se acabó: el técnico la corrige y la
+ * confirma con el `PATCH` de siempre, que es el único sitio donde se escriben líneas. Si esta ruta
+ * guardara, una cantidad que ha leído una máquina entraría en un documento que se firma y se
+ * factura sin que nadie la haya mirado.
+ *
+ * ⚠️ Y NO ES UN `GET` PORQUE MANDA UN CUERPO, no porque cambie estado: el dictado es un párrafo
+ * largo y una URL no es sitio para el texto de una obra.
+ *
+ * ⛔ NI UN IMPORTE, en ninguna dirección — ver la cabecera del fichero.
+ */
+router.post('/:id/dictado', async (req: any, res) => {
+  try {
+    const found = await findParte(req);
+    if (!found.ok) {
+      return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
+    }
+    const { parte } = found;
+
+    // El mismo candado que el PATCH, y por el mismo motivo: proponerle líneas a un parte FIRMADO
+    // es ofrecerle al técnico un camino que el siguiente paso le va a cerrar.
+    const candado = puedeEditarContenido(parte.estado as EstadoParte);
+    if (!candado.ok) return res.status(409).json({ error: 'parte_locked', message: candado.motivo });
+
+    const dictado = String(req.body?.dictado ?? '').trim();
+
+    // 🔴 SIN RED, SIN CLAVE O CON EL MODELO CAÍDO: NO SE BLOQUEA EL PARTE. Se devuelve la propuesta
+    // VACÍA con su motivo y un 200, porque el técnico puede seguir escribiendo a mano — el dictado
+    // del teclado de su móvil funciona sin nosotros y ordenar es un extra que puede faltar. Un 500
+    // aquí le diría «se ha roto» cuando lo único que pasa es que no hay ayuda.
+    if (dictado === '' || !isAiConfigured()) {
+      return res.json({ propuesta: sanearDictadoDelParte(null, dictado), avisos: AVISOS_DEL_DICTADO });
+    }
+
+    let propuesta;
+    try {
+      propuesta = await suggestLineasDeParte({ dictado });
+    } catch (err: any) {
+      console.error('[POST /admin/partes/:id/dictado] ia:', err?.message || err);
+      propuesta = sanearDictadoDelParte(null, dictado);
+    }
+
+    // Los textos viajan CON la propuesta para que la pantalla no los reteclee: son microcopy
+    // aprobada (regla 30) y un texto aprobado que se copia a mano deja de ser el aprobado.
+    return res.json({ propuesta, avisos: AVISOS_DEL_DICTADO });
+  } catch (err: any) {
+    console.error('[POST /admin/partes/:id/dictado]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });

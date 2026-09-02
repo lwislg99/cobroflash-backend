@@ -10,12 +10,22 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const {
-  cantidadRespaldadaPorElTexto, sanearDictadoDelParte, aLineaDelParte, PROMPT_PARTE_APROBADO,
+  sanearDictadoDelParte, aLineaDelParte, PROMPT_PARTE_APROBADO,
   AVISOS_DEL_DICTADO,
 } = await import('../dist/modules/jobs/domain/parteDictado.js');
 
 // El motor de presupuestos, para el contraste. Si ÉSTE aprobara lo mismo, no habría ticket.
 const { cantidadUtilizable } = await import('../dist/modules/ai/domain/lineasSugeridas.js');
+
+
+// La cantidad se mide POR LA SUPERFICIE PÚBLICA, no llamando al interno: se le da al saneador una
+// línea con esa cantidad y se mira si sobrevive. Es exactamente lo que le pasa en producción, y
+// deja de exigir un `export` que nadie de fuera necesita (SCRUM-411).
+function undsTrasElSaneado(unds, dictado) {
+  const p = sanearDictadoDelParte([{ bloque: 'materiales', descripcion: 'Pieza', unds }], dictado);
+  const linea = p.materiales[0];
+  return linea ? linea.unds : undefined;
+}
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // EL CORPUS REAL. Cuatro líneas de un parte de Tecnosel, tal cual se dictan: con marcas mal
@@ -79,14 +89,14 @@ test('SCRUM-683 · 🔴 Y CAE CON EL MECANISMO VIEJO: `cantidadUtilizable` aprue
   assert.equal(cantidadUtilizable(4), 4, 'y el 4 que el dictado no dice en ninguna parte');
 
   // El mecanismo nuevo, sobre lo mismo.
-  assert.equal(cantidadRespaldadaPorElTexto(undefined, dictado), undefined);
-  assert.equal(cantidadRespaldadaPorElTexto(1, dictado), undefined);
-  assert.equal(cantidadRespaldadaPorElTexto(4, dictado), undefined);
+  assert.equal(undsTrasElSaneado(undefined, dictado), undefined);
+  assert.equal(undsTrasElSaneado(1, dictado), undefined);
+  assert.equal(undsTrasElSaneado(4, dictado), undefined);
 
   // 🔴 El contraste, dicho como aserto: si algún día los dos coincidieran, este test es el que
   // avisa de que el mecanismo nuevo dejó de aportar y alguien está protegido por una ilusión.
   assert.notEqual(
-    cantidadUtilizable(undefined), cantidadRespaldadaPorElTexto(undefined, dictado),
+    cantidadUtilizable(undefined), undsTrasElSaneado(undefined, dictado),
     '🔴 el mecanismo nuevo y el viejo dan LO MISMO: entonces este ticket no hacía falta, o el ' +
     'mecanismo nuevo se ha roto y ya no protege nada.',
   );
@@ -122,24 +132,24 @@ test('SCRUM-683 · CONTROL POSITIVO: lo que el técnico SÍ dice sobrevive, en s
 });
 
 test('SCRUM-683 · el número dicho EN PALABRA también cuenta, y «uno» NO', () => {
-  assert.equal(cantidadRespaldadaPorElTexto(3, 'estuvimos tres horas con el rack'), 3);
-  assert.equal(cantidadRespaldadaPorElTexto(0.5, 'media hora de desplazamiento'), 0.5);
+  assert.equal(undsTrasElSaneado(3, 'estuvimos tres horas con el rack'), 3);
+  assert.equal(undsTrasElSaneado(0.5, 'media hora de desplazamiento'), 0.5);
 
   // 🔴 «una» es la palabra más frecuente del castellano hablado. Aceptarla reintroduciría el 1
   // por la puerta de atrás: aquí el dictado NO está diciendo una cantidad.
   assert.equal(
-    cantidadRespaldadaPorElTexto(1, 'hicimos una revision de una de las camaras'), undefined,
+    undsTrasElSaneado(1, 'hicimos una revision de una de las camaras'), undefined,
     '🔴 «una» se está leyendo como la cantidad 1: es exactamente el 1 inventado con otro disfraz',
   );
   // Y una palabra dentro de otra no cuenta.
-  assert.equal(cantidadRespaldadaPorElTexto(6, 'pedimos seiscientos metros de cable'), undefined);
+  assert.equal(undsTrasElSaneado(6, 'pedimos seiscientos metros de cable'), undefined);
 });
 
 test('SCRUM-683 · un número pegado a otro no es una cantidad', () => {
   // «cat 6» sí lo es (el 6 está suelto y el técnico confirma); «2026» no cede un 2.
-  assert.equal(cantidadRespaldadaPorElTexto(6, 'cable UTP cat 6'), 6);
-  assert.equal(cantidadRespaldadaPorElTexto(2, 'el contrato de 2026'), undefined);
-  assert.equal(cantidadRespaldadaPorElTexto(20, 'el contrato de 2026'), undefined);
+  assert.equal(undsTrasElSaneado(6, 'cable UTP cat 6'), 6);
+  assert.equal(undsTrasElSaneado(2, 'el contrato de 2026'), undefined);
+  assert.equal(undsTrasElSaneado(20, 'el contrato de 2026'), undefined);
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════

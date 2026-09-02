@@ -159,7 +159,19 @@ const R = analizar(RAIZ);
 // Quedan DOS esperando su gate: `parteDictado.ts` (la pantalla del parte) y `revision.ts` (el
 // campo de revisión en el esquema).
 // ═══════════════════════════════════════════════════════════════════════════════════════
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 9;
+//
+// ✅ 9 → 8 · 2-sep-2026 · SCRUM-683 (cableado). BAJA, y baja por lo que su propia entrada dejó
+// dicho: **`parteDictado.ts` YA TIENE CONSUMIDOR**, y es la pantalla del parte, como estaba
+// escrito. El cable: `partes.routes.ts` → `POST /admin/partes/:id/dictado`, que ordena el dictado
+// con `suggestLineasDeParte` y devuelve la propuesta SIN escribir nada en el parte.
+//
+// ⚠️ Y baja RECONTADO, no restado: ejecutado `analizar()` sobre el árbol de hoy → **126 módulos de
+// dominio, 289 alcanzables, 8 inalcanzables**. La entrada de arriba prometía «baja cuando
+// `parteDictado.ts` tenga consumidor» y NO prometía un número, que es justo por lo que no ha hecho
+// falta corregirla: una frase que nombra el módulo no caduca.
+//
+// Queda UNO esperando su gate: `revision.ts`, el campo de revisión en el esquema.
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 8;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 
