@@ -79,7 +79,12 @@ function renderCustomersView(container) {
   const searchInput = document.createElement("input");
   searchInput.type = "text";
   searchInput.className = "input";
-  searchInput.placeholder = "Buscar por nombre, teléfono o email…";
+  // SCRUM-588 (CONT-16) · el placeholder DICE LO QUE EL BUSCADOR HACE. Decía «nombre, teléfono o
+  // email» y esta misma rama le añadió la referencia interna al `OR` de `listCustomers`: dejarlo
+  // habría sido una frase falsa en pantalla, que es peor que una frase incompleta — el profesional
+  // no probaría a buscar por su nº de expediente porque el campo le dice que no se puede.
+  // Texto APROBADO por el asesor (2-sep-2026), literal y con «…» de UN carácter.
+  searchInput.placeholder = "Buscar por nombre, teléfono, email o referencia…";
   searchInput.style.cssText = "min-width:160px;flex:1";
   toolbar.appendChild(searchInput);
 
@@ -220,12 +225,51 @@ function renderCustomersView(container) {
   let modalForm = null;
   let fieldName, fieldPhone, fieldEmail, fieldNotes;
   let fieldTags; // SCRUM-580 (CONT-07)
-  // SCRUM-578: UNA sola constante para los dos rotulos sin aprobar de este ticket.
-  // ⚠️ Y una consecuencia medida en SCRUM-615 que hay que decir: el censo cuenta MARCAS, no
-  // rotulos. Estas dos superficies comparten constante, asi que aprobar UNO de los dos textos
-  // NO apaga el otro: habra que partirla el dia que el fundador escriba el primero.
-  const MARCADOR_MICROCOPY = "[PENDIENTE microcopy oficial]";
-  let fieldPrefijo = null;   // SCRUM-578 (a): el prefijo de pais, fuera del numero
+  let fieldInternalRef; // SCRUM-588 (CONT-16)
+  // ═════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-575 (2-sep-2026) · LA CONSTANTE COMPARTIDA SE PARTE EN DOS, Y ERA LO QUE FALTABA.
+  //
+  // SCRUM-578 dejó UNA constante para dos superficies —el rótulo del teléfono y el aviso de
+  // duplicado— y SCRUM-615 dejó escrito el problema: «aprobar UNO de los dos textos NO apaga el
+  // otro: habrá que partirla el día que el fundador escriba el primero». Ese día es hoy.
+  //
+  // 🔴 PARTIRLA NO ES ALCANCE EXTRA: sin partirla, poner el rótulo aprobado del teléfono le
+  // cambiaría el texto AL AVISO DE DUPLICADO, que dice otra cosa completamente distinta. Una
+  // constante por superficie es lo que permite firmar una sin firmar la otra.
+  //
+  // Los dos textos están APROBADOS (asesor, 2-sep-2026; el del aviso, provisional a la espera de
+  // confirmación del fundador). Van SIN marcador y fijados con `===` en
+  // `tests/scrum575b-nif-cableado.test.mjs`.
+  // ═════════════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * El rótulo del teléfono. A SECAS, y el motivo es medible: el rótulo viejo pedía un FORMATO
+   * —el de la norma internacional, sin el signo de suma— que YA NO SE PIDE, porque lo impone el
+   * control de al lado, que muestra «🇪🇸 España +34». Y CONT-05 demostró EN ESTA MISMA PANTALLA
+   * que una regla escrita en una etiqueta no se cumple: se guardaron los dos formatos el mismo día.
+   *
+   * ⚠️ El texto exacto de aquel rótulo NO se transcribe aquí a propósito: `scrum578` prohíbe esa
+   * cadena en la vista y su filtro sólo salta los comentarios de línea, no los de bloque. Un
+   * comentario que la citara haría saltar ese guard en falso.
+   *
+   * Se descartó «Teléfono (opcional)»: Email también es opcional y no lo dice, así que añadirlo
+   * aquí no arregla la inconsistencia — la reparte.
+   */
+  const ROTULO_TELEFONO = "Teléfono";
+
+  /**
+   * El aviso de identificador ya usado. PROVISIONAL del asesor, pendiente de confirmación del
+   * fundador (regla 30).
+   *
+   * 🔴 ES UN AVISO, NO UN BLOQUEO, Y EL TEXTO NO PUEDE SONAR A BLOQUEO. Hay casos legítimos
+   * —marido y mujer con el mismo móvil, dos comunidades del mismo administrador con el mismo
+   * email— y el que decide es el profesional: por eso dice «revísalo» y no «ya existe».
+   * Sirve para teléfono, email y NIF sin nombrar ninguno, que es lo que lo hace un solo texto.
+   *
+   * Caja: 63 caracteres sobre los ~45 por línea medidos a 360 px → dos líneas, en un aviso que
+   * vive ARRIBA del modal y donde caben.
+   */
+  const AVISO_DUPLICADO = "Ese dato ya lo tiene otro cliente. Revísalo por si es un duplicado.";  let fieldPrefijo = null;   // SCRUM-578 (a): el prefijo de pais, fuera del numero
   let avisoDuplicado = null; // SCRUM-578 (c): el aviso de identificador ya usado
   // SCRUM-575 (CONT-02) · CONSTANTE PROPIA, no la de CONT-05, y a proposito: son tickets
   // distintos. Compartirla ataria la aprobacion de este texto a la de los otros dos — el
@@ -371,7 +415,7 @@ function renderCustomersView(container) {
     // FALSO — y encima era la prueba del ticket de que una regla escrita en una etiqueta no se
     // cumple: pedía «E.164 sin +» y se guardaron `+34 662629419` y `662629419` igual.
     // El texto nuevo es del fundador (regla 30): sale con marcador, sin palabra de trabajo.
-    fieldPhone = createField(MARCADOR_MICROCOPY, "phone", "text");
+    fieldPhone = createField(ROTULO_TELEFONO, "phone", "text");
     // El campo NO admite espacios (punto b): se limpian al escribir, además de normalizarse en
     // servidor. Aquí es comodidad; la regla de verdad está en el servidor, que es donde el ticket
     // demostró que tenía que estar.
@@ -410,6 +454,26 @@ function renderCustomersView(container) {
       // es el control que más fácil se rompe sin querer al añadir una validación.
       avisoNif.hidden = validarNifEspanol(fieldTaxId.input.value).valido;
     });
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-588 (CONT-16) · LA REFERENCIA INTERNA, y va ANTES de «Notas» a propósito.
+    //
+    // Es el número con el que el profesional conoce a este cliente: el expediente de la
+    // aseguradora, la finca del administrador, el código del sistema viejo. Hasta hoy lo metía
+    // justo en «Notas» —el campo de debajo— y luego no lo podía buscar de forma fiable. Ponerlo
+    // encima es lo que hace que la próxima vez no acabe ahí.
+    //
+    // 🔴 LOS DOS TEXTOS ESTÁN APROBADOS Y VAN LITERALES (regla 30, asesor 2-sep-2026). Medidos en
+    // navegador a 360 px: el rótulo ocupa 103 px de 336, y el placeholder 219 px de los 308
+    // útiles del input. Ninguno parte en dos líneas.
+    //
+    // ⚠️ LA AYUDA VA COMO `placeholder` Y ES UN HUECO DECLARADO, no una solución: `createField` no
+    // admite línea de ayuda y no hay clase de hint en el CSS, así que ponerla debajo sería un
+    // componente nuevo del inventario AB3. Se acepta porque **el significado lo lleva el RÓTULO** y
+    // el placeholder sólo da ejemplos — un placeholder desaparece en cuanto se teclea, así que el
+    // día que la ayuda tenga que llevar una REGLA, esto ya no valdrá.
+    fieldInternalRef = createField("Referencia interna", "internalRef", "text");
+    fieldInternalRef.input.placeholder = "Nº de expediente, finca, código…";
+
     fieldNotes = createField("Notas", "notes", null, false, true);
 
     // ═══════════════════════════════════════════════════════════════════════════════════
@@ -528,7 +592,7 @@ function renderCustomersView(container) {
     // con marcador, sin palabra de trabajo: es del fundador (regla 30) y es lo que el profesional
     // lee para decidir si está creando un duplicado.
     avisoDuplicado = createElement("div", "alert aviso-duplicado");
-    avisoDuplicado.textContent = MARCADOR_MICROCOPY;
+    avisoDuplicado.textContent = AVISO_DUPLICADO;
     avisoDuplicado.hidden = true;
     body.appendChild(avisoDuplicado);
 
@@ -554,6 +618,9 @@ function renderCustomersView(container) {
     body.appendChild(paisWrapper);
     body.appendChild(tipoWrapper);
     body.appendChild(recargoWrapper);
+    // SCRUM-588 (CONT-16): la referencia interna va JUSTO ENCIMA de «Notas», que es donde el
+    // profesional la metía hasta hoy por no tener sitio propio.
+    body.appendChild(fieldInternalRef.wrapper);
     body.appendChild(fieldNotes.wrapper);
 
     // J3: baja manual de WhatsApp (hasta WA-0b el "BAJA" entrante no se procesa solo)
@@ -668,6 +735,9 @@ function renderCustomersView(container) {
       repartirTelefono(editingCustomer.phone || "");
       fieldEmail.input.value = editingCustomer.email || "";
       fieldNotes.input.value = editingCustomer.notes || "";
+      // SCRUM-588: si esto no estuviera, editar un cliente BORRARIA su referencia al guardar —
+      // el campo saldria vacio y el payload mandaria null encima del dato bueno.
+      fieldInternalRef.input.value = editingCustomer.internalRef || "";
       fieldLegalName.input.value = editingCustomer.legalName || ""; // A20.4
       fieldTaxId.input.value = editingCustomer.taxId || "";
       fieldWaOptOut.checked = !!editingCustomer.waOptOut;
@@ -724,6 +794,9 @@ function renderCustomersView(container) {
       notes: fieldNotes.input.value.trim(),
       legalName: fieldLegalName.input.value.trim() || null, // A20.4
       taxId: fieldTaxId.input.value.trim() || null,
+      // SCRUM-588: «ausente ≠ vacio». Lo vacio viaja como null, NUNCA como cadena vacia: una
+      // cadena vacia diria «tiene referencia, y es nada», que no es lo mismo que no tenerla.
+      internalRef: fieldInternalRef.input.value.trim() || null,
       // SCRUM-574: forma jurídica. `null` = nadie la ha declarado, y viaja como null hasta la BD:
       // NO se cae a un lado por defecto, que sería declarar por el profesional.
       contactKind: switchForma.leer(),

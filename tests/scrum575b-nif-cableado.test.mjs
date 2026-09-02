@@ -284,3 +284,144 @@ test('SCRUM-575b · 🔴 CONTROL NEGATIVO: tocar otro campo del cliente NO tumba
   // Y el esquema sigue aceptando un cliente sin NIF pero con otros campos tocados.
   assert.doesNotThrow(() => customerCreateSchema.parse(CLIENTE({ recargoEquivalencia: true })));
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// LOS DOS TEXTOS QUE SE FIRMAN EN ESTE TICKET, Y LA CONSTANTE QUE HUBO QUE PARTIR
+//
+// `customersView.js` tenía TRES marcadores y sale del censo con CERO. Dos de ellos —el rótulo
+// del teléfono y el aviso de duplicado— compartían UNA sola constante, y por eso hubo que
+// partirla: sin partirla, aprobar el rótulo le habría cambiado el texto AL AVISO, que dice otra
+// cosa completamente distinta. Lo dejó avisado SCRUM-615 y este ticket lo ejecuta.
+//
+// Los dos van fijados con `===`. Un retoque «de paso» —quitar un acento, abreviar, añadir un
+// paréntesis— reabre una aprobación sin que nadie se entere, y estos textos ya los está leyendo
+// un profesional: producción despliega al mergear.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/** Aprobado por el asesor el 2-sep-2026. A SECAS: ver el motivo en `customersView.js`. */
+const ROTULO_TELEFONO_ESPERADO = 'Teléfono';
+
+/** PROVISIONAL del asesor (2-sep-2026), pendiente de confirmación del fundador. */
+const AVISO_DUPLICADO_ESPERADO = 'Ese dato ya lo tiene otro cliente. Revísalo por si es un duplicado.';
+
+test('SCRUM-575b · 🔴 EL RÓTULO DEL TELÉFONO, LITERAL — y el viejo pedía un formato que ya no se pide', async () => {
+  const { body } = await modalDeCliente();
+  const campo = todos(body).find((n) => n.name === 'phone');
+  assert.ok(campo, '🔴 no encuentro el campo del teléfono.');
+
+  const etiqueta = todos(campo._padre._padre).find((n) => n.tagName === 'LABEL');
+  assert.ok(etiqueta, '🔴 el campo del teléfono no tiene etiqueta.');
+  assert.equal(etiqueta._texto, ROTULO_TELEFONO_ESPERADO,
+    `🔴 el rótulo dice «${etiqueta._texto}» y el aprobado es «${ROTULO_TELEFONO_ESPERADO}».`);
+
+  // 🔴 Y NO VUELVE EL RÓTULO VIEJO. «Teléfono (E.164 sin +)» describía un campo donde el prefijo
+  // iba DENTRO; desde CONT-05 el prefijo vive en el selector de al lado, así que ese texto sería
+  // FALSO. Además fue la prueba de que una regla escrita en una etiqueta no se cumple: pedía
+  // «E.164 sin +» y se guardaron `+34 662629419` y `662629419` el mismo día.
+  assert.equal(/E\.164|sin \+/.test(String(etiqueta._texto)), false,
+    '🔴 ha vuelto un rótulo que pide un FORMATO. Ese formato lo impone el control de al lado, y '
+    + 'CONT-05 demostró en esta misma pantalla que pedirlo en la etiqueta no funciona.');
+});
+
+test('SCRUM-575b · 🔴 EL AVISO DE DUPLICADO, LITERAL — y NO suena a bloqueo', async () => {
+  const { body } = await modalDeCliente();
+  const aviso = todos(body).find((n) => String(n.className || '').includes('aviso-duplicado'));
+  assert.ok(aviso, '🔴 el modal no pinta el aviso de duplicado.');
+  assert.equal(aviso._texto, AVISO_DUPLICADO_ESPERADO,
+    `🔴 el aviso dice «${aviso._texto}» y el aprobado es «${AVISO_DUPLICADO_ESPERADO}».`);
+
+  // 🔴 ES UN AVISO, NO UN BLOQUEO, y el texto no puede decir lo contrario: hay casos legítimos
+  // —marido y mujer con el mismo móvil, dos comunidades del mismo administrador con el mismo
+  // email— y el que decide es el profesional. Si algún día alguien lo reescribe en tono de
+  // prohibición, este caso lo dice.
+  assert.match(String(aviso._texto), /Revísalo/,
+    '🔴 el aviso ha dejado de invitar a REVISAR. Es un aviso, no un bloqueo: el profesional puede '
+    + 'guardar igual, y hay duplicados legítimos.');
+  assert.equal(/no puedes|no se puede|prohibid|error/i.test(String(aviso._texto)), false,
+    '🔴 el aviso suena a BLOQUEO. Bloquear un duplicado legítimo es peor que avisarlo.');
+});
+
+test('SCRUM-575b · 🔴 NINGUNO DE LOS DOS ES UN MARCADOR, y comparten haber sido UNA constante', async () => {
+  const { body } = await modalDeCliente();
+  const rotulo = todos(body).find((n) => n.name === 'phone')._padre._padre;
+  const etiqueta = todos(rotulo).find((n) => n.tagName === 'LABEL');
+  const aviso = todos(body).find((n) => String(n.className || '').includes('aviso-duplicado'));
+
+  for (const [que, texto] of [['rótulo del teléfono', etiqueta._texto], ['aviso de duplicado', aviso._texto]]) {
+    assert.equal(/PENDIENTE|^\[.*\]$/.test(String(texto)), false,
+      `🔴 el ${que} volvió a ser un MARCADOR. Producción despliega al mergear: eso lo ve un `
+      + 'profesional en su pantalla.');
+  }
+
+  // Y son DISTINTOS. Es lo que prueba que la constante se partió de verdad: mientras compartían
+  // una sola, aprobar uno le cambiaba el texto al otro.
+  assert.notEqual(etiqueta._texto, aviso._texto,
+    '🔴 los dos textos son IGUALES: la constante ha vuelto a estar compartida, y firmar uno le '
+    + 'cambia el texto al otro (es lo que dejó avisado SCRUM-615).');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 CONSTRUIDO ≠ ALCANZABLE: ¿ALGO ENSEÑA ESE AVISO DE VERDAD?
+//
+// El aviso nace `hidden`. Que exista y tenga un texto bonito no prueba que un profesional llegue
+// a verlo nunca — y un texto que nadie ve no es microcopy, es código muerto con acentos.
+//
+// MEDIDO: `comprobarDuplicados()` lo enciende con `avisoDuplicado.hidden = !hay`, y está cableada
+// al `blur` del teléfono, del email y del NIF, y al `change` del prefijo. Aquí no se lee: se
+// EJECUTA, sirviendo una respuesta del servidor con coincidencias.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+test('SCRUM-575b · 🔴 EL AVISO SE ENSEÑA DE VERDAD cuando el servidor dice que hay coincidencia', async () => {
+  const banco = cargarDashboard(RAIZ, {
+    datos: (ruta) => (String(ruta).includes('/duplicados')
+      ? { coincidencias: [{ id: 9, campo: 'phone' }] }
+      : {}),
+  });
+  const crear = banco.ctx.document.createElement;
+  banco.ctx.document.createElement = function (tag) {
+    const n = crear.call(this, tag);
+    if (String(tag).toLowerCase() === 'form' && typeof n.reset !== 'function') n.reset = function () {};
+    return n;
+  };
+  const r = await pintarVista(banco, 'renderCustomersView');
+  assert.equal(r.error, null, `🔴 la pantalla revienta: ${r.error && r.error.message}`);
+  todos(r.contenedor).find((n) => String(n._texto || '').includes('Nuevo cliente')).disparar('click');
+
+  const body = banco.ctx.document.body;
+  const aviso = todos(body).find((n) => String(n.className || '').includes('aviso-duplicado'));
+  const email = todos(body).find((n) => n.name === 'email');
+  assert.ok(aviso && email, '🔴 SUELO: falta el aviso o el campo de email.');
+  assert.equal(aviso.hidden, true, 'suelo: nace oculto, que es lo que dice el código');
+
+  // Se escribe un identificador y se sale del campo, que es lo que hace el profesional.
+  email.value = 'repetido@ejemplo.com';
+  email.disparar('blur');
+  await new Promise((r2) => setTimeout(r2, 0)); // `comprobarDuplicados` es async
+
+  assert.equal(aviso.hidden, false,
+    '🔴 CONSTRUIDO PERO NO ALCANZABLE: el servidor dice que hay coincidencia y el aviso NO se '
+    + 'enseña. Un texto que nadie llega a ver no es microcopy: es código muerto con acentos.');
+});
+
+test('SCRUM-575b · 🔴 CONTROL NEGATIVO: sin coincidencias el aviso NO acusa', async () => {
+  // Sin esto, un aviso clavado en «visible» pasaría el caso de arriba — y acusaría de duplicado a
+  // todo el mundo, que es el peor falso positivo posible en esta pantalla.
+  const banco = cargarDashboard(RAIZ, { datos: () => ({ coincidencias: [] }) });
+  const crear = banco.ctx.document.createElement;
+  banco.ctx.document.createElement = function (tag) {
+    const n = crear.call(this, tag);
+    if (String(tag).toLowerCase() === 'form' && typeof n.reset !== 'function') n.reset = function () {};
+    return n;
+  };
+  const r = await pintarVista(banco, 'renderCustomersView');
+  todos(r.contenedor).find((n) => String(n._texto || '').includes('Nuevo cliente')).disparar('click');
+
+  const body = banco.ctx.document.body;
+  const aviso = todos(body).find((n) => String(n.className || '').includes('aviso-duplicado'));
+  const email = todos(body).find((n) => n.name === 'email');
+  email.value = 'unico@ejemplo.com';
+  email.disparar('blur');
+  await new Promise((r2) => setTimeout(r2, 0));
+
+  assert.equal(aviso.hidden, true,
+    '🔴 el aviso se enciende SIN coincidencias: acusaría de duplicado a cualquier cliente nuevo.');
+});

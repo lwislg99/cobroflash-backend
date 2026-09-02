@@ -46,6 +46,11 @@ const CUSTOMER_SELECT_NO_TOKEN = {
   billingPostalCode: true,
   billingProvince: true,
   billingCountry: true,
+  // SCRUM-588 (CONT-16) · la referencia interna. Va aquí por el motivo escrito arriba, que es EL
+  // eslabón que más fácil se pierde: sin esta línea el alta la guardaría, `getCustomer` devolvería
+  // un cliente sin ella, la pantalla se recargaría vacía y el profesional la reescribiría — con la
+  // tanda en VERDE, porque el dato sí está en la base.
+  internalRef: true,
 } as const;
 
 export async function listCustomers(merchantId: number, search?: string) {
@@ -57,6 +62,16 @@ export async function listCustomers(merchantId: number, search?: string) {
         { name:  { contains: search, mode: 'insensitive' } },
         { phone: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } },
+        // 🔴 SCRUM-588 (CONT-16) · SIN ESTA LÍNEA EL CAMPO NO RESUELVE NADA.
+        //
+        // La referencia interna existe para poder ENCONTRAR al cliente por el número con el que el
+        // profesional lo conoce — el expediente de la aseguradora, la finca, el código del sistema
+        // viejo. Guardarla sin poder buscarla es exactamente lo que ya hacía `notes`: un sitio
+        // donde el dato entra y no vuelve a salir.
+        //
+        // Va en el MISMO `OR` que nombre, teléfono y email, no en un buscador aparte: el
+        // profesional escribe lo que recuerda y no tiene por qué decirnos de qué tipo es.
+        { internalRef: { contains: search, mode: 'insensitive' } },
       ],
     }];
   }

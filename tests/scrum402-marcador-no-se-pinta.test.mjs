@@ -233,15 +233,23 @@ const CENSO = Object.freeze({
   // NO se moverá** y entrará una superficie sin firmar en silencio. Quien añada un código mapeado
   // le pone SU constante, para que el fundador pueda firmar uno sin firmar los dos.
   'providersView.js': 1,
-  // SCRUM-575 (CONT-02, 2-sep-2026) · BAJA DE 2 A 1, y el trinquete se APRIETA. Se firma el aviso
-  // de NIF/CIF mal formado —texto provisional del asesor, «Ese NIF/CIF no es válido.
-  // Compruébalo.»— así que `MARCADOR_NIF` desaparece del fichero.
+  // 🔴 SCRUM-575 (2-sep-2026) · `customersView.js` SALE DEL CENSO: pasó de 2 a 1 y de 1 a 0 en el
+  // mismo ticket, y la entrada se BORRA — no se pone a 0 — como dejaron escrito SCRUM-424,
+  // SCRUM-405 y SCRUM-593 aquí mismo: `censoActual()` sólo lista ficheros CON marcadores, así que
+  // un 0 sería una bajada permanente sin anotar.
   //
-  // 🔴 NO se borra la entrada, se BAJA A 1: aquí no ocurre lo de SCRUM-593/424/405 (que sí se
-  // borraron) porque QUEDA una marca viva —el rótulo del teléfono (CONT-05)—, y un fichero que
-  // sale del censo teniendo una marca dejaría de vigilarse justo donde todavía hay algo que
-  // firmar. Se borra cuando llegue a 0, no antes.
-  'customersView.js': 1,
+  // Las TRES marcas que tenía, con quién las firmó:
+  //   · el aviso de NIF/CIF mal formado ....... «Ese NIF/CIF no es válido. Compruébalo.»
+  //   · el rótulo del teléfono ................ «Teléfono»
+  //   · el aviso de identificador ya usado .... «Ese dato ya lo tiene otro cliente. Revísalo por
+  //                                              si es un duplicado.»
+  // Los dos últimos compartían UNA constante, y por eso hubo que PARTIRLA: sin partirla, aprobar
+  // el rótulo le habría cambiado el texto al aviso, que dice otra cosa. Lo dejó avisado SCRUM-615.
+  //
+  // ⚠️ SALIR DEL CENSO NO ES SALIR DE LA VIGILANCIA, y aquí no es una frase: lo fija **R4b**, y
+  // además se ha comprobado a propósito en este ticket metiendo un marcador nuevo en este mismo
+  // fichero y viendo que R4 lo caza por la rama `nuevos`. Un cero sin control positivo no es un
+  // cero: es un guard que dejó de mirar.
   'exportView.js': 1,
   // 🔴 17-ago-2026 · `invoiceDetailView.js` SALE DEL CENSO (tenía 9). El fundador aprobó los ocho
   // rótulos de acción, y el noveno era `MARCA_MICRO`, una constante que ya no consumía nadie y que
