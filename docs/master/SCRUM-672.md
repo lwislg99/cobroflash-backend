@@ -84,6 +84,11 @@ desaparecieron:
 cobertura perdida sin reclamar, y es exactamente el caso que este ticket viene a hacer visible.
 **No lo persigo — no es mi carril.**
 
+> **CONTESTADO por SCRUM-695 (2-sep-2026): fue DELIBERADO, y además obligatorio.** Los cuatro
+> vigilaban un registro que SCRUM-680 dejó sin sujeto; resucitados contra el registro de hoy dan
+> **dos verdes huecos y dos rojos permanentes**. El motivo ya estaba escrito en la cabecera del
+> propio fichero. Detalle en `docs/master/SCRUM-695.md`.
+
 ## Lo construido
 
 | Pieza | Qué es |
@@ -155,3 +160,76 @@ de los caminos que el propio ticket nombra. Resultado:
    guardó.
 3. **`SUELO_TOTAL = 646` de `_evidencia-tanda.mjs` sigue rancio.** No se toca aquí: es otro carril
    (la tanda gateada) y ampliarlo sería mejorar de paso.
+
+---
+
+## Añadido el 2-sep-2026, después de que SCRUM-695 contestara la §③
+
+Aquella bajada resultó ser una **retirada correcta** — y este suelo **habría llorado igual**. Es su
+diseño (es un suelo, no un juez), pero la regla de conflicto podía leerse como si el número no
+pudiera bajar nunca, y eso dejaría a la siguiente sesión sin saber que **retirar tests con el motivo
+escrito es legítimo**.
+
+Se añade **sólo un comentario** a `scripts/_suelo-de-la-tanda.mjs` —17 líneas, ninguna de lógica, el
+número intacto— diciendo que «se queda el más alto» resuelve un choque entre ramas y no prohíbe una
+bajada deliberada; lo prohibido sigue siendo bajarlo para desatascar un rojo que no se ha mirado.
+
+**Comprobado que el comentario NO ENSOMBRECE al guard:** el test ata la cadena de la regla, y un
+comentario que la repitiera dejaría pasar el día que alguien borrara la regla de verdad. Medido: la
+cadena sale **una sola vez**, y al romper la original el test cae (`not ok 10`). Restaurada, 12/12.
+
+**Y la procedencia del número se contradecía a sí misma:** el docstring decía `bdce57dc` y la
+constante `MEDIDO_CONTRA` decía `a464d978`. Son dos merges reales de `main` separados 11 minutos.
+Manda `a464d978`, que es lo que declara también la cabecera de esta entrada. Corregido el docstring
+—un comentario, no el número—, porque una procedencia que se contradice no sirve para lo que existe.
+
+### 🔴 El suelo, contra el `main` de ahora
+
+Se midió dos veces, y la segunda es la que vale.
+
+| Árbol | Tanda | Suelo | Margen |
+|---|---|---|---|
+| esta rama antes de mezclar (`a464d978`) | 4766 | 4766 | **0** — el borde exacto, ejercitado de verdad |
+| **con `main` dentro** (entraron 672 y 692) | **4783** | 4766 | **+17** |
+| **con `main` dentro otra vez** (entró 584, que SUBIÓ el suelo) | **4798** | **4798** | **0** — el borde exacto, y pasa |
+
+```
+[suelo de la tanda] ✅ suelo 4766 · total actual 4783 · margen 17
+   Subir el suelo a 4783 es una línea, y lo puede hacer cualquier sesión.
+```
+
+**El suelo NO canta.** El margen 0 de la primera medición era el borde exacto y pasó, que es su
+diseño (es un mínimo, no una igualdad); con `main` dentro sobran 17. **No se sube aquí**: subirlo es
+la línea que el propio fichero describe y no hace falta para cerrar este PR — se deja dicho, con el
+número, para que quien lo suba no tenga que volver a medir.
+
+**Tanda con `main` dentro: 4783 tests, 4699 pass, 0 fail, 84 skipped.** Aquel merge fue limpio.
+
+### La segunda vuelta: SCRUM-584 subió el suelo, y el docstring SÍ chocó
+
+Entró SCRUM-584 en `main` y **subió el suelo a 4798** (`24ea2b3c`), que es exactamente la operación
+que este fichero describe. Al volver a mezclar, el conflicto fue **una sola línea**: la del docstring
+que esta rama había corregido.
+
+* `main` reintroducía el `bdce57dc` **rancio** en la primera línea y añadía debajo las suyas.
+* Esta rama tenía ahí el `a464d978` **medido**.
+
+Resuelto como **los DOS**: las tres líneas nuevas de `main` (la subida a 4798 y su procedencia
+`80db312b`), con **la corrección de esta rama en la primera**. Perder la corrección al mezclar habría
+devuelto al fichero la contradicción que este PR quitó.
+
+**Comprobado con los ojos después del merge**, porque el número es justo lo que no puede quedar mal:
+
+```
+export const SUELO_TESTS = 4798;
+export const MEDIDO_CONTRA = 'origin/main = 80db312b · 2026-09-02';
+```
+
+Ese `MEDIDO_CONTRA` es el de `main` y es el correcto: describe la medición de **4798**, no la de 4766.
+
+**Y la cadena que el test ata sigue apareciendo UNA sola vez.** Si el merge hubiera traído otra copia,
+el comentario volvería a ensombrecer al guard. Reprobado por el mecanismo sobre el fichero ya
+mezclado: rota la regla, `not ok 10`; restaurada, 12/12.
+
+**Tanda tras esta segunda vuelta: 4798 tests, 4714 pass, 0 fail, 84 skipped.** Y el suelo de punta a
+punta sobre su TAP: `✅ suelo 4798 · total actual 4798 · margen 0`.
