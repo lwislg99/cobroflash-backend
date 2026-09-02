@@ -256,6 +256,26 @@ model Customer {
   // `invoicing/domain/recargoEquivalencia.ts`.
   recargoEquivalencia Boolean? @map("recargo_equivalencia")
 
+  // SCRUM-580 (CONT-07) · LAS ETIQUETAS DEL CONTACTO.
+  //
+  // UNA COLUMNA JSONB y no una tabla de tags. Decision del fundador con su motivo: una etiqueta
+  // aqui NO tiene atributos propios —ni color, ni orden, ni descripcion—, asi que una tabla seria
+  // una tabla de cadenas; evita un join en la lista, que es la pantalla que tiene que ir rapida en
+  // movil; y el esquema YA usa JSONB (`clausulas_presupuesto`, `clausulas_excluidas`), asi que no
+  // es un patron nuevo.
+  //
+  // 🔴 NULLABLE Y SIN `@default`, y NO es cosmetica: `null` = «no se declararon etiquetas», que NO
+  // es `[]` = «se miraron y no hay ninguna». Con un `@default([])` un `IS NOT NULL` diria que
+  // TODOS los clientes tienen etiquetas y el filtro de la lista se construiria sobre esa mentira.
+  //
+  // EL TIPO NO SE ADIVINO: lo genero `prisma migrate diff` (JSONB). Importa porque `schemaDrift`
+  // comprueba que la columna EXISTA, no su tipo — creada TEXT arrancaria en verde y se pudriria al
+  // leer un array como cadena.
+  //
+  // CONSECUENCIA ASUMIDA: renombrar una etiqueta en todos los clientes toca muchas filas. Es una
+  // operacion rara y no se construye ahora.
+  tags Json? @map("tags")
+
   /// SCRUM-171b (FACT-2d): periodicidad PACTADA de facturación — `NINGUNA | QUINCENAL | MENSUAL`.
   ///
   /// SIRVE PARA AVISAR, NO PARA FACTURAR SOLO. Decisión del fundador (27-jul-2026): un cron que
