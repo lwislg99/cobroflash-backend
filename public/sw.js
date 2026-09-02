@@ -111,6 +111,7 @@ const SHELL = [
   // otras piezas de firma: se firma en obra, y en obra puede no haber cobertura. Un fichero
   // que hay que ir a buscar a la red no esta cuando hace falta.
   '/dashboard/js/parteDetailView.js',
+  '/dashboard/js/parteOficinaView.js',
   '/dashboard/js/resistenciaAlmacen.js',
   '/dashboard/js/app.js',
 ];

@@ -52,6 +52,15 @@ const MARCA = '[PENDIENTE';
  * a otra tiene que verse, y un total lo escondería (la lección del suelo por FUNCIÓN de SCRUM-392).
  */
 const CENSO = Object.freeze({
+  // Sprint Tecnosel · ENTRA A CONCIENCIA con 1: la pantalla donde la OFICINA pone los precios de
+  // un parte ya firmado. El mecanismo no existe sin texto —es un formulario— y su copy no está
+  // firmado: el fundador lo aprueba en docs/master/SCRUM-685.md. Se cuenta 1 y son ocho textos,
+  // todos de una sola constante `MARCA_OFICINA`, así que aprobarlos los apaga de golpe.
+  'parteOficinaView.js': 1,
+  // Y el TÍTULO de la vista, que lo pone el enrutador: mismo texto sin aprobar, otro fichero.
+  'app.js': 1,
+  // (el boton de Trabajos que lleva ahi NO entra: usa la constante `MARCA_651`, no un literal,
+  // asi que este censo —que cuenta LITERALES por AST— no lo ve, y con razon.)
   // SCRUM-651 (T2) · ENTRA A CONCIENCIA con 1, y el motivo es que EL MECANISMO NO EXISTE SIN
   // TEXTO: es el modal para abrir un Trabajo SIN presupuesto —una averia, el caso mas frecuente
   // del primer cliente real—, y un formulario sin rotulos no se puede rellenar.

@@ -138,28 +138,38 @@ test('tecnosel/5 · 🔴 la ruta decide POR CAMPO, y responde ANTES de construir
 });
 
 test('tecnosel/5 · 🔴 el móvil del técnico sigue SIN ver un importe', () => {
-  // 🔴 EL CONTROL QUE NO PUEDE CAER NUNCA. `serializeParteParaElTecnico` está escrito campo a
-  // campo a propósito para que el dinero no cruce el cable al móvil. Este trabajo NO lo toca.
+  // 🔴 EL CONTROL QUE NO PUEDE CAER, Y HA CAMBIADO EL HECHO QUE VIGILA.
   //
-  // 🔴 Y LA PRIMERA VERSIÓN DE ESTE ASERTO NO VALÍA: buscaba la llamada en TODO el fichero, y la
-  // ruta de firmar tiene la suya. Al romper la del PATCH a propósito, el test SEGUÍA VERDE
-  // casando con la de firmar — un guard atado a que el texto exista en alguna parte, no al hecho.
-  // Ahora se mira SOLO el bloque del PATCH, y se exigen sus DOS salidas.
+  // Antes el PATCH contestaba SIEMPRE con la vista del técnico, y bastaba con exigir eso. Ahora
+  // contesta a cada público con la suya —el jefe tiene que ver lo que acaba de escribir—, así que
+  // «siempre la del técnico» dejaría de ser cierto y el guard se REAPUNTA en vez de retirarse.
+  //
+  //   🔴 EL HECHO QUE VIGILA AHORA: la vista de OFICINA sólo se alcanza detrás de un gate de rol.
+  //      Ninguna salida la devuelve sin comprobar antes que quien pregunta lo ve todo.
+  //
+  // Y se mira el BLOQUE, no el fichero: la primera versión buscaba el serializador del técnico en
+  // todo el fichero y la ruta de firmar tiene el suyo, así que al romper el del PATCH seguía
+  // verde. Cuarta vez que un aserto atado a «que el texto exista» engaña a quien lo escribió.
   const src = soloEjecutable(leer(RUTAS));
-  const desde = src.indexOf("router.patch('/:id'");
-  assert.ok(desde > 0, '🔴 no encuentro el PATCH: el instrumento no vale.');
-  const hasta = src.indexOf('router.post(', desde);
-  assert.ok(hasta > desde, '🔴 no encuentro el final del bloque del PATCH.');
-  const patch = src.slice(desde, hasta);
 
-  const salidas = [...patch.matchAll(/return res\.json\(([^)]*)\)/g)].map((m) => m[1]);
-  assert.ok(salidas.length >= 2,
-    `🔴 el PATCH tiene ${salidas.length} salidas con cuerpo y se esperaban al menos dos (la de «no `
-    + 'hay nada que cambiar» y la del cambio aplicado). El instrumento no está viendo el bloque.');
-  for (const s of salidas) {
-    assert.match(s, /serializeParteParaElTecnico\(/,
-      `🔴 UNA SALIDA DEL PATCH DEVUELVE «${s}» EN VEZ DEL SERIALIZADOR DEL TÉCNICO.` + String.fromCharCode(10)
-      + '  Ese serializador está escrito campo a campo para que el dinero NO viaje al móvil.'
-      + ' Devolver la fila entera manda los precios al teléfono del técnico.');
-  }
+  // (a) En el PATCH: la vista de oficina va DENTRO de la condición de rol.
+  const desde = src.indexOf("router.patch('/:id'");
+  const hasta = src.indexOf('router.post(', desde);
+  assert.ok(desde > 0 && hasta > desde, '🔴 no encuentro el bloque del PATCH: el instrumento no vale.');
+  const patch = src.slice(desde, hasta);
+  assert.match(patch, /seesAllJobs\(req\.userRole\)[\s\S]{0,120}serializeParteParaLaOficina/,
+    '🔴 EL PATCH DEVUELVE LA VISTA DE OFICINA SIN MIRAR EL ROL. Con eso, un técnico que mande '
+    + 'precios recibe importes en el móvil — y el móvil es justo donde el dinero no puede estar.');
+  assert.match(patch, /serializeParteParaElTecnico\(updated\)/,
+    '🔴 la rama del técnico ha desaparecido del PATCH: entonces alguien recibe otra cosa.');
+
+  // (b) Fuera del PATCH: TODA aparición del serializador de oficina está en una ruta admin-only.
+  const lineas = src.split(String.fromCharCode(10));
+  lineas.forEach((l, i) => {
+    if (!/serializeParteParaLaOficina\(/.test(l)) return;
+    if (/^function serializeParteParaLaOficina/.test(l.trim())) return;   // su definición
+    const contexto = lineas.slice(Math.max(0, i - 14), i + 1).join(String.fromCharCode(10));
+    assert.ok(/requireRole\('admin'\)|seesAllJobs\(req\.userRole\)/.test(contexto),
+      `🔴 LA VISTA DE OFICINA SE SIRVE SIN GATE DE ROL en la línea ${i + 1}: ${l.trim()}`);
+  });
 });

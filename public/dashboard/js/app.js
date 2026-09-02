@@ -318,6 +318,15 @@ async function initApp() {
         viewTitle.textContent = 'Facturas';
         renderInvoicesView(viewContainer);
         break;
+      // Sprint Tecnosel · LA OFICINA VALORA LOS PARTES FIRMADOS. Sin este `case` el fichero se
+      // cargaría y no llevaría a él ninguna puerta — que es exactamente lo que le pasa hoy a
+      // `parteDetailView.js`, medido en la certificación del sprint.
+      case 'partes-oficina':
+        viewTitle.textContent = '[PENDIENTE microcopy oficial] Partes por valorar';
+        if (typeof window.renderPartesOficinaView === 'function') {
+          window.renderPartesOficinaView(viewContainer, opts);
+        }
+        break;
       case 'albaranes':
         // SCRUM-301 (C1): sección propia. Rótulo APROBADO (5-ago-2026), mismo que el del menú: es
         // el nombre del documento, no copy de acción — el criterio que C2 dejó escrito aquí abajo.
@@ -421,7 +430,10 @@ async function initApp() {
   // el hash no lleva, así que un deep-link a ellas abriría una ficha vacía.
   const HASH_VIEWS = ['home','cobros','quotes-list','quotes-new','customers','products','providers',
     'invoices','expenses','export','reports','templates','quote-requests','jobs','plans','team','settings',
-      'libro-registro','albaranes'];
+      'libro-registro','albaranes',
+    // sprint Tecnosel · el TERCER sitio, que es el que se olvida: sin esto, quien recargue
+    // estando en «Partes por valorar» pierde la vista. Se entra desde Trabajos.
+      'partes-oficina'];
   function viewFromHash() {
     const h = (window.location.hash || '').replace('#', '');
     return HASH_VIEWS.includes(h) ? h : null;
