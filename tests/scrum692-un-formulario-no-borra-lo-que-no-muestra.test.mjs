@@ -183,9 +183,14 @@ test('SCRUM-692 · la asimetría medida sigue siendo la que se declaró', () => 
   const soloModal = [...modal].filter((k) => !ficha.has(k)).sort();
   const soloFicha = [...ficha].filter((k) => !modal.has(k)).sort();
 
+  // 🔴 `tags` SE AÑADIÓ A ESTA LISTA EL MISMO DÍA QUE NACIÓ EL GUARD, y merece quedar escrito
+  // porque es la prueba de que sirve: SCRUM-580 (etiquetas) entró en `main` mientras se escribía
+  // esto, sólo en el modal, y este test cayó nombrándolo. No es un fallo —la ficha 360 no lo envía,
+  // así que no lo borra— pero la asimetría creció y ahora consta. Era la tercera columna en un día:
+  // `internalRef`, los cinco `billing*` y `tags`.
   assert.deepEqual(soloModal,
     ['billingAddress', 'billingCity', 'billingCountry', 'billingPostalCode', 'billingProvince',
-      'internalRef', 'recargoEquivalencia'],
+      'internalRef', 'recargoEquivalencia', 'tags'],
     '🔴 ha cambiado la lista de campos que SÓLO se editan en el modal:\n    ' + soloModal.join(', ') +
     '\n\n  Si has añadido uno, la ficha 360 no lo muestra: el profesional no podrá editarlo desde ' +
     'ahí. No es un fallo —el guardado es parcial y no se borra— pero tiene que constar.');
