@@ -199,7 +199,23 @@ test('SCRUM-604b · 🔴 las filas del desglose son DATOS, no dibujo: cabe una c
   })(sf);
 
   assert.ok(declarada, '🔴 ya no existe `filasDeTotales`: el desglose ha dejado de ser una lista de datos');
-  assert.ok(seEmpuja >= 2, `🔴 sólo veo ${seEmpuja} \`push\` sobre \`filasDeTotales\`: la lista se ha vuelto fija`);
+  // 🔴 2-sep-2026 · SCRUM-656 · LA LISTA SIGUE SIENDO DATOS, pero ya no se llena AQUÍ. Las filas
+  // las construye `quotes/domain/presentacionIva.ts`, que además decide CUÁLES se pintan según el
+  // modo de IVA del presupuesto — en «IVA no incluido» no va ninguna cuota. La maqueta declara la
+  // lista, la recibe y la recorre, que es exactamente lo que este guard protege: que quepa una
+  // cuarta fila sin rehacer el dibujo. Se exige lo mismo, en el sitio donde ahora ocurre.
+  const dominio = fs.readFileSync(path.join(RAIZ, 'src/modules/quotes/domain/presentacionIva.ts'), 'utf8');
+  const sfDom = ts.createSourceFile('p.ts', dominio, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  let empujaDominio = 0;
+  (function rec2(n) {
+    if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression)
+        && ts.isIdentifier(n.expression.name) && n.expression.name.text === 'push'
+        && ts.isIdentifier(n.expression.expression) && n.expression.expression.text === 'filas') empujaDominio++;
+    n.forEachChild(rec2);
+  })(sfDom);
+  assert.ok(seEmpuja + empujaDominio >= 2,
+    `🔴 entre la maqueta (${seEmpuja}) y el dominio (${empujaDominio}) el desglose se ha vuelto una `
+    + 'lista fija: una cuarta fila obligaría a rehacer el dibujo, que es lo que SCRUM-604 mandaba evitar.');
   assert.ok(seRecorre,
     '🔴 el desglose ya NO se pinta recorriendo la lista. Eso significa que añadir la cuarta fila '
     + '(el suplido fuera de la base, cuando el fundador escriba su etiqueta) obligaría a rehacer '

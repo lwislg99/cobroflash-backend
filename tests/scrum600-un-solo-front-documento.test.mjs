@@ -158,6 +158,12 @@ const RANURAS_A = [
   ["title", "PDF Presupuesto #${displayNum}"],
   ["setAlert", "Presupuesto enviado por email."],
   ["setAlert", "Presupuesto enviado por WhatsApp."],
+  // 🔴 SCRUM-656 (T7) · RANURA NUEVA, y entra en esta lista precisamente porque el texto es MÍO
+  // y no está aprobado (regla 30). Es el rótulo del selector que decide si el presupuesto suma
+  // el IVA al final o lo declara no incluido. Los dos textos de las opciones —«Sumar el IVA al
+  // final» y «IVA no incluido»— sí son literales del encargo del fundador; el rótulo del campo
+  // no, así que espera aquí con las demás.
+  ["createFieldSelect()", "IVA del presupuesto"],
   ["textContent", "Solo presupuesto (facturación manual)"],
   ["textContent", "Pasada esta fecha el presupuesto caduca solo y el cliente verá \"pide uno actualizado\"."],
   ["textContent", "Añade los conceptos que vas a presupuestar."],
@@ -196,7 +202,7 @@ test('SCRUM-600 · SUELO: el extractor de ranuras VE las dos pantallas enteras',
   assert.ok(f.length >= 15, `🔴 EXTRACTOR CIEGO sobre la factura: ${f.length} ranuras visibles`);
 });
 
-test('SCRUM-600 · 🔴 LAS RANURAS QUE ESPERAN AL FUNDADOR: 26 posiciones, 24 textos', () => {
+test('SCRUM-600 · 🔴 LAS RANURAS QUE ESPERAN AL FUNDADOR: 27 posiciones, 25 textos', () => {
   const ranuras = ranurasDelDocumento(leer(FRONT_PRESUPUESTO), 'quotesView.js');
 
   assert.equal(ranuras.length, RANURAS_A.length,
@@ -220,7 +226,8 @@ test('SCRUM-600 · 🔴 LAS RANURAS QUE ESPERAN AL FUNDADOR: 26 posiciones, 24 t
   });
 
   const distintos = new Set(ranuras.map((r) => r.texto));
-  assert.equal(distintos.size, 24,
+  // 24 → 25 (SCRUM-656): entra el rótulo del selector de IVA del presupuesto.
+  assert.equal(distintos.size, 25,
     `🔴 textos distintos: ${distintos.size}. Eran 24: 26 posiciones menos las dos parejas que `
     + 'comparten texto («Generar presupuesto» en el boton y al restaurarlo; el vacio del panel de '
     + 'estado, que sale dos veces de la MISMA constante).');

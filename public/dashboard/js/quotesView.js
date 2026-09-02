@@ -411,6 +411,24 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   // apuntando al `<select>` para no tocar los seis sitios que ya lo usaban. Cambiar aquí el
   // elemento y no el nombre es lo que hace que este diff sea de UNA pieza y no de siete.
   fieldVatDefault.input = fieldVatDefault.select;
+
+  // ── SCRUM-656 (T7) · CÓMO SE PRESENTA EL IVA EN ESTE PRESUPUESTO ────────────────────────
+  // Va AQUÍ y no en Configuración porque lo decide el profesional cada vez, según el cliente que
+  // tenga delante. Sus dos presupuestos reales lo demuestran: uno cierra con «IVA NO INCLUIDO» y
+  // el otro con TOTAL + 21% + TOTAL IVA INCLUIDO.
+  //
+  // Es un SELECT y no dos casillas: los dos modos son excluyentes, y dos checkboxes dejan pintar
+  // «ninguno» y «los dos» — dos estados que el documento no sabe representar.
+  //
+  // ⛔ Y NO EXISTE EN LA FACTURA: una factura lleva base, cuota y total siempre.
+  const fieldIvaModo = createFieldSelect("IVA del presupuesto", "iva_modo");
+  for (const [valor, texto] of [["sumar", "Sumar el IVA al final"], ["no_incluido", "IVA no incluido"]]) {
+    const o = document.createElement("option");
+    o.value = valor;
+    o.textContent = texto;
+    fieldIvaModo.select.appendChild(o);
+  }
+  fieldIvaModo.select.value = "sumar";   // lo que el documento hace hoy; cambiarlo sería mover el IVA de todos
   // SCRUM-286: el IVA por defecto NO es un dato del cliente — es el que se aplica a cada línea
   // nueva (`addLine` lo lee como reserva, L~2068/2261). Su sitio es el bloque de Líneas, delante
   // de ellas. Va en su propia `quote-form-row` para conservar el ancho de un tercio que ya tenía:
@@ -419,6 +437,8 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   linesVatRow.className = "quote-form-row";
   blockLines.appendChild(linesVatRow);
   linesVatRow.appendChild(fieldVatDefault.wrapper);
+  // SCRUM-656: al lado del IVA por defecto, que es su misma familia de decisiones.
+  linesVatRow.appendChild(fieldIvaModo.wrapper);
 
     // Checkbox WhatsApp
     // A2.3: el checkbox "Enviar por WhatsApp automáticamente" desaparece — al
@@ -3114,6 +3134,8 @@ payloadLines.push(lineaParaPayload({
         created_via: quoteFormCreatedVia, // VZ-3: 'voice' si hubo dictado
         // A16.2: caducidad elegida (fin del día local); omitida = 30d en server
         validUntil: validInput.value ? new Date(validInput.value + "T23:59:59").toISOString() : undefined,
+        // SCRUM-656: el modo elegido viaja con el presupuesto. Sin declararlo en zod se borraría.
+        ivaModo: fieldIvaModo.select.value || undefined,
       };
 
       const quote = await createQuote(quotePayload);
