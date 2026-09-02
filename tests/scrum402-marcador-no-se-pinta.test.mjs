@@ -52,6 +52,14 @@ const MARCA = '[PENDIENTE';
  * a otra tiene que verse, y un total lo escondería (la lección del suelo por FUNCIÓN de SCRUM-392).
  */
 const CENSO = Object.freeze({
+  // SCRUM-651 (T2) · ENTRA A CONCIENCIA con 1, y el motivo es que EL MECANISMO NO EXISTE SIN
+  // TEXTO: es el modal para abrir un Trabajo SIN presupuesto —una averia, el caso mas frecuente
+  // del primer cliente real—, y un formulario sin rotulos no se puede rellenar.
+  //
+  // Se cuenta 1 y son OCHO textos: los ocho salen de una sola constante `MARCA_651`, asi que
+  // aprobar el copy los apaga de golpe (mismo patron que SCRUM-421 dejo escrito aqui). El dia
+  // que el fundador los firme, esta entrada se BORRA — no se pone a 0.
+  'jobNuevoModal.js': 1,
   // SCRUM-507 (13-ago-2026): `aiQuoteAssistant.js` ENTRO y SALIO del censo el mismo dia. Entro con
   // 2 —el aviso de la linea que no se propone porque su IVA era ilegible, y la marca por linea de
   // lo que la IA se invento— y el fundador FIRMO los dos textos en el mismo ticket.
@@ -329,6 +337,14 @@ const CENSO = Object.freeze({
   // el fundador los escriba habrá que partir la constante.
   'tipoDestinatarioPendiente.js': 1,
   'settingsSubmenus.js': 1,
+  // 🔴 SCRUM-654 (2-sep-2026) · `voiceInput.js` ENTRA con 1, A CONCIENCIA. Es el aviso de que el
+  // dictado necesita conexión — el fallo que hasta hoy se producía EN SILENCIO y que este ticket
+  // cierra. El texto no está aprobado (regla 30) y sale marcado hasta que el fundador lo firme.
+  //
+  // ⚠️ Aquí el marcador es lo de menos, y conviene decirlo: SIN aviso el defecto era MUDO, y un
+  // defecto mudo no se puede ni reportar. Con marcador al menos habla, aunque hable provisional.
+  // Sale del censo el commit que apruebe el texto.
+  'voiceInput.js': 1,
   // SCRUM-294 (fase C) · 1 -> 5: el criterio de caja entra en Configuracion con marcador A
   // CONCIENCIA. Son 4 literales —el rotulo y sus TRES opciones— y el texto NO esta aprobado:
   // explicarle a un profesional si le conviene el RECC es asesorarle, y eso lo dictamina el

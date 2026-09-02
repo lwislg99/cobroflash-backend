@@ -774,6 +774,8 @@ model TeamMember {
 
   merchant     Merchant      @relation(fields: [merchantId], references: [id])
   authSessions AuthSession[]
+  // SCRUM-650 (T1): los trabajos que tiene asignados. Virtual, sin columna.
+  jobAssignments JobAssignee[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -884,6 +886,11 @@ model Job {
   tipoOperacion  String    @default("TRABAJO_UNICO") @map("tipo_operacion")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // SCRUM-650 (T1) · los empleados asignados a EJECUTAR este trabajo. Relacion virtual: no crea
+  // ninguna columna en `jobs`. Destino final (paso C): esta tabla es la UNICA fuente y
+  // `assignedUserId` desaparece — dos sitios diciendo quien ejecuta acaban discrepando.
+  assignees JobAssignee[]
 
   @@index([merchantId, status])
   @@index([merchantId, scheduledAt])
@@ -1079,4 +1086,37 @@ model EmailMessage {
   @@index([merchantId, createdAt])
   @@index([relatedType, relatedId])
   @@map("email_messages")
+}
+
+// SCRUM-650 (T1) · UN TRABAJO SE ASIGNA A VARIOS EMPLEADOS
+//
+// El caso real que lo pide: en el parte de trabajo EN PAPEL de la empresa de Madrid, el campo
+// «Tecnico» dice literalmente «Israel, Miguel y Jesus.L». VARIOS no es el caso raro: es el normal.
+//
+// TABLA PUENTE, y no un array ni un CSV en `jobs`:
+//   · un array de ids no tiene integridad referencial — nada impide guardar el id de un empleado
+//     borrado, o de otro merchant;
+//   · un CSV no se puede indexar ni filtrar, y el filtro por empleado es EXACTAMENTE lo que este
+//     ticket existe para que funcione.
+//
+// La clave primaria compuesta hace la asignacion idempotente: asignar dos veces al mismo no crea
+// dos filas. El indice por `team_member_id` es el que sirve la pregunta del tecnico —«que trabajos
+// tengo»—, que es la consulta caliente.
+//
+// ⚠️ Un trabajo SIN NINGUN asignado es INVISIBLE para todos los tecnicos; solo lo ven los admin.
+// Hoy ya puede quedarse sin nadie (`assignedUserId` es nullable) y esto no lo cambia: lo DICE.
+model JobAssignee {
+  jobId        Int      @map("job_id")
+  teamMemberId Int      @map("team_member_id")
+  assignedAt   DateTime @default(now()) @map("assigned_at")
+
+  job        Job        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  // onDelete: Cascade en LAS DOS. Sin el, la FK es RESTRICT y borrar un empleado —o su merchant—
+  // revienta a mitad de recorrido con las tablas anteriores ya vaciadas (lo cazo SCRUM-244). Y es
+  // lo correcto ademas de lo seguro: una asignacion no significa nada sin la persona asignada.
+  teamMember TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+
+  @@id([jobId, teamMemberId])
+  @@index([teamMemberId])
+  @@map("job_assignees")
 }
