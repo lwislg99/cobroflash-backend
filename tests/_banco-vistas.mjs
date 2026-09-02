@@ -384,6 +384,8 @@ export function scriptsDelDashboard(raiz) {
 // CIEGO: 65 leídos y se esperaban 64»). El mecanismo NO tiene hueco.
 // Y la otra hipótesis —que el merge se hubiera comido un script— también es falsa: `nifEspanol.js`
 // y `quoteAtajosVencimiento.js` están LOS DOS en el índice y sus ficheros existen.
+// SCRUM-651 (2-sep-2026) · 66 → 67: entra `jobNuevoModal.js`, el modal para abrir un Trabajo SIN
+// presupuesto — una averia, que es el caso mas frecuente del primer cliente real.
 // SCRUM-581 (1-sep-2026) · 65 → 66: entra `filtroClientes.js`, las pestañas Todos|Empresas|Personas
 // y el orden de la lista de clientes. Va ANTES de `customersView.js`, que lo consume.
 //
@@ -406,7 +408,7 @@ export function scriptsDelDashboard(raiz) {
 // Y se repite lo que ya avisaba la rama, porque es lo que falló tres veces: si en un merge este
 // número aparece IGUAL en los dos lados, git lo deja fuera de los marcadores de conflicto y nadie
 // se entera. **Se vuelve a contar después de mezclar, siempre.**
-export const SCRIPTS_DEL_DASHBOARD = 66;
+export const SCRIPTS_DEL_DASHBOARD = 67;
 
 /**
  * Monta el dashboard como lo monta el navegador y devuelve el contexto vivo.

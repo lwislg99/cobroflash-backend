@@ -29,6 +29,15 @@ export interface RouteDeclaration {
 export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // Sesión y negocio (perfil REDUCIDO para técnico — el filtrado vive en app.ts)
   { method: 'GET', path: '/admin/me', why: 'Perfil de la propia sesión; no expone datos de otros' },
+  // SCRUM-651 (T2) · DECISIÓN DE PERMISOS, no un trámite: abrir un Trabajo SIN presupuesto es
+  // trabajo de CAMPO. El caso es una AVERÍA —el más frecuente del primer cliente real— y quien
+  // la coge es el técnico, en la calle. Dejarlo admin-only obligaría a llamar a la oficina para
+  // poder empezar, que es resolverlo para la persona equivocada (misma lección que SCRUM-464).
+  //
+  // Y no abre nada de dinero ni de reparto: esta ruta NO escribe ninguno de los campos con gate
+  // (tipoOperacion, assignedUserId, cerrar), que siguen bloqueados en el PATCH. Además el Trabajo
+  // nace con su autoria (operarioId) = quien lo abre, así que el técnico solo se crea trabajos SUYOS.
+  { method: 'POST', path: '/admin/jobs', why: 'Abrir un Trabajo sin presupuesto (avería) es trabajo de campo del Operario; no toca campos de dinero ni de reparto' },
   // SCRUM-464 (H1 fase 4). DECISIÓN DEL FUNDADOR, no un trámite: el que baja al sótano es el
   // operario, así que dejar la precarga admin-only era resolver H1 para la persona equivocada. El
   // paquete que recibe va FILTRADO a sus trabajos —los que se le asignaron o los que creó él—,

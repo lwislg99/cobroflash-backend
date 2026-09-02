@@ -1,6 +1,6 @@
 # SCRUM-651 · T2 · Un trabajo SIN presupuesto, y de primera clase
 
-**Medido contra:** `origin/main` = `01d5c5a06027a443542cb327e029195ac561fda6` · 2026-09-02
+**Medido contra:** `origin/main` = `01d5c5a06027a443542cb327e029195ac561fda6` · 2026-09-02T12:40:00+02:00
 **Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-651-trabajo-sin-presupuesto`
 
 ## PASO 0 · LAS DOS PREGUNTAS, MEDIDAS
@@ -98,6 +98,48 @@ las DOS cosas que están cerradas sin tu OK:
 
 No lo he colado en `notes` ni en `titulo`: eso sería inventarse un modelo de datos donde hay una
 decisión tuya pendiente. **Propuesta lista para aprobar; con el OK son 20 minutos.**
+
+
+## 🔴 LO QUE ENCONTRO LA TANDA DE ROJOS: mi guard del titulo no vigilaba el hecho
+
+Inyecte el defecto del titulo y **el guard siguio VERDE**. La causa estaba en mi propio test: el
+criterio vivia EN LINEA dentro del serializador, asi que lo unico que se podia hacer era
+**comparar el texto del fuente** — y eso pasa en verde en cuanto alguien reescribe la expresion
+sin cambiar el defecto. Otra vez el guard atado a la FORMA y no al HECHO.
+
+Arreglado sacando el criterio a `tituloDeTrabajo()`, puro, y probandolo **por comportamiento**:
+
+| entrada | sale | 
+|---|---|
+| sin presupuesto, cliente «Bar Paco» | `Bar Paco` |
+| sin presupuesto, sin cliente | `#12` (su id, que si es suyo) |
+| **con** presupuesto 34 + cliente | `Presupuesto #34 · Bar Paco` (**igual que hoy**) |
+| con presupuesto sin numero | `Presupuesto #9` (cae a su id, como siempre) |
+| con titulo puesto por el pro | el suyo, y manda sobre todo |
+
+Y la tanda incluye una **variante SUTIL**: el mismo defecto REDACTADO DE OTRA FORMA. Con el guard
+viejo habria pasado en verde; con el de comportamiento cae. Es la comprobacion de que el arreglo
+no es cosmetico.
+
+## ROJOS: 12/12, POR CODIGO DE SALIDA
+
+Un build roto NO cuenta como rojo (dejaria `dist/` con el codigo bueno y el test no mediria nada):
+el arnes lo marca aparte — y paso una vez, con la primera version de la variante sutil.
+
+| # | rojo inyectado | cae |
+|---|---|---|
+| 1 | **MECANISMO**: se quita la puerta, vuelve a no haber `POST /` | 🔴 |
+| 2 | **MECANISMO**: el presupuesto vuelve a ser obligatorio | 🔴 |
+| 3 | **AUSENTE Y CERO**: el Trabajo directo nace con `totalAceptado: 0` | 🔴 |
+| 4 | el Trabajo directo nace emparejado a un presupuesto | 🔴 |
+| 5 | **FALLO MUDO**: deja de guardar quien lo abrio | 🔴 |
+| 6 | …y por la RUTA: el nucleo bien, pero le llega `null` fijo | 🔴 |
+| 7 | vuelve el titulo «Presupuesto #\<id del Trabajo\>» | 🔴 |
+| 8 | …y la **variante SUTIL**, el mismo defecto con otra redaccion | 🔴 |
+| 9 | vuelve «Total aceptado 0,00 €» a la pantalla | 🔴 |
+| 10 | **CONTROL POSITIVO**: el camino del presupuesto pierde su eje de dinero | 🔴 |
+| 11 | **CONTROL POSITIVO**: deja de anotar la pertenencia (SCRUM-195) | 🔴 |
+| 12 | **SUELO DE CEGUERA**: el lector de rutas por AST se queda ciego | 🔴 |
 
 ## Otras dos que son tuyas (regla 30 · regla 9)
 

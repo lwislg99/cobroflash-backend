@@ -45,7 +45,9 @@ async function renderJobsView(container) {
   const zonaNuevo = document.getElementById('jobs-nuevo');
   if (zonaNuevo && typeof abrirModalTrabajoNuevo === 'function') {
     const bNuevo = document.createElement('button');
-    bNuevo.className = 'btn-primary btn-sm';
+    // SCRUM-412: una PRIMARIA nunca es `sm`. Y esta lo es — es la accion que abre el Trabajo,
+    // que es la razon de ser de esta pantalla para un merchant que todavia no tiene ninguno.
+    bNuevo.className = 'btn-primary';
     bNuevo.id = 'jobs-nuevo-btn';
     bNuevo.textContent = MARCA_651 + ' Trabajo nuevo';
     bNuevo.addEventListener('click', () => abrirModalTrabajoNuevo(() => renderJobsView(container)));

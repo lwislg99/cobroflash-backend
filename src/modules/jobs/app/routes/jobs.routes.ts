@@ -14,7 +14,7 @@ import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; /
 // módulo para que el test use el MISMO y no una copia.
 import { primeroConTramoPendiente, restanteDelTrabajo } from '../../domain/presupuestosDelTrabajo';
 // SCRUM-651 (T2): el nucleo del Trabajo sin presupuesto, puro y probado sin base.
-import { datosDeTrabajoDirecto, filaDeTrabajoDirecto } from '../../domain/trabajoDirecto';
+import { datosDeTrabajoDirecto, filaDeTrabajoDirecto, tituloDeTrabajo } from '../../domain/trabajoDirecto';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-173
@@ -263,18 +263,10 @@ async function serializeJob(job: any, refs?: JobRefs) {
     createdAt: job.createdAt,
     // SCRUM-10: campos del contenedor "Trabajo". Fallback a derivado para Jobs
     // anteriores (titulo/totalAceptado null) → sin cambiar el comportamiento visible.
-    // 🔴 SCRUM-651 · SIN PRESUPUESTO, EL TRABAJO NO SE LLAMA «Presupuesto #N».
-    //
-    // El respaldo metia el ID DEL TRABAJO donde va el numero del presupuesto, asi que una averia
-    // abierta sin presupuesto se presentaba como «Presupuesto #12» — un documento que no existe,
-    // con un numero que es de otra cosa. Es justo lo que este ticket prohibe: la pantalla fingiendo
-    // que hay presupuesto detras.
-    //
-    // Sin presupuesto se titula con el CLIENTE, que es lo que SCRUM-317 ya dejo escrito como
-    // regla («mientras no lo ponga, la pantalla se titula con el cliente»).
-    titulo: job.titulo ?? (quote
-      ? `Presupuesto #${quote.quoteNumber ?? quote.id}${customer?.name ? ` · ${customer.name}` : ''}`
-      : (customer?.name ?? `#${job.id}`)),
+    // 🔴 SCRUM-651 · el CRITERIO del titulo vive en `tituloDeTrabajo`, no aqui: en linea solo se
+    // podia vigilar comparando texto, y un guard asi pasa en verde en cuanto alguien reescribe la
+    // expresion sin cambiar el defecto. Medido en su tanda de rojos.
+    titulo: tituloDeTrabajo({ titulo: job.titulo, quote, customer, jobId: job.id }),
     direccion: job.direccion ?? null,
     totalAceptado: job.totalAceptado != null ? Number(job.totalAceptado) : (quote ? Number(quote.total) : null),
     totalCobrado: Number(job.totalCobrado ?? 0),

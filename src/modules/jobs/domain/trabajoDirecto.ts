@@ -112,3 +112,38 @@ export function filaDeTrabajoDirecto(
     operarioId,
   };
 }
+
+/**
+ * El nombre con el que se presenta un Trabajo que todavia no tiene uno puesto.
+ *
+ * 🔴 SIN PRESUPUESTO NO SE LLAMA «Presupuesto #N», y este era el respaldo de antes:
+ *
+ *     `Presupuesto #${quote ? quote.quoteNumber : job.id}`
+ *
+ * Sin presupuesto metia **el ID DEL TRABAJO donde va el numero del presupuesto**, asi que una
+ * averia abierta sin presupuesto se presentaba como «Presupuesto #12»: un documento que no
+ * existe, con un numero que es de otra cosa. Es la pantalla fingiendo que hay presupuesto
+ * detras — justo lo que este ticket prohibe.
+ *
+ * Sin presupuesto se titula con el CLIENTE, que es lo que SCRUM-317 ya dejo escrito como regla:
+ * «mientras no lo ponga, la pantalla se titula con el cliente».
+ *
+ * ⚠️ Vive aqui y NO en linea dentro del serializador porque en linea solo se podia probar
+ * leyendo el fuente — y un guard que compara texto pasa en verde en cuanto alguien reescribe la
+ * expresion sin cambiar el defecto. Medido: la primera version de este guard hizo exactamente
+ * eso (SCRUM-651, tanda de rojos).
+ */
+export function tituloDeTrabajo(entrada: {
+  titulo?: string | null;
+  quote?: { quoteNumber?: number | string | null; id: number } | null;
+  customer?: { name?: string | null } | null;
+  jobId: number;
+}): string {
+  if (entrada.titulo) return entrada.titulo;   // el que puso el profesional manda siempre
+  const cliente = entrada.customer?.name;
+  if (entrada.quote) {
+    const num = entrada.quote.quoteNumber ?? entrada.quote.id;
+    return `Presupuesto #${num}${cliente ? ` · ${cliente}` : ''}`;
+  }
+  return cliente || `#${entrada.jobId}`;
+}

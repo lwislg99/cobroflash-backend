@@ -21,7 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
 import { soloEjecutable } from './_guard-texto.mjs';
-import { datosDeTrabajoDirecto, filaDeTrabajoDirecto } from '../dist/modules/jobs/domain/trabajoDirecto.js';
+import { datosDeTrabajoDirecto, filaDeTrabajoDirecto, tituloDeTrabajo } from '../dist/modules/jobs/domain/trabajoDirecto.js';
 import { estadoCobroFor, importeDeReferencia } from '../dist/modules/jobs/domain/job.service.js';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
@@ -171,15 +171,31 @@ test('SCRUM-651 · 🔴 sin eje, el semáforo de cobro NO afirma nada', () => {
 });
 
 test('SCRUM-651 · 🔴 un Trabajo sin presupuesto NO se llama «Presupuesto #N»', () => {
-  // El respaldo del título metía el ID DEL TRABAJO donde va el número del presupuesto: una avería
-  // se presentaba como «Presupuesto #12», un documento que no existe con un número que es de otra
-  // cosa. Es la pantalla fingiendo que hay presupuesto detrás.
-  const rutas = soloEjecutable(leer(RUTAS));
-  assert.doesNotMatch(rutas, /Presupuesto #\$\{quote \? \(quote\.quoteNumber \?\? quote\.id\) : job\.id\}/,
-    '🔴 HA VUELTO EL TÍTULO QUE LLAMA «Presupuesto #<id del Trabajo>» a un Trabajo sin presupuesto.');
-  assert.match(rutas, /: \(customer\?\.name \?\? `#\$\{job\.id\}`\)\)/,
-    '🔴 sin presupuesto, el título tiene que salir del CLIENTE — que siempre existe—, como dejó '
-    + 'escrito SCRUM-317. Inventar un número de documento es peor que no tener nombre.');
+  // 🔴 ESTO SE PRUEBA POR COMPORTAMIENTO, Y NO COMPARANDO EL FUENTE. La primera version miraba
+  // si la expresion vieja seguia escrita: al inyectar el defecto de otra forma **paso en verde**.
+  // Un guard atado a la FORMA del codigo no vigila el HECHO.
+  const sinQuote = tituloDeTrabajo({ titulo: null, quote: null, customer: { name: 'Bar Paco' }, jobId: 12 });
+  assert.equal(sinQuote, 'Bar Paco',
+    `🔴 UN TRABAJO SIN PRESUPUESTO SE PRESENTA COMO "${sinQuote}".` + String.fromCharCode(10) + String.fromCharCode(10)
+    + '  Si ahi sale «Presupuesto #12», la pantalla nombra un documento que NO EXISTE y le pone el' + String.fromCharCode(10)
+    + '  ID del Trabajo como si fuera el numero del presupuesto. Es fingir que hay presupuesto detras.');
+  assert.ok(!/Presupuesto/.test(sinQuote), '🔴 la palabra «Presupuesto» no puede aparecer si no hay ninguno.');
+
+  // Sin cliente tampoco se inventa un documento: queda el id del Trabajo, que si es suyo.
+  assert.equal(tituloDeTrabajo({ titulo: null, quote: null, customer: null, jobId: 12 }), '#12');
+
+  // CONTROL POSITIVO: con presupuesto, el titulo es EXACTAMENTE el de siempre.
+  assert.equal(
+    tituloDeTrabajo({ titulo: null, quote: { quoteNumber: 34, id: 9 }, customer: { name: 'Bar Paco' }, jobId: 12 }),
+    'Presupuesto #34 · Bar Paco',
+    '🔴 el titulo del Trabajo que viene de un presupuesto ha cambiado: el camino de siempre no se toca.');
+  assert.equal(
+    tituloDeTrabajo({ titulo: null, quote: { quoteNumber: null, id: 9 }, customer: null, jobId: 12 }),
+    'Presupuesto #9',
+    '🔴 sin numero de presupuesto se cae a su id, como siempre.');
+
+  // Y el nombre que puso el profesional manda sobre todo lo demas.
+  assert.equal(tituloDeTrabajo({ titulo: 'Averia cocina', quote: null, customer: { name: 'Bar Paco' }, jobId: 12 }), 'Averia cocina');
 });
 
 test('SCRUM-651 · 🔴 el titular «Total aceptado» NO se pinta si no consta', () => {
