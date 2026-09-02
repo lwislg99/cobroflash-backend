@@ -10,6 +10,11 @@ import {
   type AlbaranLinea,
 } from './albaran.service';
 import { nombreParaDocumento } from '../../../core/documentos/nombreParaDocumento'; // SCRUM-577
+// SCRUM-643: el calendario del merchant, resuelto en UN solo sitio. Ver el módulo para por qué
+// no sale de aquí el impuesto.
+import {
+  ZONA_POR_DEFECTO, zonaDelMerchant, diaNaturalEn, diasEntre,
+} from '../../../core/zonaDelMerchant';
 
 export type TipoDestinatario = 'PARTICULAR' | 'EMPRESARIO';
 export type Semaforo = 'verde' | 'ambar' | 'rojo';
@@ -23,36 +28,52 @@ export function resolveTipoDestinatario(customer: { tipoDestinatario?: string | 
 /**
  * Fecha límite legal de la recapitulativa para un mes natural dado (art. 13.2 RD 1619/2012):
  * último día del mes si PARTICULAR; día 16 del mes SIGUIENTE si EMPRESARIO. `mesKey` = "YYYY-MM"
- * (mismo formato que mesNaturalKey/groupByRotura). JS Date normaliza el desbordamiento de año
- * (diciembre → enero) solo.
+ * (mismo formato que mesNaturalKey/groupByRotura). El desbordamiento de año (diciembre → enero)
+ * lo normaliza `Date` solo.
+ *
+ * 🔴 SCRUM-643 · DEVUELVE UN DÍA (`YYYY-MM-DD`), NO UN INSTANTE — y ése es el arreglo de raíz.
+ *
+ * Antes construía `new Date(y, m, 0)`, o sea medianoche EN EL RELOJ DEL PROCESO, y luego había
+ * que formatearlo con cuidado (`toIsoDateLocal`) para que `toISOString()` no lo desplazara un
+ * día. Ese cuidado era un vigilante: bastaba que alguien formateara «como se formatea todo» para
+ * mover un PLAZO LEGAL.
+ *
+ * **Un plazo del art. 13.2 es un DÍA del calendario, no un instante.** En cuanto se representa
+ * como día, el problema deja de existir en vez de quedar vigilado: no hay reloj que aplicarle, y
+ * la aritmética del mes (último día / día 16 del siguiente) es pura y no depende de zona alguna.
+ * Por eso esta función NO recibe zona: la zona hace falta para saber en qué día vive HOY, y eso
+ * lo pone `calcularSemaforo`.
  */
-export function fechaLimiteRecapitulativa(mesKey: string, tipo: TipoDestinatario): Date {
+export function fechaLimiteRecapitulativa(mesKey: string, tipo: TipoDestinatario): string {
   const [y, m] = mesKey.split('-').map(Number); // m = mes 1-indexado (marzo = 3)
-  if (tipo === 'EMPRESARIO') return new Date(y, m, 16); // día 16 del mes siguiente
-  return new Date(y, m, 0); // día 0 del mes siguiente = último día del mes actual
-}
-
-function startOfDay(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-}
-
-// `fechaLimiteRecapitulativa` construye fechas en hora LOCAL (medianoche local, para comparar
-// con "hoy" también local). `Date.toISOString()` convierte a UTC antes de formatear: en
-// timezones con offset positivo (Madrid, UTC+1/+2) eso desplaza la fecha límite un día hacia
-// atrás — inaceptable en un PLAZO LEGAL. Formateamos a mano desde los componentes locales.
-export function toIsoDateLocal(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  // `Date.UTC` normaliza el desbordamiento de año (diciembre → enero) solo, y en UTC no hay
+  // desfase que pueda mover el día: aquí sólo se hace cuenta de calendario.
+  const d = new Date(tipo === 'EMPRESARIO'
+    ? Date.UTC(y, m, 16)   // día 16 del mes siguiente
+    : Date.UTC(y, m, 0));  // día 0 del mes siguiente = último día del mes actual
+  return d.toISOString().slice(0, 10);
 }
 
 /**
- * Semáforo por días hasta la fecha límite (ambas fechas normalizadas a medianoche local, para
- * que la hora del día no desplace el resultado cerca de la frontera).
+ * Semáforo por días hasta la fecha límite.
  * rojo: plazo YA vencido (< 0 días) · ámbar: 0-5 días · verde: > 5 días.
+ *
+ * 🔴 SCRUM-643 · LA ZONA ES LA DEL MERCHANT, NO LA DE LA MÁQUINA. Antes normalizaba las dos
+ * fechas «a medianoche local» y local era el reloj del proceso: con el servidor en UTC y el pro
+ * en la península, el 1 de abril a las 00:30 hora española el semáforo decía ÁMBAR con el plazo
+ * del 31 de marzo YA VENCIDO. Ahora los dos extremos son días naturales resueltos en la zona
+ * del merchant, y restarlos ya no depende de ningún reloj.
  */
-export function calcularSemaforo(fechaLimite: Date, hoy: Date = new Date()): Semaforo {
-  const diasHastaLimite = Math.round(
-    (startOfDay(fechaLimite).getTime() - startOfDay(hoy).getTime()) / 86_400_000,
-  );
+export function calcularSemaforo(
+  limiteISO: string,
+  hoy: Date = new Date(),
+  zona: string = ZONA_POR_DEFECTO,
+): Semaforo {
+  const diasHastaLimite = diasEntre(diaNaturalEn(hoy, zona), limiteISO);
+  // ⚠️ CARACTERIZACIÓN, NO DESCUIDO: con un límite ilegible `diasEntre` da NaN, las dos
+  // comparaciones son falsas y sale 'verde' — «no lo sé» pintado de «al día». Es el hallazgo de
+  // SCRUM-622 y **se conserva tal cual a propósito**: arreglarlo aquí mezclaría dos cambios en
+  // el mismo diff. Entra en su propio paso, ENCIMA de este código.
   if (diasHastaLimite < 0) return 'rojo';
   if (diasHastaLimite <= 5) return 'ambar';
   return 'verde';
@@ -78,12 +99,19 @@ export type MotivoAviso = 'plazo_legal' | 'periodicidad';
  *
  * NO dispara ningún envío: pinta un aviso y el pro decide. Un envío automático nuevo tendría que
  * pasar por la tabla J6 del máster (regla 28), y aquí esa regla no se toca.
+ *
+ * ⚠️ SCRUM-643 · ÉSTE ES UN CUARTO SITIO, y apareció al tirar del hilo. El encargo nombraba
+ * tres cálculos; este cuarto usaba el mismo `startOfDay` del reloj del proceso y vive en el
+ * MISMO fichero. Dejarlo habría sido colocar un lector del reloj de la máquina pegado al arreglo
+ * que existe para quitarlo — el defecto de familia, reintroducido en el propio diff que lo cierra.
+ * Recibe la zona como los otros tres. Es una ampliación mínima y va declarada.
  */
 export function avisoDeFacturacion(
   periodicidad: BillingPeriodicity | string | null | undefined,
   semaforo: Semaforo,
   mesKey: string,
   hoy: Date = new Date(),
+  zona: string = ZONA_POR_DEFECTO,
 ): { avisar: boolean; motivo: MotivoAviso | null } {
   // 1) La LEY primero, y con independencia de lo pactado — incluso con `NINGUNA`: el plazo corre
   //    igual, y ese aviso ya lo daba el semáforo de SCRUM-69.
@@ -96,11 +124,13 @@ export function avisoDeFacturacion(
   //    MENSUAL   → el mes natural del grupo ya terminó.
   //    QUINCENAL → además, desde el día 16 del propio mes (cerrada la primera quincena).
   const [y, m] = mesKey.split('-').map(Number);
-  const finDeMes = new Date(y, m, 0);
-  if (startOfDay(hoy).getTime() > startOfDay(finDeMes).getTime()) return { avisar: true, motivo: 'periodicidad' };
+  // Días del calendario, no instantes — igual que el plazo legal de arriba, y por lo mismo.
+  const hoyDia = diaNaturalEn(hoy, zona);
+  const finDeMes = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
+  if (diasEntre(finDeMes, hoyDia) > 0) return { avisar: true, motivo: 'periodicidad' };
   if (p === 'QUINCENAL') {
-    const dia16 = new Date(y, m - 1, 16);
-    if (startOfDay(hoy).getTime() >= startOfDay(dia16).getTime()) return { avisar: true, motivo: 'periodicidad' };
+    const dia16 = `${y}-${String(m).padStart(2, '0')}-16`;
+    if (diasEntre(dia16, hoyDia) >= 0) return { avisar: true, motivo: 'periodicidad' };
   }
   return { avisar: false, motivo: null };
 }
@@ -162,6 +192,15 @@ export async function getPendientesFacturar(
   // Albaran.jobId es un Int plano (sin relación Prisma declarada hacia Job) — a diferencia de
   // consolidar-albaranes (jobs.routes.ts), que arranca DESDE el Job y no necesita este paso,
   // aquí se arranca desde Albaran y hay que resolver los Jobs elegibles primero.
+  // SCRUM-643 · LA ZONA SE LEE UNA VEZ, AQUÍ, y se pasa hacia abajo. Los tres cálculos la
+  // RECIBEN en vez de resolverla cada uno: si cada sitio la resolviera, el siguiente volvería a
+  // leer el reloj del proceso, que es exactamente el defecto que este ticket cierra.
+  const merchant = await prisma.merchant.findUnique({
+    where: { id: merchantId },
+    select: { timezone: true },
+  });
+  const zona = zonaDelMerchant(merchant);
+
   const jobs = await prisma.job.findMany({
     where: { merchantId, tipoOperacion: { not: 'TRABAJO_UNICO' } },
     select: { id: true, customerId: true },
@@ -211,21 +250,21 @@ export async function getPendientesFacturar(
       modoValoracion: a.modoValoracion, invoiceId: a.invoiceId, customerId,
     }));
 
-    const grupos = groupByRotura(consolidables).map((g) => {
+    const grupos = groupByRotura(consolidables, zona).map((g) => {
       const albaranesOriginales = lista.filter((a) => g.albaranes.some((ga) => ga.id === a.id));
       const lineasGrupo = albaranesOriginales
         .flatMap((a) => (Array.isArray(a.lineas) ? (a.lineas as unknown as AlbaranLinea[]) : []));
       const fechaLimite = fechaLimiteRecapitulativa(g.mesKey, tipo);
-      const semaforo = calcularSemaforo(fechaLimite, hoy);
+      const semaforo = calcularSemaforo(fechaLimite, hoy, zona);
       // SCRUM-171b: el aviso se DERIVA aquí, con el plazo legal por delante de lo pactado.
-      const aviso = avisoDeFacturacion(periodicidad, semaforo, g.mesKey, hoy);
+      const aviso = avisoDeFacturacion(periodicidad, semaforo, g.mesKey, hoy, zona);
       return {
         mesKey: g.mesKey,
         mesLabel: g.mesLabel,
         albaranes: g.albaranes,
         jobId: albaranesOriginales[0].jobId,
         importePotencial: calcAlbaranTotales(lineasGrupo),
-        fechaLimite: toIsoDateLocal(fechaLimite),
+        fechaLimite, // SCRUM-643: ya viene como `YYYY-MM-DD`; `toIsoDateLocal` sobraba y se retiró
         semaforo,
         avisar: aviso.avisar,
         motivoAviso: aviso.motivo,

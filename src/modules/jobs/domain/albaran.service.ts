@@ -3,6 +3,7 @@
 // transiciones borrador→emitido→firmado, validación del shape de lineas (condición 4
 // del OK del fundador), serialización y regeneración del PDF bajo demanda (el disco
 // de Railway es efímero — mismo patrón que ensureInvoicePdf).
+import { ZONA_POR_DEFECTO, mesNaturalEn } from '../../../core/zonaDelMerchant'; // SCRUM-643
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
@@ -264,10 +265,17 @@ export function validarConsolidacion(
   return { ok: true };
 }
 
-/** Clave de mes natural (YYYY-MM) de una fecha — la rotura del art. 13. */
-export function mesNaturalKey(fecha: Date | string): string {
+/**
+ * Clave de mes natural (YYYY-MM) de una fecha — la rotura del art. 13.
+ *
+ * 🔴 SCRUM-643 · EN LA ZONA DEL MERCHANT, no en la del proceso. Antes usaba
+ * `getFullYear()`/`getMonth()`, o sea el reloj de la máquina: con el servidor en UTC y el pro en
+ * la península, un albarán del 1 de abril a las 00:30 hora española devolvía `2026-03` y entraba
+ * en la recapitulativa del MES ANTERIOR. La zona la resuelve `core/zonaDelMerchant`.
+ */
+export function mesNaturalKey(fecha: Date | string, zona: string = ZONA_POR_DEFECTO): string {
   const d = fecha instanceof Date ? fecha : new Date(fecha);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  return mesNaturalEn(d, zona);
 }
 
 const MESES_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -288,10 +296,10 @@ export interface RoturaGrupo {
  * validación/diseño: 1 Job = 1 cliente, serie ALB única por merchant). Grupos ORDENADOS por
  * mes ascendente → 1 mes = 1 factura, N meses = N facturas. tipoIva NO rompe (decisión 22-jul).
  */
-export function groupByRotura(albaranes: AlbaranConsolidable[]): RoturaGrupo[] {
+export function groupByRotura(albaranes: AlbaranConsolidable[], zona: string = ZONA_POR_DEFECTO): RoturaGrupo[] {
   const map = new Map<string, AlbaranConsolidable[]>();
   for (const a of albaranes) {
-    const key = mesNaturalKey(a.fecha);
+    const key = mesNaturalKey(a.fecha, zona);
     if (!map.has(key)) map.set(key, []);
     map.get(key)!.push(a);
   }

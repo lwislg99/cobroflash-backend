@@ -186,17 +186,63 @@ test('SCRUM-622 · ① el productor del semáforo es un union CERRADO de tres', 
 });
 
 test('SCRUM-622 · ② `calcularSemaforo` no devuelve nada fuera de esos tres', async () => {
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+  // 🔴 ESTE TEST CAYÓ EN CI, Y TENÍA RAZÓN. Lo que cazó no era un semáforo roto: era que
+  // SCRUM-643 le cambió la FIRMA a `calcularSemaforo` —el límite pasó de ser un `Date` a ser un
+  // DÍA `YYYY-MM-DD`, más la zona del merchant— y este barrido se quedó pasándole `Date`s.
+  //
+  // Y la consecuencia es exactamente lo que este fichero vigila: la función no supo leer la
+  // entrada y devolvió **`'verde'` las 801 veces**. Un llamador que no se actualiza a una firma
+  // nueva es, resulta, la forma REAL en que se alcanza el «no lo sé pintado de al día».
+  //
+  // Se comprobó cuál de los dos mundos era ANTES de tocar nada, llamando a la función
+  // directamente con casos que en `main` daban rojo y ámbar: los cinco siguen dando lo mismo.
+  // La función está bien; las fixtures estaban viejas. **Se arreglan las fixtures para que
+  // vuelvan a alcanzar los tres estados — NO se relaja la aserción**, que es lo que convertiría
+  // un trinquete en decoración.
+  // ─────────────────────────────────────────────────────────────────────────────────────────
   const { calcularSemaforo } = await import('../dist/modules/jobs/domain/pendientesFacturar.service.js');
+  const { diaNaturalEn } = await import('../dist/core/zonaDelMerchant.js');
+  const MADRID = 'Europe/Madrid';
   const vistos = new Set();
-  const hoy = new Date(2026, 6, 10);
+  const hoy = new Date(Date.UTC(2026, 6, 10, 10, 0)); // 12:00 en Madrid
   for (let d = -400; d <= 400; d += 1) {
-    vistos.add(calcularSemaforo(new Date(2026, 6, 10 + d), hoy));
+    const limite = diaNaturalEn(new Date(hoy.getTime() + d * 86_400_000), MADRID);
+    vistos.add(calcularSemaforo(limite, hoy, MADRID));
   }
   // Incluida la fecha ILEGIBLE, que es el borde que más se parece a un «no lo sé».
-  vistos.add(calcularSemaforo(new Date('no es una fecha'), hoy));
+  vistos.add(calcularSemaforo('no es una fecha', hoy, MADRID));
   assert.deepEqual([...vistos].sort(), ['ambar', 'rojo', 'verde'],
     `🔴 \`calcularSemaforo\` ha devuelto algo fuera de los tres: ${JSON.stringify([...vistos])}. Eso `
     + 'hace alcanzable el `||` de la vista.');
+  // Y el SUELO del propio barrido, dicho aparte: 801 días alrededor de hoy tienen que alcanzar
+  // LOS TRES estados. La aserción de arriba compara el conjunto ordenado, así que ya caería si
+  // faltara alguno — pero deja el motivo en un `deepEqual` que se lee como «devolvió algo raro»,
+  // y lo que pasó fue justo lo contrario: dejó de alcanzar. Contarlo lo dice con su nombre.
+  assert.equal(vistos.size, 3,
+    `🔴 el barrido sólo alcanza ${vistos.size} estado(s): ha dejado de cubrir los tres y ya no `
+    + 'prueba lo que dice su nombre.');
+});
+
+test('SCRUM-622 · 🔴 la LECCIÓN del rojo anterior: una entrada que no se sabe leer da VERDE', () => {
+  // No es teoría: acaba de pasar en este mismo fichero. Se deja fijado porque es la evidencia de
+  // que el «no lo sé → al día» se alcanza por la puerta más corriente que hay —un llamador con
+  // la firma vieja—, y no sólo por una fecha corrupta en la base.
+  //
+  // NO se arregla aquí: no hay un cuarto estado y elegir uno de los tres es decisión del
+  // fundador (reglas 27 y 30). Es SCRUM-648.
+  return import('../dist/modules/jobs/domain/pendientesFacturar.service.js').then(({ calcularSemaforo }) => {
+    const hoy = new Date(Date.UTC(2026, 6, 10, 10, 0));
+    const MADRID = 'Europe/Madrid';
+    // Lo que hacía el barrido viejo: pasar un `Date` donde ahora se espera `YYYY-MM-DD`.
+    assert.equal(calcularSemaforo(new Date(Date.UTC(2026, 6, 9)), hoy, MADRID), 'verde',
+      'CARACTERIZACIÓN: un `Date` donde se espera un día se lee como ilegible y sale VERDE — '
+      + 'aunque ese día esté VENCIDO. Si esto cambia, alguien ha decidido qué se pinta cuando no '
+      + 'se sabe: bien, pero que conste con su decisión.');
+    // Y el contraste que lo hace significativo: el MISMO día, como cadena, sale rojo.
+    assert.equal(calcularSemaforo('2026-07-09', hoy, MADRID), 'rojo',
+      '🔴 el mismo día en el formato correcto debería salir rojo: si no, el problema no es de formato');
+  });
 });
 
 test('SCRUM-622 · ③ el service worker NO cachea `/admin/`: no puede servir una respuesta vieja', () => {
