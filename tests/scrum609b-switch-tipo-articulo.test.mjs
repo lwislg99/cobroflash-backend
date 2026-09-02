@@ -70,13 +70,22 @@ test('SCRUM-609b · 🔴 los valores del switch son LOS MISMOS que los del backe
     '🔴 la lista del switch y el `z.enum` del backend han divergido.');
 });
 
-test('SCRUM-609b · el rótulo va MARCADO, y con su palabra de trabajo', () => {
-  assert.equal(sw.MARCADOR, '[PENDIENTE microcopy oficial]');
+test('SCRUM-609b · el rótulo es el APROBADO, y ya no lleva marcador (SCRUM-667)', () => {
+  // El fundador aprobó los tres textos TAL CUAL el 2-sep-2026 y se retiró el prefijo. El texto no
+  // se toca (regla 30), así que aquí se fija LITERAL: si alguien lo abrevia o le añade puntuación,
+  // esto cae. Antes este test exigía el marcador; ahora exige su ausencia y el texto exacto.
   const src = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/switchTipoArticulo.js'), 'utf8');
-  // Marca + palabra: en un control de DOS LADOS el marcador solo sería inservible, porque los dos
-  // lados dirían lo mismo. Mismo criterio que CONT-01.
-  assert.match(src, /MARCADOR \+ ' Esto es'/);
+  assert.match(src, /leyenda\.textContent = 'Esto es';/);
   assert.match(src, /ETIQUETA = \{ PRODUCTO: 'Producto', SERVICIO: 'Servicio' \}/);
+  assert.equal(sw.MARCADOR, undefined,
+    '🔴 el switch vuelve a publicar un `MARCADOR`. Su copy está aprobada: si alguien necesita uno ' +
+    'para un texto NUEVO, que sea suyo y entre en el censo, no reviviendo éste.');
+
+  // Y que no quede el prefijo en ningún rótulo del fichero. Se mira el CÓDIGO, no los comentarios:
+  // la cabecera nombra el marcador para explicar que se retiró, y cazarla sería un rojo por nada.
+  const soloCodigo = src.split('\n').filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n');
+  assert.ok(!soloCodigo.includes('[PENDIENTE'),
+    '🔴 ha vuelto un marcador al código de este switch, que ya tiene su copy aprobada.');
 });
 
 test('SCRUM-609b · 🔴 la vista ESCRIBE el lado guardado al abrir, y REAPLICA', () => {
