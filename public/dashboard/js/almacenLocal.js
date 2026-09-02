@@ -106,6 +106,17 @@ const CLAVES_LOCALES = [
       + 'el tour entero a cada cierre de sesión sin proteger absolutamente nada.',
   },
   {
+    // SCRUM-584 (CONT-11) · qué columnas ha encendido el profesional en la lista de clientes.
+    patron: /^yaqu\.clientes\.columnas$/, almacen: 'localStorage', purga: false,
+    motivo: 'SOBREVIVE, por el mismo motivo que `yaqu_tips_shown`: es una preferencia DE VISTA y '
+      + 'DEL APARATO —qué columnas se enseñan en la tabla—, sin merchant, sin dato de cliente y '
+      + 'sin un solo precio. No hay nada que proteger de quien coja el móvil después: ve la misma '
+      + 'tabla que vería igualmente. Y purgarla sí tendría coste: el profesional que enciende '
+      + '«Email» y «Notas» porque en el móvil no le caben las cuatro columnas ocultas tendría que '
+      + 'volver a encenderlas cada vez que cierra sesión, que es justo la molestia que el selector '
+      + 'venía a quitar.',
+  },
+  {
     patron: /^voiceUnsupported$/, almacen: 'sessionStorage', purga: false,
     motivo: 'SOBREVIVE. Es el resultado de probar si el micrófono de ESTE aparato funciona '
       + '(iOS en PWA lo declara y está roto). No hay dato de nadie; borrarlo solo haría repetir '
