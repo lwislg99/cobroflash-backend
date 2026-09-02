@@ -211,6 +211,12 @@ router.post('/create', async (req, res) => {
         },
         customer: { name: customer.name, phone: customer.phone, email: customer.email, legalName: (customer as any).legalName, taxId: (customer as any).taxId }, // A20.4
         docFields: ((quote as any).docFields as any) ?? null, // A20.4
+        // SCRUM-656 (T7) · el modo de IVA y las cláusulas de cierre, leídos igual que `docFields`:
+        // del presupuesto guardado, y con respaldo si el campo todavía no existe. Ausente = el
+        // documento sale como salía.
+        modoIva: ((quote as any).ivaModo as any) ?? null,
+        clausulas: ((merchant as any).clausulasPresupuesto as any) ?? null,
+        clausulasExcluidas: ((quote as any).clausulasExcluidas as any) ?? null,
         // SCRUM-593 (DOC-03): de la FILA, no del body: el papel dice lo que quedó GUARDADO.
         docHeaderText: (quote as any).docHeaderText ?? null,
         docFooterText: (quote as any).docFooterText ?? null,
@@ -546,6 +552,12 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
             },
             customer: { name: customer.name, phone: customer.phone, email: customer.email, legalName: (customer as any).legalName, taxId: (customer as any).taxId }, // A20.4
         docFields: ((quote as any).docFields as any) ?? null, // A20.4
+            // SCRUM-656 (T7) · el modo de IVA y las cláusulas de cierre, leídos igual que `docFields`:
+            // del presupuesto guardado, y con respaldo si el campo todavía no existe. Ausente = el
+            // documento sale como salía.
+            modoIva: ((quote as any).ivaModo as any) ?? null,
+            clausulas: ((merchant as any).clausulasPresupuesto as any) ?? null,
+            clausulasExcluidas: ((quote as any).clausulasExcluidas as any) ?? null,
             // SCRUM-593 (DOC-03): también al REGENERAR con firma (el porqué, en scrum593c).
             docHeaderText: (quote as any).docHeaderText ?? null,
             docFooterText: (quote as any).docFooterText ?? null,

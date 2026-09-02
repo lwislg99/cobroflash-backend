@@ -13,6 +13,8 @@ import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; /
 // SCRUM-195 (rebanada 2): el CRITERIO (orden, cuál se cobra, cuánto queda) vive en su propio
 // módulo para que el test use el MISMO y no una copia.
 import { primeroConTramoPendiente, restanteDelTrabajo } from '../../domain/presupuestosDelTrabajo';
+// SCRUM-651 (T2): el nucleo del Trabajo sin presupuesto, puro y probado sin base.
+import { datosDeTrabajoDirecto, filaDeTrabajoDirecto, tituloDeTrabajo } from '../../domain/trabajoDirecto';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-173
@@ -59,6 +61,10 @@ import { SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/s
 import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206b
 import { sellarTrasEmision } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
+// SCRUM-650 (T1): la asignacion a VARIOS vive en su dominio; aqui no se decide nada de ella.
+import {
+  normalizarAsignados, principalDe, escribirAsignados, type ClienteDeAsignacion,
+} from '../../domain/asignacionDeTrabajo';
 
 const router = Router();
 
@@ -261,7 +267,10 @@ async function serializeJob(job: any, refs?: JobRefs) {
     createdAt: job.createdAt,
     // SCRUM-10: campos del contenedor "Trabajo". Fallback a derivado para Jobs
     // anteriores (titulo/totalAceptado null) → sin cambiar el comportamiento visible.
-    titulo: job.titulo ?? `Presupuesto #${quote ? (quote.quoteNumber ?? quote.id) : job.id}${customer?.name ? ` · ${customer.name}` : ''}`,
+    // 🔴 SCRUM-651 · el CRITERIO del titulo vive en `tituloDeTrabajo`, no aqui: en linea solo se
+    // podia vigilar comparando texto, y un guard asi pasa en verde en cuanto alguien reescribe la
+    // expresion sin cambiar el defecto. Medido en su tanda de rojos.
+    titulo: tituloDeTrabajo({ titulo: job.titulo, quote, customer, jobId: job.id }),
     direccion: job.direccion ?? null,
     totalAceptado: job.totalAceptado != null ? Number(job.totalAceptado) : (quote ? Number(quote.total) : null),
     totalCobrado: Number(job.totalCobrado ?? 0),
@@ -475,7 +484,22 @@ router.get('/', async (req, res) => {
       OR?: Array<{ operarioId?: number | null; assignedUserId?: number | null }>;
     } = { merchantId: req.merchantId };
     const restringido = seesOnlyOwnJobs(req.userRole);
-    if (restringido) where.OR = [{ operarioId: req.teamMemberId }, { assignedUserId: req.teamMemberId }];
+    // SCRUM-650 (T1) paso B · LOS TRES EJES. El tercero —la tabla puente— no es cosmetico: sin el,
+    // un tecnico asignado por la tabla NUEVA no veria su trabajo, que es literalmente el defecto
+    // que SCRUM-467 arreglo. Los ejes salen de UNA fuente (`ejesDeVisibilidad`) para que esta ruta
+    // y la de albaranes no puedan quedarse con listas distintas.
+    if (restringido) {
+      where.OR = [
+        { operarioId: req.teamMemberId },
+        { assignedUserId: req.teamMemberId },
+        // SCRUM-650 (T1) paso B · EL TERCER EJE. Los dos de arriba se quedan ESCRITOS TAL CUAL: el
+        // guard de SCRUM-467 los comprueba por su texto, y sacarlos a una funcion comun lo ponia en
+        // rojo sin que la garantia cambiara. Es de otro carril y no se toca (regla 9), asi que aqui
+        // se AMPLIA. Lo que impide que las dos rutas se separen es el guard de SCRUM-650b, que
+        // exige los TRES en las dos.
+        { assignees: { some: { teamMemberId: req.teamMemberId } } },
+      ] as typeof where.OR;
+    }
 
     // SCRUM-148: ?operarioId=<id> | 'owner' → Trabajos de ESE operario, para el detalle por
     // miembro del hub de Equipo.
@@ -514,6 +538,53 @@ router.get('/', async (req, res) => {
 
 // GET /admin/jobs/:id — DETALLE del Trabajo (SCRUM-12, solo lectura, aditivo).
 // Tenancy idéntica al resto de handlers :id (findFirst { id, merchantId } → 404).
+// ── SCRUM-651 (T2) · ABRIR UN TRABAJO SIN PRESUPUESTO ───────────────────────────────────
+//
+// LA PUERTA QUE FALTABA. Hasta hoy el ÚNICO creador de Trabajos era `ensureJobForQuote`, que
+// arranca en `quote → accepted`: no había forma de meter una AVERÍA en el producto, que es el
+// caso MÁS frecuente del primer cliente real. Nadie presupuesta una urgencia.
+//
+// ⚠️ La exigencia era DE HECHO, no del esquema: `Job.quoteId` ya era `Int?`. Cero cambios de
+// schema, que es el freno duro del proyecto.
+//
+// 🔴 NO ES ADMIN-ONLY, y está medido: quien coge la avería es el técnico, en la calle. El gate
+// por CAMPO del PATCH sigue intacto (`tipoOperacion`, `assignedUserId`, cerrar) — aquí no se
+// escribe ninguno de esos, así que abrir la creación no abre nada de dinero ni de reparto.
+router.post('/', async (req, res) => {
+  try {
+    const entrada = datosDeTrabajoDirecto(req.body);
+    if (!entrada.ok) return res.status(400).json({ error: entrada.error });
+
+    // regla 2 · el cliente tiene que ser DE ESTE merchant. Y se comprueba ANTES de crear: sin
+    // esto, un `customerId` de otro merchant fabricaría un Trabajo que apunta fuera del inquilino
+    // y que nadie podría ni ver ni borrar.
+    const customer = await prisma.customer.findFirst({
+      where: { id: entrada.datos.customerId, merchantId: req.merchantId },
+      select: { id: true },
+    });
+    if (!customer) return res.status(404).json({ error: 'customer_not_found' });
+
+    const job = await prisma.job.create({
+      data: filaDeTrabajoDirecto(req.merchantId, entrada.datos, req.teamMemberId ?? null),
+    });
+
+    // SCRUM-651 · traza del Trabajo abierto SIN presupuesto (acción aprobada el 2-sep-2026). El
+    // camino del presupuesto ya dejaba la suya; éste no dejaba ninguna, y un registro con un
+    // agujero es peor que no tenerlo. Fire-and-forget, como el resto de `recordAudit`.
+    recordAudit({
+      merchantId: req.merchantId,
+      teamMemberId: req.teamMemberId ?? null,
+      action: 'trabajo_creado',
+      entityType: 'job',
+      entityId: job.id,
+    });
+    return res.status(201).json(await serializeJob(job));
+  } catch (err: any) {
+    console.error('[jobs] POST / falló:', err?.message || err);
+    return res.status(500).json({ error: 'server_error' });
+  }
+});
+
 router.get('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -675,13 +746,25 @@ router.patch('/:id', async (req, res) => {
         data.direccion = nueva;
       }
     }
-    if (req.body?.assignedUserId !== undefined) {
-      const uid = req.body.assignedUserId === null ? null : Number(req.body.assignedUserId);
-      if (uid !== null) {
+    // SCRUM-650 (T1) · SE ASIGNA A VARIOS. Se admiten las dos formas: `assignedUserIds` (la nueva,
+    // una lista) y `assignedUserId` (la de siempre, uno o `null`), que se normaliza a lista de uno.
+    // Aceptar las dos es lo que permite que el front migre sin que nada deje de funcionar un dia.
+    let asignadosPedidos: number[] | null = null;
+    if (req.body?.assignedUserIds !== undefined) {
+      asignadosPedidos = normalizarAsignados(req.body.assignedUserIds);
+    } else if (req.body?.assignedUserId !== undefined) {
+      asignadosPedidos = normalizarAsignados(req.body.assignedUserId);
+    }
+    if (asignadosPedidos !== null) {
+      // 🔴 REGLA 2, UNO A UNO: cada id tiene que ser de ESTE merchant. Validar solo el primero
+      // dejaria colar los demas — y con varios asignados eso es la mayoria de la lista.
+      for (const uid of asignadosPedidos) {
         const member = await prisma.teamMember.findFirst({ where: { id: uid, merchantId: req.merchantId } });
         if (!member) return res.status(400).json({ error: 'invalid_assignee' });
       }
-      data.assignedUserId = uid;
+      // La columna guarda el PRINCIPAL mientras el filtro siga leyendola (paso A). La tabla es la
+      // fuente; esto es la copia que el guard vigila.
+      data.assignedUserId = principalDe(asignadosPedidos);
     }
     // SCRUM-66 (TRABAJO-4): tipo de operación fiscal. Enum CERRADO (validación estricta);
     // editable siempre mientras el Job esté abierto (el candado real es SCRUM-17). Solo se
@@ -698,7 +781,16 @@ router.patch('/:id', async (req, res) => {
       }
     }
 
-    const updated = await prisma.job.update({ where: { id }, data });
+    // 🔴 LOS DOS SITIOS, EN LA MISMA TRANSACCION. Si una de las dos escrituras se quedara fuera,
+    // la discrepancia que `discrepanciaDeAsignacion` prohibe se produciria sola — y el guard
+    // estaria vigilando un invariante que el propio codigo rompe.
+    const updated = asignadosPedidos === null
+      ? await prisma.job.update({ where: { id }, data })
+      : await prisma.$transaction(async (tx) => {
+        const j = await tx.job.update({ where: { id }, data });
+        await escribirAsignados(tx as unknown as ClienteDeAsignacion, id, asignadosPedidos as number[]);
+        return j;
+      });
     // SCRUM-66: traza de que la decisión fiscal la tomó el usuario (caveat del ticket).
     // teamMemberId = quien edita (null = propietario/admin). Fire-and-forget como el resto.
     if (tipoOperacionElegido) {

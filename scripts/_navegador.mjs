@@ -206,64 +206,108 @@ const seg = (ms) => (ms / 1000).toFixed(1);
  *
  * `puppeteer` se recibe en vez de importarse: este módulo lo usan guards que ya lo tienen
  * cargado, y así se puede ejercitar el desenlace de «no arranca» con un doble, sin navegador.
+ *
+ * ── Y EL RELOJ TAMBIÉN SE RECIBE (SCRUM-671) ────────────────────────────────────────────
+ * Por el mismo motivo y con el mismo patrón: para poder EJERCITAR el reparto sin depender de
+ * lo cargada que esté la máquina. Su test medía con reloj de pared —inyectaba 0,7 s y exigía
+ * ver «0.0» en el otro tramo— y bajo carga el otro tramo salía 0,1: **el reparto era correcto
+ * y el guard lo llamaba roto**. Con un reloj de mentira, el mismo hecho se comprueba exacto.
+ *
+ * En producción no cambia nada: por defecto es `Date.now`, y ningún llamador pasa el tercero.
  */
-export async function lanzarNavegador(puppeteer, opciones = {}) {
+/**
+ * 🔴 SCRUM-673 · CUANTAS VECES SE INTENTA ARRANCAR ANTES DE DAR UN VEREDICTO.
+ *
+ * TRES, y el numero sale de lo MEDIDO, no de una corazonada. El mismo guard, el mismo binario y la
+ * misma maquina arrancaron en 0,3 s, en 12,9 s y en 38,2 s en tiradas distintas. Eso no es el
+ * navegador: es la carga del runner. Un tope fijo por debajo de 38,2 convierte una maquina cargada
+ * en un veredicto, y subirlo a 60.000 es cambiar un numero por otro y esperar que el runner no
+ * vuelva a ir lento — la cura que SCRUM-520 ya rechazo.
+ *
+ * Lo que cambia aqui no es el tope: es que UN ARRANQUE LENTO YA NO PRODUCE VEREDICTO. Solo lo
+ * produce que TODOS los intentos fallen, y entonces el veredicto es rojo diciendo NO MEDIDO.
+ */
+export const INTENTOS_DE_ARRANQUE = 3;
+
+/**
+ * El tope de CADA intento, creciente. El primero con el tope de siempre —para no alargar la tanda
+ * feliz, que es la mayoria—, y los siguientes con mas margen: la evidencia dice que cuando el
+ * runner va cargado no va «un poco» mas lento, va MUCHO mas lento (0,3 → 38,2 s es x127).
+ *
+ * Con 30 s de base la escalera cubre 30/60/90 s, o sea muy por encima del 38,2 que la propia
+ * maquina demostro sano. Y el peor caso esta ACOTADO: si nada arranca, se para en 180 s y se dice.
+ */
+export function topeDelIntento(n, base = topeDeArranque()) {
+  return base * n;
+}
+
+// 🔴 CONFLICTO RESUELTO COMBINANDO, no eligiendo: main aniadio un reloj inyectable (`ahora`) para
+// poder probar el arranque sin esperar, y esta rama aniadio los REINTENTOS. Son ortogonales y los
+// dos hacen falta: quedarse con uno habria borrado en silencio el trabajo del otro. En codigo no
+// se suma —se elige el correcto—, pero aqui no hay dos versiones de lo mismo: hay dos cosas.
+export async function lanzarNavegador(puppeteer, opciones = {}, ahora = Date.now) {
   const ruta = rutaDelNavegador(); // sale con 2 si no hay ninguno
   const args = [...(opciones.args || []), ...argsDeAislamiento()];
-  const tope = topeDeArranque();
+  const base = topeDeArranque();
 
-  /**
-   * 🔴 UNA MEDIDA CORTADA NO SE IMPRIME COMO UNA COMPLETA.
-   *
-   * Un 30,0 que significa «hasta aquí miré» y un 19,6 que significa «esto tardó» no son el mismo
-   * tipo de número, y con la misma forma acaban en la misma columna de una tabla. Aquí la línea
-   * dice CUÁL de los dos es y en QUÉ tramo se cortó, para que no haya que acordarse.
-   *
-   * El total sigue pegado a la marca —la puerta lo necesita—, pero va marcado como cota inferior
-   * en el desglose: es el reloj parado por el tope, no lo que habría tardado.
-   */
-  const cortada = (tramo, desglose, e) => {
-    const s = seg(Date.now() - t0);
-    console.error(`${MARCA_ARRANQUE} ${s} s CORTADA EN «${tramo}» · ${desglose}`);
-    console.error('🔴 NO PUDE ARRANCARLO: el navegador ESTÁ y no levanta.');
-    console.error('   binario: ' + ruta);
-    console.error(`   el reloj llegó a ${s} s y AHÍ SE CORTÓ, por el tope de ${tope} ms aplicado a`);
-    console.error(`   «${tramo}». NO es lo que tardó: es hasta dónde se miró. Lo que tardaría de`);
-    console.error('   verdad no lo sabe nadie, porque se dejó de mirar.');
-    console.error('   Esto NO es «no lo encuentro» (eso sale con ' + SALIDA_NO_ENCONTRADO
-      + ') ni «he encontrado defectos» (eso sale con 1): el guard');
-    console.error('   no ha llegado a medir nada, así que su silencio no significa que esté todo bien.');
-    console.error('   Detalle: ' + (e && e.message ? e.message : e));
-    process.exit(SALIDA_NO_ARRANCA);
+  const marcaCortada = (t0, tope, tramo, desglose) => {
+    console.error(`${MARCA_ARRANQUE} ${seg(ahora() - t0)} s CORTADA EN «${tramo}» · ${desglose}`);
+    return null;
   };
 
-  const t0 = Date.now();
-  let nav;
-  try {
-    // `waitForInitialPage: false` NO se salta la espera de la página: la saca de aquí para poder
-    // cronometrarla aparte, y se hace justo debajo con el mismo tope. Va después del spread para
-    // que ningún guard pueda desactivarla sin querer.
-    nav = await puppeteer.launch({
-      ...opciones, executablePath: ruta, args, timeout: tope, waitForInitialPage: false,
-    });
-  } catch (e) {
-    cortada(TRAMO_PROCESO,
-      `${TRAMO_PROCESO} ≥${seg(Date.now() - t0)} s · ${TRAMO_PAGINA} SIN MEDIR`, e);
-  }
-  const tProceso = Date.now() - t0;
+  /** UN intento: arranca el proceso y espera la primera página, cada uno con el tope de su turno. */
+  const intentar = async (n) => {
+    const tope = topeDelIntento(n, base);
+    const t0 = ahora();
+    let nav;
+    try {
+      // `waitForInitialPage: false` NO se salta la espera de la página: la saca de aquí para poder
+      // cronometrarla aparte, y se hace justo debajo con el mismo tope. Va después del spread para
+      // que ningún guard pueda desactivarla sin querer.
+      nav = await puppeteer.launch({
+        ...opciones, executablePath: ruta, args, timeout: tope, waitForInitialPage: false,
+      });
+    } catch (e) {
+      return marcaCortada(t0, tope, TRAMO_PROCESO,
+        `${TRAMO_PROCESO} ≥${seg(ahora() - t0)} s · ${TRAMO_PAGINA} SIN MEDIR`);
+    }
+    const tProceso = ahora() - t0;
 
-  try {
-    await nav.waitForTarget((t) => t.type() === 'page', { timeout: tope });
-  } catch (e) {
-    // Cerrar aquí no es cortesía: es lo que hace `waitForPageTarget` (BrowserLauncher.ts:363).
-    // Sin esto quedaría un navegador vivo por cada guard que muriese esperando la página.
-    await nav.close();
-    cortada(TRAMO_PAGINA,
-      `${TRAMO_PROCESO} ${seg(tProceso)} s · ${TRAMO_PAGINA} ≥${seg(Date.now() - t0 - tProceso)} s`, e);
-  }
-  const tPagina = Date.now() - t0 - tProceso;
+    try {
+      await nav.waitForTarget((t) => t.type() === 'page', { timeout: tope });
+    } catch (e) {
+      // Cerrar aquí no es cortesía: es lo que hace `waitForPageTarget` (BrowserLauncher.ts:363).
+      // Sin esto quedaría un navegador vivo por cada intento que muriese esperando la página.
+      await nav.close().catch(() => {});
+      return marcaCortada(t0, tope, TRAMO_PAGINA,
+        `${TRAMO_PROCESO} ${seg(tProceso)} s · ${TRAMO_PAGINA} ≥${seg(ahora() - t0 - tProceso)} s`);
+    }
+    const tPagina = ahora() - t0 - tProceso;
 
-  console.error(`${MARCA_ARRANQUE} ${seg(tProceso + tPagina)} s COMPLETA`
-    + ` · ${TRAMO_PROCESO} ${seg(tProceso)} s · ${TRAMO_PAGINA} ${seg(tPagina)} s`);
-  return nav;
+    console.error(`${MARCA_ARRANQUE} ${seg(tProceso + tPagina)} s COMPLETA`
+      + ` · ${TRAMO_PROCESO} ${seg(tProceso)} s · ${TRAMO_PAGINA} ${seg(tPagina)} s`);
+    return nav;
+  };
+
+  for (let n = 1; n <= INTENTOS_DE_ARRANQUE; n += 1) {
+    const nav = await intentar(n);
+    if (nav) return nav;
+  }
+
+  // 🔴 AQUÍ, Y SOLO AQUÍ, HAY VEREDICTO. Todos los intentos fallaron, así que ya no es «el runner
+  // iba lento»: es que el navegador ESTÁ y no levanta. Y el rojo dice NO MEDIDO, que es lo único
+  // honesto — el guard no ha comprobado nada, así que su silencio no significa que esté todo bien.
+  console.error(`🔴 NO PUDE ARRANCARLO en ${INTENTOS_DE_ARRANQUE} intentos: el navegador ESTÁ y no levanta.`);
+  console.error('   binario: ' + ruta);
+  console.error(`   topes aplicados, en orden: ${Array.from({ length: INTENTOS_DE_ARRANQUE },
+    (_, i) => topeDelIntento(i + 1, base) + ' ms').join(' · ')}`);
+  // ⚠️ Esta frase la comprueba el guard de SCRUM-642 por su TEXTO, y es de otro carril: se
+  // conserva LITERAL. Decía lo mismo cuando vivía en `cortada()`, antes de que hubiera intentos.
+  console.error('   Cada número de arriba es el tope de su turno. NO es lo que tardó: es hasta dónde se miró.');
+  console.error('   Lo que habría tardado de verdad no lo sabe nadie, porque se dejó de mirar.');
+  console.error('   🔴 ESTO ES **NO MEDIDO**, no «no hay defectos». Esto NO es «no lo encuentro»');
+  console.error('   (eso sale con ' + SALIDA_NO_ENCONTRADO + ') ni «he encontrado defectos» (eso sale con 1).');
+  console.error('   Si se repite en tandas seguidas, el runner no da para arrancar un navegador y');
+  console.error('   subir el tope solo mueve el problema: mídelo antes de tocar el número.');
+  process.exit(SALIDA_NO_ARRANCA);
 }

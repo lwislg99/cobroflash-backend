@@ -23,14 +23,37 @@ async function renderJobsView(container) {
     <div style="max-width:860px">
       <div class="customers-card" style="margin-bottom:16px">
         <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Trabajos</h2>
-        <p style="margin:0;font-size:13px;color:var(--muted)">Cada presupuesto aceptado se convierte en un trabajo. Agéndalo, márcalo terminado y cobra el resto con un toque.</p>
+        <p style="margin:0;font-size:13px;color:var(--muted)">Tus trabajos: los que vienen de un presupuesto aceptado, y los que abres tú.</p>
       </div>
+      <div id="jobs-nuevo" style="margin-bottom:14px"></div>
       <div id="jobs-filter" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
       <div id="jobs-list" style="display:flex;flex-direction:column;gap:12px"></div>
     </div>
   `;
   const list = document.getElementById('jobs-list');
   const filterBar = document.getElementById('jobs-filter');
+
+  // ── SCRUM-651 (T2) · LA PUERTA DEL TRABAJO SIN PRESUPUESTO ──────────────────────────
+  //
+  // Va ANTES del `return` del estado vacio a proposito: con cero trabajos es justo cuando mas
+  // falta hace poder abrir el primero. Si se colgara despues, un merchant nuevo veria una
+  // pantalla que le dice que espere a que alguien acepte un presupuesto — y ya no es verdad.
+  //
+  // El subtitulo y el estado vacio decian que un Trabajo nace de un presupuesto aceptado, y con
+  // esta puerta pasaba a ser media verdad: el estado vacio llegaba a contradecir al boton que
+  // tiene al lado. Se reporto y el fundador firmo los dos textos el 2-sep-2026 (regla 30).
+  const zonaNuevo = document.getElementById('jobs-nuevo');
+  if (zonaNuevo && typeof abrirModalTrabajoNuevo === 'function') {
+    const bNuevo = document.createElement('button');
+    // SCRUM-412: una PRIMARIA nunca es `sm`. Y esta lo es — es la accion que abre el Trabajo,
+    // que es la razon de ser de esta pantalla para un merchant que todavia no tiene ninguno.
+    bNuevo.className = 'btn-primary';
+    bNuevo.id = 'jobs-nuevo-btn';
+    bNuevo.textContent = MARCA_651 + ' Trabajo nuevo';
+    bNuevo.addEventListener('click', () => abrirModalTrabajoNuevo(() => renderJobsView(container)));
+    zonaNuevo.appendChild(bNuevo);
+  }
+
   uiSkeletonCards(list, 4);
 
   let jobs;
@@ -44,7 +67,7 @@ async function renderJobsView(container) {
   if (!jobs.length) {
     list.innerHTML = `<div class="customers-card"><div class="empty-state"><div class="empty-state-icon">🔧</div>
       <div class="empty-state-title">Aquí verás tus trabajos</div>
-      <div class="empty-state-desc">Cuando un cliente acepte un presupuesto, el trabajo aparece solo: agéndalo, termínalo y cobra el resto sin perseguir a nadie.</div>
+      <div class="empty-state-desc">Todavía no tienes ningún trabajo. Se crean solos cuando un cliente acepta un presupuesto, o los abres tú desde aquí.</div>
     </div></div>`;
     return;
   }

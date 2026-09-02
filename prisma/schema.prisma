@@ -102,10 +102,10 @@ model Merchant {
   // fiscal (IVA / IGIC canario / IPSI de Ceuta y Melilla), que es otro dato y es SCRUM-646.
   timezone String? @map("timezone")
 
-  pspId   String? @map("psp_id")
-  iban    String?
-  clabe   String?
-  status  String  @default("active")
+  pspId  String? @map("psp_id")
+  iban   String?
+  clabe  String?
+  status String  @default("active")
 
   // V0-3: atribución de adquisición capturada en el registro (UTM "source/medium/campaign"
   // o "ref:CODIGO" del programa de referidos; null = orgánico/desconocido)
@@ -158,6 +158,9 @@ model Merchant {
   // que esto NO abre deriva: el esquema alcanza a las bases, no al revés.
   retencionIrpfDeclarada Boolean @default(false) @map("retencion_irpf_declarada")
   retencionIrpfTipo      Int?    @map("retencion_irpf_tipo")
+
+  // SCRUM-656 (T7) · Las clausulas de cierre, escritas UNA vez: [{id, titulo, texto}].
+  clausulasPresupuesto Json? @map("clausulas_presupuesto")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -445,6 +448,20 @@ model Quote {
   // necesita un enlace; @unique para el lookup findUnique por token.
   decisionToken String? @unique @map("decision_token")
 
+  // SCRUM-655 (T6) · La revision de un presupuesto. `0` = original, `1` = el «P2004226.1».
+  // VA APARTE y NO dentro del texto del numero: metido en la cadena, saber que revisiones hay
+  // obligaria a PARSEAR UN TEXTO ESCRITO PARA HUMANOS, y el dia que alguien cambie el formato el
+  // mecanismo muere en silencio. «Vigente» tampoco es una bandera: es la revision mas alta,
+  // derivada — una bandera puede contradecir a los datos (dos vigentes, o ninguna).
+  revision Int @default(0)
+
+  // SCRUM-656 (T7) · como presenta el IVA ESTE presupuesto: 'sumar' | 'no_incluido'.
+  // NULL = anterior a la casilla → sale como salia. Sin @default: «no consta» y «suma» no son
+  // lo mismo, aunque hoy se pinten igual.
+  ivaModo            String? @map("iva_modo")
+  // Los id de las clausulas del merchant que ESTE presupuesto no lleva. Excluir no es borrar.
+  clausulasExcluidas Json?   @map("clausulas_excluidas")
+
   merchant Merchant @relation(fields: [merchantId], references: [id])
   customer Customer @relation(fields: [customerId], references: [id])
   charge   Charge?  @relation(fields: [chargeId], references: [id])
@@ -490,7 +507,7 @@ model Invoice {
   stageLabel    String?   @map("stage_label") // SCRUM-27: etiqueta del tramo, congelada al crear la factura
 
   // Líneas de detalle (copiadas del Quote o del Charge al crear la factura)
-  lines       Json?
+  lines Json?
 
   // SCRUM-500 (A2-c) · SUPLIDOS: lo pagado POR CUENTA del cliente y repercutido tal cual, sin IVA
   // y sin margen — una tasa municipal, el visado de un colegio, una licencia de obra. Poner ahí un
@@ -524,7 +541,7 @@ model Invoice {
   suplidos    Decimal? @map("suplidos") @db.Decimal(12, 2)
   // SCRUM-17 (FISCAL-2): operaciones agrupadas en una recapitulativa — [{albaranId, numero, fecha}].
   // La factura debe identificar los albaranes origen (art. 6 Reglamento + advertencia TEAC).
-  albaranRefs Json? @map("albaran_refs")
+  albaranRefs Json?    @map("albaran_refs")
   // SCRUM-16/142 (FISCAL-1a): las facturas que esta FINAL descuenta — [{invoiceId, number,
   // fecha, base, cuota, sinDesglose?}]. Es lo que hace AUDITABLE la compensación: sin esto la
   // final dice un importe menor y no consta contra qué (art. 6.1 RD 1619/2012 exige identificar
@@ -533,7 +550,7 @@ model Invoice {
   // `buildFinalInvoice` ya los produce y hoy NO TIENEN DÓNDE IR. Mismo patrón EXACTO que
   // `albaranRefs`: `Json?` en la fila, tipado en `EmitInvoiceInput`. NO se derivan de las líneas
   // negativas — de un concepto en texto no se saca un identificador de factura.
-  deductsRefs Json? @map("deducts_refs")
+  deductsRefs Json?    @map("deducts_refs")
 
   // Tipo de factura (RD 1619/2012 / VeriFactu): F1 = completa estándar | R1 = rectificativa
   type        String @default("F1")
@@ -790,8 +807,10 @@ model TeamMember {
   role   String @default("tecnico") // admin | tecnico
   status String @default("invited") // invited | active | suspended
 
-  merchant     Merchant      @relation(fields: [merchantId], references: [id])
-  authSessions AuthSession[]
+  merchant       Merchant      @relation(fields: [merchantId], references: [id])
+  authSessions   AuthSession[]
+  // SCRUM-650 (T1): los trabajos que tiene asignados. Virtual, sin columna.
+  jobAssignments JobAssignee[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -902,6 +921,17 @@ model Job {
   tipoOperacion  String    @default("TRABAJO_UNICO") @map("tipo_operacion")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // SCRUM-651 (T2): que clase de intervencion es. Vocabulario CERRADO en
+  // `src/modules/jobs/domain/tipoIntervencion.ts` — el MISMO que usa el parte (SCRUM-652).
+  // Nullable y sin @default: los trabajos anteriores no declararon tipo, y «no consta» no es
+  // ninguno de los valores del vocabulario.
+  tipoIntervencion String? @map("tipo_intervencion")
+
+  // SCRUM-650 (T1) · los empleados asignados a EJECUTAR este trabajo. Relacion virtual: no crea
+  // ninguna columna en `jobs`. Destino final (paso C): esta tabla es la UNICA fuente y
+  // `assignedUserId` desaparece — dos sitios diciendo quien ejecuta acaban discrepando.
+  assignees JobAssignee[]
 
   @@index([merchantId, status])
   @@index([merchantId, scheduledAt])
@@ -1083,25 +1113,103 @@ model AlbaranLineaFacturada {
 }
 
 model EmailMessage {
-  id         Int     @id @default(autoincrement())
-  merchantId Int     @map("merchant_id")
-  customerId Int?    @map("customer_id")
+  id         Int  @id @default(autoincrement())
+  merchantId Int  @map("merchant_id")
+  customerId Int? @map("customer_id")
 
-  kind       String                                    // invoice | quote | magic_link | digest | ...
+  kind       String // invoice | quote | magic_link | digest | ...
   toEmail    String  @map("to_email")
-  providerId String? @unique @map("provider_id")       // id de Resend; NULL = no consta
+  providerId String? @unique @map("provider_id") // id de Resend; NULL = no consta
 
   // ESTADOS_CORREO (constanciaCorreo.ts). `aceptado_*` NO es «entregado».
   status String  @default("aceptado_sin_identificador")
   error  String?
 
-  relatedType String? @map("related_type")             // invoice | quote | charge
+  relatedType String? @map("related_type") // invoice | quote | charge
   relatedId   Int?    @map("related_id")
 
   createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt      @map("updated_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([merchantId, createdAt])
   @@index([relatedType, relatedId])
   @@map("email_messages")
+}
+
+// SCRUM-650 (T1) · UN TRABAJO SE ASIGNA A VARIOS EMPLEADOS
+//
+// El caso real que lo pide: en el parte de trabajo EN PAPEL de la empresa de Madrid, el campo
+// «Tecnico» dice literalmente «Israel, Miguel y Jesus.L». VARIOS no es el caso raro: es el normal.
+//
+// TABLA PUENTE, y no un array ni un CSV en `jobs`:
+//   · un array de ids no tiene integridad referencial — nada impide guardar el id de un empleado
+//     borrado, o de otro merchant;
+//   · un CSV no se puede indexar ni filtrar, y el filtro por empleado es EXACTAMENTE lo que este
+//     ticket existe para que funcione.
+//
+// La clave primaria compuesta hace la asignacion idempotente: asignar dos veces al mismo no crea
+// dos filas. El indice por `team_member_id` es el que sirve la pregunta del tecnico —«que trabajos
+// tengo»—, que es la consulta caliente.
+//
+// ⚠️ Un trabajo SIN NINGUN asignado es INVISIBLE para todos los tecnicos; solo lo ven los admin.
+// Hoy ya puede quedarse sin nadie (`assignedUserId` es nullable) y esto no lo cambia: lo DICE.
+model JobAssignee {
+  jobId        Int      @map("job_id")
+  teamMemberId Int      @map("team_member_id")
+  assignedAt   DateTime @default(now()) @map("assigned_at")
+
+  job        Job        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  // onDelete: Cascade en LAS DOS. Sin el, la FK es RESTRICT y borrar un empleado —o su merchant—
+  // revienta a mitad de recorrido con las tablas anteriores ya vaciadas (lo cazo SCRUM-244). Y es
+  // lo correcto ademas de lo seguro: una asignacion no significa nada sin la persona asignada.
+  teamMember TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+
+  @@id([jobId, teamMemberId])
+  @@index([teamMemberId])
+  @@map("job_assignees")
+}
+
+// SCRUM-652 (T3) · EL PARTE DE TRABAJO. Documento propio: no es un albaran ni una factura,
+// y por eso NO comparte tabla con ellos. Sin relaciones Prisma declaradas (merchantId/jobId/
+// customerId sueltos), misma convencion que el resto del schema (SCRUM-192).
+model ParteTrabajo {
+  id         Int  @id @default(autoincrement())
+  merchantId Int  @map("merchant_id")
+  jobId      Int? @map("job_id")
+  customerId Int? @map("customer_id")
+
+  numero     String
+  fecha      DateTime
+  obra       String?
+  referencia String?
+
+  entrada         String?
+  salida          String?
+  desplazamientos Int?
+  kilometros      Decimal? @db.Decimal(10, 2)
+  /// Array de nombres. Ranura para «varios técnicos» (sesión 1), que HOY NO EXISTE.
+  tecnicos        Json     @default("[]")
+
+  /// reparacion_asistencia | mantenimiento | instalacion (TIPOS_PARTE)
+  tipo   String?
+  /// [{bloque, unds, descripcion, precioUnitario?, tipoIva?}] — el bloque va DENTRO de la línea
+  lineas Json
+  notas  String?
+
+  /// borrador | firmado | facturado (ESTADOS_PARTE)
+  estado String @default("borrador")
+
+  firmadoAt         DateTime? @map("firmado_at")
+  firmadoPorNombre  String?   @map("firmado_por_nombre")
+  firmadoPorCalidad String?   @map("firmado_por_calidad")
+  /// Huella del CONTENIDO (sin precios) y su versión de canónico.
+  contenidoHash     String?   @map("contenido_hash")
+  contenidoVersion  Int?      @map("contenido_version")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([merchantId, fecha])
+  @@index([merchantId, estado])
+  @@map("partes_trabajo")
 }

@@ -80,7 +80,18 @@ export const ORDEN_BORRADO_MERCHANT: readonly string[] = [
   //     MEDIDO: `barridoDemo` no es una supresión del art. 17 y el merchant demo sobrevive; dejar
   //     filas redactadas acumulándose ahí haría MENTIR al botón «Eliminar datos de ejemplo», que es
   //     justo el defecto que SCRUM-314 cerró. Para el demo, borrar de verdad es lo correcto.
+  //
+  // SCRUM-674 · `parteTrabajo` va en ESTE bloque y por el MISMO motivo que `emailMessage`, no por
+  // parecido: medido sobre el schema, el modelo declara **CERO** `@relation`, y sus `job_id` y
+  // `customer_id` son columnas sueltas que apuntan a `jobs` y a `customers` SIN FK. Si cayera
+  // después de ellos quedarían partes apuntando a ids que ya no existen, y ninguna FK protestaría.
+  // Al revés no hay riesgo: **nadie apunta a `ParteTrabajo`** (también medido), así que adelantarlo
+  // no puede romper ningún borrado posterior.
+  //
+  // Y no estar aquí no era «no tocar el RGPD», era incumplirlo: un parte huérfano conserva el
+  // nombre del cliente, la dirección de la obra y lo que se hizo dentro.
   'auditLog', 'whatsAppMessage', 'legalAcceptance', 'customerEvent', 'attachment', 'emailMessage',
+  'parteTrabajo',
   // Documentos: albarán antes que factura (el albarán apunta a la factura que lo consolidó).
   'albaran', 'maintenancePlan', 'invoice', 'charge', 'job', 'quote', 'quoteRequest',
   // Catálogo y operativa: nadie cuelga de ellos a estas alturas.
@@ -101,6 +112,12 @@ export const FUERA_DEL_BARRIDO_GENERICO: Readonly<Record<string, string>> = {
   // esas filas, así que el barrido genérico daría una falsa sensación de limpieza. Se borra
   // por TELÉFONO, que es lo que de verdad identifica la conversación (ver `borrarMerchant`).
   botSession: 'merchantId nullable (SCRUM-174): se barre por teléfono, no por merchant',
+  // SCRUM-650 (T1): la asignación de un trabajo a un empleado. No tiene `merchantId` —cuelga de
+  // `Job` y de `TeamMember`, que sí lo tienen— y NO necesita paso propio en el orden de borrado:
+  // sus DOS `@relation` declaran `onDelete: Cascade`, así que Postgres barre las filas cuando cae
+  // cualquiera de los dos padres. Es la diferencia con los colgados de `Charge` de abajo, que son
+  // RESTRICT y por eso sí necesitan ir antes que su padre.
+  jobAssignee: 'cascada por sus dos padres (SCRUM-650): Job y TeamMember declaran onDelete Cascade',
 };
 
 /**

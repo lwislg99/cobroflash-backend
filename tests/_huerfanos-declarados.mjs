@@ -88,6 +88,42 @@ export const CATEGORIAS = {
  * `módulo::export`, no la longitud: por eso da igual cómo se agrupen las líneas.
  */
 export const DECLARADOS = [
+  // ── SCRUM-652 (T3 fase C) · lo que destapa DARLE SUPERFICIE AL PARTE ───────────────────
+  //
+  // Mientras `parteTrabajo.ts` era un módulo inalcanzable ENTERO, sus exports no se contaban uno
+  // a uno: el módulo era el huérfano. Al cablearlo, el censo pasa a mirarlo por dentro, y estos
+  // tres quedan a la vista. NO son código muerto y NO se borran: son la mitad de OFICINA del
+  // documento —los totales por bloque, en céntimos enteros— y el vocabulario de estados. Su
+  // consumidor es la pantalla que valora, que es otro ticket (T8 y siguientes).
+  { modulo: 'src/modules/jobs/domain/parteTrabajo.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-09-02',
+    motivo: 'La aritmética de la OFICINA del parte, construida en la fase B y probada: la pantalla del técnico no la usa a propósito (no ve importes) y la de oficina es un ticket posterior.',
+    exports: ['lineasDelBloque', 'totalesPorBloque'] },
+  { modulo: 'src/modules/jobs/domain/parteTrabajo.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-02',
+    motivo: 'Los estados del parte, exportados para ser su única fuente; hoy los leen su propio módulo y su test.',
+    exports: ['ESTADOS_PARTE'] },
+  // La numeración del parte: `siguienteNumeroParte` SÍ tiene llamador (la creación); estos dos son
+  // su vocabulario y su formateador, que hoy sólo ejerce el propio módulo y su test.
+  { modulo: 'src/modules/jobs/domain/parteNumero.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-02',
+    motivo: 'Código vivo de su propio módulo lo ejecuta (`siguienteNumeroParte` lo llama); el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['formatParteNumber', 'PARTE_NUMBER_PREFIX'] },
+  // SCRUM-656 (T7) · el vocabulario del MODO DE IVA de un presupuesto. `MODOS_IVA` es además la
+  // lista contra la que se contrasta el `z.enum` del validador: si dejara de exportarse, las dos
+  // copias del conjunto cerrado podrían separarse sin que nada lo dijera.
+  { modulo: 'src/modules/quotes/domain/presentacionIva.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-02',
+    motivo: 'Constantes exportadas para ser la única fuente del término; hoy las leen su propio módulo, su test y el contraste con el `z.enum` del validador.',
+    exports: ['MODOS_IVA', 'MODO_IVA_POR_DEFECTO', 'LEYENDA_IVA_NO_INCLUIDO'] },
+  { modulo: 'src/modules/quotes/domain/presentacionIva.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-02',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['esModoIva'] },
+  { modulo: 'src/modules/quotes/domain/clausulas.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-02',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['esClausulaPintable'] },
   { modulo: 'src/modules/ai/domain/ai.service.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
@@ -100,6 +136,10 @@ export const DECLARADOS = [
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
     exports: ['ENTORNOS_APP', 'ENTORNO_ESCRITO', 'ENTORNO_NO_SE_PUDO', 'ENTORNO_SIN_CAMBIO'] },
+  { modulo: 'src/modules/jobs/domain/tipoIntervencion.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-02',
+    motivo: 'SCRUM-651 · el vocabulario CERRADO del tipo de intervencion, aprobado por el fundador. El guard propone quitarle el export porque hoy solo lo lee su modulo y su test, y AQUI ESA ES LA RESPUESTA EQUIVOCADA: el parte de trabajo (SCRUM-652) tiene que IMPORTAR estos valores, y si no los encuentra exportados la salida facil es declarar su propia lista — que es exactamente lo que el fundador prohibio, porque dos listas para el mismo hecho se separan y entonces un parte afirma sobre un Trabajo una palabra que el Trabajo no admite. Se borra esta linea el dia que SCRUM-652 lo consuma.',
+    exports: ['TIPOS_INTERVENCION'] },
   { modulo: 'src/modules/auth/domain/referral.service.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
@@ -108,6 +148,14 @@ export const DECLARADOS = [
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
     exports: ['BIZUM_MAX_CENTS', 'BIZUM_MIN_CENTS'] },
+  { modulo: 'src/modules/jobs/domain/asignacionDeTrabajo.ts',
+    cat: 'ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE', desde: '2026-09-02',
+    motivo: 'SCRUM-650: la regla de los TRES ejes, ejecutable. No tiene llamador vivo por una razon medida: el guard de SCRUM-467 comprueba POR SU TEXTO que el `where` de las dos rutas nombre operarioId y assignedUserId, asi que sacarlos a una funcion comun lo ponia en rojo sin que la garantia cambiara. Su test es de otro carril y no se toca (regla 9), luego el literal se queda inline y esto es su especificacion. Lo que impide que las dos rutas se separen es el guard de scrum650b.',
+    exports: ['loVe', 'EJES_DE_VISIBILIDAD'] },
+  { modulo: 'src/modules/jobs/domain/asignacionDeTrabajo.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-09-02',
+    motivo: 'SCRUM-650: el censo de incoherencias entre la columna y la tabla puente. No tiene llamador vivo A PROPOSITO: en npm test nadie lee la base, asi que hoy su consumidor es el guard. Su cable es el barrido sobre datos reales cuando la tabla tenga filas.',
+    exports: ['censoDeIncoherencias'] },
   { modulo: 'src/modules/billing/domain/cobros.service.ts',
     cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
     motivo: 'Los días de deuda; ni código vivo ni test lo leen, solo consta en documentos.',

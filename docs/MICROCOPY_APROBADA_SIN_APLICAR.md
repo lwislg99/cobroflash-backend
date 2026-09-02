@@ -411,3 +411,33 @@ No se reescriben ni se aprueban hasta que haya respuesta.
 
 ⚠️ **Medido:** las cinco solo se pintan en **condiciones de excepción**. Ninguna aparece en un libro
 que cuadra.
+
+---
+
+## Addendum · Dictado sin conexión (2-sep-2026) · **APLICADA**
+
+**Medido contra:** `origin/main` = `4b3865f8`. Con ese árbol quedan **44 marcas vivas** en
+`public/` + `src/` (el «13» de la cabecera es otra foto, anclada a `a241b6e4`; no se toca).
+
+**SCRUM-654** dejó el aviso con marcador porque el texto no estaba firmado. **SCRUM-674 lo aprueba
+y lo aplica en el mismo acto.**
+
+| Ranura | Fichero · línea | Texto aprobado |
+|---|---|---|
+| `AVISO_SIN_CONEXION` | `public/dashboard/js/voiceInput.js`:51 | `El dictado necesita conexión — escribe el trabajo y listo` |
+
+**Va sin marcador y con la raya larga (`—`), un solo carácter.** Se copia literal.
+
+**Por qué dice las DOS cosas.** Que hace falta conexión *y* que puede escribirlo a mano. Un aviso
+que solo da la mala noticia deja al técnico parado delante del móvil. Y la coletilla «escribe el
+trabajo y listo» es la que **ya usan los otros dos avisos del mismo fichero**: misma situación,
+mismas palabras. Estrenar una redacción aquí daría dos formas de decir lo mismo en una pantalla.
+
+**Lo que arregla no es el texto, es el silencio.** Antes de SCRUM-654 el fallo de red del dictado
+era **MUDO**: el micro se apagaba sin decir nada y el profesional no sabía si había fallado él o la
+aplicación. Un defecto mudo ni siquiera se puede reportar.
+
+✅ **Aplicada en código Y anotada aquí en el mismo commit**, y `voiceInput.js` **sale del censo** de
+`tests/scrum402-marcador-no-se-pinta.test.mjs` — la entrada se **borra**, no se pone a 0: un 0
+declararía que el fichero se vigila y tiene cero marcas, y lo cierto es que ya no hay nada que
+vigilar (precedente SCRUM-424/405).

@@ -14,6 +14,24 @@ const QuoteLineSchema = z.object({
   // misma dureza de siempre (positiva y no negativa).
   qty: z.number().positive().optional(),
   price: z.number().nonnegative().optional(),
+  /**
+   * SCRUM-661 (③) · EL COSTE UNITARIO CONGELADO EN EL MOMENTO DE LA VENTA.
+   *
+   * Sin declararlo aquí, `z.object` lo BORRA en silencio —igual que le pasaba a `suplido` antes
+   * de SCRUM-500— y no llegaría nunca a `Quote.lines`.
+   *
+   * Se guarda el COSTE y no el margen a propósito: el margen es una conclusión y quedaría
+   * incoherente si alguien edita el precio; el coste es un HECHO de ese día. Y hace falta
+   * congelarlo porque `Product.cost` es MUTABLE y NO tiene histórico: sin esto, el margen real
+   * de una venta no se puede reconstruir ni en teoría. No es que no guardemos el margen — es que
+   * no guardamos el hecho del que se derivaría.
+   *
+   * 🔴 QUE FALTE SIGNIFICA «NO SE SABE», Y ESO NO ES CERO. Una línea escrita a mano, una anterior
+   * a este campo o un producto sin coste llegan SIN la clave. Un `0` significaría «costó cero»,
+   * que es una afirmación que nadie ha hecho. Por eso es `.optional()` y NO `.default(0)`: un
+   * default convertiría el silencio en un dato, y ese dato sería falso.
+   */
+  costeUnitario: z.number().nonnegative().optional(),
   // SCRUM-217 (1124): `min(0).max(1)` aceptaba CUALQUIER fracción — un 15 % pasaba sin queja, y
   // el 15 % no es un tipo de IVA español. El validador decía que sí a un impuesto inventado, y
   // ese tipo acaba en la cuota que entra en la huella. Ahora solo pasan los que existen.
@@ -68,6 +86,18 @@ const QuoteLineSchema = z.object({
       path: ['qty'],
       message: `Un apartado es un título, no una línea que cobre: «${linea.concept}» viene marcada `
         + 'como apartado y con cantidad o precio. Quítale los importes o desmárcala.',
+    });
+  }
+
+  // SCRUM-661 · y tampoco COSTE, por la misma razón y con el mismo trato: un título no se
+  // compra. Va aparte del `if` de arriba para que el mensaje nombre el campo que sobra — decir
+  // «cantidad o precio» cuando lo que trae es un coste manda a mirar donde no es.
+  if (esCabecera && linea.costeUnitario !== undefined) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['costeUnitario'],
+      message: `Un apartado es un título, no algo que se compre: «${linea.concept}» viene marcada `
+        + 'como apartado y con coste unitario. Quítaselo o desmárcala.',
     });
   }
 
@@ -131,6 +161,18 @@ export const CreateQuoteSchema = z.object({
   // ADICIONAL sobre un Trabajo que ya existe, y NO se crea un Trabajo nuevo al aceptarlo.
   // Ausente = presupuesto normal, que es el comportamiento de siempre.
   job_id: z.number().int().positive().optional(),
+  // SCRUM-656 (T7) · CÓMO presenta el IVA ESTE presupuesto. Lo elige el profesional al crearlo,
+  // según el cliente que tenga delante — por eso viaja en el payload y no en Configuración.
+  //
+  // ⛔ Y NO EXISTE EN LA FACTURA: una factura lleva base, cuota y total SIEMPRE (reglamento de
+  // facturación). Esta clave vive en el presupuesto y muere ahí.
+  //
+  // Cerrado a los dos valores: un modo libre dejaría meter un 'sin_iva' que nadie pinta y el
+  // documento saldría mudo sin que fallara nada.
+  ivaModo: z.enum(['sumar', 'no_incluido']).optional(),
+  // Las cláusulas del merchant que ESTE presupuesto no lleva. Excluir no es borrar: la
+  // configuración no se toca y el siguiente presupuesto vuelve a llevarlas.
+  clausulasExcluidas: z.array(z.string()).optional(),
 });
 
 export type QuoteTier = z.infer<typeof QuoteTierSchema>;

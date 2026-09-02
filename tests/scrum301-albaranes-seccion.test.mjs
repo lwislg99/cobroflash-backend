@@ -24,6 +24,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+// SCRUM-670 · el ÚNICO sitio del repo donde se lee un `<script>` de un marcado.
+import { scriptsDeLaPagina } from './_scripts-de-la-pagina.mjs';
 
 import { ALBARAN_ESTADOS } from '../dist/modules/jobs/domain/albaran.service.js';
 import { ESTADOS_COBRO } from '../dist/modules/jobs/domain/albaranFacturacion.js';
@@ -335,10 +337,14 @@ test('SCRUM-301 · 🏆 cada fila lleva su TRABAJO, con id para poder enlazarlo'
  * Medido en rojo: la primera versión de este guard buscaba el nombre del fichero en el HTML entero
  * y **comentar el `<script>` la dejaba en verde** — el texto seguía ahí dentro. Un guard que no
  * distingue una etiqueta viva de una comentada no vigila el cableado, vigila la ortografía.
+ *
+ * SCRUM-670 · ese criterio —el bueno— es ahora el del extractor ÚNICO, y por eso este guard ya no
+ * tiene regex propia. Cuatro de los seis extractores que había SÍ contaban un `<script>`
+ * comentado; éste y el de `_carga-de-pagina` eran los dos que acertaban.
  */
 function scriptsCargados(html) {
-  const sinComentarios = html.replace(/<!--[\s\S]*?-->/g, '');
-  return [...sinComentarios.matchAll(/<script[^>]*\ssrc=["']([^"']+)["']/g)].map((m) => m[1]);
+  const { clasicos, modulos, remotos } = scriptsDeLaPagina(html);
+  return [...clasicos, ...modulos, ...remotos];
 }
 
 test('SCRUM-301 · la sección está CABLEADA: menú, ruta y script', () => {

@@ -25,19 +25,35 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-// SCRUM-559: sólo el RECUENTO de la población, no el extractor. Este guard sigue leyendo el
-// index con el suyo (necesita el orden y la posición); lo que se comparte es cuántos scripts
-// tiene que haber, para que este guard y el de SCRUM-417 no puedan discrepar sobre eso.
+// SCRUM-662: la POBLACIÓN (quiénes) se declara en un solo sitio, para que este guard y el de
+// SCRUM-417 no puedan discrepar sobre ella.
 import { contrastarScripts } from './_banco-vistas.mjs';
+// SCRUM-670: y el EXTRACTOR también es uno solo. Este guard tenía el suyo «porque necesita el
+// orden y la posición» — y con él veía 0 ante un `<script src="./js/x.js" defer>`, mientras el
+// guard del shell lo veía y lo exigía en `sw.js`. El orden no se pierde: `scriptsDeLaPagina`
+// devuelve la lista EN SU ORDEN, que es lo único que este guard necesitaba de verdad.
+import { scriptsDeLaPagina, rutaDelDashboard, cegueraDelExtractor } from './_scripts-de-la-pagina.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
 const DIR_JS = path.join(RAIZ, 'public', 'dashboard', 'js');
 const INDEX = path.join(RAIZ, 'public', 'dashboard', 'index.html');
 
-/** Los `<script src="./js/X.js">` del index, EN ORDEN de carga. */
-function ordenDeCarga(html) {
-  return [...html.matchAll(/<script src="\.\/js\/([^"]+)"><\/script>/g)].map((m) => m[1]);
+// Suelo holgado: el total exacto ya lo impone `SCRIPTS_DEL_DASHBOARD` (SCRUM-662) y repetirlo
+// aquí sería volver a tener dos sitios que pueden divergir.
+const MINIMO = 45;
+
+/**
+ * Los scripts del index EN ORDEN de carga, con el nombre pelado (`api.js`).
+ *
+ * 🔴 SÓLO LOS CLÁSICOS, y es la premisa entera de este fichero: un `type="module"` **no comparte
+ * ámbito global**, así que dos módulos pueden declarar el mismo nombre sin chocar. Meterlos aquí
+ * convertiría este guard en un generador de rojos sobre código correcto — y un guard que acusa en
+ * falso no se corrige: se desactiva. Hoy no hay ninguno, y `scrum670` lo vigila.
+ */
+function ordenDeCarga(raiz) {
+  return scriptsDeLaPagina(fs.readFileSync(path.join(raiz, 'public/dashboard/index.html'), 'utf8'))
+    .clasicos.map((s) => rutaDelDashboard(s).replace(/^js\//, ''));
 }
 
 /**
@@ -88,14 +104,19 @@ export function choquesEntre(scripts) {
 }
 
 function scriptsDelDashboard() {
-  const orden = ordenDeCarga(fs.readFileSync(INDEX, 'utf8'));
-  return orden.map((f) => ({ fichero: f, codigo: fs.readFileSync(path.join(DIR_JS, f), 'utf8') }));
+  return ordenDeCarga(RAIZ).map((f) => ({ fichero: f, codigo: fs.readFileSync(path.join(DIR_JS, f), 'utf8') }));
 }
 
 // ── 1 · SUELO: que el detector tenga algo que mirar ──────────────────────────────────────
-// Si la regex del index deja de casar (cambia el formato del <script>), la lista sale vacía y
-// el guard pasaría en verde sin haber leído un solo fichero. Verde hueco.
+// Si la extracción del index deja de casar, la lista sale vacía y el guard pasaría en verde sin
+// haber leído un solo fichero. Verde hueco.
 test('guard-colisión · el orden de carga se lee del index y no está vacío', () => {
+  // SCRUM-670 · antes que nada, que el extractor no esté ciego NI callándose una forma que no
+  // sabe leer. Sin esto, lo de abajo compararía dos conjuntos vacíos y saldría verde.
+  const ceguera = cegueraDelExtractor(
+    scriptsDeLaPagina(fs.readFileSync(INDEX, 'utf8')), MINIMO, 'dashboard/index.html');
+  assert.equal(ceguera, null, String(ceguera));
+
   const scripts = scriptsDelDashboard();
   // SCRUM-559: era `>= 25` sobre una población de 60 — 35 de holgura, más de la mitad. Medido:
   // quitar UNA etiqueta (60 → 59) dejaba este guard Y el de SCRUM-417 en verde, con ese fichero

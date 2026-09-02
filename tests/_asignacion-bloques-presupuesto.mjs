@@ -51,6 +51,10 @@ export const CAMPO_A_BLOQUE = {
   validUntil: { control: 'validWrapper', bloque: 'blockConditions' },
   payMethods: { control: 'payMethodsWrapper', bloque: 'blockDelivery' },
   docFields: { control: 'docFieldsWrapper', bloque: 'blockDelivery' },
+  // SCRUM-656 (T7) · CÓMO se presenta el IVA en ESTE presupuesto. Va al bloque de LÍNEAS, junto
+  // al «IVA por defecto», porque es su misma familia: los dos deciden qué impuesto enseña el
+  // documento. En «Condiciones» quedaría al lado del plan de cobro, que es OTRA conversación.
+  ivaModo: { control: 'fieldIvaModo', bloque: 'blockLines' },
 };
 
 /**

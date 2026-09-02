@@ -52,6 +52,14 @@ const MARCA = '[PENDIENTE';
  * a otra tiene que verse, y un total lo escondería (la lección del suelo por FUNCIÓN de SCRUM-392).
  */
 const CENSO = Object.freeze({
+  // SCRUM-651 (T2) · ENTRA A CONCIENCIA con 1, y el motivo es que EL MECANISMO NO EXISTE SIN
+  // TEXTO: es el modal para abrir un Trabajo SIN presupuesto —una averia, el caso mas frecuente
+  // del primer cliente real—, y un formulario sin rotulos no se puede rellenar.
+  //
+  // Se cuenta 1 y son OCHO textos: los ocho salen de una sola constante `MARCA_651`, asi que
+  // aprobar el copy los apaga de golpe (mismo patron que SCRUM-421 dejo escrito aqui). El dia
+  // que el fundador los firme, esta entrada se BORRA — no se pone a 0.
+  'jobNuevoModal.js': 1,
   // SCRUM-507 (13-ago-2026): `aiQuoteAssistant.js` ENTRO y SALIO del censo el mismo dia. Entro con
   // 2 —el aviso de la linea que no se propone porque su IVA era ilegible, y la marca por linea de
   // lo que la IA se invento— y el fundador FIRMO los dos textos en el mismo ticket.
@@ -332,7 +340,26 @@ const CENSO = Object.freeze({
   // texto no las apaga las dos: son dos textos distintos que hoy comparten marcador, y el día que
   // el fundador los escriba habrá que partir la constante.
   'tipoDestinatarioPendiente.js': 1,
+  // 🔴 SCRUM-652 (T3 fase C) · 2-sep-2026 · `parteDetailView.js` ENTRA con 1, A CONCIENCIA.
+  //
+  // Es la pantalla del parte en el móvil del técnico. Su microcopy NO está aprobada (regla 30):
+  // se propone con las palabras del impreso que ya rellenan —«UNDS», «Mano de obra»,
+  // «Materiales», «Entrada», «Salida», «Desplazamiento», «Kilómetros», «REF»— porque estrenar
+  // sinónimos obligaría al técnico a traducir entre el papel y la pantalla en casa de un cliente.
+  //
+  // ⚠️ EL «1» ENGAÑA SI NO SE DICE, y se dice: el censo cuenta MARCAS ESCRITAS, y aquí hay UNA
+  // sola —`var M`— concatenada a **20 rótulos**. Es exactamente el caso de `libroRegistroView`
+  // (SCRUM-514), donde una marca pintaba 23. Un 1 aquí no significa «un rótulo provisional»:
+  // significa «esta pantalla entera está sin firmar».
+  //
+  // Sale del censo el commit que apruebe los textos, y ese commit BORRA la entrada, no la pone a
+  // 0 (precedente SCRUM-424/405).
+  'parteDetailView.js': 1,
   'settingsSubmenus.js': 1,
+  // SCRUM-674 (2-sep-2026) · `voiceInput.js` SALE del censo: el fundador aprobo el texto del
+  // aviso de dictado sin conexion, y sale ya sin marca. La entrada se BORRA, no se pone a 0:
+  // un 0 declara «este fichero se vigila y tiene cero», y aqui lo cierto es que no hay nada
+  // que vigilar (precedente SCRUM-424/405). Anotado en MICROCOPY_APROBADA_SIN_APLICAR.md.
   // SCRUM-294 (fase C) · 1 -> 5: el criterio de caja entra en Configuracion con marcador A
   // CONCIENCIA. Son 4 literales —el rotulo y sus TRES opciones— y el texto NO esta aprobado:
   // explicarle a un profesional si le conviene el RECC es asesorarle, y eso lo dictamina el
