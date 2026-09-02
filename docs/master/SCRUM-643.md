@@ -361,3 +361,292 @@ ORDER BY fecha;
 Qué hacer con las facturas que salgan en `DESPLAZADO` —dejarlas, rectificarlas por R1, o
 anularlas con registro— **es del fundador (regla 29)**: una factura emitida no se edita ni se
 borra. Este documento sólo trae el número y cómo obtenerlo.
+
+---
+
+# FASE 1 · La zona fiscal del merchant
+
+**Medido contra:** `origin/main` = `1ec13b4a85e600e83b29655a827e73a290c675b7` · 2026-09-02T15:10:00+01:00
+
+> ⚠️ Esa hora es la del trabajo de esta rama, no una lectura de reloj — criterio R14.
+
+**Alcance: PROPÓN Y PARA.** Se entregan la consulta, el diff de esquema **sin aplicar**, las
+salidas para los existentes **sin elegir** y el diseño del sitio único **medido**. **No se aplica
+ninguna migración. No se cablea código.** No se toca `calcularSemaforo` con fecha ilegible
+(hallazgo de SCRUM-622, entra en su propio paso), ni el desglose de IVA (SCRUM-623), ni el banco
+de vistas, ni `_navegador.mjs`.
+
+**SOLO LECTURA.** Las dos consultas son `WITH` + `SELECT`: ningún `INSERT`, `UPDATE`, `DELETE`,
+`CREATE`, `ALTER`, `DROP` ni `TRUNCATE`. La de control no toca siquiera una tabla.
+
+---
+
+## 1 · Por qué no basta con lo que ya hay — **medido en el motor**
+
+Antes de pedir una columna nueva hay que descartar la que ya existe. `merchants.country` está y es
+`NOT NULL`. **No sirve**, y no es opinión:
+
+| Caso | Día en la zona A | Día en la zona B | |
+|---|---|---|---|
+| **ES** · verano, 31-mar 22:30 UTC | `Europe/Madrid` → **2026-04-01** | `Atlantic/Canary` → **2026-03-31** | 🔴 difieren |
+| **ES** · invierno, 31-ene 23:30 UTC | `Europe/Madrid` → **2026-02-01** | `Atlantic/Canary` → **2026-01-31** | 🔴 difieren |
+| **ES** · mediodía | 2026-03-31 | 2026-03-31 | coinciden |
+| **MX** · 1-abr 06:30 UTC | `America/Mexico_City` → **2026-04-01** | `America/Tijuana` → **2026-03-31** | 🔴 difieren |
+| **CL** · 1-abr 03:30 UTC | `America/Santiago` → **2026-04-01** | `Pacific/Easter` → **2026-03-31** | 🔴 difieren |
+| **PE** · 1-abr 03:30 UTC | `America/Lima` | `America/Lima` | coinciden (un solo huso) |
+
+**El país no determina la zona en ES, MX ni CL.** Sólo en países de un huso —como PE— bastaría.
+Por eso la columna es de zona, no de país, y por eso derivarla del país sería el mismo error un
+escalón más abajo.
+
+## 2 · ⚠️ EL NOMBRE, que es decisión y conviene tomarla antes del ALTER
+
+El encargo lo llama «zona fiscal». **Ese nombre ya significa otra cosa en España**, y justo en el
+territorio que motiva el ticket: Canarias no tributa IVA sino **IGIC**, y Ceuta y Melilla **IPSI**.
+Si la columna se llama `zonaFiscal` y guarda un huso horario, el día que haga falta el **régimen**
+—que es un dato distinto y muy real— el nombre estará ocupado por otra cosa.
+
+Y hay un segundo choque, dentro del propio modelo: `merchants.profileZones` ya existe y son
+**«chips de zonas»** del perfil público, geográficas, nada que ver con husos.
+
+**Propuesta:** que la columna se llame por lo que es —el **huso horario** con el que se calcula el
+calendario del merchant— y no por lo que decide. El diff de abajo usa `timezone`. **Si el fundador
+prefiere `zonaFiscal`, se cambia antes del ALTER**: después cuesta una migración.
+
+## 3 · ⛔ EL DIFF DE ESQUEMA — PREPARADO, NO APLICADO
+
+Aditivo, **nullable**, **sin `@default`** — la forma exacta de `contactKind` en CONT-01, y por su
+mismo motivo: un `@default` convertiría a todos los merchants en «declarados» sin que nadie lo
+haya dicho.
+
+```diff
+--- a/prisma/schema.prisma
++++ b/prisma/schema.prisma
+@@ model Merchant
+   country String
++
++  // SCRUM-643 · EL HUSO HORARIO CON EL QUE SE CALCULA EL CALENDARIO DE ESTE MERCHANT.
++  //
++  // Nace de un defecto MEDIDO: tres cálculos fiscales —el mes natural del art. 13, el semáforo
++  // del plazo del art. 13.2 y el corte «hasta el día X»— usaban el reloj LOCAL DEL SERVIDOR, y
++  // el servidor va en UTC (Railway, sin variable TZ) mientras la península va en UTC+1/+2. Un
++  // albarán del día 1 a las 00:30 hora española caía en la recapitulativa del mes ANTERIOR.
++  //
++  // 🔴 NO SE DERIVA DE `country`, y está medido: dos merchants del MISMO país pueden estar en
++  // husos distintos —península y Canarias en ES, CDMX y Tijuana en MX, continental e Isla de
++  // Pascua en CL—. Derivarlo del país sería repetir el error de suponer que «local» es un solo
++  // sitio, un escalón más abajo.
++  //
++  // NULLABLE Y SIN `@default`, como `Customer.contactKind` (CONT-01): NULL = «no declarado»,
++  // que es distinto de declarado. Un `@default('Europe/Madrid')` daría por dicho algo que nadie
++  // ha dicho, y además fijaría la app a la península — justo lo que la opción A descarta.
++  // String y no enum, como el resto: la lista de husos válidos vive en Zod (IANA), y añadir uno
++  // no obliga a migrar un tipo de Postgres.
++  //
++  // ⚠️ NO confundir con `profileZones` (chips geográficos del perfil público) ni con el RÉGIMEN
++  // fiscal (IVA / IGIC canario / IPSI de Ceuta y Melilla), que es otro dato y no está aquí.
++  timezone String? @map("timezone")
++
+   pspId   String? @map("psp_id")
+```
+
+**Y el ALTER que le corresponde, para la fase ②** (tampoco se ejecuta aquí):
+
+```sql
+ALTER TABLE "merchants" ADD COLUMN "timezone" TEXT;
+```
+
+### 🔴 El orden NO es negociable, y el motivo está medido por S1 en CAT-01
+
+`schemaDrift.ts` compara **esperado ⊆ real** al arrancar. Un `schema.prisma` que nombre una
+columna que la base no tiene → **producción no arranca**. Por tanto:
+
+1. **decisión sobre los existentes** (§5) — porque condiciona si el ALTER va solo o con backfill;
+2. **`ALTER TABLE` en las tres bases** (dev, staging, producción);
+3. **un solo PR** con schema + código + tests.
+
+**Esta rama no hace ninguna de las tres.** Y por eso tampoco construye la primitiva: dejarla
+exportada sin consumidor la cazaría el guard de huérfanos (SCRUM-494), con razón.
+
+## 4 · La consulta
+
+### 4.1 · CONTROL POSITIVO — pegar primero (no toca ninguna tabla)
+
+Demuestra en el motor la premisa de la opción A: **el país no determina la zona**. Ejecutado ya
+contra Postgres real (base de DEV, sólo `SELECT`): **los seis casos coinciden** con su veredicto
+esperado. Si alguno no coincide, el censo de abajo no significa lo que dice.
+
+```sql
+-- SCRUM-643 fase 1 · CONTROL POSITIVO. SOLO LECTURA: no toca ninguna tabla.
+-- Demuestra EN EL MOTOR la premisa de la opcion A: **el pais NO determina la zona**. Dos
+-- merchants del MISMO pais, el MISMO instante, y el dia natural NO coincide. Si alguna fila
+-- dice que coinciden donde se espera que difieran, el censo de abajo no significa lo que dice.
+WITH casos(caso, instante_utc, zona_a, zona_b, esperado) AS (VALUES
+  ('ES · verano · 1-abr 00:30 en la peninsula',
+   TIMESTAMP '2026-03-31 22:30:00', 'Europe/Madrid', 'Atlantic/Canary', 'DIFIEREN'),
+  ('ES · invierno · 1-feb 00:30 en la peninsula',
+   TIMESTAMP '2026-01-31 23:30:00', 'Europe/Madrid', 'Atlantic/Canary', 'DIFIEREN'),
+  ('ES · mediodia: aqui NO puede diferir',
+   TIMESTAMP '2026-03-31 12:00:00', 'Europe/Madrid', 'Atlantic/Canary', 'COINCIDEN'),
+  ('MX · el pais tampoco basta: CDMX (-6) vs Tijuana (-7)',
+   TIMESTAMP '2026-04-01 06:30:00', 'America/Mexico_City', 'America/Tijuana', 'DIFIEREN'),
+  ('CL · continental vs Isla de Pascua',
+   TIMESTAMP '2026-04-01 03:30:00', 'America/Santiago', 'Pacific/Easter', 'DIFIEREN'),
+  ('PE · un solo huso: aqui el pais SI bastaria',
+   TIMESTAMP '2026-04-01 03:30:00', 'America/Lima', 'America/Lima', 'COINCIDEN')
+)
+SELECT
+  caso,
+  instante_utc,
+  zona_a,
+  ((instante_utc AT TIME ZONE 'UTC') AT TIME ZONE zona_a)::date  AS dia_en_zona_a,
+  zona_b,
+  ((instante_utc AT TIME ZONE 'UTC') AT TIME ZONE zona_b)::date  AS dia_en_zona_b,
+  esperado,
+  CASE WHEN ((instante_utc AT TIME ZONE 'UTC') AT TIME ZONE zona_a)::date
+          <> ((instante_utc AT TIME ZONE 'UTC') AT TIME ZONE zona_b)::date
+       THEN 'DIFIEREN' ELSE 'COINCIDEN' END                      AS obtenido
+FROM casos;
+```
+
+### 4.2 · EL CENSO DE MERCHANTS
+
+Columnas comprobadas **una a una** contra el DDL que emite Prisma: `merchants` resulta ser
+**snake_case SIN excepción** —como `albaranes`, y **no** como `quotes`/`invoices`, que mezclan—.
+La regla de otra tabla **no se ha exportado**. Ejecutado ya contra la base de DEV: corre y
+devuelve filas interpretables.
+
+```sql
+-- SCRUM-643 fase 1 · EL CENSO DE MERCHANTS. SOLO LECTURA: unicamente WITH y SELECT.
+-- Columnas comprobadas UNA A UNA contra el DDL que emite Prisma. `merchants` resulta ser
+-- **snake_case SIN excepcion** -- como `albaranes`, y NO como `quotes`/`invoices`, que mezclan.
+-- Verificadas: id · name · email · country · status · is_platform_owner · plan · created_at.
+WITH m AS (
+  SELECT
+    me.id, me.country, me.status, me.is_platform_owner, me.plan, me.created_at,
+    -- Criterio de la casa, verificado en `scripts/clean-staging-tests.mjs:41`
+    -- (`TEST_EMAIL_DOMAIN = '@test.local'`), no de memoria.
+    (me.email IS NOT NULL AND me.email LIKE '%@test.local') AS es_de_prueba,
+    (me.email IS NULL)                                      AS sin_email,
+    -- Los albaranes son HOY el unico sitio donde la zona cambia un calculo fiscal
+    -- (mes natural del art. 13, semaforo del plazo y el corte «hasta el dia X»).
+    (SELECT COUNT(*) FROM albaranes a WHERE a.merchant_id = me.id)                       AS n_albaranes,
+    (SELECT COUNT(*) FROM albaranes a WHERE a.merchant_id = me.id AND a.invoice_id IS NULL) AS n_albaranes_sin_facturar,
+    (SELECT COUNT(*) FROM invoices  i WHERE i."merchantId" = me.id)                      AS n_facturas
+  FROM merchants me
+)
+SELECT
+  CASE WHEN es_de_prueba THEN 'DE PRUEBA (@test.local)'
+       WHEN sin_email    THEN 'SIN EMAIL (no se puede clasificar)'
+       ELSE 'NO es de prueba' END                                   AS clase,
+  country,
+  status,
+  is_platform_owner,
+  CASE WHEN n_albaranes = 0 THEN 'sin albaranes: la zona no le cambia NADA hoy'
+       ELSE 'CON albaranes: la zona SI le cambia el calculo' END     AS impacto_de_la_zona,
+  COUNT(*)                      AS cuantos_merchants,
+  SUM(n_albaranes)              AS albaranes,
+  SUM(n_albaranes_sin_facturar) AS albaranes_sin_facturar,
+  SUM(n_facturas)               AS facturas,
+  MIN(created_at)::date         AS alta_mas_vieja,
+  MAX(created_at)::date         AS alta_mas_nueva
+FROM m
+GROUP BY 1, 2, 3, 4, 5
+ORDER BY 6 DESC, 1, 2;
+```
+
+**Qué hay que mirar del resultado:** la columna `impacto_de_la_zona`. Los merchants **sin
+albaranes** no notan nada haga lo que haga la decisión — la zona sólo cambia un cálculo cuando hay
+partes que agrupar. **Ése es el número que dimensiona §5**, no el total de merchants.
+
+## 5 · Las salidas para los existentes, y su consecuencia. **NO se elige aquí**
+
+La columna nace vacía y el cálculo tiene que dar algo. Las cuatro salidas que hay, con lo que
+cuesta cada una:
+
+| | Salida | Consecuencia |
+|---|---|---|
+| **A** | **NULL → se calcula en UTC**, que es lo que hace hoy | **Cero cambio para todos.** No inventa ninguna zona: usa la que ya se estaba usando. El defecto sigue vivo para los no declarados, pero **no empeora** y no afirma nada falso |
+| **B** | NULL → se deriva de `country` | 🔴 **Repite el defecto un escalón más abajo.** Medido en §1: para ES, MX y CL el país no basta. Habría que elegir península o Canarias por el merchant, que es exactamente «suponer que local es España» |
+| **C** | NULL → **no se calcula**: la bandeja pide el dato donde afecta | Honesto y es el patrón que ya usa `tipoDestinatarioPendiente`. Pero deja la bandeja sin semáforo hasta contestar, y **necesita microcopy** (regla 30) |
+| **D** | Backfill masivo a una zona | 🔴 Convierte a todos en «declarados» sin que nadie lo haya dicho — lo mismo que el `@default` que el encargo prohíbe, hecho a mano |
+
+**Lo que sí aporto, sin elegir:** **A y C se pueden combinar** y es la combinación que no pierde
+nada — calcular como hoy (A) **y** pedir el dato en la bandeja donde importa (C). Nadie ve un
+cambio que no ha pedido, y el dato entra por donde el profesional ya está mirando el plazo.
+
+**B queda desaconsejada con medición**, no con opinión: §1 la desmiente para tres de los países
+del producto. **La elección es del fundador.**
+
+## 6 · El sitio único, y los tres que derivan de él
+
+Hoy la decisión de «a qué día natural pertenece este instante» está **escrita tres veces**:
+
+| Sitio | Qué hace hoy |
+|---|---|
+| `albaran.service.ts:268` `mesNaturalKey` | `getFullYear()`/`getMonth()` — reloj del proceso |
+| `pendientesFacturar.service.ts` `startOfDay` + `toIsoDateLocal` | componentes locales — reloj del proceso |
+| `consolidacionCliente.service.ts:88` `dentroDeRangoFecha` | `setHours(0,0,0,0)` / `setHours(23,59,59,999)` — reloj del proceso |
+
+**Un solo módulo** que reciba la zona y del que salgan los tres — la lección de `_navegador.mjs`,
+`nombreParaDocumento.ts` y `conceptoLinea.ts`: si la decisión no vive en un sitio, el siguiente la
+copia o la inventa.
+
+```ts
+// Forma propuesta. NO se construye en esta rama (ver §3).
+export function diaNaturalEn(instante: Date, zona: string): string;   // 'YYYY-MM-DD'
+export function mesNaturalEn(instante: Date, zona: string): string;   // 'YYYY-MM'  ← art. 13
+export function inicioDelDiaEn(fechaISO: string, zona: string): Date;
+export function finDelDiaEn(fechaISO: string, zona: string): Date;
+```
+
+Sin librerías: `Intl.DateTimeFormat` con `timeZone` explícito y `Date.UTC`, que es el método ya
+probado en SCRUM-630 (2/2) y SCRUM-640.
+
+## 7 · El control, ejecutado ya sobre el producto compilado
+
+Con el proceso en **UTC (como Railway)**, un albarán del **1-abr 00:30 en la zona del merchant**:
+
+| Zona del merchant | Mes hoy | Mes con la primitiva | Semáforo hoy | Con la primitiva | En rango «hasta 31-mar» hoy | Con la primitiva |
+|---|---|---|---|---|---|---|
+| `Europe/Madrid` | 🔴 2026-03 | **2026-04** | 🔴 ambar | **rojo** | 🔴 sí | **no** |
+| `Atlantic/Canary` | 🔴 2026-03 | **2026-04** | 🔴 ambar | **rojo** | 🔴 sí | **no** |
+| `UTC` | 2026-04 | 2026-04 | rojo | rojo | no | no |
+
+**La fila de UTC es el «comportamiento de hoy», y se afirma como resultado ESPERADO**, no como
+fallo: un merchant declarado en UTC debe seguir viendo exactamente lo de ahora.
+
+### Que DISTINGUE las zonas — el mismo instante, tres merchants
+
+Un control con cada merchant en su propio instante no separa nada (cada uno lee su propio
+calendario y siempre acierta). Para que signifique algo hay que darles **el MISMO instante**:
+
+| Instante (UTC) | Europe/Madrid | Atlantic/Canary | UTC | |
+|---|---|---|---|---|
+| 31-mar 22:30 | **2026-04-01** | 2026-03-31 | 2026-03-31 | separa **península de Canarias** |
+| 31-mar 23:30 | 2026-04-01 | 2026-04-01 | **2026-03-31** | separa **Canarias de UTC** |
+| 31-ene 23:30 | **2026-02-01** | 2026-01-31 | 2026-01-31 | invierno: separa la península |
+| 15-abr 12:00 | 2026-04-15 | 2026-04-15 | 2026-04-15 | mediodía: **no separa a nadie** |
+
+**3 de 4 instantes separan zonas**, y el mes natural del art. 13 **cambia según el merchant** con
+el mismo instante — que es exactamente lo que el ticket viene a arreglar.
+
+> ⚠️ **Matiz que el encargo pedía como «los tres son distintos» y no puede cumplirse tal cual:**
+> con desfases +2, +1 y 0 la separación máxima es de **2 horas**, así que los tres nunca pueden
+> dar **tres** calendarios distintos a la vez — como mucho dos grupos. Lo afirmable, y lo que se
+> afirma, es que **cada par se separa en algún instante**. Exigir tres distintos sería pedir un
+> rojo imposible.
+
+### ✅ CONTROL NEGATIVO
+
+Un merchant **peninsular** con un albarán de **mediodía**: mes `2026-04` hoy y `2026-04` con la
+primitiva; en rango `true` hoy y `true` con la primitiva. **IGUAL en los dos.** Si eso cambiara,
+se habría movido el criterio en vez de arreglar el desfase.
+
+## 8 · Lo que NO se ha hecho, y por qué
+
+* **No se aplica ninguna migración** — el encargo lo prohíbe y el orden de §3 lo impide.
+* **No se construye la primitiva** — sin consumidor la cazaría el guard de huérfanos (SCRUM-494),
+  y con razón: entra en el PR ③ junto al schema y al cableado de los tres sitios.
+* **No se elige la salida de §5** — es del fundador.
+* **No se decide el nombre de §2** — también.
