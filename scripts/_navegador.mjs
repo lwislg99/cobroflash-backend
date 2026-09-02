@@ -152,8 +152,54 @@ export function topeDeArranque(env = process.env) {
  * falla. Hacía falta: el total de cada guard mezcla arrancar y comprobar, y con un solo número no
  * se puede saber cuál de las dos cosas se disparó. La marca va a stderr para no ensuciar ninguna
  * salida que alguien pudiera estar parseando.
+ *
+ * 🔴 EL FORMATO EMPIEZA POR «⟦arranque⟧ <número>» Y ESO NO ES ESTÉTICA. `guards-visuales.mjs` lo
+ * extrae con `new RegExp(MARCA_ARRANQUE + ' ([0-9.]+)')`. Si el total deja de ir pegado a la
+ * marca, la puerta no falla: se queda sin número y pinta «(arranque: ?)» para los nueve. Lo que
+ * venga DESPUÉS del total es libre; lo de antes, no.
  */
 export const MARCA_ARRANQUE = '⟦arranque⟧';
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 SCRUM-642 · LA MARCA REPETÍA, UN NIVEL MÁS ABAJO, EL PROBLEMA QUE VINO A RESOLVER
+//
+// La marca nació (arriba) para separar «arrancar» de «comprobar», porque un solo número para dos
+// cosas no dice cuál se disparó. Pero «arrancar» TAMPOCO es una cosa: medido en el fuente de
+// puppeteer 25.3.0 (`node_modules/puppeteer-core/src/node/BrowserLauncher.ts`), `launch()` son
+// CINCO tramos, y el tope NO es un vigilante sobre el conjunto — es un presupuesto POR FASE que
+// se gasta DOS VECES, sobre PARTE del recorrido:
+//
+//     computeLaunchArguments (:135) ......................... ❌ sin presupuesto
+//     launch({...}) — arrancar el proceso (:164) ............ ❌ sin presupuesto
+//     waitForLineOutput(…, opts.timeout) (:382) ............. ✅ presupuesto ENTERO
+//     WebSocketTransport + Connection + Browser (:386-393) .. ❌ sin presupuesto
+//     waitForPageTarget → waitForTarget (:291, :362) ........ ✅ OTRO presupuesto entero
+//
+// De ahí que un arranque de 39,2 s sobreviviera a un tope de 30 s sin que nada estuviera roto:
+// ningún tramo vigilado pasó de 30. No era un defecto del tope; era aritmética que el número
+// único no dejaba ver.
+//
+// ── POR QUÉ SE PARTE EN DOS Y NO EN CINCO ────────────────────────────────────────────────────
+// Porque partirlo en cinco exige llamar a `@puppeteer/browsers` y a `puppeteer.connect()` por
+// separado, o sea REIMPLEMENTAR `launch()`: perfil temporal, limpieza, viewport, manejo de
+// señales. Y entonces lo que se mediría sería NUESTRO arranque, no el de puppeteer — números
+// incomparables con las muestras ya tomadas, que es justo lo contrario de lo que hace falta.
+// El corte de aquí usa SÓLO opciones documentadas y ejecuta lo mismo en el mismo orden:
+// `waitForInitialPage: false` + la misma espera que puppeteer hace en :291, con el mismo tope y
+// cerrando igual si falla (:363).
+//
+// 🕳️ HUECO DECLARADO, y se dice en vez de disimularlo: dentro de `proceso+ws` siguen juntas la
+// fase 1 PRESUPUESTADA y los tramos sin presupuesto que la rodean. Medido con `timeout: 1`, el
+// trozo previo (argumentos + spawn) costó 0,03 s en local el 2-sep-2026 — o sea que ahí dentro
+// manda la espera del WS endpoint. En el runner ese reparto NO está medido.
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+
+/** Arrancar el proceso y esperar a que anuncie el WS endpoint. Contiene la fase 1 con tope. */
+const TRAMO_PROCESO = 'proceso+ws';
+/** La espera de la primera página: `waitForTarget`, la fase 2, con su PROPIO tope entero. */
+const TRAMO_PAGINA = 'primera-página';
+
+const seg = (ms) => (ms / 1000).toFixed(1);
 
 /**
  * Arranca el navegador, o PARA con el código que corresponde.
@@ -165,21 +211,59 @@ export async function lanzarNavegador(puppeteer, opciones = {}) {
   const ruta = rutaDelNavegador(); // sale con 2 si no hay ninguno
   const args = [...(opciones.args || []), ...argsDeAislamiento()];
   const tope = topeDeArranque();
-  const t0 = Date.now();
-  try {
-    const nav = await puppeteer.launch({ ...opciones, executablePath: ruta, args, timeout: tope });
-    console.error(`${MARCA_ARRANQUE} ${((Date.now() - t0) / 1000).toFixed(1)}`);
-    return nav;
-  } catch (e) {
-    const s = ((Date.now() - t0) / 1000).toFixed(1);
-    console.error(`${MARCA_ARRANQUE} ${s}`);
+
+  /**
+   * 🔴 UNA MEDIDA CORTADA NO SE IMPRIME COMO UNA COMPLETA.
+   *
+   * Un 30,0 que significa «hasta aquí miré» y un 19,6 que significa «esto tardó» no son el mismo
+   * tipo de número, y con la misma forma acaban en la misma columna de una tabla. Aquí la línea
+   * dice CUÁL de los dos es y en QUÉ tramo se cortó, para que no haya que acordarse.
+   *
+   * El total sigue pegado a la marca —la puerta lo necesita—, pero va marcado como cota inferior
+   * en el desglose: es el reloj parado por el tope, no lo que habría tardado.
+   */
+  const cortada = (tramo, desglose, e) => {
+    const s = seg(Date.now() - t0);
+    console.error(`${MARCA_ARRANQUE} ${s} s CORTADA EN «${tramo}» · ${desglose}`);
     console.error('🔴 NO PUDE ARRANCARLO: el navegador ESTÁ y no levanta.');
     console.error('   binario: ' + ruta);
-    console.error(`   tardó ${s} s antes de rendirse, con un tope de ${tope} ms.`);
+    console.error(`   el reloj llegó a ${s} s y AHÍ SE CORTÓ, por el tope de ${tope} ms aplicado a`);
+    console.error(`   «${tramo}». NO es lo que tardó: es hasta dónde se miró. Lo que tardaría de`);
+    console.error('   verdad no lo sabe nadie, porque se dejó de mirar.');
     console.error('   Esto NO es «no lo encuentro» (eso sale con ' + SALIDA_NO_ENCONTRADO
       + ') ni «he encontrado defectos» (eso sale con 1): el guard');
     console.error('   no ha llegado a medir nada, así que su silencio no significa que esté todo bien.');
     console.error('   Detalle: ' + (e && e.message ? e.message : e));
     process.exit(SALIDA_NO_ARRANCA);
+  };
+
+  const t0 = Date.now();
+  let nav;
+  try {
+    // `waitForInitialPage: false` NO se salta la espera de la página: la saca de aquí para poder
+    // cronometrarla aparte, y se hace justo debajo con el mismo tope. Va después del spread para
+    // que ningún guard pueda desactivarla sin querer.
+    nav = await puppeteer.launch({
+      ...opciones, executablePath: ruta, args, timeout: tope, waitForInitialPage: false,
+    });
+  } catch (e) {
+    cortada(TRAMO_PROCESO,
+      `${TRAMO_PROCESO} ≥${seg(Date.now() - t0)} s · ${TRAMO_PAGINA} SIN MEDIR`, e);
   }
+  const tProceso = Date.now() - t0;
+
+  try {
+    await nav.waitForTarget((t) => t.type() === 'page', { timeout: tope });
+  } catch (e) {
+    // Cerrar aquí no es cortesía: es lo que hace `waitForPageTarget` (BrowserLauncher.ts:363).
+    // Sin esto quedaría un navegador vivo por cada guard que muriese esperando la página.
+    await nav.close();
+    cortada(TRAMO_PAGINA,
+      `${TRAMO_PROCESO} ${seg(tProceso)} s · ${TRAMO_PAGINA} ≥${seg(Date.now() - t0 - tProceso)} s`, e);
+  }
+  const tPagina = Date.now() - t0 - tProceso;
+
+  console.error(`${MARCA_ARRANQUE} ${seg(tProceso + tPagina)} s COMPLETA`
+    + ` · ${TRAMO_PROCESO} ${seg(tProceso)} s · ${TRAMO_PAGINA} ${seg(tPagina)} s`);
+  return nav;
 }

@@ -7,6 +7,8 @@ import QRCode from 'qrcode';
 import { invoicesDir } from '../../../../core/storage/dirs';
 import { cantidadDeLinea, calcVatBreakdown } from '../../domain/vat.service'; // SCRUM-504: una sola cantidad
 import { getLocale } from '../../../../core/i18n/locales';
+import { nombreParaDocumento } from '../../../../core/documentos/nombreParaDocumento'; // SCRUM-577
+import { partirConceptoYDescripcion } from './conceptoLinea'; // SCRUM-603 (DOC-13)
 
 /**
  * Un importe, con sus dos decimales. SCRUM-604 (DOC-14).
@@ -61,7 +63,15 @@ export async function generateInvoicePdf(params: {
   merchantId: number;
   // A2.4: datos del emisor completos (teléfono/email opcionales)
   merchant: { name: string; legalName?: string | null; taxId?: string | null; address?: string | null; logoUrl?: string | null; phone?: string | null; email?: string | null };
-  customer: { name: string; email?: string | null; phone?: string | null };
+  // SCRUM-577 (CONT-04) · `legalName` ENTRA AQUÍ, y hasta hoy no estaba.
+  //
+  // 🔴 Medido antes de tocar: este tipo NO lo llevaba, así que **la factura sólo podía imprimir
+  // `name`** — mientras el PDF de presupuesto sí prefería la denominación legal desde su
+  // `legalName || name`. O sea, la asignación estaba al revés de lo que el ticket daba por hecho:
+  // «la factura quiere la denominación legal».
+  //
+  // Opcional a propósito: quien no lo pase sigue funcionando exactamente igual que antes.
+  customer: { name: string; legalName?: string | null; email?: string | null; phone?: string | null };
   currency: string;
   total: string;
   qrData: string;
@@ -201,7 +211,12 @@ export async function generateInvoicePdf(params: {
   const clientY = colY;
   doc.fontSize(8).font('Helvetica-Bold').fillColor(MUTED).text('CLIENTE', col2X, clientY, { width: colW });
   const clientTextY = clientY + 16;
-  doc.fontSize(10).font('Helvetica-Bold').fillColor(INK).text(params.customer.name, col2X, clientTextY, { width: colW });
+  // SCRUM-577: el nombre sale del SITIO UNICO, el mismo criterio que ya usaba el presupuesto.
+  // 🔴 El respaldo es `params.customer.name` y no `'—'`: aqui `name` es OBLIGATORIO en el tipo,
+  // asi que un cliente SIN legalName imprime EXACTAMENTE lo que imprimia antes. Ese es el
+  // control que manda en un cambio del camino de emision.
+  const nombreCliente = nombreParaDocumento(params.customer, params.customer.name);
+  doc.fontSize(10).font('Helvetica-Bold').fillColor(INK).text(nombreCliente, col2X, clientTextY, { width: colW });
   doc.font('Helvetica').fontSize(9).fillColor(BODY);
   let cy = clientTextY + 14;
   if (params.customer.email) { doc.text(params.customer.email, col2X, cy, { width: colW }); cy += 13; }
@@ -245,10 +260,24 @@ export async function generateInvoicePdf(params: {
       const lineTotal = qty * price * (1 + taxR);
       const bg = i % 2 === 0 ? '#fff' : BG;
 
-      // Calcular altura de fila
+      // ── SCRUM-603 (DOC-13): el concepto y su DESCRIPCIÓN, separados ──────────────────
+      // La descripción viaja dentro del concepto, detrás de un salto de línea (lo compone el
+      // editor cuando el profesional marca «Incluir descripción en el PDF»). Hasta hoy esta
+      // tabla imprimía el concepto ENTERO de una vez: la descripción salía —el salto se
+      // respeta— pero con el MISMO tamaño y peso, así que no se leía como una descripción.
+      // El PDF de presupuesto ya la separaba; la partición es ahora la MISMA función para los
+      // dos (`conceptoLinea.ts`), no una segunda copia.
+      const { titulo: cTitulo, descripcion: cDesc } = partirConceptoYDescripcion(l.concept);
+      const tituloVisible = cTitulo || '—';
+
+      // Calcular altura de fila. La descripción se mide CON SU PROPIO tamaño: medirla con el
+      // del concepto dejaría la fila corta y el texto se pisaría con la de abajo.
       doc.font('Helvetica').fontSize(9);
-      const conceptH = doc.heightOfString(l.concept || '—', { width: WC });
-      const rowH = Math.max(20, conceptH + 8);
+      const conceptH = doc.heightOfString(tituloVisible, { width: WC });
+      doc.fontSize(8);
+      const descH = cDesc ? doc.heightOfString(cDesc, { width: WC }) : 0;
+      doc.fontSize(9);
+      const rowH = Math.max(20, conceptH + (cDesc ? 2 + descH : 0) + 8);
 
       // Salto de página si no cabe
       if (doc.y + rowH > PB - 80) { doc.addPage(); hLine(); }
@@ -258,7 +287,15 @@ export async function generateInvoicePdf(params: {
       doc.fillColor(BODY);
 
       doc.font('Helvetica').fontSize(9);
-      doc.text(l.concept || '—', XC, rowY + 4, { width: WC });
+      doc.text(tituloVisible, XC, rowY + 4, { width: WC });
+      if (cDesc) {
+        // Menor tamaño y tinta suave — el MISMO gris que el profesional ya ve en la vista
+        // previa del editor (`quotesView.js` la pinta con `#6b756f`), para que el documento no
+        // le enseñe otra cosa distinta de la que le prometió la pantalla.
+        doc.fontSize(8).fillColor(MUTED)
+          .text(cDesc, XC, rowY + 4 + conceptH + 2, { width: WC });
+        doc.fontSize(9).fillColor(BODY);
+      }
       doc.text(fmt(qty),              XQ,  rowY + 4, { width: WQ,  align: 'right' });
       doc.text(fmt(price),            XP,  rowY + 4, { width: WP,  align: 'right' });
       doc.text(taxR > 0 ? `${(taxR*100).toFixed(0)}%` : '—', XIV, rowY + 4, { width: WIV, align: 'right' });
@@ -479,7 +516,9 @@ export async function generateQuotePdf(params: {
   // razón social manda sobre el nombre, y el NIF sale si se pide.
   const show = (k: 'name' | 'phone' | 'taxId' | 'email') =>
     !params.docFields || params.docFields[k] !== false;
-  const clientDisplay = params.customer.legalName || params.customer.name || '—';
+  // SCRUM-577: misma regla, mismo sitio unico. El respaldo `'—'` se conserva: es lo que este
+  // documento imprimia cuando no habia ninguno de los dos, y unificarlo cambiaria lo impreso.
+  const clientDisplay = nombreParaDocumento(params.customer, '—');
   if (show('name')) doc.text(`Cliente: ${clientDisplay}`);
   if (show('taxId') && params.customer.taxId) doc.text(`NIF: ${params.customer.taxId}`);
   if (show('phone') && params.customer.phone) doc.text(`Tel: ${params.customer.phone}`);
@@ -512,7 +551,7 @@ export async function generateQuotePdf(params: {
         lineY += 12;
       }
       tier.lines.forEach((l: any) => {
-        const lineTotal = (l.qty * l.price * (1 + (l.tax ?? 0))).toFixed(2);
+        const lineTotal = fmtImporte(l.qty * l.price * (1 + (l.tax ?? 0)));
         const text = `${l.concept} × ${l.qty}`;
         doc.text(text, x + 4, lineY, { width: tierW - 8 });
         lineY += 10;
@@ -523,7 +562,7 @@ export async function generateQuotePdf(params: {
       // Total del tier
       doc.rect(x, lineY, tierW, 14).fill(tier.recommended ? '#dcfce7' : '#e5e7eb');
       doc.fillColor('#111827').font('Helvetica-Bold').fontSize(9)
-        .text(`Total: ${tier.total.toFixed(2)} ${params.currency}`, x + 4, lineY + 3, { width: tierW - 8, align: 'center' });
+        .text(`Total: ${fmtImporte(tier.total)} ${params.currency}`, x + 4, lineY + 3, { width: tierW - 8, align: 'center' });
 
       doc.fillColor('black').font('Helvetica');
     });
@@ -591,14 +630,15 @@ params.lines.forEach((l) => {
 
   const concept = softBreakLongTokens(String(l.concept || '').trim());
 
-  const parts = concept.split('\n').map((s) => s.trim()).filter(Boolean);
-  const title = parts[0] || '';
-  const desc = parts.slice(1).join('\n'); // puede tener varias líneas
+  // SCRUM-603: la partición se COMPARTE con el bloque de la FACTURA. Aquí vivía LA copia
+  // original; al llevarla también a la factura habría habido DOS, y dos listas que se
+  // sincronizan a mano divergen (la familia de SCRUM-617/620/625/627).
+  const { titulo: title, descripcion: desc } = partirConceptoYDescripcion(concept);
 
   const qty = String(l.qty ?? '');
-  const price = Number.isFinite(l.price) ? l.price.toFixed(2) : '';
+  const price = Number.isFinite(l.price) ? fmtImporte(l.price) : '';
   const vat = Number.isFinite(l.tax) ? (l.tax * 100).toFixed(0) + '%' : '';
-  const total = Number.isFinite(lineTotal) ? lineTotal.toFixed(2) : '';
+  const total = Number.isFinite(lineTotal) ? fmtImporte(lineTotal) : '';
 
   const y0 = doc.y;
 

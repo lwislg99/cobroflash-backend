@@ -170,12 +170,104 @@ function renderCustomersView(container) {
   let modalBackdrop = null;
   let modalForm = null;
   let fieldName, fieldPhone, fieldEmail, fieldNotes;
+  // SCRUM-578: UNA sola constante para los dos rotulos sin aprobar de este ticket.
+  // ⚠️ Y una consecuencia medida en SCRUM-615 que hay que decir: el censo cuenta MARCAS, no
+  // rotulos. Estas dos superficies comparten constante, asi que aprobar UNO de los dos textos
+  // NO apaga el otro: habra que partirla el dia que el fundador escriba el primero.
+  const MARCADOR_MICROCOPY = "[PENDIENTE microcopy oficial]";
+  let fieldPrefijo = null;   // SCRUM-578 (a): el prefijo de pais, fuera del numero
+  let avisoDuplicado = null; // SCRUM-578 (c): el aviso de identificador ya usado
+  // SCRUM-575 (CONT-02) · CONSTANTE PROPIA, no la de CONT-05, y a proposito: son tickets
+  // distintos. Compartirla ataria la aprobacion de este texto a la de los otros dos — el
+  // fundador no podria firmar uno sin firmar los tres. Una constante por ticket es lo que
+  // permite que se apaguen por separado.
+  const MARCADOR_NIF = "[PENDIENTE microcopy oficial]";
+  let avisoNif = null;       // SCRUM-575 (CONT-02): el aviso de NIF/CIF mal formado
   let fieldWaOptOut = null; // J3: baja manual de WhatsApp desde la ficha
   let fieldTipoDestinatario = null; // SCRUM-69: plazo legal de la recapitulativa (art. 13 RD 1619/2012)
   let switchForma = null; // SCRUM-574: FORMA JURÍDICA (contactKind). NO es fieldTipoDestinatario.
   let fieldRecargo = null; // SCRUM-294-a: recargo de equivalencia del cliente (tres estados)
   let modalTitleEl = null;
   let modalSaveBtn = null;
+
+  // ── SCRUM-578 (CONT-05) · el teléfono repartido entre prefijo y número ──────────────────
+  //
+  // Lo GUARDADO es una sola cadena. El formulario lo enseña en dos piezas, así que hay que
+  // repartirlo al abrir y volver a juntarlo al guardar. Ni una fila se modifica por esto: (d)
+  // dice que los duplicados que ya existen no se tocan, y eso incluye no migrarles el formato.
+
+  /** Junta prefijo + número para el payload. Es lo que se envía; el servidor normaliza. */
+  function telefonoCompleto() {
+    const numero = fieldPhone.input.value.trim().replace(/\s/g, "");
+    if (!numero) return "";
+    // El respaldo NO es un literal: sale de la fuente declarada. Un `|| "34"` aquí es un número
+    // escrito a mano en la lectura de un control, que es justo lo que caza el guard de SCRUM-311
+    // — y tiene razón aunque aquí sea un prefijo y no una cantidad: el patrón es el mismo.
+    const prefijo = (fieldPrefijo && fieldPrefijo.value) || prefijosPais.ESPANA.prefijo;
+    // Si el profesional ya escribió el prefijo dentro del número, NO se duplica. Pasa al pegar
+    // un número copiado de WhatsApp, y `3434…` sería un teléfono inventado.
+    const yaLoLleva = numero.startsWith(prefijo) || numero.startsWith("+" + prefijo) || numero.startsWith("00" + prefijo);
+    return yaLoLleva ? numero : prefijo + numero;
+  }
+
+  /**
+   * Reparte un teléfono guardado entre el selector y el campo.
+   *
+   * Las filas viejas pueden estar guardadas SIN prefijo —es el defecto del ticket— así que si no
+   * se reconoce ninguno, el número se deja entero y el selector se queda en España. Nunca se
+   * adivina troceando a ciegas: partir mal un teléfono es peor que enseñarlo entero.
+   */
+  function repartirTelefono(guardado) {
+    const limpio = String(guardado || "").replace(/[\s\-()]/g, "").replace(/^\+/, "");
+    if (!fieldPrefijo) { fieldPhone.input.value = limpio; return; }
+    const prefijos = prefijosPais.listaDePrefijos().map((p) => p.prefijo)
+      .sort((a, b) => b.length - a.length); // el más largo primero: `1` no puede ganarle a `1809`
+    for (const p of prefijos) {
+      if (limpio.length > p.length && limpio.startsWith(p)) {
+        fieldPrefijo.value = p;
+        fieldPhone.input.value = limpio.slice(p.length);
+        return;
+      }
+    }
+    fieldPrefijo.value = prefijosPais.ESPANA.prefijo;
+    fieldPhone.input.value = limpio;
+  }
+
+  /**
+   * SCRUM-578 (c) · pregunta al servidor si alguno de los identificadores ya lo usa otro cliente.
+   *
+   * 🔴 ES UN AVISO, NO UN BLOQUEO: no deshabilita el botón de guardar y no impide nada. Hay casos
+   * legítimos —marido y mujer con el mismo móvil, dos comunidades del mismo administrador con el
+   * mismo email— y el que decide es el profesional.
+   *
+   * El NOMBRE no se envía, y ésa es la precisión 2 del fundador: «María García» saltaría
+   * constantemente y el aviso sería ruido que nadie lee.
+   */
+  async function comprobarDuplicados() {
+    if (!avisoDuplicado) return;
+    const params = new URLSearchParams();
+    const phone = telefonoCompleto();
+    const email = fieldEmail.input.value.trim();
+    const taxId = fieldTaxId.input.value.trim();
+    if (phone) params.set("phone", phone);
+    if (email) params.set("email", email);
+    if (taxId) params.set("taxId", taxId);
+    if (editingCustomer) params.set("excluirId", String(editingCustomer.id));
+
+    // Sin ningún identificador que mirar no se pregunta: el aviso se apaga y ya está.
+    if (!params.toString()) { avisoDuplicado.hidden = true; return; }
+
+    try {
+      const r = await apiRequest("/admin/customers/duplicados?" + params.toString());
+      const hay = Array.isArray(r && r.coincidencias) && r.coincidencias.length > 0;
+      avisoDuplicado.hidden = !hay;
+    } catch (err) {
+      // Si la comprobación falla, el aviso se APAGA en vez de quedarse encendido: enseñar un
+      // aviso de duplicado porque se cayó la red sería peor que no enseñarlo.
+      console.error("[customersView] comprobarDuplicados", err);
+      avisoDuplicado.hidden = true;
+    }
+  }
 
   function buildModal() {
     modalBackdrop = createElement("div", "modal-overlay");
@@ -192,11 +284,52 @@ function renderCustomersView(container) {
 
     const body = createElement("div", "modal-body");
     fieldName = createField("Nombre", "name", "text", true);
-    fieldPhone = createField("Teléfono (E.164 sin +)", "phone", "text");
+    // SCRUM-578 (CONT-05, punto a) · el prefijo sale a un SELECTOR y el número deja de llevarlo.
+    //
+    // 🔴 EL RÓTULO CAMBIA DE MARCADOR, y no es cosmética: «Teléfono (E.164 sin +)» describía un
+    // campo donde el prefijo iba dentro. En cuanto el prefijo vive aparte, ese rótulo dice algo
+    // FALSO — y encima era la prueba del ticket de que una regla escrita en una etiqueta no se
+    // cumple: pedía «E.164 sin +» y se guardaron `+34 662629419` y `662629419` igual.
+    // El texto nuevo es del fundador (regla 30): sale con marcador, sin palabra de trabajo.
+    fieldPhone = createField(MARCADOR_MICROCOPY, "phone", "text");
+    // El campo NO admite espacios (punto b): se limpian al escribir, además de normalizarse en
+    // servidor. Aquí es comodidad; la regla de verdad está en el servidor, que es donde el ticket
+    // demostró que tenía que estar.
+    fieldPhone.input.addEventListener("input", () => {
+      const limpio = fieldPhone.input.value.replace(/\s/g, "");
+      if (limpio !== fieldPhone.input.value) fieldPhone.input.value = limpio;
+    });
+    // El selector se antepone dentro del mismo `.field`, en una fila con el número.
+    fieldPrefijo = prefijosPais.selectorDePrefijo({});
+    const filaTel = createElement("div", "campo-telefono");
+    fieldPhone.wrapper.removeChild(fieldPhone.input);
+    filaTel.appendChild(fieldPrefijo);
+    filaTel.appendChild(fieldPhone.input);
+    fieldPhone.wrapper.appendChild(filaTel);
     fieldEmail = createField("Email", "email", "email");
     // A20.4: cliente empresa (opcional) — el NIF además lo exigirá VeriFactu
     fieldLegalName = createField("Razón social (empresa, opcional)", "legalName", "text");
     fieldTaxId = createField("NIF/CIF (opcional)", "taxId", "text");
+    // SCRUM-575 (CONT-02) · el aviso de NIF mal formado. Va PEGADO a su campo —y no arriba, como
+    // el de duplicados— porque señala un error EN ESE campo: un mensaje lejos de su causa obliga
+    // a buscarla. Nace oculto; sólo aparece con un valor escrito y mal.
+    //
+    // 🔴 EL RÓTULO «NIF/CIF (opcional)» NO CAMBIA, y es deliberado: sigue describiendo el campo
+    // con exactitud. Sólo se marca lo que es NUEVO — el mensaje de error, que es texto que el
+    // profesional no ha visto nunca. Marcar de más obliga al fundador a reescribir lo que ya
+    // estaba bien.
+    avisoNif = createElement("div", "aviso-nif");
+    avisoNif.textContent = MARCADOR_NIF;
+    avisoNif.hidden = true;
+    fieldTaxId.wrapper.appendChild(avisoNif);
+
+    // Se comprueba al SALIR del campo: en cada tecla, un NIF a medio escribir estaría mal casi
+    // siempre y el aviso parpadearía acusando mientras se teclea.
+    fieldTaxId.input.addEventListener("blur", () => {
+      // VACÍO = VÁLIDO. El campo es opcional y esta comprobación no lo convierte en obligatorio:
+      // es el control que más fácil se rompe sin querer al añadir una validación.
+      avisoNif.hidden = validarNifEspanol(fieldTaxId.input.value).valido;
+    });
     fieldNotes = createField("Notas", "notes", null, false, true);
 
     // SCRUM-69 (FACT-1): sin banner ni prompt forzado (decisión fundador 23-jul) — solo aquí,
@@ -253,11 +386,31 @@ function renderCustomersView(container) {
     });
     body.appendChild(switchForma.nodo);
 
+    // SCRUM-578 (c) · el aviso de identificador ya usado. Va ARRIBA del todo, antes de los
+    // campos: si estuviera al final, en un móvil quedaría por debajo del pliegue justo cuando el
+    // profesional ya ha terminado de escribir y va a guardar.
+    //
+    // Nace oculto (`hidden`) y sólo aparece cuando el servidor dice que hay coincidencia. Texto
+    // con marcador, sin palabra de trabajo: es del fundador (regla 30) y es lo que el profesional
+    // lee para decidir si está creando un duplicado.
+    avisoDuplicado = createElement("div", "alert aviso-duplicado");
+    avisoDuplicado.textContent = MARCADOR_MICROCOPY;
+    avisoDuplicado.hidden = true;
+    body.appendChild(avisoDuplicado);
+
     body.appendChild(fieldName.wrapper);
     body.appendChild(fieldPhone.wrapper);
     body.appendChild(fieldEmail.wrapper);
     body.appendChild(fieldLegalName.wrapper);
     body.appendChild(fieldTaxId.wrapper);
+
+    // SCRUM-578 (c) · se comprueba al SALIR del campo, no en cada tecla: preguntar por cada
+    // pulsación haría una petición por letra y el aviso parpadearía mientras se escribe.
+    // El prefijo dispara con `change` porque es un `<select>` y no se «sale» de él igual.
+    fieldPhone.input.addEventListener("blur", comprobarDuplicados);
+    fieldEmail.input.addEventListener("blur", comprobarDuplicados);
+    fieldTaxId.input.addEventListener("blur", comprobarDuplicados);
+    if (fieldPrefijo) fieldPrefijo.addEventListener("change", comprobarDuplicados);
     body.appendChild(tipoWrapper);
     body.appendChild(recargoWrapper);
     body.appendChild(fieldNotes.wrapper);
@@ -309,13 +462,21 @@ function renderCustomersView(container) {
 
     modalForm.reset();
 
+    // SCRUM-578: el aviso se APAGA al abrir. Sin esto arrastraria el del cliente anterior y
+    // acusaria de duplicado a uno que no lo es — el peor falso positivo posible.
+    if (avisoDuplicado) avisoDuplicado.hidden = true;
+    if (avisoNif) avisoNif.hidden = true; // SCRUM-575: no arrastrar el aviso del cliente anterior
+    if (fieldPrefijo) fieldPrefijo.value = prefijosPais.ESPANA.prefijo;
+
     // SCRUM-574: `reset()` deja los dos radios sin marcar, que es exactamente el estado de un alta
     // nueva — nadie ha declarado nada todavía. En edición lo sobrescribe el bloque de abajo.
     switchForma.escribir(null);
 
     if (editingCustomer) {
       fieldName.input.value = editingCustomer.name || "";
-      fieldPhone.input.value = editingCustomer.phone || "";
+      // SCRUM-578: lo guardado puede venir CON prefijo o sin el (filas viejas). Se reparte para
+      // que el selector no mienta, y sin tocar la fila: (d) dice que no se migra nada.
+      repartirTelefono(editingCustomer.phone || "");
       fieldEmail.input.value = editingCustomer.email || "";
       fieldNotes.input.value = editingCustomer.notes || "";
       fieldLegalName.input.value = editingCustomer.legalName || ""; // A20.4
@@ -355,7 +516,7 @@ function renderCustomersView(container) {
 
     const payload = {
       name: fieldName.input.value.trim(),
-      phone: fieldPhone.input.value.trim(),
+      phone: telefonoCompleto(),
       email: fieldEmail.input.value.trim(),
       notes: fieldNotes.input.value.trim(),
       legalName: fieldLegalName.input.value.trim() || null, // A20.4

@@ -145,6 +145,40 @@ const CENSO = Object.freeze({
   // 🔴 17-ago-2026 (tanda B) · 5 → 1. Aprobados cuatro: el estado del botón, el vacío del periodo,
   // «Descarga lista.» y el error de descarga. Queda UNO y con su motivo: el quinto marcador de este
   // fichero es de la tarjeta de portabilidad, que NO estaba en la lista aprobada.
+  // SCRUM-578 (24-ago-2026) · SUBIDA A CONCIENCIA: el formulario de clientes saca con marcador
+  // el rótulo del teléfono y el aviso de identificador ya usado.
+  //
+  // El rótulo TENÍA texto —«Teléfono (E.164 sin +)»— y pasa a marcador a propósito: en cuanto el
+  // prefijo sale a un selector aparte, ese rótulo describe un campo que ya no existe. Y era, él
+  // mismo, la prueba del ticket de que una regla escrita en una etiqueta no se cumple: pedía
+  // «E.164 sin +» y se guardaron `+34 662629419` y `662629419` como dos clientes.
+  //
+  // Van SIN palabra de trabajo detrás, al revés que `switchFormaJuridica` (SCRUM-574): allí el
+  // copy era accesorio; aquí es lo que el profesional lee para decidir si está creando un
+  // duplicado, y un texto mío «provisional» ahí es justo lo que la regla 30 prohíbe.
+  //
+  // 🔴 CUENTA 1 Y PINTA 2, y la distinción no es cosmética — se midió en SCRUM-615: este censo
+  // cuenta MARCAS, y las dos superficies salen de una sola constante `MARCADOR_MICROCOPY`. Por
+  // eso **aprobar UNO de los dos textos NO apaga el otro**: son dos textos distintos que hoy
+  // comparten marcador, y habrá que partir la constante el día que el fundador escriba el
+  // primero. Decir «se apagan de golpe» aquí sería falso.
+  // SCRUM-575 (24-ago-2026) · 1 → 2. SUBIDA A CONCIENCIA: entra el aviso de NIF/CIF mal formado
+  // (CONT-02), con CONSTANTE PROPIA y no reutilizando la de CONT-05.
+  //
+  // 🔴 Y LA CONSTANTE SEPARADA ES LA DECISIÓN, no un descuido. Reutilizar la de CONT-05 habría
+  // dejado el censo en 1 —el número no se habría movido— metiendo una superficie nueva EN
+  // SILENCIO, que es justo lo que este trinquete existe para impedir. Y peor: ataría la
+  // aprobación de este texto a la de los otros dos, así que el fundador no podría firmar uno sin
+  // firmar los tres. Una constante por ticket es lo que permite apagarlos por separado.
+  //
+  // Estado real de este fichero: 2 MARCAS · 3 SUPERFICIES.
+  //   · CONT-05 (`MARCADOR_MICROCOPY`) pinta 2: el rótulo del teléfono y el aviso de duplicado.
+  //   · CONT-02 (`MARCADOR_NIF`) pinta 1: el aviso de NIF mal formado.
+  // La de CONT-05 sigue necesitando partirse el día que se apruebe uno de sus dos textos.
+  //
+  // El rótulo «NIF/CIF (opcional)» NO se ha marcado: sigue describiendo el campo con exactitud.
+  // Sólo se marca lo NUEVO — marcar de más obliga al fundador a reescribir lo que ya estaba bien.
+  'customersView.js': 2,
   'exportView.js': 1,
   // 🔴 17-ago-2026 · `invoiceDetailView.js` SALE DEL CENSO (tenía 9). El fundador aprobó los ocho
   // rótulos de acción, y el noveno era `MARCA_MICRO`, una constante que ya no consumía nadie y que
@@ -170,6 +204,20 @@ const CENSO = Object.freeze({
   //
   // SCRUM-483 dejó escrito que se partiría «el día que se aprueben, partiendo y rellenando en el
   // mismo commit». Ese día es hoy, así que `NF_PENDIENTE` se borra. Entrada BORRADA, no puesta a 0.
+  // SCRUM-605 (25-ago-2026) · SUBIDA A CONCIENCIA: 8 → 9 ficheros. Los tres atajos de «Válido
+  // hasta» del presupuesto (7 / 14 / 30) necesitan rótulo y nombre accesible, y ése es texto que
+  // NO existe. El encargo daba por hecho que no haría falta microcopy; hace falta, porque un
+  // botón sin nombre no es accesible y un número suelto («7») no dice de qué.
+  //
+  // Se cuenta 1: los TRES botones y sus tres `aria-label` salen de una sola constante
+  // `MARCA_MICROCOPY`, así que aprobar el copy los apaga de golpe. El NÚMERO va delante del
+  // marcador y no es microcopy —es el dato del atajo—, que es lo que los mantiene
+  // distinguibles entre sí mientras el texto no llegue.
+  //
+  // Lo que NO se hizo, y merece quedar escrito: el encargo pedía `[copy: fundador]`. Ese
+  // marcador NO lo cuenta este censo (cuenta `[PENDIENTE`), así que habría sido un marcador
+  // invisible para el trinquete que existe justo para verlo. Se usa el de la casa.
+  'quoteAtajosVencimiento.js': 1,
   'patronDetalleAcciones.js': 1,
   // 🔴 17-ago-2026 (tanda B) · SALE DEL CENSO: el fundador aprobó «Con errores» del resumen de importación de CSV. Entrada BORRADA, no
   // puesta a 0 (SCRUM-424 / SCRUM-405): `censoActual()` solo lista ficheros CON marcadores.

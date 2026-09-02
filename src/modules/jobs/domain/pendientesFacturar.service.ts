@@ -9,6 +9,7 @@ import {
   type AlbaranConsolidable,
   type AlbaranLinea,
 } from './albaran.service';
+import { nombreParaDocumento } from '../../../core/documentos/nombreParaDocumento'; // SCRUM-577
 
 export type TipoDestinatario = 'PARTICULAR' | 'EMPRESARIO';
 export type Semaforo = 'verde' | 'ambar' | 'rojo';
@@ -242,7 +243,8 @@ export async function getPendientesFacturar(
 
     resultado.push({
       customerId,
-      customerName: customer?.legalName || customer?.name || 'Cliente',
+      // SCRUM-577: el criterio sale del SITIO UNICO. Respaldo `'Cliente'` como antes.
+      customerName: nombreParaDocumento(customer, 'Cliente'),
       tipoDestinatario: tipo,
       tipoDestinatarioDeclarado: declarado,
       billingPeriodicity: periodicidad,

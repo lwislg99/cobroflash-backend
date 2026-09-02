@@ -31,11 +31,14 @@ const SHELL = [
   '/dashboard/js/homeView.js',
   '/dashboard/js/onboardingView.js',
   '/dashboard/js/plansView.js',
+  '/dashboard/js/nifEspanol.js', // SCRUM-575
+  '/dashboard/js/prefijosPais.js', // SCRUM-578
   '/dashboard/js/customersView.js',
   '/dashboard/js/quotesTabs.js', // SCRUM-432
   '/dashboard/js/quotesListView.js',
   '/dashboard/js/quoteMargen.js',
   '/dashboard/js/quoteSuplido.js',
+  '/dashboard/js/quoteAtajosVencimiento.js',
   '/dashboard/js/quotesView.js',
   '/dashboard/js/quotesDetailView.js',
   '/dashboard/js/productsView.js',
