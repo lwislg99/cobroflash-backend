@@ -188,10 +188,14 @@ function renderCustomersView(container) {
   // ═════════════════════════════════════════════════════════════════════════════════════
 
   /**
-   * El rótulo del teléfono. A SECAS, y el motivo es medible: el rótulo viejo
-   * («Teléfono (E.164 sin +)») pedía un FORMATO que ya no se pide — lo impone el control de al
-   * lado, que muestra «🇪🇸 España +34». Y CONT-05 demostró EN ESTA MISMA PANTALLA que una regla
-   * escrita en una etiqueta no se cumple: se guardaron `+34 662629419` y `662629419` el mismo día.
+   * El rótulo del teléfono. A SECAS, y el motivo es medible: el rótulo viejo pedía un FORMATO
+   * —el de la norma internacional, sin el signo de suma— que YA NO SE PIDE, porque lo impone el
+   * control de al lado, que muestra «🇪🇸 España +34». Y CONT-05 demostró EN ESTA MISMA PANTALLA
+   * que una regla escrita en una etiqueta no se cumple: se guardaron los dos formatos el mismo día.
+   *
+   * ⚠️ El texto exacto de aquel rótulo NO se transcribe aquí a propósito: `scrum578` prohíbe esa
+   * cadena en la vista y su filtro sólo salta los comentarios de línea, no los de bloque. Un
+   * comentario que la citara haría saltar ese guard en falso.
    *
    * Se descartó «Teléfono (opcional)»: Email también es opcional y no lo dice, así que añadirlo
    * aquí no arregla la inconsistencia — la reparte.

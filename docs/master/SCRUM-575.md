@@ -4,7 +4,7 @@
 
 **Medido contra:** `origin/main` = `0eef4919039262d7de88465d2c9ecbe795ae786c` · 2026-09-02T20:04:32+01:00
 
-**Tanda:** 4691 tests, 4608 pass, 0 fail, 83 skipped (los 83 declaran su motivo) — medida DESPUES del ultimo cambio, entrada incluida, y **repetida tras mezclar `main`** (antes del merge daba 4678/4595/0).
+**Tanda:** 4722 tests, 4639 pass, 0 fail, 83 skipped (los 83 declaran su motivo) — medida DESPUES del ultimo cambio, entrada incluida.
 
 > El **ancla de arriba NO se re-mide**: es un registro fechado de contra qué se midió el trabajo,
 > no una afirmación sobre el `main` de ahora. La TANDA sí se repite, porque mezclar `main` es un
@@ -90,11 +90,10 @@ Texto **provisional del asesor**, pendiente de confirmación del fundador (regla
 > la verdad al profesional y se cambia en **una línea y un aserto** el día que el fundador lo
 > confirme o lo reescriba. Un marcador no dice nada y encima parece un error de la aplicación.
 
-**El censo de marcadores baja de 2 a 1** (`scrum402`). No se borra la entrada: **queda una marca
-viva** en el fichero —el rótulo del teléfono, CONT-05—, y sacarlo del censo teniendo una marca
-dejaría de vigilarlo justo donde todavía hay algo que firmar. Se borra al llegar a 0, no antes.
+**El censo de marcadores baja de 2 a 1** (`scrum402`) — y en la segunda entrega de este mismo
+ticket llega a **0** y la entrada se borra. Ver la sección «LOS TRES MARCADORES…» más abajo.
 
-### El guard del cableado — `tests/scrum575b-nif-cableado.test.mjs`, 12 casos
+### El guard del cableado — `tests/scrum575b-nif-cableado.test.mjs`, 17 casos
 
 Los cinco eslabones, cada uno ejecutado:
 
@@ -139,7 +138,7 @@ y que el fichero haya cambiado.
 |---|---|
 | el SERVIDOR deja de validar | ④ el servidor rechaza · y EL VIAJE ENTERO |
 | el CLIENTE deja de avisar | ② el cliente avisa |
-| el aviso vuelve a ser un MARCADOR | el texto literal · **y** el censo de `scrum402` (doble red) |
+| el aviso de NIF vuelve a ser un MARCADOR | el texto literal · **y** el censo de `scrum402` (doble red) |
 | se rompe la tabla de letras del DNI | el **barrido amplio de `scrum575`** — ver abajo |
 
 > ⚠️ **La cuarta la caza `scrum575`, NO este fichero, y se dice en vez de presumir.** Se alteró la
@@ -148,6 +147,89 @@ y que el fichero haya cambiado.
 > el cableado— pero un guard no debe apuntarse lo que no hace.
 
 **Control negativo:** tocar `recargoEquivalencia` —otro campo del cliente— no tumba nada de esto.
+
+---
+
+## 🔴 SEGUNDA ENTREGA: LOS TRES MARCADORES DE ESTA PANTALLA, FIRMADOS. EL CENSO A CERO
+
+El primer commit de este ticket firmó el aviso de NIF y dejó el censo en **1**. Ese 1 se midió y
+resultó ser **dos superficies compartiendo UNA constante**, no una:
+
+| línea | superficie | |
+|---|---|---|
+| `customersView.js:312` | el **rótulo del teléfono** | ← lo que se pidió medir |
+| `customersView.js:469` | el **aviso de identificador ya usado** | ← el que nadie había contado |
+
+SCRUM-615 ya lo había dejado avisado: *«aprobar UNO de los dos textos NO apaga el otro: habrá que
+partirla»*. **Partirla no es alcance extra: sin partirla, poner el rótulo aprobado del teléfono le
+habría cambiado el texto al aviso de duplicado**, que dice otra cosa completamente distinta.
+
+### Lo que se midió antes de proponer
+
+**En navegador, a 360 px**, con el CSS real (comprobado que cargó: `min-height:44px` y `flex`
+aplicados):
+
+| pieza | ancho | alto |
+|---|---|---|
+| rótulo | **280 px** — una sola línea | 19,4 |
+| selector de prefijo | **123,2 px** (`max-width:44%`) | 44,5 |
+| input del número | **148,8 px** | 44,5 |
+
+Fuente `600 12.5px Inter` → **caben ~45 caracteres por línea**. El input **no tiene placeholder** y
+**no hay aviso bajo el campo**: el de duplicado vive arriba del modal. El selector muestra
+**«🇪🇸 España +34»** (222 opciones; el nombre lo pone `Intl`, no es copy nuestro).
+
+### Los dos textos, aprobados por el asesor el 2-sep-2026
+
+| superficie | texto |
+|---|---|
+| rótulo del teléfono | `Teléfono` |
+| aviso de duplicado (**provisional**, a la espera del fundador) | `Ese dato ya lo tiene otro cliente. Revísalo por si es un duplicado.` |
+
+**El rótulo, a secas.** El viejo —«Teléfono (E.164 sin +)»— pedía un **formato que ya no se pide**:
+lo impone el control de al lado. Y CONT-05 demostró **en esta misma pantalla** que una regla
+escrita en una etiqueta no se cumple: se guardaron `+34 662629419` y `662629419` el mismo día.
+Se descartó «Teléfono (opcional)» con un dato: **Email también es opcional y no lo dice**, así que
+añadirlo aquí no arregla la inconsistencia — la reparte.
+
+**El aviso, en tono de aviso.** Es un AVISO, no un bloqueo: hay duplicados **legítimos** —marido y
+mujer con el mismo móvil, dos comunidades del mismo administrador con el mismo email— y el que
+decide es el profesional. Por eso dice «revísalo» y no «ya existe». Sirve para teléfono, email y
+NIF sin nombrar ninguno. 63 caracteres → dos líneas en un aviso que vive arriba del modal, donde
+caben.
+
+### 🔴 «Construido ≠ alcanzable»: se comprobó ANTES de ponerle un texto bonito
+
+El aviso nace `hidden`, y un texto que nadie llega a ver **no es microcopy: es código muerto con
+acentos**. Así que antes de firmarlo se preguntó si algo lo enseña de verdad.
+
+**Sí lo enseña, y no de palabra: se EJECUTA.** `comprobarDuplicados()` lo enciende
+(`avisoDuplicado.hidden = !hay`) y está cableada al `blur` del teléfono, del email y del NIF, y al
+`change` del prefijo. El test sirve una respuesta del servidor **con coincidencias**, dispara el
+`blur` y exige que el aviso aparezca — **con su control negativo**: sin coincidencias no se
+enciende, porque un aviso clavado en «visible» acusaría de duplicado a cualquier cliente nuevo.
+
+### El censo a CERO, con control positivo
+
+`customersView.js` **sale del censo** de `scrum402`: tenía 3 marcas y se firman las 3. La entrada
+se **BORRA**, no se pone a 0 — precedente de SCRUM-424/405/593 escrito ahí mismo: `censoActual()`
+sólo lista ficheros CON marcadores, así que un 0 sería una bajada permanente sin anotar.
+
+> 🔴 **Un cero sin control positivo no es un cero, es un guard que dejó de mirar.** Comprobado:
+> se metió un marcador nuevo **en este mismo fichero ya fuera del censo** y **R4 y R4b cayeron**,
+> clasificándolo por la rama `nuevos`. Salir del censo no es salir de la vigilancia.
+
+### El rojo, probado — tres mutaciones más, con post-condición
+
+| se rompe a propósito | cae |
+|---|---|
+| el aviso deja de encenderse | «EL AVISO SE ENSEÑA DE VERDAD» (construido ≠ alcanzable) |
+| el rótulo del teléfono cambia | «EL RÓTULO, LITERAL» |
+| el aviso se reescribe en tono de bloqueo | «EL AVISO, LITERAL — y NO suena a bloqueo» |
+
+Y un caso que sólo tiene sentido después de partir la constante: **los dos textos tienen que ser
+DISTINTOS**. Mientras compartían una sola, firmar uno le cambiaba el texto al otro.
+
 
 ---
 
@@ -199,3 +281,4 @@ el resto del modal, incluidos los cinco campos de dirección de CONT-06 · los c
 
 * El validador vive DOS VECES (`nifEspanol.ts` y `nifEspanol.js`) y su propio comentario lo declara: hay un test que exige que coincidan, así que la duplicación está sujeta — pero sigue siendo una copia a mano.
 * `identificadoresDuplicados.ts` importa `normalizarNif` de la copia del servidor: si algún día divergieran, el detector de duplicados y el validador dirían cosas distintas del mismo NIF.
+* El filtro de comentarios de `scrum578` salta los de LÍNEA pero **no los de BLOQUE**, así que un JSDoc que cite el rótulo viejo lo hace saltar en falso — me pasó, y por eso mi comentario describe aquel texto sin transcribirlo.
