@@ -71,7 +71,10 @@ test('SCRUM-132: el borrador repone el IVA por defecto ANTES de crear las línea
   // input libre sino un `<select>` y asignar `.value` a pelo perdería un tipo que no esté en la
   // lista. **El ORDEN que este test vigila se sigue comprobando igual**, que es lo suyo.
   const iDefecto = src.indexOf('if (d.vatDefault) window.tiposDeIva.ponerValor(fieldVatDefault.input, d.vatDefault);');
-  const iLineas = src.indexOf('d.lines.forEach((l) => addLine(l));');
+  // SCRUM-598 · el ancla cambió de FORMA otra vez, no de invariante: las líneas del borrador
+  // pasan por `drenarMargen` para incorporar al precio el margen de un borrador viejo. **El
+  // ORDEN que este test vigila se sigue comprobando igual**, que es lo suyo.
+  const iLineas = src.indexOf('d.lines.forEach((l) => addLine(drenarMargen(l)));');
   assert.ok(iDefecto > 0 && iLineas > 0, 'no se localizan las dos líneas de loadDraft');
   assert.ok(iDefecto < iLineas,
     'el IVA por defecto debe reponerse ANTES del forEach que crea las líneas del borrador');
