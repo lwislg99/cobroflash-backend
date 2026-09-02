@@ -215,15 +215,29 @@ test('SCRUM-604b · los dos formateadores de importe del fichero no pueden separ
   const { fmtImporte } = await import('../dist/modules/invoicing/infra/pdf/pdf.service.js');
   const fuente = fs.readFileSync(path.join(RAIZ, FUENTE), 'utf8');
 
-  // El de la factura vive DENTRO de su función y no se puede importar: se comprueba que su
-  // cuerpo siga siendo el mismo, con `===` sobre la línea exacta.
-  const cuerpoFactura = "    return v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });";
+  // ⚠️ SCRUM-636 · ESTE GUARD CAMBIA DE REFERENCIA, NO DE INTENCIÓN, y queda escrito por qué.
+  //
+  // Comprobaba dos cosas contra `v.toLocaleString('es-ES', …)`: que el `fmt` de la factura tuviera
+  // ESE cuerpo exacto, y que `fmtImporte` diera ESA salida. Las dos usaban como patrón el
+  // algoritmo que el fundador acaba de RETIRAR: `toLocaleString('es-ES')` no agrupa los enteros de
+  // cuatro cifras (CLDR), así que el documento escribía `1000,00` y `12.345,67` — incoherente
+  // consigo mismo. Un guard cuyo patrón es lo que se ha decidido no hacer ya no vigila nada.
+  //
+  // 🔴 Lo que este test existe para impedir —que los dos formateadores del fichero SE SEPAREN— no
+  // cambia, y ahora se comprueba MÁS FUERTE: en vez de exigir que los dos cuerpos sean iguales, se
+  // exige que sean EL MISMO, porque uno llama al otro y el otro llama al sitio único.
+  const cuerpoFactura = '    return fmtImporte(v);';
   assert.equal(fuente.split(cuerpoFactura).length - 1, 1,
-    '🔴 el `fmt` de la factura ha cambiado de cuerpo (o se ha movido). Si ahora formatea distinto '
-    + 'que `fmtImporte`, los dos documentos empiezan a escribir el dinero de dos maneras.');
+    '🔴 el `fmt` de la factura ha dejado de delegar en `fmtImporte` (o se ha movido). Si vuelve a '
+    + 'tener cuerpo propio, los dos documentos pueden empezar a escribir el dinero de dos maneras.');
+  assert.match(fuente, /export function fmtImporte[\s\S]{0,600}?return formatImporteEs\(v\);/,
+    '🔴 `fmtImporte` ha dejado de delegar en el sitio único (`formatImporteEs`).');
 
-  for (const v of [0, 4.5, 12.6, 105, 117.6, 1234.5]) {
-    assert.equal(fmtImporte(v), v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-      `🔴 \`fmtImporte\` ya no formatea ${v} como el de la factura`);
+  // Y la comprobación de SALIDA se conserva, contra el sitio único en vez de contra el algoritmo
+  // retirado. Se añade 1000 a propósito: es la banda donde la incoherencia se veía.
+  const { formatImporteEs } = await import('../dist/core/utils/utils.js');
+  for (const v of [0, 4.5, 12.6, 105, 117.6, 1234.5, 1000]) {
+    assert.equal(fmtImporte(v), formatImporteEs(v),
+      `🔴 \`fmtImporte\` ya no escribe ${v} como el sitio único del dinero`);
   }
 });

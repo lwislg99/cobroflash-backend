@@ -105,3 +105,66 @@ escribió—. Ahora van **por función**, que es lo que no se mueve al insertar 
 
 El sellador, el CSV de evidencias (`paquete.ts`), la zona horaria y merchants (S2, SCRUM-643), y el
 desglose de IVA de la factura (S1, SCRUM-623) — de cuyo fichero me he retirado.
+
+---
+
+# APÉNDICE · 2-sep-2026 · LA CONVENCIÓN ESPAÑOLA EN LOS CINCO SITIOS
+
+**Medido contra:** `origin/main` = `6b4f122def32c75615af06d5c311dadb43740888` · 2026-09-02T00:00:00+02:00
+**Rama:** `scrum-636-separador-en-los-cinco`
+
+> La exclusión de la factura **se levanta**. Decisión del fundador con la medición delante.
+
+## Lo que cambió el marco
+
+**No era una política: era un artefacto de CLDR.** `toLocaleString('es-ES')` no agrupa los enteros
+de cuatro cifras, así que la factura escribía `1000,00` **y** `12.345,67` — incoherente consigo
+misma, y fallando justo en la banda **1.000–9.999 €**, que es el importe corriente de un trabajo.
+Eso no se estaba eligiendo: se estaba padeciendo.
+
+| valor | antes | ahora |
+|---|---|---|
+| 999,99 | `999,99` | `999,99` |
+| **1000** | **`1000,00`** | **`1.000,00`** |
+| **2383,7** | **`2383,70`** | **`2.383,70`** |
+| **9999,99** | **`9999,99`** | **`9.999,99`** |
+| 12345,67 | `12.345,67` | `12.345,67` |
+
+## Los cinco, unificados en `formatImporteEs`
+
+`payBizum.routes.ts` · `pdf.service.ts` (`fmtImporte` y el `fmt` de la factura) ·
+`weeklyDigest.service.ts` · `customerPortal.routes.ts`
+
+Censo sobre los **250 ficheros `.ts` de `src/`**, con suelo: **cero copias** de la expresión.
+
+## La exclusión se retira CON su motivo, no en silencio
+
+El test que la pinchaba **cumplió — y de forma más limpia de lo previsto: no llegó a caer.** Estaba
+anclado al FORMATEADOR y no al fichero, y SCRUM-623 añadió 125 líneas de desglose sin tocarlo. Lo
+que forzó la decisión fue la medición que lo acompañaba. El motivo queda escrito en el propio
+fichero de tests, donde estaba el guard.
+
+## Cambio visible en documento fiscal → control por TEXTO REAL del PDF
+
+Se **genera** la factura con los doce valores de borde de SCRUM-625 y se **lee el texto del PDF**:
+los doce salen con la convención española, y en la banda 1.000–9.999 ya no aparece la forma sin
+agrupar. Test aparte: **ninguna cifra cambia, sólo su escritura.**
+
+Probado por el mecanismo: con la factura escribiendo sin agrupar, **caen los dos guards de PDF**;
+con una copia de vuelta en `customerPortal`, cae el censo. Árbol limpio después.
+
+## SCRUM-604b cambia de REFERENCIA, no de intención
+
+Comprobaba contra `toLocaleString`, o sea **contra el algoritmo que se acaba de retirar**. Lo que
+existía para impedir —que los dos formateadores del fichero se separen— se comprueba ahora **más
+fuerte**: en vez de exigir dos cuerpos iguales, se exige que sean **el mismo**, porque uno llama al
+otro y el otro al sitio único. El porqué queda escrito dentro del test.
+
+## Fuera, como estaban
+
+El **sellador** (`.toFixed(2)`; el XML de la AEAT exige punto) y el **CSV de evidencias**. La
+partición sigue mandando. Y el hueco declarado sigue **anotado y sin arreglar**: el censo de
+SCRUM-436 no ve un `toLocaleString` a secas —sólo si concatena el símbolo—, que era justo la forma
+de estas cinco copias. Extenderlo es otro ticket, y hoy además acusaría al sellador.
+
+**Suite: 4.280 tests · 4.201 verdes · 0 rojos · 79 saltados.** `guards:entrada`: 21/21.

@@ -33,9 +33,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
+import { extraerTextoPdf } from './_texto-del-pdf.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const U = await import('../dist/core/utils/utils.js');
+const { generateInvoicePdf } = await import('../dist/modules/invoicing/infra/pdf/pdf.service.js');
 const { fmtMoneyAlbaran } = await import('../dist/modules/jobs/app/routes/albaranPublicVista.js');
 
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
@@ -208,22 +210,118 @@ test('SCRUM-636 · 🔴 el CSV de evidencias sigue SIN agrupar', () => {
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
-// 🛑 LA FACTURA QUEDA FUERA, Y SE DICE POR QUÉ
+// LA EXCLUSIÓN DE LA FACTURA SE LEVANTA — y aquí queda por qué, en vez de desaparecer
+//
+// Hubo aquí un test que PINCHABA la exclusión: exigía que `pdf.service.ts` conservara su
+// `toLocaleString`. No estaba para proteger ese código, sino para que la exclusión fuera VISIBLE y
+// TEMPORAL en lugar de un olvido — el día que SCRUM-623 entrara, caería y obligaría a decidir.
+//
+// Cumplió, y de forma más limpia de lo previsto: **no llegó a caer**, porque estaba anclado al
+// FORMATEADOR y no al fichero, y 623 añadió 125 líneas de desglose sin tocarlo. Lo que forzó la
+// decisión fue la medición que lo acompañaba: `toLocaleString('es-ES')` no agrupa los enteros de
+// cuatro cifras (CLDR), así que la factura escribía `1000,00` y `12.345,67` — **incoherente
+// consigo misma**, y fallando justo en la banda 1.000–9.999 €. No era una política que alguien
+// hubiera elegido: era un artefacto que se estaba padeciendo.
+//
+// El fundador decidió la convención española en LOS CINCO sitios. El test se retira porque su
+// premisa ya no existe; lo que lo sustituye es el guard de abajo, que vigila lo contrario.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-636 · 🛑 la FACTURA no se toca: SCRUM-623 (S1) está en ese fichero', () => {
-  // `fmtImporte` lo comparten el presupuesto y la factura, así que delegarlo mueve LOS DOS: la
-  // factura pasaría de escribir `1000,00` a `1.000,00`. SCRUM-623 está tocando ahora mismo cómo
-  // se presentan los importes de la factura — unificarlo aquí sería pisarse.
-  //
-  // Se PINCHA el estado actual para que la exclusión sea visible y temporal, no un olvido: el día
-  // que 623 entre, este test cae y obliga a decidir en vez de dejarlo así para siempre.
+/** La forma exacta que tenían las cinco copias. Escrita entera para que el censo no se cace solo. */
+const LA_COPIA = "toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })";
+
+/** Todo `src/**\/*.ts`, para censar el árbol y no una lista escrita a mano que envejezca. */
+function fuentesDeSrc(dir = path.join(RAIZ, 'src'), acc = []) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) fuentesDeSrc(p, acc);
+    else if (e.name.endsWith('.ts')) acc.push(p);
+  }
+  return acc;
+}
+
+test('SCRUM-636 · 🔴 SUELO: el censo de copias VE la forma que busca', () => {
+  // Sin esto, «cero copias» podría ser «no sé mirar» — que es como se leen los censos muertos.
+  assert.ok(`const t = v.${LA_COPIA};`.includes(LA_COPIA), '🔴 el detector no ve su propio cebo.');
+  assert.ok(fuentesDeSrc().length > 100, '🔴 el censo apenas ve ficheros: no está mirando el árbol.');
+});
+
+test('SCRUM-636 · 🔴 no queda NI UNA copia de la expresión en todo `src/`', () => {
+  const conCopia = fuentesDeSrc()
+    .filter((f) => soloCodigo(fs.readFileSync(f, 'utf8')).includes(LA_COPIA))
+    .map((f) => path.relative(RAIZ, f).split(path.sep).join('/'));
+  assert.deepEqual(conCopia, [],
+    '🔴 ha vuelto a aparecer la copia del formato de dinero. Eran CINCO y se unificaron en\n'
+    + `  \`formatImporteEs\`; por aquí es por donde vuelve a entrar el fallo del agrupado:\n  ${conCopia.join('\n  ')}`);
+});
+
+test('SCRUM-636 · 🔴 la FACTURA y el PRESUPUESTO beben ya del sitio único', () => {
   const codigo = soloCodigo(leer('src/modules/invoicing/infra/pdf/pdf.service.ts'));
-  assert.ok(codigo.includes("toLocaleString('es-ES'"),
-    '🔴 `pdf.service.ts` ha cambiado de formateador. Si ha sido SCRUM-623, ya se puede unificar y\n'
-    + '  hay que retirar esta exclusión. Si has sido tú: PARA, os estáis pisando.');
-  for (const n of FORMATEADORES_QUE_ESTE_GUARD_CONOCE) {
-    assert.equal(codigo.includes(n), false,
-      `🔴 la factura ha pasado a «${n}» sin coordinarlo con SCRUM-623.`);
+  assert.ok(codigo.includes('formatImporteEs'), '🔴 `pdf.service.ts` no usa el sitio único.');
+  assert.equal(codigo.includes(LA_COPIA), false, '🔴 la copia sigue en el PDF de la factura.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 CAMBIO VISIBLE EN UN DOCUMENTO FISCAL → SE COMPRUEBA SOBRE EL TEXTO REAL DEL PDF
+//
+// Leer el código diría que delega; no diría qué sale impreso. Aquí se GENERA la factura con los
+// doce valores de borde de SCRUM-625 y se lee el texto del PDF de verdad.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/** Los mismos doce de SCRUM-625, sin escribir otros. */
+const BORDE = [0, 1, 12.6, 105, 117.6, 999.99, 1000, 2383.7, 9999.99, 12345.67, 1234.567, 1e6 + 0.004];
+
+test('SCRUM-636 · 🔴 EL PDF DE LA FACTURA escribe los doce con la convención española', async () => {
+  const lines = BORDE.map((price, i) => ({ concept: `Concepto ${i + 1}`, qty: 1, price, tax: 0 }));
+  const suma = BORDE.reduce((a, b) => a + b, 0);
+  // `merchantId: 2` y no 1: el 1 es el merchant DEMO y no se comporta como uno normal (SCRUM-409).
+  const { outPath } = await generateInvoicePdf({
+    number: '2026-CF-636', invoiceId: 636, merchantId: 2,
+    merchant: { name: 'Taller' }, customer: { name: 'Cliente' },
+    currency: 'EUR', total: suma.toFixed(2), qrData: 'x', lines,
+  });
+  const r = extraerTextoPdf(fs.readFileSync(outPath));
+  assert.equal(r.ok, true,
+    `🔴 NO SUPE LEER EL PDF: ${r.motivo}. Un texto vacío se leería como «no dice eso» — falso verde.`);
+
+  for (const v of BORDE) {
+    const esperado = U.formatImporteEs(v);
+    assert.ok(r.texto.includes(esperado),
+      `🔴 el PDF no escribe «${esperado}» para ${v}. Lo que hay: ${r.texto.slice(0, 200)}`);
+  }
+});
+
+test('SCRUM-636 · 🔴 y NINGUNA CIFRA cambia: sólo su escritura', () => {
+  // Se le quitan los puntos de millar y se compara el NÚMERO. Si esto cae, no hemos cambiado el
+  // formato: hemos cambiado el importe, y eso en un documento fiscal se para en seco.
+  for (const v of BORDE) {
+    const escrito = U.formatImporteEs(v);
+    const comoNumero = Number(escrito.split('.').join('').replace(',', '.'));
+    assert.equal(comoNumero, Number(v.toFixed(2)),
+      `🔴 LA CIFRA CAMBIA con ${v}: antes «${v.toFixed(2)}», ahora «${escrito}». PARA.`);
+  }
+});
+
+test('SCRUM-636 · 🔴 la banda 1.000–9.999 € ya NO se escribe sin agrupar', async () => {
+  // Es la banda donde la factura era incoherente consigo misma: escribía `1000,00` pero
+  // `12.345,67`. Se comprueba sobre el texto del PDF, no sobre el código.
+  const enLaBanda = BORDE.filter((v) => v >= 1000 && v < 10000);
+  assert.equal(enLaBanda.length, 4, '🔴 SUELO: la banda no tiene los cuatro valores que creía.');
+
+  const lines = enLaBanda.map((price, i) => ({ concept: `Banda ${i + 1}`, qty: 1, price, tax: 0 }));
+  const { outPath } = await generateInvoicePdf({
+    number: '2026-CF-636B', invoiceId: 637, merchantId: 2,
+    merchant: { name: 'Taller' }, customer: { name: 'Cliente' },
+    currency: 'EUR', total: enLaBanda.reduce((a, b) => a + b, 0).toFixed(2), qrData: 'x', lines,
+  });
+  const r = extraerTextoPdf(fs.readFileSync(outPath));
+  assert.equal(r.ok, true, `🔴 NO SUPE LEER EL PDF: ${r.motivo}`);
+
+  for (const v of enLaBanda) {
+    const sinAgrupar = v.toFixed(2).replace('.', ',');
+    assert.equal(r.texto.includes(sinAgrupar), false,
+      `🔴 el PDF sigue escribiendo «${sinAgrupar}» sin el punto de millar, para ${v}.`);
+    assert.ok(r.texto.includes(U.formatImporteEs(v)),
+      `🔴 SUELO: tampoco escribe la forma agrupada «${U.formatImporteEs(v)}»; este guard no mira nada.`);
   }
 });
