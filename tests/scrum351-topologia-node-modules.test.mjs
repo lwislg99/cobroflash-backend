@@ -209,9 +209,18 @@ function midiendoElGasto(fn) {
   fs.realpathSync.native = anota('realpath', guardadas.native);
   try {
     const valor = fn();
-    // Una ruta está DENTRO de un `node_modules` si hay algo detrás: mirar el propio directorio es
-    // legítimo —es justo lo que este comprobador viene a resolver—; leer su contenido no.
-    const dentro = ops.filter((o) => /node_modules[\\/]./.test(o.ruta));
+    // ENTRAR en un `node_modules` tiene DOS formas, y la primera version de esto solo veia una:
+    //
+    //   · mirar algo que CUELGA de el   → la ruta lleva algo detras;
+    //   · LISTARLO                      → la ruta es la misma, pero se pide su contenido.
+    //
+    // 🔴 LO ENCONTRO UN ROJO: con la regla anterior, meter un `readdirSync(node_modules)` en el
+    // comprobador —que es exactamente la degradacion cara que esto vigila— pasaba en VERDE,
+    // porque la ruta del listado es el propio directorio. Un `lstat` o un `realpath` SOBRE el
+    // directorio si es legitimo: es lo que este comprobador viene a hacer.
+    const LISTAR = new Set(['readdir', 'opendir']);
+    const dentro = ops.filter((o) => /node_modules[\\/]./.test(o.ruta)
+      || (LISTAR.has(o.op) && /node_modules/.test(o.ruta)));
     return { valor, gasto: { ops, total: ops.length, dentro } };
   } finally {
     fs.lstatSync = guardadas.lstatSync;
@@ -302,20 +311,62 @@ test('SCRUM-520 · el gasto NO CRECE con el TAMAÑO de `node_modules`', () => {
   }
 });
 
-test('SCRUM-520 · la medida es DETERMINISTA: dos pasadas, el mismo número', () => {
-  // La condición de cierre del ticket. Si dos pasadas seguidas discrepan, el instrumento nuevo
-  // tiene el mismo defecto que el cronómetro que retira y no sirve para vigilar nada.
-  const primera = midiendoElGasto(() => topologia({ cwd: RAIZ }));
-  const segunda = midiendoElGasto(() => topologia({ cwd: RAIZ }));
+test('SCRUM-520 · la medida es DETERMINISTA sobre un conjunto FIJO', () => {
+  // La condicion de cierre del ticket. Se prueba sobre un banco propio y no sobre los worktrees
+  // del repo, y el motivo es el defecto que este ticket viene a matar:
+  //
+  // 🔴 HAY CUATRO SESIONES TRABAJANDO A LA VEZ. Si una crea o quita un worktree entre las dos
+  // pasadas, el conjunto medido cambia, el numero cambia, y este test daria ROJO por algo que no
+  // es el comprobador — exactamente la enfermedad del cronometro, con otra cara. Sobre un conjunto
+  // fijo no hay nada que se mueva por debajo.
+  const b = banco();
+  try {
+    const raices = ['a', 'b', 'c'].map((n) => {
+      const d = b.arbol(n);
+      conNodeModulesPropio(d);
+      return d;
+    });
+    const primera = midiendoElGasto(() => topologia({ raices }));
+    const segunda = midiendoElGasto(() => topologia({ raices }));
 
-  assert.ok(primera.gasto.total > 0, '🔴 el contador está ciego: dos ceros iguales no son determinismo.');
-  assert.equal(segunda.gasto.total, primera.gasto.total,
-    `🔴 dos pasadas seguidas dan ${primera.gasto.total} y ${segunda.gasto.total} operaciones. La `
-    + 'medida no es determinista, así que su veredicto depende de algo que no es el árbol — que es '
-    + 'exactamente el defecto del cronómetro que este ticket retira.');
-  assert.equal(porTipo(segunda.gasto), porTipo(primera.gasto),
-    '🔴 el TOTAL coincide pero el reparto por tipo de operación no: se están compensando dos '
-    + 'diferencias, y eso es casualidad, no determinismo.');
+    assert.ok(primera.gasto.total > 0, '🔴 el contador esta ciego: dos ceros iguales no son determinismo.');
+    assert.equal(segunda.gasto.total, primera.gasto.total,
+      `🔴 dos pasadas seguidas sobre EL MISMO conjunto dan ${primera.gasto.total} y ${segunda.gasto.total} `
+      + 'operaciones. La medida no es determinista, asi que su veredicto depende de algo que no es el '
+      + 'arbol — que es el defecto del cronometro que este ticket retira.');
+    assert.equal(porTipo(segunda.gasto), porTipo(primera.gasto),
+      '🔴 el TOTAL coincide pero el reparto por tipo de operacion no: se estan compensando dos '
+      + 'diferencias, y eso es casualidad, no determinismo.');
+  } finally {
+    b.limpiar();
+  }
+});
+
+test('SCRUM-520 · y sobre el arbol REAL, cuando nadie mueve worktrees por debajo', () => {
+  // El mismo hecho sobre el arbol de verdad. Aqui SI se puede mover el suelo —otra sesion creando
+  // o quitando un worktree—, asi que se reintenta hasta que dos pasadas midan EL MISMO conjunto.
+  // Si nunca coinciden, eso NO es no-determinismo: es trasiego de worktrees, y se dice con ese
+  // nombre en vez de acusar al comprobador.
+  const raicesDe = (t) => JSON.stringify(t.arboles.map((a) => a.raiz));
+  let primera, segunda;
+  for (let intento = 0; intento < 3; intento++) {
+    primera = midiendoElGasto(() => topologia({ cwd: RAIZ }));
+    segunda = midiendoElGasto(() => topologia({ cwd: RAIZ }));
+    if (raicesDe(primera.valor) === raicesDe(segunda.valor)) {
+      assert.ok(primera.gasto.total > 0, '🔴 el contador esta ciego sobre el arbol real.');
+      assert.equal(segunda.gasto.total, primera.gasto.total,
+        `🔴 el MISMO conjunto de ${primera.valor.arboles.length} arboles cuesta ${primera.gasto.total} y `
+        + `luego ${segunda.gasto.total} operaciones. Nada se ha movido por debajo: la medida no es determinista.`);
+      assert.equal(porTipo(segunda.gasto), porTipo(primera.gasto),
+        '🔴 el total coincide y el reparto por tipo no: eso es casualidad, no determinismo.');
+      return;
+    }
+  }
+  assert.fail(
+    '🔴 EN TRES INTENTOS NO HA HABIDO DOS PASADAS SEGUIDAS SOBRE EL MISMO CONJUNTO DE ARBOLES.\n\n'
+    + `  Ultima medida: ${primera.valor.arboles.length} y luego ${segunda.valor.arboles.length}. Alguien esta creando o\n`
+    + '  quitando worktrees continuamente. No es el comprobador el que falla, pero tampoco se puede\n'
+    + '  afirmar nada sobre el arbol mientras el suelo se mueve — y callarlo seria un verde hueco.');
 });
 
 test('SCRUM-520 · git se invoca UNA vez, y fuera del recorrido por árbol', () => {
