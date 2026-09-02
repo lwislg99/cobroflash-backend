@@ -183,9 +183,25 @@ constante `MEDIDO_CONTRA` decía `a464d978`. Son dos merges reales de `main` sep
 Manda `a464d978`, que es lo que declara también la cabecera de esta entrada. Corregido el docstring
 —un comentario, no el número—, porque una procedencia que se contradice no sirve para lo que existe.
 
-**Tanda de esta rama tras el cambio: 4766 tests, 4683 pass, 0 fail, 83 skipped.** Y el suelo, corrido
-sobre ese TAP: `✅ suelo 4766 · total actual 4766 · margen 0` — el borde exacto, ejercitado de verdad.
+### 🔴 El suelo, contra el `main` de ahora
 
-⚠️ **`main` ha avanzado 6 commits** desde el punto de medida (`a464d978`) y esta rama no los lleva.
-Quien cierre este PR mezcla `main` y **vuelve a medir**: si la tanda crece, el suelo sube; es la
-operación de una línea que este mismo fichero describe.
+Se midió dos veces, y la segunda es la que vale.
+
+| Árbol | Tanda | Suelo | Margen |
+|---|---|---|---|
+| esta rama antes de mezclar (`a464d978`) | 4766 | 4766 | **0** — el borde exacto, ejercitado de verdad |
+| **con `main` dentro** (entraron 672 y 692) | **4783** | 4766 | **+17** |
+
+```
+[suelo de la tanda] ✅ suelo 4766 · total actual 4783 · margen 17
+   Subir el suelo a 4783 es una línea, y lo puede hacer cualquier sesión.
+```
+
+**El suelo NO canta.** El margen 0 de la primera medición era el borde exacto y pasó, que es su
+diseño (es un mínimo, no una igualdad); con `main` dentro sobran 17. **No se sube aquí**: subirlo es
+la línea que el propio fichero describe y no hace falta para cerrar este PR — se deja dicho, con el
+número, para que quien lo suba no tenga que volver a medir.
+
+**Tanda con `main` dentro: 4783 tests, 4699 pass, 0 fail, 84 skipped.** El merge de `main` fue limpio
+—sin conflictos— y se comprobó a mano que el comentario nuevo y la regla siguen ahí, cada uno una
+sola vez.
