@@ -5,6 +5,28 @@
 #   host-check → preview (migrate diff) → [GO EXPLÍCITO del operador] → db push → verificación
 #   → recordatorio de documentar en docs/MIGRATIONS_PENDING.md.
 #
+#
+# ══════════════════════════════════════════════════════════════════════════════════════
+# 🔴 `db push` NO ES EL MÉTODO DE ESTA CASA CONTRA PRODUCCIÓN (SCRUM-685, 2-sep-2026)
+#
+# `db push` reconcilia el esquema ENTERO. Producción va POR DELANTE de `main` en columnas que
+# se aplican A MANO para desbloquear PRs que aún no se han mergeado, así que un push propondría
+# BORRARLAS TODAS. No es un caso raro: es el comportamiento normal de este método aquí.
+#
+# EL ORDEN DE LA CASA:
+#     ① decisión  →  ② ALTER aditivo en las TRES bases (dev, staging, prod)  →  ③ UN solo PR
+#        con esquema + código + tests.     NUNCA ③ sin ②.
+#
+# El SQL del ② se escribe a mano en `docs/sql/`, se pasa por `scripts/_clasificador-sql.mjs`
+# (cero rechazadas, cero DROP) y lo aplica una persona base por base. Ejemplo:
+# `docs/sql/scrum-674-aditivo.sql`.
+#
+# Este script se conserva para STAGING y para diagnosticar deriva, y desde SCRUM-685 se niega a
+# arrancar desde un árbol atrasado y aborta si el preview trae cualquier borrado. Pero el aviso
+# va primero: si estás a punto de ejecutarlo contra producción, casi seguro que lo que quieres
+# es un `.sql` aditivo, no esto.
+# ══════════════════════════════════════════════════════════════════════════════════════
+#
 # Fuente de verdad: prisma/schema.prisma. Aplica a la BD de DATABASE_URL (.env = PROD).
 #   Prod:     bash scripts/db-push-prod
 #   Staging:  DATABASE_URL="postgresql://…acela…" bash scripts/db-push-prod
@@ -13,6 +35,68 @@
 # db push aborta solo → señal de diff INESPERADO → PARAR y revisar.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+
+# ── 0) SCRUM-685 · LA PUERTA DEL ÁRBOL, antes de enseñar una sola línea de SQL ──
+#
+# El 2-sep-2026 este script se ejecutó desde un checkout 1.933 commits atrasado y su preview
+# propuso DROP TABLE job_assignees, DROP TABLE email_messages y ~30 columnas de PRODUCCIÓN. El
+# script hizo lo que promete; lo que estaba mal era el árbol. Lo pararon el GO explícito y que
+# aquel shell no tenía stdin — la segunda es SUERTE, y esto la convierte en mecanismo.
+#
+# La lógica vive en `scripts/_guard-arbol-y-borrado.mjs` para que se pueda probar sin ejecutar
+# esto: un guard que sólo se ejercita apuntando a producción no se ejercita nunca.
+# Un aviso en un ticket se olvida; uno en la salida lo lee quien ejecuta.
+echo ""
+echo "══════════════════════════════════════════════════════════════════════════"
+echo "🔴 db push NO es el metodo de esta casa contra PRODUCCION."
+echo ""
+echo "   Reconcilia el esquema ENTERO, y produccion va POR DELANTE de main en columnas"
+echo "   aplicadas a mano para desbloquear PRs sin mergear: un push propondria borrarlas."
+echo ""
+echo "   El orden de la casa es:"
+echo "     1) decision  ->  2) ALTER aditivo en las TRES bases  ->  3) UN solo PR"
+echo "        (esquema + codigo + tests).   NUNCA 3) sin 2)."
+echo ""
+echo "   El 2) se escribe a mano en docs/sql/, se pasa por scripts/_clasificador-sql.mjs"
+echo "   (cero rechazadas, cero DROP) y lo aplica una persona base por base."
+echo "══════════════════════════════════════════════════════════════════════════"
+echo ""
+
+echo "── SCRUM-685 · ¿desde qué árbol se compara? ────────────────────────────"
+
+set +e
+ESTADO_ARBOL="$(node --input-type=module -e '
+  import { execFileSync } from "node:child_process";
+  const { estadoDelArbol } = await import("./scripts/_guard-arbol-y-borrado.mjs");
+  const g = (args) => execFileSync("git", args, { encoding: "utf8" }).trim();
+  const git = {
+    fetch() {
+      try { execFileSync("git", ["fetch", "origin", "--quiet"], { stdio: "ignore" }); return { ok: true }; }
+      catch (e) { return { ok: false, error: (e && e.message) || "git fetch falló" }; }
+    },
+    detras: () => Number(g(["rev-list", "--count", "HEAD..origin/main"])),
+    delante: () => Number(g(["rev-list", "--count", "origin/main..HEAD"])),
+    sucioSchema: () => g(["status", "--porcelain", "--", "prisma/schema.prisma"]).length > 0,
+    enElRemoto: () => g(["branch", "-r", "--contains", "HEAD"]).length > 0,
+  };
+  const r = estadoDelArbol(git);
+  if (!r.puedeSeguir) { console.error(r.motivo); process.exit(9); }
+  // El SHA del commit Y el del propio fichero de esquema: sin esto, quien lea el diff no sabe
+  // de qué árbol salió, y un diff sin procedencia no se puede auditar después.
+  console.log("   commit          : " + g(["rev-parse", "HEAD"]));
+  console.log("   schema.prisma   : " + g(["rev-parse", "HEAD:prisma/schema.prisma"]));
+  console.log("   respecto a main : " + r.estado + (r.delante ? " (+" + r.delante + ")" : ""));
+' 2>&1)"
+RC_ARBOL=$?
+set -e
+
+printf '%s\n' "$ESTADO_ARBOL"
+if [ "$RC_ARBOL" -ne 0 ]; then
+  echo ""
+  echo "🚫 Abortado por la puerta del árbol. NO se ha tocado nada y NO se ha enseñado SQL."
+  exit 1
+fi
+echo ""
 
 # ── 1) Host-check — SIN parsear la URL a mano y SIN reconstruirla ──
 #
@@ -108,6 +192,40 @@ fi
 if printf '%s' "$DIFF" | grep -qiE 'empty migration'; then
   echo "✅ Nada que aplicar: la BD ya está en sync con el schema. Salgo."
   exit 0
+fi
+
+# ── 2-bis) SCRUM-685 · SI EL PREVIEW BORRA, NO SE PIDE GO: SE ABORTA ──
+#
+# Un push de esquema y un borrado destructivo NO comparten aprobación. El borrado se aprueba en su
+# propio ticket, o no se aprueba.
+#
+# 🔴 NO es un `grep DROP`: reutiliza `_clasificador-sql.mjs`, que desnuda comentarios y cadenas,
+# trocea en sentencias y reconoce el `DROP COLUMN` DENTRO de un `ALTER TABLE` — que es justo como
+# Prisma escribe los borrados. Un `grep` se caza a sí mismo con la palabra en un comentario, y ese
+# defecto ya ocurrió una vez en esta casa.
+DIFF_TMP="$(mktemp)"
+printf '%s\n' "$DIFF" > "$DIFF_TMP"
+
+set +e
+INFORME_BORRADO="$(node --input-type=module -e '
+  import fs from "node:fs";
+  const { borradosDelPreview, informeDeBorrado } = await import("./scripts/_guard-arbol-y-borrado.mjs");
+  const r = borradosDelPreview(fs.readFileSync(process.argv[1], "utf8"));
+  if (r.hayBorrado || r.otrasNoAditivas.length) console.log(informeDeBorrado(r));
+  process.exit(r.hayBorrado ? 9 : 0);
+' "$DIFF_TMP" 2>&1)"
+RC_BORRADO=$?
+set -e
+rm -f "$DIFF_TMP"
+
+if [ -n "$INFORME_BORRADO" ]; then
+  echo ""
+  printf '%s\n' "$INFORME_BORRADO"
+fi
+if [ "$RC_BORRADO" -ne 0 ]; then
+  echo ""
+  echo "🚫 Abortado ANTES del GO. No se aplicó NADA."
+  exit 1
 fi
 
 # ── 3) GO EXPLÍCITO — la DECISIÓN es humana, NO se automatiza ──
