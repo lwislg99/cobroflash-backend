@@ -428,7 +428,27 @@ export function scriptsDelDashboard(raiz) {
 // SCRUM-609 (2-sep-2026) · 67 → 68: entra `switchTipoArticulo.js`, el switch
 // Producto|Servicio del catálogo. Va ANTES de `productsView.js`, que lo consume.
 // RECONTADO sobre el índice, no sumado: grep -c "<script src=" → 68.
-export const SCRIPTS_DEL_DASHBOARD = 68;
+// SCRUM-611 (2-sep-2026) · 68 → 69: entra `tiposDeIva.js`, la lista de tipos del selector de la
+// línea. Va ANTES de `quotesView.js`, que la consume.
+//
+// 🔴 SEXTA VEZ QUE ESTE CONTADOR CHOCA, y de las BENIGNAS: los dos números chocaron —67 en la
+// rama, 68 en main—, así que el conflicto se ve. Las peligrosas son las cuatro en que las dos
+// ramas escribieron el MISMO valor por scripts DISTINTOS y git dejó la línea del valor FUERA de
+// los marcadores: sólo chocaban los comentarios, y quien conservaba «los dos» dejaba el contador
+// corto con dos scripts nuevos dentro.
+//
+// Se resuelve CONTANDO sobre el índice ya mezclado. Ni 67, ni 68, ni 67+1:
+//     grep -c "<script src=" public/dashboard/index.html   →   69
+//
+// Y LA FLECHA SE RECALCULA CON EL NÚMERO: esta entrada decía «66 → 67» cuando se escribió, antes
+// de mezclar. Una flecha es tan DERIVADA como el número que cuenta, y heredarla de un árbol que
+// ya no existe es el mismo error con otra forma.
+//
+// Comprobado además que los TRES scripts están en el índice mezclado Y en su sitio —`tiposDeIva`
+// en la 247 antes de `quotesView` en la 248; `switchTipoArticulo` y `margenCatalogo` en la 250 y
+// 251, antes de `productsView` en la 252—. Si el merge se hubiera comido uno, el recuento habría
+// salido bien y la vista habría reventado igual.
+export const SCRIPTS_DEL_DASHBOARD = 69;
 
 /**
  * Monta el dashboard como lo monta el navegador y devuelve el contexto vivo.
