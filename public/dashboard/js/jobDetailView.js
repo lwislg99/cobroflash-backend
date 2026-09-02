@@ -1069,6 +1069,46 @@ async function renderJobDetailView(container, jobId) {
   valoradoLabel.appendChild(document.createTextNode('Incluir precios en el parte'));
   newAlbRow.appendChild(valoradoLabel);
 
+  // ── SCRUM-652 (fase D) · EL PARTE DE TRABAJO ────────────────────────────────────────
+  //
+  // ⚠️ OJO CON EL NOMBRE: la casilla de precios de esta misma barra usa la palabra «parte» para
+  // referirse al ALBARÁN —herencia de cuando era lo único que había—. Este botón abre el
+  // `ParteTrabajo` de verdad: otro documento, otra tabla, y **sin importes en el móvil**.
+  //
+  // El rótulo de esa casilla NO se escribe aquí ni siquiera para citarlo: SCRUM-319 cuenta sus
+  // apariciones y una cita en un comentario le sube el recuento. Ya me costó un rojo.
+  // No se renombra la casilla: no es este carril.
+  //
+  // ABRE EL QUE HAYA, Y SI NO HAY, LO CREA. Un botón que siempre crea dejaría un parte nuevo cada
+  // vez que el técnico entra a mirar, y al final del día tendría seis partes vacíos del mismo
+  // trabajo sin saber cuál es el suyo.
+  //
+  // Se filtra por `jobId` en el cliente a propósito: `GET /admin/partes` ya devuelve `jobId` en
+  // cada fila, así que **no hace falta tocar `partes.routes.ts`** —que lo está editando otra
+  // sesión ahora mismo— para abrir esta puerta.
+  const parteBtn = document.createElement('button');
+  parteBtn.className = 'btn-secondary btn-sm';
+  parteBtn.setAttribute('data-abrir-parte', '1');
+  parteBtn.textContent = '[PENDIENTE microcopy oficial] Parte de trabajo';
+  parteBtn.addEventListener('click', async () => {
+    parteBtn.disabled = true;
+    try {
+      const lista = await apiRequest('/admin/partes');
+      const suyos = (lista && Array.isArray(lista.partes) ? lista.partes : [])
+        .filter((p) => p && p.jobId === job.id);
+      // El más reciente: `GET /admin/partes` ya viene ordenado por fecha descendente.
+      const parte = suyos.length
+        ? suyos[0]
+        : await apiRequest('/admin/partes', { method: 'POST', body: JSON.stringify({ jobId: job.id }) });
+      if (window.renderAppView) window.renderAppView('parte-detail', { parteId: parte.id });
+    } catch (e) {
+      if (typeof showToast === 'function') showToast('[PENDIENTE microcopy oficial] No se ha podido abrir el parte. Vuelve a intentarlo.', 'warn');
+    } finally {
+      parteBtn.disabled = false;
+    }
+  });
+  newAlbRow.appendChild(parteBtn);
+
   // ── SCRUM-135: "+ Añadir gasto" ya vinculado a ESTE trabajo ──────────────────
   // Es el alta rápida "desde la furgoneta" que SCRUM-107 dejó aparcada hasta que existiera
   // Expense.teamMemberId (SCRUM-109, ya en prod): el técnico compra material y lo registra
