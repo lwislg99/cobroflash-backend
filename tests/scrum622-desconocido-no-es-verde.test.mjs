@@ -1,0 +1,220 @@
+// tests/scrum622-desconocido-no-es-verde.test.mjs — SCRUM-622
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// «NO LO SÉ» NO SE PINTA DE VERDE
+//
+// El encargo señalaba `|| SEMAFORO_META.verde` (`invoicesView.js:520`) y pedía medir PRIMERO si
+// se alcanza. Se midió, y la respuesta tiene dos mitades que conviene no mezclar:
+//
+//   · **Ése NO se alcanza hoy.** Cuatro caminos comprobados y cerrados (ver más abajo). Por eso
+//     NO se toca: taparlo bien exige un rótulo para «no lo sé», que es microcopy y posiblemente
+//     un estado — decisión del fundador, no mía.
+//   · **El censo destapó otro de la misma forma que SÍ tenía la barrera floja:** el color del
+//     toast (`api.js`), donde `colors[kind] || colors.ok` pintaba de VERDE cualquier `kind` que
+//     no fuese `ok|warn|error`. Ahí bastaba un `'Error'` con mayúscula para que un fallo se
+//     viese como un éxito, y **ya había condicionado código**: `productsView.js` renunció a
+//     `'info'` por esto y lo dejó escrito. Ése SÍ se arregla.
+//
+// ⚠️ Y una corrección, porque el camino corto casi me hace firmar un hallazgo falso: al ejecutar
+// la expresión del color AISLADA concluí que `homeView.js:1281` —`showToast(msg, true)`— pintaba
+// un fallo de WhatsApp en verde. **Es falso:** `api.js` normaliza `true → 'warn'` DOS LÍNEAS
+// ANTES del `||`. Medir un trozo fuera de su camino da un resultado que parece un hallazgo. Por
+// eso los tests de abajo llaman a la función ENTERA, no a su interior.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import ts from 'typescript';
+import { redesBenignas } from './_censo-redes-benignas.mjs';
+
+const RAIZ = path.resolve(import.meta.dirname, '..');
+const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
+
+// `api.js` es un script clásico: se evalúa con un `window` de mentira, igual que
+// `quoteAtajosVencimiento.js` en SCRUM-605. No se toca el banco de vistas.
+const front = {};
+new Function('window', leer('public/dashboard/js/api.js'))(front);
+
+const VERDE_DE_EXITO = 'var(--brand, #16a34a)';
+const AMBAR = '#b45309';
+const ROJO = '#b91c1c';
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SUELO
+// ─────────────────────────────────────────────────────────────────────────────────────────
+test('SCRUM-622 · SUELO: `api.js` carga y publica la decisión del color', () => {
+  assert.equal(typeof front.colorDeToast, 'function',
+    '🔴 CIEGO: `api.js` no ha publicado `colorDeToast`. Sin eso, todo lo de abajo mide un `window` vacío.');
+  assert.equal(front.colorDeToast('ok'), VERDE_DE_EXITO,
+    '🔴 el verde de éxito ha cambiado de valor: las comparaciones de abajo dejarían de significar nada.');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 EL ANTES Y EL DESPUÉS, sobre los mismos `kind`
+// ─────────────────────────────────────────────────────────────────────────────────────────
+
+/** La red VIEJA, tal cual estaba, para poder comparar contra ella. */
+function comoAntes(kind) {
+  const colors = { ok: VERDE_DE_EXITO, warn: AMBAR, error: ROJO };
+  if (kind === true) kind = 'warn';
+  return colors[kind] || colors.ok;
+}
+
+const DESCONOCIDOS = ['exito', 'success', 'info', 'Error', 'ERROR', 'ko', '', 'aviso', null, 0, false, 42];
+
+test('SCRUM-622 · 🔴 ANTES: un `kind` que el código NO reconoce se pintaba de VERDE', () => {
+  for (const k of DESCONOCIDOS) {
+    assert.equal(comoAntes(k), VERDE_DE_EXITO,
+      `🔴 mi reproducción del comportamiento viejo ya no da verde para ${JSON.stringify(k)}: entonces `
+      + 'no estoy comparando contra lo que había y el «después» de abajo no prueba nada.');
+  }
+});
+
+test('SCRUM-622 · 🔴 DESPUÉS: el mismo `kind` desconocido YA NO se pinta de verde', () => {
+  for (const k of DESCONOCIDOS) {
+    const c = front.colorDeToast(k);
+    assert.notEqual(c, VERDE_DE_EXITO,
+      `🔴 ${JSON.stringify(k)} sigue saliendo con el VERDE DE ÉXITO. Decirle al profesional que todo `
+      + 'ha ido bien cuando el código no sabe qué ha pasado es la equivocación CARA: no cuesta lo '
+      + 'mismo que decirle que mire.');
+    assert.equal(c, AMBAR,
+      `🔴 ${JSON.stringify(k)} sale ${c} y debería ser ámbar. Ni verde (mentiría diciendo que todo va `
+      + 'bien) ni rojo (mentiría diciendo que ha fallado): un `kind` desconocido no afirma ninguna '
+      + 'de las dos cosas.');
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// ✅ EL CONTROL NEGATIVO, QUE ES EL QUE DECIDE
+// ─────────────────────────────────────────────────────────────────────────────────────────
+test('SCRUM-622 · ✅ lo que HOY sale verde con razón sigue saliendo verde, y lo demás igual', () => {
+  // Si esto cambia, se ha movido el criterio en vez de tapar el hueco.
+  const CONOCIDOS = ['ok', 'warn', 'error', true];
+  for (const k of CONOCIDOS) {
+    assert.equal(front.colorDeToast(k), comoAntes(k),
+      `🔴 \`${JSON.stringify(k)}\` ya no da el color de siempre. El arreglo tenía que ser INVISIBLE `
+      + 'para las llamadas que hoy aciertan.');
+  }
+  // Y el valor por defecto de la firma, que es el caso más transitado: 36 llamadas sin 2.º
+  // argumento (medido por AST). Tienen que seguir en verde.
+  assert.equal(front.colorDeToast('ok'), VERDE_DE_EXITO,
+    '🔴 el default de `showToast(msg, kind = "ok")` ha dejado de ser verde: eso son 36 avisos de '
+    + '«hecho» que pasarían a ámbar sin que nadie lo haya decidido.');
+});
+
+test('SCRUM-622 · ✅ la compatibilidad de `showToast(msg, true)` NO se ha tocado', () => {
+  // `homeView.js:1281` la usa. Es la línea que casi doy por defectuosa midiendo fuera de camino.
+  assert.equal(front.colorDeToast(true), AMBAR,
+    '🔴 `true` ya no se normaliza a `warn`: esa compatibilidad estaba escrita y tiene un llamador vivo.');
+  const home = leer('public/dashboard/js/homeView.js');
+  assert.equal(home.split('showToast(sendResult.message || `${qCap} creado. Envío WhatsApp pendiente.`, true);').length - 1, 1,
+    'CARACTERIZACIÓN: el llamador con `true` sigue ahí. Si desaparece, la rama de compatibilidad de '
+    + '`colorDeToast` se queda sin usuarios y se puede retirar — con su decisión escrita, no de paso.');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// EL CENSO · ¿cuántas redes de éstas quedan?
+// ─────────────────────────────────────────────────────────────────────────────────────────
+const FUERA = new Set(['node_modules', 'dist', '.git', 'coverage', 'tests', '.claude', '.agents']);
+
+function censarArbol() {
+  const encontradas = [];
+  let ficheros = 0;
+  (function anda(dir) {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (FUERA.has(e.name)) continue;
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) { anda(p); continue; }
+      if (!['.js', '.ts', '.mjs'].includes(path.extname(e.name)) || e.name.includes('.min.')) continue;
+      ficheros++;
+      for (const h of redesBenignas(fs.readFileSync(p, 'utf8'), e.name)) {
+        encontradas.push(`${path.relative(RAIZ, p).split(path.sep).join('/')}:${h.linea}  ${h.texto}`);
+      }
+    }
+  })(RAIZ);
+  return { ficheros, encontradas };
+}
+
+test('SCRUM-622 · 🔴 EL CENSO: queda UNA red benigna, y es la que espera decisión', () => {
+  const { ficheros, encontradas } = censarArbol();
+  assert.ok(ficheros > 300,
+    `🔴 CIEGO: solo he barrido ${ficheros} ficheros. Un barrido que no encuentra árbol devuelve un `
+    + 'cero que se lee como «no hay ninguna».');
+  assert.deepEqual(encontradas, [
+    'public/dashboard/js/invoicesView.js:520  SEMAFORO_META[grupo.semaforo] || SEMAFORO_META.verde',
+  ], '🔴 EL CENSO NO CUADRA. Si ha SUBIDO, alguien ha escrito una red nueva que convierte «no lo sé» '
+    + 'en «todo bien». Si ha BAJADO a cero, el `||` del semáforo se ha arreglado: bien, y entonces '
+    + 'hay que borrar esta entrada CON su decisión escrita, no relajar el test.');
+});
+
+test('SCRUM-622 · CONTROL del detector: ve las cuatro formas y no se cuela con las que no lo son', () => {
+  // Sin esto, un detector que devolviera siempre `[]` pasaría el censo de arriba.
+  const n = (s, f = 'x.js') => redesBenignas(s, f).length;
+  assert.equal(n('const m = T[k] || META.verde;'), 1, '🔴 no ve `|| META.verde`');
+  assert.equal(n("const s = x ?? 'verde';"), 1, '🔴 no ve `?? "verde"`');
+  assert.equal(n("const s = c ? a : 'verde';"), 1, '🔴 no ve la rama por defecto de un ternario');
+  assert.equal(n("switch(x){default: return 'verde';}"), 1, '🔴 no ve `default: return "verde"`');
+  assert.equal(n("const m = T[k] || META['verde'];"), 1, '🔴 no ve la forma con corchetes');
+  assert.equal(n('const m = T[k] || colors.ok;'), 1, '🔴 no ve `ok` como benigno');
+  // Y los que NO son la trampa:
+  assert.equal(n('// const m = T[k] || META.verde;\nconst z = 1;'), 0,
+    '🔴 cuenta un COMENTARIO: es justo el caso que obliga a usar AST — `tipoDestinatarioPendiente.js` '
+    + 'lleva ese literal en una nota.');
+  assert.equal(n('const m = T[k] || META.rojo;'), 0, '🔴 cuenta una red al estado CARO, que no es el defecto');
+  assert.equal(n('const m = T[k] || null;'), 0, '🔴 cuenta una red a `null`, que no afirma nada');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 POR QUÉ EL DEL SEMÁFORO NO SE TOCA: HOY NO SE ALCANZA — y aquí están las cuatro razones,
+// cada una atada, para que el día que deje de ser verdad este fichero lo diga.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+test('SCRUM-622 · ① el productor del semáforo es un union CERRADO de tres', () => {
+  const src = leer('src/modules/jobs/domain/pendientesFacturar.service.ts');
+  const sf = ts.createSourceFile('x.ts', src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  let miembros = null;
+  (function rec(n) {
+    if (ts.isTypeAliasDeclaration(n) && n.name.text === 'Semaforo' && ts.isUnionTypeNode(n.type)) {
+      miembros = n.type.types.map((t) => (ts.isLiteralTypeNode(t) && ts.isStringLiteralLike(t.literal) ? t.literal.text : '?'));
+    }
+    ts.forEachChild(n, rec);
+  })(sf);
+  assert.deepEqual(miembros, ['verde', 'ambar', 'rojo'],
+    '🔴 el tipo `Semaforo` ha cambiado. Si ahora admite un cuarto valor —o cualquiera—, el '
+    + '`|| SEMAFORO_META.verde` de `invoicesView.js:520` PASA A SER ALCANZABLE y hay que arreglarlo '
+    + 'antes de seguir: sin eso, el estado nuevo se le pinta al profesional como «AL DÍA».');
+});
+
+test('SCRUM-622 · ② `calcularSemaforo` no devuelve nada fuera de esos tres', async () => {
+  const { calcularSemaforo } = await import('../dist/modules/jobs/domain/pendientesFacturar.service.js');
+  const vistos = new Set();
+  const hoy = new Date(2026, 6, 10);
+  for (let d = -400; d <= 400; d += 1) {
+    vistos.add(calcularSemaforo(new Date(2026, 6, 10 + d), hoy));
+  }
+  // Incluida la fecha ILEGIBLE, que es el borde que más se parece a un «no lo sé».
+  vistos.add(calcularSemaforo(new Date('no es una fecha'), hoy));
+  assert.deepEqual([...vistos].sort(), ['ambar', 'rojo', 'verde'],
+    `🔴 \`calcularSemaforo\` ha devuelto algo fuera de los tres: ${JSON.stringify([...vistos])}. Eso `
+    + 'hace alcanzable el `||` de la vista.');
+});
+
+test('SCRUM-622 · ③ el service worker NO cachea `/admin/`: no puede servir una respuesta vieja', () => {
+  const sw = leer('public/sw.js');
+  assert.equal(sw.split("if (url.pathname.startsWith('/admin/')").length - 1, 1,
+    '🔴 ha cambiado la rama que deja `/admin/` fuera del caché. Si el SW empieza a cachear esa ruta, '
+    + 'una respuesta guardada por una versión ANTERIOR podría llegar sin `semaforo` — y entonces el '
+    + '`||` se alcanza y pinta «AL DÍA».');
+});
+
+test('SCRUM-622 · ④ el `fetch` de la bandeja LANZA si la respuesta no es buena', () => {
+  const vista = leer('public/dashboard/js/invoicesView.js');
+  assert.equal(vista.split("if (!res.ok) throw new Error('Error cargando pendientes de facturar');").length - 1, 1,
+    '🔴 `fetchPendientesFacturar` ya no lanza ante una respuesta mala. Si pasa a devolver algo por '
+    + 'defecto, ese algo puede traer grupos sin `semaforo` y el `||` se alcanza.');
+  // Y la red sigue donde estaba, sin tocar: es lo que este ticket NO arregla, a propósito.
+  assert.equal(vista.split('const meta = SEMAFORO_META[grupo.semaforo] || SEMAFORO_META.verde;').length - 1, 1,
+    'CARACTERIZACIÓN: el `|| SEMAFORO_META.verde` SIGUE AHÍ. No se toca porque hoy no se alcanza y '
+    + 'porque taparlo exige un rótulo para «no lo sé» — microcopy, y posiblemente un estado, que '
+    + 'decide el fundador. Si esto falla es que alguien lo cambió: bien, pero que conste con su decisión.');
+});
