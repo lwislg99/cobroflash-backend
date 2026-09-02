@@ -1,8 +1,10 @@
 # SCRUM-666 · El banco de vistas ya mira el CSS externo — y dice cuándo no sabe mirar
 
-**Medido contra:** `origin/main` = `fdc98cf03e82be7952d5cefb692edc3eef2eaa63` · 2026-09-02T12:57:13Z  ·  (remedido tras mezclar main por segunda vez; la anterior fue `61c90617` · 2026-09-02T12:35:08Z)
+**Medido contra:** `origin/main` = `fdc98cf03e82be7952d5cefb692edc3eef2eaa63` · 2026-09-02T12:57:13Z
 
 > Rama apilada sobre `scrum-660-iva-defecto-del-documento`, con `origin/main` mezclado dentro.
+> El ancla se REMIDIÓ al mezclar `main` por segunda vez: la anterior era
+> `61c906171b08a90baa29c02666d9961fb75c132b` · 2026-09-02T12:35:08Z.
 > El hueco lo declaré yo al entregar 660; el instrumento que lo cierra vive en el mismo banco.
 
 ---
