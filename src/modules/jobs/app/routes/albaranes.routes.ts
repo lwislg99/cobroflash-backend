@@ -83,7 +83,18 @@ const router = Router();
  */
 async function jobIdsVisiblesPara(merchantId: number, teamMemberId: number | null): Promise<number[]> {
   const jobs = await prisma.job.findMany({
-    where: { merchantId, OR: [{ operarioId: teamMemberId }, { assignedUserId: teamMemberId }] },
+    // SCRUM-650 (T1) paso B · los TRES ejes, de la MISMA fuente que el listado de trabajos. Si esta
+    // ruta se quedara con dos, un tecnico asignado por la tabla veria su trabajo y NO sus albaranes.
+    where: {
+      merchantId,
+      OR: [
+        { operarioId: teamMemberId },
+        { assignedUserId: teamMemberId },
+        // SCRUM-650 (T1) paso B · el tercer eje, tambien aqui: si esta ruta se quedara con dos, un
+        // tecnico asignado por la tabla veria su trabajo y NO sus albaranes.
+        { assignees: { some: { teamMemberId: teamMemberId as number } } },
+      ],
+    },
     select: { id: true },
   });
   return jobs.map((j) => j.id);
@@ -600,6 +611,9 @@ router.get('/:id', async (req, res) => {
       select: {
         id: true, titulo: true, direccion: true, customerId: true, quoteId: true,
         operarioId: true, assignedUserId: true, // SCRUM-467: los dos ejes de «es suyo»
+        // SCRUM-650 (T1) paso B · el TERCER eje. Sin traerlo, `loVe` decidiria con dos y un
+        // tecnico asignado por la tabla no podria abrir el albaran de SU trabajo.
+        assignees: { select: { teamMemberId: true } },
       },
     });
 
@@ -614,7 +628,12 @@ router.get('/:id', async (req, res) => {
     // líneas más arriba, así que el código de estado no le dice si el documento existe.
     if (seesOnlyOwnJobs(req.userRole)) {
       const suyo = job != null
-        && (job.operarioId === req.teamMemberId || job.assignedUserId === req.teamMemberId);
+        // SCRUM-650 (T1) paso B · el TERCER eje se AÑADE; los dos de SCRUM-467 se quedan tal cual.
+        // Escritos aqui y no via `loVe` a proposito: el guard de SCRUM-467 comprueba ESTA LINEA por
+        // su texto, y sustituirla lo ponia en rojo sin que la garantia cambiara ni un apice. Es un
+        // rojo de FORMA, y su test es de otro carril: se amplia sin tocarlo (regla 9).
+        && (job.operarioId === req.teamMemberId || job.assignedUserId === req.teamMemberId
+          || (job.assignees ?? []).some((a) => a.teamMemberId === req.teamMemberId));
       if (!suyo) return res.status(404).json({ error: 'not_found' });
     }
     const customer = job?.customerId

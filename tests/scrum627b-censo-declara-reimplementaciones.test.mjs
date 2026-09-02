@@ -112,12 +112,16 @@ const CENSO_ARITMETICA = {
       + 'reconoce lo que dice reconocer.',
   },
   'src/modules/invoicing/infra/pdf/pdf.service.ts': {
-    veredicto: 'REIMPLEMENTACION', ademasDe389: true,
-    nota: '🔴 DOS COSAS DISTINTAS EN EL MISMO FICHERO, y ésta es la razón de ser de esta tabla. '
-      + '(1) Una LLAMADA a la primitiva para el desglose del PRESUPUESTO (SCRUM-604): eso es lo que '
-      + 'SCRUM-389 clasifica como DOCUMENTO. (2) Veinte líneas al lado —el bloque de totales de la '
-      + 'FACTURA— que agrupan por tipo con su propio `vatMap` y NO llaman a nadie. El veredicto de allí '
-      + 'cubre la llamada y NO cubre estas veinte líneas. '
+    veredicto: 'REIMPLEMENTACION', ademasDe389: false,
+    nota: '🔴 2-sep-2026 · SCRUM-656 · YA NO ESTÁ EN LAS DOS TABLAS, Y ESO LO EMPEORA, no lo mejora. '
+      + 'Tenía DOS cosas: una LLAMADA a la primitiva para el desglose del PRESUPUESTO y, al lado, '
+      + 'veinte líneas que agrupan el IVA de la FACTURA con su propio `vatMap` sin llamar a nadie. '
+      + 'La llamada se ha MUDADO a `quotes/domain/presentacionIva.ts`, así que este fichero sale del '
+      + 'censo de llamadores de SCRUM-389 y aquí se queda solo con lo que siempre fue: una '
+      + 'reimplementación. '
+      + '⚠️ Y esa llamada era lo que lo TAPABA: el criterio de SCRUM-627 es por FICHERO, así que '
+      + 'mientras un documento llamaba a la primitiva, la aritmética a mano del otro no salía en la '
+      + 'lista de invisibles. Llevaba ahí desde siempre. '
       + 'NO se convierte a la primitiva: eso es la opción B, mueve un céntimo en el 25 % de los '
       + 'documentos de dos tipos (medido) y son las mismas veinte líneas de SCRUM-623 y SCRUM-624, '
       + 'parados esperando a la asesoría. Aquí se DECLARA, para que no aparezca una segunda.',
@@ -204,9 +208,16 @@ test('SCRUM-627b · 🔴 los que están en LAS DOS tablas lo dicen, y dicen qué
   }
   // Y son exactamente los dos que hacen aritmética Y llaman.
   const dobles = Object.entries(CENSO_ARITMETICA).filter(([, e]) => e.ademasDe389).map(([f]) => f).sort();
+  // 🔴 2-sep-2026 · SCRUM-656 · BAJA DE DOS A UNO, y la bajada es una MALA noticia disfrazada de
+  // limpieza: `pdf.service.ts` sale porque su LLAMADA a la primitiva se mudó a
+  // `quotes/domain/presentacionIva.ts`, no porque haya dejado de reimplementar nada. Sigue
+  // agrupando el IVA de la FACTURA a mano, igual que siempre.
+  //
+  // Lo que se pierde al salir es la MÁSCARA: mientras tuvo la llamada, el criterio por fichero de
+  // SCRUM-627 lo daba por «visto» y sus veinte líneas no aparecían en la lista de invisibles. Ahora
+  // aparece — y ésa es la única diferencia real.
   assert.deepEqual(dobles, [
     'src/modules/invoicing/domain/vat.service.ts',
-    'src/modules/invoicing/infra/pdf/pdf.service.ts',
   ], '🔴 cambió quién tiene dos entradas: mírelo, porque es el caso que este censo existe para cubrir');
 });
 
@@ -378,7 +389,17 @@ test('SCRUM-627b · 🔴 ① la remisión en SCRUM-389 existe SI Y SÓLO SI hay 
     + 'SCRUM-389 (medido el 25-ago-2026: 1.560). Si no sé extraer comentarios, «no hay remisión» y '
     + '«no supe leerla» son el mismo número, y el ⟺ de abajo pasaría en vacío.');
 
-  const faltaPuntero = [...conVeredicto].filter((f) => !conPuntero.has(f));
+  // 🔴 2-sep-2026 · SCRUM-656 · EL PUNTERO SE EXIGE A LOS QUE ESTÁN EN LAS DOS TABLAS, no a todo
+  // el que tenga veredicto REIMPLEMENTACION. Lo dice el propio mensaje de abajo: el daño que se
+  // evita es que «quien lea AQUEL censo vea el fichero clasificado y deje de buscar». Si el
+  // fichero NO está en aquel censo, no hay lector al que despistar y no hay entrada a la que
+  // pegar el aviso — exigirlo sería pedir un puntero que no puede existir.
+  //
+  // Salió al mudar la llamada de `pdf.service.ts` a `quotes/domain/presentacionIva.ts`: el
+  // fichero sigue reimplementando el desglose de la FACTURA, pero ya no aparece en el censo de
+  // llamadores. No se relaja nada: el ⟺ sigue siendo exacto sobre la población donde importa.
+  const enAmbasTablas = new Set(censo389());
+  const faltaPuntero = [...conVeredicto].filter((f) => enAmbasTablas.has(f) && !conPuntero.has(f));
   assert.deepEqual(faltaPuntero, [],
     `🔴 FALTA EL PUNTERO en el censo de SCRUM-389 para: ${faltaPuntero.join(', ')}.\n`
     + `  Ese fichero está declarado aquí como REIMPLEMENTACION, pero su entrada de allí no remite a\n`
