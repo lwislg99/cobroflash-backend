@@ -160,6 +160,17 @@ const R = analizar(RAIZ);
 // campo de revisión en el esquema).
 // ═══════════════════════════════════════════════════════════════════════════════════════
 //
+// 🔴 9 → 8 · 2-sep-2026 · SCRUM-655 fase B. BAJA, y baja por donde su propia entrada decía:
+// **`revision.ts` YA TIENE CONSUMIDOR**. El gate que lo tenía parado ERA CIERTO Y HA CAÍDO —
+// `prisma/schema.prisma` trae `revision Int @default(0)` desde SCRUM-674, comprobado en el árbol
+// y no leído del acta que decía lo contrario—. Lo consume `src/modules/system/quoteAdmin.ts`
+// (`getQuoteDetailAdmin`), que es lo que sirve `GET /admin/quotes/:id`: la pantalla del
+// presupuesto ya puede contestar QUÉ REVISIONES HAY y CUÁL ESTÁ VIGENTE.
+//
+// ⚠️ Y el número se RECUENTA, no se resta: ejecutado `analizar()` sobre este árbol da **126
+// módulos de dominio, 289 alcanzables, 8 inalcanzables**. Ocho, y `revision.ts` ya no está.
+//
+// Queda UNO de los que esperaban gate: `parteDictado.ts` (la pantalla del parte, otra sesión).
 // ✅ 9 → 8 · 2-sep-2026 · SCRUM-683 (cableado). BAJA, y baja por lo que su propia entrada dejó
 // dicho: **`parteDictado.ts` YA TIENE CONSUMIDOR**, y es la pantalla del parte, como estaba
 // escrito. El cable: `partes.routes.ts` → `POST /admin/partes/:id/dictado`, que ordena el dictado
@@ -170,8 +181,20 @@ const R = analizar(RAIZ);
 // `parteDictado.ts` tenga consumidor» y NO prometía un número, que es justo por lo que no ha hecho
 // falta corregirla: una frase que nombra el módulo no caduca.
 //
-// Queda UNO esperando su gate: `revision.ts`, el campo de revisión en el esquema.
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 8;
+// Queda UNO esperando su gate: `revision.ts`, el campo de revisión en el esquema.//
+// ⚠️ 2-sep-2026 · SEGUNDA VEZ EN EL DÍA CON ESTE CONTADOR, y la misma forma: los DOS bloques de
+// arriba bajan de 9 a 8, y NO son el mismo 8 — SCRUM-683 saca `parteDictado.ts` y SCRUM-655 fase
+// B saca `revision.ts`. Cada uno contó sobre su árbol y en el suyo tenía razón.
+//
+// 🔴 Elegir un lado habría dejado el tope UNO POR ENCIMA de lo real, que es como un trinquete
+// deja de proteger sin que nadie lo note. RECONTADO ejecutando `analizar()` sobre el árbol YA
+// MEZCLADO: **126 módulos de dominio, 290 alcanzables, 7 inalcanzables.**
+//
+// Y con esto **se vacía la cola de los que esperaban gate**: ni `parteDictado.ts` ni
+// `revision.ts` están ya en la lista. Los 7 que quedan son los de siempre — el bloque fiscal y
+// los motores de oficina— y ninguno es de hoy.
+// ═══════════════════════════════════════════════════════════════════════════════════════
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 7;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 
@@ -235,6 +258,25 @@ test('SCRUM-411 · 🔴 SCRUM-293 (③a): `retencionIrpf` YA NO es inalcanzable,
     '  y «no lo ha dicho» y «dice que no retiene» vuelven a ser el mismo estado.\n\n' +
     '  Si el cable se ha retirado A CONCIENCIA, este test vuelve a ser un control positivo (arriba) y\n' +
     '  el tope de abajo sube a 8 con su motivo. Lo que no vale es que se caiga en silencio.');
+});
+
+test('SCRUM-411 · 🔴 SCRUM-655 (fase B): `revision.ts` YA NO es inalcanzable, y se dice por dónde', () => {
+  // ⚠️ DADA LA VUELTA, NO BORRADA — el mismo trato que `retencionIrpf` justo arriba, y por el mismo
+  // motivo: si se borrase el renglón, desconectar el cable mañana dejaría el módulo inalcanzable
+  // otra vez y sólo lo acusaría el tope numérico, que NO NOMBRA al que se cayó.
+  //
+  // 🔴 Y aquí lo que se cae en silencio no es un motor de cálculo: es la respuesta a «cuál de
+  // estas versiones es la buena». Sin este cable, la pantalla del presupuesto vuelve a enseñar UNA
+  // versión sin decir que hay otras — y el profesional le cobra al cliente por un documento que el
+  // cliente ya había pedido cambiar.
+  assert.ok(!esInalcanzable('quotes/domain/revision'),
+    '🔴 `revision.ts` ha vuelto a ser INALCANZABLE: alguien ha quitado el cable de la fase B.\n\n' +
+    '  `src/modules/system/quoteAdmin.ts` ya no importa `vistaDeRevisiones`, así que\n' +
+    '  `GET /admin/quotes/:id` deja de llevar `revisiones` y `vigenteId`. La pantalla no puede\n' +
+    '  contestar cuáles hay ni cuál está vigente, y lo hace SIN FALLAR: enseña la versión que\n' +
+    '  pidió y calla las demás.\n\n' +
+    '  Si el cable se ha retirado A CONCIENCIA, este test vuelve a ser un control positivo (arriba)\n' +
+    '  y el tope de abajo sube a 9 con su motivo. Lo que no vale es que se caiga en silencio.');
 });
 
 test('SCRUM-411 · CONTROL NEGATIVO: invoiceNumber.service NO sale', () => {
