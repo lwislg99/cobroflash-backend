@@ -323,6 +323,140 @@ export function scriptsDelDashboard(raiz) {
   return [...html.matchAll(/<script src="\.\/([^"]+)"><\/script>/g)].map((m) => m[1]);
 }
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-666 · EL CSS EXTERNO, que hasta hoy este banco NO MIRABA
+//
+// El hueco lo declaró SCRUM-660 al entregar: «el banco no aplica CSS externo; un `display:none`
+// en `styles.css` no se detecta». No era el hueco de un campo: era el de TODOS los controles de
+// visibilidad que se escriban de aquí en adelante, y producía **verdes falsos** — la clase cara.
+//
+// ── LO QUE SE MIDIÓ ANTES DE ESCRIBIR ESTO ───────────────────────────────────────────────
+// El índice carga DOS hojas locales (`/tokens.css` y `./css/styles.css`) más una remota de
+// Google Fonts, que no se lee ni se debe. De 625 reglas, **31 pueden ocultar** (24 `display:none`
+// y 7 `opacity:0`; 7 de ellas dentro de `@keyframes`, o sea fotogramas que NO ocultan de verdad).
+//
+// 🔴 Y EL DATO QUE MANDA EN EL DISEÑO: de las 35 partes de selector que ocultan, el matcher de
+// SCRUM-451 resuelve 22 (63 %) — pero las DOS que tocan el editor de líneas, que es justo lo que
+// mide el control de SCRUM-660, usan `:not(:focus-within) >` y **no las resuelve ninguna**.
+//
+// O sea: un lector que aplicara sólo lo que sabe resolver diría «se ve» precisamente donde no
+// sabe mirar. Por eso aquí manda la doctrina que este fichero lleva tres tickets desterrando
+// (SCRUM-451, 444, 634): **lo que no se sabe resolver se ANOTA, no se contesta**.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/** Las hojas de estilo LOCALES que declara el índice. Las remotas (fuentes) se ignoran. */
+export function hojasDelDashboard(raiz) {
+  const html = fs.readFileSync(path.join(raiz, 'public/dashboard/index.html'), 'utf8');
+  const hrefs = [...html.matchAll(/<link[^>]*rel="stylesheet"[^>]*href="([^"]+)"/g)].map((m) => m[1]);
+  return hrefs
+    .filter((h) => !/^https?:/.test(h))
+    .map((h) => (h.startsWith('/') ? path.join(raiz, 'public', h.slice(1)) : path.join(raiz, 'public/dashboard', h.replace(/^\.\//, ''))));
+}
+
+/** Las cinco formas de ocultar que pedía el encargo. `@keyframes` NO cuenta: son fotogramas. */
+function formasDeOcultar(cuerpo) {
+  const c = cuerpo.replace(/\s+/g, ' ').toLowerCase();
+  const f = [];
+  if (/(^|[;{\s])display\s*:\s*none/.test(c)) f.push('display:none');
+  if (/visibility\s*:\s*hidden/.test(c)) f.push('visibility:hidden');
+  if (/(^|[;\s])opacity\s*:\s*0(\s|;|$)/.test(c)) f.push('opacity:0');
+  if (/(^|[;\s])(width|height)\s*:\s*0(px|%|em|rem)?\s*(;|$)/.test(c)) f.push('tamaño cero');
+  if (/(^|[;\s])(left|top)\s*:\s*-\s*\d{3,}/.test(c) || /clip\s*:\s*rect\(\s*0/.test(c)) f.push('fuera de pantalla');
+  return f;
+}
+
+/**
+ * Las reglas que pueden OCULTAR algo, sacadas de las hojas del índice.
+ *
+ * 🔴 SUELO: si no encuentra NINGUNA regla, LANZA. Cero reglas y «no supe abrir el fichero» son
+ * el mismo número con significados opuestos, y este banco existe justamente para no confundirlos.
+ */
+export function reglasQueOcultan(raiz, hojas = null) {
+  const ficheros = hojas || hojasDelDashboard(raiz);
+  if (!ficheros.length) throw new Error('[banco] el índice no declara ninguna hoja de estilo local');
+  const out = [];
+  let leidas = 0;
+  for (const f of ficheros) {
+    const css = fs.readFileSync(f, 'utf8'); // si no existe, LANZA: es el suelo, no un cero mudo
+    leidas++;
+    const t = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    const pila = [];
+    let buf = ''; let i = 0;
+    while (i < t.length) {
+      const ch = t[i];
+      if (ch === '{') {
+        const sel = buf.trim(); buf = '';
+        if (sel.startsWith('@')) { pila.push(sel.split(/\s+/)[0]); } else {
+          const cierra = t.indexOf('}', i);
+          if (cierra === -1) break;
+          const dentroDe = pila[pila.length - 1] || null;
+          const formas = formasDeOcultar(t.slice(i + 1, cierra));
+          // Los fotogramas de una animación no ocultan: describen un instante.
+          if (formas.length && dentroDe !== '@keyframes') {
+            out.push({ hoja: path.basename(f), selector: sel, formas, dentroDe });
+          }
+          i = cierra;
+        }
+      } else if (ch === '}') { pila.pop(); buf = ''; } else { buf += ch; }
+      i++;
+    }
+  }
+  if (!out.length) {
+    throw new Error(`[banco] SUELO: leí ${leidas} hoja(s) y NO encontré ni una regla que oculte. `
+      + 'Eso no es «no hay»: es «no supe mirar», y devolverlo como cero sería un verde falso.');
+  }
+  return out;
+}
+
+/**
+ * ¿Lo esconde el CSS externo? Tres respuestas, y la tercera es la que hace que esto sirva:
+ *
+ *   · `{ oculto: true,  … }` — una regla que el matcher SABE resolver casa con el nodo o un padre
+ *   · `{ oculto: false, … }` — ninguna casa, y ninguna quedó sin resolver: se ve
+ *   · `{ oculto: null,  ciego: [...] }` — hay reglas que MENCIONAN una clase del nodo y cuyo
+ *     selector el matcher NO sabe resolver. **No se contesta «se ve»**: se declara ciego.
+ *
+ * Esa tercera es la doctrina de SCRUM-451 aplicada aquí: devolver «visible» ante lo que no se
+ * sabe mirar es el `null` mudo que este fichero lleva tres tickets desterrando.
+ */
+export function ocultoPorCss(n, reglas) {
+  const cadena = [];
+  for (let x = n; x; x = x._padre) cadena.push(x);
+  const clasesDelNodo = new Set();
+  for (const x of cadena) {
+    for (const c of String(x.className || '').split(/\s+/).filter(Boolean)) clasesDelNodo.add(c);
+    if (x.id) clasesDelNodo.add(x.id);
+  }
+
+  const ciego = [];
+  for (const r of reglas) {
+    // Una regla sin ninguna forma de ocultación no esconde nada, por mucho que su selector case.
+    // `reglasQueOcultan` no las produce, pero esto se puede llamar con una lista a mano — y lo
+    // cazó el CONTROL NEGATIVO de SCRUM-666, no una revisión: marcaba una regla de color.
+    if (!r.formas || !r.formas.length) continue;
+    for (const parte of r.selector.split(',').map((s) => s.trim()).filter(Boolean)) {
+      let casaAlguno = null;
+      for (const x of cadena) {
+        const v = casa(x, parte); // el matcher de SCRUM-451: true | false | null (no soportado)
+        if (v === null) { casaAlguno = null; break; }
+        if (v === true) { casaAlguno = true; break; }
+        casaAlguno = false;
+      }
+      if (casaAlguno === true) {
+        return { oculto: true, porQue: `${r.hoja}: ${parte} { ${r.formas.join('; ')} }`, ciego: [] };
+      }
+      if (casaAlguno === null) {
+        // No se sabe resolver. Sólo se declara ciego si la regla MENCIONA algo que el nodo tiene:
+        // apuntar todas las que no se saben resolver haría el aviso inútil por ruidoso.
+        const menciona = (parte.match(/[#.][\w-]+/g) || []).some((t) => clasesDelNodo.has(t.slice(1)));
+        if (menciona) ciego.push(`${r.hoja}: ${parte} { ${r.formas.join('; ')} }`);
+      }
+    }
+  }
+  if (ciego.length) return { oculto: null, porQue: null, ciego };
+  return { oculto: false, porQue: null, ciego: [] };
+}
+
 /**
  * SCRUM-559 · CUÁNTOS SCRIPTS DECLARA EL INDEX DEL DASHBOARD. Recuento EXACTO, no un mínimo.
  *
