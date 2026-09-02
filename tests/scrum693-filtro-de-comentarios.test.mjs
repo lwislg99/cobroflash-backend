@@ -158,7 +158,11 @@ test('SCRUM-696 · 🔴 un `//` DENTRO de una plantilla no se come el código �
   // Dirección ②: la ceguera. Medido en el árbol el 2-sep-2026: 60 ficheros perdían código real
   // por esto, y siempre con la misma forma —una URL dentro de una plantilla—, que es de lo más
   // corriente que hay: `https://wa.me/${tel}`, `file://${argv[1]}`, `http://127.0.0.1:${PUERTO}`.
-  const codigo = 'const u = `https://yaqu.app/${id}?q=' + PROHIBIDA + '`;\nconst b = 2;';
+  // 🔴 EL `//` VA DESPUÉS DE LA INTERPOLACIÓN, Y NO ES UN DETALLE: puesto antes queda dentro
+  // del `TemplateHead` —el token ``https://…${``—, que el scanner lee de una pieza y protege sin
+  // querer. Así lo escribí la primera vez, y lo cazó la mutación: el test pasaba igual con el
+  // arreglo que sin él. Un test que no puede fallar no es cobertura, es decoración.
+  const codigo = 'const u = `${id} ver https://yaqu.app/' + PROHIBIDA + '`;\nconst b = 2;';
   const limpio = soloCodigo(codigo);
 
   assert.ok(limpio.includes(PROHIBIDA),
@@ -185,6 +189,32 @@ test('SCRUM-696 · 🔴 plantillas ANIDADAS: donde una pila mal hecha se vuelve 
     assert.ok(limpio.includes('const b = 2;'), `🔴 con ${que} se ha comido el código.`);
     assert.equal(limpio.length, codigo.length, `🔴 con ${que} ha cambiado la longitud.`);
   }
+});
+
+test('SCRUM-696 · 🔴 una EXPRESIÓN REGULAR tampoco puede comerse la línea', () => {
+  // `scan()` no devuelve un regex por su cuenta: ante `/` da una DIVISIÓN, y sin pedirle que
+  // relea el token, el cuerpo del regex se tokeniza como código. Basta con que dentro queden
+  // dos barras pegadas para que crea que ahí empieza un comentario de línea.
+  //
+  // 🔴 EL CASO NO ES INVENTADO: es `src/core/validation/schemas.ts:300` letra por letra. Allí
+  // el `!/^https?:\\/\\//i` se llevaba por delante el resto de la línea, que es justo donde vive
+  // la plantilla que construye la URL. Lo encontró el CENSO DEL ÁRBOL después de arreglar las
+  // plantillas, y baja aquí porque un caso mínimo se lee y un censo sólo se cree.
+  const codigo = [
+  // 🔴 TODO EN UNA LÍNEA, COMO EN EL SITIO REAL. Partirlo en dos hacía el test incapaz de
+  // fallar: el defecto se come hasta el FIN DE LÍNEA, así que con la cadena prohibida en la
+  // línea de abajo sobrevivía igual con el arreglo que sin él. Lo cazó la mutación, y es la
+  // segunda vez en este ticket — el mismo error que en el caso de la plantilla.
+    'const f = (v) => (!/^https?:\\/\\//i.test(v) ? `https://x/${v}` : ' + JSON.stringify(PROHIBIDA) + ');',
+    'const b = 2;',
+  ].join('\n');
+  const limpio = soloCodigo(codigo);
+
+  assert.ok(limpio.includes(PROHIBIDA),
+    '🔴 el filtro ha leído las dos barras del REGEX como un comentario y se ha comido el resto '
+    + 'de la línea. Es la misma ceguera que la de las plantillas, en otro literal.');
+  assert.ok(limpio.includes('const b = 2;'), '🔴 se ha comido la línea siguiente.');
+  assert.equal(limpio.length, codigo.length, '🔴 ha cambiado la longitud.');
 });
 
 test('SCRUM-693 · `literalesDe` distingue lo que se PINTA de lo que sólo se ESCRIBE', () => {

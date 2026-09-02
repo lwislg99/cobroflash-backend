@@ -4,7 +4,7 @@
 
 **Medido contra:** `origin/main` = `80db312b10b79292485ff99070648657f4dacca7` · 2026-09-02T21:40:02Z
 
-**Tanda:** 4789 tests, 4705 pass, 0 fail, 84 skipped — medida DESPUES del ultimo cambio, entrada incluida.
+**Tanda:** 4790 tests, 4706 pass, 0 fail, 84 skipped — medida DESPUES del ultimo cambio, entrada incluida.
 
 ---
 
@@ -114,6 +114,28 @@ módulo arreglado.
 
 ---
 
+## 🔴 Lo que cazó la mutación: dos tests míos que no podían fallar
+
+Los dos casos nuevos de `scrum693` **pasaban igual con el arreglo puesto que sin él**, y no se
+vio hasta inyectar la mutación. Los dos por el mismo motivo de fondo — el caso de prueba no
+tenía la forma del defecto — y los dos merecen quedar escritos, porque el error es fácil:
+
+1. **El `//` iba ANTES de la interpolación.** Escrito así (`https://x/${v}`) queda dentro del
+   `TemplateHead`, que el scanner lee de una pieza y **protege sin querer**. El defecto sólo
+   muerde DESPUÉS del `}`, que es donde el scanner vuelve a modo código.
+2. **El regex y la cadena prohibida en LÍNEAS DISTINTAS.** El defecto se come hasta el fin de
+   línea, así que con la cadena en la línea de abajo sobrevivía siempre. En el sitio real
+   —`schemas.ts:300`— todo va en una línea, y esa era la forma que había que copiar.
+
+> Un test que no puede fallar no es cobertura: es decoración que además da confianza. Es la
+> misma familia que el defecto del ticket —un instrumento que dice medir algo y mide otra cosa—,
+> sólo que un piso más arriba. Los cazó la mutación, no la lectura.
+
+**Caso cruzado, para que ninguno cubra de más:** quitando el arreglo de plantillas caen los tres
+tests de plantilla y el censo, y el de regex NO; quitando el de regex cae el de regex y el censo,
+y los de plantilla NO.
+---
+
 ## Evidencia
 
 | qué | resultado |
@@ -123,7 +145,7 @@ módulo arreglado.
 | `scrum578` (su consumidor en main) | 15 pass, 0 fail |
 | censo del árbol | **0** ficheros ciegan · 1.119 ficheros y 97.685 tramos examinados |
 | rojo probado por el mecanismo | revertido cada arreglo por separado, con post-condición sobre el fichero |
-| control positivo | una violación real sigue tumbando a `scrum578` y a `scrum693` |
+| control positivo | el rótulo prohibido inyectado en CÓDIGO (dentro de una plantilla) tumba a `scrum578`; el mismo rótulo en `/** */` y en `//` no lo toca |
 | `guards:entrada` | 21 pass, 0 fail |
 
 ---
