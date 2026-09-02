@@ -689,3 +689,42 @@ queda escrito aquí. Mi código usa `JSON.stringify`, como el PATCH del tipo de 
 
 `prisma/schema.prisma` · `jobs.routes.ts:477` y el test de SCRUM-467 · los ficheros del parte
 (`partes.routes.ts`, `parteDetailView.js`) · el dictado · el camino de emisión.
+
+## 9 · LOS ROJOS · commit de resguardo `bd6dc2cb29305ac638e74d4b60682ff9dc071ef9`
+
+Cada uno: inyectar → medir → restaurar → verde. Nada sin commitear antes.
+
+| # | Qué se rompe | Qué cae |
+| :-: | --- | --- |
+| 1 | `idsMarcados` ignora la casilla (quitar a uno no quita a nadie) | 1/13 · «el selector marca a los YA asignados» |
+| 2 | el cuerpo del PATCH va siempre vacío (se caen los tres) | 1/13 · «manda LA LISTA» |
+| 3 | el suelo de ceguera no mira | 1/13 · «CERO empleados NO es no hay empleados» |
+| 4 | el módulo escribe también en `operarioId` | **2**/13 · el cuerpo del PATCH **y** «no NOMBRA `operarioId` en su código» |
+| 5 | el propietario se ofrece como asignable | **4**/13 · el propietario, el selector, el suelo y el equipo de una persona |
+| 6 | se enciende un texto sin marcador | 1/13 · el guard de la regla 30 |
+| **7** | **se retira `asignados` del serializador** | **🔴 NADA. La suite entera VERDE: 4567 tests, 0 fallos** |
+
+### 🔴 El rojo 7 encontró un hueco de verdad, y por eso hay un guard nuevo
+
+El dato del que vive la pantalla podía **dejar de viajar sin que nada lo dijera**. El selector se
+pintaría vacío en TODOS los trabajos y lo haría sin fallar: el jefe leería «no lo ejecuta nadie» de
+un trabajo que tiene tres técnicos.
+
+Cerrado con un guard **por AST** —`grep` casaría con cualquier comentario, incluida la cabecera que
+lo explica— que mira **TODAS** las salidas de `serializeJobDetail`, no una. Inyectado el rojo otra
+vez, ahora nombra la línea y enseña lo que sí lleva:
+
+```
+🔴 UNA SALIDA DEL DETALLE NO LLEVA `asignados`:
+    jobs.routes.ts:410 → ["...base","customer","invoices","charge","albaranes","entregaPendiente"]
+```
+
+Que es lo que hacía falta: el detalle tiene **dos** salidas y añadir una tercera sin el campo es
+exactamente cómo esto se rompe sin que nadie se entere. Commit de la corrección:
+`21ec928c3e67ee9ed229799dbe3484197eb310c3`.
+
+### Y un assert mío que estaba mal, corregido HACIA LO MEDIDO
+
+Escribí que el técnico leería «Israel, Miguel» y el rojo dijo «Israel y Miguel»: con DOS nombres no
+hay coma, que es lo correcto en castellano. El test pasó a usar los TRES del parte —que es el caso
+real— en vez de cambiar la función para que encajara con lo que yo había supuesto.
