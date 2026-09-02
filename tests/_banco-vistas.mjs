@@ -210,6 +210,12 @@ export function nodo(tag, reg) {
     // no quita**: el test pasaría o fallaría por motivos que no son los del producto. Es la clase
     // de banco infiel que advierte la cabecera de este fichero, y por eso se corrige aquí en vez
     // de rodearlo desde el test.
+    // SCRUM-609 · `parentNode`. No existía, y por eso `productsView` REVENTABA al montarse en
+    // cuanto una vista hizo `x.parentNode.insertBefore(...)` — que es DOM de manual. El banco ya
+    // guardaba el padre en `_padre`; sólo le faltaba el nombre estándar. Se corrige AQUÍ y no se
+    // rodea desde la vista: la cabecera de este fichero lo dice — un banco infiel hace que el
+    // test mida el banco y no el producto.
+    get parentNode() { return n._padre; },
     get children() { return n.hijos; },
     get firstElementChild() { return n.hijos[0] || null; },
     get lastElementChild() { return n.hijos[n.hijos.length - 1] || null; },
@@ -297,6 +303,10 @@ export function nodo(tag, reg) {
         }
         const texto = (m[3] || '').trim();
         if (texto) h.textContent = texto;
+        // SCRUM-609 · el hijo nacido del marcado SABE QUIÉN ES SU PADRE. No lo sabía: el parser
+        // sólo lo metía en `hijos`, así que `h.parentNode` era null y cualquier vista que hiciera
+        // `x.parentNode.insertBefore(...)` —DOM de manual— reventaba al montarse.
+        h._padre = n;
         n.hijos.push(h);
       }
     },
@@ -406,7 +416,19 @@ export function scriptsDelDashboard(raiz) {
 // Y se repite lo que ya avisaba la rama, porque es lo que falló tres veces: si en un merge este
 // número aparece IGUAL en los dos lados, git lo deja fuera de los marcadores de conflicto y nadie
 // se entera. **Se vuelve a contar después de mezclar, siempre.**
-export const SCRIPTS_DEL_DASHBOARD = 66;
+// SCRUM-609 (2-sep-2026) · 66 → 67: entra `margenCatalogo.js`, la aritmética del margen
+// del catálogo. Va ANTES de `productsView.js`, que la consume.
+//
+// 🔴 QUINTA VEZ QUE ESTE CONTADOR CHOCA. Y esta vez el conflicto SÍ enseñaba los dos números
+// (66 en main, 65 en la rama), así que se ve — pero la regla no cambia por eso: se ha vuelto a
+// CONTAR sobre el índice YA MEZCLADO, no se ha elegido un lado ni se ha sumado uno al otro.
+//     grep -c "<script src=" public/dashboard/index.html   →   67
+// La flecha de esta entrada decía «64 → 65» cuando se escribió, antes de mezclar: se recalcula,
+// porque un valor DERIVADO no se hereda de un informe viejo.
+// SCRUM-609 (2-sep-2026) · 67 → 68: entra `switchTipoArticulo.js`, el switch
+// Producto|Servicio del catálogo. Va ANTES de `productsView.js`, que lo consume.
+// RECONTADO sobre el índice, no sumado: grep -c "<script src=" → 68.
+export const SCRIPTS_DEL_DASHBOARD = 68;
 
 /**
  * Monta el dashboard como lo monta el navegador y devuelve el contexto vivo.

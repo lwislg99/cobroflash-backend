@@ -654,6 +654,14 @@ model Product {
   vat         Decimal? @db.Decimal(5, 4)
   providerId  Int?     @map("provider_id")
   isActive    Boolean  @default(true) @map("is_active")
+  // SCRUM-609 (CAT-01) · el LADO del catálogo: PRODUCTO | SERVICIO. Mismo patrón y misma forma
+  // que `contactKind` (CONT-01): nullable y SIN `@default`, porque un default declararía por el
+  // profesional. NULL = sin clasificar, y el switch no preselecciona ningún lado.
+  //
+  // 🔴 NO es una etiqueta que se guarda: DECIDE QUÉ CAMPOS ENSEÑA la ficha. Un servicio no tiene
+  // coste, ni margen, ni proveedor. El valor va en mayúsculas y sin acentos por consistencia con
+  // `contact_kind`, que es lo que ya está mergeado.
+  itemKind    String?  @map("item_kind")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

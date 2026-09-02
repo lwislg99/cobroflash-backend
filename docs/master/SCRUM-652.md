@@ -276,3 +276,118 @@ Las opciones de hoy (`src/modules/jobs/domain/albaranFirmante.ts:109-116`):
    añade requisitos, no están cubiertos aquí.
 2. **Qué prefiere el proyecto** entre las dos estrategias de service worker de la pregunta 4.
 3. **El coste real** de cada camino. Este documento dice **qué hay**, no cuánto cuesta lo que falta.
+
+---
+
+# SCRUM-652 · T3 fase B — el parte de trabajo, construido hasta la puerta del esquema
+
+**Medido contra:** `origin/main` = `01d5c5a03e1f5e1b93d24e9f10b5b6b9a8a3f9c2` · 2026-09-02T13:40:00+02:00
+**Rama:** `scrum-652-reconocimiento`
+
+> **En una frase:** el parte existe como **dominio puro y probado** —sus dos bloques, su sello sin
+> precios y sus dos candados— y **se para en la persistencia**, que necesita `prisma/schema.prisma`
+> y es del fundador.
+
+## 1 · Lo construido
+
+`src/modules/jobs/domain/parteTrabajo.ts` + `tests/scrum652-parte-trabajo.test.mjs` (12 tests).
+
+* **Dos bloques cerrados** — `BLOQUES_PARTE = ['mano_obra', 'materiales']`. Son el **sitio** de la
+  línea, no una etiqueta: el papel los lleva separados y con su total aparte.
+* **Tres tipos excluyentes** — `reparacion_asistencia | mantenimiento | instalacion`.
+* **Su canónico propio, ESCRITO ENTERO**, sin compartir ni una línea con el del albarán.
+* 🔴 **El sello NO lleva precios.** `lineasCanonicasParte` sella `bloque`, `unds` y `descripcion`,
+  y nada más — escrito como lista explícita y no como «la línea menos dos claves», para que un
+  campo nuevo **no pueda colarse en el sello sin que alguien lo decida**.
+* **Los dos candados**: `puedeEditarContenido` (solo `borrador`) y `puedeEditarPrecios` (hasta
+  `facturado`). Devuelven **motivo**, no un booleano: «no se puede» a secas manda a adivinar.
+* **Suelo**: `puedeFirmarse` rechaza un parte sin ninguna línea. Basta una en cualquiera de los dos
+  bloques — una asistencia puede ser solo mano de obra y una instalación solo material.
+* **Totales por bloque**, en céntimos enteros como `calcAlbaranTotales`, y el total es **la suma de
+  los dos** y no un recuento aparte.
+* `lineasParaElTecnico` devuelve **solo** `bloque`, `unds` y `descripcion`: el importe no llega a la
+  pantalla, que es lo que hace imposible pintarlo por descuido.
+
+## 2 · 🔴 Dónde se para, y por qué
+
+**El parte no tiene dónde vivir.** Medido: `Job` no tiene ningún `Json` libre y `Albaran` no tiene
+discriminador de tipo. Las dos salidas —modelo nuevo, o columna nueva en `Albaran`— **son cambios
+de `prisma/schema.prisma`**, que está en NO TOCAS sin OK.
+
+**Diff preparado, sin aplicar** (modelo nuevo; es la opción que no toca el albarán):
+
+```prisma
+model ParteTrabajo {
+  id              Int      @id @default(autoincrement())
+  merchantId      Int      @map("merchant_id")
+  jobId           Int?     @map("job_id")
+  customerId      Int?     @map("customer_id")
+
+  numero          String
+  fecha           DateTime
+  obra            String?
+  referencia      String?
+
+  entrada         String?
+  salida          String?
+  desplazamientos Int?
+  kilometros      Decimal? @db.Decimal(10, 2)
+  /// Array de nombres. Ranura para «varios técnicos» (sesión 1), que HOY NO EXISTE.
+  tecnicos        Json     @default("[]")
+
+  /// reparacion_asistencia | mantenimiento | instalacion (TIPOS_PARTE)
+  tipo            String?
+  /// [{bloque, unds, descripcion, precioUnitario?, tipoIva?}] — el bloque va DENTRO de la línea
+  lineas          Json
+  notas           String?
+
+  /// borrador | firmado | facturado (ESTADOS_PARTE)
+  estado          String   @default("borrador")
+
+  firmadoAt          DateTime? @map("firmado_at")
+  firmadoPorNombre   String?   @map("firmado_por_nombre")
+  firmadoPorCalidad  String?   @map("firmado_por_calidad")
+  /// Huella del CONTENIDO (sin precios) y su versión de canónico.
+  contenidoHash      String?   @map("contenido_hash")
+  contenidoVersion   Int?      @map("contenido_version")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
+
+  @@index([merchantId, fecha])
+  @@index([merchantId, estado])
+  @@map("partes_trabajo")
+}
+```
+
+**Es 100 % aditivo**: una tabla nueva, ningún campo tocado de ningún modelo existente.
+
+⚠️ **El bloque va DENTRO de la línea, en el `Json`.** Es la opción (a) del reconocimiento: no rompe
+el array, conserva el orden del papel y **no obliga a un modelo de líneas aparte**.
+
+## 3 · Lo que falta después del OK, en orden
+
+1. Aplicar el diff (dev → staging → producción), con su preview.
+2. Repositorio y rutas del parte — y ahí **baja el tope de SCRUM-411 de 8 a 7**.
+3. La pantalla del técnico (sin importes) y la de valoración de oficina (con ellos).
+4. Si esa pantalla añade rutas al `SHELL` del service worker: `sw.js:95` usa `cache.addAll`, que es
+   **atómico**. Ver la pregunta 4 del reconocimiento.
+
+## 4 · Declaraciones que este módulo movió, con su motivo
+
+| Censo | Cambio | Por qué |
+|---|---|---|
+| `scrum627-censo-ciego` | entra `parteTrabajo.ts` | deriva IVA por documento, como el albarán |
+| `scrum627b` | veredicto **DOCUMENTO** | por línea de UN parte, sin agrupar por tipo ni periodo. Y esos importes **no entran en el sello**, así que no pueden mover ninguna huella |
+| `scrum411` | tope **7 → 8** | módulo de dominio sin llamador **por el gate del esquema**, no por deuda. Baja a 7 el commit que lo persista |
+
+## 5 · Lo que NO se hizo, y es deliberado
+
+* **El canónico del albarán no se ha tocado**, y hay un test que lo comprueba: un albarán valorado
+  **sí** se firma con precios. Son dos documentos con dos sellos.
+* **No se compartió ni una línea** entre los dos canónicos: `parteTrabajo.ts` importa `crypto` y
+  nada más, y hay un test que lo fija.
+* **«Varios técnicos» no existe** — medido: el esquema solo tiene `teamMemberId`/`operarioId`, uno.
+  La ranura se sella como array para que el día que exista no haya que estrenar versión de
+  contenido. **Que la ranura exista no significa que esté cableada.**
+* Ni firma, ni cola, ni almacén, ni precache: **ya estaban** (fase A) y no se han tocado.

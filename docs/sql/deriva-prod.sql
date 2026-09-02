@@ -303,6 +303,7 @@ WITH esperado (tabla, columna) AS (
     ('products','description'),
     ('products','id'),
     ('products','is_active'),
+    ('products','item_kind'),
     ('products','merchant_id'),
     ('products','name'),
     ('products','name_search'),

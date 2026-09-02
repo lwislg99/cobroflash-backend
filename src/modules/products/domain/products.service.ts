@@ -22,6 +22,8 @@ type CreateProductInput = {
   vat?: number | null;
   providerId?: number | null;
   isActive?: boolean;
+  /** SCRUM-609 (CAT-01) · el LADO: PRODUCTO | SERVICIO. `null` = sin clasificar. */
+  itemKind?: string | null;
 };
 
 export async function createProduct(merchantId: number, input: CreateProductInput) {
@@ -36,6 +38,9 @@ export async function createProduct(merchantId: number, input: CreateProductInpu
       vat: input.vat ?? null,
       providerId: input.providerId ?? null,
       isActive: input.isActive ?? true,
+      // Sin `?? 'PRODUCTO'`: un default aquí declararía el lado por el profesional, que es
+      // justo lo que la columna nullable evita. Ausente entra como NULL = sin clasificar.
+      itemKind: input.itemKind ?? null,
     },
   });
 }

@@ -58,6 +58,41 @@ if (typeof window !== 'undefined') {
   window.PV_MARCADOR_MICROCOPY = PV_MARCADOR_MICROCOPY;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-609 (CAT-01) · EL SWITCH Producto | Servicio, cableado en UN solo sitio.
+//
+// El alta y la edición son dos formularios distintos de este mismo fichero y ya divergieron
+// una vez (el IVA salió de uno antes que del otro). La regla de qué se ve en cada lado vive en
+// `switchTipoArticulo.js`; esto sólo la conecta al DOM de cada formulario.
+//
+// ⚠️ El switch se monta ANTES de los campos que oculta, porque es el que decide si se ven: un
+// control que aparece debajo de lo que gobierna se lee como si fuera un campo más.
+// ═══════════════════════════════════════════════════════════════════════════════════════
+function cablearTipoArticulo(raiz, filaCampos, valorInicial) {
+  const envoltorio = (nombre) => {
+    const entrada = raiz.querySelector(`[name="${nombre}"]`);
+    return entrada ? entrada.closest('.field') : null;
+  };
+  const campos = {
+    cost: envoltorio('cost'),
+    margen: envoltorio('margen'),
+    providerId: envoltorio('providerId'),
+  };
+  const sw = switchTipoArticulo({
+    valor: valorInicial,
+    alCambiar: (lado) => switchTipoArticulo.aplicarLado(lado, campos),
+  });
+  filaCampos.parentNode.insertBefore(sw.nodo, filaCampos);
+  // Al abrir: el lado guardado manda. Es la razón por la que este ticket paró hasta tener
+  // columna — un switch sin dónde guardarse olvida lo que elegiste en cuanto recargas.
+  switchTipoArticulo.aplicarLado(sw.leer(), campos);
+  // Se expone para que quien reescriba el valor pueda REAPLICAR: `escribir()` sólo marca el
+  // radio; sin esto el modal enseñaría el lado nuevo con los campos del anterior — el switch
+  // PARECERÍA funcionar, que es la peor forma de no funcionar.
+  sw.aplicar = () => switchTipoArticulo.aplicarLado(sw.leer(), campos);
+  return sw;
+}
+
 function renderProductsView(container) {
     container.innerHTML = "";
   
@@ -171,6 +206,7 @@ function renderProductsView(container) {
         // --- edit modal (custom modal-overlay) ---
         let editOverlay = null;
         let _editing = null; // { merchantId, id }
+        let _editSwitch = null; // SCRUM-609: el switch del modal de edición, para leerlo al guardar
 
         function buildEditModal() {
           const ov = document.createElement('div');
@@ -182,8 +218,8 @@ function renderProductsView(container) {
                 <div class="quote-form-row">
                   <div class="field"><label>Nombre *</label><input name="name"/></div>
                   <div class="field"><label>Precio *</label><input name="price" type="number" step="0.01" min="0"/></div>
-                  <div class="field"><label>IVA (0..1)</label><input name="vat" type="number" step="0.01" min="0" max="1"/></div>
                   <div class="field"><label>Coste</label><input name="cost" type="number" step="0.01" min="0"/></div>
+                  <div class="field"><label>Margen %</label><input name="margen" type="number" step="0.01"/></div>
                   <div class="field"><label>Proveedor</label><select name="providerId"><option value="">— Sin proveedor —</option></select></div>
                 </div>
                 <div class="field"><label>Descripción</label><input name="description"/></div>
@@ -198,6 +234,12 @@ function renderProductsView(container) {
           ov.querySelector('.modal').prepend(cabeceraModal({ titulo: "Editar producto", idCierre: "pf-edit-close" }));
           document.body.appendChild(ov);
 
+          cablearMargen(
+            ov.querySelector('[name="cost"]'),
+            ov.querySelector('[name="price"]'),
+            ov.querySelector('[name="margen"]'),
+          );
+          _editSwitch = cablearTipoArticulo(ov, ov.querySelector('.quote-form-row'), null);
           ov.querySelector('#pf-edit-close').addEventListener('click', closeEditModal);
           ov.querySelector('#pf-edit-cancel').addEventListener('click', closeEditModal);
           ov.addEventListener('click', (e) => { if (e.target === ov) closeEditModal(); });
@@ -207,7 +249,6 @@ function renderProductsView(container) {
             const body = ov.querySelector('.modal-body');
             const name = body.querySelector('[name="name"]').value.trim();
             const price = Number(body.querySelector('[name="price"]').value);
-            const vatRaw = body.querySelector('[name="vat"]').value.trim();
             const costRaw = body.querySelector('[name="cost"]').value.trim();
             const providerRaw = body.querySelector('[name="providerId"]').value.trim();
             const description = body.querySelector('[name="description"]').value.trim();
@@ -219,9 +260,15 @@ function renderProductsView(container) {
               name,
               description: description || null,
               price,
-              vat: vatRaw === '' ? null : Number(vatRaw),
+              // SCRUM-609 · la EDICIÓN tampoco escribe ya el IVA. No se manda `vat: null` —eso
+              // BORRARÍA el que hay al guardar cualquier otro cambio—: simplemente no viaja, y
+              // `updateProduct` sólo toca las claves presentes. Dejar de escribir ≠ borrar.
               cost: costRaw === '' ? null : Number(costRaw),
               providerId: providerRaw === '' ? null : Number(providerRaw),
+              // SCRUM-609 · el lado elegido. Viaja SIEMPRE (aunque sea null) porque el PUT
+              // sólo toca las claves presentes: si no viajara, no se podría volver a «sin
+              // clasificar» una vez declarado.
+              itemKind: _editSwitch ? _editSwitch.leer() : null,
             };
 
             const saveBtn = ov.querySelector('#pf-edit-save');
@@ -250,9 +297,25 @@ function renderProductsView(container) {
           const body = editOverlay.querySelector('.modal-body');
           body.querySelector('[name="name"]').value = it.name || '';
           body.querySelector('[name="price"]').value = it.price ?? '';
-          body.querySelector('[name="vat"]').value = it.vat === null ? '' : String(it.vat);
           body.querySelector('[name="cost"]').value = it.cost === null ? '' : String(it.cost);
+          // SCRUM-609 · el margen NO se guarda: se DERIVA de coste y precio. Si no hay coste no
+          // hay margen que enseñar, y el campo se queda vacío — que es «no se sabe», no 0.
+          const mg = window.margenCatalogo.margenDesde(it.cost, it.price);
+          body.querySelector('[name="margen"]').value = mg === null ? '' : String(mg);
           body.querySelector('[name="description"]').value = it.description || '';
+
+          // SCRUM-609 · EL LADO GUARDADO MANDA AL ABRIR, y esto es lo que hace que el switch
+          // sirva de algo: uno que no lee lo guardado OLVIDA lo que elegiste en cuanto
+          // recargas, y eso es peor que no tenerlo. Es la razón por la que este ticket paró
+          // hasta tener columna.
+          //
+          // Se escribe DESPUÉS de rellenar los campos a propósito: `aplicarLado` decide mirando
+          // si el campo tiene valor (invariante ② de CONT-01), así que necesita los valores ya
+          // puestos. Al revés escondería un coste que estaba a punto de aparecer.
+          if (_editSwitch) {
+            _editSwitch.escribir(it.itemKind || null);
+            _editSwitch.aplicar();
+          }
 
           const provSel = body.querySelector('[name="providerId"]');
           provSel.innerHTML = '<option value="">— Sin proveedor —</option>';
@@ -277,6 +340,25 @@ function renderProductsView(container) {
     // --- form create ---
     const form = document.createElement("div");
     form.style.cssText = "padding:0 20px 4px";
+    // ── SCRUM-609 (CAT-01) · QUÉ CAMBIA EN ESTE FORMULARIO ─────────────────────────────────
+    //
+    // SALE «IVA (0..1)». El tipo depende del trabajo y del destinatario, no del artículo: se fija
+    // en la línea del documento, donde YA existe su sitio (`vatDefault`). Y pedirle una fracción
+    // decimal a un fontanero era la mitad del defecto que abrió el ticket.
+    //
+    // 🔴 DEJAR DE ESCRIBIRLO NO ES BORRAR LO ESCRITO. El `vat` de los productos que ya existen se
+    // queda donde está, huérfano y VISIBLE en la tabla de abajo. Borrarlo es migración
+    // irreversible y espera su número de producción — el de cuántos lo tienen distinto del
+    // `defaultVat` de su locale, que son los únicos tecleados a mano.
+    //
+    // ENTRA «Margen %», sobre PRECIO DE VENTA. No es obligatorio, y eso no es un detalle: medido
+    // en este mismo ticket, 8 de 8 productos de hoy no tienen coste. Si el margen fuera
+    // obligatorio, el catálogo que ya existe dejaría de poder guardarse.
+    //
+    // ⚠️ Y los comentarios de este bloque van AQUÍ y no dentro del literal de abajo: el DOM del
+    // banco de vistas (`tests/_banco-vistas.mjs`) trae su propio parser de `innerHTML`, y ninguna
+    // vista que monta llevaba un comentario HTML hasta hoy. El primero que puse reventó su
+    // `querySelector`. No se cambia el banco por un comentario.
     form.innerHTML = `
       <div class="quote-block">
         <h3 class="quote-block-title">Nuevo producto</h3>
@@ -293,13 +375,13 @@ function renderProductsView(container) {
         </div>
 
         <div class="field">
-          <label>IVA (0..1)</label>
-          <input name="vat" type="number" step="0.01" min="0" max="1" placeholder="0.21" />
+          <label>Coste</label>
+          <input name="cost" type="number" step="0.01" min="0" placeholder="60.00" />
         </div>
 
         <div class="field">
-          <label>Coste</label>
-          <input name="cost" type="number" step="0.01" min="0" placeholder="60.00" />
+          <label>Margen %</label>
+          <input name="margen" type="number" step="0.01" placeholder="70" />
         </div>
 
         <div class="field">
@@ -324,10 +406,37 @@ function renderProductsView(container) {
   
     const nameI = form.querySelector('input[name="name"]');
     const priceI = form.querySelector('input[name="price"]');
-    const vatI = form.querySelector('input[name="vat"]');
+    // SCRUM-609: el campo de IVA ya no existe en el alta. Entra el de margen.
+    const margenI = form.querySelector('input[name="margen"]');
+
+    /**
+     * SCRUM-609 · el autocompletado coste ↔ margen ↔ precio. La aritmética NO vive aquí: está en
+     * `margenCatalogo.js`, sin DOM y con su test. Aquí sólo se cablea.
+     *
+     * 🔴 Se escribe SÓLO el campo que el módulo devuelve, y nunca el que el usuario acaba de
+     * tocar: pisarle lo que está tecleando es como se pierde un número a medio escribir.
+     * Y «sólo precio» no autocompleta NADA — es un caso válido, no un formulario a medias.
+     */
+    function cablearMargen(campoCoste, campoPrecio, campoMargen) {
+      const aplicar = (cambiado) => {
+        const r = window.margenCatalogo.autocompletar({
+          coste: campoCoste.value, precio: campoPrecio.value, margen: campoMargen.value,
+        }, cambiado);
+        if (r.precio !== null && cambiado !== 'precio') campoPrecio.value = String(r.precio);
+        if (r.margen !== null && cambiado !== 'margen') campoMargen.value = String(r.margen);
+      };
+      campoCoste.addEventListener('input', () => aplicar('coste'));
+      campoPrecio.addEventListener('input', () => aplicar('precio'));
+      campoMargen.addEventListener('input', () => aplicar('margen'));
+    }
     const costI = form.querySelector('input[name="cost"]');
     const providerSelect = form.querySelector('select[name="providerId"]');
     const descI = form.querySelector('input[name="description"]');
+    cablearMargen(costI, priceI, margenI);
+    // SCRUM-609 · el switch del ALTA. Nace SIN lado marcado: null = «nadie lo ha declarado»,
+    // y con null se ven todos los campos (invariante de CONT-01). Preseleccionar Producto
+    // aqui declararia por el profesional en cada alta, que es lo que la columna nullable evita.
+    const altaSwitch = cablearTipoArticulo(form, form.querySelector('.quote-form-row'), null);
     const createBtn = form.querySelector("#pf-create-product");
   
     // --- table ---
@@ -688,7 +797,6 @@ function renderProductsView(container) {
   
         const name = String(nameI.value || "").trim();
         const price = Number(priceI.value);
-        const vatRaw = String(vatI.value || "").trim();
         const costRaw = String(costI.value || "").trim();
         const providerRaw = String(providerSelect?.value || "").trim();
         const description = String(descI.value || "").trim();
@@ -700,16 +808,19 @@ function renderProductsView(container) {
           name,
           description: description || null,
           price,
-          vat: vatRaw === "" ? null : Number(vatRaw),
+          // SCRUM-609: el alta DEJA DE ESCRIBIR el IVA. No se manda: no es que se mande null,
+          // es que el campo ya no existe. El `vat` de lo que ya hay no se toca.
           cost: costRaw === "" ? null : Number(costRaw),
           providerId: providerRaw === "" ? null : Number(providerRaw),
+          // SCRUM-609 · el lado elegido, o null si nadie tocó el switch.
+          itemKind: altaSwitch.leer(),
         };
   
         await createProduct(merchantId, payload);
   
         nameI.value = "";
         priceI.value = "";
-        vatI.value = "";
+        margenI.value = "";
         costI.value = "";
         if (providerSelect) providerSelect.value = "";
         descI.value = "";

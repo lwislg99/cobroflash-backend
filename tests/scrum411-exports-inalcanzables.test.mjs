@@ -94,7 +94,17 @@ const R = analizar(RAIZ);
 //
 // Quedan 7, y de las tres del bloque fiscal que SCRUM-500 nombró juntas siguen dos esperando el
 // mismo GO: `recargoEquivalencia.ts` (A3) y `suplidos.ts`. **Bajan cuando les llegue el suyo.**
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 7;
+// 🔴 7 → 8 · 2-sep-2026 · SCRUM-652 (T3 fase B). SUBIDA A CONCIENCIA, y el motivo es un GATE que
+// no es mío: entra `src/modules/jobs/domain/parteTrabajo.ts` —el parte de trabajo, con su sello sin
+// precios y sus dos candados— construido y probado con 12 tests, y **sin llamador todavía**.
+//
+// No es deuda ni olvido: el parte necesita dónde vivir, y eso es `prisma/schema.prisma`, que es del
+// fundador. El diff está preparado en `docs/master/SCRUM-652.md`. Cablearlo a la fuerza para que
+// este número no subiera habría sido saltarse un STOP para que un contador quedara bonito — que es
+// justo lo que prohíbe la cabecera de arriba.
+//
+// **Baja a 7 el commit que le ponga consumidor**, y ese commit es el que persista el parte.
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 8;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 
