@@ -800,3 +800,121 @@ arrancar producción** (SCRUM-220). El esquema entra en el PR ③ **cuando las t
 tengan**, junto con la primitiva, los tres cálculos y los tests. **Sin partir.**
 
 El registro operativo va, como manda la casa, en `docs/MIGRATIONS_PENDING.md`.
+
+## 11 · ✅ FASE ③ · el PR completo: schema + primitiva + los tres cálculos + tests
+
+**Medido contra:** `origin/main` = `1ec13b4a85e600e83b29655a827e73a290c675b7`. Las **tres** bases
+tienen ya la columna (dev 5/5, staging 8/8, **producción 13/13**), así que el `schema.prisma`
+puede ir por fin: `schemaDrift` compara esperado ⊆ real y ahora la realidad alcanza.
+
+### 11.1 · El sitio único: `src/core/zonaDelMerchant.ts`
+
+Una sola pieza con la decisión y el reloj:
+
+| | |
+|---|---|
+| `ZONA_POR_DEFECTO` | `'UTC'` — lo que el sistema hacía **antes** de existir la columna |
+| `zonaDelMerchant(m)` | **el único sitio que decide** qué zona usa un merchant |
+| `diaNaturalEn` · `mesNaturalEn` | a qué día / mes natural pertenece un instante **en esa zona** |
+| `inicioDelDiaEn` · `finDelDiaEn` | los extremos del día, para el corte «hasta el día X» |
+| `diasEntre` | días de calendario entre dos días **ya resueltos** — sin zona, porque ya no hace falta |
+
+Sin librerías: `Intl` con `timeZone` explícito y `Date.UTC`, el método de SCRUM-630 (2/2) y 640.
+
+### 11.2 · 🔴 Un arreglo de RAÍZ, no un vigilante
+
+`fechaLimiteRecapitulativa` **devuelve ahora un DÍA (`YYYY-MM-DD`), no un instante**. Antes
+construía medianoche en el reloj del proceso y había que formatearla con cuidado
+(`toIsoDateLocal`) para que `toISOString()` no la desplazara: ese cuidado era **algo que había
+que recordar**, y bastaba formatear «como se formatea todo» para mover un plazo legal.
+
+**Un plazo del art. 13.2 es un día del calendario.** Representado como día, el problema **deja de
+existir** en vez de quedar vigilado. Y `toIsoDateLocal` **se retiró con la trampa que existía
+para esquivar** — también su declaración en el censo de huérfanos, borrada y no puesta a cero.
+
+### 11.3 · Los tres cálculos — y un cuarto que apareció al tirar del hilo
+
+| Cálculo | Antes | Ahora |
+|---|---|---|
+| `mesNaturalKey` (rotura del art. 13) | `getFullYear()`/`getMonth()` | `mesNaturalEn(fecha, zona)` |
+| `calcularSemaforo` (plazo art. 13.2) | `startOfDay` local ×2 | días naturales en la zona del merchant |
+| `dentroDeRangoFecha` («hasta el día X») | `new Date(str)` en UTC **+** `setHours` local | `inicioDelDiaEn` / `finDelDiaEn` en la zona |
+| ⚠️ **`avisoDeFacturacion`** (SCRUM-171b) | el mismo `startOfDay` local | días naturales en la zona |
+
+**El cuarto no estaba en el encargo y se declara:** usaba el mismo `startOfDay` y vive en el
+MISMO fichero. Dejarlo habría sido colocar un lector del reloj de la máquina **pegado al arreglo
+que existe para quitarlo** — el defecto de familia reintroducido en el propio diff que lo cierra.
+
+**La zona se lee UNA vez** (en `getPendientesFacturar` y en los dos sitios de `albaranes.routes`)
+y se pasa hacia abajo. Un test por AST vigila que **nadie más la resuelva por su cuenta**: un
+segundo `timezone || 'algo'` en cualquier fichero pone el guard en rojo.
+
+### 11.4 · El control, con el proceso en UTC (como Railway)
+
+Albarán del **1-abr 00:30 en la zona del merchant**:
+
+| Zona del merchant | Mes (art. 13) | Semáforo | ¿En rango «hasta 31-mar»? |
+|---|---|---|---|
+| `Europe/Madrid` | **2026-04** | **rojo** | **no** |
+| `Atlantic/Canary` | **2026-04** | **rojo** | **no** |
+| `UTC` | 2026-04 | rojo | no — **el comportamiento de hoy, afirmado como ESPERADO** |
+
+**Que DISTINGUE las zonas** — el mismo instante, tres merchants:
+
+| Instante (UTC) | Madrid | Canarias | UTC | |
+|---|---|---|---|---|
+| 31-mar 22:30 | **01-abr** | 31-mar | 31-mar | separa península de Canarias |
+| 31-mar 23:30 | 01-abr | 01-abr | **31-mar** | separa Canarias de UTC |
+| 31-ene 23:30 | **01-feb** | 31-ene | 31-ene | invierno: separa la península |
+| 15-abr 12:00 | 15-abr | 15-abr | 15-abr | mediodía: **no separa a nadie** |
+
+> ⚠️ **No se afirma que los tres den tres calendarios distintos**, y no es una rebaja: con +2, +1
+> y 0 la separación máxima son **dos horas**, así que nunca puede haber tres grupos. Se afirma que
+> **cada par se separa en algún instante**. Exigir tres sería pedir un rojo imposible.
+
+**✅ CONTROL NEGATIVO:** un merchant peninsular con un albarán de **mediodía** — mes `2026-04`,
+en rango, semáforo verde: **exactamente como hoy**. Y el «hasta el 30 entero» sigue incluyendo el
+último día completo, que es lo que SCRUM-70 protege.
+
+### 11.5 · Probado en ROJO, cinco veces, revirtiendo por bytes
+
+| Inyección | Cae |
+|---|---|
+| ① la zona sin declarar vuelve a la **península** | el test del defecto |
+| ② `mesNaturalKey` vuelve al reloj del proceso | península |
+| ③ el corte vuelve a `setHours()` local | península **y** el de SCRUM-70 |
+| ④ el semáforo deja de mirar la zona | península **y** Canarias |
+| ⑤ la primitiva **aprende de impuestos** | el guard del compromiso |
+
+Las cinco revertidas con `Buffer.compare` sobre los bytes de disco, y verde otra vez (25/25).
+
+### 11.6 · Y deja de medir la máquina
+
+Suite entera con la zona del proceso forzada:
+
+| `TZ` | Resultado |
+|---|---|
+| `Pacific/Kiritimati` (+14) | **4201 · fail 0** |
+| `UTC` (el runner de CI) | **4201 · fail 0** |
+| `Europe/Madrid` | **4201 · fail 0** |
+| `Pacific/Midway` (−11) | 4201 · fail **2** — ver abajo |
+
+Los dos de Midway son `SCRUM-300` y `SCRUM-397`, **ya arreglados en `origin/main`** por
+SCRUM-640: esta rama está apilada sobre una base anterior a ese merge y **no toca esos ficheros**,
+así que al integrar vendrán de `main`. Comprobado: `merge-tree` contra `origin/main` da **cero
+conflictos**.
+
+Cuatro ficheros de test que heredaban la zona pasan a fijarla a mano (`scrum17`, `scrum69`,
+`scrum171b`, `scrum615`, `scrum70`): al mover el defecto por defecto a UTC, sus fixtures locales
+dejaban de casar. **Es el mismo defecto de SCRUM-640 en la otra dirección**, y se cierra igual.
+
+### 11.7 · ⛔ Lo que NO entra, y sigue esperando
+
+* **La salida C** —pedir la zona al merchant en la bandeja— **NO está en este PR**. El backfill
+  resolvió a los 13 de hoy, **que son de prueba**; C es para los usuarios **futuros**, entre los
+  que habrá canarios. **El backfill no la sustituye.** Necesita microcopy (regla 30).
+* **`calcularSemaforo` con límite ilegible sigue devolviendo `'verde'`** — el hallazgo de
+  SCRUM-622. Se conserva **tal cual y con su comentario**: arreglarlo aquí mezclaría dos cambios
+  en un diff. Entra en su propio paso, encima de este código.
+* **El IGIC (SCRUM-646) no se construye**, y la primitiva **no lo aprende**: hay un test que cae
+  si alguien le añade un export fiscal.
