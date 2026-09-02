@@ -43,6 +43,28 @@ import { partirConceptoYDescripcion } from './conceptoLinea'; // SCRUM-603 (DOC-
 export const MARCADOR_MICROCOPY_DESGLOSE = '[PENDIENTE microcopy oficial]';
 
 /**
+ * SCRUM-593 (DOC-03) · El título del bloque FINAL del documento.
+ *
+ * ✅ APROBADO por el fundador el 2-sep-2026: «Observaciones», literal y sin variantes, en los tres
+ * documentos. **NO lleva marcador**: marcar texto firmado obligaría a refirmarlo.
+ */
+export const TITULO_OBSERVACIONES = 'Observaciones';
+
+/**
+ * SCRUM-593 (DOC-03) · El título del bloque de CABECERA — el texto libre que va bajo los datos.
+ *
+ * 🔴 SIN DECIDIR. Sale con marcador A PROPÓSITO y no se deriva de «Observaciones»: que el bloque
+ * final se llame así no dice nada sobre cómo se llama éste, y deducirlo sería inventar microcopy
+ * (regla 30). Se ve en el documento hasta que el fundador lo firme, que es la única forma de que
+ * nadie encienda por descuido un rótulo sin aprobar.
+ *
+ * ⚠️ HUECO DECLARADO: el censo de marcadores de SCRUM-402 mira SÓLO `public/dashboard/js`, así que
+ * un marcador que vive en `src/` —como éste— **no lo cuenta nadie**. Queda dicho aquí porque el
+ * sitio donde se ve es un documento que se le entrega a un cliente.
+ */
+export const MARCADOR_MICROCOPY_CABECERA_DOC = '[PENDIENTE microcopy oficial]';
+
+/**
  * SCRUM-623 (enmienda) · EL NOMBRE DEL IMPUESTO ES UN DATO, NO UNA CONSTANTE DE LA MAQUETA.
  *
  * Canarias es mercado, y un profesional canario NO repercute IVA: repercute **IGIC**, con tipos
@@ -583,6 +605,11 @@ export async function generateQuotePdf(params: {
   };
   // A20.4: qué datos del cliente se muestran (null/undefined = todos los presentes)
   docFields?: { name?: boolean; phone?: boolean; taxId?: boolean; email?: boolean } | null;
+  // SCRUM-593 (DOC-03) · los dos textos libres del documento. MULTILÍNEA: los saltos se respetan
+  // (PDFKit los honra en `doc.text`), que es lo que exige SCRUM-655 (T6). Opcionales: sin ellos
+  // el documento sale EXACTAMENTE como hasta hoy.
+  docHeaderText?: string | null;
+  docFooterText?: string | null;
   currency: string;
   total: string;
   lines: Array<{
@@ -674,6 +701,15 @@ export async function generateQuotePdf(params: {
   if (show('phone') && params.customer.phone) doc.text(`Tel: ${params.customer.phone}`);
   if (show('email') && params.customer.email) doc.text(`Email: ${params.customer.email}`);
   doc.moveDown();
+
+  // ── SCRUM-593 (DOC-03) · TEXTO LIBRE bajo la cabecera ─────────────────────────────────────
+  // Va DESPUÉS de los datos del cliente y ANTES del detalle: es texto del documento, no de una
+  // línea. Se pinta sólo si lo hay, para que un documento sin él salga byte a byte como siempre.
+  if (params.docHeaderText && String(params.docHeaderText).trim() !== '') {
+    doc.fontSize(10).font('Helvetica-Bold').text(MARCADOR_MICROCOPY_CABECERA_DOC);
+    doc.font('Helvetica').text(String(params.docHeaderText));
+    doc.moveDown();
+  }
 
   // ===== MODO TIERS: Good/Better/Best =====
   if (params.tiers && params.tiers.length > 0) {
@@ -907,6 +943,18 @@ doc.fontSize(12).text(
 );
 
 doc.moveDown(2);
+
+// ── SCRUM-593 (DOC-03) · OBSERVACIONES ──────────────────────────────────────────────────────
+// El bloque FINAL, tras los totales y antes de la firma. El rótulo está aprobado (2-sep-2026) y
+// va sin marcador. Alineado a la izquierda a propósito: los totales van a la derecha, y un texto
+// libre en esa columna se leería como parte de la suma.
+if (params.docFooterText && String(params.docFooterText).trim() !== '') {
+  doc.fontSize(10).font('Helvetica-Bold').fillColor('black')
+    .text(TITULO_OBSERVACIONES, CONTENT_X, doc.y, { width: CONTENT_W, align: 'left' });
+  doc.font('Helvetica')
+    .text(String(params.docFooterText), CONTENT_X, doc.y, { width: CONTENT_W, align: 'left' });
+  doc.moveDown(1);
+}
 
 // Sección firma digital (si existe)
 if (params.signatureData) {
