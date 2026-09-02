@@ -13,19 +13,28 @@
 // CONSTRUIDO ≠ ALCANZABLE. Aquí se monta la pantalla y se comprueba que los DOS selectores
 // están INSERTADOS y NO OCULTOS — el de la línea también, que hasta hoy no lo verificaba nadie.
 //
-// ⚠️ HUECO QUE ESTE FICHERO NO CIERRA, y se dice en vez de dejarlo suponer: el banco no aplica
-// CSS EXTERNO. Un `display:none` escrito en `styles.css` para una clase de estos nodos NO se
-// detecta aquí. Se cubre lo que se puede alcanzar desde el DOM —no insertado, y ocultación por
-// estilo en línea o atributo `hidden`—; el resto necesita navegador de verdad.
+// ── ✅ EL HUECO QUE ESTE FICHERO DECLARÓ, CERRADO EN SCRUM-666 ────────────────────────────
+// Decía: «el banco no aplica CSS EXTERNO; un `display:none` escrito en `styles.css` no se detecta
+// aquí». Ya se detecta: `quienLoEsconde` consulta las reglas de las hojas que declara el índice
+// (`reglasQueOcultan` + `ocultoPorCss`). Probado por el mecanismo: añadir a `styles.css` una regla
+// que oculte el selector de la LÍNEA hace CAER este fichero.
+//
+// ⚠️ Y LO QUE SIGUE SIN CUBRIRSE, dicho en vez de suponerse: el matcher no resuelve `>`, `+`,
+// `~`, `*` ni pseudoclases, y **las dos reglas que ocultan campos del editor de líneas son
+// justamente de ésas**. Ahí el banco NO contesta «se ve»: se declara CIEGO y este control lo
+// trata como fallo. Un `:has()` o un `@container` nuevos seguirían necesitando navegador.
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { cargarDashboard, pintarVista, todos, reglasQueOcultan, ocultoPorCss } from './_banco-vistas.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+// SCRUM-666 · las reglas de las hojas del indice que pueden ocultar. Se leen UNA vez.
+const REGLAS_CSS = reglasQueOcultan(RAIZ);
 
 /** Sube por los padres hasta la raíz. Devuelve la cadena, para poder decir QUIÉN esconde. */
 function ancestros(n) {
@@ -52,6 +61,17 @@ function quienLoEsconde(n) {
     if (st.visibility === 'hidden' || /visibility\s*:\s*hidden/.test(css)) return `${x.tagName}.${x.className} (visibility:hidden)`;
     if (x.hidden === true) return `${x.tagName}.${x.className} (atributo hidden)`;
   }
+  // 🔴 SCRUM-666 · Y AHORA TAMBIÉN EL CSS EXTERNO. Hasta este ticket, este control sólo miraba
+  // el marcado: un `display:none` escrito en `styles.css` lo dejaba en VERDE. Era el hueco que
+  // esta misma función declaró al entregar SCRUM-660, y era de la clase cara — falso verde.
+  //
+  // Tres respuestas, y la tercera es la que hace que sirva: si hay una regla que MENCIONA una
+  // clase de este nodo y cuyo selector el matcher NO sabe resolver, esto NO dice «se ve»: se
+  // declara CIEGO y el control lo trata como un fallo. Medido en SCRUM-666: las dos reglas que
+  // ocultan campos del editor de líneas usan `:not(:focus-within) >`, que no se sabe resolver.
+  const porCss = ocultoPorCss(n, REGLAS_CSS);
+  if (porCss.oculto === true) return `CSS externo → ${porCss.porQue}`;
+  if (porCss.oculto === null) return `CIEGO: hay reglas que no sé resolver y mencionan sus clases → ${porCss.ciego.join(' · ')}`;
   return null;
 }
 
