@@ -208,6 +208,10 @@ const CENSO = Object.freeze({
   // nueva EN SILENCIO — que es exactamente lo que este trinquete existe para impedir. Quien
   // añada un código mapeado le pone SU constante, para que el fundador pueda firmar uno sin
   // firmar los dos.
+  // SCRUM-593 (2-sep-2026) · LA ENTRADA SE BORRA, no baja a 0 — como dejaron escrito SCRUM-424 y
+  // SCRUM-405 aquí mismo. `textoDelDocumento.js` entró ese día con 1 marcador (el rótulo del campo
+  // de cabecera del documento) y salió el MISMO día: el fundador lo firmó —«Añadir texto en el
+  // documento»— unas horas después. Un marcador que se firma desaparece; no se queda de adorno.
   'productsView.js': 1,
   // SCRUM-644 (2-sep-2026) · SUBIDA A CONCIENCIA: `providersView.js` ENTRA con 1. Es el MISMO
   // defecto y el MISMO criterio que SCRUM-641 arriba —no se inventa uno nuevo—, en el otro fichero
