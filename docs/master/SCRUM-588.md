@@ -1,11 +1,11 @@
-# SCRUM-588 · CONT-16 · Referencia interna por cliente — **② HECHO EN DEV Y STAGING**
+# SCRUM-588 · CONT-16 · Referencia interna por cliente — **CERRADO (①②③)**
 
 **Fecha:** 2-sep-2026 · **Carril:** ficha de cliente · **Gate:** no aplica — hoy no se toca código
 
 **Medido contra:** `origin/main` = `61ae2dc38787201209c4ca5426bffd72a441f0fb` · 2026-09-02T19:49:16Z
 
-> 🛑 **Esta entrada cierra el ① y el ② en DEV y STAGING. Producción la aplica el fundador, y el ③
-> no se empieza hasta que él lo confirme.**
+> ✅ **Los tres pasos, en orden: ① decisión · ② ALTER en LAS TRES bases · ③ esquema + código +
+> tests. El ③ NO se empezó hasta que el fundador confirmó producción.**
 > `prisma/schema.prisma` de esta rama es **idéntico a `main`**, a propósito y comprobado con
 > `diff` contra `origin/main` — no afirmado.
 
@@ -34,7 +34,7 @@ que se midió antes de nada:
 tiene que encontrar la referencia ya existe: `listCustomers` en
 `src/modules/system/customerAdmin.ts:48`, con un `OR` sobre **nombre, teléfono y email**.
 
-### MECANISMO · casi todo existe; el trabajo del ③ será darle superficie
+### MECANISMO · casi todo existía; el ③ fue darle superficie
 
 | eslabón | dónde | ¿existe? |
 | --- | --- | --- |
@@ -132,7 +132,7 @@ Ninguno parte en dos líneas (19 px de alto los cuatro).
 
 ---
 
-## 3 bis · El ② aplicado en DEV y STAGING (producción NO: la aplica el fundador)
+## 3 bis · El ② aplicado en LAS TRES BASES
 
 Procedimiento antes-y-después por base, **y no es ceremonia**: esta casa ya tuvo
 `DATABASE_URL_STAGING` apuntando a desarrollo, y `STAGING` y `TESTS` siendo la misma cadena
@@ -147,6 +147,10 @@ Ninguna cadena de conexión se escribe aquí, ni completa ni parcial: sólo el *
 | **C · dev, después** | `yaqu_dev_javier` | `DATABASE_URL_DEV` | **3** | `text` · null:YES · sin default |
 | **A · staging, antes** | `railway` | `DATABASE_URL_STAGING` | **2** | ausente |
 | **C · staging, después** | `railway` | `DATABASE_URL_STAGING` | **3** | `text` · null:YES · sin default |
+| **producción** | servicio `Postgres` de Railway | — | **3** | `text` · medido por el asesor |
+
+**El fundador aplicó producción** y verificó las tres filas: `internal_ref` = text, más los dos
+controles (`name` = text, `wa_opt_out` = boolean). **Sólo entonces empezó el ③.**
 
 🔴 **El control del carril pasa, y de la forma más directa:** cuando se midió el «antes» de
 staging, **dev ya tenía 3 filas y staging seguía en 2**. Si las dos claves apuntaran a la misma
@@ -168,7 +172,60 @@ algo no lo fuera, para), ② el destino tiene que ser `railway`, ③ la cadena n
 
 ---
 
-## 4 · Lo que NO se ha hecho, y por qué
+## 4 · El ③ · los SEIS eslabones, cableados
+
+| eslabón | dónde | qué se hizo |
+| --- | --- | --- |
+| ① esquema | `prisma/schema.prisma` | `internalRef String? @map("internal_ref")` |
+| ② validación | `schemas.ts` | `z.string().max(120).nullable().optional()` |
+| ③ escritura | `createCustomer` | **nada**: ya pasaba el body validado entero |
+| ④ formulario | `customersView.js` | pinta · carga al editar · envía · **y se añade al DOM** |
+| ⑤ **`select`** | `CUSTOMER_SELECT_NO_TOKEN` | `internalRef: true` |
+| ⑥ **búsqueda** | el `OR` de `listCustomers` | `{ internalRef: { contains: search, mode: 'insensitive' } }` |
+
+El ⑥ es el que distingue este ticket de no haberlo hecho: **sin él, la referencia vive donde ya
+vivía** —en un campo que no se puede buscar— y el profesional no gana nada.
+
+### El camino real, EJECUTADO contra `yaqu_dev_javier`
+
+No leído: ejercitado de punta a punta, con el cliente de prueba borrado al terminar.
+
+| | resultado |
+| --- | --- |
+| ① `createCustomer` devuelve `internalRef` | **OK** — el `select` no se la come |
+| ② `getCustomer` la relee | **OK** — la pantalla no se recarga vacía |
+| ③ **CONTROL POSITIVO**: buscar la referencia que EXISTE | **1 fila, y es la suya** |
+| ④ buscar una que NO existe | **0 filas** |
+| ⑤ buscar por NOMBRE sigue funcionando | **1 fila** — el `OR` nuevo no rompió lo anterior |
+
+El ③ y el ④ juntos son el suelo: **un buscador que no devuelve nada nunca pasaría cualquier test
+de «no devuelve lo que no toca»**.
+
+### Las decisiones, fijadas por tests
+
+* **Campo LIBRE**: sin `@unique` (dos clientes pueden compartir referencia — es un código ajeno y
+  un choque dejaría a un profesional sin poder dar de alta a su cliente), sin `@default`, y sin
+  `regex` en Zod. El `.max(120)` es un tope de almacenamiento, **no un formato**.
+* **«Ausente ≠ vacío»**: el payload manda `null`, nunca `''`. Una cadena vacía diría «tiene
+  referencia, y es nada».
+* **Microcopy literal**, con el carácter `…` de un solo punto suspensivo, no tres.
+
+### Medición en navegador, a 360 px
+
+| | valor |
+| --- | --- |
+| rótulo «Referencia interna» | **103 px**, una línea |
+| placeholder | **219 px** sobre **308** útiles — cabe |
+| alto del input | **45 px** (≥ 44, AB6) |
+| página scrollea en horizontal | **no** |
+| orden en el modal | NIF/CIF → **Referencia interna** → Notas |
+
+Va **justo encima de «Notas»** a propósito: es donde el profesional la metía por no tener sitio
+propio, y ponerla encima es lo que hace que la próxima vez no acabe ahí.
+
+---
+
+## 5 · Lo que NO se ha hecho, y por qué
 
 * **Producción NO se ha tocado.** La aplica el fundador. Desde un árbol de trabajo no hay acceso
   ni debe haberlo.

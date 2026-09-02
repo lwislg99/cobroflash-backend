@@ -392,6 +392,15 @@ export const customerCreateSchema = z.object({
   billingPostalCode: z.string().max(20).nullable().optional(),
   billingProvince: z.string().max(100).nullable().optional(),
   billingCountry: z.string().max(2).nullable().optional(),
+  /**
+   * SCRUM-588 (CONT-16) · La referencia interna del cliente. **Campo LIBRE a propósito**: el
+   * `.max(120)` es un tope de almacenamiento, no un formato. No hay `regex`, no hay unicidad y
+   * no se autogenera — es el número de OTRO sistema (expediente, finca, código heredado) y
+   * validar su forma sería rechazarle al profesional un dato que él sí tiene delante.
+   *
+   * `.nullable()` porque «ausente ≠ vacío»: el front manda `null`, nunca `''`.
+   */
+  internalRef: z.string().max(120).nullable().optional(),
   // SCRUM-171b (FACT-2d): periodicidad PACTADA. Sirve para AVISAR de que toca facturar, nunca
   // para facturar sola (regla 28: un envío automático nuevo exigiría su entrada en la tabla J6).
   // Lista cerrada aquí; el default de la BD es 'NINGUNA' = sin aviso, que es lo de hoy.
