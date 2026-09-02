@@ -670,8 +670,9 @@ app.put('/admin/merchant', requireRole('admin'), async (req, res, next) => {
 // ese rótulo borraría datos REALES bajo una etiqueta que dice lo contrario. Por eso el front no
 // lo pinta fuera del demo y aquí se rechaza igualmente — la puerta se cierra por los dos lados.
 //
-// El barrido es el DERIVADO del schema (SCRUM-314, primera mitad): cubre los 23 modelos con
-// `merchantId` y hereda el guard de SCRUM-172/192, así que no puede volver a quedarse corto.
+// El barrido es el DERIVADO del schema (SCRUM-314, primera mitad): cubre TODOS los modelos con
+// `merchantId` —sean los que sean, sin número escrito aquí (SCRUM-680)— y hereda el guard de
+// SCRUM-172/192, así que no puede volver a quedarse corto.
 app.post('/admin/datos-ejemplo/eliminar', requireRole('admin'), async (req, res, next) => {
   try {
     const merchant = await prisma.merchant.findUnique({
