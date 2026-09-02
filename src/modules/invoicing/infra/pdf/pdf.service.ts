@@ -23,6 +23,44 @@ import { partirConceptoYDescripcion } from './conceptoLinea'; // SCRUM-603 (DOC-
  * ×2, `albaranPublicVista`, `weeklyDigest.service`, `customerPortal.routes`). No existe un
  * formateador de dinero compartido en `src/`.
  */
+/**
+ * SCRUM-623 · El rótulo de la columna de BASES del desglose por tipo.
+ *
+ * La FORMA la decidió el fundador (una fila por tipo, con su base y su cuota); la PALABRA no
+ * está escrita, y no me toca escribirla (regla 30). Sale con marcador A PROPÓSITO: es la única
+ * forma de que nadie encienda por descuido un rótulo sin firmar en un documento fiscal.
+ *
+ * ⚠️ SE VE EN EL PDF. Sólo en facturas de MÁS DE UN TIPO, y hoy eso no llega a un cliente real:
+ * `INVOICING_ES_ENABLED` está OFF para merchants ES (regla 24) y la demo lleva marca de agua.
+ * Aun así, esto hay que apagarlo escribiendo la palabra, no dejándolo correr.
+ */
+export const MARCADOR_MICROCOPY_DESGLOSE = '[PENDIENTE microcopy oficial]';
+
+/**
+ * SCRUM-623 (enmienda) · EL NOMBRE DEL IMPUESTO ES UN DATO, NO UNA CONSTANTE DE LA MAQUETA.
+ *
+ * Canarias es mercado, y un profesional canario NO repercute IVA: repercute **IGIC**, con tipos
+ * propios. En Ceuta y Melilla, **IPSI**. Si el nombre estuviera grabado en la forma del
+ * desglose, abrirle la puerta después obligaría a rehacer el bloque de totales de un documento
+ * ya emitido — caro, y con la regla 29 delante. Hoy sale gratis: se recibe por parámetro.
+ *
+ * 🔴 Y POR QUÉ ESTE VALOR NO SE RESUELVE AQUÍ, que es la parte que importa:
+ *
+ * Existe `locale.vatName` (`core/i18n/locales.ts`), que ya vale `IGV` en Perú y que el desglose
+ * del PRESUPUESTO de este mismo fichero ya consume. **NO se reutiliza, y no es por capricho:
+ * está indexado por PAÍS, y Canarias es `ES`.** Resolver el nombre desde el país le daría `IVA`
+ * a un canario — o sea, una forma que PARECE neutral y no lo es, que es justo lo que no puede
+ * pasar. Y medido: `Merchant` no tiene ningún campo de territorio fiscal; su única columna
+ * geográfica es `country`. Con el dato de hoy, QUÉ IMPUESTO APLICA NO ES RESOLUBLE.
+ *
+ * Así que esto abre la puerta y no la cruza: la MAQUETA queda neutral y quien sepa el impuesto
+ * lo pasa. Mientras nadie lo pase, el papel sale exactamente igual que hasta hoy.
+ *
+ * ⚠️ Este valor por defecto es el de la España peninsular y NO es una decisión fiscal: es lo
+ * que el documento ya imprimía. El día que alguien resuelva el territorio, se pasa y ya está.
+ */
+export const NOMBRE_IMPUESTO_POR_DEFECTO = 'IVA';
+
 export function fmtImporte(v: number): string {
   return v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
@@ -82,6 +120,10 @@ export async function generateInvoicePdf(params: {
   rectifiesNumber?: string | null; // nº de la factura original (solo R1)
   watermark?: string | null;       // texto diagonal en cada página (demo: "DEMO — no válida fiscalmente")
   stageLabel?: string | null;      // SCRUM-33: etiqueta del tramo (SCRUM-27), null en presets — se omite si no hay
+  // SCRUM-623 (enmienda) · el NOMBRE del impuesto que se repercute: `IVA`, `IGIC` (Canarias),
+  // `IPSI` (Ceuta y Melilla), `IGV`… Viene de FUERA porque la maqueta no puede saberlo: ver
+  // `NOMBRE_IMPUESTO_POR_DEFECTO`. Sin él, el documento sale exactamente como hasta hoy.
+  taxName?: string | null;
 }) {
   const fileName = `${params.merchantId}-${params.number}.pdf`; // SCRUM-72
   const outPath  = path.join(invoicesDir, fileName);
@@ -169,6 +211,9 @@ export async function generateInvoicePdf(params: {
   // Título "FACTURA" / "FACTURA RECTIFICATIVA" / "JUSTIFICANTE DE COBRO" + Nº/Ref + Fecha
   const isRect = params.type === 'R1';
   const docTitle = isReceipt ? 'JUSTIFICANTE DE COBRO' : isRect ? 'FACTURA RECTIFICATIVA' : 'FACTURA';
+  // SCRUM-623 (enmienda) · una sola vez y desde fuera. Tres sitios de este documento lo usan;
+  // tres copias volverían a divergir, y la que divergiera sería la que nadie mira.
+  const impuesto = params.taxName || NOMBRE_IMPUESTO_POR_DEFECTO;
   doc.fontSize(isRect || isReceipt ? 17 : 22).font('Helvetica-Bold')
     .fillColor(isRect ? '#dc2626' : INK)
     .text(docTitle, M, headerY, { width: W, align: 'right' });
@@ -246,7 +291,7 @@ export async function generateInvoicePdf(params: {
     doc.text('CONCEPTO',    XC,  thY, { width: WC });
     doc.text('CANT.',       XQ,  thY, { width: WQ,  align: 'right' });
     doc.text('PRECIO UNIT', XP,  thY, { width: WP,  align: 'right' });
-    doc.text('IVA %',       XIV, thY, { width: WIV, align: 'right' });
+    doc.text(`${impuesto} %`, XIV, thY, { width: WIV, align: 'right' });
     doc.text('TOTAL',       XT,  thY, { width: WT,  align: 'right' });
     doc.y += 16;
     hLine(doc.y, BORDER);
@@ -341,14 +386,85 @@ export async function generateInvoicePdf(params: {
       .text(fmt(subtotal) + ' ' + params.currency, totalsX + totalsW * 0.6, ty0, { width: totalsW * 0.4, align: 'right' });
     doc.moveDown(0.4);
 
-    // Cada tipo de IVA
-    Object.entries(vatMap).forEach(([rate, g]) => {
-      if (g.vat === 0) return;
-      const vy = doc.y;
-      doc.text(`IVA ${rate}:`, totalsX, vy, { width: totalsW * 0.6 })
-        .text(fmt(g.vat) + ' ' + params.currency, totalsX + totalsW * 0.6, vy, { width: totalsW * 0.4, align: 'right' });
-      doc.moveDown(0.4);
-    });
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // 🔴 SCRUM-623 · UNA FILA POR TIPO, CON SU BASE Y SU CUOTA.
+    //
+    // LO QUE PASABA, medido leyendo el TEXTO del PDF (instrumento de SCRUM-604):
+    //
+    //     Base imponible: 105,00   IVA 21%: 12,60   TOTAL: 117,60
+    //
+    // El total CUADRA y el cliente paga bien. Lo que no se puede es cuadrarlo DESDE EL PAPEL:
+    // 105 × 21 % = 22,05, no 12,60. Faltan 9,45 € que el documento no explica, porque la
+    // segunda base —45 € al 0 %— no aparecía por ninguna parte.
+    //
+    // ⚠️ Y EL ENUNCIADO EXACTO NO ES «imprime una sola fila». Medido, son DOS defectos:
+    //   ① `if (g.vat === 0) return` SALTABA el tipo cuya cuota es cero (0 %, exento, suplido),
+    //      así que su base desaparecía del papel aunque estuviera sumada en «Base imponible».
+    //   ② Y aun con dos tipos que SÍ tienen cuota —21 % y 10 %— se imprimían dos cuotas y UNA
+    //      sola base agregada: tampoco se sabe qué base va con qué tipo.
+    // O sea que la propiedad que falla en TODOS los casos mixtos es: **las BASES no se
+    // imprimen por tipo**. Es lo que arregla esto.
+    //
+    // ── DE DÓNDE SALEN LAS CIFRAS, Y POR QUÉ NO DE `calcVatBreakdown` ──────────────────
+    // 🛑 Existe `calcVatBreakdown` (vat.service), que YA devuelve `{rate, base, cuota}` por tipo
+    // y que alimenta el libro, el modelo 303 y el XML de VeriFactu. Lo natural sería consumirla
+    // aquí y borrar este mapa. NO SE HACE, y no es pereza: MEDIDO sobre 4.006 combinaciones,
+    // **cambiaría alguna cifra impresa en 547 de ellas** (un céntimo en la cuota y en el total),
+    // porque aquella redondea base y cuota POR SEPARADO y ésta no redondea hasta `fmt`.
+    // Cambiar una cifra de una factura no es este ticket. Queda escrito en docs/master/SCRUM-623.md.
+    //
+    // Así que las cifras salen del MISMO `vatMap` de arriba, que ya venía acumulando `base` por
+    // tipo sin imprimirla nunca. **Ni una operación aritmética nueva.**
+    //
+    // ── UN SOLO TIPO: EXACTAMENTE COMO HASTA HOY ──────────────────────────────────────
+    // El desglose sólo aparece cuando hay MÁS DE UN TIPO. Con uno solo el papel ya era
+    // reconstruible (base × tipo = cuota) y no había nada que arreglar; tocarlo sería mover algo
+    // que estaba bien. Eso incluye la factura íntegramente al 0 %: sigue sin fila de IVA.
+    //
+    // ── Y POR QUÉ ESTA FORMA SIRVE A LAS DOS RESPUESTAS DE SCRUM-619 ──────────────────
+    // Sigue abierta la pregunta a la asesoría de si el suplido va DENTRO de la base imponible
+    // (hoy, como una base al 0 %) o FUERA (que es lo que dice `suplidos.ts`). Este bloque está
+    // cerrado sobre TIPOS IMPOSITIVOS, no sobre la naturaleza de la línea:
+    //   · si va DENTRO → el suplido ES la fila del 0 %, y «Base imponible» lo incluye;
+    //   · si va FUERA  → esa fila desaparece de aquí y el suplido baja a una línea PROPIA fuera
+    //     del bloque. La forma del bloque no cambia: tiene una fila menos.
+    // 🔴 POR ESO LA FILA SE ROTULA POR SU TIPO Y NUNCA COMO «suplido». Si se etiquetara por la
+    // naturaleza, la respuesta «FUERA» rompería la maqueta. Y además hoy el dato NO distingue un
+    // suplido de una exención: los dos son una línea al 0 % (medido en SCRUM-619).
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    const tiposDeIva = Object.entries(vatMap);
+
+    if (tiposDeIva.length <= 1) {
+      tiposDeIva.forEach(([rate, g]) => {
+        if (g.vat === 0) return;
+        const vy = doc.y;
+        doc.text(`${impuesto} ${rate}:`, totalsX, vy, { width: totalsW * 0.6 })
+          .text(fmt(g.vat) + ' ' + params.currency, totalsX + totalsW * 0.6, vy, { width: totalsW * 0.4, align: 'right' });
+        doc.moveDown(0.4);
+      });
+    } else {
+      // El rótulo de la columna de bases es TEXTO NUEVO y no me toca escribirlo (regla 30). Va
+      // como marcador y UNA sola vez: la fila la describen el tipo y el importe, que son dato.
+      doc.text(MARCADOR_MICROCOPY_DESGLOSE, totalsX, doc.y, { width: totalsW });
+      doc.moveDown(0.3);
+
+      // Orden descendente por tipo, igual que `calcVatBreakdown`, para que dos documentos con
+      // las mismas líneas en distinto orden no salgan con las filas cambiadas de sitio.
+      const wTipo = totalsW * 0.11;
+      const wBase = totalsW * 0.32;
+      const wRot  = totalsW * 0.21;
+      const wCuota = totalsW * 0.32;
+      [...tiposDeIva]
+        .sort((a, b) => parseFloat(b[0]) - parseFloat(a[0]))
+        .forEach(([rate, g]) => {
+          const vy = doc.y;
+          doc.text(rate, totalsX, vy, { width: wTipo })
+            .text(fmt(g.base) + ' ' + params.currency, totalsX + wTipo, vy, { width: wBase, align: 'right' })
+            .text(`${impuesto} ${rate}:`, totalsX + wTipo + wBase + 4, vy, { width: wRot })
+            .text(fmt(g.vat) + ' ' + params.currency, totalsX + wTipo + wBase + 4 + wRot, vy, { width: wCuota, align: 'right' });
+          doc.moveDown(0.4);
+        });
+    }
 
     // Total final — el momento del dinero (Regla del Importe: Tinta, grande,
     // con el acento de marca en la regla superior; el verde nunca en la cifra)
