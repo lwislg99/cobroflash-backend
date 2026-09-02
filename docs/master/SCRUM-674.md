@@ -137,6 +137,10 @@ cierta para su base.
 
 **Suite VERDE ENTERA: 4495 tests · 4416 pass · 0 fail · 79 skipped · `exit 0`.**
 
+**Remedido tras mergear `main` otra vez** (`9ef78fc6`, sin conflicto y sin tocar ninguno de mis
+ficheros): **4500 · 4421 · 0 fail · 79 skipped · `exit 0`**. Los 5 tests que trae `main` entran
+en verde.
+
 ## SCRUM-192 + SCRUM-314 (×2): un solo cambio cierra los tres
 
 `barridoDemo` **reusa `ORDEN_BORRADO_MERCHANT`** — es su decisión de diseño declarada, no una
