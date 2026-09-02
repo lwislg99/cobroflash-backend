@@ -102,7 +102,8 @@ Puro: sin BD, sin red, sin Express. Sin pantalla, como pedía el encargo.
   `parteTrabajo.ts` ya tomó («no son una etiqueta de la línea: son su sitio»).
 * `aLineaDelParte(bloque, propuesta, undsConfirmadas)` → **la puerta**. Lanza nombrando la línea si
   nadie confirmó la cantidad. Una propuesta no es una línea del parte.
-* `PROMPT_PARTE_PROPUESTO` — **texto propuesto, NO aprobado** (regla 30).
+* `PROMPT_PARTE_APROBADO` — la instrucción al modelo, **aprobada el 2-sep-2026** (regla 30).
+* `AVISOS_DEL_DICTADO` — los textos aprobados, junto al código que los produce.
 
 **Un bloque ilegible no se adivina y la línea no se tira:** va a `sinBloque` para que el técnico la
 coloque. `BLOQUES_PARTE` es cerrado (regla 27) y de aquí no sale un tercero.
@@ -148,18 +149,51 @@ su consumidor es la pantalla del parte (SCRUM-652 fase C), que hace **otra sesi�
 el encargo dice «solo el DOMINIO, sin pantalla». Cablearlo desde aquí sería editar sus ficheros
 mientras ella los edita. **Baja a 9 el commit que le ponga consumidor.**
 
-## 7 · Microcopy propuesta, PENDIENTE de aprobación (regla 30)
+## 7 · Microcopy — APROBADA por el fundador el 2-sep-2026 (regla 30)
 
-El dominio devuelve **códigos**, no texto de pantalla. Las frases visibles las decide el fundador:
+El dominio devuelve **códigos**; el texto aprobado vive en `AVISOS_DEL_DICTADO`, junto al código que
+lo produce, para que la pantalla lo **copie** en vez de volver a escribirlo. Anotado también en
+`docs/MICROCOPY_APROBADA_SIN_APLICAR.md`.
 
-| código | frase propuesta |
-|---|---|
-| `dictado_vacio` | «No hemos entendido nada del dictado. Escribe las líneas a mano.» |
-| `sin_lineas_reconocidas` | «No hemos podido proponer ninguna línea. El parte se queda en blanco.» |
-| `cantidadesRetiradas` | «No dijiste cuántas. Pon tú la cantidad.» |
+| código | texto aprobado | estado |
+|---|---|---|
+| `dictado_vacio` | `No se ha entendido el dictado — vuelve a dictar o escríbelo a mano` | ✅ aplicado |
+| `sin_lineas_reconocidas` | `No se ha podido sacar ninguna línea — escríbelas tú` | ✅ aplicado |
+| `cantidadesRetiradas` | `Faltan las cantidades — ponlas tú` | 🔴 **NO aplicado** — ver abajo |
 
-Y `PROMPT_PARTE_PROPUESTO` entero, que es la instrucción al modelo. **Nada del mecanismo depende de
-esas palabras**: hay un test que lo prueba pasando una respuesta que ignora el prompt por completo.
+Las dos primeras **suenan parecidas y no lo son**, y por eso terminan en acciones distintas: en la
+primera el dictado no se entendió y volver a dictar puede funcionar; en la segunda se entendió y aun
+así no salió ninguna línea, así que repetir no arregla nada.
+
+> 🔴 **La tercera se para por CONCORDANCIA, y es una medición, no una duda.** El fundador aprobó el
+> plural dando por hecho que es un resumen, y pidió parar si se pinta por línea. Medido:
+> `cantidadesRetiradas` es un array con **una entrada por línea**, cada una con su `descripcion`, y
+> **puede traer exactamente una** — comprobado ejecutándolo:
+>
+> ```
+> sanearDictadoDelParte([{descripcion:'Disco duro', unds:1}], 'Sustituir el disco duro')
+>   → cantidadesRetiradas.length = 1   ·   [{"descripcion":"Disco duro","propuesta":1}]
+> ```
+>
+> Con una sola línea, «Faltan las cantidades» no concuerda **ni siquiera como resumen**. Y hoy
+> **nadie lo pinta**: el módulo no tiene consumidor, así que no hay pantalla donde verlo. La
+> concordancia la decide el fundador, no quien cablee.
+
+**El prompt (`PROMPT_PARTE_APROBADO`) queda aprobado** con la línea añadida sobre no completar
+marcas. **Nada del mecanismo depende de esas palabras**: hay un test que lo prueba pasando una
+respuesta que ignora el prompt por completo.
+
+### 🔴 Las dos mitades no están protegidas igual
+
+Escrito ya dentro de `parteDictado.ts`, junto a la línea nueva, porque hoy no estaba dicho en
+ningún sitio y la línea sola se lee como una garantía:
+
+* **La cantidad** está protegida por **mecanismo**: tiene que aparecer en el texto dictado.
+* **La descripción NO**, y no es un descuido: **reformular es justo lo que se le pide al modelo**.
+  El técnico dice «dos cámaras» y el modelo puede devolver «dos cámaras minidomo Uniview». No es
+  inventar de cero, es **enriquecer** — y acaba igual en una factura. Lo que la protege es que **el
+  técnico confirma**, y nada más.
+* Por tanto la línea nueva del prompt **es un consejo, no un mecanismo**.
 
 ## 8 · Lo que NO se tocó
 
