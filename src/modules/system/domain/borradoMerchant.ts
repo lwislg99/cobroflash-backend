@@ -101,6 +101,12 @@ export const FUERA_DEL_BARRIDO_GENERICO: Readonly<Record<string, string>> = {
   // esas filas, así que el barrido genérico daría una falsa sensación de limpieza. Se borra
   // por TELÉFONO, que es lo que de verdad identifica la conversación (ver `borrarMerchant`).
   botSession: 'merchantId nullable (SCRUM-174): se barre por teléfono, no por merchant',
+  // SCRUM-650 (T1): la asignación de un trabajo a un empleado. No tiene `merchantId` —cuelga de
+  // `Job` y de `TeamMember`, que sí lo tienen— y NO necesita paso propio en el orden de borrado:
+  // sus DOS `@relation` declaran `onDelete: Cascade`, así que Postgres barre las filas cuando cae
+  // cualquiera de los dos padres. Es la diferencia con los colgados de `Charge` de abajo, que son
+  // RESTRICT y por eso sí necesitan ir antes que su padre.
+  jobAssignee: 'cascada por sus dos padres (SCRUM-650): Job y TeamMember declaran onDelete Cascade',
 };
 
 /**

@@ -59,6 +59,10 @@ import { SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/s
 import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206b
 import { sellarTrasEmision } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
+// SCRUM-650 (T1): la asignacion a VARIOS vive en su dominio; aqui no se decide nada de ella.
+import {
+  normalizarAsignados, principalDe, escribirAsignados, type ClienteDeAsignacion,
+} from '../../domain/asignacionDeTrabajo';
 
 const router = Router();
 
@@ -675,13 +679,25 @@ router.patch('/:id', async (req, res) => {
         data.direccion = nueva;
       }
     }
-    if (req.body?.assignedUserId !== undefined) {
-      const uid = req.body.assignedUserId === null ? null : Number(req.body.assignedUserId);
-      if (uid !== null) {
+    // SCRUM-650 (T1) · SE ASIGNA A VARIOS. Se admiten las dos formas: `assignedUserIds` (la nueva,
+    // una lista) y `assignedUserId` (la de siempre, uno o `null`), que se normaliza a lista de uno.
+    // Aceptar las dos es lo que permite que el front migre sin que nada deje de funcionar un dia.
+    let asignadosPedidos: number[] | null = null;
+    if (req.body?.assignedUserIds !== undefined) {
+      asignadosPedidos = normalizarAsignados(req.body.assignedUserIds);
+    } else if (req.body?.assignedUserId !== undefined) {
+      asignadosPedidos = normalizarAsignados(req.body.assignedUserId);
+    }
+    if (asignadosPedidos !== null) {
+      // 🔴 REGLA 2, UNO A UNO: cada id tiene que ser de ESTE merchant. Validar solo el primero
+      // dejaria colar los demas — y con varios asignados eso es la mayoria de la lista.
+      for (const uid of asignadosPedidos) {
         const member = await prisma.teamMember.findFirst({ where: { id: uid, merchantId: req.merchantId } });
         if (!member) return res.status(400).json({ error: 'invalid_assignee' });
       }
-      data.assignedUserId = uid;
+      // La columna guarda el PRINCIPAL mientras el filtro siga leyendola (paso A). La tabla es la
+      // fuente; esto es la copia que el guard vigila.
+      data.assignedUserId = principalDe(asignadosPedidos);
     }
     // SCRUM-66 (TRABAJO-4): tipo de operación fiscal. Enum CERRADO (validación estricta);
     // editable siempre mientras el Job esté abierto (el candado real es SCRUM-17). Solo se
@@ -698,7 +714,16 @@ router.patch('/:id', async (req, res) => {
       }
     }
 
-    const updated = await prisma.job.update({ where: { id }, data });
+    // 🔴 LOS DOS SITIOS, EN LA MISMA TRANSACCION. Si una de las dos escrituras se quedara fuera,
+    // la discrepancia que `discrepanciaDeAsignacion` prohibe se produciria sola — y el guard
+    // estaria vigilando un invariante que el propio codigo rompe.
+    const updated = asignadosPedidos === null
+      ? await prisma.job.update({ where: { id }, data })
+      : await prisma.$transaction(async (tx) => {
+        const j = await tx.job.update({ where: { id }, data });
+        await escribirAsignados(tx as unknown as ClienteDeAsignacion, id, asignadosPedidos as number[]);
+        return j;
+      });
     // SCRUM-66: traza de que la decisión fiscal la tomó el usuario (caveat del ticket).
     // teamMemberId = quien edita (null = propietario/admin). Fire-and-forget como el resto.
     if (tipoOperacionElegido) {
