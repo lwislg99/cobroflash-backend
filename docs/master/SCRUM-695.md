@@ -4,7 +4,7 @@
 
 **Medido contra:** `origin/main` = `f803ec1e4ba189041a34d017fbf890081331ce45` · 2026-09-02T22:10:48+01:00
 
-**Tanda:** 4783 tests, 4699 pass, **0 fail**, 84 skipped — medida DESPUÉS del último cambio, con `main` dentro (entraron SCRUM-672 y 692) y el conflicto de `ci.yml` ya resuelto. Lo único posterior es esta línea.
+**Tanda:** 4798 tests, 4714 pass, **0 fail**, 84 skipped — medida DESPUÉS del último cambio, con `main` dentro por segunda vez (entró SCRUM-584, que subió el suelo a 4798). Lo único posterior es esta línea.
 
 ---
 
@@ -222,8 +222,22 @@ orden, misma indentación ⇒ mismo parse. Además: **0 tabuladores** y **0 marc
 ```
 
 **No canta.** Se dejó en 4766 con margen 0 —el borde exacto, y pasa: es un mínimo, no una igualdad—
-y con 672 y 692 dentro sobran **17**. **No se sube aquí**, y no hace falta para cerrar: queda el
-número dicho para quien lo suba.
+y con 672 y 692 dentro sobraban **17**.
+
+**Segunda vuelta:** entró SCRUM-584 en `main` y **subió el suelo a 4798** (`24ea2b3c`), que es la
+operación que el propio fichero describe. Aquí ese número **no se tocó**, así que sólo cambió un lado
+y git lo resolvió a favor de `main` sin conflicto — pero se comprobó **con los ojos**, porque si
+hubiera quedado en 4766 con la tanda en 4798 el suelo estaría **32 tests por debajo y nada lo diría**:
+
+```
+export const SUELO_TESTS = 4798;
+export const MEDIDO_CONTRA = 'origin/main = 80db312b · 2026-09-02';
+
+[suelo de la tanda] ✅ suelo 4798 · total actual 4798 · margen 0
+```
+
+Y la cadena que el test del 672 ata sigue apareciendo **una sola vez** en `_suelo-de-la-tanda.mjs`:
+el merge no trajo otra copia que volviera a ensombrecer al guard.
 
 ### El censo de EOL cazó algo, y no era el contenido
 
