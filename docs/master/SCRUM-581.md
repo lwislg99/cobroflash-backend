@@ -240,3 +240,110 @@ SCRUM-580.
 - **9 guards de navegador verdes** — como no-regresión de la landing, nunca como prueba de esta
   pantalla.
 - `npm run guards:entrada` en verde.
+
+---
+
+# SCRUM-581 · SEGUNDA VUELTA (2-sep-2026) · el marcador sale de la pantalla
+
+**Medido contra:** `origin/main` = `e96ca273cabd4cbbea7f7151ca36d7afca16b4fb` · 2026-09-02T18:21:58Z
+**Rama:** `scrum-581-cont08-filtros-y-orden`
+
+## 🔴 PASO 0 · LO PRIMERO QUE MIDO ES QUE EL TICKET YA ESTÁ CONSTRUIDO
+
+**ENTRADA: existe, y está montada.** `public/dashboard/js/filtroClientes.js` (125 líneas) y
+`customersView.js:87-121`, que ya lo consume (`const FC = window.filtroClientes`). Hay tests
+(`scrum581-pestanas-y-orden-clientes.test.mjs`) y entrada de máster. **Mergeado en `main` en el
+PR #874** (`ac69385e`).
+
+**MECANISMO: existe entero.** Pestañas `Todos | Empresas | Personas`, orden `Más recientes | Nombre
+A-Z`, filtrado y ordenación puras, montadas en la barra junto al buscador. Esta segunda vuelta
+**no reconstruye nada**: cierra los dos huecos reales que quedaban.
+
+## 🛑 EL VALOR QUE NO CAE A NINGÚN LADO — Y ES EL 100 % DE LOS DATOS
+
+Censo de `Customer.contactKind` (`contact_kind`, `String?`, **nullable y sin default**), medido hoy
+por base **física**:
+
+| Base | EMPRESA | PERSONA | NULL | total |
+|---|---|---|---|---|
+| `yaqu_dev_javier` | 0 | 0 | **11** | 11 |
+| `railway` (la resuelven `_STAGING` **+** `_TESTS`) | 0 | 0 | **4** | 4 |
+
+**Cero clientes clasificados. El 100 % está en NULL.** La instrucción era literal: *si hay un valor
+que no cae a ningún lado, PARA y dímelo: no lo mapeas tú.* NULL es ese valor, y no es un caso raro:
+**son todos**.
+
+**Lo que eso significa hoy, sin adorno:** «Empresas» y «Personas» salen **vacías las dos**, y el
+producto enseña un vacío que dice «Ningún cliente clasificado así todavía». El filtro funciona; lo
+que no hay es nada que filtrar. **No se mapea nada** — el switch de CONT-01 que rellena ese campo
+ya existe y es alcanzable (`switchFormaJuridica.js`), así que la clasificación llega usando el
+producto, no migrando datos.
+
+## Lo que SÍ se construye en esta vuelta
+
+### 1 · Fuera el marcador de la pantalla
+
+Los seis rótulos salían como `[PENDIENTE microcopy oficial] Todos`. Decisión del fundador de hoy:
+**«nada de marcadores en pantalla»**. La pantalla es de un profesional que paga; un corchete de
+proceso interno no es cosa suya.
+
+**⚠️ Lo que NO cambia: los seis textos siguen SIN APROBAR.** Se retira el corchete visible, no la
+aprobación. Y para que «no se pinta» no se convierta en «ya está aprobado» sin que nadie lo decida,
+la constante `MARCADOR` se sustituye por **`SIN_APROBAR = 6`**, que un test vigila. Aprobar una
+pestaña no aprobará las otras cinco: se baja el número en la ranura que toque.
+
+**Los literales propuestos, con su caja medida:**
+
+| Ranura | Literal propuesto | Caracteres |
+|---|---|---|
+| pestaña | `Todos` | 5 |
+| pestaña | `Empresas` | 8 |
+| pestaña | `Personas` | 8 |
+| orden | `Más recientes` | 13 |
+| orden | `Nombre A-Z` | 10 |
+| vacío de pestaña | `Ningún cliente clasificado así todavía` | 38 |
+
+🕳️ **La caja está medida en CARACTERES, no en píxeles**, y se dice: en esta máquina el navegador no
+levanta (`Failed to launch the browser process`), así que no hay medición de ancho renderizado. El
+selector de orden tiene `max-width:220px` declarado; las pestañas **no tienen ninguna restricción
+de ancho** porque no tienen CSS (ver los huecos).
+
+### 2 · El buscador combinado con el filtro — el hueco que nadie cubría
+
+El encargo lo pedía y **ningún test lo comprobaba**. Medido en el código: el buscador va al
+**servidor** (`loadCustomers(searchInput.value)`) y las pestañas filtran en el navegador **sobre lo
+que ese servidor devolvió** (`FC.aplicar(ultimoLote, …)`). Se combinan por construcción — pero «por
+construcción» deja de ser cierto el día que alguien reordena dos líneas, y entonces buscar borraría
+el filtro sin que nada chillara.
+
+Dos tests nuevos, con **suelo de control positivo**: el filtro sobre un resultado de búsqueda
+devuelve **alguna** fila (un filtro que devuelve cero pasa cualquier comprobación de «no salen
+personas»), y el orden A-Z se aplica sobre un conjunto **que no está ordenado por id** — si lo
+estuviera, el test no distinguiría orden alfabético de orden de inserción.
+
+## Los rojos, probados rompiendo el mecanismo
+
+| Rotura | Qué cayó |
+|---|---|
+| vuelve el marcador al rótulo | «NINGÚN rótulo lleva marcador» |
+| el filtro deja de filtrar (devuelve todo) | 3 tests, incluido el del buscador combinado |
+| `AZ` deja de ordenar | los 2 del orden |
+| **control negativo** · cambiar un comentario | **nada**, que es lo que debía pasar |
+
+## Lo que NO se ha perdido (comprobado, no supuesto)
+
+* **F1** — la tabla es `Nombre` · **`Teléfono`** · … : el teléfono **sigue siendo la segunda
+  columna** (`customersView.js:137-138`).
+* **F3** — Editar · Portal · Historial siguen por fila.
+* El buscador **no se ha tocado**.
+
+## 🕳️ HUECOS DECLARADOS
+
+1. **🔴 Las pestañas no tienen CSS.** `.customers-tab` y `.customers-tabs` se aplican en el código
+   y **no existen en ninguna hoja de estilos** (medido: 0 apariciones en `public/`). Se pintan como
+   botones crudos del navegador, dentro de una barra que sí está estilada. El control funciona y se
+   ve como si no fuera del producto. **No se arregla aquí**: es UI y necesita `yaqu-premium-ui` y
+   tokens de `DESIGN.md`, no un estilo improvisado.
+2. **El filtro por TAG queda fuera**, y es el recorte del fundador: CONT-07 (SCRUM-580) no está
+   construido, así que un filtro por tag sería un control que no puede filtrar por nada.
+3. **La caja de los rótulos no está medida en píxeles** (ver arriba).

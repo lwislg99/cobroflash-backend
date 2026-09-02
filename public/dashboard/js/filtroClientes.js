@@ -17,23 +17,32 @@
 // 📌 CONSECUENCIA ASUMIDA Y VISIBLE: mientras haya NULLs, «Empresas» + «Personas» NO suma
 // «Todos». Está decidido así. Explicarlo en pantalla, si se quiere, es microcopy del fundador.
 //
-// ── MICROCOPY (regla 30) ────────────────────────────────────────────────────────────────────
-// Ninguna etiqueta está aprobada. Salen con el marcador oficial MÁS la palabra de trabajo, que es
-// la forma que fija `switchFormaJuridica.js` y el motivo está escrito allí: `censo-marcadores.mjs`
-// distingue el rótulo que SÓLO lleva la marca —que pinta a ciegas— del que lleva marca + texto,
-// que al menos se puede leer y juzgar. **Con tres pestañas, el marcador solo las haría idénticas
-// y la pantalla quedaría inservible**, que es exactamente el caso que ese comentario describe
-// para un control de dos lados.
+// ── MICROCOPY · 🔴 SIN MARCADOR EN PANTALLA (decisión del fundador, 2-sep-2026) ─────────────
+// Esto CAMBIÓ. Los seis rótulos salían como `[PENDIENTE microcopy oficial] Todos`, y el fundador
+// lo retiró con estas palabras: **«nada de marcadores en pantalla»**. La pantalla es de un
+// profesional que paga; un corchete de proceso interno no es cosa suya.
+//
+// ⚠️ LO QUE NO CAMBIA: **los seis textos SIGUEN SIN APROBAR.** Lo que se retira es el marcador
+// VISIBLE, no la aprobación. Son literales PROPUESTOS por la sesión, y su procedencia vive donde
+// se puede leer sin abrir la pantalla: aquí, en `docs/master/SCRUM-581.md` y en el informe de
+// entrega. Quitar el marcador y callar de dónde salen los textos habría sido convertir una
+// propuesta en un hecho consumado por el camino.
+//
+// 📌 Y por eso la entrada de `filtroClientes.js` SALE del censo de SCRUM-402: ese censo cuenta
+// marcadores, y aquí ya no hay ninguno. Se borra la entrada, no se baja a 0 — es la convención
+// que dejaron escritas SCRUM-424 y SCRUM-405 en ese mismo fichero.
 (function () {
   'use strict';
 
-  // 🔴 LA ÚNICA CONSTANTE QUE APAGA LOS MARCADORES DE ESTE FICHERO. Cuando el fundador apruebe
-  // los textos, se vacía aquí y se van los SEIS de golpe (3 pestañas + 2 órdenes + 1 vacío).
-  //
-  // ⚠️ Y hay que decirlo, que es el aviso de SCRUM-615: sus SEIS ranuras COMPARTEN esta constante.
-  // El censo cuenta MARCAS, no rótulos — así que aprobar el texto de UNA pestaña no apaga las
-  // otras cinco: habría que sacar esa `palabra` de aquí por separado.
-  var MARCADOR = '[PENDIENTE microcopy oficial]';
+  /**
+   * 🔴 LAS SEIS RANURAS Y SU ESTADO, en un solo sitio y legible sin abrir la pantalla.
+   *
+   * `aprobado: false` en las seis: son literales PROPUESTOS, no firmados. Está aquí y no en el
+   * rótulo porque el fundador retiró el marcador de la pantalla — pero «no se pinta» no puede
+   * significar «nadie sabe que está sin aprobar». Un test lo comprueba, y el día que el fundador
+   * firme un texto se pone `true` en ESA ranura: aprobar una pestaña no aprueba las otras cinco.
+   */
+  var SIN_APROBAR = 6;
 
   /**
    * Las tres pestañas. `valor` es lo que se compara contra `contactKind`, y `null` significa
@@ -64,8 +73,14 @@
    */
   var VACIO_PESTANA = { palabra: 'Ningún cliente clasificado así todavía' };
 
-  /** El rótulo visible: marcador + palabra de trabajo. Ver el bloque de MICROCOPY de arriba. */
-  function etiqueta(x) { return MARCADOR + ' ' + x.palabra; }
+  /**
+   * El rótulo visible: la palabra, y nada más. Sin marcador (ver el bloque de arriba).
+   *
+   * Sigue existiendo como función —en vez de leer `x.palabra` desde la vista— para que el día
+   * que un texto se apruebe y otro no, la diferencia se resuelva en UN sitio y no en cada
+   * `textContent` de `customersView.js`.
+   */
+  function etiqueta(x) { return String((x && x.palabra) || ''); }
 
   /**
    * Filtra por pestaña. `TODOS` devuelve la lista TAL CUAL (misma referencia de elementos y mismo
@@ -109,7 +124,7 @@
   }
 
   var api = {
-    MARCADOR: MARCADOR,
+    SIN_APROBAR: SIN_APROBAR,
     PESTANAS: PESTANAS,
     ORDENES: ORDENES,
     POR_DEFECTO: POR_DEFECTO,
