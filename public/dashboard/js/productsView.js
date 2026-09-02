@@ -1,4 +1,63 @@
 // public/dashboard/js/productsView.js
+
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-641 · UN CÓDIGO DEL SERVIDOR NO ES UN MENSAJE PARA UNA PERSONA.
+//
+// LO QUE PASABA: las llamadas de aquí abajo hacen `throw new Error(data?.error || "Error
+// actualizando…")`, y el aviso pintaba `e.message`. Cuando el servidor contesta
+// `{ok:false, error:"name_duplicate"}`, el identificador GANA al respaldo en castellano — así
+// que un fontanero mirando su catálogo leía literalmente `name_duplicate`: una cadena en
+// inglés con guion bajo, sin forma de saber qué le dicen. No es un mensaje mal redactado; es
+// una tubería interna asomando a la interfaz.
+//
+// POR QUÉ VIVE AQUÍ Y NO EN `api.js`, que es donde están los mapeos canónicos
+// (`invoiceStatusMeta`, `jobStatusMeta`): porque `api.js` es ZONA SIN MARCADOR por decisión
+// —lo fija `scrum405-microcopy-descarga.test.mjs`, que falla si vuelve a aparecer uno— y esto
+// necesita marcador. Y además queda más honesto: el texto sin aprobar lo pinta ESTA pantalla,
+// así que es esta la que entra en el censo de marcadores.
+//
+// ⚠️ EL CRITERIO DE `invoiceStatusMeta` SE INVIERTE A PROPÓSITO, que si no parecería un
+// descuido. Allí lo desconocido «se ve» —cae al propio código en mayúsculas— para que un
+// estado sin mapear no se disfrace del más inocente. Un aviso de error NO puede hacer eso:
+// enseñar el código ES el defecto que esto cierra. Así que lo desconocido cae al respaldo en
+// castellano que cada llamada YA traía, y el código sale por `console.warn` — donde lo ve
+// quien puede mapearlo, no quien está intentando cobrar.
+// ═══════════════════════════════════════════════════════════════════════════════════════
+
+const PV_MARCADOR_MICROCOPY = '[PENDIENTE microcopy oficial]';
+
+// Un identificador interno no lleva espacios ni mayúsculas: `name_duplicate`, `forbidden`,
+// `trial_expired`. Una frase escrita para una persona siempre lleva una de las dos cosas.
+const PV_ES_IDENTIFICADOR = /^[a-z][a-z0-9_]*$/;
+
+/**
+ * El texto que se le enseña a la persona a partir de lo que dijo el servidor.
+ *
+ * `respaldo` es el mensaje en castellano que la llamada ya traía: no es microcopy nueva, es la
+ * que estaba escrita y que el identificador estaba tapando.
+ */
+function mensajeDeErrorCatalogo(codigoOMensaje, respaldo) {
+  const bruto = String(codigoOMensaje == null ? '' : codigoOMensaje).trim();
+
+  // El que necesita decir algo DISTINTO del respaldo genérico. El marcador va con su palabra
+  // distintiva —no solo— porque es un control de varios lados: si todos los errores dijeran lo
+  // mismo, la pantalla perdería la distinción que este ticket viene a dar.
+  const M = {
+    name_duplicate: PV_MARCADOR_MICROCOPY + ' nombre ya en uso',
+  };
+  if (M[bruto]) return M[bruto];
+
+  if (PV_ES_IDENTIFICADOR.test(bruto)) {
+    try { console.warn('[productsView] código sin traducir:', bruto); } catch (_) { /* sin consola */ }
+    return respaldo || PV_MARCADOR_MICROCOPY;
+  }
+  return bruto || respaldo || PV_MARCADOR_MICROCOPY;
+}
+if (typeof window !== 'undefined') {
+  window.mensajeDeErrorCatalogo = mensajeDeErrorCatalogo;
+  window.PV_MARCADOR_MICROCOPY = PV_MARCADOR_MICROCOPY;
+}
+
 function renderProductsView(container) {
     container.innerHTML = "";
   
@@ -174,7 +233,7 @@ function renderProductsView(container) {
               setAlert('success', 'Producto actualizado.');
               await refresh();
             } catch (e) {
-              setAlert('error', e.message || 'Error actualizando.');
+              setAlert('error', mensajeDeErrorCatalogo(e && e.message, 'Error actualizando.'));
             } finally {
               saveBtn.disabled = false;
               saveBtn.textContent = 'Guardar';
@@ -475,7 +534,7 @@ function renderProductsView(container) {
             setAlert("success", "Estado actualizado.");
             await refresh();
           } catch (e) {
-            setAlert("error", e.message || "Error actualizando estado.");
+            setAlert("error", mensajeDeErrorCatalogo(e && e.message, "Error actualizando estado."));
           }
         });
   
@@ -487,7 +546,7 @@ function renderProductsView(container) {
             setAlert("success", "Producto borrado.");
             await refresh();
           } catch (e) {
-            setAlert("error", e.message || "Error borrando.");
+            setAlert("error", mensajeDeErrorCatalogo(e && e.message, "Error borrando."));
           }
         });
   
@@ -545,7 +604,7 @@ function renderProductsView(container) {
         setAlert(null, "");
         await refresh();
       } catch (e) {
-        setAlert("error", e.message || "Error recargando.");
+        setAlert("error", mensajeDeErrorCatalogo(e && e.message, "Error recargando."));
       }
     });
 
@@ -556,7 +615,7 @@ function renderProductsView(container) {
         const url = `/admin/products/export?merchantId=${encodeURIComponent(merchantId)}`;
         window.open(url, "_blank");
       } catch (e) {
-        setAlert("error", e.message || "Error exportando.");
+        setAlert("error", mensajeDeErrorCatalogo(e && e.message, "Error exportando."));
       }
     });
 
@@ -612,7 +671,7 @@ function renderProductsView(container) {
         setAlert("success", `CSV importado. Insertados: ${data.created ?? 0} · Duplicados omitidos: ${data.skipped ?? 0}${errNota}`);
         await refresh();
       } catch (err) {
-        setAlert("error", err.message || "Error importando.");
+        setAlert("error", mensajeDeErrorCatalogo(err && err.message, "Error importando."));
       } finally {
         // MUY importante: limpiar value para que no se “re-dispare” con el mismo archivo
         importFile.value = "";
@@ -658,7 +717,7 @@ function renderProductsView(container) {
         setAlert("success", "Producto creado.");
         await refresh();
       } catch (e) {
-        setAlert("error", e.message || "Error creando producto.");
+        setAlert("error", mensajeDeErrorCatalogo(e && e.message, "Error creando producto."));
       }
     });
   
@@ -670,7 +729,7 @@ function renderProductsView(container) {
 
 
     // init
-    refresh().catch((e) => setAlert("error", e.message || "Error cargando productos."));
+    refresh().catch((e) => setAlert("error", mensajeDeErrorCatalogo(e && e.message, "Error cargando productos.")));
   }
   
 // ═══════════════════════════════════════════════════════════════════════════════════════════

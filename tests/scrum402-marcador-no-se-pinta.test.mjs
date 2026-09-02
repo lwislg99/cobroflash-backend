@@ -178,6 +178,29 @@ const CENSO = Object.freeze({
   //
   // El rótulo «NIF/CIF (opcional)» NO se ha marcado: sigue describiendo el campo con exactitud.
   // Sólo se marca lo NUEVO — marcar de más obliga al fundador a reescribir lo que ya estaba bien.
+  // SCRUM-641 (1-sep-2026) · SUBIDA A CONCIENCIA: `productsView.js` ENTRA en el censo (y NO `api.js`, que salió con
+  // SCRUM-405. Entra con 1: el traductor de códigos de error del servidor a texto para una
+  // persona (`mensajeDeError`).
+  //
+  // POR QUÉ CON MARCADOR Y NO CON TEXTO: hasta hoy el aviso pintaba `e.message`, y cuando el
+  // servidor contestaba `{error:"name_duplicate"}` eso es lo que leía el profesional en su
+  // catálogo — un identificador en inglés con guion bajo. Quitarlo exige poner OTRA cosa, y esa
+  // otra cosa es la frase que le dice que el nombre está cogido: microcopy que el fundador no ha
+  // escrito (regla 30). Se ve en pantalla A PROPÓSITO, que es la única forma de que nadie
+  // encienda por descuido un texto sin firmar.
+  //
+  // VA CON PALABRA DE TRABAJO detrás («nombre ya en uso»), al revés que `customersView` (CONT-05):
+  // allí el marcador iba solo porque era UN texto; aquí es un control de VARIOS LADOS —este caso
+  // frente a todos los demás errores, que caen a su respaldo en castellano—, y un marcador pelado
+  // borraría justo la distinción que este ticket viene a dar.
+  //
+  // 🔴 CUENTA 1 Y PINTA 1, HOY. Y la advertencia, que es la lección de SCRUM-575 aplicada antes de
+  // que muerda: el mapa `M` de `mensajeDeError` tiene UNA entrada. Si el siguiente ticket añade
+  // otra reutilizando `MARCADOR_MICROCOPY`, **este número NO se moverá** y entrará una superficie
+  // nueva EN SILENCIO — que es exactamente lo que este trinquete existe para impedir. Quien
+  // añada un código mapeado le pone SU constante, para que el fundador pueda firmar uno sin
+  // firmar los dos.
+  'productsView.js': 1,
   'customersView.js': 2,
   'exportView.js': 1,
   // 🔴 17-ago-2026 · `invoiceDetailView.js` SALE DEL CENSO (tenía 9). El fundador aprobó los ocho
