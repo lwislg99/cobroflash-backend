@@ -2,10 +2,11 @@
 
 **Fecha:** 2-sep-2026 · **Carril:** banco de vistas (tests) · **Gate:** sin gate — corre en `npm test`
 
-**Medido contra:** `origin/main` = `214f9de744e4ae9ea8238fd7594d32dae1581001` · 2026-09-02T23:10:43+01:00
+**Medido contra:** `origin/main` = `21a1920ba82e04be66cc8fd98c0d04d36066b845` · 2026-09-02T23:49:23+01:00
 
-**Tanda:** **4.814 pruebas · 4.730 en verde · 0 fallos · 84 saltadas** — con `main` ya mergeado
-dentro (584 y 696 entraron mientras se cerraba esto) y medida DESPUÉS del último cambio de código.
+**Tanda:** **4.821 pruebas · 4.737 en verde · 0 fallos · 84 saltadas** — con `main` ya mergeado
+dentro, medida DESPUÉS del último cambio de código **y en esta máquina**, que es un matiz que
+este ticket aprendió por las malas (ver abajo).
 
 ---
 
@@ -138,11 +139,67 @@ veredicto automático del runner, no la medición — y hay un aserto que compru
 oyentes se devuelven**, porque si no, a partir de ahí un fallo async de cualquier otro test
 pasaría desapercibido.
 
+---
+
+## 🔴 EL SUELO NO SE SUBE, Y NO ES UN OLVIDO
+
+Este ticket subió el suelo a **4814** y **el CI de su propio PR lo tumbó**: *4805 corridos contra
+un suelo de 4814*, con **cero `fail`**. Nueve tests desaparecidos, tanda verde. Era la primera vez
+que ese guard cantaba de verdad, y cantó en el caso exacto para el que se construyó.
+
+**Se midió antes de tocar el número**, con la misma técnica que este ticket usó para el fan-out:
+TAP entero de `main` solo contra TAP entero de `main` + esta rama, nombre a nombre.
+
+| | ejecuciones | nombres únicos |
+|---|---|---|
+| `main` solo | **4812** | 4796 |
+| `main` + esta rama | **4821** | 4805 |
+
+**Tests de `main` que faltan en el mezclado: CERO.** Los nueve que aparecen son los nueve de este
+ticket. **4812 + 9 = 4821, exacto.**
+
+Y eso descarta las tres causas que el propio guard enumera —fichero renombrado, `import` a vacío,
+tests borrados— y también la cuarta que se propuso: **si algún test generase casos a partir de lo
+que recorre el banco, el mezclado habría dado MENOS de `main`+9**, y da exactamente `main`+9. El
+arreglo de este ticket no le ha quitado casos a nadie.
+
+#### Lo que era: el suelo se declara donde no se evalúa
+
+Sobre **el mismo árbol**, esta máquina (Windows) cuenta **4814** y el runner (Ubuntu) cuenta
+**4805**. Nueve de diferencia que son **de entorno, no de cobertura**.
+
+Medido y descartado por el camino: `LIBRO_PG_URL` usa `{ skip: … }`, así que sus tests **se crean
+igual** y no cambian el recuento; y correr con `CI=true GITHUB_ACTIONS=true` da **4821 igual**. De
+dónde salen exactamente los nueve **no está demostrado** y por eso no se escribe aquí como dato:
+haría falta el TAP del runner, que el CI guarda como artefacto `tanda-tap`.
+
+Y no es un descubrimiento de hoy — estaba escrito en el repo, en
+`tests/scrum476-reconciliar-censos.test.mjs:78-80`:
+
+> *«el mismo género de defecto que **tumbó el suelo en el CI**: dar por universal algo que es de
+> esta máquina.»*
+
+Es la **regla 3** —el entorno no es un sujeto válido— aplicada a un guard.
+
+#### Por qué queda en 4798, el de `main`
+
+**El suelo es un MÍNIMO, no un espejo del total.** Subirlo es opcional y no obliga a nada: esta
+rama **añade** nueve tests, así que el total sube y el 4798 de `main` sigue siendo cierto. Con eso
+el PR pasa **sin apagar ninguna alarma** y sin escribir un número que hoy no sabemos medir.
+
+🔴 **Y la lección, que es lo que hay que llevarse:** 4766 y 4798 pasaron **porque tenían holgura,
+no porque estuvieran bien medidos**. Este ticket lo dejó a **margen 0** y se comió el colchón. La
+próxima sesión que lo suba a ras se lleva el mismo mordisco. **El problema no es el número: es
+dónde se mide el suelo** — y eso es un ticket aparte, no éste.
+
+> El fichero queda **byte a byte** como en `main`, y eso se comprueba por el **sha del blob**
+> (`6081c7e3c63f7f7acf9a26ad57be8356c0b941ca` en los dos lados), no leyéndolo por encima.
+
 ## Ficheros
 
 `tests/_banco-vistas.mjs` (la función `desengancha` y las cuatro inserciones) ·
 `tests/scrum697-un-solo-render.test.mjs` (**nuevo**, 9 tests) ·
-`scripts/_suelo-de-la-tanda.mjs` (el suelo, 4766 → **4814**) · esta entrada.
+esta entrada. **`scripts/_suelo-de-la-tanda.mjs` NO se toca** — y el porqué está abajo.
 
 **No se ha tocado:** ningún fichero de producto — ni `customersView.js`, ni CSS, ni rutas ·
 `prisma/schema.prisma` · ningún test existente se ha «ajustado» a un número · sin dependencias
@@ -152,10 +209,8 @@ nuevas (regla 36).
 
 * Rama nacida de `origin/main`, sin apilar sobre nada.
 * `npm run guards:entrada` en verde. Cero CR en disco (medido por BYTES).
-* El fichero del suelo lo tocan tres ramas a la vez, y **se cruzó**: main ya traía 4798 de
-  SCRUM-584. El conflicto NO se resolvió eligiendo un lado —eso habría dejado un número que no
-  midió nadie—: se puso el más alto y se **volvió a medir** la tanda con `main` ya dentro. Queda
-  en **4814**, que es lo que hay.
+* **El suelo queda como en `main` (4798), sin tocar** — comprobado por sha del blob. El porqué
+  está arriba: no es un olvido.
 
 ## Los huecos que declaro
 
