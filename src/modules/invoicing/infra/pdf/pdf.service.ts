@@ -7,21 +7,27 @@ import QRCode from 'qrcode';
 import { invoicesDir } from '../../../../core/storage/dirs';
 import { cantidadDeLinea, calcVatBreakdown } from '../../domain/vat.service'; // SCRUM-504: una sola cantidad
 import { getLocale } from '../../../../core/i18n/locales';
+import { formatImporteEs } from '../../../../core/utils/utils'; // SCRUM-636: el sitio unico
 import { nombreParaDocumento } from '../../../../core/documentos/nombreParaDocumento'; // SCRUM-577
 import { partirConceptoYDescripcion } from './conceptoLinea'; // SCRUM-603 (DOC-13)
 
 /**
- * Un importe, con sus dos decimales. SCRUM-604 (DOC-14).
+ * Un importe, con sus dos decimales. SCRUM-604 (DOC-14) · RESUELTO en SCRUM-636.
  *
- * ⚠️ ES EL MISMO CUERPO que el `fmt` que vive DENTRO de la función del PDF de factura
- * (`v.toLocaleString('es-ES', …)`), y no se han unificado A PROPÓSITO: el encargo de SCRUM-604
- * dice que la factura NO se toca, y sacarle su `fmt` sería tocarla. `scrum604b` compara las dos
- * salidas y falla si se separan — divergencia VIGILADA, que es lo que se puede hacer hoy.
+ * ⚠️ ESTE BLOQUE DECÍA LO CONTRARIO Y SE REESCRIBE EN VEZ DE BORRARSE. Decía que `fmtImporte` y el
+ * `fmt` de dentro de la factura «no se han unificado A PROPÓSITO», y declaraba —bien— que la misma
+ * expresión estaba copiada en seis sitios más y que **no existía un formateador de dinero
+ * compartido en `src/`**. Las dos cosas ya no son ciertas, y dejarlas escritas mandaría a quien las
+ * lea a resolver un problema que ya está resuelto.
  *
- * HALLAZGO DECLARADO, de otro carril y por tanto no arreglado aquí (regla 9): esta misma
- * expresión está copiada en SEIS sitios más del árbol (`payBizum.routes`, `albaranPdf.service`
- * ×2, `albaranPublicVista`, `weeklyDigest.service`, `customerPortal.routes`). No existe un
- * formateador de dinero compartido en `src/`.
+ * Lo que pasó: SCRUM-604 dijo «la factura NO se toca» y `scrum604b` vigiló la divergencia, que era
+ * lo que se podía hacer entonces. SCRUM-636 midió lo que aquello ocultaba — que
+ * `toLocaleString('es-ES')` NO agrupa los enteros de cuatro cifras (CLDR), así que el documento
+ * escribía `1000,00` y `12.345,67`, incoherente consigo mismo justo en la banda del importe
+ * corriente de un trabajo— y el fundador decidió la convención española en LOS CINCO sitios.
+ *
+ * El sitio único es `formatImporteEs` (`core/utils/utils.ts`), el mismo algoritmo que SCRUM-436
+ * fijó para el front: medido, 10/10 salidas idénticas sobre los valores de borde de SCRUM-625.
  */
 /**
  * SCRUM-623 · El rótulo de la columna de BASES del desglose por tipo.
@@ -62,7 +68,11 @@ export const MARCADOR_MICROCOPY_DESGLOSE = '[PENDIENTE microcopy oficial]';
 export const NOMBRE_IMPUESTO_POR_DEFECTO = 'IVA';
 
 export function fmtImporte(v: number): string {
-  return v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // SCRUM-636 · DELEGA en el sitio único del dinero. Lo que había aquí NO era una política: era un
+  // artefacto de CLDR. `toLocaleString('es-ES')` no agrupa los enteros de CUATRO cifras, así que
+  // este documento escribía `1000,00` y `12.345,67` — incoherente CONSIGO MISMO, y fallando justo
+  // en la banda 1.000–9.999 €, que es el importe corriente de un trabajo. Medido en SCRUM-636.
+  return formatImporteEs(v);
 }
 
 /** Descarga el logo del merchant como Buffer para PDFKit.
@@ -189,8 +199,10 @@ export async function generateInvoicePdf(params: {
     doc.strokeColor('#000').lineWidth(1);
   }
 
+  // SCRUM-636 · la copia de la FACTURA delega tambien. Era el mismo cuerpo que `fmtImporte`
+  // —`scrum604b` lo vigilaba— y ahora los dos salen del sitio unico.
   function fmt(v: number) {
-    return v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return fmtImporte(v);
   }
 
   function dateStr(d: Date | null | undefined) {

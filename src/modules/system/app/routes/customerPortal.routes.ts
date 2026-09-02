@@ -1,7 +1,7 @@
 // src/modules/system/app/routes/customerPortal.routes.ts
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
-import { formatMoneyEs } from '../../../../core/utils/utils'; // A22.1: dinero es-ES con símbolo
+import { formatMoneyEs, formatImporteEs } from '../../../../core/utils/utils'; // A22.1: dinero es-ES con símbolo
 import { getLocale } from '../../../../core/i18n/locales';
 import { esc } from '../../../../core/utils/utils';
 import { BASE_URL } from '../../../../core/config/env';
@@ -36,7 +36,7 @@ function pill(status: string) {
 }
 
 function fmt(n: number) {
-  return n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return formatImporteEs(n);
 }
 
 function dateShort(d: Date | string) {
