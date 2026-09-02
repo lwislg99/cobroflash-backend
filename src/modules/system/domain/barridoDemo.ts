@@ -3,9 +3,9 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // EL DEFECTO, medido y confirmado dos veces
 //
-// `wipeDemo` borraba una lista escrita a mano: **10 de los 23 modelos con `merchantId`**. Los
-// once que se quedaban fuera —derivación propia sobre `schema.prisma`, y coincide con el delta
-// de SCRUM-310— eran:
+// `wipeDemo` borraba una lista escrita a mano, y NO todos los modelos con `merchantId`. Los que
+// se quedaban fuera —derivación propia sobre `schema.prisma`, y coincide con el delta de
+// SCRUM-310— eran éstos, que es el dato que importa y el que no caduca:
 //
 //   authSession · provider · quoteTemplate · teamMember · legalAcceptance · job ·
 //   maintenancePlan · auditLog · attachment · albaran · albaranLineaFacturada
@@ -67,7 +67,7 @@ export async function barridoDemo(
     porModelo[modelo] = await contar(prisma, modelo, { charge: { merchantId: demoId } });
   }
 
-  // 2) Los 23 con `merchantId`, en el orden declarado (hijos antes que padres).
+  // 2) Los que llevan `merchantId`, en el orden declarado (hijos antes que padres).
   for (const modelo of ORDEN_BORRADO_MERCHANT) {
     modelos.push(modelo);
     porModelo[modelo] = await contar(prisma, modelo, { merchantId: demoId });

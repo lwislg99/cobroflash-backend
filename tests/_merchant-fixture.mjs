@@ -66,10 +66,11 @@ export function telefonosDe(merchantId) {
  * operación va aislada y `limpiarMerchant` REINTENTA la pasada entera —, pero un orden
  * razonable evita la mayoría de los reintentos.
  *
- * Son los 23 modelos con `merchantId` del schema (SCRUM-170 sumó `albaranLineaFacturada`;
- * SCRUM-495 sumó `emailMessage`, medido: 22 con `merchantId`, y él **sin relación declarada**, así
- * que entra en el grupo de columna suelta; SCRUM-674 sumó `parteTrabajo`, también suelto,
- * así que son 12 con FK + 11 sueltos). La
+ * Son los modelos con `merchantId` del schema (SCRUM-170 sumó `albaranLineaFacturada`;
+ * SCRUM-495 sumó `emailMessage`, **sin relación declarada**, así que entra en el grupo de
+ * columna suelta; SCRUM-674 sumó `parteTrabajo`, también suelto). Sin recuentos escritos a
+ * mano (SCRUM-680): quién entra lo decide el guard de SCRUM-172, que deriva del schema y cae
+ * NOMBRANDO el que falte. La
  * red de seguridad NO es uniforme (censo SCRUM-172), y saberlo importa:
  *   · 12 tienen FK a Merchant, todas RESTRICT: si uno se sale de la lista, el `merchant.delete`
  *     del fixture falla RUIDOSO y el error nombra la tabla. Red real. MEDIDO, no inferido del
