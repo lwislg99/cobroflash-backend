@@ -310,3 +310,35 @@ justamente el eje que el backfill NO toca — y sigue viendolo, que era lo que h
 3. 🔴 **`scripts/_scratch-run.mjs` esta sin fuente por mi culpa.** `SCRATCH_DATABASE_URL` vive solo
    en `.env.prod.guardado`, el fichero que renombre desde `.env` en una tanda anterior — y esa
    herramienta busca en `.env`/`.env.local`. Es de otro carril: **se reporta, no se arregla.**
+
+## 8 · LOS ROJOS · commit de resguardo `652ce41ed58674dd05fdba34d940aee97463778b`
+
+Cinco inyecciones. Cada una: inyectar → medir → restaurar → verde. Nada sin commitear antes.
+
+| # | Que se rompe | Que cae |
+|---|---|---|
+| 1 | el suelo de ceguera nunca dispara (`if (false && …)`) | 1 de 5 · «CERO trabajos … PARA» |
+| 2 | `ON CONFLICT` fuera de la constante | **NADA en memoria (5/5 verdes)** · el Postgres real revienta |
+| 3 | `ON CONFLICT` fuera, con el trinquete puesto | 1 de 6 · «fichero y constante EXACTAMENTE el mismo» |
+| 4 | una SEGUNDA sentencia colada en el `.sql` | 1 de 6 · «el fichero tiene 2 sentencias ejecutables y tenia que tener UNA» |
+| 5 | `OR j."operario_id" IS NOT NULL` en el `.sql` | 2 de 6 · el trinquete **y** «NO mete la AUTORIA en los asignados» |
+
+### 🔴 El rojo 2 encontro un hueco de verdad, y por eso hay un trinquete nuevo
+
+Quitando el `ON CONFLICT`, **los seis tests en memoria siguieron VERDES**. El banco de mentira
+deduplica por su cuenta —simula el `ON CONFLICT` aunque el SQL ya no lo lleve—, asi que no puede
+ver lo que le pase al TEXTO del SQL. Contra el Postgres real, la misma edicion:
+
+```
+ERROR:  duplicate key value violates unique constraint "job_assignees_pkey"
+DETALLE:  Key (job_id, team_member_id)=(1, 11) already exists.
+```
+
+Y debajo habia algo peor que la idempotencia: **dos copias del mismo SQL sin nada que las atara**
+—la del fichero, que es la que se pega en la consola, y la de la constante, que es la que se
+ejercita aqui—. Podian divergir sin que nada se pusiera rojo, y entonces lo probado y lo ejecutado
+dejan de ser lo mismo. De ahi el trinquete de igualdad exacta, mas la exigencia de UNA sola
+sentencia ejecutable en el fichero: una segunda se ejecutaria en produccion sin que ningun test
+la hubiera visto nunca. Commit de la correccion: `ff127dd6a4589d6901b96f98111f087e430f2857`.
+
+Retirado ademas un `import { readFileSync }` muerto del envoltorio (unico uso: el propio import).
