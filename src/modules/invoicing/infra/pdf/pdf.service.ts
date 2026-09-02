@@ -36,6 +36,31 @@ import { partirConceptoYDescripcion } from './conceptoLinea'; // SCRUM-603 (DOC-
  */
 export const MARCADOR_MICROCOPY_DESGLOSE = '[PENDIENTE microcopy oficial]';
 
+/**
+ * SCRUM-623 (enmienda) · EL NOMBRE DEL IMPUESTO ES UN DATO, NO UNA CONSTANTE DE LA MAQUETA.
+ *
+ * Canarias es mercado, y un profesional canario NO repercute IVA: repercute **IGIC**, con tipos
+ * propios. En Ceuta y Melilla, **IPSI**. Si el nombre estuviera grabado en la forma del
+ * desglose, abrirle la puerta después obligaría a rehacer el bloque de totales de un documento
+ * ya emitido — caro, y con la regla 29 delante. Hoy sale gratis: se recibe por parámetro.
+ *
+ * 🔴 Y POR QUÉ ESTE VALOR NO SE RESUELVE AQUÍ, que es la parte que importa:
+ *
+ * Existe `locale.vatName` (`core/i18n/locales.ts`), que ya vale `IGV` en Perú y que el desglose
+ * del PRESUPUESTO de este mismo fichero ya consume. **NO se reutiliza, y no es por capricho:
+ * está indexado por PAÍS, y Canarias es `ES`.** Resolver el nombre desde el país le daría `IVA`
+ * a un canario — o sea, una forma que PARECE neutral y no lo es, que es justo lo que no puede
+ * pasar. Y medido: `Merchant` no tiene ningún campo de territorio fiscal; su única columna
+ * geográfica es `country`. Con el dato de hoy, QUÉ IMPUESTO APLICA NO ES RESOLUBLE.
+ *
+ * Así que esto abre la puerta y no la cruza: la MAQUETA queda neutral y quien sepa el impuesto
+ * lo pasa. Mientras nadie lo pase, el papel sale exactamente igual que hasta hoy.
+ *
+ * ⚠️ Este valor por defecto es el de la España peninsular y NO es una decisión fiscal: es lo
+ * que el documento ya imprimía. El día que alguien resuelva el territorio, se pasa y ya está.
+ */
+export const NOMBRE_IMPUESTO_POR_DEFECTO = 'IVA';
+
 export function fmtImporte(v: number): string {
   return v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
@@ -95,6 +120,10 @@ export async function generateInvoicePdf(params: {
   rectifiesNumber?: string | null; // nº de la factura original (solo R1)
   watermark?: string | null;       // texto diagonal en cada página (demo: "DEMO — no válida fiscalmente")
   stageLabel?: string | null;      // SCRUM-33: etiqueta del tramo (SCRUM-27), null en presets — se omite si no hay
+  // SCRUM-623 (enmienda) · el NOMBRE del impuesto que se repercute: `IVA`, `IGIC` (Canarias),
+  // `IPSI` (Ceuta y Melilla), `IGV`… Viene de FUERA porque la maqueta no puede saberlo: ver
+  // `NOMBRE_IMPUESTO_POR_DEFECTO`. Sin él, el documento sale exactamente como hasta hoy.
+  taxName?: string | null;
 }) {
   const fileName = `${params.merchantId}-${params.number}.pdf`; // SCRUM-72
   const outPath  = path.join(invoicesDir, fileName);
@@ -182,6 +211,9 @@ export async function generateInvoicePdf(params: {
   // Título "FACTURA" / "FACTURA RECTIFICATIVA" / "JUSTIFICANTE DE COBRO" + Nº/Ref + Fecha
   const isRect = params.type === 'R1';
   const docTitle = isReceipt ? 'JUSTIFICANTE DE COBRO' : isRect ? 'FACTURA RECTIFICATIVA' : 'FACTURA';
+  // SCRUM-623 (enmienda) · una sola vez y desde fuera. Tres sitios de este documento lo usan;
+  // tres copias volverían a divergir, y la que divergiera sería la que nadie mira.
+  const impuesto = params.taxName || NOMBRE_IMPUESTO_POR_DEFECTO;
   doc.fontSize(isRect || isReceipt ? 17 : 22).font('Helvetica-Bold')
     .fillColor(isRect ? '#dc2626' : INK)
     .text(docTitle, M, headerY, { width: W, align: 'right' });
@@ -259,7 +291,7 @@ export async function generateInvoicePdf(params: {
     doc.text('CONCEPTO',    XC,  thY, { width: WC });
     doc.text('CANT.',       XQ,  thY, { width: WQ,  align: 'right' });
     doc.text('PRECIO UNIT', XP,  thY, { width: WP,  align: 'right' });
-    doc.text('IVA %',       XIV, thY, { width: WIV, align: 'right' });
+    doc.text(`${impuesto} %`, XIV, thY, { width: WIV, align: 'right' });
     doc.text('TOTAL',       XT,  thY, { width: WT,  align: 'right' });
     doc.y += 16;
     hLine(doc.y, BORDER);
@@ -406,7 +438,7 @@ export async function generateInvoicePdf(params: {
       tiposDeIva.forEach(([rate, g]) => {
         if (g.vat === 0) return;
         const vy = doc.y;
-        doc.text(`IVA ${rate}:`, totalsX, vy, { width: totalsW * 0.6 })
+        doc.text(`${impuesto} ${rate}:`, totalsX, vy, { width: totalsW * 0.6 })
           .text(fmt(g.vat) + ' ' + params.currency, totalsX + totalsW * 0.6, vy, { width: totalsW * 0.4, align: 'right' });
         doc.moveDown(0.4);
       });
@@ -428,7 +460,7 @@ export async function generateInvoicePdf(params: {
           const vy = doc.y;
           doc.text(rate, totalsX, vy, { width: wTipo })
             .text(fmt(g.base) + ' ' + params.currency, totalsX + wTipo, vy, { width: wBase, align: 'right' })
-            .text(`IVA ${rate}:`, totalsX + wTipo + wBase + 4, vy, { width: wRot })
+            .text(`${impuesto} ${rate}:`, totalsX + wTipo + wBase + 4, vy, { width: wRot })
             .text(fmt(g.vat) + ' ' + params.currency, totalsX + wTipo + wBase + 4 + wRot, vy, { width: wCuota, align: 'right' });
           doc.moveDown(0.4);
         });
