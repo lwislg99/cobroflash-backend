@@ -230,10 +230,23 @@ jobs:
       - name: ¿Ha perdido tests la tanda?
         if: always()
         run: node scripts/suelo-de-la-tanda.mjs "${{ runner.temp }}/tanda.tap"
-      # El TAP entero, por si el bloque de arriba no basta. Se sube SIEMPRE que haya rojo:
-      # un diagnóstico que hay que pedir a mano llega un día tarde.
+      # El TAP entero, por si el bloque de arriba no basta: un diagnóstico que hay que pedir a
+      # mano llega un día tarde.
+      #
+      # 🔴 SCRUM-695 · SE SUBE SIEMPRE, TAMBIÉN EN VERDE. Hasta hoy era `if: failure()`, y por eso
+      # de las tandas VERDES no quedaba NADA. El defecto que persigue SCRUM-672 —un fichero que sale
+      # de la tanda y se lleva sus tests— SALE VERDE, con `fail 0` y salida 0: guardar el TAP solo
+      # cuando hay rojo es guardarlo justo cuando ese defecto NO está.
+      #
+      # Esto es el histórico del total, y a propósito NO es un fichero en git: el recibo de la tanda
+      # lo reescribe una máquina en cada ejecución y con nueve worktrees en vuelo sería una fábrica
+      # de conflictos (medido en SCRUM-695; la decisión contraria ya estaba escrita en `.gitignore`
+      # y en `scripts/_evidencia-tanda.mjs`). Un artefacto de CI no viaja con la rama y no choca.
+      #
+      # ⚠️ HUECO DECLARADO: `retention-days: 7`. Es histórico CORTO, no eterno — sirve para mirar
+      # atrás unos días cuando el total baje, no para reconstruir el pasado.
       - name: Guardar el TAP completo
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: tanda-tap
