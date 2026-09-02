@@ -23,11 +23,16 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { censarAlmacenamiento } from './_censo-almacenamiento-publico.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require_ = createRequire(import.meta.url);
 const FC = require_(path.join(RAIZ, 'public/dashboard/js/filtroClientes.js'));
 const VISTA = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/customersView.js'), 'utf8');
+// SCRUM-457 · la clave se LEE de la vista, no se copia: si allí se renombra y aquí se dejara la
+// vieja, este fichero seguiría verde comprobando una clave que ya no escribe nadie.
+const CLAVE = (VISTA.match(/CLAVE_COLUMNAS = "([^"]+)"/) || [])[1];
+assert.ok(CLAVE, '🔴 no encuentro la clave de la preferencia en la vista.');
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // SUELO · sin población no hay veredicto
@@ -220,4 +225,51 @@ test('SCRUM-584 · el rótulo del control sale de la pieza y NO es un marcador',
   assert.equal(/PENDIENTE|^\[/.test(FC.TEXTOS_COLUMNAS.control), false,
     '🔴 el rótulo es un MARCADOR: el censo llegó a cero y esto lo rompería.');
   assert.match(VISTA, /FC\.TEXTOS_COLUMNAS\.control/, '🔴 la vista repite el texto en vez de leerlo.');
+});
+
+// ═══ LA DECISIÓN QUE PIDIÓ EL TRINQUETE DE SCRUM-457 ═════════════════════════════════════
+//
+// Al escribir esta preferencia, el guard del logout saltó: la clave vive en una constante y su
+// censo solo sabía leer literales, así que se declaró CIEGO —ni «se purga» ni «no se purga»— y
+// se puso en rojo. Que es exactamente lo que tenía que hacer: un trinquete que salta no es un
+// fallo, es una petición de DECISIÓN. Aquí está tomada y aquí se prueba.
+
+test('SCRUM-584 · 🔴 la preferencia SOBREVIVE al logout, y está decidido por escrito', () => {
+  const banco = cargarDashboard(RAIZ);
+  const entrada = banco.ctx.CLAVES_LOCALES.filter(
+    (c) => c.almacen === 'localStorage' && c.patron.test(CLAVE),
+  );
+  assert.equal(entrada.length, 1,
+    `🔴 la clave «${CLAVE}» no está registrada UNA vez en \`CLAVES_LOCALES\` (hay ${entrada.length}). `
+    + 'Sin registro nadie ha decidido si el logout se la lleva, y el guard de SCRUM-457 lo dirá.');
+
+  assert.equal(entrada[0].purga, false,
+    '🔴 la decisión era que SOBREVIVE: es una preferencia de VISTA y del APARATO —qué columnas se '
+    + 'enseñan—, sin merchant, sin dato de cliente y sin un solo precio. Quien coja el móvil '
+    + 'después ve la misma tabla que vería igualmente, así que purgarla no protege a nadie y sí '
+    + 'obliga a volver a encender «Email» y «Notas» en cada cierre de sesión.');
+
+  assert.ok(entrada[0].motivo && entrada[0].motivo.length > 40,
+    '🔴 la excepción no lleva escrito su porqué, y una excepción sin motivo deja de ser una '
+    + 'decisión en cuanto la lee otro.');
+});
+
+test('SCRUM-584 · 🔴 y el censo del logout SABE LEER esta clave (no se declara ciego)', () => {
+  // 🔴 EL CONTROL POSITIVO DE LO ANTERIOR: el test de arriba pasaría igual si el censo no
+  // encontrase la escritura, porque estaría mirando un registro que no gobierna nada. Así que se
+  // comprueba lo contrario: que el censo VE esta escritura y RESUELVE su clave hasta el literal.
+  const escrituras = censarAlmacenamiento(path.join(RAIZ, 'public'), RAIZ)
+    .filter((a) => a.escribe && a.fichero.endsWith('customersView.js'));
+  assert.ok(escrituras.length >= 1,
+    '🔴 CIEGO: el censo no ve NINGUNA escritura en la vista de clientes, así que el test de arriba '
+    + 'no estaría comprobando nada sobre una clave que sí existe.');
+
+  const mia = escrituras.filter((a) => a.claveResuelta && a.claveResuelta.valor === CLAVE);
+  assert.equal(mia.length, 1,
+    `🔴 el censo no resuelve la clave hasta «${CLAVE}»: `
+    + JSON.stringify(escrituras.map((e) => [e.linea, e.claveResuelta]))
+    + '. Si vuelve a quedar ciego, el logout no puede decir si se la lleva o no.');
+  assert.equal(mia[0].claveResuelta.tipo, 'exacta',
+    '🔴 la clave se ha vuelto un PREFIJO: entonces el patrón del registro casa con más cosas de '
+    + 'las que se decidieron.');
 });
