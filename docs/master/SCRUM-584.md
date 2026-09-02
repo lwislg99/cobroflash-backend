@@ -2,9 +2,15 @@
 
 **Fecha:** 2-sep-2026 · **Carril:** contactos (lista de clientes) · **Gate:** sin gate — corre en `npm test`
 
-**Medido contra:** `origin/main` = `f803ec1e4ba189041a34d017fbf890081331ce45` · 2026-09-02T22:12:27+01:00
+**Medido contra:** `origin/main` = `80db312b10b79292485ff99070648657f4dacca7` · 2026-09-02T22:47:13+01:00
 
-**Tanda:** **4.779 pruebas · 4.696 en verde · 0 fallos · 83 saltadas** — medida DESPUES del ultimo cambio, entrada incluida.
+> La base se volvió a medir AL CERRAR, y había caducado: main se movió **8 commits** desde el
+> `f803ec1e` con el que se empezó, y entre ellos venía **SCRUM-672**, que toca a este ticket de
+> lleno. Se mergeó dentro —no rebase— y se volvió a medir todo contra la base nueva.
+
+**Tanda:** **4.798 pruebas · 4.714 en verde · 0 fallos · 84 saltadas** — con `main` ya mergeado
+dentro y medida DESPUÉS del último cambio de código. Lo único posterior es esta cifra y el SHA
+de arriba, que no son código y no pueden medirse antes de existir.
 
 ---
 
@@ -222,6 +228,17 @@ Dos cautelas, y las dos devuelven `null` —o sea, **rojo**— en vez de adivina
 
 > Y el suelo del propio 457 sube solo: pasa de **cuatro** escrituras del panel a **cinco**.
 
+### Y el suelo de la tanda sube, porque la tanda ha crecido
+
+Al mergear `main` entró **SCRUM-672**: un suelo que impide que la tanda PIERDA tests sin que
+nadie se entere. Su fichero dice cuándo se sube y quién puede hacerlo —*«SUBIRLO ES UNA LÍNEA y lo
+puede hacer cualquier sesión: si la tanda crece, se sube y ya»*—, así que se sube **con lo medido,
+no con un margen**: `SUELO_TESTS` **4766 → 4798**, y `MEDIDO_CONTRA` pasa a decir contra qué se
+midió de verdad (`80db312b`), que es lo que evita que el número quede sin procedencia.
+
+> Comprobado con su propia herramienta sobre el TAP de esta tanda:
+> `[suelo de la tanda] ✅ suelo 4798 · total actual 4798 · margen 0`.
+
 ## Ficheros
 
 `public/dashboard/js/filtroClientes.js` (la decisión: `COLUMNAS`, `claseDeColumna`,
@@ -231,7 +248,8 @@ Dos cautelas, y las dos devuelven `null` —o sea, **rojo**— en vez de adivina
 `tests/scrum584-selector-de-columnas.test.mjs` (**nuevo**) ·
 `tests/scrum580-…` y `tests/scrum581-…` (reanclados) ·
 `public/dashboard/js/almacenLocal.js` (la decisión de purga, con su motivo) ·
-`tests/_censo-almacenamiento-publico.mjs` (el censo aprende un salto más) · esta entrada.
+`tests/_censo-almacenamiento-publico.mjs` (el censo aprende un salto más) ·
+`scripts/_suelo-de-la-tanda.mjs` (el suelo, 4766 → 4798) · esta entrada.
 
 **No se ha tocado:** `prisma/schema.prisma` —este ticket **no toca esquema**— · el modal de cliente
 · `tests/_banco-vistas.mjs` · ninguna dependencia nueva (regla 36).
