@@ -1,10 +1,10 @@
-# SCRUM-623 · La factura ya puede expresar más de un tipo de IVA
+# SCRUM-623 · La factura ya puede expresar más de un tipo impositivo
 
 **Fecha:** 2-sep-2026 · **Carril:** documento fiscal (representación) · **Gate:** sin gate — corre en `npm test`
 
 **Medido contra:** `origin/main` = `73d73db7f7776b34c2d777206d2d766dcead049c` · 2026-09-02T04:00:57+01:00
 
-**Tanda:** 4245 tests, 4166 pass, 0 fail, 79 skipped
+**Tanda:** 4248 tests, 4169 pass, 0 fail, 79 skipped
 
 ---
 
@@ -167,6 +167,70 @@ del 0 % sí se está leyendo.
 
 ---
 
+## 🔴 ENMIENDA (2-sep-2026) · CANARIAS ES MERCADO: EL NOMBRE DEL IMPUESTO ES UN DATO
+
+Un profesional canario no repercute IVA: repercute **IGIC**, con tipos propios. En Ceuta y Melilla,
+**IPSI**. La forma del desglose no puede llevar el nombre grabado.
+
+### Lo primero: el mecanismo YA EXISTE — y reusarlo habría sido el error
+
+`locale.vatName` (`core/i18n/locales.ts`) ya vale `IGV` en Perú, y **el desglose del PRESUPUESTO de
+este mismo fichero ya lo consume** (`pdf.service.ts:821`). Lo natural era reusarlo.
+
+🛑 **No se ha hecho, y ésta es la medición que lo decide: `locale.vatName` está indexado por PAÍS, y
+Canarias es `ES`.** Resolver el nombre desde el país le daría `IVA` a un canario — o sea, **una
+forma que parece neutral y no lo es**, que es exactamente contra lo que avisaba la enmienda.
+
+Y medido también: **`Merchant` no tiene ningún campo de territorio fiscal.** Su única columna
+geográfica es `country` (`schema.prisma:72`). Tampoco `generateInvoicePdf` recibía `country`.
+
+### La respuesta a «PARA Y DILO si no se puede»: **se puede la FORMA, no la RESOLUCIÓN**
+
+| | ¿se puede hoy? |
+|---|---|
+| que la **maqueta** sea neutral al impuesto | **SÍ** — construido |
+| **resolver** qué impuesto aplica a un merchant | **NO** — no hay dato que distinga Canarias de la península |
+
+Así que se abre la puerta y no se cruza: `generateInvoicePdf` acepta **`taxName?: string`**, se
+resuelve **una sola vez** arriba (`const impuesto = params.taxName || NOMBRE_IMPUESTO_POR_DEFECTO`)
+y lo usan los **tres** sitios del documento que lo llevaban grabado — la cabecera de la columna de
+la tabla de líneas y las dos ramas del bloque de totales.
+
+El valor por defecto **no es una decisión fiscal**: es lo que el documento ya imprimía. Mientras
+nadie pase el nombre, el papel sale exactamente igual.
+
+### Medido, no razonado
+
+```
+taxName=undefined   apariciones de «IVA» = 3   ·   «IGIC» = 0
+taxName="IGIC"      apariciones de «IVA» = 0   ·   «IGIC» = 3
+   bloque: Base imponible:105,00 EUR[PENDIENTE microcopy oficial]7%60,00 EUR
+           IGIC 7%:4,20 EUR0%45,00 EURIGIC 0%:0,00 EURTOTAL:109,20 EUR
+```
+
+Con un tipo del **7 %**, que ni siquiera está en el juego español: la forma tampoco depende de él.
+
+**Rojo**: al regrabar `IVA` en una fila caen dos tests —el que lee el PDF y el que vigila el
+fuente—, y **el control negativo sigue verde**. Eso es información: con el nombre regrabado el papel
+peninsular sigue siendo correcto, así que el control negativo *no puede* cazar esta regresión. Por
+eso hacen falta los otros dos.
+
+### Y ahora son TRES respuestas abiertas, no dos
+
+El fundador pidió una sola forma que sirva a todas. **La hay**, y es la misma razón en los tres
+casos: **el bloque está cerrado sobre `base + tipo + cuota`, y todo lo demás entra por fuera.**
+
+| pregunta abierta | qué le pasa a esta maqueta |
+|---|---|
+| **el suplido** (SCRUM-619): ¿dentro o fuera de la base? | dentro → es la fila del 0 %; fuera → esa fila se va y baja una línea propia. La forma no cambia. |
+| **el desglose**: ¿cuántos tipos? | N. Ya son tres en un test. |
+| **qué impuesto es** | un dato de entrada. Con `IGIC` el documento no dice «IVA» ni una vez. |
+
+Lo que las tres tienen en común es lo que NO está en el bloque: ni la naturaleza de la línea, ni el
+juego de tipos, ni el nombre del tributo. **Un test vigila cada una de las tres.**
+
+---
+
 ## El control
 
 **ANTES** (leído del PDF, no del código): las cuatro filas de la tabla de arriba. El caso B enseña
@@ -229,7 +293,8 @@ la cadena.
 * `src/modules/invoicing/infra/pdf/pdf.service.ts` — el bloque de tipos: una fila por tipo con su
   base; deja de saltarse la cuota cero; y `MARCADOR_MICROCOPY_DESGLOSE`. El camino de un solo tipo
   queda tal cual.
-* `tests/scrum623-desglose-por-tipo.test.mjs` — **nuevo**, 7 tests. La propiedad se comprueba
+* `tests/scrum623-desglose-por-tipo.test.mjs` — **nuevo**, 10 tests (7 del desglose + 3 de la
+  enmienda del impuesto). La propiedad se comprueba
   **leyendo el papel** y haciendo la aritmética a mano: si usara una función del producto, estaría
   midiendo el código consigo mismo.
 * `tests/scrum604-desglose-en-el-pdf.test.mjs` — tres expectativas actualizadas, con su porqué.
@@ -239,5 +304,10 @@ la cadena.
 * **El céntimo entre el papel y el registro** (apartado 🛑). Es lo más serio que ha salido de aquí.
 * **Factura y presupuesto redondean distinto** dentro del mismo fichero (punto 2 de arriba).
 * **El censo de marcadores no mira `src/`** (punto 4).
+* **La tabla de líneas del PRESUPUESTO sigue con `IVA%` grabado** (`pdf.service.ts:701`), aunque su
+  bloque de totales sí usa `locale.vatName`. Es el mismo defecto de la enmienda en el otro
+  documento, y no se toca: el fundador decidió sobre la factura.
+* **`locale.vatName` resuelve por PAÍS**, así que a un merchant canario le daría «IVA». Quien
+  construya el IGIC tendrá que resolver el TERRITORIO, y hoy no hay dato para eso.
 * **`fmtImporte` está copiado en SEIS sitios más** del árbol — lo declara el propio fichero en su
   cabecera y sigue igual.
