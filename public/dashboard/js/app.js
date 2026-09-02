@@ -74,6 +74,9 @@ async function initApp() {
   // no decide que metodos existen. Vacio si no llegan, y entonces el selector no se pinta — que es
   // exactamente el comportamiento de hoy, sin selector.
   window.appMetodosDeclarables = Array.isArray(me.metodosDeclarables) ? me.metodosDeclarables : [];
+  // SCRUM-tecnosel · los tipos de intervención, DERIVADOS del vocabulario cerrado del servidor.
+  // Vacío si no llegan, y entonces el desplegable no se pinta — nunca se inventan aquí.
+  window.appTiposIntervencion = Array.isArray(me.tiposIntervencion) ? me.tiposIntervencion : [];
 
   // A10.2 (Parte L): past_due → banner global "Hay un problema con tu pago"
   // + portal de Stripe. La cuenta sigue funcionando (gracia); solo avisa.

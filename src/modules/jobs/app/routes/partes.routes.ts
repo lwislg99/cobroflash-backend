@@ -33,6 +33,7 @@ import {
   lineasParaElTecnico,
   puedeEditarContenido,
   puedeEditarPrecios,
+  permisoDeCampos,
   puedeFirmarse,
   PARTE_CONTENIDO_VERSION_ACTUAL,
   type BloqueParte,
@@ -257,9 +258,25 @@ router.patch('/:id', async (req: any, res) => {
     }
     const { parte } = found;
 
-    // El candado del dominio, con su motivo. La regla no se reescribe aquí.
-    const candado = puedeEditarContenido(parte.estado as EstadoParte);
-    if (!candado.ok) return res.status(409).json({ error: 'parte_locked', message: candado.motivo });
+    // 🔴 EL PERMISO SE COMPRUEBA POR CAMPO, NO POR PETICIÓN.
+    //
+    // Antes esto era `puedeEditarContenido` para la petición entera, y por eso un parte FIRMADO
+    // devolvía 409 a TODO — incluida una petición que solo tocaba precios. Ése era el agujero:
+    // `puedeEditarPrecios` existía y no cerraba ninguna escritura, así que un parte firmado no
+    // se podía valorar por ninguna vía, y sin valorar no se cobra.
+    //
+    // La regla vive en el dominio (`permisoDeCampos`) y aquí solo se aplica. Y si un campo lo
+    // impide, **no se aplica NADA**: se rechaza entera, diciendo qué campo la tumbó.
+    const pedidos = Object.keys(req.body ?? {});
+    const permiso = permisoDeCampos(parte.estado as EstadoParte, pedidos);
+    if (!permiso.ok) {
+      return res.status(409).json({
+        error: 'parte_locked',
+        campo: permiso.campo,
+        grupo: permiso.grupo,
+        message: permiso.motivo,
+      });
+    }
 
     const data: any = {};
     for (const campo of ['obra', 'referencia', 'entrada', 'salida', 'notas'] as const) {
@@ -313,6 +330,49 @@ router.patch('/:id', async (req: any, res) => {
           ? { ...l, precioUnitario: antes.precioUnitario ?? null, tipoIva: antes.tipoIva ?? null }
           : l;
       });
+    }
+
+    // ── LOS PRECIOS DE LA OFICINA ────────────────────────────────────────────────────
+    //
+    // Viajan en su PROPIA clave y por índice de línea: `[{ indice, precioUnitario, tipoIva }]`.
+    // No se mezclan con `lineas` a propósito — mezclarlos haría que «esta petición toca precios»
+    // fuera una cuestión de mirar dentro de un array, y entonces «mixta» sería opinable.
+    if (req.body?.precios !== undefined) {
+      if (!Array.isArray(req.body.precios)) {
+        return res.status(400).json({ error: 'precios_invalidos', message: 'Los precios vienen en una lista.' });
+      }
+      const previas: LineaParte[] = Array.isArray(parte.lineas) ? (parte.lineas as any) : [];
+      const conPrecio = previas.map((l) => ({ ...l }));
+      for (const p of req.body.precios) {
+        const i = Number(p?.indice);
+        if (!Number.isInteger(i) || i < 0 || i >= conPrecio.length) {
+          return res.status(400).json({
+            error: 'precio_sin_linea',
+            message: `No hay ninguna línea ${String(p?.indice)} que valorar.`,
+          });
+        }
+        if (p?.precioUnitario !== undefined) {
+          const n = p.precioUnitario === null ? null : Number(p.precioUnitario);
+          if (n !== null && (!Number.isFinite(n) || n < 0)) {
+            return res.status(400).json({
+              error: 'precio_invalido',
+              message: 'Un precio es un número que no puede ser negativo.',
+            });
+          }
+          conPrecio[i].precioUnitario = n;
+        }
+        if (p?.tipoIva !== undefined) {
+          const n = p.tipoIva === null ? null : Number(p.tipoIva);
+          if (n !== null && (!Number.isFinite(n) || n < 0 || n > 1)) {
+            return res.status(400).json({
+              error: 'tipo_iva_invalido',
+              message: 'El IVA es una fracción entre 0 y 1.',
+            });
+          }
+          conPrecio[i].tipoIva = n;
+        }
+      }
+      data.lineas = conPrecio;
     }
 
     if (Object.keys(data).length === 0) return res.json(serializeParteParaElTecnico(parte));
