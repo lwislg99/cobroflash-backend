@@ -182,7 +182,21 @@ function renderCustomersView(container) {
   // distintos. Compartirla ataria la aprobacion de este texto a la de los otros dos — el
   // fundador no podria firmar uno sin firmar los tres. Una constante por ticket es lo que
   // permite que se apaguen por separado.
-  const MARCADOR_NIF = "[PENDIENTE microcopy oficial]";
+  // ═════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-575 (CONT-02) · EL AVISO DE NIF/CIF MAL FORMADO. Texto PROVISIONAL del asesor,
+  // pendiente de confirmación del fundador (regla 30).
+  //
+  // 🔴 VA SIN MARCADOR, Y ES UNA DECISIÓN MEDIDA, no un descuido. Hasta hoy este aviso pintaba
+  // literalmente «[PENDIENTE microcopy oficial]»: un profesional que tecleara mal su NIF veía en
+  // pantalla un marcador de desarrollo. Desde que producción despliega en cuanto se mergea, un
+  // marcador ya no es una nota interna — esta semana tres acabaron delante de un profesional.
+  //
+  // Entre enseñar un marcador y enseñar un texto provisional del asesor, gana el texto: dice la
+  // verdad al profesional y se cambia en UNA línea (más su aserto) el día que el fundador lo
+  // confirme o lo reescriba. El aserto está en `tests/scrum575b-nif-cableado.test.mjs`, comparado
+  // con `===`, para que un retoque «de paso» no lo cambie sin que nadie se entere.
+  // ═════════════════════════════════════════════════════════════════════════════════════
+  const AVISO_NIF = "Ese NIF/CIF no es válido. Compruébalo.";
   let avisoNif = null;       // SCRUM-575 (CONT-02): el aviso de NIF/CIF mal formado
   let fieldWaOptOut = null; // J3: baja manual de WhatsApp desde la ficha
   let fieldTipoDestinatario = null; // SCRUM-69: plazo legal de la recapitulativa (art. 13 RD 1619/2012)
@@ -319,11 +333,11 @@ function renderCustomersView(container) {
     // a buscarla. Nace oculto; sólo aparece con un valor escrito y mal.
     //
     // 🔴 EL RÓTULO «NIF/CIF (opcional)» NO CAMBIA, y es deliberado: sigue describiendo el campo
-    // con exactitud. Sólo se marca lo que es NUEVO — el mensaje de error, que es texto que el
-    // profesional no ha visto nunca. Marcar de más obliga al fundador a reescribir lo que ya
+    // con exactitud. Lo único que este ticket toca es el MENSAJE DE ERROR, que es texto que el
+    // profesional no había visto nunca. Tocar de más obliga al fundador a revisar lo que ya
     // estaba bien.
     avisoNif = createElement("div", "aviso-nif");
-    avisoNif.textContent = MARCADOR_NIF;
+    avisoNif.textContent = AVISO_NIF;
     avisoNif.hidden = true;
     fieldTaxId.wrapper.appendChild(avisoNif);
 
