@@ -127,3 +127,85 @@ que es exactamente el fallo contra el que avisó el fundador. Revertidos, verde:
 **Medido de paso:** quedan **44 marcas vivas** en `public/` + `src/` con este árbol. El «13»
 de la cabecera del `.md` no se toca: está anclado a `a241b6e4`, es otra foto y sigue siendo
 cierta para su base.
+
+---
+
+# Segunda vuelta · GO del fundador a los cuatro guards parados
+
+**Medido contra:** `origin/main` = `7bdb3a90` (ya mergeado en la rama) · 2026-09-02T17:10:00+02:00
+**Commit previo a inyectar rojos:** `55406151bb0672ca73e2aba4bff4e85910de7437`
+
+**Suite VERDE ENTERA: 4495 tests · 4416 pass · 0 fail · 79 skipped · `exit 0`.**
+
+## SCRUM-192 + SCRUM-314 (×2): un solo cambio cierra los tres
+
+`barridoDemo` **reusa `ORDEN_BORRADO_MERCHANT`** — es su decisión de diseño declarada, no una
+coincidencia. Así que basta meter `parteTrabajo` en el orden.
+
+**El sitio se midió, no se eligió por parecido:** `ParteTrabajo` declara **cero `@relation`**, y
+sus `job_id`/`customer_id` son columnas sueltas que apuntan a `jobs` y `customers` **sin FK**. Es
+el caso exacto de `emailMessage`, así que va en su bloque y **antes** de `job`/`invoice`/`quote`/
+`customer`: si cayera después quedarían partes apuntando a ids que ya no existen y ninguna FK
+protestaría. Al revés no hay riesgo — **nadie apunta a `ParteTrabajo`**, también medido.
+
+## SCRUM-498 (×2): el 22 pasa a 23 en las doce frases, y nada más
+
+No se rediseñó el mecanismo. Una de las doce arrastraba un subrecuento que **mi propio cambio
+rompía**: `scrum272` decía «20 llevan `@map("merchant_id")` y 2 NO» (20+2=22, coherente), y con
+`ParteTrabajo` —que sí mapea `merchant_id`— pasa a **21+2=23**. Medido aparte con un contador
+propio: 21 con `@map`, 2 en camelCase (`Quote`, `Invoice`).
+
+### 🔴 Hallazgo que NO se arregla, y por qué: entrada para SCRUM-680
+
+`src/modules/exports/domain/portabilidadCompleta.ts:30` dice «de los 23 modelos, **19** mapean a
+`merchant_id` y DOS no». **19+2 = 21, no 23.** Ese subrecuento **ya estaba mal antes de esta
+tanda** (decía 22 con 19+2=21). La línea divisoria es esa: el de `scrum272` era coherente y lo
+rompí yo, así que lo arreglo; éste lo rompió otro ticket, así que **se reporta y no se toca**.
+
+### Qué hace el número en `portabilidadCompleta.ts` (respuesta para SCRUM-680)
+
+**Solo documenta.** Vive dentro de un comentario de cabecera; no valida nada ni itera sobre nada.
+La lista real se deriva en ejecución de `Prisma.dmmf`, y el propio módulo lo dice: un modelo nuevo
+con `merchantId` «aparece aquí **solo**, sin que nadie lo añada a ningún sitio». O sea que el
+mecanismo **ya es derivado**: lo único copiado a mano es la prosa que lo describe.
+
+## SCRUM-461 + SCRUM-222: `docs/sql/deriva-prod.sql` REGENERADO
+
+Con `node scripts/generar-sql-deriva.mjs`. Ni editado a mano ni copiado ningún número.
+
+**374 → 403 columnas · 26 → 27 tablas.** La suma, comprobada con un contador propio **validado
+contra las cabeceras de los dos ficheros** (374 y 403, exactos) antes de creerle nada:
+
+`374 + 29 = 403`, donde **29 = 1** (`jobs.tipo_intervencion`) **+ 1**
+(`merchants.clausulas_presupuesto`) **+ 3** (`quotes`: `revision`, `iva_modo`,
+`clausulas_excluidas`) **+ 24** (`partes_trabajo`) — exactamente los seis cambios de schema.
+
+⚠️ Mi primer contador dio 381 y no 403 en los dos ficheros a la vez. **Un instrumento que falla
+igual en los dos sitios parece que cuadra**: el delta salía bien por casualidad. La causa eran las
+columnas camelCase (`invoices.merchantId`), que mi regex no veía. Corregido y revalidado antes de
+dar ninguna cifra.
+
+## `docs/master/SCRUM-650.md` corregido
+
+Su bloque describía `onDelete` **solo en `job`** — una versión PEOR que la del código. Y el `.md`
+**se contradecía a sí mismo**: su prosa ya decía «Corregido a `Cascade` en los dos padres», pero el
+bloque seguía siendo el del PASO 0. Quien copiara de ahí habría reintroducido el defecto que
+SCRUM-244 cazó. Ahora el bloque es **idéntico al del schema, comprobado línea a línea**.
+
+## Los tres rojos, con el árbol commiteado en `55406151`
+
+| Inyección | Resultado |
+|---|---|
+| `parteTrabajo` fuera del ORDEN | SCRUM-192 y SCRUM-314 rojos, **nombrando el modelo** |
+| una sola de las doce frases vuelve a decir «22» | SCRUM-498 rojo: `src/app.ts:673 dice 22 y son 23` |
+| una columna borrada **a mano** del SQL generado | SCRUM-461 y SCRUM-222 rojos, nombrando `partes_trabajo.contenido_hash` |
+
+Revertidos los tres, árbol limpio y suite verde.
+
+## Contabilidad del diff
+
+`prisma/schema.prisma` **no se ha tocado en esta vuelta**. El diff de esta vuelta sí tiene
+**14 borrados** donde el de la primera tenía cero, y son todos **sustituciones**: las 12 frases con
+el número viejo, la línea `teamMember` del `.md` y la cabecera de conteo del SQL regenerado.
+
+**No se ha ejecutado `db push`, ni `migrate`, ni `deploy`.**
