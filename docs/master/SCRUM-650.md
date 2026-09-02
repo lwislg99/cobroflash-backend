@@ -64,6 +64,11 @@ por `ADMIN_ONLY_JOB_FIELDS` (`roleCapabilities.ts:90`).
 Esto es `prisma/schema.prisma`, territorio del fundador. **No lo toco.** La propuesta:
 
 ```prisma
+// ⚠️ SCRUM-674 · CORREGIDO. Este bloque era el del PASO 0 y le faltaba `onDelete` en
+// `teamMember`: describia una version PEOR que la que YA esta en `prisma/schema.prisma`. La prosa
+// de mas abajo («Corregido a Cascade en los dos padres») lo decia, pero el bloque no, y quien
+// copiara de aqui habria reintroducido el defecto que SCRUM-244 cazo. Ahora dice lo que dice el
+// schema real, literal.
 // SCRUM-650 (T1) · un trabajo se asigna a VARIOS. Tabla puente, NO un array ni un CSV:
 // un array pierde la integridad referencial y un CSV no se puede indexar ni filtrar.
 model JobAssignee {
@@ -72,7 +77,10 @@ model JobAssignee {
   assignedAt   DateTime @default(now()) @map("assigned_at")
 
   job        Job        @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  teamMember TeamMember @relation(fields: [teamMemberId], references: [id])
+  // onDelete: Cascade en LAS DOS. Sin el, la FK es RESTRICT y borrar un empleado —o su merchant—
+  // revienta a mitad de recorrido con las tablas anteriores ya vaciadas (lo cazo SCRUM-244). Y es
+  // lo correcto ademas de lo seguro: una asignacion no significa nada sin la persona asignada.
+  teamMember TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
 
   @@id([jobId, teamMemberId])
   @@index([teamMemberId])

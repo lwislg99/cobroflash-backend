@@ -26,7 +26,7 @@
 //
 // ⚠️ SE DERIVA POR EL NOMBRE DEL CAMPO (`merchantId`), NUNCA POR EL DE LA COLUMNA.
 //
-// Es la trampa que ya costó el backfill de SCRUM-205, y aquí muerde igual: **de los 22 modelos
+// Es la trampa que ya costó el backfill de SCRUM-205, y aquí muerde igual: **de los 23 modelos
 // con `merchantId`, 19 mapean a `merchant_id` y DOS no** — `Quote` e `Invoice` guardan la
 // columna en camelCase (`invoices.merchantId`). Medido contra el DMMF, no supuesto. Derivar la
 // lista buscando una columna `merchant_id` perdería esos dos **en silencio**: un export de
