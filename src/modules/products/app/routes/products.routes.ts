@@ -8,6 +8,7 @@ import { getTradeCatalog } from '../../../../core/data/tradeCatalogs';
 import { getCatalogFile, midPrice, orientativoLabel } from '../../../../core/data/catalogLoader';
 import { getLocale } from '../../../../core/i18n/locales';
 import { requireRole } from '../../../../core/http/authMiddleware';
+import { itemKindSchema } from '../../../../core/validation/schemas'; // SCRUM-609 (CAT-01)
 import { conceptosFrecuentes, VENTANA_DIAS } from '../../domain/frequentConcepts'; // SCRUM-162
 
 const router = Router();
@@ -229,7 +230,11 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { name, description, price, cost, vat, providerId, isActive } = req.body || {};
+    const { name, description, price, cost, vat, providerId, isActive, itemKind } = req.body || {};
+    // SCRUM-609 · el lado se valida contra la lista CERRADA. Un valor de fuera no entra:
+    // una columna de texto libre acabaría con «producto», «Producto» y «PRODUCTOS» dentro.
+    const ladoNuevo = itemKindSchema.safeParse(itemKind);
+    if (!ladoNuevo.success) return res.status(400).json({ ok: false, error: 'item_kind_invalid' });
     if (!name || typeof name !== 'string') return res.status(400).json({ ok: false, error: 'name_required' });
     if (price == null || Number.isNaN(Number(price))) return res.status(400).json({ ok: false, error: 'price_required' });
     const priceNum = Number(price);
@@ -241,6 +246,7 @@ router.post('/', async (req, res) => {
       vat: vat == null ? null : Number(vat),
       providerId: providerId == null ? null : Number(providerId),
       isActive: isActive === undefined ? true : Boolean(isActive),
+      itemKind: ladoNuevo.data ?? null,
     });
     return res.status(201).json({ ok: true, item: created });
   } catch (err: any) {
@@ -263,6 +269,12 @@ router.put('/:id', async (req, res) => {
     if (body.vat !== undefined)        patch.vat  = body.vat  == null ? null : Number(body.vat);
     if (body.isActive !== undefined)   patch.isActive = Boolean(body.isActive);
     if (body.providerId !== undefined) patch.providerId = body.providerId == null ? null : Number(body.providerId);
+    // SCRUM-609 · misma lista cerrada que en el alta. `undefined` no toca la columna.
+    if (body.itemKind !== undefined) {
+      const lado = itemKindSchema.safeParse(body.itemKind);
+      if (!lado.success) return res.status(400).json({ ok: false, error: 'item_kind_invalid' });
+      patch.itemKind = lado.data ?? null;
+    }
     if (Object.keys(patch).length === 0) return res.status(400).json({ ok: false, error: 'empty_update' });
     const updated = await updateProduct(req.merchantId, id, patch);
     if (!updated) return res.status(404).json({ ok: false, error: 'not_found' });
