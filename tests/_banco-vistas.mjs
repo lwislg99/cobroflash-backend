@@ -541,6 +541,24 @@ export function cargarDashboard(raiz, opciones = {}) {
     TextEncoder, TextDecoder, btoa: globalThis.btoa, atob: globalThis.atob,
     console: { log() {}, warn() {}, info() {}, debug() {}, error(...a) { reg.errores.push(a.map(String).join(' ')); } },
     alert() {}, confirm: () => true, prompt: () => null, open: () => ({ focus() {} }),
+    // 🔴 SCRUM-660 · `window.addEventListener`. NO LO TENÍA, y por eso `renderQuotesView`
+    // REVENTABA a media pintada — medido: con la vista de `origin/main`, sin ningún cambio de
+    // producto, el banco daba `window.addEventListener is not a function`.
+    //
+    // La consecuencia era peor que un test menos: la pantalla de presupuestos se pintaba HASTA
+    // ese punto y luego paraba, así que sus LÍNEAS nunca llegaban a existir en el banco. Todo lo
+    // que viva en una línea —el selector de IVA de SCRUM-611, entre otras cosas— era
+    // estructuralmente inalcanzable para cualquier control de pantalla, y eso es exactamente el
+    // hueco que 611 declaró al entregar: «si alguien dejara el <select> sin insertar o tras un
+    // display:none, todos seguirían verdes».
+    //
+    // Se GUARDAN los oyentes, como hacen los nodos, en vez de tragárselos: un banco que acepta
+    // registros y luego no los puede disparar mide una pantalla que no existe.
+    _oyentes: {},
+    addEventListener(tipo, fn) { (ctx._oyentes[tipo] = ctx._oyentes[tipo] || []).push(fn); },
+    removeEventListener(tipo, fn) {
+      ctx._oyentes[tipo] = (ctx._oyentes[tipo] || []).filter((f) => f !== fn);
+    },
     matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
     appUserRole: opciones.rol ?? 'admin',
     // SCRUM-474 fase 2 · lo que `app.js` deja aquí al arrancar. Va SIEMPRE, también con escenario
