@@ -135,3 +135,133 @@ El IVA, los totales con IVA y las cláusulas de cierre (**T7**, la tanda siguien
 empleados.
 
 **Suite entera: 4.303 tests · 4.224 pasan · 0 fallos · 79 saltados.**
+
+---
+
+# FASE B (2-sep-2026) · `revision.ts` YA TIENE LLAMADOR — y era el último
+
+> ⚠️ Se ANEXA. Nada de lo de arriba se toca: la fase A documenta lo que era cierto entonces.
+
+**Fecha:** 2-sep-2026 · **Carril:** presupuestos · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `78f008cb1aa42678a2db06b1ac31193bf57d205a`
+
+## 1 · PASO 0 · el gate ERA cierto, y ha caído
+
+La nota de la fase A decía que este módulo no tenía cable porque «`Quote` tiene `quoteNumber Int?`
+y NO tiene campo de revisión». **Lo comprobé en el árbol antes de escribir una línea**, y ya no es
+cierto: `prisma/schema.prisma:438` trae `revision Int @default(0)` (SCRUM-674, mergeado hoy). El
+comentario del propio esquema ya dejaba escrita la decisión de diseño:
+
+> «Vigente» tampoco es una bandera: es la revision mas alta, derivada — una bandera puede
+> contradecir a los datos (dos vigentes, o ninguna).
+
+Censo de PASO 0, ejecutado:
+
+```
+git ls-tree -r --name-only origin/main | grep -iE 'scrum-?655|revision'
+  docs/master/SCRUM-655.md
+  src/modules/quotes/domain/revision.ts
+  tests/scrum655-apartados.test.mjs
+
+git ls-remote --heads origin | grep -iE 'scrum-?655'
+  59b284297bc9a2fb7acac5b76a79b91c7fca6cb0  refs/heads/scrum-655-apartados-presupuesto
+```
+
+Esa rama es la fase A y **ya es ancestro de `origin/main`** (comprobado con `merge-base
+--is-ancestor`, no por el estado de un ticket). No hay trabajo duplicado.
+
+## 2 · SCRUM-411: 9 → 8, RECONTADO
+
+No restado de cabeza. Ejecutado `analizar()` —el mismo que usa el guard— sobre este árbol:
+
+| | antes | después |
+| --- | :-: | :-: |
+| módulos de dominio | 126 | 126 |
+| alcanzables | 288 | **289** |
+| **inalcanzables** | **9** | **8** |
+
+`src/modules/quotes/domain/revision.ts` ya no está en la lista. El trinquete es de igualdad
+exacta —cayó con «el tope (9) ya no coincide con la realidad (8)»— así que el tope baja a 8 en
+este mismo commit, con su motivo. Y el renglón **se da la vuelta, no se borra**: hay un test que
+falla NOMBRANDO el módulo si mañana alguien retira el cable, igual que con `retencionIrpf`.
+
+## 3 · Quién lo consume
+
+`src/modules/system/quoteAdmin.ts` → `getQuoteDetailAdmin`, que es lo que sirve
+`GET /admin/quotes/:id`. La pantalla del presupuesto ya recibe:
+
+- `revisiones[]` — todas las versiones del mismo número base, ordenadas, cada una con su `numero`
+  pintado (`P2004226`, `P2004226.1`), su estado, su total, y **`firmado`**;
+- `vigenteId` — cuál es la buena hoy;
+- `numeroConRevision` y `revision` de la que se está mirando.
+
+**`number` NO se toca.** Un presupuesto sin revisiones viaja exactamente como viajaba, y todo lo
+que ya lo consumía sigue leyendo lo mismo.
+
+Tres decisiones que no son de estilo:
+
+1. **El grupo es `{merchantId, quoteNumber}`, y un `quoteNumber` NULO no es una clave.** Agrupar
+   por null metería en el mismo saco a todos los presupuestos sin numerar del merchant. Sin
+   número, un presupuesto es su propio grupo — y eso es la verdad, no un apaño: sin número no hay
+   «P2004226» del que ser la revisión.
+2. **`firmado` se deriva de `signatureUrl`, no de `acceptedAt`** — el mismo criterio que el libro
+   registro y el embudo de métricas, que lo dejan escrito: aceptar y firmar no son lo mismo.
+3. **El trazo NO viaja.** `signatureUrl` es un data-URI con la firma del cliente; de la consulta
+   sale sólo el booleano.
+
+## 4 · La regla vive en el dominio, y por eso se puede probar
+
+`vistaDeRevisiones(propia, grupo)` es una función pura en `revision.ts`, y es lo que corre el
+endpoint. Dentro del endpoint sólo se podría probar con base de datos, y la regla del ticket
+—«dos vigentes no es una respuesta»— habría quedado detrás de un gate.
+
+## 5 · 🔴 «Cuál está vigente» con dos respuestas no es una respuesta
+
+`vigenteDe` (fase A) resuelve el empate **en silencio**: recorre y se queda con la primera que vio.
+`vigenteUnicaDe` (fase B) PARA y nombra a las dos:
+
+```
+DOS VIGENTES A LA VEZ: P2004226.1 (revisión 1) y P2004226.1 (revisión 1).
+  «Cuál está vigente» con dos respuestas no es una respuesta. Elegir una de las dos aquí
+  sería peor que fallar: la pantalla enseñaría una y el PDF podría enseñar la otra…
+```
+
+**Y cae con el mecanismo viejo**, que es lo que prueba que hacía falta. Midiéndolo salió algo peor
+de lo que yo suponía: escribí el test esperando que la segunda empatada quedara como no-vigente, y
+el rojo dijo `true`. `esVigente` compara `{numero, revisión}`, así que con un empate **las DOS
+contestan «soy la vigente»**. No es que una desaparezca de la pantalla: es que las dos se pintan
+como la buena a la vez. El test conserva esa medición.
+
+## 6 · 🔴 Un presupuesto FIRMADO no se reescribe
+
+Si el cliente pide cambios sobre uno ya firmado, eso es una revisión NUEVA. La firma cubre lo que
+el cliente VIO. `nuevaRevisionDe(anterior, siguiente)` es pura y devuelve **los datos de la fila
+nueva, sin `id`**: no tiene a quién sobrescribir aunque se lo pidieran. El test comprueba la huella
+del original antes y después — ni una línea cambia.
+
+Y el reparto de campos es **cerrado y contrastado con el esquema**: `REVISION_HEREDA` (el
+contenido), `REVISION_NO_HEREDA` (la firma, la evidencia, la decisión, el cobro, el enlace público,
+el PDF… cada uno con su motivo) y `REVISION_LA_PONE_EL_SISTEMA`. Un test lee `model Quote` de
+`prisma/schema.prisma` y exige que **todo campo escalar esté clasificado**: una columna nueva sin
+clasificar cae en rojo. Sin eso, un campo nuevo simplemente no viajaría — y eso no falla: la
+revisión nace sin ese dato y nadie se entera hasta que el cliente lo echa de menos en el documento.
+
+## 7 · Lo que NO se ha hecho, y por qué
+
+- **No hay endpoint para CREAR la revisión.** El encargo pedía consumidor y la pregunta de
+  pantalla; un `POST` que crea filas es superficie de escritura nueva y no estaba pedida.
+  `nuevaRevisionDe` queda como la regla ejecutable, declarada como tal en el registro de huérfanos,
+  y se borra esa línea el día que un `POST` la cablee. **Es la siguiente fase natural.**
+- **No se toca la pantalla.** El backend ya manda `revisiones` y `vigenteId`; pintarlo lleva
+  microcopy y la microcopy se propone, no se aprueba (regla 30). **Propuesta, sin aprobar:** en el
+  detalle, junto al número, un selector con las versiones y la vigente marcada.
+- **`prisma/schema.prisma` no se toca** y **no hace falta ninguna columna más**: `revision`,
+  `quoteNumber` y `signatureUrl` ya están.
+- **Ni la pantalla del parte ni sus ficheros** (sesiones 2 y 3) · ni el camino de emisión.
+
+## 8 · Un hallazgo de otro carril, que se REPORTA y no se arregla
+
+`esVigente` compara por `{numero, revisión}` y no por `id`. En el camino de pantalla es inofensivo
+—`vigenteUnicaDe` para antes de que dos puedan empatar—, pero es una comparación que **no
+distingue dos filas distintas con los mismos dos números**. Queda medido y escrito aquí; cambiarlo
+tocaría la superficie de la fase A y no bloquea nada.
