@@ -65,6 +65,16 @@ const CENSO_ARITMETICA = {
       + 'ninguna cifra que salga en un documento, y además es IVA SOPORTADO, no repercutido: no entra '
       + 'en la casilla que el censo protege.',
   },
+  'src/modules/jobs/domain/parteTrabajo.ts': {
+    veredicto: 'DOCUMENTO',
+    nota: 'SCRUM-652 (T3) · `totalesPorBloque` deriva la cuota de CADA LÍNEA de UN parte '
+      + '(`base * tipoIva / 100`, en céntimos enteros) y suma los dos bloques. No agrupa por tipo de '
+      + 'IVA, no mira periodos y no sale de ese documento: es el total de lo que tiene delante, '
+      + 'igual que `calcAlbaranTotales`. '
+      + 'Y una precisión que importa para este censo: estos importes NO entran en el sello del parte '
+      + '—el canónico no lleva precios a propósito—, así que esta aritmética no puede mover ninguna '
+      + 'huella firmada.',
+  },
   'src/modules/invoicing/domain/recargoEquivalencia.ts': {
     veredicto: 'DOCUMENTO',
     nota: 'Calcula la cuota del RECARGO DE EQUIVALENCIA sobre una base (`b * tipoRecargo / 100`). Es otro '
@@ -84,11 +94,9 @@ const CENSO_ARITMETICA = {
       + 'LÍNEA a propósito — su propio comentario explica que dos formas de redondear la misma factura '
       + 'dan importes distintos, que es la lección de SCRUM-627 dicha antes de tiempo.',
   },
-  'src/modules/quotes/app/routes/quotes.routes.ts': {
-    veredicto: 'DOCUMENTO',
-    nota: '`calcTierTotal`: el total de UNA opción (tier) de UN presupuesto. Un presupuesto ni siquiera '
-      + 'entra en el 303.',
-  },
+  // ✅ SCRUM-655: `quotes.routes.ts` sale del censo. `calcTierTotal` ya no reimplementa nada —
+  // delega en `calcTotal`— así que su entrada aquí ya no describe a nadie y se retira en el mismo
+  // commit que lo arregla, que es lo que este trinquete exige.
   'src/modules/system/app/routes/customerPortal.routes.ts': {
     veredicto: 'DOCUMENTO',
     nota: 'Pinta el importe de cada línea en el portal del cliente. Es PRESENTACIÓN de un documento que '

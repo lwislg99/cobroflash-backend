@@ -464,7 +464,10 @@ export const DECLARADOS = [
   { modulo: 'src/modules/jobs/domain/pendientesFacturar.service.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
-    exports: ['avisoDeFacturacion', 'calcularSemaforo', 'fechaLimiteRecapitulativa', 'resolveTipoDestinatario', 'toIsoDateLocal'] },
+    // SCRUM-643: `toIsoDateLocal` SE RETIRÓ. Existía para esquivar una trampa —formatear un
+    // plazo legal con el reloj local— y la trampa desapareció al representar el plazo como DÍA.
+    // La declaración se BORRA, no se pone a cero: el trinquete de SCRUM-411 cae igual si sobra.
+    exports: ['avisoDeFacturacion', 'calcularSemaforo', 'fechaLimiteRecapitulativa', 'resolveTipoDestinatario'] },
   { modulo: 'src/modules/jobs/domain/precarga.service.ts',
     cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
     motivo: 'H1 fase 2 (SCRUM-458/460): el paquete de precarga está cableado por `GET /admin/precarga`, pero esta condición concreta no la alcanza ese camino.',

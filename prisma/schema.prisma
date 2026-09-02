@@ -79,6 +79,29 @@ model Merchant {
   stripeSubscriptionId String?   @map("stripe_subscription_id")
 
   country String
+
+  // SCRUM-643 · EL HUSO HORARIO CON EL QUE SE CALCULA EL CALENDARIO DE ESTE MERCHANT.
+  //
+  // Nace de un defecto MEDIDO: tres cálculos fiscales —el mes natural del art. 13, el semáforo
+  // del plazo del art. 13.2 y el corte «hasta el día X»— usaban el reloj LOCAL DEL SERVIDOR, y
+  // el servidor va en UTC (Railway, sin variable TZ) mientras la península va en UTC+1/+2. Un
+  // albarán del día 1 a las 00:30 hora española caía en la recapitulativa del mes ANTERIOR.
+  //
+  // 🔴 NO SE DERIVA DE `country`, y está medido: dos merchants del MISMO país pueden estar en
+  // husos distintos —península y Canarias en ES, CDMX y Tijuana en MX, continental e Isla de
+  // Pascua en CL—. Derivarlo del país sería repetir el error de suponer que «local» es un solo
+  // sitio, un escalón más abajo.
+  //
+  // NULLABLE Y SIN `@default`, como `Customer.contactKind` (CONT-01): NULL = «no declarado»,
+  // que es distinto de declarado. Un `@default('Europe/Madrid')` daría por dicho algo que nadie
+  // ha dicho, y además fijaría la app a la península — justo lo que la opción A descarta.
+  // Quien lo resuelve es `core/zonaDelMerchant.ts`, y NULL cae a UTC (lo de antes de existir
+  // esta columna), nunca a Madrid.
+  //
+  // ⚠️ NO confundir con `profileZones` (chips geográficos del perfil público) ni con el RÉGIMEN
+  // fiscal (IVA / IGIC canario / IPSI de Ceuta y Melilla), que es otro dato y es SCRUM-646.
+  timezone String? @map("timezone")
+
   pspId   String? @map("psp_id")
   iban    String?
   clabe   String?
@@ -631,6 +654,14 @@ model Product {
   vat         Decimal? @db.Decimal(5, 4)
   providerId  Int?     @map("provider_id")
   isActive    Boolean  @default(true) @map("is_active")
+  // SCRUM-609 (CAT-01) · el LADO del catálogo: PRODUCTO | SERVICIO. Mismo patrón y misma forma
+  // que `contactKind` (CONT-01): nullable y SIN `@default`, porque un default declararía por el
+  // profesional. NULL = sin clasificar, y el switch no preselecciona ningún lado.
+  //
+  // 🔴 NO es una etiqueta que se guarda: DECIDE QUÉ CAMPOS ENSEÑA la ficha. Un servicio no tiene
+  // coste, ni margen, ni proveedor. El valor va en mayúsculas y sin acentos por consistencia con
+  // `contact_kind`, que es lo que ya está mergeado.
+  itemKind    String?  @map("item_kind")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

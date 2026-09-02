@@ -7,6 +7,7 @@
 // precondiciones. Todo lo demás de aquí sigue sin tocar facturación.
 // Tenancy SIEMPRE findFirst { id, merchantId } → 404 (regla 2). Editable hasta 'firmado'
 // (409 albaran_locked).
+import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-643
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { recordAudit, actorDeRequest, requestIp } from '../../../system/audit.service'; // SCRUM-207
@@ -253,16 +254,21 @@ router.get('/consolidables', async (req, res) => {
       tipoOperacion: jobById.get(a.jobId)?.tipoOperacion ?? null,
     }));
 
+    // SCRUM-643: la zona del merchant, resuelta en el sitio único (`core/zonaDelMerchant`).
+    const zona = zonaDelMerchant(await prisma.merchant.findUnique({
+      where: { id: req.merchantId! }, select: { timezone: true },
+    }));
+
     const { elegibles, descartados } = seleccionarConsolidablesDeCliente(candidatos, customerId, {
       desde: typeof req.query.desde === 'string' ? req.query.desde : null,
       hasta: typeof req.query.hasta === 'string' ? req.query.hasta : null,
       numeroDesde: typeof req.query.numeroDesde === 'string' ? req.query.numeroDesde : null,
       numeroHasta: typeof req.query.numeroHasta === 'string' ? req.query.numeroHasta : null,
       mes: typeof req.query.mes === 'string' ? req.query.mes : null,
-    });
+    }, zona);
 
     const lineasById = new Map(albaranes.map((a) => [a.id, a.lineas]));
-    const grupos = agruparPorMes(elegibles).map((g) => {
+    const grupos = agruparPorMes(elegibles, zona).map((g) => {
       let base = 0;
       let cuota = 0;
       for (const a of g.albaranes) {
@@ -369,7 +375,11 @@ router.post('/consolidar', requireRole('admin'), async (req, res) => {
       facturadoParcial: conParcial.has(a.id),
     }));
 
-    const { elegibles, descartados } = seleccionarConsolidablesDeCliente(candidatos, customerId, {});
+    // SCRUM-643: misma resolución, mismo sitio único.
+    const zona = zonaDelMerchant(await prisma.merchant.findUnique({
+      where: { id: req.merchantId! }, select: { timezone: true },
+    }));
+    const { elegibles, descartados } = seleccionarConsolidablesDeCliente(candidatos, customerId, {}, zona);
     if (descartados.length > 0) {
       // Se devuelven TODOS los motivos, no solo el primero: quien seleccionó ocho partes
       // necesita saber cuáles quitar de una vez, no ir descubriéndolos de uno en uno.
@@ -381,7 +391,7 @@ router.post('/consolidar', requireRole('admin'), async (req, res) => {
     }
 
     const lineasById = new Map(albaranes.map((a) => [a.id, a.lineas]));
-    const grupos = agruparPorMes(elegibles).map((g) => ({
+    const grupos = agruparPorMes(elegibles, zona).map((g) => ({
       mesLabel: mesNaturalLabel(g.mesKey),
       albaranes: g.albaranes.map((a) => ({
         id: a.id, numero: a.numero, fecha: a.fecha, lineas: lineasById.get(a.id),
