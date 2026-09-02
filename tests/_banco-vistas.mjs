@@ -562,14 +562,57 @@ export function ocultoPorCss(n, reglas) {
 // SCRUM-609 (2-sep-2026) · 67 → 68: entra `switchTipoArticulo.js`, el switch
 // Producto|Servicio del catálogo. Va ANTES de `productsView.js`, que lo consume.
 // RECONTADO sobre el índice, no sumado: grep -c "<script src=" → 68.
-// SCRUM-611 (2-sep-2026) · 66 → 67: entra `tiposDeIva.js`, la lista de tipos del
-// selector de la linea. Va ANTES de `quotesView.js`, que la consume.
-// RECONTADO sobre el indice, no sumado: grep -c "<script src=" → 67.
-// SCRUM-666 (2-sep-2026) · 67/68 -> 69 al MEZCLAR: las dos ramas traian scripts distintos y
-// cada una habia contado el suyo. NO se ha elegido un lado ni se han sumado los dos: se ha
-// vuelto a CONTAR sobre el indice YA MEZCLADO, que es la regla que este bloque lleva cinco
-// conflictos repitiendo.
-//     grep -c "<script src=" public/dashboard/index.html   ->   69
+// SCRUM-611 (2-sep-2026) · 68 → 69: entra `tiposDeIva.js`, la lista de tipos del selector de la
+// línea. Va ANTES de `quotesView.js`, que la consume.
+//
+// 🔴 SEXTA VEZ QUE ESTE CONTADOR CHOCA, y de las BENIGNAS: los dos números chocaron —67 en la
+// rama, 68 en main—, así que el conflicto se ve. Las peligrosas son las cuatro en que las dos
+// ramas escribieron el MISMO valor por scripts DISTINTOS y git dejó la línea del valor FUERA de
+// los marcadores: sólo chocaban los comentarios, y quien conservaba «los dos» dejaba el contador
+// corto con dos scripts nuevos dentro.
+//
+// Se resuelve CONTANDO sobre el índice ya mezclado. Ni 67, ni 68, ni 67+1:
+//     grep -c "<script src=" public/dashboard/index.html   →   69
+//
+// Y LA FLECHA SE RECALCULA CON EL NÚMERO: esta entrada decía «66 → 67» cuando se escribió, antes
+// de mezclar. Una flecha es tan DERIVADA como el número que cuenta, y heredarla de un árbol que
+// ya no existe es el mismo error con otra forma.
+//
+// Comprobado además que los TRES scripts están en el índice mezclado Y en su sitio —`tiposDeIva`
+// en la 247 antes de `quotesView` en la 248; `switchTipoArticulo` y `margenCatalogo` en la 250 y
+// 251, antes de `productsView` en la 252—. Si el merge se hubiera comido uno, el recuento habría
+// salido bien y la vista habría reventado igual.
+//
+// 🔴 SÉPTIMA VEZ QUE ESTE CONTADOR CHOCA (2-sep-2026, al mezclar `main` en `scrum-666`), y de
+// las SILENCIOSAS: los dos lados decían `69` —main llegó ahí con SCRUM-611 y la rama de
+// SCRUM-666 no añade ningún `<script>`—, así que git dejó la línea del valor FUERA de los
+// marcadores y sólo chocaron los COMENTARIOS. Recontado sobre el índice ya mezclado:
+//     grep -c "<script src=" public/dashboard/index.html   →   69   (y 0 duplicados)
+//
+// ⚠️ Y AQUÍ SE CORRIGE LA REGLA QUE ESTE BLOQUE VENÍA REPITIENDO. Decía: «los dos comentarios se
+// quedan: cada uno documenta un script real». Eso vale cuando cada lado documenta un script
+// DISTINTO. **Esta vez los dos hablaban del MISMO** (`tiposDeIva.js`, SCRUM-611): la rama con la
+// flecha «66 → 67» escrita ANTES de mezclar, main con la «68 → 69» ya recalculada. Conservar los
+// dos habría dejado DOS ENTRADAS PARA UN SOLO SCRIPT con flechas contradictorias.
+//
+// Que es EXACTAMENTE la corrupción que este fichero ya arrastra unas líneas más arriba, con
+// SCRUM-575 / `nifEspanol.js` («63 -> 64» y «64 → 65»). Ahora se sabe cómo nació: no fue un
+// descuido de quien resolvió aquel merge — fue aplicar CORRECTAMENTE una regla mal enunciada.
+// Es un dato sobre el diseño, no sobre nadie.
+//
+// LA REGLA, ENUNCIADA BIEN:
+//   · lados que documentan scripts DISTINTOS → se conservan los dos y se recuenta el valor;
+//   · lados que documentan el MISMO script  → se conserva UNO, el de la flecha recalculada
+//     sobre el árbol mezclado, y se DESCARTA el caduco. No es elegir un lado por gusto: es
+//     tirar una entrada que habla de un árbol que ya no existe.
+//
+// 🔴 Y LA ASIMETRÍA QUE HACE QUE ESTO IMPORTE: el número lo vigilan dos guards, así que un valor
+// equivocado cae en la primera tanda. **Al registro no lo vigila nadie.** El daño de esta clase
+// de conflicto no es un número corto: es una entrada falsa que se lee durante meses.
+//
+// Con una LISTA DE NOMBRES en vez de un recuento, este conflicto no existiría: `'tiposDeIva.js'`
+// aparece una vez en cada lado, la unión de los dos conjuntos es trivialmente correcta, no hay
+// flechas que recalcular, y una duplicación se ve porque el nombre sale dos veces. Es SCRUM-663.
 export const SCRIPTS_DEL_DASHBOARD = 69;
 
 /**

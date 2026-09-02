@@ -79,6 +79,29 @@ model Merchant {
   stripeSubscriptionId String?   @map("stripe_subscription_id")
 
   country String
+
+  // SCRUM-643 · EL HUSO HORARIO CON EL QUE SE CALCULA EL CALENDARIO DE ESTE MERCHANT.
+  //
+  // Nace de un defecto MEDIDO: tres cálculos fiscales —el mes natural del art. 13, el semáforo
+  // del plazo del art. 13.2 y el corte «hasta el día X»— usaban el reloj LOCAL DEL SERVIDOR, y
+  // el servidor va en UTC (Railway, sin variable TZ) mientras la península va en UTC+1/+2. Un
+  // albarán del día 1 a las 00:30 hora española caía en la recapitulativa del mes ANTERIOR.
+  //
+  // 🔴 NO SE DERIVA DE `country`, y está medido: dos merchants del MISMO país pueden estar en
+  // husos distintos —península y Canarias en ES, CDMX y Tijuana en MX, continental e Isla de
+  // Pascua en CL—. Derivarlo del país sería repetir el error de suponer que «local» es un solo
+  // sitio, un escalón más abajo.
+  //
+  // NULLABLE Y SIN `@default`, como `Customer.contactKind` (CONT-01): NULL = «no declarado»,
+  // que es distinto de declarado. Un `@default('Europe/Madrid')` daría por dicho algo que nadie
+  // ha dicho, y además fijaría la app a la península — justo lo que la opción A descarta.
+  // Quien lo resuelve es `core/zonaDelMerchant.ts`, y NULL cae a UTC (lo de antes de existir
+  // esta columna), nunca a Madrid.
+  //
+  // ⚠️ NO confundir con `profileZones` (chips geográficos del perfil público) ni con el RÉGIMEN
+  // fiscal (IVA / IGIC canario / IPSI de Ceuta y Melilla), que es otro dato y es SCRUM-646.
+  timezone String? @map("timezone")
+
   pspId   String? @map("psp_id")
   iban    String?
   clabe   String?
