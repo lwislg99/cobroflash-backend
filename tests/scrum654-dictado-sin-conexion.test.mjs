@@ -177,13 +177,43 @@ test('SCRUM-654 · 🔴 EL QUE DECIDE: al fallar por RED, el técnico recibe un 
     `micro que no va. Dice: «${aviso}»`);
 });
 
-test('SCRUM-654 · el aviso sale con su MARCADOR: el texto no está aprobado (regla 30)', () => {
+// SCRUM-674 (2-sep-2026) · ESTE TEST NO SE RELAJA, SE ACTUALIZA AL HECHO.
+//
+// Vigilaba que el aviso saliera con marcador PORQUE el texto no estaba firmado. El fundador lo
+// aprobó, así que la marca desapareció — y ahí es donde un guard se muere en silencio: se borra
+// el test «que ya no aplica» y con él la única atadura entre el texto que se pinta y el que se
+// aprobó. Lo que protegía sigue vivo y es MÁS fuerte ahora: que el aviso sea EXACTAMENTE el texto
+// firmado, letra por letra, y que ese texto CONSTE en la fuente única de microcopy aprobada.
+//
+// Si mañana alguien lo retoca «de paso», esto se pone rojo: retocar un texto aprobado es reabrir
+// una aprobación sin que nadie se entere.
+const AVISO_APROBADO = 'El dictado necesita conexión — escribe el trabajo y listo';
+
+test('SCRUM-674 · el aviso es LITERALMENTE el texto aprobado (regla 30)', () => {
   const m = montar();
   const rec = dictando(m);
   rec.onerror({ error: 'network' });
-  assert.match(m.toasts[m.toasts.length - 1], /^\[PENDIENTE microcopy oficial\]/,
-    '🔴 el aviso se presenta como texto aprobado y NO lo está. Lo aprueba el fundador; hasta ' +
-    'entonces sale marcado (regla 30) y entra en el censo de SCRUM-402.');
+  const aviso = m.toasts[m.toasts.length - 1];
+
+  assert.equal(aviso, AVISO_APROBADO,
+    `🔴 el aviso NO es el texto que aprobó el fundador. Se pinta: «${aviso}». Aprobado: ` +
+    `«${AVISO_APROBADO}». Un retoque «de paso» reabre una aprobación en silencio (regla 30).`);
+
+  assert.doesNotMatch(aviso, /PENDIENTE/,
+    '🔴 el aviso ha vuelto a salir con marcador. El texto está aprobado desde SCRUM-674.');
+});
+
+test('SCRUM-674 · el texto aprobado CONSTA en la fuente única de microcopy', () => {
+  // El código y el documento tienen que decir lo mismo. Si el texto vive solo en el .js, mañana
+  // nadie puede comprobar que se aprobó: la aprobación deja de ser verificable.
+  const doc = path.join(RAIZ, 'docs', 'MICROCOPY_APROBADA_SIN_APLICAR.md');
+  assert.ok(fs.existsSync(doc), `🔴 no existe la fuente única de microcopy: ${doc}`);
+
+  const texto = fs.readFileSync(doc, 'utf8');
+  assert.ok(texto.includes(AVISO_APROBADO),
+    '🔴 el aviso está APLICADO en el código pero NO consta en ' +
+    'docs/MICROCOPY_APROBADA_SIN_APLICAR.md. Aplicar sin anotar deja una aprobación que nadie ' +
+    'puede verificar: el texto queda en producción sin rastro de quién lo firmó.');
 });
 
 test('SCRUM-654 · 🔴 quedarse sin cobertura NO retira el micro: es temporal', () => {
