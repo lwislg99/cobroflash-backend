@@ -1,10 +1,10 @@
 # SCRUM-666 · El banco de vistas ya mira el CSS externo — y dice cuándo no sabe mirar
 
-**Medido contra:** `origin/main` = `fdc98cf03e82be7952d5cefb692edc3eef2eaa63` · 2026-09-02T12:57:13Z
+**Medido contra:** `origin/main` = `001f44fd8ff35a0fb41ad9f3052e9611f57075e1` · 2026-09-02T13:23:01Z
 
 > Rama apilada sobre `scrum-660-iva-defecto-del-documento`, con `origin/main` mezclado dentro.
-> El ancla se REMIDIÓ al mezclar `main` por segunda vez: la anterior era
-> `61c906171b08a90baa29c02666d9961fb75c132b` · 2026-09-02T12:35:08Z.
+> El ancla se ha REMEDIDO en cada mezcla de `main`: `61c90617`…, luego
+> `fdc98cf03e82be7952d5cefb692edc3eef2eaa63`, y ahora la de arriba.
 > El hueco lo declaré yo al entregar 660; el instrumento que lo cierra vive en el mismo banco.
 
 ---
@@ -131,16 +131,18 @@ rojo era del fixture. Cambiado a una clase que no aparece en ninguna hoja.
 * **No verifiqué** otros caminos de apertura de la hoja de ajustes: el control sigue usando el
   chip. Sigue abierto, como en 660.
 
-## 6 · El conflicto de `SCRIPTS_DEL_DASHBOARD` — dos merges, y el segundo corrige la REGLA
+## 6 · Los tres merges de `SCRIPTS_DEL_DASHBOARD`, y el tercero ya no fue un conflicto
 
-**Primer merge (sexta colisión).** Los números chocaron —67 en la rama, 68 en main—, así que el
-conflicto se veía. Se resolvió **contando sobre el índice ya mezclado** (`grep -c "<script src="`
-→ **69**), no eligiendo un lado ni sumando, y **se conservaron los dos comentarios**.
+Esta rama mezcló `main` tres veces y el mismo sitio chocó las tres. Queda escrito porque el
+tercero es la prueba de que el arreglo funciona.
 
-**Segundo merge (séptima colisión, y de las SILENCIOSAS).** Al volver a mezclar `main`, los dos
-lados decían `69` —main llegó ahí con SCRUM-611 y esta rama no añade ningún `<script>`—, así que
-git dejó `export const SCRIPTS_DEL_DASHBOARD = 69;` **fuera de los marcadores** y sólo chocaron
-los comentarios. Medido sobre el índice ya mezclado, sin heredar de ningún lado:
+**Primero (sexta colisión del contador).** Los números chocaron —67 en la rama, 68 en main—, así
+que se veía. Se resolvió **contando sobre el índice ya mezclado** (`grep -c "<script src="` → 69),
+no eligiendo un lado, y se conservaron los dos comentarios.
+
+**Segundo (séptima colisión, y de las SILENCIOSAS).** Los dos lados decían `69` —main llegó ahí
+con SCRUM-611 y esta rama no añade ningún `<script>`—, así que git dejó la línea del valor **fuera
+de los marcadores** y sólo chocaron los comentarios. Medido sobre el índice ya mezclado:
 
 | medida | resultado |
 | --- | --- |
@@ -150,34 +152,29 @@ los comentarios. Medido sobre el índice ya mezclado, sin heredar de ningún lad
 | los 69 ficheros existen en disco | **sí** |
 | orden | `tiposDeIva` 247 < `quotesView` 248 · `switchTipoArticulo` 250 y `margenCatalogo` 251 < `productsView` 252 |
 
-🔴 **Y aquí se corrige la regla, que es el hallazgo.** Los dos lados documentaban **el mismo
-script** (`tiposDeIva.js`, SCRUM-611): la rama con la flecha caduca «66 → 67», escrita antes de
-mezclar; main con la «68 → 69» ya recalculada y el orden verificado por línea. La regla que el
-fichero venía repitiendo —«se conservan los comentarios de los dos lados, cada uno documenta un
-script real»— **sólo vale cuando cada lado documenta un script DISTINTO**. Aplicarla aquí habría
-dejado **dos entradas para un solo script con flechas contradictorias**.
+🔴 **Y ahí se corrigió la regla.** Los dos lados documentaban **el mismo script** (`tiposDeIva.js`,
+SCRUM-611): la rama con la flecha caduca «66 → 67», main con la «68 → 69» ya recalculada. La regla
+que el fichero venía repitiendo —«se conservan los comentarios de los dos lados, cada uno documenta
+un script real»— **sólo vale cuando cada lado documenta un script DISTINTO**. Aplicarla ahí habría
+dejado **dos entradas para un solo script con flechas contradictorias**, que es la corrupción que
+el fichero ya arrastraba con **SCRUM-575 / `nifEspanol.js`** («63 -> 64» y «64 → 65»). Así se supo
+cómo nació aquélla: no por descuido de nadie, sino por **aplicar correctamente una regla mal
+enunciada**.
 
-Que es exactamente la corrupción que el fichero ya arrastra con **SCRUM-575 / `nifEspanol.js`**
-(«63 -> 64» y «64 → 65»). **Ahora se sabe cómo nació**: no por un descuido de quien resolvió aquel
-merge, sino por **aplicar correctamente una regla mal enunciada**. Es un dato sobre el diseño, no
-sobre nadie.
+Se probó el suelo en rojo: con `68` declarado y 69 reales caen **los dos** guards nombrando la
+cifra — `guard-colisión` («se leyeron 69 y se esperaban 68») y el SUELO de SCRUM-417 («BANCO
+CIEGO: 69 … 68»).
 
-La regla, enunciada bien y escrita ya en `tests/_banco-vistas.mjs`:
+**Tercero — y aquí ya no hubo nada que resolver a mano.** `main` traía **SCRUM-662** (Luis): el
+contador sustituido por una **lista de nombres**. Se tomó **su lado entero**, sin pelearlo y sin
+reintroducir el número. Esta rama sólo **añade** 134 líneas a `tests/_banco-vistas.mjs` —
+`hojasDelDashboard`, `reglasQueOcultan`, `ocultoPorCss`— y no toca la lista: `git diff origin/main`
+sobre la región del contador sale **vacío**.
 
-* lados que documentan scripts **distintos** → se conservan los dos y se recuenta el valor;
-* lados que documentan el **mismo** script → se conserva **uno**, el de la flecha recalculada sobre
-  el árbol mezclado, y se descarta el caduco. No es elegir un lado por gusto: es tirar una entrada
-  que habla de un árbol que ya no existe.
-
-**La asimetría que hace que esto importe:** el número lo vigilan dos guards, así que un valor corto
-cae en la primera tanda —comprobado: con 68 declarado y 69 reales caen `guard-colisión` y el SUELO
-de SCRUM-417, los dos nombrando la cifra—. **Al registro no lo vigila nadie**, y el daño de esta
-clase de conflicto no es un número equivocado: es una entrada falsa que se lee durante meses.
-
-Con una **lista de nombres** en vez de un recuento este conflicto no existiría: `'tiposDeIva.js'`
-aparece una vez en cada lado, la unión de los dos conjuntos es trivialmente correcta, no hay
-flechas que recalcular, y una duplicación se ve porque el nombre sale dos veces. Es **SCRUM-663**,
-y esta séptima colisión es su séptima evidencia.
+**La asimetría que dio el argumento**, y que sigue siendo el aprendizaje: el número lo vigilaban
+dos guards, así que un valor corto caía en la primera tanda. **Al REGISTRO no lo vigilaba nadie**,
+y ahí es donde quedó el destrozo real: la entrada duplicada de SCRUM-575 se leyó durante días. Con
+nombres, un duplicado es el mismo nombre dos veces y se ve sin leer prosa.
 
 ## Tests que introduce esta entrada
 

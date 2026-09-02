@@ -1,4 +1,6 @@
 import crypto from 'crypto';
+// SCRUM-655: quién SUMA y quién no lo decide `apartados.ts`, en un solo sitio.
+import { lineasQueSuman } from '../../modules/quotes/domain/apartados';
 
 // A11.2 (S3): teléfonos SIEMPRE enmascarados en logs — prefijo + últimos 3.
 // "34000000001" → "34•••••001". Nunca usar el número completo en console.*.
@@ -96,10 +98,26 @@ export function normalizePhone(input?: string | null): string {
     }
   }
 
-  export type QuoteLine = { concept: string; qty: number; price: number; tax?: number };
+  // SCRUM-655: `qty` y `price` son OPCIONALES porque una CABECERA de apartado no las tiene. El
+  // tipo dice la verdad sobre la forma real de `Quote.lines`; quien sume, filtra por la marca.
+  export type QuoteLine = { concept: string; qty?: number; price?: number; tax?: number; apartado?: boolean };
   
+  /**
+   * El total de un presupuesto.
+   *
+   * 🔴 SCRUM-655 · LAS CABECERAS DE APARTADO NO SUMAN, y antes no era «no sumaban»: era `NaN`.
+   * Una cabecera no lleva cantidad ni precio, y `undefined * undefined` es `NaN`, que contamina
+   * la suma entera — medido con esta misma función antes de tocarla:
+   *
+   *     [{concept:'Mano de obra', qty:2, price:100}]                     →  200
+   *     [{concept:'1. APARTADO'}, {concept:'Mano de obra', qty:2, …}]     →  NaN
+   *
+   * Se filtran por su MARCA, no por «no tener precio»: así una cabecera a la que alguien le meta
+   * un importe sigue sin mover el total, que es lo único que hace de esto una garantía.
+   */
   export function calcTotal(lines: QuoteLine[]): number {
-    const sum = lines.reduce((acc, l) => acc + l.qty * l.price * (1 + (l.tax ?? 0)), 0);
+    const sum = lineasQueSuman(lines as unknown as Record<string, unknown>[])
+      .reduce((acc, l) => acc + Number(l.qty) * Number(l.price) * (1 + (Number(l.tax) || 0)), 0);
     return Math.round(sum * 100) / 100;
   }
   

@@ -28,7 +28,7 @@ import ts from 'typescript';
 // SCRUM-559: sólo el RECUENTO de la población, no el extractor. Este guard sigue leyendo el
 // index con el suyo (necesita el orden y la posición); lo que se comparte es cuántos scripts
 // tiene que haber, para que este guard y el de SCRUM-417 no puedan discrepar sobre eso.
-import { SCRIPTS_DEL_DASHBOARD } from './_banco-vistas.mjs';
+import { contrastarScripts } from './_banco-vistas.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
@@ -101,11 +101,17 @@ test('guard-colisión · el orden de carga se lee del index y no está vacío', 
   // quitar UNA etiqueta (60 → 59) dejaba este guard Y el de SCRUM-417 en verde, con ese fichero
   // fuera de la vigilancia de los dos. El recuento es EXACTO y su número vive en un solo sitio,
   // `_banco-vistas.mjs`, para que dos guards de la misma población no puedan divergir.
-  assert.equal(scripts.length, SCRIPTS_DEL_DASHBOARD,
-    `🔴 se leyeron ${scripts.length} scripts del index y se esperaban ${SCRIPTS_DEL_DASHBOARD}. ` +
-    'Si SOBRAN, alguien añadió un script y hay que subir el número en `tests/_banco-vistas.mjs` ' +
-    'en ese mismo commit. Si FALTAN, o la extracción del orden está rota, o hay scripts que este ' +
-    'guard ya no mira — y «cero colisiones» dejaría de significar nada.');
+  // SCRUM-662: y ese sitio único ya no guarda una CUENTA sino la LISTA — una cuenta no distingue
+  // «tu script» de «mi script», y por eso dos ramas llegaron a escribir el mismo número por
+  // scripts distintos.
+  const c = contrastarScripts(scripts);
+  assert.deepEqual([...c.sobran, ...c.faltan], [],
+    '🔴 EL ÍNDICE Y LA LISTA DECLARADA NO COINCIDEN.\n\n'
+    + (c.sobran.length ? `  SOBRAN en el índice: ${c.sobran.join(', ')}\n` : '')
+    + (c.faltan.length ? `  FALTAN en el índice: ${c.faltan.join(', ')}\n` : '')
+    + '\n  Si has añadido un script, añádelo a `SCRIPTS_DEL_DASHBOARD` en `tests/_banco-vistas.mjs`'
+    + '\n  en ese mismo commit. Si FALTAN, o la extracción del orden está rota, o hay scripts que'
+    + '\n  este guard ya no mira — y «cero colisiones» dejaría de significar nada.');
   assert.equal(scripts[0].fichero, 'api.js', 'api.js debe seguir cargando primero');
 });
 
