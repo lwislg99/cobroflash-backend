@@ -7,12 +7,21 @@ import {
   RejectQuoteSchema,
   type QuoteTier,
 } from '../../../../core/validation/schemas';
-import { calcTotal, normalizePhone, parseToken } from '../../../../core/utils/utils';
+import { calcTotal, normalizePhone, parseToken, type QuoteLine } from '../../../../core/utils/utils';
 import { getLocale } from '../../../../core/i18n/locales'; // SCRUM-647
 import { rateLimit } from '../../../../core/http/rateLimit';
 
-function calcTierTotal(lines: Array<{qty: number; price: number; tax?: number}>): number {
-  return Math.round(lines.reduce((s, l) => s + l.qty * l.price * (1 + (l.tax ?? 0)), 0) * 100) / 100;
+/**
+ * El total de un TIER (Good/Better/Best).
+ *
+ * 🔴 SCRUM-655 · ERA UNA SEGUNDA COPIA DE `calcTotal`, con la misma aritmética escrita otra vez.
+ * Lo destapó el compilador al hacer opcionales `qty`/`price` para las cabeceras de apartado: esta
+ * copia se habría quedado sumando `undefined` —o sea `NaN`— mientras la de `utils` ya sabía
+ * saltarse las cabeceras. Dos copias del mismo total divergen; ésta ahora DELEGA.
+ * (Hallazgo dentro de la misma zona, arreglado aquí por regla 37: bloqueaba la tarea y cabe.)
+ */
+function calcTierTotal(lines: QuoteLine[]): number {
+  return calcTotal(lines);
 }
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';

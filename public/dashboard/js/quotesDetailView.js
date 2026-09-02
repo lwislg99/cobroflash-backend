@@ -484,8 +484,29 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   let totalBase = 0;
   let totalIva = 0;
 
-  lines.forEach((line) => {
+  // SCRUM-655 · La numeración se DERIVA de la posición, de una vez y para todas las líneas.
+  // No se teclea nunca: si se tecleara, dos líneas podrían acabar con el mismo 1.02 y «quítame la
+  // 1.03» dejaría de tener respuesta.
+  const numeracion = numerarLineas(lines);
+
+  lines.forEach((line, i) => {
     const l = line || {};
+    const num = numeracion[i] || { cabecera: false, numero: null };
+
+    // ── CABECERA DE APARTADO ────────────────────────────────────────────────────────────
+    // Una fila a todo lo ancho: es un título, no una línea que cobre. No toca los totales —no
+    // lleva cantidad ni precio— y por eso ni siquiera pasa por la aritmética de abajo.
+    if (num.cabecera) {
+      const trA = document.createElement('tr');
+      trA.className = 'quote-apartado';
+      const td = document.createElement('td');
+      td.colSpan = 5;
+      td.appendChild(celdaConcepto(document, `${num.numero}. ${l.concept || ''}`));
+      trA.appendChild(td);
+      tbody.appendChild(trA);
+      return;
+    }
+
     const qty = Number(l.qty) || 0;
     const price = Number(l.price) || 0;
     const tax = Number(l.tax ?? 0);
@@ -497,11 +518,27 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
 
     const tr = document.createElement('tr');
     tr.innerHTML =
-      `<td>${escHtml(l.concept || '—')}</td>` +
+      `<td class="quote-line-cel"></td>` +
       `<td>${qty}</td>` +
       `<td>${fmtQuoteMoney(price, cur)}</td>` +
       `<td>${(tax * 100).toFixed(0)} %</td>` +
       `<td style="text-align:right" class="amount">${fmtQuoteMoney(total, cur)}</td>`;
+
+    // 🔴 EL CONCEPTO SE CONSTRUYE COMO NODOS, no como cadena de HTML. La descripción larga viaja
+    // dentro del concepto detrás de un salto de línea (SCRUM-603) y el HTML COLAPSA los saltos:
+    // ocho renglones
+    // de texto técnico salían aquí en una línea corrida. `celdaConcepto` los devuelve como un
+    // elemento por renglón — estructura, no estilo—, así que el salto sobrevive sin depender de
+    // ninguna propiedad de CSS. Y con `textContent`, el texto del profesional no puede inyectar
+    // marcado aunque nadie se acuerde de escaparlo.
+    const celda = tr.querySelector('.quote-line-cel');
+    if (num.numero) {
+      const n = document.createElement('span');
+      n.className = 'quote-line-num';
+      n.textContent = num.numero;
+      celda.appendChild(n);
+    }
+    celda.appendChild(celdaConcepto(document, l.concept || ''));
     tbody.appendChild(tr);
   });
 

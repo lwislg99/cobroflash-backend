@@ -323,6 +323,140 @@ export function scriptsDelDashboard(raiz) {
   return [...html.matchAll(/<script src="\.\/([^"]+)"><\/script>/g)].map((m) => m[1]);
 }
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-666 · EL CSS EXTERNO, que hasta hoy este banco NO MIRABA
+//
+// El hueco lo declaró SCRUM-660 al entregar: «el banco no aplica CSS externo; un `display:none`
+// en `styles.css` no se detecta». No era el hueco de un campo: era el de TODOS los controles de
+// visibilidad que se escriban de aquí en adelante, y producía **verdes falsos** — la clase cara.
+//
+// ── LO QUE SE MIDIÓ ANTES DE ESCRIBIR ESTO ───────────────────────────────────────────────
+// El índice carga DOS hojas locales (`/tokens.css` y `./css/styles.css`) más una remota de
+// Google Fonts, que no se lee ni se debe. De 625 reglas, **31 pueden ocultar** (24 `display:none`
+// y 7 `opacity:0`; 7 de ellas dentro de `@keyframes`, o sea fotogramas que NO ocultan de verdad).
+//
+// 🔴 Y EL DATO QUE MANDA EN EL DISEÑO: de las 35 partes de selector que ocultan, el matcher de
+// SCRUM-451 resuelve 22 (63 %) — pero las DOS que tocan el editor de líneas, que es justo lo que
+// mide el control de SCRUM-660, usan `:not(:focus-within) >` y **no las resuelve ninguna**.
+//
+// O sea: un lector que aplicara sólo lo que sabe resolver diría «se ve» precisamente donde no
+// sabe mirar. Por eso aquí manda la doctrina que este fichero lleva tres tickets desterrando
+// (SCRUM-451, 444, 634): **lo que no se sabe resolver se ANOTA, no se contesta**.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/** Las hojas de estilo LOCALES que declara el índice. Las remotas (fuentes) se ignoran. */
+export function hojasDelDashboard(raiz) {
+  const html = fs.readFileSync(path.join(raiz, 'public/dashboard/index.html'), 'utf8');
+  const hrefs = [...html.matchAll(/<link[^>]*rel="stylesheet"[^>]*href="([^"]+)"/g)].map((m) => m[1]);
+  return hrefs
+    .filter((h) => !/^https?:/.test(h))
+    .map((h) => (h.startsWith('/') ? path.join(raiz, 'public', h.slice(1)) : path.join(raiz, 'public/dashboard', h.replace(/^\.\//, ''))));
+}
+
+/** Las cinco formas de ocultar que pedía el encargo. `@keyframes` NO cuenta: son fotogramas. */
+function formasDeOcultar(cuerpo) {
+  const c = cuerpo.replace(/\s+/g, ' ').toLowerCase();
+  const f = [];
+  if (/(^|[;{\s])display\s*:\s*none/.test(c)) f.push('display:none');
+  if (/visibility\s*:\s*hidden/.test(c)) f.push('visibility:hidden');
+  if (/(^|[;\s])opacity\s*:\s*0(\s|;|$)/.test(c)) f.push('opacity:0');
+  if (/(^|[;\s])(width|height)\s*:\s*0(px|%|em|rem)?\s*(;|$)/.test(c)) f.push('tamaño cero');
+  if (/(^|[;\s])(left|top)\s*:\s*-\s*\d{3,}/.test(c) || /clip\s*:\s*rect\(\s*0/.test(c)) f.push('fuera de pantalla');
+  return f;
+}
+
+/**
+ * Las reglas que pueden OCULTAR algo, sacadas de las hojas del índice.
+ *
+ * 🔴 SUELO: si no encuentra NINGUNA regla, LANZA. Cero reglas y «no supe abrir el fichero» son
+ * el mismo número con significados opuestos, y este banco existe justamente para no confundirlos.
+ */
+export function reglasQueOcultan(raiz, hojas = null) {
+  const ficheros = hojas || hojasDelDashboard(raiz);
+  if (!ficheros.length) throw new Error('[banco] el índice no declara ninguna hoja de estilo local');
+  const out = [];
+  let leidas = 0;
+  for (const f of ficheros) {
+    const css = fs.readFileSync(f, 'utf8'); // si no existe, LANZA: es el suelo, no un cero mudo
+    leidas++;
+    const t = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    const pila = [];
+    let buf = ''; let i = 0;
+    while (i < t.length) {
+      const ch = t[i];
+      if (ch === '{') {
+        const sel = buf.trim(); buf = '';
+        if (sel.startsWith('@')) { pila.push(sel.split(/\s+/)[0]); } else {
+          const cierra = t.indexOf('}', i);
+          if (cierra === -1) break;
+          const dentroDe = pila[pila.length - 1] || null;
+          const formas = formasDeOcultar(t.slice(i + 1, cierra));
+          // Los fotogramas de una animación no ocultan: describen un instante.
+          if (formas.length && dentroDe !== '@keyframes') {
+            out.push({ hoja: path.basename(f), selector: sel, formas, dentroDe });
+          }
+          i = cierra;
+        }
+      } else if (ch === '}') { pila.pop(); buf = ''; } else { buf += ch; }
+      i++;
+    }
+  }
+  if (!out.length) {
+    throw new Error(`[banco] SUELO: leí ${leidas} hoja(s) y NO encontré ni una regla que oculte. `
+      + 'Eso no es «no hay»: es «no supe mirar», y devolverlo como cero sería un verde falso.');
+  }
+  return out;
+}
+
+/**
+ * ¿Lo esconde el CSS externo? Tres respuestas, y la tercera es la que hace que esto sirva:
+ *
+ *   · `{ oculto: true,  … }` — una regla que el matcher SABE resolver casa con el nodo o un padre
+ *   · `{ oculto: false, … }` — ninguna casa, y ninguna quedó sin resolver: se ve
+ *   · `{ oculto: null,  ciego: [...] }` — hay reglas que MENCIONAN una clase del nodo y cuyo
+ *     selector el matcher NO sabe resolver. **No se contesta «se ve»**: se declara ciego.
+ *
+ * Esa tercera es la doctrina de SCRUM-451 aplicada aquí: devolver «visible» ante lo que no se
+ * sabe mirar es el `null` mudo que este fichero lleva tres tickets desterrando.
+ */
+export function ocultoPorCss(n, reglas) {
+  const cadena = [];
+  for (let x = n; x; x = x._padre) cadena.push(x);
+  const clasesDelNodo = new Set();
+  for (const x of cadena) {
+    for (const c of String(x.className || '').split(/\s+/).filter(Boolean)) clasesDelNodo.add(c);
+    if (x.id) clasesDelNodo.add(x.id);
+  }
+
+  const ciego = [];
+  for (const r of reglas) {
+    // Una regla sin ninguna forma de ocultación no esconde nada, por mucho que su selector case.
+    // `reglasQueOcultan` no las produce, pero esto se puede llamar con una lista a mano — y lo
+    // cazó el CONTROL NEGATIVO de SCRUM-666, no una revisión: marcaba una regla de color.
+    if (!r.formas || !r.formas.length) continue;
+    for (const parte of r.selector.split(',').map((s) => s.trim()).filter(Boolean)) {
+      let casaAlguno = null;
+      for (const x of cadena) {
+        const v = casa(x, parte); // el matcher de SCRUM-451: true | false | null (no soportado)
+        if (v === null) { casaAlguno = null; break; }
+        if (v === true) { casaAlguno = true; break; }
+        casaAlguno = false;
+      }
+      if (casaAlguno === true) {
+        return { oculto: true, porQue: `${r.hoja}: ${parte} { ${r.formas.join('; ')} }`, ciego: [] };
+      }
+      if (casaAlguno === null) {
+        // No se sabe resolver. Sólo se declara ciego si la regla MENCIONA algo que el nodo tiene:
+        // apuntar todas las que no se saben resolver haría el aviso inútil por ruidoso.
+        const menciona = (parte.match(/[#.][\w-]+/g) || []).some((t) => clasesDelNodo.has(t.slice(1)));
+        if (menciona) ciego.push(`${r.hoja}: ${parte} { ${r.formas.join('; ')} }`);
+      }
+    }
+  }
+  if (ciego.length) return { oculto: null, porQue: null, ciego };
+  return { oculto: false, porQue: null, ciego: [] };
+}
+
 /**
  * SCRUM-559 · CUÁNTOS SCRIPTS DECLARA EL INDEX DEL DASHBOARD. Recuento EXACTO, no un mínimo.
  *
@@ -345,111 +479,150 @@ export function scriptsDelDashboard(raiz) {
  * AQUÍ, en el mismo commit que lo añade. Que sea una decisión explícita es el objetivo, no un
  * efecto colateral.
  */
-// SCRUM-574 (24-ago-2026) · 60 → 61: entra `switchFormaJuridica.js`, el switch Empresa/Persona
-// de la ficha de cliente. Se sube AQUÍ y en el mismo commit que añade el `<script>`, que es lo
-// que este número existe para forzar.
-// SCRUM-615 (24-ago-2026) · 61 → 62: entra `tipoDestinatarioPendiente.js`, el aviso y la pregunta
-// del tipo de destinatario en la bandeja de pendientes.
-//
-// 🔴 EL MERGE DE ESTAS DOS RAMAS NO SE RESUELVE CONSERVANDO LOS DOS LADOS, y por eso queda escrito:
-// las dos subieron 60 → 61 por separado, así que los dos lados decían `61` y **git dejó esa línea
-// FUERA de los marcadores de conflicto** — sólo chocaron los comentarios. Quedarse «los dos» habría
-// dejado el número en 61 con dos scripts nuevos dentro, y el guard habría pasado en verde
-// contando mal.
-//
-// Éste no es un número que se herede de ningún lado: se DERIVA. Medido sobre el `index.html` ya
-// mezclado, `grep -c "<script src="` da 62. Un contador que dos ramas incrementan a la vez se
-// resuelve contando, no eligiendo.
-// SCRUM-578 (24-ago-2026) · 62 -> 63: entra `prefijosPais.js`, el selector de prefijo de pais
-// del formulario de clientes. Se sube AQUI y en el mismo commit que anade el `<script>`.
-// SCRUM-605 (25-ago-2026) · 63 → 64: entra `quoteAtajosVencimiento.js`, la aritmetica pura de
-// los atajos de «Válido hasta» del presupuesto. Se sube EN EL MISMO COMMIT que el <script>, que
-// es lo que estos guards piden: un contador que sube solo deja de significar algo.
-//
-// 🔴 ESTE NUMERO SALIO DE UN CONFLICTO, y por eso no se hereda de ningun lado: SCRUM-578 y
-// SCRUM-605 escribieron 63 LOS DOS, cada uno por su script. Chocaron los COMENTARIOS y la linea
-// del valor quedo fuera de los marcadores — el incidente exacto que esta cabecera cuenta del 61.
-// Se resolvio CONTANDO sobre el index ya mezclado (`grep -c "<script src=" ` → 64), no eligiendo
-// un lado. Los dos comentarios se quedan: cada uno documenta un script real.
-// SCRUM-575 (24-ago-2026) · 63 -> 64: entra `nifEspanol.js`, la validacion de NIF/CIF/NIE en el
-// navegador (copia declarada de la del servidor, atada por el trinquete de scrum575).
-// SCRUM-575 (24-ago-2026) · 64 → 65: entra `nifEspanol.js`, la validación de NIF/CIF/NIE en el
-// navegador (copia declarada de la del servidor, atada por el trinquete de scrum575).
-//
-// 🔴 TERCERA VEZ QUE ESTE CONTADOR CHOCA, Y LA TERCERA CON LA MISMA FORMA: dos ramas suben el
-// número a LA VEZ, escriben el MISMO valor por scripts DISTINTOS, y git deja la línea del valor
-// **fuera de los marcadores** — sólo chocan los comentarios. Quien resuelva conservando «los dos
-// comentarios» y no toque el número deja el contador CORTO con dos scripts nuevos dentro.
-//
-// Se resuelve CONTANDO sobre el índice ya mezclado, nunca heredando de un lado:
-//     grep -c "<script src=" public/dashboard/index.html   →   65
-//
-// ⚠️ Y NO se convierte en derivado automático a propósito: subirlo tiene que seguir siendo una
-// DECISIÓN explícita, que es justo lo que hace que estos guards sirvan de algo.
-//
-// ── LA ANOMALÍA QUE SE MIDIÓ ANTES DE TOCAR NADA ─────────────────────────────────────────
-// Llegó la afirmación de que «con 64 declarado los tests pasan». **Es FALSA, y se comprobó
-// dejando 64 a propósito con 65 scripts reales:** caen los DOS guards que S2 dijo —
-// `dashboard-colisión` («se leyeron 65 y se esperaban 64») y el SUELO de SCRUM-417 («BANCO
-// CIEGO: 65 leídos y se esperaban 64»). El mecanismo NO tiene hueco.
-// Y la otra hipótesis —que el merge se hubiera comido un script— también es falsa: `nifEspanol.js`
-// y `quoteAtajosVencimiento.js` están LOS DOS en el índice y sus ficheros existen.
-// SCRUM-581 (1-sep-2026) · 65 → 66: entra `filtroClientes.js`, las pestañas Todos|Empresas|Personas
-// y el orden de la lista de clientes. Va ANTES de `customersView.js`, que lo consume.
-//
-// 🔴 CUARTA VEZ QUE ESTE CONTADOR CHOCA, Y LA PRIMERA CON OTRA FORMA (2-sep-2026). Las tres
-// anteriores —61, 64, 65— fueron todas iguales: dos ramas escribían el MISMO valor por scripts
-// DISTINTOS y git dejaba la línea del valor **fuera de los marcadores**, así que sólo chocaban
-// los comentarios y nadie se enteraba. Esta vez los números SÍ chocaron (63 en la rama, 65 en
-// main), lo que la hace MENOS peligrosa: el conflicto se ve.
-//
-// La regla no cambia por eso. Se resolvió CONTANDO sobre el índice ya mezclado, no eligiendo un
-// lado ni sumando ni heredando de ningún informe:
-//     grep -c "<script src=" public/dashboard/index.html   →   66
-//
-// La entrada de arriba decía «62 → 63» cuando se escribió, antes de mezclar. Se recalcula la
-// flecha porque el script entra ahora en un árbol que estaba en 65: **un valor DERIVADO no se
-// elige, se recalcula**, y eso vale igual para el número que para la flecha que lo cuenta.
-// Comprobado además que `filtroClientes.js` sigue en el índice y SIGUE yendo ANTES de
-// `customersView.js` (líneas 227 y 238): el merge no le cambió el orden.
-//
-// Y se repite lo que ya avisaba la rama, porque es lo que falló tres veces: si en un merge este
-// número aparece IGUAL en los dos lados, git lo deja fuera de los marcadores de conflicto y nadie
-// se entera. **Se vuelve a contar después de mezclar, siempre.**
-// SCRUM-609 (2-sep-2026) · 66 → 67: entra `margenCatalogo.js`, la aritmética del margen
-// del catálogo. Va ANTES de `productsView.js`, que la consume.
-//
-// 🔴 QUINTA VEZ QUE ESTE CONTADOR CHOCA. Y esta vez el conflicto SÍ enseñaba los dos números
-// (66 en main, 65 en la rama), así que se ve — pero la regla no cambia por eso: se ha vuelto a
-// CONTAR sobre el índice YA MEZCLADO, no se ha elegido un lado ni se ha sumado uno al otro.
-//     grep -c "<script src=" public/dashboard/index.html   →   67
-// La flecha de esta entrada decía «64 → 65» cuando se escribió, antes de mezclar: se recalcula,
-// porque un valor DERIVADO no se hereda de un informe viejo.
-// SCRUM-609 (2-sep-2026) · 67 → 68: entra `switchTipoArticulo.js`, el switch
-// Producto|Servicio del catálogo. Va ANTES de `productsView.js`, que lo consume.
-// RECONTADO sobre el índice, no sumado: grep -c "<script src=" → 68.
-// SCRUM-611 (2-sep-2026) · 68 → 69: entra `tiposDeIva.js`, la lista de tipos del selector de la
-// línea. Va ANTES de `quotesView.js`, que la consume.
-//
-// 🔴 SEXTA VEZ QUE ESTE CONTADOR CHOCA, y de las BENIGNAS: los dos números chocaron —67 en la
-// rama, 68 en main—, así que el conflicto se ve. Las peligrosas son las cuatro en que las dos
-// ramas escribieron el MISMO valor por scripts DISTINTOS y git dejó la línea del valor FUERA de
-// los marcadores: sólo chocaban los comentarios, y quien conservaba «los dos» dejaba el contador
-// corto con dos scripts nuevos dentro.
-//
-// Se resuelve CONTANDO sobre el índice ya mezclado. Ni 67, ni 68, ni 67+1:
-//     grep -c "<script src=" public/dashboard/index.html   →   69
-//
-// Y LA FLECHA SE RECALCULA CON EL NÚMERO: esta entrada decía «66 → 67» cuando se escribió, antes
-// de mezclar. Una flecha es tan DERIVADA como el número que cuenta, y heredarla de un árbol que
-// ya no existe es el mismo error con otra forma.
-//
-// Comprobado además que los TRES scripts están en el índice mezclado Y en su sitio —`tiposDeIva`
-// en la 247 antes de `quotesView` en la 248; `switchTipoArticulo` y `margenCatalogo` en la 250 y
-// 251, antes de `productsView` en la 252—. Si el merge se hubiera comido uno, el recuento habría
-// salido bien y la vista habría reventado igual.
-export const SCRIPTS_DEL_DASHBOARD = 69;
+// ⚠️ Aquí vivía el historial de las SEIS colisiones de este contador, entrada por entrada.
+// Se retira con el contador: **ya no puede volver a pasar**, porque lo que se declara es la
+// LISTA y dos ramas que añaden scripts distintos no pueden escribir lo mismo (SCRUM-662).
+/**
+ * LOS SCRIPTS DEL DASHBOARD — UNA LISTA, NO UNA CUENTA (SCRUM-662).
+ *
+ * ⚠️ Aquí hubo un número, y ese número colisionó SEIS veces. La séptima fue la que lo mató, y
+ * merece quedar en una línea: **los dos lados escribieron `= 69` por scripts DISTINTOS** —una
+ * rama sumaba `quoteApartados.js` y main sumaba `tiposDeIva.js`—. Lo único que hizo visible el
+ * choque fue que el comentario de al lado llevaba meses engordando y también chocó; sin esa
+ * casualidad, git habría fundido «= 69» sin marcadores y main se habría quedado declarando un
+ * script menos de los que carga. Un comentario haciendo de mecanismo por accidente.
+ *
+ * 🔴 UNA CUENTA NO DISTINGUE «TU SCRIPT» DE «MI SCRIPT»; UNA LISTA SÍ. Dos ramas que añaden
+ * cosas distintas producen listas distintas: o git las funde y quedan las dos —correcto—, o
+ * chocan donde se ve. Nunca «coinciden» por accidente, que era el fallo.
+ *
+ * ── QUÉ PROTEGE, Y PARA QUIÉN ────────────────────────────────────────────────────────────
+ * Sus dos consumidores no querían un número: querían no estar CIEGOS. `dashboard-colisión`
+ * comprueba que lee el índice entero antes de decir «cero colisiones», y el banco de SCRUM-417
+ * que carga todas las vistas antes de decir «ninguna falla». SCRUM-559 ya midió el fallo real:
+ * quitar UNA etiqueta dejaba a los dos en verde con ese fichero fuera de vigilancia. La lista
+ * responde eso mejor que la cuenta, porque además **dice cuál**.
+ *
+ * ── POR QUÉ LA LISTA Y NO LA SECUENCIA ───────────────────────────────────────────────────
+ * Se compara como CONJUNTO —ordenada alfabéticamente, no por orden de carga— a conciencia:
+ *
+ *   · Lo que rompe el producto no es «el orden» en abstracto: son DEPENDENCIAS concretas, y
+ *     esas van declaradas abajo con su motivo y se comprueban por separado.
+ *   · Exigir las 69 posiciones convertiría cualquier inserción en un conflicto de diseño y
+ *     prometería un orden que nadie mantiene: `public/sw.js` lleva su lista en OTRA secuencia
+ *     desde antes de este ticket, y SCRUM-274 pasa porque compara con `new Set`.
+ *
+ * Alfabética y no en orden de carga también por esto: dos inserciones en sitios distintos del
+ * alfabeto se funden solas y correctamente, en vez de chocar por vecindad.
+ */
+export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
+  'aiQuoteAssistant.js',
+  'albaranActionsRegistry.js',
+  'albaranDetailView.js',
+  'albaranesView.js',
+  'almacenLocal.js',
+  'api.js',
+  'app.js',
+  'cobrosView.js',
+  'colaDeFirmas.js',
+  'contacto.js',
+  'csvImport.js',
+  'customerDetailView.js',
+  'customersView.js',
+  'estadoFirma.js',
+  'expensesView.js',
+  'exportView.js',
+  'facturaPreEmision.js',
+  'filtroClientes.js',
+  'globalSearch.js',
+  'homeView.js',
+  'invoiceActionsRegistry.js',
+  'invoiceDetailView.js',
+  'invoicesView.js',
+  'jobActionsRegistry.js',
+  'jobCobroHuecos.js',
+  'jobDetailView.js',
+  'jobDocsReparto.js',
+  'jobNextAction.js',
+  'jobRailBlocks.js',
+  'jobsCierreTrabajo.js',
+  'jobsView.js',
+  'libroRegistroView.js',
+  'margenCatalogo.js',
+  'modalHeader.js',
+  'nifEspanol.js',
+  'nuevaFacturaModal.js',
+  'onboardingView.js',
+  'paidViaEtiquetas.js',
+  'patronDetalleAcciones.js',
+  'plansView.js',
+  'prefijosPais.js',
+  'productsView.js',
+  'providersView.js',
+  'puertaSerie.js',
+  'quoteActionsRegistry.js',
+  'quoteApartados.js',
+  'quoteAtajosVencimiento.js',
+  'quoteMargen.js',
+  'quoteRequestsView.js',
+  'quoteSuplido.js',
+  'quotesDetailView.js',
+  'quotesListView.js',
+  'quotesTabs.js',
+  'quotesView.js',
+  'reportsView.js',
+  'resistenciaAlmacen.js',
+  'selectorMetodoCobro.js',
+  'semaforoFiscal.js',
+  'settingsSubmenus.js',
+  'settingsView.js',
+  'signaturePad.js',
+  'switchFormaJuridica.js',
+  'switchTipoArticulo.js',
+  'teamView.js',
+  'templatesView.js',
+  'terminadoSinCobrar.js',
+  'tipoDestinatarioPendiente.js',
+  'tiposDeIva.js',
+  'tutorial.js',
+  'voiceInput.js',
+]);
 
+/**
+ * LAS DEPENDENCIAS DE CARGA — la mitad que la cuenta NUNCA vigiló.
+ *
+ * Los scripts clásicos comparten ámbito y se ejecutan en el orden del índice: si el consumidor
+ * carga antes que la pieza que consume, la pantalla revienta al abrirse. Un recuento correcto
+ * no dice nada de esto — si un merge reordena sin añadir ni quitar, la cuenta sigue cuadrando y
+ * el producto carga mal.
+ */
+export const DEPENDENCIAS_DE_CARGA = Object.freeze([
+  { antes: 'filtroClientes.js', despues: 'customersView.js', motivo: 'SCRUM-581: pestañas y orden de la lista' },
+  { antes: 'margenCatalogo.js', despues: 'productsView.js', motivo: 'SCRUM-609: la aritmética del margen' },
+  { antes: 'switchTipoArticulo.js', despues: 'productsView.js', motivo: 'SCRUM-609: el switch Producto|Servicio' },
+  { antes: 'quoteApartados.js', despues: 'quotesDetailView.js', motivo: 'SCRUM-655: apartados, numeración y descripción' },
+]);
+
+/** Nombre a secas, venga con prefijo `js/` o sin él, y sea cadena u objeto `{fichero}`. */
+export function nombreDeScript(x) {
+  const s = typeof x === 'string' ? x : (x && x.fichero) || '';
+  return String(s).replace(/^js[/]/, '');
+}
+
+/**
+ * Contrasta lo LEÍDO del índice contra la lista declarada. Devuelve qué sobra y qué falta —
+ * nombrado, que es lo que una cuenta no podía dar.
+ */
+export function contrastarScripts(leidos) {
+  const vistos = (Array.isArray(leidos) ? leidos : []).map(nombreDeScript).filter(Boolean);
+  const declarados = new Set(SCRIPTS_DEL_DASHBOARD);
+  const set = new Set(vistos);
+  return {
+    vistos,
+    sobran: [...set].filter((n) => !declarados.has(n)).sort(),
+    faltan: SCRIPTS_DEL_DASHBOARD.filter((n) => !set.has(n)),
+  };
+}
 /**
  * Monta el dashboard como lo monta el navegador y devuelve el contexto vivo.
  *
@@ -622,4 +795,23 @@ export async function pintarVista(banco, nombreFn) {
     idsNoResueltos: banco.reg.idsNoResueltos.slice(idsAntes),
     erroresDeConsola: banco.reg.errores.slice(),
   };
+}
+
+/**
+ * Las DEPENDENCIAS declaradas que se estén incumpliendo, sobre el orden REAL del índice.
+ *
+ * Recibe los nombres EN ORDEN DE CARGA. Devuelve las parejas rotas, cada una con su motivo — que
+ * es lo que hace accionable el fallo: «X va antes de Y» sin decir por qué se arregla moviendo el
+ * que no era.
+ */
+export function dependenciasRotas(nombresEnOrden) {
+  const orden = (Array.isArray(nombresEnOrden) ? nombresEnOrden : []).map(nombreDeScript);
+  const rotas = [];
+  for (const d of DEPENDENCIAS_DE_CARGA) {
+    const a = orden.indexOf(d.antes);
+    const b = orden.indexOf(d.despues);
+    if (a === -1 || b === -1) { rotas.push({ ...d, falta: true }); continue; }
+    if (a > b) rotas.push({ ...d, falta: false, posAntes: a, posDespues: b });
+  }
+  return rotas;
 }
