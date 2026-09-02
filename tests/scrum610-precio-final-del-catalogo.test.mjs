@@ -29,12 +29,19 @@ const VISTA = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/quotesView.js
 const ANCLAS = {
   'selectItem guarda la base del catálogo': '    priceInput.dataset.pfBasePrice = String(base);',
   'selectItem pinta el precio del catálogo': '    priceInput.value = String(base.toFixed(2));',
-  '🔴 SCRUM-610: el margen se pone a CERO al elegir': '    if (markupInput) markupInput.value = "0";',
-  'el margen de una línea nueva nace en 0': 'markupInput.value = initial && initial.markup != null ? initial.markup : "0";',
-  'el margen VIAJA en el borrador': '        markup: l.markupInput ? l.markupInput.value : "0",',
+  // 🔴 TRES ANCLAS RETIRADAS POR SCRUM-598 (DOC-08). No se relaja nada: DESAPARECE SU CAUSA.
+  // El doble margen que SCRUM-610 evitaba necesitaba un margen EN LA LÍNEA, y ese campo ya no
+  // existe — no hay nada que se pueda aplicar dos veces. El margen vive en el catálogo
+  // (CAT-01) desde donde el precio ya sale con él dentro.
   'tocar el precio a mano REESCRIBE la base': '  priceInput.dataset.pfBasePrice = String(n);',
-  'el DOCUMENTO parte de la base, no de lo escrito': '  const baseRaw = String(line.priceInput.dataset.pfBasePrice || "").trim();',
-  'el DOCUMENTO multiplica por el margen': '  finalPrice = safeBase * (1 + safeMarkup / 100);',
+  // 🔴 DOS ANCLAS MÁS RETIRADAS POR SCRUM-598 (DOC-08), y por la misma razón que las tres de
+  // arriba: el documento recomponía el precio desde la base del catálogo y el margen de la línea.
+  // Sin margen en la línea, esa recomposición sólo podía devolver el mismo número — así que el
+  // precio escrito ES el que viaja, y no hay «base» y «final» que reconciliar.
+  //
+  // ⚠️ HALLAZGO DECLARADO, no arreglado aquí: `priceInput.dataset.pfBasePrice` se sigue ESCRIBIENDO
+  // en cinco sitios y ya no lo lee nadie. Es estado muerto, y sacarlo es otro carril.
+  'el DOCUMENTO usa el precio escrito': '        const finalPrice = safePrice;',
 };
 
 test('SCRUM-610 · SUELO: las ocho piezas de la vista siguen donde el modelo las supone', () => {
@@ -174,10 +181,12 @@ test('SCRUM-610 · el cambio se limita al bloque del PRECIO dentro de `selectIte
   // los tres en la misma pantalla. Que el `if (markupInput)` viva dentro del bloque del precio
   // —y no cerca del IVA— es lo que mantiene los diffs separables.
   const i = VISTA.indexOf('    priceInput.dataset.pfBasePrice = String(base);');
-  const j = VISTA.indexOf('    if (markupInput) markupInput.value = "0";');
+  // SCRUM-598 · la marca del medio era el cero del margen, que ya no existe. La FRONTERA que
+  // este caso vigila —que lo del precio no se meta en el bloque del IVA (S1, DOC-16)— se sigue
+  // comprobando con las dos marcas que quedan.
   const k = VISTA.indexOf('  if (typeof it.vat !== "undefined"');
-  assert.ok(i !== -1 && j !== -1 && k !== -1, '🔴 CIEGO: falta alguna de las tres marcas');
-  assert.ok(i < j && j < k,
+  assert.ok(i !== -1 && k !== -1, '🔴 CIEGO: falta alguna de las dos marcas');
+  assert.ok(i < k,
     '🔴 el cambio de SCRUM-610 ha salido del bloque del precio y se ha metido en el del IVA, que '
     + 'es de S1 (DOC-16). Eso convierte dos diffs separables en un conflicto.');
 });

@@ -131,7 +131,9 @@ for (const f of LOS_OCHO) {
 // ─────────────────────────────────────────────────────────────────────────────────────────
 test('SCRUM-600 · 🔴 la red cubre los OCHO — quitar uno de la lista tiene que doler', () => {
   assert.deepEqual(LOS_OCHO.map((f) => f.id),
-    ['F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'F13', 'F14'],
+    // SCRUM-598: F9 sale de la lista. La capacidad no se pierde — se mudó al catálogo con
+    // CAT-01 —, lo que se retira es el margen del DOCUMENTO. Decisión del fundador 24-ago-2026.
+    ['F7', 'F8', 'F10', 'F11', 'F12', 'F13', 'F14'],
     '🔴 la red de SCRUM-600 son OCHO y estan enumeradas en el encargo. Ni una menos.');
   for (const f of LOS_OCHO) {
     assert.ok(fs.existsSync(path.join(RAIZ, f.fichero)),

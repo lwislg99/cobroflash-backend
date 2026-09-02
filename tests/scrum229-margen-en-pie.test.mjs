@@ -130,9 +130,15 @@ test('SCRUM-229 · con líneas ilegibles se OMITE el porcentaje', () => {
 // ── ② ESTRUCTURA · lo que el comportamiento no puede ver ──────────────────────────────────
 const src = leerFuente(VISTA);
 
-test('SCRUM-229 · el agregado se acumula DENTRO del recorrido que ya existe', () => {
-  assert.match(src, /margenDeLinea\(/,
-    '🔴 el pie no llama a `margenDeLinea`: o no está hecho, o se reimplementó el cálculo aparte');
+test('SCRUM-229 · ✅ RETIRADO POR SCRUM-598: el pie ya NO agrega margen', () => {
+  // 🔴 ESTE CASO FIJABA LA PRESENCIA Y AHORA FIJA LA AUSENCIA. El agregado «Margen 18,00 € (18 %)»
+  // era información del PROFESIONAL en el papel que le enseña a su cliente, y sale por decisión
+  // del fundador (24-ago-2026, DOC-08).
+  //
+  // Las funciones puras de `quoteMargen.js` NO se borran: los nueve casos de arriba las siguen
+  // probando, y el margen sigue existiendo — en el CATÁLOGO, que es donde vive desde CAT-01.
+  assert.equal(/margenDeLinea\(/.test(src), false,
+    '🔴 el pie del documento vuelve a agregar margen. Salió en DOC-08 y no vuelve sin decisión.');
 
   // UN solo `lines.forEach` en `recalcTotals`: un segundo recorrido acabaría dando otra cifra.
   const cuerpo = src.slice(src.indexOf('function recalcTotals()'), src.indexOf('function renderPreview()'));
@@ -148,16 +154,20 @@ test('SCRUM-229 · el agregado se acumula DENTRO del recorrido que ya existe', (
 test('SCRUM-229 · NO se cambia el comportamiento de `safeMarkup` en el total', () => {
   // Límite explícito del ticket: lo que cambia es que el pie lo DICE, no cómo se calcula el
   // total. Tocar esto es otra decisión y otro ticket.
-  assert.match(
-    src, /const\s+safeMarkup\s*=\s*Number\.isFinite\(markupPerc\)\s*\?\s*markupPerc\s*:\s*0;/,
-    '🔴 se ha tocado `safeMarkup`. Este ticket NO cambia cómo entra un markup ilegible en el ' +
-      'TOTAL (sigue como 0); solo hace que el pie lo diga. Cambiarlo es otra decisión.',
-  );
+  // 🔴 REAPUNTADO POR SCRUM-598: `safeMarkup` ya no existe en el total, porque el margen ya no
+  // existe en la línea. Lo que este caso vigila AHORA es que no vuelva por la puerta de atrás: un
+  // markup en el cálculo del total sería el margen otra vez, y esta vez sin campo que lo enseñe —
+  // exactamente lo que CONT-01 prohíbe («un dato invisible es un dato que nadie va a corregir»).
+  assert.equal(/\bsafeMarkup\b/.test(src), false,
+    '🔴 ha vuelto un `safeMarkup` al cálculo del total del documento. Sin campo visible, eso es un '
+    + 'margen que nadie puede ver ni corregir.');
 });
 
-test('SCRUM-229 · la fila del pie usa la clase de apoyo que ya existe, sin componente nuevo', () => {
-  const pie = src.slice(src.indexOf('totalsBox.innerHTML'), src.indexOf('kpiBox.innerHTML'));
-  assert.match(pie, /Base imponible/, 'suelo: no encuentro el pie de totales');
-  assert.match(pie, /quote-totals__apoyo[\s\S]*Margen/,
-    '🔴 la fila «Margen» debe ser una `.quote-totals__apoyo` más, como Base imponible e IVA');
+test('SCRUM-229 · ✅ RETIRADO POR SCRUM-598: el pie ya no tiene fila de Margen', () => {
+  const pie = src.slice(src.indexOf(String.fromCharCode(116)+"otalsBox.innerHTML"), src.indexOf("kpiBox.innerHTML"));
+  assert.match(pie, /Base imponible/, "suelo: no encuentro el pie de totales");
+  // El pie conserva Base imponible e IVA. La fila «Margen» sale por decision del fundador
+  // (24-ago-2026, DOC-08): era informacion del profesional en el papel de su cliente.
+  assert.equal(/>Margen</.test(pie), false,
+    "🔴 ha vuelto la fila «Margen» al pie del documento. Salio en DOC-08.");
 });

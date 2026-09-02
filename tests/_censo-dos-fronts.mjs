@@ -145,8 +145,20 @@ export const CAPACIDADES = [
     detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'rightCard', argumento: 'previewBox' }) },
   { id: 'F8', que: 'suplido como concepto de primera clase (viaja en la linea)',
     detecta: (sf) => hayPropiedad(sf, 'suplido') },
-  { id: 'F9', que: 'coste y margen (markup por linea)',
-    detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'markupTd', argumento: 'markupInput' }) },
+  // 🔴 F9 RETIRADO POR SCRUM-598 (DOC-08), y esto ES el cambio de máster que este censo exige.
+  //
+  // F9 decía «coste y margen existen EN EL PRODUCTO (markup por línea)». La capacidad NO ha
+  // desaparecido: **se ha mudado**. Desde CAT-01 (SCRUM-609) el coste y el margen viven en el
+  // CATÁLOGO, con su propio campo y su propia aritmética (`margenCatalogo.js`). Lo que se retira
+  // es el margen del DOCUMENTO, que es otra cosa: información del profesional viviendo en el
+  // papel que le enseña a su cliente.
+  //
+  // Decisión del fundador, 24-ago-2026. Registrada en `docs/master/SCRUM-598.md`.
+  //
+  // Y el detector de F9 anclaba en `markupTd.appendChild(markupInput)` DENTRO de `quotesView.js`
+  // — o sea, medía la capacidad por su dirección vieja. Este censo compara los dos fronts del
+  // DOCUMENTO; en el documento el margen ya no vive, así que aquí no hay nada que vigilar.
+  // Quien quiera vigilarlo en su casa nueva, lo hace sobre el catálogo y no aquí.
   { id: 'F10', que: 'la comision se declara en el propio formulario',
     detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'payMethodsWrapper', argumento: 'pmFee' }) },
   { id: 'F11', que: 'Sugerir con IA + Usar plantilla, en primer plano',
@@ -258,10 +270,7 @@ export const LOS_OCHO = [
     fichero: 'public/dashboard/js/quotesView.js',
     ancla: '  suplido: !!(line.suplidoCheck && line.suplidoCheck.checked),',
     detecta: (sf) => hayPropiedadEnArgumentoDe(sf, { llamada: 'lineaParaPayload', clave: 'suplido' }) },
-  { id: 'F9', que: 'coste y margen existen en el producto (markup por linea)',
-    fichero: 'public/dashboard/js/quotesView.js',
-    ancla: 'markupTd.appendChild(markupInput);',
-    detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'markupTd', argumento: 'markupInput' }) },
+  // (F9 retirado por SCRUM-598 — ver el motivo en la lista de arriba.)
   { id: 'F10', que: 'LA COMISION SE DECLARA EN EL PROPIO FORMULARIO',
     fichero: 'public/dashboard/js/quotesView.js',
     ancla: '    payMethodsWrapper.appendChild(pmFee);',

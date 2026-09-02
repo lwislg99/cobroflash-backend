@@ -1020,6 +1020,38 @@ blockDelivery.appendChild(descWrapper);
   let draftSaveTimer = null;
 
   // ---------- AUTOGUARDADO DE BORRADOR (FRONT1-4) ----------
+  /**
+   * SCRUM-598 · Incorpora al precio el margen de un borrador VIEJO y quita la clave.
+   *
+   * El precio final NO cambia: es exactamente el que ese borrador iba a enviar. Lo que cambia
+   * es dónde vive el número — deja de estar repartido en dos campos, uno de los cuales ya no
+   * se puede ver ni corregir.
+   *
+   * ⚠️ REDONDEA A DOS DECIMALES, y se dice: es lo que hace este mismo campo con el precio del
+   * catálogo (`base.toFixed(2)`). Un borrador con base 33,33 y margen 20 % enviaba 39,996 y
+   * ahora enviará 40,00 — cuatro milésimas, en un campo que el profesional ve y puede tocar.
+   *
+   * PURA y exportada para que la suite la EJECUTE: una regla enterrada en el restaurador sólo
+   * podría auditarse leyendo el fuente, y leer no ejecuta.
+   */
+  function drenarMargen(l) {
+    if (!l || typeof l !== 'object') return l;
+    const m = parseFloat(String(l.markup == null ? '0' : l.markup).replace(',', '.'));
+    const p = parseFloat(String(l.price == null ? '' : l.price).replace(',', '.'));
+    // Sin margen legible, sin margen positivo o sin precio legible no hay nada que incorporar:
+    // se devuelve la línea TAL CUAL. Inventar un precio aquí sería peor que no drenar.
+    if (!Number.isFinite(m) || m <= 0 || !Number.isFinite(p)) {
+      if (l.markup === undefined) return l;
+      const sinMargen = Object.assign({}, l);
+      delete sinMargen.markup;
+      return sinMargen;
+    }
+    const salida = Object.assign({}, l, { price: (p * (1 + m / 100)).toFixed(2) });
+    delete salida.markup;
+    return salida;
+  }
+  if (typeof window !== 'undefined') window.drenarMargenDeBorrador = drenarMargen;
+
   function draftKey() {
     const mid = currentMerchant && currentMerchant.id ? String(currentMerchant.id) : "x";
     return `pf_quote_draft_${mid}`;
@@ -1038,7 +1070,8 @@ blockDelivery.appendChild(descWrapper);
         concept: l.conceptInput.value || "",
         qty: l.qtyInput.value || "",
         price: l.priceInput.value || "",
-        markup: l.markupInput ? l.markupInput.value : "0",
+        // SCRUM-598 · el borrador ya no guarda margen: no hay campo del que leerlo. Los
+        // borradores VIEJOS que lo lleven se drenan al restaurar (ver `drenarMargen`).
         vat: l.vatInput.value || "",
         // SCRUM-500: sin esto, recuperar el borrador devolvía la línea con su IVA y sin la marca
         // — o sea, un suplido convertido en línea normal por el simple hecho de recargar.
@@ -1080,7 +1113,17 @@ blockDelivery.appendChild(descWrapper);
       // dejaría EN BLANCO: el IVA del documento cambiaría solo, al restaurar, sin que nadie lo
       // pida. `ponerValor` AÑADE la opción que falta, que es justo para lo que existe.
       if (d.vatDefault) window.tiposDeIva.ponerValor(fieldVatDefault.input, d.vatDefault);
-      d.lines.forEach((l) => addLine(l));
+      // 🔴 SCRUM-598 · SE DRENA EL MARGEN DE LOS BORRADORES VIEJOS, no se ignora.
+      //
+      // MEDIDO antes de decidirlo: el borrador guarda el precio BASE (`priceInput.value`) y el
+      // margen APARTE, y el precio final se recomponía al enviar. Así que un borrador viejo con
+      // base 100 y margen 20 valía 120 al guardarse. Si al restaurarlo se ignorara el margen,
+      // la línea pasaría a valer 100: **el precio bajaría solo, sin que nadie lo pida.**
+      //
+      // CONT-01 manda: «nunca se esconde un campo que tiene algo escrito — un dato invisible es
+      // un dato que nadie va a corregir y que sigue viajando». Quitar la interfaz y dejar el
+      // dato es exactamente lo que esa regla prohíbe, así que el margen se INCORPORA al precio.
+      d.lines.forEach((l) => addLine(drenarMargen(l)));
       if (d.paymentTerms) paymentSelect.value = d.paymentTerms;
       // SCRUM-27: restaurar el editor de tramos si el borrador era "Personalizado".
       if (d.paymentTerms === "CUSTOM" && Array.isArray(d.customStages)) {
@@ -1103,13 +1146,14 @@ blockDelivery.appendChild(descWrapper);
   function recalcTotals() {
     let base = 0;
     let vatTotal = 0;
-    // SCRUM-229: el margen agregado del pie se acumula EN ESTE MISMO recorrido, no en otro —
+    // 🔴 SCRUM-598 (DOC-08) · EL MARGEN SALE DEL PIE. Lo que sigue de SCRUM-229 se retira: el
+    // agregado «Margen 18,00 € (18 %)» era información del profesional en el papel del cliente.
+    // Las funciones puras de `quoteMargen.js` NO se borran —siguen probadas y pueden servir en
+    // el catálogo, que es donde el margen vive ahora—: lo que se retira es su consumo aquí.
+    // SCRUM-229 (retirado): el margen agregado del pie se acumulaba EN ESTE MISMO recorrido —
     // dos recorridos distintos sobre las mismas líneas acaban dando dos cifras distintas (misma
     // disciplina que SCRUM-228). `margenSinCalcular` va aparte del importe a propósito: un
     // markup ilegible NO es «margen cero», es un dato que falta, y el pie tiene que decirlo.
-    let margenImporte = 0;
-    let margenCoste = 0;
-    let margenSinCalcular = 0;
     const cur = (currentMerchant && currentMerchant.defaultCurrency) || 'EUR';
 
     lines.forEach((line, idx) => {
@@ -1120,25 +1164,18 @@ blockDelivery.appendChild(descWrapper);
         String(line.priceInput.value || "").replace(",", ".")
       );
 
-      const markupPerc = parseFloat(
-        String(line.markupInput?.value || "0").replace(",", ".")
-      );
-      const safeMarkup = Number.isFinite(markupPerc) ? markupPerc : 0;
-      
-            // Opción 2 (pro): el markup aplica SIEMPRE sobre el precio base
+      // SCRUM-598 · sin margen en la línea, el precio escrito ES el precio. Ya no hay «base»
+      // y «final»: son el mismo número, que es justo lo que el chip prometía y no cumplía.
             const p = Number.isFinite(price) ? price : 0;
-            let effectivePrice = p * (1 + safeMarkup / 100);
+            let effectivePrice = p;
       
             // hint visual (precio final) — solo cuando el markup CAMBIA el precio;
             // sin markup el hint era ruido ("Final: 45.00" bajo un precio de 45)
             // y además desalineaba la celda respecto al resto de la fila.
-            try {
-              if (line.priceHint) {
-                line.priceHint.textContent = safeMarkup > 0 && Number.isFinite(price)
-                  ? `Final: ${fmtMoneyEs(effectivePrice, cur)}`
-                  : '';
-              }
-            } catch (_e) {}
+            // SCRUM-598 · el aviso «Final: …» existía porque el margen hacía que el precio
+            // escrito NO fuese el que veía el cliente. Sin margen no puede volver a pasar, así
+            // que el aviso queda siempre vacío en vez de decir una diferencia que ya no existe.
+            try { if (line.priceHint) line.priceHint.textContent = ''; } catch (_e) {}
       
       
       const vatPerc = parseFloat(
@@ -1177,10 +1214,14 @@ blockDelivery.appendChild(descWrapper);
       // suplido lo DIGA desde fuera. Con «IVA 0 %» a secas, un suplido y una línea exenta se leen
       // igual en la lista, y no son lo mismo.
       if (line.ajustesBtn) {
+        // SCRUM-598 · el margen entra como 0 SIEMPRE, y con eso `resumenAjustes` compone
+        // «IVA 21 %» a secas. Era el chip que MENTÍA: decía IVA y contenía dos cosas.
+        // Se pasa 0 en vez de cambiar la firma de `resumenAjustes` (`quoteSuplido.js`, SCRUM-500)
+        // porque esa pieza es del suplido y sus tests la fijan: no es este ticket.
         line.ajustesBtn.textContent = resumenAjustes(
           !!(line.suplidoCheck && line.suplidoCheck.checked),
           safeVat,
-          safeMarkup,
+          0,
         );
       }
 
@@ -1189,19 +1230,8 @@ blockDelivery.appendChild(descWrapper);
 
       // SCRUM-229 · el margen de ESTA línea, en el mismo paso. `margenDeLinea` (quoteMargen.js)
       // es la pieza pura, extraída para poder exigir por test que un markup ilegible NO se cuele
-      // como 0. Aquí solo se acumula: la aritmética de `safeMarkup` para el TOTAL sigue intacta
+      // como 0. (SCRUM-598 retiró el consumo: la pieza pura sigue existiendo y probada.)
       // — este ticket no la cambia, solo hace que el pie diga lo que se perdió.
-      const m = margenDeLinea({
-        qtyRaw: line.qtyInput.value,
-        priceRaw: line.priceInput.value,
-        markupRaw: line.markupInput ? line.markupInput.value : '0',
-      });
-      if (m.calculable) {
-        margenImporte += m.importe;
-        margenCoste += m.coste;
-      } else {
-        margenSinCalcular += 1;
-      }
     });
 
     refrescarRotuloPlantillas();
@@ -1226,14 +1256,9 @@ blockDelivery.appendChild(descWrapper);
     // Microcopy APROBADO por el fundador (29-jul-2026), literal (regla 30): la etiqueta es
     // «Margen» y el valor lo compone `textoMargen` — «18,00 € (18 %)», o
     // «18,00 € · 2 líneas sin calcular» cuando alguna línea no se pudo leer.
-    const margenTexto = textoMargen(
-      { importe: margenImporte, coste: margenCoste, sinCalcular: margenSinCalcular },
-      (n) => fmtMoneyEs(n, cur),
-    );
     totalsBox.innerHTML = `
       <div class="quote-totals__apoyo"><span>Base imponible</span><strong>${fmtMoneyEs(base, cur)}</strong></div>
       <div class="quote-totals__apoyo"><span>IVA (${effVat}%)</span><strong>${fmtMoneyEs(vatTotal, cur)}</strong></div>
-      <div class="quote-totals__apoyo"><span>Margen</span><strong>${margenTexto}</strong></div>
     `;
     kpiBox.innerHTML = `
       <span class="quote-total-kpi__label">Total presupuesto</span>
@@ -1277,12 +1302,8 @@ blockDelivery.appendChild(descWrapper);
 
         if (!concept || safeQty <= 0 || safePrice < 0) return null;
 
-        const markupPerc = parseFloat(
-          String(line.markupInput?.value || "0").replace(",", ".")
-        );
-        const safeMarkup = Number.isFinite(markupPerc) ? markupPerc : 0;
-
-        const finalPrice = safePrice * (1 + safeMarkup / 100);
+        // SCRUM-598 · sin margen, el precio escrito es el que viaja.
+        const finalPrice = safePrice;
 
 
         const base = safeQty * finalPrice;
@@ -1538,7 +1559,7 @@ tr.appendChild(tdConcept);
     // ----------------------------
   // Autocomplete productos (MVP)
   // ----------------------------
-  function attachProductAutocomplete({ conceptInput, priceInput, vatInput, markupInput }) {
+  function attachProductAutocomplete({ conceptInput, priceInput, vatInput }) {
 
     let box = null;
     let timer = null;
@@ -1794,7 +1815,10 @@ if (typeof it.price !== "undefined" && it.price !== null && it.price !== "") {
     // Se pone a 0 en vez de esconder el campo: el margen del documento es DOC-08 y no es este
     // ticket. Así el pro LO VE, y si quiere margen extra sobre el precio de catálogo lo escribe
     // después — que es lo que ya podía hacer.
-    if (markupInput) markupInput.value = "0";
+    // SCRUM-598 · SCRUM-610 ponía aquí el margen a CERO para evitar el DOBLE MARGEN, y su
+    // motivo escrito era «a cero y no escondido, porque el pro lo ve». Después de DOC-08 el pro
+    // NO lo ve: el campo ya no existe. La protección no se relaja, DESAPARECE SU CAUSA — sin
+    // margen en la línea no hay nada que se pueda aplicar dos veces.
   }
 }
 
@@ -2096,7 +2120,9 @@ conceptInput.addEventListener("input", () => {
     overlay.addEventListener("click", function (e) { if (e.target === overlay) cerrarHoja(); });
     document.addEventListener("keydown", onEsc);
 
-    try { line.markupInput.focus({ preventScroll: true }); } catch (_e) {}
+    // SCRUM-598 · la hoja enfocaba el campo del margen, que ya no existe. Se enfoca el que
+    // ha pasado a ser el primero. NO se reordena nada ni se toca ningún rótulo (regla 30).
+    try { line.vatInput.focus({ preventScroll: true }); } catch (_e) {}
   }
 
   function campoLinea(etiqueta, clase) {
@@ -2111,7 +2137,7 @@ conceptInput.addEventListener("input", () => {
 
   function addLine(initial) {
     // SCRUM-139 F1: tarjeta, no `<tr>`. Se conservan EXACTAMENTE las mismas claves en `lineObj`
-    // (conceptInput, qtyInput, priceInput, markupInput, vatInput, totalCell, priceHint) para que
+    // (conceptInput, qtyInput, priceInput, vatInput, totalCell, priceHint) para que
     // todo lo que ya las consume —payload, borrador, recalcTotals, plantillas, IA, autocompletado—
     // siga funcionando sin tocarse. Lo que cambia es el DOM, no el contrato.
     const tr = document.createElement("div");
@@ -2162,14 +2188,19 @@ priceHint.textContent = "";
 priceTd.querySelector(".quote-line__label").appendChild(priceHint);
 
 
-    const markupTd = campoLinea("Margen %", "quote-line__markup");
-const markupInput = document.createElement("input");
-markupInput.type = "number";
-markupInput.min = "0";
-markupInput.step = "1";
-markupInput.placeholder = "0";
-markupInput.value = initial && initial.markup != null ? initial.markup : "0";
-markupTd.appendChild(markupInput);
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // 🔴 SCRUM-598 (DOC-08) · AQUÍ VIVÍA EL «Margen %» DE LA LÍNEA, Y SE RETIRA.
+    //
+    // El margen es información DEL PROFESIONAL, no de su cliente, y estaba en el documento que
+    // le enseña al cliente. Además el chip gris de la fila decía «IVA 21 %» y escondía dentro
+    // DOS cosas —el IVA y el margen—: la etiqueta que el pro leía no describía lo que contenía.
+    // Ahora el chip sólo contiene lo que dice.
+    //
+    // Decisión del fundador (24-ago-2026). El margen pasa a vivir SÓLO en el catálogo (CAT-01):
+    // una línea escrita a mano se escribe con su precio final directo.
+    //
+    // ⛔ SUPLIDO se queda intacto (F8): no es este ticket.
+    // ═══════════════════════════════════════════════════════════════════════════════════
 
 
     const vatTd = campoLinea("IVA %", "quote-line__vat");
@@ -2189,7 +2220,7 @@ markupTd.appendChild(markupInput);
     // El rótulo NO cambia: «IVA %» ya estaba aprobado. No hay microcopy nueva que marcar.
     // ═══════════════════════════════════════════════════════════════════════════════════
     const vatInput = window.tiposDeIva.montar(null);
-    attachProductAutocomplete({ conceptInput, priceInput, vatInput, markupInput });
+    attachProductAutocomplete({ conceptInput, priceInput, vatInput });
     // SCRUM-132: el IVA llega en DOS unidades según de dónde venga la línea, y antes solo se
     // leía una — por eso el "IVA por defecto" PISABA el IVA real de plantillas y de la IA:
     //   · `vat`  = PORCENTAJE (21)   → borrador de localStorage, autocompletado de producto
@@ -2333,7 +2364,7 @@ markupTd.appendChild(markupInput);
      *
      * Los inputs son LOS MISMOS de siempre —no hay copias ni espejos que sincronizar—: viven
      * en este contenedor y se MUEVEN a la hoja al abrirla y vuelven al cerrarla. Así
-     * `lineObj.markupInput` / `lineObj.vatInput` siguen siendo exactamente los que ya
+     * `lineObj.vatInput` sigue siendo exactamente el que ya
      * consumen el payload, el borrador, las plantillas, la IA y el autocompletado: cambia
      * dónde se ven, no qué son.
      */
@@ -2343,7 +2374,8 @@ markupTd.appendChild(markupInput);
     // deja el IVA a 0 y bloqueado—, así que leerlo después de haber tocado el IVA sería leer el
     // orden al revés.
     ajustesCampos.appendChild(suplidoTd);
-    ajustesCampos.appendChild(markupTd);
+    // SCRUM-598 · aqui iba el campo del margen. La hoja se queda con SUPLIDO y con el IVA:
+    // no se reordena nada, solo desaparece el de en medio (regla 30, no se toca ningun rotulo).
     ajustesCampos.appendChild(vatTd);
 
     const ajustesBtn = document.createElement("button");
@@ -2367,12 +2399,11 @@ markupTd.appendChild(markupInput);
       conceptInput,
       qtyInput,
       priceInput,
-      markupInput,
       vatInput,
       totalCell: totalTd,
       priceHint,
       // SCRUM-139 F4 — dónde viven margen e IVA y quién abre su hoja. Las claves de arriba
-      // NO cambian: `markupInput` y `vatInput` siguen siendo los mismos elementos.
+      // NO cambia: `vatInput` sigue siendo el mismo elemento.
       ajustesCampos,
       ajustesBtn,
       // SCRUM-500 — la casilla de suplido de esta línea. La leen el payload y el borrador.
@@ -2440,7 +2471,6 @@ if (Number.isFinite(n) && n >= 0) {
     // producto), y quitarle ese oyente lo habría dejado sin recalcular sin que nada fallara.
     vatInput.addEventListener("input", onChange);
     vatInput.addEventListener("change", onChange);
-    markupInput.addEventListener("input", onChange);
     // SCRUM-500: marcar suplido cambia el IVA de la línea, así que recalcula como cualquier otro
     // campo. Sin esto, el total del pie se quedaría con el IVA de antes hasta el siguiente toque.
     suplidoCheck.addEventListener("change", function () {
@@ -2457,7 +2487,6 @@ if (Number.isFinite(n) && n >= 0) {
         conceptInput.value = "";
         qtyInput.value = "1";
         priceInput.value = "";
-        markupInput.value = "0";
         window.tiposDeIva.ponerValor(vatInput, fieldVatDefault.input.value || "21");
 
         conceptInput.dataset.pfProductId = "";
@@ -3051,22 +3080,10 @@ try {
   }
 } catch (_e) {}
 
-let finalPrice = safePrice;
-
-try {
-  const markupPerc = parseFloat(
-    String(line.markupInput?.value || "0").replace(",", ".")
-  );
-  const safeMarkup = Number.isFinite(markupPerc) ? markupPerc : 0;
-
-  // Si viene de catálogo, la base real está aquí
-  const baseRaw = String(line.priceInput.dataset.pfBasePrice || "").trim();
-  const base = baseRaw ? Number(baseRaw) : safePrice;
-
-  const safeBase = Number.isFinite(base) ? base : 0;
-
-  finalPrice = safeBase * (1 + safeMarkup / 100);
-} catch (_e) {}
+// SCRUM-598 · el precio escrito ES el que viaja. Antes se recomponía desde la base del
+// catálogo y el margen de la línea; sin margen, esa recomposición sólo podía devolver el
+// mismo número — y con un `pfBasePrice` viejo podía devolver OTRO.
+const finalPrice = safePrice;
 
       
 
