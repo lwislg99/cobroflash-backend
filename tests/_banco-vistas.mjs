@@ -406,7 +406,10 @@ export function scriptsDelDashboard(raiz) {
 // Y se repite lo que ya avisaba la rama, porque es lo que falló tres veces: si en un merge este
 // número aparece IGUAL en los dos lados, git lo deja fuera de los marcadores de conflicto y nadie
 // se entera. **Se vuelve a contar después de mezclar, siempre.**
-export const SCRIPTS_DEL_DASHBOARD = 66;
+// SCRUM-611 (2-sep-2026) · 66 → 67: entra `tiposDeIva.js`, la lista de tipos del
+// selector de la linea. Va ANTES de `quotesView.js`, que la consume.
+// RECONTADO sobre el indice, no sumado: grep -c "<script src=" → 67.
+export const SCRIPTS_DEL_DASHBOARD = 67;
 
 /**
  * Monta el dashboard como lo monta el navegador y devuelve el contexto vivo.
