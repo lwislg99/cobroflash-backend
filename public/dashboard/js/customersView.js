@@ -79,7 +79,12 @@ function renderCustomersView(container) {
   const searchInput = document.createElement("input");
   searchInput.type = "text";
   searchInput.className = "input";
-  searchInput.placeholder = "Buscar por nombre, teléfono o email…";
+  // SCRUM-588 (CONT-16) · el placeholder DICE LO QUE EL BUSCADOR HACE. Decía «nombre, teléfono o
+  // email» y esta misma rama le añadió la referencia interna al `OR` de `listCustomers`: dejarlo
+  // habría sido una frase falsa en pantalla, que es peor que una frase incompleta — el profesional
+  // no probaría a buscar por su nº de expediente porque el campo le dice que no se puede.
+  // Texto APROBADO por el asesor (2-sep-2026), literal y con «…» de UN carácter.
+  searchInput.placeholder = "Buscar por nombre, teléfono, email o referencia…";
   searchInput.style.cssText = "min-width:160px;flex:1";
   toolbar.appendChild(searchInput);
 
@@ -171,6 +176,7 @@ function renderCustomersView(container) {
   let modalBackdrop = null;
   let modalForm = null;
   let fieldName, fieldPhone, fieldEmail, fieldNotes;
+  let fieldInternalRef; // SCRUM-588 (CONT-16)
   // ═════════════════════════════════════════════════════════════════════════════════════
   // SCRUM-575 (2-sep-2026) · LA CONSTANTE COMPARTIDA SE PARTE EN DOS, Y ERA LO QUE FALTABA.
   //
@@ -387,6 +393,26 @@ function renderCustomersView(container) {
       // es el control que más fácil se rompe sin querer al añadir una validación.
       avisoNif.hidden = validarNifEspanol(fieldTaxId.input.value).valido;
     });
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-588 (CONT-16) · LA REFERENCIA INTERNA, y va ANTES de «Notas» a propósito.
+    //
+    // Es el número con el que el profesional conoce a este cliente: el expediente de la
+    // aseguradora, la finca del administrador, el código del sistema viejo. Hasta hoy lo metía
+    // justo en «Notas» —el campo de debajo— y luego no lo podía buscar de forma fiable. Ponerlo
+    // encima es lo que hace que la próxima vez no acabe ahí.
+    //
+    // 🔴 LOS DOS TEXTOS ESTÁN APROBADOS Y VAN LITERALES (regla 30, asesor 2-sep-2026). Medidos en
+    // navegador a 360 px: el rótulo ocupa 103 px de 336, y el placeholder 219 px de los 308
+    // útiles del input. Ninguno parte en dos líneas.
+    //
+    // ⚠️ LA AYUDA VA COMO `placeholder` Y ES UN HUECO DECLARADO, no una solución: `createField` no
+    // admite línea de ayuda y no hay clase de hint en el CSS, así que ponerla debajo sería un
+    // componente nuevo del inventario AB3. Se acepta porque **el significado lo lleva el RÓTULO** y
+    // el placeholder sólo da ejemplos — un placeholder desaparece en cuanto se teclea, así que el
+    // día que la ayuda tenga que llevar una REGLA, esto ya no valdrá.
+    fieldInternalRef = createField("Referencia interna", "internalRef", "text");
+    fieldInternalRef.input.placeholder = "Nº de expediente, finca, código…";
+
     fieldNotes = createField("Notas", "notes", null, false, true);
 
     // ═══════════════════════════════════════════════════════════════════════════════════
@@ -531,6 +557,9 @@ function renderCustomersView(container) {
     body.appendChild(paisWrapper);
     body.appendChild(tipoWrapper);
     body.appendChild(recargoWrapper);
+    // SCRUM-588 (CONT-16): la referencia interna va JUSTO ENCIMA de «Notas», que es donde el
+    // profesional la metía hasta hoy por no tener sitio propio.
+    body.appendChild(fieldInternalRef.wrapper);
     body.appendChild(fieldNotes.wrapper);
 
     // J3: baja manual de WhatsApp (hasta WA-0b el "BAJA" entrante no se procesa solo)
@@ -627,6 +656,9 @@ function renderCustomersView(container) {
       repartirTelefono(editingCustomer.phone || "");
       fieldEmail.input.value = editingCustomer.email || "";
       fieldNotes.input.value = editingCustomer.notes || "";
+      // SCRUM-588: si esto no estuviera, editar un cliente BORRARIA su referencia al guardar —
+      // el campo saldria vacio y el payload mandaria null encima del dato bueno.
+      fieldInternalRef.input.value = editingCustomer.internalRef || "";
       fieldLegalName.input.value = editingCustomer.legalName || ""; // A20.4
       fieldTaxId.input.value = editingCustomer.taxId || "";
       fieldWaOptOut.checked = !!editingCustomer.waOptOut;
@@ -678,6 +710,9 @@ function renderCustomersView(container) {
       notes: fieldNotes.input.value.trim(),
       legalName: fieldLegalName.input.value.trim() || null, // A20.4
       taxId: fieldTaxId.input.value.trim() || null,
+      // SCRUM-588: «ausente ≠ vacio». Lo vacio viaja como null, NUNCA como cadena vacia: una
+      // cadena vacia diria «tiene referencia, y es nada», que no es lo mismo que no tenerla.
+      internalRef: fieldInternalRef.input.value.trim() || null,
       // SCRUM-574: forma jurídica. `null` = nadie la ha declarado, y viaja como null hasta la BD:
       // NO se cae a un lado por defecto, que sería declarar por el profesional.
       contactKind: switchForma.leer(),
