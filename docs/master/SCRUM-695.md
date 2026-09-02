@@ -4,13 +4,14 @@
 
 **Medido contra:** `origin/main` = `f803ec1e4ba189041a34d017fbf890081331ce45` · 2026-09-02T22:10:48+01:00
 
-**Tanda:** 4764 tests, 4681 pass, **0 fail**, 83 skipped — medida DESPUÉS del último cambio de código (que en este ticket es NINGUNO: sólo entra esta entrada). Lo único posterior a la medición es esta misma línea.
+**Tanda:** 4764 tests, 4681 pass, **0 fail**, 83 skipped — medida DESPUÉS del último cambio, `ci.yml` incluido. Repetida: idéntica a la de antes del cambio, como debía ser (una condición de CI no corre en la tanda). Lo único posterior es esta línea.
 
 ---
 
-El encargo traía dos mitades y **las dos se contestan con una medición, no con una construcción**.
-Este ticket no añade una línea de código a `src/` ni a `tests/`. Lo que añade es el veredicto, y la
-prueba de que el veredicto no es una opinión.
+El encargo traía dos mitades, y **la medición cambió la forma de las dos**: la ① se cierra sin
+restaurar nada, y la ② se construye —pero **no como se pidió**, porque tal y como se pidió estaba
+prohibido por una decisión ya escrita. Este ticket no añade una línea a `src/` ni a `tests/`: un
+veredicto, y una condición en `ci.yml`.
 
 ## 🛑 Mitad ① · Antes del hallazgo, el SUELO del método
 
@@ -125,25 +126,51 @@ El objetivo era el hueco nº 2 de SCRUM-672: *el total de aquellos commits no es
 fichero **sobrescrito** no es un histórico: su `git log` sería el pisoteo de nueve ramas. Y el recibo
 mide la tanda **GATEADA**, no la de `npm test`, que es donde se midió el defecto.
 
-**Conclusión: no se construye** — tal como pedía el encargo: *prefiero no tener histórico a tener una
-fábrica de conflictos*.
+**El recibo en git no se construye** — tal como pedía el encargo: *prefiero no tener histórico a
+tener una fábrica de conflictos*.
 
-### Lo que sí daría histórico, para que lo decida el asesor (NO construido aquí)
+## ✅ Y el histórico SÍ se construye — pero como ARTEFACTO, no como fichero
 
-El CI ya escribe el TAP y ya lo guarda como artefacto… **con `if: failure()`** (`ci.yml:217`,
-retención 7 días). O sea que **de las tandas VERDES no queda nada** — y verde es justo como sale el
-defecto que persigue el 672. Poner ahí `if: always()` daría histórico de 7 días sin fichero en git,
-sin conflictos y sin dependencias nuevas. **Es otro carril y no se toca aquí.**
+El objetivo del ② era **que existiera histórico**, no que hubiera un fichero en git. Y el CI ya
+escribía el TAP y ya lo guardaba… **con `if: failure()`**. O sea que **de las tandas VERDES no
+quedaba nada** — y verde es exactamente como sale el defecto del 672: `fail 0`, salida 0, once tests
+menos. Se guardaba el TAP justo cuando ese defecto **no** estaba.
+
+```diff
+  - name: Guardar el TAP completo
+-       if: failure()
++       if: always()
+```
+
+Un artefacto de CI **no viaja con la rama**, así que no se copia entre árboles y no choca: los tres
+motivos del PARA no le aplican. Sin fichero en git, sin conflictos, sin dependencias nuevas.
+
+**El comentario de encima también se reescribió**, porque decía *«se sube SIEMPRE que haya rojo»* y
+eso pasaba a ser falso. Un comentario que sobrevive al cambio que lo desmiente es la avería de
+siempre.
+
+### 🕳️ Los dos huecos de esto, declarados
+
+1. **No se puede verificar hasta que una tanda VERDE suba el artefacto.** Lo comprobado aquí es que
+   el TAP se escribe siempre —lo emite `NODE_OPTIONS` en el propio `npm test`, no un paso
+   condicionado, así que en verde el fichero existe y `if-no-files-found: warn` no tiene por qué
+   saltar— y que los cinco guards que leen `ci.yml` siguen en verde (76/76). Lo que **no** se ha
+   visto todavía es el artefacto subido en una ejecución sin rojo.
+2. **`retention-days: 7`: es histórico CORTO, no eterno.** Sirve para mirar unos días atrás cuando el
+   total baje. **No** reconstruye el pasado — el total real de los commits viejos sigue sin ser
+   recuperable, porque nadie lo guardó.
 
 ## 🕳️ Huecos y lo que NO se ha tocado
 
-1. **No se ha tocado el suelo de SCRUM-672** (`SUELO_TESTS`) ni `SUELO_TOTAL = 646`. Prohibido por el
-   encargo.
-2. **Fuera de carril, una línea:** el suelo del 672 **no distingue una retirada documentada de una
-   pérdida silenciosa** — habría llorado igual ante esta retirada, que era correcta. Es su diseño (es
-   un suelo, no un juez), pero quien lo baje legítimamente debe saber que **bajarlo a propósito es
-   lícito**: la regla «se queda el más alto» resuelve un choque entre dos ramas, no prohíbe retirar
-   tests con motivo.
+1. **No se ha tocado `SUELO_TOTAL = 646`** (rancio, otro carril) ni ningún test migrado.
+2. **El suelo del 672 no distingue una retirada documentada de una pérdida silenciosa** — habría
+   llorado igual ante esta retirada, que era correcta. Es su diseño (es un suelo, no un juez), pero
+   quien lo baje legítimamente debe saber que **bajarlo a propósito es lícito**: la regla «se queda el
+   más alto» resuelve un choque entre dos ramas, no prohíbe retirar tests con motivo escrito.
+   **⚠️ Ese aviso NO cabe en esta rama:** `scripts/_suelo-de-la-tanda.mjs` **no existe en `main`**
+   (SCRUM-672 sigue sin mergear, su rama va por `6215e2a4`). El comentario —sólo comentario, sin
+   tocar lógica ni el número— va en la rama del 672, que es donde vive el fichero. Se anota aquí para
+   que no se pierda si aquel PR se cierra antes.
 3. **`AFIRMACIONES` vacío deja la maquinaria viva pero sin uso.** La autoprueba sobre fuente sintética
    sigue probando que el mecanismo funciona, así que el día que alguien vuelva a escribir una cifra a
    mano puede registrarla y funcionará. Lo que **no** hay es nada que obligue a registrarla — igual
