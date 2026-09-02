@@ -164,12 +164,43 @@ test('tecnosel/5 · 🔴 el móvil del técnico sigue SIN ver un importe', () =>
     '🔴 la rama del técnico ha desaparecido del PATCH: entonces alguien recibe otra cosa.');
 
   // (b) Fuera del PATCH: TODA aparición del serializador de oficina está en una ruta admin-only.
+  //
+  // 🔴 SE BUSCA LA RUTA QUE LA ENVUELVE, NO UNA VENTANA DE N LÍNEAS. La primera versión miraba
+  // 14 líneas hacia atrás y por eso NO cazó quitarle el `admin` a `/oficina/pendientes`: su
+  // `router.get` queda más arriba. Una ventana fija es una tolerancia disfrazada, y lo que hay
+  // que mirar es la declaración de la ruta, que es donde vive el gate.
   const lineas = src.split(String.fromCharCode(10));
   lineas.forEach((l, i) => {
-    if (!/serializeParteParaLaOficina\(/.test(l)) return;
+    // 🔴 SIN EXIGIR PARÉNTESIS DETRÁS: en la lista de pendientes el serializador se pasa POR
+    // REFERENCIA (`partes.map(serializeParteParaLaOficina)`), y con `\(` ese uso no casaba — el
+    // rojo de quitarle el `admin` a esa ruta se quedaba VERDE. El hecho es «aparece», no
+    // «aparece llamado».
+    if (!/serializeParteParaLaOficina\b/.test(l)) return;
     if (/^function serializeParteParaLaOficina/.test(l.trim())) return;   // su definición
-    const contexto = lineas.slice(Math.max(0, i - 14), i + 1).join(String.fromCharCode(10));
-    assert.ok(/requireRole\('admin'\)|seesAllJobs\(req\.userRole\)/.test(contexto),
-      `🔴 LA VISTA DE OFICINA SE SIRVE SIN GATE DE ROL en la línea ${i + 1}: ${l.trim()}`);
+    let j = i;
+    while (j >= 0 && !/^router\.(get|post|patch|put|delete)\(/.test(lineas[j])) j -= 1;
+    assert.ok(j >= 0, `🔴 no encuentro la ruta que envuelve la línea ${i + 1}: el instrumento no vale.`);
+    const declaracion = lineas[j];
+    const cuerpo = lineas.slice(j, i + 1).join(String.fromCharCode(10));
+    assert.ok(/requireRole\('admin'\)/.test(declaracion) || /seesAllJobs\(req\.userRole\)/.test(cuerpo),
+      `🔴 LA VISTA DE OFICINA SE SIRVE SIN GATE DE ROL.` + String.fromCharCode(10)
+      + `  ruta: ${declaracion.trim()}` + String.fromCharCode(10)
+      + `  línea ${i + 1}: ${l.trim()}` + String.fromCharCode(10)
+      + '  Con eso, el móvil de un técnico puede pedir los importes de un parte.');
   });
+});
+
+test('tecnosel/5 · 🔴 la pantalla NO ofrece tocar un parte facturado', () => {
+  // El candado lo decide el SERVIDOR y viaja resuelto. Si la pantalla no lo mirara, ofrecería
+  // teclear precios en un parte ya facturado y el 409 llegaría DESPUÉS de que el jefe escribiera
+  // —trabajo tirado y un mensaje de error donde tenía que haber una explicación.
+  //
+  // 🔴 ESTE TEST FALTABA: al inyectar `editable = true` a propósito, la tanda de rojos siguió en
+  // verde. Un control que nadie comprueba no es un control.
+  const vista = soloEjecutable(leer('public/dashboard/js/parteOficinaView.js'));
+  assert.match(vista, /parte\.puedeEditarPrecios && parte\.puedeEditarPrecios\.ok/,
+    '🔴 LA PANTALLA HA DEJADO DE MIRAR EL CANDADO. Ofrecería valorar un parte facturado, y la '
+    + 'regla 29 dice que los precios de lo ya facturado no se tocan.');
+  assert.match(vista, /inp\.disabled = !editable/,
+    '🔴 las casillas de precio ya no se deshabilitan: el candado se pinta pero no se aplica.');
 });
