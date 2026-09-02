@@ -1374,8 +1374,13 @@ async function renderJobDetailView(container, jobId) {
       onClose: close,
       onError: (msg) => { errEl.textContent = msg; errEl.style.display = 'block'; },
       textoGuardar: ALB_CREAR_COPY.guardar,
-      onGuardar: async ({ lineas, notas, modoValoracion: modo }) => {
+      onGuardar: async ({ lineas, notas, modoValoracion: modo, docHeaderText }) => {
         const cuerpo = lineas.length ? { modoValoracion: modo, lineas, notas } : { modoValoracion: modo, notas };
+        // SCRUM-593 (DOC-03): sin esto el campo se pintaría, se leería con veredicto... y moriría
+        // AQUÍ, en la desestructuración. Es «construido ≠ alcanzable» una capa más abajo, y no lo
+        // habría cazado ningún test del editor: el editor sí lo manda.
+        // `undefined` = no se pudo leer → no se manda la clave y el servidor no toca la columna.
+        if (docHeaderText !== undefined) cuerpo.docHeaderText = docHeaderText;
         await apiRequest(`/admin/jobs/${job.id}/albaranes`, { method: 'POST', body: JSON.stringify(cuerpo) });
         showToast(
           lineas.length
@@ -2201,6 +2206,29 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
     campoAlb(rotAlb.fechaEntrega, ayuAlb.fechaEntrega, fEntregaEl);
   }
 
+  // ── SCRUM-593 (DOC-03) · EL TEXTO DE CABECERA DEL ALBARÁN, ALCANZABLE ──────────────────
+  //
+  // Se monta AQUÍ, encima de las notas, porque ése es el orden en el PAPEL: la cabecera arriba y
+  // el bloque final abajo. Un formulario que los ofrece al revés que el documento obliga a
+  // traducir mentalmente lo que se está escribiendo.
+  //
+  // 🔴 SÓLO LA CABECERA. El PIE de este documento ya existe y es `notas` —el textarea de justo
+  // debajo, que ya se imprime—. Montar aquí un segundo campo de pie daría dos sitios para lo
+  // mismo y al día siguiente nadie sabría cuál manda.
+  //
+  // ⚠️ EL RÓTULO SALE CON MARCADOR y no se inventa aquí: sigue sin firmarlo el fundador, así que
+  // lo pone la pieza (`textoDelDocumento.js`), que es el único sitio donde vive. Derivarlo de
+  // «Observaciones» sería inventar microcopy (regla 30).
+  //
+  // Si la pieza no está cargada, el bloque NO SE PINTA — mismo criterio que los rótulos servidos
+  // de `lugarEntrega`/`fechaEntrega`: mejor sin campo que con un campo sin rótulo.
+  let cabeceraDoc = null;
+  if (typeof window.textoDelDocumentoMontar === 'function') {
+    cabeceraDoc = document.createElement('div');
+    window.textoDelDocumentoMontar(cabeceraDoc, { docHeaderText: alb.docHeaderText || '' }, ['docHeaderText']);
+    box.appendChild(cabeceraDoc);
+  }
+
   const notas = document.createElement('textarea');
   notas.className = 'input';
   notas.placeholder = 'Notas del albarán (opcional)';
@@ -2237,7 +2265,16 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
     // primera en silencio. `alb.version` viene de `serializeAlbaran` — ya venía, no se añade campo.
     // ⚠️ Es la de cuando se abrió el editor, NO una releída al guardar: releerla aquí volvería a
     // dar siempre «coincide» y el mecanismo entero no serviría para nada.
+    // SCRUM-593 (DOC-03): se lee con el VEREDICTO de la pieza, no leyendo el nodo a pelo. Si el
+    // campo no estuviera montado, un lector mudo devolvería `null` —indistinguible de «el
+    // profesional lo dejó en blanco»— y guardar BORRARÍA un texto ya escrito. Con veredicto, si
+    // no se pudo leer NO se manda el campo, y lo guardado se queda como estaba.
+    const leidoCab = cabeceraDoc && typeof window.textoDelDocumentoLeer === 'function'
+      ? window.textoDelDocumentoLeer(cabeceraDoc, ['docHeaderText'])
+      : { ok: false };
+
     const body = { lineas: out, notas: notas.value, version: alb.version };
+    if (leidoCab.ok) body.docHeaderText = leidoCab.valores.docHeaderText;
     // SCRUM-300: se mandan SIEMPRE que el bloque exista, también vacíos — vaciar el lugar de
     // entrega es una decisión legítima del pro y el backend la respeta ('' → null). No tocan
     // `fecha`, que sigue siendo la del documento.
@@ -2251,7 +2288,13 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
       // SCRUM-303: en creación, ÉSTE es el único sitio del que sale el POST — y por eso no hay
       // albarán ni número hasta aquí. En edición no cambia nada: sigue siendo el PATCH de antes.
       if (onGuardar) {
-        await onGuardar({ lineas: out, notas: notas.value, modoValoracion: modo });
+        // SCRUM-593 (DOC-03): la creación es OTRA puerta —`onGuardar` hace el POST— y si el
+        // campo no viajara por aquí, lo tecleado al crear se perdería en silencio. Es el defecto
+        // de SCRUM-424 (el PATCH lo guarda y el create no) visto desde el navegador.
+        await onGuardar({
+          lineas: out, notas: notas.value, modoValoracion: modo,
+          ...(leidoCab.ok ? { docHeaderText: leidoCab.valores.docHeaderText } : {}),
+        });
       } else {
         await apiRequest(`/admin/albaranes/${alb.id}`, { method: 'PATCH', body: JSON.stringify(body) });
         showToast('✓ Albarán actualizado (nueva versión).');

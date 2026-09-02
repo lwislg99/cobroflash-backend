@@ -744,6 +744,11 @@ export function serializeAlbaran(a: any) {
     version: a.version,
     firmadoAt: a.firmadoAt,
     notas: a.notas,
+    // SCRUM-593 (DOC-03): sin esta línea el campo se guarda y el formulario sale SIEMPRE
+    // VACÍO — el serializador es una lista BLANCA, así que lo que no se nombra no llega al
+    // navegador. Y entonces la siguiente edición lo guardaría en blanco: el texto no se
+    // pierde al leerlo, se pierde al volver a guardar.
+    docHeaderText: a.docHeaderText ?? null,
     // SCRUM-300 (C5). ⚠️ `evidenciaFirma` sigue SIN salir de aquí: lleva ip/ua (dato personal).
     // Estos cuatro son contenido del documento, no evidencia técnica.
     // null = «No se pidió al firmar»: son los albaranes anteriores a esta tarea, y el front lo

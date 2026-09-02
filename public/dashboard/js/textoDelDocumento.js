@@ -93,15 +93,41 @@ function textoDelDocumentoPintado(valor) {
 }
 
 /**
+ * Qué campos pide quien llama. Sin argumento, LOS DOS.
+ *
+ * 🔴 EXISTE PORQUE LOS DOS DOCUMENTOS NO PIDEN LO MISMO. El presupuesto lleva los dos textos; el
+ * ALBARÁN lleva sólo la cabecera, porque su pie ya existe y es `notas` —que ya se imprime— y
+ * duplicarlo daría dos sitios para lo mismo. Sin esto, el albarán tendría que montar el campo a
+ * mano y se quedaría fuera del suelo del lector, que es justo lo que evita un borrado silencioso.
+ *
+ * SUELO: una clave que no existe devuelve `null` —no una lista vacía—. Ignorarla en silencio
+ * dejaría a quien se equivoque de nombre con un formulario sin campos y un `ok: true`, que es
+ * exactamente el fallo mudo que esta pieza persigue.
+ */
+function textoDelDocumentoCampos(claves) {
+  if (claves == null) return TD_CAMPOS;
+  const pedidas = Array.isArray(claves) ? claves : [claves];
+  const fuera = [];
+  for (const c of pedidas) {
+    const campo = TD_CAMPOS.find((x) => x.clave === c);
+    if (!campo) return null;
+    fuera.push(campo);
+  }
+  return fuera;
+}
+
+/**
  * Monta LOS DOS campos en un contenedor, en su orden, de una sola llamada.
  *
  * Existe para que el consumidor no escriba el bucle: un formulario que recorre `TD_CAMPOS` a
  * mano puede pintar uno y olvidarse del otro, o invertirlos, y las dos cosas pasan en verde
  * porque cada campo por separado está bien. Aquí el orden y la totalidad son de la pieza.
  */
-function textoDelDocumentoMontar(contenedor, valores) {
+function textoDelDocumentoMontar(contenedor, valores, claves) {
   if (!contenedor || typeof contenedor.appendChild !== 'function') return null;
-  for (const campo of TD_CAMPOS) {
+  const cuales = textoDelDocumentoCampos(claves);
+  if (!cuales) return null;
+  for (const campo of cuales) {
     contenedor.appendChild(textoDelDocumentoCampo(campo, valores ? valores[campo.clave] : ''));
   }
   return contenedor;
@@ -116,26 +142,28 @@ function textoDelDocumentoMontar(contenedor, valores) {
  * edite el presupuesto desde una pantalla que no los monte. Un lector ciego tiene que decir que
  * está ciego — es el mismo suelo que se le exige a los censos de esta casa.
  */
-function textoDelDocumentoLeer(raiz) {
+function textoDelDocumentoLeer(raiz, claves) {
   if (!raiz || typeof raiz.querySelector !== 'function') {
     return { ok: false, motivo: 'sin-raiz', valores: null };
   }
+  const cuales = textoDelDocumentoCampos(claves);
+  if (!cuales) return { ok: false, motivo: 'clave-desconocida', valores: null };
   const crudos = {};
   const faltan = [];
-  for (const campo of TD_CAMPOS) {
+  for (const campo of cuales) {
     const nodo = raiz.querySelector('#campo-' + campo.clave);
     if (!nodo) { faltan.push(campo.clave); continue; }
     // El valor entra TAL CUAL: los saltos son dato, no formato. El recorte lo decide el payload.
     crudos[campo.clave] = nodo.value;
   }
   if (faltan.length) return { ok: false, motivo: 'faltan-campos', faltan, valores: null };
-  return { ok: true, valores: textoDelDocumentoPayload(crudos) };
+  return { ok: true, valores: textoDelDocumentoPayload(crudos, claves) };
 }
 
 /** Lo que se manda al servidor. Vacío o sólo espacios → `null`: «no se escribió» no es `''`. */
-function textoDelDocumentoPayload(valores) {
+function textoDelDocumentoPayload(valores, claves) {
   const fuera = {};
-  for (const campo of TD_CAMPOS) {
+  for (const campo of textoDelDocumentoCampos(claves) || []) {
     const v = valores && valores[campo.clave];
     const limpio = v == null ? '' : String(v).trim();
     fuera[campo.clave] = limpio === '' ? null : String(v);
@@ -150,6 +178,7 @@ if (typeof window !== 'undefined') {
   window.textoDelDocumentoCampo = textoDelDocumentoCampo;
   window.textoDelDocumentoPintado = textoDelDocumentoPintado;
   window.textoDelDocumentoPayload = textoDelDocumentoPayload;
+  window.textoDelDocumentoCampos = textoDelDocumentoCampos;
   window.textoDelDocumentoMontar = textoDelDocumentoMontar;
   window.textoDelDocumentoLeer = textoDelDocumentoLeer;
 }

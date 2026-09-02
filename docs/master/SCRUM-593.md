@@ -316,3 +316,57 @@ Lo que sí queda hecho es que el día que se monte, el consumidor sólo tiene qu
 `scrum593c` comprueba que `src/lib/invoicing.ts` **no** nombra estos campos, con suelo (que el
 fichero se leyó de verdad y contiene `ensureInvoicePdf`). Es SCRUM-665: `ensureInvoicePdf` regenera
 el PDF con el código de hoy, así que un bloque nuevo cambiaría **facturas ya emitidas** — regla 29.
+
+---
+
+# 🔴 EL ALCANCE REAL DE ESTE TICKET · TRES DOCUMENTOS, TRES ESTADOS DISTINTOS
+
+> *Un ticket que entrega un tercio y no lo dice se lee después como si hubiera entregado todo.*
+> Por eso esto va aquí arriba y no en una nota al pie, y lo vigila un test
+> (`scrum593e`), que **cae si estas líneas dejan de cuadrar con el código**.
+
+| Documento | Estado |
+|---|---|
+| **ALBARÁN** | ✅ **cabecera montada y ALCANZABLE** — se escribe en el editor, se guarda al crear **y** al editar, se relee y sale en el PDF. Su pie es `notas`, que ya existía y ya se imprimía. |
+| **PRESUPUESTO** | ⚠️ **cableado y NO montado** — esquema, rutas, las tres puertas del PDF y los tests, todo hecho; **ningún formulario lo ofrece**. Espera a que salga **SCRUM-598** de `quotesView.js`. |
+| **FACTURA** | ⛔ **fuera, por SCRUM-665** — `ensureInvoicePdf` REGENERA el PDF emitido con el código de hoy (el fs de Railway es efímero), así que añadirle un bloque cambiaría **facturas ya emitidas**. Regla 29. |
+
+**Este ticket sigue ABIERTO mientras el presupuesto no esté montado**, y ése es el sitio donde el
+hueco tiene que vivir: en un ticket abierto. Cerrarlo lo borraría de todas las listas y «el
+presupuesto no tiene dónde escribirse» dejaría de existir para todo el mundo.
+
+## Por qué el albarán SÍ se pudo montar hoy
+
+No pasa por `quotesView.js`. **Medido antes de tocar:** su editor vive en `jobDetailView.js`
+—no en `albaranDetailView.js`, que era mi suposición y estaba mal— y las **cinco** ramas vivas que
+tocan ese fichero llevan **~4 semanas paradas** (5 y 6 de agosto, contra un `main` de hoy). No es
+el mismo riesgo que SCRUM-598, que tiene commit de este sprint y toca `quotesView.js` en 175
+líneas. Distinguir «rama viva de hoy» de «rama parada hace un mes» es la distinción que hace
+posible entregar una mitad alcanzable.
+
+## El defecto que apareció AL MONTARLO, y que es el más barato de todos
+
+El campo se pintaba, se leía con veredicto, se metía en el objeto… y **moría en la
+DESESTRUCTURACIÓN** de `onGuardar`, que sólo sacaba `{ lineas, notas, modoValoracion }`. Ningún
+test del editor lo habría cazado: **el editor sí lo mandaba**. Por eso `scrum593e` vigila el camino
+entero —pintar, leer, PATCH y POST— y también al RECEPTOR, no sólo al emisor.
+
+Y por lo mismo el editor **lee con veredicto** en vez de leer el nodo a pelo: si el campo no
+estuviera montado, un lector mudo devolvería `null` —indistinguible de «el profesional lo dejó en
+blanco»— y guardar **borraría** un texto ya escrito. Sin veredicto, no se manda la clave, y la
+columna se queda como estaba.
+
+## La pieza, extendida con su suelo
+
+`textoDelDocumentoMontar` / `Leer` / `Payload` aceptan ahora **qué campos** se piden, porque los dos
+documentos no piden los mismos: el presupuesto lleva los dos textos y el albarán **sólo la
+cabecera**. Una clave desconocida devuelve `null`, no una lista vacía: ignorarla en silencio dejaría
+a quien se equivoque de nombre con un formulario sin campos y un `ok: true`.
+
+## Microcopy: el rótulo de la cabecera sigue SIN FIRMAR
+
+Sale con `[PENDIENTE microcopy oficial]` en el PDF **y ahora también en el formulario del albarán**,
+donde lo ve el profesional. **No se deriva de «Observaciones»** y no se inventa (regla 30); el test
+que exige que los dos rótulos sean distintos se queda. Si la pieza no está cargada, el bloque **no
+se pinta**: mismo criterio que los rótulos servidos de `lugarEntrega`/`fechaEntrega` — mejor sin
+campo que con un campo sin rótulo.
