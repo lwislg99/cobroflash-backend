@@ -245,6 +245,11 @@ test('SCRUM-683 · los dos avisos aprobados son LITERALES, con su raya larga', (
     'No se ha entendido el dictado — vuelve a dictar o escríbelo a mano');
   assert.equal(AVISOS_DEL_DICTADO.sin_lineas_reconocidas,
     'No se ha podido sacar ninguna línea — escríbelas tú');
+  // 🔴 SINGULAR, y lo decidió la medición: se pinta una vez EN CADA línea sin cantidad.
+  assert.equal(AVISOS_DEL_DICTADO.cantidadesRetiradas, 'Falta la cantidad — ponla tú');
+  assert.doesNotMatch(AVISOS_DEL_DICTADO.cantidadesRetiradas, /Faltan|cantidades|ponlas/,
+    '🔴 ha vuelto el plural: `cantidadesRetiradas` trae UNA entrada por línea, y el aviso es de ' +
+    'línea. Un resumen («3 líneas sin cantidad») sería un texto DISTINTO, y lo aprueba el fundador.');
 
   // La raya es `—` (U+2014), UN carácter, como el aviso ya aprobado de `voiceInput.js`.
   for (const t of Object.values(AVISOS_DEL_DICTADO)) {
@@ -252,22 +257,18 @@ test('SCRUM-683 · los dos avisos aprobados son LITERALES, con su raya larga', (
     assert.ok(!t.includes('--') && !t.includes('['), `🔴 «${t}» lleva guiones dobles o corchete de marcador`);
   }
 
-  // 🔴 Y la tercera NO está, a propósito: su plural espera una decisión de concordancia del
-  // fundador. Si algún día aparece sin que él la apruebe, este aserto es el que lo dice.
-  assert.equal(AVISOS_DEL_DICTADO.cantidadesRetiradas, undefined,
-    '🔴 se ha aplicado el aviso de `cantidadesRetiradas` sin resolver la concordancia: el array ' +
-    'trae UNA entrada por línea y puede traer exactamente una, y ahí el plural no concuerda.');
 });
 
-test('SCRUM-683 · 🔴 `cantidadesRetiradas` puede traer UNA sola: por eso el plural está parado', () => {
-  // Es la medición que sostiene el párrafo de arriba, ejercitada en vez de afirmada.
+test('SCRUM-683 · 🔴 `cantidadesRetiradas` puede traer UNA sola: por eso el aviso es SINGULAR', () => {
+  // La medición que decidió la concordancia, ejercitada en vez de afirmada. Si dejara de poder
+  // darse el caso de UNA sola, el singular habría que volver a preguntarlo.
   const una = sanearDictadoDelParte(
     [{ bloque: 'materiales', descripcion: 'Disco duro', unds: 1 }],
     'Sustituir el disco duro',
   );
   assert.equal(una.cantidadesRetiradas.length, 1,
-    '🔴 si ya no se puede dar el caso de UNA sola, la objeción de concordancia caduca y hay que ' +
-    'volver a preguntar al fundador en vez de dejar el texto parado para siempre.');
+    '🔴 si ya no se puede dar el caso de UNA sola, el singular aprobado deja de estar respaldado ' +
+    'por el dato y hay que volver a preguntar al fundador, no cambiarlo por cuenta propia.');
   assert.equal(una.cantidadesRetiradas[0].descripcion, 'Disco duro',
     'cada entrada nombra SU línea: el dato es por línea, no un resumen');
 });

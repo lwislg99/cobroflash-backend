@@ -493,3 +493,40 @@ es justo lo que el fundador dijo que no aprueba a ciegas.
 
 **No se elige un singular por él y no se aplica el plural «a ver qué pasa».** Queda aquí, aprobado y
 sin aplicar, hasta que decida — y hay un aserto que cae si alguien lo aplica sin esa decisión.
+
+---
+
+## Addendum · Parte dictado, la tercera (2-sep-2026) · **APLICADA, en SINGULAR**
+
+**Medido contra:** `origin/main` = `a5aef1b9bbd2570eccbde82b407c9d3675192c2d` · 2026-09-02T19:32:31+02:00
+
+Cierra la fila que el addendum anterior dejó como **APROBADA, NO APLICADA**. Aquella entrada no se
+reescribe —es un registro fechado y era cierto—: se cierra desde aquí.
+
+| Ranura | Fichero · línea | Texto aprobado | Estado |
+|---|---|---|---|
+| `cantidadesRetiradas` | `src/modules/jobs/domain/parteDictado.ts` · `AVISOS_DEL_DICTADO` | `Falta la cantidad — ponla tú` | ✅ **APLICADA** |
+
+**Va sin corchete de marcador y con la raya larga (`—`), un solo carácter.** Comparada con `===` en
+`tests/scrum683-parte-dictado.test.mjs`.
+
+### Por qué cambió de plural a singular: lo decidió el dato
+
+El fundador lo aprobó primero como **«Faltan las cantidades — ponlas tú»**, dando por hecho que era
+un **resumen**, y pidió expresamente parar si se pintaba **por línea**. Se midió antes de aplicarlo:
+
+* `cantidadesRetiradas` es un array con **una entrada por línea**, cada una con su `descripcion`.
+* **Puede traer exactamente una**, comprobado ejecutándolo:
+
+  ```
+  sanearDictadoDelParte([{descripcion:'Disco duro', unds:1}], 'Sustituir el disco duro')
+    → cantidadesRetiradas.length = 1   ·   [{"descripcion":"Disco duro","propuesta":1}]
+  ```
+
+Con una sola línea el plural no concordaba **ni como resumen**. Se paró y se dijo; el fundador
+aprobó el **singular por línea**. El aviso se pinta **una vez en cada línea** a la que le falta la
+cantidad.
+
+> ⚠️ **Un resumen sería un texto DISTINTO.** Si algún día hace falta además un «3 líneas sin
+> cantidad», se pide y se aprueba entonces: **no se deriva de éste poniéndolo en plural**. Hay un
+> aserto en el test que cae si el plural vuelve por su cuenta.

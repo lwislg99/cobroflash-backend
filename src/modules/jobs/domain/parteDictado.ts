@@ -93,20 +93,31 @@ export interface PropuestaDelDictado {
  *
  * 🔴 FALTA LA TERCERA, la de `cantidadesRetiradas`, y falta A PROPÓSITO: ver la nota de abajo.
  */
-export const AVISOS_DEL_DICTADO: Record<'dictado_vacio' | 'sin_lineas_reconocidas', string> = {
+export const AVISOS_DEL_DICTADO: Record<
+  'dictado_vacio' | 'sin_lineas_reconocidas' | 'cantidadesRetiradas',
+  string
+> = {
   dictado_vacio: 'No se ha entendido el dictado — vuelve a dictar o escríbelo a mano',
   sin_lineas_reconocidas: 'No se ha podido sacar ninguna línea — escríbelas tú',
+  // 🔴 SINGULAR y POR LÍNEA. Aprobado así el 2-sep-2026 DESPUÉS de medir que
+  // `cantidadesRetiradas` trae una entrada por línea y puede traer exactamente una: el plural no
+  // concordaba ni como resumen. Se pinta UNA VEZ EN CADA LÍNEA a la que le falta la cantidad.
+  //
+  // ⚠️ Si algún día hace falta ADEMÁS un resumen («3 líneas sin cantidad»), ése es un texto
+  // DISTINTO y lo aprueba el fundador entonces. No se deriva de éste poniéndolo en plural.
+  cantidadesRetiradas: 'Falta la cantidad — ponla tú',
 };
 
-// 🔴 `cantidadesRetiradas` NO TIENE TEXTO APLICADO, y no es un olvido.
+// ⚠️ EL TERCERO LLEGÓ EN SINGULAR, Y LA MEDICIÓN ES LA QUE LO DECIDIÓ. Se deja escrito porque el
+// camino importa más que el resultado: el fundador lo aprobó primero en PLURAL —«Faltan las
+// cantidades»— dando por hecho que era un resumen, y pidió parar si se pintaba por línea.
 //
-// El fundador aprobó «Faltan las cantidades — ponlas tú» en PLURAL, dando por hecho que el aviso es
-// un resumen, y pidió parar si se pinta por línea. Medido: `cantidadesRetiradas` es un array con
-// UNA ENTRADA POR LÍNEA, cada una con su `descripcion`, y **puede traer exactamente una**
-// (comprobado ejecutándolo). Con una sola línea, el plural no concuerda ni siquiera como resumen.
+// Medido antes de aplicarlo: `cantidadesRetiradas` es un array con UNA ENTRADA POR LÍNEA, cada una
+// con su `descripcion`, y **puede traer exactamente una** (comprobado ejecutándolo, no razonándolo).
+// Con una sola línea el plural no concordaba ni como resumen. Se paró, se dijo, y él lo cambió.
 //
-// No se elige por él ni se inventa un singular: la concordancia es suya, no del que cablea. Queda
-// declarado en `docs/MICROCOPY_APROBADA_SIN_APLICAR.md` como aprobado y NO aplicado, con el motivo.
+// La lección para quien venga: **el dato manda el texto**, y una concordancia no se elige por el
+// fundador desde el sitio que cablea.
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // ① ¿EL TEXTO DICE ESA CANTIDAD?
