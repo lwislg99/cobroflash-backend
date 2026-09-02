@@ -10,7 +10,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const {
-  cantidadRespaldadaPorElTexto, sanearDictadoDelParte, aLineaDelParte, PROMPT_PARTE_PROPUESTO,
+  cantidadRespaldadaPorElTexto, sanearDictadoDelParte, aLineaDelParte, PROMPT_PARTE_APROBADO,
+  AVISOS_DEL_DICTADO,
 } = await import('../dist/modules/jobs/domain/parteDictado.js');
 
 // El motor de presupuestos, para el contraste. Si ÉSTE aprobara lo mismo, no habría ticket.
@@ -227,10 +228,48 @@ test('SCRUM-683 · 🔴 el prompt no es el mecanismo: sin él, la protección si
   assert.ok([...p.mano_obra, ...p.materiales].every((l) => !('unds' in l)),
     '🔴 la protección dependía del prompt: si el modelo lo ignora, entran cantidades inventadas');
 
-  // Y el prompt, que es texto PROPUESTO y NO aprobado, pide lo coherente con el mecanismo:
-  // que se calle la cantidad en vez de rellenarla, y que no devuelva importes.
-  assert.match(PROMPT_PARTE_PROPUESTO, /NUNCA pongas 1 por defecto/);
-  assert.match(PROMPT_PARTE_PROPUESTO, /NO devuelvas precios ni IVA/);
+  // Y el prompt, APROBADO, pide lo coherente con el mecanismo: que se calle la cantidad en vez de
+  // rellenarla, y que no devuelva importes.
+  assert.match(PROMPT_PARTE_APROBADO, /NUNCA pongas 1 por defecto/);
+  assert.match(PROMPT_PARTE_APROBADO, /NO devuelvas precios ni IVA/);
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// MICROCOPY APROBADA (regla 30) — literal, y sin que pueda derivar
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-683 · los dos avisos aprobados son LITERALES, con su raya larga', () => {
+  // Aprobados por el fundador el 2-sep-2026. Se comparan con `===` y carácter a carácter: un
+  // retoque «de paso» reabre una aprobación sin que nadie se entere.
+  assert.equal(AVISOS_DEL_DICTADO.dictado_vacio,
+    'No se ha entendido el dictado — vuelve a dictar o escríbelo a mano');
+  assert.equal(AVISOS_DEL_DICTADO.sin_lineas_reconocidas,
+    'No se ha podido sacar ninguna línea — escríbelas tú');
+
+  // La raya es `—` (U+2014), UN carácter, como el aviso ya aprobado de `voiceInput.js`.
+  for (const t of Object.values(AVISOS_DEL_DICTADO)) {
+    assert.ok(t.includes('—'), `🔴 «${t}» no lleva la raya larga de un solo carácter`);
+    assert.ok(!t.includes('--') && !t.includes('['), `🔴 «${t}» lleva guiones dobles o corchete de marcador`);
+  }
+
+  // 🔴 Y la tercera NO está, a propósito: su plural espera una decisión de concordancia del
+  // fundador. Si algún día aparece sin que él la apruebe, este aserto es el que lo dice.
+  assert.equal(AVISOS_DEL_DICTADO.cantidadesRetiradas, undefined,
+    '🔴 se ha aplicado el aviso de `cantidadesRetiradas` sin resolver la concordancia: el array ' +
+    'trae UNA entrada por línea y puede traer exactamente una, y ahí el plural no concuerda.');
+});
+
+test('SCRUM-683 · 🔴 `cantidadesRetiradas` puede traer UNA sola: por eso el plural está parado', () => {
+  // Es la medición que sostiene el párrafo de arriba, ejercitada en vez de afirmada.
+  const una = sanearDictadoDelParte(
+    [{ bloque: 'materiales', descripcion: 'Disco duro', unds: 1 }],
+    'Sustituir el disco duro',
+  );
+  assert.equal(una.cantidadesRetiradas.length, 1,
+    '🔴 si ya no se puede dar el caso de UNA sola, la objeción de concordancia caduca y hay que ' +
+    'volver a preguntar al fundador en vez de dejar el texto parado para siempre.');
+  assert.equal(una.cantidadesRetiradas[0].descripcion, 'Disco duro',
+    'cada entrada nombra SU línea: el dato es por línea, no un resumen');
 });
 
 test('SCRUM-683 · ⛔ este módulo no toca importes en ninguna dirección', () => {

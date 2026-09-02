@@ -75,9 +75,38 @@ export interface PropuestaDelDictado {
   cantidadesRetiradas: CantidadRetirada[];
   /** Sin ni una línea. El parte se queda EN BLANCO y quien pinte esto tiene que DECIRLO. */
   vacia: boolean;
-  /** Código, no texto de pantalla: la frase visible la aprueba el fundador (regla 30). */
+  /** Código, no texto de pantalla. La frase visible, APROBADA, está en `AVISOS_DEL_DICTADO`. */
   motivo: 'dictado_vacio' | 'sin_lineas_reconocidas' | null;
 }
+
+/**
+ * ✅ MICROCOPY APROBADA por el fundador el 2-sep-2026 (regla 30). LITERAL: raya larga `—` de un
+ * solo carácter, sin corchete de marcador.
+ *
+ * Está aquí, junto al código que la produce, para que la pantalla la COPIE de un sitio en vez de
+ * volver a escribirla. Un texto aprobado que se reteclea en cada pantalla deja de ser el aprobado
+ * sin que nadie lo decida — es el defecto que persigue `docs/MICROCOPY_APROBADA_SIN_APLICAR.md`.
+ *
+ * ⚠️ Las dos suenan parecidas y NO lo son, y por eso terminan en acciones distintas: en la primera
+ * el dictado no se entendió y **volver a dictar puede funcionar**; en la segunda se entendió y aun
+ * así no salió ninguna línea, así que repetir no arregla nada y la salida es escribirlas.
+ *
+ * 🔴 FALTA LA TERCERA, la de `cantidadesRetiradas`, y falta A PROPÓSITO: ver la nota de abajo.
+ */
+export const AVISOS_DEL_DICTADO: Record<'dictado_vacio' | 'sin_lineas_reconocidas', string> = {
+  dictado_vacio: 'No se ha entendido el dictado — vuelve a dictar o escríbelo a mano',
+  sin_lineas_reconocidas: 'No se ha podido sacar ninguna línea — escríbelas tú',
+};
+
+// 🔴 `cantidadesRetiradas` NO TIENE TEXTO APLICADO, y no es un olvido.
+//
+// El fundador aprobó «Faltan las cantidades — ponlas tú» en PLURAL, dando por hecho que el aviso es
+// un resumen, y pidió parar si se pinta por línea. Medido: `cantidadesRetiradas` es un array con
+// UNA ENTRADA POR LÍNEA, cada una con su `descripcion`, y **puede traer exactamente una**
+// (comprobado ejecutándolo). Con una sola línea, el plural no concuerda ni siquiera como resumen.
+//
+// No se elige por él ni se inventa un singular: la concordancia es suya, no del que cablea. Queda
+// declarado en `docs/MICROCOPY_APROBADA_SIN_APLICAR.md` como aprobado y NO aplicado, con el motivo.
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // ① ¿EL TEXTO DICE ESA CANTIDAD?
@@ -243,13 +272,33 @@ export function aLineaDelParte(
 // ─────────────────────────────────────────────────────────────────────────────────────────
 
 /**
- * ⚠️ TEXTO PROPUESTO, NO APROBADO. Se deja aquí para que se pueda leer y corregir de una pieza.
+ * ✅ APROBADO por el fundador el 2-sep-2026 (regla 30), con la línea de «no completes marcas».
  *
  * 🔴 Y nada del mecanismo depende de estas palabras: si este prompt desapareciera o el modelo lo
  * ignorase, `sanearDictadoDelParte` seguiría retirando toda cantidad que el dictado no respalde.
  * Por eso se pide «null» y no «1»: es coherente con el mecanismo, no su sustituto.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 LAS DOS MITADES NO ESTÁN PROTEGIDAS IGUAL, Y HAY QUE SABERLO ANTES DE LEER ESTE PROMPT
+ *
+ * Este texto prohíbe inventar trabajos y prohíbe inventar cantidades. Lo que NO prohibía —y por eso
+ * se le añade una línea— es **COMPLETAR**: el técnico dice «dos cámaras» y el modelo devuelve «dos
+ * cámaras minidomo Uniview», porque en un dictado de obra esas marcas aparecen. No es inventar de
+ * cero, es **ENRIQUECER**, y acaba igual en una factura a un instituto público.
+ *
+ *     LA CANTIDAD    está protegida por MECANISMO: tiene que aparecer en el texto dictado
+ *                    (`cantidadRespaldadaPorElTexto`), y da igual lo que devuelva el modelo.
+ *
+ *     LA DESCRIPCIÓN NO puede estarlo, y no es un descuido: **reformular es justo lo que se le
+ *                    pide al modelo**. Un mecanismo que exigiera que cada palabra apareciera en el
+ *                    dictado prohibiría lo que el modelo viene a hacer. Lo que la protege es que
+ *                    **EL TÉCNICO CONFIRMA**, y nada más.
+ *
+ * ⚠️ Por eso la línea nueva de aquí abajo **es un consejo, no un mecanismo**. Una regla escrita
+ * dentro de un prompt se cumple mientras el modelo quiera: no la lea nadie como una garantía.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
  */
-export const PROMPT_PARTE_PROPUESTO = `Eres un asistente para técnicos de instalaciones y \
+export const PROMPT_PARTE_APROBADO = `Eres un asistente para técnicos de instalaciones y \
 mantenimiento en España. Recibes lo que el técnico ha DICTADO en obra con el teclado de su móvil.
 
 Tu tarea: ordenar ese texto en las líneas de un PARTE DE TRABAJO, en DOS bloques separados.
@@ -260,6 +309,7 @@ Reglas:
 - descripcion: lo que se hizo o se puso, específico y en su orden.
 - unds: SOLO si el técnico la dice. Si no la dice, devuelve null. NUNCA pongas 1 por defecto.
 - NUNCA añadas trabajos que no se hayan mencionado.
+- NUNCA completes marcas, modelos ni referencias que el técnico no haya dicho. Si dijo «cámara», es «cámara».
 - NO devuelvas precios ni IVA. El técnico no los conoce y no le corresponden.
 
 El texto viene de voz: puede llegar sin puntuación, con muletillas (eh, mira, apúntame, o sea) y
