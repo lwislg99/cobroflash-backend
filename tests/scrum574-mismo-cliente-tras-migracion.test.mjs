@@ -36,6 +36,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs';
+// SCRUM-694: el scanner de TypeScript, no un filtro por lineas.
+import { soloCodigo } from './_solo-codigo.mjs';
 
 // Los campos que un cliente tiene ANTES de la migración. Escritos a mano y NO derivados del
 // modelo de Prisma a propósito: si se derivaran, la columna nueva entraría sola en la lista y el
@@ -210,10 +212,9 @@ test('SCRUM-574 · el control NO usa includes() para comparar textos', () => {
   // descartan las líneas de comentario antes de contar. Un guard de texto que se caza a sí mismo
   // en el comentario que explica la prohibición es el error clásico (cerebro-yaqu).
   const fuente = readFileSync(new URL(import.meta.url), 'utf8');
-  const codigo = fuente
-    .split(/\r?\n/)
-    .filter((l) => !l.trimStart().startsWith('//'))
-    .join('\n');
+  // SCRUM-694 · antes sólo se quitaban las líneas `//`, así que un bloque `/* */` que citara
+  // `.includes(` para explicar por qué está prohibido habría hecho saltar este guard.
+  const codigo = soloCodigo(fuente);
   const usos = (codigo.match(/\.includes\s*\(/g) || []).length;
   assert.equal(usos, 0, `🔴 hay ${usos} uso(s) de includes() en el comparador: el encargo los prohíbe`);
 });
