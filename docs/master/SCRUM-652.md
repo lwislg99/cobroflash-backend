@@ -391,3 +391,143 @@ el array, conserva el orden del papel y **no obliga a un modelo de líneas apart
   La ranura se sella como array para que el día que exista no haya que estrenar versión de
   contenido. **Que la ranura exista no significa que esté cableada.**
 * Ni firma, ni cola, ni almacén, ni precache: **ya estaban** (fase A) y no se han tocado.
+
+---
+
+# Fase C · El parte de trabajo YA TIENE LLAMADOR
+
+**Medido contra:** `origin/main` = `795e9c289e7028c33f37df258b3a7611a5a29e02` · 2026-09-02T18:40:00+02:00
+**Rama:** `scrum-652-parte-superficie`
+**Commit previo a inyectar rojos:** `5baa5634d9f1b8188a4444dc9c2c9a6e14e35e3a`
+
+## PASO 0
+
+```
+git ls-tree -r --name-only origin/main | grep -iE 'scrum-?652|parteTrabajo|partes_trabajo'
+  docs/master/SCRUM-652.md
+  src/modules/jobs/domain/parteTrabajo.ts
+  tests/scrum652-parte-trabajo.test.mjs
+
+git ls-remote --heads origin | grep -iE 'scrum-?652'
+  fb21d558a44c3d81944ad21e84a5e118a1ef62d2  refs/heads/scrum-652-reconocimiento
+```
+
+Esa rama viva **no tenía ni un commit fuera de `main`**: ya estaba mergeada entera. Nada que
+rescatar y nada que duplicar.
+
+## Verificación del contexto medido (no se remidió, se comprobó)
+
+`parteTrabajo.ts` **310 líneas** ✔ · **12 tests** ✔ · `lineasCanonicasParte` en **:130** ✔ ·
+el canónico del albarán mete `precioUnitario` y `tipoIva` ✔ · `albaranDetailView.js:546` ✔ ·
+`app.js:492` ✔ · las seis opciones de firmante en `albaranFirmante.ts:109-116`, «portero o
+conserje» incluida ✔.
+
+**Dos coordenadas NO cuadraron, y gana el árbol:**
+
+* `schema.prisma:1002-1003` **no** son `firmadoPorNombre`/`firmadoPorCalidad`: ahí hay un
+  comentario del albarán. Los campos están en **`:1025-1026`** (Albaran) y **`:1178-1179`**
+  (ParteTrabajo).
+* «Las 8 piezas precacheadas»: con el barrido de este ticket, en `origin/main` son **7**. Son 8
+  **después** de añadir el parte. El suelo del test se fijó en el número medido, no en el heredado.
+
+## Lo que decide el ticket: los importes no cruzan el cable
+
+En el parte real firmado la columna IMPORTE está **en blanco**. El técnico cierra en la obra sin
+precios; el jefe los pone en la oficina después. Así que el mecanismo **no es «no los pintes»**:
+
+* `serializeParteParaElTecnico` se escribe **entero, campo a campo** —no es la fila menos dos
+  claves—, así que el día que la tabla gane una columna de dinero **no sale sola**;
+* sus líneas salen de `lineasParaElTecnico`, que devuelve `{bloque, unds, descripcion}`;
+* **no hay modo oficina**: ningún parámetro lo desbloquea, y el PATCH del técnico ni siquiera
+  *lee* `precioUnitario` del cuerpo.
+
+Una pantalla que los recibe y decide no enseñarlos está a un `console.log` de enseñarlos.
+
+**Y los precios ya puestos no se pierden**: si el técnico corrige una línea que la oficina ya
+valoró, el PATCH conserva su precio. Sin eso, una corrección en la obra borraría la valoración del
+jefe en silencio.
+
+## No hay segunda cola
+
+Es la de SCRUM-358, con un cuarto argumento. La clave **ya llevaba el tipo dentro**
+(`firma:albaran:7`), así que generalizarla no migra nada y una firma encolada por una versión
+anterior sigue drenando a su albarán (default `'albaran'` en los tres puntos).
+
+🔴 **Hacía falta de verdad:** sin el tipo, el albarán 7 y el parte 7 acuñarían **la misma clave**, y
+como el `keyPath` del almacén sobrescribe por clave, encolar uno **haría desaparecer la firma del
+otro en silencio**.
+
+`parte_locked` se añade a `elServidorYaLaTiene` por el mismo motivo que `albaran_locked`: sin él,
+la firma de un parte reintentado no saldría de la cola jamás. Y un `tipo` desconocido **no cae al
+albarán «por si acaso»**: se queda en la cola y se dice cuál.
+
+## 🔴 El cuarto rojo encontró un hueco REAL en mis propios tests
+
+Los trece primeros llamaban a `firmarConRedDeSeguridad` **directamente, pasándole `'parte'` a
+mano**. Probaban la cola, no el cable. Se quitó el `'parte'` de `parteDetailView.js` —el olvido más
+fácil de cometer— y **los trece pasaron en verde** con la firma yendo al endpoint del albarán.
+
+> Un test que inyecta el valor que quiere comprobar no comprueba nada: comprueba su propio
+> argumento.
+
+Se añadieron dos que ejercitan **`firmarParte`, la función de la vista**, con dobles: uno mira con
+qué llama a la cola, otro que el resumen que ve el firmante no lleva dinero. Re-inyectado el mismo
+fallo, **ahora cae y lo nombra**.
+
+## Los cuatro rojos
+
+| Inyección | Resultado |
+|---|---|
+| la pantalla pinta un importe | **2 tests** caen: «está pintando dinero: el símbolo del euro» |
+| firmar congela los precios | cae y cita el motivo que devuelve el candado equivocado |
+| el canónico del parte sella precios (el del albarán) | cae con los dos hashes |
+| firmar el parte sin decir el tipo | **NO caía** → hueco tapado → ahora cae |
+
+El detector de dinero lleva **control positivo dentro**: se le da un importe puesto a mano y tiene
+que cazarlo. Sin eso, una regex rota daría el mismo verde.
+
+## Declaraciones actualizadas al hecho, ninguna relajada
+
+* **SCRUM-411 · 9 → 8.** El parte ya tiene consumidor, que es lo que su propia entrada pedía.
+  **Baja a 8 y no a 7**: cuando se escribió aquella nota el censo estaba en 8; después entró
+  `revision.ts` (SCRUM-655), que sigue esperando su gate. El número se **recuenta**, no se resta de
+  una foto vieja.
+* **SCRUM-362 · `tipo` entra en la lista de campos de la cola.** No es lo que ese test vigila —dice
+  de qué documento es la firma, se fija al encolar y no cambia—. La lista **no se relaja** a
+  «contiene al menos»: sigue exacta, y además se escribe **aparte** lo que de verdad protege
+  (ningún campo puede hablar de progreso de envío), para que siga vigilando aunque la lista se
+  amplíe otro día.
+* **SCRUM-55 · cinco rutas en `TECNICO_ALLOWED`,** con motivo: el parte **es** el trabajo de campo
+  del Operario. No abre puerta a dinero y no hay ruta de facturar (T8, regla 24).
+* **SCRUM-402 · `parteDetailView.js` entra con 1.** El 1 engañaría si no se dijera: es **una** marca
+  concatenada a **20 rótulos** — el caso de `libroRegistroView` (SCRUM-514). No significa «un
+  rótulo provisional», significa «esta pantalla entera está sin firmar».
+
+## Lo que NO se hizo, dicho para que no se suponga
+
+* **`prisma/schema.prisma` no se ha tocado.** Congelado por el db push.
+* **Una sola firma**, la que ya hay. Las dos firmas (cliente + técnico) necesitan columnas nuevas.
+* **No se facturó nada desde el parte** (T8, bloqueado por regla 24).
+* **`parteTrabajo.ts` y su sellador no se han reescrito.**
+* El papel lleva **Calle / Población / Teléfono / CIF** y esta pantalla **no los cablea**: viven en
+  la ficha del cliente, y traerlos es meter más datos personales en una pantalla nueva. Se decide,
+  no se arrastra de paso.
+
+## 📌 Limitación declarada: la numeración del parte
+
+`allocateAlbaranNumber` reserva contra **dos columnas de `Merchant`** dentro de la transacción del
+create. El parte **no puede** hacerlo hoy: no tiene columnas equivalentes y el schema está
+congelado. Así que `parteNumero.ts` deriva del **máximo ya emitido** dentro de la transacción, y hay
+que decir lo que eso **no** garantiza: `partes_trabajo` **no tiene índice único** sobre
+`(merchant_id, numero)` —medido—, así que dos creaciones simultáneas del mismo merchant pueden
+acuñar el mismo número y la base no lo rechazaría.
+
+**El arreglo de verdad es la columna, no más código:** `nextParteNumber` + `parteSeriesYear` en
+`Merchant`, propuesto para el segundo commit de schema junto a las dos firmas.
+
+## 📌 Hallazgo de otro carril (regla 9): un nombre colisiona
+
+`app.ts:510` y varias entradas de `adminRouteDeclarations.ts` llaman **«parte de trabajo» a los
+ALBARANES**, por herencia de cuando era lo único que había. Desde hoy hay un `ParteTrabajo` de
+verdad, con su tabla y sus rutas. **No se renombra aquí** —no es este carril— pero queda dicho, y
+anotado al lado de las líneas afectadas: son dos documentos distintos.

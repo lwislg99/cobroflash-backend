@@ -62,6 +62,7 @@ import legalPagesRouter from './modules/system/app/routes/legalPages.routes';
 import publicProfileRouter from './modules/system/app/routes/publicProfile.routes';
 import jobsRouter from './modules/jobs/app/routes/jobs.routes';
 import albaranesRouter from './modules/jobs/app/routes/albaranes.routes'; // SCRUM-14 (ALBARAN-1)
+import partesRouter from './modules/jobs/app/routes/partes.routes'; // SCRUM-652 (T3 fase C)
 import precargaAdminRouter from './modules/jobs/app/routes/precargaAdmin.routes'; // SCRUM-460 (H1 fase 3)
 import entornoAdminRouter from './modules/auth/app/routes/entornoAdmin.routes'; // SCRUM-360 (H5 fase 2)
 import soporteAdminRouter from './modules/system/app/routes/soporteAdmin.routes'; // SCRUM-406
@@ -508,6 +509,13 @@ mountAdmin(app, '/admin/expenses',   expensesRouter);
 mountAdmin(app, '/admin/bot',        botAdminRouter); // A8.3: handoffs pendientes del bot
 mountAdmin(app, '/admin/jobs',       jobsRouter);    // A13 (JOB-1): trabajos
 mountAdmin(app, '/admin/albaranes',  albaranesRouter); // SCRUM-14 (ALBARAN-1): partes de trabajo NO fiscales
+// SCRUM-652 (T3 fase C) · EL PARTE DE TRABAJO, que hasta hoy no tenia llamador.
+// OJO con el comentario de la linea de arriba: llama «partes de trabajo» a los ALBARANES, y desde
+// hoy eso es ambiguo porque existe un ParteTrabajo de verdad. No se toca aqui (no es de este
+// carril), pero queda dicho: son DOS documentos distintos con dos tablas distintas.
+// Sin parser propio de 8mb a proposito: el parte NO lleva fotos. Solo la firma, y su tope
+// (1.400.000 caracteres) cabe de sobra en el limite global de 2mb.
+mountAdmin(app, '/admin/partes',     partesRouter);
 mountAdmin(app, '/admin/precarga',   precargaAdminRouter); // SCRUM-460 (H1 fase 3): qué bajar para firmar sin red
 mountAdmin(app, '/admin/entorno',    entornoAdminRouter); // SCRUM-360 (H5 fase 2): el último entorno visto
 mountAdmin(app, '/admin/soporte',    soporteAdminRouter); // SCRUM-406: el otro extremo de «Escríbenos»

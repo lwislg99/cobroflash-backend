@@ -259,13 +259,32 @@ test('SCRUM-362 · 🔴 ④ y NADA quedó tratado como enviado', async () => {
     '🔴 el texto que ve el profesional no nombra la firma que sigue pendiente.');
 
   // Y la entrada no lleva ninguna marca de enviada que alguien pudiera haber dejado a medias.
+  //
+  // ⚠️ SCRUM-652 (T3 fase C) · `tipo` SE AÑADE A LA LISTA, Y SE EXPLICA POR QUÉ NO ES LO QUE
+  // este test vigila. `tipo` dice DE QUÉ DOCUMENTO es la firma ('albaran' | 'parte'): se fija al
+  // encolar, no cambia nunca, y no afirma nada sobre si la firma llegó. Lo que este test prohíbe
+  // es una marca de PROGRESO —un `enviada`, un `intentos`, un `subiendo`—, porque un valor así
+  // que sobreviva a la muerte del proceso deja una firma en un estado que nadie puede resolver.
+  //
+  // La lista NO se relaja a «contiene al menos»: sigue siendo exacta, porque su fuerza es que
+  // CUALQUIER campo nuevo caiga aquí y haya que justificarlo, como se está justificando éste.
   const cola = await b2.ctx.leerFirmasPendientes();
   const claves = Object.keys(cola.firmas[0]).sort();
   assert.deepEqual(claves, ['albaranId', 'claveIdempotencia', 'encoladaEn', 'firmadoPorCalidad',
-    'firmadoPorNombre', 'signatureData'],
+    'firmadoPorNombre', 'signatureData', 'tipo'],
     `🔴 la entrada de la cola tiene campos que no puso \`encolarFirma\`: ${claves.join(', ')}. Si `
     + 'alguien ha añadido una marca de estado, este test tiene que enterarse: una firma «medio '
     + 'enviada» que sobrevive a la muerte del proceso es exactamente el estado que no puede existir.');
+
+  // 🔴 Y LO QUE DE VERDAD PROTEGE, ahora escrito como tal: ningún campo de la entrada puede
+  // hablar de progreso de envío. Antes esto vivía sólo en la lista de nombres; escribirlo aparte
+  // hace que siga vigilando aunque algún día la lista se ample por otro motivo legítimo.
+  const deEstado = claves.filter((k) => /enviad|subid|subiendo|intentos|reintent|estado|pendiente/i.test(k));
+  assert.deepEqual(deEstado, [],
+    `🔴 la entrada de la cola lleva un campo que habla del ENVÍO: ${deEstado.join(', ')}. En este `
+    + 'diseño la marca de enviada es SALIR de la cola, y sólo con confirmación del servidor. Un '
+    + 'campo de progreso que sobreviva a la muerte del proceso deja la firma en un limbo que nadie '
+    + 'puede resolver: ni está subida ni se va a reintentar.');
 });
 
 // ═══ CONTROL NEGATIVO ═════════════════════════════════════════════════════════════════════
