@@ -182,7 +182,10 @@ test('SCRUM-581 · ✅ el vacío de pestaña son sus DOS líneas aprobadas', () 
 });
 
 test('SCRUM-581 · 🔴 NO queda ninguna ranura sin aprobar — y el número sigue existiendo', () => {
-  assert.equal(FC.SIN_APROBAR, 0,
+  // 🔴 SUBE A 4 CON SCRUM-580 (CONT-07), y es el contador haciendo su trabajo: las SEIS de
+  // este ticket las firmo el FUNDADOR, y las CUATRO de las etiquetas las aprobo el ASESOR,
+  // provisionales a la espera de el. Este numero existia valiendo 0 exactamente para esto.
+  assert.equal(FC.SIN_APROBAR, 4,
     '🔴 hay ranuras de microcopy sin firmar. Si se ha añadido una pestaña o un orden nuevo, su '
     + 'texto NO está aprobado y tiene que contarse aquí antes de pintarse.');
 

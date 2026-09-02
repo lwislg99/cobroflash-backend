@@ -258,11 +258,40 @@ test('SCRUM-579 · ③ el país es ISO de dos letras, no un nombre traducido', (
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // ESLABONES ④ y ⑤ · SE GUARDA Y SE RELEE — el que más fácil se pierde
 // ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-580 (2-sep-2026) · ESTE GUARD PIDIÓ QUE SE MIDIERA LA CADENA, Y SE MIDIÓ.
+//
+// Decía literalmente: «hay que volver a medir la cadena, porque un filtro por el medio se comería
+// la dirección sin que nadie lo viera». CONT-07 metió un segundo normalizador
+// (`normalizarEtiquetas`) y el guard cayó — hizo exactamente su trabajo.
+//
+// Lo que se midió: **ninguno de los dos filtra**. Los dos devuelven `{ ...data, campo }`, así que
+// la propiedad que este guard protege sigue en pie.
+//
+// ⚠️ Y NO SE RELAJA: se cambia una cadena LITERAL por la PROPIEDAD que de verdad importa, que es
+// más fuerte. Antes vigilaba una llamada exacta —y habría dado verde a un `normalizarIdentificadores`
+// reescrito para filtrar, mientras cae con un normalizador nuevo que NO filtra: las dos respuestas
+// al revés—. Ahora vigila que el alta ESPARZA los datos validados y que **ningún** eslabón de la
+// cadena escoja campos a mano. Eso vale con o sin CONT-07 delante.
 test('SCRUM-579 · ④ lo validado es lo que se ESCRIBE (el alta no filtra por su cuenta)', () => {
   const src = leer(SERVICIO);
-  assert.match(src, /data: \{ \.\.\.normalizarIdentificadores\(data\), merchantId, portalToken: generatePortalToken\(\) \}/,
-    '🔴 el alta ya no escribe los datos validados tal cual: hay que volver a medir la cadena, '
-    + 'porque un filtro por el medio se comería la dirección sin que nadie lo viera.');
+
+  // ① El alta escribe un SPREAD de la cadena de normalizadores, no un objeto escogido a mano.
+  const alta = src.slice(src.indexOf('export async function createCustomer'), src.indexOf('export async function ensurePortalToken'));
+  assert.ok(alta.length > 50, '🔴 CIEGO: no encuentro el alta; lo de abajo no probaría nada.');
+  assert.match(alta, /data: \{ \.\.\.normalizar[A-Za-z]*\([\s\S]*?\bdata\)[\s\S]*?, merchantId, portalToken: generatePortalToken\(\) \}/,
+    '🔴 el alta ya no escribe los datos validados tal cual: un filtro por el medio se comería la '
+    + 'dirección —o las etiquetas— sin que nadie lo viera.');
+
+  // ② Y NINGÚN eslabón de la cadena filtra: todos devuelven `{ ...data, … }`.
+  const normalizadores = [...src.matchAll(/function (normalizar[A-Za-z]*)<[^>]*>\([^)]*\)[^{]*\{([\s\S]*?)\n\}/g)];
+  // SUELO: si el detector no encuentra normalizadores, «ninguno filtra» sería «no supe mirar».
+  assert.ok(normalizadores.length >= 1,
+    `🔴 ESCÁNER CIEGO: veo ${normalizadores.length} normalizadores en la cadena del alta.`);
+  for (const m of normalizadores) {
+    assert.match(m[2], /\.\.\.data/,
+      `🔴 \`${m[1]}\` NO esparce \`...data\`: está escogiendo campos a mano, y lo que no escoja se `
+      + 'pierde en silencio entre lo validado y lo que se guarda.');
+  }
 });
 
 test('SCRUM-579 · 🔴 ⑤ EL ESLABÓN MUDO: las cinco están en `CUSTOMER_SELECT_NO_TOKEN`', () => {
