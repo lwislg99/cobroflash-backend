@@ -343,3 +343,50 @@ jobs:
       # `node:child_process` y `fetch`. Instalar aquí sería tiempo y superficie de balde.
       - name: ¿Está producción corriendo lo que hay en main?
         run: node scripts/vigilante-de-despliegue.mjs
+
+  # ═══════════════════════════════════════════════════════════════════════════════════════════
+  # 🔴 SCRUM-687 · LA CONSTANCIA DEL `ALTER` · INFORMATIVO, NUNCA BLOQUEANTE
+  #
+  # La otra mitad del incidente de los nueve días. El vigía de arriba mira que producción no se
+  # quede por detrás de `main`; éste mira lo que lo CAUSÓ: el `ALTER` que nadie aplicó. Tres veces
+  # se mergeó el esquema (paso ③) sin haberlo aplicado (paso ②), `schemaDrift` se negó a arrancar
+  # —correctamente— y el healthcheck fallido dejó vivo el despliegue anterior. Síntoma: «no cambia
+  # nada».
+  #
+  # ── POR QUÉ `continue-on-error`, y es la misma decisión que en el vigía ───────────────────
+  # Si está en rojo, el arreglo llega **aplicando el ALTER y luego mergeando**. Un check bloqueante
+  # le cerraría la puerta justo al que viene a arreglarlo. Que informe, que se lea, que NO vete.
+  #
+  # ── EL SECRETO ────────────────────────────────────────────────────────────────────────────
+  # `SCHEMA_CHECK_SECRET` es PROPIO de este endpoint. NO se reutiliza el interno: ése abre
+  # `/charges` e `/invoice`, y un secreto que pasa por los logs de un runner no puede ser el que
+  # abre los cobros. Si no está puesto en el repositorio, el script sale con 2 diciendo «no pude
+  # preguntar» — que NO es verde, y es lo correcto: no se ha comprobado nada.
+  # ═══════════════════════════════════════════════════════════════════════════════════════════
+  constancia-del-alter:
+    name: constancia del ALTER (informativo)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # ⚠️ NO se toca: en cuanto esto sea bloqueante, deja de poder arreglarse el problema que mide.
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - run: npm ci
+
+      # El conjunto esperado sale del DMMF del cliente, o sea de lo que el código VA A NOMBRAR.
+      # No de `deriva-prod.sql` ni de ningún fichero del repo: ésos se generan desde el mismo
+      # esquema, así que preguntarles si el ALTER está aplicado es consultar el valor que el
+      # defecto falsifica.
+      - name: Generar cliente de Prisma
+        run: npx prisma generate
+
+      - name: ¿Tiene producción las columnas que este código va a nombrar?
+        env:
+          SCHEMA_CHECK_SECRET: ${{ secrets.SCHEMA_CHECK_SECRET }}
+        run: node scripts/constancia-del-alter.mjs
