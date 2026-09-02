@@ -281,6 +281,20 @@ const CENSO = Object.freeze({
   // dirían exactamente lo mismo y el profesional no sabría cuál está eligiendo. Es la distinción
   // que `censo-marcadores.mjs` ya hace entre el rótulo que pinta A CIEGAS y el que al menos se
   // puede leer y juzgar.
+  // SCRUM-609 (2-sep-2026) · SUBIDA A CONCIENCIA: entra `switchTipoArticulo.js`, el switch
+  // Producto|Servicio del catálogo (CAT-01). Es el ESPEJO de `switchFormaJuridica` (CONT-01) y
+  // entra con 1 por el mismo motivo que aquél: ni la pregunta que encabeza el control ni las dos
+  // etiquetas están aprobadas, y son del fundador (regla 30).
+  //
+  // VA CON PALABRA DE TRABAJO detrás («Esto es» · «Producto» · «Servicio»), no solo: en un
+  // control de DOS LADOS un marcador pelado sería inservible, porque los dos lados dirían lo
+  // mismo y el profesional no sabría qué está eligiendo.
+  //
+  // 🔴 CUENTA 1 Y PINTA 3, y la distinción no es cosmética — es la misma que se midió en
+  // SCRUM-615: este censo cuenta MARCAS, y las tres superficies salen de una sola constante
+  // `MARCADOR`. Aprobar UNO de los tres textos NO apaga los otros dos: habrá que partir la
+  // constante el día que el fundador escriba el primero. Decir «se apagan de golpe» sería falso.
+  'switchTipoArticulo.js': 1,
   'switchFormaJuridica.js': 1,
   // SCRUM-581 (1-sep-2026) · SUBIDA A CONCIENCIA, autorizada por el asesor: las pestañas
   // Todos|Empresas|Personas y el desplegable de orden de la lista de clientes. El criterio de la

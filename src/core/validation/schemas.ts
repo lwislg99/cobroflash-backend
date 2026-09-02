@@ -233,6 +233,19 @@ export type MerchantProfileUpdateInput = z.infer<
 
 // ------- CUSTOMERS (NUEVO) -------
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-609 (CAT-01) · EL LADO DEL CATÁLOGO: producto o servicio.
+//
+// Mismo patrón y misma forma que `contactKind` (CONT-01), que es lo que ya está mergeado:
+// mayúsculas, sin acentos, y `nullable().optional()` para dar los tres casos sin inventar
+// ninguno — ausente = no se toca · null = no declarado · declarado por el profesional.
+//
+// 🔴 NO es una etiqueta que se guarda: DECIDE QUÉ CAMPOS ENSEÑA la ficha. Un servicio no
+// tiene coste, ni margen, ni proveedor.
+export const ITEM_KIND = ['PRODUCTO', 'SERVICIO'] as const;
+export const itemKindSchema = z.enum(ITEM_KIND).nullable().optional();
+export type ItemKind = (typeof ITEM_KIND)[number];
+
 export const customerCreateSchema = z.object({
   name: z.string().min(1),
   phone: z.string().min(5).optional(),
