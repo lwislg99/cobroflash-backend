@@ -544,6 +544,18 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'jobDetailView.js',
   'jobDocsReparto.js',
   'jobNextAction.js',
+  // SCRUM-651 (2-sep-2026): entra `jobNuevoModal.js`, el modal para abrir un Trabajo SIN
+  // presupuesto —una averia, el caso mas frecuente del primer cliente real—. Va ANTES de
+  // `jobsView.js`, que lo consume, y despues de `modalHeader.js`, del que usa `cabeceraModal`.
+  //
+  // 🔴 ESTA RAMA TRAIA UN NUMERO (`= 67`) Y NO SE HA CONSERVADO NADA DE EL. El conflicto se
+  // resolvio quedandose con el mecanismo de main: SCRUM-662 mato el contador y puso esta lista,
+  // porque una cuenta no distingue «tu script» de «mi script» y colisiono siete veces. Traer de
+  // vuelta el numero —o su historial, que main retira a proposito— habria deshecho ese ticket.
+  //
+  // La entrada se DERIVO del `index.html` ya mezclado, no se heredo de ningun lado: son 71
+  // `<script src=`, la lista de main tenia 70, y la diferencia era exactamente este fichero.
+  'jobNuevoModal.js',
   'jobRailBlocks.js',
   'jobsCierreTrabajo.js',
   'jobsView.js',

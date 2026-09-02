@@ -52,6 +52,14 @@ const MARCA = '[PENDIENTE';
  * a otra tiene que verse, y un total lo escondería (la lección del suelo por FUNCIÓN de SCRUM-392).
  */
 const CENSO = Object.freeze({
+  // SCRUM-651 (T2) · ENTRA A CONCIENCIA con 1, y el motivo es que EL MECANISMO NO EXISTE SIN
+  // TEXTO: es el modal para abrir un Trabajo SIN presupuesto —una averia, el caso mas frecuente
+  // del primer cliente real—, y un formulario sin rotulos no se puede rellenar.
+  //
+  // Se cuenta 1 y son OCHO textos: los ocho salen de una sola constante `MARCA_651`, asi que
+  // aprobar el copy los apaga de golpe (mismo patron que SCRUM-421 dejo escrito aqui). El dia
+  // que el fundador los firme, esta entrada se BORRA — no se pone a 0.
+  'jobNuevoModal.js': 1,
   // SCRUM-507 (13-ago-2026): `aiQuoteAssistant.js` ENTRO y SALIO del censo el mismo dia. Entro con
   // 2 —el aviso de la linea que no se propone porque su IVA era ilegible, y la marca por linea de
   // lo que la IA se invento— y el fundador FIRMO los dos textos en el mismo ticket.

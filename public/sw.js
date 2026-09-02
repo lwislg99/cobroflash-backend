@@ -74,6 +74,7 @@ const SHELL = [
   '/dashboard/js/teamView.js',
   '/dashboard/js/jobsCierreTrabajo.js', // SCRUM-344
   '/dashboard/js/terminadoSinCobrar.js',
+  '/dashboard/js/jobNuevoModal.js',
   '/dashboard/js/jobsView.js',
   '/dashboard/js/signaturePad.js',
   '/dashboard/js/jobDetailView.js',

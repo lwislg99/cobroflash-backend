@@ -51,6 +51,11 @@ export type AuditAction =
   // SCRUM-66 (TRABAJO-4): el pro fija el tipo de operación del Trabajo (varias sueltas vs
   // trabajo único) → traza de que la decisión es del usuario/su asesor (caveat fiscal).
   | 'tipo_operacion_elegido'
+  // SCRUM-651 (T2, aprobado 2-sep-2026): un Trabajo abierto SIN presupuesto. El camino del
+  // presupuesto deja traza por otra via (`operario_asignado` al congelar la autoria); el
+  // directo no dejaba ninguna, y **un registro de auditoria con un agujero es peor que no
+  // tenerlo**, porque quien lo lee lo cree completo.
+  | 'trabajo_creado'
   // SCRUM-25 (S2/S4): el merchant se descarga sus datos (CSV o paquete completo).
   // Queda traza de QUÉ fichero y con qué rango: es material que sale de la plataforma
   // con datos personales de los clientes finales.

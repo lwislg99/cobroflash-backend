@@ -640,10 +640,24 @@ async function renderJobDetailView(container, jobId) {
     // «Parcial» era una afirmación FALSA que además no se podía deshacer nunca (la pestaña
     // «Pagado» no lo enseñaba jamás, así que el pro perseguía un pago que ya tenía).
     (job.estadoCobro ? `<span class="status-pill ${cobroCls}">${esc(job.estadoCobro)}</span>` : '');
-  const totBlock = document.createElement('div');
-  totBlock.style.textAlign = 'right';
-  totBlock.innerHTML = `<div class="detail-total-label">Total aceptado</div><div class="detail-total-amount">${fmtMoneyEs(aceptado, cur)}</div>`;
-  sumRow.appendChild(totBlock);
+  // 🔴 SCRUM-651 · AUSENTE Y CERO NO SON LO MISMO, y aqui se veia en el titular del dinero.
+  //
+  // Esto se pintaba SIEMPRE. En un Trabajo sin presupuesto `totalAceptado` llega `null`, el
+  // `|| 0` de arriba lo volvia 0 y la pantalla anunciaba **«Total aceptado 0,00 €»** a 2,2 rem:
+  // se lee como «presupuestaste cero», que es una afirmacion, y falsa. No hay presupuesto.
+  //
+  // La guarda mira `totalAceptado != null` y NO `aceptado > 0`: un presupuesto aceptado por 0 €
+  // es raro pero es un dato que existe, y ocultarlo cambiaria el camino de siempre. Lo que se
+  // calla es lo que NO CONSTA, que es otra cosa.
+  //
+  // ⚠️ El chip de cobro y la barra ya estaban bien (SCRUM-363 y el `aceptado > 0` de abajo);
+  // este titular era el unico hueco por el que el cero se colaba a la pantalla.
+  if (job.totalAceptado != null) {
+    const totBlock = document.createElement('div');
+    totBlock.style.textAlign = 'right';
+    totBlock.innerHTML = `<div class="detail-total-label">Total aceptado</div><div class="detail-total-amount">${fmtMoneyEs(aceptado, cur)}</div>`;
+    sumRow.appendChild(totBlock);
+  }
   if (aceptado > 0) {
     const bar = document.createElement('div');
     bar.style.marginTop = '14px';
