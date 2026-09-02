@@ -597,9 +597,18 @@ html, body { overflow-x: clip; }
   gap: 8px;
   min-height: 44px;          /* objetivo táctil (AB6) */
   padding: 8px 10px;
-  /* SCRUM-690 · el borde se reserva en TODOS los estados con `transparent`. Si sólo lo
-     llevara el lado activo, la pastilla daría un salto de layout de 2 px al seleccionarla —
-     y un control que se mueve al tocarlo se siente roto aunque el color sea correcto. */
+  /* SCRUM-690 · el borde se reserva en TODOS los estados con `transparent`, y por DOS motivos
+     medidos en navegador — no por costumbre:
+
+       ① SIN LA RESERVA, EL BORDE DEL ACTIVO NO SE PINTA. La regla de abajo sólo declara
+          `border-color`; sin `border-width` ni `border-style` heredados de aquí, el borde
+          computa 0px y la señal de forma desaparece entera. (Medido: `borderTopWidth` = 0px.)
+       ② Y si se declarara el borde COMPLETO sólo en el activo, la pastilla daría un salto de
+          layout al seleccionarla. Medido con esa forma: 162 px el activo contra 160 px el
+          inactivo — **2 px**. Un control que se mueve al tocarlo se siente roto aunque el
+          color sea correcto.
+
+     Con la reserva puesta, el salto medido es 0 × 0. */
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   cursor: pointer;

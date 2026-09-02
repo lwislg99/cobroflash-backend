@@ -144,9 +144,12 @@ test('SCRUM-690 · 🔴 el borde está RESERVADO en la base: el activo no da sal
     .find((r) => r.selector === '.segmented-option');
   assert.ok(base, '🔴 no hay regla base para `.segmented-option`.');
   assert.match(base.cuerpo, /border:\s*1px solid transparent/,
-    '🔴 el borde no está reservado con `transparent` en todos los estados. Si sólo lo llevara el ' +
-    'lado activo, la pastilla daría un salto de 2 px al seleccionarla — y un control que se mueve ' +
-    'al tocarlo se siente roto aunque el color sea correcto. (Medido después del arreglo: 0 × 0.)');
+    '🔴 el borde no está reservado con `transparent`, y eso rompe DOS cosas, las dos medidas:\n' +
+    '   ① la regla del activo sólo declara `border-color`: sin el `width`/`style` de aquí, el ' +
+    'borde computa 0px y LA SEÑAL DE FORMA DESAPARECE ENTERA — el guard de las cuatro señales ' +
+    'seguiría verde porque la propiedad está escrita, pero no se pinta nada.\n' +
+    '   ② y declarar el borde completo sólo en el activo da un salto de layout de 2 px al ' +
+    'seleccionarlo (medido: 162 vs 160). Un control que se mueve al tocarlo se siente roto.');
 });
 
 test('SCRUM-690 · los colores salen de TOKENS, no de valores sueltos', () => {
