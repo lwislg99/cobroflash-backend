@@ -16,6 +16,9 @@ import path from 'node:path';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const MARCA = '[PENDIENTE microcopy oficial]';
+// Los DOS rótulos del FORMULARIO, firmados por el fundador el 2-sep-2026.
+const ROTULO_CABECERA = 'Añadir texto en el documento';
+const ROTULO_PIE = 'Observaciones';
 
 /** Un `document` mínimo: nodos con lo justo que usa el módulo. Sin librerías (regla 36). */
 function domDeMentira() {
@@ -74,19 +77,25 @@ test('SCRUM-593b · 🔴 SUELO: el módulo carga y expone sus piezas', () => {
 test('SCRUM-593b · 🔴 el bloque final dice «Observaciones» y NO lleva marcador', () => {
   const w = cargar();
   const pie = w.TD_CAMPOS.find((c) => c.clave === 'docFooterText');
-  assert.equal(pie.rotulo, 'Observaciones',
+  assert.equal(pie.rotulo, ROTULO_PIE,
     `🔴 el rótulo aprobado por el fundador (2-sep-2026) ha cambiado: «${pie.rotulo}».`);
   assert.equal(pie.rotulo.includes(MARCA), false,
     '🔴 se ha marcado texto APROBADO. Marcar de más obliga al fundador a refirmar lo que ya firmó.');
   assert.equal(pie.sinFirmar, false, '🔴 el pie figura como sin firmar y está aprobado.');
 });
 
-test('SCRUM-593b · 🔴 el rótulo de la CABECERA sigue con marcador, y no se deriva del otro', () => {
+// ⚠️ ESTE TEST SE INVIRTIÓ EL 2-sep-2026. Exigía que el rótulo de la cabecera saliera con
+// MARCADOR, porque no estaba firmado. Ese mismo día el fundador lo firmó: «Añadir texto en el
+// documento», y de paso decidió que en el PDF ese bloque no lleva rótulo. La premisa caducó por
+// una decisión legítima, así que el test no se borra: afirma lo contrario y sigue pudiendo fallar.
+test('SCRUM-593b · 🔴 el rótulo de la CABECERA es el APROBADO, y no se confunde con el otro', () => {
   const w = cargar();
   const cab = w.TD_CAMPOS.find((c) => c.clave === 'docHeaderText');
-  assert.equal(cab.rotulo, MARCA,
-    `🔴 el rótulo de la cabecera se ha escrito sin que el fundador lo firme: «${cab.rotulo}».`);
-  assert.equal(cab.sinFirmar, true, '🔴 la cabecera figura como firmada y no lo está.');
+  assert.equal(cab.rotulo, ROTULO_CABECERA,
+    `🔴 el rótulo aprobado por el fundador (2-sep-2026) ha cambiado: «${cab.rotulo}».`);
+  assert.equal(cab.rotulo.includes(MARCA), false,
+    '🔴 se ha marcado texto APROBADO: marcar de más obliga al fundador a refirmar lo que ya firmó.');
+  assert.equal(cab.sinFirmar, false, '🔴 la cabecera figura como sin firmar y SÍ está aprobada.');
   // CONTROL NEGATIVO del anterior: los dos rótulos son DISTINTOS. Si alguien «dedujera» el de la
   // cabecera de «Observaciones», este test lo cazaría.
   const pie = w.TD_CAMPOS.find((c) => c.clave === 'docFooterText');

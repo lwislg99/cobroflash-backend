@@ -25,14 +25,18 @@
 // ═══════════════════════════════════════════════════════════════════════════════════════
 
 /**
- * 🔴 El rótulo del campo de CABECERA · SIN APROBAR.
+ * ✅ El rótulo del campo de CABECERA · APROBADO por el fundador el 2-sep-2026.
  *
- * Sale con marcador A PROPÓSITO y **no se deriva de «Observaciones»**: que el bloque final se
- * llame así no dice nada sobre cómo se llama éste, y deducirlo sería inventar microcopy
- * (regla 30). Se ve en pantalla hasta que el fundador lo firme, que es la única forma de que
- * nadie encienda por descuido un rótulo sin aprobar.
+ * «Añadir texto en el documento», literal y sin variantes. PROCEDENCIA: decisión del fundador de
+ * ese día, transcrita en `docs/master/SCRUM-593.md`. Sin decir DÓNDE consta, «aprobado» es una
+ * afirmación que nadie puede comprobar (SCRUM-387).
+ *
+ * 🔴 ES DEL FORMULARIO, NO DEL PAPEL, y ésa es la otra mitad de la misma decisión: **en el PDF ese
+ * bloque NO lleva rótulo**, se imprime sólo el texto. Por eso este literal vive aquí y no en
+ * `pdf.service.ts`, donde antes había un marcador que llegó a imprimirse en un documento que ve
+ * el cliente del profesional.
  */
-const TD_MARCADOR_MICROCOPY = '[PENDIENTE microcopy oficial]';
+const TD_TITULO_CABECERA = 'Añadir texto en el documento';
 
 /**
  * ✅ El rótulo del bloque FINAL · APROBADO por el fundador el 2-sep-2026.
@@ -48,7 +52,7 @@ const TD_TITULO_OBSERVACIONES = 'Observaciones';
 
 /** Los dos campos, declarados en un solo sitio para que la pantalla no los invente. */
 const TD_CAMPOS = [
-  { clave: 'docHeaderText', rotulo: TD_MARCADOR_MICROCOPY, sinFirmar: true },
+  { clave: 'docHeaderText', rotulo: TD_TITULO_CABECERA, sinFirmar: false },
   { clave: 'docFooterText', rotulo: TD_TITULO_OBSERVACIONES, sinFirmar: false },
 ];
 
@@ -173,7 +177,7 @@ function textoDelDocumentoPayload(valores, claves) {
 
 if (typeof window !== 'undefined') {
   window.TD_CAMPOS = TD_CAMPOS;
-  window.TD_MARCADOR_MICROCOPY = TD_MARCADOR_MICROCOPY;
+  window.TD_TITULO_CABECERA = TD_TITULO_CABECERA;
   window.TD_TITULO_OBSERVACIONES = TD_TITULO_OBSERVACIONES;
   window.textoDelDocumentoCampo = textoDelDocumentoCampo;
   window.textoDelDocumentoPintado = textoDelDocumentoPintado;

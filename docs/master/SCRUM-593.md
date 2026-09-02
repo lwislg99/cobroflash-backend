@@ -370,3 +370,64 @@ donde lo ve el profesional. **No se deriva de «Observaciones»** y no se invent
 que exige que los dos rótulos sean distintos se queda. Si la pieza no está cargada, el bloque **no
 se pinta**: mismo criterio que los rótulos servidos de `lugarEntrega`/`fechaEntrega` — mejor sin
 campo que con un campo sin rótulo.
+
+---
+
+# ✅ MICROCOPY · FIRMADO POR EL FUNDADOR EL 2-sep-2026 — Y SON **DOS** DECISIONES
+
+**Literal del fundador:** *«en la pantalla de creación que salga como Añadir texto en el documento
+y en el pdf final que no salga, solo aparece el texto sin rótulo»*.
+
+| Dónde | Qué |
+|---|---|
+| **FORMULARIO** (cabecera) | rótulo **«Añadir texto en el documento»** — literal, sin variantes, sin abreviar |
+| **PDF** (cabecera) | **SIN RÓTULO**: se imprime sólo el texto del profesional |
+| **PDF** (bloque final) | **«Observaciones»**, aprobado el mismo día, con su rótulo |
+| **FORMULARIO** (bloque final) | «Observaciones» — ⚠️ **supuesto del asesor**, no decisión del fundador (ver abajo) |
+
+`MARCADOR_MICROCOPY_CABECERA_DOC` **ha desaparecido de `pdf.service.ts` y de
+`albaranPdf.service.ts`.** No era un marcador cualquiera: **se imprimía en un documento que ve el
+cliente del profesional.** Eso cierra el CASO; **SCRUM-667 sigue abierto** porque el censo de
+marcadores no mira `src/`, y eso es estructural y no se arregla firmando un rótulo.
+
+## 🔴 EL PDF QUEDA ASIMÉTRICO, Y ES LA DECISIÓN — NO UN DESCUIDO
+
+**Arriba: texto sin rótulo. Abajo: «Observaciones» con el suyo.** Queda escrito aquí porque dentro
+de seis meses alguien lo va a leer como una incoherencia y va a querer «arreglarlo» poniéndole un
+rótulo a la cabecera. **No se arregla: es lo que el fundador pidió.**
+
+## El test que caducó — se INVIRTIÓ, no se borró
+
+Había un test que exigía que **los dos rótulos del PDF fueran distintos**. Ya no puede existir: en
+el papel sólo hay **uno**. Su premisa caducó por una decisión legítima (defecto nº 5 de la casa), y
+lo que ocupa su sitio es la afirmación contraria, que **puede fallar**:
+
+* **la cabecera se imprime SIN rótulo**, y el test cae si alguien le añade uno;
+* **con su SUELO delante**: primero comprueba que el TEXTO de la cabecera **sí** está en el PDF —
+  sin eso, «no hay rótulo» y «no hay bloque» dan el **mismo verde**, que es el patrón más caro que
+  tenemos. *Un requisito de ausencia sin suelo es una intención escrita.*
+
+### Y se mide CONTANDO LÍNEAS, no buscando texto
+
+**Un bloque sin rótulo no se identifica por su rótulo: sólo por su posición.** Buscar «que no
+aparezca X» obligaría a adivinar qué X escribiría quien se equivoque, y ninguna lista de textos
+prohibidos es exhaustiva. Contando no hay que adivinar:
+
+| Bloque | Texto de 1 línea | Líneas que añade | Por qué |
+|---|---|---|---|
+| cabecera | `UNA_SOLA_LINEA_CAB` | **1** | sin rótulo |
+| bloque final | `UNA_SOLA_LINEA_PIE` | **2** | rótulo + texto |
+
+El del pie es además el **control positivo** del de la cabecera: demuestra que el instrumento sabe
+contar un rótulo cuando lo hay. Sin él, «la cabecera añade 1» también saldría con un contador roto
+que devolviera siempre 1. Y un tercer caso con texto de tres líneas comprueba que la cuenta no
+depende de que quepa en una.
+
+Es, además, la lección que costó cinco tests esta misma tarde: **anclar un guard en el TEXTO lo
+rompe un retoque de copy**, y encima con un mensaje que no habla de copy.
+
+## ⚠️ UN SUPUESTO DEL ASESOR, DECLARADO COMO TAL
+
+El rótulo del bloque **final en la PANTALLA** no lo ha decidido el fundador. Se usa
+**«Observaciones»**, el mismo que en el PDF, por coherencia con lo aprobado. **Es un supuesto del
+asesor, no una firma**, y se escribe aquí para que se pueda revocar sin arqueología.

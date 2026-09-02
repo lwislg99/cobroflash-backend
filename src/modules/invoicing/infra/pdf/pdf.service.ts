@@ -51,18 +51,17 @@ export const MARCADOR_MICROCOPY_DESGLOSE = '[PENDIENTE microcopy oficial]';
 export const TITULO_OBSERVACIONES = 'Observaciones';
 
 /**
- * SCRUM-593 (DOC-03) · El título del bloque de CABECERA — el texto libre que va bajo los datos.
+ * SCRUM-593 (DOC-03) · EL BLOQUE DE CABECERA NO LLEVA RÓTULO. Decisión del fundador, 2-sep-2026.
  *
- * 🔴 SIN DECIDIR. Sale con marcador A PROPÓSITO y no se deriva de «Observaciones»: que el bloque
- * final se llame así no dice nada sobre cómo se llama éste, y deducirlo sería inventar microcopy
- * (regla 30). Se ve en el documento hasta que el fundador lo firme, que es la única forma de que
- * nadie encienda por descuido un rótulo sin aprobar.
+ * Aquí vivía un `MARCADOR_MICROCOPY_CABECERA_DOC` esperando a que se firmara un rótulo. Lo que se
+ * firmó fue **que no hay rótulo**: en el documento se imprime sólo el texto del profesional. El
+ * rótulo aprobado —«Añadir texto en el documento»— es del FORMULARIO, no del papel, y por eso vive
+ * en `public/dashboard/js/textoDelDocumento.js` y no aquí.
  *
- * ⚠️ HUECO DECLARADO: el censo de marcadores de SCRUM-402 mira SÓLO `public/dashboard/js`, así que
- * un marcador que vive en `src/` —como éste— **no lo cuenta nadie**. Queda dicho aquí porque el
- * sitio donde se ve es un documento que se le entrega a un cliente.
+ * ⚠️ EL PDF QUEDA ASIMÉTRICO A PROPÓSITO: arriba, texto sin rótulo; abajo, «Observaciones» con el
+ * suyo. Es lo pedido, no un descuido — queda registrado en `docs/master/SCRUM-593.md` para que
+ * dentro de seis meses nadie lo lea como incoherencia y lo «arregle».
  */
-export const MARCADOR_MICROCOPY_CABECERA_DOC = '[PENDIENTE microcopy oficial]';
 
 /**
  * SCRUM-623 (enmienda) · EL NOMBRE DEL IMPUESTO ES UN DATO, NO UNA CONSTANTE DE LA MAQUETA.
@@ -706,8 +705,10 @@ export async function generateQuotePdf(params: {
   // Va DESPUÉS de los datos del cliente y ANTES del detalle: es texto del documento, no de una
   // línea. Se pinta sólo si lo hay, para que un documento sin él salga byte a byte como siempre.
   if (params.docHeaderText && String(params.docHeaderText).trim() !== '') {
-    doc.fontSize(10).font('Helvetica-Bold').text(MARCADOR_MICROCOPY_CABECERA_DOC);
-    doc.font('Helvetica').text(String(params.docHeaderText));
+    // SIN RÓTULO (fundador, 2-sep-2026): sólo el texto. Se conserva `fontSize(10)` para que el
+    // bloque tenga el mismo cuerpo que tenía, y `Helvetica` normal porque ya no hay título que
+    // destacar.
+    doc.fontSize(10).font('Helvetica').text(String(params.docHeaderText));
     doc.moveDown();
   }
 

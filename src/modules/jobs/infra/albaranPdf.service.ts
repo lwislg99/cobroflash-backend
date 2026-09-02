@@ -15,7 +15,7 @@ import type { AlbaranLinea, AlbaranModoValoracion, FirmaEvidencia } from '../dom
 // SCRUM-300: los rótulos NO se escriben aquí. Viven en un solo sitio (regla 30) y el PDF los lee.
 import { ALBARAN_ROTULOS, etiquetaCalidad } from '../domain/albaranFirmante';
 import { formatImporteEs } from '../../../core/utils/utils'; // SCRUM-636: el sitio unico
-import { TITULO_OBSERVACIONES, MARCADOR_MICROCOPY_CABECERA_DOC } from '../../invoicing/infra/pdf/pdf.service'; // SCRUM-593: un solo rotulo
+import { TITULO_OBSERVACIONES } from '../../invoicing/infra/pdf/pdf.service'; // SCRUM-593: un solo rotulo
 
 export async function generateAlbaranPdf(params: {
   merchantId: number; // SCRUM-48: prefija el nombre de archivo (mata la colisión entre merchants)
@@ -193,7 +193,8 @@ export async function generateAlbaranPdf(params: {
   // Tras Emisor/Receptor/Obra y ANTES de la tabla: es texto del DOCUMENTO, no de una linea.
   // El rotulo sale con marcador porque el fundador no lo ha firmado (regla 30).
   if (params.docHeaderText && String(params.docHeaderText).trim() !== '') {
-    doc.fontSize(10).font('Helvetica-Bold').fillColor(INK).text(MARCADOR_MICROCOPY_CABECERA_DOC);
+    // SIN RÓTULO (fundador, 2-sep-2026): en el papel va sólo el texto del profesional. El
+    // rótulo aprobado es el del FORMULARIO y vive en la pieza del dashboard.
     doc.font('Helvetica').fillColor(BODY).text(String(params.docHeaderText), { width: W });
     doc.fillColor('#000');
     doc.moveDown(1);

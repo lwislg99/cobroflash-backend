@@ -27,7 +27,7 @@ import fs from 'node:fs';
 import { lineasDePdf, lineasConPdf, extraerTextoPdf } from './_texto-del-pdf.mjs';
 
 const {
-  generateQuotePdf, TITULO_OBSERVACIONES, MARCADOR_MICROCOPY_CABECERA_DOC,
+  generateQuotePdf, TITULO_OBSERVACIONES,
 } = await import('../dist/modules/invoicing/infra/pdf/pdf.service.js');
 
 const BASE = {
@@ -62,9 +62,9 @@ test('SCRUM-593 · 🔴 los dos bloques SALEN en el PDF del presupuesto', async 
     docHeaderText: 'Aviso de la cabecera',
     docFooterText: 'Texto final del documento',
   });
-  assert.equal(lineasConPdf(r.lineas, MARCADOR_MICROCOPY_CABECERA_DOC), 1,
-    `🔴 el rótulo de la cabecera no sale una vez: ${JSON.stringify(r.lineas.map((l) => l.texto))}`);
-  assert.equal(lineasConPdf(r.lineas, 'Aviso de la cabecera'), 1, '🔴 el texto de cabecera no sale.');
+  // La cabecera se identifica por SU TEXTO: desde el 2-sep-2026 ese bloque NO tiene rótulo.
+  assert.equal(lineasConPdf(r.lineas, 'Aviso de la cabecera'), 1,
+    `🔴 el texto de cabecera no sale una vez: ${JSON.stringify(r.lineas.map((l) => l.texto))}`);
   assert.equal(lineasConPdf(r.lineas, TITULO_OBSERVACIONES), 1,
     '🔴 el bloque «Observaciones» no sale una vez.');
   assert.equal(lineasConPdf(r.lineas, 'Texto final del documento'), 1, '🔴 el texto final no sale.');
@@ -95,9 +95,9 @@ test('SCRUM-593 · 🔴 el rótulo y su texto son LÍNEAS DISTINTAS, no una pega
   assert.ok(conRotulo, '🔴 no encuentro la línea del rótulo.');
   assert.equal(conRotulo.texto.includes('PIE'), false,
     `🔴 el rótulo y su texto salen PEGADOS en la misma línea: ${JSON.stringify(conRotulo.texto)}`);
-  const conCab = r.lineas.find((l) => l.texto.includes(MARCADOR_MICROCOPY_CABECERA_DOC));
-  assert.equal(conCab.texto.includes('CAB'), false,
-    `🔴 el rótulo de cabecera y su texto salen pegados: ${JSON.stringify(conCab.texto)}`);
+  // ⚠️ La cabecera ya NO entra aquí, y no es un olvido: desde el 2-sep-2026 no tiene rótulo, así
+  // que no hay dos cosas que puedan salir pegadas. Que salga sin rótulo lo comprueba el test de
+  // más abajo, por CONTEO DE LÍNEAS.
 });
 
 test('SCRUM-593 · 🔴 MULTILÍNEA: un texto de tres líneas ocupa TRES líneas en el PDF', async () => {
@@ -126,8 +126,9 @@ test('SCRUM-593 · 🔴 SIN los campos, el documento sale como hasta hoy', async
   for (const [n, r] of [['sin pasarlos', sin], ['a null', nulos], ['vacíos', vacios]]) {
     assert.equal(lineasConPdf(r.lineas, TITULO_OBSERVACIONES), 0,
       `🔴 (${n}) sale «Observaciones» en un documento que no la pidió.`);
-    assert.equal(lineasConPdf(r.lineas, MARCADOR_MICROCOPY_CABECERA_DOC), 0,
-      `🔴 (${n}) sale un MARCADOR DE MICROCOPY en un documento que no lo pidió.`);
+    assert.equal(lineasConPdf(r.lineas, '[PENDIENTE'), 0,
+      `🔴 (${n}) sale un MARCADOR DE MICROCOPY en el documento. Ninguno debe llegar al papel: lo `
+      + 've el cliente del profesional.');
   }
   // Lo más fuerte que se puede afirmar (ver el hueco declarado arriba): mismo texto, mismas
   // líneas y mismo tamaño. Un bloque colado cambiaría las tres cosas.
@@ -163,4 +164,68 @@ test('SCRUM-593 · el ALBARÁN usa el rótulo aprobado y NO crea un segundo camp
     '🔴 el CAMPO del pie ha cambiado. `notas` ya existía y se REUTILIZA: crear otro lo duplicaría.');
   assert.equal(/docFooterText/.test(src), false,
     '🔴 se ha creado un segundo campo de pie en el albarán. El pie de ese documento es `notas`.');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 EL BLOQUE DE CABECERA SE IMPRIME **SIN RÓTULO** — decisión del fundador, 2-sep-2026
+//
+// Aquí vivía el test contrario: exigía que los DOS rótulos del PDF fueran distintos. **Su premisa
+// caducó** el día que se firmó que en el papel la cabecera no lleva rótulo — en el PDF ya sólo hay
+// UNO. No se borra: se INVIERTE, y la afirmación contraria tiene que poder fallar.
+//
+// ── POR QUÉ SE MIDE CONTANDO LÍNEAS Y NO BUSCANDO TEXTO ──────────────────────────────────────
+// **Un bloque sin rótulo no se identifica por su rótulo: sólo por su posición.** Buscar «que no
+// aparezca X» obligaría a saber qué X escribiría el que se equivoque, y ninguna lista de textos
+// prohibidos es exhaustiva. Contar líneas no necesita adivinar: si alguien añade un rótulo —el que
+// sea— el documento crece UNA LÍNEA MÁS de lo que pide su texto, y eso se ve siempre.
+//
+// Es además la lección que costó cinco tests hoy mismo: anclar un guard en el TEXTO lo rompe un
+// retoque de copy, y encima con un mensaje que no habla de copy.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-593 · 🔴 la CABECERA se imprime SIN RÓTULO: añadirle uno hace caer esto', async () => {
+  const sin = await lineasDe({});
+  const con = await lineasDe({ docHeaderText: 'UNA_SOLA_LINEA_CAB' });
+
+  // ── SUELO, PRIMERO. Sin esto, «no hay rótulo» y «no hay bloque» dan el MISMO verde, que es el
+  //    patrón más caro de la casa: un requisito de ausencia sin suelo es una intención escrita.
+  assert.equal(lineasConPdf(con.lineas, 'UNA_SOLA_LINEA_CAB'), 1,
+    '🔴 SUELO: el texto de cabecera NO está en el PDF. Entonces «no lleva rótulo» no significa '
+    + 'nada: no hay bloque que mirar.');
+
+  // ── Y LA AFIRMACIÓN: un texto de UNA línea añade EXACTAMENTE UNA línea. Con rótulo serían dos.
+  const crecio = con.lineas.length - sin.lineas.length;
+  assert.equal(crecio, 1,
+    `🔴 el bloque de cabecera añade ${crecio} líneas y su texto tiene UNA. Si son 2, se le ha `
+    + 'puesto un RÓTULO — y el fundador firmó el 2-sep-2026 que en el papel va sólo el texto. Ese '
+    + 'documento lo ve el cliente del profesional.');
+});
+
+test('SCRUM-593 · 🔴 y el pie SÍ lleva el suyo: la asimetría es la DECISIÓN, no un descuido', async () => {
+  // El control positivo del test de arriba: el instrumento SABE contar un rótulo cuando lo hay.
+  // Sin esto, «la cabecera añade 1 línea» también saldría si el contador estuviera roto y siempre
+  // devolviera 1.
+  const sin = await lineasDe({});
+  const con = await lineasDe({ docFooterText: 'UNA_SOLA_LINEA_PIE' });
+
+  assert.equal(lineasConPdf(con.lineas, 'UNA_SOLA_LINEA_PIE'), 1, '🔴 SUELO: el texto del pie no sale.');
+  assert.equal(lineasConPdf(con.lineas, TITULO_OBSERVACIONES), 1,
+    '🔴 el pie ha perdido su rótulo. «Observaciones» está APROBADO y sigue en el papel.');
+
+  const crecio = con.lineas.length - sin.lineas.length;
+  assert.equal(crecio, 2,
+    `🔴 el bloque final añade ${crecio} líneas y deberían ser 2 (su rótulo + su texto). Si es 1, ha `
+    + 'desaparecido «Observaciones»; si es 3, hay algo de más.');
+});
+
+test('SCRUM-593 · 🔴 la cuenta aguanta con TEXTO LARGO: 3 líneas añaden 3, no 4', async () => {
+  // El control de que la medida no depende de que el texto quepa en una línea — y de que sigue sin
+  // colarse un rótulo cuando el bloque es grande.
+  const sin = await lineasDe({});
+  const con = await lineasDe({ docHeaderText: 'CAB_A\nCAB_B\nCAB_C' });
+  for (const m of ['CAB_A', 'CAB_B', 'CAB_C']) {
+    assert.equal(lineasConPdf(con.lineas, m), 1, `🔴 SUELO: «${m}» no está en el PDF.`);
+  }
+  assert.equal(con.lineas.length - sin.lineas.length, 3,
+    '🔴 un texto de tres líneas no ocupa tres: o se ha añadido un rótulo, o se han perdido saltos.');
 });
