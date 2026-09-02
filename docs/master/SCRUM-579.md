@@ -4,7 +4,25 @@
 
 **Medido contra:** `origin/main` = `69300b6662752e8fe624b1f6ee6b555f02e3a3f2` · 2026-09-02T18:47:09+01:00
 
-**Tanda:** 4593 tests, 4514 pass, 0 fail, 79 skipped (los 79 declaran su motivo) — medida DESPUES del ultimo cambio, entrada incluida.
+**Tanda:** 4638 tests, 4554 pass, **1 fail**, 83 skipped — medida DESPUES del ultimo cambio, entrada incluida.
+
+> 🔴 **EL ÚNICO FALLO NO ES DE ESTE TICKET, Y ESTÁ MEDIDO: YA ESTABA EN `origin/main`.**
+>
+> Cae `SCRUM-655b · TODO campo de Quote está clasificado` nombrando `docHeaderText` y
+> `docFooterText`, que son de **SCRUM-593**. Comprobado sobre `origin/main` SIN mi rama:
+>
+> | comprobación | resultado |
+> |---|---|
+> | ¿está el test `scrum655b` en main? | **sí** |
+> | ¿está `docHeaderText` en el `schema.prisma` de main? | **sí**, 3 apariciones |
+> | ¿lo clasifica el `revision.ts` de main? | **no**, cero veces |
+> | ¿toca esta rama `revision.ts` o el dominio de `quotes`? | **no** |
+>
+> Es la colisión de dos PR que entraron por separado: SCRUM-593 añadió dos campos a `Quote` y el
+> trinquete de SCRUM-655b los reclama. **No se arregla aquí** (regla 9), y además no sería un
+> arreglo mecánico: el propio guard dice que hay que **DECIDIR** si la revisión los hereda, si no
+> los hereda o si los pone el sistema. Es el mismo patrón que el trinquete de SCRUM-619 de esta
+> mañana — un guard que salta pidiendo una decisión, no un fallo que parchear.
 
 ---
 
@@ -36,9 +54,9 @@ con razón: hoy ya había fallado una afirmación de estado sin medir):
 
 | base | resultado de `verificacion-scrum-579.sql` |
 |---|---|
-| `yaqu_dev_javier` | controles 1·1 · **5/5** · `tipos_correctos` **5** |
-| `railway` (staging) | controles 1·1 · **5/5** · `tipos_correctos` **5** |
-| producción | **NO la he medido yo** — ver huecos |
+| `yaqu_dev_javier` | controles 1·1 · **5/5** · `tipos_correctos` **5** — medido por mí |
+| `railway` (staging) | controles 1·1 · **5/5** · `tipos_correctos` **5** — medido por mí |
+| **producción** | controles 1·1 · **5/5** · `tipos_correctos` **5** — **medido por el asesor** (2-sep-2026), no por mí: ver el hueco 1 |
 
 ---
 
@@ -156,9 +174,11 @@ y que el fichero **haya cambiado**; si no, falla en vez de «probar» sobre un f
 
 ## Los huecos que declaro
 
-1. 🔴 **Producción NO la he medido yo.** `DATABASE_URL` está ausente de este worktree por diseño
-   (regla 3), así que el `5/5` de producción lo acepto del reporte del asesor. Lo digo porque hoy
-   mismo una afirmación de estado sin medir costó un turno.
+1. ✅ **CERRADO por el asesor (2-sep-2026).** Era: «producción NO la he medido yo» — `DATABASE_URL`
+   está ausente de este worktree por diseño (regla 3), así que desde aquí no se puede leer esa
+   base. El asesor ejecutó `verificacion-scrum-579.sql` contra producción y dio **1·1·5·5**.
+   **Se anota quién lo midió, no sólo el resultado:** un hueco que se cierra sin decir de quién es
+   la medición vuelve a abrirse el día que alguien pregunte de dónde salió el número.
 2. **No he verificado en navegador real.** El banco de vistas ejecuta la pantalla, pero no es un
    navegador: no hay layout, ni pintado, ni teclado.
 3. **El eslabón ④ no toca la base de datos.** Se ancla que el alta escribe los datos validados tal
@@ -185,7 +205,22 @@ y que el fichero **haya cambiado**; si no, falla en vez de «probar» sobre un f
 
 ## Estado del arbol
 
-* `origin/main` se ha MERGEADO DENTRO de la rama —no rebase— sin conflicto.
+* `origin/main` se ha MERGEADO DENTRO de la rama —no rebase, nunca `--force`— **dos veces**. La
+  segunda trajo SCRUM-593 y dio **un conflicto: `docs/sql/deriva-prod.sql`.**
+
+  🔴 **No se resolvió a mano ni eligiendo un lado: se RECALCULÓ de la fuente.** Ese fichero es un
+  valor DERIVADO del esquema, así que se regeneró con `node scripts/generar-sql-deriva.mjs` sobre
+  el árbol ya mezclado. Elegir un lado habría dejado fuera las columnas del otro, y el arranque
+  **no las habría vigilado** — que es exactamente la avería que costó nueve días hoy.
+
+  | censo | columnas |
+  |---|---|
+  | `main` (con SCRUM-593) | 406 |
+  | esta rama (con SCRUM-579) | 408 |
+  | **regenerado tras el merge** | **411** — 403 comunes + 3 de 593 + 5 de 579 |
+
+  Comprobado que la fusión **no pierde nada de ninguno de los dos lados**: cero columnas perdidas.
+  `prisma/schema.prisma` mergeó limpio y lleva las dos cosas.
 * Cliente de Prisma regenerado desde ESTE worktree y `dist/` reconstruido DESPUÉS de mezclar main.
 * `npm run guards:entrada` en verde. Cero CR en disco en los ficheros tocados (medido por BYTES).
 
@@ -193,4 +228,5 @@ y que el fichero **haya cambiado**; si no, falla en vez de «probar» sobre un f
 
 * `tests/_banco-vistas.mjs` NO implementa `form.reset()`, así que ninguna vista con `<form>` se puede montar en él sin parchearlo desde fuera; aquí se le añade un no-op **desde el test**, sin tocar el fichero (S2).
 * `Job.direccion` sigue en el esquema con su propio comentario diciendo «sin fuente hoy», y SCRUM-300 midió que no la escribe nadie: es la dirección de obra, muerta, y encaja con DOC-12.
+* 🔴 `origin/main` está EN ROJO al cerrar esto: `scrum655b` reclama `docHeaderText` y `docFooterText` de SCRUM-593, sin clasificar en `revision.ts` — medido sobre main sin mi rama, y pide una DECISIÓN de producto, no un parche.
 * El PDF construye su objeto `customer` a mano en DOS sitios (`quotes.routes.ts:208` y `:546`): cuando DOC-12 lleve la dirección al documento, serán dos y no uno.
