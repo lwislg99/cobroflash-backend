@@ -4,7 +4,11 @@
 
 **Medido contra:** `origin/main` = `0eef4919039262d7de88465d2c9ecbe795ae786c` · 2026-09-02T20:04:32+01:00
 
-**Tanda:** 4678 tests, 4595 pass, 0 fail, 83 skipped (los 83 declaran su motivo) — medida DESPUES del ultimo cambio, entrada incluida.
+**Tanda:** 4691 tests, 4608 pass, 0 fail, 83 skipped (los 83 declaran su motivo) — medida DESPUES del ultimo cambio, entrada incluida, y **repetida tras mezclar `main`** (antes del merge daba 4678/4595/0).
+
+> El **ancla de arriba NO se re-mide**: es un registro fechado de contra qué se midió el trabajo,
+> no una afirmación sobre el `main` de ahora. La TANDA sí se repite, porque mezclar `main` es un
+> cambio y la tanda va después del último cambio.
 
 ---
 
@@ -174,10 +178,19 @@ el resto del modal, incluidos los cinco campos de dirección de CONT-06 · los c
 
 ## Estado del arbol
 
-* La rama nació **apilada sobre `scrum-579`** (`be26186c`), que sigue sin mergear: los dos tickets
-  tocan `customersView.js` y ramificar de `main` habría dejado un conflicto a mano en el fichero
-  del que acaba de salir un marcador a producción. Mismo criterio que el asesor aprobó para
-  SCRUM-661, y se resuelve solo en cuanto entre 579.
+* La rama nació **apilada sobre `scrum-579`** (`be26186c`): los dos tickets tocan
+  `customersView.js` y ramificar de `main` habría dejado un conflicto a mano en el fichero del que
+  acaba de salir un marcador a producción. Mismo criterio que el asesor aprobó para SCRUM-661.
+
+  ✅ **Y se resolvió solo, como estaba previsto: SCRUM-579 entró en `main`.** Al mezclar `main`
+  DENTRO de esta rama, el diff contra `main` pasa de 13 ficheros a **los 4 de este ticket**. El
+  coste de apilar era cosmético y temporal, exactamente como se dijo.
+
+  ⚠️ El único punto delicado era `docs/master/SCRUM-579.md`: esta rama arrastraba la versión
+  ANTERIOR de esa entrada (la que declaraba «1 fail») y `main` ya tenía la actualizada. **Se queda
+  la de `main`, íntegra y sin una sola edición a mano** — comprobado por el sha del blob, que es
+  el mismo en las dos: `24d646408fc126afd850582db80fb67c3e669c7f`. Ese fichero no es de este
+  ticket y no se toca.
 * `origin/main` se ha MERGEADO DENTRO —no rebase, nunca `--force`— sin conflicto.
 * Cliente de Prisma regenerado desde ESTE worktree y `dist/` reconstruido DESPUÉS de mezclar main.
 * `npm run guards:entrada` en verde. Cero CR en disco (medido por BYTES).
