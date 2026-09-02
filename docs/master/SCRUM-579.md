@@ -4,9 +4,22 @@
 
 **Medido contra:** `origin/main` = `69300b6662752e8fe624b1f6ee6b555f02e3a3f2` · 2026-09-02T18:47:09+01:00
 
-**Tanda:** 4638 tests, 4554 pass, **1 fail**, 83 skipped — medida DESPUES del ultimo cambio, entrada incluida.
+**Tanda:** 4647 tests, 4564 pass, **0 fail**, 83 skipped — medida DESPUES del ultimo cambio, entrada incluida.
 
-> 🔴 **EL ÚNICO FALLO NO ES DE ESTE TICKET, Y ESTÁ MEDIDO: YA ESTABA EN `origin/main`.**
+> ✅ **EL FALLO QUE ESTA ENTRADA DECLARABA YA NO EXISTE, y conviene dejar escrito por qué.**
+>
+> Al cerrar el ticket la tanda daba **1 fail**, y estaba medido que **no era de aquí**: era el
+> trinquete de SCRUM-655b reclamando `docHeaderText`/`docFooterText` de SCRUM-593, sin clasificar
+> en `revision.ts`. Se reportó como hallazgo en vez de parchearlo, porque pedía una **decisión**
+> —¿la revisión los hereda o no?— y no un arreglo mecánico.
+>
+> **La decisión se tomó: SCRUM-686 (`86009b8c`, «la cabecera y el pie SE HEREDAN al revisar»,
+> decisión del fundador).** Al mergear ese `main` dentro de esta rama, la tanda pasa a **0 fail**.
+>
+> Se conserva el párrafo de abajo como registro de lo que se midió entonces: un hallazgo que se
+> resuelve no se borra, se fecha. Así se ve que el rojo tenía dueño y que el dueño lo cerró.
+>
+> 🔴 **Lo que se midió el 2-sep a las 19:0x (ya resuelto):**
 >
 > Cae `SCRUM-655b · TODO campo de Quote está clasificado` nombrando `docHeaderText` y
 > `docFooterText`, que son de **SCRUM-593**. Comprobado sobre `origin/main` SIN mi rama:
@@ -228,5 +241,5 @@ y que el fichero **haya cambiado**; si no, falla en vez de «probar» sobre un f
 
 * `tests/_banco-vistas.mjs` NO implementa `form.reset()`, así que ninguna vista con `<form>` se puede montar en él sin parchearlo desde fuera; aquí se le añade un no-op **desde el test**, sin tocar el fichero (S2).
 * `Job.direccion` sigue en el esquema con su propio comentario diciendo «sin fuente hoy», y SCRUM-300 midió que no la escribe nadie: es la dirección de obra, muerta, y encaja con DOC-12.
-* 🔴 `origin/main` está EN ROJO al cerrar esto: `scrum655b` reclama `docHeaderText` y `docFooterText` de SCRUM-593, sin clasificar en `revision.ts` — medido sobre main sin mi rama, y pide una DECISIÓN de producto, no un parche.
+* ✅ `origin/main` estuvo EN ROJO mientras se cerraba esto (`scrum655b` reclamaba `docHeaderText` y `docFooterText` de SCRUM-593 sin clasificar): se reportó en vez de parchearlo porque pedía una decisión, y **SCRUM-686 la tomó** — heredan. Ya está en main y la tanda vuelve a 0.
 * El PDF construye su objeto `customer` a mano en DOS sitios (`quotes.routes.ts:208` y `:546`): cuando DOC-12 lleve la dirección al documento, serán dos y no uno.
