@@ -66,6 +66,8 @@ export const GUARD_A_EXCLUDED_PREFIXES: ReadonlySet<string> = new Set(['/dev']);
 // PUBLIC_PREFIXES — hay que decírselo al enumerador explícitamente.
 export const PUBLIC_TOP_LEVEL_PATHS: readonly string[] = [
   '/version', '/privacidad', '/terminos', '/precios', '/public/founding-status',
+  // SCRUM-687: montada antes de requireAuth y gateada por SU PROPIO secreto (no el interno).
+  '/schema-check',
 ];
 
 // Prefijos declarados EN BLOQUE (una entrada cubre todo el router, no ruta a ruta).
@@ -79,6 +81,12 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
   { method: 'GET', path: '/precios', kind: 'no-sensitive-resource', reason: 'HTML de landing estático' },
   { method: 'GET', path: '/public/founding-status', kind: 'no-sensitive-resource', reason: 'contador agregado de plazas, sin PII' },
   { method: 'GET', path: '/version', kind: 'no-sensitive-resource', reason: 'build id, sin caché, sin PII' },
+  {
+    method: 'POST',
+    path: '/schema-check',
+    kind: 'internal',
+    reason: 'SCRUM-687: secreto PROPIO (SCHEMA_CHECK_SECRET), fail-closed a 404 sin él. No publica el esquema: sólo el espejo de las columnas que le mandan',
+  },
   { method: 'GET', path: '/health', kind: 'no-sensitive-resource', reason: 'ok/service/version/db, cero PII' },
   { method: 'GET', path: '/legal/alcance-beta', kind: 'no-sensitive-resource', reason: 'markdown legal estático' },
   {

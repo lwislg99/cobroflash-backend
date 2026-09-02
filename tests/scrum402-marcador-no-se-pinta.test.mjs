@@ -233,7 +233,15 @@ const CENSO = Object.freeze({
   // NO se moverá** y entrará una superficie sin firmar en silencio. Quien añada un código mapeado
   // le pone SU constante, para que el fundador pueda firmar uno sin firmar los dos.
   'providersView.js': 1,
-  'customersView.js': 2,
+  // SCRUM-575 (CONT-02, 2-sep-2026) · BAJA DE 2 A 1, y el trinquete se APRIETA. Se firma el aviso
+  // de NIF/CIF mal formado —texto provisional del asesor, «Ese NIF/CIF no es válido.
+  // Compruébalo.»— así que `MARCADOR_NIF` desaparece del fichero.
+  //
+  // 🔴 NO se borra la entrada, se BAJA A 1: aquí no ocurre lo de SCRUM-593/424/405 (que sí se
+  // borraron) porque QUEDA una marca viva —el rótulo del teléfono (CONT-05)—, y un fichero que
+  // sale del censo teniendo una marca dejaría de vigilarse justo donde todavía hay algo que
+  // firmar. Se borra cuando llegue a 0, no antes.
+  'customersView.js': 1,
   'exportView.js': 1,
   // 🔴 17-ago-2026 · `invoiceDetailView.js` SALE DEL CENSO (tenía 9). El fundador aprobó los ocho
   // rótulos de acción, y el noveno era `MARCA_MICRO`, una constante que ya no consumía nadie y que

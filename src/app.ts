@@ -21,6 +21,9 @@ import { modoEmisionVisible } from './modules/invoicing/domain/modoVisible'; // 
 import { requireAuth, requireActivePlan, requireRole } from './core/http/authMiddleware';
 import { mountAdmin } from './core/http/adminMounts'; // SCRUM-55: red fail-closed de /admin
 import { requireInternalSecret } from './core/http/internalAuth';
+// SCRUM-687 · la constancia del ALTER. Secreto PROPIO, no el interno (ver schemaCheckAuth.ts).
+import { requireSchemaCheckSecret } from './core/http/schemaCheckAuth';
+import { compararConstancia, CONSULTA_COLUMNAS } from './core/db/constanciaDelAlter';
 // SCRUM-274: huella de contenido en las referencias del dashboard (sin build ni bundler)
 import {
   sellarReferencias, crearHuellas, PARAM_HUELLA, CACHE_CON_HUELLA,
@@ -287,6 +290,40 @@ app.get('/version', (_req, res) => {
   res.set('Cache-Control', 'no-store');
   res.json({ version: config.BUILD_ID });
 });
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-687 · LA CONSTANCIA DEL `ALTER`, Y LA DA PRODUCCIÓN
+//
+// Producción estuvo NUEVE DÍAS sin desplegar: tres veces se mergeó el esquema sin haber aplicado
+// el `ALTER`, y `schemaDrift` se negó a arrancar. Un healthcheck fallido deja vivo el despliegue
+// anterior, así que el síntoma era «no cambia nada». Esto lo detecta ANTES de mergear.
+//
+// CI manda el conjunto ESPERADO; aquí se contesta SÓLO qué falta de lo que trajo. **No se publica
+// la lista real de tablas y columnas**: es el espejo de la pregunta, no un mapa de la base.
+//
+// FAIL-CLOSED: sin `SCHEMA_CHECK_SECRET` esto no existe (404). Su secreto es PROPIO y no el
+// interno, porque el interno abre `/charges` e `/invoice` y éste lo llama CI (ver
+// `schemaCheckAuth.ts`).
+//
+// El `express.json` va AQUÍ y acotado a 512 kb: el parser general se monta más abajo, y este
+// cuerpo es una lista de cadenas cortas. Un tope propio y pequeño evita que una superficie nueva
+// herede un límite pensado para otra cosa.
+app.post('/schema-check', requireSchemaCheckSecret, express.json({ limit: '512kb' }), async (req, res) => {
+  try {
+    const esperadas = (req.body && (req.body as any).esperadas) as unknown[];
+    const filas = await prisma.$queryRawUnsafe<Array<{ tabla: string; columna: string }>>(CONSULTA_COLUMNAS);
+    const reales = filas.map((f) => `${f.tabla}.${f.columna}`);
+    const c = compararConstancia(esperadas, reales);
+    // 400 cuando la PREGUNTA no vale (cero esperadas, forma mala): no es un hallazgo del esquema
+    // y no se puede leer como uno. 200 sólo cuando de verdad se comparó algo.
+    if (!c.ok) return res.status(400).json({ error: 'peticion_invalida', motivo: c.motivo, comparadas: 0 });
+    return res.json({ faltan: c.faltan, comparadas: c.comparadas });
+  } catch (e) {
+    // 🔴 Y AQUÍ NO SE DEVUELVE `faltan: []`. Un fallo leyendo el catálogo con cuerpo vacío se leería
+    // como «no falta nada», que es el verde más caro que se puede dar.
+    return res.status(503).json({ error: 'no_pude_leer_el_catalogo', comparadas: 0 });
+  }
+});
+
 app.use('/health', healthRouter);
 app.use('/auth', authRouter);
 // P0-SEC-1/3: estos dos son endpoints INTERNOS (self-call desde los webhooks de pago y
