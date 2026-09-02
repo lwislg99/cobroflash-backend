@@ -2,9 +2,10 @@
 
 **Fecha:** 2-sep-2026 · **Carril:** banco de vistas (tests) · **Gate:** sin gate — corre en `npm test`
 
-**Medido contra:** `origin/main` = `MEDICION_PLACEHOLDER` · FECHA_PLACEHOLDER
+**Medido contra:** `origin/main` = `214f9de744e4ae9ea8238fd7594d32dae1581001` · 2026-09-02T23:10:43+01:00
 
-**Tanda:** TANDA_PLACEHOLDER
+**Tanda:** **4.814 pruebas · 4.730 en verde · 0 fallos · 84 saltadas** — con `main` ya mergeado
+dentro (584 y 696 entraron mientras se cerraba esto) y medida DESPUÉS del último cambio de código.
 
 ---
 
@@ -141,7 +142,7 @@ pasaría desapercibido.
 
 `tests/_banco-vistas.mjs` (la función `desengancha` y las cuatro inserciones) ·
 `tests/scrum697-un-solo-render.test.mjs` (**nuevo**, 9 tests) ·
-`scripts/_suelo-de-la-tanda.mjs` (el suelo, 4766 → 4792) · esta entrada.
+`scripts/_suelo-de-la-tanda.mjs` (el suelo, 4766 → **4814**) · esta entrada.
 
 **No se ha tocado:** ningún fichero de producto — ni `customersView.js`, ni CSS, ni rutas ·
 `prisma/schema.prisma` · ningún test existente se ha «ajustado» a un número · sin dependencias
@@ -151,8 +152,10 @@ nuevas (regla 36).
 
 * Rama nacida de `origin/main`, sin apilar sobre nada.
 * `npm run guards:entrada` en verde. Cero CR en disco (medido por BYTES).
-* El fichero del suelo lo tocan tres ramas a la vez: aquí sube a **4792**, que es lo medido en
-  ésta. **Si se cruza con otra, se queda el MÁS ALTO** — nunca el más bajo.
+* El fichero del suelo lo tocan tres ramas a la vez, y **se cruzó**: main ya traía 4798 de
+  SCRUM-584. El conflicto NO se resolvió eligiendo un lado —eso habría dejado un número que no
+  midió nadie—: se puso el más alto y se **volvió a medir** la tanda con `main` ya dentro. Queda
+  en **4814**, que es lo que hay.
 
 ## Los huecos que declaro
 
