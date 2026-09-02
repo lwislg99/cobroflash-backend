@@ -57,6 +57,9 @@
  * 🔴 EL SUELO. Es un MÍNIMO, no una igualdad.
  *
  * Medido el 2-sep-2026 sobre `origin/main` = `a464d978`: la tanda dio **4766** tests
+ * — y SUBIDO a **4798** el 2-sep-2026 sobre `origin/main` = `80db312b` (rama scrum-584, con main
+ * mergeado dentro), que es lo que la regla de abajo dice que hay que hacer cuando la tanda crece:
+ * 4798 tests, 4714 en verde, 0 fallos, 84 saltadas. No se sube "por si acaso": es lo MEDIDO.
  * (`# tests` del reporter TAP, dos ejecuciones seguidas con el mismo número). Se declara ese
  * mismo valor, **sin tolerancia**: un margen «por si acaso» convertiría esto en el umbral con
  * holgura que SCRUM-559 tuvo que retirar.
@@ -67,10 +70,10 @@
  *
  * ⚠️ CONFLICTO ENTRE RAMAS: **se queda el MÁS ALTO** (ver la cabecera).
  */
-export const SUELO_TESTS = 4766;
+export const SUELO_TESTS = 4798;
 
 /** Contra qué se midió, para que el suelo no sea un número sin procedencia. */
-export const MEDIDO_CONTRA = 'origin/main = a464d978 · 2026-09-02';
+export const MEDIDO_CONTRA = 'origin/main = 80db312b · 2026-09-02';
 
 export const SALIDA_POR_DEBAJO = 1;
 export const SALIDA_NO_SUPE_MIRAR = 2;

@@ -191,6 +191,7 @@ Se midió dos veces, y la segunda es la que vale.
 |---|---|---|---|
 | esta rama antes de mezclar (`a464d978`) | 4766 | 4766 | **0** — el borde exacto, ejercitado de verdad |
 | **con `main` dentro** (entraron 672 y 692) | **4783** | 4766 | **+17** |
+| **con `main` dentro otra vez** (entró 584, que SUBIÓ el suelo) | **4798** | **4798** | **0** — el borde exacto, y pasa |
 
 ```
 [suelo de la tanda] ✅ suelo 4766 · total actual 4783 · margen 17
@@ -202,6 +203,33 @@ diseño (es un mínimo, no una igualdad); con `main` dentro sobran 17. **No se s
 la línea que el propio fichero describe y no hace falta para cerrar este PR — se deja dicho, con el
 número, para que quien lo suba no tenga que volver a medir.
 
-**Tanda con `main` dentro: 4783 tests, 4699 pass, 0 fail, 84 skipped.** El merge de `main` fue limpio
-—sin conflictos— y se comprobó a mano que el comentario nuevo y la regla siguen ahí, cada uno una
-sola vez.
+**Tanda con `main` dentro: 4783 tests, 4699 pass, 0 fail, 84 skipped.** Aquel merge fue limpio.
+
+### La segunda vuelta: SCRUM-584 subió el suelo, y el docstring SÍ chocó
+
+Entró SCRUM-584 en `main` y **subió el suelo a 4798** (`24ea2b3c`), que es exactamente la operación
+que este fichero describe. Al volver a mezclar, el conflicto fue **una sola línea**: la del docstring
+que esta rama había corregido.
+
+* `main` reintroducía el `bdce57dc` **rancio** en la primera línea y añadía debajo las suyas.
+* Esta rama tenía ahí el `a464d978` **medido**.
+
+Resuelto como **los DOS**: las tres líneas nuevas de `main` (la subida a 4798 y su procedencia
+`80db312b`), con **la corrección de esta rama en la primera**. Perder la corrección al mezclar habría
+devuelto al fichero la contradicción que este PR quitó.
+
+**Comprobado con los ojos después del merge**, porque el número es justo lo que no puede quedar mal:
+
+```
+export const SUELO_TESTS = 4798;
+export const MEDIDO_CONTRA = 'origin/main = 80db312b · 2026-09-02';
+```
+
+Ese `MEDIDO_CONTRA` es el de `main` y es el correcto: describe la medición de **4798**, no la de 4766.
+
+**Y la cadena que el test ata sigue apareciendo UNA sola vez.** Si el merge hubiera traído otra copia,
+el comentario volvería a ensombrecer al guard. Reprobado por el mecanismo sobre el fichero ya
+mezclado: rota la regla, `not ok 10`; restaurada, 12/12.
+
+**Tanda tras esta segunda vuelta: 4798 tests, 4714 pass, 0 fail, 84 skipped.** Y el suelo de punta a
+punta sobre su TAP: `✅ suelo 4798 · total actual 4798 · margen 0`.

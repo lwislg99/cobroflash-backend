@@ -185,7 +185,10 @@ test('SCRUM-581 · 🔴 NO queda ninguna ranura sin aprobar — y el número sig
   // 🔴 SUBE A 4 CON SCRUM-580 (CONT-07), y es el contador haciendo su trabajo: las SEIS de
   // este ticket las firmo el FUNDADOR, y las CUATRO de las etiquetas las aprobo el ASESOR,
   // provisionales a la espera de el. Este numero existia valiendo 0 exactamente para esto.
-  assert.equal(FC.SIN_APROBAR, 4,
+  // SCRUM-584 · SUBE A 5: el rótulo del selector de columnas, del asesor y a la espera del
+  // fundador. El contador haciendo su trabajo: una ranura nueva declara su estado antes de
+  // pintarse.
+  assert.equal(FC.SIN_APROBAR, 5,
     '🔴 hay ranuras de microcopy sin firmar. Si se ha añadido una pestaña o un orden nuevo, su '
     + 'texto NO está aprobado y tiene que contarse aquí antes de pintarse.');
 
