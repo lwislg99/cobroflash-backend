@@ -389,6 +389,15 @@ export const customerCreateSchema = z.object({
    */
   billingAddress: z.string().max(200).nullable().optional(),
   billingCity: z.string().max(100).nullable().optional(),
+  // SCRUM-580 (CONT-07) · las etiquetas del contacto.
+  //
+  // `nullable` Y `optional`, que son cosas distintas y las dos hacen falta: omitido = «no toques
+  // este campo» en una edicion parcial, `null` = «quitale todas». Sin `nullable`, vaciar las
+  // etiquetas de un cliente seria un 400.
+  //
+  // Aqui solo se comprueba la FORMA. El recorte, el tope y el «vacio → null» viven en
+  // `normalizarTags` (`src/modules/system/tagsDelCliente.ts`), en un solo sitio y probados sin base.
+  tags: z.array(z.string()).nullable().optional(),
   billingPostalCode: z.string().max(20).nullable().optional(),
   billingProvince: z.string().max(100).nullable().optional(),
   billingCountry: z.string().max(2).nullable().optional(),

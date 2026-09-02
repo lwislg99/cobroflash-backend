@@ -65,7 +65,73 @@
     { id: 'AZ', palabra: 'Nombre A-Z' },
   ];
 
-  var POR_DEFECTO = { pestana: 'TODOS', orden: 'RECIENTES' };
+  // SCRUM-580 (CONT-07) · el filtro por ETIQUETA. `null` = «no se filtra por ninguna», que NO
+  // es «filtrar por la etiqueta vacía»: son cosas distintas y aquí sólo existe la primera.
+  var POR_DEFECTO = { pestana: 'TODOS', orden: 'RECIENTES', etiqueta: null };
+
+  /**
+   * 🔴 SCRUM-580 · LAS ETIQUETAS DE UN CLIENTE, CON SUELO.
+   *
+   * La columna es JSONB, así que puede traer cualquier cosa por otra vía. Lo que no sea una lista
+   * de cadenas devuelve `[]` y no revienta: una pantalla que se cae al pintar un cliente es peor
+   * que una que enseña ese cliente sin etiquetas.
+   *
+   * ⚠️ Esto es la MISMA decisión que `tagsDe` en `src/modules/system/tagsDelCliente.ts`. Son dos
+   * copias —una por lado— y no divergen porque un test las ejercita con los mismos casos. La copia
+   * es el precio de que la lista filtre sin ir al servidor en cada pulsación.
+   */
+  function tagsDe(c) {
+    var v = c && c.tags;
+    if (!Array.isArray(v)) return [];
+    var fuera = [];
+    for (var i = 0; i < v.length; i++) {
+      if (typeof v[i] === 'string' && v[i].trim() !== '') fuera.push(v[i]);
+    }
+    return fuera;
+  }
+
+  /** Comparación sin distinguir mayúsculas: «Moroso» y «moroso» son la misma para el profesional. */
+  function mismaEtiqueta(a, b) {
+    return String(a).trim().toLocaleLowerCase('es') === String(b).trim().toLocaleLowerCase('es');
+  }
+
+  /**
+   * Las etiquetas que este merchant YA usa, sacadas de la lista que el servidor le mandó.
+   *
+   * 🔴 Nunca de otro merchant, y no hace falta filtrar por tenencia aquí: lo que entra es lo que el
+   * servidor ya acotó (regla 2). No ampliar el alcance es la forma más segura de no filtrarlo.
+   */
+  function etiquetasUsadas(clientes) {
+    var vistas = {};
+    var fuera = [];
+    var lista = Array.isArray(clientes) ? clientes : [];
+    for (var i = 0; i < lista.length; i++) {
+      var ts = tagsDe(lista[i]);
+      for (var j = 0; j < ts.length; j++) {
+        var clave = ts[j].trim().toLocaleLowerCase('es');
+        if (!vistas[clave]) { vistas[clave] = true; fuera.push(ts[j].trim()); }
+      }
+    }
+    return fuera.sort(function (a, b) { return a.localeCompare(b, 'es', { sensitivity: 'base' }); });
+  }
+
+  /**
+   * Filtra por etiqueta. `null` o vacío devuelve la lista TAL CUAL: no filtrar no es filtrar por
+   * nada, y esa distinción es la que hace que «Todas» siga siendo el control negativo del ticket.
+   *
+   * 🔴 Un cliente SIN etiquetas no cae en ninguna, y es correcto. El apaño de «si no tiene, que
+   * salga en todas» convierte el filtro en un adorno — y es la misma familia del valor por defecto
+   * que borra la diferencia entre «no lo sé» y «sé que no hay».
+   */
+  function filtrarPorEtiqueta(clientes, etiqueta) {
+    var lista = Array.isArray(clientes) ? clientes : [];
+    if (etiqueta === null || etiqueta === undefined || String(etiqueta).trim() === '') return lista.slice();
+    return lista.filter(function (c) {
+      var ts = tagsDe(c);
+      for (var i = 0; i < ts.length; i++) if (mismaEtiqueta(ts[i], etiqueta)) return true;
+      return false;
+    });
+  }
 
   /**
    * El vacío de una PESTAÑA, que no es el vacío de la pantalla. Hace falta porque hoy «Empresas»
@@ -141,9 +207,19 @@
     });
   }
 
-  /** Lo que consume la vista: filtrar y luego ordenar. En ese orden, y no al revés. */
-  function aplicar(clientes, pestanaId, ordenId) {
-    return ordenar(filtrarPorPestana(clientes, pestanaId), ordenId);
+  /**
+   * Lo que consume la vista: filtrar por pestaña, filtrar por etiqueta y ORDENAR. En ese orden.
+   *
+   * 🔴 Los dos filtros se ENCADENAN, no se sustituyen — y el buscador de texto es un tercero que
+   * ya viene aplicado desde el servidor, porque `clientes` es el lote que él devolvió. O sea que
+   * los TRES se combinan por construcción; que sigan combinándose lo sostiene un test, porque «por
+   * construcción» deja de ser cierto el día que alguien reordena dos líneas.
+   *
+   * `etiqueta` es opcional: quien llame con dos argumentos sigue teniendo el comportamiento de
+   * antes, que es lo que hace que este cambio no rompa a nadie.
+   */
+  function aplicar(clientes, pestanaId, ordenId, etiqueta) {
+    return ordenar(filtrarPorEtiqueta(filtrarPorPestana(clientes, pestanaId), etiqueta), ordenId);
   }
 
   var api = {
@@ -155,6 +231,9 @@
     etiqueta: etiqueta,
     subtitulo: subtitulo,
     filtrarPorPestana: filtrarPorPestana,
+    filtrarPorEtiqueta: filtrarPorEtiqueta,
+    etiquetasUsadas: etiquetasUsadas,
+    tagsDe: tagsDe,
     ordenar: ordenar,
     aplicar: aplicar,
   };

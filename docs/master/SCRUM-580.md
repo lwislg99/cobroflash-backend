@@ -3,7 +3,7 @@
 **Fecha:** 2-sep-2026 · **Carril:** S3
 **Medido contra:** `origin/main` = `1b76c430c7ae4e4541e86191b3802ba79b6f5017` · 2026-09-02T19:21:12Z
 **Rama:** `scrum-580-cont07-tags-por-contacto`
-**Estado:** ✅ paso ② aplicado en las **dos bases alcanzables** · ⛔ producción, pendiente del fundador.
+**Estado:** ✅ **cerrado** — las tres bases con la columna, y el ③ entregado.
 
 **La víctima:** el profesional no puede agrupar a sus clientes por nada. En oficios eso es
 comunidad · administrador · aseguradora · urgencias · moroso. Con 300 clientes, buscar por texto
@@ -167,3 +167,125 @@ Turno de staging **tomado y soltado**; libre al terminar. Registro operativo en
 
 `prisma/schema.prisma` **sigue sin tocarse** y sigue idéntico a `main`: entra en el ③ cuando las
 **tres** bases tengan la columna.
+
+---
+
+# ✅ PASO ③ · ESQUEMA + CAMPO + COLUMNA + FILTRO (2-sep-2026)
+
+**Medido contra:** `origin/main` = `61ae2dc38787201209c4ca5426bffd72a441f0fb` · 2026-09-02T19:59:38Z
+
+## Producción, con su procedencia
+
+> **Base:** producción (servicio `Postgres` de Railway) · **Medido por:** el asesor · **2-sep-2026**
+> **Resultado:** 3 filas · `customers.tags` = `jsonb`
+> **Controles positivos presentes:** `customers.billing_city` = `text` ·
+> `quotes.clausulas_excluidas` = `jsonb`
+
+No es una afirmación sobre el estado: es **el resultado de la consulta de este ticket, ejecutada
+contra esa base**, y queda con **quién la midió y cuándo**. Un hueco cerrado sin decir de quién es
+la medición se vuelve a abrir en cuanto alguien pregunte de dónde salió.
+
+**Las tres bases tienen la columna**, así que `schemaDrift` (esperado ⊆ real) ya no impide arrancar
+y el esquema puede ir.
+
+## Los cinco eslabones
+
+| # | Eslabón | Dónde |
+|---|---|---|
+| 1 | se escribe | `customersView.js` · campo en alta y edición |
+| 2 | se envía | `tagsParaPayload` → `null` si no hay ninguna |
+| 3 | se valida | `schemas.ts` · `z.array(z.string()).nullable().optional()` |
+| 4 | se guarda | `customerAdmin.ts` · `normalizarEtiquetas` en **alta Y edición** |
+| 5 | **SE RELEE** | `CUSTOMER_SELECT_NO_TOKEN` · `tags: true` |
+
+**El quinto se buscó ANTES de construir**, como pedía el encargo. Es un `select` explícito que usan
+`listCustomers` **y** `getCustomer`: sin esa línea el alta guardaría las etiquetas y devolvería un
+cliente sin ellas, la pantalla se recargaría vacía, el profesional las reescribiría — **y la tanda
+seguiría verde, porque el dato sí está en la base.** El test no se conforma con «se guarda».
+
+## 🔴 «Ausente ≠ vacío», y Prisma obligó a decirlo con precisión
+
+Sin etiquetas se guarda **`null`**, nunca `[]` ni `""`. Si se guardara `[]`, un `IS NOT NULL` diría
+que ese cliente **tiene** etiquetas y el filtro se construiría sobre esa mentira.
+
+Y el compilador forzó una distinción que conviene dejar escrita: hay **tres** nulls y sólo uno vale.
+
+| | Qué hace |
+|---|---|
+| `Prisma.DbNull` | **NULL de SQL** — «no se declararon etiquetas». **ESTE.** |
+| `Prisma.JsonNull` | el valor JSON `null` **dentro** de la columna. La columna **no** quedaría NULL |
+| `undefined` | «no toques el campo» — en una edición parcial, borrarlo sería perder las etiquetas al cambiar el teléfono |
+
+Confundir los dos primeros es «ausente ≠ vacío» con otro nombre. Un test lo ata, y mira **el código,
+no los comentarios** (ver abajo).
+
+## El filtro, y los CUATRO combinados
+
+Se cierra el recorte que CONT-08 dejó abierto. `aplicar(clientes, pestaña, orden, etiqueta)`
+encadena **pestaña → etiqueta → orden** sobre el lote que **ya viene filtrado por el buscador**
+desde el servidor. Los cuatro a la vez, y ninguno sustituye a otro — probado con un conjunto que
+**no está ordenado por id**, porque si lo estuviera el test no distinguiría A-Z de orden de
+inserción.
+
+El cuarto argumento es **opcional**: llamar con tres sigue funcionando, así que nadie se rompe.
+
+**Las opciones del selector salen de las etiquetas que ESE merchant ya usa en SUS clientes** —del
+lote que el servidor acotó por tenencia—, nunca de otro merchant. Se recalculan en cada pintado, así
+que una etiqueta recién escrita aparece sin recargar. Si la etiqueta activa deja de existir, el
+filtro **se suelta**: dejarlo puesto enseñaría una lista vacía sin decir por qué. Y con cero
+etiquetas en la cartera el selector **se oculta**, en vez de ofrecer un control con una sola opción.
+
+## Lo que NO se ha perdido, comprobado
+
+* **F1** — las cabeceras siguen siendo `ID · Nombre · Teléfono`: el teléfono sigue **tercero**. La
+  columna nueva entra **después de Notas**, oculta en móvil como sus vecinas.
+* **F3** — Editar · Portal · Historial siguen por fila.
+* Las pestañas y el orden siguen funcionando **y combinados** con lo nuevo.
+* Y un detalle que un test vigila: los `colSpan` de los estados vacíos se recalcularon a **8**.
+  Un vacío que abarca menos columnas de las que tiene la tabla sale descuadrado en cuanto entra
+  una columna, y eso no lo ve ninguna tanda.
+
+## ⚠️ MICROCOPY PROPUESTO — pendiente de tu firma
+
+Va **sin marcador en pantalla** (decisión del 2-sep-2026) y su procedencia es esta entrada.
+
+| Ranura | Propuesta | Caracteres |
+|---|---|---|
+| rótulo del campo | `Etiquetas` | 9 |
+| placeholder | `comunidad, administrador, urgencias…` | 36 |
+| cabecera de columna | `Etiquetas` | 9 |
+| opción «sin filtro» | `Todas las etiquetas` | 19 |
+
+🕳️ **La caja está medida en CARACTERES, no en píxeles**, y se dice: en esta máquina Edge no levanta
+(`Failed to launch the browser process`, 0,0 s). **La medición a 360 px que pide el ticket NO se ha
+hecho** y hay que hacerla en un navegador real: una tanda verde no puede ver qué aspecto tiene una
+pantalla — hoy ya pasó con unos rótulos solapados que destapó una captura, no los tests.
+
+## La UI, según la casa
+
+`yaqu-premium-ui` cargada antes de tocar. Las etiquetas se pintan con **`.badge .badge-slate`**, el
+componente que **ya está en el inventario (AB3)**: cero tokens nuevos, cero estilo inventado. Con
+`textContent` por etiqueta y no concatenando markup — la escribe el profesional, y meterla en un
+`innerHTML` sería una inyección con su nombre.
+
+Un input separado por comas y **no** un editor de chips: eso sería un componente nuevo, y eso es
+propuesta de inventario, no algo que se cuela en un ticket.
+
+## Los rojos, probados rompiendo el mecanismo
+
+| Rotura | Qué cayó |
+|---|---|
+| el `select` deja de traer `tags` | «el select TRAE tags, o el alta se pierde en silencio» |
+| se guarda `[]` en vez de `null` | «sin etiquetas se guarda null, NUNCA `[]`» |
+| el filtro deja «caer» al cliente sin etiquetas en todas | **2**: el suelo del filtro y «no cae en ninguna» |
+| **control negativo** · cambiar un comentario | **nada** |
+
+**Y el guard me cazó a mí, por tercera vez hoy:** el test que prohíbe `Prisma.JsonNull` **se cazó a
+sí mismo** en el comentario que explica la prohibición. Ahora desnuda los comentarios antes de
+mirar, **con suelo** para que el desnudador no se lleve el fichero por delante. Lección de
+SCRUM-349.
+
+## Lo derivado, regenerado
+
+`docs/sql/deriva-prod.sql` **regenerado**, no editado: **412 columnas · 27 tablas** (411 + la nueva,
+sin tablas nuevas). El test que lo compara con el esquema pasa sin tocarlo a mano.
