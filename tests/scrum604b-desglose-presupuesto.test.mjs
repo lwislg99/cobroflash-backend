@@ -48,13 +48,15 @@ const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FUENTE = 'src/modules/invoicing/infra/pdf/pdf.service.ts';
 
 /** Genera un presupuesto de verdad y devuelve su TEXTO. Borra el fichero siempre. */
-async function textoDePresupuesto(id, { lines, total, country = 'ES' }) {
+// SCRUM-647 · `taxName` entra en la ayuda porque el documento ya no lo deduce del país: se lo
+// pasa quien llama. Sin él, el generador imprime su valor por defecto, que es lo que se comprueba.
+async function textoDePresupuesto(id, { lines, total, country = 'ES', taxName }) {
   const { generateQuotePdf } = await import('../dist/lib/pdf.js');
   const { outPath } = await generateQuotePdf({
     quoteId: 99990000 + id, quoteNumber: 600 + id,
     merchant: { name: 'QA Fontanería', legalName: 'QA SL', taxId: 'B00000000' },
     customer: { name: 'Cliente QA' },
-    currency: 'EUR', total, lines, signatureData: null, country,
+    currency: 'EUR', total, lines, signatureData: null, country, taxName,
   });
   try {
     const r = extraerTextoPdf(fs.readFileSync(outPath));
@@ -137,13 +139,31 @@ test('SCRUM-604b · 🔴 el caso con SUPLIDO: dos bases, y la del 0 % sigue sin 
     + 'impuesto que el de una sola. Si esto falla, la del 0 % ya sale — y ① está resuelto.');
 });
 
-test('SCRUM-604b · el rótulo del impuesto sale del locale: en Perú es IGV, no IVA', async () => {
+test('SCRUM-604b · el rótulo del impuesto: en Perú sigue siendo IGV (SCRUM-647)', async () => {
+  // 🔴 REAPUNTADO POR SCRUM-647, y la propiedad NO se debilita: un presupuesto peruano sigue
+  // teniendo que decir IGV. Lo que cambia es DÓNDE se decide.
+  //
+  // Antes el documento lo resolvía con `locale.vatName`, indexado por PAÍS. Eso miente en
+  // Canarias —que es `ES` y repercute IGIC—, así que la resolución por país SUBIÓ AL LLAMANTE,
+  // donde el país ya está a la vista. El documento recibe el nombre y no lo decide.
   const bloque = bloqueDeTotales(await textoDePresupuesto(6, {
-    lines: [{ concept: 'Mano de obra', qty: 2, price: 30, tax: 0.18 }], total: '70.80', country: 'PE',
+    lines: [{ concept: 'Mano de obra', qty: 2, price: 30, tax: 0.18 }], total: '70.80',
+    country: 'PE', taxName: 'IGV', // ← exactamente lo que pasan las tres rutas
   }));
   assert.equal(bloque, 'Base imponible: 60,00 EURIGV 18%: 10,80 EURTotal cotización: 70,80 EUR',
-    '🔴 el rótulo del impuesto ha dejado de salir de `locale.vatName`, o cambió el de Perú. '
+    '🔴 el rótulo del impuesto ha dejado de llegar al bloque, o cambió el de Perú. '
     + 'Es lo que hace que este bloque no necesitara microcopy nueva.');
+
+  // ⚠️ Y EL CAMBIO DE COMPORTAMIENTO, ESCRITO EN VEZ DE ESCONDIDO: sin `taxName`, el país YA NO
+  // basta. El documento dice «IVA» aunque le pases `PE`. Que Perú siga viendo IGV depende
+  // enteramente de que los llamantes lo pasen, y eso lo vigila
+  // `scrum647-presupuesto-tambien-neutral.test.mjs` — sin aquel guard, esto regresaría en silencio.
+  const sinNombre = bloqueDeTotales(await textoDePresupuesto(7, {
+    lines: [{ concept: 'Mano de obra', qty: 2, price: 30, tax: 0.18 }], total: '70.80', country: 'PE',
+  }));
+  assert.equal(sinNombre, 'Base imponible: 60,00 EURIVA 18%: 10,80 EURTotal cotización: 70,80 EUR',
+    '🔴 el documento ha vuelto a resolver el impuesto por el país. Eso es lo que miente en '
+    + 'Canarias y lo que SCRUM-647 sacó de aquí.');
 });
 
 test('SCRUM-604b · sin líneas no hay desglose que imprimir, y el total sigue saliendo', async () => {

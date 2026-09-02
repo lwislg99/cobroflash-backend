@@ -8,6 +8,7 @@ import {
 } from '../../quoteAdmin';
 
 import { prisma } from '../../../../core/db/prisma';
+import { getLocale } from '../../../../core/i18n/locales'; // SCRUM-647
 import { actorDeRequest } from '../../audit.service'; // SCRUM-207: quién emite (C3/C4)
 import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo, validarEdicionPlan } from '../../../quotes/domain/billingPlan'; // SCRUM-37
 import { sendQuoteWhatsAppToCustomer } from '../../../quotes/domain/sendQuote.service';
@@ -544,6 +545,8 @@ router.get('/:id/pdf', async (req, res) => {
       signatureData: quote.signatureUrl || undefined,
       signedAt: quote.acceptedAt ?? undefined,
       country: quote.merchant.country,
+      // SCRUM-647 · la resolución por PAÍS vive AQUÍ y no dentro del documento.
+      taxName: getLocale(quote.merchant.country).vatName,
     });
 
     await prisma.quote.update({ where: { id }, data: { pdfUrl: pdf.publicUrlPath } }).catch(() => {});
