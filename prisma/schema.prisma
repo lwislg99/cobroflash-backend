@@ -381,6 +381,24 @@ model Quote {
   validUntil DateTime? @map("valid_until")
   docFields  Json?     @map("doc_fields") // {name,phone,taxId,email}: bool
 
+  // SCRUM-593 (DOC-03) · los dos textos libres del documento: uno bajo la cabecera y otro al
+  // final, que se presenta como «Observaciones».
+  //
+  // `@map` EXPLÍCITO, y no es adorno: `quotes` MEZCLA convenciones. Las columnas de esta tabla
+  // que llevan `@map` son snake_case (`valid_until`, `doc_fields`, `internal_notes`…) y las
+  // camelCase son justamente las que NO lo llevan, donde Prisma conserva el nombre del campo.
+  // Sin el `@map`, estas dos se llamarían `docHeaderText` en la base y no casarían con el ALTER.
+  //
+  // Nullable y SIN default: `null` es «el profesional no escribió nada», que NO es `''`. El PDF
+  // sólo pinta el bloque cuando hay texto, así que un default vacío no aportaría nada y sí
+  // destruiría la distinción.
+  //
+  // 🔴 LA FACTURA NO LOS TIENE, y no es un olvido: `ensureInvoicePdf` REGENERA el PDF con el
+  // código de hoy (el fs de Railway es efímero), así que un bloque nuevo cambiaría el aspecto de
+  // facturas YA EMITIDAS — regla 29. Es SCRUM-665.
+  docHeaderText String? @map("doc_header_text") @db.Text
+  docFooterText String? @map("doc_footer_text") @db.Text
+
   id         Int @id @default(autoincrement())
   merchantId Int
   customerId Int
@@ -1006,6 +1024,13 @@ model Albaran {
   // ni serializer/API del cliente). Aditivo, Json nullable.
   evidenciaFirma     Json?     @map("evidencia_firma")
   notas              String?   @db.Text
+  // SCRUM-593 (DOC-03): el texto libre bajo la cabecera. `albaranes` es snake_case al 100 %.
+  //
+  // 🔴 Y AQUÍ NO HAY `docFooterText`, A PROPÓSITO: el PIE de este documento ya existe y es
+  // `notas` —la línea de arriba—, que ya se imprime. Lo único que cambió en el pie fue el
+  // RÓTULO, de «Notas:» a «Observaciones», que es copy y no esquema. Un segundo campo daría dos
+  // sitios para lo mismo y al día siguiente no se sabría cuál manda.
+  docHeaderText      String?   @map("doc_header_text") @db.Text
   pdfUrl             String?   @map("pdf_url")
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")

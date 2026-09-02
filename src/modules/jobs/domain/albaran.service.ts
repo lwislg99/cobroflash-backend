@@ -852,6 +852,8 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
     lineas,
     totales: modoValoracion === 'VALORADO' ? calcAlbaranTotales(lineas) : null,
     notas: albaran.notas,
+    // SCRUM-593 (DOC-03): la cabecera. El PIE de este documento sigue siendo `notas`, arriba.
+    docHeaderText: (albaran as any).docHeaderText ?? null,
     signatureData: albaran.signatureUrl,
     firmadoAt: albaran.firmadoAt,
     // SCRUM-300 (C5): QUIÉN firmó y EN CALIDAD DE QUÉ, junto al trazo. Salen de las columnas del

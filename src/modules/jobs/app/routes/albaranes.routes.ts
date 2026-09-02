@@ -521,6 +521,16 @@ router.patch('/:id', async (req, res) => {
       data.notas = String(req.body.notas || '').slice(0, 2000) || null;
       cambios.push('notas');
     }
+    // SCRUM-593 (DOC-03) · el texto libre de CABECERA. Se trata EXACTAMENTE como `notas` —el
+    // campo hermano, que es el PIE de este mismo documento— tope incluido: dos límites distintos
+    // para dos textos del mismo papel serían una trampa para el profesional.
+    //
+    // 🔴 Y AQUÍ NO HAY `docFooterText`: el pie de este documento es `notas`, la línea de arriba.
+    // No se duplica. Que esa columna NO exista está comprobado contra `information_schema`.
+    if (req.body?.docHeaderText !== undefined) {
+      data.docHeaderText = String(req.body.docHeaderText || '').slice(0, 2000) || null;
+      cambios.push('docHeaderText');
+    }
     // SCRUM-300 (C5): DOS fechas —la del documento y la de ENTREGA— con la misma regla y UNA
     // sola salida de error. Se hizo así a propósito: duplicar el `return 400 invalid_date` habría
     // añadido una respuesta pública más sin texto humano, y el trinquete de SCRUM-275 lo cazó al

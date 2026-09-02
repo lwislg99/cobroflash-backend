@@ -172,6 +172,10 @@ router.post('/create', async (req, res) => {
           paymentTerms: body.paymentTerms ?? null,
           customBillingPlan: body.customBillingPlan ?? undefined, // SCRUM-27: plan de tramos personalizado
           docFields: body.docFields ?? undefined, // A20.4: qué datos del cliente muestra el documento
+          // SCRUM-593 (DOC-03): los dos textos libres del documento. `?? null` y no `?? undefined`
+          // porque aquí null y «no lo mandó» acaban igual —columna vacía— y null lo dice mejor.
+          docHeaderText: body.docHeaderText ?? null,
+          docFooterText: body.docFooterText ?? null,
           // A16.2: caducidad — default 30 días, editable al crear
           validUntil: body.validUntil ?? new Date(Date.now() + 30 * 86_400_000),
           teamMemberId: creatorTeamMemberId,
@@ -207,6 +211,10 @@ router.post('/create', async (req, res) => {
         },
         customer: { name: customer.name, phone: customer.phone, email: customer.email, legalName: (customer as any).legalName, taxId: (customer as any).taxId }, // A20.4
         docFields: ((quote as any).docFields as any) ?? null, // A20.4
+        // SCRUM-593 (DOC-03): los dos textos libres, leídos de la FILA. Van desde la fila y no
+        // desde el body a propósito: el documento tiene que decir lo que quedó GUARDADO.
+        docHeaderText: (quote as any).docHeaderText ?? null,
+        docFooterText: (quote as any).docFooterText ?? null,
         currency: quote.currency,
         total: quote.total.toString(),
         lines: canonicalLines as any,
@@ -539,6 +547,10 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
             },
             customer: { name: customer.name, phone: customer.phone, email: customer.email, legalName: (customer as any).legalName, taxId: (customer as any).taxId }, // A20.4
         docFields: ((quote as any).docFields as any) ?? null, // A20.4
+            // SCRUM-593 (DOC-03): también al REGENERAR con firma. Si faltara aquí, aceptar un
+            // presupuesto le borraría los dos bloques del papel — y sin tocar la base.
+            docHeaderText: (quote as any).docHeaderText ?? null,
+            docFooterText: (quote as any).docFooterText ?? null,
             currency: quote.currency,
             total: quote.total.toString(),
             lines: quote.lines as any,
