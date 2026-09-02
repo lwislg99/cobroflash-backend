@@ -2,7 +2,7 @@
 
 **Fecha:** 2-sep-2026 · **Carril:** higiene de guards · **Gate:** sin gate, corre en `npm test`
 
-**Medido contra:** `origin/main` = `01d5c5a06027a443542cb327e029195ac561fda6`
+**Medido contra:** `origin/main` = `01d5c5a06027a443542cb327e029195ac561fda6` · 2026-09-02T12:10:00+02:00
 
 ## 1 · PASO 0 · quién usaba el número y para qué
 
