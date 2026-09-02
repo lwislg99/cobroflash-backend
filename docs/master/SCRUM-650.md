@@ -196,3 +196,117 @@ trabajos.
 
 `operarioId` (autoría, no ejecución) · el parte de trabajo · el presupuesto · facturación · el
 camino de emisión · los tests de SCRUM-467 (**0 líneas modificadas**, verificado en cada paso).
+
+---
+
+# PASO C (2-sep-2026) · El backfill, probado contra un banco real
+
+> ⚠️ Se ANEXA. Nada de lo de arriba se toca.
+
+**Medido contra:** `origin/main` = `795e9c289e7028c33f37df258b3a7611a5a29e02` · 2026-09-02T18:30:00+02:00
+**Rama:** `scrum-650-paso-c-backfill`
+**Ni produccion ni staging.** Todo contra un Postgres local en `127.0.0.1:55432`, base
+`yaqu_paso_c_test` — loopback y `_test`, que es lo que exige `parseBDSegura`.
+
+## 0 · PASO 0 · el backfill YA ESTABA ESCRITO Y MERGEADO
+
+`docs/sql/scrum-650-paso-c-backfill.sql` estaba en `main` desde la tanda A/B. Se reporto y no se
+reescribio: **lo que faltaba eran las tres piezas que un `INSERT` de SQL puro no puede tener.**
+
+## 1 · Que campo alimenta la tabla, y por que no el otro
+
+**`jobs.assigned_user_id`**, y solo ese. El `WHERE` es `j."assigned_user_id" IS NOT NULL` y
+`operario_id` no aparece en ninguna parte — hay un test que lo comprueba sobre el propio fichero.
+
+- `assignedUserId` = **quien EJECUTA** (SCRUM-10) → es lo que `job_assignees` guarda.
+- `operarioId` = **AUTORIA**, congelada al aceptar el presupuesto (SCRUM-52).
+
+Mezclarlas meteria en «los asignados» a gente que solo redacto un presupuesto, y el filtro les
+ensenaria trabajos que no ejecutan. **No se unifican.**
+
+## 2 · El esquema del banco, DERIVADO — no escrito a mano
+
+`./node_modules/.bin/prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma
+--script` (el binario del proyecto, **nunca `npx`** — SCRUM-385). Control positivo: **27
+`CREATE TABLE`**, 835 lineas. Aplicado y verificado con `information_schema`:
+
+```
+tablas en public: 27
+job_assignees: assigned_at,job_id,team_member_id
+jobs.assigned_user_id existe: 1
+```
+
+Un esquema escrito a mano habria sido un parecido, y medir contra un parecido es medir mal.
+
+## 3 · 🔴 El SUELO DE CEGUERA, probado contra la base vacia
+
+Un `INSERT ... SELECT` sobre cero filas **inserta cero y sale con exito**. Y «cero trabajos con
+asignado» es indistinguible de «me he conectado a una base vacia y no he mirado nada». Con la base
+vaciada:
+
+```
+rc=3
+🔴 CENSO CIEGO - cero trabajos con `assigned_user_id`. Eso NO se puede leer como «no hay nada que
+migrar»: es indistinguible de «me he conectado a una base vacia o equivocada y no he mirado nada».
+  Un `INSERT ... SELECT` sobre cero filas inserta cero y SALE BIEN, y ahi es donde un backfill se
+  da por hecho sin haber tocado un dato.
+  Si de verdad no hay nada que migrar, dilo a mano: `--permitir-cero`.
+```
+
+## 4 · 🔴 IDEMPOTENCIA MEDIDA, no por construccion
+
+Sembrados 4 trabajos (3 con asignado: 11, 12, 11 — y uno sin nadie). Las **dos salidas**, literales:
+
+```
+═══════ PRIMERA PASADA ═══════
+  trabajos con asignado en la columna vieja : 3
+  filas en job_assignees ANTES              : 0
+  filas insertadas                          : 3
+  filas en job_assignees DESPUES            : 3
+  PENDIENTES (con asignado y sin fila)      : 0
+  modo                                      : APLICADO
+rc=0
+
+═══════ SEGUNDA PASADA ═══════
+  trabajos con asignado en la columna vieja : 3
+  filas en job_assignees ANTES              : 3
+  filas insertadas                          : 0
+  filas en job_assignees DESPUES            : 3
+  PENDIENTES (con asignado y sin fila)      : 0
+  modo                                      : APLICADO
+rc=0
+```
+
+**Segunda pasada: 0 insertadas, mismo total, 0 pendientes.** El `ON CONFLICT` lo hacia «por
+construccion», y por construccion es justo lo que ha costado dos datos falsos esta semana.
+
+## 5 · 🔴 LA EQUIVALENCIA, contra la base real
+
+El filtro de `jobs.routes.ts:477` —`operarioId OR assignedUserId OR job_assignees`— leido por los
+dos caminos, para los tres empleados del caso real:
+
+```
+  empleado 11  columna=[1,2,4]  tabla=[1,2,4]  IGUAL
+  empleado 12  columna=[2,4]    tabla=[2,4]    IGUAL
+  empleado 13  columna=[3]      tabla=[3]      IGUAL
+rc=0
+```
+
+**No hay hallazgo que reportar: devuelve lo mismo.** El empleado 13 lo ve por AUTORIA, que es
+justamente el eje que el backfill NO toca — y sigue viendolo, que era lo que habia que comprobar.
+
+## 6 · Lo que NO se ha tocado
+
+`prisma/schema.prisma` · el test de SCRUM-467 (**0 lineas**, verificado, y sigue verde) · ningun
+`DROP COLUMN`: la columna vieja se queda, convivencia y no sustitucion.
+
+## 7 · Huecos declarados
+
+1. **No se ha ejecutado contra produccion.** Queda escrito y probado; lo ejecuta el fundador.
+2. **El banco local NO es produccion.** Sus datos son cuatro filas sembradas a mano: lo que se ha
+   probado es que el backfill y el filtro se comportan como dicen, no que los datos reales de
+   produccion tengan la misma forma. Antes de aplicarlo alli, el `pendientes` de la verificacion
+   tiene que salir 0 sobre los datos de verdad.
+3. 🔴 **`scripts/_scratch-run.mjs` esta sin fuente por mi culpa.** `SCRATCH_DATABASE_URL` vive solo
+   en `.env.prod.guardado`, el fichero que renombre desde `.env` en una tanda anterior — y esa
+   herramienta busca en `.env`/`.env.local`. Es de otro carril: **se reporta, no se arregla.**
