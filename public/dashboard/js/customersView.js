@@ -93,6 +93,28 @@ function renderCustomersView(container) {
   // los controles. ✅ Los seis textos los APROBÓ el fundador el 2-sep-2026 y están fijados con
   // `===` en `tests/scrum581-pestanas-y-orden-clientes.test.mjs`: no se cambian sin pasar por él.
   const FC = window.filtroClientes;
+  // ═════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-584 (CONT-11) · QUÉ COLUMNAS HA ENCENDIDO EL PROFESIONAL.
+  //
+  // 🔴 EN EL NAVEGADOR, POR DISPOSITIVO, y es una decisión con su motivo: es preferencia de
+  // VISTA, no dato de negocio. No justifica una columna en la base ni una ida al servidor en
+  // la pantalla que tiene que ir rápida en móvil. Consecuencia asumida y escrita: NO VIAJA
+  // entre dispositivos — quien cambie de teléfono vuelve a elegir, y ese coste se paga solo.
+  //
+  // ⚠️ `localStorage` puede no existir (navegador con almacenamiento bloqueado) o traer
+  // basura. Los dos casos caen al MISMO sitio: la preferencia vacía, que es «lo de hoy». Una
+  // pantalla que revienta al leer una preferencia es peor que una sin preferencia.
+  const CLAVE_COLUMNAS = "yaqu.clientes.columnas";
+  function leerColumnas() {
+    try { return FC.normalizarColumnas(JSON.parse(localStorage.getItem(CLAVE_COLUMNAS))); }
+    catch (_e) { return []; }
+  }
+  function guardarColumnas(ids) {
+    try { localStorage.setItem(CLAVE_COLUMNAS, JSON.stringify(FC.normalizarColumnas(ids))); }
+    catch (_e) { /* sin almacenamiento: la elección vale para esta sesión y ya */ }
+  }
+  let columnasEncendidas = leerColumnas();
+
   let pestanaActiva = FC.POR_DEFECTO.pestana;
   let ordenActivo = FC.POR_DEFECTO.orden;
   let etiquetaActiva = FC.POR_DEFECTO.etiqueta; // SCRUM-580 (CONT-07)
@@ -172,6 +194,63 @@ function renderCustomersView(container) {
   ordenSelect.addEventListener("change", () => { ordenActivo = ordenSelect.value; pintar(); });
   toolbar.appendChild(ordenSelect);
 
+  // ═════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-584 (CONT-11) · EL SELECTOR DE COLUMNAS. Va el ÚLTIMO de los cinco controles.
+  //
+  // 🔴 SIRVE PARA AÑADIR, no para quitar, y eso salió de MEDIR: a 360 px no hay scroll
+  // horizontal (343 = 343) — la tabla es una pila de tarjetas—, y lo que pasa es que el CSS
+  // esconde cuatro columnas y nadie podía encenderlas. El que vive del email o de las notas
+  // no los veía en el móvil.
+  //
+  // Un `<details>` y no un desplegable: es el único control nativo que se abre y se cierra sin
+  // JavaScript de posicionamiento, funciona con teclado y no se sale de la pantalla a 360 px.
+  // Cero dependencias y cero componente nuevo.
+  //
+  // Las FIJAS no salen aquí: `Nombre` y las acciones no se pueden apagar, así que ofrecerlas
+  // sería ofrecer algo que no se puede hacer. Es lo que hace imposible la salida muerta.
+  const columnasBox = document.createElement("details");
+  columnasBox.className = "columnas-selector";
+  const columnasResumen = document.createElement("summary");
+  columnasResumen.className = "input";
+  columnasResumen.textContent = FC.TEXTOS_COLUMNAS.control;
+  columnasBox.appendChild(columnasResumen);
+
+  const columnasLista = createElement("div", "columnas-lista");
+  FC.columnasElegibles().forEach((col) => {
+    const fila = document.createElement("label");
+    fila.className = "columnas-opcion";
+    const casilla = document.createElement("input");
+    casilla.type = "checkbox";
+    casilla.dataset.columna = col.id;
+    // Una columna que HOY se ve en la tarjeta nace marcada: la casilla describe lo que hay,
+    // no lo que el profesional ha tocado. Si naciera desmarcada, «Teléfono» aparecería
+    // apagado estando encendido — y F1 dice que nace visible SIEMPRE.
+    casilla.checked = FC.claseDeColumna(col.id, columnasEncendidas) === "";
+    casilla.addEventListener("change", () => {
+      const marcadas = Array.from(columnasLista.querySelectorAll("input[type=checkbox]"))
+        .filter((x) => x.checked).map((x) => x.dataset.columna);
+      columnasEncendidas = FC.normalizarColumnas(marcadas);
+      guardarColumnas(columnasEncendidas);
+      pintarCabecera();
+      pintar();
+    });
+    const texto = document.createElement("span");
+    texto.textContent = col.texto;
+    fila.appendChild(casilla);
+    fila.appendChild(texto);
+    columnasLista.appendChild(fila);
+  });
+  columnasBox.appendChild(columnasLista);
+  toolbar.appendChild(columnasBox);
+
+  /** Repinta SOLO las clases de la cabecera: los `<th>` no se recrean, se les cambia la clase. */
+  function pintarCabecera() {
+    FC.columnasDeLaTabla().forEach((col) => {
+      const th = thPorColumna[col.id];
+      if (th) th.className = FC.claseDeColumna(col.id, columnasEncendidas);
+    });
+  }
+
   outerCard.appendChild(toolbar);
 
   function setCount(text) { subtitle.textContent = text; }
@@ -183,21 +262,18 @@ function renderCustomersView(container) {
   tableScroll.appendChild(table);
   const thead = document.createElement("thead");
   const trHead = document.createElement("tr");
-  [
-    { t: "ID" },
-    { t: "Nombre" },
-    { t: "Teléfono" },
-    { t: "Email", cls: "col-hide-mobile" },
-    { t: "Notas", cls: "col-hide-mobile" },
-    // SCRUM-580 (CONT-07). Va aquí y no antes: F1 exige que el teléfono siga siendo la TERCERA
-    // columna, así que nada se mueve por delante de él. Oculta en móvil como sus vecinas.
-    { t: FC.TEXTOS_ETIQUETAS.columna, cls: "col-hide-mobile" },
-    { t: "Alta", cls: "col-hide-mobile" },
-    { t: "" },
-  ].forEach(({ t, cls }) => {
+  // ── SCRUM-584 (CONT-11) · LA CABECERA SALE DE `FC.COLUMNAS`, no de una lista a mano ─────
+  // Antes eran ocho objetos escritos aquí, y su número estaba COPIADO en dos `colSpan`. Al
+  // entrar «Etiquetas» hubo que recalcular los dos a mano. Ahora cabecera, celdas y `colSpan`
+  // salen del MISMO sitio, así que no pueden descuadrarse entre sí — y un vacío descuadrado
+  // no lo ve ninguna tanda.
+  const thPorColumna = {};
+  FC.columnasDeLaTabla().forEach((col) => {
     const th = document.createElement("th");
-    th.textContent = t;
-    if (cls) th.className = cls;
+    th.textContent = col.texto;
+    th.dataset.columna = col.id;
+    th.className = FC.claseDeColumna(col.id, columnasEncendidas);
+    thPorColumna[col.id] = th;
     trHead.appendChild(th);
   });
   thead.appendChild(trHead);
@@ -889,7 +965,7 @@ function renderCustomersView(container) {
       if (lote.length > 0 && data.length === 0) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = 8; // SCRUM-580: entró «Etiquetas»
+        td.colSpan = FC.colSpanDeLaTabla(); // SCRUM-584: del mismo sitio que la cabecera
         // SCRUM-581 · DOS líneas (microcopy aprobada, 2-sep-2026). Se reutiliza el componente
         // de vacío que ya existe —`.empty-state-title` y `.empty-state-desc`—: cero tokens nuevos.
         // Con `textContent` y no concatenando en el `innerHTML`: el texto es de la pieza, no del
@@ -907,7 +983,7 @@ function renderCustomersView(container) {
       if (!Array.isArray(data) || data.length === 0) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = 8; // SCRUM-580: entró «Etiquetas»
+        td.colSpan = FC.colSpanDeLaTabla(); // SCRUM-584: del mismo sitio que la cabecera
         td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div>'
           + '<div class="empty-state-title">' + (searchText ? 'Sin resultados para tu búsqueda' : 'Añade a tu primer cliente') + '</div>'
           + '<div class="empty-state-desc">' + (searchText ? 'Prueba con otro nombre, teléfono o email.' : 'Guárdalo una vez y podrás enviarle cotizaciones profesionales por WhatsApp en segundos.') + '</div>'
@@ -930,8 +1006,8 @@ function renderCustomersView(container) {
         addCell(tr, "#" + c.id);
         addCell(tr, c.name || "Cliente sin nombre", "cell-title");
         addCell(tr, c.phone || "sin teléfono", "cell-date");
-        addCell(tr, c.email || "", "col-hide-mobile");
-        const notesCell = addCell(tr, c.notes || "", "col-hide-mobile");
+        addCell(tr, c.email || "", FC.claseDeColumna("email", columnasEncendidas));
+        const notesCell = addCell(tr, c.notes || "", FC.claseDeColumna("notas", columnasEncendidas));
         notesCell.style.cssText += "max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)";
         if (c.notes) notesCell.title = c.notes;
         // SCRUM-580 (CONT-07) · las etiquetas, con `.badge .badge-slate` — el componente que YA
@@ -939,7 +1015,7 @@ function renderCustomersView(container) {
         // Con `textContent` por etiqueta y no concatenando markup: el texto lo escribe el
         // profesional, y meterlo en un `innerHTML` sería una inyección con su nombre.
         const tagsCell = document.createElement("td");
-        tagsCell.className = "col-hide-mobile";
+        tagsCell.className = FC.claseDeColumna("etiquetas", columnasEncendidas);
         const susTags = FC.tagsDe(c);
         if (susTags.length === 0) {
           tagsCell.textContent = "";
@@ -957,7 +1033,7 @@ function renderCustomersView(container) {
         }
         tr.appendChild(tagsCell);
 
-        const altaCell = addCell(tr, c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "", "col-hide-mobile");
+        const altaCell = addCell(tr, c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "", FC.claseDeColumna("alta", columnasEncendidas));
         altaCell.style.color = "var(--muted)";
 
         const tdActions = document.createElement("td");
