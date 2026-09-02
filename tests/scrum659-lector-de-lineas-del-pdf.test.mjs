@@ -137,6 +137,20 @@ test('SCRUM-659 · SUELO: sobre un DOCUMENTO REAL, no sobre un PDF de juguete', 
     const ordenado = (s) => s.split('').sort().join('');
     assert.equal(ordenado(extraerTextoPdf(buf).texto), ordenado(r.texto),
       '🔴 sobre un documento real los dos lectores dejan de leer lo mismo.');
+
+    // 🔴 EL ORDEN ES EL DE LECTURA, y esto SÓLO se puede comprobar sobre un documento real: en un
+    // PDF de juguete todas las líneas comparten `x`, así que el orden de inserción ya coincide con
+    // el bueno y quitar el criterio por `y` no rompería nada. Medido aquí: el flujo del PDF NO va
+    // de arriba abajo —`extraerTextoPdf` y este lector devuelven los mismos caracteres en distinto
+    // orden—, así que si se perdiera el orden por `y` esto caería.
+    const ys = r.lineas.map((l) => l.y);
+    const bajando = ys.every((y, i) => i === 0 || y <= ys[i - 1]);
+    assert.equal(bajando, true,
+      `🔴 las líneas no salen de arriba abajo. Sin ese orden, «la línea siguiente» deja de\n`
+      + `  significar nada para quien lea este instrumento. Las \`y\`: ${JSON.stringify(ys)}`);
+    assert.notEqual(extraerTextoPdf(buf).texto, r.texto,
+      '🔴 SUELO de lo anterior: si el flujo YA viniera en orden de lectura, la comprobación de\n'
+      + '  arriba no distinguiría nada y habría que buscar otro documento para ejercitarla.');
   } finally {
     fs.rmSync(outPath, { force: true });
   }
