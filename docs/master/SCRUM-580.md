@@ -3,7 +3,7 @@
 **Fecha:** 2-sep-2026 · **Carril:** S3
 **Medido contra:** `origin/main` = `1b76c430c7ae4e4541e86191b3802ba79b6f5017` · 2026-09-02T19:21:12Z
 **Rama:** `scrum-580-cont07-tags-por-contacto`
-**Estado:** 🛑 **PARADO EN EL PASO ②**, que es donde el encargo manda parar.
+**Estado:** ✅ paso ② aplicado en las **dos bases alcanzables** · ⛔ producción, pendiente del fundador.
 
 **La víctima:** el profesional no puede agrupar a sus clientes por nada. En oficios eso es
 comunidad · administrador · aseguradora · urgencias · moroso. Con 300 clientes, buscar por texto
@@ -126,3 +126,44 @@ mergea antes del `ALTER`.
    tanda verde no ve qué aspecto tiene una pantalla.
 3. **El microcopy no está propuesto todavía**: va con el ③, cuando exista la pantalla que lo
    enseña, para poder medir su caja en vez de contar caracteres.
+
+---
+
+## ✅ PASO ② · APLICADO EN LAS DOS BASES ALCANZABLES (2-sep-2026)
+
+Producción **no**: la aplica el fundador, y desde un árbol de trabajo no se puede ni se debe.
+Destinos acreditados ANTES con `scripts/comprobar-claves-bd.mjs` (`DATABASE_URL`: **ausente**, que
+es lo correcto en un árbol de trabajo).
+
+### 🔴 EL PROCEDIMIENTO FUE ANTES-Y-DESPUÉS, y el motivo no es burocrático
+
+Esta casa ya tuvo dos veces el mismo defecto: una clave apuntando a otra base, y
+`DATABASE_URL_STAGING` y `DATABASE_URL_TESTS` siendo la misma cadena (SCRUM-668). **Aplicar dos
+veces sobre la misma base se ve exactamente igual que hacerlo bien.** Por eso se midió cada base
+antes y después.
+
+**Bases físicas distintas alcanzables: DOS**, no tres — `_STAGING` y `_TESTS` resuelven a la misma.
+Ya está fichado como SCRUM-668 y no se persigue aquí.
+
+| Base **física** | La resuelven | ANTES | DESPUÉS |
+|---|---|---|---|
+| **`yaqu_dev_javier`** (host `acela`) | `DATABASE_URL_DEV` | 2 filas · `tags` **ausente** | 3 filas · `tags` = **`jsonb`** |
+| **`railway`** (host `acela`) | `DATABASE_URL_STAGING` **+** `DATABASE_URL_TESTS` | 2 filas · `tags` **ausente** | 3 filas · `tags` = **`jsonb`** |
+| **producción** (host `autorack`) | — | ⛔ pendiente del fundador | — |
+
+**El «antes» de la segunda salió con `tags` AUSENTE**, y eso es exactamente lo que descarta que
+las dos cadenas apunten al mismo sitio: si hubiera salido con 3 filas, tocaba parar y decirlo.
+
+**Control positivo en las cuatro lecturas:** `customers.billing_city` (`text`) y
+`quotes.clausulas_excluidas` (`jsonb`). Sin esas dos, la consulta no estaba mirando esa base, y la
+ausencia de `tags` no significaría «no está» sino «no se vio nada». La segunda es además el control
+de **cómo se ve un JSONB bien creado** en esa misma base.
+
+**El tipo salió `jsonb` en las dos**, que es lo que de verdad había que comprobar: `schemaDrift`
+mira que la columna exista, **no su tipo**.
+
+Turno de staging **tomado y soltado**; libre al terminar. Registro operativo en
+`docs/MIGRATIONS_PENDING.md`.
+
+`prisma/schema.prisma` **sigue sin tocarse** y sigue idéntico a `main`: entra en el ③ cuando las
+**tres** bases tengan la columna.
