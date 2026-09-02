@@ -16,6 +16,16 @@ const CACHE_NAME = 'yaqu-v4'; // último bump manual: con network-first ya no ha
 // ⚠️ El modo de fallo del otro sentido es peor: `cache.addAll` es ATÓMICO. Una sola ruta que ya
 // no exista hace que RECHACE ENTERA — el precache no se queda a medias, se queda en NADA y el
 // `install` falla. Por eso el guard mira también SHELL → HTML.
+//
+// 🔴 SCRUM-670 · ESTA LISTA ES DE POBLACIÓN, NO DE ORDEN, y aquí decía lo contrario. El
+// comentario de abajo pedía añadir los scripts «en el mismo orden que el HTML», y **eso ya era
+// falso cuando se midió** (2-sep-2026): las dos listas coinciden en los 70 nombres —cero faltan,
+// cero sobran, cero duplicados— y **difieren en 9 posiciones**; la primera, `albaranActionsRegistry.js`
+// donde el índice tiene `invoiceDetailView.js`. Y da igual: el precache DESCARGA, no ejecuta.
+// El orden de ejecución lo fijan las dependencias declaradas del índice (`filtroClientes.js`
+// antes de `customersView.js`, `tiposDeIva.js` antes de `quotesView.js`, `margenCatalogo.js` y
+// `switchTipoArticulo.js` antes de `productsView.js`), y ahí sí importa.
+// Se corrige porque una frase falsa en un comentario se lee como una medición.
 const SHELL = [
   '/dashboard/',
   '/tokens.css',
