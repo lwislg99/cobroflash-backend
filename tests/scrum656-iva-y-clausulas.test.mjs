@@ -171,7 +171,18 @@ test('SCRUM-656 · 🔴 la FACTURA no sabe nada del modo de IVA — y no puede s
       + '  Esta casilla vive en el presupuesto y muere ahí. Si el modo se propaga a la factura, es\n'
       + '  un defecto FISCAL, no una preferencia de maqueta.');
   }
-  // Y el positivo: el presupuesto SÍ lo usa. Sin esto, borrar el modo entero pasaría en verde.
+  // 🔴 Y EL POSITIVO NO ES «LA LLAMADA EXISTE»: ES QUE EL MODO LLEGUE A ELLA.
+  //
+  // Este assert nació de un rojo que NO cayó. Se inyectó el defecto real —el PDF deja de mirar
+  // `params.modoIva` y fija el modo a 'sumar'— y los doce tests siguieron en verde: `pieDePresupuesto`
+  // y `pie.leyenda` seguían escritos, así que la comprobación de presencia pasaba mientras el
+  // documento ignoraba la casilla y «IVA no incluido» no se pintaba jamás.
+  assert.ok(presupuesto.includes('leerModoIva(params.modoIva)'),
+    '🔴 EL PDF YA NO LEE EL MODO DEL PRESUPUESTO.\n'
+    + '  La casilla se elige al crear, viaja hasta aquí y el documento la ignora: todos los\n'
+    + '  presupuestos saldrían con el desglose, también los que se ofrecieron SIN IVA incluido.\n'
+    + '  Y no basta con que `pieDePresupuesto` esté escrito: con el modo fijo, la llamada sigue\n'
+    + '  ahí y no pinta nunca la leyenda.');
   assert.ok(presupuesto.includes('pieDePresupuesto'),
     '🔴 el PDF de PRESUPUESTO ya no llama a `pieDePresupuesto`: el modo no se aplica en ningún '
     + 'sitio y los dos controles de arriba estarían midiendo un mecanismo desconectado.');
