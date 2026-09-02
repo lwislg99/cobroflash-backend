@@ -40,6 +40,10 @@ import { resolverNavegador, SALIDA_NO_ENCONTRADO, SALIDA_NO_ARRANCA, MARCA_ARRAN
 // su import es inocuo por construccion (su propio cuerpo esta detras de esta misma guarda).
 import { esInvocacionDirecta } from './_prisma-client-guard.mjs';
 import { esDeNavegador, ficheroDe } from './_solape-de-guards.mjs';
+// SCRUM-639 · el 4 de SCRUM-620 NO estaba importado aquí, así que un guard que no pudo
+// levantar su servidor se pintaba `rojo(4)` — con la palabra «rojo» delante, que es
+// justamente la que significa «he encontrado defectos».
+import { SALIDA_SIN_SERVIDOR } from './_servidor.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TOPE_MS = Number(process.env.GUARDS_VISUALES_TOPE_MS || 240000);
@@ -56,6 +60,115 @@ export function fueraDeLaTanda(s = scripts) {
   return Object.keys(s)
     .filter((k) => k.startsWith('guard:') && esDeNavegador(s, k))
     .filter((k) => !tanda.includes(k) && !tanda.includes(ficheroDe(s, k) || '\x00'));
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-639 · EL VOCABULARIO SALE DE LA PUERTA.
+//
+// LO QUE PASABA, literal del runner:
+//
+//     ✖ guard:contraste   30.1 s   arranque 30.0 s   NO ARRANCA
+//     🔴 NO PUDE ARRANCARLO: el navegador ESTÁ y no levanta.
+//     Error: Process completed with exit code 1.
+//
+// La puerta SABÍA que no se había medido nada, lo IMPRIMÍA con esas palabras, y luego salía
+// con el mismo 1 que usa para «he encontrado defectos». Desde fuera —que es desde donde se
+// mira— las dos cosas eran idénticas. Costó dos días tratando tres PR como sospechosas.
+//
+// ⚠️ Y NO ERA UNA POLÍTICA DE SALIDA DELIBERADA. Lo que sí está decidido y documentado, en
+// este fichero y en `//guards:visuales` de package.json, es que **un guard no verde hace
+// fallar el job** («no supo mirar» no es «ha vigilado»). Eso NO se toca: sigue fallando.
+// Lo que no estaba escrito en ninguna parte es que todos los fallos compartieran el 1 — y el
+// propio fichero ya lo contradecía, porque para SU PROPIA ceguera (lista vacía, sin
+// navegador) ya salía con 2. El vocabulario estaba aquí; simplemente no se propagaba desde
+// los hijos. Esto lo propaga.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+/** Qué significa cada código, y —lo que importa— si el guard LLEGÓ a medir con él. */
+export const VOCABULARIO = new Map([
+  [0, { etiqueta: 'verde', midio: true }],
+  [1, { etiqueta: 'rojo', midio: true }],
+  [SALIDA_NO_ENCONTRADO, { etiqueta: 'CIEGO', midio: false }],
+  [SALIDA_NO_ARRANCA, { etiqueta: 'NO ARRANCA', midio: false }],
+  [SALIDA_SIN_SERVIDOR, { etiqueta: 'SIN SERVIDOR', midio: false }],
+]);
+
+/**
+ * ¿Ese código significa que el guard llegó a medir? `null` es el tope de la puerta: no llegó.
+ *
+ * 🔴 UN CÓDIGO DESCONOCIDO CUENTA COMO DEFECTO, no como ceguera, y es deliberado. Las dos
+ * equivocaciones no cuestan lo mismo: leer una ceguera como defecto hace perder tiempo
+ * —lo que pasó—, pero leer un defecto como ceguera lo convierte en «cosa de infraestructura»,
+ * se relanza el job, y el defecto acaba mergeando. Fail-closed en la dirección que importa.
+ */
+export function llegoAMedir(codigo) {
+  if (codigo === null || codigo === undefined) return false;
+  const v = VOCABULARIO.get(codigo);
+  return v ? v.midio : true;
+}
+
+/**
+ * El veredicto de la tanda entera: qué código saca el PROCESO y con qué palabras.
+ *
+ * PURA y sin `process`, para que el control de las dos direcciones corra en `npm test` en
+ * milisegundos en vez de necesitar nueve navegadores — que es lo que hoy hace que nadie lo
+ * ejercite. La reproducción de punta a punta está en `docs/master/SCRUM-639.md`.
+ *
+ * LA REGLA, y su motivo:
+ *   · nadie no-verde ......................... 0
+ *   · alguien MIDIÓ y encontró algo .......... 1, aunque otros se quedaran ciegos. Un defecto
+ *     no se puede relanzar hasta que desaparezca; y que la cobertura fue parcial se DICE.
+ *   · nadie midió ............................ el código de la ceguera (2, 3 o 4), para que
+ *     «no llegué a medir» tenga puerta propia. Si los ciegos no coinciden entre ellos, o si
+ *     no dieron código (tope), sale 2 — que es el «no supe mirar» que esta puerta YA usaba
+ *     para su propia ceguera, no un número nuevo.
+ */
+export function veredicto(filas) {
+  const noVerdes = filas.filter((f) => f.estado !== 'verde');
+  if (noVerdes.length === 0) {
+    return { codigo: 0, midio: true, titulo: 'VERDE', detalle: 'los ' + filas.length + ' guards de navegador están verdes.', ciegos: 0, defectos: 0 };
+  }
+  const conDefecto = noVerdes.filter((f) => llegoAMedir(f.codigo));
+  const ciegos = noVerdes.filter((f) => !llegoAMedir(f.codigo));
+
+  if (conDefecto.length > 0) {
+    const quienes = conDefecto.map((f) => f.g).join(', ');
+    return {
+      codigo: 1, midio: true, defectos: conDefecto.length, ciegos: ciegos.length,
+      titulo: 'DEFECTOS (salida 1) · ' + conDefecto.length + ' guard(s) midieron y encontraron algo',
+      detalle: 'Han medido y hay hallazgos: ' + quienes + '.'
+        + (ciegos.length ? ' ⚠️ Y ADEMÁS ' + ciegos.length + ' guard(s) NO llegaron a medir (' + ciegos.map((f) => f.g + ': ' + f.estado).join(', ') + '), así que esta tanda NO es la lista completa de defectos.' : ''),
+    };
+  }
+
+  const codigos = [...new Set(ciegos.map((f) => f.codigo).filter((c) => c !== null && c !== undefined))];
+  const codigo = codigos.length === 1 ? codigos[0] : SALIDA_NO_ENCONTRADO;
+  const etiqueta = VOCABULARIO.get(codigo) ? VOCABULARIO.get(codigo).etiqueta : 'CIEGO';
+  return {
+    codigo, midio: false, defectos: 0, ciegos: ciegos.length,
+    titulo: 'NO MEDIDO (salida ' + codigo + ') · ' + etiqueta + ' en ' + ciegos.length + ' guard(s)',
+    detalle: 'NINGUN guard llegó a medir: ' + ciegos.map((f) => f.g + ': ' + f.estado).join(', ')
+      + '. Esto NO es un hallazgo de contraste ni de accesibilidad: no se ha comprobado nada.'
+      + (codigos.length > 1 ? ' (Los ciegos no coinciden entre ellos, así que sale el 2 genérico.)' : ''),
+  };
+}
+
+/**
+ * Que la distinción se vea SIN abrir el log.
+ *
+ * Una ANOTACIÓN de GitHub Actions sale en la pestaña de checks del PR, y el RESUMEN se
+ * renderiza en la página del run: los dos se leen sin entrar en la salida del job. Es el
+ * mismo mecanismo que ya usa `.github/workflows/zona-roja.yml` (y que vigila
+ * `tests/scrum168-zona-roja.test.mjs`), reusado en vez de inventar un segundo.
+ *
+ * Se emite desde AQUÍ y no desde el workflow a propósito: el workflow sólo ve un código de
+ * salida y no sabe distinguir los desenlaces; este fichero sí. Y en local no se emite nada,
+ * para no ensuciar una salida que alguien pueda estar leyendo.
+ */
+export function anuncio(v) {
+  const cuerpo = String(v.detalle).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+  return { anotacion: '::error title=' + v.titulo + '::' + cuerpo,
+    resumen: '### 🔴 guards de navegador — ' + v.titulo + '\n\n' + v.detalle + '\n' };
 }
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -131,17 +244,21 @@ for (const g of lista) {
   // SCRUM-522 · TRES desenlaces malos y no dos. El 3 —«lo hay y no arranca»— es nuevo y tiene
   // nombre propio porque antes salía como `rojo(1)`, indistinguible de «he encontrado defectos»:
   // el runner llevaba un guard que no había medido NADA y se leía como un hallazgo real.
+  // SCRUM-639 · el código del hijo se GUARDA, no sólo se pinta: es lo que la puerta necesita
+  // para no volver a colapsarlo todo en su propio 1 al salir. Y el 4 entra en la escalera.
+  const codigo = cortado ? null : r.status;
   const estado = cortado ? 'TOPE'
-    : (r.status === 0 ? 'verde'
-      : (r.status === SALIDA_NO_ENCONTRADO ? 'CIEGO'
-        : (r.status === SALIDA_NO_ARRANCA ? 'NO ARRANCA' : 'rojo(' + r.status + ')')));
+    : (codigo === 0 ? 'verde'
+      : (codigo === SALIDA_NO_ENCONTRADO ? 'CIEGO'
+        : (codigo === SALIDA_NO_ARRANCA ? 'NO ARRANCA'
+          : (codigo === SALIDA_SIN_SERVIDOR ? 'SIN SERVIDOR' : 'rojo(' + codigo + ')'))));
   const salida = (r.stdout || '') + (r.stderr || '');
   // SCRUM-617 (2a vuelta) · el ARRANQUE, aparte del total. El total mezcla arrancar y comprobar,
   // y con un solo numero no se sabe cual de las dos se disparo — que es justo la pregunta abierta
   // desde que el runner mato a guard-contraste en el tope de arranque.
   const m = salida.match(new RegExp(MARCA_ARRANQUE + ' ([0-9.]+)'));
   const arranque = m ? Number(m[1]) : null;
-  filas.push({ g, ms, estado, arranque, salida });
+  filas.push({ g, ms, estado, codigo, arranque, salida });
   console.log('   ' + (estado === 'verde' ? '✔' : '✖') + ' ' + g.padEnd(26)
     + String((ms / 1000).toFixed(1)).padStart(6) + ' s'
     + (arranque === null ? '   (arranque: ?)' : '   arranque ' + arranque.toFixed(1).padStart(5) + ' s')
@@ -166,7 +283,21 @@ if (fallos) {
     // el rojo llega un día tarde.
     console.error(f.salida.trimEnd() || '   (sin salida)');
   }
-  process.exit(1);
+  // SCRUM-639 · aquí vivía el colapso: `process.exit(1)` para todo, incluida una tanda en la
+  // que ningún guard llegó a medir. Ahora el código lo decide `veredicto`, que es puro y está
+  // probado en las dos direcciones.
+  const v = veredicto(filas);
+  console.error('\n' + v.titulo);
+  console.error(v.detalle);
+  // Y que se vea sin abrir el log.
+  if (process.env.GITHUB_ACTIONS) {
+    const a = anuncio(v);
+    console.log(a.anotacion);
+    if (process.env.GITHUB_STEP_SUMMARY) {
+      try { fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, a.resumen); } catch { /* el resumen es un extra: si no se puede escribir, el código de salida sigue siendo el bueno */ }
+    }
+  }
+  process.exit(v.codigo);
 }
 console.log('\n✅ los ' + lista.length + ' guards de navegador están verdes.');
 }

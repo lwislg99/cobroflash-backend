@@ -551,7 +551,7 @@ export async function generateQuotePdf(params: {
         lineY += 12;
       }
       tier.lines.forEach((l: any) => {
-        const lineTotal = (l.qty * l.price * (1 + (l.tax ?? 0))).toFixed(2);
+        const lineTotal = fmtImporte(l.qty * l.price * (1 + (l.tax ?? 0)));
         const text = `${l.concept} × ${l.qty}`;
         doc.text(text, x + 4, lineY, { width: tierW - 8 });
         lineY += 10;
@@ -562,7 +562,7 @@ export async function generateQuotePdf(params: {
       // Total del tier
       doc.rect(x, lineY, tierW, 14).fill(tier.recommended ? '#dcfce7' : '#e5e7eb');
       doc.fillColor('#111827').font('Helvetica-Bold').fontSize(9)
-        .text(`Total: ${tier.total.toFixed(2)} ${params.currency}`, x + 4, lineY + 3, { width: tierW - 8, align: 'center' });
+        .text(`Total: ${fmtImporte(tier.total)} ${params.currency}`, x + 4, lineY + 3, { width: tierW - 8, align: 'center' });
 
       doc.fillColor('black').font('Helvetica');
     });
@@ -636,9 +636,9 @@ params.lines.forEach((l) => {
   const { titulo: title, descripcion: desc } = partirConceptoYDescripcion(concept);
 
   const qty = String(l.qty ?? '');
-  const price = Number.isFinite(l.price) ? l.price.toFixed(2) : '';
+  const price = Number.isFinite(l.price) ? fmtImporte(l.price) : '';
   const vat = Number.isFinite(l.tax) ? (l.tax * 100).toFixed(0) + '%' : '';
-  const total = Number.isFinite(lineTotal) ? lineTotal.toFixed(2) : '';
+  const total = Number.isFinite(lineTotal) ? fmtImporte(lineTotal) : '';
 
   const y0 = doc.y;
 
