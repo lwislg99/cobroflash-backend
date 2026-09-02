@@ -191,7 +191,6 @@ export async function generateAlbaranPdf(params: {
 
   // ── SCRUM-593 (DOC-03) · TEXTO LIBRE bajo la cabecera ────────────────────
   // Tras Emisor/Receptor/Obra y ANTES de la tabla: es texto del DOCUMENTO, no de una linea.
-  // El rotulo sale con marcador porque el fundador no lo ha firmado (regla 30).
   if (params.docHeaderText && String(params.docHeaderText).trim() !== '') {
     // SIN RÓTULO (fundador, 2-sep-2026): en el papel va sólo el texto del profesional. El
     // rótulo aprobado es el del FORMULARIO y vive en la pieza del dashboard.
