@@ -654,6 +654,96 @@ html, body { overflow-x: clip; }
   .segmented-option { transition: none; }
 }
 
+/* ── Pestañas del listado de clientes (SCRUM-689) ─────────────────────────────
+   Todos | Empresas | Personas. Entraron con el PR #874 SIN NI UNA REGLA: medido el
+   2-sep-2026, cero apariciones de `.customers-tabs` y `.customers-tab` en todo `public/`.
+   El profesional abría su lista y veía tres botones crudos del navegador dentro de una
+   barra que sí estaba estilada — un control que parece roto.
+
+   🔴 NO SE INVENTA UN COMPONENTE: se hereda el lenguaje de `.segmented` (el control
+   «uno de N» que ya está en el sistema, justo aquí arriba). Mismos tokens, mismos radios,
+   mismo objetivo táctil, misma forma de marcar el activo. Un segundo dialecto visual para
+   el mismo gesto es lo que convierte un design system en una colección de excepciones.
+
+   POR QUÉ NO SE REUSA `.segmented` TAL CUAL: aquél son radios dentro de un `<fieldset>` y
+   esto son `<button>` con `aria-pressed`. El marcado no se toca (no es este carril), así
+   que lo que se comparte es el lenguaje, no el selector.
+
+   EL ACTIVO NO SE DISTINGUE SÓLO POR TONO — son CUATRO señales, y la cuenta sale de una
+   medición, no de una intuición. Medido en navegador a 360 px sobre este mismo CSS:
+
+       texto activo sobre su fondo ............ 17,52:1   (AA pide 4,5)
+       texto inactivo sobre la barra ..........  4,51:1   (AA, justo)
+       FONDO del activo contra la barra .......  1,07:1   ← casi invisible
+
+   🔴 Ese 1,07 es el dato que obligó a añadir algo. `--surface` (#ffffff) sobre `--bg`
+   (#f6f7f5) son casi el mismo color: la pastilla blanca NO es una señal fiable por sí
+   sola, y `.segmented` —de quien se hereda— arrastra la misma debilidad. Así que además
+   del fondo y la tinta va **borde** (forma, no tono) y **elevación** (`--shadow-md`, el
+   token «Elevado»): dos señales que se ven sin distinguir un color.
+
+   El borde se reserva en TODAS con `transparent`; si sólo lo llevara la activa, la
+   pastilla daría un salto de 2 px al seleccionarla.
+
+   `aria-pressed` ya anunciaba el estado al lector de pantalla antes que este CSS: aquí
+   sólo se hace visible lo que el marcado ya decía. */
+.customers-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  /* La PÁGINA nunca scrollea en horizontal (regla de arriba, línea 353): lo ancho scrollea
+     DENTRO de su contenedor. Y aquí hace falta de verdad, no por si acaso — hoy cada rótulo
+     sale como «[PENDIENTE microcopy oficial] Empresas» (37 caracteres) porque su copy aún no
+     está aplicada en `filtroClientes.js`. Con los seis textos aprobados puestos, los botones
+     caben de sobra y esto no se nota; mientras tanto, evita que la barra empuje la vista. */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.customers-tab {
+  /* Reparten a partes iguales cuando caben (basis 0), y NUNCA por debajo de su texto
+     (min-width: max-content). Medido en navegador a 360 px: con `min-width: 0` los botones se
+     aplastaban y el rótulo SE SOLAPABA con el de al lado en vez de scrollear — se veía peor que
+     sin estilar, que era justo el defecto a corregir. Lo destapó una captura, no el CSS. */
+  flex: 1 1 0;
+  min-width: max-content;
+  /* No se parte el rótulo en dos líneas: una pestaña de dos renglones descuadra la barra
+     entera y deja las tres a distinta altura. Prefiere ensancharse (y, en el peor caso,
+     scrollear dentro de la barra) a romperse. */
+  white-space: nowrap;
+  min-height: 44px;          /* objetivo táctil (AB6) */
+  padding: 8px 14px;
+  border: 1px solid transparent; /* reserva el sitio del borde del activo: sin esto, salta 2px */
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;             /* un <button> no hereda la tipografía: sin esto sale en la del navegador */
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+  transition: background-color .12s, color .12s, box-shadow .12s;
+}
+.customers-tab:hover { color: var(--ink); }
+.customers-tab[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--border);   /* FORMA: se ve sin distinguir el tono */
+  box-shadow: var(--shadow-md);  /* «Elevado» — el fondo solo da 1,07:1 contra la barra */
+}
+/* El anillo de foco, sobre la pastilla y con el token de Foco: sin esto, quitarle el borde
+   al <button> deja al teclado sin rastro visible de dónde está. */
+.customers-tab:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+@media (prefers-reduced-motion: reduce) {
+  .customers-tab { transition: none; }
+}
+
 /* ── Pedir el tipo de destinatario en la bandeja (SCRUM-615) ──────
    El aviso (C) y la pregunta (D) van juntos, separados del resto de la tarjeta por
    una línea, para que se lean como una cosa aparte: no son datos del grupo, son una

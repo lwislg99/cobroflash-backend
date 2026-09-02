@@ -134,13 +134,64 @@ test('SCRUM-581 · 🔴 NINGÚN rótulo lleva marcador en pantalla', () => {
     '🔴 el detector no reconoce un marcador: sus «false» de arriba no significarían nada.');
 });
 
-test('SCRUM-581 · 🔴 pero los seis textos SIGUEN SIN APROBAR, y consta', () => {
-  // Quitar el marcador NO es aprobar. Si algún día se aprueban, se baja este número en la ranura
-  // que corresponda — aprobar una pestaña no aprueba las otras cinco.
-  assert.equal(FC.SIN_APROBAR, 6,
-    '🔴 alguien ha dado por aprobados textos que el fundador no ha firmado, o ha aprobado unos y '
-    + 'no ha actualizado el recuento. Los rótulos son literales PROPUESTOS por la sesión; su '
-    + 'procedencia está en la pieza y en la entrada de máster.');
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// ✅ MICROCOPY APROBADA POR EL FUNDADOR EL 2-sep-2026 · Y FIJADA CON `===`
+//
+// Los seis textos están firmados. Se fijan LITERALES —no con `match`, no con `includes`— para
+// que nadie los cambie sin pasar por el fundador: un `match` dejaría colar una coma, un acento
+// o un «Personas físicas» sin que nada chillara, y microcopy aprobada que deriva sola es
+// microcopy que deja de estar aprobada sin que nadie lo decida (regla 30).
+//
+// 🔴 UNA CORRECCIÓN SUYA QUE MERECE QUEDAR ESCRITA: mi propuesta para el vacío era «Ningún
+// cliente clasificado así todavía», y **miente cuando hay una búsqueda activa** — ahí el motivo
+// de que no salga nadie no es la clasificación, es la búsqueda. El texto aprobado no nombra la
+// causa: dice lo que se ve y ofrece la salida.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-581 · ✅ los SEIS textos son EXACTAMENTE los aprobados', () => {
+  const APROBADOS = {
+    TODOS: 'Todos',
+    EMPRESA: 'Empresas',
+    PERSONA: 'Personas',
+    RECIENTES: 'Más recientes',
+    AZ: 'Nombre A-Z',
+  };
+  for (const r of [...FC.PESTANAS, ...FC.ORDENES]) {
+    assert.equal(FC.etiqueta(r), APROBADOS[r.id],
+      `🔴 el rótulo de «${r.id}» ya no es el aprobado el 2-sep-2026. Dice ${JSON.stringify(FC.etiqueta(r))} `
+      + `y el fundador firmó ${JSON.stringify(APROBADOS[r.id])}. No se cambia sin pasar por él.`);
+  }
+  // SUELO: y son los CINCO, no un subconjunto. Si alguien quita una pestaña, el bucle de arriba
+  // pasaría sin mirarla — «todos los que hay están bien» y «no hay ninguno» darían el mismo verde.
+  assert.deepEqual([...FC.PESTANAS, ...FC.ORDENES].map((r) => r.id),
+    ['TODOS', 'EMPRESA', 'PERSONA', 'RECIENTES', 'AZ'],
+    '🔴 han cambiado las ranuras: hay una de más, una de menos o en otro orden.');
+});
+
+test('SCRUM-581 · ✅ el vacío de pestaña son sus DOS líneas aprobadas', () => {
+  assert.equal(FC.etiqueta(FC.VACIO_PESTANA), 'Aquí no hay ningún cliente todavía.',
+    '🔴 la primera línea del vacío no es la aprobada.');
+  assert.equal(FC.subtitulo(FC.VACIO_PESTANA), 'Marca cada cliente como empresa o persona al editarlo.',
+    '🔴 la segunda línea del vacío no es la aprobada.');
+
+  // 🔴 Y NO VUELVE EL TEXTO QUE EL FUNDADOR RECHAZÓ, que mentía con una búsqueda activa.
+  const dos = FC.etiqueta(FC.VACIO_PESTANA) + ' ' + FC.subtitulo(FC.VACIO_PESTANA);
+  assert.equal(dos.includes('clasificado así todavía'), false,
+    '🔴 ha vuelto el texto rechazado: dice que el motivo es la clasificación, y con una búsqueda '
+    + 'activa el motivo es la búsqueda.');
+});
+
+test('SCRUM-581 · 🔴 NO queda ninguna ranura sin aprobar — y el número sigue existiendo', () => {
+  assert.equal(FC.SIN_APROBAR, 0,
+    '🔴 hay ranuras de microcopy sin firmar. Si se ha añadido una pestaña o un orden nuevo, su '
+    + 'texto NO está aprobado y tiene que contarse aquí antes de pintarse.');
+
+  // El número se queda aunque valga 0: es el sitio donde una ranura nueva declara que nace sin
+  // aprobar. Sin él, un texto nuevo entraría en pantalla en silencio — que es justo lo que el
+  // marcador impedía y lo que ya no se ve.
+  assert.equal(typeof FC.SIN_APROBAR, 'number',
+    '🔴 ha desaparecido el contador de ranuras sin aprobar: el hueco se queda sin sitio donde '
+    + 'declararse.');
   assert.equal(FC.MARCADOR, undefined,
     '🔴 ha vuelto la constante del marcador a la pieza: el fundador lo retiró de la pantalla.');
 });

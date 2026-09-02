@@ -85,8 +85,8 @@ function renderCustomersView(container) {
 
   // ── SCRUM-581 (CONT-08) · pestañas y orden. SE SUMAN al buscador, que no se toca ──────────
   // La DECISIÓN vive en `filtroClientes.js` (sin DOM, probada en `npm test`); aquí sólo están
-  // los controles. 🔴 Los rótulos NO llevan marcador (el fundador lo retiró de la pantalla el
-  // 2-sep-2026) y SIGUEN SIN APROBAR: son literales propuestos. Dónde consta, en `filtroClientes.js`.
+  // los controles. ✅ Los seis textos los APROBÓ el fundador el 2-sep-2026 y están fijados con
+  // `===` en `tests/scrum581-pestanas-y-orden-clientes.test.mjs`: no se cambian sin pasar por él.
   const FC = window.filtroClientes;
   let pestanaActiva = FC.POR_DEFECTO.pestana;
   let ordenActivo = FC.POR_DEFECTO.orden;
@@ -711,9 +711,14 @@ function renderCustomersView(container) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
         td.colSpan = 7;
+        // SCRUM-581 · DOS líneas (microcopy aprobada, 2-sep-2026). Se reutiliza el componente
+        // de vacío que ya existe —`.empty-state-title` y `.empty-state-desc`—: cero tokens nuevos.
+        // Con `textContent` y no concatenando en el `innerHTML`: el texto es de la pieza, no del
+        // markup, y así no hay que acordarse de escaparlo nunca.
         td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div>'
-          + '<div class="empty-state-title"></div></div>';
+          + '<div class="empty-state-title"></div><div class="empty-state-desc"></div></div>';
         td.querySelector('.empty-state-title').textContent = FC.etiqueta(FC.VACIO_PESTANA);
+        td.querySelector('.empty-state-desc').textContent = FC.subtitulo(FC.VACIO_PESTANA);
         tr.appendChild(td);
         tbody.appendChild(tr);
         setCount("0 clientes");
