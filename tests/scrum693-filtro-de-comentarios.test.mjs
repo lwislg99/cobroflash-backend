@@ -126,6 +126,67 @@ test('SCRUM-693 · 🔴 el caso mixto: comentario y código en la MISMA línea',
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // LA PREGUNTA QUE HACE CADA GUARD · «¿se pinta?» no es «¿aparece en el fichero?»
 // ═════════════════════════════════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-696 · LAS PLANTILLAS INTERPOLADAS — EL AGUJERO QUE ESTE CORPUS NO TENÍA
+//
+// Este fichero estaba VERDE sobre un mecanismo roto, y el motivo es exactamente que ni uno de
+// sus casos llevaba un `${}` dentro de una plantilla. Sin eso, el scanner nunca llegaba a la
+// situación en la que se desincroniza, así que la suite medía un `soloCodigo()` que en el árbol
+// real fallaba en 783 de 1.111 ficheros. Un corpus que no contiene la forma que rompe no está
+// dando un verde: está diciendo que no la miró.
+//
+// Los casos van EN LAS DOS DIRECCIONES a propósito. Con sólo la primera, un filtro que blanquee
+// el fichero entero pasaría; con sólo la segunda, uno que no blanquee nada.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-696 · 🔴 tras una plantilla INTERPOLADA se siguen quitando los comentarios', () => {
+  // Dirección ①: el falso positivo. El scanner leía la comilla invertida de cierre como la
+  // APERTURA de otra plantilla y se quedaba dentro de ella hasta el final del fichero, así que
+  // todos los comentarios de después sobrevivían y el guard saltaba por su documentación.
+  const codigo = 'const t = `hola ${x} adios`;\n// ' + PROHIBIDA + '\nconst b = 2;';
+  const limpio = soloCodigo(codigo);
+
+  assert.equal(limpio.includes(PROHIBIDA), false,
+    '🔴 el comentario de después de una plantilla interpolada NO se ha quitado: el scanner se '
+    + 'quedó dentro de la plantilla. Es el defecto que hacía saltar a los guards por su propio '
+    + 'comentario, y el corpus no lo veía porque no tenía ni un `${}`.');
+  assert.ok(limpio.includes('const b = 2;'), '🔴 se ha comido el código de después.');
+  assert.equal(limpio.length, codigo.length, '🔴 ha cambiado la longitud.');
+});
+
+test('SCRUM-696 · 🔴 un `//` DENTRO de una plantilla no se come el código — el daño CARO', () => {
+  // Dirección ②: la ceguera. Medido en el árbol el 2-sep-2026: 60 ficheros perdían código real
+  // por esto, y siempre con la misma forma —una URL dentro de una plantilla—, que es de lo más
+  // corriente que hay: `https://wa.me/${tel}`, `file://${argv[1]}`, `http://127.0.0.1:${PUERTO}`.
+  const codigo = 'const u = `https://yaqu.app/${id}?q=' + PROHIBIDA + '`;\nconst b = 2;';
+  const limpio = soloCodigo(codigo);
+
+  assert.ok(limpio.includes(PROHIBIDA),
+    '🔴 el `//` de una URL DENTRO de una plantilla se ha tratado como comentario y se ha comido '
+    + 'código real. Éste es el sentido que produce VERDES: el guard deja de vigilar un trozo del '
+    + 'fichero y nadie se entera.');
+  assert.ok(limpio.includes('const b = 2;'), '🔴 se ha llevado por delante la línea siguiente.');
+});
+
+test('SCRUM-696 · 🔴 plantillas ANIDADAS: donde una pila mal hecha se vuelve a desincronizar', () => {
+  // No basta con releer el `}` de la interpolación: hay que saber CUÁL cierra qué. Los tres casos
+  // que rompen una pila ingenua, y los tres tienen la misma prueba —que el comentario de después
+  // desaparezca—, porque desincronizarse significa exactamente dejar de verlo.
+  const formas = [
+    ['plantilla dentro de plantilla', 'const t = `a ${`b ${c}`} d`;'],
+    ['objeto en la interpolación',    'const t = `a ${ {b: 1} } c`;'],
+    ['bloque de función dentro',      'const t = `a ${xs.map((x) => { return x; })} b`;'],
+  ];
+  for (const [que, cabecera] of formas) {
+    const codigo = cabecera + '\n// ' + PROHIBIDA + '\nconst b = 2;';
+    const limpio = soloCodigo(codigo);
+    assert.equal(limpio.includes(PROHIBIDA), false,
+      `🔴 con ${que} el filtro se desincroniza y deja pasar el comentario de después.`);
+    assert.ok(limpio.includes('const b = 2;'), `🔴 con ${que} se ha comido el código.`);
+    assert.equal(limpio.length, codigo.length, `🔴 con ${que} ha cambiado la longitud.`);
+  }
+});
+
 test('SCRUM-693 · `literalesDe` distingue lo que se PINTA de lo que sólo se ESCRIBE', () => {
   const codigo = [
     'const rotulo = "Teléfono";',
