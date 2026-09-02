@@ -223,6 +223,20 @@ de «no devuelve lo que no toca»**.
 Va **justo encima de «Notas»** a propósito: es donde el profesional la metía por no tener sitio
 propio, y ponerla encima es lo que hace que la próxima vez no acabe ahí.
 
+### El placeholder del BUSCADOR, que quedó desfasado por este mismo ticket
+
+Decía «Buscar por nombre, teléfono o email…» y esta rama le añadió la referencia al `OR`. Dejarlo
+habría sido **una frase falsa en pantalla**, que es peor que una incompleta: el profesional no
+probaría a buscar por su nº de expediente porque el campo le dice que no se puede.
+
+**Texto aprobado por el asesor, literal:** `Buscar por nombre, teléfono, email o referencia…`
+
+🔴 **Fijado con `===`, no con `includes`, y el porqué va comprobado DENTRO del propio test:** la
+versión con **tres puntos** pasa un `includes` del texto sin los suspensivos, así que un guard laxo
+daría por bueno un texto que **no es el que firmó el asesor**. El test construye ese impostor,
+comprueba que efectivamente se colaría por un `includes` —ése es su suelo— y exige igualdad
+estricta. Probado en rojo: con tres puntos caen **tres** pruebas y el diff enseña la grafía.
+
 ---
 
 ## 5 · Lo que NO se ha hecho, y por qué
