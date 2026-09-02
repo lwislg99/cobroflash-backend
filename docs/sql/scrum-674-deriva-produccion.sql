@@ -5,7 +5,11 @@
 -- eso `schemaDrift.ts` niega el arranque y producción sigue sirviendo el código del PR #919.
 --
 -- ⚠️ MEDIDO CONTRA UN SHA CONCRETO, y sin él este fichero no se puede saber si está completo:
---   · `origin/main` = 6cc1f459378a8ed4b38665713bb5b156cc0b1e4e · 2026-09-02T17:51:47+01:00
+--   · `origin/main` = 78f008cb1aa42678a2db06b1ac31193bf57d205a · 2026-09-02T18:00:28+01:00
+--     (re-medido tras entrar #933 `scrum-650-paso-c-backfill` y #935 `scrum-683-parte-dictado`,
+--      que eran los dos ultimos anunciados: NINGUNO toca `prisma/schema.prisma`, y el censo
+--      sigue dando 403 columnas — el mismo fichero `deriva-prod.sql`, byte a byte. La medicion
+--      anterior fue contra `6cc1f459` y dio lo mismo.)
 --   · el desplegado en producción = `4b3865f8` (merge del PR #919)
 --   · delta medido: 403 columnas esperadas hoy contra 374 en #919 → 29 columnas nuevas,
 --     4 tablas afectadas, 0 columnas retiradas.
