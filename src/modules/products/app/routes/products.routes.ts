@@ -45,7 +45,32 @@ router.post('/load-catalog', requireRole('admin'), async (req, res) => {
       return res.json({ ok: true, inserted: 0, skipped: 'already_has_products' });
     }
 
-    const vat = getLocale(merchant.country).defaultVat;
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // 🔴 SCRUM-646 · AQUÍ SE ESTAMPABA UN TIPO DE IVA QUE NADIE HABÍA ELEGIDO.
+    //
+    // Estaba `const vat = getLocale(merchant.country).defaultVat`, y ese número se escribía
+    // en CADA producto que nacía de la carga por gremio. No se proponía en pantalla: se
+    // GRABABA. El profesional entra por el onboarding —con la casilla marcada por defecto
+    // (`onboardingView.js:284`)— o por el botón del catálogo, y en ningún sitio se le pregunta
+    // por el IVA. A partir de ahí el número viaja solo: a la línea, al documento, al PDF y al
+    // importe que el cliente firma.
+    //
+    // Y el valor dependía del PAÍS: 0,21 · 0,16 (MX) · 0,18 (PE/CL) · 0,19 (CO). Canarias es
+    // `ES`, así que a un canario —que repercute IGIC— le habría puesto 21.
+    //
+    // AHORA NACEN SIN TIPO, y eso NO rompe nada — medido, no supuesto:
+    //   · `Product.vat` es `Decimal?`: el alta no falla;
+    //   · la tabla del catálogo ya pinta «—» cuando es null (`productsView.js:586`);
+    //   · el CSV de exportación ya saca vacío (`products.service.ts:97`);
+    //   · y la LÍNEA cae al «IVA por defecto» del documento, que el profesional VE y puede
+    //     cambiar. Es la regla que ya estaba escrita: «el general SIEMBRA, nunca PISA».
+    //
+    // El tipo lo elige quien crea la línea. Eso es lo que cambia: de un número grabado a
+    // espaldas del profesional, a un número que elige delante.
+    //
+    // ⛔ NO se toca la tabla de locales: sigue sirviendo moneda, idioma y los rótulos del
+    // documento. Lo que se retira es el CABLEADO del IVA, no la tabla.
+    // ═══════════════════════════════════════════════════════════════════════════════
     const country = (merchant.country || 'ES').toUpperCase();
     const file = country === 'ES' ? getCatalogFile(trade) : null;
     let inserted = 0;
@@ -61,7 +86,7 @@ router.post('/load-catalog', requireRole('admin'), async (req, res) => {
             name: item.nombre,
             description: orientativoLabel(item), // etiqueta VISIBLE (spec)
             price,
-            vat,
+            // SCRUM-646 · sin `vat`: nace sin tipo y lo elige quien crea la línea.
           });
           inserted++;
         } catch (e: any) {
@@ -79,7 +104,14 @@ router.post('/load-catalog', requireRole('admin'), async (req, res) => {
               concept: l.concept,
               qty: l.qty,
               price: priceOf.get(l.priceFrom) ?? 0,
-              tax: vat,
+              // 🔴 SCRUM-646 · TERCER SITIO, y el que menos se veía: la PLANTILLA de presupuesto
+              // también llevaba el tipo por país grabado. Vive dentro de un `.map`, así que la
+              // propiedad NO está sintácticamente dentro de la llamada a Prisma — mi censo por
+              // AST no lo vio: lo cazó el compilador al quitar la variable. Queda escrito porque
+              // es exactamente la forma que un censo de escrituras se pierde.
+              //
+              // Sin `tax`, la línea de la plantilla cae al «IVA por defecto» del documento igual
+              // que cualquier otra: `quotesView.js` mira `vat`, luego `tax`, luego el defecto.
             }))
             .filter((l) => l.price > 0);
           if (!lines.length) continue;
@@ -113,7 +145,7 @@ router.post('/load-catalog', requireRole('admin'), async (req, res) => {
           name: item.name,
           description: item.description ?? null,
           price: item.price,
-          vat,
+          // SCRUM-646 · sin `vat`: nace sin tipo y lo elige quien crea la línea.
         });
         inserted++;
       } catch (e: any) {
