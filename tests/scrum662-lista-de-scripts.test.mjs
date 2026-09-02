@@ -87,6 +87,31 @@ test('SCRUM-662 · 🔴 la CUENTA no distingue dos ramas; la LISTA sí', () => {
     + 'seguirían diciendo «todo vigilado».');
 });
 
+test('SCRUM-662 · 🔴 EL CASO QUE SE ESCAPABA: mismo TAMAÑO, contenido distinto', () => {
+  // ⚠️ ESTE TEST NACIÓ DE UN ROJO QUE NO CAYÓ. El de arriba razona sobre arrays a mano, así que
+  // demuestra la IDEA pero no toca `contrastarScripts`; y los de §2 cambian el tamaño, con lo que
+  // un mecanismo que solo mirase la cuenta seguiría cazándolos. Al reinyectar el mecanismo viejo
+  // —contrastar por longitud— la suite entera se quedó EN VERDE: ocho de ocho.
+  //
+  // O sea que el arreglo no estaba cubierto por su propio test justo en el caso que motiva el
+  // ticket. Éste es ese caso, y contra la función de verdad: una lista del MISMO tamaño con un
+  // script cambiado por otro.
+  const real = scriptsDelDashboard(RAIZ).map(nombreDeScript);
+  const mezclado = [...real.filter((n) => n !== 'api.js'), 'tiposDeIva.js'];
+
+  assert.equal(mezclado.length, real.length,
+    '🔴 el vector no reproduce el caso: los dos lados tienen que tener el MISMO tamaño.');
+
+  const c = contrastarScripts(mezclado);
+  assert.deepEqual(c.sobran, ['tiposDeIva.js'],
+    '🔴 UN SCRIPT NO DECLARADO SE HA COLADO SIN QUE NADIE LO VEA, porque el total cuadraba.\n'
+    + '  Es el fallo entero de SCRUM-662: dos ramas escribieron `= 69` por scripts distintos y el\n'
+    + '  merge no vio conflicto. Si esto pasa en verde, el mecanismo ha vuelto a mirar la CUENTA.');
+  assert.deepEqual(c.faltan, ['api.js'],
+    '🔴 y el que DESAPARECIÓ del índice tampoco se nombra: con el total cuadrando, ese fichero\n'
+    + '  queda fuera de la vigilancia de los dos guards sin que salte nada.');
+});
+
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // § 2 · 🔴 ROJO POR EL MECANISMO: un script de más o de menos cae NOMBRADO
 // ═════════════════════════════════════════════════════════════════════════════════════════
