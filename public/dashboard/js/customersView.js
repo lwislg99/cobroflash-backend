@@ -85,7 +85,8 @@ function renderCustomersView(container) {
 
   // ── SCRUM-581 (CONT-08) · pestañas y orden. SE SUMAN al buscador, que no se toca ──────────
   // La DECISIÓN vive en `filtroClientes.js` (sin DOM, probada en `npm test`); aquí sólo están
-  // los controles. Los rótulos llevan el marcador de microcopy: no hay texto aprobado.
+  // los controles. 🔴 Los rótulos NO llevan marcador (el fundador lo retiró de la pantalla el
+  // 2-sep-2026) y SIGUEN SIN APROBAR: son literales propuestos. Dónde consta, en `filtroClientes.js`.
   const FC = window.filtroClientes;
   let pestanaActiva = FC.POR_DEFECTO.pestana;
   let ordenActivo = FC.POR_DEFECTO.orden;
