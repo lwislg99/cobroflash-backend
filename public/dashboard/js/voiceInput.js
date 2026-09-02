@@ -42,15 +42,13 @@
     if (typeof showToast === 'function') showToast(msg, 'warn');
   }
 
-  // 🔴 SCRUM-654 · MICROCOPY SIN APROBAR (regla 30): el texto lo aprueba el fundador y sale con
-  // marcador hasta que lo firme. Se propone que diga LAS DOS COSAS —que hace falta conexión y que
-  // puede escribirlo a mano—: un aviso que solo da la mala noticia deja al técnico parado.
+  // SCRUM-674 (2-sep-2026) · TEXTO APROBADO por el fundador (regla 30). Sale ya sin marca; queda
+  // anotado en `docs/MICROCOPY_APROBADA_SIN_APLICAR.md`.
   //
-  // Y la coletilla es la MISMA que ya usan los otros dos avisos de este fichero («escribe el
-  // trabajo y listo»): misma situación, mismas palabras. Estrenar una redacción aquí daría dos
-  // formas de decir lo mismo en la misma pantalla.
-  var AVISO_SIN_CONEXION =
-    '[PENDIENTE microcopy oficial] El dictado necesita conexión — escribe el trabajo y listo';
+  // Dice LAS DOS COSAS —que hace falta conexión y que puede escribirlo a mano—: un aviso que solo
+  // da la mala noticia deja al técnico parado. Y la coletilla es la MISMA que ya usan los otros dos
+  // avisos de este fichero («escribe el trabajo y listo»): misma situación, mismas palabras.
+  var AVISO_SIN_CONEXION = 'El dictado necesita conexión — escribe el trabajo y listo';
 
   // Retira TODOS los micros de la página (humo fallido → fuera para la sesión)
   function killAllMics() {

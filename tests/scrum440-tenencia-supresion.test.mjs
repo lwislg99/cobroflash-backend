@@ -15,7 +15,7 @@
 // POR QUÉ NINGÚN GUARD DE TENENCIA LO VEÍA — y no es descuido, es ceguera estructural
 //
 // Los censos de SCRUM-243/348 miran lecturas de modelos **con columna `merchantId`**. `merchant` es
-// el modelo RAÍZ y no la tiene (medido: 22 modelos la tienen, `merchant` no). Así que
+// el modelo RAÍZ y no la tiene (medido: 23 modelos la tienen, `merchant` no). Así que
 // `prisma.merchant.findUnique({ where: { id: merchantId } })` produce **cero lecturas censables**.
 //
 // Por eso la inclusión en el guard general es **por MECANISMO y no por mención**: el censo nuevo
