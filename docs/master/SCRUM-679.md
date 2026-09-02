@@ -47,6 +47,34 @@ Y el test nuevo prueba **más** de lo que probaba el reloj:
 | al vencer, suelta y no espera a la escritura | indirecto | sí |
 | el temporizador se cancela al salir | no | **sí** (si no, una fuga por envío) |
 
+## 🔴 UN ROJO ENCONTRÓ QUE MI COMPARACIÓN TENÍA SOLO DOS PATAS
+
+La primera versión comparaba **escenario nuevo contra red normal**. Inyecté dos lecturas de disco
+de más «cuando hay red declarada» —una degradación real— y **pasó en VERDE**: las dos ramas
+declaran red, así que las dos subieron igual y la comparación seguía cuadrando.
+
+Y esa degradación es justo la peor: **encarece TODAS las pruebas del banco a la vez**, que es cómo
+un banco deja de correrse.
+
+Arreglado con una **tercera pata**: el montaje PELADO, sin red declarada. No se lleva el
+sobrecoste, así que la degradación se ve. Y sigue sin ser un absoluto — si otra rama añade un
+`<script>` al dashboard, las tres suben lo mismo y esto sigue verde, que es lo correcto.
+
+## ROJOS: 7/7, POR CÓDIGO DE SALIDA
+
+Cuatro son degradaciones REALES **que el aserto de reloj retirado habría aprobado** — que es la
+prueba de que el arreglo hacía falta y no es cosmético:
+
+| # | rojo inyectado | ¿el viejo lo aprobaría? |
+|---|---|---|
+| 1 | el escenario nuevo hace más trabajo de disco (2 ops) | **sí** — 2 ops son microsegundos |
+| 2 | el coste CRECE de una pasada a otra | no |
+| 3 | **SUELO**: el contador de disco se queda ciego | no |
+| 4 | suelta al llamador ANTES de que venza el plazo | **sí** — sería más rápido, no más lento |
+| 5 | el plazo se programa con otro valor, no el pedido | **sí** — 7 ms también es < 2.000 |
+| 6 | deja de cancelarse el temporizador (fuga por envío) | **sí** — no afecta al tiempo |
+| 7 | se ignora el temporizador inyectado | no |
+
 ## VERIFICACIÓN
 
 **CONTROL POSITIVO CON LA MÁQUINA CARGADA** — 16 procesos en 8 núcleos, que es la condición en la
