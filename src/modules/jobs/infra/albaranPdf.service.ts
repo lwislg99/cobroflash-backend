@@ -14,6 +14,7 @@ import { loadLogoBuffer } from '../../invoicing/infra/pdf/pdf.service';
 import type { AlbaranLinea, AlbaranModoValoracion, FirmaEvidencia } from '../domain/albaran.service';
 // SCRUM-300: los rótulos NO se escriben aquí. Viven en un solo sitio (regla 30) y el PDF los lee.
 import { ALBARAN_ROTULOS, etiquetaCalidad } from '../domain/albaranFirmante';
+import { formatImporteEs } from '../../../core/utils/utils'; // SCRUM-636: el sitio unico
 
 export async function generateAlbaranPdf(params: {
   merchantId: number; // SCRUM-48: prefija el nombre de archivo (mata la colisión entre merchants)
@@ -113,8 +114,12 @@ export async function generateAlbaranPdf(params: {
   function fmtQty(v: number) {
     return v.toLocaleString('es-ES', { maximumFractionDigits: 2 });
   }
+  // SCRUM-636: DELEGA en el sitio unico. Era la SEXTA copia del formato, y su falta de agrupado
+  // es lo que hacia que el PDF del albaran escribiera `1234,50 €` mientras su propia vista
+  // publica escribia `1.234,50 €` — DOS formatos para el MISMO papel, que es justo lo que el
+  // guard de SCRUM-468 existe para impedir. Lo cazo el al cablear la vista.
   function fmtMoney(v: number) {
-    return v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+    return formatImporteEs(v) + ' €';
   }
   const valorado = params.modoValoracion === 'VALORADO';
 
