@@ -1,11 +1,13 @@
-# SCRUM-588 · CONT-16 · Referencia interna por cliente — **PASO ② PREPARADO, Y PARO**
+# SCRUM-588 · CONT-16 · Referencia interna por cliente — **② HECHO EN DEV Y STAGING**
 
 **Fecha:** 2-sep-2026 · **Carril:** ficha de cliente · **Gate:** no aplica — hoy no se toca código
 
 **Medido contra:** `origin/main` = `61ae2dc38787201209c4ca5426bffd72a441f0fb` · 2026-09-02T19:49:16Z
 
-> 🛑 **Esta entrada cierra el paso ① y entrega el ②. No hace el ②, y no hace el ③.**
-> `prisma/schema.prisma` de esta rama es **idéntico a `main`**, a propósito y comprobado.
+> 🛑 **Esta entrada cierra el ① y el ② en DEV y STAGING. Producción la aplica el fundador, y el ③
+> no se empieza hasta que él lo confirme.**
+> `prisma/schema.prisma` de esta rama es **idéntico a `main`**, a propósito y comprobado con
+> `diff` contra `origin/main` — no afirmado.
 
 ---
 
@@ -84,23 +86,19 @@ Y lleva **dos controles positivos de tipos distintos** — `customers.name` (tex
 `customers.wa_opt_out` (**boolean**) —, porque con uno solo, y de texto, un catálogo que devolviera
 `text` para todo daría los dos números buenos y no se notaría.
 
-**Probada contra las dos bases accesibles**, y distingue en la misma ejecución:
+**Devuelve UNA FILA POR COLUMNA encontrada, así que el número de filas ES el veredicto**: 2 antes
+(los dos controles), 3 después. Esa forma es la que permite el control del paso siguiente — si el
+«antes» de la segunda base ya trajera 3, no significaría que alguien se adelantó, sino que las dos
+claves miran a la MISMA base.
 
-| | `yaqu_dev_javier` | `railway` (staging) |
-| --- | :-: | :-: |
-| `control_name_text` | **1** | **1** |
-| `control_optout_boolean` | **1** | **1** |
-| `internal_ref_existe` | **0** | **0** |
-| `internal_ref_es_text` | 0 | 0 |
-
-Los controles a 1 con la columna a 0 es exactamente lo que hace que ese cero signifique «falta» y
-no «no supe mirar». **Y el mecanismo está probado en las dos direcciones sin aplicar nada**:
-`control_name_text` usa la misma forma (`column_name = X AND data_type = 'text'`) sobre una columna
-que sí existe, y devuelve 1.
+Un resultado de **0 ó 1 filas se lee al revés que el resto**: no es «falta `internal_ref`», es que
+no se ha comprobado nada (otro `search_path`, o `information_schema` ilegible). Y
+**`internal_ref` presente con un tipo que no sea `text` es peor que ausente**: `schemaDrift` la
+daría por buena y el dato se corrompería al escribir.
 
 ---
 
-## 3 · Microcopy propuesta, con su caja medida
+## 3 · Microcopy APROBADA, con su caja medida
 
 Medido en navegador a **360 px**, con el marcado real de `createField` (`div.field > label +
 input`) y las hojas reales:
@@ -108,16 +106,16 @@ input`) y las hojas reales:
 | rótulo | ancho del texto | caja | holgura |
 | --- | :-: | :-: | :-: |
 | «Teléfono» (el vecino, como referencia) | 49 px | 336 | 287 |
-| **«Referencia interna»** ← propuesto | **103 px** | 336 | **233** |
+| **«Referencia interna»** ← APROBADO | **103 px** | 336 | **233** |
 | «Tu referencia» | 73 px | 336 | 263 |
 | «Referencia interna del cliente» | 164 px | 336 | 172 |
 
 Ninguno parte en dos líneas (19 px de alto los cuatro).
 
-**Propuesta para aprobar:**
+**APROBADA, literal — no se toca:**
 
-* **Rótulo:** `Referencia interna`
-* **Ayuda, como `placeholder`:** `Nº de expediente, finca, código…` — mide **219 px** sobre **308 px**
+* **Rótulo (APROBADO por el asesor, 2-sep-2026):** `Referencia interna`
+* **Ayuda, como `placeholder` (APROBADA):** `Nº de expediente, finca, código…` — mide **219 px** sobre **308 px**
   útiles del input: **cabe**, con 89 px de holgura.
 
 > ⚠️ **Y una limitación del sistema que condiciona la propuesta:** `createField` **no admite una
@@ -125,15 +123,55 @@ Ninguno parte en dos líneas (19 px de alto los cuatro).
 > `placeholder`, que sí tiene superficie hoy. Si el asesor prefiere una ayuda **bajo** el campo,
 > eso es un componente nuevo para el inventario AB3 y no cabe en este ticket.
 >
-> **Nada de marcadores en pantalla**: no se pinta ningún `[PENDIENTE …]`. El ③ no se escribe hasta
-> que estos dos textos estén aprobados.
+> 🔴 **Y queda como HUECO DECLARADO, no como solución** (asesor): un placeholder **desaparece en
+> cuanto el profesional teclea**. Aquí es tolerable porque el significado lo lleva el RÓTULO y el
+> placeholder sólo da ejemplos. **Si algún día la ayuda tuviera que llevar la REGLA, no valdría.**
+>
+> **Nada de marcadores en pantalla**: no se pinta ningún `[PENDIENTE …]`. Los dos textos están
+> aprobados, así que el ③ los escribe LITERALES.
+
+---
+
+## 3 bis · El ② aplicado en DEV y STAGING (producción NO: la aplica el fundador)
+
+Procedimiento antes-y-después por base, **y no es ceremonia**: esta casa ya tuvo
+`DATABASE_URL_STAGING` apuntando a desarrollo, y `STAGING` y `TESTS` siendo la misma cadena
+(SCRUM-668). **Aplicar dos veces sobre la misma base se ve exactamente igual que hacerlo bien** —
+salvo por este recuento.
+
+Ninguna cadena de conexión se escribe aquí, ni completa ni parcial: sólo el **nombre físico**.
+
+| | base física | vía | filas | `internal_ref` |
+| --- | --- | --- | :-: | --- |
+| **A · dev, antes** | `yaqu_dev_javier` | `DATABASE_URL_DEV` | **2** | ausente |
+| **C · dev, después** | `yaqu_dev_javier` | `DATABASE_URL_DEV` | **3** | `text` · null:YES · sin default |
+| **A · staging, antes** | `railway` | `DATABASE_URL_STAGING` | **2** | ausente |
+| **C · staging, después** | `railway` | `DATABASE_URL_STAGING` | **3** | `text` · null:YES · sin default |
+
+🔴 **El control del carril pasa, y de la forma más directa:** cuando se midió el «antes» de
+staging, **dev ya tenía 3 filas y staging seguía en 2**. Si las dos claves apuntaran a la misma
+base, staging habría salido con 3 y habría que parar. Y tras aplicar en staging, se volvió a
+medir dev: sigue en 3, no en «3 otra vez».
+
+**El destino se verificó antes de cada escritura** (`comprobar-claves-bd.mjs`): `DEV` →
+`yaqu_dev_javier`, `STAGING` → `railway`, y `DATABASE_URL` **ausente** — producción no vive en un
+árbol de trabajo (regla 3).
+
+> ⚠️ **`DATABASE_URL_STAGING` y `DATABASE_URL_TESTS` apuntan a la MISMA base física (`railway`)**,
+> declarado como intencionado por el guard («BASE DE PRUEBAS DEL CARRIL»). Aplicar a staging ha
+> aplicado también a lo que la suite gateada llama «tests». Conviene saberlo, no descubrirlo.
+
+**Para staging no hay aplicador**: `aplicar-sql-dev.mjs` está atado por destino a
+`yaqu_dev_javier` y muere si la clave apunta a otra cosa. Se replicaron sus garantías en un script
+de un solo uso: ① el SQL pasa por **la lista blanca de la casa** (`ADD COLUMN ×1` → permitida; si
+algo no lo fuera, para), ② el destino tiene que ser `railway`, ③ la cadena nunca se imprime.
 
 ---
 
 ## 4 · Lo que NO se ha hecho, y por qué
 
-* **No se ha aplicado el `ALTER` a ninguna base.** El carril lo dice: «TÚ NO HACES EL ②». Ni
-  siquiera a dev, aunque el aplicador esté atado a ella.
+* **Producción NO se ha tocado.** La aplica el fundador. Desde un árbol de trabajo no hay acceso
+  ni debe haberlo.
 * **`prisma/schema.prisma` está idéntico a `main`**, comprobado con `diff` contra
   `origin/main:prisma/schema.prisma`: **sin diferencias**. Una rama cuyo esquema nombre una columna
   que las bases no tienen tumba el arranque de producción si alguien la mergea — y eso costó nueve

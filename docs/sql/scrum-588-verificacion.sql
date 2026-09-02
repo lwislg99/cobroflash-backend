@@ -14,51 +14,46 @@
 -- verde. Aquí se lee `data_type` del catálogo.
 --
 -- ═════════════════════════════════════════════════════════════════════════════════════════
--- CÓMO SE LEE — y los DOS controles positivos, que son lo que hace que un cero signifique algo
+-- CÓMO SE LEE — el NÚMERO DE FILAS es el veredicto
 --
---   control_name_text ......... 1 = la consulta VE el catálogo y sabe leer una columna de TEXTO.
---   control_optout_boolean .... 1 = y sabe leer una de OTRO TIPO (boolean).
+--   2 filas ... `name` y `wa_opt_out`, los dos CONTROLES POSITIVOS. Estaban ahí desde siempre:
+--               si aparecen, la consulta VE el catálogo y sabe leer DOS TIPOS distintos.
+--   3 filas ... y además `internal_ref`. Mira su columna `tipo`: tiene que poner **text**.
 --
---   🔴 LOS DOS CONTROLES SE LEEN AL REVÉS QUE EL RESTO. Un 0 en cualquiera de ellos NO significa
---      «falta esa columna» —`name` y `wa_opt_out` llevan ahí desde el principio— sino **que no se
---      ha comprobado nada**: la sesión mira a otro esquema (`search_path`), o no se pudo leer
---      `information_schema`. Con un control a 0, el veredicto de abajo NO VALE.
+--   🔴 0 ó 1 FILAS SE LEE AL REVÉS QUE EL RESTO. No significa «falta internal_ref»: significa
+--      que NO SE HA COMPROBADO NADA — la sesión mira a otro esquema (`search_path`) o no se pudo
+--      leer `information_schema`. Con menos de 2 filas el veredicto no vale.
 --
---      Y son DOS y de tipos DISTINTOS a propósito: con uno solo, y de texto, un catálogo que
---      devolviera «text» para todo daría los dos números buenos y no se notaría.
+--   🔴 Y `internal_ref` presente con un `tipo` que NO sea `text` es PEOR que ausente:
+--      `schemaDrift` sólo comprueba que la columna EXISTA, así que el arranque pasaría en verde y
+--      el dato se corrompería al escribir. En la deriva anterior dos columnas eran JSONB.
 --
---   internal_ref_existe ....... 1 = la columna está.  0 = FALTA → aplica
---                               `docs/sql/scrum-588-customers-internal-ref.sql`.
---   internal_ref_es_text ...... 1 = y es del tipo correcto. **0 con `existe` a 1 es PEOR que
---                               falta**: la columna está, `schemaDrift` la da por buena, el
---                               arranque pasa en verde y el dato se corrompe al escribir.
---   internal_ref_nullable ..... 1 = acepta NULL, que es la decisión: «ausente ≠ vacío».
---   internal_ref_sin_default .. 1 = no tiene DEFAULT. Un default habría declarado «tiene
---                               referencia» a todos los clientes que ya existen.
+--   `acepta_null` = YES y `por_defecto` = (sin default) son la decisión «ausente ≠ vacío»: lo
+--   vacío viaja como NULL, y un DEFAULT habría declarado «tiene referencia» a todos los clientes
+--   que ya existen sin que nadie lo dijera.
+
+-- ── UNA FILA POR COLUMNA ENCONTRADA, y por eso el número de filas ES el veredicto ───────
+-- ANTES del ALTER  → 2 filas (los dos controles).
+-- DESPUÉS          → 3 filas, y la tercera es `internal_ref` con su tipo.
 --
--- VEREDICTO: controles a 1 y luego  1 · 1 · 1 · 1  →  esta base tiene lo que el código nombrará.
---            cualquier control a 0  →  no se ha comprobado nada; repetir.
--- ═════════════════════════════════════════════════════════════════════════════════════════
+-- 🛑 Y SI EL «ANTES» DE LA SEGUNDA BASE YA TRAE 3 FILAS, PARA. No significa que alguien se
+-- adelantara: significa que las dos claves apuntan a la MISMA base y se está aplicando dos veces
+-- sobre ella. Esta casa ya tuvo `DATABASE_URL_STAGING` mirando a desarrollo, y STAGING y TESTS
+-- siendo la misma cadena (SCRUM-668). Aplicar dos veces sobre la misma base se ve EXACTAMENTE
+-- IGUAL que hacerlo bien — salvo por este recuento.
 
 SELECT
-  -- ── CONTROLES POSITIVOS · van primero: se leen antes que nada ──
-  (SELECT count(*) FROM information_schema.columns
-     WHERE table_schema = current_schema() AND table_name = 'customers'
-       AND column_name = 'name' AND data_type = 'text')::int          AS control_name_text,
-  (SELECT count(*) FROM information_schema.columns
-     WHERE table_schema = current_schema() AND table_name = 'customers'
-       AND column_name = 'wa_opt_out' AND data_type = 'boolean')::int AS control_optout_boolean,
-
-  -- ── LA COLUMNA DE ESTE TICKET ──
-  (SELECT count(*) FROM information_schema.columns
-     WHERE table_schema = current_schema() AND table_name = 'customers'
-       AND column_name = 'internal_ref')::int                         AS internal_ref_existe,
-  (SELECT count(*) FROM information_schema.columns
-     WHERE table_schema = current_schema() AND table_name = 'customers'
-       AND column_name = 'internal_ref' AND data_type = 'text')::int   AS internal_ref_es_text,
-  (SELECT count(*) FROM information_schema.columns
-     WHERE table_schema = current_schema() AND table_name = 'customers'
-       AND column_name = 'internal_ref' AND is_nullable = 'YES')::int  AS internal_ref_nullable,
-  (SELECT count(*) FROM information_schema.columns
-     WHERE table_schema = current_schema() AND table_name = 'customers'
-       AND column_name = 'internal_ref' AND column_default IS NULL)::int AS internal_ref_sin_default;
+  column_name                                        AS columna,
+  data_type                                          AS tipo,
+  is_nullable                                        AS acepta_null,
+  COALESCE(column_default, '(sin default)')          AS por_defecto,
+  CASE column_name
+    WHEN 'name'         THEN 'CONTROL POSITIVO (text)'
+    WHEN 'wa_opt_out'   THEN 'CONTROL POSITIVO (boolean) — otro tipo, a proposito'
+    WHEN 'internal_ref' THEN 'LA COLUMNA DE ESTE TICKET'
+  END                                                AS papel
+FROM information_schema.columns
+WHERE table_schema = current_schema()
+  AND table_name = 'customers'
+  AND column_name IN ('name', 'wa_opt_out', 'internal_ref')
+ORDER BY papel, column_name;
