@@ -538,6 +538,9 @@ router.get('/:id/pdf', async (req, res) => {
       },
       customer: { name: quote.customer.name, phone: quote.customer.phone, email: quote.customer.email, legalName: (quote.customer as any).legalName, taxId: (quote.customer as any).taxId }, // A20.4
       docFields: ((quote as any).docFields as any) ?? null, // A20.4
+      // SCRUM-593 (DOC-03): la 3ª puerta del mismo documento (el porqué, en scrum593c).
+      docHeaderText: (quote as any).docHeaderText ?? null,
+      docFooterText: (quote as any).docFooterText ?? null,
       currency: quote.currency,
       total: quote.total.toString(),
       lines: (Array.isArray(quote.lines) ? quote.lines : []) as any,

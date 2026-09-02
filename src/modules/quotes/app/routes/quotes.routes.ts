@@ -195,6 +195,10 @@ router.post('/create', async (req, res) => {
           paymentTerms: body.paymentTerms ?? null,
           customBillingPlan: body.customBillingPlan ?? undefined, // SCRUM-27: plan de tramos personalizado
           docFields: body.docFields ?? undefined, // A20.4: qué datos del cliente muestra el documento
+          // SCRUM-593 (DOC-03): los dos textos libres del documento. `?? null` y no `?? undefined`
+          // porque aquí null y «no lo mandó» acaban igual —columna vacía— y null lo dice mejor.
+          docHeaderText: body.docHeaderText ?? null,
+          docFooterText: body.docFooterText ?? null,
           // A16.2: caducidad — default 30 días, editable al crear
           validUntil: body.validUntil ?? new Date(Date.now() + 30 * 86_400_000),
           teamMemberId: creatorTeamMemberId,
@@ -248,6 +252,9 @@ router.post('/create', async (req, res) => {
         modoIva: ((quote as any).ivaModo as any) ?? null,
         clausulas: clausulasDelMerchantParaPdf(merchant),
         clausulasExcluidas: ((quote as any).clausulasExcluidas as any) ?? null,
+        // SCRUM-593 (DOC-03): de la FILA, no del body: el papel dice lo que quedó GUARDADO.
+        docHeaderText: (quote as any).docHeaderText ?? null,
+        docFooterText: (quote as any).docFooterText ?? null,
         currency: quote.currency,
         total: quote.total.toString(),
         lines: canonicalLines as any,
@@ -580,12 +587,15 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
             },
             customer: { name: customer.name, phone: customer.phone, email: customer.email, legalName: (customer as any).legalName, taxId: (customer as any).taxId }, // A20.4
         docFields: ((quote as any).docFields as any) ?? null, // A20.4
-        // SCRUM-656 (T7) · el modo de IVA y las cláusulas de cierre, leídos igual que `docFields`:
-        // del presupuesto guardado, y con respaldo si el campo todavía no existe. Ausente = el
-        // documento sale como salía.
-        modoIva: ((quote as any).ivaModo as any) ?? null,
-        clausulas: clausulasDelMerchantParaPdf(merchant),
-        clausulasExcluidas: ((quote as any).clausulasExcluidas as any) ?? null,
+            // SCRUM-656 (T7) · el modo de IVA y las cláusulas de cierre, leídos igual que `docFields`:
+            // del presupuesto guardado, y con respaldo si el campo todavía no existe. Ausente = el
+            // documento sale como salía.
+            modoIva: ((quote as any).ivaModo as any) ?? null,
+            clausulas: clausulasDelMerchantParaPdf(merchant),
+            clausulasExcluidas: ((quote as any).clausulasExcluidas as any) ?? null,
+            // SCRUM-593 (DOC-03): también al REGENERAR con firma (el porqué, en scrum593c).
+            docHeaderText: (quote as any).docHeaderText ?? null,
+            docFooterText: (quote as any).docFooterText ?? null,
             currency: quote.currency,
             total: quote.total.toString(),
             lines: quote.lines as any,

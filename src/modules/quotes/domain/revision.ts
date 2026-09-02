@@ -178,6 +178,20 @@ export const REVISION_HEREDA = [
   'jobId', 'esAdicional', 'origin', 'validUntil', 'docFields', 'customerId', 'payMethods',
   'total', 'currency', 'lines', 'paymentTerms', 'customBillingPlan', 'tiers', 'selectedTierId',
   'internalNotes', 'teamMemberId', 'ivaModo', 'clausulasExcluidas',
+  // ── 2-sep-2026 · LA CABECERA Y EL PIE DEL DOCUMENTO (SCRUM-593, PR #931 de Javier) ────────
+  //
+  // Entraron en `Quote` desde otro carril y el guard de abajo los cazó SIN CLASIFICAR, que es
+  // exactamente para lo que está: un campo sin clasificar no viaja a la revisión, y eso no falla —
+  // se descubre cuando el cliente echa de menos algo en el PDF.
+  //
+  // DECISIÓN DEL FUNDADOR (2-sep-2026): LAS DOS SE HEREDAN. Son contenido del documento. Una
+  // revisión de «P2004226.1» es EL MISMO DOCUMENTO con cambios; si pierde la cabecera y el pie, el
+  // cliente recibe algo que se ve distinto de lo que aprobó. Y heredar es REVERSIBLE —se puede
+  // borrar— mientras que no heredar no lo es: el texto ya no está.
+  //
+  // ⚠️ PROVISIONAL hasta que Javier lo confirme (2-sep-2026). Si dice que son de la versión
+  // anterior —como la firma o la decisión—, se mueven a `REVISION_NO_HEREDA` con su motivo.
+  'docHeaderText', 'docFooterText',
 ] as const;
 
 /**
