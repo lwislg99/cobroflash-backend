@@ -25,6 +25,8 @@
 // chip (SCRUM-363). Con `0` se pintaría «Pendiente» sobre un eje inventado. **Ausente y cero no
 // son lo mismo**, y aquí la diferencia se ve en la pantalla del profesional.
 
+import { esTipoIntervencion } from './tipoIntervencion';
+
 /** Lo que el profesional escribe al abrir un trabajo directo. */
 export type EntradaTrabajoDirecto = {
   customerId: number;
@@ -62,6 +64,24 @@ export function datosDeTrabajoDirecto(cuerpo: unknown): ResultadoEntrada {
   const c = (cuerpo ?? {}) as Record<string, unknown>;
 
   if ('quoteId' in c || 'quote_id' in c) return { ok: false, error: 'quote_id_no_admitido' };
+
+  // ── TIPO DE INTERVENCION (aprobado 2-sep-2026, regla 27) ───────────────────────────
+  //
+  // El vocabulario CERRADO vive en `./tipoIntervencion` y se IMPORTA: el parte de trabajo
+  // (SCRUM-652) usa exactamente el mismo, y dos listas para el mismo hecho se separan.
+  //
+  // 🔴 Y AQUI HAY UNA PUERTA CERRADA A PROPOSITO: su COLUMNA todavia no existe —`prisma/
+  // schema.prisma` es territorio del fundador y el diff esta escrito en `docs/master/
+  // SCRUM-651.md`, sin aplicar—. Asi que un `tipoIntervencion` valido **tampoco entra**, y se
+  // dice por que en vez de tragarselo.
+  //
+  // Aceptarlo y no guardarlo seria el fallo mudo entero de este ticket cometido otra vez: el
+  // profesional elige «Mantenimiento», el producto contesta 201, y ese dato no existe en
+  // ninguna parte. Se rechaza fuerte hasta que la columna este.
+  if (c.tipoIntervencion !== undefined) {
+    if (!esTipoIntervencion(c.tipoIntervencion)) return { ok: false, error: 'tipo_intervencion_invalido' };
+    return { ok: false, error: 'tipo_intervencion_sin_columna' };
+  }
 
   // El cliente es el ÚNICO obligatorio: sin él el Trabajo no es de nadie, y todo lo demás
   // —dirección, descripción, nombre— se puede añadir después con el PATCH que ya existe.

@@ -22,6 +22,7 @@ import path from 'node:path';
 import ts from 'typescript';
 import { soloEjecutable } from './_guard-texto.mjs';
 import { datosDeTrabajoDirecto, filaDeTrabajoDirecto, tituloDeTrabajo } from '../dist/modules/jobs/domain/trabajoDirecto.js';
+import { TIPOS_INTERVENCION, esTipoIntervencion } from '../dist/modules/jobs/domain/tipoIntervencion.js';
 import { estadoCobroFor, importeDeReferencia } from '../dist/modules/jobs/domain/job.service.js';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
@@ -263,4 +264,121 @@ test('SCRUM-651 · la ruta le pasa el AUTOR de verdad, no un null fijo', () => {
   assert.match(rutas, /filaDeTrabajoDirecto\(req\.merchantId, entrada\.datos, req\.teamMemberId \?\? null\)/,
     '🔴 la ruta ya no pasa quien abre el Trabajo. El nucleo lo guardaria bien y daria igual: '
     + 'llegaria null de todos modos y el tecnico perderia de vista su propia averia.');
+});
+
+// ── 6 · EL TIPO DE INTERVENCION: VOCABULARIO CERRADO, Y UNA SOLA FUENTE ───────────────────
+
+test('SCRUM-651 · el vocabulario es EXACTAMENTE el aprobado, y en su orden', () => {
+  // Aprobado por el fundador el 2-sep-2026 (regla 27). Ni uno mas, ni uno menos, ni reordenado:
+  // el orden es el que ve el profesional en el desplegable y el primero es el caso frecuente.
+  assert.deepEqual([...TIPOS_INTERVENCION],
+    ['REPARACION_ASISTENCIA', 'MANTENIMIENTO', 'INSTALACION'],
+    '🔴 el vocabulario cerrado ha cambiado. Ampliarlo o reordenarlo es cambio de master '
+    + '(regla 27), no una linea de codigo.');
+});
+
+test('SCRUM-651 · 🔴 un valor FUERA DE LOS TRES no entra, y el rojo lo nombra', () => {
+  for (const malo of [
+    'REPARACION', 'reparacion_asistencia', 'AVERIA', 'OTRO', 'MANTENIMIENTO ', '',
+    null, undefined, 3, {}, [], true,
+  ]) {
+    assert.equal(esTipoIntervencion(malo), false,
+      `🔴 «${JSON.stringify(malo)}» SE HA COLADO COMO TIPO DE INTERVENCION.` + String.fromCharCode(10)
+      + '  El vocabulario es CERRADO (regla 27): lo que no esta en la lista no existe. Y ojo con los'
+      + ' casi-iguales — minusculas, un espacio detras, un sinonimo— que es como se cuela un valor'
+      + ' que luego nadie encuentra.');
+
+    // Y la puerta lo rechaza NOMBRANDO el motivo, no en silencio.
+    //
+    // 🔴 `undefined` NO ENTRA EN ESTA MITAD, Y LA DISTINCION IMPORTA: «no lo he mandado» y «he
+    // mandado una palabra que no existe» son dos cosas. El campo es OPCIONAL —en una averia se
+    // teclea lo justo—, asi que omitirlo es legitimo y tiene que seguir abriendo el Trabajo.
+    // Es la misma disciplina de ausente-contra-cero que el resto de este ticket.
+    if (malo === undefined) continue;
+    const r = datosDeTrabajoDirecto({ customerId: 7, tipoIntervencion: malo });
+    assert.equal(r.ok, false, `🔴 la puerta acepta «${JSON.stringify(malo)}» como tipo de intervencion.`);
+    assert.equal(r.error, 'tipo_intervencion_invalido',
+      `🔴 se rechaza, pero por el motivo equivocado (${r.error}): quien lo lea no sabra que arreglar.`);
+  }
+
+  // AUSENTE NO ES INVALIDO: sin el campo, el Trabajo se abre igual.
+  assert.equal(datosDeTrabajoDirecto({ customerId: 7 }).ok, true,
+    '🔴 omitir el tipo de intervencion se trata como un error. El campo es opcional: en una averia '
+    + 'el pro teclea lo justo y sigue.');
+});
+
+test('SCRUM-651 · 🔴 un tipo VALIDO tampoco se traga en silencio mientras no haya columna', () => {
+  // La columna es territorio del fundador y todavia no esta (el diff, en docs/master/SCRUM-651.md).
+  // Aceptar el dato y no guardarlo seria el fallo mudo de este ticket cometido otra vez: el pro
+  // elige «Mantenimiento», el producto contesta 201, y ese dato no existe en ninguna parte.
+  for (const bueno of TIPOS_INTERVENCION) {
+    const r = datosDeTrabajoDirecto({ customerId: 7, tipoIntervencion: bueno });
+    assert.equal(r.ok, false,
+      `🔴 SE ACEPTA «${bueno}» Y NO HAY DONDE GUARDARLO. El 201 mentiria: el dato se pierde y nadie`
+      + ' se entera. Cuando la columna exista, esto se abre en tres lineas y este test es la lista.');
+    assert.equal(r.error, 'tipo_intervencion_sin_columna',
+      '🔴 el motivo tiene que decir QUE FALTA, no un generico: es la diferencia entre «arregla el '
+      + 'schema» y «revisa tu formulario».');
+  }
+  // Y sin el campo, el camino de siempre sigue abriendo trabajos.
+  assert.equal(datosDeTrabajoDirecto({ customerId: 7 }).ok, true,
+    '🔴 el vocabulario nuevo ha roto el alta normal: el campo es opcional.');
+});
+
+test('SCRUM-651 · 🔴 UNA sola fuente del vocabulario, no dos listas', () => {
+  // El parte de trabajo (SCRUM-652) usa EXACTAMENTE estos valores. Si cada uno declara su lista,
+  // se separan el dia que alguien anada uno — y entonces un parte afirma sobre un Trabajo una
+  // palabra que el Trabajo no admite. Ya paso con un rotulo que vivia en dos ranuras.
+  const raiz = RAIZ;
+  const sospechosos = [];
+  const anda = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (['node_modules', '.git', 'dist', 'docs'].includes(e.name)) continue;
+      const abs = path.join(dir, e.name);
+      if (e.isDirectory()) { anda(abs); continue; }
+      if (!/\.(ts|mjs|js)$/.test(e.name)) continue;
+      const rel = path.relative(raiz, abs).split(path.sep).join('/');
+      if (rel.endsWith('src/modules/jobs/domain/tipoIntervencion.ts')) continue;   // LA fuente
+      if (rel === `tests/${path.basename(import.meta.filename)}`) continue;        // este test
+      const txt = soloEjecutable(fs.readFileSync(abs, 'utf8'));
+      if (/REPARACION_ASISTENCIA/.test(txt) && /MANTENIMIENTO/.test(txt) && /INSTALACION/.test(txt)) {
+        sospechosos.push(rel);
+      }
+    }
+  };
+  anda(raiz);
+  assert.deepEqual(sospechosos, [],
+    `🔴 LOS TRES VALORES APARECEN JUNTOS FUERA DE SU FUENTE: ${JSON.stringify(sospechosos)}.`
+    + String.fromCharCode(10)
+    + '  Eso es una SEGUNDA lista del mismo vocabulario. Se importa de'
+    + ' `src/modules/jobs/domain/tipoIntervencion.ts`, no se copia: dos listas para el mismo hecho'
+    + ' se separan, y la que se quede corta hara que un documento afirme algo que el otro no admite.');
+
+  // SUELO: si el barrido no encuentra NI la propia fuente, no esta midiendo nada.
+  const fuente = fs.readFileSync(path.join(raiz, 'src/modules/jobs/domain/tipoIntervencion.ts'), 'utf8');
+  assert.ok(/REPARACION_ASISTENCIA/.test(fuente) && /INSTALACION/.test(fuente),
+    '🔴 el instrumento no encuentra el vocabulario ni en su propio fichero: el cero de arriba seria ciego.');
+});
+
+// ── 7 · LA TRAZA Y EL COPY APROBADO ──────────────────────────────────────────────────────
+
+test('SCRUM-651 · el Trabajo abierto sin presupuesto DEJA TRAZA', () => {
+  // Un registro de auditoria con un agujero es peor que no tenerlo: quien lo lee lo cree completo.
+  const rutas = soloEjecutable(leer(RUTAS));
+  assert.match(rutas, /action: 'trabajo_creado'/,
+    '🔴 abrir un Trabajo sin presupuesto ha dejado de registrarse. El camino del presupuesto si '
+    + 'deja traza, asi que el registro quedaria con un agujero justo en el camino nuevo.');
+  const audit = soloEjecutable(leer('src/modules/system/audit.service.ts'));
+  assert.match(audit, /'trabajo_creado'/,
+    '🔴 la accion ya no esta declarada en el conjunto CERRADO de AuditAction.');
+});
+
+test('SCRUM-651 · el copy APROBADO esta puesto, y sin marcador', () => {
+  const vista = leer('public/dashboard/js/jobsView.js');
+  assert.ok(vista.includes('Tus trabajos: los que vienen de un presupuesto aceptado, y los que abres tú.'),
+    '🔴 el subtitulo aprobado el 2-sep-2026 ha cambiado. Decia que un Trabajo nace de un '
+    + 'presupuesto aceptado, y con esta puerta eso era media verdad.');
+  assert.ok(vista.includes('Todavía no tienes ningún trabajo. Se crean solos cuando un cliente acepta un presupuesto, o los abres tú desde aquí.'),
+    '🔴 el estado vacio aprobado ha cambiado. El viejo mandaba ESPERAR a un presupuesto mientras '
+    + 'tenia al lado el boton para abrir uno: la pantalla se contradecia a si misma.');
 });

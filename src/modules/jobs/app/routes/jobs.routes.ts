@@ -549,9 +549,16 @@ router.post('/', async (req, res) => {
       data: filaDeTrabajoDirecto(req.merchantId, entrada.datos, req.teamMemberId ?? null),
     });
 
-    // ⚠️ SIN `recordAudit`, y es una AUSENCIA DECIDIDA, no un olvido: `AuditAction` es un conjunto
-    // CERRADO (regla 27) y no tiene ninguna acción para «trabajo creado». Inventarla aquí sería
-    // ampliar un enum cerrado sin pasar por el máster. Queda propuesto en `docs/master/SCRUM-651.md`.
+    // SCRUM-651 · traza del Trabajo abierto SIN presupuesto (acción aprobada el 2-sep-2026). El
+    // camino del presupuesto ya dejaba la suya; éste no dejaba ninguna, y un registro con un
+    // agujero es peor que no tenerlo. Fire-and-forget, como el resto de `recordAudit`.
+    recordAudit({
+      merchantId: req.merchantId,
+      teamMemberId: req.teamMemberId ?? null,
+      action: 'trabajo_creado',
+      entityType: 'job',
+      entityId: job.id,
+    });
     return res.status(201).json(await serializeJob(job));
   } catch (err: any) {
     console.error('[jobs] POST / falló:', err?.message || err);

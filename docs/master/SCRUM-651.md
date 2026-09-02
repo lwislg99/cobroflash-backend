@@ -149,3 +149,113 @@ el arnes lo marca aparte — y paso una vez, con la primera version de la varian
   contradecir al botón que tiene al lado. **Es copy aprobado: no lo reescribo, lo propongo.**
 * **Sin registro de auditoría.** `AuditAction` es un conjunto CERRADO y no tiene ninguna acción
   para «trabajo creado». Ampliarlo es cambio de máster; queda propuesto, no colado.
+
+---
+
+# SCRUM-651 · SEGUNDA ENTREGA · el merge, el tipo de intervencion y el copy firmado
+
+**Medido contra:** `origin/main` = `443a9e224c14204c0a01ee75751c067762ef04a0` · 2026-09-02T18:05:00+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-651-trabajo-sin-presupuesto`
+
+## 1 · EL CONFLICTO: el mecanismo cambio bajo los pies
+
+`SCRIPTS_DEL_DASHBOARD` **ya no es un numero**. SCRUM-662 lo retiro —colisiono SIETE veces— y
+puso la **LISTA** de scripts: una cuenta no distingue «tu script» de «mi script», y dos ramas que
+suben el contador escriben el MISMO valor por scripts DISTINTOS, asi que git funde la linea sin
+marcadores y el contador se queda corto en silencio.
+
+**No se conserva nada del lado propio.** Mi rama traia `= 67` y ese mecanismo ya no existe.
+Traer de vuelta el numero —o su historial, que main retira a proposito— habria deshecho SCRUM-662,
+que es trabajo ajeno que viene en el merge. Del lado propio sobrevive lo unico que sigue siendo
+cierto: que entra `jobNuevoModal.js`, y por que.
+
+**La entrada se DERIVO del indice ya mezclado**, no se heredo ni se sumo:
+
+| medida | valor |
+|---|---|
+| `grep -c "<script src=" public/dashboard/index.html` | **71** |
+| lista declarada en main (SCRUM-662) | 70 |
+| contraste POR NOMBRE — falta | `jobNuevoModal.js` |
+| contraste POR NOMBRE — sobra | (nada) |
+| duplicados en el indice | ninguno |
+
+Colocada en su sitio alfabetico: `jobNextAction.js` → **`jobNuevoModal.js`** → `jobRailBlocks.js`.
+
+**ORDEN CON DEPENDENCIA**, comprobado aparte porque un merge lo reordena sin tocar la lista:
+
+* `modalHeader.js` antes de `jobNuevoModal.js` (le da `cabeceraModal`) — OK
+* `jobNuevoModal.js` antes de `jobsView.js` (que lo consume) — OK
+* `filtroClientes.js` antes de `customersView.js` (de otro carril) — OK
+
+## 2 · TIPO DE INTERVENCION — vocabulario cerrado, UNA sola fuente
+
+Aprobado el 2-sep-2026 (regla 27). Vive en `src/modules/jobs/domain/tipoIntervencion.ts` y **se
+importa, no se copia**: el parte de trabajo (SCRUM-652) usa EXACTAMENTE estos valores, y dos
+listas para el mismo hecho se separan el dia que alguien anada uno en un sitio.
+
+```ts
+export const TIPOS_INTERVENCION = ['REPARACION_ASISTENCIA', 'MANTENIMIENTO', 'INSTALACION'] as const;
+```
+
+Hay un **guard que barre `src/`, `tests/` y `public/`** y cae si los tres valores aparecen juntos
+fuera de su fuente: es lo que impide que nazca la segunda lista. Con su suelo — si el barrido no
+encuentra el vocabulario ni en su propio fichero, se declara ciego.
+
+**No hay caida a un valor por defecto.** Si llega algo que no esta en la lista, la respuesta es
+«no». Caer a `REPARACION_ASISTENCIA` porque es el caso frecuente seria inventarse que clase de
+trabajo hizo alguien, y eso acaba impreso en un parte que firma el cliente.
+
+## 3 · ⛔ LA COLUMNA: EL DIFF, ESCRITO Y SIN APLICAR
+
+`prisma/schema.prisma` sigue siendo territorio del fundador, asi que **no lo he tocado**. El
+cambio, listo para aplicar:
+
+```prisma
+model Job {
+  // ...
+  // SCRUM-651 (T2): que clase de intervencion es. Vocabulario CERRADO en
+  // `src/modules/jobs/domain/tipoIntervencion.ts` — el MISMO que usa el parte (SCRUM-652).
+  tipoIntervencion String? @map("tipo_intervencion")
+}
+```
+
+```sql
+-- ADITIVO: nullable y SIN default.
+ALTER TABLE "jobs" ADD COLUMN "tipo_intervencion" TEXT;
+```
+
+⚠️ **Nullable y sin `default`, a proposito.** Un default pondria una intervencion a los Trabajos
+que ya existen, y eso es afirmar que clase de trabajo fueron sin haberlo preguntado — el mismo
+error que el `0 €` de presupuesto, con otra cara. `null` = «no consta».
+
+### 🔴 Y MIENTRAS NO ESTE, EL DATO NO SE TRAGA EN SILENCIO
+
+La puerta **rechaza** un `tipoIntervencion`, incluso valido, con `tipo_intervencion_sin_columna`.
+Aceptarlo y no guardarlo seria el fallo mudo de este ticket cometido otra vez: el profesional
+elige «Mantenimiento», el producto contesta 201, y ese dato no existe en ninguna parte.
+
+El dia que la columna este, se abre en tres lineas y **el test es la lista de lo que hay que
+tocar**. Por eso el desplegable tampoco esta todavia en el modal: ofrecer un campo que no se
+puede guardar es prometer.
+
+## 4 · La traza, y el copy firmado
+
+* **`AuditAction` gana `trabajo_creado`** (aprobado). El camino del presupuesto ya dejaba traza
+  y el directo no dejaba ninguna: **un registro con un agujero es peor que no tenerlo**, porque
+  quien lo lee lo cree completo.
+* **Los dos textos aprobados**, puestos literales:
+  * subtitulo → *Tus trabajos: los que vienen de un presupuesto aceptado, y los que abres tu.*
+  * vacio → *Todavia no tienes ningun trabajo. Se crean solos cuando un cliente acepta un
+    presupuesto, o los abres tu desde aqui.*
+
+El estado vacio viejo mandaba ESPERAR a un presupuesto **teniendo al lado el boton para abrir uno**:
+la pantalla se contradecia a si misma. Eso ya no pasa.
+
+## 5 · Hallazgos de otros carriles (regla 9) — reportados, no tocados
+
+1. **`scrum642-tramos-del-arranque` es VERDE aislado y ROJO dentro de la suite.** No es mio
+   (`git diff origin/main` vacio) y tres pasadas aisladas dan `exit=0`. **Es la enfermedad exacta
+   de SCRUM-520**: un aserto que mide reloj de pared y cae cuando la maquina esta cargada. La
+   forma de cerrarlo ya esta escrita en `docs/master/SCRUM-520.md`: medir el hecho, no el reloj.
+2. **La lista de main tiene un desorden propio y anterior a este merge**: `quoteSuplido.js` va
+   antes de `quotesDetailView.js`. No lo arreglo aqui.
