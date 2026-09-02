@@ -25,12 +25,33 @@ async function renderJobsView(container) {
         <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">Trabajos</h2>
         <p style="margin:0;font-size:13px;color:var(--muted)">Cada presupuesto aceptado se convierte en un trabajo. Agéndalo, márcalo terminado y cobra el resto con un toque.</p>
       </div>
+      <div id="jobs-nuevo" style="margin-bottom:14px"></div>
       <div id="jobs-filter" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
       <div id="jobs-list" style="display:flex;flex-direction:column;gap:12px"></div>
     </div>
   `;
   const list = document.getElementById('jobs-list');
   const filterBar = document.getElementById('jobs-filter');
+
+  // ── SCRUM-651 (T2) · LA PUERTA DEL TRABAJO SIN PRESUPUESTO ──────────────────────────
+  //
+  // Va ANTES del `return` del estado vacio a proposito: con cero trabajos es justo cuando mas
+  // falta hace poder abrir el primero. Si se colgara despues, un merchant nuevo veria una
+  // pantalla que le dice que espere a que alguien acepte un presupuesto — y ya no es verdad.
+  //
+  // ⚠️ HALLAZGO REPORTADO, NO ARREGLADO (regla 30): el subtitulo de esta pantalla y el texto del
+  // estado vacio siguen diciendo que un trabajo nace de un presupuesto aceptado. Es microcopy
+  // APROBADA y no se reescribe por cuenta propia; la propuesta esta en docs/master/SCRUM-651.md.
+  const zonaNuevo = document.getElementById('jobs-nuevo');
+  if (zonaNuevo && typeof abrirModalTrabajoNuevo === 'function') {
+    const bNuevo = document.createElement('button');
+    bNuevo.className = 'btn-primary btn-sm';
+    bNuevo.id = 'jobs-nuevo-btn';
+    bNuevo.textContent = MARCA_651 + ' Trabajo nuevo';
+    bNuevo.addEventListener('click', () => abrirModalTrabajoNuevo(() => renderJobsView(container)));
+    zonaNuevo.appendChild(bNuevo);
+  }
+
   uiSkeletonCards(list, 4);
 
   let jobs;
