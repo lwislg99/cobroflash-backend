@@ -4,6 +4,7 @@ import { isDemoMerchant } from '../invoicing/domain/emission.service'; // SCRUM-
 // no aqui: aqui solo se lee la base y se lanza el error.
 import { bloqueoCambioDeSerie, numerosDeLaSerie } from '../../core/validation/fiscalInput';
 import { prisma } from '../../core/db/prisma';
+import { normalizarClausulasParaGuardar } from '../quotes/domain/clausulas';
 
 export const DEFAULT_MERCHANT_ID = 1; // de momento trabajamos con el merchant demo
 
@@ -212,6 +213,15 @@ export async function updateMerchantProfile(
 
   // profileZones: Json — null se guarda como [] (limpiar chips)
   const { profileZones, ...rest } = data;
+
+  // SCRUM-656 (T7 fase B) · se sanean ANTES de guardar, no solo al pintar. Guardar una cláusula
+  // con el texto vacío dejaría en Configuración una fila que el profesional VE y que en el PDF no
+  // sale nunca: el producto le estaría mintiendo en su propia pantalla de ajustes.
+  const clausulas = (rest as Record<string, unknown>).clausulasPresupuesto;
+  if (clausulas !== undefined) {
+    (rest as Record<string, unknown>).clausulasPresupuesto =
+      clausulas === null ? [] : normalizarClausulasParaGuardar(clausulas);
+  }
 
   const updated = await prisma.merchant.update({
     where: { id: merchantId },

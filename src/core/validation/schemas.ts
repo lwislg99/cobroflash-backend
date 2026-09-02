@@ -241,6 +241,23 @@ export const PSPWebhookSchema = z.object({
 // ------- MERCHANT PROFILE -------
 
 export const merchantProfileUpdateSchema = z.object({
+  // SCRUM-656 (T7 fase B) · LAS CLÁUSULAS DE CIERRE DEL PRESUPUESTO, escritas UNA vez.
+  //
+  // 🔴 El `id` viaja y NO se recalcula: la exclusión de un presupuesto es una lista de `id`
+  // (`quotes.clausulas_excluidas`), y reasignarlos al reeditar haría que un presupuesto que
+  // quitó la garantía pasara a quitar otra cláusula. No fallaría nada: saldría un PDF con una
+  // condición que el profesional había retirado a propósito.
+  //
+  // `nullable` Y `optional`, y no es lo mismo: AUSENTE = la pantalla no las manda y no se tocan;
+  // `null` = el profesional las ha borrado todas, que es un valor guardable.
+  //
+  // El texto NO se valida más allá de que exista: lo escribe el merchant (regla 30), y una
+  // garantía es una obligación jurídica, no un adorno del pie del documento.
+  clausulasPresupuesto: z.array(z.object({
+    id: z.string().optional(),
+    titulo: z.string(),
+    texto: z.string(),
+  })).nullable().optional(),
   name: z.string().min(1).optional(),
   legalName: z.string().min(1).optional(),
   taxId: z.string().min(1).optional(),
