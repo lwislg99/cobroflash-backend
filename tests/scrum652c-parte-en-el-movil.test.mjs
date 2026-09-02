@@ -407,6 +407,63 @@ test('SCRUM-652c · 🔴 SIN RED: el parte se firma, se encola, y sube al ABRIR 
     '🔴 la firma del PARTE se ha subido a ' + conRed.subidas[0].ruta + '. Ahí ese id no es un parte.');
 });
 
+// ────────────────────────────────────────────────────────────────────────────────────
+// 🔴 EL HUECO QUE ENCONTRÓ EL CUARTO ROJO, Y QUE NO SE TAPA CON UN PARCHE
+//
+// Los tests de arriba llamaban a `firmarConRedDeSeguridad` DIRECTAMENTE, pasándole `'parte'` a
+// mano. O sea: probaban la COLA, no el CABLE. Se quitó el `'parte'` de `parteDetailView.js` —el
+// olvido más fácil de cometer— y los trece pasaron en verde con la firma yendo al endpoint del
+// albarán.
+//
+// Un test que inyecta el valor que quiere comprobar no comprueba nada: comprueba su propio
+// argumento. Lo que hay que ejercitar es la función DE LA VISTA, con dobles, y mirar con qué
+// llama a la cola.
+// ────────────────────────────────────────────────────────────────────────────────────
+
+test('SCRUM-652c · 🔴 LA VISTA le dice a la cola que esto es un PARTE', async () => {
+  const { ctx } = montar();
+  assert.equal(typeof ctx.firmarParte, 'function', '🔴 la vista no publica `firmarParte`');
+
+  let padAbierto = null;
+  const llamadas = [];
+  const abierto = ctx.firmarParte(PARTE_PINTABLE, {
+    abrirPad: (o) => { padAbierto = o; },
+    firmar: async (id, cuerpo, subir, tipo) => { llamadas.push({ id, tipo }); return { estado: 'ok' }; },
+    apiRequest: async () => ({ id: 1 }),
+  });
+  assert.equal(abierto, true, '🔴 la vista no ha abierto el pad de firma');
+  assert.ok(padAbierto && typeof padAbierto.onConfirm === 'function', '🔴 el pad no recibe `onConfirm`');
+
+  await padAbierto.onConfirm('data:image/png;base64,AAA', { firmadoPorNombre: 'Ana Ruiz' });
+
+  assert.deepEqual(llamadas, [{ id: 7, tipo: 'parte' }],
+    '🔴 la vista ha firmado SIN decirle a la cola que esto es un parte. Sin ese cuarto '
+    + 'argumento la firma se encola con la clave del ALBARÁN y el drenado la sube a '
+    + '`/admin/albaranes/7/firmar`, donde ese id no es un parte —y además pisaría la firma del '
+    + 'albarán 7 si la hubiera. Es el fallo que los trece tests anteriores dejaban pasar EN VERDE '
+    + 'porque le pasaban el tipo a mano en vez de mirar el de la vista.');
+});
+
+test('SCRUM-652c · 🔴 lo que se le enseña al firmante en el pad tampoco lleva dinero', () => {
+  const { ctx } = montar();
+  let padAbierto = null;
+  const valorado = JSON.parse(JSON.stringify(PARTE_PINTABLE));
+  valorado.lineas = [
+    { bloque: 'mano_obra', unds: 2.5, descripcion: 'Revisión de caldera', precioUnitario: 38, tipoIva: 21 },
+  ];
+  ctx.firmarParte(valorado, {
+    abrirPad: (o) => { padAbierto = o; },
+    firmar: async () => ({ estado: 'ok' }),
+    apiRequest: async () => ({ id: 1 }),
+  });
+
+  const resumen = JSON.stringify((padAbierto && padAbierto.albaran) || {});
+  assert.ok(!/precioUnitario|tipoIva|"38"|:38|\u20ac/.test(resumen),
+    '🔴 el resumen que ve el FIRMANTE lleva importes: ' + resumen + '.\n'
+    + '   Aquí firma quien esté delante —el portero, un familiar, el encargado— y enseñarle precios '
+    + 'es revelar condiciones comerciales a un tercero.');
+});
+
 test('SCRUM-652c · 🔴 `parte_locked` es un ÉXITO al drenar, igual que el del albarán', async () => {
   const banco = bancoDeCola({ red: 'yaLaTiene', codigo: 'parte_locked' });
   banco.almacen.set('firma:parte:7', {
