@@ -1753,8 +1753,24 @@ if (typeof it.price !== "undefined" && it.price !== null && it.price !== "") {
     // guardamos base
     priceInput.dataset.pfBasePrice = String(base);
 
-    // dejamos el precio visible como BASE (el cálculo final se ve en el hint "Final")
-priceInput.value = String(base.toFixed(2));
+    // El precio del catálogo es el PRECIO FINAL: desde CAT-01 (SCRUM-609) el margen NO se guarda
+    // en el catálogo, se DERIVA de coste y precio — o sea que `price` ya lo lleva dentro.
+    priceInput.value = String(base.toFixed(2));
+
+    // ── SCRUM-610 (CAT-02) · EL MARGEN DE LA LÍNEA SE PONE A CERO AL ELEGIR ────────────────
+    //
+    // 🔴 SIN ESTO SALE DOBLE MARGEN, y está MEDIDO: un producto de 121 € (coste 100, margen
+    // derivado del 21 %) en una línea que arrastraba un 20 % acababa en el documento a
+    // **145,20 €**. El margen del catálogo ya estaba dentro del precio y se volvía a aplicar.
+    //
+    // No es un caso raro: el margen de la línea se GUARDA en el borrador (`markup` en el
+    // autoguardado) y viaja también en las PLANTILLAS, así que una línea puede llegar con margen
+    // puesto antes de que nadie elija nada del catálogo.
+    //
+    // Se pone a 0 en vez de esconder el campo: el margen del documento es DOC-08 y no es este
+    // ticket. Así el pro LO VE, y si quiere margen extra sobre el precio de catálogo lo escribe
+    // después — que es lo que ya podía hacer.
+    if (markupInput) markupInput.value = "0";
   }
 }
 
