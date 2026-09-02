@@ -88,6 +88,27 @@ export const CATEGORIAS = {
  * `módulo::export`, no la longitud: por eso da igual cómo se agrupen las líneas.
  */
 export const DECLARADOS = [
+  // ── SCRUM-652 (T3 fase C) · lo que destapa DARLE SUPERFICIE AL PARTE ───────────────────
+  //
+  // Mientras `parteTrabajo.ts` era un módulo inalcanzable ENTERO, sus exports no se contaban uno
+  // a uno: el módulo era el huérfano. Al cablearlo, el censo pasa a mirarlo por dentro, y estos
+  // tres quedan a la vista. NO son código muerto y NO se borran: son la mitad de OFICINA del
+  // documento —los totales por bloque, en céntimos enteros— y el vocabulario de estados. Su
+  // consumidor es la pantalla que valora, que es otro ticket (T8 y siguientes).
+  { modulo: 'src/modules/jobs/domain/parteTrabajo.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-09-02',
+    motivo: 'La aritmética de la OFICINA del parte, construida en la fase B y probada: la pantalla del técnico no la usa a propósito (no ve importes) y la de oficina es un ticket posterior.',
+    exports: ['lineasDelBloque', 'totalesPorBloque'] },
+  { modulo: 'src/modules/jobs/domain/parteTrabajo.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-02',
+    motivo: 'Los estados del parte, exportados para ser su única fuente; hoy los leen su propio módulo y su test.',
+    exports: ['ESTADOS_PARTE'] },
+  // La numeración del parte: `siguienteNumeroParte` SÍ tiene llamador (la creación); estos dos son
+  // su vocabulario y su formateador, que hoy sólo ejerce el propio módulo y su test.
+  { modulo: 'src/modules/jobs/domain/parteNumero.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-02',
+    motivo: 'Código vivo de su propio módulo lo ejecuta (`siguienteNumeroParte` lo llama); el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['formatParteNumber', 'PARTE_NUMBER_PREFIX'] },
   // SCRUM-656 (T7) · el vocabulario del MODO DE IVA de un presupuesto. `MODOS_IVA` es además la
   // lista contra la que se contrasta el `z.enum` del validador: si dejara de exportarse, las dos
   // copias del conjunto cerrado podrían separarse sin que nada lo dijera.

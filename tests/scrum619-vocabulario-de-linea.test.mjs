@@ -112,11 +112,36 @@ function vocabularioFacturaSuelta(linea) {
 //
 // ⚠️ Y NO SE ARREGLA AQUÍ: tocar la puerta de la factura es camino de emisión y está fuera de
 // esta tanda (T6). Queda declarado para que la decisión sea de alguien y no del descuido.
-const VOC_PRESUPUESTO = ['apartado', 'concept', 'price', 'qty', 'suplido', 'tax'];
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-661 · ENTRA `costeUnitario`, Y ESTE TRINQUETE HIZO SU TRABAJO: saltó en la tanda y
+// obligó a tomar la decisión antes de que la clave pasara sin que nadie se enterase.
+//
+// LA DECISIÓN: **NO se añade a la puerta de la factura en este ticket.** Dos motivos, y el
+// primero manda:
+//
+//   1. Tocar `validarFacturaSuelta` es **camino de emisión** (reglas 29/38) y es **STOP**: pide
+//      el OK del fundador, no se hace de paso. Es la misma frontera que este fichero declara
+//      arriba para `suplido` y que SCRUM-655 respetó para `apartado`.
+//   2. Y hoy no rellenaría nada: la factura suelta se teclea a mano en `nuevaFacturaModal.js`,
+//      que **no tiene catálogo ni campo de coste** (el censo de SCRUM-600 le contó CERO
+//      capacidades). Añadir la clave allí crearía un campo que nadie rellena — exactamente el
+//      error que SCRUM-661 evitó al no ensanchar el esquema antes de tener los otros dos
+//      eslabones.
+//
+// 🔴 LO QUE SE PIERDE, DICHO EN VOZ ALTA porque es la víctima del propio SCRUM-661: **ninguno**
+// de los cuatro caminos de emisión copia `Quote.lines` — MEDIDO el 2-sep-2026, los cuatro
+// reconstruyen la línea a mano con `concept/qty/price/tax` (`albaranes.routes.ts` ×2,
+// `recapitulativa.service.ts`, `invoicesAdmin.routes.ts`). Así que el coste congelado vive en el
+// PRESUPUESTO y no viaja a la factura. El margen real sigue siendo reconstruible desde el
+// presupuesto, que es donde están el coste y el precio; **no lo será desde una factura que no
+// tenga presupuesto detrás.** Eso es una decisión del fundador, y queda escrita aquí para que
+// sea suya y no del descuido.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+const VOC_PRESUPUESTO = ['apartado', 'concept', 'costeUnitario', 'price', 'qty', 'suplido', 'tax'];
 const VOC_FACTURA = ['concept', 'price', 'qty', 'tax'];
-// `apartado` se une a `suplido` en la lista de lo que el presupuesto guarda y la factura no.
-// Que la lista CREZCA no es neutro: cada entrada es un dato que muere al facturar.
-const DIVERGENCIA = ['apartado', 'suplido'];
+// `apartado` y `costeUnitario` se unen a `suplido` en la lista de lo que el presupuesto guarda y
+// la factura no. Que la lista CREZCA no es neutro: cada entrada es un dato que muere al facturar.
+const DIVERGENCIA = ['apartado', 'costeUnitario', 'suplido'];
 
 /**
  * Los sitios que reconstruyen una linea con la firma EXACTA de `Invoice.lines`. Fijado POR
@@ -210,7 +235,7 @@ test('SCRUM-619 · el vocabulario de la FACTURA SUELTA sigue siendo de cuatro cl
     '🔴 la puerta de la factura y la firma declarada en el censo ya no dicen lo mismo');
 });
 
-test('SCRUM-619 · 🔴 LA DIVERGENCIA, NOMBRADA: hoy es `suplido`, y es exactamente una', () => {
+test('SCRUM-619 · 🔴 LA DIVERGENCIA, NOMBRADA: hoy son tres, y cada una es un dato que muere al facturar', () => {
   // Se compara lo DECLARADO por el presupuesto contra lo que la factura deja pasar: una clave
   // recién declarada y todavía sin usar YA es divergencia, porque el día que alguien la mande
   // se caerá. Esperar a que se use es esperar a perder el primer dato.
