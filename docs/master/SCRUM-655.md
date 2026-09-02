@@ -265,3 +265,34 @@ revisión nace sin ese dato y nadie se entera hasta que el cliente lo echa de me
 —`vigenteUnicaDe` para antes de que dos puedan empatar—, pero es una comparación que **no
 distingue dos filas distintas con los mismos dos números**. Queda medido y escrito aquí; cambiarlo
 tocaría la superficie de la fase A y no bloquea nada.
+
+## 9 · LOS ROJOS · commit de resguardo `6681feef8612f9172a2bf99ed7db599189b1d094`
+
+Cinco inyecciones. Cada una: inyectar → compilar → medir → restaurar → verde. Nada sin commitear.
+
+| # | Qué se rompe | Qué cae |
+| :-: | --- | --- |
+| 1 | el empate se resuelve en silencio (`if (false && empatadas.length > 1)`) | 2/15 · «dos revisiones empatadas PARAN» **y** «el empate revienta la VISTA entera» |
+| 2 | el suelo de ceguera no mira | 1/15 · «un censo que no se ve NI A SÍ MISMO se declara ciego» |
+| 3 | la revisión hereda `signatureUrl` y `acceptedAt` | 1/15 · «la revisión NO hereda la firma, ni la decisión, ni el cobro» |
+| 4 | se quita `clausulasExcluidas` del reparto (simula una columna nueva sin clasificar) | 1/15 · «TODO campo de Quote está clasificado» — y **nombra el campo** |
+| 5 | **se retira el cable**: `quoteAdmin` deja de importar `vistaDeRevisiones` | 4/25 de SCRUM-411 · el tope vuelve a descuadrar **y** el renglón dado la vuelta cae NOMBRANDO el módulo |
+
+El rojo 4, literal — un guard que dice «falta algo» sin decir qué obliga a buscarlo a mano:
+
+```
+🔴 HAY 1 CAMPO(S) DE `Quote` QUE NADIE HA CLASIFICADO: clausulasExcluidas.
+```
+
+Y el rojo 5, que es el que protege el trabajo de este ticket dentro de seis meses:
+
+```
+🔴 `revision.ts` ha vuelto a ser INALCANZABLE: alguien ha quitado el cable de la fase B.
+  `src/modules/system/quoteAdmin.ts` ya no importa `vistaDeRevisiones`, así que
+  `GET /admin/quotes/:id` deja de llevar `revisiones` y `vigenteId`. La pantalla no puede
+  contestar cuáles hay ni cuál está vigente, y lo hace SIN FALLAR: enseña la versión que
+  pidió y calla las demás.
+```
+
+Un tope numérico solo habría dicho «9 en vez de 8». Este dice quién se cayó y qué deja de
+funcionar — que es la diferencia entre un guard que se atiende y uno que se sube sin mirar.
