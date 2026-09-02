@@ -22,7 +22,7 @@ el import produjo rojos. Cualquier otro camino se los lleva **en silencio**.
 
 > *«RATCHET MANUAL — NO SUBE SOLO. […] Es otra cifra a mano que envejece.»*
 
-**Hoy la tanda real va por 4.743 con ese suelo en 646.** Margen: **4.097**. Ese suelo ya no separa
+**Hoy la tanda real va por 4.766 con ese suelo en 646.** Margen: **4.120**. Ese suelo ya no separa
 «tanda completa» de «media suite borrada» — y además sólo se aplica al **recibo de la tanda
 GATEADA**, no a `npm test`, que es donde se midió el defecto.
 
@@ -50,6 +50,7 @@ nada que mantener: le da superficie a un artefacto que ya existía.
 | antes de mezclar `main` | 4722 | **4722** |
 | tras mezclar `main` | 4731 | **4731** |
 | con este ticket dentro | 4743 | **4743** |
+| tras absorber  (SCRUM-580) | 4766 | **4766** |
 
 Era la medición que podía matar el ticket (lección de SCRUM-520: no se cambia una comprobación
 frágil por otra frágil). No lo mata.
@@ -98,11 +99,11 @@ nunca. Un test que lo ata: cae si aparece un `if: failure()`.
 
 ### Es un SUELO, no un espejo — y el margen se imprime siempre
 
-`SUELO_TESTS = 4743`, **sin tolerancia**. Un margen «por si acaso» sería el umbral con holgura que
+`SUELO_TESTS = 4766`, **sin tolerancia**. Un margen «por si acaso» sería el umbral con holgura que
 SCRUM-559 tuvo que retirar.
 
 La contrapartida —un suelo viejo deja perder tests— se compensa **imprimiendo el margen en cada
-ejecución**: `suelo 4743 · total actual 4743 · margen 0`. Un suelo rancio tiene que verse sin que
+ejecución**: `suelo 4766 · total actual 4766 · margen 0`. Un suelo rancio tiene que verse sin que
 nadie vaya a buscarlo, que es justo lo que le faltó al 646.
 
 ### ⚠️ La regla de conflicto, escrita DONDE se resuelve el conflicto
