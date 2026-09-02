@@ -95,6 +95,7 @@ function renderCustomersView(container) {
   const FC = window.filtroClientes;
   let pestanaActiva = FC.POR_DEFECTO.pestana;
   let ordenActivo = FC.POR_DEFECTO.orden;
+  let etiquetaActiva = FC.POR_DEFECTO.etiqueta; // SCRUM-580 (CONT-07)
 
   const pestanas = createElement("div", "customers-tabs");
   const botonesPestana = FC.PESTANAS.map((p) => {
@@ -124,6 +125,50 @@ function renderCustomersView(container) {
     ordenSelect.appendChild(op);
   });
   ordenSelect.value = ordenActivo;
+
+  // ── SCRUM-580 (CONT-07) · EL FILTRO POR ETIQUETA ────────────────────────────────────────
+  // Aquí se cierra el recorte que CONT-08 dejó abierto a propósito: entonces un filtro por
+  // etiqueta habría sido un control que no podía filtrar por nada.
+  //
+  // Las opciones salen de las etiquetas que ESTE merchant ya usa en SUS clientes —del lote que
+  // el servidor mandó, nunca de otro merchant— y se recalculan en cada pintado: una etiqueta
+  // recién escrita aparece en el selector sin recargar.
+  //
+  // ✅ MICROCOPY del asesor (provisional). El texto vive en la pieza, no aquí.
+  const ETIQUETA_TODAS = FC.TEXTOS_ETIQUETAS.sinFiltro;
+  const etiquetaSelect = document.createElement("select");
+  etiquetaSelect.className = "input";
+  etiquetaSelect.style.cssText = "max-width:220px";
+  etiquetaSelect.addEventListener("change", () => {
+    etiquetaActiva = etiquetaSelect.value || null;
+    pintar();
+  });
+  toolbar.appendChild(etiquetaSelect);
+
+  /** Repuebla el selector conservando lo elegido, o soltándolo si esa etiqueta ya no existe. */
+  function repoblarEtiquetas(lote) {
+    const usadas = FC.etiquetasUsadas(lote);
+    // Si la etiqueta activa ha dejado de existir —se le quitó al último cliente que la tenía—,
+    // se suelta el filtro. Dejarlo puesto enseñaría una lista vacía sin decir por qué.
+    if (etiquetaActiva && !usadas.some((t) => t.toLocaleLowerCase("es") === String(etiquetaActiva).toLocaleLowerCase("es"))) {
+      etiquetaActiva = null;
+    }
+    etiquetaSelect.innerHTML = "";
+    const todas = document.createElement("option");
+    todas.value = "";
+    todas.textContent = ETIQUETA_TODAS;
+    etiquetaSelect.appendChild(todas);
+    usadas.forEach((t) => {
+      const op = document.createElement("option");
+      op.value = t;
+      op.textContent = t;
+      etiquetaSelect.appendChild(op);
+    });
+    etiquetaSelect.value = etiquetaActiva || "";
+    // Sin ninguna etiqueta en la cartera, el selector no sirve de nada: se oculta en vez de
+    // ofrecer un control con una sola opción que no filtra.
+    etiquetaSelect.hidden = usadas.length === 0;
+  }
   ordenSelect.addEventListener("change", () => { ordenActivo = ordenSelect.value; pintar(); });
   toolbar.appendChild(ordenSelect);
 
@@ -144,6 +189,9 @@ function renderCustomersView(container) {
     { t: "Teléfono" },
     { t: "Email", cls: "col-hide-mobile" },
     { t: "Notas", cls: "col-hide-mobile" },
+    // SCRUM-580 (CONT-07). Va aquí y no antes: F1 exige que el teléfono siga siendo la TERCERA
+    // columna, así que nada se mueve por delante de él. Oculta en móvil como sus vecinas.
+    { t: FC.TEXTOS_ETIQUETAS.columna, cls: "col-hide-mobile" },
     { t: "Alta", cls: "col-hide-mobile" },
     { t: "" },
   ].forEach(({ t, cls }) => {
@@ -176,6 +224,7 @@ function renderCustomersView(container) {
   let modalBackdrop = null;
   let modalForm = null;
   let fieldName, fieldPhone, fieldEmail, fieldNotes;
+  let fieldTags; // SCRUM-580 (CONT-07)
   let fieldInternalRef; // SCRUM-588 (CONT-16)
   // ═════════════════════════════════════════════════════════════════════════════════════
   // SCRUM-575 (2-sep-2026) · LA CONSTANTE COMPARTIDA SE PARTE EN DOS, Y ERA LO QUE FALTABA.
@@ -220,8 +269,7 @@ function renderCustomersView(container) {
    * Caja: 63 caracteres sobre los ~45 por línea medidos a 360 px → dos líneas, en un aviso que
    * vive ARRIBA del modal y donde caben.
    */
-  const AVISO_DUPLICADO = "Ese dato ya lo tiene otro cliente. Revísalo por si es un duplicado.";
-  let fieldPrefijo = null;   // SCRUM-578 (a): el prefijo de pais, fuera del numero
+  const AVISO_DUPLICADO = "Ese dato ya lo tiene otro cliente. Revísalo por si es un duplicado.";  let fieldPrefijo = null;   // SCRUM-578 (a): el prefijo de pais, fuera del numero
   let avisoDuplicado = null; // SCRUM-578 (c): el aviso de identificador ya usado
   // SCRUM-575 (CONT-02) · CONSTANTE PROPIA, no la de CONT-05, y a proposito: son tickets
   // distintos. Compartirla ataria la aprobacion de este texto a la de los otros dos — el
@@ -347,6 +395,19 @@ function renderCustomersView(container) {
 
     const body = createElement("div", "modal-body");
     fieldName = createField("Nombre", "name", "text", true);
+    // ── SCRUM-580 (CONT-07) · LAS ETIQUETAS ───────────────────────────────────────────────
+    // ✅ MICROCOPY APROBADA por el ASESOR el 2-sep-2026, PROVISIONAL a la espera del fundador.
+    // Los cuatro textos viven en `filtroClientes.js` (`TEXTOS_ETIQUETAS`) y están fijados con
+    // `===` en `tests/scrum580-tags-por-contacto.test.mjs`: no se cambian sin pasar por ahí.
+    // Sin marcador en pantalla — y que no se pinte NO significa que estén firmados por el
+    // fundador: eso lo dice `SIN_APROBAR`.
+    //
+    // Un input de texto separado por comas, y no un componente de chips: es lo que la casa ya
+    // sabe pintar (vanilla, sin dependencias) y lo que un profesional teclea más rápido en un
+    // móvil. Un editor de chips es un componente nuevo y eso es propuesta de inventario (AB3).
+    fieldTags = createField(FC.TEXTOS_ETIQUETAS.rotulo, "tags", "text");
+    fieldTags.input.placeholder = FC.TEXTOS_ETIQUETAS.placeholder;
+    body.appendChild(fieldTags.wrapper);
     // SCRUM-578 (CONT-05, punto a) · el prefijo sale a un SELECTOR y el número deja de llevarlo.
     //
     // 🔴 EL RÓTULO CAMBIA DE MARCADOR, y no es cosmética: «Teléfono (E.164 sin +)» describía un
@@ -623,6 +684,24 @@ function renderCustomersView(container) {
     return t === '' ? null : t;
   }
 
+  /**
+   * SCRUM-580 (CONT-07) · el texto del campo → lo que viaja al servidor.
+   *
+   * 🔴 «AUSENTE ≠ VACÍO»: sin etiquetas viaja `null`, nunca `[]` ni `""`. Si viajara `[]`, la
+   * columna diría «este cliente tiene etiquetas» y el filtro se construiría sobre esa mentira.
+   *
+   * ⚠️ Esto NO es la regla: la regla vive en el SERVIDOR (`normalizarTags`), que es donde no se
+   * puede esquivar. Aquí sólo se evita mandar ruido, y hacerlo en los dos lados es lo mismo que
+   * ya hace `direccionParaPayload` justo arriba.
+   */
+  function tagsParaPayload(valor) {
+    const partes = String(valor == null ? '' : valor)
+      .split(',')
+      .map((t) => t.trim())
+      .filter((t) => t !== '');
+    return partes.length ? partes : null;
+  }
+
   function openModal(mode, customer) {
     if (!modalBackdrop) {
       buildModal();
@@ -673,6 +752,11 @@ function renderCustomersView(container) {
       // AQUÍ porque `null` y `""` se pintan igual en un input —no hay forma de pintar «no
       // consta» distinto de «vacío»—; lo que NO puede pasar es que el ENVÍO los confunda, y de
       // eso se encarga `direccionParaPayload`, que es donde la distinción sí es observable.
+      // SCRUM-580 (CONT-07) · 🔴 EL QUINTO ESLABÓN, VISTO DESDE AQUÍ. Si el `select` del
+      // servidor no trajera `tags`, esta línea pintaría el campo VACÍO sobre un cliente que SÍ
+      // las tiene, el profesional las reescribiría y nadie se enteraría. Por eso el test relee
+      // con `getCustomer` en vez de conformarse con «se guarda».
+      fieldTags.input.value = (Array.isArray(editingCustomer.tags) ? editingCustomer.tags : []).join(", ");
       fieldBillingAddress.input.value = editingCustomer.billingAddress || "";
       fieldBillingCity.input.value = editingCustomer.billingCity || "";
       fieldBillingPostalCode.input.value = editingCustomer.billingPostalCode || "";
@@ -723,6 +807,10 @@ function renderCustomersView(container) {
       recargoEquivalencia: fieldRecargo.value === "si" ? true : fieldRecargo.value === "no" ? false : null,
       // SCRUM-579 (CONT-06): la dirección de FACTURACIÓN. La regla vive en
       // `direccionParaPayload`, que la suite ejecuta: vacío → `null`, nunca `""`.
+      // SCRUM-580 (CONT-07): «ausente ≠ vacío». Sin etiquetas viaja `null`, nunca `[]` ni `""`.
+      // La regla de verdad vive en el SERVIDOR (`normalizarTags`), que es donde no se puede
+      // esquivar; esto es la mitad del navegador y hace lo mismo para no mandar ruido.
+      tags: tagsParaPayload(fieldTags.input.value),
       billingAddress: direccionParaPayload(fieldBillingAddress.input.value),
       billingCity: direccionParaPayload(fieldBillingCity.input.value),
       billingPostalCode: direccionParaPayload(fieldBillingPostalCode.input.value),
@@ -789,7 +877,10 @@ function renderCustomersView(container) {
   function pintar() {
     const searchText = ultimaBusqueda;
     const lote = Array.isArray(ultimoLote) ? ultimoLote : [];
-    const data = FC.aplicar(lote, pestanaActiva, ordenActivo);
+    // SCRUM-580: los TRES se encadenan — pestaña, etiqueta y orden— sobre el lote que ya viene
+    // filtrado por el BUSCADOR desde el servidor. Los cuatro a la vez, y ninguno sustituye a otro.
+    repoblarEtiquetas(lote);
+    const data = FC.aplicar(lote, pestanaActiva, ordenActivo, etiquetaActiva);
     {
       tbody.innerHTML = "";
 
@@ -798,7 +889,7 @@ function renderCustomersView(container) {
       if (lote.length > 0 && data.length === 0) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = 7;
+        td.colSpan = 8; // SCRUM-580: entró «Etiquetas»
         // SCRUM-581 · DOS líneas (microcopy aprobada, 2-sep-2026). Se reutiliza el componente
         // de vacío que ya existe —`.empty-state-title` y `.empty-state-desc`—: cero tokens nuevos.
         // Con `textContent` y no concatenando en el `innerHTML`: el texto es de la pieza, no del
@@ -816,7 +907,7 @@ function renderCustomersView(container) {
       if (!Array.isArray(data) || data.length === 0) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = 7;
+        td.colSpan = 8; // SCRUM-580: entró «Etiquetas»
         td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div>'
           + '<div class="empty-state-title">' + (searchText ? 'Sin resultados para tu búsqueda' : 'Añade a tu primer cliente') + '</div>'
           + '<div class="empty-state-desc">' + (searchText ? 'Prueba con otro nombre, teléfono o email.' : 'Guárdalo una vez y podrás enviarle cotizaciones profesionales por WhatsApp en segundos.') + '</div>'
@@ -843,6 +934,29 @@ function renderCustomersView(container) {
         const notesCell = addCell(tr, c.notes || "", "col-hide-mobile");
         notesCell.style.cssText += "max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)";
         if (c.notes) notesCell.title = c.notes;
+        // SCRUM-580 (CONT-07) · las etiquetas, con `.badge .badge-slate` — el componente que YA
+        // existe en el inventario. Cero tokens nuevos y cero estilos inventados.
+        // Con `textContent` por etiqueta y no concatenando markup: el texto lo escribe el
+        // profesional, y meterlo en un `innerHTML` sería una inyección con su nombre.
+        const tagsCell = document.createElement("td");
+        tagsCell.className = "col-hide-mobile";
+        const susTags = FC.tagsDe(c);
+        if (susTags.length === 0) {
+          tagsCell.textContent = "";
+        } else {
+          const caja = document.createElement("div");
+          caja.style.cssText = "display:flex;flex-wrap:wrap;gap:4px";
+          susTags.forEach((t) => {
+            const chip = document.createElement("span");
+            chip.className = "badge badge-slate";
+            chip.textContent = t;
+            caja.appendChild(chip);
+          });
+          tagsCell.appendChild(caja);
+          tagsCell.title = susTags.join(", ");
+        }
+        tr.appendChild(tagsCell);
+
         const altaCell = addCell(tr, c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "", "col-hide-mobile");
         altaCell.style.color = "var(--muted)";
 
