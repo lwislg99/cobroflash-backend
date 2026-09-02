@@ -47,7 +47,7 @@
    * el hueco sin sitio donde declararse, y el texto nuevo entraría en pantalla en silencio —
    * que es exactamente lo que el marcador impedía y lo que ya no se ve.
    */
-  var SIN_APROBAR = 4;
+  var SIN_APROBAR = 5; // SCRUM-584: +1, el rotulo del selector de columnas
 
   /**
    * Las tres pestañas. `valor` es lo que se compara contra `contactKind`, y `null` significa
@@ -246,6 +246,114 @@
     return ordenar(filtrarPorEtiqueta(filtrarPorPestana(clientes, pestanaId), etiqueta), ordenId);
   }
 
+
+  /**
+   * ═══════════════════════════════════════════════════════════════════════════════════════
+   * SCRUM-584 (CONT-11) · QUÉ COLUMNAS SE VEN. La decisión, sin DOM.
+   *
+   * 🔴 EL SELECTOR ES PARA AÑADIR, NO PARA QUITAR — y eso salió de MEDIR, no del encargo. A
+   * 360 px NO hay scroll horizontal (343 = 343 medido): la tabla no es una tabla, es una pila
+   * de tarjetas (`table--stack-mobile`, `thead` en `display:none`). Lo que pasa es lo
+   * contrario: el CSS oculta cuatro columnas con `col-hide-mobile` y **nadie puede
+   * encenderlas**. El profesional que vive del email o de las notas no los ve en el móvil y no
+   * tiene forma de pedirlos.
+   *
+   * ⚠️ El coste de encender es VERTICAL y lo asume quien enciende: la fila pasa de 153 px a
+   * 222 px con las cuatro encendidas (medido a 360 px). Por eso se puede deshacer.
+   *
+   * ── UN SOLO MECANISMO PARA MÓVIL Y ESCRITORIO ─────────────────────────────────────────
+   * No hay dos listas. Hay UNA preferencia —qué columnas ha ENCENDIDO el profesional— y una
+   * regla: una columna encendida pierde `col-hide-mobile`, así que se ve también en la
+   * tarjeta. En escritorio se seguían viendo todas y se siguen viendo.
+   *
+   * ── POR DEFECTO, LO DE HOY ────────────────────────────────────────────────────────────
+   * Con la preferencia VACÍA esto devuelve exactamente las clases de hoy. Nadie se encuentra
+   * la pantalla cambiada sin pedirlo, y por eso el valor por defecto no es «todas».
+   *
+   * ── SIN SALIDA MUERTA, POR CONSTRUCCIÓN ───────────────────────────────────────────────
+   * `Nombre` y las acciones son FIJAS: no se pueden apagar. Así que apagarlo todo es
+   * imposible y la lista nunca queda inservible — no hace falta un mínimo artificial que
+   * alguien tenga que recordar. Un control que te deja sin pantalla es peor que no tenerlo.
+   *
+   * 🔴 Y EL TELÉFONO NACE VISIBLE SIEMPRE (F1). Es ocultable —lo decide el profesional— pero
+   * nunca por defecto: es donde YaQu gana a Holded, que ni lo tiene como columna.
+   * ═══════════════════════════════════════════════════════════════════════════════════════
+   */
+  /**
+   * SCRUM-584 (CONT-11) · EL TEXTO DEL CONTROL. UNO, y es la única palabra nueva del ticket.
+   *
+   * Los NOMBRES de las columnas —ID, Nombre, Teléfono, Email, Notas, Etiquetas, Alta— NO son
+   * microcopy nuevo: ya están en pantalla hoy, en la cabecera de la tabla. Lo único que este
+   * ticket estrena es el rótulo del control, así que sólo eso cuenta en SIN_APROBAR.
+   *
+   * ⚠️ SIN MARCADOR en pantalla, como el resto de este fichero. Que no se pinte el corchete NO
+   * significa que esté firmado: eso lo dice SIN_APROBAR.
+   */
+  var TEXTOS_COLUMNAS = { control: 'Columnas' };
+  var COLUMNAS = [
+    { id: 'id', texto: 'ID', fija: false, ocultaEnMovil: false },
+    { id: 'nombre', texto: 'Nombre', fija: true, ocultaEnMovil: false },
+    { id: 'telefono', texto: 'Teléfono', fija: false, ocultaEnMovil: false },
+    { id: 'email', texto: 'Email', fija: false, ocultaEnMovil: true },
+    { id: 'notas', texto: 'Notas', fija: false, ocultaEnMovil: true },
+    { id: 'etiquetas', texto: TEXTOS_ETIQUETAS.columna, fija: false, ocultaEnMovil: true },
+    { id: 'alta', texto: 'Alta', fija: false, ocultaEnMovil: true },
+    { id: 'acciones', texto: '', fija: true, ocultaEnMovil: false },
+  ];
+
+  /** Las que el profesional puede tocar. Las fijas no salen en el control. */
+  function columnasElegibles() {
+    return COLUMNAS.filter(function (c) { return !c.fija; });
+  }
+
+  /**
+   * Normaliza lo que venga guardado. Basura → preferencia VACÍA, que es «lo de hoy».
+   *
+   * 🔴 SUELO: `localStorage` lo puede escribir cualquiera y sobrevive a los despliegues. Un id
+   * que ya no existe —una columna retirada— se descarta en vez de romper la tabla. Y si lo
+   * guardado no es una lista, no se adivina: se vuelve al comportamiento de hoy.
+   */
+  function normalizarColumnas(guardado) {
+    if (!Array.isArray(guardado)) return [];
+    var validos = COLUMNAS.map(function (c) { return c.id; });
+    var vistos = {};
+    return guardado.filter(function (id) {
+      if (typeof id !== 'string' || validos.indexOf(id) < 0 || vistos[id]) return false;
+      vistos[id] = true;
+      return true;
+    });
+  }
+
+  /**
+   * ¿Se PINTA esta columna? Siempre sí: la tabla se monta entera y lo que cambia es si el CSS
+   * la esconde en móvil. Se deja explícito para que quien lea sepa que aquí no se borran
+   * columnas del DOM — borrarlas descuadraría el `colSpan` de las filas vacías.
+   */
+  function columnasDeLaTabla() { return COLUMNAS; }
+
+  /**
+   * La CLASE de una columna dada la preferencia. Es la única regla que traduce «encendida» a
+   * lo que ve el navegador.
+   *
+   *   fija o no oculta en móvil → sin clase (se ve siempre, como hoy)
+   *   oculta y NO encendida ..... → `col-hide-mobile` (lo de hoy)
+   *   oculta y ENCENDIDA ........ → sin clase: aparece también en la tarjeta
+   */
+  function claseDeColumna(id, encendidas) {
+    var col = COLUMNAS.filter(function (c) { return c.id === id; })[0];
+    if (!col || !col.ocultaEnMovil) return '';
+    return normalizarColumnas(encendidas).indexOf(id) >= 0 ? '' : 'col-hide-mobile';
+  }
+
+  /**
+   * Cuántas columnas ocupa una fila vacía.
+   *
+   * 🔴 SALE DE LA MISMA LISTA QUE LA CABECERA, y ése es el ticket. Hoy hay dos `colSpan = 8`
+   * escritos a mano, y otra sesión los tuvo que recalcular al entrar «Etiquetas»: un número
+   * copiado envejece en silencio y **un vacío descuadrado no lo ve ninguna tanda**.
+   */
+  function colSpanDeLaTabla() { return COLUMNAS.length; }
+
   var api = {
     SIN_APROBAR: SIN_APROBAR,
     PESTANAS: PESTANAS,
@@ -258,6 +366,13 @@
     filtrarPorEtiqueta: filtrarPorEtiqueta,
     etiquetasUsadas: etiquetasUsadas,
     TEXTOS_ETIQUETAS: TEXTOS_ETIQUETAS,
+    TEXTOS_COLUMNAS: TEXTOS_COLUMNAS,
+    COLUMNAS: COLUMNAS,
+    columnasElegibles: columnasElegibles,
+    normalizarColumnas: normalizarColumnas,
+    columnasDeLaTabla: columnasDeLaTabla,
+    claseDeColumna: claseDeColumna,
+    colSpanDeLaTabla: colSpanDeLaTabla,
     tagsDe: tagsDe,
     ordenar: ordenar,
     aplicar: aplicar,

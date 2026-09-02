@@ -2689,3 +2689,26 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 .quote-line-desc {
   font-size: 12px; line-height: 1.45; color: var(--muted, #6b756f); margin-top: 2px;
 }
+
+/* ── SCRUM-584 (CONT-11) · el selector de columnas de la lista de clientes ──────────────
+   Un <details> nativo: se abre y se cierra sin JS de posicionamiento, va con teclado y no se
+   sale de la pantalla a 360 px. Tokens existentes, cero colores nuevos.
+   El desplegable va ABSOLUTO para que abrirlo no empuje la tabla hacia abajo — en un movil,
+   una toolbar que crece al tocarla mueve justo lo que el profesional esta mirando. */
+.columnas-selector { position: relative; }
+.columnas-selector > summary {
+  list-style: none; cursor: pointer; user-select: none;
+  min-height: 44px; display: inline-flex; align-items: center; /* objetivo tactil AB6 */
+}
+.columnas-selector > summary::-webkit-details-marker { display: none; }
+.columnas-lista {
+  position: absolute; z-index: 20; right: 0; margin-top: 4px; min-width: 200px;
+  background: var(--surface, #fff); border: 1px solid var(--border);
+  border-radius: var(--radius-md, 12px); padding: 6px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.10);
+}
+.columnas-opcion {
+  display: flex; align-items: center; gap: 10px;
+  min-height: 44px; padding: 0 8px; cursor: pointer; /* objetivo tactil AB6 */
+}
+.columnas-opcion input { width: 18px; height: 18px; }
