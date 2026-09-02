@@ -290,6 +290,25 @@ model Customer {
   billingProvince   String? @map("billing_province")
   billingCountry    String? @map("billing_country")
 
+  // SCRUM-588 (CONT-16) · LA REFERENCIA INTERNA: el número con el que el PROFESIONAL conoce a
+  // este cliente — el nº de expediente de la aseguradora, el código del sistema viejo, el nº de
+  // finca del administrador. Hasta hoy lo metía en `notes`, que es texto libre, y luego no lo
+  // podía buscar de forma fiable.
+  //
+  // 🔴 CAMPO LIBRE, y las tres cosas que eso significa (decisión del asesor, 2-sep-2026): NO se
+  // valida el formato, NO se comprueba unicidad y NO se autogenera. **Es el número de OTRO
+  // sistema y nosotros no mandamos sobre su forma.** Dos clientes pueden compartirlo, y un
+  // `@unique` aquí rompería el alta de un profesional por un dato que no controlamos.
+  //
+  // Nullable y SIN `@default`, como sus vecinos: «ausente ≠ vacío». Lo vacío viaja como NULL,
+  // nunca como cadena vacía — un default habría declarado «tiene referencia» a los clientes que
+  // ya existen sin que nadie lo dijera.
+  //
+  // La columna se aplicó en LAS TRES bases ANTES que esta línea (dev y staging por S2, producción
+  // por el fundador; las cuatro salidas en `docs/master/SCRUM-588.md`). Ese orden no es
+  // ceremonia: un esquema que nombra una columna que las bases no tienen para el arranque.
+  internalRef       String? @map("internal_ref")
+
   merchant     Merchant        @relation(fields: [merchantId], references: [id])
   charges      Charge[]
   createdAt    DateTime        @default(now()) @map("created_at")
