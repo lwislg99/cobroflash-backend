@@ -428,7 +428,10 @@ export function scriptsDelDashboard(raiz) {
 // SCRUM-609 (2-sep-2026) · 67 → 68: entra `switchTipoArticulo.js`, el switch
 // Producto|Servicio del catálogo. Va ANTES de `productsView.js`, que lo consume.
 // RECONTADO sobre el índice, no sumado: grep -c "<script src=" → 68.
-export const SCRIPTS_DEL_DASHBOARD = 68;
+// SCRUM-593 (2-sep-2026) · 68 → 69: entra `textoDelDocumento.js`, los dos textos libres del
+// documento (DOC-03). Va ANTES de `quotesView.js`, que los consume.
+// RECONTADO sobre el indice, no sumado: grep -c "<script src=" → 69.
+export const SCRIPTS_DEL_DASHBOARD = 69;
 
 /**
  * Monta el dashboard como lo monta el navegador y devuelve el contexto vivo.

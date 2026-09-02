@@ -200,6 +200,21 @@ const CENSO = Object.freeze({
   // nueva EN SILENCIO — que es exactamente lo que este trinquete existe para impedir. Quien
   // añada un código mapeado le pone SU constante, para que el fundador pueda firmar uno sin
   // firmar los dos.
+  // SCRUM-593 (2-sep-2026) · SUBIDA A CONCIENCIA: `textoDelDocumento.js` ENTRA con 1 — el rotulo
+  // del campo de CABECERA del documento (DOC-03), que el fundador NO ha firmado. El del bloque
+  // FINAL va aparte y SIN marcador: «Observaciones» esta aprobado (2-sep-2026), y marcar texto
+  // firmado obligaria a refirmarlo.
+  //
+  // 🔴 CUENTA 1 Y MARCA 1 ROTULO, HOY. Y la leccion de SCRUM-575 por escrito: este censo cuenta el
+  // LITERAL, que en ese fichero esta escrito UNA sola vez en la constante `TD_MARCADOR_MICROCOPY`.
+  // Si manana se marca un segundo rotulo reutilizandola, ESTE NUMERO NO SE MOVERA y entrara una
+  // superficie sin firmar en silencio. Quien marque otro le pone SU constante.
+  //
+  // ⚠️ Y hay un HERMANO QUE ESTE CENSO NO VE: el mismo rotulo vive tambien en
+  // `src/modules/invoicing/infra/pdf/pdf.service.ts` (`MARCADOR_MICROCOPY_CABECERA_DOC`), porque
+  // se pinta en el PDF. Este censo mira SOLO `public/dashboard/js`, asi que ese queda FUERA de
+  // toda vigilancia. Se dice aqui porque el sitio donde se ve es un documento que se entrega.
+  'textoDelDocumento.js': 1,
   'productsView.js': 1,
   // SCRUM-644 (2-sep-2026) · SUBIDA A CONCIENCIA: `providersView.js` ENTRA con 1. Es el MISMO
   // defecto y el MISMO criterio que SCRUM-641 arriba —no se inventa uno nuevo—, en el otro fichero
