@@ -110,7 +110,7 @@ desglose de IVA de la factura (S1, SCRUM-623) — de cuyo fichero me he retirado
 
 # APÉNDICE · 2-sep-2026 · LA CONVENCIÓN ESPAÑOLA EN LOS CINCO SITIOS
 
-**Medido contra:** `origin/main` = `6b4f122d0f8b56ae8b8ed09a9f60ac4e7d7bb1a2` · 2026-09-02T00:00:00+02:00
+**Medido contra:** `origin/main` = `6b4f122def32c75615af06d5c311dadb43740888` · 2026-09-02T00:00:00+02:00
 **Rama:** `scrum-636-separador-en-los-cinco`
 
 > La exclusión de la factura **se levanta**. Decisión del fundador con la medición delante.
