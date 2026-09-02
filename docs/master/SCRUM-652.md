@@ -531,3 +531,119 @@ acuñar el mismo número y la base no lo rechazaría.
 ALBARANES**, por herencia de cuando era lo único que había. Desde hoy hay un `ParteTrabajo` de
 verdad, con su tabla y sus rutas. **No se renombra aquí** —no es este carril— pero queda dicho, y
 anotado al lado de las líneas afectadas: son dos documentos distintos.
+
+
+---
+
+# Fase D · La puerta al parte, y el cable que faltaba detrás del botón
+
+**Medido contra:** `origin/main` = `69300b6662752e8fe624b1f6ee6b555f02e3a3f2` · 2026-09-02T20:01:54+02:00
+**Commit previo a inyectar rojos:** `107846d3bdaee5a15762fd849abb691000fd4058`
+
+## PASO 0
+
+```
+git ls-tree -r --name-only origin/main | grep -iE 'parteDetailView|partes.routes'
+  public/dashboard/js/parteDetailView.js
+  src/modules/jobs/app/routes/partes.routes.ts
+
+git ls-remote --heads origin | grep -iE 'parte'
+  32863041…  refs/heads/scrum-652-parte-superficie      ← la mía de la fase C
+```
+
+📌 **Y de paso, un dato que corrige el encargo:** de esa rama **todo está en `main` menos el
+último commit** (`32863041`, el estado del db push). La sección «Estado del db push» **no estaba
+mergeada**. Se arrastra en esta rama para que no se pierda.
+
+## Lo que se midió antes de decidir dónde ponía la puerta
+
+**¿Desde dónde llega hoy el técnico a un trabajo?** Sí hay camino, y es sólido:
+
+```
+index.html:55  data-view="jobs"   →  app.js:296  case 'jobs'      →  renderJobsView
+jobsView.js:419  renderAppView('jobs-detail', { jobId })          →  app.js:300  →  renderJobDetailView
+```
+
+**¿Hay lista de partes?** **No, y no se estrena.** Crear un parte sólo tiene sentido dentro de un
+trabajo: una entrada suelta en la barra llevaría a una pantalla que no sabe de qué trabajo hablar.
+`GET /admin/partes` existe y hoy lo consume el propio botón para no duplicar partes; una pantalla
+de «mis partes pendientes» es otro ticket.
+
+## 🔴 Lo que faltaba de la fila 4 no era el botón: era el cable
+
+La certificación decía «pantalla 🔴» en *firmar*. Medido:
+
+* `renderParte` **sí pintaba** `data-parte-firmar` desde la fase C;
+* y `parteDetailView.js` **no tenía ni un `addEventListener`**.
+
+**El botón estaba pintado y MUERTO.** Y entre `app.js` y la vista faltaba además la función que
+trae el parte: `renderParte(contenedor, parte)` pinta uno que alguien ya trajo, y nadie lo traía.
+
+Así que la fila 4 se cierra con tres piezas, no con una:
+
+1. `renderParteDetailView(contenedor, parteId)` — trae de `/admin/partes/:id`, pinta y **engancha**;
+2. `app.js` — `state.parteId` + `case 'parte-detail'`;
+3. `jobDetailView.js` — el botón, en la misma barra que «+ Nuevo albarán».
+
+**Tras firmar se repinta desde el SERVIDOR**, no retocando el objeto en memoria — y también cuando
+la firma se queda en la cola: el parte sigue en borrador y la pantalla tiene que seguir diciéndolo.
+
+**Abre el que haya y sólo crea si no hay.** Un botón que siempre crea dejaría seis partes vacíos
+del mismo trabajo al final del día, sin saber cuál es el suyo.
+
+## `partes.routes.ts` NO se ha tocado
+
+El filtro por `jobId` se hace en el cliente **a propósito**: `GET /admin/partes` ya devuelve `jobId`
+en cada fila. Así la puerta se abre sin entrar en el fichero que está editando la sesión 4, y no
+hay nada que mezclar.
+
+## Esto NO estrena la idea: SCRUM-420 ya vigilaba la mitad
+
+`SCRUM-420 · ③` comprueba que toda vista del router esté **en la barra o declarada** en
+`VISTAS_SIN_ENTRADA`. Lo que añade la fase D es la otra mitad:
+
+> **Una declaración es una promesa; una llamada es un hecho.**
+
+Declarar «se llega desde el Trabajo» deja verde a SCRUM-420 aunque nadie llame nunca. El test nuevo
+comprueba que **algo invoque** `renderAppView('parte-detail')` y que el botón **escuche**.
+`parte-detail` queda además declarado en `VISTAS_SIN_ENTRADA` con su motivo y su ticket.
+
+## Los rojos
+
+| Inyección | Resultado |
+|---|---|
+| quitar la llamada desde el Trabajo | **2 tests** caen: «LA PANTALLA DEL PARTE NO ES ALCANZABLE» |
+| el test entero **contra `origin/main`** | **6 de 10 fallan** — no habría pasado con el mecanismo de ayer |
+
+El segundo es el que decide: un test que también aprobaría el estado anterior no prueba que hiciera
+falta. Y el suelo declara **ceguera** si el barrido no ve ni un `case` ni un destino, porque con
+cero todo lo demás pasaría por no encontrar nada.
+
+## 🔴 Dos rojos me cazaron a MÍ, los dos por autorreferencia
+
+Van tres veces hoy con el mismo patrón, así que queda escrito:
+
+1. **Mi test del dinero** buscaba `precioUnitario` en el cuerpo **crudo** del serializador y cayó
+   sobre **el comentario que explica que esos campos NO cruzan el cable**. El guard se cazó a sí
+   mismo. Ahora mira el código sin comentarios, y el detector lleva **control positivo propio**:
+   se le da un serializador que sí manda dinero y tiene que cazarlo.
+2. **Mi comentario** en `jobDetailView.js` citaba literal el rótulo de la casilla de precios del
+   albarán, y **SCRUM-319 cuenta sus apariciones**: le subí el recuento de 2 a 3. Reescrito para
+   describirlo sin citarlo.
+
+> Un guard que prohíbe un texto casa con el comentario que lo explica. Leer el código, no el
+> fichero.
+
+## El control que no podía caer
+
+`serializeParteParaElTecnico` **no se ha tocado**, y no hay modo oficina. El detector de dinero de
+la fase C sigue verde, y ahora hay un segundo que vigila el serializador **desde fuera**, sin
+comentarios y con su control positivo.
+
+## Microcopy (regla 30)
+
+Propuesta, no aprobada. `jobDetailView.js` entra en el censo de SCRUM-402 con **2** —el rótulo del
+botón y el aviso de fallo— y `parteDetailView.js` suma el suyo del suelo de carga.
+
+**Entran porque la alternativa era peor:** un marcador se ve y se corrige; una pantalla
+inalcanzable no se ve, y ya estuvo así una fase entera con sus tests en verde.
