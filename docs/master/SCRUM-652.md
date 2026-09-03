@@ -729,3 +729,55 @@ NAV que empieza por «parte» (lo que cazaba el guard viejo): ["partes-oficina"]
 
 Nada más de 652d · nada de SCRUM-703 · ni el nav · ni `parteDetailView.js` · ni
 `parteOficinaView.js`. El diff es **un fichero**.
+
+---
+
+## APÉNDICE (3-sep-2026) · El suelo que faltaba, y lo preguntó Javier
+
+> ⚠️ Se ANEXA. El apéndice de arriba documenta el acotado; esto documenta su agujero.
+
+**Medido contra:** `origin/main` = `ce8f262a5270dbecfb3f503eaa8d1bd323db5683` · 2026-09-03T17:05:00+02:00
+
+## 1 · La pregunta, literal
+
+> «el censo dice 18 entradas de nav y 5 vistas que exigen contexto. ¿Tiene suelo sobre esos 18? Si
+> mañana el extractor por AST deja de encontrar entradas y devuelve 0, el guard sigue verde y no
+> nos enteramos.»
+> — **Javier, 3-sep-2026**
+
+Tenía razón. El guard llevaba suelo sobre **las 5** —si la derivación deja de ver `parte-detail`,
+cae— y **ninguno sobre las 18**.
+
+## 2 · Por qué eso es un agujero y no un detalle
+
+**Una lista vacía hace verdad cualquier afirmación sobre sus elementos.** Con cero entradas de nav,
+«ninguna entrada lleva a una vista sin contexto» es **verdadera y vacía**, y el guard pasaría para
+siempre sobre una barra que ya no sabe leer.
+
+Es la misma avería que este árbol ya caza en otros sitios —el censo de huérfanos, el de apartados,
+el de técnicos asignables—: **cero no es «está limpio», es «no he mirado»**. Que se colara aquí, en
+un guard escrito precisamente para no fiarse de la forma, es la parte que merece quedar escrita.
+
+## 3 · Dónde va el suelo, y con cuánta holgura
+
+Va **dentro** de `navSinContexto`, no al lado: así no se puede rodear llamando al extractor pelado.
+
+Hoy hay **18 entradas** (medidas). El mínimo se pone en **10**, y la holgura es deliberada: lo que
+aquí importa no es cuántas entradas haya —eso lo vigila SCRUM-420— sino que **el extractor siga
+viendo la barra**. Perder ocho de golpe es un rediseño, y entonces el número se sube a propósito con
+su motivo. *Un suelo que estorba en cada PR acaba desactivado.*
+
+## 4 · Los rojos · commit de resguardo `604c63e20b20514ce66eca4de65d37d573ddfc89`
+
+| # | Qué se rompe | Qué cae |
+| :-: | --- | --- |
+| 1 | el `index.html` cambia de forma (18 `data-view` → `data-vista`) | **5**/13 · y el rojo dice `NAV CIEGO · el extractor ha encontrado 0 entradas y el suelo son 10` |
+| 2 | se retira el suelo | 1/13 · sólo cae el test del suelo — que es la demostración de que es él quien trabaja |
+
+El rojo 1 tira cinco tests, y eso también es información: **todo lo que dependía de leer la barra
+deja de significar nada a la vez.** Antes, ninguno de los cinco se habría enterado.
+
+## 5 · Lo que queda escrito en el test
+
+Quién preguntó y cuándo. Una pregunta que destapa un suelo que falta vale tanto como el guard, y
+quien lo lea dentro de un año tiene que saber que **salió de fuera** — no de quien lo escribió.
