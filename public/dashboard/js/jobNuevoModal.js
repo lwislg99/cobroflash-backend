@@ -19,6 +19,7 @@
 /** El marcador único de este ticket. Aprobar el copy = tocar solo esta constante. */
 var MARCA_651 = '[PENDIENTE microcopy oficial]';
 
+
 /**
  * Abre el modal de «trabajo nuevo». `alCrear(job)` recibe el Trabajo ya creado.
  *
@@ -36,6 +37,18 @@ function abrirModalTrabajoNuevo(alCrear) {
         '<div class="field">' +
           '<label for="tn-cliente">' + MARCA_651 + ' Cliente</label>' +
           '<select id="tn-cliente" style="width:100%"></select>' +
+        '</div>' +
+        '<div class="field">' +
+          '<label for="tn-tipo">' + MARCA_651 + ' Tipo de intervención</label>' +
+          '<select id="tn-tipo" style="width:100%">' +
+            '<option value="">' + MARCA_651 + ' Sin especificar</option>' +
+            // 🔴 SIN LISTA AQUI: los tipos llegan del servidor (`/admin/me`). Escribirlos en el
+            // navegador seria una SEGUNDA fuente del vocabulario cerrado, y el guard de fuente
+            // unica cayo por eso mismo cuando se intento.
+            (window.appTiposIntervencion || []).map(function (t) {
+              return '<option value="' + t.valor + '">' + escHtml(t.rotulo) + '</option>';
+            }).join('') +
+          '</select>' +
         '</div>' +
         '<div class="field">' +
           '<label for="tn-direccion">' + MARCA_651 + ' Dirección de la obra</label>' +
@@ -93,6 +106,8 @@ function abrirModalTrabajoNuevo(alCrear) {
       method: 'POST',
       body: JSON.stringify({
         customerId: customerId,
+        // Vacío = no consta. NO se manda cadena vacía como si fuera un valor.
+        tipoIntervencion: overlay.querySelector('#tn-tipo').value || undefined,
         direccion: overlay.querySelector('#tn-direccion').value,
         descripcion: overlay.querySelector('#tn-descripcion').value,
       }),

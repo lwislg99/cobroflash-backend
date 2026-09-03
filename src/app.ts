@@ -11,6 +11,7 @@ import { viasDeCobro } from './modules/billing/domain/viasDeCobro'; // SCRUM-519
 // SCRUM-300 (C5): microcopy del albarán servida al dashboard vanilla desde su fuente única.
 import { ALBARAN_AYUDAS, ALBARAN_ROTULOS, firmanteCalidadOpciones } from './modules/jobs/domain/albaranFirmante';
 import { cubosDeMetodo, opcionesDeMetodoDeclarable, ROTULO_SIN_METODO } from './modules/billing/domain/metodoDeCobro';
+import { tiposIntervencionParaUI } from './modules/jobs/domain/tipoIntervencion';
 // ⚠️ FUSIÓN: C5 importaba `puedeCrearFacturaSuelta`, que SCRUM-346 (A0.5) RETIRÓ de `main`.
 // Medido antes de resolver: ya no se exporta, y `appFacturaSueltaDisponible` tiene CERO
 // consumidores en `public/`. No son dos cosas que hagan lo mismo — es una que evolucionó, así
@@ -510,6 +511,9 @@ app.get('/admin/me', async (req, res) => {
     // (regla 22) y servido en el ARRANQUE, porque es CONSTANTE. El navegador no tiene lista propia
     // de metodos — esa duplicacion es la que SCRUM-474 arranco de `cobrosView.js`.
     metodosDeclarables: opcionesDeMetodoDeclarable(),
+    // SCRUM-tecnosel · el vocabulario de tipos de intervención, DERIVADO del servidor. El
+    // navegador no decide qué tipos existen: los recibe, como los cubos de cobros.
+    tiposIntervencion: tiposIntervencionParaUI(),
     // A10.2 (Parte L): estado de la suscripción para el banner past_due
     subscriptionStatus: owner ? 'active' : ((session.merchant as any).subscriptionStatus ?? null),
     // SCRUM-313 (D2): ¿todavia se le puede preguntar por su numeracion? Mismo patron que la

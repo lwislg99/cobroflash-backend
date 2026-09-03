@@ -617,6 +617,7 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'onboardingView.js',
   'paidViaEtiquetas.js',
   'parteDetailView.js',
+  'parteOficinaView.js',
   'patronDetalleAcciones.js',
   'plansView.js',
   'prefijosPais.js',

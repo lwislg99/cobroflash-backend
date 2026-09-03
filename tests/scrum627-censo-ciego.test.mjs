@@ -165,6 +165,9 @@ const INVISIBLES = [
   // máscara desaparece y el fichero aparece por lo que lleva haciendo desde siempre. NO se
   // arregla aquí: es el camino de emisión de la factura (regla 38) y no es de este ticket.
   'src/modules/invoicing/infra/pdf/pdf.service.ts',
+  // Sprint Tecnosel · ENTRA `partes.routes.ts`: el serializador de OFICINA multiplica
+  // `precioUnitario * unds` para dar el importe de cada línea. Ver su veredicto en scrum627b.
+  'src/modules/jobs/app/routes/partes.routes.ts',
   'src/modules/jobs/domain/albaran.service.ts',
   'src/modules/jobs/domain/albaranAFactura.ts',
   // 2-sep-2026 · SCRUM-652 (T3 fase B): nace el PARTE DE TRABAJO y deriva su IVA por documento,

@@ -25,7 +25,7 @@
 // chip (SCRUM-363). Con `0` se pintaría «Pendiente» sobre un eje inventado. **Ausente y cero no
 // son lo mismo**, y aquí la diferencia se ve en la pantalla del profesional.
 
-import { esTipoIntervencion } from './tipoIntervencion';
+import { esTipoIntervencion, type TipoIntervencion } from './tipoIntervencion';
 
 /** Lo que el profesional escribe al abrir un trabajo directo. */
 export type EntradaTrabajoDirecto = {
@@ -36,6 +36,8 @@ export type EntradaTrabajoDirecto = {
   descripcion: string | null;
   /** Nombre del Trabajo. Opcional: sin él, la pantalla se titula con el cliente (SCRUM-317). */
   titulo: string | null;
+  /** Qué clase de intervención es. `null` = no consta; NO hay valor por defecto. */
+  tipoIntervencion: TipoIntervencion | null;
 };
 
 export type ResultadoEntrada =
@@ -70,17 +72,18 @@ export function datosDeTrabajoDirecto(cuerpo: unknown): ResultadoEntrada {
   // El vocabulario CERRADO vive en `./tipoIntervencion` y se IMPORTA: el parte de trabajo
   // (SCRUM-652) usa exactamente el mismo, y dos listas para el mismo hecho se separan.
   //
-  // 🔴 Y AQUI HAY UNA PUERTA CERRADA A PROPOSITO: su COLUMNA todavia no existe —`prisma/
-  // schema.prisma` es territorio del fundador y el diff esta escrito en `docs/master/
-  // SCRUM-651.md`, sin aplicar—. Asi que un `tipoIntervencion` valido **tampoco entra**, y se
-  // dice por que en vez de tragarselo.
+  // 🔴 LA PUERTA ESTUVO CERRADA A PROPOSITO, Y AHORA SE ABRE. Mientras la columna no existia,
+  // un `tipoIntervencion` valido TAMPOCO entraba: aceptarlo y no guardarlo habria sido el fallo
+  // mudo entero de este ticket —el profesional elige «Mantenimiento», el producto contesta 201,
+  // y ese dato no existe en ninguna parte—. La columna ya esta (`jobs.tipo_intervencion`), asi
+  // que se acepta Y SE PERSISTE.
   //
-  // Aceptarlo y no guardarlo seria el fallo mudo entero de este ticket cometido otra vez: el
-  // profesional elige «Mantenimiento», el producto contesta 201, y ese dato no existe en
-  // ninguna parte. Se rechaza fuerte hasta que la columna este.
-  if (c.tipoIntervencion !== undefined) {
+  // Lo que NO cambia: un valor de fuera del vocabulario cerrado se sigue rechazando por su
+  // nombre. Y sigue sin haber valor por defecto — el tipo se elige, no se hereda.
+  let tipoIntervencion: TipoIntervencion | null = null;
+  if (c.tipoIntervencion !== undefined && c.tipoIntervencion !== null && c.tipoIntervencion !== '') {
     if (!esTipoIntervencion(c.tipoIntervencion)) return { ok: false, error: 'tipo_intervencion_invalido' };
-    return { ok: false, error: 'tipo_intervencion_sin_columna' };
+    tipoIntervencion = c.tipoIntervencion;
   }
 
   // El cliente es el ÚNICO obligatorio: sin él el Trabajo no es de nadie, y todo lo demás
@@ -95,6 +98,7 @@ export function datosDeTrabajoDirecto(cuerpo: unknown): ResultadoEntrada {
       direccion: texto(c.direccion, 500),
       descripcion: texto(c.descripcion, 2000),
       titulo: texto(c.titulo, 200),
+      tipoIntervencion,
     },
   };
 }
@@ -129,6 +133,9 @@ export function filaDeTrabajoDirecto(
     titulo: datos.titulo,
     direccion: datos.direccion,
     notes: datos.descripcion,
+    // 🔴 SE PERSISTE. Mientras no habia columna, esto no estaba y la puerta rechazaba el campo
+    // entero; ahora entra. `null` cuando no consta: ausente y «reparacion» no son lo mismo.
+    tipoIntervencion: datos.tipoIntervencion,
     operarioId,
   };
 }
