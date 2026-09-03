@@ -1266,6 +1266,24 @@ model ParteTrabajo {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // SCRUM-685b · EL NÚMERO DEL PARTE ES ÚNICO DENTRO DE SU MERCHANT, Y LO DICE LA BASE.
+  //
+  // 🔴 Esto NO es una redundancia del código: es la única red que hay. `siguienteNumeroParte`
+  // (`src/modules/jobs/domain/parteNumero.ts`) deriva el número del MÁXIMO ya emitido dentro de
+  // la transacción del create, porque `Merchant` no tiene contadores propios para el parte —a
+  // diferencia del albarán, que reserva contra `nextAlbaranNumber` + `albaranSeriesYear`—.
+  //
+  // Derivar del máximo NO impide el duplicado: dos creaciones simultáneas del mismo merchant
+  // pueden leer el mismo máximo y acuñar el mismo número. Sin este índice **la base los acepta
+  // los dos**, y entonces hay dos partes distintos que dicen ser el mismo documento: el cliente
+  // firma uno y la oficina valora el otro, y nada falla hasta que alguien los compara.
+  //
+  // Con el índice, el segundo INSERT revienta RUIDOSAMENTE, que es lo correcto: mejor no crear
+  // el parte que crearlo mal identificado.
+  //
+  // ⚠️ ORDEN DE LA CASA: el ALTER va a las TRES bases ANTES de que esto se mergee
+  // (`docs/sql/scrum-685b-parte-numero-unico.sql`). ② antes que ③, siempre.
+  @@unique([merchantId, numero])
   @@index([merchantId, fecha])
   @@index([merchantId, estado])
   @@map("partes_trabajo")

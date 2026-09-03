@@ -543,6 +543,87 @@ después deja de ser el aprobado. Quien construya el formulario **copia de esta 
 ⚠️ Y al aplicarlas va **un aserto que las compare con `===`**, como el de
 `tests/scrum683-parte-dictado.test.mjs`: un retoque «de paso» reabre una aprobación sin que nadie se
 entere.
+## Addendum · Parte dictado, la tercera (2-sep-2026) · **APLICADA, en SINGULAR**
+
+**Medido contra:** `origin/main` = `a5aef1b9bbd2570eccbde82b407c9d3675192c2d` · 2026-09-02T19:32:31+02:00
+
+Cierra la fila que el addendum anterior dejó como **APROBADA, NO APLICADA**. Aquella entrada no se
+reescribe —es un registro fechado y era cierto—: se cierra desde aquí.
+
+| Ranura | Fichero · línea | Texto aprobado | Estado |
+|---|---|---|---|
+| `cantidadesRetiradas` | `src/modules/jobs/domain/parteDictado.ts` · `AVISOS_DEL_DICTADO` | `Falta la cantidad — ponla tú` | ✅ **APLICADA** |
+
+**Va sin corchete de marcador y con la raya larga (`—`), un solo carácter.** Comparada con `===` en
+`tests/scrum683-parte-dictado.test.mjs`.
+
+### Por qué cambió de plural a singular: lo decidió el dato
+
+El fundador lo aprobó primero como **«Faltan las cantidades — ponlas tú»**, dando por hecho que era
+un **resumen**, y pidió expresamente parar si se pintaba **por línea**. Se midió antes de aplicarlo:
+
+* `cantidadesRetiradas` es un array con **una entrada por línea**, cada una con su `descripcion`.
+* **Puede traer exactamente una**, comprobado ejecutándolo:
+
+  ```
+  sanearDictadoDelParte([{descripcion:'Disco duro', unds:1}], 'Sustituir el disco duro')
+    → cantidadesRetiradas.length = 1   ·   [{"descripcion":"Disco duro","propuesta":1}]
+  ```
+
+Con una sola línea el plural no concordaba **ni como resumen**. Se paró y se dijo; el fundador
+aprobó el **singular por línea**. El aviso se pinta **una vez en cada línea** a la que le falta la
+cantidad.
+
+> ⚠️ **Un resumen sería un texto DISTINTO.** Si algún día hace falta además un «3 líneas sin
+> cantidad», se pide y se aprueba entonces: **no se deriva de éste poniéndolo en plural**. Hay un
+> aserto en el test que cae si el plural vuelve por su cuenta.
+
+---
+
+## Addendum · Condiciones del presupuesto (3-sep-2026) · **APLICADAS**
+
+**Medido contra:** `origin/main` = `948e63980491950d313356977e61493f14f9888e` · 2026-09-03T11:54:28+02:00
+
+**SCRUM-656 fase B** propuso ocho rótulos con marcador. El fundador los aprobó **cambiando uno** y
+se aplican en el mismo acto. Son rótulos de **nuestra** pantalla (Configuración → Facturación); el
+texto que ve el cliente en el PDF lo escribe el merchant y no se toca desde aquí.
+
+| Ranura | Fichero | Texto aprobado |
+|---|---|---|
+| `clausulasTitulo` | `public/dashboard/js/settingsView.js` · `TX` | `Condiciones del presupuesto` |
+| `clausulasPista` | ídem | `Se escriben una vez y salen en todos tus presupuestos.` |
+| `clausulaTitulo` | ídem | `Título (GARANTÍA, ALCANCE…)` |
+| `clausulaTexto` | ídem | `Texto de la condición` |
+| `clausulaQuitar` | ídem | `Quitar` |
+| `clausulaAnadir` | ídem | `Añadir condición` |
+| `clausulasVacio` | ídem | `Todavía no has escrito ninguna condición.` |
+| `clausulasIlegibles` | ídem | `No se han podido leer tus condiciones — no se ha guardado nada` |
+
+**Van sin corchete de marcador.** Se copian literales: los puntos suspensivos de `GARANTÍA, ALCANCE…`
+son **un solo carácter** (`…`), y la raya del último es la larga (`—`), también uno.
+
+### 🔴 El único que cambió, y por qué
+
+Se propuso **«No hemos podido leer tus condiciones. No se ha guardado nada.»** y el fundador lo dejó
+en **«No se han podido leer tus condiciones — no se ha guardado nada»**.
+
+> **La voz de la casa no dice «no hemos podido»: suena a excusa nuestra.**
+
+Es la **misma corrección** que se hizo el 2-sep en los avisos del dictado, donde «No hemos entendido»
+pasó a «No se ha entendido». Y como allí: raya larga, y termina en el hecho que le importa al
+profesional —que no se ha guardado nada—, no en nosotros.
+
+### Lo que este aviso vigila, que no es un detalle de estilo
+
+Se pinta cuando `merchants.clausulas_presupuesto` trae algo que **no se puede leer**. En pantalla,
+«no has escrito ninguna» y «no se han podido leer» son **la misma caja vacía** y significan lo
+contrario: la segunda es un PDF saliendo **sin las condiciones que el profesional cree que lleva**, y
+nadie se entera hasta que un cliente discute la garantía. Por eso el aviso existe, y por eso dice
+además que **no se ha guardado nada**.
+
+✅ **Aplicadas en código Y anotadas aquí en el mismo commit.** El bloque `TX` de `settingsView.js`
+pierde su constante de marcador (`MARCA_CLAUSULAS`), que era la que factorizaba la marca para que el
+censo de SCRUM-402 no se moviera: **ya no hace falta, porque ya no hay nada marcado que aprobar ahí**.
 
 ---
 

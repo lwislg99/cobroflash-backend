@@ -607,6 +607,7 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   // `<script src=`, la lista de main tenia 70, y la diferencia era exactamente este fichero.
   'jobNuevoModal.js',
   'jobRailBlocks.js',
+  'jobAsignados.js',
   'jobsCierreTrabajo.js',
   'jobsView.js',
   'libroRegistroView.js',

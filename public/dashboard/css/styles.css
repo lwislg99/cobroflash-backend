@@ -2312,6 +2312,26 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .detail-dl dt { font-size: 13px; color: var(--muted); }
 .detail-dl dd { font-size: 13.5px; color: var(--body); margin: 0; }
 
+/* ── SCRUM-650 (T1) · QUIÉN EJECUTA EL TRABAJO — y pueden ser tres ──────────────────────
+   El campo «Técnico» del parte de papel de Tecnosel dice «Israel, Miguel y Jesús.L».
+   Cero componentes nuevos y cero colores inventados (Parte AB): tokens de `tokens.css` y la
+   misma familia visual que `.detail-dl`. El anillo de foco lo pone la regla global de :94. */
+.job-asignados-titulo {
+  font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 4px;
+}
+.job-asignados-lista { display: grid; gap: 2px; }
+/* 44 px (AB6): se marca de pie, en la obra y con guantes. */
+.job-asignados-fila {
+  display: flex; align-items: center; gap: 10px; min-height: 44px;
+  padding: 0 8px; border-radius: var(--radius-md); cursor: pointer;
+}
+.job-asignados-fila:hover { background: var(--bg, #f6f7f5); }
+.job-asignados-casilla { width: 20px; height: 20px; flex: none; accent-color: var(--brand); }
+.job-asignados-nombre { font-size: 14px; color: var(--ink); }
+.job-asignados-lectura { font-size: 14px; font-weight: 600; color: var(--ink); }
+.job-asignados-nota { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+
 /* Tarjetas de margen (planas, dentro de su sección) */
 .margin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
 .margin-tile { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; text-align: center; }

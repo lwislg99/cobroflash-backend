@@ -825,6 +825,23 @@ function renderSettingsView(container) {
           brandColorHex.textContent = merchant.brandColor;
         }
         fApproval.input.value = merchant.approvalThreshold != null ? merchant.approvalThreshold : "";
+
+        // SCRUM-656 (T7 fase B) · 🔴 SUELO: «no ha escrito ninguna» y «no supe leerlas» son la
+        // misma caja vacía en pantalla y significan lo contrario. La segunda es un PDF saliendo
+        // SIN las condiciones que el profesional cree que lleva, y nadie se entera hasta que un
+        // cliente discute la garantía. Por eso una columna ILEGIBLE se DICE, no se pinta vacía.
+        var brutas = merchant.clausulasPresupuesto;
+        if (brutas === null || brutas === undefined) {
+          clausulasEstado = [];
+        } else if (Array.isArray(brutas)) {
+          clausulasEstado = brutas.map(function (c) {
+            return { id: c && c.id, titulo: (c && c.titulo) || "", texto: (c && c.texto) || "" };
+          });
+        } else {
+          clausulasEstado = [];
+          setAlert("error", TX.clausulasIlegibles);
+        }
+        pintarClausulas();
   
         setAlert(null, "");
       } catch (err) {
@@ -834,6 +851,138 @@ function renderSettingsView(container) {
   
     loadMerchant();
   
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-656 (T7 fase B) · LAS CLÁUSULAS DE CIERRE DEL PRESUPUESTO
+    //
+    // Hoy el gerente reescribe GARANTÍA, ALCANCE y PLAZO DE VALIDEZ en cada presupuesto. Se
+    // escriben aquí UNA vez y salen en todos.
+    //
+    // 🔴 EL TEXTO LO ESCRIBE EL MERCHANT, NO NOSOTROS (regla 30): no hay plantilla, no hay
+    // ejemplo prerrellenado y no se sugiere nada. Una garantía es una obligación jurídica, y
+    // ponerle a un profesional una que no ha dado sería redactar en su nombre.
+    //
+    // ⚠️ El `id` de cada fila VIAJA y no se recalcula: la exclusión de un presupuesto concreto
+    // es una lista de `id`, y reasignarlos haría que un presupuesto que quitó la garantía
+    // pasara a quitar otra cláusula. No falla nada: solo sale mal el papel.
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // 🔴 MICROCOPY PROPUESTA, SIN APROBAR (regla 30). Estos rótulos son de NUESTRA pantalla; el
+    // texto que ve el cliente en el PDF lo escribe el merchant y no se toca desde aquí.
+    //
+    // ⚠️ La marca va FACTORIZADA en una constante y concatenada, igual que `MARCA_RETENCION`: el
+    // censo de SCRUM-402 cuenta LITERALES que contienen la marca, no superficies marcadas, así que
+    // esto añade rótulos marcados sin mover su número. Queda dicho para que nadie lea el censo
+    // como «no hay nada nuevo pendiente de aprobar».
+    // ✅ MICROCOPY APROBADA por el fundador el 3-sep-2026 (regla 30). LITERAL, sin marcador.
+    //
+    // ⚠️ El último cambió respecto a lo propuesto: decía «No hemos podido leer…» y la voz de la
+    // casa no dice «no hemos podido» — suena a excusa nuestra. Es la misma corrección que se hizo
+    // en los avisos del dictado, y por eso lleva raya larga y termina en el hecho, no en nosotros.
+    //
+    // ⛔ Estos rótulos son de NUESTRA pantalla. El texto que ve el cliente en el PDF lo escribe el
+    // merchant: aquí no hay plantilla, ni ejemplo, ni sugerencia. Una garantía es una obligación
+    // jurídica, y redactarla en su nombre sería ponerle una que no ha dado.
+    var TX = {
+      clausulasTitulo: 'Condiciones del presupuesto',
+      clausulasPista: 'Se escriben una vez y salen en todos tus presupuestos.',
+      clausulaTitulo: 'Título (GARANTÍA, ALCANCE…)',
+      clausulaTexto: 'Texto de la condición',
+      clausulaQuitar: 'Quitar',
+      clausulaAnadir: 'Añadir condición',
+      clausulasVacio: 'Todavía no has escrito ninguna condición.',
+      clausulasIlegibles: 'No se han podido leer tus condiciones — no se ha guardado nada',
+    };
+
+    var CLAUSULAS_MAX = 10;
+    var clausulasEstado = [];
+
+    function filaClausula(c, i) {
+      return '' +
+        '<div class="clausula-fila" data-clausula-fila="' + i + '" style="margin-bottom:10px">' +
+        '<input type="text" data-clausula-titulo="1" placeholder="' + TX.clausulaTitulo + '" ' +
+        'value="' + escapaAtributo(c.titulo || '') + '" style="width:100%;margin-bottom:4px">' +
+        '<textarea data-clausula-texto="1" rows="2" placeholder="' + TX.clausulaTexto + '" ' +
+        'style="width:100%">' + escapaTexto(c.texto || '') + '</textarea>' +
+        '<button type="button" data-clausula-quitar="' + i + '" style="font-size:13px">' +
+        TX.clausulaQuitar + '</button></div>';
+    }
+
+    function escapaAtributo(v) {
+      return String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    function escapaTexto(v) {
+      return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function pintarClausulas() {
+      var caja = document.getElementById('clausulas-lista');
+      if (!caja) return;
+      // 🔴 SUELO: vacío se DICE. «No has escrito ninguna» y «no supe leerlas» son la misma caja
+      // vacía y significan lo contrario; el servidor manda `[]` cuando no hay, y el aviso de
+      // ilegible lo pinta la rama de error de `loadMerchant`.
+      caja.innerHTML = clausulasEstado.length
+        ? clausulasEstado.map(filaClausula).join('')
+        : '<p style="color:var(--muted);font-size:13px">' + TX.clausulasVacio + '</p>';
+    }
+
+    /** Lo escrito en pantalla → lo que viaja. Se lee de los CAMPOS, no del estado. */
+    function clausulasDelFormulario() {
+      var caja = document.getElementById('clausulas-lista');
+      if (!caja) return clausulasEstado;
+      var filas = caja.querySelectorAll('[data-clausula-fila]');
+      var salida = [];
+      Array.prototype.forEach.call(filas, function (fila, i) {
+        var t = fila.querySelector('[data-clausula-titulo="1"]');
+        var x = fila.querySelector('[data-clausula-texto="1"]');
+        var previa = clausulasEstado[i] || {};
+        salida.push({
+          // el id de la fila que ya existía se CONSERVA; una nueva va sin él y lo pone el servidor
+          id: previa.id,
+          titulo: (t && t.value) || '',
+          texto: (x && x.value) || '',
+        });
+      });
+      return salida;
+    }
+
+    // El envoltorio de la sección, colocado en su submenú por el mismo camino que el resto.
+    // `colocar` pasa por `submenuDeCampo`, que LANZA si el campo no tiene destino declarado — por
+    // eso la entrada en `settingsSubmenus.js` no es papeleo: sin ella, esto revienta al montar.
+    var cajaClausulas = document.createElement('div');
+    // 🔴 DECLARA SU CLAVE, como el selector de país (`_censo-configuracion.mjs`, forma 2): esta
+    // sección PERSISTE `clausulasPresupuesto`, y sin decirlo el censo de SCRUM-284 no la ve y su
+    // mapa de submenús queda describiendo una Configuración que no es la de hoy.
+    //
+    // ⚠️ Es un campo COMPUESTO —una lista de filas, no un input—, y ésa es una QUINTA forma que
+    // ese censo no modela; su propia cabecera avisa de que podría aparecer. Se declara así para
+    // que el censo diga la verdad. Ampliarlo es de su carril.
+    cajaClausulas.name = 'clausulasPresupuesto';
+    cajaClausulas.innerHTML =
+      '<label style="display:block;font-weight:600;margin-bottom:2px">' + TX.clausulasTitulo + '</label>' +
+      '<p style="font-size:12px;color:var(--muted);margin:2px 0 6px">' + TX.clausulasPista + '</p>' +
+      '<div id="clausulas-lista"></div>' +
+      '<button type="button" id="clausulas-anadir" style="font-size:13px">' + TX.clausulaAnadir + '</button>';
+    colocar('clausulasPresupuesto', cajaClausulas);
+
+    cajaClausulas.addEventListener('click', function (ev) {
+      var quitar = ev.target && ev.target.getAttribute && ev.target.getAttribute('data-clausula-quitar');
+      if (quitar !== null && quitar !== undefined && quitar !== '') {
+        // Se lee de los CAMPOS antes de quitar: si se leyera del estado, lo que el profesional
+        // acabase de escribir en las otras filas se perdería al borrar una.
+        clausulasEstado = clausulasDelFormulario();
+        clausulasEstado.splice(Number(quitar), 1);
+        pintarClausulas();
+        return;
+      }
+      if (ev.target && ev.target.id === 'clausulas-anadir') {
+        clausulasEstado = clausulasDelFormulario();
+        // El tope no es una limitación de producto: un pie de página tiene fondo.
+        if (clausulasEstado.length >= CLAUSULAS_MAX) return;
+        clausulasEstado.push({ titulo: '', texto: '' });   // sin `id`: lo pone el servidor
+        pintarClausulas();
+      }
+    });
+
     form.addEventListener("submit", async (ev) => {
       ev.preventDefault();
       setAlert(null, "");
@@ -874,6 +1023,9 @@ function renderSettingsView(container) {
         notifyEmailWeeklyDigest:    tNotifyWeekly.chk.checked,
         brandColor: brandColorEnabled ? brandColorInput.value : null,
         approvalThreshold: fApproval.input.value.trim() === "" ? null : Number(fApproval.input.value),
+        // SCRUM-656 (T7 fase B): las condiciones del pie del presupuesto. Van con su `id` para
+        // que las exclusiones ya guardadas en presupuestos concretos sigan apuntando a la misma.
+        clausulasPresupuesto: clausulasDelFormulario(),
       };
   
       if (!payload.name || !payload.legalName || !payload.taxId || !payload.address || !payload.whatsappPhone) {

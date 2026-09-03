@@ -135,6 +135,11 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   { method: 'GET',   path: '/admin/partes/:id', why: 'Ver el parte que él mismo rellena y firma; sin importes (SCRUM-652)' },
   { method: 'PATCH', path: '/admin/partes/:id', why: 'Rellenar el parte en la obra: horas, kilómetros, mano de obra y materiales. Sin precios: los pone la oficina después' },
   { method: 'POST',  path: '/admin/partes/:id/firmar', why: 'Firma del cliente en el móvil del operario, con la cola sin cobertura que ya existe (SCRUM-358)' },
+  // SCRUM-683: trabajo de campo puro. El técnico dicta EN LA OBRA con el micro del teclado de su
+  // móvil y esto solo ORDENA ese texto en las dos listas. No escribe en el parte —devuelve una
+  // propuesta que él confirma— y no sirve ni un importe: el esquema que se le pide al modelo no
+  // tiene campo de precio, y el saneador tampoco lo dejaría pasar.
+  { method: 'POST',  path: '/admin/partes/:id/dictado', why: 'Ordenar en líneas lo que dictó en la obra; devuelve una PROPUESTA que él confirma, no escribe en el parte, y sin importes' },
   { method: 'POST',  path: '/admin/albaranes/:id/duplicar', why: 'Duplicar el parte de ayer para el de hoy: el técnico rellena partes en obra, y el duplicado nace en BORRADOR sin firma ni evidencia (SCRUM-302)' },
   { method: 'GET',   path: '/admin/albaranes/:id/pdf', why: 'Enseñar/enviar el parte firmado' },
   { method: 'POST',  path: '/admin/albaranes/:id/fotos', why: 'Fotos del trabajo hecho (MEDIA-1)' },

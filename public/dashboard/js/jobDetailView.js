@@ -835,6 +835,72 @@ async function renderJobDetailView(container, jobId) {
       setStatus('error', (e && e.data && e.data.message) || 'No se pudo guardar la dirección de la obra.');
     }
   });
+  // ── SCRUM-650 (T1) · QUIÉN EJECUTA ESTE TRABAJO — Y PUEDEN SER TRES ─────────────────────
+  //
+  // El parte de papel de Tecnosel escribe «Israel, Miguel y Jesús.L» en el campo «Técnico». El
+  // motor, la tabla `job_assignees` y el filtro de los tres ejes ya estaban en producción: lo que
+  // faltaba era el sitio donde el jefe los mete sin tener que elegir a uno y apañarse.
+  //
+  // ⚠️ NO ES EL BLOQUE «RESPONSABLE» del rail. Aquél pinta `job.operario` — la AUTORÍA, congelada
+  // al aceptar el presupuesto (SCRUM-52). Esto es QUIÉN EJECUTA (SCRUM-10). Un presupuesto lo
+  // redacta uno y lo ejecutan tres, y mezclarlos es el fallo que este bloque tiene prohibido.
+  //
+  // Va en «Datos» y no en el rail: el rail es contexto de SOLO LECTURA (patrón B2, regla 4) y su
+  // guard prohíbe que cree un `input`. Aquí se ESCRIBE.
+  //
+  // La lista de empleados es admin-only (`/admin/team` va con requireRole('admin')), así que al
+  // técnico ni se le pide: ve los nombres y por qué no puede cambiarlos, que es la norma de
+  // SCRUM-89 — un gate no deja UI huérfana.
+  if (typeof construirSelectorAsignados === 'function') {
+    const asigWrap = document.createElement('div');
+    asigWrap.style.cssText = 'margin-top:12px';
+    infoSec.appendChild(asigWrap);
+
+    (async () => {
+      try {
+        // Al técnico se le pinta en SOLO LECTURA con los nombres que ya trae el detalle: pedirle
+        // /admin/team sería un 403 garantizado y dejaría el bloque sin pintar.
+        const miembros = isTecnico
+          ? (job.asignados || []).map((a) => ({ id: a.id, name: a.name }))
+          : await apiRequest('/admin/team');
+        // 🔴 Con el equipo vacío, `construirSelectorAsignados` LANZA en vez de pintar un selector
+        // sin nadie: un cero ahí es «no supe leer», no «no hay empleados». Cae en este catch.
+        const sel = construirSelectorAsignados(document, {
+          miembros,
+          asignados: job.asignados || [],
+          puedeEditar: !isTecnico,
+        });
+        asigWrap.appendChild(sel.elemento);
+
+        sel.casillas.forEach((casilla) => {
+          casilla.addEventListener('change', async () => {
+            const antes = sel.casillas.map((c) => c.checked);
+            try {
+              // El cuerpo lo arma el módulo: manda SIEMPRE `assignedUserIds` (la lista), que es la
+              // que puede llevar tres. Nunca `operarioId`.
+              await apiRequest(`/admin/jobs/${job.id}`, {
+                method: 'PATCH',
+                body: JSON.stringify(cuerpoDeAsignacion(sel.idsMarcados())),
+              });
+              refresh();
+            } catch (e) {
+              // Se deshace la casilla: dejarla marcada diría que se guardó, y no se guardó.
+              sel.casillas.forEach((c, i) => { c.checked = antes[i]; });
+              // 🔴 NO se pinta el `.message` del servidor (SCRUM-644): un `invalid_assignee` en
+              // pantalla es una tubería interna asomando. El texto es de la pantalla y va marcado.
+              setStatus('error', TEXTOS_ASIGNADOS.noSeGuardo);
+            }
+          });
+        });
+      } catch (e) {
+        // Incluye el EquipoCiego: se dice que no se pudo leer, en vez de pintar un selector vacío
+        // que el jefe leería como «no tengo empleados».
+        console.error('[SCRUM-650] selector de asignados:', (e && e.message) || e);
+        asigWrap.remove();
+      }
+    })();
+  }
+
   // SCRUM-31 (F5): "Ver presupuesto" se mueve a la FILA de presupuesto de la lista 'Documentos'
   // (antes también estaba aquí; se quita para no duplicar).
   // SCRUM-31 (F6): "Datos" pasa a SEGUNDO PLANO — se appendea más abajo, tras Cobros
