@@ -226,3 +226,130 @@ test('SCRUM-683b · 🔴 la ruta del dictado NO escribe en el parte', () => {
       'que el técnico la haya mirado.');
   }
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-706 · EL CABLE: que se pulse el botón y PASE algo
+//
+// 🔴 Lo que faltaba no era la función, era el `addEventListener`. `ordenarElDictado` estaba escrita,
+// probada y colgada de `window` —que es como la alcanzaban estos mismos tests— y entre el botón que
+// se pinta y ella no había NADA. Por eso la suite estaba verde y el técnico pulsaba sin efecto.
+//
+// Estos tests NO llaman a la función: montan la pantalla, buscan el botón y lo PULSAN.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/** Un DOM mínimo que recuerda los `addEventListener` y sabe encontrar por `data-…`. */
+function pantalla() {
+  const oyentes = new Map();
+  const nodo = (marca) => ({
+    marca,
+    disabled: false,
+    // Los subnodos tienen su PROPIO innerHTML: es donde `pintarPropuesta` escribe, y el doble
+    // tiene que reflejarlo o el test mediría el contenedor y no lo pintado.
+    innerHTML: '',
+    addEventListener(ev, fn) { oyentes.set(marca + ':' + ev, fn); },
+    querySelector: () => null,
+  });
+  const contenedor = {
+    innerHTML: '',
+    _nodos: new Map(),
+    querySelector(sel) {
+      const m = /\[([a-z-]+)/.exec(sel);
+      const marca = m ? m[1] : sel;
+      // Solo se «encuentra» lo que la pantalla ha pintado de verdad.
+      if (!this.innerHTML.includes(marca)) return null;
+      if (!this._nodos.has(marca)) this._nodos.set(marca, nodo(marca));
+      return this._nodos.get(marca);
+    },
+  };
+  return { contenedor, oyentes };
+}
+
+const PARTE_ABIERTO = {
+  id: 7, numero: 'P-7', estado: 'borrador', clienteNombre: 'Instituto',
+  lineas: [{ bloque: 'materiales', unds: 2, descripcion: 'Cámara' }],
+  tecnicos: [], puedeEditarContenido: { ok: true, motivo: null },
+};
+
+test('SCRUM-706 · 🔴 EL CABLE: pulsar «Ordenar en líneas» LLAMA al servidor', async () => {
+  const { ctx } = montar();
+  const { contenedor, oyentes } = pantalla();
+  const pedidas = [];
+
+  const pedir = async (ruta, init) => {
+    pedidas.push({ ruta, init });
+    if (ruta === '/admin/partes/7') return PARTE_ABIERTO;
+    return {
+      propuesta: {
+        vacia: false, motivo: null,
+        mano_obra: [{ descripcion: 'Canalización' }],
+        materiales: [], sinBloque: [],
+        cantidadesRetiradas: [{ descripcion: 'Canalización', propuesta: 1 }],
+      },
+      avisos: AVISOS_DEL_DICTADO,
+    };
+  };
+
+  await ctx.renderParteDetailView(contenedor, 7, { apiRequest: pedir });
+
+  // SUELO: si la pantalla no pintó el botón, este test no prueba el cable, prueba nada.
+  assert.ok(contenedor.innerHTML.includes('data-dictado-ordenar'),
+    '🔴 CIEGO: la pantalla no ha pintado el botón del dictado');
+  const oyente = oyentes.get('data-dictado-ordenar:click');
+  assert.equal(typeof oyente, 'function',
+    '🔴 EL BOTÓN DEL DICTADO ESTÁ PINTADO Y MUERTO: nadie le ha puesto un `addEventListener`. El ' +
+    'técnico dicta, pulsa, y no pasa nada — y la suite entera pasa igual, porque la función existe ' +
+    'y está colgada de `window`. Eso es lo que este test viene a impedir.');
+
+  await oyente();
+
+  const alDictado = pedidas.filter((p) => p.ruta === '/admin/partes/7/dictado');
+  assert.equal(alDictado.length, 1,
+    '🔴 pulsar el botón NO ha llamado a `/admin/partes/:id/dictado`');
+  assert.equal(alDictado[0].init.method, 'POST');
+});
+
+test('SCRUM-706 · 🔴 lo retirado se PINTA en su línea, con el texto firmado', async () => {
+  const { ctx } = montar();
+  const { contenedor, oyentes } = pantalla();
+  const pedir = async (ruta) => (ruta === '/admin/partes/7' ? PARTE_ABIERTO : {
+    propuesta: {
+      vacia: false, motivo: null,
+      mano_obra: [{ descripcion: 'Canalización' }],
+      materiales: [{ descripcion: 'Cámara', unds: 2 }], sinBloque: [],
+      cantidadesRetiradas: [{ descripcion: 'Canalización', propuesta: 1 }],
+    },
+    avisos: AVISOS_DEL_DICTADO,
+  });
+
+  await ctx.renderParteDetailView(contenedor, 7, { apiRequest: pedir });
+  await oyentes.get('data-dictado-ordenar:click')();
+
+  // El aviso aparece UNA vez: solo en la línea a la que le falta.
+  const destino = contenedor.querySelector('[data-dictado-propuesta]');
+  assert.ok(destino, '🔴 CIEGO: la pantalla no pintó el hueco de la propuesta');
+  const cuantos = (destino.innerHTML.match(/data-falta-cantidad="1"/g) || []).length;
+  assert.equal(cuantos, 1, `🔴 el aviso sale ${cuantos} veces y falta en UNA línea`);
+  assert.ok(destino.innerHTML.includes(AVISOS_DEL_DICTADO.cantidadesRetiradas),
+    '🔴 la cantidad retirada ha desaparecido en silencio en vez de decirse');
+});
+
+test('SCRUM-706 · 🔴 SIN RED: el modelo no contesta y el parte NO se bloquea', async () => {
+  const { ctx } = montar();
+  const { contenedor, oyentes } = pantalla();
+  const pedir = async (ruta) => {
+    if (ruta === '/admin/partes/7') return PARTE_ABIERTO;
+    throw new Error('gemini_unreachable');
+  };
+
+  await ctx.renderParteDetailView(contenedor, 7, { apiRequest: pedir });
+  const oyente = oyentes.get('data-dictado-ordenar:click');
+
+  // No puede lanzar: el técnico sigue escribiendo a mano, que es lo que funciona sin nosotros.
+  await assert.doesNotReject(async () => { await oyente(); },
+    '🔴 un fallo de red al ordenar ha tumbado la pantalla del parte. Ordenar es un extra que puede ' +
+    'faltar; el dictado del teclado funciona sin nosotros.');
+
+  // Y el parte sigue pintado: no se ha quedado en blanco.
+  assert.ok(contenedor.innerHTML.includes('data-parte-bloque'),
+    '🔴 la pantalla del parte se ha vaciado por un fallo del extra');
+});

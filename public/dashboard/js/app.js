@@ -192,8 +192,6 @@ async function initApp() {
   // 4. Localizar labels del sidebar
   const navQuotesLabel = document.getElementById('nav-quotes-label');
   if (navQuotesLabel) navQuotesLabel.textContent = window.appLocale.quotePlural;
-  const navQuotesNew = document.getElementById('nav-quotes-new');
-  if (navQuotesNew) navQuotesNew.textContent = window.appLocale.quoteNew;
 
   const viewContainer = document.getElementById('view-container');
   const viewTitle     = document.getElementById('view-title');
@@ -468,17 +466,22 @@ async function initApp() {
   // Badges del sidebar (contadores) independientes de la vista actual
   if (typeof refreshSidebarBadges === 'function') refreshSidebarBadges();
 
-  // Atajo de teclado: "n" abre una nueva cotización rápida (usuarios avanzados)
+  // 🔴 SCRUM-599 (DOC-09) · EL ATAJO «N», UN SOLO MECANISMO PARA LAS CUATRO LISTAS.
+  //
+  // Este manejador YA EXISTÍA y ya se protegía de las cuatro situaciones peligrosas; lo que hacía
+  // era abrir SIEMPRE la cotización rápida, estuvieras donde estuvieras. No nace un segundo: la
+  // condición se ha extraído a `atajoNuevo.sePuedeDisparar` —PURA, y por eso se puede probar sin
+  // navegador— y el destino lo decide la vista en la que estás.
+  //
+  // Si la vista no ha registrado destino, se cae al comportamiento de siempre: quitarlo sería
+  // retirarle un atajo a quien ya lo usa, y este ticket viene a unificar, no a quitar.
   document.addEventListener('keydown', (e) => {
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
-    const t = e.target;
-    const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
-    if (typing) return;
-    if (document.querySelector('.modal-overlay, .modal-backdrop, #qq-modal-backdrop, #onboarding-backdrop')) return;
-    if (e.key === 'n' || e.key === 'N') {
-      e.preventDefault();
-      if (typeof openQuickQuoteModal === 'function') openQuickQuoteModal();
-    }
+    const A = window.atajoNuevo;
+    if (!A || !A.sePuedeDisparar(e, document)) return;
+    e.preventDefault();
+    const accion = A.accionDe(window.appState && window.appState.view);
+    if (accion) { accion(); return; }
+    if (typeof openQuickQuoteModal === 'function') openQuickQuoteModal();
   });
 
   // Clicks en el sidebar

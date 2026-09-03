@@ -106,3 +106,47 @@ pintado, consultado y enlazado—, así que su silencio sobre el dictado no es c
   ve el firmante se arma sin importes. La primera pasada la contó como código; se volvió a mirar.
 - Las puertas de oficina siguen pidiendo `requireRole('admin')`, y el PATCH decide por el **rol**,
   no por lo que traiga la petición.
+
+---
+
+# Tercera medición · 3-sep-2026, tras el merge de SCRUM-652e y la firma de la microcopy
+
+**Medido en:** SCRUM-703 · las dos mediciones anteriores **no se tocan**: la diferencia entre las
+tres es lo que enseña qué desbloqueó cada merge.
+
+## 🔴 SIETE DE OCHO. No son ocho de ocho.
+
+El salto 4 —dictar— **sigue sin completarse**, y por lo mismo que en la medición anterior: el cable.
+La sesión que lo estaba cableando **todavía no ha entrado en `main`**, comprobado con
+`git merge-base --is-ancestor` y no con `ls-remote`, y con suelo en las dos direcciones (el
+instrumento dice «sí» de algo que sí está y «no» de algo que no).
+
+| # | El salto | ¿Va? | Lo que se recorrió |
+|---|---|---|---|
+| 1 | Crear trabajo con tipo | ✅ | `#tn-crear` se pinta (`:60`), se consulta (`:74`) y se enlaza con **`btn.onclick` (`:99`)** |
+| 2 | Asignar a **varios** | ✅ | `sel.casillas.forEach` → `addEventListener('change')` (`:875-876`) → `PATCH` con `assignedUserIds` → `refresh()` |
+| 3 | Del trabajo al parte | ✅ | `parteBtn` con `addEventListener` → abre el que haya o crea → `case 'parte-detail'` → `renderParteDetailView` |
+| 4 | Rellenar **dictando** | 🔴 **PINTADO Y MUERTO** | `data-dictado-ordenar` sólo aparece en `parteDetailView.js:240`. **La ruta existe y la función existe entera**: falta el cable |
+| 5 | Firmar **sin cobertura** | ✅ | `data-parte-firmar` pintado (`:203`), consultado (`:455`), enlazado (`:457`) y llamando a `firmarParte` (`:458`) |
+| 6 | El jefe lo encuentra | ✅ | `fila.addEventListener('click')` (`:84`) → `pintarParte`; el estado que deja firmar es el que filtra la lista; entrada en la barra |
+| 7 | Le pone los precios | ✅ | casillas con `input` (`:190`) y **`guardar.onclick` (`:201`)**; permiso por campo antes de construir `data` |
+| 8 | Quedan guardados y los ve | ✅ | el PATCH responde con la vista de oficina si el rol ve todo; la pantalla repinta con lo del servidor |
+
+## Y mi medidor volvió a mentir, por tercera vez
+
+Dio por muertos los saltos **1, 2 y 6**, que están vivos. El motivo es el mismo defecto de siempre
+con una cara nueva: **quité la ventana fija alrededor del ancla y la reintroduje alrededor de la
+consulta**. `#tn-crear` se consulta en la línea 74 y se enlaza en la 99 — veinticinco líneas, y mi
+ventana eran doce. Los saltos 2 y 6 fallaron por otra razón: sus elementos nacen de
+`createElement`, así que **nunca pasan por un `querySelector`** y mi heurística los daba por no
+buscados.
+
+**Los tres se verificaron a mano antes de creer el veredicto**, que es la única razón por la que
+esta tabla dice la verdad. Un medidor con ventana no mide: tolera.
+
+## 🔴 El dinero, en los ocho puntos: no cae
+
+- `serializeParteParaElTecnico`, leído **sin comentarios**: limpio.
+- `parteDetailView.js`, la pantalla del móvil, leída **sin comentarios**: limpia.
+- Las **dos de dos** puertas de oficina piden `requireRole('admin')`.
+- El PATCH decide por el **rol**, no por lo que traiga la petición: quien llama no elige su permiso.

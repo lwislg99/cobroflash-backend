@@ -57,6 +57,7 @@
     yaFirmoElTecnico: M + 'Firmado por el técnico.',
     faltaUnaFirma: M + 'Falta una firma para cerrar el parte.',
     yaFirmado: M + 'Firmado. El contenido ya no se toca.',
+    noSeGuardo: M + 'No se han podido guardar las líneas — vuelve a intentarlo',
     noSePudoCargar: M + 'No se ha podido cargar el parte. Vuelve a intentarlo.',
     tipoReparacion: M + 'Reparación / asistencia',
     tipoMantenimiento: M + 'Mantenimiento',
@@ -474,6 +475,50 @@
    * `opciones` existe para el banco de pruebas (`apiRequest`, `firmar`, `abrirPad`); en producción
    * no se le pasa nada.
    */
+  /**
+   * 🔴 LO QUE EL TÉCNICO CONFIRMA ENTRA EN EL PARTE. Y NADA MÁS.
+   *
+   * Las líneas se leen de los CAMPOS de la pantalla (`lineasConfirmadas`), no de la propuesta que
+   * vino del servidor: si se leyeran de la propuesta, corregir una cantidad no cambiaría nada y se
+   * guardaría lo que dijo la máquina. Y una línea a la que él no le haya puesto cantidad NO SALE.
+   *
+   * ⚠️ Se MANDAN LAS QUE YA HABÍA MÁS LAS NUEVAS: el `PATCH` reemplaza la lista entera, así que
+   * enviar sólo las nuevas borraría en silencio lo que el técnico ya tenía apuntado.
+   *
+   * ⛔ NI UN IMPORTE, en ninguna dirección: lo que viaja es {bloque, unds, descripcion}, que es lo
+   * único que esta pantalla tiene. Los precios los pone la oficina, en otra pantalla.
+   */
+  async function confirmarLoDictado(parte, parteId, contenedor, opciones) {
+    var o = opciones || {};
+    var pedir = o.apiRequest || window.apiRequest;
+    if (typeof pedir !== 'function') return false;
+
+    var caja = contenedor.querySelector && contenedor.querySelector('[data-dictado-propuesta]');
+    var confirmadas = lineasConfirmadas(caja);
+    if (!confirmadas.lineas.length) return false;   // nada que añadir: no se manda una petición vacía
+
+    var yaHabia = (Array.isArray(parte.lineas) ? parte.lineas : []).map(function (l) {
+      return { bloque: l.bloque, unds: l.unds, descripcion: l.descripcion };
+    });
+
+    try {
+      await pedir('/admin/partes/' + parteId, {
+        method: 'PATCH',
+        body: JSON.stringify({ lineas: yaHabia.concat(confirmadas.lineas) }),
+      });
+    } catch (e) {
+      // Si no se pudo guardar NO se repinta como si sí: el técnico creería que ya está apuntado.
+      var aviso = contenedor.querySelector('[data-dictado-propuesta]');
+      if (aviso) aviso.innerHTML = '<p data-dictado-no-guardado="1">' + esc(TEXTOS.noSeGuardo) + '</p>';
+      return false;
+    }
+
+    // Se vuelve a traer del servidor en vez de retocar la pantalla: lo que se enseña es lo que
+    // quedó guardado, no lo que creemos que mandamos. Mismo criterio que tras firmar.
+    await renderParteDetailView(contenedor, parteId, o);
+    return true;
+  }
+
   async function renderParteDetailView(contenedor, parteId, opciones) {
     var o = opciones || {};
     var pedir = o.apiRequest || window.apiRequest;
@@ -493,6 +538,43 @@
       contenedor.innerHTML = '<div data-parte-error="1">' + esc(TEXTOS.noSePudoCargar) + '</div>';
       return false;
     }
+
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-706 · EL CABLE DEL DICTADO. Es el salto 4 de la cadena, y era el único roto.
+    //
+    // 🔴 Lo que faltaba no era la función: era el `addEventListener`. `ordenarElDictado` estaba
+    // escrita, probada y colgada de `window` — que es como la alcanzaban los tests—, y **entre el
+    // botón que se pinta y ella no había NADA**. La suite entera en verde, y el técnico dictaba,
+    // pulsaba y no pasaba nada. Es el mismo hueco que SCRUM-652 fase D cerró para firmar, y por eso
+    // esto se ata aquí, en la misma función y con la misma forma.
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    var botonDictado = contenedor.querySelector && contenedor.querySelector('[data-dictado-ordenar]');
+    if (botonDictado && botonDictado.addEventListener) {
+      botonDictado.addEventListener('click', async function () {
+        // Se desactiva mientras viaja: dos pulsaciones seguidas son dos llamadas al modelo, y la
+        // segunda pisaría la propuesta que el técnico ya está corrigiendo.
+        botonDictado.disabled = true;
+        try {
+          // 🔴 SIN RED NO SE BLOQUEA EL PARTE. `ordenarElDictado` ya pinta el aviso y devuelve
+          // `false` cuando no hay propuesta: el técnico sigue escribiendo a mano, que es lo que
+          // funciona sin nosotros. Ordenar es el extra que puede faltar.
+          await ordenarElDictado(parte, contenedor, o);
+        } finally {
+          botonDictado.disabled = false;
+        }
+
+        // ⚠️ El botón de confirmar NACE con la propuesta, así que se ata DESPUÉS de pintarla. Si se
+        // atara antes no existiría todavía, y volveríamos a tener un botón pintado y muerto — el
+        // defecto que este ticket viene a cerrar.
+        var confirmar = contenedor.querySelector('[data-propuesta-confirmar]');
+        if (confirmar && confirmar.addEventListener) {
+          confirmar.addEventListener('click', function () {
+            confirmarLoDictado(parte, parteId, contenedor, o);
+          });
+        }
+      });
+    }
+
 
     // Cada recuadro a SU ruta. Se enganchan los dos por separado: con un solo escuchador que
     // mirara un atributo, un fallo de selector mandaría la firma del técnico a la ranura del
