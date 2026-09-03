@@ -213,3 +213,99 @@ oficina en el fichero tiene `requireRole('admin')` o `seesAllJobs` en su context
 `_barra-lateral` (`VISTAS_SIN_ENTRADA`) · `_banco-vistas` (la lista de scripts) · `sw.js` (el
 shell) · `scrum627`/`627b` (la aritmética: veredicto **DOCUMENTO** — da la BASE de una línea,
 `precio × unds`, y **no deriva IVA**: `tipoIva` se copia sin entrar en ninguna multiplicación).
+
+
+---
+
+# SCRUM-685b · El número del parte es único dentro de su merchant, y lo dice la BASE
+
+**Medido contra:** `origin/main` = `948e63980491950d313356977e61493f14f9888e` · 2026-09-03T09:20:00+02:00
+
+## 🔴 La prueba que importó: contra un PostgreSQL REAL, no afirmada
+
+No se pudo hacer desde la suite —corre sin base— así que se levantó un **PostgreSQL 16.4 portátil
+en el scratchpad** (puerto 55432, creado vacío y tirado al terminar; **ninguna base del proyecto**).
+Salida literal:
+
+```
+② SIN EL INDICE: dos INSERT con el mismo (merchant_id, numero)
+   INSERT 0 1
+   INSERT 0 1
+   filas_con_pt_2026_001 = 2          ← LA BASE ACEPTO EL DUPLICADO
+
+③ el SELECT de comprobacion lo detecta
+   merchant_id | numero      | veces | ids
+             1 | PT-2026-001 |     2 | {1,2}
+
+④ CON duplicados dentro, CREATE UNIQUE INDEX falla
+   ERROR:  could not create unique index "partes_trabajo_merchant_id_numero_key"
+   DETAIL:  Key (merchant_id, numero)=(1, PT-2026-001) is duplicated.
+
+⑥ limpiado y creado el indice, el MISMO INSERT que antes pasaba
+   ERROR:  duplicate key value violates unique constraint "partes_trabajo_merchant_id_numero_key"
+   DETAIL:  Key (merchant_id, numero)=(1, PT-2026-001) already exists.
+
+⑦ CONTROL POSITIVO: otro merchant con el mismo numero
+   INSERT 0 1                          ← el indice es POR merchant, no global
+```
+
+**Las cuatro cosas quedan demostradas, no supuestas:** sin índice la base **acepta** el duplicado,
+con él lo **rechaza**, con duplicados dentro el `CREATE UNIQUE INDEX` **falla** —por eso el
+`SELECT` de comprobación va primero— y otro merchant **sí** puede reutilizar el número.
+
+## Por qué hace falta, y no es redundancia del código
+
+`siguienteNumeroParte` deriva el número del **máximo ya emitido** dentro de la transacción del
+create, porque `Merchant` no tiene contadores propios para el parte —el albarán sí
+(`nextAlbaranNumber` + `albaranSeriesYear`)—. Derivar del máximo **no impide el duplicado**: dos
+creaciones simultáneas leen el mismo máximo. Sin el índice quedan dos partes distintos diciendo ser
+el mismo documento: **el cliente firma uno y la oficina valora el otro**, y nada falla hasta que
+alguien los compara.
+
+## Lo entregado (② y ③ juntos, como pidió Javier)
+
+| Pieza | Qué |
+|---|---|
+| `prisma/schema.prisma` | `@@unique([merchantId, numero])` en `ParteTrabajo` — el **③** |
+| `docs/sql/scrum-685b-comprobar-duplicados.sql` | el `SELECT`, con control positivo. **Se ejecuta primero, en cada base** |
+| `docs/sql/scrum-685b-parte-numero-unico.sql` | el `CREATE UNIQUE INDEX` — el **②**, y dice en su cabecera que va ANTES del PR |
+| `tests/scrum685b-parte-numero-unico.test.mjs` | 5 tests que atan la declaración y el SQL al hecho medido |
+
+**Clasificador** sobre el fichero del índice: **1 sentencia · 0 RECHAZADAS · 0 borrados · `ok=true`**.
+
+⚠️ **El nombre del índice no es libre:** `partes_trabajo_merchant_id_numero_key`, el que genera
+Prisma para ese `@@unique` (comprobado con `migrate diff --from-empty`). Con otro nombre, esquema y
+base tendrían el mismo índice llamado de dos formas y el diff propondría crear uno y borrar el otro.
+
+## 📌 El fichero del `SELECT` sale RECHAZADO por el clasificador, y es correcto
+
+`scrum-685b-comprobar-duplicados.sql` → **2 RECHAZADAS**, forma `DESCONOCIDA`. No es un defecto:
+el clasificador es una **lista blanca de formas aditivas** y rechaza `SELECT` por diseño. Lo dice
+`docs/sql/verificacion-deriva-produccion.sql:10-12` — *«meter la verificación en el mismo fichero
+que el `ALTER` deja el fichero inaplicable. Ya pasó una vez; por eso se separan»*.
+
+Por eso van **dos ficheros**, y hay un test que fija la separación para que nadie los junte.
+
+## 🔴 Un rojo que me cazó a mí: SCRUM-694
+
+Mi test se fabricaba su propio filtro de comentarios (`replace(/^\s*\/\/.*$/gm, '')`) y el
+trinquete de SCRUM-694 subió de 56 a **57**. **Existe `tests/_solo-codigo.mjs`** — el escáner de
+TypeScript, que distingue un `//` dentro de una cadena de uno que abre comentario.
+
+Comprobado antes de migrar a ciegas: sobre el bloque de Prisma **conserva** `@@unique` y los dos
+`@@index` y **borra** las quince líneas que lo explican. Migrado; el trinquete vuelve a 56.
+
+> Construir lo que ya estaba construido, otra vez. Esta vez lo cazó un guard de la casa.
+
+## El conflicto de `SCRUM-685.md`
+
+Se conservan **los dos bloques**. El segundo no es de este ticket: es el registro de la vista de
+oficina, escrito aquí por otra sesión cuando ese trabajo no tenía número. Ya tiene el suyo
+(**SCRUM-703**) y su autora lo moverá. Se ha añadido únicamente una nota que lo explica: perder el
+registro de un trabajo hecho para dejar un fichero limpio sería cambiar una molestia por una
+pérdida.
+
+## ⛔ No aplicado a ninguna base
+
+Ni a dev. El ② lo ejecuta el fundador con Javier, base por base, con el `SELECT` de duplicados
+delante en cada una.
