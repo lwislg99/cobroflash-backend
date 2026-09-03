@@ -34,6 +34,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
 import { extraerTextoPdf } from './_texto-del-pdf.mjs';
+// SCRUM-694: el scanner de TypeScript, no un filtro por lineas.
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const U = await import('../dist/core/utils/utils.js');
@@ -41,11 +43,13 @@ const { generateInvoicePdf } = await import('../dist/modules/invoicing/infra/pdf
 const { fmtMoneyAlbaran } = await import('../dist/modules/jobs/app/routes/albaranPublicVista.js');
 
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
-/** Sólo el código: sin esto, los guards se cazan en los comentarios que explican la prohibición. */
-const soloCodigo = (s) => s.split(/\r?\n/)
-  .filter((l) => { const t = l.trimStart(); return !t.startsWith('//') && !t.startsWith('*') && !t.startsWith('/*'); })
-  .map((l) => l.replace(/\s*\/\/.*$/, ''))
-  .join('\n');
+/*
+ * Sólo el código: sin esto, los guards se cazan en los comentarios que explican la prohibición.
+ *
+ * SCRUM-694 · lo hace el scanner de TypeScript (`tests/_solo-codigo.mjs`) en vez del filtro por
+ * líneas que había aquí. Aquél era de los «completos» y aun así se comía código real: su
+ * `.replace(/\s*\/\/.*$/)` cortaba en el `//` de una URL dentro de una cadena.
+ */
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────
 

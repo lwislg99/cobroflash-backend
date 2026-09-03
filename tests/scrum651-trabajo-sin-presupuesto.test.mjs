@@ -125,7 +125,8 @@ test('SCRUM-651 · el cliente es obligatorio, y es lo ÚNICO obligatorio', () =>
   assert.equal(r.ok, true,
     '🔴 se exige algo más que el cliente. En una avería el pro escribe lo mínimo y sigue; la '
     + 'dirección y la descripción se añaden después con el PATCH que ya existe.');
-  assert.deepEqual(r.datos, { customerId: 7, direccion: null, descripcion: null, titulo: null });
+  assert.deepEqual(r.datos,
+    { customerId: 7, direccion: null, descripcion: null, titulo: null, tipoIntervencion: null });
 });
 
 test('SCRUM-651 · 🔴 por esta puerta NO entra un `quoteId`', () => {
@@ -278,9 +279,14 @@ test('SCRUM-651 · el vocabulario es EXACTAMENTE el aprobado, y en su orden', ()
 });
 
 test('SCRUM-651 · 🔴 un valor FUERA DE LOS TRES no entra, y el rojo lo nombra', () => {
+  // 🔴 AUSENTE NO ES INVALIDO, Y HAY TRES FORMAS DE AUSENTE, no una: `undefined` (el campo no
+  // viaja), `null` y `''` — que es lo que manda un `<select>` con la opcion vacia elegida.
+  // Tratarlas como un valor equivocado bloquearia el envio legitimo de un formulario en el que
+  // el profesional no eligio tipo, que es un caso previsto: el tipo se elige, no se hereda, y
+  // por eso se puede no elegir. Las tres se comprueban aparte, al final de este test.
   for (const malo of [
-    'REPARACION', 'reparacion_asistencia', 'AVERIA', 'OTRO', 'MANTENIMIENTO ', '',
-    null, undefined, 3, {}, [], true,
+    'REPARACION', 'reparacion_asistencia', 'AVERIA', 'OTRO', 'MANTENIMIENTO ',
+    3, {}, [], true,
   ]) {
     assert.equal(esTipoIntervencion(malo), false,
       `🔴 «${JSON.stringify(malo)}» SE HA COLADO COMO TIPO DE INTERVENCION.` + String.fromCharCode(10)
@@ -290,39 +296,59 @@ test('SCRUM-651 · 🔴 un valor FUERA DE LOS TRES no entra, y el rojo lo nombra
 
     // Y la puerta lo rechaza NOMBRANDO el motivo, no en silencio.
     //
-    // 🔴 `undefined` NO ENTRA EN ESTA MITAD, Y LA DISTINCION IMPORTA: «no lo he mandado» y «he
-    // mandado una palabra que no existe» son dos cosas. El campo es OPCIONAL —en una averia se
-    // teclea lo justo—, asi que omitirlo es legitimo y tiene que seguir abriendo el Trabajo.
-    // Es la misma disciplina de ausente-contra-cero que el resto de este ticket.
-    if (malo === undefined) continue;
+    // (las tres formas de AUSENTE se comprueban al final de este test)
     const r = datosDeTrabajoDirecto({ customerId: 7, tipoIntervencion: malo });
     assert.equal(r.ok, false, `🔴 la puerta acepta «${JSON.stringify(malo)}» como tipo de intervencion.`);
     assert.equal(r.error, 'tipo_intervencion_invalido',
       `🔴 se rechaza, pero por el motivo equivocado (${r.error}): quien lo lea no sabra que arreglar.`);
   }
 
-  // AUSENTE NO ES INVALIDO: sin el campo, el Trabajo se abre igual.
-  assert.equal(datosDeTrabajoDirecto({ customerId: 7 }).ok, true,
-    '🔴 omitir el tipo de intervencion se trata como un error. El campo es opcional: en una averia '
-    + 'el pro teclea lo justo y sigue.');
+  // AUSENTE NO ES INVALIDO, y las TRES formas abren el Trabajo dejando el tipo en `null`.
+  for (const ausente of [undefined, null, '']) {
+    const cuerpo = ausente === undefined ? { customerId: 7 } : { customerId: 7, tipoIntervencion: ausente };
+    const r2 = datosDeTrabajoDirecto(cuerpo);
+    assert.equal(r2.ok, true,
+      `🔴 ${JSON.stringify(ausente)} se trata como un error, y es AUSENTE: el campo es`
+      + ' opcional, y un `<select>` sin elegir manda exactamente eso.');
+    assert.equal(r2.datos.tipoIntervencion, null,
+      '🔴 ausente tiene que quedar en `null`, no en una cadena vacia: «sin tipo» es UN estado.');
+  }
 });
 
-test('SCRUM-651 · 🔴 un tipo VALIDO tampoco se traga en silencio mientras no haya columna', () => {
-  // La columna es territorio del fundador y todavia no esta (el diff, en docs/master/SCRUM-651.md).
-  // Aceptar el dato y no guardarlo seria el fallo mudo de este ticket cometido otra vez: el pro
-  // elige «Mantenimiento», el producto contesta 201, y ese dato no existe en ninguna parte.
+test('SCRUM-651/tecnosel · 🔴 el tipo de intervencion SE GUARDA DE VERDAD', () => {
+  // 🔴 ESTE TEST NO ES NUEVO: ES EL DE ANTES, DADO LA VUELTA. Protegia «no ofrezcas un campo
+  // que no se puede guardar» mientras la columna no existia, y rechazaba incluso un valor
+  // valido para que el dato no se perdiera en silencio (201 y el dato en ninguna parte).
+  //
+  // La columna ya esta (`jobs.tipo_intervencion`), asi que el hecho vigilado cambia y el guard
+  // se REAPUNTA en vez de retirarse. EL HECHO QUE VIGILA AHORA, en una frase:
+  //
+  //   🔴 que el tipo que elige el profesional LLEGUE A LA FILA que se escribe, y que un valor
+  //      de fuera del vocabulario cerrado siga sin entrar.
+  //
+  // Las dos mitades importan: sin la primera vuelve el fallo mudo que el test original evitaba;
+  // sin la segunda, el vocabulario deja de ser cerrado (regla 27).
   for (const bueno of TIPOS_INTERVENCION) {
     const r = datosDeTrabajoDirecto({ customerId: 7, tipoIntervencion: bueno });
-    assert.equal(r.ok, false,
-      `🔴 SE ACEPTA «${bueno}» Y NO HAY DONDE GUARDARLO. El 201 mentiria: el dato se pierde y nadie`
-      + ' se entera. Cuando la columna exista, esto se abre en tres lineas y este test es la lista.');
-    assert.equal(r.error, 'tipo_intervencion_sin_columna',
-      '🔴 el motivo tiene que decir QUE FALTA, no un generico: es la diferencia entre «arregla el '
-      + 'schema» y «revisa tu formulario».');
+    assert.equal(r.ok, true, `🔴 se rechaza «${bueno}», que ES del vocabulario aprobado.`);
+    assert.equal(r.datos.tipoIntervencion, bueno,
+      '🔴 el tipo no llega a los datos: se acepta y se pierde por el camino.');
+
+    const fila = filaDeTrabajoDirecto(9, r.datos, null);
+    assert.equal(fila.tipoIntervencion, bueno,
+      `🔴 EL TIPO NO LLEGA A LA FILA QUE SE ESCRIBE. El profesional elige «${bueno}», el producto`
+      + ' contesta 201 y ese dato no existe en ninguna parte: es exactamente el fallo mudo que'
+      + ' este guard evitaba cerrando la puerta, ahora cometido con la puerta abierta.');
   }
-  // Y sin el campo, el camino de siempre sigue abriendo trabajos.
-  assert.equal(datosDeTrabajoDirecto({ customerId: 7 }).ok, true,
-    '🔴 el vocabulario nuevo ha roto el alta normal: el campo es opcional.');
+
+  // AUSENTE NO ES UN VALOR: sin el campo, el Trabajo se abre igual y el tipo queda en `null`.
+  // No hay valor por defecto — el tipo se elige, no se hereda.
+  const sinTipo = datosDeTrabajoDirecto({ customerId: 7 });
+  assert.equal(sinTipo.ok, true, '🔴 el campo es opcional: en una averia se teclea lo justo.');
+  assert.equal(sinTipo.datos.tipoIntervencion, null,
+    '🔴 se ha inventado un tipo por defecto. Elegir por el profesional que clase de trabajo hizo'
+    + ' acaba impreso en un parte que firma el cliente.');
+  assert.equal(filaDeTrabajoDirecto(9, sinTipo.datos, null).tipoIntervencion, null);
 });
 
 test('SCRUM-651 · 🔴 UNA sola fuente del vocabulario, no dos listas', () => {

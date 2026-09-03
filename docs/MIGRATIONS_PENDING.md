@@ -1964,3 +1964,45 @@ intención.
 `schemaDrift.ts` compara **esperado ⊆ real** al arrancar: una columna de MÁS en la base es inocua,
 una de MENOS **impide arrancar producción** (SCRUM-220). El esquema entra en el PR ③ **cuando las
 tres bases la tengan**, junto con el cableado y los tests. **Sin partir.**
+
+## SCRUM-580 (paso ②) · `Customer.tags` — 2-sep-2026
+
+`customers.tags` (**JSONB, nullable, SIN default**). Las etiquetas del contacto (CONT-07).
+SQL en **`docs/sql/scrum-580-tags-por-contacto.sql`**, verificación en
+**`docs/sql/scrum-580-verificar.sql`**.
+
+**El tipo NO se escribió a mano:** lo generó `preview-migracion.mjs --desde` (o sea
+`prisma migrate diff`) con control positivo —27 tablas— y veredicto aditivo. Importa porque
+`schemaDrift` comprueba que la columna **exista, no su tipo**: creado TEXT arrancaría en verde y
+se pudriría al leer un array como cadena.
+
+### 🔴 SE NOMBRA LA BASE FÍSICA, Y EL PROCEDIMIENTO FUE ANTES-Y-DESPUÉS
+
+Esta casa ya tuvo dos veces el mismo defecto: una clave apuntando a otra base, y `_STAGING` y
+`_TESTS` siendo la misma cadena (SCRUM-668). **Aplicar dos veces sobre la misma base se ve
+EXACTAMENTE IGUAL que hacerlo bien**, así que se midió antes y después de cada una.
+
+**Bases físicas distintas alcanzables desde un árbol de trabajo: DOS.**
+
+| Base **física** | La resuelven | ANTES | DESPUÉS |
+|---|---|---|---|
+| **`yaqu_dev_javier`** (host `acela`) | `DATABASE_URL_DEV` | 2 filas · `tags` **ausente** | 3 filas · `tags` = **`jsonb`** |
+| **`railway`** (host `acela`) | `DATABASE_URL_STAGING` **+** `DATABASE_URL_TESTS` | 2 filas · `tags` **ausente** | 3 filas · `tags` = **`jsonb`** |
+| **producción** (host `autorack`) | — | ⛔ **PENDIENTE, la aplica el fundador** | — |
+
+El «antes» de la segunda base salió con `tags` **ausente**, que es lo que descarta que las dos
+cadenas apunten al mismo sitio — si hubiera salido con 3 filas, había que parar.
+
+**Control positivo en las cuatro lecturas:** `customers.billing_city` (`text`) y
+`quotes.clausulas_excluidas` (`jsonb`). Sin esas dos, la consulta no estaba mirando esa base y la
+ausencia de `tags` no significaría «no está» sino «no se vio nada». La segunda es además el
+control de **cómo se ve un JSONB bien creado** en esa misma base.
+
+Destinos acreditados ANTES con `scripts/comprobar-claves-bd.mjs` (`DATABASE_URL`: **ausente**, que
+es lo correcto en un árbol de trabajo). Turno de staging **tomado y soltado**; libre al terminar.
+
+### El orden, y por qué `prisma/schema.prisma` sigue sin tocarse
+
+`schemaDrift` compara **esperado ⊆ real** al arrancar: una columna de MÁS en la base es inocua,
+una de MENOS **impide arrancar producción**. El esquema entra en el PR ③ **cuando las tres bases la
+tengan**, junto con el cableado y los tests. Sin partir.
