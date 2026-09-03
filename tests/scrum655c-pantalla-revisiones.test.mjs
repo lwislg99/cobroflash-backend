@@ -1,4 +1,4 @@
-// tests/scrum704-pantalla-revisiones.test.mjs — SCRUM-704 (fila 9)
+// tests/scrum655c-pantalla-revisiones.test.mjs — SCRUM-655c (fila 9)
 //
 // LA VÍCTIMA: un gerente que manda al cliente la versión equivocada de `P2004226.1` porque la
 // pantalla le enseñó dos «vigentes», o le dijo «ésta es la única» de un presupuesto que tiene tres.
@@ -61,7 +61,7 @@ const DERIVAR = [
   { patron: /\bvigenteDe\s*\(/, que: 'vigenteDe — el que resuelve el empate en silencio' },
 ];
 
-test('SCRUM-704 · 🔴 EL INVARIANTE: la pantalla no deriva la vigente, la RECIBE', () => {
+test('SCRUM-655c · 🔴 EL INVARIANTE: la pantalla no deriva la vigente, la RECIBE', () => {
   const codigo = soloCodigo(FUENTE, 'quoteRevisiones.js');
 
   // SUELO del despojador: la cabecera de este módulo EXPLICA lo que prohíbe —cita `esVigente`,
@@ -90,7 +90,7 @@ test('SCRUM-704 · 🔴 EL INVARIANTE: la pantalla no deriva la vigente, la RECI
     '🔴 el detector no caza ni el caso evidente: su verde no significaría nada');
 });
 
-test('SCRUM-704 · 🔴 Y CAE CON EL MECANISMO VIEJO: el `vigente` sale del payload, no del orden', () => {
+test('SCRUM-655c · 🔴 Y CAE CON EL MECANISMO VIEJO: el `vigente` sale del payload, no del orden', () => {
   const { ctx, contenedor } = montar();
 
   // El payload dice que la vigente es la 33. Se le da la lista en un orden que induce a error —la
@@ -116,7 +116,7 @@ test('SCRUM-704 · 🔴 Y CAE CON EL MECANISMO VIEJO: el `vigente` sale del payl
 // 🔴 EL SUELO: cero revisiones es CEGUERA
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-704 · 🔴 SUELO: cero revisiones NO se pinta como «esta es la única versión»', () => {
+test('SCRUM-655c · 🔴 SUELO: cero revisiones NO se pinta como «esta es la única versión»', () => {
   const { ctx, contenedor } = montar();
 
   for (const roto of [null, undefined, {}, { revisiones: [] }, { revisiones: 'nada' }]) {
@@ -140,7 +140,7 @@ test('SCRUM-704 · 🔴 SUELO: cero revisiones NO se pinta como «esta es la ún
 // CONTROL POSITIVO y la regla de lo firmado
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-704 · CONTROL POSITIVO: un presupuesto SIN revisiones se pinta como hoy', () => {
+test('SCRUM-655c · CONTROL POSITIVO: un presupuesto SIN revisiones se pinta como hoy', () => {
   const { ctx, contenedor } = montar();
   const UNA = { vigenteId: 5, revisiones: [{ id: 5, revision: 0, numero: 'P2004230', firmado: false, vigente: true }] };
 
@@ -154,7 +154,7 @@ test('SCRUM-704 · CONTROL POSITIVO: un presupuesto SIN revisiones se pinta como
   assert.ok(!contenedor.innerHTML.includes('.0'), '🔴 ha aparecido un «.0» que el papel no lleva');
 });
 
-test('SCRUM-704 · 🔴 una revisión FIRMADA no se ofrece para editar', () => {
+test('SCRUM-655c · 🔴 una revisión FIRMADA no se ofrece para editar', () => {
   const { ctx, contenedor } = montar();
 
   assert.equal(ctx.puedeEditarseLaRevision({ firmado: true }), false,
@@ -172,7 +172,7 @@ test('SCRUM-704 · 🔴 una revisión FIRMADA no se ofrece para editar', () => {
     'un botón que el servidor no atiende es peor que no tenerlo.');
 });
 
-test('SCRUM-704 · la versión abierta no se ofrece «ver», y las otras sí', () => {
+test('SCRUM-655c · la versión abierta no se ofrece «ver», y las otras sí', () => {
   const { ctx, contenedor } = montar();
   ctx.pintarRevisiones(contenedor, TRES, 33);
   const html = contenedor.innerHTML;
@@ -184,7 +184,7 @@ test('SCRUM-704 · la versión abierta no se ofrece «ver», y las otras sí', (
   assert.ok(html.includes('P2004226.1'), '🔴 no se pinta el número con su revisión');
 });
 
-test('SCRUM-704 · ⛔ el módulo no toca dinero ni pinta importes', () => {
+test('SCRUM-655c · ⛔ el módulo no toca dinero ni pinta importes', () => {
   const codigo = soloCodigo(FUENTE, 'quoteRevisiones.js');
   for (const patron of [/€/, /\btotal\b/, /precio/i]) {
     assert.ok(!patron.test(codigo),

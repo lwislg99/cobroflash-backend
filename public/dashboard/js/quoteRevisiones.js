@@ -1,4 +1,4 @@
-// public/dashboard/js/quoteRevisiones.js — SCRUM-704 (fila 9) · LAS REVISIONES, EN PANTALLA.
+// public/dashboard/js/quoteRevisiones.js — SCRUM-655c (fila 9) · LAS REVISIONES, EN PANTALLA.
 //
 // Los presupuestos de Tecnosel se numeran `P2004226.1`: ese «.1» es una REVISIÓN. El cliente pide
 // un cambio, se rehace, y **el número base no cambia**. Aquí se ve cuáles hay y cuál está vigente.

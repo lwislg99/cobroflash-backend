@@ -390,7 +390,7 @@ const CENSO = Object.freeze({
   // Sale del censo el commit que apruebe los textos, y ese commit BORRA la entrada, no la pone a
   // 0 (precedente SCRUM-424/405).
   'parteDetailView.js': 1,
-  // 🔴 SCRUM-704 (fila 9) · 3-sep-2026 · `quoteRevisiones.js` ENTRA con 1, A CONCIENCIA.
+  // 🔴 SCRUM-655c (fila 9) · 3-sep-2026 · `quoteRevisiones.js` ENTRA con 1, A CONCIENCIA.
   //
   // Es el selector de revisiones del presupuesto. Su microcopy NO está aprobada (regla 30): se
   // propone con las palabras que el gerente ya usa —«revisión», y el número tal cual,
