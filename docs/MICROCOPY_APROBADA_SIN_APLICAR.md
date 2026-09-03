@@ -1,3 +1,27 @@
+> # ⛔ REGISTRO CONGELADO — no añadas aquí (SCRUM-709, 3-sep-2026)
+>
+> **Este fichero era la fuente única de las aprobaciones de microcopy y ya no lo es.** No se borra:
+> es un registro fechado y **todo lo que dice era cierto cuando se escribió**, igual que
+> `docs/MIGRATIONS_PENDING.md`. Se conserva entero, sin tocar ni un literal.
+>
+> **Las aprobaciones NUEVAS van a `docs/microcopy/`, un fichero por aprobación:**
+>
+> ```
+> docs/microcopy/AAAA-MM-DD-SCRUM-<n>-<ranura>.md
+> ```
+>
+> **Por qué se partió.** Todas las sesiones añadían al final de ESTE fichero, así que colisionaban
+> una vez **por par de ramas**: cuatro sesiones aprobando el mismo día son seis conflictos
+> garantizados. En dos días hubo **ocho**, y las ocho se resolvieron igual —conservar los dos
+> addenda—, lo que demuestra que el conflicto no informaba de nada: era una factura. Dos sesiones
+> que escriben ficheros distintos no chocan nunca.
+>
+> **El listado del directorio ES el índice.** No hay ni habrá un fichero-índice que cada sesión
+> tenga que editar para apuntar su línea: eso sería el mismo defecto con otro nombre.
+>
+> **Para buscar dónde consta una aprobación** —aquí dentro o en `docs/microcopy/`— hay una sola
+> función: `aprobacionesDeMicrocopy()` en `tests/_microcopy-aprobada.mjs`. Barre los dos sitios.
+
 # Microcopy APROBADA por el fundador, pendiente de aplicar
 
 **Aprobada:** 17-ago-2026 (regla 30) · **Estado: aplicado todo lo de las tandas A–E.**

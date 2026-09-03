@@ -226,3 +226,27 @@ SCRUM-507.** Compruébalo en cada uno que tenga más de una línea.
 Su mensaje perdió tres nombres —`NF_PENDIENTE`, `MARCA_MICRO`— porque los backticks se los comió el
 shell al escribirlo. **No se reescribe la historia para arreglar un mensaje** (y el hook de AA2
 bloquea `--force`, con razón): queda dicho aquí, que es donde se busca.
+
+---
+
+# SCRUM-402 · El último marcador de la puerta al parte
+
+**Medido contra:** `origin/main` = `336e026e6a14274676881ff1e247eab66ef06d2a` · 2026-09-03T15:02:49+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-709-microcopy-por-fichero`
+
+El fundador aprobó **«No se ha podido abrir el parte. Vuelve a intentarlo.»**, el aviso de cuando el
+botón «Parte de trabajo» no consigue abrir ni crear el parte. **No cambió ni una letra**: ya estaba
+en la voz de la casa —«no se ha podido», nunca «no hemos podido»—; lo único que se retira es el
+marcador que lo precedía.
+
+**Su registro estrena `docs/microcopy/` (SCRUM-709)**, y sirve de prueba de que el mecanismo funciona
+fuera de un test: `docs/microcopy/2026-09-03-SCRUM-402-abrir-parte-fallo.md`.
+
+**COMPROBADO ANTES DE TOCAR EL CENSO, no supuesto:** tras aplicarlo quedan **0** marcadores en
+`jobDetailView.js`, medidos con `soloEjecutable`. Por eso la entrada **se BORRA** en vez de bajar de
+número — que es exactamente el camino que dejó escrito su propia nota: bajar mientras quede marca,
+borrar cuando no quede ninguna. **Ninguna entrada salió del censo con su marcador todavía en el
+código.**
+
+Y el número en prosa del suelo del escáner decía «hay 36 medidos» cuando el censo suma **13**: se
+ajusta **al medido**, no al esperado. El desfase venía de varios tickets, no sólo de éste.
