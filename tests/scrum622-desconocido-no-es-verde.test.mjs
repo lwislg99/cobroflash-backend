@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // «NO LO SÉ» NO SE PINTA DE VERDE
 //
-// El encargo señalaba `|| SEMAFORO_META.verde` (`invoicesView.js:520`) y pedía medir PRIMERO si
+// El encargo señalaba `|| SEMAFORO_META.verde` (`invoicesView.js:532`) y pedía medir PRIMERO si
 // se alcanza. Se midió, y la respuesta tiene dos mitades que conviene no mezclar:
 //
 //   · **Ése NO se alcanza hoy.** Cuatro caminos comprobados y cerrados (ver más abajo). Por eso
@@ -142,7 +142,7 @@ test('SCRUM-622 · 🔴 EL CENSO: queda UNA red benigna, y es la que espera deci
     `🔴 CIEGO: solo he barrido ${ficheros} ficheros. Un barrido que no encuentra árbol devuelve un `
     + 'cero que se lee como «no hay ninguna».');
   assert.deepEqual(encontradas, [
-    'public/dashboard/js/invoicesView.js:520  SEMAFORO_META[grupo.semaforo] || SEMAFORO_META.verde',
+    'public/dashboard/js/invoicesView.js:532  SEMAFORO_META[grupo.semaforo] || SEMAFORO_META.verde',
   ], '🔴 EL CENSO NO CUADRA. Si ha SUBIDO, alguien ha escrito una red nueva que convierte «no lo sé» '
     + 'en «todo bien». Si ha BAJADO a cero, el `||` del semáforo se ha arreglado: bien, y entonces '
     + 'hay que borrar esta entrada CON su decisión escrita, no relajar el test.');
@@ -181,7 +181,7 @@ test('SCRUM-622 · ① el productor del semáforo es un union CERRADO de tres', 
   })(sf);
   assert.deepEqual(miembros, ['verde', 'ambar', 'rojo'],
     '🔴 el tipo `Semaforo` ha cambiado. Si ahora admite un cuarto valor —o cualquiera—, el '
-    + '`|| SEMAFORO_META.verde` de `invoicesView.js:520` PASA A SER ALCANZABLE y hay que arreglarlo '
+    + '`|| SEMAFORO_META.verde` de `invoicesView.js:532` PASA A SER ALCANZABLE y hay que arreglarlo '
     + 'antes de seguir: sin eso, el estado nuevo se le pinta al profesional como «AL DÍA».');
 });
 
