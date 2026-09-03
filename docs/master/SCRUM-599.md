@@ -2,9 +2,9 @@
 
 **Fecha:** 3-sep-2026 · **Carril:** navegación de documentos (producto) · **Gate:** sin gate — corre en `npm test`
 
-**Medido contra:** `origin/main` = `ce8f262a5270dbecfb3f503eaa8d1bd323db5683` · 2026-09-03T13:19:17+01:00
+**Medido contra:** `origin/main` = `336e026e6a14274676881ff1e247eab66ef06d2a` · 2026-09-03T13:19:17+01:00
 
-**Tanda:** **4.970 pruebas · 4.886 en verde · 0 fallos · 84 saltadas** — con `main` ya mergeado
+**Tanda:** **4.992 pruebas · 4.908 en verde · 0 fallos · 84 saltadas** — con `main` ya mergeado
 dentro y medida DESPUÉS del último cambio de código.
 
 > **ABSORBE SCRUM-585 (CONT-12 · atajo «N» en Clientes)**, aprobado por el fundador el
@@ -206,3 +206,58 @@ está haciendo otra sesión) · `scripts/_suelo-de-la-tanda.mjs` · sin dependen
 * No existe forma de crear un albarán fuera de un Trabajo (`POST /admin/jobs/{jobId}/albaranes` es el único endpoint), así que la lista global de albaranes es la única de las cuatro sin acción primaria.
 * El censo de SCRUM-622 identifica su única excepción por NÚMERO DE LÍNEA (`invoicesView.js:520`), así que cualquier edición por encima la desplaza y tumba el guard sin que haya cambiado nada de lo que vigila.
 * `tutorial.js` declara un paso para la vista `quotes-new` que hasta hoy se alcanzaba desde el submenú; sigue alcanzable por hash y por los cinco botones, pero nadie ha comprobado que el tutorial siga encontrando su ancla.
+
+---
+
+## Los dos rojos del CI, y cómo se arreglaron
+
+La tanda local salía verde y el CI encontró dos cosas más. Las dos eran **guards haciendo su
+trabajo sobre cambios deliberados de este ticket**, no regresiones.
+
+### ROJO 1 · el control positivo de SCRUM-698: «Clientes monta 63 nodos y antes montaba 62»
+
+**Primero se demostró QUÉ es el nodo 63**, porque un número que sube no dice qué subió.
+Identificado **por identidad** —no por posición ni por texto—: es el **único `<kbd>` de la vista**,
+con la tecla «N», dentro del botón que registra el destino del atajo
+(`atajoNuevo.accionDe('customers')` devuelve función y el botón está montado).
+
+> ⚠️ **Y la medición corrigió la suposición de partida:** el botón **no es nuevo**. Ya estaba en
+> `main` como «+ Nuevo cliente» —así lo recogía el censo ANTES de esta entrada—. Lo que entra es
+> la TECLA que se pinta dentro. Por eso sube **uno** y no dos.
+
+Sólo entonces se actualizó **62 → 63**, con el motivo escrito **dentro del propio test**. **El
+mecanismo del guard no se toca**: sigue siendo una igualdad exacta, sin rango, sin tolerancia y
+dentro de la tanda. Lo que sube es la línea base; la exigencia, no.
+
+### ROJO 2 · `guard:contraste`: `nav-section-label` a 3,67 sobre el verde oscuro
+
+`--neutral-500` (`#6b756f`) sobre el fondo del sidebar (`#0f1c17`) da **3,67**, y AA pide **4,5**.
+
+**El token NO se toca**, y por eso: **lo usan 16 sitios**. Subirlo ahí habría movido dieciséis
+pares para arreglar uno — arreglar uno y romper tres es peor que el rojo de ahora. El color pasa a
+vivir **en `.nav-section-label` y sólo ahí**.
+
+| | color | ratio sobre `#0f1c17` |
+|---|---|---|
+| antes | `#6b756f` (token) | **3,67** ✗ |
+| ahora | `#818e88` (propio) | **5,14** ✔ |
+| ítem del menú (`--neutral-400`) | `#9aa5a0` | 6,14 |
+
+**Mantiene la intención**: la etiqueta sigue **por debajo** del ítem del menú, así que se lee como
+secundaria, que es lo que es. **No se relajó el umbral ni se metió el par en «conocidos»** — esa
+lista es deuda registrada, no un cajón para lo nuevo.
+
+> **Medido en navegador real sobre el CSS real**, no calculado a ojo: fondo `rgb(15, 28, 23)`
+> —el mismo que reportó el guard—, etiqueta `rgb(129, 142, 136)`, ratio **5,14**.
+>
+> ⚠️ **Hueco:** `guard:contraste` **no arranca en esta máquina** («NO PUDE ARRANCARLO en 3
+> intentos»), y su propio mensaje avisa de que eso es **NO MEDIDO**, no «sin defectos». Por eso la
+> comprobación se hizo con la fórmula de WCAG sobre los colores computados en una página que carga
+> la hoja de estilos de verdad. Quien pueda correr el guard, que lo confirme.
+
+### Sobre el marcador de microcopy
+
+**Este ticket no pintó ningún marcador**: los tres rótulos cabían medidos en su caja, así que no
+hizo falta. Comprobado igualmente cuál es la grafía que el censo cuenta, con el número delante:
+`tests/scrum402-…:48` declara `const MARCA = '[PENDIENTE'`. La forma `[[MICROCOPY-PENDIENTE-…]]`
+**no la ve ese censo**, así que no es un marcador: es una frase sin aprobar camino de la pantalla.

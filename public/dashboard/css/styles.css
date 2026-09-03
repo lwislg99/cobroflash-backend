@@ -155,7 +155,13 @@ img { max-width: 100%; display: block; }
   font-weight: 700;
   letter-spacing: .08em;
   text-transform: uppercase;
-  color: var(--neutral-500);
+  /* 🔴 SCRUM-599 · COLOR PROPIO, y NO se toca el token. Sobre el verde oscuro del sidebar
+     (#0f1c17), --neutral-500 (#6b756f) da 3,67 y AA pide 4,5: el rotulo de seccion no llegaba.
+     Subirlo en el TOKEN habria movido los 16 sitios que lo usan —arreglar uno y romper tres es
+     peor que el rojo—, asi que el color vive aqui y solo aqui.
+     #818e88 da 5,14 (medido con la formula de WCAG, no a ojo) y SIGUE por debajo de los items
+     del menu (--neutral-400, 6,89): la etiqueta se lee como secundaria, que es su intencion. */
+  color: #818e88;
   padding: 12px 8px 4px;
 }
 .nav-section-label:first-child { padding-top: 4px; }
