@@ -33,9 +33,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import {
   vistasDelDispatch, entradasDeLaBarra, vistasQueAlguienAbre, vistasSinCamino, sinCamino,
+  diagnostico,
 } from './_censo-vistas-dispatch.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
@@ -50,7 +52,7 @@ test('SCRUM-433 · SUELO: se leen los `case` del switch de verdad', () => {
     + '`renderView`. O el dispatch se ha movido, o el extractor dejó de encontrarlo. No se puede '
     + 'afirmar que no falta ninguna pantalla — ni que falta.');
   assert.ok(entradasDeLaBarra(RAIZ).size >= 10, '🔴 no se leen las entradas de la barra');
-  assert.ok(vistasQueAlguienAbre(RAIZ).size >= 5, '🔴 no se leen las llamadas de navegación');
+  assert.ok(vistasQueAlguienAbre(RAIZ).abiertas.size >= 5, '🔴 no se leen las llamadas de navegación');
 });
 
 test('SCRUM-433 · SUELO: el detector distingue un alias de una vista real', () => {
@@ -102,7 +104,7 @@ test('SCRUM-433 · CONTROL NEGATIVO (a): un alias NO cuenta como huérfana', () 
   const inalcanzable = sinCamino({
     vistas: [...vistas, { nombre: 'vista-de-prueba-sin-camino', alias: null }],
     barra: entradasDeLaBarra(RAIZ),
-    abre: vistasQueAlguienAbre(RAIZ),
+    abre: vistasQueAlguienAbre(RAIZ).abiertas,
   });
   assert.ok(inalcanzable.includes('vista-de-prueba-sin-camino'),
     '🔴 el detector no marca ni una vista real sin ningún camino: está ciego, y entonces el '
@@ -134,7 +136,7 @@ test('SCRUM-433 · CONTROL NEGATIVO (b): una vista real CON entrada tampoco cuen
 test('SCRUM-433 · las pantallas de DETALLE cuentan por quien las abre, no por la barra', () => {
   // Se afirma explícitamente porque es la mitad que evita seis falsos positivos, y porque el día
   // que alguien «simplifique» el guard a «barra o nada», esto dirá por qué no.
-  const abre = vistasQueAlguienAbre(RAIZ);
+  const abre = vistasQueAlguienAbre(RAIZ).abiertas;
   const barra = entradasDeLaBarra(RAIZ);
   const detalle = ['quotes-detail', 'jobs-detail', 'invoice-detail', 'albaran-detail', 'customer-360'];
   for (const v of detalle) {
@@ -162,7 +164,7 @@ test('SCRUM-433 · SCRUM-432 sacó `Plantillas` de la barra sin chocar conmigo �
   // que es la que no se puede comprobar de otra forma.
   const { vistas } = vistasDelDispatch(RAIZ);
   const barra = entradasDeLaBarra(RAIZ);
-  const abre = vistasQueAlguienAbre(RAIZ);
+  const abre = vistasQueAlguienAbre(RAIZ).abiertas;
 
   // PREMISA, ahora la de después del movimiento: fuera de la barra y con camino propio.
   assert.ok(!barra.has('templates'),
@@ -185,3 +187,73 @@ test('SCRUM-433 · SCRUM-432 sacó `Plantillas` de la barra sin chocar conmigo �
     '🔴 sin la pestaña, `Plantillas` no tiene barra ni quien la abra, y este guard no lo nota. '
     + 'Entonces no vigila lo que dice vigilar.');
 });
+
+// ═══ SCRUM-433 · el peaje del censo, y lo que no se puede resolver ════════════════════════
+
+test('SCRUM-433 · el censo resuelve UN SALTO: navegar desde una variable cuenta', () => {
+  // 🔴 EL MOTIVO DEL ARREGLO, y no es un falso positivo: era un PEAJE. La forma natural de una tira
+  // de pestañas es `renderAppView(p.vista)` desde el bucle, y DOS sesiones independientes tuvieron
+  // que renunciar a ella —cada una por su lado— para no chocar con este censo. Un guard que moldea
+  // el código a su conveniencia cobra un precio que nadie declaró.
+  const { abiertas } = vistasQueAlguienAbre(RAIZ);
+  assert.ok(abiertas.size >= 5, '🔴 el censo no lee casi ninguna navegación: está roto');
+
+  // Y que la resolución sea REAL, no que el censo dé todo por bueno: se prueba sobre el núcleo,
+  // con las dos formas que se quieren resolver y una que no.
+  const casos = [
+    ["const v = 'panel-secreto'; renderAppView(v);", 'panel-secreto', 'variable con literal'],
+    ["const T = [{ vista: 'panel-secreto' }]; T.forEach((p) => renderAppView(p.vista));",
+      'panel-secreto', 'propiedad de un objeto, que es la forma del bucle'],
+  ];
+  for (const [codigo, esperada, que] of casos) {
+    const abre = resolverEnFuente(codigo);
+    assert.ok(abre.abiertas.has(esperada),
+      `🔴 no se resuelve el salto por ${que}: «${codigo}» no anota «${esperada}»`);
+    assert.deepEqual(abre.noResueltas, [],
+      `🔴 se resuelve y AUN ASÍ se declara sin resolver: ${que}`);
+  }
+});
+
+test('SCRUM-433 · lo que NO se puede resolver se DECLARA, no se acusa', () => {
+  // El suelo especial de este arreglo: un salto que no se puede seguir sin ejecutar el programa no
+  // se convierte en acusación. Pero tampoco se calla — el silencio se lee como «todo resuelto», y
+  // ésa es exactamente la ambigüedad que este censo existe para quitar.
+  const abre = resolverEnFuente('renderAppView(calcularVista());');
+  assert.equal(abre.abiertas.size, 0, '🔴 se ha inventado una vista de una llamada irresoluble');
+  assert.equal(abre.noResueltas.length, 1,
+    '🔴 una llamada irresoluble no se declara: pasa en SILENCIO, y entonces «cero huérfanas» puede '
+    + 'significar «no supe mirar» sin que nadie lo note.');
+  assert.match(abre.noResueltas[0].texto, /calcularVista/,
+    '🔴 lo declarado no dice CUÁL fue: sin el fragmento, el aviso no se puede investigar');
+});
+
+test('SCRUM-433 · el veredicto ENSEÑA cuántas no supo resolver, siempre', () => {
+  // No basta con que la función lo devuelva: el veredicto que consume el guard tiene que traerlo
+  // pegado. Si viviera aparte, el día que alguien lea solo `huerfanas` volvería el silencio.
+  const d = diagnostico(RAIZ);
+  assert.ok(Array.isArray(d.noResueltas),
+    '🔴 el diagnóstico no trae las llamadas sin resolver: la lista de huérfanas se leería como completa');
+  assert.ok(d.leidos >= 20, `🔴 solo ${d.leidos} ficheros leídos: el censo no está mirando donde cree`);
+  process.stdout.write(
+    `
+[SCRUM-433] ${d.leidos} ficheros · huérfanas ${d.huerfanas.length} · `
+    + `navegaciones sin resolver ${d.noResueltas.length}
+`);
+  for (const x of d.noResueltas) {
+    process.stdout.write(`    · ${x.fichero}:${x.linea}  ${x.texto}
+`);
+  }
+});
+
+/** Resuelve sobre una fuente escrita aquí, sin tocar el árbol: así los casos son exactos. */
+function resolverEnFuente(codigo) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'censo-'));
+  const publico = path.join(dir, 'public', 'dashboard', 'js');
+  fs.mkdirSync(publico, { recursive: true });
+  fs.writeFileSync(path.join(publico, 'caso.js'), codigo);
+  try {
+    return vistasQueAlguienAbre(dir);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}

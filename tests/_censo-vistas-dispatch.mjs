@@ -75,22 +75,94 @@ export function entradasDeLaBarra(raiz) {
  * Las vistas que ALGUIEN abre desde el producto, con `renderAppView('x', …)` — la API pública de
  * navegación. Es como se llega a las pantallas de detalle, que no están ni pueden estar en la barra.
  *
+ * ── 🔴 POR QUÉ RESUELVE UN SALTO, Y QUÉ COSTABA NO HACERLO ─────────────────────────────────
+ * La primera versión leía **solo el literal**: `renderAppView('templates')`. No daba falsos
+ * positivos, así que parecía correcta. Lo que hacía era peor de ver y peor de vivir:
+ *
+ *   **obligaba a escribir el código de otra manera.**
+ *
+ * Medido, y con dos víctimas independientes: al construir la pestaña de Presupuestos (SCRUM-432)
+ * la forma natural era `renderAppView(p.vista)` desde el bucle de las pestañas, y **dos sesiones
+ * que no se hablaban** —cada una por su lado— tuvieron que renunciar a ella y escribir los
+ * destinos a mano para no chocar con este censo. Su propio comentario lo dice: *«más corto, y
+ * parecía más limpio… el censo de SCRUM-433 lee justo eso»*.
+ *
+ * Un guard que cobra ese peaje no es neutral: moldea el código a su conveniencia, y el día que
+ * alguien navegue desde un bucle sin saberlo se lleva un rojo sin motivo. Se resuelve **un salto**,
+ * igual que en SCRUM-245.
+ *
+ * ── LO QUE NO SE PUEDE RESOLVER SE DICE ────────────────────────────────────────────────────
+ * Un salto es un salto: hay expresiones que no se pueden seguir sin ejecutar el programa. Ésas
+ * **no se acusan y no se callan**: se devuelven aparte, contadas, y quien llame tiene que
+ * enseñarlas. Callarlas sería lo de siempre — el silencio leyéndose como «todo resuelto».
+ *
  * ⚠️ Estar en `HASH_VIEWS` NO cuenta como camino. Es alcanzable escribiendo la URL, y eso no es
- * una forma en que un profesional encuentre una pantalla. Hoy no cambia nada (medido: la única que
- * dependería de ello, `export`, la abre `settingsView.js`), pero se dice para que la decisión esté
- * escrita y no se herede por accidente.
+ * una forma en que un profesional encuentre una pantalla.
+ *
+ * @returns {{abiertas: Map<string,string[]>, noResueltas: {fichero:string,linea:number,texto:string}[], leidos:number}}
  */
 export function vistasQueAlguienAbre(raiz) {
   const dir = path.join(raiz, DIR_JS);
   const abiertas = new Map();
-  for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.js'))) {
+  const noResueltas = [];
+  const ficheros = fs.readdirSync(dir).filter((x) => x.endsWith('.js'));
+
+  for (const f of ficheros) {
     const codigo = fs.readFileSync(path.join(dir, f), 'utf8');
-    for (const m of codigo.matchAll(/renderAppView\(\s*['"]([^'"]+)['"]/g)) {
-      if (!abiertas.has(m[1])) abiertas.set(m[1], []);
-      if (!abiertas.get(m[1]).includes(f)) abiertas.get(m[1]).push(f);
-    }
+    const sf = ts.createSourceFile(f, codigo, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+
+    // ── El salto: los literales que este fichero asigna, por nombre de variable y de propiedad ──
+    // Se recoge TODO el fichero y no solo el ámbito exacto. Es a propósito, y es la misma decisión
+    // que en SCRUM-245: seguir el ámbito de verdad exige un analizador que no tenemos, y errar
+    // hacia «resuelvo de más» aquí solo puede producir un FALSO NEGATIVO en una vista que además
+    // tendría que llamarse igual que otra. Errar al revés produce el peaje que este cambio quita.
+    const porVariable = new Map();
+    const porPropiedad = new Map();
+    const recoger = (n) => {
+      if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name)
+          && n.initializer && ts.isStringLiteral(n.initializer)) {
+        if (!porVariable.has(n.name.text)) porVariable.set(n.name.text, new Set());
+        porVariable.get(n.name.text).add(n.initializer.text);
+      }
+      if (ts.isPropertyAssignment(n) && n.initializer && ts.isStringLiteral(n.initializer)) {
+        const clave = ts.isIdentifier(n.name) || ts.isStringLiteral(n.name) ? n.name.text : null;
+        if (clave) {
+          if (!porPropiedad.has(clave)) porPropiedad.set(clave, new Set());
+          porPropiedad.get(clave).add(n.initializer.text);
+        }
+      }
+      ts.forEachChild(n, recoger);
+    };
+    recoger(sf);
+
+    const anotar = (vista) => {
+      if (!abiertas.has(vista)) abiertas.set(vista, []);
+      if (!abiertas.get(vista).includes(f)) abiertas.get(vista).push(f);
+    };
+
+    const visitar = (n) => {
+      if (ts.isCallExpression(n)) {
+        const callee = n.expression.getText(sf);
+        if (callee === 'renderAppView' || callee.endsWith('.renderAppView')) {
+          const a0 = n.arguments[0];
+          const linea = sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
+          if (a0 && ts.isStringLiteral(a0)) {
+            anotar(a0.text);                                   // el caso directo
+          } else if (a0 && ts.isIdentifier(a0) && porVariable.has(a0.text)) {
+            for (const v of porVariable.get(a0.text)) anotar(v);  // un salto: `const v = 'x'`
+          } else if (a0 && ts.isPropertyAccessExpression(a0)
+                     && porPropiedad.has(a0.name.text)) {
+            for (const v of porPropiedad.get(a0.name.text)) anotar(v); // un salto: `{ vista: 'x' }`
+          } else {
+            noResueltas.push({ fichero: f, linea, texto: n.getText(sf).slice(0, 90) });
+          }
+        }
+      }
+      ts.forEachChild(n, visitar);
+    };
+    visitar(sf);
   }
-  return abiertas;
+  return { abiertas, noResueltas, leidos: ficheros.length };
 }
 
 /**
@@ -110,9 +182,26 @@ export function sinCamino({ vistas, barra, abre }) {
 
 /** Lo mismo, sobre el árbol de verdad. */
 export function vistasSinCamino(raiz) {
-  return sinCamino({
-    vistas: vistasDelDispatch(raiz).vistas,
-    barra: entradasDeLaBarra(raiz),
-    abre: vistasQueAlguienAbre(raiz),
-  });
+  return diagnostico(raiz).huerfanas;
+}
+
+/**
+ * El veredicto COMPLETO: las huérfanas **y** lo que no se supo resolver.
+ *
+ * Van juntas a propósito. Una lista de huérfanas sin decir cuántas llamadas quedaron sin resolver
+ * se lee como «esto es todo», y no lo es: una vista podría estar viva por una llamada que el censo
+ * no supo seguir. **El silencio es la ambigüedad que este censo existe para quitar**, así que se
+ * devuelve al lado y quien llame está obligado a enseñarlo.
+ */
+export function diagnostico(raiz) {
+  const { abiertas, noResueltas, leidos } = vistasQueAlguienAbre(raiz);
+  return {
+    huerfanas: sinCamino({
+      vistas: vistasDelDispatch(raiz).vistas,
+      barra: entradasDeLaBarra(raiz),
+      abre: abiertas,
+    }),
+    noResueltas,
+    leidos,
+  };
 }
