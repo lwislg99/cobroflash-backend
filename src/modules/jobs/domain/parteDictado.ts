@@ -91,22 +91,34 @@ export interface PropuestaDelDictado {
  * el dictado no se entendió y **volver a dictar puede funcionar**; en la segunda se entendió y aun
  * así no salió ninguna línea, así que repetir no arregla nada y la salida es escribirlas.
  *
- * 🔴 FALTA LA TERCERA, la de `cantidadesRetiradas`, y falta A PROPÓSITO: ver la nota de abajo.
+ * 🔴 Y LA TERCERA ES SINGULAR PORQUE SE PINTA EN CADA LÍNEA, no como resumen: ver la nota de abajo,
+ * que cuenta cómo llegó a serlo.
  */
-export const AVISOS_DEL_DICTADO: Record<'dictado_vacio' | 'sin_lineas_reconocidas', string> = {
+export const AVISOS_DEL_DICTADO: Record<
+  'dictado_vacio' | 'sin_lineas_reconocidas' | 'cantidadesRetiradas',
+  string
+> = {
   dictado_vacio: 'No se ha entendido el dictado — vuelve a dictar o escríbelo a mano',
   sin_lineas_reconocidas: 'No se ha podido sacar ninguna línea — escríbelas tú',
+  // 🔴 SINGULAR y POR LÍNEA. Aprobado así el 2-sep-2026 DESPUÉS de medir que
+  // `cantidadesRetiradas` trae una entrada por línea y puede traer exactamente una: el plural no
+  // concordaba ni como resumen. Se pinta UNA VEZ EN CADA LÍNEA a la que le falta la cantidad.
+  //
+  // ⚠️ Si algún día hace falta ADEMÁS un resumen («3 líneas sin cantidad»), ése es un texto
+  // DISTINTO y lo aprueba el fundador entonces. No se deriva de éste poniéndolo en plural.
+  cantidadesRetiradas: 'Falta la cantidad — ponla tú',
 };
 
-// 🔴 `cantidadesRetiradas` NO TIENE TEXTO APLICADO, y no es un olvido.
+// ⚠️ EL TERCERO LLEGÓ EN SINGULAR, Y LA MEDICIÓN ES LA QUE LO DECIDIÓ. Se deja escrito porque el
+// camino importa más que el resultado: el fundador lo aprobó primero en PLURAL —«Faltan las
+// cantidades»— dando por hecho que era un resumen, y pidió parar si se pintaba por línea.
 //
-// El fundador aprobó «Faltan las cantidades — ponlas tú» en PLURAL, dando por hecho que el aviso es
-// un resumen, y pidió parar si se pinta por línea. Medido: `cantidadesRetiradas` es un array con
-// UNA ENTRADA POR LÍNEA, cada una con su `descripcion`, y **puede traer exactamente una**
-// (comprobado ejecutándolo). Con una sola línea, el plural no concuerda ni siquiera como resumen.
+// Medido antes de aplicarlo: `cantidadesRetiradas` es un array con UNA ENTRADA POR LÍNEA, cada una
+// con su `descripcion`, y **puede traer exactamente una** (comprobado ejecutándolo, no razonándolo).
+// Con una sola línea el plural no concordaba ni como resumen. Se paró, se dijo, y él lo cambió.
 //
-// No se elige por él ni se inventa un singular: la concordancia es suya, no del que cablea. Queda
-// declarado en `docs/MICROCOPY_APROBADA_SIN_APLICAR.md` como aprobado y NO aplicado, con el motivo.
+// La lección para quien venga: **el dato manda el texto**, y una concordancia no se elige por el
+// fundador desde el sitio que cablea.
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // ① ¿EL TEXTO DICE ESA CANTIDAD?
@@ -142,11 +154,16 @@ function normalizar(texto: string): string {
 /**
  * 🔴 EL CONTROL QUE DECIDE EL TICKET: la cantidad sólo sobrevive si el dictado la contiene.
  *
+ * ⚠️ NO SE EXPORTA, y es deliberado (SCRUM-411): su consumidor real es `sanearDictadoDelParte`,
+ * aquí dentro. Exportarla «para el test» añade superficie pública que nadie de fuera usa, y el
+ * censo de huérfanos la contaría como entregada. Se prueba POR LA SUPERFICIE: el test le pasa
+ * una cantidad al saneador y mira si sobrevive, que es lo que de verdad le pasa en producción.
+ *
  * Devuelve `undefined` —ausente, no cero— cuando el número no es utilizable o cuando el texto no
  * lo respalda. Cero y negativo son la misma clase de basura de dictado y reciben la misma
  * respuesta que lo inventado: no hay cantidad.
  */
-export function cantidadRespaldadaPorElTexto(bruto: unknown, dictado: string): number | undefined {
+function cantidadRespaldadaPorElTexto(bruto: unknown, dictado: string): number | undefined {
   const n = Number(bruto);
   if (!Number.isFinite(n) || n <= 0) return undefined;
 

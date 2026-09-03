@@ -171,8 +171,30 @@ const R = analizar(RAIZ);
 // módulos de dominio, 289 alcanzables, 8 inalcanzables**. Ocho, y `revision.ts` ya no está.
 //
 // Queda UNO de los que esperaban gate: `parteDictado.ts` (la pantalla del parte, otra sesión).
+// ✅ 9 → 8 · 2-sep-2026 · SCRUM-683 (cableado). BAJA, y baja por lo que su propia entrada dejó
+// dicho: **`parteDictado.ts` YA TIENE CONSUMIDOR**, y es la pantalla del parte, como estaba
+// escrito. El cable: `partes.routes.ts` → `POST /admin/partes/:id/dictado`, que ordena el dictado
+// con `suggestLineasDeParte` y devuelve la propuesta SIN escribir nada en el parte.
+//
+// ⚠️ Y baja RECONTADO, no restado: ejecutado `analizar()` sobre el árbol de hoy → **126 módulos de
+// dominio, 289 alcanzables, 8 inalcanzables**. La entrada de arriba prometía «baja cuando
+// `parteDictado.ts` tenga consumidor» y NO prometía un número, que es justo por lo que no ha hecho
+// falta corregirla: una frase que nombra el módulo no caduca.
+//
+// Queda UNO esperando su gate: `revision.ts`, el campo de revisión en el esquema.//
+// ⚠️ 2-sep-2026 · SEGUNDA VEZ EN EL DÍA CON ESTE CONTADOR, y la misma forma: los DOS bloques de
+// arriba bajan de 9 a 8, y NO son el mismo 8 — SCRUM-683 saca `parteDictado.ts` y SCRUM-655 fase
+// B saca `revision.ts`. Cada uno contó sobre su árbol y en el suyo tenía razón.
+//
+// 🔴 Elegir un lado habría dejado el tope UNO POR ENCIMA de lo real, que es como un trinquete
+// deja de proteger sin que nadie lo note. RECONTADO ejecutando `analizar()` sobre el árbol YA
+// MEZCLADO: **126 módulos de dominio, 290 alcanzables, 7 inalcanzables.**
+//
+// Y con esto **se vacía la cola de los que esperaban gate**: ni `parteDictado.ts` ni
+// `revision.ts` están ya en la lista. Los 7 que quedan son los de siempre — el bloque fiscal y
+// los motores de oficina— y ninguno es de hoy.
 // ═══════════════════════════════════════════════════════════════════════════════════════
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 8;
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 7;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 

@@ -88,6 +88,25 @@ export const CATEGORIAS = {
  * `módulo::export`, no la longitud: por eso da igual cómo se agrupen las líneas.
  */
 export const DECLARADOS = [
+  // ── SCRUM-683 (cableado) · lo que destapa DARLE SUPERFICIE AL DICTADO ──────────────────
+  //
+  // Mismo efecto que el bloque de abajo: al cablear `parteDictado.ts`, el censo deja de contarlo
+  // como un módulo huérfano ENTERO y pasa a mirarlo por dentro. Lo que queda a la vista es LA
+  // PUERTA — `aLineaDelParte`, el paso entre una PROPUESTA y una línea del parte, que exige la
+  // cantidad confirmada por el técnico y lanza nombrando la línea si no la hay.
+  //
+  // Hoy la confirmación viaja por el `PATCH` de siempre, que trae su propia validación
+  // (`validarLineasDelTecnico`), así que la puerta está construida y probada y sin llamador de
+  // producción todavía.
+  //
+  // ⚠️ Y AL DECLARARLA SALE UN HALLAZGO QUE NO SE ARREGLA AQUÍ (regla 9, carril de SCRUM-652 fase
+  // C): las dos NO comprueban lo mismo. `validarLineasDelTecnico` acepta `Number.isFinite(unds)`
+  // —o sea, **0 y negativas**— y `aLineaDelParte` exige `> 0`. Tocar la validación de esa ruta
+  // cambiaría el comportamiento de una pantalla ya mergeada por otra sesión: se reporta.
+  { modulo: 'src/modules/jobs/domain/parteDictado.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-09-02',
+    motivo: 'La puerta entre la propuesta del dictado y la línea del parte: exige cantidad confirmada por el técnico y lanza nombrando la línea. La confirmación va hoy por el PATCH, que trae su propia validación; su cable es el de esa pantalla.',
+    exports: ['aLineaDelParte'] },
   // ── SCRUM-652 (T3 fase C) · lo que destapa DARLE SUPERFICIE AL PARTE ───────────────────
   //
   // Mientras `parteTrabajo.ts` era un módulo inalcanzable ENTERO, sus exports no se contaban uno
