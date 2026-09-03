@@ -72,6 +72,19 @@ const CENSO = Object.freeze({
   // aprobar el copy los apaga de golpe (mismo patron que SCRUM-421 dejo escrito aqui). El dia
   // que el fundador los firme, esta entrada se BORRA — no se pone a 0.
   'jobNuevoModal.js': 1,
+  // 🔴 SCRUM-652 (fase D) · 2-sep-2026 · `jobDetailView.js` ENTRA con 2, A CONCIENCIA.
+  //
+  // Son la PUERTA al parte de trabajo: el rótulo del botón que lo abre desde el Trabajo, y el
+  // aviso de cuando no se puede abrir. Los dos textos son propuesta, no aprobación (regla 30).
+  //
+  // Entran porque la alternativa era peor: sin botón, `parteDetailView.js` seguía siendo un
+  // fichero cargado en el índice al que no llegaba nadie —construido, precargado por el service
+  // worker, con sus tests en verde, y sin una sola puerta—. Un marcador se ve y se corrige; una
+  // pantalla inalcanzable no se ve, y ya estuvo así una fase entera.
+  //
+  // Salen del censo el commit que apruebe los textos, y ese commit BAJA el número o BORRA la
+  // entrada según queden marcas o no (precedente SCRUM-424/405).
+  'jobDetailView.js': 2,
   // SCRUM-650 (T1) · ENTRA A CONCIENCIA con 1, y por el MISMO motivo que `jobNuevoModal.js`:
   // EL MECANISMO NO EXISTE SIN TEXTO. Es el selector de QUIEN EJECUTA el trabajo —el campo
   // «Tecnico» del parte de papel, donde Tecnosel escribe «Israel, Miguel y Jesus.L»—, y un
