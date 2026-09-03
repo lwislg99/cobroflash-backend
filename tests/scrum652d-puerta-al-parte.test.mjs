@@ -26,14 +26,23 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
+// SCRUM-694: el filtro de comentarios NO se fabrica aquí. `soloCodigo` usa el escáner de
+// TypeScript y distingue un `//` dentro de una cadena de uno que abre comentario; un regex a
+// mano falla en los DOS sentidos — deja pasar una cadena escrita en un comentario y se come
+// código real en cuanto un literal lleva dos barras. El trinquete de SCRUM-694 me cazó con
+// esto mismo el 3-sep, y es la segunda vez.
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const JS = path.join(RAIZ, 'public', 'dashboard', 'js');
 const INDEX = path.join(RAIZ, 'public', 'dashboard', 'index.html');
 
-/** Sin comentarios: un `case` citado en una explicación no pinta nada. */
+/**
+ * Sin comentarios, con el escáner de la casa. Se conserva el nombre local porque lo usan ocho
+ * llamadas; lo que cambia es QUIÉN filtra: `_solo-codigo.mjs` en vez de un regex propio.
+ */
 function sinComentarios(txt) {
-  return txt.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  return soloCodigo(txt, 'vista.js');
 }
 
 /** Las vistas que `renderView` sabe PINTAR. */
