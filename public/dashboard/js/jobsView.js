@@ -49,7 +49,7 @@ async function renderJobsView(container) {
     // que es la razon de ser de esta pantalla para un merchant que todavia no tiene ninguno.
     bNuevo.className = 'btn-primary';
     bNuevo.id = 'jobs-nuevo-btn';
-    bNuevo.textContent = MARCA_651 + ' Trabajo nuevo';
+    bNuevo.textContent = 'Trabajo nuevo';
     bNuevo.addEventListener('click', () => abrirModalTrabajoNuevo(() => renderJobsView(container)));
     zonaNuevo.appendChild(bNuevo);
 

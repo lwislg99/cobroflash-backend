@@ -709,3 +709,43 @@ mío: dije «13 textos, doce sin firmar» y los textos visibles eran **12** —c
 declaración de la constante—. Firmados «Tipo de intervención» y «Sin especificar», **quedan 10**,
 listados literales y con su línea en `docs/master/SCRUM-703.md`. El día que se firmen, `MARCA_651`
 se retira entera igual que `MARCA_OFICINA`.
+
+---
+
+## Addendum · Los diez del Trabajo, más el rótulo de la puerta (3-sep-2026) · **APLICADOS EN EL MISMO ACTO**
+
+> Con esta firma **`MARCA_651` se retira ENTERA**. Mientras quedó UNO sin firmar, la constante tenía
+> que seguir viva: retirarla antes habría dado por aprobados los demás sin que nadie los firmara, y
+> habrían llegado a la pantalla del profesional como si llevaran la firma del fundador.
+
+| Qué es | Texto aprobado | Dónde |
+|---|---|---|
+| Etiqueta de cliente | Cliente | `jobNuevoModal.js` |
+| Etiqueta de dirección | Dirección de la obra | ídem |
+| Etiqueta de descripción | Qué hay que hacer | ídem |
+| Botón de crear | Abrir trabajo | ídem |
+| Título del modal | Trabajo nuevo | ídem |
+| Aviso · sin clientes | Primero necesitas un cliente. | ídem |
+| Aviso · no se leen | No se han podido cargar tus clientes. | ídem |
+| Aviso · falta elegir | Elige un cliente. | ídem |
+| Error al crear | No se ha podido abrir el trabajo. | ídem |
+| Botón de la lista | Trabajo nuevo | `jobsView.js` |
+| **Rótulo de la puerta al parte** | Parte de trabajo | `jobDetailView.js` |
+
+🔴 **El único que cambió respecto al código es el séptimo**: decía «No hemos podido cargar tus
+clientes.» y la voz de la casa **no dice «no hemos podido»**. Es la tercera pantalla en que se
+corrige lo mismo.
+
+«Trabajo nuevo» es **el mismo texto en dos ficheros** —el título del modal y el botón de la lista—:
+firmar uno firmaba los dos, y así se aplicó.
+
+**Los dos censos, apretados en el mismo commit y comprobados antes de tocarlos:**
+
+- `jobNuevoModal.js` **sale** del censo de SCRUM-402 (cero marcadores en el fichero: medido, no
+  supuesto). La entrada se **borra**, no se pone a 0.
+- `jobDetailView.js` **baja de 2 a 1 y no se borra**: se firmó el rótulo del botón y **no** el aviso
+  de cuando no se puede abrir, que sigue marcado. Bajarlo a 0 habría sacado del censo un marcador
+  que sigue pintándose.
+
+⚠️ **Queda sin firmar, en la misma zona de la puerta:** «No se ha podido abrir el parte. Vuelve a
+intentarlo.» (`jobDetailView.js`, el aviso cuando la puerta falla). No estaba en la lista de once.
