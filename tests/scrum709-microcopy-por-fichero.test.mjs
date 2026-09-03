@@ -198,16 +198,39 @@ function fuentes() {
   return out;
 }
 
-/** Los comentarios de un fuente, por el escáner de TypeScript: nada de ventanas ni de grep. */
+/**
+ * Los comentarios de un fuente, por el escáner de TypeScript: nada de ventanas ni de grep.
+ *
+ * 🔴 Y LOS `//` CONSECUTIVOS SE UNEN EN UN BLOQUE, que es lo que hace el guard de SCRUM-387 y por
+ * la razón que él dejó escrita: la marca y su `(SCRUM-264)` suelen ir en LÍNEAS DISTINTAS. La
+ * primera versión de este control miraba cada comentario suelto por separado y veía **6 de las 12**
+ * citas —medido—: no era una ventana de N líneas, pero era de la misma familia, un alcance
+ * arbitrario que dejaba fuera justo lo que venía en la línea de al lado.
+ */
 function comentariosDe(codigo) {
   const esc = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.Standard, codigo);
-  const out = [];
+  const trozos = [];
   let k;
   while ((k = esc.scan()) !== ts.SyntaxKind.EndOfFileToken) {
     if (k === ts.SyntaxKind.SingleLineCommentTrivia || k === ts.SyntaxKind.MultiLineCommentTrivia) {
-      out.push(esc.getTokenText());
+      trozos.push({
+        texto: esc.getTokenText(),
+        suelto: k === ts.SyntaxKind.SingleLineCommentTrivia,
+        inicio: esc.getTokenStart(),
+        fin: esc.getTokenEnd(),
+      });
     }
   }
+  // Dos `//` son el mismo bloque si entre ellos sólo hay espacios y saltos de línea.
+  const out = [];
+  let acc = null;
+  for (const t of trozos) {
+    const pegado = acc && acc.suelto && t.suelto && /^[ \t\r\n]*$/.test(codigo.slice(acc.fin, t.inicio));
+    if (pegado) { acc.texto += '\n' + t.texto; acc.fin = t.fin; continue; }
+    if (acc) out.push(acc.texto);
+    acc = { ...t };
+  }
+  if (acc) out.push(acc.texto);
   return out;
 }
 
@@ -230,8 +253,10 @@ test('SCRUM-709 · ✅ CONTROL POSITIVO: toda cita de una aprobación SIGUE apun
   assert.ok(marcas >= 30,
     `🔴 CIEGO: sólo se han visto ${marcas} marcas de «aprobado por el fundador» y había 39. `
     + 'Con el barrido a medias, «ninguna cita rota» no significa nada.');
-  assert.ok(citas.length >= 5,
-    `🔴 CIEGO: sólo ${citas.length} citas a documentos. Había 6 y este control existe para ellas.`);
+  assert.ok(citas.length >= 10,
+    `🔴 CIEGO: sólo ${citas.length} citas a documentos, y había 12 medidas uniendo los bloques de`
+    + ' comentario. Con el alcance a medias, «ninguna cita rota» no significa nada: era exactamente'
+    + ' el fallo de la primera versión de este control, que veía 6 de 12.');
 
   // ENUMERADO, texto por texto: cada cita, con su fichero y si resuelve.
   const rotas = citas.filter((c) => !c.existe);
