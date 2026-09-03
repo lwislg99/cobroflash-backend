@@ -237,12 +237,28 @@ test('SCRUM-651 · 🔴 el modal NO manda `quoteId`, ni tiene por donde', () => 
     + 'escritor acaba discrepando, y discrepar aqui es un Trabajo duplicado con el dinero repartido.');
 });
 
-test('SCRUM-651 · la microcopy sin aprobar sale de UNA sola constante (regla 30)', () => {
+// 🔴 ESTE GUARD SE QUEDÓ SIN SUJETO EL 3-sep-2026, y no se borra a ciegas: se pregunta qué
+// protegía y se REAPUNTA AL HECHO. Protegía que la microcopy SIN APROBAR de esta pantalla
+// saliera de UNA sola constante, para que aprobarla fuese tocar un sitio y no cazar ocho
+// literales sueltos. El fundador firmó los diez textos que quedaban y `MARCA_651` se retiró
+// entera: ya no hay microcopy sin aprobar aquí que agrupar. Lo que SÍ sigue protegiendo, y es
+// más fuerte, es un trinquete que no sabe aflojar: en esta pantalla no vuelve a entrar NI UN
+// marcador. Si mañana hace falta texto nuevo sin firmar, este rojo obliga a pasar por el
+// fundador antes de pintarlo (SCRUM-703).
+test('SCRUM-651 · 🔴 en el modal del Trabajo no vuelve a entrar NI UN marcador (regla 30)', () => {
   const modal = leer('public/dashboard/js/jobNuevoModal.js');
-  assert.equal((modal.match(/'\[PENDIENTE microcopy oficial\]'/g) || []).length, 1,
-    '🔴 los textos sin aprobar tienen que salir de UNA constante. Repartidos en literales sueltos, '
-    + 'aprobar el copy obliga a cazarlos uno a uno y el censo de SCRUM-402 cuenta ocho en vez de uno.');
-  assert.ok(modal.includes('MARCA_651'), '🔴 ha desaparecido la constante del marcador.');
+  // SIN COMENTARIOS: el comentario que EXPLICA la retirada nombra el marcador, y un guard de
+  // texto que se caza a sí mismo en su propia explicación ya mordió cuatro veces en un día.
+  // El filtro de comentarios es el COMPARTIDO de la casa, no uno nuevo: `soloEjecutable` ya está
+  // importado arriba y el guard de SCRUM-694 prohíbe estrenar otro. Un segundo filtro se separa
+  // del primero el día que alguien arregle un caso raro en uno solo.
+  const codigo = soloEjecutable(modal);
+  const marcas = codigo.match(/\[PENDIENTE microcopy oficial\]/g) || [];
+  assert.equal(marcas.length, 0,
+    `🔴 han vuelto ${marcas.length} marcador(es) a la pantalla de abrir un Trabajo. Sus textos `
+    + 'están FIRMADOS desde el 3-sep-2026: el texto nuevo se propone y se firma, no se pinta marcado.');
+  assert.ok(!/MARCA_651/.test(codigo),
+    '🔴 ha vuelto la constante del marcador. Se retiró entera al firmarse el último texto.');
 });
 
 test('SCRUM-651 · 🔴 el Trabajo directo guarda QUIEN LO ABRE, o su autor lo pierde de vista', () => {

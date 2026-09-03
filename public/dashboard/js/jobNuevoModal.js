@@ -7,18 +7,16 @@
 // el cliente es lo único obligatorio y todo lo demás se completa después con el detalle, que ya
 // sabe editarlo. En una urgencia el pro teclea lo justo y sigue.
 //
-// ⚠️ MICROCOPY SIN APROBAR (regla 30) SALVO «Tipo de intervención», firmada el 3-sep-2026 y
-// por eso ya sin marca. Los DEMÁS textos visibles salen de `MARCA_651`, UNA sola
-// constante: así aprobar el copy los apaga a la vez y el censo de SCRUM-402 cuenta 1, no ocho.
-// El día que el fundador los firme, se sustituyen y la entrada del censo se borra.
+// ✅ MICROCOPY APROBADA AL COMPLETO (regla 30): el fundador firmó los diez textos que quedaban
+// el 3-sep-2026, y con ellos `MARCA_651` se retiró ENTERA. Mientras quedó UNO sin firmar la
+// constante tenía que seguir viva: retirarla antes habría dado por aprobados los demás sin que
+// nadie los firmara. Ése era el motivo, y ya no se cumple.
 //
 // 🔴 LO QUE ESTE MODAL NO PROMETE: un Trabajo abierto así **no tiene presupuesto detrás**, así que
 // no tendrá el contraste «presupuestaste 10, llevas 7, quedan 3» ni el aviso de «te has pasado».
 // No se puede: no hay contra qué contrastar. La pantalla no lo finge — no pinta un eje a cero— y
 // este modal tampoco insinúa lo contrario.
 
-/** El marcador único de este ticket. Aprobar el copy = tocar solo esta constante. */
-var MARCA_651 = '[PENDIENTE microcopy oficial]';
 
 
 /**
@@ -36,7 +34,7 @@ function abrirModalTrabajoNuevo(alCrear) {
       '<div class="modal-body">' +
         '<div class="alert" id="tn-alert" style="display:none"></div>' +
         '<div class="field">' +
-          '<label for="tn-cliente">' + MARCA_651 + ' Cliente</label>' +
+          '<label for="tn-cliente">Cliente</label>' +
           '<select id="tn-cliente" style="width:100%"></select>' +
         '</div>' +
         '<div class="field">' +
@@ -52,18 +50,18 @@ function abrirModalTrabajoNuevo(alCrear) {
           '</select>' +
         '</div>' +
         '<div class="field">' +
-          '<label for="tn-direccion">' + MARCA_651 + ' Dirección de la obra</label>' +
+          '<label for="tn-direccion">Dirección de la obra</label>' +
           '<input id="tn-direccion" type="text" style="width:100%" maxlength="500"/>' +
         '</div>' +
         '<div class="field">' +
-          '<label for="tn-descripcion">' + MARCA_651 + ' Qué hay que hacer</label>' +
+          '<label for="tn-descripcion">Qué hay que hacer</label>' +
           '<textarea id="tn-descripcion" rows="4" style="width:100%" maxlength="2000"></textarea>' +
         '</div>' +
-        '<button class="btn-primary" id="tn-crear" style="width:100%;margin-top:8px">' + MARCA_651 + ' Abrir trabajo</button>' +
+        '<button class="btn-primary" id="tn-crear" style="width:100%;margin-top:8px">Abrir trabajo</button>' +
       '</div>' +
     '</div>';
   overlay.querySelector('.modal').prepend(
-    cabeceraModal({ titulo: MARCA_651 + ' Trabajo nuevo', idCierre: 'tn-cerrar' }),
+    cabeceraModal({ titulo: 'Trabajo nuevo', idCierre: 'tn-cerrar' }),
   );
   document.body.appendChild(overlay);
 
@@ -87,7 +85,7 @@ function abrirModalTrabajoNuevo(alCrear) {
     var lista = Array.isArray(cs) ? cs : (cs && cs.items) || [];
     if (!lista.length) {
       btn.disabled = true;
-      aviso(MARCA_651 + ' Primero necesitas un cliente.');
+      aviso('Primero necesitas un cliente.');
       return;
     }
     sel.innerHTML = lista.map(function (c) {
@@ -95,12 +93,12 @@ function abrirModalTrabajoNuevo(alCrear) {
     }).join('');
   }).catch(function () {
     btn.disabled = true;
-    aviso(MARCA_651 + ' No hemos podido cargar tus clientes.');
+    aviso('No se han podido cargar tus clientes.');
   });
 
   btn.onclick = function () {
     var customerId = Number(sel.value);
-    if (!customerId) { aviso(MARCA_651 + ' Elige un cliente.'); return; }
+    if (!customerId) { aviso('Elige un cliente.'); return; }
     btn.disabled = true;
     aviso('');
     apiRequest('/admin/jobs', {
@@ -117,11 +115,11 @@ function abrirModalTrabajoNuevo(alCrear) {
       if (typeof alCrear === 'function') alCrear(job);
     }).catch(function () {
       btn.disabled = false;
-      aviso(MARCA_651 + ' No se ha podido abrir el trabajo.');
+      aviso('No se ha podido abrir el trabajo.');
     });
   };
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { abrirModalTrabajoNuevo: abrirModalTrabajoNuevo, MARCA_651: MARCA_651 };
+  module.exports = { abrirModalTrabajoNuevo: abrirModalTrabajoNuevo };
 }
