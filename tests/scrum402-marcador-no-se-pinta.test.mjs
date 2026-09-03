@@ -70,6 +70,22 @@ const CENSO = Object.freeze({
   // aprobar el copy los apaga de golpe (mismo patron que SCRUM-421 dejo escrito aqui). El dia
   // que el fundador los firme, esta entrada se BORRA — no se pone a 0.
   'jobNuevoModal.js': 1,
+  // 🔴 SCRUM-591 (DOC-01) · 3-sep-2026 · `quotesView.js` ENTRA con 1, A CONCIENCIA.
+  //
+  // Es la opción de ALTA del selector de cliente del documento, y aquí pasa lo mismo que en
+  // SCRUM-651: EL MECANISMO NO EXISTE SIN TEXTO. Una `<option>` sin rótulo no se puede elegir,
+  // así que o se pinta el marcador o se inventa un literal que no ha aprobado nadie — y eso, en
+  // la pantalla de un profesional que paga, es peor que un marcador visible.
+  //
+  // ⚠️ Y SE ESCRIBE CON LA GRAFÍA QUE ESTE CENSO CUENTA (`[PENDIENTE`), a propósito: el encargo
+  // proponía `[[MICROCOPY-PENDIENTE-…]]`, medido y DESCARTADO porque este censo no lo ve —lo dice
+  // el comentario de más abajo, que ya lo pagó una vez—. Un marcador invisible para el trinquete
+  // es una frase sin aprobar en pantalla que nadie está contando.
+  //
+  // El asesor lo firma con la caja medida delante (SCRUM-591, en el navegador): el peor caso es
+  // un viewport de 901px —tres columnas—, 247,7px útiles ≈ 18 caracteres anchos, 29 estrechos o
+  // 34 de texto español real. El día que lo firme, esta entrada se BORRA — no se pone a 0.
+  'quotesView.js': 1,
   // 🔴 SCRUM-652 (fase D) · 2-sep-2026 · `jobDetailView.js` ENTRA con 2, A CONCIENCIA.
   //
   // Son la PUERTA al parte de trabajo: el rótulo del botón que lo abre desde el Trabajo, y el

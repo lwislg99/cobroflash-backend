@@ -279,6 +279,20 @@ export function nodo(tag, reg) {
     dispararClick() { return n.disparar('click'); },
     click() { return n.disparar('click'); },
     focus() {}, blur() {},
+    // 🔴 SCRUM-591 · `reset()`. NO LO TENÍA, y por eso el formulario de alta de cliente REVENTABA
+    // al abrirse desde el banco (`modalForm.reset is not a function`) — en el navegador lo abre
+    // un profesional todos los días. Un banco al que le falta un método del navegador no mide de
+    // menos: hace imposible medir, que es lo que este fichero lleva seis tickets corrigiendo.
+    //
+    // Se limita a lo que un `<form>.reset()` hace y que aquí es observable: devolver los controles
+    // de su subárbol a su valor de partida. NO se simula `defaultValue` —el mini-DOM no lo
+    // tiene— y por eso se vacía: es lo que hace el navegador con un formulario recién construido,
+    // que es el único caso que este banco monta.
+    reset() {
+      for (const h of todos(n)) {
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(h.tagName)) { h.value = ''; h.checked = false; }
+      }
+    },
     // SCRUM-451 · los atributos se GUARDAN. Antes `setAttribute` era un no-op y `getAttribute`
     // devolvía `null` siempre, así que `[aria-hidden="true"]` o `[type="checkbox"]` no se podían
     // resolver — y una vista que pusiera un atributo y luego lo buscara medía el banco, no el
