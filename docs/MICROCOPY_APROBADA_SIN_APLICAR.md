@@ -659,3 +659,29 @@ baja a 0:** el error de abrir un parte —hoy «No hemos podido abrir el parte.�
 lista de once. **Propuesta, siguiendo la voz que el fundador acaba de fijar:**
 
 > **No se ha podido abrir el parte**
+
+---
+
+## Addendum · El tipo de intervención (3-sep-2026) · **APLICADA EN EL MISMO ACTO**
+
+> El primer rótulo del recorrido: el desplegable con el que se abre un trabajo sin presupuesto.
+> La medición de punta a punta (SCRUM-703) lo encontró sin firmar siendo lo PRIMERO que ve quien
+> crea el trabajo. Los tres valores son los **literales del papel de Tecnosel**.
+
+| Qué es | Texto aprobado | Dónde vive |
+|---|---|---|
+| Etiqueta del desplegable | Tipo de intervención | `public/dashboard/js/jobNuevoModal.js` |
+| Valor 1 | Reparación / Asistencia técnica | `src/modules/jobs/domain/tipoIntervencion.ts` |
+| Valor 2 | Mantenimiento | ídem |
+| Valor 3 | Instalación | ídem |
+
+El valor 1 **cambió** respecto a lo que había en el código —decía «Reparación / asistencia»—: el
+papel de Tecnosel dice **«Asistencia técnica»**, con mayúscula y entero. Los rótulos viven en el
+servidor, no en el navegador: el vocabulario cerrado tiene UNA sola fuente.
+
+⚠️ **`MARCA_651` NO se retira: sujeta 13 textos y sólo UNO está firmado.** Quitar la variable
+habría dado por aprobados los otros doce sin que nadie los firmara. Siguen marcados los diez que
+quedan en el modal («Cliente», «Sin especificar», «Dirección de la obra», «Qué hay que hacer»,
+«Abrir trabajo», «Trabajo nuevo», los tres avisos y el error) y el botón de `jobsView.js`.
+**«Sin especificar» está dentro del mismo desplegable que se acaba de firmar y no venía en la
+lista de cuatro: queda a la espera.**

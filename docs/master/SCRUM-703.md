@@ -232,3 +232,38 @@ ALTER»** y no «roto». Los precios **no** dependen de ningún ALTER: viajan de
 `lineas`, que ya existe.
 
 Medición, no arreglo: **no se tocó nada de lo encontrado**.
+
+---
+
+# SCRUM-703 · El tipo de intervención, firmado — y la mudanza, resuelta sumando
+
+**Medido contra:** `origin/main` = `1f03815295aa3ba26920283f5daec16472d03854` · 2026-09-03T12:54:49+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-tecnosel-tipo-y-precios`
+
+**EL CONFLICTO ERA LA MUDANZA.** Mis dos bloques salieron de `SCRUM-684.md` y `SCRUM-685.md` hacia
+`SCRUM-703.md`, y `main` recibió esos mismos ficheros de otras sesiones **con mis bloques todavía
+dentro**: las otras los conservaron para no tocar trabajo ajeno. Se resolvió **sumando, no
+eligiendo**. Antes de borrar nada se verificó que mis dos bloques estaban **enteros** en el destino,
+comparándolos línea a línea contra la copia que `main` conserva y con control positivo del
+comparador: el segundo es idéntico, y las 10 líneas que `main` tiene de más en el primero son una
+nota que escribió **la otra sesión después** de la mudanza —no estaba en mi rama antes—. Esa nota se
+queda: es la dirección de reenvío y no es mía. Los 21 addenda de microcopy se conservan **todos**, de
+todos, en orden de fecha; el resolutor **para** si un lado viniera sin addendum, para no tirar uno
+sin verlo.
+
+**MICROCOPY APROBADA Y APLICADA EN EL MISMO ACTO:** «Tipo de intervención» y los tres literales del
+papel de Tecnosel. «Reparación / **Asistencia técnica**» **cambió** lo que había en el código, que
+decía «Reparación / asistencia».
+
+**🔴 `MARCA_651` NO se retiró, y es deliberado: sujeta 13 textos y sólo UNO está firmado.** Quitar la
+variable habría dado por aprobados los otros doce sin que nadie los firmara. Quedan marcados diez en
+el modal y uno en `jobsView.js`. **«Sin especificar» está en el mismo desplegable que se acaba de
+firmar y no venía en la lista de cuatro: se queda a la espera.** El censo de `src/` sí baja: la
+entrada de `tipoIntervencion.ts` **se BORRA** —no se pone a 0— tal como predijo el comentario que
+vivía en ella, y el trinquete de SCRUM-667 aprieta.
+
+**LA REPETICIÓN DEL RECORRIDO NO SE HIZO, y el motivo es medido, no supuesto.** La condición era que
+`main` tuviera las dos puertas. **Tiene una.** `scrum-684-cablear-dictado` **ya está en `main`** —su
+rama sobrevive sin podar, que es lo que la hace parecer viva—; `scrum-652-puerta-al-parte` **no lo
+está**. Comprobado con `git merge-base --is-ancestor` contra las dos puntas, y con suelo: el
+comparador responde «sí» cuando algo sí está. Falta la puerta del **salto 3**, del trabajo al parte.
