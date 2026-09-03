@@ -75,6 +75,23 @@ const SRC = /\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'`=<>]+))/i;
 const MENCIONA_SRC = /\bsrc\b/i;
 
 /**
+ * SCRUM-676 · El MISMO lector de valores, para los atributos que necesitan las hojas.
+ *
+ * `src` era un caso particular de esta pregunta. Escribir un segundo lector para `href` habría
+ * sido volver a tener dos opiniones sobre qué es «el valor de un atributo» — el defecto que este
+ * módulo existe para no repetir, una capa más abajo.
+ */
+const HREF = /\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'`=<>]+))/i;
+const REL = /\brel\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'`=<>]+))/i;
+const valorDe = (m) => (m ? (m[1] ?? m[2] ?? m[3]) : null);
+
+/** La etiqueta de apertura de un `<link>`. Como la de `<script>`, puede ocupar varias líneas. */
+const APERTURA_LINK = /<link\b([^>]*)>/gi;
+
+/** ¿Remota? El MISMO criterio que para los `<script>`: esquema o `//`. */
+const ES_REMOTA = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
+
+/**
  * Los `<script>` de un marcado, clasificados. PURA sobre el HTML que recibe: no lee disco, para
  * que sus controles se ejerciten con corpus sintéticos. Un extractor que sólo sabe mirar el índice
  * real no puede demostrar que ve las formas que hoy no están — y son justo las que hacen daño.
@@ -158,6 +175,104 @@ export function cegueraDelExtractor(res, minimo, donde = 'esta página') {
       + 'sería cierto sobre un conjunto vacío — un verde peor que un rojo. Y ojo: unas comillas\n'
       + '  simples producían exactamente este cero en tres extractores A LA VEZ, así que un cero\n'
       + '  unánime no es una confirmación: es el síntoma.';
+  }
+  return null;
+}
+
+/**
+ * SCRUM-676 · Las HOJAS DE ESTILO de un marcado, clasificadas. PURA, como su hermana.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * 🔴 POR QUÉ NO DERIVA DE `scriptsDeLaPagina`, Y POR QUÉ SÍ VIVE EN ESTE FICHERO
+ *
+ * Se midió antes de decidir la forma. `scriptsDeLaPagina` clasifica por `type=module` y por
+ * `defer`/`async`, que no existen en un `<link>`; y una hoja se decide por `rel`, que no existe
+ * en un `<script>`. Reusar aquella función habría sido meter dos poblaciones distintas en una.
+ *
+ * Lo que SÍ se reusa es todo lo demás, que es donde estaban los defectos: `sinComentarios`, el
+ * lector de valores de atributo (comillas dobles, simples o SIN comillas) y la doctrina de
+ * `ilegibles`. Por eso vive aquí: sigue habiendo UN solo sitio donde se lee una etiqueta.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * 🔴 LO QUE SE MIDIÓ, Y NO ES UNA MANÍA (SCRUM-676, 2-sep-2026)
+ *
+ * Había TRES lecturas de `<link>` en el repo y sobre `dashboard/index.html` las tres daban lo
+ * mismo: `/tokens.css` y `./css/styles.css`. **Ese acuerdo no valía nada.** Sobre las formas que
+ * hoy no están en el índice, las tres fallaban, y cada una por su lado:
+ *
+ *   · comillas SIMPLES     → `_banco-vistas` y el SELLADO de producción devolvían CERO.
+ *   · `<link>` COMENTADA   → `_banco-vistas` y el SELLADO la contaban como real.
+ *   · `?v=` en el href     → `recursosDe` devolvía CERO: exigía que el href ACABARA en `.css`.
+ *   · `href` antes de `rel` → `_banco-vistas` no la veía, y el índice real TIENE una así.
+ *   · `rel="preload"`      → `recursosDe` la contaba como hoja cargada, y no lo es.
+ *
+ * @returns {{
+ *   locales: string[],   // `rel` incluye `stylesheet` y el href es del árbol. La población.
+ *   remotas: string[],   // `rel=stylesheet` con esquema o `//` (las fuentes de Google).
+ *   otras: {rel: string|null, href: string}[],  // `icon`, `manifest`, `preconnect`, `preload`…
+ *   ilegibles: string[], // menciona `href` o `rel` y no se sabe leer → CEGUERA declarada.
+ * }}
+ */
+export function hojasDeLaPagina(html) {
+  const locales = [];
+  const remotas = [];
+  const otras = [];
+  const ilegibles = [];
+
+  for (const m of sinComentarios(html).matchAll(APERTURA_LINK)) {
+    const attrs = m[1] || '';
+    const crudo = () => m[0].replace(/\s+/g, ' ').trim();
+    const href = valorDe(HREF.exec(attrs));
+
+    if (href === null) {
+      // Un `<link>` sin `href` no le pide nada al navegador; uno que lo MENCIONA y no se deja
+      // leer es otra cosa muy distinta, y confundirlas es el defecto (la doctrina de `src`).
+      if (/\bhref\b/i.test(attrs)) ilegibles.push(crudo());
+      continue;
+    }
+
+    const rel = valorDe(REL.exec(attrs));
+    if (rel === null && /\brel\b/i.test(attrs)) {
+      // Menciona `rel` y no se sabe leer: no se puede clasificar. Meterla en `otras` sería
+      // decidir que NO es una hoja sin haberlo leído — un verde por la puerta de atrás.
+      ilegibles.push(crudo());
+      continue;
+    }
+
+    // `rel` es una LISTA de fichas: `rel="preload stylesheet"` es HTML legal.
+    if (!(rel || '').toLowerCase().split(/\s+/).includes('stylesheet')) {
+      otras.push({ rel, href });
+      continue;
+    }
+    if (ES_REMOTA.test(href)) remotas.push(href);
+    else locales.push(href);
+  }
+
+  return { locales, remotas, otras, ilegibles };
+}
+
+/**
+ * SCRUM-676 · Lo que un guard de HOJAS tiene que gritar antes de dar un veredicto, o `null`.
+ *
+ * Hermana de `cegueraDelExtractor`, y NO se fusionó con ella a propósito: aquélla la consumen
+ * tres guards que afirman sobre su texto, y cambiarle el mensaje para ahorrar diez líneas habría
+ * movido tres guards ajenos en un ticket que no va de eso. La copia va ATADA: `scrum676`
+ * comprueba que las dos existen y que cada una nombra su propia población.
+ */
+export function cegueraDeLasHojas(res, minimo, donde = 'esta página') {
+  if (res.ilegibles.length) {
+    return '🔴 EL EXTRACTOR NO SABE LEER ESTAS ETIQUETAS `<link>`:\n    '
+      + res.ilegibles.join('\n    ')
+      + '\n\n  No se cuentan de menos y no se callan: si esa forma es legítima, enséñasela a\n'
+      + '  `hojasDeLaPagina` en `tests/_scripts-de-la-pagina.mjs` — que es el ÚNICO sitio donde se\n'
+      + '  lee un `<link>`, para que no vuelva a haber tres opiniones sobre qué es una hoja.';
+  }
+  if (res.locales.length < minimo) {
+    return `🔴 EXTRACTOR CIEGO: veo ${res.locales.length} hojas LOCALES en ${donde} y hay al menos `
+      + `${minimo}.\n\n  Cero hojas no es «esta página no tiene estilos»: es «no supe leer el `
+      + 'marcado», y son\n  el mismo número con significados opuestos. Está medido que pasa: unas '
+      + 'comillas simples\n  producían exactamente este cero en DOS de las tres lecturas que había '
+      + 'antes de SCRUM-676.';
   }
   return null;
 }

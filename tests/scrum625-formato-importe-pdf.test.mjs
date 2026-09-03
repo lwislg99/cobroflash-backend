@@ -32,6 +32,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { extraerTextoPdf } from './_texto-del-pdf.mjs';
+// SCRUM-694: el scanner de TypeScript, no un filtro por lineas.
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const { generateQuotePdf, generateInvoicePdf, fmtImporte } =
@@ -131,11 +133,17 @@ test('SCRUM-625 · 🔴 el PDF de presupuesto ya no formatea importes con `toFix
   // Guard sobre el fuente, además del que lee el documento: `toFixed(2)` escribe punto SIEMPRE,
   // pase lo que pase el idioma, así que es la forma en la que este defecto volvería a entrar.
   const fuente = fs.readFileSync(path.join(RAIZ, 'src/modules/invoicing/infra/pdf/pdf.service.ts'), 'utf8');
-  const soloCodigo = fuente.split(/\r?\n/)
-    .filter((l) => !l.trimStart().startsWith('//') && !l.trimStart().startsWith('*'))
-    .map((l) => l.replace(/\s*\/\/.*$/, ''))
-    .join('\n');
-  const desdeQuote = soloCodigo.slice(soloCodigo.indexOf('export async function generateQuotePdf'));
+  // 🔴 SCRUM-694 · ÉSTE ERA EL FILTRO PARCIAL DE LOS TRECE, y el hueco tenía nombre: quitaba las
+  // líneas `//` y las `*` de continuación, pero NO las que ABREN un bloque (`/*` y `/**`). Esa
+  // primera línea sobrevivía, así que un `/** … toFixed(2) … */` explicando por qué está prohibido
+  // habría hecho saltar el guard por su propia documentación.
+  //
+  // Y hay un segundo motivo para el scanner aquí: este guard hace `slice(indexOf(…))` para acotar
+  // la función. `soloCodigo()` NO ENCOGE el texto —pone los comentarios en blanco y conserva los
+  // saltos—, así que el índice sigue apuntando al mismo sitio del fichero. Un filtro que acortara
+  // mediría OTRO bloque, en silencio.
+  const codigo = soloCodigo(fuente);
+  const desdeQuote = codigo.slice(codigo.indexOf('export async function generateQuotePdf'));
   assert.ok(desdeQuote.length > 1000, '🔴 SUELO: no encuentro la función del presupuesto');
   assert.ok(desdeQuote.includes('fmtImporte('), '🔴 SUELO: la función no usa el formateador, este guard mediría mal');
   assert.equal(

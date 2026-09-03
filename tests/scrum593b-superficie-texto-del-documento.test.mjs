@@ -13,6 +13,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+// SCRUM-694: el scanner de TypeScript, no un filtro por lineas.
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const MARCA = '[PENDIENTE microcopy oficial]';
@@ -126,14 +128,14 @@ test('SCRUM-593b · 🔴 el texto del profesional NUNCA se concatena en markup',
   // del módulo dice «Nunca `innerHTML`», y un buscador por texto no distingue la prohibición de la
   // infracción. Es la lección de SCRUM-349 —no cobrar un impuesto sobre la claridad del código—,
   // y volvió a morder aquí.
-  const soloCodigo = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/textoDelDocumento.js'), 'utf8')
-    .split(/\r?\n/)
-    .filter((l) => { const t = l.trimStart(); return !t.startsWith('//') && !t.startsWith('*') && !t.startsWith('/*'); })
-    .map((l) => l.replace(/\s*\/\/.*$/, ''))
-    .join('\n');
-  assert.equal(/innerHTML/.test(soloCodigo), false, '🔴 el módulo ha empezado a usar `innerHTML`.');
-  // SUELO del recorte: si `soloCodigo` se quedara vacío, el cero de arriba no significaría nada.
-  assert.ok(soloCodigo.includes('textContent'), '🔴 el recorte de comentarios se ha comido el código.');
+  // SCRUM-694 · el filtro por líneas se sustituye por el scanner de TypeScript. Y la variable pasa
+  // a llamarse `codigo`: `soloCodigo` es ahora la FUNCIÓN importada, y llamar igual al resultado y
+  // a la herramienta es justo como se confunden las dos preguntas que ese módulo separa.
+  const codigo = soloCodigo(
+    fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/textoDelDocumento.js'), 'utf8'));
+  assert.equal(/innerHTML/.test(codigo), false, '🔴 el módulo ha empezado a usar `innerHTML`.');
+  // SUELO del recorte: si el filtro se quedara vacío, el cero de arriba no significaría nada.
+  assert.ok(codigo.includes('textContent'), '🔴 el recorte de comentarios se ha comido el código.');
   const w = cargar();
   const veneno = 'antes</textarea><script>alert(1)</script>después';
   assert.equal(w.textoDelDocumentoPintado(veneno).textContent, veneno,

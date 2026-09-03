@@ -52,6 +52,15 @@ const MARCA = '[PENDIENTE';
  * a otra tiene que verse, y un total lo escondería (la lección del suelo por FUNCIÓN de SCRUM-392).
  */
 const CENSO = Object.freeze({
+  // Sprint Tecnosel · ENTRA A CONCIENCIA con 1: la pantalla donde la OFICINA pone los precios de
+  // un parte ya firmado. El mecanismo no existe sin texto —es un formulario— y su copy no está
+  // firmado: el fundador lo aprueba en docs/master/SCRUM-685.md. Se cuenta 1 y son ocho textos,
+  // todos de una sola constante `MARCA_OFICINA`, así que aprobarlos los apaga de golpe.
+  'parteOficinaView.js': 1,
+  // Y el TÍTULO de la vista, que lo pone el enrutador: mismo texto sin aprobar, otro fichero.
+  'app.js': 1,
+  // (el boton de Trabajos que lleva ahi NO entra: usa la constante `MARCA_651`, no un literal,
+  // asi que este censo —que cuenta LITERALES por AST— no lo ve, y con razon.)
   // SCRUM-651 (T2) · ENTRA A CONCIENCIA con 1, y el motivo es que EL MECANISMO NO EXISTE SIN
   // TEXTO: es el modal para abrir un Trabajo SIN presupuesto —una averia, el caso mas frecuente
   // del primer cliente real—, y un formulario sin rotulos no se puede rellenar.
@@ -247,7 +256,23 @@ const CENSO = Object.freeze({
   // NO se moverá** y entrará una superficie sin firmar en silencio. Quien añada un código mapeado
   // le pone SU constante, para que el fundador pueda firmar uno sin firmar los dos.
   'providersView.js': 1,
-  'customersView.js': 2,
+  // 🔴 SCRUM-575 (2-sep-2026) · `customersView.js` SALE DEL CENSO: pasó de 2 a 1 y de 1 a 0 en el
+  // mismo ticket, y la entrada se BORRA — no se pone a 0 — como dejaron escrito SCRUM-424,
+  // SCRUM-405 y SCRUM-593 aquí mismo: `censoActual()` sólo lista ficheros CON marcadores, así que
+  // un 0 sería una bajada permanente sin anotar.
+  //
+  // Las TRES marcas que tenía, con quién las firmó:
+  //   · el aviso de NIF/CIF mal formado ....... «Ese NIF/CIF no es válido. Compruébalo.»
+  //   · el rótulo del teléfono ................ «Teléfono»
+  //   · el aviso de identificador ya usado .... «Ese dato ya lo tiene otro cliente. Revísalo por
+  //                                              si es un duplicado.»
+  // Los dos últimos compartían UNA constante, y por eso hubo que PARTIRLA: sin partirla, aprobar
+  // el rótulo le habría cambiado el texto al aviso, que dice otra cosa. Lo dejó avisado SCRUM-615.
+  //
+  // ⚠️ SALIR DEL CENSO NO ES SALIR DE LA VIGILANCIA, y aquí no es una frase: lo fija **R4b**, y
+  // además se ha comprobado a propósito en este ticket metiendo un marcador nuevo en este mismo
+  // fichero y viendo que R4 lo caza por la rama `nuevos`. Un cero sin control positivo no es un
+  // cero: es un guard que dejó de mirar.
   'exportView.js': 1,
   // 🔴 17-ago-2026 · `invoiceDetailView.js` SALE DEL CENSO (tenía 9). El fundador aprobó los ocho
   // rótulos de acción, y el noveno era `MARCA_MICRO`, una constante que ya no consumía nadie y que
@@ -327,14 +352,12 @@ const CENSO = Object.freeze({
   // una puerta nueva, se usa la que está abierta, y todos se apagan con la misma decisión.
   //
   // CUENTA 1 Y PINTA 6, y la distinción es la de SCRUM-615: este censo cuenta MARCAS —una sola
-  // constante `MARCADOR` en `filtroClientes.js`— no rótulos. Las seis superficies son las 3
-  // pestañas, los 2 órdenes y el vacío de pestaña. **Aprobar UN texto no las apaga las seis**:
-  // son seis textos distintos que hoy comparten marcador, y ese día habrá que sacar esa `palabra`
-  // por separado. Se dice aquí para que nadie lo descubra al aprobar el primero.
-  //
-  // 🔴 VAN CON PALABRA DE TRABAJO DETRÁS, como `switchFormaJuridica` y por el mismo motivo escrito
-  // allí: con TRES pestañas el marcador pelado las dejaría idénticas y la pantalla inservible.
-  'filtroClientes.js': 1,
+  // SCRUM-581 (2-sep-2026) · LA ENTRADA SE BORRA, no baja a 0 — la convención que dejaron
+  // escrita aquí mismo SCRUM-424 y SCRUM-405. `filtroClientes.js` entró con 1 marcador (una
+  // constante que servía a seis ranuras) y sale porque el fundador RETIRÓ el marcador de la
+  // pantalla: «nada de marcadores en pantalla». Los seis textos siguen SIN APROBAR — lo que
+  // desaparece es el corchete visible, no la aprobación—, y eso lo vigila ahora
+  // `tests/scrum581-pestanas-y-orden-clientes.test.mjs`, no este censo.
   // SCRUM-615 (24-ago-2026) · SUBIDA A CONCIENCIA: la salida D+C pinta con marcador el aviso de
   // «este plazo se ha calculado sin el dato» en la bandeja de pendientes, y el error de guardado.
   //

@@ -493,3 +493,53 @@ es justo lo que el fundador dijo que no aprueba a ciegas.
 
 **No se elige un singular por él y no se aplica el plural «a ver qué pasa».** Queda aquí, aprobado y
 sin aplicar, hasta que decida — y hay un aserto que cae si alguien lo aplica sin esa decisión.
+
+---
+
+## Addendum · Dirección de facturación del cliente (2-sep-2026) · **APROBADAS, NO APLICADAS**
+
+**Medido contra:** `origin/main` = `354fdca362063a79a928ed5df7c5120363d64c0b` · 2026-09-02T18:33:54+01:00
+
+**SCRUM-579 (CONT-06).** Las cinco etiquetas del formulario de cliente
+(`public/dashboard/js/customersView.js`, el modal «Nuevo cliente» / «Editar cliente»). El fundador
+las firmó el 2-sep **literales y sin variantes**.
+
+| Ranura | Texto aprobado |
+|---|---|
+| calle | `Dirección` |
+| población | `Población` |
+| código postal | `Código postal` |
+| provincia | `Provincia` |
+| país | `País` |
+
+**Orden en pantalla, aprobado:** `Dirección` · `Población` · `Código postal` · `Provincia` · `País`.
+
+### 🔴 Es «Dirección» A SECAS, y esto queda escrito porque yo propuse otra cosa
+
+La propuesta que salió de este carril era **«Dirección (calle y número)»**, y **NO es la aprobada**.
+Se anota en vez de borrarse, por el mismo motivo que la aprobación retirada del menú del libro: sin
+este renglón, dentro de un mes alguien vuelve a añadir el paréntesis creyendo que aclara.
+
+Regla 30, aplicada a estas cinco: **no se abrevia** («CP» no vale), **no se reordena**, y **no se le
+añaden paréntesis ni aclaraciones**. Si alguien cree que hace falta la aclaración, **se pide**; no se
+añade.
+
+### Por qué van SIN marcador, y por qué se pidió la aprobación antes que el código
+
+**Producción despliega en cuanto se mergea.** Un `[PENDIENTE microcopy oficial]` en estos cinco
+rótulos no habría sido una nota interna: lo habría visto un profesional en su pantalla **a los cinco
+minutos** del merge, cinco veces en el mismo formulario. Por eso la aprobación se pidió **antes** del
+PR de código y no después — y por eso este ticket entrega sin una sola marca.
+
+### Estado: aprobadas y todavía sin pintar
+
+El formulario **aún no existe**: SCRUM-579 está parado a propósito en el orden de migración
+—① decisión → ② `ALTER` en las TRES bases → ③ un solo PR con schema + código + tests—, y a fecha de
+esta anotación el `ALTER` está **sólo en `yaqu_dev_javier`** (medido: DEV 5/5, STAGING 0/5).
+
+Se anotan aquí **ahora** y no cuando se pinten, porque un texto aprobado que se reteclea semanas
+después deja de ser el aprobado. Quien construya el formulario **copia de esta tabla**.
+
+⚠️ Y al aplicarlas va **un aserto que las compare con `===`**, como el de
+`tests/scrum683-parte-dictado.test.mjs`: un retoque «de paso» reabre una aprobación sin que nadie se
+entere.

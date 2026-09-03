@@ -36,7 +36,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { createRequire } from 'node:module';
 // SCRUM-670 · el ÚNICO sitio del repo donde se lee un `<script>` de un marcado.
-import { scriptsDeLaPagina, rutaDelDashboard } from './_scripts-de-la-pagina.mjs';
+import { scriptsDeLaPagina, rutaDelDashboard, hojasDeLaPagina } from './_scripts-de-la-pagina.mjs';
 const require = createRequire(import.meta.url);
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -182,6 +182,33 @@ export function almacenDeTeclas(inicial = {}) {
 }
 
 /** Un nodo del DOM de mentira: lo justo para que una vista corra y se pueda mirar lo que pintó. */
+/**
+ * 🔴 SCRUM-697 · INSERTAR **MUEVE**. Un nodo está en un sitio, no en dos.
+ *
+ * En el navegador, meter un nodo en un padre lo desengancha del que tuviera. Aquí las cuatro
+ * inserciones sólo hacían `hijos.push`/`unshift`, así que el nodo se quedaba colgando de los
+ * DOS y todo recorrido pasaba dos veces por él y por su descendencia.
+ *
+ * Lo destapó `customersView`, que hace DOM de manual perfectamente legítimo: mete la tabla en
+ * el `table-scroll` (l. 183) y luego la mueve al `data-card` (l. 207). Medido: la vista se
+ * llama UNA vez, crea UNA tabla, y aun así el recorrido daba 60 nodos para 41 —`tablas[0] ===
+ * tablas[1]` era `true`—, de donde salían «16 `<th>` para 8 columnas».
+ *
+ * NO producía rojos falsos: producía MEDICIONES falsas, que es de donde salen los verdes
+ * falsos. Y el modo de fallo más probable era el peor — ver un test pedir 8, verlo caer con 16
+ * y «arreglarlo» poniendo 16, fosilizando el defecto dentro de la aserción.
+ *
+ * ⚠️ NO SE HACE CON `removeChild`, y esto es lo delicado: `removeChild` DESREGISTRA el id a
+ * propósito (SCRUM-444), porque en el navegador `getElementById` no encuentra lo que ya no
+ * está en el documento. Pero MOVER no es QUITAR: el nodo sigue en el documento. Si el
+ * desenganche borrase el id, toda vista que mueva un nodo con id lo perdería en silencio —
+ * peor que el defecto que se venía a quitar. Se desengancha por IDENTIDAD y sin tocar
+ * `reg.porId`.
+ */
+function desengancha(h) {
+  if (h && h._padre) h._padre.hijos = h._padre.hijos.filter((x) => x !== h);
+}
+
 export function nodo(tag, reg) {
   const n = {
     tagName: String(tag).toUpperCase(),
@@ -189,8 +216,11 @@ export function nodo(tag, reg) {
     href: '', download: '', title: '', placeholder: '', name: '', src: '',
     style: { cssText: '', color: '', display: '', setProperty() {} },
     dataset: {}, hijos: [], _texto: '', _html: '', _padre: null,
-    appendChild(h) { if (h) h._padre = n; n.hijos.push(h); return h; },
-    append(...h) { for (const x of h) { if (x) x._padre = n; } n.hijos.push(...h); },
+    // SCRUM-697 · las CUATRO inserciones desenganchan antes de insertar. Si sólo lo hiciera
+    // `appendChild`, la próxima vista que use `prepend` traería el mismo síntoma con otra
+    // cara y costaría otro ticket entenderlo.
+    appendChild(h) { if (h) { desengancha(h); h._padre = n; } n.hijos.push(h); return h; },
+    append(...h) { for (const x of h) { if (x) { desengancha(x); x._padre = n; } } n.hijos.push(...h); },
     // ⚠️ SCRUM-444 · al quitar un nodo se DESREGISTRA su id. En el navegador, `getElementById` no
     // encuentra lo que ya no está en el documento; aquí seguía encontrándolo, así que un test que
     // borrara un contenedor y lo volviera a pedir recibía el nodo MUERTO y seguía escribiendo en
@@ -200,11 +230,11 @@ export function nodo(tag, reg) {
       n.hijos = n.hijos.filter((x) => x !== h);
       if (h) { h._padre = null; if (h._id && reg.porId.get(h._id) === h) reg.porId.delete(h._id); }
     },
-    insertBefore(h) { if (h) h._padre = n; n.hijos.unshift(h); return h; },
+    insertBefore(h) { if (h) { desengancha(h); h._padre = n; } n.hijos.unshift(h); return h; },
     // SCRUM-460 · `prepend`. No existía, y por eso `albaranDetailView` REVENTABA al montarse —
     // quedó reportado como hueco en SCRUM-451 y ahora bloqueaba el test que decide de H1. Nada
     // podía depender de él antes, porque llamarlo era un `TypeError`.
-    prepend(...h) { for (const x of h) { if (x) x._padre = n; } n.hijos.unshift(...h); },
+    prepend(...h) { for (const x of h) { if (x) { desengancha(x); x._padre = n; } } n.hijos.unshift(...h); },
     // ⚠️ SCRUM-444 · `children`, `firstElementChild` y un `remove()` QUE DE VERDAD QUITA.
     //
     // Antes `remove()` era un NO-OP y `children` no existía. Con eso, una vista que gestione una
@@ -358,12 +388,18 @@ export function scriptsDelDashboard(raiz) {
 // (SCRUM-451, 444, 634): **lo que no se sabe resolver se ANOTA, no se contesta**.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-/** Las hojas de estilo LOCALES que declara el índice. Las remotas (fuentes) se ignoran. */
+/**
+ * Las hojas de estilo LOCALES que declara el índice. Las remotas (fuentes) se ignoran.
+ *
+ * SCRUM-676 · la regex que vivía aquí exigía `rel="stylesheet"` ANTES de `href` y sólo con
+ * comillas dobles. Medido: no veía la hoja remota del índice —que lleva `href` primero— ni
+ * habría visto ninguna con comillas simples, y contaba las COMENTADAS. Ahora deriva del
+ * extractor único, que es el que sabe todo eso. Sobre el índice real devuelve lo mismo que
+ * antes: eso es el control negativo del cambio, no la prueba de que la regex vieja valiera.
+ */
 export function hojasDelDashboard(raiz) {
   const html = fs.readFileSync(path.join(raiz, 'public/dashboard/index.html'), 'utf8');
-  const hrefs = [...html.matchAll(/<link[^>]*rel="stylesheet"[^>]*href="([^"]+)"/g)].map((m) => m[1]);
-  return hrefs
-    .filter((h) => !/^https?:/.test(h))
+  return hojasDeLaPagina(html).locales
     .map((h) => (h.startsWith('/') ? path.join(raiz, 'public', h.slice(1)) : path.join(raiz, 'public/dashboard', h.replace(/^\.\//, ''))));
 }
 
@@ -582,6 +618,7 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'onboardingView.js',
   'paidViaEtiquetas.js',
   'parteDetailView.js',
+  'parteOficinaView.js',
   'patronDetalleAcciones.js',
   'plansView.js',
   'prefijosPais.js',

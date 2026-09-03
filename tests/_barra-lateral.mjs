@@ -174,6 +174,12 @@ export const ANADIDAS_DECLARADAS = {
  */
 export const VISTAS_SIN_ENTRADA = {
   'quotes-detail': { motivo: 'detalle: se llega desde el listado de presupuestos' },
+  // Sprint Tecnosel · NO es un detalle: es una sección, y su sitio ES la barra. Está fuera por
+  // una razón concreta y temporal: su rótulo no está aprobado (regla 30) y el guard ④ de este
+  // mismo fichero prohíbe —con razón— un marcador en lo primero que el profesional ve cada día.
+  // Se entra desde Trabajos mientras tanto. Cuando el fundador firme el texto, esta línea SE
+  // BORRA y la entrada sube a la barra. Propuesta: docs/master/SCRUM-685.md.
+  'partes-oficina': { motivo: 'sección: se entra desde Trabajos hasta que su rótulo esté aprobado' },
   'albaran-detail': { motivo: 'detalle: se llega desde el listado de albaranes' },
   'invoice-detail': { motivo: 'detalle: se llega desde el listado de facturas' },
   'jobs-detail': { motivo: 'detalle: se llega desde el listado de trabajos' },

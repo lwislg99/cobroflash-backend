@@ -36,6 +36,28 @@ export type TipoIntervencion = (typeof TIPOS_INTERVENCION)[number];
  * es el caso frecuente— sería inventarse qué clase de trabajo hizo alguien, y eso acaba impreso
  * en un parte que firma el cliente.
  */
+/**
+ * Lo que se le enseña al profesional, DERIVADO de la lista de arriba y en su mismo orden.
+ *
+ * 🔴 VIVE AQUÍ Y NO EN EL NAVEGADOR, y lo destapó un guard: al escribir el desplegable con los
+ * tres valores dentro de `jobNuevoModal.js`, el guard de fuente única cayó — con razón, porque
+ * eso era una SEGUNDA lista del vocabulario. El navegador no decide qué tipos existen; los
+ * recibe. Mismo criterio que `cobrosCubos` y `albaranRotulos` (SCRUM-474, SCRUM-441).
+ *
+ * ⚠️ Los rótulos son MICROCOPY SIN APROBAR (regla 30): salen con marcador y se sustituyen el
+ * día que el fundador los firme. Los VALORES no son microcopy: son el vocabulario cerrado.
+ */
+const MARCADOR_ROTULO = '[PENDIENTE microcopy oficial]';
+
+export function tiposIntervencionParaUI(): Array<{ valor: TipoIntervencion; rotulo: string }> {
+  const rotulos: Record<TipoIntervencion, string> = {
+    REPARACION_ASISTENCIA: 'Reparación / asistencia',
+    MANTENIMIENTO: 'Mantenimiento',
+    INSTALACION: 'Instalación',
+  };
+  return TIPOS_INTERVENCION.map((valor) => ({ valor, rotulo: `${MARCADOR_ROTULO} ${rotulos[valor]}` }));
+}
+
 export function esTipoIntervencion(bruto: unknown): bruto is TipoIntervencion {
   return typeof bruto === 'string' && (TIPOS_INTERVENCION as readonly string[]).includes(bruto);
 }
