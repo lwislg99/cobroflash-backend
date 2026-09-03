@@ -34,9 +34,9 @@ async function renderPartesOficinaView(container, opts) {
     '<div style="max-width:960px">'
     + '<div class="customers-card" style="margin-bottom:16px">'
     + '<h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)">'
-    + MARCA_OFICINA + ' Partes por valorar</h2>'
-    + '<p style="margin:0;font-size:13px;color:var(--muted)">' + MARCA_OFICINA
-    + ' Los partes que tu equipo ya ha firmado y todavía no tienen precios.</p>'
+    + 'Partes por valorar</h2>'
+    + '<p style="margin:0;font-size:13px;color:var(--muted)">'
+    + 'Los partes que tu equipo ya ha firmado y todavía no tienen precios.</p>'
     + '</div>'
     + '<div id="po-lista"></div>'
     + '<div id="po-detalle" style="margin-top:16px"></div>'
@@ -50,7 +50,7 @@ async function renderPartesOficinaView(container, opts) {
   try {
     datos = await apiRequest('/admin/partes/oficina/pendientes');
   } catch (e) {
-    uiErrorState(lista, MARCA_OFICINA + ' No hemos podido cargar los partes.',
+    uiErrorState(lista, 'No se han podido cargar los partes',
       function () { renderPartesOficinaView(container, opts); });
     return;
   }
@@ -63,8 +63,8 @@ async function renderPartesOficinaView(container, opts) {
     // noticia; «no he podido leerlos» es una avería que no se puede pintar como una buena noticia.
     // El servidor manda `firmadosLeidos` justo para esto.
     var texto = leidos === null
-      ? MARCA_OFICINA + ' No hemos podido leer tus partes firmados. Vuelve a intentarlo.'
-      : MARCA_OFICINA + ' No te queda ningún parte por valorar.';
+      ? 'No se han podido leer tus partes firmados — vuelve a intentarlo'
+      : 'No te queda ningún parte por valorar.';
     lista.innerHTML = '<div class="customers-card"><div class="empty-state">'
       + '<div class="empty-state-icon">' + (leidos === null ? '⚠️' : '✅') + '</div>'
       + '<div class="empty-state-title">' + escHtml(texto) + '</div></div></div>';
@@ -129,14 +129,14 @@ async function pintarParte(id, detalle, container, opts, yaTraido) {
   if (!editable) {
     const aviso = document.createElement('p');
     aviso.className = 'alert';
-    aviso.textContent = MARCA_OFICINA + ' Este parte ya está facturado: sus precios no se tocan. '
+    aviso.textContent = 'Este parte ya está facturado: sus precios no se tocan. '
       + (parte.puedeEditarPrecios && parte.puedeEditarPrecios.motivo ? parte.puedeEditarPrecios.motivo : '');
     card.appendChild(aviso);
   }
 
   const entradas = [];
   // LOS DOS BLOQUES DEL PAPEL, y en su orden. Una línea sin bloque cae en el primero.
-  [['mano_obra', MARCA_OFICINA + ' Mano de obra'], ['materiales', MARCA_OFICINA + ' Materiales']]
+  [['mano_obra', 'Mano de obra'], ['materiales', 'Materiales']]
     .forEach(function (par, i) {
       const clave = par[0];
       const deEsteBloque = parte.lineas
@@ -167,7 +167,7 @@ async function pintarParte(id, detalle, container, opts, yaTraido) {
         inp.style.cssText = 'width:110px;text-align:right';
         inp.value = x.l.precioUnitario === null ? '' : String(x.l.precioUnitario);
         inp.disabled = !editable;
-        inp.setAttribute('aria-label', MARCA_OFICINA + ' Precio por unidad');
+        inp.setAttribute('aria-label', 'Precio por unidad');
         const imp = document.createElement('div');
         imp.style.cssText = 'width:100px;text-align:right;font-size:13px;font-weight:600;color:var(--ink)';
         imp.textContent = parteOficinaEuros(x.l.importe);
@@ -196,7 +196,7 @@ async function pintarParte(id, detalle, container, opts, yaTraido) {
   const guardar = document.createElement('button');
   guardar.className = 'btn-primary';
   guardar.style.cssText = 'width:100%;margin-top:14px';
-  guardar.textContent = MARCA_OFICINA + ' Guardar precios';
+  guardar.textContent = 'Guardar precios';
   card.appendChild(guardar);
 
   guardar.onclick = function () {
@@ -215,7 +215,7 @@ async function pintarParte(id, detalle, container, opts, yaTraido) {
       pintarParte(actualizado.id, detalle, container, opts, actualizado);
     }).catch(function () {
       guardar.disabled = false;
-      uiErrorState(detalle, MARCA_OFICINA + ' No se han podido guardar los precios.',
+      uiErrorState(detalle, 'No se han podido guardar los precios',
         function () { pintarParte(parte.id, detalle, container, opts); });
     });
   };

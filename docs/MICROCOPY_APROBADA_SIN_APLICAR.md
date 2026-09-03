@@ -543,3 +543,38 @@ después deja de ser el aprobado. Quien construya el formulario **copia de esta 
 ⚠️ Y al aplicarlas va **un aserto que las compare con `===`**, como el de
 `tests/scrum683-parte-dictado.test.mjs`: un retoque «de paso» reabre una aprobación sin que nadie se
 entere.
+
+---
+
+## Bloque · Partes por valorar (sprint Tecnosel) — `public/dashboard/js/parteOficinaView.js`
+
+**Aprobada:** 3-sep-2026 · **APLICADA EN EL MISMO ACTO** (SCRUM-703). Once literales.
+
+> La pantalla donde la oficina pone los precios de un parte ya firmado. Hasta este día sus textos
+> salían con marcador y por eso la entrada NO estaba en la barra lateral: el guard ④ de SCRUM-420
+> prohíbe un rótulo sin aprobar en lo primero que el profesional ve cada día. Con la firma, la
+> entrada sube a la barra y sale de `VISTAS_SIN_ENTRADA`.
+
+| Qué es | Texto aprobado |
+|---|---|
+| Título de la sección, del menú y del botón de Trabajos | Partes por valorar |
+| Subtítulo | Los partes que tu equipo ya ha firmado y todavía no tienen precios. |
+| Vacío · no queda ninguno | No te queda ningún parte por valorar. |
+| Vacío · no se pudieron leer | No se han podido leer tus partes firmados — vuelve a intentarlo |
+| Bloque 1 | Mano de obra |
+| Bloque 2 | Materiales |
+| Casilla de precio (aria-label) | Precio por unidad |
+| Botón | Guardar precios |
+| Parte ya facturado | Este parte ya está facturado: sus precios no se tocan. |
+| Error al cargar | No se han podido cargar los partes |
+| Error al guardar | No se han podido guardar los precios |
+
+🔴 **Los tres de error cambiaron respecto a lo propuesto**, y el motivo queda escrito porque es la
+voz de la casa: **no se dice «no hemos podido»**. Se dice «no se han podido». Los propuse en
+primera persona del plural y el fundador los corrigió al aplicarlos.
+
+⚠️ **QUEDA UNO SIN FIRMAR EN ESA MISMA PANTALLA, y por eso su entrada del censo de SCRUM-402 NO
+baja a 0:** el error de abrir un parte —hoy «No hemos podido abrir el parte.»—. No estaba en la
+lista de once. **Propuesta, siguiendo la voz que el fundador acaba de fijar:**
+
+> **No se ha podido abrir el parte**
