@@ -99,8 +99,8 @@ test('SCRUM-603b · 🔴 ALBARÁN: con descripción APARECE; sin ella NO aparece
   });
   assert.ok(contiene(con, CONCEPTO), '🔴 se ha perdido el concepto al partirlo.');
   assert.ok(contiene(con, DESC),
-    '🔴 la descripción NO llega al PDF del albarán. El profesional marcó «Incluir descripción en '
-    + 'el PDF», el dato viajó hasta la línea del albarán, y el documento no la enseña.');
+    '🔴 la descripción NO llega al PDF del albarán: el profesional la escribió, el dato viajó '
+    + 'hasta la línea, y el documento no la enseña.');
 
   // 🔴 EL NEGATIVO ES EL QUE IMPORTA: si saliera siempre, esto no sería conectar una casilla,
   // sería cambiar el documento de todo el mundo.
@@ -111,6 +111,39 @@ test('SCRUM-603b · 🔴 ALBARÁN: con descripción APARECE; sin ella NO aparece
   assert.ok(contiene(sin, CONCEPTO), '🔴 sin descripción se ha perdido hasta el concepto.');
   assert.equal(contiene(sin, DESC), false,
     '🔴 aparece una descripción que nadie escribió: el documento estaría inventando texto.');
+});
+
+test('SCRUM-603b · 🔴 LO QUE ESTE CAMBIO APORTA: la descripción se DISTINGUE del concepto', () => {
+  // 🔴 ESTE TEST EXISTE PORQUE LA PRUEBA DE ROJO DESTAPÓ QUE EL DE ARRIBA NO BASTABA.
+  //
+  // Al cortar el paso del dato —volver a `doc.text(l.concepto)` de una vez— el test de presencia
+  // SEGUÍA VERDE, y con razón: el texto de la descripción aparece igual, porque PDFKit respeta el
+  // salto de línea. Lo que faltaba nunca fue que LLEGARA: era que se leyera como descripción y no
+  // como un concepto largo. Medir la presencia y llamarlo «la descripción no llega» era prometer
+  // más de lo que se mide.
+  //
+  // La distinción se comprueba SOBRE EL CÓDIGO, y no por comodidad: el instrumento de la casa lee
+  // el TEXTO del PDF, no sus estilos (declarado en SCRUM-623), y medido aquí — el tamaño 8 ya
+  // aparece en otras partes del documento, así que «hay un 8» no distingue nada.
+  const src = fs.readFileSync(
+    path.join(RAIZ, 'src/modules/jobs/infra/albaranPdf.service.ts'), 'utf8');
+  const codigo = src.split('\n').filter((l) => !/^\s*(\/\/|\*)/.test(l)).join('\n');
+
+  assert.match(codigo, /partirConceptoYDescripcion\(l\.concepto\)/,
+    '🔴 el albarán ha vuelto a imprimir el concepto ENTERO de una vez. El texto seguiría '
+    + 'saliendo —el salto de línea se respeta— pero con el MISMO tamaño y peso que el concepto: '
+    + 'indistinguible de un concepto largo, que es el defecto que este ticket vino a cerrar.');
+  assert.match(codigo, /doc\.text\(cTitulo,/,
+    '🔴 el título ya no se pinta por separado.');
+  assert.match(codigo, /doc\.fontSize\(8\)\.fillColor\(MUTED\)\s*\n?\s*\.text\(cDesc,/,
+    '🔴 la descripción ya NO se pinta más pequeña y en gris: sale con el mismo aspecto que el '
+    + 'concepto, y entonces el documento no distingue una cosa de la otra.');
+
+  // Y el suelo de esta comprobación: que el `10` del concepto siga ahí. Si ambos fueran 8, no
+  // habría distinción tampoco, y las dos aserciones de arriba pasarían igual.
+  assert.match(codigo, /doc\.fontSize\(10\)\.fillColor\(BODY\);\s*\n\s*doc\.text\(cTitulo,/,
+    '🔴 el concepto ya no se pinta a 10: si los dos van al mismo tamaño, da igual que se pinten '
+    + 'por separado.');
 });
 
 test('SCRUM-603b · 🔴 una descripción LARGA llega ENTERA y no se come el documento', async () => {
