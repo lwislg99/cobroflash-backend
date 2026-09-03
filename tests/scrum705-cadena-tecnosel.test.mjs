@@ -72,7 +72,16 @@ function tienePuerta(nombre, propio) {
   return seLlamaEn(nombre, MODULOS.filter((f) => f !== propio));
 }
 
-/** ¿Está atado ese gancho? Vale que lo ate el propio módulo: es lo correcto. */
+/**
+ * ¿Está atado ese gancho? Vale que lo ate el propio módulo: es lo correcto.
+ *
+ * ⚠️ LO QUE ESTO **NO** VE, medido el 3-sep-2026: una llamada dentro de un `if (false)` sigue
+ * siendo una llamada. Este guard mide que la función esté LLAMADA en el código, no que el botón
+ * responda. Lo segundo lo mide `scrum683b` ejecutando la pantalla y PULSANDO el botón.
+ *
+ * Los dos hacen falta y ninguno sobra —es la misma pareja que los dos detectores de dinero de
+ * SCRUM-652c—: quien retire «el que sobra» destapa el hueco del otro.
+ */
 function estaAtado(nombre, propio) {
   return seLlamaEn(nombre, [propio]) || tienePuerta(nombre, propio);
 }

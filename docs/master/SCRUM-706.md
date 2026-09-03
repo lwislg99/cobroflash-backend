@@ -79,6 +79,20 @@ Los tests **no llaman a la función**: montan la pantalla, buscan el botón y **
 | **sin red** | el modelo falla → **no lanza** y el parte **sigue pintado** |
 | ⛔ importes en la pantalla del técnico | **cero** (`€`, `precioUnitario`, `tipoIva`) |
 
+### 🔴 Y la cadena NO cayó con este rojo — los dos guards son COMPLEMENTARIOS
+
+Al quitar el `addEventListener`, `scrum705` **siguió verde**. No es un fallo: es lo que mide. Su
+`estaAtado` pregunta *«¿se llama a esta función en algún sitio del código?»*, y una llamada dentro
+de un `if (false)` **sigue siendo una llamada**. El código muerto la satisface.
+
+| guard | qué mide | qué se le escapa |
+|---|---|---|
+| `scrum705` (cadena) | que la función esté **llamada** en el código | una llamada inalcanzable |
+| `scrum683b`/706 (cable) | que **pulsar el botón** haga algo, ejecutándolo | solo cubre los saltos que monta |
+
+Es la misma pareja que los dos detectores de dinero de SCRUM-652c: **uno mira el texto y el otro
+ejecuta**, y ninguno sobra. Quien venga a retirar «el que sobra» destapa el hueco del otro.
+
 **Y un fallo del doble, no del producto:** el primer intento del test de «lo retirado» dio 0 avisos
 porque mi DOM falso no reflejaba el `innerHTML` del subnodo donde `pintarPropuesta` escribe. Se
 arregló el doble; el producto no se tocó.
