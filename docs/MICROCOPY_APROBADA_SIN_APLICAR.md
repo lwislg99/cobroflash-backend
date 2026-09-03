@@ -141,7 +141,26 @@ su IVA.
 |---|---|
 | 16 | `No se han podido marcar como pagadas. Vuelve a intentarlo.` |
 | 18 | `Se han marcado como pagadas, pero la lista no se ha podido actualizar. Recárgala para verla al día.` |
-| 172 | `+ Nueva factura` |
+| 172 | `Nueva factura` | **sin `+` desde el 3-sep-2026**, ver abajo |
+
+### 🔴 «Nueva factura», SIN el `+` — decidido el 3-sep-2026
+
+Este rótulo estuvo **aprobado dos veces con distinta grafía**: aquí con `+` (17-ago) y sin él
+en SCRUM-599 (3-sep). Lo cazó el guard de SCRUM-514 el día que nació, y lo decidió el asesor:
+**gana `Nueva factura`**.
+
+El motivo, para que nadie lo revierta: SCRUM-599 aprobó los **cuatro** botones primarios de la
+misma familia —`Nuevo presupuesto`, `Nuevo albarán`, `Nueva factura`, `Nuevo cliente`— medidos
+en navegador real. **Dejar el `+` en uno solo rompe la familia**, y en un botón el `+` no
+informa de nada: el botón ya se ve como botón.
+
+> ⚠️ **Y lo que NO es una incoherencia, escrito a propósito:** en **SCRUM-591** se aprobó
+> `+ Nuevo cliente` **CON** `+`, y **se queda**. Allí es una `<option>` dentro de un `<select>`
+> lleno de nombres de clientes, y el `+` es **lo único** que distingue una acción de un nombre.
+> **Botón sin `+`, opción de lista con `+`.** Uniformarlos rompería el que sí informa.
+
+**El código ya estaba bien** (`invoicesView.js` lo lee de `atajoNuevo.js`): lo que se corrige
+aquí es la fuente, que era la que se había quedado atrás.
 
 ## Bloque 7 · Productos — `public/dashboard/js/productsView.js`
 
