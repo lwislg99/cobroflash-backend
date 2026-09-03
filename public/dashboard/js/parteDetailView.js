@@ -53,6 +53,7 @@
     anadirLinea: M + 'Añadir línea',
     firmar: M + 'Firmar aquí mismo',
     yaFirmado: M + 'Firmado. El contenido ya no se toca.',
+    noSePudoCargar: M + 'No se ha podido cargar el parte. Vuelve a intentarlo.',
     tipoReparacion: M + 'Reparación / asistencia',
     tipoMantenimiento: M + 'Mantenimiento',
     tipoInstalacion: M + 'Instalación',
@@ -400,18 +401,70 @@
         var cuerpo = Object.assign({ signatureData: dataUri }, declaracion || {});
         // El error SUBE (SCRUM-404): el pad no cierra hasta que esto resuelve, así que un fallo
         // deja el trazo en pantalla y se reintenta sin pedirle al cliente que firme otra vez.
-        return firmar(parte.id, cuerpo, function () {
+        var r = await firmar(parte.id, cuerpo, function () {
           return pedir('/admin/partes/' + parte.id + '/firmar', {
             method: 'POST',
             body: JSON.stringify(cuerpo),
           });
         }, 'parte');
+        // Repinta con lo que dice el SERVIDOR. Se llama también cuando la firma se quedó en la
+        // cola: el parte sigue en borrador y la pantalla tiene que seguir diciéndolo.
+        if (typeof o.alFirmar === 'function') { try { await o.alFirmar(); } catch (_e) {} }
+        return r;
       },
     });
     return true;
   }
 
+  /**
+   * 🔴 LA PIEZA QUE FALTABA, Y NO ERA SÓLO LA PUERTA.
+   *
+   * `renderParte` pinta un parte que alguien ya trajo, y `firmarParte` firma uno que alguien ya
+   * tiene. **Entre el botón que se pintaba y la función que firma no había NADA**: `renderParte`
+   * escribía `data-parte-firmar` en el marcado y este fichero no tenía ni un `addEventListener`.
+   * O sea que el botón estaba pintado y MUERTO, y eso no se ve en un test que mire el marcado.
+   *
+   * Esto es lo que `app.js` llama: trae el parte de `/admin/partes/:id`, lo pinta, y engancha el
+   * botón a `firmarParte`. Tras firmar, **vuelve a traerlo del servidor** en vez de retocar el
+   * objeto en memoria: el estado, el sello y los dos candados los decide el servidor, y una
+   * pantalla que se los inventa acaba enseñando algo que la base no dice.
+   *
+   * `opciones` existe para el banco de pruebas (`apiRequest`, `firmar`, `abrirPad`); en producción
+   * no se le pasa nada.
+   */
+  async function renderParteDetailView(contenedor, parteId, opciones) {
+    var o = opciones || {};
+    var pedir = o.apiRequest || window.apiRequest;
+    if (!contenedor || typeof pedir !== 'function') return false;
+
+    var parte;
+    try {
+      parte = await pedir('/admin/partes/' + parteId);
+    } catch (e) {
+      // 🔴 SUELO: si el parte no se pudo traer NO se pinta un parte vacío. Un técnico que ve
+      // un parte en blanco cree que no apuntó nada, y lo que pasa es que la respuesta no llegó.
+      contenedor.innerHTML = '<div data-parte-error="1">' + esc(TEXTOS.noSePudoCargar) + '</div>';
+      return false;
+    }
+
+    if (!renderParte(contenedor, parte)) {
+      contenedor.innerHTML = '<div data-parte-error="1">' + esc(TEXTOS.noSePudoCargar) + '</div>';
+      return false;
+    }
+
+    var boton = contenedor.querySelector && contenedor.querySelector('[data-parte-firmar]');
+    if (boton && boton.addEventListener) {
+      boton.addEventListener('click', function () {
+        firmarParte(parte, Object.assign({}, o, {
+          alFirmar: function () { renderParteDetailView(contenedor, parteId, o); },
+        }));
+      });
+    }
+    return true;
+  }
+
   window.renderParte = renderParte;
+  window.renderParteDetailView = renderParteDetailView;
   window.partePintarPropuesta = pintarPropuesta;
   window.parteOrdenarDictado = ordenarElDictado;
   window.parteLineasConfirmadas = lineasConfirmadas;

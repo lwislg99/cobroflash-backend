@@ -213,3 +213,144 @@ Revertidos los tres, árbol limpio y suite verde.
 el número viejo, la línea `teamMember` del `.md` y la cabecera de conteo del SQL regenerado.
 
 **No se ha ejecutado `db push`, ni `migrate`, ni `deploy`.**
+
+
+---
+
+# Estado del db push · 2-sep-2026 · EN ESPERA, y por qué
+
+**Medido contra:** `origin/main` = `a5aef1b9bbd2570eccbde82b407c9d3675192c2d` · 2026-09-02T19:30:11+02:00
+
+> Este apartado iba a ser `docs/master/SCRUM-674-ESTADO-DEL-PUSH.md`. El guard de SCRUM-273 exige
+> `/^SCRUM-\d+\.md$/` y ese nombre no casa, así que vive aquí, en el fichero de su ticket. Es la
+> segunda vez hoy que ese guard corrige un nombre y las dos veces tenía razón: un fichero por
+> ticket es la propiedad entera que defiende.
+
+## 🔒 LA REGLA QUE SALE DE ESTE DÍA
+
+> **Cuando un borrado aparece en un diff, la primera pregunta NO es «¿lo apruebo?».
+> Es «¿QUÉ RAMA FALTA POR ENTRAR?».**
+>
+> Producción puede ir POR DELANTE de `main`, y hoy iba.
+
+El fundador aplica columnas a producción para desbloquear un PR **antes** de que ese PR se mergee.
+Durante esa ventana, `main` no declara lo que la base ya tiene, y **cualquier `db push` desde `main`
+propone borrarlo**. El diff no está mal: está incompleto, porque le falta una rama.
+
+Y el corolario, que es lo que casi se hace mal: **redeclarar esas columnas en el schema para «arreglar
+el diff» es reescribir el PR de otra persona.** El diff no se arregla; se espera.
+
+## Lo que se midió (SOLO LECTURA, ni una fila escrita)
+
+### Los tres `DROP COLUMN` del preview: las tres columnas están VACÍAS
+
+| Columna | filas | con dato |
+|---|---|---|
+| `albaranes.doc_header_text` | 30 | **0** |
+| `quotes.doc_header_text` | 130 | **0** |
+| `quotes.doc_footer_text` | 130 | **0** |
+
+No hubo muestra que anonimizar: no hay ni una fila con contenido.
+**Control positivo:** la conexión ve **385 columnas** en `public`. Sin él, un 0 no distingue «está
+vacía» de «no estoy mirando esta base».
+
+### Por qué están vacías: NO es texto de cliente sin migrar
+
+`docFields` **no es su sustituto** — es `Json?` con booleanos de *qué datos del cliente muestra el
+documento* (`{name, phone, taxId, email}`). Otra cosa.
+
+Buscando quién retiró las columnas, el instrumento devolvió lo contrario: **el commit las AÑADE**.
+
+```
+05c0b1ba0ac37daa5de5342e4bd83f8fa892692a   2026-09-02 14:31   Javier Pereira Fernández
+SCRUM-593 fase ③: esquema + cableado + el viaje completo contra base real
+  «Las TRES bases tienen ya las columnas (produccion la aplico el fundador…)»
+```
+
+**Ese commit NO está en `origin/main`.** Vive sólo en `origin/scrum-593-doc03-cabecera-y-pie`
+(`cd4a2472e9eedd0f889bb4ba0e13a87c09b6e50c`); hay además una segunda rama del mismo ticket,
+`origin/scrum-593-texto-y-observaciones`.
+
+> Buscar quién quitó algo y descubrir que **nadie lo quitó** es lo que cambió la decisión del día.
+
+Así que el `db push` no borraría texto de ningún cliente: **borraría las columnas del PR de Javier**,
+y su fase ③ se mergearía sobre una base que ya no las tiene. Están a cero porque la función es de
+hoy y todavía no escribe.
+
+### Los dos `TIMESTAMP(3)`: no se pierde nada
+
+Las dos son hoy `timestamp without time zone` con **precisión 6** (microsegundos) y pasarían a **3**
+(milisegundos). Se contaron las filas cuyos microsegundos **no** son múltiplo exacto de 1000, que
+son las únicas que cambiarían:
+
+| Columna | filas | con valor | perderían precisión |
+|---|---|---|---|
+| `charges.paid_at` | 55 | 1 | **0** |
+| `merchants.asesor_programa_preguntado_at` | 13 | 0 | **0** |
+
+## Las tres salidas, y la elegida
+
+| | Salida | Veredicto |
+|---|---|---|
+| **(a)** | **Esperar a que `scrum-593-doc03-cabecera-y-pie` se mergee** | ✅ **ELEGIDA** |
+| (b) | SQL aditivo a mano por el aplicador con lista blanca | para después, con SCRUM-685 |
+| (c) | Redeclarar las tres columnas en `prisma/schema.prisma` | ❌ descartada |
+
+**(a) se elige porque no hay nada que decidir.** En cuanto entre esa rama, `main` declara las tres
+columnas y **los `DROP` desaparecen solos**. Cero aprobaciones de borrado, cero riesgo, y va a
+ocurrir igualmente.
+
+**(c) se descarta por lo que ES, no por lo que arriesga:** sería escribir el PR de Javier otra vez.
+Y `prisma db push` no admite selección por columna —reconcilia el esquema entero—, por eso no hay
+una cuarta salida.
+
+## ⚠️ Lo que bloquea y lo que NO
+
+* **`job_assignees` YA EXISTE en producción** (no aparece en el preview real, y el preview contra el
+  checkout fósil lo confirmó al proponer su `DROP TABLE`). **SCRUM-650 PASO C no está bloqueado por
+  esto** y lo ejecuta el fundador aparte.
+* Lo que sí espera: las cinco columnas y `partes_trabajo` de SCRUM-674.
+
+## 📌 Para SCRUM-685 · el aplicador de lista blanca (NO construido, descrito)
+
+La salida (b) apunta a algo que ya existe a medias y que es **mejor salvaguarda que un GO leído por
+un humano cansado**: un clasificador que rechaza el borrado **por máquina**, no por criterio.
+
+`scripts/_clasificador-sql.mjs`, medido:
+
+* **PERMITE** — `ADD COLUMN` nullable o con `DEFAULT` (y rechaza `ADD COLUMN NOT NULL` sin default,
+  «falla en seco si la tabla ya tiene filas»), `CREATE TABLE`, `CREATE INDEX` / `CREATE UNIQUE INDEX`,
+  `CREATE TYPE`, `ALTER TYPE … ADD VALUE` y `COMMENT ON`.
+* **RECHAZA** — cualquier `DROP` (incluido dentro de un `ALTER TABLE … DROP COLUMN`), y
+  `ALTER COLUMN … TYPE`, por poder truncar o fallar sobre los datos que ya hay.
+* **Y no es un `grep DROP`**: el propio fichero cuenta que un auditor improvisado se cazó a sí mismo
+  porque la palabra «DROPs» aparecía en su comentario. Trocea en sentencias y clasifica cada una,
+  así que `INSERT INTO t VALUES ('DROP COLUMN x')` no dispara nada.
+* **Por defecto rechaza**: lo que no sabe clasificar, no pasa.
+
+Contra el preview de hoy, ese clasificador habría **permitido las seis cosas de SCRUM-674** y
+**rechazado los tres `DROP` y los dos `ALTER COLUMN TYPE`**, sin que nadie tuviera que leer nada.
+
+**Qué le falta para poder apuntar a producción:**
+
+1. **Hoy está atado a una sola base a propósito.** `aplicar-sql-dev.mjs` sólo aplica a
+   `yaqu_dev_javier`, y su cabecera dice por qué: *«una herramienta genérica de "aplica este SQL a
+   la base que le digas" es la que no queremos»*. Apuntar a producción exige un equivalente con su
+   propio destino declarado y contrastado, no un parámetro.
+2. **Contraste de destino.** `dev` y `staging` comparten host; el aplicador ya contrasta la clave
+   contra su destino declarado. Producción necesita el suyo, con `parseBDSegura` (que no tiene forma
+   de devolver la cadena).
+3. **Idempotencia.** Un `.sql` aplicado dos veces tiene que ser inocuo o fallar ruidosamente, nunca
+   a medias.
+4. **Rastro.** Qué fichero, contra qué base, cuándo y con qué veredicto por sentencia — el registro
+   que hoy sostiene `docs/MIGRATIONS_PENDING.md` a mano.
+5. **El rojo del propio clasificador**, probado con un `.sql` real que mezcle formas permitidas y
+   prohibidas.
+
+⚠️ **Corrección sobre lo anterior, medida después de escribirlo:** el punto 5 estaba mal planteado
+como carencia. **Ya lo hace**: una sola sentencia rechazada bloquea el fichero ENTERO —«NO se
+ejecuta el fichero»— y no hay interruptor global; autorizar una excepción exige declararla *por su
+huella*, con motivo y nombre de quien autoriza. Lo que falta es lo de los puntos 1-4, no esto.
+Describir como pendiente algo que ya está construido es justo el error que este día ha repetido.
+
+**No se construye aquí.** Queda descrito para juntarlo con SCRUM-685.
