@@ -167,12 +167,24 @@ async function fetchInvoices(options = {}) {
       // ⚠️ REGLA 26 · NO se acompaña de ningún texto que explique POR QUÉ sale un justificante y
       // no una factura. Ni aquí, ni en un aviso, ni en un tooltip: esa pregunta se responde SOLO
       // con el guion H2, y un texto que explica mal una obligación fiscal no es feo, es peligroso.
+      // SCRUM-599 · el rótulo de FACTURA sale de la pieza (aprobado); el de JUSTIFICANTE se
+      // conserva tal cual estaba —no está en la microcopy de este ticket y la regla 26 lo blinda—.
       nuevaFacturaBtn.textContent = window.appDocumentoSuelto === 'justificante'
         ? '+ Nuevo justificante'
-        : '+ Nueva factura';
+        : ((window.atajoNuevo && window.atajoNuevo.textoDe('invoices')) || 'Nueva factura');
       nuevaFacturaBtn.addEventListener('click', () => {
         openNuevaFacturaModal(() => renderInvoicesView(container));
       });
+      if (window.atajoNuevo) {
+        // La tecla se pinta en los DOS casos: el atajo funciona igual, y un botón con atajo y
+        // otro sin él en la misma pantalla enseñaría que a veces no va.
+        const k = document.createElement('kbd');
+        k.className = 'btn-atajo';
+        k.textContent = window.atajoNuevo.TECLA;
+        k.setAttribute('aria-label', 'atajo de teclado ' + window.atajoNuevo.TECLA);
+        nuevaFacturaBtn.appendChild(k);
+        window.atajoNuevo.registrar('invoices', () => nuevaFacturaBtn.click());
+      }
       header.appendChild(nuevaFacturaBtn);
     }
 
