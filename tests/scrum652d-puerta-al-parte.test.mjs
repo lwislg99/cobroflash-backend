@@ -230,17 +230,35 @@ const vistasDelNav = (html) => [...html.matchAll(/data-view="([^"]+)"/g)].map((m
  */
 const MINIMO_ENTRADAS_DE_NAV = 10;
 
+/**
+ * 🔴 SON DOS HECHOS DISTINTOS Y NO PUEDEN DAR EL MISMO ROJO (corregido el 3-sep-2026):
+ *
+ *   · CERO entradas → **aquí no hay barra que leer**. El extractor no ve nada: el `index.html`
+ *     cambió de forma, o el fichero no es el que se cree. Es ceguera del instrumento.
+ *   · POCAS entradas → **la barra encogió**. El instrumento ve, y lo que ve es poco. Es un hecho
+ *     del producto, y quien lo lea tiene que ir a mirar el nav, no el extractor.
+ *
+ * Dar el mismo mensaje a las dos manda a quien lo lea al sitio equivocado la mitad de las veces.
+ */
 function entradasDeNavConSuelo(html) {
   const nav = vistasDelNav(html);
+  if (nav.length === 0) {
+    throw new Error(
+      'NAV CIEGO · el extractor no ha encontrado NI UNA entrada de nav. Eso no es «la barra está '
+      + 'limpia»: es que aquí no hay barra que leer — el `index.html` cambió de forma (otro '
+      + 'atributo, otra plantilla) o el fichero no es el que se cree.\n'
+      + '  Una lista vacía hace VERDADERA Y VACÍA la afirmación de abajo —«ninguna entrada lleva a '
+      + 'una vista sin contexto»— y el guard pasaría para siempre sobre una barra que ya no sabe '
+      + 'leer. MIRA EL EXTRACTOR, no el nav.'
+    );
+  }
   if (nav.length < MINIMO_ENTRADAS_DE_NAV) {
     throw new Error(
-      `NAV CIEGO · el extractor ha encontrado ${nav.length} entradas de nav y el suelo son `
-      + `${MINIMO_ENTRADAS_DE_NAV} (hoy hay 18, medidas). Eso NO se puede leer como «la barra está `
-      + 'limpia»: una lista vacía hace VERDADERA Y VACÍA la afirmación de abajo —«ninguna entrada '
-      + 'lleva a una vista sin contexto»— y el guard pasaría para siempre sobre una barra que ya no '
-      + 'sabe leer.\n'
-      + '  O el `index.html` cambió de forma (otro atributo, otra plantilla), o el fichero no es el '
-      + 'que se cree. Si de verdad la barra ha encogido, sube el mínimo a propósito y di por qué.'
+      `LA BARRA HA ENCOGIDO · el extractor ve ${nav.length} entradas y el suelo son `
+      + `${MINIMO_ENTRADAS_DE_NAV}. El instrumento FUNCIONA —ve entradas—, así que esto es un hecho `
+      + `del producto: ${JSON.stringify(nav)}.\n`
+      + '  MIRA EL NAV, no el extractor. Si la barra ha encogido a propósito, baja el mínimo con su '
+      + 'motivo; si no, alguien se ha llevado media barra por delante.'
     );
   }
   return nav;
@@ -291,6 +309,9 @@ test('SCRUM-652d · 🔴 SUELO DEL NAV: cero entradas es CIEGO, no «la barra es
     (e) => {
       assert.match(e.message, /NAV CIEGO/,
         '🔴 con CERO entradas de nav el guard no se declara ciego.');
+      assert.match(e.message, /MIRA EL EXTRACTOR/,
+        '🔴 el rojo de CERO no manda a mirar el extractor. Con cero, el problema NO está en el nav: '
+        + 'está en quien lo lee, y decirlo mal manda a la persona al sitio equivocado.');
       assert.match(e.message, /VERDADERA Y VACÍA/,
         '🔴 el rojo no explica POR QUÉ un cero es peligroso aquí, y sin eso el siguiente que lo lea '
         + 'sube el número para quitárselo de encima.');
@@ -313,10 +334,24 @@ test('SCRUM-652d · 🔴 SUELO DEL NAV: cero entradas es CIEGO, no «la barra es
   assert.ok(entradasDeNavConSuelo(html).length >= MINIMO_ENTRADAS_DE_NAV,
     '🔴 el suelo salta sobre la barra REAL: entonces no es un suelo, es un obstáculo, y acabará '
     + 'desactivado en el primer PR que moleste.');
-  assert.equal(vistasDelNav(html).length, 18,
-    `🔴 la barra tiene ${vistasDelNav(html).length} entradas y se midieron 18 el 3-sep-2026. No es `
-    + 'un fallo —quién va en la barra lo vigila SCRUM-420— pero si el número baja mucho, revisa que '
-    + `el suelo de ${MINIMO_ENTRADAS_DE_NAV} siga teniendo holgura.`);
+  // 🔴 AQUÍ HABÍA UN `assert.equal(…, 18)` Y ME PUSO LA PR EN ROJO EL MISMO DÍA. Lo quito, y queda
+  // escrito por qué: **era un trinquete de igualdad exacta sobre un número que no es mío.** Quién
+  // va en la barra lo decide el producto y lo vigila SCRUM-420; este fichero sólo necesita que el
+  // extractor SIGA VIENDO. SCRUM-599 (DOC-09) retiró `quotes-new` del nav —una decisión legítima:
+  // «una sola forma de llegar a crear»— la barra pasó de 18 a 17, y mi guard se puso rojo sin que
+  // nadie hubiera roto nada. El suelo de 10 NO saltó: funcionó. Lo que sobraba era el 18.
+  //
+  // Es el defecto que este árbol ya tiene nombrado en SCRUM-402: «un guard que exigiera eso nacería
+  // ROJO y lo apagaría alguien en una hora». Un guard que da rojo en falso se desactiva, y entonces
+  // se pierde también lo que sí vigilaba.
+  //
+  // Lo que sí es mío, y se comprueba sin fijar el número: que el suelo conserve HOLGURA.
+  const cuantas = vistasDelNav(html).length;
+  assert.ok(cuantas >= MINIMO_ENTRADAS_DE_NAV + 3,
+    `🔴 la barra tiene ${cuantas} entradas y el suelo son ${MINIMO_ENTRADAS_DE_NAV}: quedan menos de `
+    + 'tres de margen. No es un fallo de nadie —el número lo decide el producto— pero con el suelo '
+    + 'tan pegado, el siguiente PR que toque el nav lo hace saltar en falso. Bájalo con su motivo '
+    + 'antes de que alguien lo desactive.');
 });
 
 test('SCRUM-652d · 🔴 el control SIGUE CAYENDO si alguien mete el parte del técnico en la barra', () => {
