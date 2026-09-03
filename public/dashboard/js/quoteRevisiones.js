@@ -31,22 +31,24 @@
 (function () {
   'use strict';
 
-  // 🔴 MICROCOPY SIN APROBAR (regla 30). Sale MARCADA hasta que el fundador la firme.
+  // ✅ MICROCOPY APROBADA por el fundador el 3-sep-2026 (regla 30), LAS SEIS SIN UN CAMBIO.
+  // Consta en `docs/MICROCOPY_APROBADA_SIN_APLICAR.md`, addendum «Revisiones del presupuesto
+  // (3-sep-2026)», con su ancla contra `origin/main` y comparadas byte a byte con estas.
   //
-  // Se propone con las palabras que el gerente ya usa —«revisión», y el número tal cual
-  // (`P2004226.1`)— porque son las del papel que manda al cliente. La marca va factorizada en una
-  // constante, como `MARCA_RETENCION`: el censo de SCRUM-402 cuenta LITERALES que contienen la
-  // marca, así que esto añade rótulos marcados sin mover su número. Queda dicho para que nadie lo
-  // lea como «no hay nada pendiente de aprobar».
-  var M = '[PENDIENTE microcopy oficial] ';
+  // Se propusieron con las palabras que el gerente ya usa —«revisión», y el número tal cual,
+  // `P2004226.1`— porque son las del papel que le manda al cliente.
+  //
+  // 🔴 `ciego` NO ES «no tiene revisiones»: es «no se ha podido leer la lista». Son la misma caja
+  // vacía en pantalla y significan lo contrario, y por eso son dos textos y no uno. Es el suelo de
+  // ceguera aplicado a un rótulo: decir mal esa frase manda al cliente una versión creyendo que no
+  // hay otra. Va en voz pasiva, como los avisos del dictado y los de las cláusulas.
   var TEXTOS = {
-    titulo: M + 'Revisiones',
-    vigente: M + 'Vigente',
-    firmado: M + 'Firmada',
-    verEsta: M + 'Ver',
-    sinOtras: M + 'Esta es la única versión.',
-    // 🔴 Este NO es «no tiene revisiones»: es «no se ha podido leer la lista». Ver el suelo.
-    ciego: M + 'No se ha podido leer el historial de revisiones.',
+    titulo: 'Revisiones',
+    vigente: 'Vigente',
+    firmado: 'Firmada',
+    verEsta: 'Ver',
+    sinOtras: 'Esta es la única versión.',
+    ciego: 'No se ha podido leer el historial de revisiones.',
   };
 
   function esc(v) {
