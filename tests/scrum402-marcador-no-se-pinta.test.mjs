@@ -69,23 +69,15 @@ const CENSO = Object.freeze({
   // firmara—, y ése era exactamente el motivo por el que esta entrada no bajaba a 0 antes de
   // tiempo. La entrada se BORRA, no se pone a 0: `censoActual()` sólo lista ficheros CON
   // marcadores. COMPROBADO antes de borrarla: cero marcadores en el fichero (SCRUM-703).
-  // 🔴 SCRUM-652 (fase D) · 2-sep-2026 · `jobDetailView.js` ENTRA con 2, A CONCIENCIA.
+  // Sprint Tecnosel · `jobDetailView.js` ENTRÓ con 2 el 2-sep-2026 —la PUERTA al parte: el rótulo
+  // del botón y el aviso de cuando no se puede abrir— y SALIÓ el 3-sep: el fundador firmó el
+  // rótulo primero y el aviso después, en SCRUM-402. Bajó de 2 a 1 y luego se BORRA, que es el
+  // camino que dejó escrito su propia nota: bajar el número mientras quedaba marca, borrar la
+  // entrada cuando no queda ninguna (precedente SCRUM-424/405). COMPROBADO antes de borrarla:
+  // cero marcadores en el fichero, medidos con `soloEjecutable`, no supuestos.
   //
-  // Son la PUERTA al parte de trabajo: el rótulo del botón que lo abre desde el Trabajo, y el
-  // aviso de cuando no se puede abrir. Los dos textos son propuesta, no aprobación (regla 30).
-  //
-  // Entran porque la alternativa era peor: sin botón, `parteDetailView.js` seguía siendo un
-  // fichero cargado en el índice al que no llegaba nadie —construido, precargado por el service
-  // worker, con sus tests en verde, y sin una sola puerta—. Un marcador se ve y se corrige; una
-  // pantalla inalcanzable no se ve, y ya estuvo así una fase entera.
-  //
-  // Salen del censo el commit que apruebe los textos, y ese commit BAJA el número o BORRA la
-  // entrada según queden marcas o no (precedente SCRUM-424/405).
-  //
-  // 3-sep-2026 · BAJA A 1, no se borra: el fundador firmó «Parte de trabajo» —el rótulo del botón
-  // que abre la puerta— y NO el aviso de cuando no se puede abrir, que sigue marcado. Bajar a 0
-  // aquí habría sacado del censo un marcador que sigue pintándose (SCRUM-703).
-  'jobDetailView.js': 1,
+  // El registro de esa aprobación estrena `docs/microcopy/` (SCRUM-709): una aprobación, un
+  // fichero. Está en `docs/microcopy/2026-09-03-SCRUM-402-abrir-parte-fallo.md`.
   // SCRUM-650 (T1) · ENTRA A CONCIENCIA con 1, y por el MISMO motivo que `jobNuevoModal.js`:
   // EL MECANISMO NO EXISTE SIN TEXTO. Es el selector de QUIEN EJECUTA el trabajo —el campo
   // «Tecnico» del parte de papel, donde Tecnosel escribe «Israel, Miguel y Jesus.L»—, y un
@@ -488,7 +480,7 @@ test('SCRUM-402 · R6 · SUELO: el escáner encuentra la ranura `btnBizum` y el 
     'por no encontrar nada. ARREGLA EL ESCÁNER, no el número.');
 
   const total = Object.values(censoActual()).reduce((a, b) => a + b, 0);
-  assert.ok(total > 0, '🔴 ESCÁNER CIEGO: cero marcadores en literales. Imposible: hay 36 medidos.');
+  assert.ok(total > 0, '🔴 ESCÁNER CIEGO: cero marcadores en literales. Imposible: hay 13 medidos (SCRUM-402, 3-sep-2026: el número venía diciendo 36 desde una medición vieja y se ajusta AL MEDIDO, no al esperado).');
 });
 
 // ── R1/R2/R3 · EL BOTÓN Y SU RANURA ─────────────────────────────────────────────────────────
