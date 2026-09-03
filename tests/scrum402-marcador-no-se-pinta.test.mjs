@@ -404,24 +404,6 @@ const CENSO = Object.freeze({
   // Sale del censo el commit que apruebe los textos, y ese commit BORRA la entrada, no la pone a
   // 0 (precedente SCRUM-424/405).
   'parteDetailView.js': 1,
-  // 🔴 SCRUM-655c (fila 9) · 3-sep-2026 · `quoteRevisiones.js` ENTRA con 1, A CONCIENCIA.
-  //
-  // Es el selector de revisiones del presupuesto. Su microcopy NO está aprobada (regla 30): se
-  // propone con las palabras que el gerente ya usa —«revisión», y el número tal cual,
-  // `P2004226.1`— porque son las del papel que le manda al cliente.
-  //
-  // ⚠️ Y el número dice UNO donde hay SIETE rótulos marcados: es la regla de este censo —cuenta
-  // LITERALES que contienen la marca— y el módulo la factoriza en una constante que concatena
-  // siete veces, como ya hacen `parteDetailView.js` y el bloque de retención. Quien lea este «+1»
-  // no debe deducir «un rótulo».
-  //
-  // 🔴 Uno de los siete no es un rótulo cualquiera: `ciego` dice «no se ha podido leer el
-  // historial», y es lo que separa «este presupuesto no tiene más versiones» de «no he podido
-  // mirar». Las dos son la misma caja vacía en pantalla y significan lo contrario.
-  //
-  // **Baja cuando el fundador firme esos textos**, y entonces la entrada se BORRA, no se pone a
-  // 0: un 0 declararía que el fichero se vigila y no tiene marcas (precedente SCRUM-424/405).
-  'quoteRevisiones.js': 1,
   'settingsSubmenus.js': 1,
   // SCRUM-674 (2-sep-2026) · `voiceInput.js` SALE del censo: el fundador aprobo el texto del
   // aviso de dictado sin conexion, y sale ya sin marca. La entrada se BORRA, no se pone a 0:
