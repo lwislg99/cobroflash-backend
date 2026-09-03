@@ -496,7 +496,7 @@ sin aplicar, hasta que decida — y hay un aserto que cae si alguien lo aplica s
 
 ---
 
-## Addendum · Dirección de facturación del cliente (2-sep-2026) · **APROBADAS, NO APLICADAS**
+## Addendum · Dirección de facturación del cliente (2-sep-2026) · **APLICADAS el 3-sep-2026**
 
 **Medido contra:** `origin/main` = `354fdca362063a79a928ed5df7c5120363d64c0b` · 2026-09-02T18:33:54+01:00
 
@@ -531,11 +531,20 @@ rótulos no habría sido una nota interna: lo habría visto un profesional en su
 minutos** del merge, cinco veces en el mismo formulario. Por eso la aprobación se pidió **antes** del
 PR de código y no después — y por eso este ticket entrega sin una sola marca.
 
-### Estado: aprobadas y todavía sin pintar
+### Estado: APLICADAS · medido el 3-sep-2026 (SCRUM-514)
 
-El formulario **aún no existe**: SCRUM-579 está parado a propósito en el orden de migración
-—① decisión → ② `ALTER` en las TRES bases → ③ un solo PR con schema + código + tests—, y a fecha de
-esta anotación el `ALTER` está **sólo en `yaqu_dev_javier`** (medido: DEV 5/5, STAGING 0/5).
+**Las cinco están en pantalla**, una vez cada una, en `public/dashboard/js/customersView.js`.
+Comprobado literal —con sus tildes— antes de cambiar este renglón, y no por el número de línea.
+
+> ⚠️ **Este apartado decía lo contrario y era cierto cuando se escribió.** Decía que el formulario
+> «aún no existe» y que SCRUM-579 estaba parado en el orden de migración con el `ALTER` sólo en
+> DEV. Ese ticket se cerró **después**, y el renglón se quedó atrás: la fuente única llevaba un día
+> diciendo que faltaba algo que ya estaba hecho, y eso manda a la siguiente sesión a aplicar lo
+> aplicado. **Un estado que no se revisa es la siguiente mentira de la fuente** — que es lo que ya
+> avisa la cabecera de este fichero sobre el sello «TODO APLICADO».
+>
+> Desde hoy no hace falta acordarse: `tests/scrum514-aprobado-y-aplicado.test.mjs` cruza ESTE
+> fichero contra el código en cada tanda y se pone rojo si un texto aprobado no está pintado.
 
 Se anotan aquí **ahora** y no cuando se pinten, porque un texto aprobado que se reteclea semanas
 después deja de ser el aprobado. Quien construya el formulario **copia de esta tabla**.
