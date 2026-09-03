@@ -1155,7 +1155,7 @@ async function renderJobDetailView(container, jobId) {
   const parteBtn = document.createElement('button');
   parteBtn.className = 'btn-secondary btn-sm';
   parteBtn.setAttribute('data-abrir-parte', '1');
-  parteBtn.textContent = '[PENDIENTE microcopy oficial] Parte de trabajo';
+  parteBtn.textContent = 'Parte de trabajo';
   parteBtn.addEventListener('click', async () => {
     parteBtn.disabled = true;
     try {

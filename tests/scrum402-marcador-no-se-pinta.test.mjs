@@ -63,13 +63,12 @@ const CENSO = Object.freeze({
   // (el boton de Trabajos que lleva ahi NO entra: usa la constante `MARCA_651`, no un literal,
   // asi que este censo —que cuenta LITERALES por AST— no lo ve, y con razon.)
   // SCRUM-651 (T2) · ENTRA A CONCIENCIA con 1, y el motivo es que EL MECANISMO NO EXISTE SIN
-  // TEXTO: es el modal para abrir un Trabajo SIN presupuesto —una averia, el caso mas frecuente
-  // del primer cliente real—, y un formulario sin rotulos no se puede rellenar.
-  //
-  // Se cuenta 1 y son OCHO textos: los ocho salen de una sola constante `MARCA_651`, asi que
-  // aprobar el copy los apaga de golpe (mismo patron que SCRUM-421 dejo escrito aqui). El dia
-  // que el fundador los firme, esta entrada se BORRA — no se pone a 0.
-  'jobNuevoModal.js': 1,
+  // Sprint Tecnosel (3-sep-2026) · `jobNuevoModal.js` SALIÓ: el fundador firmó los diez textos
+  // que quedaban y `MARCA_651` se retiró ENTERA. Mientras quedó UNO sin firmar, la constante
+  // tenía que seguir viva —retirarla antes habría dado por aprobados los demás sin que nadie los
+  // firmara—, y ése era exactamente el motivo por el que esta entrada no bajaba a 0 antes de
+  // tiempo. La entrada se BORRA, no se pone a 0: `censoActual()` sólo lista ficheros CON
+  // marcadores. COMPROBADO antes de borrarla: cero marcadores en el fichero (SCRUM-703).
   // 🔴 SCRUM-652 (fase D) · 2-sep-2026 · `jobDetailView.js` ENTRA con 2, A CONCIENCIA.
   //
   // Son la PUERTA al parte de trabajo: el rótulo del botón que lo abre desde el Trabajo, y el
@@ -82,7 +81,11 @@ const CENSO = Object.freeze({
   //
   // Salen del censo el commit que apruebe los textos, y ese commit BAJA el número o BORRA la
   // entrada según queden marcas o no (precedente SCRUM-424/405).
-  'jobDetailView.js': 2,
+  //
+  // 3-sep-2026 · BAJA A 1, no se borra: el fundador firmó «Parte de trabajo» —el rótulo del botón
+  // que abre la puerta— y NO el aviso de cuando no se puede abrir, que sigue marcado. Bajar a 0
+  // aquí habría sacado del censo un marcador que sigue pintándose (SCRUM-703).
+  'jobDetailView.js': 1,
   // SCRUM-650 (T1) · ENTRA A CONCIENCIA con 1, y por el MISMO motivo que `jobNuevoModal.js`:
   // EL MECANISMO NO EXISTE SIN TEXTO. Es el selector de QUIEN EJECUTA el trabajo —el campo
   // «Tecnico» del parte de papel, donde Tecnosel escribe «Israel, Miguel y Jesus.L»—, y un
@@ -404,24 +407,6 @@ const CENSO = Object.freeze({
   // Sale del censo el commit que apruebe los textos, y ese commit BORRA la entrada, no la pone a
   // 0 (precedente SCRUM-424/405).
   'parteDetailView.js': 1,
-  // 🔴 SCRUM-655c (fila 9) · 3-sep-2026 · `quoteRevisiones.js` ENTRA con 1, A CONCIENCIA.
-  //
-  // Es el selector de revisiones del presupuesto. Su microcopy NO está aprobada (regla 30): se
-  // propone con las palabras que el gerente ya usa —«revisión», y el número tal cual,
-  // `P2004226.1`— porque son las del papel que le manda al cliente.
-  //
-  // ⚠️ Y el número dice UNO donde hay SIETE rótulos marcados: es la regla de este censo —cuenta
-  // LITERALES que contienen la marca— y el módulo la factoriza en una constante que concatena
-  // siete veces, como ya hacen `parteDetailView.js` y el bloque de retención. Quien lea este «+1»
-  // no debe deducir «un rótulo».
-  //
-  // 🔴 Uno de los siete no es un rótulo cualquiera: `ciego` dice «no se ha podido leer el
-  // historial», y es lo que separa «este presupuesto no tiene más versiones» de «no he podido
-  // mirar». Las dos son la misma caja vacía en pantalla y significan lo contrario.
-  //
-  // **Baja cuando el fundador firme esos textos**, y entonces la entrada se BORRA, no se pone a
-  // 0: un 0 declararía que el fichero se vigila y no tiene marcas (precedente SCRUM-424/405).
-  'quoteRevisiones.js': 1,
   'settingsSubmenus.js': 1,
   // SCRUM-674 (2-sep-2026) · `voiceInput.js` SALE del censo: el fundador aprobo el texto del
   // aviso de dictado sin conexion, y sale ya sin marca. La entrada se BORRA, no se pone a 0:
