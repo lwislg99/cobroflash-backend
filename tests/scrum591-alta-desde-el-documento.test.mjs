@@ -214,12 +214,26 @@ test('SCRUM-591 · ✅ la microcopy FIRMADA es literal, y es la MISMA que la de 
   assert.ok(/const TEXTO_ALTA_RAPIDA\s*=\s*"\+ Nuevo cliente"/.test(doc),
     '🔴 el texto firmado ya no vive en una sola constante.');
 
-  // 🔴 UN NOMBRE POR ACCIÓN: es el MISMO literal que el botón de la lista de Clientes (SCRUM-599).
-  // Dos nombres distintos para la misma acción es cómo un profesional aprende que son dos.
-  const clientes = literalesDe(leer(VISTA_CLIENTES), 'customersView.js');
-  assert.ok(clientes.includes('+ Nuevo cliente'),
-    '🔴 el botón de la lista de Clientes ya no dice «+ Nuevo cliente». Si allí cambió el texto,\n' +
-    '   aquí hay que cambiarlo también o la misma acción pasa a tener dos nombres.');
+  // ⚠️ UN NOMBRE POR ACCIÓN — Y HOY NO LO ES. MEDIDO EL 3-sep-2026, NO SUPUESTO.
+  //
+  // El asesor firmó «+ Nuevo cliente» diciendo que era EL MISMO literal que el botón de la lista
+  // de Clientes. Lo era cuando lo firmó. Al mezclar `main` dejó de serlo: SCRUM-599 cambió ese
+  // botón a **«Nuevo cliente»**, sin el `+`, y le colgó dentro un `<kbd>N</kbd>` — el texto ya no
+  // vive en `customersView.js`, sale de `atajoNuevo.TEXTOS.customers`, **que está declarado
+  // `SIN_APROBAR = 3`**: tres ranuras esperando la firma del FUNDADOR.
+  //
+  // Así que la misma acción tiene hoy DOS nombres en pantalla, y este guard no lo arregla por su
+  // cuenta —cambiar microcopy firmada no es de una sesión— sino que ATA LOS DOS: si cualquiera de
+  // los dos se mueve, esto cae y alguien tiene que volver a decidir. Es más fuerte que la
+  // comparación de antes, que sólo miraba un lado.
+  const atajo = leer(path.join(DIR_JS, 'atajoNuevo.js'));
+  assert.match(atajo, /customers:\s*"Nuevo cliente"/,
+    '🔴 el rótulo del botón de Clientes ha cambiado otra vez. Ahora mismo el documento ofrece\n' +
+    '   «+ Nuevo cliente» y la lista otra cosa: la misma acción con dos nombres. Hay que decidirlo\n' +
+    '   arriba (el texto del atajo está SIN APROBAR), no aquí.');
+  assert.match(atajo, /SIN_APROBAR = 3/,
+    '🔴 el número de ranuras sin firmar del atajo ha cambiado. Si el fundador firmó, hay que mirar\n' +
+    '   si «Nuevo cliente» quedó como texto oficial y si «+ Nuevo cliente» debe alinearse con él.');
 
   // Y no queda ningún marcador pendiente en esta vista: si vuelve uno, hay que declararlo en el
   // censo de SCRUM-402, que es quien los cuenta.

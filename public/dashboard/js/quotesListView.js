@@ -41,7 +41,14 @@ function renderQuotesListView(container) {
 
   const createBtn = document.createElement("button");
   createBtn.className = "btn-primary";
-  createBtn.textContent = "+ Crear presupuesto";
+  // SCRUM-599 · rótulo APROBADO y la tecla al final. El texto sale de la pieza, no se escribe
+  // aquí: si se escribiera, cambiar el copy sería tocar tres ficheros y el tercero se quedaría.
+  createBtn.textContent = "Nuevo presupuesto";
+  if (window.atajoNuevo) {
+    window.atajoNuevo.etiquetar(createBtn, "quotes-list");
+    // Y el MISMO destino que el botón, para que la «N» no pueda abrir otra cosa que el botón.
+    window.atajoNuevo.registrar("quotes-list", () => createBtn.click());
+  }
 
   headerActions.appendChild(exportQBtn);
   headerActions.appendChild(createBtn);
@@ -327,8 +334,19 @@ function renderQuotesListView(container) {
   qFromInput.addEventListener("change", () => { currentDateFrom = qFromInput.value; updateQuoteExportHref(); loadQuotes(); });
   qToInput.addEventListener("change", () => { currentDateTo = qToInput.value; updateQuoteExportHref(); loadQuotes(); });
 
+  // 🔴 SCRUM-599 · EL CAMINO IBA POR EL SUBMENÚ, Y EL SUBMENÚ SE RETIRA EN ESTE MISMO COMMIT.
+  //
+  // Esto hacía `querySelector('.nav-item[data-view="quotes-new"]').click()`: el botón primario de
+  // la lista no navegaba, PULSABA EL SUBÍTEM DEL MENÚ. Al quitar el submenú, `menuBtn` es `null`,
+  // el `if` se lo traga y el botón se queda INERTE — la creación de presupuesto sin ningún camino
+  // desde su propia lista, en silencio y sin un error en consola.
+  //
+  // Lo cazó el censo de caminos que este ticket exige hacer ANTES y DESPUÉS. Ahora navega al
+  // destino directamente, que es como lo hacen las otras cinco puertas a `quotes-new`
+  // (`customerDetailView`, `invoicesView`, `quoteRequestsView`, `templatesView` y
+  // `quotesDetailView`): una sola forma de llegar, y no una que dependa de que exista un botón
+  // en otra parte de la pantalla.
   createBtn.addEventListener("click", () => {
-    const menuBtn = document.querySelector('.nav-item[data-view="quotes-new"]');
-    if (menuBtn) menuBtn.click();
+    if (window.renderAppView) window.renderAppView("quotes-new");
   });
 }

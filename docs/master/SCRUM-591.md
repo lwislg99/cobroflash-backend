@@ -4,7 +4,7 @@
 
 **Medido contra:** `origin/main` = `b57ccbb37f5d3565922696691ce052836f5c23c1` · 2026-09-03T14:03:34+02:00
 
-**Tanda:** 4989 tests, 4905 pass, **0 fail**, 84 skipped — medida DESPUÉS del último cambio, entrada incluida, con `main` dentro (23 commits) y Prisma regenerado. Suelo: `suelo 4798 · total 4989 · margen 191`.
+**Tanda:** 5007 tests, 4923 pass, **0 fail**, 84 skipped — medida DESPUÉS del último cambio, entrada incluida, con main dentro (33 commits en dos mezclas) y Prisma regenerado. Suelo: suelo 4798 · total 5007 · margen 209.
 
 ---
 
@@ -190,6 +190,27 @@ Ese control existe para que **un arreglo del banco** no cambie el montaje. La su
 banco: es del producto** (la `<option>` de alta). **Aislado, no supuesto:** quitando ese
 `appendChild` —con el resto del ticket puesto, `reset()` incluido— el control vuelve a **236**. El
 número se actualiza con esa medición escrita al lado.
+
+## 🔴 Y al mezclar `main`, la JUSTIFICACIÓN de la firma dejó de ser cierta
+
+El asesor firmó «+ Nuevo cliente» **porque era el mismo literal que el botón de la lista de
+Clientes** — un nombre por acción. Lo era cuando lo firmó. Al mezclar `main` dejó de serlo, y lo
+cazó **el propio guard de este ticket**, que ataba los dos lados:
+
+| | Cuando se firmó | Ahora, medido |
+|---|---|---|
+| botón de la lista de Clientes | `"+ Nuevo cliente"` en `customersView.js` | **`"Nuevo cliente"`** —sin el `+`— más un `<kbd>N</kbd>` dentro |
+| de dónde sale el texto | del literal de la vista | de `atajoNuevo.TEXTOS.customers` |
+| estado de ese texto | aprobado | **`SIN_APROBAR = 3`**: tres ranuras esperando al FUNDADOR |
+
+**Hoy la misma acción tiene DOS nombres en pantalla:** «+ Nuevo cliente» en el documento y
+«Nuevo cliente ⌨N» en la lista.
+
+**No lo he resuelto yo.** Cambiar microcopy firmada no es de una sesión, y el texto del otro lado
+ni siquiera está aprobado todavía: alinearlos por mi cuenta sería decidir dos veces por encima de
+quien firma. Lo que sí se ha hecho es **atar los dos**: el guard fija el literal del documento con
+`===` y además fija el rótulo del atajo y su contador `SIN_APROBAR`. Si cualquiera de los dos se
+mueve, cae y obliga a decidir. Es más fuerte que la comparación anterior, que sólo miraba un lado.
 
 ## 🕳️ Huecos declarados
 
