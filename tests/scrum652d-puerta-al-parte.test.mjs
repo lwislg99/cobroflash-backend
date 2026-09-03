@@ -157,12 +157,31 @@ test('SCRUM-652d · ✅ CONTROL POSITIVO: albarán y trabajo se siguen alcanzand
   assert.match(html, /data-view="jobs"/, '🔴 el nav ya no lleva a Trabajos');
 });
 
-test('SCRUM-652d · ✅ CONTROL POSITIVO: NO se estrena una entrada de nav para el parte', () => {
-  // Crear un parte sólo tiene sentido dentro de un trabajo, y no hay lista de partes. Una entrada
-  // suelta en la barra llevaría a una pantalla que no sabe de qué trabajo hablar.
+test('SCRUM-652d · ✅ CONTROL POSITIVO: NO se estrena una entrada de nav para `parte-detail`', () => {
+  // Crear un parte sólo tiene sentido dentro de un trabajo: una entrada suelta en la barra
+  // llevaría a una pantalla que no sabe de qué trabajo hablar.
+  //
+  // 🔴 3-sep-2026 · ESTE ASERTO ERA MÍO Y ESTABA MAL, y es el mismo defecto que llevo dos días
+  // curando en los guards de otros: medía la FORMA —el prefijo `data-view="parte`— en vez del
+  // HECHO —la vista `parte-detail`—.
+  //
+  // La sesión 4 añadió `data-view="partes-oficina"`, que es OTRA pantalla y **sí** va en la barra:
+  // es la del jefe valorando, no la del técnico dentro de un trabajo. Mi prefijo la acusaba. Un
+  // guard que prohibe de más se acaba desactivando, y entonces tampoco protege de lo suyo.
   const html = fs.readFileSync(INDEX, 'utf8');
-  assert.ok(!/data-view="parte/.test(html),
-    '🔴 se ha estrenado una entrada de nav para el parte. La puerta va en el Trabajo.');
+  const enLaBarra = [...html.matchAll(/data-view="([a-z0-9-]+)"/g)].map((m) => m[1]);
+
+  assert.ok(enLaBarra.length > 0,
+    '🔴 SUELO: el barrido no ve NI UNA entrada de nav. Un cero aquí no es «la barra está ' +
+    'limpia»: es que no está mirando el índice.');
+  assert.ok(!enLaBarra.includes('parte-detail'),
+    '🔴 se ha estrenado una entrada de nav para `parte-detail`. La puerta va en el Trabajo: ' +
+    'esa pantalla necesita saber de qué parte habla, y desde la barra no lo sabe.');
+
+  // CONTROL POSITIVO del propio detector: ve las entradas que SÍ existen. Sin esto, el aserto de
+  // arriba pasaría igual con una regex rota.
+  assert.ok(enLaBarra.includes('jobs'),
+    '🔴 el detector no encuentra `jobs` en la barra, que está ahí: no está leyendo el índice.');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────────────────

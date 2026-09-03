@@ -200,3 +200,102 @@ ningún sitio y la línea sola se lee como una garantía:
 `prisma/schema.prisma` · la pantalla del parte y los ficheros de SCRUM-652 fase C · el camino de
 emisión · `ai.service.ts` y `lineasSugeridas.ts` (**el motor de presupuestos se queda como está: su
 decisión es correcta para su documento**) · ningún importe, en ninguna dirección.
+
+
+---
+
+# 2ª vuelta · El acotado de la ruta, reapuntado al HECHO
+
+**Medido contra:** `origin/main` = `4e9e114d1620386c76982efbc4eeae1e9d55fc06` · 2026-09-03T13:30:30+02:00
+**Rama:** `scrum-683b-acotado-al-hecho`
+
+## La mina que quedaba puesta
+
+El guard acotaba «la ruta del dictado» así:
+
+```js
+const ini = fuente.indexOf("router.post('/:id/dictado'");
+const fin = fuente.indexOf('\nexport default router', ini);   // ← el final del FICHERO
+const cuerpo = fuente.slice(ini, fin);
+```
+
+**Medía dónde acaba el fichero, no dónde acaba la ruta.** Funcionaba sólo mientras el dictado
+fuera la última ruta escrita — un hecho accidental del orden del fichero.
+
+El 3-sep-2026 entró `POST /:id/firmar-tecnico` después y el guard saltó **acusando al dictado de
+escribir en el parte**, cuando la que escribía era la de al lado. En SCRUM-653 se esquivó moviendo
+la ruta nueva antes — correcto en el momento, y dejaba la trampa puesta para el siguiente.
+
+> **Un rojo que nombra al inocente es peor que no tenerlo:** se busca media hora en el sitio
+> equivocado y se aprende a desconfiar del guard.
+
+Misma familia que llevamos dos días curando: **el instrumento mide la FORMA y no el HECHO.**
+
+## Cómo se mide el hecho
+
+`tests/_cuerpo-de-ruta.mjs` — nuevo, y **comprobado antes de escribirlo que no existía ya** (cero
+módulos de `tests/` que acoten rutas; el único que cortaba por `export default router` era este
+guard).
+
+Una ruta de Express es una llamada: acaba donde se cierra **su** paréntesis. Se cuentan paréntesis
+desde el de apertura hasta su pareja, ni un carácter más.
+
+🔴 **Y se cuentan sobre el código BLANQUEADO**, no sobre el fuente crudo: un paréntesis dentro de
+una cadena —`'La firma debe ser una imagen (PNG o JPEG)'`— o de un comentario descuadraría la
+cuenta. `soloCodigo` usa el escáner de TypeScript y **conserva las posiciones exactas**: medido,
+28.402 caracteres antes y después, y el mismo offset para el mismo texto. Así que se cuenta sobre
+el blanqueado y se corta sobre el original.
+
+**Nunca devuelve medio cuerpo.** Si no encuentra la ruta o no cierra el paréntesis, devuelve
+`ok:false` con el motivo: un trozo cortado por donde sea se lee igual que un cuerpo entero.
+
+## Los rojos
+
+| Prueba | Resultado |
+|---|---|
+| una ruta que **sí escribe** puesta DESPUÉS del dictado | el guard **no salta** — y el test comprueba, dentro, que **el acotado viejo sí saltaba** |
+| **CONTROL POSITIVO**: una escritura metida DENTRO del dictado | el guard **sigue cayendo** |
+| ruta inexistente · paréntesis sin cerrar · paréntesis dentro de una cadena | `ok:false` con motivo, y el acotado no se pasa de largo |
+
+El segundo es el que no podía perderse: al arreglar *dónde mira* es fácil dejarlo mirando a un
+trozo tan pequeño que ya no vea nada — y entonces el guard queda verde para siempre sin que nadie
+se entere. **Lo que comprueba no ha cambiado; cambia dónde mira.**
+
+## 🔴 Y aparece uno MÍO con el mismo defecto
+
+La suite completa destapó `SCRUM-652d · NO se estrena una entrada de nav para el parte`, que
+escribí yo en la fase D:
+
+```js
+assert.ok(!/data-view="parte/.test(html))   // ← PREFIJO
+```
+
+La sesión 4 añadió `data-view="partes-oficina"` —**otra pantalla, y ésa sí va en la barra**: es la
+del jefe valorando, no la del técnico dentro de un trabajo—. Mi prefijo la acusaba.
+
+Mismo defecto que estaba curando en el de otro: **medí la forma (un prefijo) en vez del hecho (la
+vista `parte-detail`)**. Reapuntado a la vista exacta, con suelo de ceguera y control positivo del
+propio detector.
+
+> Un guard que prohíbe de más se acaba desactivando, y entonces tampoco protege de lo suyo.
+
+## Para el ALTER de SCRUM-653
+
+* **Fichero:** `docs/sql/scrum-653-dos-firmas.sql` (rama `scrum-653-dos-firmas`). Cuatro
+  `ADD COLUMN … IF NOT EXISTS`, todas nullable. Clasificador: **4 sentencias · 0 RECHAZADAS ·
+  0 borrados · `ok=true`**.
+* **Partes firmados sin trazo: ninguno.** Medido en **producción**, sólo lectura, con control
+  positivo (`control_ve_la_tabla: 1`, así que el cero es un cero de verdad):
+
+  ```
+  CONTROL:  { control_ve_la_tabla: 1, ya_existe_signature_url: 0 }
+  RECUENTO: { partes_en_total: 0, estado_firmado: 0, con_fecha_de_firma: 0,
+              con_nombre_de_firmante: 0, con_sello: 0 }
+  ```
+
+  La tabla está **vacía**: el defecto de la fase C no ha llegado a perder ninguna firma real, y no
+  hay nada que decidir sobre partes existentes.
+
+  ⚠️ **Sólo se midió producción.** `dev` no se pudo —no hay PostgreSQL en esta máquina y su
+  servidor no responde (`P1001`)— y de `staging` no tengo la cadena. **No se declara nada sobre
+  esas dos:** «no medido» y «cero» no son lo mismo.

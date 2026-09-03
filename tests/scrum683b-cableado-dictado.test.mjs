@@ -12,6 +12,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { soloCodigo } from './_solo-codigo.mjs';
+// SCRUM-683b (2ª vuelta): dónde acaba la ruta se MIDE, no se supone.
+import { cuerpoDeRuta } from './_cuerpo-de-ruta.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const VISTA = path.join(RAIZ, 'public', 'dashboard', 'js', 'parteDetailView.js');
@@ -212,12 +214,18 @@ test('SCRUM-683b · 🔴 la ruta del dictado NO escribe en el parte', () => {
   const fuente = fs.readFileSync(
     path.join(RAIZ, 'src', 'modules', 'jobs', 'app', 'routes', 'partes.routes.ts'), 'utf8');
 
-  const ini = fuente.indexOf("router.post('/:id/dictado'");
-  assert.ok(ini > 0, '🔴 CIEGO: no encuentro la ruta del dictado');
-  // El cuerpo de la ruta, acotado por la siguiente declaración de nivel superior.
-  const fin = fuente.indexOf('\nexport default router', ini);
-  assert.ok(fin > ini, '🔴 CIEGO: no encuentro el final de la ruta');
-  const cuerpo = fuente.slice(ini, fin);
+  // 🔴 SCRUM-683b (2ª vuelta) · EL ACOTADO SE REAPUNTA AL HECHO.
+  //
+  // Antes se cortaba desde el dictado **hasta `export default router`**, o sea que se medía dónde
+  // acaba el FICHERO y no dónde acaba la RUTA. Funcionaba sólo mientras el dictado fuera la
+  // última ruta escrita — un hecho accidental del orden del fichero.
+  //
+  // El 3-sep-2026 entró `POST /:id/firmar-tecnico` después y este guard saltó acusando al dictado
+  // de escribir, cuando la que escribía era la de al lado. **Un rojo que nombra al inocente es
+  // peor que no tenerlo.** Lo que comprueba NO cambia; cambia dónde mira.
+  const ruta = cuerpoDeRuta(fuente, "router.post('/:id/dictado'");
+  assert.ok(ruta.ok, `🔴 CIEGO: ${ruta.motivo}. Sin el cuerpo de la ruta, este test no comprueba nada.`);
+  const cuerpo = ruta.cuerpo;
 
   for (const escritura of ['prisma.parteTrabajo.update', 'prisma.parteTrabajo.create', '.update(', '.create(']) {
     assert.ok(!cuerpo.includes(escritura),
@@ -225,4 +233,79 @@ test('SCRUM-683b · 🔴 la ruta del dictado NO escribe en el parte', () => {
       'una cantidad que ha leído una máquina entra en un documento que se firma y se factura sin ' +
       'que el técnico la haya mirado.');
   }
+});
+
+test('SCRUM-683b · 🔴 el acotado NO se lleva por delante la ruta de al lado', () => {
+  // El rojo que el acotado viejo NO pasaba: se le pone al fichero una ruta DESPUÉS del dictado, y
+  // esa ruta SÍ escribe. El guard tiene que seguir en verde, porque el dictado sigue sin escribir.
+  const fuente = fs.readFileSync(
+    path.join(RAIZ, 'src', 'modules', 'jobs', 'app', 'routes', 'partes.routes.ts'), 'utf8');
+
+  const rutaVecina = [
+    '',
+    "router.post('/:id/inventada', async (req, res) => {",
+    '  const x = await prisma.parteTrabajo.update({ where: { id: 1 }, data: {} });',
+    '  return res.json(x);',
+    '});',
+    '',
+  ].join('\n');
+
+  const conVecina = fuente.replace('\nexport default router', rutaVecina + '\nexport default router');
+  assert.ok(conVecina !== fuente, '🔴 SUELO: no he conseguido inyectar la ruta vecina');
+
+  const ruta = cuerpoDeRuta(conVecina, "router.post('/:id/dictado'");
+  assert.ok(ruta.ok, `🔴 CIEGO: ${ruta.motivo}`);
+  assert.ok(!ruta.cuerpo.includes('prisma.parteTrabajo.update'),
+    '🔴 el acotado se ha tragado la ruta de al lado y acusa al dictado de escribir. Es el rojo ' +
+    'que nombra al inocente: se busca media hora en el sitio equivocado y se aprende a desconfiar ' +
+    'del guard.');
+
+  // 🔴 CONTROL: el acotado VIEJO SÍ fallaba aquí. Sin esto, el arreglo podría no arreglar nada.
+  const iniViejo = conVecina.indexOf("router.post('/:id/dictado'");
+  const finViejo = conVecina.indexOf('\nexport default router', iniViejo);
+  assert.ok(conVecina.slice(iniViejo, finViejo).includes('prisma.parteTrabajo.update'),
+    '🔴 el acotado viejo NO se tragaba la ruta vecina, así que este arreglo no arregla nada y ' +
+    'el verde de arriba no demuestra que hiciera falta.');
+});
+
+test('SCRUM-683b · ✅ CONTROL POSITIVO: si el dictado SÍ escribiera, el guard SIGUE cayendo', () => {
+  // 🔴 EL QUE NO PUEDE PERDERSE. Al arreglar el acotado es fácil dejarlo mirando a un trozo tan
+  // pequeño que ya no vea nada: entonces el guard queda verde para siempre y nadie se entera.
+  const fuente = fs.readFileSync(
+    path.join(RAIZ, 'src', 'modules', 'jobs', 'app', 'routes', 'partes.routes.ts'), 'utf8');
+
+  const ruta = cuerpoDeRuta(fuente, "router.post('/:id/dictado'");
+  assert.ok(ruta.ok, `🔴 CIEGO: ${ruta.motivo}`);
+
+  // Se le mete una escritura DENTRO del cuerpo del dictado y se vuelve a acotar.
+  const conEscritura =
+    fuente.slice(0, ruta.fin - 3) +
+    '\n    await prisma.parteTrabajo.update({ where: { id: 1 }, data: {} });\n  ' +
+    fuente.slice(ruta.fin - 3);
+
+  const otra = cuerpoDeRuta(conEscritura, "router.post('/:id/dictado'");
+  assert.ok(otra.ok, `🔴 CIEGO tras inyectar: ${otra.motivo}`);
+  assert.ok(otra.cuerpo.includes('prisma.parteTrabajo.update'),
+    '🔴 EL GUARD HA MUERTO: se ha metido una escritura DENTRO del dictado y el acotado ya no la ' +
+    've. Arreglar dónde mira no puede costar que deje de mirar — y un guard que no ve nada pasa ' +
+    'en verde para siempre sin que nadie se entere.');
+});
+
+test('SCRUM-683b · 🔴 el extractor NO devuelve medio cuerpo: falla y lo dice', () => {
+  // «No supe cortarlo» y «el cuerpo está limpio» no pueden salir por la misma línea.
+  assert.equal(cuerpoDeRuta('const a = 1;', "router.post('/:id/dictado'").ok, false,
+    '🔴 devuelve un cuerpo para una ruta que no existe');
+  assert.match(String(cuerpoDeRuta('const a = 1;', "router.post('/x'").motivo), /no encuentro/i);
+
+  const sinCerrar = "router.post('/x', async (req, res) => { return 1;";
+  assert.equal(cuerpoDeRuta(sinCerrar, "router.post('/x'").ok, false,
+    '🔴 con el paréntesis sin cerrar devuelve medio cuerpo, y medio cuerpo se lee igual que uno ' +
+    'entero.');
+
+  // Y un paréntesis dentro de una CADENA no descuadra la cuenta.
+  const conCadena = "router.post('/x', (req, res) => { res.json({ m: 'PNG o JPEG)' }); });\nresto";
+  const r = cuerpoDeRuta(conCadena, "router.post('/x'");
+  assert.equal(r.ok, true, '🔴 un paréntesis dentro de una cadena ha roto el acotado');
+  assert.ok(!r.cuerpo.includes('resto'),
+    '🔴 el acotado se pasa de largo: se lleva lo que hay después de la ruta');
 });
