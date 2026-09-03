@@ -57,6 +57,17 @@ function tieneLlamadorExterno(nombre, propio) {
   });
 }
 
+/**
+ * 🔴 El CÓDIGO de un fuente del servidor, sin comentarios.
+ *
+ * Sin esto, comentar una línea la deja contando como si siguiera viva: `// mountAdmin(...)` es
+ * texto, y un guard que busca texto lo da por montado. Medido — el primer rojo de este fichero NO
+ * CAYÓ por eso, y la puerta de `/admin/partes` se podía quitar sin que nada se enterase.
+ */
+function codigoDe(ruta) {
+  return soloCodigo(leer(ruta), path.basename(ruta));
+}
+
 /** ¿La pantalla dibuja ese gancho? Se mira en su código, no en sus comentarios. */
 function pintaElGancho(fichero, gancho) {
   if (!existe(`public/dashboard/js/${fichero}`)) return false;
@@ -72,7 +83,7 @@ const CADENA = [
     salto: '1 · crear el trabajo',
     comprobar() {
       assert.ok(existe('src/modules/jobs/domain/trabajoDirecto.ts'), 'no existe el dominio del trabajo directo');
-      assert.ok(/mountAdmin\(app, '\/admin\/jobs'/.test(leer('src/app.ts')), '`/admin/jobs` no está montado');
+      assert.ok(/mountAdmin\(app, '\/admin\/jobs'/.test(codigoDe('src/app.ts')), '`/admin/jobs` no está montado');
     },
   },
   {
@@ -92,7 +103,7 @@ const CADENA = [
     pinta: 'data-parte-bloque',
     vive: 'renderParte',
     comprobar() {
-      assert.ok(/mountAdmin\(app, '\/admin\/partes'/.test(leer('src/app.ts')), '`/admin/partes` no está montado');
+      assert.ok(/mountAdmin\(app, '\/admin\/partes'/.test(codigoDe('src/app.ts')), '`/admin/partes` no está montado');
     },
   },
   {
@@ -101,9 +112,9 @@ const CADENA = [
     pinta: 'data-dictado-ordenar',
     vive: 'parteOrdenarDictado',
     comprobar() {
-      const rutas = leer('src/modules/jobs/app/routes/partes.routes.ts');
+      const rutas = codigoDe('src/modules/jobs/app/routes/partes.routes.ts');
       assert.ok(rutas.includes("router.post('/:id/dictado'"), 'no existe la ruta del dictado');
-      assert.ok(/\/admin\/partes\/:id\/dictado/.test(leer('src/core/http/adminRouteDeclarations.ts')),
+      assert.ok(/\/admin\/partes\/:id\/dictado/.test(codigoDe('src/core/http/adminRouteDeclarations.ts')),
         'la ruta del dictado no declara su rol: el Operario no llegaría');
     },
   },
@@ -113,7 +124,7 @@ const CADENA = [
     pinta: 'data-parte-firmar',
     vive: 'firmarParte',
     comprobar() {
-      assert.ok(leer('src/modules/jobs/app/routes/partes.routes.ts').includes("router.post('/:id/firmar'"),
+      assert.ok(codigoDe('src/modules/jobs/app/routes/partes.routes.ts').includes("router.post('/:id/firmar'"),
         'no existe la ruta de firma del parte');
     },
   },
@@ -129,17 +140,17 @@ const CADENA = [
   {
     salto: '7 · poner precios sobre un parte FIRMADO',
     comprobar() {
-      const dominio = leer('src/modules/jobs/domain/parteTrabajo.ts');
+      const dominio = codigoDe('src/modules/jobs/domain/parteTrabajo.ts');
       assert.ok(dominio.includes('export function puedeEditarPrecios'), 'no existe la regla de precios');
       // Y la ruta la EJERCE: sin esto la regla existe y no cierra nada, que fue el defecto de la fila 5.
-      assert.ok(leer('src/modules/jobs/app/routes/partes.routes.ts').includes('puedeEditarPrecios'),
+      assert.ok(codigoDe('src/modules/jobs/app/routes/partes.routes.ts').includes('puedeEditarPrecios'),
         'la ruta no usa `puedeEditarPrecios`: la regla existiría sin cerrar ninguna escritura');
     },
   },
   {
     salto: '8 · ver los precios guardados',
     comprobar() {
-      const rutas = leer('src/modules/jobs/app/routes/partes.routes.ts');
+      const rutas = codigoDe('src/modules/jobs/app/routes/partes.routes.ts');
       assert.ok(/precioUnitario/.test(rutas),
         'la ruta no escribe ni lee `precioUnitario`: los precios no se guardarían');
     },
