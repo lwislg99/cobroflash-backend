@@ -647,3 +647,85 @@ botón y el aviso de fallo— y `parteDetailView.js` suma el suyo del suelo de c
 
 **Entran porque la alternativa era peor:** un marcador se ve y se corrige; una pantalla
 inalcanzable no se ve, y ya estuvo así una fase entera con sus tests en verde.
+
+---
+
+## APÉNDICE (3-sep-2026) · Main estaba ROJO por un merge SIN CONFLICTOS — el control se estrecha
+
+> ⚠️ Se ANEXA. Nada de lo de arriba se toca: la fase D documenta lo que era cierto entonces.
+
+**Medido contra:** `origin/main` = `4e9e114d1620386c76982efbc4eeae1e9d55fc06` · 2026-09-03T15:30:00+02:00
+
+## 1 · Lo que pasó, con sus dos coordenadas
+
+`main` se puso rojo **sin que nadie escribiera una línea mala**:
+
+| commit | cuándo | qué hizo |
+| --- | --- | --- |
+| `107846d3` · SCRUM-652 fase D | 2-sep 19:58 | añadió el control `!/data-view="parte/.test(html)` |
+| `c561c626` · SCRUM-703 | 3-sep 12:06 | añadió `data-view="partes-oficina"` a `index.html:99` |
+
+**Ficheros distintos, cero conflicto, git contento, y el significado roto.** Es el aviso de Javier
+ocurriendo: *un merge sin conflictos no es un merge correcto — git resuelve por LÍNEAS, no por
+SIGNIFICADO*.
+
+Verificado en un **checkout limpio de `origin/main`**, sin nada de ninguna rama mía: el test cae
+solo. Y las dos coordenadas salen de `git log -S`, no de una impresión.
+
+## 2 · Los dos commits tenían razón; el que estaba mal era el test, POR ANCHO
+
+- **`parte-detail`** es el parte del TÉCNICO. El router lo pinta sólo con `state.parteId`, así que
+  se entra desde el Trabajo: una entrada suelta en la barra lleva a una pantalla que no sabe de qué
+  trabajo habla. Eso es lo que el control nació protegiendo, y sigue protegido.
+- **`partes-oficina`** es la LISTA DEL JEFE («Partes por valorar»). **No necesita contexto**, y su
+  razón de existir es que el jefe encuentre lo que le falta por valorar. **Decisión del fundador
+  (3-sep-2026): se queda en el nav.**
+
+El control cazaba `parte*` **por prefijo** y atrapaba algo que no era lo que vigila.
+
+## 3 · 🔒 La lección, que vale más que el arreglo
+
+> **UN GUARD QUE VIGILA UN PREFIJO NO VIGILA UN HECHO:** vigila una convención de nombres, y caza
+> al primero que se llame parecido siendo otra cosa.
+
+Queda escrita **dentro del test**, con las dos coordenadas y la fecha. Sin esa nota, dentro de un
+mes alguien lo vuelve a ensanchar creyendo que lo arregla.
+
+## 4 · El control ya no mira el nombre: mira el HECHO
+
+Qué vistas exigen un id de contexto **lo dice el propio router** (`if (state.<algo>Id != null && …)`),
+leído por AST — no una lista escrita a mano que envejece. Medido **antes** de escribir el guard:
+
+```
+EXIGEN un id de contexto: 5
+   quotes-detail    <- state.quoteId       albaran-detail   <- state.albaranId
+   jobs-detail      <- state.jobId         invoice-detail   <- state.invoiceId
+   parte-detail     <- state.parteId
+ENTRADAS DE NAV: 18
+NAV que apunta a una vista que EXIGE id: 0   <- el guard nace VERDE
+NAV que empieza por «parte» (lo que cazaba el guard viejo): ["partes-oficina"]
+```
+
+**El test no se borra y la entrada del nav no se quita.** Se reapunta, y pasa de uno a tres:
+
+1. el control positivo, ahora sobre el hecho, **con SUELO**: si la derivación deja de ver
+   `parte-detail`, cae — no se queda vigilando en vacío;
+2. 🔴 **el control que no puede perderse**: se mete `parte-detail` en la barra y tiene que caer,
+   nombrando el contexto que le falta. Va como **simulación permanente dentro del test**, no como
+   una inyección de una vez;
+3. el control negativo **con el mecanismo viejo EJECUTADO**: la regla del prefijo caza
+   `partes-oficina`, y el assert lo enseña con su nombre. Si alguien vuelve a ensanchar el guard,
+   ese assert le pone delante al inocente.
+
+## 5 · Los rojos · commit de resguardo `22795d1cfeea7ced2aac56b3ef4c864172a27930`
+
+| # | Qué se rompe | Qué cae |
+| :-: | --- | --- |
+| 1 | se mete `parte-detail` en la barra | 3/12 · y el rojo dice `data-view="parte-detail" — el router la pinta sólo con state.parteId` |
+| 2 | se retira `partes-oficina` del nav | 1/12 · el control negativo protege la decisión del fundador |
+| 3 | el router deja de exigir `state.parteId` | 2/12 · el SUELO enseña lo que ve: `["quotes-detail","jobs-detail","albaran-detail","invoice-detail"]` |
+
+## 6 · Lo que NO se ha tocado
+
+Nada más de 652d · nada de SCRUM-703 · ni el nav · ni `parteDetailView.js` · ni
+`parteOficinaView.js`. El diff es **un fichero**.
