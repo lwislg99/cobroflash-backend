@@ -267,3 +267,58 @@ vivía en ella, y el trinquete de SCRUM-667 aprieta.
 rama sobrevive sin podar, que es lo que la hace parecer viva—; `scrum-652-puerta-al-parte` **no lo
 está**. Comprobado con `git merge-base --is-ancestor` contra las dos puntas, y con suelo: el
 comparador responde «sí» cuando algo sí está. Falta la puerta del **salto 3**, del trabajo al parte.
+
+---
+
+# SCRUM-703 · Segunda medición del recorrido: siete de ocho, y un botón muerto
+
+**Medido contra:** `origin/main` = `4e9e114d1620386c76982efbc4eeae1e9d55fc06` · 2026-09-03T13:39:45+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-tecnosel-tipo-y-precios`
+
+Con las ocho puertas dentro por primera vez —y con los seis ALTER de SCRUM-674 aplicados por Javier
+en dev, staging y producción, así que «falta el ALTER» ya no es una respuesta posible— se repitió el
+recorrido entero. **Siete de ocho, recorridos.** La primera medición daba cuatro: la diferencia
+entre las dos es lo que desbloqueó cada merge, y por eso la anterior no se reescribió.
+
+**🔴 EL SALTO 4 ESTÁ PINTADO Y MUERTO.** El botón del dictado se pinta en `parteDetailView.js:240` y
+**no aparece en ningún otro sitio del árbol**; no hay delegación en el fichero. La ruta existe, la
+función que la llama existe y está entera, el botón existe: **lo único que falta es el cable entre
+los dos**. `ordenarElDictado` sólo se cuelga de `window.parteOrdenarDictado` (`:469`), que es como
+lo alcanzan los tests — **y por eso la suite está verde**. Medido con suelo: el mismo buscador sí
+encuentra el cable de la firma, así que su silencio no es ceguera. No se arregló: era medición.
+
+**MI PROPIO MEDIDOR MINTIÓ PRIMERO, y quedó escrito porque es la lección.** Dio por muertas tres
+pantallas vivas: buscaba el listener en UNA sola forma (`addEventListener`) cuando el botón de
+guardar precios usa `onclick`, y lo buscaba dentro de una **ventana fija** alrededor del ancla. Una
+ventana fija es una tolerancia disfrazada. Se verificó cada veredicto a mano antes de creerlo.
+
+**EL DINERO NO CAE EN NINGUNO DE LOS OCHO PUNTOS.** Y una corrección de la misma pasada: el único
+«importe» de la pantalla del técnico está **en un comentario** que dice justamente que lo que ve el
+firmante se arma sin importes. La primera lectura lo contó como código.
+
+**LOS RÓTULOS FIRMADOS, YA SUJETOS.** Hasta hoy ningún test llamaba a `tiposIntervencionParaUI()`:
+«cae con el mecanismo viejo» estaba garantizado porque **no caía nada**. Cinco controles nuevos, con
+`===`. El rojo se probó cambiando **una letra** («técnica» → «Técnica») y cae nombrando el tipo, el
+firmado y el de ahora. Commit en verde antes del rojo: `8ef07024df28b27d527f8bf57bf73f6408403635`.
+Dos guards de la casa corrigieron el guard nuevo: SCRUM-651 porque la primera versión declaraba una
+**segunda lista** del vocabulario cerrado, y SCRUM-553 porque pegaba un `>` a la etiqueta.
+
+**LOS DIEZ TEXTOS QUE SIGUEN SIN FIRMAR**, literales y con su línea, para que se firmen leyendo el
+árbol y no un resumen:
+
+| # | Fichero:línea | Texto exacto |
+|---|---|---|
+| 1 | `public/dashboard/js/jobNuevoModal.js:39` | Cliente |
+| 2 | `public/dashboard/js/jobNuevoModal.js:55` | Dirección de la obra |
+| 3 | `public/dashboard/js/jobNuevoModal.js:59` | Qué hay que hacer |
+| 4 | `public/dashboard/js/jobNuevoModal.js:62` | Abrir trabajo |
+| 5 | `public/dashboard/js/jobNuevoModal.js:66` | Trabajo nuevo |
+| 6 | `public/dashboard/js/jobNuevoModal.js:90` | Primero necesitas un cliente. |
+| 7 | `public/dashboard/js/jobNuevoModal.js:98` | No hemos podido cargar tus clientes. |
+| 8 | `public/dashboard/js/jobNuevoModal.js:103` | Elige un cliente. |
+| 9 | `public/dashboard/js/jobNuevoModal.js:120` | No se ha podido abrir el trabajo. |
+| 10 | `public/dashboard/js/jobsView.js:52` | Trabajo nuevo |
+
+Los cuatro primeros y el quinto van pegados a su etiqueta de cierre en el código (`Cliente</label>`,
+`Abrir trabajo</button>`): lo visible es lo de la tabla. El 7 dice «No hemos podido», que es la voz
+que el fundador ya corrigió en otra pantalla.

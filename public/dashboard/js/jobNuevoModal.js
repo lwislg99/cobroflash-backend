@@ -42,7 +42,7 @@ function abrirModalTrabajoNuevo(alCrear) {
         '<div class="field">' +
           '<label for="tn-tipo">Tipo de intervención</label>' +
           '<select id="tn-tipo" style="width:100%">' +
-            '<option value="">' + MARCA_651 + ' Sin especificar</option>' +
+            '<option value="">Sin especificar</option>' +
             // 🔴 SIN LISTA AQUI: los tipos llegan del servidor (`/admin/me`). Escribirlos en el
             // navegador seria una SEGUNDA fuente del vocabulario cerrado, y el guard de fuente
             // unica cayo por eso mismo cuando se intento.
