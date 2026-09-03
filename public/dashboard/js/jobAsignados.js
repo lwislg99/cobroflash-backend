@@ -25,19 +25,21 @@
 // el mismo patrón de SCRUM-229/500/655.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// ⚠️ MICROCOPY SIN APROBAR (regla 30) · el marcador se ve EN PANTALLA a propósito
+// ✅ MICROCOPY APROBADA por el fundador el 3-sep-2026 (regla 30) · LOS CINCO, SIN UN CAMBIO
 //
-// El mecanismo NO EXISTE SIN TEXTO: un selector sin rótulos no se puede usar. Mismo caso que
-// `jobNuevoModal.js` en el censo de SCRUM-402. Los CINCO textos salen de UNA sola constante,
-// así que el día que el fundador los firme se apagan de golpe y la entrada del censo se BORRA.
-var MARCA_ASIGNADOS = '[PENDIENTE microcopy oficial]';
-
+// Salieron con `[PENDIENTE microcopy oficial]` porque el mecanismo NO EXISTE SIN TEXTO —un selector
+// sin rótulos no se puede usar— y se aprobaron literales. Al aplicarlos desaparece la constante que
+// factorizaba la marca, y con ella la entrada de este fichero en el censo de SCRUM-402: se BORRA,
+// no se pone a 0.
+//
+// Se copian LITERALES y hay un guard que los fija: aquí no se retoca una coma sin volver a pasar
+// por el fundador.
 var TEXTOS_ASIGNADOS = {
-  titulo: MARCA_ASIGNADOS + ' Quién ejecuta este trabajo',
-  vacio: MARCA_ASIGNADOS + ' Todavía no lo ejecuta nadie',
-  soloAdmin: MARCA_ASIGNADOS + ' Solo un administrador puede cambiar quién ejecuta',
-  sinEquipo: MARCA_ASIGNADOS + ' Todavía no hay empleados a los que asignar',
-  noSeGuardo: MARCA_ASIGNADOS + ' No se ha podido guardar quién ejecuta este trabajo',
+  titulo: 'Quién ejecuta este trabajo',
+  vacio: 'Todavía no lo ejecuta nadie',
+  soloAdmin: 'Solo un administrador puede cambiar quién ejecuta',
+  sinEquipo: 'Todavía no hay empleados a los que asignar',
+  noSeGuardo: 'No se ha podido guardar quién ejecuta este trabajo',
 };
 
 /**
@@ -207,6 +209,6 @@ if (typeof window !== 'undefined') {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     construirSelectorAsignados, tecnicosAsignables, nombresDeAsignados,
-    cuerpoDeAsignacion, TEXTOS_ASIGNADOS, MARCA_ASIGNADOS,
+    cuerpoDeAsignacion, TEXTOS_ASIGNADOS,
   };
 }

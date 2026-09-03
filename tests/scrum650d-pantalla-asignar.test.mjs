@@ -387,23 +387,38 @@ test('SCRUM-650d · 🔴 toda clase que pinta el selector EXISTE en la hoja, y l
     'obra y con guantes: por debajo de eso se falla el toque y se asigna a quien no era.');
 });
 // ═════════════════════════════════════════════════════════════════════════════════════════
-// § 4 · REGLA 30 · EL TEXTO NO LO APRUEBO YO
+// § 4 · REGLA 30 · EL TEXTO NO LO APRUEBO YO — Y YA ESTÁ APROBADO
+//
+// ⚠️ ESTE TEST ESTÁ DADO LA VUELTA, NO BORRADO (3-sep-2026). Hasta hoy exigía que los cinco
+// textos LLEVARAN `[PENDIENTE microcopy oficial]` y que el marcador saliera de UNA sola constante,
+// para que aprobarlos los apagara de golpe. El fundador los aprobó **sin un solo cambio**, así que
+// ahora vigila lo contrario: que ninguno lleve marcador y que digan EXACTAMENTE lo aprobado.
+//
+// Se borra el renglón y esto queda sin sujeto: nadie sabría que estas cinco frases están firmadas,
+// y la siguiente persona que toque el módulo retocaría una coma sin pasar por el fundador. Un
+// texto aprobado no es un texto libre.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-650d · 🔴 todo texto de pantalla lleva el marcador, y sale de UNA constante', () => {
-  const textos = Object.entries(front.TEXTOS_ASIGNADOS);
-  assert.ok(textos.length >= 4, `🔴 solo hay ${textos.length} textos declarados: el censo mediría poco`);
-  for (const [clave, texto] of textos) {
-    assert.ok(texto.startsWith('[PENDIENTE'),
-      `🔴 el texto «${clave}» se pinta SIN marcador: «${texto}». El microcopy lo aprueba el ` +
-      'fundador (regla 30), y una frase plausible sin marcar es texto que nadie ha firmado ' +
-      'llegándole a un profesional.');
-  }
-  // Y salen de UNA sola constante: aprobar el copy los apaga de golpe, y por eso el censo de
-  // SCRUM-402 cuenta 1 para este fichero y no cuatro.
-  const literalesConMarca = (FUENTE_FRONT.match(/'\[PENDIENTE[^']*'/g) || []);
-  assert.equal(literalesConMarca.length, 1,
-    `🔴 hay ${literalesConMarca.length} literales con marcador en el fichero y tiene que haber ` +
-    'UNO. Con el marcador repetido, aprobar el copy obliga a tocar cada texto por separado y el ' +
-    'censo de SCRUM-402 deja de poder contar 1.');
+/** Los CINCO, literales, aprobados por el fundador el 3-sep-2026. No se retocan aquí. */
+const APROBADOS = {
+  titulo: 'Quién ejecuta este trabajo',
+  vacio: 'Todavía no lo ejecuta nadie',
+  soloAdmin: 'Solo un administrador puede cambiar quién ejecuta',
+  sinEquipo: 'Todavía no hay empleados a los que asignar',
+  noSeGuardo: 'No se ha podido guardar quién ejecuta este trabajo',
+};
+
+test('SCRUM-650d · 🔴 los cinco textos son EXACTAMENTE los aprobados, y sin marcador', () => {
+  assert.deepEqual(front.TEXTOS_ASIGNADOS, APROBADOS,
+    '🔴 EL TEXTO DE PANTALLA YA NO ES EL QUE FIRMÓ EL FUNDADOR.\n'
+    + `    en el módulo: ${JSON.stringify(front.TEXTOS_ASIGNADOS, null, 1)}\n`
+    + `    aprobado    : ${JSON.stringify(APROBADOS, null, 1)}\n`
+    + '  El microcopy lo aprueba el fundador (regla 30). Retocar una coma aquí es publicar texto\n'
+    + '  que nadie ha firmado; si hace falta cambiarlo, se propone y se vuelve a aprobar.');
+
+  // Y ni rastro del marcador: quedarse a medias —texto aprobado en unos y marcador en otros— es
+  // exactamente lo que el censo de SCRUM-402 dejaría de poder contar.
+  assert.equal(/\[PENDIENTE/.test(soloCodigo(FUENTE_FRONT, 'jobAsignados.js')), false,
+    '🔴 queda un `[PENDIENTE …]` en el código del módulo después de aprobarse los cinco textos. '
+    + 'El marcador se ve EN PANTALLA: es texto sin firmar llegándole a un profesional.');
 });

@@ -627,6 +627,11 @@ censo de SCRUM-402 no se moviera: **ya no hace falta, porque ya no hay nada marc
 
 ---
 
+> **LOS DOS BLOQUES DE ABAJO SE QUEDAN.** Son registros FECHADOS del mismo día y de pantallas
+> distintas: el tipo de intervención (SCRUM-703, ya en `main`) y quién ejecuta el trabajo
+> (SCRUM-650). Ninguno sustituye al otro — quitar uno dejaría sin constancia unos textos que el
+> fundador sí firmó.
+
 ## Bloque · Partes por valorar (sprint Tecnosel) — `public/dashboard/js/parteOficinaView.js`
 
 **Aprobada:** 3-sep-2026 · **APLICADA EN EL MISMO ACTO** (SCRUM-703). Once literales.
@@ -685,3 +690,56 @@ quedan en el modal («Cliente», «Sin especificar», «Dirección de la obra»,
 «Abrir trabajo», «Trabajo nuevo», los tres avisos y el error) y el botón de `jobsView.js`.
 **«Sin especificar» está dentro del mismo desplegable que se acaba de firmar y no venía en la
 lista de cuatro: queda a la espera.**
+
+---
+
+## Addendum · Quién ejecuta el trabajo (3-sep-2026) · **APLICADOS**
+
+**Medido contra:** `origin/main` = `1f03815295aa3ba26920283f5daec16472d03854` · 2026-09-03T13:40:00+02:00
+
+**SCRUM-650 (T1)** propuso cinco textos con marcador para el selector de quién ejecuta un Trabajo —
+el campo «Técnico» del parte de papel de Tecnosel, donde caben tres nombres en una línea. El
+fundador los aprobó **sin un solo cambio** y se aplican en el mismo acto.
+
+| Ranura | Fichero | Texto aprobado |
+|---|---|---|
+| `titulo` | `public/dashboard/js/jobAsignados.js` · `TEXTOS_ASIGNADOS` | `Quién ejecuta este trabajo` |
+| `vacio` | ídem | `Todavía no lo ejecuta nadie` |
+| `soloAdmin` | ídem | `Solo un administrador puede cambiar quién ejecuta` |
+| `sinEquipo` | ídem | `Todavía no hay empleados a los que asignar` |
+| `noSeGuardo` | ídem | `No se ha podido guardar quién ejecuta este trabajo` |
+
+**Van sin corchete de marcador y se copian literales.** Los cinco llevan tilde donde toca
+(`Quién`, `Todavía`) y ninguno termina en punto: son rótulos y estados de una caja, no frases de
+párrafo.
+
+### Qué dice cada uno, y por qué el conjunto no se puede recortar
+
+- **`titulo`** — el rótulo del bloque. Es lo único que separa esta caja del bloque RESPONSABLE del
+  rail: aquél dice quién REDACTÓ el presupuesto (autoría, SCRUM-52) y éste quién lo EJECUTA
+  (SCRUM-10). Sin rótulo, quien abre la pantalla no sabe cuál de las dos está marcando.
+- **`vacio`** — un trabajo sin nadie asignado es **invisible para todos los técnicos**; solo lo ven
+  los admin. Esa caja vacía tiene que decir qué significa.
+- **`soloAdmin`** — al técnico se le enseña quién ejecuta pero no lo puede cambiar. Norma de
+  SCRUM-89: un gate no deja UI huérfana, así que se dice por qué en vez de esconder el bloque.
+- **`sinEquipo`** — negocio de una sola persona. **No es un fallo:** el propietario no tiene fila en
+  `team_members`, así que hay un miembro y cero asignables. Un desplegable vacío no se distingue de
+  uno que no cargó; este texto sí.
+- **`noSeGuardo`** — el fallo al guardar. **Y sustituye a pintar el `.message` del servidor**
+  (SCRUM-644): un `invalid_assignee` en pantalla es una tubería interna asomando a la interfaz.
+
+### 🔴 El marcador se apagó de golpe, que es para lo que estaba factorizado
+
+Los cinco salían de **una sola constante** `MARCA_ASIGNADOS`, y había un guard en
+`tests/scrum650d-pantalla-asignar.test.mjs` que exigía que el literal con marcador fuera **uno**.
+Por eso el censo de SCRUM-402 contaba `1` para este fichero y no `5`, y por eso aprobarlos ha sido
+borrar una constante y no tocar cinco textos.
+
+✅ **Aplicados en código Y anotados aquí en el mismo commit.**
+✅ La entrada `'jobAsignados.js'` del censo de SCRUM-402 se **BORRA**, no se pone a 0 (SCRUM-424 /
+SCRUM-405): `censoActual()` solo lista ficheros CON marcadores. Salir del censo **no** saca de la
+vigilancia — lo fija R4b.
+✅ El guard de la regla 30 se **da la vuelta, no se borra**: antes exigía que los cinco llevaran
+marcador; ahora exige que digan EXACTAMENTE lo aprobado y que no quede ni rastro del `[PENDIENTE`.
+Borrarlo dejaría estas cinco frases sin sujeto, y la siguiente persona que toque el módulo
+retocaría una coma sin pasar por el fundador.
