@@ -150,6 +150,29 @@ async function _enviarMutacion(url, finalOptions, ctrl) {
   }
 }
 
+/**
+ * ¿Es esto un cuerpo que `fetch` sabe enviar TAL CUAL?
+ *
+ * Una cadena, sí — y son las 52 llamadas que ya hacen `JSON.stringify` fuera. Los tipos del
+ * navegador (FormData, Blob, URLSearchParams…) también: serializarlos con `JSON.stringify` daría
+ * `{}` y perdería el fichero entero sin ningún error. Todo lo demás —un objeto plano, un array—
+ * no viaja: hay que serializarlo.
+ *
+ * Las comprobaciones van con `typeof x !== 'undefined'` porque este mismo fichero se carga en
+ * contextos sin DOM (los tests lo evalúan con `new Function`), y ahí `FormData` no existe.
+ */
+function esCuerpoQueFetchEnvia(body) {
+  if (typeof body === 'string') return true;
+  const nativos = ['FormData', 'Blob', 'File', 'URLSearchParams', 'ArrayBuffer', 'ReadableStream'];
+  for (const nombre of nativos) {
+    const Tipo = typeof globalThis !== 'undefined' ? globalThis[nombre] : undefined;
+    if (typeof Tipo === 'function' && body instanceof Tipo) return true;
+  }
+  // Vistas sobre un buffer (Uint8Array y compañía): `fetch` las envía como bytes.
+  if (typeof ArrayBuffer !== 'undefined' && ArrayBuffer.isView && ArrayBuffer.isView(body)) return true;
+  return false;
+}
+
 async function apiRequest(path, options = {}) {
   const url = API_BASE_URL + path;
 
@@ -160,6 +183,36 @@ async function apiRequest(path, options = {}) {
     },
     ...options,
   };
+
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+  // SCRUM-704 · UN `body` QUE NO ES CADENA VIAJA COMO «[object Object]»
+  //
+  // `fetch` no serializa nada: a lo que no es un cuerpo válido le aplica `String(x)`, y de un
+  // objeto plano eso sale **"[object Object]"**. Medido, no deducido:
+  //
+  //     new Request(url, { body: { direccion: 'Av. Rey Juan Carlos 145' } })  ->  "[object Object]"
+  //
+  // Con `Content-Type: application/json`, al servidor le llega basura que no parsea, y el campo
+  // NO SE GUARDA. Le pasaba a dos: el nombre del Trabajo y **la dirección de la obra** — que es
+  // donde se presenta el técnico. Si el jefe la corrige y no se guarda, el técnico va a la
+  // dirección vieja: un desplazamiento perdido, de los que Tecnosel apunta como coste real.
+  //
+  // 🔴 POR QUÉ NORMALIZAR Y NO «SERIALIZAR SIEMPRE», que es el arreglo que parece obvio y rompe
+  // 52 sitios. Censo por AST sobre `public/` (SCRUM-704): de **55** llamadas con `body`,
+  // **52 ya mandan `JSON.stringify(...)`**, 2 mandaban objeto y 1 manda una cadena o `undefined`.
+  // La convención de la casa es serializar FUERA. Un `JSON.stringify` incondicional aquí les
+  // metería la cadena DENTRO DE OTRA CADENA —`"{\"a\":1}"` en vez de `{"a":1}`— y el servidor
+  // recibiría un string donde espera un objeto: cambiaría un fallo silencioso por otro, y en 52
+  // sitios en vez de 2.
+  //
+  // Así que sólo se serializa lo que NO es ya un cuerpo que `fetch` sepa enviar. Los 52 pasan
+  // intactos POR CONSTRUCCIÓN, no por una lista de excepciones.
+  //
+  // ⚠️ Se arregla AQUÍ y no en los dos llamadores: arreglar los dos deja la puerta abierta para el
+  // siguiente, y el siguiente tampoco daría error. Éste es el único punto por el que pasan todos.
+  if (finalOptions.body !== undefined && finalOptions.body !== null && !esCuerpoQueFetchEnvia(finalOptions.body)) {
+    finalOptions.body = JSON.stringify(finalOptions.body);
+  }
 
   const metodo = String(finalOptions.method || 'GET').toUpperCase();
 
