@@ -69,6 +69,20 @@ const CENSO = Object.freeze({
   // aprobar el copy los apaga de golpe (mismo patron que SCRUM-421 dejo escrito aqui). El dia
   // que el fundador los firme, esta entrada se BORRA — no se pone a 0.
   'jobNuevoModal.js': 1,
+  // SCRUM-650 (T1) · ENTRA A CONCIENCIA con 1, y por el MISMO motivo que `jobNuevoModal.js`:
+  // EL MECANISMO NO EXISTE SIN TEXTO. Es el selector de QUIEN EJECUTA el trabajo —el campo
+  // «Tecnico» del parte de papel, donde Tecnosel escribe «Israel, Miguel y Jesus.L»—, y un
+  // selector sin rotulo no se puede usar: quien lo abre no sabe si esta marcando al que ejecuta,
+  // al que lo redacto o al que cobra, que son tres cosas distintas en esta pantalla.
+  //
+  // Se cuenta 1 y son CINCO textos: el rotulo, el hueco, la nota de solo-lectura del tecnico, el
+  // aviso de equipo vacio y el fallo al guardar. Los cinco salen de una sola constante
+  // `MARCA_ASIGNADOS`, asi que
+  // aprobar el copy los apaga de golpe — y hay un test en `scrum650d` que EXIGE que el literal
+  // con marcador sea uno solo, para que ese 1 no pueda convertirse en cuatro sin que salte.
+  //
+  // El dia que el fundador firme los cuatro textos, esta entrada se BORRA — no se pone a 0.
+  'jobAsignados.js': 1,
   // SCRUM-507 (13-ago-2026): `aiQuoteAssistant.js` ENTRO y SALIO del censo el mismo dia. Entro con
   // 2 —el aviso de la linea que no se propone porque su IVA era ilegible, y la marca por linea de
   // lo que la IA se invento— y el fundador FIRMO los dos textos en el mismo ticket.
