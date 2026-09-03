@@ -16,13 +16,18 @@
 // su botón, y **nadie escucha ese botón**. La suite pasa: el módulo existe, exporta, se registra en
 // el índice y hasta se precachea. Y el profesional pulsa y no ocurre nada.
 //
-// Por eso cada eslabón del front declara DOS cosas y se exigen LAS DOS:
+// Por eso cada eslabón del front declara TRES cosas:
 //
-//     pinta →  el gancho que la pantalla dibuja (`data-…`)
-//     vive  →  la función que alguien tiene que LLAMAR desde FUERA de su propio módulo
+//     pinta  →  el gancho que la pantalla dibuja
+//     puerta →  la función PÚBLICA que el enrutador llama para abrir la pantalla
+//     ata    →  la función que atiende ese gancho, y que tiene que estar LLAMADA en algún sitio
 //
-// Un gancho que solo aparece en el fichero que lo pinta es un botón muerto. Medido: así se ve uno
-// vivo — `btnFirmarAqui` aparece en `albaranActionsRegistry.js` **y** en `albaranDetailView.js`.
+// 🔴 Y las dos últimas son preguntas DISTINTAS, que es lo que este fichero aprendió a golpes: un
+// módulo bien hecho tiene UNA puerta pública y ata sus propios botones POR DENTRO. `app.js` llama a
+// `renderParteDetailView`, y ésa ata el botón a `firmarParte` dentro del mismo fichero. Un detector
+// que solo mirase «llamadores de fuera» daría los dos por muertos, y no lo están.
+//
+// Lo que sí está muerto es un gancho que se pinta y cuya función **no se llama en ninguna parte**.
 //
 // ⚠️ NINGUNA BASE DE DATOS. Los eslabones de servidor se comprueban sobre el árbol —la ruta está
 // montada, declara su rol, y la regla que decide vive en el dominio— y los de pantalla ejecutando
@@ -43,18 +48,33 @@ const existe = (p) => fs.existsSync(path.join(RAIZ, p));
 const MODULOS = fs.readdirSync(JS).filter((f) => f.endsWith('.js'));
 
 /**
- * ¿Alguien llama a `nombre` desde FUERA de `propio`?
+ * ¿Se LLAMA `nombre` en alguno de estos módulos?
+ *
+ * 🔴 CON LÍMITE DE PALABRA, siempre. Un prefijo no es un nombre: `window.renderParte` casa dentro
+ * de `window.renderPartesOficinaView`, y esa colisión me dio un falso «tiene llamador» y luego un
+ * falso «está muerto». En un producto los nombres parecidos son los relacionados, o sea los que más
+ * se cruzan.
  *
  * Se lee el CÓDIGO, sin comentarios (`soloCodigo`, SCRUM-693): media cadena de este árbol se
  * menciona en las cabeceras que explican por qué existe, y un guard de texto se caza ahí.
  */
-function tieneLlamadorExterno(nombre, propio) {
-  return MODULOS.some((f) => {
-    if (f === propio) return false;
+function seLlamaEn(nombre, ficheros) {
+  const llamada = new RegExp(`\\b${nombre}\\s*\\(`);
+  const porWindow = new RegExp(`window\\.${nombre}\\b(?!\\s*=)`);
+  return ficheros.some((f) => {
     const codigo = soloCodigo(fs.readFileSync(path.join(JS, f), 'utf8'), f);
-    return new RegExp(`\\b${nombre}\\s*\\(`).test(codigo)
-      || new RegExp(`window\\.${nombre}\\b`).test(codigo);
+    return llamada.test(codigo) || porWindow.test(codigo);
   });
+}
+
+/** ¿Hay quien abra esta pantalla desde fuera? (la PUERTA) */
+function tienePuerta(nombre, propio) {
+  return seLlamaEn(nombre, MODULOS.filter((f) => f !== propio));
+}
+
+/** ¿Está atado ese gancho? Vale que lo ate el propio módulo: es lo correcto. */
+function estaAtado(nombre, propio) {
+  return seLlamaEn(nombre, [propio]) || tienePuerta(nombre, propio);
 }
 
 /**
@@ -92,7 +112,8 @@ const CADENA = [
     // Esta pantalla no dibuja `data-…`: construye elementos con clase `job-asignados-*`. El
     // gancho es lo que de verdad pinta, no lo que uno esperaría que pintara.
     pinta: 'job-asignados-lista',
-    vive: 'construirSelectorAsignados',
+    puerta: 'construirSelectorAsignados',
+    ata: 'construirSelectorAsignados',
     comprobar() {
       assert.ok(existe('public/dashboard/js/jobAsignados.js'), 'no existe la pantalla de asignados');
     },
@@ -101,7 +122,10 @@ const CADENA = [
     salto: '3 · abrir el parte',
     pantalla: 'parteDetailView.js',
     pinta: 'data-parte-bloque',
-    vive: 'renderParte',
+    // La PUERTA es `renderParteDetailView` (SCRUM-652 fase D): es la que llama `app.js`.
+    // `renderParte` es su pieza de dentro, y medirla a ella daba un «muerto» falso.
+    puerta: 'renderParteDetailView',
+    ata: 'renderParte',
     comprobar() {
       assert.ok(/mountAdmin\(app, '\/admin\/partes'/.test(codigoDe('src/app.ts')), '`/admin/partes` no está montado');
     },
@@ -110,7 +134,8 @@ const CADENA = [
     salto: '4 · dictar',
     pantalla: 'parteDetailView.js',
     pinta: 'data-dictado-ordenar',
-    vive: 'parteOrdenarDictado',
+    puerta: 'renderParteDetailView',
+    ata: 'parteOrdenarDictado',
     comprobar() {
       const rutas = codigoDe('src/modules/jobs/app/routes/partes.routes.ts');
       assert.ok(rutas.includes("router.post('/:id/dictado'"), 'no existe la ruta del dictado');
@@ -122,7 +147,8 @@ const CADENA = [
     salto: '5 · firmar',
     pantalla: 'parteDetailView.js',
     pinta: 'data-parte-firmar',
-    vive: 'firmarParte',
+    puerta: 'renderParteDetailView',
+    ata: 'firmarParte',
     comprobar() {
       assert.ok(codigoDe('src/modules/jobs/app/routes/partes.routes.ts').includes("router.post('/:id/firmar'"),
         'no existe la ruta de firma del parte');
@@ -132,7 +158,8 @@ const CADENA = [
     salto: '6 · aparecer en «por valorar»',
     pantalla: 'parteOficinaView.js',
     pinta: 'po-lista',
-    vive: 'renderPartesOficinaView',
+    puerta: 'renderPartesOficinaView',
+    ata: 'renderPartesOficinaView',
     comprobar() {
       assert.ok(existe('public/dashboard/js/parteOficinaView.js'), 'no existe la pantalla de oficina');
     },
@@ -161,7 +188,7 @@ const CADENA = [
 // 🔴 EL TRINQUETE DE LO YA ROTO, con su motivo. NO se arregla aquí: se NOMBRA.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 //
-// Medido el 3-sep-2026: estos CUATRO saltos están PINTADOS Y MUERTOS —la pantalla dibuja el botón y
+// Medido el 3-sep-2026 y REMEDIDO tras el merge de la PR 942: queda UNO —la pantalla dibuja el botón y
 // **nadie llama a la función que lo atendería**—. Se declaran para que el recorrido pueda entrar en
 // verde y **el número no pueda crecer en silencio**, que es lo que este fichero viene a impedir.
 //
@@ -171,17 +198,16 @@ const CADENA = [
 //
 // **La lista solo puede MENGUAR.** Si un salto se cablea, se borra de aquí en el mismo commit.
 const MUERTOS_DECLARADOS = Object.freeze({
-  // 🔴 EL MÁS GRAVE DE LOS CUATRO, y no es «un botón muerto»: es que **la pantalla del parte del
-  // técnico no tiene entrada en el enrutador**. `app.js` solo declara el caso `partes-oficina` —la
-  // de la oficina—, y de `renderParte` no hay ni una llamada en todo el dashboard. Los saltos 3, 4
-  // y 5 cuelgan de una pantalla que nadie puede abrir.
+  // ⚠️ AQUÍ HABÍA CUATRO Y AHORA HAY UNO, y la diferencia no es que se arreglaran tres: es que mi
+  // detector medía mal. Preguntaba «¿alguien lo llama desde FUERA del módulo?», y un módulo bien
+  // hecho tiene UNA puerta pública y ata sus botones POR DENTRO. Con esa medida, `renderParte` y
+  // `firmarParte` salían muertos y estaban vivos: los ata `renderParteDetailView` en su mismo
+  // fichero, y a ésa sí la llama `app.js`.
   //
-  // ⚠️ Se midió DOS VECES porque la primera engañó: `grep window.renderParte` casa dentro de
-  // `window.renderPartesOficinaView`. Con límite de palabra, cero.
-  renderParte: 'SCRUM-652 fase C · la pantalla del parte NO tiene case en el enrutador de `app.js`: solo existe `partes-oficina`.',
-  parteOrdenarDictado: 'SCRUM-683 · el botón «Ordenar en líneas» se pinta y nadie llama a `parteOrdenarDictado`. MÍO.',
-  firmarParte: 'SCRUM-652 fase C · el botón «Firmar aquí mismo» se pinta y nadie llama a `firmarParte`.',
-  pintarRevisiones: 'SCRUM-655 fase C · el selector de revisiones existe y nadie lo pinta todavía. MÍO.',
+  // El que queda está muerto de verdad: el botón «Ordenar en líneas» se pinta
+  // (`parteDetailView.js:240`) y `parteOrdenarDictado` **no se llama en ningún sitio**, ni dentro
+  // ni fuera. Es MÍO, de SCRUM-683. Se NOMBRA; lo reparte el fundador.
+  parteOrdenarDictado: 'SCRUM-683 · el botón «Ordenar en líneas» se pinta y `parteOrdenarDictado` no se llama en ninguna parte. MÍO.',
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -224,12 +250,17 @@ test('SCRUM-705 · 🔴 PINTADO Y MUERTO: cada pantalla de la cadena tiene quien
       `🔴 ${paso.salto}: «${paso.pantalla}» ya no dibuja «${paso.pinta}». O se renombró el gancho —y ` +
       'entonces este recorrido está midiendo un fantasma— o la pantalla dejó de pintarlo.');
 
-    // ② ¿alguien la llama desde fuera? Un módulo que solo se llama a sí mismo está muerto.
-    const vivo = tieneLlamadorExterno(paso.vive, paso.pantalla);
-    const declarado = Object.prototype.hasOwnProperty.call(MUERTOS_DECLARADOS, paso.vive);
+    // ② ¿la abre el enrutador? Una pantalla sin puerta no se ve nunca, por muy atada que esté.
+    assert.ok(tienePuerta(paso.puerta, paso.pantalla),
+      `🔴 ${paso.salto}: nadie llama a \`${paso.puerta}()\` desde fuera de «${paso.pantalla}». La ` +
+      'pantalla no tiene puerta: el profesional no puede llegar a ella.');
 
-    if (!vivo && !declarado) muertos.push(`${paso.salto} → nadie llama a \`${paso.vive}()\``);
-    if (vivo && declarado) resucitados.push(`${paso.salto} → \`${paso.vive}\` YA tiene llamador`);
+    // ③ ¿está atado el gancho que pinta? Vale que lo ate el propio módulo — es lo correcto.
+    const atado = estaAtado(paso.ata, paso.pantalla);
+    const declarado = Object.prototype.hasOwnProperty.call(MUERTOS_DECLARADOS, paso.ata);
+
+    if (!atado && !declarado) muertos.push(`${paso.salto} → nadie llama a \`${paso.ata}()\``);
+    if (atado && declarado) resucitados.push(`${paso.salto} → \`${paso.ata}\` YA está atado`);
   }
 
   assert.deepEqual(muertos, [],
@@ -250,17 +281,17 @@ test('SCRUM-705 · 🔴 PINTADO Y MUERTO: cada pantalla de la cadena tiene quien
 test('SCRUM-705 · 🔴 CONTROL POSITIVO del detector: un gancho VIVO no se cuenta como muerto', () => {
   // `btnFirmarAqui` del albarán es el ejemplo medido de cable vivo: lo pinta `albaranDetailView.js`
   // y lo ata `albaranActionsRegistry.js`. Si el detector lo diera por muerto, su verde no valdría.
-  assert.ok(tieneLlamadorExterno('openSignaturePad', 'signaturePad.js'),
+  assert.ok(tienePuerta('openSignaturePad', 'signaturePad.js'),
     '🔴 el detector da por muerto un cable que SÍ existe: entonces sus «muertos» no significan nada');
 
   // Y al revés: un nombre inventado no puede tener llamador.
-  assert.ok(!tieneLlamadorExterno('funcionQueNoExisteEnNingunSitio', 'app.js'),
+  assert.ok(!tienePuerta('funcionQueNoExisteEnNingunSitio', 'app.js'),
     '🔴 el detector encuentra llamadores de algo que no existe: casa con cualquier cosa');
 });
 
 test('SCRUM-705 · los muertos declarados son EXACTAMENTE éstos, y la lista no puede crecer', () => {
   // Un tope escrito: añadir un cuarto obliga a decirlo aquí, y eso es una decisión, no un descuido.
-  assert.equal(Object.keys(MUERTOS_DECLARADOS).length, 4,
+  assert.equal(Object.keys(MUERTOS_DECLARADOS).length, 1,
     '🔴 la lista de pantallas muertas ha CAMBIADO de tamaño. Solo puede menguar: si crece, alguien ' +
     'ha entregado otra pantalla que se pinta y no responde.');
   for (const [fn, motivo] of Object.entries(MUERTOS_DECLARADOS)) {

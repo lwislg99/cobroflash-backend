@@ -41,42 +41,77 @@ Ocho saltos, **sin base de datos**, y el rojo **nombra el salto**. El fallo que 
 botón**. Todo lo demás pasa —el módulo existe, exporta, se registra en el índice y se precachea— y
 el profesional pulsa y no ocurre nada.
 
-Por eso cada eslabón de pantalla declara **dos** cosas y se exigen las dos:
-
-* **pinta** → el gancho que dibuja;
-* **vive** → la función que alguien tiene que **llamar desde FUERA** de su propio módulo.
+Por eso cada eslabón de pantalla declara **tres** cosas —y son preguntas distintas, cosa que este
+fichero aprendió a golpes; el detalle está en §2(b)—: el gancho que **pinta**, la **puerta** pública
+que llama el enrutador, y la función que **ata** ese gancho.
 
 ---
 
-## 2 · 🔴 Los hallazgos. Se NOMBRAN, no se arreglan
+## 2 · 🔴 Los hallazgos — CORREGIDOS, y tres de los cuatro eran MÍOS y falsos
 
-Declarados en `MUERTOS_DECLARADOS`, con **trinquete en los dos sentidos**: no puede crecer en
-silencio, y una declaración que ya no corresponde a nada también cae.
+> ⚠️ **Esta sección decía otra cosa.** La primera versión declaró cuatro pantallas «pintadas y
+> muertas», entre ellas la puerta del parte. **Tres eran falsas, y la culpa era de mi detector.**
+> Se deja escrito el camino porque vale más que el resultado.
 
-| # | salto | hallazgo |
+### (a) La alarma del salto 3 se disuelve: la puerta ESTÁ
+
+Medido en `origin/main` con límite de palabra y control positivo:
+
+```
+git grep -nE '\brenderParteDetailView\b' origin/main
+  app.js:354-355          ← el enrutador la llama
+  parteDetailView.js:435  ← la define      :467 ← la publica          5 coincidencias
+CONTROL POSITIVO renderAlbaranDetailView → 5 coincidencias
+
+git log -S'renderParteDetailView' origin/main
+  107846d3 · 2-sep · SCRUM-652 (fase D)   padre: 0 → 5   ← ENTRÓ AQUÍ
+  f88e6c85 · su entrada de máster          padre: 5 → 5   ← no la quita, la nombra
+```
+
+**Entró y nunca se quitó. Ningún merge se ha comido nada.** Mi medición fue **anterior** a que la
+PR 942 llegara a mi árbol.
+
+### (b) Y mi detector medía mal, que es el hallazgo de verdad
+
+Preguntaba *«¿alguien llama a esta función desde FUERA del módulo?»*. Pero **un módulo bien hecho
+tiene UNA puerta pública y ata sus botones POR DENTRO**: `app.js` llama a `renderParteDetailView`,
+y ésa ata el botón a `firmarParte` en el mismo fichero. Con mi medida los dos salían muertos.
+
+Peor: cuando la puerta **ya estaba** en mi árbol, mi trinquete **siguió en verde** porque
+`renderParte` seguía sin llamador externo. **Verde por el motivo equivocado**, que es el peor.
+
+Ahora cada salto declara **tres** cosas y son preguntas distintas:
+
+| clave | qué pregunta | qué pasa si falta |
 |---|---|---|
-| **1** | abrir el parte | 🔴 **`renderParte` no tiene NI UN llamador**: `app.js` solo declara el caso `partes-oficina`. **La pantalla del parte del técnico no tiene entrada en el enrutador**, y los saltos 3, 4 y 5 cuelgan de ella. SCRUM-652 fase C |
-| **2** | firmar | `firmarParte` sin llamador. SCRUM-652 fase C |
-| **3** | dictar | `parteOrdenarDictado` sin llamador — **MÍO**, SCRUM-683 |
-| 4 | (revisiones) | `pintarRevisiones` sin llamador — **MÍO**, SCRUM-655 fase C, y ya se dijo al entregarlo |
+| `pinta` | el gancho que dibuja | mide un fantasma |
+| `puerta` | la función PÚBLICA que llama el enrutador | la pantalla no se abre nunca |
+| `ata` | la función que atiende el gancho, llamada en algún sitio (**dentro vale**) | botón muerto |
 
-> ⚠️ **El hallazgo 1 se midió DOS VECES porque la primera engañó.** `grep window.renderParte` casa
-> **dentro** de `window.renderPartesOficinaView`, así que la primera medición dijo «lo llama
-> `app.js`». Con límite de palabra: **cero**. Un prefijo que casa es un falso positivo silencioso.
+### Lo que queda, tras remedir
 
-Y una que **no** era hallazgo: `parteOficinaView.js` no publica nada en `window` explícitamente, y
-parecía muerta. **Ejecutándola** —no leyéndola— se ve que su `async function` de nivel superior sí
-queda en `window` en un `<script>` clásico, y `app.js:327` la llama. **Estaba viva.**
+| salto | estado |
+|---|---|
+| 3 · abrir el parte | ✅ **vivo** — `renderParteDetailView`, SCRUM-652 fase D |
+| 5 · firmar | ✅ **vivo** — lo ata `renderParteDetailView` por dentro |
+| **4 · dictar** | 🔴 **muerto de verdad**: el botón se pinta (`parteDetailView.js:240`) y `parteOrdenarDictado` **no se llama en ninguna parte**, ni dentro ni fuera. **MÍO**, SCRUM-683 |
 
----
+Y `pintarRevisiones` (SCRUM-655 fase C, mío) sigue sin puerta, como se dijo al entregarlo: su
+pantalla no es un salto de esta cadena y no entra en el trinquete.
 
-## 3 · Verificación — y un rojo que NO cayó
+> 🔴 **La colisión de prefijo, tercera del día**: `window.renderParte` casa **dentro** de
+> `window.renderPartesOficinaView`. Me dio primero un falso «tiene llamador» y después un falso
+> «está muerto». Todo el detector usa ya `\b` — un prefijo no es un nombre, y en un producto los
+> nombres parecidos son los relacionados, o sea los que más se cruzan.
+
+## 3 · Verificación — tres rojos, y uno que NO cayó a la primera
 
 **Commit de todo ANTES de inyectar: `cb45b1efc66e73526fddb67e82e2834ee71c1d3b`** (verde, 4.914 · 4.830).
 
 | rojo | resultado |
 |---|---|
 | **pintado y muerto**: se le quita a «por valorar» su único llamador | 🔴 exit 1 — *«6 · aparecer en “por valorar” → nadie llama a `renderPartesOficinaView()`»* |
+| **quitar la PUERTA** de la pantalla del parte (la llamada de `app.js`) | 🔴 exit 1 — *«3 · abrir el parte: nadie llama a `renderParteDetailView()`… La pantalla no tiene puerta»* |
 | **quitar la puerta**: se comenta `mountAdmin(app, '/admin/partes')` | ⚠️ **NO CAYÓ** a la primera |
 
 ### 🔴 Y el segundo rojo es el hallazgo más útil del ticket, contra mi propio test
@@ -93,8 +128,12 @@ leer el CÓDIGO con `soloCodigo` (SCRUM-693). Reinyectado, ahora cae:
     3 · abrir el parte → `/admin/partes` no está montado
 ```
 
-**Y cae con el mecanismo viejo**: hoy, con la pantalla del parte del técnico **inalcanzable desde el
-enrutador**, la suite entera está en verde. Eso es lo que aprobaba el mecanismo de ayer.
+**Y cae con el mecanismo viejo**: hoy, con el botón «Ordenar en líneas» **pintado y sin nadie que lo
+atienda**, la suite entera está en verde. Eso es lo que aprueba el mecanismo de ayer, y es
+exactamente el defecto que este recorrido viene a impedir.
+
+⚠️ Esta frase decía otra cosa —que la pantalla del parte era inalcanzable— y **era falsa**: ver
+§2(a). Se corrige en vez de borrarse, porque el error importa más que la conclusión.
 
 **Suelo:** si no se recorre ni un salto, se declara ciego — ocho saltos y cero recorridos es un
 instrumento roto, no una cadena rota. **Control positivo del detector**: `openSignaturePad` es un
