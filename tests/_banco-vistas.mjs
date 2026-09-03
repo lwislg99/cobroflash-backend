@@ -633,6 +633,8 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'quoteRequestsView.js',
   'quoteSuplido.js',
   'quotesDetailView.js',
+  // SCRUM-599 · el registro del atajo «N». Va ANTES que las vistas: ellas se registran en él.
+  'atajoNuevo.js',
   'quotesListView.js',
   'quotesTabs.js',
   'quotesView.js',

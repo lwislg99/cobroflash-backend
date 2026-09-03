@@ -2732,3 +2732,25 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   min-height: 44px; padding: 0 8px; cursor: pointer; /* objetivo tactil AB6 */
 }
 .columnas-opcion input { width: 18px; height: 18px; }
+
+/* ── SCRUM-599 (DOC-09) · la tecla del atajo, DENTRO del botón primario ─────────────────────
+   Como en Holded: el rótulo y, al final, la tecla. Se pinta sobre el propio botón —fondo
+   translúcido en vez de un color nuevo— para no estrenar un token por un adorno.
+   `pointer-events:none` porque el objetivo táctil es el BOTÓN entero: la tecla no es un
+   segundo destino y en un móvil no debe poder recibir el toque por su cuenta. */
+.btn-atajo {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, .35);
+  background: rgba(255, 255, 255, .18);
+  font: inherit;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: .02em;
+  pointer-events: none;
+}
+/* En pantallas sin teclado la tecla no significa nada, y ocupa sitio justo donde menos hay. */
+@media (max-width: 640px) {
+  .btn-atajo { display: none; }
+}
