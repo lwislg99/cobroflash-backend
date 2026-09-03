@@ -60,7 +60,7 @@ async function renderJobsView(container) {
     bValorar.className = "btn-secondary btn-sm";
     bValorar.id = "jobs-partes-valorar";
     bValorar.style.marginLeft = "8px";
-    bValorar.textContent = MARCA_651 + " Partes por valorar";
+    bValorar.textContent = "Partes por valorar";
     bValorar.addEventListener("click", () => {
       if (window.renderAppView) window.renderAppView("partes-oficina");
     });

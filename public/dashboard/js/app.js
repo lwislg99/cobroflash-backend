@@ -198,7 +198,7 @@ async function initApp() {
   const viewContainer = document.getElementById('view-container');
   const viewTitle     = document.getElementById('view-title');
 
-  if (!window.appState) window.appState = { view: 'home', quoteId: null, invoiceId: null, jobId: null, albaranId: null };
+  if (!window.appState) window.appState = { view: 'home', quoteId: null, invoiceId: null, jobId: null, albaranId: null, parteId: null };
 
   // 5. Hamburger menu (móvil)
   const overlay = document.createElement('div');
@@ -246,6 +246,7 @@ async function initApp() {
     if (options.quoteId   !== undefined) state.quoteId   = options.quoteId;
     if (options.invoiceId !== undefined) state.invoiceId = options.invoiceId;
     if (options.albaranId !== undefined) state.albaranId = options.albaranId; // SCRUM-302
+    if (options.parteId !== undefined) state.parteId = options.parteId; // SCRUM-652 (fase D)
     if (options.jobId     !== undefined) state.jobId     = options.jobId;
 
     closeSidebar();
@@ -322,7 +323,7 @@ async function initApp() {
       // cargaría y no llevaría a él ninguna puerta — que es exactamente lo que le pasa hoy a
       // `parteDetailView.js`, medido en la certificación del sprint.
       case 'partes-oficina':
-        viewTitle.textContent = '[PENDIENTE microcopy oficial] Partes por valorar';
+        viewTitle.textContent = 'Partes por valorar';
         if (typeof window.renderPartesOficinaView === 'function') {
           window.renderPartesOficinaView(viewContainer, opts);
         }
@@ -339,6 +340,19 @@ async function initApp() {
         viewTitle.textContent = 'Albarán';
         if (state.albaranId != null && typeof window.renderAlbaranDetailView === 'function')
           window.renderAlbaranDetailView(viewContainer, state.albaranId);
+        break;
+      // 🔴 SCRUM-652 (fase D) · LA PUERTA AL PARTE, que hasta hoy NO EXISTÍA.
+      //
+      // `parteDetailView.js` llevaba cargado en el índice desde la fase C y **no había forma de
+      // llegar a él**: ni caso aquí, ni una sola llamada que lo abriera. Un fichero cargado al que
+      // no lleva nada no es una pantalla; es peso muerto que además parece hecho.
+      //
+      // El rótulo es el NOMBRE DEL DOCUMENTO, no microcopy de acción — mismo criterio que
+      // 'Albarán' y 'Factura' de aquí al lado, y por eso no lleva marcador.
+      case 'parte-detail':
+        viewTitle.textContent = 'Parte de trabajo';
+        if (state.parteId != null && typeof window.renderParteDetailView === 'function')
+          window.renderParteDetailView(viewContainer, state.parteId);
         break;
       case 'invoice-detail':
         viewTitle.textContent = 'Factura';

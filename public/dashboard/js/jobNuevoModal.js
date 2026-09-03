@@ -7,7 +7,8 @@
 // el cliente es lo único obligatorio y todo lo demás se completa después con el detalle, que ya
 // sabe editarlo. En una urgencia el pro teclea lo justo y sigue.
 //
-// ⚠️ MICROCOPY SIN APROBAR (regla 30). Todos los textos visibles salen de `MARCA_651`, UNA sola
+// ⚠️ MICROCOPY SIN APROBAR (regla 30) SALVO «Tipo de intervención», firmada el 3-sep-2026 y
+// por eso ya sin marca. Los DEMÁS textos visibles salen de `MARCA_651`, UNA sola
 // constante: así aprobar el copy los apaga a la vez y el censo de SCRUM-402 cuenta 1, no ocho.
 // El día que el fundador los firme, se sustituyen y la entrada del censo se borra.
 //
@@ -39,7 +40,7 @@ function abrirModalTrabajoNuevo(alCrear) {
           '<select id="tn-cliente" style="width:100%"></select>' +
         '</div>' +
         '<div class="field">' +
-          '<label for="tn-tipo">' + MARCA_651 + ' Tipo de intervención</label>' +
+          '<label for="tn-tipo">Tipo de intervención</label>' +
           '<select id="tn-tipo" style="width:100%">' +
             '<option value="">' + MARCA_651 + ' Sin especificar</option>' +
             // 🔴 SIN LISTA AQUI: los tipos llegan del servidor (`/admin/me`). Escribirlos en el

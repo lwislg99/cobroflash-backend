@@ -627,6 +627,64 @@ censo de SCRUM-402 no se moviera: **ya no hace falta, porque ya no hay nada marc
 
 ---
 
+## Bloque · Partes por valorar (sprint Tecnosel) — `public/dashboard/js/parteOficinaView.js`
+
+**Aprobada:** 3-sep-2026 · **APLICADA EN EL MISMO ACTO** (SCRUM-703). Once literales.
+
+> La pantalla donde la oficina pone los precios de un parte ya firmado. Hasta este día sus textos
+> salían con marcador y por eso la entrada NO estaba en la barra lateral: el guard ④ de SCRUM-420
+> prohíbe un rótulo sin aprobar en lo primero que el profesional ve cada día. Con la firma, la
+> entrada sube a la barra y sale de `VISTAS_SIN_ENTRADA`.
+
+| Qué es | Texto aprobado |
+|---|---|
+| Título de la sección, del menú y del botón de Trabajos | Partes por valorar |
+| Subtítulo | Los partes que tu equipo ya ha firmado y todavía no tienen precios. |
+| Vacío · no queda ninguno | No te queda ningún parte por valorar. |
+| Vacío · no se pudieron leer | No se han podido leer tus partes firmados — vuelve a intentarlo |
+| Bloque 1 | Mano de obra |
+| Bloque 2 | Materiales |
+| Casilla de precio (aria-label) | Precio por unidad |
+| Botón | Guardar precios |
+| Parte ya facturado | Este parte ya está facturado: sus precios no se tocan. |
+| Error al cargar | No se han podido cargar los partes |
+| Error al guardar | No se han podido guardar los precios |
+
+🔴 **Los tres de error cambiaron respecto a lo propuesto**, y el motivo queda escrito porque es la
+voz de la casa: **no se dice «no hemos podido»**. Se dice «no se han podido». Los propuse en
+primera persona del plural y el fundador los corrigió al aplicarlos.
+
+⚠️ **QUEDA UNO SIN FIRMAR EN ESA MISMA PANTALLA, y por eso su entrada del censo de SCRUM-402 NO
+baja a 0:** el error de abrir un parte —hoy «No hemos podido abrir el parte.»—. No estaba en la
+lista de once. **Propuesta, siguiendo la voz que el fundador acaba de fijar:**
+
+> **No se ha podido abrir el parte**
+
+---
+
+## Addendum · El tipo de intervención (3-sep-2026) · **APLICADA EN EL MISMO ACTO**
+
+> El primer rótulo del recorrido: el desplegable con el que se abre un trabajo sin presupuesto.
+> La medición de punta a punta (SCRUM-703) lo encontró sin firmar siendo lo PRIMERO que ve quien
+> crea el trabajo. Los tres valores son los **literales del papel de Tecnosel**.
+
+| Qué es | Texto aprobado | Dónde vive |
+|---|---|---|
+| Etiqueta del desplegable | Tipo de intervención | `public/dashboard/js/jobNuevoModal.js` |
+| Valor 1 | Reparación / Asistencia técnica | `src/modules/jobs/domain/tipoIntervencion.ts` |
+| Valor 2 | Mantenimiento | ídem |
+| Valor 3 | Instalación | ídem |
+
+El valor 1 **cambió** respecto a lo que había en el código —decía «Reparación / asistencia»—: el
+papel de Tecnosel dice **«Asistencia técnica»**, con mayúscula y entero. Los rótulos viven en el
+servidor, no en el navegador: el vocabulario cerrado tiene UNA sola fuente.
+
+⚠️ **`MARCA_651` NO se retira: sujeta 13 textos y sólo UNO está firmado.** Quitar la variable
+habría dado por aprobados los otros doce sin que nadie los firmara. Siguen marcados los diez que
+quedan en el modal («Cliente», «Sin especificar», «Dirección de la obra», «Qué hay que hacer»,
+«Abrir trabajo», «Trabajo nuevo», los tres avisos y el error) y el botón de `jobsView.js`.
+**«Sin especificar» está dentro del mismo desplegable que se acaba de firmar y no venía en la
+lista de cuatro: queda a la espera.**
 ## Addendum · Revisiones del presupuesto (3-sep-2026) · **APLICADAS**
 
 **Medido contra:** `origin/main` = `2becaeaa82a8e491a5705862d3df95d6d88e5bc3` · 2026-09-03T13:01:27+02:00
