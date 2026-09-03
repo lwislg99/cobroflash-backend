@@ -60,7 +60,10 @@ test('SCRUM-652 · SUELO: el dominio se carga y sus listas cerradas tienen conte
     '🔴 han cambiado los DOS bloques del parte. Son los del papel; si nace un tercero, es otra versión.');
   assert.equal(TIPOS_PARTE.length, 3, '🔴 los tipos son TRES casillas excluyentes en el papel.');
   assert.deepEqual([...ESTADOS_PARTE], ['borrador', 'firmado', 'facturado']);
-  assert.equal(PARTE_CONTENIDO_VERSION_ACTUAL, 1);
+  // SCRUM-653 · 1 → 2, y el cambio se puede NOMBRAR: con dos firmas, sellar la identidad del
+  // firmante hacía que la huella dependiera de quién firmara primero. La v:1 sigue existiendo y
+  // sigue sellando lo que sellaba — se comprueba en `scrum653-dos-firmas`.
+  assert.equal(PARTE_CONTENIDO_VERSION_ACTUAL, 2);
 });
 
 test('SCRUM-652 · SUELO: una versión desconocida LANZA, no adivina rama', () => {
@@ -98,7 +101,6 @@ test('SCRUM-652 · 🔴 EL QUE DECIDE (1/2): cambiar el CONTENIDO de un parte fi
     ['tipo', (p) => { p.tipo = 'mantenimiento'; }],
     ['obra', (p) => { p.obra = 'Otra dirección'; }],
     ['tecnicos', (p) => { p.tecnicos = ['Marta R.']; }],
-    ['firmadoPorCalidad', (p) => { p.firmadoPorCalidad = 'el_propio_cliente'; }],
     ['una línea nueva', (p) => { p.lineas.push({ bloque: 'materiales', unds: 1, descripcion: 'Fuente 12V' }); }],
   ]) {
     const p = parte();
@@ -106,6 +108,18 @@ test('SCRUM-652 · 🔴 EL QUE DECIDE (1/2): cambiar el CONTENIDO de un parte fi
     assert.notEqual(computeParteContentHash(p), firmado,
       `🔴 cambiar «${campo}» NO mueve la huella: ese campo se ha caído del sello.`);
   }
+
+  // 🔴 SCRUM-653 · `firmadoPorCalidad` SALIÓ DE ESTA LISTA, Y NO ES UNA RELAJACIÓN: el cambio se
+  // puede NOMBRAR. En v:1 entraba en el sello; en v:2 **no**, porque con DOS firmas la identidad
+  // del firmante dentro del hash da una huella distinta según quién firme primero.
+  //
+  // Y no se borra la comprobación: se INVIERTE, que es más fuerte — ahora se exige que ese campo
+  // **no** mueva la huella, y `scrum653-dos-firmas` comprueba que en v:1 sí la mueve.
+  const conCalidad = parte();
+  conCalidad.firmadoPorCalidad = 'el_propio_cliente';
+  assert.equal(computeParteContentHash(conCalidad), firmado,
+    '🔴 en v:2 la CALIDAD del firmante vuelve a mover la huella. Con dos firmas eso significa ' +
+    'que el documento tiene un hash distinto según el orden en que se firme.');
 });
 
 test('SCRUM-652 · el candado de CONTENIDO se cierra al firmar, y lo dice', () => {

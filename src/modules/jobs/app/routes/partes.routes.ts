@@ -512,6 +512,80 @@ router.patch('/:id', async (req: any, res) => {
   }
 });
 
+// ───────────────────────────────────────────────────────
+// POST /admin/partes/:id/firmar-tecnico · SCRUM-653
+// ───────────────────────────────────────────────────────
+//
+// 🔴 RUTA PROPIA, no un parámetro de la de arriba. Las dos firmas escriben en columnas distintas
+// y tienen candados distintos; con un `if (esTecnico)` dentro de una sola ruta, el día que una
+// cambie habría que releer las dos para saber a cuál afecta. Además la cola de firmas encamina
+// por TIPO (`firma:parte-tecnico:7`), y un tipo necesita una ruta.
+//
+// ⚠️ AQUÍ NO HAY `firmadoPorCalidad`, y no es un olvido: las seis opciones de `albaranFirmante.ts`
+// existen porque quien firma POR EL CLIENTE puede ser cualquiera —«portero o conserje», «un
+// familiar»—. El técnico es un empleado identificado del merchant; ofrecerle una ranura de
+// «calidad» sería ofrecerle declarar que firma en nombre del cliente.
+router.post('/:id/firmar-tecnico', async (req: any, res) => {
+  try {
+    const found = await findParte(req);
+    if (!found.ok) {
+      return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
+    }
+    const { parte } = found;
+
+    // Mismo código `parte_locked` que la del cliente: la cola lo trata como ÉXITO al drenar.
+    const ranura = puedeFirmarTecnico(parte);
+    if (!ranura.ok) {
+      return res.status(409).json({ error: 'parte_locked', message: ranura.motivo });
+    }
+
+    const lineas: LineaParte[] = Array.isArray(parte.lineas) ? (parte.lineas as any) : [];
+    const sePuede = puedeFirmarse(lineas);
+    if (!sePuede.ok) return res.status(409).json({ error: 'parte_vacio', message: sePuede.motivo });
+
+    const signatureData = String(req.body?.signatureData || '');
+    if (!/^data:image\/(png|jpeg);base64,/.test(signatureData)) {
+      return res
+        .status(400)
+        .json({ error: 'firma_invalida', message: 'La firma debe ser una imagen PNG o JPEG (data-URI base64).' });
+    }
+    if (signatureData.length > FIRMA_MAX_CHARS) {
+      return res
+        .status(413)
+        .json({ error: 'firma_demasiado_grande', message: 'La firma supera el tamaño máximo permitido.' });
+    }
+
+    // El nombre es OBLIGATORIO, con la misma regla que el del cliente (SCRUM-300): el acto de
+    // firmar lo exige aunque la columna sea nullable por las filas viejas.
+    const nombre = exigirNombreFirmante(req.body?.firmadoTecnicoNombre);
+    if (!nombre.ok) return res.status(400).json({ error: nombre.error, message: nombre.message });
+
+    // El sello, sólo si no lo había: v:2 sella CONTENIDO, así que firme quien firme primero la
+    // huella es la misma. Recalcularla no la cambiaría, pero reescribirla haría pensar que sí.
+    const contenidoHash = parte.contenidoHash
+      ? parte.contenidoHash
+      : computeParteContentHash(paramsDeSello(parte, lineas), PARTE_CONTENIDO_VERSION_ACTUAL);
+
+    const updated = await prisma.parteTrabajo.update({
+      where: { id: parte.id },
+      data: {
+        // El contenido se congela con la PRIMERA firma, sea de quien sea. Si firma el técnico
+        // primero, el estado pasa a `firmado` aquí y el cliente firma después sobre su ranura.
+        estado: 'firmado',
+        firmadoTecnicoAt: new Date(),
+        firmadoTecnicoNombre: nombre.nombre,
+        firmaTecnicoUrl: signatureData,
+        contenidoHash,
+        contenidoVersion: parte.contenidoVersion ?? PARTE_CONTENIDO_VERSION_ACTUAL,
+      },
+    });
+    return res.json(serializeParteParaElTecnico(updated));
+  } catch (err: any) {
+    console.error('[POST /admin/partes/:id/firmar-tecnico]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 // ── POST /admin/partes/:id/firmar ────────────────────────────────────────────────────────
 router.post('/:id/firmar', async (req: any, res) => {
   try {
@@ -643,80 +717,6 @@ router.post('/:id/dictado', async (req: any, res) => {
     return res.json({ propuesta, avisos: AVISOS_DEL_DICTADO });
   } catch (err: any) {
     console.error('[POST /admin/partes/:id/dictado]', err?.message || err);
-    return res.status(500).json({ error: 'internal_error' });
-  }
-});
-
-// ───────────────────────────────────────────────────────
-// POST /admin/partes/:id/firmar-tecnico · SCRUM-653
-// ───────────────────────────────────────────────────────
-//
-// 🔴 RUTA PROPIA, no un parámetro de la de arriba. Las dos firmas escriben en columnas distintas
-// y tienen candados distintos; con un `if (esTecnico)` dentro de una sola ruta, el día que una
-// cambie habría que releer las dos para saber a cuál afecta. Además la cola de firmas encamina
-// por TIPO (`firma:parte-tecnico:7`), y un tipo necesita una ruta.
-//
-// ⚠️ AQUÍ NO HAY `firmadoPorCalidad`, y no es un olvido: las seis opciones de `albaranFirmante.ts`
-// existen porque quien firma POR EL CLIENTE puede ser cualquiera —«portero o conserje», «un
-// familiar»—. El técnico es un empleado identificado del merchant; ofrecerle una ranura de
-// «calidad» sería ofrecerle declarar que firma en nombre del cliente.
-router.post('/:id/firmar-tecnico', async (req: any, res) => {
-  try {
-    const found = await findParte(req);
-    if (!found.ok) {
-      return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
-    }
-    const { parte } = found;
-
-    // Mismo código `parte_locked` que la del cliente: la cola lo trata como ÉXITO al drenar.
-    const ranura = puedeFirmarTecnico(parte);
-    if (!ranura.ok) {
-      return res.status(409).json({ error: 'parte_locked', message: ranura.motivo });
-    }
-
-    const lineas: LineaParte[] = Array.isArray(parte.lineas) ? (parte.lineas as any) : [];
-    const sePuede = puedeFirmarse(lineas);
-    if (!sePuede.ok) return res.status(409).json({ error: 'parte_vacio', message: sePuede.motivo });
-
-    const signatureData = String(req.body?.signatureData || '');
-    if (!/^data:image\/(png|jpeg);base64,/.test(signatureData)) {
-      return res
-        .status(400)
-        .json({ error: 'firma_invalida', message: 'La firma debe ser una imagen PNG o JPEG (data-URI base64).' });
-    }
-    if (signatureData.length > FIRMA_MAX_CHARS) {
-      return res
-        .status(413)
-        .json({ error: 'firma_demasiado_grande', message: 'La firma supera el tamaño máximo permitido.' });
-    }
-
-    // El nombre es OBLIGATORIO, con la misma regla que el del cliente (SCRUM-300): el acto de
-    // firmar lo exige aunque la columna sea nullable por las filas viejas.
-    const nombre = exigirNombreFirmante(req.body?.firmadoTecnicoNombre);
-    if (!nombre.ok) return res.status(400).json({ error: nombre.error, message: nombre.message });
-
-    // El sello, sólo si no lo había: v:2 sella CONTENIDO, así que firme quien firme primero la
-    // huella es la misma. Recalcularla no la cambiaría, pero reescribirla haría pensar que sí.
-    const contenidoHash = parte.contenidoHash
-      ? parte.contenidoHash
-      : computeParteContentHash(paramsDeSello(parte, lineas), PARTE_CONTENIDO_VERSION_ACTUAL);
-
-    const updated = await prisma.parteTrabajo.update({
-      where: { id: parte.id },
-      data: {
-        // El contenido se congela con la PRIMERA firma, sea de quien sea. Si firma el técnico
-        // primero, el estado pasa a `firmado` aquí y el cliente firma después sobre su ranura.
-        estado: 'firmado',
-        firmadoTecnicoAt: new Date(),
-        firmadoTecnicoNombre: nombre.nombre,
-        firmaTecnicoUrl: signatureData,
-        contenidoHash,
-        contenidoVersion: parte.contenidoVersion ?? PARTE_CONTENIDO_VERSION_ACTUAL,
-      },
-    });
-    return res.json(serializeParteParaElTecnico(updated));
-  } catch (err: any) {
-    console.error('[POST /admin/partes/:id/firmar-tecnico]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });
