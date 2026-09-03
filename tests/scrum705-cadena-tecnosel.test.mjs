@@ -72,7 +72,16 @@ function tienePuerta(nombre, propio) {
   return seLlamaEn(nombre, MODULOS.filter((f) => f !== propio));
 }
 
-/** ¿Está atado ese gancho? Vale que lo ate el propio módulo: es lo correcto. */
+/**
+ * ¿Está atado ese gancho? Vale que lo ate el propio módulo: es lo correcto.
+ *
+ * ⚠️ LO QUE ESTO **NO** VE, medido el 3-sep-2026: una llamada dentro de un `if (false)` sigue
+ * siendo una llamada. Este guard mide que la función esté LLAMADA en el código, no que el botón
+ * responda. Lo segundo lo mide `scrum683b` ejecutando la pantalla y PULSANDO el botón.
+ *
+ * Los dos hacen falta y ninguno sobra —es la misma pareja que los dos detectores de dinero de
+ * SCRUM-652c—: quien retire «el que sobra» destapa el hueco del otro.
+ */
 function estaAtado(nombre, propio) {
   return seLlamaEn(nombre, [propio]) || tienePuerta(nombre, propio);
 }
@@ -135,7 +144,10 @@ const CADENA = [
     pantalla: 'parteDetailView.js',
     pinta: 'data-dictado-ordenar',
     puerta: 'renderParteDetailView',
-    ata: 'parteOrdenarDictado',
+    // 🔴 La que ATIENDE el botón es `ordenarElDictado`, no el alias `window.parteOrdenarDictado`.
+    // Apuntar al alias dejaba el salto declarado muerto DESPUÉS de cablearlo: el trinquete inverso
+    // no cantaba y la declaración habría envejecido mintiendo. Se mide la función, no su escaparate.
+    ata: 'ordenarElDictado',
     comprobar() {
       const rutas = codigoDe('src/modules/jobs/app/routes/partes.routes.ts');
       assert.ok(rutas.includes("router.post('/:id/dictado'"), 'no existe la ruta del dictado');
@@ -198,16 +210,11 @@ const CADENA = [
 //
 // **La lista solo puede MENGUAR.** Si un salto se cablea, se borra de aquí en el mismo commit.
 const MUERTOS_DECLARADOS = Object.freeze({
-  // ⚠️ AQUÍ HABÍA CUATRO Y AHORA HAY UNO, y la diferencia no es que se arreglaran tres: es que mi
-  // detector medía mal. Preguntaba «¿alguien lo llama desde FUERA del módulo?», y un módulo bien
-  // hecho tiene UNA puerta pública y ata sus botones POR DENTRO. Con esa medida, `renderParte` y
-  // `firmarParte` salían muertos y estaban vivos: los ata `renderParteDetailView` en su mismo
-  // fichero, y a ésa sí la llama `app.js`.
+  // ✅ VACÍA desde el 3-sep-2026 (SCRUM-706): el último que quedaba —el botón «Ordenar en líneas»—
+  // ya está atado en `renderParteDetailView`. **Los ocho saltos de la cadena están vivos.**
   //
-  // El que queda está muerto de verdad: el botón «Ordenar en líneas» se pinta
-  // (`parteDetailView.js:240`) y `parteOrdenarDictado` **no se llama en ningún sitio**, ni dentro
-  // ni fuera. Es MÍO, de SCRUM-683. Se NOMBRA; lo reparte el fundador.
-  parteOrdenarDictado: 'SCRUM-683 · el botón «Ordenar en líneas» se pinta y `parteOrdenarDictado` no se llama en ninguna parte. MÍO.',
+  // Se deja el mecanismo aunque no tenga inquilinos: es lo que impide que el siguiente entre en
+  // silencio. Una lista vacía aquí no es un adorno, es la afirmación de que hoy no hay ninguno.
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -289,11 +296,29 @@ test('SCRUM-705 · 🔴 CONTROL POSITIVO del detector: un gancho VIVO no se cuen
     '🔴 el detector encuentra llamadores de algo que no existe: casa con cualquier cosa');
 });
 
+test('SCRUM-705 · 🔴 una declaración HUÉRFANA no puede esconderse', () => {
+  // 🔴 EL AGUJERO QUE SE VIO AL CABLEAR EL SALTO 4, y es fino: el trinquete inverso comprueba
+  // «declarado pero ya atado» recorriendo LOS SALTOS. Una declaración cuya clave no corresponde a
+  // ningún `ata` de la cadena **no la mira nadie**: se queda ahí para siempre, diciendo que algo
+  // está muerto cuando ni siquiera es algo que este recorrido vigile.
+  //
+  // Pasó de verdad: `ata` apuntaba al alias `parteOrdenarDictado` y no a `ordenarElDictado`, que
+  // es la que atiende el botón. Al corregirlo, la declaración vieja quedó huérfana y el trinquete
+  // se calló.
+  const vigilados = new Set(CADENA.filter((p) => p.ata).map((p) => p.ata));
+  const huerfanas = Object.keys(MUERTOS_DECLARADOS).filter((k) => !vigilados.has(k));
+  assert.deepEqual(huerfanas, [],
+    '🔴 ESTAS DECLARACIONES NO CORRESPONDEN A NINGÚN SALTO:\n    ' + huerfanas.join('\n    ') +
+    '\n\n  Nadie las revisa nunca, así que envejecen mintiendo. O el salto cambió de función —y hay\n' +
+    '  que actualizar su `ata`— o la declaración sobra y se borra.');
+});
+
 test('SCRUM-705 · los muertos declarados son EXACTAMENTE éstos, y la lista no puede crecer', () => {
   // Un tope escrito: añadir un cuarto obliga a decirlo aquí, y eso es una decisión, no un descuido.
-  assert.equal(Object.keys(MUERTOS_DECLARADOS).length, 1,
-    '🔴 la lista de pantallas muertas ha CAMBIADO de tamaño. Solo puede menguar: si crece, alguien ' +
-    'ha entregado otra pantalla que se pinta y no responde.');
+  assert.equal(Object.keys(MUERTOS_DECLARADOS).length, 0,
+    '🔴 la lista de pantallas muertas ha CAMBIADO de tamaño, y hoy está VACÍA: los ocho saltos ' +
+    'están vivos. Si crece, alguien ha entregado una pantalla que se pinta y no responde — y eso ' +
+    'es una decisión que se declara con su motivo, no un descuido que entra solo.');
   for (const [fn, motivo] of Object.entries(MUERTOS_DECLARADOS)) {
     assert.ok(motivo.includes('SCRUM-'), `🔴 «${fn}» se declara muerto sin decir de qué ticket viene`);
   }

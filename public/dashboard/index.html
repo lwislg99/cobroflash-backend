@@ -64,17 +64,19 @@
              El rótulo «Cobros» ya está aprobado, para que B4 no tenga que pedirlo. -->
         <div class="nav-section-label">Venta</div>
 
+        <!-- SCRUM-599 (DOC-09) · EL SUBMENÚ SE RETIRA, Y EL CAMINO NO SE PIERDE.
+             Presupuestos era el ÚNICO tipo de documento con submenú: el profesional se encontraba
+             tres formas distintas de llegar a crear según el tipo. Ahora la entrada abre LA LISTA,
+             igual que Albaranes y Facturas, y la creación es el botón primario de esa pantalla.
+             El destino `quotes-new` NO desaparece: sigue en `HASH_VIEWS` (un enlace guardado no
+             se rompe) y lo abren el botón de la lista, la ficha del cliente y el estado vacío de
+             Facturas — censado antes y después, y el censo falla si devuelve cero. -->
         <div class="nav-group" data-group="quotes">
-          <button class="nav-item nav-item-parent" type="button">
+          <button class="nav-item nav-item-parent" type="button" data-view="quotes-list">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
             <span id="nav-quotes-label">Presupuestos</span>
             <span id="nav-quotes-badge" class="nav-badge" style="display:none">0</span>
-            <svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="nav-subitems">
-            <button class="nav-item nav-subitem" data-view="quotes-list">Historial</button>
-            <button class="nav-item nav-subitem" data-view="quotes-new" id="nav-quotes-new">Crear nuevo</button>
-          </div>
         </div>
 
         <!-- SCRUM-432 (B1 · incremento 3): `Plantillas` YA NO ES ENTRADA DE MENÚ. Pasó a pestaña
@@ -248,6 +250,8 @@
   <!-- SCRUM-432 (B1 · incremento 3): las pestañas `Historial · Plantillas`. Antes de las dos
        vistas que la usan. -->
   <script src="./js/quotesTabs.js"></script>
+  <!-- SCRUM-599 · el registro del atajo «N». Va ANTES que las vistas: ellas se registran en él. -->
+  <script src="./js/atajoNuevo.js"></script>
   <script src="./js/quotesListView.js"></script>
   <!-- SCRUM-229: las dos funciones puras del margen agregado, ANTES de la vista que las usa. -->
   <script src="./js/quoteMargen.js"></script>
