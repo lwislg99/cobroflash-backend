@@ -597,22 +597,53 @@ html, body { overflow-x: clip; }
   gap: 8px;
   min-height: 44px;          /* objetivo táctil (AB6) */
   padding: 8px 10px;
+  /* SCRUM-690 · el borde se reserva en TODOS los estados con `transparent`, y por DOS motivos
+     medidos en navegador — no por costumbre:
+
+       ① SIN LA RESERVA, EL BORDE DEL ACTIVO NO SE PINTA. La regla de abajo sólo declara
+          `border-color`; sin `border-width` ni `border-style` heredados de aquí, el borde
+          computa 0px y la señal de forma desaparece entera. (Medido: `borderTopWidth` = 0px.)
+       ② Y si se declarara el borde COMPLETO sólo en el activo, la pastilla daría un salto de
+          layout al seleccionarla. Medido con esa forma: 162 px el activo contra 160 px el
+          inactivo — **2 px**. Un control que se mueve al tocarlo se siente roto aunque el
+          color sea correcto.
+
+     Con la reserva puesta, el salto medido es 0 × 0. */
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
   color: var(--muted);
   text-align: center;
-  transition: background-color .12s, color .12s, box-shadow .12s;
+  transition: background-color .12s, color .12s, box-shadow .12s, border-color .12s;
 }
 /* El radio se mantiene VISIBLE (no `display:none`): es lo que anuncia el estado al
    lector de pantalla y lo que recibe el foco del teclado. */
 .segmented-option .segmented-input { margin: 0; }
 .segmented-option:hover { color: var(--ink); }
+/* 🔴 SCRUM-690 · EL LADO ACTIVO NO PUEDE DISTINGUIRSE CASI SÓLO POR LA TINTA.
+   Medido en navegador a 360 px, sobre este mismo componente y con el marcado real de sus
+   dos consumidores:
+
+       FONDO del activo contra la barra ......  1,07:1   ← prácticamente invisible
+       tinta del activo .....................  17,52:1
+       tinta del inactivo ...................   7,21:1
+
+   `--surface` (#ffffff) y `--bg` (#f6f7f5) son casi el mismo color, así que la pastilla
+   blanca NO era una señal: lo que separaba los dos lados era el color del texto, y poco
+   más. Con sol en la pantalla o el brillo bajo, un profesional no ve qué lado está puesto —
+   y aquí el lado activo CAMBIA LO QUE HACE EL FORMULARIO: en el catálogo esconde coste,
+   margen y proveedor; en la ficha de cliente cambia qué campos se piden.
+
+   Se añaden BORDE (forma, no tono) y `--shadow-md` («Elevado»): con el fondo y la tinta son
+   cuatro señales, y dos de ellas se ven sin distinguir un color. Es el patrón que SCRUM-689
+   estrenó en las pestañas de clientes, traído al componente del sistema donde vive. */
 .segmented-option:has(.segmented-input:checked) {
   background: var(--surface);
   color: var(--ink);
-  box-shadow: var(--shadow-sm);
+  border-color: var(--border);
+  box-shadow: var(--shadow-md);
 }
 /* El anillo de foco se pinta sobre la PASTILLA, no sobre el radio de 16 px: así se ve
    dónde está el teclado sin que el indicador quede minúsculo. */
@@ -621,6 +652,96 @@ html, body { overflow-x: clip; }
 }
 @media (prefers-reduced-motion: reduce) {
   .segmented-option { transition: none; }
+}
+
+/* ── Pestañas del listado de clientes (SCRUM-689) ─────────────────────────────
+   Todos | Empresas | Personas. Entraron con el PR #874 SIN NI UNA REGLA: medido el
+   2-sep-2026, cero apariciones de `.customers-tabs` y `.customers-tab` en todo `public/`.
+   El profesional abría su lista y veía tres botones crudos del navegador dentro de una
+   barra que sí estaba estilada — un control que parece roto.
+
+   🔴 NO SE INVENTA UN COMPONENTE: se hereda el lenguaje de `.segmented` (el control
+   «uno de N» que ya está en el sistema, justo aquí arriba). Mismos tokens, mismos radios,
+   mismo objetivo táctil, misma forma de marcar el activo. Un segundo dialecto visual para
+   el mismo gesto es lo que convierte un design system en una colección de excepciones.
+
+   POR QUÉ NO SE REUSA `.segmented` TAL CUAL: aquél son radios dentro de un `<fieldset>` y
+   esto son `<button>` con `aria-pressed`. El marcado no se toca (no es este carril), así
+   que lo que se comparte es el lenguaje, no el selector.
+
+   EL ACTIVO NO SE DISTINGUE SÓLO POR TONO — son CUATRO señales, y la cuenta sale de una
+   medición, no de una intuición. Medido en navegador a 360 px sobre este mismo CSS:
+
+       texto activo sobre su fondo ............ 17,52:1   (AA pide 4,5)
+       texto inactivo sobre la barra ..........  4,51:1   (AA, justo)
+       FONDO del activo contra la barra .......  1,07:1   ← casi invisible
+
+   🔴 Ese 1,07 es el dato que obligó a añadir algo. `--surface` (#ffffff) sobre `--bg`
+   (#f6f7f5) son casi el mismo color: la pastilla blanca NO es una señal fiable por sí
+   sola, y `.segmented` —de quien se hereda— arrastra la misma debilidad. Así que además
+   del fondo y la tinta va **borde** (forma, no tono) y **elevación** (`--shadow-md`, el
+   token «Elevado»): dos señales que se ven sin distinguir un color.
+
+   El borde se reserva en TODAS con `transparent`; si sólo lo llevara la activa, la
+   pastilla daría un salto de 2 px al seleccionarla.
+
+   `aria-pressed` ya anunciaba el estado al lector de pantalla antes que este CSS: aquí
+   sólo se hace visible lo que el marcado ya decía. */
+.customers-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  /* La PÁGINA nunca scrollea en horizontal (regla de arriba, línea 353): lo ancho scrollea
+     DENTRO de su contenedor. Y aquí hace falta de verdad, no por si acaso — hoy cada rótulo
+     sale como «[PENDIENTE microcopy oficial] Empresas» (37 caracteres) porque su copy aún no
+     está aplicada en `filtroClientes.js`. Con los seis textos aprobados puestos, los botones
+     caben de sobra y esto no se nota; mientras tanto, evita que la barra empuje la vista. */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.customers-tab {
+  /* Reparten a partes iguales cuando caben (basis 0), y NUNCA por debajo de su texto
+     (min-width: max-content). Medido en navegador a 360 px: con `min-width: 0` los botones se
+     aplastaban y el rótulo SE SOLAPABA con el de al lado en vez de scrollear — se veía peor que
+     sin estilar, que era justo el defecto a corregir. Lo destapó una captura, no el CSS. */
+  flex: 1 1 0;
+  min-width: max-content;
+  /* No se parte el rótulo en dos líneas: una pestaña de dos renglones descuadra la barra
+     entera y deja las tres a distinta altura. Prefiere ensancharse (y, en el peor caso,
+     scrollear dentro de la barra) a romperse. */
+  white-space: nowrap;
+  min-height: 44px;          /* objetivo táctil (AB6) */
+  padding: 8px 14px;
+  border: 1px solid transparent; /* reserva el sitio del borde del activo: sin esto, salta 2px */
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;             /* un <button> no hereda la tipografía: sin esto sale en la del navegador */
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+  transition: background-color .12s, color .12s, box-shadow .12s;
+}
+.customers-tab:hover { color: var(--ink); }
+.customers-tab[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--border);   /* FORMA: se ve sin distinguir el tono */
+  box-shadow: var(--shadow-md);  /* «Elevado» — el fondo solo da 1,07:1 contra la barra */
+}
+/* El anillo de foco, sobre la pastilla y con el token de Foco: sin esto, quitarle el borde
+   al <button> deja al teclado sin rastro visible de dónde está. */
+.customers-tab:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+@media (prefers-reduced-motion: reduce) {
+  .customers-tab { transition: none; }
 }
 
 /* ── Pedir el tipo de destinatario en la bandeja (SCRUM-615) ──────
@@ -2191,6 +2312,26 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .detail-dl dt { font-size: 13px; color: var(--muted); }
 .detail-dl dd { font-size: 13.5px; color: var(--body); margin: 0; }
 
+/* ── SCRUM-650 (T1) · QUIÉN EJECUTA EL TRABAJO — y pueden ser tres ──────────────────────
+   El campo «Técnico» del parte de papel de Tecnosel dice «Israel, Miguel y Jesús.L».
+   Cero componentes nuevos y cero colores inventados (Parte AB): tokens de `tokens.css` y la
+   misma familia visual que `.detail-dl`. El anillo de foco lo pone la regla global de :94. */
+.job-asignados-titulo {
+  font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 4px;
+}
+.job-asignados-lista { display: grid; gap: 2px; }
+/* 44 px (AB6): se marca de pie, en la obra y con guantes. */
+.job-asignados-fila {
+  display: flex; align-items: center; gap: 10px; min-height: 44px;
+  padding: 0 8px; border-radius: var(--radius-md); cursor: pointer;
+}
+.job-asignados-fila:hover { background: var(--bg, #f6f7f5); }
+.job-asignados-casilla { width: 20px; height: 20px; flex: none; accent-color: var(--brand); }
+.job-asignados-nombre { font-size: 14px; color: var(--ink); }
+.job-asignados-lectura { font-size: 14px; font-weight: 600; color: var(--ink); }
+.job-asignados-nota { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+
 /* Tarjetas de margen (planas, dentro de su sección) */
 .margin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
 .margin-tile { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; text-align: center; }
@@ -2568,3 +2709,26 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 .quote-line-desc {
   font-size: 12px; line-height: 1.45; color: var(--muted, #6b756f); margin-top: 2px;
 }
+
+/* ── SCRUM-584 (CONT-11) · el selector de columnas de la lista de clientes ──────────────
+   Un <details> nativo: se abre y se cierra sin JS de posicionamiento, va con teclado y no se
+   sale de la pantalla a 360 px. Tokens existentes, cero colores nuevos.
+   El desplegable va ABSOLUTO para que abrirlo no empuje la tabla hacia abajo — en un movil,
+   una toolbar que crece al tocarla mueve justo lo que el profesional esta mirando. */
+.columnas-selector { position: relative; }
+.columnas-selector > summary {
+  list-style: none; cursor: pointer; user-select: none;
+  min-height: 44px; display: inline-flex; align-items: center; /* objetivo tactil AB6 */
+}
+.columnas-selector > summary::-webkit-details-marker { display: none; }
+.columnas-lista {
+  position: absolute; z-index: 20; right: 0; margin-top: 4px; min-width: 200px;
+  background: var(--surface, #fff); border: 1px solid var(--border);
+  border-radius: var(--radius-md, 12px); padding: 6px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.10);
+}
+.columnas-opcion {
+  display: flex; align-items: center; gap: 10px;
+  min-height: 44px; padding: 0 8px; cursor: pointer; /* objetivo tactil AB6 */
+}
+.columnas-opcion input { width: 18px; height: 18px; }

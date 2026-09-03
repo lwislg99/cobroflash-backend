@@ -52,6 +52,19 @@ async function renderJobsView(container) {
     bNuevo.textContent = MARCA_651 + ' Trabajo nuevo';
     bNuevo.addEventListener('click', () => abrirModalTrabajoNuevo(() => renderJobsView(container)));
     zonaNuevo.appendChild(bNuevo);
+
+    // Sprint Tecnosel · LA PUERTA A «PARTES POR VALORAR». No va en la barra lateral porque su
+    // rótulo no está aprobado y ahí no cabe un marcador (SCRUM-420): cuando el fundador lo firme,
+    // se mueve. Mientras, la pantalla es alcanzable — que es lo que la separa de un fichero.
+    const bValorar = document.createElement("button");
+    bValorar.className = "btn-secondary btn-sm";
+    bValorar.id = "jobs-partes-valorar";
+    bValorar.style.marginLeft = "8px";
+    bValorar.textContent = MARCA_651 + " Partes por valorar";
+    bValorar.addEventListener("click", () => {
+      if (window.renderAppView) window.renderAppView("partes-oficina");
+    });
+    zonaNuevo.appendChild(bValorar);
   }
 
   uiSkeletonCards(list, 4);

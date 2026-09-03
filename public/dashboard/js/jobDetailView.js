@@ -835,6 +835,72 @@ async function renderJobDetailView(container, jobId) {
       setStatus('error', (e && e.data && e.data.message) || 'No se pudo guardar la dirección de la obra.');
     }
   });
+  // ── SCRUM-650 (T1) · QUIÉN EJECUTA ESTE TRABAJO — Y PUEDEN SER TRES ─────────────────────
+  //
+  // El parte de papel de Tecnosel escribe «Israel, Miguel y Jesús.L» en el campo «Técnico». El
+  // motor, la tabla `job_assignees` y el filtro de los tres ejes ya estaban en producción: lo que
+  // faltaba era el sitio donde el jefe los mete sin tener que elegir a uno y apañarse.
+  //
+  // ⚠️ NO ES EL BLOQUE «RESPONSABLE» del rail. Aquél pinta `job.operario` — la AUTORÍA, congelada
+  // al aceptar el presupuesto (SCRUM-52). Esto es QUIÉN EJECUTA (SCRUM-10). Un presupuesto lo
+  // redacta uno y lo ejecutan tres, y mezclarlos es el fallo que este bloque tiene prohibido.
+  //
+  // Va en «Datos» y no en el rail: el rail es contexto de SOLO LECTURA (patrón B2, regla 4) y su
+  // guard prohíbe que cree un `input`. Aquí se ESCRIBE.
+  //
+  // La lista de empleados es admin-only (`/admin/team` va con requireRole('admin')), así que al
+  // técnico ni se le pide: ve los nombres y por qué no puede cambiarlos, que es la norma de
+  // SCRUM-89 — un gate no deja UI huérfana.
+  if (typeof construirSelectorAsignados === 'function') {
+    const asigWrap = document.createElement('div');
+    asigWrap.style.cssText = 'margin-top:12px';
+    infoSec.appendChild(asigWrap);
+
+    (async () => {
+      try {
+        // Al técnico se le pinta en SOLO LECTURA con los nombres que ya trae el detalle: pedirle
+        // /admin/team sería un 403 garantizado y dejaría el bloque sin pintar.
+        const miembros = isTecnico
+          ? (job.asignados || []).map((a) => ({ id: a.id, name: a.name }))
+          : await apiRequest('/admin/team');
+        // 🔴 Con el equipo vacío, `construirSelectorAsignados` LANZA en vez de pintar un selector
+        // sin nadie: un cero ahí es «no supe leer», no «no hay empleados». Cae en este catch.
+        const sel = construirSelectorAsignados(document, {
+          miembros,
+          asignados: job.asignados || [],
+          puedeEditar: !isTecnico,
+        });
+        asigWrap.appendChild(sel.elemento);
+
+        sel.casillas.forEach((casilla) => {
+          casilla.addEventListener('change', async () => {
+            const antes = sel.casillas.map((c) => c.checked);
+            try {
+              // El cuerpo lo arma el módulo: manda SIEMPRE `assignedUserIds` (la lista), que es la
+              // que puede llevar tres. Nunca `operarioId`.
+              await apiRequest(`/admin/jobs/${job.id}`, {
+                method: 'PATCH',
+                body: JSON.stringify(cuerpoDeAsignacion(sel.idsMarcados())),
+              });
+              refresh();
+            } catch (e) {
+              // Se deshace la casilla: dejarla marcada diría que se guardó, y no se guardó.
+              sel.casillas.forEach((c, i) => { c.checked = antes[i]; });
+              // 🔴 NO se pinta el `.message` del servidor (SCRUM-644): un `invalid_assignee` en
+              // pantalla es una tubería interna asomando. El texto es de la pantalla y va marcado.
+              setStatus('error', TEXTOS_ASIGNADOS.noSeGuardo);
+            }
+          });
+        });
+      } catch (e) {
+        // Incluye el EquipoCiego: se dice que no se pudo leer, en vez de pintar un selector vacío
+        // que el jefe leería como «no tengo empleados».
+        console.error('[SCRUM-650] selector de asignados:', (e && e.message) || e);
+        asigWrap.remove();
+      }
+    })();
+  }
+
   // SCRUM-31 (F5): "Ver presupuesto" se mueve a la FILA de presupuesto de la lista 'Documentos'
   // (antes también estaba aquí; se quita para no duplicar).
   // SCRUM-31 (F6): "Datos" pasa a SEGUNDO PLANO — se appendea más abajo, tras Cobros
@@ -1428,8 +1494,13 @@ async function renderJobDetailView(container, jobId) {
       onClose: close,
       onError: (msg) => { errEl.textContent = msg; errEl.style.display = 'block'; },
       textoGuardar: ALB_CREAR_COPY.guardar,
-      onGuardar: async ({ lineas, notas, modoValoracion: modo }) => {
+      onGuardar: async ({ lineas, notas, modoValoracion: modo, docHeaderText }) => {
         const cuerpo = lineas.length ? { modoValoracion: modo, lineas, notas } : { modoValoracion: modo, notas };
+        // SCRUM-593 (DOC-03): sin esto el campo se pintaría, se leería con veredicto... y moriría
+        // AQUÍ, en la desestructuración. Es «construido ≠ alcanzable» una capa más abajo, y no lo
+        // habría cazado ningún test del editor: el editor sí lo manda.
+        // `undefined` = no se pudo leer → no se manda la clave y el servidor no toca la columna.
+        if (docHeaderText !== undefined) cuerpo.docHeaderText = docHeaderText;
         await apiRequest(`/admin/jobs/${job.id}/albaranes`, { method: 'POST', body: JSON.stringify(cuerpo) });
         showToast(
           lineas.length
@@ -2255,6 +2326,29 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
     campoAlb(rotAlb.fechaEntrega, ayuAlb.fechaEntrega, fEntregaEl);
   }
 
+  // ── SCRUM-593 (DOC-03) · EL TEXTO DE CABECERA DEL ALBARÁN, ALCANZABLE ──────────────────
+  //
+  // Se monta AQUÍ, encima de las notas, porque ése es el orden en el PAPEL: la cabecera arriba y
+  // el bloque final abajo. Un formulario que los ofrece al revés que el documento obliga a
+  // traducir mentalmente lo que se está escribiendo.
+  //
+  // 🔴 SÓLO LA CABECERA. El PIE de este documento ya existe y es `notas` —el textarea de justo
+  // debajo, que ya se imprime—. Montar aquí un segundo campo de pie daría dos sitios para lo
+  // mismo y al día siguiente nadie sabría cuál manda.
+  //
+  // ⚠️ EL RÓTULO SALE CON MARCADOR y no se inventa aquí: sigue sin firmarlo el fundador, así que
+  // lo pone la pieza (`textoDelDocumento.js`), que es el único sitio donde vive. Derivarlo de
+  // «Observaciones» sería inventar microcopy (regla 30).
+  //
+  // Si la pieza no está cargada, el bloque NO SE PINTA — mismo criterio que los rótulos servidos
+  // de `lugarEntrega`/`fechaEntrega`: mejor sin campo que con un campo sin rótulo.
+  let cabeceraDoc = null;
+  if (typeof window.textoDelDocumentoMontar === 'function') {
+    cabeceraDoc = document.createElement('div');
+    window.textoDelDocumentoMontar(cabeceraDoc, { docHeaderText: alb.docHeaderText || '' }, ['docHeaderText']);
+    box.appendChild(cabeceraDoc);
+  }
+
   const notas = document.createElement('textarea');
   notas.className = 'input';
   notas.placeholder = 'Notas del albarán (opcional)';
@@ -2291,7 +2385,16 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
     // primera en silencio. `alb.version` viene de `serializeAlbaran` — ya venía, no se añade campo.
     // ⚠️ Es la de cuando se abrió el editor, NO una releída al guardar: releerla aquí volvería a
     // dar siempre «coincide» y el mecanismo entero no serviría para nada.
+    // SCRUM-593 (DOC-03): se lee con el VEREDICTO de la pieza, no leyendo el nodo a pelo. Si el
+    // campo no estuviera montado, un lector mudo devolvería `null` —indistinguible de «el
+    // profesional lo dejó en blanco»— y guardar BORRARÍA un texto ya escrito. Con veredicto, si
+    // no se pudo leer NO se manda el campo, y lo guardado se queda como estaba.
+    const leidoCab = cabeceraDoc && typeof window.textoDelDocumentoLeer === 'function'
+      ? window.textoDelDocumentoLeer(cabeceraDoc, ['docHeaderText'])
+      : { ok: false };
+
     const body = { lineas: out, notas: notas.value, version: alb.version };
+    if (leidoCab.ok) body.docHeaderText = leidoCab.valores.docHeaderText;
     // SCRUM-300: se mandan SIEMPRE que el bloque exista, también vacíos — vaciar el lugar de
     // entrega es una decisión legítima del pro y el backend la respeta ('' → null). No tocan
     // `fecha`, que sigue siendo la del documento.
@@ -2305,7 +2408,13 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
       // SCRUM-303: en creación, ÉSTE es el único sitio del que sale el POST — y por eso no hay
       // albarán ni número hasta aquí. En edición no cambia nada: sigue siendo el PATCH de antes.
       if (onGuardar) {
-        await onGuardar({ lineas: out, notas: notas.value, modoValoracion: modo });
+        // SCRUM-593 (DOC-03): la creación es OTRA puerta —`onGuardar` hace el POST— y si el
+        // campo no viajara por aquí, lo tecleado al crear se perdería en silencio. Es el defecto
+        // de SCRUM-424 (el PATCH lo guarda y el create no) visto desde el navegador.
+        await onGuardar({
+          lineas: out, notas: notas.value, modoValoracion: modo,
+          ...(leidoCab.ok ? { docHeaderText: leidoCab.valores.docHeaderText } : {}),
+        });
       } else {
         await apiRequest(`/admin/albaranes/${alb.id}`, { method: 'PATCH', body: JSON.stringify(body) });
         showToast('✓ Albarán actualizado (nueva versión).');

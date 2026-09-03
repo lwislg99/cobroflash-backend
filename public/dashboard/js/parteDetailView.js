@@ -57,6 +57,11 @@
     tipoReparacion: M + 'Reparación / asistencia',
     tipoMantenimiento: M + 'Mantenimiento',
     tipoInstalacion: M + 'Instalación',
+    dictado: M + 'Dicta lo que has hecho',
+    pistaDictado: M + 'Usa el micrófono de tu teclado. Luego lo ordenamos.',
+    ordenarDictado: M + 'Ordenar en líneas',
+    confirmarPropuesta: M + 'Añadir estas líneas',
+    sinBloque: M + 'Sin colocar — dile dónde va',
   };
 
   // El vocabulario CERRADO del dominio (`parteTrabajo.ts`). No se inventa aquí ni se amplía:
@@ -188,6 +193,9 @@
       // por coma, tal como se escriben ahí.
       campo(TEXTOS.tecnicos, (parte.tecnicos || []).join(', ')) +
       pintarTipo(parte.tipo, editable) +
+      // El dictado solo tiene sentido mientras el contenido se pueda tocar: ofrecerlo en un parte
+      // firmado sería enseñar un camino que el siguiente paso cierra con un 409.
+      (editable ? pintarDictado() : '') +
       pintarBloque('mano_obra', lineas, editable) +
       pintarBloque('materiales', lineas, editable) +
       campo(TEXTOS.notas, parte.notas) +
@@ -198,6 +206,159 @@
           esc(TEXTOS.yaFirmado) + '</p>');
 
     return true;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-683 · EL DICTADO. Un TEXTAREA, y nada más.
+  //
+  // 🔴 AQUÍ NO HAY API DE VOZ DEL NAVEGADOR, Y ES LA DECISIÓN ENTERA. El técnico dicta con el
+  // MICRÓFONO DEL TECLADO DE SU MÓVIL: funciona en iPhone y Android, en todos los navegadores, es
+  // gratis y **el audio no sale del teléfono**. `SpeechRecognition` haría lo contrario —mandar voz
+  // de la obra, con el nombre del cliente y los detalles de su sistema de seguridad, a un
+  // proveedor— y encima no funciona igual en todos los navegadores.
+  //
+  // Para este campo, «no hacer nada» ES la funcionalidad: un `<textarea>` normal ya tiene el micro
+  // del teclado. A YaQu solo viaja TEXTO, y eso es lo que sostiene el argumento de protección de
+  // datos con un cliente que instala sistemas de seguridad.
+  //
+  // 🔴 Y LO PROPUESTO SE PROPONE: nada de esto escribe en el parte. El técnico corrige, confirma,
+  // y entonces se guarda por el camino de siempre.
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * El campo del dictado: un TEXTAREA NORMAL. Ver el bloque de arriba — el micrófono lo pone el
+   * teclado del móvil, no nosotros, y por eso aquí no hay nada que arrancar ni permiso que pedir.
+   */
+  function pintarDictado() {
+    return '' +
+      '<div data-parte-dictado="1" style="margin:12px 0">' +
+      '<label for="parte-dictado" style="display:block;font-size:13px;color:var(--muted)">' +
+      esc(TEXTOS.dictado) + '</label>' +
+      '<textarea id="parte-dictado" data-dictado-texto="1" rows="3" style="width:100%"></textarea>' +
+      '<p style="margin:4px 0 6px;font-size:12px;color:var(--muted)">' +
+      esc(TEXTOS.pistaDictado) + '</p>' +
+      '<button type="button" data-dictado-ordenar="1" style="width:100%">' +
+      esc(TEXTOS.ordenarDictado) + '</button>' +
+      '<div data-dictado-propuesta="1"></div></div>';
+  }
+
+  function pintarLineaPropuesta(linea, bloque, indice, avisos) {
+    var sinCantidad = !(typeof linea.unds === 'number' && linea.unds > 0);
+    return '' +
+      '<li data-propuesta="1" data-bloque="' + esc(bloque) + '" data-indice="' + indice + '"' +
+      ' style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)">' +
+      '<input type="number" step="any" min="0" data-propuesta-unds="1" ' +
+      'value="' + (sinCantidad ? '' : esc(linea.unds)) + '" ' +
+      'aria-label="' + esc(TEXTOS.unds) + '" style="width:72px">' +
+      '<span style="flex:1;font-size:14px">' + esc(linea.descripcion) + '</span>' +
+      // 🔴 La cantidad retirada NO desaparece: se dice, en la línea a la que le falta. Texto
+      // APROBADO (regla 30) y en SINGULAR porque el aviso es de línea, no un resumen — viene del
+      // servidor para no reteclearlo aquí.
+      (sinCantidad
+        ? '<em data-falta-cantidad="1" style="font-size:12px;color:var(--muted);font-style:normal">' +
+          esc(avisos.cantidadesRetiradas) + '</em>'
+        : '') +
+      '</li>';
+  }
+
+  /**
+   * Pinta la propuesta del dictado. Devuelve `false` si no hay nada que pintar, y entonces el
+   * llamador enseña el motivo — que llega resuelto del servidor, no se decide aquí.
+   */
+  function pintarPropuesta(contenedor, respuesta) {
+    if (!contenedor || !respuesta || !respuesta.propuesta) return false;
+    var p = respuesta.propuesta;
+    var avisos = respuesta.avisos || {};
+
+    // 🔴 SUELO: propuesta vacía → el parte se queda EN BLANCO Y SE DICE. No se rellena con nada.
+    if (p.vacia) {
+      contenedor.innerHTML = '<p data-propuesta-vacia="1" style="font-size:14px;color:var(--muted)">' +
+        esc(avisos[p.motivo] || avisos.sin_lineas_reconocidas || '') + '</p>';
+      return false;
+    }
+
+    var bloques = BLOQUES.map(function (b) {
+      var suyas = (p[b] || []).map(function (l, i) { return pintarLineaPropuesta(l, b, i, avisos); });
+      if (!suyas.length) return '';
+      return '<h4 style="margin:12px 0 4px;font-size:13px;color:var(--muted)">' +
+        esc(ETIQUETA_BLOQUE[b]) + '</h4><ul style="list-style:none;margin:0;padding:0">' +
+        suyas.join('') + '</ul>';
+    }).join('');
+
+    // Lo que el modelo no supo colocar tampoco se tira: se propone aparte para que él lo coloque.
+    var sueltas = (p.sinBloque || []).map(function (l, i) {
+      return pintarLineaPropuesta(l, 'sinBloque', i, avisos);
+    });
+    var resto = sueltas.length
+      ? '<h4 style="margin:12px 0 4px;font-size:13px;color:var(--muted)">' +
+        esc(TEXTOS.sinBloque) + '</h4><ul style="list-style:none;margin:0;padding:0">' +
+        sueltas.join('') + '</ul>'
+      : '';
+
+    contenedor.innerHTML = bloques + resto +
+      '<button type="button" data-propuesta-confirmar="1" style="width:100%;margin-top:10px">' +
+      esc(TEXTOS.confirmarPropuesta) + '</button>';
+    return true;
+  }
+
+  /**
+   * Lo que el técnico ha confirmado, leído de la pantalla.
+   *
+   * 🔴 Se lee de los CAMPOS, no de la propuesta que vino del servidor: si se leyera de la
+   * propuesta, corregir una cantidad en pantalla no cambiaría nada y se guardaría lo que dijo la
+   * máquina. Y una línea a la que el técnico no le haya puesto cantidad NO SALE: `aLineaDelParte`
+   * la rechazaría igual en el servidor, pero decírselo aquí le ahorra el viaje.
+   */
+  function lineasConfirmadas(contenedor) {
+    if (!contenedor) return { lineas: [], sinCantidad: 0 };
+    var filas = contenedor.querySelectorAll('[data-propuesta="1"]');
+    var lineas = [];
+    var sinCantidad = 0;
+    Array.prototype.forEach.call(filas, function (fila) {
+      var campoUnds = fila.querySelector('[data-propuesta-unds="1"]');
+      var descripcion = (fila.querySelector('span') || {}).textContent || '';
+      var unds = Number(campoUnds && campoUnds.value);
+      var bloque = fila.getAttribute('data-bloque');
+      if (!isFinite(unds) || unds <= 0) { sinCantidad += 1; return; }
+      // `sinBloque` no es un bloque del dominio: sin decidirlo el técnico, esa línea no entra.
+      if (BLOQUES.indexOf(bloque) === -1) { sinCantidad += 1; return; }
+      lineas.push({ bloque: bloque, unds: unds, descripcion: descripcion });
+    });
+    return { lineas: lineas, sinCantidad: sinCantidad };
+  }
+
+  /**
+   * Manda el dictado a `/admin/partes/:id/dictado` y pinta lo que vuelva.
+   *
+   * 🔴 NO GUARDA NADA. La ruta tampoco: devuelve una propuesta. Lo que escribe en el parte es el
+   * `PATCH` de siempre, y solo cuando el técnico le da a confirmar.
+   *
+   * 🔴 Y SI FALLA, NO BLOQUEA: se pinta el aviso y el técnico sigue escribiendo a mano. El dictado
+   * del teclado de su móvil funciona sin nosotros; ordenar es el extra que puede faltar.
+   */
+  async function ordenarElDictado(parte, contenedor, opciones) {
+    var o = opciones || {};
+    var pedir = o.apiRequest || window.apiRequest;
+    var destino = contenedor && contenedor.querySelector('[data-dictado-propuesta="1"]');
+    var campo = contenedor && contenedor.querySelector('[data-dictado-texto="1"]');
+    if (typeof pedir !== 'function' || !destino || !campo) return false;
+
+    var dictado = String(campo.value || '').trim();
+    try {
+      var respuesta = await pedir('/admin/partes/' + parte.id + '/dictado', {
+        method: 'POST',
+        body: JSON.stringify({ dictado: dictado }),
+      });
+      return pintarPropuesta(destino, respuesta);
+    } catch (e) {
+      // Un fallo de red aquí NO es un fallo del parte. Se dice con el texto aprobado del caso
+      // «no ha salido nada» y se sigue: el suelo es que la pantalla no se quede muda.
+      pintarPropuesta(destino, {
+        propuesta: { vacia: true, motivo: 'sin_lineas_reconocidas', mano_obra: [], materiales: [], sinBloque: [] },
+        avisos: o.avisos || {},
+      });
+      return false;
+    }
   }
 
   /**
@@ -304,6 +465,9 @@
 
   window.renderParte = renderParte;
   window.renderParteDetailView = renderParteDetailView;
+  window.partePintarPropuesta = pintarPropuesta;
+  window.parteOrdenarDictado = ordenarElDictado;
+  window.parteLineasConfirmadas = lineasConfirmadas;
   window.firmarParte = firmarParte;
   window.PARTE_TEXTOS = TEXTOS;
   window.parteLineasOCeguera = lineasOCeguera;

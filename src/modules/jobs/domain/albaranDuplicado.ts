@@ -37,6 +37,11 @@ export const CAMPOS_QUE_VIAJAN: Record<string, string> = {
   modoValoracion: 'con o sin precios es una decisión del parte, no un hecho ocurrido',
   lineas: 'ES lo que describe el trabajo: el motivo entero de duplicar',
   notas: 'las escribió el profesional sobre la obra, y las volvería a escribir igual',
+  // SCRUM-593 (DOC-03): el texto de CABECERA es del mismo tipo que `notas` —el pie de este
+  // mismo documento— y viaja por el mismo motivo: lo escribió el profesional sobre ESTE
+  // trabajo y lo volvería a teclear igual. No afirma ningún hecho ocurrido, así que no
+  // contamina el duplicado con nada que no haya pasado.
+  docHeaderText: 'lo escribió el profesional sobre este trabajo, y lo volvería a escribir igual',
   // SCRUM-300 (C5): DÓNDE se entrega describe el trabajo —la obra es la misma— y el pro lo
   // teclearía idéntico mañana. No afirma que se haya entregado nada: eso lo dice `fechaEntrega`,
   // que está en el otro cubo justamente por eso.

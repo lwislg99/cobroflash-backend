@@ -24,6 +24,8 @@
 //
 // La pantalla de la oficina —la que sí valora— es otra ruta y otro ticket. Cuando llegue, tendrá
 // que pedir los precios explícitamente, y eso se verá en su diff.
+import { seesAllJobs } from '../../../../core/http/roleCapabilities';
+import { requireRole } from '../../../../core/http/authMiddleware';
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import {
@@ -33,6 +35,7 @@ import {
   lineasParaElTecnico,
   puedeEditarContenido,
   puedeEditarPrecios,
+  permisoDeCampos,
   puedeFirmarse,
   PARTE_CONTENIDO_VERSION_ACTUAL,
   type BloqueParte,
@@ -41,6 +44,8 @@ import {
   type TipoParte,
 } from '../../domain/parteTrabajo';
 import { siguienteNumeroParte } from '../../domain/parteNumero';
+import { AVISOS_DEL_DICTADO, sanearDictadoDelParte } from '../../domain/parteDictado';
+import { isAiConfigured, suggestLineasDeParte } from '../../../ai/domain/ai.service';
 import { exigirNombreFirmante, resolverCalidadFirmante } from '../../domain/albaranFirmante';
 
 const router = Router();
@@ -122,6 +127,63 @@ function serializeParteParaElTecnico(parte: any) {
   };
 }
 
+/**
+ * LA OTRA VISTA DEL MISMO DOCUMENTO, y por eso es OTRO serializador.
+ *
+ * 🔴 NO es «el del técnico con dinero», ni un modo suyo: son dos públicos distintos y la
+ * separación es lo único que garantiza que un cambio en esta vista no mande importes al móvil.
+ * Se escribe campo a campo por el mismo motivo que el otro: extendiendo la fila, la columna de
+ * dinero que se añada mañana saldría por aquí sin que nadie lo decidiera.
+ *
+ * Lo que ESTA añade y la del técnico no: `precioUnitario`, `tipoIva`, el `importe` de cada línea
+ * y los totales. Y `sinValorar`, que es lo que el jefe necesita para encontrar su trabajo.
+ */
+function serializeParteParaLaOficina(parte: any) {
+  const lineas: LineaParte[] = Array.isArray(parte.lineas) ? parte.lineas : [];
+  const conImporte = lineas.map((l: any) => {
+    const precio = l.precioUnitario === null || l.precioUnitario === undefined ? null : Number(l.precioUnitario);
+    const unds = l.unds === null || l.unds === undefined ? null : Number(l.unds);
+    // El importe es DERIVADO y viaja calculado: si lo calculara la pantalla, habría dos sitios
+    // haciendo la misma multiplicación y un día darían distinto.
+    const importe = precio === null || unds === null || !Number.isFinite(precio * unds)
+      ? null
+      : Math.round(precio * unds * 100) / 100;
+    return {
+      bloque: l.bloque ?? null,
+      unds,
+      descripcion: l.descripcion ?? null,
+      precioUnitario: precio,
+      tipoIva: l.tipoIva === null || l.tipoIva === undefined ? null : Number(l.tipoIva),
+      importe,
+    };
+  });
+  // 🔴 «SIN VALORAR» ES POR LÍNEA, NO POR PARTE: un parte con tres líneas y dos precios está sin
+  // valorar, y si se contara «tiene algún precio» desaparecería de la lista del jefe a medias.
+  const sinValorar = conImporte.some((l) => l.precioUnitario === null);
+  const base = conImporte.reduce((t, l) => t + (l.importe ?? 0), 0);
+  return {
+    id: parte.id,
+    jobId: parte.jobId ?? null,
+    customerId: parte.customerId ?? null,
+    clienteNombre: parte.clienteNombre ?? null,
+    numero: parte.numero,
+    fecha: parte.fecha,
+    obra: parte.obra ?? null,
+    referencia: parte.referencia ?? null,
+    tipo: parte.tipo ?? null,
+    tecnicos: Array.isArray(parte.tecnicos) ? parte.tecnicos : [],
+    lineas: conImporte,
+    notas: parte.notas ?? null,
+    estado: parte.estado,
+    firmadoAt: parte.firmadoAt ?? null,
+    firmadoPorNombre: parte.firmadoPorNombre ?? null,
+    sinValorar,
+    totalBase: Math.round(base * 100) / 100,
+    puedeEditarContenido: puedeEditarContenido(parte.estado as EstadoParte),
+    puedeEditarPrecios: puedeEditarPrecios(parte.estado as EstadoParte),
+  };
+}
+
 /** Las líneas tal y como llegan del técnico: sin ni un precio. */
 function validarLineasDelTecnico(
   entrada: any,
@@ -177,6 +239,49 @@ router.get('/', async (req: any, res) => {
     return res.json({ partes: partes.map(serializeParteParaElTecnico) });
   } catch (err: any) {
     console.error('[GET /admin/partes]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// ── GET /admin/partes/oficina/pendientes — LO QUE FALTA POR VALORAR ──────────────────────
+//
+// 🔴 VA ANTES DE `/:id` A PROPÓSITO: Express casa por orden, y declarada después, «oficina»
+// entraría como `:id` y esto no existiría nunca.
+//
+// Es la respuesta a «¿cuáles me faltan?». Sin esta lista la pantalla no sirve: el jefe tendría
+// que abrir los partes uno a uno para descubrir cuál está firmado y sin precios.
+router.get('/oficina/pendientes', requireRole('admin'), async (req: any, res) => {
+  try {
+    const partes = await prisma.parteTrabajo.findMany({
+      where: { merchantId: req.merchantId, estado: 'firmado' },
+      orderBy: [{ firmadoAt: 'desc' }, { id: 'desc' }],
+      take: 200,
+    });
+    const vistos = partes.map(serializeParteParaLaOficina);
+    const pendientes = vistos.filter((p) => p.sinValorar);
+    // 🔴 EL SUELO VIAJA CON EL DATO: un `0` no dice si no hay ninguno o si no se supo leer. Con
+    // `firmadosLeidos` al lado, «0 de 12» y «0 de 0» dejan de ser el mismo número.
+    return res.json({ pendientes, firmadosLeidos: vistos.length });
+  } catch (err: any) {
+    console.error('[GET /admin/partes/oficina/pendientes]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// ── GET /admin/partes/:id/oficina — el parte CON dinero ──────────────────────────────────
+//
+// Puerta aparte y `admin` a propósito: el móvil del técnico no llega aquí ni por equivocación.
+// La separación no es del serializador, es de la RUTA — así no depende de un `if` que alguien
+// pueda invertir sin darse cuenta.
+router.get('/:id/oficina', requireRole('admin'), async (req: any, res) => {
+  try {
+    const found = await findParte(req);
+    if (!found.ok) {
+      return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
+    }
+    return res.json(serializeParteParaLaOficina(found.parte));
+  } catch (err: any) {
+    console.error('[GET /admin/partes/:id/oficina]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });
@@ -257,9 +362,25 @@ router.patch('/:id', async (req: any, res) => {
     }
     const { parte } = found;
 
-    // El candado del dominio, con su motivo. La regla no se reescribe aquí.
-    const candado = puedeEditarContenido(parte.estado as EstadoParte);
-    if (!candado.ok) return res.status(409).json({ error: 'parte_locked', message: candado.motivo });
+    // 🔴 EL PERMISO SE COMPRUEBA POR CAMPO, NO POR PETICIÓN.
+    //
+    // Antes esto era `puedeEditarContenido` para la petición entera, y por eso un parte FIRMADO
+    // devolvía 409 a TODO — incluida una petición que solo tocaba precios. Ése era el agujero:
+    // `puedeEditarPrecios` existía y no cerraba ninguna escritura, así que un parte firmado no
+    // se podía valorar por ninguna vía, y sin valorar no se cobra.
+    //
+    // La regla vive en el dominio (`permisoDeCampos`) y aquí solo se aplica. Y si un campo lo
+    // impide, **no se aplica NADA**: se rechaza entera, diciendo qué campo la tumbó.
+    const pedidos = Object.keys(req.body ?? {});
+    const permiso = permisoDeCampos(parte.estado as EstadoParte, pedidos);
+    if (!permiso.ok) {
+      return res.status(409).json({
+        error: 'parte_locked',
+        campo: permiso.campo,
+        grupo: permiso.grupo,
+        message: permiso.motivo,
+      });
+    }
 
     const data: any = {};
     for (const campo of ['obra', 'referencia', 'entrada', 'salida', 'notas'] as const) {
@@ -315,10 +436,65 @@ router.patch('/:id', async (req: any, res) => {
       });
     }
 
+    // ── LOS PRECIOS DE LA OFICINA ────────────────────────────────────────────────────
+    //
+    // Viajan en su PROPIA clave y por índice de línea: `[{ indice, precioUnitario, tipoIva }]`.
+    // No se mezclan con `lineas` a propósito — mezclarlos haría que «esta petición toca precios»
+    // fuera una cuestión de mirar dentro de un array, y entonces «mixta» sería opinable.
+    if (req.body?.precios !== undefined) {
+      if (!Array.isArray(req.body.precios)) {
+        return res.status(400).json({ error: 'precios_invalidos', message: 'Los precios vienen en una lista.' });
+      }
+      const previas: LineaParte[] = Array.isArray(parte.lineas) ? (parte.lineas as any) : [];
+      const conPrecio = previas.map((l) => ({ ...l }));
+      for (const p of req.body.precios) {
+        const i = Number(p?.indice);
+        if (!Number.isInteger(i) || i < 0 || i >= conPrecio.length) {
+          return res.status(400).json({
+            error: 'precio_sin_linea',
+            message: `No hay ninguna línea ${String(p?.indice)} que valorar.`,
+          });
+        }
+        if (p?.precioUnitario !== undefined) {
+          const n = p.precioUnitario === null ? null : Number(p.precioUnitario);
+          if (n !== null && (!Number.isFinite(n) || n < 0)) {
+            return res.status(400).json({
+              error: 'precio_invalido',
+              message: 'Un precio es un número que no puede ser negativo.',
+            });
+          }
+          conPrecio[i].precioUnitario = n;
+        }
+        if (p?.tipoIva !== undefined) {
+          const n = p.tipoIva === null ? null : Number(p.tipoIva);
+          if (n !== null && (!Number.isFinite(n) || n < 0 || n > 1)) {
+            return res.status(400).json({
+              error: 'tipo_iva_invalido',
+              message: 'El IVA es una fracción entre 0 y 1.',
+            });
+          }
+          conPrecio[i].tipoIva = n;
+        }
+      }
+      data.lineas = conPrecio;
+    }
+
     if (Object.keys(data).length === 0) return res.json(serializeParteParaElTecnico(parte));
 
     const updated = await prisma.parteTrabajo.update({ where: { id: parte.id }, data });
-    return res.json(serializeParteParaElTecnico(updated));
+
+    // 🔴 QUIÉN PREGUNTA DECIDE QUÉ SE DEVUELVE, y la condición es el ROL, no lo que venga en el
+    // cuerpo. Con `admin` va la vista de oficina —el jefe tiene que VER lo que acaba de escribir,
+    // que era justo lo que faltaba—; con cualquier otro rol, la del técnico.
+    //
+    // Se mira el rol y NO «si la petición traía precios» porque eso lo decide quien llama: un
+    // técnico que mandara `precios` en un borrador recibiría importes en el móvil. El rol no lo
+    // elige él.
+    return res.json(
+      seesAllJobs(req.userRole)
+        ? serializeParteParaLaOficina(updated)
+        : serializeParteParaElTecnico(updated),
+    );
   } catch (err: any) {
     console.error('[PATCH /admin/partes/:id]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
@@ -392,6 +568,59 @@ router.post('/:id/firmar', async (req: any, res) => {
     return res.json(serializeParteParaElTecnico(updated));
   } catch (err: any) {
     console.error('[POST /admin/partes/:id/firmar]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * SCRUM-683 · EL DICTADO SE ORDENA, Y NO ENTRA EN EL PARTE.
+ *
+ * 🔴 ESTA RUTA NO ESCRIBE NADA. Devuelve una PROPUESTA y se acabó: el técnico la corrige y la
+ * confirma con el `PATCH` de siempre, que es el único sitio donde se escriben líneas. Si esta ruta
+ * guardara, una cantidad que ha leído una máquina entraría en un documento que se firma y se
+ * factura sin que nadie la haya mirado.
+ *
+ * ⚠️ Y NO ES UN `GET` PORQUE MANDA UN CUERPO, no porque cambie estado: el dictado es un párrafo
+ * largo y una URL no es sitio para el texto de una obra.
+ *
+ * ⛔ NI UN IMPORTE, en ninguna dirección — ver la cabecera del fichero.
+ */
+router.post('/:id/dictado', async (req: any, res) => {
+  try {
+    const found = await findParte(req);
+    if (!found.ok) {
+      return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
+    }
+    const { parte } = found;
+
+    // El mismo candado que el PATCH, y por el mismo motivo: proponerle líneas a un parte FIRMADO
+    // es ofrecerle al técnico un camino que el siguiente paso le va a cerrar.
+    const candado = puedeEditarContenido(parte.estado as EstadoParte);
+    if (!candado.ok) return res.status(409).json({ error: 'parte_locked', message: candado.motivo });
+
+    const dictado = String(req.body?.dictado ?? '').trim();
+
+    // 🔴 SIN RED, SIN CLAVE O CON EL MODELO CAÍDO: NO SE BLOQUEA EL PARTE. Se devuelve la propuesta
+    // VACÍA con su motivo y un 200, porque el técnico puede seguir escribiendo a mano — el dictado
+    // del teclado de su móvil funciona sin nosotros y ordenar es un extra que puede faltar. Un 500
+    // aquí le diría «se ha roto» cuando lo único que pasa es que no hay ayuda.
+    if (dictado === '' || !isAiConfigured()) {
+      return res.json({ propuesta: sanearDictadoDelParte(null, dictado), avisos: AVISOS_DEL_DICTADO });
+    }
+
+    let propuesta;
+    try {
+      propuesta = await suggestLineasDeParte({ dictado });
+    } catch (err: any) {
+      console.error('[POST /admin/partes/:id/dictado] ia:', err?.message || err);
+      propuesta = sanearDictadoDelParte(null, dictado);
+    }
+
+    // Los textos viajan CON la propuesta para que la pantalla no los reteclee: son microcopy
+    // aprobada (regla 30) y un texto aprobado que se copia a mano deja de ser el aprobado.
+    return res.json({ propuesta, avisos: AVISOS_DEL_DICTADO });
+  } catch (err: any) {
+    console.error('[POST /admin/partes/:id/dictado]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });

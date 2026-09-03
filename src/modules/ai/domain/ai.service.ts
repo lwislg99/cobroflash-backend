@@ -14,6 +14,12 @@ import { geminiComplete, isGeminiConfigured } from '../../../integrations/gemini
 import { config } from '../../../core/config/env';
 import { prisma } from '../../../core/db/prisma';
 import { cantidadUtilizable, mapearLineasSugeridas } from './lineasSugeridas';
+import {
+  PROMPT_PARTE_APROBADO,
+  sanearDictadoDelParte,
+  type PropuestaDelDictado,
+} from '../../jobs/domain/parteDictado';
+
 
 // ¿Hay algún proveedor de IA disponible? (lo usa la ruta para el 503 digno)
 export function isAiConfigured(): boolean {
@@ -340,4 +346,50 @@ Trabajo: ${params.concept}
 Total: ${params.total} ${params.currency}`;
 
   return (await aiComplete({ system: MESSAGE_SYSTEM, user, maxTokens: 256 })).trim();
+}
+
+// ─── Dictado del técnico → las DOS listas del parte (SCRUM-683, cableado) ──────────────────
+//
+// 🔴 EL SANEADO MANDA SOBRE EL MODELO, Y AQUÍ MÁS QUE EN NINGÚN SITIO. Igual que
+// `suggestAlbaranLines` borra el precio en `SIN_VALORAR` pase lo que pase, esto pasa TODO por
+// `sanearDictadoDelParte`, que retira cualquier cantidad que el dictado no respalde. El prompt lo
+// pide; el saneador lo garantiza. La diferencia importa: un prompt es una petición.
+//
+// ⚠️ El `dictado` viaja DOS VECES —al modelo y al saneador— y no es un descuido: sin el texto
+// original no hay contra qué contrastar las cantidades. Un saneador que solo mirase la respuesta
+// estaría confiando en el prompt.
+//
+// ⛔ NI UN IMPORTE, en ninguna dirección: no se consulta el catálogo (que es lo único que aporta
+// precios) y el esquema que se le pide al modelo no tiene campo de precio ni de IVA.
+export async function suggestLineasDeParte(params: { dictado: string }): Promise<PropuestaDelDictado> {
+  const raw = (
+    await aiComplete({
+      system: PROMPT_PARTE_APROBADO,
+      user: `Dictado del técnico:\n${params.dictado}`,
+      maxTokens: 2048,
+      jsonSchema: {
+        type: 'ARRAY',
+        items: {
+          type: 'OBJECT',
+          properties: {
+            bloque: { type: 'STRING' },
+            descripcion: { type: 'STRING' },
+            // NULLABLE a propósito: es como el modelo dice «no se dijo». Un campo obligatorio le
+            // obligaría a inventarse un número para poder responder.
+            unds: { type: 'NUMBER', nullable: true },
+          },
+          required: ['descripcion'],
+        },
+      },
+    })
+  ).trim();
+
+  const jsonMatch = raw.match(/\[[\s\S]*\]/);
+  // Sin JSON reconocible se entrega al saneador tal cual: devuelve la propuesta VACÍA con su
+  // motivo en vez de lanzar, que es lo que deja al técnico seguir escribiendo a mano.
+  if (!jsonMatch) return sanearDictadoDelParte(null, params.dictado);
+
+  let parsed: unknown = null;
+  try { parsed = JSON.parse(jsonMatch[0]); } catch { parsed = null; }
+  return sanearDictadoDelParte(parsed, params.dictado);
 }

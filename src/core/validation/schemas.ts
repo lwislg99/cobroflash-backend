@@ -138,6 +138,20 @@ export const CreateQuoteSchema = z.object({
   payMethods: z.array(z.enum(['card', 'bizum', 'transfer'])).min(1).optional(),
   // A20.4: qué datos del cliente muestra el DOCUMENTO (null = todos los presentes)
   docFields: z.object({ name: z.boolean(), phone: z.boolean(), taxId: z.boolean(), email: z.boolean() }).partial().nullable().optional(),
+  // SCRUM-593 (DOC-03) · los dos textos libres del documento.
+  //
+  // `nullable` Y `optional` son cosas DISTINTAS y las dos hacen falta: omitido = «este cliente
+  // no manda el campo» (todo lo anterior a esta tarea), `null` = «lo mandó vacío a propósito».
+  // Sin `nullable`, vaciar un texto ya escrito sería un 400.
+  //
+  // 🔴 TOPE DE 2000, el MISMO que `Albaran.notas` —el campo hermano, en el mismo documento— para
+  // que el profesional no tenga dos límites distintos para lo mismo. Aquí RECHAZA en vez de
+  // recortar, y la diferencia queda declarada en la entrada de máster: la ruta del albarán no
+  // valida con zod y añadirle un 400 nuevo tropezaría con el trinquete de SCRUM-275.
+  //
+  // NO se recorta ni se normaliza el contenido: los saltos de línea son DATO (SCRUM-655 · T6).
+  docHeaderText: z.string().max(2000).nullable().optional(),
+  docFooterText: z.string().max(2000).nullable().optional(),
   // A16.2: caducidad del presupuesto (default 30 días en el server; editable al crear)
   validUntil: z.coerce.date().optional(),
   // SCRUM-27: plan de cobro personalizado (N tramos). Presente = ignora paymentTerms.
@@ -241,6 +255,23 @@ export const PSPWebhookSchema = z.object({
 // ------- MERCHANT PROFILE -------
 
 export const merchantProfileUpdateSchema = z.object({
+  // SCRUM-656 (T7 fase B) · LAS CLÁUSULAS DE CIERRE DEL PRESUPUESTO, escritas UNA vez.
+  //
+  // 🔴 El `id` viaja y NO se recalcula: la exclusión de un presupuesto es una lista de `id`
+  // (`quotes.clausulas_excluidas`), y reasignarlos al reeditar haría que un presupuesto que
+  // quitó la garantía pasara a quitar otra cláusula. No fallaría nada: saldría un PDF con una
+  // condición que el profesional había retirado a propósito.
+  //
+  // `nullable` Y `optional`, y no es lo mismo: AUSENTE = la pantalla no las manda y no se tocan;
+  // `null` = el profesional las ha borrado todas, que es un valor guardable.
+  //
+  // El texto NO se valida más allá de que exista: lo escribe el merchant (regla 30), y una
+  // garantía es una obligación jurídica, no un adorno del pie del documento.
+  clausulasPresupuesto: z.array(z.object({
+    id: z.string().optional(),
+    titulo: z.string(),
+    texto: z.string(),
+  })).nullable().optional(),
   name: z.string().min(1).optional(),
   legalName: z.string().min(1).optional(),
   taxId: z.string().min(1).optional(),
@@ -353,6 +384,49 @@ export const customerCreateSchema = z.object({
   // SCRUM-69 (FACT-1): determina el plazo legal de la recapitulativa (art. 13 RD 1619/2012).
   // null = sin clasificar (se trata como PARTICULAR en el cálculo, ver resolveTipoDestinatario).
   tipoDestinatario: z.enum(['PARTICULAR', 'EMPRESARIO']).nullable().optional(),
+  /**
+   * SCRUM-579 (CONT-06) · LA DIRECCIÓN DE FACTURACIÓN. Una, no dos.
+   *
+   * Sin declararlas aquí, `z.object` las BORRA en silencio —igual que le pasaba a `suplido`
+   * antes de SCRUM-500— y no llegarían nunca a `customers`.
+   *
+   * 🔴 `nullable().optional()` LAS CINCO, y da los tres casos sin inventar ninguno:
+   *   ausente = no se toca · null = no consta · texto = lo declaró el profesional.
+   * Ninguna lleva `.default()`: «este cliente no tiene dirección» y «tiene la dirección en
+   * blanco» tienen que poder leerse DISTINTO, o el dato no vale para calcular nada. Es el mismo
+   * argumento por el que la columna no lleva `DEFAULT 'ES'`.
+   *
+   * ⚠️ EL PAÍS VIAJA COMO ISO-3166-1 alfa-2 (`ES`), no como nombre. Es lo que ya guarda
+   * `Merchant.country` —medido: `ES`— y lo que usa `prefijosPais.js`. El nombre lo pone el
+   * navegador con `Intl.DisplayNames`, así que guardarlo sería guardar una TRADUCCIÓN: el mismo
+   * cliente se llamaría «España» o «Spain» según quién lo diera de alta.
+   *
+   * ⛔ Esto NO es la dirección de la OBRA. El fundador cerró la P2 el 24-ago-2026: la de obra
+   * pertenece al DOCUMENTO, porque un cliente puede tener tres obras. Eso es DOC-12.
+   */
+  billingAddress: z.string().max(200).nullable().optional(),
+  billingCity: z.string().max(100).nullable().optional(),
+  // SCRUM-580 (CONT-07) · las etiquetas del contacto.
+  //
+  // `nullable` Y `optional`, que son cosas distintas y las dos hacen falta: omitido = «no toques
+  // este campo» en una edicion parcial, `null` = «quitale todas». Sin `nullable`, vaciar las
+  // etiquetas de un cliente seria un 400.
+  //
+  // Aqui solo se comprueba la FORMA. El recorte, el tope y el «vacio → null» viven en
+  // `normalizarTags` (`src/modules/system/tagsDelCliente.ts`), en un solo sitio y probados sin base.
+  tags: z.array(z.string()).nullable().optional(),
+  billingPostalCode: z.string().max(20).nullable().optional(),
+  billingProvince: z.string().max(100).nullable().optional(),
+  billingCountry: z.string().max(2).nullable().optional(),
+  /**
+   * SCRUM-588 (CONT-16) · La referencia interna del cliente. **Campo LIBRE a propósito**: el
+   * `.max(120)` es un tope de almacenamiento, no un formato. No hay `regex`, no hay unicidad y
+   * no se autogenera — es el número de OTRO sistema (expediente, finca, código heredado) y
+   * validar su forma sería rechazarle al profesional un dato que él sí tiene delante.
+   *
+   * `.nullable()` porque «ausente ≠ vacío»: el front manda `null`, nunca `''`.
+   */
+  internalRef: z.string().max(120).nullable().optional(),
   // SCRUM-171b (FACT-2d): periodicidad PACTADA. Sirve para AVISAR de que toca facturar, nunca
   // para facturar sola (regla 28: un envío automático nuevo exigiría su entrada en la tabla J6).
   // Lista cerrada aquí; el default de la BD es 'NINGUNA' = sin aviso, que es lo de hoy.

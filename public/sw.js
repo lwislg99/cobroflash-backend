@@ -56,6 +56,7 @@ const SHELL = [
   '/dashboard/js/quoteApartados.js',
   '/dashboard/js/quoteAtajosVencimiento.js',
   '/dashboard/js/tiposDeIva.js', // SCRUM-611 (DOC-16)
+  '/dashboard/js/textoDelDocumento.js', // SCRUM-593 (DOC-03)
   '/dashboard/js/quotesView.js',
   '/dashboard/js/quotesDetailView.js',
   '/dashboard/js/switchTipoArticulo.js', // SCRUM-609 (CAT-01)
@@ -77,6 +78,7 @@ const SHELL = [
   '/dashboard/js/jobCobroHuecos.js', // SCRUM-320 (G5)
   '/dashboard/js/facturaPreEmision.js', // SCRUM-292 (A1)
   '/dashboard/js/jobRailBlocks.js', // SCRUM-318 (G3)
+  '/dashboard/js/jobAsignados.js', // SCRUM-650 (T1): quien EJECUTA el trabajo
   '/dashboard/js/albaranActionsRegistry.js', // SCRUM-302 (C2)
   '/dashboard/js/albaranDetailView.js',
   '/dashboard/js/albaranesView.js', // SCRUM-301 (C1)
@@ -110,6 +112,7 @@ const SHELL = [
   // otras piezas de firma: se firma en obra, y en obra puede no haber cobertura. Un fichero
   // que hay que ir a buscar a la red no esta cuando hace falta.
   '/dashboard/js/parteDetailView.js',
+  '/dashboard/js/parteOficinaView.js',
   '/dashboard/js/resistenciaAlmacen.js',
   '/dashboard/js/app.js',
 ];

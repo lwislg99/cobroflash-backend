@@ -92,6 +92,10 @@
           <span id="nav-albaranes-label">Albaranes</span>
         </button>
 
+        <!-- Sprint Tecnosel · «Partes por valorar» NO entra aquí todavía, y el guard de SCRUM-420
+             tiene razón: la barra lateral es lo primero que ve el profesional cada día y no puede
+             llevar un rótulo sin aprobar (regla 30). Hasta que el fundador firme el texto, se
+             entra desde Trabajos. El rótulo va propuesto en docs/master/SCRUM-685.md. -->
         <button class="nav-item" data-view="invoices">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
           <span>Facturas</span>
@@ -246,6 +250,7 @@
   <script src="./js/quoteApartados.js"></script>
   <script src="./js/quoteAtajosVencimiento.js"></script> <!-- SCRUM-605: atajos de «Válido hasta» -->
   <script src="./js/tiposDeIva.js"></script> <!-- SCRUM-611 (DOC-16): los tipos del selector de la linea, UN solo sitio; va ANTES de quotesView.js -->
+  <script src="./js/textoDelDocumento.js"></script> <!-- SCRUM-593 (DOC-03): los dos textos libres del documento; va ANTES de quotesView.js, que los consumira en la fase 3 (schema+cableado) -->
   <script src="./js/quotesView.js"></script>
   <script src="./js/quotesDetailView.js"></script>
   <script src="./js/switchTipoArticulo.js"></script> <!-- SCRUM-609 (CAT-01): el switch Producto/Servicio, una pieza para los dos formularios -->
@@ -276,6 +281,8 @@
   <!-- SCRUM-292 (A1): la revision ANTES de emitir. Puro: devuelve estados, no frases. -->
   <script src="./js/facturaPreEmision.js"></script>
   <script src="./js/jobRailBlocks.js"></script>
+  <!-- SCRUM-650 (T1): el selector de QUIEN EJECUTA. Antes de jobDetailView.js, que lo usa. -->
+  <script src="./js/jobAsignados.js"></script>
   <script src="./js/expensesView.js"></script>
   <script src="./js/settingsSubmenus.js"></script>
   <script src="./js/puertaSerie.js"></script>
@@ -310,6 +317,7 @@
   <script src="./js/resistenciaAlmacen.js"></script>
   <!-- SCRUM-652 (T3 fase C) · el parte: usa el pad de firma y la cola, va despues de los dos. -->
   <script src="./js/parteDetailView.js"></script>
+  <script src="./js/parteOficinaView.js"></script>
   <script src="./js/app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {

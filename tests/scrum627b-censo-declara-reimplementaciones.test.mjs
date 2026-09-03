@@ -65,6 +65,16 @@ const CENSO_ARITMETICA = {
       + 'ninguna cifra que salga en un documento, y además es IVA SOPORTADO, no repercutido: no entra '
       + 'en la casilla que el censo protege.',
   },
+  'src/modules/jobs/app/routes/partes.routes.ts': {
+    veredicto: 'DOCUMENTO',
+    nota: 'Sprint Tecnosel · `serializeParteParaLaOficina` da el importe de CADA LÍNEA de UN parte '
+      + 'como `precioUnitario * unds`, y suma esas líneas para el total de ese documento. '
+      + 'Precisión que importa para este censo: NO deriva IVA — `tipoIva` se copia tal cual, sin '
+      + 'entrar en ninguna multiplicación. Lo que hace es la BASE de una línea, no una cuota. No '
+      + 'agrupa por tipo, no mira periodos y no sale de ese documento. Y estos importes no entran '
+      + 'en el sello del parte: el canónico no lleva precios a propósito, así que esta aritmética '
+      + 'no puede mover ninguna huella firmada.',
+  },
   'src/modules/jobs/domain/parteTrabajo.ts': {
     veredicto: 'DOCUMENTO',
     nota: 'SCRUM-652 (T3) · `totalesPorBloque` deriva la cuota de CADA LÍNEA de UN parte '

@@ -51,6 +51,29 @@ import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
+import { leerClausulasDelMerchant } from '../../domain/clausulas';
+
+/**
+ * 🔴 EL SUELO DE LA LECTURA: «no ha configurado ninguna» y «no supe leerlas» acaban las dos en un
+ * PDF sin condiciones, y significan lo contrario.
+ *
+ * El comportamiento del documento NO cambia —una columna ilegible sigue dando cero cláusulas, que
+ * es lo único seguro que se puede hacer con ella—, pero ahora **queda registrado**. Sin esto, un
+ * JSON roto en `merchants.clausulas_presupuesto` deja de imprimir la garantía de todos los
+ * presupuestos de ese merchant y no hay ni una línea en ningún sitio que lo diga: se descubre el
+ * día que un cliente discute la garantía.
+ */
+function clausulasDelMerchantParaPdf(merchant: any) {
+  const leido = leerClausulasDelMerchant((merchant as any)?.clausulasPresupuesto);
+  if (!leido.ok) {
+    console.error(
+      '[quotes] clausulas_presupuesto ILEGIBLE para el merchant', (merchant as any)?.id,
+      '— el PDF saldrá SIN condiciones. No es que no tenga: es que no se han podido leer.',
+    );
+    return [];
+  }
+  return leido.clausulas;
+}
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-206b
 import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206b
 import { recordAudit, sobreFiscal, flagsFiscalesDe } from '../../../system/audit.service'; // SCRUM-206b
@@ -172,12 +195,28 @@ router.post('/create', async (req, res) => {
           paymentTerms: body.paymentTerms ?? null,
           customBillingPlan: body.customBillingPlan ?? undefined, // SCRUM-27: plan de tramos personalizado
           docFields: body.docFields ?? undefined, // A20.4: qué datos del cliente muestra el documento
+          // SCRUM-593 (DOC-03): los dos textos libres del documento. `?? null` y no `?? undefined`
+          // porque aquí null y «no lo mandó» acaban igual —columna vacía— y null lo dice mejor.
+          docHeaderText: body.docHeaderText ?? null,
+          docFooterText: body.docFooterText ?? null,
           // A16.2: caducidad — default 30 días, editable al crear
           validUntil: body.validUntil ?? new Date(Date.now() + 30 * 86_400_000),
           teamMemberId: creatorTeamMemberId,
           createdVia: body.created_via ?? 'text', // V0-3: telemetría quote_created_via
           payMethods: body.payMethods ?? undefined, // A2.1: selector al crear
           jobId: jobIdDelAdicional, // SCRUM-195: null = presupuesto normal; con valor = adicional
+          // SCRUM-656 (T7 fase B) · LOS DOS CAMPOS QUE SE LEÍAN Y NO SE ESCRIBÍAN.
+          //
+          // 🔴 `ivaModo` ES UN DEFECTO DE LA FASE A, Y ERA MÍO: `quotesView.js:3294` lo manda, el
+          // esquema lo acepta y `quotes.routes.ts:213` lo lee para el PDF — pero el `create` no lo
+          // guardaba, así que el PDF recibía `null` SIEMPRE. El profesional elegía «IVA no
+          // incluido» y el documento salía con el IVA sumado: un papel equivocado a un cliente,
+          // sin que fallara nada.
+          //
+          // `clausulasExcluidas` es lo mismo en el otro sentido: sin esto, quitar una cláusula de
+          // UN presupuesto no se podría guardar y la exclusión no existiría como producto.
+          ivaModo: body.ivaModo ?? undefined,
+          clausulasExcluidas: body.clausulasExcluidas ?? undefined,
         },
       });
     });
@@ -211,8 +250,11 @@ router.post('/create', async (req, res) => {
         // del presupuesto guardado, y con respaldo si el campo todavía no existe. Ausente = el
         // documento sale como salía.
         modoIva: ((quote as any).ivaModo as any) ?? null,
-        clausulas: ((merchant as any).clausulasPresupuesto as any) ?? null,
+        clausulas: clausulasDelMerchantParaPdf(merchant),
         clausulasExcluidas: ((quote as any).clausulasExcluidas as any) ?? null,
+        // SCRUM-593 (DOC-03): de la FILA, no del body: el papel dice lo que quedó GUARDADO.
+        docHeaderText: (quote as any).docHeaderText ?? null,
+        docFooterText: (quote as any).docFooterText ?? null,
         currency: quote.currency,
         total: quote.total.toString(),
         lines: canonicalLines as any,
@@ -545,12 +587,15 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
             },
             customer: { name: customer.name, phone: customer.phone, email: customer.email, legalName: (customer as any).legalName, taxId: (customer as any).taxId }, // A20.4
         docFields: ((quote as any).docFields as any) ?? null, // A20.4
-        // SCRUM-656 (T7) · el modo de IVA y las cláusulas de cierre, leídos igual que `docFields`:
-        // del presupuesto guardado, y con respaldo si el campo todavía no existe. Ausente = el
-        // documento sale como salía.
-        modoIva: ((quote as any).ivaModo as any) ?? null,
-        clausulas: ((merchant as any).clausulasPresupuesto as any) ?? null,
-        clausulasExcluidas: ((quote as any).clausulasExcluidas as any) ?? null,
+            // SCRUM-656 (T7) · el modo de IVA y las cláusulas de cierre, leídos igual que `docFields`:
+            // del presupuesto guardado, y con respaldo si el campo todavía no existe. Ausente = el
+            // documento sale como salía.
+            modoIva: ((quote as any).ivaModo as any) ?? null,
+            clausulas: clausulasDelMerchantParaPdf(merchant),
+            clausulasExcluidas: ((quote as any).clausulasExcluidas as any) ?? null,
+            // SCRUM-593 (DOC-03): también al REGENERAR con firma (el porqué, en scrum593c).
+            docHeaderText: (quote as any).docHeaderText ?? null,
+            docFooterText: (quote as any).docFooterText ?? null,
             currency: quote.currency,
             total: quote.total.toString(),
             lines: quote.lines as any,
