@@ -872,16 +872,24 @@ function renderSettingsView(container) {
     // censo de SCRUM-402 cuenta LITERALES que contienen la marca, no superficies marcadas, así que
     // esto añade rótulos marcados sin mover su número. Queda dicho para que nadie lea el censo
     // como «no hay nada nuevo pendiente de aprobar».
-    var MARCA_CLAUSULAS = PENDIENTE_MODO_EMISION;
+    // ✅ MICROCOPY APROBADA por el fundador el 3-sep-2026 (regla 30). LITERAL, sin marcador.
+    //
+    // ⚠️ El último cambió respecto a lo propuesto: decía «No hemos podido leer…» y la voz de la
+    // casa no dice «no hemos podido» — suena a excusa nuestra. Es la misma corrección que se hizo
+    // en los avisos del dictado, y por eso lleva raya larga y termina en el hecho, no en nosotros.
+    //
+    // ⛔ Estos rótulos son de NUESTRA pantalla. El texto que ve el cliente en el PDF lo escribe el
+    // merchant: aquí no hay plantilla, ni ejemplo, ni sugerencia. Una garantía es una obligación
+    // jurídica, y redactarla en su nombre sería ponerle una que no ha dado.
     var TX = {
-      clausulasTitulo: MARCA_CLAUSULAS + ' Condiciones del presupuesto',
-      clausulasPista: MARCA_CLAUSULAS + ' Se escriben una vez y salen en todos tus presupuestos.',
-      clausulaTitulo: MARCA_CLAUSULAS + ' Título (GARANTÍA, ALCANCE…)',
-      clausulaTexto: MARCA_CLAUSULAS + ' Texto de la condición',
-      clausulaQuitar: MARCA_CLAUSULAS + ' Quitar',
-      clausulaAnadir: MARCA_CLAUSULAS + ' Añadir condición',
-      clausulasVacio: MARCA_CLAUSULAS + ' Todavía no has escrito ninguna condición.',
-      clausulasIlegibles: MARCA_CLAUSULAS + ' No hemos podido leer tus condiciones. No se ha guardado nada.',
+      clausulasTitulo: 'Condiciones del presupuesto',
+      clausulasPista: 'Se escriben una vez y salen en todos tus presupuestos.',
+      clausulaTitulo: 'Título (GARANTÍA, ALCANCE…)',
+      clausulaTexto: 'Texto de la condición',
+      clausulaQuitar: 'Quitar',
+      clausulaAnadir: 'Añadir condición',
+      clausulasVacio: 'Todavía no has escrito ninguna condición.',
+      clausulasIlegibles: 'No se han podido leer tus condiciones — no se ha guardado nada',
     };
 
     var CLAUSULAS_MAX = 10;

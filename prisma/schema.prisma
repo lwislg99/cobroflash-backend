@@ -256,6 +256,26 @@ model Customer {
   // `invoicing/domain/recargoEquivalencia.ts`.
   recargoEquivalencia Boolean? @map("recargo_equivalencia")
 
+  // SCRUM-580 (CONT-07) · LAS ETIQUETAS DEL CONTACTO.
+  //
+  // UNA COLUMNA JSONB y no una tabla de tags. Decision del fundador con su motivo: una etiqueta
+  // aqui NO tiene atributos propios —ni color, ni orden, ni descripcion—, asi que una tabla seria
+  // una tabla de cadenas; evita un join en la lista, que es la pantalla que tiene que ir rapida en
+  // movil; y el esquema YA usa JSONB (`clausulas_presupuesto`, `clausulas_excluidas`), asi que no
+  // es un patron nuevo.
+  //
+  // 🔴 NULLABLE Y SIN `@default`, y NO es cosmetica: `null` = «no se declararon etiquetas», que NO
+  // es `[]` = «se miraron y no hay ninguna». Con un `@default([])` un `IS NOT NULL` diria que
+  // TODOS los clientes tienen etiquetas y el filtro de la lista se construiria sobre esa mentira.
+  //
+  // EL TIPO NO SE ADIVINO: lo genero `prisma migrate diff` (JSONB). Importa porque `schemaDrift`
+  // comprueba que la columna EXISTA, no su tipo — creada TEXT arrancaria en verde y se pudriria al
+  // leer un array como cadena.
+  //
+  // CONSECUENCIA ASUMIDA: renombrar una etiqueta en todos los clientes toca muchas filas. Es una
+  // operacion rara y no se construye ahora.
+  tags Json? @map("tags")
+
   /// SCRUM-171b (FACT-2d): periodicidad PACTADA de facturación — `NINGUNA | QUINCENAL | MENSUAL`.
   ///
   /// SIRVE PARA AVISAR, NO PARA FACTURAR SOLO. Decisión del fundador (27-jul-2026): un cron que
@@ -271,6 +291,43 @@ model Customer {
   /// igual que `tipoDestinatario` y `modoValoracion`: la lista vive en el código con su
   /// validación, y añadir un valor no obliga a migrar un tipo de Postgres.
   billingPeriodicity String @default("NINGUNA") @map("billing_periodicity")
+
+  // SCRUM-579 (CONT-06) · LA DIRECCION DE FACTURACION DEL CLIENTE. UNA, no dos.
+  //
+  // El prefijo `billing` no es decoracion: es lo que impide que alguien confunda esto con la
+  // direccion de la OBRA. El fundador cerro la P2 el 24-ago-2026: la direccion de obra pertenece
+  // al DOCUMENTO y no al cliente, porque un cliente puede tener tres obras. Eso es DOC-12.
+  //
+  // NULLABLE Y SIN @default, LOS CINCO — incluido el pais. Es el mismo motivo escrito en
+  // `contactKind`, `tipoDestinatario` y `recargoEquivalencia`: NULL = «no declarado», que es
+  // distinto de declarado. «Espana por defecto» es del FORMULARIO (el selector nace en ES), no de
+  // la columna: un @default("ES") convertiria a los clientes que ya existen en «declarados en
+  // Espana» sin que nadie lo haya dicho, y ademas haria indistinguible «no tiene direccion» de
+  // «tiene la direccion en blanco».
+  billingAddress    String? @map("billing_address")
+  billingCity       String? @map("billing_city")
+  billingPostalCode String? @map("billing_postal_code")
+  billingProvince   String? @map("billing_province")
+  billingCountry    String? @map("billing_country")
+
+  // SCRUM-588 (CONT-16) · LA REFERENCIA INTERNA: el número con el que el PROFESIONAL conoce a
+  // este cliente — el nº de expediente de la aseguradora, el código del sistema viejo, el nº de
+  // finca del administrador. Hasta hoy lo metía en `notes`, que es texto libre, y luego no lo
+  // podía buscar de forma fiable.
+  //
+  // 🔴 CAMPO LIBRE, y las tres cosas que eso significa (decisión del asesor, 2-sep-2026): NO se
+  // valida el formato, NO se comprueba unicidad y NO se autogenera. **Es el número de OTRO
+  // sistema y nosotros no mandamos sobre su forma.** Dos clientes pueden compartirlo, y un
+  // `@unique` aquí rompería el alta de un profesional por un dato que no controlamos.
+  //
+  // Nullable y SIN `@default`, como sus vecinos: «ausente ≠ vacío». Lo vacío viaja como NULL,
+  // nunca como cadena vacía — un default habría declarado «tiene referencia» a los clientes que
+  // ya existen sin que nadie lo dijera.
+  //
+  // La columna se aplicó en LAS TRES bases ANTES que esta línea (dev y staging por S2, producción
+  // por el fundador; las cuatro salidas en `docs/master/SCRUM-588.md`). Ese orden no es
+  // ceremonia: un esquema que nombra una columna que las bases no tienen para el arranque.
+  internalRef       String? @map("internal_ref")
 
   merchant     Merchant        @relation(fields: [merchantId], references: [id])
   charges      Charge[]

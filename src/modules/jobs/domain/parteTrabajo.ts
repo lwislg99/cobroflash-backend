@@ -204,6 +204,52 @@ export function puedeEditarContenido(estado: EstadoParte): { ok: boolean; motivo
  * haga falta, **hasta que se factura**. Si esto devolviera `false` en `firmado`, el producto sería
  * inservible — y desde fuera se vería idéntico a haberlo hecho bien.
  */
+/**
+ * LOS DOS GRUPOS DE CAMPOS, y cada uno lo cierra SU candado.
+ *
+ * 🔴 EL DEFECTO QUE ESTO CIERRA, medido: el `PATCH` comprobaba `puedeEditarContenido` para la
+ * PETICIÓN ENTERA, así que un parte FIRMADO devolvía 409 a todo — incluido un cambio que solo
+ * tocaba precios. Y `puedeEditarPrecios` existía, se calculaba y se devolvía… pero no cerraba
+ * ninguna escritura. Resultado: **un parte firmado no se podía valorar por ninguna vía**, y sin
+ * valorar no se cobra.
+ *
+ * El contenido lo escribe el técnico en la obra y se cierra AL FIRMAR: lo firmado no cambia.
+ * Los precios los pone la oficina DESPUÉS, y se cierran AL FACTURAR (regla 29).
+ */
+const CAMPOS_CONTENIDO = [
+  'obra', 'referencia', 'entrada', 'salida', 'notas', 'tipo',
+  'desplazamientos', 'kilometros', 'tecnicos', 'lineas',
+] as const;
+
+/** Los precios viajan en SU PROPIA clave, no mezclados en `lineas`: así «mixta» no es opinable. */
+const CAMPOS_PRECIOS = ['precios'] as const;
+
+type CampoDelParte = (typeof CAMPOS_CONTENIDO)[number] | (typeof CAMPOS_PRECIOS)[number];
+
+/**
+ * ¿Se pueden tocar ESTOS campos en ESTE estado?
+ *
+ * ⚠️ Devuelve el PRIMER campo que lo impide, y quien llama **no aplica nada**: una petición
+ * mixta sobre un parte firmado se rechaza ENTERA. Aplicarla a medias dejaría el documento en un
+ * estado que nadie pidió, y el que la mandó creyendo que fue entera no se enteraría.
+ */
+export function permisoDeCampos(
+  estado: EstadoParte,
+  campos: readonly string[],
+): { ok: true } | { ok: false; campo: string; grupo: 'contenido' | 'precios'; motivo: string } {
+  const contenido = puedeEditarContenido(estado);
+  const precios = puedeEditarPrecios(estado);
+  for (const campo of campos) {
+    if ((CAMPOS_CONTENIDO as readonly string[]).includes(campo) && !contenido.ok) {
+      return { ok: false, campo, grupo: 'contenido', motivo: contenido.motivo ?? '' };
+    }
+    if ((CAMPOS_PRECIOS as readonly string[]).includes(campo) && !precios.ok) {
+      return { ok: false, campo, grupo: 'precios', motivo: precios.motivo ?? '' };
+    }
+  }
+  return { ok: true };
+}
+
 export function puedeEditarPrecios(estado: EstadoParte): { ok: boolean; motivo: string | null } {
   if (estado === 'facturado') {
     return {

@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const VISTA = path.join(RAIZ, 'public', 'dashboard', 'js', 'parteDetailView.js');
@@ -74,12 +75,16 @@ test('SCRUM-683b · 🔴 el dictado llega al modelo como TEXTO, y vuelve SIN la 
 // ② LA PANTALLA: ni un importe, y NINGUNA API de voz
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-/** La vista SIN comentarios: un guard de texto se caza a sí mismo en el comentario que explica la
- *  prohibición, y esta vista explica por qué NO usa `SpeechRecognition`. */
+/**
+ * La vista SIN comentarios: un guard de texto se caza a sí mismo en el comentario que explica la
+ * prohibición, y esta vista explica por qué NO usa `SpeechRecognition`.
+ *
+ * 🔴 Se usa `soloCodigo` (SCRUM-693/694) y NO un regex propio: un filtro casero falla en los dos
+ * sentidos —se come código real cuando un literal lleva `//`, y deja pasar una cadena escrita
+ * dentro de un bloque `/* *\/`—. Un filtro por ticket es un filtro que nadie arregla.
+ */
 function vistaSinComentarios() {
-  return FUENTE_VISTA
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .split('\n').map((l) => l.replace(/^\s*\/\/.*$/, '')).join('\n');
+  return soloCodigo(FUENTE_VISTA, 'parteDetailView.js');
 }
 
 test('SCRUM-683b · 🔴 el campo del dictado es un TEXTAREA: cero API de voz del navegador', () => {

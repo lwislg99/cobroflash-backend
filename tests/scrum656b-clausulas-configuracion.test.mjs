@@ -10,6 +10,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const {
@@ -218,8 +219,10 @@ test('SCRUM-656b · ⛔ el módulo de cláusulas no hace ni una operación de di
     path.join(RAIZ, 'src', 'modules', 'quotes', 'domain', 'clausulas.ts'), 'utf8');
   // Sin comentarios: la cabecera habla de garantías y de dinero en prosa, y un guard de texto se
   // caza a sí mismo en el comentario que explica lo que prohíbe.
-  const codigo = fuente.replace(/\/\*[\s\S]*?\*\//g, '')
-    .split('\n').map((l) => l.replace(/^\s*\/\/.*$/, '')).join('\n');
+  //
+  // 🔴 Con `soloCodigo` (SCRUM-693/694), no con un regex propio: el casero se come código real en
+  // cuanto un literal lleva `//`, y deja pasar cadenas escritas dentro de un bloque.
+  const codigo = soloCodigo(fuente, 'clausulas.ts');
   assert.ok(codigo.includes('export function clausulasParaDocumento'),
     '🔴 CIEGO: el despojador se ha llevado el código que hay que mirar');
 

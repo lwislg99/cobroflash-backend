@@ -1,0 +1,74 @@
+# .github/workflows/vigia-despliegue.yml — SCRUM-677
+#
+# ═════════════════════════════════════════════════════════════════════════════════════════════
+# EL VIGÍA DEL DESPLIEGUE · ÉSTE ES EL QUE CANTA
+#
+# Producción estuvo NUEVE DÍAS sin desplegar. Treinta despliegues fallaron el healthcheck y
+# Railway mantuvo vivo el anterior: la web funcionaba, no hubo caída, no hubo alerta. El síntoma
+# era «no cambia nada». Lo destapó el fundador preguntando, no un mecanismo.
+#
+# 🔴 POR QUÉ PROGRAMADO Y NO SÓLO EN EL PR. Ataca la causa real: fueron nueve días **en los que
+# nadie mergeó nada**, y por eso nadie miró. Un vigía que sólo corre cuando alguien abre un PR
+# habría estado igual de callado. Éste corre aunque el repositorio esté parado.
+#
+# ── DÓNDE AVISA: AQUÍ MISMO. El workflow FALLA ────────────────────────────────────────────────
+# GitHub ya notifica un workflow programado en rojo. Cero dependencias nuevas (regla 36), cero
+# integraciones que decidir, cero canal que inventar. El aviso es el propio job en rojo.
+#
+# ── CADENCIA: cada 2 h ───────────────────────────────────────────────────────────────────────
+# Con el margen en 6 h, un cron cada 6 h dejaría el aviso llegando entre las 6 y las 12 horas —
+# el peor caso duplica el margen. Cada 2 h lo acota a entre 6 y 8. No se baja más: el vigía sólo
+# lee un endpoint público, pero un cron más apretado no compra nada frente a un margen de 6 h.
+#
+# ⚠️ GitHub NO GARANTIZA la puntualidad de `schedule`: en horas de mucha carga puede retrasarse, y
+# en un repositorio sin actividad de 60 días lo desactiva. Las dos cosas hacen que este vigía
+# pueda callar sin que nadie se entere — el mismo modo de fallo que viene a resolver. Queda
+# declarado en `docs/master/SCRUM-677.md` como hueco, no disimulado.
+# ═════════════════════════════════════════════════════════════════════════════════════════════
+name: Vigía del despliegue
+
+on:
+  schedule:
+    # Cada 2 horas, en punto. UTC.
+    - cron: '0 */2 * * *'
+  # Para poder ejercitarlo a mano sin esperar al cron — y para poder VERLO SALTAR, que es la
+  # mitad que no se puede probar en un test puro.
+  workflow_dispatch:
+    inputs:
+      margen:
+        description: 'Margen en horas (por defecto, el propuesto en el código)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vigia-despliegue
+  cancel-in-progress: true
+
+jobs:
+  vigia:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 🔴 EL HISTORIAL ENTERO, y no es un capricho: el vigía tiene que poder responder
+          # `git cat-file -e <sha de producción>` y `git merge-base --is-ancestor`. Con un
+          # checkout superficial, un commit de hace nueve días NO ESTARÍA en el clon y el vigía
+          # se declararía ciego — exactamente en el caso que existe para detectar.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Sin `npm ci`: el vigía no importa nada de `node_modules`. Sólo `node:child_process` y
+      # `fetch`. Instalar dependencias aquí sería tiempo y superficie que no hace falta.
+      - name: ¿Está producción corriendo lo que hay en main?
+        run: |
+          if [ -n "${{ inputs.margen }}" ]; then
+            node scripts/vigilante-de-despliegue.mjs --margen "${{ inputs.margen }}"
+          else
+            node scripts/vigilante-de-despliegue.mjs
+          fi

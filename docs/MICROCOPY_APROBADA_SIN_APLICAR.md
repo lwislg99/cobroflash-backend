@@ -496,6 +496,53 @@ sin aplicar, hasta que decida — y hay un aserto que cae si alguien lo aplica s
 
 ---
 
+## Addendum · Dirección de facturación del cliente (2-sep-2026) · **APROBADAS, NO APLICADAS**
+
+**Medido contra:** `origin/main` = `354fdca362063a79a928ed5df7c5120363d64c0b` · 2026-09-02T18:33:54+01:00
+
+**SCRUM-579 (CONT-06).** Las cinco etiquetas del formulario de cliente
+(`public/dashboard/js/customersView.js`, el modal «Nuevo cliente» / «Editar cliente»). El fundador
+las firmó el 2-sep **literales y sin variantes**.
+
+| Ranura | Texto aprobado |
+|---|---|
+| calle | `Dirección` |
+| población | `Población` |
+| código postal | `Código postal` |
+| provincia | `Provincia` |
+| país | `País` |
+
+**Orden en pantalla, aprobado:** `Dirección` · `Población` · `Código postal` · `Provincia` · `País`.
+
+### 🔴 Es «Dirección» A SECAS, y esto queda escrito porque yo propuse otra cosa
+
+La propuesta que salió de este carril era **«Dirección (calle y número)»**, y **NO es la aprobada**.
+Se anota en vez de borrarse, por el mismo motivo que la aprobación retirada del menú del libro: sin
+este renglón, dentro de un mes alguien vuelve a añadir el paréntesis creyendo que aclara.
+
+Regla 30, aplicada a estas cinco: **no se abrevia** («CP» no vale), **no se reordena**, y **no se le
+añaden paréntesis ni aclaraciones**. Si alguien cree que hace falta la aclaración, **se pide**; no se
+añade.
+
+### Por qué van SIN marcador, y por qué se pidió la aprobación antes que el código
+
+**Producción despliega en cuanto se mergea.** Un `[PENDIENTE microcopy oficial]` en estos cinco
+rótulos no habría sido una nota interna: lo habría visto un profesional en su pantalla **a los cinco
+minutos** del merge, cinco veces en el mismo formulario. Por eso la aprobación se pidió **antes** del
+PR de código y no después — y por eso este ticket entrega sin una sola marca.
+
+### Estado: aprobadas y todavía sin pintar
+
+El formulario **aún no existe**: SCRUM-579 está parado a propósito en el orden de migración
+—① decisión → ② `ALTER` en las TRES bases → ③ un solo PR con schema + código + tests—, y a fecha de
+esta anotación el `ALTER` está **sólo en `yaqu_dev_javier`** (medido: DEV 5/5, STAGING 0/5).
+
+Se anotan aquí **ahora** y no cuando se pinten, porque un texto aprobado que se reteclea semanas
+después deja de ser el aprobado. Quien construya el formulario **copia de esta tabla**.
+
+⚠️ Y al aplicarlas va **un aserto que las compare con `===`**, como el de
+`tests/scrum683-parte-dictado.test.mjs`: un retoque «de paso» reabre una aprobación sin que nadie se
+entere.
 ## Addendum · Parte dictado, la tercera (2-sep-2026) · **APLICADA, en SINGULAR**
 
 **Medido contra:** `origin/main` = `a5aef1b9bbd2570eccbde82b407c9d3675192c2d` · 2026-09-02T19:32:31+02:00
@@ -530,3 +577,50 @@ cantidad.
 > ⚠️ **Un resumen sería un texto DISTINTO.** Si algún día hace falta además un «3 líneas sin
 > cantidad», se pide y se aprueba entonces: **no se deriva de éste poniéndolo en plural**. Hay un
 > aserto en el test que cae si el plural vuelve por su cuenta.
+
+---
+
+## Addendum · Condiciones del presupuesto (3-sep-2026) · **APLICADAS**
+
+**Medido contra:** `origin/main` = `948e63980491950d313356977e61493f14f9888e` · 2026-09-03T11:54:28+02:00
+
+**SCRUM-656 fase B** propuso ocho rótulos con marcador. El fundador los aprobó **cambiando uno** y
+se aplican en el mismo acto. Son rótulos de **nuestra** pantalla (Configuración → Facturación); el
+texto que ve el cliente en el PDF lo escribe el merchant y no se toca desde aquí.
+
+| Ranura | Fichero | Texto aprobado |
+|---|---|---|
+| `clausulasTitulo` | `public/dashboard/js/settingsView.js` · `TX` | `Condiciones del presupuesto` |
+| `clausulasPista` | ídem | `Se escriben una vez y salen en todos tus presupuestos.` |
+| `clausulaTitulo` | ídem | `Título (GARANTÍA, ALCANCE…)` |
+| `clausulaTexto` | ídem | `Texto de la condición` |
+| `clausulaQuitar` | ídem | `Quitar` |
+| `clausulaAnadir` | ídem | `Añadir condición` |
+| `clausulasVacio` | ídem | `Todavía no has escrito ninguna condición.` |
+| `clausulasIlegibles` | ídem | `No se han podido leer tus condiciones — no se ha guardado nada` |
+
+**Van sin corchete de marcador.** Se copian literales: los puntos suspensivos de `GARANTÍA, ALCANCE…`
+son **un solo carácter** (`…`), y la raya del último es la larga (`—`), también uno.
+
+### 🔴 El único que cambió, y por qué
+
+Se propuso **«No hemos podido leer tus condiciones. No se ha guardado nada.»** y el fundador lo dejó
+en **«No se han podido leer tus condiciones — no se ha guardado nada»**.
+
+> **La voz de la casa no dice «no hemos podido»: suena a excusa nuestra.**
+
+Es la **misma corrección** que se hizo el 2-sep en los avisos del dictado, donde «No hemos entendido»
+pasó a «No se ha entendido». Y como allí: raya larga, y termina en el hecho que le importa al
+profesional —que no se ha guardado nada—, no en nosotros.
+
+### Lo que este aviso vigila, que no es un detalle de estilo
+
+Se pinta cuando `merchants.clausulas_presupuesto` trae algo que **no se puede leer**. En pantalla,
+«no has escrito ninguna» y «no se han podido leer» son **la misma caja vacía** y significan lo
+contrario: la segunda es un PDF saliendo **sin las condiciones que el profesional cree que lleva**, y
+nadie se entera hasta que un cliente discute la garantía. Por eso el aviso existe, y por eso dice
+además que **no se ha guardado nada**.
+
+✅ **Aplicadas en código Y anotadas aquí en el mismo commit.** El bloque `TX` de `settingsView.js`
+pierde su constante de marcador (`MARCA_CLAUSULAS`), que era la que factorizaba la marca para que el
+censo de SCRUM-402 no se moviera: **ya no hace falta, porque ya no hay nada marcado que aprobar ahí**.
