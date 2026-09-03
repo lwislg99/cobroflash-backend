@@ -92,6 +92,16 @@ const APARCADOS = [
       + 'guion H2. Lo desbloquea el fundador, no una sesión.',
   },
   {
+    // 🔴 LO CAZÓ ESTE GUARD EL DÍA QUE NACIÓ, y es una DIVERGENCIA DE APROBACIONES, no un olvido.
+    texto: '+ Nueva factura',
+    motivo: 'DOS APROBACIONES DEL MISMO ROTULO, con distinta grafia. La fuente lo aprobo el '
+      + '17-ago CON el «+» (Bloque 6, para `invoicesView.js:172`); SCRUM-599 lo dejo SIN el «+» '
+      + 'el 3-sep, con el literal que dio el asesor en ese encargo («Nueva factura»). Las dos '
+      + 'son aprobaciones y NINGUNA sesion puede elegir entre ellas: la regla 30 dice que el '
+      + 'microcopy lo aprueba el asesor, sin excepcion. Lo desbloquea el asesor diciendo cual '
+      + 'de las dos vale, y el commit que lo decida borra esta entrada y ajusta la fuente.',
+  },
+  {
     texto: 'No hemos podido identificar qué emite esta cuenta. Escríbenos antes de emitir nada.',
     motivo: 'La otra mitad del mismo respaldo (`settingsView.js:219`). Mismo motivo y mismo '
       + 'desbloqueo: regla 26.',
