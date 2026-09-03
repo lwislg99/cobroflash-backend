@@ -43,8 +43,10 @@ por `change`; el `<input>` que había avisaba por `input`»*).
 > ⚠️ Ese comentario **la atribuye a SCRUM-611**, y eso es lo único que he medido: lo pone el
 > código. **No he comprobado el historial**, y el asesor avisa de que ese ticket no tiene commits.
 > La atribución queda como lo que es —una cita del comentario, no un hecho verificado— y se
-> resolverá con `git log` en SCRUM-713. Convertirlo en buscador es cambiar la forma de la pantalla y proponer
-un componente nuevo al inventario AB3 — no es de este ticket y **no se ha hecho**.
+> resolverá con `git log` en SCRUM-713.
+
+Convertirlo en buscador es cambiar la forma de la pantalla y proponer un componente nuevo al
+inventario AB3 — no es de este ticket y **no se ha hecho**.
 
 **Lo entregado:** una opción de alta en el selector que ya existe. El mecanismo **sí acepta un
 nombre y lo prellena** (`abrirNuevo({nombre})`, con su test), así que el día que haya buscador el
