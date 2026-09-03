@@ -296,3 +296,114 @@ Y el rojo 5, que es el que protege el trabajo de este ticket dentro de seis mese
 
 Un tope numérico solo habría dicho «9 en vez de 8». Este dice quién se cayó y qué deja de
 funcionar — que es la diferencia entre un guard que se atiende y uno que se sube sin mirar.
+
+---
+
+# SCRUM-655 · T6 fase C — la pantalla de REVISIONES (fila 9)
+
+**Medido contra:** `origin/main` = `1f03815295aa3ba26920283f5daec16472d03854` · 2026-09-03T12:50:47+02:00
+
+> ⚠️ **Va aquí y NO en un número nuevo, a propósito.** El encargo llegó sin número y la primera
+> reacción fue inventarse uno («704») — que es exactamente lo que provocó la colisión del
+> `SCRUM-684`, donde dos sesiones se inventaron el mismo. Esta pantalla es el consumidor de
+> `revision.ts`, que nació en la fase B de este ticket: es su fase C, por el mismo criterio que puso
+> la pantalla del parte en `SCRUM-652` fase C.
+
+---
+
+## 0 · PASO 0, y el barrido de LA COSA
+
+```
+árbol → src/modules/quotes/domain/revision.ts · tests/scrum655b-…            [exit 0]
+ramas → vacío                                                                [exit 1]
+
+LA COSA (selector de versiones / «vigente» / quoteNumber en el FRONT):
+  «revision» en public/ ..... 19   ← TODAS son la «revisión ANTES de emitir» (SCRUM-292, el NIF)
+  «vigente» ................. 2    ← las dos en comentarios, de otra cosa
+  revisiones[] .............. 0
+  vigenteId ................. 0
+  CONTROL POSITIVO «quoteNumber» → 11
+```
+
+**Cero consumidores.** La pantalla no existía.
+
+---
+
+## 1 · 🔴 El invariante, que vale más que el test que se pidió
+
+El encargo pedía un test sobre «dos vigentes». Medido, esa no es la pregunta: **el empate ya está
+resuelto un nivel más arriba.** Ejecutado, no leído:
+
+```
+esVigente(A) → true          esVigente(B) → true        ← las dos «soy la vigente»
+vigenteUnicaDe(empate) → LANZA RevisionesAmbiguas
+vigenteUnicaDe([])     → LANZA CensoDeRevisionesCiego
+```
+
+`vistaDeRevisiones` llama a `vigenteUnicaDe` **antes** de mapear, así que un grupo ambiguo **no
+llega nunca a pintarse**: falla en el servidor, con las dos nombradas. Lo que hay que vigilar no es
+que la pantalla pinte bien un empate, sino que **no pueda llegar a verlo**:
+
+> **ESTA PANTALLA NO DECIDE CUÁL ES LA VIGENTE. LA PINTA.**
+
+Si derivara la vigente por su cuenta —«la de revisión más alta», que es lo natural con la lista
+delante— se saltaría esa puerta y **pintaría dos vigentes sin que nada fallara**.
+
+El guard prohíbe, en el CÓDIGO del módulo: `Math.max`, un `sort`, comparaciones de `revision` y las
+llamadas a `esVigente`/`vigenteDe`. Y lleva **dos suelos**, porque este guard es de los que se cazan
+a sí mismos: la cabecera del módulo **cita esos nombres** para explicar la prohibición, así que se
+lee con `soloCodigo` (SCRUM-693) y además se comprueba que el fichero **sí** los mencione en prosa —
+si dejara de hacerlo, el guard ya no estaría distinguiendo comentario de código y su verde sería hueco.
+
+---
+
+## 2 · Verificación — los tres rojos
+
+**Commit de todo ANTES de inyectar: `4167b2a776806b8f05fc5833e333dcfc063da9c0`** (verde, 4.909 · 4.825).
+
+| rojo | resultado |
+|---|---|
+| **la pantalla deriva la vigente** (`Math.max` sobre las revisiones) | 🔴 exit 1 — *«LA PANTALLA ESTÁ DERIVANDO CUÁL ES LA VIGENTE: Math.max»* |
+| **el suelo se cae**: cero revisiones deja de ser ceguera | 🔴 exit 1 |
+| **se ofrece editar una firmada** | 🔴 exit 1 — *«Un presupuesto firmado no se reescribe»* |
+
+Cada uno tumba **solo** su test.
+
+**Y cae con el mecanismo viejo**, en el segundo test: se le pasa la lista con la vigente **la
+primera** —un orden que induce a error— y se comprueba que la marca cae en la fila que el servidor
+dice. Un «me quedo con la última» o un «la de revisión más alta» se verían ahí.
+
+**Control positivo:** un presupuesto con una sola versión se pinta **como hoy** —enumerado, sin
+«.0»— y **no** se pinta un selector de una cosa. **Suelo:** `null`, `{}`, `[]` y una lista ilegible
+dan «no se ha podido leer», nunca «esta es la única versión»: decir mal esa frase manda al cliente
+una versión creyendo que no hay otra.
+
+---
+
+## 3 · Lo entregado, y lo que NO
+
+`public/dashboard/js/quoteRevisiones.js` — puro, publicado en `window`, registrado en
+`index.html`, en el **SHELL** del service worker y en la lista congelada de SCRUM-662.
+
+⛔ **Solo lectura y selector.** No hay ningún camino que CREE una revisión: ese `POST` no está
+aprobado, y hay un aserto que cae si aparece un botón de crear o editar. Una pantalla que ofrece
+algo que el servidor no atiende es peor que no tenerla.
+⛔ **No pinta importes**: compara versiones, no dinero. El total de cada una se ve al abrirla.
+
+## 4 · Microcopy PROPUESTA, sin aprobar (regla 30)
+
+| ranura | rótulo propuesto |
+|---|---|
+| título | `Revisiones` |
+| etiqueta de la vigente | `Vigente` |
+| etiqueta de firmada | `Firmada` |
+| enlace a otra versión | `Ver` |
+| una sola versión | `Esta es la única versión.` |
+| **no se pudo leer** | `No se ha podido leer el historial de revisiones.` |
+
+> 🔴 El último **no es «no tiene revisiones»**: es «no he podido mirar». Son la misma caja vacía en
+> pantalla y significan lo contrario. Va escrito en voz pasiva, como los del dictado y las cláusulas.
+
+Declarado en el censo de SCRUM-402 con **+1**, y anotado allí que el módulo tiene **siete** rótulos
+marcados: ese censo cuenta *literales con la marca*, y el módulo la factoriza en una constante.
+Quien lea el «+1» no debe deducir «un rótulo».

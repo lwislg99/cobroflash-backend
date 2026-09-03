@@ -47,15 +47,13 @@ export type TipoIntervencion = (typeof TIPOS_INTERVENCION)[number];
  * ⚠️ Los rótulos son MICROCOPY SIN APROBAR (regla 30): salen con marcador y se sustituyen el
  * día que el fundador los firme. Los VALORES no son microcopy: son el vocabulario cerrado.
  */
-const MARCADOR_ROTULO = '[PENDIENTE microcopy oficial]';
-
 export function tiposIntervencionParaUI(): Array<{ valor: TipoIntervencion; rotulo: string }> {
   const rotulos: Record<TipoIntervencion, string> = {
-    REPARACION_ASISTENCIA: 'Reparación / asistencia',
+    REPARACION_ASISTENCIA: 'Reparación / Asistencia técnica',
     MANTENIMIENTO: 'Mantenimiento',
     INSTALACION: 'Instalación',
   };
-  return TIPOS_INTERVENCION.map((valor) => ({ valor, rotulo: `${MARCADOR_ROTULO} ${rotulos[valor]}` }));
+  return TIPOS_INTERVENCION.map((valor) => ({ valor, rotulo: rotulos[valor] }));
 }
 
 export function esTipoIntervencion(bruto: unknown): bruto is TipoIntervencion {

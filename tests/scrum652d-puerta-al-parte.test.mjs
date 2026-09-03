@@ -31,6 +31,7 @@ import { fileURLToPath } from 'node:url';
 // mano falla en los DOS sentidos — deja pasar una cadena escrita en un comentario y se come
 // código real en cuanto un literal lleva dos barras. El trinquete de SCRUM-694 me cazó con
 // esto mismo el 3-sep, y es la segunda vez.
+import ts from 'typescript';   // SCRUM-652e: el HECHO se lee del router, no del nombre
 import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -157,12 +158,125 @@ test('SCRUM-652d · ✅ CONTROL POSITIVO: albarán y trabajo se siguen alcanzand
   assert.match(html, /data-view="jobs"/, '🔴 el nav ya no lleva a Trabajos');
 });
 
-test('SCRUM-652d · ✅ CONTROL POSITIVO: NO se estrena una entrada de nav para el parte', () => {
-  // Crear un parte sólo tiene sentido dentro de un trabajo, y no hay lista de partes. Una entrada
-  // suelta en la barra llevaría a una pantalla que no sabe de qué trabajo hablar.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔒 3-sep-2026 · ESTE CONTROL SE ESTRECHÓ, Y LA LECCIÓN VALE MÁS QUE EL ARREGLO
+//
+// UN GUARD QUE VIGILA UN PREFIJO NO VIGILA UN HECHO: vigila una convención de nombres, y caza al
+// primero que se llame parecido siendo otra cosa.
+//
+// Lo que había hasta hoy era `!/data-view="parte/.test(html)` — «ninguna vista cuyo nombre empiece
+// por parte». Y main se puso ROJO sin que nadie escribiera una línea mala:
+//
+//   · `107846d3` · 2-sep 19:58 · SCRUM-652 fase D — añadió este control positivo.
+//   · `c561c626` · 3-sep 12:06 · SCRUM-703 — añadió `data-view="partes-oficina"` a `index.html`.
+//
+// Ficheros distintos, CERO CONFLICTO, git contento, y el significado roto. Es el aviso de Javier
+// ocurriendo: un merge sin conflictos no es un merge correcto — git resuelve por LÍNEAS, no por
+// SIGNIFICADO. Los dos commits tenían razón; el que estaba mal era este test, POR ANCHO.
+//
+// LOS DOS COMMITS, Y POR QUÉ NO SE CONTRADICEN:
+//   · `parte-detail` es el PARTE DEL TÉCNICO. Se entra desde el Trabajo, y una entrada suelta en
+//     la barra llevaría a una pantalla que no sabe de qué trabajo habla. Eso es lo que se protege.
+//   · `partes-oficina` es la LISTA DEL JEFE («Partes por valorar»). NO necesita contexto, y su
+//     razón de existir es que el jefe encuentre lo que le falta por valorar: fuera de la barra, no
+//     lo encuentra. Decisión del fundador (3-sep-2026): **se queda en el nav**.
+//
+// Así que el control ya no mira el NOMBRE: mira el HECHO. Qué vistas EXIGEN un id de contexto lo
+// dice el propio router (`if (state.<algo>Id != null && …)`), y de ahí sale la lista — no de una
+// lista escrita a mano que envejece.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Las vistas que el router SÓLO sabe pintar con un id de contexto, leídas de `app.js`.
+ * Devuelve `[{ vista, exigeId }]`.
+ */
+function vistasQueExigenContexto(fuenteApp) {
+  const sf = ts.createSourceFile('app.js', fuenteApp, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const out = [];
+  const visita = (n) => {
+    if (ts.isCaseClause(n) && ts.isStringLiteral(n.expression)) {
+      const cuerpo = n.statements.map((s) => s.getText()).join('\n');
+      const m = /state\.([A-Za-z0-9_]*[Ii]d[A-Za-z0-9_]*)\s*!=\s*null/.exec(cuerpo);
+      if (m) out.push({ vista: n.expression.text, exigeId: m[1] });
+    }
+    ts.forEachChild(n, visita);
+  };
+  ts.forEachChild(sf, visita);
+  return out;
+}
+
+/** Los `data-view` de la barra de navegación. */
+const vistasDelNav = (html) => [...html.matchAll(/data-view="([^"]+)"/g)].map((m) => m[1]);
+
+/** El HECHO, en una función: ¿alguna entrada de nav lleva a una vista que exige contexto? */
+function navSinContexto(html, fuenteApp) {
+  const exigen = vistasQueExigenContexto(fuenteApp);
+  const nav = vistasDelNav(html);
+  return nav
+    .filter((v) => exigen.some((e) => e.vista === v))
+    .map((v) => ({ vista: v, exigeId: exigen.find((e) => e.vista === v).exigeId }));
+}
+
+test('SCRUM-652d · ✅ CONTROL POSITIVO: ninguna entrada de nav lleva a una vista SIN CONTEXTO', () => {
   const html = fs.readFileSync(INDEX, 'utf8');
-  assert.ok(!/data-view="parte/.test(html),
-    '🔴 se ha estrenado una entrada de nav para el parte. La puerta va en el Trabajo.');
+  const app = fs.readFileSync(path.join(JS, 'app.js'), 'utf8');
+
+  // SUELO: si la derivación no encontrara `parte-detail`, el control habría dejado de vigilar
+  // justo lo que nació vigilando, y lo haría en verde.
+  const exigen = vistasQueExigenContexto(app);
+  assert.ok(exigen.some((e) => e.vista === 'parte-detail'),
+    '🔴 la derivación ya no ve `parte-detail` entre las vistas que exigen contexto. O el router '
+    + 'cambió de forma, o la vista se retiró: en los dos casos este control estaría pasando en '
+    + `vacío. Lo que ve hoy: ${JSON.stringify(exigen.map((e) => e.vista))}`);
+  assert.ok(exigen.length >= 3,
+    `🔴 solo se han derivado ${exigen.length} vistas con contexto: la lectura de \`app.js\` se ha roto.`);
+
+  const malas = navSinContexto(html, app);
+  assert.deepEqual(malas, [],
+    '🔴 HAY UNA ENTRADA DE NAV QUE LLEVA A UNA PANTALLA SIN CONTEXTO:\n'
+    + malas.map((m) => `    data-view="${m.vista}" — el router la pinta sólo con state.${m.exigeId}`).join('\n')
+    + '\n  Pulsarla desde la barra deja al profesional en una pantalla que no sabe de qué documento\n'
+    + '  habla: el `if` del router no entra y no se pinta nada. A `parte-detail` se llega desde el\n'
+    + '  Trabajo, que es quien tiene el id.');
+});
+
+test('SCRUM-652d · 🔴 el control SIGUE CAYENDO si alguien mete el parte del técnico en la barra', () => {
+  // 🔴 ESTE ES EL CONTROL QUE NO PUEDE PERDERSE AL ESTRECHAR. Si al acotar el guard dejara de
+  // cazar esto, se habría matado sin querer y el estrechamiento estaría mal hecho.
+  const app = fs.readFileSync(path.join(JS, 'app.js'), 'utf8');
+  const htmlMalo = fs.readFileSync(INDEX, 'utf8')
+    .replace('data-view="jobs"', 'data-view="parte-detail"');
+
+  const malas = navSinContexto(htmlMalo, app);
+  assert.equal(malas.length >= 1, true,
+    '🔴 SE HA METIDO `parte-detail` EN LA BARRA Y EL CONTROL NO LO CAZA. El estrechamiento se ha '
+    + 'llevado por delante lo que este test nació protegiendo: una entrada suelta al parte del '
+    + 'técnico lleva a una pantalla que no sabe de qué trabajo habla.');
+  assert.equal(malas[0].vista, 'parte-detail');
+  assert.equal(malas[0].exigeId, 'parteId', '🔴 el rojo no dice QUÉ contexto le falta.');
+});
+
+test('SCRUM-652d · 🔴 CONTROL NEGATIVO: la LISTA DEL JEFE sí va en la barra — y el guard viejo no lo distinguía', () => {
+  const app = fs.readFileSync(path.join(JS, 'app.js'), 'utf8');
+  const html = fs.readFileSync(INDEX, 'utf8');
+
+  // El caso de hoy: `partes-oficina` está en el nav y NO exige contexto. Verde.
+  assert.ok(vistasDelNav(html).includes('partes-oficina'),
+    '🔴 la lista de «Partes por valorar» ha salido de la barra. Decisión del fundador (3-sep-2026): '
+    + 'se queda — fuera de la barra el jefe no encuentra lo que le falta por valorar, y ése era el '
+    + 'agujero entero de la fila 5.');
+  assert.deepEqual(navSinContexto(html, app), [],
+    '🔴 `partes-oficina` se está contando como pantalla sin contexto, y no lo es: el router la '
+    + 'pinta sin ningún id.');
+
+  // 🔴 Y CAE CON EL MECANISMO VIEJO: el test de hoy NO pasaría este control negativo. Se ejecuta
+  // aquí la regla vieja para que quede demostrado y no dicho — si alguien vuelve a ensanchar el
+  // guard a un prefijo, este assert lo enseña con el nombre del inocente.
+  const cazadosPorElPrefijoViejo = vistasDelNav(html).filter((v) => /^parte/.test(v));
+  assert.deepEqual(cazadosPorElPrefijoViejo, ['partes-oficina'],
+    '🔴 la regla vieja (`data-view="parte…"` por prefijo) ya no caza `partes-oficina`. Si eso ha '
+    + 'cambiado, comprueba qué se movió: la razón de estrechar este control fue que el prefijo '
+    + 'atrapaba a la lista del jefe, que es otra pantalla.');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────────────────

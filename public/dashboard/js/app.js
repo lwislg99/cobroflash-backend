@@ -323,7 +323,7 @@ async function initApp() {
       // cargaría y no llevaría a él ninguna puerta — que es exactamente lo que le pasa hoy a
       // `parteDetailView.js`, medido en la certificación del sprint.
       case 'partes-oficina':
-        viewTitle.textContent = '[PENDIENTE microcopy oficial] Partes por valorar';
+        viewTitle.textContent = 'Partes por valorar';
         if (typeof window.renderPartesOficinaView === 'function') {
           window.renderPartesOficinaView(viewContainer, opts);
         }

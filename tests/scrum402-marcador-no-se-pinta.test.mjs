@@ -52,13 +52,16 @@ const MARCA = '[PENDIENTE';
  * a otra tiene que verse, y un total lo escondería (la lección del suelo por FUNCIÓN de SCRUM-392).
  */
 const CENSO = Object.freeze({
-  // Sprint Tecnosel · ENTRA A CONCIENCIA con 1: la pantalla donde la OFICINA pone los precios de
-  // un parte ya firmado. El mecanismo no existe sin texto —es un formulario— y su copy no está
-  // firmado: el fundador lo aprueba en docs/master/SCRUM-685.md. Se cuenta 1 y son ocho textos,
-  // todos de una sola constante `MARCA_OFICINA`, así que aprobarlos los apaga de golpe.
+  // Sprint Tecnosel (3-sep-2026) · el título de `app.js` ENTRÓ y SALIÓ el mismo día: el fundador
+  // firmó «Partes por valorar». Su entrada se BORRA y no se pone a 0 (SCRUM-424 / SCRUM-405):
+  // `censoActual()` sólo lista ficheros CON marcadores. El trinquete APRIETA.
+  //
+  // 🔴 Y `parteOficinaView.js` SE QUEDA CON 1, que es el recuento honesto: de sus textos, el
+  // fundador firmó ONCE y **uno no estaba en esa lista** — «No hemos podido abrir el parte».
+  // Bajar la entrada a 0 «porque se aprobó la microcopy» habría sacado del censo un marcador que
+  // sigue pintándose. Baja el día que se firme ese último texto, que va propuesto en
+  // `docs/master/SCRUM-703.md`.
   'parteOficinaView.js': 1,
-  // Y el TÍTULO de la vista, que lo pone el enrutador: mismo texto sin aprobar, otro fichero.
-  'app.js': 1,
   // (el boton de Trabajos que lleva ahi NO entra: usa la constante `MARCA_651`, no un literal,
   // asi que este censo —que cuenta LITERALES por AST— no lo ve, y con razon.)
   // SCRUM-651 (T2) · ENTRA A CONCIENCIA con 1, y el motivo es que EL MECANISMO NO EXISTE SIN
@@ -403,6 +406,24 @@ const CENSO = Object.freeze({
   // Sale del censo el commit que apruebe los textos, y ese commit BORRA la entrada, no la pone a
   // 0 (precedente SCRUM-424/405).
   'parteDetailView.js': 1,
+  // 🔴 SCRUM-655c (fila 9) · 3-sep-2026 · `quoteRevisiones.js` ENTRA con 1, A CONCIENCIA.
+  //
+  // Es el selector de revisiones del presupuesto. Su microcopy NO está aprobada (regla 30): se
+  // propone con las palabras que el gerente ya usa —«revisión», y el número tal cual,
+  // `P2004226.1`— porque son las del papel que le manda al cliente.
+  //
+  // ⚠️ Y el número dice UNO donde hay SIETE rótulos marcados: es la regla de este censo —cuenta
+  // LITERALES que contienen la marca— y el módulo la factoriza en una constante que concatena
+  // siete veces, como ya hacen `parteDetailView.js` y el bloque de retención. Quien lea este «+1»
+  // no debe deducir «un rótulo».
+  //
+  // 🔴 Uno de los siete no es un rótulo cualquiera: `ciego` dice «no se ha podido leer el
+  // historial», y es lo que separa «este presupuesto no tiene más versiones» de «no he podido
+  // mirar». Las dos son la misma caja vacía en pantalla y significan lo contrario.
+  //
+  // **Baja cuando el fundador firme esos textos**, y entonces la entrada se BORRA, no se pone a
+  // 0: un 0 declararía que el fichero se vigila y no tiene marcas (precedente SCRUM-424/405).
+  'quoteRevisiones.js': 1,
   'settingsSubmenus.js': 1,
   // SCRUM-674 (2-sep-2026) · `voiceInput.js` SALE del censo: el fundador aprobo el texto del
   // aviso de dictado sin conexion, y sale ya sin marca. La entrada se BORRA, no se pone a 0:
