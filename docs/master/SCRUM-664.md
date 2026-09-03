@@ -4,7 +4,7 @@
 
 **Medido contra:** `origin/main` = `4e9e114d1620386c76982efbc4eeae1e9d55fc06` · 2026-09-03T13:05:11+02:00
 
-**Tanda:** TANDA_AQUI
+**Tanda:** 4940 tests, 4855 pass, **1 fail**, 84 skipped — medida DESPUÉS del último cambio, entrada incluida, con Prisma regenerado. 🔴 **Ese fallo NO es de este ticket: viene rojo de `main`** — ver el hallazgo al final. Suelo de la tanda: `suelo 4798 · total 4940 · margen 142`.
 
 ---
 
@@ -78,6 +78,28 @@ dentro del `.map` de las plantillas que ya existe en el fichero.
 * **control negativo sobre el fichero real:** añadir una propiedad ajena (`nota: 'x'`) no lo acusa;
 * y los dos anclajes de la inyección se afirman: si el fichero se mueve, esto **cae diciendo que
   hay que reanclarlo**, en vez de dejar de probar en silencio.
+
+### 🔴 Cinco mutaciones sobre el guard — y una NO tumbaba nada
+
+Commiteado en verde antes de mutar. Cada mutación con post-condición de que cambió el fichero que
+dice, y restaurada y re-verificada.
+
+| Mutación | Cae |
+|---|---|
+| se recorta la lista de códigos a sólo 2304 | **3** (incluido «los códigos siguen siendo DOS») |
+| se quita el suelo de «la fuente ya se quejaba» | **1** |
+| el instrumento contesta siempre CERO usos | **4** |
+| **vuelve la ligadura de IVA al fichero real, en disco** | **3** |
+| el nombre se compara por SUBCADENA en vez de exacto | **0** ⚠️ |
+
+La quinta es la que enseña algo. La pieza compara el nombre **entero** y su comentario explica por
+qué —`vat` casaría dentro de otro nombre y contaríamos de más—, **pero ningún caso lo probaba**. Una
+defensa sin test es una decisión que el siguiente deshace sin enterarse. Se añadió el caso.
+
+**Y el primer intento de escribirlo tampoco valía:** usaba `defaultVat` como nombre vecino, y
+`defaultVat` **no contiene `vat`** — lleva `Vat`, con V mayúscula, e `includes` distingue. El caso
+pasaba con el arreglo y sin él. Con `vatName` —un campo real de la tabla— la mutación tumba
+exactamente ese test y nada más. **Escribir el caso no es tenerlo: hay que verlo caer.**
 
 ### Los dos suelos del propio instrumento
 
@@ -155,3 +177,28 @@ Si se construye, la medición dice cómo: **por NOMBRE + VALOR (instrumento B), 
    tipos: no sustituye a `npm run build`, y no lo pretende.
 4. **La clasificación legítimo/sospechoso del ① la he hecho leyendo los 12 sitios de `src/` y
    `public/` uno a uno.** Los 267 de `tests/` y `scripts/` los he contado, **no los he leído**.
+
+## 🔴 Hallazgo fuera de carril, y hay que decirlo: **`main` está en rojo**
+
+La tanda de esta rama sale con **1 fallo**, y **no es de este ticket**:
+
+```
+not ok — SCRUM-652d · ✅ CONTROL POSITIVO: NO se estrena una entrada de nav para el parte
+   🔴 se ha estrenado una entrada de nav para el parte. La puerta va en el Trabajo.
+   tests/scrum652d-puerta-al-parte.test.mjs:164
+```
+
+**Medido, no supuesto** —porque «no es mío» es justo lo que hay que probar, no afirmar:
+
+* mi diff contra `origin/main` son **TRES ficheros nuevos**: esta entrada y los dos del guard;
+* ese test lee `public/dashboard/js/app.js`, `public/dashboard/index.html` y
+  `tests/_solo-codigo.mjs` — **ninguno de los tres está en mi diff**, así que para todo lo que ese
+  test mira, este árbol **es** el de `main`;
+* y el HEAD de `main` es `4e9e114d Merge pull request #942 from lwislg99/scrum-652-puerta-al-parte`,
+  que es **el ticket dueño de ese test**.
+
+Se intentó además correrlo sobre un árbol limpio de `main` (`git worktree`), y **eso no sirvió**: sin
+`node_modules` el fichero cae entero, que es otro rojo distinto. Se dice para que nadie lo cuente
+como confirmación.
+
+**No lo arreglo:** no es mi carril y el fichero es de otra sesión. Se reporta.

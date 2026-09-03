@@ -143,6 +143,33 @@ test('SCRUM-664 · CONTROL NEGATIVO: retirar un símbolo AJENO no acusa a `vat`'
   }
 });
 
+test('SCRUM-664 · 🔴 el nombre se compara EXACTO: `vat` no casa dentro de `vatName`', () => {
+  // Este test nace de una mutación que NO tumbaba nada: la pieza compara el nombre exacto y su
+  // comentario explica por qué, pero ningún caso lo probaba. Una defensa sin test es una decisión
+  // que el siguiente puede deshacer sin enterarse.
+  //
+  // ⚠️ Y el primer intento de escribirlo TAMPOCO valía: usaba `defaultVat` como nombre parecido, y
+  // `defaultVat` NO contiene `vat` — lleva `Vat`, con V mayúscula, y `includes` distingue. El caso
+  // pasaba con el arreglo y sin él. El vecino tiene que ser uno de verdad: `vatName`, que además
+  // es un campo real de la tabla de locales.
+  const conParecido = `
+declare const prisma: any;
+export async function f() {
+  const vat = 0.21;
+  await prisma.product.create({ data: { tax: vat, otro: vatName } });
+}
+`;
+  const r = dependenciasDe(conParecido, 'vat');
+  assert.equal(r.ciego, null,
+    '🔴 se ha declarado ciego. Con comparación por subcadena, el `defaultVat` que ya falta se\n' +
+    '   leería como si faltara `vat` ANTES de retirar nada, y el suelo dispararía en falso: ' + r.ciego);
+  assert.equal(r.usos.length, 1,
+    `🔴 esperaba UN uso de \`vat\` y hay ${r.usos.length}. Si son dos, se está contando el ` +
+    '`defaultVat`\n   de al lado: el nombre se compara ENTERO, no como trozo.');
+  assert.ok(r.usos[0].texto.includes("'vat'") && !r.usos[0].texto.includes("'defaultVat'"),
+    `🔴 el uso encontrado habla de otro símbolo: «${r.usos[0].texto}».`);
+});
+
 test('SCRUM-664 · CONTROL NEGATIVO: un símbolo declarado y NO usado da CERO', () => {
   // Sin esto, un instrumento que devolviera siempre «sí, hay dependencias» pasaría los tests de
   // arriba enteros: hay que probar que sabe decir que no.
