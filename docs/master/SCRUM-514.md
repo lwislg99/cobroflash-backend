@@ -106,11 +106,23 @@ olvido: **es el mismo rótulo aprobado dos veces con distinta grafía.**
 **Lo trajo mi propio ticket anterior**: en SCRUM-599 se aplicó el literal que dio el asesor en
 aquel encargo, sin que nadie mirara que la fuente ya tenía ese rótulo aprobado con el «+».
 
-🔴 **No lo decido yo.** Las dos son aprobaciones, y la regla 30 dice que el microcopy lo aprueba el
-asesor **sin excepción**: elegir una sería aprobar copy desde una sesión. Queda **declarado en
-`APARCADOS` con su motivo y con quién lo desbloquea**, que es exactamente para lo que existe esa
-lista — y el guard lo seguirá vigilando: el día que se decida, el commit borra la entrada y ajusta
-la fuente.
+🔴 **No lo decidí yo**: las dos eran aprobaciones, y la regla 30 dice que el microcopy lo aprueba
+el asesor **sin excepción**. Se declaró en `APARCADOS` esperando su palabra.
+
+### ✅ DECIDIDO el 3-sep-2026: gana `Nueva factura`, SIN el `+`
+
+El motivo, y queda en la **fuente** para que nadie lo revierta: SCRUM-599 aprobó los **cuatro**
+botones primarios de la misma familia —`Nuevo presupuesto`, `Nuevo albarán`, `Nueva factura`,
+`Nuevo cliente`— medidos en navegador real. **Dejar el `+` en uno solo rompe la familia**, y en un
+botón el `+` no informa: el botón ya se ve como botón.
+
+> ⚠️ **Y lo que NO es una incoherencia:** en **SCRUM-591** se aprobó `+ Nuevo cliente` **CON** `+`
+> y **se queda**. Allí es una `<option>` dentro de un `<select>` lleno de nombres de clientes, y el
+> `+` es **lo único** que distingue una acción de un nombre. **Botón sin `+`, opción de lista con
+> `+`.** Uniformarlos rompería el que sí informa.
+
+**El código ya estaba bien y no se ha tocado.** Se corrigió la **fuente** (commit propio, SCRUM-709)
+y se **borró la entrada de `APARCADOS`**: el guard vuelve a vigilar ese rótulo sin excepción.
 
 > Es la mejor prueba de que el guard hacía falta: **nació y en dos horas encontró una divergencia
 > que nadie había visto**, incluida la que yo mismo introduje ayer.
