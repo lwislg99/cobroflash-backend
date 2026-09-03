@@ -1155,7 +1155,7 @@ async function renderJobDetailView(container, jobId) {
   const parteBtn = document.createElement('button');
   parteBtn.className = 'btn-secondary btn-sm';
   parteBtn.setAttribute('data-abrir-parte', '1');
-  parteBtn.textContent = '[PENDIENTE microcopy oficial] Parte de trabajo';
+  parteBtn.textContent = 'Parte de trabajo';
   parteBtn.addEventListener('click', async () => {
     parteBtn.disabled = true;
     try {
@@ -1168,7 +1168,7 @@ async function renderJobDetailView(container, jobId) {
         : await apiRequest('/admin/partes', { method: 'POST', body: JSON.stringify({ jobId: job.id }) });
       if (window.renderAppView) window.renderAppView('parte-detail', { parteId: parte.id });
     } catch (e) {
-      if (typeof showToast === 'function') showToast('[PENDIENTE microcopy oficial] No se ha podido abrir el parte. Vuelve a intentarlo.', 'warn');
+      if (typeof showToast === 'function') showToast('No se ha podido abrir el parte. Vuelve a intentarlo.', 'warn');
     } finally {
       parteBtn.disabled = false;
     }

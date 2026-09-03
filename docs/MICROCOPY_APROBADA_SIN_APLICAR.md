@@ -1,3 +1,27 @@
+> # ⛔ REGISTRO CONGELADO — no añadas aquí (SCRUM-709, 3-sep-2026)
+>
+> **Este fichero era la fuente única de las aprobaciones de microcopy y ya no lo es.** No se borra:
+> es un registro fechado y **todo lo que dice era cierto cuando se escribió**, igual que
+> `docs/MIGRATIONS_PENDING.md`. Se conserva entero, sin tocar ni un literal.
+>
+> **Las aprobaciones NUEVAS van a `docs/microcopy/`, un fichero por aprobación:**
+>
+> ```
+> docs/microcopy/AAAA-MM-DD-SCRUM-<n>-<ranura>.md
+> ```
+>
+> **Por qué se partió.** Todas las sesiones añadían al final de ESTE fichero, así que colisionaban
+> una vez **por par de ramas**: cuatro sesiones aprobando el mismo día son seis conflictos
+> garantizados. En dos días hubo **ocho**, y las ocho se resolvieron igual —conservar los dos
+> addenda—, lo que demuestra que el conflicto no informaba de nada: era una factura. Dos sesiones
+> que escriben ficheros distintos no chocan nunca.
+>
+> **El listado del directorio ES el índice.** No hay ni habrá un fichero-índice que cada sesión
+> tenga que editar para apuntar su línea: eso sería el mismo defecto con otro nombre.
+>
+> **Para buscar dónde consta una aprobación** —aquí dentro o en `docs/microcopy/`— hay una sola
+> función: `aprobacionesDeMicrocopy()` en `tests/_microcopy-aprobada.mjs`. Barre los dos sitios.
+
 # Microcopy APROBADA por el fundador, pendiente de aplicar
 
 **Aprobada:** 17-ago-2026 (regla 30) · **Estado: aplicado todo lo de las tandas A–E.**
@@ -496,7 +520,7 @@ sin aplicar, hasta que decida — y hay un aserto que cae si alguien lo aplica s
 
 ---
 
-## Addendum · Dirección de facturación del cliente (2-sep-2026) · **APROBADAS, NO APLICADAS**
+## Addendum · Dirección de facturación del cliente (2-sep-2026) · **APLICADAS el 3-sep-2026**
 
 **Medido contra:** `origin/main` = `354fdca362063a79a928ed5df7c5120363d64c0b` · 2026-09-02T18:33:54+01:00
 
@@ -531,11 +555,20 @@ rótulos no habría sido una nota interna: lo habría visto un profesional en su
 minutos** del merge, cinco veces en el mismo formulario. Por eso la aprobación se pidió **antes** del
 PR de código y no después — y por eso este ticket entrega sin una sola marca.
 
-### Estado: aprobadas y todavía sin pintar
+### Estado: APLICADAS · medido el 3-sep-2026 (SCRUM-514)
 
-El formulario **aún no existe**: SCRUM-579 está parado a propósito en el orden de migración
-—① decisión → ② `ALTER` en las TRES bases → ③ un solo PR con schema + código + tests—, y a fecha de
-esta anotación el `ALTER` está **sólo en `yaqu_dev_javier`** (medido: DEV 5/5, STAGING 0/5).
+**Las cinco están en pantalla**, una vez cada una, en `public/dashboard/js/customersView.js`.
+Comprobado literal —con sus tildes— antes de cambiar este renglón, y no por el número de línea.
+
+> ⚠️ **Este apartado decía lo contrario y era cierto cuando se escribió.** Decía que el formulario
+> «aún no existe» y que SCRUM-579 estaba parado en el orden de migración con el `ALTER` sólo en
+> DEV. Ese ticket se cerró **después**, y el renglón se quedó atrás: la fuente única llevaba un día
+> diciendo que faltaba algo que ya estaba hecho, y eso manda a la siguiente sesión a aplicar lo
+> aplicado. **Un estado que no se revisa es la siguiente mentira de la fuente** — que es lo que ya
+> avisa la cabecera de este fichero sobre el sello «TODO APLICADO».
+>
+> Desde hoy no hace falta acordarse: `tests/scrum514-aprobado-y-aplicado.test.mjs` cruza ESTE
+> fichero contra el código en cada tanda y se pone rojo si un texto aprobado no está pintado.
 
 Se anotan aquí **ahora** y no cuando se pinten, porque un texto aprobado que se reteclea semanas
 después deja de ser el aprobado. Quien construya el formulario **copia de esta tabla**.
@@ -709,6 +742,46 @@ mío: dije «13 textos, doce sin firmar» y los textos visibles eran **12** —c
 declaración de la constante—. Firmados «Tipo de intervención» y «Sin especificar», **quedan 10**,
 listados literales y con su línea en `docs/master/SCRUM-703.md`. El día que se firmen, `MARCA_651`
 se retira entera igual que `MARCA_OFICINA`.
+
+---
+
+## Addendum · Los diez del Trabajo, más el rótulo de la puerta (3-sep-2026) · **APLICADOS EN EL MISMO ACTO**
+
+> Con esta firma **`MARCA_651` se retira ENTERA**. Mientras quedó UNO sin firmar, la constante tenía
+> que seguir viva: retirarla antes habría dado por aprobados los demás sin que nadie los firmara, y
+> habrían llegado a la pantalla del profesional como si llevaran la firma del fundador.
+
+| Qué es | Texto aprobado | Dónde |
+|---|---|---|
+| Etiqueta de cliente | Cliente | `jobNuevoModal.js` |
+| Etiqueta de dirección | Dirección de la obra | ídem |
+| Etiqueta de descripción | Qué hay que hacer | ídem |
+| Botón de crear | Abrir trabajo | ídem |
+| Título del modal | Trabajo nuevo | ídem |
+| Aviso · sin clientes | Primero necesitas un cliente. | ídem |
+| Aviso · no se leen | No se han podido cargar tus clientes. | ídem |
+| Aviso · falta elegir | Elige un cliente. | ídem |
+| Error al crear | No se ha podido abrir el trabajo. | ídem |
+| Botón de la lista | Trabajo nuevo | `jobsView.js` |
+| **Rótulo de la puerta al parte** | Parte de trabajo | `jobDetailView.js` |
+
+🔴 **El único que cambió respecto al código es el séptimo**: decía «No hemos podido cargar tus
+clientes.» y la voz de la casa **no dice «no hemos podido»**. Es la tercera pantalla en que se
+corrige lo mismo.
+
+«Trabajo nuevo» es **el mismo texto en dos ficheros** —el título del modal y el botón de la lista—:
+firmar uno firmaba los dos, y así se aplicó.
+
+**Los dos censos, apretados en el mismo commit y comprobados antes de tocarlos:**
+
+- `jobNuevoModal.js` **sale** del censo de SCRUM-402 (cero marcadores en el fichero: medido, no
+  supuesto). La entrada se **borra**, no se pone a 0.
+- `jobDetailView.js` **baja de 2 a 1 y no se borra**: se firmó el rótulo del botón y **no** el aviso
+  de cuando no se puede abrir, que sigue marcado. Bajarlo a 0 habría sacado del censo un marcador
+  que sigue pintándose.
+
+⚠️ **Queda sin firmar, en la misma zona de la puerta:** «No se ha podido abrir el parte. Vuelve a
+intentarlo.» (`jobDetailView.js`, el aviso cuando la puerta falla). No estaba en la lista de once.
 ## Addendum · Revisiones del presupuesto (3-sep-2026) · **APLICADAS**
 
 **Medido contra:** `origin/main` = `2becaeaa82a8e491a5705862d3df95d6d88e5bc3` · 2026-09-03T13:01:27+02:00

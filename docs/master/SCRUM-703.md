@@ -322,3 +322,45 @@ Dos guards de la casa corrigieron el guard nuevo: SCRUM-651 porque la primera ve
 Los cuatro primeros y el quinto van pegados a su etiqueta de cierre en el código (`Cliente</label>`,
 `Abrir trabajo</button>`): lo visible es lo de la tabla. El 7 dice «No hemos podido», que es la voz
 que el fundador ya corrigió en otra pantalla.
+
+---
+
+# SCRUM-703 · Vuelta final del recorrido: siete de ocho, y los once últimos rótulos
+
+**Medido contra:** `origin/main` = `ce8f262a5270dbecfb3f503eaa8d1bd323db5683` · 2026-09-03T14:29:30+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-tecnosel-tipo-y-precios`
+
+**🔴 SIETE DE OCHO. No son ocho de ocho.** El salto 4 —dictar— sigue sin completarse: la sesión que
+lo estaba cableando **no ha entrado en `main`**, comprobado con `git merge-base --is-ancestor` y no
+con `ls-remote`, con suelo en las dos direcciones. La ruta existe y la función existe entera; falta
+**el cable** entre el botón y la función, igual que en la medición anterior.
+
+**LAS ONCE ÚLTIMAS, FIRMADAS, Y `MARCA_651` RETIRADA ENTERA.** Mientras quedó UNO sin firmar la
+constante tenía que seguir viva: retirarla antes habría dado por aprobados los demás sin que nadie
+los firmara. Ése era el motivo, y con la firma dejó de cumplirse. El único texto que cambió respecto
+al código es «No hemos podido cargar tus clientes.» → **«No se han podido»**: tercera pantalla en que
+se corrige la misma voz.
+
+**LOS CENSOS, APRETADOS EN EL MISMO COMMIT Y COMPROBADOS ANTES DE TOCARLOS.** `jobNuevoModal.js`
+**sale** (cero marcadores, medido); `jobDetailView.js` **baja de 2 a 1 y no se borra**, porque se
+firmó el rótulo del botón y no el aviso de cuando la puerta falla. **Ninguna entrada salió del censo
+con su marcador todavía en el código**, que era la comprobación pedida.
+
+**EL GUARD DE SCRUM-651 SE QUEDÓ SIN SUJETO Y NO SE BORRÓ A CIEGAS.** Protegía que la microcopy sin
+aprobar saliera de UNA constante; ya no hay microcopy sin aprobar ahí. Se reapunta al HECHO, más
+fuerte y sin saber aflojar: en esa pantalla no vuelve a entrar NI UN marcador.
+
+**MI MEDIDOR MINTIÓ POR TERCERA VEZ, y el defecto tenía cara nueva:** quité la ventana fija alrededor
+del ancla y **la reintroduje alrededor de la consulta**. `#tn-crear` se consulta en la línea 74 y se
+enlaza en la 99; mi ventana eran doce líneas. Y los saltos 2 y 6 cayeron por otra puerta del mismo
+defecto: sus elementos nacen de `createElement` y **nunca pasan por un `querySelector`**. Los tres
+se verificaron a mano antes de creer el veredicto. Un medidor con ventana no mide: tolera.
+
+**EL DINERO NO CAE EN NINGUNO DE LOS OCHO PUNTOS.** Serializador del técnico y pantalla del móvil,
+leídos sin comentarios: limpios. Dos de dos puertas de oficina con `requireRole('admin')`. El PATCH
+decide por el ROL, no por lo que traiga la petición.
+
+**DOS GUARDS DE LA CASA ME CORRIGIERON POR EL CAMINO:** SCRUM-447 cazó un byte `0x08` que un heredoc
+me coló dentro de una regex, y SCRUM-694 me impidió estrenar un filtro de comentarios propio
+existiendo `soloEjecutable`. Los regex van **por fichero**, no por heredoc: me salté mi propia regla
+y costó dos vueltas.
