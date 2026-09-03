@@ -17,11 +17,10 @@
 // La pantalla abre por la lista de PENDIENTES DE VALORAR (`/oficina/pendientes`), no por un
 // buscador: si el jefe no puede saber cuáles le faltan, la pantalla no sirve de nada.
 //
-// ⚠️ MICROCOPY SIN APROBAR (regla 30): todos los textos visibles salen de `MARCA_OFICINA`, UNA
-// sola constante, así que aprobarlos es tocar un sitio. Van propuestos en `docs/master/SCRUM-685.md`.
-
-/** El marcador único de esta pantalla. Aprobar el copy = tocar sólo esta constante. */
-var MARCA_OFICINA = '[PENDIENTE microcopy oficial]';
+// ✅ MICROCOPY APROBADA AL COMPLETO (regla 30): las once del 3-sep-2026 y, ese mismo día, la que
+// quedaba suelta —el error de abrir un parte—. Ya no queda marcador en esta pantalla, así que la
+// constante que los sujetaba se retiró entera: dejarla vacía habría mantenido el fichero en el
+// censo de SCRUM-402 por un literal que ya no pinta nada.
 
 function parteOficinaEuros(n) {
   if (n === null || n === undefined) return '—';
@@ -102,7 +101,7 @@ async function pintarParte(id, detalle, container, opts, yaTraido) {
     try {
       parte = await apiRequest('/admin/partes/' + id + '/oficina');
     } catch (e) {
-      uiErrorState(detalle, MARCA_OFICINA + ' No hemos podido abrir el parte.',
+      uiErrorState(detalle, 'No se ha podido abrir el parte',
         function () { pintarParte(id, detalle, container, opts); });
       return;
     }
@@ -224,6 +223,5 @@ async function pintarParte(id, detalle, container, opts, yaTraido) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     renderPartesOficinaView: renderPartesOficinaView,
-    MARCA_OFICINA: MARCA_OFICINA,
   };
 }

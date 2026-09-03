@@ -685,6 +685,30 @@ quedan en el modal («Cliente», «Sin especificar», «Dirección de la obra»,
 «Abrir trabajo», «Trabajo nuevo», los tres avisos y el error) y el botón de `jobsView.js`.
 **«Sin especificar» está dentro del mismo desplegable que se acaba de firmar y no venía en la
 lista de cuatro: queda a la espera.**
+
+---
+
+## Addendum · Las dos que quedaban sueltas (3-sep-2026) · **APLICADAS EN EL MISMO ACTO**
+
+> Las dos las destapó la medición de punta a punta: una estaba **dentro del desplegable que se
+> acababa de firmar** y era la única opción visible antes de elegir; la otra era el último texto
+> sin firmar de la pantalla de valorar.
+
+| Qué es | Texto aprobado | Dónde |
+|---|---|---|
+| Opción por defecto del tipo de intervención | Sin especificar | `public/dashboard/js/jobNuevoModal.js` |
+| Error al abrir un parte desde la oficina | No se ha podido abrir el parte | `public/dashboard/js/parteOficinaView.js` |
+
+**`parteOficinaView.js` sale del censo de SCRUM-402, y se comprobó antes de bajarlo:** al firmar el
+último texto no queda **ni un** marcador en el fichero, así que la constante `MARCA_OFICINA` se
+retiró **entera** —declaración y exportación—. Dejarla vacía habría mantenido el fichero en el censo
+por un literal que ya no pinta nada. La entrada se **borra**, no se pone a 0.
+
+⚠️ **`MARCA_651` sigue viva: quedan DIEZ textos sin firmar.** Y aquí va una corrección de un número
+mío: dije «13 textos, doce sin firmar» y los textos visibles eran **12** —conté también la
+declaración de la constante—. Firmados «Tipo de intervención» y «Sin especificar», **quedan 10**,
+listados literales y con su línea en `docs/master/SCRUM-703.md`. El día que se firmen, `MARCA_651`
+se retira entera igual que `MARCA_OFICINA`.
 ## Addendum · Revisiones del presupuesto (3-sep-2026) · **APLICADAS**
 
 **Medido contra:** `origin/main` = `2becaeaa82a8e491a5705862d3df95d6d88e5bc3` · 2026-09-03T13:01:27+02:00

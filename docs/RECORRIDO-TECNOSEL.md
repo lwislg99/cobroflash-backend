@@ -54,3 +54,55 @@ medir del lado del usuario. Los declaro sin medir en vez de suponerlos.
 recorre**.
 
 > El salto 2 es del carril de la sesión 1 y aquí sólo se mide, no se toca.
+
+---
+
+# Segunda medición · 3-sep-2026, con las ocho puertas dentro
+
+**Medido contra:** `origin/main` = `4e9e114d1620386c76982efbc4eeae1e9d55fc06` (PR #942, la puerta al
+parte) · **Medido en:** SCRUM-703
+
+La primera medición se hizo con tres saltos sin puerta. Entre una y otra entraron
+`scrum-684-cablear-dictado` y `scrum-652-puerta-al-parte`, **y Javier aplicó los seis ALTER de
+SCRUM-674 en dev, staging y producción**: ya no hay ninguna columna pendiente, así que aquí no cabe
+la respuesta «falta el ALTER». La medición de arriba **no se toca**: la diferencia entre las dos es
+lo que enseña qué desbloqueó cada merge.
+
+**🔴 Esta vez se RECORRE la puerta, no basta con que exista.** Un botón pintado sin nadie que lo
+escuche deja la suite entera en verde y al técnico pulsando la nada. Por cada puerta: ¿se pinta?
+¿alguien escucha? ¿la escucha lleva a algún sitio? Y el listener se buscó en sus **dos** formas
+—`addEventListener` y `onclick`—: la primera versión de este medidor daba por muertas tres pantallas
+vivas porque sólo miraba una, y por usar una ventana fija alrededor del ancla.
+
+| # | El salto | ¿Va? | Coordenada del recorrido |
+|---|---|---|---|
+| 1 | Crear trabajo con tipo | ✅ | `#tn-crear` pinta + escucha → `/admin/customers` y `POST /admin/jobs`; el servidor manda los rótulos (`app.ts`), el modal los lee de `window.appTiposIntervencion` |
+| 2 | Asignar a **varios** | ✅ | casillas con `change` → `PATCH /admin/jobs/:id` con `assignedUserIds` (la lista, no `operarioId`) → `refresh()`; si falla, **deshace la casilla** |
+| 3 | Del trabajo al parte | ✅ | `data-abrir-parte` (`jobDetailView.js:1155`) con `addEventListener` → abre el que haya o `POST /admin/partes` → `renderAppView('parte-detail')` → `case` en `app.js:352` → `renderParteDetailView` |
+| 4 | Rellenar **dictando** | 🔴 **PINTADO Y MUERTO** | el botón `data-dictado-ordenar` se pinta en `parteDetailView.js:240` y **no aparece en ningún otro sitio**; sin delegación en el fichero |
+| 5 | Firmar **sin cobertura** | ✅ | `data-parte-firmar` pinta (`:203`) → `querySelector` (`:455`) → `addEventListener` (`:457`) → `firmarParte` (`:458`); `colaDeFirmas.js` conoce `parte: '/admin/partes'` |
+| 6 | El jefe lo encuentra | ✅ | firmar deja `estado:'firmado'`; la lista de oficina filtra ese mismo estado; entrada en la barra lateral con rótulo firmado |
+| 7 | Le pone los precios | ✅ | filas con `click` (`:84`), casillas con `input` (`:190`), **`guardar.onclick` (`:201`)**; permiso por campo antes de construir `data` |
+| 8 | Quedan guardados y los ve | ✅ | el PATCH responde con `serializeParteParaLaOficina` si el rol ve todo; la pantalla repinta con lo que devuelve el servidor |
+
+**Siete de ocho, recorridos.** La primera medición daba cuatro.
+
+## 🔴 El salto que no se completa, y por qué
+
+**El salto 4, dictar.** No es que falte el motor ni la puerta: **faltan unidos**. La ruta existe
+(`POST /admin/partes/:id/dictado`), la función que la llama existe y está entera
+(`ordenarElDictado`, con su fallo que no bloquea), el botón se pinta con su texto y su hueco para la
+propuesta. Lo único que no existe es el cable entre el botón y la función: `ordenarElDictado` sólo
+se cuelga de `window.parteOrdenarDictado` (`:469`), que es como lo alcanzan los tests — **y por eso
+la suite está verde**. Quien dicte y pulse ahí no verá pasar nada.
+
+Medido con suelo: el mismo buscador **sí** encuentra el cable de la firma —`data-parte-firmar`
+pintado, consultado y enlazado—, así que su silencio sobre el dictado no es ceguera.
+
+## 🔴 El dinero, en los ocho puntos: no cae
+
+- `serializeParteParaElTecnico`, **leído sin comentarios**: ni una clave de dinero.
+- `parteDetailView.js`: la única aparición de «importe» está **en un comentario** que dice que lo que
+  ve el firmante se arma sin importes. La primera pasada la contó como código; se volvió a mirar.
+- Las puertas de oficina siguen pidiendo `requireRole('admin')`, y el PATCH decide por el **rol**,
+  no por lo que traiga la petición.
