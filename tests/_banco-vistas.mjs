@@ -235,6 +235,38 @@ export function nodo(tag, reg) {
     // quedó reportado como hueco en SCRUM-451 y ahora bloqueaba el test que decide de H1. Nada
     // podía depender de él antes, porque llamarlo era un `TypeError`.
     prepend(...h) { for (const x of h) { if (x) { desengancha(x); x._padre = n; } } n.hijos.unshift(...h); },
+    // 🔴 SCRUM-698 · `insertAdjacentHTML`. NO EXISTÍA, y por eso `renderSettingsView` REVENTABA
+    // al montarse: la vista pone la nota del IBAN con
+    // `fIban.wrapper.querySelector('label').insertAdjacentHTML('afterend', …)`, que es DOM de
+    // manual y perfectamente legítimo. Es el mismo hueco que `prepend` (SCRUM-460) y
+    // `parentNode` (SCRUM-609): una pantalla entera fuera del alcance del banco por una API que
+    // el banco no tenía, no por nada del producto.
+    //
+    // Se apoya en el mismo parser que `innerHTML` —no se escribe un segundo— y respeta las
+    // cuatro posiciones del estándar. `beforebegin`/`afterend` necesitan padre: sin él el
+    // navegador NO hace nada, y aquí tampoco, en vez de inventarse un sitio donde ponerlo.
+    insertAdjacentHTML(posicion, html) {
+      const cuna = nodo('div', reg);
+      cuna.innerHTML = String(html ?? '');
+      const nuevos = cuna.hijos.slice();
+      for (const h of nuevos) h._padre = null;
+      const dentro = (i) => { for (const h of nuevos) { desengancha(h); h._padre = n; } n.hijos.splice(i, 0, ...nuevos); };
+      const fuera = (desplaza) => {
+        const p = n._padre;
+        if (!p) return; // el navegador no hace nada sin padre; aquí tampoco se inventa uno
+        const i = p.hijos.indexOf(n);
+        for (const h of nuevos) { desengancha(h); h._padre = p; }
+        p.hijos.splice(i < 0 ? p.hijos.length : i + desplaza, 0, ...nuevos);
+      };
+      const donde = String(posicion || '').toLowerCase();
+      if (donde === 'afterbegin') dentro(0);
+      else if (donde === 'beforeend') dentro(n.hijos.length);
+      else if (donde === 'beforebegin') fuera(0);
+      else if (donde === 'afterend') fuera(1);
+      // Una posición que no existe NO se trata como `beforeend`: el navegador lanza, y adivinar
+      // aquí pondría el marcado en un sitio que el producto no pidió.
+      else throw new SyntaxError(`insertAdjacentHTML: posición no válida «${posicion}»`);
+    },
     // ⚠️ SCRUM-444 · `children`, `firstElementChild` y un `remove()` QUE DE VERDAD QUITA.
     //
     // Antes `remove()` era un NO-OP y `children` no existía. Con eso, una vista que gestione una
@@ -838,6 +870,34 @@ export function cargarDashboard(raiz, opciones = {}) {
  * Pinta una vista y devuelve lo que salió. **No lanza**: devuelve el error, para que el test
  * pueda enseñar el mensaje en vez de morir con una traza sin contexto.
  */
+/**
+ * 🔴 SCRUM-698 · LA FORMA MÍNIMA PARA QUE UNA VISTA LLEGUE A MONTARSE.
+ *
+ * El `fetch` del banco devuelve `{}` cuando nadie le pasa `datos`, y `{}.filter` no existe: por
+ * eso CINCO pantallas del panel no llegaban a montarse —`quoteRequests`, `team`, `templates`,
+ * `plans` y `albaranDetail`— y ningún guard apoyado en el banco podía afirmar NADA sobre ellas.
+ * Medido: no falla ninguna de las cinco por su código; fallan porque se les sirve `{}`.
+ *
+ * ⚠️ QUÉ ES Y QUÉ NO ES. Esto NO es el contrato del backend y no se puede usar para afirmar nada
+ * sobre el CONTENIDO de una pantalla: es la forma mínima que hace falta para que la vista llegue
+ * a pintarse, derivada de lo que cada una PIDE. Quien quiera medir contenido pasa sus propios
+ * datos, como se ha hecho siempre — este fixture no le quita el sitio a nadie.
+ *
+ * Y por eso NO se pone como valor por defecto de `cargarDashboard`: cambiar lo que reciben las
+ * vistas que hoy se montan movería mediciones ajenas sin que nadie lo pidiera. Se ofrece, no se
+ * impone.
+ */
+export function datosDeMuestra(url) {
+  const u = String(url || '');
+  // Un objeto con `plans`: la vista hace `plans[0]` sin comprobarlo antes.
+  if (/\/billing\/plans/.test(u)) return { plans: [], currentPlan: null, founding: null };
+  // Un albarán con ESTADO CONOCIDO. El estado importa: `destinoEfectivo` devuelve `undefined`
+  // para un estado que el registro no contempla, y la vista revienta al agrupar los botones.
+  if (/\/albaranes\//.test(u)) return { id: 1, estado: 'borrador', lines: [], items: [] };
+  // Las listas del panel esperan un array. Es lo que devuelven sus endpoints.
+  return [];
+}
+
 export async function pintarVista(banco, nombreFn) {
   const fn = banco.ctx[nombreFn];
   if (typeof fn !== 'function') {
@@ -845,6 +905,31 @@ export async function pintarVista(banco, nombreFn) {
   }
   const contenedor = banco.mk('div');
   const idsAntes = banco.reg.idsNoResueltos.length;
+
+  // 🔴 SCRUM-698 · LOS RECHAZOS HUÉRFANOS SE RECOGEN, NO MATAN EL PROCESO.
+  //
+  // `reportsView` dispara su carga SIN esperarla (`load()`, `loadVat()`), así que su promesa no
+  // pasa por aquí: cuando rechaza, no hay nadie que la maneje y el proceso ENTERO se cae. Y eso,
+  // en una tanda, es el defecto de SCRUM-672 con otra cara: **el fichero muere y se lleva sus
+  // tests con él**, sin un `fail` que diga quién fue. El total baja y el porcentaje de verdes
+  // puede incluso mejorar.
+  //
+  // No se puede resolver envolviendo la vista —la promesa huérfana no vuelve por ningún sitio—,
+  // así que se apartan los oyentes MIENTRAS dura el montaje y se devuelven en un `finally`.
+  //
+  // 🔴 ESTO NO ES TRAGARSE NADA: los rechazos SE DEVUELVEN en `rechazos`, con su vista delante,
+  // para que un test pueda exigir que estén vacíos y NOMBRAR al culpable. Lo que se aparta es el
+  // veredicto automático del runner, no la medición.
+  const rechazos = [];
+  const oyentes = process.listeners('unhandledRejection');
+  process.removeAllListeners('unhandledRejection');
+  const anota = (e) => rechazos.push(`${nombreFn}: ${String((e && e.message) || e).slice(0, 120)}`);
+  process.on('unhandledRejection', anota);
+  const devolverOyentes = () => {
+    process.off('unhandledRejection', anota);
+    for (const o of oyentes) process.on('unhandledRejection', o);
+  };
+
   try {
     const r = fn(contenedor);
     // 🔴 SCRUM-448 · SE ESPERA LA VISTA **O** UNOS TICKS, LO QUE PASE ANTES.
@@ -860,14 +945,19 @@ export async function pintarVista(banco, nombreFn) {
     if (r && typeof r.then === 'function') await Promise.race([r, ticks]);
     await ticks;
   } catch (e) {
-    return { error: e, contenedor };
+    devolverOyentes();
+    return { error: e, contenedor, rechazos };
   }
+  devolverOyentes();
   return {
     error: null,
     contenedor,
     nodos: todos(contenedor).length,
     idsNoResueltos: banco.reg.idsNoResueltos.slice(idsAntes),
     erroresDeConsola: banco.reg.errores.slice(),
+    // Vacío casi siempre. Cuando no lo esté, dice QUÉ vista dejó la promesa suelta y con qué
+    // error — que es justo lo que el proceso muriéndose no decía.
+    rechazos,
   };
 }
 
