@@ -16,6 +16,7 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { escribirAsignados, loVe, principalDe, normalizarAsignados }
   from '../dist/modules/jobs/domain/asignacionDeTrabajo.js';
+import { soloCodigo, literalesDe } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -236,11 +237,12 @@ test('SCRUM-650d · 🔴 el cuerpo del PATCH manda LA LISTA, y jamás `operarioI
 test('SCRUM-650d · 🔴 el módulo de la pantalla no NOMBRA `operarioId` en su código', () => {
   // ⚠️ Se lee el código SIN COMENTARIOS: la cabecera EXPLICA que no se toca `operarioId`, y un
   // guard por texto se cazaría a sí mismo en la explicación (la trampa que ya mordió en SCRUM-118).
-  const sinComentarios = FUENTE_FRONT
-    .split(/\r?\n/)
-    .map((l) => l.replace(/\/\/.*$/, ''))
-    .join('\n')
-    .replace(/\/\*[\s\S]*?\*\//g, ' ');
+  //
+  // Y el filtro NO se fabrica aquí (SCRUM-693/694): `soloCodigo` tokeniza con el scanner de
+  // TypeScript, así que ni se come una línea de código con `https://` dentro de una cadena ni deja
+  // pasar un texto escrito dentro de un bloque `/* */`. Mi primera versión era un regex por líneas
+  // y tenía las dos averias.
+  const sinComentarios = soloCodigo(FUENTE_FRONT, 'jobAsignados.js');
   assert.equal(/operarioId|operario_id/.test(sinComentarios), false,
     '🔴 el código del selector nombra `operarioId`. Es AUTORÍA (SCRUM-52), no quién ejecuta ' +
     '(SCRUM-10): el backfill de `job_assignees` alimentó la tabla SOLO desde `assigned_user_id` y ' +
@@ -348,6 +350,42 @@ test('SCRUM-650d · 🔴 TODAS las salidas de `serializeJobDetail` llevan `asign
     '  se reparte entre varios.');
 });
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// § 3c · 🔴 LO QUE SE PINTA TIENE ESTILO (AB6)
+//
+// LO ENCONTRÉ EN MI PROPIO TRABAJO: el módulo pintaba `job-asignados-*` y esas clases no existían
+// en ninguna hoja. El selector salía sin caja, sin separación y sin objetivo táctil — y nada
+// fallaba, porque una clase inventada no da error: simplemente no aplica nada.
+//
+// La lista de clases se DERIVA del módulo (sus literales, por el scanner), no se escribe a mano:
+// una clase nueva sin estilo entra en el guard sola.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-650d · 🔴 toda clase que pinta el selector EXISTE en la hoja, y la fila mide 44 px', () => {
+  const css = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8');
+  const clases = [...new Set(literalesDe(FUENTE_FRONT, 'jobAsignados.js')
+    .filter((s) => /^job-asignados/.test(s)))];
+
+  // SUELO: si no se ve ninguna clase, «todas tienen estilo» sería verdad sin significar nada.
+  assert.ok(clases.length >= 5,
+    `🔴 solo se han visto ${clases.length} clases del selector (${JSON.stringify(clases)}). ` +
+    'El extractor no está leyendo el módulo y el guard mediría el vacío.');
+
+  // 🔴 Anclado a PRINCIPIO DE LÍNEA: sin eso, `.job-asignados-fila:hover` bastaría para dar por
+  // estilada una clase que solo aparece colgando de otra regla.
+  const sinEstilo = clases.filter((c) => !new RegExp('^[.]' + c + '\\b', 'm').test(css));
+  assert.deepEqual(sinEstilo, [],
+    `🔴 EL SELECTOR PINTA CLASES QUE NO EXISTEN EN LA HOJA: ${sinEstilo.join(', ')}.\n`
+    + '  Una clase inventada no da error: no aplica nada. El bloque sale sin caja, sin separación y\n'
+    + '  sin objetivo táctil, y la pantalla parece rota sin que nada falle.');
+
+  // AB6: se marca de pie, en la obra. El número vive en la HOJA y aquí se comprueba que sigue ahí.
+  const fila = /^\.job-asignados-fila\s*\{[^}]*\}/m.exec(css);
+  assert.ok(fila, '🔴 no se encuentra la regla de `.job-asignados-fila` en la hoja.');
+  assert.match(fila[0], /min-height:\s*44px/,
+    '🔴 la fila del selector ha dejado de declarar 44 px de alto (AB6). Se marca de pie, en una ' +
+    'obra y con guantes: por debajo de eso se falla el toque y se asigna a quien no era.');
+});
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // § 4 · REGLA 30 · EL TEXTO NO LO APRUEBO YO
 // ═════════════════════════════════════════════════════════════════════════════════════════

@@ -150,9 +150,9 @@ function construirSelectorAsignados(doc, opts) {
   var casillas = [];
   asignables.forEach(function (m) {
     var fila = doc.createElement('label');
+    // El objetivo táctil de 44 px (AB6) vive en la HOJA, no aquí: escrito en los dos sitios son
+    // dos fuentes para el mismo número, y se separan en cuanto alguien toca una.
     fila.className = 'job-asignados-fila';
-    // AB6: objetivo táctil de 44 px. Se asigna desde la obra, con guantes.
-    fila.style.minHeight = '44px';
 
     var casilla = doc.createElement('input');
     casilla.type = 'checkbox';
