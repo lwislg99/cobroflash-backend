@@ -52,13 +52,16 @@ const MARCA = '[PENDIENTE';
  * a otra tiene que verse, y un total lo escondería (la lección del suelo por FUNCIÓN de SCRUM-392).
  */
 const CENSO = Object.freeze({
-  // Sprint Tecnosel · ENTRA A CONCIENCIA con 1: la pantalla donde la OFICINA pone los precios de
-  // un parte ya firmado. El mecanismo no existe sin texto —es un formulario— y su copy no está
-  // firmado: el fundador lo aprueba en docs/master/SCRUM-685.md. Se cuenta 1 y son ocho textos,
-  // todos de una sola constante `MARCA_OFICINA`, así que aprobarlos los apaga de golpe.
+  // Sprint Tecnosel (3-sep-2026) · el título de `app.js` ENTRÓ y SALIÓ el mismo día: el fundador
+  // firmó «Partes por valorar». Su entrada se BORRA y no se pone a 0 (SCRUM-424 / SCRUM-405):
+  // `censoActual()` sólo lista ficheros CON marcadores. El trinquete APRIETA.
+  //
+  // 🔴 Y `parteOficinaView.js` SE QUEDA CON 1, que es el recuento honesto: de sus textos, el
+  // fundador firmó ONCE y **uno no estaba en esa lista** — «No hemos podido abrir el parte».
+  // Bajar la entrada a 0 «porque se aprobó la microcopy» habría sacado del censo un marcador que
+  // sigue pintándose. Baja el día que se firme ese último texto, que va propuesto en
+  // `docs/master/SCRUM-703.md`.
   'parteOficinaView.js': 1,
-  // Y el TÍTULO de la vista, que lo pone el enrutador: mismo texto sin aprobar, otro fichero.
-  'app.js': 1,
   // (el boton de Trabajos que lleva ahi NO entra: usa la constante `MARCA_651`, no un literal,
   // asi que este censo —que cuenta LITERALES por AST— no lo ve, y con razon.)
   // SCRUM-651 (T2) · ENTRA A CONCIENCIA con 1, y el motivo es que EL MECANISMO NO EXISTE SIN
