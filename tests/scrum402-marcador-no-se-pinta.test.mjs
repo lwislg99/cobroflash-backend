@@ -69,22 +69,18 @@ const CENSO = Object.freeze({
   // firmara—, y ése era exactamente el motivo por el que esta entrada no bajaba a 0 antes de
   // tiempo. La entrada se BORRA, no se pone a 0: `censoActual()` sólo lista ficheros CON
   // marcadores. COMPROBADO antes de borrarla: cero marcadores en el fichero (SCRUM-703).
-  // 🔴 SCRUM-591 (DOC-01) · 3-sep-2026 · `quotesView.js` ENTRA con 1, A CONCIENCIA.
+  // 🔴 SCRUM-591 (DOC-01) · 3-sep-2026 · `quotesView.js` ENTRÓ y SALIÓ EL MISMO DÍA.
   //
-  // Es la opción de ALTA del selector de cliente del documento, y aquí pasa lo mismo que en
-  // SCRUM-651: EL MECANISMO NO EXISTE SIN TEXTO. Una `<option>` sin rótulo no se puede elegir,
-  // así que o se pinta el marcador o se inventa un literal que no ha aprobado nadie — y eso, en
-  // la pantalla de un profesional que paga, es peor que un marcador visible.
+  // Entró con 1 —la opción de alta del selector del documento, y una `<option>` sin rótulo no se
+  // puede elegir— y el asesor firmó el texto esa misma tarde: **«+ Nuevo cliente»**, 15
+  // caracteres, con la caja medida delante (901px, 247,7px útiles ≈ 18 caracteres anchos). Su
+  // entrada se BORRA, no se pone a 0 (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista ficheros
+  // CON marcadores, y el trinquete APRIETA.
   //
-  // ⚠️ Y SE ESCRIBE CON LA GRAFÍA QUE ESTE CENSO CUENTA (`[PENDIENTE`), a propósito: el encargo
-  // proponía `[[MICROCOPY-PENDIENTE-…]]`, medido y DESCARTADO porque este censo no lo ve —lo dice
-  // el comentario de más abajo, que ya lo pagó una vez—. Un marcador invisible para el trinquete
-  // es una frase sin aprobar en pantalla que nadie está contando.
-  //
-  // El asesor lo firma con la caja medida delante (SCRUM-591, en el navegador): el peor caso es
-  // un viewport de 901px —tres columnas—, 247,7px útiles ≈ 18 caracteres anchos, 29 estrechos o
-  // 34 de texto español real. El día que lo firme, esta entrada se BORRA — no se pone a 0.
-  'quotesView.js': 1,
+  // MEDIDO AL RETIRARLO, sobre este árbol y no sobre el de antes de mezclar `main`: **15 → 14**
+  // marcadores pintables, y de 15 a 14 ficheros. (La primera medición dio 18 → 17, pero era antes
+  // de que entrara SCRUM-703 y sacara a `jobNuevoModal.js`: se re-midió en vez de copiarla, que es
+  // como una cifra correcta se queda vieja sin que nadie lo note.)
   // 🔴 SCRUM-652 (fase D) · 2-sep-2026 · `jobDetailView.js` ENTRA con 2, A CONCIENCIA.
   //
   // Son la PUERTA al parte de trabajo: el rótulo del botón que lo abre desde el Trabajo, y el

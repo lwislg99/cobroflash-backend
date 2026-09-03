@@ -203,17 +203,28 @@ test('SCRUM-591 · 🔴 el selector del documento ofrece el alta, y su valor NO 
     '🔴 el valor de la opción de alta podría confundirse con un id de cliente.');
 });
 
-test('SCRUM-591 · ⚠️ la microcopy de la opción está PENDIENTE, y se declara', () => {
+test('SCRUM-591 · ✅ la microcopy FIRMADA es literal, y es la MISMA que la de Clientes', () => {
+  // Firmada por el asesor el 3-sep-2026: «+ Nuevo cliente», 15 caracteres. Se compara ENTERA y
+  // con `===`: un `includes` dejaría colar «+ Nuevo cliente…» o «+ nuevo cliente» sin que nada
+  // cayera, y microcopy aprobada que deriva sola es microcopy que deja de estar aprobada.
   const doc = leer(VISTA_DOC);
   const lit = literalesDe(doc, 'quotesView.js');
-  const marcador = lit.find((l) => l.includes('[PENDIENTE') && l.includes('DOC-01'));
-  assert.ok(marcador,
-    '🔴 la opción de alta ya no pinta marcador. Si el asesor ha firmado el texto, hay que quitar\n' +
-    '   también la entrada de `quotesView.js` del censo de SCRUM-402 — y este test con ella.');
-  assert.ok(marcador.startsWith('[PENDIENTE'),
-    `🔴 el marcador se escribe con una grafía que el censo de SCRUM-402 NO cuenta: «${marcador}».\n` +
-    '   Ese censo busca `[PENDIENTE`, y un marcador que no cuenta es una frase sin aprobar en\n' +
-    '   pantalla que nadie está vigilando. Ya pasó una vez y está escrito en aquel fichero.');
+  assert.ok(lit.includes('+ Nuevo cliente'),
+    '🔴 la opción de alta ya no pinta el texto firmado «+ Nuevo cliente».');
+  assert.ok(/const TEXTO_ALTA_RAPIDA\s*=\s*"\+ Nuevo cliente"/.test(doc),
+    '🔴 el texto firmado ya no vive en una sola constante.');
+
+  // 🔴 UN NOMBRE POR ACCIÓN: es el MISMO literal que el botón de la lista de Clientes (SCRUM-599).
+  // Dos nombres distintos para la misma acción es cómo un profesional aprende que son dos.
+  const clientes = literalesDe(leer(VISTA_CLIENTES), 'customersView.js');
+  assert.ok(clientes.includes('+ Nuevo cliente'),
+    '🔴 el botón de la lista de Clientes ya no dice «+ Nuevo cliente». Si allí cambió el texto,\n' +
+    '   aquí hay que cambiarlo también o la misma acción pasa a tener dos nombres.');
+
+  // Y no queda ningún marcador pendiente en esta vista: si vuelve uno, hay que declararlo en el
+  // censo de SCRUM-402, que es quien los cuenta.
+  assert.ok(!lit.some((l) => l.includes('[PENDIENTE')),
+    '🔴 ha vuelto un marcador de microcopy a `quotesView.js` y no está declarado en SCRUM-402.');
 });
 
 // ── CONTROL NEGATIVO: LO COSMÉTICO NO MUEVE NADA ────────────────────────────────────────

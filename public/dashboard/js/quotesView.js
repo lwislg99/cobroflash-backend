@@ -1049,16 +1049,19 @@ blockDelivery.appendChild(descWrapper);
   // habrían sido dos altas que divergen, y el aviso de duplicado de CONT-05 se habría quedado
   // en una sola — justo donde más duplicados nacen, que es el alta rápida con prisa.
   //
-  // ⚠️ MICROCOPY PENDIENTE. El texto de la opción NO está aprobado: se pinta el marcador y el
-  // asesor lo firma con la caja medida delante (SCRUM-591, medido el 3-sep-2026 en el navegador:
-  // el peor caso es un viewport de 901px —tres columnas—, donde caben 247,7px útiles ≈ 18
-  // caracteres anchos, 29 estrechos o 34 de texto español real). Inventar aquí un texto
-  // «provisional» sería ponerle a un profesional una frase que no ha aprobado nadie.
+  // ✅ MICROCOPY FIRMADA POR EL ASESOR el 3-sep-2026: «+ Nuevo cliente», 15 caracteres.
+  //
+  // Cabe con margen en el peor caso medido en navegador real (SCRUM-591): viewport de 901px
+  // —tres columnas—, 247,7px útiles ≈ 18 caracteres anchos, 29 estrechos, 34 de texto español.
+  //
+  // 🔴 Y ES EL MISMO LITERAL QUE EL BOTÓN DE LA LISTA DE CLIENTES (SCRUM-599, aprobado y medido
+  // allí en navegador). Un nombre por acción: dos nombres distintos para la misma acción es cómo
+  // un profesional aprende que son dos acciones distintas.
   // ═══════════════════════════════════════════════════════════════════════════════════════
 
   /** El valor de la opción de alta. No es un id: ningún cliente puede llamarse así. */
   const VALOR_ALTA_RAPIDA = "__alta_cliente__";
-  const TEXTO_ALTA_RAPIDA = "[PENDIENTE microcopy · DOC-01 opción de alta]";
+  const TEXTO_ALTA_RAPIDA = "+ Nuevo cliente";
   /** Lo que había seleccionado antes de abrir el formulario, para poder volver si se cancela. */
   let clienteAntesDelAlta = "";
 
@@ -1075,18 +1078,20 @@ blockDelivery.appendChild(descWrapper);
     optEmpty.textContent = "Selecciona un cliente…";
     select.appendChild(optEmpty);
 
+    // 🔴 LA PRIMERA, justo detrás del placeholder — NUNCA al final (asesor, 3-sep-2026). En un
+    // `<select>` nativo con doscientos clientes el final de la lista no existe: la acción que
+    // desbloquea al profesional no puede estar donde no va a mirar nadie.
+    const optAlta = document.createElement("option");
+    optAlta.value = VALOR_ALTA_RAPIDA;
+    optAlta.textContent = TEXTO_ALTA_RAPIDA;
+    select.appendChild(optAlta);
+
     customersList.forEach(function (c) {
       const opt = document.createElement("option");
       opt.value = c.id;
       opt.textContent = c.name + (c.phone ? " (" + c.phone + ")" : "");
       select.appendChild(opt);
     });
-
-    // La acción va AL FINAL, después de los clientes: arriba competiría con el dato.
-    const optAlta = document.createElement("option");
-    optAlta.value = VALOR_ALTA_RAPIDA;
-    optAlta.textContent = TEXTO_ALTA_RAPIDA;
-    select.appendChild(optAlta);
 
     if (seleccionado && seleccionado !== VALOR_ALTA_RAPIDA) select.value = seleccionado;
   }

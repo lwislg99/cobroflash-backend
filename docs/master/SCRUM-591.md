@@ -4,7 +4,7 @@
 
 **Medido contra:** `origin/main` = `b57ccbb37f5d3565922696691ce052836f5c23c1` · 2026-09-03T14:03:34+02:00
 
-**Tanda:** 4955 tests, 4871 pass, **0 fail**, 84 skipped — medida DESPUÉS del último cambio, entrada incluida, con el cliente de Prisma regenerado desde este worktree. Suelo de la tanda: `suelo 4798 · total 4955 · margen 157`.
+**Tanda:** 4989 tests, 4905 pass, **0 fail**, 84 skipped — medida DESPUÉS del último cambio, entrada incluida, con `main` dentro (23 commits) y Prisma regenerado. Suelo: `suelo 4798 · total 4989 · margen 191`.
 
 ---
 
@@ -36,9 +36,14 @@ El encargo dice *«al teclear en el selector… aparece una opción de alta con 
 (`createFieldSelect`, L310-320, construye un `<select>` pelado). En un `<select>` nativo no se
 teclea, así que **«lo tecleado» no existe**.
 
-Y no es un descuido que se pueda deshacer de paso: SCRUM-611 **migró ese control de `<input>` a
-`<select>` a propósito** (`quotesView.js:2615`: *«un `<select>` avisa por `change`; el `<input>` que
-había avisaba por `input`»*). Convertirlo en buscador es cambiar la forma de la pantalla y proponer
+Y no es un descuido que se pueda deshacer de paso: **el comentario del propio código dice que la
+migración de `<input>` a `<select>` fue deliberada** (`quotesView.js:2615`: *«un `<select>` avisa
+por `change`; el `<input>` que había avisaba por `input`»*).
+
+> ⚠️ Ese comentario **la atribuye a SCRUM-611**, y eso es lo único que he medido: lo pone el
+> código. **No he comprobado el historial**, y el asesor avisa de que ese ticket no tiene commits.
+> La atribución queda como lo que es —una cita del comentario, no un hecho verificado— y se
+> resolverá con `git log` en SCRUM-713. Convertirlo en buscador es cambiar la forma de la pantalla y proponer
 un componente nuevo al inventario AB3 — no es de este ticket y **no se ha hecho**.
 
 **Lo entregado:** una opción de alta en el selector que ya existe. El mecanismo **sí acepta un
@@ -89,7 +94,7 @@ en los tres.
 | `customersView.js` · IIFE final | el formulario, FUERA del cierre, publicando `window.altaClienteModal` |
 | `abrirNuevo({nombre, alGuardar})` | la entrada nueva: abre **el mismo** formulario y devuelve el cliente creado |
 | `configurar({avisar, trasGuardar})` | las dos costuras: la vista de Clientes presta su caja de avisos y su recarga |
-| `quotesView.js` | la opción de alta, el centinela, y el pintado de opciones en **una sola** función |
+| `quotesView.js` | la opción de alta **la primera**, el centinela, y el pintado de opciones en **una sola** función |
 | `tests/scrum591-alta-desde-el-documento.test.mjs` | 11 tests |
 
 ### 🔴 La forma que se probó y se DESCARTÓ, con la medida delante
@@ -133,7 +138,33 @@ El aviso de CONT-05 llega al alta rápida, que es donde más duplicados nacen.
 
 ## Tres cosas que aparecieron al medir, y no se resolvieron a ojo
 
-### ① El marcador que el trinquete NO veía
+### ✅ MICROCOPY FIRMADA POR EL ASESOR el 3-sep-2026: «+ Nuevo cliente»
+
+**15 caracteres.** Cabe con margen en el peor caso medido (18 anchos a 901px) y ni se acerca a los
+34 de texto español real. **Va la PRIMERA, justo detrás del placeholder** —nunca al final: en un
+`<select>` nativo con doscientos clientes, el final de la lista no existe.
+
+**Y es EL MISMO literal que el botón de la lista de Clientes** (SCRUM-599), verificado en el
+código: `customersView.js:69`. Un nombre por acción — dos nombres distintos para la misma acción
+es cómo un profesional aprende que son dos acciones distintas. El test lo ata **por los dos lados**:
+si el botón de Clientes cambia de texto, este guard cae.
+
+**El contador de microcopy pendiente BAJA, con el número delante:**
+
+```
+ANTES (con el marcador)  → 15 marcadores pintables en 15 ficheros · quotesView.js: 1
+AHORA (literal firmado)  → 14 marcadores pintables en 14 ficheros · quotesView.js: 0
+```
+
+> La primera vez que lo medí dio **18 → 17**, y esa cifra ya no vale: entre medias entró
+> SCRUM-703 en `main` y sacó `jobNuevoModal.js` del censo. **Se volvió a medir sobre el árbol
+> mezclado en vez de copiar el número**, que es exactamente como una cifra correcta se queda vieja
+> sin que nadie lo note.
+
+La entrada de `quotesView.js` en el censo de SCRUM-402 se **BORRA**, no se pone a 0: ese censo
+sólo lista ficheros CON marcadores, y así el trinquete aprieta en vez de aflojarse.
+
+### ① El marcador que el trinquete NO veía (y que el encargo mandaba usar)
 
 El encargo pedía pintar `[[MICROCOPY-PENDIENTE-DOC-01-OPCION-ALTA]]`. Medido: **el censo de
 SCRUM-402 no lo cuenta** — cuenta `[PENDIENTE`, y su propio fichero ya lo dejó escrito («ese
