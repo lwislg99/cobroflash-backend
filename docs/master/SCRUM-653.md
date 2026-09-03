@@ -142,3 +142,127 @@ Es el caso de `libroRegistroView` otra vez: **un 1 que son cinco rótulos**.
 ## ⛔ No aplicado a ninguna base
 
 Ni a dev. El ② lo ejecuta el fundador, base por base, antes de mergear esto.
+
+
+---
+
+# Censo de nombres · el PASO 0 de la casa aplicado al esquema
+
+**Medido contra:** `origin/main` = `4e9e114d1620386c76982efbc4eeae1e9d55fc06` · 2026-09-03T14:05:00+02:00
+**Leído de `prisma/schema.prisma`**, no de memoria.
+
+## ① `partes_trabajo` HOY — cinco campos, y ninguno es una imagen
+
+| Campo Prisma | Columna | Tipo |
+|---|---|---|
+| `firmadoAt` | `firmado_at` | `DateTime?` |
+| `firmadoPorNombre` | `firmado_por_nombre` | `String?` |
+| `firmadoPorCalidad` | `firmado_por_calidad` | `String?` |
+| `contenidoHash` | `contenido_hash` | `String?` |
+| `contenidoVersion` | `contenido_version` | `Int?` |
+
+**No hay ninguna columna de imagen.** Ni de firmante técnico. Ni token, ni evidencia.
+
+## ② `albaranes` — el linaje, ocho campos
+
+| Campo Prisma | Columna | Tipo |
+|---|---|---|
+| `signatureUrl` | `signature_url` | `String? @db.Text` |
+| `firmadoAt` | `firmado_at` | `DateTime?` |
+| `firmadoPorNombre` | `firmado_por_nombre` | `String?` |
+| `firmadoPorCalidad` | `firmado_por_calidad` | `String?` |
+| `firmaToken` | `firma_token` | `String? @unique` |
+| `enviadoParaFirmaAt` | `enviado_para_firma_at` | `DateTime?` |
+| `evidenciaFirma` | `evidencia_firma` | `Json?` |
+| `estado` | `estado` | `String @default("borrador")` |
+
+**La convención del linaje, leída de ahí:** la IMAGEN se llama `signature_url`; la METADATA va en
+castellano, `firmado_*`. Y el barrido de TODO el esquema lo confirma: la imagen de una firma se
+llama `signatureUrl` en **`Quote` y en `Albaran`** — dos documentos, un nombre.
+
+## ③ Qué escribe cada ruta — medido sobre el CÓDIGO, no sobre el nombre
+
+Acotando el cuerpo de cada ruta con `tests/_cuerpo-de-ruta.mjs` (paréntesis balanceados sobre el
+código blanqueado), el `data:` de cada `update` en `origin/main`:
+
+```
+POST /admin/partes/:id/firmar   (cliente)
+   estado: 'firmado',
+   firmadoAt,
+   firmadoPorNombre: nombre.nombre,
+   firmadoPorCalidad: calidad.valor,
+   contenidoHash,
+   contenidoVersion: PARTE_CONTENIDO_VERSION_ACTUAL,
+
+POST /admin/partes/:id/firmar-tecnico   →  NO EXISTE en main
+```
+
+⚠️ **Mi primer instrumento mintió por omisión:** filtraba las líneas por `:` y se comía
+`firmadoAt,` y `contenidoHash,`, que son propiedades abreviadas. Corregido antes de dar la lista.
+
+**La respuesta al punto 3, entonces:**
+* la ranura del CLIENTE es `firmado_at` / `firmado_por_nombre` / `firmado_por_calidad`, **sin
+  imagen** — y esa es la mitad del mecanismo que existe;
+* la ranura del TÉCNICO **no existe**. No hay medio mecanismo que reutilizar: no hay ninguno.
+
+## ④ El juego propuesto, con su coste
+
+| Opción | Qué | Coste | ¿Toca columnas existentes? |
+|---|---|---|---|
+| **A · elegida** | añadir 4: `signature_url`, `signature_tecnico_url`, `firmado_tecnico_at`, `firmado_tecnico_nombre` | asimetría de lectura: el juego del cliente va **sin** sufijo y el del técnico **con** él | **NO. Aditivo puro** |
+| B | renombrar el juego del cliente a `firmado_cliente_*` para que los dos sean simétricos | **renombra 3 columnas con datos en tres bases** | **SÍ → PARA** |
+| C | tabla `partes_trabajo_firmas`, una fila por firma | tabla nueva con todo lo que arrastra (borrado de merchant, backup, tenencia, portabilidad, censos de SCRUM-192/241/172) y hay que migrar la ranura actual | **SÍ, en la práctica → PARA** |
+
+**Se elige A.** El coste que paga —que `firmado_at` sea «el del cliente» sin decirlo en el nombre—
+se compensa en el serializador, que expone `firmoElCliente` / `firmoElTecnico` / `firmasCompletas`
+derivados, y en un comentario en el modelo.
+
+**B y C obligan a tocar columnas existentes, así que ya no son aditivas y NO se hacen aquí.**
+Renombrar una columna con datos en tres bases es otro ticket y otra conversación.
+
+### 🔴 Lo que el censo cambió antes de aplicar nada
+
+La primera versión de este PR llamaba `firma_tecnico_url` a la imagen del técnico. **Habría sido
+una TERCERA convención** para lo mismo que `Quote` y `Albaran` llaman `signature_url`.
+
+Corregido a **`signature_tecnico_url`**, y no cuesta nada porque el ALTER **no está aplicado en
+ninguna base**. Ese es exactamente el trabajo que hace un censo: verlo antes, no después.
+
+Queda: **imagen = `signature*`, metadata = `firmado_*`**, igual que el albarán.
+
+### Lo que NO se añade, y por qué
+
+`firma_token` y `enviado_para_firma_at` son del albarán porque tiene **firma remota** (un enlace
+que se manda al cliente). El parte se firma **en la obra, en el móvil del técnico**: un token para
+un enlace que nadie manda sería superficie sin uso. `evidencia_firma` tampoco: el parte no pasa por
+`buildFirmaEvidencia`, y añadir la columna sin el mecanismo es prometer una evidencia que no se
+recoge.
+
+## El matiz de Javier sobre la exposición
+
+> Que el merchant real todavía no use el producto hace la exposición PEQUEÑA HOY, no la hace CERO,
+> y sobre todo NO ARREGLA EL DEFECTO. Las fechas «desde cuándo hasta cuándo» se anotan igual,
+> porque el día que entre el primer merchant de verdad nadie va a poder reconstruir ese intervalo
+> hacia atrás.
+
+**Las fechas, anotadas:**
+
+* **Desde:** SCRUM-652 fase C, el commit que puso en pie `POST /admin/partes/:id/firmar` con la
+  validación de `signatureData` y sin columna donde guardarlo (2-sep-2026).
+* **Hasta:** el día que se aplique `docs/sql/scrum-653-dos-firmas.sql` a cada base y se mergee este
+  PR. Mientras tanto, **todo parte que se firme queda sin trazo**.
+
+**El recuento, medido** (producción, sólo lectura):
+
+```
+CONTROL:  { control_ve_la_tabla: 1, ya_existe_signature_url: 0 }
+RECUENTO: { partes_en_total: 0, estado_firmado: 0, con_fecha_de_firma: 0,
+            con_nombre_de_firmante: 0, con_sello: 0 }
+```
+
+`control_ve_la_tabla = 1`, así que el cero es un cero y no ceguera. **La tabla está vacía.**
+
+⚠️ **`dev` y `staging` NO están medidos.** `dev` no responde (no hay PostgreSQL en esta máquina,
+`P1001`) y de `staging` no tengo la cadena. **No se declara nada sobre ellas**: «no medido» y
+«cero» no son lo mismo, y esa distinción es justo la que hace que el intervalo se pueda
+reconstruir después.

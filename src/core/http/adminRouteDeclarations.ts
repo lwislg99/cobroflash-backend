@@ -139,7 +139,7 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // primera y con más razón: es LA SUYA. Dejarla admin-only sería pedirle al técnico que llame al
   // jefe para firmar su propio parte en la obra.
   //
-  // ⚠️ Y no abre puerta a dinero: escribe en `firma_tecnico_url`, `firmado_tecnico_at` y
+  // ⚠️ Y no abre puerta a dinero: escribe en `signature_tecnico_url`, `firmado_tecnico_at` y
   // `firmado_tecnico_nombre`, y responde con el serializador del técnico, que no lleva importes.
   { method: 'POST',  path: '/admin/partes/:id/firmar-tecnico', why: 'La firma del PROPIO técnico en su parte, en la obra y sin cobertura (SCRUM-653)' },
   // SCRUM-683: trabajo de campo puro. El técnico dicta EN LA OBRA con el micro del teclado de su

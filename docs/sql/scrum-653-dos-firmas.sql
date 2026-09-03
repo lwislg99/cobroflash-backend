@@ -41,7 +41,7 @@
 ALTER TABLE "partes_trabajo" ADD COLUMN IF NOT EXISTS "signature_url" TEXT;
 
 -- ── LA FIRMA DEL TÉCNICO ─────────────────────────────────────────────────────────────────
-ALTER TABLE "partes_trabajo" ADD COLUMN IF NOT EXISTS "firma_tecnico_url"      TEXT;
+ALTER TABLE "partes_trabajo" ADD COLUMN IF NOT EXISTS "signature_tecnico_url"  TEXT;
 ALTER TABLE "partes_trabajo" ADD COLUMN IF NOT EXISTS "firmado_tecnico_at"     TIMESTAMP(3);
 ALTER TABLE "partes_trabajo" ADD COLUMN IF NOT EXISTS "firmado_tecnico_nombre" TEXT;
 
@@ -59,7 +59,7 @@ ALTER TABLE "partes_trabajo" ADD COLUMN IF NOT EXISTS "firmado_tecnico_nombre" T
 --         AND column_name='signature_url')                                    AS signature_url,
 --     (SELECT count(*) FROM information_schema.columns
 --       WHERE table_schema='public' AND table_name='partes_trabajo'
---         AND column_name='firma_tecnico_url')                                AS firma_tecnico_url,
+--         AND column_name='signature_tecnico_url')                            AS signature_tecnico_url,
 --     (SELECT count(*) FROM information_schema.columns
 --       WHERE table_schema='public' AND table_name='partes_trabajo'
 --         AND column_name='firmado_tecnico_at')                               AS firmado_tecnico_at,

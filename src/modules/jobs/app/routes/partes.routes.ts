@@ -574,7 +574,7 @@ router.post('/:id/firmar-tecnico', async (req: any, res) => {
         estado: 'firmado',
         firmadoTecnicoAt: new Date(),
         firmadoTecnicoNombre: nombre.nombre,
-        firmaTecnicoUrl: signatureData,
+        signatureTecnicoUrl: signatureData,
         contenidoHash,
         contenidoVersion: parte.contenidoVersion ?? PARTE_CONTENIDO_VERSION_ACTUAL,
       },

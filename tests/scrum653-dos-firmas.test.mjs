@@ -191,7 +191,7 @@ test('SCRUM-653 · 🔴 EL TRAZO SE GUARDA — las dos firmas', () => {
     '🔴 la firma del CLIENTE se valida y se tira: no se guarda en ninguna columna.');
 
   const tecnico = rutaSinComentarios(/router\.post\('\/:id\/firmar-tecnico'[\s\S]*?\n\}\);/);
-  assert.match(tecnico, /firmaTecnicoUrl:\s*signatureData/,
+  assert.match(tecnico, /signatureTecnicoUrl:\s*signatureData/,
     '🔴 la firma del TÉCNICO se valida y se tira.');
 });
 
@@ -201,7 +201,7 @@ test('SCRUM-653 · 🔴 el schema declara las cuatro columnas, y ninguna es obli
   assert.ok(m, '🔴 SUELO: no encuentro `model ParteTrabajo`');
   const bloque = soloCodigo(m[0], 'parte.prisma');
 
-  for (const campo of ['signatureUrl', 'firmaTecnicoUrl', 'firmadoTecnicoAt', 'firmadoTecnicoNombre']) {
+  for (const campo of ['signatureUrl', 'signatureTecnicoUrl', 'firmadoTecnicoAt', 'firmadoTecnicoNombre']) {
     const linea = bloque.split('\n').find((l) => new RegExp(`^\\s*${campo}\\s`).test(l));
     assert.ok(linea, `🔴 falta la columna \`${campo}\``);
     assert.match(linea, /\?/,

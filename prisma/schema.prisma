@@ -1285,7 +1285,7 @@ model ParteTrabajo {
   // El técnico no es «alguien en calidad de»: es un empleado identificado del merchant. Darle una
   // ranura de calidad sería ofrecerle declarar que firma «en nombre del cliente», que es
   // exactamente lo que no puede hacer.
-  firmaTecnicoUrl      String?   @map("firma_tecnico_url") @db.Text
+  signatureTecnicoUrl  String?   @map("signature_tecnico_url") @db.Text
   firmadoTecnicoAt     DateTime? @map("firmado_tecnico_at")
   firmadoTecnicoNombre String?   @map("firmado_tecnico_nombre")
   /// Huella del CONTENIDO (sin precios) y su versión de canónico.
