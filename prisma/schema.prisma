@@ -1259,6 +1259,35 @@ model ParteTrabajo {
   firmadoAt         DateTime? @map("firmado_at")
   firmadoPorNombre  String?   @map("firmado_por_nombre")
   firmadoPorCalidad String?   @map("firmado_por_calidad")
+
+  // ═════════════════════════════════════════════════════════════════════════════
+  // SCRUM-653 · LAS DOS FIRMAS DEL PAPEL: «FIRMA CLIENTE» y «FIRMA TÉCNICO»
+  // ═════════════════════════════════════════════════════════════════════════════
+  //
+  // 🔴 `signatureUrl` NO ES «la segunda mitad»: ES UN DEFECTO QUE SE ARREGLA AQUÍ.
+  //
+  // Medido el 3-sep-2026: la ruta de firmar del parte VALIDA `signatureData` —regex de PNG/JPEG y
+  // tope de tamaño— y luego **no lo guarda en ninguna parte**. El `update` escribe estado, fecha,
+  // nombre, calidad y el hash; el TRAZO SE TIRA. O sea que hasta hoy el parte guardaba que se
+  // firmó y quién dijo ser, pero no la firma. El albarán sí la guarda (`Albaran.signatureUrl`).
+  // Es un defecto de la fase C, y sale a la luz al ir a añadir la segunda.
+  //
+  // Mismo nombre y misma forma que en `Albaran`: data-URI en `@db.Text`.
+  signatureUrl String? @map("signature_url") @db.Text
+
+  // ── LA FIRMA DEL TÉCNICO ──────────────────────────────────────────────────────────
+  //
+  // 🔴 Y AQUÍ NO HAY `firmadoTecnicoCalidad`, A PROPÓSITO. Las seis opciones de
+  // `albaranFirmante.ts` —«el propio cliente», «un familiar o conviviente», «portero o
+  // conserje»…— existen porque quien firma en la obra POR EL CLIENTE puede ser cualquiera, y hay
+  // que dejar constancia de EN CALIDAD DE QUÉ firma.
+  //
+  // El técnico no es «alguien en calidad de»: es un empleado identificado del merchant. Darle una
+  // ranura de calidad sería ofrecerle declarar que firma «en nombre del cliente», que es
+  // exactamente lo que no puede hacer.
+  firmaTecnicoUrl      String?   @map("firma_tecnico_url") @db.Text
+  firmadoTecnicoAt     DateTime? @map("firmado_tecnico_at")
+  firmadoTecnicoNombre String?   @map("firmado_tecnico_nombre")
   /// Huella del CONTENIDO (sin precios) y su versión de canónico.
   contenidoHash     String?   @map("contenido_hash")
   contenidoVersion  Int?      @map("contenido_version")
