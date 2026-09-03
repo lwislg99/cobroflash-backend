@@ -50,6 +50,7 @@ const SHELL = [
   '/dashboard/js/prefijosPais.js', // SCRUM-578
   '/dashboard/js/customersView.js',
   '/dashboard/js/quotesTabs.js', // SCRUM-432
+  '/dashboard/js/atajoNuevo.js',
   '/dashboard/js/quotesListView.js',
   '/dashboard/js/quoteMargen.js',
   '/dashboard/js/quoteSuplido.js',
