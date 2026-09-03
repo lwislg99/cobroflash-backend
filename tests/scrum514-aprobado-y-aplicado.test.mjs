@@ -15,28 +15,66 @@
 // texto, no aplicarlo nunca, y ninguna tanda decía nada. Es exactamente lo que pasó durante tres
 // semanas con los rótulos del 17-ago.
 //
-// ⚠️ LA FUENTE ES EL FICHERO, Y NADA MÁS. Ni este comentario, ni un ticket, ni un informe. Si el
-// fichero cambia, este guard cambia con él sin que nadie lo actualice: la lista NO se copia aquí.
+// ⚠️ LA FUENTE SON LOS DOS SITIOS DONDE VIVEN LAS APROBACIONES, y nada más: ni este comentario,
+// ni un ticket, ni un informe. Desde SCRUM-709 son `docs/microcopy/` (las nuevas, una por fichero)
+// y el registro congelado; se leen con SU lector —`_microcopy-aprobada.mjs`— y no con un segundo
+// barrido propio. Si cambian, este guard cambia con ellos sin que nadie lo actualice: la lista NO
+// se copia aquí.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { aprobacionesDeMicrocopy } from './_microcopy-aprobada.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const FUENTE = 'docs/MICROCOPY_APROBADA_SIN_APLICAR.md';
 
 /**
- * Los textos aprobados, sacados de la ÚLTIMA columna de las tablas de la fuente.
+ * Los textos aprobados, DE LOS DOS SITIOS DONDE VIVEN.
  *
- * Se descarta lo que no es copy —rutas, identificadores en mayúsculas, fragmentos de menos de
- * cuatro caracteres—: no son frases que un profesional lea, y colarlas convertiría el guard en
- * ruido. El filtro es por FORMA, nunca por contenido: excluir un texto por lo que dice sería
- * decidir por el fundador.
+ * 🔴 SCRUM-709 partió la fuente en dos y este guard nació leyendo sólo una:
+ *   · `docs/microcopy/` — una aprobación, un fichero. Donde van las NUEVAS.
+ *   · `docs/MICROCOPY_APROBADA_SIN_APLICAR.md` — el registro CONGELADO hasta el 3-sep.
+ *
+ * Leer sólo el congelado habría sido exactamente la ceguera que `_microcopy-aprobada.mjs` avisa:
+ * un texto aprobado HOY y no aplicado no lo vería nadie, y este guard existe justo para eso. Se
+ * usa SU lector y no se escribe un segundo: dos barridos de lo mismo divergen.
+ *
+ * De cada sitio se saca lo que ese sitio usa para el texto aprobado:
+ *   · el registro → la ÚLTIMA columna de sus tablas;
+ *   · un fichero de aprobación → las CITAS bajo el encabezado «Texto aprobado».
+ * Las citas se limitan a esa sección a propósito: el registro está lleno de notas en `>` que no
+ * son copy, y meterlas convertiría el guard en ruido.
+ *
+ * Se descarta lo que no es copy —rutas, identificadores en mayúsculas, fragmentos cortos—. El
+ * filtro es por FORMA, nunca por contenido: excluir un texto por lo que dice sería decidir por el
+ * fundador.
  */
 function textosAprobados() {
-  const md = fs.readFileSync(path.join(RAIZ, FUENTE), 'utf8');
+  const out = new Set();
+  for (const ap of aprobacionesDeMicrocopy()) {
+    if (ap.origen === 'fichero') { for (const t of citasDeTextoAprobado(ap.texto)) out.add(t); continue; }
+    for (const t of celdasDeTabla(ap.texto)) out.add(t);
+  }
+  return [...out];
+}
+
+/** Las citas `> …` que van bajo un encabezado «Texto aprobado». */
+function citasDeTextoAprobado(md) {
+  const out = [];
+  let dentro = false;
+  for (const linea of md.split('\n')) {
+    if (/^#{1,6}\s/.test(linea)) { dentro = /texto\s+aprobado/i.test(linea); continue; }
+    if (!dentro) continue;
+    const m = /^>\s?(.+)$/.exec(linea.trim());
+    if (m && m[1].trim().length >= 4) out.push(m[1].trim());
+  }
+  return out;
+}
+
+/** La última columna de las tablas del registro congelado. */
+function celdasDeTabla(md) {
   const out = new Set();
   for (const linea of md.split('\n')) {
     const t0 = linea.trim();
@@ -103,9 +141,9 @@ const APARCADOS = [
 test('SCRUM-514 · SUELO: la fuente se lee y tiene textos de sobra', () => {
   const t = textosAprobados();
   assert.ok(t.length >= 60,
-    `🔴 CIEGO: sólo he extraído ${t.length} textos aprobados de \`${FUENTE}\`. Todo lo que diga `
-    + 'este fichero se apoya en esa población: con menos, un «todo aplicado» no significa nada. '
-    + '¿Ha cambiado el formato de las tablas?');
+    `🔴 CIEGO: sólo he extraído ${t.length} textos aprobados de los DOS sitios donde viven. Todo `
+    + 'lo que diga este fichero se apoya en esa población: con menos, un «todo aplicado» no '
+    + 'significa nada. ¿Ha cambiado el formato de las tablas o el de `docs/microcopy/`?');
   const { cuantos } = corpus();
   assert.ok(cuantos >= 200,
     `🔴 CIEGO: sólo he barrido ${cuantos} ficheros de código. Un texto «no encontrado» podría ser `
@@ -134,7 +172,7 @@ test('SCRUM-514 · 🔴 TODO texto APROBADO está aplicado (salvo lo aparcado, c
     '🔴 HAY TEXTO APROBADO QUE NO LLEGA A LA PANTALLA:\n    '
     + sinAplicar.map((t) => JSON.stringify(t)).join('\n    ')
     + `\n\n  El fundador lo firmó y un profesional no lo está viendo. O se aplica —copiándolo de `
-    + `\`${FUENTE}\` LITERAL, con sus tildes y su «…» de un solo carácter— o se aparca AQUÍ con su `
+    + 'la aprobación LITERAL, con sus tildes y su «…» de un solo carácter— o se aparca AQUÍ con su '
     + 'motivo y quién lo desbloquea. Lo que no vale es dejarlo sin decidir: eso es lo que estuvo '
     + 'tres semanas pasando.');
 });

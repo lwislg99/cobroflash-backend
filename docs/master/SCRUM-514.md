@@ -127,6 +127,23 @@ y se **borró la entrada de `APARCADOS`**: el guard vuelve a vigilar ese rótulo
 > Es la mejor prueba de que el guard hacía falta: **nació y en dos horas encontró una divergencia
 > que nadie había visto**, incluida la que yo mismo introduje ayer.
 
+## 🔴 Y AL MERGEAR, EL GUARD NACÍA CIEGO DE UN OJO
+
+Con `main` entró **SCRUM-709**, que parte la fuente en **dos**: `docs/microcopy/` —una aprobación,
+un fichero, donde van las NUEVAS— y el registro, ahora **congelado**. Este guard leía **sólo el
+congelado**, que es exactamente la ceguera que ese módulo avisa: *«un lector que mirase sólo uno de
+los dos daría no consta sobre aprobaciones reales»*. Un texto aprobado hoy y no aplicado **no lo
+habría visto nadie**, que es justo para lo que existe este guard.
+
+Se arregla usando **su** lector (`_microcopy-aprobada.mjs`) y **no un segundo barrido propio**: dos
+barridos de lo mismo divergen. De cada sitio se extrae lo que ese sitio usa —la última columna de
+las tablas en el registro; las **citas bajo «Texto aprobado»** en un fichero de aprobación—, y las
+citas se limitan a esa sección a propósito: el registro está lleno de notas en `>` que no son copy.
+
+> **Comprobado que no es decorativo**, que era lo fácil de dar por hecho: al cambiar el texto
+> aprobado en `docs/microcopy/2026-09-03-SCRUM-402-abrir-parte-fallo.md` por otro plausible, el
+> guard **cae y lo nombra**. Ve el sitio nuevo de verdad.
+
 ## La fuente, corregida (commit propio)
 
 El addendum de la dirección de facturación decía **«APROBADAS, NO APLICADAS»** y daba SCRUM-579 por
