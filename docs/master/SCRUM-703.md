@@ -200,3 +200,35 @@ oficina en el fichero tiene `requireRole('admin')` o `seesAllJobs` en su context
 `_barra-lateral` (`VISTAS_SIN_ENTRADA`) · `_banco-vistas` (la lista de scripts) · `sw.js` (el
 shell) · `scrum627`/`627b` (la aritmética: veredicto **DOCUMENTO** — da la BASE de una línea,
 `precio × unds`, y **no deriva IVA**: `tipoIva` se copia sin entrar en ninguna multiplicación).
+
+---
+
+# SCRUM-703 · el recorrido de Tecnosel, medido de punta a punta
+
+**Medido contra:** `origin/main` = `948e63980491950d313356977e61493f14f9888e` · 2026-09-03T12:15:00+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-tecnosel-tipo-y-precios`
+
+Se midió **el camino de una persona**, no las filas de un sprint: ocho saltos, y en cada uno las tres
+preguntas —¿existe la puerta? ¿llega el dato? ¿responde?—. Entrega: `docs/RECORRIDO-TECNOSEL.md`.
+
+**Cuatro saltos completos** (crear con tipo · el jefe lo encuentra · le pone precios · quedan
+guardados y los ve). **Tres sin puerta** (asignar a varios · del trabajo al parte · dictar): el motor
+de los tres está escrito, y en dos probado, pero **ninguna pantalla alcanzable llega hasta él**. **Uno
+con el motor entero y la puerta ausente** (firmar sin cobertura): 12 controles verdes, y hoy nadie lo
+recorre porque se entra por una vista sin llamador.
+
+**Motor entero + pantalla ausente no es medio salto: es cero.** Se cuenta así a propósito, porque el
+técnico no llega. Los tres se declaran **sin medir** en vez de suponerlos.
+
+**🔴 El control del dinero no cae en ningún punto de la cadena: 24/24 verdes, ejecutados.** Lo que sale
+hacia el técnico no tiene ni una clave de dinero, los precios no cruzan el cable aunque estén en la
+fila, y el pad de firma tampoco los lleva. El corte entre técnico y oficina es **de ruta, no de un
+`if`**.
+
+**No se afirma el estado de ninguna base de datos: no se miró.** Se nombra de qué DDL depende cada
+salto (`jobs.tipo_intervencion`, `JobAssignee`), ya presentes en el esquema de `main` —comprobado con
+`git show origin/main:prisma/schema.prisma`—, para que un fallo por columna ausente se lea **«FALTA EL
+ALTER»** y no «roto». Los precios **no** dependen de ningún ALTER: viajan dentro de la columna `Json`
+`lineas`, que ya existe.
+
+Medición, no arreglo: **no se tocó nada de lo encontrado**.
