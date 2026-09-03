@@ -728,3 +728,63 @@ exactamente cómo esto se rompe sin que nadie se entere. Commit de la correcció
 Escribí que el técnico leería «Israel, Miguel» y el rojo dijo «Israel y Miguel»: con DOS nombres no
 hay coma, que es lo correcto en castellano. El test pasó a usar los TRES del parte —que es el caso
 real— en vez de cambiar la función para que encajara con lo que yo había supuesto.
+
+## 10 · CIERRE (3-sep-2026) · el selector no tenía estilo, y lo encontré yo
+
+**Medido contra:** `origin/main` = `948e63980491950d313356977e61493f14f9888e` · 2026-09-03T10:20:00+02:00
+
+Al mergear `main` para cerrar la tanda aparecieron tres cosas. Ninguna la trajo otra sesión: dos
+eran mías.
+
+### 🔴 ① El bloque se pintaba SIN CSS
+
+El módulo usaba `job-asignados-titulo`, `-lista`, `-fila`, `-casilla`, `-nombre`, `-lectura`,
+`-nota` — y **ninguna de esas clases existía en ninguna hoja**. El selector salía sin caja, sin
+separación y sin objetivo táctil. Y **no fallaba nada**: una clase inventada no da error, sólo no
+aplica nada. Es la avería exacta que este sprint persigue — algo que parece entregado y no lo está.
+
+Añadidas en `public/dashboard/css/styles.css` con **tokens de `tokens.css`** y la familia visual de
+`.detail-*`: cero componentes nuevos y cero colores inventados (Parte AB). El anillo de foco no se
+inventa — lo pone la regla global `:focus-visible` de `styles.css:94`.
+
+### 🔴 ② El guard que impide que vuelva a pasar (AB6)
+
+Toda clase que el módulo pinta tiene que EXISTIR en la hoja, y la fila tiene que declarar 44 px.
+Dos detalles que lo hacen un guard y no un adorno:
+
+- **la lista de clases se DERIVA** de los literales del módulo —con `literalesDe` del scanner, no
+  con un `grep` que casaría con los comentarios—, así que una clase nueva sin estilo entra sola;
+- **el selector va anclado a principio de línea**: sin eso, `.job-asignados-fila:hover` bastaría
+  para dar por estilada una clase que sólo aparece colgando de otra regla.
+
+Y el **44 px vive sólo en la hoja**. Estaba también inline en el JS: dos fuentes para el mismo
+número se separan en cuanto alguien toca una.
+
+### ③ El filtro de comentarios, migrado al de la casa
+
+`main` trajo el trinquete de SCRUM-694 y mi guard de `operarioId` era el 57.º que se fabricaba su
+propio filtro por regex. Migrado a `soloCodigo` (SCRUM-693), que tokeniza con el scanner de
+TypeScript: mi versión tenía **las dos averías** que ese helper existe para evitar — se habría
+comido una línea con `https://` dentro de una cadena, y habría dejado pasar un texto escrito dentro
+de un bloque `/* */`.
+
+### Y el guard de SCRUM-655b paró tres PRs, que es lo que tenía que hacer
+
+`docHeaderText` y `docFooterText` entraron en `Quote` con el PR #931 y salieron **sin clasificar**.
+Se resolvió en rama aparte (`scrum-667b-clasificar-cabecera-pie`,
+`86009b8c71d727782732ee92fd8e9e9a3e83b2fe`) con la decisión del fundador —**se heredan**, son
+contenido del documento— y su nota de provisionalidad hasta que Javier lo confirme. Ejecutado el
+guard sobre `main` antes de tocar nada: los sin clasificar eran **exactamente esos dos**.
+
+### Los dos rojos de esta parte · resguardo `7d0cc33318288dac5a1d79837402f2940c1092c1`
+
+| # | Qué se rompe | Qué cae |
+| :-: | --- | --- |
+| 8 | el módulo pinta `job-asignados-listado`, que nadie ha estilado | 1/15 · y **nombra la clase**: `PINTA CLASES QUE NO EXISTEN EN LA HOJA: job-asignados-listado` |
+| 9 | la fila baja de 44 px a 32 px | 1/15 · el guard AB6 |
+
+### Estado de la fila de la certificación
+
+Motor ✅ · columna ✅ · backfill ✅ · **lectura ✅ (nueva)** · **pantalla ✅ (nueva)** · **estilo ✅
+(nuevo)**. Lo que queda fuera y sigue declarado: retirar `assignedUserId` del filtro y el
+`DROP COLUMN` de la columna vieja, que son los dos STOP que ya estaban escritos.
