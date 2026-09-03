@@ -141,11 +141,24 @@ test('SCRUM-698 · 🔴 EL MECANISMO: una vista con una promesa suelta se recoge
 test('SCRUM-698 · 🔴 y los oyentes de rechazo SE DEVUELVEN al terminar', async () => {
   // Si no se devolvieran, a partir de la primera vista montada un fallo async de CUALQUIER otro
   // test dejaría de verse. El arreglo sería peor que el defecto, y en silencio.
-  const antes = process.listeners('unhandledRejection').length;
-  await pintarVista(cargarDashboard(RAIZ), 'renderReportsView');
-  assert.equal(process.listeners('unhandledRejection').length, antes,
-    '🔴 `pintarVista` se ha quedado con los oyentes de rechazo del runner. A partir de aquí, un '
-    + 'fallo async de otro test pasaría desapercibido.');
+  //
+  // ⚠️ ESTE TEST HUBO QUE ARREGLARLO, y lo cazó su propia prueba de rojo. La primera versión
+  // comparaba `process.listeners(…).length` antes y después: una diferencia RELATIVA que no cae
+  // si el daño ya se hizo en una llamada anterior —y para cuando llega este test ya se han
+  // montado vistas de sobra—. Antes y después valían cero, así que pasaba siempre. Ahora se
+  // pone un oyente PROPIO y se exige que SIGA AHÍ: eso es absoluto y no depende de quién haya
+  // corrido antes.
+  const mio = () => {};
+  process.on('unhandledRejection', mio);
+  try {
+    await pintarVista(cargarDashboard(RAIZ), 'renderReportsView');
+    assert.ok(process.listeners('unhandledRejection').includes(mio),
+      '🔴 `pintarVista` se ha quedado con los oyentes de rechazo que apartó. A partir de aquí, un '
+      + 'fallo async de otro test pasaría desapercibido — y eso es peor que el defecto que este '
+      + 'ticket vino a arreglar, porque falla en silencio.');
+  } finally {
+    process.off('unhandledRejection', mio);
+  }
 });
 
 // ═══ ④ `insertAdjacentHTML`, LA API QUE FALTABA ══════════════════════════════════════════
