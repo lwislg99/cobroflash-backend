@@ -624,3 +624,43 @@ además que **no se ha guardado nada**.
 ✅ **Aplicadas en código Y anotadas aquí en el mismo commit.** El bloque `TX` de `settingsView.js`
 pierde su constante de marcador (`MARCA_CLAUSULAS`), que era la que factorizaba la marca para que el
 censo de SCRUM-402 no se moviera: **ya no hace falta, porque ya no hay nada marcado que aprobar ahí**.
+
+---
+
+## Addendum · Revisiones del presupuesto (3-sep-2026) · **APLICADAS**
+
+**Medido contra:** `origin/main` = `2becaeaa82a8e491a5705862d3df95d6d88e5bc3` · 2026-09-03T13:01:27+02:00
+
+**SCRUM-655 fase C** propuso seis rótulos con marcador. El fundador los aprobó **sin un cambio** y
+se aplican en el mismo acto.
+
+| Ranura | Fichero | Texto aprobado |
+|---|---|---|
+| `titulo` | `public/dashboard/js/quoteRevisiones.js` · `TEXTOS` | `Revisiones` |
+| `vigente` | ídem | `Vigente` |
+| `firmado` | ídem | `Firmada` |
+| `verEsta` | ídem | `Ver` |
+| `sinOtras` | ídem | `Esta es la única versión.` |
+| `ciego` | ídem | `No se ha podido leer el historial de revisiones.` |
+
+**Se copian literales**, sin corchete de marcador, y hay un test que los compara con `===`.
+
+### 🔴 Por qué son SEIS y no cinco: el último es el suelo de ceguera hecho texto
+
+`Esta es la única versión.` y `No se ha podido leer el historial de revisiones.` son, **en pantalla,
+la misma caja vacía** — y significan lo contrario:
+
+* la primera es un presupuesto que de verdad no tiene más versiones;
+* la segunda es que **el grupo se armó mal** y no se ha podido mirar. Todo presupuesto es al menos
+  su propia revisión, así que un cero ahí no es un dato: es un instrumento que no ve.
+
+Decir la primera cuando toca la segunda **manda al cliente una versión creyendo que no hay otra**.
+Por eso son dos textos y no uno, y por eso el módulo distingue las dos ramas antes de pintar.
+
+Va en **voz pasiva** («no se ha podido leer»), como los avisos del dictado y los de las cláusulas:
+la voz de la casa no dice «no hemos podido».
+
+✅ **Aplicadas en código Y anotadas aquí en el mismo commit.** `quoteRevisiones.js` **sale del censo**
+de `tests/scrum402-marcador-no-se-pinta.test.mjs`: la entrada se **borra**, no se pone a 0 — un 0
+declararía que el fichero se vigila y tiene cero marcas, y lo cierto es que ya no hay nada que
+vigilar ahí (precedente SCRUM-424/405 y SCRUM-674).
