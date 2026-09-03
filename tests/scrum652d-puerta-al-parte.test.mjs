@@ -208,10 +208,48 @@ function vistasQueExigenContexto(fuenteApp) {
 /** Los `data-view` de la barra de navegación. */
 const vistasDelNav = (html) => [...html.matchAll(/data-view="([^"]+)"/g)].map((m) => m[1]);
 
+/**
+ * 🔴 EL SUELO DEL EXTRACTOR — LO PREGUNTÓ JAVIER EL 3-sep-2026, Y TENÍA RAZÓN.
+ *
+ * Su pregunta, literal: «el censo dice 18 entradas de nav y 5 vistas que exigen contexto. ¿Tiene
+ * suelo sobre esos 18? Si mañana el extractor por AST deja de encontrar entradas y devuelve 0, el
+ * guard sigue verde y no nos enteramos.»
+ *
+ * El guard tenía suelo sobre las 5 —si la derivación deja de ver `parte-detail`, cae— y NO sobre
+ * las 18. Y ahí está el agujero: **una lista vacía hace verdad cualquier afirmación sobre sus
+ * elementos**. Con cero entradas de nav, «ninguna entrada lleva a una vista sin contexto» es
+ * VERDADERA Y VACÍA, y el guard pasaría para siempre sobre una barra que ya no sabe leer.
+ *
+ * Es el mismo caso que este árbol ya cazó en otros sitios (el censo de huérfanos, el de apartados,
+ * el de asignables): cero no es «está limpio», es «no he mirado».
+ *
+ * ⚠️ EL MÍNIMO VA CON HOLGURA, Y ESO NO ES PEREZA. Hoy hay 18 (medido). El suelo se pone en 10:
+ * un guard que estorba en cada PR acaba desactivado, y lo que aquí importa no es cuántas entradas
+ * haya —eso lo vigila SCRUM-420— sino que el extractor SIGA VIENDO la barra. Perder ocho entradas
+ * de golpe es un rediseño, y entonces este número se sube a propósito con su motivo.
+ */
+const MINIMO_ENTRADAS_DE_NAV = 10;
+
+function entradasDeNavConSuelo(html) {
+  const nav = vistasDelNav(html);
+  if (nav.length < MINIMO_ENTRADAS_DE_NAV) {
+    throw new Error(
+      `NAV CIEGO · el extractor ha encontrado ${nav.length} entradas de nav y el suelo son `
+      + `${MINIMO_ENTRADAS_DE_NAV} (hoy hay 18, medidas). Eso NO se puede leer como «la barra está `
+      + 'limpia»: una lista vacía hace VERDADERA Y VACÍA la afirmación de abajo —«ninguna entrada '
+      + 'lleva a una vista sin contexto»— y el guard pasaría para siempre sobre una barra que ya no '
+      + 'sabe leer.\n'
+      + '  O el `index.html` cambió de forma (otro atributo, otra plantilla), o el fichero no es el '
+      + 'que se cree. Si de verdad la barra ha encogido, sube el mínimo a propósito y di por qué.'
+    );
+  }
+  return nav;
+}
+
 /** El HECHO, en una función: ¿alguna entrada de nav lleva a una vista que exige contexto? */
 function navSinContexto(html, fuenteApp) {
   const exigen = vistasQueExigenContexto(fuenteApp);
-  const nav = vistasDelNav(html);
+  const nav = entradasDeNavConSuelo(html);   // 🔴 el suelo va DENTRO: no se puede rodear
   return nav
     .filter((v) => exigen.some((e) => e.vista === v))
     .map((v) => ({ vista: v, exigeId: exigen.find((e) => e.vista === v).exigeId }));
@@ -238,6 +276,47 @@ test('SCRUM-652d · ✅ CONTROL POSITIVO: ninguna entrada de nav lleva a una vis
     + '\n  Pulsarla desde la barra deja al profesional en una pantalla que no sabe de qué documento\n'
     + '  habla: el `if` del router no entra y no se pinta nada. A `parte-detail` se llega desde el\n'
     + '  Trabajo, que es quien tiene el id.');
+});
+
+test('SCRUM-652d · 🔴 SUELO DEL NAV: cero entradas es CIEGO, no «la barra está limpia»', () => {
+  // 🔴 LO PREGUNTÓ JAVIER EL 3-sep-2026, y el guard no lo tenía. Su pregunta destapó que el suelo
+  // estaba a medias: había uno sobre las vistas que exigen contexto (si la derivación deja de ver
+  // `parte-detail`, cae) y NINGUNO sobre las entradas de la barra.
+  const app = fs.readFileSync(path.join(JS, 'app.js'), 'utf8');
+  const SIN_BARRA = '<!doctype html><html><body><main id="view"></main></body></html>';
+
+  // ① CON EL SUELO: se declara ciego y dice qué mirar.
+  assert.throws(
+    () => navSinContexto(SIN_BARRA, app),
+    (e) => {
+      assert.match(e.message, /NAV CIEGO/,
+        '🔴 con CERO entradas de nav el guard no se declara ciego.');
+      assert.match(e.message, /VERDADERA Y VACÍA/,
+        '🔴 el rojo no explica POR QUÉ un cero es peligroso aquí, y sin eso el siguiente que lo lea '
+        + 'sube el número para quitárselo de encima.');
+      return true;
+    },
+  );
+
+  // ② 🔴 Y CAE CON EL MECANISMO VIEJO: sin suelo, ese mismo HTML pasa en VERDE. Se ejecuta aquí la
+  //    versión anterior —el extractor pelado— para que quede DEMOSTRADO y no dicho.
+  const comoEraAntes = vistasDelNav(SIN_BARRA)
+    .filter((v) => vistasQueExigenContexto(app).some((e) => e.vista === v));
+  assert.deepEqual(comoEraAntes, [],
+    '🔴 el mecanismo viejo ya fallaba con cero entradas. Si eso ha cambiado, este control deja de '
+    + 'probar que el suelo añadiera algo: comprueba qué se movió antes de creerte el verde.');
+  // Y ésa es exactamente la trampa: `[]` no significa «no hay ninguna mala», significa «no he
+  // mirado». Una lista vacía hace verdad cualquier afirmación sobre sus elementos.
+
+  // ③ CONTROL POSITIVO del suelo: con la barra de verdad, no estorba.
+  const html = fs.readFileSync(INDEX, 'utf8');
+  assert.ok(entradasDeNavConSuelo(html).length >= MINIMO_ENTRADAS_DE_NAV,
+    '🔴 el suelo salta sobre la barra REAL: entonces no es un suelo, es un obstáculo, y acabará '
+    + 'desactivado en el primer PR que moleste.');
+  assert.equal(vistasDelNav(html).length, 18,
+    `🔴 la barra tiene ${vistasDelNav(html).length} entradas y se midieron 18 el 3-sep-2026. No es `
+    + 'un fallo —quién va en la barra lo vigila SCRUM-420— pero si el número baja mucho, revisa que '
+    + `el suelo de ${MINIMO_ENTRADAS_DE_NAV} siga teniendo holgura.`);
 });
 
 test('SCRUM-652d · 🔴 el control SIGUE CAYENDO si alguien mete el parte del técnico en la barra', () => {
