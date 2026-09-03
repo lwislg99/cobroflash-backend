@@ -4,7 +4,7 @@
 
 **Medido contra:** `origin/main` = `09fb0c5b2988b6b658204c48f4e6f8e10568ea1d` · 2026-09-03T14:05:18+01:00
 
-**Tanda:** **5.002 pruebas · 4.918 en verde · 0 fallos · 84 saltadas** — con `main` mergeado dentro
+**Tanda:** **5.010 pruebas · 4.926 en verde · 0 fallos · 84 saltadas** — con `main` mergeado dentro
 y medida DESPUÉS del último cambio de código.
 
 ---
