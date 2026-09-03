@@ -36,7 +36,10 @@ test('SCRUM-672 · 🔴 con `fail 0` y menos tests, CAE y dice CUÁNTOS faltan',
   const v = veredictoDelSuelo(tap(SUELO_TESTS - 11));
   assert.equal(v.ok, false, '🔴 una tanda con 11 tests menos pasa por buena.');
   assert.equal(v.salida, SALIDA_POR_DEBAJO);
-  assert.match(v.titulo, /HA PERDIDO 11 TEST/,
+  // SCRUM-702 · el titulo dice «POR DEBAJO DEL SUELO» y ya no «HA PERDIDO»: estar por debajo es
+  // un INDICIO —compara con un numero declarado en otro arbol—, no una perdida comprobada. El
+  // que afirma una perdida es el de los ficheros mudos, que la ve en el TAP.
+  assert.match(v.titulo, /11 TEST\(S\) POR DEBAJO/,
     '🔴 no dice CUÁNTOS faltan. «Algo va mal» no es accionable; «faltan 11» sí.');
   assert.match(v.titulo, new RegExp(String(SUELO_TESTS - 11)), '🔴 no dice el total corrido.');
   assert.match(v.titulo, new RegExp(String(SUELO_TESTS)), '🔴 no dice contra qué suelo.');
@@ -52,7 +55,7 @@ test('SCRUM-672 · 🔴 UN solo test perdido también cae: TOLERANCIA CERO', () 
   assert.equal(v.ok, false,
     '🔴 un margen «por si acaso» convertiría esto en el umbral con holgura que SCRUM-559 tuvo que '
     + 'retirar: la pérdida PARCIAL es justo la que pasa por debajo de los umbrales.');
-  assert.match(v.titulo, /HA PERDIDO 1 TEST/);
+  assert.match(v.titulo, /1 TEST\(S\) POR DEBAJO/);
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
