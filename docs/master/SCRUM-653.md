@@ -266,3 +266,165 @@ RECUENTO: { partes_en_total: 0, estado_firmado: 0, con_fecha_de_firma: 0,
 `P1001`) y de `staging` no tengo la cadena. **No se declara nada sobre ellas**: «no medido» y
 «cero» no son lo mismo, y esa distinción es justo la que hace que el intervalo se pueda
 reconstruir después.
+
+
+---
+
+# Censo de nombres · 2ª vuelta: la pregunta de Javier, respondida midiendo
+
+**Medido contra:** `origin/main` = `3047b2c9f98e44f2a69ac7dd1ab8f0997e6fb9d2` · 2026-09-03T15:05:00+02:00
+**Leído de `prisma/schema.prisma`.** Selección por **límite de palabra sobre el nombre en
+snake_case** — nunca por prefijo ni substring: así `firma` no puede casar dentro de `confirmado`.
+
+> «Cuatro columnas de firma junto a las que ya existen no es una migración: es una BIFURCACIÓN.»
+
+Esa era la pregunta. **Se mide, no se opina.**
+
+## ① `partes_trabajo` con las cuatro propuestas — nueve campos
+
+| Campo Prisma | Tipo | Columna |
+|---|---|---|
+| `firmadoAt` | `DateTime?` | `firmado_at` |
+| `firmadoPorNombre` | `String?` | `firmado_por_nombre` |
+| `firmadoPorCalidad` | `String?` | `firmado_por_calidad` |
+| **`signatureUrl`** | `String?` | **`signature_url`** `@db.Text` |
+| **`signatureTecnicoUrl`** | `String?` | **`signature_tecnico_url`** `@db.Text` |
+| **`firmadoTecnicoAt`** | `DateTime?` | **`firmado_tecnico_at`** |
+| **`firmadoTecnicoNombre`** | `String?` | **`firmado_tecnico_nombre`** |
+| `contenidoHash` | `String?` | `contenido_hash` |
+| `contenidoVersion` | `Int?` | `contenido_version` |
+
+*(En negrita, las cuatro que añade el ALTER. Las otras cinco ya están en las tres bases.)*
+
+## ② `albaranes` — el linaje, siete campos
+
+| Campo Prisma | Tipo | Columna |
+|---|---|---|
+| `signatureUrl` | `String?` | `signature_url` `@db.Text` |
+| `firmadoAt` | `DateTime?` | `firmado_at` |
+| `firmadoPorNombre` | `String?` | `firmado_por_nombre` |
+| `firmadoPorCalidad` | `String?` | `firmado_por_calidad` |
+| `firmaToken` | `String?` | `firma_token` |
+| `enviadoParaFirmaAt` | `DateTime?` | `enviado_para_firma_at` |
+| `evidenciaFirma` | `Json?` | `evidencia_firma` |
+
+### 🔴 Y AQUÍ ESTÁ LA RESPUESTA A LO DEL INGLÉS Y EL CASTELLANO
+
+**`albaranes` YA mezcla los dos idiomas en la MISMA tabla, y con una regla:**
+
+> **la IMAGEN se llama `signature_url` (inglés). La METADATA va en castellano (`firmado_*`).**
+
+Y el barrido del esquema entero lo confirma: la imagen de una firma se llama `signatureUrl` en
+**`Quote`** y en **`Albaran`** — dos documentos, un nombre, cero excepciones.
+
+Así que la mezcla **no es una tercera convención que yo invente: es LA convención que ya existe.**
+Lo que sería inventar una tercera es lo que yo tenía escrito ayer —`firma_tecnico_url`— y por eso
+se corrigió antes de aplicar nada.
+
+## ③ ¿HAY BIFURCACIÓN? — una fila por (rol × dato)
+
+| Rol · dato | Columna(s) |
+|---|---|
+| CLIENTE · imagen | `signature_url` |
+| CLIENTE · fecha | `firmado_at` |
+| CLIENTE · nombre | `firmado_por_nombre` |
+| CLIENTE · calidad | `firmado_por_calidad` |
+| TÉCNICO · imagen | `signature_tecnico_url` |
+| TÉCNICO · fecha | `firmado_tecnico_at` |
+| TÉCNICO · nombre | `firmado_tecnico_nombre` |
+
+**UNA columna por dato y por rol. Cero duplicadas. NO hay bifurcación.**
+
+Lo que hay es **una ranura de cliente a la que le faltaba la imagen** — y las cuatro columnas la
+COMPLETAN y añaden la del técnico, que no existía. Es exactamente lo que dice Javier que hay que
+hacer: **darle superficie al mecanismo que existe a medias, no poner un segundo juego al lado.**
+
+⚠️ **Mi propio instrumento dio un FALSO POSITIVO y lo digo:** marcó «BIFURCACIÓN» en
+`contenido_hash` + `contenido_version` porque los clasificó los dos como «sello» del mismo rol. Son
+**dos datos distintos del documento** —la huella y la versión con que se calculó—, no dos ranuras
+para lo mismo, y además no son de ningún firmante. El fallo es de mi clasificador, no del esquema.
+
+## ④ Qué escribe cada ruta — el CÓDIGO, no el nombre
+
+Acotando cada ruta con paréntesis balanceados sobre el código blanqueado:
+
+```
+CLIENTE  POST /admin/partes/:id/firmar
+   estado: 'firmado',
+   firmadoAt,
+   firmadoPorNombre: nombre.nombre,
+   firmadoPorCalidad: calidad.valor,
+   signatureUrl: signatureData,
+   contenidoHash,
+   contenidoVersion: parte.contenidoVersion ?? PARTE_CONTENIDO_VERSION_ACTUAL,
+
+TÉCNICO  POST /admin/partes/:id/firmar-tecnico
+   estado: 'firmado',
+   firmadoTecnicoAt: new Date(),
+   firmadoTecnicoNombre: nombre.nombre,
+   signatureTecnicoUrl: signatureData,
+   contenidoHash,
+   contenidoVersion: parte.contenidoVersion ?? PARTE_CONTENIDO_VERSION_ACTUAL,
+```
+
+**La regla que sale de la asignación, no del nombre:**
+
+> **Las columnas SIN `tecnico` son las del CLIENTE.** La ausencia del rol *es* el rol.
+
+Es la respuesta literal a la pregunta de Javier — «cuál de las cuatro es la del cliente»: **una,
+`signature_url`**, y se sabe porque es la que escribe la ruta `/firmar`.
+
+Y en esta tabla los nombres **ya mintieron una vez**: `signatureData` se validaba y se tiraba. Por
+eso la respuesta sale del `data:` de cada `update`, no del nombre.
+
+## ⑤ Las opciones, con su coste y con la pregunta que decide
+
+| Opción | Qué | Coste | ¿Toca columnas EXISTENTES? |
+|---|---|---|---|
+| **A · propuesta** | las cuatro tal como están | el rol del cliente es IMPLÍCITO (ausencia de `tecnico`) | **NO. Aditivo puro** |
+| B | renombrar las nuevas al castellano (`firma_tecnico_url`) | rompe el linaje de la IMAGEN, que en `Quote` y `Albaran` es `signature_url`: sería la tercera convención | NO, pero **empeora** |
+| C | sufijo de rol en TODAS: `firmado_cliente_at`, `firma_cliente_url`… | simetría perfecta | **SÍ: renombra 3 columnas con datos en 3 bases** |
+| D | `_cliente` sólo en la nueva del cliente | dos reglas dentro del MISMO rol (`signature_cliente_url` junto a `firmado_at`) | NO, pero incoherente |
+
+### 🔴 La opción C obliga a tocar columnas existentes
+
+**Renombrar una columna con datos en tres bases es otro ticket y otra conversación. Paro ahí.**
+No se propone, no se prepara y no entra en el lote de Javier.
+
+**Se propone A**, y el coste que paga —que el rol del cliente sea implícito— se compensa donde se
+lee: el serializador expone `firmoElCliente`, `firmoElTecnico` y `firmasCompletas` **derivados**, y
+el modelo lleva el comentario que dice qué juego es de quién.
+
+### Lo que NO se añade, y por qué
+
+`firma_token` y `enviado_para_firma_at` son del albarán porque tiene **firma remota** (un enlace al
+cliente). El parte se firma en la obra, en el móvil: un token para un enlace que nadie manda es
+superficie sin uso. `evidencia_firma` tampoco — el parte no pasa por `buildFirmaEvidencia`, y poner
+la columna sin el mecanismo es prometer una evidencia que no se recoge.
+
+## ⑥ El fichero, y lo que sigue pendiente en producción
+
+**`docs/sql/scrum-653-dos-firmas.sql`** — rama `scrum-653-dos-firmas`.
+Clasificador: **4 sentencias · 0 RECHAZADAS · 0 borrados · `ok=true`**.
+
+Y como el lote va junto, medido en **producción** (sólo lectura) lo que falta de lo mío:
+
+```
+{ control_ve_la_tabla: 1, columnas_de_la_tabla: 24,
+  idx_685b_unico: 0,
+  col_signature_url: 0, col_signature_tecnico_url: 0,
+  col_firmado_tecnico_at: 0, col_firmado_tecnico_nombre: 0 }
+```
+
+`control_ve_la_tabla = 1`, así que los ceros son ceros. **Pendientes de aplicar, los dos:**
+
+| Fichero | Qué | Estado en prod |
+|---|---|---|
+| `docs/sql/scrum-685b-parte-numero-unico.sql` | índice único `(merchant_id, numero)` | **sin aplicar** |
+| `docs/sql/scrum-653-dos-firmas.sql` | las 4 columnas de las dos firmas | **sin aplicar** |
+
+⚠️ El de 685b lleva **fichero de comprobación previa**: `docs/sql/scrum-685b-comprobar-duplicados.sql`
+se ejecuta ANTES en cada base, y si devuelve filas esa base no se toca.
+
+⚠️ **`dev` y `staging` NO están medidos**, y no se declara nada de ellas. «No medido» y «cero» no
+son lo mismo.
