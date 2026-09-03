@@ -1338,6 +1338,13 @@ html, body { overflow-x: clip; }
 }
 .quote-line.dragging { opacity: .5; }
 
+/* SCRUM-594 (DOC-04) · EL DESCUENTO GLOBAL, bajo el bloque de totales.
+   Sin tokens nuevos: reusa `.quote-line__field` y `.quote-line__label`, que son los que ya
+   visten cualquier campo con etiqueta de esta pantalla. El botón es `.btn-ghost.btn-sm`, el
+   mismo que «Usar plantilla» — un descuento global es una acción ocasional, no una principal. */
+.quote-dto-global { margin-top: 8px; }
+.quote-dto-global__campo { display: flex; flex-direction: column; gap: 4px; max-width: 200px; }
+
 /* SCRUM-139 F2 · RENGLÓN EN BLANCO DEL CUADERNILLO.
    El editor abre con varias líneas dibujadas (LINEAS_CUADERNILLO): son una INVITACIÓN, no
    tres artículos pendientes. Las que aún no tienen concepto ni precio se apagan — sin sombra,
@@ -1519,6 +1526,9 @@ html, body { overflow-x: clip; }
        Ancho FIJO para el disparador (no `auto`): cada línea es su propia rejilla, así que con
        `auto` una línea con margen ensanchaba su columna y encogía su concepto — y las columnas
        dejaban de cuadrar ENTRE filas. Lo destapó la captura, no la lectura. */
+    /* SCRUM-594 (DOC-04): la rejilla NO cambia. «Dto. %» se montó primero aquí, junto al precio,
+       y la medición en navegador a 390 px dijo +77 px POR FILA — el número exacto que F4 midió y
+       rechazó para margen e IVA. Vive en la hoja de ajustes, con IVA y Coste, y el chip lo dice. */
     grid-template-columns: minmax(0, 3fr) 90px 120px 168px minmax(96px, auto) auto;
     align-items: end;
     gap: 12px;

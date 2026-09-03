@@ -32,6 +32,18 @@ const QuoteLineSchema = z.object({
    * default convertiría el silencio en un dato, y ese dato sería falso.
    */
   costeUnitario: z.number().nonnegative().optional(),
+  /**
+   * SCRUM-594 (DOC-04) · el descuento de ESTA línea, en PORCENTAJE (0-100).
+   *
+   * 🔴 `.optional()` Y NUNCA `.default(0)`, por el mismo motivo que `costeUnitario` justo
+   * arriba: si no se declara aquí, `z.object` lo BORRA en silencio y no llegaría a
+   * `Quote.lines`; y un default convertiría el silencio en un dato. Una línea SIN `dto` —y lo
+   * son todas las anteriores a este ticket— tiene que seguir dando exactamente el mismo total.
+   *
+   * El tope de 100 no es cosmético: un 150 % dejaría el precio NEGATIVO, y un presupuesto no
+   * puede pedirle dinero al cliente por una línea.
+   */
+  dto: z.number().min(0).max(100).optional(),
   // SCRUM-217 (1124): `min(0).max(1)` aceptaba CUALQUIER fracción — un 15 % pasaba sin queja, y
   // el 15 % no es un tipo de IVA español. El validador decía que sí a un impuesto inventado, y
   // ese tipo acaba en la cuota que entra en la huella. Ahora solo pasan los que existen.
@@ -138,6 +150,14 @@ export const CreateQuoteSchema = z.object({
   payMethods: z.array(z.enum(['card', 'bizum', 'transfer'])).min(1).optional(),
   // A20.4: qué datos del cliente muestra el DOCUMENTO (null = todos los presentes)
   docFields: z.object({ name: z.boolean(), phone: z.boolean(), taxId: z.boolean(), email: z.boolean() }).partial().nullable().optional(),
+  /**
+   * SCRUM-594 (DOC-04) · el descuento GLOBAL del presupuesto, en EUROS.
+   *
+   * `nullable` Y `optional`, y no son lo mismo: omitido = «este cliente no manda el campo»
+   * (todo lo anterior a este ticket), `null` = «lo quitó a propósito». Sin `nullable`, borrar un
+   * descuento ya puesto sería un 400 — el mismo criterio que `docHeaderText` justo debajo.
+   */
+  discountGlobalAmount: z.number().nonnegative().nullable().optional(),
   // SCRUM-593 (DOC-03) · los dos textos libres del documento.
   //
   // `nullable` Y `optional` son cosas DISTINTAS y las dos hacen falta: omitido = «este cliente
