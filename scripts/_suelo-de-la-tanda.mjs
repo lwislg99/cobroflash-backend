@@ -97,6 +97,34 @@ export function totalDelTap(texto) {
 }
 
 /**
+ * 🔴 SCRUM-702 · LOS FICHEROS MUDOS — el defecto MISMO, sin pasar por el total.
+ *
+ * Medido: cuando un fichero de `tests/` **carga bien pero no registra ni un test** —un `import`
+ * de namespace cuya propiedad ya no existe, un `if` que dejó de cumplirse—, `node --test` NO
+ * calla: emite una entrada con EL NOMBRE DEL FICHERO. Y lo hace **en verde**, contando como un
+ * test. Comprobado en laboratorio con dos ficheros:
+ *
+ *     con sus 3 tests   →  ok 1 - lab A1 · ok 2 - lab A2 · ok 3..5 (los de b)   # tests 5
+ *     fichero mudo      →  ok 1 - lab A1 · ok 2 - lab A2 · **ok 3 - b.test.mjs**  # tests 3
+ *
+ * O sea que el defecto que persigue SCRUM-672 **deja una firma exacta en el TAP**, y hasta hoy
+ * sólo se detectaba de refilón: por el total, que además baja sólo 2 en vez de 3 porque la
+ * entrada del fichero suma uno. Un test de verdad NUNCA se llama `algo.test.mjs`.
+ *
+ * 🔴 POR QUÉ ESTO IMPORTA MÁS QUE EL TOTAL: sale del MISMO TAP que se está evaluando. No se
+ * compara con ningún número declarado en otro sitio y en otro momento, así que no puede
+ * equivocarse por haberse medido sobre otro árbol — que es exactamente lo que le pasó al suelo.
+ */
+export function ficherosMudosDelTap(texto) {
+  const mudos = [];
+  for (const linea of String(texto || '').split('\n')) {
+    const m = linea.match(/^\s*(?:not )?ok \d+ - (\S+\.test\.mjs)\s*$/);
+    if (m) mudos.push(m[1]);
+  }
+  return mudos;
+}
+
+/**
  * El veredicto. **PURO**: entra el texto del TAP y el suelo, sale qué decir y con qué código.
  *
  * Separarlo del disco es lo que permite ejercitar el rojo, el control negativo y el mensaje del
@@ -104,6 +132,7 @@ export function totalDelTap(texto) {
  */
 export function veredictoDelSuelo(textoTap, suelo = SUELO_TESTS) {
   const total = totalDelTap(textoTap);
+  const mudos = ficherosMudosDelTap(textoTap);
 
   // ── 🔴 SUELO DEL PROPIO GUARD ───────────────────────────────────────────────────────────
   // Sin total no hay veredicto. «No supe leer el TAP» y «la tanda no tiene tests» son el mismo
@@ -120,15 +149,47 @@ export function veredictoDelSuelo(textoTap, suelo = SUELO_TESTS) {
 
   const margen = total - suelo;
 
+  // ── 🔴 PRIMERO LO QUE ES SEGURO, Y LUEGO LO QUE ES UN INDICIO ───────────────────────────
+  // El fichero mudo se decide con el TAP en la mano: es el defecto, visto. El margen negativo
+  // es sólo una SOSPECHA, porque compara con un número que se declaró en otro árbol. Si se
+  // dieran los dos a la vez y mandara el margen, el mensaje acusaría al árbol de un defecto que
+  // está localizado y con nombre y apellidos.
+  if (mudos.length) {
+    return {
+      ok: false, salida: SALIDA_POR_DEBAJO, total, suelo, margen, mudos,
+      titulo: `🔴 ${mudos.length} FICHERO(S) DE TEST NO REGISTRARON NI UN TEST: ${mudos.join(', ')}.`,
+      detalle: '   No es una sospecha por el recuento: está en el TAP. `node --test` emite una entrada\n'
+        + '   con el NOMBRE DEL FICHERO cuando el fichero carga y no registra nada — y la emite EN\n'
+        + '   VERDE, contando como un test, así que el total baja menos de lo que se ha perdido y\n'
+        + '   el porcentaje de verdes hasta mejora.\n\n'
+        + '   Un test de verdad nunca se llama `algo.test.mjs`. Qué mirar:\n'
+        + '     · un `import * as X` cuya propiedad ya no existe: da `undefined`, no error, y el\n'
+        + '       `if` que envuelve los tests deja de cumplirse en silencio;\n'
+        + '     · una condición de guarda que dejó de darse en este entorno;\n'
+        + '     · un fichero vaciado a medias.',
+    };
+  }
+
   if (margen < 0) {
     return {
-      ok: false, salida: SALIDA_POR_DEBAJO, total, suelo, margen,
-      titulo: `🔴 LA TANDA HA PERDIDO ${-margen} TEST(S): ${total} corridos, suelo ${suelo}.`,
+      ok: false, salida: SALIDA_POR_DEBAJO, total, suelo, margen, mudos,
+      titulo: `🔴 LA TANDA ESTÁ ${-margen} TEST(S) POR DEBAJO DEL SUELO: ${total} corridos, suelo ${suelo}.`,
       detalle: '   Un test que desaparece no es un test que falla: no grita, el recuento baja y el\n'
         + '   porcentaje de verdes puede incluso MEJORAR. Por eso esto se mira aparte del `fail`.\n\n'
+        + '   🔴 Y ANTES DE BUSCAR UN TEST PERDIDO, DESCARTA QUE SEA OTRO ÁRBOL. Esto compara un\n'
+        + '   número DECLARADO en un commit con uno MEDIDO en otro, y `main` se mueve deprisa:\n'
+        + '   medido el 2-sep-2026 subió 4805 → 4812 → 4832 → 4841 en cuarenta minutos. Una rama\n'
+        + '   que declaró el suelo con SUS tests dentro deja por debajo a toda rama hermana que no\n'
+        + '   los tenga, y ninguna ha perdido nada. Pasó: `deeb89a9` declaró 4814 mientras su\n'
+        + '   propio CI medía 4805.\n\n'
+        + '   No es cosa del sistema operativo: medido sobre el MISMO árbol, Windows y Ubuntu dan\n'
+        + '   el mismo `# tests` (4812 y 4812 en `c71635ce`; 4928 y 4928 en `4e9e114d`, nombre a\n'
+        + '   nombre). Lo que sí cambia entre los dos es `# skipped`, que no entra en este número.\n\n'
         + '   Qué mirar, en este orden:\n'
+        + '     · ¿tu rama sale de un `main` ANTERIOR al que declaró este suelo? Entonces no falta\n'
+        + '       nada: mezcla `main` y vuelve a mirar.\n'
         + '     · ¿se ha renombrado o movido un fichero de `tests/` y ya no casa con el patrón?\n'
-        + '     · ¿hay un `import` que se resuelve a vacío y se ha llevado su fichero entero?\n'
+        + '       (ése es el único caso que este número ve y los ficheros mudos no.)\n'
         + '     · ¿se han borrado tests A PROPÓSITO? Entonces esto es correcto: BAJA el suelo\n'
         + '       conscientemente, en el mismo commit y diciendo cuántos y por qué.\n\n'
         + `   Suelo medido contra: ${MEDIDO_CONTRA}.`,
@@ -136,7 +197,7 @@ export function veredictoDelSuelo(textoTap, suelo = SUELO_TESTS) {
   }
 
   return {
-    ok: true, salida: 0, total, suelo, margen,
+    ok: true, salida: 0, total, suelo, margen, mudos,
     // 🔴 EL MARGEN SE IMPRIME SIEMPRE, no sólo cuando falla. Es la compensación de haber elegido
     // un suelo y no un espejo: sin esto, un suelo rancio no se ve hasta que ya no vigila nada.
     titulo: `✅ suelo ${suelo} · total actual ${total} · margen ${margen}`,
