@@ -33,8 +33,6 @@ function createField(labelText, name, type = "text", required = false, isTextare
 function renderCustomersView(container) {
   container.innerHTML = "";
 
-  let editingCustomer = null;
-  let fieldLegalName, fieldTaxId; // A20.4
 
   // Card principal
   const outerCard = createElement("div", "data-card");
@@ -300,6 +298,242 @@ function renderCustomersView(container) {
     if (type === "error") alertBox.classList.add("error");
     alertBox.style.display = (type || msg) ? "block" : "none";
   }
+
+  // -------- Modal: EL MISMO FORMULARIO QUE USA EL ALTA DESDE UN DOCUMENTO --------
+  //
+  // SCRUM-591 (DOC-01) · el formulario ya no vive dentro de esta función: vive en la IIFE del
+  // final del fichero, y lo comparten esta pantalla y el selector de cliente de los documentos.
+  //
+  // 🔴 NO SE MOVIÓ POR GUSTO. Medido: `buildModal()` eran 278 líneas y usaba 33 símbolos de este
+  // cierre, así que NO era invocable desde fuera. La alternativa era un SEGUNDO formulario en la
+  // vista del documento — dos altas que divergen, y el aviso de duplicado de CONT-05 quedándose
+  // en una sola. Lo que estorbaba era el CIERRE, no el fichero: por eso se queda aquí, donde los
+  // guards de CONT-01, CONT-02, CONT-05, CONT-06, CONT-07 y SCRUM-692 lo leen.
+  //
+  // Esta vista le presta sus dos costuras: su caja de avisos y su recarga de tabla. El documento
+  // no le presta ninguna, porque no tiene tabla que recargar.
+  window.altaClienteModal.configurar({
+    avisar: setAlert,
+    trasGuardar: function () { return loadCustomers(searchInput.value.trim()); },
+  });
+  const openModal = window.altaClienteModal.abrir;
+
+
+  // -------- Carga de clientes --------
+
+  function openCustomer360(c) {
+    if (window.renderAppView) {
+      window.appState = window.appState || {};
+      window.appState.customerId360 = c.id;
+      window.renderAppView('customer-360');
+    }
+  }
+
+  // SCRUM-581 · el lote que mandó el servidor, TAL CUAL. `pintar()` deriva de él lo que se ve.
+  // Se guarda sin tocar para que cambiar de pestaña o de orden no vuelva a pedir a la red — y,
+  // sobre todo, para que el orden `RECIENTES` siga siendo EXACTAMENTE el del servidor.
+  let ultimoLote = [];
+  let ultimaBusqueda = "";
+
+  async function loadCustomers(searchText = "") {
+    setAlert(null, "");
+    setCount("Cargando…");
+    uiSkeletonRows(tbody, 7, 6);
+    try {
+      ultimoLote = await getCustomers(searchText);
+      ultimaBusqueda = searchText;
+      pintar();
+    } catch (err) {
+      setCount("");
+      setAlert("error", "Error cargando clientes: " + err.message);
+    }
+  }
+
+  function pintar() {
+    const searchText = ultimaBusqueda;
+    const lote = Array.isArray(ultimoLote) ? ultimoLote : [];
+    // SCRUM-580: los TRES se encadenan — pestaña, etiqueta y orden— sobre el lote que ya viene
+    // filtrado por el BUSCADOR desde el servidor. Los cuatro a la vez, y ninguno sustituye a otro.
+    repoblarEtiquetas(lote);
+    const data = FC.aplicar(lote, pestanaActiva, ordenActivo, etiquetaActiva);
+    {
+      tbody.innerHTML = "";
+
+      // El vacío de la PESTAÑA no es el vacío de la pantalla: hay clientes, pero ninguno
+      // clasificado así. Sin esto saldría «Añade a tu primer cliente», que ahí sería falso.
+      if (lote.length > 0 && data.length === 0) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = FC.colSpanDeLaTabla(); // SCRUM-584: del mismo sitio que la cabecera
+        // SCRUM-581 · DOS líneas (microcopy aprobada, 2-sep-2026). Se reutiliza el componente
+        // de vacío que ya existe —`.empty-state-title` y `.empty-state-desc`—: cero tokens nuevos.
+        // Con `textContent` y no concatenando en el `innerHTML`: el texto es de la pieza, no del
+        // markup, y así no hay que acordarse de escaparlo nunca.
+        td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div>'
+          + '<div class="empty-state-title"></div><div class="empty-state-desc"></div></div>';
+        td.querySelector('.empty-state-title').textContent = FC.etiqueta(FC.VACIO_PESTANA);
+        td.querySelector('.empty-state-desc').textContent = FC.subtitulo(FC.VACIO_PESTANA);
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        setCount("0 clientes");
+        return;
+      }
+
+      if (!Array.isArray(data) || data.length === 0) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = FC.colSpanDeLaTabla(); // SCRUM-584: del mismo sitio que la cabecera
+        td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div>'
+          + '<div class="empty-state-title">' + (searchText ? 'Sin resultados para tu búsqueda' : 'Añade a tu primer cliente') + '</div>'
+          + '<div class="empty-state-desc">' + (searchText ? 'Prueba con otro nombre, teléfono o email.' : 'Guárdalo una vez y podrás enviarle cotizaciones profesionales por WhatsApp en segundos.') + '</div>'
+          + (searchText ? '' : '<button id="customers-empty-cta" class="btn-primary btn-sm" style="margin-top:14px">+ Añadir cliente</button>') + '</div>';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        const cta = td.querySelector('#customers-empty-cta');
+        if (cta) cta.addEventListener('click', () => newBtn.click());
+        setCount(searchText ? "0 resultados" : "0 clientes");
+        return;
+      }
+
+      setCount(data.length + " cliente" + (data.length !== 1 ? "s" : ""));
+
+      data.forEach((c) => {
+        const tr = document.createElement("tr");
+        tr.style.cursor = "pointer";
+        tr.addEventListener("click", () => openCustomer360(c));
+
+        addCell(tr, "#" + c.id);
+        addCell(tr, c.name || "Cliente sin nombre", "cell-title");
+        addCell(tr, c.phone || "sin teléfono", "cell-date");
+        addCell(tr, c.email || "", FC.claseDeColumna("email", columnasEncendidas));
+        const notesCell = addCell(tr, c.notes || "", FC.claseDeColumna("notas", columnasEncendidas));
+        notesCell.style.cssText += "max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)";
+        if (c.notes) notesCell.title = c.notes;
+        // SCRUM-580 (CONT-07) · las etiquetas, con `.badge .badge-slate` — el componente que YA
+        // existe en el inventario. Cero tokens nuevos y cero estilos inventados.
+        // Con `textContent` por etiqueta y no concatenando markup: el texto lo escribe el
+        // profesional, y meterlo en un `innerHTML` sería una inyección con su nombre.
+        const tagsCell = document.createElement("td");
+        tagsCell.className = FC.claseDeColumna("etiquetas", columnasEncendidas);
+        const susTags = FC.tagsDe(c);
+        if (susTags.length === 0) {
+          tagsCell.textContent = "";
+        } else {
+          const caja = document.createElement("div");
+          caja.style.cssText = "display:flex;flex-wrap:wrap;gap:4px";
+          susTags.forEach((t) => {
+            const chip = document.createElement("span");
+            chip.className = "badge badge-slate";
+            chip.textContent = t;
+            caja.appendChild(chip);
+          });
+          tagsCell.appendChild(caja);
+          tagsCell.title = susTags.join(", ");
+        }
+        tr.appendChild(tagsCell);
+
+        const altaCell = addCell(tr, c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "", FC.claseDeColumna("alta", columnasEncendidas));
+        altaCell.style.color = "var(--muted)";
+
+        const tdActions = document.createElement("td");
+        tdActions.className = "cell-actions";
+        const actionsDiv = document.createElement("div");
+        actionsDiv.style.cssText = "display:flex;gap:6px;align-items:center";
+
+        const editBtn = createElement("button", "btn-secondary btn-sm", "Editar");
+        editBtn.type = "button";
+        editBtn.addEventListener("click", (e) => { e.stopPropagation(); openModal("edit", c); });
+        actionsDiv.appendChild(editBtn);
+
+        const portalBtn = createElement("button", "btn-secondary btn-sm", "Portal");
+        portalBtn.type = "button";
+        portalBtn.title = "Copiar enlace del portal del cliente";
+        portalBtn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          try {
+            const res = await apiRequest(`/admin/customers/${c.id}/portal-url`);
+            await navigator.clipboard.writeText(res.portalUrl);
+            portalBtn.textContent = "¡Copiado!";
+            setTimeout(() => { portalBtn.textContent = "Portal"; }, 2000);
+          } catch (err) {
+            setAlert("error", "Error al obtener el portal: " + err.message);
+          }
+        });
+        actionsDiv.appendChild(portalBtn);
+
+        const detailBtn = createElement("button", "btn-ghost btn-sm", "📊 Historial");
+        detailBtn.type = "button";
+        detailBtn.title = "Ver historial completo del cliente";
+        detailBtn.addEventListener("click", (e) => { e.stopPropagation(); openCustomer360(c); });
+        actionsDiv.appendChild(detailBtn);
+
+        tdActions.appendChild(actionsDiv);
+        tr.appendChild(tdActions);
+
+        tbody.appendChild(tr);
+      });
+    }
+  }
+
+  function addCell(tr, value, cls) {
+    const td = document.createElement("td");
+    td.textContent = value ?? "";
+    if (cls) td.className = cls;
+    tr.appendChild(td);
+    return td;
+  }
+
+  // -------- Eventos --------
+
+  newBtn.addEventListener("click", () => openModal("create", null));
+
+  let searchTimer = null;
+  searchInput.addEventListener("input", () => {
+    if (searchTimer) clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => loadCustomers(searchInput.value.trim()), 300);
+  });
+
+  // Carga inicial
+  loadCustomers();
+}
+
+
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-591 (DOC-01) · EL FORMULARIO DE ALTA DE CLIENTE — UNO SOLO, PARA LOS DOS CAMINOS
+//
+// LA VÍCTIMA: un fontanero hace un presupuesto con el cliente delante; al llegar al selector de
+// Contacto el cliente no está, y hasta hoy tenía que ABANDONAR el documento a medias, irse a
+// Clientes, darlo de alta y volver a empezar. Eso rompe «presupuesto en 30 segundos».
+//
+// 🔴 LO QUE ESTE BLOQUE IMPIDE: que naciera un SEGUNDO formulario en la vista del documento. Dos
+// altas divergen, y el aviso de duplicado de CONT-05 se habría quedado en una sola — justo donde
+// más duplicados nacen, que es el alta rápida con el cliente delante.
+//
+// ── POR QUÉ UNA IIFE, Y POR QUÉ EN ESTE MISMO FICHERO ────────────────────────────────────
+// El estorbo era el CIERRE de `renderCustomersView`, no el fichero: `buildModal()` usaba 33 de
+// sus símbolos y por eso no se podía llamar desde fuera. Sacarlo a un fichero NUEVO se probó y
+// se descartó con la medida delante: dejaba en rojo 27 guards de ocho tickets cerrados
+// (CONT-01, CONT-02, CONT-05, CONT-06, CONT-07, SCRUM-588, 615, 692) que leen ESTE fichero por
+// ruta. Mover el código de sitio no era el trabajo; sacarlo del cierre, sí.
+//
+// Y no se suben los nombres al ámbito global: `fieldName`, `fieldPhone`… son genéricos, y en
+// scripts clásicos eso es sembrar colisiones para la siguiente vista — lo que vigila
+// `dashboard-colision-declaraciones`. La IIFE publica UN nombre: `window.altaClienteModal`.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+(function () {
+  const FC = window.filtroClientes;
+
+  // Las dos COSTURAS. Por defecto no hacen nada, y es lo correcto: un documento abre este
+  // formulario sin tener caja de avisos ni tabla que recargar.
+  let avisar = function () {};
+  let trasGuardar = async function () {};
+
+  // De un solo uso: quien abre desde un documento espera el cliente creado.
+  let alGuardarUnaVez = null;
+
+  let editingCustomer = null;
+  let fieldLegalName, fieldTaxId; // A20.4
 
   // -------- Modal --------
 
@@ -867,8 +1101,9 @@ function renderCustomersView(container) {
 
   async function onModalSubmit(ev) {
     ev.preventDefault();
-    setAlert(null, "");
+    avisar(null, "");
 
+    let creado = null;
     const payload = {
       name: fieldName.input.value.trim(),
       phone: telefonoCompleto(),
@@ -903,7 +1138,7 @@ function renderCustomersView(container) {
     };
 
     if (!payload.name) {
-      setAlert("error", "El nombre es obligatorio.");
+      avisar("error", "El nombre es obligatorio.");
       fieldName.input.focus();
       return;
     }
@@ -912,194 +1147,59 @@ function renderCustomersView(container) {
       modalSaveBtn.disabled = true;
       if (editingCustomer) {
         await updateCustomer(editingCustomer.id, payload);
-        setAlert("success", "Cliente actualizado correctamente.");
+        avisar("success", "Cliente actualizado correctamente.");
       } else {
-        await createCustomer(payload);
-        setAlert("success", "Cliente creado correctamente.");
+        // SCRUM-591 · se GUARDA lo que devuelve el servidor: el alta desde un documento
+        // necesita el `id` para dejarlo seleccionado, y no se lo puede inventar.
+        creado = await createCustomer(payload);
+        avisar("success", "Cliente creado correctamente.");
       }
       closeModal();
-      await loadCustomers(searchInput.value.trim());
+      await trasGuardar();
+      // SCRUM-591 · y si quien abrió esperaba el cliente —el selector de un documento—, se le
+      // entrega AQUÍ: después de que el servidor lo haya confirmado, nunca antes. Es de UN
+      // SOLO USO: se limpia, para que el siguiente alta normal no dispare al anterior.
+      if (creado && alGuardarUnaVez) { const cb = alGuardarUnaVez; alGuardarUnaVez = null; cb(creado); }
     } catch (err) {
-      setAlert("error", "Error guardando cliente: " + err.message);
+      avisar("error", "Error guardando cliente: " + err.message);
     } finally {
       modalSaveBtn.disabled = false;
     }
   }
 
-  // -------- Carga de clientes --------
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // LA SUPERFICIE: un solo nombre en `window`, y las dos entradas al MISMO formulario.
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  window.altaClienteModal = {
+    /** La vista de Clientes le presta su caja de avisos y su recarga de tabla. */
+    configurar: function (opciones) {
+      if (opciones && opciones.avisar) avisar = opciones.avisar;
+      if (opciones && opciones.trasGuardar) trasGuardar = opciones.trasGuardar;
+    },
 
-  function openCustomer360(c) {
-    if (window.renderAppView) {
-      window.appState = window.appState || {};
-      window.appState.customerId360 = c.id;
-      window.renderAppView('customer-360');
-    }
-  }
+    /** La entrada de siempre: los dos botones de la tabla de Clientes. */
+    abrir: openModal,
 
-  // SCRUM-581 · el lote que mandó el servidor, TAL CUAL. `pintar()` deriva de él lo que se ve.
-  // Se guarda sin tocar para que cambiar de pestaña o de orden no vuelva a pedir a la red — y,
-  // sobre todo, para que el orden `RECIENTES` siga siendo EXACTAMENTE el del servidor.
-  let ultimoLote = [];
-  let ultimaBusqueda = "";
-
-  async function loadCustomers(searchText = "") {
-    setAlert(null, "");
-    setCount("Cargando…");
-    uiSkeletonRows(tbody, 7, 6);
-    try {
-      ultimoLote = await getCustomers(searchText);
-      ultimaBusqueda = searchText;
-      pintar();
-    } catch (err) {
-      setCount("");
-      setAlert("error", "Error cargando clientes: " + err.message);
-    }
-  }
-
-  function pintar() {
-    const searchText = ultimaBusqueda;
-    const lote = Array.isArray(ultimoLote) ? ultimoLote : [];
-    // SCRUM-580: los TRES se encadenan — pestaña, etiqueta y orden— sobre el lote que ya viene
-    // filtrado por el BUSCADOR desde el servidor. Los cuatro a la vez, y ninguno sustituye a otro.
-    repoblarEtiquetas(lote);
-    const data = FC.aplicar(lote, pestanaActiva, ordenActivo, etiquetaActiva);
-    {
-      tbody.innerHTML = "";
-
-      // El vacío de la PESTAÑA no es el vacío de la pantalla: hay clientes, pero ninguno
-      // clasificado así. Sin esto saldría «Añade a tu primer cliente», que ahí sería falso.
-      if (lote.length > 0 && data.length === 0) {
-        const tr = document.createElement("tr");
-        const td = document.createElement("td");
-        td.colSpan = FC.colSpanDeLaTabla(); // SCRUM-584: del mismo sitio que la cabecera
-        // SCRUM-581 · DOS líneas (microcopy aprobada, 2-sep-2026). Se reutiliza el componente
-        // de vacío que ya existe —`.empty-state-title` y `.empty-state-desc`—: cero tokens nuevos.
-        // Con `textContent` y no concatenando en el `innerHTML`: el texto es de la pieza, no del
-        // markup, y así no hay que acordarse de escaparlo nunca.
-        td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div>'
-          + '<div class="empty-state-title"></div><div class="empty-state-desc"></div></div>';
-        td.querySelector('.empty-state-title').textContent = FC.etiqueta(FC.VACIO_PESTANA);
-        td.querySelector('.empty-state-desc').textContent = FC.subtitulo(FC.VACIO_PESTANA);
-        tr.appendChild(td);
-        tbody.appendChild(tr);
-        setCount("0 clientes");
-        return;
+    /**
+     * SCRUM-591 · la entrada NUEVA: alta desde el selector de un documento.
+     *
+     * Abre EL MISMO formulario —con su switch Empresa/Persona (CONT-01), su validación de NIF
+     * (CONT-02) y su aviso de duplicado (CONT-05)— y entrega el cliente creado a quien lo pidió,
+     * para que lo deje seleccionado sin recargar la página.
+     *
+     * @param {{nombre?: string, alGuardar?: (cliente: any) => void}} opciones
+     */
+    abrirNuevo: function (opciones) {
+      const o = opciones || {};
+      alGuardarUnaVez = typeof o.alGuardar === 'function' ? o.alGuardar : null;
+      openModal('create', null);
+      // El prellenado va DESPUÉS de abrir: `openModal` hace `reset()` y lo borraría.
+      if (o.nombre && fieldName && fieldName.input) {
+        fieldName.input.value = o.nombre;
+        fieldName.input.focus();
       }
+    },
 
-      if (!Array.isArray(data) || data.length === 0) {
-        const tr = document.createElement("tr");
-        const td = document.createElement("td");
-        td.colSpan = FC.colSpanDeLaTabla(); // SCRUM-584: del mismo sitio que la cabecera
-        td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div>'
-          + '<div class="empty-state-title">' + (searchText ? 'Sin resultados para tu búsqueda' : 'Añade a tu primer cliente') + '</div>'
-          + '<div class="empty-state-desc">' + (searchText ? 'Prueba con otro nombre, teléfono o email.' : 'Guárdalo una vez y podrás enviarle cotizaciones profesionales por WhatsApp en segundos.') + '</div>'
-          + (searchText ? '' : '<button id="customers-empty-cta" class="btn-primary btn-sm" style="margin-top:14px">+ Añadir cliente</button>') + '</div>';
-        tr.appendChild(td);
-        tbody.appendChild(tr);
-        const cta = td.querySelector('#customers-empty-cta');
-        if (cta) cta.addEventListener('click', () => newBtn.click());
-        setCount(searchText ? "0 resultados" : "0 clientes");
-        return;
-      }
-
-      setCount(data.length + " cliente" + (data.length !== 1 ? "s" : ""));
-
-      data.forEach((c) => {
-        const tr = document.createElement("tr");
-        tr.style.cursor = "pointer";
-        tr.addEventListener("click", () => openCustomer360(c));
-
-        addCell(tr, "#" + c.id);
-        addCell(tr, c.name || "Cliente sin nombre", "cell-title");
-        addCell(tr, c.phone || "sin teléfono", "cell-date");
-        addCell(tr, c.email || "", FC.claseDeColumna("email", columnasEncendidas));
-        const notesCell = addCell(tr, c.notes || "", FC.claseDeColumna("notas", columnasEncendidas));
-        notesCell.style.cssText += "max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)";
-        if (c.notes) notesCell.title = c.notes;
-        // SCRUM-580 (CONT-07) · las etiquetas, con `.badge .badge-slate` — el componente que YA
-        // existe en el inventario. Cero tokens nuevos y cero estilos inventados.
-        // Con `textContent` por etiqueta y no concatenando markup: el texto lo escribe el
-        // profesional, y meterlo en un `innerHTML` sería una inyección con su nombre.
-        const tagsCell = document.createElement("td");
-        tagsCell.className = FC.claseDeColumna("etiquetas", columnasEncendidas);
-        const susTags = FC.tagsDe(c);
-        if (susTags.length === 0) {
-          tagsCell.textContent = "";
-        } else {
-          const caja = document.createElement("div");
-          caja.style.cssText = "display:flex;flex-wrap:wrap;gap:4px";
-          susTags.forEach((t) => {
-            const chip = document.createElement("span");
-            chip.className = "badge badge-slate";
-            chip.textContent = t;
-            caja.appendChild(chip);
-          });
-          tagsCell.appendChild(caja);
-          tagsCell.title = susTags.join(", ");
-        }
-        tr.appendChild(tagsCell);
-
-        const altaCell = addCell(tr, c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "", FC.claseDeColumna("alta", columnasEncendidas));
-        altaCell.style.color = "var(--muted)";
-
-        const tdActions = document.createElement("td");
-        tdActions.className = "cell-actions";
-        const actionsDiv = document.createElement("div");
-        actionsDiv.style.cssText = "display:flex;gap:6px;align-items:center";
-
-        const editBtn = createElement("button", "btn-secondary btn-sm", "Editar");
-        editBtn.type = "button";
-        editBtn.addEventListener("click", (e) => { e.stopPropagation(); openModal("edit", c); });
-        actionsDiv.appendChild(editBtn);
-
-        const portalBtn = createElement("button", "btn-secondary btn-sm", "Portal");
-        portalBtn.type = "button";
-        portalBtn.title = "Copiar enlace del portal del cliente";
-        portalBtn.addEventListener("click", async (e) => {
-          e.stopPropagation();
-          try {
-            const res = await apiRequest(`/admin/customers/${c.id}/portal-url`);
-            await navigator.clipboard.writeText(res.portalUrl);
-            portalBtn.textContent = "¡Copiado!";
-            setTimeout(() => { portalBtn.textContent = "Portal"; }, 2000);
-          } catch (err) {
-            setAlert("error", "Error al obtener el portal: " + err.message);
-          }
-        });
-        actionsDiv.appendChild(portalBtn);
-
-        const detailBtn = createElement("button", "btn-ghost btn-sm", "📊 Historial");
-        detailBtn.type = "button";
-        detailBtn.title = "Ver historial completo del cliente";
-        detailBtn.addEventListener("click", (e) => { e.stopPropagation(); openCustomer360(c); });
-        actionsDiv.appendChild(detailBtn);
-
-        tdActions.appendChild(actionsDiv);
-        tr.appendChild(tdActions);
-
-        tbody.appendChild(tr);
-      });
-    }
-  }
-
-  function addCell(tr, value, cls) {
-    const td = document.createElement("td");
-    td.textContent = value ?? "";
-    if (cls) td.className = cls;
-    tr.appendChild(td);
-    return td;
-  }
-
-  // -------- Eventos --------
-
-  newBtn.addEventListener("click", () => openModal("create", null));
-
-  let searchTimer = null;
-  searchInput.addEventListener("input", () => {
-    if (searchTimer) clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => loadCustomers(searchInput.value.trim()), 300);
-  });
-
-  // Carga inicial
-  loadCustomers();
-}
+    cerrar: function () { alGuardarUnaVez = null; closeModal(); },
+  };
+})();

@@ -265,9 +265,15 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   const nodos = todos(r.contenedor);
   assert.equal(nodos.length, new Set(nodos).size,
     '🔴 la vista de presupuestos, que no repetía ningún nodo, ha empezado a repetirlos.');
-  assert.equal(nodos.length, 236,
-    `🔴 la vista de presupuestos produce ${nodos.length} nodos y antes del arreglo producía 236 `
-    + '(medido sobre `origin/main` = 80db312b). El arreglo del banco no debía cambiar ni uno.');
+  // 🔴 SCRUM-591 (3-sep-2026) · 236 → 237, y el motivo importa porque este control existe para
+  // que un arreglo DEL BANCO no cambie el montaje: la subida NO es del banco, es del PRODUCTO —
+  // el selector de cliente pasa a ofrecer el alta sin salir del documento, y eso es UNA `<option>`
+  // más. Comprobado aislándolo, no supuesto: quitando ese `appendChild` el control vuelve a 236
+  // con el resto del ticket puesto (el `reset()` que SCRUM-591 añadió al banco no crea nodos).
+  assert.equal(nodos.length, 237,
+    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 237 `
+    + '(236 medidos sobre `origin/main` = 80db312b, + la opción de alta de SCRUM-591). Un arreglo '
+    + 'del BANCO no debe cambiar ni uno: si has tocado el banco y esto se mueve, el arreglo pinta.');
 
   const tablas = nodos.filter((n) => n.tagName === 'TABLE');
   assert.equal(tablas.length, 1, '🔴 la vista de presupuestos ya no monta su tabla.');
