@@ -289,12 +289,13 @@ nada. Lo que sí he comprobado es que el fixture del 409 tiene la forma que S3 d
 
 # SCRUM-684 (b) · **FASE B: el guard acotado — una avería también se entrega en papel**
 
-**Medido contra:** `origin/main` = `5b95cad27516f1eb106e069c434e404ad3b03151` · 2026-09-05T00:04:13+01:00
+**Medido contra:** `origin/main` = `f707619865a5be86988a4d34b9b0e97b4449169b` · 2026-09-05T00:17:11+01:00
 
 > **Re-anclado el 5-sep-2026 al mezclar `main` dentro de la rama**, porque una base caduca cuando
-> `main` se mueve. El ancla previa —el `origin/main` que terminaba en `8303db75`, del 4-sep-2026 a
-> las 21:37:50+01:00— era la del árbol sobre el que se midieron la caja del modal y los seis rojos,
-> y se conserva aquí escrita para que no se pierda contra qué se midió aquello.
+> `main` se mueve — y aquí se movió **tres veces en una hora**. El ancla previa —el `origin/main`
+> que terminaba en `8303db75`, del 4-sep-2026 a las 21:37:50+01:00— era la del árbol sobre el que se
+> midieron la caja del modal y los seis rojos, y se conserva aquí escrita para que no se pierda
+> contra qué se midió aquello.
 
 > ⚠️ **CORREGIDO el 4-sep-2026: NO es SCRUM-725, es SCRUM-683** — lo dice el propio encabezado del
 > bloque de arriba, y el asesor rectificó su cita («la saqué del título de un ticket de Jira sin
@@ -466,16 +467,38 @@ staging ni la de producción. El turno de staging se tomó y **se soltó** (lo h
 antes**: mezclar `main` es un cambio, y una tanda anterior al cambio no dice nada del árbol que se
 entrega.
 
-Se mezcló **dos veces**, y la segunda no estaba planeada: al ir a re-anclar, `main` se había movido
-otra vez. **57 commits de `main` en total** — 51 hasta `9545711d`, y 6 más hasta `5b95cad2`.
+Se mezcló **tres veces**, y ninguna de las dos últimas estaba planeada: cada vez que se fue a
+re-anclar, `main` se había vuelto a mover. **71 commits de `main` en total** — 51 hasta `9545711d`,
+6 más hasta `5b95cad2` y 14 más hasta `f7076198`. Es el ritmo real de un día con varias sesiones
+abiertas, y por eso el ancla se re-mide en vez de escribirse una vez.
 
 | tanda | árbol medido | tests | pass | fail | saltados |
 |---|---|---:|---:|---:|---:|
 | tras el 1.er merge | `origin/main` = `9545711d` · 2026-09-05T00:01:44+01:00 | 5406 | 5318 | **0** | 88 |
 | tras el 2.º merge | `origin/main` = `5b95cad2` · 2026-09-05T00:08:47+01:00 | 5411 | 5323 | **0** | 88 |
+| tras el 3.er merge | `origin/main` = `f7076198` · 2026-09-05T00:19:21+01:00 | 5439 | 5351 | **0** | 88 |
 
-Las unidades son **tests**, no ficheros: los 5 de diferencia entre una tanda y otra son los que
-entraron con **SCRUM-747** en el segundo merge, no tests míos. Los **7 tests** de
+La tercera vuelta **no fue por rutina**: entre los 14 commits venía **SCRUM-738**, un censo que lee
+`docs/master/` y los números de los títulos, y este fichero es precisamente uno con **el número
+compartido** por dos trabajos. Medido después: `main` no había tocado ninguno de los cuatro
+ficheros de este carril, y sus huellas siguen siendo las mismas tras los tres merges.
+
+> ✅ **Y valió la vuelta: SCRUM-738 trae un test QUE HABLA DE ESTE TICKET**, y en la tercera tanda
+> sale en verde — *«SCRUM-684 NO se da por hecho: su entrada está titulada para OTRO»*. Su censo
+> daba 684 por **ENTERO** por el número compartido, y ahora lo devuelve como **`NO_MEDIBLE`** con el
+> motivo `NÚMERO COMPARTIDO`. Se apoya en que el **primer** título del fichero siga siendo
+> `# SCRUM-683`, que es lo que este trabajo **no ha tocado**; si algún día se separan los ficheros,
+> ese test se retira con ellos y él mismo lo dice. Sin la tercera vuelta, un guard nuevo que mira
+> esta entrada se habría quedado sin correr contra ella.
+
+> ⚠️ **Un recuento que me falló a mí mientras escribía esto, y va aquí porque es el mismo defecto de
+> siempre.** Al comparar las tandas conté los saltos «de este carril» buscando `684`, y la tercera
+> dio **1** donde las otras daban 0. No era un salto: el patrón casaba con **`0.2684ms`**, el tiempo
+> de ejecución de un test ajeno. Con el patrón estricto (`SCRUM-684`) las tres dan **0**. Un número
+> buscado por un trozo de texto que también aparece en otra cosa no es una medición.
+
+Las unidades son **tests**, no ficheros: los 5 de diferencia entre la primera tanda y la segunda son
+los que entraron con **SCRUM-747** en el segundo merge, no tests míos. Los **7 tests** de
 `tests/scrum684-albaran-en-averia.test.mjs` salen en verde en las dos, y el barrido que los busca
 devuelve **10 líneas** —los 7 más las 3 de `scrum257` y `scrum303` que citan el ticket—: un cero
 ahí habría sido «no supe mirar», no «no hay».
