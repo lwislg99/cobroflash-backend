@@ -154,8 +154,21 @@ test('SCRUM-624 · CONTROL NEGATIVO: un `toFixed(0)` o un `round` sin factor 100
 // 🔴 LO MEDIDO, FIJADO — para que la propuesta se discuta sobre números que no se mueven
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-/** Medido el 3-sep-2026. BAJA cuando se unifique una convención; si SUBE, entra una nueva mezcla. */
-const TOPE_FICHEROS_QUE_MEZCLAN = 12;
+/**
+ * Medido el 3-sep-2026. BAJA cuando se unifique una convención; si SUBE, entra una nueva mezcla.
+ *
+ * 12 → 13 el 3-sep-2026 por SCRUM-594 (DOC-04), y el motivo se escribe aquí porque subir este
+ * número sin decir por qué es exactamente lo que el trinquete existe para impedir:
+ * `quotes/domain/presentacionIva.ts` pasa a tener las dos formas **a propósito y separadas**:
+ *   · `redondear2` (`Math.round(x*100)/100`) para PRESENTAR importes — la que ya usaba
+ *     `calcVatBreakdown`, de quien este pie consume las cifras;
+ *   · céntimos enteros SÓLO para repartir el descuento global entre tipos, donde la regla no es
+ *     una convención fiscal sino conservación aritmética: la suma de los repartos tiene que ser
+ *     EXACTAMENTE el importe que el cliente firmó, y en coma flotante no lo es.
+ * No se unifica ninguna de las dos ni se toca `calcVatBreakdown`: cuál debe mandar está en la
+ * asesoría con SCRUM-619, 623 y 624.
+ */
+const TOPE_FICHEROS_QUE_MEZCLAN = 13;
 
 test('SCRUM-624 · 🔴 no entra NINGÚN fichero nuevo que mezcle formas de redondear', () => {
   assert.ok(MEZCLAN.length <= TOPE_FICHEROS_QUE_MEZCLAN,

@@ -100,7 +100,26 @@ export function normalizePhone(input?: string | null): string {
 
   // SCRUM-655: `qty` y `price` son OPCIONALES porque una CABECERA de apartado no las tiene. El
   // tipo dice la verdad sobre la forma real de `Quote.lines`; quien sume, filtra por la marca.
-  export type QuoteLine = { concept: string; qty?: number; price?: number; tax?: number; apartado?: boolean };
+  export type QuoteLine = {
+    concept: string; qty?: number; price?: number; tax?: number; apartado?: boolean;
+    /**
+     * SCRUM-594 (DOC-04) · el descuento de ESTA línea, en PORCENTAJE.
+     *
+     * 🔴 OPCIONAL Y NUNCA CON DEFAULT. Una línea sin `dto` —y lo son TODAS las anteriores a este
+     * ticket— tiene que dar exactamente el mismo total que antes. Es el mismo criterio que
+     * `costeUnitario` (SCRUM-661): un default convertiría el silencio en un dato.
+     */
+    dto?: number;
+  };
+
+  /** El precio de una línea DESPUÉS de su descuento. Sin `dto`, es el precio tal cual. */
+  function precioConDto(price: unknown, dto: unknown): number {
+    const p = Number(price);
+    if (!Number.isFinite(p)) return 0;
+    const d = Number(dto);
+    if (!Number.isFinite(d) || d <= 0) return p;
+    return p * (1 - Math.min(100, d) / 100);
+  }
   
   /**
    * El total de un presupuesto.
@@ -115,10 +134,58 @@ export function normalizePhone(input?: string | null): string {
    * Se filtran por su MARCA, no por «no tener precio»: así una cabecera a la que alguien le meta
    * un importe sigue sin mover el total, que es lo único que hace de esto una garantía.
    */
-  export function calcTotal(lines: QuoteLine[]): number {
-    const sum = lineasQueSuman(lines as unknown as Record<string, unknown>[])
-      .reduce((acc, l) => acc + Number(l.qty) * Number(l.price) * (1 + (Number(l.tax) || 0)), 0);
-    return Math.round(sum * 100) / 100;
+  export function calcTotal(lines: QuoteLine[], descuentoGlobal?: number | string | null): number {
+    const suman = lineasQueSuman(lines as unknown as Record<string, unknown>[]);
+
+    // ── SCRUM-594 · EL DESCUENTO DE LÍNEA OPERA SÓLO SOBRE EL PRECIO ──────────────────────
+    // El margen NO vive en el documento (DOC-08): vive en el catálogo. Así que aquí no hay
+    // ningún margen que respetar, y el descuento se aplica al precio y ya.
+    //
+    // 🔴 LA CONVENCIÓN DE REDONDEO NO SE TOCA. `Math.round(sum * 100) / 100` sobre la suma en
+    // coma flotante es la que esta función ya tenía, y cambiarla movería importes de documentos
+    // existentes. Son CUATRO conviviendo en el árbol (medido en SCRUM-624) y la elección está en
+    // la asesoría con SCRUM-619 y 623: este ticket no la decide.
+    const base = suman.reduce(
+      (acc, l) => acc + Number(l.qty) * precioConDto(l.price, (l as Record<string, unknown>).dto)
+        * (1 + (Number(l.tax) || 0)),
+      0,
+    );
+
+    // ── EL DESCUENTO GLOBAL ────────────────────────────────────────────────────────────────
+    // Va en EUROS y reduce la base ANTES del impuesto, así que su efecto sobre el total incluye
+    // el IVA que deja de devengarse. Se prorratea entre los tipos proporcionalmente a su base
+    // —la única forma que no elige favorecer a nadie— y el ÚLTIMO tipo absorbe el céntimo que
+    // sobra, para que la suma de los repartos sea EXACTAMENTE el importe que el cliente firmó.
+    //
+    // ⚠️ REGLA DEL PRESUPUESTO, QUE NO ES DOCUMENTO FISCAL. Antes de que un descuento llegue a
+    // una FACTURA, este prorrateo va a la asesoría con SCRUM-619, 623 y 624.
+    const global = Number(descuentoGlobal);
+    if (!Number.isFinite(global) || global <= 0) return Math.round(base * 100) / 100;
+
+    const porTipo = new Map<number, number>();
+    for (const l of suman) {
+      const rate = Math.round((Number(l.tax) || 0) * 100);
+      const baseCents = Math.round(
+        Number(l.qty) * precioConDto(l.price, (l as Record<string, unknown>).dto) * 100,
+      );
+      porTipo.set(rate, (porTipo.get(rate) || 0) + (Number.isFinite(baseCents) ? baseCents : 0));
+    }
+    const tipos = [...porTipo.entries()];
+    const sumaBases = tipos.reduce((a, [, c]) => a + c, 0);
+    if (sumaBases <= 0) return Math.round(base * 100) / 100;
+
+    const aRepartir = Math.min(Math.round(global * 100), sumaBases);
+    let quitado = 0;
+    let acumulado = 0;
+    for (let i = 0; i < tipos.length; i++) {
+      const [rate, baseCents] = tipos[i];
+      const cents = i === tipos.length - 1
+        ? aRepartir - acumulado
+        : Math.round((aRepartir * baseCents) / sumaBases);
+      acumulado += cents;
+      quitado += cents * (1 + rate / 100);   // el descuento se lleva su parte de impuesto
+    }
+    return Math.round((base * 100 - quitado)) / 100;
   }
   
   export function makeReference() {
