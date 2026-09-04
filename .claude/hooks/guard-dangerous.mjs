@@ -641,6 +641,19 @@ function reglas(lista, sentinelPath, entorno = {}) {
       "'prisma migrate resolve' escribe en la tabla de migraciones de la base para dar por " +
       'aplicada una migracion. Esta casa no usa migraciones (regla 3), asi que esto solo puede ' +
       'dejar la base diciendo algo que no es.'],
+    // 🔴 `db seed` ENTRA POR DECISIÓN DEL ASESOR (4-sep-2026), y el motivo se escribe aquí porque
+    // es el que hace revisable la decisión: **sembrar contra el destino equivocado ESCRIBE DATOS**,
+    // y la confusión de destino es la familia de casi-accidentes de esta casa. Medido:
+    // `prisma/seed.ts` hace `upsert` sobre el merchant 1 —nombre, NIF, dirección, plan— con un
+    // `new PrismaClient()` a secas, sin comprobar a dónde apunta.
+    //
+    // El sentinel NO bloquea: confirma. Y confirmar antes de escribir en una base cuesta un
+    // segundo. `npm run db:seed` sigue pasando —el hook ve el nombre del script, no el
+    // subcomando—: ése es el hueco que mide SCRUM-746, y NO lo cierra esta línea.
+    ['db', 'seed',
+      "'prisma db seed' ESCRIBE DATOS en la base a la que apunte `DATABASE_URL`, y `prisma/seed.ts` " +
+      'no comprueba a donde apunta. Si de verdad quieres sembrar, di contra que base: ' +
+      '`DATABASE_URL_DEV=... node scripts/seed-demo.mjs` (ese si comprueba el destino).'],
     ['db', 'pull',
       "'prisma db pull' REESCRIBE `prisma/schema.prisma` con lo que haya en la base, y ese fichero " +
       'es del FUNDADOR. El esquema manda sobre la base, no al reves: si hay diferencia, el preview ' +
