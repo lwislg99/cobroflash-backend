@@ -259,13 +259,13 @@ propuesta recomienda se ha hecho**: es una propuesta.
 **Medido contra:** `origin/main` = `9545711d5172e24f1f985471a39c25bcc1062841` · 2026-09-04T23:47:23+01:00
 **Medido en:** host `DESKTOP-A24926K` · rama `scrum-746b-guarda-en-la-conexion`
 
-**Tanda:** **5.408 pruebas · 5.320 en verde · 0 fallos · 88 saltadas**, con `main` ya mergeado
+**Tanda:** **5.413 pruebas · 5.325 en verde · 0 fallos · 88 saltadas**, con `main` ya mergeado
 dentro y medida DESPUÉS del último cambio, entrada incluida.
 
 La base sobre `main` limpio, medida al empezar sobre un worktree recién nacido de
 `b54423162c3dca9f25dd160c928a70fb371f3c6f`, daba **5.400 · 5.312 · 0 fallos · 88 saltadas**.
-**Los +8 son EXACTAMENTE los de este fichero de tests**; el `main` que se mezcló después no traía
-tests nuevos (era el merge de la fase A, cuyos 5 ya estaban en la base). **No hay comparación de
+**Los +13: 8 son de este fichero de tests** y **5** son los de la fase A, que entraron con el `main`
+mezclado después de tomar la base. **No hay comparación de
 fan-out nombre a nombre**, así que el reparto es aritmética, no medición.
 
 > ⛔ **Ninguna de las tres rutas se ha ejecutado.** Ni contra producción, ni contra staging, ni
