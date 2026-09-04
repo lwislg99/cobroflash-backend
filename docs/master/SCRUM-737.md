@@ -48,9 +48,24 @@ Cuenta **las afirmaciones de RECUENTO DEL ÁRBOL EN UN MOMENTO** — las que dic
 
 | | |
 |---|---|
-| Población **declarada** | `tests/*.mjs` + `scripts/*.mjs` = **853** ficheros |
-| Cifras sin ancla **al empezar** | **80**, en 62 ficheros |
-| Cifras sin ancla **al terminar** | **78** |
+| Población **declarada** | `tests/*.mjs` + `scripts/*.mjs` = **853** ficheros (856 tras mezclar `main`) |
+| Cifras sin ancla **al empezar** (4-sep-2026) | **80**, en 62 ficheros |
+| Tras retirar las dos de este ticket | **78** |
+| **Al mezclar `main`** (4-sep-2026) | **80** otra vez — ver abajo |
+
+### 🟢 Y el guard cazó dos cifras nuevas el mismo día en que se escribió
+
+Al mezclar `main`, el censo **volvió a subir a 80**: SCRUM-740 (otra sesión) entró con **dos**
+cifras de recuento sin fecha, en `tests/scrum740-carrera-por-el-arbol.test.mjs` y
+`tests/_barrido-estable.mjs`.
+
+**No se arreglan aquí** — es su carril, no el mío (regla 9). Pero **no se diluyen en el total**:
+quedan **nombradas** en `HEREDADAS_FUERA_DE_CARRIL`, con el patrón de `PENDIENTES_FUERA_DE_CARRIL`
+de SCRUM-498, y un test comprueba que siguen ahí — de modo que **el día que su ticket las arregle,
+el guard avisa de que hay que vaciar la lista y bajar el congelado**. Subir un total sin decir qué
+lo subió es exactamente cómo un censo se convierte en un número que nadie mira.
+
+**Es la mejor evidencia de que el instrumento sirve: el defecto reapareció en cuestión de horas.**
 
 ### 🔴 SUELO, que era condición del encargo
 

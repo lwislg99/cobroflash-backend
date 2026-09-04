@@ -46,11 +46,29 @@ import {
 const RAIZ = path.resolve(import.meta.dirname, '..');
 
 /**
- * 🔴 EL CENSO CONGELADO. 78 cifras sin ancla el 4-sep-2026, tras retirar las dos de
- * `scrum667` y `scrum709` (eran 80). **No puede SUBIR.** Si BAJA, se actualiza aquí y se anota
- * cuál se arregló — un censo que encoge en silencio deja de vigilar sin que nadie lo sepa.
+ * 🔴 EL CENSO CONGELADO. **No puede SUBIR.** Si BAJA, se actualiza aquí y se anota cuál se
+ * arregló — un censo que encoge en silencio deja de vigilar sin que nadie lo sepa.
+ *
+ * Historia, con su fecha, porque un número sin ella es justo lo que este fichero persigue:
+ *   · 4-sep-2026 — 80 al abrir el ticket · 78 tras retirar las de `scrum667` y `scrum709`.
+ *   · 4-sep-2026 — vuelve a 80 al mezclar `main`: SCRUM-740 entró con DOS cifras nuevas.
  */
-const CENSO_CONGELADO = 78;
+const CENSO_CONGELADO = 80;
+
+/**
+ * 🔴 HEREDADAS DE OTRO CARRIL, NOMBRADAS PARA QUE NO SE DILUYAN EN EL TOTAL.
+ *
+ * Llegaron con el merge de SCRUM-740 (otra sesión) el 4-sep-2026, ya en `main`. **No se arreglan
+ * aquí**: es su carril, no el mío (regla 9). Se registran con el patrón de
+ * `PENDIENTES_FUERA_DE_CARRIL` de SCRUM-498 — subir el total sin decir qué lo subió es cómo un
+ * censo se convierte en un número que nadie mira.
+ *
+ * Y son la prueba de que este guard hace su trabajo: lo cazó **el mismo día** en que se escribió.
+ */
+export const HEREDADAS_FUERA_DE_CARRIL = [
+  { fichero: 'tests/scrum740-carrera-por-el-arbol.test.mjs', ticket: 'SCRUM-740' },
+  { fichero: 'tests/_barrido-estable.mjs', ticket: 'SCRUM-740' },
+];
 
 /** Suelo de población: si el barrido lee menos ficheros que esto, no está mirando el árbol. */
 const MINIMO_FICHEROS = 700;
@@ -111,6 +129,17 @@ test('SCRUM-737 · las dos instancias arregladas NO reaparecen', () => {
     '🔴 HA VUELTO UNA CIFRA A UN FICHERO YA ARREGLADO. `scrum667` remite al censo y `scrum709` ' +
     'retiró el recuento a propósito; volver a escribirlo deshace SCRUM-737 en el mismo sitio.\n     ' +
     vuelven.join('\n     '));
+});
+
+test('SCRUM-737 · las heredadas de otro carril siguen NOMBRADAS, no diluidas en el total', () => {
+  const todas = censo(RAIZ);
+  for (const { fichero, ticket } of HEREDADAS_FUERA_DE_CARRIL) {
+    const hay = todas.some((c) => c.fichero === fichero);
+    assert.ok(hay,
+      `✅ ${fichero} ya no tiene cifras sin ancla — ${ticket} lo arregló. Bien: quítalo de ` +
+      '`HEREDADAS_FUERA_DE_CARRIL` y baja `CENSO_CONGELADO`. Una lista de pendientes que no se ' +
+      'vacía cuando el pendiente se resuelve deja de ser una lista y pasa a ser decoración.');
+  }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
