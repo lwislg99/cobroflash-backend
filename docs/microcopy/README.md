@@ -75,7 +75,7 @@ los ficheros de este directorio. No es una convención inventada: es la que el r
 El motivo está medido, no es teórico. Hay literales aprobados de dos palabras —«Mano de obra»,
 «Materiales», «Guardar precios», «Precio por unidad»— y sus trozos aparecen en la prosa normal del
 registro. Con búsqueda por subcadena, preguntar por **«Precio por»** o por **«de obra»** contestaba
-**aprobado**, y nadie firmó eso. Está corrido en `tests/scrum710-consta-por-identidad.test.mjs`, con
+**aprobado**, y nadie firmó eso. Está corrido en `tests/scrum715-consta-por-identidad.test.mjs`, con
 el caso que distingue los dos mecanismos y con el control de que apretar el matching **no tiró
 ninguna aprobación legítima**: las 21 conocidas se siguen encontrando una a una.
 
