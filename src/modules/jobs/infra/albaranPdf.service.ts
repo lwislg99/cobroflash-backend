@@ -17,6 +17,7 @@ import { ALBARAN_ROTULOS, etiquetaCalidad } from '../domain/albaranFirmante';
 import { formatImporteEs } from '../../../core/utils/utils'; // SCRUM-636: el sitio unico
 import { TITULO_OBSERVACIONES } from '../../invoicing/infra/pdf/pdf.service'; // SCRUM-593: un solo rotulo
 import { partirConceptoYDescripcion } from '../../invoicing/infra/pdf/conceptoLinea'; // SCRUM-603 (DOC-13)
+import { documentoEnsenaPrecios } from '../domain/albaranPrecios'; // SCRUM-607 (ALB-02)
 
 export async function generateAlbaranPdf(params: {
   merchantId: number; // SCRUM-48: prefija el nombre de archivo (mata la colisión entre merchants)
@@ -25,6 +26,17 @@ export async function generateAlbaranPdf(params: {
   emisionAt: Date;          // SCRUM-67: fecha de emisión del documento (Albaran.createdAt)
   version: number;
   modoValoracion: AlbaranModoValoracion;
+  // SCRUM-607 (ALB-02) · el albarán CONSERVA sus precios y este papel no los enseña. Opcional y
+  // `false` por defecto: los albaranes que ya existen salen byte a byte como salían.
+  ocultarPreciosEnDocumento?: boolean | null;
+  // SCRUM-607 (ALB-02) · de qué presupuesto sale, para el PIE. Ya viene compuesto por
+  // `referenciaPresupuesto`: aquí no se decide el texto, se imprime. `null` = el Trabajo no vino
+  // de un presupuesto, y entonces no se pinta la línea.
+  //
+  // 🔴 FUERA DEL SOBRE DE LA FIRMA, que sigue en sus cinco campos (SCRUM-452). Está en el mismo
+  // cajón que `merchant.address` o `notas`: el sello no afirma nada sobre esto, así que no puede
+  // contradecir al papel.
+  presupuestoRef?: string | null;
   // ── LO QUE **NO** VIAJA EN EL SOBRE ────────────────────────────────────────────────────────
   //
   // 🔴 SCRUM-452: aquí ya NO están `name`, `legalName` ni `taxId` del emisor, ni el nombre del
@@ -126,7 +138,10 @@ export async function generateAlbaranPdf(params: {
   function fmtMoney(v: number) {
     return formatImporteEs(v) + ' €';
   }
-  const valorado = params.modoValoracion === 'VALORADO';
+  // SCRUM-607 (ALB-02) · el mismo decisor que usa la pantalla publica del cliente, no una copia:
+  // ocultar los precios en un sitio y no en el otro seria no ocultar nada, y el sitio donde no
+  // se taparan es el que el cliente abre desde el movil.
+  const valorado = documentoEnsenaPrecios(params);
 
   // ── Cabecera: logo izquierda, título derecha ─────────────────────────────
   const hY = doc.y;
@@ -401,6 +416,26 @@ export async function generateAlbaranPdf(params: {
     );
     doc.fillColor('#000');
     doc.moveDown(0.5);
+  }
+
+  // ── SCRUM-607 (ALB-02) · DE QUÉ PRESUPUESTO SALE ──────────────────────────
+  //
+  // Si el albarán no lleva precios, TIENE que decir de dónde viene: sin eso el cliente recibe una
+  // lista de cosas sin nada que la ate a lo que aceptó, y el documento deja de ser comprobable.
+  // Se imprime SIEMPRE que haya presupuesto de origen —también con precios—: la trazabilidad no
+  // estorba en un papel que ya los enseña, y un pie que cambia de forma según el interruptor
+  // sería una diferencia más que explicar.
+  //
+  // 🔴 EN EL PIE Y FUERA DEL SOBRE. El sobre de la firma se queda en sus cinco campos
+  // (SCRUM-452): ampliarlo cambiaría el hash y dejaría los albaranes ya firmados con un sobre de
+  // otra forma. Esto va en el mismo cajón que `merchant.address`: el sello no afirma nada sobre
+  // ello, así que no puede contradecir al papel.
+  if (params.presupuestoRef) {
+    if (doc.y + 60 > doc.page.height - doc.page.margins.bottom) doc.addPage();
+    doc.moveDown(0.8);
+    doc.fontSize(8).font('Helvetica').fillColor(MUTED).text(
+      String(params.presupuestoRef), M, doc.y, { width: W, align: 'center' },
+    );
   }
 
   // ── Pie legal (SCRUM-67 · texto EXACTO del brief, en AMBOS modos) ─────────

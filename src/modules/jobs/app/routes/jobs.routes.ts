@@ -985,6 +985,18 @@ router.post('/:id/albaranes', async (req, res) => {
     const docHeaderText = req.body?.docHeaderText !== undefined
       ? String(req.body.docHeaderText || '').slice(0, 2000) || null : null;
 
+    // SCRUM-607 (ALB-02) · el interruptor del papel, TAMBIEN al crear. Si el PATCH lo guardara y
+    // el create no, marcar la casilla al dar de alta se perderia en silencio — que es el defecto
+    // que SCRUM-424 cazo aqui mismo con la fecha de entrega.
+    //
+    // Booleano ESTRICTO, igual que en el PATCH: un `Boolean()` convertiria la cadena "false" en
+    // `true`, y en este campo eso significa ensenar los precios de alguien a su cliente.
+    if (req.body?.ocultarPreciosEnDocumento !== undefined
+        && typeof req.body.ocultarPreciosEnDocumento !== 'boolean') {
+      return res.status(400).json({ error: 'ocultar_precios_invalido' });
+    }
+    const ocultarPreciosEnDocumento = req.body?.ocultarPreciosEnDocumento === true;
+
     // SCRUM-424 · la fecha de entrega, con el MISMO criterio que el PATCH: admite vaciarse
     // (undefined o '' -> null, el documento puede no tenerla) y una ilegible NO se guarda como
     // hoy en silencio: se rechaza. Inventar una fecha de entrega es el defecto de SCRUM-397.
@@ -1045,6 +1057,9 @@ router.post('/:id/albaranes', async (req, res) => {
           // SCRUM-593 (DOC-03): si el PATCH lo guarda y el create no, lo que el profesional
           // teclea al crear se pierde EN SILENCIO — el defecto entero de SCRUM-424.
           docHeaderText,
+          // SCRUM-607 (ALB-02): ver arriba. `as any` en el `data` de abajo mientras la columna
+          // viva solo en el DDL — el schema de Prisma es del fundador.
+          ocultarPreciosEnDocumento,
           // ── SCRUM-424 · LO QUE SE ESCRIBE AL CREAR SE PERDÍA EN SILENCIO ──────────────────
           //
           // El PATCH guarda `lugarEntrega` y `fechaEntrega` (albaranes.routes.ts:474-486) y este
@@ -1061,7 +1076,7 @@ router.post('/:id/albaranes', async (req, res) => {
           lugarEntrega: normalizarLugarEntrega(req.body?.lugarEntrega),
           fechaEntrega: fechaEntregaAlCrear,
           claveIdempotencia: clave,
-        },
+        } as any,
       });
     });
 

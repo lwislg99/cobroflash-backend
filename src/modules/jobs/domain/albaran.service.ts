@@ -13,6 +13,7 @@ import { generateAlbaranPdf } from '../infra/albaranPdf.service';
 // SCRUM-438 (v:3): UN solo sitio declara de dónde sale cada uno de los cinco campos, y LANZA ante
 // una versión desconocida. Sustituye la rama por defecto de `obraSegunVersion`.
 import { contenidoSegunVersion, type ContenidoCongelado } from './albaranContenidoFuentes';
+import { referenciaPresupuesto } from './albaranPrecios'; // SCRUM-607 (ALB-02)
 
 export const ALBARAN_ESTADOS = ['borrador', 'emitido', 'firmado'] as const;
 export type AlbaranEstado = (typeof ALBARAN_ESTADOS)[number];
@@ -749,6 +750,10 @@ export function serializeAlbaran(a: any) {
     // navegador. Y entonces la siguiente edición lo guardaría en blanco: el texto no se
     // pierde al leerlo, se pierde al volver a guardar.
     docHeaderText: a.docHeaderText ?? null,
+    // SCRUM-607 (ALB-02) · el interruptor del papel. El serializador es una lista BLANCA: sin
+    // esta linea el formulario saldria siempre desmarcado y la siguiente edicion lo apagaria
+    // sola — el mismo defecto que describe `docHeaderText` justo arriba.
+    ocultarPreciosEnDocumento: (a as any).ocultarPreciosEnDocumento === true,
     // SCRUM-300 (C5). ⚠️ `evidenciaFirma` sigue SIN salir de aquí: lleva ip/ua (dato personal).
     // Estos cuatro son contenido del documento, no evidencia técnica.
     // null = «No se pidió al firmar»: son los albaranes anteriores a esta tarea, y el front lo
@@ -793,6 +798,19 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
   ]);
   const customer = job
     ? await prisma.customer.findUnique({ where: { id: job.customerId }, select: { name: true, legalName: true, taxId: true } })
+    : null;
+
+  // SCRUM-607 (ALB-02) · EL PRESUPUESTO DE ORIGEN, para el pie del papel.
+  //
+  // Se resuelve por `Job.quoteId` y con la MISMA forma que ya usan `jobs.routes.ts:275` y
+  // `albaranes.routes.ts:689` (numero con caida al id): dos formas del mismo dato acaban
+  // divergiendo y el profesional ve dos numeros para un presupuesto. El dato ya existia desde
+  // SCRUM-302 — lo que faltaba era que llegase al PDF.
+  const quoteOrigen = job?.quoteId
+    ? await prisma.quote.findFirst({
+        where: { id: job.quoteId, merchantId: albaran.merchantId },
+        select: { id: true, quoteNumber: true },
+      })
     : null;
 
   const modoValoracion: AlbaranModoValoracion = albaran.modoValoracion === 'VALORADO' ? 'VALORADO' : 'SIN_VALORAR';
@@ -859,6 +877,15 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
     notas: albaran.notas,
     // SCRUM-593 (DOC-03): la cabecera. El PIE de este documento sigue siendo `notas`, arriba.
     docHeaderText: (albaran as any).docHeaderText ?? null,
+    // SCRUM-607 (ALB-02) · el interruptor del papel y la trazabilidad que viene con el.
+    //
+    // `as any` como `docHeaderText` de la linea de arriba: la columna se aplica por DDL y el
+    // schema de Prisma es del fundador. Mientras no este, esto vale `undefined` y el decisor
+    // devuelve exactamente el comportamiento de hoy — no hay estado intermedio raro.
+    ocultarPreciosEnDocumento: (albaran as any).ocultarPreciosEnDocumento === true,
+    presupuestoRef: referenciaPresupuesto(
+      quoteOrigen ? { id: quoteOrigen.id, number: quoteOrigen.quoteNumber ?? quoteOrigen.id } : null,
+    ),
     signatureData: albaran.signatureUrl,
     firmadoAt: albaran.firmadoAt,
     // SCRUM-300 (C5): QUIÉN firmó y EN CALIDAD DE QUÉ, junto al trazo. Salen de las columnas del

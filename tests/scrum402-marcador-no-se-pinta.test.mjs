@@ -479,6 +479,24 @@ const CENSO = Object.freeze({
   // `PENDIENTE_MODO_EMISION` — su rama `receipt` toca terreno de la regla 26 y esa pregunta se
   // responde SOLO con el guion H2, así que no se aprueba de refilón con el resto de la pantalla.
   'settingsView.js': 1,
+  // ── SCRUM-607 (ALB-02) · 4-sep-2026 · ENTRA A CONCIENCIA CON 2, Y CON EL NÚMERO DELANTE ─────
+  //
+  // El interruptor que quita los precios del albarán que se entrega. Medido antes y después con
+  // este mismo trinquete, que es lo que se pide: SIN la entrada dijo `jobDetailView.js (+2)`, o
+  // sea que **el marcador SUBE el contador** y no es de los invisibles.
+  //
+  // 🔴 SON DOS Y NO UNA, y no por descuido: el rótulo de la casilla y su nota dicen cosas
+  // DISTINTAS —«no enseñes los precios» y «el albarán los conserva, sólo deja de enseñarlos el
+  // papel»—. Colapsarlos en una sola constante haría que aprobar uno diera por aprobado el otro,
+  // que es justo lo que este fichero declara mal en su propio caso de `jobDetailView.js` de
+  // septiembre («ilegible» y «sin líneas» dirían LO MISMO y el suelo sería decorativo).
+  //
+  // La segunda es la que de verdad importa: sin ella, un profesional puede creer que marcar la
+  // casilla le BORRA los precios del albarán —y no: los conserva, y sigue pudiendo facturar—.
+  //
+  // El asesor firma el texto cuando el control exista y se le midan las cajas a 929 y 390 px.
+  // Ese día la entrada se BORRA, no se pone a 0 (SCRUM-424 / SCRUM-405).
+  'jobDetailView.js': 2,
 });
 
 /** Marcadores que viven en un LITERAL (los que pueden pintarse). Los comentarios no son literales. */

@@ -59,6 +59,20 @@ const CENSO_SERVIDOR = Object.freeze({
   'src/modules/invoicing/domain/criterioCaja.ts': 1,
   'src/modules/fiscal/modelo303/modelo303.ts': 1,
   'src/modules/fiscal/librosAeat/librosAeat.ts': 1,
+  // ── SCRUM-607 (ALB-02) · 4-sep-2026 · ENTRA A CONCIENCIA CON 1 ─────────────────────────
+  //
+  // 🔴 SE IMPRIME EN EL PAPEL QUE RECIBE EL CLIENTE — el pie del albarán, diciendo de qué
+  // presupuesto sale. Y es incómodo a propósito: la alternativa es inventarme el literal, que
+  // es justo lo que la regla 30 prohíbe.
+  //
+  // No se puede no pintar la superficie y esperar: sin la referencia, un albarán sin precios
+  // deja de ser comprobable —una lista de cosas sin nada que la ate a lo que el cliente
+  // aceptó—, y eso es peor que el marcador. Los DOS textos de la casilla que lo enciende viven
+  // en  y están declarados en el censo de SCRUM-402.
+  //
+  // El asesor firma con las cajas ya medidas (929 y 390 px, en ). Ese
+  // día la entrada se BORRA, no se pone a 0.
+  'src/modules/jobs/domain/albaranPrecios.ts': 1,
   // Mensajes de error de API (409): los lee el profesional en un aviso del panel.
   'src/modules/jobs/app/routes/albaranes.routes.ts': 1,
   'src/modules/system/app/routes/invoicesAdmin.routes.ts': 1,
@@ -75,6 +89,9 @@ const CENSO_SERVIDOR = Object.freeze({
 // ═════════════════════════════════════════════════════════════════════════════════════════
 const EN_EL_PAPEL = Object.freeze({
   'MARCADOR_MICROCOPY_DESGLOSE': 'factura con MÁS DE UN tipo de IVA — el rótulo de la columna de bases',
+  // SCRUM-607 (ALB-02): el pie del ALBARÁN, con el presupuesto de origen. Se imprime siempre que
+  // el Trabajo venga de un presupuesto — con precios y sin ellos.
+  'ROTULO_PRESUPUESTO_ORIGEN': 'albarán cuyo Trabajo viene de un presupuesto — el pie con su número',
 });
 
 /** Una factura de prueba. Los campos son `qty`/`price`/`tax` (fracción), que es lo que lee el generador. */
@@ -182,12 +199,45 @@ test('SCRUM-667 · 🔴 CONTROL NEGATIVO: una factura de UN tipo de IVA NO lleva
     'con MÁS de un tipo; si sale aquí, se ha movido de sitio y lo ve todo cliente.');
 });
 
+/**
+ * El PAPEL DEL ALBARÁN. 🔴 SCRUM-607 · 4-sep-2026 · ESTE GENERADOR NO ESTABA, Y POR ESO ESTE
+ * GUARD NO PODÍA CRECER: contaba los marcadores de UNA factura contra el TOTAL de declarados,
+ * o sea que daba por supuesto que todo lo declarado sale en ese único papel. En cuanto un
+ * segundo documento gana un marcador —el pie del albarán con su presupuesto de origen— la
+ * cuenta deja de cuadrar, y la salida fácil habría sido no declararlo: dejar sin declarar
+ * justo el marcador que ve el cliente. Se amplía la POBLACIÓN, no se relaja el criterio.
+ */
+async function pdfDeAlbaran() {
+  const { generateAlbaranPdf } = await import('../dist/modules/jobs/infra/albaranPdf.service.js');
+  const { referenciaPresupuesto } = await import(
+    '../dist/modules/jobs/domain/albaranPrecios.js');
+  const { outPath } = await generateAlbaranPdf({
+    merchantId: 9667, numero: 'ALB-2026-QA667', version: 1,
+    fecha: new Date(2026, 8, 4), emisionAt: new Date(2026, 8, 4),
+    modoValoracion: 'SIN_VALORAR',
+    merchant: { address: 'C/ Mayor 1' }, customer: { taxId: null },
+    emisor: 'QA SL', emisorNif: 'B00000000', cliente: 'Cliente QA',
+    obra: 'Obra QA', referenciaTrabajo: 'Trabajo QA',
+    lineas: [{ concepto: 'Material', cantidad: 1, unidad: 'ud' }],
+    totales: null, notas: null, signatureData: null, firmadoAt: null,
+    firmadoPorNombre: null, firmadoPorCalidad: null, evidencia: null,
+    // Con presupuesto de origen: es la condición en la que se imprime el pie.
+    presupuestoRef: referenciaPresupuesto({ id: 41, number: 7 }),
+  });
+  try { return fs.readFileSync(outPath); } finally { fs.rmSync(outPath, { force: true }); }
+}
+
 test('SCRUM-667 · 🔴 al PAPEL del cliente no llega ningún marcador que no esté DECLARADO', async () => {
   const buf = await pdfDeFactura('P', DOS_TIPOS);
   const r = lineasDePdf(buf);
   assert.equal(r.ok, true, 'suelo: sin lector no hay veredicto');
 
-  const impresas = r.lineas.map((l) => String(l.texto || '')).filter((t) => t.includes(MARCA));
+  // Los DOS papeles que hoy pueden llevar marcador: la factura y el albarán.
+  const rAlb = lineasDePdf(await pdfDeAlbaran());
+  assert.equal(rAlb.ok, true, 'suelo: sin lector del albarán tampoco hay veredicto');
+
+  const impresas = [...r.lineas, ...rAlb.lineas]
+    .map((l) => String(l.texto || '')).filter((t) => t.includes(MARCA));
   const declarados = Object.keys(EN_EL_PAPEL).length;
 
   // 🔴 SUELO DEL CONTROL POSITIVO: hoy SÍ hay uno declarado, así que el papel TIENE que traerlo.
