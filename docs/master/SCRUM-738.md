@@ -1,7 +1,23 @@
 # SCRUM-738 · El tablero contra el árbol — y el censo que daba por hecho lo que no lo está
 
-**Medido contra:** `origin/main` = `8dec48e44333c0cdfdbaed61c7f6c17c32244c41` · 2026-09-04T21:42:25+01:00
+**Medido contra:** `origin/main` = `9545711d5172e24f1f985471a39c25bcc1062841` · 2026-09-04T23:36:56+01:00
 **Rama:** `scrum-738-el-tablero-contra-el-arbol`
+
+> 🔴 **EL ANCLA SE REMIDIÓ, Y EN ESTE TICKET NO ES UN TECNICISMO.** La primera medición fue contra
+> `8dec48e4`, **77 commits por detrás**. El entregable de este ticket **es un censo del árbol**: dar
+> cifras de un árbol que ya no existe es el instrumento contradiciéndose a sí mismo — vendría a
+> decir qué está hecho midiendo un pasado. Se mezcló `main` (limpio, sin conflictos) y se rehízo el
+> ciclo entero: medición, tanda y empuje.
+>
+> | | contra `8dec48e4` | contra **`9545711d`** |
+> |---|---|---|
+> | ramas traídas | 473 | **479** |
+> | entradas de máster | 378 | **392** |
+> | tickets censados | 444 | **449** |
+>
+> Las ramas de fase siguen en **17 sobre 15 tickets**, y `SCRUM-684` sigue saliendo `NO_MEDIBLE`
+> titulado para 683. El veredicto no depende del árbol; las cifras sí, y por eso van fechadas
+> (SCRUM-737).
 
 ---
 
@@ -86,7 +102,7 @@ pegada a los dígitos. **Comprobado: SCRUM-2 sigue sin ramas**, y SCRUM-240 sól
 
 `scripts/censo-tablero-vs-arbol.mjs` — **enumera y presenta, no dictamina**:
 
-- **Enumeración derivada** (no lista a mano): 444 tickets, de 473 ramas traídas y 378 entradas.
+- **Enumeración derivada** (no lista a mano): **449 tickets**, de 479 ramas traídas y 392 entradas.
 - **Ventana de presentación** `--dias=N`. Sin ella la propuesta son cientos de tickets y el desfase
   de esta semana queda enterrado. 🔴 **Es heurística de presentación**: no lee el tablero, no
   descarta a nadie del censo y no decide nada.
@@ -100,7 +116,7 @@ delimitadores y se comparan enteros; hay test de los cuatro a la vez.
 ## 5 · 🔴 Mis dos defectos, y los dos los cazó ejecutar, no leer
 
 1. **`714 !== '714'` siempre cierto.** El motor guarda el número como CADENA (`String(numero)`) y yo
-   comparaba contra un `Number`, así que **los 444 tickets salían con colisión**. Falló hacia el lado
+   comparaba contra un `Number`, así que **todos los tickets salían con colisión**. Falló hacia el lado
    seguro —`NO_MEDIBLE` en vez de `ENTERO`— y aun así dejaba el censo inservible. **De ahí el control
    negativo**: sin él, un discriminador que marque TODO parece que funciona.
 2. **El CLI no imprimía nada.** Usé `new URL(...).pathname`, que percent-codifica el espacio de
@@ -143,7 +159,7 @@ agosto contestando mi pregunta.
 
 ## 8 · Coste de la suite, medido
 
-El censo completo consulta git **por ticket**: con 444, tarda **~10 minutos**. Metido tal cual en
+El censo completo consulta git **por ticket**: con 449, tarda **~10 minutos**. Metido tal cual en
 `npm test` se lo cobraría a las nueve sesiones en cada tanda. Por eso `poblacionDe()` va **aparte**
 de `censar()`: lo caro se queda en el CLI y la suite ejercita lo barato. La primera versión del test
 llamaba a `censar()` y tardaba esos diez minutos — medido, no supuesto.
