@@ -234,12 +234,27 @@ printf 'Revisa el diff. Para APLICARLO a %s escribe exactamente GO (cualquier ot
 read -r REPLY
 if [ "$REPLY" != "GO" ]; then echo "🚫 Abortado (no escribiste GO). No se aplicó NADA."; exit 1; fi
 
-# ── 4) Sentinel del hook guard-dangerous (un solo uso) + db push SIN --accept-data-loss ──
-mkdir -p .claude && touch .claude/allow-db-push
+# ── 4) db push SIN --accept-data-loss ──
+#
+# 🔴 SCRUM-746 (fase B) · AQUÍ ESTABA UN `touch .claude/allow-db-push`, Y SE HA QUITADO.
+#
+# El sentinel es la autorización de UN SOLO USO que el hook `guard-dangerous` exige antes de un
+# `db push`. Este script se la concedía a sí mismo justo antes de empujar. La intención era buena
+# —a estas alturas ya han pasado cinco puertas: árbol, host-check, preview con suelo
+# anti-silencio, guard de borrado y el GO tecleado por una persona— pero el efecto no:
+#
+#   **quien lea el hook creerá que hubo un OK del fundador, y por esta ruta no lo hubo.**
+#
+# Y no era necesario: el hook intercepta lo que teclea Claude, no lo que hace un script por
+# dentro, así que el `npx prisma db push` de la línea siguiente NO pasa por él. El `touch` no
+# desbloqueaba nada — sólo dejaba escrito un permiso que nadie había dado.
+#
+# ⚠️ NO SE TOCA NADA MÁS DE ESTE SCRIPT. Sus cinco puertas funcionan y son mejores que lo que el
+# hook podría añadir; medido en SCRUM-746 (fase A). Si algún día hiciera falta el sentinel de
+# verdad, **lo pone una persona** — que es lo que significa una autorización.
 echo ""
 echo "── db push · $LABEL (sin --accept-data-loss) ──────────────────────────"
 npx prisma db push --skip-generate
-rm -f .claude/allow-db-push   # limpieza si se corrió en manual (sin hook que lo consuma)
 
 # ── 5) Verificación: el diff debe quedar vacío ──
 echo ""
