@@ -212,8 +212,16 @@ test('SCRUM-599 · el microcopy es el APROBADO, literal, y sin marcadores', () =
   assert.equal(Object.keys(A.TEXTOS).length, APROBADOS.length,
     `🔴 hay ${Object.keys(A.TEXTOS).length} rótulos y sólo ${APROBADOS.length} están aprobados: `
     + 'ha entrado uno sin firma.');
-  assert.equal(A.SIN_APROBAR, 3,
-    '🔴 el recuento de ranuras a la espera de la firma del fundador no cuadra con las tres.');
+  // 🔴 4-sep-2026 · 3 → 0: EL FUNDADOR FIRMÓ LOS TRES RÓTULOS. El registro de la aprobación está
+  // en `docs/microcopy/2026-09-04-SCRUM-599-atajo-nuevo.md`.
+  //
+  // La constante NO se retira, y el cero no relaja nada: sigue siendo una igualdad exacta. Lo que
+  // dice ahora es «las tres que hay están firmadas», no «no hay nada que declarar» — así que el
+  // día que una cuarta lista estrene su atajo, su rótulo nace sin firma, este número sube y esto
+  // cae. Un cero que no se puede mover en silencio es lo contrario de un guard apagado.
+  assert.equal(A.SIN_APROBAR, 0,
+    '🔴 el recuento de ranuras a la espera de la firma del fundador ya no es cero: o ha entrado '
+    + 'un rótulo nuevo sin firmar, o alguien ha movido el número sin decir por qué.');
   assert.equal(A.TECLA, 'N', '🔴 la tecla que se pinta ha dejado de ser la «N».');
 });
 
