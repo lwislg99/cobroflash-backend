@@ -17,6 +17,7 @@
 // que alguien tenga que recordar. Un control que te deja sin pantalla es peor que no tenerlo.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
+import { soloEjecutable } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -199,7 +200,7 @@ test('SCRUM-584 · 🔴 los CINCO controles conviven: buscador, pestañas, etiqu
 test('SCRUM-584 · la vista no repite la lista de columnas: la lee de la pieza', () => {
   // Dos sitios que declaran las mismas columnas divergen — es el defecto que dejó dos `colSpan`
   // copiados a mano.
-  const codigo = VISTA.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+  const codigo = soloEjecutable(VISTA).split('\n').map((l) => soloEjecutable(l)).join('\n');
   assert.match(codigo, /FC\.columnasDeLaTabla\(\)/, '🔴 la cabecera no sale de la pieza.');
   assert.equal(/\{ t: "ID" \}/.test(codigo), false,
     '🔴 ha vuelto la lista de cabeceras escrita a mano en la vista.');

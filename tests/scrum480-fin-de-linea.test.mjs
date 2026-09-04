@@ -28,6 +28,7 @@
 // que el fichero es BINARIO y deja de normalizarlo **en silencio**. Por eso las reglas declaran
 // `text` EXPLÍCITO por extensión: así la detección no participa.
 import test from 'node:test';
+import { soloEjecutable } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -110,7 +111,7 @@ test('SCRUM-480 · 🔴 ningún blob de TEXTO lleva CR (salvo lo declarado)', ()
 //
 // Y EL DISCO IMPORTA AUNQUE `.gitattributes` YA PROTEJA EL REPOSITORIO, por un motivo que no es
 // de higiene: **un guard no abre el repositorio, hace `readFileSync` del disco**. Con un `\r` en
-// la línea, `linea.replace(/\/\/.*$/, '')` NO HACE NADA —sin `m`, `$` exige fin de cadena y el
+// la línea, `soloEjecutable(linea)` NO HACE NADA —sin `m`, `$` exige fin de cadena y el
 // `\r` está en medio—, así que un guard que promete «miro el código, no los comentarios» mira
 // también los comentarios y aprueba lo que venía a prohibir. Le pasó al de SCRUM-409 durante
 // semanas, y solo en Windows: el CI es Linux y allí iba en verde.
