@@ -165,3 +165,54 @@ test('SCRUM-605 · el rótulo sale del marcador oficial, y de UNA sola constante
   assert.equal(fuente.split("'[PENDIENTE microcopy oficial]'").length - 1, 1,
     '🔴 hay más de una marca escrita: aprobar el copy ya no los apagaría a todos de golpe');
 });
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 LOS TRES, RECORRIDOS · y el control negativo que separa el TEXTO del CÁLCULO
+// ─────────────────────────────────────────────────────────────────────────────────────────
+
+test('SCRUM-605 · 🔴 LOS TRES atajos ponen hoy + N, recorriendo la lista y no uno a mano', () => {
+  // Los casos límite de arriba están escritos uno a uno —fin de mes, bisiesto, cambio de año— y
+  // eso es lo que hay que probar de la aritmética. Falta lo obvio, que es justo lo que nadie
+  // comprueba: que **cada uno de los tres** ponga lo que su rótulo promete. Se RECORRE
+  // `DIAS_ATAJO`: si mañana entra un cuarto atajo, este test lo mide sin que nadie lo actualice.
+  const hoy = new Date(2026, 4, 12, 12, 0, 0); // 12-may-2026, mediodía (SCRUM-640: nunca medianoche)
+  const esperado = { 7: '2026-05-19', 14: '2026-05-26', 30: '2026-06-11' };
+
+  assert.ok(A.DIAS_ATAJO.length >= 3,
+    `🔴 SUELO: sólo hay ${A.DIAS_ATAJO.length} atajos. Un recorrido sobre una lista vacía pasa `
+    + 'sin comprobar nada, que es como un test deja de mirar sin que se note.');
+
+  for (const dias of A.DIAS_ATAJO) {
+    assert.ok(Object.prototype.hasOwnProperty.call(esperado, dias),
+      `🔴 ha entrado un atajo de ${dias} días y este test no sabe qué fecha debería dar: añádela `
+      + 'aquí en el mismo commit, o el atajo nuevo viaja sin comprobar.');
+    assert.equal(A.fechaDeAtajo(dias, hoy), esperado[dias],
+      `🔴 el atajo de ${dias} DÍAS pone ${A.fechaDeAtajo(dias, hoy)} y debería poner `
+      + `${esperado[dias]}. Un botón que promete «${dias}» y escribe otra fecha es peor que no `
+      + 'tenerlo: el cliente recibe un presupuesto con una validez que nadie quiso.');
+  }
+});
+
+test('SCRUM-605 · CONTROL NEGATIVO: el RÓTULO no decide la fecha', () => {
+  // Lo que NO debe hacer caer el cálculo: cambiar el texto. Hoy el rótulo lleva el marcador
+  // dentro, y el día que el fundador firme el copy va a cambiar entero — si el cálculo dependiera
+  // del texto, aprobar la microcopy rompería las fechas de un documento que el cliente recibe.
+  const hoy = new Date(2026, 0, 31, 12, 0, 0);
+  const antes = A.DIAS_ATAJO.map((d) => A.fechaDeAtajo(d, hoy));
+
+  // Se sustituye el rótulo por otro completamente distinto, sin tocar nada más.
+  const original = A.rotuloDeAtajo;
+  try {
+    A.rotuloDeAtajo = (d) => `Otro texto cualquiera para ${d}`;
+    const despues = A.DIAS_ATAJO.map((d) => A.fechaDeAtajo(d, hoy));
+    assert.deepEqual(despues, antes,
+      '🔴 cambiar el RÓTULO ha cambiado las FECHAS. El texto y el cálculo tienen que estar '
+      + 'separados: el día que se apruebe la microcopy, el rótulo cambia entero.');
+    assert.equal(A.rotuloDeAtajo(7), 'Otro texto cualquiera para 7',
+      '🔴 SUELO: el rótulo no se ha podido sustituir, así que la prueba de arriba no prueba nada.');
+  } finally {
+    A.rotuloDeAtajo = original;
+  }
+  assert.equal(A.rotuloDeAtajo(7), `7 ${A.MARCA_MICROCOPY}`,
+    '🔴 el rótulo no se ha restaurado: el resto del fichero mediría otra cosa.');
+});
