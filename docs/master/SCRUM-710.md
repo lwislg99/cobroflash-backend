@@ -65,9 +65,9 @@ conservó entero.
 
 # FASE 2 · El número de línea, y las líneas base que chocan (4-sep-2026)
 
-**Medido contra:** `origin/main` = `1a359f6ea2b90f110bfa40516d8bbcb58a7e0f94` · 2026-09-04T15:04:26+01:00
+**Medido contra:** `origin/main` = `119484af9d0fdf9f4beb008751a2be86d5179acd` · 2026-09-04T15:04:26+01:00
 
-**Tanda:** **5.098 pruebas · 5.014 en verde · 0 fallos · 84 saltadas** — con `main` mergeado dentro
+**Tanda:** **5.099 pruebas · 5.015 en verde · 0 fallos · 84 saltadas** — con `main` mergeado dentro
 y medida DESPUÉS del último cambio de código.
 
 > ⚠️ **ESTE FICHERO YA CONTENÍA UNA ENTRADA, Y NO ERA DE ESTE TICKET.** El paso 2 del arranque
@@ -192,6 +192,28 @@ independientes que comparten renglón.
 
 ⚠️ **El primero lo está editando S3.** Ejecutar esto hoy es garantizar el octavo conflicto del día
 — exactamente el defecto que viene a cerrar.
+
+## 🔴 EL TRINQUETE NACIÓ HOY Y SU PRIMERA CAPTURA FUE UNA MEJORA
+
+Al mergear main se puso rojo: *«se han ARREGLADO 1 anclajes (bien) y la lista se ha quedado
+atrás»* — `tests/scrum514-…  invoicesView.js:172`.
+
+**No era una regresión: era una mejora.** SCRUM-514 se mergeó DESPUÉS de medir los 41, y al
+decidirse la grafía de «Nueva factura» su excepción de `APARCADOS` se borró, y con ella la cita.
+La lista decía 41 y el árbol tenía 40.
+
+> **Un trinquete que sólo sabe cazar empeoramientos es medio trinquete.** Éste mira en las dos
+> direcciones desde el primer día, y la primera vez que apretó fue para decir que la lista se
+> había quedado atrás respecto a una limpieza real.
+
+La entrada se **BORRA** —no se pone a cero ni se comenta, convención del censo de SCRUM-402
+(precedente SCRUM-424/405)— con quién la retiró y cuándo. Y la cifra baja **41 → 40**
+**re-medida sobre el árbol YA MEZCLADO**: contar antes de mezclar me caducó dos mediciones el
+mismo día.
+
+⚠️ **40 hallazgos, 39 identidades**, y no falta ninguno: `scrum390` cita la misma posición dos
+veces en el mismo fichero. Queda declarado en el propio test, porque ver «39» al lado de un censo
+que dice «40» invita a perseguir un fantasma.
 
 ## El rojo, probado por el mecanismo — cuatro mutaciones con post-condición
 

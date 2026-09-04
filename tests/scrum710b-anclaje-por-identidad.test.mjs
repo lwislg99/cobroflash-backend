@@ -167,12 +167,18 @@ test('SCRUM-710b · CONTROL NEGATIVO: un array con un elemento por línea NO ent
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // EL CENSO DECLARADO · medido el 4-sep-2026 sobre 817 ficheros de `tests/` y `scripts/`.
 //
-// (a) 41 anclajes por número de línea. De ellos, 25 aparecen como DATO y 16 dentro del mensaje
-//     de un `assert` — los del mensaje envejecen pero no tumban nada, porque nadie compara
+// (a) 40 anclajes por número de línea (eran 41; SCRUM-514 retiró uno el 4-sep). De ellos, la
+//     mayoría aparecen como DATO y el resto dentro del mensaje de un `assert` — los del mensaje
+//     envejecen pero no tumban nada, porque nadie compara
 //     contra ellos. ⚠️ Esa clasificación es ORIENTATIVA y no se usa para decidir: es frágil
 //     (la prosa dentro de un campo `motivo:` sale como «dato»), y colgar un trinquete de un
 //     criterio frágil es cómo se acaba apagando. Lo que se vigila es el TOTAL.
 // ─────────────────────────────────────────────────────────────────────────────────────────
+// ⚠️ 40 HALLAZGOS, 39 IDENTIDADES, y no falta ninguno: `scrum390` cita `YAQU_MASTER.md:1472`
+// DOS veces en el mismo fichero, y la identidad de las dos es la misma. El Set las colapsa a
+// propósito — lo que se vigila es QUÉ posiciones se fijan, no cuántas veces se escriben. Se
+// declara aquí porque ver «39» al lado de un censo que dice «40» invita a pensar que se perdió
+// una, y perseguir eso cuesta una vuelta.
 const CONOCIDOS_A = new Set([
   'tests/scrum128-send-endpoints-fail-closed.test.mjs  quotes.routes.ts:568',
   'tests/scrum216-tipo-rectificativa-sin-defecto.test.mjs  YAQU_MASTER.md:1328',
@@ -191,7 +197,11 @@ const CONOCIDOS_A = new Set([
   'tests/scrum403-beneficio-sin-iva.test.mjs  desgloseEmpleado.ts:118',
   'tests/scrum447-byte-invisible-en-patrones.test.mjs  falso.mjs:2',
   'tests/scrum514-aprobado-y-aplicado.test.mjs  settingsView.js:213',
-  'tests/scrum514-aprobado-y-aplicado.test.mjs  invoicesView.js:172',
+  // 🔴 4-sep-2026 · SALE DE LA LISTA: la entrada se BORRA, no se pone a cero ni se comenta
+  // (convención del censo de SCRUM-402, precedente SCRUM-424/405). La retiró SCRUM-514 al
+  // decidirse la grafía de «Nueva factura»: su excepción de APARCADOS se borró y con ella la
+  // cita a `invoicesView.js:172`. Se re-midió sobre el árbol YA MEZCLADO antes de bajar
+  // cifra — contar antes de mezclar caducó dos veces el mismo día.
   'tests/scrum514-aprobado-y-aplicado.test.mjs  settingsView.js:219',
   'tests/scrum519-un-solo-criterio-de-cobro.test.mjs  payInvoice.routes.ts:69',
   'tests/scrum519-un-solo-criterio-de-cobro.test.mjs  settingsView.js:990',
