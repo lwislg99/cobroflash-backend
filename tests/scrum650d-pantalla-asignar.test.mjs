@@ -10,6 +10,7 @@
 // Sin gate: funciones puras + un DOM de juguete + un doble de transacción. Ni BD, ni red, ni
 // navegador — el patrón de SCRUM-229/500/655.
 import test from 'node:test';
+import { constaAprobado } from './_microcopy-aprobada.mjs';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -393,11 +394,18 @@ test('SCRUM-650d · 🔴 toda clase que pinta el selector EXISTE en la hoja, y l
 test('SCRUM-650d · 🔴 todo texto de pantalla lleva el marcador, y sale de UNA constante', () => {
   const textos = Object.entries(front.TEXTOS_ASIGNADOS);
   assert.ok(textos.length >= 4, `🔴 solo hay ${textos.length} textos declarados: el censo mediría poco`);
+  // 🔴 SCRUM-720 · SIN MARCA SÓLO SI CONSTA APROBADO, y eso NO se declara aquí: se comprueba
+  // contra el registro de aprobaciones (SCRUM-709/710, por identidad y no por subcadena). Antes
+  // este guard exigía marca a TODOS, que era cierto el día que se escribió porque no había ni uno
+  // firmado. Convertirlo en «los que yo diga» habría sido relajarlo; apuntarlo al HECHO —consta o
+  // no consta— lo deja más fuerte: un texto sin marca y sin aprobación sigue cayendo.
   for (const [clave, texto] of textos) {
-    assert.ok(texto.startsWith('[PENDIENTE'),
-      `🔴 el texto «${clave}» se pinta SIN marcador: «${texto}». El microcopy lo aprueba el ` +
-      'fundador (regla 30), y una frase plausible sin marcar es texto que nadie ha firmado ' +
-      'llegándole a un profesional.');
+    if (texto.startsWith('[PENDIENTE')) continue;
+    const donde = constaAprobado(texto);
+    assert.ok(donde.length > 0,
+      `🔴 el texto «${clave}» se pinta SIN marcador y NO consta aprobado en ninguna parte: ` +
+      `«${texto}». El microcopy lo aprueba el fundador (regla 30), y una frase plausible sin ` +
+      'marcar es texto que nadie ha firmado llegándole a un profesional.');
   }
   // Y salen de UNA sola constante: aprobar el copy los apaga de golpe, y por eso el censo de
   // SCRUM-402 cuenta 1 para este fichero y no cuatro.
