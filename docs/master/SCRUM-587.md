@@ -80,7 +80,14 @@ ALTER TABLE "customers" ADD COLUMN "dto_por_defecto" DECIMAL(5,2);
 ```
 
 **Veredicto aditivo** — ni DROP, ni RENAME, ni TRUNCATE, ni SET NOT NULL. **Control positivo:** la
-herramienta respondió y el recuento de columnas de `Customer` pasó de **29 a 30**.
+herramienta respondió y el recuento pasó de **29 a 30**.
+
+> 🔴 **CORRECCIÓN DEL 4-sep-2026 · ese 29→30 estaba MAL ROTULADO, y el error es mío.** Son **líneas
+> de campo del modelo `Customer`**, y **seis de ellas son RELACIONES** (`merchant`, `charges`,
+> `Quote`, `Invoice`, `QuoteRequest`, `events`), que no generan columna. Las **COLUMNAS FÍSICAS**
+> van de **23 a 24**, medidas en `information_schema`. El ALTER no cambia —sigue siendo una sola
+> columna aditiva, y es la que se aplicó— pero el número circuló dos veces con la etiqueta
+> equivocada, y un número mal rotulado se hereda como si fuera una medición.
 
 🔴 **`DECIMAL(5,2)` y no otra cosa:** tres enteros para el 100 y **dos decimales, los mismos que
 `DECIMALES_PORCENTAJE` le exige al `dto` de la línea**. Con más decimales, un `33,333 %` guardado
@@ -213,20 +220,122 @@ cualquier número.
 
 ---
 
+## 4-bis · El merge de SCRUM-602, y las dos mitades que se suman
+
+`main` volvió a moverse (`1304643497934441f88950e441182b7e344dbb57`). **Cinco conflictos, los cinco
+resueltos SUMANDO**: `sw.js` e `index.html` (los dos scripts), `quotesView.js` (el mismo escuchador
+de cambio de cliente llama a `refrescarPropuestaDeDescuento` **y** a `refrescarDireccionObra` —
+quedarse con uno deja al otro pegado al cliente anterior) y los dos recuentos de nodos.
+
+**242 → 253, y el número está MEDIDO sobre el árbol mezclado, no sumado a ojo.** Las dos mitades,
+aisladas por separado sobre ese mismo árbol:
+
+| árbol | nodos |
+|---|---|
+| mezclado, entero | **253** |
+| sin la tira del 587 | 250 (−3) |
+| sin los dos campos del 602 | 245 (−8) |
+| sin ninguno de los dos | 242 |
+
+### 🔴 La ceguera del spread: NO estaba arreglada en `main`, y ahora sí
+
+El encargo daba por hecho que `main` había arreglado la ceguera del spread en `scrum286` y pedía
+fusionar esa mitad con mi estrechamiento. **Medido: esa mitad no existía.** Lo único que SCRUM-602
+tocó de ese instrumento son **dos entradas de `CAMPO_A_BLOQUE`** (+7 líneas); SCRUM-718 tocó
+`scrum709` y nada más. No hay `opacos` ni manejo de spread en ningún sitio de `main`.
+
+Y la ceguera **sí era real**, medida sobre el árbol de hoy: metiendo `...({ campoFantasma: 1 })` en
+`quotePayload`, el guard seguía **VERDE**. `nombreDePropiedad` devuelve `null` para un
+`SpreadAssignment` —no tiene `.name`— y el bucle lo saltaba en silencio. Un campo que viaja al
+servidor sin estar colocado en ningún bloque es justo lo que ese censo existe para cazar.
+
+Así que se construye, declarándolo como trabajo NUEVO y no como una mitad recuperada:
+
+- `...({ … })` **literal** → se leen sus claves y entran en el censo. **Con los paréntesis
+  desenvueltos**, y esto lo cazó la medición y no la lectura: la forma que se escribe de verdad es
+  `...({…})`, donde `p.expression` es un `ParenthesizedExpression`, no el literal. Sin desenvolver,
+  el caso legible más común se clasificaba como opaco — seguro, pero falso.
+- `...variable` **opaco** → se **declara** en `opacos` y el guard cae. No se sigue la variable:
+  seguirla a través de asignaciones es adivinar, y un censo que adivina miente mejor que uno que calla.
+
+**Verificado en los TRES sentidos que pediste, con el guard ya fusionado:**
+
+| sonda | resultado | cae por |
+|---|---|---|
+| marcador en «1. Cliente» | 🔴 ROJO | «todo título de bloque…» — **mi estrechamiento sigue vivo** |
+| campo dentro de `...({…})` | 🔴 ROJO | «ningún campo del envío se queda SIN SITIO» — **se lee** |
+| campo tras `...variable` | 🔴 ROJO | el suelo del censo — **declara que no supo mirar** |
+
+## 4-ter · La grafía, y por qué el `@map` no es decorativo
+
+**Censo de `customers` en `information_schema`: 24 columnas · 24 snake · 0 camel.**
+
+📌 **El encargo decía que `customers` «mezcla convenciones». Medido: `customers` NO las mezcla —
+pero el repo SÍ, y el aviso era bueno aunque la tabla fuera otra.** Sobre las **419 columnas** del
+censo commiteado hay **22 en camelCase**, y ninguna en `customers`: **7 en `invoices`**
+(`createdAt`, `customerId`, `merchantId`, `pdfUrl`, `qrData`, `quoteId`, `registerId`) y **15 en
+`quotes`**. O sea que el riesgo es real y está a una tabla de distancia; sólo que en ésta el `@map`
+hace falta por lo contrario — porque son TODAS snake y el modelo es camel.
+
+El
+campo del modelo es camel, así que sin `@map` Prisma buscaría `dtoPorDefecto`, que no existe: el
+campo quedaría **construido y no alcanzable**, y el fallo saldría al guardar un cliente.
+
+**Control negativo, ejecutado contra la base de desarrollo y con la fila borrada al final:**
+
+| | |
+|---|---|
+| ① escrito por Prisma | `dtoPorDefecto = 10.25` |
+| ② leído por SQL crudo en `dto_por_defecto` | `10.25` ✅ |
+| ③ preguntando por `"dtoPorDefecto"` (camel) | **falla**: `42703 column "dtoPorDefecto" does not exist` ✅ |
+| ④ releído por Prisma | `10.25` ✅ |
+
+El ③ es la mitad que hace que esto demuestre algo: sin él, el control daría el mismo verde con
+`@map` y sin él. Fila de prueba borrada y comprobado que se fue; teléfono en el rango imposible
+`34000000587` (SCRUM-262).
+
+## 4-quater · Las cajas, medidas ahora que Playwright volvió
+
+**El campo de la ficha** (cadena real `.modal-backdrop > .modal > .modal-body > .field`, con el CSS
+de producción servido desde el mismo origen):
+
+| viewport | caja del campo | rótulo |
+|---|---|---|
+| **929 px** | **462,6 px** de ancho · input 43,6 px de alto | 12,5 px / 600 |
+| **390 px** | **342 px** de ancho · input 44,5 px de alto | caben **29 caracteres anchos** en una línea |
+
+**El contador de SCRUM-582** — y aquí sólo doy la mitad que está medida. Anchos naturales del
+texto, con la fuente real (13,5 px / 600), que no dependen del contenedor:
+
+| texto | ancho natural |
+|---|---|
+| `1 cliente seleccionado` | 143,4 px |
+| `9 clientes seleccionados` | 161,1 px |
+| `128 clientes seleccionados` | 175,2 px |
+| `1.024 clientes seleccionados` | 188,2 px |
+
+⚠️ **La caja que los contiene NO se ha podido medir**, y no se da un número: la barra vive dentro de
+la rejilla del panel, el panel exige sesión, y la base de desarrollo no arranca sin `DATABASE_URL`.
+Reproducir la rejilla sobre `login.html` la contamina con el CSS de esa página — salió un `.layout`
+de **82 px** en un viewport de 390, que es un número falso y por eso no se usa. Queda pendiente
+medirlo con sesión real.
+
+---
+
 ## 5 · Lo que NO se ha construido, y por qué
 
-🔴 **El campo en la ficha, el zod y el `select` esperan a las tres bases — y no es prudencia, es
-mecánica medida.** [customerAdmin.ts:142](../../src/modules/system/customerAdmin.ts#L142) y
+**El bloque del cliente ya está entero** — el ALTER llegó a las tres bases el 4-sep-2026 (staging
+`7661649868329066548`, producción `7641555058757427243`) y se aplicó también en desarrollo. En el
+orden que el PASO 0 había medido: **el modelo ANTES que el zod**, porque
+[customerAdmin.ts:142](../../src/modules/system/customerAdmin.ts#L142) y
 [:159](../../src/modules/system/customerAdmin.ts#L159) meten el cuerpo **ya validado** directo en
-el `data` de Prisma. Añadir `dtoPorDefecto` al zod antes de que el modelo lo tenga haría que Prisma
-**rechazara cada guardado de cliente que incluyera el campo**. Así que ese bloque es atómico:
-`schema.prisma` + zod + ficha + `select`, todo junto, en cuanto confirmes el ALTER.
-
-Mientras tanto el enganche es **inerte y seguro**: sin la columna, el cliente llega sin
-`dtoPorDefecto`, `propuestaPara` devuelve `null` y el editor se comporta **exactamente como hoy**.
+el `data` de Prisma, y el zod por delante habría hecho que Prisma **rechazara cada guardado de
+cliente que incluyera el campo**.
 
 **El rótulo no está firmado y no se ha inventado ninguno.** Se pinta `[PENDIENTE microcopy oficial]`
-—la grafía que el censo de SCRUM-402 **cuenta**— en el botón y en el texto de la tira. El asesor
-pidió la caja a 929 px y 390 px para firmarlo: **no se ha podido medir, el servidor de Playwright
-lleva caído toda la sesión** (`CONNECT_TIMEOUT`), y no se le da un número calculado como si
-estuviera medido. Sigue pendiente con él la caja del contador de SCRUM-582.
+—la grafía que el censo de SCRUM-402 **cuenta**— en **tres** sitios: el rótulo del campo de la
+ficha, el botón de la tira y el texto de la tira. La caja del campo ya está medida (§4-quater);
+falta la firma.
+
+**Y lo que sigue sin medirse se dice, en vez de calcularlo:** la caja que contiene el contador de
+SCRUM-582. Los anchos del texto sí están medidos; el contenedor no, porque exige sesión.

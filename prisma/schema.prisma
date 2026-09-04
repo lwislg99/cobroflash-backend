@@ -265,6 +265,28 @@ model Customer {
   // `invoicing/domain/recargoEquivalencia.ts`.
   recargoEquivalencia Boolean? @map("recargo_equivalencia")
 
+  /// SCRUM-587 (CONT-14) · El descuento PACTADO con este cliente, en PORCENTAJE (0-100).
+  ///
+  /// 🔴 `@map("dto_por_defecto")` NO ES DECORATIVO. Las **24 columnas** de `customers` están en
+  /// snake_case —medido en `information_schema` el 4-sep-2026: 24 snake, 0 camel— y el campo del
+  /// modelo es camel. Sin el `@map`, Prisma buscaría una columna `dtoPorDefecto` que NO EXISTE:
+  /// el campo quedaría construido y no alcanzable, y el fallo saldría en tiempo de ejecución, en
+  /// el guardado de un cliente, no aquí.
+  ///
+  /// 🔴 NULLABLE Y SIN `@default`, como `recargoEquivalencia` y `tipoDestinatario` justo al lado:
+  /// NULL = «no hay descuento pactado» y 0 = «se pactó un 0 %» son cosas DISTINTAS y las dos son
+  /// legítimas. Un `@default(0)` convertiría a todos los clientes que ya existen en «declarados
+  /// con 0 %», y ya no habría forma de saber a cuáles se les llegó a preguntar.
+  ///
+  /// PORCENTAJE y no importe, y no es incoherencia con `Quote.discountGlobalAmount` (que sí es en
+  /// €): el acuerdo con un administrador de fincas se pacta en %, y el único % del documento es
+  /// el `dto` de la LÍNEA. La asimetría está escrita a propósito y no se armoniza.
+  ///
+  /// `Decimal(5,2)`: tres enteros para el 100 y DOS decimales, los mismos que
+  /// `DECIMALES_PORCENTAJE` le exige al `dto` de la línea donde va a aterrizar. Con más, un
+  /// `33,333 %` guardado aquí sería un presupuesto que no se puede guardar.
+  dtoPorDefecto Decimal? @map("dto_por_defecto") @db.Decimal(5, 2)
+
   // SCRUM-580 (CONT-07) · LAS ETIQUETAS DEL CONTACTO.
   //
   // UNA COLUMNA JSONB y no una tabla de tags. Decision del fundador con su motivo: una etiqueta

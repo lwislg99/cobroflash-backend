@@ -15,9 +15,17 @@
 --     → ALTER TABLE "customers" ADD COLUMN "dto_por_defecto" DECIMAL(5,2);
 --
 -- Su veredicto: **aditiva — ni DROP, ni RENAME, ni TRUNCATE, ni DELETE, ni SET NOT NULL**, con
--- control positivo: la herramienta respondió y el recuento de columnas de `customers` pasó de
--- **29 a 30**. Si hubiera devuelto vacío sin decir nada, no se habría podido distinguir «no hay
--- cambios» de «no ha mirado» — que es el incidente del 5-ago-2026.
+-- control positivo: la herramienta respondió y el recuento pasó de 29 a 30.
+--
+-- 🔴 CORRECCIÓN DEL 4-sep-2026, porque ese 29→30 estaba MAL ROTULADO: son **líneas de campo del
+-- modelo `Customer`**, y SEIS de ellas son RELACIONES (`merchant`, `charges`, `Quote`, `Invoice`,
+-- `QuoteRequest`, `events`), que no generan columna. Las **COLUMNAS FÍSICAS** van de **23 a 24**,
+-- medidas en `information_schema` contra la base de desarrollo. El ALTER no cambia —sigue siendo
+-- una sola columna aditiva—, pero un número con la etiqueta equivocada se hereda como si fuera
+-- una medición, y aquí ya se había citado dos veces.
+--
+-- Si hubiera devuelto vacío sin decir nada, no se habría podido distinguir «no hay cambios» de
+-- «no ha mirado» — que es el incidente del 5-ago-2026.
 --
 -- 🔴 `DECIMAL(5,2)` Y NO OTRA COSA. Tres enteros para que quepa el 100 y **dos decimales, los
 -- mismos que `DECIMALES_PORCENTAJE` le exige al `dto` de la línea** (`src/core/validation/

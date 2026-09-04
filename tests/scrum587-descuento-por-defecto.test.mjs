@@ -160,7 +160,46 @@ test('SCRUM-587 · ✅ CONTROL NEGATIVO: renombrar rótulos NO toca el cálculo'
     '🔴 cambiar textos del cliente ha movido el total: el cálculo está atado a un rótulo.');
 });
 
-// ═══ ⑤ LA SUPERFICIE: LA TIRA QUE PROPONE ════════════════════════════════════════════════
+// ═══ ⑤ LA GRAFÍA: EL `@map` QUE HACE EL CAMPO ALCANZABLE ═════════════════════════════════
+
+test('SCRUM-587 · 🔴 el campo del modelo lleva `@map` a la columna SNAKE', () => {
+  // 🔴 SIN ESTO EL CAMPO ESTARÍA CONSTRUIDO Y NO SERÍA ALCANZABLE. Las 24 columnas de `customers`
+  // están en snake_case —medido en `information_schema` el 4-sep-2026: 24 snake, 0 camel— y el
+  // campo del modelo es camel. Sin `@map`, Prisma buscaría una columna `dtoPorDefecto` que NO
+  // EXISTE, y el fallo saldría al guardar un cliente, no aquí.
+  //
+  // Comprobado contra la base: escribiendo por Prisma y leyendo por SQL crudo, el 10,25 aparece
+  // en `dto_por_defecto`; y preguntando por `"dtoPorDefecto"` Postgres responde
+  // `42703 column does not exist` — que es la mitad que hace que el control distinga grafías.
+  const modelo = fs.readFileSync(path.join(RAIZ, 'prisma/schema.prisma'), 'utf8')
+    .match(/^model Customer [\s\S]*?^}/m)[0];
+  const linea = modelo.split(/\r?\n/).find((l) => /^\s+dtoPorDefecto\s/.test(l));
+  assert.ok(linea, '🔴 el campo `dtoPorDefecto` no está en el modelo `Customer`.');
+  assert.match(linea, /@map\("dto_por_defecto"\)/,
+    '🔴 el campo NO lleva `@map("dto_por_defecto")`: Prisma buscará una columna camel que no '
+    + 'existe y el campo quedará construido y no alcanzable.');
+  assert.match(linea, /@db\.Decimal\(5, ?2\)/,
+    '🔴 se ha perdido el `Decimal(5,2)`: son los mismos dos decimales que `DECIMALES_PORCENTAJE` '
+    + 'le exige al `dto` de la línea donde este valor va a aterrizar.');
+  assert.equal(/@default/.test(linea), false,
+    '🔴 le han puesto un `@default`: eso convierte a todos los clientes que ya existen en '
+    + '«declarados», y «no hay descuento pactado» deja de poder distinguirse de «se pactó un 0 %».');
+  assert.match(linea, /Decimal\?/, '🔴 el campo ha dejado de ser nullable.');
+});
+
+test('SCRUM-587 · 🔴 el `select` explícito lo devuelve — el quinto eslabón', () => {
+  // Sin esta línea el descuento se guardaría y el documento NUNCA lo vería: la propuesta no
+  // aparecería jamás, y la tanda seguiría verde porque el dato SÍ estaría en la base. Es el
+  // mismo aviso que dejó SCRUM-580, esta vez leído antes.
+  const src = fs.readFileSync(path.join(RAIZ, 'src/modules/system/customerAdmin.ts'), 'utf8');
+  const bloque = src.match(/CUSTOMER_SELECT_NO_TOKEN\s*=\s*\{[\s\S]*?\n\} as const;/);
+  assert.ok(bloque, '🔴 GUARD CIEGO: no encuentro el `select` explícito de clientes.');
+  assert.match(bloque[0], /dtoPorDefecto:\s*true/,
+    '🔴 `dtoPorDefecto` no viaja en el `select`. El editor lee la lista de clientes para proponer: '
+    + 'sin esta línea el campo se guarda y no vuelve nunca.');
+});
+
+// ═══ ⑥ LA SUPERFICIE: LA TIRA QUE PROPONE ════════════════════════════════════════════════
 
 test('SCRUM-587 · 🔴 la tira se PINTA en el editor, OCULTA, y reutiliza el componente de la casa', async () => {
   const r = await pintarVista(cargarDashboard(RAIZ), 'renderQuotesView');
@@ -265,6 +304,26 @@ test('SCRUM-587 · 🔴 la REGLA no se ha copiado al editor: la decisión sigue 
     + 'este control lleva rato aprobando la nada.');
   assert.equal(usadas.includes('aplicarA'), true,
     '🔴 el editor no usa `aplicarA`: está escribiendo los `dto` con una regla suya.');
+});
+
+test('SCRUM-587 · 🔴 el validador acota lo mismo que la LÍNEA donde el valor aterriza', async () => {
+  const { customerCreateSchema } = await import('../dist/core/validation/schemas.js');
+  const base = { name: 'Fincas Soler', phone: '34000000587' };
+  const ok = (v) => customerCreateSchema.parse({ ...base, dtoPorDefecto: v }).dtoPorDefecto;
+  const cae = (v) => { try { ok(v); return false; } catch { return true; } };
+
+  assert.equal(ok(10), 10);
+  assert.equal(ok(33.33), 33.33, '🔴 se pierden los dos decimales aprobados para el porcentaje');
+  assert.equal(ok(null), null, '🔴 `null` («no hay descuento pactado») ya no pasa el validador');
+  assert.equal(ok(0), 0, '🔴 un 0 % PACTADO ya no pasa: es un dato legítimo y distinto de `null`');
+  assert.equal(customerCreateSchema.parse(base).dtoPorDefecto, undefined,
+    '🔴 ausente se ha convertido en un valor: «no se toca» y «no hay» son cosas distintas.');
+
+  assert.ok(cae(33.333),
+    '🔴 pasa un tercer decimal. Ese valor NO cabe en el `dto` de la línea donde va a aterrizar: '
+    + 'sería un cliente que se guarda y un presupuesto que no, sin que nadie sepa por qué.');
+  assert.ok(cae(150), '🔴 pasa un 150 %: eso deja el precio NEGATIVO.');
+  assert.ok(cae(-1), '🔴 pasa un porcentaje negativo.');
 });
 
 test('SCRUM-587 · 🔴 esta pieza NO reimplementa la aritmética del 594, y lo dice si falta', () => {

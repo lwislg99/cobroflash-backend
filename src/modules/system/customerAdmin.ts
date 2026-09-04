@@ -23,6 +23,12 @@ const CUSTOMER_SELECT_NO_TOKEN = {
   tipoDestinatario: true, // SCRUM-69: para editar en la ficha y para la bandeja de facturación
   billingPeriodicity: true, // SCRUM-171b: periodicidad pactada (solo para AVISAR, ver bandeja)
   recargoEquivalencia: true, // SCRUM-294-a: el dato del cliente; NO cableado al total (regla 38)
+  // 🔴 SCRUM-587 (CONT-14) · EL QUINTO ESLABÓN OTRA VEZ, y el aviso que dejó SCRUM-580 doce
+  // líneas más abajo se leyó ANTES esta vez: este `select` es EXPLÍCITO y lo usan `listCustomers`
+  // Y `getCustomer`. Sin esta línea, el descuento pactado se guardaría en la base y el documento
+  // NUNCA lo vería —la propuesta no aparecería jamás—, y la tanda seguiría VERDE porque el dato
+  // SÍ estaría guardado. Es el editor quien lee la lista de clientes para proponer.
+  dtoPorDefecto: true,
   // 🔴 SCRUM-580 (CONT-07) · EL QUINTO ESLABON, Y ES EL QUE MAS FACIL SE PIERDE. Este `select` es
   // EXPLICITO y lo usan `listCustomers` Y `getCustomer`: sin esta linea el alta guardaria las
   // etiquetas y devolveria un cliente sin ellas, la pantalla se recargaria vacia, el profesional
