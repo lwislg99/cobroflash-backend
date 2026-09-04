@@ -208,6 +208,17 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // Lo que NO debe cambiar. Números medidos sobre `origin/main` ANTES de tocar el banco: si el
   // cambio moviera el montaje de una pantalla que no venía a arreglar, se vería aquí.
   //
+  // 🔴 CONFLICTO RESUELTO SUMANDO, no eligiendo (3-sep-2026): DOS tickets subieron números
+  // DISTINTOS de este mismo array. Quedarse con un lado habría borrado en silencio la línea
+  // base del otro, y un control positivo con una línea base borrada deja de controlar. Los dos
+  // comentarios se conservan porque documentan dos números distintos.
+  //
+  // 🔴 SCRUM-591 (3-sep-2026) · `renderQuotesView` 236 → 237, y el motivo importa porque este
+  // control existe para que un arreglo DEL BANCO no mueva pantallas ajenas: la subida NO es del
+  // banco, es del PRODUCTO — el selector de cliente pasa a ofrecer «+ Nuevo cliente» sin salir
+  // del documento, y eso es UNA `<option>` más. AISLADO, no supuesto: quitando ese `appendChild`
+  // con el resto del ticket puesto, este control vuelve a 236 y pasa. Las otras tres, intactas.
+  //
   // 🔴 SCRUM-599 · CLIENTES SUBE DE 62 A 63, Y ES DELIBERADO. El guard hizo su trabajo: cazó un
   // nodo nuevo y obligó a decir cuál. Identificado POR IDENTIDAD antes de tocar el número —no por
   // posición ni por texto—: es el ÚNICO `<kbd>` de la vista, con la tecla «N», dentro del botón
@@ -218,7 +229,7 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   //
   // La exigencia no baja: sigue siendo una igualdad exacta, sin rango ni tolerancia. Lo que sube
   // es la línea base, con su motivo escrito aquí para que el siguiente sepa de dónde salió.
-  for (const [vista, nodos] of [['renderQuotesView', 236], ['renderProductsView', 166],
+  for (const [vista, nodos] of [['renderQuotesView', 237], ['renderProductsView', 166],
     ['renderCustomersView', 63], ['renderHomeView', 109]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
@@ -236,7 +247,10 @@ test('SCRUM-698 · CONTROL NEGATIVO: el fixture NO se impone a quien ya pasaba l
   assert.equal(conLoSuyo.error, null, '🔴 pasar datos propios ha dejado de funcionar.');
 
   const desnuda = await pintarVista(cargarDashboard(RAIZ), 'renderQuotesView');
-  assert.equal(todos(desnuda.contenedor).length, 236,
+  // SCRUM-591 · 236 → 237 por la MISMA razón que arriba: la opción «+ Nuevo cliente» del selector.
+  // Lo que este control vigila —que el fixture no se imponga— sigue intacto: lo que importa es que
+  // los dos montajes den el mismo número, sea cual sea.
+  assert.equal(todos(desnuda.contenedor).length, 237,
     '🔴 montar sin `datos` ya no da lo de siempre: el fixture se ha colado como valor por '
     + 'defecto y está moviendo lo que miden otros.');
 });
