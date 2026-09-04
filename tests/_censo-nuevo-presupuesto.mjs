@@ -56,6 +56,9 @@ export function censarEnvioPresupuesto(fuente, ruta = 'quotesView.js') {
 
   const envio = [];
   const linea = [];
+  // Lo que el censo NO ha podido resolver. Va en la salida y no en un `console.warn`: un aviso
+  // que nadie lee es un cero que parece un dato.
+  const opacos = [];
 
   // ── FORMA 1 · el objeto que se pasa a createQuote(...) ──────────────────────
   // Se sigue la VARIABLE: `createQuote(quotePayload)` no lleva el literal dentro, así que
@@ -74,6 +77,37 @@ export function censarEnvioPresupuesto(fuente, ruta = 'quotesView.js') {
       if (n.name.text !== nombreDelPayload || !n.initializer) return;
       if (!ts.isObjectLiteralExpression(n.initializer)) return;
       for (const p of n.initializer.properties) {
+        // 🔴 SCRUM-587 (4-sep-2026) · LA CEGUERA DEL SPREAD, MEDIDA Y CERRADA.
+        //
+        // `nombreDePropiedad` devuelve `null` para un `...algo` —un `SpreadAssignment` no tiene
+        // `.name`—, así que el bucle lo SALTABA EN SILENCIO. Medido sobre el árbol de hoy: metiendo
+        // `...({ campoFantasma: 1 })` en `quotePayload`, el guard de SCRUM-286 seguía **VERDE**.
+        // Un campo que viaja al servidor sin estar colocado en ningún bloque es exactamente lo que
+        // este censo existe para cazar, y por esa puerta pasaban todos.
+        //
+        // Se separan los DOS casos, porque son distintos y confundirlos es el defecto de siempre:
+        //   · `...({ a: 1 })` — literal: SE PUEDEN LEER sus claves, y se leen.
+        //   · `...variable`   — opaco: NO se pueden. Y entonces se DECLARA que no se supo mirar,
+        //     en vez de contar cero y llamarlo «no hay campos».
+        if (ts.isSpreadAssignment(p)) {
+          // ⚠️ SE DESENVUELVEN LOS PARÉNTESIS, y esto lo cazó la medición, no la lectura: la forma
+          // que uno escribe de verdad es `...({ a: 1 })`, y ahí `p.expression` NO es el literal
+          // sino un `ParenthesizedExpression` que lo envuelve. Sin desenvolver, el caso legible
+          // más común se clasificaba como OPACO — seguro, pero falso: obligaría a quitar unos
+          // paréntesis legítimos para que el censo volviera a ver.
+          let dentro = p.expression;
+          while (ts.isParenthesizedExpression(dentro)) dentro = dentro.expression;
+          if (ts.isObjectLiteralExpression(dentro)) {
+            for (const q of dentro.properties) {
+              const c = nombreDePropiedad(q);
+              if (c) envio.push({ clave: c, linea: nLinea(q), origen: 'quotePayload (spread literal)' });
+              else opacos.push({ texto: p.getText(sf).slice(0, 60), linea: nLinea(q) });
+            }
+          } else {
+            opacos.push({ texto: p.getText(sf).slice(0, 60), linea: nLinea(p) });
+          }
+          continue;
+        }
         const clave = nombreDePropiedad(p);
         if (clave) envio.push({ clave, linea: nLinea(p), origen: 'quotePayload' });
       }
@@ -103,6 +137,7 @@ export function censarEnvioPresupuesto(fuente, ruta = 'quotesView.js') {
   return {
     envio,
     linea,
+    opacos,
     poblacion: {
       fichero: ruta,
       frontera: 'objeto pasado a createQuote(...) + sub-población de payloadLines',

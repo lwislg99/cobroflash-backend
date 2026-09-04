@@ -257,13 +257,16 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
     // Las casillas POR FILA no entran en este número: el banco monta la vista sin datos, así que
     // no hay filas. Es otra medición y no se mezcla con ésta.
     //
-    // 🔴 SCRUM-587 (4-sep-2026) · `renderQuotesView` 242 → 245, y la subida NO es del banco: es
-    // del PRODUCTO. Son exactamente TRES nodos, la tira que PROPONE el descuento pactado con el
-    // cliente —el `div.alert`, su `<span>` de texto y el botón de aceptar—, que nace `hidden` y
-    // sólo se enseña cuando ese cliente trae un descuento y queda alguna línea sin él.
-    // AISLADO, NO SUPUESTO: quitando ese único `blockTotals.appendChild(propuestaWrap)` con el
-    // resto del ticket puesto, este control vuelve a 242 y pasa. Las otras tres, intactas.
-  for (const [vista, nodos] of [['renderQuotesView', 245], ['renderProductsView', 166],
+    // 🔴 4-sep-2026 · `renderQuotesView` 242 → 253, y son DOS tickets a la vez. Las dos subidas
+    // son del PRODUCTO, no del banco, y SE SUMAN:
+    //   · SCRUM-602 · +8 · el control de la dirección de la obra (los dos subárboles del
+    //     `.field`), aislados por identidad.
+    //   · SCRUM-587 · +3 · la tira que PROPONE el descuento pactado — el `div.alert`, su `<span>`
+    //     y el botón—, que nace `hidden` y sólo se enseña si ese cliente trae descuento y queda
+    //     alguna línea sin él.
+    // MEDIDO sobre el árbol mezclado y comprobado por mitades: sin la tira da 250, sin los dos
+    // `.field` da 245. Las otras tres vistas, intactas.
+  for (const [vista, nodos] of [['renderQuotesView', 253], ['renderProductsView', 166],
     ['renderCustomersView', 68], ['renderHomeView', 109]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
@@ -281,10 +284,10 @@ test('SCRUM-698 · CONTROL NEGATIVO: el fixture NO se impone a quien ya pasaba l
   assert.equal(conLoSuyo.error, null, '🔴 pasar datos propios ha dejado de funcionar.');
 
   const desnuda = await pintarVista(cargarDashboard(RAIZ), 'renderQuotesView');
-  // SCRUM-591 + SCRUM-594 + SCRUM-587 · las TRES subidas, acumuladas y MEDIDAS sobre el árbol
-  // mezclado (ver arriba). Lo que este control vigila —que el fixture no se imponga— sigue
-  // intacto: lo que importa es que los dos montajes den el mismo número, sea cual sea.
-  assert.equal(todos(desnuda.contenedor).length, 245,
+  // SCRUM-591 + SCRUM-594 + SCRUM-602 + SCRUM-587 · las CUATRO subidas, acumuladas y MEDIDAS
+  // sobre el árbol mezclado (ver arriba). Lo que este control vigila —que el fixture no se
+  // imponga— sigue intacto: lo que importa es que los dos montajes den el mismo número, sea cual sea.
+  assert.equal(todos(desnuda.contenedor).length, 253,
     '🔴 montar sin `datos` ya no da lo de siempre: el fixture se ha colado como valor por '
     + 'defecto y está moviendo lo que miden otros.');
 });

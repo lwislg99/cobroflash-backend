@@ -60,6 +60,13 @@ export const CAMPO_A_BLOQUE = {
   // y su efecto se lee justo donde se pinta, entre la suma y la base imponible. El `Dto. %` de
   // cada línea sí vive en Líneas, dentro de la hoja de ajustes de su fila.
   discountGlobalAmount: { control: 'dtoGlobalWrap', bloque: 'blockTotals' },
+  // SCRUM-602 (DOC-12) · la dirección de la OBRA. Va al bloque del CLIENTE y no a «4. Envío»,
+  // que en esta pantalla significa el envío del DOCUMENTO por WhatsApp o correo: dos cosas
+  // distintas con el mismo nombre en la misma pantalla es cómo se aprende mal un producto.
+  // Son DOS claves porque son dos datos —el modo y el texto— y el texto sólo existe con
+  // «Personalizada»; el control que gobierna cada una es distinto, así que se listan las dos.
+  shippingAddressMode: { control: 'fieldDireccionObra', bloque: 'blockClient' },
+  shippingAddress: { control: 'direccionObraWrap', bloque: 'blockClient' },
 };
 
 /**
@@ -113,6 +120,9 @@ export function revisarAsignacionDeBloques(fuente, ruta = 'quotesView.js') {
     .filter((b) => !bloquesDelFormulario.includes(b));
 
   return {
+    // SCRUM-587 · lo que el censo NO supo resolver viaja hasta arriba. Si se quedara dentro,
+    // «no encuentro campos sin colocar» y «no pude leer parte del objeto» serían el mismo verde.
+    opacos: envio.opacos || [],
     envio, pintado, bloqueDe, clavesDeEnvio, bloquesDelFormulario,
     dejaronDeViajar, sinControlEnPantalla, enElBloqueEquivocado, sinSitio, bloquesFantasma,
   };

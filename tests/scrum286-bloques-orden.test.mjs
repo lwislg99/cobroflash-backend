@@ -61,6 +61,23 @@ test('SCRUM-286 · SUELO: el derivador ve los bloques y los controles', () => {
 });
 
 test('SCRUM-286 · SUELO: el censo del ENVÍO sigue encontrando lo que viaja', () => {
+  // 🔴 SCRUM-587 (4-sep-2026) · EL CENSO DECLARA LO QUE NO SUPO LEER, Y ESO TUMBA EL GUARD.
+  //
+  // Medido sobre el árbol de hoy: metiendo `...({ campoFantasma: 1 })` en `quotePayload`, este
+  // guard seguía **VERDE** — `nombreDePropiedad` devuelve `null` para un spread y el bucle lo
+  // saltaba en silencio. Un campo que viaja al servidor sin estar colocado en ningún bloque es
+  // justo lo que este censo existe para cazar, y por esa puerta pasaban todos.
+  //
+  // Ahora un `...({…})` LITERAL se lee (sus claves entran en el censo como cualquier otra) y un
+  // `...variable` OPACO se DECLARA aquí. No se intenta resolver la variable: seguirla a través de
+  // asignaciones es adivinar, y un censo que adivina miente mejor que uno que calla.
+  assert.deepEqual(R.opacos, [],
+    '🔴 EL CENSO NO HA PODIDO LEER PARTE DE `quotePayload`:\n    '
+    + R.opacos.map((o) => `línea ${o.linea}: ${o.texto}`).join('\n    ')
+    + '\n\n  Lo que venga después es una afirmación sobre un objeto que NO es el que crees: los\n'
+    + '  campos que entren por ahí viajan al servidor sin que nadie compruebe en qué bloque\n'
+    + '  viven. Se arregla escribiendo las claves en el literal, no bajando la exigencia.');
+
   assert.ok(R.clavesDeEnvio.length >= 10,
     `🔴 solo ${R.clavesDeEnvio.length} campos en el envío (esperados ≥10). Sin esto, «0 campos ` +
     'perdidos» significaría «no supe mirar».');

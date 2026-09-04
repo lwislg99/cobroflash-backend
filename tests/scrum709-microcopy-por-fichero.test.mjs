@@ -182,7 +182,11 @@ test('SCRUM-709 · el registro anterior queda CONGELADO, entero y avisando de d�
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 
 const MARCA_APROBACION = /aprobad[oa]s?\s+por\s+el\s+fundador/i;
-const CITA_DOC = /docs\/[\w./-]+/gi;
+// 🔴 EL ESPACIO VA DENTRO DE LA CLASE, y no es un detalle: hay rutas reales con espacio —
+// `docs/Sprint Scrum/…`— y sin él la cita se corta en «docs/Sprint», que no existe. La primera
+// versión de este control lo daba por ROTO cuando el documento estaba ahí. Es la misma clase que
+// usa SCRUM-387, de donde salió este criterio (SCRUM-718).
+const CITA_DOC = /docs\/[\w./ -]+/gi;
 
 function fuentes() {
   const out = [];
@@ -199,7 +203,17 @@ function fuentes() {
 }
 
 /**
- * Los comentarios de un fuente, por el escáner de TypeScript: nada de ventanas ni de grep.
+ * Los comentarios de un fuente. Nada de ventanas ni de grep.
+ *
+ * 🔴 CON EL PARSER COMPLETO, NO CON EL ESCÁNER A PELO (SCRUM-718). `ts.createScanner` sin contexto
+ * no sabe si un `/` abre una expresión regular o divide, y en cuanto se desorienta deja de ver
+ * comentarios hasta el final del fichero. Medido sobre `src/` y `public/`: el escáner ve **13.122**
+ * comentarios y el parser **21.056** — pierde el **37,7 %**, y se pierde en **147 de 344**
+ * ficheros. En `jobDetailView.js` ve 32 de 895: se desorienta al 18 % del fichero.
+ *
+ * Y lo que eso le costaba A ESTE CONTROL, que es lo que importa aquí: veía **40 de las 56** marcas
+ * de «aprobado por el fundador» y **12 de las 13** citas. Una cita invisible es una cita que este
+ * guard no puede comprobar aunque esté rota.
  *
  * 🔴 Y LOS `//` CONSECUTIVOS SE UNEN EN UN BLOQUE, que es lo que hace el guard de SCRUM-387 y por
  * la razón que él dejó escrita: la marca y su `(SCRUM-264)` suelen ir en LÍNEAS DISTINTAS. La
@@ -207,20 +221,26 @@ function fuentes() {
  * citas —medido—: no era una ventana de N líneas, pero era de la misma familia, un alcance
  * arbitrario que dejaba fuera justo lo que venía en la línea de al lado.
  */
-function comentariosDe(codigo) {
-  const esc = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.Standard, codigo);
-  const trozos = [];
-  let k;
-  while ((k = esc.scan()) !== ts.SyntaxKind.EndOfFileToken) {
-    if (k === ts.SyntaxKind.SingleLineCommentTrivia || k === ts.SyntaxKind.MultiLineCommentTrivia) {
-      trozos.push({
-        texto: esc.getTokenText(),
-        suelto: k === ts.SyntaxKind.SingleLineCommentTrivia,
-        inicio: esc.getTokenStart(),
-        fin: esc.getTokenEnd(),
+function comentariosDe(codigo, nombre = 'fuente.ts') {
+  const sf = ts.createSourceFile(nombre, codigo, ts.ScriptTarget.Latest, true);
+  const rangos = new Map();
+  const anota = (r) => {
+    if (!r) return;
+    for (const x of r) {
+      rangos.set(x.pos + ':' + x.end, {
+        texto: codigo.slice(x.pos, x.end),
+        suelto: x.kind === ts.SyntaxKind.SingleLineCommentTrivia,
+        inicio: x.pos,
+        fin: x.end,
       });
     }
-  }
+  };
+  (function walk(n) {
+    anota(ts.getLeadingCommentRanges(codigo, n.getFullStart()));
+    anota(ts.getTrailingCommentRanges(codigo, n.getEnd()));
+    ts.forEachChild(n, walk);
+  })(sf);
+  const trozos = [...rangos.values()].sort((a, b) => a.inicio - b.inicio);
   // Dos `//` son el mismo bloque si entre ellos sólo hay espacios y saltos de línea.
   const out = [];
   let acc = null;
@@ -250,13 +270,18 @@ test('SCRUM-709 · ✅ CONTROL POSITIVO: toda cita de una aprobación SIGUE apun
   }
 
   // 🔴 SUELO: si el barrido viera pocas marcas, «ninguna cita rota» sería ceguera, no un verdicto.
-  assert.ok(marcas >= 30,
-    `🔴 CIEGO: sólo se han visto ${marcas} marcas de «aprobado por el fundador» y había 39. `
-    + 'Con el barrido a medias, «ninguna cita rota» no significa nada.');
-  assert.ok(citas.length >= 10,
-    `🔴 CIEGO: sólo ${citas.length} citas a documentos, y había 12 medidas uniendo los bloques de`
-    + ' comentario. Con el alcance a medias, «ninguna cita rota» no significa nada: era exactamente'
-    + ' el fallo de la primera versión de este control, que veía 6 de 12.');
+  //
+  // LOS NÚMEROS SUBEN CON EL PARSER (SCRUM-718), y ése es el punto: con el escáner a pelo este
+  // control veía **40 marcas y 12 citas**; con el parser ve **56 y 13**. El suelo viejo —30 y 10—
+  // pasaba en verde sobre un recuento corto, que es la peor forma de un suelo: tranquiliza
+  // exactamente cuando no debería.
+  assert.ok(marcas >= 50,
+    `🔴 CIEGO: sólo se han visto ${marcas} marcas de «aprobado por el fundador» y había 56 medidas `
+    + 'con el parser completo. Con el barrido a medias, «ninguna cita rota» no significa nada.');
+  assert.ok(citas.length >= 12,
+    `🔴 CIEGO: sólo ${citas.length} citas a documentos, y había 13 medidas. La que se perdía con el`
+    + ' escáner a pelo era, además, la única con un ESPACIO en la ruta (`docs/Sprint Scrum/…`), que'
+    + ' este mismo control daba por rota cuando el documento estaba ahí.');
 
   // ENUMERADO, texto por texto: cada cita, con su fichero y si resuelve.
   const rotas = citas.filter((c) => !c.existe);

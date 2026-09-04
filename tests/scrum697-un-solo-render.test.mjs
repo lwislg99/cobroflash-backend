@@ -277,17 +277,25 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   // 237 habría perdido el cambio del otro ticket en silencio y en verde. El número está MEDIDO
   // sobre el árbol ya mezclado, no sumado a ojo.
   //
-  // 🔴 SCRUM-587 (4-sep-2026) · 242 → 245, y sigue sin ser del banco: son los TRES nodos de la
-  // tira que PROPONE el descuento pactado con el cliente —el `div.alert`, su `<span>` de texto y
-  // el botón de aceptar—, que nace oculta. AISLADO, no supuesto: quitando ese único
-  // `blockTotals.appendChild(propuestaWrap)` con el resto del ticket puesto, este control vuelve
-  // a 242 y pasa. Las tres subidas SE ACUMULAN, y el número está medido sobre el árbol mezclado.
-  assert.equal(nodos.length, 245,
-    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 245 `
+  // 🔴 4-sep-2026 · 242 → 253, y son DOS tickets a la vez. Ninguna de las dos subidas es del
+  // banco: las dos son del PRODUCTO, y SE SUMAN. Quedarse con 245 o con 250 habría perdido el
+  // cambio del otro en silencio y en verde — que es justo lo que SCRUM-594 ya dejó escrito aquí.
+  //
+  //   · SCRUM-602 · +8 · el control de la dirección de la obra: los dos `<div class="field">`, el
+  //     `<label>`, el `<select name="shipping_address_mode">`, sus tres `<option>` y el `<input>`
+  //     del campo libre. Aislados POR IDENTIDAD (los dos subárboles del `.field`).
+  //   · SCRUM-587 · +3 · la tira que PROPONE el descuento pactado con el cliente: el `div.alert`,
+  //     su `<span>` de texto y el botón de aceptar. Nace oculta.
+  //
+  // 🔴 EL 253 ESTÁ MEDIDO SOBRE EL ÁRBOL YA MEZCLADO, NO SUMADO A OJO, y las dos mitades se
+  // comprobaron por separado sobre ese mismo árbol: quitando sólo el `appendChild` de la tira da
+  // 250, y quitando sólo los dos `.field` de la dirección da 245.
+  assert.equal(nodos.length, 253,
+    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 253 `
     + '(236 sobre `origin/main` = 80db312b, + la opción de alta de SCRUM-591, + el bloque de '
-    + 'descuento global de SCRUM-594, + la tira de propuesta de SCRUM-587). Un arreglo del BANCO '
-    + 'no debe cambiar ni uno: si has tocado '
-    + 'el banco y esto se mueve, el arreglo pinta.');
+    + 'descuento global de SCRUM-594, + el control de la dirección de la obra de SCRUM-602, '
+    + '+ la tira de propuesta de SCRUM-587). Un arreglo del BANCO no debe cambiar ni uno: si '
+    + 'has tocado el banco y esto se mueve, el arreglo pinta.');
 
   const tablas = nodos.filter((n) => n.tagName === 'TABLE');
   assert.equal(tablas.length, 1, '🔴 la vista de presupuestos ya no monta su tabla.');
