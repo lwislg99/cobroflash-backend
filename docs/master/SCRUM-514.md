@@ -151,11 +151,11 @@ ahora, lo que ha cambiado es **el lector**: SCRUM-715 apretó `constaAprobado()`
 identidad. Comprobado lo que hay que comprobar, sobre el árbol **ya mezclado**:
 
 * **sigue verde** (7/7) con el matching apretado;
-* **y sigue cayendo**: repetida la mutación —cambiar el texto de  por otro
+* **y sigue cayendo**: repetida la mutación —cambiar el texto de `docs/microcopy/` por otro
   plausible— el guard cae y **lo nombra**. Un guard que pasó su mutación ANTES del merge no ha
   probado nada sobre después.
 
-### Por qué NO se usa , que existe y haría esto en una línea
+### Por qué NO se usa `literalesAprobados()`, que existe y haría esto en una línea
 
 Porque **responde otra pregunta**. Esa función contesta «¿consta aprobado?» y para eso acepta toda
 cita  del registro, **notas en prosa incluidas** — correcto para ella. Aquí la pregunta es
