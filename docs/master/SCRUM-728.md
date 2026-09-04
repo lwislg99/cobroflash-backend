@@ -197,3 +197,169 @@ comentario solo no basta; el comentario más el test, sí.**
 * **`FOR UPDATE` dentro de un CTE**: medido correcto en 10, 25, 50, 100 y 200 concurrentes contra
   este Postgres. **No he leído la garantía en la documentación de Postgres**, así que lo sostengo
   por medición, no por especificación.
+
+---
+
+# FASE C · ① y ② resueltos · y un TERCER bloqueo que obliga a parar
+
+**Medido contra:** `origin/main` = `cc786ab34df118e6a44ae25ae523709f3cb4e11c` · 2026-09-04T23:10:00+02:00
+
+> ⚠️ Esa hora es la del trabajo de esta rama, no una lectura de reloj — criterio R14.
+
+**Alcance: NO SE ADOPTA EL CANDIDATO.** `allocateAlbaranNumber` queda **intacto**. Cero ficheros
+de `src/` modificados. Las dos condiciones de bloqueo del fundador están resueltas y escritas,
+pero apareció **una tercera** que no estaba en la lista y que toca una barrera puesta a
+propósito en SCRUM-306.
+
+---
+
+## C0 · 🔴 PRIMERO, UNA CORRECCIÓN DE MI PROPIA MEDICIÓN DE LA FASE B
+
+**La fase B midió el candidato en AUTOCOMMIT. En producción se llama DENTRO de la transacción
+que crea el albarán** (`jobs.routes.ts`), y eso importa: dentro de una transacción, el *row lock*
+del `UPDATE` **se sostiene hasta el `COMMIT`**, exactamente igual que el advisory lock. El «>200»
+de la fase B **no se obtiene en el contexto real**.
+
+Medido, con el `albaran.create` simulado por un viaje equivalente y todo con `ROLLBACK`
+(RTT mediano de esta sesión: **192,2 ms**):
+
+| | mediana | ×RTT | 10 simultáneas |
+|---|---|---|---|
+| **Hoy**, dentro de tx | 1.107,7 ms | **5,8** | 4 ok · **6 fallos** P2028 |
+| **Candidato dentro de tx** (contexto real) | 746,0 ms | **3,9** | **10 ok · 0 fallos** |
+| Candidato suelto (lo que midió la fase B) | 184,5 ms | **1,0** | 10 ok · 0 fallos |
+
+### El umbral real del candidato, buscado hasta romperlo
+
+| n | resultado |
+|---|---|
+| 10 | 10 ok · 0 fallos |
+| 15 | 15 ok · 0 fallos |
+| **20** | 17 ok · **3 fallos** P2028 |
+| 30 | 17 ok · 13 fallos |
+
+**El umbral pasa de 6 a entre 15 y 19 — no a «más de 200».** Sigue siendo **~3×**, y a las 10
+simultáneas del ticket pasa de **6 fallos a cero**, que es el caso que lo abrió. Pero **la cifra
+grande de la fase B era del contexto equivocado, y se corrige aquí en vez de dejarla correr.**
+
+> Y el hueco que esto deja abierto: **sacar la reserva fuera de la transacción** sí daría el otro
+> orden — pero rompería la garantía «sin huecos en la serie si el `create` falla», que es
+> justamente por lo que hoy vive dentro. **Eso es decisión del fundador y no se toca aquí.**
+
+## C1 · ✅ CONDICIÓN ① RESUELTA: las dos causas dejan de colapsar en «0 filas»
+
+El SQL devuelve **siempre una fila** y distingue los dos casos, sin dejar de ser **un solo viaje**:
+
+```sql
+WITH viejo AS (
+  SELECT id, albaran_series_year AS ay, next_albaran_number AS nn
+    FROM merchants WHERE id = $1 FOR UPDATE
+), actualizado AS (
+  UPDATE merchants m
+     SET albaran_series_year = $2,
+         next_albaran_number = CASE WHEN viejo.ay = $2 THEN viejo.nn + 1 ELSE 2 END
+    FROM viejo
+   WHERE m.id = viejo.id
+     AND NOT (viejo.ay IS NULL AND viejo.nn > 1)   -- ← el guard de SCRUM-306
+  RETURNING m.next_albaran_number - 1 AS seq
+)
+SELECT (SELECT seq FROM actualizado)      AS seq,
+       (SELECT nn  FROM viejo)            AS contador_previo,
+       (SELECT COUNT(*) FROM viejo)::int  AS existe;
+```
+
+| Lectura del resultado | Causa | Error que emite |
+|---|---|---|
+| `existe = 0` | el merchant no existe | `merchant_not_found` |
+| `existe = 1` y `seq IS NULL` | serie con año nulo y contador avanzado | `AlbaranSerieSinAnioError(contador_previo)` |
+| `seq` no nulo | caso normal | — |
+
+`contador_previo` viaja precisamente para que el mensaje del error pueda decir **qué contador**
+estaba puesto, igual que hoy.
+
+## C2 · ✅ CONDICIÓN ② RESUELTA Y DECIDIDA: nadie lee `merchants.updated_at`
+
+Censo por AST —un `grep updatedAt | grep merchant` no vale, porque un
+`select: { updatedAt: true }` vive en otra línea que la palabra «merchant»—, con **suelo** que
+prueba que el detector ve 2 de 2 consultas de merchant y distingue la que pide `updatedAt`:
+
+| Pregunta | Resultado |
+|---|---|
+| Consultas a `merchant` en `src/` | **118** |
+| …que mencionan `updatedAt` | **0** |
+| Accesos sueltos `merchant.updatedAt` | **0** |
+| SQL crudo con `updated_at` sobre `merchants` | **0** |
+| `updatedAt` junto a merchant/perfil/ajustes en `public/` | **0** |
+
+**LA DECISIÓN: la reserva de número NO debe tocar `updated_at`, y el candidato hace lo correcto
+al no escribirlo.**
+
+**Por qué**, que es lo que el fundador pide que quede escrito: `merchants.updated_at` significa
+**«los datos del comercio cambiaron»** — su nombre, su NIF, sus ajustes. Emitir un albarán **no
+cambia el comercio**: mueve un contador. Que hoy se moviera era **un efecto colateral del ORM**
+(Prisma lo escribe en todo `update`), no una decisión de nadie. Al pasar a SQL explícito, el
+efecto colateral desaparece y el campo pasa a significar lo que dice.
+
+> **Límite declarado:** una consulta *sin* `select` devuelve todas las columnas, `updatedAt`
+> incluido, así que el dato **puede viajar** en algún payload aunque ninguna vista lo pinte. El
+> censo dice que nadie lo *usa*; no que nadie lo *reciba*.
+
+## C3 · 🔴 EL TERCER BLOQUEO, QUE NO ESTABA EN LA LISTA
+
+`tests/scrum306-serie-albaranes.test.mjs` tiene este guard **vivo**:
+
+```js
+assert.ok(/const seq = resolveAlbaranSeq\(m, year\);/.test(alloc),
+  '🔴 ESCÁNER CIEGO: la reserva ya no usa `resolveAlbaranSeq` — la vista previa y la reserva ' +
+  'habrían dejado de compartir mecanismo y este test estaría comparando con nada.');
+```
+
+**Y su motivo no es ceremonia.** `vistaPreviaAlbaran` (`albaranSerie.ts`) **le enseña al
+profesional el número que va a salir**, y lo calcula con `resolveAlbaranSeq` — la misma función
+que hoy usa la reserva. Su comentario lo dice: *«Calcularlo aparte es como se acaba enseñando una
+cosa y emitiendo otra»*.
+
+**Adoptar el candidato mueve la regla a SQL y deja la vista previa en JS: dos implementaciones de
+la misma regla de negocio, en dos lenguajes.** Es exactamente la divergencia que ese guard existe
+para impedir, y el guard **caería** — no por estar mal, sino por tener razón.
+
+### Por qué no lo resuelvo yo
+
+* Arreglarlo por el lado de la vista previa obliga a tocar `albaranSerie.ts`, **que no es este
+  carril** (el encargo dice *sólo* `allocateAlbaranNumber`).
+* Arreglarlo por el lado del guard significa **cambiar una barrera que el fundador puso a
+  propósito** para que dejase de morder. Eso es vaciar un guard por goteo, y no lo hago sola.
+
+### Las dos salidas, para que se decida con ellas delante
+
+1. **La vista previa pregunta al mismo SQL** (en modo «sólo consulta», sin `UPDATE`). Una sola
+   fuente de verdad otra vez, pero la vista previa pasa a costar un viaje a la base — hoy es un
+   cálculo en memoria sobre un merchant ya cargado.
+2. **Se acepta la duplicación y se cambia la FORMA del guard**: de «la reserva usa esta función»
+   a «SQL y JS dan lo mismo en los cuatro casos», verificado contra base. **Ya está medido: 4 de
+   4** (§ fase B). Es más honesto que el guard textual actual, pero necesita base, así que sería
+   un test gateado y **el CI dejaría de vigilarlo en cada push**.
+
+**Mi criterio, ya que se me pide:** la **2** es mejor. El guard actual comprueba una *forma de
+escribir el código*; el propuesto comprobaría el *comportamiento*, que es lo que de verdad
+importa. Pero pierde cobertura en CI, y ese cambio de trato **no lo decide una sesión**.
+
+## C4 · Lo que NO se ha hecho
+
+* **`allocateAlbaranNumber` sigue exactamente igual.** Cero ficheros de `src/` tocados.
+* **No se ha tocado el guard de SCRUM-306**, ni el de la fase A que prohíbe subir el timeout.
+* **No se ha tocado `invoicing`** ni nada del camino de emisión.
+* **No se han creado filas**: todas las mediciones mueven el contador del merchant 1 y lo
+  restauran; post-condición verificada — contador restaurado y **0 albaranes creados**.
+* **Regla 29 intacta:** nada se renumeró porque nada se numeró.
+
+## C5 · Huecos declarados
+
+* **No he medido el candidato con el `albaran.create` REAL**, sino con un viaje equivalente
+  (`SELECT 1`). Un `INSERT` real puede costar algo más, así que el umbral 15-19 es una **cota
+  optimista**.
+* **El umbral 15-19 se estrechó con n = 10, 15, 20 y 30**; no busqué el punto exacto.
+* **Sólo `albaranes`.** No he medido `allocateInvoiceNumber` ni `allocateQuoteNumber`.
+* **No sé qué hacían las otras cinco sesiones** mientras medía contra dev, que es compartida.
+* **`FOR UPDATE` dentro de un CTE** lo sostengo por medición contra este Postgres, no por haber
+  leído la garantía en la especificación.
