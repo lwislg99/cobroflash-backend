@@ -1720,27 +1720,17 @@ html, body { overflow-x: clip; }
 
   .topbar-hamburger { display: flex; }
 
-  /* Bottom nav (keep for quick access) */
-  .sidebar-nav-bottom {
-    display: flex;
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    background: var(--neutral-900);
-    padding: 8px 4px;
-    z-index: 35;
-    justify-content: space-around;
-    border-top: 1px solid var(--neutral-800);
-  }
-  .bottom-nav-item {
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
-    padding: 6px 10px; border-radius: var(--radius-sm);
-    border: none; background: transparent;
-    color: var(--neutral-500); font-size: 10px; font-weight: 600;
-    cursor: pointer; transition: color .12s;
-  }
-  .bottom-nav-item svg { width: 20px; height: 20px; }
-  .bottom-nav-item.active { color: var(--green-500); }
+  /* SCRUM-727 · AQUÍ VIVÍA UNA BARRA DE NAVEGACIÓN INFERIOR QUE NO EXISTE.
+     `.sidebar-nav-bottom` y `.bottom-nav-item` se estilizaban enteros —posición fija, fondo,
+     iconos, estado activo— y **ningún HTML ni ningún JS los pinta**: 4 apariciones en la hoja,
+     0 en todo lo que se sirve al navegador y 0 en `src/`. Se quitan.
 
+     ⚠️ EL RELLENO INFERIOR NO SE QUITA CON ELLAS, y por una razón medida. Estaba puesto «para
+     bottom-nav», pero lo que de verdad hay flotando ahí abajo es el botón de ayuda
+     (`#tut-help-btn`: fijo, 48 px, a 20 del borde). Cuando en SCRUM-720e se comprobó que ese
+     botón no tapa ningún control ni ninguna cifra, lo que lo impedía era ESTE hueco. Quitarlo
+     por muerto habría creado el defecto que aquel ticket midió que no existía. Cambia el motivo,
+     no la medida. */
   .view-container { padding: 16px 14px 80px; }
   .kpi-grid { grid-template-columns: 1fr 1fr; }
 

@@ -375,7 +375,11 @@ function jobCard(j, container) {
   const siguiente = typeof jobNextAction === 'function' ? jobNextAction(j, !isTecnico) : null;
   if (siguiente) {
     addBtn(siguiente.label, 'btn-primary btn-sm', () => {
-      if (window.renderAppView) window.renderAppView('job-detail', { jobId: j.id });
+      // SCRUM-727 · decía `job-detail`, en singular, y el router solo atiende `jobs-detail`. No
+      // fallaba: el `switch` caía en su `default:` y este botón —el de la acción del DINERO— te
+      // dejaba en Inicio, sin aviso ni traza. Lo vigila `scrum727-vistas-que-existen.test.mjs`
+      // comparando los dos conjuntos, para que el próximo nombre mal escrito caiga solo.
+      if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: j.id });
     });
   }
   if (j.status === 'terminado') {

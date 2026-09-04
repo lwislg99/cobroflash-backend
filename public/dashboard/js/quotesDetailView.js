@@ -703,7 +703,12 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
           body: JSON.stringify({ customBillingPlan: leerTramos() }),
         });
         showToast('✓ Plan de cobro actualizado');
-        if (window.renderAppView) window.renderAppView('quote-detail', { quoteId: quote.id });
+        // SCRUM-727 · decía `quote-detail` y el router atiende `quotes-detail`: al guardar el
+        // plan de cobro salía el «✓ Plan de cobro actualizado» y acto seguido te plantaba en
+        // Inicio. Lo encontró el mecanismo del guard de vistas, no una mirada — es el segundo
+        // huérfano con la misma `s` de menos, en otra pantalla. Se arregla aquí porque sin esto
+        // el guard nace en rojo; es de otro carril y queda declarado en el informe.
+        if (window.renderAppView) window.renderAppView('quotes-detail', { quoteId: quote.id });
       } catch (e) {
         showToast(e && e.message ? e.message : 'No se pudo guardar el plan', 'error');
         btnGuardar.textContent = antes;
