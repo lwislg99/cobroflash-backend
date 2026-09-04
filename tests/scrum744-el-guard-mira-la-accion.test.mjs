@@ -172,6 +172,22 @@ test('SCRUM-744 · 🔴 `node -e` se analiza como CÓDIGO, y un argumento posici
   assert.equal(bloquea('node medir.mjs "npx prisma db push"'), false,
     '🔴 un argumento POSICIONAL de node se está tratando como código. Eso es SCRUM-454 otra vez: ' +
     '`node medir.mjs "git push --force origin main"` volvería a bloquearse.');
+
+  // 🔴 EL CASO QUE ESTE TEST NO TENÍA, Y LO ENCONTRÓ UNA MUTACIÓN.
+  //
+  // Al inyectar «el payload de `-e` vuelve a contar como mención» (máscara a `true`), la tanda
+  // seguía VERDE: los casos de arriba llevan el comando en un ARRAY —`[…,'db','push']`— y ahí
+  // los separadores `','` quedan fuera de las comillas, así que la coincidencia toca texto no
+  // enmascarado y cuenta igual sin necesidad de vaciar la máscara.
+  //
+  // El vaciado SÍ hace falta para la forma más natural de todas: el comando entero dentro de UNA
+  // sola cadena. Medido con el hook, con y sin la línea: **sin vaciar la máscara, esto pasa**.
+  // Era una regla que siempre pasaba, y la mutación fue lo único que lo dijo.
+  assert.equal(bloquea(`node -e "require('child_process').execSync('npx prisma migrate reset')"`), true,
+    '🔴 el comando entero dentro de UNA cadena de JavaScript se está descontando como «mención». ' +
+    'Dentro de `node -e` no hay menciones: lo que hay ahí se ejecuta, comillas incluidas.');
+  assert.equal(bloquea(`node -e "require('child_process').execSync('npx prisma db execute --file borrar.sql')"`), true,
+    '🔴 idem con `db execute`.');
 });
 
 test('SCRUM-744 · 🔴 el sentinel de `db push` sigue mandando, también por la forma nueva', () => {
