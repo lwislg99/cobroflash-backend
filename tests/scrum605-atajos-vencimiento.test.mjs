@@ -201,6 +201,22 @@ test('SCRUM-605 · CONTROL NEGATIVO: el RÓTULO no decide la fecha', () => {
   const antes = A.DIAS_ATAJO.map((d) => A.fechaDeAtajo(d, hoy));
 
   // Se sustituye el rótulo por otro completamente distinto, sin tocar nada más.
+  // 🔴 Y LO QUE DE VERDAD LO PRUEBA, porque lo de abajo NO bastaba: sustituir `A.rotuloDeAtajo`
+  // cambia la PROPIEDAD exportada, pero `fechaDeAtajo` llama a la función INTERNA. Un
+  // acoplamiento dentro del módulo —«si el rótulo no lleva X, no calcules»— pasaba este test
+  // sin despeinarse; lo cazó su propia prueba de rojo. Así que el desacoplamiento se comprueba
+  // DONDE SE DECIDE: en el cuerpo de la función.
+  const fuente = leer('public/dashboard/js/quoteAtajosVencimiento.js');
+  const cuerpo = fuente.slice(fuente.indexOf('function fechaDeAtajo'),
+    fuente.indexOf('function rotuloDeAtajo'));
+  assert.ok(cuerpo.length > 200, '🔴 SUELO: no he aislado el cuerpo de `fechaDeAtajo`.');
+  for (const prohibido of ['rotulo', 'MARCA_MICROCOPY']) {
+    assert.equal(cuerpo.includes(prohibido), false,
+      `🔴 \`fechaDeAtajo\` menciona \`${prohibido}\`: el cálculo se ha atado al TEXTO. El día que `
+      + 'se apruebe la microcopy el rótulo cambia entero, y con él cambiarían las fechas de un '
+      + 'documento que el cliente recibe.');
+  }
+
   const original = A.rotuloDeAtajo;
   try {
     A.rotuloDeAtajo = (d) => `Otro texto cualquiera para ${d}`;
