@@ -169,8 +169,17 @@ test('SCRUM-702 · CONTROL NEGATIVO: por encima del suelo y sin mudos, no dice n
 // imprimir una anotación de GitHub. El tope no dice «esto está mal»: dice que la próxima que
 // entre se vea.
 
-/** Medido el 3-sep-2026. Este número BAJA con motivo; si sube, hay que mirar la nueva. */
-const TOPE_LEEN_EL_ENTORNO = 11;
+/**
+ * Medido el 3-sep-2026. Este número BAJA con motivo; si sube, hay que mirar la nueva.
+ *
+ * **12 desde el 4-sep-2026 (SCRUM-727)**, y la nueva se declara aquí como pide el mensaje de
+ * fallo: `tests/scrum727-constancia-del-vigia.test.mjs` **FIJA** `GITHUB_ACTIONS` en el entorno del
+ * subproceso que arranca, en vez de leerlo. Es lo contrario del defecto que este tope vigila —
+ * ponerlo a mano hace que el vigía recorra el MISMO camino en CI y en el portátil, anotación
+ * incluida; heredarlo habría dado dos comportamientos y un verde que no significa lo mismo en cada
+ * sitio. No condiciona ningún aserto.
+ */
+const TOPE_LEEN_EL_ENTORNO = 12;
 
 /**
  * 🔴 PARTIDAS A PROPÓSITO, para que el censo NO SE CACE A SÍ MISMO. Escritas enteras, este

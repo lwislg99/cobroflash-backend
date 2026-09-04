@@ -201,3 +201,96 @@ export function veredictoDeDespliegue(datos) {
       + '   tabla y qué columna faltan, y entonces falta un `ALTER` en producción.',
   };
 }
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-727 · LA CONSTANCIA · UN RENGLÓN POR EJECUCIÓN, TAMBIÉN CUANDO SALE VERDE
+//
+// ── EL CASO, y no es preventivo ──────────────────────────────────────────────────────────────
+// El 4-sep-2026 el vigía cantó 24,9 h y 9 commits de hueco. El hueco se cerró solo y NO SE PUDO
+// DECIR POR QUÉ: no había con qué comparar. Los verdes no dejaban rastro —el título se imprimía
+// en el log del job y nada más—, así que la única forma de reconstruir qué pasó entre dos rojos
+// era abrir los logs de doce ejecuciones y leerlos a mano.
+//
+// «Ha pasado dos veces» y «lo vemos venir» son cosas distintas, y la diferencia es tener el
+// primero anotado cuando llega el segundo.
+//
+// ── ANOTAR NO ES DECIDIR ─────────────────────────────────────────────────────────────────────
+// Esto NO toca el veredicto ni el código de salida. Recibe lo que el vigía ya decidió y lo
+// escribe. Si algún día esta función influyera en `salida`, habríamos convertido el registro en
+// un juez, que es exactamente lo que no puede ser.
+//
+// ── 🔴 «NO SUPE MIRAR» NO SE PUEDE PERDER AQUÍ ───────────────────────────────────────────────
+// SCRUM-716 costó un ticket entero: hasta entonces, no poder resolver `main` salía como «al día»
+// con salida 0. El vigía ya distingue TRES veredictos, y un registro que los colapsara en dos
+// —verde/rojo— reintroduciría ese mismo defecto un nivel más arriba, en el sitio donde alguien
+// va a mirar dentro de seis meses.
+//
+// Por eso el veredicto se escribe TAL CUAL (`v.veredicto`, la misma constante que decidió el
+// vigía) y lo que no se pudo medir se escribe `?` **y nunca `0`**. Un `0` es una medición: dice
+// «no hay hueco». Un `?` dice «no lo sé». Confundirlos es el defecto de la casa.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+/** Lo que NO se ha podido medir. Nunca se escribe `0` en su lugar: `0` es una medición. */
+export const SIN_MEDIR = '?';
+
+/** La marca con la que empieza cada renglón: lo hace localizable en un log de miles de líneas. */
+export const MARCA_CONSTANCIA = 'vigía';
+
+/** Un sha, recortado a 8, o `?`. Nunca inventa: si no es un sha40, no lo es. */
+function corto(sha) {
+  const s = String(sha == null ? '' : sha).trim();
+  return ES_SHA40.test(s) ? s.slice(0, 8) : SIN_MEDIR;
+}
+
+/**
+ * El renglón de constancia de UNA ejecución. Puro: ni reloj de pared ni red ni git.
+ *
+ * @param v      lo que devolvió `veredictoDeDespliegue` — se LEE, no se toca
+ * @param datos  los MISMOS datos que se le pasaron a él, para no volver a derivarlos
+ * @returns `{ renglon, resumen }` — la línea para el log y el trozo de Markdown para el resumen
+ *          del job. Mismo reparto que `anuncio()` en `guards-visuales.mjs`: el que formatea no
+ *          escribe, y el que escribe no decide.
+ */
+export function constanciaDeEjecucion(v, datos = {}) {
+  const { versionDeProduccion, shaDeMain, commitsPorDelante, ahoraEpoch } = datos || {};
+
+  // La fecha sale del `ahoraEpoch` INYECTADO, no de `Date.now()`: este módulo no tiene reloj, y
+  // ésa es la propiedad que permite fijar un renglón entero en un test.
+  const cuando = Number.isFinite(ahoraEpoch)
+    ? new Date(ahoraEpoch * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z')
+    : SIN_MEDIR;
+
+  // 🔴 `0` y `?` son cosas distintas y aquí se separan a mano. `v.horas === 0` es «no hay hueco»,
+  // que es una medición; `v.horas == null` es «no se pudo medir».
+  const hueco = Number.isFinite(v && v.horas) ? v.horas.toFixed(1) + 'h' : SIN_MEDIR;
+  const commits = Number.isFinite(commitsPorDelante) ? String(commitsPorDelante) : SIN_MEDIR;
+
+  const campos = [
+    MARCA_CONSTANCIA,
+    cuando,
+    String((v && v.veredicto) || SIN_MEDIR),
+    'prod=' + corto(versionDeProduccion),
+    'main=' + corto(shaDeMain),
+    'hueco=' + hueco,
+    'commits=' + commits,
+  ];
+
+  // 🔴 EL MOTIVO VA SIEMPRE QUE FALTE UNA MAGNITUD, no sólo cuando el veredicto es ciego. Lo cazó
+  // el propio banco al pintar los siete casos: «producción corre un commit que no está en `main`»
+  // es `atrasado` con las DOS magnitudes en `?`, y sin motivo ese renglón es indistinguible de un
+  // atraso normal que no se pudo medir. Sale del título que el vigía ya escribió, sin sus adornos:
+  // es lo que convierte una fila de interrogantes en algo con lo que reconstruir qué pasó.
+  if (hueco === SIN_MEDIR || commits === SIN_MEDIR) {
+    campos.push('motivo=' + String((v && v.titulo) || '')
+      .replace(/^⚠️ NO SUPE MIRAR: /, '').replace(/^🔴 /, '').replace(/\n/g, ' '));
+  }
+
+  const renglon = campos.join(' · ');
+  return {
+    renglon,
+    // Para el resumen del job: en bloque de código para que se pueda copiar y comparar con el de
+    // la ejecución anterior sin que Markdown se coma nada.
+    resumen: '### vigía del despliegue — ' + String((v && v.veredicto) || SIN_MEDIR) + '\n\n'
+      + '```\n' + renglon + '\n```\n',
+  };
+}
