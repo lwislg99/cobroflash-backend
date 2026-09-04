@@ -842,7 +842,11 @@ function buildBarChart(months, currency) {
     label.setAttribute('text-anchor', 'end');
     label.setAttribute('font-size', '10');
     label.setAttribute('fill', '#949b92');
-    label.textContent = Math.round(maxVal * f).toLocaleString('es-ES');
+    // SCRUM-743 · el hueco que SCRUM-739 dejó DECLARADO, y no por olvido: este rótulo es un
+    // ENTERO y las dos formas de dinero fuerzan dos decimales, así que pasarlo por ellas habría
+    // escrito `6.050,00` en un eje donde hoy pone `6050` — añadir decimales donde no los hay es
+    // cambiar lo que se ve. `fmtNumeroEs` agrupa y no toca los decimales: `6050` → `6.050`.
+    label.textContent = fmtNumeroEs(Math.round(maxVal * f));
     svg.appendChild(label);
   });
 

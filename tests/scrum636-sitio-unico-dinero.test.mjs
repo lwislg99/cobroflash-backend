@@ -144,7 +144,13 @@ test('SCRUM-636 · 🔴 sólo cambia la PRESENTACIÓN, nunca el número', () => 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
 /** Los formateadores de PRESENTACIÓN que este guard sabe prohibir en el sellador. A mano. */
-const FORMATEADORES_QUE_ESTE_GUARD_CONOCE = ['formatMoneyEs', 'formatImporteEs'];
+//
+// SCRUM-743 · ENTRA `formatNumeroEs`, LA TERCERA FORMA: un número agrupado SIN forzar decimales
+// (una cantidad, el rótulo de un eje). No es dinero, pero se añade IGUAL y a propósito: lo que
+// este guard vigila no es que el nombre sea de dinero, es que **ningún formateador de
+// PRESENTACIÓN entre en el XML de la AEAT**. Un número escrito «1.500» en un campo del sellador
+// rompe el registro igual que un importe con símbolo.
+const FORMATEADORES_QUE_ESTE_GUARD_CONOCE = ['formatMoneyEs', 'formatImporteEs', 'formatNumeroEs'];
 
 /** Los que `utils.ts` exporta DE VERDAD hoy, derivados por AST. */
 function formateadoresExportadosDeUtils() {
