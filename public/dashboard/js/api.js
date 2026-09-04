@@ -549,13 +549,36 @@ function opcionesDeDinero(currency) {
   };
 }
 
+/**
+ * SCRUM-743 · LO ÚNICO QUE LAS TRES FORMAS COMPARTEN, Y LO ÚNICO QUE NO PUEDE DIVERGIR.
+ *
+ * Estaba escrito DOS veces —una en cada función—, y es justo lo que lleva cuatro tickets
+ * rompiéndose: `es-ES` no agrupa los enteros de cuatro cifras por CLDR, así que cada copia del
+ * formato reintrodujo `1500` donde el producto escribe `1.500`. Aquí está una vez. Lo que separa a
+ * las tres formas es sólo lo que TIENE que separarlas: el símbolo y los decimales.
+ */
+var AGRUPA_SIEMPRE = { useGrouping: 'always' };
+
+/**
+ * SCRUM-743 · LA TERCERA FORMA: un NÚMERO agrupado, **sin forzar decimales**.
+ *
+ * No es dinero: es el rótulo de un eje, una cantidad. 🔴 `1,5` sigue siendo `1,5` y NO `1,50` —
+ * las dos formas de dinero fijan el mínimo en 2 decimales, y pasar por ellas **añadiría decimales
+ * que hoy no están**, que es cambiar lo que se ve y no cómo se escribe.
+ *
+ * Gemela de `formatNumeroEs` (`core/utils/utils.ts`), como lo son las otras dos.
+ */
+function opcionesDeNumero() {
+  return { style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 2 };
+}
+
 function fmtMoneyEs(n, currency = 'EUR') {
   const safe = numeroSeguroDeDinero(n);
   const opts = opcionesDeDinero(currency);
   // A18.2 (AB6 "9.999,99 €"): es-ES por defecto NO agrupa los miles de 4 cifras
   // (CLDR); useGrouping 'always' fuerza el punto SIEMPRE. Fallback en cascada.
   try {
-    return new Intl.NumberFormat('es-ES', { ...opts, useGrouping: 'always' }).format(safe);
+    return new Intl.NumberFormat('es-ES', { ...opts, ...AGRUPA_SIEMPRE }).format(safe);
   } catch {
     try { return new Intl.NumberFormat('es-ES', opts).format(safe); }
     catch { return safe.toFixed(2) + ' ' + currency; }
@@ -605,13 +628,38 @@ function fmtImporteEs(n, currency = 'EUR') {
     .join('')
     .replace(/^[\s ]+|[\s ]+$/g, '');
   try {
-    return sinSimbolo({ ...opts, useGrouping: 'always' });
+    return sinSimbolo({ ...opts, ...AGRUPA_SIEMPRE });
   } catch {
     try { return sinSimbolo(opts); }
     catch { return safe.toFixed(2); }
   }
 }
 window.fmtImporteEs = fmtImporteEs;
+
+/**
+ * SCRUM-743 · UN NÚMERO AGRUPADO, SIN FORZAR DECIMALES. Gemela de `formatNumeroEs` del backend.
+ *
+ * Para lo que NO es dinero: el rótulo de un eje, una cantidad. Comparte `AGRUPA_SIEMPRE` con las
+ * otras dos —que es lo que estaba roto en las cuatro copias que hubo— y NADA más: sus decimales
+ * son suyos, y ahí está el filo del ticket.
+ *
+ * 🔴 `1,5` SIGUE SIENDO `1,5`. Pasarlo por una forma de dinero lo escribiría `1,50` — añadiría
+ * un decimal que hoy no está. En un albarán ya firmado eso es cambiar lo impreso, que es peor
+ * que el defecto que se viene a arreglar.
+ */
+function fmtNumeroEs(n) {
+  const v = Number(n);
+  const safe = Number.isFinite(v) ? v : 0;
+  const opts = opcionesDeNumero();
+  try {
+    return new Intl.NumberFormat('es-ES', { ...opts, ...AGRUPA_SIEMPRE }).format(safe);
+  } catch {
+    try { return new Intl.NumberFormat('es-ES', opts).format(safe); }
+    // Sin `toFixed`: forzaría los decimales que esta forma existe para NO poner.
+    catch { return String(safe); }
+  }
+}
+window.fmtNumeroEs = fmtNumeroEs;
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────────────────
