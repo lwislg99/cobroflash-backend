@@ -152,13 +152,51 @@ test('SCRUM-641 · SUELO: el dashboard carga y publica el traductor', () => {
 test('SCRUM-641 · el identificador NO llega a la pantalla — y el caso se distingue', () => {
   const salida = mensajeDeError('name_duplicate', 'Error actualizando.');
 
-  assert.ok(salida.includes(MARCADOR),
-    '🔴 el texto visible no lleva el marcador: se está enseñando microcopy que nadie aprobó.');
   assert.ok(!salida.includes('name_duplicate'),
     '🔴 `name_duplicate` sigue llegando a la pantalla. Es el defecto entero.');
-  // El marcador va CON su palabra distintiva porque es un control de varios lados: si todos los
-  // errores dijeran lo mismo, la pantalla perdería la distinción que este ticket viene a dar.
-  assert.notEqual(salida, MARCADOR, 'el marcador solo no distingue este caso de los demás.');
+  // Es un control de varios lados: si este caso dijera lo mismo que el respaldo genérico, la
+  // pantalla perdería la distinción que este ticket vino a dar.
+  assert.notEqual(salida, 'Error actualizando.',
+    '🔴 el caso del nombre cogido ya no se distingue de un error cualquiera.');
+  assert.equal(salida, banco.ctx.PV_NOMBRE_DUPLICADO,
+    '🔴 el traductor no está pintando el texto aprobado.');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// LA MICROCOPY · aprobada por el ASESOR, provisional a la espera del fundador
+// ─────────────────────────────────────────────────────────────────────────────────────────
+test('SCRUM-641 · 🔴 el texto está aprobado, y el contador dice cuántos faltan por firmar', () => {
+  const vista = fs.readFileSync(VISTA, 'utf8');
+
+  // ① Sin marcador: el asesor lo aprobó con las cajas medidas delante (929 y 390 px).
+  const linea = vista.split('\n').find((l) => l.startsWith('const PV_NOMBRE_DUPLICADO ='));
+  assert.ok(linea, '🔴 CIEGO: no encuentro la constante `PV_NOMBRE_DUPLICADO`');
+  assert.equal(linea.includes('[PENDIENTE'), false,
+    '🔴 `PV_NOMBRE_DUPLICADO` ha vuelto a llevar marcador. Si el texto se retira, la entrada de '
+    + '`productsView.js` tiene que volver a PINTAR en el censo de SCRUM-402 en el mismo commit.');
+
+  // Y lo que se pinta de verdad tampoco lo lleva — la constante y el camino son dos cosas.
+  assert.equal(mensajeDeError('name_duplicate', 'Error actualizando.').includes('[PENDIENTE'), false,
+    '🔴 el marcador ha vuelto al camino que ve el profesional.');
+
+  // ② EL CONTADOR, que es lo que distingue «sin marcador» de «firmado por el fundador» — la
+  // avería que cerró SCRUM-726. Es UNA ranura y el número tiene que decirlo: si mañana entra un
+  // segundo texto sin firma y esto se queda en 1, el hueco deja de estar declarado y el texto
+  // entra en pantalla en silencio.
+  const m = vista.match(/const PV_SIN_APROBAR = (\d+);/);
+  assert.ok(m, '🔴 no hay contador de ranuras sin firmar: «sin marcador» se leería como «aprobado»');
+  assert.equal(Number(m[1]), 1,
+    `🔴 el contador dice ${m[1]} y el traductor estrena 1 texto sin firma. O ha entrado uno nuevo `
+    + 'sin declararlo, o el fundador ha firmado y no se ha anotado.');
+
+  // ③ Y NO ESTÁ EN `docs/microcopy/`, que es el registro del FUNDADOR: `constaAprobado()` lo
+  // barre (SCRUM-726), así que meter ahí la firma del asesor la haría pasar por la suya.
+  const dir = path.join(RAIZ, 'docs/microcopy');
+  const registros = fs.existsSync(dir) ? fs.readdirSync(dir) : [];
+  assert.equal(registros.some((f) => f.includes('641')), false,
+    '🔴 hay un registro de SCRUM-641 en `docs/microcopy/`. Esta aprobación es del ASESOR y '
+    + 'provisional: su sitio es `docs/master/SCRUM-641.md`. En ese directorio se leería como la '
+    + 'firma del fundador.');
 });
 
 test('SCRUM-641 · un código SIN mapear cae al respaldo que ya estaba escrito, no al código', () => {

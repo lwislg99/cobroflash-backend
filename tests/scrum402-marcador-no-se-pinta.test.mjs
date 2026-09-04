@@ -292,6 +292,25 @@ const CENSO = Object.freeze({
   // nueva EN SILENCIO — que es exactamente lo que este trinquete existe para impedir. Quien
   // añada un código mapeado le pone SU constante, para que el fundador pueda firmar uno sin
   // firmar los dos.
+  //
+  // ── SCRUM-641 (2/2) · 4-sep-2026 · SIGUE CONTANDO 1, PERO YA PINTA 0 ─────────────────────
+  //
+  // El asesor aprobó el texto —«Ya tienes un producto con ese nombre.»— con las cajas medidas
+  // delante (929, 390 y 320 px, en el DOM renderizado). El mapa `M` ya no lleva marcador: lo
+  // pinta `PV_NOMBRE_DUPLICADO`.
+  //
+  // 🔴 LA ENTRADA NO SE BORRA, y aquí está la diferencia con SCRUM-582 y SCRUM-607, que sí la
+  // borraron: allí no quedaba ningún literal con marca. Aquí SÍ queda uno —la constante
+  // `PV_MARCADOR_MICROCOPY`, que se conserva como respaldo de ÚLTIMO RECURSO para una llamada
+  // que no traiga respaldo en castellano— y `censoActual()` cuenta LITERALES, no pintados. Con
+  // el número delante: el trinquete sigue viendo `productsView.js: 1`, así que borrar la entrada
+  // habría puesto la tanda roja. Es el mismo reparto que el gemelo `providersView.js`
+  // (SCRUM-644), que también convive con un texto aprobado y su marcador de último recurso.
+  //
+  // ⚠️ Que ya no se pinte NO significa que esté firmado por el FUNDADOR: es del asesor y
+  // provisional. Eso lo dice `PV_SIN_APROBAR` en `productsView.js`, y su registro vive en
+  // `docs/master/SCRUM-641.md` — nunca en `docs/microcopy/`, que es del fundador y
+  // `constaAprobado()` lo barre (SCRUM-726).
   // SCRUM-593 (2-sep-2026) · LA ENTRADA SE BORRA, no baja a 0 — como dejaron escrito SCRUM-424 y
   // SCRUM-405 aquí mismo. `textoDelDocumento.js` entró ese día con 1 marcador (el rótulo del campo
   // de cabecera del documento) y salió el MISMO día: el fundador lo firmó —«Añadir texto en el
