@@ -38,7 +38,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { paresDelSchema, paresDelFichero } from '../scripts/_pares-del-schema.mjs';
-import { paresEsperados, motivoParaNoEscribir, RUTA_SQL } from '../scripts/generar-sql-deriva.mjs';
+import {
+  paresEsperados, motivoParaNoEscribir, RUTA_SQL,
+  leerCensoDelFichero, // SCRUM-741: el lector que NO ancla, de S6 en SCRUM-733
+} from '../scripts/generar-sql-deriva.mjs';
 import { comprobarProcedencia, mensaje } from '../scripts/_prisma-procedencia-guard.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -51,10 +54,39 @@ const MINIMO_PARES = 300;
 
 const clave = (p) => `${p[0]}.${p[1]}`;
 
-/** Las entradas `('tabla','columna')` del fichero commiteado. */
+/**
+ * Las entradas del fichero commiteado.
+ *
+ * 🔴 SCRUM-741 · AQUÍ SE LEÍA LA LÍNEA, NO LA ENTRADA, Y EL DIAGNÓSTICO SALÍA FALSO.
+ *
+ * Era `^ {4}\('a','b'\),?$` — anclada al final de línea. Un comentario SQL detrás —o un espacio
+ * de más— y esa entrada dejaba de verse: 421 donde hay 422. Y como el veredicto se construye por
+ * diferencia contra el `.prisma`, la columna salía listada bajo **«están en `schema.prisma` y NO
+ * en `deriva-prod.sql`»**… estando en el SQL, en su línea, perfectamente escrita.
+ *
+ * El test caía, así que el VEREDICTO era correcto — por accidente. El DIAGNÓSTICO era falso, y
+ * mandaba a regenerar el fichero, que es la acción equivocada: costó una vuelta a otra sesión.
+ *
+ * Ahora lee `leerCensoDelFichero`, el lector que S6 construyó en SCRUM-733, que no ancla y ya
+ * dejó ESTE defecto medido y escrito en su propio comentario. No se escribe un segundo lector:
+ * dos lectores del mismo fichero divergen, y el día que diverjan cada test dirá una cosa.
+ *
+ * 🔴 Y LA DISTINCIÓN QUE NO SE PUEDE PERDER: tolerar un comentario NO es tolerar una ausencia.
+ * Si el lector no está seguro de lo que ha leído —la cabecera declara un número y él cuenta
+ * otro— devuelve `ok:false`, y eso se convierte aquí en un fallo que dice «no supe leer», que no
+ * es «faltan columnas». Nunca en una lista corta que se compararía como si fuera buena.
+ */
 function paresDelSql() {
   const txt = fs.readFileSync(RUTA_SQL, 'utf8');
-  return [...txt.matchAll(/^ {4}\('([^']+)','([^']+)'\),?$/gm)].map((m) => [m[1], m[2]]);
+  const r = leerCensoDelFichero(txt);
+  if (!r.ok) {
+    throw new Error(
+      '🔴 NO SUPE LEER `docs/sql/deriva-prod.sql`, y eso NO es «le faltan columnas»:\n'
+      + `    ${r.motivo}\n\n`
+      + '  Un recuento en el que no confío no puede compararse contra el schema: diría que faltan\n'
+      + '  columnas que quizá están ahí. Arregla el fichero (o su cabecera) antes de leer nada.');
+  }
+  return r.pares;
 }
 
 // ── 🔴 SUELO · CADA RECUENTO POR SEPARADO ─────────────────────────────────────────────────
