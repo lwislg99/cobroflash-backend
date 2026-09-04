@@ -59,6 +59,18 @@ const CENSO_SERVIDOR = Object.freeze({
   'src/modules/invoicing/domain/criterioCaja.ts': 1,
   'src/modules/fiscal/modelo303/modelo303.ts': 1,
   'src/modules/fiscal/librosAeat/librosAeat.ts': 1,
+  // ── SCRUM-684 · 4-sep-2026 · ENTRA A CONCIENCIA CON 1 ──────────────────────────────────
+  //
+  // El rechazo de una línea que dice venir de un presupuesto inexistente. Lo ve el PROFESIONAL
+  // en un toast del panel, no el cliente: NO va a `EN_EL_PAPEL`.
+  //
+  // 🔴 Y NO SE PUDO REUTILIZAR EL TEXTO APROBADO, que es el motivo de que esto entre: el de
+  // SCRUM-257 decía «Este trabajo no tiene presupuesto; NO SE PUEDE CREAR UN ALBARÁN», y desde
+  // que el guard se acota eso es FALSO — sí se puede, salvo para esa línea. Un mensaje aprobado
+  // que ha dejado de ser verdad es peor que uno con marcador.
+  //
+  // El día que el asesor firme el texto, esta entrada se BORRA, no se pone a 0.
+  'src/modules/jobs/domain/albaranSinPresupuesto.ts': 1,
   // ── SCRUM-607 (ALB-02) · 4-sep-2026 · ENTRA A CONCIENCIA CON 1 ─────────────────────────
   //
   // 🔴 SE IMPRIME EN EL PAPEL QUE RECIBE EL CLIENTE — el pie del albarán, diciendo de qué

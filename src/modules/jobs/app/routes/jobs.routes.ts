@@ -17,6 +17,7 @@ import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; /
 import { primeroConTramoPendiente, restanteDelTrabajo } from '../../domain/presupuestosDelTrabajo';
 // SCRUM-651 (T2): el nucleo del Trabajo sin presupuesto, puro y probado sin base.
 import { datosDeTrabajoDirecto, filaDeTrabajoDirecto, tituloDeTrabajo } from '../../domain/trabajoDirecto';
+import { veredictoAlbaranSinPresupuesto } from '../../domain/albaranSinPresupuesto'; // SCRUM-684
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-173
@@ -951,11 +952,14 @@ router.post('/:id/albaranes', async (req, res) => {
     //
     // El `message` va porque sin él el dashboard enseñaría el código crudo — `apiRequest` cae al
     // identificador cuando no hay texto, que es el defecto que cerró SCRUM-275 en /login.html.
-    if (!job.quoteId) {
-      return res.status(409).json({
-        error: 'job_without_quote',
-        message: 'Este trabajo no tiene presupuesto; no se puede crear un albarán.',
-      });
+    // 🔴 SCRUM-684 · ACOTADO, NO RETIRADO. Decisión del fundador: una avería abierta como
+    // TRABAJO DIRECTO (SCRUM-651) SÍ puede entregar albarán — «nadie presupuesta una urgencia» y
+    // «hay que dejar papel al irse» (ALB-02) son la MISMA escena. Lo que sigue devolviendo 409 es
+    // el caso donde la falta de presupuesto de verdad importa: una línea que dice venir de uno.
+    // El motivo entero, medido, en `albaranSinPresupuesto.ts`.
+    const vOrigen = veredictoAlbaranSinPresupuesto(job.quoteId != null, req.body?.lineas);
+    if (!vOrigen.ok) {
+      return res.status(409).json({ error: vOrigen.error, message: vOrigen.message });
     }
 
     // SCRUM-65: modo de valoración al crear (default SIN_VALORAR = comportamiento de siempre).
