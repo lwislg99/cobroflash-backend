@@ -60,12 +60,57 @@
 > afirmación humana, visible como tal, que se cree bajo la palabra de quien la escribió.
 
 > El deploy de Railway **NO** aplica el schema automáticamente (start = `node dist/index.js`).
-> Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
-> al desplegar) de que el código use la nueva tabla/columna.
+> El esquema se aplica **A MANO, antes** de que el código use la nueva tabla o columna.
 >
-> **Procedimiento canónico (SCRUM-40):** `bash scripts/db-push-prod` (= `npm run db:push`) —
-> host-check → preview `migrate diff` → **GO explícito del operador** → `db push` sin
-> `--accept-data-loss` → verificación vacía → documentar aquí. La carpeta `prisma/migrations`
+> ## 🔒 EL PROCEDIMIENTO ÚNICO (SCRUM-705)
+>
+> ```
+> ① decisión
+> ② ALTER ADITIVO en las TRES bases:  dev → staging → producción
+> ③ UN SOLO PR con esquema + código + tests
+>
+> NUNCA ③ sin ②.
+> ```
+>
+> **🔴 NUNCA `db push` contra PRODUCCIÓN.** `db push` reconcilia el esquema ENTERO, y producción
+> puede ir **por delante** de `main` en columnas aplicadas a mano para desbloquear un PR que aún no
+> se ha mergeado: el push propondría **tirarlas**. No es un caso raro, es el comportamiento normal
+> del método aquí.
+>
+> El caso, con fecha: el 2-sep-2026 `scripts/db-push-prod` —sin modificar y haciendo lo que
+> promete— se ejecutó desde un checkout **1.933 commits por detrás** y propuso, contra producción,
+> `DROP TABLE job_assignees`, `DROP TABLE email_messages` y ~30 columnas. Lo pararon el GO
+> explícito y que la shell no tenía `stdin` — **la segunda fue suerte**. SCRUM-685 le puso puerta
+> (se niega a arrancar desde un árbol atrasado y aborta si el preview trae cualquier borrado), pero
+> la puerta no cambia el método: el método es el ②.
+>
+> `scripts/db-push-prod` se conserva para **STAGING** y para **diagnosticar deriva**.
+>
+> ### El DDL sale de `prisma migrate diff`, y de ningún otro sitio
+>
+> Nunca a mano, nunca adivinando el tipo. `schemaDrift` comprueba que la columna **EXISTE**, no de
+> qué tipo es: un `TEXT` donde tocaba `JSONB` **arranca verde y se pudre semanas**.
+>
+> ### La verificación lleva DOS controles DE TIPOS DISTINTOS más `current_database()`
+>
+> «He usado dos variables» no prueba que sean dos bases: un catálogo que devolviera `text` para
+> todo daría los números correctos. Por eso los dos controles son **de tipos distintos**, y
+> `current_database()` dice contra qué base se miró.
+>
+> ### 🔴 Y la verificación distingue «no medido» de «cero»
+>
+> Un `0` sin control positivo al lado no dice «la columna no está»: dice **que no se ha podido
+> comprobar**, y son cosas opuestas. Ocurrió dentro del propio vigilante de despliegue (SCRUM-716),
+> que decía «al día» cuando no había podido resolver `main` — y salía **verde**. En un
+> procedimiento contra producción ese mismo defecto cuesta más caro que en un check de CI.
+>
+> ### Mergear no es acabar
+>
+> Un ticket no está cerrado hasta que **su despliegue está verde**. Producción estuvo NUEVE DÍAS
+> sin desplegar: los despliegues fallaban el healthcheck, Railway mantenía vivo el anterior, y la
+> web respondía con código viejo sin una sola alerta (SCRUM-677).
+>
+> La carpeta `prisma/migrations`
 > se ARCHIVÓ en `docs/historico/prisma-migrations-frozen-2026-03/` (congelada mar-2026):
 > **NO uses `migrate deploy`/`migrate dev`** — aplicaría un schema viejo (entorno nuevo) o
 > propondría un reset. `db push` es el ÚNICO mecanismo. (Volver a migrate = SCRUM-40 opción A.)

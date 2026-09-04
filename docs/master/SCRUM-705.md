@@ -149,3 +149,117 @@ el reparto es del fundador.
 
 ⚠️ `jobs.tipo_intervencion` **no está aplicada a las bases**, y ningún salto de este recorrido
 depende de esa columna: no hay nada que declarar como «falta el ALTER».
+
+
+---
+
+# El máster apuntaba al arma cargada · procedimiento único contra producción
+
+**Medido contra:** `origin/main` = `2c161c38cfba4ad81479dd302a933412d496f58c` · 2026-09-04T12:55:17+02:00
+**Rama:** `scrum-705-procedimiento-unico`
+
+## PASO 0 (regla 39) · la contradicción seguía viva
+
+`main` se movió desde la medición anterior. Recomprobados los cuatro sitios: **intactos, nadie los
+había corregido.**
+
+El máster decía, literal (`docs/YAQU_MASTER.md:240`):
+
+> «Prisma sin TTY: `db push` (**procedimiento canónico** `scripts/db-push-prod` —
+> host-check→preview→GO→push→documentar, SCRUM-40), nunca `migrate dev`»
+
+Y el propio script decía lo contrario (`scripts/db-push-prod:10`):
+
+> «🔴 `db push` **NO ES EL MÉTODO DE ESTA CASA** CONTRA PRODUCCIÓN (SCRUM-685)»
+
+Por **regla 35** el máster es la fuente de verdad. Así que la fuente de verdad apuntaba al arma
+cargada: ese script, desde un checkout **1.933 commits por detrás**, propuso `DROP TABLE
+job_assignees`, `DROP TABLE email_messages` y ~30 columnas **de producción**. Lo pararon el GO
+explícito y que la shell no tenía `stdin` — **la segunda fue suerte**.
+
+## Los cuatro sitios, corregidos
+
+| Sitio | Antes | Ahora |
+|---|---|---|
+| `docs/YAQU_MASTER.md:240` | «procedimiento canónico `scripts/db-push-prod`» | «**NUNCA `db push` contra PRODUCCIÓN**… el procedimiento ÚNICO es ①→②→③, nunca ③ sin ②» |
+| `docs/MIGRATIONS_PENDING.md:66` | «**Procedimiento canónico (SCRUM-40):** `bash scripts/db-push-prod`» | el procedimiento entero, con sus reglas y el caso fechado |
+| `docs/QA/SUITE_REGRESION.md:791` | «Prod va aparte: su propio preview y su propio GO (`bash scripts/db-push-prod`)» | «Prod va aparte, y **NO con `db push`**» + el ①②③ |
+| `docs/FLUJO_DE_TRABAJO.md:85` | sólo hablaba de staging | entrada propia para **producción**: nunca `db push`, y dónde está el procedimiento |
+
+En los cuatro, `scripts/db-push-prod` queda declarado para lo que sí sirve: **staging y
+diagnosticar deriva**.
+
+## El procedimiento único, escrito
+
+```
+① decisión
+② ALTER ADITIVO en las TRES bases:  dev → staging → producción
+③ UN SOLO PR con esquema + código + tests
+
+NUNCA ③ sin ②.
+```
+
+Con las cuatro reglas que van pegadas —y un guard que exige que las cuatro estén escritas—:
+
+* **Nunca `db push` contra producción** — reconcilia el esquema *entero*, y producción puede ir por
+  delante de `main` en columnas aplicadas a mano: propondría tirarlas.
+* **El DDL sale de `prisma migrate diff`**, nunca a mano ni adivinando el tipo. `schemaDrift`
+  comprueba que la columna **existe**, no de qué tipo es: un `TEXT` donde tocaba `JSONB` arranca
+  verde y se pudre semanas.
+* **La verificación lleva dos controles DE TIPOS DISTINTOS más `current_database()`.** «He usado
+  dos variables» no prueba que sean dos bases: un catálogo que devolviera `text` para todo daría
+  los números correctos.
+* **Mergear no es acabar:** un ticket no está cerrado hasta que su despliegue está verde.
+
+Y una quinta, la que salió de SCRUM-716:
+
+* **La verificación distingue «no medido» de «cero».** Un `0` sin control positivo al lado no dice
+  «la columna no está»: dice que no se ha podido comprobar. Ese mismo defecto vivía dentro del
+  vigilante de despliegue, que decía «al día» sin haber resuelto `main` — y salía **verde**.
+
+## El guard, y las dos veces que se cazó a sí mismo
+
+**El rojo:** si un documento vivo vuelve a prescribir `db-push-prod` como procedimiento, cae
+nombrando fichero y línea.
+
+**Control positivo:** se le da la frase original del máster y tiene que cazarla. Sin eso, el verde
+no dice «la documentación está bien»: dice «no sé buscar».
+
+🔴 **Y ahí falló dos veces, las dos por autorreferencia:**
+
+1. La primera versión miraba una vecindad de ±3 líneas y **descontaba si aparecía un «nunca»**
+   cerca. La frase original del máster **termina** en «nunca `migrate dev`» → el descuento apagaba
+   justo el único ejemplo que tenía. Un detector que se desactiva solo en su propio caso no vigila.
+2. La segunda exigía la coincidencia **en la misma línea**. Pero `YAQU_MASTER.md:240` es **una sola
+   línea de más de mil caracteres**: el texto **ya corregido** salía rojo, porque dice «el
+   procedimiento ÚNICO es ①→②→③» en un extremo y «`scripts/db-push-prod` queda para STAGING» en
+   el otro.
+
+**El arreglo: se mide la DISTANCIA.** Una prescripción es una *frase*, no una coincidencia: la
+palabra que prescribe tiene que estar **pegada** al nombre del script —«procedimiento canónico
+`scripts/db-push-prod`», 22 caracteres— y no a cien.
+
+### Control negativo, enumerado
+
+| Documento | Por qué no sale rojo |
+|---|---|
+| `docs/master/SCRUM-480.md` | registro por ticket, fechado y cerrado (SCRUM-273) |
+| `docs/master/SCRUM-685.md` | ídem: cuenta el incidente, era cierto al escribirse |
+| `docs/historico/prisma-migrations-frozen-2026-03/README.md` | archivo explícito, con la fecha en el nombre |
+| `docs/MIGRATIONS_PENDING.md:1383` | **narración fechada dentro de un documento VIVO** — entrada de SCRUM-102, aplicado en prod el 2026-07-23 |
+
+Los tres primeros van por ruta. **El cuarto no podía ir por ruta**: está dentro del documento que
+más hay que vigilar, así que se declara **línea a línea, con su motivo, en una allowlist visible**.
+Una excepción por fichero entero habría dejado pasar también las prescripciones **nuevas** de ese
+fichero, que es justo lo que hay que cazar.
+
+Y el control negativo no se limita a comprobar que no salen: exige que **el barrido SÍ los vea**.
+Si no los encuentra, no está demostrando que los perdona — está demostrando que no los mira.
+
+**Suelo:** si el barrido ve menos de 100 documentos, o si ninguno nombra el script, falla
+declarándose ciego. Son 447.
+
+## ⛔ No tocado
+
+`scripts/db-push-prod` · producción · ninguna base · el `continue-on-error` de los dos vigías ·
+`prisma/schema.prisma` · la rama `scrum-653-dos-firmas`, que sigue bloqueada esperando el ALTER.
