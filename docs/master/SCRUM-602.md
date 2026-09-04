@@ -4,7 +4,7 @@
 
 **Medido contra:** `origin/main` = `da5af22e347bbdfa3e57e1e658676e1cbd9bf310` · 2026-09-04T16:35:00Z
 
-**Tanda:** 5209 tests, 5120 pass, **1 fail**, 88 skipped — medida DESPUES del ultimo cambio,
+**Tanda:** 5211 tests, 5122 pass, **1 fail**, 88 skipped — medida DESPUES del ultimo cambio,
 entrada incluida. El fallo **no es de este ticket** y esta demostrado abajo, en «El rojo ajeno».
 
 ---
@@ -206,9 +206,10 @@ ALTER TABLE "invoices" ADD COLUMN "shipping_address" TEXT, ADD COLUMN "shipping_
 Aditivo puro (`sentenciasDestructivas` → `[]`), generado con `prisma migrate diff` sobre el schema
 viejo. Recuento **antes**: `quotes` 40 · `invoices` 33. **Después**: 42 y 35.
 
-**Aplicado SÓLO en `yaqu_dev_javier`**, verificado por catálogo: las cuatro son `text` y nullable.
-**Staging y producción, NO**: los aplica el fundador. `constancia-del-alter` dará rojo mientras
-falten, y eso es el guard funcionando.
+**Aplicado y verificado en LAS TRES BASES** (el fundador, 4-sep-2026): `quotes` 40→42,
+`invoices` 33→35, las cuatro `text` y nullable. Staging `7661649868329066548`, producción
+`7641555058757427243`; controles de dos tipos distintos (`numeric` y `timestamp`) responden bien.
+En desarrollo, verificado por catálogo desde este árbol.
 
 ---
 
@@ -245,6 +246,103 @@ Construye la ruta con `new URL(import.meta.url).pathname`, que devuelve la ruta
 
 O sea: **rojo en cualquier checkout cuya ruta lleve un espacio, y verde en CI.** Se arregla con
 `fileURLToPath`. Va reportado, no arreglado (regla 9).
+
+---
+
+## Lo que el asesor mandó MEDIR, no narrar (4-sep-2026)
+
+### ① El `681` de la FASE A · población declarada
+
+Censo sobre **todo el árbol rastreado** (`git grep`, sin `node_modules` ni `package-lock`):
+**20 ficheros contienen la cadena `681`**. Clasificados uno a uno, ninguno es aquella medición:
+fragmentos de SHA (`eb681bf6`, `6681feef`), números de línea citados en entradas viejas
+(`jobs.routes.ts:681`), el ticket **SCRUM-681**, un valor `oklch` de la paleta, un recuento de
+tanda (`3.681`) y un offset (`1.681`).
+
+**Sitios donde el 681 quedara escrito como dato vigente: CERO** — y el cero está calculado sobre
+una población de 20 candidatos reales, no sobre un barrido vacío. La única aparición en este
+ticket es `SCRUM-602.md:132`, que **es la corrección misma** y se queda: el registro del error no
+se borra.
+
+**Y el `min-height` que la FASE A anunciaba NO se ha añadido**: el bloque de CSS de este ticket
+son dos reglas (`styles.css:1374-1375`) y ninguna toca la altura.
+
+### ② El `...spread` · ¿seguía ciego el censo?
+
+**Sí, y confirmado con control positivo.** Se inyectó `campoQueNadieHaRegistrado` en el payload
+de tres formas, dejando literales las dos claves ya registradas para que no saltara además el caso
+`dejaronDeViajar` y confundiera la lectura:
+
+| forma | ANTES del arreglo | DESPUÉS |
+|---|---|---|
+| escrito a mano (control positivo) | **3 rojos** — lo ve | 4 rojos |
+| dentro de `...({ … })` | **CERO rojos** 🔴 ciego | 4 rojos — lo ve |
+| dentro de `...variable` | **CERO rojos** 🔴 ciego | 2 rojos — **declara que no supo mirar** |
+
+El instrumento arreglado (`_censo-nuevo-presupuesto.mjs`) hace dos cosas y **ninguna es el
+silencio**: si detrás del spread hay un objeto literal, lee sus claves —son estáticas—; si hay una
+variable, una llamada o un acceso, lo mete en `opacos`, que la junta expone como `envioOpaco` y
+`tests/scrum602-direccion-obra.test.mjs` convierte en rojo. Un análisis estático **no puede** saber
+qué claves trae una variable; lo que sí puede es no fingir que ahí no hay nada.
+
+Comprobado en los dos sentidos: con la violación puesta falla, quitada pasa (`restaurado: 0 rojos`).
+
+### ③ `hidden` derrotado por `display:flex` · control negativo
+
+Medido en Edge real, con la hoja de producción y en **una sola pasada**: se localiza la regla en la
+hoja viva, se **borra**, se mide, se vuelve a insertar y se mide otra vez.
+
+| elemento | SIN la regla | CON la regla |
+|---|---|---|
+| `.field.quote-direccion-obra` (este ticket) | **`flex`** 🔴 | **`none`** ✔ |
+| `.quote-dto-global__campo` (SCRUM-594, en `main`) | `flex` 🔴 | `flex` 🔴 — la regla no le alcanza |
+| `<div hidden>` pelado (**control**) | `none` ✔ | `none` ✔ |
+
+El control es lo que hace válida la medición: un `<div>` sin clase da `none` en los dos estados, así
+que el instrumento distingue. **El arreglo se vio fallar antes de darlo por bueno.**
+
+### ④ La grafía de las columnas · la hipótesis del asesor, comprobada
+
+`invoices` y `quotes` **mezclan convenciones**, y el asesor lo vio bien:
+
+| tabla | columnas | CAMEL | snake |
+|---|---|---|---|
+| `invoices` | 35 | **7** (`createdAt`, `customerId`, `merchantId`, `pdfUrl`, `qrData`, `quoteId`, `registerId`) | 28 |
+| `quotes` | 42 | **15** (`acceptedAt`, `createdAt`, `paymentTerms`, `signatureUrl`…) | 27 |
+
+Las cuatro columnas nuevas están en **snake**: `shipping_address` y `shipping_address_mode` en las
+dos tablas.
+
+**Y son alcanzables**, porque los cuatro campos llevan `@map` explícito
+(`schema.prisma:489-490` y `:611-612`). No es suerte: el comentario de `docHeaderText`
+(SCRUM-593) ya dejaba escrito que *«`quotes` MEZCLA convenciones… sin el `@map`, estas dos se
+llamarían `docHeaderText` en la base y no casarían con el ALTER»*.
+
+**Nadie las toca por SQL crudo.** Todo pasa por Prisma:
+
+| qué | dónde |
+|---|---|
+| escribe | `quotes.routes.ts:216-217` (`prisma.quote.create`) |
+| lee para el papel | `quotes.routes.ts:268-269` · `:621-622` · `quotesAdmin.routes.ts:544-545` |
+| hereda al revisar | `revision.ts:229` |
+
+Las dos apariciones de la grafía snake en `quotesView.js` (`:398`, `:416`) son atributos `name` de
+los controles del formulario, no SQL.
+
+### ⑤ CONTROL NEGATIVO de la columna: escrito por Prisma, leído por SQL crudo
+
+En `yaqu_dev_javier`, un presupuesto creado por el mismo camino que usa la ruta, y leído
+**directamente de la columna** con `$queryRaw`, no por el código que lo escribió:
+
+```
+escrito                 : "SCRUM-602 · control 1788540357733"
+shipping_address      → : "SCRUM-602 · control 1788540357733"   ✔
+shipping_address_mode → : "personalizada"                        ✔
+```
+
+Y el control del propio instrumento: preguntar por una columna `"shippingAddress"` en camel
+**falla** — o sea que el SQL crudo sí distingue las dos grafías y el ✔ de arriba no es un artefacto.
+La fila de prueba se borró (`count = 0`).
 
 ---
 

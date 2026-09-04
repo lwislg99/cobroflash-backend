@@ -71,9 +71,9 @@ test('SCRUM-286 · SUELO: el censo del ENVÍO sigue encontrando lo que viaja', (
   // Ahora un `...({…})` LITERAL se lee (sus claves entran en el censo como cualquier otra) y un
   // `...variable` OPACO se DECLARA aquí. No se intenta resolver la variable: seguirla a través de
   // asignaciones es adivinar, y un censo que adivina miente mejor que uno que calla.
-  assert.deepEqual(R.opacos, [],
+  assert.deepEqual(R.envioOpaco, [],
     '🔴 EL CENSO NO HA PODIDO LEER PARTE DE `quotePayload`:\n    '
-    + R.opacos.map((o) => `línea ${o.linea}: ${o.texto}`).join('\n    ')
+    + R.envioOpaco.join('\n    ')
     + '\n\n  Lo que venga después es una afirmación sobre un objeto que NO es el que crees: los\n'
     + '  campos que entren por ahí viajan al servidor sin que nadie compruebe en qué bloque\n'
     + '  viven. Se arregla escribiendo las claves en el literal, no bajando la exigencia.');

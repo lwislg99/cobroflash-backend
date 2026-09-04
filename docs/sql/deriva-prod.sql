@@ -56,6 +56,7 @@ WITH esperado (tabla, columna) AS (
     ('albaranes','modo_valoracion'),
     ('albaranes','notas'),
     ('albaranes','numero'),
+    ('albaranes','ocultar_precios_en_documento'),
     ('albaranes','pdf_url'),
     ('albaranes','signature_url'),
     ('albaranes','updated_at'),

@@ -511,6 +511,20 @@ const CENSO = Object.freeze({
   // `PENDIENTE_MODO_EMISION` — su rama `receipt` toca terreno de la regla 26 y esa pregunta se
   // responde SOLO con el guion H2, así que no se aprueba de refilón con el resto de la pantalla.
   'settingsView.js': 1,
+  // ── SCRUM-607 (ALB-02) · 4-sep-2026 · ENTRÓ CON 2 Y SALIÓ EL MISMO DÍA ─────────────────
+  //
+  // Los dos literales del interruptor que quita los precios del albarán entraron con marcador por
+  // la mañana —comprobado con el número delante: el trinquete dijo `jobDetailView.js (+2)`— y el
+  // asesor los aprobó por la tarde: «Ocultar precios en el albarán» y «Tú sigues viendo los
+  // precios y puedes facturarlo.», con las cajas medidas a 929 y 390 px.
+  //
+  // La entrada se BORRA y no se pone a 0 (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista
+  // ficheros CON marcadores. COMPROBADO antes de borrarla: cero marcadores en el fichero.
+  //
+  // ⚠️ Que no quede marcador NO significa que estén firmados por el FUNDADOR: son del asesor y
+  // provisionales. Eso lo dice `ALB_OCULTAR_PRECIOS_SIN_APROBAR` en `jobDetailView.js`, y su
+  // registro vive en `docs/master/SCRUM-607.md` — nunca en `docs/microcopy/`, que es del fundador
+  // y `constaAprobado()` lo barre (SCRUM-726).
 });
 
 /** Marcadores que viven en un LITERAL (los que pueden pintarse). Los comentarios no son literales. */
