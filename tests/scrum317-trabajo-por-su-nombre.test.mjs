@@ -16,7 +16,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { soloEjecutable } from './_guard-texto.mjs';
+import { ejecutableDe } from './_guard-texto.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (p) => fs.readFileSync(path.join(RAIZ, p), 'utf8');
@@ -33,7 +33,11 @@ const VISTA = leer('public/dashboard/js/jobDetailView.js');
  * `_guard-texto.mjs`: **para vigilar código hay que leer código, no prosa.** Los tests que
  * EXIGEN algo pueden usar el fichero entero; los que PROHÍBEN, solo lo ejecutable.
  */
-const VISTA_CODIGO = soloEjecutable(VISTA, { almohadillaEsComentario: false });
+// SUELO (SCRUM-719): la vista tiene que seguir publicando su función. Sin esto, las dos
+// prohibiciones de abajo (migas y subtítulo) pasaban sobre la cadena vacía.
+const VISTA_CODIGO = ejecutableDe(VISTA, {
+  ancla: 'renderJobDetailView', donde: 'jobDetailView.js', almohadillaEsComentario: false,
+});
 const SERVICIO = leer('src/modules/jobs/domain/job.service.ts');
 const RUTAS = leer('src/modules/jobs/app/routes/jobs.routes.ts');
 

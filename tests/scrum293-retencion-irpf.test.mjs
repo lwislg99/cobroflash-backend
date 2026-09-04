@@ -18,7 +18,7 @@
 // `calcVatBreakdown` ni `grossOfLines` — y que haya un test que lo VIGILA, no que lo afirme.
 
 import test from 'node:test';
-import { soloEjecutable } from './_guard-texto.mjs';
+import { ejecutableDe } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -131,7 +131,9 @@ test('SCRUM-293 · GUARD: el módulo no importa NADA del cálculo compartido', (
   // (`registro.builder.ts` manda su base literal al XML), así que tocarla es tocar el camino de
   // emisión — y eso es una parada de la regla 38, no un refactor.
   const src = fs.readFileSync(path.join(RAIZ, 'src/modules/invoicing/domain/retencionIrpf.ts'), 'utf8');
-  const sinComentarios = soloEjecutable(src);
+  // SUELO (SCRUM-719): `TIPOS_RETENCION` es el cubo cerrado que este mismo fichero comprueba
+  // dos tests más abajo. Si no sobrevive al filtro, no estoy mirando `retencionIrpf.ts`.
+  const sinComentarios = ejecutableDe(src, { ancla: 'TIPOS_RETENCION', donde: 'retencionIrpf.ts' });
   assert.doesNotMatch(sinComentarios, /^import /m,
     '🔴 el módulo ha dejado de ser aislado: si importa el cálculo compartido, ya no es un hueco seguro');
   for (const prohibido of ['calcVatBreakdown', 'grossOfLines', 'registro.builder', 'prisma']) {

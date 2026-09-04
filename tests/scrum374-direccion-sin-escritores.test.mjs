@@ -33,7 +33,6 @@
 //    como si fueran escrituras: `direccion: job.direccion` no escribe nada.)
 
 import test from 'node:test';
-import { soloEjecutable } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -43,7 +42,15 @@ import { versionLeeJobDireccion } from '../dist/modules/jobs/domain/jobDireccion
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SELLADOR = fs.readFileSync(path.join(RAIZ, 'src/modules/jobs/domain/albaran.service.ts'), 'utf8');
-const sinComentarios = (s) => soloEjecutable(s);
+// 🔴 SCRUM-719 · AQUÍ HABÍA `const sinComentarios = (s) => soloEjecutable(s);` Y NO LO LLAMABA
+// NADIE. Cero usos en las 123 líneas, con su `import` vivo al lado. Este fichero salía verde
+// con el filtro roto, pero NO por estar mudo: por no llegar a usarlo nunca. Son dos diagnósticos
+// distintos y sólo se separan midiendo — un censo que lea el fuente ve el `import`, se cree la
+// llamada y apunta un mudo que no existe.
+//
+// Se retira el envoltorio muerto en vez de inventarle un uso: sus negaciones viven en
+// `obraSegunVersion`, que se ejecuta de verdad, y su suelo (`SELLADOR.length`, el canónico por
+// nombre) ya mira el texto que le toca.
 
 test('SCRUM-374 · SUELO: el sellador se lee y tiene su canónico', () => {
   // Si este fichero dejara de encontrarse o cambiara de forma, los asserts de abajo pasarían por

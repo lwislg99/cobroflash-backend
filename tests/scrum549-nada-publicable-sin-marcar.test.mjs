@@ -5,7 +5,7 @@
 // marcar se publica sin que nada diga nada — le pasó al titular del bloque de contacto, y lo cazó
 // un extractor por casualidad.
 import test from 'node:test';
-import { soloEjecutable } from './_guard-texto.mjs';
+import { ejecutableDe } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -117,12 +117,15 @@ test('SCRUM-549 · 🔴 el guard NO busca la palabra «PROPUESTA» en el texto',
   // daría rojo permanente sobre un texto legítimo — o alguien la excluiría y con ella excluiría a
   // las de verdad. Se mira la ESTRUCTURA (el atributo), no el vocabulario.
   const fuente = fs.readFileSync(path.join(RAIZ, 'scripts', '_censo-microcopy-sin-marcar.mjs'), 'utf8');
-  const sinComentarios = soloEjecutable(fuente);
+  // SUELO (SCRUM-719): el ancla son LOS MARCADORES QUE ESTE TEST YA COMPROBABA — sólo que los
+  // comprobaba sobre `fuente`, el texto CRUDO, que es el paso de antes. Sobre el filtrado sí
+  // responden a la pregunta que importa: ¿el texto donde busco «PROPUESTA» es el censo?
+  const sinComentarios = ejecutableDe(fuente, { ancla: [...MARCADORES], donde: '_censo-microcopy-sin-marcar.mjs' });
   assert.doesNotMatch(sinComentarios, /['"`]PROPUESTA/,
     '🔴 el censo ha empezado a buscar la cadena «PROPUESTA» en el texto. El copy de F5-1 la lleva ' +
     'dentro: eso es un rojo permanente sobre un texto legítimo, y la salida fácil (excluirla) se ' +
     'lleva por delante a las de verdad.');
-  for (const k of MARCADORES) assert.ok(fuente.includes(k), '🔴 ya no mira el marcador ' + k);
+  // (la comprobación de los marcadores vive ahora en el ancla de arriba, sobre el texto FILTRADO)
 });
 
 // ── LA CUARENTENA, CON TOPE ──────────────────────────────────────────────────────────────────
