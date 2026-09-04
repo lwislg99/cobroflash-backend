@@ -36,8 +36,8 @@
   // ═══════════════════════════════════════════════════════════════════════════════════════
   var M = '[PENDIENTE microcopy oficial] ';
   var TEXTOS = {
-    tituloFirma: M + 'Firma del cliente',
-    pistaFirma: M + 'Pide al cliente que firme con el dedo dentro del recuadro.',
+    tituloFirma: 'Firma del cliente',
+    pistaFirma: 'Pide al cliente que firme con el dedo dentro del recuadro.',
     manoObra: 'Mano de obra',
     materiales: 'Materiales',
     sinLineas: 'Todavía no has apuntado nada.',
@@ -52,19 +52,19 @@
     notas: 'Notas',
     anadirLinea: 'Añadir línea',
     firmar: 'Firmar aquí mismo',
-    yaFirmado: M + 'Firmado. El contenido ya no se toca.',
+    yaFirmado: 'Firmado. El contenido ya no se puede cambiar.',
     // ✅ APROBADO literal por el fundador el 3-sep-2026, sin cambiar una letra. Consta en
     // `docs/microcopy/2026-09-03-SCRUM-704-guardar-lineas-dictadas.md`.
     noSeGuardo: 'No se han podido guardar las líneas — vuelve a intentarlo',
-    noSePudoCargar: M + 'No se ha podido cargar el parte. Vuelve a intentarlo.',
+    noSePudoCargar: 'No se ha podido cargar el parte. Vuelve a intentarlo.',
     tipoReparacion: 'Reparación / asistencia',
     tipoMantenimiento: 'Mantenimiento',
     tipoInstalacion: 'Instalación',
     dictado: 'Dicta lo que has hecho',
     pistaDictado: 'Usa el micrófono de tu teclado. Luego lo ordenamos.',
     ordenarDictado: 'Ordenar en líneas',
-    confirmarPropuesta: M + 'Añadir estas líneas',
-    sinBloque: M + 'Sin colocar — dile dónde va',
+    confirmarPropuesta: 'Añadir estas líneas',
+    sinBloque: 'Sin colocar — elige mano de obra o materiales',
   };
 
   // El vocabulario CERRADO del dominio (`parteTrabajo.ts`). No se inventa aquí ni se amplía:
