@@ -54,6 +54,13 @@ export interface LineaPropuesta {
   unds?: number;
 }
 
+/** Un dato de la descripción —marca, modelo, referencia— que el dictado NO respalda. */
+export interface DatoRetirado {
+  descripcion: string;
+  /** Los tokens concretos que sobran. En plural: una línea puede llevar marca Y modelo. */
+  tokens: string[];
+}
+
 /** Una cantidad que el modelo propuso y el dictado NO respalda. No se aplica; se enseña. */
 export interface CantidadRetirada {
   descripcion: string;
@@ -73,6 +80,15 @@ export interface PropuestaDelDictado {
   materiales: LineaPropuesta[];
   sinBloque: LineaPropuesta[];
   cantidadesRetiradas: CantidadRetirada[];
+  /**
+   * SCRUM-725 · Datos que el modelo puso en la DESCRIPCIÓN y el dictado no respalda: marcas,
+   * modelos y referencias. Se ENSEÑAN, no se borran: quitar una palabra de mitad de una frase
+   * deja el texto roto, y el técnico es quien sabe si dijo «Honeywell» o no.
+   *
+   * ⚠️ NO lleva texto de pantalla: el aviso visible necesita firma del fundador (regla 30) y
+   * está pedido. Hasta que llegue, el dato viaja y la pantalla no lo pinta.
+   */
+  datosRetirados: DatoRetirado[];
   /** Sin ni una línea. El parte se queda EN BLANCO y quien pinte esto tiene que DECIRLO. */
   vacia: boolean;
   /** Código, no texto de pantalla. La frase visible, APROBADA, está en `AVISOS_DEL_DICTADO`. */
@@ -195,6 +211,86 @@ function cantidadRespaldadaPorElTexto(bruto: unknown, dictado: string): number |
 // ② EL SANEADO
 // ─────────────────────────────────────────────────────────────────────────────────────────
 
+/**
+ * SCRUM-725 · UN DATO QUE EL TEXTO NO DICE, TAMPOCO APARECE EN LA DESCRIPCIÓN.
+ *
+ * ── EL HUECO, MEDIDO EL 4-sep-2026 ──────────────────────────────────────────────────────
+ * `cantidadRespaldadaPorElTexto` cerró las CANTIDADES. La `descripcion` seguía pasando
+ * **verbatim, sin comprobar nada**. Medido contra el mecanismo de entonces:
+ *
+ *     dictado: «reviso la central»
+ *     salida:  «Revision de central Honeywell Galaxy G3-144»   ← marca, gama Y modelo, inventados
+ *
+ * El prompt ya lo prohibía (*«NUNCA completes marcas, modelos ni referencias»*), y por eso el
+ * hueco es de la familia cara: **una prohibición sin mecanismo**. Un prompt no es un guard —
+ * es una petición, y el modelo la incumple sin avisar.
+ *
+ * 🔒 Y aquí no acaba en una pantalla fea: la empresa es de SEGURIDAD. Ese `G3-144` es el modelo
+ * de la central de alarma del cliente, escrito en un documento que el cliente FIRMA y que después
+ * se factura. Un dato inventado en un parte es un dato facturado.
+ *
+ * ── QUÉ SE EXIGE, Y POR QUÉ NO SE EXIGE MÁS ─────────────────────────────────────────────
+ * La tentación es pedir que TODA palabra esté en el dictado. Eso mataría la función: redactar es
+ * exactamente cambiar «cambie los detectores» por «Cambio de detectores», y un token a token
+ * declararía inventada cada conjugación. El listón se pone donde está el daño:
+ *
+ *   · **cualquier token con un DÍGITO** — `G3-144`, `20`, `2N`. Ahí viven modelos y medidas.
+ *   · **cualquier token en Mayúscula que no abra la frase** — `Honeywell`, `Galaxy`. Ahí viven
+ *     las marcas. El primer token se exime porque una frase redactada empieza en mayúscula
+ *     SIEMPRE, y exigirlo daría un falso positivo en cada línea.
+ *
+ * Lo demás —minúsculas— es libre: es la redacción que se ha pedido.
+ *
+ * ── EL COTEJO ES POR RAÍZ, NO POR IGUALDAD ──────────────────────────────────────────────
+ * `reviso` → `Revisión` es la misma palabra y el cotejo exacto la daría por inventada. Se compara
+ * la RAÍZ (los primeros caracteres, sin tildes ni mayúsculas), que es lo que sobrevive a la
+ * conjugación y al plural. Un cotejo exacto habría convertido el arreglo en un generador de
+ * falsos positivos, y un guard ruidoso acaba apagado.
+ */
+const RAIZ_MINIMA = 4;
+
+/** Sin tildes, en minúsculas — para comparar palabras, no grafías. */
+function plana(s: string): string {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
+/**
+ * ¿Está esta palabra en el dictado? Por raíz, no por igualdad.
+ *
+ * Las palabras cortas (menos de `RAIZ_MINIMA`) se comparan enteras: de `2N` no se puede sacar una
+ * raíz sin quedarse con nada, y truncar convertiría cualquier token corto en «respaldado».
+ */
+function respaldadaPorElTexto(palabra: string, dictado: string): boolean {
+  const p = plana(palabra);
+  if (!p) return true;
+  const palabrasDelDictado = plana(dictado).split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+  if (p.length < RAIZ_MINIMA) return palabrasDelDictado.includes(p);
+  const raiz = p.slice(0, RAIZ_MINIMA);
+  return palabrasDelDictado.some((d) => d.startsWith(raiz) || p.startsWith(d.slice(0, RAIZ_MINIMA)));
+}
+
+/**
+ * Los tokens de una descripción que el dictado NO respalda: números, referencias y marcas.
+ *
+ * Devuelve la LISTA, no un booleano, porque lo que hay que poder decir es CUÁL sobra. «Esta línea
+ * lleva algo inventado» no es accionable; «lleva `Honeywell`» sí.
+ */
+function datosNoRespaldados(descripcion: string, dictado: string): string[] {
+  const tokens = String(descripcion ?? '').split(/\s+/).filter(Boolean);
+  const fuera: string[] = [];
+  tokens.forEach((token, i) => {
+    const limpio = token.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
+    if (!limpio) return;
+    const llevaDigito = /\p{N}/u.test(limpio);
+    // La primera palabra se exime de la regla de mayúscula, no de la del dígito: una frase
+    // redactada empieza en mayúscula siempre, pero no empieza con un modelo por casualidad.
+    const marcaProbable = i > 0 && /^\p{Lu}/u.test(limpio) && !llevaDigito;
+    if (!llevaDigito && !marcaProbable) return;
+    if (!respaldadaPorElTexto(limpio, dictado)) fuera.push(limpio);
+  });
+  return [...new Set(fuera)];
+}
+
 const BLOQUES: Record<string, BloqueParte> = {
   mano_obra: 'mano_obra', manoobra: 'mano_obra', mano: 'mano_obra', obra: 'mano_obra',
   trabajo: 'mano_obra', horas: 'mano_obra',
@@ -216,7 +312,7 @@ function bloqueLegible(bruto: unknown): BloqueParte | null {
  */
 export function sanearDictadoDelParte(crudo: unknown, dictado: string): PropuestaDelDictado {
   const vacio: PropuestaDelDictado = {
-    mano_obra: [], materiales: [], sinBloque: [], cantidadesRetiradas: [],
+    mano_obra: [], materiales: [], sinBloque: [], cantidadesRetiradas: [], datosRetirados: [],
     vacia: true, motivo: 'dictado_vacio',
   };
 
@@ -224,7 +320,7 @@ export function sanearDictadoDelParte(crudo: unknown, dictado: string): Propuest
   if (!Array.isArray(crudo)) return { ...vacio, motivo: 'sin_lineas_reconocidas' };
 
   const salida: PropuestaDelDictado = {
-    mano_obra: [], materiales: [], sinBloque: [], cantidadesRetiradas: [],
+    mano_obra: [], materiales: [], sinBloque: [], cantidadesRetiradas: [], datosRetirados: [],
     vacia: false, motivo: null,
   };
 
@@ -241,6 +337,10 @@ export function sanearDictadoDelParte(crudo: unknown, dictado: string): Propuest
     if (unds === undefined && Number.isFinite(propuestaCruda) && propuestaCruda > 0) {
       salida.cantidadesRetiradas.push({ descripcion, propuesta: propuestaCruda });
     }
+
+    // SCRUM-725 · lo mismo que con la cantidad, pero para lo que va DENTRO de la descripción.
+    const sobran = datosNoRespaldados(descripcion, dictado);
+    if (sobran.length) salida.datosRetirados.push({ descripcion, tokens: sobran });
 
     const linea: LineaPropuesta = unds === undefined ? { descripcion } : { descripcion, unds };
     const bloque = bloqueLegible(l?.bloque);
