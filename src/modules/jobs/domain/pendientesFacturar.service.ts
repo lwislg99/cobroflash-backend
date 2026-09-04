@@ -55,6 +55,49 @@ export function fechaLimiteRecapitulativa(mesKey: string, tipo: TipoDestinatario
 }
 
 /**
+ * 🔴 SCRUM-648 (fase B) · POR QUÉ el semáforo dice lo que dice.
+ *
+ * `ambar` puede significar **dos cosas**: «se acerca el plazo» y «no he podido comprobarlo». La
+ * ACCIÓN correcta es la misma en los dos casos —mirar esto— y por eso comparten color; pero **el
+ * porqué no se comparte**, y sin él el profesional no sabe si tiene que facturar o si tiene que
+ * revisar un dato.
+ *
+ * NO es un cuarto estado: `Semaforo` sigue siendo el union cerrado de tres que ató SCRUM-622.
+ */
+export type MotivoSemaforo = 'plazo' | 'no_computable';
+
+/**
+ * 🔴 SCRUM-648 (fase B) · DECISIÓN C DEL FUNDADOR: un límite que no se puede leer sale **ÁMBAR**,
+ * no verde.
+ *
+ * Antes daba `NaN`, las dos comparaciones eran falsas y salía `verde` — que el navegador pinta
+ * **«AL DÍA»**. O sea: «no lo sé» presentado como «no tienes nada que hacer», en el aviso de un
+ * plazo legal.
+ *
+ * **Las dos equivocaciones no cuestan lo mismo** (criterio de SCRUM-639): decir «al día» cuando
+ * no se sabe **oculta** un plazo fiscal; decir «mira esto» cuesta una mirada.
+ *
+ * ⛔ Y NO ES ROJO: «plazo vencido» tampoco es cierto, y afirmar un vencimiento que no consta tiene
+ * su propio precio en fiscal. Es exactamente el razonamiento con el que SCRUM-622 resolvió el caso
+ * análogo del color del toast: *«ni rojo: un kind desconocido tampoco afirma que haya fallado»*.
+ */
+// 🔴 SIN `export`, y lo pidio el guard de SCRUM-411 con razon: su unico consumidor esta en ESTE
+// fichero (`getPendientesFacturar`). Un export que solo usa su test es indistinguible de una
+// funcion entregada. Se prueba por la SUPERFICIE PUBLICA: `calcularSemaforo` da el color, y que el
+// MOTIVO viaje hasta la tarjeta lo comprueba `scrum648b` leyendo el cableado.
+function evaluarSemaforo(
+  limiteISO: string,
+  hoy: Date = new Date(),
+  zona: string = ZONA_POR_DEFECTO,
+): { semaforo: Semaforo; motivo: MotivoSemaforo } {
+  const diasHastaLimite = diasEntre(diaNaturalEn(hoy, zona), limiteISO);
+  if (!Number.isFinite(diasHastaLimite)) return { semaforo: 'ambar', motivo: 'no_computable' };
+  if (diasHastaLimite < 0) return { semaforo: 'rojo', motivo: 'plazo' };
+  if (diasHastaLimite <= 5) return { semaforo: 'ambar', motivo: 'plazo' };
+  return { semaforo: 'verde', motivo: 'plazo' };
+}
+
+/**
  * Semáforo por días hasta la fecha límite.
  * rojo: plazo YA vencido (< 0 días) · ámbar: 0-5 días · verde: > 5 días.
  *
@@ -69,14 +112,7 @@ export function calcularSemaforo(
   hoy: Date = new Date(),
   zona: string = ZONA_POR_DEFECTO,
 ): Semaforo {
-  const diasHastaLimite = diasEntre(diaNaturalEn(hoy, zona), limiteISO);
-  // ⚠️ CARACTERIZACIÓN, NO DESCUIDO: con un límite ilegible `diasEntre` da NaN, las dos
-  // comparaciones son falsas y sale 'verde' — «no lo sé» pintado de «al día». Es el hallazgo de
-  // SCRUM-622 y **se conserva tal cual a propósito**: arreglarlo aquí mezclaría dos cambios en
-  // el mismo diff. Entra en su propio paso, ENCIMA de este código.
-  if (diasHastaLimite < 0) return 'rojo';
-  if (diasHastaLimite <= 5) return 'ambar';
-  return 'verde';
+  return evaluarSemaforo(limiteISO, hoy, zona).semaforo;
 }
 
 /** SCRUM-171b: periodicidad PACTADA con el cliente. `NINGUNA` = sin aviso (lo de hoy). */
@@ -150,6 +186,10 @@ export interface GrupoPendienteFacturar {
   // guarda: se calcula al leer, igual que el semáforo.
   avisar: boolean;
   motivoAviso: MotivoAviso | null;
+  // SCRUM-648 (fase B): POR QUÉ el semáforo dice lo que dice. `ambar` significa dos cosas y la
+  // acción es la misma, pero el porqué no se comparte: sin esto el profesional no sabe si tiene
+  // que facturar o si tiene que revisar un dato. No es un cuarto estado (regla 27).
+  motivoSemaforo: MotivoSemaforo;
 }
 
 export interface ClientePendienteFacturar {
@@ -255,7 +295,7 @@ export async function getPendientesFacturar(
       const lineasGrupo = albaranesOriginales
         .flatMap((a) => (Array.isArray(a.lineas) ? (a.lineas as unknown as AlbaranLinea[]) : []));
       const fechaLimite = fechaLimiteRecapitulativa(g.mesKey, tipo);
-      const semaforo = calcularSemaforo(fechaLimite, hoy, zona);
+      const { semaforo, motivo: motivoSemaforo } = evaluarSemaforo(fechaLimite, hoy, zona);
       // SCRUM-171b: el aviso se DERIVA aquí, con el plazo legal por delante de lo pactado.
       const aviso = avisoDeFacturacion(periodicidad, semaforo, g.mesKey, hoy, zona);
       return {
@@ -266,6 +306,7 @@ export async function getPendientesFacturar(
         importePotencial: calcAlbaranTotales(lineasGrupo),
         fechaLimite, // SCRUM-643: ya viene como `YYYY-MM-DD`; `toIsoDateLocal` sobraba y se retiró
         semaforo,
+        motivoSemaforo, // SCRUM-648 (fase B)
         avisar: aviso.avisar,
         motivoAviso: aviso.motivo,
       };

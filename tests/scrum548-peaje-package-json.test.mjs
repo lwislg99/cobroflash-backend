@@ -106,7 +106,11 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
     + '  suerte de un conflicto de merge; medidos, sobre la landing son cinco.\n'
     + `  Ahora mismo: ${JSON.stringify(s.solapes)}`);
 
-  assert.deepEqual(s.noResueltos, ['guard:contraste'],
+  // SCRUM-648 (fase B) · entra `guard:caja-semaforo`: sirve su página desde una ruta VIRTUAL
+  // (`/__caja-semaforo.html`), igual que `guard:caja-avisos`, así que el censo no puede derivar su
+  // destino de un fichero del árbol. Se declara para que ese hueco no se lea como «no solapa».
+  // Medido: no comparte página con ninguno — es la única que sirve esa ruta.
+  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo'],
     '🔴 ha cambiado el conjunto de guards cuyo destino NO se puede derivar. Se declaran para que\n'
     + '  su solape invisible no se lea como «no tiene».');
 });

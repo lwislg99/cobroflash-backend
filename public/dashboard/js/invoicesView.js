@@ -562,6 +562,26 @@ async function fetchInvoices(options = {}) {
 
       card.appendChild(rowTop);
 
+      // ── SCRUM-648 (fase B) · POR QUÉ ESTE ÁMBAR ─────────────────────────────────────────
+      //
+      // `ambar` significa dos cosas: «se acerca el plazo» y «no he podido comprobarlo». La ACCIÓN
+      // correcta es la misma —mirar esto— y por eso comparten color; pero el porqué no se
+      // comparte, y sin él el profesional no sabe si tiene que facturar o revisar un dato.
+      //
+      // 🔴 SÓLO se pinta cuando el motivo es `no_computable`. Con `plazo`, la pastilla y la fecha
+      // de arriba ya lo dicen, y repetirlo sería ruido — el mismo criterio que el aviso de
+      // periodicidad de aquí debajo.
+      //
+      // ⚠️ EL TEXTO NO ESTÁ APROBADO. Va con el marcador de microcopy (regla 30) hasta que el
+      // fundador firme el rótulo. La caja está MEDIDA (SCRUM-648 fase B, `guard:caja-semaforo`):
+      // 559 px de ancho útil a 929 y 292 px a 390, y en una línea caben 50 caracteres a 390.
+      if (grupo.motivoSemaforo === 'no_computable') {
+        const motivoLine = document.createElement('div');
+        motivoLine.style.cssText = 'margin-top:8px;font-size:13px;color:var(--neutral-700)';
+        motivoLine.textContent = '[PENDIENTE microcopy oficial] No hemos podido comprobar el plazo.';
+        card.appendChild(motivoLine);
+      }
+
       // SCRUM-171b: aviso de que TOCA facturar. Solo se pinta cuando el motivo es la
       // PERIODICIDAD pactada: si el motivo es el plazo legal, el semáforo y la fecha límite de
       // arriba ya lo están diciendo, y repetirlo con otras palabras sería ruido.

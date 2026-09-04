@@ -240,21 +240,27 @@ test('SCRUM-622 · ② `calcularSemaforo` no devuelve nada fuera de esos tres', 
     + 'prueba lo que dice su nombre.');
 });
 
-test('SCRUM-622 · 🔴 la LECCIÓN del rojo anterior: una entrada que no se sabe leer da VERDE', () => {
-  // No es teoría: acaba de pasar en este mismo fichero. Se deja fijado porque es la evidencia de
-  // que el «no lo sé → al día» se alcanza por la puerta más corriente que hay —un llamador con
-  // la firma vieja—, y no sólo por una fecha corrupta en la base.
+test('SCRUM-622 · ✅ la LECCIÓN del rojo anterior: ya NO da verde — lo decidió el fundador en SCRUM-648', () => {
+  // ── ESTE TEST CARACTERIZABA UN DEFECTO Y CAYÓ AL ARREGLARSE. Es lo que prometía ──────────
   //
-  // NO se arregla aquí: no hay un cuarto estado y elegir uno de los tres es decisión del
-  // fundador (reglas 27 y 30). Es SCRUM-648.
+  // Decía: «un `Date` donde se espera un día se lee como ilegible y sale VERDE, aunque ese día
+  // esté VENCIDO», y añadía: *«si esto cambia, alguien ha decidido qué se pinta cuando no se sabe:
+  // bien, pero que conste con su decisión»*.
+  //
+  // Pues consta. **Decisión C del fundador (SCRUM-648, fase B): sale ÁMBAR**, con el motivo
+  // `no_computable` al lado. Ni verde —que se pinta «AL DÍA»— ni rojo —que afirmaría un
+  // vencimiento que no consta—. Es el mismo razonamiento con el que este propio fichero resolvió
+  // el color del toast: decir «todo bien» cuando no se sabe es la equivocación cara.
+  //
+  // No se borra: se convierte en la afirmación del arreglo, para que quede constancia de qué se
+  // decidió y desde cuándo — y para que siga vigilando si alguien lo devuelve a verde.
   return import('../dist/modules/jobs/domain/pendientesFacturar.service.js').then(({ calcularSemaforo }) => {
     const hoy = new Date(Date.UTC(2026, 6, 10, 10, 0));
     const MADRID = 'Europe/Madrid';
     // Lo que hacía el barrido viejo: pasar un `Date` donde ahora se espera `YYYY-MM-DD`.
-    assert.equal(calcularSemaforo(new Date(Date.UTC(2026, 6, 9)), hoy, MADRID), 'verde',
-      'CARACTERIZACIÓN: un `Date` donde se espera un día se lee como ilegible y sale VERDE — '
-      + 'aunque ese día esté VENCIDO. Si esto cambia, alguien ha decidido qué se pinta cuando no '
-      + 'se sabe: bien, pero que conste con su decisión.');
+    assert.equal(calcularSemaforo(new Date(Date.UTC(2026, 6, 9)), hoy, MADRID), 'ambar',
+      '🔴 ha vuelto a salir algo distinto de ÁMBAR para una entrada ilegible. Si es VERDE, se ha '
+      + 'deshecho la decisión C y «no lo sé» vuelve a pintarse «AL DÍA» sobre un plazo legal.');
     // Y el contraste que lo hace significativo: el MISMO día, como cadena, sale rojo.
     assert.equal(calcularSemaforo('2026-07-09', hoy, MADRID), 'rojo',
       '🔴 el mismo día en el formato correcto debería salir rojo: si no, el problema no es de formato');
