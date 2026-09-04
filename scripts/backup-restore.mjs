@@ -153,6 +153,32 @@ async function main() {
     process.exit(1);
   }
   const tablas = data.tables || {};
+
+  // ── 🔴 SCRUM-746 (fase B) · A DÓNDE VOY A ESCRIBIR, ANTES DE ABRIR LA CONEXIÓN ────────────
+  //
+  // La cabecera de este fichero decía —y dice— «NO se ejecuta contra producción ni staging: usa
+  // `_scratch-run.mjs`, que lo impide». Es verdad y no bastaba: **este script tiene su propia
+  // entrada de línea de comandos** (`process.argv[2]`), así que un
+  // `DATABASE_URL=… node scripts/backup-restore.mjs fichero.gz.enc` no pasaba por el runner ni
+  // por ninguna otra puerta. La protección estaba UN NIVEL MÁS ALLÁ de la acción.
+  //
+  // Y esto no es un caso hipotético cómodo de descartar: `db-push-prod` DOCUMENTA en su cabecera
+  // exportar `DATABASE_URL` para apuntar a staging. Basta con seguir en la misma terminal.
+  //
+  // Se comprueba con `destinoDesechable`, que es LA MISMA regla que ejecuta el runner —sacada a
+  // `_db-guard.mjs` para que la llamen los dos— y no una segunda. Va ANTES de construir el
+  // cliente: una comprobación después de conectar ya ha elegido a dónde.
+  const { destinoDesechable } = await import('./_db-guard.mjs');
+  const destino = destinoDesechable(process.env.DATABASE_URL);
+  if (!destino.ok) {
+    console.error(`\n🔴 NO SE RESTAURA. Destino: ${destino.etiqueta}\n   ${destino.motivo}\n`);
+    console.error('   Una restauración sobrescribe la base ENTERA y no se deshace. La prueba va');
+    console.error('   contra la base DESECHABLE:\n');
+    console.error('     node scripts/_scratch-run.mjs node scripts/backup-restore.mjs <fichero.gz.enc>\n');
+    process.exit(1);
+  }
+  console.log(`→ destino de la restauración: ${destino.etiqueta}`);
+
   const { PrismaClient } = await import('@prisma/client');
   const prisma = new PrismaClient();
 

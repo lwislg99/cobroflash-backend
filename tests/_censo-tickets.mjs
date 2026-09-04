@@ -170,6 +170,21 @@ function git(args, cwd, { sondeo = false } = {}) {
  * @param {number|string} numero  el N de SCRUM-N
  * @param {object} opciones  `{ raiz, ref }` — `ref` es contra qué se mide (por defecto `origin/main`)
  */
+/**
+ * SCRUM-738 · el número que el CONTENIDO de una entrada dice ser: su primer título `# SCRUM-<n>`.
+ *
+ * Devuelve `null` si no hay título — y entonces NO se acusa de colisión: «no lo sé» no es «es de
+ * otro». Las entradas de esta casa empiezan por un aviso en blockquote más de una vez, así que se
+ * recorren las líneas en vez de mirar sólo la primera.
+ */
+export function numeroDelTituloDeEntrada(contenido) {
+  for (const linea of String(contenido ?? '').split(/\r?\n/)) {
+    const m = /^#\s+SCRUM-0*(\d+)\b/.exec(linea);
+    if (m) return Number(m[1]);
+  }
+  return null;
+}
+
 export function censarTicket(numero, { raiz = process.cwd(), ref = 'origin/main' } = {}) {
   const n = String(numero).trim();
   if (!/^\d+$/.test(n)) throw new Error(`[censo] número de ticket inválido: «${numero}»`);
@@ -216,11 +231,47 @@ export function censarTicket(numero, { raiz = process.cwd(), ref = 'origin/main'
   // 🔴 Con la CONVENCIÓN de la casa (`scrum-<n>-<slug>`), no «el número aparece por ahí». Medido:
   // buscar el número suelto atribuía a SCRUM-2 las ramas `…-rebasada-2` y `codeowners-zona-roja-v2`,
   // donde el 2 es un sufijo de reintento o de versión. Cinco ramas ajenas para un solo ticket.
-  const ramas = refs.filter((r) => new RegExp(`^scrum-${n}(-|$)`, 'i').test(r.replace(/^origin\//, '')));
+  //
+  // 🔴 SCRUM-738 (4-sep-2026) · LA LETRA DE FASE ENTRA, Y ESTABA CIEGO JUSTO DONDE MÁS RAMAS HAY.
+  //
+  // `^scrum-${n}(-|$)` no veía `scrum-684b-…`, que es la FASE B del MISMO ticket. Medido hoy:
+  // **17 ramas de fase en 15 tickets distintos** (`294a`, `294b`, `37b`, `542b`, `604b`, `627b`,
+  // `650d`, `652e`, `655c`, `667b`, `670b`, `683b`, `684b`, `710b`, `716c`, `728b`, `728c`). Un
+  // censo del tablero que no ve las fases se queda corto en la fuente «ramas» precisamente en los
+  // tickets grandes, que son los que más veces se reencargan.
+  //
+  // ⚠️ NO reabre el defecto que documenta el comentario de arriba: sigue ANCLADO al principio y la
+  // letra va PEGADA a los dígitos, así que `^scrum-2[a-z]?(-|$)` sigue sin casar con `scrum-240-…`
+  // ni con `…-rebasada-2`. Se admite UNA letra, que es la convención de la casa.
+  const ramas = refs.filter((r) => new RegExp(`^scrum-${n}[a-z]?(-|$)`, 'i').test(r.replace(/^origin\//, '')));
+
+  // 🔴 SCRUM-738 (4-sep-2026) · EL FICHERO EXISTE ≠ EL FICHERO ES DE ESTE TICKET.
+  //
+  // Medido: `censarTicket(684)` daba **ENTERO**, y SCRUM-684 NO está hecho —S1 trabaja su FASE B
+  // ahora mismo—. `docs/master/SCRUM-684.md` existe, y su primer título dice **`# SCRUM-683`**: lo
+  // explica el propio fichero, «dos sesiones se inventaron el mismo número», y dentro hay trabajo
+  // de SCRUM-703 y de SCRUM-683. De 684, ninguno.
+  //
+  // Es el mismo defecto que este censo ya persigue un nivel más abajo —«encontrar un mecanismo que
+  // se parece no es encontrar el ticket»— aplicado al fichero: encontrar un fichero que se LLAMA
+  // como el ticket no es encontrar su entrada. Y falla hacia el lado cómodo, el que dice que no
+  // queda trabajo.
+  //
+  // Con el número compartido, las otras fuentes tampoco son fiables (sus ramas y sus commits
+  // pueden ser del otro), así que la colisión se DECLARA y `docs/master` deja de contar como
+  // fuente. No se adivina cuál de los dos tickets es: se dice que no se puede saber.
+  // ⚠️ SE COMPARAN NÚMEROS, y esto me cazó al medirlo: `n` es una CADENA en este fichero
+  // (`String(numero).trim()`), así que `714 !== '714'` era siempre cierto y TODOS los tickets
+  // salían con colisión. Falló hacia el lado seguro —`NO_MEDIBLE` en vez de `ENTERO`— pero habría
+  // dejado el censo inservible. Lo cazó ejecutarlo, no leerlo.
+  const tituloDelDoc = doc ? numeroDelTituloDeEntrada(doc) : null;
+  const colision = doc && tituloDelDoc !== null && tituloDelDoc !== Number(n)
+    ? { fichero: `docs/master/SCRUM-${n}.md`, tituladoPara: tituloDelDoc }
+    : null;
 
   const fuentes = [];
   if (commits.length) fuentes.push('commits');
-  if (doc) fuentes.push('docs/master');
+  if (doc && !colision) fuentes.push('docs/master');
   if (ramas.length) fuentes.push('ramas');
 
 
@@ -248,6 +299,20 @@ export function censarTicket(numero, { raiz = process.cwd(), ref = 'origin/main'
     [doc || '', ...commits.map((c) => `${c.asunto} ${cuerpoDe(c.sha, raiz)}`)].join('\n'));
   const marcas = MARCAS_SIN_CONECTAR.filter((m) => textoEvidencia.toLowerCase().includes(m));
 
+  // 🔴 SCRUM-738 · con el número COMPARTIDO no se dictamina. Ninguna de sus fuentes es fiable —sus
+  // ramas y sus commits pueden ser del otro ticket— y `ENTERO` aquí es el falso positivo más caro
+  // que puede dar este censo: el que propone cerrar algo que nadie ha hecho.
+  if (colision) {
+    return {
+      ticket: `SCRUM-${n}`,
+      veredicto: 'NO_MEDIBLE',
+      fuentes, commits, ramas, doc: !!doc, marcas: [], noMedibles, colision,
+      porque: `NÚMERO COMPARTIDO: \`${colision.fichero}\` existe pero está TITULADO PARA `
+        + `SCRUM-${colision.tituladoPara}. Con el número compartido, ni sus ramas ni sus commits `
+        + 'son atribuibles: no se puede saber qué hay en `main` DE ESTE ticket.',
+    };
+  }
+
   return {
     ticket: `SCRUM-${n}`,
     veredicto: marcas.length ? 'PARCIAL' : 'ENTERO',
@@ -257,6 +322,7 @@ export function censarTicket(numero, { raiz = process.cwd(), ref = 'origin/main'
     doc: !!doc,
     marcas,
     noMedibles,
+    colision: null,
     porque: marcas.length
       ? `la entrega declara mecanismo sin conectar (${marcas.map((m) => `«${m}»`).join(', ')})`
       : 'hay evidencia que nombra el ticket y no declara nada sin conectar',
