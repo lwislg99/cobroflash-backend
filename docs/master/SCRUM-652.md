@@ -729,3 +729,129 @@ NAV que empieza por «parte» (lo que cazaba el guard viejo): ["partes-oficina"]
 
 Nada más de 652d · nada de SCRUM-703 · ni el nav · ni `parteDetailView.js` · ni
 `parteOficinaView.js`. El diff es **un fichero**.
+
+---
+
+## APÉNDICE (3-sep-2026) · El suelo que faltaba, y lo preguntó Javier
+
+> ⚠️ Se ANEXA. El apéndice de arriba documenta el acotado; esto documenta su agujero.
+
+**Medido contra:** `origin/main` = `ce8f262a5270dbecfb3f503eaa8d1bd323db5683` · 2026-09-03T17:05:00+02:00
+
+## 1 · La pregunta, literal
+
+> «el censo dice 18 entradas de nav y 5 vistas que exigen contexto. ¿Tiene suelo sobre esos 18? Si
+> mañana el extractor por AST deja de encontrar entradas y devuelve 0, el guard sigue verde y no
+> nos enteramos.»
+> — **Javier, 3-sep-2026**
+
+Tenía razón. El guard llevaba suelo sobre **las 5** —si la derivación deja de ver `parte-detail`,
+cae— y **ninguno sobre las 18**.
+
+## 2 · Por qué eso es un agujero y no un detalle
+
+**Una lista vacía hace verdad cualquier afirmación sobre sus elementos.** Con cero entradas de nav,
+«ninguna entrada lleva a una vista sin contexto» es **verdadera y vacía**, y el guard pasaría para
+siempre sobre una barra que ya no sabe leer.
+
+Es la misma avería que este árbol ya caza en otros sitios —el censo de huérfanos, el de apartados,
+el de técnicos asignables—: **cero no es «está limpio», es «no he mirado»**. Que se colara aquí, en
+un guard escrito precisamente para no fiarse de la forma, es la parte que merece quedar escrita.
+
+## 3 · Dónde va el suelo, y con cuánta holgura
+
+Va **dentro** de `navSinContexto`, no al lado: así no se puede rodear llamando al extractor pelado.
+
+Hoy hay **18 entradas** (medidas). El mínimo se pone en **10**, y la holgura es deliberada: lo que
+aquí importa no es cuántas entradas haya —eso lo vigila SCRUM-420— sino que **el extractor siga
+viendo la barra**. Perder ocho de golpe es un rediseño, y entonces el número se sube a propósito con
+su motivo. *Un suelo que estorba en cada PR acaba desactivado.*
+
+## 4 · Los rojos · commit de resguardo `604c63e20b20514ce66eca4de65d37d573ddfc89`
+
+| # | Qué se rompe | Qué cae |
+| :-: | --- | --- |
+| 1 | el `index.html` cambia de forma (18 `data-view` → `data-vista`) | **5**/13 · y el rojo dice `NAV CIEGO · el extractor ha encontrado 0 entradas y el suelo son 10` |
+| 2 | se retira el suelo | 1/13 · sólo cae el test del suelo — que es la demostración de que es él quien trabaja |
+
+El rojo 1 tira cinco tests, y eso también es información: **todo lo que dependía de leer la barra
+deja de significar nada a la vez.** Antes, ninguno de los cinco se habría enterado.
+
+## 5 · Lo que queda escrito en el test
+
+Quién preguntó y cuándo. Una pregunta que destapa un suelo que falta vale tanto como el guard, y
+quien lo lea dentro de un año tiene que saber que **salió de fuera** — no de quien lo escribió.
+
+---
+
+## APÉNDICE (3-sep-2026, tarde) · El CI se puso rojo, y el rojo era MÍO
+
+**Medido contra:** `origin/main` = `9747d16ad1699b57b6738728e938b530d006f1b8` · 2026-09-03T18:20:00+02:00
+
+## 1 · La primera pregunta no fue «qué rompí» sino «¿estaba ya rojo?»
+
+No pude citar el log: la página de Actions **pide autenticación** y `gh` no está instalado a
+propósito. Así que se reprodujo el job en local, montando el banco desechable **igual que
+`ci.yml`** (`CREATE DATABASE … _test` en loopback + `migrate diff --from-empty` + `psql -f`), con
+el binario del proyecto y no `npx` (SCRUM-385).
+
+| qué se midió | resultado |
+| --- | --- |
+| **main limpio** (`042180d4`) + banco | **5004 tests · 0 fallos** · 75 skipped → **VERDE** |
+| **mi rama tal cual** + banco | 4973 tests · 0 fallos → verde |
+| **mi rama + main de ahora** (lo que CI prueba de verdad) | **1 fallo** |
+
+🔴 **El rojo no era de main, y la hipótesis de SCRUM-684 no se reproduce**: la tanda gateada corre
+entera sobre `main` de ahora. Lo que faltaba era que **CI prueba el MERGE**, y ese merge yo no lo
+había ejecutado.
+
+## 2 · El fallo, literal
+
+```
+🔴 la barra tiene 17 entradas y se midieron 18 el 3-sep-2026.
+17 !== 18
+```
+
+`SCRUM-599` (DOC-09, `17705a7e`) retiró `quotes-new` del nav — decisión legítima: «una sola forma
+de llegar a crear». La barra pasó de 18 a 17.
+
+**El suelo de 10 NO saltó: funcionó.** Lo que saltó fue un `assert.equal(…, 18)` mío.
+
+## 3 · Lo que estaba mal, y no era el número
+
+Era un **trinquete de igualdad exacta sobre un número que no es mío**. Quién va en la barra lo
+decide el producto y lo vigila SCRUM-420; este fichero sólo necesita que el extractor **siga
+viendo**. Es el defecto que este árbol ya tiene nombrado en SCRUM-402:
+
+> «un guard que exigiera eso nacería ROJO y lo apagaría alguien en una hora»
+
+Y ahí está el daño real: un guard que da rojo en falso **se desactiva**, y con él se pierde también
+lo que sí vigilaba — el suelo, que funcionaba.
+
+Fuera el `=== 18`. En su sitio, lo que sí es mío y no fija el número: **que el suelo conserve
+holgura** (al menos 3 de margen), con su motivo.
+
+## 4 · Y los DOS HECHOS, separados
+
+Lo pidió el fundador y tenía razón: hoy daban el mismo rojo.
+
+- **CERO entradas** → *aquí no hay barra que leer*. Ceguera del instrumento. **«MIRA EL EXTRACTOR,
+  no el nav.»**
+- **POCAS entradas** → *la barra encogió*. El instrumento ve, y lo que ve es poco. Hecho del
+  producto, y el rojo **las nombra**. **«MIRA EL NAV, no el extractor.»**
+
+Dar el mismo mensaje a las dos manda a quien lo lea al sitio equivocado la mitad de las veces. El
+test comprueba **el mensaje de cada uno**, no sólo que caiga.
+
+## 5 · Los rojos · commit de resguardo `54f443672f3e1eb1e9fda3a69f11b27dbd8053af`
+
+| # | Qué se rompe | Qué cae |
+| :-: | --- | --- |
+| A | `data-view` → `data-vista` (18 atributos) | 5/13 · `NAV CIEGO … MIRA EL EXTRACTOR, no el nav` |
+| B | se dejan 4 entradas | 5/13 · `LA BARRA HA ENCOGIDO · el extractor ve 4 … ["home","quote-requests","jobs","quotes-list"]` |
+| C | el suelo se pega a la barra (10 → 17) | 1/13 · `quedan menos de tres de margen … antes de que alguien lo desactive` |
+
+## 6 · Una corrección a la hipótesis del fundador
+
+Su sospechoso era el banco desechable montando un `index.html` distinto. **No es eso:** CI corre
+sobre el checkout del repo y ve las 17 entradas reales. Mi suelo no llegó a dispararse.

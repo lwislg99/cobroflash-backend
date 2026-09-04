@@ -16,6 +16,7 @@ import type { AlbaranLinea, AlbaranModoValoracion, FirmaEvidencia } from '../dom
 import { ALBARAN_ROTULOS, etiquetaCalidad } from '../domain/albaranFirmante';
 import { formatImporteEs } from '../../../core/utils/utils'; // SCRUM-636: el sitio unico
 import { TITULO_OBSERVACIONES } from '../../invoicing/infra/pdf/pdf.service'; // SCRUM-593: un solo rotulo
+import { partirConceptoYDescripcion } from '../../invoicing/infra/pdf/conceptoLinea'; // SCRUM-603 (DOC-13)
 
 export async function generateAlbaranPdf(params: {
   merchantId: number; // SCRUM-48: prefija el nombre de archivo (mata la colisión entre merchants)
@@ -233,14 +234,52 @@ export async function generateAlbaranPdf(params: {
     doc.moveDown(0.5);
   }
   for (const l of params.lineas) {
+    // ── SCRUM-603 (DOC-13): el concepto y su DESCRIPCION, separados ────────────────────
+    // La descripcion no viaja en un campo propio: viaja DENTRO del concepto, detras de un salto
+    // de linea. Y al albaran le llega copiada del presupuesto tal cual —`jobDetailView.js:426`
+    // hace `l.concept.trim()` sobre la linea del presupuesto, que es justo la que el editor
+    // concatena cuando el profesional marca «Incluir descripcion en el PDF»—. Hasta hoy esta
+    // tabla imprimia el concepto ENTERO de una vez: la descripcion salia —el salto se respeta—
+    // pero con el MISMO tamano y peso, indistinguible de un concepto largo. Es el mismo defecto
+    // que la factura tenia y que se arreglo el 1-sep.
+    //
+    // La particion es la MISMA funcion que usan factura y presupuesto (`conceptoLinea.ts`), que
+    // ya se escribio pensando en este dia: «el dia que la tenga, la funcion ya esta y no habra
+    // que escribirla por tercera vez». Copias: siguen siendo CERO.
+    //
+    // 🔴 Y NO TOCA EL SELLADO. Medido: el hash del albaran certifica el CONTENIDO CANONICO
+    // —`numero`, `fecha`, `cliente`, `lineas`…— y NO el PDF (`albaran.service.ts:532`). Aqui
+    // solo cambia como se PINTA un texto que ya estaba: el papel imprime exactamente lo mismo
+    // que se sello, que es lo que exige SCRUM-452. Ni un byte del canonico cambia.
+    const { titulo: cTitulo, descripcion: cDesc } = partirConceptoYDescripcion(l.concepto);
+
+    // La altura se mide con el tamano de CADA parte: medir la descripcion con el del concepto
+    // dejaria la fila corta y el texto se pisaria con la de abajo.
+    doc.fontSize(10);
+    const hTitulo = doc.heightOfString(cTitulo || ' ', { width: colConceptoW - rowPad * 2 });
+    doc.fontSize(8);
+    const hDesc = cDesc ? doc.heightOfString(cDesc, { width: colConceptoW - rowPad * 2 }) : 0;
+    doc.fontSize(10);
+    // El 26 de siempre se conserva como MINIMO: sin descripcion, el salto de pagina decide
+    // exactamente igual que antes de este cambio. Solo reserva mas cuando hay algo mas que pintar.
+    const necesario = Math.max(26, hTitulo + (cDesc ? 1 + hDesc : 0) + rowPad);
+
     // Salto de página con recabecera si no cabe la fila
-    if (doc.y + 26 > doc.page.height - doc.page.margins.bottom - 90) {
+    if (doc.y + necesario > doc.page.height - doc.page.margins.bottom - 90) {
       doc.addPage();
       tableHeader();
     }
     const y = doc.y;
     doc.fontSize(10).fillColor(BODY);
-    doc.text(l.concepto, M + rowPad, y, { width: colConceptoW - rowPad * 2 });
+    doc.text(cTitulo, M + rowPad, y, { width: colConceptoW - rowPad * 2 });
+    if (cDesc) {
+      // Menor tamano y tinta suave — el MISMO gris (`MUTED`) que usan la factura y la vista
+      // previa del editor, para que el documento no le ensene al profesional otra cosa distinta
+      // de la que le prometio la pantalla.
+      doc.fontSize(8).fillColor(MUTED)
+        .text(cDesc, M + rowPad, doc.y + 1, { width: colConceptoW - rowPad * 2 });
+      doc.fontSize(10).fillColor(BODY);
+    }
     const rowH = Math.max(doc.y - y, 14);
     doc.text(fmtQty(l.cantidad), M + colConceptoW, y, { width: colCantW - rowPad, align: 'right' });
     doc.text(l.unidad || '—', M + colConceptoW + colCantW + rowPad, y, { width: colUnidadW - rowPad * 2 });

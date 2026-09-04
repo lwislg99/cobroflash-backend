@@ -5,6 +5,7 @@
 // marcar se publica sin que nada diga nada — le pasó al titular del bloque de contacto, y lo cazó
 // un extractor por casualidad.
 import test from 'node:test';
+import { soloEjecutable } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -116,7 +117,7 @@ test('SCRUM-549 · 🔴 el guard NO busca la palabra «PROPUESTA» en el texto',
   // daría rojo permanente sobre un texto legítimo — o alguien la excluiría y con ella excluiría a
   // las de verdad. Se mira la ESTRUCTURA (el atributo), no el vocabulario.
   const fuente = fs.readFileSync(path.join(RAIZ, 'scripts', '_censo-microcopy-sin-marcar.mjs'), 'utf8');
-  const sinComentarios = fuente.replace(/\/\/[^\n]*/g, ' ').replace(/\/\*[\s\S]*?\*\//g, ' ');
+  const sinComentarios = soloEjecutable(fuente);
   assert.doesNotMatch(sinComentarios, /['"`]PROPUESTA/,
     '🔴 el censo ha empezado a buscar la cadena «PROPUESTA» en el texto. El copy de F5-1 la lleva ' +
     'dentro: eso es un rojo permanente sobre un texto legítimo, y la salida fácil (excluirla) se ' +

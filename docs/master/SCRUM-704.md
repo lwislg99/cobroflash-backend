@@ -106,3 +106,80 @@ El guard `scripts/_prisma-procedencia-guard.mjs` recomienda en su mensaje **`npx
 `npx` se baja `prisma@latest` cuando no encuentra el local, que es justo lo que SCRUM-385 dejó
 escrito que no se hace. El remedio correcto es `./node_modules/.bin/prisma generate`. El guard
 funciona; lo que induce a error es su texto.
+
+---
+
+# SCRUM-704 (segunda medición) · el arreglo YA ESTABA, y el censo tiene un punto ciego
+
+**Medido contra:** `origin/main` = `042180d43eb4475b096ae219eba277c37d81468a` · 2026-09-03T14:40:00+02:00
+
+## 0 · PARA: el ticket está hecho en `main`
+
+El encargo describía el defecto en presente. **No lo está.** Medido antes de tocar nada:
+
+```
+git log -S'esCuerpoQueFetchEnvia' origin/main -- public/dashboard/js/api.js
+  b42adbf7 · SCRUM-704: el `body` de apiRequest no viajaba…      1 commit
+  CONTROL POSITIVO del mismo comando (API_BASE_URL) → 1          ← el comando mide
+
+tests/scrum704-el-cuerpo-llega.test.mjs → 9 tests, 9 pass, exit 0
+```
+
+Y **no me fié del fuente**: ejecuté `api.js` en un contexto con `fetch` instrumentado y miré **lo que
+sale por el cable**, que es lo que el encargo pedía comprobar.
+
+| lo que se le pasa | lo que SALE |
+|---|---|
+| `{ title: 'Obra nueva', obra: 'Av. Rey Juan Carlos 145' }` | `{"title":"Obra nueva","obra":"Av. Rey Juan Carlos 145"}` |
+| `JSON.stringify({ title: 'Obra nueva' })` | `{"title":"Obra nueva"}` — **intacto**, no escapado dentro de otra cadena |
+| sin `body` | **sin `body`** — no aparece un cuerpo vacío |
+
+**La dirección de la obra llega.** El campo que el jefe corrige se guarda.
+
+## 1 · El censo, RECONTADO por mí (no copiado del comentario)
+
+Ejecutado `censoDeBodies` sobre el árbol de hoy:
+
+| | hoy | dice el comentario de `api.js` |
+|---|---|---|
+| llamadas con `body` | **56** | 55 |
+| ya serializan fuera (`JSON.stringify`) | **53** | 52 |
+| pasan un objeto plano | **2** | 2 |
+| otra forma (variable, `FormData`…) | **1** | 1 |
+
+Los dos objetos siguen en `jobDetailView.js:791` y `:829`, **y eso es correcto**: el arreglo está en
+`apiRequest`, no en los llamadores, así que pasan por él y se normalizan.
+
+**Qué funcionaba antes y por qué:** los **53** que ya serializan fuera. Esa es la convención de la
+casa, y es la razón por la que el arreglo **normaliza** en vez de serializar siempre: un
+`JSON.stringify` incondicional les metería la cadena dentro de otra cadena y el servidor recibiría un
+`string` donde espera un objeto — cambiaría un fallo silencioso por otro, y en 53 sitios en vez de 2.
+
+> El número del comentario ha derivado en uno. No se corrige aquí: es una medición fechada que
+> justificaba una decisión, y la decisión no cambia con 52 o 53. Es la lección de SCRUM-682 — **un
+> recuento en prosa caduca**; el que vale sale de ejecutar el censo.
+
+## 2 · 🔴 Hallazgo: el censo NO VE las llamadas por alias
+
+`censoDeBodies` cuenta llamadas literales a `apiRequest(...)`. La pantalla del parte llama **a
+través de un alias** —`var pedir = o.apiRequest || window.apiRequest`, el patrón que permite
+inyectar un doble en los tests— y el censo ve **cero** de sus llamadas:
+
+```
+llamadas con body en parteDetailView.js, según el censo ....... 0
+las que hay de verdad, con body ............................... 3   (líneas 351, 408, 465)
+```
+
+**Hoy no hay riesgo**: las tres mandan `JSON.stringify`. Pero el censo que decide «cuál es el arreglo
+correcto» no está mirando ese fichero, y el patrón del alias es el que usa toda pantalla que quiera
+ser testeable. **Se reporta** (regla 9): tocarlo es del carril de quien construyó el censo.
+
+## 3 · Microcopy APROBADA y aplicada
+
+`No se han podido guardar las líneas — vuelve a intentarlo` — aprobada literal, aplicada en el mismo
+acto y registrada con el mecanismo nuevo, un fichero por aprobación en `docs/microcopy/`.
+
+⚠️ Y una cifra que hay que leer bien: el censo de marcadores sigue diciendo **1** para
+`parteDetailView.js`, y en ese fichero quedan **26 rótulos** marcados. Las dos son correctas — ese
+censo cuenta **literales con la marca** y la pantalla la factoriza en una constante. Los 26 se
+**reportan**, no se aprueban.

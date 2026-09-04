@@ -33,6 +33,7 @@
 //    como si fueran escrituras: `direccion: job.direccion` no escribe nada.)
 
 import test from 'node:test';
+import { soloEjecutable } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -42,7 +43,7 @@ import { versionLeeJobDireccion } from '../dist/modules/jobs/domain/jobDireccion
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SELLADOR = fs.readFileSync(path.join(RAIZ, 'src/modules/jobs/domain/albaran.service.ts'), 'utf8');
-const sinComentarios = (s) => s.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+const sinComentarios = (s) => soloEjecutable(s);
 
 test('SCRUM-374 · SUELO: el sellador se lee y tiene su canónico', () => {
   // Si este fichero dejara de encontrarse o cambiara de forma, los asserts de abajo pasarían por

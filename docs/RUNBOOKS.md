@@ -291,6 +291,39 @@ Un cambio de schema NO está aplicado hasta estar en las TRES bases:
 3. autorack.proxy.rlwy.net                 — PRODUCCIÓN.
 ```
 
+> ### 🔒 INTERINO desde el 4-sep-2026 · STAGING ESTÁ CONTAMINADA COMO SUJETO DE MEDIDA
+>
+> **Decisión del fundador (SCRUM-668). No es una sospecha: es una declaración de estado.**
+>
+> `DATABASE_URL_TESTS` en los carriles `b1`, `b2` y `b3` apunta a `acela/railway`, que **es la
+> misma base que `DATABASE_URL_STAGING`**. O sea: la suite gateada ESCRIBE en la base que
+> también se usa para medir. Y son 61 ficheros de test los que están gateados por esa clave,
+> con `_merchant-fixture.mjs` creando un merchant y barriéndolo sobre 23 modelos por pasada.
+>
+> **Consecuencia operativa, y es lo único que hay que recordar:**
+>
+> * **Una cifra sacada de `acela/railway` NO vale como medición.** Filas, totales, huecos,
+>   duplicados, «no hay ninguno»: nada de eso distingue el estado real del sedimento de una
+>   tanda. Una base que es a la vez el sujeto de la medida y el vertedero de los tests no da
+>   resultados: da coincidencias.
+> * **Sirve igual para lo de siempre**: correr la suite gateada, probar una pantalla, un
+>   `db push` de ensayo. Lo que se retira es su valor como FUENTE DE UN NÚMERO.
+> * **Si necesitas medir de verdad**, mide contra producción en sólo-lectura (`autorack`, y
+>   di en el informe que era producción) o levanta una base propia.
+>
+> **No se relaja nada para esto.** `assertSafeStagingUrl` es una allowlist de host y es
+> fail-closed: sigue igual. Esto no cambia ni una variable de entorno — sólo dice qué valor
+> tiene el dato que sale de ahí.
+>
+> **Se levanta cuando** cada carril tenga su base de pruebas propia (`yaqu_tests_b1|b2|b3`), que
+> es el objetivo acordado y necesita infraestructura: **espera a Javier**. Se descartó mandar
+> los cuatro carriles a `yaqu_dev_javier`: cuatro sesiones escribiendo en la misma base es
+> cambiar un problema por otro.
+>
+> ⚠️ Y lo que **no** se sabe, dicho como resultado y no como tranquilidad: **no está medido si
+> alguna cifra de staging ya publicada salió contaminada.** No se ha barrido quién midió qué
+> contra `acela/railway` ni cuándo. Un «no» sin medir no habría sido un resultado.
+
 > ### 📌 QUÉ BASE TOCA CADA WORKTREE — MAPA MEDIDO el 6-ago-2026
 >
 > **Método:** censo de `.env*` en los cuatro árboles, imprimiendo `clave → host/base` con

@@ -11,6 +11,7 @@
 // dueño.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
+import { soloEjecutable } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -233,7 +234,7 @@ test('SCRUM-464 · la ruta resuelve el rol con `seesAllJobs`, no comparando con 
   const fuente = fs.readFileSync(
     path.join(RAIZ, 'src/modules/jobs/app/routes/precargaAdmin.routes.ts'), 'utf8',
   );
-  const codigo = fuente.replace(/\/\/[^\n]*|\/\*[^]*?\*\//g, '');
+  const codigo = soloEjecutable(fuente);
 
   assert.ok(/seesAllJobs\(/.test(codigo),
     '🔴 la ruta no usa la allowlist de la casa. Con una denylist, un rol NUEVO se llevaría el ' +
