@@ -142,14 +142,20 @@ test('SCRUM-728 · ① el cerrojo es la PRIMERA sentencia de cada reserva de nú
 // ② El censo que no puede subir sin que se vea
 // ─────────────────────────────────────────────────────────────────────────────────────────
 test('SCRUM-728 · ② sólo UNA transacción reserva número dentro de un BUCLE, y es la recapitulativa', () => {
-  const enBucle = TODAS.filter((t) => t.cerrojoEnBucle.length > 0)
-    .map((t) => `${t.file}:${t.line}`).sort();
+  // 🔴 SE ANCLA AL FICHERO, NO A `fichero:línea` — SCRUM-710b, y su guard me lo cazó al
+  // escribir esto. Un número de línea es una POSICIÓN: basta que alguien edite ese fichero por
+  // encima para que este censo caduque y salte un rojo que no es. La línea va en el MENSAJE,
+  // que es donde sirve para encontrarlo y donde caducar no cuesta nada.
+  const enBucle = TODAS.filter((t) => t.cerrojoEnBucle.length > 0);
+  const donde = enBucle.map((t) => t.file).sort();
+  const conLinea = enBucle.map((t) => `${t.file}:${t.line}`).join(', ');
 
-  assert.deepEqual(enBucle, ['src/modules/jobs/domain/recapitulativa.service.ts:72'],
+  assert.deepEqual(donde, ['src/modules/jobs/domain/recapitulativa.service.ts'],
     '🔴 EL CENSO SE MOVIÓ. Una reserva dentro de un bucle hace que la sección crítica sea ' +
     'proporcional a los DATOS, no constante: con N grupos son N reservas seguidas con el ' +
     'cerrojo tomado, y el timeout de 5 s no depende de N. Si has añadido una, trae el número ' +
-    'de cuánto tarda con el N máximo real. Si has quitado la que había, actualiza este censo.');
+    'de cuánto tarda con el N máximo real. Si has quitado la que había, actualiza este censo.\n' +
+    `     hoy están en: ${conLinea || '(ninguna)'}`);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
