@@ -2,9 +2,9 @@
 
 **Fecha:** 3-sep-2026 · **Carril:** documentos / dinero · **Gate:** sin gate — corre en `npm test`
 
-**Medido contra:** `origin/main` = `09fb0c5b2988b6b658204c48f4e6f8e10568ea1d` · 2026-09-03T13:08:42Z
+**Medido contra:** `origin/main` = `119484af9d0fdf9f4beb008751a2be86d5179acd` · 2026-09-04T14:23:28Z
 
-**Tanda:** 5012 tests, 4928 pass, 0 fail, 84 skipped — medida DESPUES del ultimo cambio, entrada incluida.
+**Tanda:** 5110 tests, 5026 pass, 0 fail, 84 skipped — medida DESPUES del ultimo cambio, entrada incluida.
 
 ---
 
@@ -102,6 +102,12 @@ En la hoja de ajustes cuesta **0 px por fila**, y no queda escondido: **el chip 
 (`IVA 21 % · Dto. 10 %`), que es lo que F4 pedía del disparador. Así se cumple CONT-01 ② —un dato
 invisible es un dato que nadie corrige— sin pagar el scroll.
 
+> 🔴 **RATIFICADO POR EL FUNDADOR el 4-sep-2026, y queda escrito con el número para que nadie lo
+> devuelva a la línea dentro de seis meses creyendo que corrige un olvido.** No está en la tarjeta
+> porque allí cuesta **+77 px por fila a 390 px** —medido en navegador con el CSS de producción,
+> 354 contra 277—, que es **exactamente** el coste que SCRUM-139 F4 midió y rechazó para margen e
+> IVA. El sitio no es una preferencia: es el precedente.
+
 **Microcopy: los tres rótulos CABEN, medido, y no hizo falta ningún marcador.**
 
 | rótulo | caja | texto | |
@@ -117,6 +123,33 @@ Target táctil del campo: **44 px** (AB6). Censo de marcadores **idéntico antes
 **«Base imponible» NO se renombra.** Es el rótulo vivo y aprobado, el mismo que imprime el PDF, y
 además es el correcto: la base imponible es la que soporta el IVA, o sea la de **después** del
 descuento. Las filas nuevas van encima.
+
+---
+
+## 🔴 Los decimales del descuento — un TERCER tipo, decidido el 4-sep-2026
+
+Main trajo SCRUM-712 mientras este ticket estaba en vuelo: acota los decimales **en la puerta**,
+4 para el precio unitario y 2 para el importe. `dto` es una clave nueva de la misma región, y el
+fundador la aprueba como **tercer tipo, a dos decimales**.
+
+El motivo no es simetría: sin acotarlo, un `33,3333 %` mete decimales infinitos en `Quote.lines`,
+que es una columna **`Json` y no trunca nada** — la misma puerta por la que entró el `30,003` de
+la única divergencia real medida en este árbol (SCRUM-624). Y aquí duele igual, porque el
+descuento acaba **multiplicando** un precio que sí está acotado.
+
+Va con el mecanismo que main ya trae (`conDecimales`, con su mensaje que nombra el valor y sus
+decimales) y con **constante propia**, `DECIMALES_PORCENTAJE`: hoy vale lo mismo que
+`DECIMALES_IMPORTE`, pero un porcentaje no es un importe, y compartir la constante haría que el
+día que uno se mueva se muevan los dos sin que nadie lo decida.
+
+**Probado con las tres trampas de coma flotante que SCRUM-712 ya midió**, aplicadas a un
+porcentaje: `1.005` (que el bit guarda como `1.00499…`), `8.165` y `0.1 + 0.2`. Y con su control:
+`1.01`, `8.17` y `0.3` —que sí tienen dos decimales— pasan, porque un validador que lo rechazara
+todo daría los tres primeros verdes sin significar nada.
+
+> Se resolvió el conflicto **sin** esta acotación y entró **en un commit propio** una vez aprobada.
+> Meter una decisión no tomada dentro de una resolución de conflicto es como entra una decisión
+> que nadie tomó.
 
 ---
 

@@ -32,8 +32,21 @@ const D = require_(path.join(RAIZ, 'public/dashboard/js/quoteDescuentos.js'));
 const { calcTotal } = await import('../dist/core/utils/utils.js');
 const { generateQuotePdf, generateInvoicePdf } =
   await import('../dist/modules/invoicing/infra/pdf/pdf.service.js');
+const { CreateQuoteSchema } = await import('../dist/core/validation/schemas.js');
 
 const euros = (cents) => (cents / 100).toFixed(2);
+
+/**
+ * Valida UNA línea por la puerta REAL del presupuesto.
+ *
+ * Se usa `CreateQuoteSchema` —el que se exporta y el que atiende la petición— y no el
+ * `QuoteLineSchema` interno: probar la puerta por la que de verdad entra el dato es lo que hace
+ * que esto mida algo, y además evita exportar un símbolo sólo para el test.
+ */
+const lineaValida = (extra) => CreateQuoteSchema.safeParse({
+  merchant_id: 1, customer_id: 1, currency: 'EUR',
+  lines: [{ concept: 'x', qty: 1, price: 10, tax: 0.21, ...extra }],
+});
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // SUELO · si la pieza no responde, todo lo de abajo pasa sin medir nada
@@ -220,6 +233,52 @@ test('SCRUM-594 · 🔴 y el papel SUMA: base + IVA = Total, siempre', () => {
       `🔴 el documento no suma: ${euros(t.baseImponibleCents)} + ${euros(t.cuotaCents)} ≠ `
       + `${euros(t.totalCents)}. Caso: ${JSON.stringify({ lineas, global })}`);
   }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 LOS DECIMALES DEL DESCUENTO — la puerta, no la pantalla
+//
+// Aprobado por el fundador el 4-sep-2026: el porcentaje es un TERCER tipo junto al precio
+// unitario (4 decimales) y al importe (2) que fijó SCRUM-712, y va a DOS.
+//
+// Sin esto, un `33,3333 %` mete decimales infinitos en `Quote.lines`, que es una columna `Json`
+// y no trunca nada — exactamente la puerta por la que entró el `30,003` de la única divergencia
+// real medida en este árbol (SCRUM-624). Y aquí duele igual, porque el descuento multiplica un
+// precio que sí está acotado.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-594 · 🔴 el `dto` admite DOS decimales y ni uno más', () => {
+  const con = (dto) => lineaValida({ dto });
+  for (const bueno of [0, 5, 10.5, 33.33, 99.99, 100]) {
+    assert.equal(con(bueno).success, true, `🔴 rechaza un descuento legítimo del ${bueno} %`);
+  }
+  for (const malo of [33.333, 0.001, 12.345]) {
+    const r = con(malo);
+    assert.equal(r.success, false,
+      `🔴 ${malo} % ENTRA con más de dos decimales. Va a \`Quote.lines\`, que es Json y no trunca: `
+      + 'es la misma puerta que SCRUM-712 cerró para el precio.');
+  }
+  // Y el mensaje NOMBRA el valor y sus decimales, que es lo que aporta `conDecimales`.
+  const r = con(33.333);
+  const texto = JSON.stringify(r.error?.issues ?? []);
+  assert.match(texto, /33\.333/, `🔴 el rojo no dice QUÉ valor falló: ${texto.slice(0, 160)}`);
+  assert.match(texto, /decimales/, '🔴 el rojo no dice que el problema son los decimales');
+});
+
+test('SCRUM-594 · 🔴 y las TRES TRAMPAS de coma flotante, sobre un porcentaje', () => {
+  // Los `number` MIENTEN con los decimales: `1.005` se representa como `1.00499999999999989`.
+  // Una acotación que cuente decimales sobre el bit acepta o rechaza según el valor que toque.
+  // Son las mismas tres que SCRUM-712 midió para el precio, aplicadas aquí.
+  const con = (dto) => lineaValida({ dto });
+  assert.equal(con(1.005).success, false, '🔴 `1.005` (que el bit guarda como 1.00499…) se cuela');
+  assert.equal(con(8.165).success, false, '🔴 `8.165` se cuela');
+  assert.equal(con(0.1 + 0.2).success, false,
+    '🔴 `0.1 + 0.2` (= 0.30000000000000004) se cuela: son 17 decimales, no dos');
+  // CONTROL: los que SÍ tienen dos decimales de verdad pasan. Sin esto, un validador que
+  // rechazara todo daría estos tres verdes sin significar nada.
+  assert.equal(con(1.01).success, true, '🔴 rechaza 1,01, que tiene exactamente dos decimales');
+  assert.equal(con(8.17).success, true, '🔴 rechaza 8,17');
+  assert.equal(con(0.3).success, true, '🔴 rechaza 0,30');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════

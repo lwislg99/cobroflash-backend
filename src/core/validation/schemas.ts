@@ -48,6 +48,19 @@ import { invalidTipoIva, invalidPrefijoSerie } from './fiscalInput'; // SCRUM-21
 export const DECIMALES_PRECIO_UNITARIO = 4;
 /** Un IMPORTE en euros. Dos decimales y punto. */
 export const DECIMALES_IMPORTE = 2;
+/**
+ * Un PORCENTAJE (SCRUM-594, aprobado por el fundador el 4-sep-2026).
+ *
+ * 🔴 CONSTANTE PROPIA Y NO `DECIMALES_IMPORTE`, aunque hoy valgan lo mismo. Un porcentaje **no
+ * es un importe**: comparten número por ahora, y llamar «importe» a un descuento del 33,33 %
+ * haría que el día que uno de los dos se mueva se muevan los dos sin que nadie lo decida. La
+ * decisión del fundador enumera TRES tipos —precio unitario, importe y porcentaje—, y aquí se
+ * escriben los tres.
+ *
+ * Acotarlo cierra la misma puerta que SCRUM-712: sin esto, un `33,3333 %` mete decimales
+ * infinitos en `Quote.lines`, que es una columna `Json` y no trunca nada.
+ */
+export const DECIMALES_PORCENTAJE = 2;
 
 /** El paso mínimo para N decimales: 4 → 0.0001. Se deriva; no se escribe el número dos veces. */
 const pasoDe = (decimales: number) => Number('0.' + '0'.repeat(decimales - 1) + '1');
@@ -107,13 +120,13 @@ const QuoteLineSchema = z.object({
    * El tope de 100 no es cosmético: un 150 % dejaría el precio NEGATIVO, y un presupuesto no
    * puede pedirle dinero al cliente por una línea.
    *
-   * ⚠️ NO LLEVA `conDecimales`, Y ES DELIBERADO (resolución del conflicto con SCRUM-712, 4-sep):
-   * un PORCENTAJE no es ni un precio unitario ni un importe. La decisión del fundador cubre esos
-   * dos y no un tercero, y meter una acotación no decidida dentro de una resolución de conflicto
-   * es cómo entra una decisión que nadie tomó. Está preguntado; si se aprueba, entra en un commit
-   * propio con su motivo.
+   * 🔴 Y DOS DECIMALES, aprobado por el fundador el 4-sep-2026 como TERCER tipo junto al precio
+   * unitario (4) y al importe (2) de SCRUM-712. Sin esto, un `33,3333 %` vuelve a meter decimales
+   * infinitos por la puerta que aquel ticket acaba de cerrar — y aquí duele igual, porque el
+   * descuento acaba multiplicando un precio que sí está acotado. Usa el MISMO mecanismo que main
+   * (`conDecimales`), con su mensaje que nombra el valor y sus decimales.
    */
-  dto: z.number().min(0).max(100).optional(),
+  dto: conDecimales(z.number().min(0).max(100), DECIMALES_PORCENTAJE, 'el descuento').optional(),
   // SCRUM-217 (1124): `min(0).max(1)` aceptaba CUALQUIER fracción — un 15 % pasaba sin queja, y
   // el 15 % no es un tipo de IVA español. El validador decía que sí a un impuesto inventado, y
   // ese tipo acaba en la cuota que entra en la huella. Ahora solo pasan los que existen.
