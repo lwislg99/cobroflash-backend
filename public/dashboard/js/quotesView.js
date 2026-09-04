@@ -383,6 +383,62 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   clientFormRow.appendChild(fieldCustomer.wrapper);
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-602 (DOC-12) · LA DIRECCIÓN DE LA OBRA.
+  //
+  // 🔴 VA EN «1. Cliente» Y NO EN «4. Envío», y no es una preferencia: «4. Envío» significa el
+  // envío del DOCUMENTO por WhatsApp o correo. Poner aquí una dirección postal lo convertiría en
+  // dos cosas con el mismo nombre en la misma pantalla. Va junto al cliente porque acompaña a los
+  // datos con los que sale impresa, que es donde el profesional la va a buscar.
+  //
+  // Los textos salen de `quoteDireccionObra.TEXTOS`, en un solo sitio, y NO se escriben aquí:
+  // sueltos en cada `textContent` derivan sin que nada chille (la lección de `filtroClientes.js`).
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  const fieldDireccionObra = createFieldSelect(
+    window.quoteDireccionObra.TEXTOS.rotulo,
+    "shipping_address_mode",
+  );
+  window.quoteDireccionObra.OPCIONES.forEach(function (o) {
+    const opt = document.createElement("option");
+    opt.value = o.valor;
+    opt.textContent = o.palabra;
+    fieldDireccionObra.select.appendChild(opt);
+  });
+  fieldDireccionObra.select.value = window.quoteDireccionObra.MODOS.NO_MOSTRAR;
+  clientFormRow.appendChild(fieldDireccionObra.wrapper);
+
+  // El campo libre vive en su PROPIA fila, a ancho completo: `.quote-form-row` es una rejilla de
+  // tres columnas y una dirección postal de 300 caracteres en un tercio de ancho se lee mal.
+  const direccionObraWrap = document.createElement("div");
+  direccionObraWrap.className = "field quote-direccion-obra";
+  direccionObraWrap.hidden = true;
+  const direccionObraInput = document.createElement("input");
+  direccionObraInput.type = "text";
+  direccionObraInput.name = "shipping_address";
+  // 300 = `DIRECCION_OBRA_MAX`. El servidor RECORTA (no rechaza), igual que `lugarEntrega`; el
+  // tope de aquí es para que el profesional vea dónde está el límite, no para validar.
+  direccionObraInput.maxLength = 300;
+  direccionObraWrap.appendChild(direccionObraInput);
+  blockClient.appendChild(direccionObraWrap);
+
+  /**
+   * SCRUM-602 · enseña u oculta el campo libre, y le pone la SUGERENCIA como placeholder.
+   *
+   * 🔴 PLACEHOLDER, NUNCA VALOR — es el suelo del albarán, adoptado literal: «la sugerencia entra
+   * sólo como PLACEHOLDER, porque una dirección equivocada en un documento de entrega es peor que
+   * ninguna». Rellenar el campo pondría en un papel que ve el cliente una dirección que nadie
+   * tecleó ni revisó.
+   */
+  function refrescarDireccionObra() {
+    const modo = fieldDireccionObra.select.value;
+    const esPersonalizada = modo === window.quoteDireccionObra.MODOS.PERSONALIZADA;
+    direccionObraWrap.hidden = !esPersonalizada;
+    const cliente = customersList.find(
+      (c) => String(c.id) === String(fieldCustomer.select.value),
+    ) || null;
+    direccionObraInput.placeholder = window.quoteDireccionObra.sugerenciaParaPlaceholder(cliente);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
   // SCRUM-660 · EL IVA POR DEFECTO DEL DOCUMENTO TAMBIÉN SE ELIGE.
   //
   // Lo dejó escrito SCRUM-611 al cerrar el selector de la LÍNEA, y era un hueco de verdad:
@@ -2958,6 +3014,12 @@ if (Number.isFinite(n) && n >= 0) {
 
   resetBtn.addEventListener("click", function () {
     fieldCustomer.select.value = "";
+    // SCRUM-602 · el control vuelve a su defecto Y el texto se vacía. Sin la segunda línea, la
+    // dirección del presupuesto anterior seguiría escondida detrás de «No mostrar» y volvería a
+    // salir en cuanto alguien reeligiera «Personalizada» — en OTRO documento y OTRO cliente.
+    fieldDireccionObra.select.value = window.quoteDireccionObra.MODOS.NO_MOSTRAR;
+    direccionObraInput.value = "";
+    refrescarDireccionObra();
     window.tiposDeIva.ponerValor(fieldVatDefault.input, "21"); // SCRUM-660
     paymentSelect.value = "FULL_UPFRONT";
 
@@ -3360,9 +3422,27 @@ if (Number.isFinite(n) && n >= 0) {
       return;
     }
     clienteAntesDelAlta = fieldCustomer.select.value;
+    // SCRUM-602 · al cambiar de cliente cambia la PISTA del placeholder: la dirección de
+    // facturación es de ESE cliente, y dejar la del anterior sugeriría la dirección equivocada.
+    refrescarDireccionObra();
     renderPreview();
     scheduleDraftSave();
   });
+  // SCRUM-602 · los DOS eventos, por el mismo motivo que el IVA por defecto de SCRUM-660: en un
+  // `<select>` el navegador dispara `change`, y algunos además `input`. `refrescarDireccionObra`
+  // y `scheduleDraftSave` son idempotentes, así que oírlo dos veces no cuesta nada.
+  ["change", "input"].forEach(function (evento) {
+    fieldDireccionObra.select.addEventListener(evento, function () {
+      refrescarDireccionObra();
+      renderPreview();
+      scheduleDraftSave();
+    });
+  });
+  direccionObraInput.addEventListener("input", function () {
+    renderPreview();
+    scheduleDraftSave();
+  });
+  refrescarDireccionObra();
   descCheck.addEventListener("change", renderPreview);
   paymentSelect.addEventListener("change", function () {
     // SCRUM-27: el editor de tramos solo se ve en "Personalizado"; arranca con 1 fila.
@@ -3509,6 +3589,12 @@ payloadLines.push(lineaParaPayload({
       submitBtn.textContent = "Generando…";
 
       // 1) Crear el presupuesto en DRAFT (esto ya genera el PDF en el back)
+      // SCRUM-602 (DOC-12) · la regla de qué viaja vive en la pieza PURA; aquí sólo se reparte
+      // en las dos claves, para que el censo del envío las vea (ver el comentario de abajo).
+      const direccionDeLaObra = window.quoteDireccionObra.direccionParaPayload(
+        fieldDireccionObra.select.value,
+        direccionObraInput.value,
+      );
       const quotePayload = {
         merchant_id: currentMerchant.id,
         customer_id: Number(customerId),
@@ -3525,6 +3611,18 @@ payloadLines.push(lineaParaPayload({
           const v = parseFloat(String(descuentoGlobalInput.value || "").replace(",", "."));
           return Number.isFinite(v) && v > 0 ? v : null;
         }()),
+        // SCRUM-602 (DOC-12) · la dirección de la obra. El modo viaja SIEMPRE (la columna dice
+        // lo que el formulario dijo; `null` queda para los presupuestos anteriores al control) y
+        // el texto SÓLO con «Personalizada», para no dejar una dirección fantasma que el
+        // documento no imprime. La regla vive en la pieza pura, no aquí.
+        //
+        // 🔴 LAS DOS CLAVES SE ESCRIBEN A MANO, Y NO CON UN `...spread` DE LA PIEZA PURA. Se probó
+        // con spread y la tanda SIGUIÓ VERDE: el censo de SCRUM-286 deriva lo que viaja de las
+        // PROPIEDADES del literal, así que un spread esconde las claves y el guard que existe para
+        // cazar «un campo nuevo que nadie coloca» no las ve. Dos campos nuevos entrando sin que
+        // ningún guard los mire es exactamente el fallo mudo que ese censo vino a impedir.
+        shippingAddressMode: direccionDeLaObra.shippingAddressMode,
+        shippingAddress: direccionDeLaObra.shippingAddress,
         created_via: quoteFormCreatedVia, // VZ-3: 'voice' si hubo dictado
         // A16.2: caducidad elegida (fin del día local); omitida = 30d en server
         validUntil: validInput.value ? new Date(validInput.value + "T23:59:59").toISOString() : undefined,

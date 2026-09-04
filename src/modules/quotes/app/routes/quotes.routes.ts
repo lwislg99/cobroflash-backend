@@ -79,6 +79,8 @@ import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento';
 import { recordAudit, sobreFiscal, flagsFiscalesDe } from '../../../system/audit.service'; // SCRUM-206b
 import { sellarTrasEmision } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { exigirLineasFacturables, esErrorSinLineas, COPY_PUBLICO_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
+// SCRUM-602 (DOC-12) · normalizadores del dominio: el modo no se adivina y el texto vacío se queda vacío.
+import { normalizarDireccionObra, normalizarModoDireccionObra } from '../../../../core/documentos/direccionObra';
 
 
 const router = Router();
@@ -205,6 +207,13 @@ router.post('/create', async (req, res) => {
           // porque aquí null y «no lo mandó» acaban igual —columna vacía— y null lo dice mejor.
           docHeaderText: body.docHeaderText ?? null,
           docFooterText: body.docFooterText ?? null,
+          // SCRUM-602 (DOC-12) · la dirección de la obra. `?? null` como los dos textos de arriba:
+          // aquí «no lo mandó» y «lo quitó» acaban igual —columna vacía— y `null` lo dice.
+          //
+          // 🔴 EL TEXTO SE NORMALIZA Y EL MODO NO SE ADIVINA: un modo que no es ninguno de los tres
+          // se guarda como `null` (= nadie decidió), nunca como el que más se le parece.
+          shippingAddressMode: normalizarModoDireccionObra(body.shippingAddressMode),
+          shippingAddress: normalizarDireccionObra(body.shippingAddress),
           // A16.2: caducidad — default 30 días, editable al crear
           validUntil: body.validUntil ?? new Date(Date.now() + 30 * 86_400_000),
           teamMemberId: creatorTeamMemberId,
@@ -251,6 +260,14 @@ router.post('/create', async (req, res) => {
           logoUrl: merchant.logoUrl,
         },
         customer: { name: customer.name, phone: customer.phone, email: customer.email, legalName: (customer as any).legalName, taxId: (customer as any).taxId }, // A20.4
+        // SCRUM-602 (DOC-12) · la dirección de la obra, EN CRUDO: modo, texto y cliente. Quien
+        // resuelve los tres modos es el documento, con `resolverDireccionObra`, para que las tres
+        // puertas de este PDF no puedan decir direcciones distintas del mismo presupuesto.
+        direccionObra: {
+          modo: (quote as any).shippingAddressMode ?? null,
+          personalizada: (quote as any).shippingAddress ?? null,
+          cliente: customer,
+        },
         docFields: ((quote as any).docFields as any) ?? null, // A20.4
         // SCRUM-594 (DOC-04) · el descuento global, DE LA FILA y no del body: el papel dice lo
         // que quedó GUARDADO, igual que `docHeaderText` unas líneas abajo. Ausente = el
@@ -596,6 +613,14 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
               logoUrl: merchant.logoUrl,
             },
             customer: { name: customer.name, phone: customer.phone, email: customer.email, legalName: (customer as any).legalName, taxId: (customer as any).taxId }, // A20.4
+        // SCRUM-602 (DOC-12) · la dirección de la obra, EN CRUDO: modo, texto y cliente. Quien
+        // resuelve los tres modos es el documento, con `resolverDireccionObra`, para que las tres
+        // puertas de este PDF no puedan decir direcciones distintas del mismo presupuesto.
+        direccionObra: {
+          modo: (quote as any).shippingAddressMode ?? null,
+          personalizada: (quote as any).shippingAddress ?? null,
+          cliente: customer,
+        },
         docFields: ((quote as any).docFields as any) ?? null, // A20.4
         // SCRUM-594 (DOC-04) · el descuento global, DE LA FILA y no del body: el papel dice lo
         // que quedó GUARDADO, igual que `docHeaderText` unas líneas abajo. Ausente = el
