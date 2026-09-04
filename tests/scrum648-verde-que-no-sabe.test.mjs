@@ -1,0 +1,140 @@
+// tests/scrum648-verde-que-no-sabe.test.mjs — SCRUM-648
+//
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// «AL DÍA» CUANDO EL SISTEMA NO HA PODIDO SABERLO
+//
+// `calcularSemaforo` con un límite ilegible da `NaN`, las dos comparaciones son falsas y sale
+// **verde**. Verde se le pinta al profesional como **«AL DÍA»**, y lo que ha ocurrido es que el
+// sistema no ha podido calcularlo. Es el defecto nº1 de la casa en el sitio más caro: el aviso
+// del plazo del art. 13.2.
+//
+// ⛔ AQUÍ NO SE ARREGLA, Y NO ES PEREZA: no hay un cuarto estado. Verde miente, rojo miente
+// («plazo vencido» tampoco es cierto) y ámbar ya significa «se acerca el plazo». Elegir uno de
+// los tres, o crear un cuarto, es **decisión del fundador** (regla 27) y su rótulo es **microcopy**
+// (regla 30). Este fichero MIDE y deja la medición atada. La propuesta está en
+// `docs/master/SCRUM-648.md`.
+//
+// ── QUÉ NO REPITE, para no duplicar a SCRUM-622 ──────────────────────────────────────────
+// SCRUM-622 ya ató: que el tipo `Semaforo` es un union cerrado de tres, que `calcularSemaforo`
+// barrido no devuelve nada fuera de esos tres, que el service worker no cachea `/admin/`, que el
+// `fetch` de la bandeja lanza si la respuesta no es buena, y **la caracterización** de que un
+// `Date` donde se espera un día sale verde. **Nada de eso se vuelve a comprobar aquí.**
+//
+// Lo que este fichero añade es la pregunta que faltaba: **¿ALGÚN CAMINO REAL alimenta a
+// `calcularSemaforo` con un límite ilegible?** 622 vigiló la salida de la función; esto vigila
+// su entrada.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+
+import { calcularSemaforo, fechaLimiteRecapitulativa } from '../dist/modules/jobs/domain/pendientesFacturar.service.js';
+import { diaNaturalEn, diasEntre } from '../dist/core/zonaDelMerchant.js';
+
+const RAIZ = path.resolve(import.meta.dirname, '..');
+const HOY = new Date('2026-09-04T10:00:00Z');
+const MADRID = 'Europe/Madrid';
+
+/** Entradas degeneradas al ÚNICO productor del límite. */
+const MESKEYS_DEGENERADAS = [
+  '', 'basura', '2026', '2026-', '-09', '2026-13', '2026-00', '2026-1', 'YYYY-MM',
+  '2026-09-04', '0000-00', '99999-99', 'null', 'undefined', '2026/09', '  ', '2026-ab',
+];
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 CONTROL POSITIVO PRIMERO — antes de creerse ningún cero
+// ─────────────────────────────────────────────────────────────────────────────────────────
+test('SCRUM-648 · 🔴 CONTROL POSITIVO: inyectando límites ilegibles, el defecto SALE', () => {
+  const ILEGIBLES = ['', 'no soy una fecha', new Date('2026-03-31'), null, undefined, 20260331, '31-03-2026'];
+  const verdes = ILEGIBLES.filter((v) => calcularSemaforo(v, HOY, MADRID) === 'verde');
+
+  assert.equal(verdes.length, ILEGIBLES.length,
+    '🔴 CIEGO: he inyectado límites que NADIE puede leer y no todos salen verde. Si el defecto no ' +
+    'se reproduce ni forzándolo, el cero de la medición siguiente no significaría «no hay camino»: ' +
+    'significaría «no supe mirar», y son cosas opuestas.\n' +
+    `   salieron verde ${verdes.length} de ${ILEGIBLES.length}`);
+
+  // Y el contraste que hace significativo ese verde: los tres estados se alcanzan de verdad.
+  assert.equal(calcularSemaforo('2026-09-03', HOY, MADRID), 'rojo');
+  assert.equal(calcularSemaforo('2026-09-09', HOY, MADRID), 'ambar');
+  assert.equal(calcularSemaforo('2026-09-10', HOY, MADRID), 'verde');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// LA MEDICIÓN: ¿alimenta algún camino REAL a la función con basura?
+// ─────────────────────────────────────────────────────────────────────────────────────────
+test('SCRUM-648 · el ÚNICO productor del límite no entrega hoy ni un día ilegible', () => {
+  const ilegibles = [];
+  for (const mesKey of MESKEYS_DEGENERADAS) {
+    for (const tipo of ['PARTICULAR', 'EMPRESARIO']) {
+      let limite;
+      try {
+        limite = fechaLimiteRecapitulativa(mesKey, tipo);
+      } catch {
+        continue; // lanza = camino CERRADO: falla ruidosamente, que es lo correcto
+      }
+      if (!Number.isFinite(diasEntre(diaNaturalEn(HOY, MADRID), limite))) {
+        ilegibles.push(`${JSON.stringify(mesKey)} · ${tipo} → ${limite}`);
+      }
+    }
+  }
+
+  assert.deepEqual(ilegibles, [],
+    '🔴 UN CAMINO REAL YA ENTREGA UN LÍMITE ILEGIBLE, y eso sale «AL DÍA» al profesional.\n' +
+    'Deja de ser un defecto latente y pasa a ser alcanzable: SCRUM-648 sube de prioridad.\n     ' +
+    ilegibles.join('\n     '));
+
+  // SUELO del barrido: si no se probó nada, el `[]` de arriba no significa nada.
+  assert.ok(MESKEYS_DEGENERADAS.length >= 15,
+    `🔴 sólo ${MESKEYS_DEGENERADAS.length} entradas degeneradas: el barrido no aprieta.`);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 EL HALLAZGO, y es PEOR que el defecto del ticket
+// ─────────────────────────────────────────────────────────────────────────────────────────
+test('SCRUM-648 · 🔴 un mes fuera de rango NO da ilegible: da un plazo PLAUSIBLE Y EQUIVOCADO', () => {
+  // `fechaLimiteRecapitulativa` no valida su entrada: pasa los números a `Date.UTC`, que
+  // NORMALIZA en silencio. El mes 13 de 2026 se convierte en enero de 2027 sin protestar.
+  assert.equal(fechaLimiteRecapitulativa('2026-13', 'PARTICULAR'), '2027-01-31');
+  assert.equal(fechaLimiteRecapitulativa('2026-00', 'PARTICULAR'), '2025-12-31');
+
+  // Y el semáforo lo trata como un plazo bueno, porque lo es: es finito y legible.
+  assert.equal(calcularSemaforo(fechaLimiteRecapitulativa('2026-13', 'PARTICULAR'), HOY, MADRID), 'verde');
+
+  // 🔴 POR QUÉ ES PEOR QUE EL NaN: contra un ilegible se puede programar una barrera —es
+  // detectable—. Contra un plazo plausible no hay nada que detectar: el número es finito, el
+  // semáforo es correcto para ese número, y el número es de otro mes. No hay síntoma.
+  //
+  // ⛔ NO SE ARREGLA AQUÍ: validar `mesKey` cambiaría el comportamiento de un cálculo de plazo
+  // legal, y hoy NO es alcanzable (`mesKey` sale de `mesNaturalEn`, que sólo produce `YYYY-MM`
+  // bien formado). Queda medido y nombrado.
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// EL COSTE ASIMÉTRICO, ATADO EN LA CAPA QUE NADIE MIRÓ
+// ─────────────────────────────────────────────────────────────────────────────────────────
+test('SCRUM-648 · 🔴 el navegador pinta «AL DÍA» lo que no reconoce — y eso BLOQUEA el arreglo', () => {
+  const vista = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/invoicesView.js'), 'utf8');
+
+  // El rótulo que ve el profesional cuando el semáforo es verde.
+  assert.match(vista, /verde:\s*\{[^}]*label:\s*'AL DÍA'/,
+    '🔴 ha cambiado el rótulo de `verde`. Este fichero mide el COSTE de equivocarse, y el coste ' +
+    'es exactamente lo que la pastilla dice.');
+
+  // Y el repliegue: cualquier estado que el navegador no conozca se pinta con el de `verde`.
+  assert.match(vista, /SEMAFORO_META\[grupo\.semaforo\]\s*\|\|\s*SEMAFORO_META\.verde/,
+    '✅ el repliegue a `verde` del navegador ha cambiado. Si ahora repliega a otra cosa, alguien ' +
+    'ha decidido qué se enseña cuando no se sabe: bien, pero SCRUM-648 hay que revisarlo entero.');
+
+  // 🔴 LA CONSECUENCIA, que es la razón de que este test exista: el defecto está en DOS capas, y
+  // la del navegador es la que MANDA. El día que el fundador cree un cuarto estado y el servidor
+  // lo emita, este `||` lo pintaría «AL DÍA» — el mismo defecto, con más trabajo hecho. El arreglo
+  // del navegador va ANTES o A LA VEZ que el del servidor, nunca después.
+  const meta = /const SEMAFORO_META = \{([\s\S]*?)\};/.exec(vista);
+  assert.ok(meta, '🔴 no encuentro `SEMAFORO_META`: si se renombró, este control dejó de mirar.');
+  const estados = [...meta[1].matchAll(/^\s*(\w+):/gm)].map((m) => m[1]).sort();
+  assert.deepEqual(estados, ['ambar', 'rojo', 'verde'],
+    '✅ el navegador ya conoce otro estado además de los tres. Si el fundador aprobó un cuarto, ' +
+    'actualiza este censo y comprueba que el repliegue de arriba ya NO manda a «AL DÍA».');
+});
