@@ -4,7 +4,7 @@
 
 **Medido contra:** `origin/main` = `09fb0c5b2988b6b658204c48f4e6f8e10568ea1d` · 2026-09-03T14:05:18+01:00
 
-**Tanda:** **5.010 pruebas · 4.926 en verde · 0 fallos · 84 saltadas** — con `main` mergeado dentro
+**Tanda:** **5.081 pruebas · 4.997 en verde · 0 fallos · 84 saltadas** — con `main` mergeado dentro
 y medida DESPUÉS del último cambio de código.
 
 ---
@@ -143,6 +143,30 @@ citas se limitan a esa sección a propósito: el registro está lleno de notas e
 > **Comprobado que no es decorativo**, que era lo fácil de dar por hecho: al cambiar el texto
 > aprobado en `docs/microcopy/2026-09-03-SCRUM-402-abrir-parte-fallo.md` por otro plausible, el
 > guard **cae y lo nombra**. Ve el sitio nuevo de verdad.
+
+## 🔴 Y OTRA VEZ: cambió el LECTOR, no la fuente
+
+Hace unas horas este guard nació ciego de un ojo porque **la fuente** se partió en dos. Al mergear
+ahora, lo que ha cambiado es **el lector**: SCRUM-715 apretó `constaAprobado()` de subcadena a
+identidad. Comprobado lo que hay que comprobar, sobre el árbol **ya mezclado**:
+
+* **sigue verde** (7/7) con el matching apretado;
+* **y sigue cayendo**: repetida la mutación —cambiar el texto de  por otro
+  plausible— el guard cae y **lo nombra**. Un guard que pasó su mutación ANTES del merge no ha
+  probado nada sobre después.
+
+### Por qué NO se usa , que existe y haría esto en una línea
+
+Porque **responde otra pregunta**. Esa función contesta «¿consta aprobado?» y para eso acepta toda
+cita  del registro, **notas en prosa incluidas** — correcto para ella. Aquí la pregunta es
+«¿este copy de PANTALLA está pintado?», y la prosa de una nota no se pinta nunca.
+
+**Medido, no supuesto:** con  el cruce pasa de **0 a 13** sin aplicar, y **~11
+son notas** del registro. El guard nacería rojo por prosa y alguien lo apagaría en una hora. Entra
+un control negativo que fija exactamente eso.
+
+> ⚠️ **Y no es un segundo barrido:** los SITIOS los sigue barriendo ,
+> que es el lector único. Lo que cambia es el CRITERIO de selección sobre lo que él devuelve.
 
 ## La fuente, corregida (commit propio)
 

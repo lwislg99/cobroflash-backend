@@ -50,6 +50,19 @@ const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
  * Se descarta lo que no es copy —rutas, identificadores en mayúsculas, fragmentos cortos—. El
  * filtro es por FORMA, nunca por contenido: excluir un texto por lo que dice sería decidir por el
  * fundador.
+ *
+ * 🔴 POR QUÉ NO SE USA `literalesAprobados()`, QUE EXISTE Y HARÍA ESTO EN UNA LÍNEA (SCRUM-715).
+ *
+ * Porque responde OTRA PREGUNTA. Esa función contesta «¿consta aprobado?» y para eso acepta toda
+ * cita `>` del registro, incluidas las notas en prosa — que es lo correcto para ella. Aquí la
+ * pregunta es «¿este copy de PANTALLA está pintado?», y la prosa de una nota no se pinta nunca.
+ *
+ * MEDIDO el 4-sep-2026, no supuesto: con `literalesAprobados()` el cruce pasa de 0 a 13 sin
+ * aplicar, y ~11 son notas del registro («⚠️ **Y el censo de marcadores dice UNO…**»). El guard
+ * nacería rojo por prosa y alguien lo apagaría en una hora.
+ *
+ * ⚠️ Y esto NO es un segundo barrido: los SITIOS los sigue barriendo `aprobacionesDeMicrocopy()`,
+ * que es el lector único. Lo que cambia es el CRITERIO de selección sobre lo que él devuelve.
  */
 function textosAprobados() {
   const out = new Set();
@@ -204,6 +217,18 @@ test('SCRUM-514 · CONTROL NEGATIVO: un texto NO aprobado no entra por estar en 
   assert.equal(aprobados.includes('Sin líneas.'), false,
     '🔴 un texto que sólo vive en el código aparece como «aprobado»: el extractor está leyendo '
     + 'algo que no son las tablas de la fuente.');
+});
+
+test('SCRUM-514 · CONTROL NEGATIVO: el extractor no se traga PROSA del registro', () => {
+  // Es la diferencia con `literalesAprobados()` y lo que justifica no usarla aquí: sus 150
+  // literales incluyen las notas en prosa del registro. Si esa prosa entrara, el guard nacería
+  // rojo por texto que nadie pinta nunca — medido el 4-sep: 13 sin aplicar, ~11 de ellos notas.
+  const prosa = textosAprobados().filter((t) => /\*\*/.test(t) || t.length > 160);
+  assert.deepEqual(prosa, [],
+    '🔴 ha entrado PROSA en el cruce: '
+    + prosa.map((p) => JSON.stringify(p.slice(0, 50))).join(', ')
+    + '. Son notas del registro, no copy de pantalla, y el guard se pondría rojo por algo que '
+    + 'nadie pinta.');
 });
 
 test('SCRUM-514 · CONTROL NEGATIVO: el extractor no se traga rutas ni constantes', () => {
