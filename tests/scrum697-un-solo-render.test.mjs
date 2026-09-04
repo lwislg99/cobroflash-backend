@@ -265,8 +265,10 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   const nodos = todos(r.contenedor);
   assert.equal(nodos.length, new Set(nodos).size,
     '🔴 la vista de presupuestos, que no repetía ningún nodo, ha empezado a repetirlos.');
-  assert.equal(nodos.length, 236,
-    `🔴 la vista de presupuestos produce ${nodos.length} nodos y antes del arreglo producía 236 `
+  // SCRUM-594 (DOC-04): 236 -> 241. Los cinco nodos son el bloque del descuento global, y
+  // estan identificados por identidad en scrum698 (.quote-dto-global y sus cuatro hijos).
+  assert.equal(nodos.length, 241,
+    `🔴 la vista de presupuestos produce ${nodos.length} nodos y antes del arreglo producía 241 `
     + '(medido sobre `origin/main` = 80db312b). El arreglo del banco no debía cambiar ni uno.');
 
   const tablas = nodos.filter((n) => n.tagName === 'TABLE');

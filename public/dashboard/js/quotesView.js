@@ -1261,6 +1261,8 @@ blockDelivery.appendChild(descWrapper);
   function recalcTotals() {
     let base = 0;
     let vatTotal = 0;
+    // SCRUM-594 · se llena en el MISMO recorrido de abajo y se lo come `totalesConDescuento`.
+    const lineasParaTotales = [];
     // 🔴 SCRUM-598 (DOC-08) · EL MARGEN SALE DEL PIE. Lo que sigue de SCRUM-229 se retira: el
     // agregado «Margen 18,00 € (18 %)» era información del profesional en el papel del cliente.
     // Las funciones puras de `quoteMargen.js` NO se borran —siguen probadas y pueden servir en
@@ -1349,6 +1351,16 @@ blockDelivery.appendChild(descWrapper);
         ) + (dtoDeEsta > 0 ? ` · Dto. ${dtoDeEsta} %` : '');
       }
 
+      // SCRUM-594 · la línea, tal cual, para la pieza que calcula los totales. Mismo recorrido.
+      // Sin clave `apartado`: este editor no crea cabeceras (ni una mención en el fichero); la
+      // pieza SÍ las respeta, para cuando las haya.
+      lineasParaTotales.push({
+        qty: line.qtyInput.value,
+        price: line.priceInput.value,
+        dto: line.dtoInput ? line.dtoInput.value : null,
+        tax: safeVat / 100,
+      });
+
       base += lineBase;
       vatTotal += lineVat;
 
@@ -1370,16 +1382,9 @@ blockDelivery.appendChild(descWrapper);
     //
     // El bucle de arriba se conserva porque sigue haciendo su otro trabajo: pintar el total de
     // cada línea, marcar las vacías y componer el chip de ajustes.
-    const lineasParaTotales = lines.map(function (l) {
-      return {
-        qty: l.qtyInput.value,
-        price: l.priceInput.value,
-        dto: l.dtoInput ? l.dtoInput.value : null,
-        tax: (parseFloat(String(l.vatInput.value || "").replace(",", ".")) || 0) / 100,
-        // Sin clave `apartado`: este editor no crea cabeceras de apartado (no hay una sola
-        // mención en este fichero). La pieza SÍ las respeta, para cuando las haya.
-      };
-    });
+    // 🔴 UN SOLO RECORRIDO, y no es estilo: es la disciplina de SCRUM-228/229 que un guard
+    // sujeta. `lineasParaTotales` se llena DENTRO del bucle de arriba, no con un `map` aparte —
+    // dos recorridos distintos sobre las mismas líneas acaban dando dos cifras distintas.
     const T = window.quoteDescuentos.totalesConDescuento(
       lineasParaTotales,
       descuentoGlobalInput ? descuentoGlobalInput.value : null,

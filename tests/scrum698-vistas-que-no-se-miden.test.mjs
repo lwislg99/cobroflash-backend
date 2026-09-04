@@ -218,7 +218,13 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   //
   // La exigencia no baja: sigue siendo una igualdad exacta, sin rango ni tolerancia. Lo que sube
   // es la línea base, con su motivo escrito aquí para que el siguiente sepa de dónde salió.
-  for (const [vista, nodos] of [['renderQuotesView', 236], ['renderProductsView', 166],
+  // 🔴 SCRUM-594 (DOC-04) · PRESUPUESTOS SUBE DE 236 A 241, Y SON CINCO NODOS CON NOMBRE.
+  // Identificados POR IDENTIDAD antes de tocar el número, igual que hizo SCRUM-599: son el
+  // bloque del descuento global —`.quote-dto-global`, su botón «+ Añadir descuento», la etiqueta
+  // `.quote-dto-global__campo`, su rótulo y su input—, y ni uno más. Medido también lo que NO
+  // sube: `.quote-line__dto` da 0 en esta vista, porque el campo de la línea vive en la hoja de
+  // ajustes de cada fila y esta pantalla no monta el editor de líneas.
+  for (const [vista, nodos] of [['renderQuotesView', 241], ['renderProductsView', 166],
     ['renderCustomersView', 63], ['renderHomeView', 109]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
@@ -236,7 +242,9 @@ test('SCRUM-698 · CONTROL NEGATIVO: el fixture NO se impone a quien ya pasaba l
   assert.equal(conLoSuyo.error, null, '🔴 pasar datos propios ha dejado de funcionar.');
 
   const desnuda = await pintarVista(cargarDashboard(RAIZ), 'renderQuotesView');
-  assert.equal(todos(desnuda.contenedor).length, 236,
+  // SCRUM-594 (DOC-04): 236 -> 241, el bloque del descuento global. Lo que este test vigila
+  // sigue intacto: que montar SIN datos de fixture de el mismo numero que montar con ellos.
+  assert.equal(todos(desnuda.contenedor).length, 241,
     '🔴 montar sin `datos` ya no da lo de siempre: el fixture se ha colado como valor por '
     + 'defecto y está moviendo lo que miden otros.');
 });
