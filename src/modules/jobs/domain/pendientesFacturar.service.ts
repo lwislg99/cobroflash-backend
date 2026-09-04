@@ -26,6 +26,48 @@ export function resolveTipoDestinatario(customer: { tipoDestinatario?: string | 
 }
 
 /**
+ * 🔴 SCRUM-747 · UN MES QUE NO EXISTE NO TIENE UN MES CORRECTO QUE ADIVINAR.
+ *
+ * `Date.UTC` **normaliza en silencio**: el mes 13 de 2026 se convierte en enero de 2027 sin
+ * protestar. Medido en SCRUM-648: `'2026-13'` daba el plazo `2027-01-31` y el semáforo lo pintaba
+ * **verde**, porque para él era un plazo perfectamente bueno — sólo que de otro mes.
+ *
+ * Y **eso es peor que un valor ilegible**: contra un ilegible se puede programar una barrera
+ * porque es detectable; contra un plazo plausible no hay síntoma ninguno.
+ *
+ * ⛔ NO se repara con un valor por defecto. Un `mesKey` que no existe no tiene un mes correcto
+ * que adivinar, y elegir uno convertiría un dato roto en un plazo legal inventado. Se **falla
+ * nombrando el valor**, que es lo único que permite arreglar el origen.
+ */
+// 🔴 SIN `export`, y lo pidió el guard de SCRUM-411 con razón: su único consumidor está en
+// ESTE fichero. Un export sin llamador de fuera es indistinguible de una función entregada, y así
+// estuvo meses `borrarMerchant`. Se prueba por la SUPERFICIE PÚBLICA —`fechaLimiteRecapitulativa`
+// y `avisoDeFacturacion`—, que es lo que de verdad usa alguien.
+class MesKeyInvalidoError extends Error {
+  constructor(public readonly mesKey: unknown) {
+    super(
+      `mesKey inválido: ${JSON.stringify(mesKey)}. Se esperaba «YYYY-MM» con mes entre 01 y 12. ` +
+      'No se normaliza a un mes vecino: un plazo del art. 13.2 calculado sobre un mes que no ' +
+      'existe sería un plazo inventado.',
+    );
+    this.name = 'MesKeyInvalidoError';
+  }
+}
+
+/**
+ * Las dos partes de un `mesKey`, **validadas antes de que nadie las normalice**.
+ *
+ * Un solo sitio, y no dos copias: `fechaLimiteRecapitulativa` y `avisoDeFacturacion` reciben el
+ * MISMO `mesKey` y lo troceaban cada una por su cuenta. Dos validaciones acaban divergiendo.
+ */
+function partesDelMesKey(mesKey: string): { y: number; m: number } {
+  if (typeof mesKey !== 'string' || !/^\d{4}-\d{2}$/.test(mesKey)) throw new MesKeyInvalidoError(mesKey);
+  const [y, m] = mesKey.split('-').map(Number);
+  if (!Number.isInteger(y) || !Number.isInteger(m) || m < 1 || m > 12) throw new MesKeyInvalidoError(mesKey);
+  return { y, m };
+}
+
+/**
  * Fecha límite legal de la recapitulativa para un mes natural dado (art. 13.2 RD 1619/2012):
  * último día del mes si PARTICULAR; día 16 del mes SIGUIENTE si EMPRESARIO. `mesKey` = "YYYY-MM"
  * (mismo formato que mesNaturalKey/groupByRotura). El desbordamiento de año (diciembre → enero)
@@ -45,9 +87,10 @@ export function resolveTipoDestinatario(customer: { tipoDestinatario?: string | 
  * lo pone `calcularSemaforo`.
  */
 export function fechaLimiteRecapitulativa(mesKey: string, tipo: TipoDestinatario): string {
-  const [y, m] = mesKey.split('-').map(Number); // m = mes 1-indexado (marzo = 3)
+  const { y, m } = partesDelMesKey(mesKey); // m = mes 1-indexado (marzo = 3)
   // `Date.UTC` normaliza el desbordamiento de año (diciembre → enero) solo, y en UTC no hay
-  // desfase que pueda mover el día: aquí sólo se hace cuenta de calendario.
+  // desfase que pueda mover el día: aquí sólo se hace cuenta de calendario. Con el mes ya
+  // validado, ese desbordamiento es el LEGÍTIMO (diciembre → enero) y ningún otro.
   const d = new Date(tipo === 'EMPRESARIO'
     ? Date.UTC(y, m, 16)   // día 16 del mes siguiente
     : Date.UTC(y, m, 0));  // día 0 del mes siguiente = último día del mes actual
@@ -123,7 +166,11 @@ export function avisoDeFacturacion(
   // 2) El ACUERDO después: su ciclo se ha cerrado y hay partes esperando.
   //    MENSUAL   → el mes natural del grupo ya terminó.
   //    QUINCENAL → además, desde el día 16 del propio mes (cerrada la primera quincena).
-  const [y, m] = mesKey.split('-').map(Number);
+  // 🔴 SCRUM-747 · LA MISMA PUERTA QUE ARRIBA, y era mi propio hueco declarado en SCRUM-648:
+  // esta función recibe el MISMO `mesKey` y decide SI AVISAR. Con un mes fuera de rango, el
+  // `dia16` salía como `2026-13-16` —ilegible— y `diasEntre` daba `NaN`: la comparación era falsa
+  // y **el aviso quincenal se perdía en silencio**. Si el semáforo miente, este aviso también.
+  const { y, m } = partesDelMesKey(mesKey);
   // Días del calendario, no instantes — igual que el plazo legal de arriba, y por lo mismo.
   const hoyDia = diaNaturalEn(hoy, zona);
   const finDeMes = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
