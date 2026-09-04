@@ -220,3 +220,90 @@ aparecido ninguno** que apagar — el tipo derivado del `select` describía la r
    eslabón y es más grande: el `job` viene de consultas sin `select` explícito. Queda para su turno.
 3. **`loadJobRefs(jobs: any[])`** y los `any` internos de la construcción de los `Map` no se han
    tocado: los `Map` se declaran tipados y eso basta para lo que LEE `serializeJob`.
+
+---
+
+## APÉNDICE (4-sep-2026, tarde) · El tercer eslabón: `serializeJob`
+
+**Medido contra:** `origin/main` = `7ac80025df1ca0fcc12bc61bf3c1a9025ceeb772` · 2026-09-04T18:40:00+02:00
+
+## 1 · El número que decidía el trabajo — y decía lo contrario de lo esperado
+
+El encargo temía que, sin `select`, no hubiera de dónde derivar el tipo. Medido:
+
+| | |
+| --- | :-: |
+| consultas que alimentan a `serializeJob` / `serializeJobDetail` | **5** |
+| de ellas, **con `select` explícito** | **0** |
+| 🔴 control positivo del recuento: `select:` en el fichero | **26** |
+
+**Ese cero lo hace más fácil, no más difícil.** Sin `select`, Prisma devuelve el **modelo entero**,
+y su tipo (`Job`) ya está generado. No había nada que derivar: el tipo estaba escrito desde el
+principio. **No hacía falta otro ticket.**
+
+## 2 · 🔴 El rojo, y el mecanismo viejo
+
+Campo elegido comprobando ANTES que TypeScript lo lee (`job.titulo`, usado en `serializeJob`):
+
+```
+DESPUÉS (job: Job) → tsc rc=2
+  jobs.routes.ts(305,43): error TS2551: Property 'tituloo' does not exist on type
+    '{ id: number; customerId: number; status: string; createdAt: Date; ... 7 more ...;
+       tipoIntervencion: string | null; }'. Did you mean 'titulo'?
+
+ANTES   (job: any)  → tsc rc=0 · 0 errores
+```
+
+**SUELO:** con un error deliberado, `tsc` sale `rc=2` y lo nombra. No estaba mudo.
+
+## 3 · CONTROL POSITIVO · las cinco, corridas
+
+| # | inyección | resultado |
+| :-: | --- | --- |
+| 1 | `status` por **`Map`** | `rc=2 · Property 'status' does not exist` |
+| 2 | `paymentTerms` por **callback** | `rc=2 · Property 'paymentTerms' does not exist` |
+| 3 | `internalNotes` por **desestructuración** | `rc=2 · Property 'internalNotes' does not exist` |
+| 4 | `total` en `job.service.ts` | `rc=2 · Property 'total' does not exist` |
+| 5 | `currency` de `QUOTE_SELECT` (717b) | `rc=2 · Property 'currency' does not exist` |
+
+Tipar el tercer eslabón no ha perdido detección en ninguno de los anteriores.
+
+**CONTROL NEGATIVO:** suite **5123 · 5039 pass · 0 fail** · 84 skipped · `tsc` 0 errores · **cero
+`as any` nuevos** en `src/`, y ninguno que apagar: el tipo describía la realidad.
+
+## 4 · 🔴 `serializeJobDetail` SE QUEDA EN `any`, y el motivo es un guard de otro carril
+
+`tests/scrum363-eje-de-cobro.test.mjs:108` fija **por texto** la firma:
+
+```js
+assert.match(rutas, /async function serializeJobDetail\(job: any\) \{\s*
+\s*const base = await serializeJob\(job\);/)
+```
+
+Tiparlo **hace caer ese guard sin que la propiedad se haya roto**: la delegación sigue ahí. Es un
+control anclado a la FORMA, no al hecho, y cobra un impuesto sobre mejorar el código.
+
+**Lo intenté y lo revertí.** Acotar el regex a `\(job: [^)]+\)` funciona —comprobado: sigue cazando
+la delegación rota— **pero desencadena una cascada de anclajes por posición**:
+
+1. mi comentario en `scrum363` desplaza seis líneas;
+2. `scrum553-etiquetas-pegadas` ancla `tests/scrum363-eje-de-cobro.test.mjs:133` y falla;
+3. actualizar ese número a `139` hace caer a **`scrum710b` · «los anclajes por NÚMERO DE LÍNEA no
+   crecen»**, que lo cuenta como un ancla nueva.
+
+**Tres ficheros de otros carriles para tipar una firma.** Se revirtieron los dos que llegué a tocar
+y `serializeJobDetail` se queda en `any` **con el motivo escrito en el propio código**.
+
+## 5 · Lo que queda, con su número
+
+- **1 firma sin tipar** (`serializeJobDetail`), bloqueada por 1 guard anclado a la forma
+  (`scrum363:108`) y 2 más en cascada (`scrum553:90`, `scrum710b`).
+- **`loadJobRefs(jobs: any[])`** y los `any` internos de la construcción de los `Map`.
+- Lo de siempre: **los campos que sólo consume el front** no los alcanza `tsc` (SCRUM-717 §7).
+
+## 6 · Hallazgo del camino — se reporta, no se arregla
+
+🔴 **El cliente de Prisma estaba desfasado** y dio un error que no era mío
+(`quotes.routes.ts:203 · discountGlobalAmount`). Medido: 2 apariciones en `schema.prisma`, **0 en
+el cliente generado**; tras `./node_modules/.bin/prisma generate` (binario local, nunca `npx`),
+134. El `node_modules` lo comparten cinco worktrees míos.
