@@ -479,24 +479,20 @@ const CENSO = Object.freeze({
   // `PENDIENTE_MODO_EMISION` — su rama `receipt` toca terreno de la regla 26 y esa pregunta se
   // responde SOLO con el guion H2, así que no se aprueba de refilón con el resto de la pantalla.
   'settingsView.js': 1,
-  // ── SCRUM-607 (ALB-02) · 4-sep-2026 · ENTRA A CONCIENCIA CON 2, Y CON EL NÚMERO DELANTE ─────
+  // ── SCRUM-607 (ALB-02) · 4-sep-2026 · ENTRÓ CON 2 Y SALIÓ EL MISMO DÍA ─────────────────
   //
-  // El interruptor que quita los precios del albarán que se entrega. Medido antes y después con
-  // este mismo trinquete, que es lo que se pide: SIN la entrada dijo `jobDetailView.js (+2)`, o
-  // sea que **el marcador SUBE el contador** y no es de los invisibles.
+  // Los dos literales del interruptor que quita los precios del albarán entraron con marcador por
+  // la mañana —comprobado con el número delante: el trinquete dijo `jobDetailView.js (+2)`— y el
+  // asesor los aprobó por la tarde: «Ocultar precios en el albarán» y «Tú sigues viendo los
+  // precios y puedes facturarlo.», con las cajas medidas a 929 y 390 px.
   //
-  // 🔴 SON DOS Y NO UNA, y no por descuido: el rótulo de la casilla y su nota dicen cosas
-  // DISTINTAS —«no enseñes los precios» y «el albarán los conserva, sólo deja de enseñarlos el
-  // papel»—. Colapsarlos en una sola constante haría que aprobar uno diera por aprobado el otro,
-  // que es justo lo que este fichero declara mal en su propio caso de `jobDetailView.js` de
-  // septiembre («ilegible» y «sin líneas» dirían LO MISMO y el suelo sería decorativo).
+  // La entrada se BORRA y no se pone a 0 (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista
+  // ficheros CON marcadores. COMPROBADO antes de borrarla: cero marcadores en el fichero.
   //
-  // La segunda es la que de verdad importa: sin ella, un profesional puede creer que marcar la
-  // casilla le BORRA los precios del albarán —y no: los conserva, y sigue pudiendo facturar—.
-  //
-  // El asesor firma el texto cuando el control exista y se le midan las cajas a 929 y 390 px.
-  // Ese día la entrada se BORRA, no se pone a 0 (SCRUM-424 / SCRUM-405).
-  'jobDetailView.js': 2,
+  // ⚠️ Que no quede marcador NO significa que estén firmados por el FUNDADOR: son del asesor y
+  // provisionales. Eso lo dice `ALB_OCULTAR_PRECIOS_SIN_APROBAR` en `jobDetailView.js`, y su
+  // registro vive en `docs/master/SCRUM-607.md` — nunca en `docs/microcopy/`, que es del fundador
+  // y `constaAprobado()` lo barre (SCRUM-726).
 });
 
 /** Marcadores que viven en un LITERAL (los que pueden pintarse). Los comentarios no son literales. */

@@ -1194,6 +1194,26 @@ model Albaran {
   invoiceId          Int?      @map("invoice_id")
   claveIdempotencia  String?   @map("clave_idempotencia") @db.VarChar(64)
 
+  /// SCRUM-607 (ALB-02) · el albarán CONSERVA sus precios y el DOCUMENTO que se entrega no los
+  /// enseña. Misma distinción que hace `docFields` en el presupuesto: decide qué muestra EL
+  /// PAPEL, no la pantalla. **No es `modoValoracion`**: aquél decide qué CONTIENE el albarán —en
+  /// `SIN_VALORAR` el backend rechaza una línea con precio y facturar devuelve 409—, así que
+  /// usarlo para ocultar precios le costaba la factura al profesional.
+  ///
+  /// Aditivo, default `false` = comportamiento actual intacto. Editable en `borrador` Y
+  /// `emitido`, congelado al FIRMAR (y ahí se aparta de `modoValoracion` a propósito: aquél
+  /// congela pronto porque cambia el IMPORTE; éste sólo cambia qué se imprime).
+  ///
+  /// 🔴 `@map` OBLIGATORIO Y MEDIDO, no heredado del comentario de al lado: `albaranes` es snake
+  /// al 100 % — 25 campos, 18 con `@map` y los 7 sin él de una sola palabra, donde camel y snake
+  /// coinciden. **Cero columnas camelCase de verdad.** `quotes`, en cambio, MEZCLA: 15 columnas
+  /// camelCase reales sin `@map` (`merchantId`, `createdAt`…). Sin el `@map`, Prisma buscaría
+  /// `ocultarPreciosEnDocumento` y esa columna no existe.
+  ///
+  /// NO entra en el sobre de la firma (SCRUM-452, que sigue en cinco campos): no cambia ni una
+  /// línea ni un importe, y el sello certifica el CONTENIDO canónico, no el PDF.
+  ocultarPreciosEnDocumento Boolean @default(false) @map("ocultar_precios_en_documento")
+
   @@unique([merchantId, claveIdempotencia])
   @@unique([merchantId, numero])
   @@index([merchantId, jobId])

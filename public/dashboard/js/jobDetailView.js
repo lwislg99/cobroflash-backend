@@ -333,12 +333,30 @@ const ALB_TABLA_COPY = {
 // igualmente en los dos casos —un pro con mala cobertura, de pie y con el cliente delante, NO
 // puede quedarse sin poder crear el documento (bloque H)— pero el producto NO MIENTE: cada caso
 // dice el suyo. Por eso `motivo` es un código distinto por caso y nunca `null` cuando falta algo.
-// ⚠️ SCRUM-607 (ALB-02) · MICROCOPY SIN APROBAR (regla 30). Los dos literales del interruptor
-// que quita los precios del papel. Salen de AQUI y de un solo sitio para que aprobarlos los
-// apague de golpe, y con la grafia que CUENTA el censo de SCRUM-402 — un marcador que el
-// trinquete no ve seria invisible justo para el mecanismo que existe para verlo.
-const ALB_OCULTAR_PRECIOS_ROTULO = '[PENDIENTE microcopy oficial] ocultar precios en el documento';
-const ALB_OCULTAR_PRECIOS_NOTA = '[PENDIENTE microcopy oficial] el albaran conserva sus precios; solo deja de ensenarlos el papel que se entrega';
+// ── SCRUM-607 (ALB-02) · los dos literales del interruptor que quita los precios del papel ──
+//
+// ✅ APROBADOS POR EL ASESOR el 4-sep-2026, PROVISIONALES a la espera de la firma del fundador.
+// El registro va en `docs/master/SCRUM-607.md` y NO en `docs/microcopy/`: ese directorio es el
+// registro del FUNDADOR y `constaAprobado()` lo barre (SCRUM-726), asi que meter ahi la firma
+// del asesor la haria pasar por la suya.
+//
+// 🔴 EL ROTULO NO DICE «EN EL PDF» pese a ser mas corto, y el motivo es del propio mecanismo: el
+// interruptor gobierna LAS DOS superficies —el papel y la pantalla que el cliente abre desde el
+// movil—, asi que «en el PDF» describiria la mitad del efecto. El profesional creeria que en el
+// movil si se ven.
+//
+// ⚠️ SIN MARCADOR en pantalla, mismo criterio que `quoteDireccionObra.js` y `filtroClientes.js`.
+// Que no se pinte el corchete NO significa que esten firmados por el fundador: eso lo dice
+// `ALB_OCULTAR_PRECIOS_SIN_APROBAR`, aqui debajo.
+const ALB_OCULTAR_PRECIOS_ROTULO = 'Ocultar precios en el albarán';
+const ALB_OCULTAR_PRECIOS_NOTA = 'Tú sigues viendo los precios y puedes facturarlo.';
+
+// Cuantas ranuras estrena esta pieza SIN la firma del fundador. DOS: el rotulo y su nota.
+//
+// Se queda aunque llegue a 0, por el motivo de `filtroClientes.js` y `quoteDireccionObra.js`: el
+// dia que el interruptor gane un tercer texto, ese texto nace sin firma y este numero tiene que
+// subir. Borrarlo dejaria el hueco sin sitio donde declararse.
+const ALB_OCULTAR_PRECIOS_SIN_APROBAR = 2;
 
 const ALB_MOTIVO = {
   VALORADO: 'valorado',                       // el backend exige precio; el presupuesto no lo trae

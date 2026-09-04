@@ -1057,8 +1057,7 @@ router.post('/:id/albaranes', async (req, res) => {
           // SCRUM-593 (DOC-03): si el PATCH lo guarda y el create no, lo que el profesional
           // teclea al crear se pierde EN SILENCIO — el defecto entero de SCRUM-424.
           docHeaderText,
-          // SCRUM-607 (ALB-02): ver arriba. `as any` en el `data` de abajo mientras la columna
-          // viva solo en el DDL — el schema de Prisma es del fundador.
+          // SCRUM-607 (ALB-02): ver arriba.
           ocultarPreciosEnDocumento,
           // ── SCRUM-424 · LO QUE SE ESCRIBE AL CREAR SE PERDÍA EN SILENCIO ──────────────────
           //
@@ -1076,7 +1075,7 @@ router.post('/:id/albaranes', async (req, res) => {
           lugarEntrega: normalizarLugarEntrega(req.body?.lugarEntrega),
           fechaEntrega: fechaEntregaAlCrear,
           claveIdempotencia: clave,
-        } as any,
+        },
       });
     });
 

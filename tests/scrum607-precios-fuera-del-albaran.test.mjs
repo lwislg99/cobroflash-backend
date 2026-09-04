@@ -339,6 +339,39 @@ test('SCRUM-607 · 🔴 el sobre de la firma NO ha crecido: sigue en CINCO campo
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // CONTROL NEGATIVO · cambiar un rótulo NO tumba nada
 // ─────────────────────────────────────────────────────────────────────────────────────────
+// LA MICROCOPY · aprobada por el ASESOR, provisional a la espera del fundador
+// ─────────────────────────────────────────────────────────────────────────────────────────
+test('SCRUM-607 · 🔴 los dos literales están aprobados, y el contador dice cuántos faltan por firmar', () => {
+  const vista = leer(VISTA);
+  // Sin marcador: el asesor los aprobó con las cajas medidas delante (929 y 390 px).
+  for (const c of ['ALB_OCULTAR_PRECIOS_ROTULO', 'ALB_OCULTAR_PRECIOS_NOTA']) {
+    const linea = vista.split('\n').find((l) => l.startsWith('const ' + c + ' ='));
+    assert.ok(linea, `🔴 CIEGO: no encuentro la constante \`${c}\``);
+    assert.equal(linea.includes('[PENDIENTE'), false,
+      `🔴 \`${c}\` ha vuelto a llevar marcador. Si el texto se retira, su entrada tiene que volver `
+      + 'al censo de SCRUM-402 en el mismo commit.');
+  }
+
+  // 🔴 Y EL CONTADOR, que es lo que distingue «sin marcador» de «firmado por el fundador» — la
+  // avería que SCRUM-726 acaba de cerrar un nivel más arriba. Son DOS ranuras y el número tiene
+  // que decirlo: si mañana entra un tercer texto sin firma y esto se queda en 2, el hueco deja
+  // de estar declarado y el texto entra en pantalla en silencio.
+  const m = vista.match(/const ALB_OCULTAR_PRECIOS_SIN_APROBAR = (\d+);/);
+  assert.ok(m, '🔴 no hay contador de ranuras sin firmar: «sin marcador» se leería como «aprobado»');
+  assert.equal(Number(m[1]), 2,
+    `🔴 el contador dice ${m[1]} y los literales del interruptor son 2. O ha entrado un texto `
+    + 'nuevo sin declararlo, o el fundador ha firmado y no se ha anotado.');
+
+  // 🔴 Y NO ESTÁN EN `docs/microcopy/`, que es el registro del FUNDADOR: `constaAprobado()` lo
+  // barre (SCRUM-726), así que meter ahí la firma del asesor la haría pasar por la suya.
+  const dir = path.join(RAIZ, 'docs/microcopy');
+  const registros = fs.existsSync(dir) ? fs.readdirSync(dir) : [];
+  assert.equal(registros.some((f) => f.includes('607')), false,
+    '🔴 hay un registro de SCRUM-607 en `docs/microcopy/`. Esta aprobación es del ASESOR y '
+    + 'provisional: su sitio es `docs/master/SCRUM-607.md`. En ese directorio se leería como la '
+    + 'firma del fundador.');
+});
+
 test('SCRUM-607 · CONTROL NEGATIVO: el texto del rótulo no decide nada', async () => {
   // Los tests de arriba miran DINERO y MECANISMO, no copy. Si aprobar el microcopy —que es lo
   // siguiente que va a pasar aquí— tumbara alguno, sería un guard atado a lo que no le toca, y el
@@ -354,7 +387,7 @@ test('SCRUM-607 · CONTROL NEGATIVO: el texto del rótulo no decide nada', async
   // SCRUM-203, y el idioma de la casa para salir de ella es éste (`scrum702` hace lo mismo con
   // sus señales de entorno).
   const yo = leer('tests/scrum607-precios-fuera-del-albaran.test.mjs');
-  assert.equal(yo.includes('ocultar precios' + ' en el documento'), false,
+  assert.equal(yo.includes('Ocultar precios' + ' en el albarán'), false,
     '🔴 este fichero fija el TEXTO del rótulo. Aprobar el microcopy lo pondría rojo, y ese rojo no '
     + 'significaría nada sobre los precios del albarán.');
 

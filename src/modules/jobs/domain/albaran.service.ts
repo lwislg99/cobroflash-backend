@@ -753,7 +753,7 @@ export function serializeAlbaran(a: any) {
     // SCRUM-607 (ALB-02) · el interruptor del papel. El serializador es una lista BLANCA: sin
     // esta linea el formulario saldria siempre desmarcado y la siguiente edicion lo apagaria
     // sola — el mismo defecto que describe `docHeaderText` justo arriba.
-    ocultarPreciosEnDocumento: (a as any).ocultarPreciosEnDocumento === true,
+    ocultarPreciosEnDocumento: a.ocultarPreciosEnDocumento === true,
     // SCRUM-300 (C5). ⚠️ `evidenciaFirma` sigue SIN salir de aquí: lleva ip/ua (dato personal).
     // Estos cuatro son contenido del documento, no evidencia técnica.
     // null = «No se pidió al firmar»: son los albaranes anteriores a esta tarea, y el front lo
@@ -879,10 +879,10 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
     docHeaderText: (albaran as any).docHeaderText ?? null,
     // SCRUM-607 (ALB-02) · el interruptor del papel y la trazabilidad que viene con el.
     //
-    // `as any` como `docHeaderText` de la linea de arriba: la columna se aplica por DDL y el
-    // schema de Prisma es del fundador. Mientras no este, esto vale `undefined` y el decisor
-    // devuelve exactamente el comportamiento de hoy — no hay estado intermedio raro.
-    ocultarPreciosEnDocumento: (albaran as any).ocultarPreciosEnDocumento === true,
+    // ✅ SIN `as any`: la columna esta aplicada en las tres bases y el campo vive en el schema
+    // con su `@map("ocultar_precios_en_documento")`. Ese `@map` NO es decorativo — medido:
+    // `albaranes` es snake al 100 %, y preguntar en camel falla con 42703.
+    ocultarPreciosEnDocumento: albaran.ocultarPreciosEnDocumento === true,
     presupuestoRef: referenciaPresupuesto(
       quoteOrigen ? { id: quoteOrigen.id, number: quoteOrigen.quoteNumber ?? quoteOrigen.id } : null,
     ),

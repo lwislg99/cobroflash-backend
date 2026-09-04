@@ -261,7 +261,7 @@ router.get('/:token', async (req: Request, res: Response) => {
   // SCRUM-607 (ALB-02): el interruptor viaja tambien a la pantalla que el cliente abre desde el
   // movil. Si el PDF los oculta y esta no, el cliente los ve igual y el control no oculta nada.
   const linesHtml = renderLineasAlbaran(
-    albaran.lineas, albaran.modoValoracion, (albaran as any).ocultarPreciosEnDocumento,
+    albaran.lineas, albaran.modoValoracion, albaran.ocultarPreciosEnDocumento,
   );
 
   return html('Firmar parte de trabajo', `
