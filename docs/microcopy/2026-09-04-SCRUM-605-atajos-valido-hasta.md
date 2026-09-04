@@ -1,9 +1,18 @@
 # Los tres atajos de «Válido hasta» del presupuesto
 
-**Aprobado por el ASESOR** el 4-sep-2026, en **SCRUM-605** (DOC-15).
-**A la espera de la firma del fundador** — esto no es su firma, y queda dicho aquí para que nadie
-lo lea como tal.
+**Aprobado por el fundador** el 4-sep-2026, en **SCRUM-605** (DOC-15) — firma confirmada al
+despachar SCRUM-726.
 **Aplicado en el mismo acto** (regla 30).
+
+> ⚠️ **Cómo estaba escrito antes, y por qué se corrige.** Nació diciendo «Aprobado por el **ASESOR**»
+> y añadía, con toda razón, «a la espera de la firma del fundador — esto no es su firma». **El
+> fichero era escrupuloso: el defecto estaba en `constaAprobado()`**, que lo contaba como aprobación
+> igualmente, porque sólo miraba que el texto estuviera escrito en `docs/microcopy/` y **no quién lo
+> firmaba**. La regla 30 dice que la microcopy la aprueba el fundador; el guard comprobaba que
+> alguien la hubiera escrito. Dos afirmaciones distintas con el mismo verde.
+>
+> La firma del fundador llegó, así que **la aprobación no se retira**: se corrige la línea que la
+> atribuía mal, y el hueco del guard se cierra en SCRUM-726.
 
 ## Texto aprobado, literal
 
