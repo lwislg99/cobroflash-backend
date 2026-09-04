@@ -29,21 +29,77 @@ import fs from 'node:fs'; // SCRUM-193: `leerFuente` LEE, no solo filtra
 // ─────────────────────────────────────────────────────────────────────────────────────────
 
 /**
- * Devuelve el fuente sin las líneas de comentario. Cubre las tres formas que usa este repo:
- * `//` (JS/TS), `#` (YAML/shell) y los bloques `/* … *\/` (JSDoc y cabeceras largas).
+ * Devuelve el fuente sin comentarios. Cubre las tres formas que usa este repo: `//` (JS/TS),
+ * `#` (YAML/shell) y los bloques `/* … *\/` (JSDoc y cabeceras largas).
  *
- * NO es un parser: no distingue un `//` dentro de un string de un comentario de verdad. Es
- * deliberado — un parser aquí sería más código que lo que vigila, y el caso que importa (el
- * literal escrito en la prosa que explica la prohibición) queda cubierto. Lo que no cubre
- * queda dicho aquí en vez de descubrirse en un rojo raro.
+ * ── SCRUM-700 · QUÉ CAMBIÓ, Y POR QUÉ LA DOCUMENTACIÓN DE ANTES ERA PEOR QUE EL CÓDIGO ──────
+ *
+ * Aquí ponía «no distingue un `//` dentro de un string de un comentario de verdad», y **eso
+ * describía un riesgo que esta función no tenía**: sólo borraba líneas ENTERAS que empezaban por
+ * `//`, así que jamás cortaba dentro de una cadena. Lo que sí tenía —y no estaba escrito— era el
+ * hueco contrario: **un comentario al final de una línea con código SOBREVIVÍA**. Medido con una
+ * sonda: `const x = 1; // PALABRA` salía con la PALABRA dentro. Y ése es justo el caso que este
+ * fichero existe para cerrar, porque el sitio natural donde se escribe el literal prohibido es
+ * el comentario que explica la prohibición — mordió cuatro veces.
+ *
+ * Ahora se recorre el fuente **carácter a carácter**, llevando la cuenta de si estamos dentro de
+ * una cadena (`'`, `"`, `` ` ``) o de un bloque. Un `//` sólo abre comentario **fuera** de una
+ * cadena, así que `'https://yaqu.app'` deja de partirse por la mitad y el comentario final sí se
+ * va. Nada de ventanas: se lee el documento entero.
+ *
+ * LO QUE SIGUE SIN CUBRIR, dicho aquí en vez de descubrirse en un rojo raro: un `//` **sin
+ * escapar dentro de un literal de expresión regular**. En este repo no aparece —las regex
+ * escriben `\/\/`— y distinguir una regex de una división pide un parser de verdad. Y ojo con
+ * ese parser: `ts.createScanner` a pelo NO sirve, medido en SCRUM-700 — ve 148 de los 352
+ * comentarios de `src/app.ts` porque sin contexto no sabe si un `/` abre regex o divide.
  */
 export function soloEjecutable(fuente, { almohadillaEsComentario = true } = {}) {
-  const sinBloques = fuente.replace(/\/\*[\s\S]*?\*\//g, '');
-  const patron = almohadillaEsComentario ? /^\s*(\/\/|#)/ : /^\s*\/\//;
-  return sinBloques
-    .split('\n')
-    .filter((l) => !patron.test(l))
-    .join('\n');
+  const n = fuente.length;
+  let out = '';
+  let i = 0;
+  let comilla = null;      // `'`, `"` o `` ` `` mientras estemos dentro de una cadena
+  let inicioDeLinea = true; // para saber si el `#` abre comentario de línea entera
+
+  while (i < n) {
+    const c = fuente[i];
+    const d = fuente[i + 1];
+
+    if (comilla) {
+      out += c;
+      if (c === '\\') { if (i + 1 < n) out += fuente[i + 1]; i += 2; continue; }
+      if (c === comilla) comilla = null;
+      if (c === '\n') { comilla = null; inicioDeLinea = true; } // una cadena no cruza de línea
+      i += 1;
+      continue;
+    }
+
+    if (c === '/' && d === '*') {
+      const fin = fuente.indexOf('*/', i + 2);
+      i = fin < 0 ? n : fin + 2;   // sin cerrar: comenta hasta el final, como hace el motor
+      continue;
+    }
+    // Un `/` ESCAPADO no abre comentario. Sin esto, un literal de regex que acaba en `\/` —como
+    // `/https:\/\//`— junta su última barra escapada con la de cierre y parece un `//`. Medido:
+    // era el único de las nueve sondas que fallaba.
+    if (c === '/' && d === '/' && fuente[i - 1] !== '\\') {
+      while (i < n && fuente[i] !== '\n') i += 1;
+      continue;                     // el `\n` se copia en la vuelta siguiente
+    }
+    if (c === '#' && almohadillaEsComentario && inicioDeLinea) {
+      while (i < n && fuente[i] !== '\n') i += 1;
+      continue;
+    }
+
+    if (c === "'" || c === '"' || c === '`') comilla = c;
+    if (c === '\n') inicioDeLinea = true;
+    else if (!/\s/.test(c)) inicioDeLinea = false;
+
+    out += c;
+    i += 1;
+  }
+
+  // Las líneas que sólo tenían un comentario quedan vacías: se quitan, como hacía antes.
+  return out.split('\n').filter((l, k, todas) => l.trim() !== '' || k === todas.length - 1).join('\n');
 }
 
 /**
