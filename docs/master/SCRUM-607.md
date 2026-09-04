@@ -1,6 +1,6 @@
 # SCRUM-607 · ALB-02 · Ocultar precios en el albarán
 
-**Medido contra:** `origin/main` = `a3b2987640ae2e5274cf304f433600a4e3ac8302` · 2026-09-04T17:44:30+01:00
+**Medido contra:** `origin/main` = `1304643497934441f88950e441182b7e344dbb57` · 2026-09-04T20:01:01+01:00
 
 > **FASE A** (la medición y la columna) va abajo, tal y como se entregó. **FASE B** —lo
 > construido, con el GO del asesor y sus tres decisiones— va aquí arriba.
@@ -48,6 +48,71 @@ ALB-02. Se pudo imprimir sin entrar en el sobre —lo que había que comprobar a
 porque va en el mismo cajón que `merchant.address` o `notas`: cosas sobre las que el sello no
 afirma nada y que por eso no pueden contradecirlo. **Hay un guard que fija los cinco campos.**
 
+## La columna, APLICADA — y la grafía, MEDIDA antes de fiarme del `@map`
+
+**El ALTER está en las tres bases.** Confirmado por el asesor en staging (`7661649868329066548`) y
+producción (`7641555058757427243`), con su control de tipo distinto (`created_at → timestamp`), y
+aplicado por mí en **dev** (`yaqu_dev_javier`) por el mecanismo de la casa —`exigirDestinoCorrecto`
+delante, sin parsear la URL a mano y sin imprimir ninguna cadena de conexión—:
+
+```
+columnas de `albaranes` ANTES:  25   (¿está la nueva? 0)
+  → ALTER aplicado
+columnas de `albaranes` DESPUÉS: 26   (¿está la nueva? 1)
+```
+
+### 🔴 `albaranes` NO mezcla convenciones — y eso se mide, no se hereda
+
+La lección de SCRUM-602 es que una tabla **puede** mezclarlas. Medido sobre `schema.prisma`, campo
+a campo:
+
+| tabla | campos | con `@map` | camelCase **de verdad** (sin `@map` y multi-palabra) |
+|---|---|---|---|
+| **`albaranes`** | 25 | 18 | **ninguno** — los 7 sin `@map` son de una sola palabra (`id`, `numero`, `fecha`, `lineas`, `estado`, `version`, `notas`), donde camel y snake coinciden |
+| `quotes` | 47 | 18 | **15** (`merchantId`, `createdAt`, `pdfUrl`, `chargeId`…) |
+
+O sea: **`albaranes` es snake al 100 %** y `quotes` sí mezcla. El comentario del schema ya lo decía
+de pasada; ahora está **medido**, que es otra cosa.
+
+### El control negativo de la grafía, contra dev
+
+Escribir por **Prisma** (en camel, que traduce el `@map`), leer por **SQL crudo** (en snake), y
+comprobar que preguntar en **camel falla**:
+
+```
+① escrito por PRISMA (camel)   → id 173 · ocultarPreciosEnDocumento = true
+② leído por SQL CRUDO (snake)  → {"v":true}
+③ preguntado en CAMEL          → FALLA ✅  column "ocultarPreciosEnDocumento" does not exist  (42703)
+④ columnas reales que casan    → ocultar_precios_en_documento
+
+POST-CONDICIÓN · fila de prueba borrada: sí
+```
+
+**Sin el `@map`, Prisma habría buscado `ocultarPreciosEnDocumento` y esa columna no existe.** El
+error `42703` es la prueba, no el razonamiento.
+
+### Los tres censos que movió la columna
+
+Añadir una columna no es añadir una columna: hay tres censos que la cuentan y los tres saltaron.
+Ninguno se ensanchó — cada uno pedía una respuesta concreta:
+
+| censo | qué pedía | qué se decidió |
+|---|---|---|
+| **SCRUM-302** · duplicar | clasificar el campo en UNO de los dos cubos | **VIAJA**, por el mismo motivo que `modoValoracion`: es una **decisión** sobre el parte, no un hecho ocurrido sobre el anterior |
+| **SCRUM-222** · deriva de producción | regenerar `docs/sql/deriva-prod.sql` | **420 → 421 columnas** |
+| **SCRUM-461** · el censo no encoge | la columna estaba en el schema y **no** en el SQL del censo | mismo arreglo: el censo dejaría de preguntar por ella y respondería «en sync» justo sobre la que le falta |
+
+> 🔴 **La de SCRUM-302 es la que tenía respuesta que pensar**, y el caso real la decide: un
+> profesional que entrega sin precios a un cliente lo hace con **todos** sus albaranes, no con uno.
+> Si el campo no viajara, el duplicado saldría con los márgenes a la vista y lo descubriría cuando
+> el papel ya está entregado.
+
+### El hueco declarado, CERRADO
+
+Los cuatro `as any` que existían **porque la columna sólo vivía en el DDL** se han retirado:
+`ensureAlbaranPdf`, `serializeAlbaran`, la ruta pública y el `create` del alta leen y escriben el
+campo por su nombre. Ya no queda ningún estado intermedio.
+
 ## El DDL — generado sobre una COPIA, sin tocar `prisma/schema.prisma`
 
 Con el mecanismo de la casa (`previewMigracion`, binario local y control positivo dentro,
@@ -61,23 +126,25 @@ ALTER TABLE "albaranes" ADD COLUMN     "ocultar_precios_en_documento" BOOLEAN NO
 ```
 
 Aditivo y con default: los albaranes que ya existen no cambian. Orden: **staging →
-`yaqu_dev_javier` → producción**. **No lo he ejecutado yo**, y el schema del repo quedó intacto
-(comprobado tras generar la copia).
+`yaqu_dev_javier` → producción**.
 
-⚠️ **Mientras la columna viva sólo en el DDL**, el cliente de Prisma no la conoce: se lee con
-`as any` —el mismo idioma que `docHeaderText` usa dos líneas más arriba— y el decisor devuelve
-entonces **exactamente el comportamiento de hoy**. No hay estado intermedio raro.
+⚠️ **En FASE A esto era una propuesta y el schema no se tocó.** El DDL se generó contra una copia
+para poder enseñarlo sin escribir en `prisma/schema.prisma`; el campo entró después, ya con el GO
+y con el ALTER firmado para las tres bases — el mismo camino que siguió SCRUM-602 con sus cuatro
+columnas.
 
 ## Lo construido
 
 | pieza | qué hace |
 |---|---|
+| `prisma/schema.prisma` | el campo `ocultarPreciosEnDocumento`, con su `@map` medido |
 | `src/modules/jobs/domain/albaranPrecios.ts` | **nuevo** · el decisor (`documentoEnsenaPrecios`), el candado (`sePuedeCambiarOcultarPrecios`) y la referencia (`referenciaPresupuesto`). Puro |
 | `albaranPdf.service.ts` | el booleano sale del decisor; el pie imprime de qué presupuesto sale |
 | `albaranPublicVista.ts` + `albaranPublic.routes.ts` | la pantalla del cliente, **con el mismo decisor** y recibiendo el interruptor |
 | `albaran.service.ts` | resuelve el presupuesto de origen y pasa los dos parámetros; el serializador expone el interruptor |
 | `albaranes.routes.ts` (PATCH) · `jobs.routes.ts` (POST) | guardan el interruptor, con su candado y booleano estricto |
 | `jobDetailView.js` | la casilla en el editor, visible sólo con precios y hasta `emitido` |
+| `albaranDuplicado.ts` · `docs/sql/deriva-prod.sql` | los tres censos que movió la columna |
 
 **Ni una columna nueva en la tabla del PDF**: los anchos alternativos (62/18/20 %) existían desde
 SCRUM-65 y suman 100 %. Se reutiliza el reparto; sólo cambia de dónde sale el booleano.
@@ -120,7 +187,37 @@ los bytes de disco — SCRUM-570) y `git status` limpio después:
 > El rojo **cuenta y nombra** lo que se coló, que es lo que pedía el encargo: no dice «falla», dice
 > cuántas señales de precio hay en un papel que no debe llevar ninguna.
 
-## Microcopy — medido, sin firmar
+## ✅ MICROCOPY · APROBADA POR EL ASESOR el 4-sep-2026 — provisional
+
+**Éste es su registro.** Va aquí y **NO en `docs/microcopy/`**: ese directorio es el registro del
+**fundador** y `constaAprobado()` lo barre (SCRUM-726), así que meter ahí la firma del asesor la
+haría pasar por la suya. Hay un guard en `scrum607` que comprueba que no existe tal fichero.
+
+| ranura | texto aprobado |
+|---|---|
+| rótulo de la casilla | **«Ocultar precios en el albarán»** |
+| nota bajo la casilla | **«Tú sigues viendo los precios y puedes facturarlo.»** |
+
+**Se descartó «Ocultar precios en el PDF»** pese a ser 20 px más corto, y el motivo es del propio
+mecanismo: el interruptor gobierna **las dos superficies** —el papel y la pantalla que el cliente
+abre desde el móvil—, así que «en el PDF» describiría la mitad del efecto y el profesional creería
+que en el móvil sí se ven.
+
+**Contador declarado**: `ALB_OCULTAR_PRECIOS_SIN_APROBAR = 2` en `jobDetailView.js`. Que no se
+pinte el corchete **no** significa que estén firmados por el fundador — eso lo dice el contador,
+y hay un guard que exige que cuadre con el número de literales. Se queda aunque llegue a 0, por el
+motivo de `filtroClientes.js` y `quoteDireccionObra.js`: el día que entre un tercer texto, nace sin
+firma y este número tiene que subir.
+
+**Censo de SCRUM-402**: la entrada `jobDetailView.js: 2` entró por la mañana —comprobado con el
+número delante, el trinquete dijo `(+2)`— y **se BORRA** por la tarde, no se pone a 0 (SCRUM-424 /
+SCRUM-405). Comprobado antes de borrarla: **cero marcadores en literales** del fichero.
+
+**Sigue con marcador**, y no se toca: `ROTULO_PRESUPUESTO_ORIGEN` en `albaranPrecios.ts` — el pie
+del papel. Ése no estaba en la firma del asesor, así que mantiene su `[PENDIENTE` y su entrada en
+`CENSO_SERVIDOR` / `EN_EL_PAPEL` de SCRUM-667.
+
+## Microcopy — las cajas que sostienen esa firma
 
 Navegador real, CSS de verdad (`tokens.css` + `styles.css`), la cadena `.modal-overlay > .modal >
 .modal-body` que es donde vive el editor.
@@ -150,12 +247,14 @@ ninguno de los dos**.
 | `El albarán conserva sus precios: sólo deja de enseñarlos el papel que entregas.` | 413,5 px | ✅ | ❌ (dos líneas) |
 | `Tú sigues viendo los precios y puedes facturarlo.` | 255,8 px | ✅ | ✅ |
 
-> Son **medidas, no propuestas de copy**. El asesor firma; yo no invento ningún literal.
+> Son **medidas, no propuestas de copy**. ✅ **De esta tabla salieron los dos aprobados**:
+> «Ocultar precios en el albarán» (164,0 px) y «Tú sigues viendo los precios y puedes facturarlo.»
+> (255,8 px) — la única de las notas que cabe a 390 px.
 
-**El censo, con el número delante.** Los dos literales salen con `[PENDIENTE`, la grafía que
-SCRUM-402 cuenta. Comprobado en las dos direcciones: **sin declararlo, el trinquete dijo
-`jobDetailView.js (+2)`** — o sea que el marcador **sube** el contador y no es de los invisibles.
-Declarado con motivo: **13 → 14 ficheros**.
+**El censo, con el número delante.** Los dos literales salieron primero con la grafía que SCRUM-402
+cuenta, y el trinquete lo confirmó: **sin declararlos dijo `jobDetailView.js (+2)`** — o sea que el
+marcador **sube** el contador y no es de los invisibles. Con la firma del asesor esa misma tarde la
+entrada **se borra**, y el fichero vuelve a cero marcadores en literales.
 
 **Son DOS y no una a propósito**: el rótulo y la nota dicen cosas distintas, y colapsarlos haría
 que aprobar uno diera por aprobado el otro. La segunda es la que importa: sin ella un profesional
@@ -186,10 +285,20 @@ pudiendo facturar.
 
 ## Huecos declarados
 
-* **La columna todavía no está aplicada.** Hasta que el ALTER corra en las tres y el schema la
-  recoja, el interruptor se guarda pero no vuelve en la fila, y todo se comporta como hoy —
-  por construcción, no por suerte.
-* El texto de los dos literales **no está aprobado**. Las cajas ya están medidas arriba.
+Los dos que declaró la primera entrega **están cerrados**, y se deja escrito para que no parezca
+que se olvidaron:
+
+* ~~La columna todavía no está aplicada~~ → **aplicada en las tres**, y los cuatro `as any` que
+  vivían de ese hueco, retirados.
+* ~~El texto de los dos literales no está aprobado~~ → **aprobados por el asesor**, con las cajas
+  medidas delante. **Provisionales**: siguen esperando la firma del fundador, y quien lo dice es
+  `ALB_OCULTAR_PRECIOS_SIN_APROBAR = 2`, no la ausencia de corchete.
+
+Lo que sigue abierto:
+
+* **`ROTULO_PRESUPUESTO_ORIGEN` sigue con marcador** y se imprime en el pie del papel que recibe
+  el cliente. No entraba en la firma del asesor. Declarado en `CENSO_SERVIDOR` y `EN_EL_PAPEL`.
+* **La firma del fundador** sobre los dos literales del interruptor.
 
 ---
 
