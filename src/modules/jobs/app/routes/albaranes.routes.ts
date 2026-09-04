@@ -67,6 +67,7 @@ import {
 // SCRUM-195: el número del adicional se reserva DENTRO de su transacción, igual que el del alta.
 import { allocateQuoteNumber } from '../../../quotes/domain/quoteNumber.service';
 import { sePuedeCambiarOcultarPrecios } from '../../domain/albaranPrecios'; // SCRUM-607 (ALB-02)
+import { veredictoAlbaranSinPresupuesto } from '../../domain/albaranSinPresupuesto'; // SCRUM-684
 
 const router = Router();
 
@@ -512,6 +513,23 @@ router.patch('/:id', async (req, res) => {
     }
 
     if (req.body?.lineas !== undefined) {
+      // 🔴 SCRUM-684 · LA OTRA PUERTA, QUE NO TENÍA GUARD NINGUNO.
+      //
+      // Medido: el `POST` traía el `job_without_quote` y este `PATCH` **no**. O sea que el agujero
+      // que aquel guard decía tapar ya estaba abierto por aquí — un albarán anterior al guard se
+      // podía parchear con cualquier `quoteLineIndex` y nada lo validaba, porque
+      // `contarLineasDePresupuesto` devuelve `undefined` sin presupuesto y entonces `validarLineas`
+      // **conserva el índice tal cual**.
+      //
+      // El invariante es el mismo en las dos: ninguna línea puede decir que viene de un
+      // presupuesto que no existe. Una avería sin líneas enlazadas pasa por las dos.
+      const jobDelAlbaran = await prisma.job.findFirst({
+        where: { id: albaran.jobId, merchantId: req.merchantId }, select: { quoteId: true },
+      });
+      const vOrigen = veredictoAlbaranSinPresupuesto(jobDelAlbaran?.quoteId != null, req.body.lineas);
+      if (!vOrigen.ok) {
+        return res.status(409).json({ error: vOrigen.error, message: vOrigen.message });
+      }
       // SCRUM-367: mismo rango real que al crear. ESTE es el punto donde el índice se perdía.
       const nLineasQuote = await contarLineasDePresupuesto(albaran.jobId, req.merchantId!);
       const v = validarLineas(req.body.lineas, modoEfectivo, nLineasQuote);
