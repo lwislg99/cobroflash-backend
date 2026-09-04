@@ -51,33 +51,60 @@ function totalDelDesglose(lineas) {
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
 /**
- * Los caminos que FIJAN el `total` de una factura, medidos uno a uno (SCRUM-624 fase B).
- * `comoCalcula` ejecuta lo que ese camino ejecuta — no lo imita: importa la misma función.
+ * 🔴 EL MOTOR DE UN CAMINO SE DERIVA DE SU CÓDIGO, NO SE ESCRIBE A MANO.
+ *
+ * La primera versión de este fichero declaraba a mano cómo calcula cada camino. Eso comprobaba mi
+ * transcripción, no el producto: al inyectar el mecanismo viejo, este test **siguió verde** y solo
+ * cayó el estructural. Una tautología con pinta de invariante.
+ *
+ * Ahora se LEE el bloque del camino y se elige el motor que de verdad invoca.
  */
+function motorDe(bloque) {
+  if (/calcVatBreakdown\s*\(/.test(bloque)) return (l) => totalDelDesglose(l).total;
+  if (/totalDeFacturables\s*\(/.test(bloque)) {
+    return (l) => totalDeFacturables(l.map((x) => ({ cantidad: x.qty, precioUnitario: x.price, tax: x.tax })));
+  }
+  if (/calcTotal\s*\(/.test(bloque)) return (l) => calcTotal(l).toFixed(2);
+  return null;   // no se adivina: quien lo reciba se declara ciego
+}
+
 const CAMINOS = [
   {
     nombre: 'C7-albaran · albarán → factura (el de Tecnosel)',
     donde: 'src/modules/jobs/app/routes/albaranes.routes.ts',
     ancla: 'origen: \'C7-albaran\'',
-    comoCalcula: (l) => totalDelDesglose(l).total,
+    bloque: (fuente) => {
+      const fin = fuente.indexOf("origen: 'C7-albaran'");
+      const ini = fuente.lastIndexOf('const invoiceLines', fin);
+      return ini > 0 && ini < fin ? fuente.slice(ini, fin) : null;
+    },
   },
   {
     nombre: 'albarán parcial',
     donde: 'src/modules/jobs/app/routes/albaranes.routes.ts',
     ancla: 'calcVatBreakdown(invoiceLines)',
-    comoCalcula: (l) => totalDelDesglose(l).total,
+    bloque: (fuente) => {
+      const i = fuente.indexOf('calcVatBreakdown(invoiceLines)');
+      return i > 0 ? fuente.slice(Math.max(0, i - 400), i + 200) : null;
+    },
   },
   {
     nombre: 'recapitulativa',
     donde: 'src/modules/jobs/domain/recapitulativa.service.ts',
     ancla: '(bd.base + bd.cuota).toFixed(2)',
-    comoCalcula: (l) => totalDelDesglose(l).total,
+    bloque: (fuente) => {
+      const i = fuente.indexOf('(bd.base + bd.cuota).toFixed(2)');
+      return i > 0 ? fuente.slice(Math.max(0, i - 400), i + 200) : null;
+    },
   },
   {
     nombre: 'presupuesto → factura',
     donde: 'src/modules/quotes/app/routes/quotes.routes.ts',
     ancla: 'calcTotal(',
-    comoCalcula: (l) => calcTotal(l).toFixed(2),
+    bloque: (fuente) => {
+      const i = fuente.indexOf('calcTotal(');
+      return i > 0 ? fuente.slice(Math.max(0, i - 300), i + 200) : null;
+    },
   },
 ];
 
@@ -100,10 +127,21 @@ test('SCRUM-624c · 🔴 los CUATRO caminos guardan un total reconstruible desde
   const { total: vara, base, cuota } = totalDelDesglose(LINEAS);
 
   const rotos = [];
+  const ciegos = [];
   for (const c of CAMINOS) {
-    const suyo = c.comoCalcula(LINEAS);
+    const bloque = c.bloque(codigoDe(c.donde));
+    if (!bloque) { ciegos.push(`${c.nombre}: no acoto su bloque`); continue; }
+    const motor = motorDe(bloque);
+    if (!motor) { ciegos.push(`${c.nombre}: no reconozco qué motor usa`); continue; }
+    const suyo = motor(LINEAS);
     if (suyo !== vara) rotos.push(`${c.nombre}: guarda ${suyo} · Σ(base+cuota) = ${vara}`);
   }
+
+  // SUELO: «no supe leer el camino» y «el camino cuadra» son el mismo verde y significan lo
+  // contrario. Un camino ilegible se declara, no se aprueba.
+  assert.deepEqual(ciegos, [],
+    '🔴 CIEGO: no se ha podido derivar el motor de estos caminos:\n    ' + ciegos.join('\n    ') +
+    '\n\n  Si no se lee cómo calculan, este test no está midiendo el producto.');
 
   assert.deepEqual(rotos, [],
     '🔴 HAY UN CAMINO QUE GUARDA UN TOTAL QUE NO CUADRA CON SU PROPIO DESGLOSE:\n    ' +
