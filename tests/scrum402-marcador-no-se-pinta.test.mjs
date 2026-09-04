@@ -479,8 +479,20 @@ test('SCRUM-402 · R6 · SUELO: el escáner encuentra la ranura `btnBizum` y el 
     'se movió — en los dos casos los tests de abajo dejarían de vigilar el botón y saldrían verdes ' +
     'por no encontrar nada. ARREGLA EL ESCÁNER, no el número.');
 
+  // 🔴 EL NÚMERO SE DERIVA, NO SE ESCRIBE (SCRUM-710). Aquí ponía «hay 36 medidos» cuando el censo
+  // sumaba 13: un número escrito a mano no miente el día que se escribe, sólo envejece — y éste
+  // llevaba tiempo haciéndolo. Se deriva del CENSO declarado, que es justo lo que el trinquete de
+  // abajo obliga a mantener al día.
+  //
+  // Ojo con la distinción, que no es la misma para todos los números de este fichero: esto es una
+  // AFIRMACIÓN DE CANTIDAD y por eso se deriva. Los SUELOS DE ALCANCE («>= 100 ficheros leídos»)
+  // se escriben a mano a propósito: derivarlos haría que añadir un fichero subiera el listón solo,
+  // y el suelo dejaría de poder caer nunca (la lección que SCRUM-377 dejó escrita).
+  const declarado = Object.values(CENSO).reduce((a, b) => a + b, 0);
   const total = Object.values(censoActual()).reduce((a, b) => a + b, 0);
-  assert.ok(total > 0, '🔴 ESCÁNER CIEGO: cero marcadores en literales. Imposible: hay 13 medidos (SCRUM-402, 3-sep-2026: el número venía diciendo 36 desde una medición vieja y se ajusta AL MEDIDO, no al esperado).');
+  assert.ok(total > 0,
+    `🔴 ESCÁNER CIEGO: cero marcadores en literales, y el censo declara ${declarado}. `
+    + 'ARREGLA EL ESCÁNER, no el número.');
 });
 
 // ── R1/R2/R3 · EL BOTÓN Y SU RANURA ─────────────────────────────────────────────────────────
