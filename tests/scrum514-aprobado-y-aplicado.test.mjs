@@ -137,6 +137,33 @@ function corpus() {
  */
 const APARCADOS = [
   {
+    texto: 'Válido hasta dentro de 7 días',
+    motivo: 'CONSTRUIDO Y SIN CABLEAR (SCRUM-605, 4-sep-2026). El nombre accesible existe en '
+      + '`quoteAtajosVencimiento.js` (`nombreAccesibleDeAtajo`) pero la vista pone el MISMO '
+      + 'texto en el rotulo y en el `aria-label` con una sola llamada, asi que cablearlo es UNA '
+      + 'linea en `quotesView.js` — fichero de otro carril en vuelo (SCRUM-594). Lo desbloquea '
+      + 'esa sesion al '
+      + 'liberar el fichero; el commit que lo cablee borra estas tres entradas.',
+  },
+  {
+    texto: 'Válido hasta dentro de 14 días',
+    motivo: 'CONSTRUIDO Y SIN CABLEAR (SCRUM-605, 4-sep-2026). El nombre accesible existe en '
+      + '`quoteAtajosVencimiento.js` (`nombreAccesibleDeAtajo`) pero la vista pone el MISMO '
+      + 'texto en el rotulo y en el `aria-label` con una sola llamada, asi que cablearlo es UNA '
+      + 'linea en `quotesView.js` — fichero de otro carril en vuelo (SCRUM-594). Lo desbloquea '
+      + 'esa sesion al '
+      + 'liberar el fichero; el commit que lo cablee borra estas tres entradas.',
+  },
+  {
+    texto: 'Válido hasta dentro de 30 días',
+    motivo: 'CONSTRUIDO Y SIN CABLEAR (SCRUM-605, 4-sep-2026). El nombre accesible existe en '
+      + '`quoteAtajosVencimiento.js` (`nombreAccesibleDeAtajo`) pero la vista pone el MISMO '
+      + 'texto en el rotulo y en el `aria-label` con una sola llamada, asi que cablearlo es UNA '
+      + 'linea en `quotesView.js` — fichero de otro carril en vuelo (SCRUM-594). Lo desbloquea '
+      + 'esa sesion al '
+      + 'liberar el fichero; el commit que lo cablee borra estas tres entradas.',
+  },
+  {
     texto: 'Modo no reconocido',
     motivo: 'RESPALDO del modo de emisión (`settingsView.js:213`). Aparcado por la REGLA 26: el '
       + 'texto que explica qué emite una cuenta toca claims fiscales y se responde sólo con el '

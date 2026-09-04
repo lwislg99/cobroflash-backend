@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // «NO LO SÉ» NO SE PINTA DE VERDE
 //
-// El encargo señalaba `|| SEMAFORO_META.verde` (`invoicesView.js:532`) y pedía medir PRIMERO si
+// El encargo señalaba `|| SEMAFORO_META.verde` (en `invoicesView.js`) y pedía medir PRIMERO si
 // se alcanza. Se midió, y la respuesta tiene dos mitades que conviene no mezclar:
 //
 //   · **Ése NO se alcanza hoy.** Cuatro caminos comprobados y cerrados (ver más abajo). Por eso
@@ -129,7 +129,17 @@ function censarArbol() {
       if (!['.js', '.ts', '.mjs'].includes(path.extname(e.name)) || e.name.includes('.min.')) continue;
       ficheros++;
       for (const h of redesBenignas(fs.readFileSync(p, 'utf8'), e.name)) {
-        encontradas.push(`${path.relative(RAIZ, p).split(path.sep).join('/')}:${h.linea}  ${h.texto}`);
+        // 🔴 SCRUM-710 · LA IDENTIDAD Y LA POSICIÓN, SEPARADAS.
+        //
+        // Aquí se componía `fichero:LÍNEA  texto` y esa cadena se comparaba entera contra la
+        // excepción. Un número de línea es una POSICIÓN: doce líneas añadidas por encima en
+        // SCRUM-599 desplazaron esta red de la 520 a la 532 y el guard cayó SIN QUE CAMBIARA
+        // NADA DE LO QUE VIGILA. Se re-ancló a mano y el defecto de forma seguía ahí.
+        //
+        // `id` es lo que la red ES —el fichero y la expresión— y es con lo que se compara.
+        // `linea` es dónde está HOY y sólo se enseña, para poder ir a mirarla.
+        const ruta = path.relative(RAIZ, p).split(path.sep).join('/');
+        encontradas.push({ id: `${ruta}  ${h.texto}`, ruta, linea: h.linea, texto: h.texto });
       }
     }
   })(RAIZ);
@@ -141,11 +151,17 @@ test('SCRUM-622 · 🔴 EL CENSO: queda UNA red benigna, y es la que espera deci
   assert.ok(ficheros > 300,
     `🔴 CIEGO: solo he barrido ${ficheros} ficheros. Un barrido que no encuentra árbol devuelve un `
     + 'cero que se lee como «no hay ninguna».');
-  assert.deepEqual(encontradas, [
-    'public/dashboard/js/invoicesView.js:532  SEMAFORO_META[grupo.semaforo] || SEMAFORO_META.verde',
+  // 🔴 SE COMPARA POR IDENTIDAD, NO POR POSICIÓN (SCRUM-710). La línea va en el MENSAJE —para
+  // poder ir a mirarla— pero NO en la comparación: editar el fichero por encima no puede tumbar
+  // un guard que vigila otra cosa. Lo que se exige NO se relaja: sigue siendo la lista EXACTA, y
+  // una red duplicada da dos entradas iguales y también cae.
+  const dondeEstanHoy = encontradas.map((h) => `${h.ruta}:${h.linea}`).join(' · ') || '(ninguna)';
+  assert.deepEqual(encontradas.map((h) => h.id), [
+    'public/dashboard/js/invoicesView.js  SEMAFORO_META[grupo.semaforo] || SEMAFORO_META.verde',
   ], '🔴 EL CENSO NO CUADRA. Si ha SUBIDO, alguien ha escrito una red nueva que convierte «no lo sé» '
     + 'en «todo bien». Si ha BAJADO a cero, el `||` del semáforo se ha arreglado: bien, y entonces '
-    + 'hay que borrar esta entrada CON su decisión escrita, no relajar el test.');
+    + 'hay que borrar esta entrada CON su decisión escrita, no relajar el test.'
+    + `\n  Dónde están hoy: ${dondeEstanHoy}.`);
 });
 
 test('SCRUM-622 · CONTROL del detector: ve las cuatro formas y no se cuela con las que no lo son', () => {
@@ -181,7 +197,7 @@ test('SCRUM-622 · ① el productor del semáforo es un union CERRADO de tres', 
   })(sf);
   assert.deepEqual(miembros, ['verde', 'ambar', 'rojo'],
     '🔴 el tipo `Semaforo` ha cambiado. Si ahora admite un cuarto valor —o cualquiera—, el '
-    + '`|| SEMAFORO_META.verde` de `invoicesView.js:532` PASA A SER ALCANZABLE y hay que arreglarlo '
+    + '`|| SEMAFORO_META.verde` de `invoicesView.js` PASA A SER ALCANZABLE y hay que arreglarlo '
     + 'antes de seguir: sin eso, el estado nuevo se le pinta al profesional como «AL DÍA».');
 });
 
