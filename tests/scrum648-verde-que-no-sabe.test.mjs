@@ -100,22 +100,32 @@ test('SCRUM-648 · el ÚNICO productor del límite no entrega hoy ni un día ile
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 🔴 EL HALLAZGO, y es PEOR que el defecto del ticket
 // ─────────────────────────────────────────────────────────────────────────────────────────
-test('SCRUM-648 · 🔴 un mes fuera de rango NO da ilegible: da un plazo PLAUSIBLE Y EQUIVOCADO', () => {
-  // `fechaLimiteRecapitulativa` no valida su entrada: pasa los números a `Date.UTC`, que
-  // NORMALIZA en silencio. El mes 13 de 2026 se convierte en enero de 2027 sin protestar.
-  assert.equal(fechaLimiteRecapitulativa('2026-13', 'PARTICULAR'), '2027-01-31');
-  assert.equal(fechaLimiteRecapitulativa('2026-00', 'PARTICULAR'), '2025-12-31');
-
-  // Y el semáforo lo trata como un plazo bueno, porque lo es: es finito y legible.
-  assert.equal(calcularSemaforo(fechaLimiteRecapitulativa('2026-13', 'PARTICULAR'), HOY, MADRID), 'verde');
-
-  // 🔴 POR QUÉ ES PEOR QUE EL NaN: contra un ilegible se puede programar una barrera —es
-  // detectable—. Contra un plazo plausible no hay nada que detectar: el número es finito, el
-  // semáforo es correcto para ese número, y el número es de otro mes. No hay síntoma.
+test('SCRUM-648 · ✅ un mes fuera de rango ya NO se normaliza en silencio — lo cerró SCRUM-747', () => {
+  // ── ESTE TEST CARACTERIZABA UN DEFECTO Y CAYÓ AL ARREGLARSE. Es lo que prometía ──────────
   //
-  // ⛔ NO SE ARREGLA AQUÍ: validar `mesKey` cambiaría el comportamiento de un cálculo de plazo
-  // legal, y hoy NO es alcanzable (`mesKey` sale de `mesNaturalEn`, que sólo produce `YYYY-MM`
-  // bien formado). Queda medido y nombrado.
+  // Decía: «`fechaLimiteRecapitulativa` no valida su entrada, así que el mes 13 de 2026 se
+  // convierte en enero de 2027 sin protestar, y el semáforo lo pinta verde». Era cierto, y era
+  // **peor que un valor ilegible**: contra un ilegible se puede programar una barrera porque es
+  // detectable; contra un plazo plausible no hay síntoma.
+  //
+  // SCRUM-747 lo cerró validando ANTES de normalizar, y esta caracterización se convierte en la
+  // afirmación del arreglo — no se borra: así queda constancia de qué se arregló y desde cuándo.
+  assert.throws(() => fechaLimiteRecapitulativa('2026-13', 'PARTICULAR'), /mesKey inválido/,
+    '🔴 ha vuelto la normalización silenciosa: `2026-13` debe FALLAR, no dar el plazo de enero.');
+  assert.throws(() => fechaLimiteRecapitulativa('2026-00', 'PARTICULAR'), /mesKey inválido/);
+
+  // Y el error NOMBRA el valor, que es lo que permite arreglar el origen en vez de taparlo.
+  try {
+    fechaLimiteRecapitulativa('2026-13', 'PARTICULAR');
+    assert.fail('debería haber lanzado');
+  } catch (e) {
+    assert.ok(e.message.includes('"2026-13"'), '🔴 el error ya no dice QUÉ valor entró.');
+  }
+
+  // CONTROL NEGATIVO: los meses legítimos siguen dando exactamente lo de siempre.
+  assert.equal(fechaLimiteRecapitulativa('2026-09', 'PARTICULAR'), '2026-09-30');
+  assert.equal(fechaLimiteRecapitulativa('2026-12', 'EMPRESARIO'), '2027-01-16');
+  assert.equal(calcularSemaforo(fechaLimiteRecapitulativa('2026-09', 'PARTICULAR'), HOY, MADRID), 'verde');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────────────────

@@ -243,3 +243,212 @@ propuesta recomienda se ha hecho**: es una propuesta.
 * `scripts/db-push-prod` **se auto-crea el sentinel** (`touch .claude/allow-db-push`) antes del push: quien lea el hook creerá que hubo una autorización del fundador que por esa ruta no existe.
 * Ninguna barrera de esta casa protege a **una persona en una terminal**: el hook sólo existe cuando escribe Claude, y siete de los doce constructores que pueden alcanzar producción dependen de que quien los lance sepa lo que hace.
 * Mi propio hallazgo de SCRUM-744 sobre `db-push-prod` **exageraba**: decir «no cruza la barrera» sin decir «tiene cinco puertas propias» habría mandado a la siguiente sesión a blindar lo que ya estaba blindado.
+
+
+---
+
+# SCRUM-746 · FASE B · La guarda, donde se escribe
+
+**Fecha:** 4-sep-2026 · **Carril:** barrera de producción (AA2) · **Gate:** sin gate — corre en `npm test`
+
+> 📎 Esta entrada es de la **fase B**: la EJECUCIÓN de lo que la fase A midió y propuso. La fase A
+> —el rojo, el censo del punto de conexión y las dos salidas con su criterio— abre este fichero, y
+> se mezcló a `main` mientras ésta estaba en vuelo. El asesor adoptó la salida (B) y **cambió el
+> orden**: primero lo irreversible.
+
+**Medido contra:** `origin/main` = `9545711d5172e24f1f985471a39c25bcc1062841` · 2026-09-04T23:47:23+01:00
+**Medido en:** host `DESKTOP-A24926K` · rama `scrum-746b-guarda-en-la-conexion`
+
+**Tanda:** **5.413 pruebas · 5.325 en verde · 0 fallos · 88 saltadas**, con `main` ya mergeado
+dentro y medida DESPUÉS del último cambio, entrada incluida.
+
+La base sobre `main` limpio, medida al empezar sobre un worktree recién nacido de
+`b54423162c3dca9f25dd160c928a70fb371f3c6f`, daba **5.400 · 5.312 · 0 fallos · 88 saltadas**.
+**Los +13: 8 son de este fichero de tests** y **5** son los de la fase A, que entraron con el `main`
+mezclado después de tomar la base. **No hay comparación de
+fan-out nombre a nombre**, así que el reparto es aritmética, no medición.
+
+> ⛔ **Ninguna de las tres rutas se ha ejecutado.** Ni contra producción, ni contra staging, ni
+> contra la base desechable. Las dos reglas son funciones **puras sobre una URL**, así que su rojo
+> y su verde se ejercitan con cadenas inventadas — que es la única forma de probar un candado que
+> existe para NO ejecutarse.
+
+---
+
+## 🔴 PRIMERO, EL HUECO QUE YO MISMA DECLARÉ, PORQUE CAMBIA LA URGENCIA
+
+La fase A lo dejó escrito: *«no he medido qué pasa si `DATABASE_URL` no está definida»*. Medido
+ahora, sin conectar con nada (sin URL no hay conexión posible):
+
+| | |
+|---|---|
+| `new PrismaClient()` sin `DATABASE_URL` | **no lanza** |
+| la **primera consulta** | **lanza**: `Environment variable not found: DATABASE_URL` |
+| `.env` de un árbol de trabajo | **no lleva `DATABASE_URL`** (sólo `_STAGING`, `_DEV`, `_TESTS`) |
+| `loadEnv.ts` | carga `.env.local` y `.env`; **no mapea** ninguna clave a `DATABASE_URL` |
+
+**Conclusión, y baja la urgencia:** hoy `npm run db:seed` en un árbol de trabajo **falla en seco al
+primer `upsert`**, sin tocar nada. El riesgo **no es «por defecto»**.
+
+🔴 **Y el camino real del accidente sigue ahí, escrito en nuestra propia documentación:** la
+cabecera de `scripts/db-push-prod` dice cómo apuntar a staging —
+`DATABASE_URL="postgresql://…acela…" bash scripts/db-push-prod`—. **Basta con seguir en la misma
+terminal.** Exportas la variable para una cosa y la siguiente la hereda.
+
+## Lo que se cierra, en el orden del asesor
+
+Yo propuse `seed.ts` primero. El asesor lo cambió y **el motivo es mejor que el mío**: no es de
+esfuerzo, es de **daño irreversible**. Un `upsert` sobre un merchant es malo, acotado y deshacible;
+una restauración sobrescribe una base **entera** y eso no se deshace.
+
+### ① `scripts/backup-restore.mjs` — lo irreversible
+
+Su cabecera decía —y sigue diciendo— *«NO se ejecuta contra producción ni staging: usa
+`_scratch-run.mjs`, que lo impide»*. **Es verdad y no bastaba:** el script tiene su **propia entrada
+de línea de comandos** (`process.argv[2]`), así que
+`DATABASE_URL=… node scripts/backup-restore.mjs fichero.gz.enc` no pasaba por el runner ni por
+ninguna otra puerta. **La protección vivía un nivel más allá de la acción** — que es el defecto de
+todo este día, con otra cara.
+
+Ahora comprueba el destino **antes de construir el cliente**. El orden es la regla: una
+comprobación después de conectar ya ha elegido a dónde. Hay una mutación (②) que sólo mueve la
+comprobación de sitio, y cae.
+
+### ② `prisma/seed.ts` — el único de los tres
+
+Esta casa tiene **tres sembradores**. `scripts/seed-demo.mjs` y `scripts/seed-video.mjs` llaman a
+`destinoSembrable` desde SCRUM-381. `prisma/seed.ts` hacía `new PrismaClient()` **a secas**, y su
+`upsert` pisa nombre, NIF, dirección, plan y `planExpiresAt` del merchant 1.
+
+**No era una regla que faltara: era un llamador que faltaba.**
+
+### ③ `scripts/db-push-prod` — sólo la autoconcesión
+
+Se quita **una línea**: `mkdir -p .claude && touch .claude/allow-db-push` (y su `rm -f`). Nada más.
+
+El sentinel es la autorización de un solo uso que el hook exige antes de un `db push`, y el script
+**se la concedía a sí mismo**. La intención era buena —a esa altura ya han pasado cinco puertas—
+pero el efecto no: **quien lea el hook creerá que hubo un OK del fundador, y por esa ruta no lo
+hubo**. Y no era necesario: el hook intercepta lo que teclea Claude, no lo que hace un script por
+dentro, así que el `npx prisma db push` de la línea siguiente **no pasa por él**. El `touch` no
+desbloqueaba nada — sólo dejaba escrito un permiso que nadie había dado.
+
+⚠️ **Las cinco puertas no se tocan**, y hay un test que exige que sigan las cinco (árbol,
+host-check, suelo anti-silencio, guard de borrado, GO explícito). La mutación ⑦ rompe una y cae.
+
+## 🔴 NO HAY REGLA NUEVA, y era la instrucción
+
+* **`destinoSembrable`** ya existía (SCRUM-381, en `scripts/_db-guard.mjs`). Se llama, no se copia.
+* **`destinoDesechable`** es **la que `_scratch-run.mjs` venía ejecutando desde SCRUM-242**, sacada
+  a `_db-guard.mjs` para que la llamen **los dos**. El runner ya no tiene su copia inline, y hay un
+  test que lo exige.
+
+**Y son DOS reglas, no una con un parámetro.** La diferencia es **staging**: un sembrador *añade*
+filas y puede escribir ahí; una restauración lo *sobrescribe entero*, y staging es de todo el
+equipo. Una función con un flag es una función a la que un día se le pasa el flag equivocado, y esa
+diferencia es una base perdida.
+
+## El control negativo, que era el filo
+
+> *«Un `seed` contra la base de DEV tiene que seguir funcionando SIN fricción. Si el arreglo obliga
+> a teclear algo para sembrar en dev, se desactivará en una semana.»*
+
+**Cero fricción añadida, y está medido:** la URL de dev vive **en el mismo host que staging**
+(`acela.proxy.rlwy.net/yaqu_dev_javier`), que ya está en `DESTINOS_SEMBRABLES`. Un
+`DATABASE_URL=<dev> npm run db:seed` pasa **exactamente igual que antes**. El test lo fija para
+dev, staging, `localhost`, `127.0.0.1` y `[::1]`.
+
+Lo único que deja de poder hacerse es lo que nadie quería hacer.
+
+## 🔴 Y DOS DEFECTOS MÍOS QUE CAZÓ EL TEST ANTES DE SALIR DE AQUÍ
+
+**① `destinoDesechable` dejaba pasar una URL con host VACÍO.** `parseBDSegura('postgresql://')`
+devuelve `{ host: '', … }` —parseable pero sin destino— y mi lista **negra** («ni producción ni
+staging») lo daba por bueno.
+
+La lección es de forma, no de caso: **una lista negra sólo sabe decir que no a lo que le enseñaron;
+una lista blanca falla cerrada con lo raro.** `destinoSembrable` no cae ahí porque exige que el host
+**esté** en su lista. Aquí no se puede usar lista blanca —la base desechable es la que sea: un
+contenedor, un Postgres local, otro puerto—, así que **la limitación se declara** en el código y se
+exige que al menos **haya** host.
+
+**② Mi propio test buscaba el `touch` sobre el fuente crudo… y casaba con MI PROPIO COMENTARIO** —el
+que explica que esa línea se quitó—. Es el defecto que llevo cazando todo el día, esta vez en mí:
+*el sitio natural donde se escribe el nombre de lo prohibido es la explicación de la prohibición*.
+Ahora filtra con `soloEjecutable` (el filtro ÚNICO de la casa, SCRUM-700/719, con
+`almohadillaEsComentario` porque bash comenta con `#`), **y lleva suelo**: si el filtro devolviera
+poco texto, los asertos pasarían sobre la nada.
+
+## 🟢 Y EL TRINQUETE DE LA FASE A DISPARÓ, QUE ES LA MEJOR PRUEBA DE QUE SERVÍA
+
+La tanda final de esta fase cayó. No por un defecto: por **mi propio trinquete de la fase A**, con
+el mensaje que le escribí al revés:
+
+> 🟢 UN EXPUESTO CONOCIDO YA NO SALE: ,  — si le has
+> puesto guarda de destino, quítalo y anótalo en la entrada.
+
+Es exactamente para lo que se escribió así: **un guard que sabe decir que ha dejado de hacer falta
+no se convierte en ruido**. Se hizo lo que pedía, y de paso el trinquete se dio la vuelta: ahora
+vigila que **lo cerrado no se reabra** —si alguien le quita la guarda a cualquiera de los dos,
+cae— y que los dos **sigan escribiendo**, porque una guarda sobre algo que ya no escribe sobra y
+hay que decirlo en vez de arrastrarla.
+
+## Verificado en rojo — ocho mutaciones
+
+Cada una guarda los BYTES, comprueba que cambió **ese** fichero, corre **los míos y los AJENOS que
+ya vigilaban estas piezas** —`scrum381` de la semilla y `scrum242` de la restauración—, restaura y
+verifica con `Buffer.compare`. Árbol limpio al final.
+
+| se rompe a propósito | cae por |
+|---|---|
+| ① la restauración deja de comprobar el destino | «comprueba el destino ANTES de construir el cliente» |
+| ② la comprobación se mueve **después** del cliente | la misma — **el orden es la regla** |
+| ③ la semilla vuelve a no comprobar nada | «los TRES sembradores llaman a la misma regla» |
+| ④ `destinoDesechable` deja pasar staging | «son DOS reglas distintas, y la diferencia es staging» |
+| ⑤ vuelve a pasar el host vacío | «sin URL, las dos fallan CERRADO» |
+| ⑥ vuelve la autoconcesión del sentinel | «ya NO se concede el sentinel a sí mismo» |
+| ⑦ se cae **una de las cinco puertas** de `db-push-prod` | la misma — este ticket no las tocaba |
+| ⑧ **CONTROL NEGATIVO**: se reescribe un comentario | **no cae** |
+
+La ⑥ vale doble: la línea que inyecta va **en código**, no en el comentario que explica que se
+quitó — así que además demuestra que el filtro de comentarios funciona.
+
+## Ficheros
+
+`scripts/_db-guard.mjs` (+`destinoDesechable`, la regla del runner extraída) ·
+`scripts/_scratch-run.mjs` (usa la extraída; se le quita la copia inline) ·
+`scripts/backup-restore.mjs` (comprueba el destino antes de conectar) ·
+`prisma/seed.ts` (llama a `destinoSembrable`, como sus dos hermanos) ·
+`scripts/db-push-prod` (**−1 línea**: la autoconcesión) ·
+`tests/scrum746b-guarda-en-la-conexion.test.mjs` (**nuevo**, 8 tests) · esta entrada.
+
+**No se ha tocado:** las cinco puertas de `db-push-prod` · `destinoSembrable` ni
+`DESTINOS_SEMBRABLES` · el hook `guard-dangerous.mjs` · `package.json` ·
+`prisma/schema.prisma` · ningún test existente · sin dependencias nuevas (regla 36).
+
+## 🔴 Los huecos que declaro
+
+1. **`destinoDesechable` es una lista NEGRA**, y por eso un host desconocido **pasa**. Es
+   deliberado —la base desechable puede ser cualquier cosa— pero significa que si mañana apareciera
+   un tercer host peligroso con otro nombre, esta regla no lo vería. `destinoSembrable` no tiene ese
+   problema porque es lista blanca.
+2. **No he ejecutado ninguna restauración ni ninguna siembra**, ni siquiera contra la base
+   desechable. Sé que la guarda decide bien porque es pura y está probada; **no he visto el camino
+   completo correr**.
+3. **`prisma/seed.ts` importa de `scripts/`** por `import()` dinámico. `tsconfig.json` sólo incluye
+   `src`, así que no pasa por `npm run build` — pero **no he corrido `prisma db seed`** para verlo
+   resolver en ts-node. Si ese import fallara, el fallo sería al arrancar el sembrador, no silencioso.
+4. **Quedan 4 constructores de cliente que pueden alcanzar producción sin comprobar destino**, de
+   los 12 censados en la fase A: la app (correcto), uno que sólo lee, uno con `--apply` y
+   `backfill-quote-jobid`. Este ticket cierra los DOS que escriben sin nada; los demás siguen
+   apuntados en el trinquete de la fase A.
+5. **No he tocado el residuo del sentinel** —que se consume aunque el usuario deniegue después—.
+   Sigue siendo un hueco de diseño del punto de enganche, medido en la fase A.
+6. **`npm run db:seed` y `bash scripts/db-push-prod` siguen sin cruzar el hook.** Este ticket no lo
+   arregla: lo hace irrelevante para el daño, poniendo la guarda donde se escribe.
+
+## HALLAZGOS FUERA DE CARRIL — una línea cada uno
+
+* `scripts/backfill-quote-jobid.mjs` usa `parseBDSegura` pero **no** una de las dos reglas de destino: mira la URL sin decidir sobre ella, que es la forma más fácil de parecer protegido.
+* La cabecera de `scripts/db-push-prod` **enseña a exportar `DATABASE_URL`** para apuntar a staging, y esa variable **se hereda en la misma terminal**: es el camino documentado por el que un `seed` o un `restore` acaban donde no debían.
+* `prisma/seed.ts` no lo compila `tsc` (`include: ["src"]`), así que **ningún type-check lo cubre**: un error de tipos ahí no aparece hasta que alguien lo ejecuta.

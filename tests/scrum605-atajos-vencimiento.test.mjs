@@ -119,10 +119,23 @@ test('SCRUM-605 · 🔴 NINGÚN atajo cae por debajo del `min` — y se comprueb
 // ─────────────────────────────────────────────────────────────────────────────────────────
 test('SCRUM-605 · ✅ el campo de siempre no se ha tocado: default +30 d, min +1 d y su nota', () => {
   const vista = leer(VISTA);
+  // ── 🔴 SCRUM-633 · ESTE CONTROL FIJABA LA EXPRESIÓN, Y AHORA FIJA LA PROPIEDAD ────────────
+  //
+  // Los dos trozos del default y del mínimo eran las líneas LITERALES `new Date(Date.now() + …)
+  // .toISOString().slice(0, 10)`, que es exactamente el defecto que SCRUM-633 vino a cerrar: ese
+  // `toISOString()` da el día en UTC, y para un profesional en Madrid falla 335 de 365 días a las
+  // 00:30. Así que este guard cayó — y **cayó bien**: su modelo (el texto de la expresión) dejó de
+  // valer el día en que la expresión cambió.
+  //
+  // **No se ha relajado: se le devuelve la PREGUNTA.** Lo que protege —«quien no pulse un atajo ve
+  // exactamente lo de antes: +30 días, +1 día y su nota»— sigue siendo cierto y sigue importando,
+  // y ahora se comprueba por los DÍAS, que es lo que el control quería decir, en vez de por cómo
+  // se calculan. Que el día resultante sea el correcto lo ata `scrum633-caducidad-en-la-zona`, con
+  // su propio control negativo: un merchant sin zona ve EXACTAMENTE lo de antes.
   const trozos = [
     ['el rótulo aprobado', '    validLabel.textContent = "Válido hasta";'],
-    ['el valor por defecto (+30 d)', '    const defUntil = new Date(Date.now() + 30 * 86400000);'],
-    ['el mínimo (+1 d)', '    validInput.min = new Date(Date.now() + 86400000).toISOString().slice(0, 10);'],
+    ['el valor por defecto (+30 d)', 'window.quoteCaducidad.diaPorDefecto(null, 30)'],
+    ['el mínimo (+1 d)', 'window.quoteCaducidad.diaPorDefecto(null, 1)'],
     ['la nota de caducidad que ve el cliente',
       '    validNote.textContent = "Pasada esta fecha el presupuesto caduca solo y el cliente verá \\"pide uno actualizado\\".";'],
   ];
