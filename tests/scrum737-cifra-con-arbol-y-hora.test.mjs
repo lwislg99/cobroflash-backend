@@ -52,22 +52,27 @@ const RAIZ = path.resolve(import.meta.dirname, '..');
  * Historia, con su fecha, porque un número sin ella es justo lo que este fichero persigue:
  *   · 4-sep-2026 — 80 al abrir el ticket · 78 tras retirar las de `scrum667` y `scrum709`.
  *   · 4-sep-2026 — vuelve a 80 al mezclar `main`: SCRUM-740 entró con DOS cifras nuevas.
+ *   · 4-sep-2026 — 81 al mezclar `main` otra vez: SCRUM-742 entró con UNA más.
+ *
+ * 🟢 Tres cifras nuevas de tres sesiones distintas en una sola tarde, todas cazadas por este
+ * guard el día en que se escribió. Eso no es ruido: es el ritmo real al que aparece el defecto.
  */
-const CENSO_CONGELADO = 80;
+const CENSO_CONGELADO = 81;
 
 /**
  * 🔴 HEREDADAS DE OTRO CARRIL, NOMBRADAS PARA QUE NO SE DILUYAN EN EL TOTAL.
  *
- * Llegaron con el merge de SCRUM-740 (otra sesión) el 4-sep-2026, ya en `main`. **No se arreglan
- * aquí**: es su carril, no el mío (regla 9). Se registran con el patrón de
- * `PENDIENTES_FUERA_DE_CARRIL` de SCRUM-498 — subir el total sin decir qué lo subió es cómo un
- * censo se convierte en un número que nadie mira.
+ * Llegaron con merges de `main` el 4-sep-2026 (SCRUM-740 y SCRUM-742, otras sesiones), y ya están
+ * en `main`. **No se arreglan aquí**: es su carril, no el mío (regla 9). Se registran con el
+ * patrón de `PENDIENTES_FUERA_DE_CARRIL` de SCRUM-498 — subir el total sin decir qué lo subió es
+ * cómo un censo se convierte en un número que nadie mira.
  *
- * Y son la prueba de que este guard hace su trabajo: lo cazó **el mismo día** en que se escribió.
+ * Y son la prueba de que este guard hace su trabajo: cazó **tres el mismo día** en que se escribió.
  */
 export const HEREDADAS_FUERA_DE_CARRIL = [
   { fichero: 'tests/scrum740-carrera-por-el-arbol.test.mjs', ticket: 'SCRUM-740' },
   { fichero: 'tests/_barrido-estable.mjs', ticket: 'SCRUM-740' },
+  { fichero: 'scripts/censo-internos-de-prisma.mjs', ticket: 'SCRUM-742' },
 ];
 
 /** Suelo de población: si el barrido lee menos ficheros que esto, no está mirando el árbol. */

@@ -53,11 +53,15 @@ Cuenta **las afirmaciones de RECUENTO DEL ÁRBOL EN UN MOMENTO** — las que dic
 | Tras retirar las dos de este ticket | **78** |
 | **Al mezclar `main`** (4-sep-2026) | **80** otra vez — ver abajo |
 
-### 🟢 Y el guard cazó dos cifras nuevas el mismo día en que se escribió
+### 🟢 Y el guard cazó TRES cifras nuevas el mismo día en que se escribió
 
-Al mezclar `main`, el censo **volvió a subir a 80**: SCRUM-740 (otra sesión) entró con **dos**
+Al mezclar `main`, el censo **volvió a subir**: primero a **80** —SCRUM-740 entró con **dos**
 cifras de recuento sin fecha, en `tests/scrum740-carrera-por-el-arbol.test.mjs` y
-`tests/_barrido-estable.mjs`.
+`tests/_barrido-estable.mjs`— y luego a **81**, con **una más** de SCRUM-742 en
+`scripts/censo-internos-de-prisma.mjs`.
+
+**Tres cifras, de tres sesiones distintas, en una sola tarde.** Ése es el ritmo real al que
+aparece el defecto, y explica por qué S3 vio caducar seis de siete cifras en 90 minutos.
 
 **No se arreglan aquí** — es su carril, no el mío (regla 9). Pero **no se diluyen en el total**:
 quedan **nombradas** en `HEREDADAS_FUERA_DE_CARRIL`, con el patrón de `PENDIENTES_FUERA_DE_CARRIL`
