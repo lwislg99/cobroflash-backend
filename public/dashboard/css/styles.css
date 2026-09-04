@@ -2907,3 +2907,41 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   padding: 10px 12px;
   font-size: 13.5px;
 }
+
+/* ── Parte de trabajo · objetivos táctiles (SCRUM-720d) ──────
+   Medido EN NAVEGADOR con viewport real (390 y 1280), en los cuatro estados de la pantalla, y
+   con el árbitro de la casa: `elementsFromPoint`, no la caja (SCRUM-542).
+
+   Lo que salió, igual en los cuatro estados:
+
+       button.parte-quitar-linea    22 px    ← la «×» que BORRA una línea
+       button (firmar / ordenar / añadir)  36 px
+       label del tipo               36 px
+       input[type=radio]            13 px    (su objetivo real es la etiqueta que lo envuelve)
+
+   AB6 exige 44. Y el que de verdad no se puede usar es la «×»: 22 px de alto, con el móvil en la
+   mano y de pie, y **borra una línea del parte**. Fallar ese toque tiene coste.
+
+   ⚠️ Sin `style=` en línea y sin tocar el fichero de la vista, que lo está editando otra sesión:
+   sólo se sube el alto mínimo de lo que ya se estiliza aquí.
+   ──────────────────────────────────────────────────────────── */
+.parte-anadir,
+[data-parte-firmar],
+[data-dictado-ordenar],
+[data-propuesta-confirmar] { min-height: 44px; }
+
+/* La «×» pasa de 22 a 44 sin engordar la fila: crece el área, no el dibujo. */
+.parte-quitar-linea {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Las tres casillas de tipo: el objetivo es la etiqueta entera, que es lo que ya recibe el toque. */
+.parte-tipo label { min-height: 44px; box-sizing: border-box; }
+
+/* El campo del dictado y las cantidades de la propuesta, al mismo mínimo. */
+[data-parte-dictado] textarea { min-height: 88px; }
+[data-propuesta] input[type="number"] { min-height: 44px; }
