@@ -340,7 +340,12 @@ const CENSO = Object.freeze({
   // Lo que NO se hizo, y merece quedar escrito: el encargo pedía `[copy: fundador]`. Ese
   // marcador NO lo cuenta este censo (cuenta `[PENDIENTE`), así que habría sido un marcador
   // invisible para el trinquete que existe justo para verlo. Se usa el de la casa.
-  'quoteAtajosVencimiento.js': 1,
+  // 🔴 4-sep-2026 · SALE DEL CENSO: el ASESOR firmo los seis literales de los tres atajos de
+  // «Valido hasta» —tres rotulos («7 dias», «14 dias», «30 dias») y tres nombres accesibles
+  // («Valido hasta dentro de N dias»)—, a la espera de la firma del fundador. La entrada se
+  // BORRA y no se pone a 0 (SCRUM-424 / SCRUM-405):  solo lista ficheros CON
+  // marcadores. COMPROBADO antes de borrarla: cero marcas en el fichero, y el censo baja de 13
+  // a 12 entradas con el numero delante.
   'patronDetalleAcciones.js': 1,
   // 🔴 17-ago-2026 (tanda B) · SALE DEL CENSO: el fundador aprobó «Con errores» del resumen de importación de CSV. Entrada BORRADA, no
   // puesta a 0 (SCRUM-424 / SCRUM-405): `censoActual()` solo lista ficheros CON marcadores.
