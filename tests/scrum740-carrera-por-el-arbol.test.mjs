@@ -257,3 +257,26 @@ test('SCRUM-740 · 🔴 y cada barredor CIERRA con su suelo', () => {
     + sinSuelo.map((f) => '   · ' + f).join('\n')
     + '\n\n  Tragar un fichero que desaparece no puede convertirse en tragar un árbol vacío.');
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-745 · LAS MUTACIONES QUE TIENEN QUE TUMBAR A ESTE GUARD, DECLARADAS
+//
+// Los dos trinquetes de arriba nacieron MUDOS y sólo lo destapó inyectar el defecto a mano. Eso
+// dependía de que a alguien se le ocurriera. Aquí quedan escritas las dos inyecciones exactas,
+// junto al guard que deben tumbar, para que `npm run meta:mutaciones` las ejecute sin que nadie
+// se acuerde. Viven aquí y no en un registro central: lo que no está al lado no se actualiza.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    fichero: 'tests/scrum393-marcadores-de-conflicto.test.mjs',
+    de: '    const txt = leerSiSigueAhi(f);\n    if (txt === null) continue;',
+    a: "    const txt = fs.readFileSync(f, 'utf8');",
+    cae: 'TRINQUETE: todo el que barre el árbol lee con el helper',
+  },
+  {
+    fichero: 'tests/scrum393-marcadores-de-conflicto.test.mjs',
+    de: "  exigirCorpusLeido(leidos, 50, 'SCRUM-393 · marcadores de conflicto');\n",
+    a: '',
+    cae: 'y cada barredor CIERRA con su suelo',
+  },
+];
