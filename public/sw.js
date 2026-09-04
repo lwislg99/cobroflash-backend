@@ -56,6 +56,7 @@ const SHELL = [
   '/dashboard/js/quoteSuplido.js',
   '/dashboard/js/quoteApartados.js',
   '/dashboard/js/quoteDescuentos.js',
+  '/dashboard/js/quoteDireccionObra.js', // SCRUM-602 (DOC-12)
   '/dashboard/js/quoteRevisiones.js',
   '/dashboard/js/quoteAtajosVencimiento.js',
   '/dashboard/js/tiposDeIva.js', // SCRUM-611 (DOC-16)

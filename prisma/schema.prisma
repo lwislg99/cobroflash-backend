@@ -336,7 +336,7 @@ model Customer {
   // La columna se aplicó en LAS TRES bases ANTES que esta línea (dev y staging por S2, producción
   // por el fundador; las cuatro salidas en `docs/master/SCRUM-588.md`). Ese orden no es
   // ceremonia: un esquema que nombra una columna que las bases no tienen para el arranque.
-  internalRef       String? @map("internal_ref")
+  internalRef String? @map("internal_ref")
 
   merchant     Merchant        @relation(fields: [merchantId], references: [id])
   charges      Charge[]
@@ -468,6 +468,27 @@ model Quote {
   docHeaderText String? @map("doc_header_text") @db.Text
   docFooterText String? @map("doc_footer_text") @db.Text
 
+  /// SCRUM-602 (DOC-12) · LA DIRECCIÓN DE LA OBRA de este presupuesto, y CÓMO se decidió.
+  ///
+  /// Son DOS columnas y no una porque tres opciones no salen de un campo de texto: «utilizar la
+  /// de facturación» NO TIENE DATO PROPIO —se resuelve del cliente— y «no mostrar» tampoco. Con
+  /// una sola, «vacío» tendría que significar las dos cosas a la vez. El albarán usa un campo
+  /// único (`lugarEntrega`) porque allí el modo es implícito: sólo existe «personalizada».
+  ///
+  /// `shippingAddressMode`: no_mostrar | facturacion | personalizada. NULL = nadie decidió, que
+  /// es lo que tienen TODOS los presupuestos anteriores a este ticket y NO es «no_mostrar». Los
+  /// dos imprimen igual hoy; se distinguen porque «ausente» y «cero» no son lo mismo.
+  ///
+  /// `shippingAddress`: el texto que tecleó el profesional. Sólo tiene sentido con
+  /// «personalizada». 🔴 NUNCA se prerrellena con la de facturación: es el suelo que se adopta
+  /// literal del albarán (SCRUM-300) — «una dirección equivocada en un documento de entrega es
+  /// peor que ninguna». Con «facturacion» el texto se resuelve del cliente EN VIVO (asesor,
+  /// 4-sep-2026): el presupuesto es una oferta viva, igual que ya lo son su nombre y su NIF.
+  ///
+  /// La regla de los tres modos vive en `src/core/documentos/direccionObra.ts`, en UN solo sitio.
+  shippingAddress     String? @map("shipping_address") @db.Text
+  shippingAddressMode String? @map("shipping_address_mode")
+
   id         Int @id @default(autoincrement())
   merchantId Int
   customerId Int
@@ -482,8 +503,8 @@ model Quote {
   // ["card","bizum","transfer"]). null = todos los que el merchant tenga activos.
   payMethods Json? @map("pay_methods")
 
-  status            String    @default("draft")
-  total             Decimal   @db.Decimal(12, 2)
+  status String  @default("draft")
+  total  Decimal @db.Decimal(12, 2)
 
   /// SCRUM-594 (DOC-04) · el descuento GLOBAL del documento, en EUROS.
   ///
@@ -495,27 +516,27 @@ model Quote {
   ///
   /// NULL = no hay descuento global. No lleva flag de «mostrar» (regla 27): sin descuento no se
   /// pinta, y el dato ES el flag.
-  discountGlobalAmount Decimal? @map("discount_global_amount") @db.Decimal(12, 2)
-  currency          String    @db.VarChar(3)
-  lines             Json
-  acceptedAt        DateTime?
-  paymentTerms      String?
-  customBillingPlan Json?     @map("custom_billing_plan") // SCRUM-27: [{percentage, label}] plan de tramos personalizado (fracción 0-1; índice = orden)
+  discountGlobalAmount Decimal?  @map("discount_global_amount") @db.Decimal(12, 2)
+  currency             String    @db.VarChar(3)
+  lines                Json
+  acceptedAt           DateTime?
+  paymentTerms         String?
+  customBillingPlan    Json?     @map("custom_billing_plan") // SCRUM-27: [{percentage, label}] plan de tramos personalizado (fracción 0-1; índice = orden)
   // V0-3: telemetría quote_created_via ('text' | 'voice' con VOZ-1)
-  createdVia        String?   @map("created_via")
-  rejectedAt        DateTime?
-  decisionChannel   String?
-  decisionComment   String?
-  rejectionReason   String?
-  pdfUrl            String?   @db.Text
-  signatureUrl      String?   @db.Text
-  tiers             Json?
-  selectedTierId    String?
-  internalNotes     String?   @map("internal_notes") @db.Text // Notas privadas del profesional, nunca visibles al cliente
-  evidence          Json?
-  chargeId          Int?
-  reminderSentAt    DateTime?
-  teamMemberId      Int?      @map("team_member_id") // técnico que creó la cotización (null = propietario)
+  createdVia           String?   @map("created_via")
+  rejectedAt           DateTime?
+  decisionChannel      String?
+  decisionComment      String?
+  rejectionReason      String?
+  pdfUrl               String?   @db.Text
+  signatureUrl         String?   @db.Text
+  tiers                Json?
+  selectedTierId       String?
+  internalNotes        String?   @map("internal_notes") @db.Text // Notas privadas del profesional, nunca visibles al cliente
+  evidence             Json?
+  chargeId             Int?
+  reminderSentAt       DateTime?
+  teamMemberId         Int?      @map("team_member_id") // técnico que creó la cotización (null = propietario)
 
   // SCRUM-95: token OPACO para las páginas/acciones públicas del cliente (patrón
   // Charge.receiptToken SCRUM-74, Albaran.firmaToken SCRUM-49). Quote.id es autoincremental
@@ -561,8 +582,8 @@ model Invoice {
   quoteId    Int?
   chargeId   Int? @map("charge_id")
 
-  number     String
-  total      Decimal @db.Decimal(12, 2)
+  number String
+  total  Decimal @db.Decimal(12, 2)
 
   /// SCRUM-594 (DOC-04) · la columna existe porque el ALTER se aplicó a las dos tablas, pero
   /// AQUÍ NO SE USA TODAVÍA y eso es deliberado: la propagación del descuento a la FACTURA queda
@@ -571,10 +592,28 @@ model Invoice {
   /// camino multiplicaría ese defecto en vez de heredarlo. El schema describe la base tal y como
   /// está; el día que se propague, el campo ya está.
   discountGlobalAmount Decimal? @map("discount_global_amount") @db.Decimal(12, 2)
-  currency   String  @db.VarChar(3)
-  pdfUrl     String
-  qrData     String
-  registerId String?
+
+  /// SCRUM-602 (DOC-12) · la dirección de la obra CONGELADA en la factura.
+  ///
+  /// 🔴 LAS COLUMNAS ESTÁN Y NADIE LAS ESCRIBE TODAVÍA, y no es un olvido: está MEDIDO y
+  /// declarado en `docs/master/SCRUM-602.md`. Escribirlas al emitir obliga a tocar `emitInvoice`
+  /// —el camino de emisión compartido— o los otros seis `invoice.create` del árbol, y MODIFICAR
+  /// el camino de emisión es STOP del fundador (CLAUDE.md, AA1.4). El ALTER va ahora porque las
+  /// cuatro columnas se firmaron juntas para las tres bases; el escritor va cuando haya GO.
+  ///
+  /// Aquí NO se leerá el cliente en vivo, a diferencia del presupuesto: al emitir se COPIA EL
+  /// TEXTO (asesor, 4-sep-2026). El precedente es `Albaran.lugarEntrega`, que queda fijo por el
+  /// sello. Que el nombre y el NIF de la factura sigan leyéndose en vivo es deuda VIEJA
+  /// (SCRUM-729): no se propaga a un campo nuevo para que «case».
+  ///
+  /// MEDIDO: la huella de VeriFactu es una lista CERRADA de ocho campos
+  /// (`computeVeriFactuHash`) y ninguna columna nueva entra en ella. Estas dos no tocan el sello.
+  shippingAddress     String? @map("shipping_address") @db.Text
+  shippingAddressMode String? @map("shipping_address_mode")
+  currency            String  @db.VarChar(3)
+  pdfUrl              String
+  qrData              String
+  registerId          String?
 
   status        String    @default("pending") @map("status")
   paidAt        DateTime? @map("paid_at")

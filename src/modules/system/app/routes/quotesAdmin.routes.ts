@@ -537,6 +537,14 @@ router.get('/:id/pdf', async (req, res) => {
         logoUrl: quote.merchant.logoUrl,
       },
       customer: { name: quote.customer.name, phone: quote.customer.phone, email: quote.customer.email, legalName: (quote.customer as any).legalName, taxId: (quote.customer as any).taxId }, // A20.4
+      // SCRUM-602 (DOC-12) · la dirección de la obra, EN CRUDO: modo, texto y cliente. Quien
+      // resuelve los tres modos es el documento, con `resolverDireccionObra`, para que las tres
+      // puertas de este PDF no puedan decir direcciones distintas del mismo presupuesto.
+      direccionObra: {
+        modo: (quote as any).shippingAddressMode ?? null,
+        personalizada: (quote as any).shippingAddress ?? null,
+        cliente: quote.customer,
+      },
       docFields: ((quote as any).docFields as any) ?? null, // A20.4
       // SCRUM-593 (DOC-03): la 3ª puerta del mismo documento (el porqué, en scrum593c).
       docHeaderText: (quote as any).docHeaderText ?? null,

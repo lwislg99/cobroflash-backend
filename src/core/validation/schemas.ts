@@ -2,6 +2,8 @@
 import { z } from 'zod';
 import { validarNifEspanol } from './nifEspanol'; // SCRUM-575 (CONT-02)
 import { invalidTipoIva, invalidPrefijoSerie } from './fiscalInput'; // SCRUM-217
+// SCRUM-602 (DOC-12) · los tres modos, DERIVADOS del dominio: una segunda lista aquí envejecería sola.
+import { MODOS_DIRECCION_OBRA } from '../documentos/direccionObra';
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // SCRUM-712 · CUÁNTOS DECIMALES ADMITE UN NÚMERO DE DINERO EN LA PUERTA
@@ -256,6 +258,25 @@ export const CreateQuoteSchema = z.object({
   // NO se recorta ni se normaliza el contenido: los saltos de línea son DATO (SCRUM-655 · T6).
   docHeaderText: z.string().max(2000).nullable().optional(),
   docFooterText: z.string().max(2000).nullable().optional(),
+  /**
+   * SCRUM-602 (DOC-12) · LA DIRECCIÓN DE LA OBRA de este presupuesto.
+   *
+   * 🔴 EL MODO ES UN `enum` DERIVADO, no una lista escrita aquí: `MODOS_DIRECCION_OBRA` vive en
+   * `src/core/documentos/direccionObra.ts` y es la misma que usa el resolvedor. Copiar los tres
+   * valores en este fichero crearía una segunda lista que puede envejecer sola — y el día que se
+   * añada un cuarto modo, la validación lo rechazaría mientras el resolvedor lo entiende.
+   *
+   * `nullable` Y `optional`, igual que los dos textos de arriba y por el mismo motivo: omitido =
+   * «este cliente no manda el campo» (todo lo anterior a este ticket), `null` = «lo quitó a
+   * propósito».
+   *
+   * ⚠️ EL TOPE ES 300 Y AQUÍ NO SE VALIDA CONTRA ÉL: se RECORTA en `normalizarDireccionObra`,
+   * que es lo que ya hacen `normalizarLugarEntrega` y `normalizarJobDireccion` con el mismo
+   * dato. Un 400 por una dirección larga sería un tercer comportamiento para el mismo campo en
+   * el mismo producto. El `max(2000)` de aquí es sólo el suelo contra un cuerpo abusivo.
+   */
+  shippingAddressMode: z.enum(MODOS_DIRECCION_OBRA).nullable().optional(),
+  shippingAddress: z.string().max(2000).nullable().optional(),
   // A16.2: caducidad del presupuesto (default 30 días en el server; editable al crear)
   validUntil: z.coerce.date().optional(),
   // SCRUM-27: plan de cobro personalizado (N tramos). Presente = ignora paymentTerms.

@@ -30,7 +30,23 @@ Lo que hace falta para que la aprobación sea **verificable por alguien que no e
 
 1. El **texto literal aprobado**, tal cual se pinta, sin recortar ni parafrasear.
 2. **Dónde se pinta**: fichero y, si ayuda, la ranura.
-3. **Quién y cuándo**: el fundador, con la fecha.
+3. **🔴 LA FIRMA, Y AHORA SE COMPRUEBA** (SCRUM-726). Una línea, fuera de cualquier cita:
+
+   ```
+   **Aprobado por el fundador** el <fecha>, en **SCRUM-<n>**.
+   ```
+
+   Si la firma dice otra cosa —«por el asesor», «pendiente»— el registro **se lee igual, pero sus
+   textos NO cuentan como aprobados**: `constaAprobado()` los ignora y `pendientesDeFirma()` los
+   lista para que el fundador los firme. **No se borra nada de la pantalla por esto.**
+
+   Hasta SCRUM-726 esa función contestaba «aprobado» en cuanto el texto estuviera escrito aquí,
+   **sin mirar quién firmaba** — comprobaba que alguien lo hubiera escrito, no que lo hubiera
+   aprobado quien puede. La regla 30 estaba escrita y no había nada que la hiciera cierta.
+
+   ⚠️ **La firma se lee FUERA de las líneas de cita (`>`)**, que es donde los registros guardan su
+   propia historia: leyendo el fichero entero, una frase citada que explica un error pasado
+   decidiría por la firma de verdad.
 4. **Qué cambió** respecto a lo que había, si cambió algo, y por qué.
 5. Lo que **queda sin firmar** en esa misma pantalla, si queda algo.
 

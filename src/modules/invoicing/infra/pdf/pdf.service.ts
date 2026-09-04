@@ -14,6 +14,8 @@ import { partirConceptoYDescripcion } from './conceptoLinea'; // SCRUM-603 (DOC-
 // cálculo sigue siendo `calcVatBreakdown`; estos módulos solo deciden qué se pinta.
 import { pieDePresupuesto, leerModoIva } from '../../../quotes/domain/presentacionIva';
 import { clausulasParaDocumento } from '../../../quotes/domain/clausulas';
+// SCRUM-602 (DOC-12) · el resolvedor de los tres modos y el rótulo, del dominio: la maqueta no decide.
+import { resolverDireccionObra, ROTULO_DIRECCION_OBRA_PDF, type ClienteConFacturacion } from '../../../../core/documentos/direccionObra';
 
 /**
  * Un importe, con sus dos decimales. SCRUM-604 (DOC-14) · RESUELTO en SCRUM-636.
@@ -623,6 +625,24 @@ export async function generateQuotePdf(params: {
   // el documento sale EXACTAMENTE como hasta hoy.
   docHeaderText?: string | null;
   docFooterText?: string | null;
+  /**
+   * SCRUM-602 (DOC-12) · LA DIRECCIÓN DE LA OBRA, en crudo. 🔴 LLEGAN LOS DATOS, NO LA
+   * DECISIÓN: quién resuelve los tres modos es `resolverDireccionObra`, y se le llama UNA vez,
+   * aquí dentro. Las tres puertas de este documento (crear, regenerar con firma, y el
+   * `GET /admin/quotes/:id/pdf` que sirve el papel de verdad) sólo reenvían lo que tienen.
+   *
+   * El motivo está medido en este mismo fichero: `discountGlobalAmount` se pasa en DOS de las
+   * tres puertas y no en la tercera, así que el mismo presupuesto sale con el pie del descuento
+   * o sin él según por dónde se pida. Con la decisión aquí dentro, olvidarse de un dato deja el
+   * bloque fuera —el suelo del albarán— en vez de imprimir una dirección distinta.
+   *
+   * Ausente = el documento sale EXACTAMENTE como salía.
+   */
+  direccionObra?: {
+    modo: string | null;
+    personalizada: string | null;
+    cliente: ClienteConFacturacion | null;
+  } | null;
   currency: string;
   total: string;
   lines: Array<{
@@ -720,6 +740,26 @@ export async function generateQuotePdf(params: {
   if (show('taxId') && params.customer.taxId) doc.text(`NIF: ${params.customer.taxId}`);
   if (show('phone') && params.customer.phone) doc.text(`Tel: ${params.customer.phone}`);
   if (show('email') && params.customer.email) doc.text(`Email: ${params.customer.email}`);
+
+  // ── SCRUM-602 (DOC-12) · LA DIRECCIÓN DE LA OBRA ─────────────────────────────────────────
+  // Va PEGADA al bloque del cliente y antes del `moveDown`, porque describe al mismo
+  // interlocutor: dónde se hace el trabajo de quien acaba de nombrarse. El texto libre de
+  // cabecera (SCRUM-593) sigue justo detrás, separado por su espacio.
+  //
+  // Se pinta SÓLO si hay texto. Un presupuesto sin modo —todos los anteriores a este ticket—
+  // resuelve `null` y sale byte a byte como salía; un cliente sin dirección fiscal que eligió
+  // «utilizar dirección de facturación» también, y eso es el suelo, no un fallo: una dirección
+  // equivocada en un documento es peor que ninguna (SCRUM-300).
+  //
+  // 🔴 EL RÓTULO ES DATO DEL DOCUMENTO Y NO SE INVENTA AQUÍ: `ROTULO_DIRECCION_OBRA_PDF` vive
+  // en el dominio, con las otras cuatro palabras de esta ranura.
+  const direccionObra = resolverDireccionObra({
+    modo: params.direccionObra?.modo,
+    personalizada: params.direccionObra?.personalizada ?? null,
+    cliente: params.direccionObra?.cliente ?? null,
+  });
+  if (direccionObra) doc.text(`${ROTULO_DIRECCION_OBRA_PDF}: ${direccionObra}`);
+
   doc.moveDown();
 
   // ── SCRUM-593 (DOC-03) · TEXTO LIBRE bajo la cabecera ─────────────────────────────────────
