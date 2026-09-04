@@ -199,6 +199,20 @@ export const REVISION_HEREDA = [
   //
   // `albaranes.doc_header_text` NO entra aquí: no es campo de `Quote`.
   'docHeaderText', 'docFooterText',
+  // ── 3-sep-2026 · EL DESCUENTO GLOBAL (SCRUM-594, DOC-04) ─────────────────────────────────
+  //
+  // Lo cazó este mismo guard, otra vez sin clasificar, y otra vez antes de que costara nada.
+  //
+  // HEREDA, y aquí el motivo es más fuerte que el de la cabecera: `total` y `lines` YA heredan.
+  // Un descuento que no viajara dejaría la revisión INCOHERENTE CONSIGO MISMA — el total
+  // heredado no cuadraría con sus propias líneas—, y sobre todo **subiría el precio en
+  // silencio**: el profesional revisa un presupuesto de 3.000 € rebajados a 2.700 y le sale de
+  // nuevo a 3.000 sin que nadie se lo diga. Eso es justo lo contrario de lo que este ticket
+  // viene a resolver.
+  //
+  // Es CONTENIDO negociado con el cliente, igual que la cabecera y el pie, y heredar es
+  // reversible —se puede quitar— mientras que no heredar no lo es.
+  'discountGlobalAmount',
 ] as const;
 
 /**

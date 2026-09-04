@@ -137,11 +137,33 @@ function vocabularioFacturaSuelta(linea) {
 // tenga presupuesto detrás.** Eso es una decisión del fundador, y queda escrita aquí para que
 // sea suya y no del descuido.
 // ─────────────────────────────────────────────────────────────────────────────────────────
-const VOC_PRESUPUESTO = ['apartado', 'concept', 'costeUnitario', 'price', 'qty', 'suplido', 'tax'];
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-594 (DOC-04) · ENTRA `dto`, Y EL TRINQUETE VOLVIÓ A HACER SU TRABAJO: saltó en la tanda
+// y obligó a escribir la decisión antes de que la clave pasara en silencio.
+//
+// LA DECISIÓN: **NO se añade a la puerta de la factura**, y aquí no es una frontera heredada
+// sino LA ACOTACIÓN EXPLÍCITA del ticket:
+//
+//   1. El PDF de la factura **RECALCULA** su total desde `lines` con un motor distinto del que
+//      alimenta el libro registro, el modelo 303 y VeriFactu — eso es SCRUM-624, ABIERTO y
+//      medido. Meter descuentos en ese camino **multiplicaría** ese defecto en vez de heredarlo.
+//   2. Y el prorrateo del descuento global entre tipos de IVA es una regla que vale para el
+//      PRESUPUESTO, que **no es documento fiscal**. Antes de que un descuento llegue a una
+//      factura, esa regla va a la asesoría con SCRUM-619, 623 y 624.
+//
+// 🔴 LO QUE SE PIERDE, DICHO EN VOZ ALTA: **un presupuesto con descuento que se convierte en
+// factura pierde el descuento de sus líneas.** Hoy eso no rompe ningún importe —los cuatro
+// caminos de emisión reconstruyen la línea a mano con `concept/qty/price/tax`, así que la
+// factura sale del `price` de tarifa— pero significa que el papel que firma el cliente y el que
+// se le factura pueden decir precios distintos. **Es el hueco declarado de este ticket, no un
+// olvido, y entra cuando la asesoría fije la convención.**
+// ─────────────────────────────────────────────────────────────────────────────────────────
+const VOC_PRESUPUESTO = ['apartado', 'concept', 'costeUnitario', 'dto', 'price', 'qty', 'suplido', 'tax'];
 const VOC_FACTURA = ['concept', 'price', 'qty', 'tax'];
-// `apartado` y `costeUnitario` se unen a `suplido` en la lista de lo que el presupuesto guarda y
-// la factura no. Que la lista CREZCA no es neutro: cada entrada es un dato que muere al facturar.
-const DIVERGENCIA = ['apartado', 'costeUnitario', 'suplido'];
+// `apartado`, `costeUnitario` y ahora `dto` se unen a `suplido` en la lista de lo que el
+// presupuesto guarda y la factura no. Que la lista CREZCA no es neutro: cada entrada es un dato
+// que muere al facturar.
+const DIVERGENCIA = ['apartado', 'costeUnitario', 'dto', 'suplido'];
 
 /**
  * Los sitios que reconstruyen una linea con la firma EXACTA de `Invoice.lines`. Fijado POR

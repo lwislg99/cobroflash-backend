@@ -231,9 +231,14 @@ test('SCRUM-591 · ✅ la microcopy FIRMADA es literal, y es la MISMA que la de 
     '🔴 el rótulo del botón de Clientes ha cambiado otra vez. Ahora mismo el documento ofrece\n' +
     '   «+ Nuevo cliente» y la lista otra cosa: la misma acción con dos nombres. Hay que decidirlo\n' +
     '   arriba (el texto del atajo está SIN APROBAR), no aquí.');
-  assert.match(atajo, /SIN_APROBAR = 3/,
-    '🔴 el número de ranuras sin firmar del atajo ha cambiado. Si el fundador firmó, hay que mirar\n' +
-    '   si «Nuevo cliente» quedó como texto oficial y si «+ Nuevo cliente» debe alinearse con él.');
+  // 🔴 4-sep-2026 · 3 → 0: el fundador firmó los tres rótulos del atajo, y con ellos «Nuevo
+  // cliente». La pregunta que este test dejaba abierta ya tiene respuesta y NO es «alinearlos»:
+  // el asesor decidió que la distinción se mantiene —BOTÓN sin `+`, OPCIÓN de `<select>` con `+`—
+  // porque en una lista de doscientos nombres el `+` es lo único que separa una acción de un
+  // nombre, y en un botón no separa nada. Los dos textos siguen atados, cada uno al suyo.
+  assert.match(atajo, /SIN_APROBAR = 0/,
+    '🔴 el número de ranuras sin firmar del atajo ha cambiado. Si ha entrado un rótulo nuevo sin\n' +
+    '   firma, hay que decirlo; y si se ha movido sin motivo, no es este test lo que hay que tocar.');
 
   // Y no queda ningún marcador pendiente en esta vista: si vuelve uno, hay que declararlo en el
   // censo de SCRUM-402, que es quien los cuenta.

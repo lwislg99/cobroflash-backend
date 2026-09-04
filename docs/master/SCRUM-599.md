@@ -102,9 +102,22 @@ anterior seguiría verde: la «n» y la «N» a secas **sí** disparan, y otra t
 
 ---
 
-## Microcopy — aprobada por el asesor, a la espera del fundador
+## Microcopy — ✅ FIRMADA POR EL FUNDADOR el 4-sep-2026
 
 > `Nuevo presupuesto` · `Nueva factura` · `Nuevo cliente`
+
+**Firmados los tres, sin cambiar una letra.** El registro de la aprobación vive en
+`docs/microcopy/2026-09-04-SCRUM-599-atajo-nuevo.md` — una aprobación, un fichero (SCRUM-709) — con
+los tres literales, dónde se pinta cada uno y sus cajas medidas en navegador real.
+
+`SIN_APROBAR` baja de **3 a 0** y **la constante no se retira**: el cero no dice «no hay nada que
+declarar», dice «las tres que hay están firmadas». Si mañana una cuarta lista estrena su atajo, su
+rótulo nace sin firma, el número sube y los dos tests que lo atan caen.
+
+**El censo de SCRUM-402 no se mueve, y es correcto:** `atajoNuevo.js` nunca tuvo un marcador
+—medido: cero— así que no había nada que retirar de ahí.
+
+Lo que sigue debajo es lo que se escribió el 3-sep, cuando la aprobación era del asesor.
 
 Van **en la pieza y en un solo sitio**: si cada vista escribiera el suyo, cambiar el copy sería
 tocar tres ficheros y el tercero se quedaría atrás. `SIN_APROBAR = 3`, declarado. **Sin
