@@ -1306,7 +1306,8 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
     if (lineasAdicional.length > 0) {
       try {
         adicional = await prisma.$transaction(async (tx) => {
-          const quoteNumber = await allocateQuoteNumber(tx, req.merchantId!);
+          // SCRUM-592 · la fila guarda la SECUENCIA; el texto `P260001` se deriva al pintarlo.
+          const { seq: quoteNumber } = await allocateQuoteNumber(tx, req.merchantId!);
           const creado = await tx.quote.create({
             data: {
               merchantId: req.merchantId!, customerId: job.customerId, quoteNumber,

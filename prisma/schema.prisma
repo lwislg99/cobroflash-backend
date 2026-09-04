@@ -27,6 +27,15 @@ model Merchant {
   // facturas; reset anual (mismo patrón que invoiceSeriesYear).
   nextAlbaranNumber          Int       @default(1) @map("next_albaran_number")
   albaranSeriesYear          Int?      @map("albaran_series_year")
+  /// SCRUM-592 (DOC-02) · el año de la serie de PRESUPUESTOS en curso.
+  ///
+  /// Hasta hoy `nextQuoteNumber` era un contador único que no volvía nunca a 1, porque el
+  /// presupuesto no es documento fiscal y no se le vio la necesidad. La necesidad era del
+  /// PROFESIONAL: sin año, «el presupuesto 32» no dice de qué ejercicio es ni de cuántos.
+  ///
+  /// NULL = serie sin estrenar. Copia exacta del patrón de `albaranSeriesYear`, que ya hace esto
+  /// desde SCRUM-14: al cambiar de año natural el contador vuelve a 1 y el formato lleva el año.
+  quoteSeriesYear            Int?      @map("quote_series_year")
   logoUrl                    String?   @map("logo_url")
   whatsappPhone              String?   @map("whatsapp_phone")
   // SCRUM-441 (E2) · el programa del asesor. SON DOS Y NO UNA: con solo la respuesta, `null`
