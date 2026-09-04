@@ -131,19 +131,35 @@ test('SCRUM-741 · 🔴 CASO C: «no supe leer» NO se confunde con «faltan col
 test('SCRUM-741 · 🔴 y el VIGILANTE convierte ese «no supe leer» en un FALLO, no en una lista corta', () => {
   // Si `paresDelSql` devolviera los 2 pares del caso C como si fueran buenos, la comparación
   // diría «falta una columna» sobre un fichero que quizá la tiene. Tiene que reventar antes.
+  //
+  // 🔴 SE MIRA LA CONDICIÓN QUE GUARDA EL `throw`, NO QUE EL `throw` ESTÉ ESCRITO. Ese fue el
+  // primer intento y era MUDO: sustituir `if (!r.ok)` por `if (false)` deja el `throw` en el
+  // fichero —inalcanzable— y el trinquete seguía verde. Tercera vez hoy que comparar por texto
+  // en vez de por identidad me caza, y la tercera la encontró lo mismo: probar el rojo.
   const src = fs.readFileSync(VIGILANTE, 'utf8');
   const sf = ts.createSourceFile('x.mjs', src, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
-  let lanza = false;
+  let guardado = false;
   const v = (n) => {
     if (ts.isFunctionDeclaration(n) && n.name && n.name.text === 'paresDelSql') {
-      if (/throw new Error/.test(n.getText(sf))) lanza = true;
+      const dentro = (m) => {
+        // Un `if` cuya CONDICIÓN depende de `ok` y cuyo cuerpo lanza.
+        if (ts.isIfStatement(m)
+            && /\bok\b/.test(m.expression.getText(sf))
+            && /throw\s/.test(m.thenStatement.getText(sf))) {
+          guardado = true;
+        }
+        ts.forEachChild(m, dentro);
+      };
+      dentro(n);
     }
     ts.forEachChild(n, v);
   };
   v(sf);
-  assert.ok(lanza,
-    '🔴 `paresDelSql` no falla cuando el lector dice `ok:false`. Devolver una lista en la que el '
-    + 'propio lector no confía es exactamente cómo nace un diagnóstico falso.');
+  assert.ok(guardado,
+    '🔴 `paresDelSql` no falla cuando el lector dice `ok:false` — o el `throw` ya no está, o su\n'
+    + '  condición dejó de mirar `ok` (un `if (false)` lo deja escrito pero inalcanzable).\n'
+    + '  Devolver una lista en la que el propio lector no confía es exactamente cómo nace un\n'
+    + '  diagnóstico falso: se compararía como si fuera buena y señalaría columnas que sí están.');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
