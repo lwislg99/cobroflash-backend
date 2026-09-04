@@ -664,12 +664,47 @@ blockDelivery.appendChild(descWrapper);
     const validInput = document.createElement("input");
     validInput.type = "date";
     validInput.id = "quote-valid-until";
-    const defUntil = new Date(Date.now() + 30 * 86400000);
-    validInput.value = defUntil.toISOString().slice(0, 10);
-    validInput.min = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    // 🔴 SCRUM-633 · EL DÍA, EN LA ZONA DEL MERCHANT. Antes: `toISOString().slice(0, 10)`, que
+    // da el día en UTC. Medido sobre 2026 para un profesional en Madrid: a las 09:00 y a las
+    // 12:00 fallan 0 días de 365, pero a la 01:00 son 210 y a las 00:30 son 335. No es «el
+    // cambio de hora» —quien lea eso buscará dos días al año—: es que UTC y la hora local son
+    // dos calendarios distintos casi todas las noches.
+    //
+    // La zona es la del NEGOCIO y no la del navegador: un empleado que viaja vería una
+    // caducidad distinta de la que rige el presupuesto. La regla vive en la pieza pura.
+    //
+    // ⚠️ LOS CINCO SITIOS SE ARREGLAN JUNTOS. Hoy los cinco fallan en el MISMO sentido, así que
+    // coinciden; arreglar uno solo los desincroniza, y una caducidad en la que el formulario dice
+    // un día, la base otro y el papel del cliente un tercero es PEOR que la que está mal en los
+    // cinco a la vez.
+    // 🔴 SIN `currentMerchant` AQUÍ, y lo cazó el banco de vistas: esa variable se declara 550
+    // líneas más abajo y leerla al construir el formulario revienta la pantalla entera
+    // («Cannot access before initialization»). Se pinta con la zona por defecto —UTC, lo que el
+    // sistema hacía antes— y se REFRESCA en cuanto el merchant llega.
+    const diaPintadoPorDefecto = window.quoteCaducidad.diaPorDefecto(null, 30);
+    validInput.value = diaPintadoPorDefecto;
+    validInput.min = window.quoteCaducidad.diaPorDefecto(null, 1);
     const validNote = document.createElement("p");
     validNote.style.cssText = "font-size:12px;color:var(--muted);margin:4px 0 0";
     validNote.textContent = "Pasada esta fecha el presupuesto caduca solo y el cliente verá \"pide uno actualizado\".";
+    /**
+     * SCRUM-633 · recalcula la caducidad con la zona del NEGOCIO, cuando ya se sabe cuál es.
+     *
+     * 🔴 SÓLO SI EL PROFESIONAL NO HA ELEGIDO NADA. Se compara con el valor que se pintó al
+     * construir el formulario: si sigue ahí, nadie lo ha tocado y se puede corregir; si lo ha
+     * cambiado, mandar el suyo. Pisar una fecha elegida a mano sería cambiar un documento por
+     * detrás, que es peor que el desfase de un día que esto viene a arreglar.
+     */
+    function refrescarCaducidad() {
+      // Se compara con lo que SE PINTÓ, no con un recálculo: a las 23:59 el recálculo daría otro
+      // día y el refresco se saltaría justo en la franja que este ticket viene a arreglar.
+      if (validInput.value === diaPintadoPorDefecto) {
+        validInput.value = window.quoteCaducidad.diaPorDefecto(currentMerchant, 30);
+      }
+      validInput.min = window.quoteCaducidad.diaPorDefecto(currentMerchant, 1);
+    }
+    window.__refrescarCaducidadDelPresupuesto = refrescarCaducidad;
+
     validWrapper.appendChild(validLabel);
     validWrapper.appendChild(validInput);
 
@@ -3438,6 +3473,8 @@ if (Number.isFinite(n) && n >= 0) {
 
       currentMerchant = res[0];
       customersList = Array.isArray(res[1]) ? res[1] : [];
+      // SCRUM-633 · ya se sabe en qué calendario vive el negocio: la caducidad se recalcula.
+      if (window.__refrescarCaducidadDelPresupuesto) window.__refrescarCaducidadDelPresupuesto();
 
       // Checkboxes de métodos HONESTOS: sin IBAN no hay transferencia — se
       // desactiva con el motivo, en vez de dejar marcar algo que no saldrá.
