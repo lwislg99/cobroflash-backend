@@ -3620,7 +3620,9 @@ payloadLines.push(lineaParaPayload({
         // con spread y la tanda SIGUIÓ VERDE: el censo de SCRUM-286 deriva lo que viaja de las
         // PROPIEDADES del literal, así que un spread esconde las claves y el guard que existe para
         // cazar «un campo nuevo que nadie coloca» no las ve. Dos campos nuevos entrando sin que
-        // ningún guard los mire es exactamente el fallo mudo que ese censo vino a impedir.
+        // ningún guard los mire es exactamente el fallo mudo que ese censo vino a impedir. (Hoy,
+        // con los dos campos ya registrados en la asignación de bloques, el spread cae además por
+        // «un campo asignado que ya no viaja»; pero un campo nuevo nace SIN registrar.)
         shippingAddressMode: direccionDeLaObra.shippingAddressMode,
         shippingAddress: direccionDeLaObra.shippingAddress,
         created_via: quoteFormCreatedVia, // VZ-3: 'voice' si hubo dictado
