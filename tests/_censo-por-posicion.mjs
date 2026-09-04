@@ -77,14 +77,31 @@ export function anclajesPorLinea(raiz, subdirs = ['tests', 'scripts']) {
         if (ts.isStringLiteralLike(n)) {
           const m = POSICION_EN_TEXTO.exec(n.text);
           if (m) {
+            // 🔴 SCRUM-710 · EL DESTINO SE SEPARA DE SU LÍNEA, y es la misma leccion que este
+            // fichero aplicó a SCRUM-622 una capa más arriba: alli el censo separo `id` de `linea`
+            // y aqui la `id` seguía llevando dentro la línea del DESTINO. Consecuencia medida el
+            // 4-sep-2026: **corregir** un anclaje de `:133` a `:141` producía a la vez un id nuevo
+            // y un id desaparecido, o sea DOS rojos por un cambio que no añade nada. El trinquete
+            // que existe para que no proliferen los anclajes por línea bloqueaba **arreglar uno**.
+            //
+            // `destino` (sin línea) es lo que no se mueve cuando alguien edita por encima. La
+            // línea sigue viajando en `cita` y en `lineaDestino`, para el MENSAJE — que es donde
+            // una posición sí sirve.
+            const corte = m[0].lastIndexOf(':');
             hallados.push({
               fichero: rel(raiz, p),
               linea: sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1,
               cita: m[0],
+              destino: m[0].slice(0, corte),
+              lineaDestino: Number(m[0].slice(corte + 1)),
               enMensaje: mensajes.has(n),
               // La IDENTIDAD de este hallazgo: dónde vive y qué posición fija. No lleva su
               // propia línea dentro, que sería repetir el defecto que censa.
               id: `${rel(raiz, p)}  ${m[0]}`,
+              // Y la identidad ESTABLE, la del trinquete: qué guard ancla a qué fichero. Dos
+              // anclajes al mismo fichero desde el mismo guard comparten identidad a proposito:
+              // lo que los distingue es CUÁNTOS hay, y eso se cuenta aparte.
+              identidad: `${rel(raiz, p)}  ${m[0].slice(0, corte)}`,
             });
           }
         }
