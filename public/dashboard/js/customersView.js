@@ -661,6 +661,31 @@ function renderCustomersView(container) {
   let fieldTags; // SCRUM-580 (CONT-07)
   let fieldInternalRef; // SCRUM-588 (CONT-16)
   let fieldDtoPorDefecto; // SCRUM-587 (CONT-14)
+
+  // ── SCRUM-587 (CONT-14) · EL RÓTULO DEL DESCUENTO PACTADO ────────────────────────────────
+  // ✅ MICROCOPY APROBADA por el ASESOR el 4-sep-2026, PROVISIONAL a la espera del fundador.
+  //
+  // «pactado» y no «por defecto» porque es la palabra del dominio: es un acuerdo con ESE cliente,
+  // no una preferencia de la aplicación. Y el `(%)` va DENTRO del rótulo porque sin él el
+  // profesional no sabe si escribe `10` o `0,10`.
+  //
+  // Firmado CON LA CAJA MEDIDA delante (Playwright, 4-sep-2026): 21 caracteres en los 342 px de
+  // 390 —donde caben 29 caracteres anchos en una línea— y en los 462,6 px de 929 sin discusión.
+  //
+  // 🔴 EL REGISTRO VA EN `docs/master/SCRUM-587.md` Y **NO** EN `docs/microcopy/`: ese directorio
+  // es el registro del FUNDADOR y `constaAprobado()` lo barre (SCRUM-726), así que una firma del
+  // asesor metida ahí se leería como la suya. Hay un test que lo impide.
+  const DTO_POR_DEFECTO_ROTULO = "Descuento pactado (%)";
+  // 🔴 Y EL CONTADOR, que es lo que distingue «sin marcador» de «firmado por el fundador». Es UNA
+  // ranura y el número tiene que decirlo: si mañana entra un segundo texto sin firma y esto se
+  // queda en 1, el hueco deja de estar declarado y el texto entra en pantalla en silencio.
+  //
+  // ⚠️ NO SE SUMA AL `SIN_APROBAR` DE `filtroClientes.js` (hoy 7), y es deliberado: aquél cuenta
+  // los textos que viven EN ESE módulo —el filtro y la selección de la lista—, y meter aquí un
+  // rótulo del FORMULARIO haría que el mismo número significara dos cosas. El contador vive donde
+  // vive el texto, que es la regla que ya seguían `atajoNuevo`, `filtroClientes` y
+  // `quoteDireccionObra`.
+  const DTO_POR_DEFECTO_SIN_APROBAR = 1;
   // ═════════════════════════════════════════════════════════════════════════════════════
   // SCRUM-575 (2-sep-2026) · LA CONSTANTE COMPARTIDA SE PARTE EN DOS, Y ERA LO QUE FALTABA.
   //
@@ -911,14 +936,15 @@ function renderCustomersView(container) {
 
     // 🔴 SCRUM-587 (CONT-14) · EL DESCUENTO PACTADO CON ESTE CLIENTE.
     //
-    // El rótulo va con MARCADOR y no con un texto inventado (regla 30): lo firma el asesor con la
-    // caja medida delante. La grafía es la que el censo de SCRUM-402 CUENTA (`[PENDIENTE`), para
-    // que aparezca en el recuento y no se quede dormido.
+    // El rótulo sale de `DTO_POR_DEFECTO_ROTULO`, arriba, con su firma y su contador. Sin marcador
+    // en pantalla — y que no se pinte NO significa que esté firmado por el FUNDADOR: eso lo dice
+    // `DTO_POR_DEFECTO_SIN_APROBAR`.
     //
     // `type="number"` con `step="0.01"`: los MISMOS dos decimales que `DECIMALES_PORCENTAJE` le
     // exige al `dto` de la línea donde este valor va a aterrizar. Y `min/max` 0-100 porque un
     // 150 % dejaría el precio NEGATIVO — el navegador lo dice antes de que el servidor tenga que.
-    fieldDtoPorDefecto = createField("[PENDIENTE microcopy oficial]", "dtoPorDefecto", "number");
+    // Sin `min-height`: el input mide 44,5 px medidos, así que ya cumple AB6.
+    fieldDtoPorDefecto = createField(DTO_POR_DEFECTO_ROTULO, "dtoPorDefecto", "number");
     fieldDtoPorDefecto.input.min = "0";
     fieldDtoPorDefecto.input.max = "100";
     fieldDtoPorDefecto.input.step = "0.01";

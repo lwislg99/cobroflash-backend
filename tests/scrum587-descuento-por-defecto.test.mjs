@@ -199,7 +199,65 @@ test('SCRUM-587 · 🔴 el `select` explícito lo devuelve — el quinto eslabó
     + 'sin esta línea el campo se guarda y no vuelve nunca.');
 });
 
-// ═══ ⑥ LA SUPERFICIE: LA TIRA QUE PROPONE ════════════════════════════════════════════════
+// ═══ ⑥ EL RÓTULO FIRMADO POR EL ASESOR, Y DÓNDE NO VA SU REGISTRO ═══════════════════════
+
+test('SCRUM-587 · ✅ el rótulo del campo es el FIRMADO, literal', () => {
+  // Firmado por el ASESOR el 4-sep-2026, provisional a la espera del fundador. Se compara ENTERO
+  // y con `===`: un `includes` dejaría colar «Descuento pactado (%) …» o «descuento pactado (%)»
+  // sin que nada cayera, y microcopy aprobada que deriva sola es microcopy que deja de estarlo.
+  const vista = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/customersView.js'), 'utf8');
+  const m = ejecutableDe(vista, { donde: 'customersView.js', ancla: 'DTO_POR_DEFECTO_ROTULO' })
+    .match(/const DTO_POR_DEFECTO_ROTULO = "([^"]*)";/);
+  assert.ok(m, '🔴 el rótulo ya no vive en una sola constante: se ha vuelto a escribir a mano.');
+  assert.equal(m[1], 'Descuento pactado (%)',
+    `🔴 el rótulo firmado ha cambiado: ahora dice «${m[1]}». El «(%)» no es decorativo — sin él `
+    + 'el profesional no sabe si escribe `10` o `0,10`.');
+  // Y se PINTA: un literal firmado que nadie usa es un texto aprobado que no llega a nadie.
+  assert.match(vista, /createField\(DTO_POR_DEFECTO_ROTULO,/,
+    '🔴 el rótulo firmado no se usa para crear el campo.');
+});
+
+test('SCRUM-587 · 🔴 el CONTADOR de ranuras sin firmar dice cuántas hay', () => {
+  // Es lo que distingue «sin marcador en pantalla» de «firmado por el fundador» — la avería que
+  // cerró SCRUM-726 un nivel más arriba. Si mañana entra un segundo texto sin firma y esto sigue
+  // en 1, el hueco deja de estar declarado y el texto entra en pantalla en silencio.
+  const vista = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/customersView.js'), 'utf8');
+  const m = vista.match(/const DTO_POR_DEFECTO_SIN_APROBAR = (\d+);/);
+  assert.ok(m, '🔴 no hay contador de ranuras sin firmar: «sin marcador» se leería como «aprobado».');
+  assert.equal(Number(m[1]), 1,
+    `🔴 el contador dice ${m[1]} y la ranura sin firma del fundador es UNA. O ha entrado un texto `
+    + 'nuevo sin declararlo, o el fundador ha firmado y no se ha anotado.');
+
+  // ⚠️ Y NO se ha sumado al de `filtroClientes.js`, que cuenta OTRA cosa: los textos que viven en
+  // ESE módulo (filtro y selección de la lista). Meter ahí un rótulo del formulario haría que el
+  // mismo número significara dos cosas — el defecto que SCRUM-714 viene a cerrar.
+  const filtro = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/filtroClientes.js'), 'utf8');
+  const f = filtro.match(/var SIN_APROBAR = (\d+);/);
+  assert.ok(f, '🔴 GUARD CIEGO: no encuentro el contador de `filtroClientes.js`.');
+  assert.equal(Number(f[1]), 7,
+    `🔴 el contador de \`filtroClientes\` está en ${f[1]} y debía quedarse en 7: este ticket no `
+    + 'añade textos a ese módulo, y moverlo mezclaría dos poblaciones en un solo número.');
+});
+
+test('SCRUM-587 · 🔴 la firma del ASESOR **no** va a `docs/microcopy/`', () => {
+  // Ese directorio es el registro del FUNDADOR y `constaAprobado()` lo barre (SCRUM-726): meter
+  // ahí una aprobación del asesor la haría pasar por la suya. Su sitio es la entrada de máster.
+  const dir = path.join(RAIZ, 'docs/microcopy');
+  const registros = fs.existsSync(dir) ? fs.readdirSync(dir) : [];
+  assert.ok(registros.length > 0,
+    '🔴 GUARD CIEGO: `docs/microcopy/` está vacío o no existe, así que «no hay ninguno del 587» '
+    + 'sería cierto por no haber mirado nada.');
+  assert.equal(registros.some((f) => f.includes('587')), false,
+    '🔴 hay un registro de SCRUM-587 en `docs/microcopy/`. Esta aprobación es del ASESOR y '
+    + 'provisional: su sitio es `docs/master/SCRUM-587.md`.');
+
+  // Y la entrada de máster SÍ lo registra: si no, la firma no consta en ningún sitio.
+  const entrada = fs.readFileSync(path.join(RAIZ, 'docs/master/SCRUM-587.md'), 'utf8');
+  assert.match(entrada, /Descuento pactado \(%\)/,
+    '🔴 el rótulo firmado no consta en la entrada de máster, que es donde vive esta aprobación.');
+});
+
+// ═══ ⑦ LA SUPERFICIE: LA TIRA QUE PROPONE ════════════════════════════════════════════════
 
 test('SCRUM-587 · 🔴 la tira se PINTA en el editor, OCULTA, y reutiliza el componente de la casa', async () => {
   const r = await pintarVista(cargarDashboard(RAIZ), 'renderQuotesView');

@@ -332,10 +332,39 @@ orden que el PASO 0 había medido: **el modelo ANTES que el zod**, porque
 el `data` de Prisma, y el zod por delante habría hecho que Prisma **rechazara cada guardado de
 cliente que incluyera el campo**.
 
-**El rótulo no está firmado y no se ha inventado ninguno.** Se pinta `[PENDIENTE microcopy oficial]`
-—la grafía que el censo de SCRUM-402 **cuenta**— en **tres** sitios: el rótulo del campo de la
-ficha, el botón de la tira y el texto de la tira. La caja del campo ya está medida (§4-quater);
-falta la firma.
+### ✅ MICROCOPY FIRMADA POR EL ASESOR · 4-sep-2026 · el rótulo del campo
+
+> **«Descuento pactado (%)»** — 21 caracteres.
+> **Provisional, a la espera del fundador.**
+
+**Firmada CON LA CAJA MEDIDA delante** (§4-quater), que es lo que este ticket cambió respecto a las
+anteriores: 21 caracteres en los **342 px** de 390 —donde caben **29 caracteres anchos** en una
+línea— y en los **462,6 px** de 929 sin discusión. El input mide **44,5 px**, así que cumple AB6 y
+**no se le añade `min-height`**.
+
+El motivo del texto, para que nadie lo «mejore» dentro de seis meses: **«pactado» y no «por
+defecto»** porque es la palabra del dominio —es un acuerdo con ESE cliente, no una preferencia de
+la aplicación—; y el **`(%)` va DENTRO del rótulo** porque sin él el profesional no sabe si escribe
+`10` o `0,10`.
+
+🔴 **Su registro vive AQUÍ y NO en `docs/microcopy/`**: ese directorio es el del **FUNDADOR** y
+`constaAprobado()` lo barre (SCRUM-726), así que una firma del asesor metida ahí pasaría por la
+suya. Hay un test que lo impide, copiado del que puso S1 en SCRUM-607.
+
+**El contador:** `DTO_POR_DEFECTO_SIN_APROBAR = 1` en la propia vista. Que no se pinte marcador
+**no** significa que el fundador haya firmado: eso lo dice el contador. **No se ha sumado al
+`SIN_APROBAR = 7` de `filtroClientes.js`** —que cuenta los textos de ESE módulo, el filtro y la
+selección de la lista— porque mezclar las dos poblaciones haría que el mismo número significara dos
+cosas. Es el defecto que SCRUM-714 viene a cerrar, y el guard fija los dos números.
+
+**Censo de SCRUM-402:** `customersView.js` **entró y salió el mismo día** (1 → 0). Su entrada se
+**BORRA**, no se pone a 0.
+
+### Lo que sigue SIN firmar, y por qué
+
+**El texto de la tira y su botón** siguen con `[PENDIENTE microcopy oficial]` (los 2 de
+`quotesView.js` en el censo): no se firman porque **no se tiene su caja**.
 
 **Y lo que sigue sin medirse se dice, en vez de calcularlo:** la caja que contiene el contador de
-SCRUM-582. Los anchos del texto sí están medidos; el contenedor no, porque exige sesión.
+SCRUM-582. Los anchos naturales del texto sí están medidos; el contenedor no, porque exige sesión.
+Un texto aprobado contra una caja falsa es peor que un texto sin aprobar.

@@ -130,17 +130,20 @@ const CENSO = Object.freeze({
   // El día que se firmen los dos textos, esta entrada se BORRA — no se pone a 0 (SCRUM-424 /
   // SCRUM-405): `censoActual()` sólo lista ficheros CON marcadores, y el trinquete APRIETA.
   'quotesView.js': 2,
-  // 🔴 SCRUM-587 (CONT-14) · 4-sep-2026 · `customersView.js` ENTRA con 1: el rótulo del campo del
-  // descuento pactado en la ficha del cliente.
+  // 🔴 SCRUM-587 (CONT-14) · 4-sep-2026 · `customersView.js` ENTRÓ Y SALIÓ EL MISMO DÍA.
   //
-  // Es el mismo motivo que sus dos hermanos de `quotesView.js` y la misma firma pendiente: el
-  // mecanismo existe y funciona —la columna está en las tres bases, el campo va y viene, y el
-  // documento propone— y lo único que falta es que el asesor firme el texto. La CAJA ya está
-  // medida y consta en la entrada de máster (462,6 px a 929 y 342 px a 390, con 29 caracteres
-  // anchos en una línea), así que la firma ya no espera a una medición.
+  // Entró con 1 —el rótulo del campo del descuento pactado en la ficha del cliente— y el asesor lo
+  // firmó esa misma tarde: **«Descuento pactado (%)»**, 21 caracteres, CON LA CAJA MEDIDA delante
+  // (342 px a 390, donde caben 29 caracteres anchos en una línea; 462,6 px a 929). Es la primera
+  // firma de esta casa que no ha tenido que esperar a que volviera el medidor.
   //
-  // El día que se firme, esta entrada se BORRA — no se pone a 0 (SCRUM-424 / SCRUM-405).
-  'customersView.js': 1,
+  // Su entrada se BORRA, no se pone a 0 (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista
+  // ficheros CON marcadores, así que un 0 sería una bajada permanente sin anotar, y el trinquete
+  // dejaría de apretar. COMPROBADO antes de borrarla: el censo dice `customersView.js: 1 → 0`.
+  //
+  // ⚠️ Y salir del censo NO saca de la vigilancia — lo fija R4b. El texto sigue SIN LA FIRMA DEL
+  // FUNDADOR, y eso lo declara `DTO_POR_DEFECTO_SIN_APROBAR = 1` en la propia vista: que no se
+  // pinte marcador no significa que esté firmado arriba.
   // SCRUM-507 (13-ago-2026): `aiQuoteAssistant.js` ENTRO y SALIO del censo el mismo dia. Entro con
   // 2 —el aviso de la linea que no se propone porque su IVA era ilegible, y la marca por linea de
   // lo que la IA se invento— y el fundador FIRMO los dos textos en el mismo ticket.
