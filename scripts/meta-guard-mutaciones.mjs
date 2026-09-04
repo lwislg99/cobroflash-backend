@@ -102,15 +102,64 @@ export function censoDeDeclaraciones(dir = DIR_TESTS) {
 }
 
 /** ¿El test `nombre` aparece como FALLIDO en esta salida de `node --test`? */
-function cayo(salida, nombre) {
+export function cayo(salida, nombre) {
   // Se busca la línea de fallo del reporter, no la mención del nombre: el nombre aparece también
   // en la línea de la lista de tests que pasan.
   return salida.split('\n').some((l) => /^\s*(✖|not ok)/.test(l) && l.includes(nombre));
 }
 
-function aplicarUna(mut, guard) {
+/** ¿El test `nombre` aparece como PASADO en esta salida de `node --test`? */
+export function paso(salida, nombre) {
+  return salida.split('\n').some((l) => /^\s*(✔|ok\s)/.test(l) && l.includes(nombre));
+}
+
+/**
+ * 🔴 SCRUM-748 · LA LÍNEA BASE, Y POR QUÉ NO SE RECONOCE EL MENSAJE DE ERROR.
+ *
+ * Este meta-guard llamaba MUDO a todo lo que no caía, y eso metía por la misma puerta dos cosas
+ * distintas: **«el guard no cayó»** y **«el guard no llegó a ejecutarse»**.
+ *
+ * Pasó en CI con `scrum748`. Su fichero llama a `cargarDashboard` en el top level, y el job no
+ * compilaba, así que `_banco-vistas.mjs` no encontraba `dist/` y **el fichero entero moría antes
+ * de registrar un solo test**. La línea `✖ <nombre>` nunca se imprimía, este script no la
+ * encontraba, y dictaba MUDO sobre un guard que **con `dist/` presente cae con las dos
+ * mutaciones**. El guard nunca estuvo mudo: mintió el rótulo.
+ *
+ * ⛔ Y NO SE ARREGLA RECONOCIENDO `Cannot find module` ni ninguna otra cadena de fallo. Un
+ * detector que reconoce mensajes sólo sabe decir que no a lo que le enseñaron — es la lista negra
+ * de siempre, y caduca con el primer fallo que nadie previó.
+ *
+ * SE ARREGLA POR LÍNEA BASE: antes de mutar nada se corre el fichero LIMPIO. Si el test que la
+ * declaración nombra no aparece **en verde** ahí, no hay nada que juzgar y **ni siquiera se muta**:
+ * es CIEGO. Los tres estados quedan separados por construcción y no porque alguien acierte un
+ * texto.
+ *
+ * Y de propina cierra un caso que antes no se veía: una declaración que nombra un test
+ * **renombrado o borrado** salía MUDA —acusaba al guard— y ahora sale CIEGA, que es lo que es.
+ */
+function correr(guard) {
+  const r = spawnSync(process.execPath,
+    ['--test', '--test-force-exit', '--test-reporter=spec', path.join(DIR_TESTS, guard)],
+    { encoding: 'utf8', cwd: RAIZ, timeout: 300000 });
+  return (r.stdout || '') + (r.stderr || '');
+}
+
+function aplicarUna(mut, guard, salidaLimpia) {
   const abs = path.join(RAIZ, mut.fichero);
   if (!fs.existsSync(abs)) return { ok: false, ciego: `el fichero \`${mut.fichero}\` no existe` };
+
+  // 🔴 PUERTA 1 · ¿EXISTE EN VERDE LO QUE VAMOS A JUZGAR? Si el test que la declaración nombra no
+  // pasó en la pasada limpia —porque el fichero no cargó, porque está renombrado, porque ya
+  // fallaba— no hay nada que juzgar sobre él, y NI SIQUIERA SE MUTA.
+  if (!paso(salidaLimpia, mut.cae)) {
+    return {
+      ok: false,
+      ciego: `el test «${mut.cae}» NO aparece EN VERDE en la pasada limpia, así que no se ha `
+        + 'mutado nada. O el fichero no llegó a ejecutarse (una dependencia que falta: '
+        + '`dist/` sin compilar, por ejemplo), o ese test ya fallaba, o el nombre de la '
+        + 'declaración caducó. NO es que el guard esté mudo: es que no se ha podido medir.',
+    };
+  }
 
   const ORIGINAL = fs.readFileSync(abs); // los BYTES de disco (SCRUM-570), no el blob
   const texto = ORIGINAL.toString('utf8');
@@ -124,10 +173,7 @@ function aplicarUna(mut, guard) {
     if (Buffer.compare(fs.readFileSync(abs), ORIGINAL) === 0) {
       return { ok: false, ciego: 'la mutación no cambió el fichero: no probaría nada' };
     }
-    const r = spawnSync(process.execPath,
-      ['--test', '--test-force-exit', '--test-reporter=spec', path.join(DIR_TESTS, guard)],
-      { encoding: 'utf8', cwd: RAIZ, timeout: 300000 });
-    const salida = (r.stdout || '') + (r.stderr || '');
+    const salida = correr(guard);
     resultado = cayo(salida, mut.cae)
       ? { ok: true }
       : { ok: false, mudo: `el guard NO cayó. Test que debía ponerse rojo: «${mut.cae}»` };
@@ -151,8 +197,11 @@ if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith
   const ciegos = [];
   let vivas = 0;
   for (const { guard, mutaciones } of censo) {
+    // La línea base se corre UNA VEZ por guard, no por mutación: es la misma pasada limpia para
+    // todas las suyas y duplicarla sólo costaría reloj.
+    const salidaLimpia = correr(guard);
     for (const mut of mutaciones) {
-      const r = aplicarUna(mut, guard);
+      const r = aplicarUna(mut, guard, salidaLimpia);
       if (r.ok) { vivas += 1; console.log(`  ✔ ${guard} · ${mut.cae}`); }
       else if (r.mudo) { mudos.push(`${guard} · ${r.mudo}`); console.log(`  ✖ ${guard} · MUDO`); }
       else { ciegos.push(`${guard} · ${r.ciego}`); console.log(`  ? ${guard} · CIEGO`); }
