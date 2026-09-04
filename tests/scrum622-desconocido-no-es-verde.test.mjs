@@ -156,11 +156,28 @@ test('SCRUM-622 · 🔴 EL CENSO: queda UNA red benigna, y es la que espera deci
   // un guard que vigila otra cosa. Lo que se exige NO se relaja: sigue siendo la lista EXACTA, y
   // una red duplicada da dos entradas iguales y también cae.
   const dondeEstanHoy = encontradas.map((h) => `${h.ruta}:${h.linea}`).join(' · ') || '(ninguna)';
-  assert.deepEqual(encontradas.map((h) => h.id), [
-    'public/dashboard/js/invoicesView.js  SEMAFORO_META[grupo.semaforo] || SEMAFORO_META.verde',
-  ], '🔴 EL CENSO NO CUADRA. Si ha SUBIDO, alguien ha escrito una red nueva que convierte «no lo sé» '
-    + 'en «todo bien». Si ha BAJADO a cero, el `||` del semáforo se ha arreglado: bien, y entonces '
-    + 'hay que borrar esta entrada CON su decisión escrita, no relajar el test.'
+  // ── 🔴 SCRUM-748 (4-sep-2026) · LA ENTRADA SE BORRA, Y AQUÍ VA SU DECISIÓN ────────────────
+  //
+  // Este censo declaraba UNA red benigna —`SEMAFORO_META[grupo.semaforo] || SEMAFORO_META.verde`
+  // en `invoicesView.js`— y dejaba escrito qué hacer si bajaba a cero: **borrar la entrada CON su
+  // decisión, no relajar el test**. Eso es lo que ha pasado, y ésta es la decisión.
+  //
+  // SE ARREGLÓ. `metaDelSemaforo` sustituye al `||`: un estado que no esté en el mapa ya no se
+  // disfraza del más inocente, se pinta con marcador y con su código a la vista. Medido antes:
+  // `sin_datos`, un estado nuevo, `''`, `undefined` y `null` pintaban los CINCO «AL DÍA».
+  //
+  // ⚠️ LO QUE 622 DEJÓ ABIERTO ERA EL RÓTULO, y sigue abierto: el texto de «no lo sé» es
+  // microcopy sin firmar, así que va con `[PENDIENTE microcopy oficial]` y `invoicesView.js`
+  // ENTRA en el censo de SCRUM-402 con 1. El CUARTO ESTADO tampoco se ha construido — es del
+  // fundador (regla 27). Lo que este ticket cierra es la MENTIRA, no la decisión de producto.
+  //
+  // La lista queda VACÍA a propósito, y eso es lo correcto: `redesBenignas` sigue barriendo el
+  // árbol entero, así que una red nueva en cualquier fichero cae aquí con nombre. Una lista vacía
+  // es la única creíble — una que nace poblada enseña a poblarla (SCRUM-211).
+  assert.deepEqual(encontradas.map((h) => h.id), [],
+    '🔴 EL CENSO NO CUADRA. Ha SUBIDO: alguien ha escrito una red que convierte «no lo sé» en '
+    + '«todo bien». La de `invoicesView.js` se retiró en SCRUM-748 y la lista quedó vacía; si '
+    + 'vuelve a haber una, es nueva y hay que mirarla, no añadirla aquí.'
     + `\n  Dónde están hoy: ${dondeEstanHoy}.`);
 });
 
@@ -274,9 +291,41 @@ test('SCRUM-622 · ④ el `fetch` de la bandeja LANZA si la respuesta no es buen
   assert.equal(vista.split("if (!res.ok) throw new Error('Error cargando pendientes de facturar');").length - 1, 1,
     '🔴 `fetchPendientesFacturar` ya no lanza ante una respuesta mala. Si pasa a devolver algo por '
     + 'defecto, ese algo puede traer grupos sin `semaforo` y el `||` se alcanza.');
-  // Y la red sigue donde estaba, sin tocar: es lo que este ticket NO arregla, a propósito.
-  assert.equal(vista.split('const meta = SEMAFORO_META[grupo.semaforo] || SEMAFORO_META.verde;').length - 1, 1,
-    'CARACTERIZACIÓN: el `|| SEMAFORO_META.verde` SIGUE AHÍ. No se toca porque hoy no se alcanza y '
-    + 'porque taparlo exige un rótulo para «no lo sé» — microcopy, y posiblemente un estado, que '
-    + 'decide el fundador. Si esto falla es que alguien lo cambió: bien, pero que conste con su decisión.');
+  // 🔴 SCRUM-748 · LA CARACTERIZACIÓN SE INVIERTE, Y ÉSTA ES SU DECISIÓN.
+  //
+  // Aquí se exigía que el `|| SEMAFORO_META.verde` SIGUIERA AHÍ, y se decía por qué: «no se toca
+  // porque hoy no se alcanza y porque taparlo exige un rótulo para "no lo sé" — microcopy, y
+  // posiblemente un estado, que decide el fundador. Si esto falla es que alguien lo cambió: bien,
+  // pero QUE CONSTE CON SU DECISIÓN».
+  //
+  // Consta. El fundador lo encargó (SCRUM-748) y la parte que le tocaba decidir sigue siendo suya:
+  // el rótulo va con `[PENDIENTE microcopy oficial]` hasta que lo firme, y el cuarto estado NO se
+  // ha construido (regla 27). Lo que se ha cerrado es la MENTIRA, no la decisión de producto.
+  //
+  // Ahora se exige lo contrario. 🔴 Y SE MIRA EL CÓDIGO, NO EL TEXTO: el comentario que explica
+  // el arreglo CITA la expresión retirada —tiene que citarla para explicarse—, así que un
+  // `split` sobre el fuente se caza a sí mismo. Es la trampa de auto-referencia de SCRUM-203, y
+  // me mordió al escribir esto. Por AST los comentarios no son nodos, así que la inmunidad es
+  // estructural y no una excepción escrita a mano.
+  const sf = ts.createSourceFile('v.js', vista, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  let redes = 0;
+  let usaElDecisor = 0;
+  const v = (n) => {
+    if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.BarBarToken
+        && ts.isElementAccessExpression(n.left)
+        && n.left.expression.getText(sf) === 'SEMAFORO_META'
+        && ts.isPropertyAccessExpression(n.right)
+        && n.right.expression.getText(sf) === 'SEMAFORO_META') redes += 1;
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression)
+        && n.expression.text === 'metaDelSemaforo') usaElDecisor += 1;
+    ts.forEachChild(n, v);
+  };
+  v(sf);
+
+  assert.equal(redes, 0,
+    '🔴 HA VUELTO el `|| SEMAFORO_META.verde` que SCRUM-748 retiró. Un estado desconocido volvería '
+    + 'a pintarse «AL DÍA» — y el día que exista un cuarto estado, ése es exactamente el que se '
+    + 'convertiría en la mentira que venía a evitar.');
+  assert.ok(usaElDecisor >= 1,
+    '🔴 la vista ya no LLAMA a `metaDelSemaforo`: el arreglo de SCRUM-748 se ha ido.');
 });

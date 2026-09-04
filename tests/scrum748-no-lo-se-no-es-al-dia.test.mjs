@@ -173,9 +173,13 @@ function respaldosQueAfirman(codigo, nombre = 'x.js') {
  * CENSO MEDIDO el 4-sep-2026 sobre `origin/main` = 291b86739079a8b069992deb45fb876f944b8050.
  *
  * 🔴 **NO ERAN TRES: SON SEIS** (cinco tras arreglar el de este ticket). SCRUM-622 encontró uno,
- * S4 encontró éste, y el censo por AST destapa cuatro más. Población: 83 ficheros `.js` de
- * `public/`; la cota bruta —cualquier `MAPA[k] || <algo>`— era **47**, y lo que la baja a seis es
- * exigir que el respaldo sea **otro valor del mismo mapa**.
+ * S4 encontró éste, y el censo por AST destapa cuatro más.
+ *
+ * La POBLACIÓN no se escribe a mano —el test de abajo la deriva del árbol y exige un suelo—, que
+ * es la primera de las salidas que ofrece SCRUM-737: un recuento escrito envejece sin avisar. Lo
+ * que sí queda fijado, con su árbol y su fecha arriba: la cota bruta —cualquier `MAPA[k] ||
+ * <algo>`— era **47**, y lo que la baja a seis es exigir que el respaldo sea **otro valor del
+ * mismo mapa**.
  *
  * Y con `MAPA[k] || k` —el patrón HONESTO, que deja ver el código— hay **14** sitios: la casa ya
  * sabe hacerlo bien, sólo que no en todas partes.
