@@ -184,3 +184,151 @@ nombres, un duplicado es el mismo nombre dos veces y se ve sin leer prosa.
   y el reparto medido (57 %) fijado con margen para que avise si sube o baja mucho.
 * `tests/_banco-vistas.mjs` — `hojasDelDashboard`, `reglasQueOcultan`, `ocultoPorCss`.
 * `tests/scrum660-iva-defecto-del-documento.test.mjs` — `quienLoEsconde` consulta ya el CSS.
+
+
+---
+
+# SCRUM-666b · «¿la esconde una regla?» no es «¿tiene alguna?»
+
+**Medido contra:** `origin/main` = `d9f60f7e89cc600e4d518af50ad2a977ed1876ba` · 2026-09-04T14:10:05+02:00
+**Rama:** `scrum-666-el-banco-ve-el-css`
+
+## 1 · PASO 0 (regla 39) — el ticket estaba medio arreglado, y el hueco era otro
+
+El encargo decía: «el banco de vistas no aplica CSS externo». **Eso ya no es cierto.** Lo cerró
+este mismo ticket en el PR #916 (`45a2474c`), y el banco lee las dos hojas locales desde entonces.
+
+Pero la pantalla desnuda llegó a producción **después**. Así que el hueco no era el que decía el
+enunciado, y encontrarlo era el trabajo:
+
+| pregunta | ¿la sabía contestar el banco? |
+|---|---|
+| ¿una regla de la hoja ESCONDE este nodo? | **SÍ**, desde el #916 — `ocultoPorCss` |
+| ¿este nodo tiene ALGUNA regla? | **NO. Nadie se la había hecho.** |
+
+```
+ocultoPorCss(<div class="clase-que-nadie-ha-escrito-jamas">) → { oculto: false }
+```
+
+`false` se lee como «se ve». Y una clase sin ni una regla no se ve: **se pinta desnuda.** El banco
+daba la respuesta buena y la peor noticia posible con el mismo verde.
+
+## 2 · El alcance, medido antes de tocar nada
+
+| | |
+|---|---|
+| hojas locales del índice | 2 (`tokens.css`, `css/styles.css`, 117 KB) |
+| clases que DEFINEN | **377** |
+| scripts que declara el índice | **77** |
+| atributos `class=` leídos | **664**, ilegibles **0** |
+| vistas que el banco publica / montan | 26 / **21** |
+| ficheros que consumen el banco | **41** |
+| controles que usaban las hojas | **5** (660, 661b, 666, 689, 690) |
+| **clases pintadas SIN ni una regla** | **29, en 15 ficheros** |
+
+Tres ficheros al **100 %** —todas sus clases desnudas—, y uno es el del fundador:
+
+```
+parteDetailView.js  4 de 4      globalSearch.js  1 de 1      tutorial.js  2 de 2
+```
+
+### 🔴 El dato que decidió el diseño
+
+De esas 29, **un barrido por lo PINTADO sólo ve 13**. Las 4 del parte **no**: en el banco esa vista
+se va por su rama de error y pinta 2 nodos sin una sola clase. Medir «lo que se pintó» habría
+dejado fuera justamente el caso que motivó el ticket, así que **el barrido que manda es el
+ESTÁTICO**, sobre el fuente.
+
+Y la población son los **77 scripts del índice**, no los 27 `*View.js`: restringirla perdía 8
+clases y dos ficheros enteros, los dos al 100 % (`globalSearch.js`, `tutorial.js`).
+
+## 3 · El coste, porque se preguntó
+
+| | |
+|---|---|
+| leer las dos hojas (117 KB) | **4,2 ms** |
+| trocearlas | **6,8 ms** |
+| un montaje del banco, de referencia | 70 ms |
+| **el CSS sobre la suite entera** | **+5 tests, 94 s → 94 s** |
+
+No triplica nada: es el **16 % de UN montaje** del banco, y el banco se monta una vez por vista. El
+barrido entero (77 ficheros + 2 hojas) tarda menos que montar una sola pantalla.
+
+## 4 · Las tres veces que el instrumento mintió, y cómo se vieron
+
+Ninguna la cazó una revisión. Las tres las cazó la medición, y por eso están escritas:
+
+1. **El lector no entraba en `@media`.** Declaraba huérfanas `col-hide-mobile`,
+   `table--cards-mobile` y `quote-line__qty`, **las tres definidas dentro de una media query**. Un
+   lector que no entra en el `@media` no encuentra menos: **encuentra las de otro sitio.**
+2. **La interpolación pegada al nombre.** `class="status-pill status-pill-${v}"` producía el token
+   `status-pill-`, que no es una clase: es **la mitad de un nombre**. Habría mandado a alguien a
+   escribir una regla inventada. Ahora la interpolación contamina el token que toca y se descarta.
+3. **La autorreferencia, por los dos lados a la vez.** `styles.css:1276` explica *en un comentario*
+   una regla `.quote-lines-table` que ya no existe → contarla habría dado por vestida una clase
+   desnuda. Y `quotesView.js:786` cita `class="quote-lines-table"` para contar que se retiró →
+   contarla habría inventado una huérfana que nadie pinta. Se resuelve quitando comentarios ANTES
+   de mirar: en el CSS a mano, en el JS con `soloCodigo` (SCRUM-693/694).
+
+## 5 · La verificación
+
+### 🔴 El rojo que importa, y que CAE CON EL MECANISMO VIEJO
+
+Inyectada una clase real sin regla en `exportView.js`:
+
+| | |
+|---|---|
+| el guard nuevo | 🔴 **rojo**, nombrando `.clase-nueva-sin-regla-999 (en exportView.js)` |
+| los 7 controles de CSS/vistas que ya había | ✅ **71 de 71 en verde** |
+
+Entre esos siete está **el propio SCRUM-666**, el que lee las hojas. Ése es el ticket entero en dos
+filas: el mecanismo viejo da por bueno el defecto que llegó a producción.
+
+### Los cuatro rojos, uno a uno
+
+| inyección | qué cae |
+|---|---|
+| clase huérfana nueva en un fuente | el trinquete, con clase **y** fichero |
+| barrido recortado a 3 scripts | el **suelo** — «sólo ha leído 3 script(s)», no un cero limpio |
+| el lector deja de entrar en `@media` | el control del `@media`, **el trinquete y el control positivo** |
+| `clasesEscritas` sin `soloCodigo` | el control de comentarios, y el trinquete |
+
+Los tres últimos tumban más de un test **a propósito**: un lector roto no produce un fallo, produce
+una cosecha de falsos, y eso tiene que notarse por varios sitios a la vez.
+
+### ✅ Control positivo
+
+**62 de 77 scripts sin ninguna clase huérfana.** Es lo que hace creíble el hallazgo del parte: no
+es que todo esté mal — es que **esa** pantalla lo está. Si casi todo saliera sucio, lo roto sería
+el lector de hojas y no el panel, y el guard lo dice con esas palabras.
+
+### ✅ Control negativo
+
+**Suite completa: 5068 · 4984 pass · 0 fail · 84 skipped.** Ni un rojo ajeno: aplicar la
+comprobación de CSS no ha enrojecido nada que midiera otra cosa. `guards:entrada` **21/21, exit 0**.
+
+## 6 · ⚠️ Coordinación — el guard no castiga a quien arregla
+
+La sesión 2 está vistiendo `#parte-detail` **mientras esto corre**, y la 4 sus rótulos.
+
+* **Arreglar una clase NO pone esto en rojo.** Cuando gana su regla, su línea de `CONOCIDAS` sobra
+  y un test la **nombra en verde** para que se borre. Un guard que se pusiera rojo cuando alguien
+  arregla algo castigaría justo la conducta que persigue.
+* **Lo que sí es rojo** es una clase huérfana **nueva**. Si la sesión 2 añade marcado con clases
+  sin regla, cae — y eso es lo que se quiere.
+* **No se ha tocado** `parteDetailView.js` ni `styles.css`: sus 4 clases se **declaran**, no se
+  arreglan.
+
+## 7 · Ficheros
+
+* `tests/_banco-vistas.mjs` — `clasesDeLasHojas(raiz, hojas?)` (con suelo: <100 clases LANZA) y
+  `clasesEscritas(fuente, nombre)` (devuelve `ilegibles`, para que un cero por no mirar no pase
+  por un cero limpio). Cero dependencias nuevas (regla 36).
+* `tests/scrum666b-toda-clase-pintada-tiene-regla.test.mjs` — 9 tests: el suelo, el rojo, la caída
+  del mecanismo viejo, el trinquete de 29, el control positivo y tres controles negativos.
+
+## ⛔ No tocado
+
+`public/dashboard/js/parteDetailView.js` · `public/dashboard/css/styles.css` · `public/tokens.css` ·
+`ocultoPorCss` y `reglasQueOcultan` (SCRUM-666 sigue igual) · el `continue-on-error` de los dos
+vigías · la rama `scrum-653-dos-firmas`, que sigue bloqueada esperando el ALTER de Javier.
