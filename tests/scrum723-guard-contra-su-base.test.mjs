@@ -279,6 +279,11 @@ const HALLAZGOS_DECLARADOS = [
 
 /** Ficheros que llaman a git y nombran la referencia móvil FUERA de los argumentos. */
 const INDIRECTAS_DECLARADAS = [
+  // SCRUM-738 · el censo del tablero contra el árbol. Su pregunta es sobre la PUNTA de `main` —
+  // «¿qué tickets tienen ya trabajo suyo AHÍ?»— así que la referencia móvil es el sujeto, no un
+  // descuido: contra la base de una rama respondería sobre un pasado que a nadie le sirve. La
+  // nombra al listar `refs/remotes/origin/` y al explicar el motor que consulta.
+  'scripts/censo-tablero-vs-arbol.mjs',
   'scripts/censo-reparto.mjs',   // el mensaje de error del CLI de arriba
   'tests/_censo-eol.mjs',        // la lista de referencias que `merge-base` prueba: es la SOLUCIÓN
   'tests/_censo-tickets.mjs',    // recibe la referencia por parámetro (`ref = 'origin/main'`)
