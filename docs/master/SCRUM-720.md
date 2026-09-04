@@ -389,3 +389,74 @@ SCRUM-402, que mira el fuente.
 720c). No es un error de nadie: el número se repartió a varias sesiones y el guard de SCRUM-273
 obliga a un fichero por ticket. Se conservan **los tres**, por número, sin tocar una palabra de los
 otros.
+
+---
+
+# SCRUM-720e · el terciario no parecía pulsable, y el botón de ayuda no tapaba nada
+
+**Medido contra:** `origin/main` = `ec97cd92501baf20984f585be7e985d893fc4ef7` · 2026-09-04T17:46:21+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-720e-ghost-y-ayuda`
+**Carril:** front / hoja de estilos
+
+## ① `.btn-ghost` no parecía pulsable — CONFIRMADO, y arreglado
+
+El instrumento no es el ojo: es el **despegue del papel**, el contraste del relleno del botón contra
+el fondo del sitio donde vive. Medido en `#job-detail`, a 390 y a 1280:
+
+| control | despegue del papel | borde | contraste del texto |
+|---|---|---|---|
+| `.btn-ghost` («Facturar el trabajo», «Cambiar») | **1.00** | ninguno | 4.77 |
+| `.btn-primary` («+ Nuevo albarán») | 3.30 | ninguno | — |
+| `.btn-secondary` («+ Añadir gasto») | 1.00 | **1px** | — |
+
+**1.00 no es «poco contraste»: es exactamente el mismo color que el fondo.** Sin relleno y sin
+borde, `.btn-ghost` no era un botón discreto — era texto. Y debajo de esa clase está «Facturar el
+trabajo», que es cómo cobra el profesional. 🔒 Una acción primaria que no parece una acción es una
+función que el usuario no sabe que existe.
+
+**El arreglo no estrena vocabulario: ese aspecto ya existía, en su propio `:hover`.** Se asciende a
+reposo y el hover sube un escalón. Que viviera solo en el hover era el defecto en el peor sitio
+posible — **en el móvil no hay hover**, así que allí no llegaba a verse nunca.
+
+Después: despegue **1.12**, texto **10.14** (AA holgado, antes 4.77 rozando el mínimo).
+
+**🔴 CONTROL NEGATIVO, que es el que decide:** el terciario no puede acabar pesando como el
+principal. Sigue en **1.12 frente a 3.30** — el primario se despega casi el triple. Y se distingue
+del secundario porque el suyo es relleno suave sin borde y el del secundario es borde nítido sin
+relleno. **No se toca `.btn-primary` ni `.btn-secondary`**: eso mueve todas las pantallas a la vez
+y es SCRUM-724.
+
+## ② El botón de ayuda tapando «Qué falta para cobrar» — NO SE SOSTIENE
+
+Se midió antes de moverlo, y la premisa se cae. Tres medidas:
+
+1. **Recorriendo la página entera**, en las cuatro paradas de scroll a 390 px y las tres a 1280, y
+   sondeando los cuatro vértices y el centro del botón: **0 controles tapados y 0 cifras tapadas**.
+   Nunca cae encima de nada que haya que pulsar ni de ningún importe.
+2. **La captura mentía, y era la mía.** En una captura `fullPage` un elemento `position:fixed` se
+   pinta a la altura del scroll de ese momento, así que aparece en mitad del documento cuando en la
+   pantalla está siempre abajo a la derecha. Es el mismo error de método que el recorte de
+   SCRUM-720d, en otra forma: **no se mira la captura, se recorre la página**.
+3. **La colisión que sí habría sido grave no existe.** En móvil hay estilos de una barra de
+   navegación inferior fija (`.sidebar-nav-bottom`, `bottom:0`) y el botón va a `bottom:20px` con
+   48 px de alto: sobre el papel se solapan, y habría tapado una pestaña de navegación. Se fue a
+   comprobar al `index.html` real y **esa barra no existe**: `.sidebar-nav-bottom` aparece
+   únicamente en la hoja de estilos, ningún HTML ni ningún JS la pinta.
+
+**No se toca.** Lo que decía la medición era «aquí no hay avería», y mover un botón que no estorba
+solo mueve el riesgo de sitio.
+
+## Hallazgos abiertos (regla 37 — no bloquean, no son de esta zona)
+
+1. **CSS muerto de la barra inferior**: `.sidebar-nav-bottom` y `.bottom-nav-item` se estilizan y
+   nadie los pinta. Y `.view-container` reserva **80 px** de relleno inferior en móvil «para
+   bottom-nav» — espacio en blanco al final de todas las pantallas de móvil, por una barra que no
+   está. Es medida, no impresión, y no se toca aquí porque afecta a todas las vistas.
+2. **`#tut-help-btn` se estiliza con `style.cssText` desde `tutorial.js`**, fuera de la hoja y
+   fuera de tokens. No se mueve en este ticket porque no había defecto que arreglar en él, y
+   trasladarlo sin motivo es tocar por tocar.
+
+## Cierre
+
+`npm test` **5138 tests, 0 fallos** · `guards-entrada` 4/4 · `guards-visuales` **9/9**.
+Ni un `style=` en línea: el cambio son cinco líneas de la hoja.
