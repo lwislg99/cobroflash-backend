@@ -2,9 +2,9 @@
 
 **Fecha:** 4-sep-2026 · **Carril:** documentos · **Gate:** el de concurrencia con `QA_DB_TEST=1`; el resto en `npm test`
 
-**Medido contra:** `origin/main` = `98bbbb41649905622efae3f03eb596672ea8c29f` · 2026-09-04T14:55:13Z
+**Medido contra:** `origin/main` = `c9cf435b20287ad7a0dc02a3a17d3fe182dfa372` · 2026-09-04T15:15:57Z
 
-**Tanda:** 5144 tests, 5056 pass, 0 fail, 88 skipped — medida DESPUES del ultimo cambio, entrada incluida.
+**Tanda:** 5159 tests, 5071 pass, 0 fail, 88 skipped — medida DESPUES del ultimo cambio, entrada incluida.
 
 ---
 
