@@ -239,3 +239,27 @@ test('SCRUM-748 · 🔴 el censo: nadie NUEVO convierte un desconocido en un est
   assert.equal(actual['invoicesView.js'], undefined,
     '🔴 `invoicesView.js` ha vuelto a tener un respaldo que afirma un estado: es este ticket, otra vez.');
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-745 · LAS MUTACIONES QUE TIENEN QUE TUMBAR A ESTE GUARD, DECLARADAS
+//
+// Las dos se probaron a mano al escribir el ticket y las dos cayeron. Quedan aquí para que
+// `npm run meta:mutaciones` las ejecute sin que nadie se acuerde — que es el punto entero de
+// SCRUM-745: lo que depende de que a alguien se le ocurra, un día no se le ocurre.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // El defecto original, tal cual estaba antes del ticket.
+    fichero: 'public/dashboard/js/invoicesView.js',
+    de: 'const meta = metaDelSemaforo(grupo.semaforo); // SCRUM-748: lo desconocido NO cae a «AL DÍA»',
+    a: 'const meta = SEMAFORO_META[grupo.semaforo] || SEMAFORO_META.verde;',
+    cae: 'y la LÍNEA que decide ya no lleva el respaldo',
+  },
+  {
+    // Y la otra mitad: el decisor existe, se usa, pero vuelve a elegir el estado más inocente.
+    fichero: 'public/dashboard/js/invoicesView.js',
+    de: '    if (conocido) return conocido;',
+    a: '    if (conocido) return conocido;\n    return SEMAFORO_META.verde;',
+    cae: 'NINGÚN estado desconocido se pinta «AL DÍA»',
+  },
+];
