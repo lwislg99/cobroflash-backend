@@ -61,12 +61,25 @@ export function normalizePhone(input?: string | null): string {
    * Comparte cuerpo con `formatMoneyEs` a propósito —mismo `Intl`, mismas opciones— salvo
    * `style`. Si divergieran, el símbolo dejaría de ser lo único que las separa.
    */
+  /**
+   * SCRUM-743 · LO ÚNICO QUE LAS TRES FORMAS COMPARTEN, Y LO ÚNICO QUE NO PUEDE DIVERGIR.
+   *
+   * `es-ES` **no agrupa los enteros de cuatro cifras** por CLDR. Cada copia del formato que se
+   * escribió por su cuenta reintrodujo ese defecto —A18.2 lo corrigió, SCRUM-436 lo volvió a
+   * corregir en el front, SCRUM-636 en el backend y SCRUM-739 en Informes—, y siempre por el mismo
+   * motivo: la agrupación estaba escrita N veces.
+   *
+   * Aquí está UNA vez. Las tres formas la traen con `...AGRUPA_SIEMPRE`, así que lo que las separa
+   * es sólo lo que TIENE que separarlas: el símbolo y los decimales.
+   */
+  const AGRUPA_SIEMPRE = { useGrouping: 'always' as unknown as boolean };
+
   export function formatImporteEs(n: number | string | { toString(): string }): string {
     const v = Number(String(n));
     try {
       return new Intl.NumberFormat('es-ES', {
+        ...AGRUPA_SIEMPRE,
         style: 'decimal',
-        useGrouping: 'always' as unknown as boolean,
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }).format(v);
@@ -86,15 +99,48 @@ export function normalizePhone(input?: string | null): string {
     const v = Number(String(n));
     try {
       return new Intl.NumberFormat('es-ES', {
+        // A18.2 (AB6): punto de miles SIEMPRE ("2.383,70 €", no "2383,70 €").
+        // SCRUM-743: viene de `AGRUPA_SIEMPRE`, compartido con las otras dos formas.
+        ...AGRUPA_SIEMPRE,
         style: 'currency',
-        // A18.2 (AB6): punto de miles SIEMPRE ("2.383,70 €", no "2383,70 €")
-        useGrouping: 'always' as unknown as boolean,
         currency: currency || 'EUR',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }).format(v);
     } catch {
       return `${v.toFixed(2)} ${currency}`;
+    }
+  }
+
+  /**
+   * ─────────────────────────────────────────────────────────────────────────────────────────
+   * SCRUM-743 · LA TERCERA FORMA: **agrupar SIN forzar decimales**.
+   *
+   * No es dinero: es un NÚMERO que se escribe en un documento o en una pantalla — una cantidad
+   * («1.500 ud»), el rótulo de un eje. Por eso no puede pasar por las otras dos.
+   *
+   * 🔴 `1,5` SIGUE SIENDO `1,5`, NO `1,50`. Ése es el filo entero de este ticket. Las dos formas
+   * de dinero fijan `minimumFractionDigits: 2`; pasar una cantidad por ellas **añadiría decimales
+   * que hoy no están** — y en un albarán FIRMADO eso es cambiar lo impreso, que es peor que el
+   * defecto que se viene a arreglar. Aquí el mínimo es 0: los decimales que traiga, hasta dos.
+   *
+   * Lo que SÍ comparte con las otras dos es `AGRUPA_SIEMPRE`, que es lo que estaba roto: un
+   * `toLocaleString('es-ES')` a pelo escribe `1500` donde el producto escribe `1.500`.
+   * ─────────────────────────────────────────────────────────────────────────────────────────
+   */
+  export function formatNumeroEs(n: number | string | { toString(): string }): string {
+    const v = Number(String(n));
+    try {
+      return new Intl.NumberFormat('es-ES', {
+        ...AGRUPA_SIEMPRE,
+        style: 'decimal',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      }).format(v);
+    } catch {
+      // Mismo criterio que las otras dos: si `Intl` falla, algo legible antes que romper el
+      // documento. Sin `toFixed`, que forzaría los decimales que esta forma existe para no poner.
+      return String(v);
     }
   }
 

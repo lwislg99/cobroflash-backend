@@ -34,6 +34,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { leerSiSigueAhi, exigirCorpusLeido } from './_barrido-estable.mjs'; // SCRUM-740
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -102,13 +103,22 @@ test('SCRUM-393 · SUELO: el escáner encuentra ficheros que revisar', () => {
 
 test('SCRUM-393 · ningún fichero del repo contiene un marcador de conflicto', () => {
   const sucios = [];
+  let leidos = 0;
   for (const f of TODOS) {
-    let txt;
-    try { txt = fs.readFileSync(f, 'utf8'); } catch { continue; }
+    // 🔴 SCRUM-740 · AQUÍ HABÍA UN `catch` PELADO, y era la mitad buena del arreglo sin la otra.
+    // Tolerar que un fichero desaparezca (cuatro autopruebas escriben dentro de `tests/`) está
+    // BIEN; tragarse ADEMÁS un permiso denegado o un directorio ilegible no, porque entonces
+    // «no hay marcadores» y «no supe leer nada» salen por la misma puerta. `leerSiSigueAhi`
+    // sólo perdona el ENOENT, y `exigirCorpusLeido` impide que perdonarlo acabe en un árbol
+    // vacío leído como limpio.
+    const txt = leerSiSigueAhi(f);
+    if (txt === null) continue;
+    leidos++;
     for (const m of marcadoresEn(txt)) {
       sucios.push(`${path.relative(RAIZ, f).replace(/\\/g, '/')}:${m.n}  ${m.linea}`);
     }
   }
+  exigirCorpusLeido(leidos, 50, 'SCRUM-393 · marcadores de conflicto');
   assert.deepEqual(
     sucios, [],
     '🔴 HAY MARCADORES DE CONFLICTO EN EL ÁRBOL:\n\n' + sucios.map((s) => '    ' + s).join('\n') +

@@ -284,3 +284,115 @@ hacerlo **taparía el defecto** en 22 ficheros a la vez.
 diagnóstico de S3 ya está medido y citado, y repetirlo habría bloqueado a otro carril sin añadir
 nada. Lo que sí he comprobado es que el fixture del 409 tiene la forma que S3 describió
 (`tests/albaran.test.mjs:224` crea el job sin `quoteId`; el POST de la línea siguiente espera 201).
+
+---
+
+# SCRUM-684 (b) · **FASE B: el guard acotado — una avería también se entrega en papel**
+
+**Medido contra:** `origin/main` = `8303db7524d3e0e90659c49f840d47adefaf6d5f` · 2026-09-04T21:37:50+01:00
+
+> El número sigue compartido con el trabajo de DICTADO de arriba (que es SCRUM-725, según el
+> asesor). **684 es este ticket** y la reubicación de aquél la hace él; aquí no se mueve nada.
+
+## La decisión, tomada por el fundador
+
+**SÍ.** Una avería abierta como TRABAJO DIRECTO puede entregar albarán. El guard de SCRUM-257 **se
+ACOTA, no se quita**, y los 22 ficheros de fixtures **no se tocan**: no estaban mal, reflejaban un
+estado que el producto sí permite.
+
+## 🔴 La distinción real, medida: NO es el trabajo, es LA LÍNEA
+
+El encargo pedía criterio, no una condición inventada. Se midieron los candidatos obvios y **ninguno
+sirve**:
+
+| candidato | por qué NO distingue |
+|---|---|
+| `tipoOperacion` (SCRUM-66) | es agrupación **fiscal** —recapitulativa o factura al concluir— y vale `TRABAJO_UNICO` por defecto en **los dos** casos |
+| `tipoIntervencion` (SCRUM-651) | nullable y sin `@default`: un trabajo de presupuesto también lo tiene a `null` |
+| `quoteId` a secas | **es la pregunta, no la respuesta**: acotar por él sería el guard de hoy |
+
+Lo que de verdad depende del presupuesto en este camino es **una sola cosa**, y está medida:
+**`quoteLineIndex`** (SCRUM-367). `contarLineasDePresupuesto` devuelve `undefined` cuando el trabajo
+no tiene presupuesto, y entonces `validarLineas` **conserva el índice sin validarlo** — lo dice su
+propio comentario: *«un enlace roto es peor que ningún enlace, porque C6 se lo creería y respondería
+“no queda nada por entregar” sobre una correspondencia que no existe»*.
+
+Así que el invariante que hay que sostener **no** es «no hay albarán sin presupuesto», sino:
+
+> 🔴 **NINGUNA LÍNEA PUEDE DECIR QUE VIENE DE UN PRESUPUESTO QUE NO EXISTE.**
+
+Una avería **sin** líneas enlazadas no rompe nada: no hay correspondencia que mentir.
+
+## Y va en las DOS puertas, porque hoy sólo estaba en una
+
+**Medido**: el `POST` traía el `job_without_quote` y el `PATCH` **no**. O sea que el agujero que
+aquel guard decía tapar **ya estaba abierto por el otro lado**: un albarán anterior al guard se
+podía parchear con cualquier `quoteLineIndex` y nada lo validaba. Aquí se cierra por las dos.
+
+## El microcopy: el texto aprobado ya no servía
+
+El de SCRUM-257 decía «Este trabajo no tiene presupuesto; **no se puede crear un albarán**». Con el
+guard acotado eso es **falso**: sí se puede, salvo para la línea que afirma un origen inexistente.
+
+**Un mensaje aprobado que ha dejado de ser verdad es peor que uno con marcador.** El nuevo sale con
+`[PENDIENTE` desde un solo sitio y **nombra qué línea**, declarado en `CENSO_SERVIDOR` de SCRUM-667
+—y **no** en `EN_EL_PAPEL`: lo ve el profesional en el panel, no el cliente en el papel—.
+
+Candidato para firmar, con la caja no medida porque es un toast y no un control:
+**«La línea N dice venir de un presupuesto y este trabajo no tiene ninguno.»**
+
+## Rojo por el mecanismo, en los DOS sentidos
+
+Seis casos en `tests/scrum684-albaran-en-averia.test.mjs`, y los dos guards de la regla vieja
+**re-anclados a la nueva** en vez de borrados:
+
+| caso | antes | ahora |
+|---|---|---|
+| avería sin presupuesto, sin líneas enlazadas | 🔴 409 | ✅ **201** |
+| línea con `quoteLineIndex` sin presupuesto | 409 (por el motivo equivocado) | 🔴 **409**, nombrando la línea |
+| `quoteLineIndex: 0` | — | 🔴 409 — `0` es la PRIMERA línea, no un hueco (familia SCRUM-271) |
+| `undefined` · `null` · `''` | — | ✅ pasa: es lo que manda el navegador cuando no hay origen |
+| con presupuesto, cualquier cosa | 201 | ✅ **201** — el rango lo sigue validando `validarLineas` |
+
+**CONTROL NEGATIVO**: los 22 ficheros de fixtures **pasan sin tocar ni uno**. Los dos guards que sí
+cambiaron —`scrum257` y `scrum303`— **no son fixtures: son los guards de la regla vieja**, y
+conservan sus dos caras (el 409 que queda y el 201 nuevo).
+
+## 🔴 La tanda gateada: ABORTADA, y no por esto
+
+```
+❌ preflight: DERIVA DE ESQUEMA — la BD NO coincide con prisma/schema.prisma.
+   SENTIDO: MIXTO — 1 por detrás (ADD/CREATE) y 1 por delante (DROP).
+     ALTER TABLE "customers" DROP COLUMN "dto_por_defecto";
+     CREATE UNIQUE INDEX "partes_trabajo_merchant_id_numero_key" ON "partes_trabajo"("merchant_id","numero");
+```
+
+**Las dos derivas son de otros carriles y NO se tocan:**
+
+* `customers.dto_por_defecto` está en la base y **no** en `main`: lo metió `64b498ba` **SCRUM-587**,
+  que es el carril de **S3**. Sincronizar con `db push` **haría `DROP` de esa columna** mientras su
+  rama está viva. **No se hace.**
+* el índice único de `partes_trabajo` es el **cerrojo de serie, SCRUM-728 — S4**.
+
+**Lo que sí se pudo medir**, corriendo el fichero del albarán con su puerta (`QA_DB_TEST=1`) y
+saltándome el envoltorio —lo digo porque es un desvío del procedimiento, no un atajo silencioso—:
+
+```
+tests/albaran.test.mjs → 17 tests · 15 pass · 2 fail
+```
+
+**El `409 job_without_quote` HA DESAPARECIDO.** Los dos que quedan **no son míos y no los redondeo**:
+
+| línea | fallo | de quién |
+|---|---|---|
+| **252** | `'AB260001'` no casa con `/^ALB-\d{4}-001$/` | el **formato de numeración** cambió. El propio fichero **se contradice**: su test unitario de arriba ya afirma `AB260001` |
+| **376** | espera `400` y recibe `409 albaran_cambiado_al_editar` | **SCRUM-361 (H6)**: el PATCH no manda `version`, y ese candado dice literalmente *«SI LA VERSIÓN NO LLEGA, NO SE ESCRIBE… consecuencia declarada, no descubierta»* |
+
+Los dos estaban **tapados** por el 409 del guard: el fixture nunca llegaba tan lejos. Es el mismo
+patrón que S3 midió («el fallo AVANZÓ»), dos capas más adelante. **No los toco**: el encargo dice
+que los fixtures no se tocan, y además son de la numeración (S4) y del candado de versión.
+
+## Lo que NO se ha tocado
+
+`prisma/schema.prisma` · ninguna columna · el camino de emisión · los 22 fixtures · la base de
+staging ni la de producción. El turno de staging se tomó y **se soltó** (lo hace el propio script).

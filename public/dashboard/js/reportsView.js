@@ -154,7 +154,16 @@ async function renderReportsView(container) {
     }
 
     const { months, totals, prevYear, currency } = data;
-    const fmt = (n) => Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // SCRUM-739 · AL SITIO ÚNICO. Antes: `toLocaleString('es-ES')`, que por CLDR **no agrupa
+    // los enteros de cuatro cifras** — esta pantalla escribía `6050,00` donde el resto del
+    // producto escribe `6.050,00`, y fallaba justo entre 1.000 y 9.999 €, que es el trabajo
+    // corriente de un fontanero. Por encima de 10.000 volvía a coincidir, y eso es lo que lo
+    // hacía invisible.
+    //
+    // SIN símbolo a propósito: aquí el `€` va en un `<span>` aparte o en la cabecera de la
+    // columna. `fmtImporteEs` es la VARIANTE del sitio único —la misma que el backend ya
+    // tenía en `formatImporteEs`—, no un formateador nuevo.
+    const fmt = (n) => fmtImporteEs(n, currency);
 
     // ── Tarjetas KPI ─────────────────────────────────────────────────────
     const kpiWrap = document.createElement('div');
@@ -291,7 +300,16 @@ async function renderReportsView(container) {
       return;
     }
 
-    const fmt = (n) => Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // SCRUM-739 · AL SITIO ÚNICO. Antes: `toLocaleString('es-ES')`, que por CLDR **no agrupa
+    // los enteros de cuatro cifras** — esta pantalla escribía `6050,00` donde el resto del
+    // producto escribe `6.050,00`, y fallaba justo entre 1.000 y 9.999 €, que es el trabajo
+    // corriente de un fontanero. Por encima de 10.000 volvía a coincidir, y eso es lo que lo
+    // hacía invisible.
+    //
+    // SIN símbolo a propósito: aquí el `€` va en un `<span>` aparte o en la cabecera de la
+    // columna. `fmtImporteEs` es la VARIANTE del sitio único —la misma que el backend ya
+    // tenía en `formatImporteEs`—, no un formateador nuevo.
+    const fmt = (n) => fmtImporteEs(n);
 
     vatCard.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px">
@@ -641,7 +659,7 @@ async function loadPlatformFunnel(card) {
           <td style="padding:6px 8px;text-align:right">${m.quotes}</td>
           <td style="padding:6px 8px;text-align:right">${m.sent}</td>
           <td style="padding:6px 8px;text-align:right">${m.accepted}</td>
-          <td style="padding:6px 8px;text-align:right" class="amount">${m.collectedAmount.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</td>
+          <td style="padding:6px 8px;text-align:right" class="amount">${fmtImporteEs(m.collectedAmount)} €</td>
         </tr>`).join('')}
       </tbody>
     </table>`;
@@ -731,7 +749,16 @@ function renderServices(card, data) {
     return;
   }
 
-  const fmt = (n) => Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // SCRUM-739 · AL SITIO ÚNICO. Antes: `toLocaleString('es-ES')`, que por CLDR **no agrupa
+  // los enteros de cuatro cifras** — esta pantalla escribía `6050,00` donde el resto del
+  // producto escribe `6.050,00`, y fallaba justo entre 1.000 y 9.999 €, que es el trabajo
+  // corriente de un fontanero. Por encima de 10.000 volvía a coincidir, y eso es lo que lo
+  // hacía invisible.
+  //
+  // SIN símbolo a propósito: aquí el `€` va en un `<span>` aparte o en la cabecera de la
+  // columna. `fmtImporteEs` es la VARIANTE del sitio único —la misma que el backend ya
+  // tenía en `formatImporteEs`—, no un formateador nuevo.
+  const fmt = (n) => fmtImporteEs(n);
   const tableWrap = document.createElement('div');
   tableWrap.className = 'table-scroll';
   const table = document.createElement('table');
@@ -815,7 +842,11 @@ function buildBarChart(months, currency) {
     label.setAttribute('text-anchor', 'end');
     label.setAttribute('font-size', '10');
     label.setAttribute('fill', '#949b92');
-    label.textContent = Math.round(maxVal * f).toLocaleString('es-ES');
+    // SCRUM-743 · el hueco que SCRUM-739 dejó DECLARADO, y no por olvido: este rótulo es un
+    // ENTERO y las dos formas de dinero fuerzan dos decimales, así que pasarlo por ellas habría
+    // escrito `6.050,00` en un eje donde hoy pone `6050` — añadir decimales donde no los hay es
+    // cambiar lo que se ve. `fmtNumeroEs` agrupa y no toca los decimales: `6050` → `6.050`.
+    label.textContent = fmtNumeroEs(Math.round(maxVal * f));
     svg.appendChild(label);
   });
 
@@ -846,7 +877,7 @@ function buildBarChart(months, currency) {
 
       // Tooltip
       const title = document.createElementNS(svgNS, 'title');
-      title.textContent = `${m.label}: ${Number(value).toLocaleString('es-ES', {minimumFractionDigits:2})} ${currency}`;
+      title.textContent = `${m.label}: ${fmtImporteEs(value, currency)} ${currency}`;
       rect.appendChild(title);
 
       svg.appendChild(rect);

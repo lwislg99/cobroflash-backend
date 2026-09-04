@@ -72,8 +72,16 @@ const PUBLICAN_CIFRA = [
     unidad: 'MARCAS_ESCRITAS' },
   { rel: 'tests/scrum402-marcador-no-se-pinta.test.mjs', cifra: /const CENSO = /,
     unidad: 'FICHEROS_CON_MARCA' },
-  { rel: 'tests/scrum667-marcador-visible.test.mjs', cifra: /\b\d+\s+marcas?\b/,
-    unidad: 'MARCAS_ESCRITAS' },
+  // ── SALIÓ EL 4-sep-2026, CON SU MOTIVO (lo pedía el mensaje de este mismo guard) ────────
+  //
+  // `tests/scrum667-marcador-visible.test.mjs` publicaba `MARCAS_ESCRITAS` en su cabecera —«N
+  // marcas hoy», con desglose—. **SCRUM-737 la retiró**: era un recuento del árbol sin fecha, o
+  // sea de los que caducan solos, y además DERIVABLE (`scripts/censo-marcadores.mjs` lo cuenta).
+  // Ahora esa cabecera remite al censo en vez de copiar su número.
+  //
+  // No se sustituye por otra entrada: **ya no publica nada que otra sesión pueda comparar**, que
+  // es exactamente lo que esta lista mide. Y esto es lo correcto según el propio mensaje de
+  // abajo: «si un instrumento dejó de publicar su número, sale de la lista con su motivo».
   { rel: 'tests/scrum709-microcopy-por-fichero.test.mjs', cifra: /\b\d+\s+citas?\b|de las \d+ citas/,
     unidad: 'CITAS_A_APROBACION' },
 ];
