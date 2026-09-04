@@ -101,6 +101,29 @@ export const DECLARADOS = [
   //
   // Lo que estaba mal no era la convención: era que CRUZABA LA FRONTERA al convertirse en factura.
   // Se arregló la frontera.
+  // ── SCRUM-592 (DOC-02) · dos piezas cuyo consumidor vive FUERA de `src/` ────────────────
+  //
+  // No son motores dormidos: los dos tienen llamador de verdad, sólo que el censo mira `src/` y
+  // ellos se consumen desde un script y desde la suite. Se declaran en vez de forzarles un
+  // consumidor artificial dentro de `src/`, que sería inventar un cable para callar un guard.
+  {
+    modulo: 'src/modules/jobs/domain/albaranNumber.service.ts',
+    cat: 'EXPORTADO_PARA_LAS_FIXTURES', desde: '2026-09-04',
+    motivo: 'La pregunta «¿este albarán ya está en el formato de SCRUM-592?». La usa '
+      + '`scripts/renumerar-documentos.mjs` para no renumerar dos veces —un proceso que no es '
+      + 'idempotente cambia el número cada vez que alguien lo lanza— y su test la corre. Vive en '
+      + 'el dominio, y no en el script, porque la respuesta la da la SERIE, no quien pregunta.',
+    exports: ['esAlbaranRenumerado'],
+  },
+  {
+    modulo: 'src/modules/quotes/domain/quoteNumber.service.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-04',
+    motivo: 'El guion con el que se dice «este presupuesto no tiene número». Se exporta para que '
+      + 'la suite compruebe el texto sin volver a escribirlo —copiarlo sería tener dos verdades— y '
+      + 'porque es la alternativa al defecto que SCRUM-592 cierra: hasta hoy ahí se enseñaba el id '
+      + 'GLOBAL de la plataforma, que es justo lo que A1.2 vino a esconder.',
+    exports: ['SIN_NUMERO'],
+  },
   {
     modulo: 'src/modules/jobs/domain/albaranAFactura.ts',
     cat: 'ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE', desde: '2026-09-04',
