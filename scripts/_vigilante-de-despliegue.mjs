@@ -110,6 +110,26 @@ export function veredictoDeDespliegue(datos) {
       + '   Puede ser un `git fetch` que falta, o un despliegue desde otro sitio. No se adivina.');
   }
 
+  // ── SUELO 4 · 🔴 LA OTRA PUNTA. SCRUM-716 ─────────────────────────────────────────
+  //
+  // Los tres suelos de arriba miran lo que dice PRODUCCIÓN. Faltaba mirar la otra punta: si
+  // `origin/main` no resuelve, no hay CONTRA QUÉ comparar — y hasta SCRUM-716 eso salía
+  // **«al día» con salida 0**, imprimiendo «`main` está en ?» en el mismo título.
+  //
+  // Medido el 3-sep-2026 y todavía vivo el 4:
+  //     conoceElCommit: true, shaDeMain: null  →  al-dia · salida 0 · «`main` está en ? · sin hueco»
+  //
+  // 🔒 Y lo peor no es el texto: es que **con salida 0 no aparece ni en rojo**. El guard que
+  // existe para que no vuelvan a pasar nueve días sin desplegar callaba justo cuando no sabía.
+  // Pasa en CI de verdad: en un checkout de PR, `origin/main` puede no existir como rama de
+  // seguimiento.
+  if (shaDeMain == null || !ES_SHA40.test(String(shaDeMain).trim())) {
+    return ciego('no se pudo resolver `main` en este repositorio.',
+      '   Producción dice estar en ' + version.slice(0, 8) + ', pero no hay contra qué compararlo:\n'
+      + '   `git rev-parse origin/main` no devolvió un sha. Suele ser un checkout sin la rama de\n'
+      + '   seguimiento (un PR) o un `git fetch` que falta.');
+  }
+
   // ── Producción corriendo algo que NO está en `main`: eso no es «atraso» ────────────────
   if (estaEnMain === false) {
     return {
@@ -130,7 +150,15 @@ export function veredictoDeDespliegue(datos) {
   // Lo que se mide es el HUECO: si el sha de producción y el HEAD de `main` son IGUALES, verde
   // **dé la hora que dé**. Nueve días de silencio con producción al día no son un fallo: son un
   // puente. El reloj sólo corre cuando hay hueco — y entonces cuenta desde que se abrió.
-  if (!commitsPorDelante) {
+  // 🔴 SCRUM-716 · `null` NO ES `0`, y aquí lo era. `!commitsPorDelante` daba verdadero para
+  // los dos: «no se pudo contar» salía por la misma línea que «no hay hueco». Es la confusión
+  // de la casa entre «no medido» y «cero», esta vez dentro del propio vigilante.
+  if (commitsPorDelante == null || !Number.isFinite(commitsPorDelante)) {
+    return ciego('no se pudo contar cuántos commits le faltan a producción.',
+      '   Las dos puntas se resolvieron, pero `git rev-list --count` no devolvió un número.');
+  }
+
+  if (commitsPorDelante === 0) {
     return {
       veredicto: AL_DIA, salida: 0, horas: 0,
       titulo: 'producción dice ' + version.slice(0, 8) + ' · `main` está en '
