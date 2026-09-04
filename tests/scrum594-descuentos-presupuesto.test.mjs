@@ -272,24 +272,36 @@ test('SCRUM-594 · con descuento, el papel LO DICE y sigue sumando', async () =>
   assert.ok(r.texto.includes('102,85'), '🔴 el total no cuadra');
 });
 
-test('SCRUM-594 · 🔴 LA ACOTACIÓN, PROBADA: el PDF de la FACTURA sale igual que antes', async () => {
+test('SCRUM-594 · 🔴 LA ACOTACIÓN, PROBADA: la factura IGNORA el `dto` por completo', async () => {
   // La propagación del descuento a la factura queda FUERA de este ticket: allí el total se
   // RECALCULA desde `lines` con un motor distinto del que alimenta el libro registro y VeriFactu
-  // (SCRUM-624, abierto). Este test es la prueba de que no se ha colado por ningún lado: la
-  // factura recibe una línea CON `dto` y lo ignora por completo.
-  const lines = [{ concept: 'Mano de obra', qty: 1, price: 100, dto: 50, tax: 0.21 }];
-  const { outPath } = await generateInvoicePdf({
-    ...CASO, invoiceId: 5943, number: '2026-CF-5943', lines, total: '121.00',
-  });
-  const r = extraerTextoPdf(fs.readFileSync(outPath));
-  assert.equal(r.ok, true, `🔴 no supe leer el PDF: ${r.motivo}`);
-  assert.ok(r.texto.includes('121,00'),
-    '🔴 LA FACTURA HA CAMBIADO DE IMPORTE. Con un `dto: 50` en la línea sigue teniendo que '
-    + 'imprimir 121,00: el descuento NO entra en este documento en este ticket.');
-  for (const rotulo of ['Suma de líneas', 'Descuento global']) {
-    assert.equal(r.texto.includes(rotulo), false,
-      `🔴 la factura ha empezado a pintar «${rotulo}»: la acotación se ha roto.`);
-  }
+  // (SCRUM-624, abierto). Esto prueba que no se ha colado por ningún lado.
+  //
+  // 🔴 SE COMPARAN LOS DOS DOCUMENTOS, Y NO UNA CIFRA SUELTA. La primera versión de este test
+  // comprobaba `texto.includes('121,00')` y era INCAPAZ DE FALLAR: al inyectar el descuento en
+  // el bucle de la factura, el documento pasaba a imprimir 50,00 / 10,50 / **60,50** de total…
+  // y seguía conteniendo «121,00», porque ese número también aparece en el IMPORTE DE LA LÍNEA.
+  // El test pasaba sobre una factura con el total cambiado. Lo cazó la mutación, no la lectura.
+  const conDto = [{ concept: 'Mano de obra', qty: 1, price: 100, dto: 50, tax: 0.21 }];
+  const sinDto = [{ concept: 'Mano de obra', qty: 1, price: 100, tax: 0.21 }];
+
+  const importesDe = async (lines, id) => {
+    const { outPath } = await generateInvoicePdf({
+      ...CASO, invoiceId: id, number: `2026-CF-${id}`, lines, total: '121.00',
+    });
+    const r = extraerTextoPdf(fs.readFileSync(outPath));
+    assert.equal(r.ok, true, `🔴 no supe leer el PDF: ${r.motivo}`);
+    return [...new Set([...r.texto.matchAll(/\d+[.,]\d{2}/g)].map((m) => m[0]))].sort();
+  };
+
+  const a = await importesDe(conDto, 5943);
+  const b = await importesDe(sinDto, 5944);
+  assert.deepEqual(a, b,
+    '🔴 LA FACTURA HA CAMBIADO DE IMPORTES al llegarle una línea con `dto`. Ese documento se '
+    + 'calcula con un motor distinto del que alimenta el libro registro y VeriFactu (SCRUM-624, '
+    + `abierto): el descuento NO entra ahí en este ticket.\n  con dto: ${a}\n  sin dto: ${b}`);
+  // Y el suelo del propio control: si no viera importes, la igualdad de arriba sería vacía.
+  assert.ok(a.length >= 3, `🔴 sólo veo ${a.length} importes en la factura: no estoy midiendo nada`);
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════

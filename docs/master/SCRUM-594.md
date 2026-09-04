@@ -156,6 +156,20 @@ de lo que cuesta de verdad ampliar el presupuesto:
 
 ---
 
+## 🔴 Y un test mío que no podía fallar, cazado por la mutación
+
+El test que prueba la acotación —«la factura sale igual»— comprobaba
+`texto.includes('121,00')`. Al inyectar el descuento en el bucle de la factura para verlo caer,
+**no cayó**: el documento pasaba a imprimir `50,00 / 10,50 / 60,50` de total y **seguía
+conteniendo «121,00»**, porque ese número también aparece en el **importe de la línea**. Es decir,
+el test daba verde sobre una factura con el total cambiado — exactamente lo que venía a impedir.
+
+Arreglado comparando **los importes de los dos documentos** (con `dto` y sin `dto`), que es una
+igualdad y no una cifra suelta. Con el arreglo, la misma mutación lo tumba y el mensaje enseña los
+dos conjuntos. **Lo cazó la mutación, no la lectura.**
+
+---
+
 ## Evidencia
 
 - **El que decide:** un presupuesto sin descuento imprime **exactamente** lo de antes, leído del
