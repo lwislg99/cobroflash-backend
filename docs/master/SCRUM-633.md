@@ -504,8 +504,8 @@ una semana afinando **no lo tiene la mayoría de los documentos reales**.
 **Medido contra:** `origin/main` = `b74f523910fdb371c098a7f265a5a60e0eae3425` · 2026-09-04T21:55:00Z
 
 **Tanda:** 5396 tests, **5308 pass, 0 fail**, 88 skipped — corrida DESPUES del ultimo cambio,
-entrada incluida. Es la primera tanda del dia sin rojos:  —que llevaba toda la sesion
-rojo en cualquier checkout cuya ruta lleve un espacio— ya esta arreglado en .
+entrada incluida. Es la primera tanda del dia sin rojos: `SCRUM-176b` —que llevaba toda la sesion
+rojo en cualquier checkout cuya ruta lleve un espacio— ya esta arreglado en `main`.
 
 ---
 
