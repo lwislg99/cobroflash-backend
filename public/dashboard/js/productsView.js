@@ -24,7 +24,48 @@
 // quien puede mapearlo, no quien está intentando cobrar.
 // ═══════════════════════════════════════════════════════════════════════════════════════
 
+// ⚠️ EL MARCADOR YA NO SE PINTA: se queda SÓLO como respaldo de ÚLTIMO RECURSO, para el caso en
+// que una llamada no traiga respaldo en castellano. Hoy las ocho lo traen, así que no es
+// alcanzable; se conserva porque una llamada nueva que lo olvide tiene que enseñar que falta un
+// texto, no una cadena vacía (`.alert:empty` no se pinta, y el error desaparecería en silencio).
+// Es el mismo reparto que el fichero gemelo `providersView.js` (SCRUM-644), que ya convive con un
+// texto aprobado en el mapa y el marcador aquí abajo. Criterio COPIADO, no inventado.
 const PV_MARCADOR_MICROCOPY = '[PENDIENTE microcopy oficial]';
+
+// ── SCRUM-641 · EL TEXTO DEL NOMBRE COGIDO ───────────────────────────────────────────────────
+//
+// ✅ APROBADO POR EL ASESOR el 4-sep-2026, PROVISIONAL a la espera de la firma del fundador.
+// El registro va en `docs/master/SCRUM-641.md` y NO en `docs/microcopy/`: ese directorio es el
+// registro del FUNDADOR y `constaAprobado()` lo barre (SCRUM-726), así que meter ahí la firma del
+// asesor la haría pasar por la suya.
+//
+// 🔴 DICE «YA TIENES» Y NO «ese nombre está en uso»: le dice al profesional que el choque es con
+// algo SUYO. Quien lee «en uso» se pregunta de quién es, y en un multi-tenant esa duda es peor
+// que el error.
+//
+// 🔴 NO LLEVA SALIDA («cambia el nombre»): se lee con el campo del nombre delante, así que la
+// salida es obvia y la frase sobraría. Precedente de la casa: un 409 que decía «no lo hemos
+// duplicado» y acababa mandando a crearlo otra vez.
+//
+// 🔴 NO MENCIONA LOS DESACTIVADOS aunque sean probablemente la causa frecuente: eso es SCRUM-631
+// y está esperando al fundador. No se explica algo que todavía no es verdad.
+//
+// LA CAJA, MEDIDA en el DOM renderizado (Playwright) antes de aprobarlo — 37 caracteres:
+//   · 929 px → útil 561 px (546 con barra de scroll): una línea, sobra el triple.
+//   · 390 px → útil 279 px CON barra de scroll: una línea, capacidad medida 45 caracteres.
+//   · 320 px → útil 224 px: dos líneas, y la página no scrollea en horizontal (SCRUM-469).
+//
+// ⚠️ SIN MARCADOR en pantalla, mismo criterio que `jobDetailView.js` (SCRUM-607) y
+// `filtroClientes.js` (SCRUM-582). Que no se pinte el corchete NO significa que esté firmado por
+// el fundador: eso lo dice `PV_SIN_APROBAR`, aquí abajo.
+const PV_NOMBRE_DUPLICADO = 'Ya tienes un producto con ese nombre.';
+
+// Cuántas ranuras estrena esta pantalla SIN la firma del fundador. UNA: el texto de arriba.
+//
+// Se queda aunque llegue a 0, por el motivo de `filtroClientes.js` y `quoteDireccionObra.js`: el
+// día que el traductor gane un segundo texto, ese texto nace sin firma y este número tiene que
+// subir. Borrarlo dejaría el hueco sin sitio donde declararse.
+const PV_SIN_APROBAR = 1;
 
 // Un identificador interno no lleva espacios ni mayúsculas: `name_duplicate`, `forbidden`,
 // `trial_expired`. Una frase escrita para una persona siempre lleva una de las dos cosas.
@@ -39,11 +80,11 @@ const PV_ES_IDENTIFICADOR = /^[a-z][a-z0-9_]*$/;
 function mensajeDeErrorCatalogo(codigoOMensaje, respaldo) {
   const bruto = String(codigoOMensaje == null ? '' : codigoOMensaje).trim();
 
-  // El que necesita decir algo DISTINTO del respaldo genérico. El marcador va con su palabra
-  // distintiva —no solo— porque es un control de varios lados: si todos los errores dijeran lo
-  // mismo, la pantalla perdería la distinción que este ticket viene a dar.
+  // El que necesita decir algo DISTINTO del respaldo genérico: es un control de varios lados —este
+  // caso frente a todos los demás, que caen a su respaldo en castellano—, así que si todos los
+  // errores dijeran lo mismo la pantalla perdería la distinción que este ticket vino a dar.
   const M = {
-    name_duplicate: PV_MARCADOR_MICROCOPY + ' nombre ya en uso',
+    name_duplicate: PV_NOMBRE_DUPLICADO,
   };
   if (M[bruto]) return M[bruto];
 
@@ -56,6 +97,8 @@ function mensajeDeErrorCatalogo(codigoOMensaje, respaldo) {
 if (typeof window !== 'undefined') {
   window.mensajeDeErrorCatalogo = mensajeDeErrorCatalogo;
   window.PV_MARCADOR_MICROCOPY = PV_MARCADOR_MICROCOPY;
+  window.PV_NOMBRE_DUPLICADO = PV_NOMBRE_DUPLICADO;
+  window.PV_SIN_APROBAR = PV_SIN_APROBAR;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════════════
