@@ -2770,3 +2770,150 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 @media (max-width: 640px) {
   .btn-atajo { display: none; }
 }
+
+/* ── Parte de trabajo ────────────────────────────────────────
+   SCRUM-720 · La pantalla del parte llegó a producción SIN UNA SOLA REGLA suya.
+
+   Medido antes de escribir esto: la hoja SÍ se carga en esa vista —la tipografía y los colores
+   de `--muted`/`--ink` se aplican, se ve en la captura— pero de las CUATRO clases que pinta
+   `parteDetailView.js` existían CERO. Sus hermanas: Trabajos 13 de 15, albarán 11 de 12.
+
+   Por eso salía texto crudo sobre blanco y los botones eran los nativos del navegador: la hoja
+   sólo declara `button { font-family: inherit; cursor: pointer }`, sin apariencia.
+
+   ⚠️ Aquí NO se estrena vocabulario: se reutiliza el que ya existe (`.customers-card`,
+   `.btn-primary`, `.btn-secondary`, `--radius-*`, `--shadow-sm`). Un componente nuevo iría al
+   inventario AB3, y esta pantalla no necesita ninguno.
+
+   ⚠️ Y se estiliza por `data-*` donde el marcado no lleva clase. No es un atajo: esos atributos
+   son los ganchos que ya usan los tests, y el fichero de la vista lo está tocando otra sesión
+   para firmar los rótulos. Tocarlo aquí sería chocar en el mismo fichero por un `class=`.
+   ──────────────────────────────────────────────────────────── */
+
+/* Los dos bloques del papel —mano de obra y materiales— son las tarjetas de esta pantalla. */
+.parte-bloque {
+  background: #fff;
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+}
+
+.parte-bloque table { width: 100%; border-collapse: collapse; }
+.parte-bloque th {
+  text-align: left;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--neutral-200);
+}
+.parte-bloque td { border-bottom: 1px solid var(--neutral-100); }
+.parte-bloque tr:last-child td { border-bottom: 0; }
+
+/* Las tres casillas de tipo: excluyentes, y se leen de un vistazo. */
+.parte-tipo label {
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-full);
+  padding: 6px 12px;
+  margin-bottom: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+.parte-tipo label:has(input:checked) {
+  border-color: var(--brand);
+  background: var(--brand-tint, #f0fdf4);
+  color: var(--brand-ink, var(--ink));
+  font-weight: 600;
+}
+
+/* El campo del dictado. El micrófono lo pone el teclado del móvil: aquí sólo hay un textarea. */
+[data-parte-dictado] textarea {
+  border: 1px solid var(--input-border, var(--border));
+  border-radius: var(--radius-md, 10px);
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--ink);
+  background: #fff;
+  resize: vertical;
+}
+[data-parte-dictado] textarea:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: var(--ring, 0 0 0 3px rgba(22,163,74,.15));
+}
+
+/* ── Los botones ──────────────────────────────────────────────
+   Ninguno de éstos lleva `class`, así que sin esto salen como el botón nativo del navegador:
+   caja gris con borde de sistema. Es literalmente lo que se veía en producción. */
+.parte-anadir,
+[data-parte-firmar],
+[data-dictado-ordenar],
+[data-propuesta-confirmar] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 8px 16px;
+  min-height: 36px;
+  font-family: var(--font);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: all .12s;
+  background: var(--surface);
+  color: var(--ink);
+}
+.parte-anadir:active,
+[data-parte-firmar]:active,
+[data-dictado-ordenar]:active,
+[data-propuesta-confirmar]:active { transform: scale(.97); }
+
+.parte-anadir:disabled,
+[data-parte-firmar]:disabled,
+[data-dictado-ordenar]:disabled,
+[data-propuesta-confirmar]:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+/* Firmar es la acción principal de esta pantalla: es lo que cierra el parte en la obra. */
+[data-parte-firmar] {
+  background: var(--brand);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 1px 2px rgba(5,46,22,.18);
+}
+[data-parte-firmar]:hover:not(:disabled) { background: var(--green-700, var(--brand-700)); color: #fff; }
+
+/* Quitar una línea: presente, pero nunca compitiendo con la acción principal. */
+.parte-quitar-linea {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+}
+.parte-quitar-linea:hover { background: var(--danger-bg, #fef2f2); color: var(--danger, #dc2626); }
+
+/* Las líneas que propone el dictado, antes de que el técnico las confirme. */
+[data-propuesta] input[type="number"] {
+  border: 1px solid var(--input-border, var(--border));
+  border-radius: var(--radius-md, 10px);
+  padding: 6px 8px;
+  font-size: 14px;
+  text-align: right;
+}
+[data-falta-cantidad] { color: var(--muted); }
+
+/* Firmado: el contenido ya no se toca, y la pantalla tiene que decirlo sin gritar. */
+[data-parte-firmado] {
+  background: var(--ok-bg, #f0fdf4);
+  color: var(--ok-ink, #166534);
+  border-radius: var(--radius-md, 10px);
+  padding: 10px 12px;
+  font-size: 13.5px;
+}
