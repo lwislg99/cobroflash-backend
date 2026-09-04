@@ -142,3 +142,82 @@ identificador); y la forma **correcta**, `llamadasA(src, 'x') > 0`.
   negativo, que el mecanismo existe y es ejecutable, y el censo con su suelo.
 * `tests/scrum740-carrera-por-el-arbol.test.mjs` — declara sus dos mutaciones.
 * `package.json` — `meta:mutaciones`, con su nota de por qué no sustituye a `censo:mudez`.
+
+---
+---
+
+# APÉNDICE · SCRUM-745 FASE B · el meta-guard a CI, y la mitad que faltaba
+
+**Fecha:** 4-sep-2026 · **Medido contra:** `origin/main` = `a84680db458feb0db41fdd63e227bb22ea012daf` · 2026-09-04T23:45:00Z
+
+Las dos cosas autorizadas dentro de este carril. Va en la misma rama a propósito: amplía el mismo
+censo y el mismo script, y separarlas daría una rama que no se puede mergear sin la otra.
+
+---
+
+## ① `meta:mutaciones` VA A CI, en job propio
+
+**Fuera de CI era «un aviso que nadie está obligado a mirar»** (SCRUM-736). Ya está en `ci.yml`.
+
+### 🔴 Y el job es propio por una razón medida, no por estilo
+
+**Este guard MUTA FICHEROS DEL CHECKOUT.** Compartir job con cualquier paso que lea el árbol es
+**exactamente la carrera de SCRUM-740** —un barrido leyendo mientras otro escribe—, y la sabemos
+hoy porque la arreglamos hoy. Con checkout propio, lo que muta es suyo y de nadie más.
+
+**No cuesta reloj:** los jobs de un workflow corren en paralelo, y éste tarda **4 s** con las dos
+mutaciones declaradas, frente a los varios minutos del job de tests.
+
+No compila (`npm run build`) porque ninguna mutación declarada hoy toca un guard que importe de
+`dist/`. El día que una lo haga, **se enterará por el rojo y no por sorpresa**: ese guard saldría
+CIEGO, no verde.
+
+---
+
+## ② LA MITAD DE LA REGEX — y era la mayor
+
+| forma | sitios |
+|---|---:|
+| ① `<fuente>.includes('<identificador>')` | **24** |
+| ② `/<literal>/.test(<fuente>)` ← **FASE B** | **51** |
+| **total** | **75**, en **52** ficheros |
+
+Población: **650** ficheros de test.
+
+🔴 **La mitad que faltaba era el doble que la medida.** De haber dado la fase A por completa, **dos
+tercios de la superficie habrían quedado fuera con el número puesto** — que es peor que no tener
+número, porque un número invita a dejar de mirar.
+
+### 🔴 El criterio NO podía ser «el patrón es un identificador»
+
+Mi segundo trinquete mudo era `/throw new Error/.test(cuerpo)`. **Lleva espacios.** Un criterio de
+«identificador» lo habría dejado escapar — y un censo que no ve el caso que lo originó no vale.
+
+Lo que define la forma es que el patrón sea **literal puro, sin ningún metacarácter**: eso es
+preguntar por texto. Una regex **con estructura** (`^\d+$`, `\bfoo\b`) está midiendo otra cosa y no
+entra. Probado con ese caso exacto y con **cinco controles negativos**, incluidos una regex
+estructural y una regex literal aplicada a algo que **no** es un fuente de fichero.
+
+### ⚠️ Y se corrige la cifra de la fase A
+
+Publiqué **29** para la forma ①. **Son 24.** La primera medición usaba un detector que además
+contaba `leer(` como origen de fuente; el del test mira sólo `readFileSync`, `leerFuente` y
+`soloEjecutable`. Mismo criterio en las dos formas, y el número que vale es el del test.
+
+### El suelo mira LAS DOS RAMAS por separado
+
+Con 51 sitios de regex, la rama `includes` podría caer a cero y **el total seguiría pareciendo
+grande**. Un total sano esconde una rama muda: es la lección del censo por fichero de SCRUM-402,
+aplicada al detector en vez de al corpus.
+
+---
+
+## Lo que sigue sin cubrir, tras la fase B
+
+1. **Sigue habiendo UN solo guard declarando mutaciones.** Es lo caro y lo que da el valor: el
+   script es media tarde, escribir cada declaración **y comprobarla** es el trabajo.
+2. **La superficie fuera de `tests/`** (`scripts/`, `.claude/hooks/`) sigue sin medir.
+3. **El censo sigue sin distinguir intención**: 75 no son 75 defectos. Preguntar por un nombre está
+   bien cuando se afirma «aparece» y mal cuando se afirma «se usa».
+4. **Quedan otras formas de preguntar por texto** que ninguna de las dos ramas cuenta —
+   `indexOf(...) !== -1`, `match(...)`, `new RegExp('literal')`. No están medidas.
