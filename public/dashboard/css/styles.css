@@ -1362,6 +1362,17 @@ html, body { overflow-x: clip; }
    visten cualquier campo con etiqueta de esta pantalla. El botón es `.btn-ghost.btn-sm`, el
    mismo que «Usar plantilla» — un descuento global es una acción ocasional, no una principal. */
 .quote-dto-global { margin-top: 8px; }
+
+/* ── SCRUM-602 (DOC-12) · el campo libre de la dirección de la obra ────────────────────────
+   Sin tokens nuevos: es un `.field` normal, el mismo que viste el resto del formulario.
+
+   🔴 LA SEGUNDA REGLA NO ES ADORNO: `.field` declara `display: flex`, y una regla de AUTOR
+   gana a la del navegador para `[hidden]`, así que `el.hidden = true` NO APAGA NADA. Medido en
+   navegador real: un `<div>` pelado con `hidden` da `display: none`, y este campo daba `flex`.
+   Se apaga aquí, en el CSS, y no con `style.display` en el JS, para que el que lea el HTML vea
+   por qué un elemento con `hidden` no se ve. */
+.quote-direccion-obra { margin-top: 8px; }
+.quote-direccion-obra[hidden] { display: none; }
 .quote-dto-global__campo { display: flex; flex-direction: column; gap: 4px; max-width: 200px; }
 
 /* SCRUM-139 F2 · RENGLÓN EN BLANCO DEL CUADERNILLO.

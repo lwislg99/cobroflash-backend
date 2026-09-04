@@ -213,6 +213,20 @@ export const REVISION_HEREDA = [
   // Es CONTENIDO negociado con el cliente, igual que la cabecera y el pie, y heredar es
   // reversible —se puede quitar— mientras que no heredar no lo es.
   'discountGlobalAmount',
+  // ── 4-sep-2026 · LA DIRECCIÓN DE LA OBRA (SCRUM-602, DOC-12) ─────────────────────────────
+  //
+  // Lo cazó este mismo guard, igual que al descuento global y por tercera vez: una columna
+  // nueva de `Quote` nace SIN clasificar, y sin clasificar simplemente no viaja.
+  //
+  // HEREDAN LAS DOS. Una revisión es OTRA versión del MISMO trabajo, y el trabajo se hace en el
+  // mismo sitio: la obra no se muda porque el profesional cambie un precio. Si no heredaran, el
+  // presupuesto revisado saldría SIN la dirección que el anterior sí llevaba —el cliente vería
+  // desaparecer del papel el único dato que le decía dónde iban a trabajar— y nadie lo notaría
+  // hasta tener los dos documentos delante.
+  //
+  // Van LAS DOS y no sólo el texto: heredar `shippingAddress` sin `shippingAddressMode` dejaría
+  // una dirección guardada que el documento no imprime, porque el modo manda.
+  'shippingAddress', 'shippingAddressMode',
 ] as const;
 
 /**

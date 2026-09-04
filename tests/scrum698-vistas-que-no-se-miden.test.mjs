@@ -256,7 +256,9 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
     //
     // Las casillas POR FILA no entran en este número: el banco monta la vista sin datos, así que
     // no hay filas. Es otra medición y no se mezcla con ésta.
-  for (const [vista, nodos] of [['renderQuotesView', 242], ['renderProductsView', 166],
+  // SCRUM-602 (4-sep-2026) · 242 → 250: los ocho nodos del control de la dirección de la obra,
+  // aislados POR IDENTIDAD (los dos subárboles del `.field`); sin ellos la vista da 242 exactas.
+  for (const [vista, nodos] of [['renderQuotesView', 250], ['renderProductsView', 166],
     ['renderCustomersView', 68], ['renderHomeView', 109]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
@@ -274,10 +276,10 @@ test('SCRUM-698 · CONTROL NEGATIVO: el fixture NO se impone a quien ya pasaba l
   assert.equal(conLoSuyo.error, null, '🔴 pasar datos propios ha dejado de funcionar.');
 
   const desnuda = await pintarVista(cargarDashboard(RAIZ), 'renderQuotesView');
-  // SCRUM-591 + SCRUM-594 · las dos subidas, acumuladas y MEDIDAS sobre el árbol mezclado (ver
-  // arriba). Lo que este control vigila —que el fixture no se imponga— sigue intacto: lo que
-  // importa es que los dos montajes den el mismo número, sea cual sea.
-  assert.equal(todos(desnuda.contenedor).length, 242,
+  // SCRUM-591 + SCRUM-594 + SCRUM-602 · las TRES subidas, acumuladas y MEDIDAS sobre el árbol
+  // mezclado (ver arriba). Lo que este control vigila —que el fixture no se imponga— sigue
+  // intacto: lo que importa es que los dos montajes den el mismo número, sea cual sea.
+  assert.equal(todos(desnuda.contenedor).length, 250,
     '🔴 montar sin `datos` ya no da lo de siempre: el fixture se ha colado como valor por '
     + 'defecto y está moviendo lo que miden otros.');
 });
