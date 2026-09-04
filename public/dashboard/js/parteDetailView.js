@@ -36,37 +36,45 @@
   // ═══════════════════════════════════════════════════════════════════════════════════════
   var M = '[PENDIENTE microcopy oficial] ';
   var TEXTOS = {
-    tituloFirma: M + 'Firma del cliente',
-    pistaFirma: M + 'Pide al cliente que firme con el dedo dentro del recuadro.',
-    manoObra: M + 'Mano de obra',
-    materiales: M + 'Materiales',
-    sinLineas: M + 'Todavía no has apuntado nada.',
-    unds: M + 'UNDS',
-    entrada: M + 'Entrada',
-    salida: M + 'Salida',
-    desplazamiento: M + 'Desplazamiento',
-    kilometros: M + 'Kilómetros',
-    referencia: M + 'REF',
-    obra: M + 'Dirección de la obra',
-    tecnicos: M + 'Técnicos',
-    notas: M + 'Notas',
-    anadirLinea: M + 'Añadir línea',
-    firmar: M + 'Firma del cliente',
+    tituloFirma: 'Firma del cliente',
+    pistaFirma: 'Pide al cliente que firme con el dedo dentro del recuadro.',
+    manoObra: 'Mano de obra',
+    materiales: 'Materiales',
+    sinLineas: 'Todavía no has apuntado nada.',
+    unds: 'UNDS',
+    entrada: 'Entrada',
+    salida: 'Salida',
+    desplazamiento: 'Desplazamiento',
+    kilometros: 'Kilómetros',
+    referencia: 'REF',
+    obra: 'Dirección de la obra',
+    tecnicos: 'Técnicos',
+    notas: 'Notas',
+    anadirLinea: 'Añadir línea',
+    firmar: 'Firmar aquí mismo',
+    yaFirmado: 'Firmado. El contenido ya no se puede cambiar.',
+    // ✅ APROBADO literal por el fundador el 3-sep-2026, sin cambiar una letra. Consta en
+    // `docs/microcopy/2026-09-03-SCRUM-704-guardar-lineas-dictadas.md`.
+    noSeGuardo: 'No se han podido guardar las líneas — vuelve a intentarlo',
+    noSePudoCargar: 'No se ha podido cargar el parte. Vuelve a intentarlo.',
+    tipoReparacion: 'Reparación / asistencia',
+    tipoMantenimiento: 'Mantenimiento',
+    tipoInstalacion: 'Instalación',
+    dictado: 'Dicta lo que has hecho',
+    pistaDictado: 'Usa el micrófono de tu teclado. Luego lo ordenamos.',
+    ordenarDictado: 'Ordenar en líneas',
+    confirmarPropuesta: 'Añadir estas líneas',
+    sinBloque: 'Sin colocar — elige mano de obra o materiales',
+
+    // ── SCRUM-653 · LAS DOS FIRMAS ──────────────────────────────────────────────────────
+    // Estas cuatro son la aportación de la rama y **siguen con marcador a propósito**: el
+    // fundador no las ha firmado, y firmarlas yo sería inventar una aprobación (regla 30).
+    // Van listadas en el informe para que las firme. El resto de esta tabla son los textos
+    // que SÍ firmó, y por eso no llevan marca (SCRUM-720).
     firmarTecnico: M + 'Firma del técnico',
     yaFirmoElCliente: M + 'Firmado por el cliente.',
     yaFirmoElTecnico: M + 'Firmado por el técnico.',
     faltaUnaFirma: M + 'Falta una firma para cerrar el parte.',
-    yaFirmado: M + 'Firmado. El contenido ya no se toca.',
-    noSeGuardo: M + 'No se han podido guardar las líneas — vuelve a intentarlo',
-    noSePudoCargar: M + 'No se ha podido cargar el parte. Vuelve a intentarlo.',
-    tipoReparacion: M + 'Reparación / asistencia',
-    tipoMantenimiento: M + 'Mantenimiento',
-    tipoInstalacion: M + 'Instalación',
-    dictado: M + 'Dicta lo que has hecho',
-    pistaDictado: M + 'Usa el micrófono de tu teclado. Luego lo ordenamos.',
-    ordenarDictado: M + 'Ordenar en líneas',
-    confirmarPropuesta: M + 'Añadir estas líneas',
-    sinBloque: M + 'Sin colocar — dile dónde va',
   };
 
   // El vocabulario CERRADO del dominio (`parteTrabajo.ts`). No se inventa aquí ni se amplía:

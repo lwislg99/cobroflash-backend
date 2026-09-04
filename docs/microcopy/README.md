@@ -49,3 +49,39 @@ barrido vacío es «no supe mirar», nunca «no hay aprobaciones».
 
 `docs/MICROCOPY_APROBADA_SIN_APLICAR.md` queda **congelado**, entero y sin tocar. Era cierto cuando
 se escribió y sigue siendo la constancia de todo lo aprobado hasta el 3-sep-2026.
+
+## Si vas a escribir un lector, lee esto antes
+
+Es la parte que más se copia, así que aquí está el patrón bueno.
+
+**Usa el buscador compartido. No abras un fichero por su ruta.**
+
+```js
+import { constaAprobado, literalesAprobados } from '../../tests/_microcopy-aprobada.mjs';
+
+const donde = constaAprobado('Guardar precios');   // → ['docs/MICROCOPY_APROBADA_SIN_APLICAR.md']
+```
+
+Un lector que abra `docs/MICROCOPY_APROBADA_SIN_APLICAR.md` por su ruta y busque dentro **contestará
+«no consta» sobre cualquier aprobación nueva**, porque las nuevas viven aquí, en un fichero propio.
+Ese patrón existe hoy en el árbol y funciona sólo porque el registro viejo se conservó entero.
+
+**🔒 Y no compares por subcadena. Un prefijo no es un nombre, y una subcadena tampoco.**
+
+`constaAprobado` compara por **identidad** contra las unidades en las que el registro escribe un
+literal: la celda de la columna **«Texto aprobado»** de una tabla, y la línea de **cita (`>`)** en
+los ficheros de este directorio. No es una convención inventada: es la que el registro ya usaba.
+
+El motivo está medido, no es teórico. Hay literales aprobados de dos palabras —«Mano de obra»,
+«Materiales», «Guardar precios», «Precio por unidad»— y sus trozos aparecen en la prosa normal del
+registro. Con búsqueda por subcadena, preguntar por **«Precio por»** o por **«de obra»** contestaba
+**aprobado**, y nadie firmó eso. Está corrido en `tests/scrum715-consta-por-identidad.test.mjs`, con
+el caso que distingue los dos mecanismos y con el control de que apretar el matching **no tiró
+ninguna aprobación legítima**: las 21 conocidas se siguen encontrando una a una.
+
+**Las notas no son textos aprobados.** El registro congelado usa `>` para avisos, así que las citas
+sólo cuentan como literal dentro de `docs/microcopy/`. Si aceptaras las de allí, cada advertencia
+pasaría a ser un texto «firmado por el fundador», que es exactamente lo que la regla 30 impide.
+
+**Y si tu lector no encuentra nada, que lo diga.** `aprobacionesDeMicrocopy()` **lanza** cuando el
+barrido vuelve vacío: cero es «no supe mirar», nunca «no hay aprobaciones».

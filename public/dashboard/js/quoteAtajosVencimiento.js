@@ -9,6 +9,9 @@
 // dar el 31 de enero, en un cambio de año y en un febrero bisiesto. Un guard de forma pasaría
 // con la fecha mal calculada, que es justo el error que esto viene a impedir.
 //
+// ✅ MICROCOPY: aprobada por el ASESOR el 4-sep-2026, a la espera de la firma del fundador.
+// Los seis literales y sus motivos van abajo, junto a las constantes.
+//
 // ⚠️ ÁMBITO GLOBAL COMPARTIDO: estos scripts son clásicos y comparten `window`. Va en IIFE y
 // publica lo suyo, como `quoteSuplido.js`.
 //
@@ -42,13 +45,32 @@
   var DIAS_ATAJO = [7, 14, 30];
 
   /**
-   * 🔴 MICROCOPY PENDIENTE DE APROBACIÓN (regla 30). UNA sola constante para los tres botones y
-   * sus nombres accesibles: cuando el fundador firme el texto, se apagan todos de golpe.
+   * ✅ MICROCOPY APROBADA POR EL ASESOR el 4-sep-2026, A LA ESPERA DE LA FIRMA DEL FUNDADOR.
    *
-   * El NÚMERO no es microcopy —es el dato del atajo— así que se compone delante del marcador y
-   * los tres botones siguen siendo distinguibles entre sí mientras el texto no llegue.
+   * Los seis literales —tres rótulos y tres nombres accesibles— con sus motivos, porque son la
+   * clase de texto que alguien «mejora» dentro de un mes:
+   *
+   *   · «7 / 14 / 30 días» CABE CON HOLGURA: 217 px de los 356 útiles a 390 px, sobran 139. No
+   *     se eligió el que iba justo (306) ni el que rompía a dos filas (346).
+   *
+   *   · 🔴 NO es «1 semana / 2 semanas / 1 mes», que también cabía (254 px): **«1 mes» describe
+   *     algo que este mecanismo NO calcula**. El motor hace hoy+30, y 30 días no son un mes en
+   *     enero, ni en febrero, ni en ninguno salvo cuatro. Un rótulo que no describe lo que hace
+   *     el mecanismo es la avería que este árbol lleva una semana cazando — y en un botón la ve
+   *     el profesional.
+   *
+   *   · NO es «7 d», «+7 días» ni «7 días más»: los puntos suspensivos prometen otro paso —un
+   *     diálogo, algo más— y no lo hay: se escribe la fecha y ya. Abreviar «días» a «d» paga
+   *     claridad por 51 px que sobran.
+   *
+   *   · EL NOMBRE ACCESIBLE DICE LA ACCIÓN COMPLETA porque no tiene caja que lo limite. El botón
+   *     puede decir «7 días» apoyándose en el campo que tiene al lado; un lector de pantalla
+   *     puede no dar ese contexto, y «7 días» a secas no dice qué va a pasar.
+   *
+   * El NÚMERO se compone: es el dato del atajo, no texto. Añadir un cuarto atajo no pide copy.
    */
-  var MARCA_MICROCOPY = '[PENDIENTE microcopy oficial]';
+  var UNIDAD_ROTULO = 'días';
+  var PREFIJO_ACCESIBLE = 'Válido hasta dentro de';
 
   function dosCifras(n) { return (n < 10 ? '0' : '') + n; }
 
@@ -71,12 +93,26 @@
     return d.getFullYear() + '-' + dosCifras(d.getMonth() + 1) + '-' + dosCifras(d.getDate());
   }
 
-  /**
-   * El rótulo de un atajo mientras su texto no esté aprobado.
-   * El número va DELANTE del marcador: es dato, no texto.
-   */
+  /** El rótulo visible: `7 días`. */
   function rotuloDeAtajo(dias) {
-    return String(dias) + ' ' + MARCA_MICROCOPY;
+    return String(dias) + ' ' + UNIDAD_ROTULO;
+  }
+
+  /**
+   * El nombre accesible: el prefijo aprobado + el rótulo, p. ej. para 7 días.
+   *
+   * ⚠️ El literal COMPLETO no se escribe en este comentario a propósito: el cruce de SCRUM-514
+   * —que exige que todo texto aprobado llegue a la pantalla— busca por subcadena, y una cita en
+   * un comentario le haría dar por APLICADO algo que no se pinta. Lo cazó él mismo: de los tres
+   * nombres accesibles saltaron dos, y el tercero se salvaba por esta línea.
+   *
+   * ⚠️ CONSTRUIDO Y SIN CABLEAR, y se declara en vez de esconderlo: hoy `quotesView.js` pone el
+   * MISMO texto en el rótulo y en el `aria-label` (una sola llamada a `rotuloDeAtajo`), así que
+   * para que digan cosas distintas hay que cambiar UNA línea de esa vista — y ese fichero es de
+   * otro carril en vuelo (SCRUM-594). Se deja listo para que sea una línea, no un rediseño.
+   */
+  function nombreAccesibleDeAtajo(dias) {
+    return PREFIJO_ACCESIBLE + ' ' + rotuloDeAtajo(dias);
   }
 
   /**
@@ -97,9 +133,11 @@
 
   root.QUOTE_ATAJOS_VENCIMIENTO = {
     DIAS_ATAJO: DIAS_ATAJO,
-    MARCA_MICROCOPY: MARCA_MICROCOPY,
+    UNIDAD_ROTULO: UNIDAD_ROTULO,
+    PREFIJO_ACCESIBLE: PREFIJO_ACCESIBLE,
     fechaDeAtajo: fechaDeAtajo,
     rotuloDeAtajo: rotuloDeAtajo,
+    nombreAccesibleDeAtajo: nombreAccesibleDeAtajo,
     atajoPorDebajoDelMinimo: atajoPorDebajoDelMinimo,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

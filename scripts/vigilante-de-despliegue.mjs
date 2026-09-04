@@ -17,8 +17,10 @@
 // token de Railway, sin base de datos y sin secretos. **No hay ninguna cadena de conexión en este
 // fichero, ni de ejemplo.**
 import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
 import {
   veredictoDeDespliegue, MARGEN_HORAS_PROPUESTO, NO_SUPE_MIRAR, SALIDA_NO_SUPE_MIRAR,
+  constanciaDeEjecucion,
 } from './_vigilante-de-despliegue.mjs';
 
 const URL_POR_DEFECTO = 'https://yaqu.app/version';
@@ -68,16 +70,40 @@ if (typeof versionDeProduccion === 'string' && /^[0-9a-f]{40}$/.test(versionDePr
   }
 }
 
-const v = veredictoDeDespliegue({
+const datos = {
   versionDeProduccion, shaDeMain, conoceElCommit, estaEnMain,
   commitsPorDelante, epochDelPrimeroSinDesplegar,
   ahoraEpoch: Math.floor(Date.now() / 1000), margenHoras,
-});
+};
+const v = veredictoDeDespliegue(datos);
 
 console.log('\n[vigilante de despliegue] ' + url);
 console.log(v.titulo);
 if (v.detalle) console.log(v.detalle);
 console.log('');
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-727 · LA CONSTANCIA, Y VA FUERA DE TODO `if` A PROPÓSITO
+//
+// Un renglón por ejecución, SIEMPRE: verde, rojo y ciego. Ésa es la línea que faltaba — el
+// 4-sep-2026 el vigía cantó 24,9 h y 9 commits, el hueco se cerró solo y no se pudo decir por
+// qué, porque los verdes no dejaban rastro con el que comparar.
+//
+// Va antes del `process.exit` y sin ninguna condición sobre el veredicto: en cuanto esto viva
+// dentro de un `if (v.salida !== 0)`, los verdes vuelven a no existir y este ticket se deshace.
+// La anotación de abajo SÍ es condicional, y son cosas distintas: aquella AVISA (y avisar de un
+// verde es ruido), ésta ANOTA.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+const constancia = constanciaDeEjecucion(v, datos);
+console.log(constancia.renglon);
+
+// Y en el resumen del job, para que se lea sin abrir el log. Mismo mecanismo que
+// `guards-visuales.mjs` —no uno nuevo—, incluido su `try/catch`: el resumen es un EXTRA, y si no
+// se puede escribir, el veredicto y el código de salida siguen siendo los que ya se decidieron.
+if (process.env.GITHUB_STEP_SUMMARY) {
+  try { fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, constancia.resumen); }
+  catch { /* anotar no es decidir: que falle el resumen no cambia nada de lo de arriba */ }
+}
 
 // Que se vea en el PR sin abrir el log, igual que hace `guards-visuales` (mismo mecanismo, no uno
 // nuevo). En local no se emite nada, para no ensuciar una salida que alguien esté leyendo.

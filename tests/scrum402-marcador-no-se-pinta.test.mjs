@@ -69,6 +69,26 @@ const CENSO = Object.freeze({
   // firmara—, y ése era exactamente el motivo por el que esta entrada no bajaba a 0 antes de
   // tiempo. La entrada se BORRA, no se pone a 0: `censoActual()` sólo lista ficheros CON
   // marcadores. COMPROBADO antes de borrarla: cero marcadores en el fichero (SCRUM-703).
+  // 🔴 SCRUM-591 (DOC-01) · 3-sep-2026 · `quotesView.js` ENTRÓ y SALIÓ EL MISMO DÍA.
+  //
+  // Entró con 1 —la opción de alta del selector del documento, y una `<option>` sin rótulo no se
+  // puede elegir— y el asesor firmó el texto esa misma tarde: **«+ Nuevo cliente»**, 15
+  // caracteres, con la caja medida delante (901px, 247,7px útiles ≈ 18 caracteres anchos). Su
+  // entrada se BORRA, no se pone a 0 (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista ficheros
+  // CON marcadores, y el trinquete APRIETA.
+  //
+  // 🔴 MEDIDO AL RETIRARLO — Y CON EL ÁRBOL Y LA FECHA, QUE ES LA PARTE QUE FALTABA:
+  //
+  //     14 → 13 marcadores pintables (y de 14 a 13 ficheros)
+  //     árbol: `origin/main` = 9747d16a con la rama scrum-591 dentro · 3-sep-2026
+  //
+  // Y cuadra con el suelo de más abajo, que dice «hay 13 medidos»: 13 entradas declaradas aquí,
+  // 13 marcadores reales en el árbol, ninguno sin declarar. Barrido entrada por entrada.
+  //
+  // ⚠️ LA CIFRA SE ESCRIBE CON SU ÁRBOL PORQUE YA CADUCÓ DOS VECES EN ESTE MISMO TICKET: primero
+  // 18 → 17 (entró SCRUM-703 y sacó `jobNuevoModal.js`), después 15 → 14 (entró la salida de
+  // `jobDetailView.js`). Las dos eran correctas cuando se escribieron. **Una cifra sin árbol es
+  // una cifra que va a caducar sin avisar**, y quien la lea no tendrá forma de saberlo.
   // Sprint Tecnosel · `jobDetailView.js` ENTRÓ con 2 el 2-sep-2026 —la PUERTA al parte: el rótulo
   // del botón y el aviso de cuando no se puede abrir— y SALIÓ el 3-sep: el fundador firmó el
   // rótulo primero y el aviso después, en SCRUM-402. Bajó de 2 a 1 y luego se BORRA, que es el
@@ -244,6 +264,23 @@ const CENSO = Object.freeze({
   // SCRUM-405 aquí mismo. `textoDelDocumento.js` entró ese día con 1 marcador (el rótulo del campo
   // de cabecera del documento) y salió el MISMO día: el fundador lo firmó —«Añadir texto en el
   // documento»— unas horas después. Un marcador que se firma desaparece; no se queda de adorno.
+  // 🔴 SCRUM-582 (CONT-09) · 4-sep-2026 · `filtroClientes.js` ENTRÓ y SALIÓ EL MISMO DÍA.
+  //
+  // Entró con 1 —el CONTADOR de la selección múltiple, y una barra que no dice cuántos hay
+  // marcados no informa de nada— y el asesor firmó el texto esa misma tarde, con plural de verdad:
+  // **«1 cliente seleccionado» / «N clientes seleccionados»**. La entrada se BORRA, no se pone a 0
+  // (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista ficheros CON marcadores.
+  //
+  // MEDIDO AL RETIRARLO, con su árbol y su fecha:
+  //     14 → 13 marcadores pintables (y de 14 a 13 ficheros)
+  //     árbol: `origin/main` = 1a359f6e con la rama scrum-582 dentro · 4-sep-2026
+  //
+  // Es la SEGUNDA vez que este fichero entra y sale: SCRUM-581 retiró sus seis cuando el fundador
+  // dijo «nada de marcadores en pantalla». Éste era uno nuevo, no aquéllos.
+  //
+  // ⚠️ Y la caja de ese texto está **CALCULADA, no medida**: el MCP de Playwright estaba caído. El
+  // asesor firmó sabiéndolo y dejando la condición escrita — si al medirla no cabe, el que falla
+  // es el cálculo y se cambia el texto. Consta en `docs/microcopy/`.
   'productsView.js': 1,
   // SCRUM-644 (2-sep-2026) · SUBIDA A CONCIENCIA: `providersView.js` ENTRA con 1. Es el MISMO
   // defecto y el MISMO criterio que SCRUM-641 arriba —no se inventa uno nuevo—, en el otro fichero
@@ -320,7 +357,12 @@ const CENSO = Object.freeze({
   // Lo que NO se hizo, y merece quedar escrito: el encargo pedía `[copy: fundador]`. Ese
   // marcador NO lo cuenta este censo (cuenta `[PENDIENTE`), así que habría sido un marcador
   // invisible para el trinquete que existe justo para verlo. Se usa el de la casa.
-  'quoteAtajosVencimiento.js': 1,
+  // 🔴 4-sep-2026 · SALE DEL CENSO: el ASESOR firmo los seis literales de los tres atajos de
+  // «Valido hasta» —tres rotulos («7 dias», «14 dias», «30 dias») y tres nombres accesibles
+  // («Valido hasta dentro de N dias»)—, a la espera de la firma del fundador. La entrada se
+  // BORRA y no se pone a 0 (SCRUM-424 / SCRUM-405):  solo lista ficheros CON
+  // marcadores. COMPROBADO antes de borrarla: cero marcas en el fichero, y el censo baja de 13
+  // a 12 entradas con el numero delante.
   'patronDetalleAcciones.js': 1,
   // 🔴 17-ago-2026 (tanda B) · SALE DEL CENSO: el fundador aprobó «Con errores» del resumen de importación de CSV. Entrada BORRADA, no
   // puesta a 0 (SCRUM-424 / SCRUM-405): `censoActual()` solo lista ficheros CON marcadores.
@@ -479,8 +521,20 @@ test('SCRUM-402 · R6 · SUELO: el escáner encuentra la ranura `btnBizum` y el 
     'se movió — en los dos casos los tests de abajo dejarían de vigilar el botón y saldrían verdes ' +
     'por no encontrar nada. ARREGLA EL ESCÁNER, no el número.');
 
+  // 🔴 EL NÚMERO SE DERIVA, NO SE ESCRIBE (SCRUM-710). Aquí ponía «hay 36 medidos» cuando el censo
+  // sumaba 13: un número escrito a mano no miente el día que se escribe, sólo envejece — y éste
+  // llevaba tiempo haciéndolo. Se deriva del CENSO declarado, que es justo lo que el trinquete de
+  // abajo obliga a mantener al día.
+  //
+  // Ojo con la distinción, que no es la misma para todos los números de este fichero: esto es una
+  // AFIRMACIÓN DE CANTIDAD y por eso se deriva. Los SUELOS DE ALCANCE («>= 100 ficheros leídos»)
+  // se escriben a mano a propósito: derivarlos haría que añadir un fichero subiera el listón solo,
+  // y el suelo dejaría de poder caer nunca (la lección que SCRUM-377 dejó escrita).
+  const declarado = Object.values(CENSO).reduce((a, b) => a + b, 0);
   const total = Object.values(censoActual()).reduce((a, b) => a + b, 0);
-  assert.ok(total > 0, '🔴 ESCÁNER CIEGO: cero marcadores en literales. Imposible: hay 13 medidos (SCRUM-402, 3-sep-2026: el número venía diciendo 36 desde una medición vieja y se ajusta AL MEDIDO, no al esperado).');
+  assert.ok(total > 0,
+    `🔴 ESCÁNER CIEGO: cero marcadores en literales, y el censo declara ${declarado}. `
+    + 'ARREGLA EL ESCÁNER, no el número.');
 });
 
 // ── R1/R2/R3 · EL BOTÓN Y SU RANURA ─────────────────────────────────────────────────────────

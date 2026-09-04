@@ -176,3 +176,201 @@ divergencia de 36,27 / 36,26 queda fijada con números, y si alguien limita los 
 - **Control negativo:** un `Math.round(x)` sin factor 100 y un `toFixed(0)` no cuentan como
   redondeo de dinero.
 - **Solo lectura:** ninguna escritura contra ninguna base. Producción no se ha abierto ni nombrado.
+
+---
+
+# SCRUM-624 fase B · EL PAPEL contra la base — y el arreglo es un STOP
+
+**Medido contra:** `origin/main` = `2d826de6d18f7a76be0ef2509c2e469e7b383f54` · 2026-09-04T09:20:00+02:00
+
+## 0 · PASO 0 (regla 39): el defecto EXISTE HOY
+
+```
+git ls-tree origin/main | grep -iE 'scrum-?624'
+  docs/master/SCRUM-624.md · tests/scrum624-cuantos-sitios-calculan-dinero.test.mjs   [exit 0]
+  CONTROL POSITIVO (704) → 3 ficheros                                                 [exit 0]
+
+ramas: scrum-624-total-guardado-vs-recalculado → 0 commits fuera de main (ancestro: SÍ)
+  CONTROL POSITIVO discriminante: chore-flujo-pr → 1 commit fuera de main
+
+git log -S'SCRUM-624' origin/main -- src/   →  1 commit, y es de SCRUM-604
+  CONTROL POSITIVO: git log -S'SCRUM-704' -- src/ public/  →  4 commits
+```
+
+Y la prueba definitiva: **`pdf.service.ts:926` sigue nombrándolo como defecto abierto**. Lo que hay
+en `main` es la MEDICIÓN, y su propio registro lo dice: *«ESTE TICKET NO CAMBIA NINGÚN CÁLCULO»*.
+
+**Veredicto: no está arreglado. Se continúa.**
+
+---
+
+## 1 · Qué añade esta fase, y en qué se diferencia de la medición
+
+El censo fijó que las dos **convenciones** divergen, comparando **las dos fórmulas entre sí**. Esto
+es otra pregunta: **se genera el PDF de verdad y se lee el número que IMPRIME**, y se compara con el
+`total` GUARDADO que se le ha pasado. No se mira la función que calcula: **se mira el papel.**
+
+`generateInvoicePdf` recibe **las dos cosas** —`total` y `lines`— y cuando hay líneas **ignora
+`total`** y recalcula (`pdf.service.ts:399-411`). Ése es el defecto en una frase.
+
+### Los dos números, leídos del papel
+
+| caso | guardado | **IMPRESO EN EL PAPEL** |
+|---|---|---|
+| redondeo por línea · 3 × 9,99 al 21 % | 36,27 € | **36,26 €** |
+| decimales del precio · 30,003 (el de staging) | 30,01 € | **30,00 €** |
+| ✅ control positivo · 100 € sin IVA | 100,00 € | 100,00 € |
+
+---
+
+## 2 · ⛔ El arreglo es un STOP (regla 38), y por eso aquí sólo entra el guard
+
+Corregir el cálculo **modifica el camino de emisión** y **cambia cifras ya impresas**: SCRUM-623 lo
+midió — **547 de 4.006 combinaciones** cambiarían un céntimo. Eso lo decide el fundador, no yo.
+
+Así que las dos divergencias quedan **DECLARADAS con su motivo**, en una lista que **solo puede
+menguar** y que canta si aparece una tercera. Y el guard trae la puerta de salida: si un día el
+papel imprime el guardado, **falla pidiendo que se borre la declaración** — para que la lista no
+envejezca mintiendo, que es lo que me pasó con el trinquete de la cadena.
+
+**La convención que gobierna es la ESCRITA** (céntimo por línea, `albaranAFactura.ts:275`). Lo que
+no cuadra con ella es el bucle propio del PDF de factura, que no llama a `calcVatBreakdown`.
+
+---
+
+## 3 · Verificación
+
+**Commit de todo ANTES del rojo: `3b32ddc44367f98a06fe6e596f3c34c2cd8f9dd0`** (verde, 5.021 · 4.937).
+
+Quitando una declaración, el guard cae **nombrando los dos números**:
+
+```
+🔴 EL PAPEL DICE UN TOTAL Y LA BASE OTRO.
+    guardado: 36,27 €   ·   IMPRESO EN EL PAPEL: 36,26 €
+                                                          exit 1
+```
+
+**Control positivo enumerado**, uno por uno: línea entera sin IVA · línea entera al 21 % · dos
+líneas que no arrastran céntimo · cantidad fraccionada exacta. Los cuatro imprimen su guardado, y si
+al corregir la divergencia se descuadra alguno, el guard los nombra.
+
+**Suelo:** si el lector no encuentra un número que SÍ está impreso, se declara ciego — un texto
+vacío se leería como «no hay divergencia», que es el falso verde exacto de este ticket.
+
+---
+
+## 4 · 🔴 Un guard ajeno me corrigió una medición, y conviene que conste
+
+`SCRUM-409` cazó mi fixture con `merchantId: 1` — **el merchant DEMO, cuyo PDF lleva marca de
+agua**. Cambiado a `7` y **remedido**: los tres números salen idénticos, así que la medición se
+sostiene. Pero sin ese guard habría reportado una cifra tomada de **un papel que no es el que ve el
+cliente**, y nadie lo habría sabido.
+
+## 5 · Hallazgo de otro carril, reportado y no arreglado (regla 9)
+
+Hay **dos ayudantes para leer el texto de un PDF**: `tests/_pdf-texto.mjs` (`textoDePdf`, devuelve
+una cadena, 4 ficheros lo usan) y `tests/_texto-del-pdf.mjs` (`extraerTextoPdf`, devuelve
+`{ ok, texto, motivo }` **con suelo**, 13 ficheros). Sus nombres se diferencian en el orden de dos
+palabras. Escogí el primero por el nombre y mi propio suelo me lo cazó: sin él habría leído
+`undefined.ok` y el guard habría pasado midiendo nada.
+
+---
+
+# SCRUM-624 fase C · EL ARREGLO — el total de la factura sale de la canónica
+
+**Medido contra:** `origin/main` = `2c161c38cfba4ad81479dd302a933412d496f58c` · 2026-09-04T11:30:00+02:00
+
+**Decisión del fundador (4-sep-2026):** gobierna la canónica. El arreglo es **la frontera**, no la
+convención.
+
+## 0 · PASO 0 (regla 39), remedido
+
+```
+albaranes.routes.ts:1223  →  const total = totalDeFacturables(facturables);     [1 uso]
+CONTROL POSITIVO del mismo barrido: calcVatBreakdown en ese fichero → 1         [el camino parcial]
+```
+
+El defecto seguía. **Se continúa.**
+
+## 1 · Qué cambia, en una línea
+
+`albaranes.routes.ts` (camino `C7-albaran`) calcula el total con **`calcVatBreakdown(invoiceLines)`**
+— la canónica, **sobre las líneas que se GUARDAN** —, igual que ya hacían los otros tres caminos.
+
+> ⚠️ **Sobre `invoiceLines` y no sobre `facturables`**, y no es un detalle: así el total, el desglose
+> y la cuota de la huella VeriFactu (`calcVatCuotaTotal`, que **es** `calcVatBreakdown`) salen del
+> **mismo cálculo sobre los mismos datos**. Cuadran **por construcción**, no por casualidad. Hay un
+> test que lo fija.
+
+## 2 · Los cuatro caminos, DESPUÉS del arreglo
+
+Sobre 3 líneas de 9,99 al 21 % — desglose: base 29,97 + cuota 6,29 = **36,26**:
+
+| camino | motor | total |
+|---|---|---|
+| **C7-albaran · albarán → factura (Tecnosel)** | `calcVatBreakdown` | **36,26** ✅ |
+| albarán parcial | `calcVatBreakdown` | 36,26 ✅ |
+| recapitulativa | `calcVatBreakdown` | 36,26 ✅ |
+| presupuesto → factura | `calcTotal` | 36,26 ✅ |
+
+**Los cuatro guardan un total reconstruible desde su propio desglose.**
+
+## 3 · Lo que NO se ha tocado, y se comprueba
+
+* **El PDF**: ni una línea. Ya imprimía lo correcto.
+* **`calcVatBreakdown`**: intacta.
+* **La convención POR LÍNEA del albarán**: viva y sin tocar. Control negativo ejecutando
+  `calcAlbaranTotales` → **36,27**, y comprobado que la frase que la declara sigue escrita en
+  `albaranAFactura.ts`. Si alguien se la lleva «de paso», ese test cae.
+* **Ningún documento ya guardado** se corrige.
+
+## 4 · Verificación
+
+**Commit de todo ANTES del rojo: `9cd50120199b14f5862cbad7af9e496253f73495`** (verde, 5.032 · 4.948).
+
+Volviendo al mecanismo viejo (`totalDeFacturables` cruzando la frontera), **caen dos**:
+
+```
+🔴 HAY UN CAMINO QUE GUARDA UN TOTAL QUE NO CUADRA CON SU PROPIO DESGLOSE:
+    C7-albaran · albarán → factura (el de Tecnosel): guarda 36.27 · Σ(base+cuota) = 36.26
+    desglose de esas líneas: base 29.97 + cuota 6.29 = 36.26
+                                                                              exit 1
+```
+
+**Suelo:** el censo exige **cuatro** caminos y que cada uno se reconozca en el árbol; y si no se
+puede derivar el motor de alguno, se declara ciego en vez de aprobarlo.
+
+### 🔴 Un fallo de mi test, encontrado por el propio rojo
+
+La primera versión del invariante **era una tautología**: yo escribía a mano cómo calcula cada
+camino, así que comprobaba mi transcripción y no el producto. Al inyectar el mecanismo viejo,
+**siguió verde** y sólo cayó el estructural.
+
+Corregido: el motor de cada camino **se deriva de su bloque de código**. Reinyectado, caen los dos.
+Es la misma familia que lo de ayer —medir el nombre equivocado— y sólo salió porque el rojo se
+ejecuta en vez de suponerse.
+
+## 5 · Declaraciones que movió el arreglo
+
+**SCRUM-411**: `totalDeFacturables` pierde su llamador. **No se borra** —es donde la convención del
+albarán está *escrita*, con su porqué— y se declara como `ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE`
+con su motivo.
+
+## 6 · 🔴 El recuento de facturas con el total viejo: NO PUEDO HACERLO
+
+Este worktree **no tiene `.env`**, así que no tengo base contra la que contar. No lo estimo ni lo
+deduzco. La consulta es de **sólo lectura** y la corre el fundador:
+
+```sql
+SELECT id, number, status, type, total, lines
+FROM invoices
+WHERE jsonb_array_length(COALESCE(lines, '[]'::jsonb)) > 0;
+```
+
+Sobre su salida se aplica `calcVatBreakdown` (líneas → base + cuota) y se comparan con `total`. Las
+que no cuadren son las que quedaron con el total viejo. **No se corrige ninguna**: se cuentan y se
+reportan, y qué hacer con ellas lo decide el fundador (regla 29).
+
+⚠️ Hoy `INVOICING_ES_ENABLED` está OFF y la data de producción es de prueba, así que esas cifras no
+son de nadie. **Esa ventana se cierra con la primera factura real por ese camino** — que es el de
+Tecnosel.

@@ -14,6 +14,7 @@
 // las reescribiría, y la tanda seguiría VERDE porque el dato SÍ está en la base.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
+import { soloEjecutable } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -114,9 +115,8 @@ test('SCRUM-580 · 🔴 se escribe `Prisma.DbNull`, no el `null` de JS ni `JsonN
   // anterior de esta línea se cazó A SÍ MISMA en el comentario que EXPLICA la prohibición —el
   // fichero que prohíbe usar `JsonNull` tiene que poder nombrarlo para decir por qué—. Es la
   // lección de SCRUM-349, y hoy ha aparecido tres veces.
-  const soloCodigo = src
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+  const soloCodigo = soloEjecutable(src)
+    .split('\n').map((l) => soloEjecutable(l)).join('\n');
   // SUELO: el desnudador no se ha llevado el fichero entero por delante.
   assert.match(soloCodigo, /Prisma\.DbNull/,
     '🔴 CIEGO: al quitar los comentarios ha desaparecido también el código. La comprobación de '
@@ -259,8 +259,21 @@ test('SCRUM-580 · 🔴 F1 y F3 NO se han perdido', () => {
   const cabeceras = FC.COLUMNAS.map((c) => c.texto);
   assert.ok(cabeceras.length >= 7,
     `🔴 CIEGO: sólo veo ${cabeceras.length} cabeceras; el orden de abajo no probaría nada.`);
-  assert.deepEqual(cabeceras.slice(0, 3), ['ID', 'Nombre', 'Teléfono'],
-    '🔴 F1 ROTO: el teléfono ya no es la tercera columna.');
+  // 🔴 SCRUM-582 (CONT-09) · REANCLADO, Y A MÁS POSICIONES QUE ANTES, NO A MENOS.
+  //
+  // Entra delante una columna de SELECCIÓN, que no es dato: es un control, y va la primera como
+  // en cualquier tabla con selección múltiple (la de facturas la pone ahí desde SCRUM-373). F1
+  // habla del orden en que el profesional LEE los datos, y ese orden no cambia — lo que cambia
+  // es que ahora hay un control antes.
+  //
+  // Se fijan CUATRO posiciones en vez de tres, a propósito: así este guard queda más apretado que
+  // antes y nadie puede meter una segunda columna delante del teléfono diciendo que «es un
+  // control». La de selección se identifica por su `id`, no por su rótulo, que está vacío.
+  assert.equal(FC.COLUMNAS[0].id, 'seleccion',
+    '🔴 la primera columna ya no es la de selección. Si se ha colado otra delante, F1 deja de '
+    + 'decir lo que dice: el profesional lee otra cosa antes que el nombre y el teléfono.');
+  assert.deepEqual(cabeceras.slice(1, 4), ['ID', 'Nombre', 'Teléfono'],
+    '🔴 F1 ROTO: el teléfono ya no es la tercera columna de DATOS.');
   // 🔴 Y F1 dice algo más que la posición: el teléfono NACE VISIBLE. Con columnas ocultables,
   // «estar en la lista» ya no basta — podría estar y nacer apagado.
   const tel = FC.COLUMNAS.filter((c) => c.id === 'telefono')[0];
@@ -334,7 +347,14 @@ test('SCRUM-580 · 🔴 las cuatro cuentan como SIN LA FIRMA DEL FUNDADOR', () =
   // entre en pantalla sin que nadie declare su estado.
   // SCRUM-584 · SUBE A 5: entra el rótulo del selector de columnas, aprobado por el ASESOR y a
   // la espera del fundador. Los NOMBRES de las columnas no cuentan — ya estaban en pantalla.
-  assert.equal(FC.SIN_APROBAR, 5,
+  // 🔴 SCRUM-582 (CONT-09) · SUBE A 7, y son DOS ranuras en estados DISTINTOS:
+  //   · «Seleccionar todos» — el nombre accesible de la casilla de cabecera. Lo APROBÓ EL ASESOR
+  //     el 4-sep-2026 y espera al fundador, así que cuenta aquí.
+  //   · el CONTADOR de selección — no lo ha aprobado NADIE todavía: va con marcador visible, y
+  //     por eso  entra además en el censo de SCRUM-402.
+  // Contarlas juntas en un solo número no las confunde: el estado de cada una está escrito en la
+  // pieza, y este contador sólo dice CUÁNTAS le faltan al fundador.
+  assert.equal(FC.SIN_APROBAR, 7,
     '🔴 el recuento de ranuras sin la firma del fundador no cuadra. Si '
     + 'el fundador firma alguna, se baja AQUÍ — aprobar una no aprueba las otras tres.');
 });
@@ -342,7 +362,7 @@ test('SCRUM-580 · 🔴 las cuatro cuentan como SIN LA FIRMA DEL FUNDADOR', () =
 test('SCRUM-580 · 🔴 la vista NO repite los textos: los lee de la pieza', () => {
   const v = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/customersView.js'), 'utf8');
   // Sin comentarios: el porqué puede nombrar los textos, el código no debe repetirlos.
-  const codigo = v.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+  const codigo = soloEjecutable(v).split('\n').map((l) => soloEjecutable(l)).join('\n');
   assert.match(codigo, /FC\.TEXTOS_ETIQUETAS\.rotulo/, '🔴 el rótulo no sale de la pieza.');
   assert.match(codigo, /FC\.TEXTOS_ETIQUETAS\.placeholder/, '🔴 el placeholder no sale de la pieza.');
   // SCRUM-584 · REANCLADO: la vista ya NO menciona el rótulo de la columna, porque la cabecera

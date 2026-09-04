@@ -139,33 +139,90 @@ export type Referencia = {
   fichero: string | null;
 };
 
+/** Un `src=`/`href=` encontrado en el HTML, con dónde está y cómo estaba escrito. */
+type Hallazgo = {
+  atributo: 'src' | 'href';
+  valor: string;
+  /** La comilla con la que venía: `"`, `'`, o cadena vacía si venía sin comillas. */
+  comilla: '"' | "'" | '';
+  inicio: number;
+  fin: number;
+};
+
 /**
- * Extrae las referencias `src=` / `href=` de un HTML.
+ * Los tramos del HTML que están DENTRO de un comentario `<!-- … -->`.
  *
- * POR QUÉ REGEX Y NO UN PARSER DE HTML: meter un parser es una dependencia nueva, y eso pide OK
- * del fundador (regla 36) para un problema que no lo necesita — este HTML es nuestro, lo
- * escribimos nosotros y sus atributos van siempre entre comillas dobles. El guard incluye un
- * SUELO por número de referencias justamente para que, si algún día el HTML cambia de forma y
- * la regex deja de verlas, salte en rojo en vez de aprobar en silencio.
+ * Se recorre el documento entero de principio a fin, sin ventanas: un comentario puede abarcar
+ * cien líneas y una ventana de N no lo vería. Un `<!--` sin cerrar comenta hasta el final, que es
+ * justo lo que hace el navegador.
  */
+function tramosComentados(html: string): Array<[number, number]> {
+  const out: Array<[number, number]> = [];
+  let i = 0;
+  for (;;) {
+    const a = html.indexOf('<!--', i);
+    if (a < 0) break;
+    const cierre = html.indexOf('-->', a + 4);
+    const fin = cierre < 0 ? html.length : cierre + 3;
+    out.push([a, fin]);
+    i = fin;
+  }
+  return out;
+}
+
+/**
+ * EL ÚNICO SITIO QUE DECIDE QUÉ ES UNA REFERENCIA. Lo usan tanto `referenciasDe` (el guard) como
+ * `sellarReferencias` (producción): dos regex para el mismo hecho se separan el día que alguien
+ * arregla una sola, y ese día el guard aprueba lo que producción sella mal.
+ *
+ * ── QUÉ FORMAS RECONOCE, Y DE DÓNDE SALE LA LISTA (SCRUM-701) ─────────────────────────────
+ * La lista NO se hizo de memoria: se midió sobre los 9 HTML de `public/`. Aparecen dos formas
+ * —comillas dobles (163) y comillas simples (2, en `login.html` y `register.html`)— y CERO sin
+ * comillas. Se reconocen las tres de todos modos: la tercera no cuesta nada y el HTML lo
+ * escribimos a mano.
+ *
+ * ── LO QUE ESTÁ COMENTADO NO ES UNA REFERENCIA ────────────────────────────────────────────
+ * Una etiqueta dentro de `<!-- … -->` no la pide el navegador. Contarla hacía dos cosas malas: el
+ * guard exigía que un fichero comentado existiera en disco, y producción reescribía texto muerto.
+ *
+ * POR QUÉ SIGUE SIN HABER UN PARSER DE HTML: sería una dependencia nueva y eso pide OK del
+ * fundador (regla 36). El SUELO por número de referencias del guard existe para que, si el HTML
+ * cambia de forma y esto deja de verlas, salte en rojo en vez de aprobar en silencio.
+ */
+function hallazgosDeReferencia(html: string): Hallazgo[] {
+  const comentados = tramosComentados(html);
+  const dentroDeComentario = (pos: number) => comentados.some(([a, b]) => pos >= a && pos < b);
+
+  const out: Hallazgo[] = [];
+  // Tres alternativas de valor: entre dobles, entre simples, o pelado hasta el primer espacio o `>`.
+  const re = /\b(src|href)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    if (dentroDeComentario(m.index)) continue;
+    const comilla: '"' | "'" | '' = m[2] !== undefined ? '"' : m[3] !== undefined ? "'" : '';
+    const valor = m[2] ?? m[3] ?? m[4] ?? '';
+    out.push({
+      atributo: m[1].toLowerCase() as 'src' | 'href',
+      valor,
+      comilla,
+      inicio: m.index,
+      fin: m.index + m[0].length,
+    });
+  }
+  return out;
+}
+
+/** Extrae las referencias `src=` / `href=` de un HTML. Ver `hallazgosDeReferencia`. */
 export function referenciasDe(
   html: string,
   opts: { publicDir: string; baseUrl: string; fsMod?: typeof fs },
 ): Referencia[] {
-  const out: Referencia[] = [];
-  const re = /\b(src|href)\s*=\s*"([^"]*)"/gi;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(html)) !== null) {
-    const atributo = m[1].toLowerCase() as 'src' | 'href';
-    const valor = m[2];
-    out.push({
-      atributo,
-      valor,
-      externa: esExterna(valor),
-      fichero: resolverEstatico(valor, opts),
-    });
-  }
-  return out;
+  return hallazgosDeReferencia(html).map((h) => ({
+    atributo: h.atributo,
+    valor: h.valor,
+    externa: esExterna(h.valor),
+    fichero: resolverEstatico(h.valor, opts),
+  }));
 }
 
 /**
@@ -189,14 +246,28 @@ export function sellarReferencias(
     fsMod?: typeof fs;
   },
 ): string {
-  return html.replace(/\b(src|href)\s*=\s*"([^"]*)"/gi, (completo, atributo: string, valor: string) => {
-    const fichero = resolverEstatico(valor, opts);
-    if (!fichero) return completo;
+  // Se reconstruye por TRAMOS a partir de los hallazgos, en vez de con un `replace` global: así
+  // sellar y auditar miran exactamente lo mismo, y lo que está dentro de un comentario ni se toca.
+  const hallazgos = hallazgosDeReferencia(html);
+  let out = '';
+  let cursor = 0;
+  for (const h of hallazgos) {
+    out += html.slice(cursor, h.inicio);
+    cursor = h.fin;
+
+    const original = html.slice(h.inicio, h.fin);
+    const fichero = resolverEstatico(h.valor, opts);
+    if (!fichero) { out += original; continue; }
     const huella = opts.huellaDeFichero(fichero);
-    if (!huella) return completo;
+    if (!huella) { out += original; continue; }
+
     // Se respeta una query que ya viniera puesta; nadie las usa hoy, pero romperla en silencio
     // sería peor que no sellar.
-    const separador = valor.includes('?') ? '&' : '?';
-    return `${atributo}="${valor}${separador}${PARAM_HUELLA}=${huella}"`;
-  });
+    const separador = h.valor.includes('?') ? '&' : '?';
+    // 🔒 SE CONSERVA LA COMILLA CON LA QUE VENÍA. Normalizarla a dobles sería reescribir el HTML
+    // de alguien por gusto, y con un valor que llevara `"` dentro rompería la etiqueta.
+    out += `${h.atributo}=${h.comilla}${h.valor}${separador}${PARAM_HUELLA}=${huella}${h.comilla}`;
+  }
+  out += html.slice(cursor);
+  return out;
 }

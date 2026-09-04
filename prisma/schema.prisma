@@ -27,6 +27,15 @@ model Merchant {
   // facturas; reset anual (mismo patrón que invoiceSeriesYear).
   nextAlbaranNumber          Int       @default(1) @map("next_albaran_number")
   albaranSeriesYear          Int?      @map("albaran_series_year")
+  /// SCRUM-592 (DOC-02) · el año de la serie de PRESUPUESTOS en curso.
+  ///
+  /// Hasta hoy `nextQuoteNumber` era un contador único que no volvía nunca a 1, porque el
+  /// presupuesto no es documento fiscal y no se le vio la necesidad. La necesidad era del
+  /// PROFESIONAL: sin año, «el presupuesto 32» no dice de qué ejercicio es ni de cuántos.
+  ///
+  /// NULL = serie sin estrenar. Copia exacta del patrón de `albaranSeriesYear`, que ya hace esto
+  /// desde SCRUM-14: al cambiar de año natural el contador vuelve a 1 y el formato lleva el año.
+  quoteSeriesYear            Int?      @map("quote_series_year")
   logoUrl                    String?   @map("logo_url")
   whatsappPhone              String?   @map("whatsapp_phone")
   // SCRUM-441 (E2) · el programa del asesor. SON DOS Y NO UNA: con solo la respuesta, `null`
@@ -475,6 +484,18 @@ model Quote {
 
   status            String    @default("draft")
   total             Decimal   @db.Decimal(12, 2)
+
+  /// SCRUM-594 (DOC-04) · el descuento GLOBAL del documento, en EUROS.
+  ///
+  /// 🔴 IMPORTE FIJO Y NO PORCENTAJE, y no es una incoherencia con el `dto` de la línea (que sí
+  /// es %). Decisión de los dos fundadores: el importe es lo que el cliente VE Y FIRMA; el
+  /// porcentaje sería una forma de calcularlo, o sea guardar el derivado en vez del dato. Por
+  /// línea se descuenta sobre un precio unitario, que es naturalmente un porcentaje; el global
+  /// se negocia a bulto. Uniformarlos rompería el que es exacto, y guardar los dos no es opción.
+  ///
+  /// NULL = no hay descuento global. No lleva flag de «mostrar» (regla 27): sin descuento no se
+  /// pinta, y el dato ES el flag.
+  discountGlobalAmount Decimal? @map("discount_global_amount") @db.Decimal(12, 2)
   currency          String    @db.VarChar(3)
   lines             Json
   acceptedAt        DateTime?
@@ -542,6 +563,14 @@ model Invoice {
 
   number     String
   total      Decimal @db.Decimal(12, 2)
+
+  /// SCRUM-594 (DOC-04) · la columna existe porque el ALTER se aplicó a las dos tablas, pero
+  /// AQUÍ NO SE USA TODAVÍA y eso es deliberado: la propagación del descuento a la FACTURA queda
+  /// fuera de este ticket. Su PDF RECALCULA el total desde `lines` con un motor distinto del que
+  /// alimenta el libro registro y VeriFactu (SCRUM-624, abierto), así que meter descuentos en ese
+  /// camino multiplicaría ese defecto en vez de heredarlo. El schema describe la base tal y como
+  /// está; el día que se propague, el campo ya está.
+  discountGlobalAmount Decimal? @map("discount_global_amount") @db.Decimal(12, 2)
   currency   String  @db.VarChar(3)
   pdfUrl     String
   qrData     String

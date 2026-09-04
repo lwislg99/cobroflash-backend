@@ -61,7 +61,7 @@ import { sellarTrasEmision, SELLADO_HECHO } from '../../../invoicing/domain/sell
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 // SCRUM-290 (A0.4): el CRITERIO de qué se factura y a qué precio vive en funciones puras, no aquí.
 import {
-  casarLineas, motivosParaNoEmitir, lineasParaFactura, totalDeFacturables,
+  casarLineas, motivosParaNoEmitir, lineasParaFactura,
   yaFacturadoPorLineaDePresupuesto, lineasParaAdicional,
 } from '../../domain/albaranAFactura';
 // SCRUM-195: el número del adicional se reserva DENTRO de su transacción, igual que el del alta.
@@ -1220,7 +1220,38 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
       ...l,
       concept: `Albarán ${albaran.numero} (${fechaTxt}): ${l.concept} — ${facturables[i].cantidad}`,
     }));
-    const total = totalDeFacturables(facturables);
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // 🔴 SCRUM-624 · EL TOTAL DE LA FACTURA SALE DE LA CANÓNICA, NO DE LA CONVENCIÓN DEL ALBARÁN
+    //
+    // Aquí ponía `totalDeFacturables(facturables)`, que redondea el céntimo POR LÍNEA. Medido:
+    // sobre 3 líneas de 9,99 al 21 % daba **36,27** mientras el desglose de la misma factura da
+    // base 29,97 + cuota 6,29 = **36,26**. O sea, una factura cuyo `ImporteTotal` NO se puede
+    // reconstruir sumando su propio desglose.
+    //
+    // 🔒 Eso no es «otro redondeo»: es un registro que se contradice a sí mismo, y el sistema que
+    // lo recibe lo RECHAZA — validación VeriFactu **1210** (`ImporteTotal` ≠ Σ(base + cuota + RE)).
+    // El desglose viaja a dos decimales por base y por cuota porque así lo exige el registro; si
+    // el total no sale de ESE mismo desglose, no hay aritmética que los reconcilie después.
+    //
+    // ⚠️ NO SE APOYA NADA en el margen de ±10 € del PDF de la AEAT: `SEMAFORO_CALIBRACION.md`
+    // §8.1 dice que dónde está la frontera entre el rechazo (1210) y la aceptación (2005) **es
+    // una inferencia, no está escrito en ninguna de las dos fuentes**. Lo que se afirma aquí es
+    // sólo COHERENCIA INTERNA —el total reconstruible desde su desglose—, que es aritmética
+    // contra la estructura del registro y no interpretación de la norma. La confirmación fiscal
+    // va a la asesoría (SCRUM-619 y 623). Decisión del fundador, 4-sep-2026.
+    //
+    // 🔴 Y LA CONVENCIÓN POR LÍNEA NO SE DEROGA: sigue viva y gobierna el ALBARÁN
+    // (`albaranAFactura.ts:274-278`, `albaran.service.ts:191`). Un albarán no es un registro
+    // fiscal y sus líneas tienen que sumar A LA VISTA. Lo que estaba mal no era la convención:
+    // era que CRUZABA LA FRONTERA al convertirse en factura. Lo que se arregla es la frontera.
+    //
+    // ⚠️ Se calcula sobre `invoiceLines` —las que se GUARDAN— y no sobre `facturables`: así el
+    // total, el desglose y la cuota de la huella VeriFactu (`calcVatCuotaTotal`, que es
+    // `calcVatBreakdown`) salen del MISMO cálculo sobre los MISMOS datos. Que cuadren por
+    // construcción, no por casualidad.
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    const bd = calcVatBreakdown(invoiceLines);
+    const total = (bd.base + bd.cuota).toFixed(2);
 
     // SCRUM-246 · ANTES de pedir número: si no hay nada que cobrar, la serie ni se entera.
     // Comprobarlo después obligaría a deshacer una factura ya numerada, y deshacer es lo que crea
@@ -1275,7 +1306,8 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
     if (lineasAdicional.length > 0) {
       try {
         adicional = await prisma.$transaction(async (tx) => {
-          const quoteNumber = await allocateQuoteNumber(tx, req.merchantId!);
+          // SCRUM-592 · la fila guarda la SECUENCIA; el texto `P260001` se deriva al pintarlo.
+          const { seq: quoteNumber } = await allocateQuoteNumber(tx, req.merchantId!);
           const creado = await tx.quote.create({
             data: {
               merchantId: req.merchantId!, customerId: job.customerId, quoteNumber,

@@ -37,6 +37,8 @@ import vm from 'node:vm';
 import { createRequire } from 'node:module';
 // SCRUM-670 · el ÚNICO sitio del repo donde se lee un `<script>` de un marcado.
 import { scriptsDeLaPagina, rutaDelDashboard, hojasDeLaPagina } from './_scripts-de-la-pagina.mjs';
+// SCRUM-694 · el filtro de comentarios es ÉSTE, nunca uno a mano.
+import { soloCodigo } from './_solo-codigo.mjs';
 const require = createRequire(import.meta.url);
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -311,6 +313,20 @@ export function nodo(tag, reg) {
     dispararClick() { return n.disparar('click'); },
     click() { return n.disparar('click'); },
     focus() {}, blur() {},
+    // 🔴 SCRUM-591 · `reset()`. NO LO TENÍA, y por eso el formulario de alta de cliente REVENTABA
+    // al abrirse desde el banco (`modalForm.reset is not a function`) — en el navegador lo abre
+    // un profesional todos los días. Un banco al que le falta un método del navegador no mide de
+    // menos: hace imposible medir, que es lo que este fichero lleva seis tickets corrigiendo.
+    //
+    // Se limita a lo que un `<form>.reset()` hace y que aquí es observable: devolver los controles
+    // de su subárbol a su valor de partida. NO se simula `defaultValue` —el mini-DOM no lo
+    // tiene— y por eso se vacía: es lo que hace el navegador con un formulario recién construido,
+    // que es el único caso que este banco monta.
+    reset() {
+      for (const h of todos(n)) {
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(h.tagName)) { h.value = ''; h.checked = false; }
+      }
+    },
     // SCRUM-451 · los atributos se GUARDAN. Antes `setAttribute` era un no-op y `getAttribute`
     // devolvía `null` siempre, así que `[aria-hidden="true"]` o `[type="checkbox"]` no se podían
     // resolver — y una vista que pusiera un atributo y luego lo buscara medía el banco, no el
@@ -539,6 +555,132 @@ export function ocultoPorCss(n, reglas) {
   return { oculto: false, porQue: null, ciego: [] };
 }
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-666b · «¿LA ESCONDE UNA REGLA?» NO ES «¿TIENE ALGUNA REGLA?»
+//
+// SCRUM-666 (PR #916) le dio a este banco las hojas de estilo, y con eso `ocultoPorCss` sabe
+// contestar si una regla ESCONDE un nodo. Pero eso deja fuera el caso peor, que es el que llegó
+// a producción: una vista pintada con clases que **no existen en ninguna hoja**.
+//
+//     ocultoPorCss(<div class="clase-que-nadie-ha-escrito-jamas">) → { oculto: false }
+//
+// `false` se lee como «se ve». Y una clase sin ni una regla no se ve: se pinta DESNUDA. El banco
+// no distinguía «tiene estilo y no lo esconde» de «no tiene estilo ninguno», que son la respuesta
+// buena y la peor noticia posible dando el mismo verde.
+//
+// ── LO MEDIDO EL 4-sep-2026, ANTES DE ESCRIBIR ESTO ──────────────────────────────────────
+// Las dos hojas locales definen **377 clases**. Contra ellas, las 27 vistas del panel escriben
+// **22 clases que no tienen ni una regla**, repartidas en 9 ficheros. Una sola está al 100 %:
+//
+//     parteDetailView.js → 4 clases, 4 sin regla. La pantalla entera sin una línea de CSS.
+//
+// 🔴 Y EL DATO QUE DECIDE EL DISEÑO: de esas 22, el barrido por PINTADO sólo ve 2. Las otras 20
+// —las 4 del parte incluidas— viven en ramas que el banco no llega a ejecutar: vistas que no
+// montan, o que se van por su rama de error. Medir «lo que se pintó» habría dejado fuera
+// justamente el caso que motivó el ticket, así que el barrido que manda es el ESTÁTICO.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Toda clase que aparezca en un SELECTOR de las hojas locales del índice — `@media` incluido.
+ *
+ * 🔴 EL `@media` NO ES UN DETALLE, es la diferencia entre medir y mentir. La primera versión de
+ * esto sólo miraba profundidad 0 y declaraba huérfanas `col-hide-mobile`, `table--cards-mobile` y
+ * `quote-line__qty`, que están las tres definidas **dentro de una media query**. Un instrumento
+ * que no entra en `@media` no encuentra menos: encuentra las de otro sitio.
+ *
+ * 🔴 Y EL CUERPO DE LA REGLA NO DEFINE NADA: `content: ".foo"` no crea la clase `foo`. Por eso se
+ * salta hasta el `}` en cuanto se abre un bloque de declaraciones, en vez de barrer el fichero
+ * entero con un regex.
+ *
+ * ⚠️ Los comentarios se quitan ANTES, y eso cazó un caso real: `styles.css:1276` explica en un
+ * comentario una regla `.quote-lines-table` que ya **no existe**. Contarla habría dado por
+ * estilada una clase que se pinta desnuda — la autorreferencia de siempre, aquí al revés.
+ *
+ * SUELO: si salen menos de 100 clases, LANZA. Cero clases y «no supe leer la hoja» son el mismo
+ * número con significados opuestos, y este fichero existe para no confundirlos.
+ */
+export function clasesDeLasHojas(raiz, hojas = null) {
+  const ficheros = hojas || hojasDelDashboard(raiz);
+  if (!ficheros.length) throw new Error('[banco] el índice no declara ninguna hoja de estilo local');
+  const out = new Set();
+  for (const f of ficheros) {
+    const t = fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    let buf = ''; let i = 0;
+    while (i < t.length) {
+      const ch = t[i];
+      if (ch === '{') {
+        const sel = buf.trim(); buf = '';
+        if (sel.startsWith('@')) {
+          // `@media`, `@supports` y `@layer` contienen MÁS selectores: se entra. `@keyframes` y
+          // `@font-face` sólo llevan declaraciones, así que se saltan enteros.
+          if (/^@(keyframes|font-face|page|property|counter-style)/i.test(sel)) {
+            let prof = 1; let j = i + 1;
+            while (j < t.length && prof > 0) { if (t[j] === '{') prof++; else if (t[j] === '}') prof--; j++; }
+            i = j - 1;
+          }
+        } else {
+          for (const m of sel.matchAll(/\.(-?[_a-zA-Z][\w-]*)/g)) out.add(m[1]);
+          const cierra = t.indexOf('}', i);
+          i = cierra === -1 ? t.length : cierra;
+        }
+      } else if (ch === '}') { buf = ''; } else { buf += ch; }
+      i++;
+    }
+  }
+  if (out.size < 100) {
+    throw new Error(`[banco] SUELO: leí ${ficheros.length} hoja(s) y sólo saqué ${out.size} clase(s). `
+      + 'Eso no es «hay pocas»: es «no supe leer los selectores», y devolverlo sería un verde falso.');
+  }
+  return out;
+}
+
+/**
+ * Las clases que un fuente de vista ESCRIBE en un `class="…"`, y cuántos atributos no supo leer.
+ *
+ * 🔴 SE DEVUELVE `ilegibles` A PROPÓSITO, y es la mitad del valor: un extractor que se comiera la
+ * mitad de los atributos en silencio informaría «ninguna clase huérfana» por no haber mirado. El
+ * consumidor exige que la cobertura sea alta ANTES de creerse el cero (SCRUM-559, el umbral con
+ * holgura que sólo detectaba la ceguera total).
+ *
+ * ⚠️ Los comentarios se quitan con `soloCodigo` (SCRUM-693), no a mano: documentar una clase
+ * retirada citándola no puede contar como pintarla. Es el trinquete de SCRUM-694.
+ *
+ * Los trozos interpolados (`${…}`) se descartan: no son un nombre de clase, son una decisión en
+ * tiempo de ejecución. Lo que rodea a la interpolación sí se lee.
+ */
+export function clasesEscritas(fuente, nombre = 'x.js') {
+  const src = soloCodigo(fuente, nombre);
+  const clases = new Set();
+  let atributos = 0; let ilegibles = 0;
+  for (const m of src.matchAll(/\bclass\s*=\s*(["'`])/g)) {
+    atributos++;
+    const comilla = m[1];
+    const desde = m.index + m[0].length;
+    // Hasta la comilla de cierre, saltándose lo interpolado — que puede llevar comillas dentro.
+    let i = desde; let valor = ''; let ok = false;
+    while (i < src.length) {
+      if (src[i] === comilla) { ok = true; break; }
+      if (src[i] === '$' && src[i + 1] === '{') {
+        let prof = 1; i += 2;
+        while (i < src.length && prof > 0) { if (src[i] === '{') prof++; else if (src[i] === '}') prof--; i++; }
+        // 🔴 UN NUL, NO UN ESPACIO — y la diferencia la cazó la medición, no una revisión.
+        // Con espacio, `class="status-pill status-pill-${v}"` producía el token
+        // `status-pill-`, que no es ninguna clase: es la MITAD de un nombre. Salía en el
+        // censo como huérfana y habría mandado a alguien a escribir una regla inventada.
+        // El NUL no separa: CONTAMINA el token que toca, y el filtro de abajo lo tira por
+        // no casar con el patrón. Lo que va suelto entre espacios (`class="a ${x} b"`) se
+        // sigue leyendo entero, que es lo que hay que conservar.
+        valor += '\u0000';
+        continue;
+      }
+      valor += src[i]; i++;
+    }
+    if (!ok) { ilegibles++; continue; }
+    for (const c of valor.split(/\s+/)) if (/^-?[_a-zA-Z][\w-]*$/.test(c)) clases.add(c);
+  }
+  return { clases, atributos, ilegibles };
+}
+
 /**
  * SCRUM-559 · CUÁNTOS SCRIPTS DECLARA EL INDEX DEL DASHBOARD. Recuento EXACTO, no un mínimo.
  *
@@ -659,6 +801,9 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'puertaSerie.js',
   'quoteActionsRegistry.js',
   'quoteApartados.js',
+  // SCRUM-594 (DOC-04) · la aritmética de los descuentos del presupuesto. Va ANTES de
+  // `quotesView.js`, que la consume en `recalcTotals` y al componer el payload.
+  'quoteDescuentos.js',
   'quoteRevisiones.js',
   'quoteAtajosVencimiento.js',
   'quoteMargen.js',

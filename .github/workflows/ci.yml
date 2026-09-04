@@ -371,6 +371,33 @@ jobs:
         with:
           node-version: '24'
 
+      # ── SCRUM-716b · TRAER `main`, o el vigía no puede comparar ───────────────────────
+      #
+      # 🔴 `fetch-depth: 0` NO basta en un `pull_request`, y esto está MEDIDO reproduciendo el
+      # checkout: `actions/checkout` trae **una sola ref** —la del PR— con toda su historia. En ese
+      # clon:
+      #
+      #     ¿resuelve origin/main?           NO
+      #     ¿está el commit de producción?   NO
+      #
+      # Así que el vigía se declaraba ciego — correctamente, pero por falta de datos que el JOB
+      # podía darle. Salía rojo en TODA PR, en 6-8 segundos, igual en ramas sin nada que ver: se
+      # leía como ruido, y un vigía que se lee como ruido no avisa el día que tiene razón.
+      #
+      # Con esta línea, medido en el mismo banco:
+      #
+      #     producción dice 5bfc1136 · `main` está en 382439a1 · 0.7 h de hueco (margen 6 h)
+      #        6 commit(s) sin llegar. Un despliegue en curso se lee así.       ← veredicto REAL
+      #
+      # ⚠️ Y NO convierte una ceguera legítima en un veredicto inventado: con `main` ya traído y un
+      # `/version` que no responde, sigue diciendo «NO SUPE MIRAR». Comprobado.
+      #
+      # 📌 El workflow PROGRAMADO (`vigia-despliegue.yml`) NO necesita esto: se ejecuta sobre
+      # `main`, así que `actions/checkout` ya crea `refs/remotes/origin/main`. Por eso aquel
+      # funcionaba y éste no.
+      - name: Traer `main` (el vigía compara contra él)
+        run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
+
       # Sin `npm ci` a propósito: el vigía no importa nada de `node_modules` — sólo
       # `node:child_process` y `fetch`. Instalar aquí sería tiempo y superficie de balde.
       - name: ¿Está producción corriendo lo que hay en main?

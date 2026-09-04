@@ -165,7 +165,26 @@ su IVA.
 |---|---|
 | 16 | `No se han podido marcar como pagadas. Vuelve a intentarlo.` |
 | 18 | `Se han marcado como pagadas, pero la lista no se ha podido actualizar. Recárgala para verla al día.` |
-| 172 | `+ Nueva factura` |
+| 172 | `Nueva factura` | **sin `+` desde el 3-sep-2026**, ver abajo |
+
+### 🔴 «Nueva factura», SIN el `+` — decidido el 3-sep-2026
+
+Este rótulo estuvo **aprobado dos veces con distinta grafía**: aquí con `+` (17-ago) y sin él
+en SCRUM-599 (3-sep). Lo cazó el guard de SCRUM-514 el día que nació, y lo decidió el asesor:
+**gana `Nueva factura`**.
+
+El motivo, para que nadie lo revierta: SCRUM-599 aprobó los **cuatro** botones primarios de la
+misma familia —`Nuevo presupuesto`, `Nuevo albarán`, `Nueva factura`, `Nuevo cliente`— medidos
+en navegador real. **Dejar el `+` en uno solo rompe la familia**, y en un botón el `+` no
+informa de nada: el botón ya se ve como botón.
+
+> ⚠️ **Y lo que NO es una incoherencia, escrito a propósito:** en **SCRUM-591** se aprobó
+> `+ Nuevo cliente` **CON** `+`, y **se queda**. Allí es una `<option>` dentro de un `<select>`
+> lleno de nombres de clientes, y el `+` es **lo único** que distingue una acción de un nombre.
+> **Botón sin `+`, opción de lista con `+`.** Uniformarlos rompería el que sí informa.
+
+**El código ya estaba bien** (`invoicesView.js` lo lee de `atajoNuevo.js`): lo que se corrige
+aquí es la fuente, que era la que se había quedado atrás.
 
 ## Bloque 7 · Productos — `public/dashboard/js/productsView.js`
 
@@ -520,7 +539,7 @@ sin aplicar, hasta que decida — y hay un aserto que cae si alguien lo aplica s
 
 ---
 
-## Addendum · Dirección de facturación del cliente (2-sep-2026) · **APROBADAS, NO APLICADAS**
+## Addendum · Dirección de facturación del cliente (2-sep-2026) · **APLICADAS el 3-sep-2026**
 
 **Medido contra:** `origin/main` = `354fdca362063a79a928ed5df7c5120363d64c0b` · 2026-09-02T18:33:54+01:00
 
@@ -555,11 +574,20 @@ rótulos no habría sido una nota interna: lo habría visto un profesional en su
 minutos** del merge, cinco veces en el mismo formulario. Por eso la aprobación se pidió **antes** del
 PR de código y no después — y por eso este ticket entrega sin una sola marca.
 
-### Estado: aprobadas y todavía sin pintar
+### Estado: APLICADAS · medido el 3-sep-2026 (SCRUM-514)
 
-El formulario **aún no existe**: SCRUM-579 está parado a propósito en el orden de migración
-—① decisión → ② `ALTER` en las TRES bases → ③ un solo PR con schema + código + tests—, y a fecha de
-esta anotación el `ALTER` está **sólo en `yaqu_dev_javier`** (medido: DEV 5/5, STAGING 0/5).
+**Las cinco están en pantalla**, una vez cada una, en `public/dashboard/js/customersView.js`.
+Comprobado literal —con sus tildes— antes de cambiar este renglón, y no por el número de línea.
+
+> ⚠️ **Este apartado decía lo contrario y era cierto cuando se escribió.** Decía que el formulario
+> «aún no existe» y que SCRUM-579 estaba parado en el orden de migración con el `ALTER` sólo en
+> DEV. Ese ticket se cerró **después**, y el renglón se quedó atrás: la fuente única llevaba un día
+> diciendo que faltaba algo que ya estaba hecho, y eso manda a la siguiente sesión a aplicar lo
+> aplicado. **Un estado que no se revisa es la siguiente mentira de la fuente** — que es lo que ya
+> avisa la cabecera de este fichero sobre el sello «TODO APLICADO».
+>
+> Desde hoy no hace falta acordarse: `tests/scrum514-aprobado-y-aplicado.test.mjs` cruza ESTE
+> fichero contra el código en cada tanda y se pone rojo si un texto aprobado no está pintado.
 
 Se anotan aquí **ahora** y no cuando se pinten, porque un texto aprobado que se reteclea semanas
 después deja de ser el aprobado. Quien construya el formulario **copia de esta tabla**.
