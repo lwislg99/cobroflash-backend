@@ -134,6 +134,24 @@ export function descontarTexto(comando) {
 // ampliar sin ceremonia. Es lo contrario de una lista blanca.
 const ENVOLTORIOS = new Set(['bash', 'sh', 'zsh', 'dash', 'cmd', 'cmd.exe', 'powershell', 'powershell.exe', 'pwsh', 'eval']);
 
+// ── SCRUM-744 · EL ENVOLTORIO QUE FALTABA, Y POR QUÉ NO ES `node` A SECAS ───────────────────
+//
+// `node -e "…"` ejecuta su argumento igual que `bash -c "…"`, y no estaba en la lista. Medido
+// con el hook real el 4-sep-2026: la invocación que ESTA CASA USA —el CLI de Prisma resuelto por
+// `require.resolve('prisma/build/index.js')` y lanzado con `spawnSync`— **pasaba sin saltar**,
+// también con `db push` y con `--force-reset` dentro.
+//
+// 🔴 Y NO SE PUEDE METER `node` EN `ENVOLTORIOS` A SECAS: entonces el argumento entrecomillado de
+// CUALQUIER `node script.mjs "…"` se volvería a analizar como línea de comando, y eso reabre
+// exactamente el falso positivo que SCRUM-454 midió y cerró —`node medir.mjs "git push --force
+// origin main"`—. La diferencia no es el programa: es LA BANDERA. `-e` lleva código; un argumento
+// posicional lleva datos.
+//
+// Por eso esto es un mapa programa → banderas cuyo argumento ES CÓDIGO, y se recursa sólo por ahí.
+const BANDERAS_DE_CODIGO = new Map([
+  ['node', new Set(['-e', '--eval', '-p', '--print'])],
+]);
+
 const SEPARADORES = new Set([';', '|', '&', '&&', '||', '\n']);
 /** Redirecciones que TRUNCAN el destino. `>>` (añadir) y `>&` (duplicar descriptor) no. */
 const TRUNCANTES = new Set(['>', '>|', '&>']);
@@ -247,6 +265,36 @@ export function acciones(comando, profundidad = 0) {
   for (const a of [...salida]) {
     if (!ENVOLTORIOS.has(a.programa)) continue;
     for (const p of a.palabras) if (p.entrecomillado) salida.push(...acciones(p.texto, profundidad + 1));
+  }
+  // 1-bis) SCRUM-744 · Banderas que llevan CÓDIGO (`node -e "…"`).
+  //
+  // 🔴 EL PAYLOAD VA CON LA MÁSCARA A CERO, y ésa es la decisión del ticket. Dentro de `-e` NO
+  // HAY «mención»: todo lo que hay ahí se ejecuta, comillas incluidas — `['db','push']` son
+  // comillas de JavaScript, no de un shell, y tratarlas como si escondieran texto inerte es
+  // justo lo que dejaba pasar la invocación real. Se recursa ADEMÁS como línea de comando, por
+  // si dentro hay un `bash -c` anidado.
+  //
+  // El precio, medido y declarado: `node -e "console.log('prisma db push')"` queda BLOQUEADO
+  // aunque sólo imprima. Es la dirección segura —el guard yerra cerrado— y el rodeo es escribirlo
+  // en un fichero, que además es lo que uno hace con cualquier cosa que no sea de usar y tirar.
+  for (const a of [...salida]) {
+    const banderas = BANDERAS_DE_CODIGO.get(a.programa);
+    if (!banderas) continue;
+    for (let i = 0; i < a.palabras.length; i++) {
+      const t = a.palabras[i].texto;
+      const conIgual = t.match(/^(--?[A-Za-z-]+)=([\s\S]*)$/);
+      const payload = conIgual && banderas.has(conIgual[1]) ? conIgual[2]
+        : (banderas.has(t) && a.palabras[i + 1] ? a.palabras[i + 1].texto : null);
+      if (payload == null || payload === '') continue;
+      salida.push({
+        texto: payload,
+        mascara: new Array(payload.length).fill(false), // todo ejecutable: nada es mención
+        palabras: [],
+        redirecciones: [],
+        programa: '',
+      });
+      salida.push(...acciones(payload, profundidad + 1));
+    }
   }
   // 2) Sustitución de comando: se ejecuta esté donde esté, también dentro de comillas.
   for (const m of comando.matchAll(/\$\(([\s\S]*?)\)|`([\s\S]*?)`/g)) {
@@ -533,13 +581,73 @@ function perdidaInminente(lista, cwd) {
 function reglas(lista, sentinelPath, entorno = {}) {
   const enAlguna = (re) => lista.some((a) => coincide(re, a));
 
+  // ── SCRUM-744 · LA ACCIÓN, NO LA FORMA DE ESCRIBIRLA ──────────────────────────────────────
+  //
+  // El patrón viejo era `prisma[^"]{0,40}migrate +dev`: exigía los dos verbos SEPARADOS POR
+  // ESPACIOS y a menos de 40 caracteres del nombre, y que por medio no hubiera una comilla. Eso
+  // no describe la acción: describe UNA MANERA DE TECLEARLA. La casa invoca de otra —
+  // `spawnSync(process.execPath, [require.resolve('prisma/build/index.js'), 'db', 'push'])`— y
+  // ahí los verbos van en un array, con comillas y comas por medio.
+  //
+  // `subcomando()` tolera lo que separa a los dos verbos (`'db','push'`, `db  push`, `db","push`)
+  // y ensancha la distancia hasta el nombre del CLI, porque `require.resolve('prisma/build/…')`
+  // ya se come esos 40. Lo que NO se toca es el árbitro de SCRUM-454: sigue haciendo falta que la
+  // coincidencia toque al menos un carácter que no venga de dentro de unas comillas, así que
+  // `git commit -m "no ejecutes prisma db push"` sigue pasando.
+  const subcomando = (a, b) =>
+    new RegExp(`\\bprisma\\b[\\s\\S]{0,200}?\\b${a}\\b[^A-Za-z0-9]{0,4}\\b${b}\\b`, 'i');
+
   // 1) prisma migrate dev — PROHIBIDO siempre (regla 3: Prisma sin TTY)
-  if (enAlguna(/prisma[^"]{0,40}migrate +dev/)) {
+  if (enAlguna(subcomando('migrate', 'dev'))) {
     return {
       bloqueado: true,
       motivo:
         "'prisma migrate dev' esta prohibido (regla 3). Usa 'prisma migrate diff' (preview) y luego 'db push' autorizado.",
     };
+  }
+
+  // 1-bis) SCRUM-744 · LOS DOS QUE NO ESTABAN EN LA LISTA, y el censo era el hallazgo.
+  //
+  // 🔴 Medido el 4-sep-2026 con el hook real: la lista de subcomandos destructivos de Prisma
+  // tenía DOS entradas —`migrate dev` y `db push`— y `npx prisma migrate reset`, que BORRA Y
+  // RECREA LA BASE ENTERA, **pasaba**. `migrate reset --force` sí caía, pero por la regla de
+  // `--force` (regla 3 de AA2): o sea, por accidente y no porque nadie lo hubiera considerado.
+  // Un guard que para el caso peligroso sólo cuando además lleva otra bandera es un guard que no
+  // sabe lo que protege.
+  //
+  // `db execute` ejecuta el SQL que le des CONTRA LA BASE, sin clasificarlo. La casa tiene un
+  // camino para eso —`scripts/aplicar-sql-dev.mjs`, que pasa el fichero por
+  // `_clasificador-sql.mjs` y RECHAZA POR DEFECTO lo que no reconoce como aditivo— y ese camino
+  // sigue funcionando: el hook ve `node scripts/aplicar-sql-dev.mjs …`, no `db execute`. Lo que
+  // se bloquea es teclearlo a mano, que es exactamente saltarse el clasificador.
+  // ⚠️ CADA ENTRADA SE AÑADE CON SU USO MEDIDO, no con una intuición. Barrido del 4-sep-2026 sobre
+  // `package.json`, `scripts/`, `src/` y `.github/`: **ninguno de los cinco lo usa nadie** —y
+  // `migrate deploy` aparecía en `preflight-schema-drift.mjs` sólo dentro de un comentario que dice
+  // «cero `db push`, cero `migrate deploy`», o sea mención y no uso—. Bloquearlos no le quita el
+  // camino a nadie. Los que SÍ tienen camino se quedan fuera a propósito: ver la lista de abajo.
+  const DESTRUCTIVOS = [
+    ['migrate', 'reset',
+      "'prisma migrate reset' BORRA Y RECREA la base entera. No hay flujo en esta casa que lo use: " +
+      'los cambios de esquema van por `migrate diff` (preview) + `db push` autorizado.'],
+    ['db', 'execute',
+      "'prisma db execute' ejecuta el SQL TAL CUAL contra la base, sin clasificarlo. Usa " +
+      '`node scripts/aplicar-sql-dev.mjs --file <x.sql>` (ensena y no toca nada) y `--go` para aplicar: ' +
+      'ese camino rechaza por defecto lo que no reconoce como aditivo.'],
+    ['migrate', 'deploy',
+      "'prisma migrate deploy' aplica migraciones a la base, y esta casa NO tiene flujo de " +
+      'migraciones: no existe `prisma/migrations` y `migrate dev` esta prohibido (regla 3). ' +
+      'Los cambios de esquema van por `db push` autorizado.'],
+    ['migrate', 'resolve',
+      "'prisma migrate resolve' escribe en la tabla de migraciones de la base para dar por " +
+      'aplicada una migracion. Esta casa no usa migraciones (regla 3), asi que esto solo puede ' +
+      'dejar la base diciendo algo que no es.'],
+    ['db', 'pull',
+      "'prisma db pull' REESCRIBE `prisma/schema.prisma` con lo que haya en la base, y ese fichero " +
+      'es del FUNDADOR. El esquema manda sobre la base, no al reves: si hay diferencia, el preview ' +
+      'la ensena (`node scripts/preview-migracion.mjs`).'],
+  ];
+  for (const [a, b, motivo] of DESTRUCTIVOS) {
+    if (enAlguna(subcomando(a, b))) return { bloqueado: true, motivo };
   }
 
   // 2) db push sin preview confirmado — exige sentinel de un solo uso.
@@ -553,7 +661,7 @@ function reglas(lista, sentinelPath, entorno = {}) {
   //    que no ejecutó nada y tenía que volver a darlo — o peor, creerse que lo había gastado.
   //    Es un fallo PREEXISTENTE (venía de la versión en bash, con el mismo orden) que la
   //    portación a .mjs conservó tal cual; lo encontró la sesión 1 comparando implementaciones.
-  const pideDbPush = enAlguna(/prisma[^"]{0,40}db +push/);
+  const pideDbPush = enAlguna(subcomando('db', 'push'));
   if (pideDbPush && !fs.existsSync(sentinelPath)) {
     return {
       bloqueado: true,
@@ -677,6 +785,31 @@ if (invocadoDirectamente) {
 //   · Un editor, un script de Node (`fs.writeFileSync`) o cualquier herramienta que no sea
 //     Bash/PowerShell sobrescribe sin pasar por aquí. El hueco es el mismo de siempre y no lo
 //     cierra este ticket: lo que se cierra es la vía por la que se perdieron los cuatro.
+//
+// SCRUM-744 — lo que se CIERRA, y lo que queda abierto después:
+//
+//   CERRADO: la invocación del CLI de Prisma por su ruta dentro de un `node -e`, que es como
+//   esta casa lo lanza en cuatro sitios (`_prisma-sync`, `aplicar-sql-dev`,
+//   `preflight-schema-drift` y `preview-migracion`; el runbook que lo explica entra con
+//   SCRUM-742). Y la lista de subcomandos, que tenía
+//   DOS entradas: ahora son siete, censadas contra el `--help` del CLI instalado en
+//   `tests/scrum744-el-guard-mira-la-accion.test.mjs`.
+//
+//   NO cubierto, a sabiendas:
+//   · UN SCRIPT DEL REPO que por dentro lance algo destructivo. El hook ve `node scripts/x.mjs`
+//     y no lo que ese fichero hace. Es el mismo hueco que ya estaba declarado arriba para
+//     `fs.writeFileSync`, y aquí es DELIBERADO: los scripts del árbol pasan por PR, y cerrarlo
+//     obligaría a leer ficheros desde el hook. `scripts/aplicar-sql-dev.mjs` vive justo en ese
+//     hueco a propósito — es el camino BUENO para el SQL, con su clasificador delante.
+//   · `bash scripts/db-push-prod` y `npm run db:seed`: rutas declaradas en `package.json` que
+//     llegan al hook como el nombre del script, no como el subcomando. Miden lo mismo que el
+//     punto anterior y se dejan igual.
+//   · `prisma db seed`, `prisma studio` y `prisma format` NO se bloquean: los dos primeros
+//     tienen camino declarado y el tercero sólo reformatea. Los tres están en el censo del test
+//     con su motivo, para que la decisión se pueda revisar en vez de deducirse de su ausencia.
+//   · OTRAS BANDERAS QUE LLEVAN CÓDIGO. `BANDERAS_DE_CODIGO` sólo cubre `node`. `python -c`,
+//     `perl -e`, `ruby -e` o `deno eval` tendrían el mismo agujero; no se añaden porque no
+//     aparecen en este repo y cada uno necesita su propio control de falso positivo.
 //   · Si algo revienta dentro de la familia nueva, se DEJA PASAR (try/catch en `reglas`). Es
 //     cobertura nueva: un fallo mío parando a las cuatro sesiones sería peor que el estado de
 //     ayer. Las cuatro reglas de AA2 no llevan esa red — ésas nunca dejan de mirar.
