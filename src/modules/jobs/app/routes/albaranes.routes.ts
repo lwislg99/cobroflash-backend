@@ -66,6 +66,7 @@ import {
 } from '../../domain/albaranAFactura';
 // SCRUM-195: el número del adicional se reserva DENTRO de su transacción, igual que el del alta.
 import { allocateQuoteNumber } from '../../../quotes/domain/quoteNumber.service';
+import { sePuedeCambiarOcultarPrecios } from '../../domain/albaranPrecios'; // SCRUM-607 (ALB-02)
 
 const router = Router();
 
@@ -527,6 +528,30 @@ router.patch('/:id', async (req, res) => {
           message: `Las líneas actuales no encajan con el nuevo modo: ${v.error}`,
         });
       }
+    }
+    // ── SCRUM-607 (ALB-02) · EL INTERRUPTOR DEL PAPEL, Y SU CANDADO PROPIO ────────────────
+    //
+    // 🔴 SE PUEDE TOCAR EN `borrador` Y EN `emitido`; se congela al FIRMAR. Y aqui NO se copia el
+    // candado de `modoValoracion` a proposito: aquel se congela en `emitido` porque CAMBIA EL
+    // IMPORTE, y un importe que se mueve despues de emitir es otro documento. Este solo cambia
+    // QUE SE IMPRIME, y el caso real es de un profesional de verdad: «ya lo emiti y ahora me lo
+    // piden sin precios». Al firmar si se congela: ahi el papel es prueba de lo entregado.
+    //
+    // ⚠️ AL SIGUIENTE QUE QUIERA UNIFICARLO CON `modoValoracion`: ese es el motivo de por que no.
+    if (req.body?.ocultarPreciosEnDocumento !== undefined) {
+      if (!sePuedeCambiarOcultarPrecios(albaran.estado)) {
+        return res.status(409).json({
+          error: 'albaran_locked',
+          message: 'Este albaran ya esta firmado: lo que muestra el documento no se puede cambiar.',
+        });
+      }
+      // Booleano ESTRICTO. Un `Boolean(req.body...)` convertiria la cadena "false" en `true`, que
+      // en este campo significa ensenar los precios de alguien a su cliente.
+      if (typeof req.body.ocultarPreciosEnDocumento !== 'boolean') {
+        return res.status(400).json({ error: 'ocultar_precios_invalido' });
+      }
+      data.ocultarPreciosEnDocumento = req.body.ocultarPreciosEnDocumento;
+      cambios.push('ocultarPreciosEnDocumento');
     }
     if (req.body?.notas !== undefined) {
       data.notas = String(req.body.notas || '').slice(0, 2000) || null;
