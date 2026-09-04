@@ -790,8 +790,8 @@ if (invocadoDirectamente) {
 //
 //   CERRADO: la invocación del CLI de Prisma por su ruta dentro de un `node -e`, que es como
 //   esta casa lo lanza en cuatro sitios (`_prisma-sync`, `aplicar-sql-dev`,
-//   `preflight-schema-drift` y `preview-migracion`; el runbook que lo explica entra con
-//   SCRUM-742). Y la lista de subcomandos, que tenía
+//   `preflight-schema-drift` y `preview-migracion`; el runbook es docs/RUNBOOKS.md §R20).
+//   Y la lista de subcomandos, que tenía
 //   DOS entradas: ahora son siete, censadas contra el `--help` del CLI instalado en
 //   `tests/scrum744-el-guard-mira-la-accion.test.mjs`.
 //

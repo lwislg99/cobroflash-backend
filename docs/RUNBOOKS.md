@@ -716,6 +716,12 @@ se le pasa en `--schema`**. Con un schema de usar y tirar fuera del repo, infier
 ese fichero, no encuentra `package.json`, se lanza a un `npm i prisma` y muere. Un schema temporal
 va **dentro de `prisma/`**, y se borra al terminar.
 
+**🔴 Y el guard SÍ mira esta forma, desde SCRUM-744.** Hasta entonces no: el hook sólo reconocía
+`prisma db push` tecleado con espacios y a menos de 40 caracteres del nombre, así que la
+invocación correcta de aquí arriba —con los verbos en un array— **pasaba sin saltar**, `db push`
+y `--force-reset` incluidos. Escribirla bien nunca fue un rodeo de la barrera, pero durante unas
+horas lo pareció. Ahora el guard mira **qué hace** el comando, no cómo está escrito.
+
 **Qué decir al merchant.** Nada: es de herramienta interna, no llega a producción.
 
 **Prevención.** Medido el 4-sep-2026 (SCRUM-733/742). El censo
