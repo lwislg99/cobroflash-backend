@@ -433,7 +433,8 @@ son lo mismo.
 
 # SCRUM-653b · Los cinco textos de las dos firmas, firmados — y el aviso que ya dice CUÁL falta
 
-**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-653-dos-firmas` · 4-sep-2026
+**Medido contra:** `origin/main` = `1304643497934441f88950e441182b7e344dbb57` · 2026-09-04T19:06:52+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-653-dos-firmas`
 
 El fundador firmó los cinco textos que la rama traía con marcador. Constan en
 `docs/microcopy/2026-09-04-SCRUM-653-las-dos-firmas.md`, **con su firma** — que es exactamente el
