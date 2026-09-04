@@ -344,7 +344,23 @@ function renderCustomersView(container) {
   barraSeleccion.appendChild(casillaTodosBarra);
   barraSeleccion.appendChild(contadorSeleccion);
 
-  outerCard.appendChild(table);
+  // 🔴 SCRUM-699 · AQUÍ HABÍA UN `outerCard.appendChild(table)`, Y SACABA LA TABLA DE SU CARRIL.
+  //
+  // La tabla ya entró en el `.table-scroll` en la l. 266. Insertar MUEVE —un nodo está en un
+  // sitio, no en dos—, así que esta línea la devolvía al `.data-card` y dejaba el envoltorio de
+  // scroll VACÍO. Y no es reciente: el envoltorio nació ya inerte en `bc4cf146` («fix(UI): layout
+  // desktop + scroll móvil en todas las vistas»), que añadió las dos líneas de arriba y se dejó
+  // ésta, que venía del primer commit del fichero.
+  //
+  // LO QUE COSTABA, MEDIDO EN NAVEGADOR (Edge, 9 columnas, 7 clientes ordinarios): la página NO
+  // desbordaba nunca —`html, body { overflow-x: clip }` (styles.css:359) lo impide—, pero
+  // `.data-card { overflow: hidden }` (styles.css:1819) RECORTABA la tabla, y sin envoltorio no
+  // quedaba ningún carril por el que llegar a lo recortado. A partir de 1196 px de ventana se
+  // perdía «📊 Historial»; a 1024 px y por debajo, los TRES botones de la fila —Editar, Portal e
+  // Historial— eran inalcanzables con el ratón. Por debajo de 768 px no se notaba porque ahí la
+  // propia `.table` es `display:block; overflow-x:auto` (styles.css:1762).
+  //
+  // No se añade nada en su lugar: el sitio correcto ya estaba escrito en la l. 266.
   outerCard.appendChild(barraSeleccion);
 
   /** Pone las DOS casillas y el contador a lo que dice el estado. Un solo sitio que pinta. */
