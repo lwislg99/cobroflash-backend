@@ -65,6 +65,20 @@
     ordenarDictado: 'Ordenar en líneas',
     confirmarPropuesta: 'Añadir estas líneas',
     sinBloque: 'Sin colocar — elige mano de obra o materiales',
+
+    // ── SCRUM-653 · LAS DOS FIRMAS ──────────────────────────────────────────────────────
+    // Los cinco textos de las dos firmas, FIRMADOS por el fundador el 4-sep-2026. Constan en
+    // `docs/microcopy/2026-09-04-SCRUM-653-las-dos-firmas.md`.
+    //
+    // Etiquetas de estado SIN punto final; frases CON punto. Es deliberado, no un descuido.
+    firmarTecnico: 'Firma del técnico',
+    yaFirmoElCliente: 'Firmado por el cliente',
+    yaFirmoElTecnico: 'Firmado por el técnico',
+    // 🔴 DOS CLAVES Y NO UNA. «Falta una firma para cerrar el parte» **no decía cuál**, y el
+    // técnico está de pie en un cuarto técnico con el móvil en la mano: un aviso que no nombra lo
+    // que falta le obliga a adivinar. El control negativo de SCRUM-653 exige que se diga cuál.
+    faltaLaFirmaDelCliente: 'Falta la firma del cliente para cerrar el parte.',
+    faltaLaFirmaDelTecnico: 'Falta la firma del técnico para cerrar el parte.',
   };
 
   // El vocabulario CERRADO del dominio (`parteTrabajo.ts`). No se inventa aquí ni se amplía:
@@ -203,10 +217,8 @@
       pintarBloque('materiales', lineas, editable) +
       campo(TEXTOS.notas, parte.notas) +
       (editable
-        ? '<button type="button" data-parte-firmar="1" style="width:100%;margin-top:10px">' +
-          esc(TEXTOS.firmar) + '</button>'
-        : '<p data-parte-firmado="1" style="margin-top:10px;font-size:14px;color:var(--muted)">' +
-          esc(TEXTOS.yaFirmado) + '</p>');
+        ? pintarLasDosFirmas(parte)
+        : pintarLasDosFirmas(parte));
 
     return true;
   }
@@ -365,6 +377,42 @@
   }
 
   /**
+   * 🔴 LOS DOS RECUADROS DEL PAPEL: «FIRMA CLIENTE» y «FIRMA TÉCNICO».
+   *
+   * Se pintan **los dos SIEMPRE**, igual que los dos bloques de líneas y por el mismo motivo: el
+   * impreso los lleva impresos aunque falte uno, y esconder el que falta haría que «no ha firmado
+   * todavía» se viera igual que «esta pantalla no tiene esa firma».
+   *
+   * Cada uno es un botón si su ranura está libre, y un texto si ya se firmó. **El orden no se
+   * exige** (`ordenDeFirmaExigido()` en el dominio): en la obra firma quien esté libre primero.
+   */
+  function pintarLasDosFirmas(parte) {
+    var recuadro = function (firmado, marca, rotulo, hecho, quien) {
+      return firmado
+        ? '<p data-parte-' + marca + '-hecha="1" style="margin:8px 0 0;font-size:14px;color:var(--muted)">' +
+          esc(hecho) + (quien ? ' ' + esc(quien) : '') + '</p>'
+        : '<button type="button" data-parte-' + marca + '="1" style="width:100%;margin-top:8px">' +
+          esc(rotulo) + '</button>';
+    };
+    return (
+      '<section data-parte-firmas="1" style="margin-top:12px">' +
+      recuadro(parte.firmoElCliente, 'firmar', TEXTOS.firmar, TEXTOS.yaFirmoElCliente, parte.firmadoPorNombre) +
+      recuadro(parte.firmoElTecnico, 'firmar-tecnico', TEXTOS.firmarTecnico, TEXTOS.yaFirmoElTecnico, parte.firmadoTecnicoNombre) +
+      // 🔴 EL AVISO NOMBRA LA QUE FALTA, y si faltan las dos se dicen las dos: fundir ambas en
+      // «falta una firma» era exactamente el defecto — el técnico tendría que adivinar cuál.
+      (!parte.firmoElCliente
+        ? '<p data-parte-falta-firma="cliente" style="margin:8px 0 0;font-size:13px;color:var(--muted)">' +
+          esc(TEXTOS.faltaLaFirmaDelCliente) + '</p>'
+        : '') +
+      (!parte.firmoElTecnico
+        ? '<p data-parte-falta-firma="tecnico" style="margin:8px 0 0;font-size:13px;color:var(--muted)">' +
+          esc(TEXTOS.faltaLaFirmaDelTecnico) + '</p>'
+        : '') +
+      '</section>'
+    );
+  }
+
+  /**
    * Abre el pad de firma y firma CON LA RED DE SEGURIDAD QUE YA EXISTE.
    *
    * 🔴 No se construye una segunda cola: es `firmarConRedDeSeguridad` (`colaDeFirmas.js`), la
@@ -375,8 +423,20 @@
    * Lo que ve el firmante se arma AQUÍ y sin importes: descripción y unidades, que es lo que la
    * pantalla tiene. El pad no se toca — recibe la forma que ya sabía pintar.
    */
-  function firmarParte(parte, opciones) {
+  /**
+   * `quien` es 'cliente' o 'tecnico'. Una sola función y no dos: lo único que cambia es la ruta, el
+   * tipo con el que se encola y qué campo lleva el nombre. Duplicarla habría duplicado también el
+   * cuidado de SCRUM-404 (que el error SUBA para que el trazo siga en pantalla), y esa clase de
+   * copia se separa en cuanto una de las dos se toca.
+   */
+  var FIRMAS = {
+    cliente: { tipo: 'parte', ruta: function (id) { return '/admin/partes/' + id + '/firmar'; } },
+    tecnico: { tipo: 'parte-tecnico', ruta: function (id) { return '/admin/partes/' + id + '/firmar-tecnico'; } },
+  };
+
+  function firmarParte(parte, opciones, quien) {
     var o = opciones || {};
+    var cual = FIRMAS[quien || 'cliente'];
     var abrirPad = o.abrirPad || window.openSignaturePad;
     var firmar = o.firmar || window.firmarConRedDeSeguridad;
     var pedir = o.apiRequest || window.apiRequest;
@@ -386,7 +446,7 @@
     if (lineas === null) return false;
 
     abrirPad({
-      title: TEXTOS.tituloFirma,
+      title: quien === 'tecnico' ? TEXTOS.firmarTecnico : TEXTOS.tituloFirma,
       hint: TEXTOS.pistaFirma,
       // Mismo contrato que el albarán: {cliente, fecha, lugar, lineas:[{concepto,cantidad,unidad}]}.
       // `unidad` lleva la ETIQUETA DEL BLOQUE, que es lo que distingue una hora de un material en
@@ -405,11 +465,8 @@
         // El error SUBE (SCRUM-404): el pad no cierra hasta que esto resuelve, así que un fallo
         // deja el trazo en pantalla y se reintenta sin pedirle al cliente que firme otra vez.
         var r = await firmar(parte.id, cuerpo, function () {
-          return pedir('/admin/partes/' + parte.id + '/firmar', {
-            method: 'POST',
-            body: JSON.stringify(cuerpo),
-          });
-        }, 'parte');
+          return pedir(cual.ruta(parte.id), { method: 'POST', body: JSON.stringify(cuerpo) });
+        }, cual.tipo);
         // Repinta con lo que dice el SERVIDOR. Se llama también cuando la firma se quedó en la
         // cola: el parte sigue en borrador y la pantalla tiene que seguir diciéndolo.
         if (typeof o.alFirmar === 'function') { try { await o.alFirmar(); } catch (_e) {} }
@@ -535,14 +592,19 @@
       });
     }
 
-    var boton = contenedor.querySelector && contenedor.querySelector('[data-parte-firmar]');
-    if (boton && boton.addEventListener) {
+
+    // Cada recuadro a SU ruta. Se enganchan los dos por separado: con un solo escuchador que
+    // mirara un atributo, un fallo de selector mandaría la firma del técnico a la ranura del
+    // cliente — y eso, en un documento firmado, no se deshace.
+    [['[data-parte-firmar]', 'cliente'], ['[data-parte-firmar-tecnico]', 'tecnico']].forEach(function (par) {
+      var boton = contenedor.querySelector && contenedor.querySelector(par[0]);
+      if (!boton || !boton.addEventListener) return;
       boton.addEventListener('click', function () {
         firmarParte(parte, Object.assign({}, o, {
-          alFirmar: function () { renderParteDetailView(contenedor, parteId, o); },
-        }));
+          alFirmar: function () { return renderParteDetailView(contenedor, parteId, o); },
+        }), par[1]);
       });
-    }
+    });
     return true;
   }
 

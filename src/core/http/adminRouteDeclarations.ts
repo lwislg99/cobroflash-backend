@@ -135,6 +135,13 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   { method: 'GET',   path: '/admin/partes/:id', why: 'Ver el parte que él mismo rellena y firma; sin importes (SCRUM-652)' },
   { method: 'PATCH', path: '/admin/partes/:id', why: 'Rellenar el parte en la obra: horas, kilómetros, mano de obra y materiales. Sin precios: los pone la oficina después' },
   { method: 'POST',  path: '/admin/partes/:id/firmar', why: 'Firma del cliente en el móvil del operario, con la cola sin cobertura que ya existe (SCRUM-358)' },
+  // SCRUM-653 · la SEGUNDA firma del papel. Va a TECNICO_ALLOWED por el mismo motivo que la
+  // primera y con más razón: es LA SUYA. Dejarla admin-only sería pedirle al técnico que llame al
+  // jefe para firmar su propio parte en la obra.
+  //
+  // ⚠️ Y no abre puerta a dinero: escribe en `signature_tecnico_url`, `firmado_tecnico_at` y
+  // `firmado_tecnico_nombre`, y responde con el serializador del técnico, que no lleva importes.
+  { method: 'POST',  path: '/admin/partes/:id/firmar-tecnico', why: 'La firma del PROPIO técnico en su parte, en la obra y sin cobertura (SCRUM-653)' },
   // SCRUM-683: trabajo de campo puro. El técnico dicta EN LA OBRA con el micro del teclado de su
   // móvil y esto solo ORDENA ese texto en las dos listas. No escribe en el parte —devuelve una
   // propuesta que él confirma— y no sirve ni un importe: el esquema que se le pide al modelo no

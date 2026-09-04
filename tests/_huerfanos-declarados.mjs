@@ -130,6 +130,19 @@ export const DECLARADOS = [
     motivo: 'La convención de redondeo POR LÍNEA del albarán, escrita y ejecutable. Perdió su llamador al mover la frontera albarán→factura (SCRUM-624): el total de la FACTURA sale ahora de la canónica. Se conserva porque es donde la convención del albarán está declarada, y su test la corre.',
     exports: ['totalDeFacturables'],
   },
+
+  // SCRUM-653 · `ordenDeFirmaExigido` no tiene llamador Y NO SE LE QUITA EL `export`.
+  //
+  // Devuelve `null` a propósito: es la DECISIÓN de que el orden de firma no se exige, escrita en
+  // un sitio y no repartida por dos rutas. Su consumidor es el test que la fija — el día que
+  // alguien quiera exigir un orden, lo cambia aquí y el rojo dice dónde mirar.
+  //
+  // Es exactamente la categoría de «la regla vive en la función»: borrarla no quita código muerto,
+  // quita la única constancia de que esa decisión se tomó.
+  { modulo: 'src/modules/jobs/domain/parteTrabajo.ts',
+    cat: 'ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE', desde: '2026-09-03',
+    motivo: 'Es la decisión ESCRITA de que las dos firmas no llevan orden: la corre su test, y borrarla borraría la única constancia de esa decisión.',
+    exports: ['ordenDeFirmaExigido'] },
   // ── SCRUM-683 (cableado) · lo que destapa DARLE SUPERFICIE AL DICTADO ──────────────────
   //
   // Mismo efecto que el bloque de abajo: al cablear `parteDictado.ts`, el censo deja de contarlo

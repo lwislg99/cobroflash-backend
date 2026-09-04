@@ -37,6 +37,9 @@ import {
   puedeEditarPrecios,
   permisoDeCampos,
   puedeFirmarse,
+  puedeFirmarCliente,
+  puedeFirmarTecnico,
+  firmasCompletas,
   PARTE_CONTENIDO_VERSION_ACTUAL,
   type BloqueParte,
   type EstadoParte,
@@ -118,6 +121,14 @@ function serializeParteParaElTecnico(parte: any) {
     firmadoAt: parte.firmadoAt ?? null,
     firmadoPorNombre: parte.firmadoPorNombre ?? null,
     firmadoPorCalidad: parte.firmadoPorCalidad ?? null,
+    // SCRUM-653 · el ESTADO de las dos firmas. **Los trazos NO viajan**: la pantalla
+    // necesita saber si ya se firmó y quién, no repintar la imagen — y un data-URI por
+    // firma engorda cada respuesta del listado con algo que nadie mira.
+    firmadoTecnicoAt: parte.firmadoTecnicoAt ?? null,
+    firmadoTecnicoNombre: parte.firmadoTecnicoNombre ?? null,
+    firmoElCliente: parte.firmadoAt !== null && parte.firmadoAt !== undefined,
+    firmoElTecnico: parte.firmadoTecnicoAt !== null && parte.firmadoTecnicoAt !== undefined,
+    firmasCompletas: firmasCompletas(parte),
     contenidoHash: parte.contenidoHash ?? null,
     contenidoVersion: parte.contenidoVersion ?? null,
     // Los dos candados VIAJAN RESUELTOS, con su motivo: la pantalla no vuelve a decidir la regla.
@@ -501,6 +512,80 @@ router.patch('/:id', async (req: any, res) => {
   }
 });
 
+// ───────────────────────────────────────────────────────
+// POST /admin/partes/:id/firmar-tecnico · SCRUM-653
+// ───────────────────────────────────────────────────────
+//
+// 🔴 RUTA PROPIA, no un parámetro de la de arriba. Las dos firmas escriben en columnas distintas
+// y tienen candados distintos; con un `if (esTecnico)` dentro de una sola ruta, el día que una
+// cambie habría que releer las dos para saber a cuál afecta. Además la cola de firmas encamina
+// por TIPO (`firma:parte-tecnico:7`), y un tipo necesita una ruta.
+//
+// ⚠️ AQUÍ NO HAY `firmadoPorCalidad`, y no es un olvido: las seis opciones de `albaranFirmante.ts`
+// existen porque quien firma POR EL CLIENTE puede ser cualquiera —«portero o conserje», «un
+// familiar»—. El técnico es un empleado identificado del merchant; ofrecerle una ranura de
+// «calidad» sería ofrecerle declarar que firma en nombre del cliente.
+router.post('/:id/firmar-tecnico', async (req: any, res) => {
+  try {
+    const found = await findParte(req);
+    if (!found.ok) {
+      return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
+    }
+    const { parte } = found;
+
+    // Mismo código `parte_locked` que la del cliente: la cola lo trata como ÉXITO al drenar.
+    const ranura = puedeFirmarTecnico(parte);
+    if (!ranura.ok) {
+      return res.status(409).json({ error: 'parte_locked', message: ranura.motivo });
+    }
+
+    const lineas: LineaParte[] = Array.isArray(parte.lineas) ? (parte.lineas as any) : [];
+    const sePuede = puedeFirmarse(lineas);
+    if (!sePuede.ok) return res.status(409).json({ error: 'parte_vacio', message: sePuede.motivo });
+
+    const signatureData = String(req.body?.signatureData || '');
+    if (!/^data:image\/(png|jpeg);base64,/.test(signatureData)) {
+      return res
+        .status(400)
+        .json({ error: 'firma_invalida', message: 'La firma debe ser una imagen PNG o JPEG (data-URI base64).' });
+    }
+    if (signatureData.length > FIRMA_MAX_CHARS) {
+      return res
+        .status(413)
+        .json({ error: 'firma_demasiado_grande', message: 'La firma supera el tamaño máximo permitido.' });
+    }
+
+    // El nombre es OBLIGATORIO, con la misma regla que el del cliente (SCRUM-300): el acto de
+    // firmar lo exige aunque la columna sea nullable por las filas viejas.
+    const nombre = exigirNombreFirmante(req.body?.firmadoTecnicoNombre);
+    if (!nombre.ok) return res.status(400).json({ error: nombre.error, message: nombre.message });
+
+    // El sello, sólo si no lo había: v:2 sella CONTENIDO, así que firme quien firme primero la
+    // huella es la misma. Recalcularla no la cambiaría, pero reescribirla haría pensar que sí.
+    const contenidoHash = parte.contenidoHash
+      ? parte.contenidoHash
+      : computeParteContentHash(paramsDeSello(parte, lineas), PARTE_CONTENIDO_VERSION_ACTUAL);
+
+    const updated = await prisma.parteTrabajo.update({
+      where: { id: parte.id },
+      data: {
+        // El contenido se congela con la PRIMERA firma, sea de quien sea. Si firma el técnico
+        // primero, el estado pasa a `firmado` aquí y el cliente firma después sobre su ranura.
+        estado: 'firmado',
+        firmadoTecnicoAt: new Date(),
+        firmadoTecnicoNombre: nombre.nombre,
+        signatureTecnicoUrl: signatureData,
+        contenidoHash,
+        contenidoVersion: parte.contenidoVersion ?? PARTE_CONTENIDO_VERSION_ACTUAL,
+      },
+    });
+    return res.json(serializeParteParaElTecnico(updated));
+  } catch (err: any) {
+    console.error('[POST /admin/partes/:id/firmar-tecnico]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 // ── POST /admin/partes/:id/firmar ────────────────────────────────────────────────────────
 router.post('/:id/firmar', async (req: any, res) => {
   try {
@@ -510,11 +595,19 @@ router.post('/:id/firmar', async (req: any, res) => {
     }
     const { parte } = found;
 
-    // 🔴 `parte_locked` es el gemelo de `albaran_locked`, y su código importa: la cola de firmas
-    // lo trata como ÉXITO al drenar. Un reintento cuya petición anterior sí llegó no puede
-    // quedarse dando vueltas en la cola para siempre.
-    if (parte.estado !== 'borrador') {
-      return res.status(409).json({ error: 'parte_locked', message: 'Este parte ya está firmado.' });
+    // 🔴 SCRUM-653 · EL CANDADO PASA A SER POR RANURA, NO POR ESTADO.
+    //
+    // Antes bastaba `estado !== 'borrador'`, y con UNA firma daba igual. Con DOS no: en cuanto el
+    // TÉCNICO firma, el estado ya es `firmado`, y con el candado viejo **el cliente no podría
+    // firmar después** — el segundo firmante se quedaría fuera según el orden, que es justo lo que
+    // `ordenDeFirmaExigido()` dice que NO se exige.
+    //
+    // `parte_locked` se conserva como código: la cola de firmas lo trata como ÉXITO al drenar
+    // (`elServidorYaLaTiene`), así que un reintento cuya petición anterior sí llegó sale de la cola
+    // en vez de dar vueltas para siempre.
+    const ranura = puedeFirmarCliente(parte);
+    if (!ranura.ok) {
+      return res.status(409).json({ error: 'parte_locked', message: ranura.motivo });
     }
 
     const lineas: LineaParte[] = Array.isArray(parte.lineas) ? (parte.lineas as any) : [];
@@ -544,15 +637,15 @@ router.post('/:id/firmar', async (req: any, res) => {
     if (!nombre.ok) return res.status(400).json({ error: nombre.error, message: nombre.message });
 
     const firmadoAt = new Date();
-    // El sello se calcula CON el firmante ya resuelto (las dos ranuras están en el canónico) y SIN
-    // un solo precio: `lineasCanonicasParte` sella bloque, unds y descripción, y nada más.
-    const contenidoHash = computeParteContentHash(
-      paramsDeSello(
-        { ...parte, firmadoPorNombre: nombre.nombre, firmadoPorCalidad: calidad.valor },
-        lineas,
-      ),
-      PARTE_CONTENIDO_VERSION_ACTUAL,
-    );
+    // 🔴 SCRUM-653 · EL SELLO YA NO LLEVA AL FIRMANTE (v:2). Con dos firmas, sellar la identidad
+    // hacía que la huella dependiera de quién firmara primero — ver `contenidoCanonicoParte`.
+    // Se sella el CONTENIDO, y por eso el sello **no se recalcula** cuando firma el segundo.
+    //
+    // ⚠️ Y sólo se sella si NO había sello: si el técnico firmó antes, la huella ya está puesta y
+    // volver a calcularla no puede cambiarla —pero escribirla otra vez haría pensar que sí—.
+    const contenidoHash = parte.contenidoHash
+      ? parte.contenidoHash
+      : computeParteContentHash(paramsDeSello(parte, lineas), PARTE_CONTENIDO_VERSION_ACTUAL);
 
     const updated = await prisma.parteTrabajo.update({
       where: { id: parte.id },
@@ -561,8 +654,11 @@ router.post('/:id/firmar', async (req: any, res) => {
         firmadoAt,
         firmadoPorNombre: nombre.nombre,
         firmadoPorCalidad: calidad.valor,
+        // 🔴 EL TRAZO SE GUARDA. Hasta SCRUM-653 se validaba y se TIRABA: el parte guardaba que
+        // se firmó y quién dijo ser, y no la firma. Defecto de la fase C, arreglado aquí.
+        signatureUrl: signatureData,
         contenidoHash,
-        contenidoVersion: PARTE_CONTENIDO_VERSION_ACTUAL,
+        contenidoVersion: parte.contenidoVersion ?? PARTE_CONTENIDO_VERSION_ACTUAL,
       },
     });
     return res.json(serializeParteParaElTecnico(updated));
