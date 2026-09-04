@@ -156,9 +156,9 @@ su **control positivo**: con un atajo de 0 días dice que sí cae, así que su �
 
 # FASE 2 · Las cajas medidas, y lo que faltaba de evidencia (4-sep-2026)
 
-**Medido contra:** `origin/main` = `119484af9d0fdf9f4beb008751a2be86d5179acd` · 2026-09-04T15:16:48+01:00
+**Medido contra:** `origin/main` = `4719dc9e346bc747073509ed4199088684a0d7d5` · 2026-09-04T15:41:07+01:00
 
-**Tanda:** **5.094 pruebas · 5.010 en verde · 0 fallos · 84 saltadas** — con `main` mergeado dentro
+**Tanda:** **5.112 pruebas · 5.028 en verde · 0 fallos · 84 saltadas** — con `main` mergeado dentro
 y medida DESPUÉS del último cambio de código.
 
 > ⚠️ **La rama de la fase 1 ya estaba mergeada**, comprobado con el paso 2 del arranque
@@ -267,9 +267,61 @@ mencionar `rotulo` ni `MARCA_MICROCOPY`. Con esa mutación, **cae y nombra el ac
 Y el **suelo** ya existía y es más fuerte que un suelo: `DIAS_ATAJO` se compara con `[7, 14, 30]`
 por igualdad exacta, así que una lista vacía no pasa.
 
+## ✅ APLICADO · la firma del ASESOR, 4-sep-2026
+
+**Los seis literales**, tal cual: rótulos `7 días` · `14 días` · `30 días`; nombres accesibles
+`Válido hasta dentro de 7 / 14 / 30 días`. Registrados en
+`docs/microcopy/2026-09-04-SCRUM-605-atajos-valido-hasta.md` con sus motivos y sus cajas.
+
+⚠️ **Es la firma del ASESOR, no la del fundador**, y así queda escrito en el código y en el
+registro. Este carril **no lleva contador `SIN_APROBAR`** —comprobado— así que no había ninguno que
+bajar.
+
+### La medición DESPUÉS, que es la que dice si entró
+
+| a 390 px | antes | después |
+|---|---|---|
+| alto de la fila | **148 px** (tres filas apiladas) | **44 px** (una) |
+| los tres chips | 236+244+244 | **67+75+75 = 217** |
+| ¿recorta? ¿scroll horizontal? | — | no y no |
+
+> 🔴 **Retirar el marcador devuelve 104 px de pantalla** en el móvil de un profesional. No era «un
+> texto pendiente»: era un tercio de la pantalla ocupado por una nota interna.
+
+### El censo, con el número delante
+
+La entrada `'quoteAtajosVencimiento.js': 1` **se BORRA** —no se pone a 0 (SCRUM-424 / SCRUM-405)—
+con su nota de salida. **Medido antes y después: 13 → 12 entradas**, y **cero** marcas en el
+fichero.
+
+### 🔴 Y UNA PREMISA QUE SE CAYÓ AL APLICAR
+
+El encargo decía que los seis salían de **una sola constante** y que sustituirla los apagaba de
+golpe. **Salían de una sola FUNCIÓN**, que daba el **mismo** texto al rótulo y al `aria-label`. Y
+los dos textos aprobados **son distintos**, así que la forma anterior no podía servirlos: hacen
+falta dos constantes.
+
+**El nombre accesible queda CONSTRUIDO Y SIN CABLEAR**, y se declara en vez de esconderlo: la vista
+pone el mismo texto en los dos sitios con una sola llamada, así que cablearlo es **una línea** en
+`quotesView.js` — fichero de otro carril en vuelo (SCRUM-594). Hoy el `aria-label` dice «7 días»,
+que es correcto pero **no es el literal firmado**.
+
+### Los guards, RE-ANCLADOS a la forma nueva (no relajados)
+
+Dos tests apuntaban al marcador y a `MARCA_MICROCOPY`, que ya no existen. **Se voltean a la forma
+de hoy**, como manda el protocolo cuando cambia lo que el guard busca:
+
+* el que fijaba el marcador pasa a fijar **los seis literales con `===`**, y además comprueba que
+  **no puede volver** un `[PENDIENTE` al fichero —su entrada ya salió del censo, así que se
+  pintaría sin que ningún trinquete lo contara—;
+* y prohíbe explícitamente **«mes» y «semana»** en el rótulo: el motor cuenta DÍAS, y prometer un
+  mes cuando se suman 30 es mentir donde el profesional sí mira;
+* el control negativo del rótulo pasa a prohibir las constantes **nuevas** en el cuerpo de
+  `fechaDeAtajo`.
+
 ## 🔴 LO QUE FALTA, Y NO LO PUEDO HACER YO
 
-**Los textos no están aprobados**, así que **el marcador se queda**. Cuando lleguen firmados:
+~~**Los textos no están aprobados**, así que **el marcador se queda**~~ — **HECHO el 4-sep**, ver arriba. El plan que se siguió fue éste:
 
 1. se sustituye `MARCA_MICROCOPY` por el copy aprobado —**una sola constante, seis superficies**—;
 2. se **BORRA** la entrada `'quoteAtajosVencimiento.js': 1` del `CENSO` de SCRUM-402, **no se pone
