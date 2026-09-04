@@ -423,3 +423,57 @@ test('SCRUM-602 · la pieza se carga ANTES que la vista, y el service worker la 
   assert.match(leer('public/sw.js'), /\/dashboard\/js\/quoteDireccionObra\.js/,
     '🔴 el service worker no la cachea: en offline la pantalla del presupuesto se rompería');
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// EL INSTRUMENTO ARREGLADO · un `...spread` ya no deja ciego al censo del envío
+//
+// El asesor pidió medirlo antes de creérselo, y el diagnóstico se confirmó CON CONTROL: se
+// inyectó `campoQueNadieHaRegistrado` en el payload de tres formas y se corrió el censo de
+// SCRUM-286.
+//
+//   · escrito a mano          → 3 rojos          (el censo lo ve)
+//   · dentro de `...({ … })`  → CERO rojos       🔴 ciego
+//   · dentro de `...variable` → CERO rojos       🔴 ciego
+//
+// Ahora el censo lee las claves del spread cuando son estáticas y DECLARA `opacos` cuando no
+// puede. Un spread de una variable o de una llamada ya no devuelve un número más bajo en
+// silencio: dice que no supo mirar, que es otra cosa.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+import { revisarAsignacionDeBloques } from './_asignacion-bloques-presupuesto.mjs';
+
+test('SCRUM-602 · el censo del envío no tiene NADA opaco en el árbol de hoy', () => {
+  const R = revisarAsignacionDeBloques(leer('public/dashboard/js/quotesView.js'));
+  assert.ok(R.clavesDeEnvio.length >= 10,
+    `🔴 SUELO: el censo sólo ve ${R.clavesDeEnvio.length} campos. Con tan pocos, un «nada opaco» `
+    + 'sería la respuesta de un analizador que no encontró el payload.');
+  assert.deepEqual(R.envioOpaco, [],
+    `🔴 el censo NO puede resolver esto del payload: ${R.envioOpaco.join(' · ')}. Lo que viaje ahí `
+    + 'dentro es invisible para el guard que caza «un campo nuevo que nadie ha colocado».');
+});
+
+test('SCRUM-602 · ROJO: un campo dentro de un spread YA NO pasa desapercibido', () => {
+  const fuente = leer('public/dashboard/js/quotesView.js');
+  const ancla = '        shippingAddressMode: direccionDeLaObra.shippingAddressMode,\n';
+  assert.equal(fuente.split(ancla).length - 1, 1,
+    '🔴 SUELO: no encuentro el ancla del payload; las mutaciones de abajo no medirían nada.');
+
+  // ① spread de un OBJETO LITERAL: las claves SÍ son estáticas → se cuentan, y salen «sin sitio».
+  const conLiteral = revisarAsignacionDeBloques(
+    fuente.replace(ancla, '        ...({ campoQueNadieHaRegistrado: 1 }),\n' + ancla));
+  assert.ok(conLiteral.sinSitio.includes('campoQueNadieHaRegistrado'),
+    '🔴 un campo dentro de `...({ … })` sigue sin verse. Antes de SCRUM-602 esto daba CERO rojos.');
+
+  // ② spread de una VARIABLE: no se puede resolver → el censo lo DECLARA en vez de callarse.
+  const conVariable = revisarAsignacionDeBloques(
+    fuente.replace(ancla, '        ...extraSinRegistrar,\n' + ancla));
+  assert.equal(conVariable.envioOpaco.length, 1,
+    `🔴 un \`...variable\` no se ha declarado opaco (opacos: ${conVariable.envioOpaco.length}). `
+    + 'Devolver el censo sin él es contestar «no hay campos ahí» a una pregunta que no se ha hecho.');
+  assert.match(conVariable.envioOpaco[0], /extraSinRegistrar/,
+    '🔴 el censo declara algo opaco pero no dice QUÉ: un aviso sin nombre no se puede seguir.');
+
+  // ③ CONTROL NEGATIVO: sin mutar, ni «sin sitio» ni «opaco».
+  const limpio = revisarAsignacionDeBloques(fuente);
+  assert.deepEqual([limpio.sinSitio, limpio.envioOpaco], [[], []],
+    '🔴 el árbol de hoy ya tiene hallazgos: los dos casos de arriba no probarían nada.');
+});

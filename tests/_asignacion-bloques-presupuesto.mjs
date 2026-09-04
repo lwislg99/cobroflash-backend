@@ -119,8 +119,14 @@ export function revisarAsignacionDeBloques(fuente, ruta = 'quotesView.js') {
   const bloquesFantasma = [...new Set(Object.values(CAMPO_A_BLOQUE).map((v) => v.bloque))]
     .filter((b) => !bloquesDelFormulario.includes(b));
 
+  // ⑥ SCRUM-602 · lo que el censo del ENVÍO no ha podido resolver. Un `...spread` de una
+  //    variable o de una llamada esconde sus claves del análisis estático, así que el censo lo
+  //    DECLARA en vez de devolver un número más bajo — que se leería como «no hay campos ahí».
+  const envioOpaco = (envio.opacos ?? []).map((o) => `${o.texto} (línea ${o.linea})`);
+
   return {
     envio, pintado, bloqueDe, clavesDeEnvio, bloquesDelFormulario,
     dejaronDeViajar, sinControlEnPantalla, enElBloqueEquivocado, sinSitio, bloquesFantasma,
+    envioOpaco,
   };
 }
