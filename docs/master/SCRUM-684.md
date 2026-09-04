@@ -138,3 +138,149 @@ y **un detector que acusa a los sanos se desactiva**. Queda escrito como decisi�
 
 La descripción sigue protegida solo por que **el técnico confirma** — y la línea del prompt que
 prohíbe completar marcas **es un consejo, no un mecanismo**. Está dicho en `parteDictado.ts`.
+
+---
+
+# SCRUM-684 (b) · ¿PUEDE UN ALBARÁN NACER SOBRE UN TRABAJO SIN PRESUPUESTO? — **FASE A: medir y preguntar**
+
+**Medido contra:** `origin/main` = `1304643497934441f88950e441182b7e344dbb57` · 2026-09-04T20:22:09+01:00
+
+> 🔴 **EL NÚMERO ESTÁ OCUPADO, Y ES LA TERCERA VEZ EN ESTE FICHERO.** Arriba viven ya dos trabajos
+> que no son el mismo ticket —el aviso lo escribió la sesión anterior— y `scrum-684-cablear-dictado`
+> está **mergeada en `main`**. Éste es un TERCER encargo con el mismo número.
+>
+> Se anexa aquí como manda la skill («si ya existe, se AÑADE como apéndice y no se borra nada»,
+> precedente `SCRUM-244.md`) **y se pide número propio**: el precedente de esta misma casa es
+> SCRUM-703, que salió de este fichero a uno suyo. **La rama se llama `scrum-684b-…` a propósito**,
+> para no fingir que el número es libre.
+>
+> **NO LLEVA CÓDIGO.** El encargo es «medir y preguntar», y la pregunta no es técnica.
+
+## La pregunta, que decide el fundador
+
+> **¿Un albarán DEBE poder existir sobre un trabajo SIN presupuesto?**
+>
+> · Si **NO** → los fixtures están mal; el arreglo es de tests y no toca el producto.
+> · Si **SÍ** → el guard está mal, el defecto está en el PRODUCTO, y dar presupuesto a los fixtures
+>   **taparía un defecto real**.
+
+## 🔴 Lo que cambia la pregunta: NO es una regla que nadie revisara. Son DOS decisiones correctas que nadie reconcilió
+
+La hipótesis del encargo era que alguien metió una regla nueva sin mirar si el resto la asumía.
+**Medido: es al revés, y el orden importa.**
+
+| cuándo | qué pasó | dónde |
+|---|---|---|
+| **16-jul-2026** | un test afirma que un **Job manual SIN `quoteId`** con un albarán devuelve ese albarán en el detalle. **Albarán sobre trabajo sin presupuesto era un estado probado.** | `tests/scrum51-job-sin-quote.test.mjs:1-4` |
+| **5-ago-2026** | **SCRUM-257** pone el guard `409 job_without_quote`. Y su comentario dice, con razón **entonces**: «la única vía de creación de `Job` en todo `src/` es `job.service.ts`… **No hay endpoint de trabajo manual**» | `jobs.routes.ts:942-958` |
+| **2-sep-2026** | **SCRUM-651 (T2)** abre `POST /admin/jobs`: el **trabajo directo**. Su cabecera: «Una empresa de electricidad. Llaman por una AVERÍA… **Nadie presupuesta una urgencia**» | `src/modules/jobs/domain/trabajoDirecto.ts` |
+
+**SCRUM-651 abrió exactamente la puerta que el comentario del guard daba por cerrada**, cuatro
+semanas después. Y **no menciona el albarán ni una vez** —medido: cero coincidencias de «albar» en
+`docs/master/SCRUM-651.md`—, aunque sí razonó con cuidado qué OTRAS cosas le faltan a un trabajo
+sin presupuesto (`totalAceptado` en `null` y no `0`, sin `importeDeReferencia`, sin `estadoCobro`).
+
+> Las dos decisiones son del fundador y las dos siguen teniendo sentido por separado. Lo que no
+> existe es la respuesta a qué pasa cuando se cruzan.
+
+## 1 · ¿Está la regla en el MÁSTER?
+
+**NO está en `docs/YAQU_MASTER.md`** — con esas palabras. Medido: cero coincidencias de
+`job_without_quote`, «sin presupuesto no hay albarán» ni variantes.
+
+Dónde sí vive:
+
+* **En el código**, `src/modules/jobs/app/routes/jobs.routes.ts:954-959` (y otra vez en `:1151`,
+  para el plan de cobro).
+* **En `docs/master/SCRUM-257.md`**, que es registro de trabajo y no el máster, y que la atribuye a
+  una **decisión del fundador del 2-ago-2026**: *«Las tres decisiones del fundador se respetan tal
+  cual: **no hay albarán sin presupuesto** · …»*
+
+⚠️ **Y no la puso SCRUM-195.** El encargo lo atribuye a ese ticket; medido, `SCRUM-195` es
+*«PAGOS-FLEX-2: pertenencia por Job, lectura serializada y el loop del adicional»* y no toca esto.
+El guard es de **SCRUM-257** (4-ago, mergeado el 5-ago).
+
+## 2 · ¿Hay hoy un camino EN EL PRODUCTO que cree un job sin presupuesto?
+
+**SÍ, y es de primera clase.** Dos altas de `Job` en todo `src/`:
+
+| fichero:línea | qué | ¿fija `quoteId`? |
+|---|---|---|
+| `src/modules/jobs/domain/job.service.ts:95` | aceptar un presupuesto (`ensureJobForQuote`) | **sí** (`quoteId: quote.id`) |
+| `src/modules/jobs/app/routes/jobs.routes.ts:648` | **`POST /admin/jobs`** · trabajo directo, vía `filaDeTrabajoDirecto` | **NO** — la función no lo escribe (`trabajoDirecto.ts:124-141`) |
+
+O sea: **el producto crea hoy trabajos sin presupuesto por una puerta que se construyó a propósito,
+y el guard del albarán los rechaza.** No es un caso hipotético de los fixtures.
+
+## 3 · El censo de fixtures, con sus dos controles
+
+Por **AST** y no por texto: un comentario que hable de `quoteId` no crea nada.
+
+```
+POBLACIÓN: 727 ficheros bajo `tests/`
+altas de Job encontradas: 36  (con quoteId: 4 · SIN: 32)
+FICHEROS que crean Jobs SIN presupuesto: 22
+```
+
+* ✅ **CONTROL POSITIVO** (el que pidió el encargo): encuentra los **2/2** de
+  `tests/albaran.test.mjs`, líneas **224** y **350** — las mismas que midió S3.
+* ✅ **CONTROL NEGATIVO**: hay **4** altas CON `quoteId`, así que el detector no dice «sin» a todo.
+
+Los 22 ficheros: `albaran` · `scrum106` · `scrum120` · `scrum127` · `scrum136` · `scrum148` ·
+`scrum17` · `scrum170` · `scrum171a` · `scrum22` · `scrum24` · `scrum25-export-zip` ·
+`scrum25-exports` · `scrum296` · `scrum297` · `scrum47` · `scrum49` · **`scrum51-job-sin-quote`** ·
+`scrum57` · `scrum66` · `scrum68` · `tenancy-permisos`.
+
+> 🔴 **`scrum51-job-sin-quote.test.mjs` no es un fixture descuidado: es un test cuyo NOMBRE y cuyo
+> propósito son ese estado.** Eso convierte la hipótesis del encargo en algo medido: cuando se
+> escribieron, «job sin presupuesto» **era** un estado normal — y con albarán encima.
+
+## 4 · Cuántos jobs sin presupuesto hay HOY — **en dev, y sólo en dev**
+
+```
+destino: acela.proxy.rlwy.net/yaqu_dev_javier   ⚠️ DEV
+jobs en dev: 5   ·  CON presupuesto: 5  ·  SIN presupuesto: 0   ✅ la suma cuadra
+albaranes en dev: 0  ·  de trabajos SIN presupuesto: 0
+
+CONTROL · creado un job sin presupuesto (id 387, quoteId=null)
+          la consulta pasa de 0 a 1  ✅ SABE encontrarlo
+          fila borrada; vuelve a 0   ✅
+```
+
+**El cero es un cero medido**, no un cero ciego: la consulta encuentra uno cuando lo hay. La fila de
+control se creó y se borró, comprobado.
+
+> ⚠️ **LÍMITE, y es duro: dev NO es producción.** Este número **no autoriza a decir nada** sobre
+> producción — ni «no hay ninguno» ni «hay pocos». Si hace falta el de producción, lo pide el
+> asesor. **No he leído staging ni producción, ni siquiera un preview.**
+
+## Lo que NO he hecho, y consta
+
+**No he dado presupuesto a ningún fixture.** Estaba expresamente prohibido y además sería ajustar
+la medida al instrumento: si la respuesta es «SÍ, un albarán puede existir sin presupuesto»,
+hacerlo **taparía el defecto** en 22 ficheros a la vez.
+
+**No he tocado el guard, ni los fixtures, ni la ruta.** Esto es FASE A.
+
+## El material, resumido para decidir
+
+| a favor de **SÍ** (el guard está mal) | a favor de **NO** (los fixtures están mal) |
+|---|---|
+| El producto **ya crea** trabajos sin presupuesto por una puerta hecha a propósito (SCRUM-651), y su motivo es el caso más frecuente del primer cliente real: **una avería no se presupuesta** | La regla es una **decisión explícita del fundador** (2-ago-2026), recogida en `SCRUM-257.md` |
+| Un test de julio afirma que **albarán sobre job sin presupuesto** funcionaba y se esperaba (`scrum51`) | Cuando se tomó, era **coherente con el producto de entonces**: no había forma de crear un job sin presupuesto |
+| 22 ficheros de tests lo asumen | El guard formalizaba un invariante que **entonces** se cumplía de hecho |
+| Un técnico que abre una avería, la arregla y **no puede entregar un albarán** se queda sin papel que entregar — que es la víctima de ALB-02 | — |
+
+**La pregunta afinada que le llevaría al fundador**, y que el material sugiere que es la de verdad:
+
+> No es «¿albarán sin presupuesto sí o no?». Es: **cuando abriste la puerta del trabajo directo
+> (SCRUM-651) para las averías, ¿querías que esas averías pudieran entregar un albarán?** Si la
+> respuesta es sí, el guard de SCRUM-257 quedó viejo el 2 de septiembre y hay que acotarlo, no
+> quitarlo.
+
+## Hueco declarado
+
+**No he ejecutado la tanda gateada.** Toma el turno de staging y hoy hay seis sesiones; el
+diagnóstico de S3 ya está medido y citado, y repetirlo habría bloqueado a otro carril sin añadir
+nada. Lo que sí he comprobado es que el fixture del 409 tiene la forma que S3 describió
+(`tests/albaran.test.mjs:224` crea el job sin `quoteId`; el POST de la línea siguiente espera 201).
