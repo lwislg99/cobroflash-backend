@@ -202,17 +202,39 @@ test('SCRUM-582 · ⛔ NO HAY NI UNA ACCIÓN EN BLOQUE, y esto es el ticket', as
 
 // ═══ ④ MICROCOPY ═════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-582 · ✅ «Seleccionar todos» es literal, y ⚠️ el contador va con MARCADOR', () => {
+test('SCRUM-582 · ✅ los TRES textos son EXACTAMENTE los aprobados, literales', () => {
+  // Se comparan con `===`, no con `includes`: un `includes` dejaría colar «Seleccionar todo», un
+  // acento de más o un «clientes seleccionadas» sin que nada cayera, y microcopy aprobada que
+  // deriva sola es microcopy que deja de estar aprobada sin que nadie lo decida (regla 30).
   assert.equal(FC.TEXTOS_SELECCION.todos, 'Seleccionar todos',
-    '🔴 el nombre accesible de la casilla de cabecera no es el aprobado por el asesor (4-sep-2026). '
-    + 'Se compara con `===`: un `includes` dejaría colar «Seleccionar todo» sin que nada cayera.');
-  assert.ok(FC.TEXTOS_SELECCION.contador.startsWith('[PENDIENTE'),
-    '🔴 el contador ya no lleva marcador, o lo lleva con una grafía que el censo de SCRUM-402 NO '
-    + 'cuenta: ese censo busca `[PENDIENTE`, y un marcador invisible al trinquete es una frase sin '
-    + 'aprobar en pantalla que nadie está vigilando. Si el asesor lo ha firmado, hay que quitar '
-    + 'también la entrada de `filtroClientes.js` del censo — y este test con ella.');
-  assert.equal(FC.textoDelContador(3).startsWith('3 '), true,
-    '🔴 el contador ha dejado de decir CUÁNTOS hay marcados, que es el único dato que da.');
+    '🔴 el nombre accesible de la casilla de cabecera no es el aprobado.');
+  assert.equal(FC.TEXTOS_SELECCION.uno, '1 cliente seleccionado',
+    '🔴 el singular del contador no es el aprobado.');
+  assert.equal(FC.TEXTOS_SELECCION.varios, 'clientes seleccionados',
+    '🔴 el plural del contador no es el aprobado.');
+  // Y que ninguno lleve ya marcador: si vuelve uno, hay que declararlo en el censo de SCRUM-402.
+  for (const [k, v] of Object.entries(FC.TEXTOS_SELECCION)) {
+    assert.equal(v.includes('[PENDIENTE'), false, `🔴 «${k}» ha vuelto a llevar marcador.`);
+  }
+});
+
+test('SCRUM-582 · 🔴 SINGULAR Y PLURAL DE VERDAD: «1 facturas seleccionadas» no puede pasar', () => {
+  // 🔴 ESTÁ MEDIDO QUE EL ATAJO SE ROMPE, y por eso este test existe: la barra de FACTURAS escribe
+  // su plural a mano (`n + ' factura' + (n !== 1 ? 's' : '')`), así que allí «1 facturas
+  // seleccionadas» es alcanzable. Aquí el singular es un texto propio, no una `s` pegada.
+  assert.equal(FC.textoDelContador(1), '1 cliente seleccionado',
+    '🔴 con UNO marcado no sale el singular: es el defecto que se ve en la primera pulsación.');
+  assert.equal(FC.textoDelContador(2), '2 clientes seleccionados', '🔴 el plural no es el aprobado.');
+  assert.equal(FC.textoDelContador(0), '0 clientes seleccionados', '🔴 el cero no usa el plural.');
+  // Y NADA de `(s)`: si alguien vuelve al atajo, esto cae.
+  for (const n of [0, 1, 2, 23]) {
+    assert.equal(/\(s\)/.test(FC.textoDelContador(n)), false,
+      `🔴 ha vuelto el «(s)» para n=${n}. Eso no es un plural: es no haberlo resuelto.`);
+  }
+  // El NÚMERO va sin separador de millares (decisión del asesor): con mil marcados, un punto ahí
+  // se lee como otra cosa.
+  assert.equal(FC.textoDelContador(1000), '1000 clientes seleccionados',
+    '🔴 el número lleva separador de millares.');
 });
 
 // ═══ ⑤ CONTROL NEGATIVO ══════════════════════════════════════════════════════════════════

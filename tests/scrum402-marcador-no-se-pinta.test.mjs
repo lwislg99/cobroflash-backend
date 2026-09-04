@@ -264,25 +264,23 @@ const CENSO = Object.freeze({
   // SCRUM-405 aquí mismo. `textoDelDocumento.js` entró ese día con 1 marcador (el rótulo del campo
   // de cabecera del documento) y salió el MISMO día: el fundador lo firmó —«Añadir texto en el
   // documento»— unas horas después. Un marcador que se firma desaparece; no se queda de adorno.
-  // 🔴 SCRUM-582 (CONT-09) · 4-sep-2026 · `filtroClientes.js` VUELVE al censo con 1.
+  // 🔴 SCRUM-582 (CONT-09) · 4-sep-2026 · `filtroClientes.js` ENTRÓ y SALIÓ EL MISMO DÍA.
   //
-  // Es el CONTADOR de la selección múltiple —«N seleccionados», o como quiera que se llame— y
-  // aquí pasa lo de siempre: EL MECANISMO NO EXISTE SIN TEXTO. Una barra de selección que no dice
-  // cuántos hay marcados no informa de nada, y ése es todo lo que este ticket entrega: el estado.
+  // Entró con 1 —el CONTADOR de la selección múltiple, y una barra que no dice cuántos hay
+  // marcados no informa de nada— y el asesor firmó el texto esa misma tarde, con plural de verdad:
+  // **«1 cliente seleccionado» / «N clientes seleccionados»**. La entrada se BORRA, no se pone a 0
+  // (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista ficheros CON marcadores.
   //
-  // El asesor NO lo firma hasta tener la caja medida, así que va con marcador y con la grafía que
-  // este censo cuenta. El OTRO texto del ticket —«Seleccionar todos», el nombre accesible de la
-  // casilla de cabecera— **sí está aprobado** por el asesor y por eso NO lleva marcador: cuenta en
-  // `SIN_APROBAR` de la pieza, que es quien lleva las firmas del fundador, no aquí.
-  //
-  // MEDIDO AL PINTARLO, con su árbol y su fecha (la lección de SCRUM-591, que vio caducar dos
-  // cifras seguidas): **13 → 14** marcadores pintables, y de 13 a 14 ficheros.
+  // MEDIDO AL RETIRARLO, con su árbol y su fecha:
+  //     14 → 13 marcadores pintables (y de 14 a 13 ficheros)
   //     árbol: `origin/main` = 1a359f6e con la rama scrum-582 dentro · 4-sep-2026
   //
-  // Este fichero YA estuvo aquí y salió: SCRUM-581 retiró sus seis marcadores cuando el fundador
-  // dijo «nada de marcadores en pantalla». Vuelve por UNO nuevo, no por aquéllos. El día que el
-  // asesor firme el contador, esta entrada se BORRA — no se pone a 0.
-  'filtroClientes.js': 1,
+  // Es la SEGUNDA vez que este fichero entra y sale: SCRUM-581 retiró sus seis cuando el fundador
+  // dijo «nada de marcadores en pantalla». Éste era uno nuevo, no aquéllos.
+  //
+  // ⚠️ Y la caja de ese texto está **CALCULADA, no medida**: el MCP de Playwright estaba caído. El
+  // asesor firmó sabiéndolo y dejando la condición escrita — si al medirla no cabe, el que falla
+  // es el cálculo y se cambia el texto. Consta en `docs/microcopy/`.
   'productsView.js': 1,
   // SCRUM-644 (2-sep-2026) · SUBIDA A CONCIENCIA: `providersView.js` ENTRA con 1. Es el MISMO
   // defecto y el MISMO criterio que SCRUM-641 arriba —no se inventa uno nuevo—, en el otro fichero

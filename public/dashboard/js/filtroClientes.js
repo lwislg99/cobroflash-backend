@@ -444,27 +444,43 @@
   }
 
   /**
-   * SCRUM-582 (CONT-09) · LOS DOS TEXTOS DE LA SELECCIÓN, y NO están en el mismo estado.
+   * SCRUM-582 (CONT-09) · LOS TRES TEXTOS DE LA SELECCIÓN.
    *
-   * ✅ `todos` — «Seleccionar todos». APROBADO por el ASESOR el 4-sep-2026, a la espera de la
-   *    firma del fundador (regla 30). Es el NOMBRE ACCESIBLE de la casilla de cabecera: sin él,
-   *    un lector de pantalla dice «casilla» y no dice a quién selecciona.
+   * ✅ APROBADOS por el ASESOR el 4-sep-2026, **a la espera de la firma del fundador** (regla 30).
+   * PROCEDENCIA: `docs/master/SCRUM-582.md`, sección de microcopy — que es donde consta una
+   * aprobación DEL ASESOR, como la de SCRUM-580. `docs/microcopy/` es del FUNDADOR: su README lo
+   * dice en la primera línea, y meter ahí una aprobación que no es suya corrompería el registro
+   * de las que sí lo son.
    *
-   * ⚠️ `contador` — SIN APROBAR POR NADIE. El asesor no lo firma hasta tener la caja medida, así
-   *    que va con MARCADOR y con la grafía que el censo de SCRUM-402 cuenta (`[PENDIENTE`).
-   *    Escribir aquí un provisional «3 seleccionados» sería ponerle a un profesional que paga una
-   *    frase que no ha aprobado nadie.
+   * ⚠️ Y CONSTA ALGO MÁS, porque el asesor lo pidió por escrito: **la caja de estos textos está
+   * CALCULADA, no medida**. El MCP del navegador estaba caído y la firma se dio sobre el cálculo,
+   * con la condición de medirla cuando vuelva. Si no cabe, falla el cálculo, no el texto.
+   *
+   * · `todos` es el NOMBRE ACCESIBLE de la casilla de cabecera: sin él, un lector de pantalla
+   *   dice «casilla» y no dice a quién selecciona.
+   * · `uno` y `varios` son el contador, y son DOS porque el plural es de verdad.
    */
   var TEXTOS_SELECCION = {
     todos: 'Seleccionar todos',
-    contador: '[PENDIENTE microcopy · CONT-09 contador de selección]',
+    uno: '1 cliente seleccionado',
+    varios: 'clientes seleccionados',
   };
 
   /**
-   * Lo que se pinta en el contador. El NÚMERO es dato —no es microcopy— y el rótulo, marcador.
-   * Puro para poder fijarlo desde un test sin navegador.
+   * 🔴 SINGULAR Y PLURAL DE VERDAD, y no es un capricho de estilo: está MEDIDO que el atajo del
+   * `(s)` se rompe. La barra de facturas escribe su plural a mano
+   * (`invoicesView.js`: `n + ' factura' + (n !== 1 ? 's' : '') + …`), y ahí «1 facturas
+   * seleccionadas» es alcanzable. No se repite el defecto en el sitio nuevo.
+   *
+   * El NÚMERO es DATO, no microcopy, y va **sin separador de millares** (decisión del asesor,
+   * 4-sep-2026): con 1.000 clientes marcados, un punto ahí se lee como otra cosa.
+   *
+   * Puro, para poder fijarlo desde un test sin navegador.
    */
-  function textoDelContador(n) { return String(n) + ' ' + TEXTOS_SELECCION.contador; }
+  function textoDelContador(n) {
+    var cuantos = Number(n) || 0;
+    return cuantos === 1 ? TEXTOS_SELECCION.uno : String(cuantos) + ' ' + TEXTOS_SELECCION.varios;
+  }
 
   /** El estado de la casilla de cabecera. Sin filas visibles NO hay «todos»: hay «ninguno». */
   function estadoDeCabecera(seleccion, visibles) {
