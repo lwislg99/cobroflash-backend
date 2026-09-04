@@ -153,6 +153,27 @@ de FIXTURES, territorio de S1 (SCRUM-684). Un hallazgo de otro carril se reporta
 ese fichero gana un segundo sitio, cae igual. Una excepción que sobrevive a su causa deja de ser
 una nota y pasa a ser un permiso (SCRUM-368).
 
+### ✅ VALIDACIÓN CRUZADA, por un método distinto
+
+El censo es por AST. Para comprobar que no se le escapaba nada se barrió **el árbol entero por
+TEXTO** —método independiente, con las debilidades contrarias— y los dos coinciden. Lo que salió:
+
+| sitio | qué es | ¿lo cuenta el AST? |
+|---|---|---|
+| `tests/scrum409:86` | código vivo | **sí** — es la entrada del censo |
+| `tests/scrum176b:120` | **un comentario** (el que explica el defecto) | no, y correcto |
+| `tests/scrum730:127,137` | cadenas del propio suelo | no (fichero excluido, y además son literales) |
+| `.claude/skills/impeccable/scripts/cleanup-deprecated.mjs:270` | **skill de terceros** | fuera del corpus |
+| `.agents/skills/impeccable/…:270` | la misma, duplicada | fuera del corpus |
+
+Dos cosas que deja claras. **Una:** que el AST no cuente comentarios no es un agujero, es la
+lección de SCRUM-349 y SCRUM-402 — cobrar impuesto sobre la prosa que explica un defecto es como
+se consigue que nadie lo explique. **Dos:** la exclusión de terceros no era teórica. La skill
+`impeccable` de Anthropic **tiene exactamente este defecto** en su línea 270, en las dos copias.
+No se puede arreglar desde este repositorio (regla 36: los plugins de terceros no se tocan sin
+revisión del fundador), y meterla en el censo habría subido el número sin que nadie pudiera
+bajarlo.
+
 ---
 
 ## Lo que NO cubre
@@ -170,6 +191,10 @@ una nota y pasa a ser un permiso (SCRUM-368).
 * `tests/scrum409-fixtures-sin-merchant-demo.test.mjs:86` — mismo idioma, latente, carril de S1.
 * La virgulilla de los nombres cortos 8.3 (`JAVIER~1` → `%7E`) rompe igual que el espacio:
   cualquier script que resuelva rutas a mano bajo el directorio temporal está expuesto.
+* **La skill `impeccable` (de Anthropic) tiene el mismo defecto**, en `cleanup-deprecated.mjs:270`
+  y en sus dos copias (`.claude/skills/` y `.agents/skills/`). No es nuestra y no se toca (regla
+  36); queda dicho por si alguien la ejecuta desde una ruta con espacios y se pregunta por qué
+  falla. Vive fuera del corpus del censo a propósito.
 
 ## Ficheros
 
