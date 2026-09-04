@@ -1,4 +1,4 @@
-// tests/scrum710-consta-por-identidad.test.mjs — SCRUM-710
+// tests/scrum715-consta-por-identidad.test.mjs — SCRUM-715
 //
 // LA VÍCTIMA: quien pregunte si un texto está aprobado y reciba un «sí» que nadie firmó.
 //
@@ -90,7 +90,7 @@ function constaPorSubcadena(aguja) {
 // 🔴 EL ROJO QUE IMPORTA
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-710 · 🔴 un texto de DOS PALABRAS que nadie aprobó sale NO APROBADO', () => {
+test('SCRUM-715 · 🔴 un texto de DOS PALABRAS que nadie aprobó sale NO APROBADO', () => {
   for (const t of [...NO_APROBADOS, ...NO_APROBADOS_QUE_NO_DISCRIMINAN]) {
     assert.deepEqual(constaAprobado(t), [],
       `🔴 «${t}» sale como APROBADO y nadie lo firmó. Casa porque un literal corto que sí está `
@@ -99,7 +99,7 @@ test('SCRUM-710 · 🔴 un texto de DOS PALABRAS que nadie aprobó sale NO APROB
   }
 });
 
-test('SCRUM-710 · 🔴 Y CAE CON EL MECANISMO VIEJO: esos MISMOS textos pasaban en verde', () => {
+test('SCRUM-715 · 🔴 Y CAE CON EL MECANISMO VIEJO: esos MISMOS textos pasaban en verde', () => {
   // Si el caso elegido no distinguiera los dos mecanismos, esta prueba no probaría nada.
   const colados = NO_APROBADOS.filter((t) => constaPorSubcadena(t).length > 0);
   assert.deepEqual(colados, NO_APROBADOS,
@@ -114,7 +114,7 @@ test('SCRUM-710 · 🔴 Y CAE CON EL MECANISMO VIEJO: esos MISMOS textos pasaban
 // CONTROL POSITIVO — apretar el matching no puede tirar aprobaciones legítimas
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-710 · ✅ CONTROL POSITIVO: las 21 aprobaciones se siguen encontrando, una a una', () => {
+test('SCRUM-715 · ✅ CONTROL POSITIVO: las 21 aprobaciones se siguen encontrando, una a una', () => {
   const caidas = [];
   for (const t of APROBADOS) {
     const donde = constaAprobado(t);
@@ -134,7 +134,7 @@ test('SCRUM-710 · ✅ CONTROL POSITIVO: las 21 aprobaciones se siguen encontran
   }
 });
 
-test('SCRUM-710 · 🔴 SUELO: el extractor SACA literales, y un cero se declara ciego', () => {
+test('SCRUM-715 · 🔴 SUELO: el extractor SACA literales, y un cero se declara ciego', () => {
   const todos = literalesAprobados();
   assert.ok(todos.length >= 100,
     `🔴 CIEGO: sólo ${todos.length} literales extraídos y hay 144 medidos. Con el extractor a `
@@ -143,7 +143,7 @@ test('SCRUM-710 · 🔴 SUELO: el extractor SACA literales, y un cero se declara
     '🔴 la cadena vacía tiene que lanzar: casaría con todo y daría «aprobado» gratis.');
 });
 
-test('SCRUM-710 · las NOTAS del registro congelado no son textos aprobados', () => {
+test('SCRUM-715 · las NOTAS del registro congelado no son textos aprobados', () => {
   // El registro usa `>` para avisos y advertencias. Si las citas contaran ahí, cada nota se
   // convertiría en un literal firmado por el fundador, que es justo lo que la regla 30 prohíbe.
   const congelado = aprobacionesDeMicrocopy().find((a) => a.origen === 'congelado');
