@@ -99,3 +99,73 @@ Medido ayer: ninguna de las dos ramas contenía `2d826de6`, que llegó a `main` 
 
 El `continue-on-error: true` del job (es de Javier, y está así a propósito) · el contrato de
 `GET /version` · `scripts/db-push-prod`.
+
+---
+
+# SCRUM-716b · El JOB, que es donde estaba el otro rojo
+
+**Medido contra:** `origin/main` = `382439a16a3888c24e4678d560c3e1429194e085` · 2026-09-04T13:40:00+02:00
+**Rama:** `scrum-716b-job-del-vigia`
+
+## PASO 0 · seguía pasando
+
+SCRUM-716 ya está en `main` (el `SUELO 4` está dentro). El job ya llevaba `fetch-depth: 0`.
+**Y no basta.**
+
+## Medido reproduciendo el checkout, no deducido
+
+Se reprodujo lo que hace `actions/checkout@v4` en un `pull_request`: traer **una sola ref** con
+toda su historia. Contra el remoto de verdad:
+
+```
+¿resuelve origin/main?           NO
+producción dice                  5bfc1136…
+¿está su commit en el clon?      NO
+→ ⚠️ NO SUPE MIRAR: el commit de producción no existe en este repositorio.   exit 2
+```
+
+**Faltaban las dos cosas a la vez.** El script hacía lo correcto declarándose ciego; lo que
+faltaba se lo tenía que dar el job.
+
+⚠️ **Y el banco mintió primero:** la primera versión apuntaba el `origin` del clon de prueba al
+**checkout local, que está 1.933 commits atrás**, así que `origin/main` resolvía a `5749f2f1`. La
+misma trampa de siempre, esta vez dentro del instrumento. Se rehízo contra el remoto real antes de
+concluir nada.
+
+## El arreglo, y el control que decide
+
+Un paso, antes de llamar al vigía:
+
+```yaml
+- name: Traer `main` (el vigía compara contra él)
+  run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
+```
+
+**Veredicto REAL en el mismo banco, después:**
+
+```
+producción dice 5bfc1136 · `main` está en 382439a1 · 0.7 h de hueco (margen 6 h)
+   6 commit(s) sin llegar. Un despliegue en curso se lee así.
+exit 0
+```
+
+Ya no es «no supe mirar»: es una lectura.
+
+**CONTROL NEGATIVO** — con `main` ya traído y un `/version` que no responde:
+
+```
+⚠️ NO SUPE MIRAR: no se pudo leer `/version` de producción.
+```
+
+Arreglar el fetch **no** convierte una ceguera legítima en un veredicto inventado.
+
+## 📌 El workflow PROGRAMADO no lo necesita
+
+`vigia-despliegue.yml` se ejecuta sobre `main`, así que `actions/checkout` ya crea
+`refs/remotes/origin/main`. **Por eso aquél funcionaba y éste no.** Hay un test que impide
+añadírselo «por simetría»: hacerlo escondería la razón por la que el otro sí lo necesita.
+
+## ⛔ No tocado
+
+El `continue-on-error: true` (hay test que lo comprueba) · `scripts/vigilante-de-despliegue.mjs` ·
+ninguna base.
