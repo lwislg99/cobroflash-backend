@@ -1411,7 +1411,10 @@ html, body { overflow-x: clip; }
   justify-content: space-between;
   gap: 8px;
 }
-.quote-propuesta-dto[hidden] { display: none; }
+/* SIN `.quote-propuesta-dto[hidden]`: la regla GLOBAL `[hidden] { display:none !important }`
+   (línea 40, SCRUM-731) ya la cubre, y el trinquete de ese ticket cazó ésta el mismo día que
+   nació. Repetirla por clase es arreglar el síntoma sin fiarse de la global — y la siguiente
+   tira que naciera la volvería a copiar. Se comprobó que la global existe ANTES de quitarla. */
 .quote-propuesta-dto .btn-sm { min-height: 44px; }
 
 .quote-dto-global { margin-top: 8px; }
