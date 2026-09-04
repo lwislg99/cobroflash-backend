@@ -197,13 +197,42 @@ test('SCRUM-740 · 🔴 el censo: escritores × barredores, y no ha bajado', () 
     `🔴 el detector de barredores ve ${barredores.length} y se midieron ${BARREDORES_MEDIDOS}.`);
 });
 
+/**
+ * 🔴 CUÁNTAS VECES SE **LLAMA** A `nombre` EN ESTE FICHERO. Por AST, no por subcadena.
+ *
+ * Escrito así porque la primera versión de este trinquete era MUDA y me cazó al probar el rojo:
+ * miraba `src.includes('leerSiSigueAhi')`, y el `import` más el comentario que explica la regla
+ * mantienen la palabra viva aunque la llamada desaparezca. O sea que quitar la llamada NO ponía
+ * el guard en rojo. Mencionar no es hacer, y un guard que cuenta menciones vigila la prosa.
+ */
+function llamadasA(src, nombre) {
+  const sf = ts.createSourceFile('x.mjs', src, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  let n = 0;
+  const v = (nodo) => {
+    if (ts.isCallExpression(nodo) && ts.isIdentifier(nodo.expression) && nodo.expression.text === nombre) n += 1;
+    ts.forEachChild(nodo, v);
+  };
+  v(sf);
+  return n;
+}
+
+test('SCRUM-740 · SUELO: el contador de llamadas distingue una LLAMADA de una MENCIÓN', () => {
+  // Si esto no se cumpliera, los dos trinquetes de abajo pasarían sobre un import huérfano.
+  assert.equal(llamadasA("import { leerSiSigueAhi } from './x.mjs';", 'leerSiSigueAhi'), 0,
+    '🔴 cuenta el import como si fuera una llamada.');
+  assert.equal(llamadasA('// usa leerSiSigueAhi aquí', 'leerSiSigueAhi'), 0,
+    '🔴 cuenta un comentario como si fuera una llamada.');
+  assert.equal(llamadasA('const a = leerSiSigueAhi(p);', 'leerSiSigueAhi'), 1,
+    '🔴 NO ve una llamada de verdad: el trinquete sería ciego, no mudo.');
+});
+
 test('SCRUM-740 · 🔴 TRINQUETE: todo el que barre el árbol lee con el helper', () => {
   const sinHelper = [];
   for (const f of BARREDORES) {
     const p = path.join(DIR_TESTS, f);
     assert.ok(fs.existsSync(p), `🔴 el barredor \`${f}\` ya no existe: actualiza esta lista.`);
     const src = fs.readFileSync(p, 'utf8');
-    if (!src.includes('leerSiSigueAhi')) sinHelper.push(f);
+    if (llamadasA(src, 'leerSiSigueAhi') === 0) sinHelper.push(f);
   }
   assert.deepEqual(sinHelper, [],
     '🔴 UN BARREDOR DEL ÁRBOL VOLVIÓ A LEER A PELO:\n'
@@ -219,7 +248,9 @@ test('SCRUM-740 · 🔴 y cada barredor CIERRA con su suelo', () => {
   // pelado. Si alguien añade la tolerancia y se olvida del suelo, esto cae.
   const sinSuelo = BARREDORES.filter((f) => {
     const src = fs.readFileSync(path.join(DIR_TESTS, f), 'utf8');
-    return src.includes('leerSiSigueAhi') && !src.includes('exigirCorpusLeido');
+    // Por LLAMADAS, igual que el trinquete de arriba y por el mismo motivo: el import y el
+    // comentario dejan la palabra en el fichero aunque el suelo se haya quitado.
+    return llamadasA(src, 'leerSiSigueAhi') > 0 && llamadasA(src, 'exigirCorpusLeido') === 0;
   });
   assert.deepEqual(sinSuelo, [],
     '🔴 TOLERA EL ENOENT PERO NO EXIGE CORPUS:\n'
