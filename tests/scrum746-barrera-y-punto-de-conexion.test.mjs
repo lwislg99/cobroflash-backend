@@ -76,12 +76,24 @@ export function censoDeConexiones() {
  * un problema y decirlo es la mitad del trabajo. Derivarla haría que el número subiera solo cada
  * vez que alguien añade un script que sólo lee.
  */
-const EXPUESTOS_CONOCIDOS = Object.freeze({
-  'prisma/seed.ts':
-    'ESCRIBE: `upsert` sobre el merchant 1 (nombre, NIF, direccion, plan). Sin guarda y sin bandera.',
-  'scripts/backup-restore.mjs':
-    'ESCRIBE: restaura un backup. Es el mas destructivo de los veinte y no comprueba el destino.',
+/**
+ * 🟢 CERRADOS EN LA FASE B — y esta lista la escribió el trinquete, no yo.
+ *
+ * Al terminar la fase B, este fichero CAYÓ con su propio mensaje al revés: «UN EXPUESTO CONOCIDO
+ * YA NO SALE: prisma/seed.ts, scripts/backup-restore.mjs — si le has puesto guarda de destino,
+ * quítalo de EXPUESTOS_CONOCIDOS y anótalo en la entrada». Eso es exactamente para lo que se
+ * escribió así: un guard que sabe decir que ha dejado de hacer falta no se convierte en ruido.
+ *
+ * Ahora el trinquete apunta al otro lado: si a alguno de los dos le quitaran la guarda, vuelve a
+ * caer. Lo que se vigila ya no es «que no crezca la exposición», es «que no vuelva».
+ */
+const CERRADOS_EN_FASE_B = Object.freeze({
+  'prisma/seed.ts': 'llama a `destinoSembrable`, como sus dos hermanos sembradores (SCRUM-746 fase B)',
+  'scripts/backup-restore.mjs': 'llama a `destinoDesechable` ANTES de construir el cliente (SCRUM-746 fase B)',
 });
+
+/** Ninguno: los dos que había los cerró la fase B. Si vuelve a haber uno, se apunta aquí. */
+const EXPUESTOS_CONOCIDOS = Object.freeze({});
 const NO_SON_PROBLEMA = Object.freeze({
   'src/core/db/prisma.ts': 'es el cliente de la APP: su destino correcto ES produccion',
   'scripts/censo-vias-de-cobro.mjs': 'solo LEE (y ya tiene su suelo de «ciego»)',
@@ -136,15 +148,24 @@ test('SCRUM-746 · 🔴 no aparecen NUEVOS puntos de conexión sin guarda de des
   const desaparecidos = Object.keys(EXPUESTOS_CONOCIDOS).filter((x) => !sinGuarda.includes(x));
   assert.deepEqual(desaparecidos, [],
     '🟢 UN EXPUESTO CONOCIDO YA NO SALE: ' + desaparecidos.join(', ') + '\n' +
-    '  Si le has puesto guarda de destino, quítalo de EXPUESTOS_CONOCIDOS y anótalo en la entrada.\n' +
+    '  Si le has puesto guarda de destino, muévelo a CERRADOS_EN_FASE_B y anótalo en la entrada.\n' +
     '  Si no le has puesto nada, entonces el detector ha dejado de verlo y ese verde no vale.');
+
+  // 🔴 Y EL TRINQUETE INVERSO: lo que la fase B cerró, no se reabre.
+  const reabiertos = Object.keys(CERRADOS_EN_FASE_B).filter((x) => sinGuarda.includes(x));
+  assert.deepEqual(reabiertos, [],
+    '🔴 SE HA QUITADO LA GUARDA DE DESTINO A:\n    ' + reabiertos.join('\n    ') + '\n\n' +
+    '  Estos dos se cerraron en la fase B de SCRUM-746 porque ESCRIBEN contra lo que apunte\n' +
+    '  `DATABASE_URL`. Uno siembra sobre el merchant 1; el otro sobrescribe una base ENTERA y no\n' +
+    '  se deshace. Si de verdad hay que quitarles la guarda, hace falta un ticket que lo explique.');
 });
 
-test('SCRUM-746 · 🔴 los dos EXPUESTOS siguen siendo los que digo, y escriben de verdad', () => {
+test('SCRUM-746 · 🔴 los dos que cerró la fase B siguen escribiendo, o su guarda ya no protege nada', () => {
   // Un trinquete sobre una lista que ya no describe nada es peor que ninguno. Se comprueba que
   // los dos ficheros existen, que construyen un cliente y que ESCRIBEN — que es lo que los hace
-  // peligrosos frente a los que sólo leen.
-  for (const [rel, motivo] of Object.entries(EXPUESTOS_CONOCIDOS)) {
+  // peligrosos frente a los que sólo leen. Si uno dejara de escribir, su guarda sobra y hay que
+  // decirlo en vez de arrastrarla.
+  for (const [rel, motivo] of Object.entries({ ...EXPUESTOS_CONOCIDOS, ...CERRADOS_EN_FASE_B })) {
     const p = path.join(RAIZ, rel);
     assert.ok(fs.existsSync(p), `🔴 ${rel} ya no existe, y el trinquete sigue nombrándolo: ${motivo}`);
     const src = fs.readFileSync(p, 'utf8');

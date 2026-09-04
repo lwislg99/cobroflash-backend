@@ -379,6 +379,20 @@ Ahora filtra con `soloEjecutable` (el filtro ÚNICO de la casa, SCRUM-700/719, c
 `almohadillaEsComentario` porque bash comenta con `#`), **y lleva suelo**: si el filtro devolviera
 poco texto, los asertos pasarían sobre la nada.
 
+## 🟢 Y EL TRINQUETE DE LA FASE A DISPARÓ, QUE ES LA MEJOR PRUEBA DE QUE SERVÍA
+
+La tanda final de esta fase cayó. No por un defecto: por **mi propio trinquete de la fase A**, con
+el mensaje que le escribí al revés:
+
+> 🟢 UN EXPUESTO CONOCIDO YA NO SALE: ,  — si le has
+> puesto guarda de destino, quítalo y anótalo en la entrada.
+
+Es exactamente para lo que se escribió así: **un guard que sabe decir que ha dejado de hacer falta
+no se convierte en ruido**. Se hizo lo que pedía, y de paso el trinquete se dio la vuelta: ahora
+vigila que **lo cerrado no se reabra** —si alguien le quita la guarda a cualquiera de los dos,
+cae— y que los dos **sigan escribiendo**, porque una guarda sobre algo que ya no escribe sobra y
+hay que decirlo en vez de arrastrarla.
+
 ## Verificado en rojo — ocho mutaciones
 
 Cada una guarda los BYTES, comprueba que cambió **ese** fichero, corre **los míos y los AJENOS que
