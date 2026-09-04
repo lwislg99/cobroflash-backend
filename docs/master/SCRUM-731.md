@@ -2,9 +2,14 @@
 
 **Fecha:** 4-sep-2026 · **Carril:** documentos · **Gate:** todo en `npm test`; sin gates de BD
 
-**Medido contra:** `origin/main` = `1304643497934441f88950e441182b7e344dbb57` · 2026-09-04T18:58:32Z
+**Medido contra:** `origin/main` = `93ceed21f7fb5d0bebb0a09f37cce84c170e520e` · 2026-09-04T19:35:00Z
 
-**Tanda:** 5234 tests, 5145 pass, **1 fail**, 88 skipped — corrida DESPUES del ultimo cambio,
+⚠️ `main` **se movió mientras se construía** —`13046434` → `93ceed21`, siete commits, entre ellos
+SCRUM-607 (S1, precios fuera del albarán)—. Se ha **mergeado DENTRO**, sin conflictos: ese ticket
+toca `albaranPdf.service.ts` y `tests/scrum607`, y este no toca ninguno de los dos. La medición de
+arriba está re-corrida sobre el árbol ya mezclado.
+
+**Tanda:** 5248 tests, 5159 pass, **1 fail**, 88 skipped — corrida DESPUES del ultimo cambio,
 entrada incluida. El fallo **no es de este ticket**: es `SCRUM-176b`, que construye una ruta con
 `new URL(import.meta.url).pathname` y por eso da rojo en cualquier checkout cuya ruta lleve un
 espacio, y verde en CI. Medido y reportado en `docs/master/SCRUM-602.md`; sigue sin arreglar en `main`.
