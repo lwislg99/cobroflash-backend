@@ -801,6 +801,9 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'puertaSerie.js',
   'quoteActionsRegistry.js',
   'quoteApartados.js',
+  // SCRUM-594 (DOC-04) · la aritmética de los descuentos del presupuesto. Va ANTES de
+  // `quotesView.js`, que la consume en `recalcTotals` y al componer el payload.
+  'quoteDescuentos.js',
   'quoteRevisiones.js',
   'quoteAtajosVencimiento.js',
   'quoteMargen.js',

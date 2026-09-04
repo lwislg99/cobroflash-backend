@@ -55,6 +55,11 @@ export const CAMPO_A_BLOQUE = {
   // al «IVA por defecto», porque es su misma familia: los dos deciden qué impuesto enseña el
   // documento. En «Condiciones» quedaría al lado del plan de cobro, que es OTRA conversación.
   ivaModo: { control: 'fieldIvaModo', bloque: 'blockLines' },
+  // SCRUM-594 (DOC-04) · el descuento GLOBAL, en euros. Va al bloque de TOTALES y no al de
+  // Líneas: no es un ajuste de una línea, es una rebaja sobre el conjunto —se negocia a bulto—,
+  // y su efecto se lee justo donde se pinta, entre la suma y la base imponible. El `Dto. %` de
+  // cada línea sí vive en Líneas, dentro de la hoja de ajustes de su fila.
+  discountGlobalAmount: { control: 'dtoGlobalWrap', bloque: 'blockTotals' },
 };
 
 /**

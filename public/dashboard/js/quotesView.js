@@ -911,6 +911,53 @@ blockDelivery.appendChild(descWrapper);
   totalsBox.className = "quote-totals";
   blockTotals.appendChild(totalsBox);
 
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-594 (DOC-04) · EL DESCUENTO GLOBAL — EN EUROS, Y DETRÁS DE UN BOTÓN.
+  //
+  // 🔴 VA EN EUROS Y NO EN %, y no es incoherente con el `Dto. %` de la línea (decisión de los
+  // dos fundadores): el importe es lo que el cliente VE Y FIRMA —«te dejo 200 € menos»—; el
+  // porcentaje sería una forma de calcularlo, o sea guardar el derivado en vez del dato. Por
+  // línea se descuenta sobre un precio unitario, que sí es naturalmente un porcentaje.
+  //
+  // DETRÁS DE UN BOTÓN porque la inmensa mayoría de presupuestos no llevan descuento global, y
+  // un campo vacío permanente en el bloque del dinero es ruido justo donde menos sobra. El botón
+  // desaparece al abrirlo: no hay dos estados que mantener, hay uno u otro.
+  //
+  // NO LLEVA FLAG de «mostrar» (regla 27): si el importe está vacío, el descuento no existe y no
+  // se pinta. El dato ES el flag.
+  const dtoGlobalWrap = document.createElement("div");
+  dtoGlobalWrap.className = "quote-dto-global";
+
+  const dtoGlobalBtn = document.createElement("button");
+  dtoGlobalBtn.type = "button";
+  dtoGlobalBtn.className = "btn-ghost btn-sm";
+  dtoGlobalBtn.textContent = "+ Añadir descuento";
+
+  const dtoGlobalCampo = document.createElement("label");
+  dtoGlobalCampo.className = "quote-line__field quote-dto-global__campo";
+  dtoGlobalCampo.hidden = true;
+  const dtoGlobalLab = document.createElement("span");
+  dtoGlobalLab.className = "quote-line__label";
+  dtoGlobalLab.textContent = "Descuento global";
+  const descuentoGlobalInput = document.createElement("input");
+  descuentoGlobalInput.type = "number";
+  descuentoGlobalInput.min = "0";
+  descuentoGlobalInput.step = "0.01";
+  descuentoGlobalInput.inputMode = "decimal";
+  dtoGlobalCampo.appendChild(dtoGlobalLab);
+  dtoGlobalCampo.appendChild(descuentoGlobalInput);
+
+  dtoGlobalBtn.addEventListener("click", function () {
+    dtoGlobalCampo.hidden = false;
+    dtoGlobalBtn.hidden = true;
+    try { descuentoGlobalInput.focus({ preventScroll: true }); } catch (_e) {}
+  });
+  descuentoGlobalInput.addEventListener("input", function () { recalcTotals(); });
+
+  dtoGlobalWrap.appendChild(dtoGlobalBtn);
+  dtoGlobalWrap.appendChild(dtoGlobalCampo);
+  blockTotals.appendChild(dtoGlobalWrap);
+
   /**
    * SCRUM-139 F3 · EL TOTAL, ANCLADO EN MÓVIL.
    *
@@ -1297,6 +1344,8 @@ blockDelivery.appendChild(descWrapper);
   function recalcTotals() {
     let base = 0;
     let vatTotal = 0;
+    // SCRUM-594 · se llena en el MISMO recorrido de abajo y se lo come `totalesConDescuento`.
+    const lineasParaTotales = [];
     // 🔴 SCRUM-598 (DOC-08) · EL MARGEN SALE DEL PIE. Lo que sigue de SCRUM-229 se retira: el
     // agregado «Margen 18,00 € (18 %)» era información del profesional en el papel del cliente.
     // Las funciones puras de `quoteMargen.js` NO se borran —siguen probadas y pueden servir en
@@ -1338,7 +1387,10 @@ blockDelivery.appendChild(descWrapper);
 
       const safeVat = Number.isFinite(vatPerc) ? vatPerc : 0;
 
-      const lineBase = safeQty * safePrice;
+      // SCRUM-594 (DOC-04) · el descuento de la línea opera SÓLO sobre el precio. La regla vive
+      // en `quoteDescuentos.js`, que es una pieza PURA y la suite EJECUTA — aquí no se repite.
+      const precioTrasDto = window.quoteDescuentos.precioEfectivo(safePrice, line.dtoInput && line.dtoInput.value);
+      const lineBase = safeQty * precioTrasDto;
       const lineVat = lineBase * (safeVat / 100);
 
       // SCRUM-139 F2: una línea EN BLANCO del cuadernillo se ve en blanco.
@@ -1369,12 +1421,28 @@ blockDelivery.appendChild(descWrapper);
         // «IVA 21 %» a secas. Era el chip que MENTÍA: decía IVA y contenía dos cosas.
         // Se pasa 0 en vez de cambiar la firma de `resumenAjustes` (`quoteSuplido.js`, SCRUM-500)
         // porque esa pieza es del suplido y sus tests la fijan: no es este ticket.
+        // SCRUM-594 · el descuento se AÑADE al chip, no cambia la firma de `resumenAjustes`.
+        // Esa pieza es del suplido y sus tests la fijan (SCRUM-500); componer aquí el añadido
+        // deja aquel contrato intacto y cumple lo que F4 pedía del disparador: que DIGA lo que
+        // esconde. Sin esto, un descuento escrito viviría dentro de una hoja cerrada — un dato
+        // invisible que nadie corrige, que es justo lo que CONT-01 ② prohíbe.
+        const dtoDeEsta = window.quoteDescuentos.dtoDeLinea(line.dtoInput && line.dtoInput.value);
         line.ajustesBtn.textContent = resumenAjustes(
           !!(line.suplidoCheck && line.suplidoCheck.checked),
           safeVat,
           0,
-        );
+        ) + (dtoDeEsta > 0 ? ` · Dto. ${dtoDeEsta} %` : '');
       }
+
+      // SCRUM-594 · la línea, tal cual, para la pieza que calcula los totales. Mismo recorrido.
+      // Sin clave `apartado`: este editor no crea cabeceras (ni una mención en el fichero); la
+      // pieza SÍ las respeta, para cuando las haya.
+      lineasParaTotales.push({
+        qty: line.qtyInput.value,
+        price: line.priceInput.value,
+        dto: line.dtoInput ? line.dtoInput.value : null,
+        tax: safeVat / 100,
+      });
 
       base += lineBase;
       vatTotal += lineVat;
@@ -1387,7 +1455,27 @@ blockDelivery.appendChild(descWrapper);
 
     refrescarRotuloPlantillas();
 
-    const total = base + vatTotal;
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-594 (DOC-04) · LOS TOTALES SALEN DE LA PIEZA, NO DE ESTE BUCLE.
+    //
+    // 🔴 Y NO ES UN REFACTOR DE ADORNO: `quoteDescuentos.totalesConDescuento` está probada contra
+    // `calcTotal` —el que produce el `Quote.total` que se guarda— caso a caso, y ese barrido cazó
+    // una divergencia de un céntimo mientras se escribía este ticket. Si esta pantalla siguiera
+    // sumando por su cuenta, el profesional podría ver un número y firmar otro.
+    //
+    // El bucle de arriba se conserva porque sigue haciendo su otro trabajo: pintar el total de
+    // cada línea, marcar las vacías y componer el chip de ajustes.
+    // 🔴 UN SOLO RECORRIDO, y no es estilo: es la disciplina de SCRUM-228/229 que un guard
+    // sujeta. `lineasParaTotales` se llena DENTRO del bucle de arriba, no con un `map` aparte —
+    // dos recorridos distintos sobre las mismas líneas acaban dando dos cifras distintas.
+    const T = window.quoteDescuentos.totalesConDescuento(
+      lineasParaTotales,
+      descuentoGlobalInput ? descuentoGlobalInput.value : null,
+    );
+    base = T.baseImponibleCents / 100;
+    vatTotal = T.cuotaCents / 100;
+
+    const total = T.totalCents / 100;
     const effVat = base > 0 ? Math.round((vatTotal / base) * 100) : 0;
 
     // Premium: UNA sola representación de los totales (antes la lista y la tira
@@ -1407,7 +1495,22 @@ blockDelivery.appendChild(descWrapper);
     // Microcopy APROBADO por el fundador (29-jul-2026), literal (regla 30): la etiqueta es
     // «Margen» y el valor lo compone `textoMargen` — «18,00 € (18 %)», o
     // «18,00 € · 2 líneas sin calcular» cuando alguna línea no se pudo leer.
-    totalsBox.innerHTML = `
+    // SCRUM-594 (DOC-04) · las filas de descuento van DELANTE, y sólo cuando hay descuento.
+    // 🔴 Sin descuento el bloque queda EXACTAMENTE como estaba —mismas dos filas, mismos
+    // rótulos—: un presupuesto anterior a este ticket no puede cambiar de aspecto ni de cifras.
+    // Los flags «activable» no llevan columna (regla 27): el dato ES el flag.
+    //
+    // «Base imponible» NO se renombra. Es el rótulo vivo y aprobado, el mismo que imprime el PDF
+    // (`presentacionIva.ts`), y además es el correcto: la base imponible es la que soporta el
+    // IVA, o sea la de DESPUÉS del descuento. Las filas nuevas son las de arriba.
+    const filasDto = T.descuentoLineasCents > 0 || T.descuentoGlobalCents > 0
+      ? `<div class="quote-totals__apoyo"><span>Suma de líneas</span><strong>${fmtMoneyEs(T.sumaSinDescuentoCents / 100, cur)}</strong></div>`
+        + (T.descuentoLineasCents > 0
+          ? `<div class="quote-totals__apoyo"><span>Descuento</span><strong>−${fmtMoneyEs(T.descuentoLineasCents / 100, cur)}</strong></div>` : '')
+        + (T.descuentoGlobalCents > 0
+          ? `<div class="quote-totals__apoyo"><span>Descuento global</span><strong>−${fmtMoneyEs(T.descuentoGlobalCents / 100, cur)}</strong></div>` : '')
+      : '';
+    totalsBox.innerHTML = filasDto + `
       <div class="quote-totals__apoyo"><span>Base imponible</span><strong>${fmtMoneyEs(base, cur)}</strong></div>
       <div class="quote-totals__apoyo"><span>IVA (${effVat}%)</span><strong>${fmtMoneyEs(vatTotal, cur)}</strong></div>
     `;
@@ -2384,6 +2487,32 @@ priceTd.querySelector(".quote-line__label").appendChild(priceHint);
     // ⛔ SUPLIDO se queda intacto (F8): no es este ticket.
     // ═══════════════════════════════════════════════════════════════════════════════════
 
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-594 (DOC-04) · «Dto. %» — EN EL HUECO QUE DEJÓ EL MARGEN, Y NO POR CASUALIDAD.
+    //
+    // Aquí vivía «Margen %» hasta SCRUM-598. Es el mismo sitio de la rejilla, el mismo helper
+    // (`campoLinea`) y el mismo ancho, así que la tarjeta no cambia de forma: se ocupa un hueco
+    // que ya estaba medido en móvil, en vez de añadir una columna nueva y pagar altura por fila.
+    //
+    // 🔴 Y ES UN CAMPO DISTINTO DEL QUE HABÍA, aunque comparta sitio: el margen era información
+    // DEL PROFESIONAL colada en el papel del cliente —por eso se retiró—. Un descuento es lo
+    // contrario: es exactamente lo que el cliente ha negociado y quiere ver escrito.
+    //
+    // VACÍO = SIN DESCUENTO, y no «0 %». La clave no viaja (`descuentoParaPayload`), así que una
+    // línea sin tocar es idéntica a las de antes de este ticket. Sin eso, reeditar un
+    // presupuesto viejo le metería un `dto: 0` a todas sus líneas.
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    const dtoTd = campoLinea("Dto. %", "quote-line__dto");
+    const dtoInput = document.createElement("input");
+    dtoInput.type = "number";
+    dtoInput.min = "0";
+    dtoInput.max = "100";
+    dtoInput.step = "1";
+    dtoInput.inputMode = "numeric";
+    // Ausente ⇒ vacío. Restaurar un borrador ANTERIOR a este campo no puede inventar un
+    // descuento que nadie escribió (mismo criterio que `costeUnitario`, SCRUM-661).
+    dtoInput.value = initial && initial.dto != null && initial.dto !== "" ? initial.dto : "";
+    dtoTd.appendChild(dtoInput);
 
     // ═══════════════════════════════════════════════════════════════════════════════════
     // SCRUM-661 (②) · EL COSTE UNITARIO DE LA LÍNEA — VISIBLE Y EDITABLE.
@@ -2602,6 +2731,18 @@ priceTd.querySelector(".quote-line__label").appendChild(priceHint);
     // cosa —el margen era una conclusion que salia en el papel del cliente; el coste es un HECHO
     // del profesional que NO sale—. Anadir al final no reordena nada de lo que ya habia.
     ajustesCampos.appendChild(costeTd);
+    // 🔴 SCRUM-594 · «Dto. %» VA EN LA HOJA, Y LO DECIDIÓ LA MEDICIÓN, NO EL GUSTO.
+    //
+    // Se montó primero en la TARJETA, junto al precio, que es lo natural: se descuenta sobre el
+    // precio. Medido en navegador a 390 px con el CSS real: **+77 px POR FILA**. Ese número no
+    // es nuevo — es EXACTAMENTE el que SCRUM-139 F4 midió y RECHAZÓ para meter margen e IVA en
+    // columnas: «+770 px en un presupuesto de 10 líneas: dos pantallas más de scroll en obra».
+    // Reintroducirlo por otra puerta habría deshecho aquel ticket sin decirlo.
+    //
+    // Aquí cuesta 0 px por fila, y no queda escondido: el chip de ajustes DICE lo que lleva
+    // dentro (F4), así que un descuento escrito se lee sin abrir la hoja. Eso es lo que cumple
+    // CONT-01 ② —un dato que nadie ve es un dato que nadie corrige— sin pagar el scroll.
+    ajustesCampos.appendChild(dtoTd);
 
     const ajustesBtn = document.createElement("button");
     ajustesBtn.type = "button";
@@ -2629,6 +2770,9 @@ priceTd.querySelector(".quote-line__label").appendChild(priceHint);
       // borrador, igual que `suplidoCheck`. Es el MISMO input que se ve en la hoja de ajustes:
       // no hay copia ni espejo que sincronizar (F4 de SCRUM-139).
       costeInput,
+      // SCRUM-594 (DOC-04) — el descuento de ESTA línea, en %. Lo leen `recalcTotals`, el
+      // payload y el borrador, igual que `costeInput`.
+      dtoInput,
       totalCell: totalTd,
       priceHint,
       // SCRUM-139 F4 — dónde viven margen e IVA y quién abre su hoja. Las claves de arriba
@@ -3328,6 +3472,12 @@ const costeDeLaLinea = costeParaPayload(line.costeInput && line.costeInput.value
 // SCRUM-500: la línea pasa por `lineaParaPayload` (quoteSuplido.js) — es quien FUERZA el
 // `tax: 0` de un suplido. No se confía a que el input esté deshabilitado: un borrador
 // restaurado, una plantilla o la IA pueden dejar un IVA puesto sin tocar la casilla.
+// SCRUM-594 (DOC-04) · el descuento de la línea, con el MISMO criterio que el coste: si el
+// campo está vacío la clave NO viaja. Es lo que hace que una línea que nadie tocó —incluidas
+// todas las anteriores a este ticket— siga siendo el mismo objeto, y que reeditar un
+// presupuesto viejo no le estampe un `dto: 0` a cada línea.
+const dtoDeLaLinea = window.quoteDescuentos.descuentoParaPayload(line.dtoInput && line.dtoInput.value);
+
 payloadLines.push(lineaParaPayload({
   concept: conceptForPdf,
   qty: safeQty,
@@ -3335,6 +3485,7 @@ payloadLines.push(lineaParaPayload({
   tax: safeVat / 100,
   suplido: !!(line.suplidoCheck && line.suplidoCheck.checked),
   ...costeDeLaLinea,
+  ...dtoDeLaLinea,
 }));
 
     });
@@ -3367,6 +3518,13 @@ payloadLines.push(lineaParaPayload({
         customBillingPlan: paymentSelect.value === "CUSTOM" ? collectCustomStages() : undefined, // SCRUM-27
         payMethods: selectedPayMethods(), // A2.1: undefined = todas
         docFields: selectedDocFields(),   // A20.4: undefined = todos
+        // SCRUM-594 (DOC-04) · el descuento global, en euros. Vacío ⇒ `null` y no `0`: son cosas
+        // distintas y la columna las distingue. `calcTotal` lo aplica en el servidor, que es
+        // quien produce el total que se guarda — la pantalla sólo lo previsualiza.
+        discountGlobalAmount: (function () {
+          const v = parseFloat(String(descuentoGlobalInput.value || "").replace(",", "."));
+          return Number.isFinite(v) && v > 0 ? v : null;
+        }()),
         created_via: quoteFormCreatedVia, // VZ-3: 'voice' si hubo dictado
         // A16.2: caducidad elegida (fin del día local); omitida = 30d en server
         validUntil: validInput.value ? new Date(validInput.value + "T23:59:59").toISOString() : undefined,
