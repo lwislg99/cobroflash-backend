@@ -679,3 +679,45 @@ node --test --test-force-exit --test-reporter=tap tests/*.test.mjs | grep "# SKI
 Todo salto **declara su motivo** y el comando que lo arregla; que siga siendo así lo vigila
 `tests/scrum419-ci-declara-lo-que-no-corre.test.mjs`, que corre **sin gate** — el guard que vigila a
 los gateados no puede estar gateado él mismo.
+
+---
+
+## R20 · Lanzar el CLI de Prisma desde un script (y por qué `node_modules/.bin/prisma` no vale)
+
+**Síntoma.** Un script propio lanza Prisma con `execFileSync`/`spawnSync` apuntando a
+`node_modules/.bin/prisma` y **falla siempre en Windows**, con un error que no habla de Prisma:
+`spawnSync ... ENOENT`, o una salida vacía y un código distinto de 0. El mismo comando escrito a
+mano en la terminal funciona, así que se lee como «Prisma no puede generar» — y eso es otra cosa.
+
+**Dónde mirar.** `ls node_modules/.bin/prisma*` → hay **tres** ficheros: `prisma` (script sh),
+`prisma.cmd` y `prisma.ps1`. Ninguno es un ejecutable: son **lanzadores de shell** que npm crea.
+`execFileSync` ejecuta un binario, no los interpreta.
+
+**Acción — la forma correcta, y es la que la casa ya usa en tres sitios:**
+
+```js
+import { createRequire } from 'node:module';
+import { spawnSync } from 'node:child_process';
+
+const requireDelRepo = createRequire(path.join(RAIZ, 'x.js'));
+const PRISMA_JS = requireDelRepo.resolve('prisma/build/index.js');   // el JS, no el lanzador
+const r = spawnSync(process.execPath, [PRISMA_JS, 'generate'], { cwd: RAIZ, encoding: 'utf8' });
+```
+
+Se lanza **`process.execPath`** (el node que ya está corriendo) con el JS como primer argumento.
+Funciona igual en Windows, Linux y en el runner del CI, y no depende de `PATH` ni de `npx` —que
+además se baja otro CLI de la red en silencio si el local falta (incidente del 5-ago-2026).
+
+Precedentes en el árbol: `scripts/aplicar-sql-dev.mjs`, `scripts/preflight-schema-drift.mjs`,
+`scripts/_prisma-sync.mjs` y `scripts/preview-migracion.mjs` ya lo hacen así.
+
+**⚠️ Y una trampa aparte, del mismo día:** Prisma **infiere la raíz del proyecto desde la ruta que
+se le pasa en `--schema`**. Con un schema de usar y tirar fuera del repo, infiere el directorio de
+ese fichero, no encuentra `package.json`, se lanza a un `npm i prisma` y muere. Un schema temporal
+va **dentro de `prisma/`**, y se borra al terminar.
+
+**Qué decir al merchant.** Nada: es de herramienta interna, no llega a producción.
+
+**Prevención.** Medido el 4-sep-2026 (SCRUM-733/742). El censo
+`npm run censo:internos-prisma` enumera quién lanza el CLI y quién sólo nombra su ruta, para que
+un cambio del punto de entrada se pueda evaluar con la lista delante.
