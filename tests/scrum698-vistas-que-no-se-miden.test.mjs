@@ -241,8 +241,23 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // su botón «+ Añadir descuento», la etiqueta `.quote-dto-global__campo`, su rótulo y su input.
   // Y lo que NO sube: `.quote-line__dto` da 0 aquí, porque el campo de la línea vive en la hoja
   // de ajustes de cada fila y esta pantalla no monta el editor de líneas.
+  //
+    // 🔴 SCRUM-582 (CONT-09) · `renderCustomersView` 63 → 68. CINCO nodos, y aquí están CUÁLES,
+    // identificados POR IDENTIDAD antes de tocar el número —no por posición ni por su texto—:
+    //
+    //   1. el `<th data-columna="seleccion">`, que sale de `FC.COLUMNAS` como los otros ocho
+    //   2. su casilla de cabecera — `aria-label="Seleccionar todos"`, padre `<th>`
+    //   3. el `<div>` de la barra de selección
+    //   4. la casilla ESPEJO de la barra — mismo `aria-label`, padre `<div>`
+    //   5. el `<span>` del contador
+    //
+    // La barra existe porque esta tabla es `table--stack-mobile` y a ≤640px su CSS hace
+    // `thead{display:none}`: sin ella, en el móvil no habría forma de «seleccionar todos».
+    //
+    // Las casillas POR FILA no entran en este número: el banco monta la vista sin datos, así que
+    // no hay filas. Es otra medición y no se mezcla con ésta.
   for (const [vista, nodos] of [['renderQuotesView', 242], ['renderProductsView', 166],
-    ['renderCustomersView', 63], ['renderHomeView', 109]]) {
+    ['renderCustomersView', 68], ['renderHomeView', 109]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
     assert.equal(todos(r.contenedor).length, nodos,

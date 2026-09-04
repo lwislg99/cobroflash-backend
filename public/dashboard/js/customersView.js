@@ -284,7 +284,89 @@ function renderCustomersView(container) {
   table.appendChild(thead);
   const tbody = document.createElement("tbody");
   table.appendChild(tbody);
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-582 (CONT-09) · SELECCIÓN MÚLTIPLE — EL MECANISMO, Y NADA MÁS
+  //
+  // LA VÍCTIMA: un profesional con 300 clientes actúa de uno en uno. Con 2 no se nota; con 300 es
+  // la diferencia entre usar el producto y abandonarlo.
+  //
+  // ⛔ NI UNA ACCIÓN EN BLOQUE. Qué se ofrece en bloque lo decide el fundador, y este ticket
+  // entrega sólo el ESTADO. Tampoco va un contenedor de menú vacío: un menú «Acciones» que no
+  // hace nada es una promesa rota cada vez que se pulsa.
+  //
+  // La DECISIÓN vive en `filtroClientes.js` —pura y probable sin navegador—; aquí sólo el DOM.
+  // Medido en el PASO 0: la lista de facturas ya tiene selección, pero su estado vive dentro del
+  // cierre de `renderInvoicesView` y sus piezas de nivel superior son las de «marcar como
+  // pagadas», que es flujo de dinero. Extraer aquello para esto habría sido tocar el camino del
+  // dinero por una pantalla de clientes.
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+
+  /** Las ids marcadas. Siempre cadenas, y siempre un subconjunto de lo VISIBLE. */
+  let seleccion = [];
+  /** Lo que la tabla está enseñando ahora mismo: lo que ya pasó por los cuatro filtros. */
+  let visibles = [];
+
+  /**
+   * Una casilla con nombre accesible. Sin `aria-label` un lector de pantalla dice «casilla» y no
+   * dice de quién — y en una tabla de 300 filas eso es no decir nada.
+   */
+  function casillaConNombre(nombre) {
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.setAttribute("aria-label", nombre);
+    // AB6 · objetivo táctil. El `input` de fábrica mide 13px: se agranda aquí porque en el móvil
+    // esta casilla es lo primero que toca el pulgar.
+    cb.style.cssText = "width:18px;height:18px;cursor:pointer;accent-color:var(--brand,#16a34a)";
+    return cb;
+  }
+
+  // ── La casilla de CABECERA. Va en el `th` de su columna, que ya existe por `FC.COLUMNAS`.
+  const casillaTodos = casillaConNombre(FC.TEXTOS_SELECCION.todos);
+  thPorColumna.seleccion.appendChild(casillaTodos);
+  thPorColumna.seleccion.style.width = "36px";
+
+  // ── LA BARRA DE SELECCIÓN.
+  //
+  // 🔴 POR QUÉ EXISTE Y NO BASTA LA CABECERA: medido en el PASO 0, esta tabla es
+  // `table--stack-mobile` —NO `table--cards-mobile`— y a ≤640px su CSS hace `thead{display:none}`.
+  // O sea que en el móvil la casilla de «seleccionar todos» DESAPARECE. Sin esta barra, un
+  // profesional en el móvil sólo podría marcar de una en una: justo el que más lo necesita.
+  //
+  // Lleva la MISMA casilla —tres estados incluidos— para no inventar un segundo control ni un
+  // texto nuevo: marcarla selecciona lo visible, desmarcarla lo suelta.
+  const barraSeleccion = createElement("div");
+  barraSeleccion.style.cssText = "display:none;align-items:center;gap:10px;padding:10px 14px;"
+    + "border-top:1px solid var(--border);background:var(--neutral-50,#f8faf9)";
+  const casillaTodosBarra = casillaConNombre(FC.TEXTOS_SELECCION.todos);
+  const contadorSeleccion = document.createElement("span");
+  contadorSeleccion.style.cssText = "font-size:13.5px;font-weight:600;color:var(--ink)";
+  barraSeleccion.appendChild(casillaTodosBarra);
+  barraSeleccion.appendChild(contadorSeleccion);
+
   outerCard.appendChild(table);
+  outerCard.appendChild(barraSeleccion);
+
+  /** Pone las DOS casillas y el contador a lo que dice el estado. Un solo sitio que pinta. */
+  function refrescarSeleccion() {
+    const estado = FC.estadoDeCabecera(seleccion, visibles);
+    for (const cb of [casillaTodos, casillaTodosBarra]) {
+      cb.checked = estado === FC.CABECERA_TODOS;
+      // 🔴 EL TERCER ESTADO. Sin él, «algunas marcadas» se pinta igual que «ninguna», y el
+      // profesional no puede saber si «todos» está puesto o no.
+      cb.indeterminate = estado === FC.CABECERA_PARCIAL;
+    }
+    contadorSeleccion.textContent = FC.textoDelContador(seleccion.length);
+    barraSeleccion.style.display = seleccion.length > 0 ? "flex" : "none";
+  }
+
+  function alternarTodos() {
+    const estado = FC.estadoDeCabecera(seleccion, visibles);
+    seleccion = estado === FC.CABECERA_TODOS ? [] : FC.seleccionarTodos(visibles);
+    pintar();
+  }
+  casillaTodos.addEventListener("change", alternarTodos);
+  casillaTodosBarra.addEventListener("change", alternarTodos);
 
   // Alertas
   const alertBox = createElement("div", "alert");
@@ -356,6 +438,21 @@ function renderCustomersView(container) {
     // filtrado por el BUSCADOR desde el servidor. Los cuatro a la vez, y ninguno sustituye a otro.
     repoblarEtiquetas(lote);
     const data = FC.aplicar(lote, pestanaActiva, ordenActivo, etiquetaActiva);
+
+    // ── SCRUM-582 (CONT-09) · LA SELECCIÓN SE RECORTA A LO VISIBLE, EN CADA PINTADO ────────
+    //
+    // 🔴 Es la decisión del ticket, y va aquí porque `pintar()` es por donde pasan LOS CUATRO
+    // filtros —buscador, pestaña, etiqueta y orden—. Guardar lo que ya no se ve dejaría una
+    // selección INVISIBLE: el contador diría «12» con tres filas marcadas en pantalla, y así es
+    // como se borra lo que nadie quería borrar. Se pierde trabajo al cambiar de filtro, y es el
+    // precio: lo que se ve es lo que hay.
+    visibles = data;
+    seleccion = FC.limitarAVisibles(seleccion, visibles);
+    // Va AQUÍ y no al final del pintado a propósito: debajo hay dos `return` tempranos —la pestaña
+    // vacía y la pantalla sin clientes— y si el refresco viviera al final, la barra se quedaría
+    // encendida enseñando un contador de filas que ya no existen.
+    refrescarSeleccion();
+
     {
       tbody.innerHTML = "";
 
@@ -401,6 +498,27 @@ function renderCustomersView(container) {
         const tr = document.createElement("tr");
         tr.style.cursor = "pointer";
         tr.addEventListener("click", () => openCustomer360(c));
+
+        // ── SCRUM-582 (CONT-09) · LA CASILLA DE LA FILA ───────────────────────────────────
+        //
+        // 🔴 `stopPropagation` NO ES OPCIONAL, y es el defecto que más rabia da: la FILA ENTERA
+        // abre la ficha 360 (la línea de arriba). Sin esto, marcar tres clientes para una acción
+        // en bloque te saca de la lista a la primera — y al volver, la selección ya no está.
+        //
+        // El nombre accesible es el NOMBRE DEL CLIENTE, que es DATO y no microcopy: «seleccionar»
+        // a secas no dice a quién, e inventar aquí un «Seleccionar <nombre>» sería escribir copy
+        // que no ha aprobado nadie. Si el asesor quiere el verbo delante, lo firma y se pone.
+        const tdSel = document.createElement("td");
+        const casillaFila = casillaConNombre(c.name || "Cliente sin nombre");
+        casillaFila.checked = FC.estaMarcado(seleccion, c.id);
+        casillaFila.addEventListener("click", (ev) => ev.stopPropagation());
+        casillaFila.addEventListener("change", (ev) => {
+          ev.stopPropagation();
+          seleccion = FC.alternar(seleccion, c.id);
+          refrescarSeleccion();
+        });
+        tdSel.appendChild(casillaFila);
+        tr.appendChild(tdSel);
 
         addCell(tr, "#" + c.id);
         addCell(tr, c.name || "Cliente sin nombre", "cell-title");
