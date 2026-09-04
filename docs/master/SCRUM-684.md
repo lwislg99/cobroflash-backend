@@ -329,7 +329,50 @@ Una avería **sin** líneas enlazadas no rompe nada: no hay correspondencia que 
 aquel guard decía tapar **ya estaba abierto por el otro lado**: un albarán anterior al guard se
 podía parchear con cualquier `quoteLineIndex` y nada lo validaba. Aquí se cierra por las dos.
 
-## El microcopy: el texto aprobado ya no servía
+## ✅ El microcopy: FIRMADO por el asesor, y por qué hubo que firmar uno nuevo
+
+El de SCRUM-257 decía «Este trabajo no tiene presupuesto; **no se puede crear un albarán**». Con el
+guard acotado eso es **falso**: sí se puede, salvo para la línea que afirma un origen inexistente.
+
+> 🔴 **Un mensaje aprobado que ha dejado de ser verdad es peor que uno con marcador.** Retirar un
+> texto FIRMADO porque el producto cambió debajo pide más criterio que escribir uno nuevo.
+
+**Texto aprobado por el asesor el 4-sep-2026** (provisional, a la espera del fundador):
+
+> **«La línea N dice venir de un presupuesto y este trabajo no tiene ninguno.»**
+
+Nombra la línea **primero**, que es lo que el profesional necesita para arreglarlo. El plural
+concuerda: «Las líneas 1, 3 **dicen**…».
+
+### 📏 La caja, medida en navegador real — y es OTRA superficie que la de S5
+
+No es «la caja de aviso del dashboard» (45 car. en una línea, 93 en dos): este 409 se pinta en el
+`.alert.error` **del modal**, que es más estrecho — la cadena real es
+`.modal-overlay > .modal > .alert.error`, en `jobDetailView.js:1471` y `:2523`.
+
+| | 929 px | 390 px |
+|---|---|---|
+| caja | 472,0 px | 342,0 px |
+| ancho útil | 444,0 px | 314,0 px |
+| el firmado (72 car.) | **1 línea** | **2 líneas** |
+| peor caso: plural con dos números (78 car.) | 2 líneas | **2 líneas** |
+
+**Nunca pasa de dos líneas**, que era la condición. Se pinta, y el marcador se retira.
+
+> 🔴 **Y me cazó la propia medida**: la regla `.alert:empty { display: none }` deja la caja en
+> **0 px** si se mide vacía, y ese cero se habría leído como «no cabe nada». Se mide con el texto dentro.
+
+**Censo de SCRUM-667**: la entrada entró con 1 por la tarde y **se BORRA** el mismo día, no se pone
+a 0. Comprobado: cero marcadores en el fichero. Que no quede marcador **no** significa que esté
+firmado por el fundador — eso lo dice `SIN_APROBAR = 1`, y hay un guard que exige que cuadre.
+
+Y un tope medido: si el mensaje crece por encima de **78 caracteres**, el guard obliga a volver a
+medir la caja antes de pintarlo.
+
+> El apartado de abajo es la versión previa de éste, de cuando el texto aún no estaba firmado.
+> Se conserva por el motivo de siempre: no se borra lo escrito.
+
+### El microcopy, antes de la firma
 
 El de SCRUM-257 decía «Este trabajo no tiene presupuesto; **no se puede crear un albarán**». Con el
 guard acotado eso es **falso**: sí se puede, salvo para la línea que afirma un origen inexistente.

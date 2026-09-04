@@ -39,6 +39,20 @@ const ERROR_SIN_PRESUPUESTO = 'job_without_quote';
 /** La grafía que CUENTA el censo de SCRUM-402/667. Se escribe aquí porque es lo que se exige. */
 const MARCA = '[PENDIENTE';
 
+/**
+ * 📏 LA CAJA, medida en navegador real con el CSS de verdad — `.modal-overlay > .modal >
+ * .alert.error`, que es donde `jobDetailView.js` pinta este 409 (líneas 1471 y 2523):
+ *
+ *     929 px → caja 472,0 px · útil 444,0 px → el texto firmado cabe en 1 línea
+ *     390 px → caja 342,0 px · útil 314,0 px → 2 líneas
+ *
+ * Peor caso, el plural con dos números (78 caracteres): **2 líneas en los dos tamaños**. La
+ * condición del asesor —que quepa en dos— se cumple con holgura.
+ *
+ * ⚠️ Se fija el tope para que un texto más largo obligue a volver a medir en vez de colarse.
+ */
+const LARGO_MAXIMO_MEDIDO = 78;
+
 /** Una línea de albarán como la que manda el navegador. */
 const linea = (extra) => ({ concepto: 'Sustituir diferencial', cantidad: 1, unidad: 'ud', ...extra });
 
@@ -71,22 +85,29 @@ test('SCRUM-684 · 🔴 una línea que dice venir de un presupuesto que NO exist
     + 'presupuesto que no está, y el motor de entrega pendiente se lo cree.');
   assert.equal(v.error, ERROR_SIN_PRESUPUESTO,
     '🔴 ha cambiado el código de error: el dashboard y los tests de la casa lo conocen');
-  // Y el mensaje NOMBRA cuál, en base 1, que es como las cuenta el profesional.
-  assert.match(v.message, /la línea 2\b/,
-    `🔴 el mensaje no dice QUÉ línea es: «${v.message}»`);
+  // Y el mensaje NOMBRA la línea, en base 1 —que es como las cuenta el profesional— y ANTES que
+  // el motivo: es lo que necesita para arreglarlo, y es la condición con la que se firmó.
+  assert.match(v.message, /^La línea 2\b/,
+    `🔴 el mensaje no empieza nombrando QUÉ línea es: «${v.message}»`);
   assert.match(v.message, /no tiene ninguno/,
     '🔴 el mensaje no dice POR QUÉ. Un código crudo en pantalla es el defecto de SCRUM-275.');
 
-  // ⚠️ Y SALE CON MARCADOR (regla 30). El texto que aprobó el fundador en SCRUM-257 decía «no se
-  // puede crear un albarán», y HOY eso sería FALSO: sí se puede, salvo para la línea que afirma un
-  // origen inexistente. Un mensaje aprobado que ha dejado de ser verdad es peor que uno sin firmar.
-  assert.ok(v.message.startsWith(MARCA),
-    `🔴 el mensaje nuevo no lleva el marcador que cuenta el censo: «${v.message}»`);
+  // ✅ APROBADO POR EL ASESOR el 4-sep-2026 (provisional, a la espera del fundador), con la caja
+  // medida delante. El texto que el fundador firmó en SCRUM-257 decía «no se puede crear un
+  // albarán», y desde que el guard se acota eso es FALSO — un mensaje aprobado que ha dejado de
+  // ser verdad es peor que uno sin firmar, así que se firmó uno nuevo en vez de reciclarlo.
+  assert.equal(v.message,
+    'La línea 2 dice venir de un presupuesto y este trabajo no tiene ninguno.',
+    '🔴 el texto ha cambiado sin pasar por quien lo aprueba (regla 30).');
+  assert.equal(v.message.includes(MARCA), false,
+    `🔴 ha vuelto un marcador a un mensaje ya firmado: «${v.message}»`);
 
   // Plural cuando son varias: un mensaje que dice «la línea 1, 3» se lee como un fallo del programa.
   const v2 = veredictoAlbaranSinPresupuesto(false, [linea({ quoteLineIndex: 0 }), linea(), linea({ quoteLineIndex: 1 })]);
   assert.equal(v2.ok, false);
-  assert.match(v2.message, /las líneas 1, 3\b/, `🔴 el plural no concuerda: «${v2.message}»`);
+  assert.equal(v2.message,
+    'Las líneas 1, 3 dicen venir de un presupuesto y este trabajo no tiene ninguno.',
+    `🔴 el plural no concuerda con el texto firmado: «${v2.message}»`);
 });
 
 test('SCRUM-684 · 🔴 el índice CERO cuenta como afirmación: `0` es una línea, no un hueco', () => {
@@ -144,6 +165,29 @@ test('SCRUM-684 · 🔴 el veredicto se aplica en las DOS puertas: crear y parch
   assert.equal(/if \(!job\.quoteId\) \{[\s\S]{0,120}job_without_quote/.test(post), false,
     '🔴 HA VUELTO EL GUARD DE BROCHA GORDA. Bloquea la avería entera, que es lo que este ticket '
     + 'acaba de decidir que SÍ puede entregar papel.');
+});
+
+test('SCRUM-684 · 🔴 el mensaje no crece por encima de lo MEDIDO, y el contador dice quién falta', () => {
+  // La caja está medida (arriba). Un texto más largo no se puede pintar sin volver a medirla: a
+  // 390 px el peor caso ya ocupa las dos líneas que el asesor puso como condición.
+  const peorCaso = veredictoAlbaranSinPresupuesto(false, [
+    { concepto: 'a', cantidad: 1, unidad: 'ud', quoteLineIndex: 0 },
+    { concepto: 'b', cantidad: 1, unidad: 'ud' },
+    { concepto: 'c', cantidad: 1, unidad: 'ud', quoteLineIndex: 1 },
+  ]);
+  assert.ok(peorCaso.message.length <= LARGO_MAXIMO_MEDIDO,
+    `🔴 el mensaje mide ${peorCaso.message.length} caracteres y lo medido en navegador fueron `
+    + `${LARGO_MAXIMO_MEDIDO}. Vuelve a medir la caja a 390 px antes de alargarlo: ahí el peor caso `
+    + 'ya ocupa las dos líneas que el asesor puso como condición.');
+
+  // Y el contador de lo que sigue esperando la firma del FUNDADOR: que no haya marcador NO
+  // significa que esté firmado por él (SCRUM-726).
+  const dominio = leer('src/modules/jobs/domain/albaranSinPresupuesto.ts');
+  const m = dominio.match(/const SIN_APROBAR = (\d+);/);
+  assert.ok(m, '🔴 no hay contador de ranuras sin firmar: «sin marcador» se leería como «aprobado»');
+  assert.equal(Number(m[1]), 1,
+    `🔴 el contador dice ${m[1]} y el rechazo tiene UN texto. O ha entrado otro sin declararlo, o `
+    + 'el fundador ha firmado y no se ha anotado.');
 });
 
 test('SCRUM-684 · el motivo está escrito donde el próximo lo va a buscar', () => {

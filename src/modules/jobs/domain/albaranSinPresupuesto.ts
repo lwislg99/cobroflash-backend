@@ -94,17 +94,37 @@ export function veredictoAlbaranSinPresupuesto(
   return {
     ok: false,
     error: ERROR_SIN_PRESUPUESTO,
-    message: `${MARCA_MICROCOPY} ${afirman.length === 1 ? 'la línea' : 'las líneas'} ${cuales} `
-      + 'dicen venir de un presupuesto y este trabajo no tiene ninguno',
+    message: afirman.length === 1
+      ? `La línea ${cuales} dice venir de un presupuesto y este trabajo no tiene ninguno.`
+      : `Las líneas ${cuales} dicen venir de un presupuesto y este trabajo no tiene ninguno.`,
   };
 }
 
 /**
- * ⚠️ MICROCOPY SIN APROBAR (regla 30), y **el texto viejo no se podía reutilizar**: decía «Este
- * trabajo no tiene presupuesto; **no se puede crear un albarán**», que era cierto con el guard de
- * brocha gorda y **hoy sería falso** — sí se puede, salvo para la línea que afirma un origen que
- * no existe. Un mensaje aprobado que ha dejado de ser verdad es peor que uno con marcador.
+ * ✅ MICROCOPY APROBADA POR EL ASESOR el 4-sep-2026, **provisional** a la espera del fundador. El
+ * registro vive en `docs/master/SCRUM-684.md` y **no** en `docs/microcopy/`, que es el registro del
+ * FUNDADOR y `constaAprobado()` lo barre (SCRUM-726).
  *
- * Sale con la grafía que CUENTA el censo de SCRUM-402/667 (`[PENDIENTE`), desde un solo sitio.
+ * 🔴 EL TEXTO VIEJO NO SE PODÍA REUTILIZAR, y es el motivo de que hubiera que firmar uno nuevo:
+ * decía «Este trabajo no tiene presupuesto; **no se puede crear un albarán**», cierto con el guard
+ * de brocha gorda y **falso** desde que se acota — sí se puede, salvo para la línea que afirma un
+ * origen que no existe. **Un mensaje aprobado que ha dejado de ser verdad es peor que uno con
+ * marcador.**
+ *
+ * NOMBRA LA LÍNEA PRIMERO porque es lo que el profesional necesita para arreglarlo.
+ *
+ * 📏 LA CAJA, medida en navegador real con el CSS de verdad — `.modal-overlay > .modal >
+ * .alert.error`, que es donde `jobDetailView.js` pinta este 409 (líneas 1471 y 2523):
+ *
+ *     929 px → caja 472,0 px · útil 444,0 px → **1 línea**
+ *     390 px → caja 342,0 px · útil 314,0 px → **2 líneas**
+ *
+ * El peor caso es el plural con dos números (78 caracteres) y sigue en **2 líneas** en los dos
+ * tamaños. La condición del asesor —que quepa en dos— se cumple con holgura.
+ *
+ * Cuántas ranuras esperan la firma del FUNDADOR. Se queda aunque llegue a 0: el día que este
+ * rechazo gane un segundo texto, ése nace sin firma y este número tiene que subir.
  */
-const MARCA_MICROCOPY = '[PENDIENTE microcopy oficial]';
+// Sin `export` (SCRUM-411): nadie lo importa — su guard lo lee del FUENTE, que es donde vive la
+// declaración. Un export que sólo existe para que un test lo lea es un export huérfano.
+const SIN_APROBAR = 1;
