@@ -168,10 +168,14 @@ test('SCRUM-739 · Informes ya no formatea dinero por su cuenta', () => {
     `🔴 SUELO: el extractor sólo ve ${codigo.length} caracteres de código; no está mirando la vista.`);
 
   const usos = [...codigo.matchAll(/\.toLocaleString\s*\(/g)];
-  assert.equal(usos.length, 1,
-    `🔴 quedan ${usos.length} \`toLocaleString\` en el código de Informes y tiene que quedar UNO: el `
-    + 'rótulo del eje del gráfico, que es un entero SIN decimales y no puede pasar por un '
-    + 'formateador que fuerza dos. Va declarado como hallazgo, no arreglado a escondidas.');
+  // 🔴 SCRUM-743 · 1 → 0. El que quedaba era el rótulo del eje, DECLARADO como hueco por este
+  // mismo ticket: un entero al que las dos formas de dinero le habrían metido dos decimales. Con
+  // la TERCERA forma —agrupar SIN forzarlos— ya tiene a dónde ir, y el hueco se cierra. El número
+  // baja y el trinquete sólo aprieta: si aparece uno nuevo, cae.
+  assert.equal(usos.length, 0,
+    `🔴 quedan ${usos.length} \`toLocaleString\` en el código de Informes y no puede quedar ninguno: `
+    + 'las tres formas del sitio único cubren ya los tres casos —con símbolo, sin símbolo, y número '
+    + 'agrupado sin forzar decimales—. Uno nuevo es una cuarta copia del formato.');
 
   assert.ok(codigo.includes('fmtImporteEs('),
     '🔴 Informes no llama al sitio único: el arreglo no está cableado donde se dice.');

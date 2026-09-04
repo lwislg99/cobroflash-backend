@@ -337,6 +337,51 @@ jobs:
         run: npm run guards:visuales
 
   # ═══════════════════════════════════════════════════════════════════════════════════════════
+  # 🔴 SCRUM-745 · EL META-GUARD, EN CI · un aviso que nadie está obligado a mirar no es un guard
+  #
+  # Tres trinquetes escritos el mismo día nacieron MUDOS: comparaban por TEXTO, así que el
+  # `import` y el comentario que explica la regla mantenían viva la palabra y seguían VERDES sobre
+  # el defecto que venían a vigilar. Se leen perfectamente bien — ninguna revisión los habría
+  # cazado. A los tres los encontró inyectar el defecto a mano, o sea que dependía de que a alguien
+  # se le ocurriera. Esto lo ejecuta: cada guard DECLARA la mutación que tiene que tumbarlo
+  # (`MUTACIONES_QUE_ME_TUMBAN`) y aquí se aplica, se exige el ROJO y se restaura.
+  #
+  # ── 🔴 POR QUÉ JOB PROPIO, Y NO UN PASO MÁS ────────────────────────────────────────────────
+  # Porque ESTE guard MUTA FICHEROS DEL CHECKOUT. Compartir job con cualquier paso que lea el
+  # árbol es exactamente la carrera de SCRUM-740 —un barrido leyendo mientras otro escribe—, y la
+  # sabemos hoy porque la arreglamos hoy. Con checkout propio, lo que muta es suyo y de nadie más.
+  #
+  # ── Y POR QUÉ NO CUESTA RELOJ ──────────────────────────────────────────────────────────────
+  # Los jobs de un workflow corren EN PARALELO. Éste tarda unos segundos (medido: 4 s con las dos
+  # mutaciones declaradas hoy) frente a los varios minutos del job de tests.
+  #
+  # ⚠️ SIN SECRETOS: no toca ninguna base. Muta ficheros de `tests/` y corre `node --test` sobre
+  #    el guard que declara, nada más.
+  #
+  # CÓDIGOS: 1 algún guard MUDO (falla el job) · 2 no supo medir (ciego, también falla) · 3 no
+  # pudo restaurar un fichero. El 3 es el grave y lo grita: hay que mirar el árbol a mano.
+  meta-mutaciones:
+    name: meta-guard · los guards caen cuando deben
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - run: npm ci
+
+      # El lector de declaraciones y los guards que las declaran usan `typescript` para el AST,
+      # que entra con `npm ci`. No hace falta `npm run build`: ninguna mutación declarada hoy toca
+      # un guard que importe de `dist/`. El día que una lo haga, este paso tendrá que compilar — y
+      # se enterará por el rojo, no por sorpresa: ese guard saldría CIEGO, no verde.
+      - name: Cada guard cae con la mutación que declara
+        run: npm run meta:mutaciones
+
+  # ═══════════════════════════════════════════════════════════════════════════════════════════
   # 🔴 SCRUM-677 · EL VIGÍA DEL DESPLIEGUE, EN EL PR · INFORMATIVO, NUNCA BLOQUEANTE
   #
   # Producción estuvo NUEVE DÍAS sin desplegar y nadie se enteró: cuando un despliegue falla el

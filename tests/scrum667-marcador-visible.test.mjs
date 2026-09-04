@@ -21,7 +21,9 @@
 //
 // ── LAS TRES PREGUNTAS, EN ORDEN DE COSTE ────────────────────────────────────────────────
 //
-//   ① ¿cuántos hay?          → lo contesta el censo. 25 marcas hoy (panel 16 · público 1 · servidor 8).
+//   ① ¿cuántos hay?          → lo contesta el censo, y por eso aquí no se escribe el número:
+//                              `node scripts/censo-marcadores.mjs` lo cuenta hoy, no el día en
+//                              que se escribió esta línea (SCRUM-737).
 //   ② ¿cuántos VE alguien?   → un marcador en un camino inalcanzable no cuesta nada.
 //   ③ ¿cuál llega al PDF DEL CLIENTE? → ésos son los caros: los ve el cliente de nuestro cliente.
 //
