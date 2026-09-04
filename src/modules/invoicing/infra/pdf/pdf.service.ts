@@ -129,6 +129,107 @@ export async function loadLogoBuffer(logoUrl: string | null | undefined): Promis
   return null;
 }
 
+// 🔴 SCRUM-734 · ESTE TIPO VIVE ANTES DE `generateInvoicePdf`, Y NO ES CAPRICHO DE ORDEN.
+//
+// El guard de SCRUM-603b —el que sostiene que una factura emitida no se toca— recorta «de
+// `generateInvoicePdf` al siguiente `export` de nivel superior» y exige que ese trozo sea
+// IDÉNTICO, byte a byte, al de la base de la rama.
+// Puesto entre las dos funciones, este bloque caía DENTRO del recorte y ponía en rojo un guard de
+// factura emitida por un cambio que no toca la factura. Aquí fuera, el recorte vuelve a medir
+// exactamente lo que dice medir.
+//
+// Se movió el código, NO el guard: relajar la frontera de un guard que protege una factura ya
+// emitida para que quepa un refactor de presupuestos sería pagar con la vigilancia equivocada.
+/**
+ * SCRUM-734 · TODO LO QUE UN PRESUPUESTO NECESITA PARA SER UN PDF, EN UN SOLO TIPO.
+ *
+ * Estaba escrito EN LÍNEA en la firma de `generateQuotePdf` y no se movía ni una letra al
+ * sacarlo: es el mismo texto, con sus comentarios. Lo que cambia es que ahora TIENE NOMBRE, y
+ * por eso se puede exigir desde fuera que alguien lo produzca ENTERO.
+ *
+ * De aquí cuelga `paramsDePresupuestoParaPdf`, que es el único sitio donde se decide qué lleva
+ * el documento. Las tres puertas ya no arman el objeto: le piden el objeto a esa función.
+ */
+export type ParamsPdfPresupuesto = {
+  quoteId: number;
+  // A1.2: número visible por merchant (el fichero sigue nombrándose con el id
+  // global para no romper pdfUrl existentes). Si falta, se muestra el id.
+  quoteNumber?: number | null;
+  merchant: {
+    name: string | null;
+    legalName?: string | null;
+    taxId?: string | null;
+    address?: string | null;
+    whatsappPhone?: string | null;
+    logoUrl?: string | null;
+  };
+  customer: {
+    name: string | null;
+    phone?: string | null;
+    email?: string | null;
+    // A20.4: cliente empresa
+    legalName?: string | null;
+    taxId?: string | null;
+  };
+  // A20.4: qué datos del cliente se muestran (null/undefined = todos los presentes)
+  docFields?: { name?: boolean; phone?: boolean; taxId?: boolean; email?: boolean } | null;
+  /**
+   * SCRUM-594 (DOC-04) · el descuento GLOBAL del presupuesto, en euros.
+   *
+   * 🔴 SÓLO EN EL PRESUPUESTO. El PDF de FACTURA no lo recibe y no es un olvido: allí el total
+   * se RECALCULA desde `lines` con un motor distinto del que alimenta el libro registro y
+   * VeriFactu (SCRUM-624, abierto), así que meter descuentos en ese camino multiplicaría ese
+   * defecto en vez de heredarlo. Aquí es seguro porque este documento imprime `params.total`,
+   * el GUARDADO, y las filas del pie las decide el dominio.
+   */
+  discountGlobalAmount?: number | string | null;
+  // SCRUM-593 (DOC-03) · los dos textos libres del documento. MULTILÍNEA: los saltos se respetan
+  // (PDFKit los honra en `doc.text`), que es lo que exige SCRUM-655 (T6). Opcionales: sin ellos
+  // el documento sale EXACTAMENTE como hasta hoy.
+  docHeaderText?: string | null;
+  docFooterText?: string | null;
+  /**
+   * SCRUM-602 (DOC-12) · LA DIRECCIÓN DE LA OBRA, en crudo. 🔴 LLEGAN LOS DATOS, NO LA
+   * DECISIÓN: quién resuelve los tres modos es `resolverDireccionObra`, y se le llama UNA vez,
+   * aquí dentro. Las tres puertas de este documento (crear, regenerar con firma, y el
+   * `GET /admin/quotes/:id/pdf` que sirve el papel de verdad) sólo reenvían lo que tienen.
+   *
+   * El motivo está medido en este mismo fichero: `discountGlobalAmount` se pasa en DOS de las
+   * tres puertas y no en la tercera, así que el mismo presupuesto sale con el pie del descuento
+   * o sin él según por dónde se pida. Con la decisión aquí dentro, olvidarse de un dato deja el
+   * bloque fuera —el suelo del albarán— en vez de imprimir una dirección distinta.
+   *
+   * Ausente = el documento sale EXACTAMENTE como salía.
+   */
+  direccionObra?: {
+    modo: string | null;
+    personalizada: string | null;
+    cliente: ClienteConFacturacion | null;
+  } | null;
+  currency: string;
+  total: string;
+  lines: Array<{
+    concept: string;
+    qty: number;
+    price: number;
+    tax: number;
+  }>;
+  signatureData?: string | null;
+  signedAt?: Date | null;
+  country?: string | null;
+  // SCRUM-647 · el NOMBRE del impuesto, igual que en la factura (SCRUM-623): un DATO, no una
+  // constante de la maqueta. Sin él, el documento sale como hasta hoy.
+  taxName?: string | null;
+  // SCRUM-656 (T7) · CÓMO se presenta el IVA en ESTE presupuesto: `sumar` pinta el desglose,
+  // `no_incluido` no pinta ninguna cuota y añade la leyenda. Ausente = como salía hasta hoy.
+  modoIva?: string | null;
+  // Las cláusulas de cierre del MERCHANT y las que este presupuesto excluye. El texto lo escribe
+  // el profesional; aquí solo se pintan.
+  clausulas?: Array<{ id: string; titulo: string; texto: string }> | null;
+  clausulasExcluidas?: string[] | null;
+  tiers?: Array<{ id: string; label: string; description?: string; lines: any[]; total: number; recommended?: boolean }> | null;
+};
+
 export async function generateInvoicePdf(params: {
   number: string;
   // SCRUM-72: id para la URL del endpoint auth y merchantId para el nombre de fichero
@@ -587,85 +688,7 @@ export async function generateInvoicePdf(params: {
  * Generar PDF de PRESUPUESTO.
  * Usa el ID de quote para el nombre de fichero: QUOTE-<id>.pdf
  */
-export async function generateQuotePdf(params: {
-  quoteId: number;
-  // A1.2: número visible por merchant (el fichero sigue nombrándose con el id
-  // global para no romper pdfUrl existentes). Si falta, se muestra el id.
-  quoteNumber?: number | null;
-  merchant: {
-    name: string | null;
-    legalName?: string | null;
-    taxId?: string | null;
-    address?: string | null;
-    whatsappPhone?: string | null;
-    logoUrl?: string | null;
-  };
-  customer: {
-    name: string | null;
-    phone?: string | null;
-    email?: string | null;
-    // A20.4: cliente empresa
-    legalName?: string | null;
-    taxId?: string | null;
-  };
-  // A20.4: qué datos del cliente se muestran (null/undefined = todos los presentes)
-  docFields?: { name?: boolean; phone?: boolean; taxId?: boolean; email?: boolean } | null;
-  /**
-   * SCRUM-594 (DOC-04) · el descuento GLOBAL del presupuesto, en euros.
-   *
-   * 🔴 SÓLO EN EL PRESUPUESTO. El PDF de FACTURA no lo recibe y no es un olvido: allí el total
-   * se RECALCULA desde `lines` con un motor distinto del que alimenta el libro registro y
-   * VeriFactu (SCRUM-624, abierto), así que meter descuentos en ese camino multiplicaría ese
-   * defecto en vez de heredarlo. Aquí es seguro porque este documento imprime `params.total`,
-   * el GUARDADO, y las filas del pie las decide el dominio.
-   */
-  discountGlobalAmount?: number | string | null;
-  // SCRUM-593 (DOC-03) · los dos textos libres del documento. MULTILÍNEA: los saltos se respetan
-  // (PDFKit los honra en `doc.text`), que es lo que exige SCRUM-655 (T6). Opcionales: sin ellos
-  // el documento sale EXACTAMENTE como hasta hoy.
-  docHeaderText?: string | null;
-  docFooterText?: string | null;
-  /**
-   * SCRUM-602 (DOC-12) · LA DIRECCIÓN DE LA OBRA, en crudo. 🔴 LLEGAN LOS DATOS, NO LA
-   * DECISIÓN: quién resuelve los tres modos es `resolverDireccionObra`, y se le llama UNA vez,
-   * aquí dentro. Las tres puertas de este documento (crear, regenerar con firma, y el
-   * `GET /admin/quotes/:id/pdf` que sirve el papel de verdad) sólo reenvían lo que tienen.
-   *
-   * El motivo está medido en este mismo fichero: `discountGlobalAmount` se pasa en DOS de las
-   * tres puertas y no en la tercera, así que el mismo presupuesto sale con el pie del descuento
-   * o sin él según por dónde se pida. Con la decisión aquí dentro, olvidarse de un dato deja el
-   * bloque fuera —el suelo del albarán— en vez de imprimir una dirección distinta.
-   *
-   * Ausente = el documento sale EXACTAMENTE como salía.
-   */
-  direccionObra?: {
-    modo: string | null;
-    personalizada: string | null;
-    cliente: ClienteConFacturacion | null;
-  } | null;
-  currency: string;
-  total: string;
-  lines: Array<{
-    concept: string;
-    qty: number;
-    price: number;
-    tax: number;
-  }>;
-  signatureData?: string | null;
-  signedAt?: Date | null;
-  country?: string | null;
-  // SCRUM-647 · el NOMBRE del impuesto, igual que en la factura (SCRUM-623): un DATO, no una
-  // constante de la maqueta. Sin él, el documento sale como hasta hoy.
-  taxName?: string | null;
-  // SCRUM-656 (T7) · CÓMO se presenta el IVA en ESTE presupuesto: `sumar` pinta el desglose,
-  // `no_incluido` no pinta ninguna cuota y añade la leyenda. Ausente = como salía hasta hoy.
-  modoIva?: string | null;
-  // Las cláusulas de cierre del MERCHANT y las que este presupuesto excluye. El texto lo escribe
-  // el profesional; aquí solo se pintan.
-  clausulas?: Array<{ id: string; titulo: string; texto: string }> | null;
-  clausulasExcluidas?: string[] | null;
-  tiers?: Array<{ id: string; label: string; description?: string; lines: any[]; total: number; recommended?: boolean }> | null;
-}) {
+export async function generateQuotePdf(params: ParamsPdfPresupuesto) {
   // SCRUM-72: quoteId es el id GLOBAL (autoincrement) → ya único entre merchants, no hace
   // falta prefijo. El fichero vive en storage/invoices (fuera de public/), como la factura.
   const fileName = `QUOTE-${params.quoteId}.pdf`;

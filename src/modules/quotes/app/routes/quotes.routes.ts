@@ -51,29 +51,7 @@ import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
-import { leerClausulasDelMerchant } from '../../domain/clausulas';
 
-/**
- * 🔴 EL SUELO DE LA LECTURA: «no ha configurado ninguna» y «no supe leerlas» acaban las dos en un
- * PDF sin condiciones, y significan lo contrario.
- *
- * El comportamiento del documento NO cambia —una columna ilegible sigue dando cero cláusulas, que
- * es lo único seguro que se puede hacer con ella—, pero ahora **queda registrado**. Sin esto, un
- * JSON roto en `merchants.clausulas_presupuesto` deja de imprimir la garantía de todos los
- * presupuestos de ese merchant y no hay ni una línea en ningún sitio que lo diga: se descubre el
- * día que un cliente discute la garantía.
- */
-function clausulasDelMerchantParaPdf(merchant: any) {
-  const leido = leerClausulasDelMerchant((merchant as any)?.clausulasPresupuesto);
-  if (!leido.ok) {
-    console.error(
-      '[quotes] clausulas_presupuesto ILEGIBLE para el merchant', (merchant as any)?.id,
-      '— el PDF saldrá SIN condiciones. No es que no tenga: es que no se han podido leer.',
-    );
-    return [];
-  }
-  return leido.clausulas;
-}
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-206b
 import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206b
 import { recordAudit, sobreFiscal, flagsFiscalesDe } from '../../../system/audit.service'; // SCRUM-206b
@@ -81,6 +59,8 @@ import { sellarTrasEmision } from '../../../invoicing/domain/selladoEstado'; // 
 import { exigirLineasFacturables, esErrorSinLineas, COPY_PUBLICO_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 // SCRUM-602 (DOC-12) · normalizadores del dominio: el modo no se adivina y el texto vacío se queda vacío.
 import { normalizarDireccionObra, normalizarModoDireccionObra } from '../../../../core/documentos/direccionObra';
+// SCRUM-734 · el ÚNICO sitio donde se decide qué lleva el PDF del presupuesto.
+import { paramsDePresupuestoParaPdf } from '../../domain/presupuestoParaPdf';
 
 
 const router = Router();
@@ -251,48 +231,13 @@ router.post('/create', async (req, res) => {
 
     // 2) Generar PDF
     try {
-      const pdf = await generateQuotePdf({
-        quoteId: quote.id,
-        quoteNumber: quote.quoteNumber, // A1.2
-        merchant: {
-          name: merchant.name, legalName: merchant.legalName,
-          taxId: merchant.taxId, address: merchant.address,
-          whatsappPhone: merchant.whatsappPhone,
-          logoUrl: merchant.logoUrl,
-        },
-        customer: { name: customer.name, phone: customer.phone, email: customer.email, legalName: (customer as any).legalName, taxId: (customer as any).taxId }, // A20.4
-        // SCRUM-602 (DOC-12) · la dirección de la obra, EN CRUDO: modo, texto y cliente. Quien
-        // resuelve los tres modos es el documento, con `resolverDireccionObra`, para que las tres
-        // puertas de este PDF no puedan decir direcciones distintas del mismo presupuesto.
-        direccionObra: {
-          modo: (quote as any).shippingAddressMode ?? null,
-          personalizada: (quote as any).shippingAddress ?? null,
-          cliente: customer,
-        },
-        docFields: ((quote as any).docFields as any) ?? null, // A20.4
-        // SCRUM-594 (DOC-04) · el descuento global, DE LA FILA y no del body: el papel dice lo
-        // que quedó GUARDADO, igual que `docHeaderText` unas líneas abajo. Ausente = el
-        // documento sale exactamente como salía.
-        discountGlobalAmount: (quote as any).discountGlobalAmount ?? null,
-        // SCRUM-656 (T7) · el modo de IVA y las cláusulas de cierre, leídos igual que `docFields`:
-        // del presupuesto guardado, y con respaldo si el campo todavía no existe. Ausente = el
-        // documento sale como salía.
-        modoIva: ((quote as any).ivaModo as any) ?? null,
-        clausulas: clausulasDelMerchantParaPdf(merchant),
-        clausulasExcluidas: ((quote as any).clausulasExcluidas as any) ?? null,
-        // SCRUM-593 (DOC-03): de la FILA, no del body: el papel dice lo que quedó GUARDADO.
-        docHeaderText: (quote as any).docHeaderText ?? null,
-        docFooterText: (quote as any).docFooterText ?? null,
-        currency: quote.currency,
-        total: quote.total.toString(),
-        lines: canonicalLines as any,
-        tiers: tiersWithTotal,
-        country: merchant.country,
-        // SCRUM-647 · la resolución por PAÍS vive AQUÍ y no dentro del documento. Es la que
-        // miente en Canarias (IGIC) y en Ceuta y Melilla (IPSI): cuando SCRUM-646 traiga el
-        // territorio se cambia en este sitio, que es donde el país ya está a la vista.
-        taxName: getLocale(merchant.country).vatName,
-      });
+      const pdf = await generateQuotePdf(paramsDePresupuestoParaPdf({
+        // SCRUM-734 · el objeto ENTERO lo arma UN solo sitio. Aquí ya no se enumeran veinte
+        // claves: se le pasa de dónde salen. Si mañana el documento estrena un campo, el
+        // constructor deja de compilar hasta que alguien decida de dónde sale — que es antes de
+        // que llegue, no después.
+        quote, merchant, customer,
+      }));
 
       await prisma.quote.update({
         where: { id: quote.id },
@@ -604,47 +549,14 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         try {
           const merchant = quote.merchant;
           const customer = quote.customer;
-          const pdf = await generateQuotePdf({
-            quoteId: quote.id,
-            quoteNumber: quote.quoteNumber, // A1.2
-            merchant: {
-              name: merchant.name, legalName: merchant.legalName,
-              taxId: merchant.taxId, address: merchant.address,
-              whatsappPhone: merchant.whatsappPhone,
-              logoUrl: merchant.logoUrl,
-            },
-            customer: { name: customer.name, phone: customer.phone, email: customer.email, legalName: (customer as any).legalName, taxId: (customer as any).taxId }, // A20.4
-        // SCRUM-602 (DOC-12) · la dirección de la obra, EN CRUDO: modo, texto y cliente. Quien
-        // resuelve los tres modos es el documento, con `resolverDireccionObra`, para que las tres
-        // puertas de este PDF no puedan decir direcciones distintas del mismo presupuesto.
-        direccionObra: {
-          modo: (quote as any).shippingAddressMode ?? null,
-          personalizada: (quote as any).shippingAddress ?? null,
-          cliente: customer,
-        },
-        docFields: ((quote as any).docFields as any) ?? null, // A20.4
-        // SCRUM-594 (DOC-04) · el descuento global, DE LA FILA y no del body: el papel dice lo
-        // que quedó GUARDADO, igual que `docHeaderText` unas líneas abajo. Ausente = el
-        // documento sale exactamente como salía.
-        discountGlobalAmount: (quote as any).discountGlobalAmount ?? null,
-            // SCRUM-656 (T7) · el modo de IVA y las cláusulas de cierre, leídos igual que `docFields`:
-            // del presupuesto guardado, y con respaldo si el campo todavía no existe. Ausente = el
-            // documento sale como salía.
-            modoIva: ((quote as any).ivaModo as any) ?? null,
-            clausulas: clausulasDelMerchantParaPdf(merchant),
-            clausulasExcluidas: ((quote as any).clausulasExcluidas as any) ?? null,
-            // SCRUM-593 (DOC-03): también al REGENERAR con firma (el porqué, en scrum593c).
-            docHeaderText: (quote as any).docHeaderText ?? null,
-            docFooterText: (quote as any).docFooterText ?? null,
-            currency: quote.currency,
-            total: quote.total.toString(),
-            lines: quote.lines as any,
-            signatureData,
-            signedAt: now,
-            country: merchant.country,
-            // SCRUM-647 · ver la nota del otro envío: la resolución por país vive aquí.
-            taxName: getLocale(merchant.country).vatName,
-          });
+          const pdf = await generateQuotePdf(paramsDePresupuestoParaPdf({
+            // 🔴 SCRUM-734 · `updatedQuote`, NO `quote`. Medido: esta ruta acaba de escribir
+            // `total` y `lines` cuando el cliente elige un tramo, y el PDF se regeneraba desde
+            // la fila ANTERIOR — el cliente firmaba la opción «Better» y el papel que quedaba
+            // guardado enseñaba el total viejo. La firma tampoco hace falta pasarla aparte: el
+            // `update` de arriba ya dejó `signatureUrl` y `acceptedAt` en la fila.
+            quote: updatedQuote, merchant, customer,
+          }));
           await prisma.quote.update({ where: { id: quote.id }, data: { pdfUrl: pdf.publicUrlPath } });
         } catch (e) {
           console.error('[decision] Error regenerando PDF con firma:', e);

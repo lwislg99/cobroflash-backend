@@ -39,6 +39,8 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import ts from 'typescript';
 import { extraerTextoPdf } from './_texto-del-pdf.mjs';
+// SCRUM-734 · el censo COMPARTIDO de las puertas del presupuesto.
+import { censarPuertasDelPresupuesto } from './_puertas-del-presupuesto.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const require_ = createRequire(import.meta.url);
@@ -288,7 +290,13 @@ function llamadasCon(rel, nombre) {
 }
 
 test('SCRUM-602 · LAS TRES PUERTAS del PDF reciben la dirección de la obra', () => {
-  const puertas = FUENTES.flatMap((f) => llamadasCon(f, 'generateQuotePdf'));
+  // 🔴 SCRUM-734 · las tres puertas ya no arman su objeto: le piden la carga entera a
+  // `paramsDePresupuestoParaPdf`. Este censo cayó en rojo el día del cambio, y esa era la SEÑAL
+  // CORRECTA — un censo cuyo modelo se rompe tiene que fallar, no seguir reportando. La
+  // propiedad no cambia; cambia cómo se comprueba: quien delega lleva todo lo que el constructor
+  // produce. El lector vive en `_puertas-del-presupuesto.mjs`, compartido por los cuatro tickets
+  // que preguntan esto (593c, 602, 731, 734) y que tenían el mismo supuesto escrito cuatro veces.
+  const puertas = censarPuertasDelPresupuesto();
   assert.equal(puertas.length, 3,
     `🔴 SUELO: el censo ha encontrado ${puertas.length} llamadas a \`generateQuotePdf\` y sabe que `
     + 'hay 3 (crear · regenerar con firma · GET /admin/quotes/:id/pdf). Un número más bajo es un '
