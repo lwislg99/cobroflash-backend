@@ -307,3 +307,101 @@ y `serializeJobDetail` se queda en `any` **con el motivo escrito en el propio c�
 (`quotes.routes.ts:203 · discountGlobalAmount`). Medido: 2 apariciones en `schema.prisma`, **0 en
 el cliente generado**; tras `./node_modules/.bin/prisma generate` (binario local, nunca `npx`),
 134. El `node_modules` lo comparten cinco worktrees míos.
+
+---
+
+## APÉNDICE (4-sep-2026, noche) · El cuarto eslabón: `loadJobRefs` y los `any` internos
+
+**Medido contra:** `origin/main` = `cb9b858bb25db5c0ce03abd60465a50b51b33a9a` · 2026-09-04T20:15:00+02:00
+
+## 1 · PASO 0 · los siete `any` de la frontera, uno a uno
+
+```
+131  async function loadJobRefs(jobs: any[]): Promise<JobRefs>
+166  const porId = new Map<number, any>([...quotes, ...porJobId].map((q: any) => …))   ← dos
+167  const quotesPorJob = new Map<number, any[]>()
+169  const suyos: any[] = []
+174  for (const q of porJobId as any[])
+183  customers: new Map(customers.map((c: any) => …))
+184  operarios: new Map(operarios.map((o: any) => …))
+```
+
+🔴 Control positivo del censo: `loadJobRefs` aparece 2 veces. El comando ve.
+
+**Los siete, retirados.** `jobs` sale de `prisma.job.findMany` **sin `select`**, así que su tipo es
+el MODELO — el mismo `Job` de 717d. Y los `Map` internos toman su tipo de `JobRefs['quotes']` y
+`JobRefs['quotesPorJob']`: **una sola fuente**, la que ya estaba declarada.
+
+## 2 · 🔴 Tipar destapó un error REAL que el `any` tapaba
+
+```
+jobs.routes.ts(179,65): error TS2345: Argument of type '{ … } | { … } | undefined'
+  is not assignable to parameter of type '{ … } | { … }'.
+```
+
+El código hacía `porId.has(j.quoteId)` y luego `porId.get(j.quoteId)`: **dos consultas al Map para
+la misma pregunta**, y el compilador no puede demostrar que la segunda traiga algo — así que
+`suyos` podía acabar con un `undefined` dentro.
+
+**Arreglado de verdad, no apagado:** una sola búsqueda, y se comprueba el resultado.
+
+```ts
+const original = j.quoteId != null ? porId.get(j.quoteId) : undefined;
+if (original) { suyos.push(original); vistos.add(original.id); }
+```
+
+El comportamiento es idéntico —el `Map` nunca guarda `undefined`— pero **ahora lo dice el tipo y no
+la costumbre**. Y `original.id` en vez de `j.quoteId as number`: es el mismo valor y **evita el
+único casteo** que el arreglo habría necesitado. *Un `as` es una afirmación sin comprobar, aunque
+sea inocente.*
+
+## 3 · 🔴 El rojo, y el mecanismo viejo
+
+Campo elegido comprobando ANTES que TypeScript lo lee: `j.quoteId`, en **3 sitios**.
+
+```
+DESPUÉS (jobs: Job[]) → tsc rc=2
+  error TS2551: Property 'quoteIdd' does not exist on type
+    '{ id: number; customerId: number; status: string; createdAt: Date; … }'
+
+ANTES   (jobs: any[]) → tsc rc=0 · 0 errores
+```
+
+**SUELO:** con un error deliberado, `tsc` sale `rc=2` y lo nombra.
+
+## 4 · CONTROL POSITIVO · las SEIS acumuladas, corridas
+
+| # | inyección | resultado |
+| :-: | --- | --- |
+| 1 | `status` por **`Map`** | `rc=2 · Property 'status' does not exist` |
+| 2 | `paymentTerms` por **callback** | `rc=2 · Property 'paymentTerms' does not exist` |
+| 3 | `internalNotes` por **desestructuración** | `rc=2 · Property 'internalNotes' does not exist` |
+| 4 | `total` en `job.service.ts` | `rc=2 · Property 'total' does not exist` |
+| 5 | `currency` de `QUOTE_SELECT` (717b) | `rc=2 · Property 'currency' does not exist` |
+| 6 | `tituloo` en `serializeJob` (717d) | `rc=2 · Property 'tituloo' does not exist` |
+
+Cuatro eslabones tipados y **ninguno ha perdido detección en los anteriores**.
+
+**CONTROL NEGATIVO:** suite **5154 · 5070 pass · 0 fail** · 84 skipped · `tsc` 0 errores · **cero
+casteos nuevos en código** (el único match del diff es un comentario que explica por qué NO se usó
+uno).
+
+## 5 · Qué queda de `any` en este fichero, con su número
+
+**19 anotaciones**, y ninguna es ya de la frontera de `JobRefs`:
+
+| dónde | por qué sigue |
+| --- | --- |
+| `serializeJobDetail(job: any)` · 377 | **bloqueada por `scrum363`**, que fija su firma por texto. La desbloquea SCRUM-710 (sesión 3) |
+| `quotesDeJob(job: any)` · 218 | el `job`, no el resultado: mismo caso que 717d, y su tipo es `Job` |
+| `totalFacturadoDe(quotes: any[])` · 248 | recibe lo que devuelve `quotesDeJob`, ya tipado: es el siguiente y es pequeño |
+| `customer: any` · 385 · `lineas as any[]` · 436 | dentro de `serializeJobDetail`: caen con ella |
+| **6 × `catch (err: any)`** | idioma de la casa para errores; no son fronteras de consulta |
+| `const data: any` · 762 y similares | objetos de escritura de Prisma, otra frontera |
+
+**La frontera de `JobRefs` queda cerrada del todo.**
+
+## 6 · Lo que NO se ha tocado
+
+`serializeJobDetail` (⛔ explícito) · `quotes.routes.ts` · `albaranes.routes.ts` · `scrum363` ·
+`scrum553` · `prisma/schema.prisma`. El diff toca **un fichero**.
