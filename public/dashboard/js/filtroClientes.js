@@ -47,7 +47,7 @@
    * el hueco sin sitio donde declararse, y el texto nuevo entraría en pantalla en silencio —
    * que es exactamente lo que el marcador impedía y lo que ya no se ve.
    */
-  var SIN_APROBAR = 5; // SCRUM-584: +1, el rotulo del selector de columnas
+  var SIN_APROBAR = 7; // SCRUM-584: +1 el rotulo de columnas · SCRUM-582: +2 (ver abajo)
 
   /**
    * Las tres pestañas. `valor` es lo que se compara contra `contactKind`, y `null` significa
@@ -291,6 +291,20 @@
    */
   var TEXTOS_COLUMNAS = { control: 'Columnas' };
   var COLUMNAS = [
+    // ── SCRUM-582 (CONT-09) · LA COLUMNA DE SELECCIÓN, LA PRIMERA ────────────────────────
+    //
+    // `fija: true` NO es un detalle de estilo: es lo que la deja FUERA del selector de columnas
+    // de SCRUM-584 (`columnasElegibles()` filtra por `!fija`). Una casilla que el profesional
+    // pudiera apagar sin querer dejaría la selección múltiple inalcanzable y sin forma de
+    // recuperarla — el control que la enciende estaría escondido detrás de la propia columna.
+    //
+    // `ocultaEnMovil: false` porque `claseDeColumna` sólo pone `col-hide-mobile` a las que lo
+    // declaran: así la casilla de cada fila se ve también en el móvil, que es donde el
+    // profesional con 300 clientes trabaja de pie.
+    //
+    // Y `texto: ''` porque la cabecera de esta columna NO es un rótulo: es la casilla de
+    // «seleccionar todos», que monta la vista. El nombre accesible va en el `aria-label`.
+    { id: 'seleccion', texto: '', fija: true, ocultaEnMovil: false },
     { id: 'id', texto: 'ID', fija: false, ocultaEnMovil: false },
     { id: 'nombre', texto: 'Nombre', fija: true, ocultaEnMovil: false },
     { id: 'telefono', texto: 'Teléfono', fija: false, ocultaEnMovil: false },
@@ -354,6 +368,130 @@
    */
   function colSpanDeLaTabla() { return COLUMNAS.length; }
 
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-582 (CONT-09) · EL MECANISMO DE SELECCIÓN. SÓLO EL MECANISMO.
+  //
+  // LA VÍCTIMA: un profesional con 300 clientes actúa de uno en uno. Con 2 clientes esto no se
+  // nota; con 300 es la diferencia entre usar el producto y abandonarlo.
+  //
+  // ⛔ AQUÍ NO HAY NI UNA ACCIÓN EN BLOQUE, y es del ticket: qué se ofrece en bloque lo decide
+  // el fundador. Lo que se entrega es el ESTADO —quién está marcado— y nada más. Un menú de
+  // acciones que nadie aprobó es exactamente lo que este ticket tiene prohibido construir.
+  //
+  // ⚠️ Y por escrito para el día que existan: cualquier acción en bloque que ENVÍE MENSAJES pasa
+  // antes por la tabla anti-spam de la regla 28. Seleccionar 300 clientes y mandarles algo es el
+  // peor botón que se puede construir mal.
+  //
+  // ── POR QUÉ VIVE AQUÍ Y NO EN LA VISTA ─────────────────────────────────────────────────
+  // Medido en SCRUM-582: la lista de FACTURAS ya tiene selección múltiple (`invoicesView.js`),
+  // pero su estado (`selectedIds`) vive DENTRO del cierre de `renderInvoicesView` y no es
+  // invocable desde fuera — la misma forma que tenía `buildModal` antes de SCRUM-591. Y sus
+  // únicas piezas de nivel superior son las del «marcar como pagadas», que es flujo de dinero.
+  // Así que el estado se escribe aquí, PURO y probable sin navegador, para que el día que
+  // facturas quiera compartirlo tenga de dónde, en vez de nacer una tercera opinión.
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Los tres estados de la casilla de cabecera. NO son dos: sin el intermedio, el profesional
+   * no puede distinguir «no hay nada marcado» de «hay algunos», y la casilla le mentiría.
+   */
+  var CABECERA_NINGUNO = 'ninguno';
+  var CABECERA_PARCIAL = 'parcial';
+  var CABECERA_TODOS = 'todos';
+
+  /** Las ids visibles, normalizadas a cadena: un `id` numérico y su cadena son el mismo cliente. */
+  function idsDe(lista) {
+    return (Array.isArray(lista) ? lista : [])
+      .map(function (c) { return c && c.id != null ? String(c.id) : null; })
+      .filter(function (x) { return x !== null; });
+  }
+
+  /** ¿Está marcado? Se compara como cadena SIEMPRE, por lo mismo. */
+  function estaMarcado(seleccion, id) {
+    return (Array.isArray(seleccion) ? seleccion : []).indexOf(String(id)) >= 0;
+  }
+
+  /** Marca o desmarca uno. Devuelve una lista NUEVA: el estado no se muta por debajo. */
+  function alternar(seleccion, id) {
+    var s = Array.isArray(seleccion) ? seleccion.slice() : [];
+    var clave = String(id);
+    var i = s.indexOf(clave);
+    if (i >= 0) s.splice(i, 1); else s.push(clave);
+    return s;
+  }
+
+  /**
+   * 🔴 SELECCIONAR TODO SELECCIONA LO FILTRADO, NO LA BASE ENTERA.
+   *
+   * Con un filtro puesto, «todos» significa «todos los que estoy viendo». Si significara los 300,
+   * el profesional marcaría a ciegas gente que la pantalla no le está enseñando — y el día que
+   * haya una acción en bloque, eso es un desastre con su nombre.
+   */
+  function seleccionarTodos(visibles) { return idsDe(visibles); }
+
+  /**
+   * 🔴 AL CAMBIAR DE FILTRO, LA SELECCIÓN SE RECORTA A LO VISIBLE. Decisión de SCRUM-582.
+   *
+   * La alternativa —guardar lo que ya no se ve— deja una selección INVISIBLE, y eso es cómo se
+   * borra lo que nadie quería borrar: el contador diría «12» enseñando tres filas marcadas.
+   * Se pierde trabajo al cambiar de filtro, sí, y es el precio: lo que se ve es lo que hay.
+   */
+  function limitarAVisibles(seleccion, visibles) {
+    var hay = idsDe(visibles);
+    return (Array.isArray(seleccion) ? seleccion : []).filter(function (id) {
+      return hay.indexOf(String(id)) >= 0;
+    });
+  }
+
+  /**
+   * SCRUM-582 (CONT-09) · LOS TRES TEXTOS DE LA SELECCIÓN.
+   *
+   * ✅ APROBADOS por el ASESOR el 4-sep-2026, **a la espera de la firma del fundador** (regla 30).
+   * PROCEDENCIA: `docs/master/SCRUM-582.md`, sección de microcopy — que es donde consta una
+   * aprobación DEL ASESOR, como la de SCRUM-580. `docs/microcopy/` es del FUNDADOR: su README lo
+   * dice en la primera línea, y meter ahí una aprobación que no es suya corrompería el registro
+   * de las que sí lo son.
+   *
+   * ⚠️ Y CONSTA ALGO MÁS, porque el asesor lo pidió por escrito: **la caja de estos textos está
+   * CALCULADA, no medida**. El MCP del navegador estaba caído y la firma se dio sobre el cálculo,
+   * con la condición de medirla cuando vuelva. Si no cabe, falla el cálculo, no el texto.
+   *
+   * · `todos` es el NOMBRE ACCESIBLE de la casilla de cabecera: sin él, un lector de pantalla
+   *   dice «casilla» y no dice a quién selecciona.
+   * · `uno` y `varios` son el contador, y son DOS porque el plural es de verdad.
+   */
+  var TEXTOS_SELECCION = {
+    todos: 'Seleccionar todos',
+    uno: '1 cliente seleccionado',
+    varios: 'clientes seleccionados',
+  };
+
+  /**
+   * 🔴 SINGULAR Y PLURAL DE VERDAD, y no es un capricho de estilo: está MEDIDO que el atajo del
+   * `(s)` se rompe. La barra de facturas escribe su plural a mano
+   * (`invoicesView.js`: `n + ' factura' + (n !== 1 ? 's' : '') + …`), y ahí «1 facturas
+   * seleccionadas» es alcanzable. No se repite el defecto en el sitio nuevo.
+   *
+   * El NÚMERO es DATO, no microcopy, y va **sin separador de millares** (decisión del asesor,
+   * 4-sep-2026): con 1.000 clientes marcados, un punto ahí se lee como otra cosa.
+   *
+   * Puro, para poder fijarlo desde un test sin navegador.
+   */
+  function textoDelContador(n) {
+    var cuantos = Number(n) || 0;
+    return cuantos === 1 ? TEXTOS_SELECCION.uno : String(cuantos) + ' ' + TEXTOS_SELECCION.varios;
+  }
+
+  /** El estado de la casilla de cabecera. Sin filas visibles NO hay «todos»: hay «ninguno». */
+  function estadoDeCabecera(seleccion, visibles) {
+    var hay = idsDe(visibles);
+    var marcadas = (Array.isArray(seleccion) ? seleccion : []).filter(function (id) {
+      return hay.indexOf(String(id)) >= 0;
+    });
+    if (hay.length === 0 || marcadas.length === 0) return CABECERA_NINGUNO;
+    return marcadas.length === hay.length ? CABECERA_TODOS : CABECERA_PARCIAL;
+  }
+
   var api = {
     SIN_APROBAR: SIN_APROBAR,
     PESTANAS: PESTANAS,
@@ -373,6 +511,17 @@
     columnasDeLaTabla: columnasDeLaTabla,
     claseDeColumna: claseDeColumna,
     colSpanDeLaTabla: colSpanDeLaTabla,
+    CABECERA_NINGUNO: CABECERA_NINGUNO,
+    CABECERA_PARCIAL: CABECERA_PARCIAL,
+    CABECERA_TODOS: CABECERA_TODOS,
+    TEXTOS_SELECCION: TEXTOS_SELECCION,
+    textoDelContador: textoDelContador,
+    idsDe: idsDe,
+    estaMarcado: estaMarcado,
+    alternar: alternar,
+    seleccionarTodos: seleccionarTodos,
+    limitarAVisibles: limitarAVisibles,
+    estadoDeCabecera: estadoDeCabecera,
     tagsDe: tagsDe,
     ordenar: ordenar,
     aplicar: aplicar,

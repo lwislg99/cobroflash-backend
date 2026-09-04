@@ -34,10 +34,10 @@ var MARCA_ASIGNADOS = '[PENDIENTE microcopy oficial]';
 
 var TEXTOS_ASIGNADOS = {
   titulo: 'Quién ejecuta este trabajo',
-  vacio: MARCA_ASIGNADOS + ' Todavía no lo ejecuta nadie',
-  soloAdmin: MARCA_ASIGNADOS + ' Solo un administrador puede cambiar quién ejecuta',
-  sinEquipo: MARCA_ASIGNADOS + ' Todavía no hay empleados a los que asignar',
-  noSeGuardo: MARCA_ASIGNADOS + ' No se ha podido guardar quién ejecuta este trabajo',
+  vacio: 'Todavía no lo ejecuta nadie',
+  soloAdmin: 'Solo un administrador puede cambiar quién ejecuta este trabajo',
+  sinEquipo: 'Todavía no has dado de alta a nadie en tu equipo',
+  noSeGuardo: 'No se ha podido guardar quién ejecuta este trabajo',
 };
 
 /**

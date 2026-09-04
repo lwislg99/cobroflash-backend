@@ -3,6 +3,7 @@
 // resto JAMÁS se cobra solo — SIEMPRE acción del pro). Merchant-scoped (regla 2).
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
+import type { Prisma } from '@prisma/client'; // SCRUM-717b: los tipos SALEN del select
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: dinero = admin)
 import { seesOnlyOwnJobs, seesAllJobs, adminOnlyJobField } from '../../../../core/http/roleCapabilities'; // SCRUM-147 / SCRUM-164
 import { listExpenses } from '../../../expenses/domain/expenses.service'; // SCRUM-370: los gastos de ESTE Trabajo
@@ -84,6 +85,24 @@ const QUOTE_SELECT = {
 const CUSTOMER_SELECT = { id: true, name: true, phone: true } as const;
 
 /**
+ * SCRUM-717b · LOS TIPOS DEL LOTE SALEN DEL `select`, NO SE ESCRIBEN A MANO.
+ *
+ * `Prisma.<Modelo>GetPayload<{ select: typeof X }>` deriva la forma exacta que devuelve la
+ * consulta. Escribir el tipo aparte crearía **dos fuentes para el mismo hecho**: el día que alguien
+ * añada un campo al `select` y no al tipo, o al revés, el compilador dejaría de saber cuál manda.
+ *
+ * 🔴 QUÉ DEVUELVE ESTO A LA VIGILANCIA. Hasta hoy `JobRefs` declaraba `Map<number, any>`, y un
+ * `any` apaga al compilador: quitar `phone` de `CUSTOMER_SELECT` daba `tsc rc=0` — y el teléfono
+ * desaparecía del rail del Trabajo, donde se pinta pulsable para llamar desde la obra. Medido.
+ *
+ * No se añade ningún guard: se le devuelve al que ya estaba encendido una consulta que no veía.
+ */
+type QuoteDelLote = Prisma.QuoteGetPayload<{ select: typeof QUOTE_SELECT }>;
+/** La segunda consulta pide lo mismo MÁS `jobId` — la pertenencia (SCRUM-195). */
+type QuoteDelLoteConJob = Prisma.QuoteGetPayload<{ select: typeof QUOTE_SELECT & { jobId: true } }>;
+type ClienteDelLote = Prisma.CustomerGetPayload<{ select: typeof CUSTOMER_SELECT }>;
+
+/**
  * SCRUM-58: resuelve quote + customer + operario de TODOS los jobs de una lista en 3
  * consultas, en vez de 3 por fila (N+1 de SCRUM-22). El detalle (1 job) no lo necesita y
  * sigue por el camino de siempre.
@@ -94,7 +113,7 @@ const CUSTOMER_SELECT = { id: true, name: true, phone: true } as const;
  * filas trajeran el mismo id.
  */
 type JobRefs = {
-  quotes: Map<number, any>;
+  quotes: Map<number, QuoteDelLote | QuoteDelLoteConJob>;
   /**
    * SCRUM-195 (rebanada 2) · TODOS los presupuestos de cada Trabajo, precargados en lote.
    *
@@ -102,8 +121,8 @@ type JobRefs = {
    * Trabajos, y resolver la pertenencia dentro de `serializeJob` habría reintroducido el N+1
    * que SCRUM-58 quitó — medido allí en 2910 ms contra 1270 ms.
    */
-  quotesPorJob: Map<number, any[]>;
-  customers: Map<number, any>;
+  quotesPorJob: Map<number, Array<QuoteDelLote | QuoteDelLoteConJob>>;
+  customers: Map<number, ClienteDelLote>;
   operarios: Map<string, { id: number; name: string }>;
 };
 const operarioKey = (merchantId: number, operarioId: number) => `${merchantId}:${operarioId}`;
@@ -175,7 +194,13 @@ async function loadJobRefs(jobs: any[]): Promise<JobRefs> {
  * Los DOS sentidos siguen vivos (paso 1: `Job.quoteId` no se retira). El nuevo responde por
  * `Quote.jobId`; el viejo cubre los pares que aún no tiene el backfill.
  */
-async function quotesDeJob(job: any, refs?: JobRefs): Promise<any[]> {
+/**
+ * SCRUM-717b · SEGUNDO ESLABON. Tipar `JobRefs` no basta: si esta funcion devuelve `any[]`, el
+ * valor sale del Map tipado y vuelve a `any` en el mismo gesto. La frontera no se cierra, se
+ * MUEVE — medido: con `JobRefs` tipado y esto en `any[]`, quitar `currency` de `QUOTE_SELECT`
+ * seguia dando `tsc rc=0`.
+ */
+async function quotesDeJob(job: any, refs?: JobRefs): Promise<Array<QuoteDelLote | QuoteDelLoteConJob>> {
   if (refs) return refs.quotesPorJob.get(job.id) ?? [];
 
   const [original, porJob] = await Promise.all([
@@ -188,7 +213,7 @@ async function quotesDeJob(job: any, refs?: JobRefs): Promise<any[]> {
     }),
   ]);
 
-  const salida: any[] = [];
+  const salida: Array<QuoteDelLote | QuoteDelLoteConJob> = [];
   const vistos = new Set<number>();
   if (original) { salida.push(original); vistos.add(original.id); }
   for (const q of porJob) if (!vistos.has(q.id)) { salida.push(q); vistos.add(q.id); }

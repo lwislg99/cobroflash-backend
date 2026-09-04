@@ -188,7 +188,14 @@ test('SCRUM-581 · 🔴 NO queda ninguna ranura sin aprobar — y el número sig
   // SCRUM-584 · SUBE A 5: el rótulo del selector de columnas, del asesor y a la espera del
   // fundador. El contador haciendo su trabajo: una ranura nueva declara su estado antes de
   // pintarse.
-  assert.equal(FC.SIN_APROBAR, 5,
+  // 🔴 SCRUM-582 (CONT-09) · SUBE A 7, y son DOS ranuras en estados DISTINTOS:
+  //   · «Seleccionar todos» — el nombre accesible de la casilla de cabecera. Lo APROBÓ EL ASESOR
+  //     el 4-sep-2026 y espera al fundador, así que cuenta aquí.
+  //   · el CONTADOR de selección — no lo ha aprobado NADIE todavía: va con marcador visible, y
+  //     por eso  entra además en el censo de SCRUM-402.
+  // Contarlas juntas en un solo número no las confunde: el estado de cada una está escrito en la
+  // pieza, y este contador sólo dice CUÁNTAS le faltan al fundador.
+  assert.equal(FC.SIN_APROBAR, 7,
     '🔴 hay ranuras de microcopy sin firmar. Si se ha añadido una pestaña o un orden nuevo, su '
     + 'texto NO está aprobado y tiene que contarse aquí antes de pintarse.');
 
