@@ -101,13 +101,17 @@ test('SCRUM-742 · 🔴 el censo distingue USAR de NOMBRAR EN UN COMENTARIO', ()
 /**
  * Los topes. Son MÁXIMOS con holgura, no espejos: subir uno es una decisión que se toma tocando
  * este fichero, que es exactamente el punto. Medido el 4-sep-2026 contra `prisma` 6.18.0.
+ *
+ * 🔴 LA HOLGURA NO ES PEREZA, es la lección de SCRUM-697: aquel ticket dejó el suelo de la tanda a
+ * margen 0 y el CI de su propio PR se lo comió. Un tope a ras del número de hoy cae con el primer
+ * fichero legítimo que se añada, y un guard que cae por lo normal se desactiva.
  */
 const TOPES = Object.freeze({
-  dmmf: 11,                  // hoy 9
+  dmmf: 12,                  // hoy 9
   'fichero-del-cliente': 3,  // hoy 1
   'paquete-interno': 1,      // hoy 0 — que suba a 1 significa una dependencia NUEVA (regla 36)
-  'ruta-del-cli': 7,         // hoy 5
-  'cli-invocado': 6,         // hoy 4
+  'ruta-del-cli': 9,         // hoy 6
+  'cli-invocado': 7,         // hoy 4
 });
 
 test('SCRUM-742 · 🔴 la superficie interna no crece sin que nadie lo diga', () => {

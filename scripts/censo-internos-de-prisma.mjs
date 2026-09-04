@@ -17,7 +17,7 @@
 // ── POR QUÉ NO ES UN `grep`, Y ESTÁ MEDIDO ───────────────────────────────────────────────────
 // El sitio natural donde se escribe el nombre de un interno es **el comentario que explica por
 // qué se usa**. Medido en este mismo censo: `Prisma.dmmf` aparece en 11 ficheros por texto y en
-// **10** de verdad — `scripts/_pares-del-schema.mjs` sólo lo nombra en su cabecera (l. 9), donde
+// **9** de verdad — `scripts/_pares-del-schema.mjs` sólo lo nombra en su cabecera (l. 9), donde
 // explica de dónde saca el censo el OTRO camino. Un `grep` habría abierto un ticket sobre un
 // fichero que no toca el DMMF.
 //
@@ -108,9 +108,10 @@ export const SUPERFICIES = Object.freeze([
     // ensancharla hasta que quepa es elegir el número que uno quiere.
     //
     // Así que se deja de adivinar la distancia: la condición es **de FICHERO** —nombra la ruta
-    // del CLI Y llama a la familia `spawn`—, que es tosca pero no se equivoca en silencio, y son
-    // CINCO ficheros. Se revisaron los cinco A MANO, uno a uno, antes de publicar el número; y el
-    // censo los imprime para que el siguiente pueda repetir esa revisión en dos minutos.
+    // del CLI Y llama a la familia `spawn`—, que es tosca pero no se equivoca en silencio. Son
+    // seis ficheros los que nombran la ruta y CUATRO los que la lanzan, y **los seis se revisaron
+    // A MANO** antes de publicar ningún número; el censo los imprime uno a uno para que el
+    // siguiente pueda repetir esa revisión en dos minutos.
     detector: (codigo) => {
       const RUTA = /prisma[\\/]build[\\/]index\.js|['"]prisma['"]\s*,\s*['"]build['"]|\.bin[\\/]prisma|['"]\.bin['"]\s*,\s*['"]prisma['"]/;
       const LLAMADA = /\b(spawnSync|spawn|execFileSync|execSync|execFile)\s*\(/;
@@ -141,6 +142,21 @@ export const SUPERFICIES = Object.freeze([
  * la infla y, peor, la infla justo donde uno querría creerse el número.
  */
 export const SE_EXCLUYE = 'scripts/censo-internos-de-prisma.mjs';
+
+/**
+ * Y el trinquete tampoco: se excluye **el instrumento entero**, no sólo el script.
+ *
+ * Se descubrió al mezclar `main`: el fichero de tests del censo entró en `dmmf` y en
+ * `ruta-del-cli` porque sus asertos contienen los literales que busca. El mismo defecto que ya se
+ * había arreglado en el script, cometido otra vez a un fichero de distancia — así que la
+ * exclusión pasa a ser una LISTA y no un nombre, para que el siguiente trozo del instrumento no
+ * vuelva a colarse.
+ */
+export const LOS_MIOS = Object.freeze([
+  SE_EXCLUYE,
+  'tests/scrum742-internos-de-prisma.test.mjs',
+]);
+export const esDelInstrumento = (rel) => LOS_MIOS.includes(rel);
 
 /** Todos los ficheros de código de los directorios censados. */
 export function ficherosDelArbol(raiz = RAIZ, dirs = DIRECTORIOS) {
@@ -219,7 +235,7 @@ export function censar(entradas, opciones = {}) {
 
 // ── LA EJECUCIÓN ─────────────────────────────────────────────────────────────────────────────
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const ficheros = ficherosDelArbol().filter((f) => path.relative(RAIZ, f).replace(/\\/g, '/') !== SE_EXCLUYE);
+  const ficheros = ficherosDelArbol().filter((f) => !esDelInstrumento(path.relative(RAIZ, f).replace(/\\/g, '/')));
   const entradas = ficheros.map((f) => ({
     nombre: path.relative(RAIZ, f).replace(/\\/g, '/'),
     texto: fs.readFileSync(f, 'utf8'),
@@ -229,7 +245,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   console.log('CENSO DE INTERNOS DE PRISMA · SCRUM-742');
   console.log('');
   console.log('POBLACIÓN: ' + ficheros.length + ' ficheros .ts/.mjs/.js en ' + DIRECTORIOS.join(', ')
-    + '  (sin `.d.ts`, sin node_modules, y sin el propio censo — ver SE_EXCLUYE)');
+    + '  (sin `.d.ts`, sin node_modules, y sin el propio instrumento — ver LOS_MIOS)');
   console.log('MEDIDO CONTRA LO INSTALADO: ' + VERSIONES.map((x) => x.nombre + ' ' + x.version).join(' · '));
   console.log('');
 

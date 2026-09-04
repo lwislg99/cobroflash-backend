@@ -6,8 +6,8 @@
 
 **Medido contra lo instalado:** `prisma` 6.18.0 · `@prisma/client` 6.18.0 · `@prisma/engines`
 6.18.0 · `@prisma/config` 6.18.0 · `@prisma/internals` **no instalado**.
-**Población:** 1.117 ficheros `.ts/.mjs/.js` en `src/`, `scripts/` y `tests/` (sin `.d.ts`, sin
-`node_modules`, y sin el propio censo).
+**Población:** 1.120 ficheros `.ts/.mjs/.js` en `src/`, `scripts/` y `tests/` (sin `.d.ts`, sin
+`node_modules`, y sin los dos ficheros del propio instrumento — el script y su trinquete).
 
 **«Media docena» era una impresión. Son 15 ficheros** más el bloque `prisma` de `package.json`.
 
@@ -44,14 +44,16 @@ propio fichero ya lo declara como *«detalle interno de Prisma, no API documenta
 pone **rojo y jamás verde** si desaparece. Es el único de los quince que ya llevaba su propio suelo
 para este riesgo.
 
-### 🟠 La RUTA del CLI dentro de `node_modules` · **5 ficheros**
+### 🟠 La RUTA del CLI dentro de `node_modules` · **6 ficheros**
 
-`scripts/_prisma-sync.mjs` · `scripts/aplicar-sql-dev.mjs` · `scripts/preflight-schema-drift.mjs` ·
-`scripts/preview-migracion.mjs` · `tests/scrum176b-force-por-identidad.test.mjs`.
+`scripts/_prisma-sync.mjs` · `scripts/aplicar-sql-dev.mjs` · `scripts/generar-sql-deriva.mjs` ·
+`scripts/preflight-schema-drift.mjs` · `scripts/preview-migracion.mjs` ·
+`tests/scrum176b-force-por-identidad.test.mjs`.
 
-De ésos, **4 LANZAN el CLI** (`spawnSync(process.execPath, [prisma/build/index.js, …])`). El
-quinto, `scrum176b`, sólo lo nombra en una cadena de ejemplo de su lista de comandos peligrosos —
-pero depende de la FORMA del comando, que es justo lo que cambiaría.
+De ésos, **4 LANZAN el CLI** (`spawnSync(process.execPath, [prisma/build/index.js, …])`). Los otros
+dos sólo la NOMBRAN: `scrum176b` en una cadena de ejemplo de su lista de comandos peligrosos, y
+`generar-sql-deriva.mjs` en el mensaje que le dice al operador cómo regenerar el cliente. No son
+acoplamiento, pero dependen de la FORMA del comando, que es justo lo que cambiaría.
 
 ### 🟠 El bloque `prisma` de `package.json` · **1**, y es el único con fecha
 
@@ -64,12 +66,12 @@ Nadie los importa. `scripts/_pares-del-schema.mjs` menciona `@prisma/internals` 
 prediciendo justamente el escenario de la sección 2: *«El día que `@prisma/internals` esté
 instalado, `getDMMF` hace esto mejor y este fichero sobra.»*
 
-### ·· Control negativo — API pública · **70 ficheros**
+### ·· Control negativo — API pública · **71 ficheros**
 
 `PrismaClient`, errores tipados, `Decimal`, `$transaction`. Se cuentan a propósito: **si el barrido
 no viera el uso normal, su cero de internos no significaría nada.**
 
-### ·· Prosa — un comando de Prisma escrito en un mensaje · 18 ficheros, **no cuentan**
+### ·· Prosa — un comando de Prisma escrito en un mensaje · 19 ficheros, **no cuentan**
 
 Instrucciones al fundador («regenera con `npx prisma generate`») y mensajes de guards. No son
 acoplamiento, pero envejecen igual si cambian los comandos.
@@ -118,7 +120,7 @@ son tests**, o sea que parte de la red que vigila los otros cuatro también se a
 `node_modules/.prisma/client`, el guard de procedencia (SCRUM-252) pierde el fichero que compara —
 aunque ése, al menos, está construido para ponerse rojo y no verde.
 
-**Lo que NO está en riesgo:** los 70 ficheros de API pública. El uso normal de Prisma en esta casa
+**Lo que NO está en riesgo:** los 71 ficheros de API pública. El uso normal de Prisma en esta casa
 no depende de nada de esto.
 
 ---
