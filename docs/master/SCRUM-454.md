@@ -172,3 +172,75 @@ del checkout principal, no el de mi worktree.
 
 **Suite:** 3101 tests, **0 fail** · `npm run guards:entrada` → 0 · Tickets nuevos abiertos: **0** (el
 junction entró aquí, como se pidió).
+
+---
+
+# SCRUM-176b · la regla de `--force` comparaba por subcadena
+
+**Medido contra:** `origin/main` = `c9cf435b20287ad7a0dc02a3a17d3fe182dfa372` · 2026-09-04T17:30:22+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-176b-force-por-identidad`
+**Carril:** hooks / seguridad de AA2
+
+## El defecto
+
+El patrón era `/(^|[^A-Za-z-])--force(-with-lease)?\b/`. El ancla de la izquierda estaba bien
+puesta; la de la derecha no. `\b` entre la `e` de `--force` y el guion de `-device` **existe** —una
+es letra y el otro no—, así que `--force-device-scale-factor`, que es calibrado de Chrome y no
+borra nada de nadie, salía bloqueada exactamente igual que un push forzado.
+
+Se vio corriendo: el hook bloqueó un `echo` que solo llevaba la palabra, en el mismo comando con el
+que iba a leer el hook. El defecto se demostró solo.
+
+## Por qué esto no es una molestia
+
+🔒 **Un guard de seguridad con falso positivo es un guard que alguien va a desactivar.** Éste es el
+que sostiene AA2 —el que impide reescribir historia publicada—, y el día que se apague por pesado
+se apaga también lo que sí protegía. El criterio ya estaba escrito en este mismo fichero para la
+familia de SCRUM-454: «una barrera que bloquea lo legítimo la desactiva entera alguien con prisa,
+y entonces protege menos que ninguna».
+
+Y es la **sexta cara de la misma avería esta semana**: `data-view="parte*"` · `window.renderParte`
+casando dentro de `renderPartesOficinaView` · `ata` apuntando al alias · el prefijo del censo de
+navegación · `constaAprobado` por subcadena · `0%` encontrado dentro de `10%`.
+🔒 **Un prefijo no es un nombre, y una subcadena tampoco.**
+
+## El arreglo: negar por defecto, eximir por lista visible
+
+Se compara por **identidad de bandera**: se recorta el argumento hasta el `=` y se mira si **es**
+una de las exentas. Tres, enumeradas a mano y con su motivo, en `FORCE_EXENTAS`. Cualquier
+`--force-…` nueva sigue bloqueada mientras nadie la escriba ahí — que es la única forma de aflojar
+un guard de seguridad sin abrir un agujero invisible. Un test fija la lista: si crece, hay que
+tocar el test y explicar por qué.
+
+**Se comparan PALABRAS, y esto se midió antes de escribirlo.** El primer intento filtraba las
+entrecomilladas y lo tumbó un test de SCRUM-454 que tenía razón: una bandera entre comillas el
+shell la entrega igual. La mención la borra antes `descontarTexto`, que sustituye la carga de texto
+entera (un `commit -m "…"` llega como `[git, commit, -m, MENSAJE]`). Las comillas no eran la
+frontera entre mencionar y ejecutar; filtrarlas habría abierto justo esa vía de escape.
+
+## 🔴 Un agujero PREEXISTENTE que encontró el control negativo
+
+Al enumerar lo que tenía que seguir cazando apareció que **la forma corta `-f` en `git push` pasaba
+el guard entero**. Es la misma orden con otro nombre y nadie la miraba. No lo abrió este ticket: lo
+encontró. Se cierra **acotada a `git push`** — en `rm`, `grep` o `npm i` esa misma letra significa
+otras cosas, y bloquearla en general sería fabricar el falso positivo que este ticket viene a quitar.
+
+## Controles
+
+**EL ROJO, corrido antes del arreglo:** los tres tests nuevos en rojo, con el de calibrado listando
+las cuatro banderas bloqueadas sin motivo.
+
+**EL CONTROL NEGATIVO, enumerado uno a uno** — 15 casos que siguen bloqueados: el push forzado
+(pelado, con destino explícito y con la bandera al final), `--force-with-lease` (con y sin `=valor`),
+`--force-if-includes`, la forma corta en `git push`, el reseteo de Prisma que tira el esquema
+(invocado por npx y por la ruta correcta), `git checkout --force`, `git clean -fd --force`,
+`npm install --force`, `git rebase --force-rebase`, y la bandera pelada en un programa cualquiera.
+
+**SUELO:** si la lista de casos peligrosos baja de 14, el test **falla declarándose ciego** en vez
+de aprobar. Un control negativo vacío da verde igual que uno que funciona, y ése es justo el fallo
+que no puede quedar oculto en un guard de seguridad.
+
+**EL HOOK CORRIDO**, no la función: 8 casos por stdin contra el fichero real, mirando el código de
+salida (2 = bloquea). Los ocho, como dice el control.
+
+`npm test` **5141 tests, 0 fallos** · `guards-entrada` 4/4.

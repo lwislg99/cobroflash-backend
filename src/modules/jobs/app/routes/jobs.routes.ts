@@ -4,6 +4,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import type { Prisma } from '@prisma/client'; // SCRUM-717b: los tipos SALEN del select
+import type { Job } from '@prisma/client'; // SCRUM-717d: sin `select`, la consulta devuelve el MODELO
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: dinero = admin)
 import { seesOnlyOwnJobs, seesAllJobs, adminOnlyJobField } from '../../../../core/http/roleCapabilities'; // SCRUM-147 / SCRUM-164
 import { listExpenses } from '../../../expenses/domain/expenses.service'; // SCRUM-370: los gastos de ESTE Trabajo
@@ -127,7 +128,12 @@ type JobRefs = {
 };
 const operarioKey = (merchantId: number, operarioId: number) => `${merchantId}:${operarioId}`;
 
-async function loadJobRefs(jobs: any[]): Promise<JobRefs> {
+/**
+ * SCRUM-717e · CUARTO ESLABON. `jobs` sale de `prisma.job.findMany` SIN `select`, asi que su
+ * tipo es el MODELO — el mismo `Job` que ya usa `serializeJob`. No se escribe aparte: dos
+ * fuentes para el mismo hecho es lo que este trabajo lleva toda la semana desmontando.
+ */
+async function loadJobRefs(jobs: Job[]): Promise<JobRefs> {
   const quoteIds = [...new Set(jobs.map((j) => j.quoteId).filter((v): v is number => v != null))];
   const customerIds = [...new Set(jobs.map((j) => j.customerId).filter((v): v is number => v != null))];
   const conOperario = jobs.filter((j) => j.operarioId != null);
@@ -162,15 +168,24 @@ async function loadJobRefs(jobs: any[]): Promise<JobRefs> {
       : Promise.resolve([]),
   ]);
 
-  const porId = new Map<number, any>([...quotes, ...porJobId].map((q: any) => [q.id, q]));
-  const quotesPorJob = new Map<number, any[]>();
+  // Los tipos de los Map internos son los MISMOS que declara `JobRefs`: se escriben una vez.
+  const porId: JobRefs['quotes'] = new Map([...quotes, ...porJobId].map((q) => [q.id, q]));
+  const quotesPorJob: JobRefs['quotesPorJob'] = new Map();
   for (const j of jobs) {
-    const suyos: any[] = [];
+    const suyos: Array<QuoteDelLote | QuoteDelLoteConJob> = [];
     const vistos = new Set<number>();
     // El ORIGINAL primero: define el alcance base, y ese orden lo usan tanto el detalle como
     // `collect-rest` para ser deterministas (§4 del ticket).
-    if (j.quoteId != null && porId.has(j.quoteId)) { suyos.push(porId.get(j.quoteId)); vistos.add(j.quoteId); }
-    for (const q of porJobId as any[]) {
+    // 🔴 SCRUM-717e · UNA sola busqueda, y se comprueba EL RESULTADO. Antes era `has()` y
+    // luego `get()`: dos consultas al Map para la misma pregunta, y el compilador no puede
+    // demostrar que la segunda traiga algo — con `any` eso no se veia y `suyos` podia acabar
+    // con un `undefined` dentro. El comportamiento es el mismo (el Map nunca guarda
+    // `undefined`), pero ahora lo dice el tipo y no la costumbre.
+    const original = j.quoteId != null ? porId.get(j.quoteId) : undefined;
+    // Y `original.id` en vez de `j.quoteId as number`: es el MISMO valor —el Map se indexa por
+    // `q.id`— y no necesita casteo. Un `as` es una afirmacion sin comprobar, aunque sea inocente.
+    if (original) { suyos.push(original); vistos.add(original.id); }
+    for (const q of porJobId) {
       if (q.jobId === j.id && !vistos.has(q.id)) { suyos.push(q); vistos.add(q.id); }
     }
     quotesPorJob.set(j.id, suyos);
@@ -179,8 +194,8 @@ async function loadJobRefs(jobs: any[]): Promise<JobRefs> {
   return {
     quotes: porId,
     quotesPorJob,
-    customers: new Map(customers.map((c: any) => [c.id, c])),
-    operarios: new Map(operarios.map((o: any) => [operarioKey(o.merchantId, o.id), { id: o.id, name: o.name }])),
+    customers: new Map(customers.map((c) => [c.id, c])),
+    operarios: new Map(operarios.map((o) => [operarioKey(o.merchantId, o.id), { id: o.id, name: o.name }])),
   };
 }
 
@@ -238,7 +253,13 @@ function totalFacturadoDe(quotes: any[]): number {
   return total;
 }
 
-async function serializeJob(job: any, refs?: JobRefs) {
+/**
+ * SCRUM-717d · TERCER ESLABON. `job` era `any`, y no porque faltara de donde sacar el tipo:
+ * medido, las CINCO consultas que alimentan a los dos serializadores no llevan `select`
+ * explicito — ninguna. Y sin `select` Prisma devuelve el MODELO ENTERO, cuyo tipo ya existe
+ * generado. No habia nada que derivar porque el tipo estaba escrito desde el principio.
+ */
+async function serializeJob(job: Job, refs?: JobRefs) {
   // SCRUM-58: con `refs` (lista) se lee del lote; sin él (detalle, update) se consulta como
   // siempre. Mismos selects en ambas ramas — ver QUOTE_SELECT/CUSTOMER_SELECT.
   // SCRUM-195 (rebanada 2): el Trabajo puede tener VARIOS presupuestos. `quote` sigue siendo el
@@ -344,6 +365,15 @@ async function serializeJob(job: any, refs?: JobRefs) {
 // getQuoteDetailAdmin (quoteAdmin.ts:141-160) con su PROPIO fetch (Job 1:1 Quote vía
 // Job.quoteId; NO acopla a getQuoteDetailAdmin). GAP CERRADO: cada invoice expone
 // status/paidAt/payToken (semáforo por tramo + link /pay/invoice/:token, SCRUM-85).
+/**
+ * SCRUM-717d · ESTE SE QUEDA EN `any`, Y NO ES UN OLVIDO. `scrum363-eje-de-cobro` fija POR TEXTO
+ * la firma de esta funcion —`serializeJobDetail(job: any)`— para exigir que el detalle DELEGUE en
+ * el serializer del listado. Tiparlo hace caer ese guard SIN QUE LA PROPIEDAD SE HAYA ROTO: la
+ * delegacion sigue ahi. Reanclarlo es de otro carril (regla 9) y esta reportado.
+ *
+ * `job` le llega de las mismas consultas SIN `select` que a `serializeJob`, asi que el tipo es
+ * el mismo `Job` el dia que su guard deje de fijar la forma.
+ */
 async function serializeJobDetail(job: any) {
   const base = await serializeJob(job);
   // SCRUM-12 (decisión 2): el detalle expone customer.email (fallback de correo del

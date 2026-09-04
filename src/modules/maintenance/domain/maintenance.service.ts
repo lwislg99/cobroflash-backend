@@ -344,7 +344,8 @@ export async function runMaintenanceProposals(now: Date = new Date()): Promise<{
     const price = Number(line.price ?? 0) * Number(line.qty ?? 1);
 
     const draft = await prisma.$transaction(async (tx) => {
-      const quoteNumber = await allocateQuoteNumber(tx, plan.merchantId);
+      // SCRUM-592 · la fila guarda la SECUENCIA; el texto `P260001` se deriva al pintarlo.
+      const { seq: quoteNumber } = await allocateQuoteNumber(tx, plan.merchantId);
       return tx.quote.create({
         data: {
           merchantId: plan.merchantId,

@@ -18,7 +18,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { soloEjecutable } from './_guard-texto.mjs';
+import { ejecutableDe } from './_guard-texto.mjs';
 import { allocateInvoiceNumber, ORIGENES_C7 } from '../dist/modules/invoicing/domain/invoiceNumber.service.js';
 import { emitInvoice } from '../dist/modules/invoicing/domain/invoicing.service.js';
 
@@ -255,8 +255,13 @@ test('SCRUM-347 · `C7` a secas ya no se puede EMITIR, pero sigue siendo un DATO
   // PROPIO comentario —el que explica que no se hace eso—: un guard de texto se caza a sí mismo en
   // la frase que describe la prohibición.
   const backfill = ['update.*meta\\.camino', 'set.*camino.*C7', 'backfill'];
-  const fuentes = soloEjecutable(leer('src/modules/invoicing/domain/invoiceNumber.service.ts'), { almohadillaEsComentario: false })
-    + soloEjecutable(leer('src/modules/invoicing/domain/invoicing.service.ts'), { almohadillaEsComentario: false });
+  // SUELO (SCRUM-719): las dos funciones que este fichero IMPORTA de `dist/` tienen que
+  // seguir estando en el fuente que se registra. Si una se mueve de módulo, el barrido de
+  // reescrituras de origen estaría mirando el fichero equivocado y diría «limpio».
+  const fuentes = ejecutableDe(leer('src/modules/invoicing/domain/invoiceNumber.service.ts'),
+    { ancla: 'allocateInvoiceNumber', donde: 'invoiceNumber.service.ts', almohadillaEsComentario: false })
+    + ejecutableDe(leer('src/modules/invoicing/domain/invoicing.service.ts'),
+      { ancla: 'emitInvoice', donde: 'invoicing.service.ts', almohadillaEsComentario: false });
   for (const pat of backfill) {
     assert.doesNotMatch(
       fuentes, new RegExp(pat, 'i'),

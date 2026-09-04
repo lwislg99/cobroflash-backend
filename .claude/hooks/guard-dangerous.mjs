@@ -295,6 +295,68 @@ export function coincide(re, accion) {
 
 export const SENTINEL_DESTRUCTIVO_POR_DEFECTO = path.join(AQUI, '..', 'allow-destructivo');
 
+// ── SCRUM-176b · `--force` SE COMPARA POR IDENTIDAD DE BANDERA, NO POR SUBCADENA ─────────────
+//
+// El patrón viejo era `/(^|[^A-Za-z-])--force(-with-lease)?\b/`. El ancla de la izquierda estaba
+// bien; la de la derecha no: `\b` entre la `e` y el guion de `-device` EXISTE, así que
+// `--force-device-scale-factor` —calibrado de Chrome, que no borra nada— salía bloqueado igual
+// que `git push --force`. Y este guard es el que sostiene AA2: uno que estorba es uno que alguien
+// acaba apagando, y ese día se apaga también lo que sí protegía. Es el mismo criterio que ya está
+// escrito veinte líneas más abajo para la familia de SCRUM-454.
+//
+// SE NIEGA POR DEFECTO. Cualquier `--force-loquesea` sigue bloqueada mientras no esté AQUÍ, con
+// su motivo. Eximir por lista visible es la única manera de aflojar un guard de seguridad sin
+// abrir un agujero que nadie vea: cada línea de esta lista es un agujero, y se ve.
+export const FORCE_EXENTAS = new Set([
+  '--force-device-scale-factor',    // escala del navegador headless: hace falta para MEDIR (SCRUM-720d)
+  '--force-color-profile',          // fija el perfil de color, para que la captura no dependa del monitor
+  '--force-prefers-reduced-motion', // mide la pantalla con las animaciones apagadas (AB6)
+]);
+
+/**
+ * La bandera peligrosa de la familia `--force` que se va a EJECUTAR, o `null`.
+ *
+ * Compara PALABRAS y no mira comillas, y esto se midió antes de escribirlo:
+ *
+ *   git push "--force" origin main    →  palabras: [git, push, --force, origin, main]   ← se EJECUTA
+ *   git commit -m "…push --force"     →  palabras: [git, commit, -m, MENSAJE]           ← ya no está
+ *
+ * Es decir: la mención la borra `descontarTexto` ANTES, sustituyendo la carga de texto entera. Las
+ * comillas no son la frontera entre mencionar y ejecutar —el shell entrega `"--force"` igual—, y
+ * filtrarlas habría abierto justo esa vía de escape. Lo intenté y lo tumbó un test de SCRUM-454
+ * que tenía razón.
+ */
+export function forcePeligrosa(lista) {
+  for (const accion of lista) {
+    for (const p of accion.palabras) {
+      // `--force-device-scale-factor=1` es la MISMA bandera que sin valor: se compara el nombre.
+      const bandera = p.texto.split('=')[0];
+      if (!bandera.startsWith('--force')) continue;
+      if (!FORCE_EXENTAS.has(bandera)) return bandera;
+    }
+  }
+  return null;
+}
+
+/**
+ * `-f` es `--force` con otro nombre, y el control negativo de SCRUM-176b lo encontró ESCAPANDO:
+ * `git push -f origin main` pasaba el guard entero. Agujero preexistente, no abierto aquí.
+ *
+ * Se mira ACOTADO a `git push`. En `rm -f`, `grep -f` o `npm i -f` esa misma letra significa otras
+ * cosas, y bloquearla en general sería fabricar el falso positivo que este ticket viene a quitar.
+ */
+export function gitPushForzadoCorto(lista) {
+  for (const accion of lista) {
+    if (accion.programa !== 'git') continue;
+    const palabras = accion.palabras.map((p) => p.texto);
+    if (!palabras.includes('push')) continue;
+    // Identidad, no prefijo: `-f` exacto, o agrupada con otras cortas (`-fu`), nunca `-follow`.
+    const corta = palabras.find((t) => /^-[A-Za-z]+$/.test(t) && t.slice(1).includes('f'));
+    if (corta) return corta;
+  }
+  return null;
+}
+
 const RUTAS_INERTES = /^(\/dev\/|nul$|con$|\/proc\/)/i;
 
 function correrGit(args, cwd) {
@@ -500,12 +562,15 @@ function reglas(lista, sentinelPath, entorno = {}) {
     };
   }
 
-  // 3) --force (git push --force, npm --force, prisma --force...)
-  if (enAlguna(/(^|[^A-Za-z-])--force(-with-lease)?\b/)) {
+  // 3) --force (git push --force, npm --force, prisma --force...) — POR IDENTIDAD DE BANDERA
+  //    desde SCRUM-176b. Ver FORCE_EXENTAS arriba: se niega por defecto y se exime a mano.
+  const forzada = forcePeligrosa(lista) || gitPushForzadoCorto(lista);
+  if (forzada) {
     return {
       bloqueado: true,
       motivo:
-        "'--force' esta prohibido por AA2. Si es imprescindible, pide OK explicito al fundador y que lo ejecute el.",
+        `'${forzada}' esta prohibido por AA2 ('--force'). Si es imprescindible, pide OK explicito ` +
+        'al fundador y que lo ejecute el.',
     };
   }
 

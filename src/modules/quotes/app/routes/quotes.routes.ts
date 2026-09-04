@@ -186,7 +186,8 @@ router.post('/create', async (req, res) => {
     // 1) Crear el presupuesto (A1.2: número por merchant asignado en la misma
     // transacción, para que un fallo en el create no queme el contador)
     const quote = await prisma.$transaction(async (tx) => {
-      const quoteNumber = await allocateQuoteNumber(tx, merchant_id);
+      // SCRUM-592 · la fila guarda la SECUENCIA; el texto `P260001` se deriva al pintarlo.
+      const { seq: quoteNumber } = await allocateQuoteNumber(tx, merchant_id);
       return tx.quote.create({
         data: {
           merchantId: merchant_id,
