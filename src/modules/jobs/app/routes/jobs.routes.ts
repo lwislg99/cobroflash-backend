@@ -4,6 +4,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import type { Prisma } from '@prisma/client'; // SCRUM-717b: los tipos SALEN del select
+import type { Job } from '@prisma/client'; // SCRUM-717d: sin `select`, la consulta devuelve el MODELO
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: dinero = admin)
 import { seesOnlyOwnJobs, seesAllJobs, adminOnlyJobField } from '../../../../core/http/roleCapabilities'; // SCRUM-147 / SCRUM-164
 import { listExpenses } from '../../../expenses/domain/expenses.service'; // SCRUM-370: los gastos de ESTE Trabajo
@@ -238,7 +239,13 @@ function totalFacturadoDe(quotes: any[]): number {
   return total;
 }
 
-async function serializeJob(job: any, refs?: JobRefs) {
+/**
+ * SCRUM-717d · TERCER ESLABON. `job` era `any`, y no porque faltara de donde sacar el tipo:
+ * medido, las CINCO consultas que alimentan a los dos serializadores no llevan `select`
+ * explicito — ninguna. Y sin `select` Prisma devuelve el MODELO ENTERO, cuyo tipo ya existe
+ * generado. No habia nada que derivar porque el tipo estaba escrito desde el principio.
+ */
+async function serializeJob(job: Job, refs?: JobRefs) {
   // SCRUM-58: con `refs` (lista) se lee del lote; sin él (detalle, update) se consulta como
   // siempre. Mismos selects en ambas ramas — ver QUOTE_SELECT/CUSTOMER_SELECT.
   // SCRUM-195 (rebanada 2): el Trabajo puede tener VARIOS presupuestos. `quote` sigue siendo el
@@ -344,6 +351,15 @@ async function serializeJob(job: any, refs?: JobRefs) {
 // getQuoteDetailAdmin (quoteAdmin.ts:141-160) con su PROPIO fetch (Job 1:1 Quote vía
 // Job.quoteId; NO acopla a getQuoteDetailAdmin). GAP CERRADO: cada invoice expone
 // status/paidAt/payToken (semáforo por tramo + link /pay/invoice/:token, SCRUM-85).
+/**
+ * SCRUM-717d · ESTE SE QUEDA EN `any`, Y NO ES UN OLVIDO. `scrum363-eje-de-cobro` fija POR TEXTO
+ * la firma de esta funcion —`serializeJobDetail(job: any)`— para exigir que el detalle DELEGUE en
+ * el serializer del listado. Tiparlo hace caer ese guard SIN QUE LA PROPIEDAD SE HAYA ROTO: la
+ * delegacion sigue ahi. Reanclarlo es de otro carril (regla 9) y esta reportado.
+ *
+ * `job` le llega de las mismas consultas SIN `select` que a `serializeJob`, asi que el tipo es
+ * el mismo `Job` el dia que su guard deje de fijar la forma.
+ */
 async function serializeJobDetail(job: any) {
   const base = await serializeJob(job);
   // SCRUM-12 (decisión 2): el detalle expone customer.email (fallback de correo del
