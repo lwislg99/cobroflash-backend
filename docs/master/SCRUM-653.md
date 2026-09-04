@@ -428,3 +428,43 @@ se ejecuta ANTES en cada base, y si devuelve filas esa base no se toca.
 
 ⚠️ **`dev` y `staging` NO están medidos**, y no se declara nada de ellas. «No medido» y «cero» no
 son lo mismo.
+
+---
+
+# SCRUM-653b · Los cinco textos de las dos firmas, firmados — y el aviso que ya dice CUÁL falta
+
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-653-dos-firmas` · 4-sep-2026
+
+El fundador firmó los cinco textos que la rama traía con marcador. Constan en
+`docs/microcopy/2026-09-04-SCRUM-653-las-dos-firmas.md`, **con su firma** — que es exactamente el
+defecto que SCRUM-726 acaba de cerrar: registrarlos como del asesor habría hecho que el propio guard
+dejara de contarlos en cuanto el 726 entre en main.
+
+**🔴 EL CUARTO NO SE APROBÓ COMO ESTABA: se partió en DOS.** La rama traía una sola clave,
+`faltaUnaFirma` → «Falta una firma para cerrar el parte.», y **no dice cuál falta**. El control
+negativo de este mismo ticket exige que se diga: el técnico está de pie en un cuarto técnico con el
+móvil en la mano, y un aviso que no nombra lo que falta le obliga a adivinar.
+
+Ahora hay `faltaLaFirmaDelCliente` y `faltaLaFirmaDelTecnico`, y **el aviso nombra la que falta — si
+faltan las dos, se dicen las dos**. Por eso `PARTE_TEXTOS` pasa de 31 a **32**: 27 firmados en
+SCRUM-720 **+ 5**, no + 4. Un 31 habría significado sustituir en vez de partir.
+
+**La puntuación es deliberada:** etiquetas de estado **sin** punto final, frases **con** punto. Dos
+de los textos cambiaron por eso — «Firmado por el cliente.» y «Firmado por el técnico.» lo pierden.
+
+## Verificación, sobre el DOM renderizado
+
+- **CERO marcadores** en los tres estados: borrador 0 · firmado 0 · sin líneas 0.
+- **Los 32 textos, enumerados uno a uno**, ninguno con marcador. Los 27 de SCRUM-720 siguen todos:
+  añadir cinco no perdió ninguno.
+- `TEXTOS_ASIGNADOS` sigue con **5**.
+- Las cuatro clases de SCRUM-720 —`parte-bloque`, `parte-tipo`, `parte-anadir`,
+  `parte-quitar-linea`— **tienen regla en `styles.css`**, comprobado con el banco que arregló
+  SCRUM-666: la pregunta no es «¿tiene clase?» sino «¿esa clase existe en la hoja?».
+- **BUILD limpio (exit 0, 0 errores) ANTES de mirar los tests**, que es la lección del día: 27 tests
+  pasaron una vez contra un `dist/` viejo.
+- Los dos guards de SCRUM-720 en **verde**, y no porque miren menos: porque los textos están
+  firmados. No se tocó ni un umbral.
+
+**El suelo del instrumento estaba probado de antes**: antes de resolver el conflicto veía 1 marcador
+y 3 marcas de git, así que este cero es un dato y no una ceguera.

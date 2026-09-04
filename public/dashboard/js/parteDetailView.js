@@ -67,14 +67,18 @@
     sinBloque: 'Sin colocar — elige mano de obra o materiales',
 
     // ── SCRUM-653 · LAS DOS FIRMAS ──────────────────────────────────────────────────────
-    // Estas cuatro son la aportación de la rama y **siguen con marcador a propósito**: el
-    // fundador no las ha firmado, y firmarlas yo sería inventar una aprobación (regla 30).
-    // Van listadas en el informe para que las firme. El resto de esta tabla son los textos
-    // que SÍ firmó, y por eso no llevan marca (SCRUM-720).
-    firmarTecnico: M + 'Firma del técnico',
-    yaFirmoElCliente: M + 'Firmado por el cliente.',
-    yaFirmoElTecnico: M + 'Firmado por el técnico.',
-    faltaUnaFirma: M + 'Falta una firma para cerrar el parte.',
+    // Los cinco textos de las dos firmas, FIRMADOS por el fundador el 4-sep-2026. Constan en
+    // `docs/microcopy/2026-09-04-SCRUM-653-las-dos-firmas.md`.
+    //
+    // Etiquetas de estado SIN punto final; frases CON punto. Es deliberado, no un descuido.
+    firmarTecnico: 'Firma del técnico',
+    yaFirmoElCliente: 'Firmado por el cliente',
+    yaFirmoElTecnico: 'Firmado por el técnico',
+    // 🔴 DOS CLAVES Y NO UNA. «Falta una firma para cerrar el parte» **no decía cuál**, y el
+    // técnico está de pie en un cuarto técnico con el móvil en la mano: un aviso que no nombra lo
+    // que falta le obliga a adivinar. El control negativo de SCRUM-653 exige que se diga cuál.
+    faltaLaFirmaDelCliente: 'Falta la firma del cliente para cerrar el parte.',
+    faltaLaFirmaDelTecnico: 'Falta la firma del técnico para cerrar el parte.',
   };
 
   // El vocabulario CERRADO del dominio (`parteTrabajo.ts`). No se inventa aquí ni se amplía:
@@ -383,7 +387,6 @@
    * exige** (`ordenDeFirmaExigido()` en el dominio): en la obra firma quien esté libre primero.
    */
   function pintarLasDosFirmas(parte) {
-    var falta = !parte.firmoElCliente || !parte.firmoElTecnico;
     var recuadro = function (firmado, marca, rotulo, hecho, quien) {
       return firmado
         ? '<p data-parte-' + marca + '-hecha="1" style="margin:8px 0 0;font-size:14px;color:var(--muted)">' +
@@ -395,9 +398,15 @@
       '<section data-parte-firmas="1" style="margin-top:12px">' +
       recuadro(parte.firmoElCliente, 'firmar', TEXTOS.firmar, TEXTOS.yaFirmoElCliente, parte.firmadoPorNombre) +
       recuadro(parte.firmoElTecnico, 'firmar-tecnico', TEXTOS.firmarTecnico, TEXTOS.yaFirmoElTecnico, parte.firmadoTecnicoNombre) +
-      (falta
-        ? '<p data-parte-falta-firma="1" style="margin:8px 0 0;font-size:13px;color:var(--muted)">' +
-          esc(TEXTOS.faltaUnaFirma) + '</p>'
+      // 🔴 EL AVISO NOMBRA LA QUE FALTA, y si faltan las dos se dicen las dos: fundir ambas en
+      // «falta una firma» era exactamente el defecto — el técnico tendría que adivinar cuál.
+      (!parte.firmoElCliente
+        ? '<p data-parte-falta-firma="cliente" style="margin:8px 0 0;font-size:13px;color:var(--muted)">' +
+          esc(TEXTOS.faltaLaFirmaDelCliente) + '</p>'
+        : '') +
+      (!parte.firmoElTecnico
+        ? '<p data-parte-falta-firma="tecnico" style="margin:8px 0 0;font-size:13px;color:var(--muted)">' +
+          esc(TEXTOS.faltaLaFirmaDelTecnico) + '</p>'
         : '') +
       '</section>'
     );
