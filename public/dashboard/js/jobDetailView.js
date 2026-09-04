@@ -333,6 +333,31 @@ const ALB_TABLA_COPY = {
 // igualmente en los dos casos —un pro con mala cobertura, de pie y con el cliente delante, NO
 // puede quedarse sin poder crear el documento (bloque H)— pero el producto NO MIENTE: cada caso
 // dice el suyo. Por eso `motivo` es un código distinto por caso y nunca `null` cuando falta algo.
+// ── SCRUM-607 (ALB-02) · los dos literales del interruptor que quita los precios del papel ──
+//
+// ✅ APROBADOS POR EL ASESOR el 4-sep-2026, PROVISIONALES a la espera de la firma del fundador.
+// El registro va en `docs/master/SCRUM-607.md` y NO en `docs/microcopy/`: ese directorio es el
+// registro del FUNDADOR y `constaAprobado()` lo barre (SCRUM-726), asi que meter ahi la firma
+// del asesor la haria pasar por la suya.
+//
+// 🔴 EL ROTULO NO DICE «EN EL PDF» pese a ser mas corto, y el motivo es del propio mecanismo: el
+// interruptor gobierna LAS DOS superficies —el papel y la pantalla que el cliente abre desde el
+// movil—, asi que «en el PDF» describiria la mitad del efecto. El profesional creeria que en el
+// movil si se ven.
+//
+// ⚠️ SIN MARCADOR en pantalla, mismo criterio que `quoteDireccionObra.js` y `filtroClientes.js`.
+// Que no se pinte el corchete NO significa que esten firmados por el fundador: eso lo dice
+// `ALB_OCULTAR_PRECIOS_SIN_APROBAR`, aqui debajo.
+const ALB_OCULTAR_PRECIOS_ROTULO = 'Ocultar precios en el albarán';
+const ALB_OCULTAR_PRECIOS_NOTA = 'Tú sigues viendo los precios y puedes facturarlo.';
+
+// Cuantas ranuras estrena esta pieza SIN la firma del fundador. DOS: el rotulo y su nota.
+//
+// Se queda aunque llegue a 0, por el motivo de `filtroClientes.js` y `quoteDireccionObra.js`: el
+// dia que el interruptor gane un tercer texto, ese texto nace sin firma y este numero tiene que
+// subir. Borrarlo dejaria el hueco sin sitio donde declararse.
+const ALB_OCULTAR_PRECIOS_SIN_APROBAR = 2;
+
 const ALB_MOTIVO = {
   VALORADO: 'valorado',                       // el backend exige precio; el presupuesto no lo trae
   SIN_PRESUPUESTO: 'sin_presupuesto',         // la vista no trae `quote` (el 409 lo pone el backend)
@@ -1494,8 +1519,11 @@ async function renderJobDetailView(container, jobId) {
       onClose: close,
       onError: (msg) => { errEl.textContent = msg; errEl.style.display = 'block'; },
       textoGuardar: ALB_CREAR_COPY.guardar,
-      onGuardar: async ({ lineas, notas, modoValoracion: modo, docHeaderText }) => {
+      onGuardar: async ({ lineas, notas, modoValoracion: modo, docHeaderText, ocultarPreciosEnDocumento }) => {
         const cuerpo = lineas.length ? { modoValoracion: modo, lineas, notas } : { modoValoracion: modo, notas };
+        // SCRUM-607 (ALB-02): la misma trampa que describe `docHeaderText` justo debajo — si no se
+        // desestructura aqui, la casilla se pinta, se lee, se manda... y muere en esta linea.
+        if (ocultarPreciosEnDocumento !== undefined) cuerpo.ocultarPreciosEnDocumento = ocultarPreciosEnDocumento;
         // SCRUM-593 (DOC-03): sin esto el campo se pintaría, se leería con veredicto... y moriría
         // AQUÍ, en la desestructuración. Es «construido ≠ alcanzable» una capa más abajo, y no lo
         // habría cazado ningún test del editor: el editor sí lo manda.
@@ -2009,6 +2037,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
       modo = chk.checked ? 'VALORADO' : 'SIN_VALORAR';
       [...rows.children].forEach(syncRowToModo);
       updateTotales();
+      syncOcultarRow(); // SCRUM-607: sin precios no hay nada que ocultar
     });
     lbl.appendChild(chk);
     lbl.appendChild(document.createTextNode('Incluir precios en el parte'));
@@ -2024,6 +2053,42 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
     modoRow.appendChild(p);
   }
   box.appendChild(modoRow);
+
+  // ── SCRUM-607 (ALB-02) · «no ensenes los precios en el papel» ────────────────────────────
+  //
+  // El profesional deja el material en la obra y entrega un albaran. Hasta hoy o entregaba un
+  // documento con sus margenes a la vista de quien no deberia verlos, o no entregaba nada.
+  //
+  // 🔴 SOLO CON PRECIOS. Sin ellos no hay nada que ocultar, y una casilla que no hace nada es
+  // peor que ninguna: el pro la marca, no cambia el papel, y deja de fiarse del resto.
+  //
+  // 🔴 Y SIGUE VISIBLE EN `emitido`, a diferencia de la casilla de arriba. Ese es el caso real:
+  // «ya lo emiti y ahora me lo piden sin precios». Se congela al FIRMAR.
+  var ocultarPrecios = alb.ocultarPreciosEnDocumento === true;
+  var ocultarEditable = alb.estado === 'borrador' || alb.estado === 'emitido';
+  const ocultarRow = document.createElement('div');
+  ocultarRow.style.cssText = 'margin-bottom:10px';
+  const ocultarChk = document.createElement('input');
+  ocultarChk.type = 'checkbox';
+  ocultarChk.checked = ocultarPrecios;
+  ocultarChk.setAttribute('data-ocultar-precios', '1');
+  ocultarChk.disabled = !ocultarEditable;
+  ocultarChk.addEventListener('change', () => { ocultarPrecios = ocultarChk.checked; });
+  const ocultarLbl = document.createElement('label');
+  ocultarLbl.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);cursor:pointer';
+  ocultarLbl.appendChild(ocultarChk);
+  // ⚠️ MICROCOPY SIN APROBAR (regla 30). Sale del sitio unico `ALB_OCULTAR_PRECIOS_ROTULO`, con
+  // la grafia que CUENTA el censo de SCRUM-402, para que aprobarlo lo apague de una vez.
+  ocultarLbl.appendChild(document.createTextNode(ALB_OCULTAR_PRECIOS_ROTULO));
+  ocultarRow.appendChild(ocultarLbl);
+  const ocultarHint = document.createElement('p');
+  ocultarHint.style.cssText = 'margin:2px 0 0;color:var(--muted);font-size:12px';
+  ocultarHint.textContent = ALB_OCULTAR_PRECIOS_NOTA;
+  ocultarRow.appendChild(ocultarHint);
+  // Se muestra u oculta con el modo, sin re-pintar nada: el pro marca «con precios» y aparece.
+  function syncOcultarRow() { ocultarRow.style.display = modo === 'VALORADO' ? '' : 'none'; }
+  syncOcultarRow();
+  box.appendChild(ocultarRow);
 
   const rows = document.createElement('div');
   // Muestra/oculta las columnas precio+IVA de una fila según el modo actual.
@@ -2403,6 +2468,9 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
     // Solo se manda modoValoracion cuando es EDITABLE (borrador); en 'emitido' el
     // backend lo rechaza con 409 aunque el valor no cambie — mejor ni ofrecerlo.
     if (modoEditable) body.modoValoracion = modo;
+    // SCRUM-607 (ALB-02): se manda mientras el backend lo acepte —`borrador` y `emitido`—; en
+    // `firmado` responderia 409 aunque el valor no cambiara, asi que ni se ofrece ni se manda.
+    if (ocultarEditable) body.ocultarPreciosEnDocumento = ocultarPrecios;
     save.disabled = true;
     try {
       // SCRUM-303: en creación, ÉSTE es el único sitio del que sale el POST — y por eso no hay
@@ -2413,6 +2481,9 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
         // de SCRUM-424 (el PATCH lo guarda y el create no) visto desde el navegador.
         await onGuardar({
           lineas: out, notas: notas.value, modoValoracion: modo,
+          // SCRUM-607: la CREACION es otra puerta. Sin esto, marcar la casilla al crear se
+          // perderia en silencio — el defecto de SCRUM-424 visto desde el navegador.
+          ocultarPreciosEnDocumento: ocultarPrecios,
           ...(leidoCab.ok ? { docHeaderText: leidoCab.valores.docHeaderText } : {}),
         });
       } else {
