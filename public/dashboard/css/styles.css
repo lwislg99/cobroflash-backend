@@ -2,6 +2,44 @@
    YaQu Design System v2
    ============================================================ */
 
+/* ── SCRUM-731 · `hidden` TIENE QUE APAGAR. SIEMPRE. ───────────────────────────────────────
+   Esto NO es una regla de estilo: es la que impide una clase entera de defecto silencioso.
+
+   EL DEFECTO, MEDIDO EN NAVEGADOR REAL (4-sep-2026, con DOS controles):
+   `el.hidden = true` no oculta nada en cuanto el elemento tiene una clase de autor que
+   declara `display`. La regla del navegador para `[hidden]` es de ORIGEN USER-AGENT, y
+   cualquier declaracion de autor le gana. De los SEIS elementos que el editor de presupuesto
+   apaga con `hidden` (censo derivado del arbol, no lista a mano), CINCO seguian visibles:
+
+     .quote-conceptos                            flex        se ve
+     .quote-plantillas                           flex        se ve
+     .quote-line__field.quote-dto-global__campo  flex        se ve   (SCRUM-594)
+     .btn-ghost.btn-sm                           inline-flex se ve   (dos botones)
+     .field.quote-direccion-obra                 none        oculto  (SCRUM-602, ya arreglado)
+     <div hidden> pelado    (CONTROL)            none        oculto
+     <button hidden> pelado (CONTROL)            none        oculto
+
+   Los dos controles son lo que hace valida la medicion: un elemento sin clase da `none`, asi
+   que el instrumento distingue y esos cinco `se ve` no son un artefacto.
+
+   POR QUE UNA REGLA GLOBAL Y NO CINCO REGLAS `.clase[hidden]`:
+   arreglar por clase deja el cepo armado para el sexto elemento que alguien anada — que nacera
+   roto y en silencio, porque el codigo que lo apaga es correcto. Esta linea lo hace IMPOSIBLE
+   en vez de vigilado. Es ademas la regla que traen los `reset` de toda la vida.
+
+   EL `!important` ES NECESARIO Y ESTA MEDIDO: sin el, cualquier `.clase { display: flex }`
+   con la misma especificidad o mas le gana. Y es SEGURO, comprobado antes de escribirlo:
+     · ninguna regla del proyecto ENSENA a proposito un `[hidden]` (las dos que existen dicen
+       `display: none`, o sea que refuerzan esto);
+     · nadie apaga con `hidden` y ensena con `style.display` — censados los 14 elementos que
+       usan `hidden` en los 7 ficheros del dashboard, cero mezclan los dos mecanismos.
+
+   ⚠️ NO ESCRIBAS UNA REGLA `.loquesea[hidden]` NUEVA: esta las cubre todas. Las dos que
+   quedan en el fichero son anteriores y se conservan por historia; un trinquete de
+   `tests/scrum731-el-descuento-explicado.test.mjs` impide que crezcan. */
+[hidden] { display: none !important; }
+
+
 /* ── Variables ─────────────────────────────────────────────── */
 :root {
   /* Verde de marca: alias a tokens.css (fuente de verdad) para no duplicar el hex.
