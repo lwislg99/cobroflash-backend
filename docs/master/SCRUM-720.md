@@ -157,3 +157,47 @@ escribió, porque no había ni uno firmado. Ahora uno lo está. Convertirlo en �
 sido relajarlo; se apunta al **HECHO**: sin marca sólo si **consta aprobado**, y eso no se declara
 —se comprueba contra el registro con `constaAprobado` (SCRUM-709/710, por identidad y no por
 subcadena). Queda más fuerte que antes: un texto sin marca y sin aprobación sigue cayendo.
+
+---
+
+# SCRUM-720c · Los diez que faltaban: la pantalla del parte queda a cero
+
+**Medido contra:** `origin/main` = `119484af9d0fdf9f4beb008751a2be86d5179acd` · 2026-09-04T16:33:48+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-720c-los-diez-rotulos`
+
+El fundador firmó los **diez** que quedaban: seis tal cual y **cuatro cambiados**, con su motivo
+escrito en `docs/microcopy/2026-09-04-SCRUM-720-los-diez-que-faltaban.md`. Con éstos, las dos
+pantallas quedan a **CERO marcadores**.
+
+**Los cuatro cambios no son de estilo, son de significado**, y por eso van al registro: «el
+contenido ya no se **puede cambiar**» en vez de «ya no se toca», porque **los precios siguen
+abiertos** tras firmar; «elige mano de obra o materiales» en vez de «dile dónde va», porque nombra
+las dos opciones reales del vocabulario cerrado (regla 27); «quién ejecuta **este trabajo**», que
+dice cuál; y «todavía no has dado de alta a nadie en tu equipo», porque un estado vacío que no dice
+el siguiente paso es media pantalla.
+
+**EL MECANISMO SE VACÍA, NO SE RETIRA.** Las dos constantes siguen vivas con su control.
+
+## El guard ya no promete más de lo que cubre
+
+Era mi propio punto débil declarado: el trinquete medía sólo lo que `renderParte` pinta, y cinco de
+los diez vivían en caminos que ese banco no alcanza —el pad de firma, el error al cargar, la
+propuesta del dictado— más cuatro en otra pantalla. **Un guard cuyo nombre promete más de lo que
+cubre es peor que uno que no existe**: quien lo lea deja de mirar donde el guard no llega.
+
+Ahora son **dos capas**, y la cobertura vive en una constante que **sale en el rojo**, no sólo en un
+comentario:
+
+1. **① Lo que se pinta** — tres estados (borrador, firmado, sin líneas). **Cero.** Un cero en un
+   solo estado no es un cero: con el parte en borrador ya salía 0 antes de firmar nada.
+2. **② El catálogo entero** — `PARTE_TEXTOS` (27 textos) y `TEXTOS_ASIGNADOS` (5). **Cero.** Esta
+   capa **sí llega a la otra pantalla**, que era la pregunta pendiente.
+
+**Y lo que sigue sin cubrirse lo dice el propio guard:** que cada texto del catálogo **llegue** a
+una pantalla. Un texto declarado y nunca pintado pasaría las dos capas; para eso está el censo de
+SCRUM-402, que mira el fuente.
+
+⚠️ **Este fichero lo comparten tres tickets** (720b del router del nav, 720 de los 21 rótulos y este
+720c). No es un error de nadie: el número se repartió a varias sesiones y el guard de SCRUM-273
+obliga a un fichero por ticket. Se conservan **los tres**, por número, sin tocar una palabra de los
+otros.
