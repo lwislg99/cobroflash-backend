@@ -35,7 +35,10 @@ test('SCRUM-199 · ni el runner ni el verificador re-listan aislados/claves a ma
   // Son .mjs → el `#` NO se filtra (bien: aquí no hay campos privados, y _guard-texto lo decide por
   // extensión, no a ciegas).
   for (const rel of CONSUMIDORES) {
-    const fuente = leerFuente(path.join(RAIZ, rel));
+    // SUELO (SCRUM-719): el ancla es LO QUE ESTE MISMO GUARD EXIGE — que el consumidor importe
+    // del spec. Si `_evidencia-tanda` no sobrevive al filtro, las tres prohibiciones de abajo
+    // son ciertas por vacías, no porque el fichero esté limpio.
+    const fuente = leerFuente(path.join(RAIZ, rel), { ancla: '_evidencia-tanda' });
 
     // (1) Ningún NOMBRE de fichero .test.mjs a mano: los aislados viven SOLO en HIJOS_SPEC. El sufijo
     //     `.test.mjs` del filtro `readdir` NO casa: el patrón exige un NOMBRE (empieza por `\w`) antes

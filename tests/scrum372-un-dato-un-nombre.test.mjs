@@ -148,14 +148,19 @@ test('SCRUM-372 · `estadoCobro` ya NO se lee sobre un albarán en el dashboard'
   const ficheros = fs.readdirSync(dir).filter((f) => f.endsWith('.js'));
   assert.ok(ficheros.length > 10, `🔴 ESCÁNER CIEGO: solo ${ficheros.length} ficheros en el dashboard`);
 
+  // 🔴 SCRUM-719 · `lineasMiradas` contaba lo que ENTRA y la ceguera está en lo que SALE: con el
+  // filtro devolviendo la cadena vacía, este contador pasaba de 3.000 igual y el guard se
+  // declaraba limpio sin haber mirado una sola línea de código. Se cuenta lo filtrado.
   const culpables = [];
   let lineasMiradas = 0;
+  let lineasConCodigo = 0;
   for (const f of ficheros) {
     const lineas = fs.readFileSync(path.join(dir, f), 'utf8').split(/\r?\n/);
     lineas.forEach((linea, i) => {
       // Sin comentarios: un guard de texto se caza a sí mismo en el comentario que lo explica.
       const codigo = soloEjecutable(linea);
       lineasMiradas += 1;
+      if (codigo.trim()) lineasConCodigo += 1;
       // `alb.estadoCobro`, `a.estadoCobro`, `f.estadoCobro` — el albarán. `job.`/`j.` es el Trabajo.
       if (new RegExp(`\\b(alb|albaran)\\.${RETIRADO}\\b`).test(codigo)) {
         culpables.push(`public/dashboard/js/${f}:${i + 1} — ${codigo.trim().slice(0, 90)}`);
@@ -163,6 +168,12 @@ test('SCRUM-372 · `estadoCobro` ya NO se lee sobre un albarán en el dashboard'
     });
   }
   assert.ok(lineasMiradas > 3000, `🔴 ESCÁNER CIEGO: solo ${lineasMiradas} líneas miradas`);
+  // El suelo que de verdad respalda la negación: no cuántas líneas se leyeron, sino cuántas
+  // traían CÓDIGO tras filtrar. La proporción sale de los propios ficheros; se exige un tercio
+  // porque el dashboard está muy comentado y el número real ronda el 60 %.
+  assert.ok(lineasConCodigo > lineasMiradas / 3,
+    `🔴 ESCÁNER CIEGO: de ${lineasMiradas} líneas leídas solo ${lineasConCodigo} traían código. `
+    + 'Sobre las vacías la prohibición es cierta por vacía, no por limpia.');
 
   assert.deepEqual(
     culpables, [],

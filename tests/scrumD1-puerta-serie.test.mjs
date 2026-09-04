@@ -22,7 +22,7 @@
 // SCRUM-385 con los dos vacíos: cada uno solo, engañable; juntos, no.
 
 import test from 'node:test';
-import { soloEjecutable } from './_guard-texto.mjs';
+import { ejecutableDe } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -128,8 +128,15 @@ test('SCRUM-D1 · el front CONSUME el flag del servidor', () => {
 test('SCRUM-D1 · el front NO recalcula la condición (esa regla vive en el servidor)', () => {
   // La forma de la regla es `invoiceSeriesYear !== año`. Si aparece en el navegador, hay dos
   // sitios decidiendo lo mismo — el defecto de siempre, y el de fuera es el fácil de equivocar.
-  for (const [nombre, codigo] of [['puertaSerie.js', PUERTA], ['settingsView.js', SETTINGS]]) {
-    const sinComentarios = soloEjecutable(codigo);
+  // SUELO (SCRUM-719): cada fichero se ancla en SU propia función. El respaldo que ya había
+  // —que `invoiceSeriesYear` exista en el servidor— prueba que la regla existe, no que estos dos
+  // textos se hayan leído: con el filtro devolviendo la cadena vacía, la prohibición pasaba en
+  // los dos y el respaldo seguía en verde, porque mira OTRO fichero.
+  for (const [nombre, codigo, ancla] of [
+    ['puertaSerie.js', PUERTA, 'renderPuertaSerie'],
+    ['settingsView.js', SETTINGS, 'renderSettingsView'],
+  ]) {
+    const sinComentarios = ejecutableDe(codigo, { ancla, donde: nombre });
     assert.doesNotMatch(
       sinComentarios, /invoiceSeriesYear/,
       `🔴 ${nombre} está mirando invoiceSeriesYear: la condición se reimplementó en el navegador`,
