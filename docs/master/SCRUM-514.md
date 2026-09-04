@@ -4,7 +4,7 @@
 
 **Medido contra:** `origin/main` = `09fb0c5b2988b6b658204c48f4e6f8e10568ea1d` · 2026-09-03T14:05:18+01:00
 
-**Tanda:** **5.002 pruebas · 4.918 en verde · 0 fallos · 84 saltadas** — con `main` mergeado dentro
+**Tanda:** **5.081 pruebas · 4.997 en verde · 0 fallos · 84 saltadas** — con `main` mergeado dentro
 y medida DESPUÉS del último cambio de código.
 
 ---
@@ -106,14 +106,67 @@ olvido: **es el mismo rótulo aprobado dos veces con distinta grafía.**
 **Lo trajo mi propio ticket anterior**: en SCRUM-599 se aplicó el literal que dio el asesor en
 aquel encargo, sin que nadie mirara que la fuente ya tenía ese rótulo aprobado con el «+».
 
-🔴 **No lo decido yo.** Las dos son aprobaciones, y la regla 30 dice que el microcopy lo aprueba el
-asesor **sin excepción**: elegir una sería aprobar copy desde una sesión. Queda **declarado en
-`APARCADOS` con su motivo y con quién lo desbloquea**, que es exactamente para lo que existe esa
-lista — y el guard lo seguirá vigilando: el día que se decida, el commit borra la entrada y ajusta
-la fuente.
+🔴 **No lo decidí yo**: las dos eran aprobaciones, y la regla 30 dice que el microcopy lo aprueba
+el asesor **sin excepción**. Se declaró en `APARCADOS` esperando su palabra.
+
+### ✅ DECIDIDO el 3-sep-2026: gana `Nueva factura`, SIN el `+`
+
+El motivo, y queda en la **fuente** para que nadie lo revierta: SCRUM-599 aprobó los **cuatro**
+botones primarios de la misma familia —`Nuevo presupuesto`, `Nuevo albarán`, `Nueva factura`,
+`Nuevo cliente`— medidos en navegador real. **Dejar el `+` en uno solo rompe la familia**, y en un
+botón el `+` no informa: el botón ya se ve como botón.
+
+> ⚠️ **Y lo que NO es una incoherencia:** en **SCRUM-591** se aprobó `+ Nuevo cliente` **CON** `+`
+> y **se queda**. Allí es una `<option>` dentro de un `<select>` lleno de nombres de clientes, y el
+> `+` es **lo único** que distingue una acción de un nombre. **Botón sin `+`, opción de lista con
+> `+`.** Uniformarlos rompería el que sí informa.
+
+**El código ya estaba bien y no se ha tocado.** Se corrigió la **fuente** (commit propio, SCRUM-709)
+y se **borró la entrada de `APARCADOS`**: el guard vuelve a vigilar ese rótulo sin excepción.
 
 > Es la mejor prueba de que el guard hacía falta: **nació y en dos horas encontró una divergencia
 > que nadie había visto**, incluida la que yo mismo introduje ayer.
+
+## 🔴 Y AL MERGEAR, EL GUARD NACÍA CIEGO DE UN OJO
+
+Con `main` entró **SCRUM-709**, que parte la fuente en **dos**: `docs/microcopy/` —una aprobación,
+un fichero, donde van las NUEVAS— y el registro, ahora **congelado**. Este guard leía **sólo el
+congelado**, que es exactamente la ceguera que ese módulo avisa: *«un lector que mirase sólo uno de
+los dos daría no consta sobre aprobaciones reales»*. Un texto aprobado hoy y no aplicado **no lo
+habría visto nadie**, que es justo para lo que existe este guard.
+
+Se arregla usando **su** lector (`_microcopy-aprobada.mjs`) y **no un segundo barrido propio**: dos
+barridos de lo mismo divergen. De cada sitio se extrae lo que ese sitio usa —la última columna de
+las tablas en el registro; las **citas bajo «Texto aprobado»** en un fichero de aprobación—, y las
+citas se limitan a esa sección a propósito: el registro está lleno de notas en `>` que no son copy.
+
+> **Comprobado que no es decorativo**, que era lo fácil de dar por hecho: al cambiar el texto
+> aprobado en `docs/microcopy/2026-09-03-SCRUM-402-abrir-parte-fallo.md` por otro plausible, el
+> guard **cae y lo nombra**. Ve el sitio nuevo de verdad.
+
+## 🔴 Y OTRA VEZ: cambió el LECTOR, no la fuente
+
+Hace unas horas este guard nació ciego de un ojo porque **la fuente** se partió en dos. Al mergear
+ahora, lo que ha cambiado es **el lector**: SCRUM-715 apretó `constaAprobado()` de subcadena a
+identidad. Comprobado lo que hay que comprobar, sobre el árbol **ya mezclado**:
+
+* **sigue verde** (7/7) con el matching apretado;
+* **y sigue cayendo**: repetida la mutación —cambiar el texto de `docs/microcopy/` por otro
+  plausible— el guard cae y **lo nombra**. Un guard que pasó su mutación ANTES del merge no ha
+  probado nada sobre después.
+
+### Por qué NO se usa `literalesAprobados()`, que existe y haría esto en una línea
+
+Porque **responde otra pregunta**. Esa función contesta «¿consta aprobado?» y para eso acepta toda
+cita  del registro, **notas en prosa incluidas** — correcto para ella. Aquí la pregunta es
+«¿este copy de PANTALLA está pintado?», y la prosa de una nota no se pinta nunca.
+
+**Medido, no supuesto:** con  el cruce pasa de **0 a 13** sin aplicar, y **~11
+son notas** del registro. El guard nacería rojo por prosa y alguien lo apagaría en una hora. Entra
+un control negativo que fija exactamente eso.
+
+> ⚠️ **Y no es un segundo barrido:** los SITIOS los sigue barriendo ,
+> que es el lector único. Lo que cambia es el CRITERIO de selección sobre lo que él devuelve.
 
 ## La fuente, corregida (commit propio)
 

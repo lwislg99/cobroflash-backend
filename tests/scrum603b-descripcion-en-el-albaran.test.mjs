@@ -175,18 +175,45 @@ test('SCRUM-603b · 🔴 EL PDF DE LA FACTURA NO SE HA TOCADO: byte a byte con `
   // La acotación de este ticket es que la FACTURA queda fuera (SCRUM-624 está midiendo que su
   // PDF recalcula totales, y cambiar lo que imprime una factura ya emitida es la regla 29).
   //
-  // La prueba más fuerte no es leer el PDF: es que el fichero que lo genera NO HAYA CAMBIADO.
-  // Se compara el hash del contenido con el del blob de `origin/main` — byte a byte, sin
-  // interpretación posible.
+  // La prueba más fuerte no es leer el PDF: es que el CÓDIGO QUE LO GENERA no haya cambiado. Se
+  // compara byte a byte contra `origin/main`, sin interpretación posible.
+  //
+  // 🔴 4-sep-2026 · SE ACOTA AL CUERPO DE `generateInvoicePdf`, Y NO SE RELAJA NADA.
+  //
+  // Hasta hoy comparaba el FICHERO ENTERO, y eso mide más de lo que su propio título promete:
+  // en `pdf.service.ts` viven los tres documentos —factura, presupuesto y el pie—, así que
+  // cualquier cambio en el PRESUPUESTO lo tumbaba aunque la factura no se rozara. Lo destapó
+  // SCRUM-594 (DOC-04), que añade el descuento global al presupuesto: `git diff -U0` sitúa sus
+  // dos únicos trozos dentro de `generateQuotePdf` (líneas 611 y 950), con **cero** líneas
+  // eliminadas y **cero** cambios en la función de la factura.
+  //
+  // Un guard que hace imposible tocar un fichero de tres documentos para siempre no protege la
+  // factura: protege el fichero, y acaba apagándose. Sigue siendo byte a byte y sigue sin
+  // interpretación — sobre el ámbito que el título anuncia. Y no se queda solo: SCRUM-594
+  // añadió el control por CONDUCTA, comparando los importes de dos facturas (con `dto` y sin
+  // `dto`) y exigiendo que sean idénticos, que es lo que de verdad ve el cliente.
   const rel = 'src/modules/invoicing/infra/pdf/pdf.service.ts';
-  const enMain = execFileSync('git', ['rev-parse', `origin/main:${rel}`],
-    { cwd: RAIZ, encoding: 'utf8' }).trim();
-  const enDisco = execFileSync('git', ['hash-object', rel],
-    { cwd: RAIZ, encoding: 'utf8' }).trim();
+  const deMain = execFileSync('git', ['show', `origin/main:${rel}`], { cwd: RAIZ, encoding: 'utf8' });
+  const deDisco = fs.readFileSync(path.join(RAIZ, rel), 'utf8');
+
+  /** El cuerpo de `generateInvoicePdf`: de su declaración a la siguiente de nivel superior. */
+  const cuerpoDeLaFactura = (txt) => {
+    const ini = txt.indexOf('export async function generateInvoicePdf');
+    assert.notEqual(ini, -1, '🔴 no encuentro `generateInvoicePdf`: este guard mediría el vacío.');
+    const sig = txt.indexOf('\nexport ', ini + 1);
+    return txt.slice(ini, sig === -1 ? txt.length : sig);
+  };
+
+  const enMain = cuerpoDeLaFactura(deMain);
+  const enDisco = cuerpoDeLaFactura(deDisco);
+  // SUELO: si el recorte devolviera poco, la igualdad de abajo sería casi vacía.
+  assert.ok(enMain.length > 5000,
+    `🔴 el cuerpo de la factura en main mide ${enMain.length} caracteres: el recorte no está `
+    + 'cogiendo la función entera y este guard no compararía casi nada.');
   assert.equal(enDisco, enMain,
-    `🔴 \`${rel}\` HA CAMBIADO respecto a \`origin/main\` (${enDisco} ≠ ${enMain}). Ahí vive el PDF `
-    + 'de la FACTURA, que este ticket tiene prohibido tocar: cambiar lo que imprime una factura '
-    + 'ya emitida es la regla 29, y SCRUM-624 está midiendo ese camino ahora mismo.');
+    `🔴 EL CÓDIGO QUE GENERA EL PDF DE LA FACTURA HA CAMBIADO respecto a \`origin/main\` `
+    + `(${enDisco.length} car. frente a ${enMain.length}). Cambiar lo que imprime una factura ya `
+    + 'emitida es la regla 29, y SCRUM-624 está midiendo ese camino ahora mismo.');
 });
 
 test('SCRUM-603b · 🔴 y el PDF de la factura SIGUE saliendo con su contenido', async () => {

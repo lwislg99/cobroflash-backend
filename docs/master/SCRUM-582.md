@@ -4,7 +4,7 @@
 
 **Medido contra:** `origin/main` = `1a359f6ea2b90f110bfa40516d8bbcb58a7e0f94` · 2026-09-04T14:58:42+01:00
 
-**Tanda:** 5104 tests, 5020 pass, **0 fail**, 84 skipped — medida DESPUÉS del último cambio, entrada incluida, con Prisma regenerado. Suelo: suelo 4798 · total 5104 · margen 306.
+**Tanda:** 5128 tests, 5044 pass, **0 fail**, 84 skipped — medida DESPUES del ultimo cambio, entrada incluida, con main dentro (26 commits) y Prisma regenerado. Suelo: suelo 4798 · total 5128 · margen 330.
 
 ---
 
