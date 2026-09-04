@@ -15,28 +15,79 @@
 // texto, no aplicarlo nunca, y ninguna tanda decía nada. Es exactamente lo que pasó durante tres
 // semanas con los rótulos del 17-ago.
 //
-// ⚠️ LA FUENTE ES EL FICHERO, Y NADA MÁS. Ni este comentario, ni un ticket, ni un informe. Si el
-// fichero cambia, este guard cambia con él sin que nadie lo actualice: la lista NO se copia aquí.
+// ⚠️ LA FUENTE SON LOS DOS SITIOS DONDE VIVEN LAS APROBACIONES, y nada más: ni este comentario,
+// ni un ticket, ni un informe. Desde SCRUM-709 son `docs/microcopy/` (las nuevas, una por fichero)
+// y el registro congelado; se leen con SU lector —`_microcopy-aprobada.mjs`— y no con un segundo
+// barrido propio. Si cambian, este guard cambia con ellos sin que nadie lo actualice: la lista NO
+// se copia aquí.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { aprobacionesDeMicrocopy } from './_microcopy-aprobada.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const FUENTE = 'docs/MICROCOPY_APROBADA_SIN_APLICAR.md';
 
 /**
- * Los textos aprobados, sacados de la ÚLTIMA columna de las tablas de la fuente.
+ * Los textos aprobados, DE LOS DOS SITIOS DONDE VIVEN.
  *
- * Se descarta lo que no es copy —rutas, identificadores en mayúsculas, fragmentos de menos de
- * cuatro caracteres—: no son frases que un profesional lea, y colarlas convertiría el guard en
- * ruido. El filtro es por FORMA, nunca por contenido: excluir un texto por lo que dice sería
- * decidir por el fundador.
+ * 🔴 SCRUM-709 partió la fuente en dos y este guard nació leyendo sólo una:
+ *   · `docs/microcopy/` — una aprobación, un fichero. Donde van las NUEVAS.
+ *   · `docs/MICROCOPY_APROBADA_SIN_APLICAR.md` — el registro CONGELADO hasta el 3-sep.
+ *
+ * Leer sólo el congelado habría sido exactamente la ceguera que `_microcopy-aprobada.mjs` avisa:
+ * un texto aprobado HOY y no aplicado no lo vería nadie, y este guard existe justo para eso. Se
+ * usa SU lector y no se escribe un segundo: dos barridos de lo mismo divergen.
+ *
+ * De cada sitio se saca lo que ese sitio usa para el texto aprobado:
+ *   · el registro → la ÚLTIMA columna de sus tablas;
+ *   · un fichero de aprobación → las CITAS bajo el encabezado «Texto aprobado».
+ * Las citas se limitan a esa sección a propósito: el registro está lleno de notas en `>` que no
+ * son copy, y meterlas convertiría el guard en ruido.
+ *
+ * Se descarta lo que no es copy —rutas, identificadores en mayúsculas, fragmentos cortos—. El
+ * filtro es por FORMA, nunca por contenido: excluir un texto por lo que dice sería decidir por el
+ * fundador.
+ *
+ * 🔴 POR QUÉ NO SE USA `literalesAprobados()`, QUE EXISTE Y HARÍA ESTO EN UNA LÍNEA (SCRUM-715).
+ *
+ * Porque responde OTRA PREGUNTA. Esa función contesta «¿consta aprobado?» y para eso acepta toda
+ * cita `>` del registro, incluidas las notas en prosa — que es lo correcto para ella. Aquí la
+ * pregunta es «¿este copy de PANTALLA está pintado?», y la prosa de una nota no se pinta nunca.
+ *
+ * MEDIDO el 4-sep-2026, no supuesto: con `literalesAprobados()` el cruce pasa de 0 a 13 sin
+ * aplicar, y ~11 son notas del registro («⚠️ **Y el censo de marcadores dice UNO…**»). El guard
+ * nacería rojo por prosa y alguien lo apagaría en una hora.
+ *
+ * ⚠️ Y esto NO es un segundo barrido: los SITIOS los sigue barriendo `aprobacionesDeMicrocopy()`,
+ * que es el lector único. Lo que cambia es el CRITERIO de selección sobre lo que él devuelve.
  */
 function textosAprobados() {
-  const md = fs.readFileSync(path.join(RAIZ, FUENTE), 'utf8');
+  const out = new Set();
+  for (const ap of aprobacionesDeMicrocopy()) {
+    if (ap.origen === 'fichero') { for (const t of citasDeTextoAprobado(ap.texto)) out.add(t); continue; }
+    for (const t of celdasDeTabla(ap.texto)) out.add(t);
+  }
+  return [...out];
+}
+
+/** Las citas `> …` que van bajo un encabezado «Texto aprobado». */
+function citasDeTextoAprobado(md) {
+  const out = [];
+  let dentro = false;
+  for (const linea of md.split('\n')) {
+    if (/^#{1,6}\s/.test(linea)) { dentro = /texto\s+aprobado/i.test(linea); continue; }
+    if (!dentro) continue;
+    const m = /^>\s?(.+)$/.exec(linea.trim());
+    if (m && m[1].trim().length >= 4) out.push(m[1].trim());
+  }
+  return out;
+}
+
+/** La última columna de las tablas del registro congelado. */
+function celdasDeTabla(md) {
   const out = new Set();
   for (const linea of md.split('\n')) {
     const t0 = linea.trim();
@@ -92,16 +143,6 @@ const APARCADOS = [
       + 'guion H2. Lo desbloquea el fundador, no una sesión.',
   },
   {
-    // 🔴 LO CAZÓ ESTE GUARD EL DÍA QUE NACIÓ, y es una DIVERGENCIA DE APROBACIONES, no un olvido.
-    texto: '+ Nueva factura',
-    motivo: 'DOS APROBACIONES DEL MISMO ROTULO, con distinta grafia. La fuente lo aprobo el '
-      + '17-ago CON el «+» (Bloque 6, para `invoicesView.js:172`); SCRUM-599 lo dejo SIN el «+» '
-      + 'el 3-sep, con el literal que dio el asesor en ese encargo («Nueva factura»). Las dos '
-      + 'son aprobaciones y NINGUNA sesion puede elegir entre ellas: la regla 30 dice que el '
-      + 'microcopy lo aprueba el asesor, sin excepcion. Lo desbloquea el asesor diciendo cual '
-      + 'de las dos vale, y el commit que lo decida borra esta entrada y ajusta la fuente.',
-  },
-  {
     texto: 'No hemos podido identificar qué emite esta cuenta. Escríbenos antes de emitir nada.',
     motivo: 'La otra mitad del mismo respaldo (`settingsView.js:219`). Mismo motivo y mismo '
       + 'desbloqueo: regla 26.',
@@ -113,9 +154,9 @@ const APARCADOS = [
 test('SCRUM-514 · SUELO: la fuente se lee y tiene textos de sobra', () => {
   const t = textosAprobados();
   assert.ok(t.length >= 60,
-    `🔴 CIEGO: sólo he extraído ${t.length} textos aprobados de \`${FUENTE}\`. Todo lo que diga `
-    + 'este fichero se apoya en esa población: con menos, un «todo aplicado» no significa nada. '
-    + '¿Ha cambiado el formato de las tablas?');
+    `🔴 CIEGO: sólo he extraído ${t.length} textos aprobados de los DOS sitios donde viven. Todo `
+    + 'lo que diga este fichero se apoya en esa población: con menos, un «todo aplicado» no '
+    + 'significa nada. ¿Ha cambiado el formato de las tablas o el de `docs/microcopy/`?');
   const { cuantos } = corpus();
   assert.ok(cuantos >= 200,
     `🔴 CIEGO: sólo he barrido ${cuantos} ficheros de código. Un texto «no encontrado» podría ser `
@@ -144,7 +185,7 @@ test('SCRUM-514 · 🔴 TODO texto APROBADO está aplicado (salvo lo aparcado, c
     '🔴 HAY TEXTO APROBADO QUE NO LLEGA A LA PANTALLA:\n    '
     + sinAplicar.map((t) => JSON.stringify(t)).join('\n    ')
     + `\n\n  El fundador lo firmó y un profesional no lo está viendo. O se aplica —copiándolo de `
-    + `\`${FUENTE}\` LITERAL, con sus tildes y su «…» de un solo carácter— o se aparca AQUÍ con su `
+    + 'la aprobación LITERAL, con sus tildes y su «…» de un solo carácter— o se aparca AQUÍ con su '
     + 'motivo y quién lo desbloquea. Lo que no vale es dejarlo sin decidir: eso es lo que estuvo '
     + 'tres semanas pasando.');
 });
@@ -176,6 +217,18 @@ test('SCRUM-514 · CONTROL NEGATIVO: un texto NO aprobado no entra por estar en 
   assert.equal(aprobados.includes('Sin líneas.'), false,
     '🔴 un texto que sólo vive en el código aparece como «aprobado»: el extractor está leyendo '
     + 'algo que no son las tablas de la fuente.');
+});
+
+test('SCRUM-514 · CONTROL NEGATIVO: el extractor no se traga PROSA del registro', () => {
+  // Es la diferencia con `literalesAprobados()` y lo que justifica no usarla aquí: sus 150
+  // literales incluyen las notas en prosa del registro. Si esa prosa entrara, el guard nacería
+  // rojo por texto que nadie pinta nunca — medido el 4-sep: 13 sin aplicar, ~11 de ellos notas.
+  const prosa = textosAprobados().filter((t) => /\*\*/.test(t) || t.length > 160);
+  assert.deepEqual(prosa, [],
+    '🔴 ha entrado PROSA en el cruce: '
+    + prosa.map((p) => JSON.stringify(p.slice(0, 50))).join(', ')
+    + '. Son notas del registro, no copy de pantalla, y el guard se pondría rojo por algo que '
+    + 'nadie pinta.');
 });
 
 test('SCRUM-514 · CONTROL NEGATIVO: el extractor no se traga rutas ni constantes', () => {
