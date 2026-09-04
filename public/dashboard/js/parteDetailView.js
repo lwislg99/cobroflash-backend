@@ -53,7 +53,9 @@
     anadirLinea: M + 'Añadir línea',
     firmar: M + 'Firmar aquí mismo',
     yaFirmado: M + 'Firmado. El contenido ya no se toca.',
-    noSeGuardo: M + 'No se han podido guardar las líneas — vuelve a intentarlo',
+    // ✅ APROBADO literal por el fundador el 3-sep-2026, sin cambiar una letra. Consta en
+    // `docs/microcopy/2026-09-03-SCRUM-704-guardar-lineas-dictadas.md`.
+    noSeGuardo: 'No se han podido guardar las líneas — vuelve a intentarlo',
     noSePudoCargar: M + 'No se ha podido cargar el parte. Vuelve a intentarlo.',
     tipoReparacion: M + 'Reparación / asistencia',
     tipoMantenimiento: M + 'Mantenimiento',

@@ -3,6 +3,70 @@ import { z } from 'zod';
 import { validarNifEspanol } from './nifEspanol'; // SCRUM-575 (CONT-02)
 import { invalidTipoIva, invalidPrefijoSerie } from './fiscalInput'; // SCRUM-217
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-712 · CUÁNTOS DECIMALES ADMITE UN NÚMERO DE DINERO EN LA PUERTA
+//
+// Hasta hoy: `z.number().nonnegative()` — decimales ILIMITADOS. Medido ejecutando el esquema
+// real: `1.23456789` entraba y se guardaba tal cual. No es teórico — es el camino por el que
+// entró el `30,003` de la única divergencia real medida en este árbol (SCRUM-624).
+//
+// 🔴 Y NO LO ACOTABA NADIE AGUAS ABAJO. `Product.price` es `Decimal(12,2)` y la base trunca en
+// silencio, pero el precio de una LÍNEA de presupuesto vive en `Quote.lines`, que es una columna
+// **`Json`**: ahí no hay truncado. Se guarda con todos sus decimales.
+//
+// ── LA DECISIÓN DEL FUNDADOR (4-sep-2026), y por qué son dos números y no uno ─────────────
+//
+//   PRECIO UNITARIO  → 4 decimales   (`price`, `costeUnitario` de una línea)
+//   IMPORTE          → 2 decimales   (`total` de un tramo, `amount` de un cobro)
+//
+// **Un importe en euros tiene dos decimales y punto.** Un PRECIO UNITARIO no: un electricista
+// compra cable a 0,4567 €/m. Acotarlo a 2 destruiría EN SILENCIO precisión que el profesional
+// escribió — 0,46 en vez de 0,4567 son 20 céntimos de su margen sobre 60 metros, y nadie se lo
+// dice. Es la misma familia de defecto que este árbol lleva dos días cerrando: un dato que se
+// pierde sin avisar.
+//
+// **POR QUÉ 4 Y NO 3 O 5:** porque 4 ya es la escala que esta casa usa cuando necesita más de
+// dos — `Merchant.costEstimate` es `Decimal(8,4)` y `Product.vat` es `Decimal(5,4)`. No es un
+// número que suene bien: es el que ya está en el esquema.
+//
+// 🔴 CUATRO DECIMALES EN LA PUERTA NO SON CUATRO AGUAS ABAJO, y esto es lo que impide que esto
+// reabra el 30,003. El importe de línea, la base, la cuota y el total siguen a DOS, y el redondeo
+// se hace UNA SOLA VEZ Y AL FINAL (SCRUM-293, ya escrito; SCRUM-436 lo vigila al pintar). El
+// defecto viejo nunca fue que entraran decimales: fue que se redondeaba en DOS SITIOS con DOS
+// CONVENCIONES.
+//
+// ── ⚠️ POR QUÉ `multipleOf` Y NO CONTAR DECIMALES A MANO ──────────────────────────────────
+//
+// Los `number` de coma flotante MIENTEN con los decimales: `1.005` se representa como
+// `1.00499999999999989`. Una acotación que cuente decimales sobre el bit acepta o rechaza según
+// el valor que toque. `multipleOf` de zod usa una comparación decimal segura, y **está medido en
+// `tests/scrum712-decimales-de-precio.test.mjs` contra las tres trampas** —`1.005`, `8.165` y
+// `0.1+0.2`— antes de darlo por bueno.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/** Un PRECIO UNITARIO: lo que cuesta UNA unidad. Admite más precisión que un importe. */
+export const DECIMALES_PRECIO_UNITARIO = 4;
+/** Un IMPORTE en euros. Dos decimales y punto. */
+export const DECIMALES_IMPORTE = 2;
+
+/** El paso mínimo para N decimales: 4 → 0.0001. Se deriva; no se escribe el número dos veces. */
+const pasoDe = (decimales: number) => Number('0.' + '0'.repeat(decimales - 1) + '1');
+
+/**
+ * Acota los decimales de un número de dinero, y el rojo NOMBRA el valor y sus decimales.
+ *
+ * «Validación fallida» obliga a quien lo lea a ir a buscar qué número fue. Aquí lo dice.
+ */
+function conDecimales(base: z.ZodNumber, decimales: number, queEs: string) {
+  return base.multipleOf(pasoDe(decimales), {
+    error: (iss) => {
+      const v = String(iss.input);
+      const tiene = v.includes('.') ? v.split('.')[1].length : 0;
+      return `${queEs} ${v} tiene ${tiene} decimales y el máximo son ${decimales}.`;
+    },
+  });
+}
+
 // ------- QUOTES -------
 
 const QuoteLineSchema = z.object({
@@ -13,7 +77,7 @@ const QuoteLineSchema = z.object({
   // dinero: el `superRefine` de abajo las vuelve a exigir a todas las que NO son cabecera, con la
   // misma dureza de siempre (positiva y no negativa).
   qty: z.number().positive().optional(),
-  price: z.number().nonnegative().optional(),
+  price: conDecimales(z.number().nonnegative(), DECIMALES_PRECIO_UNITARIO, 'el precio').optional(),
   /**
    * SCRUM-661 (③) · EL COSTE UNITARIO CONGELADO EN EL MOMENTO DE LA VENTA.
    *
@@ -31,7 +95,7 @@ const QuoteLineSchema = z.object({
    * que es una afirmación que nadie ha hecho. Por eso es `.optional()` y NO `.default(0)`: un
    * default convertiría el silencio en un dato, y ese dato sería falso.
    */
-  costeUnitario: z.number().nonnegative().optional(),
+  costeUnitario: conDecimales(z.number().nonnegative(), DECIMALES_PRECIO_UNITARIO, 'el coste unitario').optional(),
   /**
    * SCRUM-594 (DOC-04) · el descuento de ESTA línea, en PORCENTAJE (0-100).
    *
@@ -42,6 +106,12 @@ const QuoteLineSchema = z.object({
    *
    * El tope de 100 no es cosmético: un 150 % dejaría el precio NEGATIVO, y un presupuesto no
    * puede pedirle dinero al cliente por una línea.
+   *
+   * ⚠️ NO LLEVA `conDecimales`, Y ES DELIBERADO (resolución del conflicto con SCRUM-712, 4-sep):
+   * un PORCENTAJE no es ni un precio unitario ni un importe. La decisión del fundador cubre esos
+   * dos y no un tercero, y meter una acotación no decidida dentro de una resolución de conflicto
+   * es cómo entra una decisión que nadie tomó. Está preguntado; si se aprueba, entra en un commit
+   * propio con su motivo.
    */
   dto: z.number().min(0).max(100).optional(),
   // SCRUM-217 (1124): `min(0).max(1)` aceptaba CUALQUIER fracción — un 15 % pasaba sin queja, y
@@ -131,7 +201,8 @@ const QuoteTierSchema = z.object({
   description: z.string().optional(),
   lines: z.array(QuoteLineSchema).min(1),
   recommended: z.boolean().optional().default(false),
-  total: z.number().optional(), // calculado en backend, puede venir del cliente
+  // SCRUM-712 · es un IMPORTE, no un precio unitario: dos decimales.
+  total: conDecimales(z.number(), DECIMALES_IMPORTE, 'el total del tramo').optional(), // calculado en backend, puede venir del cliente
 });
 
 export const CreateQuoteSchema = z.object({
@@ -237,7 +308,7 @@ export const RejectQuoteSchema = z.object({
 export const CreateChargeSchema = z.object({
   merchant_id: z.number().int().positive(),
   concept: z.string().min(1),
-  amount: z.number().positive(),
+  amount: conDecimales(z.number().positive(), DECIMALES_IMPORTE, 'el importe del cobro'),
   currency: z.string().length(3),
   // Cliente existente (preferido): evita duplicar clientes al crear el cobro.
   customer_id: z.number().int().positive().optional(),
@@ -267,7 +338,7 @@ export const PSPWebhookSchema = z.object({
   charge_id: z.union([z.string(), z.number()]),
   method: z.string().optional(),
   bank_ref: z.string().optional(),
-  amount: z.number().positive().optional(),
+  amount: conDecimales(z.number().positive(), DECIMALES_IMPORTE, 'el importe notificado').optional(),
   currency: z.string().length(3).optional(),
   ts: z.string().optional(),
 });

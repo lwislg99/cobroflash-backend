@@ -323,7 +323,11 @@ async function initApp() {
       case 'partes-oficina':
         viewTitle.textContent = 'Partes por valorar';
         if (typeof window.renderPartesOficinaView === 'function') {
-          window.renderPartesOficinaView(viewContainer, opts);
+          // 🔴 SCRUM-720b · era `opts`, y el parametro de `renderView` se llama `options`.
+          // `ReferenceError: opts is not defined` en cada pulsacion: el titulo YA se habia
+          // puesto en la linea de arriba, asi que la pantalla se quedaba en blanco con el
+          // rotulo correcto — «no pasa nada». Medido pulsando, no leyendo.
+          window.renderPartesOficinaView(viewContainer, options);
         }
         break;
       case 'albaranes':

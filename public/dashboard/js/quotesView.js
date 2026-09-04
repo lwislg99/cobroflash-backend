@@ -1084,6 +1084,89 @@ blockDelivery.appendChild(descWrapper);
   let lines = [];
   let currentMerchant = null;
   let customersList = [];
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-591 (DOC-01) · DAR DE ALTA UN CLIENTE SIN SALIR DEL DOCUMENTO
+  //
+  // LA VÍCTIMA: el fontanero está haciendo el presupuesto con el cliente delante, y al llegar
+  // aquí el cliente no está en la lista. Hasta hoy tenía que ABANDONAR el documento a medias,
+  // irse a Clientes, darlo de alta y volver a empezar. Eso rompe «presupuesto en 30 segundos».
+  //
+  // 🔴 ABRE EL FORMULARIO QUE YA EXISTE, y eso es el ticket entero. Un segundo formulario aquí
+  // habrían sido dos altas que divergen, y el aviso de duplicado de CONT-05 se habría quedado
+  // en una sola — justo donde más duplicados nacen, que es el alta rápida con prisa.
+  //
+  // ✅ MICROCOPY FIRMADA POR EL ASESOR el 3-sep-2026: «+ Nuevo cliente», 15 caracteres.
+  //
+  // Cabe con margen en el peor caso medido en navegador real (SCRUM-591): viewport de 901px
+  // —tres columnas—, 247,7px útiles ≈ 18 caracteres anchos, 29 estrechos, 34 de texto español.
+  //
+  // 🔴 Y ES EL MISMO LITERAL QUE EL BOTÓN DE LA LISTA DE CLIENTES (SCRUM-599, aprobado y medido
+  // allí en navegador). Un nombre por acción: dos nombres distintos para la misma acción es cómo
+  // un profesional aprende que son dos acciones distintas.
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+
+  /** El valor de la opción de alta. No es un id: ningún cliente puede llamarse así. */
+  const VALOR_ALTA_RAPIDA = "__alta_cliente__";
+  const TEXTO_ALTA_RAPIDA = "+ Nuevo cliente";
+  /** Lo que había seleccionado antes de abrir el formulario, para poder volver si se cancela. */
+  let clienteAntesDelAlta = "";
+
+  /**
+   * Pinta las opciones del selector. UNA sola función: la carga inicial y el alta rápida pintan
+   * lo mismo, y si divergieran, el cliente recién creado saldría con otro formato que el resto.
+   */
+  function pintarOpcionesDeCliente() {
+    const select = fieldCustomer.select;
+    const seleccionado = select.value;
+    select.innerHTML = "";
+    const optEmpty = document.createElement("option");
+    optEmpty.value = "";
+    optEmpty.textContent = "Selecciona un cliente…";
+    select.appendChild(optEmpty);
+
+    // 🔴 LA PRIMERA, justo detrás del placeholder — NUNCA al final (asesor, 3-sep-2026). En un
+    // `<select>` nativo con doscientos clientes el final de la lista no existe: la acción que
+    // desbloquea al profesional no puede estar donde no va a mirar nadie.
+    const optAlta = document.createElement("option");
+    optAlta.value = VALOR_ALTA_RAPIDA;
+    optAlta.textContent = TEXTO_ALTA_RAPIDA;
+    select.appendChild(optAlta);
+
+    customersList.forEach(function (c) {
+      const opt = document.createElement("option");
+      opt.value = c.id;
+      opt.textContent = c.name + (c.phone ? " (" + c.phone + ")" : "");
+      select.appendChild(opt);
+    });
+
+    if (seleccionado && seleccionado !== VALOR_ALTA_RAPIDA) select.value = seleccionado;
+  }
+
+  /**
+   * Abre EL MISMO formulario de alta que la pantalla de Clientes y, cuando el servidor confirma
+   * el cliente, lo deja SELECCIONADO sin recargar la página.
+   */
+  function abrirAltaDeCliente() {
+    if (!window.altaClienteModal) {
+      setAlert("error", "No se ha podido abrir el alta de cliente.");
+      return;
+    }
+    window.altaClienteModal.abrirNuevo({
+      alGuardar: function (cliente) {
+        if (!cliente || !cliente.id) return;
+        // Entra en la MISMA lista que alimenta el resto de la vista (la vista previa lo busca
+        // ahí por id): si sólo se añadiera la `<option>`, el documento tendría un cliente
+        // seleccionado que para el resto del código no existe.
+        customersList.push(cliente);
+        pintarOpcionesDeCliente();
+        fieldCustomer.select.value = String(cliente.id);
+        clienteAntesDelAlta = fieldCustomer.select.value;
+        renderPreview();
+        scheduleDraftSave();
+      },
+    });
+  }
   let draftSaveTimer = null;
 
   // ---------- AUTOGUARDADO DE BORRADOR (FRONT1-4) ----------
@@ -3245,19 +3328,7 @@ if (Number.isFinite(n) && n >= 0) {
       merchantInfo.textContent = miText.replace(/ · $/, "");
 
       // Rellenar select de clientes
-      const select = fieldCustomer.select;
-      select.innerHTML = "";
-      const optEmpty = document.createElement("option");
-      optEmpty.value = "";
-      optEmpty.textContent = "Selecciona un cliente…";
-      select.appendChild(optEmpty);
-
-      customersList.forEach(function (c) {
-        const opt = document.createElement("option");
-        opt.value = c.id;
-        opt.textContent = c.name + (c.phone ? " (" + c.phone + ")" : "");
-        select.appendChild(opt);
-      });
+      pintarOpcionesDeCliente();
 
       // Restaurar borrador autoguardado (si no venimos de una plantilla)
       let draftRestored = false;
@@ -3280,6 +3351,15 @@ if (Number.isFinite(n) && n >= 0) {
   loadInitialData();
 
   fieldCustomer.select.addEventListener("change", function () {
+    // SCRUM-591 (DOC-01) · la entrada de ALTA no es un cliente: es una acción. Se devuelve el
+    // selector a lo que había ANTES de abrir el formulario — si el profesional cierra sin
+    // guardar, el documento tiene que quedar exactamente como estaba, no con un valor raro.
+    if (fieldCustomer.select.value === VALOR_ALTA_RAPIDA) {
+      fieldCustomer.select.value = clienteAntesDelAlta;
+      abrirAltaDeCliente();
+      return;
+    }
+    clienteAntesDelAlta = fieldCustomer.select.value;
     renderPreview();
     scheduleDraftSave();
   });
