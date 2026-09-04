@@ -289,7 +289,12 @@ nada. Lo que sí he comprobado es que el fixture del 409 tiene la forma que S3 d
 
 # SCRUM-684 (b) · **FASE B: el guard acotado — una avería también se entrega en papel**
 
-**Medido contra:** `origin/main` = `8303db7524d3e0e90659c49f840d47adefaf6d5f` · 2026-09-04T21:37:50+01:00
+**Medido contra:** `origin/main` = `5b95cad27516f1eb106e069c434e404ad3b03151` · 2026-09-05T00:04:13+01:00
+
+> **Re-anclado el 5-sep-2026 al mezclar `main` dentro de la rama**, porque una base caduca cuando
+> `main` se mueve. El ancla previa —el `origin/main` que terminaba en `8303db75`, del 4-sep-2026 a
+> las 21:37:50+01:00— era la del árbol sobre el que se midieron la caja del modal y los seis rojos,
+> y se conserva aquí escrita para que no se pierda contra qué se midió aquello.
 
 > ⚠️ **CORREGIDO el 4-sep-2026: NO es SCRUM-725, es SCRUM-683** — lo dice el propio encabezado del
 > bloque de arriba, y el asesor rectificó su cita («la saqué del título de un ticket de Jira sin
@@ -451,3 +456,64 @@ que los fixtures no se tocan, y además son de la numeración (S4) y del candado
 
 `prisma/schema.prisma` · ninguna columna · el camino de emisión · los 22 fixtures · la base de
 staging ni la de producción. El turno de staging se tomó y **se soltó** (lo hace el propio script).
+
+---
+
+## El merge de `main`, y la tanda RE-MEDIDA después (S1 · 5-sep-2026)
+
+`main` había avanzado mucho desde que se abrió el conflicto de esta rama, así que se mezcló
+**DENTRO** de la rama —nunca rebase, nunca `--force`— y **la tanda se corrió DESPUÉS del merge, no
+antes**: mezclar `main` es un cambio, y una tanda anterior al cambio no dice nada del árbol que se
+entrega.
+
+Se mezcló **dos veces**, y la segunda no estaba planeada: al ir a re-anclar, `main` se había movido
+otra vez. **57 commits de `main` en total** — 51 hasta `9545711d`, y 6 más hasta `5b95cad2`.
+
+| tanda | árbol medido | tests | pass | fail | saltados |
+|---|---|---:|---:|---:|---:|
+| tras el 1.er merge | `origin/main` = `9545711d` · 2026-09-05T00:01:44+01:00 | 5406 | 5318 | **0** | 88 |
+| tras el 2.º merge | `origin/main` = `5b95cad2` · 2026-09-05T00:08:47+01:00 | 5411 | 5323 | **0** | 88 |
+
+Las unidades son **tests**, no ficheros: los 5 de diferencia entre una tanda y otra son los que
+entraron con **SCRUM-747** en el segundo merge, no tests míos. Los **7 tests** de
+`tests/scrum684-albaran-en-averia.test.mjs` salen en verde en las dos, y el barrido que los busca
+devuelve **10 líneas** —los 7 más las 3 de `scrum257` y `scrum303` que citan el ticket—: un cero
+ahí habría sido «no supe mirar», no «no hay».
+
+### ⚠️ Los 88 saltados, y por qué NINGUNO es un fallo tapado
+
+Los 88 **declaran su motivo** —comprobado: **cero** saltos mudos, y **cero** de este carril—. Por
+grupos, y suman 88 exactos: **78 tests** gateados por `QA_DB_TEST` / `A55_DB_TEST` /
+`BOT_SUITE_TEST` (la tanda de staging), **9** por `LIBRO_PG_URL` (piden un Postgres desechable) y
+**1** por no poder crear un enlace a fichero en esta máquina (EPERM de Windows), que declara además
+qué control positivo portable cubre el mismo mecanismo. Los 9 de `LIBRO_PG_URL` los canta la propia
+suite por su nombre al terminar, que es lo que impide leer su «0 fallos» como «todo corrió».
+
+### 🔴 EL HUECO, y hay que decirlo: los dos fallos de arriba NO se han vuelto a medir
+
+Los dos que quedan en `tests/albaran.test.mjs` —el formato `AB260001` y el candado de versión de
+SCRUM-361— viven **dentro de los dos únicos tests gateados de ese fichero** (`SCRUM-14`, línea 202,
+y `SCRUM-65`, línea 331). En esta tanda **saltaron**, así que el `fail 0` de arriba **no dice nada
+sobre ellos**: no están arreglados, están sin ejecutar. Los otros **15 tests** del fichero sí
+corrieron y pasan, incluido el unitario de `formatAlbaranNumber`, que es justamente el que
+contradice al fixture. Esta sesión **no ejecuta nada contra staging**, ni el preview, así que el
+hueco se declara en vez de rellenarlo con una suposición.
+
+### Los dos censos de mudez: medido que este carril NO entra en ninguno
+
+Son **dos poblaciones distintas** y se midieron por separado, que es la única forma de no
+confundirlas:
+
+| censo | qué población mide | los ficheros de este carril |
+|---|---|---|
+| **SCRUM-719** (`censo:mudez`) | guards que llaman a `soloEjecutable` | **0 llamadas** → NO APLICA |
+| **SCRUM-745** (`meta:mutaciones`) | preguntar por TEXTO sobre un fuente | **0 sitios** en la superficie |
+
+La segunda se midió **reusando el detector del propio `scrum745`** —extraído de su fichero por AST,
+sin escribir un segundo criterio que pudiera divergir del suyo— y con su suelo delante: el detector
+reusado ve **1 + 1** sitios en los dos sintéticos de control, **0** en el control negativo de la
+lista, y **1 sitio real** en `scrum740`. O sea que el **0** de este carril es «no lo hace», no «no
+supe mirar».
+
+Así que aquí no hay ninguna `MUTACIONES_QUE_ME_TUMBAN` que declarar: declararla sin que exista el
+defecto que vigila sería la «cobertura aparente» contra la que avisa el propio SCRUM-745.
