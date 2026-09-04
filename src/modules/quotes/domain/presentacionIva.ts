@@ -88,11 +88,31 @@ export interface PieDePresupuesto {
  * ⚠️ El desglose sale de `calcVatBreakdown`, la misma primitiva que usan la factura y el libro.
  * Aquí no se suma, no se redondea y no se multiplica nada.
  */
+/** Dos decimales, sin elegir convención nueva: es la que ya usa `calcVatBreakdown`. */
+function redondear2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+/**
+ * La línea con su `dto` YA aplicado al precio. Devuelve una línea normal, así que todo lo que
+ * viene después —`calcVatBreakdown` incluido— no sabe que hubo un descuento, que es justo lo
+ * que permite no tocar el motor fiscal.
+ */
+function aplicarDtoDeLinea(l: VatLine): VatLine {
+  const dto = Number((l as unknown as Record<string, unknown>).dto);
+  if (!Number.isFinite(dto) || dto <= 0) return l;
+  const price = Number((l as unknown as Record<string, unknown>).price);
+  if (!Number.isFinite(price)) return l;
+  return { ...l, price: price * (1 - Math.min(100, dto) / 100) } as VatLine;
+}
+
 export function pieDePresupuesto(params: {
   lineas: VatLine[] | null | undefined;
   modo: ModoIva;
   /** `IVA`, `IGIC`… lo resuelve quien pinta (SCRUM-647): aquí solo se rotula. */
   nombreImpuesto: string;
+  /** SCRUM-594 · el descuento global del documento, en EUROS. Ausente = no hay. */
+  descuentoGlobal?: number | string | null;
 }): PieDePresupuesto {
   if (params.modo === 'no_incluido') {
     return { filas: [], leyenda: LEYENDA_IVA_NO_INCLUIDO };
@@ -101,14 +121,64 @@ export function pieDePresupuesto(params: {
   const lineas = Array.isArray(params.lineas) ? params.lineas : [];
   if (lineas.length === 0) return { filas: [], leyenda: null };
 
-  const bd = calcVatBreakdown(lineas);
-  const filas: FilaDeTotal[] = [{ etiqueta: 'Base imponible:', importe: bd.base }];
-  for (const e of bd.entries) {
+  // ── 🔴 SCRUM-594 (DOC-04) · LOS DESCUENTOS, Y POR QUÉ ENTRAN COMO PRECIO YA EFECTIVO ────
+  //
+  // `calcVatBreakdown` NO SE TOCA. De él cuelgan el libro registro, el modelo 303 y el XML de
+  // VeriFactu (20 importadores), y cuál de las cuatro convenciones de redondeo del árbol debe
+  // mandar está en la asesoría con SCRUM-619, 623 y 624. Así que el descuento de línea se
+  // aplica ANTES, sobre el precio, y aquí llega una línea normal: el motor fiscal ni se entera.
+  //
+  // El descuento GLOBAL sí se resta después, porque va en euros y no cabe en un precio unitario.
+  // Se prorratea proporcional a la base de cada tipo —la única forma que no elige favorecer a
+  // nadie— y el ÚLTIMO tipo absorbe el céntimo que sobra, para que la suma de los repartos sea
+  // EXACTAMENTE el importe que el cliente firmó. Es conservación aritmética, no una convención.
+  //
+  // ⚠️ REGLA DEL PRESUPUESTO, QUE NO ES DOCUMENTO FISCAL. Antes de que un descuento llegue a una
+  // FACTURA, este prorrateo va a la asesoría con SCRUM-619, 623 y 624.
+  const efectivas = lineas.map((l) => aplicarDtoDeLinea(l));
+  const bd = calcVatBreakdown(efectivas);
+
+  const sinDescuento = calcVatBreakdown(lineas as VatLine[]).base;
+  const descuentoLineas = redondear2(sinDescuento - bd.base);
+  const globalPedido = Number(params.descuentoGlobal);
+  const global = Number.isFinite(globalPedido) && globalPedido > 0
+    ? Math.min(redondear2(globalPedido), bd.base)
+    : 0;
+
+  const filas: FilaDeTotal[] = [];
+  // 🔴 SIN DESCUENTO, EL BLOQUE ES EXACTAMENTE EL DE ANTES. Ni una fila de más, ni un rótulo
+  // distinto: un presupuesto anterior a este ticket tiene que salir idéntico. Los flags
+  // «activable» no llevan columna (regla 27) — el dato ES el flag.
+  if (descuentoLineas > 0 || global > 0) {
+    filas.push({ etiqueta: 'Suma de líneas:', importe: sinDescuento });
+    if (descuentoLineas > 0) filas.push({ etiqueta: 'Descuento:', importe: -descuentoLineas });
+    if (global > 0) filas.push({ etiqueta: 'Descuento global:', importe: -global });
+  }
+  filas.push({ etiqueta: 'Base imponible:', importe: redondear2(bd.base - global) });
+
+  // El reparto del global entre tipos, en CÉNTIMOS para que conserve el importe exacto. El
+  // último absorbe la diferencia; sin eso, la suma de lo descontado no sería la firmada.
+  const totalCents = Math.round(bd.base * 100);
+  const globalCents = Math.round(global * 100);
+  let acumulado = 0;
+  const quitaDelTipo = bd.entries.map((e, i) => {
+    if (globalCents <= 0 || totalCents <= 0) return 0;
+    const cents = i === bd.entries.length - 1
+      ? globalCents - acumulado
+      : Math.round((globalCents * Math.round(e.base * 100)) / totalCents);
+    acumulado += cents;
+    return cents / 100;
+  });
+
+  bd.entries.forEach((e, i) => {
     // Heredado de SCRUM-623 y de la factura: una fila con cuota CERO no se pinta. Se mantiene
     // igual en los dos documentos a propósito — divergir aquí inventaría una segunda forma de
     // documento, y el defecto (una base al 0 % que no aparece) es de los DOS.
-    if (e.cuota === 0) continue;
-    filas.push({ etiqueta: `${params.nombreImpuesto} ${e.rate}%:`, importe: e.cuota });
-  }
+    if (e.cuota === 0) return;
+    // La cuota de este tipo, sobre su base YA descontada de la parte de global que le tocó.
+    const cuota = redondear2((e.base - quitaDelTipo[i]) * (e.rate / 100));
+    if (cuota === 0) return;
+    filas.push({ etiqueta: `${params.nombreImpuesto} ${e.rate}%:`, importe: cuota });
+  });
   return { filas, leyenda: null };
 }

@@ -14,6 +14,7 @@
 // las reescribiría, y la tanda seguiría VERDE porque el dato SÍ está en la base.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
+import { soloEjecutable } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -114,9 +115,8 @@ test('SCRUM-580 · 🔴 se escribe `Prisma.DbNull`, no el `null` de JS ni `JsonN
   // anterior de esta línea se cazó A SÍ MISMA en el comentario que EXPLICA la prohibición —el
   // fichero que prohíbe usar `JsonNull` tiene que poder nombrarlo para decir por qué—. Es la
   // lección de SCRUM-349, y hoy ha aparecido tres veces.
-  const soloCodigo = src
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+  const soloCodigo = soloEjecutable(src)
+    .split('\n').map((l) => soloEjecutable(l)).join('\n');
   // SUELO: el desnudador no se ha llevado el fichero entero por delante.
   assert.match(soloCodigo, /Prisma\.DbNull/,
     '🔴 CIEGO: al quitar los comentarios ha desaparecido también el código. La comprobación de '
@@ -342,7 +342,7 @@ test('SCRUM-580 · 🔴 las cuatro cuentan como SIN LA FIRMA DEL FUNDADOR', () =
 test('SCRUM-580 · 🔴 la vista NO repite los textos: los lee de la pieza', () => {
   const v = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/customersView.js'), 'utf8');
   // Sin comentarios: el porqué puede nombrar los textos, el código no debe repetirlos.
-  const codigo = v.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+  const codigo = soloEjecutable(v).split('\n').map((l) => soloEjecutable(l)).join('\n');
   assert.match(codigo, /FC\.TEXTOS_ETIQUETAS\.rotulo/, '🔴 el rótulo no sale de la pieza.');
   assert.match(codigo, /FC\.TEXTOS_ETIQUETAS\.placeholder/, '🔴 el placeholder no sale de la pieza.');
   // SCRUM-584 · REANCLADO: la vista ya NO menciona el rótulo de la columna, porque la cabecera

@@ -21,6 +21,7 @@
 // se toca. Aquí solo se devuelve lo que el usuario metió.
 
 import test from 'node:test';
+import { soloEjecutable } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -113,7 +114,7 @@ test('SCRUM-370 · la pantalla NO enseña totales ni califica el importe', () =>
   // o con IVA (SCRUM-403): llamarlo de una de las dos formas sería afirmar lo que no consta.
   const job = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/jobDetailView.js'), 'utf8');
   const i = job.indexOf('Gastos de este trabajo');
-  const bloqueUI = job.slice(i, i + 2600).replace(/\/\/[^\n]*/g, '');
+  const bloqueUI = soloEjecutable(job.slice(i, i + 2600));
   for (const prohibido of ['Total', 'total', 'margen', 'Base imponible', 'con IVA']) {
     assert.ok(!bloqueUI.includes(prohibido),
       `🔴 la sección de gastos menciona «${prohibido}»: o invade rentabilidad por obra, o afirma algo que Expense no dice`);

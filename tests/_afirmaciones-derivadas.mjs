@@ -45,6 +45,7 @@
 // dice *«el 30-jul había 21»*, y eso seguirá siendo cierto cuando sean 22. No se registra, y se
 // dice por qué: lo que caduca en silencio es el número SIN fecha.
 import fs from 'node:fs';
+import { soloEjecutable } from './_guard-texto.mjs';
 import path from 'node:path';
 
 /** El campo que marca la pertenencia. Un solo sitio lo nombra (igual que `CAMPO_TENENCIA`). */
@@ -66,7 +67,7 @@ export function modelosDelTexto(texto) {
     if (abre) { actual = { nombre: abre[1], campos: [] }; continue; }
     if (actual && /^\s*\}\s*$/.test(linea)) { out.push(actual); actual = null; continue; }
     if (!actual) continue;
-    const campo = /^\s*([A-Za-z0-9_]+)\s+\S/.exec(linea.replace(/\/\/.*$/, ''));
+    const campo = /^\s*([A-Za-z0-9_]+)\s+\S/.exec(soloEjecutable(linea));
     if (campo) actual.campos.push(campo[1]);
   }
   return {

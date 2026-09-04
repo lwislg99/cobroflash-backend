@@ -9,6 +9,7 @@
 // adjuntos al sellado de la firma.
 
 import test from 'node:test';
+import { soloEjecutable } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -66,7 +67,7 @@ test('SCRUM-382 · el dedupe NO usa el hash del SELLO de la firma', () => {
   // Son dos cosas distintas con la palabra «hash» en medio. Atarlas habría metido el dedupe de
   // adjuntos dentro del camino de emisión (regla 38).
   const src = fs.readFileSync(path.join(RAIZ, 'src/modules/jobs/domain/fotoDuplicada.ts'), 'utf8');
-  const sinComentarios = src.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  const sinComentarios = soloEjecutable(src);
   assert.ok(!sinComentarios.includes('computeAlbaranContentHash'),
     '🔴 el dedupe de fotos está usando el sellador del albarán: son cosas distintas');
   assert.ok(!/^import /m.test(sinComentarios.replace(/import crypto[^\n]*\n/, '')),

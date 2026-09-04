@@ -15,6 +15,7 @@
 // registra su aviso**: para poder decir que un plan está parado hay que verlo. Por eso son DOS
 // lotes y no un filtro — y por eso R2 vigila que el aviso siga ocurriendo.
 import test from 'node:test';
+import { soloEjecutable } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -269,7 +270,7 @@ test('SCRUM-399 · R5: el opt-out se decide EN LA CONSULTA, no dentro del bucle'
   };
   visita(sf);
   assert.ok(selector, '🔴 ESCÁNER CIEGO: no encuentro `seleccionarLotes`. Si se renombró, ARREGLA EL ESCÁNER.');
-  const cuerpo = selector.getText(sf).replace(/\/\/.*$/gm, '');
+  const cuerpo = soloEjecutable(selector.getText(sf));
   assert.match(cuerpo, /customerId:\s*\{\s*notIn/,
     '🔴 EL HAMBRE DEL LOTE HA VUELTO: la consulta ya no excluye a los planes sin canal. Volverán a ' +
     'ocupar los primeros huecos de los ' + TOPE_LOTE + ' todos los días —porque nunca se ' +
