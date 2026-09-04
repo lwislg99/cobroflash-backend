@@ -65,7 +65,7 @@ const CENSO = Object.freeze([
   ['format', false, 'reescribe el schema pero solo su formato; nadie lo usa y el riesgo de falso positivo con la palabra «format» es alto'],
   ['version', false, 'solo informa'],
   ['debug', false, 'solo informa'],
-  ['db seed', false, 'tiene camino declarado (`npm run db:seed`); escribe DATOS y queda como hueco declarado'],
+  ['db seed', true, 'ESCRIBE DATOS y prisma/seed.ts no comprueba el destino (decision del asesor, 4-sep)'],
   ['studio', false, 'tiene camino declarado (`npm run prisma:studio`); es interactivo'],
   ['init', false, 'crea ficheros en un proyecto nuevo; inofensivo aqui'],
   ['dev', false, 'levanta un Postgres local de desarrollo'],
@@ -81,7 +81,7 @@ test('SCRUM-744 · 🔴 SUELO: el censo cubre los subcomandos que publica el CLI
     '  Vuelve a medirlo: `node node_modules/prisma/build/index.js --help`, y lo mismo para `db` y ' +
     '`migrate`. Cada entrada nueva se clasifica AQUI, con su motivo.');
   const bloqueados = CENSO.filter(([, b]) => b);
-  assert.ok(bloqueados.length >= 7,
+  assert.ok(bloqueados.length >= 8,
     `🔴 solo ${bloqueados.length} subcomandos bloqueados. Antes de este ticket eran DOS y eso era el defecto.`);
 });
 
