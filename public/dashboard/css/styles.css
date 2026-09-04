@@ -1399,6 +1399,24 @@ html, body { overflow-x: clip; }
    Sin tokens nuevos: reusa `.quote-line__field` y `.quote-line__label`, que son los que ya
    visten cualquier campo con etiqueta de esta pantalla. El botón es `.btn-ghost.btn-sm`, el
    mismo que «Usar plantilla» — un descuento global es una acción ocasional, no una principal. */
+/* SCRUM-587 (CONT-14) · la tira que PROPONE el descuento pactado con el cliente.
+   Sin colores propios: hereda los de `.alert.info`, que ya son tokens de DESIGN.md. Aquí sólo
+   vive la disposición. El botón se lleva su objetivo táctil de 44 px explícito porque `btn-sm`
+   se queda corto y el guard que debería cazarlo está ciego (SCRUM-711). */
+.quote-propuesta-dto {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+/* SIN `.quote-propuesta-dto[hidden]`: la regla GLOBAL `[hidden] { display:none !important }`
+   (línea 40, SCRUM-731) ya la cubre, y el trinquete de ese ticket cazó ésta el mismo día que
+   nació. Repetirla por clase es arreglar el síntoma sin fiarse de la global — y la siguiente
+   tira que naciera la volvería a copiar. Se comprobó que la global existe ANTES de quitarla. */
+.quote-propuesta-dto .btn-sm { min-height: 44px; }
+
 .quote-dto-global { margin-top: 8px; }
 
 /* ── SCRUM-602 (DOC-12) · el campo libre de la dirección de la obra ────────────────────────

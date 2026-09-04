@@ -112,6 +112,38 @@ const CENSO = Object.freeze({
   //
   // El dia que el fundador firme los cuatro textos, esta entrada se BORRA — no se pone a 0.
   'jobAsignados.js': 1,
+  // 🔴 SCRUM-587 (CONT-14) · 4-sep-2026 · `quotesView.js` VUELVE A ENTRAR, con 2, y a conciencia.
+  //
+  // Salió el 3-sep cuando el asesor firmó «+ Nuevo cliente» (SCRUM-591). Entra ahora por la tira
+  // que PROPONE el descuento pactado con el cliente: son DOS literales —el rótulo del botón que
+  // acepta la propuesta y el texto que enuncia el acuerdo—, y los dos se PINTAN.
+  //
+  // No se inventa el texto mientras tanto (regla 30) y no se aplaza el ticket: el mecanismo sí
+  // existe y funciona; lo que falta es la firma. El asesor la da CON LA CAJA MEDIDA delante —así
+  // firmó el 591, con 901 px y 247,7 px útiles— y el servidor de medición lleva caído toda la
+  // sesión (`CONNECT_TIMEOUT`). Darle un número calculado como si estuviera medido es exactamente
+  // lo que él pidió que no se hiciera, así que se espera y se deja el marcador puesto.
+  //
+  // El DATO sí se enseña junto al marcador (el «10 %»): es del profesional, no es microcopy, y sin
+  // él la tira no le dejaría decidir nada — que es todo el punto del ticket.
+  //
+  // El día que se firmen los dos textos, esta entrada se BORRA — no se pone a 0 (SCRUM-424 /
+  // SCRUM-405): `censoActual()` sólo lista ficheros CON marcadores, y el trinquete APRIETA.
+  'quotesView.js': 2,
+  // 🔴 SCRUM-587 (CONT-14) · 4-sep-2026 · `customersView.js` ENTRÓ Y SALIÓ EL MISMO DÍA.
+  //
+  // Entró con 1 —el rótulo del campo del descuento pactado en la ficha del cliente— y el asesor lo
+  // firmó esa misma tarde: **«Descuento pactado (%)»**, 21 caracteres, CON LA CAJA MEDIDA delante
+  // (342 px a 390, donde caben 29 caracteres anchos en una línea; 462,6 px a 929). Es la primera
+  // firma de esta casa que no ha tenido que esperar a que volviera el medidor.
+  //
+  // Su entrada se BORRA, no se pone a 0 (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista
+  // ficheros CON marcadores, así que un 0 sería una bajada permanente sin anotar, y el trinquete
+  // dejaría de apretar. COMPROBADO antes de borrarla: el censo dice `customersView.js: 1 → 0`.
+  //
+  // ⚠️ Y salir del censo NO saca de la vigilancia — lo fija R4b. El texto sigue SIN LA FIRMA DEL
+  // FUNDADOR, y eso lo declara `DTO_POR_DEFECTO_SIN_APROBAR = 1` en la propia vista: que no se
+  // pinte marcador no significa que esté firmado arriba.
   // SCRUM-507 (13-ago-2026): `aiQuoteAssistant.js` ENTRO y SALIO del censo el mismo dia. Entro con
   // 2 —el aviso de la linea que no se propone porque su IVA era ilegible, y la marca por linea de
   // lo que la IA se invento— y el fundador FIRMO los dos textos en el mismo ticket.

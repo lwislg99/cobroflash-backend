@@ -125,6 +125,11 @@ export function revisarAsignacionDeBloques(fuente, ruta = 'quotesView.js') {
   const envioOpaco = (envio.opacos ?? []).map((o) => `${o.texto} (línea ${o.linea})`);
 
   return {
+    // 🔴 4-sep-2026 · AQUÍ HUBO DOS NOMBRES PARA LO MISMO y se queda UNO. SCRUM-587 sacaba esto
+    // como `opacos` y SCRUM-602 como `envioOpaco` (arriba), los dos el mismo día y sin saberlo.
+    // Dejar los dos habría sido peor que dejar cualquiera: dos nombres para el mismo dato es cómo
+    // nace un instrumento que mide dos veces y se contradice. Se queda `envioOpaco`, que es el que
+    // ya consume `scrum602-direccion-obra.test.mjs`.
     envio, pintado, bloqueDe, clavesDeEnvio, bloquesDelFormulario,
     dejaronDeViajar, sinControlEnPantalla, enElBloqueEquivocado, sinSitio, bloquesFantasma,
     envioOpaco,

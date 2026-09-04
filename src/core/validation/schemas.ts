@@ -561,6 +561,22 @@ export const customerCreateSchema = z.object({
   // 🔴 Nunca se coacciona a false: false es un valor LEGITIMO («declara que no»), asi que degradar
   // a false una lectura fallida seria el peor sitio para hacerlo — nadie notaria el fallo (SCRUM-271).
   recargoEquivalencia: z.boolean().nullable().optional(),
+  /**
+   * SCRUM-587 (CONT-14) · El descuento PACTADO con este cliente, en PORCENTAJE (0-100).
+   *
+   * `nullable().optional()` como sus vecinos `recargoEquivalencia`, `internalRef` y `tags`, y
+   * **nunca `.default(0)`**: los tres estados sin inventar ninguno — ausente = no se toca ·
+   * `null` = no hay descuento pactado · `0` = se pactó expresamente un 0 %. Con un default, todos
+   * los clientes que ya existen pasarían a estar «declarados con 0 %» y nadie sabría a cuáles se
+   * les llegó a preguntar.
+   *
+   * 🔴 EL MISMO `conDecimales` QUE EL `dto` DE LA LÍNEA, y no es simetría cosmética: este valor
+   * ATERRIZA en ese campo. Si aquí cupieran más decimales, un `33,333 %` guardado en el cliente
+   * daría un presupuesto que no se puede guardar, y el profesional no tendría forma de saber por
+   * qué. El tope de 100 tampoco es cosmético: un 150 % dejaría el precio NEGATIVO.
+   */
+  dtoPorDefecto: conDecimales(z.number().min(0).max(100), DECIMALES_PORCENTAJE, 'el descuento por defecto')
+    .nullable().optional(),
 });
 
 export const customerUpdateSchema = customerCreateSchema.partial();
