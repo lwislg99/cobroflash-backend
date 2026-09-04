@@ -31,6 +31,7 @@
 import { esc } from '../../../../core/utils/utils';
 import { calcAlbaranTotales, AlbaranLinea } from '../../domain/albaran.service';
 import { formatImporteEs } from '../../../../core/utils/utils'; // SCRUM-636: el sitio unico
+import { documentoEnsenaPrecios } from '../../domain/albaranPrecios'; // SCRUM-607 (ALB-02)
 
 /**
  * El MISMO formato de dinero que imprime el PDF (`albaranPdf.service.ts` → `fmtMoney`).
@@ -61,9 +62,17 @@ export const LEYENDA_IMPORTES_ORIENTATIVOS =
  * `SIN_VALORAR` sale **byte a byte como salía antes de SCRUM-468**: son 4 albaranes ya firmados en
  * producción y su pantalla no se toca.
  */
-export function renderLineasAlbaran(lineas: unknown, modoValoracion: unknown): string {
+export function renderLineasAlbaran(
+  lineas: unknown,
+  modoValoracion: unknown,
+  // SCRUM-607 (ALB-02): el interruptor del documento. Opcional y `false` por defecto — los cuatro
+  // albaranes ya firmados en produccion siguen saliendo byte a byte como salian.
+  ocultarPreciosEnDocumento?: unknown,
+): string {
   const filas: any[] = Array.isArray(lineas) ? (lineas as any[]) : [];
-  const valorado = modoValoracion === 'VALORADO';
+  // EL MISMO DECISOR QUE EL PDF, no una copia. Esta pantalla es la que el cliente abre desde el
+  // movil: taparlo en el papel y no aqui seria no taparlo.
+  const valorado = documentoEnsenaPrecios({ modoValoracion, ocultarPreciosEnDocumento });
 
   if (!filas.length) return '<p class="meta">Sin líneas.</p>';
 
