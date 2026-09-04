@@ -48,6 +48,19 @@ import { invalidTipoIva, invalidPrefijoSerie } from './fiscalInput'; // SCRUM-21
 export const DECIMALES_PRECIO_UNITARIO = 4;
 /** Un IMPORTE en euros. Dos decimales y punto. */
 export const DECIMALES_IMPORTE = 2;
+/**
+ * Un PORCENTAJE (SCRUM-594, aprobado por el fundador el 4-sep-2026).
+ *
+ * 🔴 CONSTANTE PROPIA Y NO `DECIMALES_IMPORTE`, aunque hoy valgan lo mismo. Un porcentaje **no
+ * es un importe**: comparten número por ahora, y llamar «importe» a un descuento del 33,33 %
+ * haría que el día que uno de los dos se mueva se muevan los dos sin que nadie lo decida. La
+ * decisión del fundador enumera TRES tipos —precio unitario, importe y porcentaje—, y aquí se
+ * escriben los tres.
+ *
+ * Acotarlo cierra la misma puerta que SCRUM-712: sin esto, un `33,3333 %` mete decimales
+ * infinitos en `Quote.lines`, que es una columna `Json` y no trunca nada.
+ */
+export const DECIMALES_PORCENTAJE = 2;
 
 /** El paso mínimo para N decimales: 4 → 0.0001. Se deriva; no se escribe el número dos veces. */
 const pasoDe = (decimales: number) => Number('0.' + '0'.repeat(decimales - 1) + '1');
@@ -96,6 +109,24 @@ const QuoteLineSchema = z.object({
    * default convertiría el silencio en un dato, y ese dato sería falso.
    */
   costeUnitario: conDecimales(z.number().nonnegative(), DECIMALES_PRECIO_UNITARIO, 'el coste unitario').optional(),
+  /**
+   * SCRUM-594 (DOC-04) · el descuento de ESTA línea, en PORCENTAJE (0-100).
+   *
+   * 🔴 `.optional()` Y NUNCA `.default(0)`, por el mismo motivo que `costeUnitario` justo
+   * arriba: si no se declara aquí, `z.object` lo BORRA en silencio y no llegaría a
+   * `Quote.lines`; y un default convertiría el silencio en un dato. Una línea SIN `dto` —y lo
+   * son todas las anteriores a este ticket— tiene que seguir dando exactamente el mismo total.
+   *
+   * El tope de 100 no es cosmético: un 150 % dejaría el precio NEGATIVO, y un presupuesto no
+   * puede pedirle dinero al cliente por una línea.
+   *
+   * 🔴 Y DOS DECIMALES, aprobado por el fundador el 4-sep-2026 como TERCER tipo junto al precio
+   * unitario (4) y al importe (2) de SCRUM-712. Sin esto, un `33,3333 %` vuelve a meter decimales
+   * infinitos por la puerta que aquel ticket acaba de cerrar — y aquí duele igual, porque el
+   * descuento acaba multiplicando un precio que sí está acotado. Usa el MISMO mecanismo que main
+   * (`conDecimales`), con su mensaje que nombra el valor y sus decimales.
+   */
+  dto: conDecimales(z.number().min(0).max(100), DECIMALES_PORCENTAJE, 'el descuento').optional(),
   // SCRUM-217 (1124): `min(0).max(1)` aceptaba CUALQUIER fracción — un 15 % pasaba sin queja, y
   // el 15 % no es un tipo de IVA español. El validador decía que sí a un impuesto inventado, y
   // ese tipo acaba en la cuota que entra en la huella. Ahora solo pasan los que existen.
@@ -203,6 +234,14 @@ export const CreateQuoteSchema = z.object({
   payMethods: z.array(z.enum(['card', 'bizum', 'transfer'])).min(1).optional(),
   // A20.4: qué datos del cliente muestra el DOCUMENTO (null = todos los presentes)
   docFields: z.object({ name: z.boolean(), phone: z.boolean(), taxId: z.boolean(), email: z.boolean() }).partial().nullable().optional(),
+  /**
+   * SCRUM-594 (DOC-04) · el descuento GLOBAL del presupuesto, en EUROS.
+   *
+   * `nullable` Y `optional`, y no son lo mismo: omitido = «este cliente no manda el campo»
+   * (todo lo anterior a este ticket), `null` = «lo quitó a propósito». Sin `nullable`, borrar un
+   * descuento ya puesto sería un 400 — el mismo criterio que `docHeaderText` justo debajo.
+   */
+  discountGlobalAmount: z.number().nonnegative().nullable().optional(),
   // SCRUM-593 (DOC-03) · los dos textos libres del documento.
   //
   // `nullable` Y `optional` son cosas DISTINTAS y las dos hacen falta: omitido = «este cliente

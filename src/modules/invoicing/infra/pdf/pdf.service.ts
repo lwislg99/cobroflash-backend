@@ -608,6 +608,16 @@ export async function generateQuotePdf(params: {
   };
   // A20.4: qué datos del cliente se muestran (null/undefined = todos los presentes)
   docFields?: { name?: boolean; phone?: boolean; taxId?: boolean; email?: boolean } | null;
+  /**
+   * SCRUM-594 (DOC-04) · el descuento GLOBAL del presupuesto, en euros.
+   *
+   * 🔴 SÓLO EN EL PRESUPUESTO. El PDF de FACTURA no lo recibe y no es un olvido: allí el total
+   * se RECALCULA desde `lines` con un motor distinto del que alimenta el libro registro y
+   * VeriFactu (SCRUM-624, abierto), así que meter descuentos en ese camino multiplicaría ese
+   * defecto en vez de heredarlo. Aquí es seguro porque este documento imprime `params.total`,
+   * el GUARDADO, y las filas del pie las decide el dominio.
+   */
+  discountGlobalAmount?: number | string | null;
   // SCRUM-593 (DOC-03) · los dos textos libres del documento. MULTILÍNEA: los saltos se respetan
   // (PDFKit los honra en `doc.text`), que es lo que exige SCRUM-655 (T6). Opcionales: sin ellos
   // el documento sale EXACTAMENTE como hasta hoy.
@@ -937,6 +947,10 @@ const pie = pieDePresupuesto({
   lineas: lineasParaDesglose as any,
   modo: modoDelDocumento,
   nombreImpuesto: impuesto,
+  // SCRUM-594 (DOC-04) · el descuento global. Las filas nuevas —«Suma de líneas», «Descuento»,
+  // «Descuento global»— las decide el DOMINIO, igual que las de IVA: aquí no se suma nada, se
+  // empuja una entrada más al array. Es exactamente lo que SCRUM-604b dejó preparado.
+  descuentoGlobal: params.discountGlobalAmount ?? null,
 });
 filasDeTotales.push(...pie.filas);
 

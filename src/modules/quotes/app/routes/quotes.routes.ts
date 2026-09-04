@@ -141,7 +141,10 @@ router.post('/create', async (req, res) => {
       canonicalLines = betterTier.lines; // líneas del tier recomendado como referencia
     } else {
       canonicalLines = body.lines!;
-      totalNum = calcTotal(canonicalLines);
+      // SCRUM-594 (DOC-04) · el descuento global entra en el MISMO sitio único que ya calculaba
+      // el total. No hay una segunda aritmética: `calcTotal` es quien produce el `Quote.total`
+      // que se guarda y que el PDF del presupuesto imprime tal cual (`pdf.service.ts:954`).
+      totalNum = calcTotal(canonicalLines, body.discountGlobalAmount ?? null);
     }
 
     // Atribuir el técnico que crea la cotización (null = propietario)
@@ -195,6 +198,9 @@ router.post('/create', async (req, res) => {
           paymentTerms: body.paymentTerms ?? null,
           customBillingPlan: body.customBillingPlan ?? undefined, // SCRUM-27: plan de tramos personalizado
           docFields: body.docFields ?? undefined, // A20.4: qué datos del cliente muestra el documento
+          // SCRUM-594 (DOC-04) · el descuento global, en euros. `?? null` como los textos de
+          // abajo: aquí «no lo mandó» y «lo quitó» acaban igual —columna vacía— y null lo dice.
+          discountGlobalAmount: body.discountGlobalAmount ?? null,
           // SCRUM-593 (DOC-03): los dos textos libres del documento. `?? null` y no `?? undefined`
           // porque aquí null y «no lo mandó» acaban igual —columna vacía— y null lo dice mejor.
           docHeaderText: body.docHeaderText ?? null,
@@ -246,6 +252,10 @@ router.post('/create', async (req, res) => {
         },
         customer: { name: customer.name, phone: customer.phone, email: customer.email, legalName: (customer as any).legalName, taxId: (customer as any).taxId }, // A20.4
         docFields: ((quote as any).docFields as any) ?? null, // A20.4
+        // SCRUM-594 (DOC-04) · el descuento global, DE LA FILA y no del body: el papel dice lo
+        // que quedó GUARDADO, igual que `docHeaderText` unas líneas abajo. Ausente = el
+        // documento sale exactamente como salía.
+        discountGlobalAmount: (quote as any).discountGlobalAmount ?? null,
         // SCRUM-656 (T7) · el modo de IVA y las cláusulas de cierre, leídos igual que `docFields`:
         // del presupuesto guardado, y con respaldo si el campo todavía no existe. Ausente = el
         // documento sale como salía.
@@ -587,6 +597,10 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
             },
             customer: { name: customer.name, phone: customer.phone, email: customer.email, legalName: (customer as any).legalName, taxId: (customer as any).taxId }, // A20.4
         docFields: ((quote as any).docFields as any) ?? null, // A20.4
+        // SCRUM-594 (DOC-04) · el descuento global, DE LA FILA y no del body: el papel dice lo
+        // que quedó GUARDADO, igual que `docHeaderText` unas líneas abajo. Ausente = el
+        // documento sale exactamente como salía.
+        discountGlobalAmount: (quote as any).discountGlobalAmount ?? null,
             // SCRUM-656 (T7) · el modo de IVA y las cláusulas de cierre, leídos igual que `docFields`:
             // del presupuesto guardado, y con respaldo si el campo todavía no existe. Ausente = el
             // documento sale como salía.
