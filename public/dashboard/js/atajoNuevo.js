@@ -27,9 +27,12 @@
   var SELECTOR_MODAL =
     ".modal-overlay, .modal-backdrop, #qq-modal-backdrop, #onboarding-backdrop";
 
-  // MICROCOPY APROBADA por el asesor el 3-sep-2026, A LA ESPERA DE LA FIRMA DEL FUNDADOR
-  // (regla 30). Van aquí y en un solo sitio: si cada vista escribiera el suyo, cambiar el copy
-  // sería tocar cuatro ficheros y el cuarto se quedaría atrás.
+  // ✅ MICROCOPY FIRMADA POR EL FUNDADOR el 4-sep-2026 (regla 30). El asesor la había aprobado el
+  // 3-sep y quedaba a la espera; ya no. El registro de la aprobación vive en
+  // `docs/microcopy/2026-09-04-SCRUM-599-atajo-nuevo.md` — una aprobación, un fichero.
+  //
+  // Van aquí y en un solo sitio: si cada vista escribiera el suyo, cambiar el copy sería tocar
+  // cuatro ficheros y el cuarto se quedaría atrás.
   var TEXTOS = {
     "quotes-list": "Nuevo presupuesto",
     invoices: "Nueva factura",
@@ -38,7 +41,13 @@
 
   // Cuántas ranuras esperan la firma del fundador. Se declara para que nadie tenga que contarlas
   // a mano y para que añadir una sin decirlo salga rojo.
-  var SIN_APROBAR = 3;
+  //
+  // 🔴 BAJA DE 3 A 0 el 4-sep-2026: el fundador firmó los tres rótulos. **NO se borra la
+  // constante**, y ésa es la diferencia con una entrada del censo de SCRUM-402 —que sí se borra—:
+  // aquí el cero no es «no hay nada que declarar», es «las tres que hay están firmadas». Si mañana
+  // entra una cuarta lista con su atajo, su rótulo nace SIN FIRMAR y este número tiene que subir.
+  // Borrarlo dejaría el hueco sin sitio donde declararse.
+  var SIN_APROBAR = 0;
 
   var registro = Object.create(null);
 
