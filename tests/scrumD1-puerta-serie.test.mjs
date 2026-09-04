@@ -22,6 +22,7 @@
 // SCRUM-385 con los dos vacíos: cada uno solo, engañable; juntos, no.
 
 import test from 'node:test';
+import { soloEjecutable } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -128,7 +129,7 @@ test('SCRUM-D1 · el front NO recalcula la condición (esa regla vive en el serv
   // La forma de la regla es `invoiceSeriesYear !== año`. Si aparece en el navegador, hay dos
   // sitios decidiendo lo mismo — el defecto de siempre, y el de fuera es el fácil de equivocar.
   for (const [nombre, codigo] of [['puertaSerie.js', PUERTA], ['settingsView.js', SETTINGS]]) {
-    const sinComentarios = codigo.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+    const sinComentarios = soloEjecutable(codigo);
     assert.doesNotMatch(
       sinComentarios, /invoiceSeriesYear/,
       `🔴 ${nombre} está mirando invoiceSeriesYear: la condición se reimplementó en el navegador`,
