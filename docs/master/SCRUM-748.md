@@ -158,3 +158,117 @@ tarde ya está corriendo las declaraciones de este ticket.
 * `public/dashboard/js/invoicesView.js` — `metaDelSemaforo`, el marcador y `INV_SIN_APROBAR`.
 * `tests/scrum748-no-lo-se-no-es-al-dia.test.mjs` — **nuevo**, 7 tests + las dos mutaciones declaradas.
 * `tests/scrum402-marcador-no-se-pinta.test.mjs` — el censo sube: `invoicesView.js: 1`, con motivo.
+
+---
+---
+
+# APÉNDICE · SCRUM-748 (2/2) · El guard nunca estuvo mudo. Lo estaba el rótulo.
+
+**Fecha:** 5-sep-2026 · **Medido contra:** `origin/main` = `f707619865a5be86988a4d34b9b0e97b4449169b`
+
+CI puso la 748 en rojo con `mudas 2`. **No era ninguna de las cuatro causas previstas.**
+
+## 0 · El dato que cierra la causa
+
+En mi máquina, `vivas 4 · mudas 0`. En CI, `mudas 2`. Y **el fichero es idéntico byte a byte
+contra el remoto**: `invoicesView.js` 38.688 = 38.688, el test 16.006 = 16.006.
+
+Con eso, la causa no puede estar en el fichero. La única diferencia relevante del job era que **no
+compilaba**. Aparté `dist/` en local y salió exactamente el rojo de CI.
+
+## 🔴 E · El test no llegó a EJECUTARSE
+
+```
+Error: Cannot find module '../dist/modules/billing/domain/metodoDeCobro.js'
+    at cargarDashboard (tests/_banco-vistas.mjs:1003)
+ℹ tests 1 · pass 0 · fail 1
+```
+
+`scrum748` llama a `cargarDashboard` **en el top level**. Sin `dist/`, el fichero **muere antes de
+registrar un solo test** —ese `tests 1` es el fichero—, la línea `✖ <nombre>` no se imprime nunca,
+y el meta-guard, que buscaba ese rojo, no lo encontraba y dictaba **MUDO**.
+
+**El guard de 748 nunca estuvo mudo:** con `dist/` presente cae con las dos mutaciones. Lo que
+mintió fue el rótulo — el defecto de SCRUM-741 («grita pero apunta mal») cometido por mí en 745.
+
+## 1 · ① El meta-guard discrimina por LÍNEA BASE
+
+**No reconociendo mensajes de error.** Eso es una lista negra: sólo sabe decir que no a lo que le
+enseñaron, y caduca con el primer fallo que nadie previó.
+
+Antes de mutar nada se corre el fichero **limpio** (una vez por guard). Si el test que la
+declaración nombra **no aparece en verde** ahí, es **CIEGO y ni siquiera se muta**. Los tres
+estados quedan separados **por construcción**, no porque alguien acierte un texto.
+
+De propina cierra un caso que antes no se veía: una declaración que nombra un test **renombrado o
+borrado** salía MUDA —acusaba— y ahora sale CIEGA.
+
+### Los tres controles, medidos
+
+| control | resultado |
+|---|---|
+| **A** · con `dist/` presente | `vivas 4 · mudas 0 · ciegas 0` |
+| **B** · con `dist/` apartado | `vivas 2 · mudas 0 · **ciegas 2**` ← ya no acusa |
+| **C** · un MUDO real inyectado | `vivas 3 · **mudas 1** · ciegas 0` ← sigue acusando |
+
+**El C es el que decide.** Si al arreglar esto todo se hubiera vuelto CIEGO, el instrumento habría
+dejado de acusar y el arreglo sería peor que el defecto.
+
+### 🔴 Y se probó a sí mismo con su propio defecto
+
+Mi primera declaración de mutación ancló en la línea de `cayo`, que lleva una regex, y **el `\s`
+perdió su barra** camino del fichero: el ancla no casaba con nada. El meta-guard **corregido** dijo
+**CIEGO — «la declaración caducó»**, en vez de acusar al guard. Con el código de ayer habría dicho
+MUDO. Es exactamente **la causa B**, cazada por el arreglo que la hace distinguible.
+
+## 2 · ② El job compila — decidido con los números
+
+| | |
+|---|---:|
+| job `meta:mutaciones` | **8 s** |
+| `npm run build` en frío | **21 s** |
+
+Dos jobs del workflow ya construyen (`test`, `guards-visuales`), pero reutilizar su salida exige
+`upload-artifact`/`download-artifact` **y un `needs:`** — y eso **serializa lo que hoy corre en
+paralelo**: el PR esperaría **más**, no menos, por ahorrar 21 s en un job que ya convive con otro
+de varios minutos. Se compila.
+
+**No se acota a la 748.** Cinco ficheros llaman a `cargarDashboard` en el top level —`scrum443`,
+`scrum641`, `scrum739`, `scrum743`, `scrum748`— y mueren enteros sin `dist/`; otros 30 lo hacen
+dentro de un test y sólo pierden ese test. Compilar cubre **a los 35** por construcción.
+
+## 3 · 🔴 REGLA 13, y de dónde sale
+
+En la entrada de máster de 745 escribí sobre este mismo job:
+
+> *«No hace falta `npm run build` … El día que una [mutación toque `dist/`], se enterará por el
+> rojo, no por sorpresa: ese guard saldría **CIEGO, no verde**.»*
+
+**Predije el caso exacto y fallé el síntoma.** Dije CIEGO; salió **MUDO**, que es la acusación
+sobre un guard sano. La predicción era razonable y era falsa, y lo era porque **la escribí sin
+provocar el caso**. Provocarlo costaba un `mv dist dist_`.
+
+> **UNA GARANTÍA ESCRITA SOBRE UN CASO QUE NO SE HA PROVOCADO NO ES UNA GARANTÍA: ES UNA
+> PREDICCIÓN.** O se provoca y se anota lo que salió, o se escribe en condicional y se marca como
+> hipótesis.
+
+La frase que fallaba queda **escrita en el propio job**, no borrada: es de donde sale la regla.
+
+## Lo que NO cubre
+
+1. **La línea base cuesta una pasada extra por guard.** Hoy son 3 guards y 6 mutaciones; con
+   muchos más, habría que medir si compensa cachearla.
+2. **`paso()` y `cayo()` leen el reporter `spec`.** Si alguien cambia el reporter del meta-guard,
+   los dos se quedan ciegos a la vez. No está vigilado.
+3. **No se ha comprobado en el runner real** que 21 s sea el coste allí: los dos números son de
+   esta máquina. En CI el build puede costar más o menos.
+4. **Los otros cuatro ficheros del top level** siguen sin declarar mutaciones; cuando lo hagan, el
+   job ya compila, pero nadie lo ha ejercitado con ellos.
+
+## Ficheros
+
+* `scripts/meta-guard-mutaciones.mjs` — línea base, `paso()` exportada, y el veredicto CIEGO con
+  su motivo. **Corrección de SCRUM-745.**
+* `.github/workflows/ci.yml` — el job compila, con los números y la garantía fallida escrita.
+* `tests/scrum745-comparar-por-identidad.test.mjs` — 3 tests de la discriminación + las mutaciones
+  del propio meta-guard.
