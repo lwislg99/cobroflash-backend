@@ -5,7 +5,14 @@
 **Medido contra:** `origin/main` = `291b86739079a8b069992deb45fb876f944b8050` · 2026-09-04T23:12:30+01:00
 **Medido en:** host `DESKTOP-A24926K` · rama `scrum-746-la-barrera-y-la-indireccion`
 
-**Tanda:** **PENDIENTE** — se rellena con la pasada de después del último cambio.
+**Tanda:** **5.405 pruebas · 5.317 en verde · 0 fallos · 88 saltadas**, con `main` ya mergeado
+dentro y medida DESPUÉS del último cambio, entrada incluida.
+
+La base sobre `main` limpio, medida al empezar sobre un worktree recién nacido de
+`b74f523910fdb371c098a7f265a5a60e0eae3425`, daba **5.383 · 5.295 · 0 fallos · 88 saltadas**.
+**Los +22: 5 son de este ticket** (medidos corriendo el fichero solo) y **17** vienen del `main`
+nuevo que se mergeó dentro —SCRUM-744, 745 y 648—. **No hay comparación de fan-out nombre a
+nombre**, así que ese reparto es aritmética, no medición.
 
 > ⛔ **ESTE TICKET MIDE Y PROPONE. NO ELIGE.** El encargo lo dice y estoy de acuerdo: esto toca la
 > barrera de producción y la decisión no es mía. Lo que va aquí es el rojo medido, el censo, las dos
