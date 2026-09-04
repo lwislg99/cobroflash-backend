@@ -276,11 +276,19 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   // `scrum698`. Las dos subidas SE ACUMULAN: el merge no podía sumarlas, y quedarse con 241 o con
   // 237 habría perdido el cambio del otro ticket en silencio y en verde. El número está MEDIDO
   // sobre el árbol ya mezclado, no sumado a ojo.
-  assert.equal(nodos.length, 242,
-    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 242 `
+  //
+  // 🔴 SCRUM-602 (4-sep-2026) · 242 → 250, y TAMPOCO es del banco: son los OCHO nodos del control
+  // de la dirección de la obra. MEDIDOS POR IDENTIDAD, no restados a ojo: se toman los dos
+  // subárboles —el `.field` que envuelve al `<select name="shipping_address_mode">` y el
+  // `.field.quote-direccion-obra` del campo libre— y la vista sin ellos vuelve a dar 242 exactas.
+  // Son: los dos `<div class="field">`, el `<label>`, el `<select>`, sus tres `<option>` y el
+  // `<input>`. Las tres subidas SE ACUMULAN, por el mismo motivo que ya escribió SCRUM-594.
+  assert.equal(nodos.length, 250,
+    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 250 `
     + '(236 sobre `origin/main` = 80db312b, + la opción de alta de SCRUM-591, + el bloque de '
-    + 'descuento global de SCRUM-594). Un arreglo del BANCO no debe cambiar ni uno: si has tocado '
-    + 'el banco y esto se mueve, el arreglo pinta.');
+    + 'descuento global de SCRUM-594, + el control de la dirección de la obra de SCRUM-602). Un '
+    + 'arreglo del BANCO no debe cambiar ni uno: si has tocado el banco y esto se mueve, el '
+    + 'arreglo pinta.');
 
   const tablas = nodos.filter((n) => n.tagName === 'TABLE');
   assert.equal(tablas.length, 1, '🔴 la vista de presupuestos ya no monta su tabla.');
