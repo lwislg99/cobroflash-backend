@@ -788,7 +788,10 @@ combate — por eso, con la campaña cerrada, se documentó en vez de recontar: 
 >    «Unknown field» aunque la columna SÍ esté en la BD — pasó al verificar el push a prod de
 >    SCRUM-145. Regenerar después del push arregla ambos lados.
 >
-> Prod va aparte: su propio preview y su propio GO (`bash scripts/db-push-prod`).
+> 🔴 Prod va aparte, y NO con `db push` (SCRUM-705): el procedimiento único es
+> ① decisión → ② **ALTER aditivo** en las TRES bases (dev→staging→prod) → ③ un solo PR, y
+> **nunca ③ sin ②**. `db push` reconcilia el esquema entero y producción puede ir por delante de
+> `main` en columnas aplicadas a mano: propondría tirarlas. Ver `docs/MIGRATIONS_PENDING.md`.
 
 > **Cómo saber si hay «schema en vuelo» — NO por el diff (23-jul-2026).** Buscar ramas o worktrees
 > con cambios en `prisma/schema.prisma` **no es fiable**: da falsos positivos en las dos direcciones.

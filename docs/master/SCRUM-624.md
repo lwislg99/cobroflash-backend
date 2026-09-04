@@ -273,3 +273,104 @@ una cadena, 4 ficheros lo usan) y `tests/_texto-del-pdf.mjs` (`extraerTextoPdf`,
 `{ ok, texto, motivo }` **con suelo**, 13 ficheros). Sus nombres se diferencian en el orden de dos
 palabras. Escogí el primero por el nombre y mi propio suelo me lo cazó: sin él habría leído
 `undefined.ok` y el guard habría pasado midiendo nada.
+
+---
+
+# SCRUM-624 fase C · EL ARREGLO — el total de la factura sale de la canónica
+
+**Medido contra:** `origin/main` = `2c161c38cfba4ad81479dd302a933412d496f58c` · 2026-09-04T11:30:00+02:00
+
+**Decisión del fundador (4-sep-2026):** gobierna la canónica. El arreglo es **la frontera**, no la
+convención.
+
+## 0 · PASO 0 (regla 39), remedido
+
+```
+albaranes.routes.ts:1223  →  const total = totalDeFacturables(facturables);     [1 uso]
+CONTROL POSITIVO del mismo barrido: calcVatBreakdown en ese fichero → 1         [el camino parcial]
+```
+
+El defecto seguía. **Se continúa.**
+
+## 1 · Qué cambia, en una línea
+
+`albaranes.routes.ts` (camino `C7-albaran`) calcula el total con **`calcVatBreakdown(invoiceLines)`**
+— la canónica, **sobre las líneas que se GUARDAN** —, igual que ya hacían los otros tres caminos.
+
+> ⚠️ **Sobre `invoiceLines` y no sobre `facturables`**, y no es un detalle: así el total, el desglose
+> y la cuota de la huella VeriFactu (`calcVatCuotaTotal`, que **es** `calcVatBreakdown`) salen del
+> **mismo cálculo sobre los mismos datos**. Cuadran **por construcción**, no por casualidad. Hay un
+> test que lo fija.
+
+## 2 · Los cuatro caminos, DESPUÉS del arreglo
+
+Sobre 3 líneas de 9,99 al 21 % — desglose: base 29,97 + cuota 6,29 = **36,26**:
+
+| camino | motor | total |
+|---|---|---|
+| **C7-albaran · albarán → factura (Tecnosel)** | `calcVatBreakdown` | **36,26** ✅ |
+| albarán parcial | `calcVatBreakdown` | 36,26 ✅ |
+| recapitulativa | `calcVatBreakdown` | 36,26 ✅ |
+| presupuesto → factura | `calcTotal` | 36,26 ✅ |
+
+**Los cuatro guardan un total reconstruible desde su propio desglose.**
+
+## 3 · Lo que NO se ha tocado, y se comprueba
+
+* **El PDF**: ni una línea. Ya imprimía lo correcto.
+* **`calcVatBreakdown`**: intacta.
+* **La convención POR LÍNEA del albarán**: viva y sin tocar. Control negativo ejecutando
+  `calcAlbaranTotales` → **36,27**, y comprobado que la frase que la declara sigue escrita en
+  `albaranAFactura.ts`. Si alguien se la lleva «de paso», ese test cae.
+* **Ningún documento ya guardado** se corrige.
+
+## 4 · Verificación
+
+**Commit de todo ANTES del rojo: `9cd50120199b14f5862cbad7af9e496253f73495`** (verde, 5.032 · 4.948).
+
+Volviendo al mecanismo viejo (`totalDeFacturables` cruzando la frontera), **caen dos**:
+
+```
+🔴 HAY UN CAMINO QUE GUARDA UN TOTAL QUE NO CUADRA CON SU PROPIO DESGLOSE:
+    C7-albaran · albarán → factura (el de Tecnosel): guarda 36.27 · Σ(base+cuota) = 36.26
+    desglose de esas líneas: base 29.97 + cuota 6.29 = 36.26
+                                                                              exit 1
+```
+
+**Suelo:** el censo exige **cuatro** caminos y que cada uno se reconozca en el árbol; y si no se
+puede derivar el motor de alguno, se declara ciego en vez de aprobarlo.
+
+### 🔴 Un fallo de mi test, encontrado por el propio rojo
+
+La primera versión del invariante **era una tautología**: yo escribía a mano cómo calcula cada
+camino, así que comprobaba mi transcripción y no el producto. Al inyectar el mecanismo viejo,
+**siguió verde** y sólo cayó el estructural.
+
+Corregido: el motor de cada camino **se deriva de su bloque de código**. Reinyectado, caen los dos.
+Es la misma familia que lo de ayer —medir el nombre equivocado— y sólo salió porque el rojo se
+ejecuta en vez de suponerse.
+
+## 5 · Declaraciones que movió el arreglo
+
+**SCRUM-411**: `totalDeFacturables` pierde su llamador. **No se borra** —es donde la convención del
+albarán está *escrita*, con su porqué— y se declara como `ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE`
+con su motivo.
+
+## 6 · 🔴 El recuento de facturas con el total viejo: NO PUEDO HACERLO
+
+Este worktree **no tiene `.env`**, así que no tengo base contra la que contar. No lo estimo ni lo
+deduzco. La consulta es de **sólo lectura** y la corre el fundador:
+
+```sql
+SELECT id, number, status, type, total, lines
+FROM invoices
+WHERE jsonb_array_length(COALESCE(lines, '[]'::jsonb)) > 0;
+```
+
+Sobre su salida se aplica `calcVatBreakdown` (líneas → base + cuota) y se comparan con `total`. Las
+que no cuadren son las que quedaron con el total viejo. **No se corrige ninguna**: se cuentan y se
+reportan, y qué hacer con ellas lo decide el fundador (regla 29).
+
+⚠️ Hoy `INVOICING_ES_ENABLED` está OFF y la data de producción es de prueba, así que esas cifras no
+son de nadie. **Esa ventana se cierra con la primera factura real por ese camino** — que es el de
+Tecnosel.

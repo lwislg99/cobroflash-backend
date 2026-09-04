@@ -88,6 +88,25 @@ export const CATEGORIAS = {
  * `módulo::export`, no la longitud: por eso da igual cómo se agrupen las líneas.
  */
 export const DECLARADOS = [
+  // ── SCRUM-624 (fase C) · lo que destapa MOVER LA FRONTERA ──────────────────────────────
+  //
+  // `totalDeFacturables` se queda sin llamador porque el camino albarán→factura **deja de usarla
+  // para el total de la FACTURA**: ese total pasa a salir de `calcVatBreakdown`, la canónica, para
+  // que el `ImporteTotal` se pueda reconstruir sumando su propio desglose (VeriFactu 1210).
+  //
+  // 🔴 NO SE BORRA, y es una decisión del fundador, no una omisión: **la convención POR LÍNEA sigue
+  // viva y gobierna el ALBARÁN**. Esta función es donde está ESCRITA —con su porqué, en su
+  // cabecera— y su hermana `calcAlbaranTotales` (`albaran.service.ts:191`) es la que la ejerce.
+  // Borrarla se llevaría por delante la declaración de una convención que sigue vigente.
+  //
+  // Lo que estaba mal no era la convención: era que CRUZABA LA FRONTERA al convertirse en factura.
+  // Se arregló la frontera.
+  {
+    modulo: 'src/modules/jobs/domain/albaranAFactura.ts',
+    cat: 'ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE', desde: '2026-09-04',
+    motivo: 'La convención de redondeo POR LÍNEA del albarán, escrita y ejecutable. Perdió su llamador al mover la frontera albarán→factura (SCRUM-624): el total de la FACTURA sale ahora de la canónica. Se conserva porque es donde la convención del albarán está declarada, y su test la corre.',
+    exports: ['totalDeFacturables'],
+  },
   // ── SCRUM-683 (cableado) · lo que destapa DARLE SUPERFICIE AL DICTADO ──────────────────
   //
   // Mismo efecto que el bloque de abajo: al cablear `parteDictado.ts`, el censo deja de contarlo
