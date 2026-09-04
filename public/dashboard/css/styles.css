@@ -437,12 +437,25 @@ html, body { overflow-x: clip; }
 }
 .btn-danger:hover:not(:disabled) { background: var(--red-500); color: #fff; }
 
+/* SCRUM-720e · EL TERCIARIO TENÍA QUE PARECER PULSABLE, Y NO LO PARECÍA.
+   Medido en #job-detail: despegue del papel **1.00** y sin borde. No es una impresión — 1.00 es
+   literalmente el mismo color del fondo. Y debajo de esa clase está «Facturar el trabajo», que es
+   cómo cobra el profesional: una acción primaria que no parece una acción es una función que el
+   usuario no sabe que existe.
+
+   NO SE ESTRENA VOCABULARIO: este aspecto ya existía… en su propio `:hover`. Se asciende a
+   reposo y el hover sube un escalón. Que estuviera solo en el hover es justo el defecto en el
+   sitio donde más duele: **en el móvil no hay hover**, así que ahí no llegaba a verse nunca.
+
+   Sigue siendo el TERCIARIO y se mide: relleno suave y sin borde, por debajo del primario (verde
+   lleno, despegue 3.30) y con el borde nítido del secundario para distinguirlo. No se toca
+   `.btn-primary` ni `.btn-secondary`: eso mueve todas las pantallas a la vez y es SCRUM-724. */
 .btn-ghost {
-  background: transparent;
-  color: var(--neutral-500);
+  background: var(--neutral-100);
+  color: var(--neutral-700);
   border-color: transparent;
 }
-.btn-ghost:hover:not(:disabled) { background: var(--neutral-100); color: var(--neutral-700); }
+.btn-ghost:hover:not(:disabled) { background: var(--neutral-200); color: var(--ink); }
 
 .btn-sm,
 .btn.btn-sm { padding: 5px 12px; font-size: 12.5px; min-height: 30px; }
