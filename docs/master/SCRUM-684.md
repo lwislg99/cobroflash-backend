@@ -291,8 +291,14 @@ nada. Lo que sí he comprobado es que el fixture del 409 tiene la forma que S3 d
 
 **Medido contra:** `origin/main` = `8303db7524d3e0e90659c49f840d47adefaf6d5f` · 2026-09-04T21:37:50+01:00
 
-> El número sigue compartido con el trabajo de DICTADO de arriba (que es SCRUM-725, según el
-> asesor). **684 es este ticket** y la reubicación de aquél la hace él; aquí no se mueve nada.
+> ⚠️ **CORREGIDO el 4-sep-2026: NO es SCRUM-725, es SCRUM-683** — lo dice el propio encabezado del
+> bloque de arriba, y el asesor rectificó su cita («la saqué del título de un ticket de Jira sin
+> medir»). La línea de abajo se deja tal cual, tachada, porque es el registro de lo que se creyó.
+>
+> ~~El número sigue compartido con el trabajo de DICTADO de arriba (que es SCRUM-725, según el
+> asesor).~~ **684 es este ticket** y la reubicación de aquél —a `docs/master/SCRUM-683.md`— la hace
+> el asesor; aquí no se mueve nada, porque hacerlo daría un segundo conflicto a la sesión que tiene
+> ese fichero.
 
 ## La decisión, tomada por el fundador
 
@@ -380,6 +386,12 @@ guard acotado eso es **falso**: sí se puede, salvo para la línea que afirma un
 **Un mensaje aprobado que ha dejado de ser verdad es peor que uno con marcador.** El nuevo sale con
 `[PENDIENTE` desde un solo sitio y **nombra qué línea**, declarado en `CENSO_SERVIDOR` de SCRUM-667
 —y **no** en `EN_EL_PAPEL`: lo ve el profesional en el panel, no el cliente en el papel—.
+
+> 🔴 **LA FRASE QUE SIGUE QUEDÓ DESMENTIDA AL MEDIR, y se deja escrita en vez de borrarla.** Decía
+> que la caja no se medía «porque es un toast y no un control», y es **falso**: este 409 se pinta en
+> el `.alert.error` del modal, que **sí** tiene caja y se midió — 472,0 px a 929 y 342,0 px a 390,
+> con el resultado en el apartado de arriba. Un registro que contradice al de arriba sin decirlo es
+> peor que no tenerlo.
 
 Candidato para firmar, con la caja no medida porque es un toast y no un control:
 **«La línea N dice venir de un presupuesto y este trabajo no tiene ninguno.»**
