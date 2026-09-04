@@ -35,10 +35,12 @@ function filtro() {
 }
 const FC = filtro();
 
+// 🔴 Los teléfonos van en el RANGO IMPOSIBLE de SCRUM-262 (34 000 000 00X): `+34 6XX` es
+// móvil español ORDINARIO y un dato de prueba con ese prefijo puede ser el número de alguien.
 const CLIENTES = [
-  { id: 1, name: 'Comunidad Los Olivos', contactKind: 'EMPRESA', phone: '600111222', tags: ['administrador'] },
-  { id: 2, name: 'Ana Ruiz', contactKind: 'PERSONA', phone: '600333444', tags: ['moroso'] },
-  { id: 3, name: 'Beta SL', contactKind: 'EMPRESA', phone: '600555666', tags: [] },
+  { id: 1, name: 'Comunidad Los Olivos', contactKind: 'EMPRESA', phone: '34000000001', tags: ['administrador'] },
+  { id: 2, name: 'Ana Ruiz', contactKind: 'PERSONA', phone: '34000000002', tags: ['moroso'] },
+  { id: 3, name: 'Beta SL', contactKind: 'EMPRESA', phone: '34000000003', tags: [] },
 ];
 
 /** Monta la lista de clientes CON filas. Sin filas, nada de lo de abajo mediría nada. */
