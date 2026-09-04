@@ -525,15 +525,33 @@ window.ENTORNO_DESCONOCIDO = ENTORNO_DESCONOCIDO;
 
 // P-A66-3: dinero SIEMPRE en formato español también dentro del BO — espejo
 // del formatMoneyEs del servidor (core/utils). "2.383,70 €", nunca "2383.70 EUR".
-function fmtMoneyEs(n, currency = 'EUR') {
+/** Un número utilizable. Lo ilegible se trata como 0, que es lo que hacía `fmtMoneyEs` ya. */
+function numeroSeguroDeDinero(n) {
   const v = Number(n);
-  const safe = Number.isFinite(v) ? v : 0;
-  const opts = {
+  return Number.isFinite(v) ? v : 0;
+}
+
+/**
+ * SCRUM-739 · LAS OPCIONES DEL DINERO, EN UN SOLO SITIO.
+ *
+ * Estaban escritas dentro de `fmtMoneyEs` y no se mueve ni un valor al sacarlas: son las mismas.
+ * Lo que cambia es que ahora `fmtImporteEs` —la variante SIN símbolo— las comparte, así que las
+ * dos no pueden divergir. El backend deja escrito el aviso que esto convierte en imposible:
+ * *«comparte cuerpo con `formatMoneyEs` a propósito —mismo `Intl`, mismas opciones— salvo
+ * `style`. Si divergieran, el símbolo dejaría de ser lo único que las separa.»*
+ */
+function opcionesDeDinero(currency) {
+  return {
     style: 'currency',
     currency: currency || 'EUR',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   };
+}
+
+function fmtMoneyEs(n, currency = 'EUR') {
+  const safe = numeroSeguroDeDinero(n);
+  const opts = opcionesDeDinero(currency);
   // A18.2 (AB6 "9.999,99 €"): es-ES por defecto NO agrupa los miles de 4 cifras
   // (CLDR); useGrouping 'always' fuerza el punto SIEMPRE. Fallback en cascada.
   try {
@@ -544,6 +562,56 @@ function fmtMoneyEs(n, currency = 'EUR') {
   }
 }
 window.fmtMoneyEs = fmtMoneyEs;
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * SCRUM-739 · EL IMPORTE **SIN SÍMBOLO**, para donde el símbolo no va en la cifra.
+ *
+ * Hay pantallas donde el `€` NO puede ir pegado al número: la columna de una tabla lo lleva en
+ * la cabecera, y el KPI de Informes lo pinta en un `<span>` más pequeño aparte. Forzarles
+ * `fmtMoneyEs` metería un símbolo por celda, o dos donde ya hay uno.
+ *
+ * 🔴 ESTO NO ES UN SEXTO FORMATEADOR: es la variante que el BACKEND YA TIENE
+ * (`formatImporteEs`, SCRUM-636) y que al front se le quedó sin traer. Ésa es la razón medida de
+ * que exista este ticket: `reportsView.js` necesitaba un número sin símbolo, no había ninguno, y
+ * se escribió su propio `toLocaleString` — que en `es-ES` **no agrupa los enteros de cuatro
+ * cifras**. Resultado: la pantalla de Informes escribía `6050,00` donde el resto del producto
+ * escribe `6.050,00`, y fallaba justo entre 1.000 y 9.999 €, que es el trabajo corriente de un
+ * fontanero. Por encima de 10.000 volvía a coincidir, que es lo que lo hacía difícil de ver.
+ *
+ * ── POR QUÉ SE DERIVA DE LAS PARTES Y NO SE REESCRIBEN LAS OPCIONES ──────────────────────
+ *
+ * Se le pide al MISMO formateador que descomponga el resultado (`formatToParts`) y se le quita
+ * la pieza de la moneda. El separador de miles, los decimales y el redondeo salen de la misma
+ * llamada que `fmtMoneyEs`, así que **no pueden divergir**: no es que se hayan escrito iguales,
+ * es que son la misma. Copiar las opciones habría sido la quinta copia del formato — justo lo
+ * que este ticket viene a cerrar.
+ *
+ * ⚠️ Se quita la pieza `currency` y se recorta el espacio que la acompañaba (en `es-ES` va
+ * detrás, con espacio duro). Se recorta a los DOS lados a propósito: en otras plazas el símbolo
+ * va delante, y este código no tiene por qué saber en cuál está.
+ *
+ * Mismo respaldo que el backend: si `Intl` falla, se escribe algo legible en vez de romper la
+ * pantalla.
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ */
+function fmtImporteEs(n, currency = 'EUR') {
+  const safe = numeroSeguroDeDinero(n);
+  const opts = opcionesDeDinero(currency);
+  const sinSimbolo = (o) => new Intl.NumberFormat('es-ES', o)
+    .formatToParts(safe)
+    .filter((p) => p.type !== 'currency')
+    .map((p) => p.value)
+    .join('')
+    .replace(/^[\s ]+|[\s ]+$/g, '');
+  try {
+    return sinSimbolo({ ...opts, useGrouping: 'always' });
+  } catch {
+    try { return sinSimbolo(opts); }
+    catch { return safe.toFixed(2); }
+  }
+}
+window.fmtImporteEs = fmtImporteEs;
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────────────────
