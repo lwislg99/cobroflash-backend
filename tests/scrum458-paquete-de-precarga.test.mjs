@@ -6,6 +6,7 @@
 // profesional.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
+import { soloEjecutable } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -319,7 +320,7 @@ test('SCRUM-458 · el criterio no se ha repartido por el producto', async () => 
       if (e.isDirectory()) { anda(f); continue; }
       const rel = path.relative(RAIZ, f).replace(/\\/g, '/');
       if (!f.endsWith('.ts') || rel === RUTA) continue;
-      const codigo = fs.readFileSync(f, 'utf8').replace(/\/\/[^\n]*|\/\*[^]*?\*\//g, '');
+      const codigo = soloEjecutable(fs.readFileSync(f, 'utf8'));
       for (const n of nombres) {
         // DECLARAR, no usar: importarlo es exactamente lo que se quiere que hagan.
         if (new RegExp(`(const|let|var|function)\\s+${n}\\b`).test(codigo)) sospechosos.push(`${rel} → ${n}`);

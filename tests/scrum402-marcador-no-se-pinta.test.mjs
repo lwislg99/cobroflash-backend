@@ -69,6 +69,26 @@ const CENSO = Object.freeze({
   // firmara—, y ése era exactamente el motivo por el que esta entrada no bajaba a 0 antes de
   // tiempo. La entrada se BORRA, no se pone a 0: `censoActual()` sólo lista ficheros CON
   // marcadores. COMPROBADO antes de borrarla: cero marcadores en el fichero (SCRUM-703).
+  // 🔴 SCRUM-591 (DOC-01) · 3-sep-2026 · `quotesView.js` ENTRÓ y SALIÓ EL MISMO DÍA.
+  //
+  // Entró con 1 —la opción de alta del selector del documento, y una `<option>` sin rótulo no se
+  // puede elegir— y el asesor firmó el texto esa misma tarde: **«+ Nuevo cliente»**, 15
+  // caracteres, con la caja medida delante (901px, 247,7px útiles ≈ 18 caracteres anchos). Su
+  // entrada se BORRA, no se pone a 0 (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista ficheros
+  // CON marcadores, y el trinquete APRIETA.
+  //
+  // 🔴 MEDIDO AL RETIRARLO — Y CON EL ÁRBOL Y LA FECHA, QUE ES LA PARTE QUE FALTABA:
+  //
+  //     14 → 13 marcadores pintables (y de 14 a 13 ficheros)
+  //     árbol: `origin/main` = 9747d16a con la rama scrum-591 dentro · 3-sep-2026
+  //
+  // Y cuadra con el suelo de más abajo, que dice «hay 13 medidos»: 13 entradas declaradas aquí,
+  // 13 marcadores reales en el árbol, ninguno sin declarar. Barrido entrada por entrada.
+  //
+  // ⚠️ LA CIFRA SE ESCRIBE CON SU ÁRBOL PORQUE YA CADUCÓ DOS VECES EN ESTE MISMO TICKET: primero
+  // 18 → 17 (entró SCRUM-703 y sacó `jobNuevoModal.js`), después 15 → 14 (entró la salida de
+  // `jobDetailView.js`). Las dos eran correctas cuando se escribieron. **Una cifra sin árbol es
+  // una cifra que va a caducar sin avisar**, y quien la lea no tendrá forma de saberlo.
   // Sprint Tecnosel · `jobDetailView.js` ENTRÓ con 2 el 2-sep-2026 —la PUERTA al parte: el rótulo
   // del botón y el aviso de cuando no se puede abrir— y SALIÓ el 3-sep: el fundador firmó el
   // rótulo primero y el aviso después, en SCRUM-402. Bajó de 2 a 1 y luego se BORRA, que es el

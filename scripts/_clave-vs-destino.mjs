@@ -38,6 +38,28 @@ import { parseBDSegura } from './_db-guard.mjs';
  * que comparar solo el host las daría por iguales — que es exactamente el hueco por el que se
  * coló el problema.
  */
+//
+// ──────────────────────────────────────────────────────────────────────────────────
+// 🔒 INTERINO desde el 4-sep-2026 · LO QUE ESTE MAPA IMPLICA, Y QUE NO SE VE MIRÁNDOLO
+//
+// El mapa de abajo dice, sin decirlo con esas palabras, que en `b1`, `b2` y `b3` la BASE DE
+// PRUEBAS DEL CARRIL **es la misma base que STAGING** (`acela/railway`). No es deriva: está
+// declarado y el aislamiento por carril es deliberado. Pero tiene una consecuencia que había
+// que escribir, porque ya ha mordido tres veces:
+//
+//   🔒 La suite gateada ESCRIBE donde medimos. Una base que es a la vez el sujeto de la
+//      medida y el vertedero de los tests no da resultados: da coincidencias.
+//
+// **DECISIÓN DEL FUNDADOR (SCRUM-668): staging queda declarada CONTAMINADA y NO válida como
+// sujeto de medida.** Sigue sirviendo para correr la suite, probar pantallas y ensayar un
+// `db push`; lo que se retira es su valor como fuente de una CIFRA.
+//
+// El interino se levanta cuando cada carril tenga su base propia (`yaqu_tests_b1|b2|b3`), que
+// necesita infraestructura y espera a Javier. Detalle y alcance: `docs/RUNBOOKS.md`, justo
+// encima del mapa de bases por worktree.
+//
+// ⚠️ Esto NO relaja nada. `assertSafeStagingUrl` sigue siendo una allowlist de host y
+// fail-closed, y las tres opciones que se barajaron viven todas en `acela`: ninguna la tocaba.
 export const DESTINOS_ESPERADOS = Object.freeze({
   DATABASE_URL_STAGING: { host: 'acela.proxy.rlwy.net', base: 'railway', comoSeLlama: 'STAGING' },
   DATABASE_URL_DEV:     { host: 'acela.proxy.rlwy.net', base: 'yaqu_dev_javier', comoSeLlama: 'DESARROLLO' },

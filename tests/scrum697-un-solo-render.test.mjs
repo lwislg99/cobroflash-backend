@@ -265,9 +265,22 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   const nodos = todos(r.contenedor);
   assert.equal(nodos.length, new Set(nodos).size,
     '🔴 la vista de presupuestos, que no repetía ningún nodo, ha empezado a repetirlos.');
-  assert.equal(nodos.length, 236,
-    `🔴 la vista de presupuestos produce ${nodos.length} nodos y antes del arreglo producía 236 `
-    + '(medido sobre `origin/main` = 80db312b). El arreglo del banco no debía cambiar ni uno.');
+  // 🔴 SCRUM-591 (3-sep-2026) · 236 → 237, y el motivo importa porque este control existe para
+  // que un arreglo DEL BANCO no cambie el montaje: la subida NO es del banco, es del PRODUCTO —
+  // el selector de cliente pasa a ofrecer el alta sin salir del documento, y eso es UNA `<option>`
+  // más. Comprobado aislándolo, no supuesto: quitando ese `appendChild` el control vuelve a 236
+  // con el resto del ticket puesto (el `reset()` que SCRUM-591 añadió al banco no crea nodos).
+  //
+  // 🔴 SCRUM-594 (4-sep-2026) · 237 → 242, y TAMPOCO es del banco: son los cinco nodos del bloque
+  // del descuento global (`.quote-dto-global` y sus cuatro hijos), identificados por identidad en
+  // `scrum698`. Las dos subidas SE ACUMULAN: el merge no podía sumarlas, y quedarse con 241 o con
+  // 237 habría perdido el cambio del otro ticket en silencio y en verde. El número está MEDIDO
+  // sobre el árbol ya mezclado, no sumado a ojo.
+  assert.equal(nodos.length, 242,
+    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 242 `
+    + '(236 sobre `origin/main` = 80db312b, + la opción de alta de SCRUM-591, + el bloque de '
+    + 'descuento global de SCRUM-594). Un arreglo del BANCO no debe cambiar ni uno: si has tocado '
+    + 'el banco y esto se mueve, el arreglo pinta.');
 
   const tablas = nodos.filter((n) => n.tagName === 'TABLE');
   assert.equal(tablas.length, 1, '🔴 la vista de presupuestos ya no monta su tabla.');

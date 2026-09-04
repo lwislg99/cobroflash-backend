@@ -10,6 +10,7 @@
 // ticket vive en `vistaDeRevisiones`, que es lo que corre el endpoint, y no dentro del endpoint:
 // ahí sólo se podría probar con base de datos y quedaría detrás de un gate.
 import test from 'node:test';
+import { soloEjecutable } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -243,7 +244,7 @@ function camposEscalaresDeQuote() {
   const ESCALARES = /^(Int|String|Boolean|DateTime|Decimal|Json|Float|BigInt|Bytes)\??$/;
   const campos = [];
   for (const linea of m[1].split(/\r?\n/)) {
-    const l = linea.replace(/\/\/.*$/, '').trim();
+    const l = soloEjecutable(linea).trim();
     if (!l || l.startsWith('@@')) continue;
     const [nombre, tipo] = l.split(/\s+/);
     if (tipo && ESCALARES.test(tipo)) campos.push(nombre);

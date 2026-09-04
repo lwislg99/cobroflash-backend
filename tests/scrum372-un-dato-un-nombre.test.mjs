@@ -24,6 +24,7 @@
 // ⚠️ ESTE GUARD NO VIGILA UN NOMBRE BONITO. Vigila que el nombre no pueda VOLVER a bifurcarse:
 // un productor nuevo que invente un tercer nombre reabre exactamente el mismo `undefined`.
 import { test } from 'node:test';
+import { soloEjecutable } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -153,7 +154,7 @@ test('SCRUM-372 · `estadoCobro` ya NO se lee sobre un albarán en el dashboard'
     const lineas = fs.readFileSync(path.join(dir, f), 'utf8').split(/\r?\n/);
     lineas.forEach((linea, i) => {
       // Sin comentarios: un guard de texto se caza a sí mismo en el comentario que lo explica.
-      const codigo = linea.replace(/\/\/.*$/, '').replace(/^\s*\*.*$/, '');
+      const codigo = soloEjecutable(linea);
       lineasMiradas += 1;
       // `alb.estadoCobro`, `a.estadoCobro`, `f.estadoCobro` — el albarán. `job.`/`j.` es el Trabajo.
       if (new RegExp(`\\b(alb|albaran)\\.${RETIRADO}\\b`).test(codigo)) {

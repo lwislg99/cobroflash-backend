@@ -10,6 +10,7 @@
 // lado de «pestaña», habríamos fabricado el número tranquilo que este dato venía a impedir.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
+import { soloEjecutable } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -153,7 +154,7 @@ test('SCRUM-360 · el navegador manda el entorno al arrancar, y no bloquea el ar
   // «Un endpoint que recibe y no guarda no lleva a ninguna parte» — y uno que guarda y al que nadie
   // llama, tampoco. Esto comprueba la mitad del camino que no se ve desde el servidor.
   const app = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/app.js'), 'utf8');
-  const codigo = app.replace(/\/\/[^\n]*|\/\*[^]*?\*\//g, '');
+  const codigo = soloEjecutable(app);
 
   assert.ok(/enviarEntornoDeLaApp\(\)/.test(codigo),
     '🔴 nadie llama a `enviarEntornoDeLaApp`: la fase 1 dejó `entornoDeLaApp()` sin llamar y esto ' +
@@ -180,7 +181,7 @@ test('SCRUM-360 · la detección de la fase 1 NO se ha reescrito', () => {
       const f = path.join(d, e.name);
       if (e.isDirectory()) { anda(f); continue; }
       if (!f.endsWith('.ts')) continue;
-      const codigo = fs.readFileSync(f, 'utf8').replace(/\/\/[^\n]*|\/\*[^]*?\*\//g, '');
+      const codigo = soloEjecutable(fs.readFileSync(f, 'utf8'));
       if (/display-mode|navigator\.standalone/.test(codigo)) copias.push(path.relative(RAIZ, f).replace(/\\/g, '/'));
     }
   })(dir);

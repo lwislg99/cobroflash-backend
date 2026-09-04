@@ -151,7 +151,19 @@ function censo() {
 }
 
 // Medido el 4-sep-2026. El trinquete APRIETA: si baja, se anota; si sube, cae.
-const CIEGAN_HOY = 31;
+//
+// 🔴 4-sep-2026 · BAJA DE 31 A 7 (SCRUM-700b): migrados 24 guards a `soloEjecutable`, cada uno
+// verificado por separado —parsea, y su propio test sigue en verde— antes de aceptarlo.
+//
+// Los SIETE que quedan, y por qué cada uno:
+//   · `scrum694-los-guards-migrados` conserva el filtro viejo **a propósito**, como control de
+//     que la migración no es cosmética. Migrarlo sería borrar la prueba de que hacía falta.
+//   · `scrum377-plural-de-programador` se REVIERTE y se reporta: al dejar de estar ciego encuentra
+//     un SÉPTIMO «(s)» de pantalla con el tope en 6. El texto lo aprueba el fundador (regla 30) y
+//     el guard es de otro carril (regla 9) — no se toca ninguna de las dos cosas desde aquí.
+//   · Los otros cinco (`scrum128`, `scrum574-switch`, `scrum577`, `scrum636`, `scrum696`) escriben
+//     el filtro con otra forma que la migración automática no encajaba. Quedan pendientes.
+const CIEGAN_HOY = 7;
 const CON_PROPIO_HOY = 91;
 
 test('SCRUM-700 · 🔴 SUELO: el censo VE filtros propios, y un cero se declara ciego', () => {
