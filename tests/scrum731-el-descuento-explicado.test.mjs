@@ -30,6 +30,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
 import { extraerTextoPdf } from './_texto-del-pdf.mjs';
+// SCRUM-734 · el censo COMPARTIDO de las puertas del presupuesto.
+import { censarPuertasDelPresupuesto } from './_puertas-del-presupuesto.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
@@ -73,7 +75,13 @@ function llamadasCon(rel, nombre) {
   return fuera;
 }
 
-const PUERTAS = FUENTES.flatMap((f) => llamadasCon(f, 'generateQuotePdf'));
+// 🔴 SCRUM-734 · las tres puertas ya no arman su objeto: le piden la carga entera a
+// `paramsDePresupuestoParaPdf`. Este censo cayó en rojo el día del cambio, y esa era la SEÑAL
+// CORRECTA — un censo cuyo modelo se rompe tiene que fallar, no seguir reportando. La
+// propiedad no cambia; cambia cómo se comprueba: quien delega lleva todo lo que el constructor
+// produce. El lector vive en `_puertas-del-presupuesto.mjs`, compartido por los cuatro tickets
+// que preguntan esto (593c, 602, 731, 734) y que tenían el mismo supuesto escrito cuatro veces.
+const PUERTAS = censarPuertasDelPresupuesto();
 
 test('SCRUM-731 · SUELO: el censo encuentra LAS TRES puertas del PDF del presupuesto', () => {
   assert.equal(PUERTAS.length, 3,
@@ -117,10 +125,16 @@ test('SCRUM-731 · las TRES puertas pasan lo que explica el total', () => {
  * incluido» y el PDF que se sirve por esa puerta imprime el desglose igual. Va reportado como
  * hallazgo; es un ticket del asesor, no de este carril.
  */
-const HUECOS_DECLARADOS = Object.freeze({
-  'src/modules/system/app/routes/quotesAdmin.routes.ts': ['modoIva', 'clausulas', 'clausulasExcluidas'],
-  'src/modules/quotes/app/routes/quotes.routes.ts': ['signatureData', 'signedAt', 'tiers'],
-});
+// VACIO desde SCRUM-734, y el vacio es el RESULTADO, no un descuido: las tres puertas dejaron
+// de armar su lista y le piden la carga entera al constructor, asi que ninguna puede conocer
+// menos campos que otra. Los seis huecos que este ticket declaro estan cerrados por
+// CONSTRUCCION, no uno a uno.
+//
+// LA CONSTANTE SE QUEDA AUNQUE VALGA CERO. Misma decision que `SIN_APROBAR` en
+// `filtroClientes.js`: si manana alguien vuelve a armar un literal en una puerta y le falta un
+// campo, el hueco nace SIN sitio donde declararse y el test de abajo cae. Borrarla dejaria ese
+// caso sin nadie que lo mire.
+const HUECOS_DECLARADOS = Object.freeze({});
 
 test('SCRUM-731 · los huecos de las puertas son EXACTAMENTE los declarados', () => {
   const todas = [...new Set(PUERTAS.flatMap((p) => [...p.props]))].sort();
