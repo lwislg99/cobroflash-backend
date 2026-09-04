@@ -32,7 +32,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execFileSync } from 'node:child_process';
+import { contenidoEnLaBase } from './_base-de-la-rama.mjs';
 import { extraerTextoPdf } from './_texto-del-pdf.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -171,12 +171,24 @@ test('SCRUM-603b · acentos, ñ y comillas sobreviven al viaje', async () => {
 
 // ═══ ③ 🔴 LA PRUEBA DE QUE LA ACOTACIÓN SE CUMPLIÓ ═══════════════════════════════════════
 
-test('SCRUM-603b · 🔴 EL PDF DE LA FACTURA NO SE HA TOCADO: byte a byte con `main`', () => {
+test('SCRUM-603b · 🔴 EL PDF DE LA FACTURA NO SE HA TOCADO: byte a byte con la BASE de la rama', () => {
   // La acotación de este ticket es que la FACTURA queda fuera (SCRUM-624 está midiendo que su
   // PDF recalcula totales, y cambiar lo que imprime una factura ya emitida es la regla 29).
   //
   // La prueba más fuerte no es leer el PDF: es que el CÓDIGO QUE LO GENERA no haya cambiado. Se
-  // compara byte a byte contra `origin/main`, sin interpretación posible.
+  // compara byte a byte contra el PUNTO DE PARTIDA DE LA RAMA, sin interpretación posible.
+  //
+  // 🔴 4-sep-2026 · SCRUM-723 · SE CAMBIA CONTRA QUÉ COMPARA, NO LO QUE EXIGE.
+  //
+  // Hasta hoy comparaba contra la PUNTA de `origin/main`, que es un objetivo móvil: no medía lo
+  // que hace la rama, medía la distancia entre dos cosas que se mueven. Y se cobró su pieza — este
+  // guard se puso rojo en la rama de SCRUM-605, que no había tocado el fichero, porque SCRUM-594
+  // había entrado en `main` tocándolo. Un guard que acusa a quien no ha hecho nada se acaba
+  // ignorando, y entonces ya no protege la factura de nadie.
+  //
+  // El punto de partida (`git merge-base HEAD origin/main`) es un commit y no se mueve. En CI sale
+  // la misma cuenta: allí HEAD es el commit de MEZCLA, cuyo árbol ya lleva `main` dentro, así que
+  // la diferencia contra la base vuelve a ser exactamente lo que aporta la rama.
   //
   // 🔴 4-sep-2026 · SE ACOTA AL CUERPO DE `generateInvoicePdf`, Y NO SE RELAJA NADA.
   //
@@ -193,8 +205,19 @@ test('SCRUM-603b · 🔴 EL PDF DE LA FACTURA NO SE HA TOCADO: byte a byte con `
   // añadió el control por CONDUCTA, comparando los importes de dos facturas (con `dto` y sin
   // `dto`) y exigiendo que sean idénticos, que es lo que de verdad ve el cliente.
   const rel = 'src/modules/invoicing/infra/pdf/pdf.service.ts';
-  const deMain = execFileSync('git', ['show', `origin/main:${rel}`], { cwd: RAIZ, encoding: 'utf8' });
+  const { contenido: deLaBase, base } = contenidoEnLaBase(RAIZ, rel);
   const deDisco = fs.readFileSync(path.join(RAIZ, rel), 'utf8');
+
+  // 🔴 CIEGO ANTES QUE VERDE. Si no hay base, o el fichero no se puede leer en ella, este guard no
+  // sabe nada — y «no sé» no se informa como «no ha cambiado». Se cae diciendo qué falta, en vez de
+  // caer hacia `origin/main`, que es justo el defecto que este cambio quita.
+  assert.ok(base && /^[0-9a-f]{40}$/.test(base.sha),
+    '🔴 CIEGO: no se ha podido resolver la base de la rama. En un clon somero no hay con qué '
+    + 'comparar: el checkout de CI necesita `fetch-depth: 0`, que es lo que ya lleva el job de la '
+    + 'suite desde SCRUM-388.');
+  assert.ok(typeof deLaBase === 'string' && deLaBase.length > 0,
+    `🔴 CIEGO: no se pudo leer el fichero en la base de la rama (${base.ref} @ ${base.sha.slice(0, 8)}). `
+    + 'Sin las dos mitades no hay comparación, y un verde aquí no significaría nada.');
 
   /** El cuerpo de `generateInvoicePdf`: de su declaración a la siguiente de nivel superior. */
   const cuerpoDeLaFactura = (txt) => {
@@ -204,16 +227,19 @@ test('SCRUM-603b · 🔴 EL PDF DE LA FACTURA NO SE HA TOCADO: byte a byte con `
     return txt.slice(ini, sig === -1 ? txt.length : sig);
   };
 
-  const enMain = cuerpoDeLaFactura(deMain);
+  const enBase = cuerpoDeLaFactura(deLaBase);
   const enDisco = cuerpoDeLaFactura(deDisco);
   // SUELO: si el recorte devolviera poco, la igualdad de abajo sería casi vacía.
-  assert.ok(enMain.length > 5000,
-    `🔴 el cuerpo de la factura en main mide ${enMain.length} caracteres: el recorte no está `
+  assert.ok(enBase.length > 5000,
+    `🔴 el cuerpo de la factura en la base mide ${enBase.length} caracteres: el recorte no está `
     + 'cogiendo la función entera y este guard no compararía casi nada.');
-  assert.equal(enDisco, enMain,
-    `🔴 EL CÓDIGO QUE GENERA EL PDF DE LA FACTURA HA CAMBIADO respecto a \`origin/main\` `
-    + `(${enDisco.length} car. frente a ${enMain.length}). Cambiar lo que imprime una factura ya `
-    + 'emitida es la regla 29, y SCRUM-624 está midiendo ese camino ahora mismo.');
+  assert.equal(enDisco, enBase,
+    `🔴 EL CÓDIGO QUE GENERA EL PDF DE LA FACTURA HA CAMBIADO respecto al punto de partida de esta `
+    + `rama (${base.ref} @ ${base.sha.slice(0, 8)}): ${enDisco.length} car. frente a ${enBase.length}. `
+    + 'Cambiar lo que imprime una factura ya emitida es la regla 29, y SCRUM-624 está midiendo ese '
+    + 'camino ahora mismo.\n\n'
+    + `  Si tu rama NO ha tocado esa función, esto ya no puede ser \`main\` moviéndose por debajo `
+    + `(SCRUM-723): mira \`git diff ${base.sha.slice(0, 8)} -- ${rel}\`.`);
 });
 
 test('SCRUM-603b · 🔴 y el PDF de la factura SIGUE saliendo con su contenido', async () => {
