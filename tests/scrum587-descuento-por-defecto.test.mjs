@@ -17,9 +17,14 @@
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
+import ts from 'typescript';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { ejecutableDe } from './_guard-texto.mjs';
+import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { scriptsDeLaPagina, rutaDelDashboard, cegueraDelExtractor } from './_scripts-de-la-pagina.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require_ = createRequire(import.meta.url);
@@ -28,6 +33,8 @@ const D594 = require_(path.join(RAIZ, 'public/dashboard/js/quoteDescuentos.js'))
 const P = require_(path.join(RAIZ, 'public/dashboard/js/descuentoPorDefecto.js'));
 
 const cliente = (dto) => ({ id: 1, name: 'Administración Fincas Soler', dtoPorDefecto: dto });
+/** Las clases de un nodo como LISTA. Un `includes` sobre la cadena confunde padre e hijo. */
+const clases = (n) => String((n && n.className) || '').split(/\s+/).filter(Boolean);
 const LINEAS = [
   { concept: 'Mano de obra', qty: 4, price: 35, vat: 21 },
   { concept: 'Material', qty: 1, price: 120, vat: 21 },
@@ -151,6 +158,113 @@ test('SCRUM-587 · ✅ CONTROL NEGATIVO: renombrar rótulos NO toca el cálculo'
   assert.equal(P.propuestaPara(conOtrosRotulos), 10);
   assert.equal(centimos(P.aplicarA(LINEAS, P.propuestaPara(conOtrosRotulos))), centimos(antes),
     '🔴 cambiar textos del cliente ha movido el total: el cálculo está atado a un rótulo.');
+});
+
+// ═══ ⑤ LA SUPERFICIE: LA TIRA QUE PROPONE ════════════════════════════════════════════════
+
+test('SCRUM-587 · 🔴 la tira se PINTA en el editor, OCULTA, y reutiliza el componente de la casa', async () => {
+  const r = await pintarVista(cargarDashboard(RAIZ), 'renderQuotesView');
+  assert.equal(r.error, null, `🔴 el editor ha dejado de montarse: ${r.error && r.error.message}`);
+  const nodos = todos(r.contenedor);
+  assert.ok(nodos.length > 50,
+    `🔴 BANCO CIEGO: la vista montó ${nodos.length} nodos. Una pantalla vacía y un banco roto dan `
+    + 'el mismo verde, y entonces «la tira no está» no significaría nada.');
+
+  // 🔴 POR CLASE EXACTA, NO POR SUBCADENA. La primera versión filtraba con `includes(...)` y
+  // contaba DOS: el `<span>` interior se llama `quote-propuesta-dto__texto` y contiene el nombre
+  // del padre. Es el defecto que esta casa persigue desde SCRUM-349 —comparar por texto lo que hay
+  // que comparar por identidad— y aquí habría acusado de duplicado a un árbol correcto.
+  const tira = nodos.filter((n) => clases(n).includes('quote-propuesta-dto'));
+  assert.equal(tira.length, 1,
+    `🔴 hay ${tira.length} tiras de propuesta y tiene que haber UNA. Cero = el ticket no llega a la `
+    + 'pantalla; dos = un merge la ha duplicado y el profesional vería dos ofertas del mismo descuento.');
+
+  // 🔴 ACABA OCULTA. Visible, el editor le ofrecería un descuento a TODO cliente, incluido el que
+  // no tiene nada pactado — que es «se aplica solo» disfrazado de otra cosa.
+  //
+  // 📌 Y NO LA PROTEGE EL `hidden = true` DEL NACIMIENTO, medido: poniéndolo a `false` este test
+  // SIGUE VERDE, porque `recalcTotals` refresca durante el montaje y la vuelve a ocultar. Lo que
+  // se comprueba aquí es el estado CONVERGIDO. Quien venga a probar este caso en rojo tiene que
+  // romper el refresco (`if (alcance <= 0) …`), no el valor inicial: con esa sonda sí cae, y con
+  // este mismo mensaje.
+  assert.equal(tira[0].hidden, true,
+    '🔴 la tira nace VISIBLE: se le está ofreciendo un descuento a un cliente sin acuerdo.');
+  assert.match(String(tira[0].className), /\balert\b/, '🔴 no reutiliza el componente `.alert`');
+  assert.match(String(tira[0].className), /\binfo\b/,
+    '🔴 la tira no es `info`: un acuerdo que el profesional pactó no es un aviso de que algo va mal.');
+});
+
+test('SCRUM-587 · 🔴 el rótulo sin firmar lleva la grafía que el censo de SCRUM-402 CUENTA', async () => {
+  const r = await pintarVista(cargarDashboard(RAIZ), 'renderQuotesView');
+  const tira = todos(r.contenedor).find((n) => String(n.className || '').includes('quote-propuesta-dto'));
+  assert.ok(tira, '🔴 no hay tira que mirar');
+  const dentro = todos(tira).map((n) => String(n.textContent || '')).join(' | ');
+  assert.match(dentro, /\[PENDIENTE/,
+    '🔴 el rótulo sin firmar NO lleva marcador, o lleva una grafía que el censo del 402 no cuenta '
+    + '(cuenta `[PENDIENTE`). Un marcador invisible para el censo se queda dormido para siempre.');
+  assert.doesNotMatch(dentro, /descuento habitual|precio pactado|aplicar descuento/i,
+    '🔴 se ha inventado microcopy oficial (regla 30). El rótulo lo firma el asesor.');
+});
+
+test('SCRUM-587 · 🔴 la pieza se carga DESPUÉS de su aritmética y ANTES de quien la consume', () => {
+  // Por IDENTIDAD, no por texto: se leen los `<script src>` de la página en su orden real.
+  const html = fs.readFileSync(path.join(RAIZ, 'public/dashboard/index.html'), 'utf8');
+  const res = scriptsDeLaPagina(html);
+  // 🔴 SUELO DEL EXTRACTOR: `cegueraDelExtractor` DEVUELVE el motivo, no lanza. Ignorar su
+  // devolución es quedarse ciego con el mismo gesto con el que se cree uno protegido.
+  assert.equal(cegueraDelExtractor(res, 20, 'el índice del dashboard'), null);
+  const orden = res.clasicos.map((s) => rutaDelDashboard(s).replace(/^js\//, ''));
+  const i = (n) => orden.indexOf(n);
+  assert.ok(i('descuentoPorDefecto.js') >= 0,
+    '🔴 la pieza no se carga en la página: es código muerto y la tira nunca se llenaría.');
+  assert.ok(i('quoteDescuentos.js') < i('descuentoPorDefecto.js'),
+    '🔴 la pieza se carga ANTES que la aritmética que lee. Como se niega a improvisar una segunda, '
+    + 'el rojo saldría en la pantalla del profesional y no aquí.');
+  assert.ok(i('descuentoPorDefecto.js') < i('quotesView.js'),
+    '🔴 la pieza se carga DESPUÉS del editor que le pide la propuesta.');
+});
+
+test('SCRUM-587 · 🔴 el editor REFRESCA la propuesta en los DOS sitios, contados por AST', () => {
+  // Los dos hacen falta por motivos distintos: cambiar de cliente cambia el acuerdo, y añadir una
+  // línea cambia a cuántas alcanza. Si un merge se lleva uno, la tira se queda pegada enseñando
+  // una oferta que ya no toca — y eso NO se ve en el diff.
+  const fuente = ejecutableDe(
+    fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/quotesView.js'), 'utf8'),
+    { donde: 'quotesView.js', ancla: 'refrescarPropuestaDeDescuento' });
+  const sf = ts.createSourceFile('quotesView.js', fuente, ts.ScriptTarget.Latest, true);
+  let llamadas = 0;
+  const v = (n) => {
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression)
+      && n.expression.text === 'refrescarPropuestaDeDescuento') llamadas++;
+    ts.forEachChild(n, v);
+  };
+  v(sf);
+  assert.equal(llamadas, 2,
+    `🔴 el editor llama ${llamadas} veces a \`refrescarPropuestaDeDescuento\` y tienen que ser DOS: `
+    + 'al cambiar de cliente, y al recalcular los totales.');
+});
+
+test('SCRUM-587 · 🔴 la REGLA no se ha copiado al editor: la decisión sigue en la pieza pura', () => {
+  // Una copia de «a qué líneas alcanza» dentro de `quotesView.js` es el modo de que dentro de seis
+  // meses una de las dos se quede atrás. El editor puede LEER la decisión, no tomarla.
+  const fuente = ejecutableDe(
+    fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/quotesView.js'), 'utf8'),
+    { donde: 'quotesView.js', ancla: 'aplicarA' });
+  const sf = ts.createSourceFile('quotesView.js', fuente, ts.ScriptTarget.Latest, true);
+  const usadas = [];
+  const v = (n) => {
+    if (ts.isPropertyAccessExpression(n)
+      && ['aplicarA', 'alcanceDe', 'propuestaPara', 'hayPropuesta'].includes(n.name.text)) {
+      usadas.push(n.name.text);
+    }
+    ts.forEachChild(n, v);
+  };
+  v(sf);
+  assert.ok(usadas.length > 0,
+    '🔴 CENSO VACÍO: el editor no llama a NINGUNA función de la pieza. O el enganche no está, o '
+    + 'este control lleva rato aprobando la nada.');
+  assert.equal(usadas.includes('aplicarA'), true,
+    '🔴 el editor no usa `aplicarA`: está escribiendo los `dto` con una regla suya.');
 });
 
 test('SCRUM-587 · 🔴 esta pieza NO reimplementa la aritmética del 594, y lo dice si falta', () => {

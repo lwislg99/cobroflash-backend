@@ -276,10 +276,17 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   // `scrum698`. Las dos subidas SE ACUMULAN: el merge no podía sumarlas, y quedarse con 241 o con
   // 237 habría perdido el cambio del otro ticket en silencio y en verde. El número está MEDIDO
   // sobre el árbol ya mezclado, no sumado a ojo.
-  assert.equal(nodos.length, 242,
-    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 242 `
+  //
+  // 🔴 SCRUM-587 (4-sep-2026) · 242 → 245, y sigue sin ser del banco: son los TRES nodos de la
+  // tira que PROPONE el descuento pactado con el cliente —el `div.alert`, su `<span>` de texto y
+  // el botón de aceptar—, que nace oculta. AISLADO, no supuesto: quitando ese único
+  // `blockTotals.appendChild(propuestaWrap)` con el resto del ticket puesto, este control vuelve
+  // a 242 y pasa. Las tres subidas SE ACUMULAN, y el número está medido sobre el árbol mezclado.
+  assert.equal(nodos.length, 245,
+    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 245 `
     + '(236 sobre `origin/main` = 80db312b, + la opción de alta de SCRUM-591, + el bloque de '
-    + 'descuento global de SCRUM-594). Un arreglo del BANCO no debe cambiar ni uno: si has tocado '
+    + 'descuento global de SCRUM-594, + la tira de propuesta de SCRUM-587). Un arreglo del BANCO '
+    + 'no debe cambiar ni uno: si has tocado '
     + 'el banco y esto se mueve, el arreglo pinta.');
 
   const tablas = nodos.filter((n) => n.tagName === 'TABLE');

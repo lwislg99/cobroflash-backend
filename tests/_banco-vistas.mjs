@@ -753,6 +753,10 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'csvImport.js',
   'customerDetailView.js',
   'customersView.js',
+  // SCRUM-587 (CONT-14) · el descuento pactado con el cliente, PROPUESTO. Va DESPUÉS de
+  // `quoteDescuentos.js`, del que lee la aritmética y sin el cual se niega a funcionar, y ANTES
+  // de `quotesView.js`, que le pide la propuesta al elegir cliente.
+  'descuentoPorDefecto.js',
   'estadoFirma.js',
   'expensesView.js',
   'exportView.js',
@@ -854,6 +858,11 @@ export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   // antes de que exista el consumidor, el rojo aparecería en la pantalla del profesional.
   { antes: 'textoDelDocumento.js', despues: 'jobDetailView.js', motivo: 'SCRUM-593: el campo de cabecera del albaran' },
   { antes: 'textoDelDocumento.js', despues: 'quotesView.js', motivo: 'SCRUM-593: los dos textos libres (consumidor tras SCRUM-598)' },
+  // SCRUM-587 (CONT-14): las DOS direcciones se declaran, porque la pieza está en medio. Si un
+  // merge la colocara antes que `quoteDescuentos.js`, se quedaría sin la aritmética que lee —y
+  // ella LANZA en vez de improvisar una segunda, así que el rojo saldría en la pantalla.
+  { antes: 'quoteDescuentos.js', despues: 'descuentoPorDefecto.js', motivo: 'SCRUM-587: lee `dtoDeLinea` y no reimplementa la aritmética' },
+  { antes: 'descuentoPorDefecto.js', despues: 'quotesView.js', motivo: 'SCRUM-587: el editor le pide la propuesta al elegir cliente' },
 ]);
 
 /** Nombre a secas, venga con prefijo `js/` o sin él, y sea cadena u objeto `{fichero}`. */

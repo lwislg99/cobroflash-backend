@@ -139,19 +139,94 @@ sobre un conjunto vacío.
 
 ---
 
-## 4 · Lo que NO se ha construido, y por qué
+## 4 · FASE B · el enganche en el editor
 
-🔴 **La superficie de la propuesta vive en `quotesView.js`, que es el carril de S2 (SCRUM-602).**
-El encargo dice que si el trabajo lleva allí hay que decirlo **antes** de tocar. Se dice: no se ha
-tocado ni una línea de ese fichero. El enganche es pequeño y está medido —
-[quotesView.js:1638-1640](../../public/dashboard/js/quotesView.js#L1638-L1640) ya resuelve el
-objeto del cliente— pero lo decide el asesor.
+⚠️ **Se avisó antes de tocar `quotesView.js`:** dos ramas sobre ese fichero a la vez (S2 con
+SCRUM-602). Autorizado por el asesor, con el motivo suyo: el cableado va en el PR ③ **sin partir**,
+y un campo en la ficha que no llega al documento es la mitad que no se ve.
 
-**El campo en la ficha** (`customersView.js`, zod, `customerAdmin.ts`) no entra todavía: sin la
-columna en las tres bases no puede ir y venir, y el precedente de SCRUM-580 dice que el cableado va
-en el PR ③ junto al esquema, **sin partir**.
+Una **tira** en el bloque de totales, `alert info` (tokens de `DESIGN.md`, cero colores nuevos),
+que nace y permanece **oculta** salvo que ese cliente traiga descuento pactado **y** quede alguna
+línea sin él. Lleva un botón: **la propuesta no se aplica hasta que alguien lo pulsa.**
 
-**El rótulo del campo no está firmado** y no se ha inventado ninguno. El asesor pidió la caja a
-929 px y 390 px para firmarlo: **no se ha podido medir, el servidor de Playwright lleva caído toda
-la sesión** (`CONNECT_TIMEOUT`). Queda pendiente, y con él la medida de la caja del contador de
-SCRUM-582.
+La regla —a qué líneas alcanza, y que no pisa un `dto` tecleado a mano— **no se ha copiado al
+editor**: `quotesView.js` construye una vista plana de sus líneas, se la da a `aplicarA`, y sólo
+escribe las que la pieza pura cambió. Hay un guard por AST que lo vigila.
+
+`descuentoPorDefecto.js` se carga **después** de `quoteDescuentos.js` y **antes** de
+`quotesView.js`, declarado en las dos direcciones en `SCRIPTS_DEL_DASHBOARD` y comprobado por
+identidad sobre los `<script src>` reales.
+
+### El censo de nodos de SCRUM-698: 242 → 245, aislado
+
+El guard hizo su trabajo y cazó la tira. Son **exactamente tres nodos** (el `div`, su `<span>` y el
+botón). **Aislado, no supuesto:** quitando ese único `blockTotals.appendChild(propuestaWrap)` con
+el resto del ticket puesto, el control vuelve a **242** y pasa. Las otras tres vistas, intactas.
+
+### El rojo de la superficie: 5 de 6 sondas, y la sexta enseñó algo
+
+| se rompe | cae |
+|---|---|
+| la tira no se cuelga del bloque de totales | «la tira se PINTA» |
+| se inventa microcopy en vez de poner marcador | «grafía que el censo de SCRUM-402 CUENTA» |
+| la pieza se carga ANTES de la aritmética que lee | «DESPUÉS de su aritmética» |
+| un merge se lleva UNA de las dos llamadas de refresco | «los DOS sitios» |
+| 🔴 la regla se **copia** al editor | «no se ha copiado al editor» |
+
+📌 **La sexta sonda no dio rojo, y el fallo era de la sonda:** poner `propuestaWrap.hidden = false`
+en el nacimiento deja el test **verde**, porque `recalcTotals` refresca durante el montaje y la
+vuelve a ocultar. Lo que se comprueba es el estado **convergido**. Con la sonda correcta —romper
+`if (alcance <= 0)`— sí cae, y con su mensaje. Queda escrito en el test para quien venga a
+reprobarlo: la primera hipótesis ante un rojo que no aparece es «caso mal elegido», no «guard de
+sobra».
+
+### Los seis guards que saltaron, y qué se hizo con cada uno
+
+Ninguno se apagó. Los seis estaban haciendo su trabajo.
+
+| guard | qué dijo | qué se hizo |
+|---|---|---|
+| **SCRUM-274** | el shell del SW no lleva el script nuevo | se añade a `sw.js` |
+| **SCRUM-697** · **SCRUM-698** | 242 → 245 nodos | número actualizado **con el aislamiento medido**, en los dos ficheros |
+| **SCRUM-402** (R4/R4b) | «hay marcadores nuevos que pueden pintarse: `quotesView.js` (+2)» | **declarados en el censo con su motivo**: `'quotesView.js': 2` |
+| **SCRUM-286** | «ha vuelto un marcador a los títulos del formulario» | 🔴 se **estrecha a su sujeto** (ver abajo) |
+| **SCRUM-591** | «ha vuelto un marcador y no está declarado en SCRUM-402» | 🔴 se le hace **cumplir su propia promesa** (ver abajo) |
+
+**🔴 SCRUM-286 · se estrecha, y hay que leer por qué antes de darlo por una relajación.** Miraba
+`quotesView.js` **entero** para defender una propiedad de **cuatro títulos de bloque**. Mientras
+los títulos fueron el único sitio del fichero con marcadores, las dos cosas coincidían; en cuanto
+otro ticket pinta un marcador legítimo en otra parte de la pantalla, el guard se pone rojo
+**acusando a los títulos de algo que no ha pasado** — y un rojo que nombra el sitio equivocado se
+arregla apagándolo. No se le ha añadido excepción por fichero ni por literal: ahora mira los
+títulos, que es su sujeto. **Probado en rojo:** metiendo el marcador en «1. Cliente», cae. Y la
+cobertura de todo el fichero no se pierde, la hace mejor el censo del 402, que cuenta por fichero
+con trinquete.
+
+**🔴 SCRUM-591 · ahora hace lo que su mensaje ya prometía.** Decía «si vuelve uno, hay que
+declararlo en el censo de SCRUM-402» y a la vez prohibía **cualquier** marcador: la vía que
+ofrecía no existía, así que el único modo de pasar era borrar el marcador o apagar el test. Ahora
+**consulta ese censo por AST** —leyendo el fuente, porque importar un `.test.mjs` correría sus
+pruebas— y exige que los marcadores de la vista sean exactamente los declarados. El número vive en
+**un solo sitio**. **Probado en rojo dos veces:** con el censo declarando 1 cae diciendo «pinta 2 y
+el censo declara 1»; y renombrando el objeto `CENSO` salta su suelo de ceguera en vez de aprobar
+cualquier número.
+
+---
+
+## 5 · Lo que NO se ha construido, y por qué
+
+🔴 **El campo en la ficha, el zod y el `select` esperan a las tres bases — y no es prudencia, es
+mecánica medida.** [customerAdmin.ts:142](../../src/modules/system/customerAdmin.ts#L142) y
+[:159](../../src/modules/system/customerAdmin.ts#L159) meten el cuerpo **ya validado** directo en
+el `data` de Prisma. Añadir `dtoPorDefecto` al zod antes de que el modelo lo tenga haría que Prisma
+**rechazara cada guardado de cliente que incluyera el campo**. Así que ese bloque es atómico:
+`schema.prisma` + zod + ficha + `select`, todo junto, en cuanto confirmes el ALTER.
+
+Mientras tanto el enganche es **inerte y seguro**: sin la columna, el cliente llega sin
+`dtoPorDefecto`, `propuestaPara` devuelve `null` y el editor se comporta **exactamente como hoy**.
+
+**El rótulo no está firmado y no se ha inventado ninguno.** Se pinta `[PENDIENTE microcopy oficial]`
+—la grafía que el censo de SCRUM-402 **cuenta**— en el botón y en el texto de la tira. El asesor
+pidió la caja a 929 px y 390 px para firmarlo: **no se ha podido medir, el servidor de Playwright
+lleva caído toda la sesión** (`CONNECT_TIMEOUT`), y no se le da un número calculado como si
+estuviera medido. Sigue pendiente con él la caja del contador de SCRUM-582.

@@ -1361,6 +1361,21 @@ html, body { overflow-x: clip; }
    Sin tokens nuevos: reusa `.quote-line__field` y `.quote-line__label`, que son los que ya
    visten cualquier campo con etiqueta de esta pantalla. El botón es `.btn-ghost.btn-sm`, el
    mismo que «Usar plantilla» — un descuento global es una acción ocasional, no una principal. */
+/* SCRUM-587 (CONT-14) · la tira que PROPONE el descuento pactado con el cliente.
+   Sin colores propios: hereda los de `.alert.info`, que ya son tokens de DESIGN.md. Aquí sólo
+   vive la disposición. El botón se lleva su objetivo táctil de 44 px explícito porque `btn-sm`
+   se queda corto y el guard que debería cazarlo está ciego (SCRUM-711). */
+.quote-propuesta-dto {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.quote-propuesta-dto[hidden] { display: none; }
+.quote-propuesta-dto .btn-sm { min-height: 44px; }
+
 .quote-dto-global { margin-top: 8px; }
 .quote-dto-global__campo { display: flex; flex-direction: column; gap: 4px; max-width: 200px; }
 
