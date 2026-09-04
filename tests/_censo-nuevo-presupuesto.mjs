@@ -89,7 +89,12 @@ export function censarEnvioPresupuesto(fuente, ruta = 'quotesView.js') {
 
   const envio = [];
   const linea = [];
-  /** SCRUM-602 · spreads que el censo NO puede resolver. Vacío = lo ha visto TODO. */
+  /**
+   * SCRUM-602 · spreads que el censo NO puede resolver. Vacío = lo ha visto TODO.
+   *
+   * Va en la SALIDA y no en un `console.warn`: un aviso que nadie lee es un cero que parece un
+   * dato. (Las dos frases salieron de dos sesiones distintas el mismo día; dicen lo mismo.)
+   */
   const opacos = [];
 
   // ── FORMA 1 · el objeto que se pasa a createQuote(...) ──────────────────────
@@ -109,7 +114,20 @@ export function censarEnvioPresupuesto(fuente, ruta = 'quotesView.js') {
       if (n.name.text !== nombreDelPayload || !n.initializer) return;
       if (!ts.isObjectLiteralExpression(n.initializer)) return;
       for (const p of n.initializer.properties) {
-        // SCRUM-602 · un spread NO se salta en silencio (ver la cabecera).
+        // 🔴 4-sep-2026 · AQUÍ HUBO DOS IMPLEMENTACIONES DEL MISMO ARREGLO, Y SE QUEDA UNA.
+        //
+        // SCRUM-602 (S2) y SCRUM-587 (S3) cerraron la ceguera del spread por separado, sin saber
+        // la una de la otra, el mismo día. Las dos midieron lo mismo antes de escribir —inyectar
+        // un campo dentro de `...({ … })` dejaba el guard en VERDE— y las dos llegaron al mismo
+        // detalle fino: hay que DESENVOLVER LOS PARÉNTESIS, porque `...({ a: 1 })` es la forma que
+        // sale sola al envolver y ahí `p.expression` es un `ParenthesizedExpression`, no el
+        // literal. Sin eso, el caso legible más común se clasifica como OPACO: seguro, pero falso.
+        //
+        // ⚠️ ESTO NO SE RESUELVE «SUMANDO», porque sumar sería tener DOS veces la misma regla y
+        // que una se quede atrás. Se queda la de SCRUM-602 —es la que ya está en `main` y la que
+        // `scrum602-direccion-obra.test.mjs` consume por `envioOpaco`— y la del 587 se retira
+        // entera. Lo único que sobrevive del 587 es esta nota, porque la coincidencia de dos
+        // mediciones independientes vale más que cualquiera de las dos por su cuenta.
         if (ts.isSpreadAssignment(p)) {
           const lit = objetoLiteralDetrasDelSpread(p.expression);
           if (lit) {

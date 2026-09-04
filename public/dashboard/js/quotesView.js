@@ -1014,6 +1014,90 @@ blockDelivery.appendChild(descWrapper);
   dtoGlobalWrap.appendChild(dtoGlobalCampo);
   blockTotals.appendChild(dtoGlobalWrap);
 
+  // ═══ SCRUM-587 (CONT-14) · EL DESCUENTO PACTADO CON EL CLIENTE, PROPUESTO ═══════════════════
+  //
+  // LA VÍCTIMA: el profesional con un 10 % acordado con un administrador de fincas hoy tiene que
+  // ACORDARSE y teclearlo en cada presupuesto. El día que se le olvida factura de más y lo
+  // descubre cuando el cliente se queja; o factura de menos y no lo descubre nunca.
+  //
+  // 🔴 SE PROPONE. NO SE APLICA SOLO. Por eso esto es una TIRA CON UN BOTÓN y no una línea de
+  // código que rellene los campos al elegir cliente: un descuento aplicado en silencio es dinero
+  // que sale del bolsillo del profesional sin que lo haya decidido ESTA vez, y el día que quiera
+  // cobrar el precio entero no va a saber por qué le sale otro número.
+  //
+  // La regla —a qué líneas alcanza, y que NO pisa un `dto` tecleado a mano— vive entera en
+  // `descuentoPorDefecto.js`, que la suite ejecuta sin navegador. Aquí sólo se pinta y se llama.
+  const propuestaWrap = document.createElement("div");
+  // `info` y no `warning`: un acuerdo que el profesional pactó no es un aviso de que algo va mal.
+  propuestaWrap.className = "alert info quote-propuesta-dto";
+  propuestaWrap.hidden = true;
+
+  const propuestaTexto = document.createElement("span");
+  propuestaTexto.className = "quote-propuesta-dto__texto";
+
+  const propuestaBtn = document.createElement("button");
+  propuestaBtn.type = "button";
+  propuestaBtn.className = "btn-ghost btn-sm";
+  // 🔴 MARCADOR, NO TEXTO INVENTADO (regla 30): el rótulo lo firma el asesor cuando tenga medida
+  // la caja del campo, y el servidor de medición lleva caído toda la sesión. La grafía es la que
+  // el censo de SCRUM-402 CUENTA (`[PENDIENTE`), para que salga en el recuento y no se quede
+  // dormida: un marcador que el censo no ve es peor que ninguno.
+  propuestaBtn.textContent = "[PENDIENTE microcopy oficial]";
+
+  propuestaWrap.appendChild(propuestaTexto);
+  propuestaWrap.appendChild(propuestaBtn);
+  blockTotals.appendChild(propuestaWrap);
+
+  /** El cliente elegido AHORA, o `null`. Mismo criterio que la vista previa (una sola forma). */
+  function clienteElegido() {
+    const id = fieldCustomer.select.value;
+    if (!id || id === VALOR_ALTA_RAPIDA) return null;
+    return customersList.find((c) => String(c.id) === String(id)) || null;
+  }
+
+  /**
+   * Las líneas como objetos planos, SOLO con lo que la regla necesita. Se construye esta vista
+   * para que la decisión de «a qué líneas alcanza» siga viviendo en la pieza pura: si aquí se
+   * mirara `dtoInput` a mano, habría dos sitios que saben la regla y uno se quedaría atrás.
+   */
+  function lineasParaPropuesta() {
+    return lines.map((l) => ({ dto: l.dtoInput ? l.dtoInput.value : null }));
+  }
+
+  function refrescarPropuestaDeDescuento() {
+    const M = window.descuentoPorDefecto;
+    // Sin la pieza —o con un cliente sin descuento pactado— la tira no existe y el editor se
+    // comporta EXACTAMENTE como antes de este ticket. Es el caso normal, no una degradación.
+    if (!M) { propuestaWrap.hidden = true; return; }
+    const cliente = clienteElegido();
+    const pct = M.propuestaPara(cliente);
+    const alcance = M.hayPropuesta(cliente) ? M.alcanceDe(lineasParaPropuesta(), pct) : 0;
+    if (alcance <= 0) { propuestaWrap.hidden = true; return; }
+    propuestaWrap.hidden = false;
+    propuestaWrap.dataset.pct = String(pct);
+    // 🔴 MARCADOR también aquí: el texto que enuncia el acuerdo es microcopy sin firmar. El dato
+    // —el porcentaje— sí es del profesional y se enseña, porque es lo que le deja decidir.
+    propuestaTexto.textContent = "[PENDIENTE microcopy oficial] · " + pct + " %";
+  }
+
+  propuestaBtn.addEventListener("click", function () {
+    const M = window.descuentoPorDefecto;
+    if (!M) return;
+    const pct = M.propuestaPara(clienteElegido());
+    // La pieza pura decide QUÉ líneas cambian; aquí sólo se escriben las que ella ha cambiado.
+    const antes = lineasParaPropuesta();
+    const despues = M.aplicarA(antes, pct);
+    for (let i = 0; i < lines.length; i++) {
+      if (antes[i] === despues[i]) continue;          // ésta ya traía su propio `dto`: no se toca
+      if (lines[i] && lines[i].dtoInput) lines[i].dtoInput.value = String(despues[i].dto);
+    }
+    // Aceptada, la tira desaparece: ya no hay nada que proponer.
+    propuestaWrap.hidden = true;
+    recalcTotals();
+    renderPreview();
+    scheduleDraftSave();
+  });
+
   /**
    * SCRUM-139 F3 · EL TOTAL, ANCLADO EN MÓVIL.
    *
@@ -1575,6 +1659,10 @@ blockDelivery.appendChild(descWrapper);
       <strong class="quote-total-kpi__cifra">${fmtMoneyEs(total, cur)}</strong>
     `;
 
+    // SCRUM-587 · la tira de la propuesta se decide con los MISMOS datos que acaban de recalcular:
+    // así aparece al añadir una línea nueva y desaparece sola en cuanto ya no queda ninguna sin
+    // descuento. No lleva flag propio (regla 27) — el dato ES el flag.
+    refrescarPropuestaDeDescuento();
     return { base, vatTotal, total };
   }
 
@@ -3422,6 +3510,9 @@ if (Number.isFinite(n) && n >= 0) {
       return;
     }
     clienteAntesDelAlta = fieldCustomer.select.value;
+    // SCRUM-587: cambiar de cliente cambia el acuerdo, así que la propuesta se recalcula aquí.
+    // Sólo se PROPONE: nada de esto escribe en las líneas.
+    refrescarPropuestaDeDescuento();
     // SCRUM-602 · al cambiar de cliente cambia la PISTA del placeholder: la dirección de
     // facturación es de ESE cliente, y dejar la del anterior sugeriría la dirección equivocada.
     refrescarDireccionObra();
@@ -3452,8 +3543,6 @@ if (Number.isFinite(n) && n >= 0) {
     renderPreview();
     scheduleDraftSave();
   });
-
-
   // SCRUM-660 · se escuchan LOS DOS eventos a propósito. Al elegir en un `<select>` el navegador
   // dispara `change`, y los actuales disparan además `input`; quedarse sólo con `input` dejaba
   // algo que decide el IVA de las líneas siguientes colgando de un detalle del navegador.

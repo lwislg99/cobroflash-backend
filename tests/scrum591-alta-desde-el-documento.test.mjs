@@ -30,6 +30,38 @@ const DIR_JS = path.join(RAIZ, 'public/dashboard/js');
 const VISTA_CLIENTES = path.join(DIR_JS, 'customersView.js');
 const VISTA_DOC = path.join(DIR_JS, 'quotesView.js');
 
+/**
+ * Cuántos marcadores declara el censo de SCRUM-402 para un fichero. **Por AST**: se lee el objeto
+ * `CENSO` de su test, no se busca la cadena — una mención en un comentario (y ese fichero está
+ * lleno de comentarios que nombran ficheros) daría un número inventado.
+ *
+ * Se lee el FUENTE en vez de importarlo porque importar un `.test.mjs` CORRERÍA sus pruebas.
+ */
+function declaradosEn402(fichero) {
+  const ruta = path.join(RAIZ, 'tests/scrum402-marcador-no-se-pinta.test.mjs');
+  const sf = ts.createSourceFile(ruta, fs.readFileSync(ruta, 'utf8'), ts.ScriptTarget.Latest, true);
+  let censo = null;
+  const v = (n) => {
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.name.text === 'CENSO') {
+      let e = n.initializer;
+      // `Object.freeze({...})`: el objeto va dentro de la llamada.
+      if (e && ts.isCallExpression(e) && e.arguments.length) e = e.arguments[0];
+      if (e && ts.isObjectLiteralExpression(e)) censo = e;
+    }
+    ts.forEachChild(n, v);
+  };
+  v(sf);
+  assert.ok(censo,
+    '🔴 GUARD CIEGO: no encuentro el objeto `CENSO` en el test de SCRUM-402. Si se ha renombrado, '
+    + 'esta comprobación dejó de mirar nada y cualquier número le parecería bien.');
+  for (const p of censo.properties) {
+    if (!ts.isPropertyAssignment(p)) continue;
+    const clave = ts.isStringLiteral(p.name) || ts.isIdentifier(p.name) ? p.name.text : null;
+    if (clave === fichero) return Number(p.initializer.getText());
+  }
+  return 0; // no está en el censo = no debe pintar ninguno
+}
+
 const leer = (p) => fs.readFileSync(p, 'utf8');
 
 /** Los literales de un fichero, por AST: los comentarios NO son literales y quedan fuera solos. */
@@ -240,10 +272,22 @@ test('SCRUM-591 · ✅ la microcopy FIRMADA es literal, y es la MISMA que la de 
     '🔴 el número de ranuras sin firmar del atajo ha cambiado. Si ha entrado un rótulo nuevo sin\n' +
     '   firma, hay que decirlo; y si se ha movido sin motivo, no es este test lo que hay que tocar.');
 
-  // Y no queda ningún marcador pendiente en esta vista: si vuelve uno, hay que declararlo en el
-  // censo de SCRUM-402, que es quien los cuenta.
-  assert.ok(!lit.some((l) => l.includes('[PENDIENTE')),
-    '🔴 ha vuelto un marcador de microcopy a `quotesView.js` y no está declarado en SCRUM-402.');
+  // 🔴 4-sep-2026 (SCRUM-587) · ESTA COMPROBACIÓN AHORA HACE LO QUE SU MENSAJE YA PROMETÍA.
+  //
+  // Decía «si vuelve uno, hay que declararlo en el censo de SCRUM-402» y a la vez prohibía
+  // CUALQUIER marcador: la vía que ofrecía no existía, así que el único modo de pasar era borrar
+  // el marcador o apagar el test. Un guard que nombra una salida que no lleva a ningún sitio se
+  // acaba apagando, y ahí sí se pierde la propiedad entera.
+  //
+  // Ahora se CONSULTA el censo del 402 —por AST, no por texto— y se exige que los marcadores de
+  // esta vista sean EXACTAMENTE los declarados allí. Es más fuerte que antes: un marcador nuevo
+  // sigue cayendo aquí, y además tiene que cuadrar con quien los cuenta. El número no se duplica
+  // en dos sitios; éste lo LEE de aquél.
+  const marcadores = lit.filter((l) => l.includes('[PENDIENTE')).length;
+  assert.equal(marcadores, declaradosEn402('quotesView.js'),
+    `🔴 \`quotesView.js\` pinta ${marcadores} marcadores de microcopy y el censo de SCRUM-402 `
+    + `declara ${declaradosEn402('quotesView.js')}. Si has añadido uno, va al censo con su motivo; `
+    + 'si has firmado un texto, su entrada se BORRA allí — no se pone a 0 (SCRUM-424 / SCRUM-405).');
 });
 
 // ── CONTROL NEGATIVO: LO COSMÉTICO NO MUEVE NADA ────────────────────────────────────────

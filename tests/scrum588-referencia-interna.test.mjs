@@ -184,9 +184,24 @@ test('SCRUM-588 · 🔴 NEGATIVO: no se pinta ningún marcador de microcopy en e
   // pantalla de un profesional — y desde que producción despliega con cada merge, a los cinco
   // minutos. Se mira el CÓDIGO: la cabecera del bloque menciona la marca para explicar la
   // decisión, y cazarla sería un rojo por nada.
+  // 🔴 SCRUM-587 (4-sep-2026) · EL ALCANCE SE ESTRECHA A SU SUJETO, Y NO ES UNA RELAJACIÓN.
+  //
+  // Miraba una VENTANA DE 400 CARACTERES a partir de `fieldInternalRef = createField`, que es un
+  // proxy del bloque y no el bloque. El primer campo que naciera al lado —SCRUM-587 pone el
+  // descuento pactado justo ahí, con su rótulo sin firmar y su marcador— caía dentro de la ventana
+  // y ponía este guard rojo acusando a la referencia interna de algo que no había pasado. Un rojo
+  // que nombra el sitio equivocado se acaba apagando, y ahí sí se pierde la propiedad entera.
+  //
+  // Ahora se miran LAS LÍNEAS QUE HABLAN DE `fieldInternalRef`, que es de lo que este test trata.
+  // La cobertura del resto del fichero no se pierde: la da el censo de SCRUM-402, que cuenta
+  // marcadores POR FICHERO con trinquete.
   const vista = soloCodigo(leer('public/dashboard/js/customersView.js'));
-  const bloque = /fieldInternalRef = createField[\s\S]{0,400}/.exec(vista);
-  assert.ok(bloque, '🔴 no encuentro el bloque del campo.');
-  assert.ok(!bloque[0].includes('[PENDIENTE'),
+  const suyas = vista.split(/\r?\n/).filter((l) => l.includes('fieldInternalRef'));
+  assert.ok(suyas.length >= 3,
+    `🔴 GUARD CIEGO: sólo ${suyas.length} líneas hablan de \`fieldInternalRef\`. Eran cinco `
+    + '(declaración, creación, placeholder, montaje, edición y payload): si ahora hay menos, o el '
+    + 'campo se ha renombrado o este control lleva rato mirando casi nada.');
+  const conMarca = suyas.filter((l) => l.includes('[PENDIENTE'));
+  assert.deepEqual(conMarca, [],
     '🔴 hay un marcador de microcopy en el campo de referencia interna, y su copy está aprobada.');
 });
