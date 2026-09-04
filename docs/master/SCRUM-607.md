@@ -1,8 +1,203 @@
-# SCRUM-607 · ALB-02 · Ocultar precios en el albarán — **FASE A: la medición y la columna**
+# SCRUM-607 · ALB-02 · Ocultar precios en el albarán
+
+**Medido contra:** `origin/main` = `a3b2987640ae2e5274cf304f433600a4e3ac8302` · 2026-09-04T17:44:30+01:00
+
+> **FASE A** (la medición y la columna) va abajo, tal y como se entregó. **FASE B** —lo
+> construido, con el GO del asesor y sus tres decisiones— va aquí arriba.
+
+---
+
+# FASE B · lo construido
+
+## Las tres decisiones del asesor, escritas donde el próximo las va a buscar
+
+### ① El candado NO es el de `modoValoracion`, y ése es el motivo
+
+**Editable en `borrador` Y en `emitido`; congelada al FIRMAR.**
+
+`modoValoracion` se congela en `emitido` porque **cambia el importe**, y un importe que se mueve
+después de emitir es otro documento. Éste sólo cambia **qué se imprime**, y el caso real es de un
+profesional de verdad: **«ya lo emití y ahora me lo piden sin precios»**. Al firmar sí se congela:
+ahí el papel es prueba de lo entregado y no se retoca.
+
+> ⚠️ **Al siguiente que lea esto y quiera «unificarlo» con `modoValoracion`: éste es el motivo de
+> por qué no.** No son el mismo candado porque no protegen lo mismo. Está escrito también en
+> `albaranPrecios.ts` y en el `PATCH`, que es donde se tropieza con ello.
+
+### ② Sin precios NO se enseña total; la UNIDAD se queda
+
+**Un total es el margen sumado**, así que un albarán que oculta precios tampoco enseña `Base:` ni
+`Total:`. **La columna `UNIDAD` sí se mantiene: no es dinero**, y es lo que el cliente necesita
+para comprobar lo que ha recibido. Es también lo que hace el albarán de Quipu.
+
+### ③ La pantalla pública del cliente entra en el carril
+
+No es un hueco a declarar. `renderLineasAlbaran` tiene el mismo reparto que el PDF, y **si el PDF
+oculta los precios y esa pantalla no, el cliente los ve igual** — desde el móvil, que es el sitio
+donde más duele. Por eso las dos superficies deciden con **la misma función**, y hay un guard que
+lo exige.
+
+### ④ La referencia al presupuesto se imprime, y el sobre se queda en CINCO
+
+El papel decía `Referencia: <Job.titulo>`, un título libre que no identifica nada. Ahora lleva
+además de qué presupuesto sale, **en el pie y FUERA de lo que el sobre de la firma congela**.
+
+Ampliar el sobre a seis campos cambiaría el hash y dejaría los albaranes ya firmados con un sobre
+de otra forma: **eso es evidencia legal y merece su propia tanda**, no ser un efecto colateral de
+ALB-02. Se pudo imprimir sin entrar en el sobre —lo que había que comprobar antes de seguir—
+porque va en el mismo cajón que `merchant.address` o `notas`: cosas sobre las que el sello no
+afirma nada y que por eso no pueden contradecirlo. **Hay un guard que fija los cinco campos.**
+
+## El DDL — generado sobre una COPIA, sin tocar `prisma/schema.prisma`
+
+Con el mecanismo de la casa (`previewMigracion`, binario local y control positivo dentro,
+SCRUM-385), no con `npx prisma` a pelo.
+
+**Columnas de `albaranes` ANTES: 25 · DESPUÉS: 26** (contadas sobre los dos ficheros, no a ojo).
+
+```sql
+-- AlterTable
+ALTER TABLE "albaranes" ADD COLUMN     "ocultar_precios_en_documento" BOOLEAN NOT NULL DEFAULT false;
+```
+
+Aditivo y con default: los albaranes que ya existen no cambian. Orden: **staging →
+`yaqu_dev_javier` → producción**. **No lo he ejecutado yo**, y el schema del repo quedó intacto
+(comprobado tras generar la copia).
+
+⚠️ **Mientras la columna viva sólo en el DDL**, el cliente de Prisma no la conoce: se lee con
+`as any` —el mismo idioma que `docHeaderText` usa dos líneas más arriba— y el decisor devuelve
+entonces **exactamente el comportamiento de hoy**. No hay estado intermedio raro.
+
+## Lo construido
+
+| pieza | qué hace |
+|---|---|
+| `src/modules/jobs/domain/albaranPrecios.ts` | **nuevo** · el decisor (`documentoEnsenaPrecios`), el candado (`sePuedeCambiarOcultarPrecios`) y la referencia (`referenciaPresupuesto`). Puro |
+| `albaranPdf.service.ts` | el booleano sale del decisor; el pie imprime de qué presupuesto sale |
+| `albaranPublicVista.ts` + `albaranPublic.routes.ts` | la pantalla del cliente, **con el mismo decisor** y recibiendo el interruptor |
+| `albaran.service.ts` | resuelve el presupuesto de origen y pasa los dos parámetros; el serializador expone el interruptor |
+| `albaranes.routes.ts` (PATCH) · `jobs.routes.ts` (POST) | guardan el interruptor, con su candado y booleano estricto |
+| `jobDetailView.js` | la casilla en el editor, visible sólo con precios y hasta `emitido` |
+
+**Ni una columna nueva en la tabla del PDF**: los anchos alternativos (62/18/20 %) existían desde
+SCRUM-65 y suman 100 %. Se reutiliza el reparto; sólo cambia de dónde sale el booleano.
+
+## La evidencia
+
+**Trece casos** en `tests/scrum607-precios-fuera-del-albaran.test.mjs`, generando el PDF de verdad
+y leyendo su texto.
+
+| lo que pedía el encargo | cómo se comprueba |
+|---|---|
+| apagado, el papel sale como hoy | se generan los dos: **sin el campo** (la llamada tal cual era) y con él en `false`, y se exige texto **idéntico** |
+| encendido: cero precios **Y** la referencia | en el **mismo** test — un albarán sin precios y sin origen es peor que uno con precios |
+| la pantalla del pro sigue con precios | `syncRowToModo` —quien decide qué ve el profesional— no puede nombrar el interruptor |
+| suelo | apagado, las **9** señales de precio tienen que estar. Si diera cero, todo lo demás sería verde sobre la nada |
+| control negativo | ningún control fija el **texto** del rótulo: aprobar el microcopy no puede poner nada rojo |
+
+> 🔴 **El control negativo me cazó a mí primero**: escrito entero, el propio fichero contenía el
+> texto que dice no contener y se ponía rojo solo. Es la trampa de SCRUM-203; se parte el literal,
+> como hace `scrum702` con sus señales de entorno.
+
+Y dos que el encargo no pedía y que salen de lo medido: la **pantalla pública** oculta de verdad
+(HTML sin dinero, con su suelo delante), y el **sobre sigue en cinco campos**.
+
+### Visto en ROJO, y nombrando qué precio se coló
+
+Siete mutaciones sobre el árbol de verdad, revertidas con post-condición (`Buffer.compare` contra
+los bytes de disco — SCRUM-570) y `git status` limpio después:
+
+| mutación | qué pasa |
+|---|---|
+| el papel vuelve a mirar sólo el modo | 🔴 «**SE HAN COLADO 9 SEÑALES DE PRECIO**» + «el PDF ha vuelto a la comparación a pelo» |
+| el importe de línea se pinta siempre | 🔴 «SE HAN COLADO **4** SEÑALES» |
+| se cuela el `Total:` | 🔴 «SE HAN COLADO **3** SEÑALES» |
+| la pantalla pública deja de ocultarlos | 🔴 dos: el decisor común **y** «SE HA COLADO «12,50» en la pantalla que el cliente abre desde el móvil» |
+| el interruptor se cuela en la pantalla del **profesional** | 🔴 «EL INTERRUPTOR DEL PAPEL SE HA METIDO EN LA PANTALLA» |
+| el pie deja de decir de qué presupuesto sale | 🔴 dos tests |
+| **control negativo**: se cambia el **texto** del rótulo | ✅ **verde**, como debe: ningún control mira el copy |
+
+> El rojo **cuenta y nombra** lo que se coló, que es lo que pedía el encargo: no dice «falla», dice
+> cuántas señales de precio hay en un papel que no debe llevar ninguna.
+
+## Microcopy — medido, sin firmar
+
+Navegador real, CSS de verdad (`tokens.css` + `styles.css`), la cadena `.modal-overlay > .modal >
+.modal-body` que es donde vive el editor.
+
+| | 929 px | 390 px |
+|---|---|---|
+| `.modal-body` | 520,0 px | 390,0 px |
+| ancho útil (sin padding) | 472,0 px | 342,0 px |
+| **para el TEXTO del rótulo** (menos casilla y hueco) | **453,0 px** | **323,0 px** |
+| alto de la fila **hoy, con el marcador** | 59,3 px | **79,5 px** |
+
+**Rótulo (13 px)** — el marcador mide **363,4 px**: cabe a 929 px y **NO a 390 px**, donde parte
+en dos líneas y sube la fila de 59,3 a 79,5 px.
+
+| candidato | ancho | 929 | 390 |
+|---|---|---|---|
+| `No mostrar precios en el albarán` | 187,4 px | ✅ | ✅ |
+| `Ocultar precios en el albarán` | 164,0 px | ✅ | ✅ |
+| `Ocultar precios en el PDF` | 144,2 px | ✅ | ✅ |
+| `Entregar sin precios` | 112,8 px | ✅ | ✅ |
+
+**Nota (12 px)** — ancho útil 472/342 px. La nota con marcador mide **585,1 px: no cabe en
+ninguno de los dos**.
+
+| candidato | ancho | 929 | 390 |
+|---|---|---|---|
+| `El albarán conserva sus precios: sólo deja de enseñarlos el papel que entregas.` | 413,5 px | ✅ | ❌ (dos líneas) |
+| `Tú sigues viendo los precios y puedes facturarlo.` | 255,8 px | ✅ | ✅ |
+
+> Son **medidas, no propuestas de copy**. El asesor firma; yo no invento ningún literal.
+
+**El censo, con el número delante.** Los dos literales salen con `[PENDIENTE`, la grafía que
+SCRUM-402 cuenta. Comprobado en las dos direcciones: **sin declararlo, el trinquete dijo
+`jobDetailView.js (+2)`** — o sea que el marcador **sube** el contador y no es de los invisibles.
+Declarado con motivo: **13 → 14 ficheros**.
+
+**Son DOS y no una a propósito**: el rótulo y la nota dicen cosas distintas, y colapsarlos haría
+que aprobar uno diera por aprobado el otro. La segunda es la que importa: sin ella un profesional
+puede creer que la casilla le **borra** los precios del albarán — y no, los conserva y sigue
+pudiendo facturar.
+
+## Seis trinquetes saltaron. Ninguno se ensanchó para pasar
+
+| trinquete | qué dijo | decisión |
+|---|---|---|
+| **SCRUM-667** | marcador nuevo en `src/` | declarado en `CENSO_SERVIDOR` y en `EN_EL_PAPEL`, con motivo |
+| **SCRUM-402** | `jobDetailView.js (+2)` | declarado, y **es la prueba de que el marcador sube el contador** |
+| **SCRUM-411** | export huérfano | `ROTULO_PRESUPUESTO_ORIGEN` **deja de exportarse**; se prueba por la superficie pública, como aconsejaba el propio guard |
+| **SCRUM-533** | CR en disco en dos ficheros que toca la rama | rematerializados en LF (el blob ya estaba limpio: sólo estaba sucio el disco) |
+| **SCRUM-463** | el ancla fijaba la llamada de DOS argumentos | **re-anclado**, y exigiendo MÁS: la llamada **y** que le llegue el interruptor |
+| **SCRUM-593e** | «lo desestructura pero no lo mete en el cuerpo» | era falso: **su recorte era `i + 900`, una ventana de BYTES**. Re-anclado por IDENTIDAD |
+
+> 🔴 **Dos de ellos no eran fallos míos de producto, eran anclajes que caducaron.** El de 593e es
+> del todo la familia de SCRUM-710: al meter un campo más en el mismo receptor, `docHeaderText` se
+> salió de los 900 caracteres y el guard se puso rojo **sin que nada de lo que vigila hubiera
+> cambiado**. Ahora recorta del receptor a su cierre y crece con él, con un suelo que exige que el
+> recorte no venga vacío.
+>
+> Y el de **SCRUM-667** destapó un límite suyo: contaba los marcadores de **una** factura contra el
+> **total** de declarados, o sea que daba por supuesto que todo lo declarado sale en ese único
+> papel. La salida fácil era no declarar el mío — dejar sin declarar justo el marcador que ve el
+> cliente. **Se amplía la población a los dos documentos**; el criterio no se toca.
+
+## Huecos declarados
+
+* **La columna todavía no está aplicada.** Hasta que el ALTER corra en las tres y el schema la
+  recoja, el interruptor se guarda pero no vuelve en la fila, y todo se comporta como hoy —
+  por construcción, no por suerte.
+* El texto de los dos literales **no está aprobado**. Las cajas ya están medidas arriba.
+
+---
+
+# FASE A · la medición y la columna (tal y como se entregó)
 
 **Medido contra:** `origin/main` = `da5af22e347bbdfa3e57e1e658676e1cbd9bf310` · 2026-09-04T17:03:02+01:00
 
-> 🛑 **ESTO ES FASE A Y NO LLEVA CÓDIGO DE PRODUCTO.** El propio encargo lo pide: «¿Lleva columna
+> 🛑 **ESTO ERA FASE A Y NO LLEVABA CÓDIGO DE PRODUCTO** (el GO para FASE B llegó después). El propio encargo lo pide: «¿Lleva columna
 > nueva? Un “este albarán no enseña precios” es un dato del documento. Si la lleva, **es FASE A y
 > me la entregas antes de construir**». **La lleva.** Y además `prisma/schema.prisma` es dominio
 > del fundador, así que la columna se propone, no se escribe.
