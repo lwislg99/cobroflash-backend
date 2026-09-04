@@ -134,13 +134,22 @@ test('SCRUM-648b · 🔴 EL TOPE: si el texto crece por encima de lo MEDIDO, hay
     'marcador Y baja la entrada de `invoicesView.js` en el censo de SCRUM-402.');
 
   const textoSinMarca = literal.replace(/^\[PENDIENTE[^\]]*\]\s*/, '');
-  assert.equal(textoSinMarca, CANDIDATO,
-    '🔴 el texto ya no es el candidato que se midió. La caja está medida PARA ESE texto.');
+
+  // 🔴 EL TOPE SE COMPRUEBA ANTES QUE LA IGUALDAD, y no es cosmética: con la igualdad delante,
+  // CUALQUIER cambio de texto tumbaba este test por el mismo sitio, y el tope no se podía probar
+  // por separado. Lo cazó su propia mutación —un texto de 49 caracteres, que está DENTRO del
+  // tope, caía igual que uno de 53—, o sea que el rojo no distinguía «se pasó» de «cambió».
   assert.ok(textoSinMarca.length <= TOPE_CARACTERES,
     `🔴 EL TEXTO SE HA PASADO DEL TOPE MEDIDO: ${textoSinMarca.length} caracteres y el tope es ` +
     `${TOPE_CARACTERES}.\nNo es que no quepa: es que YA NO ESTÁ MEDIDO. A 390 px caben ` +
     `${TOPE_CARACTERES} en una línea, y por encima pasa a dos.\nVuelve a medir con ` +
     '`npm run guard:caja-semaforo` ANTES de pintarlo, y actualiza este tope con el número nuevo.');
+
+  // Y DESPUÉS, que sea el texto que se midió. Va detrás a propósito (ver arriba): así un texto
+  // que cambia pero cabe falla por «no es el candidato», y uno que se pasa falla por el tope.
+  assert.equal(textoSinMarca, CANDIDATO,
+    '🔴 el texto ya no es el candidato que se midió. La caja está medida PARA ESE texto: si el ' +
+    'fundador firma otro, hay que volver a pasar `npm run guard:caja-semaforo`.');
 
   // SUELO del propio tope: si fuera enorme, no vigilaría nada.
   assert.ok(TOPE_CARACTERES < 120,

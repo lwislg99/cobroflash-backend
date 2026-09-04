@@ -150,3 +150,156 @@ Los ficheros mutados quedaron **idénticos byte a byte** al original leído de d
   semáforo miente, ese aviso también.
 * **No sé qué pasa con un `mesKey` corrupto en base**: `mesNaturalEn` no puede producirlo hoy,
   pero no he auditado si alguna migración o import antiguo dejó filas con fechas raras.
+
+---
+
+# FASE B · Ejecutar la decisión C: ámbar con el motivo al lado
+
+**Medido contra:** `origin/main` = `f707619865a5be86988a4d34b9b0e97b4449169b` · 2026-09-05T01:17:00+02:00
+
+> ⚠️ Esa hora es la del trabajo de esta rama, no una lectura de reloj — criterio R14.
+
+**Alcance:** ejecutar la decisión C del fundador. Un plazo que **no se puede comprobar** sale
+**ámbar**, con el **motivo** al lado. **No se construye un cuarto estado** (regla 27) y **no se
+toca el `||` de `invoicesView`** (SCRUM-748, de otra sesión).
+
+---
+
+## B1 · Lo que se decidió, y por qué no es ninguno de los otros
+
+Verde se le pinta al profesional como **«AL DÍA»** — «no tienes nada que hacer»— sobre un plazo
+legal que nadie ha podido calcular. **Las dos equivocaciones no cuestan lo mismo** (criterio de
+S1 en SCRUM-639): decir «al día» cuando no se sabe **oculta** un plazo fiscal; decir «mira esto»
+cuesta una mirada.
+
+**Y no es rojo:** «plazo vencido» tampoco es cierto. Es el mismo razonamiento con el que
+SCRUM-622 resolvió el color del toast — *«ni rojo: un kind desconocido tampoco afirma que haya
+fallado»*.
+
+**`Semaforo` sigue siendo el union cerrado de tres.** Lo que se añade es `MotivoSemaforo`
+(`plazo` | `no_computable`), que no es un estado: es **por qué** el semáforo dice lo que dice.
+`ambar` pasa a significar dos cosas, comparten color porque **la acción correcta es la misma**
+—mirar esto—, pero **el porqué no se comparte**: sin él, el profesional no sabe si tiene que
+facturar o si tiene que revisar un dato.
+
+## B2 · 🔴 LA CAJA, MEDIDA — y con texto dentro
+
+`npm run guard:caja-semaforo`. Fuera de `npm test` por la misma decisión que los otros nueve
+guards de navegador: la suite no arranca un navegador.
+
+| Viewport | Sidebar | Ancho útil de la línea | El candidato (35 car.) |
+|---|---|---|---|
+| **929 px** | 248 px | **559 px** | **1 línea** (20,1 px) |
+| **390 px** | oculto | **292 px** | **1 línea** (20,1 px) |
+
+**Se midió CON TEXTO DENTRO**, que era la lección de S1: una caja vacía computa **0 px de alto** y
+ese cero se leería como «no cabe nada», que es exactamente lo contrario.
+
+**Referencia**: la microcopy YA APROBADA de SCRUM-171b (56 caracteres) ocupa **2 líneas a 390 px**
+— o sea, dos líneas no es un defecto en esta card; simplemente deja de estar medido.
+
+**En 390 px caben 50 caracteres en una línea.** De ahí sale el tope.
+
+### ⚠️ Dos correcciones a la propia medida
+
+1. **Mi primer control negativo no servía.** Era `'X'.repeat(300)`: una palabra sin espacios **no
+   se puede partir**, así que el navegador la desborda en UNA línea y el detector medía lo mismo
+   que el candidato. **El rojo que no sale acusa al caso, no al detector.** Cambiado a una frase
+   con espacios: 161 caracteres → 2 líneas a 929 y 4 a 390.
+2. **El candidato son 35 caracteres, no 34.** Cabe igual, pero el número que se ata tiene que ser
+   el real.
+
+### Y el navegador con el que se midió
+
+**Edge —el de la casa— no arranca en este entorno**: el helper de SCRUM-522 lo dice con todas las
+letras (*«el navegador ESTÁ y no levanta»*, salida 3 = NO MEDIDO). Comprobado que **le pasa a los
+diez**, no sólo al mío: `npm run censo:guards-navegador` da `rojo(3)` en los diez.
+
+La medida se tomó con **Chromium**, apuntando **al servidor de este mismo guard** —modo
+`--servir`—, así que la página medida es byte a byte la del fichero y no una copia que se
+quedaría vieja. La propia doctrina de `_navegador.mjs` lo contempla: *«Chrome y Chromium después:
+comparten motor, así que un veredicto suyo vale, pero conviene saber cuál contestó»*. **Contestó
+Chromium, y queda dicho.**
+
+## B3 · El TOPE, atado como en SCRUM-684
+
+**50 caracteres.** No dice «no crezcas»: dice **vuelve a medir antes de pintarlo**. Por encima, el
+motivo pasa a dos líneas y **deja de estar medido**.
+
+Lleva su propio suelo: si el tope fuera enorme no vigilaría nada.
+
+### 🔴 Y el tope se probó mal la primera vez
+
+La mutación con un texto de **49** caracteres —que está **dentro** del tope— tumbaba el test
+igual que uno de 53, porque la aserción de igualdad («es el candidato») se evaluaba **antes**. O
+sea: **el rojo no distinguía «se pasó» de «cambió»**. Reordenado, y reprobado:
+
+| Texto | Cae por |
+|---|---|
+| 53 caracteres | **PASADO DEL TOPE MEDIDO** |
+| 49 caracteres | **no es el candidato** |
+
+## B4 · Microcopy: marcador, y el censo sube A CONCIENCIA
+
+El texto se pinta con **`[PENDIENTE microcopy oficial]`** delante hasta que el fundador firme
+(regla 30). La grafía es la que **cuenta** el censo de SCRUM-402, y **el censo sube**:
+`invoicesView.js: 1`, declarado con su motivo, su caja medida y su árbol.
+
+**El mecanismo no existe sin texto** — el mismo criterio con el que entraron `jobNuevoModal.js` y
+`jobAsignados.js`: una línea de motivo sin texto no distingue nada, y entonces el ámbar vuelve a
+significar dos cosas sin decir cuál.
+
+**El día que se firme el rótulo, la entrada se BORRA — no se pone a 0.**
+
+## B5 · Cuatro guards ajenos me corrigieron, y los cuatro tenían razón
+
+| Guard | Qué pidió |
+|---|---|
+| **SCRUM-411** | quitar el `export` a `evaluarSemaforo` — su único consumidor está dentro del módulo. El test pasa a medir por la **superficie pública** |
+| **SCRUM-522** | declarar el guard nuevo: **9 → 10** guards fuera de la tanda |
+| **SCRUM-548** | declararlo como **destino no derivable**: sirve una ruta virtual, igual que `caja-avisos`, para que su hueco no se lea como «no solapa» |
+| **SCRUM-402** | declarar el marcador, que es de lo que va la regla 30 |
+
+## B6 · Dos caracterizaciones cayeron al ejecutar la decisión
+
+Y **no se borran: se convierten en la afirmación del arreglo**, con su historia dentro.
+
+* **SCRUM-622** decía: *«una entrada que no se sabe leer da VERDE»*, y añadía *«si esto cambia,
+  alguien ha decidido qué se pinta cuando no se sabe: bien, pero que conste con su decisión»*.
+  **Pues consta.**
+* **El control positivo de la fase A de 648** afirmaba que los siete ilegibles salían verde. Era
+  cierto, y era el defecto.
+
+## B7 · Probado en ROJO, por el mecanismo
+
+| Mutación | Qué cae |
+|---|---|
+| el ilegible vuelve a **verde** | **tres** tests, de **tres ficheros** — la decisión está atada en tres sitios |
+| el texto crece a 53 caracteres | el tope, **nombrando** que se pasó de lo medido |
+| el texto cambia pero cabe (49) | «no es el candidato» — **no** el tope |
+| se pinta **sin** el marcador | el censo de SCRUM-402 **y** el test del marcador |
+
+Los ficheros mutados quedaron **idénticos byte a byte** al original leído de disco.
+
+## B8 · Lo que NO se ha tocado
+
+* **El `||` de `invoicesView`**: es SCRUM-748 y lo lleva S5. Con la decisión C **no dispara**,
+  porque el servidor sigue emitiendo sólo los tres estados de siempre — y hay un test aquí que
+  vigila que siga en su sitio.
+* **No hay cuarto estado.** Regla 27.
+* **No se ha firmado ningún texto.** El candidato queda medido y esperando.
+
+## B9 · Huecos declarados
+
+* **La medida es de Chromium, no de Edge**, porque Edge no arranca en este entorno. Mismo motor,
+  pero no es el navegador sobre el que se midió todo lo demás de la casa.
+* **La página de medida REPRODUCE la card**, no la pinta con `renderGrupoCard` — esa función vive
+  dentro de un IIFE y no es alcanzable desde fuera. Se replicaron los contenedores que deciden el
+  ancho (`.layout`, `.sidebar`, `.main`, `.view-container`, `.data-card-body`, la card con su
+  `padding:16px`) y se comprobó que el CSS del árbol **se aplicó**; pero si alguien cambia el
+  marcado de la card, esta página no se entera sola.
+* **No se ha medido a 320 px**, que es el ancho más estrecho que soporta la casa. El fundador
+  pidió 929 y 390.
+* **`guard:caja-semaforo` no se ha podido ejecutar de punta a punta en este entorno** (Edge). Su
+  lógica de suelos y control negativo está escrita y ejercitada por partes, pero **no ha dado un
+  veredicto completo aquí**.
