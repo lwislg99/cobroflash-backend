@@ -546,6 +546,20 @@ router.get('/:id/pdf', async (req, res) => {
         cliente: quote.customer,
       },
       docFields: ((quote as any).docFields as any) ?? null, // A20.4
+      // ── 🔴 SCRUM-731 · LA FILA QUE EXPLICA EL DESCUENTO, POR LA PUERTA QUE DE VERDAD SIRVE ──
+      //
+      // Esta es la TERCERA puerta del mismo documento, y la que más pesa: regenera el PDF bajo
+      // demanda y **sobrescribe `quote.pdfUrl`**, así que su salida es la que acaba en manos del
+      // cliente. Sin esta línea el papel salía con el total YA REBAJADO y sin «Suma de líneas»,
+      // «Descuento» ni «Descuento global»: un total que el cliente no puede reconstruir sumando
+      // lo que tiene delante, y que firma así.
+      //
+      // No hace falta microcopy: los tres rótulos existen desde SCRUM-594 y ya se imprimen por
+      // las otras dos puertas. Lo que faltaba era el DATO, no el texto.
+      //
+      // DE LA FILA y no del body, igual que las otras dos puertas: este endpoint es un GET y no
+      // recibe body — el papel dice lo que quedó GUARDADO.
+      discountGlobalAmount: (quote as any).discountGlobalAmount ?? null,
       // SCRUM-593 (DOC-03): la 3ª puerta del mismo documento (el porqué, en scrum593c).
       docHeaderText: (quote as any).docHeaderText ?? null,
       docFooterText: (quote as any).docFooterText ?? null,
