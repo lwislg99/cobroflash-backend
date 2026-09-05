@@ -555,27 +555,17 @@ const CENSO = Object.freeze({
   // `PENDIENTE_MODO_EMISION` — su rama `receipt` toca terreno de la regla 26 y esa pregunta se
   // responde SOLO con el guion H2, así que no se aprueba de refilón con el resto de la pantalla.
   'settingsView.js': 1,
-  // 🔴 SCRUM-648 (fase B) · 5-sep-2026 · `invoicesView.js` ENTRA con 1, y a conciencia.
+  // 🔴 SCRUM-648 (fase B) · 5-sep-2026 · `invoicesView.js` ENTRÓ con 1 y SALIÓ el mismo día: el
+  // fundador firmó «No hemos podido comprobar el plazo.» (35 caracteres; el tope de 50 lo ata
+  // `scrum648b`). Entrada BORRADA, no puesta a 0 — un 0 es un sujeto que se mide y da cero; una
+  // entrada borrada es un sujeto que ya no existe.
   //
-  // Es el MOTIVO del ámbar en la bandeja de pendientes. La decisión C del fundador hace que un
-  // plazo que NO se puede comprobar salga ámbar en vez de verde —verde se pinta «AL DÍA», o sea
-  // «no tienes nada que hacer», sobre un plazo legal que el sistema no ha podido calcular—. Pero
-  // ámbar ya significa «se acerca el plazo», así que sin el motivo al lado el profesional no sabe
-  // si tiene que facturar o si tiene que revisar un dato: la acción es la misma, el porqué no.
-  //
-  // 🔴 EL MECANISMO NO EXISTE SIN TEXTO, que es el mismo criterio con el que entraron
-  // `jobNuevoModal.js` y `jobAsignados.js`: una línea de motivo sin texto no distingue nada, y
-  // entonces el ámbar vuelve a significar dos cosas sin decir cuál.
-  //
-  // LA CAJA ESTÁ MEDIDA ANTES DE PEDIR EL TEXTO, no después (`npm run guard:caja-semaforo`):
-  //     929 px → 559 px útiles · 390 px → 292 px útiles
-  //     el candidato del fundador («No hemos podido comprobar el plazo.») son 35 caracteres, no
-  //     los 34 que decía el encargo, y cabe en UNA línea en los dos anchos.
-  //     En 390 px caben 50 caracteres en una línea: ése es el TOPE que ata `scrum648b`.
-  //     árbol: `origin/main` = 5b95cad2 con esta rama dentro · 5-sep-2026
-  //
-  // El día que el fundador firme el rótulo, esta entrada se BORRA — no se pone a 0.
-  'invoicesView.js': 1,
+  // ⚠️ Y ESTA ENTRADA NUNCA CONTÓ: `invoicesView.js` YA ESTABA en el censo desde SCRUM-748, así
+  // que eran DOS claves iguales en el MISMO literal y en JavaScript **la última gana, en**
+  // **silencio**. `Object.freeze` no protege de esto: el pisado ocurre al construir el objeto,
+  // antes de congelarlo. El censo declaraba 1 mientras la pantalla pintaba 2, el trinquete no
+  // podía apretar y el PR #1065 se mergeó en ROJO. Lo que faltaba no era una entrada nueva: era
+  // subir a 2 la que ya había. Que no vuelva a colarse lo vigila **R4c**.
   // ── SCRUM-607 (ALB-02) · 4-sep-2026 · ENTRÓ CON 2 Y SALIÓ EL MISMO DÍA ─────────────────
   //
   // Los dos literales del interruptor que quita los precios del albarán entraron con marcador por
