@@ -663,6 +663,44 @@ function renderCustomersView(container) {
   let avisar = function () {};
   let trasGuardar = async function () {};
 
+  // SCRUM-756 · la caja propia del formulario, y QUIÉN lo abrió esta vez.
+  //
+  // `avisarEnLaVista` NO es una preferencia: es la diferencia entre pintar donde el usuario está
+  // mirando y pintar en una pantalla que no está delante. La vista de Clientes presta su caja y
+  // la usa cuando abre ELLA; el alta desde un documento usa la del modal. Sin esta bandera, y
+  // con `avisar` siendo un solo valor global, en cuanto alguien visitaba Clientes los avisos del
+  // alta abierta desde el DOCUMENTO se pintaban en la caja de CLIENTES — el arreglo que parece
+  // bueno porque el mensaje existe, sólo que nadie lo ve. Medido en SCRUM-591.
+  let modalAlertBox = null;
+  let avisarEnLaVista = false;
+
+  /**
+   * El aviso del formulario: a la caja de quien lo abrió, y SIEMPRE a alguna.
+   *
+   * Ésta es la función que usa el envío; `avisar` a secas ya no se llama desde ahí. Que el
+   * formulario no dependa de haber sido «configurado» para poder hablar es todo el ticket.
+   */
+  function avisarDelFormulario(tipo, msg) {
+    if (avisarEnLaVista) return avisar(tipo, msg);
+    if (!modalAlertBox) return;
+    modalAlertBox.textContent = msg || "";
+    modalAlertBox.className = "alert";
+    if (tipo === "success") modalAlertBox.classList.add("success");
+    if (tipo === "error") modalAlertBox.classList.add("error");
+    modalAlertBox.style.display = (tipo || msg) ? "block" : "none";
+
+    // 🔴 Y SE TRAE A LA VISTA. `.modal` lleva `max-height: calc(100vh - 40px)` con
+    // `overflow-y: auto`, y este formulario tiene veinte campos: quien pulsa «Guardar» está
+    // ABAJO, junto al botón, y un aviso pintado arriba del cuerpo le queda fuera de la pantalla.
+    // Sería el mismo defecto de este ticket en su versión sutil — el mensaje existe y no se ve.
+    //
+    // Sin `behavior: 'smooth'` a propósito: un aviso de error no se anuncia con una animación, y
+    // así no hay motion que reconciliar con `prefers-reduced-motion` (AB6).
+    if (msg) {
+      try { modalAlertBox.scrollIntoView({ block: "nearest" }); } catch (_e) { /* el banco no lo trae */ }
+    }
+  }
+
   // De un solo uso: quien abre desde un documento espera el cliente creado.
   let alGuardarUnaVez = null;
 
@@ -867,9 +905,32 @@ function renderCustomersView(container) {
 
     modal.appendChild(header);
 
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-756 · LA CAJA DE AVISOS DEL FORMULARIO, QUE ES SUYA.
+    //
+    // 🔴 Un formulario que puede RECHAZAR tiene que poder DECIRLO por sí mismo: la protección
+    // vive donde está la acción, no un nivel más allá (fundador, 5-sep-2026).
+    //
+    // Hasta hoy el único sitio donde el rechazo se pintaba era la caja de la pantalla de
+    // Clientes, prestada en `configurar`. Quien abría el alta desde el selector de un documento
+    // SIN haber pasado nunca por Clientes se comía el no-op: pulsaba Guardar, el formulario
+    // rechazaba —bien— y no lo decía. Medido en SCRUM-591.
+    //
+    // Va DENTRO del modal y encima del formulario a propósito: es donde ya está mirando quien
+    // acaba de pulsar Guardar. Reutiliza las clases `alert` / `error` / `success` que la casa ya
+    // tiene, así que no estrena ni un token (DESIGN.md) ni un texto (regla 30).
+    // ═══════════════════════════════════════════════════════════════════════════════════
     modalForm = document.createElement("form");
 
     const body = createElement("div", "modal-body");
+
+    // 🔴 VA DENTRO DE `.modal-body`, Y LO DECIDIÓ EL CSS, no el gusto. Como hijo directo de
+    // `.modal` salía SIN padding lateral —`.modal` no tiene, lo ponen `.modal-header` (20px 24px)
+    // y `.modal-body` (16px 24px)— o sea pegada a los dos bordes. Aquí hereda el padding y el
+    // `gap: 14px` de la columna, así que se separa de los campos sola y no estrena ni una regla.
+    modalAlertBox = createElement("div", "alert");
+    modalAlertBox.style.display = "none";
+    body.appendChild(modalAlertBox);
     fieldName = createField("Nombre", "name", "text", true);
     // ── SCRUM-580 (CONT-07) · LAS ETIQUETAS ───────────────────────────────────────────────
     // ✅ MICROCOPY APROBADA por el ASESOR el 2-sep-2026, PROVISIONAL a la espera del fundador.
@@ -1210,6 +1271,13 @@ function renderCustomersView(container) {
     // SCRUM-578: el aviso se APAGA al abrir. Sin esto arrastraria el del cliente anterior y
     // acusaria de duplicado a uno que no lo es — el peor falso positivo posible.
     if (avisoDuplicado) avisoDuplicado.hidden = true;
+    // SCRUM-756: y la caja del formulario, por el MISMO motivo. Un «Error guardando cliente» del
+    // alta anterior recibiria al siguiente cliente como si acabara de fallar.
+    if (modalAlertBox) {
+      modalAlertBox.textContent = "";
+      modalAlertBox.className = "alert";
+      modalAlertBox.style.display = "none";
+    }
     if (avisoNif) avisoNif.hidden = true; // SCRUM-575: no arrastrar el aviso del cliente anterior
     if (fieldPrefijo) fieldPrefijo.value = prefijosPais.ESPANA.prefijo;
     // SCRUM-579: Espana por defecto EN EL FORMULARIO, nunca en la columna. La columna es
@@ -1282,7 +1350,7 @@ function renderCustomersView(container) {
 
   async function onModalSubmit(ev) {
     ev.preventDefault();
-    avisar(null, "");
+    avisarDelFormulario(null, "");
 
     let creado = null;
     const payload = {
@@ -1326,7 +1394,7 @@ function renderCustomersView(container) {
     };
 
     if (!payload.name) {
-      avisar("error", "El nombre es obligatorio.");
+      avisarDelFormulario("error", "El nombre es obligatorio.");
       fieldName.input.focus();
       return;
     }
@@ -1335,12 +1403,12 @@ function renderCustomersView(container) {
       modalSaveBtn.disabled = true;
       if (editingCustomer) {
         await updateCustomer(editingCustomer.id, payload);
-        avisar("success", "Cliente actualizado correctamente.");
+        avisarDelFormulario("success", "Cliente actualizado correctamente.");
       } else {
         // SCRUM-591 · se GUARDA lo que devuelve el servidor: el alta desde un documento
         // necesita el `id` para dejarlo seleccionado, y no se lo puede inventar.
         creado = await createCustomer(payload);
-        avisar("success", "Cliente creado correctamente.");
+        avisarDelFormulario("success", "Cliente creado correctamente.");
       }
       closeModal();
       await trasGuardar();
@@ -1349,7 +1417,7 @@ function renderCustomersView(container) {
       // SOLO USO: se limpia, para que el siguiente alta normal no dispare al anterior.
       if (creado && alGuardarUnaVez) { const cb = alGuardarUnaVez; alGuardarUnaVez = null; cb(creado); }
     } catch (err) {
-      avisar("error", "Error guardando cliente: " + err.message);
+      avisarDelFormulario("error", "Error guardando cliente: " + err.message);
     } finally {
       modalSaveBtn.disabled = false;
     }
@@ -1365,8 +1433,16 @@ function renderCustomersView(container) {
       if (opciones && opciones.trasGuardar) trasGuardar = opciones.trasGuardar;
     },
 
-    /** La entrada de siempre: los dos botones de la tabla de Clientes. */
-    abrir: openModal,
+    /**
+     * La entrada de siempre: los dos botones de la tabla de Clientes.
+     *
+     * SCRUM-756 · marca que avisa LA VISTA, porque su caja SÍ está delante. Lo que funcionaba
+     * sigue funcionando igual: el aviso se pinta donde el profesional lleva viéndolo siempre.
+     */
+    abrir: function (mode, customer) {
+      avisarEnLaVista = true;
+      return openModal(mode, customer);
+    },
 
     /**
      * SCRUM-591 · la entrada NUEVA: alta desde el selector de un documento.
@@ -1380,6 +1456,11 @@ function renderCustomersView(container) {
     abrirNuevo: function (opciones) {
       const o = opciones || {};
       alGuardarUnaVez = typeof o.alGuardar === 'function' ? o.alGuardar : null;
+      // 🔴 SCRUM-756 · el documento NO presta caja, así que el formulario usa la SUYA. Y se pone
+      // en cada apertura, no una vez: si se dejara al valor que quedó de la vez anterior, abrir
+      // desde el documento DESPUÉS de haber abierto desde Clientes seguiría avisando en la caja
+      // de Clientes — que es el defecto entero, sólo que más difícil de ver.
+      avisarEnLaVista = false;
       openModal('create', null);
       // El prellenado va DESPUÉS de abrir: `openModal` hace `reset()` y lo borraría.
       if (o.nombre && fieldName && fieldName.input) {
