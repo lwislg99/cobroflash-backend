@@ -2,6 +2,13 @@
 
 **Escrita el 5-sep-2026 · ninguno de estos textos está aprobado** (regla 30).
 
+**Medido contra:** `origin/main` = `78ca15a35f1765d141688258eb34ae0ef396731c` · 2026-09-05T16:25:32+01:00
+
+> El ancla se escribió **después** de mezclar ese `main` dentro de la rama y comprobando que es
+> ancestro de `HEAD`, no antes: en esta sesión `main` se movió dos veces (`28b04585` → `78ca15a3`)
+> mientras se trabajaba, y un ancla escrita antes del merge nace caduca. La segunda de esas
+> vueltas trajo SCRUM-751, que arregla justo el defecto que esta rama había medido y registrado.
+
 ## ⚠️ Por qué este fichero NO está en `docs/microcopy/`
 
 Se escribió primero ahí y **el guard de SCRUM-726 lo tiró, con razón**. Aquel directorio es «el
