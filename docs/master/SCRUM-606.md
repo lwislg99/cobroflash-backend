@@ -18,7 +18,7 @@ cambio, y el placeholder se acortó antes de enseñárselo.
 > se PINTE un marcador (y ya no hay ninguno) y SCRUM-514 vigila el sentido contrario, que todo
 > lo aprobado esté pintado—, pero es un hecho declarado, no un olvido.
 
-**Medido contra:** `origin/main` = `78ca15a35f1765d141688258eb34ae0ef396731c` · 2026-09-05T16:25:32+01:00
+**Medido contra:** `origin/main` = `6fa04adc66a95509f52b3b0b38679e19c5b0baa0` · 2026-09-05T18:10:52+01:00
 
 > El ancla se escribió **después** de mezclar ese `main` dentro de la rama y comprobando que es
 > ancestro de `HEAD`, no antes: en esta sesión `main` se movió dos veces (`28b04585` → `78ca15a3`)
