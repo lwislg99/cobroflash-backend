@@ -268,3 +268,91 @@ ticket le pone un guard, no le cambia una línea.
 * `public/dashboard/js/quoteMargen.js` se sigue cargando en el índice y **el documento ya no lo consume** (SCRUM-669; colisiona con SCRUM-663).
 * El elemento `priceHint` («Final: …») queda **siempre vacío** (SCRUM-669).
 * En el árbol hay tres ficheros **sin seguimiento** que no son de este carril y llevan ahí desde antes: `docs/Sprint Scrum/SESION_ACTUAL_SCRUM-104_fase2.md`, `docs/Sprint Scrum/SESION_ACTUAL_SCRUM-118.md` y uno llamado literalmente `how f11e445e`, que tiene pinta de `git show` mal escrito.
+
+---
+
+# SCRUM-598 · APÉNDICE · La frontera MARGEN / COSTE, medida el 5-sep-2026
+
+**Fecha:** 5-sep-2026 · **Carril:** verificación · **Gate:** sin gate — no entra código
+**Medido contra:** `origin/main` = `2f8a70570a0427707cb75550dfb68ed50eec1cc9` · 2026-09-05T17:44:03+01:00
+**No se ha construido nada.** Ni guard nuevo, ni microcopy, ni esquema. Dos inyecciones, revertidas
+por bytes. Esta entrada sólo mide.
+
+## Por qué esto no estaba en «Los huecos que declaro», y no es un olvido
+
+El 2-sep, cuando se retiró el margen del documento, **`costeUnitario` todavía no existía**.
+
+| | commit | hora |
+|---|---|---|
+| SCRUM-598 · el margen SALE del documento | `139ebbd1` | 2-sep **14:35** |
+| SCRUM-661 · el coste ENTRA en la línea | `2e3e7685` | 2-sep **15:03** |
+
+`139ebbd1` es **ancestro** de `2e3e7685`. Los dos trabajos fueron **secuenciales, nunca
+simultáneos**, así que la pregunta «¿quitar el margen se lleva por delante el coste?» **no se podía
+formular todavía**. Hoy los dos están vivos a la vez y sí se puede — y P6 se firmó el 5-sep con la
+salida B, que hace de `costeUnitario` una decisión y no un detalle.
+
+**La pregunta, entonces:** ¿está la frontera VIGILADA, o sólo está bien hoy por casualidad?
+
+## Las dos inyecciones, y qué cayó con cada una
+
+Árbol limpio en `2f8a7057`, verde base **31/31** en los tres ficheros. Testigos de bytes guardados
+antes de tocar.
+
+### ① Alguien DEVUELVE el margen al documento
+
+Inyectado en `quotesView.js` un `campoLinea("Margen %")` con su input, **en el hueco donde vivía** y
+copiando la forma del `Dto. %` que lo ocupa hoy — un defecto creíble, no uno escrito para caer.
+Comprobado que la inyección se aplicó y que `node --check` pasa: el fichero es válido, el defecto es
+real.
+
+| resultado | |
+|---|---|
+| **caen 4 tests, los cuatro de `scrum598`** | «EL MARGEN NO ESTÁ EN NINGUNA DE LAS TRES PUERTAS», «EL ROJO NOMBRA LA PUERTA», y **los dos controles negativos** |
+| **de `scrum661` / `661b`: cae 0** | el coste no se entera, que es lo correcto |
+
+### ② Alguien RETIRA `costeUnitario` «por limpieza»
+
+Retirada la declaración de `QuoteLineSchema` (`schemas.ts:113`), que es exactamente el gesto que
+haría quien pasara a limpiar un campo que cree muerto.
+
+| resultado | |
+|---|---|
+| 🔴 **NI SIQUIERA COMPILA** | `error TS2339: Property 'costeUnitario' does not exist on type…` — lo delata el propio `superRefine` que prohíbe coste en una cabecera (`schemas.ts:191`) |
+| **caen 9 tests en CUATRO ficheros** | `scrum619` (vocabulario de línea) · `scrum661` · `scrum661b` · `scrum712` (decimales) |
+| **de `scrum598`: cae 0** | el margen no se entera, que es lo correcto |
+
+## El veredicto
+
+> **La frontera está vigilada en las DOS direcciones, por guards DISTINTOS, y sin solaparse.**
+> Devolver el margen tumba sólo a 598; retirar el coste tumba sólo a los del coste — y antes de
+> llegar al test, **rompe la compilación**.
+
+O sea que la consecuencia operativa que P6 dejó escrita —«ningún ticket futuro puede retirar
+`costeUnitario` por limpieza»— **no depende de que alguien lea el ticket**: hay mecanismo, y es el
+tipo, que es el escalón más alto (hacerlo imposible), no un guard que hubiera que recordar correr.
+
+## 🔬 Un falso positivo MÍO, y lo digo porque casi publico su número
+
+La primera pasada de la inyección ① dio **8 rojos**, cuatro de ellos de `scrum661`. Habría escrito
+«devolver el margen rompe el coste», que es justo la mina que venía a descartar — y **habría sido
+falso**.
+
+La causa: en la inyección ② había recompilado con el campo retirado, y al revertir el **fuente** no
+recompilé. `dist/` seguía sin `costeUnitario`. **Los rojos de 661 eran del `dist/` rancio, no del
+defecto.** Se repitió la medición con `npm run build` de por medio y el resultado limpio es el de
+arriba: 4 rojos, todos de 598.
+
+**La lección, que ya está escrita en esta casa y hoy volvió a morder:** después de revertir un
+fuente que compila, **la reversión no ha terminado hasta que `dist/` la refleja**. `Buffer.compare`
+sobre el fuente daba 0 y aun así el árbol mentía.
+
+## Lo que sigue sin medirse
+
+1. **Navegador: sigue abierto.** Los huecos 1, 2 y 3 de la entrada del 2-sep siguen exactamente
+   igual — esta medición es de fuente y de ejecución en Node, no de pantalla.
+2. **Producción: sin medir.** No se puede desde un árbol de trabajo.
+3. **El margen NEGATIVO.** `margenDesde(150, 100)` devuelve **−50**, ejecutado hoy. Es aritmética
+   correcta —vender por debajo del coste ES margen negativo— pero **nadie ha decidido qué enseña la
+   ficha** en ese caso, y el guard de CAT-01 sólo cubre el imposible por arriba (≥ 100 % con coste).
+   No es de este ticket; se anota porque es la pregunta que quedó viva de CAT-01.
