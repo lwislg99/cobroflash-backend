@@ -324,6 +324,99 @@ un índice ausente no rompe ninguna consulta, solo la degrada cuando la tabla cr
 * **La ausencia en un reflog no prueba que algo no se hiciera aquí**: un rebase reescribe el SHA y
   rompe el enlace. Por eso ① lleva su control de sensibilidad (47/50) y no se apoya en el silencio.
 
+## SCRUM-609 (CAT-01) · `products.item_kind` — ✅ COLUMNA APLICADA en las TRES bases · ✋ backfill SIN VERIFICAR en producción (2-sep-2026 · registrado el 5-sep-2026)
+
+**REGISTRO TARDÍO, y el retraso es parte del registro.** El `ALTER` se aplicó el **2-sep-2026** y el
+PR con el esquema mergeó ese mismo día. **Este fichero no se tocó**, así que durante tres días una
+migración aplicada en las tres bases —producción incluida— no constaba en el log de `db push`.
+Lo escribe el 5-sep-2026 la sesión que lo detectó, **no** la que lo aplicó: todo lo que va abajo
+sobre dev y staging es **lo que aquella sesión declaró**, y se marca como tal.
+
+```sql
+-- prisma/backfill/scrum609-item-kind.sql
+ALTER TABLE "products" ADD COLUMN "item_kind" TEXT;
+UPDATE "products" SET "item_kind" = 'PRODUCTO' WHERE "item_kind" IS NULL;
+```
+
+Fichero: **`prisma/backfill/scrum609-item-kind.sql`** (no en `docs/sql/`, a diferencia del resto).
+Aditivo, nullable y **sin `DEFAULT`**, por el mismo motivo que `customers.contact_kind` de CONT-01:
+un `DEFAULT` convertiría cada fila futura en «declarada» sin que nadie lo haya dicho. NULL = sin
+clasificar, y el switch no preselecciona ningún lado. El `WHERE item_kind IS NULL` lo hace
+re-ejecutable sin pisar nada ya declarado.
+
+### Las dos afirmaciones de esta entrada, separadas como manda la cabecera
+
+Esta entrada es el caso de manual de la distinción de SCRUM-225 — **la columna la puede verificar
+una máquina; el backfill no** — así que van en dos filas y con dos símbolos distintos:
+
+| # | afirmación | clase | quién la sostiene |
+|---|---|---|---|
+| ① | **existe `products.item_kind`** en dev, staging y **producción** | 🔎 **VERIFICABLE** | ① dev/staging: la sesión del 2-sep. ② producción: **medido el 5-sep**, método abajo |
+| ② | **las filas están a `'PRODUCTO'`** | ✋ **DECLARACIÓN MANUAL** | dev (8 filas) y staging (0): la sesión del 2-sep. **Producción: NADIE. No verificado.** |
+
+| base | columna | filas declaradas al aplicar | backfill |
+|---|---|---:|---|
+| **DEV** (`yaqu_dev_javier`) | ✅ declarada aplicada (2-sep) | 8 → tocó 8 | ✋ declarado, no re-verificado aquí |
+| **STAGING** (`railway` @ `acela`) | ✅ declarada aplicada (2-sep) | 0 → tocó 0 | ⚪ **no ejercitó nada**: staging tiene 0 productos |
+| **PRODUCCIÓN** (`railway` @ `autorack`) | ✅ **PROBADA el 5-sep** (método abajo) | 58 (dato del fundador, **no medido**) | 🕳️ **SIN VERIFICAR — ver abajo** |
+
+### 🔎 ① Cómo se probó que producción TIENE la columna, sin una sola credencial
+
+Producción no se puede consultar desde un árbol de trabajo (regla 3), así que no se consultó: se
+midió **por el arranque**, que es un instrumento que ya existe.
+
+`src/index.ts` llama a `assertSchemaSinDeriva`, y `src/core/db/schemaDrift.ts:276` hace
+`if (!d.arranca) throw new Error(d.mensaje)`. En producción, **una columna del esquema que la base
+no tiene impide arrancar**. Luego: si el proceso está sirviendo el código que nombra `item_kind`,
+la columna está. Sólo hay que probar las dos mitades, y las dos son lectura pública:
+
+| lo que se pidió | respuesta (5-sep-2026, 16:31–16:38 +0100) | qué prueba |
+|---|---|---|
+| `GET /dashboard/js/switchTipoArticulo.js` — **fichero nacido en ese PR** | **200 · 8 579 bytes** · `x-powered-by: Express` | el proceso vivo sirve el código del PR |
+| `GET /admin/products` | **401** | el router está montado: no es un CDN sirviendo estáticos sueltos |
+| **control negativo** · `GET /dashboard/js/noExisteJamas-609.js` | **404 · 21 bytes** | el servidor **no** responde 200 a cualquier cosa: el 200 de arriba significa algo |
+| `last-modified` del asset | `Sat, 05 Sep 2026 01:23:31 GMT` | el instante exacto del merge de `28b04585` — el despliegue es el de `main` de hoy |
+
+**Sin el control negativo esto no valdría.** Un servidor que devuelve 200 a todo habría dado el
+mismo 200 al fichero del PR, y la prueba habría sido un espejismo.
+
+> ⚠️ **El límite de este método, dicho:** prueba que la columna **existe**. No dice nada de su tipo,
+> su nullability ni su default en producción. Eso sigue siendo `docs/sql/deriva-prod.sql`, que se
+> pega en la consola de esa base — y es el instrumento que manda sobre este fichero (SCRUM-225).
+
+### 🕳️ ② Lo que NO está probado, y no se va a escribir como si lo estuviera
+
+**Que las filas de producción quedaran a `'PRODUCTO'` NO ESTÁ VERIFICADO POR NADIE.**
+
+No es un descuido de esta entrada: es estructural, y la cabecera de este fichero ya lo dice —
+«la columna existe, así que el mecanismo dirá "en sync" con toda la razón **mientras las filas
+siguen a NULL**». El backfill es exactamente ese caso.
+
+Y aquí hay una consecuencia concreta, no teórica: **`item_kind` es nullable y NULL es un valor
+legítimo** («sin clasificar»). Así que un producto de producción a NULL **no rompe nada y no
+avisa**: la ficha simplemente enseña todos los campos, que es el comportamiento diseñado para
+`null`. **Un backfill que no corrió es indistinguible de uno que corrió, mirando desde fuera.**
+
+**Qué lo cerraría, y es una sola consulta de lectura:**
+
+```sql
+SELECT "item_kind", COUNT(*) FROM "products" GROUP BY 1 ORDER BY 2 DESC;
+```
+
+Si sale una sola fila `PRODUCTO | 58`, el backfill corrió. Si aparece `NULL | 58`, no corrió y
+**no ha roto nada** — sólo hay que ejecutar el `UPDATE`, que es re-ejecutable. La ejecuta el
+fundador en la consola de producción; esta sesión no puede y no debe.
+
+> 🔴 **Y el límite de la decisión del backfill, que se copia aquí porque el que la reutilice leerá
+> esta entrada y no el ticket:** todas las filas nacen `'PRODUCTO'` **por el ESTADO de los datos, no
+> por el criterio** — no hay merchants reales, todos son de prueba, así que no se declara nada por
+> nadie. **Con catálogos reales, un backfill masivo SÍ estaría declarando por el profesional**
+> (diciendo que su catálogo son productos cuando quizá son servicios) y sería la decisión
+> equivocada. Mismo límite que se dejó escrito con `timezone`. La condición es **evaluable**, no
+> prosa: `npm run puerta:cliente-real` (SCRUM-390).
+
+---
+
 ## SCRUM-441 · `invoices.paid_via` — ✅ APLICADO en staging y producción (12-ago-2026)
 
 **Lo aplicó el FUNDADOR, no esta sesión.** Se registra lo que él reportó, y con eso queda dicho el
