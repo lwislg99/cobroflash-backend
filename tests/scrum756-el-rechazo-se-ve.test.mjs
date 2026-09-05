@@ -167,6 +167,86 @@ test('SCRUM-756 · 🔴 LA TRAMPA: tras visitar Clientes, el aviso del DOCUMENTO
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
+// EL DESPLAZAMIENTO · la mitad que SÍ se puede medir
+//
+// ⚠️ ESTE TEST MIDE LA MECÁNICA, NO EL EFECTO. Que el aviso quede a la vista de un humano
+// depende del motor de maquetado, y aquí no hay: el banco no implementa `scrollIntoView`. Lo
+// que SÍ es medible —y barato— es que se llame, UNA vez, SOBRE EL NODO DE LA CAJA y sólo
+// cuando hay algo que enseñar. Esa mitad se mide; la otra se declara en la entrada de máster.
+//
+// Un cambio sin ejercitar dentro de un ticket cuya tesis es «lo que no se ve no cuenta» sería
+// incoherente con el propio ticket (fundador, 5-sep-2026).
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Pone un espía de `scrollIntoView` en TODOS los nodos del modal y devuelve las llamadas.
+ *
+ * En todos, y no sólo en la caja, a propósito: así el test puede afirmar sobre QUÉ nodo se
+ * llamó. Espiando sólo la caja, un `scrollIntoView` sobre el nodo equivocado saldría como
+ * «no se llamó», que es un diagnóstico distinto.
+ */
+function espiarScroll(b) {
+  const llamadas = [];
+  for (const n of todos(b.ctx.document.body)) {
+    n.scrollIntoView = function (opts) { llamadas.push({ nodo: n, opts }); };
+  }
+  return llamadas;
+}
+
+test('SCRUM-756 · el aviso SE TRAE A LA VISTA: una vez, y sobre la caja', async () => {
+  const { b } = banco();
+  b.ctx.window.altaClienteModal.abrirNuevo({ alGuardar: () => {} });
+
+  const llamadas = espiarScroll(b);
+  assert.equal(llamadas.length, 0,
+    '🔴 SUELO: abrir el modal ya desplaza algo, así que lo de abajo no distinguiría.');
+
+  await enviarElFormulario(b);
+
+  // 🔴 UNA, no dos. El envío llama al aviso DOS veces —primero `(null, "")` para limpiar y
+  // luego el error—, y la de limpiar no debe desplazar nada: ahí no hay nada que enseñar.
+  // Ese `(null, "")` es el control negativo, y viene dentro del mismo flujo real.
+  assert.equal(llamadas.length, 1,
+    `🔴 se ha desplazado ${llamadas.length} veces y tiene que ser UNA. Si son dos, la llamada `
+    + 'que LIMPIA el aviso está desplazando también, y eso mueve la pantalla sin motivo.');
+
+  const nodo = llamadas[0].nodo;
+  assert.ok(String(nodo.textContent || '').includes(MENSAJE),
+    '🔴 SE HA DESPLAZADO AL NODO EQUIVOCADO: el nodo traído a la vista no es el que lleva el\n'
+    + `   mensaje. Contenido del nodo desplazado: ${JSON.stringify(String(nodo.textContent || '').slice(0, 120))}`);
+  assert.ok(String(nodo.className || '').split(' ').includes('alert'),
+    `🔴 el nodo desplazado no es la caja de avisos: className=${JSON.stringify(nodo.className)}`);
+});
+
+test('SCRUM-756 · CONTROL NEGATIVO: la llamada que LIMPIA el aviso no desplaza', async () => {
+  const { b } = banco();
+  b.ctx.window.altaClienteModal.abrirNuevo({ alGuardar: () => {} });
+
+  // 🔴 EL PRIMER INTENTO DE ESTE CONTROL ESTABA MAL, y queda escrito porque la trampa es fina:
+  // se puso el nombre esperando que «sin rechazo no hay aviso», y el envío con ÉXITO también
+  // avisa —«Cliente creado correctamente.»—, así que desplazaba y el rojo acusaba al caso, no
+  // al detector.
+  //
+  // Lo que de verdad hay que medir es que el aviso VACÍO no mueva la pantalla. Y el flujo real
+  // lo trae dentro: `onModalSubmit` llama al aviso DOS veces —`(null, "")` para limpiar y
+  // luego el resultado—, así que un solo desplazamiento por envío ES la prueba de que el de
+  // limpieza no desplaza. Se ejercita por el camino bueno, donde el de limpieza va delante.
+  const nombre = todos(b.ctx.document.body).find((n) => n.tagName === 'INPUT' && n.name === 'name');
+  assert.ok(nombre, '🔴 SUELO: no hay campo de nombre, así que este caso no prueba nada.');
+  nombre.value = 'Talleres Ruiz';
+
+  const llamadas = espiarScroll(b);
+  await enviarElFormulario(b);
+
+  assert.equal(llamadas.length, 1,
+    `🔴 se ha desplazado ${llamadas.length} veces en un envío que emite DOS avisos (la limpieza `
+    + 'y el resultado). Si son dos, el aviso VACÍO está moviendo la pantalla: ruido, y encima '
+    + 'tapando lo que el profesional mira.');
+  assert.ok(String(llamadas[0].nodo.className || '').split(' ').includes('alert'),
+    '🔴 el nodo desplazado no es la caja de avisos.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
 // EL CENSO · ¿cuántas costuras más tienen esta forma?
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
@@ -264,5 +344,14 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: '    if (avisarEnLaVista) return avisar(tipo, msg);',
     a: '    return avisar(tipo, msg);',
     cae: 'LA TRAMPA: tras visitar Clientes, el aviso del DOCUMENTO no va a su caja',
+  },
+  {
+    // ③ el desplazamiento desaparece. Sin esta mutación, la parte MECÁNICA del `scrollIntoView`
+    // viajaría sin que nadie haya visto caer su guard — y un guard que no se ha visto fallar es
+    // una decoración, no un guard.
+    fichero: 'public/dashboard/js/customersView.js',
+    de: '      try { modalAlertBox.scrollIntoView({ block: "nearest" }); } catch (_e) { /* el banco no lo trae */ }',
+    a: '      /* mutación: sin desplazamiento */',
+    cae: 'el aviso SE TRAE A LA VISTA: una vez, y sobre la caja',
   },
 ];
