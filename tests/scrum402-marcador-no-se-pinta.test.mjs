@@ -112,6 +112,31 @@ const CENSO = Object.freeze({
   //
   // El dia que el fundador firme los cuatro textos, esta entrada se BORRA — no se pone a 0.
   'jobAsignados.js': 1,
+  // 🔴 SCRUM-748 (4-sep-2026) · SUBIDA A CONCIENCIA: `invoicesView.js` ENTRA con 1.
+  //
+  // La bandeja de pendientes decidía con `SEMAFORO_META[grupo.semaforo] || SEMAFORO_META.verde`,
+  // así que CUALQUIER estado que el servidor no supiera nombrar salía en pantalla como **«AL
+  // DÍA»**. Medido ejecutando esa misma línea: los cinco casos desconocidos —uno nuevo, cadena
+  // vacía, `undefined`, `null`— pintaban lo mismo que el bueno.
+  //
+  // POR QUÉ CON MARCADOR Y NO CON TEXTO: quitar la mentira exige poner OTRA cosa, y esa otra cosa
+  // es el rótulo de «no sé qué estado es esto», que es microcopy que nadie ha escrito (regla 30).
+  // Se ve en pantalla A PROPÓSITO: es la única forma de que nadie encienda por descuido un texto
+  // sin firmar. Y el cuarto estado NO se construye aquí: eso es del fundador (regla 27).
+  //
+  // VA CON EL CÓDIGO DETRÁS —`[PENDIENTE microcopy oficial] CUARTO_ESTADO`—, y no solo. Es el
+  // criterio de `invoiceStatusMeta` en `api.js:1118`, que ante un estado sin mapear no elige uno
+  // sino que enseña el suyo. Es el REVERSO exacto de SCRUM-641: en un aviso de error enseñar el
+  // código ES el defecto; en un rótulo de estado, esconderlo lo es.
+  //
+  // 🔴 CUENTA 1 Y PINTA 1, HOY, y el literal está escrito UNA sola vez (`INV_MARCADOR_MICROCOPY`).
+  // Si el siguiente ticket añade otro rótulo reutilizando esa constante, **este número NO se
+  // moverá** y entrará una superficie nueva en silencio — la lección de SCRUM-575. Quien añada uno
+  // le pone SU constante, para que el fundador pueda firmar uno sin firmar los dos.
+  //
+  // ⚠️ Que esto no dispare HOY no lo hace decorativo: el semáforo tiene tres estados y los tres
+  // están mapeados. Es un guard que se abre solo (SCRUM-537) con el disparador ya en el plan.
+  'invoicesView.js': 1,
   // 🔴 SCRUM-606 (ALB-01) · 5-sep-2026 · ENTRAN DOS FICHEROS, con 1 cada uno, A CONCIENCIA.
   //
   // `albaranDesdePresupuestoModal.js` cuenta 1 y son SEIS textos: el placeholder del buscador,

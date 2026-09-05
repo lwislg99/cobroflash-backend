@@ -32,7 +32,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url'; // SCRUM-730
 import ts from 'typescript';
-import { mutacionesDeclaradas, censoDeDeclaraciones } from '../scripts/meta-guard-mutaciones.mjs';
+import {
+  mutacionesDeclaradas, censoDeDeclaraciones,
+  cayo, paso, // SCRUM-748: los dos veredictos, que dejaron de ser el mismo
+} from '../scripts/meta-guard-mutaciones.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIR_TESTS = path.join(RAIZ, 'tests');
@@ -248,3 +251,108 @@ test('SCRUM-745 · 🔴 el censo de la superficie de riesgo, con su población',
     `🔴 la rama \`regex\` del detector ve ${porForma.regex}: se ha quedado muda — y es la MAYOR `
     + 'de las dos, así que su silencio se notaría menos en el total.');
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// ④ SCRUM-748 · «NO CAYÓ» Y «NO SE EJECUTÓ» NO SON LO MISMO
+//
+// El meta-guard llamaba MUDO a todo lo que no caía, y con eso ACUSÓ EN CI a un guard sano:
+// `scrum748` moría entero al cargar —el job no compilaba y su banco de vistas necesita `dist/`—
+// así que su `✖ <nombre>` no se imprimía nunca. «No lo encuentro» se leyó como «no cayó».
+//
+// 🔴 Y NO SE ARREGLÓ RECONOCIENDO EL MENSAJE DE ERROR: eso es una lista negra, y sólo sabe decir
+// que no a lo que le enseñaron. Se arregló por LÍNEA BASE — si el test no sale EN VERDE en la
+// pasada limpia, no hay nada que juzgar y ni siquiera se muta.
+//
+// Lo de abajo vigila los DOS lectores por separado, porque el veredicto entero cuelga de que no
+// se confundan.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/** Una salida de `node --test --test-reporter=spec` con un test verde y otro rojo. */
+const SALIDA_MIXTA = [
+  '✔ SCRUM-x · el que pasa (1.2ms)',
+  '✖ SCRUM-x · el que falla (3.4ms)',
+  'ℹ tests 2',
+].join('\n');
+
+/** Lo que imprime node cuando el FICHERO no llega a cargar: ni un nombre de test, en ningún lado. */
+const SALIDA_FICHERO_MUERTO = [
+  "Error: Cannot find module '../dist/algo.js'",
+  'ℹ tests 1',
+  'ℹ pass 0',
+  'ℹ fail 1',
+].join('\n');
+
+test('SCRUM-745/748 · SUELO: `paso` y `cayo` distinguen verde de rojo, y no se confunden', () => {
+  assert.equal(paso(SALIDA_MIXTA, 'el que pasa'), true, '🔴 `paso` no ve un verde.');
+  assert.equal(cayo(SALIDA_MIXTA, 'el que falla'), true, '🔴 `cayo` no ve un rojo.');
+  // Y cruzados: el verde no es un rojo ni al revés. Si esto se confundiera, el veredicto se
+  // invertiría entero y todo saldría al revés sin que nada avisara.
+  assert.equal(cayo(SALIDA_MIXTA, 'el que pasa'), false, '🔴 `cayo` cuenta un VERDE como caída.');
+  assert.equal(paso(SALIDA_MIXTA, 'el que falla'), false, '🔴 `paso` cuenta un ROJO como verde.');
+});
+
+test('SCRUM-745/748 · 🔴 con el FICHERO MUERTO, ni pasó ni cayó — y ahí nace el CIEGO', () => {
+  // Éste es el caso que produjo la acusación falsa en CI. Los dos lectores tienen que decir NO:
+  // es la conjunción «no pasó y no cayó» la que separa «no se ejecutó» de «no cayó».
+  assert.equal(paso(SALIDA_FICHERO_MUERTO, 'el que pasa'), false,
+    '🔴 se lee como verde un test que no llegó a existir.');
+  assert.equal(cayo(SALIDA_FICHERO_MUERTO, 'el que pasa'), false,
+    '🔴 se lee como caída un test que no llegó a existir: ESA es la acusación falsa.');
+});
+
+test('SCRUM-745/748 · 🔴 el meta-guard mira la LÍNEA BASE, y NO reconoce mensajes de error', () => {
+  const src = fs.readFileSync(path.join(RAIZ, 'scripts', 'meta-guard-mutaciones.mjs'), 'utf8');
+  const sf = ts.createSourceFile('m.mjs', src, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+
+  // ① Consulta la línea base ANTES de decidir: por llamada, no por mención (lección de SCRUM-740).
+  let consultaLaBase = 0;
+  const v = (n) => {
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'paso') {
+      consultaLaBase += 1;
+    }
+    ts.forEachChild(n, v);
+  };
+  v(sf);
+  assert.ok(consultaLaBase >= 1,
+    '🔴 el meta-guard ya no consulta la pasada limpia. Sin línea base vuelve a confundir «no se '
+    + 'ejecutó» con «no cayó», y a acusar a guards sanos.');
+
+  // ② 🔴 Y NO se cuela una lista negra de mensajes. Se mira el CÓDIGO desnudo, porque el
+  // comentario que explica la prohibición CITA el mensaje que prohíbe reconocer (SCRUM-203).
+  const desnudo = src
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .split('\n').map((l) => l.replace(/(^|[^:])\/\/.*$/, '$1')).join('\n');
+  assert.ok(desnudo.includes('function aplicarUna'), '🔴 el desnudado se llevó el código por delante.');
+  for (const cadena of ['Cannot find module', 'MODULE_NOT_FOUND', 'SyntaxError']) {
+    assert.equal(desnudo.includes(cadena), false,
+      `🔴 el meta-guard reconoce el mensaje «${cadena}». Un detector de mensajes sólo sabe decir `
+      + 'que no a lo que le enseñaron: el primer fallo que nadie previó vuelve a salir MUDO.');
+  }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-748 · LAS MUTACIONES DE ESTE GUARD — el que juzga a los demás, el primero
+// ═════════════════════════════════════════════════════════════════════════════════════════
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // El defecto original: dictar el veredicto sin mirar la línea base.
+    fichero: 'scripts/meta-guard-mutaciones.mjs',
+    de: '  if (!paso(salidaLimpia, mut.cae)) {',
+    a: '  if (false) {',
+    cae: 'el meta-guard mira la LÍNEA BASE, y NO reconoce mensajes de error',
+  },
+  {
+    // Y la otra mitad: que `paso` deje de distinguir un verde de una ausencia — con eso, un
+    // fichero muerto volvería a parecer que se ejecutó, y el CIEGO se convertiría otra vez en
+    // una acusación.
+    //
+    // ⚠️ EL ANCLA VA SIN BARRAS INVERTIDAS A PROPÓSITO. El primer intento ancló en la línea de
+    // `cayo`, que lleva una regex, y el s perdió su barra por el camino hasta el fichero: el
+    // ancla no casaba con nada. Lo cazó ESTE MISMO meta-guard diciendo CIEGO —«la declaración
+    // caducó»— en vez de acusar al guard. Es exactamente la distinción que SCRUM-748 vino a
+    // arreglar, probándose a sí misma con su propio defecto.
+    fichero: 'scripts/meta-guard-mutaciones.mjs',
+    de: 'export function paso(salida, nombre) {',
+    a: 'export function paso(salida, nombre) {\n  return true;',
+    cae: 'con el FICHERO MUERTO, ni pasó ni cayó',  },
+];
