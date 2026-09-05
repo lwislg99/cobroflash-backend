@@ -5,6 +5,18 @@
 **Origen:** la medición del apéndice de `docs/master/SCRUM-605.md` (5-sep-2026). El ticket nace de
 un hallazgo, no de una intención.
 
+> ⚠️ **`main` se movió durante el trabajo** y se mezcló DENTRO de la rama antes de la tanda final:
+> `78ca15a35f1765d141688258eb34ae0ef396731c` (SCRUM-751). El ancla de arriba es contra lo que se
+> MIDIÓ; ésta es contra lo que se ENTREGA. Y trajo un guard nuevo —el de claves duplicadas— que
+> corrió sobre este código sin señalarlo.
+
+**Tanda final, con `main` dentro y después del último cambio:**
+**5.467 pruebas · 5.379 en verde · 0 fallos · 88 saltadas** (76 `QA_DB_TEST`, 9 `LIBRO_PG_URL`,
+1 `BOT_SUITE_TEST`, 1 `A55_DB_TEST`, 1 EPERM de Windows — suman 88, comprobado).
+
+> El rojo que traía `main` al empezar —`SCRUM-402 R4`, `invoicesView.js: 1 → 2`— **no era de este
+> ticket** y lo cerró SCRUM-751 en el mismo día. Se reportó desde aquí antes de que existiera.
+
 ---
 
 ## 1 · El defecto, en una frase
