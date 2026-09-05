@@ -228,12 +228,14 @@ aplicada al detector en vez de al corpus.
 # APÉNDICE · SCRUM-745 (adopción) · Que ningún guard del censo pueda estar mudo sin que se vea
 
 **Fecha:** 5-sep-2026 · **Ramificado de** `origin/main` = `28b045855d9a68f12906f218bfe78fa5e0472433`
-· **mezclado y RE-MEDIDO contra** `origin/main` = `78ca15a35f1765d141688258eb34ae0ef396731c`
+· **entregado sobre** `origin/main` = `4e9e273944b9a293bc5f213d89b3e3b9cd4b06ab`
 
-> ⚠️ El ancla de arriba nació caduca y por eso son dos. Escribí la primera, `main` se movió mientras
-> trabajaba —entró SCRUM-751— y el merge **cambió el censo**: trajo dos declaraciones más y con
-> ellas `invoicesView.js`, que es donde ancla `scrum748`. Todos los números de esta entrada están
-> medidos **después** del merge.
+> ⚠️ **`main` se movió DOS veces mientras duraba esta tarea, y las dos cambiaron el censo.** La
+> primera (`78ca15a3`) trajo SCRUM-751 con dos declaraciones propias y con `invoicesView.js`, que es
+> donde ancla `scrum748`; la segunda (`4e9e2739`) trajo SCRUM-606 y SCRUM-750 con cuatro más y con
+> `tests/_banco-vistas.mjs`, del que dependen los cuatro guards del nivel superior que aquí se
+> declaran. Se mezcló las dos veces y **se volvió a medir entero las dos veces**: los números de
+> esta entrada son los del árbol que se entrega, no los del que se empezó.
 
 El hueco nº 1 de la fase B decía: *«Sigue habiendo UN solo guard declarando mutaciones»*. Se cierra
 aquí, junto con los tres que dejó abiertos SCRUM-748.
@@ -245,18 +247,18 @@ aquí, junto con los tres que dejó abiertos SCRUM-748.
 
 ## 0 · El censo, antes y después
 
-| | antes | este trabajo | tras mezclar `main` |
+| | antes | este trabajo | en lo entregado |
 |---|---:|---:|---:|
-| guards que declaran | 3 | **8** | **9** |
-| mutaciones declaradas | 6 | **18** | **20** |
-| ejecuciones del job (línea base + mutación) | 9 | 26 | **29** |
+| guards que declaran | 3 | **8** | **10** |
+| mutaciones declaradas | 6 | **18** | **24** |
+| ejecuciones del job (línea base + mutación) | 9 | 26 | **34** |
 
 Las doce que pone este trabajo: `scrum443` (2), `scrum641` (2), `scrum738` (2), `scrum739` (2),
-`scrum743` (2) y dos más del propio `scrum745`. **La tercera columna no es mía:** el merge trajo
-`scrum751`, que ya nació declarando — que es exactamente lo que se buscaba, que el mecanismo se
-adopte solo.
+`scrum743` (2) y dos más del propio `scrum745`. **La tercera columna no es mía:** los merges de la
+tarde trajeron `scrum751`, `scrum606` y `scrum750`, y los tres **ya nacieron declarando**. Que el
+mecanismo se adopte solo, sin que nadie vaya detrás, era el objetivo entero.
 
-**Ninguna se ha escrito sin comprobarla:** las 20 salen `✔` en el control A, o sea que las 20 se
+**Ninguna se ha escrito sin comprobarla:** las 24 salen `✔` en el control A, o sea que las 24 se
 han aplicado, han puesto rojo al test que nombran, se han revertido, y el fichero ha vuelto byte a
 byte (`sha256sum -c` sobre los nueve sujetos, después de cada pasada).
 
@@ -307,11 +309,18 @@ su propia mutación declarada: si el reporter reaparece en el código, cae.
 
 ## 4 · Los tres controles, medidos hoy con el lector nuevo
 
+Los tres, **repetidos sobre el árbol que se entrega** (censo de 24), no sobre el que se midió antes
+de los merges:
+
 | control | resultado | salida |
 |---|---|---:|
-| **A** · árbol como está | `vivas 20 · mudas 0 · ciegas 0` | 0 |
-| **B** · `dist/` apartado | `vivas 10 · mudas 0 · ciegas 10` — **ninguna acusación falsa** | 2 |
-| **C** · un MUDO real inyectado en `scrum738` | `vivas 19 · mudas 1 · ciegas 0`, nombrando guard **y** test | 1 |
+| **A** · árbol como está | `vivas 24 · mudas 0 · ciegas 0` | 0 |
+| **B** · `dist/` apartado | `vivas 14 · mudas 0 · ciegas 10` — **ninguna acusación falsa** | 2 |
+| **C** · un MUDO real inyectado en `scrum738` | `vivas 23 · mudas 1 · ciegas 0`, nombrando guard **y** test | 1 |
+
+Las diez CIEGAS del control B son exactamente los cinco guards que cargan el banco de vistas en el
+nivel superior, dos declaraciones cada uno. **Cero MUDAS es el dato**: sin `dist/` el instrumento
+deja de poder medir y lo DICE, en vez de acusar.
 
 **El C sigue siendo el que decide:** si al cambiar el lector todo se hubiera vuelto CIEGO, el
 instrumento habría dejado de acusar y el arreglo sería peor que el defecto.
@@ -331,10 +340,11 @@ ellas. Conclusión honesta: **NO MEDIBLE en esta máquina**, que no es «cuestan
 lección de SCRUM-520/671/673 —el reloj de pared no es un instrumento aquí— aplicada a mi propia
 decisión, y por poco no la aplico.
 
-**La unidad estable es la EJECUCIÓN, no el segundo:** el job pasó de 9 a 29 ejecuciones. La línea
-base es 9 de esas 29 (31 %); antes era 3 de 9 (33 %). **La línea base no ha encarecido nada en
-proporción:** lo que ha crecido es el censo, que era el objetivo. Ésa es la contestación al encargo
-—«si el job se pone lento, mide cuánto»—: en ejecuciones, ×3,2; en segundos, no medible aquí.
+**La unidad estable es la EJECUCIÓN, no el segundo:** el job pasó de 9 a 34 ejecuciones. La línea
+base es 10 de esas 34 (29 %); antes era 3 de 9 (33 %). **La línea base no ha encarecido nada en
+proporción — ha bajado**, porque los guards nuevos declaran de media más de una mutación cada uno y
+la pasada limpia se comparte entre todas las suyas. Ésa es la contestación al encargo —«si el job se
+pone lento, mide cuánto»—: en ejecuciones, ×3,8; en segundos, **no medible en esta máquina**.
 
 ## Lo que NO cubre
 
