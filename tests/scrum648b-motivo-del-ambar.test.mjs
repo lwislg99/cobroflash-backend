@@ -127,27 +127,33 @@ test('SCRUM-648b · 🔴 EL TOPE: si el texto crece por encima de lo MEDIDO, hay
   assert.ok(m, '🔴 CIEGO: no encuentro el literal del motivo. Si cambió de forma, este control dejó de mirar.');
   const literal = m[1];
 
-  // El marcador va delante hasta que el fundador firme (regla 30), y su grafía es la que CUENTA
-  // el censo de SCRUM-402 — por eso se comprueba tal cual, no «que empiece por PENDIENTE».
-  assert.ok(literal.startsWith('[PENDIENTE'),
-    '🔴 el texto se pinta SIN marcador y no consta aprobado. Si ya está firmado, retira el ' +
-    'marcador Y baja la entrada de `invoicesView.js` en el censo de SCRUM-402.');
+  // 🔴 EL RÓTULO ESTÁ FIRMADO desde el 5-sep-2026 (SCRUM-751), así que este control CAMBIA DE
+  // LADO: hasta la firma exigía que el marcador ESTUVIERA (regla 30 — un texto sin firmar no se
+  // pinta a pelo); desde la firma exige que NO VUELVA.
+  //
+  // No es simetría de adorno. Un marcador reaparecido sobre un texto YA APROBADO volvería a meter
+  // `invoicesView.js` en el censo de SCRUM-402, y ese desajuste entre lo que la pantalla pinta y
+  // lo que el censo declara es exactamente lo que dejó `main` en ROJO el 5-sep (PR #1065).
+  assert.ok(!literal.startsWith('[PENDIENTE'),
+    '🔴 el motivo ha vuelto a llevar marcador de microcopy, y este rótulo YA ESTÁ FIRMADO por el ' +
+    'fundador (5-sep-2026): «No hemos podido comprobar el plazo.». Si hace falta OTRO texto, lo ' +
+    'firma él y se vuelve a medir la caja con `npm run guard:caja-semaforo` ANTES de pintarlo.');
 
-  const textoSinMarca = literal.replace(/^\[PENDIENTE[^\]]*\]\s*/, '');
+  const texto = literal;
 
   // 🔴 EL TOPE SE COMPRUEBA ANTES QUE LA IGUALDAD, y no es cosmética: con la igualdad delante,
   // CUALQUIER cambio de texto tumbaba este test por el mismo sitio, y el tope no se podía probar
   // por separado. Lo cazó su propia mutación —un texto de 49 caracteres, que está DENTRO del
   // tope, caía igual que uno de 53—, o sea que el rojo no distinguía «se pasó» de «cambió».
-  assert.ok(textoSinMarca.length <= TOPE_CARACTERES,
-    `🔴 EL TEXTO SE HA PASADO DEL TOPE MEDIDO: ${textoSinMarca.length} caracteres y el tope es ` +
+  assert.ok(texto.length <= TOPE_CARACTERES,
+    `🔴 EL TEXTO SE HA PASADO DEL TOPE MEDIDO: ${texto.length} caracteres y el tope es ` +
     `${TOPE_CARACTERES}.\nNo es que no quepa: es que YA NO ESTÁ MEDIDO. A 390 px caben ` +
     `${TOPE_CARACTERES} en una línea, y por encima pasa a dos.\nVuelve a medir con ` +
     '`npm run guard:caja-semaforo` ANTES de pintarlo, y actualiza este tope con el número nuevo.');
 
   // Y DESPUÉS, que sea el texto que se midió. Va detrás a propósito (ver arriba): así un texto
   // que cambia pero cabe falla por «no es el candidato», y uno que se pasa falla por el tope.
-  assert.equal(textoSinMarca, CANDIDATO,
+  assert.equal(texto, CANDIDATO,
     '🔴 el texto ya no es el candidato que se midió. La caja está medida PARA ESE texto: si el ' +
     'fundador firma otro, hay que volver a pasar `npm run guard:caja-semaforo`.');
 
