@@ -326,3 +326,266 @@ y por eso la salida 0 no es «arreglar el callejón» sino cambiar la regla.
   `name_duplicate`). No lo he medido a fondo porque no es este carril; queda apuntado.
 * No se ha tocado nada de SCRUM-614 (`lockActionForRole`, permisos), ni `quotesView`/fechas, ni
   `pdf.service`/guards.
+
+---
+---
+
+# APÉNDICE · S2 (5-sep-2026) — EL CALLEJÓN PROVOCADO, Y UNA AFIRMACIÓN MÍA QUE LA MEDICIÓN TUMBA
+
+**Medido contra:** `origin/main` = `78ca15a3` · re-fetch inmediato · árbol `cobroflash-b15`,
+rama `scrum-631-nombre-ocupado-para-siempre` con `main` mezclado DENTRO (770 commits).
+Comprobado que entre `28b04585` (donde empecé) y `78ca15a3` **no cambió nada de lo que medí**:
+`prisma/schema.prisma`, `src/modules/products/`, `adminRouteDeclarations.ts`, `schemaDrift.ts`
+y `seed-demo.mjs` tienen diff vacío entre los dos.
+
+**Qué añade este apéndice al trabajo de S1, que no repito:** S1 declara *«cero escrituras en
+ninguna base»* y escribe el control **en futuro** («el día que se autorice una salida, el control
+será…»). Eso es una PREDICCIÓN. Aquí está PROVOCADO, sobre base de desarrollo, por el camino real
+del código, con su limpieza verificada.
+
+---
+
+## 0 · ¿TIENE QUE SER ÚNICO EL NOMBRE? — SÍ, Y AQUÍ ESTÁ QUIÉN, CON LA LÍNEA DELANTE
+
+Censo de `nameSearch` en `origin/main`: **4 ficheros, 11 apariciones**. Población pequeña y
+enumerable, así que esto no es una muestra: es el total.
+
+**🔴 NADIE NAVEGA POR LA UNICIDAD.** Cero usos de `findUnique` con la clave compuesta
+`merchantId_nameSearch` — medido con control negativo (un patrón imposible devuelve vacío y exit
+distinto de 0). La unicidad **no se usa como clave de búsqueda: se usa como GUARDA**. Y eso decide
+el ticket: la restricción puede cambiar de FORMA (parcial, o columna) sin romper ningún camino de
+lectura.
+
+Los cuatro que dependen de que choque:
+
+| quién | línea | qué pasa si se quita |
+|---|---|---|
+| `POST /admin/products` | `products.routes.ts:285` | deja de dar **409 name_duplicate**; el alta duplicada entra |
+| `PUT /admin/products/:id` | `products.routes.ts:323` | ídem — es el arreglo de **SCRUM-641** |
+| las **dos** rutas MASIVAS (load-catalog, import) | `:93` y `:152` | se tragan el P2002 **a propósito**: es la idempotencia de ONBOARD-2. Sin unicidad, recargar el catálogo **duplica**. Lo defiende `scrum644-...:219`, que exige exactamente 2 |
+| el importador CSV | `products.service.ts:192` | el recuento skipped deja de contar la carrera |
+
+**Respuesta: la unicidad HACE FALTA, y el ticket no desaparece.** Pero se reduce: no hay que
+inventar unicidad, hay que **cambiarle la frontera** — de «todas las filas» a «las filas activas».
+
+---
+
+## 1 · EL ALCANCE, CON NÚMERO — y el cero que NO es «no pasa nada»
+
+Base de **desarrollo**, sólo lectura, sin imprimir jamás la cadena de conexión:
+
+| medida | valor |
+|---|---|
+| productos totales | **8** |
+| activos | **8** |
+| **INACTIVOS** (nombres presos) | **0** |
+| merchants con productos | 1 |
+| `name_search` **NULL** | **8** |
+| nombres repetidos (merchant, name_search) | **0** |
+
+**Los dos ceros dicen cosas distintas y ninguno dice «no pasa nada»:**
+
+* **0 inactivos** → el defecto es **REAL Y LATENTE**. Nadie ha desactivado todavía; el día que lo
+  haga, el nombre queda preso. Un cero aquí mide que aún no hay víctima, no que no pueda haberla.
+* **0 nombres repetidos** → **la @@unique lo hace IMPOSIBLE por construcción**. Ese cero no es
+  un hallazgo: es la definición de la restricción. Publicarlo como tranquilizador sería mentir.
+
+### 🔴 UN HALLAZGO QUE NO BUSCABA: los 8 tienen `name_search` NULL
+
+`seed-demo.mjs:227` crea productos con merchantId, name y price, y **sin `nameSearch`**. Como en
+Postgres **los NULL no chocan entre sí en un índice único**, sobre esas 8 filas la restricción
+**no está vigilando nada**. La base de dev, tal cual, **no puede demostrar el callejón** — por eso
+tuve que fabricarme el caso.
+
+Y tiene una consecuencia peor, medida con control positivo (un producto creado por el camino real
+**sí** se encuentra, así que la búsqueda funciona):
+
+```
+¿ENCUENTRA EL AUTOCOMPLETADO LOS PRODUCTOS SEMBRADOS?
+   buscando «sustitución de» → 0 resultado(s) 🔴 INVISIBLE
+   buscando «desatasco de»   → 0 resultado(s) 🔴 INVISIBLE
+   buscando «instalación de» → 0 resultado(s) 🔴 INVISIBLE
+```
+
+`searchProducts` (`products.service.ts:206`) filtra por nameSearch contains. **Todo el catálogo
+sembrado es invisible al autocompletado del presupuesto.** Es un defecto de la demo, vivo hoy,
+fuera del alcance de este ticket. **Ticket aparte** — no lo toco.
+
+---
+
+## 🔴 EL CONTROL QUE DECIDE — PROVOCADO, NO PREDICHO
+
+Por el camino real (`dist/.../products.service.js`, no SQL a mano), contra dev, con nonce y
+limpieza verificada:
+
+```
+① alta del producto ................... OK id=10
+② duplicado estando ACTIVO ............ FALLA ✅ (P2002) — línea base correcta
+③ desactivar .......................... OK · is_active=false · name_search=«caldera vaillant ...»
+④ EL CASO: alta con el otro INACTIVO .. FALLA con P2002 → ✅ EL CALLEJÓN EXISTE
+limpieza: 1 fila borrada · quedan con el nonce: 0 ✓
+```
+
+**El callejón existe y está medido.** Y ③ enseña el mecanismo exacto: desactivar **no limpia**
+`name_search`, así que la fila sigue compitiendo por el nombre.
+
+---
+
+## 2 · LA AFIRMACIÓN HEREDADA QUE LA MEDICIÓN TUMBA
+
+> S1, en la tabla de salidas: **«B · índice parcial por SQL crudo → 🔴 lo tira, y en CADA push»**
+
+**Medido: NO lo tira.** Y no es un vacío sin comprobar — lleva control positivo en el mismo disparo.
+
+### El experimento que discrimina
+
+Se le esconden a Prisma **dos** índices que el esquema no declara, y se le pregunta al mismo
+`migrate diff`:
+
+| índice escondido | ¿propone borrarlo? | SQL emitido |
+|---|---|---|
+| **TOTAL** · UNIQUE (merchant_id, name) | 🔴 **SÍ** | `DROP INDEX "public"."p631_total";` |
+| **PARCIAL** · UNIQUE (merchant_id, name_search) WHERE is_active = true | ✅ **NO** | *(sin SQL)* |
+
+**Prisma VE los índices totales y es CIEGO a los parciales.** La advertencia de
+`docs/sql/scrum-685b-parte-numero-unico.sql` —«el próximo migrate diff propondría BORRARLO»— es
+**correcta para el índice que ella describe**, que es total. No se extiende al parcial.
+
+### Y probado también en la configuración EXACTA de S1
+
+S1 precisa que para que el parcial mande hay que quitar el @@unique del esquema, y que entonces
+«cada db push volverá a proponer tirar el índice parcial. Para siempre». Reproducido —copia del
+esquema **sin** @@unique, `prisma/schema.prisma` intacto (git status limpio)—:
+
+```
+SQL que propone el siguiente push:
+   -- DropIndex
+   DROP INDEX "public"."products_merchant_id_name_search_key";
+
+CONTROL POSITIVO · ¿ve la retirada del @@unique (tira el índice total)? sí ✓
+🔴 LA PREGUNTA   · ¿tira TAMBIÉN el índice parcial? ................. ✅ NO
+```
+
+El control positivo es lo que hace publicable ese «NO»: la herramienta **sí** está mirando y **sí**
+reacciona a la retirada del @@unique. El parcial, sencillamente, no lo ve.
+
+### Y con el comando que esta casa usa de verdad
+
+**No hay `prisma/migrations/`**: esta casa aplica con **db push** (`scripts/db-push-prod`). Así que
+migrate diff no bastaba. Corrido `prisma db push --skip-generate` contra **dev**, sin
+accept-data-loss (si quisiera destruir algo, que se niegue):
+
+```
+ANTES   · índices únicos: p631_parcial(parcial) · products_merchant_id_name_search_key · products_pkey
+          The database is already in sync with the Prisma schema.
+DESPUÉS · índices únicos: p631_parcial(parcial) · products_merchant_id_name_search_key · products_pkey
+          datos intactos: ✓ (8 → 8 filas)
+```
+
+**Sobrevive al db push.** Y el preview obligatorio de la casa (`scripts/preview-migracion.mjs`, con
+su propio control positivo «la herramienta responde (27 tablas)») dice «sin cambios pendientes»
+tanto **con** el índice parcial puesto como **sin** él — ni lo menciona.
+
+### 🔴 PERO EL RIESGO SIGUE, Y ES EL CONTRARIO DEL QUE SE TEMÍA
+
+Que el preview diga lo mismo con el índice y sin él **es exactamente el problema**: la herramienta
+**no distingue los dos estados**. El peligro no es que se lo lleven en cada push — es que:
+
+* **nada lo recrea**: una base nueva levantada desde `schema.prisma`, un force-reset o una
+  restauración de copia **no lo tienen**;
+* **nada nota su ausencia**: medido, los **dos** guardianes de esta casa miran **columnas**, no
+  índices — `schemaDrift.ts:25-26` lo declara él mismo («**NO:** tipos, nullability, defaults,
+  **índices**...») y `constanciaDelAlter.ts:58` consulta `information_schema.columns`.
+
+**Un índice no tiene vigilante en esta casa.** Así que la conclusión de S1 —«es el que peor
+envejece»— **se sostiene**, y su opción C sigue ganando en ese eje. Lo que cambia es el **motivo**:
+no envejece porque se lo lleven, envejece porque **es invisible en las dos direcciones**.
+
+---
+
+## LA CONSECUENCIA NUEVA QUE NADIE HABÍA NOMBRADO: REACTIVAR PASA A CHOCAR
+
+Con el índice parcial puesto, dentro de transacción revertida:
+
+```
+✅ ① alta activa «X»
+✅ ② desactivar «X»
+✅ ③ alta activa «X» de nuevo (el arreglo funciona)
+⛔ ④ REACTIVAR la vieja, con la nueva ACTIVA          → P2002
+✅ ⑤ desactivar la nueva y ENTONCES reactivar la vieja
+```
+
+Hoy reactivar **no puede** chocar, porque el nombre nunca se liberó. Con cualquier salida que libere
+el nombre (B **o** C, no sólo B), **reactivar se convierte en una vía de choque nueva**. ④ no es un
+callejón —⑤ enseña la salida— pero es un camino que hoy no existe.
+
+**Y cae justo donde SCRUM-641 lo dejó preparado.** El PUT mete isActive en el mismo patch
+(`products.routes.ts:302`) y pasa por el mismo catch (`:314`), así que el choque da **409
+name_duplicate** y no un 500 — y el cliente ya lo traduce. SCRUM-641 lo escribió anticipándolo,
+citando este ticket por su número:
+
+> «en cuanto SCRUM-631 haga que reactivar un producto sea normal, este camino pasa de raro a
+> frecuente» — `tests/scrum641-nombre-cogido-sin-500.test.mjs:17`
+
+**Mi cambio no rompe 641: lo ACTIVA.** Nada que ajustar ahí.
+
+⚠️ **Lo que SÍ queda pendiente y NO decido yo:** el texto que lee el profesional al pulsar
+«Activar» sería «ese nombre ya está cogido», que es cierto pero habla de un alta. **Es microcopy y
+la firma el asesor (regla 30).** No escribo candidato: no he medido su caja en navegador, y un
+candidato sin caja medida es justo lo que la regla prohíbe.
+
+---
+
+## LAS SALIDAS, RE-PUNTUADAS CON LO MEDIDO
+
+Mantengo la numeración de S1. Sólo cambia la fila **B**, y cambia por medición.
+
+| salida | ¿libera el nombre? | ¿2 activos siguen imposibles? | 2.º inactivo | ¿sobrevive al db push? | ¿alguien nota si desaparece? |
+|---|---|---|---|---|---|
+| **0 · no exigir unicidad** | ✅ | 🔴 **NO** — cambia la regla | ✅ | — | — |
+| **A · isActive en el @@unique** | ✅ | ✅ | 🔴 **se rompe** | ✅ (lo declara el esquema) | ✅ |
+| **B · índice parcial por SQL** | ✅ | ✅ **medido** | ✅ **medido** | ✅ **MEDIDO — S1 decía que no** | 🔴 **NO — nadie** |
+| **C · columna declarada** (S1) | ✅ | ✅ | ✅ | ✅ | ✅ schemaDrift **niega el arranque** |
+
+**Consecuencia escrita de cada una:**
+
+* **0** — se rompen los cuatro dependientes del punto 0: adiós al 409 name_duplicate y adiós a la
+  idempotencia de ONBOARD-2 (recargar el catálogo **duplica**). No es arreglar el callejón: es
+  cambiar la regla del producto.
+* **A** — el fontanero que desactive **un segundo** «Caldera Vaillant» vuelve a chocar. Cambia el
+  callejón de sitio en vez de quitarlo. Confirmado por medición: el caso ⑥ del índice parcial es
+  justo el que A no cubre.
+* **B** — funciona hoy y sobrevive al db push (medido). Su coste es que **queda fuera del esquema y
+  sin vigilante**: el día que falte, producción arranca **verde** y el primer síntoma serán nombres
+  duplicados entre activos.
+* **C** — la más cara (columna + backfill + 3 sitios de escritura + despliegue por pasos) y la única
+  cuya pérdida **detiene el arranque**. El diff lo dejó S1; no lo repito.
+
+**No elijo.** Las cuatro cambian comportamiento del producto y las cuatro tocan
+`prisma/schema.prisma` o la base. **Decide el fundador.**
+
+---
+
+## LO QUE NO SE HIZO
+
+* ⛔ **Ninguna migración aplicada.** `prisma/schema.prisma` **intacto** — verificado con git status
+  y git diff sobre la ruta: 0 ficheros modificados. Los dos esquemas de prueba son **copias en el
+  scratchpad**.
+* ⛔ **No se ejecutó `scripts/db-push-prod`.** El db push que corrí apunta a DATABASE_URL_DEV, que
+  es la única base que tengo permiso para alterar. Staging y producción, el fundador.
+* ⛔ **Cero secretos.** No se ha impreso, escrito ni inventado ninguna cadena de conexión: el .env
+  se lee para sacar **una** clave y pasarla en el ENTORNO del hijo, nunca en argv
+  (`aplicar-sql-dev.mjs:106`). El rótulo de host que aparece en la salida lo imprime prisma.
+* ⛔ **No se devolvió el borrado físico**, no se tocó lockActionForRole ni los permisos de 614, y no
+  se entró en su fase 2.
+* ⛔ **Cero cambios de código de producto.** Este apéndice y el SQL preparado son todo.
+
+### Higiene de la base de desarrollo
+
+Todo lo que escribí lo limpié, y lo verifiqué **por propiedad del catálogo**, no por memoria:
+
+* las pruebas destructivas (quitar el índice total, poner el parcial) fueron **dentro de una
+  transacción revertida**, con SAVEPOINT para los casos que debían fallar — porque en Postgres una
+  sentencia fallida aborta la transacción (`albaranIdempotencia.ts:22`);
+* post-condición final: `products_merchant_id_name_search_key` **restaurado**, índices de prueba
+  **0**, filas con nonce **0**, y preview-migracion de vuelta en «sin cambios pendientes».
