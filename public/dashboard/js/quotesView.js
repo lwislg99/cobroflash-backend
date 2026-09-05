@@ -740,7 +740,15 @@ blockDelivery.appendChild(descWrapper);
         chip.appendChild(nombre);
         chip.setAttribute("aria-label", rotulo);
         chip.addEventListener("click", function () {
-          const fecha = atajosVenc.fechaDeAtajo(dias);
+          // 🔴 SCRUM-750 · EL MERCHANT VA DENTRO. Sin él, el atajo calculaba el día en la zona del
+          // NAVEGADOR mientras el valor por defecto y el `min` de este mismo campo lo calculan en
+          // la del NEGOCIO — medido: con el navegador en `Pacific/Auckland` discrepaban el 45,6 %
+          // de los instantes del año. Ahora los tres salen de `quoteCaducidad.diaPorDefecto`.
+          //
+          // `currentMerchant` SÍ se puede leer aquí, al revés que al construir el formulario: esto
+          // corre dentro de un manejador de clic, mucho después de que la variable exista. Es el
+          // mismo momento en que la lee `refrescarCaducidad`.
+          const fecha = atajosVenc.fechaDeAtajo(dias, currentMerchant);
           // Si no se puede calcular no se escribe NADA: mejor que el campo se quede como está
           // que meterle una fecha inventada en un documento que el cliente va a recibir.
           if (fecha) validInput.value = fecha;
