@@ -472,6 +472,35 @@
 
 ## P3 — Técnico / raíz (registrar, abordar después de P1)
 
+### [ ] P3-CENSO-402 · `CENSO` de SCRUM-402 tiene una CLAVE REPETIDA, y JavaScript se come una
+- **Sintoma (medido el 5-sep-2026 en `origin/main` = `28b04585`, SIN ninguna rama encima):**
+  `tests/scrum402-marcador-no-se-pinta.test.mjs` sale **ROJO** en su prueba R4 con
+  `invoicesView.js: 1 -> 2`. No es de la rama que lo encontro (SCRUM-606): ya esta en `main`.
+- **Causa raiz:** el objeto `CENSO` declara **dos veces** la clave `'invoicesView.js'` —una en la
+  linea 139 (SCRUM-748, el rotulo del semaforo) y otra en la 578 (SCRUM-648b)—, cada una con
+  valor `1`. Estan a 439 lineas de distancia, asi que **git las mezclo sin conflicto**, y
+  JavaScript, ante una clave repetida en un literal de objeto, **se queda con la ULTIMA en
+  silencio**. El fichero tiene 2 marcadores reales en literales y el censo declara 1.
+- **Medicion, con control positivo del instrumento** (un marcador en literal cuenta 1; el mismo
+  en comentario cuenta 0, que es el criterio del propio guard):
+  marcadores reales en literales de `invoicesView.js` = **2** · entradas del CENSO = **1 y 1** ·
+  valor efectivo tras la semantica de JS = **1** · claves repetidas = **`invoicesView.js`**.
+- **Por que importa mas que un rojo:** el trinquete deja de apretar por ese fichero. Quien
+  manana anada un tercer marcador a `invoicesView.js` y suba **la primera** entrada a 3 vera el
+  guard seguir rojo sin entender por que; y quien suba la primera a 2 lo vera **seguir rojo**
+  aunque el numero ya sea correcto, porque el que manda es el otro. Un guard que no se puede
+  arreglar por el sitio evidente acaba apagado, que es el fallo que `METODO_YAQU.md` describe.
+- **Arreglo (una linea, pero NO es de la sesion que lo encuentra):** fundir las dos entradas en
+  **una sola** con valor **2**, conservando los DOS bloques de comentario —son dos tickets
+  distintos y cada motivo sigue siendo cierto—. No vale borrar una: el 2 es el numero real.
+- **Y ademas, para que no vuelva:** el guard no detecta claves repetidas en su propio censo.
+  Una comprobacion de tres lineas sobre el texto del objeto (las claves leidas con regexp
+  frente al `Set` de las mismas) lo cerraria por construccion. Hoy la unica senal es un rojo
+  que acusa al fichero equivocado.
+- **Done cuando:** `node --test tests/scrum402-marcador-no-se-pinta.test.mjs` verde en `main` y
+  el censo declara una sola entrada por fichero.
+
+
 ### [~] P3-9 · Tests que dependen del merchant `id=1` quemado por SCRUM-42 (22-jul, hallazgo en SCRUM-73; 3/5 corregidos en SCRUM-78+SCRUM-80)
 - **Síntoma:** varios tests gateados asumen que el merchant `id=1` (demo) tiene
   quotes/invoices/customers reales — SCRUM-42 (12-jul-2026) lo quemó como placeholder INERTE

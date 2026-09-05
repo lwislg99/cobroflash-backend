@@ -331,20 +331,32 @@ test('SCRUM-606 · (d) 🔴 EL ALTA SIGUE SIENDO UNA, MIRANDO TODOS LOS FICHEROS
 });
 
 test('SCRUM-606 · (d) el modal del buscador NO crea nada: elige y se aparta', () => {
+  // ⚠️ SE AFIRMA LA LISTA ENTERA, no se prohíbe un token. La primera versión hacía
+  // `assert.doesNotMatch(opciones, /POST|PATCH|DELETE|PUT/)` y el guard de SCRUM-237 la marcó
+  // NINGUNO — una negación sin respaldo: ese token no aparece en positivo en ninguna parte, así
+  // que habría seguido verde aunque el escáner dejara de mirar. Enumerar lo que SÍ hay es más
+  // fuerte y no necesita respaldo: un método nuevo, sea cual sea, rompe la igualdad.
   const src = fs.readFileSync(path.join(DIR_JS, 'albaranDesdePresupuestoModal.js'), 'utf8');
   const sf = ts.createSourceFile('m.js', src, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
-  const metodos = [];
+  const llamadas = [];
   (function visitar(n) {
     if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'apiRequest') {
-      metodos.push(n.arguments[1] ? n.arguments[1].getText(sf) : '(sin opciones)');
+      llamadas.push({
+        destino: n.arguments[0] ? n.arguments[0].getText(sf) : '',
+        opciones: n.arguments[1] ? n.arguments[1].getText(sf) : null,
+      });
     }
     ts.forEachChild(n, visitar);
   })(sf);
-  assert.ok(metodos.length > 0, '🔴 ESCÁNER CIEGO: el modal no llama a `apiRequest` por ningún sitio');
-  for (const m of metodos) {
-    assert.doesNotMatch(m, /POST|PATCH|DELETE|PUT/,
-      `🔴 el buscador ESCRIBE (${m}). Es un selector de origen: lee y devuelve la elección.`);
-  }
+
+  assert.equal(llamadas.length, 1,
+    `🔴 el modal hace ${llamadas.length} llamadas a la API y debe hacer UNA: la del buscador.`);
+  assert.match(llamadas[0].destino, /admin\/albaranes\/presupuestos/,
+    `🔴 la única llamada del buscador no va a su endpoint, va a ${llamadas[0].destino}.`);
+  assert.equal(llamadas[0].opciones, null,
+    `🔴 EL BUSCADOR ESCRIBE: lleva opciones (${llamadas[0].opciones}). Sin segundo argumento, ` +
+    '`apiRequest` hace GET; en cuanto lleva uno, puede llevar método. Es un selector de origen: ' +
+    'lee y devuelve la elección, y el alta la hace `openAlbCrearSheet`.');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════

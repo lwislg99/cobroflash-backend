@@ -1,10 +1,21 @@
-# Los siete textos de «Nuevo albarán desde presupuesto» — CANDIDATOS, SIN FIRMAR
+# SCRUM-606 (ALB-01) — nuevo albarán desde presupuesto · microcopy CANDIDATA, sin firmar
 
-**SCRUM-606 (ALB-01)** · escritos el 5-sep-2026 · **ninguno está aprobado** (regla 30).
+**Escrita el 5-sep-2026 · ninguno de estos textos está aprobado** (regla 30).
 
-Este fichero **no registra una aprobación**: registra los candidatos con su caja medida, para que
-el asesor pueda firmar —o cambiarlos— con el dato delante. Mientras no haya firma, los siete salen
-en pantalla con el marcador `[PENDIENTE microcopy oficial]` **visible a propósito** (SCRUM-402/667).
+## ⚠️ Por qué este fichero NO está en `docs/microcopy/`
+
+Se escribió primero ahí y **el guard de SCRUM-726 lo tiró, con razón**. Aquel directorio es «el
+registro de cada microcopy que **aprueba** el fundador», un fichero por **aprobación**, y todos sus
+ficheros tienen que llevar su firma: `constaAprobado()` la exige. Un registro de **candidatos** con
+`firmante: null` allí dentro es exactamente lo que ese guard existe para impedir — un texto que
+parece aprobado por estar donde se guardan las aprobaciones.
+
+Así que vive aquí, en el registro de trabajo por ticket. **El día que el asesor firme**, ese acto sí
+estrena su fichero en `docs/microcopy/` con la línea de firma, y este documento se queda como lo que
+es: la medición que había delante cuando se decidió.
+
+Mientras no haya firma, los siete salen en pantalla con el marcador `[PENDIENTE microcopy oficial]`
+**visible a propósito** (SCRUM-402/667).
 
 ## Los candidatos
 
