@@ -235,3 +235,36 @@ test('SCRUM-641 · la vista ya no pinta `e.message` a pelo en ningún sitio', ()
     '🔴 QUEDAN SITIOS QUE PINTAN EL MENSAJE SIN TRADUCIR. Cuando el servidor contesta con un\n'
     + '  identificador, ahí es donde acaba en la pantalla del profesional.');
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-745 (adopción) · LAS MUTACIONES DE ESTE GUARD
+//
+// Una por MITAD, porque el ticket son dos mitades del mismo camino y se rompen por separado: el
+// servidor puede volver al 500 mientras la pantalla sigue traduciendo, o al revés. Con una sola
+// mutación, la mitad no probada podría estar muda y este guard seguiría pareciendo cobertura.
+//
+// ⚠️ EL ANCLA DEL SERVIDOR VA EN DOS LÍNEAS A PROPÓSITO. La línea del `P2002 → 409` aparece DOS
+// veces en el fichero (medido) —en `POST /` y en `PUT /:id`— y `replace` sustituye la PRIMERA. Con
+// una sola línea, la mutación habría caído sobre `POST /` y habría tumbado también el CONTROL
+// NEGATIVO, que existe justamente para fijar que esa ruta no se mueve. El `console.error` del PUT
+// es único (1 aparición) y ancla el par a la ruta que se quiere reconstruir rota.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // ① El defecto del servidor: `PUT /:id` deja de capturar el P2002 y el nombre cogido vuelve a
+    // caer al `internal_error` de abajo — un 500 que manda a mirar los logs de un servidor sano.
+    fichero: 'src/modules/products/app/routes/products.routes.ts',
+    de: "    if (err?.code === 'P2002') return res.status(409).json({ ok: false, error: 'name_duplicate' });\n    console.error('[PUT /admin/products/:id]', err);",
+    a: "    console.error('[PUT /admin/products/:id]', err);",
+    cae: 'toda escritura de UNA FILA contesta 409 al chocar con el nombre',
+  },
+  {
+    // ② El defecto de la pantalla: el identificador vuelve a GANARLE al respaldo en castellano.
+    // Sin la puerta, `forbidden` o `trial_expired` salen crudos en el aviso — que es literalmente
+    // lo que leía el fontanero mirando su catálogo.
+    fichero: 'public/dashboard/js/productsView.js',
+    de: '  if (PV_ES_IDENTIFICADOR.test(bruto)) {',
+    a: '  if (false) {',
+    cae: 'un código SIN mapear cae al respaldo que ya estaba escrito, no al código',
+  },
+];

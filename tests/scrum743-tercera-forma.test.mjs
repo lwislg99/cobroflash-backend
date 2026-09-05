@@ -189,3 +189,37 @@ test('SCRUM-743 · el rótulo del eje ya pasa por la tercera forma', () => {
   assert.equal((codigo.match(/\.toLocaleString\s*\(/g) || []).length, 0,
     '🔴 queda algún `toLocaleString` en Informes: con las tres formas ya no hace falta ninguno.');
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-745 (adopción) · LAS MUTACIONES DE ESTE GUARD
+//
+// El FILO y el CABLEADO, que es donde este ticket se puede romper por separado: la tercera forma
+// puede volver a forzar decimales mientras el rótulo del eje sigue llamándola, o puede quedar
+// perfecta mientras la pantalla vuelve a escribir el número por su cuenta.
+//
+// ⛔ EL FILO SE MUTA EN EL FRONT, NO EN `src/core/utils/utils.ts`. Los asserts que comparan `1,5`
+// contra `1,50` leen el backend desde `dist/`, y entre la mutación y la pasada no se compila: el
+// `.ts` mutado no llegaría a `dist/` y el guard saldría MUDO sin estar mudo. El front sí lo carga
+// el banco de vistas en vivo, y el test que compara las dos mitades cae igual.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // ① EL FILO, reconstruido: la tercera forma vuelve a forzar dos decimales. `1,5` pasa a
+    // escribirse `1,50` — en un albarán ya firmado eso es cambiar lo impreso, que es peor que el
+    // defecto que el ticket vino a arreglar. Cae por la mitad que se puede medir sin compilar: el
+    // front deja de decir lo mismo que el backend.
+    fichero: 'public/dashboard/js/api.js',
+    de: "  return { style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 2 };",
+    a: "  return { style: 'decimal', minimumFractionDigits: 2, maximumFractionDigits: 2 };",
+    cae: 'el front y el backend escriben el MISMO número',
+  },
+  {
+    // ② EL CABLEADO: el rótulo del eje se escribe otra vez a mano. Vuelve a salir `6050` donde el
+    // resto del producto escribe `6.050`, y reaparece el `toLocaleString` que las tres formas
+    // existen para no necesitar — la cuarta copia del formato.
+    fichero: 'public/dashboard/js/reportsView.js',
+    de: '    label.textContent = fmtNumeroEs(Math.round(maxVal * f));',
+    a: "    label.textContent = Math.round(maxVal * f).toLocaleString('es-ES');",
+    cae: 'el rótulo del eje ya pasa por la tercera forma',
+  },
+];

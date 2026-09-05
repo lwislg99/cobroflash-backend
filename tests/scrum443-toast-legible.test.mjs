@@ -201,3 +201,32 @@ test('SCRUM-443 · el texto va en su propio nodo y NO se toca ningún mensaje', 
   assert.match(src, /texto\.textContent = msg;/,
     '🔴 el mensaje ya no se pinta tal cual: esta tarea cambia el CONTENEDOR, jamás el contenido.');
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-745 (adopción) · LAS MUTACIONES DE ESTE GUARD
+//
+// Las dos mitades del arreglo pueden romperse por separado —la duración puede volver a ser fija
+// mientras el botón de cerrar sigue ahí, o al revés— y una sola mutación dejaría la otra sin
+// probar. Son las DOS que reconstruyen el defecto medido el 10-ago-2026: un error que se va antes
+// de poder leerse.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // El defecto original, tal cual: 5.000 ms FIJOS para cualquier error. El más largo del
+    // producto son 136 caracteres ≈ 7.555 ms de lectura, así que se iría por la mitad.
+    fichero: 'public/dashboard/js/api.js',
+    de: '  const necesita = Math.max(TOAST_MS_MIN_ERROR, TOAST_MS_BASE + largo * TOAST_MS_POR_CARACTER);',
+    a: '  const necesita = TOAST_MS_MIN_ERROR;',
+    cae: 'TODO mensaje de error cabe en su propia duración',
+  },
+  {
+    // Y la otra mitad: el `null` deja de evitar el autocierre. `setTimeout(fn, null)` dispara
+    // enseguida, así que el aviso que NO cabe en el tope —el más largo de todos— es justo el que
+    // se iría al instante. Es el defecto original reconstruido un escalón más arriba, que es como
+    // ya se rompió el primer intento de la fórmula.
+    fichero: 'public/dashboard/js/api.js',
+    de: '  if (ms === null) { delete toast.dataset.timer; return; }',
+    a: '  if (false) { delete toast.dataset.timer; return; }',
+    cae: 'lo que NO se cierra solo SIEMPRE se puede cerrar a mano',
+  },
+];
