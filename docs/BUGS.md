@@ -472,6 +472,22 @@
 
 ## P3 — Técnico / raíz (registrar, abordar después de P1)
 
+### [x] P3-CENSO-402 · `CENSO` de SCRUM-402 tenia una CLAVE REPETIDA, y JavaScript se comia una
+- **Medido el 5-sep-2026** desde la rama de SCRUM-606, sobre `origin/main` = `28b04585` SIN
+  ninguna rama encima: `tests/scrum402-marcador-no-se-pinta.test.mjs` salia **ROJO** en R4
+  (`invoicesView.js: 1 -> 2`). Causa: la clave `'invoicesView.js'` estaba **dos veces** en el
+  objeto —lineas 139 (SCRUM-748) y 578 (SCRUM-648b), a 439 de distancia, asi que git las
+  mezclo sin conflicto— y JS se queda con la ultima en silencio: 2 marcadores reales, 1
+  declarado. Comprobado con control positivo del instrumento (un marcador en literal cuenta 1;
+  el mismo en comentario, 0).
+- **CERRADO por SCRUM-751, no por esta entrada.** Se registro aqui como bug ajeno —era de otros
+  dos tickets— y `main` lo arreglo el mismo dia, ANTES de que la rama de SCRUM-606 se empujara:
+  la entrada duplicada se fundio en una con valor 2 y entro un guard que lo cierra por
+  construccion (`tests/_claves-duplicadas.mjs` + `tests/scrum751-clave-duplicada-en-silencio.test.mjs`),
+  sobre el FUENTE, porque en ejecucion la clave repetida ya no existe. Registro entero en
+  `docs/master/SCRUM-751.md`.
+- **Se conserva** porque dos sesiones midieron el mismo defecto por separado y llegaron al
+  mismo numero: eso es lo que hace creible el diagnostico, y borrarlo lo perderia.
 ### [~] P3-9 · Tests que dependen del merchant `id=1` quemado por SCRUM-42 (22-jul, hallazgo en SCRUM-73; 3/5 corregidos en SCRUM-78+SCRUM-80)
 - **Síntoma:** varios tests gateados asumen que el merchant `id=1` (demo) tiene
   quotes/invoices/customers reales — SCRUM-42 (12-jul-2026) lo quemó como placeholder INERTE

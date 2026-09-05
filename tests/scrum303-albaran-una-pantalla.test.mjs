@@ -366,10 +366,21 @@ test('SCRUM-303 · LOS DOS BOTONES QUE DAN DE ALTA usan la misma puerta', () => 
     ts.forEachChild(n, visitar);
   })(sf);
 
-  assert.equal(llamadas.length, 2,
-    `🔴 el alta se llama desde ${llamadas.length} sitio(s) y deberían ser DOS: el botón «+ Nuevo ` +
-    'albarán» de la sección y la siguiente acción `nuevo` de la cabecera. Si baja a uno, hay un ' +
-    'camino que volvió a crear por su cuenta; si sube, hay un alta nueva sin medir.');
+  // 🔴 5-sep-2026 · 2 → 3 (SCRUM-606 · ALB-01) · EL TERCER LLAMANTE, Y ESTE NÚMERO ES SU MEDIDA.
+  //
+  // ALB-01 pone un «Nuevo albarán» en la pestaña Albaranes con un buscador de presupuesto detrás.
+  // Al elegir, se ATERRIZA en el Trabajo de ese presupuesto y se abre ESTA MISMA hoja, ya
+  // prellenada: el alta no se reescribe ni en `albaranesView.js` ni en el modal del buscador.
+  //
+  // 🔴 Y había un motivo duro para no escribirla allí: **este censo lee SÓLO `jobDetailView.js`**.
+  // Un `POST` a `/albaranes` en otro fichero no le saldría, o sea que el guard que existe para
+  // impedir la segunda alta habría sido ciego justo ante ella. «El alta tiene un solo sitio» se
+  // sostiene porque el tercer camino LLAMA, no porque nadie lo haya mirado.
+  assert.equal(llamadas.length, 3,
+    `🔴 el alta se llama desde ${llamadas.length} sitio(s) y deberían ser TRES: el botón «+ Nuevo ` +
+    'albarán» de la sección, la siguiente acción `nuevo` de la cabecera y la llegada desde el ' +
+    'buscador de presupuesto de la pestaña Albaranes (SCRUM-606). Si baja, hay un camino que ' +
+    'volvió a crear por su cuenta; si sube, hay un alta nueva sin medir.');
 });
 
 test('SCRUM-303 · 🔴 EL ORIGEN (SCRUM-367) SOBREVIVE A LA HOJA, ida y vuelta', () => {

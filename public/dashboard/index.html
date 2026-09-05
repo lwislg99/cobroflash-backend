@@ -285,6 +285,10 @@
   <script src="./js/albaranActionsRegistry.js"></script>
   <script src="./js/albaranDetailView.js"></script>
   <!-- SCRUM-301 (C1): el listado global. Después del detalle porque enlaza a él. -->
+  <!-- SCRUM-606 (ALB-01): el buscador de presupuesto de «Nuevo albarán». ANTES de
+       albaranesView.js, que lo abre, y después de modalHeader.js y atajoNuevo.js, de los que
+       lee la cabecera del modal y el rótulo con su marcador. -->
+  <script src="./js/albaranDesdePresupuestoModal.js"></script>
   <script src="./js/albaranesView.js"></script>
   <script src="./js/invoiceDetailView.js"></script>
   <!-- SCRUM-316 (G1): la ley del patrón aplicada al Trabajo. Carga ANTES de jobDetailView.js, que pinta desde ella. -->

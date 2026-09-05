@@ -268,7 +268,10 @@ test('SCRUM-591 · ✅ la microcopy FIRMADA es literal, y es la MISMA que la de 
   // el asesor decidió que la distinción se mantiene —BOTÓN sin `+`, OPCIÓN de `<select>` con `+`—
   // porque en una lista de doscientos nombres el `+` es lo único que separa una acción de un
   // nombre, y en un botón no separa nada. Los dos textos siguen atados, cada uno al suyo.
-  assert.match(atajo, /SIN_APROBAR = 0/,
+  // 🔴 5-sep-2026 · 0 → 1 (SCRUM-606 · ALB-01): entró «Nuevo albarán» sin firmar. Lo que este
+  // test ata sigue INTACTO —el rótulo de Clientes, comprobado literal justo arriba—: lo que
+  // cambia es el recuento global del atajo, que ahora lleva una ranura pendiente que no es suya.
+  assert.match(atajo, /SIN_APROBAR = 1/,
     '🔴 el número de ranuras sin firmar del atajo ha cambiado. Si ha entrado un rótulo nuevo sin\n' +
     '   firma, hay que decirlo; y si se ha movido sin motivo, no es este test lo que hay que tocar.');
 
