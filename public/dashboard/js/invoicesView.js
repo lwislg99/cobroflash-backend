@@ -620,13 +620,16 @@ async function fetchInvoices(options = {}) {
       // de arriba ya lo dicen, y repetirlo sería ruido — el mismo criterio que el aviso de
       // periodicidad de aquí debajo.
       //
-      // ⚠️ EL TEXTO NO ESTÁ APROBADO. Va con el marcador de microcopy (regla 30) hasta que el
-      // fundador firme el rótulo. La caja está MEDIDA (SCRUM-648 fase B, `guard:caja-semaforo`):
+      // ✅ RÓTULO FIRMADO POR EL FUNDADOR (5-sep-2026): «No hemos podido comprobar el plazo.», 35
+      // caracteres. LA FIRMA Y LA RETIRADA DEL MARCADOR VAN EN EL MISMO COMMIT: si el rótulo se
+      // aprueba en un chat y el código sigue diciendo `[PENDIENTE`, el repositorio afirma algo que
+      // ha dejado de ser verdad. Así se mergeó el PR #1065 en rojo, y el guard del 402 tenía razón.
+      // La caja se midió ANTES de pedir el texto (SCRUM-648 fase B, `guard:caja-semaforo`):
       // 559 px de ancho útil a 929 y 292 px a 390, y en una línea caben 50 caracteres a 390.
       if (grupo.motivoSemaforo === 'no_computable') {
         const motivoLine = document.createElement('div');
         motivoLine.style.cssText = 'margin-top:8px;font-size:13px;color:var(--neutral-700)';
-        motivoLine.textContent = '[PENDIENTE microcopy oficial] No hemos podido comprobar el plazo.';
+        motivoLine.textContent = 'No hemos podido comprobar el plazo.';
         card.appendChild(motivoLine);
       }
 
