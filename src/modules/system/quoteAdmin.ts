@@ -6,6 +6,17 @@ import { ensureQuoteDecisionToken } from '../quotes/domain/quoteToken.service'; 
 import { numeroConRevision, vistaDeRevisiones } from '../quotes/domain/revision'; // SCRUM-655 (T6, fase B)
 
 /**
+ * SCRUM-606 (ALB-01) · EL TOPE DE ESTA LISTA, CON NOMBRE.
+ *
+ * Era un `100` suelto dentro del `findMany` y ahora se declara, porque hay un segundo lector que
+ * necesita saberlo: el buscador de presupuestos de «Nuevo albarán» tiene que poder decirle al
+ * profesional «hay más, afina la búsqueda» en vez de enseñar un recorte que parece el total.
+ * Copiar el número allí habría sido el escalón 4 —duplicar con comentario—, y el día que este
+ * `take` cambie el aviso mentiría sin que nada se entere.
+ */
+export const TOPE_LISTADO_QUOTES = 100;
+
+/**
  * Lista de presupuestos para el panel admin.
  */
 export async function listQuotesAdmin(
@@ -56,7 +67,7 @@ export async function listQuotesAdmin(
       charge: true,
     },
     orderBy: { id: 'desc' },
-    take: 100,
+    take: TOPE_LISTADO_QUOTES, // SCRUM-606: el mismo número que lee el aviso de «hay más»
   });
 
   return quotes.map((q) => {
