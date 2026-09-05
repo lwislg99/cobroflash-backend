@@ -104,6 +104,54 @@ async function fetchInvoices(options = {}) {
     rojo:  { pillClass: 'status-pill-rejected', label: 'PLAZO VENCIDO' },
   };
 
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-748 · UN «NO LO SÉ» NO SE PINTA COMO ÉXITO.
+  //
+  // Aquí se decidía con `SEMAFORO_META[grupo.semaforo] || SEMAFORO_META.verde`, así que
+  // CUALQUIER estado que el servidor no supiera nombrar —uno nuevo, uno vacío, un `null`—
+  // salía en pantalla como **«AL DÍA»**. Medido ejecutando esa línea: los cinco casos
+  // desconocidos pintaban lo mismo que el bueno.
+  //
+  // 🔴 HOY NO DISPARA, y por eso es un guard que se abre solo (SCRUM-537). El semáforo tiene
+  // tres estados y los tres están en el mapa. Pero el disparador ya está en el plan: el día
+  // que exista un CUARTO —cuyo único propósito sería no afirmar lo que no se sabe— el
+  // navegador lo convertiría en la mentira que ese estado venía a evitar. Se cierra ahora,
+  // que es barato, y no el día que muerda.
+  //
+  // EL CRITERIO NO SE INVENTA: es el de `invoiceStatusMeta` en `api.js`, que ante un estado
+  // sin mapear NO elige uno — construye una insignia neutra con el código a la vista. Lo
+  // desconocido SE VE. Ahí está escrito por qué, y es el reverso exacto de SCRUM-641: en un
+  // aviso de error enseñar el código ES el defecto; en un rótulo de estado, ESCONDERLO lo es.
+  //
+  // ⚠️ EL RÓTULO NO ESTÁ ESCRITO. Va con marcador hasta que lo firme quien puede: no es una
+  // frase que pueda inventar quien programa (regla 30). Y no se construye el cuarto estado:
+  // eso es del fundador (regla 27). Esto sólo deja de mentir sobre él.
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  const INV_MARCADOR_MICROCOPY = '[PENDIENTE microcopy oficial]';
+
+  /** Cuántas ranuras estrena esta pantalla SIN la firma del fundador. UNA: el rótulo de abajo. */
+  const INV_SIN_APROBAR = 1;
+
+  /**
+   * La insignia de un semáforo. Un estado que no está en el mapa NO se disfraza del más
+   * inocente: se pinta con marcador y con su código a la vista, y se avisa por consola —donde
+   * lo ve quien puede mapearlo, no quien está mirando si le deben dinero.
+   */
+  function metaDelSemaforo(semaforo) {
+    const conocido = SEMAFORO_META[semaforo];
+    if (conocido) return conocido;
+    // Un código vacío es tan desconocido como uno ausente: los dos salen con el guion, para que
+    // el rótulo nunca termine en un espacio colgando que se leería como un fallo de pintado.
+    const codigo = String(semaforo == null ? '' : semaforo).trim().toUpperCase() || '—';
+    try { console.warn('[invoicesView] semáforo sin mapear:', semaforo); } catch (_) { /* sin consola */ }
+    return { pillClass: 'status-pill-draft', label: INV_MARCADOR_MICROCOPY + ' ' + codigo };
+  }
+  if (typeof window !== 'undefined') {
+    window.metaDelSemaforo = metaDelSemaforo;
+    window.INV_MARCADOR_MICROCOPY = INV_MARCADOR_MICROCOPY;
+    window.INV_SIN_APROBAR = INV_SIN_APROBAR;
+  }
+
   // SCRUM-210: `copyRojo` se MUDÓ a api.js sin tocar una letra de su texto. Motivo: el semáforo
   // fiscal reutiliza este mismo copy aprobado como cuerpo de su aviso ámbar de plazo vencido, y
   // dejar dos copias de un texto aprobado es el fallo de «dos listas a mano que deben cuadrar»
@@ -529,7 +577,7 @@ async function fetchInvoices(options = {}) {
     panelPendientes.appendChild(pendBody);
 
     function renderGrupoCard(customer, grupo) {
-      const meta = SEMAFORO_META[grupo.semaforo] || SEMAFORO_META.verde;
+      const meta = metaDelSemaforo(grupo.semaforo); // SCRUM-748: lo desconocido NO cae a «AL DÍA»
       const card = document.createElement('div');
       card.style.cssText = 'border:1px solid var(--neutral-200);border-radius:var(--radius-lg);'
         + 'padding:16px;margin-bottom:12px;background:#fff';

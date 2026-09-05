@@ -374,10 +374,35 @@ jobs:
 
       - run: npm ci
 
-      # El lector de declaraciones y los guards que las declaran usan `typescript` para el AST,
-      # que entra con `npm ci`. No hace falta `npm run build`: ninguna mutación declarada hoy toca
-      # un guard que importe de `dist/`. El día que una lo haga, este paso tendrá que compilar — y
-      # se enterará por el rojo, no por sorpresa: ese guard saldría CIEGO, no verde.
+      # 🔴 AQUÍ HUBO UNA GARANTÍA ESCRITA SIN PROVOCAR EL CASO, Y SALIÓ MAL. Queda escrita porque
+      # es lo que originó la regla 13 de la casa.
+      #
+      # Decía: «No hace falta `npm run build`: ninguna mutación declarada hoy toca un guard que
+      # importe de `dist/`. El día que una lo haga, este paso tendrá que compilar — y se enterará
+      # por el rojo, no por sorpresa: ese guard saldría CIEGO, no verde».
+      #
+      # Pasó al día siguiente, con `scrum748`. Y el síntoma NO fue el predicho: salió **MUDO** —la
+      # acusación de «pasa en verde sobre el defecto que dice vigilar»— sobre un guard SANO. La
+      # predicción era razonable y era falsa, y lo era por escribirse sin provocar el caso.
+      # Provocarlo costaba un `mv dist dist_`.
+      #
+      # Se arreglaron las dos mitades: el meta-guard discrimina por LÍNEA BASE (si el test no sale
+      # en verde limpio es CIEGO, y ni se muta), y este paso COMPILA.
+      #
+      # ── POR QUÉ COMPILAR AQUÍ Y NO REUTILIZAR EL BUILD DE OTRO JOB ─────────────────────────
+      # MEDIDO: el job cuesta ~8 s y `npm run build` en frío ~21 s. Dos jobs de este workflow ya
+      # construyen (`test` y `guards-visuales`), pero reutilizar su salida exige
+      # `upload-artifact`/`download-artifact` **y un `needs:`** — y eso SERIALIZA lo que hoy corre
+      # en paralelo: el PR esperaría MÁS, no menos, por ahorrar 21 s en un job que ya convive con
+      # otro de varios minutos. Se compila y ya está.
+      #
+      # ⚠️ Y NO se acota a `scrum748`. Hay CINCO ficheros que llaman a `cargarDashboard` en el top
+      # level —`scrum443`, `scrum641`, `scrum739`, `scrum743`, `scrum748`— y mueren enteros sin
+      # `dist/`; otros 30 lo hacen dentro de un test y sólo pierden ese test. Compilar los cubre a
+      # los treinta y cinco por construcción, hoy y el día que declaren mutaciones.
+      - name: Compilar (tsc)
+        run: npm run build
+
       - name: Cada guard cae con la mutación que declara
         run: npm run meta:mutaciones
 
