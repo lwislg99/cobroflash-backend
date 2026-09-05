@@ -589,3 +589,235 @@ Todo lo que escribí lo limpié, y lo verifiqué **por propiedad del catálogo**
   sentencia fallida aborta la transacción (`albaranIdempotencia.ts:22`);
 * post-condición final: `products_merchant_id_name_search_key` **restaurado**, índices de prueba
   **0**, filas con nonce **0**, y preview-migracion de vuelta en «sin cambios pendientes».
+
+---
+---
+
+# APÉNDICE 2 · S2 (5-sep-2026) — LA OPCIÓN B, CON SU VIGILANTE
+
+**Decisión del asesor:** opción B (índice parcial), **y B no entra sin su guard**. Uno sin el
+otro no se mergea. Esto es esa entrega.
+
+**Medido contra:** `origin/main` = `6fa04adc`, mezclado DENTRO de la rama antes de la tanda.
+El apéndice 1 de este máster **ya está en `main`** (PR #1070).
+
+---
+
+## 1 · EL SQL SE PARTIÓ EN DOS, Y ME LO ENSEÑÓ LA HERRAMIENTA DE LA CASA
+
+La primera versión era un fichero con `BEGIN; CREATE...; DROP...; COMMIT;`.
+**`scripts/aplicar-sql-dev.mjs` lo RECHAZÓ**, nombrando las tres sentencias que no sabe aplicar:
+
+```
+🔴 3 sentencia(s) que esta herramienta NO sabe aplicar:
+      línea 58: BEGIN
+      línea 64: DROP INDEX IF EXISTS "products_merchant_id_name_search_key"
+      línea 66: COMMIT
+   Solo se aceptan: ALTER TABLE … ADD COLUMN · CREATE [UNIQUE] INDEX · CREATE TABLE … ( … ).
+```
+
+No era un obstáculo: era el diseño diciendo que **los dos pasos no tienen el mismo riesgo**.
+Quedan dos ficheros:
+
+| fichero | riesgo | quién lo aplica |
+|---|---|---|
+| `docs/sql/scrum-631-paso-1-crear-indice-parcial.sql` | **aditivo** — no borra nada | la herramienta de la casa lo acepta |
+| `docs/sql/scrum-631-paso-2-retirar-indice-total.sql` | **destructivo** — retira un índice | una persona que ha leído el host; en producción, el fundador |
+
+**El orden no es libre, y la ventana intermedia es SEGURA:** primero se crea el parcial, después se
+retira el total. Entre los dos conviven, y el total es el MÁS ESTRICTO — durante esa ventana el
+callejón sigue pero **no se abre ningún hueco**. Al revés dejaría un instante sin garantía.
+
+### 🔴 Y UNA CONDICIÓN QUE MIDO AHORA Y CONFIRMA A S1
+
+> S1: «para que el índice parcial mande hay que quitar el `@@unique` del schema — si se deja, el
+> siguiente `db push` **recrea el índice del callejón**».
+
+**Medido, y es cierto.** Con el parcial puesto y el `@@unique` todavía en el esquema, retirado el
+índice total, esto es lo que propone el siguiente push:
+
+```
+-- CreateIndex
+CREATE UNIQUE INDEX "products_merchant_id_name_search_key" ON "products"("merchant_id","name_search");
+```
+
+Así que **el paso 2 NO puede aplicarse antes de que el PR del esquema esté mergeado**, o el
+callejón vuelve solo y en silencio. Está escrito dentro del propio fichero del paso 2.
+
+⚠️ Esto NO contradice lo que medí en el apéndice 1. Son dos cosas distintas y las dos son ciertas:
+Prisma **no tira** un índice PARCIAL que no conoce (medido, con control positivo), y Prisma **sí
+recrea** un índice TOTAL que su esquema declara y la base no tiene. Lo primero es sobre el índice
+nuevo; lo segundo, sobre el viejo.
+
+### Estado de la base de DESARROLLO
+
+Paso 1 **aplicado** con `scripts/aplicar-sql-dev.mjs --go`. Verificado leyendo el catálogo, no el
+mensaje de la herramienta:
+
+```
+ANTES   → control_ve_los_indices 5 · indice_total_unico 1 · indice_parcial 0 · activos_duplicados 0
+DESPUÉS → control_ve_los_indices 6 · indice_total_unico 1 · indice_parcial 1 · activos_duplicados 0
+```
+
+⛔ **El paso 2 NO está aplicado en dev**, y es deliberado: el esquema aún declara el `@@unique`, así
+que dev quedaría en deriva y el `preflight-schema-drift` de las demás sesiones —que mira esta misma
+base— empezaría a fallar. Dev queda con los DOS índices y `migrate diff` limpio.
+
+---
+
+## 2 · EL GUARD — `src/core/db/unicidadNombreProducto.ts`
+
+El hueco, medido en el apéndice 1: **un índice no tiene vigilante en esta casa**. `schemaDrift.ts:25`
+lo declara él mismo («NO: … índices …») y `constanciaDelAlter.ts:58` consulta
+`information_schema.columns`. Con la opción B, la garantía vive en un índice que el esquema no
+puede declarar, así que su ausencia sería invisible.
+
+### Qué comprueba, y qué NO
+
+* **SÍ**: que exista AL MENOS UN índice ÚNICO sobre `(merchant_id, name_search)` en `products`,
+  sea **TOTAL** (el estado de hoy) o **PARCIAL sobre los activos** (tras la opción B).
+* **NO**: cuál de los dos. Y es DELIBERADO: los dos son estados legítimos de esta migración, así
+  que **este guard vale antes, durante y después**, y puede mergearse sin depender de cuándo se
+  aplique el ALTER en cada base. Lo que no admite es que no quede NINGUNO — que es exactamente la
+  pérdida silenciosa que existe para cazar.
+* **NO**: `providers`, que tiene la misma forma y no está medido.
+
+Esa tolerancia no es blandura: es lo que **quita el riesgo de despliegue**. Un guard que exigiera
+el índice parcial y se mergeara antes del ALTER dejaría producción sin arrancar.
+
+### Se pide POR PROPIEDAD, nunca por el nombre
+
+`indisunique`, la lista de columnas resuelta a nombres, y el predicado (`pg_get_expr`). Un guard
+que buscara `products_merchant_nombre_activo_key` se cae al renombrarlo, y —peor— pasaría a verde
+con un índice que se llama igual y no garantiza nada.
+
+🔴 **Y el control negativo NO es hipotético: está HOY en la base.**
+`products_merchant_id_name_search_idx` está sobre **las mismas dos columnas** y **no es único**.
+Un guard que mirara sólo las columnas lo daría por bueno con la garantía perdida. El corpus del
+test es el catálogo REAL de dev, con ese índice dentro a propósito.
+
+El predicado se acepta sólo si restringe **a los activos**: Postgres lo normaliza a
+`(is_active = true)` —medido, no supuesto— y se rechaza cualquier negación (`false`, `NOT`, `<>`),
+porque un parcial sobre los INACTIVOS dejaría a dos activos llamarse igual.
+
+### El desenlace, COPIADO del guard hermano y no inventado
+
+Mismos tres de `schemaDrift` (SCRUM-222): **perdida** → en producción NO arranca, fuera sólo avisa;
+**no pude comprobar** → arranca gritando, y jamás dice «todo bien»; **garantizada** → arranca y
+**dice qué forma encontró**, que durante la migración es la única manera de saber en qué estado
+está cada base mirando el log.
+
+### El suelo
+
+Lista VACÍA de índices ⇒ **`no-pude-comprobar`, nunca `perdida`**: `products` tiene siempre su clave
+primaria, así que cero índices significa que la consulta no está mirando esa tabla. Sin esa rama,
+«la garantía se perdió» y «el guard está roto» darían el mismo veredicto — el defecto que este
+guard existe para cazar, un nivel más abajo.
+
+### El enganche, por AST y no por texto
+
+`src.includes('assertUnicidadDeNombre')` seguiría VERDE tras borrar la llamada, porque el `import`
+mantiene viva la palabra. Es el defecto exacto de SCRUM-745. La técnica se **deriva** de
+`scrum222-deriva-arranque.test.mjs:324`. Se exige: que el arranque lo ESPERE, que sea ANTES de
+`app.listen`, y que vaya **DESPUÉS** de `assertSchemaSinDeriva` — si la columna no existe, la
+unicidad sobre ella no significa nada.
+
+⚠️ **Escalón 3 declarado.** `llamadasEnTests` (`_alcance-desde-entradas.mjs`) hace exactamente esta
+búsqueda por AST, pero está **acotada al directorio `tests/`**; generalizarla tocaría un helper
+compartido por otros tests, más riesgo del que este ticket pide. Y `quienLoImporta` no sirve:
+contesta «quién lo importa», y el import SOBREVIVE justo cuando se borra la llamada.
+
+### MUTACIONES_QUE_ME_TUMBAN — corridas, no declaradas
+
+```
+✔ scrum631 · GUARD · src/index.ts ESPERA a assertUnicidadDeNombre ANTES de app.listen   (×2)
+vivas 14 · mudas 0 · ciegas 0
+```
+
+Las dos mutaciones son sobre `src/index.ts`, **y no es casualidad**: el meta-guard NO reconstruye
+`dist` antes de correr el test mutado, así que mutar `unicidadNombreProducto.ts` sería INERTE —el
+test importa el compilado, seguiría verde, y el guard parecería mudo sin serlo—. `src/index.ts` sí
+se lee de disco. Las demás pruebas comparan VALORES de funciones puras, que no tienen esa clase de
+mudez.
+
+---
+
+## 3 · 🔴 LA MICROCOPY: EL LITERAL ESTÁ, LA CAJA **NO SE PUDO MEDIR**
+
+Me pediste el literal con su caja a 929 y 390 px. **El literal está escrito y MARCADO. La caja no
+la tengo, y no la voy a fingir.**
+
+### El candidato
+
+```
+Ya tienes otro producto activo con ese nombre.
+```
+
+46 caracteres. En pantalla sale hoy con el marcador delante, porque **no lo ha aprobado nadie**:
+
+```js
+const PV_NOMBRE_ACTIVO_DUPLICADO =
+  PV_MARCADOR_MICROCOPY + ' Ya tienes otro producto activo con ese nombre.';
+```
+
+**Por qué no vale el de SCRUM-641.** Aquel dice «Ya tienes **un** producto con ese nombre» y se lee
+**con el campo del nombre delante**, en un alta. Al pulsar «Activar» no hay campo que cambiar y el
+choque es con **otro producto que está ACTIVO**. Mantengo su voz («Ya tienes» → es tuyo, que en un
+multi-tenant importa) y su decisión de no llevar salida.
+
+**Y el reparto del fichero se respeta:** SIN marcador = aprobado por el asesor
+(`PV_NOMBRE_DUPLICADO`); CON marcador = sin aprobar por nadie (éste). `PV_SIN_APROBAR` sube de
+**1 a 2**, y el guard de SCRUM-641 —que mira ese número— **puso la tanda en rojo hasta que lo
+declaré**. Es literalmente el caso que su propio comentario anticipaba.
+
+### 🔴 POR QUÉ NO HAY CAJA, CON SU CONTROL
+
+El navegador de esta máquina **no arranca**. Y no es mi medidor:
+
+```
+control · scripts/guard-caja-avisos.mjs (guard de navegador que YA existe y corre en CI)
+  ⟦arranque⟧ 0.3 s CORTADA EN «proceso+ws» ×3 intentos → salida 3
+  binario: C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe
+```
+
+Falla **exactamente igual** que el mío. Edge está instalado y se resuelve; lo que no levanta es el
+proceso. Escribí el medidor entero (servidor desde `public/`, `.view-container`, el marcado real de
+`setAlert`, los textos leídos de `window.PV_*` y control negativo de 400 caracteres) y **lo borré**:
+un medidor que no puede medir no se commitea.
+
+**Esto es NO MEDIDO, no «cabe».** Y por regla 30 significa que **no lo puedes firmar todavía**.
+
+**El dato que sí tengo, y por el que hay que verlo y no calcularlo:** el texto aprobado de SCRUM-641
+son **37** caracteres, y la capacidad medida a 390 px fue **45**. El mío son **46 sin el marcador**.
+Está **justo en el borde**: un carácter fuera de la capacidad conocida. Puede caer a dos líneas.
+
+Si prefieres una alternativa corta que quede holgada, la más cercana en voz es
+«Ya tienes otro activo con ese nombre.» (37 caracteres, igual que el aprobado) — pero **tampoco la
+he medido**, y pierde la palabra «producto».
+
+⛔ **No firmo ninguna, y no quito el marcador.** Cuando haya máquina con navegador, la caja se mide
+y decides con ella delante.
+
+---
+
+## 4 · LO QUE NO SE HIZO
+
+* ⛔ **`prisma/schema.prisma` INTACTO.** El PR del esquema —quitar `@@unique([merchantId,
+  nameSearch])`— es del fundador. Sin él, el paso 2 no se aplica en ninguna base.
+* ⛔ **Paso 2 sin aplicar en ninguna base**, ni siquiera dev, y por el motivo de arriba.
+* ⛔ **No se ejecutó `scripts/db-push-prod`.** Staging y producción, el fundador.
+* ⛔ **No se devolvió el borrado físico**, no se tocó `lockActionForRole` ni los permisos de 614.
+* ⛔ **Cero dependencias nuevas.**
+* ⛔ **Cero secretos**: la clave de dev viaja en el ENTORNO del hijo, nunca en `argv`.
+
+## 5 · HUECOS DECLARADOS
+
+1. **La caja de la microcopy: NO MEDIDA**, con el control que demuestra que es la máquina.
+2. **El 403/409 por el camino real** (sesión de técnico contra el servidor) sigue sin ejercitarse:
+   vive en `tenancy-permisos.test.mjs`, gateado tras `QA_DB_TEST=1`. El guard nuevo se prueba con
+   funciones puras y con el catálogo real, no arrancando el servidor.
+3. **El guard nunca se ha visto disparar contra una base REAL sin el índice.** Su rama `perdida`
+   está ejercitada con corpus, no provocada en Postgres: provocarla exigiría dejar la base sin
+   ninguna unicidad, y esa base la comparten otras sesiones.
+4. **`providers` sigue sin medir.**
+5. **Staging y producción: sin tocar y sin medir.**
