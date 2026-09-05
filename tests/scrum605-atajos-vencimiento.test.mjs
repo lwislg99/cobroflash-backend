@@ -30,10 +30,17 @@ import path from 'node:path';
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
 
-// El módulo es un script clásico (ni DOM ni red): se evalúa con un `window` de mentira. Mismo
+// Los módulos son scripts clásicos (ni DOM ni red): se evalúan con un `window` de mentira. Mismo
 // procedimiento que `scrum500-suplidos.test.mjs` — dos formas de cargar el mismo fichero
 // acabarían midiendo dos cosas distintas.
+//
+// 🔴 SCRUM-750 · SE CARGAN LOS DOS, Y EN EL MISMO `window`. Desde el 5-sep-2026 `fechaDeAtajo` no
+// calcula: le pide el día a `quoteCaducidad.diaPorDefecto` (SCRUM-633), que es la pieza que sabe
+// en qué zona vive el negocio. Cargar sólo este fichero dejaría a `fechaDeAtajo` devolviendo
+// `null` siempre — y un test que sólo compruebe `null` pasaría igual sin enterarse. El orden es el
+// mismo que el del índice: `quoteCaducidad.js` va ANTES.
 const front = {};
+new Function('window', leer('public/dashboard/js/quoteCaducidad.js'))(front);
 new Function('window', leer('public/dashboard/js/quoteAtajosVencimiento.js'))(front);
 const A = front.QUOTE_ATAJOS_VENCIMIENTO;
 
@@ -53,21 +60,35 @@ test('SCRUM-605 · SUELO: el módulo publica lo suyo', () => {
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 🔴 LOS BORDES · calculados, no razonados
 // ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 SCRUM-750 · LOS INSTANTES SON EXPLÍCITOS Y EL MERCHANT TAMBIÉN, Y ESO NO ES COSMÉTICA.
+//
+// Antes el instante se construía con `new Date(2026, 0, 31)` —componentes LOCALES— y la fecha
+// esperada se comparaba contra un cálculo que también usaba componentes locales. Las dos mitades
+// se movían juntas con la máquina, así que el test pasaba en cualquier zona SIN comprobar que el
+// día no dependiera de ella: exactamente el defecto que este ticket viene a cerrar.
+//
+// Ahora el instante es UTC explícito y el merchant es `null` → UTC (decisión A del fundador). Las
+// SIETE fechas esperadas son las MISMAS de antes, y eso es el resultado, no la casualidad: en una
+// zona sin cambio de hora sumar `N × 86400000` ms equivale a sumar N días de calendario, así que
+// el desbordamiento de fin de mes, de año y del bisiesto sale igual. La ventana del cambio de
+// hora —donde las dos formas SÍ discrepan— se mide aparte, en `scrum750-los-dos-calendarios`.
+//
+// Al MEDIODÍA y nunca a medianoche (SCRUM-640).
 const BORDES = [
-  { que: 'fin de mes: 31 de enero + 30, febrero de 28', hoy: [2026, 0, 31], dias: 30, esperada: '2026-03-02' },
-  { que: 'fin de mes en año BISIESTO: 31 de enero + 30', hoy: [2024, 0, 31], dias: 30, esperada: '2024-03-01' },
-  { que: 'la fecha CAE en el 29 de febrero', hoy: [2024, 0, 30], dias: 30, esperada: '2024-02-29' },
-  { que: 'cambio de AÑO con 30 días', hoy: [2026, 11, 15], dias: 30, esperada: '2027-01-14' },
-  { que: 'cambio de AÑO con 7 días, desde el 31 de diciembre', hoy: [2026, 11, 31], dias: 7, esperada: '2027-01-07' },
-  { que: 'mes de 30 días: 31 de marzo + 30', hoy: [2026, 2, 31], dias: 30, esperada: '2026-04-30' },
-  { que: 'caso corriente de 14 días', hoy: [2026, 4, 20], dias: 14, esperada: '2026-06-03' },
+  { que: 'fin de mes: 31 de enero + 30, febrero de 28', hoy: '2026-01-31T12:00:00Z', dias: 30, esperada: '2026-03-02' },
+  { que: 'fin de mes en año BISIESTO: 31 de enero + 30', hoy: '2024-01-31T12:00:00Z', dias: 30, esperada: '2024-03-01' },
+  { que: 'la fecha CAE en el 29 de febrero', hoy: '2024-01-30T12:00:00Z', dias: 30, esperada: '2024-02-29' },
+  { que: 'cambio de AÑO con 30 días', hoy: '2026-12-15T12:00:00Z', dias: 30, esperada: '2027-01-14' },
+  { que: 'cambio de AÑO con 7 días, desde el 31 de diciembre', hoy: '2026-12-31T12:00:00Z', dias: 7, esperada: '2027-01-07' },
+  { que: 'mes de 30 días: 31 de marzo + 30', hoy: '2026-03-31T12:00:00Z', dias: 30, esperada: '2026-04-30' },
+  { que: 'caso corriente de 14 días', hoy: '2026-05-20T12:00:00Z', dias: 14, esperada: '2026-06-03' },
 ];
 
 for (const b of BORDES) {
   test(`SCRUM-605 · 🔴 ${b.que}`, () => {
-    const hoy = new Date(b.hoy[0], b.hoy[1], b.hoy[2]);
-    const obtenida = A.fechaDeAtajo(b.dias, hoy);
-    const desde = `${b.hoy[0]}-${String(b.hoy[1] + 1).padStart(2, '0')}-${String(b.hoy[2]).padStart(2, '0')}`;
+    const hoy = new Date(b.hoy);
+    const obtenida = A.fechaDeAtajo(b.dias, null, hoy);
+    const desde = b.hoy.slice(0, 10);
     assert.equal(obtenida, b.esperada,
       `🔴 EL ATAJO DE ${b.dias} DÍAS CALCULA MAL.\n`
       + `     desde:     ${desde}\n`
@@ -82,15 +103,23 @@ for (const b of BORDES) {
 // CONTROL NEGATIVO del propio módulo · no inventa fechas
 // ─────────────────────────────────────────────────────────────────────────────────────────
 test('SCRUM-605 · lo que no se puede calcular devuelve `null`, nunca una fecha inventada', () => {
-  const hoy = new Date(2026, 0, 1);
+  const hoy = new Date('2026-01-01T12:00:00Z');
   for (const malo of [0, -7, 7.5, NaN, '7', null, undefined, {}]) {
-    assert.equal(A.fechaDeAtajo(malo, hoy), null,
+    assert.equal(A.fechaDeAtajo(malo, null, hoy), null,
       `🔴 \`${JSON.stringify(malo)}\` ha producido una fecha en vez de \`null\`. Una fecha inventada `
       + 'en un documento es peor que un campo sin tocar.');
   }
+  // 🔴 SCRUM-750 · Y LA FIRMA VIEJA TAMBIÉN. `fechaDeAtajo(7, hoy)` era la llamada correcta hasta
+  // el 5-sep; hoy ese `Date` cae en el hueco del merchant y `zonaDelMerchant` no le encontraría
+  // `.timezone`, así que devolvería una fecha calculada en UTC como si fuera la del negocio. Sin
+  // este aserto, una llamada sin migrar sigue escribiendo un día PLAUSIBLE en el documento.
+  assert.equal(A.fechaDeAtajo(7, hoy), null,
+    '🔴 la firma vieja `(dias, hoy)` ha vuelto a devolver una fecha: un `Date` en el hueco del '
+    + 'merchant da la zona equivocada SIN avisar, que es peor que no escribir nada.');
+
   // Y el control al revés: con un dato bueno SÍ devuelve fecha. Sin esto, una función que
-  // devolviera `null` siempre pasaría el bucle de arriba.
-  assert.equal(A.fechaDeAtajo(7, hoy), '2026-01-08', '🔴 tampoco calcula el caso bueno');
+  // devolviera `null` siempre pasaría los bucles de arriba.
+  assert.equal(A.fechaDeAtajo(7, null, hoy), '2026-01-08', '🔴 tampoco calcula el caso bueno');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
@@ -98,19 +127,20 @@ test('SCRUM-605 · lo que no se puede calcular devuelve `null`, nunca una fecha 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 test('SCRUM-605 · 🔴 NINGÚN atajo cae por debajo del `min` — y se comprueba, no se razona', () => {
   // Se prueba en los días que más duelen, no en uno cualquiera.
-  const dias = [[2026, 0, 31], [2024, 1, 29], [2026, 11, 31], [2026, 5, 30]];
-  for (const d of dias) {
-    const hoy = new Date(d[0], d[1], d[2]);
-    const min = A.fechaDeAtajo(1, hoy);          // el `min` del campo es mañana
+  const dias = ['2026-01-31T12:00:00Z', '2024-02-29T12:00:00Z', '2026-12-31T12:00:00Z', '2026-06-30T12:00:00Z'];
+  for (const iso of dias) {
+    const hoy = new Date(iso);
+    const min = A.fechaDeAtajo(1, null, hoy);    // el `min` del campo es mañana
+    assert.ok(min, `🔴 SUELO: no se ha podido calcular el propio \`min\` para ${iso}.`);
     for (const n of A.DIAS_ATAJO) {
-      assert.equal(A.atajoPorDebajoDelMinimo(n, min, hoy), false,
+      assert.equal(A.atajoPorDebajoDelMinimo(n, min, null, hoy), false,
         `🔴 el atajo de ${n} días cae por debajo del mínimo del campo (${min}) el `
-        + `${hoy.toDateString()}: el navegador rechazaría el valor EN SILENCIO.`);
+        + `${iso}: el navegador rechazaría el valor EN SILENCIO.`);
     }
   }
   // CONTROL POSITIVO del detector: con un atajo imposible tiene que decir que SÍ cae. Sin esto,
   // una función que devolviera `false` siempre pasaría el bucle de arriba.
-  assert.equal(A.atajoPorDebajoDelMinimo(0, '2026-02-01', new Date(2026, 0, 31)), true,
+  assert.equal(A.atajoPorDebajoDelMinimo(0, '2026-02-01', null, new Date('2026-01-31T12:00:00Z')), true,
     '🔴 el detector no sabe decir que sí: su `false` de arriba no vale nada');
 });
 
@@ -216,7 +246,7 @@ test('SCRUM-605 · 🔴 LOS TRES atajos ponen hoy + N, recorriendo la lista y no
   // eso es lo que hay que probar de la aritmética. Falta lo obvio, que es justo lo que nadie
   // comprueba: que **cada uno de los tres** ponga lo que su rótulo promete. Se RECORRE
   // `DIAS_ATAJO`: si mañana entra un cuarto atajo, este test lo mide sin que nadie lo actualice.
-  const hoy = new Date(2026, 4, 12, 12, 0, 0); // 12-may-2026, mediodía (SCRUM-640: nunca medianoche)
+  const hoy = new Date('2026-05-12T12:00:00Z'); // 12-may-2026, mediodía (SCRUM-640: nunca medianoche)
   const esperado = { 7: '2026-05-19', 14: '2026-05-26', 30: '2026-06-11' };
 
   assert.ok(A.DIAS_ATAJO.length >= 3,
@@ -227,8 +257,8 @@ test('SCRUM-605 · 🔴 LOS TRES atajos ponen hoy + N, recorriendo la lista y no
     assert.ok(Object.prototype.hasOwnProperty.call(esperado, dias),
       `🔴 ha entrado un atajo de ${dias} días y este test no sabe qué fecha debería dar: añádela `
       + 'aquí en el mismo commit, o el atajo nuevo viaja sin comprobar.');
-    assert.equal(A.fechaDeAtajo(dias, hoy), esperado[dias],
-      `🔴 el atajo de ${dias} DÍAS pone ${A.fechaDeAtajo(dias, hoy)} y debería poner `
+    assert.equal(A.fechaDeAtajo(dias, null, hoy), esperado[dias],
+      `🔴 el atajo de ${dias} DÍAS pone ${A.fechaDeAtajo(dias, null, hoy)} y debería poner `
       + `${esperado[dias]}. Un botón que promete «${dias}» y escribe otra fecha es peor que no `
       + 'tenerlo: el cliente recibe un presupuesto con una validez que nadie quiso.');
   }
@@ -238,8 +268,14 @@ test('SCRUM-605 · CONTROL NEGATIVO: el RÓTULO no decide la fecha', () => {
   // Lo que NO debe hacer caer el cálculo: cambiar el texto. Hoy el rótulo lleva el marcador
   // dentro, y el día que el fundador firme el copy va a cambiar entero — si el cálculo dependiera
   // del texto, aprobar la microcopy rompería las fechas de un documento que el cliente recibe.
-  const hoy = new Date(2026, 0, 31, 12, 0, 0);
-  const antes = A.DIAS_ATAJO.map((d) => A.fechaDeAtajo(d, hoy));
+  const hoy = new Date('2026-01-31T12:00:00Z');
+  const antes = A.DIAS_ATAJO.map((d) => A.fechaDeAtajo(d, null, hoy));
+  // 🔴 SUELO (SCRUM-750): si `antes` fueran todo `null` —lo que pasa con la firma vieja, porque el
+  // `Date` cae en el hueco del merchant— la comparación de abajo sería `[null,null,null]` contra
+  // `[null,null,null]` y este control negativo pasaría SIN MIRAR NADA.
+  assert.ok(antes.every((f) => typeof f === 'string' && f.length === 10),
+    `🔴 SUELO: las fechas de partida son ${JSON.stringify(antes)}; sin fechas de verdad, comparar `
+    + 'antes y después no prueba que el rótulo no decida el cálculo.');
 
   // Se sustituye el rótulo por otro completamente distinto, sin tocar nada más.
   // 🔴 Y LO QUE DE VERDAD LO PRUEBA, porque lo de abajo NO bastaba: sustituir `A.rotuloDeAtajo`
@@ -264,7 +300,7 @@ test('SCRUM-605 · CONTROL NEGATIVO: el RÓTULO no decide la fecha', () => {
   const original = A.rotuloDeAtajo;
   try {
     A.rotuloDeAtajo = (d) => `Otro texto cualquiera para ${d}`;
-    const despues = A.DIAS_ATAJO.map((d) => A.fechaDeAtajo(d, hoy));
+    const despues = A.DIAS_ATAJO.map((d) => A.fechaDeAtajo(d, null, hoy));
     assert.deepEqual(despues, antes,
       '🔴 cambiar el RÓTULO ha cambiado las FECHAS. El texto y el cálculo tienen que estar '
       + 'separados: el día que se apruebe la microcopy, el rótulo cambia entero.');
