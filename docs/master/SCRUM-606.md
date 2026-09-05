@@ -1,6 +1,22 @@
-# SCRUM-606 (ALB-01) — nuevo albarán desde presupuesto · microcopy CANDIDATA, sin firmar
+# SCRUM-606 (ALB-01) — nuevo albarán desde presupuesto · microcopy APROBADA POR EL ASESOR
 
-**Escrita el 5-sep-2026 · ninguno de estos textos está aprobado** (regla 30).
+**Aprobada por el asesor** el 5-sep-2026, en **SCRUM-606**, y **aplicada en el mismo commit**:
+textos escritos, marcadores retirados y contadores a 0 a la vez. Cuatro firmó tal cual, dos con
+cambio, y el placeholder se acortó antes de enseñárselo.
+
+> ⚠️ **Falta la firma del FUNDADOR, y por eso este registro NO está en `docs/microcopy/`.**
+> Ese directorio es de aprobaciones del fundador —`firmanteDe()` sólo cuenta «Aprobado por el
+> fundador» (SCRUM-726)— y escribir ahí su nombre por una firma del asesor sería exactamente
+> la misuscripción que ese guard existe para impedir.
+>
+> **Es el flujo normal de la casa, no un hueco raro.** SCRUM-599 estuvo en este mismo estado:
+> «el asesor la había aprobado el 3-sep y quedaba a la espera», y su fichero de
+> `docs/microcopy/` nació el 4-sep, cuando firmó el fundador. Aquí igual.
+>
+> **Consecuencia medida, para que nadie la descubra tarde:** `constaAprobado()` NO cuenta estos
+> siete literales como aprobados mientras tanto. Hoy eso no rompe nada —SCRUM-402 vigila que no
+> se PINTE un marcador (y ya no hay ninguno) y SCRUM-514 vigila el sentido contrario, que todo
+> lo aprobado esté pintado—, pero es un hecho declarado, no un olvido.
 
 **Medido contra:** `origin/main` = `78ca15a35f1765d141688258eb34ae0ef396731c` · 2026-09-05T16:25:32+01:00
 
@@ -9,43 +25,46 @@
 > mientras se trabajaba, y un ancla escrita antes del merge nace caduca. La segunda de esas
 > vueltas trajo SCRUM-751, que arregla justo el defecto que esta rama había medido y registrado.
 
-## ⚠️ Por qué este fichero NO está en `docs/microcopy/`
+## Los siete textos aprobados, literales
 
-Se escribió primero ahí y **el guard de SCRUM-726 lo tiró, con razón**. Aquel directorio es «el
-registro de cada microcopy que **aprueba** el fundador», un fichero por **aprobación**, y todos sus
-ficheros tienen que llevar su firma: `constaAprobado()` la exige. Un registro de **candidatos** con
-`firmante: null` allí dentro es exactamente lo que ese guard existe para impedir — un texto que
-parece aprobado por estar donde se guardan las aprobaciones.
-
-Así que vive aquí, en el registro de trabajo por ticket. **El día que el asesor firme**, ese acto sí
-estrena su fichero en `docs/microcopy/` con la línea de firma, y este documento se queda como lo que
-es: la medición que había delante cuando se decidió.
-
-Mientras no haya firma, los siete salen en pantalla con el marcador `[PENDIENTE microcopy oficial]`
-**visible a propósito** (SCRUM-402/667).
-
-## Los candidatos
-
-| Ranura | Dónde vive | Candidato (sin el marcador) |
+| Ranura | Dónde vive | Texto aprobado |
 |---|---|---|
 | Rótulo del botón | `atajoNuevo.TEXTOS.albaranes` | Nuevo albarán |
 | Título del modal | *el mismo* — lo lee de `atajoNuevo.textoDe('albaranes')` | Nuevo albarán |
 | Placeholder del buscador | `albaranDesdePresupuestoModal.js` · `COPY.buscar` | Buscar por nº, cliente o teléfono |
 | Vacío de la búsqueda | `COPY.vacio` | Ningún presupuesto coincide con esa búsqueda |
-| Motivo `sin_trabajo` | `COPY.sin_trabajo` | Todavía no tiene trabajo: acepta el presupuesto y vuelve |
-| Motivo `trabajo_no_visible` | `COPY.trabajo_no_visible` | Su trabajo no es tuyo |
+| Motivo `sin_trabajo` | `COPY.sin_trabajo` | Aún no tiene trabajo: acepta el presupuesto y vuelve |
+| Motivo `trabajo_no_visible` | `COPY.trabajo_no_visible` | Su trabajo no está a tu nombre |
 | Aviso de lista cortada | `COPY.truncado` | Puede haber más: afina la búsqueda |
 | Aviso de fallo de carga | `COPY.error` | No se han podido cargar los presupuestos |
 
-Son **ocho ranuras y siete textos**: el rótulo del botón y el título del modal son **la misma
-cadena leída de un solo sitio**, para que la firma no deje uno de los dos con el marcador puesto.
+Ocho ranuras y **siete textos**: el rótulo del botón y el título del modal son la misma cadena
+leída de un solo sitio. Firmar una y dejar la otra con marcador habría sido el defecto que hoy
+tuvo `main` en rojo.
 
-Contadores que lo declaran, y que caen si alguien añade una novena sin decirlo:
+### Qué cambió el asesor, y por qué
 
-* `atajoNuevo.js` → `SIN_APROBAR` **0 → 1** (sólo el rótulo; los otros tres siguen firmados).
-* `albaranDesdePresupuestoModal.js` → `ALB_ORIGEN_SIN_APROBAR = 6` (los seis textos del modal).
-* Censo de SCRUM-402 → entran `atajoNuevo.js: 1` y `albaranDesdePresupuestoModal.js: 1`
-  (un literal cada uno; los seis del modal salen de una sola constante `MARCA`).
+| Ranura | Candidato entregado | Aprobado | Motivo |
+|---|---|---|---|
+| Placeholder | Busca por nº de presupuesto, cliente o teléfono | **Buscar por nº, cliente o teléfono** | Acortado **antes** de enseñárselo: el primero medía 314,0 px en 314,0 útiles. Se derivó del hermano ya firmado de la misma pantalla y se corrigió la única palabra falsa («trabajo» → «teléfono»). |
+| `sin_trabajo` | Todavía no tiene trabajo: acepta el presupuesto y vuelve | **Aún** no tiene trabajo: acepta el presupuesto y vuelve | «Todavía» → «Aún» dice lo mismo y devuelve holgura. Era la ranura más justa: +19,9 px. |
+| `trabajo_no_visible` | Su trabajo no es tuyo | **Su trabajo no está a tu nombre** | «No es tuyo» suena a reproche y el profesional no ha hecho nada mal. Dice el mismo hecho sin acusar y sin filtrar de quién es el Trabajo, que era el requisito. |
+
+Los otros cinco, firmados tal cual. Del vacío dijo expresamente que **no se acortara** para
+meterlo en una línea: es un estado vacío centrado y ahí envolver es lo correcto.
+
+### Los contadores, movidos en el MISMO commit
+
+* `atajoNuevo.js` → `SIN_APROBAR` **1 → 0** (subió y volvió a bajar el mismo día).
+* `albaranDesdePresupuestoModal.js` → `ALB_ORIGEN_SIN_APROBAR` **6 → 0**, y `MARCA` se retira
+  ENTERA: una constante de marcado sin consumidores invita a marcar texto nuevo en vez de
+  someterlo (precedente de `MARCA_651`).
+* Censo de SCRUM-402 → las dos entradas se **borran**, no se ponen a 0.
+
+**Y el tope de cada ranura queda atado por guard** (`tests/scrum606-…`), que era la exigencia
+al firmar: alargar cualquiera **cae**, no se recorta en pantalla. El tope se **calcula** dentro
+del test —`floor(útil × líneas ÷ (px medidos ÷ caracteres))`— y se contrasta con el declarado,
+para que un número copiado a mano no se quede viejo en silencio.
 
 ## Las cajas, medidas en navegador real
 
@@ -83,38 +102,46 @@ Cajas tal y como salen HOY, **con el marcador puesto** (ancho × alto):
 
 La página **no scrollea en horizontal** en ninguno de los dos anchos.
 
-## 🔴 Tres cosas que la medición dice y hay que decir
+## 🔴 Lo que la medición dijo, y qué pasó con cada cosa
 
-1. **El placeholder se ACORTÓ antes de pedir la firma, por decisión del asesor.** El primer
-   candidato —«Busca por nº de presupuesto, cliente o teléfono»— medía **314,0 px en 314,0 px
-   útiles** a 390: no es holgura, es su ausencia exacta, y medio píxel de otra fuente lo
-   recorta. El de ahora deja **+101,8 px**. Y no se inventó la forma: es la del hermano **ya
-   firmado** de esta misma pantalla —«Buscar por nº, cliente o trabajo», 203,8 px, el buscador
-   de la lista de Albaranes—. Cambia la última palabra, y es exacta: `listQuotesAdmin` casa por
-   número, por nombre de cliente y por **teléfono**, no por trabajo.
+1. ✅ **El recorte se acabó.** Con marcador, el botón necesitaba 404 px en 284 útiles y se leía
+   «DIENTE microcopy oficial] Nuevo alb»; el placeholder se cortaba en los dos anchos.
+   **Re-medido tras la firma a 390 px: CERO elementos recortados** (`scrollWidth > clientWidth`
+   sobre las ocho ranuras) y sin scroll horizontal. Los dos motivos caben en UNA línea cada uno
+   (18,6 px de alto), y el vacío en dos, como se firmó.
 
-2. **Con el marcador puesto, el botón se recorta a 390 px**: el texto marcado necesita 404 px y
-   el botón tiene 284 útiles, y `.btn` no parte línea — se lee «DIENTE microcopy oficial] Nuevo
-   alb». El candidato cabe con +155,9 px, así que esto se cura **firmando**, no tocando el CSS.
-   Es feo a propósito: el coste de no firmar se ve. ⚠️ Pero conviene saber que el mecanismo de
-   marcado **degrada la interfaz** mientras espera firma — un marcador olvidado no es sólo
-   deuda de proceso, es un defecto de UI en producción.
+2. ✅ **La ranura más justa dejó de serlo.** `sin_trabajo` tenía +19,9 px, que es lo primero que
+   se parte el día que alguien toque una fuente o un padding. Con «Aún» en vez de «Todavía»:
+   277,4 px en 316 útiles, **+38,6**. La mejora real es de **18,7 px** — el asesor estimó unos
+   30 y el número medido es menor; se anota el medido.
 
-3. ⚠️ **El motivo `sin_trabajo` es el que queda más justo**: +19,9 px de holgura a 390 px. Cabe
-   en una línea, pero es el primero que se partiría si el texto firmado crece. Si el asesor
-   quiere una frase más larga ahí, la fila crece a dos líneas — no se recorta (es un `div`,
-   no un botón), así que es aceptable; pero se dice antes de firmar, no después.
+3. 📌 **Hallazgo que no es de este ticket: el mecanismo de marcado DEGRADA la interfaz mientras
+   espera firma.** El marcador no es sólo deuda de proceso — mientras está puesto, el botón y el
+   placeholder salen recortados en producción. Tiene su lado bueno (el coste de no firmar se ve)
+   y su lado malo (un marcador olvidado es un defecto de UI, no una nota). El asesor lo apunta
+   como cosa de la casa; aquí sólo queda la medición que lo demuestra.
 
-## Cómo se aplica una firma
+## Lo que queda: la firma del FUNDADOR
 
-Cuando el asesor firme, en el MISMO acto:
+Los siete textos **ya están en pantalla** con la aprobación del asesor. Lo que falta es un solo
+paso, y es de él:
 
-* se escribe el texto sin marcador en su constante,
-* baja `SIN_APROBAR` / `ALB_ORIGEN_SIN_APROBAR`,
-* se **borra** la entrada del censo de SCRUM-402 —no se pone a 0 (precedente SCRUM-424/405)—,
-* y se añade aquí la fecha de la firma.
+* crear `docs/microcopy/2026-09-05-SCRUM-606-nuevo-albaran-desde-presupuesto.md` con la línea
+  `**Aprobado por el fundador** el <fecha>, en **SCRUM-606**.` y los siete literales;
+* con eso, `constaAprobado()` empieza a contarlos y `literalesAprobados()` los incluye.
 
-Los guards que lo atan: `tests/scrum599-navegacion-documentos-y-atajo.test.mjs`,
-`tests/scrum591-alta-desde-el-documento.test.mjs`, `tests/scrum402-marcador-no-se-pinta.test.mjs` y
-`tests/scrum606-albaran-desde-presupuesto.test.mjs` (que exige el marcador en el botón mientras no
-haya firma).
+**No hay nada que retirar de la pantalla mientras tanto** —así lo decidió SCRUM-726 a propósito:
+un texto sin firma del fundador «no se borra de la pantalla, se LISTA para que la firme»— y
+ningún guard está rojo por esto. Es el mismo camino que recorrió SCRUM-599 entre el 3 y el 4 de
+septiembre.
+
+## Los guards que atan todo esto
+
+* `tests/scrum606-albaran-desde-presupuesto.test.mjs` — compara los seis textos del modal
+  **ranura a ranura**, exige que el botón diga exactamente «Nuevo albarán» y **sin** marcador, y
+  topa cada ranura recalculando su límite desde la medición.
+* `tests/scrum599-navegacion-documentos-y-atajo.test.mjs` — los cuatro rótulos del atajo y
+  `SIN_APROBAR = 0`, con la suma atada (`aprobados + sin firmar = total`), que es más fuerte que
+  la igualdad simple: un quinto rótulo sin firma sube el total y tiene que subir el contador.
+* `tests/scrum591-alta-desde-el-documento.test.mjs` — el contador, desde el otro lado.
+* `tests/scrum402-marcador-no-se-pinta.test.mjs` — el censo, con las dos entradas ya borradas.

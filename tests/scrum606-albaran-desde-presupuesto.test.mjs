@@ -378,9 +378,114 @@ test('SCRUM-606 · (e) 🔴 el botón sigue estando cuando la lista de albaranes
     `🔴 hay ${conAtajo.length} botones con tecla en Albaranes y debía haber UNO (el de «Nuevo albarán»).`);
   assert.equal(conAtajo[0].hijos.find((h) => h.tagName === 'KBD').textContent, 'N',
     '🔴 la tecla pintada no es la «N»: el atajo de las otras tres listas es esa.');
-  assert.match(conAtajo[0].textContent, /PENDIENTE/,
-    '🔴 el rótulo ya no lleva el marcador. O el fundador lo ha firmado —y entonces hay que bajar ' +
-    '`SIN_APROBAR` y sacar la entrada del censo de SCRUM-402—, o alguien se ha inventado un texto.');
+  // ⚠️ `textContent` del banco es el del NODO, no el del subárbol: la «N» del `<kbd>` NO se
+  // concatena aquí (medido — la primera versión esperaba «Nuevo albaránN» y salió roja). Mejor
+  // así: el rótulo se compara limpio, y la tecla se comprueba en su propio nodo, tres líneas
+  // arriba. Dos cosas distintas, dos asserts.
+  assert.equal(conAtajo[0].textContent, 'Nuevo albarán',
+    '🔴 el rótulo del botón ha cambiado sin pasar por quien lo firma (regla 30).');
+  assert.doesNotMatch(conAtajo[0].textContent, /PENDIENTE/,
+    '🔴 VUELVE A HABER UN MARCADOR EN EL BOTÓN. Está firmado desde el 5-sep-2026: si alguien ' +
+    'necesita texto nuevo aquí, nace con su marcador Y subiendo `SIN_APROBAR`, no reabriendo éste.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// (f) LA MICROCOPY FIRMADA · ranura a ranura, y con su TOPE
+// ═════════════════════════════════════════════════════════════════════════════════════════
+//
+// ✅ Los SIETE textos los firmó el asesor el 5-sep-2026 (regla 30), con la caja medida delante:
+// cuatro tal cual, dos con cambio y el placeholder acortado antes de enseñárselo.
+//
+// 🔴 SE COMPARA RANURA A RANURA, no «que exista un texto»: es lo que ata cada literal a SU sitio,
+// igual que hacen `albaranesView` y `scrum599`. Retocar copy firmada es decisión del asesor.
+//
+// 🔴 Y CADA UNA LLEVA SU TOPE, que era la exigencia expresa al firmar: «que alguien las alargue
+// tiene que caer, NO recortarse en pantalla». El tope va en CARACTERES —el criterio de
+// SCRUM-648b— y su modelo se declara, porque una aproximación sin modelo es un número inventado:
+//
+//   · el tope de cada ranura sale de su ancho ÚTIL medido a 390 px (el estrecho, que es el que
+//     manda) dividido por el ancho medio POR CARÁCTER del texto firmado, MEDIDO en navegador;
+//   · o sea que vale para frases de anchura parecida a la firmada. Una llena de «m» cabría menos,
+//     y por eso el tope NO sustituye a volver a medir cuando el texto cambie: lo que impide que
+//     alguien alargue sin medir es el literal exacto de arriba; esto es el segundo cinturón.
+// Cada tope se CALCULA, no se elige: `floor(util_efectivo / (px_medidos / caracteres))`, donde
+// `util_efectivo` es el ancho útil a 390 px por las líneas permitidas en esa ranura. Todos van
+// a UNA línea menos `vacio`, que son DOS a propósito —es un estado vacío centrado y ahí envolver
+// es lo correcto: el asesor lo firmó así y dijo expresamente que no se acortara para meterlo en
+// una—. La cuenta está en el parte y se puede rehacer con los números de esta misma tabla.
+const COPY_FIRMADA = Object.freeze({
+  // ranura: [literal firmado, útil a 390 px, px medidos, líneas permitidas, TOPE en caracteres]
+  buscar:             ['Buscar por nº, cliente o teléfono',                    314, 212.2, 1, 48],
+  vacio:              ['Ningún presupuesto coincide con esa búsqueda',         294, 318.2, 2, 81],
+  sin_trabajo:        ['Aún no tiene trabajo: acepta el presupuesto y vuelve', 316, 277.4, 1, 59],
+  trabajo_no_visible: ['Su trabajo no está a tu nombre',                       316, 164.3, 1, 57],
+  truncado:           ['Puede haber más: afina la búsqueda',                   312, 214.9, 1, 49],
+  error:              ['No se han podido cargar los presupuestos',             312, 251.9, 1, 49],
+});
+
+/** Lee `COPY` del modal SIN ejecutarlo: los literales, tal y como están escritos. */
+function copyDelModal() {
+  const src = fs.readFileSync(path.join(DIR_JS, 'albaranDesdePresupuestoModal.js'), 'utf8');
+  const sf = ts.createSourceFile('m.js', src, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  let encontrado = null;
+  (function visitar(n) {
+    if (!encontrado && ts.isVariableDeclaration(n) && n.name.getText(sf) === 'COPY'
+        && n.initializer && ts.isObjectLiteralExpression(n.initializer)) {
+      encontrado = {};
+      for (const p of n.initializer.properties) {
+        if (ts.isPropertyAssignment(p) && ts.isStringLiteralLike(p.initializer)) {
+          encontrado[p.name.getText(sf)] = p.initializer.text;
+        }
+      }
+    }
+    ts.forEachChild(n, visitar);
+  })(sf);
+  return encontrado;
+}
+
+test('SCRUM-606 · (f) SUELO: se lee `COPY` del modal y trae las seis ranuras', () => {
+  const copy = copyDelModal();
+  assert.ok(copy, '🔴 ESCÁNER CIEGO: no encuentro el objeto `COPY` en el modal');
+  assert.deepEqual(Object.keys(copy).sort(), Object.keys(COPY_FIRMADA).sort(),
+    '🔴 las ranuras del modal y las firmadas no son las mismas: o ha entrado una sin firma, o se ' +
+    'ha ido una que estaba aprobada.');
+});
+
+test('SCRUM-606 · (f) ✅ los SEIS textos del modal son EXACTAMENTE los firmados', () => {
+  const copy = copyDelModal();
+  for (const [ranura, [literal]] of Object.entries(COPY_FIRMADA)) {
+    assert.equal(copy[ranura], literal,
+      `🔴 «${ranura}» ha cambiado sin pasar por quien lo firma (regla 30).\n` +
+      `     firmado: «${literal}»\n     está:    «${copy[ranura]}»`);
+    assert.doesNotMatch(copy[ranura], /PENDIENTE|\[\[/,
+      `🔴 «${ranura}» ha vuelto a llevar marcador, y esto se ve en pantalla.`);
+  }
+});
+
+test('SCRUM-606 · (f) 🔴 el TOPE de cada ranura: alargar CAE, no se recorta en pantalla', () => {
+  const copy = copyDelModal();
+  for (const [ranura, [literal, util, px, lineas, tope]] of Object.entries(COPY_FIRMADA)) {
+    // 🔴 EL TOPE SE RECALCULA AQUÍ y se contrasta con el declarado. Un número copiado a mano en
+    // una tabla es lo que se queda viejo en silencio: si alguien cambia el literal o el ancho
+    // útil sin rehacer la cuenta, esto cae antes de que el tope empiece a mentir.
+    const topeCalculado = Math.floor((util * lineas) / (px / literal.length));
+    assert.equal(tope, topeCalculado,
+      `🔴 el tope declarado de «${ranura}» (${tope}) no es el que sale de su medición 
+(${topeCalculado}): ${util} px útiles × ${lineas} línea(s) ÷ ${(px / literal.length).toFixed(2)} px por carácter.`);
+    // Suelo del propio tope: tiene que dejar MARGEN sobre el texto firmado y no ser absurdo. Un
+    // tope por debajo de lo firmado sería rojo permanente; uno enorme, una decoración.
+    assert.ok(tope > literal.length,
+      `🔴 el tope de «${ranura}» (${tope}) no deja margen sobre el texto firmado (${literal.length}).`);
+    assert.ok(tope < literal.length * 3,
+      `🔴 el tope de «${ranura}» (${tope}) es tan grande que no topa nada.`);
+    // Y el tope de verdad.
+    assert.ok(copy[ranura].length <= tope,
+      `🔴 «${ranura}» tiene ${copy[ranura].length} caracteres y su tope medido es ${tope}.\n\n` +
+      `  Se midió en navegador a 390 px: ${util} px útiles, y el texto firmado ocupa ${px} px.\n` +
+      '  Alargarlo sin volver a medir es exactamente lo que este tope existe para impedir: en el\n' +
+      '  botón y en el placeholder el exceso NO envuelve, se RECORTA, y el profesional lee media\n' +
+      '  frase. Si el texto nuevo tiene que ser más largo, mídelo y sube el tope con su medición.');
+  }
 });
 
 test('SCRUM-606 · (e) la vista de Albaranes registra su atajo «N»', async () => {

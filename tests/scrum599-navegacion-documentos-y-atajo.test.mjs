@@ -202,6 +202,9 @@ test('SCRUM-599 · el microcopy es el APROBADO, literal, y sin marcadores', () =
     ['quotes-list', 'Nuevo presupuesto'],
     ['invoices', 'Nueva factura'],
     ['customers', 'Nuevo cliente'],
+    // 5-sep-2026 (SCRUM-606 · ALB-01): la CUARTA lista, firmada por el asesor el mismo dia que
+    // entro. Su caja, medida en navegador antes de pedir la firma: 128,1 px en 284 utiles a 390.
+    ['albaranes', 'Nuevo albarán'],
   ];
   for (const [vista, texto] of APROBADOS) {
     assert.equal(A.textoDe(vista), texto,
@@ -209,11 +212,10 @@ test('SCRUM-599 · el microcopy es el APROBADO, literal, y sin marcadores', () =
     assert.equal(/PENDIENTE|\[\[/.test(texto), false,
       `🔴 «${texto}» es un MARCADOR, y esto se ve en pantalla.`);
   }
-  // 🔴 5-sep-2026 (SCRUM-606) · YA NO SON IGUALES, Y ESO ES EL ESTADO CORRECTO: hay CUATRO
-  // rótulos y TRES firmados. La diferencia no se tapa — se declara aquí y tiene que cuadrar
-  // exactamente con `SIN_APROBAR`, que es el número que cuenta las que esperan firma. Atar los
-  // dos es lo que impide que entre un quinto rótulo sin firma y nadie se entere: subiría el
-  // total sin subir el contador, y esta igualdad cae.
+  // 🔴 VUELVEN A CUADRAR el 5-sep-2026: los CUATRO rotulos estan firmados y `SIN_APROBAR` es 0.
+  // La suma se conserva ASI —aprobados + sin firmar = total— y no se vuelve a la igualdad simple:
+  // con esta forma, un quinto rotulo que entre sin firma sube el total Y tiene que subir el
+  // contador, o esto cae. La igualdad simple solo lo cazaba mientras el contador fuera 0.
   assert.equal(Object.keys(A.TEXTOS).length, APROBADOS.length + A.SIN_APROBAR,
     `🔴 hay ${Object.keys(A.TEXTOS).length} rótulos, ${APROBADOS.length} aprobados y `
     + `${A.SIN_APROBAR} declarados sin firma: las cuentas no cuadran, ha entrado uno a escondidas.`);
@@ -224,14 +226,12 @@ test('SCRUM-599 · el microcopy es el APROBADO, literal, y sin marcadores', () =
   // dice ahora es «las tres que hay están firmadas», no «no hay nada que declarar» — así que el
   // día que una cuarta lista estrene su atajo, su rótulo nace sin firma, este número sube y esto
   // cae. Un cero que no se puede mover en silencio es lo contrario de un guard apagado.
-  // 🔴 5-sep-2026 · 0 → 1 (SCRUM-606 · ALB-01): entra «Nuevo albarán», el rótulo de la CUARTA
-  // lista, y nace SIN la firma del fundador. Es exactamente lo que el comentario de arriba
-  // predijo el 4-sep, palabra por palabra. El uno tampoco se puede mover en silencio: sigue
-  // siendo una igualdad exacta, y el día de la firma vuelve a 0 a la vez que se retira el
-  // marcador del literal — un contador a 0 con un marcador vivo es peor que no llevar cuenta.
-  assert.equal(A.SIN_APROBAR, 1,
-    '🔴 el recuento de ranuras a la espera de la firma del fundador ya no es uno: o ha entrado '
-    + 'un rótulo nuevo sin firmar, o alguien ha movido el número sin decir por qué.');
+  // 🔴 5-sep-2026 · subio a 1 y volvio a 0 el MISMO DIA (SCRUM-606): entro «Nuevo albarán» sin
+  // firma y el asesor lo firmo en la misma sesion, retirando marcador y contador en el mismo
+  // commit. El cero sigue sin poder moverse en silencio: es una igualdad exacta.
+  assert.equal(A.SIN_APROBAR, 0,
+    '🔴 el recuento de ranuras a la espera de firma ya no es cero: o ha entrado un rótulo nuevo '
+    + 'sin firmar, o alguien ha movido el número sin decir por qué.');
   assert.equal(A.TECLA, 'N', '🔴 la tecla que se pinta ha dejado de ser la «N».');
 });
 

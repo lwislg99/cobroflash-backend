@@ -29,47 +29,72 @@
 // un peaje: es lo que hace visible el encadenamiento que el ticket quiere «sin la rigidez» de
 // Quipu.
 //
-// ── MICROCOPY · REGLA 30 · NINGUNO DE ESTOS SEIS TEXTOS ESTÁ APROBADO ───────────────────────
+// ── MICROCOPY · REGLA 30 · LOS SEIS TEXTOS, FIRMADOS POR EL ASESOR el 5-sep-2026 ────────────
 //
-// Van con el marcador VISIBLE a propósito, como hicieron `albaranesView` y el Libro registro antes
-// de que el asesor los firmara: se ve en pantalla para que nadie encienda por descuido texto que
-// nadie ha aprobado. El rótulo del BOTÓN no está aquí — vive en `atajoNuevo.js`, que es la fuente
-// única de los rótulos de «nuevo» de las listas, y allí tiene su propio contador.
+// Nacieron con `[PENDIENTE microcopy oficial]` VISIBLE en pantalla —como hicieron `albaranesView`
+// y el Libro registro antes de que el asesor los firmara— y se entregaron con su caja medida en
+// navegador a 929 y 390 px. El asesor firmó cuatro tal cual y cambió dos; los motivos de cada
+// cambio están junto a su literal, con la medición de antes y de después.
+//
+// El rótulo del BOTÓN no está aquí: vive en `atajoNuevo.js`, que es la fuente única de los
+// rótulos de «nuevo» de las listas — y el TÍTULO de este modal lee de ahí, no repite la cadena.
+//
+// ⚠️ Retocar cualquiera de estos seis es cambiar copy firmada: decisión del asesor, no un detalle
+// de implementación. El guard los compara ranura a ranura y sale rojo.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 (function () {
   'use strict';
 
-  /** La grafía que CUENTA el censo de SCRUM-402/667. Desde un solo sitio. */
-  var MARCA = '[PENDIENTE microcopy oficial]';
-
   /**
-   * Cuántas ranuras de ESTE fichero esperan la firma del fundador. Se declara para que nadie las
-   * cuente a mano y para que añadir una sin decirlo salga rojo (patrón de `PV_SIN_APROBAR` y de
-   * `ALB_OCULTAR_PRECIOS_SIN_APROBAR`). Cuando el fundador firme, el número BAJA y el trinquete
-   * aprieta; no se borra mientras quede una sin firmar.
+   * ✅ LOS SEIS TEXTOS, FIRMADOS POR EL ASESOR el 5-sep-2026 (regla 30). Ya NO llevan marcador.
+   *
+   * 🔴 Y `MARCA` SE BORRA CON ELLOS, no se deja «por si acaso»: es el precedente de `MARCA_651`
+   * en `jobNuevoModal.js` y del `rotulo()` de `albaranesView.js`. Una constante de marcado sin
+   * consumidores invita a marcar texto nuevo en vez de someterlo a firma, que es exactamente el
+   * camino que queremos cerrado. Quien estrene una ranura aquí, que estrene también su marcador.
+   *
+   * ⚠️ EL TOPE DE CADA UNA ESTÁ ATADO POR GUARD (`tests/scrum606-...`), no sólo el texto: se
+   * compara ranura a ranura contra el literal firmado, así que alargar cualquiera CAE en vez de
+   * recortarse en pantalla.
    */
-  var ALB_ORIGEN_SIN_APROBAR = 6;
-
   var COPY = {
-    // 🔴 ACORTADO el 5-sep-2026 por decisión del asesor, ANTES de firmarlo. El primer candidato
-    // —«Busca por nº de presupuesto, cliente o teléfono»— medía 314,0 px en 314,0 px útiles a
-    // 390: no es holgura, es la ausencia exacta de holgura, y medio píxel de otra fuente lo
-    // recorta. Éste mide 212,2 y deja 101,8 de margen.
+    // ACORTADO por el asesor ANTES de firmarlo. El primer candidato —«Busca por nº de
+    // presupuesto, cliente o teléfono»— medía 314,0 px en 314,0 px útiles a 390: no es holgura,
+    // es su ausencia exacta, y medio píxel de otra fuente lo recorta. Éste mide 212,2 (+101,8).
     //
-    // Y no se inventa la forma: es la del hermano YA FIRMADO que vive en esta misma pantalla,
-    // el buscador de la lista de Albaranes («Buscar por nº, cliente o trabajo», 203,8 px). Misma
+    // Y no se inventó la forma: es la del hermano YA FIRMADO que vive en esta misma pantalla, el
+    // buscador de la lista de Albaranes («Buscar por nº, cliente o trabajo», 203,8 px). Misma
     // acción, mismas palabras. Cambia la última, y es exacta: `listQuotesAdmin` casa por número,
     // por nombre de cliente y por TELÉFONO del cliente — no por trabajo.
-    buscar: MARCA + ' Buscar por nº, cliente o teléfono',
-    vacio: MARCA + ' Ningún presupuesto coincide con esa búsqueda',
+    buscar: 'Buscar por nº, cliente o teléfono',
+    // Dos líneas a 390 px, y es lo correcto: es un estado vacío centrado y ahí envolver está
+    // bien. NO se acorta para meterlo en una (decisión del asesor al firmarlo).
+    vacio: 'Ningún presupuesto coincide con esa búsqueda',
     // Los DOS motivos del conjunto cerrado de `presupuestosParaAlbaran.ts`. Cada uno con su
     // texto: un motivo sin frase deja al profesional mirando un código, que es el defecto que
     // SCRUM-275 cerró en /login.html.
-    sin_trabajo: MARCA + ' Todavía no tiene trabajo: acepta el presupuesto y vuelve',
-    trabajo_no_visible: MARCA + ' Su trabajo no es tuyo',
-    truncado: MARCA + ' Puede haber más: afina la búsqueda',
-    error: MARCA + ' No se han podido cargar los presupuestos',
+    //
+    // «Aún» y no «Todavía» — cambio del asesor al firmar, y no es cosmético: el candidato dejaba
+    // +19,9 px de holgura a 390, que es la primera ranura que se parte el día que alguien toque
+    // una fuente o un padding. Medido tras el cambio: 277,4 px en 316 útiles, +38,6.
+    sin_trabajo: 'Aún no tiene trabajo: acepta el presupuesto y vuelve',
+    // «no está a tu nombre» y no «no es tuyo» — cambio del asesor al firmar: dice el MISMO hecho
+    // sin sonar a reproche (el profesional no ha hecho nada mal) y sigue sin filtrar de quién es
+    // el Trabajo, que era el requisito. Medido: 164,3 px en 316 útiles, +151,7.
+    trabajo_no_visible: 'Su trabajo no está a tu nombre',
+    truncado: 'Puede haber más: afina la búsqueda',
+    error: 'No se han podido cargar los presupuestos',
   };
+
+  /**
+   * Cuántas ranuras de ESTE fichero esperan firma. **0 desde el 5-sep-2026**: las seis están
+   * firmadas.
+   *
+   * 🔴 EL CERO NO RELAJA NADA, y la constante NO se retira — mismo criterio que `SIN_APROBAR` en
+   * `atajoNuevo.js`: no dice «no hay nada que declarar», dice «las seis que hay están firmadas».
+   * El día que entre una séptima ranura, nace sin firma, este número sube y el guard cae.
+   */
+  var ALB_ORIGEN_SIN_APROBAR = 0;
 
   /**
    * Abre el buscador. `alElegir({jobId, quoteId, numero})` recibe el presupuesto ELEGIDO —nunca
