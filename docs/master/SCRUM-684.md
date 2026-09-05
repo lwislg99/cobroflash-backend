@@ -289,10 +289,22 @@ nada. Lo que sí he comprobado es que el fixture del 409 tiene la forma que S3 d
 
 # SCRUM-684 (b) · **FASE B: el guard acotado — una avería también se entrega en papel**
 
-**Medido contra:** `origin/main` = `8303db7524d3e0e90659c49f840d47adefaf6d5f` · 2026-09-04T21:37:50+01:00
+**Medido contra:** `origin/main` = `f707619865a5be86988a4d34b9b0e97b4449169b` · 2026-09-05T00:17:11+01:00
 
-> El número sigue compartido con el trabajo de DICTADO de arriba (que es SCRUM-725, según el
-> asesor). **684 es este ticket** y la reubicación de aquél la hace él; aquí no se mueve nada.
+> **Re-anclado el 5-sep-2026 al mezclar `main` dentro de la rama**, porque una base caduca cuando
+> `main` se mueve — y aquí se movió **tres veces en una hora**. El ancla previa —el `origin/main`
+> que terminaba en `8303db75`, del 4-sep-2026 a las 21:37:50+01:00— era la del árbol sobre el que se
+> midieron la caja del modal y los seis rojos, y se conserva aquí escrita para que no se pierda
+> contra qué se midió aquello.
+
+> ⚠️ **CORREGIDO el 4-sep-2026: NO es SCRUM-725, es SCRUM-683** — lo dice el propio encabezado del
+> bloque de arriba, y el asesor rectificó su cita («la saqué del título de un ticket de Jira sin
+> medir»). La línea de abajo se deja tal cual, tachada, porque es el registro de lo que se creyó.
+>
+> ~~El número sigue compartido con el trabajo de DICTADO de arriba (que es SCRUM-725, según el
+> asesor).~~ **684 es este ticket** y la reubicación de aquél —a `docs/master/SCRUM-683.md`— la hace
+> el asesor; aquí no se mueve nada, porque hacerlo daría un segundo conflicto a la sesión que tiene
+> ese fichero.
 
 ## La decisión, tomada por el fundador
 
@@ -329,7 +341,50 @@ Una avería **sin** líneas enlazadas no rompe nada: no hay correspondencia que 
 aquel guard decía tapar **ya estaba abierto por el otro lado**: un albarán anterior al guard se
 podía parchear con cualquier `quoteLineIndex` y nada lo validaba. Aquí se cierra por las dos.
 
-## El microcopy: el texto aprobado ya no servía
+## ✅ El microcopy: FIRMADO por el asesor, y por qué hubo que firmar uno nuevo
+
+El de SCRUM-257 decía «Este trabajo no tiene presupuesto; **no se puede crear un albarán**». Con el
+guard acotado eso es **falso**: sí se puede, salvo para la línea que afirma un origen inexistente.
+
+> 🔴 **Un mensaje aprobado que ha dejado de ser verdad es peor que uno con marcador.** Retirar un
+> texto FIRMADO porque el producto cambió debajo pide más criterio que escribir uno nuevo.
+
+**Texto aprobado por el asesor el 4-sep-2026** (provisional, a la espera del fundador):
+
+> **«La línea N dice venir de un presupuesto y este trabajo no tiene ninguno.»**
+
+Nombra la línea **primero**, que es lo que el profesional necesita para arreglarlo. El plural
+concuerda: «Las líneas 1, 3 **dicen**…».
+
+### 📏 La caja, medida en navegador real — y es OTRA superficie que la de S5
+
+No es «la caja de aviso del dashboard» (45 car. en una línea, 93 en dos): este 409 se pinta en el
+`.alert.error` **del modal**, que es más estrecho — la cadena real es
+`.modal-overlay > .modal > .alert.error`, en `jobDetailView.js:1471` y `:2523`.
+
+| | 929 px | 390 px |
+|---|---|---|
+| caja | 472,0 px | 342,0 px |
+| ancho útil | 444,0 px | 314,0 px |
+| el firmado (72 car.) | **1 línea** | **2 líneas** |
+| peor caso: plural con dos números (78 car.) | 2 líneas | **2 líneas** |
+
+**Nunca pasa de dos líneas**, que era la condición. Se pinta, y el marcador se retira.
+
+> 🔴 **Y me cazó la propia medida**: la regla `.alert:empty { display: none }` deja la caja en
+> **0 px** si se mide vacía, y ese cero se habría leído como «no cabe nada». Se mide con el texto dentro.
+
+**Censo de SCRUM-667**: la entrada entró con 1 por la tarde y **se BORRA** el mismo día, no se pone
+a 0. Comprobado: cero marcadores en el fichero. Que no quede marcador **no** significa que esté
+firmado por el fundador — eso lo dice `SIN_APROBAR = 1`, y hay un guard que exige que cuadre.
+
+Y un tope medido: si el mensaje crece por encima de **78 caracteres**, el guard obliga a volver a
+medir la caja antes de pintarlo.
+
+> El apartado de abajo es la versión previa de éste, de cuando el texto aún no estaba firmado.
+> Se conserva por el motivo de siempre: no se borra lo escrito.
+
+### El microcopy, antes de la firma
 
 El de SCRUM-257 decía «Este trabajo no tiene presupuesto; **no se puede crear un albarán**». Con el
 guard acotado eso es **falso**: sí se puede, salvo para la línea que afirma un origen inexistente.
@@ -337,6 +392,12 @@ guard acotado eso es **falso**: sí se puede, salvo para la línea que afirma un
 **Un mensaje aprobado que ha dejado de ser verdad es peor que uno con marcador.** El nuevo sale con
 `[PENDIENTE` desde un solo sitio y **nombra qué línea**, declarado en `CENSO_SERVIDOR` de SCRUM-667
 —y **no** en `EN_EL_PAPEL`: lo ve el profesional en el panel, no el cliente en el papel—.
+
+> 🔴 **LA FRASE QUE SIGUE QUEDÓ DESMENTIDA AL MEDIR, y se deja escrita en vez de borrarla.** Decía
+> que la caja no se medía «porque es un toast y no un control», y es **falso**: este 409 se pinta en
+> el `.alert.error` del modal, que **sí** tiene caja y se midió — 472,0 px a 929 y 342,0 px a 390,
+> con el resultado en el apartado de arriba. Un registro que contradice al de arriba sin decirlo es
+> peor que no tenerlo.
 
 Candidato para firmar, con la caja no medida porque es un toast y no un control:
 **«La línea N dice venir de un presupuesto y este trabajo no tiene ninguno.»**
@@ -396,3 +457,86 @@ que los fixtures no se tocan, y además son de la numeración (S4) y del candado
 
 `prisma/schema.prisma` · ninguna columna · el camino de emisión · los 22 fixtures · la base de
 staging ni la de producción. El turno de staging se tomó y **se soltó** (lo hace el propio script).
+
+---
+
+## El merge de `main`, y la tanda RE-MEDIDA después (S1 · 5-sep-2026)
+
+`main` había avanzado mucho desde que se abrió el conflicto de esta rama, así que se mezcló
+**DENTRO** de la rama —nunca rebase, nunca `--force`— y **la tanda se corrió DESPUÉS del merge, no
+antes**: mezclar `main` es un cambio, y una tanda anterior al cambio no dice nada del árbol que se
+entrega.
+
+Se mezcló **tres veces**, y ninguna de las dos últimas estaba planeada: cada vez que se fue a
+re-anclar, `main` se había vuelto a mover. **71 commits de `main` en total** — 51 hasta `9545711d`,
+6 más hasta `5b95cad2` y 14 más hasta `f7076198`. Es el ritmo real de un día con varias sesiones
+abiertas, y por eso el ancla se re-mide en vez de escribirse una vez.
+
+| tanda | árbol medido | tests | pass | fail | saltados |
+|---|---|---:|---:|---:|---:|
+| tras el 1.er merge | `origin/main` = `9545711d` · 2026-09-05T00:01:44+01:00 | 5406 | 5318 | **0** | 88 |
+| tras el 2.º merge | `origin/main` = `5b95cad2` · 2026-09-05T00:08:47+01:00 | 5411 | 5323 | **0** | 88 |
+| tras el 3.er merge | `origin/main` = `f7076198` · 2026-09-05T00:19:21+01:00 | 5439 | 5351 | **0** | 88 |
+
+La tercera vuelta **no fue por rutina**: entre los 14 commits venía **SCRUM-738**, un censo que lee
+`docs/master/` y los números de los títulos, y este fichero es precisamente uno con **el número
+compartido** por dos trabajos. Medido después: `main` no había tocado ninguno de los cuatro
+ficheros de este carril, y sus huellas siguen siendo las mismas tras los tres merges.
+
+> ✅ **Y valió la vuelta: SCRUM-738 trae un test QUE HABLA DE ESTE TICKET**, y en la tercera tanda
+> sale en verde — *«SCRUM-684 NO se da por hecho: su entrada está titulada para OTRO»*. Su censo
+> daba 684 por **ENTERO** por el número compartido, y ahora lo devuelve como **`NO_MEDIBLE`** con el
+> motivo `NÚMERO COMPARTIDO`. Se apoya en que el **primer** título del fichero siga siendo
+> `# SCRUM-683`, que es lo que este trabajo **no ha tocado**; si algún día se separan los ficheros,
+> ese test se retira con ellos y él mismo lo dice. Sin la tercera vuelta, un guard nuevo que mira
+> esta entrada se habría quedado sin correr contra ella.
+
+> ⚠️ **Un recuento que me falló a mí mientras escribía esto, y va aquí porque es el mismo defecto de
+> siempre.** Al comparar las tandas conté los saltos «de este carril» buscando `684`, y la tercera
+> dio **1** donde las otras daban 0. No era un salto: el patrón casaba con **`0.2684ms`**, el tiempo
+> de ejecución de un test ajeno. Con el patrón estricto (`SCRUM-684`) las tres dan **0**. Un número
+> buscado por un trozo de texto que también aparece en otra cosa no es una medición.
+
+Las unidades son **tests**, no ficheros: los 5 de diferencia entre la primera tanda y la segunda son
+los que entraron con **SCRUM-747** en el segundo merge, no tests míos. Los **7 tests** de
+`tests/scrum684-albaran-en-averia.test.mjs` salen en verde en las dos, y el barrido que los busca
+devuelve **10 líneas** —los 7 más las 3 de `scrum257` y `scrum303` que citan el ticket—: un cero
+ahí habría sido «no supe mirar», no «no hay».
+
+### ⚠️ Los 88 saltados, y por qué NINGUNO es un fallo tapado
+
+Los 88 **declaran su motivo** —comprobado: **cero** saltos mudos, y **cero** de este carril—. Por
+grupos, y suman 88 exactos: **78 tests** gateados por `QA_DB_TEST` / `A55_DB_TEST` /
+`BOT_SUITE_TEST` (la tanda de staging), **9** por `LIBRO_PG_URL` (piden un Postgres desechable) y
+**1** por no poder crear un enlace a fichero en esta máquina (EPERM de Windows), que declara además
+qué control positivo portable cubre el mismo mecanismo. Los 9 de `LIBRO_PG_URL` los canta la propia
+suite por su nombre al terminar, que es lo que impide leer su «0 fallos» como «todo corrió».
+
+### 🔴 EL HUECO, y hay que decirlo: los dos fallos de arriba NO se han vuelto a medir
+
+Los dos que quedan en `tests/albaran.test.mjs` —el formato `AB260001` y el candado de versión de
+SCRUM-361— viven **dentro de los dos únicos tests gateados de ese fichero** (`SCRUM-14`, línea 202,
+y `SCRUM-65`, línea 331). En esta tanda **saltaron**, así que el `fail 0` de arriba **no dice nada
+sobre ellos**: no están arreglados, están sin ejecutar. Los otros **15 tests** del fichero sí
+corrieron y pasan, incluido el unitario de `formatAlbaranNumber`, que es justamente el que
+contradice al fixture. Esta sesión **no ejecuta nada contra staging**, ni el preview, así que el
+hueco se declara en vez de rellenarlo con una suposición.
+
+### Los dos censos de mudez: medido que este carril NO entra en ninguno
+
+Son **dos poblaciones distintas** y se midieron por separado, que es la única forma de no
+confundirlas:
+
+| censo | qué población mide | los ficheros de este carril |
+|---|---|---|
+| **SCRUM-719** (`censo:mudez`) | guards que llaman a `soloEjecutable` | **0 llamadas** → NO APLICA |
+| **SCRUM-745** (`meta:mutaciones`) | preguntar por TEXTO sobre un fuente | **0 sitios** en la superficie |
+
+La segunda se midió **reusando el detector del propio `scrum745`** —extraído de su fichero por AST,
+sin escribir un segundo criterio que pudiera divergir del suyo— y con su suelo delante: el detector
+reusado ve **1 + 1** sitios en los dos sintéticos de control, **0** en el control negativo de la
+lista, y **1 sitio real** en `scrum740`. O sea que el **0** de este carril es «no lo hace», no «no
+supe mirar».
+
+Así que aquí no hay ninguna `MUTACIONES_QUE_ME_TUMBAN` que declarar: declararla sin que exista el
+defecto que vigila sería la «cobertura aparente» contra la que avisa el propio SCRUM-745.

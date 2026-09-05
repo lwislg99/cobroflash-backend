@@ -61,18 +61,18 @@ const CENSO_SERVIDOR = Object.freeze({
   'src/modules/invoicing/domain/criterioCaja.ts': 1,
   'src/modules/fiscal/modelo303/modelo303.ts': 1,
   'src/modules/fiscal/librosAeat/librosAeat.ts': 1,
-  // ── SCRUM-684 · 4-sep-2026 · ENTRA A CONCIENCIA CON 1 ──────────────────────────────────
+  // ── SCRUM-684 · 4-sep-2026 · ENTRÓ CON 1 Y SALIÓ EL MISMO DÍA ──────────────────────────
   //
-  // El rechazo de una línea que dice venir de un presupuesto inexistente. Lo ve el PROFESIONAL
-  // en un toast del panel, no el cliente: NO va a `EN_EL_PAPEL`.
+  // El rechazo de una línea que dice venir de un presupuesto inexistente entró con marcador
+  // porque el texto aprobado en SCRUM-257 había dejado de ser VERDAD —decía «no se puede crear un
+  // albarán» y desde que el guard se acota sí se puede—. El asesor firmó el nuevo esa misma tarde,
+  // con la caja medida delante: 1 línea a 929 px y 2 a 390 px, peor caso incluido.
   //
-  // 🔴 Y NO SE PUDO REUTILIZAR EL TEXTO APROBADO, que es el motivo de que esto entre: el de
-  // SCRUM-257 decía «Este trabajo no tiene presupuesto; NO SE PUEDE CREAR UN ALBARÁN», y desde
-  // que el guard se acota eso es FALSO — sí se puede, salvo para esa línea. Un mensaje aprobado
-  // que ha dejado de ser verdad es peor que uno con marcador.
+  // La entrada se BORRA y no se pone a 0 (SCRUM-424 / SCRUM-405). COMPROBADO antes de borrarla:
+  // cero marcadores en el fichero.
   //
-  // El día que el asesor firme el texto, esta entrada se BORRA, no se pone a 0.
-  'src/modules/jobs/domain/albaranSinPresupuesto.ts': 1,
+  // ⚠️ Que no quede marcador NO significa que esté firmado por el FUNDADOR: es del asesor y
+  // provisional. Eso lo dice `SIN_APROBAR` en `albaranSinPresupuesto.ts`.
   // ── SCRUM-607 (ALB-02) · 4-sep-2026 · ENTRA A CONCIENCIA CON 1 ─────────────────────────
   //
   // 🔴 SE IMPRIME EN EL PAPEL QUE RECIBE EL CLIENTE — el pie del albarán, diciendo de qué
@@ -82,9 +82,9 @@ const CENSO_SERVIDOR = Object.freeze({
   // No se puede no pintar la superficie y esperar: sin la referencia, un albarán sin precios
   // deja de ser comprobable —una lista de cosas sin nada que la ate a lo que el cliente
   // aceptó—, y eso es peor que el marcador. Los DOS textos de la casilla que lo enciende viven
-  // en  y están declarados en el censo de SCRUM-402.
+  // en `jobDetailView.js` y están declarados en el censo de SCRUM-402.
   //
-  // El asesor firma con las cajas ya medidas (929 y 390 px, en ). Ese
+  // El asesor firma con las cajas ya medidas (929 y 390 px, en `docs/master/SCRUM-607.md`). Ese
   // día la entrada se BORRA, no se pone a 0.
   'src/modules/jobs/domain/albaranPrecios.ts': 1,
   // Mensajes de error de API (409): los lee el profesional en un aviso del panel.
