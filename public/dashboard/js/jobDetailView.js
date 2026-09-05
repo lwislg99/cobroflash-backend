@@ -458,7 +458,13 @@ function lineasDeQuoteParaAlbaran(lines) {
   return out;
 }
 
-async function renderJobDetailView(container, jobId) {
+/**
+ * @param altaAlbaran SCRUM-606 (ALB-01) · `{quoteId}` cuando se llega desde el buscador de «Nuevo
+ *   albarán» de la pestaña Albaranes, `null` en todas las demás navegaciones. Es un argumento de
+ *   UN SOLO USO (no vive en `appState`), y lo único que hace es abrir aquí la hoja de alta que ya
+ *   existe — no crea nada por su cuenta ni cambia lo que se pinta.
+ */
+async function renderJobDetailView(container, jobId, altaAlbaran) {
   container.innerHTML = '';
   const id = Number(jobId);
 
@@ -1986,6 +1992,31 @@ async function renderJobDetailView(container, jobId) {
     for (const b of bloquesRail) rail.appendChild(pintarBloqueRail(b));
     cuerpo.appendChild(rail);
     cuerpo.classList.add('detail-cuerpo--con-rail');
+  }
+
+  // ── SCRUM-606 (ALB-01) · SE LLEGA DESDE EL BUSCADOR DE PRESUPUESTO, CON LA HOJA ABIERTA ────
+  //
+  // Va AL FINAL y no antes: la hoja se monta sobre una pantalla ya pintada, así que si el
+  // profesional la cierra encuentra el Trabajo detrás y no un contenedor a medias.
+  //
+  // 🔴 AQUÍ NO SE CREA NADA, y por eso este bloque llama a `abrirAltaAlbaran` en vez de hacer su
+  // propio POST: es la MISMA puerta que usan los dos botones de esta pantalla (SCRUM-303), con su
+  // prellenado, su origen por línea y su «no existe hasta que se guarda». Es el tercer llamante y
+  // el guard de SCRUM-303 lo cuenta.
+  //
+  // ⚠️ `SIN_VALORAR` y no la casilla: es el default del modelo y **el único modo que prellena** —
+  // en `VALORADO` el backend exige precio en todas las líneas y las del presupuesto llegan sin él
+  // (decisión del fundador en SCRUM-257), así que prellenar ahí daría un 400 al guardar. Quien
+  // quiera precios los pone desde la casilla de esta misma pantalla, como hoy.
+  //
+  // `quoteId` NO se vuelve a comprobar contra `job.quote`, y no es un descuido: el prellenado se
+  // ancla SIEMPRE en `Job.quoteId`, que es el único sentido en que `quoteLineIndex` significa algo
+  // (ver `presupuestosParaAlbaran.ts`), y ese campo se escribe UNA vez al crear el Trabajo y no lo
+  // reescribe nadie — medido por AST el 5-sep-2026: 5 escrituras sobre `job`, 1 sola con `quoteId`.
+  // Así que el presupuesto elegido y el del prellenado son el mismo por construcción. Si el
+  // Trabajo no tuviera ninguno, `decidirAperturaAlbaran` ya lo dice con su texto aprobado.
+  if (altaAlbaran && typeof abrirAltaAlbaran === 'function') {
+    abrirAltaAlbaran('SIN_VALORAR');
   }
 }
 

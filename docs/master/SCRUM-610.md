@@ -121,6 +121,38 @@ que quede escrito, porque hoy parece un olvido y sería una decisión.
 
 ### 4.3 · ⛔ DIFF PREPARADO para la salida B — NO APLICADO
 
+> ## ⏱️ NOTA DE CADUCIDAD — 5-sep-2026: **ESTE DIFF YA ESTÁ EN `main`. NO LO APLIQUES.**
+>
+> Lo aplicó **SCRUM-661** (`2e3e7685`, «el coste unitario viaja y se CONGELA en la línea»), y es
+> **la salida B**, con el mismo argumento que la sostiene aquí: `Product.cost` es mutable y sin
+> histórico, así que actualizar un coste reescribe el pasado de todas las ventas que lo usaron.
+>
+> **La medición de abajo NO estaba mal cuando se hizo, y eso importa para leerla:** en el ancla de
+> esta entrada (`558765ad`, 2-sep 12:42) `costeUnitario` **no existía** — comprobado sobre ese
+> mismo árbol, 0 coincidencias en `schemas.ts`. SCRUM-661 entró **2 h 21 min después**, a las
+> 15:03. No es un error de nadie: es una línea base que caducó mientras se escribía.
+>
+> **Lo que hay hoy en `main`** (`schemas.ts:113`), refinado luego por SCRUM-712 para acotar los
+> decimales — mismo campo, misma semántica, y sigue siendo `.optional()` porque **ausente ≠ cero**:
+>
+> ```ts
+> costeUnitario: conDecimales(z.number().nonnegative(), DECIMALES_PRECIO_UNITARIO, 'el coste unitario').optional(),
+> ```
+>
+> ### 🔴 Y lo que esto NO significa
+>
+> **P6 sigue SIN FIRMAR.** Censado el 5-sep-2026 en todo `docs/`: la única línea que la nombra en
+> este carril es el título de §4 («MEDIDO, NO DECIDIDO»). O sea que **la salida B está construida y
+> la pregunta sigue abierta** — la implementación llegó por otro carril y por su propio motivo, no
+> porque alguien eligiera B aquí.
+>
+> Eso deja dos cosas por hacer, y ninguna es código:
+>
+> 1. **Firmar P6** (o dejar escrito que la respuesta es «el margen es del catálogo, no de la venta»,
+>    la salida A) — hoy el repo no distingue «se decidió B» de «B apareció por otro sitio».
+> 2. Si se firma A, **hay que decir qué se hace con el `costeUnitario` que ya se está guardando**,
+>    porque A y lo construido no conviven en silencio.
+
 ```diff
 --- a/src/core/validation/schemas.ts
 +++ b/src/core/validation/schemas.ts

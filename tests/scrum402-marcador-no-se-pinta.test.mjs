@@ -137,6 +137,25 @@ const CENSO = Object.freeze({
   // ⚠️ Que esto no dispare HOY no lo hace decorativo: el semáforo tiene tres estados y los tres
   // están mapeados. Es un guard que se abre solo (SCRUM-537) con el disparador ya en el plan.
   'invoicesView.js': 1,
+  // 🔴 SCRUM-606 (ALB-01) · 5-sep-2026 · ENTRAN DOS FICHEROS, con 1 cada uno, A CONCIENCIA.
+  //
+  // `albaranDesdePresupuestoModal.js` cuenta 1 y son SEIS textos: el placeholder del buscador,
+  // el vacío, los DOS motivos por los que un presupuesto no puede estrenar albarán, el aviso de
+  // «puede haber más» y el fallo de carga. Los seis salen de una sola constante `MARCA`, igual
+  // que `MARCA_ASIGNADOS` en la entrada de arriba, así que la firma del fundador los apaga de
+  // golpe. Su contador propio —`ALB_ORIGEN_SIN_APROBAR = 6`— dice cuántos son de verdad, que es
+  // lo que este 1 no puede decir.
+  //
+  // `atajoNuevo.js` entra por PRIMERA VEZ, y no es una casualidad: su propio comentario lo había
+  // anunciado el 4-sep con estas palabras — «el día que una cuarta lista estrene su atajo, su
+  // rótulo nace sin firma, este número sube y esto cae». Es «Nuevo albarán», el rótulo de la
+  // cuarta lista, y su `SIN_APROBAR` ha subido de 0 a 1 en el mismo commit.
+  //
+  // NO se inventa el texto mientras tanto (regla 30) ni se aplaza el ticket: el mecanismo existe
+  // y funciona entero; lo que falta es la firma. El día que llegue, las DOS entradas se BORRAN —
+  // no se ponen a 0 (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista ficheros CON marcadores.
+  'albaranDesdePresupuestoModal.js': 1,
+  'atajoNuevo.js': 1,
   // 🔴 SCRUM-587 (CONT-14) · 4-sep-2026 · `quotesView.js` VUELVE A ENTRAR, con 2, y a conciencia.
   //
   // Salió el 3-sep cuando el asesor firmó «+ Nuevo cliente» (SCRUM-591). Entra ahora por la tira

@@ -301,7 +301,12 @@ async function initApp() {
         break;
       case 'jobs-detail':
         viewTitle.textContent = 'Trabajo';
-        if (state.jobId != null && typeof renderJobDetailView === 'function') renderJobDetailView(viewContainer, state.jobId);
+        // SCRUM-606 (ALB-01): `altaAlbaran` viaja como ARGUMENTO y a propósito NO se guarda en
+        // `state` — mismo criterio que la plantilla de `quotes-new` (SCRUM-140): es de un solo uso,
+        // y persistirlo haría que la hoja de «Nuevo albarán» se abriera sola la próxima vez que
+        // alguien entrara en ese Trabajo por cualquier otro camino. Las navegaciones que no lo
+        // mandan —que son todas las demás— reciben `null` y abren el Trabajo tal cual.
+        if (state.jobId != null && typeof renderJobDetailView === 'function') renderJobDetailView(viewContainer, state.jobId, options.altaAlbaran || null);
         else viewContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔧</div><div class="empty-state-title">Sin trabajo seleccionado</div></div>`;
         break;
       case 'customer-360':

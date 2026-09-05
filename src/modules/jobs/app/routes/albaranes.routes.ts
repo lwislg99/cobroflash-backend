@@ -34,6 +34,10 @@ import { puedeEditarEstaVersion } from '../../domain/albaranEdicion';
 import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-467
 import { fotoYaSubida } from '../../domain/fotoDuplicada'; // SCRUM-382: la misma foto no se guarda dos veces
 import { getPendientesFacturar } from '../../domain/pendientesFacturar.service'; // SCRUM-69
+// SCRUM-606 (ALB-01): el buscador de «Nuevo albarán». La búsqueda se REUTILIZA (no se reescribe)
+// y la regla de qué presupuesto puede ser origen vive en su módulo puro, con su porqué medido.
+import { listQuotesAdmin, TOPE_LISTADO_QUOTES } from '../../../system/quoteAdmin';
+import { filasParaElegirPresupuesto } from '../../domain/presupuestosParaAlbaran';
 // SCRUM-301 (C1): el listado global. Dominio puro + lector inyectable (la tenencia se ejercita).
 import { listarAlbaranesDelMerchant, type LectorListado } from '../../domain/albaranesListado';
 import {
@@ -197,6 +201,66 @@ router.get('/pendientes-facturar', async (req, res) => {
   } catch (err: any) {
     console.error('[GET /admin/albaranes/pendientes-facturar]', err?.message || err);
     res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * GET /admin/albaranes/presupuestos?q= — SCRUM-606 (ALB-01) · EL BUSCADOR DE «NUEVO ALBARÁN».
+ *
+ * SOLO LECTURA. Este ticket **no añade ninguna puerta de alta**: el albarán se sigue creando por
+ * `POST /admin/jobs/:id/albaranes`, que es la única que existe y la que ya trae el guard de
+ * SCRUM-257/684, la validación de líneas de SCRUM-367, el interruptor de ALB-02 y el texto de
+ * cabecera de DOC-03. Lo que faltaba no era una segunda alta: era saber A QUÉ TRABAJO ir.
+ *
+ * Qué devuelve: los presupuestos que casan con la búsqueda, cada uno con el Trabajo del que
+ * colgaría su albarán (`jobId`) o el MOTIVO por el que no puede colgar de ninguno. La regla y su
+ * porqué —medidos, no elegidos aquí— viven en `presupuestosParaAlbaran.ts`.
+ *
+ * ⚠️ LA BÚSQUEDA NO SE REESCRIBE: se llama a `listQuotesAdmin`, la misma de `GET /admin/quotes`.
+ * Un segundo buscador de presupuestos habría divergido del primero en cuanto alguien tocara uno
+ * —dos criterios de «buscar por cliente» es exactamente el defecto que este proyecto ya se ha
+ * comido varias veces—. Y no abre superficie: `GET /admin/quotes` es `TECNICO_ALLOWED` y devuelve
+ * esa misma lista entera a cualquier rol que llegue a ella, así que aquí no se enseña ni un
+ * presupuesto que el llamante no pudiera pedir por su cuenta.
+ *
+ * 🔴 `truncado` NO ES UN ADORNO. `listQuotesAdmin` corta en `TOPE_LISTADO_QUOTES`, así que una
+ * lista SIN elegibles puede significar dos cosas opuestas: «ninguno de tus presupuestos tiene
+ * Trabajo» o «los que lo tienen están más abajo del corte». Sin este campo, el profesional lee un
+ * cero que no es un cero — que es el fallo que esta casa persigue por escrito.
+ *
+ * Registrada ANTES de `GET /:id` a propósito: ese handler acepta un solo segmento y haría
+ * `Number('presupuestos')` → `400 invalid_id`. El orden en Express es la única defensa.
+ */
+router.get('/presupuestos', async (req, res) => {
+  try {
+    const q = req.query.q !== undefined ? String(req.query.q) : undefined;
+    const candidatos = await listQuotesAdmin(req.merchantId!, q);
+
+    // Los Trabajos que tienen por ORIGEN a alguno de estos presupuestos. Una sola consulta para
+    // toda la lista (patrón de SCRUM-58), no una por fila.
+    const ids = candidatos.map((c) => c.id);
+    const trabajos = ids.length
+      ? await prisma.job.findMany({
+          // regla 2: la lectura filtra por merchant aunque los ids ya vengan de una lista suya.
+          where: { merchantId: req.merchantId!, quoteId: { in: ids } },
+          select: { id: true, quoteId: true },
+        })
+      : [];
+
+    // SCRUM-467: un técnico solo puede aterrizar en SUS Trabajos. `null` = admin, ve todos.
+    const visibles = seesOnlyOwnJobs(req.userRole)
+      ? await jobIdsVisiblesPara(req.merchantId!, req.teamMemberId ?? null)
+      : null;
+
+    return res.json({
+      presupuestos: filasParaElegirPresupuesto(candidatos, trabajos, visibles),
+      // «Puede haber más», no «hay más»: venir justo con el tope es indistinguible de venir con
+      // el tope de una lista mayor, y afirmar la segunda sería inventarse un dato que no se tiene.
+      truncado: candidatos.length >= TOPE_LISTADO_QUOTES,
+    });
+  } catch (err: any) {
+    console.error('[GET /admin/albaranes/presupuestos]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
   }
 });
 

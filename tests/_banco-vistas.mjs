@@ -742,6 +742,10 @@ export function clasesEscritas(fuente, nombre = 'x.js') {
 export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'aiQuoteAssistant.js',
   'albaranActionsRegistry.js',
+  // SCRUM-606 (ALB-01): el buscador de presupuesto de «Nuevo albarán». Va ANTES de
+  // `albaranesView.js`, que es quien lo abre, y después de `modalHeader.js` y `atajoNuevo.js`,
+  // de los que lee la cabecera del modal y el rótulo. Ambas relaciones se DECLARAN abajo.
+  'albaranDesdePresupuestoModal.js',
   'albaranDetailView.js',
   'albaranesView.js',
   'almacenLocal.js',
@@ -865,6 +869,12 @@ export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   // ella LANZA en vez de improvisar una segunda, así que el rojo saldría en la pantalla.
   { antes: 'quoteDescuentos.js', despues: 'descuentoPorDefecto.js', motivo: 'SCRUM-587: lee `dtoDeLinea` y no reimplementa la aritmética' },
   { antes: 'descuentoPorDefecto.js', despues: 'quotesView.js', motivo: 'SCRUM-587: el editor le pide la propuesta al elegir cliente' },
+  // SCRUM-606 (ALB-01) · las TRES del buscador de presupuesto. La del rótulo no es cosmética:
+  // el modal titula con `atajoNuevo.textoDe('albaranes')`, así que si se cargara antes se
+  // quedaría sin título y el marcador de microcopy sin firmar no se vería en pantalla.
+  { antes: 'modalHeader.js', despues: 'albaranDesdePresupuestoModal.js', motivo: 'SCRUM-606: la cabecera del modal sale de `cabeceraModal`' },
+  { antes: 'atajoNuevo.js', despues: 'albaranDesdePresupuestoModal.js', motivo: 'SCRUM-606: el título del modal ES el rótulo del botón, leído de su fuente única' },
+  { antes: 'albaranDesdePresupuestoModal.js', despues: 'albaranesView.js', motivo: 'SCRUM-606: el botón «Nuevo albarán» de la lista abre este modal' },
 ]);
 
 /** Nombre a secas, venga con prefijo `js/` o sin él, y sea cadena u objeto `{fichero}`. */
