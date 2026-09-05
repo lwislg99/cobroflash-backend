@@ -211,10 +211,42 @@ jobs:
           echo
           awk '/^not ok /{p=1} p{print} p&&/^  \.\.\./{p=0}' "$tap"
 
-      # El TAP entero, por si el bloque de arriba no basta. Se sube SIEMPRE que haya rojo:
-      # un diagnóstico que hay que pedir a mano llega un día tarde.
+      # ═══════════════════════════════════════════════════════════════════════════════════
+      # 🔴 SCRUM-672 · UN TEST QUE DESAPARECE NO ES UN TEST QUE FALLA
+      #
+      # Medido el 2-sep: al romper un `import`, la tanda pasó de 4391 a 4377 — CATORCE tests
+      # desaparecieron. Allí hubo señal porque el import produjo rojos, pero un fichero que sale
+      # de la tanda por un patrón que deja de casarlo se lleva sus tests con `fail 0` y salida 0.
+      # Reproducido en este ticket: 4731 → 4720, verde y sin una sola queja.
+      #
+      # ⚠️ `if: always()` NO ES OPCIONAL, y es la mitad del ticket: el defecto que persigue sale
+      # VERDE. Si esto corriera sólo cuando la tanda falla, NO LO VERÍA NUNCA.
+      #
+      # Y se lee el TAP, no la consola: medido, con el reporter TAP activo la línea `tests N` de
+      # `spec` no existe — el número que imprime la consola depende de qué reporter esté puesto.
+      # El resumen del TAP lo emite el propio reporter, y ese fichero YA se escribe arriba: esto
+      # no añade nada que mantener, le da superficie.
+      # ═══════════════════════════════════════════════════════════════════════════════════
+      - name: ¿Ha perdido tests la tanda?
+        if: always()
+        run: node scripts/suelo-de-la-tanda.mjs "${{ runner.temp }}/tanda.tap"
+      # El TAP entero, por si el bloque de arriba no basta: un diagnóstico que hay que pedir a
+      # mano llega un día tarde.
+      #
+      # 🔴 SCRUM-695 · SE SUBE SIEMPRE, TAMBIÉN EN VERDE. Hasta hoy era `if: failure()`, y por eso
+      # de las tandas VERDES no quedaba NADA. El defecto que persigue SCRUM-672 —un fichero que sale
+      # de la tanda y se lleva sus tests— SALE VERDE, con `fail 0` y salida 0: guardar el TAP solo
+      # cuando hay rojo es guardarlo justo cuando ese defecto NO está.
+      #
+      # Esto es el histórico del total, y a propósito NO es un fichero en git: el recibo de la tanda
+      # lo reescribe una máquina en cada ejecución y con nueve worktrees en vuelo sería una fábrica
+      # de conflictos (medido en SCRUM-695; la decisión contraria ya estaba escrita en `.gitignore`
+      # y en `scripts/_evidencia-tanda.mjs`). Un artefacto de CI no viaja con la rama y no choca.
+      #
+      # ⚠️ HUECO DECLARADO: `retention-days: 7`. Es histórico CORTO, no eterno — sirve para mirar
+      # atrás unos días cuando el total baje, no para reconstruir el pasado.
       - name: Guardar el TAP completo
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: tanda-tap
@@ -303,3 +335,187 @@ jobs:
       # Ver `docs/master/SCRUM-617.md`.
       - name: Guards de navegador
         run: npm run guards:visuales
+
+  # ═══════════════════════════════════════════════════════════════════════════════════════════
+  # 🔴 SCRUM-745 · EL META-GUARD, EN CI · un aviso que nadie está obligado a mirar no es un guard
+  #
+  # Tres trinquetes escritos el mismo día nacieron MUDOS: comparaban por TEXTO, así que el
+  # `import` y el comentario que explica la regla mantenían viva la palabra y seguían VERDES sobre
+  # el defecto que venían a vigilar. Se leen perfectamente bien — ninguna revisión los habría
+  # cazado. A los tres los encontró inyectar el defecto a mano, o sea que dependía de que a alguien
+  # se le ocurriera. Esto lo ejecuta: cada guard DECLARA la mutación que tiene que tumbarlo
+  # (`MUTACIONES_QUE_ME_TUMBAN`) y aquí se aplica, se exige el ROJO y se restaura.
+  #
+  # ── 🔴 POR QUÉ JOB PROPIO, Y NO UN PASO MÁS ────────────────────────────────────────────────
+  # Porque ESTE guard MUTA FICHEROS DEL CHECKOUT. Compartir job con cualquier paso que lea el
+  # árbol es exactamente la carrera de SCRUM-740 —un barrido leyendo mientras otro escribe—, y la
+  # sabemos hoy porque la arreglamos hoy. Con checkout propio, lo que muta es suyo y de nadie más.
+  #
+  # ── Y POR QUÉ NO CUESTA RELOJ ──────────────────────────────────────────────────────────────
+  # Los jobs de un workflow corren EN PARALELO. Éste tarda unos segundos (medido: 4 s con las dos
+  # mutaciones declaradas hoy) frente a los varios minutos del job de tests.
+  #
+  # ⚠️ SIN SECRETOS: no toca ninguna base. Muta ficheros de `tests/` y corre `node --test` sobre
+  #    el guard que declara, nada más.
+  #
+  # CÓDIGOS: 1 algún guard MUDO (falla el job) · 2 no supo medir (ciego, también falla) · 3 no
+  # pudo restaurar un fichero. El 3 es el grave y lo grita: hay que mirar el árbol a mano.
+  meta-mutaciones:
+    name: meta-guard · los guards caen cuando deben
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - run: npm ci
+
+      # 🔴 AQUÍ HUBO UNA GARANTÍA ESCRITA SIN PROVOCAR EL CASO, Y SALIÓ MAL. Queda escrita porque
+      # es lo que originó la regla 13 de la casa.
+      #
+      # Decía: «No hace falta `npm run build`: ninguna mutación declarada hoy toca un guard que
+      # importe de `dist/`. El día que una lo haga, este paso tendrá que compilar — y se enterará
+      # por el rojo, no por sorpresa: ese guard saldría CIEGO, no verde».
+      #
+      # Pasó al día siguiente, con `scrum748`. Y el síntoma NO fue el predicho: salió **MUDO** —la
+      # acusación de «pasa en verde sobre el defecto que dice vigilar»— sobre un guard SANO. La
+      # predicción era razonable y era falsa, y lo era por escribirse sin provocar el caso.
+      # Provocarlo costaba un `mv dist dist_`.
+      #
+      # Se arreglaron las dos mitades: el meta-guard discrimina por LÍNEA BASE (si el test no sale
+      # en verde limpio es CIEGO, y ni se muta), y este paso COMPILA.
+      #
+      # ── POR QUÉ COMPILAR AQUÍ Y NO REUTILIZAR EL BUILD DE OTRO JOB ─────────────────────────
+      # MEDIDO: el job cuesta ~8 s y `npm run build` en frío ~21 s. Dos jobs de este workflow ya
+      # construyen (`test` y `guards-visuales`), pero reutilizar su salida exige
+      # `upload-artifact`/`download-artifact` **y un `needs:`** — y eso SERIALIZA lo que hoy corre
+      # en paralelo: el PR esperaría MÁS, no menos, por ahorrar 21 s en un job que ya convive con
+      # otro de varios minutos. Se compila y ya está.
+      #
+      # ⚠️ Y NO se acota a `scrum748`. Hay CINCO ficheros que llaman a `cargarDashboard` en el top
+      # level —`scrum443`, `scrum641`, `scrum739`, `scrum743`, `scrum748`— y mueren enteros sin
+      # `dist/`; otros 30 lo hacen dentro de un test y sólo pierden ese test. Compilar los cubre a
+      # los treinta y cinco por construcción, hoy y el día que declaren mutaciones.
+      - name: Compilar (tsc)
+        run: npm run build
+
+      - name: Cada guard cae con la mutación que declara
+        run: npm run meta:mutaciones
+
+  # ═══════════════════════════════════════════════════════════════════════════════════════════
+  # 🔴 SCRUM-677 · EL VIGÍA DEL DESPLIEGUE, EN EL PR · INFORMATIVO, NUNCA BLOQUEANTE
+  #
+  # Producción estuvo NUEVE DÍAS sin desplegar y nadie se enteró: cuando un despliegue falla el
+  # healthcheck, Railway mantiene vivo el anterior. La web funcionaba. El síntoma era «no cambia
+  # nada», indistinguible de un día tranquilo.
+  #
+  # ── POR QUÉ `continue-on-error`, Y ES LA DECISIÓN, NO UN DESCUIDO ─────────────────────────
+  # Si el vigía está en ROJO, **el arreglo LLEGA MERGEANDO**. Un check bloqueante le cerraría la
+  # puerta justo a quien viene a arreglarlo: la rama que aplica el ALTER que falta no podría
+  # entrar porque producción sigue atrasada por no tener ese ALTER. Que informe, que se lea, que
+  # NO vete.
+  #
+  # El que sí canta es `vigia-despliegue.yml` (programado cada 2 h), y ése ataca la causa real:
+  # nueve días en los que nadie mergeó nada y por eso nadie miró.
+  # ═══════════════════════════════════════════════════════════════════════════════════════════
+  vigia-despliegue:
+    name: vigía del despliegue (informativo)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # ⚠️ NO se toca: en cuanto esto sea bloqueante, deja de poder arreglarse el problema que mide.
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # El historial ENTERO: el vigía resuelve el sha que dice producción contra la historia
+          # de `main`. Con un checkout superficial, un commit de hace nueve días no estaría en el
+          # clon y el vigía se declararía ciego justo en el caso que existe para detectar.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      # ── SCRUM-716b · TRAER `main`, o el vigía no puede comparar ───────────────────────
+      #
+      # 🔴 `fetch-depth: 0` NO basta en un `pull_request`, y esto está MEDIDO reproduciendo el
+      # checkout: `actions/checkout` trae **una sola ref** —la del PR— con toda su historia. En ese
+      # clon:
+      #
+      #     ¿resuelve origin/main?           NO
+      #     ¿está el commit de producción?   NO
+      #
+      # Así que el vigía se declaraba ciego — correctamente, pero por falta de datos que el JOB
+      # podía darle. Salía rojo en TODA PR, en 6-8 segundos, igual en ramas sin nada que ver: se
+      # leía como ruido, y un vigía que se lee como ruido no avisa el día que tiene razón.
+      #
+      # Con esta línea, medido en el mismo banco:
+      #
+      #     producción dice 5bfc1136 · `main` está en 382439a1 · 0.7 h de hueco (margen 6 h)
+      #        6 commit(s) sin llegar. Un despliegue en curso se lee así.       ← veredicto REAL
+      #
+      # ⚠️ Y NO convierte una ceguera legítima en un veredicto inventado: con `main` ya traído y un
+      # `/version` que no responde, sigue diciendo «NO SUPE MIRAR». Comprobado.
+      #
+      # 📌 El workflow PROGRAMADO (`vigia-despliegue.yml`) NO necesita esto: se ejecuta sobre
+      # `main`, así que `actions/checkout` ya crea `refs/remotes/origin/main`. Por eso aquel
+      # funcionaba y éste no.
+      - name: Traer `main` (el vigía compara contra él)
+        run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
+
+      # Sin `npm ci` a propósito: el vigía no importa nada de `node_modules` — sólo
+      # `node:child_process` y `fetch`. Instalar aquí sería tiempo y superficie de balde.
+      - name: ¿Está producción corriendo lo que hay en main?
+        run: node scripts/vigilante-de-despliegue.mjs
+
+  # ═══════════════════════════════════════════════════════════════════════════════════════════
+  # 🔴 SCRUM-687 · LA CONSTANCIA DEL `ALTER` · INFORMATIVO, NUNCA BLOQUEANTE
+  #
+  # La otra mitad del incidente de los nueve días. El vigía de arriba mira que producción no se
+  # quede por detrás de `main`; éste mira lo que lo CAUSÓ: el `ALTER` que nadie aplicó. Tres veces
+  # se mergeó el esquema (paso ③) sin haberlo aplicado (paso ②), `schemaDrift` se negó a arrancar
+  # —correctamente— y el healthcheck fallido dejó vivo el despliegue anterior. Síntoma: «no cambia
+  # nada».
+  #
+  # ── POR QUÉ `continue-on-error`, y es la misma decisión que en el vigía ───────────────────
+  # Si está en rojo, el arreglo llega **aplicando el ALTER y luego mergeando**. Un check bloqueante
+  # le cerraría la puerta justo al que viene a arreglarlo. Que informe, que se lea, que NO vete.
+  #
+  # ── EL SECRETO ────────────────────────────────────────────────────────────────────────────
+  # `SCHEMA_CHECK_SECRET` es PROPIO de este endpoint. NO se reutiliza el interno: ése abre
+  # `/charges` e `/invoice`, y un secreto que pasa por los logs de un runner no puede ser el que
+  # abre los cobros. Si no está puesto en el repositorio, el script sale con 2 diciendo «no pude
+  # preguntar» — que NO es verde, y es lo correcto: no se ha comprobado nada.
+  # ═══════════════════════════════════════════════════════════════════════════════════════════
+  constancia-del-alter:
+    name: constancia del ALTER (informativo)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # ⚠️ NO se toca: en cuanto esto sea bloqueante, deja de poder arreglarse el problema que mide.
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - run: npm ci
+
+      # El conjunto esperado sale del DMMF del cliente, o sea de lo que el código VA A NOMBRAR.
+      # No de `deriva-prod.sql` ni de ningún fichero del repo: ésos se generan desde el mismo
+      # esquema, así que preguntarles si el ALTER está aplicado es consultar el valor que el
+      # defecto falsifica.
+      - name: Generar cliente de Prisma
+        run: npx prisma generate
+
+      - name: ¿Tiene producción las columnas que este código va a nombrar?
+        env:
+          SCHEMA_CHECK_SECRET: ${{ secrets.SCHEMA_CHECK_SECRET }}
+        run: node scripts/constancia-del-alter.mjs

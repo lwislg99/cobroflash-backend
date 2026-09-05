@@ -2,6 +2,44 @@
    YaQu Design System v2
    ============================================================ */
 
+/* ── SCRUM-731 · `hidden` TIENE QUE APAGAR. SIEMPRE. ───────────────────────────────────────
+   Esto NO es una regla de estilo: es la que impide una clase entera de defecto silencioso.
+
+   EL DEFECTO, MEDIDO EN NAVEGADOR REAL (4-sep-2026, con DOS controles):
+   `el.hidden = true` no oculta nada en cuanto el elemento tiene una clase de autor que
+   declara `display`. La regla del navegador para `[hidden]` es de ORIGEN USER-AGENT, y
+   cualquier declaracion de autor le gana. De los SEIS elementos que el editor de presupuesto
+   apaga con `hidden` (censo derivado del arbol, no lista a mano), CINCO seguian visibles:
+
+     .quote-conceptos                            flex        se ve
+     .quote-plantillas                           flex        se ve
+     .quote-line__field.quote-dto-global__campo  flex        se ve   (SCRUM-594)
+     .btn-ghost.btn-sm                           inline-flex se ve   (dos botones)
+     .field.quote-direccion-obra                 none        oculto  (SCRUM-602, ya arreglado)
+     <div hidden> pelado    (CONTROL)            none        oculto
+     <button hidden> pelado (CONTROL)            none        oculto
+
+   Los dos controles son lo que hace valida la medicion: un elemento sin clase da `none`, asi
+   que el instrumento distingue y esos cinco `se ve` no son un artefacto.
+
+   POR QUE UNA REGLA GLOBAL Y NO CINCO REGLAS `.clase[hidden]`:
+   arreglar por clase deja el cepo armado para el sexto elemento que alguien anada — que nacera
+   roto y en silencio, porque el codigo que lo apaga es correcto. Esta linea lo hace IMPOSIBLE
+   en vez de vigilado. Es ademas la regla que traen los `reset` de toda la vida.
+
+   EL `!important` ES NECESARIO Y ESTA MEDIDO: sin el, cualquier `.clase { display: flex }`
+   con la misma especificidad o mas le gana. Y es SEGURO, comprobado antes de escribirlo:
+     · ninguna regla del proyecto ENSENA a proposito un `[hidden]` (las dos que existen dicen
+       `display: none`, o sea que refuerzan esto);
+     · nadie apaga con `hidden` y ensena con `style.display` — censados los 14 elementos que
+       usan `hidden` en los 7 ficheros del dashboard, cero mezclan los dos mecanismos.
+
+   ⚠️ NO ESCRIBAS UNA REGLA `.loquesea[hidden]` NUEVA: esta las cubre todas. Las dos que
+   quedan en el fichero son anteriores y se conservan por historia; un trinquete de
+   `tests/scrum731-el-descuento-explicado.test.mjs` impide que crezcan. */
+[hidden] { display: none !important; }
+
+
 /* ── Variables ─────────────────────────────────────────────── */
 :root {
   /* Verde de marca: alias a tokens.css (fuente de verdad) para no duplicar el hex.
@@ -155,7 +193,13 @@ img { max-width: 100%; display: block; }
   font-weight: 700;
   letter-spacing: .08em;
   text-transform: uppercase;
-  color: var(--neutral-500);
+  /* 🔴 SCRUM-599 · COLOR PROPIO, y NO se toca el token. Sobre el verde oscuro del sidebar
+     (#0f1c17), --neutral-500 (#6b756f) da 3,67 y AA pide 4,5: el rotulo de seccion no llegaba.
+     Subirlo en el TOKEN habria movido los 16 sitios que lo usan —arreglar uno y romper tres es
+     peor que el rojo—, asi que el color vive aqui y solo aqui.
+     #818e88 da 5,14 (medido con la formula de WCAG, no a ojo) y SIGUE por debajo de los items
+     del menu (--neutral-400, 6,89): la etiqueta se lee como secundaria, que es su intencion. */
+  color: #818e88;
   padding: 12px 8px 4px;
 }
 .nav-section-label:first-child { padding-top: 4px; }
@@ -431,12 +475,25 @@ html, body { overflow-x: clip; }
 }
 .btn-danger:hover:not(:disabled) { background: var(--red-500); color: #fff; }
 
+/* SCRUM-720e · EL TERCIARIO TENÍA QUE PARECER PULSABLE, Y NO LO PARECÍA.
+   Medido en #job-detail: despegue del papel **1.00** y sin borde. No es una impresión — 1.00 es
+   literalmente el mismo color del fondo. Y debajo de esa clase está «Facturar el trabajo», que es
+   cómo cobra el profesional: una acción primaria que no parece una acción es una función que el
+   usuario no sabe que existe.
+
+   NO SE ESTRENA VOCABULARIO: este aspecto ya existía… en su propio `:hover`. Se asciende a
+   reposo y el hover sube un escalón. Que estuviera solo en el hover es justo el defecto en el
+   sitio donde más duele: **en el móvil no hay hover**, así que ahí no llegaba a verse nunca.
+
+   Sigue siendo el TERCIARIO y se mide: relleno suave y sin borde, por debajo del primario (verde
+   lleno, despegue 3.30) y con el borde nítido del secundario para distinguirlo. No se toca
+   `.btn-primary` ni `.btn-secondary`: eso mueve todas las pantallas a la vez y es SCRUM-724. */
 .btn-ghost {
-  background: transparent;
-  color: var(--neutral-500);
+  background: var(--neutral-100);
+  color: var(--neutral-700);
   border-color: transparent;
 }
-.btn-ghost:hover:not(:disabled) { background: var(--neutral-100); color: var(--neutral-700); }
+.btn-ghost:hover:not(:disabled) { background: var(--neutral-200); color: var(--ink); }
 
 .btn-sm,
 .btn.btn-sm { padding: 5px 12px; font-size: 12.5px; min-height: 30px; }
@@ -597,22 +654,53 @@ html, body { overflow-x: clip; }
   gap: 8px;
   min-height: 44px;          /* objetivo táctil (AB6) */
   padding: 8px 10px;
+  /* SCRUM-690 · el borde se reserva en TODOS los estados con `transparent`, y por DOS motivos
+     medidos en navegador — no por costumbre:
+
+       ① SIN LA RESERVA, EL BORDE DEL ACTIVO NO SE PINTA. La regla de abajo sólo declara
+          `border-color`; sin `border-width` ni `border-style` heredados de aquí, el borde
+          computa 0px y la señal de forma desaparece entera. (Medido: `borderTopWidth` = 0px.)
+       ② Y si se declarara el borde COMPLETO sólo en el activo, la pastilla daría un salto de
+          layout al seleccionarla. Medido con esa forma: 162 px el activo contra 160 px el
+          inactivo — **2 px**. Un control que se mueve al tocarlo se siente roto aunque el
+          color sea correcto.
+
+     Con la reserva puesta, el salto medido es 0 × 0. */
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
   color: var(--muted);
   text-align: center;
-  transition: background-color .12s, color .12s, box-shadow .12s;
+  transition: background-color .12s, color .12s, box-shadow .12s, border-color .12s;
 }
 /* El radio se mantiene VISIBLE (no `display:none`): es lo que anuncia el estado al
    lector de pantalla y lo que recibe el foco del teclado. */
 .segmented-option .segmented-input { margin: 0; }
 .segmented-option:hover { color: var(--ink); }
+/* 🔴 SCRUM-690 · EL LADO ACTIVO NO PUEDE DISTINGUIRSE CASI SÓLO POR LA TINTA.
+   Medido en navegador a 360 px, sobre este mismo componente y con el marcado real de sus
+   dos consumidores:
+
+       FONDO del activo contra la barra ......  1,07:1   ← prácticamente invisible
+       tinta del activo .....................  17,52:1
+       tinta del inactivo ...................   7,21:1
+
+   `--surface` (#ffffff) y `--bg` (#f6f7f5) son casi el mismo color, así que la pastilla
+   blanca NO era una señal: lo que separaba los dos lados era el color del texto, y poco
+   más. Con sol en la pantalla o el brillo bajo, un profesional no ve qué lado está puesto —
+   y aquí el lado activo CAMBIA LO QUE HACE EL FORMULARIO: en el catálogo esconde coste,
+   margen y proveedor; en la ficha de cliente cambia qué campos se piden.
+
+   Se añaden BORDE (forma, no tono) y `--shadow-md` («Elevado»): con el fondo y la tinta son
+   cuatro señales, y dos de ellas se ven sin distinguir un color. Es el patrón que SCRUM-689
+   estrenó en las pestañas de clientes, traído al componente del sistema donde vive. */
 .segmented-option:has(.segmented-input:checked) {
   background: var(--surface);
   color: var(--ink);
-  box-shadow: var(--shadow-sm);
+  border-color: var(--border);
+  box-shadow: var(--shadow-md);
 }
 /* El anillo de foco se pinta sobre la PASTILLA, no sobre el radio de 16 px: así se ve
    dónde está el teclado sin que el indicador quede minúsculo. */
@@ -621,6 +709,96 @@ html, body { overflow-x: clip; }
 }
 @media (prefers-reduced-motion: reduce) {
   .segmented-option { transition: none; }
+}
+
+/* ── Pestañas del listado de clientes (SCRUM-689) ─────────────────────────────
+   Todos | Empresas | Personas. Entraron con el PR #874 SIN NI UNA REGLA: medido el
+   2-sep-2026, cero apariciones de `.customers-tabs` y `.customers-tab` en todo `public/`.
+   El profesional abría su lista y veía tres botones crudos del navegador dentro de una
+   barra que sí estaba estilada — un control que parece roto.
+
+   🔴 NO SE INVENTA UN COMPONENTE: se hereda el lenguaje de `.segmented` (el control
+   «uno de N» que ya está en el sistema, justo aquí arriba). Mismos tokens, mismos radios,
+   mismo objetivo táctil, misma forma de marcar el activo. Un segundo dialecto visual para
+   el mismo gesto es lo que convierte un design system en una colección de excepciones.
+
+   POR QUÉ NO SE REUSA `.segmented` TAL CUAL: aquél son radios dentro de un `<fieldset>` y
+   esto son `<button>` con `aria-pressed`. El marcado no se toca (no es este carril), así
+   que lo que se comparte es el lenguaje, no el selector.
+
+   EL ACTIVO NO SE DISTINGUE SÓLO POR TONO — son CUATRO señales, y la cuenta sale de una
+   medición, no de una intuición. Medido en navegador a 360 px sobre este mismo CSS:
+
+       texto activo sobre su fondo ............ 17,52:1   (AA pide 4,5)
+       texto inactivo sobre la barra ..........  4,51:1   (AA, justo)
+       FONDO del activo contra la barra .......  1,07:1   ← casi invisible
+
+   🔴 Ese 1,07 es el dato que obligó a añadir algo. `--surface` (#ffffff) sobre `--bg`
+   (#f6f7f5) son casi el mismo color: la pastilla blanca NO es una señal fiable por sí
+   sola, y `.segmented` —de quien se hereda— arrastra la misma debilidad. Así que además
+   del fondo y la tinta va **borde** (forma, no tono) y **elevación** (`--shadow-md`, el
+   token «Elevado»): dos señales que se ven sin distinguir un color.
+
+   El borde se reserva en TODAS con `transparent`; si sólo lo llevara la activa, la
+   pastilla daría un salto de 2 px al seleccionarla.
+
+   `aria-pressed` ya anunciaba el estado al lector de pantalla antes que este CSS: aquí
+   sólo se hace visible lo que el marcado ya decía. */
+.customers-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  /* La PÁGINA nunca scrollea en horizontal (regla de arriba, línea 353): lo ancho scrollea
+     DENTRO de su contenedor. Y aquí hace falta de verdad, no por si acaso — hoy cada rótulo
+     sale como «[PENDIENTE microcopy oficial] Empresas» (37 caracteres) porque su copy aún no
+     está aplicada en `filtroClientes.js`. Con los seis textos aprobados puestos, los botones
+     caben de sobra y esto no se nota; mientras tanto, evita que la barra empuje la vista. */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.customers-tab {
+  /* Reparten a partes iguales cuando caben (basis 0), y NUNCA por debajo de su texto
+     (min-width: max-content). Medido en navegador a 360 px: con `min-width: 0` los botones se
+     aplastaban y el rótulo SE SOLAPABA con el de al lado en vez de scrollear — se veía peor que
+     sin estilar, que era justo el defecto a corregir. Lo destapó una captura, no el CSS. */
+  flex: 1 1 0;
+  min-width: max-content;
+  /* No se parte el rótulo en dos líneas: una pestaña de dos renglones descuadra la barra
+     entera y deja las tres a distinta altura. Prefiere ensancharse (y, en el peor caso,
+     scrollear dentro de la barra) a romperse. */
+  white-space: nowrap;
+  min-height: 44px;          /* objetivo táctil (AB6) */
+  padding: 8px 14px;
+  border: 1px solid transparent; /* reserva el sitio del borde del activo: sin esto, salta 2px */
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;             /* un <button> no hereda la tipografía: sin esto sale en la del navegador */
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+  transition: background-color .12s, color .12s, box-shadow .12s;
+}
+.customers-tab:hover { color: var(--ink); }
+.customers-tab[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--border);   /* FORMA: se ve sin distinguir el tono */
+  box-shadow: var(--shadow-md);  /* «Elevado» — el fondo solo da 1,07:1 contra la barra */
+}
+/* El anillo de foco, sobre la pastilla y con el token de Foco: sin esto, quitarle el borde
+   al <button> deja al teclado sin rastro visible de dónde está. */
+.customers-tab:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+@media (prefers-reduced-motion: reduce) {
+  .customers-tab { transition: none; }
 }
 
 /* ── Pedir el tipo de destinatario en la bandeja (SCRUM-615) ──────
@@ -1217,6 +1395,42 @@ html, body { overflow-x: clip; }
 }
 .quote-line.dragging { opacity: .5; }
 
+/* SCRUM-594 (DOC-04) · EL DESCUENTO GLOBAL, bajo el bloque de totales.
+   Sin tokens nuevos: reusa `.quote-line__field` y `.quote-line__label`, que son los que ya
+   visten cualquier campo con etiqueta de esta pantalla. El botón es `.btn-ghost.btn-sm`, el
+   mismo que «Usar plantilla» — un descuento global es una acción ocasional, no una principal. */
+/* SCRUM-587 (CONT-14) · la tira que PROPONE el descuento pactado con el cliente.
+   Sin colores propios: hereda los de `.alert.info`, que ya son tokens de DESIGN.md. Aquí sólo
+   vive la disposición. El botón se lleva su objetivo táctil de 44 px explícito porque `btn-sm`
+   se queda corto y el guard que debería cazarlo está ciego (SCRUM-711). */
+.quote-propuesta-dto {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+/* SIN `.quote-propuesta-dto[hidden]`: la regla GLOBAL `[hidden] { display:none !important }`
+   (línea 40, SCRUM-731) ya la cubre, y el trinquete de ese ticket cazó ésta el mismo día que
+   nació. Repetirla por clase es arreglar el síntoma sin fiarse de la global — y la siguiente
+   tira que naciera la volvería a copiar. Se comprobó que la global existe ANTES de quitarla. */
+.quote-propuesta-dto .btn-sm { min-height: 44px; }
+
+.quote-dto-global { margin-top: 8px; }
+
+/* ── SCRUM-602 (DOC-12) · el campo libre de la dirección de la obra ────────────────────────
+   Sin tokens nuevos: es un `.field` normal, el mismo que viste el resto del formulario.
+
+   🔴 LA SEGUNDA REGLA NO ES ADORNO: `.field` declara `display: flex`, y una regla de AUTOR
+   gana a la del navegador para `[hidden]`, así que `el.hidden = true` NO APAGA NADA. Medido en
+   navegador real: un `<div>` pelado con `hidden` da `display: none`, y este campo daba `flex`.
+   Se apaga aquí, en el CSS, y no con `style.display` en el JS, para que el que lea el HTML vea
+   por qué un elemento con `hidden` no se ve. */
+.quote-direccion-obra { margin-top: 8px; }
+.quote-direccion-obra[hidden] { display: none; }
+.quote-dto-global__campo { display: flex; flex-direction: column; gap: 4px; max-width: 200px; }
+
 /* SCRUM-139 F2 · RENGLÓN EN BLANCO DEL CUADERNILLO.
    El editor abre con varias líneas dibujadas (LINEAS_CUADERNILLO): son una INVITACIÓN, no
    tres artículos pendientes. Las que aún no tienen concepto ni precio se apagan — sin sombra,
@@ -1398,6 +1612,9 @@ html, body { overflow-x: clip; }
        Ancho FIJO para el disparador (no `auto`): cada línea es su propia rejilla, así que con
        `auto` una línea con margen ensanchaba su columna y encogía su concepto — y las columnas
        dejaban de cuadrar ENTRE filas. Lo destapó la captura, no la lectura. */
+    /* SCRUM-594 (DOC-04): la rejilla NO cambia. «Dto. %» se montó primero aquí, junto al precio,
+       y la medición en navegador a 390 px dijo +77 px POR FILA — el número exacto que F4 midió y
+       rechazó para margen e IVA. Vive en la hoja de ajustes, con IVA y Coste, y el chip lo dice. */
     grid-template-columns: minmax(0, 3fr) 90px 120px 168px minmax(96px, auto) auto;
     align-items: end;
     gap: 12px;
@@ -2191,6 +2408,26 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .detail-dl dt { font-size: 13px; color: var(--muted); }
 .detail-dl dd { font-size: 13.5px; color: var(--body); margin: 0; }
 
+/* ── SCRUM-650 (T1) · QUIÉN EJECUTA EL TRABAJO — y pueden ser tres ──────────────────────
+   El campo «Técnico» del parte de papel de Tecnosel dice «Israel, Miguel y Jesús.L».
+   Cero componentes nuevos y cero colores inventados (Parte AB): tokens de `tokens.css` y la
+   misma familia visual que `.detail-dl`. El anillo de foco lo pone la regla global de :94. */
+.job-asignados-titulo {
+  font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 4px;
+}
+.job-asignados-lista { display: grid; gap: 2px; }
+/* 44 px (AB6): se marca de pie, en la obra y con guantes. */
+.job-asignados-fila {
+  display: flex; align-items: center; gap: 10px; min-height: 44px;
+  padding: 0 8px; border-radius: var(--radius-md); cursor: pointer;
+}
+.job-asignados-fila:hover { background: var(--bg, #f6f7f5); }
+.job-asignados-casilla { width: 20px; height: 20px; flex: none; accent-color: var(--brand); }
+.job-asignados-nombre { font-size: 14px; color: var(--ink); }
+.job-asignados-lectura { font-size: 14px; font-weight: 600; color: var(--ink); }
+.job-asignados-nota { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+
 /* Tarjetas de margen (planas, dentro de su sección) */
 .margin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
 .margin-tile { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; text-align: center; }
@@ -2546,3 +2783,255 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 }
 .modal-ayuda:hover { color: var(--ink); }
 .modal-ayuda + .modal-close { margin-left: 0; }
+
+/* SCRUM-655 · APARTADOS Y DESCRIPCIÓN LARGA EN EL DETALLE DEL PRESUPUESTO.
+   El apartado es un RENGLÓN DE TÍTULO a todo lo ancho, no una fila que cobre: por eso no lleva
+   importe y se separa con peso y espacio, no con color inventado.
+   ⚠️ La descripción NO usa `white-space: pre-line`, y es deliberado: cada renglón es su propio
+   elemento (`quoteApartados.js`), así que el salto es ESTRUCTURA y no depende de este fichero.
+   Poner aquí `pre-line` protegería un salto que en el HTML ya no existe — el error que esta casa
+   pagó dos veces. */
+.quote-apartado td {
+  padding-top: 14px; font-weight: 700; color: var(--ink, #0f1c17);
+  text-transform: uppercase; letter-spacing: .03em; font-size: 12.5px;
+}
+.quote-line-num {
+  display: inline-block; min-width: 42px; font-variant-numeric: tabular-nums;
+  color: var(--muted, #6b756f); font-weight: 600;
+}
+.quote-line-cel { display: flex; gap: 8px; align-items: baseline; }
+.quote-line-concepto { min-width: 0; }
+.quote-line-titulo { color: var(--ink, #0f1c17); }
+.quote-line-desc {
+  font-size: 12px; line-height: 1.45; color: var(--muted, #6b756f); margin-top: 2px;
+}
+
+/* ── SCRUM-584 (CONT-11) · el selector de columnas de la lista de clientes ──────────────
+   Un <details> nativo: se abre y se cierra sin JS de posicionamiento, va con teclado y no se
+   sale de la pantalla a 360 px. Tokens existentes, cero colores nuevos.
+   El desplegable va ABSOLUTO para que abrirlo no empuje la tabla hacia abajo — en un movil,
+   una toolbar que crece al tocarla mueve justo lo que el profesional esta mirando. */
+.columnas-selector { position: relative; }
+.columnas-selector > summary {
+  list-style: none; cursor: pointer; user-select: none;
+  min-height: 44px; display: inline-flex; align-items: center; /* objetivo tactil AB6 */
+}
+.columnas-selector > summary::-webkit-details-marker { display: none; }
+.columnas-lista {
+  position: absolute; z-index: 20; right: 0; margin-top: 4px; min-width: 200px;
+  background: var(--surface, #fff); border: 1px solid var(--border);
+  border-radius: var(--radius-md, 12px); padding: 6px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.10);
+}
+.columnas-opcion {
+  display: flex; align-items: center; gap: 10px;
+  min-height: 44px; padding: 0 8px; cursor: pointer; /* objetivo tactil AB6 */
+}
+.columnas-opcion input { width: 18px; height: 18px; }
+
+/* ── SCRUM-599 (DOC-09) · la tecla del atajo, DENTRO del botón primario ─────────────────────
+   Como en Holded: el rótulo y, al final, la tecla. Se pinta sobre el propio botón —fondo
+   translúcido en vez de un color nuevo— para no estrenar un token por un adorno.
+   `pointer-events:none` porque el objetivo táctil es el BOTÓN entero: la tecla no es un
+   segundo destino y en un móvil no debe poder recibir el toque por su cuenta. */
+.btn-atajo {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, .35);
+  background: rgba(255, 255, 255, .18);
+  font: inherit;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: .02em;
+  pointer-events: none;
+}
+/* En pantallas sin teclado la tecla no significa nada, y ocupa sitio justo donde menos hay. */
+@media (max-width: 640px) {
+  .btn-atajo { display: none; }
+}
+
+/* ── Parte de trabajo ────────────────────────────────────────
+   SCRUM-720 · La pantalla del parte llegó a producción SIN UNA SOLA REGLA suya.
+
+   Medido antes de escribir esto: la hoja SÍ se carga en esa vista —la tipografía y los colores
+   de `--muted`/`--ink` se aplican, se ve en la captura— pero de las CUATRO clases que pinta
+   `parteDetailView.js` existían CERO. Sus hermanas: Trabajos 13 de 15, albarán 11 de 12.
+
+   Por eso salía texto crudo sobre blanco y los botones eran los nativos del navegador: la hoja
+   sólo declara `button { font-family: inherit; cursor: pointer }`, sin apariencia.
+
+   ⚠️ Aquí NO se estrena vocabulario: se reutiliza el que ya existe (`.customers-card`,
+   `.btn-primary`, `.btn-secondary`, `--radius-*`, `--shadow-sm`). Un componente nuevo iría al
+   inventario AB3, y esta pantalla no necesita ninguno.
+
+   ⚠️ Y se estiliza por `data-*` donde el marcado no lleva clase. No es un atajo: esos atributos
+   son los ganchos que ya usan los tests, y el fichero de la vista lo está tocando otra sesión
+   para firmar los rótulos. Tocarlo aquí sería chocar en el mismo fichero por un `class=`.
+   ──────────────────────────────────────────────────────────── */
+
+/* Los dos bloques del papel —mano de obra y materiales— son las tarjetas de esta pantalla. */
+.parte-bloque {
+  background: #fff;
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+}
+
+.parte-bloque table { width: 100%; border-collapse: collapse; }
+.parte-bloque th {
+  text-align: left;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--neutral-200);
+}
+.parte-bloque td { border-bottom: 1px solid var(--neutral-100); }
+.parte-bloque tr:last-child td { border-bottom: 0; }
+
+/* Las tres casillas de tipo: excluyentes, y se leen de un vistazo. */
+.parte-tipo label {
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-full);
+  padding: 6px 12px;
+  margin-bottom: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+.parte-tipo label:has(input:checked) {
+  border-color: var(--brand);
+  background: var(--brand-tint, #f0fdf4);
+  color: var(--brand-ink, var(--ink));
+  font-weight: 600;
+}
+
+/* El campo del dictado. El micrófono lo pone el teclado del móvil: aquí sólo hay un textarea. */
+[data-parte-dictado] textarea {
+  border: 1px solid var(--input-border, var(--border));
+  border-radius: var(--radius-md, 10px);
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--ink);
+  background: #fff;
+  resize: vertical;
+}
+[data-parte-dictado] textarea:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: var(--ring, 0 0 0 3px rgba(22,163,74,.15));
+}
+
+/* ── Los botones ──────────────────────────────────────────────
+   Ninguno de éstos lleva `class`, así que sin esto salen como el botón nativo del navegador:
+   caja gris con borde de sistema. Es literalmente lo que se veía en producción. */
+.parte-anadir,
+[data-parte-firmar],
+[data-dictado-ordenar],
+[data-propuesta-confirmar] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 8px 16px;
+  min-height: 36px;
+  font-family: var(--font);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: all .12s;
+  background: var(--surface);
+  color: var(--ink);
+}
+.parte-anadir:active,
+[data-parte-firmar]:active,
+[data-dictado-ordenar]:active,
+[data-propuesta-confirmar]:active { transform: scale(.97); }
+
+.parte-anadir:disabled,
+[data-parte-firmar]:disabled,
+[data-dictado-ordenar]:disabled,
+[data-propuesta-confirmar]:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+/* Firmar es la acción principal de esta pantalla: es lo que cierra el parte en la obra. */
+[data-parte-firmar] {
+  background: var(--brand);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 1px 2px rgba(5,46,22,.18);
+}
+[data-parte-firmar]:hover:not(:disabled) { background: var(--green-700, var(--brand-700)); color: #fff; }
+
+/* Quitar una línea: presente, pero nunca compitiendo con la acción principal. */
+.parte-quitar-linea {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+}
+.parte-quitar-linea:hover { background: var(--danger-bg, #fef2f2); color: var(--danger, #dc2626); }
+
+/* Las líneas que propone el dictado, antes de que el técnico las confirme. */
+[data-propuesta] input[type="number"] {
+  border: 1px solid var(--input-border, var(--border));
+  border-radius: var(--radius-md, 10px);
+  padding: 6px 8px;
+  font-size: 14px;
+  text-align: right;
+}
+[data-falta-cantidad] { color: var(--muted); }
+
+/* Firmado: el contenido ya no se toca, y la pantalla tiene que decirlo sin gritar. */
+[data-parte-firmado] {
+  background: var(--ok-bg, #f0fdf4);
+  color: var(--ok-ink, #166534);
+  border-radius: var(--radius-md, 10px);
+  padding: 10px 12px;
+  font-size: 13.5px;
+}
+
+/* ── Parte de trabajo · objetivos táctiles (SCRUM-720d) ──────
+   Medido EN NAVEGADOR con viewport real (390 y 1280), en los cuatro estados de la pantalla, y
+   con el árbitro de la casa: `elementsFromPoint`, no la caja (SCRUM-542).
+
+   Lo que salió, igual en los cuatro estados:
+
+       button.parte-quitar-linea    22 px    ← la «×» que BORRA una línea
+       button (firmar / ordenar / añadir)  36 px
+       label del tipo               36 px
+       input[type=radio]            13 px    (su objetivo real es la etiqueta que lo envuelve)
+
+   AB6 exige 44. Y el que de verdad no se puede usar es la «×»: 22 px de alto, con el móvil en la
+   mano y de pie, y **borra una línea del parte**. Fallar ese toque tiene coste.
+
+   ⚠️ Sin `style=` en línea y sin tocar el fichero de la vista, que lo está editando otra sesión:
+   sólo se sube el alto mínimo de lo que ya se estiliza aquí.
+   ──────────────────────────────────────────────────────────── */
+.parte-anadir,
+[data-parte-firmar],
+[data-dictado-ordenar],
+[data-propuesta-confirmar] { min-height: 44px; }
+
+/* La «×» pasa de 22 a 44 sin engordar la fila: crece el área, no el dibujo. */
+.parte-quitar-linea {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Las tres casillas de tipo: el objetivo es la etiqueta entera, que es lo que ya recibe el toque. */
+.parte-tipo label { min-height: 44px; box-sizing: border-box; }
+
+/* El campo del dictado y las cantidades de la propuesta, al mismo mínimo. */
+[data-parte-dictado] textarea { min-height: 88px; }
+[data-propuesta] input[type="number"] { min-height: 44px; }

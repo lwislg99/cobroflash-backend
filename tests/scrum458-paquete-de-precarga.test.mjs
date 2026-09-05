@@ -6,6 +6,7 @@
 // profesional.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
+import { soloEjecutable } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -313,19 +314,37 @@ test('SCRUM-458 · el criterio no se ha repartido por el producto', async () => 
 
   const dir = path.join(RAIZ, 'src');
   const sospechosos = [];
+  // SUELO (SCRUM-719): aquí no hay un ancla común —se barre `src` entero—, así que el respaldo
+  // es la SALIDA del filtro: un `.ts` de este repo que se quede sin código tras quitar
+  // comentarios no existe. Si aparece uno, la negación de abajo es cierta por vacía sobre él.
+  let ficherosBarridos = 0;
+  const sinCodigo = [];
   (function anda(d) {
     for (const e of fs.readdirSync(d, { withFileTypes: true })) {
       const f = path.join(d, e.name);
       if (e.isDirectory()) { anda(f); continue; }
       const rel = path.relative(RAIZ, f).replace(/\\/g, '/');
       if (!f.endsWith('.ts') || rel === RUTA) continue;
-      const codigo = fs.readFileSync(f, 'utf8').replace(/\/\/[^\n]*|\/\*[^]*?\*\//g, '');
+      const bruto = fs.readFileSync(f, 'utf8');
+      const codigo = soloEjecutable(bruto);
+      ficherosBarridos += 1;
+      // Se compara la ENTRADA con la SALIDA, no se mira sola la salida: `src` tiene 7 ficheros
+      // `.ts` de CERO BYTES (medido: `src/api/routes.ts`, `src/core/http/types.ts`, cinco mas).
+      // Un fichero vacio en disco y un fichero VACIADO por el filtro son hechos distintos, y
+      // solo el segundo deja hueca la negacion de abajo.
+      if (bruto.trim() && !codigo.trim()) sinCodigo.push(rel);
       for (const n of nombres) {
         // DECLARAR, no usar: importarlo es exactamente lo que se quiere que hagan.
         if (new RegExp(`(const|let|var|function)\\s+${n}\\b`).test(codigo)) sospechosos.push(`${rel} → ${n}`);
       }
     }
   })(dir);
+  assert.ok(ficherosBarridos > 100,
+    `🔴 ESCÁNER CIEGO: solo ${ficherosBarridos} ficheros .ts barridos en \`src\``);
+  assert.deepEqual(sinCodigo, [],
+    `🔴 ESCÁNER CIEGO: ${sinCodigo.length} fichero(s) se quedaron SIN CÓDIGO tras filtrar `
+    + `comentarios: ${sinCodigo.slice(0, 5).join(', ')}. La negación sobre ésos es hueca.`);
+
   assert.deepEqual(sospechosos, [],
     `🔴 el criterio de precarga ha empezado a vivir también en: ${sospechosos.join(', ')}. Vive en ` +
     '`precarga.service.ts` y en ningún otro sitio: el fundador dijo que esto «quizás pueda cambiar», ' +

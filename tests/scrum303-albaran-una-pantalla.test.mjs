@@ -459,7 +459,7 @@ test('SCRUM-303 · RETROCOMPATIBILIDAD: sin `onGuardar` el editor sigue haciendo
 const moduloPrisma = await import(DIST + 'core/db/prisma.js');
 const routerDe = (mod) => mod.default?.default ?? mod.default;
 
-async function invocarAlta(job) {
+async function invocarAlta(job, cuerpo = {}) {
   moduloPrisma.prisma.job = { findFirst: async () => job, findUnique: async () => job };
   moduloPrisma.prisma.$transaction = async () => ({
     id: 9, jobId: job?.id ?? 1, numero: 'A-2026-0001', fecha: new Date(),
@@ -478,19 +478,36 @@ async function invocarAlta(job) {
   };
   const handlers = capa.route.stack;
   await handlers[handlers.length - 1].handle(
-    { params: { id: String(job?.id ?? 1) }, body: {}, merchantId: 7, query: {}, headers: {} },
+    { params: { id: String(job?.id ?? 1) }, body: cuerpo, merchantId: 7, query: {}, headers: {} },
     res, () => {},
   );
   return salida;
 }
 
-test('SCRUM-303 · LAS DOS CARAS: sin presupuesto sigue dando 409 con su mensaje humano', async () => {
-  const r = await invocarAlta({ id: 3, merchantId: 7, quoteId: null });
+// 🔴 RE-ANCLADO el 4-sep-2026 (SCRUM-684): la regla cambió, y este guard vigilaba la vieja.
+//
+// Una AVERÍA abierta como trabajo directo (SCRUM-651) SÍ puede entregar albarán — decisión del
+// fundador. El guard de SCRUM-257 se ACOTA, no se quita: sigue en 409 el caso donde la falta de
+// presupuesto de verdad importa, una línea que dice venir de uno que no existe. Aquí se conservan
+// **las dos caras**, que es lo que este fichero se llama.
+test('SCRUM-303 · LAS DOS CARAS: una línea con origen inexistente sigue dando 409 con su mensaje', async () => {
+  const r = await invocarAlta({ id: 3, merchantId: 7, quoteId: null }, {
+    lineas: [{ concepto: 'Sustituir diferencial', cantidad: 1, unidad: 'ud', quoteLineIndex: 0 }],
+  });
   assert.equal(r?.code, 409,
-    `🔴 el guard de SCRUM-257 se ha debilitado: respondió ${r?.code} con ${JSON.stringify(r?.body)}`);
+    `🔴 el guard de SCRUM-257 se ha debilitado de más: respondió ${r?.code} con ${JSON.stringify(r?.body)}`);
   assert.equal(r.body?.error, 'job_without_quote');
-  assert.equal(r.body?.message, COPY_SIN_PRESUPUESTO,
-    '🔴 sin `message`, el dashboard enseñaría el código crudo — el defecto que cerró SCRUM-275.');
+  // El texto aprobado en SCRUM-257 ya no vale: decía «no se puede crear un albarán» y hoy sería
+  // falso. El nuevo sale con marcador (regla 30) y NOMBRA la línea.
+  assert.match(r.body?.message || '', /línea 1\b/,
+    '🔴 sin `message` útil, el dashboard enseñaría el código crudo — el defecto que cerró SCRUM-275.');
+});
+
+test('SCRUM-303 · LAS DOS CARAS: una AVERÍA sin líneas enlazadas SÍ crea albarán (SCRUM-684)', async () => {
+  // La cara nueva. Sin ella, «acotar» sería indistinguible de «seguir bloqueando».
+  const r = await invocarAlta({ id: 3, merchantId: 7, quoteId: null });
+  assert.equal(r?.code, 201,
+    `🔴 la avería sigue sin poder entregar papel: ${JSON.stringify(r?.body)}`);
 });
 
 test('SCRUM-303 · LAS DOS CARAS: con presupuesto sigue creando (201)', async () => {

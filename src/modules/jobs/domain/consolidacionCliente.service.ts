@@ -14,6 +14,7 @@
 //
 // ESTE MÓDULO ES SOLO SELECCIÓN. No emite nada, ni toca `emitInvoice` ni VeriFactu: la emisión
 // está en manos de SCRUM-173 (agujero de VeriFactu en esa misma ruta) y se cablea después.
+import { ZONA_POR_DEFECTO, diaNaturalEn, inicioDelDiaEn, finDelDiaEn } from '../../../core/zonaDelMerchant'; // SCRUM-643
 import {
   mesNaturalKey,
   type AlbaranConsolidable,
@@ -85,22 +86,29 @@ export function ordenNumeroAlbaran(numero: string): number | null {
   return Number(m[1]) * 1_000_000 + Number(m[2]);
 }
 
-function dentroDeRangoFecha(fecha: Date | string, f: FiltrosConsolidacion): boolean {
+// 🔴 SCRUM-643 · EL CORTE, EN LA ZONA DEL MERCHANT. Antes mezclaba dos convenciones: `f.hasta`
+// llega como cadena `YYYY-MM-DD` —que `new Date()` interpreta en UTC— y encima se le aplicaba un
+// `setHours()` del reloj del PROCESO. Con el servidor en UTC, un albarán del 1 de abril a las
+// 00:30 hora española ENTRABA en el rango «hasta el 31 de marzo». Ahora los dos extremos se
+// resuelven como días naturales de la zona del merchant, y el «31 entero» lo es de verdad.
+//
+// El filtro puede llegar como cadena `YYYY-MM-DD` (lo que manda la pantalla) o como `Date`. La
+// cadena YA ES un día natural y se usa tal cual; un `Date` es un instante y hay que preguntarle a
+// qué día pertenece EN LA ZONA — que es justo lo que antes resolvía el reloj del proceso.
+const diaISO = (v: Date | string, zona: string): string => (typeof v === 'string' ? v.slice(0, 10) : diaNaturalEn(v, zona));
+
+function dentroDeRangoFecha(fecha: Date | string, f: FiltrosConsolidacion, zona: string): boolean {
   const t = new Date(fecha).getTime();
   if (f.desde) {
-    const d = new Date(f.desde);
-    // Desde el PRIMER instante del día indicado.
-    d.setHours(0, 0, 0, 0);
-    if (t < d.getTime()) return false;
+    // Desde el PRIMER instante del día indicado, EN SU ZONA.
+    if (t < inicioDelDiaEn(diaISO(f.desde, zona), zona).getTime()) return false;
   }
   if (f.hasta) {
-    const h = new Date(f.hasta);
     // Hasta el ÚLTIMO instante del día indicado: "hasta el 31" incluye el 31 entero, que es lo
     // que cualquiera espera de un rango de fechas de facturación.
-    h.setHours(23, 59, 59, 999);
-    if (t > h.getTime()) return false;
+    if (t > finDelDiaEn(diaISO(f.hasta, zona), zona).getTime()) return false;
   }
-  if (f.mes && mesNaturalKey(fecha) !== f.mes) return false;
+  if (f.mes && mesNaturalKey(fecha, zona) !== f.mes) return false;
   return true;
 }
 
@@ -134,6 +142,7 @@ export function seleccionarConsolidablesDeCliente(
   candidatos: AlbaranCandidato[],
   customerId: number,
   filtros: FiltrosConsolidacion = {},
+  zona: string = ZONA_POR_DEFECTO,
 ): { elegibles: AlbaranCandidato[]; descartados: Descartado[] } {
   const elegibles: AlbaranCandidato[] = [];
   const descartados: Descartado[] = [];
@@ -151,7 +160,7 @@ export function seleccionarConsolidablesDeCliente(
     if (a.tipoOperacion === 'TRABAJO_UNICO') { fuera(a, 'obra_unica'); continue; }
     if (a.estado !== 'firmado') { fuera(a, 'no_firmado'); continue; }
     if (a.modoValoracion !== 'VALORADO') { fuera(a, 'sin_precios'); continue; }
-    if (!dentroDeRangoFecha(a.fecha, filtros) || !dentroDeRangoNumero(a.numero, filtros)) {
+    if (!dentroDeRangoFecha(a.fecha, filtros, zona) || !dentroDeRangoNumero(a.numero, filtros)) {
       fuera(a, 'fuera_de_rango'); continue;
     }
     elegibles.push(a);
@@ -174,10 +183,10 @@ export interface GrupoCliente {
  * y `tipoOperacion` por el camino; la rotura —la clave de mes— es la misma función
  * (`mesNaturalKey`), que es lo que de verdad no puede divergir.
  */
-export function agruparPorMes(albaranes: AlbaranCandidato[]): GrupoCliente[] {
+export function agruparPorMes(albaranes: AlbaranCandidato[], zona: string = ZONA_POR_DEFECTO): GrupoCliente[] {
   const map = new Map<string, AlbaranCandidato[]>();
   for (const a of albaranes) {
-    const key = mesNaturalKey(a.fecha);
+    const key = mesNaturalKey(a.fecha, zona);
     if (!map.has(key)) map.set(key, []);
     map.get(key)!.push(a);
   }

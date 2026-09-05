@@ -17,9 +17,10 @@
 // caso en que la fecha CAE en el 29 de febrero, que es el que se escapa cuando alguien escribe
 // una tabla de meses.
 //
-// ⚠️ MICROCOPY: los rótulos de los tres botones son texto NUEVO y salen con
-// `[PENDIENTE microcopy oficial]` (regla 30), de UNA sola constante para que aprobarlo los
-// apague de golpe. El censo de SCRUM-402 sube de 8 a 9 ficheros, declarado en su tabla.
+// ✅ MICROCOPY APROBADA por el ASESOR el 4-sep-2026, a la espera de la firma del fundador:
+// «7 días» · «14 días» · «30 días», y los nombres accesibles «Válido hasta dentro de N días».
+// El marcador se retiró y la entrada de `quoteAtajosVencimiento.js` SALIÓ del censo de
+// SCRUM-402 —borrada, no puesta a 0—: comprobado con el número delante, de 13 a 12 entradas.
 // ─────────────────────────────────────────────────────────────────────────────────────────
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -118,10 +119,23 @@ test('SCRUM-605 · 🔴 NINGÚN atajo cae por debajo del `min` — y se comprueb
 // ─────────────────────────────────────────────────────────────────────────────────────────
 test('SCRUM-605 · ✅ el campo de siempre no se ha tocado: default +30 d, min +1 d y su nota', () => {
   const vista = leer(VISTA);
+  // ── 🔴 SCRUM-633 · ESTE CONTROL FIJABA LA EXPRESIÓN, Y AHORA FIJA LA PROPIEDAD ────────────
+  //
+  // Los dos trozos del default y del mínimo eran las líneas LITERALES `new Date(Date.now() + …)
+  // .toISOString().slice(0, 10)`, que es exactamente el defecto que SCRUM-633 vino a cerrar: ese
+  // `toISOString()` da el día en UTC, y para un profesional en Madrid falla 335 de 365 días a las
+  // 00:30. Así que este guard cayó — y **cayó bien**: su modelo (el texto de la expresión) dejó de
+  // valer el día en que la expresión cambió.
+  //
+  // **No se ha relajado: se le devuelve la PREGUNTA.** Lo que protege —«quien no pulse un atajo ve
+  // exactamente lo de antes: +30 días, +1 día y su nota»— sigue siendo cierto y sigue importando,
+  // y ahora se comprueba por los DÍAS, que es lo que el control quería decir, en vez de por cómo
+  // se calculan. Que el día resultante sea el correcto lo ata `scrum633-caducidad-en-la-zona`, con
+  // su propio control negativo: un merchant sin zona ve EXACTAMENTE lo de antes.
   const trozos = [
     ['el rótulo aprobado', '    validLabel.textContent = "Válido hasta";'],
-    ['el valor por defecto (+30 d)', '    const defUntil = new Date(Date.now() + 30 * 86400000);'],
-    ['el mínimo (+1 d)', '    validInput.min = new Date(Date.now() + 86400000).toISOString().slice(0, 10);'],
+    ['el valor por defecto (+30 d)', 'window.quoteCaducidad.diaPorDefecto(null, 30)'],
+    ['el mínimo (+1 d)', 'window.quoteCaducidad.diaPorDefecto(null, 1)'],
     ['la nota de caducidad que ve el cliente',
       '    validNote.textContent = "Pasada esta fecha el presupuesto caduca solo y el cliente verá \\"pide uno actualizado\\".";'],
   ];
@@ -152,16 +166,115 @@ test('SCRUM-605 · los atajos se pintan reutilizando la ficha de AB3, no una cla
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // MICROCOPY · una sola constante, y el número no es texto
 // ─────────────────────────────────────────────────────────────────────────────────────────
-test('SCRUM-605 · el rótulo sale del marcador oficial, y de UNA sola constante', () => {
-  assert.equal(A.MARCA_MICROCOPY, '[PENDIENTE microcopy oficial]',
-    '🔴 el marcador no es el que cuenta el censo de SCRUM-402 (`[PENDIENTE`). Uno que no cuente '
-    + 'sería un marcador invisible para el trinquete que existe justo para verlo.');
+test('SCRUM-605 · 🔴 los SEIS literales son los APROBADOS, comparados con `===`', () => {
+  // ✅ Aprobados por el ASESOR el 4-sep-2026, a la espera de la firma del fundador. Se comparan
+  // uno a uno y con `===`: un retoque «de paso» reabre una aprobación sin que nadie se entere
+  // (mismo aserto que `scrum683-parte-dictado`).
+  const ROTULOS = { 7: '7 días', 14: '14 días', 30: '30 días' };
+  const ACCESIBLES = {
+    7: 'Válido hasta dentro de 7 días',
+    14: 'Válido hasta dentro de 14 días',
+    30: 'Válido hasta dentro de 30 días',
+  };
+
+  assert.ok(A.DIAS_ATAJO.length >= 3,
+    `🔴 SUELO: sólo hay ${A.DIAS_ATAJO.length} atajos; comparar sobre una lista corta no prueba nada.`);
+
   for (const d of A.DIAS_ATAJO) {
-    assert.equal(A.rotuloDeAtajo(d), `${d} ${A.MARCA_MICROCOPY}`,
-      `🔴 el rótulo de ${d} días ya no se compone del número + la constante`);
+    assert.equal(A.rotuloDeAtajo(d), ROTULOS[d],
+      `🔴 el RÓTULO de ${d} días ha cambiado sin pasar por quien lo aprueba (regla 30).`);
+    assert.equal(A.nombreAccesibleDeAtajo(d), ACCESIBLES[d],
+      `🔴 el NOMBRE ACCESIBLE de ${d} días ha cambiado. Dice la acción completa a propósito: el
+       botón puede decir «${d} días» apoyándose en el campo de al lado, pero un lector de pantalla
+       puede no dar ese contexto.`);
   }
-  // Una sola marca escrita en el fichero: aprobar el texto los apaga los tres de golpe.
+
+  // 🔴 Y NO PUEDE VOLVER EL MARCADOR: si alguien lo repone, el censo de SCRUM-402 subiría otra vez
+  // y el profesional volvería a ver una nota interna en su presupuesto.
   const fuente = leer('public/dashboard/js/quoteAtajosVencimiento.js');
-  assert.equal(fuente.split("'[PENDIENTE microcopy oficial]'").length - 1, 1,
-    '🔴 hay más de una marca escrita: aprobar el copy ya no los apagaría a todos de golpe');
+  assert.equal(/\[PENDIENTE/.test(fuente), false,
+    '🔴 ha vuelto un marcador al fichero: su entrada salió del censo de SCRUM-402 el 4-sep, así '
+    + 'que ahora se pintaría SIN que ningún trinquete lo contara.');
+
+  // 🔴 «1 mes» NO: el motor hace hoy+30, y 30 días no son un mes salvo en cuatro. Un rótulo que
+  // no describe lo que hace el mecanismo es la avería que este árbol lleva una semana cazando.
+  for (const prohibido of ['1 mes', 'mes', 'semana']) {
+    for (const d of A.DIAS_ATAJO) {
+      assert.equal(A.rotuloDeAtajo(d).includes(prohibido), false,
+        `🔴 el rótulo de ${d} días dice «${prohibido}», y este mecanismo cuenta DÍAS. Prometer un
+         mes cuando se suman 30 días es mentir en el sitio donde el profesional sí mira.`);
+    }
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 LOS TRES, RECORRIDOS · y el control negativo que separa el TEXTO del CÁLCULO
+// ─────────────────────────────────────────────────────────────────────────────────────────
+
+test('SCRUM-605 · 🔴 LOS TRES atajos ponen hoy + N, recorriendo la lista y no uno a mano', () => {
+  // Los casos límite de arriba están escritos uno a uno —fin de mes, bisiesto, cambio de año— y
+  // eso es lo que hay que probar de la aritmética. Falta lo obvio, que es justo lo que nadie
+  // comprueba: que **cada uno de los tres** ponga lo que su rótulo promete. Se RECORRE
+  // `DIAS_ATAJO`: si mañana entra un cuarto atajo, este test lo mide sin que nadie lo actualice.
+  const hoy = new Date(2026, 4, 12, 12, 0, 0); // 12-may-2026, mediodía (SCRUM-640: nunca medianoche)
+  const esperado = { 7: '2026-05-19', 14: '2026-05-26', 30: '2026-06-11' };
+
+  assert.ok(A.DIAS_ATAJO.length >= 3,
+    `🔴 SUELO: sólo hay ${A.DIAS_ATAJO.length} atajos. Un recorrido sobre una lista vacía pasa `
+    + 'sin comprobar nada, que es como un test deja de mirar sin que se note.');
+
+  for (const dias of A.DIAS_ATAJO) {
+    assert.ok(Object.prototype.hasOwnProperty.call(esperado, dias),
+      `🔴 ha entrado un atajo de ${dias} días y este test no sabe qué fecha debería dar: añádela `
+      + 'aquí en el mismo commit, o el atajo nuevo viaja sin comprobar.');
+    assert.equal(A.fechaDeAtajo(dias, hoy), esperado[dias],
+      `🔴 el atajo de ${dias} DÍAS pone ${A.fechaDeAtajo(dias, hoy)} y debería poner `
+      + `${esperado[dias]}. Un botón que promete «${dias}» y escribe otra fecha es peor que no `
+      + 'tenerlo: el cliente recibe un presupuesto con una validez que nadie quiso.');
+  }
+});
+
+test('SCRUM-605 · CONTROL NEGATIVO: el RÓTULO no decide la fecha', () => {
+  // Lo que NO debe hacer caer el cálculo: cambiar el texto. Hoy el rótulo lleva el marcador
+  // dentro, y el día que el fundador firme el copy va a cambiar entero — si el cálculo dependiera
+  // del texto, aprobar la microcopy rompería las fechas de un documento que el cliente recibe.
+  const hoy = new Date(2026, 0, 31, 12, 0, 0);
+  const antes = A.DIAS_ATAJO.map((d) => A.fechaDeAtajo(d, hoy));
+
+  // Se sustituye el rótulo por otro completamente distinto, sin tocar nada más.
+  // 🔴 Y LO QUE DE VERDAD LO PRUEBA, porque lo de abajo NO bastaba: sustituir `A.rotuloDeAtajo`
+  // cambia la PROPIEDAD exportada, pero `fechaDeAtajo` llama a la función INTERNA. Un
+  // acoplamiento dentro del módulo —«si el rótulo no lleva X, no calcules»— pasaba este test
+  // sin despeinarse; lo cazó su propia prueba de rojo. Así que el desacoplamiento se comprueba
+  // DONDE SE DECIDE: en el cuerpo de la función.
+  const fuente = leer('public/dashboard/js/quoteAtajosVencimiento.js');
+  const cuerpo = fuente.slice(fuente.indexOf('function fechaDeAtajo'),
+    fuente.indexOf('function rotuloDeAtajo'));
+  assert.ok(cuerpo.length > 200, '🔴 SUELO: no he aislado el cuerpo de `fechaDeAtajo`.');
+  // Re-anclado el 4-sep: `MARCA_MICROCOPY` ya no existe —se aprobó el copy—, así que la lista
+  // pasa a las constantes NUEVAS. No se relaja: se apunta a la forma de hoy, que es lo que el
+  // protocolo manda cuando cambia lo que el guard busca.
+  for (const prohibido of ['rotulo', 'UNIDAD_ROTULO', 'PREFIJO_ACCESIBLE']) {
+    assert.equal(cuerpo.includes(prohibido), false,
+      `🔴 \`fechaDeAtajo\` menciona \`${prohibido}\`: el cálculo se ha atado al TEXTO. El día que `
+      + 'se apruebe la microcopy el rótulo cambia entero, y con él cambiarían las fechas de un '
+      + 'documento que el cliente recibe.');
+  }
+
+  const original = A.rotuloDeAtajo;
+  try {
+    A.rotuloDeAtajo = (d) => `Otro texto cualquiera para ${d}`;
+    const despues = A.DIAS_ATAJO.map((d) => A.fechaDeAtajo(d, hoy));
+    assert.deepEqual(despues, antes,
+      '🔴 cambiar el RÓTULO ha cambiado las FECHAS. El texto y el cálculo tienen que estar '
+      + 'separados: el día que se apruebe la microcopy, el rótulo cambia entero.');
+    assert.equal(A.rotuloDeAtajo(7), 'Otro texto cualquiera para 7',
+      '🔴 SUELO: el rótulo no se ha podido sustituir, así que la prueba de arriba no prueba nada.');
+  } finally {
+    A.rotuloDeAtajo = original;
+  }
+  // Re-anclado el 4-sep: comparaba con `MARCA_MICROCOPY`, que ya no existe porque se aprobó el
+  // copy. Ahora contra el literal aprobado, que es lo que el rótulo tiene que ser.
+  assert.equal(A.rotuloDeAtajo(7), '7 días',
+    '🔴 el rótulo no se ha restaurado: el resto del fichero mediría otra cosa.');
 });

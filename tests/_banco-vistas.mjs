@@ -35,6 +35,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { createRequire } from 'node:module';
+// SCRUM-670 · el ÚNICO sitio del repo donde se lee un `<script>` de un marcado.
+import { scriptsDeLaPagina, rutaDelDashboard, hojasDeLaPagina } from './_scripts-de-la-pagina.mjs';
+// SCRUM-694 · el filtro de comentarios es ÉSTE, nunca uno a mano.
+import { soloCodigo } from './_solo-codigo.mjs';
 const require = createRequire(import.meta.url);
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -56,6 +60,23 @@ const require = createRequire(import.meta.url);
 
 const SIMPLE = /^([a-zA-Z][\w-]*)?((?:[#.][\w-]+|\[[^\]]+\])*)$/;
 
+// SCRUM-634 · un atributo del marcado: con comillas dobles, simples, o SIN VALOR
+// (`<input required>`), que en el navegador vale cadena vacía y NO `null` — que es justo la
+// diferencia entre «está puesto» y «no está».
+const ATRIBUTO = /(?:^|\s)([A-Za-z_:][\w:.-]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'))?/g;
+
+// SCRUM-634 · LOS CAMPOS QUE EN EL NAVEGADOR **REFLEJAN** un atributo del mismo nombre, con el
+// valor que `nodo()` les da de fábrica. Si uno trae algo distinto del de fábrica pero `_attrs`
+// no lo tiene, el banco TIENE el dato y la consulta NO LO VE: eso se grita, no se calla.
+//
+// FUERA A PROPÓSITO: `value` y `checked`, porque en el navegador el campo NO refleja el
+// atributo después de escribir o de marcar —ahí devolver `false` es lo FIEL, no un hueco—; e
+// `id` y `class`, que el matcher ya resuelve por su campo unas líneas más abajo.
+const REFLEJADOS = new Map([
+  ['type', ''], ['name', ''], ['href', ''], ['src', ''],
+  ['title', ''], ['placeholder', ''], ['download', ''], ['disabled', false],
+]);
+
 function casaSimple(n, sel) {
   const m = SIMPLE.exec(sel.trim());
   if (!m) return null; // no soportado
@@ -71,7 +92,25 @@ function casaSimple(n, sel) {
     const valor = a[1].startsWith('data-')
       ? n.dataset[a[1].slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase())]
       : (a[1] === 'class' ? n.className : (a[1] === 'id' ? n.id : n.getAttribute(a[1])));
-    if (valor === undefined || valor === null) return false;
+    if (valor === undefined || valor === null) {
+      // SCRUM-634 · AQUÍ VIVÍA EL NULL MUDO. Ahora solo hay dos salidas, y ninguna calla:
+      //   · el atributo no está en ninguna parte del nodo → `false`, que es la verdad;
+      //   · el nodo SÍ lleva el dato en su campo reflejado y `_attrs` no → se GRITA.
+      //
+      // El segundo caso es el único que queda tras copiar todo el marcado: un nodo hecho con
+      // `createElement` al que la vista le asigna el CAMPO (`i.name = 'x'`) en vez del atributo.
+      const defecto = REFLEJADOS.get(a[1]);
+      if (defecto !== undefined && n[a[1]] !== undefined && n[a[1]] !== defecto) {
+        throw new Error(
+          `[banco de vistas] el selector "${sel}" pregunta por el atributo "${a[1]}", que este `
+          + `<${String(n.tagName).toLowerCase()}> SÍ lleva en su campo `
+          + `(${JSON.stringify(n[a[1]])}) pero no en sus atributos. El banco no puede `
+          + `contestar y NO va a devolver null: usa setAttribute() al construir el nodo, o `
+          + `pon el atributo en el marcado. (SCRUM-634)`,
+        );
+      }
+      return false;
+    }
     if (a[2] !== undefined && String(valor) !== a[2]) return false;
   }
   return true;
@@ -145,6 +184,33 @@ export function almacenDeTeclas(inicial = {}) {
 }
 
 /** Un nodo del DOM de mentira: lo justo para que una vista corra y se pueda mirar lo que pintó. */
+/**
+ * 🔴 SCRUM-697 · INSERTAR **MUEVE**. Un nodo está en un sitio, no en dos.
+ *
+ * En el navegador, meter un nodo en un padre lo desengancha del que tuviera. Aquí las cuatro
+ * inserciones sólo hacían `hijos.push`/`unshift`, así que el nodo se quedaba colgando de los
+ * DOS y todo recorrido pasaba dos veces por él y por su descendencia.
+ *
+ * Lo destapó `customersView`, que hace DOM de manual perfectamente legítimo: mete la tabla en
+ * el `table-scroll` (l. 183) y luego la mueve al `data-card` (l. 207). Medido: la vista se
+ * llama UNA vez, crea UNA tabla, y aun así el recorrido daba 60 nodos para 41 —`tablas[0] ===
+ * tablas[1]` era `true`—, de donde salían «16 `<th>` para 8 columnas».
+ *
+ * NO producía rojos falsos: producía MEDICIONES falsas, que es de donde salen los verdes
+ * falsos. Y el modo de fallo más probable era el peor — ver un test pedir 8, verlo caer con 16
+ * y «arreglarlo» poniendo 16, fosilizando el defecto dentro de la aserción.
+ *
+ * ⚠️ NO SE HACE CON `removeChild`, y esto es lo delicado: `removeChild` DESREGISTRA el id a
+ * propósito (SCRUM-444), porque en el navegador `getElementById` no encuentra lo que ya no
+ * está en el documento. Pero MOVER no es QUITAR: el nodo sigue en el documento. Si el
+ * desenganche borrase el id, toda vista que mueva un nodo con id lo perdería en silencio —
+ * peor que el defecto que se venía a quitar. Se desengancha por IDENTIDAD y sin tocar
+ * `reg.porId`.
+ */
+function desengancha(h) {
+  if (h && h._padre) h._padre.hijos = h._padre.hijos.filter((x) => x !== h);
+}
+
 export function nodo(tag, reg) {
   const n = {
     tagName: String(tag).toUpperCase(),
@@ -152,8 +218,11 @@ export function nodo(tag, reg) {
     href: '', download: '', title: '', placeholder: '', name: '', src: '',
     style: { cssText: '', color: '', display: '', setProperty() {} },
     dataset: {}, hijos: [], _texto: '', _html: '', _padre: null,
-    appendChild(h) { if (h) h._padre = n; n.hijos.push(h); return h; },
-    append(...h) { for (const x of h) { if (x) x._padre = n; } n.hijos.push(...h); },
+    // SCRUM-697 · las CUATRO inserciones desenganchan antes de insertar. Si sólo lo hiciera
+    // `appendChild`, la próxima vista que use `prepend` traería el mismo síntoma con otra
+    // cara y costaría otro ticket entenderlo.
+    appendChild(h) { if (h) { desengancha(h); h._padre = n; } n.hijos.push(h); return h; },
+    append(...h) { for (const x of h) { if (x) { desengancha(x); x._padre = n; } } n.hijos.push(...h); },
     // ⚠️ SCRUM-444 · al quitar un nodo se DESREGISTRA su id. En el navegador, `getElementById` no
     // encuentra lo que ya no está en el documento; aquí seguía encontrándolo, así que un test que
     // borrara un contenedor y lo volviera a pedir recibía el nodo MUERTO y seguía escribiendo en
@@ -163,11 +232,43 @@ export function nodo(tag, reg) {
       n.hijos = n.hijos.filter((x) => x !== h);
       if (h) { h._padre = null; if (h._id && reg.porId.get(h._id) === h) reg.porId.delete(h._id); }
     },
-    insertBefore(h) { if (h) h._padre = n; n.hijos.unshift(h); return h; },
+    insertBefore(h) { if (h) { desengancha(h); h._padre = n; } n.hijos.unshift(h); return h; },
     // SCRUM-460 · `prepend`. No existía, y por eso `albaranDetailView` REVENTABA al montarse —
     // quedó reportado como hueco en SCRUM-451 y ahora bloqueaba el test que decide de H1. Nada
     // podía depender de él antes, porque llamarlo era un `TypeError`.
-    prepend(...h) { for (const x of h) { if (x) x._padre = n; } n.hijos.unshift(...h); },
+    prepend(...h) { for (const x of h) { if (x) { desengancha(x); x._padre = n; } } n.hijos.unshift(...h); },
+    // 🔴 SCRUM-698 · `insertAdjacentHTML`. NO EXISTÍA, y por eso `renderSettingsView` REVENTABA
+    // al montarse: la vista pone la nota del IBAN con
+    // `fIban.wrapper.querySelector('label').insertAdjacentHTML('afterend', …)`, que es DOM de
+    // manual y perfectamente legítimo. Es el mismo hueco que `prepend` (SCRUM-460) y
+    // `parentNode` (SCRUM-609): una pantalla entera fuera del alcance del banco por una API que
+    // el banco no tenía, no por nada del producto.
+    //
+    // Se apoya en el mismo parser que `innerHTML` —no se escribe un segundo— y respeta las
+    // cuatro posiciones del estándar. `beforebegin`/`afterend` necesitan padre: sin él el
+    // navegador NO hace nada, y aquí tampoco, en vez de inventarse un sitio donde ponerlo.
+    insertAdjacentHTML(posicion, html) {
+      const cuna = nodo('div', reg);
+      cuna.innerHTML = String(html ?? '');
+      const nuevos = cuna.hijos.slice();
+      for (const h of nuevos) h._padre = null;
+      const dentro = (i) => { for (const h of nuevos) { desengancha(h); h._padre = n; } n.hijos.splice(i, 0, ...nuevos); };
+      const fuera = (desplaza) => {
+        const p = n._padre;
+        if (!p) return; // el navegador no hace nada sin padre; aquí tampoco se inventa uno
+        const i = p.hijos.indexOf(n);
+        for (const h of nuevos) { desengancha(h); h._padre = p; }
+        p.hijos.splice(i < 0 ? p.hijos.length : i + desplaza, 0, ...nuevos);
+      };
+      const donde = String(posicion || '').toLowerCase();
+      if (donde === 'afterbegin') dentro(0);
+      else if (donde === 'beforeend') dentro(n.hijos.length);
+      else if (donde === 'beforebegin') fuera(0);
+      else if (donde === 'afterend') fuera(1);
+      // Una posición que no existe NO se trata como `beforeend`: el navegador lanza, y adivinar
+      // aquí pondría el marcado en un sitio que el producto no pidió.
+      else throw new SyntaxError(`insertAdjacentHTML: posición no válida «${posicion}»`);
+    },
     // ⚠️ SCRUM-444 · `children`, `firstElementChild` y un `remove()` QUE DE VERDAD QUITA.
     //
     // Antes `remove()` era un NO-OP y `children` no existía. Con eso, una vista que gestione una
@@ -175,6 +276,12 @@ export function nodo(tag, reg) {
     // no quita**: el test pasaría o fallaría por motivos que no son los del producto. Es la clase
     // de banco infiel que advierte la cabecera de este fichero, y por eso se corrige aquí en vez
     // de rodearlo desde el test.
+    // SCRUM-609 · `parentNode`. No existía, y por eso `productsView` REVENTABA al montarse en
+    // cuanto una vista hizo `x.parentNode.insertBefore(...)` — que es DOM de manual. El banco ya
+    // guardaba el padre en `_padre`; sólo le faltaba el nombre estándar. Se corrige AQUÍ y no se
+    // rodea desde la vista: la cabecera de este fichero lo dice — un banco infiel hace que el
+    // test mida el banco y no el producto.
+    get parentNode() { return n._padre; },
     get children() { return n.hijos; },
     get firstElementChild() { return n.hijos[0] || null; },
     get lastElementChild() { return n.hijos[n.hijos.length - 1] || null; },
@@ -206,6 +313,20 @@ export function nodo(tag, reg) {
     dispararClick() { return n.disparar('click'); },
     click() { return n.disparar('click'); },
     focus() {}, blur() {},
+    // 🔴 SCRUM-591 · `reset()`. NO LO TENÍA, y por eso el formulario de alta de cliente REVENTABA
+    // al abrirse desde el banco (`modalForm.reset is not a function`) — en el navegador lo abre
+    // un profesional todos los días. Un banco al que le falta un método del navegador no mide de
+    // menos: hace imposible medir, que es lo que este fichero lleva seis tickets corrigiendo.
+    //
+    // Se limita a lo que un `<form>.reset()` hace y que aquí es observable: devolver los controles
+    // de su subárbol a su valor de partida. NO se simula `defaultValue` —el mini-DOM no lo
+    // tiene— y por eso se vacía: es lo que hace el navegador con un formulario recién construido,
+    // que es el único caso que este banco monta.
+    reset() {
+      for (const h of todos(n)) {
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(h.tagName)) { h.value = ''; h.checked = false; }
+      }
+    },
     // SCRUM-451 · los atributos se GUARDAN. Antes `setAttribute` era un no-op y `getAttribute`
     // devolvía `null` siempre, así que `[aria-hidden="true"]` o `[type="checkbox"]` no se podían
     // resolver — y una vista que pusiera un atributo y luego lo buscara medía el banco, no el
@@ -248,17 +369,24 @@ export function nodo(tag, reg) {
       // un `card.innerHTML = '<div>…</div>'` seguido de `card.querySelector('div')` devolvía `null`
       // y la vista reventaba —`settingsView` lo hace— por un hueco del banco, no del producto.
       for (const m of String(v).matchAll(/<(\w+)([^>]*)>([^<]*)/g)) {
-        const attrs = m[2] || '';
         const h = nodo(m[1], reg);
-        const id = attrs.match(/\bid="([^"]+)"/);
-        const cls = attrs.match(/\bclass="([^"]+)"/);
-        if (id) { h.id = id[1]; reg.porId.set(id[1], h); }
-        if (cls) h.className = cls[1];
-        for (const d of attrs.matchAll(/\bdata-([\w-]+)="([^"]*)"/g)) {
-          h.dataset[d[1].replace(/-([a-z])/g, (_, c) => c.toUpperCase())] = d[2];
+        // SCRUM-634 · SE COPIAN **TODOS** LOS ATRIBUTOS, no solo `id`, `class` y `data-*`.
+        //
+        // Antes solo entraban esos tres. Y como el matcher SÍ da por soportado un selector
+        // como `[name="cost"]`, preguntarlo devolvía `null` EN SILENCIO: indistinguible de
+        // «ese nodo no existe». Son 36 consultas del dashboard las que caían justo ahí.
+        //
+        // Se copian vía `setAttribute` —no como campos sueltos— porque el matcher resuelve
+        // por `getAttribute`, y ese método ya refleja `id`, `class` y `data-*` a sus campos.
+        for (const a of String(m[2] || '').matchAll(ATRIBUTO)) {
+          h.setAttribute(a[1], a[2] !== undefined ? a[2] : (a[3] !== undefined ? a[3] : ''));
         }
         const texto = (m[3] || '').trim();
         if (texto) h.textContent = texto;
+        // SCRUM-609 · el hijo nacido del marcado SABE QUIÉN ES SU PADRE. No lo sabía: el parser
+        // sólo lo metía en `hijos`, así que `h.parentNode` era null y cualquier vista que hiciera
+        // `x.parentNode.insertBefore(...)` —DOM de manual— reventaba al montarse.
+        h._padre = n;
         n.hijos.push(h);
       }
     },
@@ -269,10 +397,288 @@ export function nodo(tag, reg) {
 
 export function todos(n, out = []) { out.push(n); for (const h of n.hijos) todos(h, out); return out; }
 
-/** Los `<script src>` de `dashboard/index.html`, EN SU ORDEN. */
+/**
+ * Los `<script src>` LOCALES de `dashboard/index.html`, EN SU ORDEN, relativos a
+ * `public/dashboard` (`js/api.js`) — que es como este banco los abre.
+ *
+ * SCRUM-670 · YA NO TIENE REGEX PROPIA. La que había —`<script src="./X"></script>`— veía **0**
+ * ante un `defer`, un atributo de más o la etiqueta partida en dos líneas, y en cambio SÍ contaba
+ * un `<script>` COMENTADO, que el navegador no carga. Las dos cosas en silencio: la primera dejaba
+ * una vista sin cargar y sin vigilar, la segunda hacía cargar un fichero que nadie pide.
+ *
+ * Devuelve `clasicos` a propósito: los `type="module"` NO comparten ámbito global, así que
+ * ejecutarlos aquí en un solo contexto —que es lo que hace fiel a este banco para los clásicos—
+ * mediría otra cosa. Hoy no hay ninguno, y `scrum670` cae el día que entre el primero.
+ */
 export function scriptsDelDashboard(raiz) {
   const html = fs.readFileSync(path.join(raiz, 'public/dashboard/index.html'), 'utf8');
-  return [...html.matchAll(/<script src="\.\/([^"]+)"><\/script>/g)].map((m) => m[1]);
+  return scriptsDeLaPagina(html).clasicos.map(rutaDelDashboard);
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-666 · EL CSS EXTERNO, que hasta hoy este banco NO MIRABA
+//
+// El hueco lo declaró SCRUM-660 al entregar: «el banco no aplica CSS externo; un `display:none`
+// en `styles.css` no se detecta». No era el hueco de un campo: era el de TODOS los controles de
+// visibilidad que se escriban de aquí en adelante, y producía **verdes falsos** — la clase cara.
+//
+// ── LO QUE SE MIDIÓ ANTES DE ESCRIBIR ESTO ───────────────────────────────────────────────
+// El índice carga DOS hojas locales (`/tokens.css` y `./css/styles.css`) más una remota de
+// Google Fonts, que no se lee ni se debe. De 625 reglas, **31 pueden ocultar** (24 `display:none`
+// y 7 `opacity:0`; 7 de ellas dentro de `@keyframes`, o sea fotogramas que NO ocultan de verdad).
+//
+// 🔴 Y EL DATO QUE MANDA EN EL DISEÑO: de las 35 partes de selector que ocultan, el matcher de
+// SCRUM-451 resuelve 22 (63 %) — pero las DOS que tocan el editor de líneas, que es justo lo que
+// mide el control de SCRUM-660, usan `:not(:focus-within) >` y **no las resuelve ninguna**.
+//
+// O sea: un lector que aplicara sólo lo que sabe resolver diría «se ve» precisamente donde no
+// sabe mirar. Por eso aquí manda la doctrina que este fichero lleva tres tickets desterrando
+// (SCRUM-451, 444, 634): **lo que no se sabe resolver se ANOTA, no se contesta**.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Las hojas de estilo LOCALES que declara el índice. Las remotas (fuentes) se ignoran.
+ *
+ * SCRUM-676 · la regex que vivía aquí exigía `rel="stylesheet"` ANTES de `href` y sólo con
+ * comillas dobles. Medido: no veía la hoja remota del índice —que lleva `href` primero— ni
+ * habría visto ninguna con comillas simples, y contaba las COMENTADAS. Ahora deriva del
+ * extractor único, que es el que sabe todo eso. Sobre el índice real devuelve lo mismo que
+ * antes: eso es el control negativo del cambio, no la prueba de que la regex vieja valiera.
+ */
+export function hojasDelDashboard(raiz) {
+  const html = fs.readFileSync(path.join(raiz, 'public/dashboard/index.html'), 'utf8');
+  return hojasDeLaPagina(html).locales
+    .map((h) => (h.startsWith('/') ? path.join(raiz, 'public', h.slice(1)) : path.join(raiz, 'public/dashboard', h.replace(/^\.\//, ''))));
+}
+
+/** Las cinco formas de ocultar que pedía el encargo. `@keyframes` NO cuenta: son fotogramas. */
+function formasDeOcultar(cuerpo) {
+  const c = cuerpo.replace(/\s+/g, ' ').toLowerCase();
+  const f = [];
+  if (/(^|[;{\s])display\s*:\s*none/.test(c)) f.push('display:none');
+  if (/visibility\s*:\s*hidden/.test(c)) f.push('visibility:hidden');
+  if (/(^|[;\s])opacity\s*:\s*0(\s|;|$)/.test(c)) f.push('opacity:0');
+  if (/(^|[;\s])(width|height)\s*:\s*0(px|%|em|rem)?\s*(;|$)/.test(c)) f.push('tamaño cero');
+  if (/(^|[;\s])(left|top)\s*:\s*-\s*\d{3,}/.test(c) || /clip\s*:\s*rect\(\s*0/.test(c)) f.push('fuera de pantalla');
+  return f;
+}
+
+/**
+ * Las reglas que pueden OCULTAR algo, sacadas de las hojas del índice.
+ *
+ * 🔴 SUELO: si no encuentra NINGUNA regla, LANZA. Cero reglas y «no supe abrir el fichero» son
+ * el mismo número con significados opuestos, y este banco existe justamente para no confundirlos.
+ */
+export function reglasQueOcultan(raiz, hojas = null) {
+  const ficheros = hojas || hojasDelDashboard(raiz);
+  if (!ficheros.length) throw new Error('[banco] el índice no declara ninguna hoja de estilo local');
+  const out = [];
+  let leidas = 0;
+  for (const f of ficheros) {
+    const css = fs.readFileSync(f, 'utf8'); // si no existe, LANZA: es el suelo, no un cero mudo
+    leidas++;
+    const t = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    const pila = [];
+    let buf = ''; let i = 0;
+    while (i < t.length) {
+      const ch = t[i];
+      if (ch === '{') {
+        const sel = buf.trim(); buf = '';
+        if (sel.startsWith('@')) { pila.push(sel.split(/\s+/)[0]); } else {
+          const cierra = t.indexOf('}', i);
+          if (cierra === -1) break;
+          const dentroDe = pila[pila.length - 1] || null;
+          const formas = formasDeOcultar(t.slice(i + 1, cierra));
+          // Los fotogramas de una animación no ocultan: describen un instante.
+          if (formas.length && dentroDe !== '@keyframes') {
+            out.push({ hoja: path.basename(f), selector: sel, formas, dentroDe });
+          }
+          i = cierra;
+        }
+      } else if (ch === '}') { pila.pop(); buf = ''; } else { buf += ch; }
+      i++;
+    }
+  }
+  if (!out.length) {
+    throw new Error(`[banco] SUELO: leí ${leidas} hoja(s) y NO encontré ni una regla que oculte. `
+      + 'Eso no es «no hay»: es «no supe mirar», y devolverlo como cero sería un verde falso.');
+  }
+  return out;
+}
+
+/**
+ * ¿Lo esconde el CSS externo? Tres respuestas, y la tercera es la que hace que esto sirva:
+ *
+ *   · `{ oculto: true,  … }` — una regla que el matcher SABE resolver casa con el nodo o un padre
+ *   · `{ oculto: false, … }` — ninguna casa, y ninguna quedó sin resolver: se ve
+ *   · `{ oculto: null,  ciego: [...] }` — hay reglas que MENCIONAN una clase del nodo y cuyo
+ *     selector el matcher NO sabe resolver. **No se contesta «se ve»**: se declara ciego.
+ *
+ * Esa tercera es la doctrina de SCRUM-451 aplicada aquí: devolver «visible» ante lo que no se
+ * sabe mirar es el `null` mudo que este fichero lleva tres tickets desterrando.
+ */
+export function ocultoPorCss(n, reglas) {
+  const cadena = [];
+  for (let x = n; x; x = x._padre) cadena.push(x);
+  const clasesDelNodo = new Set();
+  for (const x of cadena) {
+    for (const c of String(x.className || '').split(/\s+/).filter(Boolean)) clasesDelNodo.add(c);
+    if (x.id) clasesDelNodo.add(x.id);
+  }
+
+  const ciego = [];
+  for (const r of reglas) {
+    // Una regla sin ninguna forma de ocultación no esconde nada, por mucho que su selector case.
+    // `reglasQueOcultan` no las produce, pero esto se puede llamar con una lista a mano — y lo
+    // cazó el CONTROL NEGATIVO de SCRUM-666, no una revisión: marcaba una regla de color.
+    if (!r.formas || !r.formas.length) continue;
+    for (const parte of r.selector.split(',').map((s) => s.trim()).filter(Boolean)) {
+      let casaAlguno = null;
+      for (const x of cadena) {
+        const v = casa(x, parte); // el matcher de SCRUM-451: true | false | null (no soportado)
+        if (v === null) { casaAlguno = null; break; }
+        if (v === true) { casaAlguno = true; break; }
+        casaAlguno = false;
+      }
+      if (casaAlguno === true) {
+        return { oculto: true, porQue: `${r.hoja}: ${parte} { ${r.formas.join('; ')} }`, ciego: [] };
+      }
+      if (casaAlguno === null) {
+        // No se sabe resolver. Sólo se declara ciego si la regla MENCIONA algo que el nodo tiene:
+        // apuntar todas las que no se saben resolver haría el aviso inútil por ruidoso.
+        const menciona = (parte.match(/[#.][\w-]+/g) || []).some((t) => clasesDelNodo.has(t.slice(1)));
+        if (menciona) ciego.push(`${r.hoja}: ${parte} { ${r.formas.join('; ')} }`);
+      }
+    }
+  }
+  if (ciego.length) return { oculto: null, porQue: null, ciego };
+  return { oculto: false, porQue: null, ciego: [] };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-666b · «¿LA ESCONDE UNA REGLA?» NO ES «¿TIENE ALGUNA REGLA?»
+//
+// SCRUM-666 (PR #916) le dio a este banco las hojas de estilo, y con eso `ocultoPorCss` sabe
+// contestar si una regla ESCONDE un nodo. Pero eso deja fuera el caso peor, que es el que llegó
+// a producción: una vista pintada con clases que **no existen en ninguna hoja**.
+//
+//     ocultoPorCss(<div class="clase-que-nadie-ha-escrito-jamas">) → { oculto: false }
+//
+// `false` se lee como «se ve». Y una clase sin ni una regla no se ve: se pinta DESNUDA. El banco
+// no distinguía «tiene estilo y no lo esconde» de «no tiene estilo ninguno», que son la respuesta
+// buena y la peor noticia posible dando el mismo verde.
+//
+// ── LO MEDIDO EL 4-sep-2026, ANTES DE ESCRIBIR ESTO ──────────────────────────────────────
+// Las dos hojas locales definen **377 clases**. Contra ellas, las 27 vistas del panel escriben
+// **22 clases que no tienen ni una regla**, repartidas en 9 ficheros. Una sola está al 100 %:
+//
+//     parteDetailView.js → 4 clases, 4 sin regla. La pantalla entera sin una línea de CSS.
+//
+// 🔴 Y EL DATO QUE DECIDE EL DISEÑO: de esas 22, el barrido por PINTADO sólo ve 2. Las otras 20
+// —las 4 del parte incluidas— viven en ramas que el banco no llega a ejecutar: vistas que no
+// montan, o que se van por su rama de error. Medir «lo que se pintó» habría dejado fuera
+// justamente el caso que motivó el ticket, así que el barrido que manda es el ESTÁTICO.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Toda clase que aparezca en un SELECTOR de las hojas locales del índice — `@media` incluido.
+ *
+ * 🔴 EL `@media` NO ES UN DETALLE, es la diferencia entre medir y mentir. La primera versión de
+ * esto sólo miraba profundidad 0 y declaraba huérfanas `col-hide-mobile`, `table--cards-mobile` y
+ * `quote-line__qty`, que están las tres definidas **dentro de una media query**. Un instrumento
+ * que no entra en `@media` no encuentra menos: encuentra las de otro sitio.
+ *
+ * 🔴 Y EL CUERPO DE LA REGLA NO DEFINE NADA: `content: ".foo"` no crea la clase `foo`. Por eso se
+ * salta hasta el `}` en cuanto se abre un bloque de declaraciones, en vez de barrer el fichero
+ * entero con un regex.
+ *
+ * ⚠️ Los comentarios se quitan ANTES, y eso cazó un caso real: `styles.css:1276` explica en un
+ * comentario una regla `.quote-lines-table` que ya **no existe**. Contarla habría dado por
+ * estilada una clase que se pinta desnuda — la autorreferencia de siempre, aquí al revés.
+ *
+ * SUELO: si salen menos de 100 clases, LANZA. Cero clases y «no supe leer la hoja» son el mismo
+ * número con significados opuestos, y este fichero existe para no confundirlos.
+ */
+export function clasesDeLasHojas(raiz, hojas = null) {
+  const ficheros = hojas || hojasDelDashboard(raiz);
+  if (!ficheros.length) throw new Error('[banco] el índice no declara ninguna hoja de estilo local');
+  const out = new Set();
+  for (const f of ficheros) {
+    const t = fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    let buf = ''; let i = 0;
+    while (i < t.length) {
+      const ch = t[i];
+      if (ch === '{') {
+        const sel = buf.trim(); buf = '';
+        if (sel.startsWith('@')) {
+          // `@media`, `@supports` y `@layer` contienen MÁS selectores: se entra. `@keyframes` y
+          // `@font-face` sólo llevan declaraciones, así que se saltan enteros.
+          if (/^@(keyframes|font-face|page|property|counter-style)/i.test(sel)) {
+            let prof = 1; let j = i + 1;
+            while (j < t.length && prof > 0) { if (t[j] === '{') prof++; else if (t[j] === '}') prof--; j++; }
+            i = j - 1;
+          }
+        } else {
+          for (const m of sel.matchAll(/\.(-?[_a-zA-Z][\w-]*)/g)) out.add(m[1]);
+          const cierra = t.indexOf('}', i);
+          i = cierra === -1 ? t.length : cierra;
+        }
+      } else if (ch === '}') { buf = ''; } else { buf += ch; }
+      i++;
+    }
+  }
+  if (out.size < 100) {
+    throw new Error(`[banco] SUELO: leí ${ficheros.length} hoja(s) y sólo saqué ${out.size} clase(s). `
+      + 'Eso no es «hay pocas»: es «no supe leer los selectores», y devolverlo sería un verde falso.');
+  }
+  return out;
+}
+
+/**
+ * Las clases que un fuente de vista ESCRIBE en un `class="…"`, y cuántos atributos no supo leer.
+ *
+ * 🔴 SE DEVUELVE `ilegibles` A PROPÓSITO, y es la mitad del valor: un extractor que se comiera la
+ * mitad de los atributos en silencio informaría «ninguna clase huérfana» por no haber mirado. El
+ * consumidor exige que la cobertura sea alta ANTES de creerse el cero (SCRUM-559, el umbral con
+ * holgura que sólo detectaba la ceguera total).
+ *
+ * ⚠️ Los comentarios se quitan con `soloCodigo` (SCRUM-693), no a mano: documentar una clase
+ * retirada citándola no puede contar como pintarla. Es el trinquete de SCRUM-694.
+ *
+ * Los trozos interpolados (`${…}`) se descartan: no son un nombre de clase, son una decisión en
+ * tiempo de ejecución. Lo que rodea a la interpolación sí se lee.
+ */
+export function clasesEscritas(fuente, nombre = 'x.js') {
+  const src = soloCodigo(fuente, nombre);
+  const clases = new Set();
+  let atributos = 0; let ilegibles = 0;
+  for (const m of src.matchAll(/\bclass\s*=\s*(["'`])/g)) {
+    atributos++;
+    const comilla = m[1];
+    const desde = m.index + m[0].length;
+    // Hasta la comilla de cierre, saltándose lo interpolado — que puede llevar comillas dentro.
+    let i = desde; let valor = ''; let ok = false;
+    while (i < src.length) {
+      if (src[i] === comilla) { ok = true; break; }
+      if (src[i] === '$' && src[i + 1] === '{') {
+        let prof = 1; i += 2;
+        while (i < src.length && prof > 0) { if (src[i] === '{') prof++; else if (src[i] === '}') prof--; i++; }
+        // 🔴 UN NUL, NO UN ESPACIO — y la diferencia la cazó la medición, no una revisión.
+        // Con espacio, `class="status-pill status-pill-${v}"` producía el token
+        // `status-pill-`, que no es ninguna clase: es la MITAD de un nombre. Salía en el
+        // censo como huérfana y habría mandado a alguien a escribir una regla inventada.
+        // El NUL no separa: CONTAMINA el token que toca, y el filtro de abajo lo tira por
+        // no casar con el patrón. Lo que va suelto entre espacios (`class="a ${x} b"`) se
+        // sigue leyendo entero, que es lo que hay que conservar.
+        valor += '\u0000';
+        continue;
+      }
+      valor += src[i]; i++;
+    }
+    if (!ok) { ilegibles++; continue; }
+    for (const c of valor.split(/\s+/)) if (/^-?[_a-zA-Z][\w-]*$/.test(c)) clases.add(c);
+  }
+  return { clases, atributos, ilegibles };
 }
 
 /**
@@ -297,57 +703,190 @@ export function scriptsDelDashboard(raiz) {
  * AQUÍ, en el mismo commit que lo añade. Que sea una decisión explícita es el objetivo, no un
  * efecto colateral.
  */
-// SCRUM-574 (24-ago-2026) · 60 → 61: entra `switchFormaJuridica.js`, el switch Empresa/Persona
-// de la ficha de cliente. Se sube AQUÍ y en el mismo commit que añade el `<script>`, que es lo
-// que este número existe para forzar.
-// SCRUM-615 (24-ago-2026) · 61 → 62: entra `tipoDestinatarioPendiente.js`, el aviso y la pregunta
-// del tipo de destinatario en la bandeja de pendientes.
-//
-// 🔴 EL MERGE DE ESTAS DOS RAMAS NO SE RESUELVE CONSERVANDO LOS DOS LADOS, y por eso queda escrito:
-// las dos subieron 60 → 61 por separado, así que los dos lados decían `61` y **git dejó esa línea
-// FUERA de los marcadores de conflicto** — sólo chocaron los comentarios. Quedarse «los dos» habría
-// dejado el número en 61 con dos scripts nuevos dentro, y el guard habría pasado en verde
-// contando mal.
-//
-// Éste no es un número que se herede de ningún lado: se DERIVA. Medido sobre el `index.html` ya
-// mezclado, `grep -c "<script src="` da 62. Un contador que dos ramas incrementan a la vez se
-// resuelve contando, no eligiendo.
-// SCRUM-578 (24-ago-2026) · 62 -> 63: entra `prefijosPais.js`, el selector de prefijo de pais
-// del formulario de clientes. Se sube AQUI y en el mismo commit que anade el `<script>`.
-// SCRUM-605 (25-ago-2026) · 63 → 64: entra `quoteAtajosVencimiento.js`, la aritmetica pura de
-// los atajos de «Válido hasta» del presupuesto. Se sube EN EL MISMO COMMIT que el <script>, que
-// es lo que estos guards piden: un contador que sube solo deja de significar algo.
-//
-// 🔴 ESTE NUMERO SALIO DE UN CONFLICTO, y por eso no se hereda de ningun lado: SCRUM-578 y
-// SCRUM-605 escribieron 63 LOS DOS, cada uno por su script. Chocaron los COMENTARIOS y la linea
-// del valor quedo fuera de los marcadores — el incidente exacto que esta cabecera cuenta del 61.
-// Se resolvio CONTANDO sobre el index ya mezclado (`grep -c "<script src=" ` → 64), no eligiendo
-// un lado. Los dos comentarios se quedan: cada uno documenta un script real.
-// SCRUM-575 (24-ago-2026) · 63 -> 64: entra `nifEspanol.js`, la validacion de NIF/CIF/NIE en el
-// navegador (copia declarada de la del servidor, atada por el trinquete de scrum575).
-// SCRUM-575 (24-ago-2026) · 64 → 65: entra `nifEspanol.js`, la validación de NIF/CIF/NIE en el
-// navegador (copia declarada de la del servidor, atada por el trinquete de scrum575).
-//
-// 🔴 TERCERA VEZ QUE ESTE CONTADOR CHOCA, Y LA TERCERA CON LA MISMA FORMA: dos ramas suben el
-// número a LA VEZ, escriben el MISMO valor por scripts DISTINTOS, y git deja la línea del valor
-// **fuera de los marcadores** — sólo chocan los comentarios. Quien resuelva conservando «los dos
-// comentarios» y no toque el número deja el contador CORTO con dos scripts nuevos dentro.
-//
-// Se resuelve CONTANDO sobre el índice ya mezclado, nunca heredando de un lado:
-//     grep -c "<script src=" public/dashboard/index.html   →   65
-//
-// ⚠️ Y NO se convierte en derivado automático a propósito: subirlo tiene que seguir siendo una
-// DECISIÓN explícita, que es justo lo que hace que estos guards sirvan de algo.
-//
-// ── LA ANOMALÍA QUE SE MIDIÓ ANTES DE TOCAR NADA ─────────────────────────────────────────
-// Llegó la afirmación de que «con 64 declarado los tests pasan». **Es FALSA, y se comprobó
-// dejando 64 a propósito con 65 scripts reales:** caen los DOS guards que S2 dijo —
-// `dashboard-colisión` («se leyeron 65 y se esperaban 64») y el SUELO de SCRUM-417 («BANCO
-// CIEGO: 65 leídos y se esperaban 64»). El mecanismo NO tiene hueco.
-// Y la otra hipótesis —que el merge se hubiera comido un script— también es falsa: `nifEspanol.js`
-// y `quoteAtajosVencimiento.js` están LOS DOS en el índice y sus ficheros existen.
-export const SCRIPTS_DEL_DASHBOARD = 65;
+// ⚠️ Aquí vivía el historial de las SEIS colisiones de este contador, entrada por entrada.
+// Se retira con el contador: **ya no puede volver a pasar**, porque lo que se declara es la
+// LISTA y dos ramas que añaden scripts distintos no pueden escribir lo mismo (SCRUM-662).
+/**
+ * LOS SCRIPTS DEL DASHBOARD — UNA LISTA, NO UNA CUENTA (SCRUM-662).
+ *
+ * ⚠️ Aquí hubo un número, y ese número colisionó SEIS veces. La séptima fue la que lo mató, y
+ * merece quedar en una línea: **los dos lados escribieron `= 69` por scripts DISTINTOS** —una
+ * rama sumaba `quoteApartados.js` y main sumaba `tiposDeIva.js`—. Lo único que hizo visible el
+ * choque fue que el comentario de al lado llevaba meses engordando y también chocó; sin esa
+ * casualidad, git habría fundido «= 69» sin marcadores y main se habría quedado declarando un
+ * script menos de los que carga. Un comentario haciendo de mecanismo por accidente.
+ *
+ * 🔴 UNA CUENTA NO DISTINGUE «TU SCRIPT» DE «MI SCRIPT»; UNA LISTA SÍ. Dos ramas que añaden
+ * cosas distintas producen listas distintas: o git las funde y quedan las dos —correcto—, o
+ * chocan donde se ve. Nunca «coinciden» por accidente, que era el fallo.
+ *
+ * ── QUÉ PROTEGE, Y PARA QUIÉN ────────────────────────────────────────────────────────────
+ * Sus dos consumidores no querían un número: querían no estar CIEGOS. `dashboard-colisión`
+ * comprueba que lee el índice entero antes de decir «cero colisiones», y el banco de SCRUM-417
+ * que carga todas las vistas antes de decir «ninguna falla». SCRUM-559 ya midió el fallo real:
+ * quitar UNA etiqueta dejaba a los dos en verde con ese fichero fuera de vigilancia. La lista
+ * responde eso mejor que la cuenta, porque además **dice cuál**.
+ *
+ * ── POR QUÉ LA LISTA Y NO LA SECUENCIA ───────────────────────────────────────────────────
+ * Se compara como CONJUNTO —ordenada alfabéticamente, no por orden de carga— a conciencia:
+ *
+ *   · Lo que rompe el producto no es «el orden» en abstracto: son DEPENDENCIAS concretas, y
+ *     esas van declaradas abajo con su motivo y se comprueban por separado.
+ *   · Exigir las 69 posiciones convertiría cualquier inserción en un conflicto de diseño y
+ *     prometería un orden que nadie mantiene: `public/sw.js` lleva su lista en OTRA secuencia
+ *     desde antes de este ticket, y SCRUM-274 pasa porque compara con `new Set`.
+ *
+ * Alfabética y no en orden de carga también por esto: dos inserciones en sitios distintos del
+ * alfabeto se funden solas y correctamente, en vez de chocar por vecindad.
+ */
+export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
+  'aiQuoteAssistant.js',
+  'albaranActionsRegistry.js',
+  'albaranDetailView.js',
+  'albaranesView.js',
+  'almacenLocal.js',
+  'api.js',
+  'app.js',
+  'cobrosView.js',
+  'colaDeFirmas.js',
+  'contacto.js',
+  'csvImport.js',
+  'customerDetailView.js',
+  'customersView.js',
+  // SCRUM-587 (CONT-14) · el descuento pactado con el cliente, PROPUESTO. Va DESPUÉS de
+  // `quoteDescuentos.js`, del que lee la aritmética y sin el cual se niega a funcionar, y ANTES
+  // de `quotesView.js`, que le pide la propuesta al elegir cliente.
+  'descuentoPorDefecto.js',
+  'estadoFirma.js',
+  'expensesView.js',
+  'exportView.js',
+  'facturaPreEmision.js',
+  'filtroClientes.js',
+  'globalSearch.js',
+  'homeView.js',
+  'invoiceActionsRegistry.js',
+  'invoiceDetailView.js',
+  'invoicesView.js',
+  'jobActionsRegistry.js',
+  'jobCobroHuecos.js',
+  'jobDetailView.js',
+  'jobDocsReparto.js',
+  'jobNextAction.js',
+  // SCRUM-651 (2-sep-2026): entra `jobNuevoModal.js`, el modal para abrir un Trabajo SIN
+  // presupuesto —una averia, el caso mas frecuente del primer cliente real—. Va ANTES de
+  // `jobsView.js`, que lo consume, y despues de `modalHeader.js`, del que usa `cabeceraModal`.
+  //
+  // 🔴 ESTA RAMA TRAIA UN NUMERO (`= 67`) Y NO SE HA CONSERVADO NADA DE EL. El conflicto se
+  // resolvio quedandose con el mecanismo de main: SCRUM-662 mato el contador y puso esta lista,
+  // porque una cuenta no distingue «tu script» de «mi script» y colisiono siete veces. Traer de
+  // vuelta el numero —o su historial, que main retira a proposito— habria deshecho ese ticket.
+  //
+  // La entrada se DERIVO del `index.html` ya mezclado, no se heredo de ningun lado: son 71
+  // `<script src=`, la lista de main tenia 70, y la diferencia era exactamente este fichero.
+  'jobNuevoModal.js',
+  'jobRailBlocks.js',
+  'jobAsignados.js',
+  'jobsCierreTrabajo.js',
+  'jobsView.js',
+  'libroRegistroView.js',
+  'margenCatalogo.js',
+  'modalHeader.js',
+  'nifEspanol.js',
+  'nuevaFacturaModal.js',
+  'onboardingView.js',
+  'paidViaEtiquetas.js',
+  'parteDetailView.js',
+  'parteOficinaView.js',
+  'patronDetalleAcciones.js',
+  'plansView.js',
+  'prefijosPais.js',
+  'productsView.js',
+  'providersView.js',
+  'puertaSerie.js',
+  'quoteActionsRegistry.js',
+  'quoteApartados.js',
+  // SCRUM-594 (DOC-04) · la aritmética de los descuentos del presupuesto. Va ANTES de
+  // `quotesView.js`, que la consume en `recalcTotals` y al componer el payload.
+  'quoteDescuentos.js',
+  'quoteCaducidad.js', // SCRUM-633
+  'quoteDireccionObra.js', // SCRUM-602 (DOC-12)
+  'quoteRevisiones.js',
+  'quoteAtajosVencimiento.js',
+  'quoteMargen.js',
+  'quoteRequestsView.js',
+  'quoteSuplido.js',
+  'quotesDetailView.js',
+  // SCRUM-599 · el registro del atajo «N». Va ANTES que las vistas: ellas se registran en él.
+  'atajoNuevo.js',
+  'quotesListView.js',
+  'quotesTabs.js',
+  'quotesView.js',
+  'reportsView.js',
+  'resistenciaAlmacen.js',
+  'selectorMetodoCobro.js',
+  'semaforoFiscal.js',
+  'settingsSubmenus.js',
+  'settingsView.js',
+  'signaturePad.js',
+  'switchFormaJuridica.js',
+  'switchTipoArticulo.js',
+  'teamView.js',
+  'templatesView.js',
+  'terminadoSinCobrar.js',
+  'textoDelDocumento.js',
+  'tipoDestinatarioPendiente.js',
+  'tiposDeIva.js',
+  'tutorial.js',
+  'voiceInput.js',
+]);
+/**
+ * LAS DEPENDENCIAS DE CARGA — la mitad que la cuenta NUNCA vigiló.
+ *
+ * Los scripts clásicos comparten ámbito y se ejecutan en el orden del índice: si el consumidor
+ * carga antes que la pieza que consume, la pantalla revienta al abrirse. Un recuento correcto
+ * no dice nada de esto — si un merge reordena sin añadir ni quitar, la cuenta sigue cuadrando y
+ * el producto carga mal.
+ */
+export const DEPENDENCIAS_DE_CARGA = Object.freeze([
+  { antes: 'filtroClientes.js', despues: 'customersView.js', motivo: 'SCRUM-581: pestañas y orden de la lista' },
+  { antes: 'margenCatalogo.js', despues: 'productsView.js', motivo: 'SCRUM-609: la aritmética del margen' },
+  { antes: 'switchTipoArticulo.js', despues: 'productsView.js', motivo: 'SCRUM-609: el switch Producto|Servicio' },
+  { antes: 'quoteApartados.js', despues: 'quotesDetailView.js', motivo: 'SCRUM-655: apartados, numeración y descripción' },
+  { antes: 'signaturePad.js', despues: 'parteDetailView.js', motivo: 'SCRUM-652: el parte abre el pad de firma' },
+  { antes: 'colaDeFirmas.js', despues: 'parteDetailView.js', motivo: 'SCRUM-652: firma con la cola que ya existe' },
+  // SCRUM-593 (DOC-03): la pieza se carga antes que sus DOS consumidores. `jobDetailView.js`
+  // YA la consume (el campo de cabecera del albaran); `quotesView.js` la consumira cuando salga
+  // SCRUM-598 de ese fichero, y la dependencia se declara igualmente: si un merge la reordenara
+  // antes de que exista el consumidor, el rojo aparecería en la pantalla del profesional.
+  { antes: 'textoDelDocumento.js', despues: 'jobDetailView.js', motivo: 'SCRUM-593: el campo de cabecera del albaran' },
+  { antes: 'textoDelDocumento.js', despues: 'quotesView.js', motivo: 'SCRUM-593: los dos textos libres (consumidor tras SCRUM-598)' },
+  // SCRUM-587 (CONT-14): las DOS direcciones se declaran, porque la pieza está en medio. Si un
+  // merge la colocara antes que `quoteDescuentos.js`, se quedaría sin la aritmética que lee —y
+  // ella LANZA en vez de improvisar una segunda, así que el rojo saldría en la pantalla.
+  { antes: 'quoteDescuentos.js', despues: 'descuentoPorDefecto.js', motivo: 'SCRUM-587: lee `dtoDeLinea` y no reimplementa la aritmética' },
+  { antes: 'descuentoPorDefecto.js', despues: 'quotesView.js', motivo: 'SCRUM-587: el editor le pide la propuesta al elegir cliente' },
+]);
 
+/** Nombre a secas, venga con prefijo `js/` o sin él, y sea cadena u objeto `{fichero}`. */
+export function nombreDeScript(x) {
+  const s = typeof x === 'string' ? x : (x && x.fichero) || '';
+  return String(s).replace(/^js[/]/, '');
+}
+
+/**
+ * Contrasta lo LEÍDO del índice contra la lista declarada. Devuelve qué sobra y qué falta —
+ * nombrado, que es lo que una cuenta no podía dar.
+ */
+export function contrastarScripts(leidos) {
+  const vistos = (Array.isArray(leidos) ? leidos : []).map(nombreDeScript).filter(Boolean);
+  const declarados = new Set(SCRIPTS_DEL_DASHBOARD);
+  const set = new Set(vistos);
+  return {
+    vistos,
+    sobran: [...set].filter((n) => !declarados.has(n)).sort(),
+    faltan: SCRIPTS_DEL_DASHBOARD.filter((n) => !set.has(n)),
+  };
+}
 /**
  * Monta el dashboard como lo monta el navegador y devuelve el contexto vivo.
  *
@@ -439,6 +978,24 @@ export function cargarDashboard(raiz, opciones = {}) {
     TextEncoder, TextDecoder, btoa: globalThis.btoa, atob: globalThis.atob,
     console: { log() {}, warn() {}, info() {}, debug() {}, error(...a) { reg.errores.push(a.map(String).join(' ')); } },
     alert() {}, confirm: () => true, prompt: () => null, open: () => ({ focus() {} }),
+    // 🔴 SCRUM-660 · `window.addEventListener`. NO LO TENÍA, y por eso `renderQuotesView`
+    // REVENTABA a media pintada — medido: con la vista de `origin/main`, sin ningún cambio de
+    // producto, el banco daba `window.addEventListener is not a function`.
+    //
+    // La consecuencia era peor que un test menos: la pantalla de presupuestos se pintaba HASTA
+    // ese punto y luego paraba, así que sus LÍNEAS nunca llegaban a existir en el banco. Todo lo
+    // que viva en una línea —el selector de IVA de SCRUM-611, entre otras cosas— era
+    // estructuralmente inalcanzable para cualquier control de pantalla, y eso es exactamente el
+    // hueco que 611 declaró al entregar: «si alguien dejara el <select> sin insertar o tras un
+    // display:none, todos seguirían verdes».
+    //
+    // Se GUARDAN los oyentes, como hacen los nodos, en vez de tragárselos: un banco que acepta
+    // registros y luego no los puede disparar mide una pantalla que no existe.
+    _oyentes: {},
+    addEventListener(tipo, fn) { (ctx._oyentes[tipo] = ctx._oyentes[tipo] || []).push(fn); },
+    removeEventListener(tipo, fn) {
+      ctx._oyentes[tipo] = (ctx._oyentes[tipo] || []).filter((f) => f !== fn);
+    },
     matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
     appUserRole: opciones.rol ?? 'admin',
     // SCRUM-474 fase 2 · lo que `app.js` deja aquí al arrancar. Va SIEMPRE, también con escenario
@@ -471,6 +1028,34 @@ export function cargarDashboard(raiz, opciones = {}) {
  * Pinta una vista y devuelve lo que salió. **No lanza**: devuelve el error, para que el test
  * pueda enseñar el mensaje en vez de morir con una traza sin contexto.
  */
+/**
+ * 🔴 SCRUM-698 · LA FORMA MÍNIMA PARA QUE UNA VISTA LLEGUE A MONTARSE.
+ *
+ * El `fetch` del banco devuelve `{}` cuando nadie le pasa `datos`, y `{}.filter` no existe: por
+ * eso CINCO pantallas del panel no llegaban a montarse —`quoteRequests`, `team`, `templates`,
+ * `plans` y `albaranDetail`— y ningún guard apoyado en el banco podía afirmar NADA sobre ellas.
+ * Medido: no falla ninguna de las cinco por su código; fallan porque se les sirve `{}`.
+ *
+ * ⚠️ QUÉ ES Y QUÉ NO ES. Esto NO es el contrato del backend y no se puede usar para afirmar nada
+ * sobre el CONTENIDO de una pantalla: es la forma mínima que hace falta para que la vista llegue
+ * a pintarse, derivada de lo que cada una PIDE. Quien quiera medir contenido pasa sus propios
+ * datos, como se ha hecho siempre — este fixture no le quita el sitio a nadie.
+ *
+ * Y por eso NO se pone como valor por defecto de `cargarDashboard`: cambiar lo que reciben las
+ * vistas que hoy se montan movería mediciones ajenas sin que nadie lo pidiera. Se ofrece, no se
+ * impone.
+ */
+export function datosDeMuestra(url) {
+  const u = String(url || '');
+  // Un objeto con `plans`: la vista hace `plans[0]` sin comprobarlo antes.
+  if (/\/billing\/plans/.test(u)) return { plans: [], currentPlan: null, founding: null };
+  // Un albarán con ESTADO CONOCIDO. El estado importa: `destinoEfectivo` devuelve `undefined`
+  // para un estado que el registro no contempla, y la vista revienta al agrupar los botones.
+  if (/\/albaranes\//.test(u)) return { id: 1, estado: 'borrador', lines: [], items: [] };
+  // Las listas del panel esperan un array. Es lo que devuelven sus endpoints.
+  return [];
+}
+
 export async function pintarVista(banco, nombreFn) {
   const fn = banco.ctx[nombreFn];
   if (typeof fn !== 'function') {
@@ -478,6 +1063,31 @@ export async function pintarVista(banco, nombreFn) {
   }
   const contenedor = banco.mk('div');
   const idsAntes = banco.reg.idsNoResueltos.length;
+
+  // 🔴 SCRUM-698 · LOS RECHAZOS HUÉRFANOS SE RECOGEN, NO MATAN EL PROCESO.
+  //
+  // `reportsView` dispara su carga SIN esperarla (`load()`, `loadVat()`), así que su promesa no
+  // pasa por aquí: cuando rechaza, no hay nadie que la maneje y el proceso ENTERO se cae. Y eso,
+  // en una tanda, es el defecto de SCRUM-672 con otra cara: **el fichero muere y se lleva sus
+  // tests con él**, sin un `fail` que diga quién fue. El total baja y el porcentaje de verdes
+  // puede incluso mejorar.
+  //
+  // No se puede resolver envolviendo la vista —la promesa huérfana no vuelve por ningún sitio—,
+  // así que se apartan los oyentes MIENTRAS dura el montaje y se devuelven en un `finally`.
+  //
+  // 🔴 ESTO NO ES TRAGARSE NADA: los rechazos SE DEVUELVEN en `rechazos`, con su vista delante,
+  // para que un test pueda exigir que estén vacíos y NOMBRAR al culpable. Lo que se aparta es el
+  // veredicto automático del runner, no la medición.
+  const rechazos = [];
+  const oyentes = process.listeners('unhandledRejection');
+  process.removeAllListeners('unhandledRejection');
+  const anota = (e) => rechazos.push(`${nombreFn}: ${String((e && e.message) || e).slice(0, 120)}`);
+  process.on('unhandledRejection', anota);
+  const devolverOyentes = () => {
+    process.off('unhandledRejection', anota);
+    for (const o of oyentes) process.on('unhandledRejection', o);
+  };
+
   try {
     const r = fn(contenedor);
     // 🔴 SCRUM-448 · SE ESPERA LA VISTA **O** UNOS TICKS, LO QUE PASE ANTES.
@@ -493,13 +1103,37 @@ export async function pintarVista(banco, nombreFn) {
     if (r && typeof r.then === 'function') await Promise.race([r, ticks]);
     await ticks;
   } catch (e) {
-    return { error: e, contenedor };
+    devolverOyentes();
+    return { error: e, contenedor, rechazos };
   }
+  devolverOyentes();
   return {
     error: null,
     contenedor,
     nodos: todos(contenedor).length,
     idsNoResueltos: banco.reg.idsNoResueltos.slice(idsAntes),
     erroresDeConsola: banco.reg.errores.slice(),
+    // Vacío casi siempre. Cuando no lo esté, dice QUÉ vista dejó la promesa suelta y con qué
+    // error — que es justo lo que el proceso muriéndose no decía.
+    rechazos,
   };
+}
+
+/**
+ * Las DEPENDENCIAS declaradas que se estén incumpliendo, sobre el orden REAL del índice.
+ *
+ * Recibe los nombres EN ORDEN DE CARGA. Devuelve las parejas rotas, cada una con su motivo — que
+ * es lo que hace accionable el fallo: «X va antes de Y» sin decir por qué se arregla moviendo el
+ * que no era.
+ */
+export function dependenciasRotas(nombresEnOrden) {
+  const orden = (Array.isArray(nombresEnOrden) ? nombresEnOrden : []).map(nombreDeScript);
+  const rotas = [];
+  for (const d of DEPENDENCIAS_DE_CARGA) {
+    const a = orden.indexOf(d.antes);
+    const b = orden.indexOf(d.despues);
+    if (a === -1 || b === -1) { rotas.push({ ...d, falta: true }); continue; }
+    if (a > b) rotas.push({ ...d, falta: false, posAntes: a, posDespues: b });
+  }
+  return rotas;
 }

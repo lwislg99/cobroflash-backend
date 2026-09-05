@@ -63,7 +63,7 @@ test('SCRUM-306 · CONTROL NEGATIVO: el reinicio anual LEGÍTIMO sigue funcionan
 });
 
 test('SCRUM-306 · la vista previa NO enseña el número reiniciado', () => {
-  assert.equal(vistaPreviaAlbaran({ albaranSeriesYear: 2026, nextAlbaranNumber: 12 }, 2026), 'ALB-2026-012');
+  assert.equal(vistaPreviaAlbaran({ albaranSeriesYear: 2026, nextAlbaranNumber: 12 }, 2026), 'AB260012');
   // Y con el contador movido sin año, falla en vez de enseñar `ALB-2026-001`: enseñarlo sería
   // confirmarle al profesional el reinicio justo antes de que ocurra.
   assert.throws(
@@ -88,7 +88,7 @@ test('SCRUM-306 · la vista previa usa las MISMAS funciones que la reserva', () 
 // ── 2 · EL DETECTOR ES EL DE A4 ─────────────────────────────────────────────────────────
 
 test('SCRUM-306 · SUELO: el detector encuentra los albaranes que existen', () => {
-  const r = huecosDeAlbaranes(['ALB-2026-001', 'ALB-2026-002', 'ALB-2026-003'], 2026);
+  const r = huecosDeAlbaranes(['AB260001', 'AB260002', 'AB260003'], 2026);
   assert.equal(
     r.emitidos, 3,
     `🔴 ESCÁNER CIEGO: el detector ve ${r.emitidos} albaranes y se le han dado 3. Un cero de «todo ` +
@@ -100,7 +100,7 @@ test('SCRUM-306 · SUELO: el detector encuentra los albaranes que existen', () =
 
 test('SCRUM-306 · CONTROL NEGATIVO: una serie sin huecos NO avisa', () => {
   // Si solo se probara el aviso, no se habría probado que no se avisa siempre.
-  const r = huecosDeAlbaranes(['ALB-2026-001', 'ALB-2026-002', 'ALB-2026-003'], 2026);
+  const r = huecosDeAlbaranes(['AB260001', 'AB260002', 'AB260003'], 2026);
   assert.deepEqual(
     r.huecos, [],
     '🔴 avisa de huecos en una serie perfectamente correlativa. Un detector que avisa siempre es ' +
@@ -109,8 +109,8 @@ test('SCRUM-306 · CONTROL NEGATIVO: una serie sin huecos NO avisa', () => {
 });
 
 test('SCRUM-306 · un hueco real se detecta y se NOMBRA', () => {
-  const r = huecosDeAlbaranes(['ALB-2026-001', 'ALB-2026-003', 'ALB-2026-004'], 2026);
-  assert.deepEqual(r.huecos, ['ALB-2026-002'], '🔴 no detecta el hueco, o no lo nombra');
+  const r = huecosDeAlbaranes(['AB260001', 'AB260003', 'AB260004'], 2026);
+  assert.deepEqual(r.huecos, ['AB260002'], '🔴 no detecta el hueco, o no lo nombra');
   assert.equal(r.emitidos, 3);
   assert.equal(r.ultimoSeq, 4);
   // Lo que falta POR ENCIMA del último no es hueco: la serie aún no ha llegado.
@@ -118,13 +118,13 @@ test('SCRUM-306 · un hueco real se detecta y se NOMBRA', () => {
   // ⚠️ SCRUM-237 · esta negación necesita su HERMANO POSITIVO. Sola sería verde permanente: si el
   // detector no compusiera nunca `ALB-2026-005`, el `!includes` pasaría por vacío en vez de por
   // discriminar. Así que primero se comprueba que ESE MISMO número SÍ sale cuando es un hueco real.
-  const conHueco005 = huecosDeAlbaranes(['ALB-2026-004', 'ALB-2026-006'], 2026);
+  const conHueco005 = huecosDeAlbaranes(['AB260004', 'AB260006'], 2026);
   assert.ok(
-    conHueco005.huecos.includes('ALB-2026-005'),
+    conHueco005.huecos.includes('AB260005'),
     '🔴 ESCÁNER CIEGO: `ALB-2026-005` no sale como hueco ni cuando lo es. La negación de abajo ' +
       'estaría pasando porque ese número no se compone nunca, no porque no sea un hueco.',
   );
-  assert.ok(!r.huecos.includes('ALB-2026-005'), '🔴 inventa un hueco en el futuro');
+  assert.ok(!r.huecos.includes('AB260005'), '🔴 inventa un hueco en el futuro');
 });
 
 test('SCRUM-306 · es EL MISMO detector que A4, no una copia', () => {
@@ -144,7 +144,7 @@ test('SCRUM-306 · es EL MISMO detector que A4, no una copia', () => {
   );
 
   // Y de verdad: el resultado del atajo es idéntico al de llamar a A4 a mano con el compositor.
-  const numeros = ['ALB-2026-001', 'ALB-2026-003'];
+  const numeros = ['AB260001', 'AB260003'];
   assert.deepEqual(
     huecosDeAlbaranes(numeros, 2026),
     huecosDeLaSerie(numeros, null, 2026, false, componerNumeroAlbaran),
@@ -182,7 +182,7 @@ test('SCRUM-306 · CONTROL POSITIVO con FACTURAS: el uso que ya existía sigue i
 
 test('SCRUM-306 · las dos series no se mezclan', () => {
   // Un albarán no casa como factura ni al revés: mezclarlas inventaría huecos que no existen.
-  assert.equal(formatAlbaranNumber(2026, 1), 'ALB-2026-001');
+  assert.equal(formatAlbaranNumber(2026, 1), 'AB260001');
   assert.notEqual(formatAlbaranNumber(2026, 1), formatInvoiceNumber('CF', 2026, 1, false));
   const r = huecosDeAlbaranes(['2026-CF-001'], 2026);
   assert.deepEqual(

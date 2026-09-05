@@ -146,9 +146,23 @@ test('SCRUM-387 · lo INDETERMINADO no se cuenta como mergeado', () => {
 //
 //     fatal: Not a valid object name origin/main
 //
-// **CI no tiene `origin/main` fetcheado.** Es la SEGUNDA vez en dos días que un guard se cae por
+// **CI no tenía `origin/main` fetcheado.** Es la SEGUNDA vez en dos días que un guard se cae por
 // darlo por hecho — la primera fue SCRUM-291, que lo resolvió trayéndose la referencia DENTRO del
 // repo (un sha256 congelado) en vez de pedirla a un ref remoto.
+//
+// ⚠️ ESE MOTIVO CADUCÓ, Y LA DECISIÓN NO (corregido en SCRUM-726, avisó Javier). Desde SCRUM-388
+// el checkout usa `fetch-depth: 0` —comprobado hoy en `.github/workflows/ci.yml`, y también en
+// `vigia-despliegue.yml` y `zona-roja.yml`—, así que hoy el ref **sí** está. Se deja escrito lo
+// que pasó porque es la historia real, pero quien lea esto no debe deducir que CI no fetchea:
+// dejó de ser cierto.
+//
+// **La decisión sigue siendo la correcta por una razón mejor que la avería**: `origin/main` es un
+// blanco MÓVIL. Un guard de PR que lo lea mide algo que puede cambiar entre que se abre la PR y
+// se mergea, y entonces su verde no habla del árbol que se está probando. La referencia buena no
+// es la que está disponible: es la que responde a la pregunta.
+//
+// 🔒 Un guard cuya razón escrita ya no es cierta enseña una cosa falsa del árbol a quien lo lea,
+// aunque siga cazando bien lo suyo.
 //
 // ⚠️ LO QUE NO SE HA HECHO, Y ERA LA TENTACIÓN: saltarse la comprobación cuando falta la
 // referencia. Eso haría que «no pude mirar» se leyera igual que «miré y no hay desfases» — que es
@@ -226,7 +240,7 @@ test('SCRUM-387 · el censo no va a buscar su referencia FUERA del árbol bajo p
   // la referencia correcta. No corre en CI.
   for (const f of ['tests/scrum387-censo-reparto.test.mjs', 'scripts/_censo-reparto.mjs']) {
     assert.deepEqual(arrancaProcesos(f), [],
-      `${f} arranca procesos: si eso es git, su referencia vive fuera del árbol y CI —que no tiene \`origin/main\` fetcheado— lo tumbará. La referencia de un guard de PR es el ÁRBOL BAJO PRUEBA`);
+      `${f} arranca procesos: si eso es git, su referencia vive FUERA del árbol que se está probando. La referencia de un guard de PR es el ÁRBOL BAJO PRUEBA, que tras el merge SERÁ main — \`origin/main\` es un blanco móvil y puede cambiar entre que se abre la PR y se mergea. (Antes aquí ponía «CI no tiene origin/main fetcheado»: eso dejó de ser cierto con \`fetch-depth: 0\` desde SCRUM-388, y la decisión sigue en pie por el motivo de arriba — SCRUM-726.)`);
   }
   // Hermano positivo (SCRUM-237): el detector SÍ encuentra algo cuando lo hay, así que un
   // `deepEqual([])` verde significa algo. El CLI es el control: sabemos que arranca git.

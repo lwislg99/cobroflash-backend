@@ -5,26 +5,101 @@ import axios from 'axios';
 import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
 import { invoicesDir } from '../../../../core/storage/dirs';
-import { cantidadDeLinea, calcVatBreakdown } from '../../domain/vat.service'; // SCRUM-504: una sola cantidad
+import { cantidadDeLinea } from '../../domain/vat.service'; // SCRUM-504: una sola cantidad
 import { getLocale } from '../../../../core/i18n/locales';
+import { formatImporteEs } from '../../../../core/utils/utils'; // SCRUM-636: el sitio unico
 import { nombreParaDocumento } from '../../../../core/documentos/nombreParaDocumento'; // SCRUM-577
 import { partirConceptoYDescripcion } from './conceptoLinea'; // SCRUM-603 (DOC-13)
+// SCRUM-656 (T7): CÓMO se presenta el IVA de un PRESUPUESTO y sus cláusulas de cierre. El
+// cálculo sigue siendo `calcVatBreakdown`; estos módulos solo deciden qué se pinta.
+import { pieDePresupuesto, leerModoIva } from '../../../quotes/domain/presentacionIva';
+import { clausulasParaDocumento } from '../../../quotes/domain/clausulas';
+// SCRUM-602 (DOC-12) · el resolvedor de los tres modos y el rótulo, del dominio: la maqueta no decide.
+import { resolverDireccionObra, ROTULO_DIRECCION_OBRA_PDF, type ClienteConFacturacion } from '../../../../core/documentos/direccionObra';
 
 /**
- * Un importe, con sus dos decimales. SCRUM-604 (DOC-14).
+ * Un importe, con sus dos decimales. SCRUM-604 (DOC-14) · RESUELTO en SCRUM-636.
  *
- * ⚠️ ES EL MISMO CUERPO que el `fmt` que vive DENTRO de la función del PDF de factura
- * (`v.toLocaleString('es-ES', …)`), y no se han unificado A PROPÓSITO: el encargo de SCRUM-604
- * dice que la factura NO se toca, y sacarle su `fmt` sería tocarla. `scrum604b` compara las dos
- * salidas y falla si se separan — divergencia VIGILADA, que es lo que se puede hacer hoy.
+ * ⚠️ ESTE BLOQUE DECÍA LO CONTRARIO Y SE REESCRIBE EN VEZ DE BORRARSE. Decía que `fmtImporte` y el
+ * `fmt` de dentro de la factura «no se han unificado A PROPÓSITO», y declaraba —bien— que la misma
+ * expresión estaba copiada en seis sitios más y que **no existía un formateador de dinero
+ * compartido en `src/`**. Las dos cosas ya no son ciertas, y dejarlas escritas mandaría a quien las
+ * lea a resolver un problema que ya está resuelto.
  *
- * HALLAZGO DECLARADO, de otro carril y por tanto no arreglado aquí (regla 9): esta misma
- * expresión está copiada en SEIS sitios más del árbol (`payBizum.routes`, `albaranPdf.service`
- * ×2, `albaranPublicVista`, `weeklyDigest.service`, `customerPortal.routes`). No existe un
- * formateador de dinero compartido en `src/`.
+ * Lo que pasó: SCRUM-604 dijo «la factura NO se toca» y `scrum604b` vigiló la divergencia, que era
+ * lo que se podía hacer entonces. SCRUM-636 midió lo que aquello ocultaba — que
+ * `toLocaleString('es-ES')` NO agrupa los enteros de cuatro cifras (CLDR), así que el documento
+ * escribía `1000,00` y `12.345,67`, incoherente consigo mismo justo en la banda del importe
+ * corriente de un trabajo— y el fundador decidió la convención española en LOS CINCO sitios.
+ *
+ * El sitio único es `formatImporteEs` (`core/utils/utils.ts`), el mismo algoritmo que SCRUM-436
+ * fijó para el front: medido, 10/10 salidas idénticas sobre los valores de borde de SCRUM-625.
  */
+/**
+ * SCRUM-623 · El rótulo de la columna de BASES del desglose por tipo.
+ *
+ * La FORMA la decidió el fundador (una fila por tipo, con su base y su cuota); la PALABRA no
+ * está escrita, y no me toca escribirla (regla 30). Sale con marcador A PROPÓSITO: es la única
+ * forma de que nadie encienda por descuido un rótulo sin firmar en un documento fiscal.
+ *
+ * ⚠️ SE VE EN EL PDF. Sólo en facturas de MÁS DE UN TIPO, y hoy eso no llega a un cliente real:
+ * `INVOICING_ES_ENABLED` está OFF para merchants ES (regla 24) y la demo lleva marca de agua.
+ * Aun así, esto hay que apagarlo escribiendo la palabra, no dejándolo correr.
+ */
+export const MARCADOR_MICROCOPY_DESGLOSE = '[PENDIENTE microcopy oficial]';
+
+/**
+ * SCRUM-593 (DOC-03) · El título del bloque FINAL del documento.
+ *
+ * ✅ APROBADO por el fundador el 2-sep-2026: «Observaciones», literal y sin variantes, en los tres
+ * documentos. **NO lleva marcador**: marcar texto firmado obligaría a refirmarlo.
+ */
+export const TITULO_OBSERVACIONES = 'Observaciones';
+
+/**
+ * SCRUM-593 (DOC-03) · EL BLOQUE DE CABECERA NO LLEVA RÓTULO. Decisión del fundador, 2-sep-2026.
+ *
+ * Aquí vivía un `MARCADOR_MICROCOPY_CABECERA_DOC` esperando a que se firmara un rótulo. Lo que se
+ * firmó fue **que no hay rótulo**: en el documento se imprime sólo el texto del profesional. El
+ * rótulo aprobado —«Añadir texto en el documento»— es del FORMULARIO, no del papel, y por eso vive
+ * en `public/dashboard/js/textoDelDocumento.js` y no aquí.
+ *
+ * ⚠️ EL PDF QUEDA ASIMÉTRICO A PROPÓSITO: arriba, texto sin rótulo; abajo, «Observaciones» con el
+ * suyo. Es lo pedido, no un descuido — queda registrado en `docs/master/SCRUM-593.md` para que
+ * dentro de seis meses nadie lo lea como incoherencia y lo «arregle».
+ */
+
+/**
+ * SCRUM-623 (enmienda) · EL NOMBRE DEL IMPUESTO ES UN DATO, NO UNA CONSTANTE DE LA MAQUETA.
+ *
+ * Canarias es mercado, y un profesional canario NO repercute IVA: repercute **IGIC**, con tipos
+ * propios. En Ceuta y Melilla, **IPSI**. Si el nombre estuviera grabado en la forma del
+ * desglose, abrirle la puerta después obligaría a rehacer el bloque de totales de un documento
+ * ya emitido — caro, y con la regla 29 delante. Hoy sale gratis: se recibe por parámetro.
+ *
+ * 🔴 Y POR QUÉ ESTE VALOR NO SE RESUELVE AQUÍ, que es la parte que importa:
+ *
+ * Existe `locale.vatName` (`core/i18n/locales.ts`), que ya vale `IGV` en Perú y que el desglose
+ * del PRESUPUESTO de este mismo fichero ya consume. **NO se reutiliza, y no es por capricho:
+ * está indexado por PAÍS, y Canarias es `ES`.** Resolver el nombre desde el país le daría `IVA`
+ * a un canario — o sea, una forma que PARECE neutral y no lo es, que es justo lo que no puede
+ * pasar. Y medido: `Merchant` no tiene ningún campo de territorio fiscal; su única columna
+ * geográfica es `country`. Con el dato de hoy, QUÉ IMPUESTO APLICA NO ES RESOLUBLE.
+ *
+ * Así que esto abre la puerta y no la cruza: la MAQUETA queda neutral y quien sepa el impuesto
+ * lo pasa. Mientras nadie lo pase, el papel sale exactamente igual que hasta hoy.
+ *
+ * ⚠️ Este valor por defecto es el de la España peninsular y NO es una decisión fiscal: es lo
+ * que el documento ya imprimía. El día que alguien resuelva el territorio, se pasa y ya está.
+ */
+export const NOMBRE_IMPUESTO_POR_DEFECTO = 'IVA';
+
 export function fmtImporte(v: number): string {
-  return v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // SCRUM-636 · DELEGA en el sitio único del dinero. Lo que había aquí NO era una política: era un
+  // artefacto de CLDR. `toLocaleString('es-ES')` no agrupa los enteros de CUATRO cifras, así que
+  // este documento escribía `1000,00` y `12.345,67` — incoherente CONSIGO MISMO, y fallando justo
+  // en la banda 1.000–9.999 €, que es el importe corriente de un trabajo. Medido en SCRUM-636.
+  return formatImporteEs(v);
 }
 
 /** Descarga el logo del merchant como Buffer para PDFKit.
@@ -54,6 +129,107 @@ export async function loadLogoBuffer(logoUrl: string | null | undefined): Promis
   return null;
 }
 
+// 🔴 SCRUM-734 · ESTE TIPO VIVE ANTES DE `generateInvoicePdf`, Y NO ES CAPRICHO DE ORDEN.
+//
+// El guard de SCRUM-603b —el que sostiene que una factura emitida no se toca— recorta «de
+// `generateInvoicePdf` al siguiente `export` de nivel superior» y exige que ese trozo sea
+// IDÉNTICO, byte a byte, al de la base de la rama.
+// Puesto entre las dos funciones, este bloque caía DENTRO del recorte y ponía en rojo un guard de
+// factura emitida por un cambio que no toca la factura. Aquí fuera, el recorte vuelve a medir
+// exactamente lo que dice medir.
+//
+// Se movió el código, NO el guard: relajar la frontera de un guard que protege una factura ya
+// emitida para que quepa un refactor de presupuestos sería pagar con la vigilancia equivocada.
+/**
+ * SCRUM-734 · TODO LO QUE UN PRESUPUESTO NECESITA PARA SER UN PDF, EN UN SOLO TIPO.
+ *
+ * Estaba escrito EN LÍNEA en la firma de `generateQuotePdf` y no se movía ni una letra al
+ * sacarlo: es el mismo texto, con sus comentarios. Lo que cambia es que ahora TIENE NOMBRE, y
+ * por eso se puede exigir desde fuera que alguien lo produzca ENTERO.
+ *
+ * De aquí cuelga `paramsDePresupuestoParaPdf`, que es el único sitio donde se decide qué lleva
+ * el documento. Las tres puertas ya no arman el objeto: le piden el objeto a esa función.
+ */
+export type ParamsPdfPresupuesto = {
+  quoteId: number;
+  // A1.2: número visible por merchant (el fichero sigue nombrándose con el id
+  // global para no romper pdfUrl existentes). Si falta, se muestra el id.
+  quoteNumber?: number | null;
+  merchant: {
+    name: string | null;
+    legalName?: string | null;
+    taxId?: string | null;
+    address?: string | null;
+    whatsappPhone?: string | null;
+    logoUrl?: string | null;
+  };
+  customer: {
+    name: string | null;
+    phone?: string | null;
+    email?: string | null;
+    // A20.4: cliente empresa
+    legalName?: string | null;
+    taxId?: string | null;
+  };
+  // A20.4: qué datos del cliente se muestran (null/undefined = todos los presentes)
+  docFields?: { name?: boolean; phone?: boolean; taxId?: boolean; email?: boolean } | null;
+  /**
+   * SCRUM-594 (DOC-04) · el descuento GLOBAL del presupuesto, en euros.
+   *
+   * 🔴 SÓLO EN EL PRESUPUESTO. El PDF de FACTURA no lo recibe y no es un olvido: allí el total
+   * se RECALCULA desde `lines` con un motor distinto del que alimenta el libro registro y
+   * VeriFactu (SCRUM-624, abierto), así que meter descuentos en ese camino multiplicaría ese
+   * defecto en vez de heredarlo. Aquí es seguro porque este documento imprime `params.total`,
+   * el GUARDADO, y las filas del pie las decide el dominio.
+   */
+  discountGlobalAmount?: number | string | null;
+  // SCRUM-593 (DOC-03) · los dos textos libres del documento. MULTILÍNEA: los saltos se respetan
+  // (PDFKit los honra en `doc.text`), que es lo que exige SCRUM-655 (T6). Opcionales: sin ellos
+  // el documento sale EXACTAMENTE como hasta hoy.
+  docHeaderText?: string | null;
+  docFooterText?: string | null;
+  /**
+   * SCRUM-602 (DOC-12) · LA DIRECCIÓN DE LA OBRA, en crudo. 🔴 LLEGAN LOS DATOS, NO LA
+   * DECISIÓN: quién resuelve los tres modos es `resolverDireccionObra`, y se le llama UNA vez,
+   * aquí dentro. Las tres puertas de este documento (crear, regenerar con firma, y el
+   * `GET /admin/quotes/:id/pdf` que sirve el papel de verdad) sólo reenvían lo que tienen.
+   *
+   * El motivo está medido en este mismo fichero: `discountGlobalAmount` se pasa en DOS de las
+   * tres puertas y no en la tercera, así que el mismo presupuesto sale con el pie del descuento
+   * o sin él según por dónde se pida. Con la decisión aquí dentro, olvidarse de un dato deja el
+   * bloque fuera —el suelo del albarán— en vez de imprimir una dirección distinta.
+   *
+   * Ausente = el documento sale EXACTAMENTE como salía.
+   */
+  direccionObra?: {
+    modo: string | null;
+    personalizada: string | null;
+    cliente: ClienteConFacturacion | null;
+  } | null;
+  currency: string;
+  total: string;
+  lines: Array<{
+    concept: string;
+    qty: number;
+    price: number;
+    tax: number;
+  }>;
+  signatureData?: string | null;
+  signedAt?: Date | null;
+  country?: string | null;
+  // SCRUM-647 · el NOMBRE del impuesto, igual que en la factura (SCRUM-623): un DATO, no una
+  // constante de la maqueta. Sin él, el documento sale como hasta hoy.
+  taxName?: string | null;
+  // SCRUM-656 (T7) · CÓMO se presenta el IVA en ESTE presupuesto: `sumar` pinta el desglose,
+  // `no_incluido` no pinta ninguna cuota y añade la leyenda. Ausente = como salía hasta hoy.
+  modoIva?: string | null;
+  // Las cláusulas de cierre del MERCHANT y las que este presupuesto excluye. El texto lo escribe
+  // el profesional; aquí solo se pintan.
+  clausulas?: Array<{ id: string; titulo: string; texto: string }> | null;
+  clausulasExcluidas?: string[] | null;
+  tiers?: Array<{ id: string; label: string; description?: string; lines: any[]; total: number; recommended?: boolean }> | null;
+};
+
 export async function generateInvoicePdf(params: {
   number: string;
   // SCRUM-72: id para la URL del endpoint auth y merchantId para el nombre de fichero
@@ -82,6 +258,10 @@ export async function generateInvoicePdf(params: {
   rectifiesNumber?: string | null; // nº de la factura original (solo R1)
   watermark?: string | null;       // texto diagonal en cada página (demo: "DEMO — no válida fiscalmente")
   stageLabel?: string | null;      // SCRUM-33: etiqueta del tramo (SCRUM-27), null en presets — se omite si no hay
+  // SCRUM-623 (enmienda) · el NOMBRE del impuesto que se repercute: `IVA`, `IGIC` (Canarias),
+  // `IPSI` (Ceuta y Melilla), `IGV`… Viene de FUERA porque la maqueta no puede saberlo: ver
+  // `NOMBRE_IMPUESTO_POR_DEFECTO`. Sin él, el documento sale exactamente como hasta hoy.
+  taxName?: string | null;
 }) {
   const fileName = `${params.merchantId}-${params.number}.pdf`; // SCRUM-72
   const outPath  = path.join(invoicesDir, fileName);
@@ -147,8 +327,10 @@ export async function generateInvoicePdf(params: {
     doc.strokeColor('#000').lineWidth(1);
   }
 
+  // SCRUM-636 · la copia de la FACTURA delega tambien. Era el mismo cuerpo que `fmtImporte`
+  // —`scrum604b` lo vigilaba— y ahora los dos salen del sitio unico.
   function fmt(v: number) {
-    return v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return fmtImporte(v);
   }
 
   function dateStr(d: Date | null | undefined) {
@@ -169,6 +351,9 @@ export async function generateInvoicePdf(params: {
   // Título "FACTURA" / "FACTURA RECTIFICATIVA" / "JUSTIFICANTE DE COBRO" + Nº/Ref + Fecha
   const isRect = params.type === 'R1';
   const docTitle = isReceipt ? 'JUSTIFICANTE DE COBRO' : isRect ? 'FACTURA RECTIFICATIVA' : 'FACTURA';
+  // SCRUM-623 (enmienda) · una sola vez y desde fuera. Tres sitios de este documento lo usan;
+  // tres copias volverían a divergir, y la que divergiera sería la que nadie mira.
+  const impuesto = params.taxName || NOMBRE_IMPUESTO_POR_DEFECTO;
   doc.fontSize(isRect || isReceipt ? 17 : 22).font('Helvetica-Bold')
     .fillColor(isRect ? '#dc2626' : INK)
     .text(docTitle, M, headerY, { width: W, align: 'right' });
@@ -246,7 +431,7 @@ export async function generateInvoicePdf(params: {
     doc.text('CONCEPTO',    XC,  thY, { width: WC });
     doc.text('CANT.',       XQ,  thY, { width: WQ,  align: 'right' });
     doc.text('PRECIO UNIT', XP,  thY, { width: WP,  align: 'right' });
-    doc.text('IVA %',       XIV, thY, { width: WIV, align: 'right' });
+    doc.text(`${impuesto} %`, XIV, thY, { width: WIV, align: 'right' });
     doc.text('TOTAL',       XT,  thY, { width: WT,  align: 'right' });
     doc.y += 16;
     hLine(doc.y, BORDER);
@@ -341,14 +526,85 @@ export async function generateInvoicePdf(params: {
       .text(fmt(subtotal) + ' ' + params.currency, totalsX + totalsW * 0.6, ty0, { width: totalsW * 0.4, align: 'right' });
     doc.moveDown(0.4);
 
-    // Cada tipo de IVA
-    Object.entries(vatMap).forEach(([rate, g]) => {
-      if (g.vat === 0) return;
-      const vy = doc.y;
-      doc.text(`IVA ${rate}:`, totalsX, vy, { width: totalsW * 0.6 })
-        .text(fmt(g.vat) + ' ' + params.currency, totalsX + totalsW * 0.6, vy, { width: totalsW * 0.4, align: 'right' });
-      doc.moveDown(0.4);
-    });
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // 🔴 SCRUM-623 · UNA FILA POR TIPO, CON SU BASE Y SU CUOTA.
+    //
+    // LO QUE PASABA, medido leyendo el TEXTO del PDF (instrumento de SCRUM-604):
+    //
+    //     Base imponible: 105,00   IVA 21%: 12,60   TOTAL: 117,60
+    //
+    // El total CUADRA y el cliente paga bien. Lo que no se puede es cuadrarlo DESDE EL PAPEL:
+    // 105 × 21 % = 22,05, no 12,60. Faltan 9,45 € que el documento no explica, porque la
+    // segunda base —45 € al 0 %— no aparecía por ninguna parte.
+    //
+    // ⚠️ Y EL ENUNCIADO EXACTO NO ES «imprime una sola fila». Medido, son DOS defectos:
+    //   ① `if (g.vat === 0) return` SALTABA el tipo cuya cuota es cero (0 %, exento, suplido),
+    //      así que su base desaparecía del papel aunque estuviera sumada en «Base imponible».
+    //   ② Y aun con dos tipos que SÍ tienen cuota —21 % y 10 %— se imprimían dos cuotas y UNA
+    //      sola base agregada: tampoco se sabe qué base va con qué tipo.
+    // O sea que la propiedad que falla en TODOS los casos mixtos es: **las BASES no se
+    // imprimen por tipo**. Es lo que arregla esto.
+    //
+    // ── DE DÓNDE SALEN LAS CIFRAS, Y POR QUÉ NO DE `calcVatBreakdown` ──────────────────
+    // 🛑 Existe `calcVatBreakdown` (vat.service), que YA devuelve `{rate, base, cuota}` por tipo
+    // y que alimenta el libro, el modelo 303 y el XML de VeriFactu. Lo natural sería consumirla
+    // aquí y borrar este mapa. NO SE HACE, y no es pereza: MEDIDO sobre 4.006 combinaciones,
+    // **cambiaría alguna cifra impresa en 547 de ellas** (un céntimo en la cuota y en el total),
+    // porque aquella redondea base y cuota POR SEPARADO y ésta no redondea hasta `fmt`.
+    // Cambiar una cifra de una factura no es este ticket. Queda escrito en docs/master/SCRUM-623.md.
+    //
+    // Así que las cifras salen del MISMO `vatMap` de arriba, que ya venía acumulando `base` por
+    // tipo sin imprimirla nunca. **Ni una operación aritmética nueva.**
+    //
+    // ── UN SOLO TIPO: EXACTAMENTE COMO HASTA HOY ──────────────────────────────────────
+    // El desglose sólo aparece cuando hay MÁS DE UN TIPO. Con uno solo el papel ya era
+    // reconstruible (base × tipo = cuota) y no había nada que arreglar; tocarlo sería mover algo
+    // que estaba bien. Eso incluye la factura íntegramente al 0 %: sigue sin fila de IVA.
+    //
+    // ── Y POR QUÉ ESTA FORMA SIRVE A LAS DOS RESPUESTAS DE SCRUM-619 ──────────────────
+    // Sigue abierta la pregunta a la asesoría de si el suplido va DENTRO de la base imponible
+    // (hoy, como una base al 0 %) o FUERA (que es lo que dice `suplidos.ts`). Este bloque está
+    // cerrado sobre TIPOS IMPOSITIVOS, no sobre la naturaleza de la línea:
+    //   · si va DENTRO → el suplido ES la fila del 0 %, y «Base imponible» lo incluye;
+    //   · si va FUERA  → esa fila desaparece de aquí y el suplido baja a una línea PROPIA fuera
+    //     del bloque. La forma del bloque no cambia: tiene una fila menos.
+    // 🔴 POR ESO LA FILA SE ROTULA POR SU TIPO Y NUNCA COMO «suplido». Si se etiquetara por la
+    // naturaleza, la respuesta «FUERA» rompería la maqueta. Y además hoy el dato NO distingue un
+    // suplido de una exención: los dos son una línea al 0 % (medido en SCRUM-619).
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    const tiposDeIva = Object.entries(vatMap);
+
+    if (tiposDeIva.length <= 1) {
+      tiposDeIva.forEach(([rate, g]) => {
+        if (g.vat === 0) return;
+        const vy = doc.y;
+        doc.text(`${impuesto} ${rate}:`, totalsX, vy, { width: totalsW * 0.6 })
+          .text(fmt(g.vat) + ' ' + params.currency, totalsX + totalsW * 0.6, vy, { width: totalsW * 0.4, align: 'right' });
+        doc.moveDown(0.4);
+      });
+    } else {
+      // El rótulo de la columna de bases es TEXTO NUEVO y no me toca escribirlo (regla 30). Va
+      // como marcador y UNA sola vez: la fila la describen el tipo y el importe, que son dato.
+      doc.text(MARCADOR_MICROCOPY_DESGLOSE, totalsX, doc.y, { width: totalsW });
+      doc.moveDown(0.3);
+
+      // Orden descendente por tipo, igual que `calcVatBreakdown`, para que dos documentos con
+      // las mismas líneas en distinto orden no salgan con las filas cambiadas de sitio.
+      const wTipo = totalsW * 0.11;
+      const wBase = totalsW * 0.32;
+      const wRot  = totalsW * 0.21;
+      const wCuota = totalsW * 0.32;
+      [...tiposDeIva]
+        .sort((a, b) => parseFloat(b[0]) - parseFloat(a[0]))
+        .forEach(([rate, g]) => {
+          const vy = doc.y;
+          doc.text(rate, totalsX, vy, { width: wTipo })
+            .text(fmt(g.base) + ' ' + params.currency, totalsX + wTipo, vy, { width: wBase, align: 'right' })
+            .text(`${impuesto} ${rate}:`, totalsX + wTipo + wBase + 4, vy, { width: wRot })
+            .text(fmt(g.vat) + ' ' + params.currency, totalsX + wTipo + wBase + 4 + wRot, vy, { width: wCuota, align: 'right' });
+          doc.moveDown(0.4);
+        });
+    }
 
     // Total final — el momento del dinero (Regla del Importe: Tinta, grande,
     // con el acento de marca en la regla superior; el verde nunca en la cifra)
@@ -432,48 +688,32 @@ export async function generateInvoicePdf(params: {
  * Generar PDF de PRESUPUESTO.
  * Usa el ID de quote para el nombre de fichero: QUOTE-<id>.pdf
  */
-export async function generateQuotePdf(params: {
-  quoteId: number;
-  // A1.2: número visible por merchant (el fichero sigue nombrándose con el id
-  // global para no romper pdfUrl existentes). Si falta, se muestra el id.
-  quoteNumber?: number | null;
-  merchant: {
-    name: string | null;
-    legalName?: string | null;
-    taxId?: string | null;
-    address?: string | null;
-    whatsappPhone?: string | null;
-    logoUrl?: string | null;
-  };
-  customer: {
-    name: string | null;
-    phone?: string | null;
-    email?: string | null;
-    // A20.4: cliente empresa
-    legalName?: string | null;
-    taxId?: string | null;
-  };
-  // A20.4: qué datos del cliente se muestran (null/undefined = todos los presentes)
-  docFields?: { name?: boolean; phone?: boolean; taxId?: boolean; email?: boolean } | null;
-  currency: string;
-  total: string;
-  lines: Array<{
-    concept: string;
-    qty: number;
-    price: number;
-    tax: number;
-  }>;
-  signatureData?: string | null;
-  signedAt?: Date | null;
-  country?: string | null;
-  tiers?: Array<{ id: string; label: string; description?: string; lines: any[]; total: number; recommended?: boolean }> | null;
-}) {
+export async function generateQuotePdf(params: ParamsPdfPresupuesto) {
   // SCRUM-72: quoteId es el id GLOBAL (autoincrement) → ya único entre merchants, no hace
   // falta prefijo. El fichero vive en storage/invoices (fuera de public/), como la factura.
   const fileName = `QUOTE-${params.quoteId}.pdf`;
   const outPath = path.join(invoicesDir, fileName);
 
   const locale = getLocale(params.country);
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-647 · UN SOLO CRITERIO PARA EL NOMBRE DEL IMPUESTO, Y ES EL DE LA FACTURA.
+  //
+  // Este documento tenía LOS DOS A LA VEZ: la tabla de líneas con `IVA%` grabado y el bloque
+  // de totales resolviéndolo por `locale.vatName`. El mismo papel, dos criterios — y es el que
+  // más se envía: va por WhatsApp y es el primero que ve el cliente.
+  //
+  // 🔴 Y EL QUE SE VA ES `locale.vatName`, no el otro. Está indexado por PAÍS, y Canarias es
+  // `ES`: un canario repercute IGIC y aquello le pondría «IVA». Dejarlo como respaldo dentro
+  // del documento sería meter el defecto por la puerta de atrás.
+  //
+  // ⚠️ PERO NO SE BORRA SIN MÁS, y esto se midió antes de tocarlo: los tres llamantes SÍ pasan
+  // `country`, y `locale.vatName` vale `IGV` en Perú. Quitarlo a secas habría hecho que un
+  // presupuesto peruano dejara de decir IGV — una regresión en un mercado que el registro
+  // declara. Así que la resolución por país NO desaparece: **se sube al llamante**, donde el
+  // país ya está a la vista y donde SCRUM-646 la sustituirá el día que exista el territorio.
+  // El documento deja de decidir; quien sabe, pasa.
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  const impuesto = params.taxName || NOMBRE_IMPUESTO_POR_DEFECTO;
   const QUOTE_LABEL = locale.quote; // "Presupuesto" o "Cotización"
 
   const logoBuf = await loadLogoBuffer(params.merchant.logoUrl);
@@ -523,7 +763,38 @@ export async function generateQuotePdf(params: {
   if (show('taxId') && params.customer.taxId) doc.text(`NIF: ${params.customer.taxId}`);
   if (show('phone') && params.customer.phone) doc.text(`Tel: ${params.customer.phone}`);
   if (show('email') && params.customer.email) doc.text(`Email: ${params.customer.email}`);
+
+  // ── SCRUM-602 (DOC-12) · LA DIRECCIÓN DE LA OBRA ─────────────────────────────────────────
+  // Va PEGADA al bloque del cliente y antes del `moveDown`, porque describe al mismo
+  // interlocutor: dónde se hace el trabajo de quien acaba de nombrarse. El texto libre de
+  // cabecera (SCRUM-593) sigue justo detrás, separado por su espacio.
+  //
+  // Se pinta SÓLO si hay texto. Un presupuesto sin modo —todos los anteriores a este ticket—
+  // resuelve `null` y sale byte a byte como salía; un cliente sin dirección fiscal que eligió
+  // «utilizar dirección de facturación» también, y eso es el suelo, no un fallo: una dirección
+  // equivocada en un documento es peor que ninguna (SCRUM-300).
+  //
+  // 🔴 EL RÓTULO ES DATO DEL DOCUMENTO Y NO SE INVENTA AQUÍ: `ROTULO_DIRECCION_OBRA_PDF` vive
+  // en el dominio, con las otras cuatro palabras de esta ranura.
+  const direccionObra = resolverDireccionObra({
+    modo: params.direccionObra?.modo,
+    personalizada: params.direccionObra?.personalizada ?? null,
+    cliente: params.direccionObra?.cliente ?? null,
+  });
+  if (direccionObra) doc.text(`${ROTULO_DIRECCION_OBRA_PDF}: ${direccionObra}`);
+
   doc.moveDown();
+
+  // ── SCRUM-593 (DOC-03) · TEXTO LIBRE bajo la cabecera ─────────────────────────────────────
+  // Va DESPUÉS de los datos del cliente y ANTES del detalle: es texto del documento, no de una
+  // línea. Se pinta sólo si lo hay, para que un documento sin él salga byte a byte como siempre.
+  if (params.docHeaderText && String(params.docHeaderText).trim() !== '') {
+    // SIN RÓTULO (fundador, 2-sep-2026): sólo el texto. Se conserva `fontSize(10)` para que el
+    // bloque tenga el mismo cuerpo que tenía, y `Helvetica` normal porque ya no hay título que
+    // destacar.
+    doc.fontSize(10).font('Helvetica').text(String(params.docHeaderText));
+    doc.moveDown();
+  }
 
   // ===== MODO TIERS: Good/Better/Best =====
   if (params.tiers && params.tiers.length > 0) {
@@ -551,7 +822,7 @@ export async function generateQuotePdf(params: {
         lineY += 12;
       }
       tier.lines.forEach((l: any) => {
-        const lineTotal = (l.qty * l.price * (1 + (l.tax ?? 0))).toFixed(2);
+        const lineTotal = fmtImporte(l.qty * l.price * (1 + (l.tax ?? 0)));
         const text = `${l.concept} × ${l.qty}`;
         doc.text(text, x + 4, lineY, { width: tierW - 8 });
         lineY += 10;
@@ -562,7 +833,7 @@ export async function generateQuotePdf(params: {
       // Total del tier
       doc.rect(x, lineY, tierW, 14).fill(tier.recommended ? '#dcfce7' : '#e5e7eb');
       doc.fillColor('#111827').font('Helvetica-Bold').fontSize(9)
-        .text(`Total: ${tier.total.toFixed(2)} ${params.currency}`, x + 4, lineY + 3, { width: tierW - 8, align: 'center' });
+        .text(`Total: ${fmtImporte(tier.total)} ${params.currency}`, x + 4, lineY + 3, { width: tierW - 8, align: 'center' });
 
       doc.fillColor('black').font('Helvetica');
     });
@@ -614,7 +885,7 @@ function drawTableHeader() {
     .text('Concepto', X0, doc.y, { width: W_CONCEPT })
     .text('Cant.', X_QTY, doc.y - 12, { width: W_QTY, align: 'right' })
     .text('Precio', X_PRICE, doc.y - 12, { width: W_PRICE, align: 'right' })
-    .text('IVA%', X_VAT, doc.y - 12, { width: W_VAT, align: 'right' })
+    .text(`${impuesto}%`, X_VAT, doc.y - 12, { width: W_VAT, align: 'right' })
     .text('Total', X_TOTAL, doc.y - 12, { width: W_TOTAL, align: 'right' });
 
   doc.moveDown(0.3);
@@ -636,9 +907,9 @@ params.lines.forEach((l) => {
   const { titulo: title, descripcion: desc } = partirConceptoYDescripcion(concept);
 
   const qty = String(l.qty ?? '');
-  const price = Number.isFinite(l.price) ? l.price.toFixed(2) : '';
+  const price = Number.isFinite(l.price) ? fmtImporte(l.price) : '';
   const vat = Number.isFinite(l.tax) ? (l.tax * 100).toFixed(0) + '%' : '';
-  const total = Number.isFinite(lineTotal) ? lineTotal.toFixed(2) : '';
+  const total = Number.isFinite(lineTotal) ? fmtImporte(lineTotal) : '';
 
   const y0 = doc.y;
 
@@ -712,7 +983,8 @@ const CONTENT_W = 510;
  *
  * MICROCOPY · CERO TEXTO NUEVO (regla 30). Los tres rótulos salen de sitios ya aprobados:
  *   · «Base imponible:» — el MISMO literal del bloque de totales de la factura.
- *   · el del impuesto   — `locale.vatName`, que ya existe y vale 'IVA' o 'IGV' (Perú).
+ *   · el del impuesto   — `params.taxName`, resuelto arriba (SCRUM-647). Antes salía de
+ *     `locale.vatName`, que resuelve por PAÍS y por tanto miente en Canarias.
  *                         Es MÁS correcto que el de la factura, que lo lleva escrito a mano.
  *   · «Total <quoteVerb>:» — el rótulo que este documento YA imprimía. No se toca.
  *
@@ -729,14 +1001,21 @@ const CONTENT_W = 510;
  */
 const lineasParaDesglose = Array.isArray(params.lines) ? params.lines : [];
 const filasDeTotales: Array<{ etiqueta: string; importe: number }> = [];
-if (lineasParaDesglose.length > 0) {
-  const bd = calcVatBreakdown(lineasParaDesglose as any);
-  filasDeTotales.push({ etiqueta: 'Base imponible:', importe: bd.base });
-  for (const e of bd.entries) {
-    if (e.cuota === 0) continue; // ← el defecto ① heredado; ver la cabecera de arriba
-    filasDeTotales.push({ etiqueta: `${locale.vatName} ${e.rate}%:`, importe: e.cuota });
-  }
-}
+// SCRUM-656 (T7) · las filas y la leyenda las decide el DOMINIO, no la maqueta. El cálculo
+// sigue siendo `calcVatBreakdown` —dentro de `pieDePresupuesto`— y aquí no se suma nada: esta
+// función solo pinta lo que le den. Es lo que impide que «una funcioncita para el IVA del pie»
+// se convierta en la tercera copia de la aritmética (la segunda fue `calcTierTotal`, SCRUM-655).
+const modoDelDocumento = leerModoIva(params.modoIva).modo;
+const pie = pieDePresupuesto({
+  lineas: lineasParaDesglose as any,
+  modo: modoDelDocumento,
+  nombreImpuesto: impuesto,
+  // SCRUM-594 (DOC-04) · el descuento global. Las filas nuevas —«Suma de líneas», «Descuento»,
+  // «Descuento global»— las decide el DOMINIO, igual que las de IVA: aquí no se suma nada, se
+  // empuja una entrada más al array. Es exactamente lo que SCRUM-604b dejó preparado.
+  descuentoGlobal: params.discountGlobalAmount ?? null,
+});
+filasDeTotales.push(...pie.filas);
 
 for (const fila of filasDeTotales) {
   doc.fontSize(10).text(
@@ -755,7 +1034,32 @@ doc.fontSize(12).text(
   { width: CONTENT_W, align: 'right' },
 );
 
+// 🔴 SCRUM-656 · LA LEYENDA DEL MODO «IVA NO INCLUIDO», bajo el total y solo en ese modo.
+// No es decoración: en ese modo el documento NO afirma cuánto será el impuesto, así que sin la
+// leyenda el cliente lee el total como el precio final. Es lo que dice su presupuesto real.
+if (pie.leyenda) {
+  doc.fontSize(10).fillColor('#444').text(
+    pie.leyenda,
+    CONTENT_X,
+    doc.y,
+    { width: CONTENT_W, align: 'right' },
+  );
+  doc.fillColor('black');
+}
+
 doc.moveDown(2);
+
+// ── SCRUM-593 (DOC-03) · OBSERVACIONES ──────────────────────────────────────────────────────
+// El bloque FINAL, tras los totales y antes de la firma. El rótulo está aprobado (2-sep-2026) y
+// va sin marcador. Alineado a la izquierda a propósito: los totales van a la derecha, y un texto
+// libre en esa columna se leería como parte de la suma.
+if (params.docFooterText && String(params.docFooterText).trim() !== '') {
+  doc.fontSize(10).font('Helvetica-Bold').fillColor('black')
+    .text(TITULO_OBSERVACIONES, CONTENT_X, doc.y, { width: CONTENT_W, align: 'left' });
+  doc.font('Helvetica')
+    .text(String(params.docFooterText), CONTENT_X, doc.y, { width: CONTENT_W, align: 'left' });
+  doc.moveDown(1);
+}
 
 // Sección firma digital (si existe)
 if (params.signatureData) {
@@ -781,6 +1085,28 @@ if (params.signatureData) {
   } catch (e) {
     // Si la imagen falla, continuamos sin firma
   }
+}
+
+// ── SCRUM-656 (T7) · LAS CLÁUSULAS DE CIERRE ─────────────────────────────────────────
+// Del MERCHANT, menos las que este presupuesto excluya. El texto lo escribe el profesional;
+// aquí solo se pinta.
+//
+// 🔴 CON LA CONFIGURACIÓN VACÍA NO SE ABRE NADA: ni sección, ni título, ni un hueco. Un bloque
+// «CONDICIONES» sin cláusulas dentro es peor que no ponerlo, y un título sin texto debajo
+// —«GARANTÍA» y nada— se lee como que la garantía existe pero no dice cuál. Ausente y vacío no
+// son lo mismo, y `clausulasParaDocumento` ya descarta las que no tienen las dos cosas.
+const clausulasDelDocumento = clausulasParaDocumento(params.clausulas, params.clausulasExcluidas);
+if (clausulasDelDocumento.length > 0) {
+  if (doc.y + 80 > doc.page.height - doc.page.margins.bottom) doc.addPage();
+  doc.moveDown(1);
+  for (const c of clausulasDelDocumento) {
+    if (doc.y + 60 > doc.page.height - doc.page.margins.bottom) doc.addPage();
+    doc.fontSize(9).fillColor('black').text(c.titulo.toUpperCase(), CONTENT_X, doc.y, { width: CONTENT_W });
+    doc.moveDown(0.2);
+    doc.fontSize(8).fillColor('#444').text(c.texto, CONTENT_X, doc.y, { width: CONTENT_W, align: 'justify' });
+    doc.moveDown(0.6);
+  }
+  doc.fillColor('black');
 }
 
 // Footer centrado bien (con ancho fijo)

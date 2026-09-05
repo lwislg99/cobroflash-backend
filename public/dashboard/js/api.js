@@ -150,6 +150,29 @@ async function _enviarMutacion(url, finalOptions, ctrl) {
   }
 }
 
+/**
+ * ¿Es esto un cuerpo que `fetch` sabe enviar TAL CUAL?
+ *
+ * Una cadena, sí — y son las 52 llamadas que ya hacen `JSON.stringify` fuera. Los tipos del
+ * navegador (FormData, Blob, URLSearchParams…) también: serializarlos con `JSON.stringify` daría
+ * `{}` y perdería el fichero entero sin ningún error. Todo lo demás —un objeto plano, un array—
+ * no viaja: hay que serializarlo.
+ *
+ * Las comprobaciones van con `typeof x !== 'undefined'` porque este mismo fichero se carga en
+ * contextos sin DOM (los tests lo evalúan con `new Function`), y ahí `FormData` no existe.
+ */
+function esCuerpoQueFetchEnvia(body) {
+  if (typeof body === 'string') return true;
+  const nativos = ['FormData', 'Blob', 'File', 'URLSearchParams', 'ArrayBuffer', 'ReadableStream'];
+  for (const nombre of nativos) {
+    const Tipo = typeof globalThis !== 'undefined' ? globalThis[nombre] : undefined;
+    if (typeof Tipo === 'function' && body instanceof Tipo) return true;
+  }
+  // Vistas sobre un buffer (Uint8Array y compañía): `fetch` las envía como bytes.
+  if (typeof ArrayBuffer !== 'undefined' && ArrayBuffer.isView && ArrayBuffer.isView(body)) return true;
+  return false;
+}
+
 async function apiRequest(path, options = {}) {
   const url = API_BASE_URL + path;
 
@@ -160,6 +183,36 @@ async function apiRequest(path, options = {}) {
     },
     ...options,
   };
+
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+  // SCRUM-704 · UN `body` QUE NO ES CADENA VIAJA COMO «[object Object]»
+  //
+  // `fetch` no serializa nada: a lo que no es un cuerpo válido le aplica `String(x)`, y de un
+  // objeto plano eso sale **"[object Object]"**. Medido, no deducido:
+  //
+  //     new Request(url, { body: { direccion: 'Av. Rey Juan Carlos 145' } })  ->  "[object Object]"
+  //
+  // Con `Content-Type: application/json`, al servidor le llega basura que no parsea, y el campo
+  // NO SE GUARDA. Le pasaba a dos: el nombre del Trabajo y **la dirección de la obra** — que es
+  // donde se presenta el técnico. Si el jefe la corrige y no se guarda, el técnico va a la
+  // dirección vieja: un desplazamiento perdido, de los que Tecnosel apunta como coste real.
+  //
+  // 🔴 POR QUÉ NORMALIZAR Y NO «SERIALIZAR SIEMPRE», que es el arreglo que parece obvio y rompe
+  // 52 sitios. Censo por AST sobre `public/` (SCRUM-704): de **55** llamadas con `body`,
+  // **52 ya mandan `JSON.stringify(...)`**, 2 mandaban objeto y 1 manda una cadena o `undefined`.
+  // La convención de la casa es serializar FUERA. Un `JSON.stringify` incondicional aquí les
+  // metería la cadena DENTRO DE OTRA CADENA —`"{\"a\":1}"` en vez de `{"a":1}`— y el servidor
+  // recibiría un string donde espera un objeto: cambiaría un fallo silencioso por otro, y en 52
+  // sitios en vez de 2.
+  //
+  // Así que sólo se serializa lo que NO es ya un cuerpo que `fetch` sepa enviar. Los 52 pasan
+  // intactos POR CONSTRUCCIÓN, no por una lista de excepciones.
+  //
+  // ⚠️ Se arregla AQUÍ y no en los dos llamadores: arreglar los dos deja la puerta abierta para el
+  // siguiente, y el siguiente tampoco daría error. Éste es el único punto por el que pasan todos.
+  if (finalOptions.body !== undefined && finalOptions.body !== null && !esCuerpoQueFetchEnvia(finalOptions.body)) {
+    finalOptions.body = JSON.stringify(finalOptions.body);
+  }
 
   const metodo = String(finalOptions.method || 'GET').toUpperCase();
 
@@ -472,25 +525,141 @@ window.ENTORNO_DESCONOCIDO = ENTORNO_DESCONOCIDO;
 
 // P-A66-3: dinero SIEMPRE en formato español también dentro del BO — espejo
 // del formatMoneyEs del servidor (core/utils). "2.383,70 €", nunca "2383.70 EUR".
-function fmtMoneyEs(n, currency = 'EUR') {
+/** Un número utilizable. Lo ilegible se trata como 0, que es lo que hacía `fmtMoneyEs` ya. */
+function numeroSeguroDeDinero(n) {
   const v = Number(n);
-  const safe = Number.isFinite(v) ? v : 0;
-  const opts = {
+  return Number.isFinite(v) ? v : 0;
+}
+
+/**
+ * SCRUM-739 · LAS OPCIONES DEL DINERO, EN UN SOLO SITIO.
+ *
+ * Estaban escritas dentro de `fmtMoneyEs` y no se mueve ni un valor al sacarlas: son las mismas.
+ * Lo que cambia es que ahora `fmtImporteEs` —la variante SIN símbolo— las comparte, así que las
+ * dos no pueden divergir. El backend deja escrito el aviso que esto convierte en imposible:
+ * *«comparte cuerpo con `formatMoneyEs` a propósito —mismo `Intl`, mismas opciones— salvo
+ * `style`. Si divergieran, el símbolo dejaría de ser lo único que las separa.»*
+ */
+function opcionesDeDinero(currency) {
+  return {
     style: 'currency',
     currency: currency || 'EUR',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   };
+}
+
+/**
+ * SCRUM-743 · LO ÚNICO QUE LAS TRES FORMAS COMPARTEN, Y LO ÚNICO QUE NO PUEDE DIVERGIR.
+ *
+ * Estaba escrito DOS veces —una en cada función—, y es justo lo que lleva cuatro tickets
+ * rompiéndose: `es-ES` no agrupa los enteros de cuatro cifras por CLDR, así que cada copia del
+ * formato reintrodujo `1500` donde el producto escribe `1.500`. Aquí está una vez. Lo que separa a
+ * las tres formas es sólo lo que TIENE que separarlas: el símbolo y los decimales.
+ */
+var AGRUPA_SIEMPRE = { useGrouping: 'always' };
+
+/**
+ * SCRUM-743 · LA TERCERA FORMA: un NÚMERO agrupado, **sin forzar decimales**.
+ *
+ * No es dinero: es el rótulo de un eje, una cantidad. 🔴 `1,5` sigue siendo `1,5` y NO `1,50` —
+ * las dos formas de dinero fijan el mínimo en 2 decimales, y pasar por ellas **añadiría decimales
+ * que hoy no están**, que es cambiar lo que se ve y no cómo se escribe.
+ *
+ * Gemela de `formatNumeroEs` (`core/utils/utils.ts`), como lo son las otras dos.
+ */
+function opcionesDeNumero() {
+  return { style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 2 };
+}
+
+function fmtMoneyEs(n, currency = 'EUR') {
+  const safe = numeroSeguroDeDinero(n);
+  const opts = opcionesDeDinero(currency);
   // A18.2 (AB6 "9.999,99 €"): es-ES por defecto NO agrupa los miles de 4 cifras
   // (CLDR); useGrouping 'always' fuerza el punto SIEMPRE. Fallback en cascada.
   try {
-    return new Intl.NumberFormat('es-ES', { ...opts, useGrouping: 'always' }).format(safe);
+    return new Intl.NumberFormat('es-ES', { ...opts, ...AGRUPA_SIEMPRE }).format(safe);
   } catch {
     try { return new Intl.NumberFormat('es-ES', opts).format(safe); }
     catch { return safe.toFixed(2) + ' ' + currency; }
   }
 }
 window.fmtMoneyEs = fmtMoneyEs;
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * SCRUM-739 · EL IMPORTE **SIN SÍMBOLO**, para donde el símbolo no va en la cifra.
+ *
+ * Hay pantallas donde el `€` NO puede ir pegado al número: la columna de una tabla lo lleva en
+ * la cabecera, y el KPI de Informes lo pinta en un `<span>` más pequeño aparte. Forzarles
+ * `fmtMoneyEs` metería un símbolo por celda, o dos donde ya hay uno.
+ *
+ * 🔴 ESTO NO ES UN SEXTO FORMATEADOR: es la variante que el BACKEND YA TIENE
+ * (`formatImporteEs`, SCRUM-636) y que al front se le quedó sin traer. Ésa es la razón medida de
+ * que exista este ticket: `reportsView.js` necesitaba un número sin símbolo, no había ninguno, y
+ * se escribió su propio `toLocaleString` — que en `es-ES` **no agrupa los enteros de cuatro
+ * cifras**. Resultado: la pantalla de Informes escribía `6050,00` donde el resto del producto
+ * escribe `6.050,00`, y fallaba justo entre 1.000 y 9.999 €, que es el trabajo corriente de un
+ * fontanero. Por encima de 10.000 volvía a coincidir, que es lo que lo hacía difícil de ver.
+ *
+ * ── POR QUÉ SE DERIVA DE LAS PARTES Y NO SE REESCRIBEN LAS OPCIONES ──────────────────────
+ *
+ * Se le pide al MISMO formateador que descomponga el resultado (`formatToParts`) y se le quita
+ * la pieza de la moneda. El separador de miles, los decimales y el redondeo salen de la misma
+ * llamada que `fmtMoneyEs`, así que **no pueden divergir**: no es que se hayan escrito iguales,
+ * es que son la misma. Copiar las opciones habría sido la quinta copia del formato — justo lo
+ * que este ticket viene a cerrar.
+ *
+ * ⚠️ Se quita la pieza `currency` y se recorta el espacio que la acompañaba (en `es-ES` va
+ * detrás, con espacio duro). Se recorta a los DOS lados a propósito: en otras plazas el símbolo
+ * va delante, y este código no tiene por qué saber en cuál está.
+ *
+ * Mismo respaldo que el backend: si `Intl` falla, se escribe algo legible en vez de romper la
+ * pantalla.
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ */
+function fmtImporteEs(n, currency = 'EUR') {
+  const safe = numeroSeguroDeDinero(n);
+  const opts = opcionesDeDinero(currency);
+  const sinSimbolo = (o) => new Intl.NumberFormat('es-ES', o)
+    .formatToParts(safe)
+    .filter((p) => p.type !== 'currency')
+    .map((p) => p.value)
+    .join('')
+    .replace(/^[\s ]+|[\s ]+$/g, '');
+  try {
+    return sinSimbolo({ ...opts, ...AGRUPA_SIEMPRE });
+  } catch {
+    try { return sinSimbolo(opts); }
+    catch { return safe.toFixed(2); }
+  }
+}
+window.fmtImporteEs = fmtImporteEs;
+
+/**
+ * SCRUM-743 · UN NÚMERO AGRUPADO, SIN FORZAR DECIMALES. Gemela de `formatNumeroEs` del backend.
+ *
+ * Para lo que NO es dinero: el rótulo de un eje, una cantidad. Comparte `AGRUPA_SIEMPRE` con las
+ * otras dos —que es lo que estaba roto en las cuatro copias que hubo— y NADA más: sus decimales
+ * son suyos, y ahí está el filo del ticket.
+ *
+ * 🔴 `1,5` SIGUE SIENDO `1,5`. Pasarlo por una forma de dinero lo escribiría `1,50` — añadiría
+ * un decimal que hoy no está. En un albarán ya firmado eso es cambiar lo impreso, que es peor
+ * que el defecto que se viene a arreglar.
+ */
+function fmtNumeroEs(n) {
+  const v = Number(n);
+  const safe = Number.isFinite(v) ? v : 0;
+  const opts = opcionesDeNumero();
+  try {
+    return new Intl.NumberFormat('es-ES', { ...opts, ...AGRUPA_SIEMPRE }).format(safe);
+  } catch {
+    try { return new Intl.NumberFormat('es-ES', opts).format(safe); }
+    // Sin `toFixed`: forzaría los decimales que esta forma existe para NO poner.
+    catch { return String(safe); }
+  }
+}
+window.fmtNumeroEs = fmtNumeroEs;
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────────────────
@@ -609,6 +778,32 @@ function pilaDeToasts() {
   return pila;
 }
 
+// ── SCRUM-622 · UN `kind` QUE NO SE RECONOCE NO SE PINTA DE VERDE ──────────────────────────
+//
+// Aquí había `colors[kind] || colors.ok`, y esa red convertía «no sé qué es esto» en «todo ha
+// ido bien». Las dos equivocaciones NO cuestan lo mismo: pintar de verde un aviso que el código
+// no entiende le dice al profesional que está todo correcto; pintarlo de ámbar solo le dice que
+// mire. El desempate va al lado CARO.
+//
+// 🔴 NO ERA TEÓRICO, Y NO LO DESCUBRÍ YO: `productsView.js` ya tuvo que sortearlo. Su comentario
+// dice, con todas las letras, «`'info'` NO EXISTE — showToast solo admite ok|warn|error y
+// cualquier otra cosa cae al verde de éxito», y por eso eligió `'warn'`. La trampa ya había
+// condicionado código: basta un `'Error'` con mayúscula para que un fallo salga en verde.
+//
+// `'warn'` y no `'error'`: un `kind` desconocido no es necesariamente un fallo, así que gritar
+// tampoco sería honesto. Ámbar no afirma ninguna de las dos cosas. Y NO introduce nada nuevo —
+// `warn` ya existía y ya se usa.
+const TOAST_COLORES = { ok: 'var(--brand, #16a34a)', warn: '#b45309', error: '#b91c1c' };
+
+/** El color de un toast. Un `kind` que no se reconoce cae en ÁMBAR, nunca en el verde de éxito. */
+function colorDeToast(kind) {
+  if (kind === true) kind = 'warn'; // compat: llamadas antiguas `showToast(msg, true)`
+  return Object.prototype.hasOwnProperty.call(TOAST_COLORES, kind)
+    ? TOAST_COLORES[kind]
+    : TOAST_COLORES.warn;
+}
+if (typeof window !== 'undefined') window.colorDeToast = colorDeToast;
+
 function showToast(msg, kind = 'ok') {
   // Compat: llamadas antiguas showToast(msg, true) = warn
   if (kind === true) kind = 'warn';
@@ -629,7 +824,6 @@ function showToast(msg, kind = 'ok') {
     return;
   }
 
-  const colors = { ok: 'var(--brand, #16a34a)', warn: '#b45309', error: '#b91c1c' };
   const toast = document.createElement('div');
   toast.className = 'yaqu-toast';
   toast.dataset.kind = kind;
@@ -638,7 +832,7 @@ function showToast(msg, kind = 'ok') {
   toast.setAttribute('aria-live', kind === 'error' ? 'assertive' : 'polite');
   const unaLinea = String(msg == null ? '' : msg).length <= TOAST_LARGO_UNA_LINEA;
   toast.style.cssText = `
-    background:${colors[kind] || colors.ok}; color:#fff; max-width:min(92vw,480px);
+    background:${colorDeToast(kind)}; color:#fff; max-width:min(92vw,480px);
     padding:10px 20px; border-radius:${unaLinea ? '999px' : '14px'}; font-size:14px; font-weight:600;
     box-shadow:0 4px 12px rgba(0,0,0,0.2); pointer-events:auto;
     display:flex; align-items:center; gap:12px; text-align:left;

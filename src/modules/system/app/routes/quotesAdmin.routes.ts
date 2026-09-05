@@ -8,6 +8,7 @@ import {
 } from '../../quoteAdmin';
 
 import { prisma } from '../../../../core/db/prisma';
+import { getLocale } from '../../../../core/i18n/locales'; // SCRUM-647
 import { actorDeRequest } from '../../audit.service'; // SCRUM-207: quién emite (C3/C4)
 import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo, validarEdicionPlan } from '../../../quotes/domain/billingPlan'; // SCRUM-37
 import { sendQuoteWhatsAppToCustomer } from '../../../quotes/domain/sendQuote.service';
@@ -28,6 +29,8 @@ import fetch from 'node-fetch';
 import { sendSuccessBody, sendFailureBody } from '../../../../lib/sendOutcome'; // SCRUM-126
 import { sellarTrasEmision, SELLADO_HECHO, SELLADO_PENDIENTE } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
+// SCRUM-734 · el ÚNICO sitio donde se decide qué lleva el PDF del presupuesto.
+import { paramsDePresupuestoParaPdf } from '../../../quotes/domain/presupuestoParaPdf';
 
 const router = Router();
 
@@ -526,25 +529,12 @@ router.get('/:id/pdf', async (req, res) => {
     if (!quote) return res.status(404).json({ error: 'not_found' });
 
     const { generateQuotePdf } = await import('../../../../lib/pdf');
-    const pdf = await generateQuotePdf({
-      quoteId: quote.id,
-      quoteNumber: quote.quoteNumber,
-      merchant: {
-        name: quote.merchant.name, legalName: quote.merchant.legalName,
-        taxId: quote.merchant.taxId, address: quote.merchant.address,
-        whatsappPhone: quote.merchant.whatsappPhone,
-        logoUrl: quote.merchant.logoUrl,
-      },
-      customer: { name: quote.customer.name, phone: quote.customer.phone, email: quote.customer.email, legalName: (quote.customer as any).legalName, taxId: (quote.customer as any).taxId }, // A20.4
-      docFields: ((quote as any).docFields as any) ?? null, // A20.4
-      currency: quote.currency,
-      total: quote.total.toString(),
-      lines: (Array.isArray(quote.lines) ? quote.lines : []) as any,
-      tiers: (quote.tiers as any) ?? undefined,
-      signatureData: quote.signatureUrl || undefined,
-      signedAt: quote.acceptedAt ?? undefined,
-      country: quote.merchant.country,
-    });
+    const pdf = await generateQuotePdf(paramsDePresupuestoParaPdf({
+      // SCRUM-734 · la puerta que SOBRESCRIBE `quote.pdfUrl`, o sea la que acaba en manos del
+      // cliente, era la que menos campos conocía: le faltaban `modoIva`, `clausulas` y
+      // `clausulasExcluidas` (y `discountGlobalAmount` hasta SCRUM-731). Ya no enumera nada.
+      quote, merchant: quote.merchant, customer: quote.customer,
+    }));
 
     await prisma.quote.update({ where: { id }, data: { pdfUrl: pdf.publicUrlPath } }).catch(() => {});
 

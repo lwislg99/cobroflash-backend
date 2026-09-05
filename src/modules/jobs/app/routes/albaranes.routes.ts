@@ -7,6 +7,7 @@
 // precondiciones. Todo lo demás de aquí sigue sin tocar facturación.
 // Tenancy SIEMPRE findFirst { id, merchantId } → 404 (regla 2). Editable hasta 'firmado'
 // (409 albaran_locked).
+import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-643
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { recordAudit, actorDeRequest, requestIp } from '../../../system/audit.service'; // SCRUM-207
@@ -60,11 +61,13 @@ import { sellarTrasEmision, SELLADO_HECHO } from '../../../invoicing/domain/sell
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 // SCRUM-290 (A0.4): el CRITERIO de qué se factura y a qué precio vive en funciones puras, no aquí.
 import {
-  casarLineas, motivosParaNoEmitir, lineasParaFactura, totalDeFacturables,
+  casarLineas, motivosParaNoEmitir, lineasParaFactura,
   yaFacturadoPorLineaDePresupuesto, lineasParaAdicional,
 } from '../../domain/albaranAFactura';
 // SCRUM-195: el número del adicional se reserva DENTRO de su transacción, igual que el del alta.
 import { allocateQuoteNumber } from '../../../quotes/domain/quoteNumber.service';
+import { sePuedeCambiarOcultarPrecios } from '../../domain/albaranPrecios'; // SCRUM-607 (ALB-02)
+import { veredictoAlbaranSinPresupuesto } from '../../domain/albaranSinPresupuesto'; // SCRUM-684
 
 const router = Router();
 
@@ -82,7 +85,18 @@ const router = Router();
  */
 async function jobIdsVisiblesPara(merchantId: number, teamMemberId: number | null): Promise<number[]> {
   const jobs = await prisma.job.findMany({
-    where: { merchantId, OR: [{ operarioId: teamMemberId }, { assignedUserId: teamMemberId }] },
+    // SCRUM-650 (T1) paso B · los TRES ejes, de la MISMA fuente que el listado de trabajos. Si esta
+    // ruta se quedara con dos, un tecnico asignado por la tabla veria su trabajo y NO sus albaranes.
+    where: {
+      merchantId,
+      OR: [
+        { operarioId: teamMemberId },
+        { assignedUserId: teamMemberId },
+        // SCRUM-650 (T1) paso B · el tercer eje, tambien aqui: si esta ruta se quedara con dos, un
+        // tecnico asignado por la tabla veria su trabajo y NO sus albaranes.
+        { assignees: { some: { teamMemberId: teamMemberId as number } } },
+      ],
+    },
     select: { id: true },
   });
   return jobs.map((j) => j.id);
@@ -242,16 +256,21 @@ router.get('/consolidables', async (req, res) => {
       tipoOperacion: jobById.get(a.jobId)?.tipoOperacion ?? null,
     }));
 
+    // SCRUM-643: la zona del merchant, resuelta en el sitio único (`core/zonaDelMerchant`).
+    const zona = zonaDelMerchant(await prisma.merchant.findUnique({
+      where: { id: req.merchantId! }, select: { timezone: true },
+    }));
+
     const { elegibles, descartados } = seleccionarConsolidablesDeCliente(candidatos, customerId, {
       desde: typeof req.query.desde === 'string' ? req.query.desde : null,
       hasta: typeof req.query.hasta === 'string' ? req.query.hasta : null,
       numeroDesde: typeof req.query.numeroDesde === 'string' ? req.query.numeroDesde : null,
       numeroHasta: typeof req.query.numeroHasta === 'string' ? req.query.numeroHasta : null,
       mes: typeof req.query.mes === 'string' ? req.query.mes : null,
-    });
+    }, zona);
 
     const lineasById = new Map(albaranes.map((a) => [a.id, a.lineas]));
-    const grupos = agruparPorMes(elegibles).map((g) => {
+    const grupos = agruparPorMes(elegibles, zona).map((g) => {
       let base = 0;
       let cuota = 0;
       for (const a of g.albaranes) {
@@ -358,7 +377,11 @@ router.post('/consolidar', requireRole('admin'), async (req, res) => {
       facturadoParcial: conParcial.has(a.id),
     }));
 
-    const { elegibles, descartados } = seleccionarConsolidablesDeCliente(candidatos, customerId, {});
+    // SCRUM-643: misma resolución, mismo sitio único.
+    const zona = zonaDelMerchant(await prisma.merchant.findUnique({
+      where: { id: req.merchantId! }, select: { timezone: true },
+    }));
+    const { elegibles, descartados } = seleccionarConsolidablesDeCliente(candidatos, customerId, {}, zona);
     if (descartados.length > 0) {
       // Se devuelven TODOS los motivos, no solo el primero: quien seleccionó ocho partes
       // necesita saber cuáles quitar de una vez, no ir descubriéndolos de uno en uno.
@@ -370,7 +393,7 @@ router.post('/consolidar', requireRole('admin'), async (req, res) => {
     }
 
     const lineasById = new Map(albaranes.map((a) => [a.id, a.lineas]));
-    const grupos = agruparPorMes(elegibles).map((g) => ({
+    const grupos = agruparPorMes(elegibles, zona).map((g) => ({
       mesLabel: mesNaturalLabel(g.mesKey),
       albaranes: g.albaranes.map((a) => ({
         id: a.id, numero: a.numero, fecha: a.fecha, lineas: lineasById.get(a.id),
@@ -490,6 +513,23 @@ router.patch('/:id', async (req, res) => {
     }
 
     if (req.body?.lineas !== undefined) {
+      // 🔴 SCRUM-684 · LA OTRA PUERTA, QUE NO TENÍA GUARD NINGUNO.
+      //
+      // Medido: el `POST` traía el `job_without_quote` y este `PATCH` **no**. O sea que el agujero
+      // que aquel guard decía tapar ya estaba abierto por aquí — un albarán anterior al guard se
+      // podía parchear con cualquier `quoteLineIndex` y nada lo validaba, porque
+      // `contarLineasDePresupuesto` devuelve `undefined` sin presupuesto y entonces `validarLineas`
+      // **conserva el índice tal cual**.
+      //
+      // El invariante es el mismo en las dos: ninguna línea puede decir que viene de un
+      // presupuesto que no existe. Una avería sin líneas enlazadas pasa por las dos.
+      const jobDelAlbaran = await prisma.job.findFirst({
+        where: { id: albaran.jobId, merchantId: req.merchantId }, select: { quoteId: true },
+      });
+      const vOrigen = veredictoAlbaranSinPresupuesto(jobDelAlbaran?.quoteId != null, req.body.lineas);
+      if (!vOrigen.ok) {
+        return res.status(409).json({ error: vOrigen.error, message: vOrigen.message });
+      }
       // SCRUM-367: mismo rango real que al crear. ESTE es el punto donde el índice se perdía.
       const nLineasQuote = await contarLineasDePresupuesto(albaran.jobId, req.merchantId!);
       const v = validarLineas(req.body.lineas, modoEfectivo, nLineasQuote);
@@ -507,9 +547,43 @@ router.patch('/:id', async (req, res) => {
         });
       }
     }
+    // ── SCRUM-607 (ALB-02) · EL INTERRUPTOR DEL PAPEL, Y SU CANDADO PROPIO ────────────────
+    //
+    // 🔴 SE PUEDE TOCAR EN `borrador` Y EN `emitido`; se congela al FIRMAR. Y aqui NO se copia el
+    // candado de `modoValoracion` a proposito: aquel se congela en `emitido` porque CAMBIA EL
+    // IMPORTE, y un importe que se mueve despues de emitir es otro documento. Este solo cambia
+    // QUE SE IMPRIME, y el caso real es de un profesional de verdad: «ya lo emiti y ahora me lo
+    // piden sin precios». Al firmar si se congela: ahi el papel es prueba de lo entregado.
+    //
+    // ⚠️ AL SIGUIENTE QUE QUIERA UNIFICARLO CON `modoValoracion`: ese es el motivo de por que no.
+    if (req.body?.ocultarPreciosEnDocumento !== undefined) {
+      if (!sePuedeCambiarOcultarPrecios(albaran.estado)) {
+        return res.status(409).json({
+          error: 'albaran_locked',
+          message: 'Este albaran ya esta firmado: lo que muestra el documento no se puede cambiar.',
+        });
+      }
+      // Booleano ESTRICTO. Un `Boolean(req.body...)` convertiria la cadena "false" en `true`, que
+      // en este campo significa ensenar los precios de alguien a su cliente.
+      if (typeof req.body.ocultarPreciosEnDocumento !== 'boolean') {
+        return res.status(400).json({ error: 'ocultar_precios_invalido' });
+      }
+      data.ocultarPreciosEnDocumento = req.body.ocultarPreciosEnDocumento;
+      cambios.push('ocultarPreciosEnDocumento');
+    }
     if (req.body?.notas !== undefined) {
       data.notas = String(req.body.notas || '').slice(0, 2000) || null;
       cambios.push('notas');
+    }
+    // SCRUM-593 (DOC-03) · el texto libre de CABECERA. Se trata EXACTAMENTE como `notas` —el
+    // campo hermano, que es el PIE de este mismo documento— tope incluido: dos límites distintos
+    // para dos textos del mismo papel serían una trampa para el profesional.
+    //
+    // 🔴 Y AQUÍ NO HAY `docFooterText`: el pie de este documento es `notas`, la línea de arriba.
+    // No se duplica. Que esa columna NO exista está comprobado contra `information_schema`.
+    if (req.body?.docHeaderText !== undefined) {
+      data.docHeaderText = String(req.body.docHeaderText || '').slice(0, 2000) || null;
+      cambios.push('docHeaderText');
     }
     // SCRUM-300 (C5): DOS fechas —la del documento y la de ENTREGA— con la misma regla y UNA
     // sola salida de error. Se hizo así a propósito: duplicar el `return 400 invalid_date` habría
@@ -590,6 +664,9 @@ router.get('/:id', async (req, res) => {
       select: {
         id: true, titulo: true, direccion: true, customerId: true, quoteId: true,
         operarioId: true, assignedUserId: true, // SCRUM-467: los dos ejes de «es suyo»
+        // SCRUM-650 (T1) paso B · el TERCER eje. Sin traerlo, `loVe` decidiria con dos y un
+        // tecnico asignado por la tabla no podria abrir el albaran de SU trabajo.
+        assignees: { select: { teamMemberId: true } },
       },
     });
 
@@ -604,7 +681,12 @@ router.get('/:id', async (req, res) => {
     // líneas más arriba, así que el código de estado no le dice si el documento existe.
     if (seesOnlyOwnJobs(req.userRole)) {
       const suyo = job != null
-        && (job.operarioId === req.teamMemberId || job.assignedUserId === req.teamMemberId);
+        // SCRUM-650 (T1) paso B · el TERCER eje se AÑADE; los dos de SCRUM-467 se quedan tal cual.
+        // Escritos aqui y no via `loVe` a proposito: el guard de SCRUM-467 comprueba ESTA LINEA por
+        // su texto, y sustituirla lo ponia en rojo sin que la garantia cambiara ni un apice. Es un
+        // rojo de FORMA, y su test es de otro carril: se amplia sin tocarlo (regla 9).
+        && (job.operarioId === req.teamMemberId || job.assignedUserId === req.teamMemberId
+          || (job.assignees ?? []).some((a) => a.teamMemberId === req.teamMemberId));
       if (!suyo) return res.status(404).json({ error: 'not_found' });
     }
     const customer = job?.customerId
@@ -1181,7 +1263,38 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
       ...l,
       concept: `Albarán ${albaran.numero} (${fechaTxt}): ${l.concept} — ${facturables[i].cantidad}`,
     }));
-    const total = totalDeFacturables(facturables);
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // 🔴 SCRUM-624 · EL TOTAL DE LA FACTURA SALE DE LA CANÓNICA, NO DE LA CONVENCIÓN DEL ALBARÁN
+    //
+    // Aquí ponía `totalDeFacturables(facturables)`, que redondea el céntimo POR LÍNEA. Medido:
+    // sobre 3 líneas de 9,99 al 21 % daba **36,27** mientras el desglose de la misma factura da
+    // base 29,97 + cuota 6,29 = **36,26**. O sea, una factura cuyo `ImporteTotal` NO se puede
+    // reconstruir sumando su propio desglose.
+    //
+    // 🔒 Eso no es «otro redondeo»: es un registro que se contradice a sí mismo, y el sistema que
+    // lo recibe lo RECHAZA — validación VeriFactu **1210** (`ImporteTotal` ≠ Σ(base + cuota + RE)).
+    // El desglose viaja a dos decimales por base y por cuota porque así lo exige el registro; si
+    // el total no sale de ESE mismo desglose, no hay aritmética que los reconcilie después.
+    //
+    // ⚠️ NO SE APOYA NADA en el margen de ±10 € del PDF de la AEAT: `SEMAFORO_CALIBRACION.md`
+    // §8.1 dice que dónde está la frontera entre el rechazo (1210) y la aceptación (2005) **es
+    // una inferencia, no está escrito en ninguna de las dos fuentes**. Lo que se afirma aquí es
+    // sólo COHERENCIA INTERNA —el total reconstruible desde su desglose—, que es aritmética
+    // contra la estructura del registro y no interpretación de la norma. La confirmación fiscal
+    // va a la asesoría (SCRUM-619 y 623). Decisión del fundador, 4-sep-2026.
+    //
+    // 🔴 Y LA CONVENCIÓN POR LÍNEA NO SE DEROGA: sigue viva y gobierna el ALBARÁN
+    // (`albaranAFactura.ts:274-278`, `albaran.service.ts:191`). Un albarán no es un registro
+    // fiscal y sus líneas tienen que sumar A LA VISTA. Lo que estaba mal no era la convención:
+    // era que CRUZABA LA FRONTERA al convertirse en factura. Lo que se arregla es la frontera.
+    //
+    // ⚠️ Se calcula sobre `invoiceLines` —las que se GUARDAN— y no sobre `facturables`: así el
+    // total, el desglose y la cuota de la huella VeriFactu (`calcVatCuotaTotal`, que es
+    // `calcVatBreakdown`) salen del MISMO cálculo sobre los MISMOS datos. Que cuadren por
+    // construcción, no por casualidad.
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    const bd = calcVatBreakdown(invoiceLines);
+    const total = (bd.base + bd.cuota).toFixed(2);
 
     // SCRUM-246 · ANTES de pedir número: si no hay nada que cobrar, la serie ni se entera.
     // Comprobarlo después obligaría a deshacer una factura ya numerada, y deshacer es lo que crea
@@ -1236,7 +1349,8 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
     if (lineasAdicional.length > 0) {
       try {
         adicional = await prisma.$transaction(async (tx) => {
-          const quoteNumber = await allocateQuoteNumber(tx, req.merchantId!);
+          // SCRUM-592 · la fila guarda la SECUENCIA; el texto `P260001` se deriva al pintarlo.
+          const { seq: quoteNumber } = await allocateQuoteNumber(tx, req.merchantId!);
           const creado = await tx.quote.create({
             data: {
               merchantId: req.merchantId!, customerId: job.customerId, quoteNumber,

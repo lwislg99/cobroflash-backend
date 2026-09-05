@@ -3,6 +3,7 @@ import { prisma } from '../../core/db/prisma';
 import { allocateInvoiceNumber, isReceiptNumber } from '../invoicing/domain/invoiceNumber.service';
 import { buildBillingPlanView } from '../quotes/domain/billingPlanView'; // SCRUM-34
 import { ensureQuoteDecisionToken } from '../quotes/domain/quoteToken.service'; // SCRUM-95
+import { numeroConRevision, vistaDeRevisiones } from '../quotes/domain/revision'; // SCRUM-655 (T6, fase B)
 
 /**
  * Lista de presupuestos para el panel admin.
@@ -119,9 +120,57 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
   // de la UI nunca prometa un tramo distinto del que emitiría el endpoint.
   const planView = buildBillingPlanView(quote as any, (quote.Invoice || []).length);
 
+  // ── SCRUM-655 (T6, fase B) · QUÉ REVISIONES HAY Y CUÁL ESTÁ VIGENTE ───────────────────────
+  // El «.1» de «P2004226.1» es una REVISIÓN, y vive en su columna: el número base no cambia.
+  // El grupo es {merchantId, quoteNumber}. 🔴 Y `quoteNumber` NULO NO ES UNA CLAVE: agrupar por
+  // null metería en el mismo saco a todos los presupuestos sin numerar del merchant, que no tienen
+  // nada que ver entre sí. Sin número, un presupuesto es su propio grupo — y eso es la verdad, no
+  // un apaño: sin número no hay «P2004226» del que ser la revisión.
+  const hermanas = quote.quoteNumber != null
+    ? await prisma.quote.findMany({
+        where: { merchantId: quote.merchantId, quoteNumber: quote.quoteNumber },
+        select: { id: true, quoteNumber: true, revision: true, status: true,
+                  signatureUrl: true, total: true, createdAt: true },
+        orderBy: { revision: 'asc' },
+      })
+    : [{ id: quote.id, quoteNumber: quote.quoteNumber, revision: quote.revision,
+         status: quote.status, signatureUrl: quote.signatureUrl,
+         total: quote.total, createdAt: quote.createdAt }];
+
+  const base = String(quote.quoteNumber ?? quote.id);
+  const comoFila = (q: { id: number; revision: number; signatureUrl: string | null }) => ({
+    id: q.id,
+    numero: base,
+    revision: q.revision,
+    // «FIRMADO» se deriva de `signatureUrl`, NO de `acceptedAt` — el MISMO criterio que el libro
+    // registro (`libroRegistro.repo.ts`) y el embudo de métricas: aceptar y firmar no son lo mismo.
+    // Y el trazo NO VIAJA: `signatureUrl` es un data-URI con la firma del cliente y de aquí sale
+    // sólo el booleano.
+    firmado: q.signatureUrl != null,
+  });
+  // Toda la regla vive en el dominio: el suelo de ceguera y el «dos vigentes no es una respuesta».
+  const vista = vistaDeRevisiones(comoFila(quote), hermanas.map(comoFila));
+  const porId = new Map(hermanas.map((q) => [q.id, q]));
+  const revisiones = vista.revisiones.map((r) => ({
+    id: r.id,
+    revision: r.revision,
+    numero: numeroConRevision(r),
+    status: porId.get(r.id)!.status,
+    firmado: r.firmado,
+    total: porId.get(r.id)!.total,
+    createdAt: porId.get(r.id)!.createdAt,
+    vigente: r.esVigente,
+  }));
+
   return {
     id: quote.id,
     number: quote.quoteNumber ?? quote.id, // A1.2: número visible por merchant
+    // SCRUM-655 (T6, fase B). `number` NO se toca: un presupuesto sin revisiones sale exactamente
+    // como salía —enumerado y sin «.0»—, y todo lo que ya lo consume sigue leyendo lo mismo.
+    revision: quote.revision,
+    numeroConRevision: vista.numero,
+    revisiones,
+    vigenteId: vista.vigenteId,
     // SCRUM-95: token opaco del enlace público (patrón payToken de Charge.receiptToken,
     // jobs.routes.ts:157) — lo consume la vista admin para el enlace "copiar" de fallback.
     payToken: await ensureQuoteDecisionToken(quote.id, prisma),

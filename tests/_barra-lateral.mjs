@@ -157,6 +157,16 @@ export const AUSENCIAS_CONOCIDAS = {
  * se separan por el lado que nadie mira.
  */
 export const ANADIDAS_DECLARADAS = {
+  'partes-oficina': {
+    ticket: 'SCRUM-703',
+    motivo:
+      'El diseño de B1 es del 5-ago y el parte de trabajo llegó con el sprint Tecnosel: no está ' +
+      'en la lista porque no existía cuando se escribió. Es donde la OFICINA pone los precios de ' +
+      'un parte ya firmado — sin esa pantalla el parte llega firmado y sin valorar, y sin valorar ' +
+      'no se cobra. El rótulo «Partes por valorar» lo aprueba el fundador el 3-sep-2026, y hasta ' +
+      'ese día la entrada NO estuvo en la barra: el guard ④ de este mismo fichero prohíbe un ' +
+      'marcador en lo primero que el profesional ve cada día, y tenía razón.',
+  },
   'libro-registro': {
     ticket: null,
     motivo:
@@ -175,6 +185,10 @@ export const ANADIDAS_DECLARADAS = {
 export const VISTAS_SIN_ENTRADA = {
   'quotes-detail': { motivo: 'detalle: se llega desde el listado de presupuestos' },
   'albaran-detail': { motivo: 'detalle: se llega desde el listado de albaranes' },
+  // SCRUM-652 (fase D): NO tiene entrada en la barra a propósito. Crear un parte sólo tiene
+  // sentido dentro de un trabajo, y no hay listado de partes: una entrada suelta llevaría a una
+  // pantalla que no sabe de qué trabajo hablar.
+  'parte-detail': { motivo: 'detalle: se llega desde el Trabajo', ticket: 'SCRUM-652' },
   'invoice-detail': { motivo: 'detalle: se llega desde el listado de facturas' },
   'jobs-detail': { motivo: 'detalle: se llega desde el listado de trabajos' },
   'customer-360': { motivo: 'detalle: la ficha de un cliente, se llega desde el listado de clientes' },

@@ -64,17 +64,19 @@
              El rótulo «Cobros» ya está aprobado, para que B4 no tenga que pedirlo. -->
         <div class="nav-section-label">Venta</div>
 
+        <!-- SCRUM-599 (DOC-09) · EL SUBMENÚ SE RETIRA, Y EL CAMINO NO SE PIERDE.
+             Presupuestos era el ÚNICO tipo de documento con submenú: el profesional se encontraba
+             tres formas distintas de llegar a crear según el tipo. Ahora la entrada abre LA LISTA,
+             igual que Albaranes y Facturas, y la creación es el botón primario de esa pantalla.
+             El destino `quotes-new` NO desaparece: sigue en `HASH_VIEWS` (un enlace guardado no
+             se rompe) y lo abren el botón de la lista, la ficha del cliente y el estado vacío de
+             Facturas — censado antes y después, y el censo falla si devuelve cero. -->
         <div class="nav-group" data-group="quotes">
-          <button class="nav-item nav-item-parent" type="button">
+          <button class="nav-item nav-item-parent" type="button" data-view="quotes-list">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
             <span id="nav-quotes-label">Presupuestos</span>
             <span id="nav-quotes-badge" class="nav-badge" style="display:none">0</span>
-            <svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="nav-subitems">
-            <button class="nav-item nav-subitem" data-view="quotes-list">Historial</button>
-            <button class="nav-item nav-subitem" data-view="quotes-new" id="nav-quotes-new">Crear nuevo</button>
-          </div>
         </div>
 
         <!-- SCRUM-432 (B1 · incremento 3): `Plantillas` YA NO ES ENTRADA DE MENÚ. Pasó a pestaña
@@ -90,6 +92,15 @@
         <button class="nav-item" data-view="albaranes" id="nav-albaranes">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2h6a2 2 0 012 2v1h2a1 1 0 011 1v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a1 1 0 011-1h2V4a2 2 0 012-2z"/><path d="M9 12h6M9 16h4"/></svg>
           <span id="nav-albaranes-label">Albaranes</span>
+        </button>
+
+        <!-- Sprint Tecnosel · el sitio donde la oficina pone los precios de los partes ya
+             firmados. RÓTULO APROBADO por el fundador el 3-sep-2026 (regla 30); hasta ese día
+             la entrada no estuvo aquí, porque la barra es lo primero que ve el profesional cada
+             día y no admite un marcador — lo pedía el guard ④ de SCRUM-420. -->
+        <button class="nav-item" data-view="partes-oficina" id="nav-partes-oficina">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h5"/></svg>
+          <span id="nav-partes-oficina-label">Partes por valorar</span>
         </button>
 
         <button class="nav-item" data-view="invoices">
@@ -224,6 +235,7 @@
   <script src="./js/contacto.js"></script>
   <script src="./js/modalHeader.js"></script>
   <script src="./js/switchFormaJuridica.js"></script> <!-- SCRUM-574: el switch Empresa/Persona, una pieza para los dos modales -->
+  <script src="./js/filtroClientes.js"></script> <!-- SCRUM-581: pestañas y orden de la lista; va ANTES de customersView.js, que lo consume -->
   <!-- SCRUM-366: la escalera de la siguiente accion, compartida por el listado y el detalle.
        Detras de api.js porque usa fmtMoneyEs; delante de las dos vistas que la consumen. -->
   <script src="./js/jobNextAction.js"></script>
@@ -238,13 +250,27 @@
   <!-- SCRUM-432 (B1 · incremento 3): las pestañas `Historial · Plantillas`. Antes de las dos
        vistas que la usan. -->
   <script src="./js/quotesTabs.js"></script>
+  <!-- SCRUM-599 · el registro del atajo «N». Va ANTES que las vistas: ellas se registran en él. -->
+  <script src="./js/atajoNuevo.js"></script>
   <script src="./js/quotesListView.js"></script>
   <!-- SCRUM-229: las dos funciones puras del margen agregado, ANTES de la vista que las usa. -->
   <script src="./js/quoteMargen.js"></script>
   <script src="./js/quoteSuplido.js"></script>
+  <script src="./js/quoteApartados.js"></script>
+  <script src="./js/quoteDescuentos.js"></script>
+  <script src="./js/quoteCaducidad.js"></script> <!-- SCRUM-633: el dia natural en la zona del merchant; va ANTES de quotesView.js -->
+  <!-- SCRUM-587 (CONT-14): DESPUÉS de quoteDescuentos.js, del que lee la aritmética y sin el
+       cual se niega a funcionar; y ANTES de quotesView.js, que le pide la propuesta. -->
+  <script src="./js/descuentoPorDefecto.js"></script>
+  <script src="./js/quoteDireccionObra.js"></script> <!-- SCRUM-602 (DOC-12): los tres modos de la direccion de la obra; va ANTES de quotesView.js -->
+  <script src="./js/quoteRevisiones.js"></script>
   <script src="./js/quoteAtajosVencimiento.js"></script> <!-- SCRUM-605: atajos de «Válido hasta» -->
+  <script src="./js/tiposDeIva.js"></script> <!-- SCRUM-611 (DOC-16): los tipos del selector de la linea, UN solo sitio; va ANTES de quotesView.js -->
+  <script src="./js/textoDelDocumento.js"></script> <!-- SCRUM-593 (DOC-03): los dos textos libres del documento; va ANTES de quotesView.js, que los consumira en la fase 3 (schema+cableado) -->
   <script src="./js/quotesView.js"></script>
   <script src="./js/quotesDetailView.js"></script>
+  <script src="./js/switchTipoArticulo.js"></script> <!-- SCRUM-609 (CAT-01): el switch Producto/Servicio, una pieza para los dos formularios -->
+  <script src="./js/margenCatalogo.js"></script> <!-- SCRUM-609: la aritmetica del margen; va ANTES de productsView.js, que la consume -->
   <script src="./js/productsView.js"></script>
   <script src="./js/providersView.js"></script>
   <script src="./js/tipoDestinatarioPendiente.js"></script> <!-- SCRUM-615: la pregunta y el aviso de la bandeja -->
@@ -271,6 +297,8 @@
   <!-- SCRUM-292 (A1): la revision ANTES de emitir. Puro: devuelve estados, no frases. -->
   <script src="./js/facturaPreEmision.js"></script>
   <script src="./js/jobRailBlocks.js"></script>
+  <!-- SCRUM-650 (T1): el selector de QUIEN EJECUTA. Antes de jobDetailView.js, que lo usa. -->
+  <script src="./js/jobAsignados.js"></script>
   <script src="./js/expensesView.js"></script>
   <script src="./js/settingsSubmenus.js"></script>
   <script src="./js/puertaSerie.js"></script>
@@ -280,6 +308,7 @@
   <script src="./js/teamView.js"></script>
   <script src="./js/jobsCierreTrabajo.js"></script>
   <script src="./js/terminadoSinCobrar.js"></script>
+  <script src="./js/jobNuevoModal.js"></script>
   <script src="./js/jobsView.js"></script>
   <script src="./js/signaturePad.js"></script>
   <script src="./js/jobDetailView.js"></script>
@@ -302,6 +331,9 @@
   <script src="./js/colaDeFirmas.js"></script>
   <!-- SCRUM-360 fase 3 · lee la cola y marca fuera de IndexedDB: despues del almacen y de la cola. -->
   <script src="./js/resistenciaAlmacen.js"></script>
+  <!-- SCRUM-652 (T3 fase C) · el parte: usa el pad de firma y la cola, va despues de los dos. -->
+  <script src="./js/parteDetailView.js"></script>
+  <script src="./js/parteOficinaView.js"></script>
   <script src="./js/app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {

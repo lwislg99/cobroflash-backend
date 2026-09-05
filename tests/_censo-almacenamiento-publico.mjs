@@ -114,7 +114,7 @@ export function censarAlmacenamiento(raizPublic, raizRepo) {
  *
  * @returns {{tipo:'exacta'|'prefijo', valor:string}|null}
  */
-function resolverClave(arg, sf) {
+function resolverClave(arg, sf, vistos = new Set()) {
   if (!arg) return null;
   if (ts.isStringLiteralLike(arg) && !ts.isTemplateExpression(arg)) {
     return { tipo: 'exacta', valor: arg.text };
@@ -128,8 +128,31 @@ function resolverClave(arg, sf) {
   // escritura nueva escrita con `+` se declara ciega y parece un fallo del censo cuando es solo
   // una forma que no habíamos previsto. Se toma la parte IZQUIERDA si es una cadena.
   if (ts.isBinaryExpression(arg) && arg.operatorToken.kind === ts.SyntaxKind.PlusToken) {
-    const izq = resolverClave(arg.left, sf);
+    const izq = resolverClave(arg.left, sf, vistos);
     return izq && izq.valor ? { tipo: 'prefijo', valor: izq.valor } : null;
+  }
+  // SCRUM-584 · `localStorage.setItem(CLAVE_COLUMNAS, …)`: la clave vive en una CONSTANTE del
+  // mismo fichero. Se añade por la MISMA razón que se añadió el `+` de arriba —una forma
+  // corriente que nadie había previsto dejaba ciego al censo— y con el mismo límite: un salto,
+  // identificador → su declaración en ESTE fichero, cuyo valor se vuelve a resolver con estas
+  // reglas. No es un intérprete y no pretende serlo.
+  //
+  // 🔴 Dos cautelas, y las dos hacen que devuelva `null` (= ciego, = rojo), nunca una adivinanza:
+  //   · si el nombre está declarado MÁS DE UNA VEZ en el fichero, no se elige: no se sabe cuál es.
+  //   · `vistos` corta `const A = B; const B = A;` — sin él, el censo se colgaría al leerlo, y un
+  //     censo colgado no es un rojo: es una tanda que no termina y nadie sabe por qué.
+  if (ts.isIdentifier(arg)) {
+    if (vistos.has(arg.text)) return null;
+    vistos.add(arg.text);
+    const valores = [];
+    (function busca(n) {
+      if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name)
+          && n.name.text === arg.text && n.initializer) {
+        valores.push(n.initializer);
+      }
+      ts.forEachChild(n, busca);
+    })(sf);
+    return valores.length === 1 ? resolverClave(valores[0], sf, vistos) : null;
   }
   if (ts.isCallExpression(arg) && ts.isIdentifier(arg.expression)) {
     const nombre = arg.expression.text;
@@ -142,7 +165,7 @@ function resolverClave(arg, sf) {
       if (esLaFuncion && n.body) {
         (function buscaReturn(b) {
           if (hallada) return;
-          if (ts.isReturnStatement(b) && b.expression) hallada = resolverClave(b.expression, sf);
+          if (ts.isReturnStatement(b) && b.expression) hallada = resolverClave(b.expression, sf, vistos);
           ts.forEachChild(b, buscaReturn);
         })(n.body);
       }

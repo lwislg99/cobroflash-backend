@@ -4,6 +4,7 @@ import { isDemoMerchant } from '../invoicing/domain/emission.service'; // SCRUM-
 // no aqui: aqui solo se lee la base y se lanza el error.
 import { bloqueoCambioDeSerie, numerosDeLaSerie } from '../../core/validation/fiscalInput';
 import { prisma } from '../../core/db/prisma';
+import { normalizarClausulasParaGuardar } from '../quotes/domain/clausulas';
 
 export const DEFAULT_MERCHANT_ID = 1; // de momento trabajamos con el merchant demo
 
@@ -100,6 +101,14 @@ export async function getMerchantProfile(merchantId: number = DEFAULT_MERCHANT_I
       address: true,
       trade: true,
       defaultCurrency: true,
+      // 🔴 SCRUM-633 · LA ZONA, Y ESTE ES EL ESLABÓN QUE MÁS FÁCIL SE PIERDE.
+      //
+      // El `select` es EXPLÍCITO: lo que no esté aquí NO SALE, aunque esté en la columna. Sin
+      // esta línea, el navegador del profesional no sabría en qué calendario vive su negocio y
+      // volvería a calcular la caducidad en UTC — que es el defecto entero de este ticket. Es la
+      // misma advertencia que dejó SCRUM-579 con la dirección de facturación, y por eso hay un
+      // test que la ata en vez de confiar en que nadie la borre.
+      timezone: true,
       invoiceSeriesPrefix: true,
       logoUrl: true,
       whatsappPhone: true,
@@ -212,6 +221,15 @@ export async function updateMerchantProfile(
 
   // profileZones: Json — null se guarda como [] (limpiar chips)
   const { profileZones, ...rest } = data;
+
+  // SCRUM-656 (T7 fase B) · se sanean ANTES de guardar, no solo al pintar. Guardar una cláusula
+  // con el texto vacío dejaría en Configuración una fila que el profesional VE y que en el PDF no
+  // sale nunca: el producto le estaría mintiendo en su propia pantalla de ajustes.
+  const clausulas = (rest as Record<string, unknown>).clausulasPresupuesto;
+  if (clausulas !== undefined) {
+    (rest as Record<string, unknown>).clausulasPresupuesto =
+      clausulas === null ? [] : normalizarClausulasParaGuardar(clausulas);
+  }
 
   const updated = await prisma.merchant.update({
     where: { id: merchantId },

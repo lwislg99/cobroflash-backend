@@ -153,8 +153,26 @@ const INVISIBLES = [
   'src/core/validation/schemas.ts',
   'src/modules/expenses/domain/justificante.ts',
   'src/modules/invoicing/domain/recargoEquivalencia.ts',
+  // 🔴 2-sep-2026 · SCRUM-656 · ENTRA `pdf.service.ts`, y NO porque se haya añadido aritmética:
+  // porque se ha destapado la que ya tenía. Ese fichero pinta DOS documentos, y su bloque de
+  // totales de la FACTURA agrupa el IVA por tipo a mano —a propósito y documentado, ver el
+  // comentario «DE DÓNDE SALEN LAS CIFRAS, Y POR QUÉ NO DE calcVatBreakdown»—. Lo que lo
+  // mantenía fuera de esta lista era que el bloque del PRESUPUESTO, en el MISMO fichero, sí
+  // llamaba a la primitiva: el criterio es POR FICHERO, así que una llamada de un documento
+  // tapaba la aritmética a mano del otro.
+  //
+  // Al mover el pie del presupuesto a `quotes/domain/presentacionIva.ts` (que sí la llama), la
+  // máscara desaparece y el fichero aparece por lo que lleva haciendo desde siempre. NO se
+  // arregla aquí: es el camino de emisión de la factura (regla 38) y no es de este ticket.
+  'src/modules/invoicing/infra/pdf/pdf.service.ts',
+  // Sprint Tecnosel · ENTRA `partes.routes.ts`: el serializador de OFICINA multiplica
+  // `precioUnitario * unds` para dar el importe de cada línea. Ver su veredicto en scrum627b.
+  'src/modules/jobs/app/routes/partes.routes.ts',
   'src/modules/jobs/domain/albaran.service.ts',
   'src/modules/jobs/domain/albaranAFactura.ts',
+  // 2-sep-2026 · SCRUM-652 (T3 fase B): nace el PARTE DE TRABAJO y deriva su IVA por documento,
+  // igual que el albarán. SUBE a conciencia y va clasificado abajo, en `scrum627b`.
+  'src/modules/jobs/domain/parteTrabajo.ts',
   // 🔴 SALE `maintenance.service.ts` (SCRUM-627b, 25-ago-2026) — y baja de 9 a 8. NO es un
   // refinamiento silencioso: era un FALSO POSITIVO probado. El alias del impuesto nacía del
   // NOMBRE de una propiedad (`let line: QuoteLine = { …, tax: 0 }`), así que `line` entera pasaba
@@ -162,7 +180,11 @@ const INVISIBLES = [
   // `_censo-aritmetica-iva.mjs`: el nombre de una propiedad ya no cuenta como mención; su VALOR
   // sí. Medido: era el único, y quitarlo no pierde ningún hallazgo real.
   // La entrada se anota en vez de borrarse a secas, para que la bajada no parezca una pérdida.
-  'src/modules/quotes/app/routes/quotes.routes.ts',
+  // ✅ 2-sep-2026 · SCRUM-655 · SALE `quotes.routes.ts`, y la bajada se anota en vez de borrarse
+  // a secas: `calcTierTotal` ERA una segunda copia de `calcTotal` con la misma aritmética escrita
+  // otra vez, y ahora DELEGA. Lo destapó el compilador al hacer `qty`/`price` opcionales para las
+  // cabeceras de apartado — la copia se habría quedado sumando `undefined` mientras la de `utils`
+  // ya sabía saltarse las cabeceras. Un arreglo sin anotar se deshace solo.
   'src/modules/system/app/routes/customerPortal.routes.ts',
 ];
 

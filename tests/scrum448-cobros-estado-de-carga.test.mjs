@@ -11,6 +11,7 @@
 //
 // Lo encontró el banco de SCRUM-362 en su primer uso, con el escenario «acepta y no entrega».
 import test from 'node:test';
+import { ejecutableDe } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -208,7 +209,9 @@ test('SCRUM-448 · Cobros ya NO tiene plazo propio: el de la casa es el de `apiR
   // toca a esta vista: que **no se ha quedado con el suyo**. La otra mitad —que en `api.js` hay una
   // sola constante y son 10 s— la comprueba `scrum451-plazo-de-red.test.mjs`.
   const fuente = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/cobrosView.js'), 'utf8');
-  const codigo = fuente.replace(/\/\/[^\n]*|\/\*[^]*?\*\//g, '');
+  // SUELO (SCRUM-719): sin esto, las tres prohibiciones de abajo (plazo propio, `setTimeout`,
+  // número suelto) pasaban sobre la cadena vacía.
+  const codigo = ejecutableDe(fuente, { ancla: 'renderCobrosView', donde: 'cobrosView.js' });
   assert.doesNotMatch(codigo, /COBROS_PLAZO_MS/,
     '🔴 Cobros ha vuelto a tener su propio plazo. Dos plazos son dos números que se separan: el ' +
     'segundo sitio donde se copia una decisión es donde deja de ser una decisión y pasa a ser una ' +

@@ -43,6 +43,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import { leerSiSigueAhi, exigirCorpusLeido } from './_barrido-estable.mjs'; // SCRUM-740
 
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
@@ -90,7 +91,9 @@ function esShell(ruta) {
   if (/\.(sh|bash)$/.test(ruta)) return true;
   if (path.extname(ruta) !== '') return false;
   try {
-    return /^#!.*\b(bash|sh)\b/.test(fs.readFileSync(ruta, 'utf8').split('\n', 1)[0] ?? '');
+    // SCRUM-740: si desapareció entre el `readdir` y esta lectura, no es shell ni es nada.
+    const cabecera = leerSiSigueAhi(ruta);
+    return cabecera === null ? false : /^#!.*\b(bash|sh)\b/.test(cabecera.split('\n', 1)[0] ?? '');
   } catch {
     return false;
   }
@@ -153,13 +156,19 @@ export function infraccionesShell(codigo, ruta) {
 
 function todasLasInfracciones() {
   const out = [];
+  let leidos = 0;
   for (const p of TODOS) {
     const r = rel(p);
     if (r === CASA_DEL_PARSEO) continue; // es el sitio autorizado
-    const codigo = fs.readFileSync(p, 'utf8');
+    // SCRUM-740: se tolera SÓLO que el fichero haya desaparecido entre el `readdir` y esto
+    // (cuatro autopruebas escriben y borran dentro de `tests/`). El suelo va justo debajo.
+    const codigo = leerSiSigueAhi(p);
+    if (codigo === null) continue;
+    leidos++;
     if (esJs(p)) out.push(...infraccionesJs(codigo, r));
     else if (esShell(p)) out.push(...infraccionesShell(codigo, r));
   }
+  exigirCorpusLeido(leidos, 50, 'SCRUM-226 · parseo de URL de BD a mano');
   return out;
 }
 

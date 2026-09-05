@@ -50,21 +50,62 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
  * 🔴 EL TOPE BAJA PORQUE SE MIDIO RUIDO, NUNCA PORQUE EL NUMERO MOLESTE. Y no baja a 16 porque
  *    16 no es lo que hay: seria un tope que el arbol no cumple, o sea main en rojo. La rebaja
  *    honesta es de 6 —13 que se van, 7 que aparecen— y las dos mitades estan escritas.
+ *
+ * ── SCRUM-670 · 23 -> 21, Y ESTA VEZ POR ARREGLO, no por medicion ───────────────────────────
+ *
+ * Habia SEIS extractores leyendo `public/dashboard/index.html`, cada uno con su idea de que es un
+ * `<script>`. Dos de ellos con el `>` PEGADO, que es lo que vigila este fichero:
+ *
+ *     tests/_banco-vistas.mjs                          <script src="./X"></script>
+ *     tests/dashboard-colision-declaraciones.test.mjs  <script src="./js/X"></script>
+ *
+ * Los dos se han retirado: los seis consumidores derivan ahora de UN extractor unico
+ * (`tests/_scripts-de-la-pagina.mjs`), que si deja hueco a los atributos. Y no era cosmetica —
+ * medido: esas dos veian 0 ante `<script src="./js/x.js" defer></script>`, o sea que esa vista se
+ * quedaba sin cargar y sin vigilar mientras el guard del shell la exigia en `sw.js`.
+ *
+ * Es el mismo defecto que este trinquete existe para frenar, cazado en su version mas cara. El
+ * propio trinquete lo pidio con estas palabras: «han bajado a 21, baja TOPE a ese numero».
  */
-const TOPE = 23;
-
+// 🔴 2-sep-2026 · SCRUM-670 · RECONTADO SOBRE EL ÁRBOL MEZCLADO: 20.
+//
+// Ni el 22 de la rama ni el 21 de main: los dos son de árboles que ya no existen. Las dos
+// partes del merge bajaban este número por el mismo motivo —llevar los lectores del índice a
+// un solo extractor— y cada una contó sobre el suyo. Sumar o elegir habría dejado el tope por
+// encima de lo real, que es como un trinquete deja de proteger sin que nadie lo note.
+//
+// Y la base heredada decía 21 antes de todo esto: este contador no ha sido nunca de fiar. El
+// que vale sale de CONTAR, y el propio guard lo dice en su mensaje cuando no cuadra.
+const TOPE = 20;
 /**
  * Los 7 que el criterio viejo no veia. Estan aqui para que se puedan arreglar, NO para
  * excusarlos: cuentan dentro del TOPE como cualquier otro.
+ *
+ * 🔴 SCRUM-710 · ANTES ESTO ERAN SIETE `fichero:linea`, Y ERAN LOS ÚNICOS ANCLAJES POR
+ * POSICIÓN DEL ÁRBOL QUE SE ROMPÍAN DE VERDAD. Medido metiendo UNA linea en blanco arriba de
+ * cada fichero anclado y corriendo su guard: de los 40 anclajes por linea que hay, **se rompen
+ * exactamente estos 7**. Los otros 33 aguantan, porque citan la posicion como DECLARACION y no
+ * la recalculan; aqui se comparaba contra `${h.fichero}:${h.linea}` recien calculado.
+ *
+ * Y el coste no era teorico: el 4-sep-2026 bloquearon tipar `serializeJobDetail`. Anadir un
+ * comentario en `scrum363` desplazaba su linea 133, esto caía, y corregir el numero hacía caer a
+ * `scrum710b`. Tres ficheros de otros carriles para tipar una firma.
+ *
+ * ✅ AHORA SE IDENTIFICAN POR LO QUE SON —fichero + la ETIQUETA que el censo ya devuelve— y por
+ * CUANTAS hay. La multiplicidad no es un adorno: `scrum331-heroe` tiene `<span class="eyebrow">`
+ * DOS veces, asi que sin contar, arreglar una de las dos pasaría desapercibido. Son **7
+ * hallazgos en 6 identidades**, y se escribe aqui porque ver un 6 al lado de un texto que dice
+ * «los 7» invita a pensar que se perdio uno.
+ *
+ * La etiqueta no se mueve cuando alguien edita por encima. La linea, si.
  */
 const NO_SE_VEIAN_ANTES = [
-  'tests/scrum331-heroe.test.mjs:163',
-  'tests/scrum331-heroe.test.mjs:164',
-  'tests/scrum541-comparativa-a11y.test.mjs:82',
-  'tests/_barra-lateral.mjs:77',
-  'tests/scrum264-copy-que-llega-al-cliente.test.mjs:74',
-  'tests/scrum363-eje-de-cobro.test.mjs:133',
-  'tests/scrum551-anclas-bloque-f.test.mjs:152',
+  ['tests/scrum331-heroe.test.mjs', '<span class="eyebrow">', 2],
+  ['tests/scrum541-comparativa-a11y.test.mjs', '<span class="cmp-lbl">', 1],
+  ['tests/_barra-lateral.mjs', '<div class="nav-section-label">', 1],
+  ['tests/scrum264-copy-que-llega-al-cliente.test.mjs', '<br\\/>', 1],
+  ['tests/scrum363-eje-de-cobro.test.mjs', '<span class="status-pill \\$\\{cobroCls\\}">', 1],
+  ['tests/scrum551-anclas-bloque-f.test.mjs', '<div class="prod" data-gremio="pintura">', 1],
 ];
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -302,11 +343,21 @@ test('SCRUM-567 · los 7 que el criterio viejo no veia siguen ahi, nombrados', (
   // No son una excusa: cuentan dentro del TOPE. Estan nombrados para que se puedan arreglar, y
   // este caso avisa cuando alguien arregle uno — porque entonces el tope tiene que bajar.
   const r = censar(RAIZ);
-  const coords = new Set(r.html.map((h) => `${h.fichero}:${h.linea}`));
-  const perdidos = NO_SE_VEIAN_ANTES.filter((c) => !coords.has(c));
+  // Se cuenta por IDENTIDAD (fichero + etiqueta), no por posicion. Y se cuenta de verdad: con un
+  // `Set` de identidades, arreglar UNA de las dos `eyebrow` de `scrum331` no se notaria.
+  const cuenta = new Map();
+  for (const h of r.html) {
+    const k = `${h.fichero}  ${h.etiqueta}`;
+    cuenta.set(k, (cuenta.get(k) || 0) + 1);
+  }
+  const perdidos = NO_SE_VEIAN_ANTES
+    .map(([f, etiqueta, n]) => ({ f, etiqueta, n, hay: cuenta.get(`${f}  ${etiqueta}`) || 0 }))
+    .filter((x) => x.hay < x.n)
+    .map((x) => `${x.f}  ${x.etiqueta}  (esperaba ${x.n}, hay ${x.hay})`);
   assert.deepEqual(perdidos, [],
     '✅/🔴 alguno de los 7 ya no aparece.\n'
-    + '  Si lo has ARREGLADO: enhorabuena — quitalo de `NO_SE_VEIAN_ANTES` y baja `TOPE` en uno.\n'
+    + '  Si lo has ARREGLADO: enhorabuena — baja su cuenta en `NO_SE_VEIAN_ANTES` (o quita la\n'
+    + '  entrada si llega a cero) y baja `TOPE` en uno.\n'
     + '  Si NO lo has tocado: el detector ha dejado de verlo, que es el fallo caro — el numero\n'
     + '  bajaria sin que nadie hubiera arreglado nada.\n'
     + `  Faltan: ${JSON.stringify(perdidos)}`);

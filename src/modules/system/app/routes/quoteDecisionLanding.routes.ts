@@ -6,6 +6,8 @@ import { getLocale } from '../../../../core/i18n/locales';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { isQuoteExpired } from '../../../quotes/domain/expire.service';
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
+// SCRUM-633 · el calendario en el que vive el merchant. Sitio único desde SCRUM-643.
+import { zonaDelMerchant } from '../../../../core/zonaDelMerchant';
 
 type DecisionApiError = { message?: string; error?: string };
 
@@ -180,7 +182,10 @@ async function loadQuote(token: string) {
   return prisma.quote.findUnique({
     where: { decisionToken: token },
     include: {
-      merchant: { select: { name: true, legalName: true, logoUrl: true, address: true, country: true, brandColor: true, brandAccentColor: true, whatsappPhone: true } },
+      // SCRUM-633 · `timezone`: la página que ve el CLIENTE imprime la fecha de caducidad DOS
+      // veces, y sin este campo las dos saldrían en la zona del contenedor. Mismo `select`
+      // explícito, mismo riesgo: lo que no esté aquí no sale.
+      merchant: { select: { name: true, legalName: true, logoUrl: true, address: true, country: true, brandColor: true, brandAccentColor: true, whatsappPhone: true, timezone: true } },
       customer: { select: { name: true } },
     },
   });
@@ -342,7 +347,14 @@ function renderQuoteDetail(
     ? new Date((quote as any).validUntil)
     : ((quote as any).createdAt ? new Date(new Date((quote as any).createdAt).getTime() + 30 * 86_400_000) : null);
   if (untilRaw) {
-    const untilStr = untilRaw.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+    // 🔴 SCRUM-633 · `timeZone` EXPLÍCITO. Sin él, `toLocaleDateString` usa la zona del PROCESO,
+    // y nadie la fija en el despliegue: la fecha que lee el cliente salía de con qué zona
+    // arrancara el contenedor. Ahora sale de la del NEGOCIO — que es de quien es la validez, no
+    // del dispositivo que la mira ni de la máquina que la sirve.
+    const untilStr = untilRaw.toLocaleDateString('es-ES', {
+      timeZone: zonaDelMerchant((quote as any).merchant),
+      day: '2-digit', month: 'long', year: 'numeric',
+    });
     validityHtml = `<div class="validity-badge">⏳ Válido hasta el ${untilStr}</div>`;
   }
 
@@ -467,7 +479,13 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
       // también sent con validUntil pasado (el cron horario aún no barrió).
       if (isQuoteExpired(quote as any)) {
         const fechaCad = (quote as any).validUntil
-          ? new Date((quote as any).validUntil).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+          // SCRUM-633 · la MISMA fecha, impresa por segunda vez en esta página. El encargo contaba
+          // cuatro sitios y éste es el quinto: sin `timeZone`, el cliente que llega tarde lee un día
+          // y el que llega a tiempo lee otro, los dos de la zona del contenedor.
+          ? new Date((quote as any).validUntil).toLocaleDateString('es-ES', {
+              timeZone: zonaDelMerchant((quote as any).merchant),
+              day: '2-digit', month: 'long', year: 'numeric',
+            })
           : null;
         const proPhoneExp = (quote.merchant as any)?.whatsappPhone
           ? String((quote.merchant as any).whatsappPhone).replace(/[^\d]/g, '')
@@ -498,8 +516,16 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
         }
       } else if (quote.status === 'accepted') {
         // PC-C (N3): estado aceptado digno con FECHA + siguiente paso (igual que rejected).
+        // SCRUM-633 · MISMA PÁGINA, MISMA ZONA. El censo del encargo contaba dos impresiones y hay
+        // CUATRO: ésta y la del rechazo también salían en la zona del contenedor. Se arreglan con
+        // las otras dos y no después, porque dejarlas fuera crearía en la MISMA página justo lo que
+        // este ticket viene a cerrar: unas fechas en el calendario del negocio y otras en el de la
+        // máquina que las sirve.
         const fechaAcept = quote.acceptedAt
-          ? new Date(quote.acceptedAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+          ? new Date(quote.acceptedAt).toLocaleDateString('es-ES', {
+            timeZone: zonaDelMerchant((quote as any).merchant),
+            day: '2-digit', month: 'long', year: 'numeric',
+          })
           : null;
         return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
           renderPage(`${locale.quote} ya aceptada`, `<div class="status-ok" style="text-align:center">
@@ -510,8 +536,12 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
       } else if (quote.status === 'rejected') {
         // N3 (copy oficial decidido por el fundador 12-jun): estado rechazado digno,
         // nunca el formulario de firma.
+        // SCRUM-633 · la cuarta, por el mismo motivo que la de arriba.
         const fechaRechazo = quote.rejectedAt
-          ? new Date(quote.rejectedAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+          ? new Date(quote.rejectedAt).toLocaleDateString('es-ES', {
+            timeZone: zonaDelMerchant((quote as any).merchant),
+            day: '2-digit', month: 'long', year: 'numeric',
+          })
           : null;
         const proPhone = (quote.merchant as any)?.whatsappPhone
           ? String((quote.merchant as any).whatsappPhone).replace(/[^\d]/g, '')

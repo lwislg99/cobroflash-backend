@@ -27,6 +27,26 @@
 //
 // ⚠️ NO cubre `saveDraft` (línea ~918): ese snapshot va a `localStorage`, no al servidor. Es
 // otra población; mezclarlas daría un número más grande y menos cierto.
+//
+// ── 🔴 SCRUM-602 (4-sep-2026) · EL `...spread` DEJABA ESTE CENSO CIEGO, Y EN SILENCIO ──────
+//
+// `nombreDePropiedad` devuelve `null` para un `SpreadAssignment` —no tiene `.name`— y el bucle
+// lo SALTABA sin decir nada. O sea: todo lo que viajara dentro de un spread era invisible para
+// el censo, incluido «un campo nuevo que nadie ha colocado», que es el caso ④ que este
+// mecanismo existe para cazar.
+//
+// MEDIDO, no supuesto, y con control positivo: se inyectó `campoQueNadieHaRegistrado` en el
+// payload de tres formas. Escrito a mano → 3 rojos. Dentro de `...({ … })` → CERO rojos.
+// Dentro de `...variable` → CERO rojos.
+//
+// Ahora hay dos respuestas y NINGUNA es el silencio:
+//   · spread de un OBJETO LITERAL → sus claves se leen y se cuentan: son estáticas.
+//   · spread de CUALQUIER OTRA COSA (variable, llamada, acceso) → `opacos`. El censo NO puede
+//     saber qué claves viajan ahí, así que lo DICE en vez de devolver un número más bajo.
+//     «No supe mirar» y «no hay nada» dejan de ser el mismo resultado.
+//
+// Quien lo convierte en rojo es `tests/scrum602-direccion-obra.test.mjs`, sobre
+// `revisarAsignacionDeBloques(...).envioOpaco`.
 import ts from 'typescript';
 
 function recorrer(nodo, fn) { fn(nodo); nodo.forEachChild((h) => recorrer(h, fn)); }
@@ -48,6 +68,19 @@ function nombreDePropiedad(p) {
 }
 
 /**
+ * SCRUM-602 · el objeto literal que hay DETRÁS de un spread, si lo hay.
+ *
+ * Acepta el paréntesis —`...({ a: 1 })` es la forma que sale sola al envolver— porque un censo
+ * que pidiera la llave pegada al spread se quedaría ciego por la forma, que es la avería que
+ * SCRUM-553 ya documentó en otro extractor.
+ */
+function objetoLiteralDetrasDelSpread(expr) {
+  let e = expr;
+  while (e && ts.isParenthesizedExpression(e)) e = e.expression;
+  return e && ts.isObjectLiteralExpression(e) ? e : null;
+}
+
+/**
  * @returns {{envio:Array, linea:Array, poblacion:object}}
  */
 export function censarEnvioPresupuesto(fuente, ruta = 'quotesView.js') {
@@ -56,6 +89,13 @@ export function censarEnvioPresupuesto(fuente, ruta = 'quotesView.js') {
 
   const envio = [];
   const linea = [];
+  /**
+   * SCRUM-602 · spreads que el censo NO puede resolver. Vacío = lo ha visto TODO.
+   *
+   * Va en la SALIDA y no en un `console.warn`: un aviso que nadie lee es un cero que parece un
+   * dato. (Las dos frases salieron de dos sesiones distintas el mismo día; dicen lo mismo.)
+   */
+  const opacos = [];
 
   // ── FORMA 1 · el objeto que se pasa a createQuote(...) ──────────────────────
   // Se sigue la VARIABLE: `createQuote(quotePayload)` no lleva el literal dentro, así que
@@ -74,6 +114,33 @@ export function censarEnvioPresupuesto(fuente, ruta = 'quotesView.js') {
       if (n.name.text !== nombreDelPayload || !n.initializer) return;
       if (!ts.isObjectLiteralExpression(n.initializer)) return;
       for (const p of n.initializer.properties) {
+        // 🔴 4-sep-2026 · AQUÍ HUBO DOS IMPLEMENTACIONES DEL MISMO ARREGLO, Y SE QUEDA UNA.
+        //
+        // SCRUM-602 (S2) y SCRUM-587 (S3) cerraron la ceguera del spread por separado, sin saber
+        // la una de la otra, el mismo día. Las dos midieron lo mismo antes de escribir —inyectar
+        // un campo dentro de `...({ … })` dejaba el guard en VERDE— y las dos llegaron al mismo
+        // detalle fino: hay que DESENVOLVER LOS PARÉNTESIS, porque `...({ a: 1 })` es la forma que
+        // sale sola al envolver y ahí `p.expression` es un `ParenthesizedExpression`, no el
+        // literal. Sin eso, el caso legible más común se clasifica como OPACO: seguro, pero falso.
+        //
+        // ⚠️ ESTO NO SE RESUELVE «SUMANDO», porque sumar sería tener DOS veces la misma regla y
+        // que una se quede atrás. Se queda la de SCRUM-602 —es la que ya está en `main` y la que
+        // `scrum602-direccion-obra.test.mjs` consume por `envioOpaco`— y la del 587 se retira
+        // entera. Lo único que sobrevive del 587 es esta nota, porque la coincidencia de dos
+        // mediciones independientes vale más que cualquiera de las dos por su cuenta.
+        if (ts.isSpreadAssignment(p)) {
+          const lit = objetoLiteralDetrasDelSpread(p.expression);
+          if (lit) {
+            for (const q of lit.properties) {
+              const c = nombreDePropiedad(q);
+              if (c) envio.push({ clave: c, linea: nLinea(q), origen: 'quotePayload (spread literal)' });
+              else opacos.push({ texto: q.getText(sf), linea: nLinea(q) });
+            }
+          } else {
+            opacos.push({ texto: p.getText(sf), linea: nLinea(p) });
+          }
+          continue;
+        }
         const clave = nombreDePropiedad(p);
         if (clave) envio.push({ clave, linea: nLinea(p), origen: 'quotePayload' });
       }
@@ -103,6 +170,7 @@ export function censarEnvioPresupuesto(fuente, ruta = 'quotesView.js') {
   return {
     envio,
     linea,
+    opacos,
     poblacion: {
       fichero: ruta,
       frontera: 'objeto pasado a createQuote(...) + sub-población de payloadLines',

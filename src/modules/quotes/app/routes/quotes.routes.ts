@@ -7,11 +7,21 @@ import {
   RejectQuoteSchema,
   type QuoteTier,
 } from '../../../../core/validation/schemas';
-import { calcTotal, normalizePhone, parseToken } from '../../../../core/utils/utils';
+import { calcTotal, normalizePhone, parseToken, type QuoteLine } from '../../../../core/utils/utils';
+import { getLocale } from '../../../../core/i18n/locales'; // SCRUM-647
 import { rateLimit } from '../../../../core/http/rateLimit';
 
-function calcTierTotal(lines: Array<{qty: number; price: number; tax?: number}>): number {
-  return Math.round(lines.reduce((s, l) => s + l.qty * l.price * (1 + (l.tax ?? 0)), 0) * 100) / 100;
+/**
+ * El total de un TIER (Good/Better/Best).
+ *
+ * 🔴 SCRUM-655 · ERA UNA SEGUNDA COPIA DE `calcTotal`, con la misma aritmética escrita otra vez.
+ * Lo destapó el compilador al hacer opcionales `qty`/`price` para las cabeceras de apartado: esta
+ * copia se habría quedado sumando `undefined` —o sea `NaN`— mientras la de `utils` ya sabía
+ * saltarse las cabeceras. Dos copias del mismo total divergen; ésta ahora DELEGA.
+ * (Hallazgo dentro de la misma zona, arreglado aquí por regla 37: bloqueaba la tarea y cabe.)
+ */
+function calcTierTotal(lines: QuoteLine[]): number {
+  return calcTotal(lines);
 }
 import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
@@ -41,11 +51,16 @@ import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
+
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-206b
 import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206b
 import { recordAudit, sobreFiscal, flagsFiscalesDe } from '../../../system/audit.service'; // SCRUM-206b
 import { sellarTrasEmision } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { exigirLineasFacturables, esErrorSinLineas, COPY_PUBLICO_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
+// SCRUM-602 (DOC-12) · normalizadores del dominio: el modo no se adivina y el texto vacío se queda vacío.
+import { normalizarDireccionObra, normalizarModoDireccionObra } from '../../../../core/documentos/direccionObra';
+// SCRUM-734 · el ÚNICO sitio donde se decide qué lleva el PDF del presupuesto.
+import { paramsDePresupuestoParaPdf } from '../../domain/presupuestoParaPdf';
 
 
 const router = Router();
@@ -108,7 +123,10 @@ router.post('/create', async (req, res) => {
       canonicalLines = betterTier.lines; // líneas del tier recomendado como referencia
     } else {
       canonicalLines = body.lines!;
-      totalNum = calcTotal(canonicalLines);
+      // SCRUM-594 (DOC-04) · el descuento global entra en el MISMO sitio único que ya calculaba
+      // el total. No hay una segunda aritmética: `calcTotal` es quien produce el `Quote.total`
+      // que se guarda y que el PDF del presupuesto imprime tal cual (`pdf.service.ts:954`).
+      totalNum = calcTotal(canonicalLines, body.discountGlobalAmount ?? null);
     }
 
     // Atribuir el técnico que crea la cotización (null = propietario)
@@ -148,7 +166,8 @@ router.post('/create', async (req, res) => {
     // 1) Crear el presupuesto (A1.2: número por merchant asignado en la misma
     // transacción, para que un fallo en el create no queme el contador)
     const quote = await prisma.$transaction(async (tx) => {
-      const quoteNumber = await allocateQuoteNumber(tx, merchant_id);
+      // SCRUM-592 · la fila guarda la SECUENCIA; el texto `P260001` se deriva al pintarlo.
+      const { seq: quoteNumber } = await allocateQuoteNumber(tx, merchant_id);
       return tx.quote.create({
         data: {
           merchantId: merchant_id,
@@ -162,12 +181,38 @@ router.post('/create', async (req, res) => {
           paymentTerms: body.paymentTerms ?? null,
           customBillingPlan: body.customBillingPlan ?? undefined, // SCRUM-27: plan de tramos personalizado
           docFields: body.docFields ?? undefined, // A20.4: qué datos del cliente muestra el documento
+          // SCRUM-594 (DOC-04) · el descuento global, en euros. `?? null` como los textos de
+          // abajo: aquí «no lo mandó» y «lo quitó» acaban igual —columna vacía— y null lo dice.
+          discountGlobalAmount: body.discountGlobalAmount ?? null,
+          // SCRUM-593 (DOC-03): los dos textos libres del documento. `?? null` y no `?? undefined`
+          // porque aquí null y «no lo mandó» acaban igual —columna vacía— y null lo dice mejor.
+          docHeaderText: body.docHeaderText ?? null,
+          docFooterText: body.docFooterText ?? null,
+          // SCRUM-602 (DOC-12) · la dirección de la obra. `?? null` como los dos textos de arriba:
+          // aquí «no lo mandó» y «lo quitó» acaban igual —columna vacía— y `null` lo dice.
+          //
+          // 🔴 EL TEXTO SE NORMALIZA Y EL MODO NO SE ADIVINA: un modo que no es ninguno de los tres
+          // se guarda como `null` (= nadie decidió), nunca como el que más se le parece.
+          shippingAddressMode: normalizarModoDireccionObra(body.shippingAddressMode),
+          shippingAddress: normalizarDireccionObra(body.shippingAddress),
           // A16.2: caducidad — default 30 días, editable al crear
           validUntil: body.validUntil ?? new Date(Date.now() + 30 * 86_400_000),
           teamMemberId: creatorTeamMemberId,
           createdVia: body.created_via ?? 'text', // V0-3: telemetría quote_created_via
           payMethods: body.payMethods ?? undefined, // A2.1: selector al crear
           jobId: jobIdDelAdicional, // SCRUM-195: null = presupuesto normal; con valor = adicional
+          // SCRUM-656 (T7 fase B) · LOS DOS CAMPOS QUE SE LEÍAN Y NO SE ESCRIBÍAN.
+          //
+          // 🔴 `ivaModo` ES UN DEFECTO DE LA FASE A, Y ERA MÍO: `quotesView.js:3294` lo manda, el
+          // esquema lo acepta y `quotes.routes.ts:213` lo lee para el PDF — pero el `create` no lo
+          // guardaba, así que el PDF recibía `null` SIEMPRE. El profesional elegía «IVA no
+          // incluido» y el documento salía con el IVA sumado: un papel equivocado a un cliente,
+          // sin que fallara nada.
+          //
+          // `clausulasExcluidas` es lo mismo en el otro sentido: sin esto, quitar una cláusula de
+          // UN presupuesto no se podría guardar y la exclusión no existiría como producto.
+          ivaModo: body.ivaModo ?? undefined,
+          clausulasExcluidas: body.clausulasExcluidas ?? undefined,
         },
       });
     });
@@ -186,23 +231,13 @@ router.post('/create', async (req, res) => {
 
     // 2) Generar PDF
     try {
-      const pdf = await generateQuotePdf({
-        quoteId: quote.id,
-        quoteNumber: quote.quoteNumber, // A1.2
-        merchant: {
-          name: merchant.name, legalName: merchant.legalName,
-          taxId: merchant.taxId, address: merchant.address,
-          whatsappPhone: merchant.whatsappPhone,
-          logoUrl: merchant.logoUrl,
-        },
-        customer: { name: customer.name, phone: customer.phone, email: customer.email, legalName: (customer as any).legalName, taxId: (customer as any).taxId }, // A20.4
-        docFields: ((quote as any).docFields as any) ?? null, // A20.4
-        currency: quote.currency,
-        total: quote.total.toString(),
-        lines: canonicalLines as any,
-        tiers: tiersWithTotal,
-        country: merchant.country,
-      });
+      const pdf = await generateQuotePdf(paramsDePresupuestoParaPdf({
+        // SCRUM-734 · el objeto ENTERO lo arma UN solo sitio. Aquí ya no se enumeran veinte
+        // claves: se le pasa de dónde salen. Si mañana el documento estrena un campo, el
+        // constructor deja de compilar hasta que alguien decida de dónde sale — que es antes de
+        // que llegue, no después.
+        quote, merchant, customer,
+      }));
 
       await prisma.quote.update({
         where: { id: quote.id },
@@ -514,24 +549,14 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         try {
           const merchant = quote.merchant;
           const customer = quote.customer;
-          const pdf = await generateQuotePdf({
-            quoteId: quote.id,
-            quoteNumber: quote.quoteNumber, // A1.2
-            merchant: {
-              name: merchant.name, legalName: merchant.legalName,
-              taxId: merchant.taxId, address: merchant.address,
-              whatsappPhone: merchant.whatsappPhone,
-              logoUrl: merchant.logoUrl,
-            },
-            customer: { name: customer.name, phone: customer.phone, email: customer.email, legalName: (customer as any).legalName, taxId: (customer as any).taxId }, // A20.4
-        docFields: ((quote as any).docFields as any) ?? null, // A20.4
-            currency: quote.currency,
-            total: quote.total.toString(),
-            lines: quote.lines as any,
-            signatureData,
-            signedAt: now,
-            country: merchant.country,
-          });
+          const pdf = await generateQuotePdf(paramsDePresupuestoParaPdf({
+            // 🔴 SCRUM-734 · `updatedQuote`, NO `quote`. Medido: esta ruta acaba de escribir
+            // `total` y `lines` cuando el cliente elige un tramo, y el PDF se regeneraba desde
+            // la fila ANTERIOR — el cliente firmaba la opción «Better» y el papel que quedaba
+            // guardado enseñaba el total viejo. La firma tampoco hace falta pasarla aparte: el
+            // `update` de arriba ya dejó `signatureUrl` y `acceptedAt` en la fila.
+            quote: updatedQuote, merchant, customer,
+          }));
           await prisma.quote.update({ where: { id: quote.id }, data: { pdfUrl: pdf.publicUrlPath } });
         } catch (e) {
           console.error('[decision] Error regenerando PDF con firma:', e);

@@ -60,12 +60,57 @@
 > afirmación humana, visible como tal, que se cree bajo la palabra de quien la escribió.
 
 > El deploy de Railway **NO** aplica el schema automáticamente (start = `node dist/index.js`).
-> Hay que correr `prisma db push` manualmente contra la BD de producción **antes** (o justo
-> al desplegar) de que el código use la nueva tabla/columna.
+> El esquema se aplica **A MANO, antes** de que el código use la nueva tabla o columna.
 >
-> **Procedimiento canónico (SCRUM-40):** `bash scripts/db-push-prod` (= `npm run db:push`) —
-> host-check → preview `migrate diff` → **GO explícito del operador** → `db push` sin
-> `--accept-data-loss` → verificación vacía → documentar aquí. La carpeta `prisma/migrations`
+> ## 🔒 EL PROCEDIMIENTO ÚNICO (SCRUM-705)
+>
+> ```
+> ① decisión
+> ② ALTER ADITIVO en las TRES bases:  dev → staging → producción
+> ③ UN SOLO PR con esquema + código + tests
+>
+> NUNCA ③ sin ②.
+> ```
+>
+> **🔴 NUNCA `db push` contra PRODUCCIÓN.** `db push` reconcilia el esquema ENTERO, y producción
+> puede ir **por delante** de `main` en columnas aplicadas a mano para desbloquear un PR que aún no
+> se ha mergeado: el push propondría **tirarlas**. No es un caso raro, es el comportamiento normal
+> del método aquí.
+>
+> El caso, con fecha: el 2-sep-2026 `scripts/db-push-prod` —sin modificar y haciendo lo que
+> promete— se ejecutó desde un checkout **1.933 commits por detrás** y propuso, contra producción,
+> `DROP TABLE job_assignees`, `DROP TABLE email_messages` y ~30 columnas. Lo pararon el GO
+> explícito y que la shell no tenía `stdin` — **la segunda fue suerte**. SCRUM-685 le puso puerta
+> (se niega a arrancar desde un árbol atrasado y aborta si el preview trae cualquier borrado), pero
+> la puerta no cambia el método: el método es el ②.
+>
+> `scripts/db-push-prod` se conserva para **STAGING** y para **diagnosticar deriva**.
+>
+> ### El DDL sale de `prisma migrate diff`, y de ningún otro sitio
+>
+> Nunca a mano, nunca adivinando el tipo. `schemaDrift` comprueba que la columna **EXISTE**, no de
+> qué tipo es: un `TEXT` donde tocaba `JSONB` **arranca verde y se pudre semanas**.
+>
+> ### La verificación lleva DOS controles DE TIPOS DISTINTOS más `current_database()`
+>
+> «He usado dos variables» no prueba que sean dos bases: un catálogo que devolviera `text` para
+> todo daría los números correctos. Por eso los dos controles son **de tipos distintos**, y
+> `current_database()` dice contra qué base se miró.
+>
+> ### 🔴 Y la verificación distingue «no medido» de «cero»
+>
+> Un `0` sin control positivo al lado no dice «la columna no está»: dice **que no se ha podido
+> comprobar**, y son cosas opuestas. Ocurrió dentro del propio vigilante de despliegue (SCRUM-716),
+> que decía «al día» cuando no había podido resolver `main` — y salía **verde**. En un
+> procedimiento contra producción ese mismo defecto cuesta más caro que en un check de CI.
+>
+> ### Mergear no es acabar
+>
+> Un ticket no está cerrado hasta que **su despliegue está verde**. Producción estuvo NUEVE DÍAS
+> sin desplegar: los despliegues fallaban el healthcheck, Railway mantenía vivo el anterior, y la
+> web respondía con código viejo sin una sola alerta (SCRUM-677).
+>
+> La carpeta `prisma/migrations`
 > se ARCHIVÓ en `docs/historico/prisma-migrations-frozen-2026-03/` (congelada mar-2026):
 > **NO uses `migrate deploy`/`migrate dev`** — aplicaría un schema viejo (entorno nuevo) o
 > propondría un reset. `db push` es el ÚNICO mecanismo. (Volver a migrate = SCRUM-40 opción A.)
@@ -84,6 +129,39 @@ Un cambio de schema NO está aplicado hasta estar en las TRES bases:
                                              GO para aplicarle schema.
 3. autorack.proxy.rlwy.net                 — PRODUCCIÓN.
 ```
+
+> ### 🔒 INTERINO desde el 4-sep-2026 · STAGING ESTÁ CONTAMINADA COMO SUJETO DE MEDIDA
+>
+> **Decisión del fundador (SCRUM-668). No es una sospecha: es una declaración de estado.**
+>
+> `DATABASE_URL_TESTS` en los carriles `b1`, `b2` y `b3` apunta a `acela/railway`, que **es la
+> misma base que `DATABASE_URL_STAGING`**. O sea: la suite gateada ESCRIBE en la base que
+> también se usa para medir. Y son 61 ficheros de test los que están gateados por esa clave,
+> con `_merchant-fixture.mjs` creando un merchant y barriéndolo sobre 23 modelos por pasada.
+>
+> **Consecuencia operativa, y es lo único que hay que recordar:**
+>
+> * **Una cifra sacada de `acela/railway` NO vale como medición.** Filas, totales, huecos,
+>   duplicados, «no hay ninguno»: nada de eso distingue el estado real del sedimento de una
+>   tanda. Una base que es a la vez el sujeto de la medida y el vertedero de los tests no da
+>   resultados: da coincidencias.
+> * **Sirve igual para lo de siempre**: correr la suite gateada, probar una pantalla, un
+>   `db push` de ensayo. Lo que se retira es su valor como FUENTE DE UN NÚMERO.
+> * **Si necesitas medir de verdad**, mide contra producción en sólo-lectura (`autorack`, y
+>   di en el informe que era producción) o levanta una base propia.
+>
+> **No se relaja nada para esto.** `assertSafeStagingUrl` es una allowlist de host y es
+> fail-closed: sigue igual. Esto no cambia ni una variable de entorno — sólo dice qué valor
+> tiene el dato que sale de ahí.
+>
+> **Se levanta cuando** cada carril tenga su base de pruebas propia (`yaqu_tests_b1|b2|b3`), que
+> es el objetivo acordado y necesita infraestructura: **espera a Javier**. Se descartó mandar
+> los cuatro carriles a `yaqu_dev_javier`: cuatro sesiones escribiendo en la misma base es
+> cambiar un problema por otro.
+>
+> ⚠️ Y lo que **no** se sabe, dicho como resultado y no como tranquilidad: **no está medido si
+> alguna cifra de staging ya publicada salió contaminada.** No se ha barrido quién midió qué
+> contra `acela/railway` ni cuándo. Un «no» sin medir no habría sido un resultado.
 
 > ### 📌 QUÉ BASE TOCA CADA WORKTREE — MAPA MEDIDO el 6-ago-2026
 >
@@ -1882,3 +1960,127 @@ sentidos (529 líneas comparadas). Si algún día una base no las tuviera, `asse
 lo cantaría al arrancar — que es exactamente su trabajo.
 
 Aditivo puro: una columna con default y otra anulable. No reescribe ninguna fila existente.
+
+## SCRUM-643 (fase ②) · `Merchant.timezone` — 2-sep-2026
+
+`Merchant.timezone` (`timezone`, TEXT, **nullable, SIN default**). El huso horario con el que se
+calcula el calendario del merchant — a qué día y a qué mes natural pertenece un instante.
+
+⚠️ **NO confundir con el RÉGIMEN fiscal (IVA / IGIC canario / IPSI de Ceuta y Melilla), que es
+otro dato y es SCRUM-646.** Coinciden geográficamente en Canarias pero no son lo mismo, y la
+relación no es biyectiva: Ceuta y Melilla llevan IPSI con el huso de la península.
+
+**Aplicado a mano, no con `db push`** — porque `schema.prisma` va DETRÁS a propósito (ver abajo):
+
+| Base | Antes | `ALTER` | `UPDATE` · filas tocadas | Después |
+|---|---|---|---|---|
+| **dev** (`yaqu_dev_javier`) | columna no existía · 5 merchants | aplicado | **5 / 5 esperadas** | `Europe/Madrid`=5 · 0 NULL |
+| **staging** (`railway`, host `acela`) | columna no existía · 8 merchants | aplicado | **8 / 8 esperadas** | `Europe/Madrid`=8 · 0 NULL |
+| **producción** | — | ⛔ **PENDIENTE, la aplica el fundador** | esperadas **13** | — |
+
+El número esperado se **declaró antes** de ejecutar (contando merchants en cada base) y el script
+**para y sale con código 1** si el `UPDATE` toca otra cantidad. En las dos cuadró. Acreditado
+contra `information_schema` después: `data_type=text`, `is_nullable=YES`, `column_default=null`.
+
+Turno de staging **tomado y soltado** (`scripts/turno-staging.mjs`); libre al terminar.
+
+### 🔴 EL ORDEN, y por qué `schema.prisma` NO se toca todavía
+
+`schemaDrift.ts` compara **esperado ⊆ real** al arrancar: un `schema.prisma` que nombre una
+columna que la base no tiene → **producción no arranca** (es lo que se vivió en SCRUM-220). Por
+eso primero van las **tres** bases y después el esquema, todo junto en el PR ③ con el código y
+los tests. Una columna de MÁS en la base no rompe nada: la dirección que duele es la contraria.
+
+**Backfill a `Europe/Madrid`:** vale **por el estado de los datos, no por el criterio** — los
+merchants de hoy son todos de prueba. Con merchants reales sería la decisión equivocada, porque
+declararía peninsular a un canario. La pregunta al profesional (salida C) sigue en el plan para
+los usuarios futuros y **el backfill no la sustituye**.
+
+## SCRUM-593 (fase ②) · los dos textos libres del documento — 2-sep-2026
+
+Tres columnas, todas `TEXT`, **nullable y SIN default**:
+`quotes.doc_header_text` · `quotes.doc_footer_text` · `albaranes.doc_header_text`.
+El SQL, aplicable y re-ejecutable, en **`docs/sql/scrum-593-cabecera-y-pie.sql`**.
+
+**Son TRES y no cuatro:** el pie del albarán ya existe —`albaranes.notas`— y ya se imprime. Ahí
+sólo cambia el rótulo, que es copy y no esquema. Un `albaranes.doc_footer_text` daría dos campos
+para lo mismo, y al día siguiente no se sabría cuál manda.
+
+### 🔴 SE NOMBRA LA BASE FÍSICA, NO LA VARIABLE — y esta migración es la razón
+
+Al medir el estado previo se destapó que **`DATABASE_URL_STAGING` y `DATABASE_URL_TESTS` son la
+misma cadena** y resuelven a la **misma base**. Escribir «aplicado en dev y staging» habría
+nombrado tres cosas donde hay dos, y habría dejado sin registrar que la base de la tanda gateada
+y la de staging son **una**. Un nombre de variable no es evidencia de a qué apunta.
+
+| Base **física** | La resuelven | Estado | Verificación |
+|---|---|---|---|
+| **`yaqu_dev_javier`** (host `acela`) | `DATABASE_URL_DEV` | ✅ aplicado | **3/3** · `text` · `is_nullable=YES` · `column_default=null` |
+| **`railway`** (host `acela`) | `DATABASE_URL_STAGING` **+** `DATABASE_URL_TESTS` | ✅ aplicado | **3/3** · `text` · `is_nullable=YES` · `column_default=null` |
+| **producción** (host `autorack`) | — | ⛔ **PENDIENTE, la aplica el fundador** | — |
+
+Producción **no se pudo tocar y no debía**: ninguna clave de un árbol de trabajo va allí, acreditado
+ANTES con `scripts/comprobar-claves-bd.mjs` (`DATABASE_URL`: ausente). Turno de staging **tomado y
+soltado** (`scripts/turno-staging.mjs`); libre al terminar.
+
+### El estado ANTES, y por qué se midió en vez de creerlo
+
+El encargo afirmaba que el `ALTER` ya estaba aplicado en las tres bases. **No lo estaba en ninguna
+de las dos alcanzables**, y por eso la orden era comprobarlo. La medición leyó **58** columnas en
+`quotes`+`albaranes` y **0/3** de las nuevas; después del `ALTER`, **61**.
+
+**Con CONTROL POSITIVO en las dos bases y en las dos pasadas**, porque un cero de un instrumento
+roto se lee igual que un cero verdadero: la misma consulta tenía que seguir viendo
+`quotes.valid_until`, `quotes.internal_notes` y `albaranes.notas`. Las vio siempre.
+
+Y un **suelo** que no es simétrico con los otros: se comprueba que `albaranes.doc_footer_text`
+**NO existe**. Es la única forma de que «se reutiliza `notas`» sea una comprobación y no una
+intención.
+
+### 🔴 EL ORDEN, y por qué `prisma/schema.prisma` sigue sin tocarse
+
+`schemaDrift.ts` compara **esperado ⊆ real** al arrancar: una columna de MÁS en la base es inocua,
+una de MENOS **impide arrancar producción** (SCRUM-220). El esquema entra en el PR ③ **cuando las
+tres bases la tengan**, junto con el cableado y los tests. **Sin partir.**
+
+## SCRUM-580 (paso ②) · `Customer.tags` — 2-sep-2026
+
+`customers.tags` (**JSONB, nullable, SIN default**). Las etiquetas del contacto (CONT-07).
+SQL en **`docs/sql/scrum-580-tags-por-contacto.sql`**, verificación en
+**`docs/sql/scrum-580-verificar.sql`**.
+
+**El tipo NO se escribió a mano:** lo generó `preview-migracion.mjs --desde` (o sea
+`prisma migrate diff`) con control positivo —27 tablas— y veredicto aditivo. Importa porque
+`schemaDrift` comprueba que la columna **exista, no su tipo**: creado TEXT arrancaría en verde y
+se pudriría al leer un array como cadena.
+
+### 🔴 SE NOMBRA LA BASE FÍSICA, Y EL PROCEDIMIENTO FUE ANTES-Y-DESPUÉS
+
+Esta casa ya tuvo dos veces el mismo defecto: una clave apuntando a otra base, y `_STAGING` y
+`_TESTS` siendo la misma cadena (SCRUM-668). **Aplicar dos veces sobre la misma base se ve
+EXACTAMENTE IGUAL que hacerlo bien**, así que se midió antes y después de cada una.
+
+**Bases físicas distintas alcanzables desde un árbol de trabajo: DOS.**
+
+| Base **física** | La resuelven | ANTES | DESPUÉS |
+|---|---|---|---|
+| **`yaqu_dev_javier`** (host `acela`) | `DATABASE_URL_DEV` | 2 filas · `tags` **ausente** | 3 filas · `tags` = **`jsonb`** |
+| **`railway`** (host `acela`) | `DATABASE_URL_STAGING` **+** `DATABASE_URL_TESTS` | 2 filas · `tags` **ausente** | 3 filas · `tags` = **`jsonb`** |
+| **producción** (host `autorack`) | — | ⛔ **PENDIENTE, la aplica el fundador** | — |
+
+El «antes» de la segunda base salió con `tags` **ausente**, que es lo que descarta que las dos
+cadenas apunten al mismo sitio — si hubiera salido con 3 filas, había que parar.
+
+**Control positivo en las cuatro lecturas:** `customers.billing_city` (`text`) y
+`quotes.clausulas_excluidas` (`jsonb`). Sin esas dos, la consulta no estaba mirando esa base y la
+ausencia de `tags` no significaría «no está» sino «no se vio nada». La segunda es además el
+control de **cómo se ve un JSONB bien creado** en esa misma base.
+
+Destinos acreditados ANTES con `scripts/comprobar-claves-bd.mjs` (`DATABASE_URL`: **ausente**, que
+es lo correcto en un árbol de trabajo). Turno de staging **tomado y soltado**; libre al terminar.
+
+### El orden, y por qué `prisma/schema.prisma` sigue sin tocarse
+
+`schemaDrift` compara **esperado ⊆ real** al arrancar: una columna de MÁS en la base es inocua,
+una de MENOS **impide arrancar producción**. El esquema entra en el PR ③ **cuando las tres bases la
+tengan**, junto con el cableado y los tests. Sin partir.
