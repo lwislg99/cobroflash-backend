@@ -192,8 +192,19 @@ test('SCRUM-633 · 🔴 HUECO DECLARADO: si el navegador NO está en la zona del
   const viajando = cadena(MADRID, ahora, 'America/Mexico_City');
 
   assert.equal(enCasa.diaQueLeeElCliente, enCasa.diaQueVeElPro, '🔴 SUELO: el caso normal ya no cuadra');
+  // 🔴 SCRUM-750 · ESTE ASERTO HABLA DEL VALOR POR DEFECTO, Y AHORA LO DICE.
+  //
+  // Hasta el 5-sep-2026 el mensaje decía «① ya depende del dispositivo» a secas. Era cierto de lo
+  // que mide —`cadena()` llama a `diaPorDefecto` y a nada más—, pero ① tiene DOS escritores: el
+  // valor por defecto y los tres ATAJOS de SCRUM-605, que entonces sí calculaban en la zona del
+  // navegador. Un rótulo que abarca más de lo que el aserto mide se lee como cobertura que no
+  // existe: no era una afirmación falsa, era un hueco con un cartel demasiado grande.
+  //
+  // El otro escritor lo cubre `scrum750-los-dos-calendarios`, que barre las dos salidas en
+  // procesos arrancados en otra zona y exige que coincidan.
   assert.equal(viajando.diaQueVeElPro, enCasa.diaQueVeElPro,
-    '🔴 ① ya depende del dispositivo, y no debería: la zona la pone el merchant.');
+    '🔴 el VALOR POR DEFECTO de ① ya depende del dispositivo, y no debería: la zona la pone el '
+    + 'merchant. (El otro escritor de ①, los atajos, lo mide `scrum750-los-dos-calendarios`.)');
   assert.notEqual(viajando.diaQueLeeElCliente, viajando.diaQueVeElPro,
     '🔴 el hueco de ③ ha DEJADO de existir. Si es que se ha arreglado, bien: quita este test y '
     + 'apúntalo. Lo que no puede es cambiar sin que nadie lo mire.');
