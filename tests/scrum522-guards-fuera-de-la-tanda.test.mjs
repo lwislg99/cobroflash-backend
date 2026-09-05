@@ -24,7 +24,7 @@ const PKG = JSON.parse(fs.readFileSync(path.join(RAIZ, 'package.json'), 'utf8'))
 const SCRIPTS = PKG.scripts || {};
 const CI = fs.readFileSync(path.join(RAIZ, '.github', 'workflows', 'ci.yml'), 'utf8');
 
-const GUARDS = ['contraste', 'caja-avisos', 'cls-barra-anuncio', 'primera-pantalla',
+const GUARDS = ['contraste', 'caja-avisos', 'caja-semaforo', 'cls-barra-anuncio', 'primera-pantalla',
   'vias-de-cobro', 'aviso-bizum', 'a11y-comparativa', 'a11y-landing', 'objetivo-tactil'];
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -40,8 +40,14 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
     + '  y «no supe mirar los scripts» son el mismo resultado con significados opuestos.');
 
   // El número, con la corrección del ticket A LA VISTA: la ficha decía «al menos tres».
-  assert.equal(fuera.length, 9,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ 9 → ${fuera.length}.\n`
+  //
+  // SCRUM-648 (fase B) · 9 → 10: entra `guard:caja-semaforo`, que mide la caja del MOTIVO del
+  // ámbar en la bandeja de pendientes. Sube A CONCIENCIA y por la misma razón que los otros
+  // nueve: la suite no arranca un navegador, y la caja de una microcopy no se puede medir con
+  // aritmética — es el hueco que SCRUM-460 declaró y que SCRUM-469 cerró con el motor de
+  // maquetado de árbitro.
+  assert.equal(fuera.length, 10,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ 10 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);

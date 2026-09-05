@@ -45,17 +45,24 @@ const MESKEYS_DEGENERADAS = [
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 🔴 CONTROL POSITIVO PRIMERO — antes de creerse ningún cero
 // ─────────────────────────────────────────────────────────────────────────────────────────
-test('SCRUM-648 · 🔴 CONTROL POSITIVO: inyectando límites ilegibles, el defecto SALE', () => {
+test('SCRUM-648 · ✅ los límites ilegibles ya NO salen verde — decisión C, ejecutada en la fase B', () => {
+  // ── ESTE ERA EL CONTROL POSITIVO DE LA FASE A, Y CAYÓ AL EJECUTARSE LA DECISIÓN ──────────
+  //
+  // Afirmaba que los siete ilegibles salían VERDE, y era cierto: ése era el defecto, y hacía falta
+  // demostrarlo forzándolo para que el cero de la medición de abajo significara «no hay camino» y
+  // no «no supe mirar».
+  //
+  // La fase B lo cerró con la decisión C del fundador: **ámbar**, con el motivo al lado. Se
+  // convierte en la afirmación del arreglo en vez de borrarse, así queda constancia de qué había.
   const ILEGIBLES = ['', 'no soy una fecha', new Date('2026-03-31'), null, undefined, 20260331, '31-03-2026'];
-  const verdes = ILEGIBLES.filter((v) => calcularSemaforo(v, HOY, MADRID) === 'verde');
+  const noAmbar = ILEGIBLES.filter((v) => calcularSemaforo(v, HOY, MADRID) !== 'ambar');
 
-  assert.equal(verdes.length, ILEGIBLES.length,
-    '🔴 CIEGO: he inyectado límites que NADIE puede leer y no todos salen verde. Si el defecto no ' +
-    'se reproduce ni forzándolo, el cero de la medición siguiente no significaría «no hay camino»: ' +
-    'significaría «no supe mirar», y son cosas opuestas.\n' +
-    `   salieron verde ${verdes.length} de ${ILEGIBLES.length}`);
+  assert.deepEqual(noAmbar.map(String), [],
+    '🔴 un límite ilegible ha dejado de salir ÁMBAR. Si sale VERDE, se ha deshecho la decisión C ' +
+    'y «no lo sé» vuelve a pintarse «AL DÍA» sobre el plazo del art. 13.2.');
 
-  // Y el contraste que hace significativo ese verde: los tres estados se alcanzan de verdad.
+  // El contraste que lo hace significativo: los tres estados se siguen alcanzando con plazos
+  // legibles, así que el ámbar de arriba no viene de haber roto el cálculo.
   assert.equal(calcularSemaforo('2026-09-03', HOY, MADRID), 'rojo');
   assert.equal(calcularSemaforo('2026-09-09', HOY, MADRID), 'ambar');
   assert.equal(calcularSemaforo('2026-09-10', HOY, MADRID), 'verde');
