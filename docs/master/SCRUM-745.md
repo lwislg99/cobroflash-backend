@@ -228,14 +228,15 @@ aplicada al detector en vez de al corpus.
 # APÉNDICE · SCRUM-745 (adopción) · Que ningún guard del censo pueda estar mudo sin que se vea
 
 **Fecha:** 5-sep-2026 · **Ramificado de** `origin/main` = `28b045855d9a68f12906f218bfe78fa5e0472433`
-· **entregado sobre** `origin/main` = `4e9e273944b9a293bc5f213d89b3e3b9cd4b06ab`
+· **entregado sobre** `origin/main` = `6fa04adc66a95509f52b3b0b38679e19c5b0baa0`
 
-> ⚠️ **`main` se movió DOS veces mientras duraba esta tarea, y las dos cambiaron el censo.** La
-> primera (`78ca15a3`) trajo SCRUM-751 con dos declaraciones propias y con `invoicesView.js`, que es
-> donde ancla `scrum748`; la segunda (`4e9e2739`) trajo SCRUM-606 y SCRUM-750 con cuatro más y con
+> ⚠️ **`main` se movió TRES veces mientras duraba esta tarea, y dos de ellas cambiaron el censo.**
+> `78ca15a3` trajo SCRUM-751 con dos declaraciones propias y con `invoicesView.js`, que es donde
+> ancla `scrum748`. `4e9e2739` trajo SCRUM-606 y SCRUM-750 con cuatro más y con
 > `tests/_banco-vistas.mjs`, del que dependen los cuatro guards del nivel superior que aquí se
-> declaran. Se mezcló las dos veces y **se volvió a medir entero las dos veces**: los números de
-> esta entrada son los del árbol que se entrega, no los del que se empezó.
+> declaran. `6fa04adc` trajo sólo documentos. **Se mezcló las tres veces y se volvió a medir entero
+> las tres veces:** los números de esta entrada son los del árbol que se entrega, no los del que se
+> empezó. Es el motivo de que la primera ancla que escribí naciera caduca a media entrada.
 
 El hueco nº 1 de la fase B decía: *«Sigue habiendo UN solo guard declarando mutaciones»*. Se cierra
 aquí, junto con los tres que dejó abiertos SCRUM-748.
