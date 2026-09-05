@@ -30,7 +30,7 @@ Mientras no haya firma, los siete salen en pantalla con el marcador `[PENDIENTE 
 |---|---|---|
 | Rótulo del botón | `atajoNuevo.TEXTOS.albaranes` | Nuevo albarán |
 | Título del modal | *el mismo* — lo lee de `atajoNuevo.textoDe('albaranes')` | Nuevo albarán |
-| Placeholder del buscador | `albaranDesdePresupuestoModal.js` · `COPY.buscar` | Busca por nº de presupuesto, cliente o teléfono |
+| Placeholder del buscador | `albaranDesdePresupuestoModal.js` · `COPY.buscar` | Buscar por nº, cliente o teléfono |
 | Vacío de la búsqueda | `COPY.vacio` | Ningún presupuesto coincide con esa búsqueda |
 | Motivo `sin_trabajo` | `COPY.sin_trabajo` | Todavía no tiene trabajo: acepta el presupuesto y vuelve |
 | Motivo `trabajo_no_visible` | `COPY.trabajo_no_visible` | Su trabajo no es tuyo |
@@ -57,44 +57,53 @@ Control positivo del propio instrumento: el `<kbd>N</kbd>` **desaparece a 390 px
 que es lo que `styles.css:2761` promete. Si la página de medición no cargara el CSS real, ese
 `<kbd>` habría salido igual en las dos y la medición no valdría nada.
 
-**Ancho útil vs. ancho del texto**, en píxeles:
+**Ancho útil vs. ancho del texto CANDIDATO** (sin el marcador), en píxeles:
 
-| Ranura | 929: útil | 929: candidato | 929: con marcador | 390: útil | 390: candidato | 390: con marcador |
-|---|---|---|---|---|---|---|
-| Botón | 441 | **128,1** | 404 | 284 | **128,1** | 404 ⚠️ |
-| Título del modal | 340 | **109,9** | 346,4 ⚠️ | 288 | **109,9** | 346,4 |
-| Placeholder | 484 | **314,0** | 519,6 ⚠️ | 314 | **314,0** 🔶 | 519,6 ⚠️ |
-| Vacío | 464 | **318,2** | 523,8 | 294 | **318,2** (2 líneas) | 523,8 |
-| Motivo `sin_trabajo` | 486 | **296,1** | 460,6 | 316 | **296,1** | 460,6 |
-| Motivo `trabajo_no_visible` | 486 | **112,6** | 277,1 | 316 | **112,6** | 277,1 |
-| Aviso truncado | 482 | **214,9** | 399,9 | 312 | **214,9** | 399,9 |
-| Aviso error | 482 | **251,9** | 436,9 | 312 | **251,9** | 436,9 |
+| Ranura | Literal candidato | 929: útil / texto / holgura | 390: útil / texto / holgura |
+|---|---|---|---|
+| Botón | Nuevo albarán | 441 / **128,1** / +312,9 | 284 / **128,1** / +155,9 |
+| Título del modal | Nuevo albarán | 340 / **109,9** / +230,1 | 288 / **109,9** / +178,1 |
+| Placeholder | Buscar por nº, cliente o teléfono | 484 / **212,2** / +271,8 | 314 / **212,2** / **+101,8** |
+| Vacío | Ningún presupuesto coincide con esa búsqueda | 464 / **318,2** / +145,8 | 294 / **318,2** / −24,2 → 2 líneas |
+| Motivo `sin_trabajo` | Todavía no tiene trabajo: acepta el presupuesto y vuelve | 486 / **296,1** / +189,9 | 316 / **296,1** / **+19,9** ⚠️ |
+| Motivo `trabajo_no_visible` | Su trabajo no es tuyo | 486 / **112,6** / +373,4 | 316 / **112,6** / +203,4 |
+| Aviso truncado | Puede haber más: afina la búsqueda | 482 / **214,9** / +267,1 | 312 / **214,9** / +97,1 |
+| Aviso error | No se han podido cargar los presupuestos | 482 / **251,9** / +230,1 | 312 / **251,9** / +60,1 |
 
-Cajas resultantes (ancho × alto), tal y como salen hoy **con el marcador puesto**:
+Cajas tal y como salen HOY, **con el marcador puesto** (ancho × alto):
 
 | Ranura | A 929 px | A 390 px |
 |---|---|---|
 | Botón | 472,9 × 36 | 316 × 44 |
 | Título del modal | 339,5 × 24,8 | 288,4 × 49,6 |
 | Buscador | 512 × 44,5 | 342 × 44,5 |
-| Aviso truncado | 512 × 42,3 | 342 × 62,5 |
-| Aviso error | 512 × 42,3 | 342 × 62,5 |
-| Fila no elegible (con sus dos motivos) | 512 × 111 | 316 × 37,2 + 18,6 |
+| Aviso truncado / error | 512 × 42,3 | 342 × 62,5 |
+| Motivo `sin_trabajo` | 486 × 18,6 | 316 × 37,2 |
 | Vacío | 512 × 142,5 | 342 × 142,5 |
 
 La página **no scrollea en horizontal** en ninguno de los dos anchos.
 
 ## 🔴 Tres cosas que la medición dice y hay que decir
 
-1. **Con el marcador puesto, el botón se recorta a 390 px.** Medido: el texto necesita 404 px y el
-   botón tiene 284 útiles, y `.btn` no parte línea — en la captura se lee
-   «DIENTE microcopy oficial] Nuevo alb». **El candidato solo cabe de sobra** (128,1 en 284), así
-   que esto se cura firmando, no cambiando el CSS. Mientras tanto, es feo a propósito.
-2. **El placeholder también se recorta con el marcador**, en los dos anchos.
-3. 🔶 **El placeholder candidato queda JUSTO en el límite a 390 px: 314,0 px de texto en 314,0 px
-   útiles.** No es una holgura, es un empate — con otra fuente, otro zoom o una «ñ» de más, se
-   corta. Si el asesor quiere firmar esa ranura, conviene un texto más corto (el buscador acepta
-   número, cliente y teléfono, pero el placeholder no tiene por qué enumerar los tres).
+1. **El placeholder se ACORTÓ antes de pedir la firma, por decisión del asesor.** El primer
+   candidato —«Busca por nº de presupuesto, cliente o teléfono»— medía **314,0 px en 314,0 px
+   útiles** a 390: no es holgura, es su ausencia exacta, y medio píxel de otra fuente lo
+   recorta. El de ahora deja **+101,8 px**. Y no se inventó la forma: es la del hermano **ya
+   firmado** de esta misma pantalla —«Buscar por nº, cliente o trabajo», 203,8 px, el buscador
+   de la lista de Albaranes—. Cambia la última palabra, y es exacta: `listQuotesAdmin` casa por
+   número, por nombre de cliente y por **teléfono**, no por trabajo.
+
+2. **Con el marcador puesto, el botón se recorta a 390 px**: el texto marcado necesita 404 px y
+   el botón tiene 284 útiles, y `.btn` no parte línea — se lee «DIENTE microcopy oficial] Nuevo
+   alb». El candidato cabe con +155,9 px, así que esto se cura **firmando**, no tocando el CSS.
+   Es feo a propósito: el coste de no firmar se ve. ⚠️ Pero conviene saber que el mecanismo de
+   marcado **degrada la interfaz** mientras espera firma — un marcador olvidado no es sólo
+   deuda de proceso, es un defecto de UI en producción.
+
+3. ⚠️ **El motivo `sin_trabajo` es el que queda más justo**: +19,9 px de holgura a 390 px. Cabe
+   en una línea, pero es el primero que se partiría si el texto firmado crece. Si el asesor
+   quiere una frase más larga ahí, la fila crece a dos líneas — no se recorta (es un `div`,
+   no un botón), así que es aceptable; pero se dice antes de firmar, no después.
 
 ## Cómo se aplica una firma
 

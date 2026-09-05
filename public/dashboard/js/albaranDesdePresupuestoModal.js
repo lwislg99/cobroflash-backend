@@ -51,7 +51,16 @@
   var ALB_ORIGEN_SIN_APROBAR = 6;
 
   var COPY = {
-    buscar: MARCA + ' Busca por nº de presupuesto, cliente o teléfono',
+    // 🔴 ACORTADO el 5-sep-2026 por decisión del asesor, ANTES de firmarlo. El primer candidato
+    // —«Busca por nº de presupuesto, cliente o teléfono»— medía 314,0 px en 314,0 px útiles a
+    // 390: no es holgura, es la ausencia exacta de holgura, y medio píxel de otra fuente lo
+    // recorta. Éste mide 212,2 y deja 101,8 de margen.
+    //
+    // Y no se inventa la forma: es la del hermano YA FIRMADO que vive en esta misma pantalla,
+    // el buscador de la lista de Albaranes («Buscar por nº, cliente o trabajo», 203,8 px). Misma
+    // acción, mismas palabras. Cambia la última, y es exacta: `listQuotesAdmin` casa por número,
+    // por nombre de cliente y por TELÉFONO del cliente — no por trabajo.
+    buscar: MARCA + ' Buscar por nº, cliente o teléfono',
     vacio: MARCA + ' Ningún presupuesto coincide con esa búsqueda',
     // Los DOS motivos del conjunto cerrado de `presupuestosParaAlbaran.ts`. Cada uno con su
     // texto: un motivo sin frase deja al profesional mirando un código, que es el defecto que
