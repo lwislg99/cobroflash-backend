@@ -194,7 +194,18 @@ const envolver = (cuerpo) => `<!doctype html><html lang="es"><head><meta charset
 </head><body><div class="view-container">${cuerpo}</div></body></html>`;
 
 const SUPERFICIES_791 = [
-  { ruta: '/__quotes', vista: 'renderQuotesView', titulo: 'editor de presupuesto', distintosEsperados: 8 },
+  // 🔴 SCRUM-794 · 6-sep-2026 · 8 → 7, y el que falta VA NOMBRADO. Este suelo hizo justo lo que
+  // se le pide: saltó en cuanto la pantalla dejó de pintar uno de los objetivos censados. No era
+  // un fallo, era el aviso, así que se DECIDE en vez de bajar el número y seguir.
+  //
+  // El que se ha ido está identificado corriendo ESTE MISMO guard sobre el árbol de antes
+  // (`ff4e1c4a`), no restando 8 − 7: allí salían DOS excusados con el mismo selector
+  // —`BUTTON.btn.btn-secondary «+ Añadir línea»` y `«Limpiar formulario»`, los dos a 36,8 px— y
+  // aquí sólo queda el segundo. El primero era el duplicado del rótulo que el fundador mandó
+  // borrar: había dos «+ Añadir línea» idénticos y se queda el de abajo, que mide 44,9 px y por
+  // eso nunca estuvo entre los cortos. O sea que la vista no ha dejado de pintar nada que
+  // debiera: hay un objetivo menos porque hay un botón menos, y encima uno que no cumplía AB6.
+  { ruta: '/__quotes', vista: 'renderQuotesView', titulo: 'editor de presupuesto', distintosEsperados: 7 },
   { ruta: '/__jobdetail', vista: 'renderJobDetailView', titulo: 'ficha de Trabajo', distintosEsperados: 6 },
 ];
 for (const s of SUPERFICIES_791) {
@@ -506,7 +517,12 @@ const EXCEPCIONES_791 = {
     { sel: 'BUTTON.btn-ghost.btn-sm', motivo: 'clase compartida `.btn-sm` (29,5–30,8 px) — «✨ Sugerir con IA», «+ Añadir descuento». Pre-existente. La retira el fundador al decidir sobre `.btn-sm` (SCRUM-787: 57 de los 76 son de esa clase).' },
     { sel: 'BUTTON.btn-ghost.btn-sm.quote-header-btn', motivo: 'clase compartida `.btn-sm` (30,8 px a 390) — «📋 Usar plantilla», «💾 Guardar como plantilla». Misma decisión que la anterior.' },
     { sel: 'BUTTON.btn.btn-primary', motivo: 'el BOTÓN BASE mide 36,8 px, no 44 — «Generar presupuesto». NO es `.btn-sm`: es el segundo grupo que destapó SCRUM-787 (14 de 76). Decisión propia del fundador, distinta de la de `.btn-sm`.' },
-    { sel: 'BUTTON.btn.btn-secondary', motivo: 'el BOTÓN BASE a 36,8 px — «+ Añadir línea», «Limpiar formulario». Mismo grupo que el anterior.' },
+    // 🔴 SCRUM-794 · el motivo NOMBRABA DOS VÍCTIMAS y una ya no existe. El detector de sobrantes
+    // de abajo mira el SELECTOR, no el motivo: como «Limpiar formulario» sigue midiendo 36,8 px,
+    // la excepción sigue haciendo falta y NADA habría avisado de que su motivo señala a un botón
+    // borrado. Es la misma avería que este fichero persigue —«una mentira con antigüedad»— por la
+    // cara que el mecanismo no ve, así que se corrige a mano y se deja dicho.
+    { sel: 'BUTTON.btn.btn-secondary', motivo: 'el BOTÓN BASE a 36,8 px — «Limpiar formulario». Mismo grupo que el anterior. (Hasta SCRUM-794 este motivo nombraba también «+ Añadir línea»: era el duplicado de la cabecera de «2. Líneas», y se borró. El que quedó mide 44,9 px y cumple.)' },
     { sel: 'INPUT', motivo: 'casillas del editor a 17,0 px de área de toque. TERCER grupo de SCRUM-787: no es cuestión de una clase compartida, sino de darles área en este sitio. Sin decidir.' },
   ],
   renderJobDetailView: [
