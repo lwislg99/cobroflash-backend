@@ -97,17 +97,53 @@ test('SCRUM-768 · SUELO: el censo VE las vistas, VE los botones de crear y no s
     + `${c.ciegas.join(' · ')}. Una vista que no se mira no es una vista sin defectos.`);
 });
 
-test('SCRUM-768 · SUELO: las CUATRO que SÍ tienen atajo salen registradas, por nombre', async () => {
+test('SCRUM-768 · SUELO: las SEIS que SÍ tienen atajo salen registradas, por nombre', async () => {
   const c = await censar();
   // Si el censo dijera «ninguna sin atajo» porque cree que todas registran, esto lo caza.
+  // 🔴 SCRUM-769: eran cuatro y ahora son SEIS — entran `jobs` y `expenses`.
   for (const fn of ['renderQuotesListView', 'renderInvoicesView', 'renderCustomersView',
-    'renderAlbaranesView']) {
+    'renderAlbaranesView', 'renderJobsView', 'renderExpensesView']) {
     assert.ok(c.conCrear.includes(fn),
       `🔴 «${fn}» ha dejado de tener botón primario de crear, o el censo dejó de verlo.`);
     assert.equal(c.sinAtajo.includes(fn), false,
-      `🔴 «${fn}» ya no registra destino para la «N». Es una de las cuatro de SCRUM-599: el atajo `
-      + 'ha dejado de abrir nada en esa pantalla.');
+      `🔴 «${fn}» ya no registra destino para la «N»: el atajo ha dejado de abrir nada en esa `
+      + 'pantalla.');
   }
+});
+
+test('SCRUM-769 · 🔴 SUELO: NINGUNA vista con botón de crear DESAPARECE del censo', async () => {
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 ESTE SUELO NACE DE UN FALSO VERDE CON FORMA DE PROGRESO, medido hoy.
+  //
+  // Al renombrar el botón de Gastos, un acento grave dentro de una plantilla cerró el literal:
+  // `expensesView.js` dejó de parsear, `renderExpensesView` dejó de publicarse y la vista
+  // **desapareció de la población**. El censo pasó de 26 vistas a 25 y de 9 botones de crear a 8
+  // — y su lista de «sin atajo» BAJÓ de 5 a 3, que es exactamente lo que este ticket buscaba.
+  //
+  // O sea: una pantalla ROTA se leía como una pantalla ARREGLADA. El suelo de entonces
+  // (`vistas.length >= 20`) no lo veía, porque 25 también es ≥ 20.
+  //
+  // Se cierra ENUMERANDO: una vista que se cae del censo se nombra, en vez de restarse de un
+  // total. Es la misma lección de SCRUM-411 aplicada a la otra mitad del censo.
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  const c = await censar();
+  assert.deepEqual(c.conCrear, [
+    'renderAlbaranesView',
+    'renderCustomersView',
+    'renderExpensesView',
+    'renderInvoicesView',
+    'renderJobDetailView',
+    'renderJobsView',
+    'renderProductsView',
+    'renderProvidersView',
+    'renderQuotesListView',
+  ],
+  '🔴 HA CAMBIADO EL CONJUNTO DE VISTAS CON BOTÓN PRIMARIO DE CREAR.\n'
+  + `   Lo que hay ahora: ${c.conCrear.join(', ')}.\n`
+  + '   · Si FALTA una: o su fichero ha dejado de parsear —y entonces la pantalla está rota, no '
+  + 'arreglada—, o le han quitado el botón, o lo han renombrado a algo que el criterio textual '
+  + 'ya no reconoce. Los tres casos hacen BAJAR el censo de «sin atajo» por la razón equivocada.\n'
+  + '   · Si hay una NUEVA: bienvenida — mírala en la lista de abajo y decide si le toca atajo.');
 });
 
 // ═══ ② EL CENSO — enumera, no cuenta ═════════════════════════════════════════════════════════
@@ -116,10 +152,17 @@ test('SCRUM-768 · 🔴 la lista de vistas con botón de crear y SIN atajo no CR
   const c = await censar();
   // 🔴 ENUMERA, NO CUENTA (lección de SCRUM-411): un número que cuadra no prueba que sean las
   // mismas. Con nombres, una recién llegada se lee de un vistazo.
+  // 🔴 SCRUM-769 · BAJA DE CINCO A TRES, y NO a cero. Las dos que salen —`jobs` y `expenses`—
+  // tienen un botón primario que ABRE una creación, que es lo que el patrón de SCRUM-599 supone.
+  // Las TRES que quedan no lo tienen, y está medido:
+  //   · `renderProductsView` y `renderProvidersView`: su botón primario es el SUBMIT de un
+  //     formulario en línea siempre visible. La «N» intentaría crear con lo que hubiera escrito.
+  //   · `renderJobDetailView`: su botón primario es el CTA del héroe, cuya etiqueta la decide la
+  //     escalera de `jobNextAction` según el estado del Trabajo — hoy «+ Nuevo albarán», mañana
+  //     «Cobrar el resto». La «N» dispararía lo que tocase, incluido un cobro.
+  // Los tres esperan decisión: no se inventa aquí.
   assert.deepEqual(c.sinAtajo, [
-    'renderExpensesView',
     'renderJobDetailView',
-    'renderJobsView',
     'renderProductsView',
     'renderProvidersView',
   ],
@@ -138,13 +181,19 @@ test('SCRUM-768 · 🔴 la lista de vistas con botón de crear y SIN atajo no CR
     + 'mano diciéndolo— o el censo ha dejado de encontrar botones de crear.');
 });
 
-test('SCRUM-768 · una de las cinco NO es una lista, y se dice en vez de esconderse', async () => {
+test('SCRUM-768 · una de las tres NO es una lista, y se dice en vez de esconderse', async () => {
   const c = await censar();
-  // `renderJobDetailView` es la ficha de un Trabajo, no una lista, y su «+ Nuevo albarán» es el
-  // ÚNICO camino real de creación de albaranes (`POST /admin/jobs/{jobId}/albaranes`). Aparece en
-  // el censo porque el criterio es «vista con botón primario de crear», que es lo que se puede
-  // derivar; «lista» no es derivable sin una lista escrita a mano, que es lo que no se quiere.
-  // Se deja DENTRO y declarado: sacarlo exigiría justo la lista a mano que este censo evita.
+  // `renderJobDetailView` es la ficha de un Trabajo, no una lista. Aparece en el censo porque el
+  // criterio es «vista con botón primario de crear», que es lo que se puede derivar; «lista» no lo
+  // es sin una lista escrita a mano, que es lo que no se quiere.
+  //
+  // 🔴 SCRUM-769 · Y AL IR A DARLE EL ATAJO SE MIDIÓ QUE TIENE **DOS** BOTONES «+ Nuevo albarán»:
+  //   · el PRIMARIO es el CTA del héroe, y su etiqueta la escribe `jobNextAction.js:67` —una de
+  //     las seis de la escalera aprobada—, así que dice «+ Nuevo albarán» sólo mientras el Trabajo
+  //     esté en ese peldaño. En otro dice «Cobrar el resto», que mueve dinero.
+  //   · el que DA DE ALTA de verdad es `jobDetailView.js:1157`, y es `btn-secondary btn-sm`.
+  // Por eso este censo lo sigue viendo y por eso NO se le ha registrado atajo: hacerlo ataría la
+  // «N» a lo que decida la escalera. Espera decisión.
   assert.ok(c.sinAtajo.includes('renderJobDetailView'),
     '🔴 `renderJobDetailView` ha salido del censo. Si se le ha registrado atajo, quítalo también '
     + 'de la lista de arriba y de esta nota, los dos en el mismo commit.');

@@ -49,8 +49,19 @@ async function renderJobsView(container) {
     // que es la razon de ser de esta pantalla para un merchant que todavia no tiene ninguno.
     bNuevo.className = 'btn-primary';
     bNuevo.id = 'jobs-nuevo-btn';
-    bNuevo.textContent = 'Trabajo nuevo';
+    // SCRUM-769 · rótulo FIRMADO por el fundador el 6-sep-2026: «Trabajo nuevo» → «Nuevo trabajo»,
+    // el mismo patrón que las otras listas. Se conserva escrito aquí como RESPALDO —igual que en
+    // `quotesListView` y `customersView`— por si la pieza no ha cargado; el que manda es el de
+    // `atajoNuevo.TEXTOS` y `etiquetar` lo pisa un renglón más abajo.
+    bNuevo.textContent = 'Nuevo trabajo';
     bNuevo.addEventListener('click', () => abrirModalTrabajoNuevo(() => renderJobsView(container)));
+    // SCRUM-769 · el atajo «N», por el MISMO mecanismo que las otras cuatro (SCRUM-599): nada se
+    // reimplementa aquí. Este botón encaja en el patrón porque ABRE una creación —el modal de
+    // Trabajo nuevo— en vez de confirmarla.
+    if (window.atajoNuevo) {
+      window.atajoNuevo.etiquetar(bNuevo, 'jobs');
+      window.atajoNuevo.registrar('jobs', () => bNuevo.click());
+    }
     zonaNuevo.appendChild(bNuevo);
 
     // Sprint Tecnosel · LA PUERTA A «PARTES POR VALORAR». No va en la barra lateral porque su

@@ -46,6 +46,16 @@
     // modal del buscador (`albaranDesdePresupuestoModal.js`): una acción, un texto. Si cada sitio
     // escribiera el suyo, el día de la firma uno se quedaría con el marcador puesto.
     albaranes: "[PENDIENTE microcopy oficial] Nuevo albarán",
+    // ✅ SCRUM-769 · FIRMADOS POR EL FUNDADOR el 6-sep-2026, junto con otros tres que NO se han
+    // podido aplicar (ver `docs/microcopy/2026-09-06-SCRUM-769-las-cinco-pantallas.md`). Estos dos
+    // sí: su pantalla tiene un botón primario que ABRE una creación, que es lo que el patrón de
+    // SCRUM-599 supone.
+    //
+    // ⚠️ «Nuevo trabajo» sustituye a «Trabajo nuevo», que sigue APROBADO y sigue vivo como TÍTULO
+    // del modal (`jobNuevoModal.js:64`). Los dos textos conviven a propósito y quedan declarados:
+    // el botón y el título del modal que abre ya no dicen lo mismo. No es de este ticket.
+    jobs: "Nuevo trabajo",
+    expenses: "Nuevo gasto",
   };
 
   // Cuántas ranuras esperan la firma del fundador. Se declara para que nadie tenga que contarlas
