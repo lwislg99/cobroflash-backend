@@ -2518,6 +2518,53 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 @keyframes viewFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .view-enter { animation: none; } }
 
+/* ═══ SCRUM-782 (CONT-09) · EL OBJETIVO TÁCTIL DE LA CASILLA DE SELECCIÓN ═══════════════════
+
+   MEDIDO, no calculado: con `elementsFromPoint` —el árbitro de `scripts/_medidor-de-toque.mjs`,
+   el mismo de `guard:objetivo-tactil`— las tres casillas de SCRUM-582 (fila, cabecera y barra)
+   daban un área de toque de **19 px** contra los **44** de AB6, a 929 y a 390 px.
+
+   🔴 LA CAJA MENTÍA HACIA EL LADO CÓMODO, que es la lección de SCRUM-542. Midiendo la CELDA que
+   contiene la casilla salían 46,0 × 171,5 px en escritorio y «cumple» — pero la celda no es
+   pulsable: lo único que responde al dedo es el `input`, y ése mide 18. Es el mismo error con el
+   que aquel botón tenía caja de 61,8 px y respondían 41,5.
+
+   POR QUÉ UN PSEUDO-ELEMENTO Y NO OTRA COSA. Se midieron cuatro candidatos con el árbitro:
+
+     borde transparente ....... 19 px  (el `input` nativo no lo cuenta para el hit-test)
+     padding .................. 19 px  (ídem)
+     outline transparente ..... 19 px  (nunca participa en el hit-test)
+     <label> de 44px alrededor  19 px  (el área pasa a pertenecer AL LABEL, no a la casilla)
+     pseudo-elemento .......... 45 px  ✅  y la casilla se queda en 18×18 a la vista
+
+   Es la técnica que la landing ya usa en `.announce a::after` (SCRUM-543), así que no estrena
+   patrón.
+
+   🔴 EL VALOR SALE DE MEDIR, NO DE LA ARITMÉTICA. `18 + 13·2 = 44` es la cuenta, y con
+   `inset:-13px` las FILAS medían 45 px pero la CABECERA se quedaba en **42**: el `th` es más bajo
+   que la fila (43,3 px) y el área no llega a expandirse igual. Se probaron -13, -14, -15 y -16:
+
+     -13 → cabecera 42  ·  -14 → 43  ·  -15 → 44,0  ·  -16 → 45
+
+   Se toma **-16px**. Con -15 la cabecera queda clavada en 44,0 y este medidor afina el borde por
+   bisección (SCRUM-542): un objetivo exactamente en el límite se lee 43,9 en la siguiente pasada
+   y el guard cae por redondeo, no por un defecto. Con -16 hay margen: 45 en la cabecera, 51 en la
+   fila y 50,4 en la barra.
+
+   ⚠️ SE AMPLÍA EL ÁREA, NO LA CASILLA: a la vista sigue midiendo 18×18 px con su `accent-color`.
+   El encargo lo pedía así — la fila a 390 px ya va justa de alto.
+
+   El área invade 13 px alrededor, y eso es DESEADO en la fila: `<tr>` entero navega a la ficha
+   360, así que esos 13 px dejan de ser «abrir el cliente sin querer» y pasan a ser «marcar». El
+   `stopPropagation` de la casilla (SCRUM-582) sigue haciendo su trabajo, porque el pseudo
+   pertenece a la casilla. */
+.casilla-seleccion { position: relative; }
+.casilla-seleccion::before {
+  content: "";
+  position: absolute;
+  inset: -16px;
+}
+
 /* ── Feedback fundador 6-jul: tablas SIMPLES (sin dinero) como cards en móvil ──
    Clientes, Proveedores, Plantillas, Equipo: cada fila = card apilada, sin
    overflow horizontal. cell-title = destacado arriba; cell-actions = ancho

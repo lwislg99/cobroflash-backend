@@ -1,7 +1,27 @@
-// scripts/guard-objetivo-tactil.mjs — SCRUM-542
+// scripts/guard-objetivo-tactil.mjs — SCRUM-542 · ampliado al PANEL en SCRUM-782
 //
 // Mide EN NAVEGADOR (Edge vía puppeteer-core) el ÁREA QUE RECIBE EL TOQUE de cada objetivo
-// interactivo de la landing, a 1280 y a 360 px, contra los 44 px de AB6.
+// interactivo, contra los 44 px de AB6, en DOS superficies:
+//
+//   · LA LANDING (`/`) a 1280 y 360 px — lo que este guard hizo desde SCRUM-542.
+//   · EL PANEL (la lista de Clientes) a 929 y 390 px — desde SCRUM-782.
+//
+// 🔴 POR QUÉ ENTRA EL PANEL, Y POR QUÉ NO BASTABA CON RENOMBRAR ESTE GUARD.
+//
+// Hasta hoy este fichero hacía `goto('/')` y nada más: medía LA LANDING y se llamaba
+// «objetivo-tactil», sin decir de qué. Quien leyera el nombre creería que la casa está cubierta.
+// SCRUM-582 metió tres casillas de selección en la lista de Clientes y NADIE las midió: cuando se
+// midieron a mano (SCRUM-782) daban **19 px de área de toque contra los 44 de AB6**, a 929 y a 390.
+//
+// Se valoró la otra salida —renombrarlo a `guard:objetivo-tactil-landing` y declarar su alcance— y
+// se descartó MIDIENDO: el nombre aparece 33 veces en 17 ficheros, tres de ellos tests que fijan
+// la cadena exacta (`scrum522` lo lleva en una lista, `scrum542` exige que aparezca UNA vez en
+// package.json), o sea un diff mayor y más arriesgado que añadir la cobertura… y que además
+// dejaría el panel igual de descubierto. Cubrir quita el agujero Y hace verdadero el nombre.
+//
+// ⚠️ Y LA CEGUERA ERA DOBLE: `INTERACTIVOS` tampoco incluía `input[type="checkbox"]`, así que
+// visitar la página no habría bastado — habría dado «✅ todo cumple» sin mirar el control del que
+// iba el ticket. Eso se arregló en `_medidor-de-toque.mjs`, y allí está escrito por qué.
 //
 // ── POR QUÉ ESTE GUARD NO SE PARECE AL DE SCRUM-543 ──────────────────────────────────────────
 // `guard-a11y-landing.mjs` vigila DOS táctiles escritos a mano (el logo y «Ver planes →»). Sirve
@@ -48,6 +68,10 @@ import puppeteer from 'puppeteer-core';
 // en línea, y una copia en línea es lo que dejó que este guard y el de SCRUM-543 midieran
 // distinto durante dos días.
 import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL } from './_medidor-de-toque.mjs';
+// SCRUM-782 · la vista del panel, montada por el banco y serializada. `scripts/` importando de
+// `tests/` no es nuevo: ya lo hacen censo-internos-de-prisma, censo-tablero-vs-arbol y
+// diagnostico-dependencias.
+import { paginaDeClientes } from './_pagina-panel.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
@@ -120,8 +144,21 @@ const CONOCIDOS = {
 const EXCEPCIONES = [];
 
 const TIPOS = { '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/html', '.png': 'image/png', '.json': 'application/json', '.svg': 'image/svg+xml' };
+// SCRUM-782 · LA PÁGINA DEL PANEL. Se monta con el banco de vistas y se SERIALIZA: el marcado que
+// llega al navegador lo produce el PRODUCTO (`renderCustomersView`), no una tabla escrita aquí.
+// Si no se puede montar, se dice y se sale CIEGO — no se mide media casa y se llama verde.
+const PANEL = await paginaDeClientes(RAIZ);
+const PANEL_HTML = PANEL.html && `<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/dashboard/css/styles.css">
+</head><body><div class="view-container">${PANEL.html}</div></body></html>`;
+
 const srv = http.createServer((req, res) => {
   let p = decodeURIComponent(req.url.split('?')[0]);
+  if (p === '/__panel' && PANEL_HTML) {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    return res.end(PANEL_HTML);
+  }
   if (p === '/') p = '/index.html';
   const abs = path.join(PUBLIC, p);
   if (!abs.startsWith(PUBLIC) || !fs.existsSync(abs) || fs.statSync(abs).isDirectory()) { res.writeHead(404); return res.end('no'); }
@@ -290,6 +327,127 @@ for (const ancho of ANCHOS) {
   await page.close();
 }
 
+/**
+ * 🔴 SCRUM-782 · EXCEPCIONES **DEL PANEL**, y por qué existen separadas de las de la landing.
+ *
+ * En cuanto este guard miró la lista de Clientes por primera vez encontró TRECE objetivos cortos
+ * que nadie había medido nunca: los botones `.btn-sm` de la pantalla, a **30,8–31,0 px** contra
+ * los 44 de AB6 (caja CSS de 30 px). No son un estreno de hoy: llevan ahí desde que existen esas
+ * acciones. Lo que estrena hoy es que se VEN.
+ *
+ * NO SE ABSORBEN CALLANDO Y NO SE ARREGLAN AQUÍ, y las dos mitades tienen motivo:
+ *
+ *   · Arreglar `.btn-sm` es tocar una clase compartida por TODA la aplicación —la usan la lista de
+ *     clientes, la de presupuestos, los detalles…— y eso cambia el alto de botones en pantallas
+ *     que este ticket no ha medido. Es una decisión de producto, no de una sesión.
+ *   · Dejarlos sin declarar sería peor: el guard saldría rojo por algo ajeno a su ticket y el
+ *     siguiente que lo viera lo apagaría, que es como muere un guard.
+ *
+ * ⚠️ LA EXCEPCIÓN ESTÁ ACOTADA AL PANEL A PROPÓSITO. Metida en la lista compartida excusaría
+ * cualquier `.btn-sm` corto que apareciera MAÑANA en la landing, y eso sí sería bajar el umbral.
+ *
+ * QUIÉN LA RETIRA: el fundador, decidiendo qué hacer con `.btn-sm` (subirla a 44, o darle área con
+ * un pseudo como se ha hecho aquí con la casilla). El día que se decida, esta lista se vacía.
+ */
+const EXCEPCIONES_PANEL = [
+  { sel: 'BUTTON.btn-secondary.btn-sm', motivo: 'clase compartida `.btn-sm` (30 px de caja) — «Importar CSV», «Editar», «Portal». Pre-existente, medido 30,8–31,0 px. Lo retira el fundador al decidir sobre `.btn-sm`.' },
+  { sel: 'BUTTON.btn-primary.btn-sm', motivo: 'clase compartida `.btn-sm` — el botón «Nuevo». Pre-existente, medido 31,0 px.' },
+  { sel: 'BUTTON.btn-ghost.btn-sm', motivo: 'clase compartida `.btn-sm` — «📊 Historial». Pre-existente, medido 30,9 px.' },
+];
+
+// ═══ SCRUM-782 · SEGUNDA SUPERFICIE: EL PANEL (lista de Clientes) ═══════════════════════════
+//
+// A 929 y 390 px, que son los anchos con los que se midió el defecto. No se reutilizan los 1280 y
+// 360 de la landing: 929 es donde el editor pasa a dos columnas y 390 es el móvil de referencia
+// de esta casa, y son los que el ticket dejó medidos.
+const ANCHOS_PANEL = [929, 390];
+/** Por selector: si en ALGUNA anchura se queda corto, su excepción sigue haciendo falta. */
+const vistosEnPanel = new Map();
+
+if (!PANEL_HTML) {
+  mal(`   🔴 CIEGO: no he podido montar la vista del panel (${PANEL.aviso}). `
+    + 'El verde de la landing NO cubre esta superficie, así que esto no se traga.');
+} else {
+  for (const ancho of ANCHOS_PANEL) {
+    const page = await navegador.newPage();
+    await page.setViewport({ width: ancho, height: 900 });
+    await page.goto(`http://127.0.0.1:${PUERTO}/__panel`, { waitUntil: 'load' });
+
+    decir('\n════════════════════════════════════════════════════════════════════════════');
+    decir(`PANEL · lista de Clientes · ANCHO ${ancho} px`);
+    decir('════════════════════════════════════════════════════════════════════════════');
+
+    const r = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MINIMO}, ${JSON.stringify([])}, true)`);
+
+    decir(`① censo derivado · interactivos en el DOM: ${r.total}  ·  medidos: ${r.medidos.length}`
+      + `  ·  sin pintar: ${r.sinPintar.length}  ·  presentes pero no tocables: ${r.noTocables.length}`);
+
+    // ── SUELO ①: sin táctiles medidos no hay veredicto, hay ceguera.
+    if (r.medidos.length === 0) {
+      mal('   🔴 CIEGO: cero táctiles medidos en el panel. Eso no es «no hay defectos».');
+      await page.close();
+      continue;
+    }
+
+    // ── SUELO ②, EL QUE IMPORTA: las CASILLAS DE SELECCIÓN tienen que estar entre lo medido.
+    // Es el suelo que faltaba antes de SCRUM-782: el selector no las veía y el guard habría dado
+    // verde sin mirarlas. Si un día vuelven a desaparecer del censo, esto lo dice.
+    const casillas = r.medidos.filter((m) => m.sel.startsWith('INPUT'));
+    const MINIMO_CASILLAS = ancho === 390 ? 4 : 5;   // a 390 la cabecera va oculta (`thead:none`)
+    if (casillas.length < MINIMO_CASILLAS) {
+      mal(`   🔴 CIEGO: sólo ${casillas.length} casillas medidas y esperaba al menos `
+        + `${MINIMO_CASILLAS}. O el selector volvió a dejarlas fuera, o la vista dejó de pintarlas: `
+        + 'en los dos casos el verde de abajo no significa nada.');
+    } else {
+      decir(`   ✅ suelo: ${casillas.length} casillas de selección MEDIDAS (mínimo ${MINIMO_CASILLAS}).`);
+    }
+
+    if (r.noTocables.length) {
+      decir('\n② presentes pero NO tocables (no son «pequeños»: ahí el dedo no los activa):');
+      for (const m of r.noTocables) decir(`   · [${m.seccion}] ${m.sel} «${m.texto}» — caja ${m.caja}px — ${m.motivo}`);
+    }
+
+    const cortos = r.medidos.filter((m) => !m.cumple);
+    const excusados = cortos.filter((m) => EXCEPCIONES_PANEL.some((e) => e.sel === m.sel));
+    const culpables = cortos.filter((m) => !EXCEPCIONES_PANEL.some((e) => e.sel === m.sel));
+    decir(`\n③ contra AB6 (${MINIMO} px) · cumplen: ${r.medidos.length - cortos.length}`
+      + `  ·  se quedan cortos: ${cortos.length}  ·  de ésos, excusados con motivo: ${excusados.length}`);
+    for (const m of culpables) {
+      mal(`   ✖ ${m.tocable}px < ${MINIMO} · [${m.seccion}] ${m.sel} «${m.texto}» (caja CSS ${m.caja}px)`);
+    }
+    // Las excepciones se IMPRIMEN una a una: una deuda que no se ve por pantalla deja de existir.
+    for (const m of excusados) {
+      const e = EXCEPCIONES_PANEL.find((x) => x.sel === m.sel);
+      decir(`   ⚠️ EXCEPCIÓN ${m.tocable}px · ${m.sel} «${m.texto}» — ${e.motivo}`);
+    }
+    // Se apuntan para el control de sobrantes, que va DESPUÉS del bucle (ver abajo).
+    for (const m of r.medidos) {
+      if (!vistosEnPanel.has(m.sel)) vistosEnPanel.set(m.sel, { corto: false });
+      if (!m.cumple) vistosEnPanel.get(m.sel).corto = true;
+    }
+    if (!culpables.length) decir('   ✅ todo lo que se puede pulsar en el panel llega a 44 px (o está excusado con motivo).');
+
+    await page.close();
+  }
+}
+
+// 🔴 UNA EXCEPCIÓN QUE YA NO HACE FALTA ES UNA MENTIRA CON ANTIGÜEDAD: si alguien arregla
+// `.btn-sm` y nadie limpia la lista, el guard deja de vigilar esos botones para siempre.
+//
+// ⚠️ SE COMPRUEBA SOBRE LAS DOS ANCHURAS, NO DENTRO DEL BUCLE. La primera versión lo hacía por
+// anchura y saltó en falso: `BUTTON.btn-ghost.btn-sm` cumple a 390 px —la tabla apila y el botón
+// gana sitio— y NO cumple a 929. Una excepción sólo sobra cuando ya no hace falta EN NINGUNA.
+for (const e of EXCEPCIONES_PANEL) {
+  const v = vistosEnPanel.get(e.sel);
+  if (!v) {
+    mal(`   🔴 EXCEPCIÓN CADUCA: \`${e.sel}\` ya no aparece en el panel. Bórrala: una excepción `
+      + 'para algo que no existe es ruido que tapa a la siguiente.');
+  } else if (!v.corto) {
+    mal(`   🔴 EXCEPCIÓN SOBRANTE: \`${e.sel}\` cumple los ${MINIMO} px en TODAS las anchuras `
+      + 'medidas. Bórrala de EXCEPCIONES_PANEL: mientras esté, ese botón no está vigilado.');
+  }
+}
+
 await navegador.close();
 srv.close();
 
@@ -299,4 +457,5 @@ if (fallos) {
     + `${MINIMO} px, va a EXCEPCIONES con su motivo y quién la retira.`);
   process.exit(1);
 }
-decir('✅ SCRUM-542 · objetivos de toque: todos llegan a los 44 px de AB6, en 1280 y en 360.');
+decir('✅ objetivos de toque: todos llegan a los 44 px de AB6 — LANDING (1280 y 360) y '
+  + 'PANEL/clientes (929 y 390). SCRUM-542 + SCRUM-782.');
