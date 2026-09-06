@@ -70,14 +70,21 @@
              igual que Albaranes y Facturas, y la creación es el botón primario de esa pantalla.
              El destino `quotes-new` NO desaparece: sigue en `HASH_VIEWS` (un enlace guardado no
              se rompe) y lo abren el botón de la lista, la ficha del cliente y el estado vacío de
-             Facturas — censado antes y después, y el censo falla si devuelve cero. -->
-        <div class="nav-group" data-group="quotes">
-          <button class="nav-item nav-item-parent" type="button" data-view="quotes-list">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            <span id="nav-quotes-label">Presupuestos</span>
-            <span id="nav-quotes-badge" class="nav-badge" style="display:none">0</span>
-          </button>
-        </div>
+             Facturas — censado antes y después, y el censo falla si devuelve cero.
+
+             🔴 SCRUM-768 · SE RETIRA EL RESIDUO, Y NO ERA COSMÉTICO. La 599 quitó los subítems
+             pero dejó el envoltorio `.nav-group` y la clase `.nav-item-parent`, que existía sólo
+             para hacerle sitio al chevron: `justify-content: space-between`. MEDIDO en navegador
+             real (Edge) sobre esta misma barra, a 929 y a 390 px: el rótulo «Presupuestos» salía
+             en x=146,7 mientras Albaranes, Facturas y Clientes salían en x=46,0 — 100,7 px de
+             diferencia, con 110,7 px de hueco entre el icono y el texto contra los 10 px de sus
+             tres hermanas. O sea: la navegación que este ticket vino a unificar seguía sin
+             estarlo, en la barra que el profesional mira todos los días. -->
+        <button class="nav-item" type="button" data-view="quotes-list">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <span id="nav-quotes-label">Presupuestos</span>
+          <span id="nav-quotes-badge" class="nav-badge" style="display:none">0</span>
+        </button>
 
         <!-- SCRUM-432 (B1 · incremento 3): `Plantillas` YA NO ES ENTRADA DE MENÚ. Pasó a pestaña
              dentro de Presupuestos («Historial · Plantillas», diseño §B1) — «se usa desde ahí y

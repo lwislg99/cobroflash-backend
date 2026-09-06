@@ -248,22 +248,17 @@ img { max-width: 100%; display: block; }
 }
 .nav-item.active .nav-icon { opacity: 1; }
 
-/* Group / submenu */
-.nav-group { display: flex; flex-direction: column; gap: 2px; }
-.nav-item-parent { justify-content: space-between; }
-.nav-chevron {
-  width: 14px; height: 14px;
-  flex-shrink: 0;
-  transition: transform .2s;
-  margin-left: auto;
-  opacity: .6;
-}
-.nav-group.open .nav-chevron { transform: rotate(180deg); }
-.nav-subitems { display: none; padding-left: 26px; gap: 1px; flex-direction: column; }
-.nav-group.open .nav-subitems { display: flex; }
-.nav-subitem { font-size: 13px; padding: 7px 10px; color: var(--neutral-500); }
-.nav-subitem:hover { color: #fff; }
-.nav-subitem.active { color: var(--green-500); background: rgba(34,197,94,.1); }
+/* SCRUM-768 · AQUÍ VIVÍA EL SUBMENÚ DE LA BARRA, y se retira ENTERO.
+   Eran NUEVE reglas —`.nav-group`, `.nav-item-parent`, `.nav-chevron`, `.nav-group.open
+   .nav-chevron`, `.nav-subitems`, `.nav-group.open .nav-subitems`, `.nav-subitem`,
+   `.nav-subitem:hover` y `.nav-subitem.active`— y desde SCRUM-599 (3-sep-2026) NINGÚN elemento
+   del árbol llevaba ya esas clases salvo dos: el envoltorio `.nav-group` de Presupuestos y su
+   `.nav-item-parent`.
+   🔴 Y esa clase NO era inerte: su `justify-content: space-between` existía para hacerle sitio
+   al chevron, así que sin chevron empujaba el rótulo al borde derecho. Medido en Edge a 929 y a
+   390 px: «Presupuestos» en x=146,7 contra x=46,0 de sus tres hermanas. La barra que este
+   bloque estilaba ya no existe; lo que quedaba era una diferencia visible sin dueño.
+   Si mañana vuelve a hacer falta un submenú, se escribe con su pantalla, no antes. */
 
 /* Badge de conteo del sidebar: un único color para "tienes N pendientes".
    Info (DESIGN.md — badges de conteo), no rojo (=error) ni verde (=acción).
@@ -1904,7 +1899,9 @@ html, body { overflow-x: clip; }
 
 /* Pestañas de data-card (SCRUM-69, componente NUEVO — propuesto a AB3). Mismo lenguaje que
    .status-pill/.badge: sin sombras/colores nuevos, solo el verde de marca ya usado en
-   .nav-subitem.active. Altura del botón ≥44px (AB6, targets táctiles). */
+   .nav-item.active. Altura del botón ≥44px (AB6, targets táctiles).
+   (SCRUM-768: aquí ponía `.nav-subitem.active`, que era la MISMA regla de color y se ha ido con
+   el submenú. Se re-ancla a la que sigue viva en vez de dejar una cita a algo que ya no existe.) */
 .data-card-tabs {
   display: flex;
   gap: 4px;
