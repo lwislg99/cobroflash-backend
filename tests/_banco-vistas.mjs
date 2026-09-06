@@ -766,6 +766,11 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'exportView.js',
   'facturaPreEmision.js',
   'filtroClientes.js',
+  // SCRUM-586 (CONT-13) · las formas de pago pactadas con el cliente, PROPUESTAS. Va ANTES de
+  // `quotesView.js`, que le pide la propuesta al elegir cliente. A diferencia de su hermana del
+  // 587, NO cuelga de `quoteDescuentos.js` —aquí no hay aritmética que leer—, así que declara UNA
+  // sola relación de orden y no dos.
+  'formaDePagoPorDefecto.js',
   'globalSearch.js',
   'homeView.js',
   'invoiceActionsRegistry.js',
@@ -869,6 +874,12 @@ export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   // ella LANZA en vez de improvisar una segunda, así que el rojo saldría en la pantalla.
   { antes: 'quoteDescuentos.js', despues: 'descuentoPorDefecto.js', motivo: 'SCRUM-587: lee `dtoDeLinea` y no reimplementa la aritmética' },
   { antes: 'descuentoPorDefecto.js', despues: 'quotesView.js', motivo: 'SCRUM-587: el editor le pide la propuesta al elegir cliente' },
+  // SCRUM-586 (CONT-13): UNA sola dirección, y la ausencia de la segunda es la diferencia con la
+  // línea de arriba. La pieza no lee aritmética de nadie, así que no tiene un «antes» del que
+  // colgar; lo que sí rompería el producto es cargarla DESPUÉS del editor, porque entonces
+  // `window.formaDePagoPorDefecto` no existe cuando el editor se monta y la tira no aparecería
+  // JAMÁS — en silencio y con la tanda verde, que es el modo en que este defecto se esconde.
+  { antes: 'formaDePagoPorDefecto.js', despues: 'quotesView.js', motivo: 'SCRUM-586: el editor le pide la propuesta al elegir cliente' },
   // SCRUM-606 (ALB-01) · las TRES del buscador de presupuesto. La del rótulo no es cosmética:
   // el modal titula con `atajoNuevo.textoDe('albaranes')`, así que si se cargara antes se
   // quedaría sin título y el marcador de microcopy sin firmar no se vería en pantalla.

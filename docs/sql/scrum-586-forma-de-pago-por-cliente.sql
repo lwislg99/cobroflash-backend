@@ -1,9 +1,13 @@
 -- docs/sql/scrum-586-forma-de-pago-por-cliente.sql — SCRUM-586 (CONT-13)
 --
--- ⛔ PREPARADO Y NO APLICADO. El fundador tiene el diff; el GO no está dado.
+-- ⛔ ESTE FICHERO ES EL REGISTRO Y LA VERIFICACIÓN. NO SE APLICA CON ÉL.
 --    Generado el 5-sep-2026 por `node scripts/preview-migracion.mjs --desde <schema previo>`,
 --    con su control positivo respondiendo (27 tablas) y veredicto **aditiva**: ni DROP, ni
 --    RENAME, ni TRUNCATE, ni DELETE, ni SET NOT NULL.
+--
+--    6-sep-2026 · GO del fundador al `ALTER`, acotado a DEV. Aplicado en `yaqu_dev_javier` y sólo
+--    ahí; staging y producción las aplica ÉL. La medición de antes y después, con su suelo, está
+--    en `docs/master/SCRUM-586.md`.
 --
 -- 🔴 EL CAMPO ES NULLABLE Y SIN DEFAULT, Y ESO NO ES PEREZA. `NULL` = «a este cliente no se le
 --    ha pactado nada», que es la verdad de los clientes que ya existen. Un `DEFAULT` los
@@ -13,8 +17,22 @@
 -- ⚠️ NO se aplica con este fichero: el camino es `npx prisma db push` tras el preview, y en
 --    staging/producción lo hace el fundador. Esto es el REGISTRO de lo que ese push haría.
 
--- ──────── LO QUE SE APLICARÍA ────────
-ALTER TABLE "customers" ADD COLUMN "pay_methods_por_defecto" JSONB;
+-- ──────── LO QUE SE APLICA · YA NO VIVE AQUÍ ────────
+--
+-- El `ALTER` se MUDÓ a `scrum-586-paso-1-anadir-columna.sql` el 6-sep-2026, y no por orden ni por
+-- gusto: el aplicador de la casa (`scripts/aplicar-sql-dev.mjs`) rechaza el FICHERO ENTERO cuando
+-- encuentra una sentencia fuera de su lista blanca, y el `SELECT` de aquí abajo lo está. Medido:
+-- con las dos juntas la herramienta sale con código 1 y NO APLICA NADA — o sea que el fichero
+-- «listo para aplicar» de ayer no se podía aplicar con la herramienta que existe para aplicarlo.
+--
+-- 🔴 NO SE COPIÓ: SE MUDÓ. La sentencia existe UNA sola vez en el árbol. Copiada en dos ficheros,
+-- el día que alguien cambie el tipo o el nombre en uno, el otro seguiría diciendo lo de antes y
+-- las dos versiones se leerían igual de oficiales.
+--
+-- ⚠️ Y UN AVISO PARA QUIEN AUTOMATICE ESTA VERIFICACIÓN: el `SELECT` de abajo NO se extrae
+-- partiendo el fichero por `;`. Los comentarios de aquí arriba contienen puntos y coma, y partir
+-- por ahí deja prosa suelta donde debería haber SQL. Pasó de verdad el 6-sep-2026:
+-- `syntax error at or near "staging"`. Se quitan los comentarios PRIMERO y se parte después.
 
 
 -- ──────── VERIFICACIÓN · ANTES Y DESPUÉS, CON SUELO DENTRO ────────

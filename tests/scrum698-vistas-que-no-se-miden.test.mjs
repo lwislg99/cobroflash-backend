@@ -266,7 +266,20 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
     //     alguna línea sin él.
     // MEDIDO sobre el árbol mezclado y comprobado por mitades: sin la tira da 250, sin los dos
     // `.field` da 245. Las otras tres vistas, intactas.
-  for (const [vista, nodos] of [['renderQuotesView', 253], ['renderProductsView', 166],
+    //
+    // 🔴 SCRUM-586 (CONT-13) · 6-sep-2026 · `renderQuotesView` 253 → 256. TRES nodos, y aquí están
+    // CUÁLES, identificados POR IDENTIDAD sobre el árbol montado antes de tocar el número —no
+    // restando 256 − 253, que es como se cuela un cuarto nodo sin que nadie lo vea:
+    //
+    //   1. `div.alert.info.quote-propuesta-pago` — la tira que propone las formas de pago pactadas
+    //   2. su `span.quote-propuesta-pago__texto`
+    //   3. su `button.btn-ghost.btn-sm` (hoy con el marcador de microcopy sin firmar)
+    //
+    // Es la MISMA forma que la tira del 587 —medida: su subárbol también da 3— porque una deriva
+    // de la otra. Nace `hidden` y sólo se enseña si el cliente elegido trae formas pactadas que
+    // cambien alguna casilla, así que estos tres nodos existen SIEMPRE y se ven CASI NUNCA: por eso
+    // suben el número aunque la pantalla parezca la de ayer.
+  for (const [vista, nodos] of [['renderQuotesView', 256], ['renderProductsView', 166],
     ['renderCustomersView', 68], ['renderHomeView', 109]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
@@ -287,7 +300,10 @@ test('SCRUM-698 · CONTROL NEGATIVO: el fixture NO se impone a quien ya pasaba l
   // SCRUM-591 + SCRUM-594 + SCRUM-602 + SCRUM-587 · las CUATRO subidas, acumuladas y MEDIDAS
   // sobre el árbol mezclado (ver arriba). Lo que este control vigila —que el fixture no se
   // imponga— sigue intacto: lo que importa es que los dos montajes den el mismo número, sea cual sea.
-  assert.equal(todos(desnuda.contenedor).length, 253,
+  // SCRUM-586 (6-sep-2026): la QUINTA subida, +3 por la tira de formas de pago. Identificada por
+  // identidad en el bloque de arriba. Este control sigue vigilando lo suyo —que los dos montajes
+  // den el MISMO número—, no cuál sea ese número.
+  assert.equal(todos(desnuda.contenedor).length, 256,
     '🔴 montar sin `datos` ya no da lo de siempre: el fixture se ha colado como valor por '
     + 'defecto y está moviendo lo que miden otros.');
 });
