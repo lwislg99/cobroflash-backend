@@ -291,3 +291,116 @@ con algo que muta el árbol no mide el árbol que crees**. Se repitió sin nada 
 
 `main` se movió **tres veces** durante esta sesión (`590e019d` → `7f8c48d8` → `2c155141` →
 `74aba16e`). Cada mezcla fue seguida de su tanda; el ancla de arriba se tomó con `fetch` inmediato.
+
+---
+
+# SCRUM-753 · APÉNDICE · el CIEGO de CI: `origin/main` no existe en el runner
+
+**Fecha:** 6-sep-2026 · **Carril:** instrumentos (censos) · **Gate:** sin gate
+**Medido contra:** `origin/main` = `00c6cb0cc328eb88cea26bc4b672ebad25e51a47` · 2026-09-06T08:15:04+01:00
+**Tanda:** 5583 tests, 5495 pass, 0 fail, 88 skipped
+
+## EL ROJO
+
+```
+vivas 31 · mudas 0 · ciegas 1
+· scrum753-censo-de-alcanzabilidad.test.mjs · CIEGO
+  el test «SCRUM-753 · 🔴 `origin/HEAD` no se cuenta como una rama (respuesta conocida:
+  `ls-remote`)» NO aparece EN VERDE en la pasada limpia, así que no se ha mutado nada.
+```
+
+No es un defecto nuevo: es el meta-guard negándose a dar por VIVA una mutación que no pudo
+medir. Y no era cosmético — **el defecto que ese test protege estaba sin vigilar en CI aunque
+el código estuviera arreglado.**
+
+## LAS TRES CAUSAS, UNA MEDICIÓN CADA UNA
+
+**(c) ¿Caducó el nombre de la declaración? NO.** Se extrajo el nombre declarado con el LECTOR
+OFICIAL y el nombre real del test del fuente, y se compararon en hexadecimal: **92 bytes cada
+uno, idénticos**. Control positivo del comparador: el mismo nombre con UNA `а` cirílica da
+`false`.
+
+**(«el fichero no llegó a ejecutarse») NO, y por dos vías.**
+1. Desde la salida del propio CI: declaro **5** mutaciones. Si el fichero no hubiera cargado,
+   ninguno de mis cinco nombres aparecería en verde → serían **5 ciegas**, y CI dijo **1**.
+2. Provocado: con `dist/` apartado del disco, el fichero corre **18/18 en verde**. No depende
+   de `dist/`.
+
+**(b) ¿Ese test ya fallaba? SÍ — y el mecanismo es más preciso que la hipótesis.** No es el
+desajuste de recuentos entre refs locales y `ls-remote`. Reproducido en un clon con el checkout
+POR DEFECTO de `actions/checkout` (superficial, una sola rama):
+
+```
+Error: Command failed: git rev-parse origin/main^{commit}
+fatal: ambiguous argument 'origin/main^{commit}': unknown revision or path not in the
+working tree.                                                            (status 128)
+```
+
+En ese clon **`origin/main` no existe**, así que `instantanea()` moría antes de llegar a
+ningún assert. El modelo: `is-shallow-repository = true`, `remote.origin.fetch =
++refs/heads/<mi-rama>:refs/remotes/origin/<mi-rama>`, **1 ref local** frente a **491 heads** en
+el remoto.
+
+⚠️ **Y CI sólo señaló UNO de TRES.** En esas condiciones fallaban tres tests míos —el de
+`origin/HEAD`, el de las dos reglas rama→ticket y el del árbol vivo—, pero el meta-guard sólo
+mira los que una mutación NOMBRA. Los otros dos llevaban rojos en ese job sin que nadie lo viera.
+
+**Por qué el job `test` sí pasaba:** su checkout lleva `fetch-depth: 0` (línea 93 del workflow,
+puesto por SCRUM-388); el de `meta:mutaciones` (línea 369) va sin opciones.
+
+## EL ARREGLO — el primero es del instrumento, no del test
+
+**① `instantanea()` se DECLARA CIEGA en vez de reventar.** Si la referencia no resuelve,
+devuelve `sha: null` + `incapaz`, y `motivosParaNoFiarse` lo recoge el primero. **No cae a otra
+referencia**: eso mediría un árbol distinto del pedido y lo haría en silencio, que es el defecto
+entero de este ticket. El CLI gana un suelo en **dos etapas** —la incapacidad se comprueba ANTES
+de censar, porque preguntar 450 veces contra un sha nulo tarda un minuto y acaba en una traza—.
+Las dos salen por el mismo código 2.
+
+Medido en el mismo árbol sin `origin/main`:
+
+| | salida |
+| --- | --- |
+| antes | `EXIT=1` + traza de Node (`Command failed: git rev-parse…`) |
+| después | `EXIT=2` + los dos motivos, el árbol, la ref pedida y la hora |
+
+Es el incidente que originó `capacidadDeMedir` en SCRUM-388, repetido aquí.
+
+**② Los tres tests CONSTRUYEN su escenario** en vez de leer el estado de las refs de la máquina:
+
+- **`origin/HEAD`** — sobre el banco sintético, con la lista de ramas **escrita a mano**
+  (`RAMAS_DEL_BANCO`): derivarla del propio `for-each-ref` sería el censo dándose la razón solo.
+  Y con **control positivo de que la trampa existe**: se comprueba que el banco tiene
+  `refs/remotes/origin/HEAD` y que git lo abrevia a `origin` —no a `origin/HEAD`—, porque sin
+  eso el test pasaría en verde sobre un repositorio que no tiene qué morder.
+- **las dos reglas rama→ticket** — corpus garantizado ∪ refs del árbol. Donde hay 500 refs se
+  comparan las 500; donde el checkout trae una, el corpus sostiene la medición.
+- **el árbol vivo** — la propiedad pasa a ser la de la casa: **o contesta las dos cosas, o se
+  DECLARA ciego**, nunca a medias en silencio. Y las dos ramas de la disyuntiva se ejercitan,
+  para que no pase en verde por no haber entrado en ninguna.
+
+⛔ No se ha desactivado, saltado ni renombrado ningún test. El suelo de exit 2 sigue entero, y
+ahora dispara también por referencia irresoluble. `censo-tablero-vs-arbol.mjs:136` sigue sin
+tocarse.
+
+## EL CONTROL QUE DECIDE
+
+Mismo arnés, mismo modelo del runner, con el LECTOR OFICIAL leyendo las declaraciones:
+
+| | resultado |
+| --- | --- |
+| antes (código del commit) | **vivas 4 · mudas 0 · ciegas 1** ← el mismo síntoma que CI (31 = 27 ajenas + 4 mías) |
+| después | **vivas 5 · mudas 0 · ciegas 0** |
+
+Y el fichero entero en condiciones de runner: **18/18**, frente a 15/18 antes. Con la mutación
+de `origin/HEAD` inyectada allí, el test **sigue poniéndose ROJO** (`el censo lee 7 ramas y el
+banco tiene 6`, con `HEAD` de más): el test se ejecuta en CI **y sigue cazando el defecto**.
+
+En mi máquina, `npm run meta:mutaciones`: **vivas 36 · mudas 0 · ciegas 0**, exit 0.
+
+## HUECO DECLARADO
+
+El modelo del runner es un **clon local `--depth 1 --single-branch` por `file://`**, no un runner
+de GitHub. Reproduce fielmente los dos ejes que importan —superficialidad y refspec de una sola
+rama— y reprodujo el síntoma exacto de CI (`ciegas 1`, el mismo test), pero **no es CI**. Lo que
+no cubre: la autenticación del remoto y cualquier diferencia de versión de git del runner.
