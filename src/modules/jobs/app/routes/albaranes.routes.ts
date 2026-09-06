@@ -7,7 +7,7 @@
 // precondiciones. Todo lo demás de aquí sigue sin tocar facturación.
 // Tenancy SIEMPRE findFirst { id, merchantId } → 404 (regla 2). Editable hasta 'firmado'
 // (409 albaran_locked).
-import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-643
+import { zonaDelMerchant, diaExiste } from '../../../../core/zonaDelMerchant'; // SCRUM-643 · SCRUM-749
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { recordAudit, actorDeRequest, requestIp } from '../../../system/audit.service'; // SCRUM-207
@@ -288,6 +288,31 @@ router.get('/consolidables', async (req, res) => {
     const customerId = Number(req.query.customerId);
     if (!Number.isInteger(customerId)) {
       return res.status(400).json({ error: 'customer_requerido', message: 'Indica el cliente.' });
+    }
+
+    // ── 🔴 SCRUM-749 · UN DÍA QUE NO EXISTE SE CONTESTA, NO SE NORMALIZA ────────────────────
+    //
+    // `hasta=2026-02-31` cortaba el **3 de marzo** —`Date.UTC` normaliza en silencio— y metía un
+    // parte de marzo en una factura que el profesional acotó a febrero. La primitiva ya lo
+    // RECHAZA (`dia_inexistente`), pero sin esta puerta el rechazo llegaba aquí como
+    // `500 internal_error`: «se ha roto el servidor» sobre un dato que sólo estaba mal escrito.
+    //
+    // El predicado se DERIVA de la propia primitiva (`diaExiste`): aquí no hay una segunda tabla
+    // de meses que pueda quedarse atrás.
+    if (typeof req.query.hasta === 'string' && req.query.hasta !== '' && !diaExiste(req.query.hasta)) {
+      return res.status(400).json({
+        error: 'dia_inexistente',
+        message: 'La fecha «hasta» no existe en el calendario. Revísala.',
+      });
+    }
+    // `desde`, con su propio texto FIRMADO. Se escribe entero y no se compone con el de arriba:
+    // la microcopy se firma tal cual (regla 30), y una plantilla que sustituye el nombre del campo
+    // convertiría dos textos aprobados en uno inventado en tiempo de ejecución.
+    if (typeof req.query.desde === 'string' && req.query.desde !== '' && !diaExiste(req.query.desde)) {
+      return res.status(400).json({
+        error: 'dia_inexistente',
+        message: 'La fecha «desde» no existe en el calendario. Revísala.',
+      });
     }
     // Tenancy (regla 2): el cliente tiene que ser de este merchant o no existe.
     const customer = await prisma.customer.findFirst({
