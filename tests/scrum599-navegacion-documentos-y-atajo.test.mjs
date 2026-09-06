@@ -272,6 +272,12 @@ test('SCRUM-599 · el microcopy es el APROBADO, literal, y sin marcadores', () =
     ['quotes-list', 'Nuevo presupuesto'],
     ['invoices', 'Nueva factura'],
     ['customers', 'Nuevo cliente'],
+    // 🔴 SCRUM-769 · FIRMADOS POR EL FUNDADOR el 6-sep-2026. Firmó CINCO y sólo estos dos se han
+    // podido aplicar: los otros tres van a `docs/MICROCOPY_APROBADA_SIN_APLICAR.md` porque su
+    // botón no es lo que la firma daba por hecho. El registro está en
+    // `docs/microcopy/2026-09-06-SCRUM-769-las-cinco-pantallas.md`.
+    ['jobs', 'Nuevo trabajo'],
+    ['expenses', 'Nuevo gasto'],
   ];
   for (const [vista, texto] of APROBADOS) {
     assert.equal(A.textoDe(vista), texto,
