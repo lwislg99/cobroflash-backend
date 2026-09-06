@@ -51,8 +51,12 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // los diez anteriores: el texto lo firma el asesor y la caja se adapta al texto, y eso no se
   // comprueba con aritmética — los rótulos del modo justificante son más largos que los de
   // factura y hay que ver si caben.
-  assert.equal(fuera.length, 11,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ 11 → ${fuera.length}.\n`
+  // SCRUM-589 · 11 → 12: entra guard:caja-datos-del-cliente, que mide el bloque «Datos del
+  // cliente en el documento» en los DOS estados del control nuevo. Sube por lo mismo que los
+  // once anteriores: el texto lo firma el asesor, la caja se adapta al texto y eso no se
+  // comprueba con aritmética. Cuesta 5,3 s — el más barato de los cinco guards de caja.
+  assert.equal(fuera.length, 12,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ 12 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);

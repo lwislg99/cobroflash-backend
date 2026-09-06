@@ -293,11 +293,16 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   // 🔴 EL 253 ESTÁ MEDIDO SOBRE EL ÁRBOL YA MEZCLADO, NO SUMADO A OJO, y las dos mitades se
   // comprobaron por separado sobre ese mismo árbol: quitando sólo el `appendChild` de la tira da
   // 250, y quitando sólo los dos `.field` de la dirección da 245.
-  assert.equal(nodos.length, 256,
-    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 256 `
+  // 🔴 SCRUM-589 (CONT-18) · 6-sep-2026 · 256 → 263. SIETE nodos, identificados POR IDENTIDAD
+  // sobre el árbol montado y NO restando 263 − 256: el div.inline-options de la elección de
+  // nombre, sus dos label.radio-label, sus dos input[type=radio][name=df-nombre] y los dos
+  // #TEXT de los rótulos firmados. AISLADO: los siete son exactamente el subárbol de ese div
+  // (todos(div) = 7), así que el delta entero vive dentro del control nuevo.
+  assert.equal(nodos.length, 263,
+    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 263 `
     + '(236 sobre `origin/main` = 80db312b, + la opción de alta de SCRUM-591, + el bloque de '
     + 'descuento global de SCRUM-594, + el control de la dirección de la obra de SCRUM-602, '
-    + '+ la tira de propuesta de SCRUM-587, + la tira de formas de pago de SCRUM-586). Un arreglo del BANCO no debe cambiar ni uno: si '
+    + '+ la tira de propuesta de SCRUM-587, + la tira de formas de pago de SCRUM-586, + la elección de nombre de SCRUM-589). Un arreglo del BANCO no debe cambiar ni uno: si '
     + 'has tocado el banco y esto se mueve, el arreglo pinta.');
 
   const tablas = nodos.filter((n) => n.tagName === 'TABLE');
