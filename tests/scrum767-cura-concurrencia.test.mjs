@@ -12,19 +12,23 @@
 // Es el mismo reparto que ya tenía SCRUM-592 —`scrum592-numeracion-doc02` (sin base) y
 // `scrum592-concurrencia-serie` (gateado)—, y ahora queda escrito POR QUÉ.
 //
-// ── 🔴 AQUÍ NO SE AFIRMA LA CARRERA, Y ES DELIBERADO ────────────────────────────────────
+// ── ✅ LA CARRERA YA ESTÁ ARREGLADA — SCRUM-793 ─────────────────────────────────────────
 //
-// Está PROVOCADA y MEDIDA (8 pasadas, en la entrada de máster): `ensurePortalToken` es un
-// read-then-write sin transacción ni cerrojo, así que dos llamadas simultáneas sobre un cliente
-// sin token escriben las dos y **gana la última**; el otro llamador se lleva un token que ya no
-// está en la base. Medido: 4 de 5 pasadas con DOS a la vez, y hasta 9 de 10 tokens muertos con
-// DIEZ.
+// Cuando nació este fichero, `ensurePortalToken` era un read-then-write sin transacción ni
+// cerrojo: dos llamadas simultáneas sobre un cliente sin token escribían las dos y **ganaba la
+// última**. Medido entonces: 4 de 5 pasadas con DOS a la vez, y hasta 9 de 10 tokens muertos con
+// DIEZ. Aquí NO se asertaba, y se dijo por qué: *«una de las cinco pasadas no llegó a
+// entrelazarse, y un test intermitente no es un guard — el determinista nace el día que se
+// arregle»*.
 //
-// Pero una aserción sobre eso sería INESTABLE —una de las cinco pasadas no llegó a entrelazarse—
-// y un test intermitente no es un guard: es ruido que un día alguien apaga «porque falla solo».
-// Así que aquí van sólo las invariantes que se cumplen SIEMPRE, y la carrera va al parte con sus
-// números y su diff preparado. **El guard determinista nace el día que se arregle**, porque
-// entonces «todos los llamadores reciben el token de la base» sí es cierto siempre.
+// **Ese día fue SCRUM-793.** La condición vive ahora dentro del `WHERE` de la escritura, así que
+// la invariante dejó de ser intermitente: mismo experimento, 4/5 → 0/5 y 3/3 → 0/3. El guard
+// determinista vive en `scrum793-la-carrera-del-token.test.mjs`.
+//
+// ⚠️ ESTE FICHERO SE QUEDA COMO ESTÁ, y no es inercia: lo que afirma —idempotencia secuencial, la
+// base termina con un token, el token final es uno de los entregados, y editar no lo mueve— era
+// cierto ANTES y sigue siéndolo AHORA. Son las invariantes que el arreglo no podía romper, y por
+// eso siguen valiendo como red: si un refactor futuro las tumbara, el problema sería otro.
 //
 // ⛔ SÓLO `yaqu_dev_javier`: se niega a arrancar si la clave apunta a otro sitio. Este fichero
 //    ESCRIBE — crea merchants y clientes de usar y tirar, y los borra.

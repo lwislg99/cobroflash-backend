@@ -54,6 +54,7 @@ import ts from 'typescript';
 import { cargarDashboard, todos } from './_banco-vistas.mjs';
 import { sanearLineasAlbaran } from '../dist/modules/ai/domain/ai.service.js';
 import { invalidTipoIva, TIPOS_IVA_ES_BP } from '../dist/core/validation/fiscalInput.js';
+import { anclaEnElRepositorio } from './_ancla-en-el-repositorio.mjs'; // SCRUM-796
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const RUTA_AI = path.join(RAIZ, 'src', 'modules', 'ai', 'domain', 'ai.service.ts');
@@ -401,8 +402,11 @@ test('SCRUM-760 · EL LECTOR OFICIAL me ve: las cinco declaraciones, con sus cua
   for (const m of MUTACIONES_QUE_ME_TUMBAN) {
     const abs = path.join(RAIZ, m.fichero);
     assert.ok(fs.existsSync(abs), `🔴 el fichero de la mutación no existe: ${m.fichero}`);
+    // 🔴 SCRUM-796 · contra el fuente del REPOSITORIO: el arnés reescribe la copia de trabajo.
+    const anc = anclaEnElRepositorio(m, RAIZ);
+    assert.ok(anc.medible, `🔴 CIEGO: no puedo comprobar el ancla de ${m.fichero} — ${anc.motivo}`);
     assert.ok(
-      fs.readFileSync(abs, 'utf8').includes(m.de),
+      anc.viva,
       `🔴 el ancla de la mutación ya no está en ${m.fichero}: «${m.de.trim().slice(0, 60)}…»`,
     );
   }

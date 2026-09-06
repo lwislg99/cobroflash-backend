@@ -38,6 +38,7 @@ import { spawnSync } from 'node:child_process';
 // 🔴 EL LECTOR DE MUTACIONES ES EL OFICIAL (SCRUM-745), no una copia. Si esta declaración tuviera
 // la forma equivocada, `npm run meta:mutaciones` no la vería y nadie se enteraría.
 import { mutacionesDeclaradas } from '../scripts/meta-guard-mutaciones.mjs';
+import { anclaEnElRepositorio } from './_ancla-en-el-repositorio.mjs'; // SCRUM-796
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
@@ -209,8 +210,10 @@ test('SCRUM-750 · mis mutaciones las LEE el lector oficial, y apuntan a tests q
   for (const m of leidas) {
     // El fichero que dice mutar tiene que existir, y el texto `de` tiene que estar DENTRO de él:
     // una mutación cuyo `de` no aparece no se aplica, y el meta-guard la daría por no medible.
-    const fuente = leer(m.fichero);
-    assert.ok(fuente.includes(m.de),
+    // 🔴 SCRUM-796 · contra el fuente del REPOSITORIO: el arnés reescribe la copia de trabajo.
+    const anc = anclaEnElRepositorio(m, RAIZ);
+    assert.ok(anc.medible, `🔴 CIEGO: no puedo comprobar el ancla de \`${m.fichero}\` — ${anc.motivo}`);
+    assert.ok(anc.viva,
       `🔴 la mutación de \`${m.fichero}\` busca un texto que ya no está:\n     ${m.de}\n`
       + '  Una mutación que no se puede aplicar es una promesa, no cobertura.');
     assert.ok(propio.includes(m.cae),

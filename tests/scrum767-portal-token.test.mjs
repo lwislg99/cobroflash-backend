@@ -56,11 +56,34 @@ const rel = (p) => path.relative(RAIZ, p).split(path.sep).join('/');
 // `select` (leer EL token de un cliente), y confundirlas daría un censo que no dice nada.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-/** La función que envuelve a un nodo, o `null`. Para saber si la aparición vive DENTRO de la cura. */
+/**
+ * La función que envuelve a un nodo, o `null`. Para saber si la aparición vive DENTRO de la cura.
+ *
+ * 🔴 SCRUM-793 · AQUÍ HABÍA UN PUNTO CIEGO MÍO, y lo destapó el arreglo de la carrera.
+ *
+ * Esto devolvía el nombre de la primera `VariableDeclaration` que encontrara subiendo, ANTES de
+ * llegar a la función. Mientras `ensurePortalToken` no asignaba nada a una variable con
+ * `portalToken` dentro, funcionaba de casualidad. En cuanto la cura pasó a hacer
+ * `const customer = await prisma.customer.findFirst({ select: { portalToken: true } })`, sus
+ * PROPIAS lecturas salían clasificadas como «lectura directa sin curar» — o sea, el censo
+ * acusaba a la cura de no curar.
+ *
+ * ⚠️ Y NO SE ARREGLA BAJÁNDOLE EL LISTÓN al censo ni metiendo mi fichero en la lista de
+ * declaradas: eso sería enseñarle al analizador a no verme. Se arregla haciéndolo PRECISO — lo
+ * que se busca es la FUNCIÓN que envuelve, y una `const` no es una función. Una `const` que SÍ
+ * es una función (arrow o `function` expression) sigue contando, que es para lo que estaba.
+ *
+ * El control de que sigue viendo lo que tiene que ver está justo debajo: la lectura directa de
+ * `customersAdmin.routes.ts` sigue saliendo, y la mutación ③ sigue tumbándolo.
+ */
 function funcionEnvolvente(n, sf) {
   for (let p = n.parent; p; p = p.parent) {
     if (ts.isFunctionDeclaration(p) && p.name) return p.name.getText(sf);
-    if (ts.isVariableDeclaration(p) && p.name && ts.isIdentifier(p.name)) return p.name.text;
+    // `const f = () => …` / `const f = function () {…}`: eso sí es una función con nombre.
+    if (ts.isVariableDeclaration(p) && p.name && ts.isIdentifier(p.name)
+        && p.initializer && (ts.isArrowFunction(p.initializer) || ts.isFunctionExpression(p.initializer))) {
+      return p.name.text;
+    }
   }
   return null;
 }

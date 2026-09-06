@@ -43,6 +43,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { extraerTextoPdf, vecesEnPdf, lineasDePdf } from './_texto-del-pdf.mjs';
 import { soloCodigo } from './_solo-codigo.mjs';
+import { ocurrenciasEnElRepositorio } from './_ancla-en-el-repositorio.mjs'; // SCRUM-796
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
@@ -300,8 +301,11 @@ test('SCRUM-596 · EL LECTOR OFICIAL ME VE — la declaracion no vale si el meta
     + 'cobertura sin serlo.');
 
   for (const m of mias) {
-    const enDisco = leer(m.fichero);
-    assert.equal(enDisco.split(m.de).length - 1, 1,
+    // \u{1F534} SCRUM-796 · en el fuente del REPOSITORIO: el arnes reescribe la copia de trabajo,
+    // y leyendo del disco esta cuenta da 0 mientras la mutacion esta puesta.
+    const oc = ocurrenciasEnElRepositorio(m, RAIZ);
+    assert.ok(oc.medible, `\u{1F534} CIEGO: no puedo contar el ancla de ${m.fichero} — ${oc.motivo}`);
+    assert.equal(oc.veces, 1,
       `\u{1F534} el texto \`de\` de la mutacion no aparece EXACTAMENTE UNA VEZ en ${m.fichero}: `
       + 'una mutacion ambigua muta otra cosa, o no muta nada y se lee como guard mudo.');
     assert.ok(MUTACIONES_QUE_ME_TUMBAN.some((d) => d.cae === m.cae),

@@ -1,21 +1,43 @@
-# Los cinco rótulos del atajo «N» — trabajo, gasto, producto, proveedor y albarán
+# Los rótulos del atajo «N» — DOS firmados, y TRES con la firma RETIRADA
 
-**Aprobados por el fundador** el 6-sep-2026, en **SCRUM-769**.
-**Aplicados DOS de los cinco.** Los otros tres quedan aprobados y **sin aplicar**, con su motivo
-medido más abajo. No es una acotación de alcance: es que la firma daba por hecho que los cinco
-botones eran la misma clase de botón, y **tres no lo son**.
+**Aprobados por el fundador** el 6-sep-2026, en **SCRUM-769**. **De los cinco, TRES con la firma
+RETIRADA el mismo día**: siguen firmados sólo los dos que se aplicaron.
 
-## Textos aprobados, literales
+## 🔴 ACTUALIZACIÓN DEL 6-sep-2026 · EL FUNDADOR RETIRA LA FIRMA DE TRES
+
+Este fichero decía que los **cinco** estaban aprobados y que tres quedaban «sin aplicar». **Ya no
+es cierto, y no se reescribe la historia: se corrige encima, fechado.** Tras la medición de
+SCRUM-769 —que enseñó que los cinco botones no son la misma clase de botón— el fundador **retiró
+la firma de tres**, con estas palabras:
+
+*«Colgar N de un botón que confirma es atar una tecla a un guardado. N abre, no guarda.»*
+
+**Siguen firmados los DOS aplicados.** Los otros tres **ya no están aprobados**: no es que estén
+aprobados y pendientes, es que **su rótulo no se toca**. Un registro que dijera «aprobado» sobre
+un texto sin firma sería exactamente la mentira que este directorio existe para impedir.
+
+## Textos aprobados, literales — LOS DOS QUE SIGUEN FIRMADOS
 
 | Ranura | Texto anterior | Texto aprobado | ¿aplicado? |
 |---|---|---|---|
-| `atajoNuevo.TEXTOS.jobs` | Trabajo nuevo | **Nuevo trabajo** | ✅ sí |
-| `atajoNuevo.TEXTOS.expenses` | + Nuevo gasto | **Nuevo gasto** | ✅ sí |
-| `productsView` · `#pf-create-product` | Crear producto | **Nuevo producto** | ⛔ **no** |
-| `providersView` · `#pf-create-provider` | Crear proveedor | **Nuevo proveedor** | ⛔ **no** |
-| `jobDetailView` · botón primario | + Nuevo albarán | **Nuevo albarán** | ⛔ **no** |
+| `atajoNuevo.TEXTOS.jobs` | Trabajo nuevo | **Nuevo trabajo** | ✅ sí — 13 caracteres |
+| `atajoNuevo.TEXTOS.expenses` | + Nuevo gasto | **Nuevo gasto** | ✅ sí — 11 caracteres |
 
-Los textos van literales: mayúscula inicial, sin punto final y **sin el `+`**.
+Van literales: mayúscula inicial, sin punto final y **sin el `+`**. Verificado carácter a carácter
+y en hexadecimal por `tests/scrum769-el-motivo-de-las-dos-que-no.test.mjs`.
+
+## 🚫 Los TRES con la firma RETIRADA — su rótulo NO se toca
+
+🔴 Esta tabla **no** encabeza su columna «Texto aprobado», y es a propósito: el extractor de
+`tests/_microcopy-aprobada.mjs` sólo recoge esa columna, así que estos tres **no cuentan como
+aprobados** —que es justo lo que dejaron de ser—. Ponerlos en la tabla de arriba los volvería a
+declarar firmados por la puerta de atrás.
+
+| Ranura | Rótulo que se queda | Texto que se propuso | por qué se retira |
+|---|---|---|---|
+| `productsView` · `#pf-create-product` | Crear producto | ~~Nuevo producto~~ | el botón **confirma**, no abre |
+| `providersView` · `#pf-create-provider` | Crear proveedor | ~~Nuevo proveedor~~ | el botón **confirma**, no abre |
+| `jobDetailView` · botón primario | + Nuevo albarán | ~~Nuevo albarán~~ | ahí el primario es el CTA que cambia con el estado y **mueve dinero** |
 
 ## Los dos aplicados — dónde se pintan
 
@@ -90,9 +112,12 @@ El primario es el **CTA del héroe**, y su etiqueta **depende del estado del Tra
 Y el atajo tampoco encaja: atar la «N» al primario haría que la tecla dispare **lo que toque en ese
 momento**, incluido `collect-rest` — o sea, **mover dinero desde una tecla**.
 
-> La instrucción de la firma era «SÓLO se retira el +, la palabra no se toca, porque su hermana de
-> la lista de albaranes sigue con `[PENDIENTE microcopy oficial]` esperando SCRUM-606». Eso se ha
-> respetado al pie de la letra: **no se ha tocado ninguna de las dos**.
+La instrucción de la firma era «SÓLO se retira el +, la palabra no se toca, porque su hermana de la
+lista de albaranes sigue con `[PENDIENTE microcopy oficial]` esperando SCRUM-606». Eso se ha
+respetado al pie de la letra: **no se ha tocado ninguna de las dos**.
+
+*(Ese párrafo iba citado con `>` y el extractor lo leía como tres «textos aprobados» más. Se pasa a
+prosa: en este directorio una cita **es** un literal firmado, y esa no lo era.)*
 
 ## Qué NO cambia
 
