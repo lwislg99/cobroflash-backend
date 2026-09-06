@@ -491,3 +491,85 @@ test('SCRUM-771 · el portón LLAMA a `invalidTipoIva`, no reimplementa la regla
     `🔴 el portón no consulta la regla fiscal. Llama a: [${[...new Set(llamadas)].join(', ')}]`,
   );
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// 4 · LAS MUTACIONES — y el reparto entre el corredor y la mano, por un límite MEDIDO
+//
+// 🔴 `meta-guard-mutaciones.mjs` muta el FUENTE y corre el guard **SIN RECOMPILAR** (hallazgo
+// declarado en SCRUM-760, con ticket propio y todavía ABIERTO). Así que aquí sólo se declaran las
+// mutaciones cuyo test **lee el FUENTE por AST** —los censos—, que son las que el corredor puede
+// juzgar de verdad sin recompilar.
+//
+// Las que caen en tests que importan de `dist/` (el portón y los dos controles por el camino
+// real) se corren A MANO recompilando entre pasos, y su resultado va en el parte. Declararlas
+// aquí pintaría de «vivo» un guard que nadie ha visto caer, que es justo lo que este mecanismo
+// existe para impedir.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // ① CONTROL NEGATIVO DEL CENSO: se quita el portón de UNA boca. Si el censo no la nombra,
+    // no es un censo: es una lista bonita.
+    fichero: 'src/modules/jobs/domain/recapitulativa.service.ts',
+    de: '      exigirTiposDeIvaEmitibles(lines);',
+    a: '      // mutación: esta boca se queda sin portón',
+    cae: 'SCRUM-771 · CENSO: toda boca que emite comprueba el tipo de IVA antes de pedir número',
+  },
+  {
+    // ② La boca que COMPARTE FICHERO con la excepción declarada (C5). Un control por FICHERO
+    // pasaría en verde aquí, porque `invoicesAdmin.routes.ts` seguiría mencionando el portón.
+    // Es la diferencia exacta entre este censo y la lista cableada de SCRUM-246.
+    fichero: 'src/modules/system/app/routes/invoicesAdmin.routes.ts',
+    de: '    exigirTiposDeIvaEmitibles(val.lineas);',
+    a: '    // mutación: la suelta se queda sin portón',
+    cae: 'SCRUM-771 · CENSO: toda boca que emite comprueba el tipo de IVA antes de pedir número',
+  },
+  {
+    // ③ Nace una SEGUNDA copia de la lista de tipos: la forma exacta en que dos validaciones de
+    // la misma regla empiezan a separarse.
+    fichero: 'src/core/validation/tiposIvaEmitibles.ts',
+    de: "export const ERROR_TIPO_IVA_NO_EMITIBLE = 'tipo_iva_no_emitible';",
+    a: "const TIPOS_IVA_ES_BP = new Set([0, 200, 400, 500, 750, 1000, 2100]);\nexport const ERROR_TIPO_IVA_NO_EMITIBLE = 'tipo_iva_no_emitible';",
+    cae: 'SCRUM-771 · la lista de tipos españoles vive en UN solo fichero de `src/`',
+  },
+];
+
+test('SCRUM-771 · EL LECTOR OFICIAL me ve: las tres declaraciones, con sus cuatro campos', async () => {
+  // El meta-guard está bajo sospecha de IGNORAR EN SILENCIO una declaración con forma propia
+  // (SCRUM-757). Una declaración que el corredor no lee es una promesa que no comprueba nadie,
+  // así que no basta con escribirla bien: hay que preguntarle A ÉL si la ve.
+  const { mutacionesDeclaradas } = await import('../scripts/meta-guard-mutaciones.mjs');
+  const yo = fileURLToPath(import.meta.url);
+  const vistas = mutacionesDeclaradas(fs.readFileSync(yo, 'utf8'), path.basename(yo));
+
+  assert.equal(
+    vistas.length, MUTACIONES_QUE_ME_TUMBAN.length,
+    `🔴 declaro ${MUTACIONES_QUE_ME_TUMBAN.length} mutaciones y el lector oficial ve ${vistas.length}.`,
+  );
+  assert.deepEqual(
+    vistas.map((m) => ({ fichero: m.fichero, de: m.de, a: m.a, cae: m.cae })),
+    MUTACIONES_QUE_ME_TUMBAN.map((m) => ({ fichero: m.fichero, de: m.de, a: m.a, cae: m.cae })),
+    '🔴 el lector oficial lee algo distinto de lo que está escrito aquí',
+  );
+
+  // Y ninguna declarada puede depender de `dist/`: el corredor no recompila, así que su veredicto
+  // sobre ellas no significaría nada. Se comprueba que el test que nombran es de los que leen el
+  // FUENTE — los dos censos por AST.
+  const DE_FUENTE = [
+    'SCRUM-771 · CENSO: toda boca que emite comprueba el tipo de IVA antes de pedir número',
+    'SCRUM-771 · la lista de tipos españoles vive en UN solo fichero de `src/`',
+  ];
+  for (const m of MUTACIONES_QUE_ME_TUMBAN) {
+    assert.ok(
+      DE_FUENTE.includes(m.cae),
+      `🔴 la mutación declara que tumba «${m.cae}», y ese test lee \`dist/\`. El corredor no `
+        + 'recompila: lo daría por MUDO sin estarlo. Esa mutación va a mano, no aquí.',
+    );
+    const abs = path.join(RAIZ, m.fichero);
+    assert.ok(fs.existsSync(abs), `🔴 el fichero de la mutación no existe: ${m.fichero}`);
+    assert.ok(
+      fs.readFileSync(abs, 'utf8').includes(m.de),
+      `🔴 el ancla ya no está en ${m.fichero}: «${m.de.trim().slice(0, 60)}…»`,
+    );
+  }
+});
