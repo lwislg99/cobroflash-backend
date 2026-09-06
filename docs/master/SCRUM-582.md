@@ -202,3 +202,187 @@ convención, y no lo decide una sesión.
   su contador: el día que se comparta el mecanismo, ahí hay una segunda opinión que retirar.
 * La barra de facturas dice «N facturas seleccionadas» con plural resuelto a mano; el contador de
   aquí está sin aprobar. Cuando se firme, conviene mirar los dos a la vez.
+
+---
+---
+
+# APÉNDICE · 6-sep-2026 — EL MECANISMO YA ESTABA. LO QUE FALTABA ERAN LAS MEDIDAS
+
+**Rama:** `scrum-582-medidas-en-navegador` · **medido contra** `origin/main` =
+`16bd95731883a6c84ceb57820a493c8fe1500f6d` · 2026-09-06T10:12Z · worktree `cobroflash-backend`
+
+> **PASO 0 · ¿ESTABA HECHO? SÍ, EL MECANISMO.** `3277d79d` está en `main`
+> (`git merge-base --is-ancestor` → sí) y sus 14 tests salen **14/14** contra el árbol de hoy.
+> Verificado requisito por requisito, no por el número del commit.
+>
+> **Lo que NO estaba hecho son los dos huecos que esta misma entrada declaró**: la caja sin medir
+> en navegador y el objetivo táctil sin verificar. Aquella sesión tenía el MCP de Playwright caído
+> y lo dejó por escrito con su condición: *«cuando el MCP del navegador vuelva, se mide»*. Esta
+> sesión no ha usado el MCP: ha usado **Edge por `puppeteer-core`**, que es la vía con la que esta
+> casa mide cajas desde SCRUM-368. **Se mide.**
+
+---
+
+## 1 · Requisito por requisito, contra el árbol de hoy
+
+| requisito del encargo | ¿está? | dónde, medido |
+|---|---|---|
+| casilla por fila | ✅ | `customersView.js:527-537` · el banco monta 3 casillas con 3 clientes |
+| casilla de cabecera «seleccionar todo» | ✅ | `customersView.js:325-327` (`<th>`) y `:341` (barra del móvil) |
+| estado de la selección | ✅ | `let seleccion = []` (`:306`) + `refrescarSeleccion()` (`:368-376`) |
+| contador visible | ✅ | «3 clientes seleccionados», medido en navegador (abajo) |
+| ⛔ ninguna acción en bloque | ✅ | hay un test que lo EXIGE: «⛔ NO HAY NI UNA ACCIÓN EN BLOQUE» |
+
+**Y los 14 verdes no son decoración.** Se inyectaron tres defectos y se exigió el rojo:
+
+```
+LÍNEA BASE (limpio): pass 14 · fail 0
+  ROJO OK · seleccionar todo deja de seleccionar              → fail 3
+  ROJO OK · vuelve «1 clientes seleccionados» (plural falso)  → fail 1
+  MUDA    · la casilla de fila deja de reflejar la selección  ← 🔴
+```
+
+## 2 · 🔴 UN REQUISITO DEL TICKET ESTABA SIN GUARD, y lo enseña la muda
+
+Con esta mutación de UNA línea en la vista:
+
+```diff
+-  casillaFila.checked = FC.estaMarcado(seleccion, c.id);
++  casillaFila.checked = false;
+```
+
+…los **catorce tests siguieron en VERDE**. El mecanismo se podía romper entero —el profesional
+marca y no ve lo que ha marcado— y la tanda no se enteraba.
+
+**Por qué se escapaba:** los tests que miran la pantalla la miran **recién montada**, y con la
+selección vacía «todas desmarcadas» es indistinguible de «no reflejo nada». Hay que **repintar con
+una selección no vacía**, y el camino del producto para eso es la casilla de cabecera.
+
+**Es el único código que toca este PR**: un test —`tras REPINTAR, la casilla de cada fila REFLEJA
+la selección`— con su control positivo dentro (desmarcar tiene que volver a apagarlas: sin eso, un
+`checked = true` fijo pasaría igual de bien que el código correcto). Ahora:
+
+```
+LÍNEA BASE (limpio): pass 15 · fail 0
+  ROJO OK · seleccionar todo deja de seleccionar              → fail 4
+  ROJO OK · vuelve «1 clientes seleccionados» (plural falso)  → fail 1
+  ROJO OK · la casilla de fila deja de reflejar la selección  → fail 1
+vivas 3 de 3 · árbol restaurado · re-corrida: pass 15 · fail 0
+```
+
+---
+
+## 3 · LA CAJA, MEDIDA EN NAVEGADOR REAL
+
+Edge por `puppeteer-core`, `tokens.css` y `styles.css` **del árbol** servidos desde disco.
+🔴 **El marcado no se escribe en el medidor: se SERIALIZA del árbol que monta
+`renderCustomersView`** en el banco de vistas, y la versión «sin la columna» se obtiene quitando
+el `<th>` **y** la primera `<td>` de cada fila. Un medidor con su propia tabla mide su idea de la
+pantalla.
+
+### ¿La casilla nueva cambia el ancho de las demás columnas? **NO. Ni una.**
+
+| columna | 929 px · con | 929 px · sin | Δ | 390 px · con | Δ |
+|---|---|---|---|---|---|
+| **seleccion** | **46,0** | — | ← la nueva | **18,0** | ← la nueva |
+| id | 41,3 | 41,3 | **0,0** | 14,7 | 0,0 |
+| nombre | 81,3 | 81,3 | **0,0** | 310,0 | 0,0 |
+| telefono | 90,0 | 90,0 | **0,0** | 77,1 | 0,0 |
+| email | 65,6 | 65,6 | **0,0** | oculta | — |
+| notas | 220,0 | 220,0 | **0,0** | oculta | — |
+| etiquetas | 93,5 | 93,5 | **0,0** | oculta | — |
+| alta | 57,5 | 57,5 | **0,0** | oculta | — |
+| acciones | 250,6 | 250,6 | **0,0** | 310,0 | 0,0 |
+
+**Ninguna columna se estrecha: la tabla CRECE.** A 929 px la suma de columnas pasa de **899,8 px**
+(sin) a **945,8 px** (con), en un contenedor de **929,0 px** — o sea que con la casilla la tabla
+excede el contenedor en **~16,8 px**. La página **no** desborda horizontalmente (medido:
+`scrollWidth <= innerWidth`), así que ese exceso lo absorbe el contenedor de la tabla.
+⚠️ **Dónde exactamente va ese desbordamiento NO lo he medido** — se declara, no se supone.
+
+### El contador: la cuenta del asesor se sostiene
+
+Con cero seleccionados la barra está en `display:none`, así que **hay que seleccionar para poder
+medirla** (la primera pasada de mi medidor la midió oculta y sacó 0×0). Los textos del peor caso
+no se escriben a mano: se le piden al producto, `FC.textoDelContador(n)`.
+
+| | 929 px (contenedor 929) | 390 px (contenedor 390) |
+|---|---|---|
+| barra | 879,0 × **44,3** px | 364,0 × 67,5 px |
+| «3 clientes seleccionados» | 146,1 × 20,9 | 87,9 × 41,8 |
+| «23 clientes seleccionados» (25 car.) | 166,3 × 23,3 · **cabe** | 100,1 × 46,5 · **cabe** |
+| «300 clientes seleccionados» (26 car.) | 174,4 × 23,3 · **cabe** | 105,0 × 46,5 · **cabe** |
+
+✅ **La condición que el asesor dejó por escrito queda cumplida:** su cálculo (~334 px útiles a
+390) era conservador y el texto **cabe de sobra** — el peor caso ocupa **105,0 px**. La firma del
+contador ya no descansa sobre una hipótesis.
+
+---
+
+## 4 · 🔴 EL OBJETIVO TÁCTIL: TRES HALLAZGOS REALES
+
+**Primero, la cobertura, medida y no supuesta:** `scripts/guard-objetivo-tactil.mjs` hace
+`page.goto('http://127.0.0.1:PUERTO/')` a 1280 y 360 px — **mide la LANDING**. No carga el
+dashboard, así que **NO cubre esta pantalla**. La entrada decía «no avisa»; el motivo de fondo es
+más simple: nunca la mira.
+
+| dónde | 929 px | 390 px |
+|---|---|---|
+| casilla de fila (`<td>`) | 46,0 × 171,5 / 108,7 / 171,0 → **cumple** | **18,0 × 23,1 → 🔴 POR DEBAJO** |
+| casilla de cabecera (`<th>`) | **46,0 × 43,3 → 🔴 por 0,7 px** | oculta (`thead{display:none}`) → **no medible** |
+| casilla de la barra (`<div>`) | 879,0 × 44,3 → cumple | 364,0 × 67,5 → cumple |
+
+🔴 **El hallazgo que importa es el de 390 px**: la casilla de cada fila da un objetivo de
+**18,0 × 23,1 px** contra los **44** de AB6 — menos de la mitad de alto y menos de la mitad de
+ancho. Y es justo donde el documento sitúa a la víctima: *«el profesional con 300 clientes trabaja
+de pie»*. En escritorio la celda estira a 108-171 px de alto y cumple de sobra; en el móvil la
+tabla es `table--stack-mobile` y la celda se encoge a la casilla.
+
+El de la cabecera a 929 px (**43,3 px**, falla por **0,7**) es marginal pero es un fallo de AB6.
+
+⚠️ **Ninguno de los tres se arregla aquí**: tocar el alto de las celdas es un cambio de UI de esta
+pantalla y no estaba en el encargo, que pedía **medir**. Con el número delante, se decide.
+
+---
+
+## 5 · LAS TRES PREGUNTAS QUE ARRASTRABA
+
+**① ¿«todo» es la página o todos los clientes del filtro?** → **lo VISIBLE/filtrado**, y está
+decidido en el código con su motivo (`filtroClientes.js:424`, «SELECCIONAR TODO SELECCIONA LO
+FILTRADO, NO LA BASE ENTERA»). Medido en el banco: con 3 filas montadas, marca **3 de 3**.
+
+**② ¿Sobrevive al paginar, filtrar y buscar?**
+- **Al filtrar:** sí, RECORTADA — `limitarAVisibles()` deja fuera lo que ya no se ve, y hay test.
+- **Al remontar la vista:** **NO, y está medido.** `openCustomer360` hace
+  `renderAppView('customer-360')` — **navega, no abre modal**. Al volver, la vista se monta de
+  nuevo y `let seleccion = []` **nace vacía**: medido, 3 marcadas → 0.
+- **Al buscar:** ⚠️ **NO MEDIDO.** Lo intenté dos veces (mock que ignora `?search=` y mock que lo
+  honra); en el banco la lista no repinta con el temporizador de la búsqueda, así que el caso **no
+  se ejercita**. No se afirma que sobreviva.
+
+**③ ¿Se ve cuántos hay seleccionados?** Sí, y **con su caja medida** (§3). El texto está **firmado**
+(«N clientes seleccionados» / «1 cliente seleccionado»), con singular propio y sin `(s)`.
+
+---
+
+## 6 · LA TRAMPA DEL `.modal-overlay`
+
+Medido: **la selección SOBREVIVE** a pulsar una fila (contador y casillas idénticos antes y
+después), y **no queda ningún overlay** en el body — porque esa puerta **no abre modal**: navega.
+
+⚠️ **El caso del modal de EDICIÓN no lo he ejercitado** (se abre desde otra acción). Lo que sí se
+puede afirmar por lectura: la selección vive en `let seleccion = []`, **estado de JavaScript del
+montaje, no del DOM**, así que un overlay huérfano no puede alterarla — pero eso es lectura, no
+medición, y así queda dicho.
+
+---
+
+## 7 · Huecos declarados
+
+1. **La búsqueda no se ejercitó** (§5②). Dos intentos, los dos no medibles en el banco.
+2. **Dónde va el desbordamiento de ~16,8 px de la tabla a 929 px** (§3) no está medido.
+3. **El modal de edición** no se abrió (§6).
+4. **Los tres fallos de objetivo táctil NO se arreglan aquí** (§4): medir era el encargo.
+5. **Sin verificar en yaqu.app**, y sin capturas.
+6. **La barra sigue sin ser alcanzable en móvil con cero seleccionados**, hueco (4) de la entrada
+   original: sigue abierto y no lo toca este PR.
