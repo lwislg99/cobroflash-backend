@@ -50,6 +50,9 @@ import { barridoDemo } from '../dist/modules/system/domain/barridoDemo.js';
 // SCRUM-761: el catálogo se siembra POR EL CAMINO REAL DEL ALTA, no con un `product.create` a
 // mano. Ver el bloque largo junto al catálogo, más abajo.
 import { createProduct } from '../dist/modules/products/domain/products.service.js';
+// SCRUM-767: y los CLIENTES igual, por el mismo motivo y con el mismo escalón. Ver el bloque
+// junto a `customersData`, más abajo.
+import { createCustomer } from '../dist/modules/system/customerAdmin.js';
 // …y el cliente que usa ESE camino, para poder cerrarlo al final: `createProduct` escribe con el
 // singleton de `core/db/prisma`, no con el `new PrismaClient()` de este script. Sin este
 // `$disconnect` el proceso se queda con una conexión viva y no termina solo.
@@ -271,9 +274,31 @@ async function seed() {
     { name: 'Comunidad de Vecinos C/ Mayor 5',  phone: '34000000008', email: 'admin.mayor5@example.com' },
     { name: 'Bar El Rincón',                    phone: '34000000009', email: 'barelrincon@example.com' },
   ];
+  // ───────────────────────────────────────────────────────────────────────
+  // SCRUM-767 · LOS CLIENTES SE DAN DE ALTA POR EL CAMINO REAL
+  //
+  // Esto era `prisma.customer.create({ data: { merchantId, ...c } })`, y omitía `portalToken`
+  // —la llave del portal público del cliente— que `createCustomer` sí escribe.
+  //
+  // CONSECUENCIA MEDIDA el 6-sep-2026 sobre la BD de desarrollo: **11 de 14 clientes sin token
+  // (79 %), y los SIETE del demo entre ellos**. En la ficha 360 (`customerDetailView.js:76`) el
+  // botón «🔗 Portal» **sólo se pinta si el token existe**, así que en el demo —el que se le
+  // enseña a quien está decidiendo— ese botón NO APARECE en ningún cliente. Y en la LISTA sí
+  // aparece, porque aquel camino llama a `ensurePortalToken` y cura al vuelo. El mismo cliente,
+  // dos pantallas, dos respuestas.
+  //
+  // 🔴 NO se arregla escribiendo aquí `portalToken: …`. Sería una SEGUNDA copia del alta, y el
+  // día que el alta real derive una columna más este sembrador volvería a quedarse corto
+  // exactamente igual — que es el defecto, no el síntoma. Es el escalón 1: el camino entero.
+  // Misma decisión y mismo motivo que SCRUM-761 con el catálogo, doce líneas más arriba.
+  //
+  // `createCustomer` escribe con el cliente global (`core/db/prisma`), no con el `prisma` de
+  // este fichero, y devuelve `CUSTOMER_SELECT_NO_TOKEN` — que trae `id`, que es lo único que el
+  // resto del sembrador usa de estas filas. El token NO se devuelve a propósito (SCRUM-97).
+  // ───────────────────────────────────────────────────────────────────────
   const customers = [];
   for (const c of customersData) {
-    customers.push(await prisma.customer.create({ data: { merchantId: DEMO_ID, ...c } }));
+    customers.push(await createCustomer(DEMO_ID, c));
   }
   const [maria, joseluis, carmen, antonio, lucia, comunidad, bar] = customers;
 
