@@ -286,15 +286,18 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   //     del campo libre. Aislados POR IDENTIDAD (los dos subárboles del `.field`).
   //   · SCRUM-587 · +3 · la tira que PROPONE el descuento pactado con el cliente: el `div.alert`,
   //     su `<span>` de texto y el botón de aceptar. Nace oculta.
+  //   · SCRUM-586 · +3 · la tira que PROPONE las FORMAS DE PAGO pactadas: misma forma exacta —
+  //     `div.alert`, su `<span>` y el botón—, porque deriva de la anterior. Nace oculta también.
+  //     Identificados POR IDENTIDAD sobre el árbol montado (6-sep-2026), no restando 256 − 253.
   //
   // 🔴 EL 253 ESTÁ MEDIDO SOBRE EL ÁRBOL YA MEZCLADO, NO SUMADO A OJO, y las dos mitades se
   // comprobaron por separado sobre ese mismo árbol: quitando sólo el `appendChild` de la tira da
   // 250, y quitando sólo los dos `.field` de la dirección da 245.
-  assert.equal(nodos.length, 253,
-    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 253 `
+  assert.equal(nodos.length, 256,
+    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 256 `
     + '(236 sobre `origin/main` = 80db312b, + la opción de alta de SCRUM-591, + el bloque de '
     + 'descuento global de SCRUM-594, + el control de la dirección de la obra de SCRUM-602, '
-    + '+ la tira de propuesta de SCRUM-587). Un arreglo del BANCO no debe cambiar ni uno: si '
+    + '+ la tira de propuesta de SCRUM-587, + la tira de formas de pago de SCRUM-586). Un arreglo del BANCO no debe cambiar ni uno: si '
     + 'has tocado el banco y esto se mueve, el arreglo pinta.');
 
   const tablas = nodos.filter((n) => n.tagName === 'TABLE');
