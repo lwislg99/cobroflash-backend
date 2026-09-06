@@ -60,7 +60,20 @@ const CENSO_SIN_RED = [
   ['src/modules/billing/app/routes/payMp.routes.ts', 2],
   ['src/modules/billing/app/routes/receipt.routes.ts', 9],
   ['src/modules/jobs/app/routes/albaranPublic.routes.ts', 1],
-  ['src/modules/system/app/routes/quoteDecisionLanding.routes.ts', 2],
+  // 🔴 SCRUM-806 · 2 → 3, y es una DECISIÓN tomada a conciencia, no un descuido que pasó.
+  //    La tercera es `GET /pay/quote/:token/pdf`, que sirve al CLIENTE el PDF de su presupuesto.
+  //    Busca por `decisionToken` y no filtra por merchant porque NO HAY NINGUNO A MANO: quien
+  //    abre esto no tiene sesión —es el cliente final, desde el enlace que le llegó— y nunca la
+  //    tendrá. Misma categoría exacta que las dos de este mismo fichero que ya estaban aquí.
+  //
+  //    El token es `crypto.randomBytes(16)` y `@unique`: ni adivinable ni enumerable. MEDIDO,
+  //    no supuesto — con dos merchants: el id de otro a mano da 404, el id propio da 404, un
+  //    token inventado da 404, el token con un byte cambiado da 404, y enumerando los ids 1..40
+  //    salen 0 PDFs. Quien no tenga el token exacto no alcanza ninguna fila.
+  //
+  //    ⚠️ Y sólo LEE: no muta estado, no escribe `quote.pdfUrl`, y lo que devuelve es el mismo
+  //    documento que ese cliente ya podía ver entero en la landing de decisión con ese token.
+  ['src/modules/system/app/routes/quoteDecisionLanding.routes.ts', 3],
   ['src/modules/system/app/routes/customerPortal.routes.ts', 3],
   ['src/modules/quotes/domain/quoteToken.service.ts', 1],
 
@@ -111,7 +124,7 @@ const CENSO_SIN_RED = [
   //    y nada más— y si no hay fila NO SE CREA ninguna.
   ['src/modules/messaging/domain/registroDeEnvios.ts', 1],
 ];
-const TOTAL_SIN_RED = CENSO_SIN_RED.reduce((t, [, n]) => t + n, 0);   // 45 (44 + el receptor de SCRUM-475 2B)
+const TOTAL_SIN_RED = CENSO_SIN_RED.reduce((t, [, n]) => t + n, 0);   // 46 (44 + SCRUM-475 2B + SCRUM-806)
 const MINIMO_QUE_FILTRAN = 196;
 
 // ── SUELO, EN DOS MITADES ────────────────────────────────────────────────────────────────
