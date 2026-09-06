@@ -164,6 +164,10 @@ function renderProvidersView(container) {
 
     function openProviderEditModal(it) {
       if (!editProviderOverlay) editProviderOverlay = buildProviderEditModal();
+      // SCRUM-785 · al cerrarse se DESCUELGA del `body` (ver `closeProviderEditModal`), así que al
+      // reabrir hay que volver a colgarlo. Se reengancha el MISMO nodo: sus campos y sus oyentes
+      // siguen cableados desde `buildProviderEditModal`, que sólo corre una vez.
+      else if (!editProviderOverlay.parentNode) document.body.appendChild(editProviderOverlay);
       _editingProvider = { merchantId: _merchantId, id: it.id };
 
       const body = editProviderOverlay.querySelector('.modal-body');
@@ -177,7 +181,16 @@ function renderProvidersView(container) {
     }
 
     function closeProviderEditModal() {
-      if (editProviderOverlay) editProviderOverlay.style.display = 'none';
+      if (editProviderOverlay) {
+        editProviderOverlay.style.display = 'none';
+        // 🔴 SCRUM-785 · Y SE DESCUELGA DEL BODY, por lo mismo que en Productos: un overlay
+        // escondido pero PRESENTE dispara `body:has(.modal-overlay) #tut-help-btn`, que es una
+        // regla ESTRUCTURAL, y apaga el botón flotante de ayuda para el resto de la sesión.
+        // Medido en Edge, con su control positivo (al borrarlo, vuelve).
+        //
+        // ⚠️ SE DESCUELGA, NO SE DESTRUYE: `openProviderEditModal` reutiliza este mismo nodo.
+        if (typeof editProviderOverlay.remove === 'function') editProviderOverlay.remove();
+      }
       _editingProvider = null;
     }
   

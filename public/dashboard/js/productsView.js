@@ -371,6 +371,10 @@ function renderProductsView(container) {
 
         function openEditModal(it) {
           if (!editOverlay) editOverlay = buildEditModal();
+          // SCRUM-785 · al cerrarse se DESCUELGA del `body` (ver `closeEditModal`), así que al
+          // reabrir hay que volver a colgarlo. Se reengancha el MISMO nodo: sus campos y sus
+          // oyentes siguen cableados desde `buildEditModal`, que sólo corre una vez.
+          else if (!editOverlay.parentNode) document.body.appendChild(editOverlay);
           _editing = { merchantId: _merchantId, id: it.id };
 
           const body = editOverlay.querySelector('.modal-body');
@@ -411,7 +415,21 @@ function renderProductsView(container) {
         }
 
         function closeEditModal() {
-          if (editOverlay) editOverlay.style.display = 'none';
+          if (editOverlay) {
+            editOverlay.style.display = 'none';
+            // 🔴 SCRUM-785 · Y SE DESCUELGA DEL BODY. Esconderlo dejaba el nodo colgado para
+            // siempre, y eso apaga el botón flotante de ayuda: `styles.css` tiene
+            // `body:has(.modal-overlay) #tut-help-btn { display:none !important }`, y `:has()` es
+            // ESTRUCTURAL — mira si el nodo EXISTE, no si se ve. Medido en Edge: con el residuo el
+            // «?» computa `display:none` y caja 0×0; al borrarlo vuelve a `inline-block` 9,98×21.
+            //
+            // El atajo «N» ya no sufría por esto —SCRUM-777 hizo que la pieza mire visibilidad—,
+            // pero esta segunda víctima NO pasa por la pieza: es CSS. Por eso el arreglo es aquí.
+            //
+            // ⚠️ SE DESCUELGA, NO SE DESTRUYE: `openEditModal` reutiliza este mismo nodo y lo
+            // vuelve a colgar. `remove()` sólo lo separa del árbol.
+            if (typeof editOverlay.remove === 'function') editOverlay.remove();
+          }
           _editing = null;
         }
     
