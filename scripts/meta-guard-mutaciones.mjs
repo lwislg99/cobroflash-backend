@@ -50,6 +50,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url'; // SCRUM-730: `pathname` no decodifica
 import { run } from 'node:test'; // SCRUM-745 (adopción): eventos, no reporter
 import ts from 'typescript';
+import { ejecutadoDirectamente } from './_puerta-de-entrada.mjs'; // SCRUM-765
+import { correspondencia, destinoEnDist, emitirDesdeFuente } from './frontera-dist.mjs'; // SCRUM-763
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIR_TESTS = path.join(RAIZ, 'tests');
@@ -57,6 +59,59 @@ const DIR_TESTS = path.join(RAIZ, 'tests');
 export const SALIDA_MUDO = 1;
 export const SALIDA_CIEGO = 2;
 export const SALIDA_NO_RESTAURADO = 3;
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-765 · LOS DOS SUELOS, Y POR QUÉ HACEN FALTA LOS DOS.
+ *
+ * Este instrumento le exige a todos los censos de la casa que un CERO se distinga de un «no supe
+ * mirar», y no se lo exigía a sí mismo. Se cerró por los dos sitios por los que se puede llegar
+ * a cero sin enterarse:
+ *
+ * ① `SUELO_DECLARACIONES` / `SUELO_GUARDS` — un `MUTACIONES_QUE_ME_TUMBAN` **borrado entero**
+ *    saca al guard del censo, y el censo no sabía cuántos debería haber: el recuento bajaba de
+ *    N a N-1 y el job seguía verde. La declaración COJA ya se denunciaba desde SCRUM-745; la
+ *    BORRADA no. Es el hueco hermano, y sin suelo no hay forma de verlo.
+ *
+ * ② El suelo de EJECUCIÓN, abajo en el bloque principal: si al final no se ha ejecutado ni una
+ *    mutación, se sale CIEGO. Sin él, la puerta rota de SCRUM-765 daba exit 0 en 0,28 s.
+ *
+ * SON NÚMEROS QUE SÓLO SUBEN. Se suben al adoptar el mecanismo en un guard nuevo; bajarlos es
+ * retirar cobertura, y entonces el diff lo tiene que decir en voz alta. Medido en el árbol del
+ * 6-sep-2026 (rama scrum-765-763, tras mezclar main): 15 guards · 36 declaraciones.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+export const SUELO_GUARDS = 15;
+export const SUELO_DECLARACIONES = 36;
+
+/**
+ * SUELO ① · ¿ha encogido el censo? Devuelve el motivo, o `null` si el suelo aguanta.
+ *
+ * Vive FUERA del bloque principal a propósito: un suelo que sólo existe dentro del `if` de
+ * arranque no se le puede exigir el rojo sin pagar los minutos del trabajo entero, y un guard al
+ * que no se le ha visto caer es una decoración.
+ */
+export function sueloDelCenso({ guards, declaraciones }) {
+  if (guards >= SUELO_GUARDS && declaraciones >= SUELO_DECLARACIONES) return null;
+  return `EL CENSO HA ENCOGIDO: ${guards} guards y ${declaraciones} declaraciones, y el suelo es `
+    + `${SUELO_GUARDS} y ${SUELO_DECLARACIONES}.\n`
+    + '  Un `MUTACIONES_QUE_ME_TUMBAN` borrado entero saca a su guard del censo sin que nada lo '
+    + 'diga: el recuento baja y el verde de al lado se lee igual.\n'
+    + '  Si la cobertura se ha retirado A PROPÓSITO, baja el suelo EN EL MISMO COMMIT y que el '
+    + 'diff lo diga en voz alta.';
+}
+
+/**
+ * SUELO ② · ¿se ha ejecutado algo? Devuelve el motivo, o `null` si sí.
+ *
+ * EJECUTADAS = VIVAS + MUDAS. Las CIEGAS se descartaron ANTES de tocar el árbol, así que no
+ * cuentan como trabajo hecho: contarlas convertiría «no supe medir» en «he medido».
+ */
+export function sueloDeEjecucion({ vivas, mudas }) {
+  if (vivas + mudas > 0) return null;
+  return 'NO SE HA EJECUTADO NI UNA MUTACIÓN. Este exit no dice que los guards estén vivos: '
+    + 'dice que no he medido nada. Mira las ciegas de arriba.';
+}
 
 /**
  * Lee las mutaciones declaradas en un fichero, POR AST y sin ejecutarlo.
@@ -218,32 +273,116 @@ async function aplicarUna(mut, guard, limpia) {
     return { ok: false, ciego: `el ancla no está en \`${mut.fichero}\`: la declaración caducó` };
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 PUERTA 2 (SCRUM-763) · ¿HAY UN ÁRBOL EJECUTABLE DETRÁS DE ESTE FUENTE?
+  //
+  // Si el fichero se compila, el código que corren los tests NO es éste: es su `.js` de `dist/`.
+  // Mutar sólo el fuente dejaría al guard midiendo el árbol de antes, y este instrumento
+  // dictaría MUDO sobre un guard sano — la misma falsa acusación de SCRUM-748, por la otra cara.
+  // Y restaurar sólo el fuente dejaría `dist/` mutado para todo lo que venga detrás, que es
+  // exactamente lo que casi hizo publicar a S1 la conclusión contraria a la real.
+  //
+  // Antes de tocar nada se exige que `dist/` YA corresponda al fuente. Si no corresponde, no se
+  // muta: no hay nada que juzgar sobre un árbol que no es el que está escrito. Es CIEGO, y con
+  // el motivo delante en vez de un rojo que acusaría al guard equivocado.
+  //
+  // ✅ CONTRASTE: para un `.mjs`, `destinoEnDist` devuelve `null` y todo esto no cuesta nada.
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  const destino = destinoEnDist(mut.fichero, RAIZ);
+  const absDist = destino ? path.join(RAIZ, destino) : null;
+  let ORIGINAL_DIST = null;
+  if (absDist) {
+    const corr = correspondencia(mut.fichero, RAIZ, texto);
+    if (corr.estado !== 'corresponde') {
+      return {
+        ok: false,
+        ciego: `\`${mut.fichero}\` se compila a \`${destino}\`, y el árbol ejecutable NO `
+          + `corresponde al fuente (${corr.estado}). Los tests de este guard medirían un código `
+          + 'que no es el que hay escrito, así que NO se ha mutado nada. Compila '
+          + '(`npm run build`) y vuelve a correrme; `npm run frontera:dist` lo enseña entero.',
+      };
+    }
+    ORIGINAL_DIST = fs.readFileSync(absDist);
+  }
+
   let resultado;
   try {
-    fs.writeFileSync(abs, texto.replace(mut.de, mut.a));
+    const mutado = texto.replace(mut.de, mut.a);
+    fs.writeFileSync(abs, mutado);
     if (Buffer.compare(fs.readFileSync(abs), ORIGINAL) === 0) {
       return { ok: false, ciego: 'la mutación no cambió el fichero: no probaría nada' };
     }
+    // El árbol ejecutable tiene que llevar la mutación TAMBIÉN, o el guard mide el de antes.
+    if (absDist) fs.writeFileSync(absDist, emitirDesdeFuente(abs, mutado, RAIZ));
     const tras = await correr(guard);
     resultado = cayo(tras, mut.cae)
       ? { ok: true }
       : { ok: false, mudo: `el guard NO cayó. Test que debía ponerse rojo: «${mut.cae}»` };
   } finally {
+    // 🔴 LA RESTAURACIÓN ES DE LOS DOS, Y SE VERIFICA POR BYTES EN LOS DOS. Verificar sólo el
+    // fuente es el verde falso de SCRUM-763: da 0 sobre un árbol que sigue mutado.
     fs.writeFileSync(abs, ORIGINAL);
-    if (Buffer.compare(fs.readFileSync(abs), ORIGINAL) !== 0) {
-      console.error(`🔴🔴 NO PUDE RESTAURAR \`${mut.fichero}\`. MÍRALO A MANO ANTES DE SEGUIR.`);
+    const sinRestaurar = [];
+    if (Buffer.compare(fs.readFileSync(abs), ORIGINAL) !== 0) sinRestaurar.push(mut.fichero);
+    if (absDist && ORIGINAL_DIST) {
+      fs.writeFileSync(absDist, ORIGINAL_DIST);
+      if (Buffer.compare(fs.readFileSync(absDist), ORIGINAL_DIST) !== 0) sinRestaurar.push(destino);
+    }
+    if (sinRestaurar.length) {
+      console.error(`🔴🔴 NO PUDE RESTAURAR \`${sinRestaurar.join('` y `')}\`. `
+        + 'MÍRALO A MANO ANTES DE SEGUIR.');
       process.exit(SALIDA_NO_RESTAURADO);
     }
   }
   return resultado;
 }
 
-if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('meta-guard-mutaciones.mjs')) {
+/**
+ * ¿Qué declaraciones del árbol tocan código COMPILADO, y por tanto viven sobre la frontera de
+ * SCRUM-763? Lleva su población delante: sin ella, un «0 expuestas» no se distingue de un censo
+ * que no encontró nada que mirar.
+ */
+export function censoDeExposicionATypeScript(dir = DIR_TESTS, raiz = RAIZ) {
+  const expuestas = [];
+  const noExpuestas = [];
+  for (const { guard, mutaciones } of censoDeDeclaraciones(dir)) {
+    for (const m of mutaciones) {
+      const destino = destinoEnDist(m.fichero, raiz);
+      (destino ? expuestas : noExpuestas).push({ guard, fichero: m.fichero, destino });
+    }
+  }
+  return { poblacion: expuestas.length + noExpuestas.length, expuestas, noExpuestas };
+}
+
+// 🔴 SCRUM-765 · LA PUERTA. Antes comparaba `import.meta.url` con `'file://' + argv[1]`, que en
+// Windows NUNCA casa, y arrancaba SÓLO por el respaldo `endsWith('meta-guard-mutaciones.mjs')`.
+// El respaldo comparaba por NOMBRE DE FICHERO: una copia renombrada salía exit 0 en 0,28 s sin
+// ejecutar una sola mutación. El respaldo se ha ido con la avería — era lo que la tapaba.
+if (ejecutadoDirectamente(import.meta.url)) {
+  // `--solo-censo` abre esta misma puerta y aplica los suelos del censo SIN mutar nada. Existe
+  // para que se pueda comprobar en un segundo que la puerta abre, en vez de tener que esperar
+  // los ~76 s del trabajo entero. NO es el modo del CI: `npm run meta:mutaciones` no lo pasa.
+  const soloCenso = process.argv.includes('--solo-censo');
   const censo = censoDeDeclaraciones();
-  if (!censo.length) {
-    console.error('🔴 CIEGO: ningún guard declara mutaciones. No he medido nada.');
+
+  // ── SUELO ① · EL TAMAÑO DEL CENSO ─────────────────────────────────────────────────────────
+  const declaraciones = censo.reduce((n, c) => n + c.mutaciones.length, 0);
+  const guardsConDeclaracion = censo.filter((c) => c.mutaciones.length).length;
+  const encogido = sueloDelCenso({ guards: guardsConDeclaracion, declaraciones });
+  if (encogido) {
+    console.error(`🔴 CIEGO · ${encogido}`);
     process.exit(SALIDA_CIEGO);
   }
+  if (soloCenso) {
+    const expo = censoDeExposicionATypeScript(); // `expo`, no `ts`: `ts` es el compilador de arriba
+    console.log(`censo · ${guardsConDeclaracion} guards · ${declaraciones} declaraciones `
+      + `(suelos ${SUELO_GUARDS} / ${SUELO_DECLARACIONES})`);
+    console.log(`  sobre la frontera src/ ↔ dist/ (SCRUM-763): ${expo.expuestas.length} de ${expo.poblacion}`);
+    for (const e of expo.expuestas) console.log(`    · ${e.guard} → ${e.fichero}`);
+    console.log('\n⚠️ MODO CENSO: NO se ha ejecutado ninguna mutación.');
+    process.exit(0);
+  }
+
   const mudos = [];
   const ciegos = [];
   let vivas = 0;
@@ -269,6 +408,20 @@ if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith
     }
   }
   console.log(`\nvivas ${vivas} · mudas ${mudos.length} · ciegas ${ciegos.length}`);
+
+  // ── SUELO ② · LA EJECUCIÓN (SCRUM-765) ────────────────────────────────────────────────────
+  // 🔴 EJECUTADAS = las que llegaron a mutar el árbol: las VIVAS y las MUDAS. Las CIEGAS se
+  // descartaron ANTES de tocar nada, así que no cuentan como trabajo hecho.
+  //
+  // Sin este suelo, cualquier camino que llegue al final sin haber mutado nada sale con 0, y un
+  // exit 0 de este script es lo que sostiene el requisito de entrega de toda la casa. Es la
+  // misma medicina que este instrumento le exige a los demás censos, y no se la aplicaba.
+  const sinMedir = sueloDeEjecucion({ vivas, mudas: mudos.length });
+  if (sinMedir) {
+    console.error(`🔴 CIEGO: ${sinMedir}`);
+    process.exit(SALIDA_CIEGO);
+  }
+
   if (ciegos.length) console.error('🔴 CIEGO:\n  · ' + ciegos.join('\n  · '));
   if (mudos.length) {
     console.error('🔴 GUARDS MUDOS — pasan en verde sobre el defecto que dicen vigilar:\n  · '
