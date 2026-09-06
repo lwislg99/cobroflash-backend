@@ -269,6 +269,10 @@
   <!-- SCRUM-587 (CONT-14): DESPUÉS de quoteDescuentos.js, del que lee la aritmética y sin el
        cual se niega a funcionar; y ANTES de quotesView.js, que le pide la propuesta. -->
   <script src="./js/descuentoPorDefecto.js"></script>
+  <!-- SCRUM-586 (CONT-13): las formas de pago pactadas con el cliente, PROPUESTAS. Va ANTES de
+       quotesView.js, que le pide la propuesta al elegir cliente. NO cuelga de quoteDescuentos.js
+       —aquí no hay aritmética que leer—, así que su única relación de orden es con el editor. -->
+  <script src="./js/formaDePagoPorDefecto.js"></script>
   <script src="./js/quoteDireccionObra.js"></script> <!-- SCRUM-602 (DOC-12): los tres modos de la direccion de la obra; va ANTES de quotesView.js -->
   <script src="./js/quoteRevisiones.js"></script>
   <script src="./js/quoteAtajosVencimiento.js"></script> <!-- SCRUM-605: atajos de «Válido hasta» -->

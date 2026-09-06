@@ -58,6 +58,7 @@ const SHELL = [
   '/dashboard/js/quoteDescuentos.js',
   '/dashboard/js/quoteCaducidad.js', // SCRUM-633
   '/dashboard/js/descuentoPorDefecto.js', // SCRUM-587 (CONT-14)
+  '/dashboard/js/formaDePagoPorDefecto.js', // SCRUM-586 (CONT-13)
   '/dashboard/js/quoteDireccionObra.js', // SCRUM-602 (DOC-12)
   '/dashboard/js/quoteRevisiones.js',
   '/dashboard/js/quoteAtajosVencimiento.js',
