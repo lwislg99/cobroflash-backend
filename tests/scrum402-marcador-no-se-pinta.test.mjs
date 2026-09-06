@@ -173,7 +173,24 @@ const CENSO = Object.freeze({
   //
   // El día que se firmen los dos textos, esta entrada se BORRA — no se pone a 0 (SCRUM-424 /
   // SCRUM-405): `censoActual()` sólo lista ficheros CON marcadores, y el trinquete APRIETA.
-  'quotesView.js': 2,
+  //
+  // 🔴 SCRUM-586 (CONT-13) · 6-sep-2026 · SUBE DE 2 A 4, Y ESTO ES LA DECISIÓN, NO EL TRÁMITE.
+  //
+  // El trinquete SALTÓ («quotesView.js: 2 → 4») y ese salto es el aviso funcionando, no un
+  // estorbo. Se sube porque los dos textos nuevos existen, se PINTAN y están declarados; no se
+  // sube «para que pase». Son la tira que propone las FORMAS DE PAGO pactadas con el cliente: el
+  // rótulo del botón que acepta la propuesta y el texto que enuncia el acuerdo — los mismos dos
+  // huecos que abrió la tira del 587 en este fichero, por el mismo motivo y sin firmar tampoco.
+  //
+  // ⚠️ SON CUATRO LITERALES Y DOS FRASES. Las dos tiras dicen lo mismo con distinto sujeto, y sus
+  // botones dicen exactamente lo mismo. Cuando el asesor firme, lo más probable es que firme DOS
+  // textos y este número baje de 4 a 0 de una vez; si firmara sólo los del 587, bajaría a 2. Que
+  // el número no sea el de las frases está escrito aquí para que nadie lo lea como cuatro
+  // decisiones de microcopy pendientes: son dos, duplicadas por sujeto.
+  //
+  // La caja de los dos nuevos SÍ está medida —en navegador, a 929 y a 390 px, con texto dentro—
+  // y las medidas están en `docs/master/SCRUM-586.md`. Lo que falta es la FIRMA, no la medida.
+  'quotesView.js': 4,
   // 🔴 SCRUM-587 (CONT-14) · 4-sep-2026 · `customersView.js` ENTRÓ Y SALIÓ EL MISMO DÍA.
   //
   // Entró con 1 —el rótulo del campo del descuento pactado en la ficha del cliente— y el asesor lo
