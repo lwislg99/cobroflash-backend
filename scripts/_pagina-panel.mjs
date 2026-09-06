@@ -73,7 +73,12 @@ export const CLIENTES_DE_MUESTRA = [
  *
  * Si algo de esto no sale, se devuelve `aviso` y el llamador DECIDE — este módulo no traga.
  */
-export async function paginaDeClientes(raiz, { extra = '' } = {}) {
+/**
+ * `seleccionar: false` deja la lista con CERO marcados. Lo estrena SCRUM-792, que mide justo el
+ * caso contrario al de siempre: qué se puede pulsar ANTES de haber marcado nada. Por defecto sigue
+ * marcando una fila, porque `guard:objetivo-tactil` cuenta con la barra abierta para medirla.
+ */
+export async function paginaDeClientes(raiz, { extra = '', seleccionar = true } = {}) {
   const banco = cargarDashboard(raiz, {
     datos: (url) => {
       const u = String(url || '');
@@ -92,8 +97,10 @@ export async function paginaDeClientes(raiz, { extra = '' } = {}) {
   const filas = nodos.filter((n) => n.tagName === 'INPUT' && n.type === 'checkbox'
     && n.getAttribute && n.getAttribute('aria-label') && n.getAttribute('aria-label') !== TODOS_LABEL && enTd(n));
   if (filas.length === 0) return { html: null, aviso: 'no hay casillas de fila que medir' };
-  filas[0].checked = true;
-  filas[0].disparar('change');
+  if (seleccionar) {
+    filas[0].checked = true;
+    filas[0].disparar('change');
+  }
 
   return { html: serializar(r.contenedor) + extra, aviso: null, casillasDeFila: filas.length };
 }

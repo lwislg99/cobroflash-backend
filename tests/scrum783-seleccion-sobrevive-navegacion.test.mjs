@@ -108,8 +108,12 @@ test('SCRUM-783 · 🔴 EL QUE DECIDE: marcar tres, ver una ficha y VOLVER deja 
   const c = contador(r2.contenedor);
   assert.ok(c && /^3 clientes seleccionados$/.test(String(c.textContent).trim()),
     `🔴 el contador dice «${c && c.textContent}» al volver, y tenía que decir «3 clientes seleccionados».`);
-  assert.equal(barra(r2.contenedor).style.display, 'flex',
-    '🔴 la barra se ha cerrado al volver: hay tres seleccionados y no hay dónde verlo.');
+  // ⚠️ SCRUM-792 movió el `display` de la barra al CSS (la decisión depende del ANCHO y eso sólo
+  // lo sabe una `@media`), así que aquí ya NO se puede mirar `style.display`: el banco no evalúa
+  // CSS. Lo que sí es contrato del JS —y lo único que este banco puede juzgar— es la CLASE.
+  // La visibilidad de verdad se mide en navegador (`scripts/guard-caja-barra-seleccion.mjs`).
+  assert.equal(barra(r2.contenedor).classList.contains('barra-seleccion--vacia'), false,
+    '🔴 la barra se marca como VACÍA al volver: hay tres seleccionados y el CSS la cerraría.');
 });
 
 test('SCRUM-783 · 🔴 y la CASILLA DE CADA FILA lo refleja al volver, no sólo el contador', async () => {
@@ -193,8 +197,8 @@ test('SCRUM-783 · ✅ EL LÍMITE: RECARGAR la página vacía la selección', as
   assert.equal(marcadas(r2.contenedor), 0,
     `🔴 tras RECARGAR quedan ${marcadas(r2.contenedor)} marcadas. La selección se ha hecho `
     + 'persistente de verdad, y eso es otra decisión y otro ticket.');
-  assert.equal(barra(r2.contenedor).style.display, 'none',
-    '🔴 la barra sigue abierta tras recargar, con cero seleccionados.');
+  assert.equal(barra(r2.contenedor).classList.contains('barra-seleccion--vacia'), true,
+    '🔴 la barra NO se marca como vacía tras recargar, con cero seleccionados.');
 });
 
 // ═══ ④ DÓNDE VIVE EL ESTADO — las dos prohibiciones del encargo ══════════════════════════

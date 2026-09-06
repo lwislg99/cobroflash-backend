@@ -377,7 +377,39 @@ export function nodo(tag, reg) {
       while (p) { if (casa(p, s) === true) return p; p = p._padre; }
       return null;
     },
-    classList: { add() {}, remove() {}, toggle() {}, contains: () => false },
+    /**
+     * 🔴 SCRUM-792 · `classList` DE VERDAD. Era `{ add(){}, remove(){}, toggle(){}, contains: () => false }`:
+     * cuatro no-ops y un `contains` que MENTÍA SIEMPRE que no.
+     *
+     * Lo que costaba, medido: `customersView` marca la barra de selección con
+     * `classList.toggle('barra-seleccion--vacia', …)`, y el banco se tragaba la llamada sin
+     * cambiar `className`. El marcado serializado salía SIN la clase, así que el guard de
+     * navegador medía una barra que en el producto está oculta y aquí salía visible — y el fallo
+     * se leía como un defecto del CSS que no existía.
+     *
+     * Es el mismo hueco que `prepend` (SCRUM-460), `parentNode` (SCRUM-609),
+     * `insertAdjacentHTML` (SCRUM-698) e `insertAdjacentElement` (SCRUM-760): una pieza entera
+     * fuera del alcance del banco por una API que el banco no tenía, no por nada del producto.
+     * Se corrige AQUÍ y no se rodea desde el test.
+     *
+     * ⚠️ Y el `contains: () => false` era peor que un no-op: un test que preguntara «¿tiene la
+     * clase?» recibía un NO firme sobre un nodo que sí la tenía. Ahora se apoya en `className`,
+     * que es de donde el resto del banco lee las clases (`clasesDeLasHojas`, los tests que
+     * filtran por clase), así que no hay dos verdades.
+     */
+    classList: {
+      add(...cs) { const s = new Set(String(n.className || '').split(/\s+/).filter(Boolean)); for (const c of cs) if (c) s.add(String(c)); n.className = [...s].join(' '); },
+      remove(...cs) { const s = new Set(String(n.className || '').split(/\s+/).filter(Boolean)); for (const c of cs) s.delete(String(c)); n.className = [...s].join(' '); },
+      contains(c) { return String(n.className || '').split(/\s+/).filter(Boolean).includes(String(c)); },
+      toggle(c, forzar) {
+        // El estándar: con el segundo argumento manda ÉL; sin él, alterna. Si aquí se ignorara,
+        // `toggle(x, false)` AÑADIRÍA la clase — el contrario exacto de lo que pide el llamador.
+        const tiene = n.classList.contains(c);
+        const poner = forzar === undefined ? !tiene : !!forzar;
+        if (poner) n.classList.add(c); else n.classList.remove(c);
+        return poner;
+      },
+    },
     getBoundingClientRect: () => ({ width: 0, height: 0, top: 0, left: 0 }),
     set textContent(v) { n._texto = String(v); n.hijos = []; },
     get textContent() { return n._texto; },
