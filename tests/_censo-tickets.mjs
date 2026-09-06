@@ -66,8 +66,13 @@ export function normalizar(texto) {
 /**
  * El número, con FRONTERA. `SCRUM-29` no puede casar dentro de `SCRUM-298`, ni al revés: sin
  * frontera, un censo de SCRUM-29 heredaría toda la evidencia del 298 y lo daría por hecho.
+ *
+ * ⚠️ SCRUM-753 le añadió el `export` y nada más. Es aditivo y no cambia el motor: lo pide
+ * `scripts/_censo-alcanzabilidad.mjs`, que reparte commits por ticket y necesita ESTA frontera.
+ * La alternativa era la tercera copia de la misma regla, y la copia es cómo una de las dos se
+ * queda atrás.
  */
-function patronTicket(n) {
+export function patronTicket(n) {
   return new RegExp(`SCRUM-${n}(?![0-9])`, 'i');
 }
 
