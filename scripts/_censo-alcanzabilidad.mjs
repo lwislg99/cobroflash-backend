@@ -118,8 +118,8 @@ export function traerRefs(raiz) {
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  * LA INSTANTÁNEA. **SE LEE UNA VEZ Y NO SE VUELVE A LEER.**
  *
- * 🔴 ESTO ES LA CORRECCIÓN DE UN DESAJUSTE MEDIDO Y NO EXPLICADO, y no era inocuo. El 5-sep-2026
- * `scripts/censo-tablero-vs-arbol.mjs` publicó `poblacion.ticketsCensados = 454` con **453 filas**.
+ * 🔴 ESTO ES LA CORRECCIÓN DE UN DESAJUSTE MEDIDO Y NO EXPLICADO, y no era inocuo.
+ * El 5-sep-2026 `scripts/censo-tablero-vs-arbol.mjs` publicó 454 tickets censados con 453 filas.
  * No se pierde uno entre el recuento y la presentación: **SE GANA UNO ENTRE DOS LECTURAS**.
  *
  * `censar()` llama a `numerosDelArbol()` para construir las filas y, cuando termina, llama a
