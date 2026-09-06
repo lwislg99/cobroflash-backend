@@ -104,3 +104,30 @@ export async function paginaDeClientes(raiz, { extra = '', seleccionar = true } 
 
   return { html: serializar(r.contenedor) + extra, aviso: null, casillasDeFila: filas.length };
 }
+
+/**
+ * SCRUM-791 · UNA VISTA CUALQUIERA DEL PANEL, montada y serializada.
+ *
+ * `paginaDeClientes` sigue existiendo y NO se toca: necesita seleccionar una fila con el
+ * mecanismo del producto para que la barra del móvil exista, y eso es suyo. Esto es para las
+ * vistas que no piden ese gesto.
+ *
+ * 🔴 EL SUELO NO ES DECORATIVO. Una vista que monta pero pinta cuatro nodos NO es una superficie
+ * medida: es una pantalla que no llegó a pintarse, y medirla daría un cero que parece un
+ * cumplimiento. Por eso se exige un mínimo de nodos y, si no llega, se devuelve `aviso` y decide
+ * quien llama. Es la misma lección que dejó escrita SCRUM-787 con sus ocho vistas sin fixture.
+ */
+export async function paginaDeVista(raiz, nombreFn, { datos = null, minimoNodos = 20, extra = '' } = {}) {
+  let r;
+  try {
+    r = await pintarVista(cargarDashboard(raiz, datos ? { datos } : {}), nombreFn);
+  } catch (e) {
+    return { html: null, aviso: `${nombreFn} reventó al montarse: ${String(e.message).slice(0, 90)}` };
+  }
+  if (r.error) return { html: null, aviso: `${nombreFn} no monta: ${String(r.error.message).slice(0, 90)}` };
+  const nodos = todos(r.contenedor).length;
+  if (nodos < minimoNodos) {
+    return { html: null, aviso: `${nombreFn} montó ${nodos} nodos (mínimo ${minimoNodos}): está a medias con estos datos` };
+  }
+  return { html: serializar(r.contenedor) + extra, aviso: null, nodos };
+}
