@@ -235,7 +235,27 @@ export const CreateQuoteSchema = z.object({
   // Omitido = todos los que el merchant tenga disponibles.
   payMethods: z.array(z.enum(['card', 'bizum', 'transfer'])).min(1).optional(),
   // A20.4: qué datos del cliente muestra el DOCUMENTO (null = todos los presentes)
-  docFields: z.object({ name: z.boolean(), phone: z.boolean(), taxId: z.boolean(), email: z.boolean() }).partial().nullable().optional(),
+  /**
+   * A20.4: qué datos del cliente muestra el DOCUMENTO (null = todos los presentes).
+   *
+   * 🔴 SCRUM-589 (CONT-18) · `usarRazonSocial` NO ES UNA CASILLA MÁS: las otras cuatro dicen
+   * «muestra este campo» y se SUMAN; ésta dice CUÁL de los dos nombres sale, y sustituye.
+   *
+   * Y hubo que tocar esto o el ticket nacía muerto: `z.object` **ESTRAGA las claves que no
+   * declara, en silencio y con `ok: true`**. Medido antes de cambiarlo, contra este mismo
+   * esquema importado de `dist/`:
+   *
+   *     entrada {name,phone,taxId,email,usarRazonSocial:false} → ok:true
+   *     salida  {name,phone,taxId,email}          ← la elección, desaparecida
+   *
+   * O sea: el navegador la mandaba, el servidor contestaba 2xx y la elección no llegaba nunca a
+   * la fila. Cero migración era cierto y aun así no habría funcionado — con todos los tests en
+   * verde, porque nadie preguntaba por una clave que se cae sola.
+   */
+  docFields: z.object({
+    name: z.boolean(), phone: z.boolean(), taxId: z.boolean(), email: z.boolean(),
+    usarRazonSocial: z.boolean(),
+  }).partial().nullable().optional(),
   /**
    * SCRUM-594 (DOC-04) · el descuento GLOBAL del presupuesto, en EUROS.
    *
