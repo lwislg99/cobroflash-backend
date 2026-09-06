@@ -534,6 +534,23 @@ function renderProductsView(container) {
     // y con null se ven todos los campos (invariante de CONT-01). Preseleccionar Producto
     // aqui declararia por el profesional en cada alta, que es lo que la columna nullable evita.
     const altaSwitch = cablearTipoArticulo(form, form.querySelector('.quote-form-row'), null);
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    // 🔴 ESTA PANTALLA **NO** LLEVA EL ATAJO «N», Y NO ES UN HUECO. Decisión del fundador,
+    // 6-sep-2026 (SCRUM-769), con estas palabras:
+    //
+    //     «Colgar N de un botón que confirma es atar una tecla a un guardado. N abre, no guarda.»
+    //
+    // El motivo, medido antes de decidirlo: aquí NO hay un botón que ABRA un alta. El formulario
+    // está SIEMPRE visible y este botón es su ENVÍO — lee los campos y crea. `atajoNuevo.registrar`
+    // ata la tecla a `boton.click()`, así que la «N» intentaría crear con lo que hubiera escrito;
+    // con el formulario vacío, dispararía un error en la cara del profesional.
+    //
+    // Por lo mismo, su RÓTULO tampoco se toca: «Nuevo producto» es lo que se lee para ABRIR un
+    // alta, y aquí rotularía el botón que la CONFIRMA.
+    //
+    // ⛔ Si vienes a «arreglar el hueco»: no lo es. Lo que haría falta primero es un botón que
+    //    abra el alta; entonces el atajo tendría a qué colgarse. Ver `docs/master/SCRUM-769.md`.
+    // ═══════════════════════════════════════════════════════════════════════════════════════
     const createBtn = form.querySelector("#pf-create-product");
   
     // --- table ---
