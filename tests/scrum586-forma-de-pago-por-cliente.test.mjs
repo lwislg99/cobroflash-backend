@@ -415,16 +415,72 @@ test('SCRUM-586 · 🔴 EL CONTROL DE PUNTA A PUNTA: se elige cliente, se PROPON
     '🔴 el editor ha deshecho el cambio manual del profesional.');
 });
 
-test('SCRUM-586 · 🔴 el rótulo sin firmar lleva la grafía que el censo de SCRUM-402 CUENTA', async () => {
+test('SCRUM-586 · ✅ el texto de la tira es el FIRMADO, literal', async () => {
+  // Firmado por el ASESOR el 6-sep-2026, CON LA CAJA MEDIDA delante (929 y 390 px, en navegador,
+  // con los literales extraídos del fuente por AST). Se compara ENTERO y con `===`: un `includes`
+  // dejaría colar «Formas de pago pactadas hoy» o «formas de pago pactadas» sin que nada cayera, y
+  // microcopy aprobada que deriva sola es microcopy que deja de estarlo.
+  const vista = fs.readFileSync(QUOTES_VIEW, 'utf8');
+  const m = ejecutableDe(vista, { donde: 'quotesView.js', ancla: 'FORMA_DE_PAGO_ROTULO_TIRA' })
+    .match(/const FORMA_DE_PAGO_ROTULO_TIRA = "([^"]*)";/);
+  assert.ok(m, '🔴 el texto firmado ya no vive en una sola constante: se ha vuelto a escribir a mano.');
+  assert.equal(m[1], 'Formas de pago pactadas',
+    `🔴 el texto firmado ha cambiado: ahora dice «${m[1]}». «Pactadas» no es un sinónimo elegido a `
+    + 'gusto: es la palabra que el fundador ya firmó en «Descuento pactado (%)», en el modal de '
+    + 'cliente, y de la que ésta se derivó.');
+
+  // Y SE PINTA. Un literal firmado que nadie usa es un texto aprobado que no llega a nadie.
+  const c = cliente(['bizum', 'transfer']);
+  const r = await pintarVista(banco({ clientes: [c] }), 'renderQuotesView');
+  const selector = todos(r.contenedor).find((n) => n.tagName === 'SELECT' && n.name === 'customer_id');
+  assert.ok(selector, '🔴 GUARD CIEGO: no encuentro el selector de cliente.');
+  selector.value = String(c.id);
+  selector.disparar('change');
+  const texto = todos(tiraDe(r)[0]).find((n) => clases(n).includes('quote-propuesta-pago__texto'));
+  assert.ok(texto, '🔴 GUARD CIEGO: no encuentro el `<span>` del texto de la tira.');
+  assert.ok(String(texto.textContent).startsWith(m[1] + ' · '),
+    `🔴 la tira pinta «${texto.textContent}» y tenía que empezar por el literal firmado más su `
+    + 'separador. O no se usa la constante, o alguien ha cambiado la composición.');
+  assert.doesNotMatch(String(texto.textContent), /\[PENDIENTE/,
+    '🔴 el texto de la tira SIGUE con marcador después de haberse firmado. La firma y la retirada '
+    + 'del marcador van en el MISMO commit: un PR que llega a `main` con el marcador puesto deja '
+    + 'la pantalla diciendo que su propio texto está sin aprobar.');
+});
+
+test('SCRUM-586 · 🔴 el rótulo del BOTÓN sigue sin firmar, con la grafía que el censo CUENTA', async () => {
+  // 🔴 QUÉ VIGILA ESTO AHORA. Antes vigilaba los DOS textos de la tira; el 6-sep-2026 el asesor
+  // firmó el del texto y aquí queda sólo el del BOTÓN, que NO estaba entre los tres literales
+  // firmados. No se relaja el control: se estrecha al hueco que de verdad sigue abierto.
   const r = await pintarVista(banco(), 'renderQuotesView');
   const tira = tiraDe(r)[0];
   assert.ok(tira, '🔴 no hay tira que mirar');
+  const boton = todos(tira).find((n) => n.tagName === 'BUTTON');
+  assert.ok(boton, '🔴 GUARD CIEGO: la tira no tiene botón.');
+  assert.match(String(boton.textContent), /\[PENDIENTE/,
+    '🔴 el rótulo del botón NO lleva marcador, o lleva una grafía que el censo del 402 no cuenta '
+    + '(cuenta `[PENDIENTE`). Si se ha firmado, hay que bajar `FORMA_DE_PAGO_SIN_APROBAR` y la '
+    + 'entrada del trinquete EN EL MISMO COMMIT; si no, un marcador invisible se queda dormido.');
   const dentro = todos(tira).map((n) => String(n.textContent || '')).join(' | ');
-  assert.match(dentro, /\[PENDIENTE/,
-    '🔴 el rótulo sin firmar NO lleva marcador, o lleva una grafía que el censo del 402 no cuenta '
-    + '(cuenta `[PENDIENTE`). Un marcador invisible para el censo se queda dormido para siempre.');
   assert.doesNotMatch(dentro, /forma de pago habitual|como siempre|aplicar formas/i,
     '🔴 se ha inventado microcopy oficial (regla 30). El texto lo firma el asesor.');
+});
+
+test('SCRUM-586 · 🔴 la firma del ASESOR **no** va a `docs/microcopy/`', () => {
+  // Ese directorio es el registro del FUNDADOR y `constaAprobado()` lo barre (SCRUM-726): meter
+  // ahí una aprobación del asesor la haría pasar por la suya. Su sitio es la entrada de máster.
+  const dir = path.join(RAIZ, 'docs/microcopy');
+  const registros = fs.existsSync(dir) ? fs.readdirSync(dir) : [];
+  assert.ok(registros.length > 0,
+    '🔴 GUARD CIEGO: `docs/microcopy/` está vacío o no existe, así que «no hay ninguno del 586» '
+    + 'sería cierto por no haber mirado nada.');
+  assert.equal(registros.some((f) => f.includes('586')), false,
+    '🔴 hay un registro de SCRUM-586 en `docs/microcopy/`. Esta aprobación es del ASESOR: su sitio '
+    + 'es `docs/master/SCRUM-586.md`.');
+
+  // Y la entrada de máster SÍ lo registra: si no, la firma no consta en ningún sitio.
+  const entrada = fs.readFileSync(path.join(RAIZ, 'docs/master/SCRUM-586.md'), 'utf8');
+  assert.match(entrada, /Formas de pago pactadas/,
+    '🔴 el texto firmado no consta en la entrada de máster, que es donde vive esta aprobación.');
 });
 
 test('SCRUM-586 · 🔴 el CONTADOR de ranuras sin firmar dice cuántas hay en ESTA pantalla', () => {
@@ -434,8 +490,11 @@ test('SCRUM-586 · 🔴 el CONTADOR de ranuras sin firmar dice cuántas hay en E
   const m = ejecutableDe(vista, { donde: 'quotesView.js', ancla: 'FORMA_DE_PAGO_SIN_APROBAR' })
     .match(/const FORMA_DE_PAGO_SIN_APROBAR = (\d+);/);
   assert.ok(m, '🔴 no hay contador de ranuras sin firmar: «sin marcador» se leería como «aprobado».');
-  assert.equal(Number(m[1]), 2,
-    `🔴 el contador dice ${m[1]} y las ranuras sin firma de la tira son DOS: el texto y el botón.`);
+  // 6-sep-2026 · DOS → UNA: el asesor firmó el texto de la tira; el botón sigue sin firmar. El
+  // contador NO baja a 0 y por eso sigue sirviendo: «ya no veo marcador» no es «está aprobado».
+  assert.equal(Number(m[1]), 1,
+    `🔴 el contador dice ${m[1]} y la ranura sin firma de la tira es UNA: el rótulo del botón. `
+    + 'El texto se firmó el 6-sep-2026 y su marcador se retiró en el mismo commit.');
 
   // Y que el número CUADRE con lo que se pinta de verdad: un contador que nadie contrasta es una
   // cifra escrita a mano.
@@ -657,5 +716,22 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: '    return p !== null && p.length < METODOS.length;',
     a: '    return p !== null;',
     cae: 'un pacto de LAS TRES consta, y aun así no propone nada',
+  },
+  {
+    // ⑤ 6-sep-2026 · el texto FIRMADO deriva solo. Vuelve a «por defecto», que es exactamente la
+    // palabra que el asesor descartó por no ser la del dominio. Microcopy aprobada que se mueve
+    // sin que nadie lo note es microcopy que deja de estar aprobada.
+    fichero: 'public/dashboard/js/quotesView.js',
+    de: '    const FORMA_DE_PAGO_ROTULO_TIRA = "Formas de pago pactadas";',
+    a: '    const FORMA_DE_PAGO_ROTULO_TIRA = "Formas de pago por defecto";',
+    cae: 'el texto de la tira es el FIRMADO, literal',
+  },
+  {
+    // ⑥ 6-sep-2026 · al botón le quitan el marcador SIN firmarlo. Es el defecto que SCRUM-726
+    // cerró un nivel más arriba: un hueco sin firma que deja de verse pasa por aprobado.
+    fichero: 'public/dashboard/js/quotesView.js',
+    de: '    propuestaPagoBtn.textContent = "[PENDIENTE microcopy oficial]";',
+    a: '    propuestaPagoBtn.textContent = "Usar estas formas de pago";',
+    cae: 'el rótulo del BOTÓN sigue sin firmar, con la grafía que el censo CUENTA',
   },
 ];
