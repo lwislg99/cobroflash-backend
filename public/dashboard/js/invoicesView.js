@@ -226,11 +226,19 @@ async function fetchInvoices(options = {}) {
       if (window.atajoNuevo) {
         // La tecla se pinta en los DOS casos: el atajo funciona igual, y un botón con atajo y
         // otro sin él en la misma pantalla enseñaría que a veces no va.
-        const k = document.createElement('kbd');
-        k.className = 'btn-atajo';
-        k.textContent = window.atajoNuevo.TECLA;
-        k.setAttribute('aria-label', 'atajo de teclado ' + window.atajoNuevo.TECLA);
-        nuevaFacturaBtn.appendChild(k);
+        //
+        // 🔴 SCRUM-768 · LA PINTA LA PIEZA, NO UNA COPIA. Aquí vivían las cinco líneas del `<kbd>`
+        // calcadas de `etiquetar` —misma clase, mismo `aria-label`, mismo `appendChild`—, así que
+        // Facturas era la ÚNICA de las cuatro listas que no compartía el mecanismo que este
+        // ticket presume de tener único. El día que la tecla cambie de forma, ésta se queda atrás
+        // y nadie se entera: es el mismo motivo por el que los rótulos viven en la pieza.
+        //
+        // Se le pasa `null` como vista A PROPÓSITO, y no `'invoices'`: `etiquetar` sólo reescribe
+        // el texto si su `textoDe` devuelve algo, y con `null` no devuelve nada. Así el rótulo que
+        // se acaba de poner arriba se conserva TAL CUAL en los dos modos —el de FACTURA, que ya
+        // sale de la pieza, y el de JUSTIFICANTE, que la regla 26 blinda— y lo único que se añade
+        // es la «N». Medido: el literal visible no cambia ni un byte en ninguno de los dos.
+        window.atajoNuevo.etiquetar(nuevaFacturaBtn, null);
         window.atajoNuevo.registrar('invoices', () => nuevaFacturaBtn.click());
       }
       header.appendChild(nuevaFacturaBtn);
