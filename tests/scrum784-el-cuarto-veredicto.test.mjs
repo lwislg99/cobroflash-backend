@@ -25,8 +25,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
 import { cayo, murioElFichero, paso } from '../scripts/meta-guard-mutaciones.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -59,16 +61,81 @@ test('SCRUM-784 · 🔴 un caído que es LA RUTA del fichero es una MUERTE, no u
     '🔴 la muerte de otro fichero se está atribuyendo a este guard.');
 });
 
-test('SCRUM-784 · 🔴 la ruta se compara NORMALIZADA: la unidad en minúscula es la misma ruta', () => {
-  // 🔴 ESTO NO ES UN ADORNO: la primera versión del detector comparaba con `path.resolve` y dio
-  // **false** sobre el caso real por esto exactamente. Medido: `realpathSync` CONSERVA la
-  // mayúscula de la unidad y `realpathSync.native` la NORMALIZA.
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 ESTE CASO SE PARTIÓ EN DOS PORQUE UNA MITAD NO EXISTE EN TODAS PARTES.
+ *
+ * La primera versión exigía que `C:\…` y `c:\…` fueran DISTINTAS antes de normalizar. En el
+ * runner de Linux **no hay letra de unidad**, así que `toLowerCase()` sobre el primer carácter no
+ * cambia nada, las dos rutas son idénticas y el `assert.notEqual` de partida REVENTABA:
+ *
+ *     actual:   '/home/runner/work/…/scrum784-el-cuarto-veredicto.test.mjs'
+ *     expected: '/home/runner/work/…/scrum784-el-cuarto-veredicto.test.mjs'
+ *     operator: 'notStrictEqual'
+ *
+ * Es la misma familia que la puerta de SCRUM-765: **el instrumento que se escribe para probar algo
+ * también tiene plataforma.** Reproducido antes de tocar nada, con la ruta del runner:
+ *
+ *     WINDOWS  primer carácter "C"  → bajada distinta → el aserto se cumple
+ *     LINUX    primer carácter "/"  → bajada IDÉNTICA → 🔴 revienta
+ *
+ * ── POR QUÉ DOS MITADES Y NO UNA PORTABLE ───────────────────────────────────────────────────
+ * Medido: lo que `realpathSync.native` añade sobre `realpathSync` es exactamente la unidad
+ * (`normaliza? false` vs `true`), y una letra de unidad **no existe** donde no la hay. No se puede
+ * inventar un equivalente sin inventarse el caso.
+ *
+ * Lo que SÍ existe en las dos plataformas es un ENLACE de directorio, y discrimina lo que de
+ * verdad sostiene el detector — comparar la ruta RESUELTA en vez del texto. Medido:
+ *
+ *     por el enlace vs la real →  path.resolve iguala? false   ← discrimina
+ *                                 realpath     iguala? true
+ *                                 .native      iguala? true
+ *
+ * Así que la mitad portable CORRE SIEMPRE y lleva la mutación declarada; la mitad de la unidad
+ * corre donde existe y, donde no, **lo dice por pantalla**. ⛔ Sin `skip` silencioso: un test que
+ * en Linux no corre y no lo dice es un hueco con cara de verde.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+const TIENE_UNIDAD = /^[a-zA-Z]:/.test(RUTA_YO);
+
+test('SCRUM-784 · 🔴 la ruta se compara RESUELTA, no por texto', (t) => {
+  // ── MITAD PORTABLE: a través de un enlace, la misma ruta escrita de otra forma ──────────────
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum784-'));
+  try {
+    const enlace = path.join(tmp, 'repo');
+    try {
+      fs.symlinkSync(RAIZ, enlace, TIENE_UNIDAD ? 'junction' : 'dir');
+    } catch (e) {
+      assert.fail('🔴 CIEGO: no he podido crear el enlace, así que NO he probado nada. No es un '
+        + `verde: es que no he medido. (${e.code}: ${e.message})`);
+    }
+    const porElEnlace = path.join(enlace, 'tests', YO);
+
+    // SUELO: si las dos rutas ya fueran iguales como TEXTO, este caso no distinguiría nada.
+    assert.notEqual(path.resolve(porElEnlace), path.resolve(RUTA_YO),
+      '🔴 el enlace no cambia el texto de la ruta: este caso no discrimina comparar por texto de '
+      + 'comparar resuelto, y su verde no significaría nada.');
+
+    assert.equal(murioElFichero({ caidos: [porElEnlace] }, YO), true,
+      '🔴 la misma ruta alcanzada por un enlace se lee como otro fichero. El detector está '
+      + 'comparando TEXTO, y con eso una muerte real vuelve a salir MUDA.');
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+
+  // ── MITAD QUE SÓLO EXISTE DONDE HAY LETRA DE UNIDAD ────────────────────────────────────────
+  if (!TIENE_UNIDAD) {
+    t.diagnostic('NO APLICA en esta plataforma: la ruta empieza por '
+      + JSON.stringify(RUTA_YO.charAt(0)) + ' y no tiene letra de unidad, así que el caso de la '
+      + 'unidad en minúscula NO EXISTE aquí. La mitad portable (el enlace) SÍ ha corrido.');
+    return;
+  }
   const enMinuscula = RUTA_YO.charAt(0).toLowerCase() + RUTA_YO.slice(1);
   assert.notEqual(enMinuscula, RUTA_YO,
-    '🔴 este caso no está probando nada: las dos rutas ya eran idénticas. (¿No es Windows?)');
+    '🔴 hay letra de unidad y aun así las dos rutas salen iguales: el caso no prueba nada.');
   assert.equal(murioElFichero({ caidos: [enMinuscula] }, YO), true,
-    '🔴 la misma ruta con la unidad en minúscula se lee como otro fichero. Con eso, una muerte '
-    + 'real volvería a salir MUDA.');
+    '🔴 la misma ruta con la unidad en minúscula se lee como otro fichero. `realpathSync` CONSERVA '
+    + 'la unidad y `realpathSync.native` la NORMALIZA: se ha vuelto a la primera.');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -93,6 +160,96 @@ test('SCRUM-784 · ⛔ `cayo()` sigue exigiendo EL NOMBRE declarado, ni uno más
   assert.equal(paso({ pasados: [] }, 'el mío'), false);
 });
 
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// ③ EL CENSO · ¿hay más tests que EXIJAN que dos grafías de la misma ruta difieran?
+//
+// 🔴 ESTE CENSO ES ESTRECHO A PROPÓSITO, Y ESO SE DECIDIÓ MIDIENDO. La primera versión buscaba
+// «constructos de Windows» en `tests/` y daba **19 ficheros, 16 sin declarar**. Al mirarlos uno a
+// uno, casi todos eran falsos positivos —la misma clase de error que contar una exclusión como
+// una ejecución—:
+//
+//   · `'junction'` como tipo de enlace **no** ata a Windows: fuera de Windows Node ignora el
+//     argumento de tipo (documentado; aquí sólo se ha medido que en Windows funciona).
+//   · las rutas `'C:/…'` escritas a mano son DATOS de prueba de un parser de rutas, no una
+//     dependencia de plataforma. Sin leer cada caso no se puede decidir: INDETERMINADO.
+//   · `charAt(0).toLowerCase()` cazaba `const camel = (m) => …`, capitalizar un rótulo y ordenar
+//     apellidos. Nada que ver con la letra de unidad.
+//
+// Un censo que no distingue no es un censo, así que se retiró y queda SÓLO lo que sí es sano y
+// suficiente para el defecto que ha mordido dos veces: **una PRECONDICIÓN que exige que la misma
+// ruta escrita de dos formas sea DISTINTA**. Eso no puede cumplirse donde no hay letra de unidad,
+// y es literalmente el aserto que reventó en el runner.
+//
+// ⚠️ LO QUE ESTE CENSO **NO** VE, dicho para que nadie lo lea como «no hay dependencias de
+// Windows en tests/»: cualquier otra forma de depender de la plataforma. Sólo ve ésta.
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+function precondicionesDeGrafiaDeRuta(codigo, nombre) {
+  const sf = ts.createSourceFile(nombre, codigo, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const CAJA_DEL_PRIMERO = /(charAt\(0\)|\[0\])\.to(Lower|Upper)Case\(\)/;
+  const out = [];
+  let declara = false;
+
+  // 🔴 HAY QUE SEGUIR LA VARIABLE. En el caso real la transformación no está DENTRO del aserto:
+  // vive una línea antes, en un `const`, y el aserto sólo ve el identificador. Un detector que
+  // mirase sólo los argumentos no habría cazado el aserto que tumbó el CI — lo comprobé, y su
+  // control positivo salió rojo.
+  const bautizadas = new Set();
+  const b = (n) => {
+    if (ts.isVariableDeclaration(n) && n.name && ts.isIdentifier(n.name) && n.initializer
+        && CAJA_DEL_PRIMERO.test(n.initializer.getText(sf))) bautizadas.add(n.name.text);
+    ts.forEachChild(n, b);
+  };
+  b(sf);
+  const esLaTransformada = (a) => CAJA_DEL_PRIMERO.test(a.getText(sf))
+    || (ts.isIdentifier(a) && bautizadas.has(a.text));
+
+  const v = (n) => {
+    // ¿El fichero DECLARA que esto depende de la plataforma? Vale un discriminador de letra de
+    // unidad o `process.platform`. Con puerta puesta, el aserto no llega a correr donde no aplica.
+    if (ts.isRegularExpressionLiteral(n) && /\[[^\]]*\]\s*:/.test(n.getText(sf))) declara = true;
+    if (ts.isPropertyAccessExpression(n) && n.name.text === 'platform') declara = true;
+
+    if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression)
+        && /^notEqual$|^notStrictEqual$/.test(n.expression.name.text)
+        && n.arguments.length >= 2
+        && n.arguments.slice(0, 2).some(esLaTransformada)) {
+      out.push({ fichero: nombre, linea: sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1 });
+    }
+    ts.forEachChild(n, v);
+  };
+  v(sf);
+  return declara ? [] : out;
+}
+
+test('SCRUM-784 · 🔴 ningún test EXIGE que dos grafías de la misma ruta difieran', () => {
+  // 🔴 CONTROL POSITIVO CON EL CASO CONOCIDO: el aserto tal y como estaba escrito cuando reventó
+  // en CI. Si el censo no lo ve, no está censando: está mirando para otro lado.
+  const COMO_ESTABA = "const enMinuscula = RUTA_YO.charAt(0).toLowerCase() + RUTA_YO.slice(1);\n"
+    + "assert.notEqual(enMinuscula, RUTA_YO, 'este caso no está probando nada');";
+  assert.equal(precondicionesDeGrafiaDeRuta(COMO_ESTABA, 'viejo.mjs').length, 1,
+    '🔴 el censo no reconoce el aserto que tumbó el CI. Su cero no significaría nada.');
+
+  // 🔴 CONTROL NEGATIVO CON LA MISMA FORMA, PERO DECLARADA. Es el que decide que el censo mida
+  // «sin declararlo» y no «lo menciona»: el aserto es idéntico al de arriba y aquí NO se denuncia,
+  // porque el fichero lleva el discriminador que impide que llegue a correr donde no aplica.
+  const DECLARADO = 'const TIENE_UNIDAD = /^[a-zA-Z]:/.test(R);\n' + COMO_ESTABA;
+  assert.equal(precondicionesDeGrafiaDeRuta(DECLARADO, 'nuevo.mjs').length, 0,
+    '🔴 el censo denuncia una dependencia DECLARADA: entonces no distingue declarar de no '
+    + 'declarar, y su lista sería una lista de menciones.');
+
+  // Y sobre el árbol de verdad.
+  const dir = path.join(RAIZ, 'tests');
+  const ficheros = fs.readdirSync(dir).filter((f) => f.endsWith('.mjs'));
+  assert.ok(ficheros.length > 200,
+    `🔴 CIEGO: el censo sólo ha visto ${ficheros.length} ficheros; su cero no sería medible.`);
+  const hallazgos = ficheros.flatMap(
+    (f) => precondicionesDeGrafiaDeRuta(fs.readFileSync(path.join(dir, f), 'utf8'), f));
+  assert.deepEqual(hallazgos, [],
+    '🔴 hay tests que EXIGEN que dos grafías de la misma ruta sean distintas. Donde no hay letra '
+    + 'de unidad eso no se puede cumplir y el test revienta sin decir por qué:\n  · '
+    + hallazgos.map((h) => `${h.fichero}:${h.linea}`).join('\n  · '));
+});
+
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // LA MUTACIÓN QUE ME TUMBA (SCRUM-745)
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -113,11 +270,18 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'un caído que es LA RUTA del fichero es una MUERTE, no un silencio',
   },
   {
-    // Se vuelve a comparar con la ruta SIN normalizar la unidad: el defecto que se midió a mano.
+    // Se vuelve a comparar POR TEXTO en vez de por ruta resuelta — el defecto original del
+    // detector, el que dio `false` sobre el caso real.
+    //
+    // 📌 AQUÍ IBA `.native` → `realpathSync`, Y LA RETIRÉ CON LA MEDICIÓN DELANTE. Esa degradación
+    // sólo se puede cazar donde HAY letra de unidad: es exactamente lo único que `.native` añade.
+    // En el runner de Linux ningún test caería con ella puesta, así que saldría **MUDA** y pondría
+    // el job en rojo por un defecto que no existe allí. Va como hueco declarado, no como
+    // declaración que sé que miente en la mitad de las plataformas.
     fichero: 'scripts/meta-guard-mutaciones.mjs',
     de: 'const rutaRealDe = (p) => { try { return fs.realpathSync.native(p); } catch { return null; } };',
-    a: 'const rutaRealDe = (p) => { try { return fs.realpathSync(p); } catch { return null; } };',
-    cae: 'la ruta se compara NORMALIZADA: la unidad en minúscula es la misma ruta',
+    a: 'const rutaRealDe = (p) => path.resolve(p);',
+    cae: 'la ruta se compara RESUELTA, no por texto',
   },
   {
     // 🔴 `cayo()` relajado a «cualquier rojo vale»: el sello de goma que el ticket prohíbe.
