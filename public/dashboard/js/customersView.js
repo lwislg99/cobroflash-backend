@@ -30,6 +30,40 @@ function createField(labelText, name, type = "text", required = false, isTextare
   return { wrapper, input };
 }
 
+/**
+ * ═══ SCRUM-783 (CONT-09) · LA SELECCIÓN SOBREVIVE A LA NAVEGACIÓN, NO A RECARGAR ═══════════
+ *
+ * LA VÍCTIMA: el profesional marca doce clientes, entra en la ficha de uno para comprobar algo
+ * antes de actuar sobre los doce, y vuelve. Hasta hoy había perdido los doce, sin aviso.
+ * **Comprobar antes de actuar es lo que hace alguien prudente, y el mecanismo castigaba la
+ * prudencia.** Decisión del asesor (6-sep-2026).
+ *
+ * 🔴 POR QUÉ ESTA VARIABLE VIVE AQUÍ Y NO DENTRO DE `renderCustomersView`, QUE ES DONDE ESTABA.
+ *
+ * `openCustomer360` hace `renderAppView('customer-360')`: **NAVEGA, no abre un modal**. Al volver,
+ * `renderCustomersView` se ejecuta OTRA VEZ y todo lo que viva en su cierre nace de cero. Medido
+ * antes de tocar nada: se marcaban tres, se pulsaba una fila, se volvía, y quedaban **cero**.
+ *
+ * En el ámbito del SCRIPT la variable sobrevive al remontaje —el fichero se evalúa UNA vez por
+ * carga de página— y muere al recargar, que es exactamente la línea que el asesor pidió:
+ *
+ *     navegar y volver  → la selección SIGUE      (el trabajo del profesional no se tira)
+ *     recargar la página → la selección SE VA     (recargar es empezar de cero, y así se espera)
+ *
+ * ⛔ NO VA EN EL DOM, y no es preferencia: dejar estado colgado del DOM es lo que mató la tecla
+ * «N» en toda la aplicación (SCRUM-777), y ese arreglo acaba de entrar. Un `data-` en un nodo
+ * sobrevive a lo que no debe y desaparece cuando no toca.
+ * ⛔ NO VA EN UNA COLUMNA: no hace falta persistencia de verdad. Si algún día se pidiera que
+ * sobreviviera a recargar, eso YA es otra decisión y otro ticket — y llevaría diff de esquema.
+ * ⛔ NO VA EN `sessionStorage` por lo mismo: sobreviviría a la recarga, que es justo lo que el
+ * asesor decidió que NO debe pasar.
+ *
+ * ⚠️ SIGUE SIENDO UN SUBCONJUNTO DE LO VISIBLE, y eso no lo cambia este ticket: `pintar()` llama a
+ * `FC.limitarAVisibles` en CADA pintado, incluido el primero de cada montaje. Por eso el contador
+ * no puede mentir —nunca hay marcados fuera de pantalla— y por eso filtrar sigue recortando.
+ */
+let seleccion = [];
+
 function renderCustomersView(container) {
   container.innerHTML = "";
 
@@ -302,9 +336,11 @@ function renderCustomersView(container) {
   // dinero por una pantalla de clientes.
   // ═══════════════════════════════════════════════════════════════════════════════════════
 
-  /** Las ids marcadas. Siempre cadenas, y siempre un subconjunto de lo VISIBLE. */
-  let seleccion = [];
-  /** Lo que la tabla está enseñando ahora mismo: lo que ya pasó por los cuatro filtros. */
+  /**
+   * Lo que la tabla está enseñando ahora mismo: lo que ya pasó por los cuatro filtros.
+   *
+   * Éste SÍ es del montaje: es la página que hay delante, no una preferencia del profesional.
+   */
   let visibles = [];
 
   /**
