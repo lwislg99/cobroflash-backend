@@ -2045,6 +2045,38 @@ function albTotalesJS(lineas) {
   return { base: baseCents / 100, total: (baseCents + cuotaCents) / 100 };
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-772 (VOZ-ALB) · QUÉ VALOR DIJO EL MODELO, SACADO DEL MOTIVO QUE YA VIAJA
+//
+// `tipoIvaRechazado` llega desde SCRUM-760 con el motivo de `invalidTipoIva`, que YA NOMBRA el
+// valor recibido. Aquí no se reescribe ese motivo ni se abre un segundo canal: se saca de él el
+// número para poder decírselo al profesional.
+//
+// 🔴 LAS TRES FORMAS SON LAS DE `invalidTipoIva`, MEDIDAS EJECUTÁNDOLA (no leídas):
+//
+//   'no es un número: abc'                          → el valor va DESPUÉS de los dos puntos
+//   'fuera de rango (0 a 1): 100'                   → idem
+//   '15 % no es un tipo de IVA español. Admitidos: 0 %, 2 %, …'  → 🔴 va DELANTE
+//
+// La tercera es la que obliga a mirar el principio ANTES que los dos puntos: un «lo de después
+// del `:`» —que es lo primero que uno escribe— devolvería «0 %, 2 %, 4 %…» de la lista de
+// admitidos, o sea le diría al profesional que dijo algo que no dijo.
+//
+// Devuelve `null` si el motivo no encaja en ninguna de las tres. Quien lo use NO debe inventarse
+// un número: sin valor no hay aviso, porque el aviso firmado lo lleva dentro.
+function vozIvaValorDicho(motivo) {
+  const m = String(motivo == null ? '' : motivo).trim();
+  if (!m) return null;
+  // Forma 3: empieza por el propio valor en porcentaje.
+  const delante = m.match(/^(-?\d+(?:[.,]\d+)?\s*%)/);
+  if (delante) return delante[1].trim();
+  // Formas 1 y 2: lo que sigue a los PRIMEROS dos puntos.
+  const i = m.indexOf(': ');
+  if (i < 0) return null;
+  const cola = m.slice(i + 2).trim();
+  return cola || null;
+}
+
 function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } = {}, ctx = {}) {
   // SCRUM-386 · lo que antes venía del ámbito de `renderJobDetailView`. Se desestructura con
   // los MISMOS nombres a propósito: así el cuerpo de abajo no cambia ni un carácter, y la
@@ -2311,6 +2343,37 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
             + (modo === 'VALORADO' && l.precioUnitario != null ? ` · ${l.precioUnitario} €/ud` : '');
           txt.innerHTML = `<div style="font-weight:600;color:var(--ink)">${escVoz(l.concepto)}</div>`
             + `<div style="color:var(--muted);font-size:13px">${escVoz(detalle)}</div>`;
+
+          // ── SCRUM-772 · QUE EL RECHAZO DEL IVA SE VEA ─────────────────────────────────────
+          //
+          // El motivo viajaba desde SCRUM-760 y MORÍA AQUÍ: medido por el camino real (🎤 →
+          // «Convertir» → «Añadir al parte») con el modelo devolviendo 100, el profesional NO
+          // VEÍA NADA y la línea entraba con 21. El dato ya estaba; sólo faltaba pintarlo.
+          //
+          // 🔴 LAS DOS COSAS QUE EL TEXTO TIENE QUE DECIR, y por eso está escrito así:
+          //   · EL NÚMERO QUE LLEGÓ — sin él, el profesional no sabe si falló el micro, el
+          //     modelo o él.
+          //   · QUE EL 21 ES UN RELLENO, no una decisión suya. Sin esa frase, el 21 que pone el
+          //     sistema se lee como el 21 que él eligió, y ahí el defecto se vuelve invisible
+          //     justo cuando acierta por casualidad.
+          //
+          // NO BLOQUEA (decisión del fundador): es un aviso al lado de la línea. La casilla sigue
+          // marcada, «Añadir al parte» sigue funcionando y la línea entra con su 21.
+          //
+          // Sólo en VALORADO: en SIN_VALORAR no hay columna de IVA que corregir, así que avisar
+          // de un IVA que no se va a pedir sería ruido sobre una pantalla que ni lo enseña.
+          //
+          // Texto FIRMADO por el asesor (6-sep-2026). Si no se puede saber qué valor llegó, no se
+          // pinta: el aviso lleva el número dentro y uno inventado sería peor que ninguno.
+          const dichoIva = modo === 'VALORADO' ? vozIvaValorDicho(l.tipoIvaRechazado) : null;
+          if (dichoIva) {
+            const aviso = document.createElement('div');
+            aviso.setAttribute('data-aviso-iva', '');
+            aviso.style.cssText = 'color:var(--warn,#8a5a00);font-size:12.5px;margin-top:4px;line-height:1.35';
+            aviso.textContent = `No he entendido el IVA (dijiste ${dichoIva}). Está puesto el 21 %; cámbialo si no es.`;
+            txt.appendChild(aviso);
+          }
+
           fila.append(chk, txt);
           res.appendChild(fila);
         });

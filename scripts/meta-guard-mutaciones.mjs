@@ -208,6 +208,72 @@ export function paso(resultado, nombre) {
 }
 
 /**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-784 · EL CUARTO VEREDICTO: «EL FICHERO MURIÓ AL MUTAR».
+ *
+ * `cayo()` busca el nombre declarado entre los caídos. Cuando el RADIO de una mutación mata el
+ * fichero entero, `node:test` emite **un solo** `test:fail` y su `name` es **LA RUTA del
+ * fichero**, no el nombre de un test. `cayo()` no lo encuentra y el meta-guard dictaba **MUDO**
+ * —«pasa en verde sobre el defecto que dice vigilar»— sobre un guard que SÍ se puso rojo.
+ *
+ * Medido el 6-sep-2026 mutando la puerta de `_puerta-de-entrada.mjs` a `return true` (con eso, el
+ * `import` que ese guard hace del meta-guard ejecuta su bloque principal dentro del proceso del
+ * test). Las TRES formas, con el mismo guard y la misma línea:
+ *
+ *     A · sin mutar .................... pasados 7 · caídos 0
+ *     B · un test cae, el fichero VIVE . pasados 4 · caídos 3   ← los tres son NOMBRES de test
+ *     C · el fichero MUERE ............. pasados 0 · caídos 1   ← el caído es LA RUTA del fichero
+ *
+ * ⛔ NO ES RELAJAR `cayo()`. `cayo()` sigue exigiendo el nombre declarado, ni uno más. Esto es una
+ * pregunta DISTINTA que se contesta con un dato DISTINTO: ¿hay entre los caídos uno que resuelve
+ * al fichero del propio guard?
+ *
+ * ── POR QUÉ SCRUM-748 NO LO TAPABA ──────────────────────────────────────────────────────────
+ * Aquella cerró el fichero que muere en la PASADA LIMPIA: PUERTA 1 exige el test en verde antes de
+ * mutar, y si no está, es CIEGO. Aquí la línea base está VERDE —7 pasados— y el fichero muere
+ * DESPUÉS de mutar. PUERTA 1 ya ha dicho que sí.
+ *
+ * ── SE COMPARA CON `realpathSync.native`, Y ESO TAMBIÉN SE MIDIÓ ────────────────────────────
+ * La primera versión de este detector comparaba con `path.resolve` sobre una raíz escrita a mano y
+ * dio **false** sobre el caso C. La raíz llevaba la unidad en minúscula (`c:`) y `node:test` emite
+ * `C:`. Aquel `false` era un defecto de la MEDICIÓN, no del instrumento —calculada la ruta como la
+ * calcula este fichero, casaban—, pero destapó una fragilidad real, así que se midió a fondo sobre
+ * la misma ruta escrita de las dos formas:
+ *
+ *     realpathSync(C:\…) vs realpathSync(c:\…) .............. NO son iguales (conserva la unidad)
+ *     realpathSync.native(C:\…) vs …native(c:\…) ............ SÍ son iguales (la normaliza)
+ *
+ * Por eso `native`: además de enlaces y nombres cortos 8.3 —lo que ya hizo falta en la puerta de
+ * SCRUM-765— normaliza la mayúscula de la unidad, que es exactamente lo que se coló aquí.
+ *
+ * CONTROL NEGATIVO, medido: un NOMBRE de test no resuelve a ningún fichero (`realpath` → excepción),
+ * así que el caso B no puede disparar esto.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+const rutaRealDe = (p) => { try { return fs.realpathSync.native(p); } catch { return null; } };
+
+export function murioElFichero(resultado, guard, dir = DIR_TESTS) {
+  const objetivo = rutaRealDe(path.join(dir, guard));
+  if (!objetivo) return false; // sin fichero al que apuntar no se puede afirmar nada
+  return (resultado?.caidos || []).some((n) => rutaRealDe(n) === objetivo);
+}
+
+/**
+ * 🔴 DECISIÓN DEL ASESOR, PENDIENTE — y por eso vive en UNA constante y no repartida por el código.
+ *
+ * ¿Un fichero que muere al mutar cuenta como que el guard CAYÓ (el defecto se detectó, aunque de
+ * forma tosca) o como CEGUERA (no se pudo medir lo que se quería medir)? Cambia el código de
+ * salida del instrumento, así que no lo elige la sesión que lo implementa.
+ *
+ * Puesto PROVISIONALMENTE en `'ciega'` mientras se decide, por el lado conservador: contarlo como
+ * caída convierte «el fichero explotó» en «el guard vigila», y un guard puede morir por algo que
+ * no tiene NADA que ver con lo que promete vigilar — eso sería el sello de goma. Medido: hoy
+ * ninguna de las declaraciones del árbol dispara este veredicto, así que la elección no mueve
+ * ningún número de hoy; sólo decide qué pasará la próxima vez.
+ */
+export const MUERTE_CUENTA_COMO = 'ciega'; // 'ciega' | 'caida'
+
+/**
  * 🔴 SCRUM-748 · LA LÍNEA BASE, Y POR QUÉ NO SE RECONOCE EL MENSAJE DE ERROR.
  *
  * Este meta-guard llamaba MUDO a todo lo que no caía, y eso metía por la misma puerta dos cosas
@@ -472,9 +538,26 @@ export async function aplicarUna(mut, guard, limpia) {
     // El árbol ejecutable tiene que llevar la mutación TAMBIÉN, o el guard mide el de antes.
     if (absDist) fs.writeFileSync(absDist, emitirDesdeFuente(abs, mutado, RAIZ));
     const tras = await correr(guard);
-    resultado = cayo(tras, mut.cae)
-      ? { ok: true }
-      : { ok: false, mudo: `el guard NO cayó. Test que debía ponerse rojo: «${mut.cae}»` };
+    if (cayo(tras, mut.cae)) {
+      // 📌 SCRUM-784 (medición, no veredicto): cuántos OTROS tests se han caído además del que la
+      // declaración nombra. Hoy no cambia nada; se imprime porque hasta ahora era invisible.
+      const colaterales = tras.caidos.filter((n) => !n.includes(mut.cae)).length;
+      resultado = { ok: true, colaterales };
+    } else if (murioElFichero(tras, guard)) {
+      // 🔴 EL CUARTO VEREDICTO. No es MUDO: el guard se puso rojo. Pero tampoco se ha medido lo
+      // que se quería medir, porque el test declarado no llegó a reportarse.
+      resultado = {
+        ok: false,
+        muerto: `EL FICHERO MURIÓ AL MUTAR. \`node:test\` no ha reportado ni un nombre de test: el `
+          + `único caído es el propio fichero. El guard SÍ se puso rojo, pero el test declarado `
+          + `—«${mut.cae}»— nunca llegó a ejecutarse, así que no se sabe si HABRÍA caído.\n`
+          + '    Suele significar que la mutación tiene un RADIO más ancho que el defecto que '
+          + 'quiere imitar (rompe la carga del fichero, o hace que un `import` ejecute algo). '
+          + 'Acota la mutación, o declara otra que produzca el mismo defecto sin tumbar el proceso.',
+      };
+    } else {
+      resultado = { ok: false, mudo: `el guard NO cayó. Test que debía ponerse rojo: «${mut.cae}»` };
+    }
   } finally {
     const sinRestaurar = restaurarYVerificar(
       piezasARestaurar({ fichero: mut.fichero, abs, ORIGINAL, destino, absDist, ORIGINAL_DIST }));
@@ -535,7 +618,9 @@ if (ejecutadoDirectamente(import.meta.url)) {
 
   const mudos = [];
   const ciegos = [];
+  const muertos = [];
   let vivas = 0;
+  let colaterales = 0;
   for (const { guard, mutaciones, incompletas } of censo) {
     // 🔴 UNA DECLARACIÓN A LA QUE LE FALTA UN CAMPO NO ES UNA DECLARACIÓN MENOS: ES UN HUECO.
     // Se descartaba en silencio y el recuento bajaba sin que nadie lo dijera — «parece cobertura»,
@@ -552,12 +637,33 @@ if (ejecutadoDirectamente(import.meta.url)) {
     const limpia = await correr(guard);
     for (const mut of mutaciones) {
       const r = await aplicarUna(mut, guard, limpia);
-      if (r.ok) { vivas += 1; console.log(`  ✔ ${guard} · ${mut.cae}`); }
+      if (r.ok) {
+        vivas += 1;
+        colaterales += r.colaterales || 0;
+        console.log(`  ✔ ${guard} · ${mut.cae}`
+          + (r.colaterales ? `   (+${r.colaterales} test(s) más caídos)` : ''));
+      } else if (r.muerto) { muertos.push(`${guard} · ${r.muerto}`); console.log(`  ☠ ${guard} · FICHERO MUERTO`); }
       else if (r.mudo) { mudos.push(`${guard} · ${r.mudo}`); console.log(`  ✖ ${guard} · MUDO`); }
       else { ciegos.push(`${guard} · ${r.ciego}`); console.log(`  ? ${guard} · CIEGO`); }
     }
   }
-  console.log(`\nvivas ${vivas} · mudas ${mudos.length} · ciegas ${ciegos.length}`);
+  console.log(`\nvivas ${vivas} · mudas ${mudos.length} · ciegas ${ciegos.length} `
+    + `· ficheros muertos ${muertos.length}`);
+
+  // 📌 SCRUM-784, EL OTRO LADO DEL MISMO AGUJERO — MEDICIÓN, NO VEREDICTO. El meta-guard sólo
+  // mira el test que la mutación NOMBRA; lo que le pase al resto del fichero no lo ve nadie. Esta
+  // línea lo hace visible y NO cambia ningún veredicto: decidir qué hacer con los colaterales es
+  // otro ticket, porque un colateral puede ser legítimo (dos tests que miran el mismo defecto).
+  if (colaterales) {
+    console.log(`ℹ ${colaterales} test(s) cayeron ADEMÁS del nombrado. Ninguno cambia un veredicto: `
+      + 'se cuentan porque hasta hoy eran invisibles.');
+  }
+
+  if (muertos.length) {
+    console.error('☠ FICHEROS MUERTOS AL MUTAR — el guard se puso rojo, pero el test declarado '
+      + `nunca llegó a reportarse (cuenta como ${MUERTE_CUENTA_COMO.toUpperCase()}):\n  · `
+      + muertos.join('\n  · '));
+  }
 
   // ── SUELO ② · LA EJECUCIÓN (SCRUM-765) ────────────────────────────────────────────────────
   // 🔴 EJECUTADAS = las que llegaron a mutar el árbol: las VIVAS y las MUDAS. Las CIEGAS se
@@ -566,7 +672,10 @@ if (ejecutadoDirectamente(import.meta.url)) {
   // Sin este suelo, cualquier camino que llegue al final sin haber mutado nada sale con 0, y un
   // exit 0 de este script es lo que sostiene el requisito de entrega de toda la casa. Es la
   // misma medicina que este instrumento le exige a los demás censos, y no se la aplicaba.
-  const sinMedir = sueloDeEjecucion({ vivas, mudas: mudos.length });
+  // Un fichero MUERTO sí llegó a mutar el árbol y a correr el guard, así que cuenta como trabajo
+  // ejecutado con independencia de cómo se clasifique: no contarlo diría «no he medido nada»
+  // sobre una pasada que mutó y corrió.
+  const sinMedir = sueloDeEjecucion({ vivas: vivas + muertos.length, mudas: mudos.length });
   if (sinMedir) {
     console.error(`🔴 CIEGO: ${sinMedir}`);
     process.exit(SALIDA_CIEGO);
@@ -578,5 +687,8 @@ if (ejecutadoDirectamente(import.meta.url)) {
       + mudos.join('\n  · '));
     process.exit(SALIDA_MUDO);
   }
-  if (ciegos.length) process.exit(SALIDA_CIEGO);
+  // 🔴 SCRUM-784 · aquí es donde la decisión del asesor cambia el código de salida, y por eso la
+  // constante está arriba, sola y nombrada: con `'ciega'` un fichero muerto tumba el job (nadie
+  // firma una cobertura que no se ha podido medir); con `'caida'` no lo tumba y sólo se avisa.
+  if (ciegos.length || (muertos.length && MUERTE_CUENTA_COMO === 'ciega')) process.exit(SALIDA_CIEGO);
 }
