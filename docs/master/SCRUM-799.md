@@ -1,10 +1,17 @@
 # SCRUM-799 · El presupuesto que el cliente FIRMÓ se vuelve a dibujar en cada apertura
 
 **Fecha:** 6-sep-2026 · **Carril:** DOC / integridad del documento firmado · **Gate:** MEDIR — no se construye
-**Medido contra:** `origin/main` = `95be56e4dd523b45d3046bda8cf09578ff953ab8` · 2026-09-06T22:27:14+01:00
-**Tanda:** 5692 tests, 5596 pass, 0 fail, 96 skipped (salida 0)
+**Medido contra:** `origin/main` = `07ec5befb176d95b066f87d586d585b2b0e932c2` · 2026-09-06T22:39:00+01:00
+**Tanda:** 5714 tests, 5612 pass, 0 fail, 102 skipped (salida 0), tras mezclar main
 
-> **Esto es el hermano del SCRUM-762 y es PEOR.** La factura al menos INTENTA reutilizar el
+> **`main` se movió mientras esto duraba, y se mezcló ANTES de re-medir.** El ancla de arriba es
+> la de después. La tanda previa (contra `95be56e4`) fue 5692 · 5596 · 0 fail · 96 skip, y el
+> veredicto del control que decide salió **idéntico** antes y después del merge: misma línea, mismo
+> cambio. Lo que sí cambió entre tandas fue el COSTE por apertura — ver obligación 4, donde se
+> dice. Entre medias entró SCRUM-762 (PR #1105), el hermano de este ticket; ninguno de los
+> ficheros que aquí se miden vino tocado en ese merge.
+
+> **Esto es el hermano de [SCRUM-762](SCRUM-762.md) y es PEOR.** La factura al menos INTENTA reutilizar el
 > fichero de disco (`ensureInvoicePdf` mira `fs.existsSync`, aunque en Railway el fs sea efímero
 > y el intento falle siempre). El presupuesto **no lo intenta**: la ruta no tiene `existsSync` ni
 > `needs` — llama al generador y ya. Cada apertura es un documento nuevo.
@@ -40,16 +47,21 @@ El instrumento sabe encontrar hashing cuando lo hay. En el presupuesto **no lo h
 
 ### El matiz que evita exagerar el hallazgo
 
-Las CIFRAS firmadas sí sobreviven, pero en la FILA, no en el documento: ningún `quote.update` del
-repo (19 sitios) escribe `lines`, `total`, `quoteNumber`, `docFields` ni `currency` — sólo
-`status`, `pdfUrl`, `reminderSentAt`, `internalNotes`, `decisionToken` y `customBillingPlan`.
-**CONTROL POSITIVO:** la misma ventana sobre `quote.create` sí ve `lines:` y `total:`, así que el
-detector no es ciego a esos nombres.
+Las CIFRAS firmadas sí sobreviven, pero en la FILA, no en el documento. Lo comprobado es la
+afirmación NEGATIVA, que es la que importa: de los **19** `quote.update` del repo, **ninguno**
+escribe `lines`, `total`, `quoteNumber`, `docFields` ni `currency` (ventana de 10 líneas tras cada
+llamada). **CONTROL POSITIVO:** la misma ventana sobre `quote.create` sí ve `lines:` y `total:`,
+así que el detector no es ciego a esos nombres.
+
+*Lo que NO está verificado con el mismo rigor:* la lista de campos que esos updates sí escriben
+(`status`, `pdfUrl`, `reminderSentAt`, `internalNotes`, `decisionToken`, `customBillingPlan`) sale
+de un extractor de UNA línea que se come los `data:` multilínea. Vale como orientación, no como
+censo — y no hace falta para la conclusión.
 
 O sea: **lo que cambia no son los importes, es el DOCUMENTO** — qué se pinta, cómo, y con qué
-nombre. Y el documento es justamente lo que el cliente miró antes de firmar. Un cambio como el de
-SCRUM-589 (elegir entre razón social y nombre comercial) reescribe el nombre del cliente en
-presupuestos firmados hace un año.
+nombre. Y el documento es justamente lo que el cliente miró antes de firmar. Un cambio como el que
+propone SCRUM-589 (elegir entre razón social y nombre comercial) reescribiría el nombre del cliente
+en presupuestos **ya firmados**, sin que nadie los toque.
 
 Por el criterio del encargo esto **no escala a 🔴🔴** (no hay huella que se contradiga: no hay
 huella en absoluto), así que no se paró aquí y se siguió midiendo.
@@ -63,9 +75,12 @@ huella en absoluto), así que no se paró aquí y se siguió midiendo.
 - **El cliente firma SIN ver el PDF.** La landing donde decide y firma
   (`quoteDecisionLanding.routes.ts`, 803 líneas) menciona «pdf» **0 veces**. *Control positivo en
   el mismo fichero:* 30 «firm», 13 «presupuesto», 20 «canvas» — el contador no está mudo.
-- **El correo adjunta el PDF, pero *best-effort*** (`email.service.ts:144-151`): lee el fichero de
+- **El correo adjunta el PDF, pero *best-effort*** (`email.service.ts:147-151`): lee el fichero de
   disco `if (fs.existsSync(disk))` y, si no está, el correo sale **sin adjunto**. Con el fs efímero
   de Railway, la única copia que el cliente podría conservar es la que menos garantías tiene.
+  Ese mismo sitio deriva la ruta del nombre canónico y **no** de `quote.pdfUrl`, y dice por qué
+  (`email.service.ts:145`): *«que ahora apunta al endpoint auth»*. O sea que **la casa ya sabe**
+  qué hay en esa columna; lo que sigue sin enterarse es el portal (ver el hallazgo colateral).
 
 ---
 
@@ -86,10 +101,21 @@ es el MECANISMO, y el mecanismo no distingue entornos.
 
 ## Obligación 4 · qué cuesta cada apertura
 
-5 aperturas del mismo presupuesto: **37 · 37 · 39 · 37 · 36 ms** (mín 36, máx 39), 1 995 bytes.
+**Tres tandas, y las tres se dicen — porque no coinciden:**
 
-No hay caché **de ningún tipo**: la ruta no consulta el disco antes de generar. Cada visita del
-profesional al PDF de un presupuesto es una generación completa.
+| tanda | aperturas | rango |
+|---|---|---|
+| 1ª (antes de mezclar `main`) | 5 | 36–39 ms |
+| 2ª (tras mezclar `main`) | 5 | 119–300 ms |
+| 3ª (8 aperturas, para desempatar) | 8 | 107–252 ms, **mediana 164 ms** |
+
+La primera tanda era el caso raro, no la norma. **El número absoluto no es una propiedad del
+código: lo manda la carga de la máquina**, y esto es un portátil, no Railway — allí no está
+medido. Se cita la mediana de la tanda más larga y se declara lo que vale.
+
+Lo que sí es del código y no se mueve entre tandas: **no hay caché de ningún tipo**. La ruta no
+consulta el disco antes de generar, así que cada visita del profesional al PDF de un presupuesto
+es una generación completa. El tamaño sí fue idéntico en las tres: **1 995 bytes**.
 
 ---
 
@@ -140,7 +166,12 @@ Hoy está **latente**: los 15 presupuestos de dev tienen `pdf_url = NULL` y el b
 (*control positivo del clasificador:* con `/admin/quotes/7/pdf`, `PENDING_PDF`, `null` y una `http`
 absoluta acierta las cuatro). Se activa en cuanto el profesional abre **una vez** el PDF desde el
 panel. Es el mismo error que `docs/BUGS.md:284` ya cerró para la factura —enlazar el `pdfUrl`
-crudo— reaparecido en la cara del cliente. Queda registrado en `docs/BUGS.md`; **no se toca aquí**.
+crudo— reaparecido en la cara del cliente. Queda registrado como **P1-PORTAL-PDF** en
+`docs/BUGS.md`; **no se toca aquí**, que el encargo era medir otra cosa.
+
+El botón hermano de la FACTURA (`customerPortal.routes.ts:347-350`, «📄 Descargar factura») repite
+el patrón con `inv.pdfUrl`. En dev las 5 facturas están en `PENDING_PDF`, así que tampoco se pinta:
+**no medido en producción**, y por eso va como pregunta abierta en el bug y no como afirmación.
 
 ---
 
@@ -150,7 +181,9 @@ crudo— reaparecido en la cara del cliente. Queda registrado en `docs/BUGS.md`;
   es infraestructura y es del fundador.
 - **No se ha tocado el camino de emisión de la factura** (es el 762 y está en su mesa). La única
   mutación fue temporal, dentro de `generateQuotePdf`, y se revirtió byte a byte.
-- **`package.json` intacto:** se comprobó que SCRUM-790 sigue sin mergear en `origin/main`.
+- **`package.json` intacto**, y comprobado dos veces: `origin/main` tiene **0** commits de
+  SCRUM-790 (*control positivo:* **4** de SCRUM-762, que sí entró), y `git diff origin/main --
+  package.json` sale **vacío**. No basta con no haberlo tocado: se mide que no está tocado.
 - **Nada contra staging ni producción.** Todo contra dev, con el guard de destino diciendo `cuadra`
   en cada script.
 
