@@ -47,6 +47,18 @@ import { parseBDSegura, destinoSembrable } from './_db-guard.mjs';
 // dominio SIN actualizar este import. El script llevaba tickets sin poder ni arrancar, y nadie se
 // enteró porque ninguna suite lo cargaba — el hueco que cierra el guard de este mismo ticket.
 import { barridoDemo } from '../dist/modules/system/domain/barridoDemo.js';
+// SCRUM-761: el catálogo se siembra POR EL CAMINO REAL DEL ALTA, no con un `product.create` a
+// mano. Ver el bloque largo junto al catálogo, más abajo.
+import { createProduct } from '../dist/modules/products/domain/products.service.js';
+// …y el cliente que usa ESE camino, para poder cerrarlo al final: `createProduct` escribe con el
+// singleton de `core/db/prisma`, no con el `new PrismaClient()` de este script. Sin este
+// `$disconnect` el proceso se queda con una conexión viva y no termina solo.
+//
+// ⚠️ Esto NO adelanta la construcción de un cliente por delante del guard de destino: MEDIDO
+// hoy, el singleton ya lo construían los imports que este script tenía (`invoiceNumber.service`
+// lo arrastra por `audit.service`). Y construir un `PrismaClient` no conecta: la conexión la
+// abre la primera consulta, que sigue ocurriendo después de `confirmarDestino()`.
+import { prisma as prismaApp } from '../dist/core/db/prisma.js';
 
 /**
  * El copy del cobro NUNCA dice "factura" de un `J-` (regla 24/26, Parte M). No es un texto
@@ -222,10 +234,31 @@ async function seed() {
     { name: 'Revisión general de fontanería', price: 45 },
     { name: 'Mano de obra (hora)', price: 35 },
   ];
+  // ───────────────────────────────────────────────────────────────────────
+  // SCRUM-761 · EL CATÁLOGO SE DA DE ALTA POR EL CAMINO REAL
+  //
+  // Esto era `prisma.product.create({ data: { merchantId, name, price } })`, y omitía
+  // `nameSearch` — la sombra normalizada de `name` que `createProduct` escribe y por la que
+  // `searchProducts` FILTRA. Consecuencia medida sobre la BD de desarrollo (8/8 filas con
+  // `name_search` NULL): «desatasco de» → 0, «sustitución de» → 0, «instalación de» → 0.
+  // TODO el catálogo sembrado era invisible al autocompletado de la pantalla que el máster
+  // quiere resuelta en 30 segundos, mientras un producto dado de alta a mano SÍ aparecía.
+  //
+  // Y un segundo daño, menos visible: en Postgres los NULL NO CHOCAN ENTRE SÍ, así que sobre
+  // esas 8 filas `@@unique([merchantId, nameSearch])` no vigilaba NADA. Una base de desarrollo
+  // cuyo estado deja inoperante la restricción que se está midiendo no es una base de pruebas.
+  //
+  // 🔴 NO se arregla escribiendo aquí `nameSearch: normalizeSearch(p.name)`. Eso sería una
+  // SEGUNDA copia del alta, y el día que el alta real derive una columna más, este sembrador
+  // volvería a quedarse corto exactamente igual — que es el defecto, no el síntoma. Se llama al
+  // alta de verdad, que es el escalón 1: derivar el camino entero.
+  //
+  // `createProduct` escribe con el cliente global (`core/db/prisma`), no con el `prisma` de este
+  // fichero. Los dos resuelven la MISMA `DATABASE_URL`, que el guard de destino ya confirmó
+  // arriba; el cierre del global se hace al final del script.
+  // ───────────────────────────────────────────────────────────────────────
   for (const p of productsData) {
-    await prisma.product.create({
-      data: { merchantId: DEMO_ID, name: p.name, price: p.price.toFixed(2) },
-    });
+    await createProduct(DEMO_ID, { name: p.name, price: p.price });
   }
 
   // ── Clientes (teléfonos FICTICIOS 34611000xx — el guard V0-2 bloquea envíos) ──
@@ -411,3 +444,6 @@ const counts = {
 };
 console.log('Sembrado ✅', counts);
 await prisma.$disconnect();
+// SCRUM-761: el alta real del catálogo escribe con el singleton de la app, que es OTRO cliente.
+// Cerrar sólo el de arriba dejaba una conexión abierta y el proceso sin terminar.
+await prismaApp.$disconnect();
