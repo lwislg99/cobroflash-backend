@@ -539,10 +539,14 @@ export async function aplicarUna(mut, guard, limpia) {
     if (absDist) fs.writeFileSync(absDist, emitirDesdeFuente(abs, mutado, RAIZ));
     const tras = await correr(guard);
     if (cayo(tras, mut.cae)) {
-      // 📌 SCRUM-784 (medición, no veredicto): cuántos OTROS tests se han caído además del que la
-      // declaración nombra. Hoy no cambia nada; se imprime porque hasta ahora era invisible.
-      const colaterales = tras.caidos.filter((n) => !n.includes(mut.cae)).length;
-      resultado = { ok: true, colaterales };
+      // 📌 SCRUM-784 (medición, no veredicto): qué OTROS tests se han caído además del que la
+      // declaración nombra. Hoy no cambia nada; se cuenta porque hasta entonces era invisible.
+      //
+      // SCRUM-788: se devuelven también los NOMBRES. Un recuento dice CUÁNTOS y no deja
+      // clasificarlos, y clasificarlos era la mitad del ticket: sin los nombres no se puede
+      // distinguir la cobertura legítima del radio demasiado ancho.
+      const colateralesNombres = tras.caidos.filter((n) => !n.includes(mut.cae));
+      resultado = { ok: true, colaterales: colateralesNombres.length, colateralesNombres };
     } else if (murioElFichero(tras, guard)) {
       // 🔴 EL CUARTO VEREDICTO. No es MUDO: el guard se puso rojo. Pero tampoco se ha medido lo
       // que se quería medir, porque el test declarado no llegó a reportarse.
