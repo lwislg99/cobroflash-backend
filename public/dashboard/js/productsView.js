@@ -65,7 +65,42 @@ const PV_NOMBRE_DUPLICADO = 'Ya tienes un producto con ese nombre.';
 // Se queda aunque llegue a 0, por el motivo de `filtroClientes.js` y `quoteDireccionObra.js`: el
 // día que el traductor gane un segundo texto, ese texto nace sin firma y este número tiene que
 // subir. Borrarlo dejaría el hueco sin sitio donde declararse.
-const PV_SIN_APROBAR = 1;
+
+// ── SCRUM-631 · EL NOMBRE COGIDO **AL REACTIVAR** ────────────────────────────────────────────
+//
+// 🔴 PENDIENTE DE FIRMA: LLEVA MARCADOR EN PANTALLA. No lo ha aprobado nadie todavia — ni el
+// asesor ni el fundador. Es la otra mitad del reparto que este fichero ya usa: SIN marcador =
+// aprobado por el asesor (PV_NOMBRE_DUPLICADO, arriba); CON marcador = sin aprobar por nadie.
+//
+// POR QUE NO VALE `PV_NOMBRE_DUPLICADO` AQUI. Aquel dice «Ya tienes un producto con ese nombre»
+// y se lee CON EL CAMPO DEL NOMBRE DELANTE, en un alta. Al pulsar «Activar» no hay campo que
+// cambiar y el choque es con OTRO producto que esta ACTIVO: el texto tiene que decir eso, o el
+// profesional lee un mensaje de alta sobre una accion que no es un alta.
+//
+// ⚠️ Y HOY NO PUEDE SALIR EN PANTALLA: reactivar solo choca cuando el nombre se ha liberado, y
+// eso exige el paso 2 de la opcion B, que espera al fundador. Nace marcado y sin camino que lo
+// pinte en produccion — que es exactamente como debe nacer un texto sin firmar.
+//
+// 🔴 LA CAJA: **NO MEDIDA**, y por eso este texto NO se puede aprobar todavia (regla 30).
+//
+// No es que no se haya intentado: el navegador de esta maquina NO ARRANCA. Y no es culpa del
+// medidor — control hecho: `scripts/guard-caja-avisos.mjs`, que es un guard de navegador que ya
+// existe y funciona en CI, falla EXACTAMENTE igual aqui («CORTADA EN proceso+ws» en 0,2-0,4 s,
+// tres intentos, salida 3). Edge esta instalado y se resuelve; lo que no levanta es el proceso.
+//
+// Asi que esto es NO MEDIDO, no «cabe». Mientras no haya caja medida a 929 y 390 px, el asesor
+// no puede firmarlo y el marcador se queda. Referencia para cuando se mida: el texto aprobado
+// de SCRUM-641 son 37 caracteres y a 390 px la capacidad medida fue 45; este candidato, SIN el
+// marcador, son 46 — o sea que esta JUSTO en el borde y por eso hay que verlo, no calcularlo.
+const PV_NOMBRE_ACTIVO_DUPLICADO =
+  PV_MARCADOR_MICROCOPY + ' Ya tienes otro producto activo con ese nombre.';
+
+/** El codigo del servidor, en UN solo sitio: lo usan el mapa de abajo y el camino de Activar. */
+const PV_COD_NOMBRE_DUPLICADO = 'name_duplicate';
+
+// Cuantas ranuras estrena esta pantalla SIN firma. DOS desde SCRUM-631: el texto de arriba
+// (aprobado por el asesor, pendiente del fundador) y el de reactivar (sin aprobar por nadie).
+const PV_SIN_APROBAR = 2;
 
 // Un identificador interno no lleva espacios ni mayúsculas: `name_duplicate`, `forbidden`,
 // `trial_expired`. Una frase escrita para una persona siempre lleva una de las dos cosas.
@@ -84,7 +119,7 @@ function mensajeDeErrorCatalogo(codigoOMensaje, respaldo) {
   // caso frente a todos los demás, que caen a su respaldo en castellano—, así que si todos los
   // errores dijeran lo mismo la pantalla perdería la distinción que este ticket vino a dar.
   const M = {
-    name_duplicate: PV_NOMBRE_DUPLICADO,
+    [PV_COD_NOMBRE_DUPLICADO]: PV_NOMBRE_DUPLICADO,
   };
   if (M[bruto]) return M[bruto];
 
@@ -98,6 +133,7 @@ if (typeof window !== 'undefined') {
   window.mensajeDeErrorCatalogo = mensajeDeErrorCatalogo;
   window.PV_MARCADOR_MICROCOPY = PV_MARCADOR_MICROCOPY;
   window.PV_NOMBRE_DUPLICADO = PV_NOMBRE_DUPLICADO;
+  window.PV_NOMBRE_ACTIVO_DUPLICADO = PV_NOMBRE_ACTIVO_DUPLICADO;
   window.PV_SIN_APROBAR = PV_SIN_APROBAR;
 }
 
@@ -686,7 +722,14 @@ function renderProductsView(container) {
             setAlert("success", "Estado actualizado.");
             await refresh();
           } catch (e) {
-            setAlert("error", mensajeDeErrorCatalogo(e && e.message, "Error actualizando estado."));
+            // SCRUM-631 · El cliente SABE que estaba ACTIVANDO, asi que puede elegir el texto sin
+            // que el servidor invente un codigo nuevo (regla 27). El 409 es el mismo `name_duplicate`
+            // del alta; lo que cambia es la accion que lo provoco, y por eso cambia la frase.
+            const activando = !it.isActive;
+            const codigo = String((e && e.message) == null ? "" : e.message).trim();
+            setAlert("error", activando && codigo === PV_COD_NOMBRE_DUPLICADO
+              ? PV_NOMBRE_ACTIVO_DUPLICADO
+              : mensajeDeErrorCatalogo(e && e.message, "Error actualizando estado."));
           }
         });
   
