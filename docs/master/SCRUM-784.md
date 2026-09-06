@@ -157,7 +157,7 @@ nada que el guard mire → **MUDA**.
 |---|---|
 | `murioElFichero` → `false` siempre | se vuelve al MUDO falso del ticket |
 | `murioElFichero` → cualquier caída vale | el cuarto veredicto se comería a los otros tres |
-| volver a `realpathSync` sin `.native` | la unidad en minúscula rompería la comparación |
+| comparar con `path.resolve` en vez de la ruta resuelta | comparar por TEXTO — el defecto original del detector *(esta declaración sustituyó a `.native` → `realpathSync`; ver el apéndice: aquélla sólo se caza donde hay letra de unidad)* |
 | 🔴 `cayo()` relajado a «cualquier rojo vale» | el sello de goma que el ticket prohíbe |
 
 ---
@@ -173,3 +173,118 @@ nada que el guard mire → **MUDA**.
   fuera literalmente la ruta de su propio fichero** se leería como una muerte. No existe en el
   árbol y no parece un riesgo real, pero queda dicho.
 - Los **55 colaterales** se cuentan, no se juzgan. Qué hacer con ellos es otro ticket.
+
+---
+---
+
+# APÉNDICE · el rojo de CI de esta misma entrega (6-sep-2026)
+
+**Medido contra:** `origin/main` = `0d02b637a782ae9d90a0093985699999bdca7e9b` · 2026-09-06T12:59:22+01:00
+
+## 🔴 ROJO 1 · mi propio caso de la unidad no existe en Linux
+
+El aserto exigía que `C:\…` y `c:\…` fueran **distintas** antes de normalizar. En el runner **no
+hay letra de unidad**, así que `toLowerCase()` sobre el primer carácter no cambia nada:
+
+```
+actual:   '/home/runner/work/…/scrum784-el-cuarto-veredicto.test.mjs'
+expected: '/home/runner/work/…/scrum784-el-cuarto-veredicto.test.mjs'
+operator: 'notStrictEqual'
+```
+
+Reproducido antes de tocar nada, con la ruta del runner:
+
+| | primer carácter | bajada | ¿son distintas? |
+|---|---|---|---|
+| Windows | `"C"` | `c:\…` | sí → el aserto se cumple |
+| Linux | `"/"` | idéntica | **no → revienta** |
+
+Es la misma familia que la puerta de SCRUM-765: **el instrumento que se escribe para probar algo
+también tiene plataforma.** Y es la segunda vez en el día.
+
+## LA VIABILIDAD, MEDIDA ANTES DE ELEGIR
+
+| opción | ¿viable? | medición |
+|---|---|---|
+| construir el caso **sin depender de la plataforma** | **no**, para esa propiedad | lo que `.native` añade sobre `realpathSync` es EXACTAMENTE la unidad (`normaliza? false` vs `true`), y una letra de unidad no existe donde no la hay |
+| declarar el caso **no aplicable** donde no hay unidad | sí | — |
+| un caso portable para la propiedad **de fondo** | **sí** | por un ENLACE: `path.resolve` iguala? **false** · `realpath` **true** · `.native` **true** |
+
+**Así que las dos mitades, no una.** La portable (el enlace) corre siempre y lleva la mutación
+declarada; la de la unidad corre donde existe y, donde no, **lo dice por pantalla** con
+`t.diagnostic()`. ⛔ Sin `skip` silencioso — y además un `skip` habría dejado el test fuera de la
+pasada limpia y el meta-guard habría vuelto a decir CIEGO, o sea que no arreglaba el ROJO 2.
+
+**Elijo las dos porque cubren cosas distintas:** la portable defiende lo que de verdad sostiene el
+detector (comparar resuelto, no texto) en las dos plataformas; la de la unidad defiende lo único
+que `.native` añade, allí donde existe.
+
+## La mutación declarada cambia, y también por medición
+
+Iba `.native` → `realpathSync`. Esa degradación **sólo se caza donde hay letra de unidad**, así que
+en Linux ningún test caería, saldría **MUDA** y pondría el job en rojo por un defecto que allí no
+existe. Ahora es `.native` → `path.resolve`, que la mitad portable caza en las dos.
+
+## ✅ EL CONTROL QUE NO PODÍA FALTAR
+
+En Windows, a mano, con restauración verificada por bytes:
+
+| mutación | resultado |
+|---|---|
+| sin mutar | `ok 2` |
+| `.native` → `realpathSync` | **`not ok 2`** ← la mitad de la unidad **sigue cazando aquí** |
+| `.native` → `path.resolve` (la declarada) | `not ok 2` |
+
+Bytes restaurados: `Buffer.compare = 0` en los dos.
+
+## EL CENSO (tarea 4) — y su primera versión NO servía
+
+Buscaba «constructos de Windows» en `tests/` y daba **19 ficheros, 16 sin declarar**. Mirándolos
+uno a uno, casi todos falsos positivos — la misma clase de error que contar una exclusión como una
+ejecución:
+
+- **`'junction'` no ata a Windows**: fuera de Windows Node ignora el argumento de tipo (documentado;
+  aquí sólo he medido que en Windows funciona).
+- las rutas **`'C:/…'` escritas a mano son DATOS** de prueba de un parser de rutas → **INDETERMINADO**
+  sin leer cada caso.
+- `charAt(0).toLowerCase()` cazaba `const camel = (m) => …`, capitalizar un rótulo y ordenar
+  apellidos. Nada que ver con la unidad.
+
+**Retirado.** Queda uno estrecho y sano: *una PRECONDICIÓN que exige que la misma ruta escrita de
+dos formas sea DISTINTA, en un fichero que no lo declara.*
+
+| | |
+|---|---|
+| población | 786 ficheros `.mjs` de `tests/` |
+| 🔴 sin declarar | **0** |
+| control positivo | el aserto **exacto** que tumbó el CI → lo reconoce |
+| control negativo | la **misma forma** con el discriminador puesto → no lo denuncia |
+
+Y hubo que enseñarle a **seguir la variable**: en el caso real la transformación vive una línea
+antes del aserto, y sin eso su control positivo salía rojo. Lo cazó su propio control.
+
+⚠️ **Lo que este censo NO ve**, dicho para que nadie lo lea como «no hay dependencias de Windows en
+`tests/`»: cualquier otra forma de depender de la plataforma. Sólo ve ésta.
+
+## ROJO 2 · cayó solo, COMPROBADO
+
+`vivas 79 · mudas 0 · ciegas 0 · ficheros muertos 0` · exit 0. La CIEGA de `scrum784` era
+consecuencia del ROJO 1 —su test no estaba verde en la pasada limpia, luego no se podía mutar— y
+desaparece con él. Comprobado, no supuesto.
+
+## Tanda de cierre
+
+| | |
+|---|---|
+| `npm test` | **5661 tests · 5569 pass · 0 fail · 92 skipped** |
+| `frontera:dist` | 270 corresponden · 0 no · 0 sin dist |
+| `meta:mutaciones` | **vivas 79 · mudas 0 · ciegas 0 · muertos 0** · exit 0 |
+
+## Huecos declarados
+
+- **La degradación `.native` → `realpathSync` sólo se caza en Windows**, y por eso no tiene
+  mutación declarada: en Linux saldría MUDA y el rojo sería falso.
+- **La mitad portable no está medida en Linux.** `fs.symlinkSync(dir, enlace, 'dir')` es la forma
+  documentada allí y no exige privilegios, pero aquí sólo se ha medido con `'junction'` en Windows.
+  Lo confirma la próxima pasada de CI.
+- El censo es **estrecho a propósito**: ve una sola forma de depender de la plataforma.
