@@ -2,7 +2,7 @@
 
 **Fecha:** 6-sep-2026 · **Carril:** fiscal · emisión · **Gate:** sin gate
 **Medido contra:** `origin/main` = `ff4e1c4a14f474d0fb4095cb0643e069388e4935` · 2026-09-06T20:16:48+01:00
-**Tanda:** ver al final
+**Tanda:** 5683 tests, 5591 pass, 0 fail, 92 skipped (salida 0), tras mezclar main
 
 > 🛑 **ESTE TICKET MIDE. NO CONSTRUYE.** El camino de emisión no se toca: el generador se mutó
 > TEMPORALMENTE para poder medir y se restauró con `sha256sum -c`. El fixture vivió en la base de
@@ -138,5 +138,5 @@ estado de sellado, no una protección.
 
 ---
 
-**Tanda:** 5674 tests · 5582 pass · 0 fail · 92 skipped · salida 0. Ningún fichero de producción
+**Tanda:** 5683 tests · 5591 pass · 0 fail · 92 skipped · salida 0, tras mezclar main. Ningún fichero de producción
 modificado (`git status` vacío tras las mediciones; generador verificado byte a byte).
