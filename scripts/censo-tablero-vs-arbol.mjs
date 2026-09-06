@@ -119,12 +119,26 @@ export function censar({ raiz = RAIZ } = {}) {
 // mordido a mí quince minutos después de reportarlo.
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const censo = censar();
+  const p = censo.poblacion;
+
+  // 🔴 SCRUM-775 · EL SUELO SE COMPRUEBA ANTES DE INFORMAR POR CUALQUIERA DE LAS DOS BOCAS.
+  //
+  // La ruta `--json` salía con **0 siempre**, y salía ANTES del suelo. Su propia cabecera dice
+  // «para otro programa»: un programa que lea esa salida no tenía forma de distinguir «medido» de
+  // «no supe medir» sin parsear prosa — que es el mismo defecto por la puerta de atrás.
+  //
+  // Medido antes de tocarlo: NADIE consume esa ruta (`git grep 'censo-tablero-vs-arbol.*--json'`
+  // sólo casa con el comentario de uso de este mismo fichero), así que cambiarle el código de
+  // salida no rompe ningún llamador. El suelo viaja además DENTRO del JSON, para que no haya que
+  // deducirlo del código de salida.
+  const suelo = comprobarSuelo({ raiz: RAIZ });
+  const noSeFia = p.ticketsCensados === 0 || suelo.length > 0;
+
   if (process.argv.includes('--json')) {
-    console.log(JSON.stringify(censo, null, 2));
-    process.exit(0);
+    console.log(JSON.stringify({ ...censo, suelo, fiable: !noSeFia }, null, 2));
+    process.exit(noSeFia ? 2 : 0);
   }
 
-  const p = censo.poblacion;
   console.log(`\nPOBLACIÓN — ${p.ticketsCensados} tickets, de ${p.ramasTraidas} ramas traídas y `
     + `${p.entradasDeMaster} entradas de máster.`);
   console.log(`  Motor: ${p.motor}`);
@@ -132,10 +146,34 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
 
   // 🔴 EL SUELO, ANTES DE NADA, y se usa el del propio motor: un censo vacío no dice «el tablero
   // está al día», dice «no supe mirar».
-  const suelo = comprobarSuelo({ raiz: RAIZ });
-  if (p.ticketsCensados === 0 || (suelo && suelo.ok === false)) {
+  //
+  // ── 🔴 SCRUM-775 · ESTA MITAD DEL SUELO NO PUDO DISPARARSE NUNCA ────────────────────────────
+  //
+  // Aquí ponía `(suelo && suelo.ok === false)`, y `comprobarSuelo` devuelve un **ARRAY** de
+  // problemas (`[]` cuando el árbol está sano). Un array no tiene `.ok`, así que la expresión era
+  // `undefined === false` → **siempre falsa**. De las dos condiciones sólo vivía la primera.
+  //
+  // Provocado el 6-sep-2026 antes de tocar nada, sobre un clon de la fixture de la casa con
+  // `docs/master/` encogido de 28 entradas a 3 y el historial intacto (111 commits):
+  //
+  //     comprobarSuelo(...)  →  ["docs/master/ solo tiene 3 entradas SCRUM-*.md"]   (1 problema)
+  //     el CLI               →  exit 0, informe completo, stderr VACÍO
+  //
+  // O sea: el censo encogió un 89 %, su propio suelo lo vio, y esto informó igual. Es el defecto
+  // que este fichero existe para cazar —«no supe mirar» leído como «no hay desfase»— cometido por
+  // el propio fichero.
+  //
+  // ⚠️ Se compara por LONGITUD y no por `.ok`, `.length > 0` y no truthiness del array: `[]` es
+  // truthy en JS, así que `if (suelo)` habría sido el mismo defecto con otra cara — saltaría
+  // SIEMPRE, que es la avería contraria y se desactiva en una tarde.
+  //
+  // Y ahora se IMPRIMEN los motivos: un suelo que salta sin decir por qué obliga a reproducirlo.
+  if (noSeFia) {
     console.error('🔴 CENSO VACÍO O SIN CAPACIDAD DE MEDIR. No significa «no hay desfase»: '
       + 'significa que no se ha visto ni una rama ni una entrada de máster.');
+    if (p.ticketsCensados === 0) console.error('   · CERO tickets censados.');
+    for (const m of suelo) console.error(`   · ${m}`);
+    console.error(`   árbol: ${RAIZ}`);
     process.exit(2);
   }
 
