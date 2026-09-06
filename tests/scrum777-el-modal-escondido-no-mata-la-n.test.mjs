@@ -168,7 +168,13 @@ function censoDeCierres() {
   const pieza = fs.readFileSync(path.join(DIR_JS, 'atajoNuevo.js'), 'utf8');
   const m = pieza.match(/SELECTOR_MODAL\s*=\s*\n?\s*"([^"]+)"/);
   assert.ok(m, '🔴 CIEGO: no sé leer `SELECTOR_MODAL` de la pieza.');
-  const CLASES = m[1].split(',').map((s) => s.trim()).filter((s) => s.startsWith('.')).map((s) => s.slice(1));
+  const PARTES = m[1].split(',').map((s) => s.trim());
+  const CLASES = PARTES.filter((s) => s.startsWith('.')).map((s) => s.slice(1));
+  // 🔴 SCRUM-785 · LOS IDS TAMBIÉN. El censo de SCRUM-777 sólo miraba clases, y por eso
+  // `onboardingView.js` NI ENTRABA EN LA POBLACIÓN: su overlay se identifica por `id`
+  // (`#onboarding-backdrop`, que está en el propio `SELECTOR_MODAL`). Se sabía a mano; ahora se
+  // deriva.
+  const IDS = PARTES.filter((s) => s.startsWith('#')).map((s) => s.slice(1));
 
   const esconden = [];
   const borran = [];
@@ -176,14 +182,21 @@ function censoDeCierres() {
   for (const f of fs.readdirSync(DIR_JS).filter((x) => x.endsWith('.js'))) {
     if (f === 'atajoNuevo.js') continue;
     const src = fs.readFileSync(path.join(DIR_JS, f), 'utf8');
-    if (!CLASES.some((c) => src.includes(c))) continue;
+    if (!CLASES.some((c) => src.includes(c)) && !IDS.some((i) => src.includes(i))) continue;
     const sf = ts.createSourceFile(f, src, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
     const overlays = new Set();
+    // Los ids que se le ponen a un overlay, para reconocer después un cierre por `getElementById`.
+    const idsDeOverlay = new Set(IDS);
     const tieneClase = (a) => ts.isStringLiteralLike(a) && CLASES.some((c) => a.text.split(/\s+/).includes(c));
+    const esIdDeModal = (a) => ts.isStringLiteralLike(a) && IDS.includes(a.text);
     const v1 = (n) => {
       if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.EqualsToken
           && ts.isPropertyAccessExpression(n.left) && n.left.name.text === 'className'
           && ts.isIdentifier(n.left.expression) && tieneClase(n.right)) overlays.add(n.left.expression.text);
+      // 🔴 SCRUM-785 · `x.id = "onboarding-backdrop"` también hace de `x` un overlay.
+      if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.EqualsToken
+          && ts.isPropertyAccessExpression(n.left) && n.left.name.text === 'id'
+          && ts.isIdentifier(n.left.expression) && esIdDeModal(n.right)) overlays.add(n.left.expression.text);
       if (ts.isVariableDeclaration(n) && n.initializer && ts.isCallExpression(n.initializer)
           && ts.isIdentifier(n.name) && n.initializer.arguments.some(tieneClase)) overlays.add(n.name.text);
       if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.EqualsToken
@@ -192,14 +205,72 @@ function censoDeCierres() {
       ts.forEachChild(n, v1);
     };
     v1(sf);
+    // 🔴 SCRUM-785 · TERCERA FORMA, Y ERA LA QUE FALTABA: EL ALIAS.
+    //
+    // `productsView` y `providersView` construyen el overlay dentro de `buildEditModal()`, que lo
+    // DEVUELVE, y el resto del fichero lo maneja por otro nombre:
+    //     let editOverlay = null;  …  if (!editOverlay) editOverlay = buildEditModal();
+    // El censo veía `ov` (el de dentro) y no veía `editOverlay` (el de fuera), así que el
+    // `editOverlay.remove()` de SCRUM-785 le resultaba INVISIBLE y los seguía dando por
+    // «esconden». Medido: con la corrección aplicada, el censo seguía acusándolos.
+    //
+    // Se resuelve derivando: una función que declara un overlay y lo DEVUELVE convierte en
+    // overlay a quien recoja su resultado.
+    const fabricas = new Set();
+    const v1c = (n) => {
+      if ((ts.isFunctionDeclaration(n) || ts.isFunctionExpression(n) || ts.isArrowFunction(n)) && n.body) {
+        let devuelveOverlay = false;
+        const rv = (x) => {
+          if (ts.isReturnStatement(x) && x.expression && ts.isIdentifier(x.expression)
+              && overlays.has(x.expression.text)) devuelveOverlay = true;
+          ts.forEachChild(x, rv);
+        };
+        rv(n.body);
+        if (devuelveOverlay && n.name && ts.isIdentifier(n.name)) fabricas.add(n.name.text);
+      }
+      ts.forEachChild(n, v1c);
+    };
+    v1c(sf);
+    const v1d = (n) => {
+      if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.EqualsToken
+          && ts.isIdentifier(n.left) && ts.isCallExpression(n.right)
+          && ts.isIdentifier(n.right.expression) && fabricas.has(n.right.expression.text)) {
+        overlays.add(n.left.text);
+      }
+      if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer
+          && ts.isCallExpression(n.initializer) && ts.isIdentifier(n.initializer.expression)
+          && fabricas.has(n.initializer.expression.text)) overlays.add(n.name.text);
+      ts.forEachChild(n, v1d);
+    };
+    v1d(sf);
+    // 🔴 SCRUM-785 · segunda pasada: el ID que se le da a un overlay ya reconocido. Es lo que
+    // permite ver el cierre de `expensesView`, que crea por clase y borra por
+    // `getElementById('exp-modal')?.remove()`. También se sabía a mano; ahora se deriva.
+    const v1b = (n) => {
+      if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.EqualsToken
+          && ts.isPropertyAccessExpression(n.left) && n.left.name.text === 'id'
+          && ts.isIdentifier(n.left.expression) && overlays.has(n.left.expression.text)
+          && ts.isStringLiteralLike(n.right)) idsDeOverlay.add(n.right.text);
+      ts.forEachChild(n, v1b);
+    };
+    v1b(sf);
     if (!overlays.size) { ciegos.push(f); continue; }
 
     let borra = false;
     let esconde = false;
-    const v2 = (n) => {
+    /** ¿Esta expresión ES un overlay? Su variable, o un `getElementById` de su id. */
+    const esOverlay = (n) => {
+      if (ts.isIdentifier(n) && overlays.has(n.text)) return true;
+      // `document.getElementById('exp-modal')` — con o sin `?.` delante del `remove`.
       if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression)
-          && n.expression.name.text === 'remove' && ts.isIdentifier(n.expression.expression)
-          && overlays.has(n.expression.expression.text)) borra = true;
+          && n.expression.name.text === 'getElementById'
+          && n.arguments.length === 1 && ts.isStringLiteralLike(n.arguments[0])
+          && idsDeOverlay.has(n.arguments[0].text)) return true;
+      return false;
+    };
+    const v2 = (n) => {
+      if (ts.isCallExpression(n) && (ts.isPropertyAccessExpression(n.expression))
+          && n.expression.name.text === 'remove' && esOverlay(n.expression.expression)) borra = true;
       if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.EqualsToken
           && ts.isPropertyAccessExpression(n.left) && ts.isPropertyAccessExpression(n.left.expression)
           && n.left.expression.name.text === 'style' && ts.isIdentifier(n.left.expression.expression)
@@ -228,14 +299,24 @@ test('SCRUM-777 · SUELO: el censo VE los dos tipos de cierre', () => {
 
 test('SCRUM-777 · 🔴 la lista de modales que se cierran ESCONDIÉNDOSE no CRECE', () => {
   const c = censoDeCierres();
-  assert.deepEqual(c.esconden, ['productsView.js', 'providersView.js'],
-    '🔴 HA CAMBIADO EL CONJUNTO DE MODALES QUE SE CIERRAN ESCONDIÉNDOSE.\n'
+  // 🔴 SCRUM-785 · LA LISTA ESTÁ VACÍA, y un cero sobre población vacía no sería un dato. Por eso
+  // va atado a que el censo SIGA CLASIFICANDO: si dejara de ver ficheros, su cero de culpables
+  // sería ceguera y no limpieza. El suelo de arriba exige además que `jobNuevoModal` salga como
+  // «borra», que es el control negativo.
+  assert.ok(c.borran.length >= 16,
+    `🔴 CIEGO: el censo sólo clasifica ${c.borran.length} ficheros como «borran». Con una `
+    + 'población así de corta, la lista vacía de abajo no significaría «no hay ninguno», sino '
+    + '«he dejado de mirar».');
+  assert.deepEqual(c.esconden, [],
+    '🔴 HA VUELTO A HABER MODALES QUE SE CIERRAN ESCONDIÉNDOSE.\n'
     + `   Lo que hay ahora: ${c.esconden.join(', ')}.\n`
-    + '   · Si hay uno NUEVO: cierra su modal con `style.display = "none"` y lo deja colgado del '
-    + '`body`. La pieza ya no se traga eso para el atajo, pero la regla CSS '
-    + '`body:has(.modal-overlay) #tut-help-btn` SÍ: apaga el botón de ayuda para siempre.\n'
-    + '   · Si FALTA uno: se ha arreglado, bien. Quítalo de esta lista en el mismo commit.\n'
-    + '   · `customersView.js` salió de aquí en SCRUM-777, y ése es el cambio (b) de este ticket.');
+    + '   Cierra su modal con `style.display = "none"` y lo deja colgado del `body`. La pieza ya '
+    + 'no se traga eso para el atajo (SCRUM-777), pero la regla CSS '
+    + '`body:has(.modal-overlay) #tut-help-btn` SÍ: `:has()` es ESTRUCTURAL y apaga el botón '
+    + 'flotante de ayuda para el resto de la sesión.\n'
+    + '   Se descuelga con `remove()` al cerrar y se reengancha al reabrir — el mismo nodo, con '
+    + 'sus campos y sus oyentes. Así lo hacen `customersView` (SCRUM-777) y `productsView` y '
+    + '`providersView` (SCRUM-785), que son los tres que estuvieron aquí.');
   assert.equal(c.esconden.includes('customersView.js'), false,
     '🔴 `customersView.js` ha vuelto a cerrar su modal escondiéndolo. Es el defecto que este '
     + 'ticket arregla, y su víctima medida no es sólo el atajo: el botón flotante de ayuda se '
@@ -244,25 +325,28 @@ test('SCRUM-777 · 🔴 la lista de modales que se cierran ESCONDIÉNDOSE no CRE
 
 test('SCRUM-777 · el censo DECLARA lo que no sabe leer, en vez de callarlo', () => {
   const c = censoDeCierres();
-  // No se fija la lista de ciegos —eso caduca— pero SÍ que el canal exista y que los dos que se
-  // midieron a mano sigan ahí: los dos BORRAN, por `id`, y el censo no sabe verlo.
   assert.ok(Array.isArray(c.ciegos), '🔴 el censo ya no devuelve lista de ciegos.');
-  assert.deepEqual(c.ciegos, ['expensesView.js'],
-    '🔴 HA CAMBIADO LO QUE EL CENSO NO SABE LEER.\n'
-    + `   Ciegos ahora: ${c.ciegos.join(', ') || '(ninguno)'}.\n`
-    + '   `expensesView.js` crea su overlay con la clase pero lo cierra por ID '
-    + '(`getElementById("exp-modal")?.remove()`), así que el censo ve el overlay y no ve el '
-    + 'cierre. MEDIDO A MANO el 6-sep-2026: BORRA. Se declara ciego en vez de contarlo como '
-    + 'limpio — si mañana lo clasifica, comprueba que lo hace bien antes de quitarlo de aquí.');
 
-  // 🔴 Y EL SEGUNDO LÍMITE, que no sale ni como ciego: `onboardingView.js` NO ENTRA EN LA
-  // POBLACIÓN. Su overlay se identifica por `id` (`#onboarding-backdrop`, que sí está en el
-  // SELECTOR_MODAL) y no por clase, y este censo empieza filtrando por CLASE. MEDIDO a mano:
-  // BORRA (`backdrop.remove()`). Se deja escrito aquí para que el día que alguien amplíe el
-  // censo a los ids sepa que ese fichero le va a aparecer y ya está medido.
-  assert.equal(c.esconden.includes('onboardingView.js'), false,
-    '🔴 `onboardingView.js` ha entrado en la lista de los que esconden. Estaba medido como que '
-    + 'BORRA: vuelve a medirlo antes de darlo por culpable.');
+  // 🔴 SCRUM-785 · LOS DOS AGUJEROS QUE SCRUM-777 DEJÓ DOCUMENTADOS ESTÁN CERRADOS, Y NO A MANO:
+  //   · `expensesView.js` creaba por CLASE y cerraba por ID (`getElementById('exp-modal')?.remove()`).
+  //     Ahora el censo aprende el `id` que se le pone a un overlay y reconoce ese cierre.
+  //   · `onboardingView.js` NI ENTRABA EN LA POBLACIÓN: su overlay se identifica por `id`
+  //     (`#onboarding-backdrop`), y el censo filtraba sólo por clase. Ahora los ids del propio
+  //     `SELECTOR_MODAL` también entran.
+  //   · Y de paso apareció un TERCERO que nadie había declarado: `productsView` y `providersView`
+  //     manejan su overlay por un ALIAS (`editOverlay = buildEditModal()`), así que su `remove()`
+  //     era invisible. Ahora una función que devuelve un overlay convierte en overlay a quien
+  //     recoja su resultado.
+  //
+  // Un censo con casos que sólo se saben a mano es un censo con agujeros documentados. Este ya no
+  // los tiene, y por eso la lista se fija en VACÍA en vez de enumerar excusas.
+  assert.deepEqual(c.ciegos, [],
+    '🔴 EL CENSO HA VUELTO A NO SABER LEER ALGO.\n'
+    + `   Ciegos ahora: ${c.ciegos.join(', ') || '(ninguno)'}.\n`
+    + '   Un fichero aquí NO es un fichero limpio: es uno del que este guard no puede afirmar '
+    + 'nada. Mídelo a mano y, si el censo debería saber verlo, enséñaselo — las tres formas que '
+    + 'ya entiende son: la clase, el id del `SELECTOR_MODAL`, y el alias de una función que '
+    + 'devuelve el overlay.');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
