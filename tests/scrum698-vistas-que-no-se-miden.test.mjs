@@ -279,7 +279,22 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
     // de la otra. Nace `hidden` y sólo se enseña si el cliente elegido trae formas pactadas que
     // cambien alguna casilla, así que estos tres nodos existen SIEMPRE y se ven CASI NUNCA: por eso
     // suben el número aunque la pantalla parezca la de ayer.
-  for (const [vista, nodos] of [['renderQuotesView', 256], ['renderProductsView', 166],
+  // 🔴 SCRUM-589 (CONT-18) · 6-sep-2026 · `renderQuotesView` 256 → 263. SIETE nodos, y aquí están
+  // CUÁLES, identificados POR IDENTIDAD sobre el árbol montado ANTES de tocar el número — no
+  // restando 263 − 256, que es como se cuela un octavo nodo sin que nadie lo vea:
+  //
+  //   1. `div.inline-options` — la elección de con qué nombre sale el cliente
+  //   2. y 3. sus dos `label.radio-label`
+  //   4. y 5. sus dos `input[type=radio][name="df-nombre"]`
+  //   6. y 7. los dos `#TEXT` de los rótulos: « Razón social» y « Nombre comercial»
+  //
+  // AISLADO Y COMPROBADO: los siete son EXACTAMENTE el subárbol del `div.inline-options`
+  // (`todos(div)` devuelve 7), así que el delta entero vive dentro del control nuevo y este
+  // ticket no ha movido ni un nodo del resto de la pantalla. Las otras tres vistas, intactas.
+  //
+  // La subida es del PRODUCTO, no del banco: el bloque «Datos del cliente en el documento» pasa
+  // de decir qué campos salen a decir además CUÁL de los dos nombres del cliente se imprime.
+  for (const [vista, nodos] of [['renderQuotesView', 263], ['renderProductsView', 166],
     ['renderCustomersView', 68], ['renderHomeView', 109]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
@@ -303,7 +318,11 @@ test('SCRUM-698 · CONTROL NEGATIVO: el fixture NO se impone a quien ya pasaba l
   // SCRUM-586 (6-sep-2026): la QUINTA subida, +3 por la tira de formas de pago. Identificada por
   // identidad en el bloque de arriba. Este control sigue vigilando lo suyo —que los dos montajes
   // den el MISMO número—, no cuál sea ese número.
-  assert.equal(todos(desnuda.contenedor).length, 256,
+  // SCRUM-589 (6-sep-2026): la SEXTA subida, +7 por la elección de con qué nombre sale el
+  // cliente. Los siete están identificados por identidad en el bloque de arriba y son el
+  // subárbol completo de su `div.inline-options`. Lo que este control vigila —que el fixture no
+  // se imponga, o sea que los DOS montajes den el mismo número— sigue intacto.
+  assert.equal(todos(desnuda.contenedor).length, 263,
     '🔴 montar sin `datos` ya no da lo de siempre: el fixture se ha colado como valor por '
     + 'defecto y está moviendo lo que miden otros.');
 });

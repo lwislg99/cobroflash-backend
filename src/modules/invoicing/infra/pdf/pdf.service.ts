@@ -172,7 +172,9 @@ export type ParamsPdfPresupuesto = {
     taxId?: string | null;
   };
   // A20.4: qué datos del cliente se muestran (null/undefined = todos los presentes)
-  docFields?: { name?: boolean; phone?: boolean; taxId?: boolean; email?: boolean } | null;
+  // SCRUM-589 (CONT-18): `usarRazonSocial` NO es una casilla más — las otras cuatro dicen si un
+  // campo se muestra; ésta dice CUÁL de los dos nombres del cliente sale. Ausente = como siempre.
+  docFields?: { name?: boolean; phone?: boolean; taxId?: boolean; email?: boolean; usarRazonSocial?: boolean } | null;
   /**
    * SCRUM-594 (DOC-04) · el descuento GLOBAL del presupuesto, en euros.
    *
@@ -758,7 +760,13 @@ export async function generateQuotePdf(params: ParamsPdfPresupuesto) {
     !params.docFields || params.docFields[k] !== false;
   // SCRUM-577: misma regla, mismo sitio unico. El respaldo `'—'` se conserva: es lo que este
   // documento imprimia cuando no habia ninguno de los dos, y unificarlo cambiaria lo impreso.
-  const clientDisplay = nombreParaDocumento(params.customer, '—');
+  // SCRUM-589 · la elección del DOCUMENTO llega dentro del mismo `docFields` que ya decidía qué
+  // campos salen. Se pasa TAL CUAL a la regla: aquí no se interpreta nada — si este fichero
+  // mirara el booleano por su cuenta, habría dos sitios decidiendo el nombre.
+  //
+  // ⛔ `generateInvoicePdf` (más arriba) NO se toca: es camino de emisión y además la factura no
+  // tiene `docFields`. Al no pasarle opciones, la regla le devuelve lo de siempre.
+  const clientDisplay = nombreParaDocumento(params.customer, '—', params.docFields);
   if (show('name')) doc.text(`Cliente: ${clientDisplay}`);
   if (show('taxId') && params.customer.taxId) doc.text(`NIF: ${params.customer.taxId}`);
   if (show('phone') && params.customer.phone) doc.text(`Tel: ${params.customer.phone}`);
