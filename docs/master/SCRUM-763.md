@@ -204,3 +204,115 @@ Dato lateral, en la misma dirección: con el árbol sano, dos pasadas consecutiv
 - El detector cubre `src/` ↔ `dist/`. **No** cubre otros pasos de compilación: hoy no hay más.
 - El reparto del coste del meta-guard (76 s → 236 s) entre este cambio y la varianza de la máquina
   **no está medido**. Ver [SCRUM-765.md](docs/master/SCRUM-765.md).
+
+---
+---
+
+# APÉNDICE · ¿sigue vivo «el meta-guard muta el fuente y no recompila»? (6-sep-2026)
+
+**Medido contra:** `origin/main` = `16bd95731883a6c84ceb57820a493c8fe1500f6d` · 2026-09-06T08:48:11+01:00
+
+Otra sesión midió que el meta-guard **muta el fuente y no recompila**, y lo abrió como 🔴🔴. Esa
+sesión **no tenía esta rama**. La pregunta —hecha, no supuesta— es si SCRUM-763 ya lo cerró.
+
+## 🔴 EL CONTROL QUE DECIDE
+
+Se declaró la primera mutación del árbol que muta un fuente **compilado** y cuyo test **ejecuta
+`dist/`**: `tests/utils.test.mjs` importa `../dist/core/utils/utils.js` en su línea 5, y la
+mutación quita el escapado de `<` en `src/core/utils/utils.ts`.
+
+Conducido con el instrumento REAL (`censoDeDeclaraciones` → `correr` → `aplicarUna`), sobre el
+mismo árbol, con **una sola línea de diferencia** entre las dos pasadas:
+
+| pasada | el meta-guard emite el `.js` al mutar | veredicto |
+|---|---|---|
+| ① árbol de hoy (con SCRUM-763) | **sí** | **VIVA** |
+| ② misma pasada, retirada esa línea (el meta-guard de antes) | no | **MUDA** |
+
+```
+── ① ──                                     ── ② ──
+línea base : 6 pasados · 0 caídos           línea base : 6 pasados · 0 caídos
+🔴 VEREDICTO : VIVA                          🔴 VEREDICTO : MUDA
+sha ANTES   fuente=96b0fdcc dist=33570173      motivo: el guard NO cayó. Test que debía
+sha DESPUÉS fuente=96b0fdcc dist=33570173              ponerse rojo: «esc: escapa HTML…»
+```
+
+**EL DEFECTO ESTÁ CERRADO POR SCRUM-763.** Y la VIVA de ① no es un sello de goma: si lo fuera, ②
+—idéntica salvo esa línea— habría dado VIVA también.
+
+### 📌 Y el síntoma estaba descrito al revés
+
+El ticket decía que una mutación así «se declara **VIVA** sin que nadie la haya visto caer».
+**Medido: sale MUDA.** Sin emitir el `.js`, el test lee el `dist/` de antes, **pasa en verde**, y
+el meta-guard concluye «el guard NO cayó». Es una **falsa acusación**, no un falso aprobado —
+exactamente la familia del falso MUDO de SCRUM-748. Cambia la gravedad y cambia dónde mirar:
+no había números inflados, había guards sanos acusados de mudos.
+
+## ✅ CONTROL POSITIVO — no se ha roto por el otro lado
+
+De las **61** declaraciones del árbol, **49 mutan ficheros sin compilación** (`.mjs`, `.js` de
+`public/`). Si SCRUM-763 hubiera empezado a exigir un árbol ejecutable donde no lo hay, saldrían
+mudas o ciegas en bloque. Tanda completa: **`vivas 61 · mudas 0 · ciegas 0`**, exit 0.
+
+## EL ALCANCE — el tamaño que TENÍA el agujero
+
+| | de 61 declaraciones |
+|---|---|
+| su test **ejecuta** `dist/` | **42** |
+| mutan un fuente **compilado** | 12 |
+| 🔴 **las dos cosas a la vez — las expuestas de verdad** | **12** |
+| no legibles (ceguera del censo) | **0** |
+
+Las dos preguntas no son la misma y por eso se cuentan aparte: mutar un `.mjs` cuyo test ejecuta
+`dist/` es inofensivo (no hay `.js` que emitir), y mutar un `.ts` cuyo test lee el FUENTE tampoco
+pisa la frontera. **Hoy las 12 que mutan un `.ts` están las 12 expuestas** — control negativo: `0`
+mutan un `.ts` sin que su test ejecute `dist/`.
+
+### El censo se equivocó dos veces antes de dar ese número, y las dos se corrigieron midiendo
+
+- **Siguió un DATO como si fuera un `import`.** La primera versión casaba cualquier literal
+  `'./algo.mjs'`; `scrum740` lleva `'./x.mjs'` como nombre de fichero de mentira, el censo intentó
+  abrirlo y **se declaró CIEGO con un ENOENT**. Se declaró ciego —que es lo correcto— pero por un
+  defecto suyo. Arreglado por AST: sólo se siguen `import`s de verdad.
+- **Contó una EXCLUSIÓN como una ejecución.** Un `'dist'` a secas tiene dos significados opuestos
+  en `tests/`: 43 literales, la mayoría **excluyendo** el directorio de un barrido y el resto
+  **construyendo** la ruta para importarlo. Contarlos igual metió a `scrum751` entre los lectores
+  de `dist/` cuando su helper hace justo lo contrario. Los distingue **quién los usa**
+  (`path.join`), no el literal.
+
+## EL HUECO DECLARADO EN ESTA MISMA ENTRADA, CERRADO
+
+> *«La restauración de `dist/` del meta-guard no tiene guard propio en la suite. Está ejercitada
+> de continuo por las declaraciones sobre TypeScript.»*
+
+**Ejercitada no es vigilada.** Ahora hay guard:
+[tests/restauracion-del-arbol-ejecutable.test.mjs](tests/restauracion-del-arbol-ejecutable.test.mjs).
+La restauración se extrajo a dos piezas exportadas —`piezasARestaurar` y `restaurarYVerificar`—
+para poder exigirle el rojo sin fabricar un `src/` de mentira, y el guard mide, **en los dos
+sentidos**:
+
+- un fuente compilado pide **dos** piezas; uno sin compilación, **una**;
+- con las dos piezas, los dos ficheros vuelven byte a byte; **sin la pieza de `dist`, el fuente
+  vuelve y `dist` SE QUEDA MUTADO** — el defecto provocado y visible, no contado;
+- un fallo de escritura **revienta** en vez de devolver «todo bien».
+
+Sus **tres** mutaciones declaradas caen (`vivas 61 · mudas 0`), o sea que no es decoración.
+
+## Tanda
+
+| | |
+|---|---|
+| `npm test` | **5607 tests · 5519 pass · 0 fail · 88 skipped** · exit 0 |
+| `frontera:dist` | 270 corresponden · 0 no · 0 sin dist · exit 0 |
+| `meta:mutaciones` | **vivas 61 · mudas 0 · ciegas 0** · exit 0 · 354,0 s |
+
+## Huecos declarados
+
+- **El veredicto del ticket no lo pone esta sesión.** Aquí está la medición; el tablero es del
+  asesor.
+- El censo de lectores de `dist/` sigue la cadena de helpers `./x.mjs` **dentro de `tests/`**. No
+  sigue imports que salgan de ahí; hoy no hay ninguno en un guard que declare mutaciones.
+- **La verificación por bytes en sí no tiene mutación declarada.** Provocar que una escritura
+  «cuele» pero deje bytes distintos exige trampas del sistema de ficheros que no son portables. Lo
+  que sí está vigilado es que la restauración **ocurra**, que incluya `dist` y que no se trague un
+  fallo de escritura.

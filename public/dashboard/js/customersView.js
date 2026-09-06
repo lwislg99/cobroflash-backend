@@ -1272,6 +1272,10 @@ function renderCustomersView(container) {
   function openModal(mode, customer) {
     if (!modalBackdrop) {
       buildModal();
+    } else if (!modalBackdrop.parentNode) {
+      // SCRUM-777 · al cerrarse se descolgó del `body`. Se vuelve a colgar el MISMO nodo: sus
+      // campos, su formulario y sus oyentes siguen cableados desde `buildModal`.
+      document.body.appendChild(modalBackdrop);
     }
 
     editingCustomer = mode === "edit" ? customer : null;
@@ -1356,6 +1360,25 @@ function renderCustomersView(container) {
   function closeModal() {
     if (modalBackdrop) {
       modalBackdrop.style.display = "none";
+      // 🔴 SCRUM-777 · Y SE DESCUELGA DEL BODY, que es lo que faltaba.
+      //
+      // Esconderlo dejaba el nodo colgado del `body` para siempre, y eso tiene DOS víctimas
+      // medidas —ninguna avisa, ninguna da error—:
+      //   ① el atajo «N»: `sePuedeDisparar` miraba la PRESENCIA de un `.modal-overlay`, así que
+      //      abrir y cerrar una ficha mataba la tecla en TODAS las pantallas hasta recargar.
+      //   ② el botón flotante de ayuda: `styles.css:2552` dice
+      //      `body:has(.modal-overlay) #tut-help-btn { display:none !important }`, y `:has()` es
+      //      ESTRUCTURAL — mira si el nodo existe, no si se ve. Medido en Edge: con el residuo,
+      //      el «?» computa `display:none` y una caja de 0×0; al borrarlo, vuelve.
+      //
+      // La pieza se arregló también (mira VISIBILIDAD, no presencia), y eso cierra ①. Pero ② NO
+      // pasa por la pieza: es CSS. Por eso hacían falta las dos cosas, y está medido, no supuesto.
+      //
+      // ⚠️ SE DESCUELGA, NO SE DESTRUYE. `openModal` reutiliza este mismo nodo (`if
+      // (!modalBackdrop) buildModal()`), con sus campos y sus oyentes ya cableados; volver a
+      // construirlo en cada apertura sería otro ciclo de vida y no es lo que este ticket arregla.
+      // `remove()` sólo lo separa del árbol: al reengancharlo sigue siendo el mismo nodo.
+      if (typeof modalBackdrop.remove === "function") modalBackdrop.remove();
     }
     editingCustomer = null;
   }

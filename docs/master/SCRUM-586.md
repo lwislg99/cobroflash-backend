@@ -482,3 +482,110 @@ firmas donde hay una decisión.
   columna en la base del entorno que se fotografíe.
 - **La matriz de dispositivos AB6 está a medias**: 929 y 390 px, que es lo que pedía el encargo.
   Ni tablet ni 320 px.
+
+---
+---
+
+# APÉNDICE 2 · 6-sep-2026 — ✅ MICROCOPY FIRMADA POR EL ASESOR, Y EL MARCADOR RETIRADO
+
+**Rama:** `scrum-586-microcopy-firmada` · **medido contra** `origin/main` =
+`00c6cb0cc328eb88cea26bc4b672ebad25e51a47` · 2026-09-06T06:43Z
+
+> 🔴 **LA FIRMA Y LA RETIRADA DEL MARCADOR VAN EN EL MISMO COMMIT.** Un PR que llega a `main` con
+> el marcador puesto deja la pantalla diciendo que su propio texto está sin aprobar, y la firma
+> viviendo en un chat. Aquí van juntas, y hay un test que cae si se separan.
+
+## Los tres literales firmados
+
+| # | dónde | literal FIRMADO | car. | ¿en el código hoy? |
+|---|---|---|---|---|
+| 1 | rótulo del campo del cliente | **«Formas de pago pactadas»** | 23 | **no** — el campo no existe (frontera del esquema, apéndice 1 §2) |
+| 2 | ayuda del campo del cliente | **«Se propondrán al crear un documento para este cliente. Podrás cambiarlas en cada uno.»** | 85 | **no**, ídem |
+| 3 | texto de la tira del documento | **«Formas de pago pactadas»** + ` · ` + los métodos | 23 + dato | **sí** — marcador RETIRADO en este commit |
+
+El 3 repite al 1 **a propósito**: un nombre por concepto, la regla que SCRUM-591 dejó escrita para
+«+ Nuevo cliente». El literal vive en **una sola constante**, `FORMA_DE_PAGO_ROTULO_TIRA`, y un
+test lo compara **entero y con `===`** — un `includes` dejaría colar «Formas de pago pactadas hoy»
+sin que nada cayera, y microcopy aprobada que deriva sola deja de estarlo.
+
+**Por qué «pactadas» y no «por defecto»:** no se eligió una palabra, **se derivó de una ya
+firmada**. El fundador aprobó «Descuento pactado (%)» el 4-sep-2026 en el modal de cliente y dejó
+escrito el motivo — es la palabra del DOMINIO, un acuerdo con ESE cliente y no una preferencia de
+la aplicación. El campo nuevo vive en el mismo modal, a dos campos de distancia.
+
+🔴 **Su registro vive AQUÍ y NO en `docs/microcopy/`**: ese directorio es el del **FUNDADOR** y
+`constaAprobado()` lo barre (SCRUM-726), así que una firma del ASESOR metida ahí pasaría por la
+suya. Hay un test que lo impide, copiado del que dejó SCRUM-587.
+
+## El censo, ANTES y DESPUÉS — medido con el censo oficial, no a ojo
+
+`node scripts/censo-marcadores.mjs`
+
+| | marcas totales | `quotesView.js` | `atajoNuevo.js` (CONTROL) |
+|---|---|---|---|
+| **ANTES** | 29 | **4** | 1 |
+| **DESPUÉS** | 28 | **3** | 1 |
+
+Las **tres que quedan** en `quotesView.js`, nombradas por el censo:
+
+```
+linea  890 · propuestaPagoBtn.textContent = "[PENDIENTE microcopy oficial]";      ← 586, el BOTÓN
+linea 1283 · propuestaBtn.textContent     = "[PENDIENTE microcopy oficial]";      ← 587
+linea 1318 · propuestaTexto.textContent   = "[PENDIENTE microcopy oficial] · "…   ← 587
+```
+
+⛔ **El «Nuevo albarán» de otro ticket NO se ha firmado**, y no se afirma de palabra: el censo lo
+cuenta **1 antes y 1 después** (`atajoNuevo.js`), que es el control de que esta firma no se
+desbordó a lo que no le tocaba.
+
+### Los contadores
+
+- `FORMA_DE_PAGO_SIN_APROBAR` **2 → 1**. **No baja a 0 y ahí está su valor**: el rótulo del BOTÓN
+  no estaba entre los tres literales y sigue sin firmar. Mientras el contador diga 1, «ya no veo
+  marcador» no se puede leer como «está aprobado».
+- Trinquete de SCRUM-402: `'quotesView.js'` **4 → 3**. La entrada **NO se borra** —al revés que las
+  de `customersView.js` o `aiQuoteAssistant.js`, que llegaron a cero— porque quedan tres marcadores
+  vivos y `censoActual()` sigue listando el fichero.
+- `DTO_POR_DEFECTO_SIN_APROBAR` sigue en **1**: esto no toca `customersView.js`.
+
+## La caja, re-medida CON EL TEXTO FIRMADO YA EN EL FUENTE
+
+Edge por `puppeteer-core`, CSS del árbol servido desde disco, literales **extraídos del fuente por
+AST**, control negativo (400 caracteres sin cortes) desbordando en las dos anchuras.
+
+| ancho | bloque útil | caso | tira | texto | botón |
+|---|---|---|---|---|---|
+| **929 px** | 839,0 px | peor (2 métodos) | 839,0 × 66,0 | **335,1 × 20,3** (1 línea) | 197,8 × **44,0** |
+| **929 px** | 839,0 px | un método | 839,0 × 66,0 | 263,7 × 20,3 | 197,8 × 44,0 |
+| **390 px** | 324,0 px | peor (2 métodos) | 324,0 × 114,5 | **294,0 × 40,5** (2 líneas) | 197,8 × **44,0** |
+| **390 px** | 324,0 px | un método | 324,0 × 94,3 | 263,7 × 20,3 | 197,8 × 44,0 |
+
+El texto entra **en una línea a 929 px** y en **dos a 390 px** en el peor caso, sin desbordar y sin
+salirse del viewport. Botón en **44,0 px**: AB6 cumplido.
+
+> 🔴 **Y EL MEDIDOR SE DECLARÓ CIEGO ANTES DE DAR ESTOS NÚMEROS.** Al pasar el literal a una
+> constante, su extractor por AST dejó de encontrar el string y **salió con código 2** («no
+> encuentro el literal del texto de la tira») en vez de rellenar el hueco. Eso es lo correcto: un
+> medidor que adivina habría seguido midiendo el texto de ayer, en verde. Se le enseñó a **resolver
+> la constante**, y entonces midió.
+
+## Las mutaciones: 4 → **6**, y las seis en ROJO
+
+Dos nuevas, porque un guard que no se ha visto fallar es una decoración:
+
+| mutación | el rojo que saca |
+|---|---|
+| el texto firmado vuelve a «Formas de pago por defecto» | «el texto de la tira es el FIRMADO, literal» |
+| al botón le quitan el marcador SIN firmarlo | «el rótulo del BOTÓN sigue sin firmar…» |
+
+`vivas 6 de 6`, con la línea base verde delante (SCRUM-748) y las seis vistas por el **lector
+oficial** del meta-guard.
+
+## Hueco declarado
+
+- **Los literales 1 y 2 están firmados y NO están en el código**, porque su campo no existe: la
+  columna sigue aplicada sólo en dev y `prisma/schema.prisma` es del fundador. Su firma queda
+  registrada aquí para que, cuando el campo entre, **el texto ya esté decidido y no se vuelva a
+  proponer otro**.
+- **El rótulo del BOTÓN sigue sin firmar** (el del 586 y los dos del 587, mismo acto y misma
+  frase). Cuando el asesor lo firme, bajan a la vez el contador, el trinquete y el marcador.

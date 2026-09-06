@@ -64,3 +64,26 @@ test('esc: escapa HTML peligroso y tolera null/number', () => {
   assert.equal(U.esc(42), '42');
   assert.equal(U.esc('sin nada'), 'sin nada');
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// LA MUTACIÓN QUE ME TUMBA (SCRUM-745) — Y POR QUÉ ESTE FICHERO EN CONCRETO
+//
+// 🔴 ES EL PRIMER CASO DEL ÁRBOL EN QUE LA MUTACIÓN TOCA UN FUENTE COMPILADO Y EL TEST MIDE
+// `dist/`. Este fichero importa `../dist/core/utils/utils.js` en la línea 5, arriba del todo: no
+// lee el `.ts`, ejecuta lo que salió del compilador.
+//
+// Hasta ahora las declaraciones sobre TypeScript del árbol comprobaban el FUENTE (leían el `.ts`
+// y buscaban una forma en él), así que la frontera `src/` ↔ `dist/` no las tocaba. Ésta sí, y por
+// eso existe: mide el mecanismo de SCRUM-763 —emitir el `.js` al mutar y devolver LOS DOS— con un
+// caso en el que, sin ese mecanismo, la mutación no llegaría al código que se ejecuta.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // `esc` deja de escapar `<`. Si `dist/` no recibe la mutación, este test sigue VERDE sobre un
+    // fuente que ya no escapa: el guard parecería mudo y no lo sería.
+    fichero: 'src/core/utils/utils.ts',
+    de: "'<':'&lt;'",
+    a: "'<':'&LT;'",
+    cae: 'esc: escapa HTML peligroso y tolera null/number',
+  },
+];
