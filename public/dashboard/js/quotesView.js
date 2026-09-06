@@ -836,8 +836,38 @@ blockDelivery.appendChild(descWrapper);
     //
     // ⚠️ NO se suma al contador del 587: aquél cuenta los textos del modal de CLIENTES. Mezclar las
     // dos poblaciones haría que el mismo número significara dos cosas — el defecto de SCRUM-714.
-    const FORMA_DE_PAGO_SIN_APROBAR = 2;
+    //
+    // 🔴 6-sep-2026 · BAJA DE 2 A 1. El asesor FIRMÓ el texto de la tira; el rótulo del BOTÓN sigue
+    // sin firmar y por eso esto no baja a 0. Que el contador siga en pie con un 1 es justo lo que
+    // impide leer «ya no hay marcador que me estorbe» como «ya está aprobado todo».
+    const FORMA_DE_PAGO_SIN_APROBAR = 1;
     void FORMA_DE_PAGO_SIN_APROBAR; // se declara para que se pueda leer; no lo consume la vista
+
+    /**
+     * ✅ MICROCOPY FIRMADA POR EL ASESOR · 6-sep-2026 · el texto de la tira.
+     *
+     * **«Formas de pago pactadas»** — 23 caracteres. Firmada CON LA CAJA MEDIDA delante, en
+     * navegador real (Edge) y con los literales extraídos del propio fuente por AST:
+     *
+     *   · 929 px — bloque útil 839,0 px · texto 335,1 × 20,3 px (UNA línea, peor caso: dos métodos)
+     *   · 390 px — bloque útil 324,0 px · texto 294,0 × 40,5 px (dos líneas) · un método: 263,7 × 20,3
+     *   · el botón mantiene sus 44,0 px de alto (AB6) en las dos anchuras.
+     *
+     * 🔴 «PACTADAS» Y NO «POR DEFECTO», y el motivo es que **no se inventó una palabra: se derivó
+     * de una ya firmada**. El fundador aprobó «Descuento pactado (%)» el 4-sep-2026 en el modal de
+     * cliente y dejó escrito por qué: es la palabra del DOMINIO —un acuerdo con ESE cliente, no una
+     * preferencia de la aplicación—. Meter «por defecto» aquí habría puesto dos palabras para la
+     * misma idea a dos pantallas de distancia.
+     *
+     * 🔴 Y ES EL MISMO LITERAL QUE EL RÓTULO DEL CAMPO DEL CLIENTE, a propósito: un nombre por
+     * concepto, la regla que SCRUM-591 dejó escrita para «+ Nuevo cliente». Por eso el censo de
+     * SCRUM-402 contaba CUATRO marcadores donde había DOS frases.
+     *
+     * Su registro vive en `docs/master/SCRUM-586.md` y **NO en `docs/microcopy/`**: ese directorio
+     * es el del FUNDADOR y `constaAprobado()` lo barre (SCRUM-726), así que una firma del asesor
+     * metida ahí pasaría por la suya.
+     */
+    const FORMA_DE_PAGO_ROTULO_TIRA = "Formas de pago pactadas";
 
     const propuestaPagoWrap = document.createElement("div");
     // `info` y no `warning`, igual que la tira del 587: un acuerdo que el profesional pactó no es
@@ -924,13 +954,14 @@ blockDelivery.appendChild(descWrapper);
       if (alcance <= 0) { propuestaPagoWrap.hidden = true; return; }
       propuestaPagoWrap.hidden = false;
       propuestaPagoWrap.dataset.metodos = propuesta.join(",");
-      // 🔴 MARCADOR también aquí, y el DATO junto a él: QUÉ formas de pago se pactaron es del
-      // profesional, no es microcopy, y sin verlo la tira no le dejaría decidir nada — que es todo
-      // el punto del ticket. Los rótulos salen de `pmDefs`, los MISMOS de las casillas de arriba:
-      // escribir «Bizum» a mano aquí sería un segundo sitio donde vive el nombre de un método.
+      // ✅ TEXTO FIRMADO (ver `FORMA_DE_PAGO_ROTULO_TIRA` arriba, con su caja medida), y el DATO
+      // junto a él: QUÉ formas de pago se pactaron es del profesional, no es microcopy, y sin verlo
+      // la tira no le dejaría decidir nada — que es todo el punto del ticket. Los rótulos salen de
+      // `pmDefs`, los MISMOS de las casillas de arriba: escribir «Bizum» a mano aquí sería un
+      // segundo sitio donde vive el nombre de un método.
       const rotulos = pmDefs.filter(function (d) { return propuesta.indexOf(d.key) >= 0; })
         .map(function (d) { return d.label; }).join(" · ");
-      propuestaPagoTexto.textContent = "[PENDIENTE microcopy oficial] · " + rotulos;
+      propuestaPagoTexto.textContent = FORMA_DE_PAGO_ROTULO_TIRA + " · " + rotulos;
     }
 
     /**
