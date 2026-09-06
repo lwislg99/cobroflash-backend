@@ -297,6 +297,18 @@ const INDIRECTAS_DECLARADAS = [
   // llamada DIRECTA. Tenía razón por partida doble: el día que este ticket entre en `main` el caso
   // roto deja de estar ahí y el control se apagaría solo. El caso se congeló en un literal.
   'tests/scrum775-suelo-que-no-dispara.test.mjs',
+  // SCRUM-753 · el censo de ALCANZABILIDAD. Aquí la referencia móvil no es un descuido: es el
+  // sujeto de la pregunta —«¿está esto DENTRO de la punta de `main`?»— y contra la base de una
+  // rama contestaría sobre un pasado que no le sirve a nadie. Lo que sí hace, y es lo que este
+  // guard quiere ver, es RESOLVERLA UNA VEZ (`rev-parse`) y medir contra el sha congelado: el
+  // nombre aparece como valor por defecto del parámetro `ref` y en la prosa que explica por qué
+  // se congela, nunca como argumento de una comparación.
+  // ⚠️ El CLI (`scripts/censo-alcanzabilidad.mjs`) NO entra: se le declaró de más al primer
+  // intento y este guard lo rechazó. No nombra la referencia por su cuenta — la recibe ya
+  // resuelta en la instantánea—, y una lista que declara de más deja de describir el árbol.
+  'scripts/_censo-alcanzabilidad.mjs',
+  'tests/_fixture-alcanzabilidad.mjs',             // el `origin/main` del repo SINTÉTICO, que no es el de nadie
+  'tests/scrum753-censo-de-alcanzabilidad.test.mjs',  // los mensajes que explican la regla R10
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {

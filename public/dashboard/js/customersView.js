@@ -318,6 +318,18 @@ function renderCustomersView(container) {
     // AB6 · objetivo táctil. El `input` de fábrica mide 13px: se agranda aquí porque en el móvil
     // esta casilla es lo primero que toca el pulgar.
     cb.style.cssText = "width:18px;height:18px;cursor:pointer;accent-color:var(--brand,#16a34a)";
+    // 🔴 SCRUM-782 · Y LOS 18px DE CAJA NO SON 18px DE DEDO. Medido con `elementsFromPoint` (el
+    // árbitro de `_medidor-de-toque.mjs`, no la caja CSS): las TRES casillas —fila, cabecera y
+    // barra— daban un área de toque de **19 px** contra los 44 de AB6, a 929 y a 390. La caja de
+    // la CELDA sí llegaba a 44 en escritorio, y por eso una medición por caja las daba por buenas:
+    // pero la celda no es pulsable, sólo lo es el `input`.
+    //
+    // El área se agranda con un PSEUDO-ELEMENTO —la clase la lee `styles.css`—, que es la técnica
+    // que la landing ya usa en `.announce a::after`. Se eligió MIDIENDO los cuatro candidatos: con
+    // `border`, `padding` y `outline` transparentes el área se queda en 19 px (el `input` nativo
+    // no los cuenta para el hit-test), y con un `<label>` de 44px envolviéndolo el área pasa a
+    // pertenecer AL LABEL, no a la casilla. Sólo el pseudo sube a 45 px dejando la casilla en 18.
+    cb.className = "casilla-seleccion";
     return cb;
   }
 
