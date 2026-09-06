@@ -2,7 +2,7 @@
 
 **Fecha:** 6-sep-2026 · **Carril:** instrumentos · **Gate:** sin gate — el guard corre en `npm test`
 
-**Medido contra:** `origin/main` = `590e019d2dedb4a951237e37396d7b0c265bef23` · 2026-09-05T18:41:33+01:00
+**Medido contra:** `origin/main` = `2c155141bc27f0e450a9a1c7ca5748330b37ee39` · 2026-09-06T06:46:25+01:00
 
 ---
 
@@ -78,7 +78,7 @@ ticket.
 
 `destinoEnDist()` devuelve `null` para todo lo que no se compila —`.mjs`, el front vanilla de
 `public/`, los scripts, los `.d.ts`, un `.ts` fuera del `rootDir`— y entonces **no se compila
-nada**. De las 36 declaraciones del árbol, **31 son de esa clase y no pagan ni un milisegundo**.
+nada**. De las 39 declaraciones del árbol, **34 son de esa clase y no pagan ni un milisegundo**.
 
 Si el arreglo obligara a compilar donde no hace falta, encarecería todas las mutaciones de la casa
 por un caso que no aplica. No lo hace, y hay un test que lo sujeta.
@@ -87,7 +87,7 @@ por un caso que no aplica. No lo hace, y hay un test que lo sujeta.
 
 ## EL CENSO DE EXPOSICIÓN (punto 3 del ticket)
 
-**Población: 36 declaraciones. Sobre la frontera: 5.**
+**Población: 39 declaraciones. Sobre la frontera: 5.**
 
 | guard | fichero mutado |
 |---|---|
@@ -102,7 +102,7 @@ sido sobre `.mjs`/`.js`». Tras mezclar `main`, **ya había cinco sobre TypeScri
 no era hipotética: estaba puesta.
 
 **Sobre el «si el censo da cero, falla declarándose ciego»:** se aplica con la regla de la casa —
-*cero sobre población vacía no es un cero*. El suelo va sobre la **población** (36 declaraciones), y
+*cero sobre población vacía no es un cero*. El suelo va sobre la **población** (39 declaraciones), y
 el guard exige además **al menos una expuesta**, para que un futuro «0 expuestas» obligue a decirlo
 a mano en vez de pasar por un cero cualquiera.
 

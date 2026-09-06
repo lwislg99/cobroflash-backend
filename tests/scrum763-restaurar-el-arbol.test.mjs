@@ -47,7 +47,7 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 //
 // 🔴 ESTE ES EL CONTRASTE QUE PIDE EL TICKET, y no es un detalle de rendimiento: si el arreglo
 // obligara a compilar donde no hace falta, encarecería TODAS las mutaciones de la casa por un
-// caso que no aplica. De las 36 declaraciones de hoy, 31 son sobre ficheros sin compilación.
+// caso que no aplica. De las 39 declaraciones de hoy, 34 son sobre ficheros sin compilación.
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 test('SCRUM-763 · sólo se compila lo que se compila', () => {
   // SÍ: un `.ts` bajo el `rootDir` del proyecto.
@@ -128,7 +128,7 @@ test('SCRUM-763 · SUELO: el censo de la frontera tiene población, y un cero su
 // dato con su POBLACIÓN al lado. Aquí la población son las 31 declaraciones del árbol.
 //
 // 📌 Y CORRIGE LA PREMISA DEL TICKET, que decía «hasta ahora las mutaciones documentadas han sido
-// sobre .mjs/.js». Medido el 6-sep-2026 tras mezclar main: **5 de 36 tocan TypeScript**
+// sobre .mjs/.js». Medido el 6-sep-2026 tras mezclar main: **5 de 39 tocan TypeScript**
 // (scrum596 ×2, scrum631 ×2, scrum641 ×1). La exposición no era hipotética: ya estaba.
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 test('SCRUM-763 · el censo de exposición sabe cuántas declaraciones pisan la frontera', () => {

@@ -2,7 +2,7 @@
 
 **Fecha:** 6-sep-2026 · **Carril:** instrumentos · **Gate:** sin gate — el guard corre en `npm test`
 
-**Medido contra:** `origin/main` = `590e019d2dedb4a951237e37396d7b0c265bef23` · 2026-09-05T18:41:33+01:00
+**Medido contra:** `origin/main` = `2c155141bc27f0e450a9a1c7ca5748330b37ee39` · 2026-09-06T06:46:25+01:00
 
 ---
 
@@ -64,7 +64,7 @@ forma que la casa ya había acertado, y vive en un sitio —
 
 SCRUM-745 ya denunciaba la declaración **coja** (a la que le falta un campo). No cubría la
 **borrada entera**: eso saca al guard del censo, el recuento baja de N a N-1 y el verde de al lado
-se lee igual. Ahora hay trinquete: **15 guards · 36 declaraciones**, números que **sólo suben**.
+se lee igual. Ahora hay trinquete: **16 guards · 39 declaraciones**, números que **sólo suben**.
 
 Si alguien retira cobertura a propósito, baja el suelo **en el mismo commit** y el diff lo dice.
 
@@ -152,9 +152,10 @@ máquina es más grande que la diferencia que se le quería atribuir al cambio, 
 números el coste del cambio no es medible**. El mismo censo de la frontera ha tardado hoy entre
 **1,6 s y 12,7 s** sobre el árbol quieto: misma señal.
 
-Lo que sí está medido es la cota superior del trabajo añadido: **5 de 36 mutaciones** tocan
-TypeScript, y emitir un fichero cuesta **~6 ms** (1,7 s los 269). O sea **decenas de milisegundos**,
-no minutos. Pero eso es aritmética sobre una parte, no la medición del total, y va dicho así.
+Lo que sí está medido es la cota superior del trabajo añadido: **sólo 5 mutaciones** tocan
+TypeScript (5 de 36 cuando se midió; 5 de 39 tras el segundo merge de main), y emitir un fichero
+cuesta **~6 ms** (1,7 s los 269). O sea **decenas de milisegundos**, no minutos. Pero eso es
+aritmética sobre una parte, no la medición del total, y va dicho así.
 
 ---
 

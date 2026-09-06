@@ -78,11 +78,11 @@ export const SALIDA_NO_RESTAURADO = 3;
  *
  * SON NÚMEROS QUE SÓLO SUBEN. Se suben al adoptar el mecanismo en un guard nuevo; bajarlos es
  * retirar cobertura, y entonces el diff lo tiene que decir en voz alta. Medido en el árbol del
- * 6-sep-2026 (rama scrum-765-763, tras mezclar main): 15 guards · 36 declaraciones.
+ * 6-sep-2026 (rama scrum-765-763, tras el segundo merge de main): 16 guards · 39 declaraciones.
  * ═══════════════════════════════════════════════════════════════════════════════════════════
  */
-export const SUELO_GUARDS = 15;
-export const SUELO_DECLARACIONES = 36;
+export const SUELO_GUARDS = 16;
+export const SUELO_DECLARACIONES = 39;
 
 /**
  * SUELO ① · ¿ha encogido el censo? Devuelve el motivo, o `null` si el suelo aguanta.
