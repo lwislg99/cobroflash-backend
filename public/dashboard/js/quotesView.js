@@ -806,6 +806,170 @@ blockDelivery.appendChild(descWrapper);
       return sel;
     }
 
+    // ═══ SCRUM-586 (CONT-13) · LAS FORMAS DE PAGO PACTADAS CON EL CLIENTE, PROPUESTAS ═══════════
+    //
+    // LA VÍCTIMA: el administrador de fincas que no paga con tarjeta jamás, y el profesional que
+    // tiene que ACORDARSE de desmarcarla en cada documento. El día que se le olvida, el cliente ve
+    // un botón que su gestoría no va a pulsar y el cobro se queda esperando.
+    //
+    // 🔴 SE PROPONE. NO SE APLICA SOLO — y aquí la razón es MÁS fuerte que en la tira del 587, de
+    // la que esto deriva. Allí el estado por defecto del documento era «sin descuento» y aplicar
+    // AÑADÍA. Aquí el documento nace con LAS TRES MARCADAS, así que aplicar RESTA opciones de
+    // cobro: si el cliente sólo tiene «transferencia» y el profesional no se fija, el cobro se
+    // retrasa ENTERO. Y al revés cuesta igual, marcar tarjeta mete la comisión del 0,9 %.
+    // CUANDO APLICAR CUESTA EN AMBOS SENTIDOS, SE PROPONE (fundador, 5-sep-2026).
+    //
+    // Por eso esto es UNA TIRA CON UN BOTÓN y no una línea que marque las casillas al elegir
+    // cliente. La regla —qué se propone, qué se descarta por ilegible y cuántas casillas
+    // cambiarían— vive entera en `formaDePagoPorDefecto.js`, que la suite EJECUTA sin navegador.
+    // Aquí sólo se pinta y se llama.
+    // 🔴 EL CONTADOR DE RANURAS SIN FIRMAR DE ESTA TIRA. Es lo que distingue «no se pinta
+    // marcador» de «lo ha firmado el fundador» — la avería que cerró SCRUM-726, y el mecanismo que
+    // el 587 dejó en `DTO_POR_DEFECTO_SIN_APROBAR`. El contador vive donde vive el texto.
+    //
+    // DOS y no tres: el texto de la tira y el rótulo del botón. Los otros dos candidatos de este
+    // ticket —el rótulo y la ayuda del campo del CLIENTE— NO están en el código y por eso no se
+    // cuentan aquí: su campo no existe todavía, porque la columna sólo está aplicada en dev y
+    // `prisma/schema.prisma` es del fundador. Contarlos aquí diría que hay cuatro textos en esta
+    // pantalla, y en esta pantalla hay dos. Sus literales, con su caja medida, están en
+    // `docs/master/SCRUM-586.md`.
+    //
+    // ⚠️ NO se suma al contador del 587: aquél cuenta los textos del modal de CLIENTES. Mezclar las
+    // dos poblaciones haría que el mismo número significara dos cosas — el defecto de SCRUM-714.
+    const FORMA_DE_PAGO_SIN_APROBAR = 2;
+    void FORMA_DE_PAGO_SIN_APROBAR; // se declara para que se pueda leer; no lo consume la vista
+
+    const propuestaPagoWrap = document.createElement("div");
+    // `info` y no `warning`, igual que la tira del 587: un acuerdo que el profesional pactó no es
+    // un aviso de que algo va mal.
+    propuestaPagoWrap.className = "alert info quote-propuesta-pago";
+    propuestaPagoWrap.hidden = true;
+
+    const propuestaPagoTexto = document.createElement("span");
+    propuestaPagoTexto.className = "quote-propuesta-pago__texto";
+
+    const propuestaPagoBtn = document.createElement("button");
+    propuestaPagoBtn.type = "button";
+    propuestaPagoBtn.className = "btn-ghost btn-sm";
+    // 🔴 MARCADOR, NO TEXTO INVENTADO (regla 30), con la grafía que el censo de SCRUM-402 CUENTA
+    // (`[PENDIENTE`): un marcador que el censo no ve es peor que ninguno.
+    //
+    // El rótulo del botón NO estrena literal propio, y es una decisión: el botón del 587 dice
+    // exactamente lo mismo —«acepto la propuesta»— y sigue sin firmar. Abrir un segundo hueco de
+    // microcopy para el mismo acto le daría al asesor dos textos que firmar donde hay UNA frase.
+    propuestaPagoBtn.textContent = "[PENDIENTE microcopy oficial]";
+
+    propuestaPagoWrap.appendChild(propuestaPagoTexto);
+    propuestaPagoWrap.appendChild(propuestaPagoBtn);
+    blockDelivery.appendChild(propuestaPagoWrap);
+
+    /**
+     * Las casillas marcadas AHORA, todas.
+     *
+     * NO es `selectedPayMethods`, y la diferencia es la razón de que exista: aquélla devuelve
+     * `undefined` cuando están las tres, porque es lo que el PAYLOAD necesita para decir «sin
+     * límite». Aquí hace falta la lista de verdad, porque lo que se hace con ella es COMPARARLA
+     * con lo pactado — y `undefined` y «las tres» no se pueden comparar con nada.
+     */
+    function seleccionDePagoActual() {
+      return pmDefs.filter(function (d) { return pmChecks[d.key].checked; }).map(function (d) { return d.key; });
+    }
+
+    /**
+     * 🔴 LO PACTADO, RECORTADO A LO QUE ESTE MERCHANT PUEDE OFRECER HOY.
+     *
+     * Arriba, en `loadInitialData`, hay un bloque llamado «checkboxes de métodos HONESTOS»: sin
+     * IBAN, la casilla de transferencia se DESMARCA y se DESACTIVA con su motivo, para no dejar
+     * ofrecer algo que no va a salir. Sin este recorte, un cliente con «transferencia» pactada
+     * haría que la tira propusiera justo eso, y el clic marcaría una casilla desactivada —
+     * `selectedPayMethods` la lee por `.checked` y NO mira `disabled`, así que el método viajaría
+     * en el payload. Es decir: este ticket desharía esa honestidad desde otra pantalla, y el
+     * cliente vería una forma de pago que su profesional no tiene configurada.
+     *
+     * Se recorta ANTES de calcular el alcance, no sólo al aplicar: si no, la tira contaría como
+     * «cambiaría 1 casilla» algo que el clic no puede cambiar, y se quedaría visible para siempre
+     * ofreciendo lo mismo.
+     */
+    function metodosOfrecibles() {
+      return pmDefs.filter(function (d) { return !pmChecks[d.key].disabled; }).map(function (d) { return d.key; });
+    }
+
+    function propuestaOfrecible(propuesta) {
+      if (!Array.isArray(propuesta)) return null;
+      const puede = metodosOfrecibles();
+      const recortada = propuesta.filter(function (m) { return puede.indexOf(m) >= 0; });
+      // Si no queda NADA que se pueda ofrecer, no hay propuesta. Proponer la lista vacía sería
+      // proponer un documento que el cliente no puede pagar.
+      return recortada.length ? recortada : null;
+    }
+
+    /**
+     * 🔴 ESTA FUNCIÓN NO APLICA NADA, y el nombre lo dice. Decide si la tira se ve y con qué texto.
+     *
+     * Si algún día alguien mete aquí la aplicación «porque es más cómodo», el ticket se ha roto:
+     * el guard de ALCANZABILIDAD de `tests/scrum586-forma-de-pago-por-cliente.test.mjs` cae, y cae
+     * también si la llamada llega por una función intermedia.
+     */
+    function refrescarPropuestaDeFormaDePago() {
+      const M = window.formaDePagoPorDefecto;
+      // Sin la pieza —o con un cliente sin nada pactado— la tira no existe y el editor se comporta
+      // EXACTAMENTE como antes de este ticket. Es el caso normal, no una degradación.
+      if (!M) { propuestaPagoWrap.hidden = true; return; }
+      // `clienteElegido` es la del 587 y NO se escribe una segunda: con dos formas de saber qué
+      // cliente hay elegido, una se quedaría atrás el día que cambie el selector.
+      const cliente = clienteElegido();
+      const propuesta = propuestaOfrecible(M.propuestaPara(cliente));
+      const alcance = M.hayPropuesta(cliente) && propuesta
+        ? M.alcanceDe(seleccionDePagoActual(), propuesta) : 0;
+      if (alcance <= 0) { propuestaPagoWrap.hidden = true; return; }
+      propuestaPagoWrap.hidden = false;
+      propuestaPagoWrap.dataset.metodos = propuesta.join(",");
+      // 🔴 MARCADOR también aquí, y el DATO junto a él: QUÉ formas de pago se pactaron es del
+      // profesional, no es microcopy, y sin verlo la tira no le dejaría decidir nada — que es todo
+      // el punto del ticket. Los rótulos salen de `pmDefs`, los MISMOS de las casillas de arriba:
+      // escribir «Bizum» a mano aquí sería un segundo sitio donde vive el nombre de un método.
+      const rotulos = pmDefs.filter(function (d) { return propuesta.indexOf(d.key) >= 0; })
+        .map(function (d) { return d.label; }).join(" · ");
+      propuestaPagoTexto.textContent = "[PENDIENTE microcopy oficial] · " + rotulos;
+    }
+
+    /**
+     * 🔴 LA MITAD QUE APLICA, Y SE ALCANZA SÓLO DESDE EL CLIC.
+     *
+     * Está separada de la de arriba a propósito: es la frontera entre PROPONER y APLICAR, y es lo
+     * que un futuro «pulido» tiraría sin enterarse. Sustituye la selección entera en vez de
+     * rellenar huecos —al revés que su hermana del 587— porque una casilla no tiene estado
+     * «vacío»: «las tres marcadas» es a la vez el valor de fábrica y una elección deliberada, y
+     * desde el dato no se distinguen. Lo que da el consentimiento no puede ser una heurística:
+     * es EL CLIC.
+     */
+    function aceptarPropuestaDeFormaDePago() {
+      const M = window.formaDePagoPorDefecto;
+      if (!M) return;
+      const propuesta = propuestaOfrecible(M.propuestaPara(clienteElegido()));
+      // La pieza pura decide QUÉ queda marcado; aquí sólo se escriben las casillas.
+      const despues = M.aplicarA(seleccionDePagoActual(), propuesta);
+      pmDefs.forEach(function (d) {
+        // Una casilla DESACTIVADA no se toca ni para marcarla ni para desmarcarla: la desactivó
+        // el bloque de «checkboxes honestos» porque el merchant no tiene cómo cobrar por ahí.
+        if (pmChecks[d.key].disabled) return;
+        pmChecks[d.key].checked = despues.indexOf(d.key) >= 0;
+      });
+      // Aceptada, la tira desaparece: ya no queda nada que proponer.
+      propuestaPagoWrap.hidden = true;
+      renderPreview();
+      scheduleDraftSave();
+    }
+
+    propuestaPagoBtn.addEventListener("click", aceptarPropuestaDeFormaDePago);
+
+    // Y si el profesional toca las casillas a mano, la tira se recalcula: en cuanto llega por su
+    // cuenta a lo pactado, deja de ofrecerle lo que ya tiene. Sin esto la tira se quedaría
+    // enseñando una propuesta que ya no cambiaría ni una casilla.
+    pmDefs.forEach(function (d) {
+      pmChecks[d.key].addEventListener("change", refrescarPropuestaDeFormaDePago);
+    });
+
     // A20.4 (PV-FIX-CAMPOS): qué datos del cliente se MUESTRAN en el documento.
     // Default: todos marcados (comportamiento de siempre; solo salen si existen).
     const docFieldsWrapper = document.createElement("div");
@@ -3536,6 +3700,11 @@ if (Number.isFinite(n) && n >= 0) {
         }
       }
       if (!draftRestored) setAlert(null, "");
+      // SCRUM-586 (CONT-13): la lista de clientes acaba de llegar y el borrador ya ha puesto su
+      // cliente, así que ÉSTE es el primer momento en que se puede saber si hay algo pactado. Sin
+      // esta llamada, un borrador restaurado no propondría NADA hasta que el profesional volviera
+      // a tocar el selector — y para entonces ya habría enviado el documento.
+      refrescarPropuestaDeFormaDePago();
       renderPreview();
     } catch (err) {
       setAlert("error", "Error cargando datos: " + err.message);
@@ -3558,6 +3727,10 @@ if (Number.isFinite(n) && n >= 0) {
     // SCRUM-587: cambiar de cliente cambia el acuerdo, así que la propuesta se recalcula aquí.
     // Sólo se PROPONE: nada de esto escribe en las líneas.
     refrescarPropuestaDeDescuento();
+    // SCRUM-586 (CONT-13): y lo mismo con las formas de pago pactadas. Es REFRESCAR, no aplicar —
+    // esta llamada no puede marcar ni desmarcar una casilla, y el guard de alcanzabilidad del test
+    // cae si alguien la convierte en una que sí.
+    refrescarPropuestaDeFormaDePago();
     // SCRUM-602 · al cambiar de cliente cambia la PISTA del placeholder: la dirección de
     // facturación es de ESE cliente, y dejar la del anterior sugeriría la dirección equivocada.
     refrescarDireccionObra();
