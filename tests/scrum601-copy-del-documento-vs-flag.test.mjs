@@ -36,7 +36,7 @@ const cierreTipo = portadoresDelFlag(RAIZ, SEMILLA_TIPO);
 const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 
 /**
- * EL VEREDICTO, ANCLADO. Medido el 6-sep-2026 sobre `main` = 7f8c48d8.
+ * EL VEREDICTO, ANCLADO. Medido el 6-sep-2026 sobre `main` = 00c6cb0c (re-medido tras mezclarlo: la población pasó a 356 ficheros y 19.978 literales, y el reparto NO se movió).
  *
  *   ① FLAG — el texto lo elige, EN CÓDIGO, una condición que baja del flag.
  *   ② TIPO — lo elige el `type` del documento ya emitido. La dependencia es real pero pasa por
@@ -135,7 +135,7 @@ test('SCRUM-601 · EL VEREDICTO: las tres categorías, ancladas, y SUMAN', () =>
  * puede afirmar desde el fuente. NO son un fallo del árbol ni se aprueban — son el límite del
  * instrumento, y va escrito con su número para que crecer sea visible.
  *
- * Medido el 6-sep-2026 sobre `main` = 7f8c48d8.
+ * Medido el 6-sep-2026 sobre `main` = 00c6cb0c (re-medido tras mezclarlo: la población pasó a 356 ficheros y 19.978 literales, y el reparto NO se movió).
  */
 const NO_LEGIBLES_AL_MEDIR = 33;
 
