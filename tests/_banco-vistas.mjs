@@ -247,11 +247,13 @@ export function nodo(tag, reg) {
     // Se apoya en el mismo parser que `innerHTML` —no se escribe un segundo— y respeta las
     // cuatro posiciones del estándar. `beforebegin`/`afterend` necesitan padre: sin él el
     // navegador NO hace nada, y aquí tampoco, en vez de inventarse un sitio donde ponerlo.
-    insertAdjacentHTML(posicion, html) {
-      const cuna = nodo('div', reg);
-      cuna.innerHTML = String(html ?? '');
-      const nuevos = cuna.hijos.slice();
-      for (const h of nuevos) h._padre = null;
+    /**
+     * SCRUM-760 · LA COLOCACIÓN, EN UN SOLO SITIO. La usan `insertAdjacentHTML` y
+     * `insertAdjacentElement`: son la MISMA regla del estándar con distinta materia prima, y
+     * escribirla dos veces es cómo una de las dos se queda atrás el día que alguien corrija un
+     * borde. Recibe los nodos YA desenganchados de su cuna.
+     */
+    _colocarAdyacente(posicion, nuevos, quien) {
       const dentro = (i) => { for (const h of nuevos) { desengancha(h); h._padre = n; } n.hijos.splice(i, 0, ...nuevos); };
       const fuera = (desplaza) => {
         const p = n._padre;
@@ -267,7 +269,31 @@ export function nodo(tag, reg) {
       else if (donde === 'afterend') fuera(1);
       // Una posición que no existe NO se trata como `beforeend`: el navegador lanza, y adivinar
       // aquí pondría el marcado en un sitio que el producto no pidió.
-      else throw new SyntaxError(`insertAdjacentHTML: posición no válida «${posicion}»`);
+      else throw new SyntaxError(`${quien}: posición no válida «${posicion}»`);
+    },
+    insertAdjacentHTML(posicion, html) {
+      const cuna = nodo('div', reg);
+      cuna.innerHTML = String(html ?? '');
+      const nuevos = cuna.hijos.slice();
+      for (const h of nuevos) h._padre = null;
+      n._colocarAdyacente(posicion, nuevos, 'insertAdjacentHTML');
+    },
+    /**
+     * 🔴 SCRUM-760 · `insertAdjacentElement`. NO EXISTÍA, y por eso `attachVoiceInput` REVENTABA
+     * en cuanto una vista pintaba el micro (`voiceInput.js:85-86`): **el camino del DICTADO
+     * entero era inalcanzable para el banco**, que es justo lo que este ticket tiene que poder
+     * mirar. Y no era sólo la voz — `productsView.js:1036` lo llama SIN CONDICIÓN.
+     *
+     * Es el mismo hueco que `prepend` (SCRUM-460), `parentNode` (SCRUM-609) e
+     * `insertAdjacentHTML` (SCRUM-698): una pantalla fuera del alcance del banco por una API que
+     * el banco no tenía, no por nada del producto. Se corrige AQUÍ y no se rodea desde el test.
+     *
+     * Devuelve el elemento insertado, como el estándar.
+     */
+    insertAdjacentElement(posicion, el) {
+      if (!el) return null;
+      n._colocarAdyacente(posicion, [el], 'insertAdjacentElement');
+      return el;
     },
     // ⚠️ SCRUM-444 · `children`, `firstElementChild` y un `remove()` QUE DE VERDAD QUITA.
     //
@@ -766,6 +792,11 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'exportView.js',
   'facturaPreEmision.js',
   'filtroClientes.js',
+  // SCRUM-586 (CONT-13) · las formas de pago pactadas con el cliente, PROPUESTAS. Va ANTES de
+  // `quotesView.js`, que le pide la propuesta al elegir cliente. A diferencia de su hermana del
+  // 587, NO cuelga de `quoteDescuentos.js` —aquí no hay aritmética que leer—, así que declara UNA
+  // sola relación de orden y no dos.
+  'formaDePagoPorDefecto.js',
   'globalSearch.js',
   'homeView.js',
   'invoiceActionsRegistry.js',
@@ -869,6 +900,12 @@ export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   // ella LANZA en vez de improvisar una segunda, así que el rojo saldría en la pantalla.
   { antes: 'quoteDescuentos.js', despues: 'descuentoPorDefecto.js', motivo: 'SCRUM-587: lee `dtoDeLinea` y no reimplementa la aritmética' },
   { antes: 'descuentoPorDefecto.js', despues: 'quotesView.js', motivo: 'SCRUM-587: el editor le pide la propuesta al elegir cliente' },
+  // SCRUM-586 (CONT-13): UNA sola dirección, y la ausencia de la segunda es la diferencia con la
+  // línea de arriba. La pieza no lee aritmética de nadie, así que no tiene un «antes» del que
+  // colgar; lo que sí rompería el producto es cargarla DESPUÉS del editor, porque entonces
+  // `window.formaDePagoPorDefecto` no existe cuando el editor se monta y la tira no aparecería
+  // JAMÁS — en silencio y con la tanda verde, que es el modo en que este defecto se esconde.
+  { antes: 'formaDePagoPorDefecto.js', despues: 'quotesView.js', motivo: 'SCRUM-586: el editor le pide la propuesta al elegir cliente' },
   // SCRUM-606 (ALB-01) · las TRES del buscador de presupuesto. La del rótulo no es cosmética:
   // el modal titula con `atajoNuevo.textoDe('albaranes')`, así que si se cargara antes se
   // quedaría sin título y el marcador de microcopy sin firmar no se vería en pantalla.
