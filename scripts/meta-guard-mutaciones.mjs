@@ -231,7 +231,7 @@ export function paso(resultado, nombre) {
  * Y de propina cierra un caso que antes no se veía: una declaración que nombra un test
  * **renombrado o borrado** salía MUDA —acusaba al guard— y ahora sale CIEGA, que es lo que es.
  */
-async function correr(guard) {
+export async function correr(guard) {
   const pasados = [];
   const caidos = [];
   const flujo = run({
@@ -250,7 +250,164 @@ async function correr(guard) {
   return { pasados, caidos };
 }
 
-async function aplicarUna(mut, guard, limpia) {
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * EL ALCANCE DEL AGUJERO: ¿cuántas declaraciones tienen un test que EJECUTA `dist/`?
+ *
+ * No es la misma pregunta que «¿cuántas mutan un `.ts`?» (eso lo contesta
+ * `censoDeExposicionATypeScript`). Una declaración puede mutar un `.ts` y que su test lea el
+ * FUENTE —buscar una forma en el `.ts` por AST o por texto—, y entonces la frontera `src/`↔`dist/`
+ * no la toca. La expuesta de verdad es aquella cuyo test **importa de `dist/`**: sin emitir el
+ * `.js`, esa mutación no llega al código que se ejecuta y el guard sale MUDO sin serlo.
+ *
+ * 🔴 SE MIRA SOBRE EL CÓDIGO, NO SOBRE EL FICHERO ENTERO. `dist/` aparece en comentarios por todo
+ * el árbol —este mismo párrafo lo escribe cuatro veces—, y el AST no ve comentarios.
+ * Y se sigue la cadena de helpers: `scrum641` no nombra `dist/`, pero importa `_banco-vistas.mjs`,
+ * que sí. Un censo que no siguiera esa flecha diría «no lee dist» de un fichero que muere sin él.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+const arbolDe = (codigo, nombre) =>
+  ts.createSourceFile(nombre, codigo, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+
+/**
+ * ¿Este código nombra `dist/` en alguna CADENA suya?
+ *
+ * 🔴 POR AST Y SOBRE LITERALES, no por `grep`. Los comentarios del árbol escriben `dist/` a
+ * puñados —este fichero el primero— y el AST no los ve. Cubre las dos formas reales:
+ * `'../dist/x.js'` (el import) y `path.join(RAIZ, 'dist', …)` (la ruta montada a trozos).
+ */
+export function leeDistEnTexto(codigo, nombre = 'x.mjs') {
+  const sf = arbolDe(codigo, nombre);
+  let visto = false;
+
+  /** ¿Es este literal un TROZO DE RUTA, o sólo una palabra? Lo dice quién lo usa. */
+  const esTrozoDeRuta = (n) => {
+    const padre = n.parent;
+    if (!padre || !ts.isCallExpression(padre)) return false;
+    const f = padre.expression;
+    const nombreLlamada = ts.isPropertyAccessExpression(f) ? f.name.text
+      : (ts.isIdentifier(f) ? f.text : '');
+    return nombreLlamada === 'join' || nombreLlamada === 'resolve';
+  };
+
+  const v = (n) => {
+    if (ts.isStringLiteralLike(n)) {
+      // ① `'../dist/x.js'` — el import, que no admite otra lectura.
+      if (/(^|[^\w.])(\.\.\/)?dist\//.test(n.text)) visto = true;
+      // ② `path.join(RAIZ, 'dist', …)` — la ruta montada a trozos.
+      //
+      // 🔴 UN `'dist'` A SECAS NO BASTA, Y ESTO ESTÁ MEDIDO. En `tests/` hay 43 literales `'dist'`
+      // y tienen DOS significados opuestos: la mayoría EXCLUYE el directorio de un barrido
+      // (`SKIP_DIRS`, `if (e.name === 'dist') continue`) y el resto CONSTRUYE la ruta para
+      // importarlo (`pathToFileURL(path.join(RAIZ, 'dist'))`). Contar los dos igual metió a
+      // `scrum751` entre los lectores de `dist/` cuando su helper hace justo lo contrario:
+      // saltárselo. Los distingue QUIÉN LOS USA, no el literal.
+      else if (n.text === 'dist' && esTrozoDeRuta(n)) visto = true;
+    }
+    ts.forEachChild(n, v);
+  };
+  v(sf);
+  return visto;
+}
+
+/**
+ * Especificadores `./x.mjs` que este código IMPORTA de verdad — estático o dinámico.
+ *
+ * 🔴 TIENE QUE SER AST. La primera versión casaba cualquier literal `'./algo.mjs'` y se comió un
+ * DATO: `scrum740-carrera-por-el-arbol.test.mjs` lleva `'./x.mjs'` como nombre de fichero de
+ * mentira para su banco de pruebas, el censo intentó abrirlo y se declaró CIEGO con un ENOENT.
+ * Se declaró ciego —que es lo correcto— pero por un defecto suyo, no del árbol.
+ */
+export function importsHermanos(codigo, nombre = 'x.mjs') {
+  const sf = arbolDe(codigo, nombre);
+  const out = [];
+  const v = (n) => {
+    if (ts.isImportDeclaration(n) && ts.isStringLiteralLike(n.moduleSpecifier)) {
+      out.push(n.moduleSpecifier.text);
+    } else if (ts.isCallExpression(n) && n.expression.kind === ts.SyntaxKind.ImportKeyword
+        && n.arguments[0] && ts.isStringLiteralLike(n.arguments[0])) {
+      out.push(n.arguments[0].text);
+    }
+    ts.forEachChild(n, v);
+  };
+  v(sf);
+  return out.filter((s) => s.startsWith('./') && s.endsWith('.mjs'));
+}
+
+/**
+ * ¿Este guard llega a `dist/`, por sí mismo o por un helper suyo? Devuelve el CAMINO, para que el
+ * censo diga POR DÓNDE y no sólo que sí.
+ */
+export function rastroDeDist(nombre, dir = DIR_TESTS, vistos = new Set()) {
+  if (vistos.has(nombre)) return { lee: false, por: null };
+  vistos.add(nombre);
+  const codigo = fs.readFileSync(path.join(dir, nombre), 'utf8'); // si no se puede leer, revienta
+  if (leeDistEnTexto(codigo)) return { lee: true, por: nombre };
+  for (const esp of importsHermanos(codigo)) {
+    const r = rastroDeDist(path.basename(esp), dir, vistos);
+    if (r.lee) return { lee: true, por: `${nombre} → ${r.por}` };
+  }
+  return { lee: false, por: null };
+}
+
+/** El censo, con su población delante y sus ilegibles aparte: un cero suyo tiene que ser legible. */
+export function censoDeLectoresDeDist(dir = DIR_TESTS) {
+  const leen = [];
+  const noLeen = [];
+  const noLegibles = [];
+  for (const { guard, mutaciones } of censoDeDeclaraciones(dir)) {
+    if (!mutaciones.length) continue;
+    let r;
+    try {
+      r = rastroDeDist(guard, dir);
+    } catch (e) {
+      // 🔴 NO se cuenta como «no lee dist»: eso convertiría un fallo de lectura en un dato.
+      noLegibles.push({ guard, porque: e.message });
+      continue;
+    }
+    for (const m of mutaciones) (r.lee ? leen : noLeen).push({ guard, fichero: m.fichero, cae: m.cae, por: r.por });
+  }
+  return { poblacion: leen.length + noLeen.length, leen, noLeen, noLegibles };
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 QUÉ HAY QUE DEVOLVER AL ÁRBOL DESPUÉS DE UNA MUTACIÓN — y por qué son DOS piezas.
+ *
+ * Restaurar el fuente NO es restaurar el árbol (SCRUM-763). Si el fichero mutado se compila, el
+ * código que ejecutan los tests es su `.js` de `dist/`, y ése no lo devuelve ninguna restauración
+ * del fuente: `Buffer.compare` sobre el fuente da 0 sobre un árbol que sigue mutado.
+ *
+ * Vive FUERA de `aplicarUna` para que se le pueda exigir el rojo sin fabricar un `src/` de
+ * mentira: la pieza de `dist` se puede pedir, contar y provocar desde un test. Estaba EJERCITADA
+ * por las declaraciones sobre TypeScript, y ejercitada no es vigilada.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+export function piezasARestaurar({ fichero, abs, ORIGINAL, destino, absDist, ORIGINAL_DIST }) {
+  const piezas = [{ ruta: fichero, abs, ORIGINAL }];
+  // Sólo hay segunda pieza si el fichero se COMPILA. Para un `.mjs` no hay árbol ejecutable
+  // detrás, y pedir uno encarecería todas las mutaciones de la casa por un caso que no aplica.
+  if (absDist && ORIGINAL_DIST) piezas.push({ ruta: destino, abs: absDist, ORIGINAL: ORIGINAL_DIST });
+  return piezas;
+}
+
+/**
+ * Devuelve cada pieza a sus BYTES originales y lo VERIFICA leyendo el disco otra vez. Devuelve la
+ * lista de las que no cuadraron — vacía si todo volvió a su sitio.
+ *
+ * No traga fallos de escritura: si una pieza no se puede escribir, revienta. Un restaurador que
+ * devuelve «todo bien» porque no pudo ni intentarlo es peor que no tenerlo.
+ */
+export function restaurarYVerificar(piezas) {
+  const sinRestaurar = [];
+  for (const p of piezas) {
+    fs.writeFileSync(p.abs, p.ORIGINAL);
+    if (Buffer.compare(fs.readFileSync(p.abs), p.ORIGINAL) !== 0) sinRestaurar.push(p.ruta);
+  }
+  return sinRestaurar;
+}
+
+export async function aplicarUna(mut, guard, limpia) {
   const abs = path.join(RAIZ, mut.fichero);
   if (!fs.existsSync(abs)) return { ok: false, ciego: `el fichero \`${mut.fichero}\` no existe` };
 
@@ -319,15 +476,8 @@ async function aplicarUna(mut, guard, limpia) {
       ? { ok: true }
       : { ok: false, mudo: `el guard NO cayó. Test que debía ponerse rojo: «${mut.cae}»` };
   } finally {
-    // 🔴 LA RESTAURACIÓN ES DE LOS DOS, Y SE VERIFICA POR BYTES EN LOS DOS. Verificar sólo el
-    // fuente es el verde falso de SCRUM-763: da 0 sobre un árbol que sigue mutado.
-    fs.writeFileSync(abs, ORIGINAL);
-    const sinRestaurar = [];
-    if (Buffer.compare(fs.readFileSync(abs), ORIGINAL) !== 0) sinRestaurar.push(mut.fichero);
-    if (absDist && ORIGINAL_DIST) {
-      fs.writeFileSync(absDist, ORIGINAL_DIST);
-      if (Buffer.compare(fs.readFileSync(absDist), ORIGINAL_DIST) !== 0) sinRestaurar.push(destino);
-    }
+    const sinRestaurar = restaurarYVerificar(
+      piezasARestaurar({ fichero: mut.fichero, abs, ORIGINAL, destino, absDist, ORIGINAL_DIST }));
     if (sinRestaurar.length) {
       console.error(`🔴🔴 NO PUDE RESTAURAR \`${sinRestaurar.join('` y `')}\`. `
         + 'MÍRALO A MANO ANTES DE SEGUIR.');
