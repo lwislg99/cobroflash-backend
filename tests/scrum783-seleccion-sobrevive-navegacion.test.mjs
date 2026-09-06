@@ -26,6 +26,7 @@ import ts from 'typescript';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 // 🔴 EL LECTOR OFICIAL de mutaciones, importado y no reescrito.
 import { mutacionesDeclaradas } from '../scripts/meta-guard-mutaciones.mjs';
+import { ocurrenciasEnElRepositorio } from './_ancla-en-el-repositorio.mjs'; // SCRUM-796
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const VISTA = path.join(RAIZ, 'public/dashboard/js/customersView.js');
@@ -264,9 +265,11 @@ test('SCRUM-783 · 🔴 el LECTOR OFICIAL del meta-guard VE mis mutaciones, y la
   // Y que cada `de` exista UNA vez, y que cada `cae` nombre un test de este fichero.
   const nombres = [...fs.readFileSync(ESTE_FICHERO, 'utf8').matchAll(/^test\('([^']+)'/gm)].map((x) => x[1]);
   for (const m of MUTACIONES_QUE_ME_TUMBAN) {
-    const src = fs.readFileSync(path.join(RAIZ, m.fichero), 'utf8');
-    assert.equal(src.split(m.de).length - 1, 1,
-      `🔴 el texto de «${m.cae}» aparece ${src.split(m.de).length - 1} veces en ${m.fichero}; hace falta UNA.`);
+    // 🔴 SCRUM-796 · en el fuente del REPOSITORIO: el arnés reescribe la copia de trabajo.
+    const oc = ocurrenciasEnElRepositorio(m, RAIZ);
+    assert.ok(oc.medible, `🔴 CIEGO: no puedo contar el ancla de «${m.cae}» — ${oc.motivo}`);
+    assert.equal(oc.veces, 1,
+      `🔴 el texto de «${m.cae}» aparece ${oc.veces} veces en ${m.fichero} (${oc.origen}); hace falta UNA.`);
     assert.ok(nombres.some((n) => n.includes(m.cae)),
       `🔴 la mutación dice que cae «${m.cae}» y ningún test de este fichero se llama así: saldría CIEGA.`);
   }

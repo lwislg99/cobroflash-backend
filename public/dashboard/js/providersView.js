@@ -233,6 +233,24 @@ function renderProvidersView(container) {
     const phoneI = form.querySelector('input[name="phone"]');
     const emailI = form.querySelector('input[name="email"]');
     const notesI = form.querySelector('input[name="notes"]');
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    // 🔴 ESTA PANTALLA **NO** LLEVA EL ATAJO «N», Y NO ES UN HUECO. Decisión del fundador,
+    // 6-sep-2026 (SCRUM-769), con estas palabras:
+    //
+    //     «Colgar N de un botón que confirma es atar una tecla a un guardado. N abre, no guarda.»
+    //
+    // El motivo, medido antes de decidirlo: aquí NO hay un botón que ABRA un alta. El formulario
+    // está SIEMPRE visible —bajo el título «Nuevo proveedor», unas líneas más arriba— y este botón
+    // es su ENVÍO: lee los campos y crea; sin nombre devuelve `name_required`.
+    // `atajoNuevo.registrar` ata la tecla a `boton.click()`, así que la «N» intentaría crear con el
+    // formulario a medias.
+    //
+    // Por lo mismo, su RÓTULO tampoco se toca: dejaría el mismo texto dos veces en la misma
+    // tarjeta —título del bloque y botón— y además diría «abrir» donde se confirma.
+    //
+    // ⛔ Si vienes a «arreglar el hueco»: no lo es. Lo que haría falta primero es un botón que
+    //    abra el alta; entonces el atajo tendría a qué colgarse. Ver `docs/master/SCRUM-769.md`.
+    // ═══════════════════════════════════════════════════════════════════════════════════════
     const createBtn = form.querySelector("#pf-create-provider");
   
     const tableWrap = document.createElement("div");

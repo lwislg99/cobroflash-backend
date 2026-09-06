@@ -309,11 +309,25 @@ export async function correr(guard) {
   // ⚠️ EL FLUJO HAY QUE CONSUMIRLO. Con sólo suscribirse a `test:pass` no arranca: salen CERO
   // eventos y estado 0, que es un «no hay» indistinguible de un «no supe mirar». Cazado al
   // medir esto, y por eso la sonda llevaba control positivo.
+  // 📌 SCRUM-788 (medición, no veredicto): se guarda TAMBIÉN de qué murió cada caído. Un
+  // `AssertionError` dice que el test llegó a comprobar algo; un `SyntaxError`, un
+  // `ERR_MODULE_NOT_FOUND` o un `TypeError` dicen que se rompió el andamio y el test no llegó a
+  // opinar. Es el dato que separa cobertura de arrastre, y hasta hoy se tiraba.
+  const errores = {};
   for await (const ev of flujo) {
     if (ev.type === 'test:pass') pasados.push(ev.data.name);
-    else if (ev.type === 'test:fail') caidos.push(ev.data.name);
+    else if (ev.type === 'test:fail') {
+      caidos.push(ev.data.name);
+      const e = ev.data?.details?.error;
+      const causa = e?.cause;
+      errores[ev.data.name] = {
+        nombre: causa?.name || e?.name || null,
+        code: causa?.code || e?.code || null,
+        mensaje: String(causa?.message || e?.message || '').slice(0, 160),
+      };
+    }
   }
-  return { pasados, caidos };
+  return { pasados, caidos, errores };
 }
 
 /**
@@ -539,10 +553,16 @@ export async function aplicarUna(mut, guard, limpia) {
     if (absDist) fs.writeFileSync(absDist, emitirDesdeFuente(abs, mutado, RAIZ));
     const tras = await correr(guard);
     if (cayo(tras, mut.cae)) {
-      // 📌 SCRUM-784 (medición, no veredicto): cuántos OTROS tests se han caído además del que la
-      // declaración nombra. Hoy no cambia nada; se imprime porque hasta ahora era invisible.
-      const colaterales = tras.caidos.filter((n) => !n.includes(mut.cae)).length;
-      resultado = { ok: true, colaterales };
+      // 📌 SCRUM-784 (medición, no veredicto): qué OTROS tests se han caído además del que la
+      // declaración nombra. Hoy no cambia nada; se cuenta porque hasta entonces era invisible.
+      //
+      // SCRUM-788: se devuelven también los NOMBRES. Un recuento dice CUÁNTOS y no deja
+      // clasificarlos, y clasificarlos era la mitad del ticket: sin los nombres no se puede
+      // distinguir la cobertura legítima del radio demasiado ancho.
+      const colateralesNombres = tras.caidos.filter((n) => !n.includes(mut.cae));
+      // `tras` viaja entero para que quien mida pueda mirar de QUÉ murió cada caído sin repetir
+      // la pasada. No lo usa ningún veredicto.
+      resultado = { ok: true, colaterales: colateralesNombres.length, colateralesNombres, tras };
     } else if (murioElFichero(tras, guard)) {
       // 🔴 EL CUARTO VEREDICTO. No es MUDO: el guard se puso rojo. Pero tampoco se ha medido lo
       // que se quería medir, porque el test declarado no llegó a reportarse.

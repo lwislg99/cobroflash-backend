@@ -1122,11 +1122,21 @@ blockDelivery.appendChild(descWrapper);
   lhText.textContent = "Añade los conceptos que vas a presupuestar.";
   linesHeader.appendChild(lhText);
 
-  const addLineBtn = document.createElement("button");
-  addLineBtn.type = "button";
-  addLineBtn.className = "btn btn-secondary";
-  addLineBtn.textContent = "+ Añadir línea";
-  linesHeader.appendChild(addLineBtn);
+  // 🔴 SCRUM-794 · AQUÍ HABÍA UN SEGUNDO «+ Añadir línea», y se ha BORRADO.
+  //
+  // Eran DOS botones con el MISMO rótulo y la MISMA función (los dos colgaban de
+  // `addLineAndFocus`): éste, suelto entre el texto de la sección y la fila de plantillas, y el de
+  // abajo, a ancho completo pegado a la última línea. El fundador firmó quedarse con el de abajo.
+  //
+  // Medido antes de borrarlo, en navegador y por `elementsFromPoint`: los DOS estaban pintados y
+  // alcanzables en las cuatro combinaciones (3 y 4 líneas × 929 y 390 px). Y éste, además,
+  // INCUMPLÍA AB6 a 929 px: caja de 120,6 × 36 y área de toque de 36,8 px contra los 44. El que
+  // se queda da 44,9. O sea que borrarlo no sólo quita el duplicado: quita un táctil corto.
+  //
+  // ⚠️ Y NO ERA EL ÚNICO CAMINO EN NINGÚN ESTADO — que es lo que había que comprobar antes de
+  // tocar: el estado de CERO líneas no existe (se arranca con `LINEAS_CUADERNILLO` = 3 y borrar la
+  // última la vacía en vez de quitarla), y ninguno de los dos botones era condicional: los dos se
+  // añadían al montar, fuera de todo `if` y de todo bucle.
 
   const aiBtn = document.createElement("button");
   aiBtn.type = "button";
@@ -3386,7 +3396,9 @@ if (Number.isFinite(n) && n >= 0) {
     nueva.scrollIntoView({ block: "nearest" });
   }
 
-  addLineBtn.addEventListener("click", addLineAndFocus);
+  // SCRUM-794: aquí había también `addLineBtn.addEventListener(…)`, el del botón de arriba que se
+  // ha borrado. El de abajo conserva EXACTAMENTE el mismo manejador, así que el comportamiento del
+  // que queda no cambia ni una línea.
   addLineBtnBottom.addEventListener("click", addLineAndFocus);
 
   // Botón IA — añade las líneas sugeridas por Claude
