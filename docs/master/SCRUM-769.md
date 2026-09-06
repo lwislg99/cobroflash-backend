@@ -195,3 +195,174 @@ ahora el botón y el título de lo que abre ya no dicen lo mismo. Se dice y se d
 | `tests/scrum768-listas-sin-atajo.test.mjs` | la lista baja a tres, las registradas suben a seis, y nace el suelo de la población |
 | `docs/microcopy/2026-09-06-SCRUM-769-las-cinco-pantallas.md` | **nuevo** · las cinco firmas, dos aplicadas y tres no |
 | `docs/master/SCRUM-769.md` | **nuevo** · esta entrada |
+
+---
+
+# APÉNDICE · 6-sep-2026 · la firma llegó, y con ella lo que faltaba
+
+**Medido contra:** `origin/main` = `95be56e4dd523b45d3046bda8cf09578ff953ab8` · 2026-09-06T21:39:27+01:00
+**Tanda (árbol ya mezclado con `95be56e4…`):** `npm run build` + `node --test --test-reporter=tap
+tests/*.test.mjs` → **5699 pruebas · 5603 en verde · 0 rojas · 96 saltadas** · 228,8 s · salida 0.
+
+Los **96 saltos declaran su motivo y suman 96**, que es la comprobación entera: **86** piden base
+(`QA_DB_TEST`/`AN_DB_TEST`/`BOT_SUITE_TEST` → `npm run test:staging:gated`), **9** piden un
+Postgres desechable (`LIBRO_PG_URL`) y **1** no puede crear un enlace a fichero en esta máquina
+(EPERM: Windows lo exige elevado) **y dice que su mecanismo queda cubierto por el control positivo
+portable que sí corre**. Ninguno es un salto mudo.
+
+`npm run meta:mutaciones` sobre el mismo árbol → **90 vivas · 0 mudas · 0 ciegas · 0 ficheros
+muertos**, salida 0, y las **tres** de este ticket nombradas una a una entre las vivas. (Antes de
+mezclar eran **84**: las **6** que faltaban las trajo `main`, no este ticket.)
+
+> **El ancla se movió durante el ticket, y se dice cuál es cuál.** Todo lo de abajo se midió
+> primero contra `ff4e1c4a14f474d0fb4095cb0643e069388e4935`; mientras se medía, `main` avanzó a
+> `95be56e4…` (entraron SCRUM-767, SCRUM-775 y SCRUM-791). La rama **se mezcló con `main`** y
+> **todo se volvió a medir encima**. Los DELTAS —qué registra cada pantalla, qué abre la tecla,
+> cuántos caracteres tiene cada rótulo— no dependen de eso; los ABSOLUTOS (recuento de la tanda)
+> son los del árbol mezclado.
+
+> La entrada de arriba se escribió con el ticket PARADO en tres de cinco. La firma ya está, y dice
+> exactamente lo que se midió: **Trabajos y Gastos SÍ; Productos y Proveedores NO, y su rótulo no
+> se toca.** Con estas palabras del fundador:
+>
+>   > «Colgar N de un botón que confirma es atar una tecla a un guardado. **N abre, no guarda.**»
+
+## Lo que ya estaba hecho, verificado obligación por obligación
+
+**No se ha vuelto a escribir nada de lo que ya funcionaba.** Se ha comprobado contra el árbol:
+
+| obligación | estado | cómo se comprobó |
+|---|---|---|
+| ① registrar «N» en Trabajos y Gastos, mismo mecanismo | **ya estaba** | `jobsView.js:62-63` y `expensesView.js:127-128`, los dos con `etiquetar` + `registrar` de la pieza. Seis listas registradas en total |
+| ② los dos rótulos, literales firmados | **ya estaba** | «Nuevo trabajo» = **13 caracteres / 13 bytes** (`4e7565766f2074726162616a6f`) · «Nuevo gasto» = **11 / 11** (`4e7565766f20676173746f`). Idénticos a la firma, con control positivo del comparador |
+| ③ probarlo con teclado real | **faltaba** | hecho, abajo |
+| ④ el motivo escrito en Productos y Proveedores | **faltaba** | hecho: comentario en los dos ficheros, con la frase del fundador |
+
+## ③ La «N», con teclado REAL — y ejecutando el despacho del producto
+
+No es una copia del manejador: el bloque `document.addEventListener('keydown', …)` **se extrae de
+`app.js` y se ejecuta**. Si no aparece exactamente uno, el banco se declara ciego.
+
+| lista | `appState.view` | qué abre la «N» |
+|---|---|---|
+| Trabajos | `jobs` | **el alta de Trabajo** ✅ |
+| Gastos | `expenses` | **el alta de Gasto** ✅ |
+| Productos | `products` | 🔴 **la cotización rápida** |
+| Proveedores | `providers` | 🔴 **la cotización rápida** |
+
+**✅ CONTROL NEGATIVO:** escribiendo `nuevo` en un campo de texto, el campo queda con `"nuevo"` y
+**no se abre nada**.
+
+**✅ CONTROL POSITIVO:** las cuatro listas que ya tenían «N» —presupuestos, facturas, clientes y
+albaranes— la conservan, con su tecla pintada.
+
+## ⚠️ Un dato del encargo que NO cuadra: «no hace nada» son dos cosas
+
+El encargo pedía comprobar que **«pulsar N en Productos y en Proveedores NO HACE NADA»**. Medido:
+**no hace nada de esas pantallas, pero sí hace algo** — cae al respaldo de `app.js` y **abre la
+cotización rápida**.
+
+No es un defecto nuevo ni de este ticket: es el respaldo que **SCRUM-599 dejó a propósito**
+—*«quitarlo sería retirarle un atajo a quien ya lo usa»*— y afecta a **toda** vista sin destino
+registrado, no sólo a estas dos.
+
+**No se toca, porque retirarlo es una decisión de producto que cambia el comportamiento en
+pantallas que este ticket no ha medido.** Se deja **caracterizado** en el guard: el día que se
+decida, alguien tendrá que venir a cambiar ese test, y no se podrá cambiar en silencio.
+
+## ④ El motivo, escrito donde se tropieza con él
+
+En `productsView.js` y en `providersView.js`, pegado a su `createBtn`: que **no** llevan atajo, la
+frase del fundador, el motivo medido (el formulario está siempre visible y ese botón **confirma**),
+por qué su rótulo tampoco se toca, y un **⛔ si vienes a arreglar el hueco: no lo es**.
+
+## La firma retirada, corregida en el registro
+
+`docs/microcopy/2026-09-06-SCRUM-769-las-cinco-pantallas.md` decía que los **cinco** estaban
+aprobados y tres «sin aplicar». **Ya no es cierto**: el fundador retiró la firma de tres. Se
+corrige **encima y fechado**, sin reescribir la historia — un registro que dijera «aprobado» sobre
+un texto sin firma es justo la mentira que ese directorio existe para impedir.
+
+## 🔴 Y ESA CORRECCIÓN SE LLEVÓ POR DELANTE LAS DOS FIRMAS BUENAS — lo cazó un guard de la casa
+
+**No es una anécdota: es el defecto de esta sesión, y lo encontró la tanda, no la lectura.**
+`tests/scrum726-quien-firma-la-microcopy.test.mjs` se puso rojo:
+
+```
++ [ 'docs/microcopy/2026-09-06-SCRUM-769-las-cinco-pantallas.md → firmante: null' ]
+- []
+```
+
+Al reescribir la cabecera para contar la retirada **desapareció la línea de firma** —`Aprobados por
+el fundador`, la única forma que `firmanteDe()` acepta, y sólo **fuera de las citas**—. El registro
+pasó a no tener firmante: sus literales dejaban de contar como aprobados, **todos**, incluidos los
+dos que sí lo están.
+
+Y al medirlo apareció una **segunda mitad que ningún guard vigilaba**: la cabecera de la tabla
+también había cambiado de `Texto aprobado` a `Texto`, y el extractor **sólo lee esa columna**. Con
+las dos juntas, `constaAprobado('Nuevo trabajo')` contestaba `[]`. **Nadie lo habría notado**:
+ninguna prueba preguntaba por estos dos literales.
+
+**La forma correcta, y por qué es la correcta:** el registro lleva ahora **DOS tablas**.
+
+| tabla | cabecera de la columna | qué produce |
+|---|---|---|
+| los **dos firmados** | `Texto aprobado` | los extrae → cuentan como aprobados |
+| los **tres retirados** | `Texto que se propuso` | **no** los extrae → no cuentan, que es lo que dejaron de ser |
+
+No es un truco: el extractor lee esa columna **desde SCRUM-709**, y una firma parcial no tenía
+forma de escribirse. Ésta la tiene, y la tabla de los retirados lo dice en su propio párrafo para
+que nadie «unifique» las dos.
+
+**Medido después, con control positivo y negativo en el mismo sitio:**
+
+```
+firmante del registro : "fundador"
+literales que extrae  : ["Nuevo trabajo", "Nuevo gasto"]     ← exactamente los dos firmados
+Nuevo trabajo   → ["docs/microcopy/2026-09-06-SCRUM-769-…"]
+Nuevo gasto     → ["docs/microcopy/2026-09-06-SCRUM-769-…"]
+Nuevo producto  → []      Nuevo proveedor → []      Nuevo albarán → []
+control (texto inventado) → []
+```
+
+Queda **sujeto** por `SCRUM-769 · 🔴 el registro de microcopy declara firmados EXACTAMENTE los dos`,
+que cae por los dos lados: si **faltan**, la firma buena se ha vuelto a caer; si **sobran**, los
+retirados han vuelto por la puerta de atrás. Y su mutación declarada es justo esa puerta —cambiar
+la cabecera de la tabla de retirados a `Texto aprobado`—, **verificada viva**.
+
+**De paso, y medido:** tres líneas de prosa citadas con `>` en ese mismo fichero se estaban leyendo
+como «textos aprobados». Pasadas a prosa: el registro extrae ahora **2** literales en vez de 5, y
+el total del directorio baja de **200 a 197** — ninguno de los tres era un literal de pantalla.
+
+## Lo que NO se ha tocado
+
+⛔ La ficha del Trabajo y su «+ Nuevo albarán» · ⛔ `productsView` y `providersView` más allá del
+comentario · ⛔ ningún literal · ⛔ el respaldo de `app.js`.
+
+## Huecos declarados
+
+1. **El puente del banco de teclado.** La pieza y el despacho son del producto; **quién registra
+   qué** se mide montando las vistas reales en el banco y se **replica** en la página. La ruta
+   completa —`initApp()` con sesión— sigue sin ejercitarse.
+2. **`openQuickQuoteModal` es un doble** en ese banco: se cuenta que se llama, no se abre la
+   cotización de verdad.
+3. **Una sola anchura (929 px)** en la prueba de teclado: mide comportamiento, no caja.
+4. 🔴 **La firma se lee por FICHERO, no por fila.** `firmanteDe()` contesta «fundador» para todo el
+   registro; **una retirada parcial no cabe en ese dato**. Hoy lo salva la forma —los retirados
+   viven en una tabla que el extractor no lee— pero eso es una **convención**, no algo que el
+   lector entienda. Si mañana hay un registro con la mitad firmada, el instrumento seguirá
+   diciendo «fundador» de todo. Se declara; darle al lector un firmante por fila es otro ticket.
+5. **`productsView` y `providersView` sólo llevan un COMENTARIO.** Lo que impide que alguien les
+   cuelgue la «N» es el guard, no el código: nada en la pieza rechaza que se registre una vista
+   cuyo botón sea un envío. Un `registrar` con destino comprobado sería «imposible» en vez de
+   «vigilado»; hoy es lo segundo, y se dice.
+
+## Ficheros
+
+| fichero | qué cambia |
+|---|---|
+| `public/dashboard/js/productsView.js` | **sólo un comentario** sobre su `createBtn`: no lleva «N», la frase del fundador, el motivo medido y un ⛔ para quien venga a «arreglar el hueco» |
+| `public/dashboard/js/providersView.js` | ídem, más la nota de que su bloque ya se titula «Nuevo proveedor» |
+| `tests/scrum769-el-motivo-de-las-dos-que-no.test.mjs` | **nuevo** · 7 pruebas: los dos rótulos carácter a carácter, quién registra y quién no sobre las vistas reales, el motivo escrito en las dos pantallas, el registro de microcopy con los dos firmados exactos, el control positivo de las cuatro que ya tenían «N», y el respaldo de `app.js` **caracterizado**. Declara **3** mutaciones, las tres **vivas** |
+| `docs/microcopy/2026-09-06-SCRUM-769-las-cinco-pantallas.md` | la retirada de tres firmas, **con la línea de firma restaurada** y la tabla partida en dos |
+| `docs/master/SCRUM-769.md` | este apéndice |
