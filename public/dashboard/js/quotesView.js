@@ -1027,18 +1027,88 @@ blockDelivery.appendChild(descWrapper);
       dfRow.appendChild(lbl);
     });
     docFieldsWrapper.appendChild(dfRow);
+
+    // ── SCRUM-589 (CONT-18) · CON QUÉ NOMBRE SALE ESTE CLIENTE ──────────────────────────────
+    //
+    // Hasta hoy la razón social SUSTITUÍA al nombre siempre que existiera, sin que el
+    // profesional pudiera evitarlo. Aquí deja de ser automático.
+    //
+    // 🔴 POR QUÉ RADIOS Y NO UNA QUINTA CASILLA. Las cuatro de arriba dicen «MUESTRA este campo»
+    // y se SUMAN; el nombre no se suma, SUSTITUYE. Una casilla «Razón social» al lado de
+    // «Nombre» dejaría cuatro combinaciones para tres resultados —¿qué sale con las dos
+    // marcadas?— y además cambiaría el significado de ☑Nombre, que ya está firmado. Con dos
+    // opciones excluyentes no existe la combinación imposible. Medido a 929 y 390: cuesta
+    // +30,4 px en los dos anchos y la fila de casillas NO salta de línea (una quinta casilla sí
+    // la parte a 390). Forma y textos firmados por el asesor el 6-sep-2026.
+    //
+    // Reutiliza `.inline-options` y `.radio-label`, que YA existen en el CSS: no se inventa
+    // ninguna clase para esto.
+    const dfNombreRow = document.createElement("div");
+    dfNombreRow.className = "inline-options";
+    dfNombreRow.style.marginTop = "6px";
+    const dfNombreDefs = [
+      { valor: "legal", label: "Razón social" },
+      { valor: "comercial", label: "Nombre comercial" },
+    ];
+    const dfNombreRadios = {};
+    dfNombreDefs.forEach(function (def) {
+      const lbl = document.createElement("label");
+      lbl.className = "radio-label";
+      const r = document.createElement("input");
+      r.type = "radio";
+      r.name = "df-nombre";
+      r.value = def.valor;
+      // 🔴 EL DEFECTO ES «Razón social» A PROPÓSITO: es lo que este formulario hace HOY. Un
+      // defecto en «Nombre comercial» cambiaría en silencio el nombre impreso de todos los
+      // presupuestos nuevos de quien tenga razón social rellena.
+      r.checked = def.valor === "legal";
+      dfNombreRadios[def.valor] = r;
+      lbl.appendChild(r);
+      lbl.appendChild(document.createTextNode(" " + def.label));
+      dfNombreRow.appendChild(lbl);
+    });
+    docFieldsWrapper.appendChild(dfNombreRow);
+
+    // Con ☐Nombre la elección no pinta nada: se DESHABILITA, no se esconde. Esconderla haría
+    // aparecer y desaparecer una fila entera al marcar una casilla —la pantalla daría un salto—
+    // y además dejaría al profesional sin saber que la opción existe.
+    function refrescarEleccionDeNombre() {
+      const activo = dfChecks.name.checked;
+      dfNombreDefs.forEach(function (def) { dfNombreRadios[def.valor].disabled = !activo; });
+      dfNombreRow.style.opacity = activo ? "" : "0.5";
+    }
+    dfChecks.name.addEventListener("change", refrescarEleccionDeNombre);
+    refrescarEleccionDeNombre();
+
     const dfNote = document.createElement("p");
     dfNote.className = "pay-methods-note";
-    dfNote.textContent = "Solo aparecen los que el cliente tenga rellenos (la razón social sustituye al nombre si existe).";
+    // SCRUM-589 · la nota de antes AFIRMABA la sustitución automática como un hecho («la razón
+    // social sustituye al nombre si existe»). Con la elección delante, esa frase pasaba a ser
+    // FALSA. Texto firmado por el asesor el 6-sep-2026.
+    dfNote.textContent = "Solo aparecen los que el cliente tenga rellenos. Elige con qué nombre sale este cliente en el documento.";
     docFieldsWrapper.appendChild(dfNote);
     blockDelivery.appendChild(docFieldsWrapper);
 
     // null = todos (default); objeto solo si el pro desmarca algo
     function selectedDocFields() {
       const all = dfDefs.every(function (d) { return dfChecks[d.key].checked; });
-      if (all) return undefined;
+      // SCRUM-589 · «como siempre» ahora son DOS cosas: las cuatro marcadas Y el nombre por
+      // defecto. Si el profesional cambia el nombre, esto YA NO puede devolver `undefined`.
+      //
+      // 🔴 EL ATAJO NO SE BORRA, SE ESTRECHA, y está medido por qué: `undefined` hace que el
+      // servidor omita el campo y la fila se quede con `doc_fields = NULL`. Medido: NINGUNA
+      // consulta del árbol filtra por esa columna, y para el PDF `null` y «los cuatro a true»
+      // son EQUIVALENTES (`!docFields || docFields[k] !== false` da [true,true,true,true] en los
+      // dos casos). O sea que borrarlo no rompería nada... pero haría que TODOS los presupuestos
+      // nuevos guardaran un objeto donde hoy guardan NULL, y eso es cambiarle los datos a quien
+      // no ha pedido nada. Estrecharlo deja intacto el caso de siempre y sólo escribe cuando hay
+      // algo que decir.
+      const usarRazonSocial = dfNombreRadios.legal.checked;
+      if (all && usarRazonSocial) return undefined;
       const out = {};
       dfDefs.forEach(function (d) { out[d.key] = dfChecks[d.key].checked; });
+      // No es una casilla más: dice CUÁL de los dos nombres sale, no si se muestra.
+      out.usarRazonSocial = usarRazonSocial;
       return out;
     }
 
