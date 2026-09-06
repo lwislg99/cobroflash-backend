@@ -294,7 +294,22 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   //
   // La subida es del PRODUCTO, no del banco: el bloque «Datos del cliente en el documento» pasa
   // de decir qué campos salen a decir además CUÁL de los dos nombres del cliente se imprime.
-  for (const [vista, nodos] of [['renderQuotesView', 263], ['renderProductsView', 166],
+  // 🔴 SCRUM-794 · 6-sep-2026 · `renderQuotesView` 263 → 262. Es la PRIMERA BAJADA que registra
+  // este número, y por eso conviene decir qué la hace legítima: no es una vista que se haya
+  // dejado de montar (eso lo cazaría el `r.error` de abajo), es UN nodo que el fundador mandó
+  // borrar. Había DOS botones «+ Añadir línea» con el mismo rótulo y la misma función en la
+  // sección «2. Líneas»; se queda el de abajo.
+  //
+  // IDENTIFICADO POR IDENTIDAD sobre el árbol de ANTES, no restando 263 − 262:
+  //
+  //   1. `button.btn.btn-secondary` con textContent «+ Añadir línea», el de la cabecera.
+  //
+  // Y AISLADO: su subárbol medido es de 1 nodo —`textContent` en el banco es una propiedad, no
+  // un hijo, así que no arrastra ningún `#TEXT`—, y el botón que se queda
+  // (`button.btn-ghost.quote-add-line`) sigue montándose con su subárbol de 1. El delta entero
+  // es el botón borrado: este ticket no ha movido ni un nodo del resto de la pantalla, y las
+  // otras tres vistas siguen intactas.
+  for (const [vista, nodos] of [['renderQuotesView', 262], ['renderProductsView', 166],
     ['renderCustomersView', 68], ['renderHomeView', 109]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
@@ -322,7 +337,11 @@ test('SCRUM-698 · CONTROL NEGATIVO: el fixture NO se impone a quien ya pasaba l
   // cliente. Los siete están identificados por identidad en el bloque de arriba y son el
   // subárbol completo de su `div.inline-options`. Lo que este control vigila —que el fixture no
   // se imponga, o sea que los DOS montajes den el mismo número— sigue intacto.
-  assert.equal(todos(desnuda.contenedor).length, 263,
+  // SCRUM-794 (6-sep-2026): la SÉPTIMA anotación y la primera que RESTA, −1 por el
+  // «+ Añadir línea» duplicado que se borra. Identificado por identidad en el bloque de arriba.
+  // Lo que este control vigila —que el fixture no se imponga, o sea que los DOS montajes den el
+  // mismo número— sigue intacto: le da igual cuál sea ese número, y por eso baja sin perder nada.
+  assert.equal(todos(desnuda.contenedor).length, 262,
     '🔴 montar sin `datos` ya no da lo de siempre: el fixture se ha colado como valor por '
     + 'defecto y está moviendo lo que miden otros.');
 });

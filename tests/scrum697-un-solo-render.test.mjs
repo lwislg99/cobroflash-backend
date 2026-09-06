@@ -298,11 +298,18 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   // nombre, sus dos label.radio-label, sus dos input[type=radio][name=df-nombre] y los dos
   // #TEXT de los rótulos firmados. AISLADO: los siete son exactamente el subárbol de ese div
   // (todos(div) = 7), así que el delta entero vive dentro del control nuevo.
-  assert.equal(nodos.length, 263,
-    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 263 `
+  // 🔴 SCRUM-794 · 6-sep-2026 · 263 → 262. LA PRIMERA BAJADA de este número, y es un BORRADO
+  // firmado: había DOS «+ Añadir línea» idénticos en la sección «2. Líneas» y el fundador mandó
+  // quedarse con el de abajo. El nodo que se va es UNO y está identificado POR IDENTIDAD sobre el
+  // árbol de antes (no restando 263 − 262): el `button.btn.btn-secondary` de la cabecera, cuyo
+  // subárbol medido es de 1 nodo —`textContent` en el banco es una propiedad, no un hijo—.
+  // Medido también el que SE QUEDA (`button.btn-ghost.quote-add-line`): subárbol de 1 nodo, y
+  // sigue ahí. O sea que el delta entero es el botón borrado y esta pantalla no ha movido nada más.
+  assert.equal(nodos.length, 262,
+    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 262 `
     + '(236 sobre `origin/main` = 80db312b, + la opción de alta de SCRUM-591, + el bloque de '
     + 'descuento global de SCRUM-594, + el control de la dirección de la obra de SCRUM-602, '
-    + '+ la tira de propuesta de SCRUM-587, + la tira de formas de pago de SCRUM-586, + la elección de nombre de SCRUM-589). Un arreglo del BANCO no debe cambiar ni uno: si '
+    + '+ la tira de propuesta de SCRUM-587, + la tira de formas de pago de SCRUM-586, + la elección de nombre de SCRUM-589, − el «+ Añadir línea» duplicado de SCRUM-794). Un arreglo del BANCO no debe cambiar ni uno: si '
     + 'has tocado el banco y esto se mueve, el arreglo pinta.');
 
   const tablas = nodos.filter((n) => n.tagName === 'TABLE');
