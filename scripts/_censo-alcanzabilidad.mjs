@@ -142,7 +142,32 @@ export function instantanea({ raiz = process.cwd(), ref = 'origin/main', traer =
 
   // El sha se congela AQUÍ. A partir de esta línea el nombre `origin/main` no se vuelve a usar:
   // sólo el objeto. Es lo que hace que la pregunta deje de ser móvil (R10).
-  const sha = g('rev-parse', `${ref}^{commit}`).trim();
+  //
+  // 🔴 Y SI NO SE PUEDE RESOLVER, ESTA FUNCIÓN **SE DECLARA CIEGA**, no revienta.
+  //
+  // Medido el 6-sep-2026 reproduciendo el checkout por defecto de `actions/checkout` (clon
+  // superficial de UNA sola rama): `git rev-parse origin/main^{commit}` muere con **status 128**
+  // —`unknown revision`— porque en ese clon `origin/main` sencillamente NO EXISTE. El error salía
+  // en crudo desde `execFileSync` y se llevaba por delante a quien llamara.
+  //
+  // Es EXACTAMENTE el incidente que originó `capacidadDeMedir` en SCRUM-388, repetido aquí. Un
+  // instrumento que no sabe leer algo tiene que fallar DECLARÁNDOSE CIEGO: quien recibe la
+  // instantánea puede entonces preguntarle al suelo y salir con 2, en vez de recibir una traza de
+  // git que no le dice qué hacer.
+  //
+  // ⚠️ NO se devuelve un sha inventado ni se cae a `HEAD`. `sha: null` + `incapaz` es la respuesta,
+  // y el suelo la convierte en «no supe medir». Caer a otra referencia mediría un árbol distinto
+  // del que se pidió y lo haría en silencio, que es el defecto entero de este ticket.
+  let sha = null;
+  let incapaz = null;
+  try {
+    sha = g('rev-parse', `${ref}^{commit}`).trim();
+  } catch (e) {
+    const stderr = String(e?.stderr || '').trim().split('\n')[0];
+    incapaz = `no se puede resolver «${ref}» en este árbol (${stderr || `git salió con ${e?.status}`}). `
+      + 'Es lo que devuelve un checkout de UNA sola rama: la ref del PR está y `origin/main` no. '
+      + 'Sin ella no hay contra qué medir alcanzabilidad — y eso NO es «no hay trabajo fuera».';
+  }
 
   // UNA sola lectura de refs, con su objeto, para no preguntar dos veces por lo mismo.
   //
@@ -173,7 +198,7 @@ export function instantanea({ raiz = process.cwd(), ref = 'origin/main', traer =
   let refspec = '';
   try { refspec = g('config', '--get', 'remote.origin.fetch').trim(); } catch { refspec = ''; }
 
-  return { raiz, ref, sha, ramas, entradas, refspec, hora: new Date().toISOString() };
+  return { raiz, ref, sha, incapaz, ramas, entradas, refspec, hora: new Date().toISOString() };
 }
 
 /**
@@ -211,6 +236,9 @@ export function poblacionDe(inst) {
  */
 export function motivosParaNoFiarse(inst, filas) {
   const motivos = [];
+  // 🔴 EL PRIMERO, PORQUE ES EL QUE IMPIDE MEDIR NADA. Si la referencia no se resolvió, no hay
+  // sha congelado contra el que preguntar y todo lo demás sería sobre la nada.
+  if (inst.incapaz) motivos.push(inst.incapaz);
   if (!inst.refspec) {
     motivos.push('no hay remoto «origin» configurado: no hay refs de origin que medir');
   } else if (!inst.refspec.includes('refs/heads/*')) {

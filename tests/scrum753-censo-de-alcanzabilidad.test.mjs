@@ -32,7 +32,7 @@ import { ejecutableDe } from './_guard-texto.mjs';
 import { mutacionesDeclaradas, censoDeDeclaraciones } from '../scripts/meta-guard-mutaciones.mjs';
 import { numeroDeClave } from '../scripts/_censo-reparto.mjs';
 import { numeroDeRama } from '../scripts/censo-tablero-vs-arbol.mjs';
-import { repoAlcanzabilidad, CASOS } from './_fixture-alcanzabilidad.mjs';
+import { repoAlcanzabilidad, CASOS, RAMAS_DEL_BANCO } from './_fixture-alcanzabilidad.mjs';
 import {
   instantanea, poblacionDe, censar, resumenDe, motivosParaNoFiarse, titularConSalvedad,
   corroboracionDe, esAncestroDe, alcanzabilidadDe, ESTADOS, MOTIVOS, PREFIJO_ORIGIN,
@@ -239,15 +239,51 @@ test('SCRUM-753 · la instantánea CONGELA el sha, y el censo lo publica', () =>
 });
 
 test('SCRUM-753 · 🔴 `origin/HEAD` no se cuenta como una rama (respuesta conocida: `ls-remote`)', () => {
-  const inst = instantanea({ raiz: RAIZ, traer: false });
-  const conocidas = execFileSync('git', ['ls-remote', '--heads', 'origin'],
-    { cwd: RAIZ, encoding: 'utf8' }).split('\n').filter(Boolean).length;
-  assert.ok(conocidas > 10, `🔴 SUELO: ls-remote devolvió ${conocidas} ramas. Sin remoto no hay `
-    + 'respuesta conocida contra la que medir, y lo de abajo sería una comparación con la nada.');
-  assert.equal(inst.ramas.length, conocidas,
-    `🔴 el censo lee ${inst.ramas.length} ramas y el remoto tiene ${conocidas}. Git abrevia `
-    + '`refs/remotes/origin/HEAD` a `origin` —no a `origin/HEAD`—, así que un filtro por el nombre '
-    + 'corto lo deja pasar como si fuera una rama, y sale siempre DENTRO.');
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+  // 🔴 ESTE TEST SE MIDIÓ CONTRA EL REPO REAL Y EN CI NO SE EJECUTABA. Reproducido el 6-sep-2026
+  // en un clon con el checkout POR DEFECTO de `actions/checkout` (superficial, una sola rama):
+  //
+  //     Error: Command failed: git rev-parse origin/main^{commit}
+  //     fatal: ambiguous argument 'origin/main^{commit}': unknown revision or path not in the
+  //     working tree.                                                        (status 128)
+  //
+  // En ese clon `origin/main` NO EXISTE, así que `instantanea()` moría antes de llegar a ningún
+  // assert. El meta-guard lo cazó y dijo CIEGO —correctamente—, y mientras tanto **el defecto que
+  // este test protege estaba sin vigilar en CI aunque el código estuviera arreglado**.
+  //
+  // Ahora el escenario lo CONSTRUYE el test: un repositorio con su `refs/remotes/origin/HEAD` de
+  // verdad y una lista de ramas escrita a mano. No depende del estado de las refs de la máquina,
+  // así que se ejecuta igual aquí y en un runner limpio. La capacidad del árbol REAL de contestar
+  // ya no es asunto de este test: es asunto del suelo, y lo mide el test del árbol vivo.
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+  const { raiz, inst } = banco();
+
+  // ① CONTROL POSITIVO DEL ESCENARIO: la trampa TIENE que estar. Sin un `refs/remotes/origin/HEAD`
+  //    en el banco, lo de abajo pasaría en verde sobre un repositorio que no tiene qué morder.
+  const refsCompletas = execFileSync('git', ['for-each-ref', '--format=%(refname)', PREFIJO_ORIGIN],
+    { cwd: raiz, encoding: 'utf8' }).split('\n').map((s) => s.trim()).filter(Boolean);
+  assert.ok(refsCompletas.includes(`${PREFIJO_ORIGIN}HEAD`),
+    '🔴 el banco no tiene `refs/remotes/origin/HEAD`: no hay trampa que morder y este test no '
+    + 'probaría nada.');
+
+  // ② Y LA TRAMPA, ENSEÑADA: git NO abrevia esa ref a `origin/HEAD`, la abrevia a `origin`. Ése
+  //    es el motivo entero por el que un filtro por nombre corto la dejaba pasar.
+  const cortas = execFileSync('git', ['for-each-ref', '--format=%(refname:short)', PREFIJO_ORIGIN],
+    { cwd: raiz, encoding: 'utf8' }).split('\n').map((s) => s.trim()).filter(Boolean);
+  assert.ok(cortas.includes('origin'),
+    '🔴 git ya no abrevia `refs/remotes/origin/HEAD` a `origin`. Si eso cambió, el comentario del '
+    + 'instrumento describe un mundo que no existe y hay que volver a medirlo.');
+  assert.equal(cortas.includes('origin/HEAD'), false,
+    '🔴 `origin/HEAD` aparece como nombre corto: la premisa del arreglo ha cambiado.');
+
+  // ③ LA RESPUESTA CONOCIDA, escrita a mano en el banco — no derivada del propio censo.
+  assert.equal(refsCompletas.length, RAMAS_DEL_BANCO.length + 1,
+    `🔴 el banco tiene ${refsCompletas.length} refs y se esperaban ${RAMAS_DEL_BANCO.length} ramas `
+    + '+ la HEAD simbólica. El escenario cambió y la respuesta conocida está sin actualizar.');
+  assert.deepEqual([...inst.ramas.map((r) => r.nombre)].sort(), [...RAMAS_DEL_BANCO].sort(),
+    `🔴 el censo lee ${inst.ramas.length} ramas y el banco tiene ${RAMAS_DEL_BANCO.length}. Git `
+    + 'abrevia `refs/remotes/origin/HEAD` a `origin` —no a `origin/HEAD`—, así que un filtro por '
+    + 'el nombre corto lo deja pasar como si fuera una rama, y sale siempre DENTRO.');
   assert.equal(inst.ramas.some((r) => r.nombre === 'origin' || r.nombre === 'HEAD'), false,
     '🔴 el puntero simbólico se ha colado en la lista de ramas.');
 });
@@ -256,10 +292,38 @@ test('SCRUM-753 · 🔴 `origin/HEAD` no se cuenta como una rama (respuesta cono
 // ④ LOS COSTURONES — dos reglas para la misma pregunta, reconciliadas sobre el árbol VIVO
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
+/**
+ * 🔴 EL CORPUS GARANTIZADO de nombres de rama, para que este guard no dependa de que el árbol
+ * traiga refs. Son las formas que de verdad aparecen en este repo, incluidas las que ya han
+ * mordido a alguien: la letra de fase, el sufijo de reintento y el nombre sin ticket.
+ *
+ * Existe porque medir sólo sobre las refs del árbol dejaba el guard SIN EJECUTAR en un checkout
+ * de una sola rama — donde hay una ref, y un acuerdo sobre una ref no es un acuerdo.
+ */
+const CORPUS_DE_NOMBRES = [
+  'scrum-753-censo-de-alcanzabilidad',
+  'scrum-684b-albaran-sin-presupuesto',
+  'scrum-388-censo-contra-main-rebasada-2',
+  'scrum-72-lo-que-sea',
+  'scrum-727-constancia',
+  'scrum-1727-inventado',
+  'codeowners-zona-roja-v2',
+  'censo-marcadores-microcopy',
+  'main',
+];
+
 test('SCRUM-753 · 🔴 las DOS reglas rama→ticket siguen de acuerdo (SCRUM-387 vs SCRUM-738)', () => {
-  const inst = instantanea({ raiz: RAIZ, traer: false });
-  assert.ok(inst.ramas.length > 10,
-    `🔴 SUELO: sólo ${inst.ramas.length} ramas. Un acuerdo sobre cuatro refs no es un acuerdo.`);
+  // El árbol vivo SUMA, no decide: donde hay 500 refs se comparan las 500, y donde el checkout
+  // trae una sola (CI) el corpus garantiza que el guard sigue midiendo algo de verdad.
+  let delArbol = [];
+  try {
+    delArbol = instantanea({ raiz: RAIZ, traer: false }).ramas.map((r) => r.nombre);
+  } catch {
+    delArbol = [];   // un árbol que no puede contestar no invalida el corpus
+  }
+  const nombres = [...new Set([...CORPUS_DE_NOMBRES, ...delArbol])];
+  assert.ok(nombres.length >= CORPUS_DE_NOMBRES.length,
+    '🔴 CIEGO: ni siquiera el corpus garantizado ha llegado hasta aquí.');
 
   // Control positivo del comparador: casos de RESPUESTA CONOCIDA. Sin esto, un cero de abajo
   // podría ser «coinciden» o «el comparador no compara».
@@ -267,8 +331,8 @@ test('SCRUM-753 · 🔴 las DOS reglas rama→ticket siguen de acuerdo (SCRUM-38
   assert.equal(numeroDeClave('SCRUM-684b-albaran'), 684, '🔴 el comparador no lee la letra de fase.');
   assert.equal(numeroDeRama('codeowners-zona-roja-v2'), null, '🔴 el comparador inventa números.');
 
-  const desacuerdos = inst.ramas
-    .map((r) => ({ rama: r.nombre, a: numeroDeClave(r.nombre.replace(/^scrum-/i, 'SCRUM-')), b: numeroDeRama(r.nombre) }))
+  const desacuerdos = nombres
+    .map((n) => ({ rama: n, a: numeroDeClave(n.replace(/^scrum-/i, 'SCRUM-')), b: numeroDeRama(n) }))
     .filter((x) => x.a !== x.b);
   assert.deepEqual(desacuerdos, [],
     '🔴 `agruparRamas` (que AGRUPA, con `numeroDeClave`) y la población (que ENUMERA, con '
@@ -300,11 +364,47 @@ test('SCRUM-753 · 🔴 el clasificador a granel dice LO MISMO que `merge-base -
   assert.ok(fs.existsSync(path.join(raiz, '.git')), '🔴 el banco no es un repositorio.');
 });
 
-test('SCRUM-753 · sobre el ÁRBOL VIVO el detector contesta las DOS cosas', () => {
-  // No se fija ningún ticket —eso convertiría un defecto en requisito—: se exige que el detector
-  // sepa cambiar de respuesta sobre el árbol real. Si todo saliera DENTRO, el censo no distinguiría
-  // nada y volveríamos al barrido que daba 27 por 13.
-  const inst = instantanea({ raiz: RAIZ, traer: false });
+test('SCRUM-753 · sobre el ÁRBOL VIVO el detector contesta las DOS cosas, o se DECLARA CIEGO', () => {
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+  // 🔴 LA PROPIEDAD SE REFORMULÓ PORQUE LA ANTERIOR NO SE PODÍA SOSTENER EN CI, y descubrirlo
+  // costó ver el rojo: en un checkout de una sola rama `instantanea()` moría con status 128
+  // (`origin/main` no existe) y este test no llegaba a ejecutarse.
+  //
+  // «El detector contesta las dos cosas» sólo es exigible donde hay refs que clasificar. Lo que SÍ
+  // vale en los dos entornos es la regla de la casa: **o contesta, o dice que no puede** — nunca
+  // una respuesta a medias en silencio. Y las DOS ramas de la disyuntiva se ejercitan aquí, para
+  // que no pase en verde por no haber entrado en ninguna.
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+
+  // ── ① EL CASO INCAPAZ, PROVOCADO. No se espera a que CI lo produzca ────────────────────────
+  const capado = { ...banco().inst, refspec: '+refs/heads/main:refs/remotes/origin/main' };
+  assert.ok(motivosParaNoFiarse(capado, null).length >= 1,
+    '🔴 con un clon de una sola rama el censo no se declara incapaz.');
+  const sinRef = { ...banco().inst, sha: null, incapaz: 'no se puede resolver «origin/main»' };
+  const motivosSinRef = motivosParaNoFiarse(sinRef, null);
+  assert.ok(motivosSinRef.some((m) => /no se puede resolver/.test(m)),
+    '🔴 una instantánea SIN referencia resuelta no aparece en el suelo. Entonces el CLI la censaría '
+    + 'contra un sha nulo y moriría con una traza de git en vez de salir con 2.');
+
+  // ── ② EL ÁRBOL REAL: una cosa o la otra, y las dos son un resultado válido ─────────────────
+  let inst = null;
+  try {
+    inst = instantanea({ raiz: RAIZ, traer: false });
+  } catch (e) {
+    assert.fail('🔴 `instantanea()` LANZÓ en vez de declararse ciega: ' + String(e.message).split('\n')[0]
+      + '\n   Esa es la diferencia entre «no supe medir» y una traza que nadie sabe qué hacer con ella.');
+  }
+  const motivos = motivosParaNoFiarse(inst, null);
+  if (motivos.length) {
+    // Éste es el camino que toma un runner con checkout por defecto. Es un resultado, no un fallo:
+    // lo que se exige es que lo DIGA y que no haya inventado un sha.
+    assert.equal(inst.sha === null || inst.ramas.length <= 1, true,
+      `🔴 el censo se declara incapaz (${motivos[0]}) pero trae ${inst.ramas.length} ramas y un sha. `
+      + 'O puede medir o no puede: las dos cosas a la vez es lo que hace ilegible un informe.');
+    return;
+  }
+
+  // El árbol SÍ puede contestar: entonces el detector no puede estar atascado en una sola respuesta.
   const clasificar = alcanzabilidadDe(inst);
   let dentro = 0; let fuera = 0;
   for (const r of inst.ramas) {
@@ -312,8 +412,8 @@ test('SCRUM-753 · sobre el ÁRBOL VIVO el detector contesta las DOS cosas', () 
     if (v === true) dentro += 1; else if (v === false) fuera += 1;
   }
   assert.ok(dentro > 0,
-    '🔴 NINGUNA rama del árbol es alcanzable desde `main`. Eso no es un hallazgo, es un fallo de '
-    + 'medición: comprueba el fetch.');
+    '🔴 NINGUNA rama del árbol es alcanzable desde `main`, y el suelo dice que el árbol SÍ se puede '
+    + 'medir. Eso no es un hallazgo, es un fallo de medición.');
   assert.ok(fuera > 0,
     '🔴 TODAS las ramas del árbol salen alcanzables. Con ramas de trabajo abiertas eso es un '
     + 'detector que sólo sabe decir que sí — exactamente lo que este ticket viene a impedir.');

@@ -61,6 +61,26 @@ if (process.argv[1] && path.resolve(process.argv[1]) === AQUI) {
   const traer = !argv.includes('--sin-traer');
 
   const inst = instantanea({ raiz: RAIZ, traer });
+
+  // 🔴 EL SUELO, EN DOS ETAPAS. ÉSTA VA **ANTES** DE CENSAR NADA.
+  //
+  // Si el árbol no puede contestar —no se resolvió la referencia, no hay refs, el clon trae una
+  // sola rama— no se censa: preguntar 450 veces contra un sha que no existe tarda un minuto y
+  // termina en una traza de git. Medido el 6-sep-2026 reproduciendo el checkout por defecto de
+  // `actions/checkout`: `rev-parse origin/main^{commit}` sale con status 128.
+  //
+  // La segunda etapa (¿algún ticket del lote tiene rama?) necesita las filas y va más abajo. Las
+  // dos salen por el MISMO código 2: quien lo lee no tiene que distinguirlas para saber que no
+  // hay medición.
+  const incapacidad = motivosParaNoFiarse(inst, null);
+  if (incapacidad.length) {
+    console.error('\n🔴 NO SE HA PODIDO MEDIR ALCANZABILIDAD — no se censa nada:\n');
+    for (const m of incapacidad) console.error(`   · ${m}`);
+    console.error(`\n   árbol: ${inst.raiz}  ·  ref pedida: ${inst.ref}  ·  ${inst.hora}`);
+    console.error('   Esto NO significa «no está en `main`». Comprueba el fetch y el refspec.\n');
+    process.exit(SALIDA_NO_SUPE_MEDIR);
+  }
+
   const censo = censar(inst, { numeros });
   const resumen = resumenDe(censo.filas);
 

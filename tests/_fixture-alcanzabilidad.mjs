@@ -64,6 +64,27 @@ export const CASOS = [
   },
 ];
 
+/**
+ * 🔴 LA RESPUESTA CONOCIDA DEL BANCO, ESCRITA A MANO.
+ *
+ * Las ramas que `repoAlcanzabilidad()` crea bajo `refs/remotes/origin/`, y NADA más. Es una lista
+ * literal a propósito: si se derivara del propio `for-each-ref` estaría comparando el instrumento
+ * consigo mismo, y un censo que se da la razón solo no es un control.
+ *
+ * ⚠️ NO incluye `refs/remotes/origin/HEAD`, que el `git clone` crea por su cuenta. Ése es
+ * justamente el que no debe contarse como rama — y el que git abrevia a `origin`, no a
+ * `origin/HEAD`. El banco lo lleva dentro para que la trampa EXISTA en el escenario; el guard
+ * comprueba primero que está y luego que el censo no la muerde.
+ */
+export const RAMAS_DEL_BANCO = [
+  'main',
+  'scrum-9501-lo-mergeado',
+  'scrum-9502-viva',
+  'scrum-9505-numero-cruzado',
+  'scrum-9506-parada',
+  'scrum-9507-fantasma',
+];
+
 let cache = null;
 
 /**
