@@ -2558,6 +2558,13 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
    360, así que esos 13 px dejan de ser «abrir el cliente sin querer» y pasan a ser «marcar». El
    `stopPropagation` de la casilla (SCRUM-582) sigue haciendo su trabajo, porque el pseudo
    pertenece a la casilla. */
+/* SCRUM-792 · La barra de selección: su `display` sale del JS y vive aquí, porque la decisión
+   depende del ANCHO y eso sólo lo sabe una `@media`. Por defecto —escritorio— se comporta como
+   siempre: se ve desde UNO seleccionado y con cero no. El caso de móvil está en el bloque
+   `@media (max-width: 640px)` de más abajo, pegado a la regla que esconde el `thead`. */
+.barra-seleccion { display: flex; }
+.barra-seleccion.barra-seleccion--vacia { display: none; }
+
 .casilla-seleccion { position: relative; }
 .casilla-seleccion::before {
   content: "";
@@ -2571,6 +2578,20 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
    completo abajo con targets ≥44px. El resto de celdas fluyen como chips. */
 @media (max-width: 640px) {
   .table--stack-mobile thead { display: none; }
+
+  /* ═══ SCRUM-792 · LA BARRA DE SELECCIÓN SE VE SIEMPRE EN MÓVIL, TAMBIÉN CON CERO ═══════════
+     🔴 ESTA REGLA VIVE PEGADA A LA DE ARRIBA A PROPÓSITO, Y ES MEDIO TICKET.
+     La línea anterior esconde el `thead`, y con él la casilla de «seleccionar todos». La barra se
+     escribió para suplirla —lo dice su comentario en `customersView.js`— pero nacía oculta con
+     cero seleccionados, así que a ≤640 px LAS DOS VÍAS se ocultaban A LA VEZ: para llegar al
+     control que marca todas había que marcar una a mano. Medido a 390 px: 0 vías alcanzables.
+     El único que lo sufre es el profesional con 300 clientes en el móvil, que es justo para quien
+     se escribió.
+     ⚠️ EL UMBRAL NO SE REPITE: las dos reglas comparten ESTE bloque. Un `@media` no admite
+     variables, así que la co-locación es la derivación más fuerte que hay en CSS plano — y
+     `tests/scrum792-…` CAE si alguien las separa. Dos números que dicen lo mismo en dos sitios es
+     la regla 2 esperando a morder. */
+  .barra-seleccion.barra-seleccion--vacia { display: flex; }
   .table--stack-mobile, .table--stack-mobile tbody { display: block; width: 100%; }
   .table-scroll .table--stack-mobile { min-width: 0; }
   .table--stack-mobile td.col-hide-mobile { display: none; }

@@ -74,6 +74,38 @@ export const CLIENTES_DE_MUESTRA = [
  * Si algo de esto no sale, se devuelve `aviso` y el llamador DECIDE — este módulo no traga.
  */
 /**
+ * `seleccionar: false` deja la lista con CERO marcados. Lo estrena SCRUM-792, que mide justo el
+ * caso contrario al de siempre: qué se puede pulsar ANTES de haber marcado nada. Por defecto sigue
+ * marcando una fila, porque `guard:objetivo-tactil` cuenta con la barra abierta para medirla.
+ */
+export async function paginaDeClientes(raiz, { extra = '', seleccionar = true } = {}) {
+  const banco = cargarDashboard(raiz, {
+    datos: (url) => {
+      const u = String(url || '');
+      if (/\/admin\/customers/.test(u)) return CLIENTES_DE_MUESTRA;
+      if (/\/admin\/merchant/.test(u)) return { id: 1, name: 'Fontanería Soler' };
+      return [];
+    },
+  });
+  const r = await pintarVista(banco, 'renderCustomersView');
+  if (r.error) return { html: null, aviso: 'la vista de clientes no monta: ' + r.error.message };
+  const nodos = todos(r.contenedor);
+  if (nodos.length < 40) return { html: null, aviso: `la vista montó ${nodos.length} nodos: está a medias` };
+
+  const TODOS_LABEL = 'Seleccionar todos';
+  const enTd = (x) => { let p = x._padre; while (p) { if (p.tagName === 'TD') return true; p = p._padre; } return false; };
+  const filas = nodos.filter((n) => n.tagName === 'INPUT' && n.type === 'checkbox'
+    && n.getAttribute && n.getAttribute('aria-label') && n.getAttribute('aria-label') !== TODOS_LABEL && enTd(n));
+  if (filas.length === 0) return { html: null, aviso: 'no hay casillas de fila que medir' };
+  if (seleccionar) {
+    filas[0].checked = true;
+    filas[0].disparar('change');
+  }
+
+  return { html: serializar(r.contenedor) + extra, aviso: null, casillasDeFila: filas.length };
+}
+
+/**
  * SCRUM-791 · UNA VISTA CUALQUIERA DEL PANEL, montada y serializada.
  *
  * `paginaDeClientes` sigue existiendo y NO se toca: necesita seleccionar una fila con el
@@ -98,29 +130,4 @@ export async function paginaDeVista(raiz, nombreFn, { datos = null, minimoNodos 
     return { html: null, aviso: `${nombreFn} montó ${nodos} nodos (mínimo ${minimoNodos}): está a medias con estos datos` };
   }
   return { html: serializar(r.contenedor) + extra, aviso: null, nodos };
-}
-
-export async function paginaDeClientes(raiz, { extra = '' } = {}) {
-  const banco = cargarDashboard(raiz, {
-    datos: (url) => {
-      const u = String(url || '');
-      if (/\/admin\/customers/.test(u)) return CLIENTES_DE_MUESTRA;
-      if (/\/admin\/merchant/.test(u)) return { id: 1, name: 'Fontanería Soler' };
-      return [];
-    },
-  });
-  const r = await pintarVista(banco, 'renderCustomersView');
-  if (r.error) return { html: null, aviso: 'la vista de clientes no monta: ' + r.error.message };
-  const nodos = todos(r.contenedor);
-  if (nodos.length < 40) return { html: null, aviso: `la vista montó ${nodos.length} nodos: está a medias` };
-
-  const TODOS_LABEL = 'Seleccionar todos';
-  const enTd = (x) => { let p = x._padre; while (p) { if (p.tagName === 'TD') return true; p = p._padre; } return false; };
-  const filas = nodos.filter((n) => n.tagName === 'INPUT' && n.type === 'checkbox'
-    && n.getAttribute && n.getAttribute('aria-label') && n.getAttribute('aria-label') !== TODOS_LABEL && enTd(n));
-  if (filas.length === 0) return { html: null, aviso: 'no hay casillas de fila que medir' };
-  filas[0].checked = true;
-  filas[0].disparar('change');
-
-  return { html: serializar(r.contenedor) + extra, aviso: null, casillasDeFila: filas.length };
 }
