@@ -33,6 +33,7 @@ import { mutacionesDeclaradas, censoDeDeclaraciones } from '../scripts/meta-guar
 import { numeroDeClave } from '../scripts/_censo-reparto.mjs';
 import { numeroDeRama } from '../scripts/censo-tablero-vs-arbol.mjs';
 import { repoAlcanzabilidad, CASOS, RAMAS_DEL_BANCO } from './_fixture-alcanzabilidad.mjs';
+import { anclaEnElRepositorio } from './_ancla-en-el-repositorio.mjs'; // SCRUM-796
 import {
   instantanea, poblacionDe, censar, resumenDe, motivosParaNoFiarse, titularConSalvedad,
   corroboracionDe, esAncestroDe, alcanzabilidadDe, ESTADOS, MOTIVOS, PREFIJO_ORIGIN,
@@ -529,8 +530,14 @@ test('SCRUM-753 · 🔴 el LECTOR OFICIAL de `meta:mutaciones` VE mis declaracio
   for (const m of mio.mutaciones) {
     const abs = path.join(RAIZ, m.fichero);
     assert.ok(fs.existsSync(abs), `🔴 la mutación apunta a «${m.fichero}», que no existe.`);
-    assert.ok(fs.readFileSync(abs, 'utf8').includes(m.de),
-      `🔴 el ancla de la mutación «${m.cae}» ya no está en «${m.fichero}»: la declaración caducó.`);
+    // 🔴 SCRUM-796 · CONTRA EL FUENTE DEL REPOSITORIO, no contra el fichero de la copia de
+    // trabajo. `meta:mutaciones` sustituye el ancla en ese fichero y LUEGO corre este guard, así
+    // que leerlo del disco hacía caer este aserto por definición: era 27 de los 36 arrastres.
+    const anc = anclaEnElRepositorio(m, RAIZ);
+    assert.ok(anc.medible, `🔴 CIEGO: no puedo comprobar el ancla de «${m.cae}» — ${anc.motivo}`);
+    assert.ok(anc.viva,
+      `🔴 el ancla de la mutación «${m.cae}» ya no está en «${m.fichero}» (${anc.origen}): la `
+      + 'declaración caducó.');
     assert.notEqual(m.de, m.a, '🔴 una mutación que no cambia nada no probaría nada.');
     // El nombre del test que debe caer tiene que ser el de un test DE ESTE fichero.
     assert.ok(fuenteDe(`tests/${YO}`).includes(m.cae),

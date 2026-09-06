@@ -46,6 +46,7 @@ import {
   ERROR_TIPO_IVA_NO_EMITIBLE,
 } from '../dist/core/validation/tiposIvaEmitibles.js';
 import { invalidTipoIva, TIPOS_IVA_ES_BP } from '../dist/core/validation/fiscalInput.js';
+import { anclaEnElRepositorio } from './_ancla-en-el-repositorio.mjs'; // SCRUM-796
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(RAIZ, 'src');
@@ -567,8 +568,11 @@ test('SCRUM-771 · EL LECTOR OFICIAL me ve: las tres declaraciones, con sus cuat
     );
     const abs = path.join(RAIZ, m.fichero);
     assert.ok(fs.existsSync(abs), `🔴 el fichero de la mutación no existe: ${m.fichero}`);
+    // 🔴 SCRUM-796 · contra el fuente del REPOSITORIO: el arnés reescribe la copia de trabajo.
+    const anc = anclaEnElRepositorio(m, RAIZ);
+    assert.ok(anc.medible, `🔴 CIEGO: no puedo comprobar el ancla de ${m.fichero} — ${anc.motivo}`);
     assert.ok(
-      fs.readFileSync(abs, 'utf8').includes(m.de),
+      anc.viva,
       `🔴 el ancla ya no está en ${m.fichero}: «${m.de.trim().slice(0, 60)}…»`,
     );
   }
