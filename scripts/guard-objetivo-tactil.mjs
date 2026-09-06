@@ -1,10 +1,18 @@
-// scripts/guard-objetivo-tactil.mjs — SCRUM-542 · ampliado al PANEL en SCRUM-782
+// scripts/guard-objetivo-tactil.mjs — SCRUM-542 · panel en SCRUM-782 · dos más en SCRUM-791
 //
 // Mide EN NAVEGADOR (Edge vía puppeteer-core) el ÁREA QUE RECIBE EL TOQUE de cada objetivo
-// interactivo, contra los 44 px de AB6, en DOS superficies:
+// interactivo, contra los 44 px de AB6, en CUATRO superficies:
 //
 //   · LA LANDING (`/`) a 1280 y 360 px — lo que este guard hizo desde SCRUM-542.
-//   · EL PANEL (la lista de Clientes) a 929 y 390 px — desde SCRUM-782.
+//   · EL PANEL · lista de Clientes a 929 y 390 px — desde SCRUM-782.
+//   · EL PANEL · editor de presupuesto y ficha de Trabajo a 929 y 390 px — desde SCRUM-791.
+//
+// 🔴 SON CUATRO Y NO DIECIOCHO, y eso es una decisión medida: SCRUM-787 censó el panel entero
+// —76 objetivos cortos distintos, de los que 57 son `.btn-sm`— y dejó escrito que MEDIR es barato
+// pero VIGILAR se paga en cada PR. Estas dos entran por su motivo: el editor es la pantalla que
+// más se usa, y la ficha de Trabajo tiene los dos peores del árbol (14,0 y 19,6 px) y se usa de
+// pie en obra. Las otras dieciséis siguen medidas por el censo (`npm run censo:tactil-panel`) y
+// sin vigilar, a propósito.
 //
 // 🔴 POR QUÉ ENTRA EL PANEL, Y POR QUÉ NO BASTABA CON RENOMBRAR ESTE GUARD.
 //
@@ -71,7 +79,7 @@ import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL } from './_medidor-de-toque
 // SCRUM-782 · la vista del panel, montada por el banco y serializada. `scripts/` importando de
 // `tests/` no es nuevo: ya lo hacen censo-internos-de-prisma, censo-tablero-vs-arbol y
 // diagnostico-dependencias.
-import { paginaDeClientes } from './_pagina-panel.mjs';
+import { paginaDeClientes, paginaDeVista, CLIENTES_DE_MUESTRA } from './_pagina-panel.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
@@ -153,11 +161,65 @@ const PANEL_HTML = PANEL.html && `<!doctype html><html lang="es"><head><meta cha
 <link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/dashboard/css/styles.css">
 </head><body><div class="view-container">${PANEL.html}</div></body></html>`;
 
+// ═══ SCRUM-791 · LAS DOS SUPERFICIES QUE PROPUSO EL CENSO DE SCRUM-787 ═══════════════════════
+//
+// Entran ÉSTAS y no las dieciocho: medir es barato, vigilar se paga en cada PR. El censo dejó el
+// número (76 objetivos cortos distintos en el panel) y estas dos son las que el asesor aceptó:
+//
+//   · `renderQuotesView`    — 8 cortos, y es la pantalla que más se usa: el presupuesto en 30
+//                             segundos es el producto entero.
+//   · `renderJobDetailView` — 6 cortos, y tiene LOS DOS PEORES DEL ÁRBOL (14,0 y 19,6 px de área
+//                             de toque). Se usa DE PIE EN OBRA, con una mano y con guantes.
+//
+// ⚠️ `renderSettingsView` tiene MÁS (10) y NO entra: es configuración —se toca sentado y una vez—
+// y arrastra 9 nodos «sin pintar» que nadie ha mirado. Un guard sobre una población que no se sabe
+// leer entra ciego. Entra el día que alguien mire esos nueve.
+//
+// Los datos de muestra son los del censo de SCRUM-787: sin ellos las dos se quedan en su estado
+// vacío y medirían otra pantalla.
+const DATOS_791 = (url) => {
+  const u = String(url || '');
+  if (u.includes('/admin/merchant')) return { id: 1, name: 'Fontanería Soler' };
+  if (/\/admin\/customers/.test(u)) return CLIENTES_DE_MUESTRA;
+  if (/\/albaranes\//.test(u)) return { id: 1, estado: 'borrador', lines: [], items: [] };
+  return [];
+};
+/** El elemento de la SONDA: 12 px, deliberadamente por debajo de todo. */
+const SONDA_TEXTO = '·';
+const SONDA_HTML = '<button id="__sonda-791" style="width:12px;height:12px;padding:0;border:0">' + SONDA_TEXTO + '</button>';
+
+const envolver = (cuerpo) => `<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/dashboard/css/styles.css">
+</head><body><div class="view-container">${cuerpo}</div></body></html>`;
+
+const SUPERFICIES_791 = [
+  { ruta: '/__quotes', vista: 'renderQuotesView', titulo: 'editor de presupuesto', distintosEsperados: 8 },
+  { ruta: '/__jobdetail', vista: 'renderJobDetailView', titulo: 'ficha de Trabajo', distintosEsperados: 6 },
+];
+for (const s of SUPERFICIES_791) {
+  const p = await paginaDeVista(RAIZ, s.vista, { datos: DATOS_791, minimoNodos: 10 });
+  s.aviso = p.aviso;
+  s.html = p.html && envolver(p.html);
+  s.htmlSonda = p.html && envolver(p.html + SONDA_HTML);
+}
+
 const srv = http.createServer((req, res) => {
   let p = decodeURIComponent(req.url.split('?')[0]);
   if (p === '/__panel' && PANEL_HTML) {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     return res.end(PANEL_HTML);
+  }
+  // SCRUM-791 · las dos superficies nuevas y sus gemelas con sonda.
+  for (const s of SUPERFICIES_791) {
+    if (p === s.ruta && s.html) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      return res.end(s.html);
+    }
+    if (p === s.ruta + '__sonda' && s.htmlSonda) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      return res.end(s.htmlSonda);
+    }
   }
   if (p === '/') p = '/index.html';
   const abs = path.join(PUBLIC, p);
@@ -431,6 +493,130 @@ if (!PANEL_HTML) {
   }
 }
 
+// ═══ SCRUM-791 · LAS DOS SUPERFICIES NUEVAS ══════════════════════════════════════════════════
+//
+// Bucle APARTE, y a propósito: el de Clientes y sus `EXCEPCIONES_PANEL` no se tocan. Lo que
+// funciona sigue igual y esto se suma.
+//
+// 🔴 LAS EXCEPCIONES VAN ACOTADAS A SU SUPERFICIE. Metidas en la lista compartida excusarían el
+// mismo selector en CUALQUIER pantalla —incluida una que aparezca mañana—, y eso no es declarar
+// una deuda: es bajar el umbral. Cada superficie declara las suyas y responde de ellas.
+const EXCEPCIONES_791 = {
+  renderQuotesView: [
+    { sel: 'BUTTON.btn-ghost.btn-sm', motivo: 'clase compartida `.btn-sm` (29,5–30,8 px) — «✨ Sugerir con IA», «+ Añadir descuento». Pre-existente. La retira el fundador al decidir sobre `.btn-sm` (SCRUM-787: 57 de los 76 son de esa clase).' },
+    { sel: 'BUTTON.btn-ghost.btn-sm.quote-header-btn', motivo: 'clase compartida `.btn-sm` (30,8 px a 390) — «📋 Usar plantilla», «💾 Guardar como plantilla». Misma decisión que la anterior.' },
+    { sel: 'BUTTON.btn.btn-primary', motivo: 'el BOTÓN BASE mide 36,8 px, no 44 — «Generar presupuesto». NO es `.btn-sm`: es el segundo grupo que destapó SCRUM-787 (14 de 76). Decisión propia del fundador, distinta de la de `.btn-sm`.' },
+    { sel: 'BUTTON.btn.btn-secondary', motivo: 'el BOTÓN BASE a 36,8 px — «+ Añadir línea», «Limpiar formulario». Mismo grupo que el anterior.' },
+    { sel: 'INPUT', motivo: 'casillas del editor a 17,0 px de área de toque. TERCER grupo de SCRUM-787: no es cuestión de una clase compartida, sino de darles área en este sitio. Sin decidir.' },
+  ],
+  renderJobDetailView: [
+    { sel: 'BUTTON.btn-ghost.btn-sm', motivo: 'clase compartida `.btn-sm` (30,9 px) — «Cambiar». Pre-existente; la retira el fundador con `.btn-sm`.' },
+    { sel: 'BUTTON.btn-secondary.btn-sm', motivo: 'clase compartida `.btn-sm` (30,9 px) — «+ Nuevo albarán», «Parte de trabajo». Ídem.' },
+    { sel: 'BUTTON.btn-primary', motivo: 'el BOTÓN BASE a 37,0 px — el CTA del héroe. Segundo grupo de SCRUM-787, decisión aparte de `.btn-sm`.' },
+    { sel: 'BUTTON.detail-miga-link', motivo: '19,6 px de ÁREA DE TOQUE — la miga «Trabajos». Uno de los DOS PEORES del árbol, y su caja CSS no lo delata: es el ejemplo de por qué el árbitro es el área y no la caja. Sin decidir.' },
+    { sel: 'INPUT', motivo: '14,0 px — la casilla de precios de la barra de documentos. EL PEOR del árbol entero, y en la pantalla que se usa de pie en obra. Sin decidir.' },
+  ],
+};
+
+for (const s of SUPERFICIES_791) {
+  if (!s.html) {
+    mal(`   🔴 CIEGO: no he podido montar «${s.vista}» (${s.aviso}). No se cuenta como cero: `
+      + 'esa superficie NO está medida.');
+    continue;
+  }
+  const excs = EXCEPCIONES_791[s.vista] || [];
+  const vistos = new Map();          // selector → { corto } — para el detector de sobrantes
+  const distintos = new Set();       // sel|texto — para el suelo que reencuentra lo ya medido
+
+  for (const ancho of ANCHOS_PANEL) {
+    const page = await navegador.newPage();
+    await page.setViewport({ width: ancho, height: 900 });
+
+    // ✅ LA SONDA, superficie por superficie y anchura por anchura. Un objetivo de 12 px inyectado
+    // TIENE que salir corto. La superficie que no lo caza NO está medida, aunque devuelva cero —
+    // y un cero así parecería cobertura. La sonda vive en una página aparte servida en memoria:
+    // no se toca ningún fichero del árbol.
+    await page.goto(`http://127.0.0.1:${PUERTO}${s.ruta}__sonda`, { waitUntil: 'load' });
+    const rs = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MINIMO}, ${JSON.stringify([])}, true)`);
+    const sonda = rs.medidos.find((m) => m.sel === 'BUTTON' && m.texto === SONDA_TEXTO);
+    if (!sonda) {
+      mal(`   🔴 SUPERFICIE NO MEDIDA · ${s.vista} @${ancho}px: la sonda de 12 px ni siquiera se ha `
+        + 'medido. Todo lo que diga esta superficie es ceguera.');
+    } else if (sonda.cumple) {
+      mal(`   🔴 SUPERFICIE NO MEDIDA · ${s.vista} @${ancho}px: la sonda de 12 px sale como que `
+        + `CUMPLE los ${MINIMO} px. El medidor no está midiendo lo que cree.`);
+    }
+
+    await page.goto(`http://127.0.0.1:${PUERTO}${s.ruta}`, { waitUntil: 'load' });
+    const r = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MINIMO}, ${JSON.stringify([])}, true)`);
+
+    decir('\n════════════════════════════════════════════════════════════════════════════');
+    decir(`PANEL · ${s.titulo} (${s.vista}) · ANCHO ${ancho} px`);
+    decir('════════════════════════════════════════════════════════════════════════════');
+    decir(`① censo derivado · interactivos en el DOM: ${r.total}  ·  medidos: ${r.medidos.length}`
+      + `  ·  sin pintar: ${r.sinPintar.length}  ·  presentes pero no tocables: ${r.noTocables.length}`
+      + `  ·  sonda: ${sonda ? (sonda.cumple ? '🔴 NO cazada' : '✅ cazada') : '🔴 ausente'}`);
+
+    if (r.medidos.length === 0) {
+      mal(`   🔴 CIEGO: cero táctiles medidos en ${s.vista}. Eso no es «no hay defectos».`);
+      await page.close();
+      continue;
+    }
+    if (r.noTocables.length) {
+      decir('\n② presentes pero NO tocables (no son «pequeños»: ahí el dedo no los activa):');
+      for (const m of r.noTocables) decir(`   · [${m.seccion}] ${m.sel} «${m.texto}» — caja ${m.caja}px — ${m.motivo}`);
+    }
+
+    const cortos = r.medidos.filter((m) => !m.cumple);
+    for (const m of cortos) distintos.add(`${m.sel}|${m.texto}`);
+    const excusados = cortos.filter((m) => excs.some((e) => e.sel === m.sel));
+    const culpables = cortos.filter((m) => !excs.some((e) => e.sel === m.sel));
+    decir(`\n③ contra AB6 (${MINIMO} px) · cumplen: ${r.medidos.length - cortos.length}`
+      + `  ·  se quedan cortos: ${cortos.length}  ·  de ésos, excusados con motivo: ${excusados.length}`);
+    for (const m of culpables) {
+      mal(`   ✖ ${m.tocable}px < ${MINIMO} · [${m.seccion}] ${m.sel} «${m.texto}» (caja CSS ${m.caja}px)`);
+    }
+    for (const m of excusados) {
+      const e = excs.find((x) => x.sel === m.sel);
+      decir(`   ⚠️ EXCEPCIÓN ${m.tocable}px · ${m.sel} «${m.texto}» — ${e.motivo}`);
+    }
+    for (const m of r.medidos) {
+      if (!vistos.has(m.sel)) vistos.set(m.sel, { corto: false });
+      if (!m.cumple) vistos.get(m.sel).corto = true;
+    }
+    if (!culpables.length) decir(`   ✅ todo lo pulsable de ${s.titulo} llega a 44 px (o está excusado con motivo).`);
+    await page.close();
+  }
+
+  // 🔴 EL SUELO QUE DECIDE: el guard tiene que REENCONTRAR lo que ya midió el censo de SCRUM-787.
+  // Si encuentra MENOS, ha entrado ciego — y ése es el peor resultado posible, porque la
+  // superficie PARECERÍA cubierta. Se cuentan elementos DISTINTOS (selector + texto), no
+  // mediciones: el mismo botón medido a dos anchuras es UNO, y confundirlo fue el error del dato
+  // de partida de SCRUM-787 (los «13» de Clientes eran 11 sumados dos veces).
+  if (distintos.size < s.distintosEsperados) {
+    mal(`   🔴 CIEGO · ${s.vista}: he encontrado ${distintos.size} objetivos cortos DISTINTOS y el `
+      + `censo de SCRUM-787 midió ${s.distintosEsperados}. Faltan ${s.distintosEsperados - distintos.size}: `
+      + 'o la vista ya no pinta lo mismo con estos datos, o el censo dejó de verlos. Un verde aquí '
+      + 'diría que la pantalla está cubierta cuando no lo está.');
+  } else {
+    decir(`\n   ✅ suelo de ${s.vista}: ${distintos.size} objetivos cortos DISTINTOS `
+      + `(el censo de SCRUM-787 midió ${s.distintosEsperados}).`);
+  }
+
+  // Y el detector de sobrantes, ACOTADO a esta superficie y SOBRE LAS DOS ANCHURAS — que es la
+  // corrección que ya costó un falso rojo en Clientes: `BUTTON.btn-ghost.btn-sm` cumple a 390 y no
+  // a 929, así que una excepción sólo sobra cuando ya no hace falta EN NINGUNA.
+  for (const e of excs) {
+    const v = vistos.get(e.sel);
+    if (!v) {
+      mal(`   🔴 EXCEPCIÓN CADUCA · ${s.vista}: \`${e.sel}\` ya no aparece en esa pantalla. Bórrala.`);
+    } else if (!v.corto) {
+      mal(`   🔴 EXCEPCIÓN SOBRANTE · ${s.vista}: \`${e.sel}\` cumple los ${MINIMO} px en TODAS las `
+        + 'anchuras medidas. Bórrala: mientras esté, ese objetivo no está vigilado.');
+    }
+  }
+}
+
 // 🔴 UNA EXCEPCIÓN QUE YA NO HACE FALTA ES UNA MENTIRA CON ANTIGÜEDAD: si alguien arregla
 // `.btn-sm` y nadie limpia la lista, el guard deja de vigilar esos botones para siempre.
 //
@@ -457,5 +643,9 @@ if (fallos) {
     + `${MINIMO} px, va a EXCEPCIONES con su motivo y quién la retira.`);
   process.exit(1);
 }
-decir('✅ objetivos de toque: todos llegan a los 44 px de AB6 — LANDING (1280 y 360) y '
-  + 'PANEL/clientes (929 y 390). SCRUM-542 + SCRUM-782.');
+// El mensaje final NOMBRA LAS CUATRO. Un «todo bien» que no dice de qué es cómo este guard
+// empezó: se llamaba «objetivo-tactil» y sólo miraba la landing (SCRUM-782).
+decir('✅ objetivos de toque: todos llegan a los 44 px de AB6 (o están excusados con motivo) — '
+  + 'LANDING (1280 y 360) · PANEL/clientes, editor de presupuesto y ficha de Trabajo (929 y 390). '
+  + 'SCRUM-542 + SCRUM-782 + SCRUM-791. Las otras 16 vistas del panel NO se vigilan aquí: están '
+  + 'medidas en `npm run censo:tactil-panel` (SCRUM-787).');
