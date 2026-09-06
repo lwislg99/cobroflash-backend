@@ -239,7 +239,7 @@ async function seed() {
   //
   // Esto era `prisma.product.create({ data: { merchantId, name, price } })`, y omitía
   // `nameSearch` — la sombra normalizada de `name` que `createProduct` escribe y por la que
-  // `searchProducts` FILTRA. Consecuencia medida sobre la BD de desarrollo (8/8 filas con
+  // `searchProducts` FILTRA. Consecuencia medida el 6-sep-2026 sobre la BD de desarrollo (8/8 con
   // `name_search` NULL): «desatasco de» → 0, «sustitución de» → 0, «instalación de» → 0.
   // TODO el catálogo sembrado era invisible al autocompletado de la pantalla que el máster
   // quiere resuelta en 30 segundos, mientras un producto dado de alta a mano SÍ aparecía.
