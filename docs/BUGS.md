@@ -348,6 +348,15 @@
 - **Arreglo:** usar el nombre del negocio (el que aparece en presupuesto/factura/landing) de forma consistente en todos los mensajes al cliente.
 - **CAUSA RAÍZ (9 jun):** usaba `merchant.name` (nombre de cuenta). Commit `3d64887`: usa `legalName||name`, como presupuesto/factura/landing. Aplicado en psp y mpWebhook.
 
+### [ ] P1-PORTAL-PDF · El botón «📄 Ver PDF» del portal PÚBLICO apunta a una URL bajo `requireAuth`
+- **Encontrado:** 6-sep-2026, midiendo SCRUM-799 (hallazgo colateral: ese ticket era MEDIR el PDF que cambia). **No se arregla ahí.**
+- **Dónde:** `customerPortal.routes.ts:302-305` construye el href como `BASE_URL + quote.pdfUrl`, y el portal es **público** (`app.use('/cliente', …)`, `src/app.ts:139`, montado 220 líneas antes del `requireAuth` de la 359).
+- **Por qué el valor es malo:** `quotes.pdf_url` lo escribe la propia ruta del PDF con su valor de retorno (`quotesAdmin.routes.ts:548`), y ese valor es **`/admin/quotes/<id>/pdf`** — MEDIDO, no deducido: el generador devolvió `publicUrlPath = "/admin/quotes/362/pdf"`. El cliente acaba pinchando una ruta de admin.
+- **Hoy está LATENTE:** los 15 presupuestos de dev tienen `pdf_url = NULL` y el botón no se pinta (`btnPdf = pdfUrl ? … : ''`). **Se activa en cuanto el profesional abre UNA vez el PDF desde el panel**, porque esa apertura escribe la columna.
+- **Ya pasó una vez:** es el mismo error que P0-2 (línea 284) cerró para la FACTURA —enlazar el `pdfUrl` crudo en vez de una ruta que sirva el documento—, reaparecido en la cara del cliente.
+- **Lo mismo hay que mirar en la factura del portal:** `customerPortal.routes.ts:347-350` («📄 Descargar factura») repite el patrón con `inv.pdfUrl`. En dev las 5 facturas están en `PENDING_PDF`, así que tampoco se pinta: **no medido en producción**.
+- **Done cuando:** desde `/cliente` (sin sesión de admin) el botón o lleva a un documento que se ve, o no se pinta. Verificado en yaqu.app, no en localhost.
+
 ---
 
 ## P2 — Mejoras de producto / UX
