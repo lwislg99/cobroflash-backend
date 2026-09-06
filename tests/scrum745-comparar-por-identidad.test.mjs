@@ -33,7 +33,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url'; // SCRUM-730
 import ts from 'typescript';
 import {
-  mutacionesDeclaradas, censoDeDeclaraciones,
+  mutacionesDeclaradas, censoDeDeclaraciones, lecturaDeDeclaraciones,
   cayo, paso, // SCRUM-748: los dos veredictos, que dejaron de ser el mismo
 } from '../scripts/meta-guard-mutaciones.mjs';
 
@@ -63,6 +63,28 @@ test('SCRUM-745 · 🔴 CONTROL NEGATIVO: una declaración INCOMPLETA no se cuen
   // Y un fichero que sólo MENCIONA el nombre en un comentario no declara nada.
   assert.deepEqual(mutacionesDeclaradas('// aquí iría MUTACIONES_QUE_ME_TUMBAN algún día'), [],
     '🔴 un comentario se está leyendo como una declaración.');
+});
+
+test('SCRUM-745 · 🔴 una declaración INCOMPLETA se DENUNCIA, no se descarta en silencio', () => {
+  // 🔴 PROVOCADO, NO IMAGINADO (5-sep-2026). Editando este mismo árbol perdí la línea `fichero:`
+  // de una declaración ya escrita. El lector la descartó, el censo pasó de 17 a 16 y
+  // `meta:mutaciones` siguió VERDE: la mutación había dejado de ejecutarse y nada lo dijo. Eso es
+  // literalmente «media declaración parece cobertura», el defecto que este mecanismo vino a cerrar,
+  // cometido dentro del mecanismo.
+  const coja = "export const MUTACIONES_QUE_ME_TUMBAN = [{ de: 'a', a: 'b', cae: 'c' }];";
+  const r = lecturaDeDeclaraciones(coja);
+  assert.deepEqual(r.buenas, [], '🔴 una declaración sin `fichero` se está aceptando como buena.');
+  assert.equal(r.incompletas.length, 1,
+    '🔴 la declaración coja se DESCARTA sin dejar rastro. El recuento del job bajaría solo y el '
+    + 'verde de al lado se leería como si esa mutación se siguiera ejecutando.');
+  assert.deepEqual(r.incompletas[0].faltan, ['fichero'],
+    '🔴 la denuncia no dice QUÉ falta: sin eso hay que buscarlo a mano, y la prisa lo salta.');
+
+  // Y el complementario, que es lo que convierte esto en un dato: HOY el árbol no tiene ninguna.
+  // El cero vale porque el instrumento acaba de enseñar que sabe encontrar una.
+  const censo = censoDeDeclaraciones(DIR_TESTS);
+  const cojas = censo.flatMap((g) => (g.incompletas || []).map((i) => `${g.guard}: faltan ${i.faltan.join(', ')}`));
+  assert.deepEqual(cojas, [], '🔴 hay declaraciones incompletas en el árbol:\n   · ' + cojas.join('\n   · '));
 });
 
 test('SCRUM-745 · SUELO: hay al menos un guard declarando de verdad en el árbol', () => {
@@ -267,37 +289,50 @@ test('SCRUM-745 · 🔴 el censo de la superficie de riesgo, con su población',
 // se confundan.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-/** Una salida de `node --test --test-reporter=spec` con un test verde y otro rojo. */
-const SALIDA_MIXTA = [
-  '✔ SCRUM-x · el que pasa (1.2ms)',
-  '✖ SCRUM-x · el que falla (3.4ms)',
-  'ℹ tests 2',
-].join('\n');
+/**
+ * Lo que devuelve `correr()`: los nombres de los tests que PASARON y los que CAYERON. No es texto
+ * de ningún reporter — son los eventos `test:pass` / `test:fail` de `run()`, que es lo que dejó
+ * de poder quedarse ciego (SCRUM-745, adopción).
+ */
+const RESULTADO_MIXTO = {
+  pasados: ['SCRUM-x · el que pasa'],
+  caidos: ['SCRUM-x · el que falla'],
+};
 
-/** Lo que imprime node cuando el FICHERO no llega a cargar: ni un nombre de test, en ningún lado. */
-const SALIDA_FICHERO_MUERTO = [
-  "Error: Cannot find module '../dist/algo.js'",
-  'ℹ tests 1',
-  'ℹ pass 0',
-  'ℹ fail 1',
-].join('\n');
+/**
+ * Lo que devuelve cuando el FICHERO no llega a cargar.
+ *
+ * 🔴 MEDIDO EL 5-SEP-2026, PROVOCÁNDOLO — no imaginado. Se hizo morir un fichero de test contra un
+ * `import` inexistente y `run()` emitió **exactamente un** `test:fail` cuyo `name` es la RUTA DEL
+ * FICHERO. Ni un nombre de test, en ningún lado. De ahí que los dos lectores digan NO, que es la
+ * conjunción de la que nace el veredicto CIEGO.
+ */
+const RESULTADO_FICHERO_MUERTO = {
+  pasados: [],
+  caidos: ['C:/x/cobroflash/tests/scrum748-no-lo-se-no-es-al-dia.test.mjs'],
+};
 
 test('SCRUM-745/748 · SUELO: `paso` y `cayo` distinguen verde de rojo, y no se confunden', () => {
-  assert.equal(paso(SALIDA_MIXTA, 'el que pasa'), true, '🔴 `paso` no ve un verde.');
-  assert.equal(cayo(SALIDA_MIXTA, 'el que falla'), true, '🔴 `cayo` no ve un rojo.');
+  assert.equal(paso(RESULTADO_MIXTO, 'el que pasa'), true, '🔴 `paso` no ve un verde.');
+  assert.equal(cayo(RESULTADO_MIXTO, 'el que falla'), true, '🔴 `cayo` no ve un rojo.');
   // Y cruzados: el verde no es un rojo ni al revés. Si esto se confundiera, el veredicto se
   // invertiría entero y todo saldría al revés sin que nada avisara.
-  assert.equal(cayo(SALIDA_MIXTA, 'el que pasa'), false, '🔴 `cayo` cuenta un VERDE como caída.');
-  assert.equal(paso(SALIDA_MIXTA, 'el que falla'), false, '🔴 `paso` cuenta un ROJO como verde.');
+  assert.equal(cayo(RESULTADO_MIXTO, 'el que pasa'), false, '🔴 `cayo` cuenta un VERDE como caída.');
+  assert.equal(paso(RESULTADO_MIXTO, 'el que falla'), false, '🔴 `paso` cuenta un ROJO como verde.');
 });
 
 test('SCRUM-745/748 · 🔴 con el FICHERO MUERTO, ni pasó ni cayó — y ahí nace el CIEGO', () => {
   // Éste es el caso que produjo la acusación falsa en CI. Los dos lectores tienen que decir NO:
   // es la conjunción «no pasó y no cayó» la que separa «no se ejecutó» de «no cayó».
-  assert.equal(paso(SALIDA_FICHERO_MUERTO, 'el que pasa'), false,
+  assert.equal(paso(RESULTADO_FICHERO_MUERTO, 'el que pasa'), false,
     '🔴 se lee como verde un test que no llegó a existir.');
-  assert.equal(cayo(SALIDA_FICHERO_MUERTO, 'el que pasa'), false,
+  assert.equal(cayo(RESULTADO_FICHERO_MUERTO, 'el que pasa'), false,
     '🔴 se lee como caída un test que no llegó a existir: ESA es la acusación falsa.');
+  // 🔴 Y el nombre que SÍ trae el fichero muerto es su RUTA. Preguntar por ella da rojo, y eso no
+  // es un fallo: es la prueba de que el único `test:fail` de un fichero muerto NO es un test.
+  assert.equal(cayo(RESULTADO_FICHERO_MUERTO, 'scrum748-no-lo-se-no-es-al-dia.test.mjs'), true,
+    '🔴 SUELO: la sonda no ve ni el único evento que hay; entonces los dos NO de arriba no '
+    + 'significan «no está», significan «no supe mirar».');
 });
 
 test('SCRUM-745/748 · 🔴 el meta-guard mira la LÍNEA BASE, y NO reconoce mensajes de error', () => {
@@ -331,13 +366,53 @@ test('SCRUM-745/748 · 🔴 el meta-guard mira la LÍNEA BASE, y NO reconoce men
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
+// ⑤ SCRUM-745 (adopción) · EL VIGILANTE Y SU CONTROL YA NO CUELGAN DEL MISMO CLAVO
+//
+// `paso()` y `cayo()` leían los dos el reporter `spec`. Cambiar `--test-reporter` en `correr()`
+// los dejaba CIEGOS A LA VEZ: un detector y su control con un punto de fallo común, que es el
+// defecto de SCRUM-742 dentro de la herramienta que lo persigue.
+//
+// 🔴 NO SE VIGILA LA CONSTANTE DEL REPORTER: SE QUITA EL REPORTER. El escalón manda —hacerlo
+// imposible antes que derivar, y derivar antes que duplicar con guard—, y aquí el escalón 1
+// estaba disponible: `run()` de `node:test` entrega eventos con el nombre del test dentro. Este
+// test es el trinquete que impide volver atrás sin darse cuenta.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-745 · 🔴 los dos lectores NO cuelgan de ningún reporter', () => {
+  const src = fs.readFileSync(path.join(RAIZ, 'scripts', 'meta-guard-mutaciones.mjs'), 'utf8');
+  const desnudo = src
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .split('\n').map((l) => l.replace(/(^|[^:])\/\/.*$/, '$1')).join('\n');
+
+  // 🔴 SUELO, Y NO ES ADORNO: los tres asserts de abajo son NEGACIONES, y una negación sobre un
+  // fuente vacío pasa sola (SCRUM-719). El desnudado se lleva por delante toda la prosa que
+  // EXPLICA el reporter —que nombra `--test-reporter` para prohibirlo—, así que hay que
+  // comprobar que no se ha llevado también el código.
+  assert.ok(desnudo.includes('async function correr'),
+    '🔴 el desnudado se comió el código: lo de abajo no estaría mirando nada.');
+
+  assert.equal(/test-reporter/.test(desnudo), false,
+    '🔴 el meta-guard vuelve a nombrar un reporter en su CÓDIGO. Con eso `paso` y `cayo` vuelven a '
+    + 'colgar del mismo clavo: quien lo cambie los ciega a los dos a la vez y el veredicto entero '
+    + 'se apaga en silencio.');
+  assert.equal(/spawnSync/.test(desnudo), false,
+    '🔴 ha vuelto el subproceso a mano. Su salida es TEXTO, y leer texto de un reporter es '
+    + 'justamente el acoplamiento que este trinquete cierra.');
+
+  // Y el positivo: que de verdad pide los eventos, que es de donde sale el dato.
+  assert.ok(desnudo.includes('test:pass') && desnudo.includes('test:fail'),
+    '🔴 ya no se leen los eventos del runner: entonces el veredicto sale de otro sitio y este '
+    + 'trinquete no sabe de dónde.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
 // SCRUM-748 · LAS MUTACIONES DE ESTE GUARD — el que juzga a los demás, el primero
 // ═════════════════════════════════════════════════════════════════════════════════════════
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // El defecto original: dictar el veredicto sin mirar la línea base.
     fichero: 'scripts/meta-guard-mutaciones.mjs',
-    de: '  if (!paso(salidaLimpia, mut.cae)) {',
+    de: '  if (!paso(limpia, mut.cae)) {',
     a: '  if (false) {',
     cae: 'el meta-guard mira la LÍNEA BASE, y NO reconoce mensajes de error',
   },
@@ -352,7 +427,26 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     // caducó»— en vez de acusar al guard. Es exactamente la distinción que SCRUM-748 vino a
     // arreglar, probándose a sí misma con su propio defecto.
     fichero: 'scripts/meta-guard-mutaciones.mjs',
-    de: 'export function paso(salida, nombre) {',
-    a: 'export function paso(salida, nombre) {\n  return true;',
+    de: 'export function paso(resultado, nombre) {',
+    a: 'export function paso(resultado, nombre) {\n  return true;',
     cae: 'con el FICHERO MUERTO, ni pasó ni cayó',  },
+  {
+    // SCRUM-745 (adopción) · Y LA TERCERA: que el reporter VUELVA. Es el acoplamiento entero
+    // reconstruido — en cuanto el código nombra un reporter, `paso` y `cayo` vuelven a tener un
+    // punto de fallo común, y quien lo cambie los apaga a los dos sin que nada avise.
+    fichero: 'scripts/meta-guard-mutaciones.mjs',
+    de: '    forceExit: true,',
+    a: "    forceExit: true,\n    reporterQueVuelveAColgarDelMismoClavo: '--test-reporter=spec',",
+    cae: 'los dos lectores NO cuelgan de ningún reporter',
+  },
+  {
+    // SCRUM-745 (adopción) · Y LA CUARTA: que la declaración coja vuelva a caerse por el agujero
+    // sin ruido. Es el defecto provocado el 5-sep-2026 —perder un campo de una declaración ya
+    // escrita— devuelto a su sitio: el lector la descarta, el recuento baja solo y el job sigue
+    // verde sobre una mutación que ha dejado de ejecutarse.
+    fichero: 'scripts/meta-guard-mutaciones.mjs',
+    de: '        else incompletas.push({ faltan: ',
+    a: '        else if (false) incompletas.push({ faltan: ',
+    cae: 'una declaración INCOMPLETA se DENUNCIA, no se descarta en silencio',
+  },
 ];

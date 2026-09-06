@@ -213,3 +213,43 @@ test('SCRUM-739 · la pieza se carga ANTES que Informes, y el service worker la 
   assert.match(leer('public/sw.js'), /\/dashboard\/js\/api\.js/,
     '🔴 el service worker no cachea `api.js`');
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-745 (adopción) · LAS MUTACIONES DE ESTE GUARD
+//
+// El ticket tiene dos mitades que se rompen por separado: que el SITIO ÚNICO escriba bien el
+// número, y que la pantalla de Informes de verdad DELEGUE en él. Se puede tener lo segundo con lo
+// primero roto, y se puede tener lo primero con la pantalla volviendo a formatear por su cuenta —
+// que es exactamente cómo nació este defecto.
+//
+// ⛔ NINGUNA MUTACIÓN TOCA `src/core/utils/utils.ts` PARA LO QUE SE MIDE POR VALOR. Los tests que
+// comparan cifras leen el BACKEND desde `dist/`, y el meta-guard no compila entre la mutación y la
+// pasada: cambiar el `.ts` no movería el `dist/` y saldría MUDO — una acusación falsa contra un
+// guard sano, que es el defecto que SCRUM-748 vino a quitar. Se muta lo que el guard lee de
+// verdad: el `api.js` que carga el banco de vistas, y el fuente de la vista.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // ① El sitio único deja de agrupar: `fmtImporteEs(6050)` vuelve a «6050,00», que es el defecto
+    // literal — `es-ES` por CLDR no agrupa los enteros de cuatro cifras, y ésa es toda la banda
+    // del trabajo corriente de un fontanero.
+    fichero: 'public/dashboard/js/api.js',
+    de: '    return sinSimbolo({ ...opts, ...AGRUPA_SIEMPRE });',
+    a: '    return sinSimbolo(opts);',
+    cae: 'EL QUE DECIDE: con cuatro cifras, Informes escribe el punto de millar',
+  },
+  {
+    // ② Informes vuelve a formatear por su cuenta. El valor sale IGUAL de bien en la mayoría de
+    // los casos —por eso se coló—: lo que cambia es que hay una sexta copia del formato, y la
+    // siguiente divergencia ya no la ve nadie.
+    //
+    // ⚠️ El ancla lleva sus CUATRO espacios a propósito: con dos casaría también la otra
+    // `const fmt` del fichero —que va indentada con dos— y se mutaría la que no es. El guard de
+    // SCRUM-737 me obligó a quitar de aquí el recuento que lo demostraba: era una cifra del árbol
+    // sin ancla, y anotarla habría envejecido sola.
+    fichero: 'public/dashboard/js/reportsView.js',
+    de: '    const fmt = (n) => fmtImporteEs(n);',
+    a: "    const fmt = (n) => Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });",
+    cae: 'Informes ya no formatea dinero por su cuenta',
+  },
+];

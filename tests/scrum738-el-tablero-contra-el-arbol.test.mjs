@@ -153,3 +153,46 @@ test('SCRUM-738 · 🔴 esta pieza es SUPERFICIE: el motor sigue siendo el de SC
   assert.equal(/veredicto\s*=\s*['"]/.test(codigo), false,
     '🔴 aquí se está calculando un veredicto propio. El veredicto es del motor.');
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-745 (adopción) · LAS MUTACIONES DE ESTE GUARD
+//
+// 🔴 ESTE HUECO ESTABA DECLARADO Y ABIERTO A PROPÓSITO. Sin declaración, el meta-guard no
+// ejercitaba este fichero: su rojo dependía de que alguien se acordara de inyectar el defecto a
+// mano en un scratchpad — que es LITERALMENTE el defecto que SCRUM-745 vino a quitar. Un guard
+// cuya prueba depende de que alguien se acuerde no es un mecanismo.
+//
+// Son dos porque el ticket son dos piezas separables: la SUPERFICIE que enumera (`numeroDeRama`)
+// y el ARREGLO DENTRO DEL MOTOR (el número compartido). Cada una puede quedarse muda sola.
+//
+// ⚠️ LAS DOS ANCLAS VAN SIN BARRAS INVERTIDAS, y no es estética: en SCRUM-748 un ancla que
+// llevaba `\s` perdió la barra camino del fichero y no casaba con nada. El meta-guard lo dijo
+// —CIEGO, «la declaración caducó»—, pero el ancla que no se puede escribir bien es un ancla que
+// caduca sola. La primera muta la FIRMA de la función y mete el defecto detrás; la segunda apaga
+// el título leído, que es una línea sin ninguna barra.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // ① EL SUBSTRING QUE ESTE TICKET PROHÍBE, reconstruido: se quita el delimitador obligatorio.
+    // `scrum-72` vuelve a dar 72 en vez de `null`, o sea que «72» vuelve a casar con el principio
+    // de `scrum-727-x`. Con eso el censo propondría cerrar el ticket que no es — el peor resultado
+    // que puede dar, peor que no tenerlo.
+    fichero: 'scripts/censo-tablero-vs-arbol.mjs',
+    de: 'export function numeroDeRama(nombre) {',
+    a: 'export function numeroDeRama(nombre) {\n  const mm = /^scrum-0*([0-9]+)/.exec(String(nombre ??0).trim()); return mm ? Number(mm[1]) : null;',
+    cae: '«72» NO casa con 720, 727 ni 1727 — se compara el NÚMERO',
+  },
+  {
+    // ② EL FALSO POSITIVO QUE ABRIÓ EL ARREGLO: sin el título leído, el discriminador de número
+    // compartido se apaga entero y `docs/master/SCRUM-684.md` vuelve a contar como fuente propia
+    // aunque esté titulado para SCRUM-683. `censarTicket(684)` volvería a decir ENTERO sobre un
+    // ticket que NO está hecho.
+    //
+    // La colisión se calcula con un ternario, así que apagar el título la deja en `null` limpio y
+    // el CONTROL NEGATIVO de al lado sigue verde: cae este caso y sólo este.
+    fichero: 'tests/_censo-tickets.mjs',
+    de: '  const tituloDelDoc = doc ? numeroDelTituloDeEntrada(doc) : null;',
+    a: '  const tituloDelDoc = null;',
+    cae: 'SCRUM-684 NO se da por hecho: su entrada está titulada para OTRO',
+  },
+];
