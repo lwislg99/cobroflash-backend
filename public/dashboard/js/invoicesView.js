@@ -183,7 +183,9 @@ async function fetchInvoices(options = {}) {
 
     const left = document.createElement('div');
     const title = document.createElement('h2');
-    title.textContent = 'Facturas';
+    // SCRUM-776: el título sigue al documento. Un merchant ES real (flag OFF) emite
+    // JUSTIFICANTES, y esta pantalla se los listaba bajo el rótulo «Facturas».
+    title.textContent = window.rotulosDelDocumento.tituloListado();
     title.style.cssText = 'margin:0;font-size:18px';
     left.appendChild(title);
     const subtitle = document.createElement('p');
@@ -334,7 +336,7 @@ async function fetchInvoices(options = {}) {
     thead.innerHTML = `
       <tr>
         <th style="width:36px" class="col-hide-mobile"><input type="checkbox" id="inv-check-all" title="Seleccionar todas"/></th>
-        <th>Nº factura</th>
+        <th>${window.rotulosDelDocumento.columnaNumero()}</th>
         <th>Cliente</th>
         <th style="text-align:right">Total</th>
         <th>Estado</th>

@@ -48,8 +48,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url'; // SCRUM-730: `pathname` no decodifica
-import { spawnSync } from 'node:child_process';
+import { run } from 'node:test'; // SCRUM-745 (adopción): eventos, no reporter
 import ts from 'typescript';
+import { ejecutadoDirectamente } from './_puerta-de-entrada.mjs'; // SCRUM-765
+import { correspondencia, destinoEnDist, emitirDesdeFuente } from './frontera-dist.mjs'; // SCRUM-763
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIR_TESTS = path.join(RAIZ, 'tests');
@@ -59,14 +61,68 @@ export const SALIDA_CIEGO = 2;
 export const SALIDA_NO_RESTAURADO = 3;
 
 /**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-765 · LOS DOS SUELOS, Y POR QUÉ HACEN FALTA LOS DOS.
+ *
+ * Este instrumento le exige a todos los censos de la casa que un CERO se distinga de un «no supe
+ * mirar», y no se lo exigía a sí mismo. Se cerró por los dos sitios por los que se puede llegar
+ * a cero sin enterarse:
+ *
+ * ① `SUELO_DECLARACIONES` / `SUELO_GUARDS` — un `MUTACIONES_QUE_ME_TUMBAN` **borrado entero**
+ *    saca al guard del censo, y el censo no sabía cuántos debería haber: el recuento bajaba de
+ *    N a N-1 y el job seguía verde. La declaración COJA ya se denunciaba desde SCRUM-745; la
+ *    BORRADA no. Es el hueco hermano, y sin suelo no hay forma de verlo.
+ *
+ * ② El suelo de EJECUCIÓN, abajo en el bloque principal: si al final no se ha ejecutado ni una
+ *    mutación, se sale CIEGO. Sin él, la puerta rota de SCRUM-765 daba exit 0 en 0,28 s.
+ *
+ * SON NÚMEROS QUE SÓLO SUBEN. Se suben al adoptar el mecanismo en un guard nuevo; bajarlos es
+ * retirar cobertura, y entonces el diff lo tiene que decir en voz alta. Medido en el árbol del
+ * 6-sep-2026 (rama scrum-765-763, tras mezclar main por tercera vez): 20 guards · 54 declaraciones.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+export const SUELO_GUARDS = 20;
+export const SUELO_DECLARACIONES = 54;
+
+/**
+ * SUELO ① · ¿ha encogido el censo? Devuelve el motivo, o `null` si el suelo aguanta.
+ *
+ * Vive FUERA del bloque principal a propósito: un suelo que sólo existe dentro del `if` de
+ * arranque no se le puede exigir el rojo sin pagar los minutos del trabajo entero, y un guard al
+ * que no se le ha visto caer es una decoración.
+ */
+export function sueloDelCenso({ guards, declaraciones }) {
+  if (guards >= SUELO_GUARDS && declaraciones >= SUELO_DECLARACIONES) return null;
+  return `EL CENSO HA ENCOGIDO: ${guards} guards y ${declaraciones} declaraciones, y el suelo es `
+    + `${SUELO_GUARDS} y ${SUELO_DECLARACIONES}.\n`
+    + '  Un `MUTACIONES_QUE_ME_TUMBAN` borrado entero saca a su guard del censo sin que nada lo '
+    + 'diga: el recuento baja y el verde de al lado se lee igual.\n'
+    + '  Si la cobertura se ha retirado A PROPÓSITO, baja el suelo EN EL MISMO COMMIT y que el '
+    + 'diff lo diga en voz alta.';
+}
+
+/**
+ * SUELO ② · ¿se ha ejecutado algo? Devuelve el motivo, o `null` si sí.
+ *
+ * EJECUTADAS = VIVAS + MUDAS. Las CIEGAS se descartaron ANTES de tocar el árbol, así que no
+ * cuentan como trabajo hecho: contarlas convertiría «no supe medir» en «he medido».
+ */
+export function sueloDeEjecucion({ vivas, mudas }) {
+  if (vivas + mudas > 0) return null;
+  return 'NO SE HA EJECUTADO NI UNA MUTACIÓN. Este exit no dice que los guards estén vivos: '
+    + 'dice que no he medido nada. Mira las ciegas de arriba.';
+}
+
+/**
  * Lee las mutaciones declaradas en un fichero, POR AST y sin ejecutarlo.
  *
  * Devuelve `[]` si no declara ninguna — no es un error: la mayoría de los guards todavía no lo
  * hacen, y este mecanismo se adopta guard a guard.
  */
-export function mutacionesDeclaradas(codigo, nombre = 'x.mjs') {
+export function lecturaDeDeclaraciones(codigo, nombre = 'x.mjs') {
   const sf = ts.createSourceFile(nombre, codigo, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
-  const out = [];
+  const buenas = [];
+  const incompletas = [];
   const textoDe = (nodo) => (ts.isStringLiteralLike(nodo) ? nodo.text : null);
 
   const v = (n) => {
@@ -82,35 +138,73 @@ export function mutacionesDeclaradas(codigo, nombre = 'x.mjs') {
           const valor = textoDe(p.initializer);
           if (valor !== null) m[clave] = valor;
         }
-        if (m.fichero && m.de && typeof m.a === 'string' && m.cae) out.push(m);
+        if (m.fichero && m.de && typeof m.a === 'string' && m.cae) buenas.push(m);
+        // 🔴 LA QUE SE CAE POR EL AGUJERO. Antes se descartaba con un `continue` mudo, y el
+        // recuento del job bajaba de N a N-1 sin que nada lo dijera: una declaración a la que le
+        // falta un campo DESAPARECE, y el verde de al lado se lee como si siguiera cubriendo.
+        else incompletas.push({ faltan: ['fichero', 'de', 'a', 'cae'].filter((k) => typeof m[k] !== 'string'), tiene: m });
       }
     }
     ts.forEachChild(n, v);
   };
   v(sf);
-  return out;
+  return { buenas, incompletas };
+}
+
+/**
+ * Las declaraciones COMPLETAS de un fichero. Se deriva de `lecturaDeDeclaraciones` en vez de
+ * repetir el recorrido: dos recorridos del mismo AST son dos cosas que se quedan atrás por
+ * separado.
+ */
+export function mutacionesDeclaradas(codigo, nombre = 'x.mjs') {
+  return lecturaDeDeclaraciones(codigo, nombre).buenas;
 }
 
 /** Todos los guards que declaran mutaciones, con las suyas. */
 export function censoDeDeclaraciones(dir = DIR_TESTS) {
   const out = [];
   for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.test.mjs'))) {
-    const ms = mutacionesDeclaradas(fs.readFileSync(path.join(dir, f), 'utf8'), f);
-    if (ms.length) out.push({ guard: f, mutaciones: ms });
+    const { buenas, incompletas } = lecturaDeDeclaraciones(fs.readFileSync(path.join(dir, f), 'utf8'), f);
+    if (buenas.length || incompletas.length) out.push({ guard: f, mutaciones: buenas, incompletas });
   }
   return out;
 }
 
-/** ¿El test `nombre` aparece como FALLIDO en esta salida de `node --test`? */
-export function cayo(salida, nombre) {
-  // Se busca la línea de fallo del reporter, no la mención del nombre: el nombre aparece también
-  // en la línea de la lista de tests que pasan.
-  return salida.split('\n').some((l) => /^\s*(✖|not ok)/.test(l) && l.includes(nombre));
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-745 (adopción) · POR QUÉ AQUÍ YA NO SE LEE NINGÚN REPORTER.
+ *
+ * Hasta hoy los dos lectores parseaban la salida del reporter `spec` —buscaban `✔` y `✖` al
+ * principio de la línea—, y eso los dejaba COLGANDO DEL MISMO CLAVO: el día que alguien cambiara
+ * `--test-reporter` en `correr()`, **el vigilante y su control se quedaban ciegos a la vez**. Un
+ * detector y su control compartiendo punto de fallo es el defecto de SCRUM-742 metido dentro de
+ * la propia herramienta que lo persigue.
+ *
+ * ⛔ NO SE ARREGLA VIGILANDO LA CONSTANTE DEL REPORTER. Eso es duplicar el dato y ponerle un
+ * guard encima —el escalón 3—, y el escalón manda: primero, hacerlo IMPOSIBLE. Aquí se podía, y
+ * está medido: `run()` de `node:test` entrega eventos `test:pass` / `test:fail` con el nombre del
+ * test dentro. Sin reporter no hay reporter que cambiar, y no hay glifo que se pueda mover.
+ *
+ * ── LO QUE SE MIDIÓ ANTES DE ESCRIBIRLO, PROVOCANDO EL CASO EN VEZ DE PREDECIRLO (regla 13) ──
+ * Un fichero que MUERE AL CARGAR emite **exactamente un** `test:fail`, y su `name` es la RUTA DEL
+ * FICHERO, jamás el nombre de un test. O sea que sobre un fichero muerto los dos lectores dicen
+ * NO — que es justo la conjunción de la que SCRUM-748 hizo nacer el veredicto CIEGO. La
+ * discriminación de los tres estados no sólo sobrevive al cambio: pasa de casar TEXTO a casar
+ * DATO.
+ *
+ * El `nombre` sigue siendo un FRAGMENTO del nombre del test —así están escritas las declaraciones
+ * del árbol—, no el nombre entero.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+
+/** ¿El test `nombre` aparece como FALLIDO en este resultado? */
+export function cayo(resultado, nombre) {
+  return (resultado?.caidos || []).some((n) => n.includes(nombre));
 }
 
-/** ¿El test `nombre` aparece como PASADO en esta salida de `node --test`? */
-export function paso(salida, nombre) {
-  return salida.split('\n').some((l) => /^\s*(✔|ok\s)/.test(l) && l.includes(nombre));
+/** ¿El test `nombre` aparece como PASADO en este resultado? */
+export function paso(resultado, nombre) {
+  return (resultado?.pasados || []).some((n) => n.includes(nombre));
 }
 
 /**
@@ -137,21 +231,33 @@ export function paso(salida, nombre) {
  * Y de propina cierra un caso que antes no se veía: una declaración que nombra un test
  * **renombrado o borrado** salía MUDA —acusaba al guard— y ahora sale CIEGA, que es lo que es.
  */
-function correr(guard) {
-  const r = spawnSync(process.execPath,
-    ['--test', '--test-force-exit', '--test-reporter=spec', path.join(DIR_TESTS, guard)],
-    { encoding: 'utf8', cwd: RAIZ, timeout: 300000 });
-  return (r.stdout || '') + (r.stderr || '');
+async function correr(guard) {
+  const pasados = [];
+  const caidos = [];
+  const flujo = run({
+    files: [path.join(DIR_TESTS, guard)],
+    cwd: RAIZ,
+    forceExit: true,
+    timeout: 300000,
+  });
+  // ⚠️ EL FLUJO HAY QUE CONSUMIRLO. Con sólo suscribirse a `test:pass` no arranca: salen CERO
+  // eventos y estado 0, que es un «no hay» indistinguible de un «no supe mirar». Cazado al
+  // medir esto, y por eso la sonda llevaba control positivo.
+  for await (const ev of flujo) {
+    if (ev.type === 'test:pass') pasados.push(ev.data.name);
+    else if (ev.type === 'test:fail') caidos.push(ev.data.name);
+  }
+  return { pasados, caidos };
 }
 
-function aplicarUna(mut, guard, salidaLimpia) {
+async function aplicarUna(mut, guard, limpia) {
   const abs = path.join(RAIZ, mut.fichero);
   if (!fs.existsSync(abs)) return { ok: false, ciego: `el fichero \`${mut.fichero}\` no existe` };
 
   // 🔴 PUERTA 1 · ¿EXISTE EN VERDE LO QUE VAMOS A JUZGAR? Si el test que la declaración nombra no
   // pasó en la pasada limpia —porque el fichero no cargó, porque está renombrado, porque ya
   // fallaba— no hay nada que juzgar sobre él, y NI SIQUIERA SE MUTA.
-  if (!paso(salidaLimpia, mut.cae)) {
+  if (!paso(limpia, mut.cae)) {
     return {
       ok: false,
       ciego: `el test «${mut.cae}» NO aparece EN VERDE en la pasada limpia, así que no se ha `
@@ -167,47 +273,155 @@ function aplicarUna(mut, guard, salidaLimpia) {
     return { ok: false, ciego: `el ancla no está en \`${mut.fichero}\`: la declaración caducó` };
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 PUERTA 2 (SCRUM-763) · ¿HAY UN ÁRBOL EJECUTABLE DETRÁS DE ESTE FUENTE?
+  //
+  // Si el fichero se compila, el código que corren los tests NO es éste: es su `.js` de `dist/`.
+  // Mutar sólo el fuente dejaría al guard midiendo el árbol de antes, y este instrumento
+  // dictaría MUDO sobre un guard sano — la misma falsa acusación de SCRUM-748, por la otra cara.
+  // Y restaurar sólo el fuente dejaría `dist/` mutado para todo lo que venga detrás, que es
+  // exactamente lo que casi hizo publicar a S1 la conclusión contraria a la real.
+  //
+  // Antes de tocar nada se exige que `dist/` YA corresponda al fuente. Si no corresponde, no se
+  // muta: no hay nada que juzgar sobre un árbol que no es el que está escrito. Es CIEGO, y con
+  // el motivo delante en vez de un rojo que acusaría al guard equivocado.
+  //
+  // ✅ CONTRASTE: para un `.mjs`, `destinoEnDist` devuelve `null` y todo esto no cuesta nada.
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  const destino = destinoEnDist(mut.fichero, RAIZ);
+  const absDist = destino ? path.join(RAIZ, destino) : null;
+  let ORIGINAL_DIST = null;
+  if (absDist) {
+    const corr = correspondencia(mut.fichero, RAIZ, texto);
+    if (corr.estado !== 'corresponde') {
+      return {
+        ok: false,
+        ciego: `\`${mut.fichero}\` se compila a \`${destino}\`, y el árbol ejecutable NO `
+          + `corresponde al fuente (${corr.estado}). Los tests de este guard medirían un código `
+          + 'que no es el que hay escrito, así que NO se ha mutado nada. Compila '
+          + '(`npm run build`) y vuelve a correrme; `npm run frontera:dist` lo enseña entero.',
+      };
+    }
+    ORIGINAL_DIST = fs.readFileSync(absDist);
+  }
+
   let resultado;
   try {
-    fs.writeFileSync(abs, texto.replace(mut.de, mut.a));
+    const mutado = texto.replace(mut.de, mut.a);
+    fs.writeFileSync(abs, mutado);
     if (Buffer.compare(fs.readFileSync(abs), ORIGINAL) === 0) {
       return { ok: false, ciego: 'la mutación no cambió el fichero: no probaría nada' };
     }
-    const salida = correr(guard);
-    resultado = cayo(salida, mut.cae)
+    // El árbol ejecutable tiene que llevar la mutación TAMBIÉN, o el guard mide el de antes.
+    if (absDist) fs.writeFileSync(absDist, emitirDesdeFuente(abs, mutado, RAIZ));
+    const tras = await correr(guard);
+    resultado = cayo(tras, mut.cae)
       ? { ok: true }
       : { ok: false, mudo: `el guard NO cayó. Test que debía ponerse rojo: «${mut.cae}»` };
   } finally {
+    // 🔴 LA RESTAURACIÓN ES DE LOS DOS, Y SE VERIFICA POR BYTES EN LOS DOS. Verificar sólo el
+    // fuente es el verde falso de SCRUM-763: da 0 sobre un árbol que sigue mutado.
     fs.writeFileSync(abs, ORIGINAL);
-    if (Buffer.compare(fs.readFileSync(abs), ORIGINAL) !== 0) {
-      console.error(`🔴🔴 NO PUDE RESTAURAR \`${mut.fichero}\`. MÍRALO A MANO ANTES DE SEGUIR.`);
+    const sinRestaurar = [];
+    if (Buffer.compare(fs.readFileSync(abs), ORIGINAL) !== 0) sinRestaurar.push(mut.fichero);
+    if (absDist && ORIGINAL_DIST) {
+      fs.writeFileSync(absDist, ORIGINAL_DIST);
+      if (Buffer.compare(fs.readFileSync(absDist), ORIGINAL_DIST) !== 0) sinRestaurar.push(destino);
+    }
+    if (sinRestaurar.length) {
+      console.error(`🔴🔴 NO PUDE RESTAURAR \`${sinRestaurar.join('` y `')}\`. `
+        + 'MÍRALO A MANO ANTES DE SEGUIR.');
       process.exit(SALIDA_NO_RESTAURADO);
     }
   }
   return resultado;
 }
 
-if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('meta-guard-mutaciones.mjs')) {
+/**
+ * ¿Qué declaraciones del árbol tocan código COMPILADO, y por tanto viven sobre la frontera de
+ * SCRUM-763? Lleva su población delante: sin ella, un «0 expuestas» no se distingue de un censo
+ * que no encontró nada que mirar.
+ */
+export function censoDeExposicionATypeScript(dir = DIR_TESTS, raiz = RAIZ) {
+  const expuestas = [];
+  const noExpuestas = [];
+  for (const { guard, mutaciones } of censoDeDeclaraciones(dir)) {
+    for (const m of mutaciones) {
+      const destino = destinoEnDist(m.fichero, raiz);
+      (destino ? expuestas : noExpuestas).push({ guard, fichero: m.fichero, destino });
+    }
+  }
+  return { poblacion: expuestas.length + noExpuestas.length, expuestas, noExpuestas };
+}
+
+// 🔴 SCRUM-765 · LA PUERTA. Antes comparaba `import.meta.url` con `'file://' + argv[1]`, que en
+// Windows NUNCA casa, y arrancaba SÓLO por el respaldo `endsWith('meta-guard-mutaciones.mjs')`.
+// El respaldo comparaba por NOMBRE DE FICHERO: una copia renombrada salía exit 0 en 0,28 s sin
+// ejecutar una sola mutación. El respaldo se ha ido con la avería — era lo que la tapaba.
+if (ejecutadoDirectamente(import.meta.url)) {
+  // `--solo-censo` abre esta misma puerta y aplica los suelos del censo SIN mutar nada. Existe
+  // para que se pueda comprobar en un segundo que la puerta abre, en vez de tener que esperar
+  // los ~76 s del trabajo entero. NO es el modo del CI: `npm run meta:mutaciones` no lo pasa.
+  const soloCenso = process.argv.includes('--solo-censo');
   const censo = censoDeDeclaraciones();
-  if (!censo.length) {
-    console.error('🔴 CIEGO: ningún guard declara mutaciones. No he medido nada.');
+
+  // ── SUELO ① · EL TAMAÑO DEL CENSO ─────────────────────────────────────────────────────────
+  const declaraciones = censo.reduce((n, c) => n + c.mutaciones.length, 0);
+  const guardsConDeclaracion = censo.filter((c) => c.mutaciones.length).length;
+  const encogido = sueloDelCenso({ guards: guardsConDeclaracion, declaraciones });
+  if (encogido) {
+    console.error(`🔴 CIEGO · ${encogido}`);
     process.exit(SALIDA_CIEGO);
   }
+  if (soloCenso) {
+    const expo = censoDeExposicionATypeScript(); // `expo`, no `ts`: `ts` es el compilador de arriba
+    console.log(`censo · ${guardsConDeclaracion} guards · ${declaraciones} declaraciones `
+      + `(suelos ${SUELO_GUARDS} / ${SUELO_DECLARACIONES})`);
+    console.log(`  sobre la frontera src/ ↔ dist/ (SCRUM-763): ${expo.expuestas.length} de ${expo.poblacion}`);
+    for (const e of expo.expuestas) console.log(`    · ${e.guard} → ${e.fichero}`);
+    console.log('\n⚠️ MODO CENSO: NO se ha ejecutado ninguna mutación.');
+    process.exit(0);
+  }
+
   const mudos = [];
   const ciegos = [];
   let vivas = 0;
-  for (const { guard, mutaciones } of censo) {
+  for (const { guard, mutaciones, incompletas } of censo) {
+    // 🔴 UNA DECLARACIÓN A LA QUE LE FALTA UN CAMPO NO ES UNA DECLARACIÓN MENOS: ES UN HUECO.
+    // Se descartaba en silencio y el recuento bajaba sin que nadie lo dijera — «parece cobertura»,
+    // que es el defecto que este mecanismo entero vino a cerrar. Provocado el 5-sep-2026 al perder
+    // yo mismo la línea `fichero:` de una declaración en una edición: el job siguió verde.
+    for (const inc of incompletas || []) {
+      ciegos.push(`${guard} · una declaración está INCOMPLETA (le faltan: ${inc.faltan.join(', ')}) `
+        + `y por eso no se ha ejecutado. Media declaración es peor que ninguna: parece cobertura.`);
+      console.log(`  ? ${guard} · CIEGO (declaración incompleta)`);
+    }
+    if (!mutaciones.length) continue;
     // La línea base se corre UNA VEZ por guard, no por mutación: es la misma pasada limpia para
     // todas las suyas y duplicarla sólo costaría reloj.
-    const salidaLimpia = correr(guard);
+    const limpia = await correr(guard);
     for (const mut of mutaciones) {
-      const r = aplicarUna(mut, guard, salidaLimpia);
+      const r = await aplicarUna(mut, guard, limpia);
       if (r.ok) { vivas += 1; console.log(`  ✔ ${guard} · ${mut.cae}`); }
       else if (r.mudo) { mudos.push(`${guard} · ${r.mudo}`); console.log(`  ✖ ${guard} · MUDO`); }
       else { ciegos.push(`${guard} · ${r.ciego}`); console.log(`  ? ${guard} · CIEGO`); }
     }
   }
   console.log(`\nvivas ${vivas} · mudas ${mudos.length} · ciegas ${ciegos.length}`);
+
+  // ── SUELO ② · LA EJECUCIÓN (SCRUM-765) ────────────────────────────────────────────────────
+  // 🔴 EJECUTADAS = las que llegaron a mutar el árbol: las VIVAS y las MUDAS. Las CIEGAS se
+  // descartaron ANTES de tocar nada, así que no cuentan como trabajo hecho.
+  //
+  // Sin este suelo, cualquier camino que llegue al final sin haber mutado nada sale con 0, y un
+  // exit 0 de este script es lo que sostiene el requisito de entrega de toda la casa. Es la
+  // misma medicina que este instrumento le exige a los demás censos, y no se la aplicaba.
+  const sinMedir = sueloDeEjecucion({ vivas, mudas: mudos.length });
+  if (sinMedir) {
+    console.error(`🔴 CIEGO: ${sinMedir}`);
+    process.exit(SALIDA_CIEGO);
+  }
+
   if (ciegos.length) console.error('🔴 CIEGO:\n  · ' + ciegos.join('\n  · '));
   if (mudos.length) {
     console.error('🔴 GUARDS MUDOS — pasan en verde sobre el defecto que dicen vigilar:\n  · '

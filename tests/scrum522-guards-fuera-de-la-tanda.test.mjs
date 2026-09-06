@@ -46,8 +46,13 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // nueve: la suite no arranca un navegador, y la caja de una microcopy no se puede medir con
   // aritmética — es el hueco que SCRUM-460 declaró y que SCRUM-469 cerró con el motor de
   // maquetado de árbitro.
-  assert.equal(fuera.length, 10,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ 10 → ${fuera.length}.\n`
+  // SCRUM-776 · 10 → 11: entra `guard:caja-documento-suelto`, que mide los siete rótulos del
+  // flujo de la factura suelta EN LOS DOS MODOS y a 929 y 390 px. Sube por la misma razón que
+  // los diez anteriores: el texto lo firma el asesor y la caja se adapta al texto, y eso no se
+  // comprueba con aritmética — los rótulos del modo justificante son más largos que los de
+  // factura y hay que ver si caben.
+  assert.equal(fuera.length, 11,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ 11 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);

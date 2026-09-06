@@ -178,8 +178,18 @@ test('SCRUM-702 · CONTROL NEGATIVO: por encima del suelo y sin mudos, no dice n
  * ponerlo a mano hace que el vigía recorra el MISMO camino en CI y en el portátil, anotación
  * incluida; heredarlo habría dado dos comportamientos y un verde que no significa lo mismo en cada
  * sitio. No condiciona ningún aserto.
+ *
+ * **13 desde el 6-sep-2026 (SCRUM-765)**, y la nueva se declara aquí como pide el mensaje de
+ * fallo: `tests/scrum765-la-puerta-y-el-suelo.test.mjs` lee `process.platform` para pedirle a
+ * `fs.symlinkSync` el tipo de enlace de DIRECTORIO que existe en cada sistema —`junction` en
+ * Windows, `dir` en el resto—. **No condiciona ningún aserto: el guard exige lo mismo en las dos
+ * plataformas**, y el `process.platform` está justo para eso. Nace de lo contrario: la primera
+ * versión de ese guard llevaba pares `argv[1]`/`import.meta.url` CONGELADOS de una sonda de
+ * Windows, pasaba aquí y **caía en el CI de Linux**. Ahora arranca procesos de verdad en la
+ * plataforma en la que corre, y esta línea es lo único que hace falta para que el caso del enlace
+ * —el defecto que destapó CI— se pueda PROBAR en las dos en vez de saltarse en una.
  */
-const TOPE_LEEN_EL_ENTORNO = 12;
+const TOPE_LEEN_EL_ENTORNO = 13;
 
 /**
  * 🔴 PARTIDAS A PROPÓSITO, para que el censo NO SE CACE A SÍ MISMO. Escritas enteras, este

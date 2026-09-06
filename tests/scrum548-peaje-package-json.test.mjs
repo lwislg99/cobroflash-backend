@@ -110,7 +110,10 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // (`/__caja-semaforo.html`), igual que `guard:caja-avisos`, así que el censo no puede derivar su
   // destino de un fichero del árbol. Se declara para que ese hueco no se lea como «no solapa».
   // Medido: no comparte página con ninguno — es la única que sirve esa ruta.
-  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo'],
+  // SCRUM-776 · entra `guard:caja-documento-suelto`, por lo mismo: sirve DOS rutas virtuales
+  // (`/__caja-justificante.html` y `/__caja-factura.html`), una por modo, así que su destino
+  // tampoco sale de un fichero del árbol. Medido: no comparte página con ninguno.
+  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo', 'guard:caja-documento-suelto'],
     '🔴 ha cambiado el conjunto de guards cuyo destino NO se puede derivar. Se declaran para que\n'
     + '  su solape invisible no se lea como «no tiene».');
 });

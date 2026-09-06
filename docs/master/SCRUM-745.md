@@ -221,3 +221,166 @@ aplicada al detector en vez de al corpus.
    bien cuando se afirma «aparece» y mal cuando se afirma «se usa».
 4. **Quedan otras formas de preguntar por texto** que ninguna de las dos ramas cuenta —
    `indexOf(...) !== -1`, `match(...)`, `new RegExp('literal')`. No están medidas.
+
+---
+---
+
+# APÉNDICE · SCRUM-745 (adopción) · Que ningún guard del censo pueda estar mudo sin que se vea
+
+**Fecha:** 5-sep-2026 · **Ramificado de** `origin/main` = `28b045855d9a68f12906f218bfe78fa5e0472433`
+· **entregado sobre** `origin/main` = `6fa04adc66a95509f52b3b0b38679e19c5b0baa0`
+
+> ⚠️ **`main` se movió TRES veces mientras duraba esta tarea, y dos de ellas cambiaron el censo.**
+> `78ca15a3` trajo SCRUM-751 con dos declaraciones propias y con `invoicesView.js`, que es donde
+> ancla `scrum748`. `4e9e2739` trajo SCRUM-606 y SCRUM-750 con cuatro más y con
+> `tests/_banco-vistas.mjs`, del que dependen los cuatro guards del nivel superior que aquí se
+> declaran. `6fa04adc` trajo sólo documentos. **Se mezcló las tres veces y se volvió a medir entero
+> las tres veces:** los números de esta entrada son los del árbol que se entrega, no los del que se
+> empezó. Es el motivo de que la primera ancla que escribí naciera caduca a media entrada.
+
+El hueco nº 1 de la fase B decía: *«Sigue habiendo UN solo guard declarando mutaciones»*. Se cierra
+aquí, junto con los tres que dejó abiertos SCRUM-748.
+
+> **Y la pregunta que el encargo dejaba abierta, contestada:** ninguno de los cuatro salió CIEGO al
+> declararlo. Los cuatro salen **VIVOS**, o sea que **no hay ningún fichero que muera antes de
+> registrar sus tests** entre los del nivel superior — con `dist/` compilado, que es lo que el job
+> hace desde SCRUM-748. La ceguera de aquel día era del rótulo, no del árbol.
+
+## 0 · El censo, antes y después
+
+| | antes | este trabajo | en lo entregado |
+|---|---:|---:|---:|
+| guards que declaran | 3 | **8** | **10** |
+| mutaciones declaradas | 6 | **18** | **24** |
+| ejecuciones del job (línea base + mutación) | 9 | 26 | **34** |
+
+Las doce que pone este trabajo: `scrum443` (2), `scrum641` (2), `scrum738` (2), `scrum739` (2),
+`scrum743` (2) y dos más del propio `scrum745`. **La tercera columna no es mía:** los merges de la
+tarde trajeron `scrum751`, `scrum606` y `scrum750`, y los tres **ya nacieron declarando**. Que el
+mecanismo se adopte solo, sin que nadie vaya detrás, era el objetivo entero.
+
+**Ninguna se ha escrito sin comprobarla:** las 24 salen `✔` en el control A, o sea que las 24 se
+han aplicado, han puesto rojo al test que nombran, se han revertido, y el fichero ha vuelto byte a
+byte (`sha256sum -c` sobre los nueve sujetos, después de cada pasada).
+
+## 1 · ⛔ LO QUE NO SE PUEDE MUTAR: EL `.ts` QUE EL GUARD LEE DESDE `dist/`
+
+`scrum739` y `scrum743` comparan cifras del front contra el backend, y el backend lo importan de
+`dist/`. **El meta-guard no compila entre la mutación y la pasada**, así que mutar
+`src/core/utils/utils.ts` no movería `dist/` y el guard saldría **MUDO sin estar mudo** — la
+acusación falsa que SCRUM-748 vino a quitar, reintroducida por la puerta de atrás.
+
+Las dos declaraciones se anclan por eso en lo que el guard lee **de verdad**: el `api.js` que carga
+el banco de vistas en vivo, y el fuente de la vista. Queda escrito en los dos ficheros.
+
+## 2 · 🔴 EL HALLAZGO, y me lo hice yo: **una declaración coja desaparece en silencio**
+
+Editando `scrum739` perdí la línea `fichero:` de una declaración **ya escrita y ya comprobada**.
+`mutacionesDeclaradas` la descartó con un `continue` mudo, el censo bajó de 17 a 16 y
+`meta:mutaciones` **siguió verde**. La mutación había dejado de ejecutarse y **nada lo dijo**.
+
+Es literalmente *«media declaración es peor que ninguna: parece cobertura»* —la frase con la que
+nació este mecanismo— cometida **dentro del mecanismo**. Y no lo cazó ninguna revisión: lo vi
+leyendo el fichero por otra cosa.
+
+**Cerrado, y DERIVADO en vez de duplicado** (el escalón): `mutacionesDeclaradas` pasa a derivarse de
+`lecturaDeDeclaraciones`, que devuelve las buenas **y las cojas con el campo que les falta**. Una
+coja ya no es «una menos»: es **CIEGO** con nombre y motivo, y el job sale con su código 2.
+
+## 3 · ③ EL VIGILANTE Y SU CONTROL YA NO CUELGAN DEL MISMO CLAVO
+
+`paso()` y `cayo()` leían los dos el reporter `spec`. Cambiar `--test-reporter` los cegaba **a los
+dos a la vez**: el defecto de SCRUM-742 dentro de la herramienta que lo persigue.
+
+**Primero se midió el escalón, que es lo que manda:**
+
+| escalón | ¿disponible? | medido |
+|---|---|---|
+| ① hacerlo **imposible** | **SÍ** | `run()` de `node:test` entrega eventos `test:pass`/`test:fail` con el nombre dentro. Sin reporter no hay reporter que cambiar. |
+| ② **derivar** de algo que exista | no | Barrido de `scripts/` y `tests/_*.mjs`: **no existe ningún parser de salida del runner en la casa**. El único era éste. |
+| ③ duplicar con guard | — | habría sido vigilar la constante del reporter: justo el escalón que se evita. |
+
+Se hizo el ①. Y **se provocó el caso que decide antes de escribirlo** (regla 13): un fichero que
+muere al cargar emite **exactamente un** `test:fail` cuyo `name` es la **ruta del fichero**, jamás
+el nombre de un test. Los dos lectores dicen NO — que es la conjunción de la que SCRUM-748 hizo
+nacer el CIEGO. La discriminación no sólo sobrevive: pasa de casar **texto** a casar **dato**.
+
+Un trinquete nuevo (*«los dos lectores NO cuelgan de ningún reporter»*) impide volver atrás, y lleva
+su propia mutación declarada: si el reporter reaparece en el código, cae.
+
+## 4 · Los tres controles, medidos hoy con el lector nuevo
+
+Los tres, **repetidos sobre el árbol que se entrega** (censo de 24), no sobre el que se midió antes
+de los merges:
+
+| control | resultado | salida |
+|---|---|---:|
+| **A** · árbol como está | `vivas 24 · mudas 0 · ciegas 0` | 0 |
+| **B** · `dist/` apartado | `vivas 14 · mudas 0 · ciegas 10` — **ninguna acusación falsa** | 2 |
+| **C** · un MUDO real inyectado en `scrum738` | `vivas 23 · mudas 1 · ciegas 0`, nombrando guard **y** test | 1 |
+
+Las diez CIEGAS del control B son exactamente los cinco guards que cargan el banco de vistas en el
+nivel superior, dos declaraciones cada uno. **Cero MUDAS es el dato**: sin `dist/` el instrumento
+deja de poder medir y lo DICE, en vez de acusar.
+
+**El C sigue siendo el que decide:** si al cambiar el lector todo se hubiera vuelto CIEGO, el
+instrumento habría dejado de acusar y el arreglo sería peor que el defecto.
+
+## 5 · ⚠️ EL RELOJ DE ESTA MÁQUINA NO SEPARA LAS DOS IMPLEMENTACIONES
+
+Llegué a dar por bueno «`run()` es 2,6× más lento» tras una pasada de cada. **Era ruido, no un
+dato.** Con muestras pareadas y alternadas sobre el MISMO árbol y las mismas 17 declaraciones:
+
+| | pasadas (s) | mediana |
+|---|---|---:|
+| `run()` | 136 · 58 · 68 | **68 s** |
+| `spawnSync` | 53 · 65 · 154 | **65 s** |
+
+La dispersión **dentro** de una implementación (53 → 154 s) es mayor que la diferencia **entre**
+ellas. Conclusión honesta: **NO MEDIBLE en esta máquina**, que no es «cuestan lo mismo». Es la
+lección de SCRUM-520/671/673 —el reloj de pared no es un instrumento aquí— aplicada a mi propia
+decisión, y por poco no la aplico.
+
+**La unidad estable es la EJECUCIÓN, no el segundo:** el job pasó de 9 a 34 ejecuciones. La línea
+base es 10 de esas 34 (29 %); antes era 3 de 9 (33 %). **La línea base no ha encarecido nada en
+proporción — ha bajado**, porque los guards nuevos declaran de media más de una mutación cada uno y
+la pasada limpia se comparte entre todas las suyas. Ésa es la contestación al encargo —«si el job se
+pone lento, mide cuánto»—: en ejecuciones, ×3,8; en segundos, **no medible en esta máquina**.
+
+## Lo que NO cubre
+
+1. **Sigue sin haber suelo sobre el NÚMERO de declaraciones.** Una coja ya se denuncia; un
+   `MUTACIONES_QUE_ME_TUMBAN` **borrado entero** de un fichero no lo vería nadie: ese guard
+   simplemente deja de estar en el censo, y el censo no sabe cuántos debería tener.
+2. **El coste real en el runner sigue sin medir.** Los números de arriba son de esta máquina, y
+   esta máquina ya ha demostrado que no separa 65 de 136 s.
+3. **La superficie fuera de `tests/`** (`scripts/`, `.claude/hooks/`) sigue sin declarar nada.
+4. **Los ficheros que llaman a `cargarDashboard` DENTRO de un test** no se han tocado: pierden un
+   test y no el fichero, así que no producían la confusión de SCRUM-748. Ninguno declara.
+
+## HALLAZGOS FUERA DE ALCANCE — para el asesor
+
+* ✅ **`main` estuvo ROJO unas horas, y ya no. No hace falta ticket.** Con `origin/main` en
+  `28b04585`, `scrum402-marcador-no-se-pinta` fallaba **en el árbol limpio**:
+  `invoicesView.js: 1 → 2` marcadores pintables. Lo atribuí apartando mis cambios con `git stash`,
+  que es lo que separa «lo he roto yo» de «ya estaba». **Al mezclar `78ca15a3` pasa a verde:** lo
+  cerró SCRUM-751, que subió el censo y firmó el rótulo en el mismo commit. Queda escrito porque el
+  hecho —`main` en rojo durante horas— es real aunque la causa ya no exista.
+* 🟠 **La puerta de entrada del meta-guard nunca casa en Windows.** Compara `import.meta.url`
+  (`file:///C:/…`) contra `file://` + `process.argv[1]` (`file://C:\…`): **siempre falso aquí**. El
+  script sólo arranca por el respaldo `endsWith('meta-guard-mutaciones.mjs')`. Lo destapé al
+  renombrar una copia para medir: salió **exit 0 en 0,88 s sin haber medido nada** — un cero
+  silencioso. Si alguien renombra el script, el job pasa a verde sin ejecutar una sola mutación.
+* 🟠 **El `grep` de retornos de carro es un instrumento FALSO en este Git Bash.** Devolvió
+  exactamente `wc -l` en los cinco ficheros que miré —el patrón se queda vacío y casa con todas las
+  líneas—. Medido con Node sobre bytes, el árbol es **LF puro, CR = 0**. Cualquier censo de CR hecho
+  así publica un 100 % de falsos positivos.
+
+## Ficheros
+
+* `scripts/meta-guard-mutaciones.mjs` — `run()` en vez de reporter; `lecturaDeDeclaraciones` y la
+  denuncia de la declaración coja.
+* `tests/scrum443-…`, `scrum641-…`, `scrum738-…`, `scrum739-…`, `scrum743-…` — **+2 mutaciones
+  declaradas cada uno**, todas comprobadas.
+* `tests/scrum745-comparar-por-identidad.test.mjs` — fixtures estructuradas, el trinquete del
+  reporter, el de la declaración coja, y **+2 mutaciones propias** (4 en total).

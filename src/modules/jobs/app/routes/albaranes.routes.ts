@@ -63,6 +63,7 @@ import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
 import { emitirRecapitulativas } from '../../domain/recapitulativa.service'; // SCRUM-171a: emisión compartida con la vía de Job
 import { sellarTrasEmision, SELLADO_HECHO } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
+import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
 // SCRUM-290 (A0.4): el CRITERIO de qué se factura y a qué precio vive en funciones puras, no aquí.
 import {
   casarLineas, motivosParaNoEmitir, lineasParaFactura,
@@ -1154,6 +1155,10 @@ router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
     // ni se entera: comprobarlo DESPUÉS obligaría a modificar una factura ya numerada o a
     // deshacerla, y deshacer es lo que crea el hueco que hay que justificar ante Hacienda.
     exigirLineasFacturables(invoiceLines);
+    // SCRUM-771 · y que el tipo de IVA EXISTA. Mismo sitio y misma razón que la línea de
+    // arriba: ANTES de pedir número, nunca después. Deriva de `invalidTipoIva`; aquí no
+    // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
+    exigirTiposDeIvaEmitibles(invoiceLines);
 
     const invoice = await prisma.$transaction(async (tx) => {
       const inv = await emitInvoice(tx, {
@@ -1364,6 +1369,10 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
     // Comprobarlo después obligaría a deshacer una factura ya numerada, y deshacer es lo que crea
     // el hueco que hay que justificar ante Hacienda.
     exigirLineasFacturables(invoiceLines);
+    // SCRUM-771 · y que el tipo de IVA EXISTA. Mismo sitio y misma razón que la línea de
+    // arriba: ANTES de pedir número, nunca después. Deriva de `invalidTipoIva`; aquí no
+    // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
+    exigirTiposDeIvaEmitibles(invoiceLines);
 
     const invoice = await prisma.$transaction(async (tx) => {
       const inv = await emitInvoice(tx, {

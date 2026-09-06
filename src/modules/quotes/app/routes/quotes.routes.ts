@@ -57,6 +57,7 @@ import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento';
 import { recordAudit, sobreFiscal, flagsFiscalesDe } from '../../../system/audit.service'; // SCRUM-206b
 import { sellarTrasEmision } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { exigirLineasFacturables, esErrorSinLineas, COPY_PUBLICO_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
+import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
 // SCRUM-602 (DOC-12) · normalizadores del dominio: el modo no se adivina y el texto vacío se queda vacío.
 import { normalizarDireccionObra, normalizarModoDireccionObra } from '../../../../core/documentos/direccionObra';
 // SCRUM-734 · el ÚNICO sitio donde se decide qué lleva el PDF del presupuesto.
@@ -604,6 +605,10 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         // conceptos. Su aceptación ya está commiteada más arriba y sigue siendo válida: lo único
         // que no ocurre es la emisión. El copy lo dice sin pedirle que repita nada.
         exigirLineasFacturables(scaledLines);
+        // SCRUM-771 · y que el tipo de IVA EXISTA. Mismo sitio y misma razón que la línea de
+        // arriba: ANTES de pedir número, nunca después. Deriva de `invalidTipoIva`; aquí no
+        // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
+        exigirTiposDeIvaEmitibles(scaledLines);
 
         // ── EL ORDEN DE ESTAS DOS COSAS ES TODA LA RESOLUCIÓN DEL CONFLICTO 246 ↔ 234 ──────
         //
