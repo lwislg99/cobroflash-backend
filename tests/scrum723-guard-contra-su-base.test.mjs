@@ -288,6 +288,15 @@ const INDIRECTAS_DECLARADAS = [
   'tests/_censo-eol.mjs',        // la lista de referencias que `merge-base` prueba: es la SOLUCIÓN
   'tests/_censo-tickets.mjs',    // recibe la referencia por parámetro (`ref = 'origin/main'`)
   'tests/scrum723-guard-contra-su-base.test.mjs',  // los mensajes y los comentarios de aquí mismo
+  // SCRUM-775 · el guard del suelo decorativo. NO llama a git contra la referencia móvil: la
+  // NOMBRA en la prosa que explica por qué NO la usa, y dentro del fragmento congelado del caso
+  // roto —donde `ref = 'origin/main'` es el valor por defecto que tenía el original—.
+  //
+  // Y el camino hasta aquí lo puso ESTE censo: la primera versión sí leía
+  // `git cat-file -p origin/main:…` para traerse el fichero de antes del arreglo, y lo tumbó como
+  // llamada DIRECTA. Tenía razón por partida doble: el día que este ticket entre en `main` el caso
+  // roto deja de estar ahí y el control se apagaría solo. El caso se congeló en un literal.
+  'tests/scrum775-suelo-que-no-dispara.test.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {
