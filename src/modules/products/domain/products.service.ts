@@ -4,7 +4,24 @@ import { prisma } from '../../../core/db/prisma';
 // el importador del navegador), y no eran equivalentes.
 import { parsearLineaCsv, quitarBom, detectarSeparador } from '../../../core/csv/csv';
 
-function normalizeSearch(s: string) {
+/**
+ * La sombra normalizada de `name`. Es la ÚNICA normalización del catálogo del proyecto.
+ *
+ * SCRUM-761 · Se EXPORTA para que ningún sembrador tenga que escribir la suya. Había una segunda
+ * en `seed-video.mjs:406` (`p.name.toLowerCase()`) y estaba MAL: no quita diacríticos, así que
+ * `'Sustitución de grifo monomando'` quedaba como `'sustitución …'` y una búsqueda sin tilde
+ * —la que teclea cualquiera— no la encontraba. Medido antes de tocarlo, con los dos literales
+ * del catálogo puestos uno al lado del otro. Dos normalizaciones del mismo hecho se
+ * desincronizan solas; ésta ya lo estaba.
+ *
+ * ⚠️ Derivar la NORMALIZACIÓN es el escalón 2. El escalón 1 —derivar el CAMINO ENTERO llamando a
+ * `createProduct`— es el que usa `seed-demo.mjs`, y es mejor: trae gratis cualquier columna
+ * derivada FUTURA. `seed-video.mjs` no puede subir a ese escalón por una imposibilidad MEDIDA,
+ * no de calendario: siembra dentro de `prisma.$transaction` con el `tx`, y `createProduct`
+ * escribe con el cliente global — llamarlo desde ahí dejaría el producto FUERA de la
+ * transacción que envuelve al resto de la siembra.
+ */
+export function normalizeSearch(s: string) {
   return String(s || '')
     .trim()
     .toLowerCase()
