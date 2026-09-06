@@ -16,10 +16,19 @@
 // rápida. No nace un segundo manejador: la condición se extrajo a `sePuedeDisparar` —pura, y por
 // eso probable sin navegador— y el destino pasa a decidirlo la vista.
 //
-// ⚠️ ALBARANES SE QUEDA FUERA, Y NO ES UN OLVIDO: el único endpoint de creación es
-// `POST /admin/jobs/{jobId}/albaranes`, que EXIGE un Trabajo. No existe crear un albarán suelto,
-// así que un botón en la lista global sería una promesa rota — lo que el propio menú prohíbe:
-// «una entrada que apunta a nada es una promesa rota cada vez que se pulsa».
+// ⚠️ ALBARANES SE QUEDÓ FUERA EL 3-sep, Y NO FUE UN OLVIDO: el único endpoint de creación era
+// `POST /admin/jobs/{jobId}/albaranes`, que EXIGE un Trabajo. No existía crear un albarán suelto,
+// así que un botón en la lista global habría sido una promesa rota — lo que el propio menú
+// prohíbe: «una entrada que apunta a nada es una promesa rota cada vez que se pulsa».
+//
+// ✅ SCRUM-606 (ALB-01) LE DIO CAMINO el 5-sep: el botón abre el buscador de presupuestos y
+// aterriza en el Trabajo de origen, así que ya no promete nada que no pueda cumplir. Registra su
+// destino y pinta su tecla como las otras tres.
+//
+// 🔴 SCRUM-768 · Y ESTE FICHERO NO SE ENTERÓ, que es por lo que se toca hoy: dos de sus tests
+// seguían recorriendo TRES listas con nombres que decían CUATRO y TRES. Un guard cuyo nombre
+// promete más de lo que mide es cobertura que nadie vuelve a mirar — la lista que se quedó fuera
+// no tiene a nadie que la vigile y nadie se entera de que le falta vigilante.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -45,20 +54,70 @@ function tecla(k, extra = {}) {
 }
 const SIN_MODALES = { querySelector: () => null };
 
+/**
+ * SCRUM-768 · EL MARCADO SIN COMENTARIOS.
+ *
+ * Hace falta para poder afirmar que una clase **NO está**: el comentario que explica por qué se
+ * retiró el submenú tiene que NOMBRAR `nav-item-parent` para explicarse, así que un `test` sobre
+ * el texto crudo se cazaría a sí mismo. Es la trampa de auto-referencia de SCRUM-203, y aquí se
+ * evita quitando los comentarios en vez de con una excepción escrita a mano.
+ */
+export function sinComentariosHtml(html) {
+  return String(html).replace(/<!--[\s\S]*?-->/g, '');
+}
+const MARCADO = sinComentariosHtml(INDEX);
+
 // ═══ ① EL MENÚ: UNA ENTRADA POR TIPO ═════════════════════════════════════════════════════
 
+test('SCRUM-768 · SUELO: el filtro de comentarios VE el marcado y NO ve los comentarios', () => {
+  // Se prueba con una cadena fabricada, no con `index.html`: así el control no depende de que
+  // hoy exista un comentario concreto en el fichero, y sigue valiendo cuando alguien lo reescriba.
+  const muestra = '<!-- aqui-solo-en-comentario --><b class="si-esta-en-marcado">x</b>';
+  assert.equal(/aqui-solo-en-comentario/.test(sinComentariosHtml(muestra)), false,
+    '🔴 el filtro NO está quitando los comentarios: entonces «esta clase ya no está» sería '
+    + 'indistinguible de «está, pero sólo en el texto que explica que se fue».');
+  assert.equal(/si-esta-en-marcado/.test(sinComentariosHtml(muestra)), true,
+    '🔴 el filtro se está comiendo marcado de verdad: mediría de menos y todo lo de abajo saldría '
+    + 'verde sin haber mirado nada.');
+  // Y sobre el fichero real: después de filtrar sigue habiendo barra que medir.
+  assert.ok(MARCADO.includes('<nav class="sidebar-nav">'),
+    '🔴 tras quitar los comentarios no queda ni la barra: el filtro se ha llevado el marcado.');
+});
+
 test('SCRUM-599 · 🔴 Presupuestos ya NO tiene submenú, y su entrada abre la LISTA', () => {
-  assert.equal(/data-view="quotes-new"/.test(INDEX), false,
+  assert.equal(/data-view="quotes-new"/.test(MARCADO), false,
     '🔴 sigue habiendo un subítem «Crear nuevo» en el menú: entonces Presupuestos sigue siendo el '
     + 'único tipo con dos caminos y el profesional se sigue encontrando tres formas distintas.');
-  assert.equal(/nav-subitems/.test(INDEX), false,
-    '🔴 queda el contenedor del submenú.');
-  assert.match(INDEX, /nav-item nav-item-parent" type="button" data-view="quotes-list"/,
+
+  // 🔴 SCRUM-768 · AQUÍ ESTABA EL DEFECTO, Y NO ERA EL VEREDICTO: ERA EL DIAGNÓSTICO.
+  //
+  // Esta línea decía:
+  //     assert.match(INDEX, /nav-item nav-item-parent" type="button" data-view="quotes-list"/,
+  //       '🔴 la entrada de Presupuestos no lleva a la lista. Sin `data-view` no navega…');
+  //
+  // El mensaje habla de `data-view` —que es lo que importa— pero la regex ataba ADEMÁS
+  // `nav-item-parent`, que es el residuo del submenú que este mismo test dice haber retirado. O
+  // sea: el guard EXIGÍA la clase que su nombre presume de haber quitado, y quien se encontrara
+  // el rojo la habría vuelto a poner creyendo que arreglaba la navegación. Por eso sobrevivió
+  // tres días. Ahora son DOS afirmaciones con DOS mensajes: una por el destino y otra por la
+  // clase, y ninguna puede esconderse detrás de la otra.
+  assert.match(MARCADO, /data-view="quotes-list"/,
     '🔴 la entrada de Presupuestos no lleva a la lista. Sin `data-view` no navega a ningún sitio.');
+
+  // Y el residuo del submenú NO puede volver: `nav-item-parent` sólo existía para hacerle sitio
+  // al chevron (`justify-content: space-between`), así que sin chevron empuja el rótulo al borde
+  // derecho. MEDIDO en navegador real: con la clase, «Presupuestos» sale en x=146,7 mientras sus
+  // tres hermanas salen en x=46,0 — 100,7 px de diferencia en la barra que este ticket unifica.
+  for (const clase of ['nav-item-parent', 'nav-group', 'nav-subitems', 'nav-subitem', 'nav-chevron']) {
+    assert.equal(new RegExp(clase).test(MARCADO), false,
+      `🔴 ha vuelto «${clase}» al marcado de la barra. Es residuo del submenú retirado en `
+      + 'SCRUM-599: no lo vuelvas a poner para acallar un rojo — el rojo que buscas es el de '
+      + 'arriba, el del `data-view`.');
+  }
 
   // Y las otras tres siguen siendo entradas directas, que es a lo que se unifica.
   for (const v of ['albaranes', 'invoices', 'customers']) {
-    assert.match(INDEX, new RegExp(`data-view="${v}"`),
+    assert.match(MARCADO, new RegExp(`data-view="${v}"`),
       `🔴 ha desaparecido la entrada de menú de «${v}».`);
   }
 });
@@ -123,8 +182,15 @@ test('SCRUM-599 · 🔴 UN SOLO MECANISMO: no hay un segundo manejador del atajo
 
 test('SCRUM-599 · 🔴 LAS CUATRO LISTAS registran su destino, y Clientes es una de ellas', async () => {
   // CONT-12 absorbido: si Clientes no registrara, habría hecho falta un segundo mecanismo.
+  //
+  // 🔴 SCRUM-768 · ESTE MAPA TENÍA TRES ENTRADAS Y EL TEST SE LLAMA «LAS CUATRO LISTAS». Albaranes
+  // entró en SCRUM-606 (ALB-01) y nadie amplió el guard, así que la única de las cuatro añadida
+  // DESPUÉS era justo la que no tenía a nadie mirándola. El nombre no se cambia —era el correcto—;
+  // lo que se corrige es que ahora mide lo que dice.
   const esperado = { renderQuotesListView: 'quotes-list', renderInvoicesView: 'invoices',
-    renderCustomersView: 'customers' };
+    renderCustomersView: 'customers', renderAlbaranesView: 'albaranes' };
+  assert.equal(Object.keys(esperado).length, 4,
+    '🔴 este test se llama «LAS CUATRO LISTAS»: si el mapa deja de tener cuatro, el nombre miente.');
   for (const [fn, vista] of Object.entries(esperado)) {
     const banco = cargarDashboard(RAIZ);
     const r = await pintarVista(banco, fn);
@@ -235,8 +301,15 @@ test('SCRUM-599 · el microcopy es el APROBADO, literal, y sin marcadores', () =
   assert.equal(A.TECLA, 'N', '🔴 la tecla que se pinta ha dejado de ser la «N».');
 });
 
-test('SCRUM-599 · 🔴 la tecla se pinta EN el botón, en las tres listas', async () => {
-  for (const fn of ['renderQuotesListView', 'renderInvoicesView', 'renderCustomersView']) {
+test('SCRUM-599 · 🔴 la tecla se pinta EN el botón, en las CUATRO listas', async () => {
+  // 🔴 SCRUM-768 · se llamaba «en las tres listas» y recorría tres. Albaranes pinta su tecla desde
+  // SCRUM-606 y estaba sin vigilar: si mañana alguien le quita el `etiquetar`, el botón se queda
+  // sin la «N» impresa mientras el atajo sigue funcionando — que es la peor de las dos mitades,
+  // porque el profesional deja de saber que existe.
+  const LISTAS = ['renderQuotesListView', 'renderInvoicesView', 'renderCustomersView',
+    'renderAlbaranesView'];
+  assert.equal(LISTAS.length, 4, '🔴 el nombre dice CUATRO: si la lista no las trae, miente.');
+  for (const fn of LISTAS) {
     const banco = cargarDashboard(RAIZ);
     const r = await pintarVista(banco, fn);
     assert.equal(r.error, null, `🔴 ${fn} no se monta: ${r.error}`);
@@ -272,3 +345,39 @@ test('SCRUM-599 · el CSS de la tecla existe y no se come el objetivo táctil', 
   assert.match(css, /max-width:\s*640px\)\s*\{\s*\.btn-atajo\s*\{\s*display:\s*none/,
     '🔴 la tecla se sigue pintando en móvil, donde no hay teclado y donde menos sitio hay.');
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-768 · LAS MUTACIONES QUE ME TUMBAN (contrato de SCRUM-745)
+//
+// Las tres se provocaron A MANO al escribir el ticket y las tres dieron rojo; aquí se mecanizan
+// para que no dependan de que alguien se acuerde. Todas apuntan a `public/`, que no tiene paso de
+// compilación: lo que se muta es exactamente lo que el guard lee.
+//
+// La primera es LA DEL TICKET: antes de SCRUM-768, PONER `nav-item-parent` dejaba el guard en
+// VERDE y QUITARLO lo ponía rojo. Ahora el rojo está del otro lado, que es donde tenía que estar.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // Vuelve el residuo del submenú a la barra: el rótulo de Presupuestos se va 100,7 px a la
+    // derecha y la navegación deja de estar unificada.
+    fichero: 'public/dashboard/index.html',
+    de: '<button class="nav-item" type="button" data-view="quotes-list">',
+    a: '<button class="nav-item nav-item-parent" type="button" data-view="quotes-list">',
+    cae: 'Presupuestos ya NO tiene submenú, y su entrada abre la LISTA',
+  },
+  {
+    // La CUARTA lista deja de registrar destino. Antes de SCRUM-768 esto NO tumbaba nada: el
+    // test se llamaba «LAS CUATRO LISTAS» y recorría tres.
+    fichero: 'public/dashboard/js/albaranesView.js',
+    de: "      window.atajoNuevo.registrar('albaranes', () => nuevoBtn.click());",
+    a: '      // sin registro',
+    cae: 'LAS CUATRO LISTAS registran su destino, y Clientes es una de ellas',
+  },
+  {
+    // La CUARTA lista deja de pintar la tecla: el atajo funciona y el profesional no se entera.
+    fichero: 'public/dashboard/js/albaranesView.js',
+    de: "      window.atajoNuevo.etiquetar(nuevoBtn, 'albaranes');",
+    a: '      // sin etiquetar',
+    cae: 'la tecla se pinta EN el botón, en las CUATRO listas',
+  },
+];
