@@ -4,101 +4,119 @@
 // LA PUERTA QUE NUNCA CASABA, Y EL SUELO QUE ESTE INSTRUMENTO LE EXIGÍA A TODOS MENOS A SÍ MISMO.
 //
 // `scripts/meta-guard-mutaciones.mjs` es el guard que sostiene el requisito de entrega de toda la
-// casa: cada guard declara la mutación que lo tumba y él las ejecuta. Su bloque de arranque
-// preguntaba «¿me han ejecutado a mí?» comparando `import.meta.url` con `'file://' + argv[1]`.
+// casa. Su bloque de arranque preguntaba «¿me han ejecutado a mí?» comparando `import.meta.url`
+// con `'file://' + argv[1]`, que en Windows **no casa nunca** (tres barras vs dos, normales vs
+// invertidas, `%20` vs espacio). Arrancaba SÓLO por su respaldo `endsWith(<su nombre>)`, que
+// compara por NOMBRE DE FICHERO: **copiado a otro nombre salía exit 0 en 0,28 s ejecutando CERO
+// mutaciones**, frente a 76 s y 31 por su nombre real.
 //
-// 🔴 EN WINDOWS ESO NO CASA NUNCA. Medido el 6-sep-2026 en las cuatro formas de invocación:
+// ── 🔴 Y LA SEGUNDA MITAD LA ENCONTRÓ CI, MIDIENDO UNA PREDICCIÓN MÍA ───────────────────────
+// La primera versión de este guard llevaba pares `argv[1]`/`import.meta.url` **congelados** de una
+// sonda de Windows. En el runner de Linux, una cadena `C:\Users\…` no es una ruta absoluta: es un
+// nombre de fichero relativo. El guard se puso rojo, y con razón — **el defecto estaba en la
+// simulación del test**, no en la puerta (CI lo demostró a la vez: el meta-guard ejecutó allí 42
+// mutaciones, o sea que su puerta SÍ abría en Linux).
 //
-//     argv[1]            C:\Users\Javier Pereira\cobroflash-b5\scripts\x.mjs
-//     'file://'+argv[1]  file://C:\Users\Javier Pereira\…      ← dos barras, invertidas, sin %20
-//     import.meta.url    file:///C:/Users/Javier%20Pereira/…   ← tres barras, normales, con %20
+// Al medirlo apareció un defecto REAL de la puerta, que era un hueco declarado: Node resuelve el
+// módulo de ENTRADA pasando por `realpath`, así que con un ENLACE de por medio `import.meta.url`
+// trae la ruta real y `argv[1]` la escrita, y **la puerta no abría**. Medido con un junction en
+// Windows: `false`. Con `realpath` a los dos lados: `true`.
 //
-// Arrancaba SÓLO por su respaldo, `argv[1].endsWith('meta-guard-mutaciones.mjs')`, que compara
-// por NOMBRE DE FICHERO. **Copiado a otro nombre: exit 0 en 0,28 s y CERO mutaciones ejecutadas**
-// —frente a 76 s y 31 mutaciones por su nombre real—. Un verde perfecto sobre ningún trabajo.
-//
-// Y el agujero no lo cierra sólo arreglar la puerta, porque cualquier otro camino que llegue al
-// final sin haber mutado nada sigue saliendo con 0. Lo cierra EL SUELO: cero mutaciones
-// ejecutadas es CIEGO, no verde. Es la medicina que este instrumento le exige a todos los censos
-// de la casa desde que existe.
-//
-// Aquí se vigilan las tres piezas: la puerta, los dos suelos, y que el árbol no se llene otra vez
-// de puertas frágiles.
+// ⛔ POR ESO AQUÍ YA NO SE SIMULA NADA. Se arranca `tests/_sonda-puerta.mjs` DE VERDAD, en cada
+// forma de invocación, en la plataforma en la que esté corriendo el guard.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import {
-  censoDePuertasFragiles, ejecutadoDirectamente, puertasFragilesEn,
-} from '../scripts/_puerta-de-entrada.mjs';
+import { censoDePuertasFragiles, ejecutadoDirectamente, puertasFragilesEn } from '../scripts/_puerta-de-entrada.mjs';
 import {
   SUELO_DECLARACIONES, SUELO_GUARDS, censoDeDeclaraciones, sueloDeEjecucion, sueloDelCenso,
 } from '../scripts/meta-guard-mutaciones.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const SONDA_REL = 'tests/_sonda-puerta.mjs';
+
+/** Arranca la sonda y devuelve lo que imprime. `args[0]` es la ruta con la que se la invoca. */
+function arrancarSonda(ruta, cwd = RAIZ) {
+  return execFileSync(process.execPath, [ruta], { cwd, encoding: 'utf8', timeout: 120000 }).trim();
+}
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
-// ① LA PUERTA · sobre pares REALES, no inventados
-//
-// Los cuatro pares de abajo son los que imprimió una sonda ejecutada de verdad en este árbol el
-// 6-sep-2026, una por forma de invocación. Se guardan como DATO para que el guard no dependa de
-// que la máquina donde corre reproduzca las cuatro formas.
+// ① LA PUERTA, MEDIDA EN LA PLATAFORMA EN LA QUE CORRE — arrancando procesos de verdad
 // ─────────────────────────────────────────────────────────────────────────────────────────────
-const FORMAS_MEDIDAS = Object.freeze([
-  {
-    como: 'ruta relativa (`node scripts/x.mjs`, que es lo que hace `npm run`)',
-    argv1: 'C:\\Users\\Javier Pereira\\cobroflash-b5\\scripts\\_sonda-puerta-765.mjs',
-    meta: 'file:///C:/Users/Javier%20Pereira/cobroflash-b5/scripts/_sonda-puerta-765.mjs',
-  },
-  {
-    como: 'ruta absoluta con barras normales y un espacio en el nombre',
-    argv1: 'c:\\Users\\Javier Pereira\\cobroflash-b5\\scripts\\_sonda-puerta-765.mjs',
-    meta: 'file:///c:/Users/Javier%20Pereira/cobroflash-b5/scripts/_sonda-puerta-765.mjs',
-  },
-  {
-    como: 'ruta absoluta en barras invertidas',
-    argv1: 'c:\\Users\\Javier Pereira\\cobroflash-b5\\scripts\\_sonda-puerta-765.mjs',
-    meta: 'file:///c:/Users/Javier%20Pereira/cobroflash-b5/scripts/_sonda-puerta-765.mjs',
-  },
-  {
-    como: 'invocado desde otro cwd',
-    argv1: 'C:\\Users\\Javier Pereira\\cobroflash-b5\\scripts\\_sonda-puerta-765.mjs',
-    meta: 'file:///C:/Users/Javier%20Pereira/cobroflash-b5/scripts/_sonda-puerta-765.mjs',
-  },
-]);
+test('SCRUM-765 · la puerta ABRE en todas las formas de invocación, incluida a través de un enlace', () => {
+  const formas = [
+    { como: 'ruta relativa (lo que hace `npm run`)', ruta: SONDA_REL, cwd: RAIZ },
+    { como: 'ruta absoluta', ruta: path.join(RAIZ, SONDA_REL), cwd: RAIZ },
+    { como: 'ruta relativa desde otro cwd', ruta: path.join('..', SONDA_REL), cwd: path.join(RAIZ, 'scripts') },
+  ];
 
-test('SCRUM-765 · la puerta CASA en las cuatro formas medidas — y la de antes en ninguna', () => {
-  assert.ok(FORMAS_MEDIDAS.length >= 4, '🔴 SUELO: sin formas que probar, esto no prueba nada.');
+  // 🔴 EL CASO DEL ENLACE, que es el defecto que destapó CI. Un enlace de DIRECTORIO no exige
+  // privilegios en ninguna de las dos plataformas (`junction` en Windows, `dir` en Linux), así que
+  // este caso CORRE, no se salta. Si aun así no se pudiera crear, el test se declara CIEGO en vez
+  // de pasar sin haberlo probado.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum765-'));
+  let motivoSinEnlace = null;
+  try {
+    const enlace = path.join(tmp, 'repo');
+    fs.symlinkSync(RAIZ, enlace, process.platform === 'win32' ? 'junction' : 'dir');
+    formas.push({ como: 'A TRAVÉS DE UN ENLACE al repositorio', ruta: path.join(enlace, SONDA_REL), cwd: RAIZ });
+  } catch (e) {
+    motivoSinEnlace = `${e.code}: ${e.message}`;
+  }
 
-  for (const f of FORMAS_MEDIDAS) {
-    assert.equal(ejecutadoDirectamente(f.meta, f.argv1), true,
-      `🔴 la puerta NO abre con ${f.como}. El script no arrancaría, y un script que no arranca `
-      + 'sale con 0 sin haber hecho nada.');
+  try {
+    assert.equal(motivoSinEnlace, null,
+      '🔴 CIEGO: no he podido crear el enlace, así que NO he probado el caso que destapó CI. '
+      + `No es un verde: es que no he medido. (${motivoSinEnlace})`);
 
-    // CONTROL NEGATIVO, en el mismo test para que no se puedan separar: la forma de antes tiene
-    // que seguir sin casar. Si algún día casara, este dato dejaría de justificar el cambio.
-    assert.notEqual(f.meta, `file://${f.argv1}`,
-      `🔴 la forma vieja SÍ casa con ${f.como}: entonces el defecto de SCRUM-765 no era éste.`);
+    // SUELO: sin formas que probar esto no probaría nada.
+    assert.ok(formas.length >= 4, `🔴 SUELO: sólo ${formas.length} formas de invocación.`);
+
+    for (const f of formas) {
+      assert.equal(arrancarSonda(f.ruta, f.cwd), 'PUERTA:ABRE',
+        `🔴 la puerta NO abre con ${f.como} (${process.platform}). El script no arrancaría, y un `
+        + 'script que no arranca sale con 0 sin haber hecho nada — que es el defecto entero de '
+        + 'SCRUM-765.');
+    }
+
+    // 🔴 CONTROL POSITIVO DEL INSTRUMENTO: la sonda TIENE que saber decir que no. Sin esto, una
+    // sonda que imprimiera siempre `PUERTA:ABRE` pasaría los cuatro casos de arriba sin medir nada.
+    const importadora = path.join(tmp, 'importadora.mjs');
+    fs.writeFileSync(importadora, `import ${JSON.stringify(pathToFileURL(path.join(RAIZ, SONDA_REL)).href)};\n`);
+    assert.equal(arrancarSonda(importadora), 'PUERTA:NO-ABRE',
+      '🔴 la sonda dice ABRE aunque la hayan IMPORTADO. O la puerta está rota por el otro lado '
+      + '—arrancaría sus mutaciones dentro de cualquier proceso que la importe— o la sonda '
+      + 'imprime una constante y los cuatro verdes de arriba no significan nada.');
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
 
-test('SCRUM-765 · CONTRASTE: importada como módulo, la puerta NO abre', () => {
-  // Para lo que existe la puerta: que importar el script no ejecute su trabajo. Aquí se mide con
-  // el caso real —este mismo fichero de test es el argv[1] del proceso que estás leyendo—.
-  const yo = pathToFileURL(path.join(RAIZ, 'scripts/meta-guard-mutaciones.mjs')).href;
-  assert.equal(ejecutadoDirectamente(yo, process.argv[1]), false,
-    '🔴 el meta-guard se creería el punto de entrada mientras lo importa un test: ejecutaría '
-    + 'sus mutaciones dentro de la suite.');
+test('SCRUM-765 · CONTRASTE: la puerta NO abre para nadie que no sea el fichero de entrada', () => {
+  // Con valores REALES de este proceso: `process.argv[1]` es este fichero de test.
+  const otro = pathToFileURL(path.join(RAIZ, 'scripts/meta-guard-mutaciones.mjs')).href;
+  assert.equal(ejecutadoDirectamente(otro, process.argv[1]), false,
+    '🔴 el meta-guard se creería el punto de entrada mientras lo importa un test: ejecutaría sus '
+    + 'mutaciones dentro de la suite.');
 
-  // Y sin fichero de entrada (`node -e`, REPL) tampoco: no hay nada con lo que casar.
-  assert.equal(ejecutadoDirectamente(yo, undefined), false);
-  assert.equal(ejecutadoDirectamente(yo, ''), false);
+  // Sin fichero de entrada (`node -e`, REPL) no hay nada con lo que casar.
+  assert.equal(ejecutadoDirectamente(otro, undefined), false);
+  assert.equal(ejecutadoDirectamente(otro, ''), false);
 
-  // CONTROL POSITIVO del propio comparador: consigo mismo SÍ abre. Sin esto, una función que
-  // devolviera `false` siempre pasaría los dos asertos de arriba.
-  assert.equal(ejecutadoDirectamente(yo, path.join(RAIZ, 'scripts/meta-guard-mutaciones.mjs')), true,
+  // Un `metaUrl` que no es `file:` no se puede resolver a un fichero: ante la duda, NO se arranca.
+  assert.equal(ejecutadoDirectamente('data:text/javascript,1', process.argv[1]), false);
+
+  // Una ruta que ya no está en disco tampoco afirma nada.
+  assert.equal(ejecutadoDirectamente(otro, path.join(RAIZ, 'no-existe-scrum765.mjs')), false);
+
+  // CONTROL POSITIVO: consigo mismo SÍ abre. Sin esto, una función que devolviera `false` siempre
+  // pasaría todos los asertos de arriba.
+  assert.equal(ejecutadoDirectamente(pathToFileURL(process.argv[1]).href, process.argv[1]), true,
     '🔴 la puerta no abre ni consigo misma: el comparador está roto, no protegiendo.');
 });
 
@@ -126,7 +144,7 @@ test('SCRUM-765 · el censo de puertas frágiles VE lo que dice ver', () => {
   assert.equal(conReplace.length, 1, '🔴 el censo no ve la variante con `.replace()` dentro.');
 
   // CONTROL NEGATIVO: la forma buena NO se denuncia. Sin esto, un censo que marcara todo pasaría
-  // los tres controles de arriba y dejaría el trinquete de abajo inservible.
+  // los tres controles de arriba y dejaría el techo de abajo inservible.
   const buena = puertasFragilesEn(
     'if (import.meta.url === pathToFileURL(process.argv[1]).href) { corre(); }', 'sintetico.mjs');
   assert.equal(buena.length, 0, '🔴 el censo marca como frágil la forma que SÍ casa.');
@@ -147,7 +165,7 @@ test('SCRUM-765 · el censo de puertas frágiles VE lo que dice ver', () => {
  *     meta-guard: arranca sólo por el respaldo.
  *   · `scripts/backfill-job-assignees.mjs` — la variante que invierte las barras, y SIN respaldo:
  *     su bloque de arranque no se ejecuta nunca en Windows. Y ese bloque ESCRIBE EN UNA BASE DE
- *     DATOS. Arreglarle la puerta es encender un backfill que hoy está apagado, y eso lo decide
+ *     DATOS. Arreglarle la puerta es ENCENDER un backfill que hoy está apagado, y eso lo decide
  *     el fundador con el diff delante — no una sesión que pasaba por aquí (reglas 9 y 37).
  *
  * Lo que este techo impide es que aparezcan MÁS. Bajarlo al arreglar una de las dos es el camino
@@ -220,13 +238,12 @@ test('SCRUM-765 · SUELO DE EJECUCIÓN: cero mutaciones ejecutadas es CIEGO, no 
 });
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
-// ④ DE PUNTA A PUNTA · que la puerta abra en un proceso DE VERDAD
+// ④ DE PUNTA A PUNTA · que el meta-guard ARRANQUE de verdad
 //
-// Los tests de arriba miden la función. Éste mide el arranque real: si la puerta se rompiera otra
-// vez, el script saldría con 0 sin decir nada y ninguna comprobación de función lo vería.
-// `--solo-censo` existe para poder hacerlo en segundos en vez de en minutos.
+// Los de arriba miden la puerta con la sonda. Éste mide el sujeto real: si su puerta se rompiera,
+// saldría con 0 sin decir nada. `--solo-censo` existe para poder comprobarlo en segundos.
 // ─────────────────────────────────────────────────────────────────────────────────────────────
-test('SCRUM-765 · el script ARRANCA de verdad al invocarlo por su ruta', () => {
+test('SCRUM-765 · el meta-guard ARRANCA de verdad al invocarlo por su ruta', () => {
   const salida = execFileSync(process.execPath,
     [path.join(RAIZ, 'scripts/meta-guard-mutaciones.mjs'), '--solo-censo'],
     { cwd: RAIZ, encoding: 'utf8', timeout: 120000 });
@@ -244,11 +261,38 @@ test('SCRUM-765 · el script ARRANCA de verdad al invocarlo por su ruta', () => 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
-    // Devolver la puerta a la forma que nunca casa. Es el defecto entero de este ticket.
+    // La puerta deja de comparar y no abre nunca: el script no arranca y sale con 0 sin trabajar.
     fichero: 'scripts/_puerta-de-entrada.mjs',
-    de: '    return metaUrl === pathToFileURL(argv1).href;',
-    a: '    return metaUrl === `file://${argv1}`;',
-    cae: 'la puerta CASA en las cuatro formas medidas',
+    de: '    return fs.realpathSync(fileURLToPath(metaUrl)) === fs.realpathSync(argv1);',
+    a: '    return false;',
+    cae: 'la puerta ABRE en todas las formas de invocación',
+  },
+  {
+    // El `catch` deja de fallar cerrado: un `metaUrl` que no se puede resolver a un fichero
+    // pasaría por «sí, soy yo». Es la puerta abriéndose por no saber, que es peor que no abrir.
+    //
+    // 📌 AQUÍ IBA OTRA, Y LA RETIRÉ CON LA MEDICIÓN DELANTE. Era `la comparación → return true`
+    // (la puerta abre para todos). `npm run meta:mutaciones` la declaró **MUDA**, y no lo era:
+    // con la puerta abierta de par en par, el `import` que este fichero hace de
+    // `meta-guard-mutaciones.mjs` **ejecuta su bloque principal dentro del proceso del test**, que
+    // es exactamente para lo que la puerta existe. Medido a mano: el fichero entero muere —
+    // `not ok 1 - tests\scrum765-…test.mjs`, `exitCode: 2`— y por eso NINGÚN nombre de test llega
+    // a reportarse. El guard SÍ cae; lo que no cae es el test que la declaración nombraba.
+    //
+    // 🔴 Es un hueco del contrato de SCRUM-745, no de este guard: **una mutación cuyo radio mata
+    // al fichero sale MUDA aunque el árbol se haya puesto rojo**. Va reportado aparte. Aquí se
+    // elige una mutación del mismo valor y sin ese radio: el `catch` no lo pisa ningún `import`.
+    fichero: 'scripts/_puerta-de-entrada.mjs',
+    de: '    // que seamos la entrada, y ante la duda no se arranca.\n    return false;',
+    a: '    return true;',
+    cae: 'CONTRASTE: la puerta NO abre para nadie que no sea el fichero de entrada',
+  },
+  {
+    // Sin fichero de entrada (`node -e`, REPL) la puerta se daría por abierta.
+    fichero: 'scripts/_puerta-de-entrada.mjs',
+    de: '  if (!argv1) return false; // `node -e`, REPL: no hay fichero de entrada, luego no somos él',
+    a: '  if (!argv1) return true;',
+    cae: 'CONTRASTE: la puerta NO abre para nadie que no sea el fichero de entrada',
   },
   {
     // Aflojar el suelo del censo hasta que deje de sujetar: un guard menos pasaría en silencio.

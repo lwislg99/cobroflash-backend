@@ -25,20 +25,37 @@
 // NOMBRE DE FICHERO, así que una copia renombrada del `meta-guard` salía **exit 0 en 0,28 s sin
 // ejecutar una sola mutación** — un verde perfecto sobre cero trabajo.
 //
-// ── LA FORMA QUE SÍ CASA, Y POR QUÉ ─────────────────────────────────────────────────────────
+// ── EL PRIMER ARREGLO, Y POR QUÉ NO BASTABA ─────────────────────────────────────────────────
 // `pathToFileURL(argv[1]).href` construye la URL con las MISMAS reglas con las que Node compone
-// `import.meta.url`: resuelve la ruta a absoluta, pone las tres barras, invierte las barras y
-// escapa. Se compara lo mismo con lo mismo en vez de dos convenios distintos. **CASA en las
-// cuatro formas medidas.** No es una preferencia de estilo: seis scripts del árbol ya la usan
-// (`citar-*.mjs`, `diagnostico-dependencias.mjs`, `registro-de-lo-aprobado.mjs`), así que esto
-// no inventa nada — unifica en la forma que la casa ya había acertado.
+// `import.meta.url`, y casa en las cuatro formas de invocación. **Pero se rompe en cuanto hay un
+// ENLACE de por medio**, y eso lo destapó CI: Node resuelve el módulo de ENTRADA pasando por
+// `realpath`, así que `import.meta.url` trae la ruta REAL y `argv[1]` la que se escribió.
 //
-// ⛔ Y SE VA EL RESPALDO `endsWith()`. No es una red: es lo que ocultaba el agujero. Mientras
-// estuvo puesto, la puerta rota no se notaba, y por eso vivió desde que se escribió.
+// MEDIDO en Windows el 6-sep-2026, arrancando el MISMO fichero a través de un junction al repo:
+//
+//     argv[1]              C:\…\scratchpad\enlace-repo\scripts\_sonda-enlace-765.mjs
+//     realpath(argv[1])    C:\Users\Javier Pereira\cobroflash-b5\scripts\_sonda-enlace-765.mjs
+//     import.meta.url      file:///C:/Users/Javier%20Pereira/cobroflash-b5/scripts/…
+//     pathToFileURL(argv1) file:///C:/Users/JAVIER%7E1/AppData/…/enlace-repo/scripts/…
+//     ¿ABRE LA PUERTA?     **false**   ← el script no arranca, y sale con 0 sin hacer nada
+//
+// ── LA FORMA QUE SE QUEDA: LAS DOS RUTAS REALES ─────────────────────────────────────────────
+// `realpath` a los DOS lados y una sola comparación. Normaliza de golpe todo lo que separaba a
+// las dos cadenas —el enlace, el sentido de las barras, el escapado, la mayúscula de la unidad y
+// hasta el nombre corto 8.3 (`JAVIER~1` → `Javier Pereira`)— porque pregunta por el FICHERO DE
+// DISCO en vez de por dos convenios de texto.
+//
+// Se probó antes una versión con las dos comparaciones (la de URL y ésta). Se retiró: con
+// `realpath` a los dos lados, la de URL **no puede fallar sin que falle también la otra**, o sea
+// que ninguna mutación podría cazarla. Código que ningún rojo puede alcanzar es decoración.
+//
+// ⛔ Y ESTO NO ES EL RESPALDO `endsWith()`. Aquél comparaba por NOMBRE DE FICHERO, y por eso una
+// copia renombrada colaba y tapaba la avería. Esto compara el MISMO FICHERO DE DISCO: una copia
+// con otro nombre sigue sin casar con el original.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
 /**
@@ -50,9 +67,10 @@ import ts from 'typescript';
 export function ejecutadoDirectamente(metaUrl, argv1 = process.argv[1]) {
   if (!argv1) return false; // `node -e`, REPL: no hay fichero de entrada, luego no somos él
   try {
-    return metaUrl === pathToFileURL(argv1).href;
+    return fs.realpathSync(fileURLToPath(metaUrl)) === fs.realpathSync(argv1);
   } catch {
-    // Una ruta que ni siquiera se puede convertir en URL no es este fichero.
+    // Un `metaUrl` que no es `file:`, o un fichero que ya no está en disco: no se puede AFIRMAR
+    // que seamos la entrada, y ante la duda no se arranca.
     return false;
   }
 }

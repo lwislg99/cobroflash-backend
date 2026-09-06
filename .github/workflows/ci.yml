@@ -366,7 +366,35 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      # ── SCRUM-765 · ESTE JOB CORRE LOS MISMOS GUARDS QUE LA TANDA, Y NECESITA SU MISMO ÁRBOL ──
+      #
+      # 🔴 Aquí había un `checkout` DESNUDO mientras el job de la tanda lleva `fetch-depth: 0` desde
+      # SCRUM-388. El meta-guard ejecuta esos mismos ficheros de guard uno a uno, así que un guard
+      # que necesita el repositorio entero se cae aquí y no allí — y este instrumento, desde
+      # SCRUM-748, ya no lo llama MUDO: se declara CIEGO y saca el job con 2. Eso es lo que pasó
+      # con `scrum738`, y el veredicto era correcto: no había medido nada.
+      #
+      # MEDIDO el 6-sep-2026 reproduciendo las formas de checkout en clones locales y llamando a
+      # `censarTicket(684)`, que es lo que ese guard comprueba:
+      #
+      #     forma del clon                                veredicto    colisión   scrum738
+      #     ─────────────────────────────────────────────────────────────────────────────
+      #     repositorio entero                            NO_MEDIBLE   683        PASA
+      #     superficial (checkout por defecto)            NO_MEDIBLE   AUSENTE    FALLA
+      #     superficial + `main`                          NO_MEDIBLE   AUSENTE    FALLA
+      #     historia completa, UNA ref (fetch-depth: 0)   NADA         AUSENTE    FALLA
+      #     historia completa, UNA ref + `main`           NO_MEDIBLE   683        PASA
+      #
+      # Hacen falta LAS DOS COSAS y ninguna basta sola: historia completa Y la ref `origin/main`.
+      # Por eso van las dos líneas — la segunda es la misma que SCRUM-716b tuvo que añadirle al
+      # vigía, y por el mismo motivo medido: en un `pull_request`, `fetch-depth: 0` trae una sola
+      # ref y `origin/main` no resuelve.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Traer `main` (el censo de tickets lo consulta)
+        run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
 
       - uses: actions/setup-node@v4
         with:
