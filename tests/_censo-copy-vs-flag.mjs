@@ -405,6 +405,39 @@ export function censoCopy(raiz, portadores, portadoresTipo = new Map()) {
   const visibles = [], noLegibles = [];
   let literales = 0;
 
+  // ── PASADA 0 · NOMBRES QUE SE LLAMAN EN UN SUMIDERO, EN TODO EL ÁRBOL ──────────────────
+  //
+  // 🔴 SIN ESTO, CENTRALIZAR COPY LA VUELVE INVISIBLE AL CENSO. Medido en SCRUM-776: al mover los
+  // siete rótulos del documento suelto a `rotulosDelDocumento.js`, los literales dejaron de estar
+  // pegados a un `textContent` —ahora los devuelve una función que el consumidor llama— y el
+  // censo pasó de 162 literales visibles a 155. No es que hubiera menos copy: es que el
+  // instrumento había dejado de verla, que es la peor forma de bajar un número.
+  //
+  // Así que se recoge el nombre de toda función CUYA LLAMADA ocupa un sumidero visible
+  // (`x.textContent = R.tituloListado()`), y un literal devuelto por una función con ese nombre
+  // hereda ese sumidero. Es UN nivel, igual que la indirección por `const` de más abajo: los
+  // encadenamientos más largos siguen sin verse, y por eso el número no se publica solo.
+  //
+  // ⚠️ Es un puente POR NOMBRE, así que sobre-aproxima si alguien llama `label()` o `text()` en un
+  // sumidero: cualquier propiedad homónima heredaría. Se acepta porque sobre-aproximar aquí mete
+  // literales de más EN EL CENSO —que se leen y se clasifican— mientras que quedarse corto los
+  // saca en silencio, que es lo que acaba de pasar.
+  const nombresEnSumidero = new Set();
+  for (const p of ficheros) {
+    const sf = parsear(p);
+    const visitar = (n) => {
+      if (ts.isCallExpression(n)) {
+        const s = sumideroDe(n, sf);
+        if (s) {
+          const e = n.expression;
+          nombresEnSumidero.add(ts.isPropertyAccessExpression(e) ? e.name.text : e.getText(sf));
+        }
+      }
+      ts.forEachChild(n, visitar);
+    };
+    visitar(sf);
+  }
+
   for (const p of ficheros) {
     const rel = aPosix(path.relative(raiz, p));
     const sf = parsear(p);
@@ -455,6 +488,23 @@ export function censoCopy(raiz, portadores, portadoresTipo = new Map()) {
                 const rUso = condicionesQueLoEligen(uso.nodo, sf, portadores, rel, uso.sink.nodoValor, uso.sink.clase + ":" + uso.sink.detalle);
                 razones = { eligen: razones.eligen.concat(rUso.eligen), puertas: razones.puertas.concat(rUso.puertas) };
               }
+            }
+          }
+
+          if (!sink) {
+            // ¿Lo DEVUELVE una función cuya llamada ocupa un sumidero? (ver PASADA 0)
+            let d = n.parent, nombre = null;
+            while (d && !ts.isSourceFile(d)) {
+              if (ts.isPropertyAssignment(d)) { nombre = d.name.getText(sf).replace(/['"]/g, ''); break; }
+              if (ts.isFunctionDeclaration(d) && d.name) { nombre = d.name.text; break; }
+              if (ts.isVariableDeclaration(d) && ts.isIdentifier(d.name)) { nombre = d.name.text; break; }
+              d = d.parent;
+            }
+            if (nombre && nombresEnSumidero.has(nombre)) {
+              // El sumidero concreto no se conoce sin resolver el llamador; lo que importa aquí es
+              // que el literal ES copy visible. Se declara la vía para que se pueda auditar.
+              sink = { clase: 'DEVUELTO', detalle: nombre, nodoValor: n };
+              via = `return ${nombre}()`;
             }
           }
 

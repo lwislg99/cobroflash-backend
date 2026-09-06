@@ -856,6 +856,7 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'quotesListView.js',
   'quotesTabs.js',
   'quotesView.js',
+  'rotulosDelDocumento.js',
   'reportsView.js',
   'resistenciaAlmacen.js',
   'selectorMetodoCobro.js',

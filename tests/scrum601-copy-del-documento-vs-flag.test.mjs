@@ -11,16 +11,24 @@
 //     getEmissionMode          → 'receipt'
 //     modoDocumentoSuelto      → 'justificante'
 //
-// El botón de la pantalla de Facturas SÍ lo sigue: dice «+ Nuevo justificante»
+// El botón de la pantalla de Facturas SÍ lo seguía: decía «+ Nuevo justificante»
 // (`invoicesView.js`, elegido por `window.appDocumentoSuelto`). El modal que ese botón ABRE, no:
-// su título es «Nueva factura» y su botón primario «Emitir factura», los dos escritos a pelo.
+// su título era «Nueva factura» y su botón primario «Emitir factura», los dos escritos a pelo.
 //
-// O sea que el profesional pulsa un botón que le promete un justificante y se le abre una
-// ventana que le dice que va a emitir una factura. En la MISMA pantalla y en el MISMO gesto.
+// O sea que el profesional pulsaba un botón que le prometía un justificante y se le abría una
+// ventana que le decía que iba a emitir una factura. En la MISMA pantalla y en el MISMO gesto.
 //
-// ⚠️ ESTE TICKET MIDE, NO TOCA (regla 30: el microcopy lo firma el asesor). Aquí no se cambia ni
-// un literal: se deja el defecto ATADO para que no pueda crecer en silencio, y el arreglo va en
-// su propio ticket con el texto ya firmado.
+// ⚠️ SCRUM-601 MIDIÓ Y NO TOCÓ (regla 30: el microcopy lo firma el asesor): dejó el defecto ATADO
+// para que no pudiera crecer en silencio.
+//
+// ✅ SCRUM-776 LO CERRÓ, con los textos ya firmados (asesor, 6-sep-2026). Siete rótulos derivan
+// ahora de `rotulosDelDocumento`, y este fichero se queda como LA RED que lo sostiene: el
+// veredicto anclado, el censo que no puede encogerse en silencio y el trinquete —que bajó de
+// SEIS entradas a UNA—. La que queda es el `aria-label` del selector de cliente, que el asesor
+// NO firmó a propósito porque «cliente al que justificas» no existe en castellano.
+//
+// 🔴 Este fichero se lee HOY, no el día que se escribió: si vuelve a describir un árbol que ya no
+// existe, es el defecto que llevamos cinco veces cazándole al máster de agosto.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -47,7 +55,7 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
  * anclar sólo el total dejaría pasar un trasvase silencioso entre categorías — que es
  * exactamente cómo este defecto se disolvería sin que nadie lo viera.
  */
-const VEREDICTO_AL_MEDIR = { flag: 2, tipo: 7, aPelo: 153 };
+const VEREDICTO_AL_MEDIR = { flag: 16, tipo: 7, aPelo: 151 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
@@ -91,7 +99,7 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   const en = (f, l) => censo.visibles.filter((v) => v.fichero === f && v.linea === l);
 
   // POSITIVO, del árbol real: el rótulo del botón SÍ deriva del flag.
-  const boton = en('public/dashboard/js/invoicesView.js', 221);
+  const boton = en('public/dashboard/js/invoicesView.js', 223);
   assert.equal(boton.length, 1, 'no se encuentra el rótulo «+ Nuevo justificante» donde se midió');
   assert.equal(boton[0].texto, '+ Nuevo justificante');
   assert.equal(boton[0].dependeDelFlag, true,
@@ -100,9 +108,9 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   assert.equal(boton[0].via, 'WINDOW::appDocumentoSuelto');
 
   // NEGATIVO, del árbol real: el título del modal NO deriva, y está en la misma pantalla.
-  const modal = en('public/dashboard/js/nuevaFacturaModal.js', 52);
-  assert.equal(modal.length, 1, 'no se encuentra el título del modal donde se midió');
-  assert.equal(modal[0].texto, 'Nueva factura');
+  const modal = en('public/dashboard/js/nuevaFacturaModal.js', 108);
+  assert.equal(modal.length, 1, 'no se encuentra el aria-label sin firmar donde se midió');
+  assert.equal(modal[0].texto, 'Cliente al que facturas');
   assert.equal(modal[0].dependeDelFlag, false);
 });
 
@@ -137,7 +145,7 @@ test('SCRUM-601 · EL VEREDICTO: las tres categorías, ancladas, y SUMAN', () =>
  *
  * Medido el 6-sep-2026 sobre `main` = 00c6cb0c (re-medido tras mezclarlo: la población pasó a 356 ficheros y 19.978 literales, y el reparto NO se movió).
  */
-const NO_LEGIBLES_AL_MEDIR = 33;
+const NO_LEGIBLES_AL_MEDIR = 31;
 
 test('SCRUM-601 · el censo DECLARA lo que no sabe leer, y esa lista no crece sola', () => {
   const n = censo.noLegibles.length;
@@ -167,12 +175,14 @@ test('SCRUM-601 · el censo DECLARA lo que no sabe leer, y esa lista no crece so
  * pelo en el flujo, también cae.
  */
 const PENDIENTES_DE_FIRMA = [
-  { fichero: 'public/dashboard/js/nuevaFacturaModal.js', linea: 29, texto: 'Emitir factura' },
-  { fichero: 'public/dashboard/js/nuevaFacturaModal.js', linea: 43, texto: 'Crear una factura nueva' },
-  { fichero: 'public/dashboard/js/nuevaFacturaModal.js', linea: 52, texto: 'Nueva factura' },
-  { fichero: 'public/dashboard/js/nuevaFacturaModal.js', linea: 84, texto: 'Cliente al que facturas' },
-  { fichero: 'public/dashboard/js/nuevaFacturaModal.js', linea: 215, texto: 'Factura emitida' },
-  { fichero: 'public/dashboard/js/nuevaFacturaModal.js', linea: 220, texto: 'No hemos podido emitir la factura. Inténtalo otra vez.' },
+  // SCRUM-776 · SE VACIÓ DE SEIS A UNO. Los cinco que faltan ya derivan de
+  // `rotulosDelDocumento`, y se han borrado de aquí EN EL MISMO COMMIT que los arregla — que es
+  // lo que este trinquete exige y por lo que sirve de algo.
+  //
+  // 🔴 EL QUE QUEDA NO ES UN OLVIDO: el asesor NO lo firmó, y a propósito. «Cliente al que
+  // justificas» no existe en castellano, así que necesita redacción nueva y eso no se firma de
+  // pasada. Sigue con su texto aprobado de 17-ago-2026 y su marcador en el fuente.
+  { fichero: 'public/dashboard/js/nuevaFacturaModal.js', linea: 108, texto: 'Cliente al que facturas' },
 ];
 
 test('SCRUM-601 · 🔴 el flujo de la factura suelta NO habla con una sola voz (defecto ATADO)', () => {
@@ -180,7 +190,7 @@ test('SCRUM-601 · 🔴 el flujo de la factura suelta NO habla con una sola voz 
 
   // Premisa: el botón que ABRE este modal sí deriva del flag. Si dejara de hacerlo, la
   // contradicción desaparecería por el lado malo y este test tiene que enterarse.
-  const boton = censo.visibles.find((v) => v.fichero === 'public/dashboard/js/invoicesView.js' && v.linea === 221);
+  const boton = censo.visibles.find((v) => v.fichero === 'public/dashboard/js/invoicesView.js' && v.linea === 223);
   assert.ok(boton && boton.dependeDelFlag,
     'el rótulo del botón ha dejado de derivar del flag: ya no hay «uno sí y otro no», hay «ninguno».');
 

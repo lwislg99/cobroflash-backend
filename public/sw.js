@@ -71,6 +71,9 @@ const SHELL = [
   '/dashboard/js/productsView.js',
   '/dashboard/js/providersView.js',
   '/dashboard/js/tipoDestinatarioPendiente.js', // SCRUM-615
+  // SCRUM-776: la fuente única de cómo se llama el documento; va ANTES de invoicesView y
+  // nuevaFacturaModal, igual que en el índice — los dos la leen al pintar.
+  '/dashboard/js/rotulosDelDocumento.js',
   '/dashboard/js/invoicesView.js',
   '/dashboard/js/cobrosView.js', // SCRUM-285 (B4)
   '/dashboard/js/nuevaFacturaModal.js', // SCRUM-289 (A0.3)
