@@ -35,6 +35,7 @@ import { esErrorSinSellar, ERROR_SIN_SELLAR } from '../../../invoicing/domain/po
 import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { resolverFechaDeCobro } from '../../../billing/domain/fechaDeCobro'; // SCRUM-397
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
+import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-289 (C7)
 import { puedeRectificarse } from '../../../invoicing/domain/rectificabilidad'; // SCRUM-308
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-289
@@ -120,6 +121,10 @@ router.post('/', requireRole('admin'), async (req, res) => {
     // entera. Comprobarlo después obligaría a deshacer una factura ya numerada, que es el hueco
     // que hay que justificar ante Hacienda.
     exigirLineasFacturables(val.lineas);
+    // SCRUM-771 · y que el tipo de IVA EXISTA. Mismo sitio y misma razón que la línea de
+    // arriba: ANTES de pedir número, nunca después. Deriva de `invalidTipoIva`; aquí no
+    // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
+    exigirTiposDeIvaEmitibles(val.lineas);
 
     const invoice = await prisma.$transaction(async (tx) =>
       emitInvoice(tx, {
