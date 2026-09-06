@@ -190,7 +190,18 @@ const CENSO = Object.freeze({
   //
   // La caja de los dos nuevos SÍ está medida —en navegador, a 929 y a 390 px, con texto dentro—
   // y las medidas están en `docs/master/SCRUM-586.md`. Lo que falta es la FIRMA, no la medida.
-  'quotesView.js': 4,
+  //
+  // 🔴 6-sep-2026 · BAJA DE 4 A 3, y una BAJADA también se anota: el asesor FIRMÓ el texto de la
+  // tira del 586 —«Formas de pago pactadas»— y su marcador se retiró EN EL MISMO COMMIT que la
+  // firma. Medido con el censo oficial antes y después: `quotesView.js` 4 → 3, total 29 → 28.
+  //
+  // La entrada NO se borra, al revés que las de `customersView.js` o `aiQuoteAssistant.js`: aquí
+  // quedan TRES marcadores vivos —el botón del 586 y los dos del 587—, y `censoActual()` sigue
+  // listando el fichero. Se borra cuando llegue a cero, no antes.
+  //
+  // ⛔ Y esta firma NO alcanza a «[PENDIENTE microcopy oficial] Nuevo albarán» de `atajoNuevo.js`,
+  // que es de otro ticket. Comprobado con el censo: sigue en 1 antes y después.
+  'quotesView.js': 3,
   // 🔴 SCRUM-587 (CONT-14) · 4-sep-2026 · `customersView.js` ENTRÓ Y SALIÓ EL MISMO DÍA.
   //
   // Entró con 1 —el rótulo del campo del descuento pactado en la ficha del cliente— y el asesor lo
