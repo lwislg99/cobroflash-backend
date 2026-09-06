@@ -304,12 +304,34 @@ test('SCRUM-778 · 🔴 ningún guard vuelve a cablear los llamadores de `emitIn
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
-    // ① El defecto del ticket, en el árbol REAL: se quita el portón de UNA boca de un fichero que
-    // tiene DOS. Un control por fichero pasaría; éste tiene que nombrarla.
-    fichero: 'src/modules/jobs/app/routes/albaranes.routes.ts',
-    de: '  const doc = await prisma.$transaction(async (tx) => {',
-    a: '  const doc = await prisma.$transaction(async (tx) => {\n    await emitInvoice(tx, { origen: "C9-mutada" } as any);',
-    cae: 'SCRUM-778 · SUELO: la población derivada ni está vacía ni ha encogido, y cuadra con SCRUM-203',
+    // ① EL DEFECTO DEL TICKET, CONTRA EL DERIVADOR: el censo vuelve a contar **por fichero**.
+    // Se colapsa la población a una boca por (fichero, tipo), que es exactamente lo que hacían las
+    // tres listas cableadas. Con eso `albaranes.routes.ts` pasa de dos bocas a una y el control
+    // positivo de abajo cae: sin ese fichero con DOS, contar por llamada no se distingue de contar
+    // por fichero, y el ticket entero se queda sin caso.
+    //
+    // 🔴 ESTA DECLARACIÓN ESTABA MAL EN LOS DOS CAMPOS, y se corrige tras MEDIRLO, no tras leerlo.
+    //
+    // Decía mutar `albaranes.routes.ts` con un ancla —`const doc = await prisma.$transaction(...)`—
+    // que **no existía en ese fichero ni el día que la escribí**: medido, `grep -c` da 0 tanto en mi
+    // propio commit como en `origin/main`, y `main` NO ha tocado ese fichero desde entonces. No fue
+    // el árbol moviéndose: nació caduca, porque empujé el ticket sin correr `meta:mutaciones`.
+    //
+    // Y el emparejamiento tampoco valía. Provocado el defecto A MANO en el fichero real —una
+    // tercera llamada a `emitInvoice` sin portón, tres en total— y corrido este guard:
+    // **8/8 EN VERDE, exit 0**. O sea que aun con el ancla perfecta habría salido MUDA. Este
+    // fichero vigila el DERIVADOR, no la protección del árbol: eso lo comprueban `scrum246`,
+    // `scrum205` y `scrum206b`, que consumen la población derivada. Re-anclar sin mirar esto
+    // habría cambiado un rojo por otro.
+    // ⚠️ Y `a` VA EN UN SOLO LITERAL, no en una concatenación con `+`. Medido: el lector oficial
+    // (`mutacionesDeclaradas`, por AST) sólo acepta `ts.isStringLiteralLike`, así que una
+    // expresión `'…' + '…'` NO ES UNA CADENA para él y la declaración entera desaparece **en
+    // silencio** — el censo pasó de tres mutaciones a dos sin decir nada. Es el hueco que ya tenía
+    // nombre (SCRUM-757) y aquí volvió a morder.
+    fichero: 'tests/_bocas-de-emision.mjs',
+    de: '    ts.forEachChild(sf, (n) => visitar(n, []));',
+    a: '    ts.forEachChild(sf, (n) => visitar(n, []));\n    for (let i = out.length - 1; i > 0; i--) {\n      if (out.slice(0, i).some((b) => b.fichero === out[i].fichero && b.tipo === out[i].tipo)) out.splice(i, 1);\n    }',
+    cae: 'SCRUM-778 · ✅ CONTROL POSITIVO: el censo ve la boca que la lista CABLEADA no veía',
   },
   {
     // ② El censo mirando sólo a `emitInvoice`: se queda ciego para las siete bocas del embudo,
