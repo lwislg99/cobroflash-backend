@@ -50,6 +50,7 @@ import { mutacionesDeclaradas } from '../scripts/meta-guard-mutaciones.mjs';
 // WhatsApp a teléfonos guardados. Lo cazó `tests/scrum262-telefonos-de-prueba.test.mjs` en la
 // primera tanda de este ticket, con el número puesto a mano.
 import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs';
+import { anclaEnElRepositorio } from './_ancla-en-el-repositorio.mjs'; // SCRUM-796
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const AQUI = fileURLToPath(import.meta.url);
@@ -207,7 +208,7 @@ test('SCRUM-608 · EL QUE DECIDE: los tres papeles NO comparten cabecera', async
 //    EN SILENCIO, y entonces esto no es un guard vivo sino un comentario largo.)
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-608 · el lector oficial del meta-guard VE mi declaración, y ve las tres', () => {
+test('SCRUM-608 · el lector oficial del meta-guard VE mi declaración, y ve las tres', (t) => {
   const mias = mutacionesDeclaradas(fs.readFileSync(AQUI, 'utf8'), path.basename(AQUI));
   assert.equal(mias.length, MUTACIONES_QUE_ME_TUMBAN.length,
     `🔴 el lector oficial ve ${mias.length} mutaciones y yo declaro `
@@ -216,9 +217,19 @@ test('SCRUM-608 · el lector oficial del meta-guard VE mi declaración, y ve las
     assert.ok(fs.existsSync(path.join(RAIZ, m.fichero)),
       `🔴 la mutación apunta a \`${m.fichero}\`, que no existe: el meta-guard la daría por CIEGA. `
       + 'Si es un fichero de `dist/`, hace falta haber compilado (`npm run build`).');
-    const texto = fs.readFileSync(path.join(RAIZ, m.fichero), 'utf8');
-    assert.ok(texto.includes(m.de),
-      `🔴 EL ANCLA CADUCÓ: \`${m.de.slice(0, 60)}…\` ya no está en \`${m.fichero}\`.`);
+    // 🔴 SCRUM-796 · contra el fuente del REPOSITORIO, no contra el fichero que el arnés está
+    // reescribiendo. Aquí las mutaciones apuntan a `dist/`, que git IGNORA por diseño: para un
+    // fichero generado NO HAY fuente original en el repositorio, y eso se DICE en vez de dar por
+    // bueno un verde que no se ha medido.
+    const anc = anclaEnElRepositorio(m, RAIZ);
+    if (!anc.medible) {
+      t.diagnostic(`NO MEDIBLE el ancla de \`${m.fichero}\`: ${anc.motivo}. Es un fichero generado `
+        + '(`dist/`), así que el repositorio no tiene un original con el que comparar. Las demás '
+        + 'comprobaciones de esta declaración SÍ han corrido.');
+    } else {
+      assert.ok(anc.viva,
+        `🔴 EL ANCLA CADUCÓ: \`${m.de.slice(0, 60)}…\` ya no está en \`${m.fichero}\` (${anc.origen}).`);
+    }
   }
 });
 

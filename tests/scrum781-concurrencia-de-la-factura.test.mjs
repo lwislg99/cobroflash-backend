@@ -41,6 +41,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { pathToFileURL, fileURLToPath } from 'node:url'; // SCRUM-730: `pathname` no decodifica
 import { withMerchant } from './_merchant-fixture.mjs';
+import { anclaEnElRepositorio } from './_ancla-en-el-repositorio.mjs'; // SCRUM-796
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 // ⚠️ El motivo del salto va LITERAL en cada test y no en una constante: el guard de SCRUM-456
@@ -301,8 +302,11 @@ test('SCRUM-781 · EL LECTOR OFICIAL me ve: las tres declaraciones, con sus cuat
     '🔴 el lector oficial lee algo distinto de lo que está escrito aquí',
   );
   for (const m of MUTACIONES_QUE_ME_TUMBAN) {
+    // 🔴 SCRUM-796 · contra el fuente del REPOSITORIO: el arnés reescribe la copia de trabajo.
+    const anc = anclaEnElRepositorio(m, RAIZ);
+    assert.ok(anc.medible, `🔴 CIEGO: no puedo comprobar el ancla de ${m.fichero} — ${anc.motivo}`);
     assert.ok(
-      fs.readFileSync(m.fichero, 'utf8').includes(m.de),
+      anc.viva,
       `🔴 el ancla ya no está en ${m.fichero}: «${m.de.trim().slice(0, 60)}…»`,
     );
   }
