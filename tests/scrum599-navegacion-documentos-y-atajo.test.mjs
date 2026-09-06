@@ -80,7 +80,11 @@ test('SCRUM-768 · SUELO: el filtro de comentarios VE el marcado y NO ve los com
     '🔴 el filtro se está comiendo marcado de verdad: mediría de menos y todo lo de abajo saldría '
     + 'verde sin haber mirado nada.');
   // Y sobre el fichero real: después de filtrar sigue habiendo barra que medir.
-  assert.ok(MARCADO.includes('<nav class="sidebar-nav">'),
+  // 🔴 CON HUECO PARA LOS ATRIBUTOS (SCRUM-553): la primera versión buscaba el literal
+  // `<nav class="sidebar-nav">` pegado, y su guard la cazó — el tope de extractores con el `>`
+  // pegado pasó de 20 a 21 y la tanda se puso roja. Un `id` nuevo en esa etiqueta habría roto
+  // este suelo por un motivo que no tiene nada que ver con lo que mide.
+  assert.match(MARCADO, /<nav[^>]*class="sidebar-nav"[^>]*>/,
     '🔴 tras quitar los comentarios no queda ni la barra: el filtro se ha llevado el marcado.');
 });
 
