@@ -1,8 +1,8 @@
 # SCRUM-806 · El botón del cliente ya no lleva a la puerta del profesional
 
 **Fecha:** 6-sep-2026 · **Carril:** producto · portal del cliente · **Gate:** sin gate
-**Medido contra:** `origin/main` = `50312d327c0f7ddcf8a0670ab54c46407a7bba9d` · 2026-09-06T23:10:26+01:00
-**Tanda:** TANDA_PENDIENTE
+**Medido contra:** `origin/main` = `5af8e7e9cdcd15ac90eb9b8a1473737872b6625c` · 2026-09-06T23:35:00+01:00
+**Tanda:** 5731 tests, 5629 pass, 0 fail, 102 skipped · `EXIT_REAL=0` (tras mezclar main)
 
 > Sale del hallazgo colateral de [SCRUM-799](SCRUM-799.md), donde se midió y **no** se arregló.
 > Aquí se arregla, y lo que se toca es **adónde apunta** un enlace: ni un literal nuevo.
@@ -258,8 +258,11 @@ se probó, con servidor y base de dev, en los tres controles de arriba.
   pasa por `ensureInvoicePdf`, que es **camino de emisión** y está en la mesa del fundador
   (SCRUM-762). Existe ya una ruta pública de recibo (`/recibo/:token/pdf`) que podría ser la
   salida, pero elegirla es de quien tenga el 762 delante.
-- **`P1-PORTAL-PDF` en `docs/BUGS.md`** se registró en la rama de SCRUM-799, que aún no está
-  mezclada; por eso aquí no aparece y no se marca. Quien mezcle el segundo, que lo tache.
+- **`P1-PORTAL-PDF` en `docs/BUGS.md`**: SCRUM-799 se mezcló (PR #1111) mientras esto se
+  construía, así que el bug YA está en `main` y aquí se anota con su línea de qué se cambió.
+  **Se deja en `[ ]` a propósito:** la regla de ese fichero dice que se verifica en yaqu.app, y
+  desde un árbol de trabajo eso no se puede hacer. Tacharlo yo sería firmar una verificación que
+  no he hecho.
 - Los dos `href` del recibo que el censo marcó: declarados arriba, **no medidos**.
 
 ## Prohibiciones del encargo, respetadas
