@@ -1,8 +1,14 @@
 # SCRUM-791 · Las dos superficies del panel que el censo propuso, dentro del guard
 
 **Fecha:** 6-sep-2026 · **Carril:** AB6 / objetivo táctil · **Gate:** sin gate — guard de navegador, fuera de `npm test`
-**Medido contra:** `origin/main` = `61e9aea466ccf08ab315f446de92338ae2ca0268` · 2026-09-06T13:18:15+01:00
-**Tanda:** 5664 tests, 5572 pass, 0 fail, 92 skipped (salida 0) — la SEGUNDA; la primera salió en rojo, ver abajo
+**Medido contra:** `origin/main` = `ff4e1c4a14f474d0fb4095cb0643e069388e4935` · 2026-09-06T13:35:56+01:00
+**Tanda:** 5674 tests, 5582 pass, 0 fail, 92 skipped (salida 0)
+
+> **Es la TERCERA tanda, y las tres se dicen.** `main` se movió TRES veces mientras duraba esto y
+> las tres veces se mezcló ANTES de medir. La primera salió en **ROJO** (un guard de la casa me
+> cazó, ver el final); la segunda dio 5664/5572/0/92; la tercera es ésta, con el `main` que tocó
+> `jobDetailView.js` —una de mis dos superficies— ya dentro. Los suelos de 8 y 6 y la sonda 4/4 se
+> volvieron a medir después de cada merge.
 
 > Nace de SCRUM-787, que censó el panel entero —**76 objetivos cortos distintos**, de los que 57
 > son `.btn-sm`— y propuso vigilar **dos**, no dieciocho. El asesor aceptó las dos y sus motivos.
