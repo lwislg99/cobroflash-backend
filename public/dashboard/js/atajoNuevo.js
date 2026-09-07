@@ -37,15 +37,16 @@
     "quotes-list": "Nuevo presupuesto",
     invoices: "Nueva factura",
     customers: "Nuevo cliente",
-    // 🔴 SCRUM-606 (ALB-01) · LA CUARTA LISTA, Y NACE SIN FIRMAR — que es exactamente lo que este
-    // fichero predijo el 4-sep: «el día que una cuarta lista estrene su atajo, su rótulo nace sin
-    // firma, este número sube y esto cae». Sube y cae. El marcador se VE en pantalla a propósito
-    // (SCRUM-402/667): así nadie enciende por descuido texto que nadie ha aprobado.
+    // ✅ SCRUM-722 · FIRMADO POR EL FUNDADOR el 7-sep-2026. Entró con marcador en SCRUM-606 y este
+    // mismo fichero lo había predicho el 4-sep: «el día que una cuarta lista estrene su atajo, su
+    // rótulo nace sin firma». Nació — y estuvo TRES DÍAS en pantalla, en los tres estados de la
+    // lista. No lo encontró ningún mecanismo: salió de rebote en el barrido de SCRUM-721, midiendo
+    // otra cosa. Ese hueco es lo que cierra el guard de este ticket.
     //
-    // El rótulo vive AQUÍ y no en la vista, como los otros tres, y además lo lee el título del
-    // modal del buscador (`albaranDesdePresupuestoModal.js`): una acción, un texto. Si cada sitio
-    // escribiera el suyo, el día de la firma uno se quedaría con el marcador puesto.
-    albaranes: "[PENDIENTE microcopy oficial] Nuevo albarán",
+    // El rótulo vive AQUÍ y no en la vista, como sus hermanos, y además lo lee el título del modal
+    // del buscador (`albaranDesdePresupuestoModal.js`): una acción, un texto. Por eso la firma se
+    // aplica en UN sitio y llega a los dos.
+    albaranes: "Nuevo albarán",
     // ✅ SCRUM-769 · FIRMADOS POR EL FUNDADOR el 6-sep-2026, junto con otros tres que NO se han
     // podido aplicar (ver `docs/microcopy/2026-09-06-SCRUM-769-las-cinco-pantallas.md`). Estos dos
     // sí: su pantalla tiene un botón primario que ABRE una creación, que es lo que el patrón de
@@ -66,11 +67,13 @@
   // aquí el cero no es «no hay nada que declarar», es «las tres que hay están firmadas». Si mañana
   // entra una cuarta lista con su atajo, su rótulo nace SIN FIRMAR y este número tiene que subir.
   // Borrarlo dejaría el hueco sin sitio donde declararse.
-  // 🔴 SUBE DE 0 A 1 el 5-sep-2026 (SCRUM-606 · ALB-01): entra «Nuevo albarán», el rótulo de la
-  // CUARTA lista, y nace sin la firma del fundador. Los otros tres siguen firmados. Cuando éste se
-  // firme, el número vuelve a 0 y su marcador se retira del literal de arriba — los dos a la vez,
-  // porque un contador a 0 con un marcador vivo es peor que no llevar cuenta.
-  var SIN_APROBAR = 1;
+  // 🔴 SUBIÓ DE 0 A 1 el 5-sep-2026 (SCRUM-606 · ALB-01): entró «Nuevo albarán», el rótulo de la
+  // CUARTA lista, sin la firma del fundador. Aquel comentario dejó escrito cómo se cierra: «cuando
+  // éste se firme, el número vuelve a 0 y su marcador se retira del literal de arriba — los dos a
+  // la vez, porque un contador a 0 con un marcador vivo es peor que no llevar cuenta».
+  //
+  // ✅ VUELVE A 0 el 7-sep-2026 (SCRUM-722): firmado. Los dos a la vez, como estaba escrito.
+  var SIN_APROBAR = 0;
 
   var registro = Object.create(null);
 
