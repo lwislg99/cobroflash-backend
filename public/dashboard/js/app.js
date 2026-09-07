@@ -322,6 +322,18 @@ async function initApp() {
         viewTitle.textContent = 'Facturas';
         renderInvoicesView(viewContainer);
         break;
+      // SCRUM-600 (DOC-10) · el documento suelto tiene PÁGINA PROPIA, la misma que el
+      // presupuesto. Antes se hacía en un modal que se abría desde un botón: sin ruta, no se
+      // podía enlazar, ni recargar, ni volver — y una recarga a media factura lo perdía todo.
+      //
+      // El rótulo NO se escribe aquí: sale de `rotulosDelDocumento`, que ya sabe si este
+      // profesional emite facturas o justificantes (SCRUM-776). Escribir 'Facturas' a pelo sería
+      // decirle «factura» a un merchant español real, que con el flag en su valor por defecto
+      // emite JUSTIFICANTES.
+      case 'invoices-new':
+        viewTitle.textContent = window.rotulosDelDocumento.tituloModal();
+        renderQuotesView(viewContainer, null, true);
+        break;
       // Sprint Tecnosel · LA OFICINA VALORA LOS PARTES FIRMADOS. Sin este `case` el fichero se
       // cargaría y no llevaría a él ninguna puerta — que es exactamente lo que le pasa hoy a
       // `parteDetailView.js`, medido en la certificación del sprint.
@@ -450,7 +462,10 @@ async function initApp() {
   // NOTA: las vistas de DETALLE (`albaran-detail`, …) NO van aquí a propósito: necesitan un id que
   // el hash no lleva, así que un deep-link a ellas abriría una ficha vacía.
   const HASH_VIEWS = ['home','cobros','quotes-list','quotes-new','customers','products','providers',
-    'invoices','expenses','export','reports','templates','quote-requests','jobs','plans','team','settings',
+    // SCRUM-600 (DOC-10) · el TERCER sitio, que es justo el que este comentario dice que se
+    // olvida. Sin esto, quien recargue estando a media factura suelta pierde la pantalla — que
+    // es exactamente lo que le pasaba con el modal, y medio motivo del ticket.
+    'invoices','invoices-new','expenses','export','reports','templates','quote-requests','jobs','plans','team','settings',
       'libro-registro','albaranes',
     // sprint Tecnosel · el TERCER sitio, que es el que se olvida: sin esto, quien recargue
     // estando en «Partes por valorar» pierde la vista. Se entra desde Trabajos.
