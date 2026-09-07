@@ -283,6 +283,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
+    # 🔴 RAMA DE MEDICIÓN — NO MERGEAR (SCRUM-626).
+    #
+    # El log del runner decía «tardó 30.0 s antes de rendirse, con un tope de 30000 ms». Esos
+    # 30,0 s SON EL TOPE, no el arranque: puppeteer abandonó al llegar a él. O sea que el
+    # arranque en frío real NUNCA SE HA MEDIDO — sólo sabemos que es > 30 s.
+    #
+    # `topeDeArranque()` (`scripts/_navegador.mjs`) lee esta variable, y su propio comentario
+    # dice para qué existe: «lo sube SOLO PARA MEDIR». Esto es exactamente ese uso.
+    #
+    # ⚠️ ESTO NO PUEDE ENTRAR EN `main`. Un tope de 180 s permanente pondría el CI verde por la
+    # razón equivocada: sería relajar el guard con otro nombre. Se empuja para LEER el
+    # ⟦arranque⟧ de los tres primeros guards y se tira.
+    env:
+      NAVEGADOR_TIMEOUT_MS: 180000
+
     steps:
       - uses: actions/checkout@v4
 
