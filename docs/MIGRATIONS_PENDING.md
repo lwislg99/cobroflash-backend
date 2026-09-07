@@ -2220,3 +2220,79 @@ es lo correcto en un árbol de trabajo). Turno de staging **tomado y soltado**; 
 `schemaDrift` compara **esperado ⊆ real** al arrancar: una columna de MÁS en la base es inocua,
 una de MENOS **impide arrancar producción**. El esquema entra en el PR ③ **cuando las tres bases la
 tengan**, junto con el cableado y los tests. Sin partir.
+
+## SCRUM-797 · `customers.merchant_id` pierde su `DEFAULT 1` — ⛔ **SIN APLICAR EN NINGUNA** (7-sep-2026)
+
+```sql
+ALTER TABLE "customers" ALTER COLUMN "merchant_id" DROP DEFAULT;
+```
+
+**Una sentencia, y es la migración entera.** La columna **YA era `NOT NULL`** (medido en
+`information_schema` de `yaqu_dev_javier` el 7-sep-2026: `data_type=integer`, `is_nullable=NO`,
+`column_default=1`), así que esto **no añade una restricción nueva**: sólo quita el defecto.
+
+**Por qué.** El merchant 1 **es la cuenta demo**. Con el defecto puesto, un `create` que se
+olvidara del dueño archivaba el cliente bajo el demo **sin un solo error**. Reproducido por el
+camino real contra dev: `POST /charges` del merchant 1044 → HTTP 201 → cliente `id=932` con
+`merchant_id = 1`; el demo lo veía en su lista y su dueño no. 🟢 Firmado por el fundador.
+
+**El SQL no se escribió a mano:** lo generó `node scripts/preview-migracion.mjs --desde` (CLI
+**local** de Prisma; `npx` está prohibido, regla 3) con su control positivo — **27 tablas**.
+
+### 🔴 EL VEREDICTO DEL PREVIEW DICE «DESTRUCTIVA», Y NO SIGNIFICA LO QUE PARECE
+
+`preview-migracion.mjs` la marca **🔴 destructiva**. Leído `_clasificador-sql.mjs`, la regla que
+casa es `PALABRA('DROP')` — la que existe para cazar `ALTER TABLE … DROP COLUMN`. Es una **lista
+blanca**: lo que no reconoce se rechaza por defecto, y `DROP DEFAULT` no está en ella.
+
+**O sea que la etiqueta dice «no reconozco esta forma», no «borra datos».** Y esa distinción no se
+resuelve razonando: se mide.
+
+### La medida — la sentencia aplicada DE VERDAD y REVERTIDA
+
+DDL dentro de una transacción contra `yaqu_dev_javier`, con `ROLLBACK` a propósito
+(**@ 2026-09-07T06:42:21Z** — dev es compartida y se mueve):
+
+| | filas | de las cuales del demo (`merchant_id=1`) | huella SHA-256 de `(id, merchant_id)` | `column_default` |
+|---|---|---|---|---|
+| antes | 14 | **7** | `5ef05d5434f8d8ab` | `"1"` |
+| **dentro**, ya aplicada | 14 | **7** | `5ef05d5434f8d8ab` | **`null`** ✅ |
+| después del `ROLLBACK` | 14 | **7** | `5ef05d5434f8d8ab` | `"1"` |
+
+- ✅ **Control positivo:** dentro de la transacción `column_default` pasó a `null`. Sin eso, una
+  huella idéntica sólo probaría que la DDL **no corrió**, no que sea inocua.
+- 🔴 **La respuesta:** **cero filas tocadas.** Los **7 clientes que hoy pertenecen al demo
+  legítimamente siguen perteneciéndole**, con el mismo `merchant_id`. `DROP DEFAULT` cambia el
+  catálogo, no las filas.
+- **Dev quedó exactamente como estaba**, verificado después del `ROLLBACK`. Nada persiste.
+
+### ⛔ NO se ha aplicado en ninguna base
+
+- [ ] **producción · autorack** — pendiente. La aplica el fundador. Desde un árbol de trabajo no
+      hay credencial de producción (regla 3), y no la ha habido en ningún momento de este ticket.
+- [ ] **staging · acela/railway** — pendiente. No se tomó el turno de staging: no hacía falta.
+- [ ] **desarrollo · acela/yaqu_dev_javier** — pendiente. La sentencia se aplicó aquí **dentro de
+      una transacción REVERTIDA** para medir si tocaba filas (tabla de arriba); tras el
+      `ROLLBACK` la base quedó con su `column_default = 1`, verificado. **No persiste nada.**
+
+Ni producción, ni staging, ni dev. **La aplica el fundador.** Desde un árbol de trabajo no vive
+producción (regla 3), y este ticket no tenía por qué tocar ninguna: ver lo siguiente.
+
+### 🔴 LA PROTECCIÓN **NO** ESPERA A ESTA MIGRACIÓN — y por eso el schema entra ya
+
+Quitar el `@default(1)` de `prisma/schema.prisma` cambia los **tipos generados**: `merchantId`
+pasa a ser obligatorio en `CustomerCreateInput`. **Medido**, quitando la línea del arreglo y
+compilando:
+
+```
+src/modules/billing/app/routes/charges.routes.ts(25,9): error TS2322:
+  Property 'merchant' is missing in type '{ name; phone; email }' but required in type 'CustomerCreateInput'.
+```
+
+**El olvido que originó el ticket ya no compila**, con la base todavía sin migrar. La sentencia de
+arriba cierra el mismo agujero para quien escriba SQL en crudo, que es el camino que Prisma no ve.
+
+**Y no hay riesgo de drift mientras esté pendiente:** `schemaDrift` compara **esperado ⊆ real** en
+tablas y columnas — **no mira defectos de columna**. La columna existe en las tres bases antes y
+después, así que el esquema puede ir por delante sin impedir arrancar (que es lo que costó
+SCRUM-220).
