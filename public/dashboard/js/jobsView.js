@@ -20,15 +20,40 @@ let jobsCobroFilter = 'all';
 // SCRUM-727b: y el de técnico, por el mismo motivo — asignar recarga la lista, y perder el
 // filtro justo después de asignar sería devolverle al jefe las 19 filas que acababa de acotar.
 let jobsTecnicoFilter = 'all';
+// SCRUM-816 · y el TEXTO escrito en el buscador de técnicos, por el mismo motivo: `paint()`
+// rehace la barra entera, así que sin esto la caja se vaciaría sola al elegir en el selector.
+let jobsTecnicoBusqueda = '';
+
+/**
+ * SCRUM-816 · comparar nombres SIN tildes y sin mayúsculas.
+ *
+ * Buscar «sanchis» tiene que encontrar a «Toni Sanchís». Sin esto, el buscador falla justo con
+ * los apellidos españoles, que es donde se usa. No se toma de ningún sitio porque no hay: medido
+ * el 7-sep-2026, en `public/dashboard/js/` no existía ni un `normalize('NFD')`.
+ */
+function sinTildes(s) {
+  return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
 
 async function renderJobsView(container) {
   // SCRUM-727b · sin un solo `style=` en línea: lo que había aquí se ha mudado a la hoja, bajo
   // `.jobs-pantalla`. Los textos no cambian ni una coma (regla 30).
+  //
+  // ── SCRUM-816 · EL SUBTÍTULO SE BORRA (fundador, 7-sep-2026) ──────────────────────────────
+  //
+  // Decía «Tus trabajos: los que vienen de un presupuesto aceptado, y los que abres tú», y era la
+  // TERCERA vez que esta pantalla se presentaba: migaja «Trabajos» + título «Trabajos» + esa
+  // frase. 🔒 La explicación de una pantalla se lee una vez y estorba mil.
+  //
+  // 🔴 NO SE MUDA AL ESTADO VACÍO, y ésa fue la corrección. El estado vacío YA tiene su texto
+  // aprobado (SCRUM-651, fundador 2-sep-2026): «Todavía no tienes ningún trabajo. Se crean solos
+  // cuando un cliente acepta un presupuesto, o los abres tú desde aquí.» Mudar el subtítulo allí
+  // habría puesto DOS textos aprobados diciendo lo mismo en la misma caja. La explicación ya vive
+  // donde hace falta; lo que sobraba era la de arriba.
   container.innerHTML = `
     <div class="jobs-pantalla">
       <div class="customers-card jobs-cabecera">
         <h2>Trabajos</h2>
-        <p>Tus trabajos: los que vienen de un presupuesto aceptado, y los que abres tú.</p>
       </div>
       <div id="jobs-nuevo" class="jobs-nuevo"></div>
       <div id="jobs-filter" class="jobs-filtros"></div>
@@ -147,30 +172,73 @@ async function renderJobsView(container) {
       const lab = document.createElement('label');
       lab.setAttribute('for', 'jobs-filtro-tecnico-select');
       lab.textContent = 'Técnico';                       // microcopy firmada (4-sep-2026)
+
+      // ── SCRUM-816 · ESCRIBIR PARA BUSCAR, Y **EN CLIENTE** ────────────────────────────────
+      //
+      // 🔴 EL TICKET PEDÍA COPIAR `nuevaFacturaModal.js` (búsqueda en SERVIDOR, espera de 250 ms)
+      // Y ESO AQUÍ ESTÁ MAL. Aquel busca CLIENTES, que son miles y no caben en una respuesta. Los
+      // técnicos no: `/admin/team` ya trae el equipo ENTERO en una sola petición, y esta pantalla
+      // ya la hace veinte líneas más arriba. Filtrar sobre lo que ya está cargado no gasta ni una
+      // petición — y, sobre todo, **no puede tener la carrera** que el propio ticket avisaba (la
+      // respuesta lenta de una consulta anterior pisando a la última): no hay segunda consulta
+      // que pueda llegar tarde. La trampa no se esquiva: no existe. (Fundador, 7-sep-2026.)
+      //
+      // 🔴 Y NO LLAMA A `paint()`. La barra se repinta entera en cada `paint`, así que teclear
+      // una letra habría destruido este mismo `<input>` y con él el foco: la segunda letra no se
+      // podría escribir. Escribir sólo re-pinta LAS OPCIONES del selector.
+      const buscador = document.createElement('input');
+      buscador.type = 'search';
+      buscador.id = 'jobs-filtro-tecnico-buscar';
+      buscador.className = 'input jobs-filtro-tecnico-buscar';
+      // El MISMO literal firmado que la etiqueta de al lado, a propósito: no se estrena texto
+      // para un control que filtra exactamente lo que esa etiqueta ya nombra (regla 30).
+      buscador.setAttribute('aria-label', 'Técnico');
+      buscador.value = jobsTecnicoBusqueda;
+
       const sel = document.createElement('select');
       sel.id = 'jobs-filtro-tecnico-select';
       sel.className = 'input';
-      const opcion = (valor, texto) => {
-        const o = document.createElement('option');
-        o.value = valor;
-        o.textContent = texto;
-        if (String(jobsTecnicoFilter) === String(valor)) o.selected = true;
-        sel.appendChild(o);
+
+      // Las opciones, derivadas del texto escrito. Se rehacen enteras en cada tecla.
+      const pintarOpciones = () => {
+        sel.innerHTML = '';
+        const opcion = (valor, texto) => {
+          const o = document.createElement('option');
+          o.value = valor;
+          o.textContent = texto;
+          if (String(jobsTecnicoFilter) === String(valor)) o.selected = true;
+          sel.appendChild(o);
+        };
+        opcion('all', 'Todos los técnicos');
+        const aguja = sinTildes(jobsTecnicoBusqueda);
+        for (const [id, nombre] of tecnicos) {
+          // 🔴 EL SELECCIONADO NO SE PUEDE CAER DE LA LISTA. Si el filtro activo es Miguel y se
+          // teclea «nad», quitar su opción cambiaría el `value` del selector **sin que nadie haya
+          // elegido nada** y la lista de abajo pasaría a enseñar otra cosa. Un buscador que
+          // cambia el filtro por escribir es peor que no tenerlo.
+          const casa = !aguja || sinTildes(nombre).includes(aguja);
+          if (casa || String(jobsTecnicoFilter) === String(id)) opcion(String(id), nombre);
+        }
+        // «Sin asignar» dice lo MISMO que la celda de la fila, a propósito: el jefe filtra por lo
+        // que ve escrito, y dos palabras distintas para la misma cosa le hacen dudar de las dos.
+        opcion('sin', 'Sin asignar');
       };
-      opcion('all', 'Todos los técnicos');
-      tecnicos.forEach(([id, nombre]) => opcion(String(id), nombre));
-      // «Sin asignar» dice lo MISMO que la celda de la fila, a propósito: el jefe filtra por lo
-      // que ve escrito, y dos palabras distintas para la misma cosa le hacen dudar de las dos.
-      opcion('sin', 'Sin asignar');
+      pintarOpciones();
+
+      buscador.addEventListener('input', () => {
+        jobsTecnicoBusqueda = buscador.value;
+        pintarOpciones();
+      });
       sel.addEventListener('change', () => { jobsTecnicoFilter = sel.value; paint(); });
       caja.appendChild(lab);
+      caja.appendChild(buscador);
       caja.appendChild(sel);
       filterBar.appendChild(caja);
     }
 
     const porCobro = jobsCobroFilter === 'all' ? jobs : jobs.filter((j) => j.estadoCobro === jobsCobroFilter);
     const shown = porCobro.filter((j) => pasaFiltroTecnico(j, jobsTecnicoFilter));
-    renderJobRows(list, shown, container, jobs);
+    renderJobRows(list, shown, container, jobs, equipo);
   };
   paint();
 }
@@ -255,6 +323,145 @@ function celdaTecnicos(j) {
   return td;
 }
 
+/** Lo que dice el resumen del desplegable: los nombres, o el rótulo aprobado con cero. */
+function rotuloDeTecnicos(nombres) {
+  return nombres.length ? nombres.join(', ') : 'Sin asignar';
+}
+
+/**
+ * ═══ SCRUM-816 · ASIGNAR TÉCNICO DESDE LA FILA, SIN ROMPER EL CANDADO ════════════════════════
+ *
+ * 🔒 EL CANDADO DE SCRUM-727, LITERAL: **una acción que modifica datos y se dispara con el mismo
+ * gesto con el que se navega es una acción que se va a disparar sin querer. Y el jefe no se
+ * entera hasta que el técnico se presenta en una obra que no era la suya.**
+ *
+ * El candado NO se levanta: se cumple de otra forma. Antes eran dos gestos (abrir el «⋯», y
+ * confirmar en un modal); ahora es un control PROPIO dentro de la celda, que se abre y se marca
+ * — y el gesto de navegar (clic en la fila) sigue sin poder tocar un dato. Las dos direcciones se
+ * prueban CORRIENDO, no razonando, y son dos pruebas distintas:
+ *   · el clic en el desplegable asigna y NO navega;
+ *   · el clic en la fila navega y NO asigna a nadie.
+ *
+ * 🔴 Y LA GUARDA DE LA FILA ESTABA ATADA A LA FORMA, NO AL HECHO. Decía
+ * `closest('button, a, input, textarea, select, label')`: una lista de ETIQUETAS. Un `<summary>`
+ * no está en ella, ni el `<div>` que envuelve las casillas, así que pulsar el hueco entre dos
+ * nombres habría navegado al Trabajo en mitad de una asignación. La guarda pasa a preguntar por
+ * el HECHO —«¿este clic ha caído dentro de un control de la fila?»— con `[data-fila-no-navega]`,
+ * que el control se pone a sí mismo. La lista de etiquetas SE QUEDA: cubre los controles que ya
+ * existían y quitarla sería cambiar dos cosas a la vez.
+ *
+ * ⚠️ SE GUARDA AL MARCAR, y se dice. Con `<details>` no hay «Aceptar» que pulsar, así que cada
+ * casilla es una escritura — y si esa escritura falla, **lo que se ve vuelve atrás**: la casilla
+ * se desmarca y el resumen recupera el texto anterior. Un desplegable que se queda con el nombre
+ * puesto y no lo ha guardado es peor que no tenerlo.
+ *
+ * ⚠️ LA LISTA SE REFRESCA AL CERRAR, no en cada casilla. Un Trabajo puede llevar tres técnicos:
+ * repintar entre marca y marca cerraría el desplegable en la cara del jefe. Al cerrar sí, porque
+ * si está filtrando por técnico la fila puede haber dejado de pertenecer al filtro.
+ *
+ * SUELO: con CERO técnicos asignables no se pinta un desplegable vacío —un control sin opciones
+ * es un adorno que promete lo que no puede dar—; se deja la celda de siempre, y el «⋯ → Técnicos»
+ * sigue abriendo el modal que lo DICE con todas las letras.
+ */
+function celdaTecnicosConDesplegable(j, equipo, refrescar) {
+  const miembros = (Array.isArray(equipo) ? equipo : []).filter((m) => m && m.id != null);
+  if (!miembros.length) return celdaTecnicos(j);
+
+  const td = document.createElement('td');
+  td.className = 'cell-tecnicos';
+
+  const menu = document.createElement('details');
+  menu.className = 'jobs-tecnicos-menu';
+  // 🔒 EL HECHO, no la forma: este subárbol es un control de la fila y lo declara él mismo.
+  menu.setAttribute('data-fila-no-navega', '');
+
+  const resumen = document.createElement('summary');
+  resumen.className = 'jobs-tecnicos-resumen';
+
+  let nombres = tecnicosDeTrabajo(j);
+  const pintarResumen = () => {
+    resumen.textContent = rotuloDeTecnicos(nombres);
+    resumen.title = rotuloDeTecnicos(nombres);
+    resumen.classList.toggle('jobs-tecnicos-resumen-vacio', nombres.length === 0);
+  };
+  pintarResumen();
+  menu.appendChild(resumen);
+
+  const lista = document.createElement('div');
+  lista.className = 'jobs-tecnicos-lista';
+  const yaAsignados = new Set((Array.isArray(j.asignados) ? j.asignados : []).map((a) => String(a.id)));
+  const casillas = [];
+  for (const m of miembros) {
+    const fila = document.createElement('label');
+    fila.className = 'jobs-asignar-fila';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = String(m.id);
+    cb.checked = yaAsignados.has(String(m.id));
+    const txt = document.createElement('span');
+    txt.textContent = m.name || ('#' + m.id);
+    fila.appendChild(cb);
+    fila.appendChild(txt);
+    lista.appendChild(fila);
+    casillas.push(cb);
+  }
+  menu.appendChild(lista);
+
+  let hayCambios = false;
+  const marcados = () => casillas.filter((c) => c.checked);
+  const nombreDe = (cb) => {
+    const m = miembros.find((x) => String(x.id) === cb.value);
+    return (m && m.name) || ('#' + cb.value);
+  };
+
+  for (const cb of casillas) {
+    cb.addEventListener('change', async () => {
+      // 🔴 EL ESTADO ANTERIOR SE RECONSTRUYE, NO SE LEE. `change` salta DESPUÉS de que el
+      // navegador haya cambiado la casilla, así que `casillas.map((c) => c.checked)` devuelve el
+      // estado NUEVO — y revertir con eso dejaba la marca puesta. Lo cazó corriendo
+      // `guard:lista-trabajos` con el guardado roto: decía «No se pudo guardar» y se quedaba con
+      // el técnico marcado, que es la mitad peligrosa del defecto que este control viene a
+      // evitar. La única que ha cambiado es ÉSTA, así que su valor anterior es el contrario.
+      const antesMarcados = casillas.map((c) => (c === cb ? !c.checked : c.checked));
+      const antesNombres = nombres;
+      const ids = marcados().map((c) => Number(c.value));
+      const nuevos = marcados().map(nombreDe);
+
+      // Lo que se ve cambia YA: es la respuesta al gesto. Si el guardado falla, vuelve atrás.
+      nombres = nuevos;
+      pintarResumen();
+      casillas.forEach((c) => { c.disabled = true; });
+      try {
+        await apiRequest(`/admin/jobs/${j.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ assignedUserIds: ids }),
+        });
+        // LO DICE, y dice QUIÉN queda — no un «guardado» mudo. Los dos literales son los que ya
+        // usa el modal del «⋯» desde SCRUM-727b: cero microcopy nueva (regla 30).
+        showToast(nuevos.length ? `✓ Técnicos: ${nuevos.join(', ')}` : '✓ Sin asignar');
+        // El Trabajo en memoria se pone al día: si no, un repintado posterior resucitaría lo viejo.
+        j.asignados = marcados().map((c) => ({ id: Number(c.value), name: nombreDe(c) }));
+        hayCambios = true;
+      } catch (err) {
+        // 🔴 REVERTIR LO QUE SE VE. Sin esto la pantalla afirmaría una asignación que no existe.
+        casillas.forEach((c, i) => { c.checked = antesMarcados[i]; });
+        nombres = antesNombres;
+        pintarResumen();
+        avisoDeFallo('No se pudo guardar', err);
+      } finally {
+        casillas.forEach((c) => { c.disabled = false; });
+      }
+    });
+  }
+
+  menu.addEventListener('toggle', () => {
+    if (!menu.open && hayCambios) { hayCambios = false; refrescar(); }
+  });
+
+  td.appendChild(menu);
+  return td;
+}
+
 /**
  * Las opciones del filtro: TODO EL EQUIPO, y no solo quien ya tiene trabajos.
  *
@@ -287,7 +494,7 @@ function pasaFiltroTecnico(j, filtro) {
   return (Array.isArray(j.asignados) ? j.asignados : []).some((a) => a && String(a.id) === String(filtro));
 }
 
-function renderJobRows(list, jobs, container, todos) {
+function renderJobRows(list, jobs, container, todos, equipo) {
   list.innerHTML = '';
 
   // 🔴 CONTROL NEGATIVO DEL FILTRO, escrito en el propio camino: si el filtro no encuentra nada,
@@ -337,11 +544,26 @@ function renderJobRows(list, jobs, container, todos) {
   scroll.appendChild(table);
 
   const thead = document.createElement('thead');
-  // Los cinco primeros rótulos son los que ya usan las listas hermanas en producción; el sexto
-  // —«Técnicos»— lo firmó el fundador el 4-sep-2026 (regla 30, `docs/microcopy/`).
+  // Los rótulos son los que ya usan las listas hermanas en producción; «Técnicos» lo firmó el
+  // fundador el 4-sep-2026 (regla 30, `docs/microcopy/`).
+  //
+  // ── SCRUM-816 · «ESTADO» Y «FECHA» ERAN LA MISMA PREGUNTA ─────────────────────────────────
+  //
+  // Se funden en una. Y no es que quepan juntas: es que **contestan lo mismo** —«¿cuándo se hace
+  // esto?»—, y separadas se contradecían a media pantalla. FECHA estaba vacía («—») en 11 de 12
+  // filas de la captura de producción: una columna que no dice nada el 92% del tiempo gasta ancho
+  // y no informa. Y la insignia que iba al lado repetía en una palabra lo que la fecha ya decía.
+  //
+  // 🔴 LO QUE SE PODÍA PERDER Y NO SE PIERDE. La FSM tiene cinco estados y sólo dos hablan de
+  // agenda; «En curso», «Terminado» y «Cerrado» no responden a «cuándo». Pero **cada fila vive
+  // bajo una cabecera de grupo que ya los nombra** (🔨 En curso · ✅ Terminados · 🔒 Cerrados), y
+  // esas cabeceras llevan microcopy aprobada de SCRUM-428. Así que la fusión no borra el estado:
+  // lo deja donde ya estaba dicho, en vez de repetirlo veinte veces.
+  //
+  // Se retira el `<th>Estado</th>`. No se estrena ni un rótulo: «Fecha» ya estaba.
   thead.innerHTML =
     '<tr><th>Cliente</th><th>Técnicos</th><th style="text-align:right">Importe</th>'
-    + '<th>Estado</th><th>Fecha</th><th>Acciones</th></tr>';
+    + '<th>Fecha</th><th>Acciones</th></tr>';
   table.appendChild(thead);
 
   for (const g of groups) {
@@ -357,7 +579,7 @@ function renderJobRows(list, jobs, container, todos) {
     const trTitulo = document.createElement('tr');
     trTitulo.className = 'jobs-grupo-titulo';
     const tdTitulo = document.createElement('td');
-    tdTitulo.colSpan = 6;
+    tdTitulo.colSpan = 5;
     tdTitulo.textContent = `${g.title} · ${g.items.length}${importe}`;
     trTitulo.appendChild(tdTitulo);
     tbody.appendChild(trTitulo);
@@ -366,7 +588,7 @@ function renderJobRows(list, jobs, container, todos) {
       const trSalvedad = document.createElement('tr');
       trSalvedad.className = 'jobs-grupo-salvedad';
       const tdSalvedad = document.createElement('td');
-      tdSalvedad.colSpan = 6;
+      tdSalvedad.colSpan = 5;
       // ⚠️ TEXTO OFICIAL APROBADO (regla 30, fundador 10-ago-2026). Ni se reescribe ni se «mejora».
       tdSalvedad.textContent =
         `${resumen.sinImporte} sin importe de referencia: no se sabe cuánto falta y no entran en el total.`;
@@ -378,19 +600,19 @@ function renderJobRows(list, jobs, container, todos) {
       const tr = document.createElement('tr');
       tr.className = 'jobs-grupo-abrir';
       const td = document.createElement('td');
-      td.colSpan = 6;
+      td.colSpan = 5;
       const btn = document.createElement('button');
       btn.className = 'btn-ghost btn-sm';
       btn.textContent = `Ver ${g.items.length} cerrado${g.items.length !== 1 ? 's' : ''}`;
       btn.addEventListener('click', () => {
         tr.remove();
-        g.items.forEach((j) => tbody.appendChild(jobRow(j, container)));
+        g.items.forEach((j) => tbody.appendChild(jobRow(j, container, equipo)));
       });
       td.appendChild(btn);
       tr.appendChild(td);
       tbody.appendChild(tr);
     } else {
-      g.items.forEach((j) => tbody.appendChild(jobRow(j, container)));
+      g.items.forEach((j) => tbody.appendChild(jobRow(j, container, equipo)));
     }
     table.appendChild(tbody);
   }
@@ -610,8 +832,7 @@ async function abrirAsignar(j, refrescar) {
   });
 }
 
-function jobRow(j, container) {
-  const meta = JOB_STATE_META[j.status] || JOB_STATE_META.pendiente_agendar;
+function jobRow(j, container, equipo) {
   const tr = document.createElement('tr');
   tr.className = 'jobs-fila';
 
@@ -643,8 +864,9 @@ function jobRow(j, container) {
   tdCliente.textContent = j.customer?.name || 'Cliente';
   tr.appendChild(tdCliente);
 
-  // ② Técnicos — el dato que hasta hoy no llegaba a esta pantalla
-  tr.appendChild(celdaTecnicos(j));
+  // ② Técnicos — el dato que hasta hoy no llegaba a esta pantalla, y desde SCRUM-816 el control
+  // que lo cambia sin salir de la fila. Con cero equipo cae a la celda de siempre (su SUELO).
+  tr.appendChild(celdaTecnicosConDesplegable(j, equipo, refresh));
 
   // ③ Importe y cobrado
   const tdImporte = document.createElement('td');
@@ -665,29 +887,32 @@ function jobRow(j, container) {
   }
   tr.appendChild(tdImporte);
 
-  // ④ Estado — el de la FSM y, si lo hay, el semáforo de cobro. Los dos ya existían.
-  const tdEstado = document.createElement('td');
-  tdEstado.className = 'cell-status';
-  const pill = document.createElement('span');
-  pill.className = 'jobs-estado-pill';
-  pill.classList.add('jobs-estado-' + (j.status || 'pendiente_agendar'));
-  pill.textContent = meta.label;
-  tdEstado.appendChild(pill);
-  if (showCobro) {
-    const cp = document.createElement('span');
-    cp.className = 'status-pill ' + cobroPillClass(j.estadoCobro);
-    cp.textContent = j.estadoCobro;
-    tdEstado.appendChild(cp);
-  }
-  tr.appendChild(tdEstado);
-
-  // ⑤ Fecha
+  // ── ④ CUÁNDO — la columna que antes eran dos ────────────────────────────────────────────
+  //
+  // SCRUM-816. Aquí vivían ESTADO y FECHA, una al lado de la otra, contestando lo mismo. Y en la
+  // celda de ESTADO se apilaban DOS insignias de dimensiones distintas: una de agenda
+  // (`SIN AGENDAR`) y otra de cobro (`PARCIAL`). Apiladas no se leía ninguna.
+  //
+  // 🔴 EL COBRO NO SE PIERDE, SE DEJA DE REPETIR. Ya estaba dicho dos columnas antes, y mejor:
+  // «597,14 € de 1.194,27 €» en la celda de IMPORTE, que es la línea que se pinta justo arriba.
+  // La insignia decía lo mismo con una palabra en vez de con las dos cifras. El control de que no
+  // se pierde está escrito como test: con eje de cobro, la fila SIGUE diciendo cuánto va cobrado.
+  //
+  // Con fecha se pinta la fecha; sin ella, «Sin agendar» — el MISMO literal que llevaba la
+  // insignia (`JOB_STATE_META`), en el mismo sitio donde antes había un guion que no informaba.
   const tdFecha = document.createElement('td');
   tdFecha.className = 'cell-date';
-  tdFecha.textContent = fecha;
+  if (j.scheduledAt) {
+    tdFecha.textContent = fecha;
+  } else {
+    const pill = document.createElement('span');
+    pill.className = 'jobs-estado-pill jobs-estado-pendiente_agendar';
+    pill.textContent = JOB_STATE_META.pendiente_agendar.label;
+    tdFecha.appendChild(pill);
+  }
   tr.appendChild(tdFecha);
 
-  // ⑥ Acción principal + el «⋯»
+  // ⑤ Acción principal + el «⋯»
   const tdAcc = document.createElement('td');
   tdAcc.className = 'cell-actions';
   const caja = document.createElement('div');
@@ -779,7 +1004,15 @@ function jobRow(j, container) {
 
   // La fila abre el Trabajo. Los controles de dentro NO disparan la navegación (guard por
   // target, igual que hacía la tarjeta): sin esto, pulsar «Técnicos» te llevaría al detalle.
+  //
+  // 🔴 SCRUM-816 · LA GUARDA PREGUNTA POR EL HECHO, NO POR LA FORMA. La lista de etiquetas de
+  // abajo se queda —cubre los controles que ya existían— pero no basta: el desplegable de
+  // técnicos tiene un `<summary>` y un `<div>` que NO son ninguna de esas seis etiquetas, así que
+  // pulsar el hueco entre dos nombres habría navegado al Trabajo en mitad de una asignación.
+  // `[data-fila-no-navega]` lo declara el propio control, y por eso un control futuro entra solo:
+  // 🔒 una lista de etiquetas se satisface dejando de enumerar.
   tr.addEventListener('click', (e) => {
+    if (e.target.closest('[data-fila-no-navega]')) return;
     if (e.target.closest('button, a, input, textarea, select, label')) return;
     if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: j.id });
   });

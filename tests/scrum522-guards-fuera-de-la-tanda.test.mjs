@@ -65,8 +65,15 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // tres estados. Sube por el motivo de SCRUM-795 y no por el de los cinco guards de caja: aquí
   // el árbitro tiene que ser el DOM. Había CUATRO guards de marcadores mirando el FUENTE y
   // ninguno vio uno que estuvo tres días en pantalla — estaba contado y permitido en sus censos.
-  assert.equal(fuera.length, 14,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ 14 → ${fuera.length}.\n`
+  // SCRUM-816 · 14 → 15: entra `guard:lista-trabajos`, y sube por un motivo NUEVO en esta lista:
+  // los catorce anteriores OBSERVAN una pantalla (miden una caja, leen un árbol, buscan un
+  // marcador); éste la PULSA. Tiene que probar que el clic en el desplegable de técnicos asigna
+  // sin navegar y que el clic en la fila navega sin asignar — dos afirmaciones sobre lo que pasa
+  // DESPUÉS de un gesto, y eso no existe en un DOM servido muerto. Por lo mismo no podía usar
+  // `_pagina-panel.mjs`, que serializa el mini-DOM: carga los scripts de verdad en el navegador.
+  // Comprobado en rojo quitando `[data-fila-no-navega]`: caen las dos afirmaciones de ①.
+  assert.equal(fuera.length, 15,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ 15 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);

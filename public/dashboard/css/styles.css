@@ -3234,10 +3234,23 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    `actions`) y no tiene hueco para una sexta. Añadírselo allí habría movido las CUATRO listas
    hermanas de golpe — justo lo que el control positivo de este ticket vigila. `.table--trabajos`
    redefine las áreas SOLO para esta tabla. */
-.jobs-pantalla { max-width: 980px; }
+/* ═══ SCRUM-816 · EL TOPE DE ANCHO SE VA, Y SÓLO SE MUEVE ESTA PANTALLA ═════════════════════
+   Aquí decía `max-width: 980px`, heredado del contenedor de tarjetas que la lista sustituyó en
+   SCRUM-727b. Medido en Edge con `page.setViewport` real el 7-sep-2026, subiendo la cadena de
+   antepasados desde la tabla: a 1700 px de ventana la tabla de Trabajos acababa en **978 px** y
+   las otras cuatro listas de la casa llegaban a **1402**. Media pantalla en blanco, en la
+   pantalla desde la que el jefe reparte el día — y sólo en ésta.
+   🔴 NO ES ESTÉTICA, ES DENSIDAD: una pantalla operativa que enseña la mitad de lo que cabe
+   obliga a hacer scroll para contestar algo que debería verse de un vistazo.
+   ⚠️ Y NO ARRASTRA A NADIE: `.jobs-pantalla` existe en exactamente dos sitios de todo el árbol
+   —esta regla y `jobsView.js`—; las otras cuatro listas van de `.data-card` a `.view-container`
+   sin ningún tope. El control de que siguen idénticas se corre por HASH del DOM pintado en
+   `npm run guard:lista-trabajos`. */
+.jobs-pantalla { max-width: 100%; }
 .jobs-cabecera { margin-bottom: 16px; }
-.jobs-cabecera h2 { margin: 0 0 4px; font-size: 18px; font-weight: 700; color: var(--ink); }
-.jobs-cabecera p { margin: 0; font-size: 13px; color: var(--muted); }
+/* Sin subtítulo desde SCRUM-816 (el `<p>` se borró: la explicación vive en el estado vacío), así
+   que el `h2` ya no necesita separarse de nada por debajo. */
+.jobs-cabecera h2 { margin: 0; font-size: 18px; font-weight: 700; color: var(--ink); }
 .jobs-nuevo { margin-bottom: 14px; }
 .jobs-filtros { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
 .jobs-lista { display: flex; flex-direction: column; gap: 12px; }
@@ -3248,6 +3261,9 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 .jobs-filtro-tecnico { display: flex; align-items: center; gap: 6px; margin-left: auto; }
 .jobs-filtro-tecnico label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
 .jobs-filtro-tecnico select { width: auto; min-height: 30px; padding: 4px 10px; font-size: 12.5px; }
+/* SCRUM-816 · la caja de «escribir para buscar». Filtra las opciones del selector de al lado EN
+   CLIENTE, sobre el equipo que la pantalla ya ha cargado: ni una petición nueva. */
+.jobs-filtro-tecnico-buscar { width: 132px; min-height: 30px; padding: 4px 10px; font-size: 12.5px; }
 
 /* Cabecera de grupo dentro de la tabla: los grupos se conservan porque su rótulo lleva el
    importe de «Terminados» y su salvedad, que son microcopy aprobada (SCRUM-428). */
@@ -3264,6 +3280,37 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    deja al jefe sin saber si falta uno o faltan cuatro, que es justo lo que viene a preguntar. */
 .cell-tecnicos { overflow-wrap: anywhere; max-width: 220px; }
 .cell-tecnicos-vacio { color: var(--muted); font-style: italic; }
+
+/* ═══ SCRUM-816 · EL DESPLEGABLE DE TÉCNICOS DE LA FILA ══════════════════════════════════════
+   `<details>/<summary>` nativos: se abren y se cierran solos, van con teclado y con `Escape`, y
+   no estrenan componente. Las casillas de dentro reutilizan `.jobs-asignar-fila`, que es la misma
+   fila de 44 px que ya usa el modal del «⋯» (AB6: el objetivo es la fila entera, no la casilla de
+   13 px). El popover se posiciona `absolute` sobre la celda para no estirar la altura de la fila
+   ni empujar a las de abajo al abrirse. */
+.jobs-tecnicos-menu { position: relative; }
+.jobs-tecnicos-resumen {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 30px; padding: 4px 8px;
+  border: 1px solid var(--neutral-200); border-radius: var(--radius-sm, 8px);
+  background: var(--surface, #fff); color: var(--ink);
+  font-size: 12.5px; cursor: pointer; list-style: none;
+}
+.jobs-tecnicos-resumen::-webkit-details-marker { display: none; }
+.jobs-tecnicos-resumen::after { content: "▾"; font-size: 10px; color: var(--muted); }
+.jobs-tecnicos-resumen:hover { background: var(--neutral-50); }
+.jobs-tecnicos-resumen:focus-visible { outline: 2px solid var(--brand, #0f766e); outline-offset: 2px; }
+.jobs-tecnicos-resumen-vacio { color: var(--muted); font-style: italic; }
+.jobs-tecnicos-lista {
+  position: absolute; z-index: 600; top: calc(100% + 4px); left: 0;
+  min-width: 200px; max-width: min(92vw, 280px);
+  padding: 6px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e7e9e5);
+  border-radius: var(--radius-md, 12px);
+  box-shadow: 0 18px 40px -12px rgba(16,24,40,.18);   /* Flotante (DESIGN.md §4) */
+  display: flex; flex-direction: column; gap: 2px;
+  max-height: 280px; overflow-y: auto;
+}
 
 .jobs-importe-total { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
 .jobs-importe-cobrado { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -3302,13 +3349,20 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   /* La card de móvil de ESTA tabla: se le añade la fila de técnicos que la rejilla compartida
      no tiene. Todo lo demás lo sigue heredando de `.table--cards-mobile`. */
   .table--trabajos tbody tr.jobs-fila {
+    /* SCRUM-816 · el área `status` DESAPARECE porque la celda desapareció: ESTADO y FECHA eran la
+       misma pregunta y se han fundido en `date`. Una rejilla que declare un área sin celda no
+       falla —simplemente queda vacía— y por eso se retira a mano: un hueco reservado para nada
+       es un renglón de aire en una card que a 390 px ya iba justa. */
     grid-template-areas:
       "client   amount"
       "tecnicos amount"
-      "date     status"
+      "date     date"
       "actions  actions";
   }
   .table--trabajos td.cell-tecnicos { grid-area: tecnicos; font-size: 12.5px; color: var(--muted); max-width: none; }
+  /* El desplegable ocupa el ancho de su área en la card: a 390 px un control de 132 px con tres
+     nombres dentro se corta, y el resumen es justo lo que hay que poder leer. */
+  .table--trabajos td.cell-tecnicos .jobs-tecnicos-resumen { max-width: 100%; }
   /* El nombre del cliente ENVUELVE en la card. La tabla hereda `white-space: nowrap`, y medido a
      390 px eso dejaba «Cliente con nombre largo número 2» cortado a media palabra y pegado al
      importe: no se solapaban —hay 12 px de hueco, medidos— pero se leían como una sola cadena.

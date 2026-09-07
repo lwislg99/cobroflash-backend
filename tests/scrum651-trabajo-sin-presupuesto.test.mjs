@@ -428,11 +428,28 @@ test('SCRUM-651 · el Trabajo abierto sin presupuesto DEJA TRAZA', () => {
 });
 
 test('SCRUM-651 · el copy APROBADO esta puesto, y sin marcador', () => {
-  const vista = leer('public/dashboard/js/jobsView.js');
-  assert.ok(vista.includes('Tus trabajos: los que vienen de un presupuesto aceptado, y los que abres tú.'),
-    '🔴 el subtitulo aprobado el 2-sep-2026 ha cambiado. Decia que un Trabajo nace de un '
-    + 'presupuesto aceptado, y con esta puerta eso era media verdad.');
+  // 🔒 SIN COMENTARIOS, y no es un detalle. La pregunta es «¿se PINTA este texto?», y un
+  // comentario no se pinta. La primera version de este ajuste leia el fuente crudo y cayo contra
+  // el comentario de `jobsView.js` que EXPLICA por que se retiro el subtitulo — o sea, se cazo a
+  // si misma en la explicacion de lo que vigila. Le ha pasado a esta casa cuatro veces.
+  const vista = soloEjecutable(leer('public/dashboard/js/jobsView.js'), { almohadillaEsComentario: false });
+  // ── SCRUM-816 · EL SUBTITULO SE RETIRO POR DECISION DEL FUNDADOR (7-sep-2026) ──────────────
+  //
+  // Este test exigia los DOS textos del 2-sep-2026. El subtitulo ya no se pinta: era la TERCERA
+  // presentacion de la misma pantalla (migaja «Trabajos» + titulo «Trabajos» + la frase).
+  //
+  // 🔴 NO SE BORRO PORQUE ESTORBARA: se borro porque el texto que EXPLICA la pantalla ya vive
+  // donde hace falta —el estado vacio de aqui abajo—, y ese sigue siendo obligatorio. La
+  // propuesta del ticket era MUDAR el subtitulo alli, y al mirarlo se vio que habria dejado dos
+  // textos aprobados diciendo lo mismo en la misma caja. El fundador firmo el borrado.
+  //
+  // ⚠️ POR QUE SE AJUSTA EN VEZ DE RETIRARSE: la garantia que aporta sigue haciendo falta —que
+  // el subtitulo no VUELVA y que el estado vacio no se toque—, solo cambia de signo la primera.
+  assert.ok(!vista.includes('Tus trabajos: los que vienen de un presupuesto aceptado'),
+    '🔴 ha vuelto el subtitulo de la cabecera. Se retiro en SCRUM-816 (fundador, 7-sep-2026): la '
+    + 'explicacion de la pantalla vive en el estado vacio, que es donde hace falta.');
   assert.ok(vista.includes('Todavía no tienes ningún trabajo. Se crean solos cuando un cliente acepta un presupuesto, o los abres tú desde aquí.'),
     '🔴 el estado vacio aprobado ha cambiado. El viejo mandaba ESPERAR a un presupuesto mientras '
-    + 'tenia al lado el boton para abrir uno: la pantalla se contradecia a si misma.');
+    + 'tenia al lado el boton para abrir uno: la pantalla se contradecia a si misma. Y desde '
+    + 'SCRUM-816 es el UNICO sitio donde esta pantalla se explica: si se toca, no queda nada.');
 });
