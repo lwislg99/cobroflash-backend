@@ -267,12 +267,28 @@ app.use(
   }),
 );
 
+// ── SCRUM-822 · `root` NO ES DECORACIÓN, Y LO QUE EVITA NO SE VE LEYENDO LA LÍNEA ────────
+//
+// `res.sendFile(rutaAbsoluta)` SIN `root` hace que `send` parta la ruta ENTERA —el path de
+// instalación incluido— y le aplique su regla de dotfiles (`send/index.js:451-470`,
+// `containsDotFile`). Resultado: si CUALQUIER tramo del sitio donde vive el checkout empieza
+// por `.` (`.claude/worktrees/…`, un `.tmp`, un árbol desechable), estas tres rutas devuelven
+// **404 con el fichero presente y legible**. Con `root`, `send` sólo inspecciona el nombre
+// relativo — y de paso confina lo servido a `publicDir`.
+//
+// POR QUÉ NADIE LO VIO ANTES: `express.static` SÍ pasa `root`, así que la misma página seguía
+// respondiendo 200 como `/privacidad.html` y 404 como `/privacidad`. Y producción vive en
+// `/app` (Railway), sin ningún punto en la ruta, así que el sitio público nunca lo sufrió: el
+// defecto sólo se manifestaba en el banco de pruebas, donde se leía como «la landing enlaza a
+// un 404» — dos guards en rojo acusando a un producto sano. Medido en SCRUM-822 sobre el
+// `dist/` real: `/index.html` 200, `/privacidad` 404, `/privacidad.html` 200.
+
 // URLs limpias para políticas legales (privacidad requerida por Meta para publicar la app)
-app.get('/privacidad', (_req, res) => res.sendFile(path.join(publicDir, 'privacidad.html')));
-app.get('/terminos', (_req, res) => res.sendFile(path.join(publicDir, 'terminos.html')));
+app.get('/privacidad', (_req, res) => res.sendFile('privacidad.html', { root: publicDir }));
+app.get('/terminos', (_req, res) => res.sendFile('terminos.html', { root: publicDir }));
 
 // V0-4: página de precios + contador REAL de plazas founding (público, sin auth)
-app.get('/precios', (_req, res) => res.sendFile(path.join(publicDir, 'precios.html')));
+app.get('/precios', (_req, res) => res.sendFile('precios.html', { root: publicDir }));
 app.get('/public/founding-status', async (_req, res) => {
   try {
     const { getFoundingStatus } = await import('./modules/billing/domain/founding');
