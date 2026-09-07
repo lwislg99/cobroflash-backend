@@ -49,6 +49,29 @@
   }
 
   /**
+   * ¿Este margen dice que el artículo se vende POR DEBAJO DEL COSTE? (SCRUM-764)
+   *
+   * 🔴 LA REGLA VIVE AQUÍ Y NO EN LA VISTA, por lo mismo que la fórmula: si cada pantalla decide
+   * por su cuenta qué cuenta como «va mal», acaban decidiendo distinto. Aquí se escribe una vez y
+   * se prueba sin navegador.
+   *
+   * 🔴 `null` NO ES «VA MAL», ES «NO SE SABE», y la diferencia es la que sostiene todo este
+   * módulo: sin coste no hay margen que calcular (medido en SCRUM-609: 8 de 8 productos de
+   * desarrollo no tienen coste). Un catálogo entero sin costes no puede salir en rojo, porque no
+   * está diciendo nada malo — no está diciendo nada. Por eso lo que no es un número utilizable
+   * devuelve `false`, no `true`.
+   *
+   * ⚠️ Y ESTO NO IMPIDE NADA. Vender por debajo del coste es una decisión legítima del
+   * profesional —una oferta gancho, un trabajo que se quiere ganar— y el catálogo tiene que poder
+   * guardarla. Lo que no puede es guardarla EN SILENCIO. Quien decide qué hacer con este `true`
+   * es la pantalla, y lo único que hace es que se vea.
+   */
+  function bajoCoste(margen) {
+    if (!hayNumero(margen)) return false;
+    return Number(margen) < 0;
+  }
+
+  /**
    * Precio a partir de coste y margen. Inversa exacta de la de arriba:
    *   m = (p−c)/p·100  →  p = c / (1 − m/100)
    *
@@ -97,6 +120,7 @@
     margenDesde: margenDesde,
     precioDesde: precioDesde,
     autocompletar: autocompletar,
+    bajoCoste: bajoCoste,
     hayNumero: hayNumero,
   };
 

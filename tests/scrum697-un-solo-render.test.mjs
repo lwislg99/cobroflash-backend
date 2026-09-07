@@ -276,11 +276,41 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   // `scrum698`. Las dos subidas SE ACUMULAN: el merge no podía sumarlas, y quedarse con 241 o con
   // 237 habría perdido el cambio del otro ticket en silencio y en verde. El número está MEDIDO
   // sobre el árbol ya mezclado, no sumado a ojo.
-  assert.equal(nodos.length, 242,
-    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 242 `
+  //
+  // 🔴 4-sep-2026 · 242 → 253, y son DOS tickets a la vez. Ninguna de las dos subidas es del
+  // banco: las dos son del PRODUCTO, y SE SUMAN. Quedarse con 245 o con 250 habría perdido el
+  // cambio del otro en silencio y en verde — que es justo lo que SCRUM-594 ya dejó escrito aquí.
+  //
+  //   · SCRUM-602 · +8 · el control de la dirección de la obra: los dos `<div class="field">`, el
+  //     `<label>`, el `<select name="shipping_address_mode">`, sus tres `<option>` y el `<input>`
+  //     del campo libre. Aislados POR IDENTIDAD (los dos subárboles del `.field`).
+  //   · SCRUM-587 · +3 · la tira que PROPONE el descuento pactado con el cliente: el `div.alert`,
+  //     su `<span>` de texto y el botón de aceptar. Nace oculta.
+  //   · SCRUM-586 · +3 · la tira que PROPONE las FORMAS DE PAGO pactadas: misma forma exacta —
+  //     `div.alert`, su `<span>` y el botón—, porque deriva de la anterior. Nace oculta también.
+  //     Identificados POR IDENTIDAD sobre el árbol montado (6-sep-2026), no restando 256 − 253.
+  //
+  // 🔴 EL 253 ESTÁ MEDIDO SOBRE EL ÁRBOL YA MEZCLADO, NO SUMADO A OJO, y las dos mitades se
+  // comprobaron por separado sobre ese mismo árbol: quitando sólo el `appendChild` de la tira da
+  // 250, y quitando sólo los dos `.field` de la dirección da 245.
+  // 🔴 SCRUM-589 (CONT-18) · 6-sep-2026 · 256 → 263. SIETE nodos, identificados POR IDENTIDAD
+  // sobre el árbol montado y NO restando 263 − 256: el div.inline-options de la elección de
+  // nombre, sus dos label.radio-label, sus dos input[type=radio][name=df-nombre] y los dos
+  // #TEXT de los rótulos firmados. AISLADO: los siete son exactamente el subárbol de ese div
+  // (todos(div) = 7), así que el delta entero vive dentro del control nuevo.
+  // 🔴 SCRUM-794 · 6-sep-2026 · 263 → 262. LA PRIMERA BAJADA de este número, y es un BORRADO
+  // firmado: había DOS «+ Añadir línea» idénticos en la sección «2. Líneas» y el fundador mandó
+  // quedarse con el de abajo. El nodo que se va es UNO y está identificado POR IDENTIDAD sobre el
+  // árbol de antes (no restando 263 − 262): el `button.btn.btn-secondary` de la cabecera, cuyo
+  // subárbol medido es de 1 nodo —`textContent` en el banco es una propiedad, no un hijo—.
+  // Medido también el que SE QUEDA (`button.btn-ghost.quote-add-line`): subárbol de 1 nodo, y
+  // sigue ahí. O sea que el delta entero es el botón borrado y esta pantalla no ha movido nada más.
+  assert.equal(nodos.length, 262,
+    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 262 `
     + '(236 sobre `origin/main` = 80db312b, + la opción de alta de SCRUM-591, + el bloque de '
-    + 'descuento global de SCRUM-594). Un arreglo del BANCO no debe cambiar ni uno: si has tocado '
-    + 'el banco y esto se mueve, el arreglo pinta.');
+    + 'descuento global de SCRUM-594, + el control de la dirección de la obra de SCRUM-602, '
+    + '+ la tira de propuesta de SCRUM-587, + la tira de formas de pago de SCRUM-586, + la elección de nombre de SCRUM-589, − el «+ Añadir línea» duplicado de SCRUM-794). Un arreglo del BANCO no debe cambiar ni uno: si '
+    + 'has tocado el banco y esto se mueve, el arreglo pinta.');
 
   const tablas = nodos.filter((n) => n.tagName === 'TABLE');
   assert.equal(tablas.length, 1, '🔴 la vista de presupuestos ya no monta su tabla.');

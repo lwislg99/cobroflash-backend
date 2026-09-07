@@ -115,6 +115,22 @@ export const DECLARADOS = [
       + 'el dominio, y no en el script, porque la respuesta la da la SERIE, no quien pregunta.',
     exports: ['esAlbaranRenumerado'],
   },
+  // ── SCRUM-761 · la normalización del catálogo, consumida desde un SEMBRADOR ─────────────
+  //
+  // Mismo caso que el par de SCRUM-592 de aquí arriba, y por eso va pegado a ellos: tiene
+  // llamador de verdad (`scripts/seed-video.mjs`), sólo que el censo mira `src/` y no lo ve.
+  {
+    modulo: 'src/modules/products/domain/products.service.ts',
+    cat: 'FALSO_POSITIVO_MEDIDO', desde: '2026-09-06',
+    motivo: 'La ÚNICA normalización del catálogo (`name` → `nameSearch`, la columna por la que '
+      + 'filtra `searchProducts`). Se exportó en SCRUM-761 porque `scripts/seed-video.mjs` tenía '
+      + 'una SEGUNDA copia y estaba mal —`p.name.toLowerCase()`, sin quitar diacríticos: sembraba '
+      + '«sustitución …» mientras la consulta se normaliza a «sustitucion …», así que teclear sin '
+      + 'tilde no encontraba la fila—. Ahora ese script la importa. Dentro de `src/` la usa su '
+      + 'propio módulo (createProduct, importProductsCsv, searchProducts, updateProduct), así que '
+      + 'el `export` es superficie para el sembrador, no un motor dormido.',
+    exports: ['normalizeSearch'],
+  },
   {
     modulo: 'src/modules/quotes/domain/quoteNumber.service.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-04',

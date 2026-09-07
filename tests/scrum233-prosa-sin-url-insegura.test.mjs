@@ -37,6 +37,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { leerSiSigueAhi, exigirCorpusLeido } from './_barrido-estable.mjs'; // SCRUM-740
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -190,20 +191,32 @@ export function infraccionesDeRecorte(texto, ruta = 'ficticio.md') {
   return out;
 }
 
+// SCRUM-740: los dos barridos toleran SÓLO que un fichero desaparezca entre el `readdir` y la
+// lectura, y cada uno exige después haber leído un corpus de verdad — tolerar la desaparición no
+// puede convertirse en barrer un árbol vacío.
 function escanear() {
   const out = [];
+  let leidos = 0;
   for (const p of markdowns()) {
-    const texto = fs.readFileSync(p, 'utf8');
+    const texto = leerSiSigueAhi(p);
+    if (texto === null) continue;
+    leidos++;
     out.push(...infraccionesEnProsa(texto, rel(p)));
   }
+  exigirCorpusLeido(leidos, 30, 'SCRUM-233 · prosa con URL insegura');
   return out;
 }
 
 function escanearRecortes() {
   const out = [];
+  let leidos = 0;
   for (const p of markdowns()) {
-    out.push(...infraccionesDeRecorte(fs.readFileSync(p, 'utf8'), rel(p)));
+    const texto = leerSiSigueAhi(p);
+    if (texto === null) continue;
+    leidos++;
+    out.push(...infraccionesDeRecorte(texto, rel(p)));
   }
+  exigirCorpusLeido(leidos, 30, 'SCRUM-233 · recortes con URL insegura');
   return out;
 }
 

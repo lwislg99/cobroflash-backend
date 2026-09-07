@@ -35,6 +35,8 @@ import path from 'node:path';
 const RAIZ = path.resolve(import.meta.dirname, '..');
 export const DIR_APROBACIONES = path.join(RAIZ, 'docs', 'microcopy');
 export const REGISTRO_CONGELADO = path.join(RAIZ, 'docs', 'MICROCOPY_APROBADA_SIN_APLICAR.md');
+const DIR_APROBACIONES_REAL = DIR_APROBACIONES;
+const REGISTRO_CONGELADO_REAL = REGISTRO_CONGELADO;
 
 // El README explica la convención; no es una aprobación y no puede contar como tal.
 const NO_ES_APROBACION = new Set(['README.md']);
@@ -61,6 +63,31 @@ function desnudar(s) {
     if (t === antes) break;
   }
   return t;
+}
+
+/** La firma que la regla 30 exige. Las demás formas se leen, pero NO cuentan como aprobación. */
+const FIRMA_DEL_FUNDADOR = /^\s*\**\s*Aprobad[oa]s?\s+por\s+el\s+fundador\b/i;
+const CUALQUIER_FIRMA = /^\s*\**\s*Aprobad[oa]s?\s+por\s+(?:el|la|los|las)\s+\**\s*([\wÁÉÍÓÚÜÑáéíóúüñ]+)/i;
+
+/**
+ * ¿Quién firma este registro? `'fundador'`, otro nombre en minúsculas, o `null` si no lo dice.
+ *
+ * 🔴 LAS LÍNEAS DE CITA (`>`) NO CUENTAN, y no es un detalle: ahí es donde los registros escriben
+ * su propia historia. El de SCRUM-605 conserva, citada, la frase «Aprobado por el ASESOR» que
+ * explica el error — y el de mañana podría conservar citada la contraria. Un lector que mirase el
+ * fichero entero se dejaría convencer por la explicación en vez de por la firma.
+ *
+ * No es una ventana de N líneas: es el mismo criterio estructural que ya usa el extractor de
+ * literales (SCRUM-715), leyendo el documento ENTERO y quedándose con lo que no está citado.
+ */
+export function firmanteDe(texto) {
+  const lineas = String(texto).split(/\r?\n/).filter((l) => !/^\s*>/.test(l));
+  for (const l of lineas) if (FIRMA_DEL_FUNDADOR.test(l)) return 'fundador';
+  for (const l of lineas) {
+    const m = CUALQUIER_FIRMA.exec(l);
+    if (m) return m[1].toLowerCase();
+  }
+  return null;
 }
 
 /**
@@ -103,10 +130,15 @@ function unidadesDelimitadas(texto, { aceptarCitas }) {
  * no supo mirar —directorio movido, permisos, un cambio de nombre— y devolver `[]` convertiría
  * esa ceguera en un veredicto tranquilo. «Cero» y «no supe mirar» no son el mismo número.
  */
-export function aprobacionesDeMicrocopy({ permitirVacio = false } = {}) {
+export function aprobacionesDeMicrocopy({ permitirVacio = false, dir = null, congelado = null } = {}) {
   const out = [];
+  // `dir`/`congelado` existen para PODER PROBAR ESTO SIN ENSUCIAR EL DIRECTORIO REAL: escribir un
+  // registro de mentira en `docs/microcopy/` durante la suite lo vería cualquier otro guard que
+  // corra en paralelo. Fuera de los tests no se pasan, y entonces son los de siempre.
+  const DIR_APROBACIONES = dir || DIR_APROBACIONES_REAL;
+  const REGISTRO_CONGELADO = congelado === null ? REGISTRO_CONGELADO_REAL : congelado;
 
-  if (fs.existsSync(DIR_APROBACIONES)) {
+  if (DIR_APROBACIONES && fs.existsSync(DIR_APROBACIONES)) {
     for (const nombre of fs.readdirSync(DIR_APROBACIONES).sort()) {
       if (!nombre.endsWith('.md') || NO_ES_APROBACION.has(nombre)) continue;
       const texto = fs.readFileSync(path.join(DIR_APROBACIONES, nombre), 'utf8');
@@ -119,6 +151,7 @@ export function aprobacionesDeMicrocopy({ permitirVacio = false } = {}) {
         ticket: m ? 'SCRUM-' + m[4] : null,
         ranura: m ? m[5] : null,
         texto,
+        firmante: firmanteDe(texto),
         // En un fichero por aprobación, el literal va en su cita; y algunos usan tabla.
         literales: unidadesDelimitadas(texto, { aceptarCitas: true }),
       });
@@ -135,6 +168,9 @@ export function aprobacionesDeMicrocopy({ permitirVacio = false } = {}) {
       ticket: null,
       ranura: null,
       texto,
+      // El registro congelado es la constancia de TODO lo que el fundador aprobó hasta el
+      // 3-sep-2026. Su firma no está línea a línea porque el fichero entero ES su registro.
+      firmante: 'fundador',
       // 🔴 AQUÍ NO SE ACEPTAN CITAS: el registro congelado usa `>` para NOTAS y avisos, no para
       // literales aprobados. Aceptarlas convertiría cada nota en un «texto aprobado».
       literales: unidadesDelimitadas(texto, { aceptarCitas: false }),
@@ -152,23 +188,47 @@ export function aprobacionesDeMicrocopy({ permitirVacio = false } = {}) {
 }
 
 /**
- * ¿Dónde consta este texto aprobado? Devuelve las rutas donde consta, o `[]` si en ninguna.
+ * ¿Dónde consta este texto aprobado **POR EL FUNDADOR**? Devuelve las rutas, o `[]`.
  *
- * 🔒 POR IDENTIDAD, NO POR SUBCADENA: «Materiales» NO casa dentro de «Materiales del almacén
- * central» ni dentro de una frase en prosa del registro. Un `[]` aquí SÍ es un veredicto: el
- * barrido ya se declaró no-ciego al construir la lista.
+ * 🔒 POR IDENTIDAD, NO POR SUBCADENA (SCRUM-715): «Materiales» NO casa dentro de «Materiales del
+ * almacén central» ni dentro de una frase en prosa del registro.
+ *
+ * 🔒 Y POR QUIÉN FIRMA, NO POR QUIÉN ESCRIBE (SCRUM-726): antes esta función contestaba «aprobado»
+ * en cuanto el texto estuviera escrito en `docs/microcopy/`, **sin mirar la firma**. La regla 30
+ * dice que la microcopy la aprueba el fundador; el guard comprobaba que alguien la hubiera
+ * escrito. Son dos afirmaciones distintas y daban el mismo verde. Lo destapó el asesor sobre su
+ * propio registro: metió el de SCRUM-605 con SU firma y esta función lo leyó como la del fundador.
+ *
+ * Un `[]` aquí SÍ es un veredicto: el barrido ya se declaró no-ciego al construir la lista.
  */
 export function constaAprobado(texto, opciones) {
   const aguja = desnudar(texto);
   if (aguja === '') throw new Error('CIEGO: buscar la cadena vacía casaría con todo.');
   return aprobacionesDeMicrocopy(opciones)
+    .filter((a) => a.firmante === 'fundador')
     .filter((a) => a.literales.includes(aguja))
     .map((a) => a.ruta);
 }
 
-/** Todos los literales aprobados, sin repetir. Útil para enumerar y para censos derivados. */
+/**
+ * Los registros que NO llevan firma del fundador, con sus literales.
+ *
+ * 🔴 EXISTE PARA QUE EL ARREGLO NO SEA PEOR QUE EL DEFECTO: un texto sin firma **no se borra de la
+ * pantalla**, se LISTA para que el fundador lo firme. Un guard que dejara media aplicación con
+ * corchetes de golpe costaría más que el hueco que cierra.
+ */
+export function pendientesDeFirma(opciones) {
+  return aprobacionesDeMicrocopy(opciones)
+    .filter((a) => a.firmante !== 'fundador')
+    .map((a) => ({ ruta: a.ruta, firmante: a.firmante, literales: a.literales }));
+}
+
+/** Todos los literales aprobados POR EL FUNDADOR, sin repetir. */
 export function literalesAprobados(opciones) {
   const set = new Set();
-  for (const a of aprobacionesDeMicrocopy(opciones)) for (const l of a.literales) set.add(l);
+  for (const a of aprobacionesDeMicrocopy(opciones)) {
+    if (a.firmante !== 'fundador') continue;
+    for (const l of a.literales) set.add(l);
+  }
   return [...set];
 }

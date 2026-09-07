@@ -2,6 +2,8 @@
 import { z } from 'zod';
 import { validarNifEspanol } from './nifEspanol'; // SCRUM-575 (CONT-02)
 import { invalidTipoIva, invalidPrefijoSerie } from './fiscalInput'; // SCRUM-217
+// SCRUM-602 (DOC-12) · los tres modos, DERIVADOS del dominio: una segunda lista aquí envejecería sola.
+import { MODOS_DIRECCION_OBRA } from '../documentos/direccionObra';
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // SCRUM-712 · CUÁNTOS DECIMALES ADMITE UN NÚMERO DE DINERO EN LA PUERTA
@@ -233,7 +235,27 @@ export const CreateQuoteSchema = z.object({
   // Omitido = todos los que el merchant tenga disponibles.
   payMethods: z.array(z.enum(['card', 'bizum', 'transfer'])).min(1).optional(),
   // A20.4: qué datos del cliente muestra el DOCUMENTO (null = todos los presentes)
-  docFields: z.object({ name: z.boolean(), phone: z.boolean(), taxId: z.boolean(), email: z.boolean() }).partial().nullable().optional(),
+  /**
+   * A20.4: qué datos del cliente muestra el DOCUMENTO (null = todos los presentes).
+   *
+   * 🔴 SCRUM-589 (CONT-18) · `usarRazonSocial` NO ES UNA CASILLA MÁS: las otras cuatro dicen
+   * «muestra este campo» y se SUMAN; ésta dice CUÁL de los dos nombres sale, y sustituye.
+   *
+   * Y hubo que tocar esto o el ticket nacía muerto: `z.object` **ESTRAGA las claves que no
+   * declara, en silencio y con `ok: true`**. Medido antes de cambiarlo, contra este mismo
+   * esquema importado de `dist/`:
+   *
+   *     entrada {name,phone,taxId,email,usarRazonSocial:false} → ok:true
+   *     salida  {name,phone,taxId,email}          ← la elección, desaparecida
+   *
+   * O sea: el navegador la mandaba, el servidor contestaba 2xx y la elección no llegaba nunca a
+   * la fila. Cero migración era cierto y aun así no habría funcionado — con todos los tests en
+   * verde, porque nadie preguntaba por una clave que se cae sola.
+   */
+  docFields: z.object({
+    name: z.boolean(), phone: z.boolean(), taxId: z.boolean(), email: z.boolean(),
+    usarRazonSocial: z.boolean(),
+  }).partial().nullable().optional(),
   /**
    * SCRUM-594 (DOC-04) · el descuento GLOBAL del presupuesto, en EUROS.
    *
@@ -256,6 +278,25 @@ export const CreateQuoteSchema = z.object({
   // NO se recorta ni se normaliza el contenido: los saltos de línea son DATO (SCRUM-655 · T6).
   docHeaderText: z.string().max(2000).nullable().optional(),
   docFooterText: z.string().max(2000).nullable().optional(),
+  /**
+   * SCRUM-602 (DOC-12) · LA DIRECCIÓN DE LA OBRA de este presupuesto.
+   *
+   * 🔴 EL MODO ES UN `enum` DERIVADO, no una lista escrita aquí: `MODOS_DIRECCION_OBRA` vive en
+   * `src/core/documentos/direccionObra.ts` y es la misma que usa el resolvedor. Copiar los tres
+   * valores en este fichero crearía una segunda lista que puede envejecer sola — y el día que se
+   * añada un cuarto modo, la validación lo rechazaría mientras el resolvedor lo entiende.
+   *
+   * `nullable` Y `optional`, igual que los dos textos de arriba y por el mismo motivo: omitido =
+   * «este cliente no manda el campo» (todo lo anterior a este ticket), `null` = «lo quitó a
+   * propósito».
+   *
+   * ⚠️ EL TOPE ES 300 Y AQUÍ NO SE VALIDA CONTRA ÉL: se RECORTA en `normalizarDireccionObra`,
+   * que es lo que ya hacen `normalizarLugarEntrega` y `normalizarJobDireccion` con el mismo
+   * dato. Un 400 por una dirección larga sería un tercer comportamiento para el mismo campo en
+   * el mismo producto. El `max(2000)` de aquí es sólo el suelo contra un cuerpo abusivo.
+   */
+  shippingAddressMode: z.enum(MODOS_DIRECCION_OBRA).nullable().optional(),
+  shippingAddress: z.string().max(2000).nullable().optional(),
   // A16.2: caducidad del presupuesto (default 30 días en el server; editable al crear)
   validUntil: z.coerce.date().optional(),
   // SCRUM-27: plan de cobro personalizado (N tramos). Presente = ignora paymentTerms.
@@ -540,6 +581,22 @@ export const customerCreateSchema = z.object({
   // 🔴 Nunca se coacciona a false: false es un valor LEGITIMO («declara que no»), asi que degradar
   // a false una lectura fallida seria el peor sitio para hacerlo — nadie notaria el fallo (SCRUM-271).
   recargoEquivalencia: z.boolean().nullable().optional(),
+  /**
+   * SCRUM-587 (CONT-14) · El descuento PACTADO con este cliente, en PORCENTAJE (0-100).
+   *
+   * `nullable().optional()` como sus vecinos `recargoEquivalencia`, `internalRef` y `tags`, y
+   * **nunca `.default(0)`**: los tres estados sin inventar ninguno — ausente = no se toca ·
+   * `null` = no hay descuento pactado · `0` = se pactó expresamente un 0 %. Con un default, todos
+   * los clientes que ya existen pasarían a estar «declarados con 0 %» y nadie sabría a cuáles se
+   * les llegó a preguntar.
+   *
+   * 🔴 EL MISMO `conDecimales` QUE EL `dto` DE LA LÍNEA, y no es simetría cosmética: este valor
+   * ATERRIZA en ese campo. Si aquí cupieran más decimales, un `33,333 %` guardado en el cliente
+   * daría un presupuesto que no se puede guardar, y el profesional no tendría forma de saber por
+   * qué. El tope de 100 tampoco es cosmético: un 150 % dejaría el precio NEGATIVO.
+   */
+  dtoPorDefecto: conDecimales(z.number().min(0).max(100), DECIMALES_PORCENTAJE, 'el descuento por defecto')
+    .nullable().optional(),
 });
 
 export const customerUpdateSchema = customerCreateSchema.partial();

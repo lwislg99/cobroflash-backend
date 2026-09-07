@@ -1,0 +1,33 @@
+-- docs/sql/scrum-586-paso-1-anadir-columna.sql — SCRUM-586 (CONT-13)
+--
+-- LO QUE SE APLICA, Y NADA MÁS. La verificación (con su suelo) vive en el fichero de al lado,
+-- `scrum-586-forma-de-pago-por-cliente.sql`, y el motivo de que estén separados NO es estético:
+-- `scripts/aplicar-sql-dev.mjs` RECHAZA el fichero entero si contiene una sentencia que no sabe
+-- clasificar, y un `SELECT` no está en su lista blanca. Medido el 6-sep-2026: con el `SELECT`
+-- dentro, la herramienta sale con código 1 y no aplica nada — o sea que el fichero «listo para
+-- aplicar» de ayer no se podía aplicar. Así que el `ALTER` vive AQUÍ, SOLO, y existe UNA SOLA VEZ
+-- en el árbol: copiado en dos ficheros, el día que alguien cambiara el tipo o el nombre en uno,
+-- el otro seguiría diciendo lo de antes y los dos se leerían igual de oficiales.
+--
+-- 🔴 EL CAMPO ES NULLABLE Y SIN DEFAULT, Y ESO NO ES PEREZA. `NULL` = «a este cliente no se le
+--    ha pactado nada», que es la verdad de los clientes que ya existen. Un `DEFAULT` los
+--    convertiría a todos en «declarados» y ya no habría forma de saber a cuáles se preguntó —
+--    exactamente el motivo que `dtoPorDefecto` (SCRUM-587) dejó escrito en la columna de al lado.
+--
+-- ESTADO POR BASE (lo re-fecha quien lo aplique; una casilla sin fecha es una casilla sin aplicar):
+--   · dev  `yaqu_dev_javier` .... ✅ aplicado el 6-sep-2026 por esta sesión, con el GO del
+--                                    fundador acotado a dev. Medición ANTES y DESPUÉS, con su
+--                                    suelo, en `docs/master/SCRUM-586.md`.
+--   · staging ................... ⛔ PENDIENTE — la aplica el FUNDADOR.
+--   · producción ................ ⛔ PENDIENTE — la aplica el FUNDADOR.
+--
+-- ⚠️ Y EL ORDEN IMPORTA, no es ceremonia: `prisma/schema.prisma` NO nombra esta columna todavía y
+--    NO se toca en este PR (es dominio del fundador). La línea del modelo entra DESPUÉS de que la
+--    columna exista en las TRES bases — es el orden que dejó escrito `internalRef` (SCRUM-588) en
+--    el propio esquema. Al revés, un esquema que nombra una columna que la base no tiene rompe el
+--    arranque.
+--
+--    Cómo se aplica aquí (nunca a mano, nunca con la URL en argv):
+--        node scripts/aplicar-sql-dev.mjs --file docs/sql/scrum-586-paso-1-anadir-columna.sql --go
+
+ALTER TABLE "customers" ADD COLUMN "pay_methods_por_defecto" JSONB;

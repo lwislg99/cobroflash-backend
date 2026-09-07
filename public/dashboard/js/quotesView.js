@@ -383,6 +383,62 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   clientFormRow.appendChild(fieldCustomer.wrapper);
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-602 (DOC-12) · LA DIRECCIÓN DE LA OBRA.
+  //
+  // 🔴 VA EN «1. Cliente» Y NO EN «4. Envío», y no es una preferencia: «4. Envío» significa el
+  // envío del DOCUMENTO por WhatsApp o correo. Poner aquí una dirección postal lo convertiría en
+  // dos cosas con el mismo nombre en la misma pantalla. Va junto al cliente porque acompaña a los
+  // datos con los que sale impresa, que es donde el profesional la va a buscar.
+  //
+  // Los textos salen de `quoteDireccionObra.TEXTOS`, en un solo sitio, y NO se escriben aquí:
+  // sueltos en cada `textContent` derivan sin que nada chille (la lección de `filtroClientes.js`).
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  const fieldDireccionObra = createFieldSelect(
+    window.quoteDireccionObra.TEXTOS.rotulo,
+    "shipping_address_mode",
+  );
+  window.quoteDireccionObra.OPCIONES.forEach(function (o) {
+    const opt = document.createElement("option");
+    opt.value = o.valor;
+    opt.textContent = o.palabra;
+    fieldDireccionObra.select.appendChild(opt);
+  });
+  fieldDireccionObra.select.value = window.quoteDireccionObra.MODOS.NO_MOSTRAR;
+  clientFormRow.appendChild(fieldDireccionObra.wrapper);
+
+  // El campo libre vive en su PROPIA fila, a ancho completo: `.quote-form-row` es una rejilla de
+  // tres columnas y una dirección postal de 300 caracteres en un tercio de ancho se lee mal.
+  const direccionObraWrap = document.createElement("div");
+  direccionObraWrap.className = "field quote-direccion-obra";
+  direccionObraWrap.hidden = true;
+  const direccionObraInput = document.createElement("input");
+  direccionObraInput.type = "text";
+  direccionObraInput.name = "shipping_address";
+  // 300 = `DIRECCION_OBRA_MAX`. El servidor RECORTA (no rechaza), igual que `lugarEntrega`; el
+  // tope de aquí es para que el profesional vea dónde está el límite, no para validar.
+  direccionObraInput.maxLength = 300;
+  direccionObraWrap.appendChild(direccionObraInput);
+  blockClient.appendChild(direccionObraWrap);
+
+  /**
+   * SCRUM-602 · enseña u oculta el campo libre, y le pone la SUGERENCIA como placeholder.
+   *
+   * 🔴 PLACEHOLDER, NUNCA VALOR — es el suelo del albarán, adoptado literal: «la sugerencia entra
+   * sólo como PLACEHOLDER, porque una dirección equivocada en un documento de entrega es peor que
+   * ninguna». Rellenar el campo pondría en un papel que ve el cliente una dirección que nadie
+   * tecleó ni revisó.
+   */
+  function refrescarDireccionObra() {
+    const modo = fieldDireccionObra.select.value;
+    const esPersonalizada = modo === window.quoteDireccionObra.MODOS.PERSONALIZADA;
+    direccionObraWrap.hidden = !esPersonalizada;
+    const cliente = customersList.find(
+      (c) => String(c.id) === String(fieldCustomer.select.value),
+    ) || null;
+    direccionObraInput.placeholder = window.quoteDireccionObra.sugerenciaParaPlaceholder(cliente);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
   // SCRUM-660 · EL IVA POR DEFECTO DEL DOCUMENTO TAMBIÉN SE ELIGE.
   //
   // Lo dejó escrito SCRUM-611 al cerrar el selector de la LÍNEA, y era un hueco de verdad:
@@ -608,12 +664,47 @@ blockDelivery.appendChild(descWrapper);
     const validInput = document.createElement("input");
     validInput.type = "date";
     validInput.id = "quote-valid-until";
-    const defUntil = new Date(Date.now() + 30 * 86400000);
-    validInput.value = defUntil.toISOString().slice(0, 10);
-    validInput.min = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    // 🔴 SCRUM-633 · EL DÍA, EN LA ZONA DEL MERCHANT. Antes: `toISOString().slice(0, 10)`, que
+    // da el día en UTC. Medido sobre 2026 para un profesional en Madrid: a las 09:00 y a las
+    // 12:00 fallan 0 días de 365, pero a la 01:00 son 210 y a las 00:30 son 335. No es «el
+    // cambio de hora» —quien lea eso buscará dos días al año—: es que UTC y la hora local son
+    // dos calendarios distintos casi todas las noches.
+    //
+    // La zona es la del NEGOCIO y no la del navegador: un empleado que viaja vería una
+    // caducidad distinta de la que rige el presupuesto. La regla vive en la pieza pura.
+    //
+    // ⚠️ LOS CINCO SITIOS SE ARREGLAN JUNTOS. Hoy los cinco fallan en el MISMO sentido, así que
+    // coinciden; arreglar uno solo los desincroniza, y una caducidad en la que el formulario dice
+    // un día, la base otro y el papel del cliente un tercero es PEOR que la que está mal en los
+    // cinco a la vez.
+    // 🔴 SIN `currentMerchant` AQUÍ, y lo cazó el banco de vistas: esa variable se declara 550
+    // líneas más abajo y leerla al construir el formulario revienta la pantalla entera
+    // («Cannot access before initialization»). Se pinta con la zona por defecto —UTC, lo que el
+    // sistema hacía antes— y se REFRESCA en cuanto el merchant llega.
+    const diaPintadoPorDefecto = window.quoteCaducidad.diaPorDefecto(null, 30);
+    validInput.value = diaPintadoPorDefecto;
+    validInput.min = window.quoteCaducidad.diaPorDefecto(null, 1);
     const validNote = document.createElement("p");
     validNote.style.cssText = "font-size:12px;color:var(--muted);margin:4px 0 0";
     validNote.textContent = "Pasada esta fecha el presupuesto caduca solo y el cliente verá \"pide uno actualizado\".";
+    /**
+     * SCRUM-633 · recalcula la caducidad con la zona del NEGOCIO, cuando ya se sabe cuál es.
+     *
+     * 🔴 SÓLO SI EL PROFESIONAL NO HA ELEGIDO NADA. Se compara con el valor que se pintó al
+     * construir el formulario: si sigue ahí, nadie lo ha tocado y se puede corregir; si lo ha
+     * cambiado, mandar el suyo. Pisar una fecha elegida a mano sería cambiar un documento por
+     * detrás, que es peor que el desfase de un día que esto viene a arreglar.
+     */
+    function refrescarCaducidad() {
+      // Se compara con lo que SE PINTÓ, no con un recálculo: a las 23:59 el recálculo daría otro
+      // día y el refresco se saltaría justo en la franja que este ticket viene a arreglar.
+      if (validInput.value === diaPintadoPorDefecto) {
+        validInput.value = window.quoteCaducidad.diaPorDefecto(currentMerchant, 30);
+      }
+      validInput.min = window.quoteCaducidad.diaPorDefecto(currentMerchant, 1);
+    }
+    window.__refrescarCaducidadDelPresupuesto = refrescarCaducidad;
+
     validWrapper.appendChild(validLabel);
     validWrapper.appendChild(validInput);
 
@@ -649,7 +740,15 @@ blockDelivery.appendChild(descWrapper);
         chip.appendChild(nombre);
         chip.setAttribute("aria-label", rotulo);
         chip.addEventListener("click", function () {
-          const fecha = atajosVenc.fechaDeAtajo(dias);
+          // 🔴 SCRUM-750 · EL MERCHANT VA DENTRO. Sin él, el atajo calculaba el día en la zona del
+          // NAVEGADOR mientras el valor por defecto y el `min` de este mismo campo lo calculan en
+          // la del NEGOCIO — medido: con el navegador en `Pacific/Auckland` discrepaban el 45,6 %
+          // de los instantes del año. Ahora los tres salen de `quoteCaducidad.diaPorDefecto`.
+          //
+          // `currentMerchant` SÍ se puede leer aquí, al revés que al construir el formulario: esto
+          // corre dentro de un manejador de clic, mucho después de que la variable exista. Es el
+          // mismo momento en que la lee `refrescarCaducidad`.
+          const fecha = atajosVenc.fechaDeAtajo(dias, currentMerchant);
           // Si no se puede calcular no se escribe NADA: mejor que el campo se quede como está
           // que meterle una fecha inventada en un documento que el cliente va a recibir.
           if (fecha) validInput.value = fecha;
@@ -707,6 +806,201 @@ blockDelivery.appendChild(descWrapper);
       return sel;
     }
 
+    // ═══ SCRUM-586 (CONT-13) · LAS FORMAS DE PAGO PACTADAS CON EL CLIENTE, PROPUESTAS ═══════════
+    //
+    // LA VÍCTIMA: el administrador de fincas que no paga con tarjeta jamás, y el profesional que
+    // tiene que ACORDARSE de desmarcarla en cada documento. El día que se le olvida, el cliente ve
+    // un botón que su gestoría no va a pulsar y el cobro se queda esperando.
+    //
+    // 🔴 SE PROPONE. NO SE APLICA SOLO — y aquí la razón es MÁS fuerte que en la tira del 587, de
+    // la que esto deriva. Allí el estado por defecto del documento era «sin descuento» y aplicar
+    // AÑADÍA. Aquí el documento nace con LAS TRES MARCADAS, así que aplicar RESTA opciones de
+    // cobro: si el cliente sólo tiene «transferencia» y el profesional no se fija, el cobro se
+    // retrasa ENTERO. Y al revés cuesta igual, marcar tarjeta mete la comisión del 0,9 %.
+    // CUANDO APLICAR CUESTA EN AMBOS SENTIDOS, SE PROPONE (fundador, 5-sep-2026).
+    //
+    // Por eso esto es UNA TIRA CON UN BOTÓN y no una línea que marque las casillas al elegir
+    // cliente. La regla —qué se propone, qué se descarta por ilegible y cuántas casillas
+    // cambiarían— vive entera en `formaDePagoPorDefecto.js`, que la suite EJECUTA sin navegador.
+    // Aquí sólo se pinta y se llama.
+    // 🔴 EL CONTADOR DE RANURAS SIN FIRMAR DE ESTA TIRA. Es lo que distingue «no se pinta
+    // marcador» de «lo ha firmado el fundador» — la avería que cerró SCRUM-726, y el mecanismo que
+    // el 587 dejó en `DTO_POR_DEFECTO_SIN_APROBAR`. El contador vive donde vive el texto.
+    //
+    // DOS y no tres: el texto de la tira y el rótulo del botón. Los otros dos candidatos de este
+    // ticket —el rótulo y la ayuda del campo del CLIENTE— NO están en el código y por eso no se
+    // cuentan aquí: su campo no existe todavía, porque la columna sólo está aplicada en dev y
+    // `prisma/schema.prisma` es del fundador. Contarlos aquí diría que hay cuatro textos en esta
+    // pantalla, y en esta pantalla hay dos. Sus literales, con su caja medida, están en
+    // `docs/master/SCRUM-586.md`.
+    //
+    // ⚠️ NO se suma al contador del 587: aquél cuenta los textos del modal de CLIENTES. Mezclar las
+    // dos poblaciones haría que el mismo número significara dos cosas — el defecto de SCRUM-714.
+    //
+    // 🔴 6-sep-2026 · BAJA DE 2 A 1. El asesor FIRMÓ el texto de la tira; el rótulo del BOTÓN sigue
+    // sin firmar y por eso esto no baja a 0. Que el contador siga en pie con un 1 es justo lo que
+    // impide leer «ya no hay marcador que me estorbe» como «ya está aprobado todo».
+    const FORMA_DE_PAGO_SIN_APROBAR = 1;
+    void FORMA_DE_PAGO_SIN_APROBAR; // se declara para que se pueda leer; no lo consume la vista
+
+    /**
+     * ✅ MICROCOPY FIRMADA POR EL ASESOR · 6-sep-2026 · el texto de la tira.
+     *
+     * **«Formas de pago pactadas»** — 23 caracteres. Firmada CON LA CAJA MEDIDA delante, en
+     * navegador real (Edge) y con los literales extraídos del propio fuente por AST:
+     *
+     *   · 929 px — bloque útil 839,0 px · texto 335,1 × 20,3 px (UNA línea, peor caso: dos métodos)
+     *   · 390 px — bloque útil 324,0 px · texto 294,0 × 40,5 px (dos líneas) · un método: 263,7 × 20,3
+     *   · el botón mantiene sus 44,0 px de alto (AB6) en las dos anchuras.
+     *
+     * 🔴 «PACTADAS» Y NO «POR DEFECTO», y el motivo es que **no se inventó una palabra: se derivó
+     * de una ya firmada**. El fundador aprobó «Descuento pactado (%)» el 4-sep-2026 en el modal de
+     * cliente y dejó escrito por qué: es la palabra del DOMINIO —un acuerdo con ESE cliente, no una
+     * preferencia de la aplicación—. Meter «por defecto» aquí habría puesto dos palabras para la
+     * misma idea a dos pantallas de distancia.
+     *
+     * 🔴 Y ES EL MISMO LITERAL QUE EL RÓTULO DEL CAMPO DEL CLIENTE, a propósito: un nombre por
+     * concepto, la regla que SCRUM-591 dejó escrita para «+ Nuevo cliente». Por eso el censo de
+     * SCRUM-402 contaba CUATRO marcadores donde había DOS frases.
+     *
+     * Su registro vive en `docs/master/SCRUM-586.md` y **NO en `docs/microcopy/`**: ese directorio
+     * es el del FUNDADOR y `constaAprobado()` lo barre (SCRUM-726), así que una firma del asesor
+     * metida ahí pasaría por la suya.
+     */
+    const FORMA_DE_PAGO_ROTULO_TIRA = "Formas de pago pactadas";
+
+    const propuestaPagoWrap = document.createElement("div");
+    // `info` y no `warning`, igual que la tira del 587: un acuerdo que el profesional pactó no es
+    // un aviso de que algo va mal.
+    propuestaPagoWrap.className = "alert info quote-propuesta-pago";
+    propuestaPagoWrap.hidden = true;
+
+    const propuestaPagoTexto = document.createElement("span");
+    propuestaPagoTexto.className = "quote-propuesta-pago__texto";
+
+    const propuestaPagoBtn = document.createElement("button");
+    propuestaPagoBtn.type = "button";
+    propuestaPagoBtn.className = "btn-ghost btn-sm";
+    // 🔴 MARCADOR, NO TEXTO INVENTADO (regla 30), con la grafía que el censo de SCRUM-402 CUENTA
+    // (`[PENDIENTE`): un marcador que el censo no ve es peor que ninguno.
+    //
+    // El rótulo del botón NO estrena literal propio, y es una decisión: el botón del 587 dice
+    // exactamente lo mismo —«acepto la propuesta»— y sigue sin firmar. Abrir un segundo hueco de
+    // microcopy para el mismo acto le daría al asesor dos textos que firmar donde hay UNA frase.
+    propuestaPagoBtn.textContent = "[PENDIENTE microcopy oficial]";
+
+    propuestaPagoWrap.appendChild(propuestaPagoTexto);
+    propuestaPagoWrap.appendChild(propuestaPagoBtn);
+    blockDelivery.appendChild(propuestaPagoWrap);
+
+    /**
+     * Las casillas marcadas AHORA, todas.
+     *
+     * NO es `selectedPayMethods`, y la diferencia es la razón de que exista: aquélla devuelve
+     * `undefined` cuando están las tres, porque es lo que el PAYLOAD necesita para decir «sin
+     * límite». Aquí hace falta la lista de verdad, porque lo que se hace con ella es COMPARARLA
+     * con lo pactado — y `undefined` y «las tres» no se pueden comparar con nada.
+     */
+    function seleccionDePagoActual() {
+      return pmDefs.filter(function (d) { return pmChecks[d.key].checked; }).map(function (d) { return d.key; });
+    }
+
+    /**
+     * 🔴 LO PACTADO, RECORTADO A LO QUE ESTE MERCHANT PUEDE OFRECER HOY.
+     *
+     * Arriba, en `loadInitialData`, hay un bloque llamado «checkboxes de métodos HONESTOS»: sin
+     * IBAN, la casilla de transferencia se DESMARCA y se DESACTIVA con su motivo, para no dejar
+     * ofrecer algo que no va a salir. Sin este recorte, un cliente con «transferencia» pactada
+     * haría que la tira propusiera justo eso, y el clic marcaría una casilla desactivada —
+     * `selectedPayMethods` la lee por `.checked` y NO mira `disabled`, así que el método viajaría
+     * en el payload. Es decir: este ticket desharía esa honestidad desde otra pantalla, y el
+     * cliente vería una forma de pago que su profesional no tiene configurada.
+     *
+     * Se recorta ANTES de calcular el alcance, no sólo al aplicar: si no, la tira contaría como
+     * «cambiaría 1 casilla» algo que el clic no puede cambiar, y se quedaría visible para siempre
+     * ofreciendo lo mismo.
+     */
+    function metodosOfrecibles() {
+      return pmDefs.filter(function (d) { return !pmChecks[d.key].disabled; }).map(function (d) { return d.key; });
+    }
+
+    function propuestaOfrecible(propuesta) {
+      if (!Array.isArray(propuesta)) return null;
+      const puede = metodosOfrecibles();
+      const recortada = propuesta.filter(function (m) { return puede.indexOf(m) >= 0; });
+      // Si no queda NADA que se pueda ofrecer, no hay propuesta. Proponer la lista vacía sería
+      // proponer un documento que el cliente no puede pagar.
+      return recortada.length ? recortada : null;
+    }
+
+    /**
+     * 🔴 ESTA FUNCIÓN NO APLICA NADA, y el nombre lo dice. Decide si la tira se ve y con qué texto.
+     *
+     * Si algún día alguien mete aquí la aplicación «porque es más cómodo», el ticket se ha roto:
+     * el guard de ALCANZABILIDAD de `tests/scrum586-forma-de-pago-por-cliente.test.mjs` cae, y cae
+     * también si la llamada llega por una función intermedia.
+     */
+    function refrescarPropuestaDeFormaDePago() {
+      const M = window.formaDePagoPorDefecto;
+      // Sin la pieza —o con un cliente sin nada pactado— la tira no existe y el editor se comporta
+      // EXACTAMENTE como antes de este ticket. Es el caso normal, no una degradación.
+      if (!M) { propuestaPagoWrap.hidden = true; return; }
+      // `clienteElegido` es la del 587 y NO se escribe una segunda: con dos formas de saber qué
+      // cliente hay elegido, una se quedaría atrás el día que cambie el selector.
+      const cliente = clienteElegido();
+      const propuesta = propuestaOfrecible(M.propuestaPara(cliente));
+      const alcance = M.hayPropuesta(cliente) && propuesta
+        ? M.alcanceDe(seleccionDePagoActual(), propuesta) : 0;
+      if (alcance <= 0) { propuestaPagoWrap.hidden = true; return; }
+      propuestaPagoWrap.hidden = false;
+      propuestaPagoWrap.dataset.metodos = propuesta.join(",");
+      // ✅ TEXTO FIRMADO (ver `FORMA_DE_PAGO_ROTULO_TIRA` arriba, con su caja medida), y el DATO
+      // junto a él: QUÉ formas de pago se pactaron es del profesional, no es microcopy, y sin verlo
+      // la tira no le dejaría decidir nada — que es todo el punto del ticket. Los rótulos salen de
+      // `pmDefs`, los MISMOS de las casillas de arriba: escribir «Bizum» a mano aquí sería un
+      // segundo sitio donde vive el nombre de un método.
+      const rotulos = pmDefs.filter(function (d) { return propuesta.indexOf(d.key) >= 0; })
+        .map(function (d) { return d.label; }).join(" · ");
+      propuestaPagoTexto.textContent = FORMA_DE_PAGO_ROTULO_TIRA + " · " + rotulos;
+    }
+
+    /**
+     * 🔴 LA MITAD QUE APLICA, Y SE ALCANZA SÓLO DESDE EL CLIC.
+     *
+     * Está separada de la de arriba a propósito: es la frontera entre PROPONER y APLICAR, y es lo
+     * que un futuro «pulido» tiraría sin enterarse. Sustituye la selección entera en vez de
+     * rellenar huecos —al revés que su hermana del 587— porque una casilla no tiene estado
+     * «vacío»: «las tres marcadas» es a la vez el valor de fábrica y una elección deliberada, y
+     * desde el dato no se distinguen. Lo que da el consentimiento no puede ser una heurística:
+     * es EL CLIC.
+     */
+    function aceptarPropuestaDeFormaDePago() {
+      const M = window.formaDePagoPorDefecto;
+      if (!M) return;
+      const propuesta = propuestaOfrecible(M.propuestaPara(clienteElegido()));
+      // La pieza pura decide QUÉ queda marcado; aquí sólo se escriben las casillas.
+      const despues = M.aplicarA(seleccionDePagoActual(), propuesta);
+      pmDefs.forEach(function (d) {
+        // Una casilla DESACTIVADA no se toca ni para marcarla ni para desmarcarla: la desactivó
+        // el bloque de «checkboxes honestos» porque el merchant no tiene cómo cobrar por ahí.
+        if (pmChecks[d.key].disabled) return;
+        pmChecks[d.key].checked = despues.indexOf(d.key) >= 0;
+      });
+      // Aceptada, la tira desaparece: ya no queda nada que proponer.
+      propuestaPagoWrap.hidden = true;
+      renderPreview();
+      scheduleDraftSave();
+    }
+
+    propuestaPagoBtn.addEventListener("click", aceptarPropuestaDeFormaDePago);
+
+    // Y si el profesional toca las casillas a mano, la tira se recalcula: en cuanto llega por su
+    // cuenta a lo pactado, deja de ofrecerle lo que ya tiene. Sin esto la tira se quedaría
+    // enseñando una propuesta que ya no cambiaría ni una casilla.
+    pmDefs.forEach(function (d) {
+      pmChecks[d.key].addEventListener("change", refrescarPropuestaDeFormaDePago);
+    });
+
     // A20.4 (PV-FIX-CAMPOS): qué datos del cliente se MUESTRAN en el documento.
     // Default: todos marcados (comportamiento de siempre; solo salen si existen).
     const docFieldsWrapper = document.createElement("div");
@@ -733,18 +1027,88 @@ blockDelivery.appendChild(descWrapper);
       dfRow.appendChild(lbl);
     });
     docFieldsWrapper.appendChild(dfRow);
+
+    // ── SCRUM-589 (CONT-18) · CON QUÉ NOMBRE SALE ESTE CLIENTE ──────────────────────────────
+    //
+    // Hasta hoy la razón social SUSTITUÍA al nombre siempre que existiera, sin que el
+    // profesional pudiera evitarlo. Aquí deja de ser automático.
+    //
+    // 🔴 POR QUÉ RADIOS Y NO UNA QUINTA CASILLA. Las cuatro de arriba dicen «MUESTRA este campo»
+    // y se SUMAN; el nombre no se suma, SUSTITUYE. Una casilla «Razón social» al lado de
+    // «Nombre» dejaría cuatro combinaciones para tres resultados —¿qué sale con las dos
+    // marcadas?— y además cambiaría el significado de ☑Nombre, que ya está firmado. Con dos
+    // opciones excluyentes no existe la combinación imposible. Medido a 929 y 390: cuesta
+    // +30,4 px en los dos anchos y la fila de casillas NO salta de línea (una quinta casilla sí
+    // la parte a 390). Forma y textos firmados por el asesor el 6-sep-2026.
+    //
+    // Reutiliza `.inline-options` y `.radio-label`, que YA existen en el CSS: no se inventa
+    // ninguna clase para esto.
+    const dfNombreRow = document.createElement("div");
+    dfNombreRow.className = "inline-options";
+    dfNombreRow.style.marginTop = "6px";
+    const dfNombreDefs = [
+      { valor: "legal", label: "Razón social" },
+      { valor: "comercial", label: "Nombre comercial" },
+    ];
+    const dfNombreRadios = {};
+    dfNombreDefs.forEach(function (def) {
+      const lbl = document.createElement("label");
+      lbl.className = "radio-label";
+      const r = document.createElement("input");
+      r.type = "radio";
+      r.name = "df-nombre";
+      r.value = def.valor;
+      // 🔴 EL DEFECTO ES «Razón social» A PROPÓSITO: es lo que este formulario hace HOY. Un
+      // defecto en «Nombre comercial» cambiaría en silencio el nombre impreso de todos los
+      // presupuestos nuevos de quien tenga razón social rellena.
+      r.checked = def.valor === "legal";
+      dfNombreRadios[def.valor] = r;
+      lbl.appendChild(r);
+      lbl.appendChild(document.createTextNode(" " + def.label));
+      dfNombreRow.appendChild(lbl);
+    });
+    docFieldsWrapper.appendChild(dfNombreRow);
+
+    // Con ☐Nombre la elección no pinta nada: se DESHABILITA, no se esconde. Esconderla haría
+    // aparecer y desaparecer una fila entera al marcar una casilla —la pantalla daría un salto—
+    // y además dejaría al profesional sin saber que la opción existe.
+    function refrescarEleccionDeNombre() {
+      const activo = dfChecks.name.checked;
+      dfNombreDefs.forEach(function (def) { dfNombreRadios[def.valor].disabled = !activo; });
+      dfNombreRow.style.opacity = activo ? "" : "0.5";
+    }
+    dfChecks.name.addEventListener("change", refrescarEleccionDeNombre);
+    refrescarEleccionDeNombre();
+
     const dfNote = document.createElement("p");
     dfNote.className = "pay-methods-note";
-    dfNote.textContent = "Solo aparecen los que el cliente tenga rellenos (la razón social sustituye al nombre si existe).";
+    // SCRUM-589 · la nota de antes AFIRMABA la sustitución automática como un hecho («la razón
+    // social sustituye al nombre si existe»). Con la elección delante, esa frase pasaba a ser
+    // FALSA. Texto firmado por el asesor el 6-sep-2026.
+    dfNote.textContent = "Solo aparecen los que el cliente tenga rellenos. Elige con qué nombre sale este cliente en el documento.";
     docFieldsWrapper.appendChild(dfNote);
     blockDelivery.appendChild(docFieldsWrapper);
 
     // null = todos (default); objeto solo si el pro desmarca algo
     function selectedDocFields() {
       const all = dfDefs.every(function (d) { return dfChecks[d.key].checked; });
-      if (all) return undefined;
+      // SCRUM-589 · «como siempre» ahora son DOS cosas: las cuatro marcadas Y el nombre por
+      // defecto. Si el profesional cambia el nombre, esto YA NO puede devolver `undefined`.
+      //
+      // 🔴 EL ATAJO NO SE BORRA, SE ESTRECHA, y está medido por qué: `undefined` hace que el
+      // servidor omita el campo y la fila se quede con `doc_fields = NULL`. Medido: NINGUNA
+      // consulta del árbol filtra por esa columna, y para el PDF `null` y «los cuatro a true»
+      // son EQUIVALENTES (`!docFields || docFields[k] !== false` da [true,true,true,true] en los
+      // dos casos). O sea que borrarlo no rompería nada... pero haría que TODOS los presupuestos
+      // nuevos guardaran un objeto donde hoy guardan NULL, y eso es cambiarle los datos a quien
+      // no ha pedido nada. Estrecharlo deja intacto el caso de siempre y sólo escribe cuando hay
+      // algo que decir.
+      const usarRazonSocial = dfNombreRadios.legal.checked;
+      if (all && usarRazonSocial) return undefined;
       const out = {};
       dfDefs.forEach(function (d) { out[d.key] = dfChecks[d.key].checked; });
+      // No es una casilla más: dice CUÁL de los dos nombres sale, no si se muestra.
+      out.usarRazonSocial = usarRazonSocial;
       return out;
     }
 
@@ -758,11 +1122,21 @@ blockDelivery.appendChild(descWrapper);
   lhText.textContent = "Añade los conceptos que vas a presupuestar.";
   linesHeader.appendChild(lhText);
 
-  const addLineBtn = document.createElement("button");
-  addLineBtn.type = "button";
-  addLineBtn.className = "btn btn-secondary";
-  addLineBtn.textContent = "+ Añadir línea";
-  linesHeader.appendChild(addLineBtn);
+  // 🔴 SCRUM-794 · AQUÍ HABÍA UN SEGUNDO «+ Añadir línea», y se ha BORRADO.
+  //
+  // Eran DOS botones con el MISMO rótulo y la MISMA función (los dos colgaban de
+  // `addLineAndFocus`): éste, suelto entre el texto de la sección y la fila de plantillas, y el de
+  // abajo, a ancho completo pegado a la última línea. El fundador firmó quedarse con el de abajo.
+  //
+  // Medido antes de borrarlo, en navegador y por `elementsFromPoint`: los DOS estaban pintados y
+  // alcanzables en las cuatro combinaciones (3 y 4 líneas × 929 y 390 px). Y éste, además,
+  // INCUMPLÍA AB6 a 929 px: caja de 120,6 × 36 y área de toque de 36,8 px contra los 44. El que
+  // se queda da 44,9. O sea que borrarlo no sólo quita el duplicado: quita un táctil corto.
+  //
+  // ⚠️ Y NO ERA EL ÚNICO CAMINO EN NINGÚN ESTADO — que es lo que había que comprobar antes de
+  // tocar: el estado de CERO líneas no existe (se arranca con `LINEAS_CUADERNILLO` = 3 y borrar la
+  // última la vacía en vez de quitarla), y ninguno de los dos botones era condicional: los dos se
+  // añadían al montar, fuera de todo `if` y de todo bucle.
 
   const aiBtn = document.createElement("button");
   aiBtn.type = "button";
@@ -957,6 +1331,90 @@ blockDelivery.appendChild(descWrapper);
   dtoGlobalWrap.appendChild(dtoGlobalBtn);
   dtoGlobalWrap.appendChild(dtoGlobalCampo);
   blockTotals.appendChild(dtoGlobalWrap);
+
+  // ═══ SCRUM-587 (CONT-14) · EL DESCUENTO PACTADO CON EL CLIENTE, PROPUESTO ═══════════════════
+  //
+  // LA VÍCTIMA: el profesional con un 10 % acordado con un administrador de fincas hoy tiene que
+  // ACORDARSE y teclearlo en cada presupuesto. El día que se le olvida factura de más y lo
+  // descubre cuando el cliente se queja; o factura de menos y no lo descubre nunca.
+  //
+  // 🔴 SE PROPONE. NO SE APLICA SOLO. Por eso esto es una TIRA CON UN BOTÓN y no una línea de
+  // código que rellene los campos al elegir cliente: un descuento aplicado en silencio es dinero
+  // que sale del bolsillo del profesional sin que lo haya decidido ESTA vez, y el día que quiera
+  // cobrar el precio entero no va a saber por qué le sale otro número.
+  //
+  // La regla —a qué líneas alcanza, y que NO pisa un `dto` tecleado a mano— vive entera en
+  // `descuentoPorDefecto.js`, que la suite ejecuta sin navegador. Aquí sólo se pinta y se llama.
+  const propuestaWrap = document.createElement("div");
+  // `info` y no `warning`: un acuerdo que el profesional pactó no es un aviso de que algo va mal.
+  propuestaWrap.className = "alert info quote-propuesta-dto";
+  propuestaWrap.hidden = true;
+
+  const propuestaTexto = document.createElement("span");
+  propuestaTexto.className = "quote-propuesta-dto__texto";
+
+  const propuestaBtn = document.createElement("button");
+  propuestaBtn.type = "button";
+  propuestaBtn.className = "btn-ghost btn-sm";
+  // 🔴 MARCADOR, NO TEXTO INVENTADO (regla 30): el rótulo lo firma el asesor cuando tenga medida
+  // la caja del campo, y el servidor de medición lleva caído toda la sesión. La grafía es la que
+  // el censo de SCRUM-402 CUENTA (`[PENDIENTE`), para que salga en el recuento y no se quede
+  // dormida: un marcador que el censo no ve es peor que ninguno.
+  propuestaBtn.textContent = "[PENDIENTE microcopy oficial]";
+
+  propuestaWrap.appendChild(propuestaTexto);
+  propuestaWrap.appendChild(propuestaBtn);
+  blockTotals.appendChild(propuestaWrap);
+
+  /** El cliente elegido AHORA, o `null`. Mismo criterio que la vista previa (una sola forma). */
+  function clienteElegido() {
+    const id = fieldCustomer.select.value;
+    if (!id || id === VALOR_ALTA_RAPIDA) return null;
+    return customersList.find((c) => String(c.id) === String(id)) || null;
+  }
+
+  /**
+   * Las líneas como objetos planos, SOLO con lo que la regla necesita. Se construye esta vista
+   * para que la decisión de «a qué líneas alcanza» siga viviendo en la pieza pura: si aquí se
+   * mirara `dtoInput` a mano, habría dos sitios que saben la regla y uno se quedaría atrás.
+   */
+  function lineasParaPropuesta() {
+    return lines.map((l) => ({ dto: l.dtoInput ? l.dtoInput.value : null }));
+  }
+
+  function refrescarPropuestaDeDescuento() {
+    const M = window.descuentoPorDefecto;
+    // Sin la pieza —o con un cliente sin descuento pactado— la tira no existe y el editor se
+    // comporta EXACTAMENTE como antes de este ticket. Es el caso normal, no una degradación.
+    if (!M) { propuestaWrap.hidden = true; return; }
+    const cliente = clienteElegido();
+    const pct = M.propuestaPara(cliente);
+    const alcance = M.hayPropuesta(cliente) ? M.alcanceDe(lineasParaPropuesta(), pct) : 0;
+    if (alcance <= 0) { propuestaWrap.hidden = true; return; }
+    propuestaWrap.hidden = false;
+    propuestaWrap.dataset.pct = String(pct);
+    // 🔴 MARCADOR también aquí: el texto que enuncia el acuerdo es microcopy sin firmar. El dato
+    // —el porcentaje— sí es del profesional y se enseña, porque es lo que le deja decidir.
+    propuestaTexto.textContent = "[PENDIENTE microcopy oficial] · " + pct + " %";
+  }
+
+  propuestaBtn.addEventListener("click", function () {
+    const M = window.descuentoPorDefecto;
+    if (!M) return;
+    const pct = M.propuestaPara(clienteElegido());
+    // La pieza pura decide QUÉ líneas cambian; aquí sólo se escriben las que ella ha cambiado.
+    const antes = lineasParaPropuesta();
+    const despues = M.aplicarA(antes, pct);
+    for (let i = 0; i < lines.length; i++) {
+      if (antes[i] === despues[i]) continue;          // ésta ya traía su propio `dto`: no se toca
+      if (lines[i] && lines[i].dtoInput) lines[i].dtoInput.value = String(despues[i].dto);
+    }
+    // Aceptada, la tira desaparece: ya no hay nada que proponer.
+    propuestaWrap.hidden = true;
+    recalcTotals();
+    renderPreview();
+    scheduleDraftSave();
+  });
 
   /**
    * SCRUM-139 F3 · EL TOTAL, ANCLADO EN MÓVIL.
@@ -1519,6 +1977,10 @@ blockDelivery.appendChild(descWrapper);
       <strong class="quote-total-kpi__cifra">${fmtMoneyEs(total, cur)}</strong>
     `;
 
+    // SCRUM-587 · la tira de la propuesta se decide con los MISMOS datos que acaban de recalcular:
+    // así aparece al añadir una línea nueva y desaparece sola en cuanto ya no queda ninguna sin
+    // descuento. No lleva flag propio (regla 27) — el dato ES el flag.
+    refrescarPropuestaDeDescuento();
     return { base, vatTotal, total };
   }
 
@@ -2934,7 +3396,9 @@ if (Number.isFinite(n) && n >= 0) {
     nueva.scrollIntoView({ block: "nearest" });
   }
 
-  addLineBtn.addEventListener("click", addLineAndFocus);
+  // SCRUM-794: aquí había también `addLineBtn.addEventListener(…)`, el del botón de arriba que se
+  // ha borrado. El de abajo conserva EXACTAMENTE el mismo manejador, así que el comportamiento del
+  // que queda no cambia ni una línea.
   addLineBtnBottom.addEventListener("click", addLineAndFocus);
 
   // Botón IA — añade las líneas sugeridas por Claude
@@ -2958,6 +3422,12 @@ if (Number.isFinite(n) && n >= 0) {
 
   resetBtn.addEventListener("click", function () {
     fieldCustomer.select.value = "";
+    // SCRUM-602 · el control vuelve a su defecto Y el texto se vacía. Sin la segunda línea, la
+    // dirección del presupuesto anterior seguiría escondida detrás de «No mostrar» y volvería a
+    // salir en cuanto alguien reeligiera «Personalizada» — en OTRO documento y OTRO cliente.
+    fieldDireccionObra.select.value = window.quoteDireccionObra.MODOS.NO_MOSTRAR;
+    direccionObraInput.value = "";
+    refrescarDireccionObra();
     window.tiposDeIva.ponerValor(fieldVatDefault.input, "21"); // SCRUM-660
     paymentSelect.value = "FULL_UPFRONT";
 
@@ -3288,6 +3758,8 @@ if (Number.isFinite(n) && n >= 0) {
 
       currentMerchant = res[0];
       customersList = Array.isArray(res[1]) ? res[1] : [];
+      // SCRUM-633 · ya se sabe en qué calendario vive el negocio: la caducidad se recalcula.
+      if (window.__refrescarCaducidadDelPresupuesto) window.__refrescarCaducidadDelPresupuesto();
 
       // Checkboxes de métodos HONESTOS: sin IBAN no hay transferencia — se
       // desactiva con el motivo, en vez de dejar marcar algo que no saldrá.
@@ -3341,6 +3813,11 @@ if (Number.isFinite(n) && n >= 0) {
         }
       }
       if (!draftRestored) setAlert(null, "");
+      // SCRUM-586 (CONT-13): la lista de clientes acaba de llegar y el borrador ya ha puesto su
+      // cliente, así que ÉSTE es el primer momento en que se puede saber si hay algo pactado. Sin
+      // esta llamada, un borrador restaurado no propondría NADA hasta que el profesional volviera
+      // a tocar el selector — y para entonces ya habría enviado el documento.
+      refrescarPropuestaDeFormaDePago();
       renderPreview();
     } catch (err) {
       setAlert("error", "Error cargando datos: " + err.message);
@@ -3360,9 +3837,34 @@ if (Number.isFinite(n) && n >= 0) {
       return;
     }
     clienteAntesDelAlta = fieldCustomer.select.value;
+    // SCRUM-587: cambiar de cliente cambia el acuerdo, así que la propuesta se recalcula aquí.
+    // Sólo se PROPONE: nada de esto escribe en las líneas.
+    refrescarPropuestaDeDescuento();
+    // SCRUM-586 (CONT-13): y lo mismo con las formas de pago pactadas. Es REFRESCAR, no aplicar —
+    // esta llamada no puede marcar ni desmarcar una casilla, y el guard de alcanzabilidad del test
+    // cae si alguien la convierte en una que sí.
+    refrescarPropuestaDeFormaDePago();
+    // SCRUM-602 · al cambiar de cliente cambia la PISTA del placeholder: la dirección de
+    // facturación es de ESE cliente, y dejar la del anterior sugeriría la dirección equivocada.
+    refrescarDireccionObra();
     renderPreview();
     scheduleDraftSave();
   });
+  // SCRUM-602 · los DOS eventos, por el mismo motivo que el IVA por defecto de SCRUM-660: en un
+  // `<select>` el navegador dispara `change`, y algunos además `input`. `refrescarDireccionObra`
+  // y `scheduleDraftSave` son idempotentes, así que oírlo dos veces no cuesta nada.
+  ["change", "input"].forEach(function (evento) {
+    fieldDireccionObra.select.addEventListener(evento, function () {
+      refrescarDireccionObra();
+      renderPreview();
+      scheduleDraftSave();
+    });
+  });
+  direccionObraInput.addEventListener("input", function () {
+    renderPreview();
+    scheduleDraftSave();
+  });
+  refrescarDireccionObra();
   descCheck.addEventListener("change", renderPreview);
   paymentSelect.addEventListener("change", function () {
     // SCRUM-27: el editor de tramos solo se ve en "Personalizado"; arranca con 1 fila.
@@ -3372,8 +3874,6 @@ if (Number.isFinite(n) && n >= 0) {
     renderPreview();
     scheduleDraftSave();
   });
-
-
   // SCRUM-660 · se escuchan LOS DOS eventos a propósito. Al elegir en un `<select>` el navegador
   // dispara `change`, y los actuales disparan además `input`; quedarse sólo con `input` dejaba
   // algo que decide el IVA de las líneas siguientes colgando de un detalle del navegador.
@@ -3509,6 +4009,12 @@ payloadLines.push(lineaParaPayload({
       submitBtn.textContent = "Generando…";
 
       // 1) Crear el presupuesto en DRAFT (esto ya genera el PDF en el back)
+      // SCRUM-602 (DOC-12) · la regla de qué viaja vive en la pieza PURA; aquí sólo se reparte
+      // en las dos claves, para que el censo del envío las vea (ver el comentario de abajo).
+      const direccionDeLaObra = window.quoteDireccionObra.direccionParaPayload(
+        fieldDireccionObra.select.value,
+        direccionObraInput.value,
+      );
       const quotePayload = {
         merchant_id: currentMerchant.id,
         customer_id: Number(customerId),
@@ -3525,6 +4031,20 @@ payloadLines.push(lineaParaPayload({
           const v = parseFloat(String(descuentoGlobalInput.value || "").replace(",", "."));
           return Number.isFinite(v) && v > 0 ? v : null;
         }()),
+        // SCRUM-602 (DOC-12) · la dirección de la obra. El modo viaja SIEMPRE (la columna dice
+        // lo que el formulario dijo; `null` queda para los presupuestos anteriores al control) y
+        // el texto SÓLO con «Personalizada», para no dejar una dirección fantasma que el
+        // documento no imprime. La regla vive en la pieza pura, no aquí.
+        //
+        // 🔴 LAS DOS CLAVES SE ESCRIBEN A MANO, Y NO CON UN `...spread` DE LA PIEZA PURA. Se probó
+        // con spread y la tanda SIGUIÓ VERDE: el censo de SCRUM-286 deriva lo que viaja de las
+        // PROPIEDADES del literal, así que un spread esconde las claves y el guard que existe para
+        // cazar «un campo nuevo que nadie coloca» no las ve. Dos campos nuevos entrando sin que
+        // ningún guard los mire es exactamente el fallo mudo que ese censo vino a impedir. (Hoy,
+        // con los dos campos ya registrados en la asignación de bloques, el spread cae además por
+        // «un campo asignado que ya no viaja»; pero un campo nuevo nace SIN registrar.)
+        shippingAddressMode: direccionDeLaObra.shippingAddressMode,
+        shippingAddress: direccionDeLaObra.shippingAddress,
         created_via: quoteFormCreatedVia, // VZ-3: 'voice' si hubo dictado
         // A16.2: caducidad elegida (fin del día local); omitida = 30d en server
         validUntil: validInput.value ? new Date(validInput.value + "T23:59:59").toISOString() : undefined,

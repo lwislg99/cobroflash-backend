@@ -363,3 +363,92 @@ antes**— · los 41 anclajes por línea de SCRUM-710.
 * El valor por defecto del campo se calcula en `quotesView.js` con `Date.now() + 30*86400000` y `toISOString()`, así que en los cambios de hora y en horas locales tempranas puede dar **un día distinto** que el atajo de 30 — ya está declarado en la cabecera del módulo y sigue sin unificar.
 * `atajoPorDebajoDelMinimo` está construido, probado y **no lo llama nadie**: es un mecanismo sin superficie, y el propio comentario dice que existe «por si algún día se añade un atajo de 0 días».
 * El `expiresAt @map("vencimiento")` de `Charge` usa el mismo nombre de columna que tendría un vencimiento de factura, así que quien busque «vencimiento» en el esquema lo encuentra y puede creer que la factura ya lo tiene.
+
+---
+
+# APÉNDICE · 5-sep-2026 — la medición que abrió SCRUM-750
+
+**Medido contra:** `origin/main` = `28b045855d9a68f12906f218bfe78fa5e0472433` · 2026-09-05T02:23:31+01:00
+
+> Este apéndice **no entrega nada**: es la medición que se hizo al recibir SCRUM-605 por tercera
+> vez, ya mergeado. El arreglo que salió de ella tiene ticket propio y vive en
+> `docs/master/SCRUM-750.md`.
+
+## 1 · El ticket ya estaba en `main`, y el tablero decía que no
+
+| rama | tip | fecha | ¿ancestra de `origin/main`? |
+|---|---|---|---|
+| `scrum-605-vencimiento-con-atajos` | `e967b753` | 1-sep | **sí** (PR #876) |
+| `scrum-605-atajos-vencimiento` | `7f695c75` | 4-sep | **sí** (PR #1012) |
+
+Y no hizo falta creerlo a ojo: el motor que ya existe —`censarTicket(605)` de
+`tests/_censo-tickets.mjs`, con la enumeración de SCRUM-738— devuelve **`PARCIAL`** con
+`porque: "la entrega declara mecanismo sin conectar («no lo llama nadie»)"`. Su suelo
+(`comprobarSuelo()`) devuelve `[]` antes de creerse el veredicto.
+
+## 2 · 🔴 EL ATAJO Y EL VALOR POR DEFECTO NO CALCULABAN EN EL MISMO CALENDARIO
+
+Es lo que quedó al cruzarse este ticket con SCRUM-633, y **no** era el hueco declarado de ③.
+
+| | quién lo calculaba | zona | aritmética |
+|---|---|---|---|
+| valor por defecto y `min` | `quoteCaducidad.diaPorDefecto` (633) | del **MERCHANT** | `+N*86400000` ms |
+| los tres atajos | `quoteAtajosVencimiento.fechaDeAtajo` (605) | del **NAVEGADOR** | `+N` días de calendario |
+
+**17.520 instantes de 2026** (uno cada 30 min), merchant en `Europe/Madrid`:
+
+| zona del navegador | +7 | +14 | +30 | % de 17.520 |
+|---|---|---|---|---|
+| `Europe/Madrid` (el pro en su sitio) | 28 | 56 | 120 | 0,2 / 0,3 / 0,7 % |
+| `Europe/London` | 730 | 730 | 730 | 4,2 % |
+| `UTC` | 1.150 | 1.150 | 1.150 | 6,6 % |
+| `America/New_York` | 4.324 | 4.324 | 4.324 | 24,7 % |
+| `Pacific/Auckland` | 7.990 | 7.990 | 7.990 | 45,6 % |
+
+**Las dos causas, separadas.** Con el navegador EN la zona del merchant, aislar sólo la aritmética
+da **exactamente** los mismos 28/56/120: ahí la causa de zona ya no existía y lo único que
+sobrevivía era sumar 24 h fijas contra sumar días de calendario.
+
+**Antes / después de SCRUM-633**, atajo contra valor por defecto:
+
+| navegador | antes de 633 | después de 633 |
+|---|---|---|
+| `Europe/Madrid` | 1.150 | **28 / 56 / 120** ✅ mejoró |
+| `America/New_York` | 3.174 | **4.324** 🔴 **empeoró** |
+
+> 🔴 Queda escrito aunque señale a la entrega anterior: SCRUM-633 arregló el caso mayoritario y
+> **separó más** el del empleado que viaja. Es coherente —el valor por defecto pasó a ser correcto
+> y el atajo se quedó donde estaba—, pero no fue «sin efecto» y no debe leerse así.
+
+**Controles del instrumento.** Negativo: con una zona inexistente (`Marte/Olympus`) se declara
+CIEGO y sale con estado 2 sin publicar número. Positivo: da números distintos por zona, luego lee
+la zona. Y una trampa medida en esta máquina: **`TZ=X node …`, `export TZ=X` y `env TZ=X` NO
+llegan a `process.env.TZ`** en Git Bash sobre Windows — la primera pasada dio tres veces el mismo
+número con tres etiquetas distintas. La zona se fija con `process.env.TZ` DENTRO del proceso,
+antes de tocar `Date`.
+
+## 3 · El hueco declarado de 633 no cubría esto
+
+`tests/scrum633-caducidad-en-la-zona.test.mjs` fija el hueco de **③** (el instante que se guarda)
+y afirmaba, sobre ①: *«① ya depende del dispositivo, y no debería»*. Era cierto de lo que mide
+—`cadena()` llama a `diaPorDefecto`—, pero **① tenía DOS escritores** y el otro eran los atajos.
+No era afirmación falsa: era un hueco de cobertura con un mensaje que se leía como general. El
+rótulo se corrigió en SCRUM-750 y el otro escritor pasó a estar cubierto.
+
+## 4 · Un comentario CADUCO en `quoteAtajosVencimiento.js`
+
+Su cabecera afirmaba que el valor por defecto «se calcula hoy así»:
+`new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10)`. Esa expresión **ya no existía**
+en `quotesView.js` —SCRUM-633 la sustituyó— y el guard del 605 tampoco la vigilaba: desde la
+enmienda de 633 fija los DÍAS (+30, +1), no la expresión. Reescrito en SCRUM-750.
+
+## 5 · Lo que sigue sin construir de este ticket
+
+1. **La FACTURA no tiene vencimiento.** `Invoice` no tiene columna: sus fechas son `paidAt`,
+   `reminder7SentAt` y `reminder14SentAt`. El `expiresAt @map("vencimiento")` es de **`Charge`**.
+   El diff aditivo está descrito en §2 de esta entrada y **no aplicado**: el esquema es del
+   fundador, y persistirlo tocaría `validarFacturaSuelta` y `emitInvoice` — camino de emisión
+   (reglas 29/38).
+2. **El nombre accesible sigue construido y sin cablear.** `quotesView.js` pone
+   `aria-label = rotulo` («7 días»), no el literal firmado «Válido hasta dentro de 7 días».
+3. **La microcopy la firmó el ASESOR el 4-sep, no el fundador.**

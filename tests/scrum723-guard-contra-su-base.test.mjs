@@ -279,10 +279,44 @@ const HALLAZGOS_DECLARADOS = [
 
 /** Ficheros que llaman a git y nombran la referencia móvil FUERA de los argumentos. */
 const INDIRECTAS_DECLARADAS = [
+  // SCRUM-738 · el censo del tablero contra el árbol. Su pregunta es sobre la PUNTA de `main` —
+  // «¿qué tickets tienen ya trabajo suyo AHÍ?»— así que la referencia móvil es el sujeto, no un
+  // descuido: contra la base de una rama respondería sobre un pasado que a nadie le sirve. La
+  // nombra al listar `refs/remotes/origin/` y al explicar el motor que consulta.
+  'scripts/censo-tablero-vs-arbol.mjs',
   'scripts/censo-reparto.mjs',   // el mensaje de error del CLI de arriba
+  // SCRUM-810 · el suelo de la vigilancia. Nombra `origin/main` en una constante y en la prosa,
+  // pero NO compara contra su punta: compara contra la BASE DE FUSIÓN, que es lo que este mismo
+  // guard defiende. Lo aprendió a golpes — su control positivo salió ROJO por comparar contra la
+  // punta, porque la rama iba por detrás y «había perdido» algo que nunca tuvo.
+  'scripts/_suelo-contra-main.mjs',
+  // …y su guard, que la nombra en la prosa que explica POR QUÉ la base y no la punta, y en el
+  // motivo literal del salto que SCRUM-456 le exige («sin origin/main en este clon»).
+  'tests/scrum810-el-suelo-a-la-primera.test.mjs',
   'tests/_censo-eol.mjs',        // la lista de referencias que `merge-base` prueba: es la SOLUCIÓN
   'tests/_censo-tickets.mjs',    // recibe la referencia por parámetro (`ref = 'origin/main'`)
   'tests/scrum723-guard-contra-su-base.test.mjs',  // los mensajes y los comentarios de aquí mismo
+  // SCRUM-775 · el guard del suelo decorativo. NO llama a git contra la referencia móvil: la
+  // NOMBRA en la prosa que explica por qué NO la usa, y dentro del fragmento congelado del caso
+  // roto —donde `ref = 'origin/main'` es el valor por defecto que tenía el original—.
+  //
+  // Y el camino hasta aquí lo puso ESTE censo: la primera versión sí leía
+  // `git cat-file -p origin/main:…` para traerse el fichero de antes del arreglo, y lo tumbó como
+  // llamada DIRECTA. Tenía razón por partida doble: el día que este ticket entre en `main` el caso
+  // roto deja de estar ahí y el control se apagaría solo. El caso se congeló en un literal.
+  'tests/scrum775-suelo-que-no-dispara.test.mjs',
+  // SCRUM-753 · el censo de ALCANZABILIDAD. Aquí la referencia móvil no es un descuido: es el
+  // sujeto de la pregunta —«¿está esto DENTRO de la punta de `main`?»— y contra la base de una
+  // rama contestaría sobre un pasado que no le sirve a nadie. Lo que sí hace, y es lo que este
+  // guard quiere ver, es RESOLVERLA UNA VEZ (`rev-parse`) y medir contra el sha congelado: el
+  // nombre aparece como valor por defecto del parámetro `ref` y en la prosa que explica por qué
+  // se congela, nunca como argumento de una comparación.
+  // ⚠️ El CLI (`scripts/censo-alcanzabilidad.mjs`) NO entra: se le declaró de más al primer
+  // intento y este guard lo rechazó. No nombra la referencia por su cuenta — la recibe ya
+  // resuelta en la instantánea—, y una lista que declara de más deja de describir el árbol.
+  'scripts/_censo-alcanzabilidad.mjs',
+  'tests/_fixture-alcanzabilidad.mjs',             // el `origin/main` del repo SINTÉTICO, que no es el de nadie
+  'tests/scrum753-censo-de-alcanzabilidad.test.mjs',  // los mensajes que explican la regla R10
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {

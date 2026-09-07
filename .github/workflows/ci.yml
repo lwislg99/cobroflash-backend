@@ -337,6 +337,104 @@ jobs:
         run: npm run guards:visuales
 
   # ═══════════════════════════════════════════════════════════════════════════════════════════
+  # 🔴 SCRUM-745 · EL META-GUARD, EN CI · un aviso que nadie está obligado a mirar no es un guard
+  #
+  # Tres trinquetes escritos el mismo día nacieron MUDOS: comparaban por TEXTO, así que el
+  # `import` y el comentario que explica la regla mantenían viva la palabra y seguían VERDES sobre
+  # el defecto que venían a vigilar. Se leen perfectamente bien — ninguna revisión los habría
+  # cazado. A los tres los encontró inyectar el defecto a mano, o sea que dependía de que a alguien
+  # se le ocurriera. Esto lo ejecuta: cada guard DECLARA la mutación que tiene que tumbarlo
+  # (`MUTACIONES_QUE_ME_TUMBAN`) y aquí se aplica, se exige el ROJO y se restaura.
+  #
+  # ── 🔴 POR QUÉ JOB PROPIO, Y NO UN PASO MÁS ────────────────────────────────────────────────
+  # Porque ESTE guard MUTA FICHEROS DEL CHECKOUT. Compartir job con cualquier paso que lea el
+  # árbol es exactamente la carrera de SCRUM-740 —un barrido leyendo mientras otro escribe—, y la
+  # sabemos hoy porque la arreglamos hoy. Con checkout propio, lo que muta es suyo y de nadie más.
+  #
+  # ── Y POR QUÉ NO CUESTA RELOJ ──────────────────────────────────────────────────────────────
+  # Los jobs de un workflow corren EN PARALELO. Éste tarda unos segundos (medido: 4 s con las dos
+  # mutaciones declaradas hoy) frente a los varios minutos del job de tests.
+  #
+  # ⚠️ SIN SECRETOS: no toca ninguna base. Muta ficheros de `tests/` y corre `node --test` sobre
+  #    el guard que declara, nada más.
+  #
+  # CÓDIGOS: 1 algún guard MUDO (falla el job) · 2 no supo medir (ciego, también falla) · 3 no
+  # pudo restaurar un fichero. El 3 es el grave y lo grita: hay que mirar el árbol a mano.
+  meta-mutaciones:
+    name: meta-guard · los guards caen cuando deben
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      # ── SCRUM-765 · ESTE JOB CORRE LOS MISMOS GUARDS QUE LA TANDA, Y NECESITA SU MISMO ÁRBOL ──
+      #
+      # 🔴 Aquí había un `checkout` DESNUDO mientras el job de la tanda lleva `fetch-depth: 0` desde
+      # SCRUM-388. El meta-guard ejecuta esos mismos ficheros de guard uno a uno, así que un guard
+      # que necesita el repositorio entero se cae aquí y no allí — y este instrumento, desde
+      # SCRUM-748, ya no lo llama MUDO: se declara CIEGO y saca el job con 2. Eso es lo que pasó
+      # con `scrum738`, y el veredicto era correcto: no había medido nada.
+      #
+      # MEDIDO el 6-sep-2026 reproduciendo las formas de checkout en clones locales y llamando a
+      # `censarTicket(684)`, que es lo que ese guard comprueba:
+      #
+      #     forma del clon                                veredicto    colisión   scrum738
+      #     ─────────────────────────────────────────────────────────────────────────────
+      #     repositorio entero                            NO_MEDIBLE   683        PASA
+      #     superficial (checkout por defecto)            NO_MEDIBLE   AUSENTE    FALLA
+      #     superficial + `main`                          NO_MEDIBLE   AUSENTE    FALLA
+      #     historia completa, UNA ref (fetch-depth: 0)   NADA         AUSENTE    FALLA
+      #     historia completa, UNA ref + `main`           NO_MEDIBLE   683        PASA
+      #
+      # Hacen falta LAS DOS COSAS y ninguna basta sola: historia completa Y la ref `origin/main`.
+      # Por eso van las dos líneas — la segunda es la misma que SCRUM-716b tuvo que añadirle al
+      # vigía, y por el mismo motivo medido: en un `pull_request`, `fetch-depth: 0` trae una sola
+      # ref y `origin/main` no resuelve.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Traer `main` (el censo de tickets lo consulta)
+        run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - run: npm ci
+
+      # 🔴 AQUÍ HUBO UNA GARANTÍA ESCRITA SIN PROVOCAR EL CASO, Y SALIÓ MAL. Queda escrita porque
+      # es lo que originó la regla 13 de la casa.
+      #
+      # Decía: «No hace falta `npm run build`: ninguna mutación declarada hoy toca un guard que
+      # importe de `dist/`. El día que una lo haga, este paso tendrá que compilar — y se enterará
+      # por el rojo, no por sorpresa: ese guard saldría CIEGO, no verde».
+      #
+      # Pasó al día siguiente, con `scrum748`. Y el síntoma NO fue el predicho: salió **MUDO** —la
+      # acusación de «pasa en verde sobre el defecto que dice vigilar»— sobre un guard SANO. La
+      # predicción era razonable y era falsa, y lo era por escribirse sin provocar el caso.
+      # Provocarlo costaba un `mv dist dist_`.
+      #
+      # Se arreglaron las dos mitades: el meta-guard discrimina por LÍNEA BASE (si el test no sale
+      # en verde limpio es CIEGO, y ni se muta), y este paso COMPILA.
+      #
+      # ── POR QUÉ COMPILAR AQUÍ Y NO REUTILIZAR EL BUILD DE OTRO JOB ─────────────────────────
+      # MEDIDO: el job cuesta ~8 s y `npm run build` en frío ~21 s. Dos jobs de este workflow ya
+      # construyen (`test` y `guards-visuales`), pero reutilizar su salida exige
+      # `upload-artifact`/`download-artifact` **y un `needs:`** — y eso SERIALIZA lo que hoy corre
+      # en paralelo: el PR esperaría MÁS, no menos, por ahorrar 21 s en un job que ya convive con
+      # otro de varios minutos. Se compila y ya está.
+      #
+      # ⚠️ Y NO se acota a `scrum748`. Hay CINCO ficheros que llaman a `cargarDashboard` en el top
+      # level —`scrum443`, `scrum641`, `scrum739`, `scrum743`, `scrum748`— y mueren enteros sin
+      # `dist/`; otros 30 lo hacen dentro de un test y sólo pierden ese test. Compilar los cubre a
+      # los treinta y cinco por construcción, hoy y el día que declaren mutaciones.
+      - name: Compilar (tsc)
+        run: npm run build
+
+      - name: Cada guard cae con la mutación que declara
+        run: npm run meta:mutaciones
+
+  # ═══════════════════════════════════════════════════════════════════════════════════════════
   # 🔴 SCRUM-677 · EL VIGÍA DEL DESPLIEGUE, EN EL PR · INFORMATIVO, NUNCA BLOQUEANTE
   #
   # Producción estuvo NUEVE DÍAS sin desplegar y nadie se enteró: cuando un despliegue falla el

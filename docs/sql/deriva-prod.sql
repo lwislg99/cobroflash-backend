@@ -24,7 +24,7 @@
 -- ajenas ni valores de enum. Y no reporta columnas de MÁS en la base: que la base vaya por
 -- delante del código es el orden seguro de un cambio aditivo, no un problema.
 --
--- Columnas esperadas: 420. Tablas: 27.
+-- Columnas esperadas: 426. Tablas: 27.
 
 WITH esperado (tabla, columna) AS (
   VALUES
@@ -56,6 +56,7 @@ WITH esperado (tabla, columna) AS (
     ('albaranes','modo_valoracion'),
     ('albaranes','notas'),
     ('albaranes','numero'),
+    ('albaranes','ocultar_precios_en_documento'),
     ('albaranes','pdf_url'),
     ('albaranes','signature_url'),
     ('albaranes','updated_at'),
@@ -127,6 +128,7 @@ WITH esperado (tabla, columna) AS (
     ('customers','billing_province'),
     ('customers','contact_kind'),
     ('customers','created_at'),
+    ('customers','dto_por_defecto'),
     ('customers','email'),
     ('customers','id'),
     ('customers','internal_ref'),
@@ -200,6 +202,8 @@ WITH esperado (tabla, columna) AS (
     ('invoices','registerId'),
     ('invoices','reminder_14_sent_at'),
     ('invoices','reminder_7_sent_at'),
+    ('invoices','shipping_address'),
+    ('invoices','shipping_address_mode'),
     ('invoices','stage_label'),
     ('invoices','status'),
     ('invoices','suplidos'),
@@ -415,6 +419,8 @@ WITH esperado (tabla, columna) AS (
     ('quotes','reminderSentAt'),
     ('quotes','revision'),
     ('quotes','selectedTierId'),
+    ('quotes','shipping_address'),
+    ('quotes','shipping_address_mode'),
     ('quotes','signatureUrl'),
     ('quotes','status'),
     ('quotes','team_member_id'),

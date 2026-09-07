@@ -61,6 +61,23 @@ test('SCRUM-286 · SUELO: el derivador ve los bloques y los controles', () => {
 });
 
 test('SCRUM-286 · SUELO: el censo del ENVÍO sigue encontrando lo que viaja', () => {
+  // 🔴 SCRUM-587 (4-sep-2026) · EL CENSO DECLARA LO QUE NO SUPO LEER, Y ESO TUMBA EL GUARD.
+  //
+  // Medido sobre el árbol de hoy: metiendo `...({ campoFantasma: 1 })` en `quotePayload`, este
+  // guard seguía **VERDE** — `nombreDePropiedad` devuelve `null` para un spread y el bucle lo
+  // saltaba en silencio. Un campo que viaja al servidor sin estar colocado en ningún bloque es
+  // justo lo que este censo existe para cazar, y por esa puerta pasaban todos.
+  //
+  // Ahora un `...({…})` LITERAL se lee (sus claves entran en el censo como cualquier otra) y un
+  // `...variable` OPACO se DECLARA aquí. No se intenta resolver la variable: seguirla a través de
+  // asignaciones es adivinar, y un censo que adivina miente mejor que uno que calla.
+  assert.deepEqual(R.envioOpaco, [],
+    '🔴 EL CENSO NO HA PODIDO LEER PARTE DE `quotePayload`:\n    '
+    + R.envioOpaco.join('\n    ')
+    + '\n\n  Lo que venga después es una afirmación sobre un objeto que NO es el que crees: los\n'
+    + '  campos que entren por ahí viajan al servidor sin que nadie compruebe en qué bloque\n'
+    + '  viven. Se arregla escribiendo las claves en el literal, no bajando la exigencia.');
+
   assert.ok(R.clavesDeEnvio.length >= 10,
     `🔴 solo ${R.clavesDeEnvio.length} campos en el envío (esperados ≥10). Sin esto, «0 campos ` +
     'perdidos» significaría «no supe mirar».');
@@ -159,8 +176,22 @@ test('SCRUM-286 · todo título de bloque sale con el marcador de microcopy pend
   // La comprobación de que la FÁBRICA usaba el marcador oficial se retira: la fábrica ya no existe
   // porque los cuatro títulos están aprobados. Lo que la sustituye es la igualdad de arriba, que es
   // más fuerte — antes bastaba con pasar por la fábrica, ahora el texto tiene que ser EL que es.
-  assert.ok(!FUENTE.includes('[PENDIENTE microcopy oficial]'),
-    '🔴 ha vuelto un marcador a los títulos del formulario: o hay un bloque nuevo sin aprobar, o se ' +
+  // 🔴 SCRUM-587 (4-sep-2026) · ESTA COMPROBACIÓN SE ESTRECHA A LO QUE DICE PROTEGER, Y HAY QUE
+  // LEER POR QUÉ ANTES DE DARLO POR UNA RELAJACIÓN.
+  //
+  // Miraba `FUENTE` ENTERA —todo `quotesView.js`— para defender una propiedad de CUATRO TÍTULOS.
+  // Mientras el único sitio del fichero con marcadores fueron los títulos, las dos cosas
+  // coincidían; en cuanto otro ticket pinta un marcador LEGÍTIMO en otra parte de la pantalla,
+  // este guard se pone rojo acusando a los títulos de algo que no ha pasado. Un rojo que nombra
+  // el sitio equivocado se arregla apagándolo, y entonces sí se pierde de verdad.
+  //
+  // ⚠️ NO ES ENSEÑARLE A NO VER (que sería añadirle una excepción por fichero o por literal): es
+  // que su sujeto son los títulos, y ahora los mira A ELLOS. La cobertura de TODO el fichero no
+  // se pierde — la hace mejor el censo de SCRUM-402, que cuenta marcadores POR FICHERO con
+  // trinquete: `quotesView.js` está allí con 2, y un tercero salta.
+  const conMarcador = bloques.filter((b) => String(b.titulo || '').includes('[PENDIENTE'));
+  assert.deepEqual(conMarcador.map((b) => b.nombre), [],
+    '🔴 ha vuelto un marcador a los TÍTULOS del formulario: o hay un bloque nuevo sin aprobar, o se ' +
     'ha reintroducido la fábrica. Si es un bloque nuevo, su rótulo va al censo de SCRUM-402.');
 });
 

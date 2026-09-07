@@ -164,6 +164,10 @@ function renderProvidersView(container) {
 
     function openProviderEditModal(it) {
       if (!editProviderOverlay) editProviderOverlay = buildProviderEditModal();
+      // SCRUM-785 · al cerrarse se DESCUELGA del `body` (ver `closeProviderEditModal`), así que al
+      // reabrir hay que volver a colgarlo. Se reengancha el MISMO nodo: sus campos y sus oyentes
+      // siguen cableados desde `buildProviderEditModal`, que sólo corre una vez.
+      else if (!editProviderOverlay.parentNode) document.body.appendChild(editProviderOverlay);
       _editingProvider = { merchantId: _merchantId, id: it.id };
 
       const body = editProviderOverlay.querySelector('.modal-body');
@@ -177,7 +181,16 @@ function renderProvidersView(container) {
     }
 
     function closeProviderEditModal() {
-      if (editProviderOverlay) editProviderOverlay.style.display = 'none';
+      if (editProviderOverlay) {
+        editProviderOverlay.style.display = 'none';
+        // 🔴 SCRUM-785 · Y SE DESCUELGA DEL BODY, por lo mismo que en Productos: un overlay
+        // escondido pero PRESENTE dispara `body:has(.modal-overlay) #tut-help-btn`, que es una
+        // regla ESTRUCTURAL, y apaga el botón flotante de ayuda para el resto de la sesión.
+        // Medido en Edge, con su control positivo (al borrarlo, vuelve).
+        //
+        // ⚠️ SE DESCUELGA, NO SE DESTRUYE: `openProviderEditModal` reutiliza este mismo nodo.
+        if (typeof editProviderOverlay.remove === 'function') editProviderOverlay.remove();
+      }
       _editingProvider = null;
     }
   
@@ -220,6 +233,24 @@ function renderProvidersView(container) {
     const phoneI = form.querySelector('input[name="phone"]');
     const emailI = form.querySelector('input[name="email"]');
     const notesI = form.querySelector('input[name="notes"]');
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    // 🔴 ESTA PANTALLA **NO** LLEVA EL ATAJO «N», Y NO ES UN HUECO. Decisión del fundador,
+    // 6-sep-2026 (SCRUM-769), con estas palabras:
+    //
+    //     «Colgar N de un botón que confirma es atar una tecla a un guardado. N abre, no guarda.»
+    //
+    // El motivo, medido antes de decidirlo: aquí NO hay un botón que ABRA un alta. El formulario
+    // está SIEMPRE visible —bajo el título «Nuevo proveedor», unas líneas más arriba— y este botón
+    // es su ENVÍO: lee los campos y crea; sin nombre devuelve `name_required`.
+    // `atajoNuevo.registrar` ata la tecla a `boton.click()`, así que la «N» intentaría crear con el
+    // formulario a medias.
+    //
+    // Por lo mismo, su RÓTULO tampoco se toca: dejaría el mismo texto dos veces en la misma
+    // tarjeta —título del bloque y botón— y además diría «abrir» donde se confirma.
+    //
+    // ⛔ Si vienes a «arreglar el hueco»: no lo es. Lo que haría falta primero es un botón que
+    //    abra el alta; entonces el atajo tendría a qué colgarse. Ver `docs/master/SCRUM-769.md`.
+    // ═══════════════════════════════════════════════════════════════════════════════════════
     const createBtn = form.querySelector("#pf-create-provider");
   
     const tableWrap = document.createElement("div");

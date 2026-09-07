@@ -918,3 +918,192 @@ dejaban de casar. **Es el mismo defecto de SCRUM-640 en la otra dirección**, y 
   en un diff. Entra en su propio paso, encima de este código.
 * **El IGIC (SCRUM-646) no se construye**, y la primitiva **no lo aprende**: hay un test que cae
   si alguien le añade un export fiscal.
+
+---
+
+# APÉNDICE · El censo que faltaba: el CAMINO DE EMISIÓN se quedó fuera del arreglo
+
+**Medido contra:** `origin/main` = `93ceed21f7fb5d0bebb0a09f37cce84c170e520e` · 2026-09-04T21:45:00+02:00
+
+> ⚠️ Esa hora es la del trabajo de esta rama, no una lectura de reloj — criterio R14.
+
+**Alcance: MEDIR Y PARAR.** No se arregla nada. No se toca `prisma/schema.prisma`, ni
+`emitInvoice`, ni ningún `invoice.create`, ni una sola línea de producción. Lo único que se
+construye es un test de **caracterización** que afirma el comportamiento de HOY.
+
+**Por qué se para aquí y no se arregla:** el valor de `formatFechaHoraHuso` entra en la **huella
+SHA-256** del registro de facturación y se remite a la AEAT en `FechaHoraHusoGenRegistro`
+(`verifactu.service.ts:766` y `:836`). Tocarlo es **STOP del fundador** (AA1.4), y **una factura
+emitida no se edita ni se borra** (regla 29). Leer ese camino no es STOP; modificarlo sí
+(regla 38) — así que se lee, se mide, se deja atado y se para.
+
+---
+
+## 0 · Lo primero: este ticket YA ESTABA ENTREGADO, y conviene que quede escrito
+
+La sesión se abrió como «SCRUM-643 fase A: medir y proponer». **No lo era.** Comprobado con la
+prueba dura, no con el estado de un tablero (R2): las **nueve** commits de SCRUM-643 son
+ancestros de `origin/main` (`git merge-base --is-ancestor`), y quedan **dos ramas remotas** del
+mismo número, las dos ya mezcladas:
+
+| Rama remota | Punta | ¿en `origin/main`? |
+|---|---|---|
+| `scrum-643-periodificacion-emitida` | `fc62dccb` | sí |
+| `scrum-643-zona-fiscal-merchant` | `1bdac348` | sí |
+
+Las fases ①, ② y ③ están hechas: `Merchant.timezone` en el esquema, `src/core/zonaDelMerchant.ts`
+como sitio único, y los cuatro cálculos cableados. **Repetir la fase A habría sido el quinto
+duplicado.** Lo que sigue es lo único que esa fase dejó sin mirar.
+
+## 1 · El censo, rehecho por AST y con el suelo delante
+
+La fase ① censó **tres** sitios. Se rehace sobre el árbol de hoy, **por AST y no por `grep`**
+(SCRUM-203), para no contar la palabra dentro de un comentario ni de una cadena.
+
+**SUELO, primero.** El detector se prueba contra un cebo con seis casos: debe contar
+`getFullYear`, `getMonth` y `toLocaleDateString`, y **no** contar `getUTCFullYear`, un
+`toLocaleDateString` **con** `timeZone`, la palabra dentro de un comentario ni dentro de una
+cadena. **3 de 3 contados, 4 de 4 ignorados.** Sin ese verde el censo aborta: un cero de un
+detector ciego no es un cero.
+
+| Población | Ficheros | Ocurrencias | Ficheros afectados |
+|---|---|---|---|
+| `src/**/*.ts` (servidor) | **266** | **89** | **31** |
+| `public/**/*.js` (navegador) | **82** | **62** | **25** |
+
+**Los cuatro que la fase ③ arregló salen limpios**, verificado de forma independiente: cero
+ocurrencias en `albaran.service.ts`, `pendientesFacturar.service.ts` y
+`consolidacionCliente.service.ts`, y los tres importan la primitiva. **El arreglo está donde dice
+que está.**
+
+### Lo que el navegador NO es
+
+Las 62 del navegador **no son el mismo defecto**: ahí el reloj de la máquina **es** el del
+profesional, que está en España. Se listan como contexto, no como hallazgo.
+
+## 2 · 🔴 Lo que el censo destapa: tres capas que la fase ③ no miró
+
+De las 89 del servidor, **23 derivan un día, un mes o un AÑO con consecuencia fiscal**. El resto
+(66) es presentación, informes y el año del pie de página.
+
+### A · El sello y la fecha del registro de facturación — 17 ocurrencias, 4 ficheros
+
+| Sitio | Qué deriva del reloj del proceso | Dónde acaba |
+|---|---|---|
+| `verifactu.service.ts:65` `formatFechaHoraHuso` | año, mes, día, hora **y el huso** (`getTimezoneOffset`) | la **huella SHA-256** y `FechaHoraHusoGenRegistro` del XML |
+| `verifactu.service.ts:56` `formatDateES` | el día, en `DD-MM-YYYY` | `FechaExpedicionFactura` del XML |
+| `invoiceNumber.service.ts:87` `makeReceiptNumber` | el día del justificante `J-YYYYMMDD` | la referencia que ve el cliente |
+| `invoiceNumber.service.ts:282` · `albaranNumber.service.ts:115` · `quoteNumber.service.ts:77,100` | el **año de la serie** | la numeración correlativa |
+
+Llamadores **comprobados, no supuestos** (mencionar no es hacer): `formatFechaHoraHuso` se llama
+en `:325`, `:409`, `:766` y `:836`; `formatDateES` en siete sitios, cinco de ellos dentro del XML.
+
+### B · El periodo fiscal por defecto — 5 ocurrencias, 3 ficheros
+
+`modelo303.routes.ts:20,24` y `fiscal/evidencias/evidencias.routes.ts:17,18` resuelven el
+**trimestre en curso** con `ahora.getMonth()`. En la madrugada del 1-abr, 1-jul, 1-oct o 1-ene
+hora española, el trimestre por defecto es **el anterior**.
+
+`core/validation/fiscalInput.ts:52` toma `ahora.getFullYear()` como **año máximo aceptado**: en la
+madrugada del 1 de enero, pedir el ejercicio en curso se rechazaría con *«es un año futuro»*.
+
+### C · La ventana de «hoy» — 1 ocurrencia
+
+`billing/domain/fechaDeCobro.ts:61` construye el fin de hoy con `setHours(23,59,59,999)` sobre el
+reloj del proceso: una fecha de cobro del día en curso español puede leerse como **futura**.
+
+## 3 · Medido, no opinado
+
+Llamando a las funciones **ya exportadas** desde `dist/` — leer el camino de emisión, sin tocarlo.
+Instante `2026-03-31T23:30:00Z`, que en la península es el **1 de abril a las 00:30**:
+
+| `TZ` del proceso | `formatFechaHoraHuso` | Día que declara | Día real allí |
+|---|---|---|---|
+| **`UTC` (como Railway)** | `2026-03-31T23:30:00+00:00` | 🔴 **2026-03-31** | 2026-04-01 |
+| `Europe/Madrid` | `2026-04-01T01:30:00+02:00` | 2026-04-01 | 2026-04-01 |
+| `Atlantic/Canary` | `2026-04-01T00:30:00+01:00` | 2026-04-01 | 2026-04-01 |
+
+Instante `2026-12-31T23:30:00Z` — el salto de **ejercicio**:
+
+| `TZ` del proceso | `makeReceiptNumber` | Año que declara | Año real allí |
+|---|---|---|---|
+| **`UTC` (como Railway)** | `J-20261231-…` | 🔴 **2026** | 2027 (península) |
+| `Europe/Madrid` | `J-20270101-…` | 2027 | 2027 |
+| `Atlantic/Canary` | `J-20261231-…` | **2026** | **2026** ✅ |
+
+### 🔴 La fila de Canarias es el control negativo, y desmonta el arreglo fácil
+
+Canarias va en **UTC+0 en invierno**: a las 23:30Z del 31-dic allí **todavía es 2026**. Ese
+resultado, idéntico al «equivocado» de Railway, es el **correcto** para un merchant canario.
+Luego el arreglo **no es fijar `Europe/Madrid`**: eso sería el error de este mismo ticket con el
+signo cambiado, y ya está dicho en §5-bis. La zona tiene que ser **la del merchant** —
+`zonaDelMerchant`, la pieza que ya existe y que estas funciones **todavía no reciben**.
+
+## 4 · Lo que se construye, y es todo
+
+`tests/scrum643-huso-del-sello-fiscal.test.mjs` — **5 tests, 5 verdes.** Caracterización: afirma
+el comportamiento de HOY para que el día que se arregle **se vea caer**. Su nombre dice que
+documenta un defecto vivo, no una promesa.
+
+**La zona se fija en un SUBPROCESO.** Cambiar `process.env.TZ` en caliente no reconfigura el ICU
+ya cargado, y el test mediría la máquina — el defecto de SCRUM-640 repetido en el instrumento. El
+arnés **afirma la zona efectiva del subproceso** antes de comparar, y esa comprobación existe
+porque **ya me pasó**: midiendo a mano, un `TZ=Europe/Madrid` que Git Bash convirtió en ruta
+arrancó en `Europe/London` y me dio un control negativo que no medía lo que decía.
+
+### Probado en ROJO, por el mecanismo
+
+| Mutación | Qué cae | Mensaje |
+|---|---|---|
+| firma `formatFechaHoraHuso(d, zona)` | **sólo** el trinquete | «ha cambiado de firma… el defecto está arreglado» |
+| el módulo importa `zonaDelMerchant` | **sólo** el trinquete | «ya importa la primitiva de zona» |
+| **el arreglo simulado** (sello en zona peninsular) | **4 de 5** | «este fichero entero sobra» |
+
+Y **dos mutaciones que NO produjeron rojo**, anotadas porque la primera hipótesis es *caso mal
+elegido*, no *test de sobra*: poner sólo el offset a cero, y pasar sólo la **fecha** a UTC
+dejando la hora local. En los dos casos UTC y Madrid seguían dando sellos distintos, así que el
+suelo tenía razón en no saltar.
+
+Los dos ficheros mutados quedaron **idénticos byte a byte** al original leído de disco antes de
+tocar nada — no al blob (lección de SCRUM-570). La mutación del arreglo se hizo sobre `dist/`,
+que es artefacto generado e ignorado por git.
+
+## 5 · La propuesta, sin código de producción
+
+**No hay concepto nuevo que decidir**: `Merchant.timezone` y `zonaDelMerchant()` ya existen y ya
+están en producción. Lo que falta es **dárselos a estas funciones**, y eso es exactamente lo que
+la fase ③ hizo con los otros cuatro cálculos.
+
+* **El ALTER que haría falta: NINGUNO.** Cero columnas nuevas. Recuento **antes: 421 columnas ·
+  después: 421 columnas**, medido con `node scripts/generar-sql-deriva.mjs` sobre el árbol de
+  esta rama. (El commit `1bdac348` decía 371: ese número **caducó** al avanzar `main`, y por eso
+  se vuelve a medir en vez de heredarlo — que es exactamente la lección que ese commit dejó
+  escrita. El propio script se negó a escribir con el cliente de Prisma atrasado.)
+* **Dónde vive la zona:** ya vive. `merchants.timezone`, `text`, `is_nullable=YES`,
+  `column_default=NULL`, aplicada en dev (5/5), staging (8/8) y producción (13/13).
+* **Qué pasa si falta o es ilegible:** `zonaDelMerchant()` ya cae a `UTC`, que es lo que el
+  sistema hace hoy. **Ninguna de estas funciones empeora respecto a hoy.**
+* **La forma:** `formatFechaHoraHuso(d, zona)` y `formatDateES(d, zona)` — el mismo cambio de
+  firma que la fase ③ le hizo a `fechaLimiteRecapitulativa`. `formatDateES` **no está exportada**
+  hoy, así que **exportarla ya sería modificar el camino de emisión**: eso es el STOP, no el
+  arreglo.
+
+### ⚠️ Y el límite que hay que no perder
+
+**Esto toca documentos EMITIDOS.** Cambiar cómo se sella una factura **no** reescribe las ya
+emitidas — la regla 29 lo impide, y no se propone tocarlas. Pero significa que **el corte tiene
+fecha**: los registros anteriores al arreglo llevan el huso de Railway y los posteriores el del
+merchant. **Eso lo decide el fundador, no esta rama.**
+
+**Urgencia, con el mismo marco de la fase ①:** en producción hay 13 merchants y **los 13 son de
+prueba**, e `INVOICING_ES_ENABLED` está OFF para merchants ES reales — así que **hoy no hay
+víctima en el registro VeriFactu**. Lo que **sí** está vivo hoy es la capa A sin flag: el
+justificante `J-` y las series anuales de albarán y presupuesto, que no dependen de ese flag.
+
+## 6 · Lo que NO se ha hecho
+
+* **No se arregla nada.** Ni el sello, ni las series, ni el trimestre, ni `fechaDeCobro`.
+* **No se exporta `formatDateES`**, que es el paso mínimo para poder testearla: sería tocar el
+  camino de emisión (regla 38), y por eso queda **declarada y sin cubrir**.
+* **No se abre ni se mueve ningún ticket de Jira** — lo lleva el asesor.
+* **Cero microcopy.** El censo de marcadores de SCRUM-402 no sube.

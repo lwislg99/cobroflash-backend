@@ -7,7 +7,7 @@
 // precondiciones. Todo lo demás de aquí sigue sin tocar facturación.
 // Tenancy SIEMPRE findFirst { id, merchantId } → 404 (regla 2). Editable hasta 'firmado'
 // (409 albaran_locked).
-import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-643
+import { zonaDelMerchant, diaExiste } from '../../../../core/zonaDelMerchant'; // SCRUM-643 · SCRUM-749
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { recordAudit, actorDeRequest, requestIp } from '../../../system/audit.service'; // SCRUM-207
@@ -34,6 +34,10 @@ import { puedeEditarEstaVersion } from '../../domain/albaranEdicion';
 import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-467
 import { fotoYaSubida } from '../../domain/fotoDuplicada'; // SCRUM-382: la misma foto no se guarda dos veces
 import { getPendientesFacturar } from '../../domain/pendientesFacturar.service'; // SCRUM-69
+// SCRUM-606 (ALB-01): el buscador de «Nuevo albarán». La búsqueda se REUTILIZA (no se reescribe)
+// y la regla de qué presupuesto puede ser origen vive en su módulo puro, con su porqué medido.
+import { listQuotesAdmin, TOPE_LISTADO_QUOTES } from '../../../system/quoteAdmin';
+import { filasParaElegirPresupuesto } from '../../domain/presupuestosParaAlbaran';
 // SCRUM-301 (C1): el listado global. Dominio puro + lector inyectable (la tenencia se ejercita).
 import { listarAlbaranesDelMerchant, type LectorListado } from '../../domain/albaranesListado';
 import {
@@ -59,6 +63,7 @@ import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
 import { emitirRecapitulativas } from '../../domain/recapitulativa.service'; // SCRUM-171a: emisión compartida con la vía de Job
 import { sellarTrasEmision, SELLADO_HECHO } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
+import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
 // SCRUM-290 (A0.4): el CRITERIO de qué se factura y a qué precio vive en funciones puras, no aquí.
 import {
   casarLineas, motivosParaNoEmitir, lineasParaFactura,
@@ -66,6 +71,8 @@ import {
 } from '../../domain/albaranAFactura';
 // SCRUM-195: el número del adicional se reserva DENTRO de su transacción, igual que el del alta.
 import { allocateQuoteNumber } from '../../../quotes/domain/quoteNumber.service';
+import { sePuedeCambiarOcultarPrecios } from '../../domain/albaranPrecios'; // SCRUM-607 (ALB-02)
+import { veredictoAlbaranSinPresupuesto } from '../../domain/albaranSinPresupuesto'; // SCRUM-684
 
 const router = Router();
 
@@ -199,6 +206,66 @@ router.get('/pendientes-facturar', async (req, res) => {
 });
 
 /**
+ * GET /admin/albaranes/presupuestos?q= — SCRUM-606 (ALB-01) · EL BUSCADOR DE «NUEVO ALBARÁN».
+ *
+ * SOLO LECTURA. Este ticket **no añade ninguna puerta de alta**: el albarán se sigue creando por
+ * `POST /admin/jobs/:id/albaranes`, que es la única que existe y la que ya trae el guard de
+ * SCRUM-257/684, la validación de líneas de SCRUM-367, el interruptor de ALB-02 y el texto de
+ * cabecera de DOC-03. Lo que faltaba no era una segunda alta: era saber A QUÉ TRABAJO ir.
+ *
+ * Qué devuelve: los presupuestos que casan con la búsqueda, cada uno con el Trabajo del que
+ * colgaría su albarán (`jobId`) o el MOTIVO por el que no puede colgar de ninguno. La regla y su
+ * porqué —medidos, no elegidos aquí— viven en `presupuestosParaAlbaran.ts`.
+ *
+ * ⚠️ LA BÚSQUEDA NO SE REESCRIBE: se llama a `listQuotesAdmin`, la misma de `GET /admin/quotes`.
+ * Un segundo buscador de presupuestos habría divergido del primero en cuanto alguien tocara uno
+ * —dos criterios de «buscar por cliente» es exactamente el defecto que este proyecto ya se ha
+ * comido varias veces—. Y no abre superficie: `GET /admin/quotes` es `TECNICO_ALLOWED` y devuelve
+ * esa misma lista entera a cualquier rol que llegue a ella, así que aquí no se enseña ni un
+ * presupuesto que el llamante no pudiera pedir por su cuenta.
+ *
+ * 🔴 `truncado` NO ES UN ADORNO. `listQuotesAdmin` corta en `TOPE_LISTADO_QUOTES`, así que una
+ * lista SIN elegibles puede significar dos cosas opuestas: «ninguno de tus presupuestos tiene
+ * Trabajo» o «los que lo tienen están más abajo del corte». Sin este campo, el profesional lee un
+ * cero que no es un cero — que es el fallo que esta casa persigue por escrito.
+ *
+ * Registrada ANTES de `GET /:id` a propósito: ese handler acepta un solo segmento y haría
+ * `Number('presupuestos')` → `400 invalid_id`. El orden en Express es la única defensa.
+ */
+router.get('/presupuestos', async (req, res) => {
+  try {
+    const q = req.query.q !== undefined ? String(req.query.q) : undefined;
+    const candidatos = await listQuotesAdmin(req.merchantId!, q);
+
+    // Los Trabajos que tienen por ORIGEN a alguno de estos presupuestos. Una sola consulta para
+    // toda la lista (patrón de SCRUM-58), no una por fila.
+    const ids = candidatos.map((c) => c.id);
+    const trabajos = ids.length
+      ? await prisma.job.findMany({
+          // regla 2: la lectura filtra por merchant aunque los ids ya vengan de una lista suya.
+          where: { merchantId: req.merchantId!, quoteId: { in: ids } },
+          select: { id: true, quoteId: true },
+        })
+      : [];
+
+    // SCRUM-467: un técnico solo puede aterrizar en SUS Trabajos. `null` = admin, ve todos.
+    const visibles = seesOnlyOwnJobs(req.userRole)
+      ? await jobIdsVisiblesPara(req.merchantId!, req.teamMemberId ?? null)
+      : null;
+
+    return res.json({
+      presupuestos: filasParaElegirPresupuesto(candidatos, trabajos, visibles),
+      // «Puede haber más», no «hay más»: venir justo con el tope es indistinguible de venir con
+      // el tope de una lista mayor, y afirmar la segunda sería inventarse un dato que no se tiene.
+      truncado: candidatos.length >= TOPE_LISTADO_QUOTES,
+    });
+  } catch (err: any) {
+    console.error('[GET /admin/albaranes/presupuestos]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
  * GET /admin/albaranes/consolidables — SCRUM-70 (FACT-2).
  *
  * VISTA PREVIA de lo que entraría en la recapitulativa de UN cliente, a ámbito CLIENTE + MES
@@ -221,6 +288,31 @@ router.get('/consolidables', async (req, res) => {
     const customerId = Number(req.query.customerId);
     if (!Number.isInteger(customerId)) {
       return res.status(400).json({ error: 'customer_requerido', message: 'Indica el cliente.' });
+    }
+
+    // ── 🔴 SCRUM-749 · UN DÍA QUE NO EXISTE SE CONTESTA, NO SE NORMALIZA ────────────────────
+    //
+    // `hasta=2026-02-31` cortaba el **3 de marzo** —`Date.UTC` normaliza en silencio— y metía un
+    // parte de marzo en una factura que el profesional acotó a febrero. La primitiva ya lo
+    // RECHAZA (`dia_inexistente`), pero sin esta puerta el rechazo llegaba aquí como
+    // `500 internal_error`: «se ha roto el servidor» sobre un dato que sólo estaba mal escrito.
+    //
+    // El predicado se DERIVA de la propia primitiva (`diaExiste`): aquí no hay una segunda tabla
+    // de meses que pueda quedarse atrás.
+    if (typeof req.query.hasta === 'string' && req.query.hasta !== '' && !diaExiste(req.query.hasta)) {
+      return res.status(400).json({
+        error: 'dia_inexistente',
+        message: 'La fecha «hasta» no existe en el calendario. Revísala.',
+      });
+    }
+    // `desde`, con su propio texto FIRMADO. Se escribe entero y no se compone con el de arriba:
+    // la microcopy se firma tal cual (regla 30), y una plantilla que sustituye el nombre del campo
+    // convertiría dos textos aprobados en uno inventado en tiempo de ejecución.
+    if (typeof req.query.desde === 'string' && req.query.desde !== '' && !diaExiste(req.query.desde)) {
+      return res.status(400).json({
+        error: 'dia_inexistente',
+        message: 'La fecha «desde» no existe en el calendario. Revísala.',
+      });
     }
     // Tenancy (regla 2): el cliente tiene que ser de este merchant o no existe.
     const customer = await prisma.customer.findFirst({
@@ -511,6 +603,23 @@ router.patch('/:id', async (req, res) => {
     }
 
     if (req.body?.lineas !== undefined) {
+      // 🔴 SCRUM-684 · LA OTRA PUERTA, QUE NO TENÍA GUARD NINGUNO.
+      //
+      // Medido: el `POST` traía el `job_without_quote` y este `PATCH` **no**. O sea que el agujero
+      // que aquel guard decía tapar ya estaba abierto por aquí — un albarán anterior al guard se
+      // podía parchear con cualquier `quoteLineIndex` y nada lo validaba, porque
+      // `contarLineasDePresupuesto` devuelve `undefined` sin presupuesto y entonces `validarLineas`
+      // **conserva el índice tal cual**.
+      //
+      // El invariante es el mismo en las dos: ninguna línea puede decir que viene de un
+      // presupuesto que no existe. Una avería sin líneas enlazadas pasa por las dos.
+      const jobDelAlbaran = await prisma.job.findFirst({
+        where: { id: albaran.jobId, merchantId: req.merchantId }, select: { quoteId: true },
+      });
+      const vOrigen = veredictoAlbaranSinPresupuesto(jobDelAlbaran?.quoteId != null, req.body.lineas);
+      if (!vOrigen.ok) {
+        return res.status(409).json({ error: vOrigen.error, message: vOrigen.message });
+      }
       // SCRUM-367: mismo rango real que al crear. ESTE es el punto donde el índice se perdía.
       const nLineasQuote = await contarLineasDePresupuesto(albaran.jobId, req.merchantId!);
       const v = validarLineas(req.body.lineas, modoEfectivo, nLineasQuote);
@@ -527,6 +636,30 @@ router.patch('/:id', async (req, res) => {
           message: `Las líneas actuales no encajan con el nuevo modo: ${v.error}`,
         });
       }
+    }
+    // ── SCRUM-607 (ALB-02) · EL INTERRUPTOR DEL PAPEL, Y SU CANDADO PROPIO ────────────────
+    //
+    // 🔴 SE PUEDE TOCAR EN `borrador` Y EN `emitido`; se congela al FIRMAR. Y aqui NO se copia el
+    // candado de `modoValoracion` a proposito: aquel se congela en `emitido` porque CAMBIA EL
+    // IMPORTE, y un importe que se mueve despues de emitir es otro documento. Este solo cambia
+    // QUE SE IMPRIME, y el caso real es de un profesional de verdad: «ya lo emiti y ahora me lo
+    // piden sin precios». Al firmar si se congela: ahi el papel es prueba de lo entregado.
+    //
+    // ⚠️ AL SIGUIENTE QUE QUIERA UNIFICARLO CON `modoValoracion`: ese es el motivo de por que no.
+    if (req.body?.ocultarPreciosEnDocumento !== undefined) {
+      if (!sePuedeCambiarOcultarPrecios(albaran.estado)) {
+        return res.status(409).json({
+          error: 'albaran_locked',
+          message: 'Este albaran ya esta firmado: lo que muestra el documento no se puede cambiar.',
+        });
+      }
+      // Booleano ESTRICTO. Un `Boolean(req.body...)` convertiria la cadena "false" en `true`, que
+      // en este campo significa ensenar los precios de alguien a su cliente.
+      if (typeof req.body.ocultarPreciosEnDocumento !== 'boolean') {
+        return res.status(400).json({ error: 'ocultar_precios_invalido' });
+      }
+      data.ocultarPreciosEnDocumento = req.body.ocultarPreciosEnDocumento;
+      cambios.push('ocultarPreciosEnDocumento');
     }
     if (req.body?.notas !== undefined) {
       data.notas = String(req.body.notas || '').slice(0, 2000) || null;
@@ -1047,6 +1180,10 @@ router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
     // ni se entera: comprobarlo DESPUÉS obligaría a modificar una factura ya numerada o a
     // deshacerla, y deshacer es lo que crea el hueco que hay que justificar ante Hacienda.
     exigirLineasFacturables(invoiceLines);
+    // SCRUM-771 · y que el tipo de IVA EXISTA. Mismo sitio y misma razón que la línea de
+    // arriba: ANTES de pedir número, nunca después. Deriva de `invalidTipoIva`; aquí no
+    // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
+    exigirTiposDeIvaEmitibles(invoiceLines);
 
     const invoice = await prisma.$transaction(async (tx) => {
       const inv = await emitInvoice(tx, {
@@ -1257,6 +1394,10 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
     // Comprobarlo después obligaría a deshacer una factura ya numerada, y deshacer es lo que crea
     // el hueco que hay que justificar ante Hacienda.
     exigirLineasFacturables(invoiceLines);
+    // SCRUM-771 · y que el tipo de IVA EXISTA. Mismo sitio y misma razón que la línea de
+    // arriba: ANTES de pedir número, nunca después. Deriva de `invalidTipoIva`; aquí no
+    // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
+    exigirTiposDeIvaEmitibles(invoiceLines);
 
     const invoice = await prisma.$transaction(async (tx) => {
       const inv = await emitInvoice(tx, {

@@ -1,13 +1,11 @@
-// public/dashboard/js/quoteAtajosVencimiento.js — SCRUM-605 (DOC-15)
+// public/dashboard/js/quoteAtajosVencimiento.js — SCRUM-605 (DOC-15) · SCRUM-750
 //
-// LOS ATAJOS DE «VÁLIDO HASTA», EN FUNCIONES PURAS.
+// LOS ATAJOS DE «VÁLIDO HASTA». LA FECHA NO SE CALCULA AQUÍ: SE PIDE.
 //
 // Por qué viven aquí y no dentro de `quotesView.js`: mismo motivo que `quoteMargen.js`
 // (SCRUM-229) y `quoteSuplido.js` (SCRUM-500) —`quotesView.js` es un módulo de navegador que
 // `node:test` no puede importar, así que lo único que se le puede exigir es la FORMA de su
-// fuente—. Y aquí lo que hay que exigir es ARITMÉTICA: que «30 días» dé la fecha que tiene que
-// dar el 31 de enero, en un cambio de año y en un febrero bisiesto. Un guard de forma pasaría
-// con la fecha mal calculada, que es justo el error que esto viene a impedir.
+// fuente—. Aquí viven la lista de atajos, sus textos y qué NO es un atajo; la aritmética, no.
 //
 // ✅ MICROCOPY: aprobada por el ASESOR el 4-sep-2026, a la espera de la firma del fundador.
 // Los seis literales y sus motivos van abajo, junto a las constantes.
@@ -15,25 +13,45 @@
 // ⚠️ ÁMBITO GLOBAL COMPARTIDO: estos scripts son clásicos y comparten `window`. Va en IIFE y
 // publica lo suyo, como `quoteSuplido.js`.
 //
-// ─────────────────────────────────────────────────────────────────────────────────────────
-// 🔴 POR QUÉ LA ARITMÉTICA VA POR COMPONENTES LOCALES Y NO EN MILISEGUNDOS
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-750 · POR QUÉ AQUÍ YA NO HAY ARITMÉTICA DE FECHAS
 //
-// El valor por defecto del campo se calcula hoy así (`quotesView.js`, y NO se toca en este
-// ticket porque el control negativo es que quien no toque nada vea exactamente lo de hoy):
+// Hasta el 5-sep-2026 este módulo calculaba la fecha por su cuenta, con `new Date(y, m, d + N)`
+// y componentes LOCALES, mientras el valor por defecto y el `min` del MISMO campo los calculaba
+// `quoteCaducidad.diaPorDefecto` (SCRUM-633) en la zona del MERCHANT. Dos implementaciones de la
+// misma regla escribiendo en el mismo sitio, y una se quedó atrás.
 //
-//     new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10)
+// NO ERA TEÓRICO. Medido sobre 17.520 instantes de 2026 (uno cada 30 min), merchant en
+// `Europe/Madrid`, comparando el atajo de +30 contra el valor por defecto de +30:
 //
-// Eso tiene dos costuras conocidas: `86400000` supone que todos los días duran 24 h —falso en
-// los dos cambios de hora— y `toISOString()` formatea en UTC, así que en Madrid (UTC+1/+2) una
-// hora local temprana cae en el día ANTERIOR en UTC.
+//     navegador en Europe/Madrid       120 de 17.520 divergen   ( 0,7 %)
+//     navegador en Europe/London       730                      ( 4,2 %)
+//     navegador en UTC               1.150                      ( 6,6 %)
+//     navegador en America/New_York  4.324                      (24,7 %)
+//     navegador en Pacific/Auckland  7.990                      (45,6 %)
 //
-// Los atajos se calculan con `new Date(y, m, d + N)` y se formatean a mano desde los componentes
-// LOCALES. `Date` normaliza sola el desbordamiento de mes y de año, así que fin de mes, cambio
-// de año y bisiesto salen bien sin tabla de meses y sin ninguna librería (regla 36).
+// El profesional pulsaba «30 días» y el campo se quedaba con un día distinto del que ese mismo
+// campo había propuesto al abrirse, en un documento que el cliente recibe.
 //
-// HALLAZGO DECLARADO, no arreglado (regla 9, y además el encargo prohíbe tocar el defecto): en
-// los casos límite de arriba el atajo de 30 días y el valor por defecto pueden dar días
-// distintos. No se unifica aquí porque tocar el defecto cambiaría lo que ve quien no pulsa nada.
+// ── EL ESCALÓN, Y POR QUÉ AQUÍ SÍ SE PODÍA SUBIR ─────────────────────────────────────────
+//
+// El escalón de la casa es **hacerlo imposible → derivar → duplicar con guard → duplicar con
+// comentario**. `quoteCaducidad.js` está en el 3 y lo explica: su sitio único
+// (`core/zonaDelMerchant.ts`) es TypeScript compilado para Node y esta pantalla es JavaScript de
+// navegador servido tal cual, sin bundler, así que derivar era IMPOSIBLE.
+//
+// 🔴 AQUÍ NO LO ERA. `quoteCaducidad` y este módulo corren en el MISMO sitio —dos scripts
+// clásicos sobre el mismo `window`, y el índice carga aquél ANTES que éste—, así que el escalón 2
+// estaba disponible desde el principio y no se subió. Ahora sí: **`fechaDeAtajo` llama a
+// `diaPorDefecto`**. No queda una segunda aritmética a la que se le pueda olvidar algo, porque no
+// queda una segunda aritmética.
+//
+// ⚠️ ESTO CAMBIA LO QUE ESCRIBE EL ATAJO, y se declara en vez de venderlo como refactor:
+// `diaPorDefecto` suma `N * 86400000` milisegundos —24 h fijas— y formatea en la zona del
+// merchant; la forma anterior sumaba días de CALENDARIO. En la ventana de los dos cambios de hora
+// las dos no coinciden, y el atajo pasa a decir lo que dice el campo. Es el objetivo del ticket:
+// que el botón y el valor por defecto no PUEDAN discrepar. Cuánto duran «30 días» es otra
+// pregunta, tiene un solo sitio donde responderse (`diaPorDefecto`) y no se responde aquí.
 (function (root) {
   'use strict';
 
@@ -72,25 +90,46 @@
   var UNIDAD_ROTULO = 'días';
   var PREFIJO_ACCESIBLE = 'Válido hasta dentro de';
 
-  function dosCifras(n) { return (n < 10 ? '0' : '') + n; }
+  /**
+   * La pieza que sabe de calendarios, resuelta EN CADA LLAMADA y no al cargar el módulo.
+   *
+   * El orden de los `<script>` del índice es hoy la garantía de que ya exista, y ese orden lo
+   * cambia cualquiera moviendo una línea. Resuelta en la llamada, el peor caso es que UN atajo no
+   * escriba nada; resuelta al cargar, el peor caso es que el módulo nazca mudo para siempre.
+   */
+  function calendario() {
+    var c = root && root.quoteCaducidad;
+    return (c && typeof c.diaPorDefecto === 'function') ? c : null;
+  }
 
   /**
-   * La fecha de un atajo, en `YYYY-MM-DD` y en día LOCAL.
+   * La fecha de un atajo, en `YYYY-MM-DD`, en el día natural del calendario del MERCHANT.
    *
-   * @param {number} dias  días a sumar a HOY. Se exige entero y > 0: un atajo que reste sería
-   *                       una fecha en el pasado, y el campo tiene `min` = mañana.
-   * @param {Date}   [hoy] inyectable para poder probar los bordes sin esperar a que llegue el
-   *                       31 de enero. Sin él, ahora.
+   * 🔴 NO CALCULA: DELEGA (SCRUM-750; el motivo entero, en la cabecera). Lo único que se decide
+   * aquí es qué NO es un atajo, y eso sí es de este módulo: `diaPorDefecto` acepta 0 y negativos
+   * —legítimos para el valor por defecto de otro campo— y aquí serían una fecha por debajo del
+   * `min`, que el navegador rechaza EN SILENCIO.
+   *
+   * @param {number} dias       días a sumar a HOY. Entero y > 0.
+   * @param {object} [merchant] el merchant, por su `timezone`. Sin él → UTC, la misma regla que
+   *                            aplican las dos mitades de `zonaDelMerchant` (decisión A del
+   *                            fundador, 2-sep-2026): quien no ha declarado zona no ve un cambio
+   *                            que no ha pedido.
+   * @param {Date}   [hoy]      inyectable para poder probar los bordes sin esperar al 31 de
+   *                            enero. Sin él, ahora.
    * @returns {string|null} `null` si no se puede calcular — nunca una fecha inventada.
    */
-  function fechaDeAtajo(dias, hoy) {
+  function fechaDeAtajo(dias, merchant, hoy) {
     if (typeof dias !== 'number' || !isFinite(dias) || Math.floor(dias) !== dias || dias <= 0) return null;
-    var base = (hoy instanceof Date && !isNaN(hoy.getTime())) ? hoy : new Date();
-    // `Date` normaliza sola el desbordamiento: día 32 de enero es 1 de febrero, y el 29 de
-    // febrero sólo existe cuando toca. Por eso no hay tabla de meses ni caso especial de bisiesto.
-    var d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + dias);
-    if (isNaN(d.getTime())) return null;
-    return d.getFullYear() + '-' + dosCifras(d.getMonth() + 1) + '-' + dosCifras(d.getDate());
+    // 🔴 LA FIRMA ANTERIOR ERA `(dias, hoy)`. Una llamada sin actualizar pasaría el `Date` en el
+    // hueco del merchant, `zonaDelMerchant` le buscaría `.timezone`, no lo encontraría y caería a
+    // UTC: una fecha PLAUSIBLE calculada en la zona equivocada, sin ruido. Se prefiere no escribir
+    // nada — quien llama ya sabe qué hacer con `null`, y hay un test que lo fija.
+    if (merchant instanceof Date) return null;
+    if (hoy !== undefined && hoy !== null && !(hoy instanceof Date && !isNaN(hoy.getTime()))) return null;
+    var cal = calendario();
+    if (!cal) return null;                        // sin la pieza del calendario no se inventa nada
+    return cal.diaPorDefecto(merchant, dias, hoy instanceof Date ? hoy : undefined);
   }
 
   /** El rótulo visible: `7 días`. */
@@ -124,8 +163,8 @@
    * Si algún día se añade un atajo de 0 días, esto lo dice en vez de escribir una fecha que el
    * navegador rechazaría en silencio.
    */
-  function atajoPorDebajoDelMinimo(dias, min, hoy) {
-    var fecha = fechaDeAtajo(dias, hoy);
+  function atajoPorDebajoDelMinimo(dias, min, merchant, hoy) {
+    var fecha = fechaDeAtajo(dias, merchant, hoy);
     if (fecha === null) return true;              // no calculable = no usable
     if (typeof min !== 'string' || !min) return false;
     return fecha < min;                            // ISO `YYYY-MM-DD` ordena como texto
