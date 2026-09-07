@@ -328,10 +328,13 @@ Cuatro tests más —**13** en el fichero— y **dos mutaciones más: seis, y la
 
 ## A6 · Lo que queda dicho y no se toca
 
-- La dependencia de carga `margenCatalogo.js` → `reportsView.js` **es real y no está declarada** en
-  `DEPENDENCIAS_DE_CARGA`. Hoy se cumple (línea 284 < línea 335) y el test de arriba la fija, pero
-  la lista canónica vive en `tests/_banco-vistas.mjs`, que este encargo prohíbe tocar. **Una línea,
-  para quien pueda:**
-  `{ antes: 'margenCatalogo.js', despues: 'reportsView.js', motivo: 'SCRUM-764: el criterio de margen negativo' }`
+- ~~La dependencia de carga `margenCatalogo.js` → `reportsView.js` **es real y no está declarada**
+  en `DEPENDENCIAS_DE_CARGA`.~~ **RESUELTO** (7-sep-2026): el asesor estrechó la prohibición
+  —seguía vetado arreglar el matcher de SCRUM-634, no declarar una dependencia real que ya se
+  cumple— y la línea está puesta. Se mezcló `main` justo antes de tocar el fichero compartido
+  (sin cambios: blob `3bc6d1f6`), se volvió a medir el orden (**284 < 335**, los mismos números) y
+  **la línea se probó EN ROJO**: moviendo `margenCatalogo.js` detrás de `reportsView.js` en el
+  índice, `scrum662-lista-de-scripts` cae nombrando la pareja con `posAntes: 70, posDespues: 69`.
+  `index.html` restaurado byte a byte. Una línea, nada más de ese fichero.
 - Las dos condiciones redundantes del techo siguen las dos, como estaban.
 - `quotesView`, el detector de sobrantes y `_banco-vistas.mjs`: sin tocar. Ningún literal nuevo.
