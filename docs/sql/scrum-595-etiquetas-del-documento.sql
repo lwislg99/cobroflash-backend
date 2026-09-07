@@ -1,0 +1,61 @@
+-- SCRUM-595 (DOC-05) · Las etiquetas DEL DOCUMENTO. Los DOS documentos.
+--
+-- ⛔ ESTE FICHERO NO SE HA APLICADO EN NINGUNA BASE. Lo escribe la sesión; lo aplica el fundador.
+--    En desarrollo estaba medido AUSENTE el 7-sep-2026 (`node scripts/censo-etiquetas-del-documento.mjs`).
+--
+-- ═══════════════════════════════════════════════════════════════════════════════════════════════
+-- POR QUÉ DOS TABLAS Y NO UNA
+--
+-- El bloque de etiquetas es del DOCUMENTO, y en YaQu hay dos: presupuesto (`quotes`) y factura
+-- (`invoices`). Una sola de las dos no es el ticket — «el bloque aplica a los dos documentos».
+-- El precedente exacto es SCRUM-602 (DOC-12), que firmó las cuatro columnas de la dirección de
+-- obra en el MISMO DDL para `quotes` e `invoices`.
+--
+-- ⚠️ NOMBRE DE LA BASE (snake_case), NO DEL MODELO. Aquí coinciden: el campo se llamaría `tags`
+-- en el modelo y `tags` en la columna, igual que en `customers` (SCRUM-580). `invoices` y `quotes`
+-- MEZCLAN convenciones —SCRUM-602 lo midió: 7 columnas camel de 35 en `invoices`—, así que esto
+-- no se deduce, se comprueba. Se comprueba: `customers.tags` es `tags`, y las columnas nuevas de
+-- documento de los últimos tickets (`shipping_address`, `doc_header_text`) van en snake.
+--
+-- ═══════════════════════════════════════════════════════════════════════════════════════════════
+-- 🔴 JSONB, Y EL TIPO NO SE ADIVINA
+--
+-- Es el MISMO tipo que `customers.tags`, que es el mecanismo que este ticket reutiliza: si el
+-- documento guardara sus etiquetas en otra forma, no sería el mismo mecanismo — sería el segundo.
+-- El esquema ya usa JSONB en `merchants.clausulas_presupuesto`, `quotes.clausulas_excluidas`,
+-- `quotes.lines` y `customers.tags`, así que no es patrón nuevo (regla 36 intacta).
+--
+-- Importa porque `schemaDrift` comprueba que la columna EXISTA, **no su tipo** (lo dice él mismo:
+-- «NO: tipos, nullability, defaults…»). Un `tags` creado como TEXT arrancaría EN VERDE y se
+-- pudriría semanas después, al guardar un array y leerlo como cadena.
+--
+-- 🔴 SIN `NOT NULL` Y SIN `DEFAULT`, y no es cosmética: `null` = «no se declararon etiquetas», que
+-- NO es `[]` = «se miraron y no hay ninguna». Con un `DEFAULT '[]'` un `IS NOT NULL` diría que
+-- TODOS los documentos tienen etiquetas y el filtro se construiría sobre esa mentira. Es la misma
+-- decisión de SCRUM-580, palabra por palabra, porque es el mismo mecanismo.
+--
+-- ═══════════════════════════════════════════════════════════════════════════════════════════════
+-- LO QUE ESTA COLUMNA **NO** TOCA — medido, no supuesto (ver `tests/scrum595-etiquetas-del-documento.test.mjs`)
+--
+--   · EL SELLO. `computeVeriFactuHash` es una lista CERRADA de ocho campos (NIF, serie, fecha,
+--     tipo, cuota, importe, huella anterior, timestamp). Ninguna columna nueva entra en la huella;
+--     el test lo ejercita pasando `tags` y comprobando que la huella sale IDÉNTICA.
+--   · EL PDF. Los parámetros de `generateInvoicePdf` son una lista blanca explícita y `tags` no
+--     está en ella, así que una etiqueta no puede cambiar el papel de una factura ya emitida.
+--   · EL CAMINO DE EMISIÓN. Una etiqueta NO se copia al emitir: la escribe el profesional sobre la
+--     ficha, cuando quiere. Por eso este ticket no necesita un escritor en `emitInvoice` — que es
+--     exactamente lo que bloqueó el lado factura de SCRUM-602 (DOC-12) y aquí no aplica.
+--
+-- ADITIVO Y RE-EJECUTABLE: `IF NOT EXISTS`, así que volver a correrlo sobre una base ya aplicada
+-- no hace nada y no falla.
+--
+-- ⚠️ ORDEN, Y ES INVIOLABLE: esto va ANTES de que `prisma/schema.prisma` nombre los campos.
+-- `schemaDrift` compara esperado ⊆ real al arrancar: una columna de MÁS en la base es inocua, una
+-- de MENOS impide arrancar PRODUCCIÓN. Las tres bases primero; el esquema, el código y los tests
+-- después y juntos. Es la secuencia que costó nueve días sin desplegar (SCRUM-580).
+
+ALTER TABLE "quotes"
+  ADD COLUMN IF NOT EXISTS "tags" JSONB;
+
+ALTER TABLE "invoices"
+  ADD COLUMN IF NOT EXISTS "tags" JSONB;
