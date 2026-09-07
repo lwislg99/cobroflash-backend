@@ -3051,7 +3051,13 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 }
 [data-parte-firmar]:hover:not(:disabled) { background: var(--green-700, var(--brand-700)); color: #fff; }
 
-/* Quitar una línea: presente, pero nunca compitiendo con la acción principal. */
+/* Quitar una línea: presente, pero nunca compitiendo con la acción principal.
+   ⚠️ AQUÍ ESTÁ TODO LO DE ESTA CLASE, y en un solo sitio a propósito (SCRUM-818). Vivía partida en
+   dos reglas —el aspecto aquí y el área táctil 50 líneas más abajo— y no eran duplicadas sino
+   COMPLEMENTARIAS: borrar cualquiera de las dos rompía algo. Se tropezó con eso una búsqueda que
+   encontró sólo la primera y concluyó que la «×» no llegaba a 44 px cuando sí llega. Un CSS que
+   dice una cosa en un sitio y otra cincuenta líneas más abajo hace que el siguiente lector
+   concluya lo contrario de lo que ocurre. */
 .parte-quitar-linea {
   border: 0;
   background: transparent;
@@ -3061,6 +3067,12 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   padding: 2px 6px;
   border-radius: var(--radius-full);
   cursor: pointer;
+  /* De 22 a 44 px SIN engordar el dibujo ni la fila: crece el área, no la «×» (SCRUM-720d). */
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .parte-quitar-linea:hover { background: var(--danger-bg, #fef2f2); color: var(--danger, #dc2626); }
 
@@ -3105,14 +3117,104 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 [data-dictado-ordenar],
 [data-propuesta-confirmar] { min-height: 44px; }
 
-/* La «×» pasa de 22 a 44 sin engordar la fila: crece el área, no el dibujo. */
-.parte-quitar-linea {
-  min-width: 44px;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+/* La «×» ya no se estiliza aquí: su regla ENTERA —aspecto y área táctil— vive junto a las demás
+   de `.parte-quitar-linea`, más arriba en este mismo fichero (SCRUM-818). */
+
+/* ══ SCRUM-818 · LA CABECERA DEL PARTE DEJA DE MENTIR ════════════════════════════════════════
+   Los siete de arriba —obra, REF, entrada, salida, desplazamiento, kilómetros, técnicos— se
+   pintaban como un rótulo con un guion debajo: PARECÍAN campos y no se podían tocar. Los siete
+   existen en la base y los siete tienen camino de escritura (medido en el PASO 0), así que pasan
+   a ser campos de verdad. Si algo parece un campo, la gente escribe; si no puede, la pantalla ha
+   mentido y se deja de fiar del resto.
+
+   Una columna a 390 px —que es donde se usa, de pie y con una mano— y dos en cuanto hay sitio. */
+.parte-datos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
 }
+@media (min-width: 560px) { .parte-datos { grid-template-columns: 1fr 1fr; } }
+
+.parte-campo { display: block; }
+.parte-campo-rotulo {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--neutral-600, var(--muted));
+  margin-bottom: 3px;
+}
+.parte-campo input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 10px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md, 10px);
+  font-size: 16px;              /* 16 evita el zoom automático de iOS al enfocar */
+  color: var(--ink);
+  background: var(--surface, #fff);
+}
+.parte-campo input:focus {
+  outline: none;
+  border-color: var(--brand-600, var(--brand));
+  box-shadow: 0 0 0 3px var(--focus-ring, rgba(22,163,74,.18));
+}
+/* Un parte FIRMADO no se edita (T3, SCRUM-652): el dato se enseña, y se ve que no es un hueco. */
+.parte-campo-dato {
+  display: block;
+  min-height: 44px;
+  padding: 10px 0;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+/* El grupo de los tres tipos ya dice de qué es (rótulo firmado en SCRUM-703). */
+.parte-tipo legend {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--neutral-600, var(--muted));
+  padding: 0;
+  margin-bottom: 4px;
+}
+
+/* ── Las líneas: dos campos con borde y dos cabeceras ──────────────────────────────────────
+   Hoy es `2  Tiempo de espera ×` sin bordes: con las manos sucias no se ve dónde acaba la
+   cantidad y dónde empieza la descripción. Los dos campos se ven, y la cantidad abre teclado
+   numérico en el móvil. */
+.parte-linea-unds,
+.parte-linea-desc {
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md, 10px);
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--surface, #fff);
+}
+.parte-linea-unds { width: 100%; text-align: right; }
+.parte-linea-desc { width: 100%; }
+.parte-linea-unds:focus,
+.parte-linea-desc:focus {
+  outline: none;
+  border-color: var(--brand-600, var(--brand));
+  box-shadow: 0 0 0 3px var(--focus-ring, rgba(22,163,74,.18));
+}
+/* La columna de la cantidad, estrecha: el número cabe y la descripción se queda con el ancho. */
+.parte-bloque th.parte-col-unds,
+.parte-bloque td.parte-col-unds { width: 88px; }
+.parte-bloque th.parte-col-quitar,
+.parte-bloque td.parte-col-quitar { width: 48px; }
+.parte-bloque th {
+  text-align: left;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--neutral-600, var(--muted));
+  padding: 0 8px 4px 0;
+}
+.parte-bloque th.parte-col-unds { text-align: right; }
+.parte-bloque td { padding: 5px 8px 5px 0; vertical-align: top; }
 
 /* Las tres casillas de tipo: el objetivo es la etiqueta entera, que es lo que ya recibe el toque. */
 .parte-tipo label { min-height: 44px; box-sizing: border-box; }

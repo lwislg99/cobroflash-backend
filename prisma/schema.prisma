@@ -390,6 +390,11 @@ model Charge {
   currency   String    @map("moneda")
   method     String
   status     String
+  /// ⚠️ ESTE `vencimiento` ES DEL COBRO, NO DE LA FACTURA. Es hasta cuándo vale ESTE enlace de
+  /// pago. `Invoice` NO tiene campo de vencimiento —medido en SCRUM-605—, así que quien busque
+  /// «vencimiento» en el esquema y encuentre esta línea puede creer que la factura ya lo tiene.
+  /// Ya estuvo a punto de pasar. El comentario vive aquí y no en un `.md` porque quien se
+  /// confunde está mirando este fichero (SCRUM-722).
   expiresAt  DateTime? @map("vencimiento")
   reference  String?   @map("referencia")
   intentId   String?   @map("intent_id")

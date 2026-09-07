@@ -59,7 +59,14 @@ const JS = path.join(RAIZ, 'public/dashboard/js');
  */
 const CENSO_DE_SITIOS = {
   'albaranDesdePresupuestoModal.js': 6,
-  'atajoNuevo.js': 1,
+  // 🔴 SCRUM-722 · 7-sep-2026 · `atajoNuevo.js` SALE: el fundador firmó «Nuevo albarán». La
+  // entrada se borra, no se pone a 0. 29 → 28 sitios.
+  //
+  // ⚠️ Y DE PASO, LO QUE ESTE FICHERO VINO A EVITAR ESTUVO A PUNTO DE REPETIRSE: ese marcador
+  // llevaba TRES DÍAS en pantalla y lo encontró de rebote un barrido que medía otra cosa. Este
+  // censo lo tenía contado —hacía su trabajo—, pero contar no es avisar: mientras el número
+  // cuadre, nadie mira si lo que cuenta está delante de un cliente. Ese eje lo cubre desde hoy
+  // `guard:marcadores-en-pantalla` (SCRUM-722), que mide el DOM renderizado y no el árbol.
   'exportView.js': 2,
   'invoicesView.js': 1,
   'libroRegistroView.js': 1,
