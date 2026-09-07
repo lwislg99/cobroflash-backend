@@ -297,6 +297,20 @@
 - **Done cuando:** tras pagar, el cliente recibe la factura por email (si tiene) y por WhatsApp (enlace o PDF).
 - **CAUSA RAÍZ (9 jun):** el email no llegaba porque `sendInvoiceEmail` usaba nodemailer/SMTP; sin `SMTP_URL` (prod usa Resend) caía a `streamTransport` → solo escribía un `.eml` a disco, **no enviaba**. Commit `0bf44f7`: ahora envía por **Resend** con el PDF en base64 adjunto; helper `ensureInvoicePdf` genera el PDF si falta; el email post-pago se intenta SIEMPRE (psp/mp). **WhatsApp PENDIENTE:** entregar la factura por WhatsApp necesita un botón "Ver factura" (URL dinámica) en una plantilla de confirmación → **alta/re-aprobación en Meta** (no se puede añadir botón a una plantilla aprobada sin re-aprobarla). El código del builder se añadirá cuando exista la plantilla. **VERIFICAR:** tras un pago, que llegue el email con PDF (requiere `RESEND_API_KEY` ok + cliente con email).
 
+### [ ] P0-SEC-8 · `/recibo/:token?mail=saved&eml=…` mete un href SIN VALIDAR EL ESQUEMA (SCRUM-807, 7-sep-2026)
+- **🔴 MEDIDO, no supuesto.** `receipt.routes.ts:115` pinta `<a href="${esc(emlParam)}">` con `emlParam = req.query.eml` en crudo. `esc()` escapa HTML y hace bien lo suyo; un href no se defiende escapando HTML sino **validando el esquema**, y en `javascript:alert(1)` no hay nada que escapar.
+- **Llegan al atributo 5 de 6 cargas probadas:** `javascript:`, `JaVaScRiPt:` (mayúsculas), `data:text/html,…`, `vbscript:` y `javascript:` con espacio delante. La única que no llega es la partida por un salto de línea.
+- **Y SE EJECUTA, comprobado en Edge de verdad** (no razonado): con el ancla tal cual se emite —lleva `target="_blank"`— Edge **no** lo ejecutó; **sin** el target y por navegación directa a ese mismo href, **sí**: corrió código en el origen de la aplicación. Otros navegadores NO medidos.
+- **Alcance medido:** la página **no tiene CSP** (ni `X-Frame-Options` ni `X-Content-Type-Options`). A favor: la cookie de sesión es `HttpOnly; SameSite=Lax` (+`Secure` en producción), así que no se puede leer desde JS. Hace falta un `receiptToken` válido, o sea que quien **manda** el enlace del recibo controla también la carga.
+- **Lo que lo hace evitable del todo:** el ÚNICO productor legítimo de `?mail=saved&eml=` es `dev.routes.ts:99-100`, y `/dev` sólo se monta si `NODE_ENV!=='production'` (`app.ts:354`). En producción **nadie** genera ese banner y la página lo sigue pintando a quien se lo pida. El texto dice «(modo dev)» pero el código no lo comprueba.
+- **De regalo, en la misma línea:** es el único `target="_blank"` del fichero **sin** `rel="noopener"` — las otras tres anclas sí lo llevan. Con una URL externa eso da acceso a `window.opener`.
+- **NO SE HA ARREGLADO A PROPÓSITO:** el encargo manda parar y avisar antes de construir. Arreglo propuesto y no hecho: **validar el esquema donde se construye el href** (no dentro de `esc()`: darle dos trabajos garantiza que un día haga mal uno de los dos), y/o poner el banner tras el mismo gate de entorno que su único productor.
+- **Done cuando:** `?eml=javascript:…` no produce un href con ese esquema, y un `https://` legítimo sigue funcionando. Verificado en yaqu.app.
+
+### [ ] P0-SEC-8b · NOTA de lo que se midió y NO era vulnerable (mismo censo)
+- `googleReviewUrl` (`receipt.routes.ts:255` y `:261`, más el perfil público) **NO es inyectable por su puerta real**: las 6 cargas dan `PUT /admin/merchant` → **400** y no se guarda nada; un `https://` legítimo → 200 y se pinta. Lo para el `z.preprocess` que antepone `https://` a todo lo que no empiece por http, que rompe cualquier otro esquema antes de `.url()`. Censados TODOS los escritores de la columna: sólo hay uno de usuario, y es ése.
+- Queda escrito porque una defensa que funciona **por un efecto lateral** (el prefijo se puso para tolerar `g.page/r/…` sin protocolo, no para bloquear esquemas) es una defensa que alguien puede quitar sin saber lo que sujetaba.
+
 ---
 
 ## P1 — Bugs visibles al cliente / datos incorrectos
