@@ -60,8 +60,15 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // cinco guards de caja: aquí no se mide si un texto CABE, sino si un elemento EXISTE. Y no vale
   // mirarlo en el fuente — un `${cond ? botón : ''}` bien puesto y uno mal puesto se leen igual,
   // que es la lección de SCRUM-515. El árbitro tiene que ser el DOM renderizado.
-  assert.equal(fuera.length, 13,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ 13 → ${fuera.length}.\n`
+  // SCRUM-819 · 13 → 14: entra `guard:rastro-del-menu`, que pulsa los 17 destinos del menú y
+  // pregunta por `location.hash`, `window.appState.view` e `history`. Sube por un motivo que
+  // ninguno de los trece anteriores tenía: **no mide cómo se ve nada**, mide si navegar DEJA
+  // RASTRO. Y no puede vivir en la tanda porque el banco de vistas navega poniendo el hash él
+  // mismo — en su mundo hash y vista coinciden por construcción, así que esa pregunta no se le
+  // puede hacer. Un `history.back()` de banco es la implementación que el banco haya hecho de la
+  // semántica que se quiere medir. Cuesta unos 10 s.
+  assert.equal(fuera.length, 14,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ 14 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);
