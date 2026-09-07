@@ -444,9 +444,14 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     // sin ruido. Es el defecto provocado el 5-sep-2026 —perder un campo de una declaración ya
     // escrita— devuelto a su sitio: el lector la descarta, el recuento baja solo y el job sigue
     // verde sobre una mutación que ha dejado de ejecutarse.
+    // 🔴 SCRUM-757 · EL ANCLA SE REAPUNTA. Aquella decía `else incompletas.push({ faltan: ` y esa
+    // línea ya no existe: al separar «el campo NO ESTÁ» de «el campo ESTÁ y no lo sé leer», el
+    // `push` pasó a varias líneas. **Lo cazó este mismo meta-guard** declarando CIEGO —«la
+    // declaración caducó»— en vez de seguir verde con una mutación menos. Es la tercera vez esta
+    // semana que una edición deja atrás el ancla de OTRO guard, y las tres las ha cazado él.
     fichero: 'scripts/meta-guard-mutaciones.mjs',
-    de: '        else incompletas.push({ faltan: ',
-    a: '        else if (false) incompletas.push({ faltan: ',
+    de: '        incompletas.push({',
+    a: '        if (false) incompletas.push({',
     cae: 'una declaración INCOMPLETA se DENUNCIA, no se descarta en silencio',
   },
 ];
