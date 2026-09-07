@@ -173,3 +173,85 @@ sería empujar la decisión.
 `prisma/schema.prisma` · el camino de emisión (regla 38) · `voiceInput.js` y los flags de voz ·
 `PROMPT_PARTE_APROBADO` · ninguna base · producción · la rama `scrum-653-dos-firmas`, que sigue
 bloqueada esperando el ALTER de Javier.
+
+
+---
+
+# SCRUM-725c · El aviso se pinta — y el micrófono no deja nada muerto
+
+**Medido contra:** `origin/main` = `d1b65eb91b6940246d87d0931188c24fc92ee0d9` · 2026-09-07T11:37:00+02:00
+**Rama:** `scrum-725-voz-y-redaccion`
+
+> Cierra el ticket. El mecanismo de ① detectaba el dato inventado y **la pantalla se lo callaba**:
+> un mecanismo que detecta y no avisa es medio mecanismo.
+
+---
+
+## 1 · El aviso, con su firma
+
+✅ **Aprobado por el fundador el 7-sep-2026**, registrado en
+`docs/microcopy/2026-09-07-SCRUM-725-dato-no-dicho.md` — fichero propio, sin tocar el README
+(convención de SCRUM-709). Comprobado con el mecanismo de SCRUM-726: `firmanteDe` → **`fundador`**,
+y `constaAprobado` lo devuelve. Firmado por el asesor no habría contado.
+
+> Esto no lo has dicho — bórralo o confírmalo.
+
+**Dónde:** en la **línea** de la propuesta que lleva el dato, junto a su hermano «Falta la cantidad
+— ponla tú». No como resumen de cabecera: un aviso arriba diría que algo sobra pero **no cuál**, y
+con varias líneas el técnico no sabría dónde mirar. Va en singular por lo mismo — `datosRetirados`
+trae una entrada por línea.
+
+**El texto vive en el servidor y la pantalla lo COPIA** (`avisos.datosRetirados`). Hay test de que
+la cadena **no** está retecleada en la vista: un texto aprobado que se reescribe en cada pantalla
+deja de ser el aprobado sin que nadie lo decida.
+
+## 2 · Verificación · sobre el DOM renderizado, no sobre el fuente
+
+`tests/scrum725b-el-aviso-se-pinta.test.mjs` monta el bloque con el banco de vistas y llama al
+**camino real** (`parteOrdenarDictado`, con la respuesta del servidor inyectada). Y la propuesta la
+produce **el mecanismo de verdad**, no una escrita a mano: si mañana `sanearDictadoDelParte` deja
+de marcar el dato, el test se cae con él.
+
+| | |
+|---|---|
+| 🔴 «reviso la central» + modelo inventado | **el aviso APARECE** en el árbol, y es el texto aprobado exacto |
+| ✅ «cambié 3 detectores Honeywell» (todo respaldado) | **NO aparece** — ni el nodo ni el texto por otra vía |
+| 🔴 el rojo, comprobado | desactivando el pintado caen **2 tests**; revertido, 5/5 |
+
+### ⚠️ La trampa del `appendChild` pisado, y el límite que apareció midiendo
+
+El anidamiento —que el aviso caiga **dentro** de su línea— se pregunta al **marcado que la vista
+acabó escribiendo**, no al fuente ni al árbol de nodos. Y el motivo está medido:
+
+🔴 **El mini-DOM del banco APLANA lo que parsea de un `innerHTML`**: todos los nodos quedan
+colgando de la raíz, así que `_padre` no puede contestar si el `<em>` está dentro de su `<li>`. Mi
+primera versión del test se puso roja por eso y **el defecto era del instrumento, no de la
+pantalla**. Se reporta sin arreglarlo (regla 9): el banco es infraestructura compartida y tocar su
+parser es otro ticket.
+
+## 3 · El cabo suelto del micrófono: no queda nada
+
+**Medido en el DOM, no leído.** Montadas las dos vistas que ofrecen dictado con el flag como está
+hoy (`appVoiceEnabled` sin definir → `voiceSupportProbe()` **false**):
+
+| vista | nodos pintados | rótulos de dictado |
+|---|---|---|
+| `renderHomeView` | 109 | **0** |
+| `renderJobDetailView` | 73 | **0** |
+
+Los tres puntos de llamada están cerrados, y el tercero **por dentro**: `aiQuoteAssistant.js:173`
+llama a `attachVoiceInput` sin consultar la sonda, pero `attachVoiceInput` empieza por
+`if (!textarea || !voiceSupportProbe()) return false`. Y **cero `getUserMedia`** en todo `public/`:
+no se pide permiso de micrófono a nadie.
+
+**No hay botón muerto, ni tooltip, ni permiso.** Nada que quitar.
+
+## 4 · Números
+
+**BUILD exit 0** (antes que los tests) · **suite 5877 · 5775 pass · 0 fail · 102 skipped** ·
+`guards:entrada` **21/21, exit 0**. Todo sobre el árbol con `main` ya mezclado (AA2).
+
+## ⛔ No tocado
+
+Ningún flag de voz —siguen los dos en `false`— · `voiceInput.js` · `prisma/schema.prisma` · el
+camino de emisión (regla 38) · el mini-DOM del banco · ni un `style=` en línea nuevo.

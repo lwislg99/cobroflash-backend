@@ -111,7 +111,7 @@ export interface PropuestaDelDictado {
  * que cuenta cómo llegó a serlo.
  */
 export const AVISOS_DEL_DICTADO: Record<
-  'dictado_vacio' | 'sin_lineas_reconocidas' | 'cantidadesRetiradas',
+  'dictado_vacio' | 'sin_lineas_reconocidas' | 'cantidadesRetiradas' | 'datosRetirados',
   string
 > = {
   dictado_vacio: 'No se ha entendido el dictado — vuelve a dictar o escríbelo a mano',
@@ -123,6 +123,16 @@ export const AVISOS_DEL_DICTADO: Record<
   // ⚠️ Si algún día hace falta ADEMÁS un resumen («3 líneas sin cantidad»), ése es un texto
   // DISTINTO y lo aprueba el fundador entonces. No se deriva de éste poniéndolo en plural.
   cantidadesRetiradas: 'Falta la cantidad — ponla tú',
+  // ✅ APROBADA por el fundador el 7-sep-2026 (regla 30), registrada en
+  // `docs/microcopy/2026-09-07-SCRUM-725-dato-no-dicho.md`. LITERAL, punto final incluido.
+  //
+  // Dice QUÉ pasa y LAS DOS SALIDAS —borrarlo o confirmarlo— sin culpar a nadie: no dice que la
+  // máquina se lo haya inventado ni que el técnico se lo haya callado, porque desde aquí no se
+  // sabe cuál de las dos. El único que puede decidirlo es el que estuvo en la obra.
+  //
+  // ⚠️ Va en SINGULAR y POR LÍNEA, como su hermana de arriba: `datosRetirados` trae una entrada
+  // por línea. Un resumen sería otro texto y lo aprobaría el fundador entonces.
+  datosRetirados: 'Esto no lo has dicho — bórralo o confírmalo.',
 };
 
 // ⚠️ EL TERCERO LLEGÓ EN SINGULAR, Y LA MEDICIÓN ES LA QUE LO DECIDIÓ. Se deja escrito porque el
