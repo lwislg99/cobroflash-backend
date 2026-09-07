@@ -332,3 +332,281 @@ a llevar.
 - **No se ha medido producción** ni se ha nombrado ninguna credencial suya.
 - **Sin capturas** y sin matriz de dispositivos completa: se midieron 929 y 390 px, que es lo que
   pedía el encargo.
+
+---
+
+# APÉNDICE · 7-sep-2026 — LA CONSTRUCCIÓN
+
+**Rama:** `scrum-590-canal-de-envio-al-movil` · **Worktree:** `cobroflash-b4`
+**Medido y construido contra:** `origin/main` = `d271d29aff85ed155d23397b7e6a1fca64a86bb0`
+(la sesión de medición trabajó sobre `00c6cb0c`, del 6-sep; `main` ha avanzado desde entonces y
+todo lo de aquí abajo está **re-medido**, no heredado del documento anterior).
+
+> El cuerpo de este fichero, escrito el 6-sep, **midió y paró**. Este apéndice construye. No se
+> corrige ni se borra nada de arriba: donde el árbol de hoy contradice aquella medición, se dice
+> aquí y se dice por qué.
+
+---
+
+## A0 · 🔴 LO PRIMERO: ESTE TICKET YA TENÍA RAMA, Y ESTÁ EN `main`
+
+`scrum-590-telefono-y-movil` (PR #1086) es **ancestro de `origin/main`** — comprobado con
+`git merge-base --is-ancestor`, no con el estado de Jira. No trae una línea de código: son las
+334 líneas de arriba. **No era un duplicado en vuelo, era la entrada de este mismo ticket**, así
+que esta sesión no paró: siguió, con rama NUEVA (`scrum-590-canal-de-envio-al-movil`) para no
+reescribir una rama ya mergeada.
+
+---
+
+## A1 · LAS TRES COSAS QUE IBAN JUNTAS
+
+### (1) EL PIPELINE LEE EL NÚMERO MARCADO — 11 puntos de resolución, uno solo que decide
+
+Los **11 puntos** que resolvían el destino desde `customer.phone` pasan ahora por
+`canalDeWhatsApp()` (`src/core/contacto/canalDeWhatsApp.ts`). Es la forma de SCRUM-577
+(`nombreParaDocumento`) y SCRUM-578 (`identificadoresDuplicados`): la regla en un sitio.
+
+| fichero:línea | vía |
+|---|---|
+| `billing/app/routes/mpWebhook.routes.ts:180` · `:203` | confirmación de pago · reseña |
+| `billing/app/routes/psp.routes.ts:239` · `:264` | confirmación de pago · reseña |
+| `billing/domain/invoiceReminder.service.ts:130` | recordatorio de factura (7 y 14 d) |
+| `billing/domain/invoiceWhatsApp.service.ts:42` | factura por WhatsApp |
+| `jobs/domain/albaranWhatsApp.service.ts:55` · `:126` | albarán firmado · para firmar |
+| `quotes/domain/reminder.service.ts:33` | recordatorio de presupuesto |
+| `quotes/domain/sendQuote.service.ts:53` | envío del presupuesto |
+| `system/app/routes/invoicesAdmin.routes.ts:627` | recordatorio manual (admin) |
+
+**El criterio: `mobile` manda, `phone` es el respaldo. NO hay flag de canal** — la marca es
+ESTRUCTURAL (recibe el número que esté en «Móvil»). El `waCanal` que el §4 dejó propuesto **NO se
+crea**: sus valores serían un estado nuevo y los estados son cerrados (regla 27). Sigue medido
+arriba por si el fundador lo prefiere, y añadirlo después seguiría siendo aditivo.
+
+Con `mobile` a NULL —que es **todo cliente que existe hoy**— `canalDeWhatsApp()` devuelve
+exactamente `normalizePhone(phone)`, que es la línea que había. El comportamiento de hoy no es un
+caso que se respete: es el caso por defecto.
+
+#### 🔴 Y UNA TRAMPA QUE NO ESTABA EN LA MEDICIÓN: LOS `SELECT` EXPLÍCITOS
+
+Cablear los 11 sitios **no bastaba**. Cuatro consultas traen el cliente con un `select` explícito
+que pedía `phone` y no habría pedido `mobile`: el resolvedor lo habría recibido `undefined` y el
+documento se habría ido al fijo **sin fallar nada y con la tanda en verde**. Es el «quinto
+eslabón» que `customerAdmin.ts` ya tiene avisado tres veces (SCRUM-579, 580, 587). Corregidos:
+`albaranWhatsApp` (×2), `quotes/reminder`, `customerAdmin.CUSTOMER_SELECT_NO_TOKEN`,
+`customersAdmin.routes` (ficha 360) y `jobs.routes` (×2).
+
+Y los **filtros de consulta** de `invoiceReminder`: `customer: { phone: { not: null } }` pasa a
+`OR: [phone, mobile]`. Sin eso, un cliente que sólo tuviera móvil quedaba **fuera del lote** y no
+recibía su recordatorio nunca.
+
+#### EL TRINQUETE (`tests/scrum590-el-destino-pasa-por-el-resolvedor.test.mjs`)
+
+El sitio número doce —el que se escriba mañana— es el que de verdad importa. Guard **por AST**
+(no `grep`: la prosa que explica la prohibición contiene `.phone` y un guard de texto se caza a
+sí mismo, SCRUM-129). La población de senders se **deriva** de los `export` de
+`integrations/whatsapp.ts` y `whatsappNotifications.ts`, y el nombre del parámetro de destino se
+lee de la firma (`to` / `toPhone` / `merchantPhone`) — cablearla aquí la habría congelado, que es
+lo que SCRUM-778 tuvo que deshacer con tres listas idénticas.
+
+**Probado en rojo** con una regresión sintética (devolver `sendQuote` a `normalizePhone(quote.customer.phone)`):
+
+```
+✖ SCRUM-590 🔴 ningún envío resuelve su destino leyendo `.phone`
+  + 'src/modules/quotes/domain/sendQuote.service.ts:66 (sendWhatsAppWindowFirst)
+     → normalizePhone(quote.customer.phone)'
+```
+
+Lleva **suelo** (≥5 senders, ≥20 llamadas) y **control positivo** (≥8 resolviendo por el
+resolvedor): un guard que no ve la población no protege nada.
+
+### (2) LA BAJA ESTÁ ATADA AL NÚMERO — y ya lo estaba; el agujero era otro
+
+**Medido antes de tocar, y corrige la premisa del encargo:** `isWaOptedOut` **ya** estaba atada al
+número y no al registro. No mira el `waOptOut` del cliente al que se envía: compara el DESTINO
+contra los teléfonos de los dados de baja de ese merchant. Eso estaba bien y no se ha cambiado.
+
+🔴 **El agujero real que abría este ticket** era que sólo miraba UN campo:
+
+> el cliente pide la baja · su ficha tiene el fijo en `phone` y el móvil en `mobile` · el
+> documento sale al MÓVIL (que es el canal) · aquí se compara el móvil contra los `phone` de los
+> dados de baja · **no coincide** · el envío pasa.
+
+Sin error, sin log y sin que nadie se entere. Ahora la comprobación usa `numerosDelContacto()`:
+**enviar mira UNO —el que toca—, proteger mira LOS DOS.**
+
+#### Y CUATRO CONSULTAS MÁS, EN EL WEBHOOK DE ENTRADA
+
+`whatsappIncoming.routes.ts` preguntaba «¿de quién es este número?» en **cuatro** sitios, los
+cuatro mirando sólo `phone`. Con el móvil en su campo, los cuatro dejan de reconocer al cliente:
+
+- **la BAJA no se guarda**, y encima se le contesta «Este número no tiene mensajes activos» — que
+  es MENTIRA, porque los documentos le están saliendo justo a ese número;
+- el acuse del «👍 Recibido» pierde el merchant;
+- su «Acepto» deja de contar como decisión sobre el presupuesto;
+- su mensaje normal recibe «no encontramos un presupuesto asociado a este número».
+
+Unificadas en `dondePuedeEstarElNumero()`. **El criterio de coincidencia NO se ensancha**: siguen
+siendo las dos grafías de siempre (`34…` y `+34…`); lo único que cambia es DÓNDE se busca.
+
+### (3) LA CLAVE DE DEDUPLICACIÓN — MEDIDA Y REPORTADA. **NO TOCADA.**
+
+El encargo lo marca como obligación y dice que la decisión no es de esta sesión. **No se ha
+cambiado ni una línea de `identificadoresDuplicados.ts`.**
+
+Medida **ejecutando `buscarCoincidencias()`** (la función del producto, importada de `dist/`), no
+leyéndola, y con sus tres controles delante:
+
+```
+CONTROL POSITIVO · mismo número en dos grafías coincide ...................... SÍ
+CONTROL NEGATIVO · dos números distintos NO coinciden ........................ SÍ
+CONTROL          · dos vacíos NO coinciden ................................... SÍ
+
+campos identificadores de HOY ................................ phone · email · taxId
+¿participa `mobile` HOY? ..................................... NO
+¿es por campo o CRUZADA? ..................... CRUZADA: mismo VALOR en CUALQUIER campo
+   (candidato.phone contra existente.email, mismo texto → coincide)
+¿aviso o bloqueo? ............................ AVISO: devuelve una lista, no lanza
+¿el nombre es identificador? ................. NO (dos «María García» no coinciden)
+```
+
+**LA RESPUESTA A LA PREGUNTA DEL ENCARGO,** literal: hoy no se avisa por el móvil, ni por
+cualquiera de los dos, ni por la pareja — **el móvil no es campo identificador**. La clave de hoy
+es **«mismo valor normalizado en CUALQUIER campo identificador»**, y esos campos son tres.
+**Nunca la pareja:** el código cruza todos contra todos, no campo con campo.
+
+Consecuencia de no tocarla, dicha para que se decida a la vista: **un móvil duplicado NO avisa.**
+Si el fundador quiere que avise, es **una línea** —`{ campo: 'mobile', canon: canonParaComparar }`
+en `IDENTIFICADORES`— y el cruce sale solo, porque la búsqueda ya compara todos contra todos. El
+comentario `⏳ PENDIENTE DE SCRUM-590` de ese fichero **sigue vivo a propósito**: hasta que se
+decida, dirige bien.
+
+---
+
+## A2 · EL ESQUEMA — ESCRITO, **NO APLICADO**
+
+⛔ `prisma/schema.prisma` lleva el campo; **ninguna base ha sido tocada**. `npx` no se ha usado
+para nada de Prisma (CLI local: `npm run prisma:generate`).
+
+**Preview obligatorio (SCRUM-385), offline, contra el esquema de `origin/main`:**
+
+```
+$ node scripts/preview-migracion.mjs --desde <schema de origin/main>
+✔ control positivo: la herramienta responde (27 tablas).
+──────── SQL QUE SE APLICARÍA ────────
+ALTER TABLE "customers" ADD COLUMN     "mobile" TEXT;
+──────── VEREDICTO ────────
+✔ aditiva: ni DROP, ni RENAME, ni TRUNCATE, ni DELETE, ni SET NOT NULL.
+```
+
+- `docs/sql/scrum-590-movil-del-contacto.sql` — el `ALTER`, con `IF NOT EXISTS`.
+- `docs/sql/deriva-prod.sql` — **regenerado** (427 columnas; entra `('customers','mobile')`).
+
+⚠️ **ORDEN ①②③**, y aquí es lo de siempre: el `ALTER` va a las tres bases (staging →
+`yaqu_dev_javier` → producción) **antes** de que el código desplegado nombre el campo. Hasta
+entonces `scripts/constancia-del-alter.mjs` dirá **FALTAN** — eso es la señal funcionando, no un
+fallo del PR.
+
+---
+
+## A3 · VERIFICACIÓN — el camino REAL, contra el doble
+
+`tests/scrum590-el-movil-es-el-canal.test.mjs` **ejecuta** `sendQuoteWhatsAppToCustomer`, el
+servicio de producción, y mira a qué número acabó llamando. Un guard de texto no habría podido
+distinguir «los dos campos se guardan» de «el documento sale al móvil»: en los dos mundos hay una
+línea que resuelve un destino.
+
+⛔ **No se ha mandado ni un mensaje a ningún número real, ni un byte a Meta.** Los dobles son dos:
+la BASE (`require.cache` de `dist/core/db/prisma.js`) y META (`WHATSAPP_DRY_RUN=1` +
+`globalThis.__waDryRunOutbox`, el mecanismo que ya existía). En dry-run los senders **pasan todos
+los guards** y sólo se saltan el HTTP — por eso el caso negativo de abajo es real.
+
+| control | resultado |
+|---|---|
+| 🔴 **EL QUE DECIDE** · fijo + móvil → el documento sale al **MÓVIL** | ✅ |
+| 🔴 **el sentido contrario** · y **NO** sale también al fijo | ✅ |
+| ✅ **POSITIVO** · un solo número (todo cliente de hoy) → idéntico a hoy | ✅ |
+| ✅ móvil en blanco (`''`, `'   '`) → cae al fijo, no deja sin canal | ✅ |
+| ✅ **NEGATIVO** · baja sobre el MÓVIL → **no se manda**, con el fijo limpio | ✅ |
+| control negativo del guard · una baja AJENA no bloquea este envío | ✅ |
+| 🔴 **SUELO** · sin salida en el buzón, el test falla declarándose CIEGO | ✅ |
+
+**Probado en rojo** devolviendo al árbol el código anterior (resolución por `phone` y opt-out por
+`phone`):
+
+```
+✖ el documento sale al MÓVIL, no al fijo
+  AssertionError: el documento NO salió al móvil. Destinos observados: ["34910000111"]   ← el FIJO
+✖ opt-out sobre el MÓVIL: NO se manda, aunque el fijo esté limpio
+```
+
+Eso —`Destinos observados: ["34910000111"]`— es la medición del sentido contrario que pedía el
+encargo: **con el código de antes, salía al fijo.** No es un recuerdo; se produjo.
+
+En el caso negativo, la fila dada de baja lleva **el móvil y `phone: null`** a propósito: así el
+bloqueo sólo puede venir del móvil.
+
+---
+
+## A4 · ⛔ LO QUE **NO** ENTRA, Y POR QUÉ
+
+### El campo «Móvil» en el formulario — NO se ha añadido. Se propone el rótulo y se para.
+
+No es olvido ni falta de tiempo: **un campo necesita un rótulo, y un rótulo es texto que ve el
+usuario.** El encargo prohíbe literales nuevos (regla 30) y CLAUDE.md lo dice sin matices:
+*«Ningún texto que vea el usuario se escribe sin firma del fundador. Se propone el literal y se
+para.»*
+
+Y la salida fácil —pintar `[PENDIENTE microcopy oficial]`— está **cerrada por medición previa**:
+`customersView.js` tiene escrito, de SCRUM-575, que ese marcador *«acabó delante de un
+profesional»* tres veces en una semana desde que producción despliega al mergear.
+
+**Propuesta (no decisión), con la caja ya medida en el §5 de arriba** —los seis candidatos caben
+en una línea a 929 px y a 390 px, así que la elección es de significado, no de espacio—:
+
+> **«Móvil (WhatsApp)»** · 16 caracteres · junto a «Teléfono», mismo componente, sin selector de
+> prefijo propio (el que ya existe sirve a los dos).
+
+Firmado el rótulo, el campo es un PR pequeño: `createField` + `mobile` en el `body` del guardado.
+El backend **ya lo acepta y lo devuelve** (Zod, los `select`, la normalización).
+
+### Lo demás que se deja fuera, cada cosa con su motivo
+
+| qué | por qué no entra |
+|---|---|
+| `wa_canal` | estado nuevo → regla 27. Medido en el §4; añadirlo después sigue siendo aditivo |
+| el móvil en la deduplicación | **no lo decide esta sesión** (§A1.3). Es una línea cuando se decida |
+| los 6 interruptores del panel (`if (customer.phone)` → «Recordar pago», `hasPhone`…) | mismo defecto, **hoy inalcanzable**: sin campo en el formulario ningún cliente puede tener móvil. Van con el PR del rótulo, que es cuando se vuelven alcanzables. Regla 37 |
+| `charges.routes.ts:34` (la 2ª puerta que crea clientes) | ampliar el contrato de una API pública sin necesidad. Omitirlo **no abre agujero**: los clientes que nacen ahí no tienen móvil, o sea el comportamiento de hoy |
+| `botAdmin.routes.ts:27` (lista de reparto del bot) | **sólo pinta un nombre**; no decide a dónde va un mensaje. Ésa es la línea que se ha seguido: lo que decide envío o respuesta se arregla, lo que sólo muestra se reporta |
+| `exportData.ts` | la exportación es forma de datos y contrato con el profesional: otro carril |
+
+---
+
+## A5 · HALLAZGOS (regla 37 — se reportan, no se arreglan)
+
+1. **`guard-dangerous` tiene un falso positivo**: leyó `git diff <ruta-rastreada> > <fichero del
+   scratchpad>` como si truncara la ruta rastreada, y bloqueó. El destino del `>` era otro
+   fichero. Se esquivó sin tocar el guard (regla: un guard en rojo se arregla cambiando el
+   código, no el guard) — pero conviene que sepa distinguir el operando del destino.
+2. **Los 6 interruptores del panel** y **`botAdmin.routes.ts:27`**, arriba, con su siguiente
+   acción concreta.
+3. **`customers.phone` sigue sin índice**, y ahora el buscador de duplicados tendría **dos**
+   columnas sin índice en el mismo `OR` el día que el móvil entre en la deduplicación. Ya estaba
+   reportado en el §7; se re-reporta porque este ticket lo empeora.
+4. **El rótulo de la ficha 360 sigue obsoleto** («Teléfono (E.164 sin +)»), y sigue en línea, no
+   en constante. Reportado en el §7 y sin tocar.
+
+---
+
+## A6 · HUECOS DECLARADOS
+
+- **Sin campo en el formulario** (§A4), y por tanto **sin capturas ni matriz de dispositivos**:
+  no se ha tocado una línea de `public/`. La skill `yaqu-premium-ui` se cargó antes de decidirlo.
+- **Ninguna base tocada.** Ni producción, ni staging, ni dev. El `ALTER` está escrito y parado.
+- **La deduplicación no se ha medido con datos nuevos**: el §3 ya dejó dicho que la muestra de dev
+  (14 clientes, 7 en el merchant mayor) no aguanta un porcentaje, y eso no ha cambiado.
+- **El trinquete no ve** el destino calculado dentro de otra función que no se sigue, ni el envío
+  por alias (`const f = sendWhatsAppTemplate`). Declarado en su cabecera; falla ABIERTO (sale como
+  «no juzgado», nunca como aprobado), y por eso lleva suelo de población.
+- **`normalizePhone` no se ha tocado**, y era tentador: tiene ~40 llamadores y **es el número al
+  que se envía el WhatsApp**. Cambiar lo que devuelve cambia a dónde se manda un mensaje.
