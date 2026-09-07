@@ -1,9 +1,9 @@
 # SCRUM-755 · El contador que cuadró solo, y el trinquete que no lo miraba
 
 **Fecha:** 7-sep-2026 · **Carril:** microcopy · instrumentos · **Gate:** sin gate
-**Medido contra:** `origin/main` = `6fb51ab77713af1261dcf2e3f7819545c57c35b6` · 2026-09-07T02:40:00+01:00
-**Tanda:** TANDA_PENDIENTE
-**Meta-guard:** vivas 129 · mudas 0 · ciegas 0 · ficheros muertos 0 · `exit 0`
+**Medido contra:** `origin/main` = `7bcf417907020708b5824db42b7b867e0c7e01d2` · 2026-09-07T03:30:00+01:00
+**Tanda:** 5816 tests, 5714 pass, 0 fail, 102 skipped · `EXIT_REAL=0` · y los saltados SUMAN: 5714 + 102 = 5816
+**Meta-guard:** vivas 132 · mudas 0 · ciegas 0 · ficheros muertos 0 · `exit 0` (tras mezclar main y RECOMPILAR)
 **Tanda (1ª vuelta):** 5789 tests, 5687 pass, 0 fail, 102 skipped · `EXIT_REAL=0` (fichero y $? aparte, nunca al final de una tubería) · tras mezclar main
 
 > **Obligación 0 · NO estaba hecho.** Comprobado antes de empezar: `INV_SIN_APROBAR` sigue en
