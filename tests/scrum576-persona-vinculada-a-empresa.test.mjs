@@ -291,16 +291,26 @@ test('SCRUM-576 · el `select` del servidor DEVUELVE `companyId`', async () => {
 
 function mesaDeClientes(filas) {
   const tabla = filas.map((f) => ({ ...f }));
+  // 🔴 EL DIARIO DE LLAMADAS, y no es adorno: es lo ÚNICO que ve el orden. Sobre una tabla en
+  // memoria, desvincular-y-borrar y borrar-y-desvincular dejan el MISMO estado final, así que
+  // ningún test que mire sólo las filas puede distinguirlos — medido: invertir el orden en el
+  // producto dejaba la suite entera en VERDE. Y el orden importa de verdad: al revés queda una
+  // ventana con filas apuntando a un id que ya no existe, y si el segundo paso falla no se cierra
+  // nunca. Lo que en Postgres es una ventana, aquí sólo se ve en la SECUENCIA.
+  const diario = [];
   const casa = (fila, where) => Object.entries(where).every(([k, v]) => fila[k] === v);
   return {
     tabla,
+    diario,
     customer: {
       async updateMany({ where, data }) {
+        diario.push('updateMany');
         let n = 0;
         for (const f of tabla) if (casa(f, where)) { Object.assign(f, data); n += 1; }
         return { count: n };
       },
       async deleteMany({ where }) {
+        diario.push('deleteMany');
         let n = 0;
         for (let i = tabla.length - 1; i >= 0; i -= 1) {
           if (casa(tabla[i], where)) { tabla.splice(i, 1); n += 1; }
@@ -410,6 +420,20 @@ test('SCRUM-576 · ✅ el desvinculado NO cruza de merchant (regla 2)', async ()
   assert.equal(ajeno.companyId, 7,
     '🔴 FUGA ENTRE INQUILINOS: se ha escrito en la fila de otro merchant porque su `companyId` ' +
     'coincidía POR NÚMERO. Sin `merchantId` en el `where`, un entero alcanza a quien no debe.');
+});
+
+test('SCRUM-576 · 🔴 SE DESVINCULA ANTES DE BORRAR, no al revés', async () => {
+  const { desvincularYBorrar } = await import('../dist/modules/system/customerAdmin.js');
+  const m = mesaDeClientes(SEMBRADO());
+
+  await desvincularYBorrar(m, 71, 7);
+
+  assert.deepEqual(m.diario, ['updateMany', 'deleteMany'],
+    '🔴 EL ORDEN ESTÁ INVERTIDO. Borrar primero deja una ventana en la que las personas apuntan a ' +
+    'un id que YA NO EXISTE, y si el desvinculado falla después, esa ventana no se cierra nunca. ' +
+    'Sin clave ajena nadie protestaría: el defecto sería MUDO. Y este control existe porque ' +
+    'el estado FINAL es idéntico en los dos órdenes: mirar sólo las filas no puede verlo, y no ' +
+    'lo veía — invertir el orden dejaba la suite entera en VERDE.');
 });
 
 test('SCRUM-576 · 🔴 los dos pasos van en UNA transacción, no sueltos', () => {
