@@ -2,7 +2,7 @@
 
 **Fecha:** 6-sep-2026 · **Carril:** producto · fechas · **Gate:** sin gate — el guard corre en `npm test`
 
-**Medido contra:** `origin/main` = `50312d327c0f7ddcf8a0670ab54c46407a7bba9d` · 2026-09-06T22:36:05+01:00
+**Medido contra:** `origin/main` = `5af8e7e9cdcd15ac90eb9b8a1473737872b6625c` · 2026-09-06T23:20:04+01:00
 
 ---
 
@@ -149,6 +149,29 @@ recalculados con la misma aritmética que se prueba — recalcularlos habría si
 | mutación | qué prueba |
 |---|---|
 | `if (!existe) {` → `if (false) {` | el ida y vuelta deja de comprobarse y el 31 de febrero vuelve a ser 3 de marzo |
+
+---
+
+## LA TANDA — la del árbol ENTREGADO, después de mezclar `main`
+
+Mezclar es un cambio, así que estas cifras son de DESPUÉS del merge, no de antes.
+
+| | UTC | Europe/Madrid |
+|---|---|---|
+| `npm test` | **5733 · 5631 pass · 0 fail · 102 skipped** · exit 0 | **idéntico** |
+
+La zona se inyecta en el entorno del proceso hijo y se comprueba la **zona RESUELTA** de ese
+proceso (`Intl…resolvedOptions().timeZone`), no `process.env.TZ` — en esta máquina la variable
+no llega, y mirarla habría sido un control ciego.
+
+| | |
+|---|---|
+| `guards:entrada` | 21 tests, verde |
+| `frontera:dist` | 270 corresponden · 0 no · 0 sin dist |
+| `meta:mutaciones` | **vivas 101 · mudas 0 · ciegas 0 · ficheros muertos 0** · exit 0 · 1.337 s |
+
+La declaración de este ticket muta un `.ts` **compilado**, así que el meta-guard ejercita de paso
+el camino de `dist/` de SCRUM-763: emite, corre y restaura las dos piezas. Sale **VIVA**.
 
 ---
 
