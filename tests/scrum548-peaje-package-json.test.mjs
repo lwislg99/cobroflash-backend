@@ -127,6 +127,11 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // construida a partir del nombre del caso (`${base}/${caso.nombre…}`). De una variable no sale
   // ningún destino, así que su solape es INVISIBLE para este detector y se declara en vez de
   // contarse como «no tiene». Lo que sí se sabe es que su página la fabrica él y no la comparte.
+  // SCRUM-722 · entra `guard:marcadores-en-pantalla`, por lo mismo: no visita ninguna página del
+  // árbol. Se FABRICA su banco en un temporal —derivando la lista de scripts del `index.html`
+  // real— y lo abre por `file://` desde una variable, así que de aquí no sale ningún destino. Su
+  // solape es invisible para este detector y se declara en vez de contarse como «no tiene».
+  // MEDIDO: la página la fabrica él en un `mkdtemp` y la borra al acabar; no la comparte con nadie.
   // SCRUM-819 · entra `guard:rastro-del-menu`. Su destino tampoco se deriva: levanta un servidor
   // propio en un PUERTO EFÍMERO y navega a `http://127.0.0.1:${puerto}/dashboard/index.html`, así
   // que del fuente no sale ninguna ruta fija. Y una vez dentro no vuelve a hacer `goto`: recorre
@@ -135,7 +140,10 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // MEDIDO: la página la fabrica él —sirve `public/` con `/admin/*` respondido al vuelo— y no la
   // comparte con ningún otro guard. Se declara para que su solape invisible no se lea como «no
   // tiene», que es la trampa que este fichero cierra.
-  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo', 'guard:caja-documento-suelto', 'guard:portal-en-la-ficha', 'guard:caja-datos-del-cliente', 'guard:objetivo-tactil', 'guard:rastro-del-menu'],
+  // ⚠️ Los DOS de arriba entraron a la vez, en ramas distintas, y el conflicto fue de git y no
+  // de criterio: los dos AÑADEN. Se conservan los dos —convención de `//guards` en
+  // package.json—, nunca se elige uno.
+  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo', 'guard:caja-documento-suelto', 'guard:portal-en-la-ficha', 'guard:caja-datos-del-cliente', 'guard:objetivo-tactil', 'guard:rastro-del-menu', 'guard:marcadores-en-pantalla'],
     '🔴 ha cambiado el conjunto de guards cuyo destino NO se puede derivar. Se declaran para que\n'
     + '  su solape invisible no se lea como «no tiene».');
 });

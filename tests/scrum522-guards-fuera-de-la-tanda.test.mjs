@@ -60,6 +60,11 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // cinco guards de caja: aquí no se mide si un texto CABE, sino si un elemento EXISTE. Y no vale
   // mirarlo en el fuente — un `${cond ? botón : ''}` bien puesto y uno mal puesto se leen igual,
   // que es la lección de SCRUM-515. El árbitro tiene que ser el DOM renderizado.
+  // SCRUM-722 · 13 → 14: entra `guard:marcadores-en-pantalla`, que mide en navegador que ningún
+  // `[PENDIENTE microcopy oficial]` llegue al DOM RENDERIZADO de las 26 vistas del panel, en sus
+  // tres estados. Sube por el motivo de SCRUM-795 y no por el de los cinco guards de caja: aquí
+  // el árbitro tiene que ser el DOM. Había CUATRO guards de marcadores mirando el FUENTE y
+  // ninguno vio uno que estuvo tres días en pantalla — estaba contado y permitido en sus censos.
   // SCRUM-819 · 13 → 14: entra `guard:rastro-del-menu`, que pulsa los 17 destinos del menú y
   // pregunta por `location.hash`, `window.appState.view` e `history`. Sube por un motivo que
   // ninguno de los trece anteriores tenía: **no mide cómo se ve nada**, mide si navegar DEJA
@@ -67,8 +72,12 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // mismo — en su mundo hash y vista coinciden por construcción, así que esa pregunta no se le
   // puede hacer. Un `history.back()` de banco es la implementación que el banco haya hecho de la
   // semántica que se quiere medir. Cuesta unos 10 s.
-  assert.equal(fuera.length, 14,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ 14 → ${fuera.length}.\n`
+  // ⚠️ SCRUM-722 y SCRUM-819 entraron a la vez y LOS DOS escribieron «13 → 14», cada uno por su
+  // guard. Es la colisión de contador de SCRUM-662 otra vez: dos ramas que añaden cosas distintas
+  // no pueden escribir el mismo número. Aquí la resolución correcta es SUMAR —los dos añaden—, y
+  // por eso son 15. Ninguno de los dos comentarios se tira: cada uno dice por qué sube el suyo.
+  assert.equal(fuera.length, 15,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ 15 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);

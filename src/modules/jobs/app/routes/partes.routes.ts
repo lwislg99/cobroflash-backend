@@ -322,6 +322,30 @@ router.post('/', async (req: any, res) => {
     }
 
     const fecha = new Date();
+    // 🔴 SCRUM-818 · LOS TÉCNICOS VIENEN PRELLENADOS DE LOS ASIGNADOS DEL TRABAJO.
+    //
+    // Nadie teclea lo que el sistema ya sabe: si el jefe asignó a Israel y a Miguel (SCRUM-650),
+    // el parte nace con sus nombres puestos. Antes nacía con `[]` y el técnico los reescribía de
+    // pie y con una mano.
+    //
+    // ⚠️ SE COPIA UNA VEZ, AL CREARLO, Y DESPUÉS ES UN CAMPO SUYO — no un valor derivado que se
+    // recalcule. El parte es la prueba de lo que PASÓ, no el registro de lo que se planeó, y lo
+    // firma un cliente que puede discutirlo. Si el técnico lo cambia porque al final fue otro,
+    // **eso no es un error: es el dato**, y nada lo revierte al guardar.
+    //
+    // Sin Trabajo detrás, o con un Trabajo sin nadie asignado, se queda vacío —que es lo que
+    // había— y lo escribe el técnico. No se inventa un nombre.
+    let tecnicosDelTrabajo: string[] = [];
+    if (jobId !== null) {
+      const asignados = await prisma.jobAssignee.findMany({
+        where: { jobId },
+        select: { teamMember: { select: { name: true } } },
+      });
+      tecnicosDelTrabajo = asignados
+        .map((a) => (a.teamMember?.name ?? '').trim())
+        .filter((n) => n !== '');
+    }
+
     const creado = await prisma.$transaction(async (tx) => {
       // Ver `parteNumero.ts` para lo que esta reserva SÍ garantiza y lo que NO.
       const yaHay = await tx.parteTrabajo.findMany({
@@ -338,7 +362,7 @@ router.post('/', async (req: any, res) => {
           fecha,
           tipo,
           lineas: [],
-          tecnicos: [],
+          tecnicos: tecnicosDelTrabajo,
           estado: 'borrador',
         },
       });
