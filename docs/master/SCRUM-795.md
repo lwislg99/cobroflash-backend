@@ -427,3 +427,150 @@ sesiones mueven mientras corre — el mismo fenómeno de base compartida que ya 
 
 `ensurePortalToken`, `botFlow`, `charges`, `prisma/schema.prisma`, ningún backfill. El
 `@default(1)` sigue en la mesa del fundador con la cifra de esta entrada dentro.
+
+---
+
+# SCRUM-795 · CIERRE · lo que dijo la skill de UI, y lo que costó cumplirla
+
+**Medido contra:** `origin/main` = `44562c332d1aed2c4ad4c7dfeaf71fd7bd59ce21` · 2026-09-07T03:19:09Z
+
+`yaqu-premium-ui` lleva **88 días en el árbol** (nace el 11-jun-2026, commit `b028bad6`, un solo
+commit y nunca modificada) y se declara **obligatoria antes de tocar cualquier UI**. La leí
+DESPUÉS de escribir el botón, no antes. Ese orden es el defecto, y de él sale todo lo de abajo.
+
+## ① El literal vuelve al oficial, y se cuentan los bytes
+
+`customersView.js:660` pinta esta misma acción con `"Error al obtener el portal: " + err.message`.
+Mi primera versión escribía `'Error al obtener el portal'` — **26 bytes contra 28**, o sea la
+oficial menos `": "`. Un recorte es microcopy nuevo (regla 30): la regla no distingue entre
+inventar una frase y quitarle dos caracteres a la de la casa.
+
+Ahora la línea 113 lleva los **28 bytes exactos**, comprobado por sha256 y no a ojo:
+
+| | literal | bytes | sha256 (16) |
+|---|---|---|---|
+| lista `customersView.js:660` | `Error al obtener el portal: ` | 28 | `6e1e8e77b66e039b` |
+| ficha `customerDetailView.js:113` | `Error al obtener el portal: ` | 28 | `6e1e8e77b66e039b` |
+
+🔴 **Y LO QUE NO VA, DICHO:** la lista sigue con `+ err.message`. Este fichero **no puede** — el
+techo de `.message` crudos de `customerDetailView.js` en SCRUM-644 es **CERO**, y su segundo
+trinquete impide devolverlo a la tabla del censo heredado. Consecuencia visible: el usuario lee
+`Error al obtener el portal: ` con un dos puntos y nada detrás. Es feo, está **declarado en el
+código**, y se prefiere a las dos alternativas: estrenar texto por mi cuenta, o asomar un
+`customer_not_found` a la interfaz.
+
+## ② Los 30 px: la deuda que este ticket AÑADE, contada como nueva
+
+**No se arregla aquí** (decisión del asesor: tocar `.btn-sm` son 57 objetivos en 18 vistas, y eso
+es SCRUM-786). Pero se cuenta, porque un botón de 30 px sin declarar es deuda escondida.
+
+La medida, en navegador, área de toque (no caja CSS), 7-sep-2026:
+
+| botón | 929 px | 390 px | AB6 |
+|---|---|---|---|
+| `btn-secondary btn-sm` «🔗 Portal» (**el mío**) | 30,9 | 30,6 | 🔴 |
+| `btn-secondary btn-sm` «Portal» de la lista (no tocado) | 30,9 | 30,9 | 🔴 |
+| `btn-secondary` **sin** `btn-sm` | — | **44,0** | ✅ |
+
+O sea: el sub-44 es propiedad de la clase, no de mi cambio. **Pero mi cambio añade un objetivo
+corto donde antes no había ninguno**: para un cliente sin token el botón no se pintaba. Que la
+clase sea vieja no hace vieja la deuda, y por eso entra en el contador como nueva.
+
+Área de toque completa del mío: **80 × 30 px**. Contraste `rgb(15,28,23)` sobre blanco:
+**17,52:1** (AA pide 4,5) ✅.
+
+## ③ La ficha 360 entra en el guard — y antes NADIE la medía
+
+El censo de SCRUM-787 no la dejó fuera por criterio: **no podía montarla**. `tests/_banco-vistas.mjs`
+llamaba a todas las vistas con UN argumento y la 360 necesita dos —`renderCustomer360View(caja,
+id)`, como hace `app.js:314`—, así que montaba **2 nodos** y el censo la declaraba «⚠️ sólo 2
+nodos». Eso es el suelo funcionando: no la contó como cero, dijo que no sabía.
+
+Cambio mínimo en el fichero compartido: `pintarVista` acepta un **resto opcional**. Los 91 sitios
+que llaman sin argumentos (contados el 7-sep-2026 sobre `6fb51ab7`) se comportan igual —ninguno
+pasaba un tercero—. El fixture vive en `_pagina-panel.mjs`, compartido por el guard y el censo,
+para que el que vigila y el que cuenta hablen de la misma pantalla.
+
+**Provocado primero, con la lista de excepciones VACÍA:** 7 interactivos, **7 por debajo de 44 px,
+los siete**. Ninguno cumplía. Ésa es la superficie real, y así queda declarada:
+
+| objetivo | px (929 / 390) | de quién es |
+|---|---|---|
+| `BUTTON.btn-ghost.btn-sm` «← Volver a Clientes» | 31,0 / 31,0 | pre-existente (SCRUM-786) |
+| `BUTTON.btn-secondary.btn-sm` «✎ Editar» | 30,9 / 30,5 | pre-existente (SCRUM-786) |
+| **`BUTTON.btn-secondary.btn-sm` «🔗 Portal»** | **30,9 / 30,5** | **SCRUM-795 — lo añado yo** |
+| `BUTTON.btn-primary.btn-sm` «+ Nuevo presupuesto» | 30,9 / 30,6 | pre-existente |
+| `BUTTON` «Presupuestos (1)» | 41,0 / 41,0 | tercer grupo de SCRUM-787 |
+| `BUTTON` «Facturas (1)» | 41,0 / 41,0 | ídem |
+| `BUTTON.btn-ghost.btn-sm` «Ver →» | 30,5 / 30,7 | pre-existente |
+
+⚠️ **CÓMO FALLA ESTE MECANISMO, dicho antes de que lo descubra otro:** las excepciones casan por
+**SELECTOR**, y `BUTTON.btn-secondary.btn-sm` es el mismo para «✎ Editar» (que ya estaba) y para
+«🔗 Portal» (que pongo yo). Una línea excusa a los dos y no sabe separarlos. No se arregla aquí
+—tocar el emparejador cambiaría el veredicto de las otras dos superficies, que son de otras
+sesiones—, así que el motivo **nombra a los dos** y el guard imprime cada elemento con su texto y
+sus píxeles. Quien lea la salida ve escrito `⚠️ EXCEPCIÓN 30.9px · «🔗 Portal» … LO AÑADE SCRUM-795`.
+
+El suelo de la superficie **no se le atribuye a SCRUM-787**, que nunca la midió: la superficie
+declara su `origen` y el guard lo imprime.
+
+## ④ El número del censo deja de mentir: 75 → 82
+
+`npm run censo:tactil-panel`, 7-sep-2026:
+
+| | antes (02:18) | ahora (02:40) |
+|---|---|---|
+| vistas montadas | 18 | **19** |
+| NO medidas | 8 | **7** |
+| objetivos cortos distintos | 75 | **82** |
+| de ellos `.btn-sm` | 57 (76,0 %) | **62 (75,6 %)** |
+
+No son seis defectos nuevos: son los **7 de la ficha 360**, que hasta hoy no se podían montar. El
+76 de SCRUM-787 no se reescribe — era verdad sobre la población que aquel día se podía medir.
+
+## ⑤ El control que no se podía perder, vuelto a medir
+
+Con el contador de SCRUM-58 (`QA_QUERY_LOG=1`), contra `yaqu_dev_javier`, **7-sep-2026 03:12 UTC**,
+por el handler compilado:
+
+- **ABRIR la ficha** (`GET /detail`) → HTTP 200 · 5 consultas · **0 ESCRITURAS** ✅
+- **PULSAR el botón** (`GET /portal-url`) → HTTP 200 · 4 consultas · **1 escritura**:
+  `UPDATE "public"."customers" SET "portal_token" = $1, "updated_at" = $2 WHERE id = $3`
+- limpieza: clientes 0 · merchants 0
+
+Descarté curar-al-abrir con este argumento; perderlo ahora sería peor que no haber arreglado nada.
+
+## ⑥ Lo de AB6 que sigue SIN cumplirse, y no lo tapo
+
+De las seis casillas del checklist, mi cambio cumple contraste ✅ y falla o no cubre:
+
+- **targets ≥44 px** — 🔴 falla, medido y declarado arriba.
+- **capturas antes/después** — no las hay.
+- **matriz Android gama media / iPhone / tablet (V0-5)** — medí 929, 1280 y 390 px. Eso no es la
+  matriz.
+- **estados empty / error / loading** — el error se ve ahora con el `: ` colgando; no hay skeleton.
+- **focus visible (anillo Foco)** — 🔴 **sigue SIN MEDIR**, y ver abajo.
+
+Las reglas duras sí: vanilla ✅ · un componente por cambio ✅ · reutiliza el inventario AB3 ✅ ·
+cero estilos inline nuevos ✅.
+
+## ⑦ Qué haría falta para medir el foco de verdad (y por qué no se mide aquí)
+
+`styles.css:132` **sí** declara el anillo: `:focus-visible { outline: none; box-shadow: var(--ring) }`.
+Lo que no vale es cómo lo miré: `el.focus()` desde el script es foco **programático**, y el
+navegador sólo aplica `:focus-visible` cuando la heurística dice que el foco vino del teclado.
+Una lectura tras `.focus()` puede dar «sin anillo» con el CSS perfectamente sano.
+
+Para medirlo hacen falta dos cosas que hoy no tiene ningún guard del panel: **(1)** llegar al
+elemento con `Tab` de verdad (`page.keyboard.press('Tab')` hasta que `document.activeElement` sea
+el botón, que es lo único que enciende `:focus-visible`), y **(2)** un árbitro que no sea «hay
+box-shadow»: comparar el píxel del borde **con foco y sin foco** —captura y diferencia—, porque un
+`--ring` mal resuelto devuelve una sombra transparente que la lectura de estilos da por buena.
+Es su propio ticket; aquí no se toca.
+
+## Lo que este cierre NO ha tocado
+
+`.btn-sm` (57 objetivos, SCRUM-786) · los cambios de UI de SCRUM-794 y SCRUM-792, que son de otras
+sesiones · `ensurePortalToken`, `botFlow`, `charges`, `prisma/schema.prisma`, ningún backfill · la
+limitación del emparejador de SCRUM-634 en el banco de vistas, que sigue declarada donde estaba ·
+ningún umbral bajado y ninguna excepción inventada para que un guard pase.
