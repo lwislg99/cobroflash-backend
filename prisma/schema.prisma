@@ -229,7 +229,15 @@ model Customer {
   taxId     String? @map("tax_id")
 
   id          Int     @id @default(autoincrement())
-  merchantId  Int     @default(1) @map("merchant_id")
+  // SCRUM-797 · SIN `@default(1)`, y ése es el cambio entero. El merchant 1 ES LA CUENTA DEMO:
+  // con el defecto puesto, un `create` que se olvidara del dueño archivaba el cliente bajo el
+  // demo SIN UN SOLO ERROR, y el profesional que lo creó no lo veía en su lista. Reproducido
+  // por el camino real contra dev el 7-sep-2026 (POST /charges del merchant 1044 → cliente 932
+  // con merchant_id = 1). Obligatoria, el olvido es RUIDOSO: Prisma se niega al primer intento.
+  // 🟢 Firmado por el fundador: «la más segura y más sólida de cara a en un futuro tener muchos
+  // clientes». La columna YA era NOT NULL, así que esto sólo quita el DEFAULT: ninguna fila
+  // existente cambia de dueño.
+  merchantId  Int     @map("merchant_id")
   name        String
   phone       String?
   email       String?
