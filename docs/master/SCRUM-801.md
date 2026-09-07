@@ -1,9 +1,15 @@
 # SCRUM-801 · La «N» que abre otra pantalla — cuántas son, y qué hacer
 
-**Fecha:** 6-sep-2026 · **Carril:** producto · navegación · **Gate:** sin gate — corre en `npm test`
-**Medido contra:** `origin/main` = `07ec5befb176d95b066f87d586d585b2b0e932c2` · 2026-09-06T22:38:10+01:00
-**Tanda:** `npm run build` + `node --test --test-reporter=tap tests/*.test.mjs` → **5721 pruebas ·
-5619 en verde · 0 rojas · 102 saltadas** · 266,0 s · salida 0.
+**Fecha:** 6/7-sep-2026 · **Carril:** producto · navegación · **Gate:** sin gate — corre en `npm test`
+**Medido contra:** `origin/main` = `5af8e7e9cdcd15ac90eb9b8a1473737872b6625c` · 2026-09-07T01:37:09+01:00
+
+> **`main` se movió DOS veces durante el ticket y se dice cuál es cuál.** Se midió primero contra
+> `07ec5bef…`; entraron después SCRUM-758, 778, 790, 792 y 799. La rama **se mezcló y las tres
+> mediciones se repitieron enteras encima**: censo **27 / 6 / 21**, teclado real **6 + 21 + 0** y
+> creación propia **7 / 3 / 11** salen **idénticos** antes y después. Los absolutos de la tanda son
+> los del árbol mezclado.
+**Tanda:** `npm run build` + `node --test --test-reporter=tap tests/*.test.mjs` → **5735 pruebas ·
+5633 en verde · 0 rojas · 102 saltadas** · 421,8 s · salida 0.
 
 Los **102 saltos declaran motivo y suman 102**: **92** piden base (`QA_DB_TEST` / `A55_DB_TEST` /
 `AN_DB_TEST` / `BOT_SUITE_TEST` → `npm run test:staging:gated`), **9** piden un Postgres desechable
