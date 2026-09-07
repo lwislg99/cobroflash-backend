@@ -18,10 +18,14 @@
 // fichero, ni de ejemplo.**
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import path from 'node:path';
 import {
-  veredictoDeDespliegue, MARGEN_HORAS_PROPUESTO, NO_SUPE_MIRAR, SALIDA_NO_SUPE_MIRAR,
+  veredictoDeDespliegue, MARGEN_HORAS_PROPUESTO, SALIDA_NO_SUPE_MIRAR,
   constanciaDeEjecucion,
 } from './_vigilante-de-despliegue.mjs';
+// SCRUM-716 · el ritmo: congelado y retrasado no son lo mismo. La aritmética y la decisión son
+// puras y viven allí; aquí sólo se lee el fichero y se escribe.
+import { ritmoDeDespliegue, ultimaLectura, salidaConRitmo } from './_ritmo-de-despliegue.mjs';
 
 const URL_POR_DEFECTO = 'https://yaqu.app/version';
 
@@ -77,9 +81,48 @@ const datos = {
 };
 const v = veredictoDeDespliegue(datos);
 
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-716 · EL RITMO: ¿ESTÁ CONGELADA, O SÓLO VA POR DETRÁS?
+//
+// El veredicto de arriba mira UN instante. El 6-sep-2026 eso pintó igual dos situaciones muy
+// distintas —producción movida y producción quieta—, mandó a buscar un healthcheck sano y bloqueó
+// cinco ramas media jornada. El discriminador es comparar con la lectura ANTERIOR.
+//
+// 🔴 EL ALMACÉN ES LA CACHÉ DE ACTIONS, y por eso el diseño aguanta que falle: cuando la caché se
+// pierde no hay lectura anterior, y la respuesta es `NO_SE_SABE` — un valor de primera clase que
+// ya existe. Ningún permiso nuevo, nada escrito en el repositorio.
+//
+// ⚠️ SIN `VIGIA_ESTADO` NO HAY HISTORIAL, y es deliberado: en local no se ensucia nada y el vigía
+// contesta lo honrado, que es que no sabe si se mueve. La ruta la pone el job.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+const rutaEstado = process.env.VIGIA_ESTADO || '';
+let anterior = null;
+if (rutaEstado) {
+  // Que no exista todavía es lo normal en la primera ejecución: no es un error, es que no hay
+  // lectura anterior. Cualquier otro fallo de lectura SE DICE — un historial que falla en
+  // silencio es la avería que este historial existe para no repetir.
+  try {
+    anterior = ultimaLectura(fs.readFileSync(rutaEstado, 'utf8'));
+  } catch (e) {
+    if (e && e.code !== 'ENOENT') {
+      console.error('   (no se pudo leer el historial en ' + rutaEstado + ': '
+        + String(e.message).split('\n')[0] + ')');
+    }
+  }
+}
+const ritmo = ritmoDeDespliegue(anterior, { versionDeProduccion });
+const final = salidaConRitmo(v, ritmo);
+
 console.log('\n[vigilante de despliegue] ' + url);
 console.log(v.titulo);
 if (v.detalle) console.log(v.detalle);
+// El ritmo sólo habla cuando tiene algo que decir sobre este veredicto; si no, callarse es lo
+// correcto — un vigía que repite «no sé nada del ritmo» en cada verde es ruido.
+if (final.califica) {
+  console.log('');
+  console.log(final.titulo);
+  console.log('   ' + final.detalle);
+}
 console.log('');
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -97,6 +140,19 @@ console.log('');
 const constancia = constanciaDeEjecucion(v, datos);
 console.log(constancia.renglon);
 
+// SCRUM-716 · y el MISMO renglón se guarda, para que la ejecución siguiente tenga con qué
+// comparar. Se APENDA: un historial que se sobrescribe no es un historial. Si no se puede
+// escribir SE DICE y no se calla — pero no cambia el veredicto, que ya está decidido arriba.
+if (rutaEstado) {
+  try {
+    fs.mkdirSync(path.dirname(rutaEstado), { recursive: true });
+    fs.appendFileSync(rutaEstado, constancia.renglon + '\n', 'utf8');
+  } catch (e) {
+    console.error('   (no se pudo anotar el historial en ' + rutaEstado + ': '
+      + String(e.message).split('\n')[0] + ')');
+  }
+}
+
 // Y en el resumen del job, para que se lea sin abrir el log. Mismo mecanismo que
 // `guards-visuales.mjs` —no uno nuevo—, incluido su `try/catch`: el resumen es un EXTRA, y si no
 // se puede escribir, el veredicto y el código de salida siguen siendo los que ya se decidieron.
@@ -107,10 +163,18 @@ if (process.env.GITHUB_STEP_SUMMARY) {
 
 // Que se vea en el PR sin abrir el log, igual que hace `guards-visuales` (mismo mecanismo, no uno
 // nuevo). En local no se emite nada, para no ensuciar una salida que alguien esté leyendo.
-if (process.env.GITHUB_ACTIONS === 'true' && v.salida !== 0) {
-  const cuerpo = String(v.detalle).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
-  console.log('::' + (v.veredicto === NO_SUPE_MIRAR ? 'warning' : 'error')
-    + ' title=' + v.titulo + '::' + cuerpo);
+//
+// 🔴 SCRUM-716 · MIRA LA SALIDA **FINAL**, no la del veredicto suelto. Si el ritmo dice que
+// producción se está moviendo, la salida baja a 0 y aquí NO se emite nada: poner un ::error sobre
+// un retraso que se está cerrando solo es exactamente lo que bloqueó cinco ramas el 6-sep.
+if (process.env.GITHUB_ACTIONS === 'true' && final.salida !== 0) {
+  const titulo = final.califica ? final.titulo : v.titulo;
+  const texto = final.califica ? final.detalle : v.detalle;
+  const cuerpo = String(texto).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+  // `warning` para la ceguera y `error` para el defecto: el mismo reparto de antes, ahora
+  // decidido por el código de salida final en vez de por el veredicto suelto.
+  console.log('::' + (final.salida === SALIDA_NO_SUPE_MIRAR ? 'warning' : 'error')
+    + ' title=' + titulo + '::' + cuerpo);
 }
 
-process.exit(v.salida);
+process.exit(final.salida);
