@@ -918,6 +918,7 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
 export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   { antes: 'filtroClientes.js', despues: 'customersView.js', motivo: 'SCRUM-581: pestañas y orden de la lista' },
   { antes: 'margenCatalogo.js', despues: 'productsView.js', motivo: 'SCRUM-609: la aritmética del margen' },
+  { antes: 'margenCatalogo.js', despues: 'reportsView.js', motivo: 'SCRUM-764: el criterio de margen negativo' },
   { antes: 'switchTipoArticulo.js', despues: 'productsView.js', motivo: 'SCRUM-609: el switch Producto|Servicio' },
   { antes: 'quoteApartados.js', despues: 'quotesDetailView.js', motivo: 'SCRUM-655: apartados, numeración y descripción' },
   { antes: 'signaturePad.js', despues: 'parteDetailView.js', motivo: 'SCRUM-652: el parte abre el pad de firma' },

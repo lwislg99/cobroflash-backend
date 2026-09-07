@@ -385,6 +385,10 @@ function renderProductsView(container) {
           // hay margen que enseñar, y el campo se queda vacío — que es «no se sabe», no 0.
           const mg = window.margenCatalogo.margenDesde(it.cost, it.price);
           body.querySelector('[name="margen"]').value = mg === null ? '' : String(mg);
+          // SCRUM-764 · al ABRIR. `cablearMargen` sólo pinta cuando alguien teclea, y aquí el
+          // valor lo escribe la vista: sin esta línea, el artículo que ya está por debajo del
+          // coste se abriría en negro y no se enseñaría hasta tocar un campo.
+          pintarMargen(body.querySelector('[name="margen"]'));
           body.querySelector('[name="description"]').value = it.description || '';
 
           // SCRUM-609 · EL LADO GUARDADO MANDA AL ABRIR, y esto es lo que hace que el switch
@@ -521,10 +525,42 @@ function renderProductsView(container) {
         }, cambiado);
         if (r.precio !== null && cambiado !== 'precio') campoPrecio.value = String(r.precio);
         if (r.margen !== null && cambiado !== 'margen') campoMargen.value = String(r.margen);
+        // 🔴 SIEMPRE, y también cuando no se ha escrito nada: si sólo se pintara al escribir, un
+        // margen que pasa a positivo se quedaría en rojo para siempre.
+        pintarMargen(campoMargen);
       };
       campoCoste.addEventListener('input', () => aplicar('coste'));
       campoPrecio.addEventListener('input', () => aplicar('precio'));
+      // 🔴 También cuando el margen lo teclea el profesional. `aplicar('margen')` NO reescribe
+      // ese campo —pisarle lo que está tecleando es el defecto que evita la línea de arriba—,
+      // así que sin este `input` un «-50» escrito a mano no se pintaría.
       campoMargen.addEventListener('input', () => aplicar('margen'));
+    }
+
+    /**
+     * SCRUM-764 · QUE EL MARGEN NEGATIVO SE VEA.
+     *
+     * `margenDesde(150, 100)` devuelve **−50** y hasta hoy la ficha lo enseñaba con la misma tinta
+     * que un 30 %: mismo color, mismo borde, mismo fondo (medido en navegador). El profesional
+     * firma un presupuesto perdiendo dinero y se entera al facturar.
+     *
+     * 🔴 SE AVISA, NO SE IMPIDE. Vender por debajo del coste es una decisión legítima —una oferta
+     * gancho, un trabajo que se quiere ganar— y rechazarlo dejaría catálogos reales sin poder
+     * guardarse. Es un ÁMBAR, no un rojo irreversible: se avisa, no se bloquea.
+     *
+     * 🔴 Y EL TRATAMIENTO NO SE INVENTA AQUÍ: es el que el producto YA aplica al margen del
+     * trabajo en `quotesDetailView.js` (`data.margin >= 0 ? var(--brand) : var(--red-600)`, con
+     * `--red-50` de fondo). Esto no estrena una política: pone al catálogo de acuerdo con una que
+     * ya está en producción. Por eso no hace falta ni un texto nuevo — sólo color (regla 30).
+     *
+     * La regla de QUÉ es «bajo coste» no vive aquí: está en `margenCatalogo.bajoCoste`, con la
+     * aritmética y con su test, para que dos pantallas no puedan decidirlo distinto.
+     */
+    const MARGEN_BAJO_COSTE = 'catalogo-margen--bajo-coste';
+    function pintarMargen(campoMargen) {
+      if (!campoMargen) return;
+      campoMargen.classList.toggle(
+        MARGEN_BAJO_COSTE, window.margenCatalogo.bajoCoste(campoMargen.value));
     }
     const costI = form.querySelector('input[name="cost"]');
     const providerSelect = form.querySelector('select[name="providerId"]');
@@ -943,6 +979,9 @@ function renderProductsView(container) {
         priceI.value = "";
         margenI.value = "";
         costI.value = "";
+        // SCRUM-764 · vaciar el campo no le quita la clase: sin esto, el formulario recién
+        // limpiado se queda en rojo para el alta siguiente, avisando de un margen que ya no hay.
+        pintarMargen(margenI);
         if (providerSelect) providerSelect.value = "";
         descI.value = "";
   
