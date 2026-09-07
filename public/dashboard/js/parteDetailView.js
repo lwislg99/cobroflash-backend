@@ -42,6 +42,10 @@
     materiales: 'Materiales',
     sinLineas: 'Todavía no has apuntado nada.',
     unds: 'UNDS',
+    // La segunda cabecera de las líneas. FIRMADA por el fundador el 7-sep-2026 (SCRUM-818): es la
+    // palabra del impreso y no estrena vocabulario. Consta en
+    // `docs/microcopy/2026-09-07-SCRUM-818-cabecera-de-la-descripcion.md`.
+    descripcion: 'Descripción',
     entrada: 'Entrada',
     salida: 'Salida',
     desplazamiento: 'Desplazamiento',
@@ -170,10 +174,11 @@
       '<h4 style="margin:0 0 6px;font-size:14px;font-weight:700;color:var(--ink)">' +
       esc(ETIQUETA_BLOQUE[bloque]) + '</h4>' +
       '<table style="width:100%;border-collapse:collapse;font-size:14px">' +
-      // ⚠️ LA SEGUNDA CABECERA, la de la descripción, NO SE PINTA TODAVÍA: su literal es texto
-      // nuevo y lo firma el fundador (regla 30). Va propuesto en el informe de SCRUM-818. Poner
-      // aquí un marcador la dejaría a la vista del técnico, que es justo lo que SCRUM-720 cerró.
-      '<thead><tr><th class="parte-col-unds">' + esc(TEXTOS.unds) + '</th><th></th>' +
+      // 🔴 DOS CABECERAS, no una. Con «UNDS» sola, la columna del texto no tenía nombre y el
+      // técnico no sabía qué se esperaba ahí. «Descripción» la firmó el fundador el 7-sep-2026: es
+      // la palabra del impreso, así que no estrena vocabulario.
+      '<thead><tr><th class="parte-col-unds">' + esc(TEXTOS.unds) + '</th>' +
+      '<th>' + esc(TEXTOS.descripcion) + '</th>' +
       (editable ? '<th class="parte-col-quitar"></th>' : '') +
       '</tr></thead><tbody>' + filas + '</tbody></table>' +
       (editable

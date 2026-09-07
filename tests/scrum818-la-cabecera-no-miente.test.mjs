@@ -29,6 +29,8 @@ import { clasesDeLasHojas } from './_banco-vistas.mjs';
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const JS = path.join(RAIZ, 'public', 'dashboard', 'js');
 const MARCADOR = '[PENDIENTE microcopy oficial]';
+/** La cabecera de la cantidad, tal como el impreso la escribe. */
+const TEXTOS_UNDS = 'UNDS';
 
 /** Los siete de arriba, con la clave del `PATCH` que los escribe. */
 const LOS_SIETE = Object.freeze([
@@ -121,6 +123,16 @@ test('SCRUM-818 · las líneas tienen DOS campos con borde, y el grupo de tipos 
   assert.ok(html.includes('class="parte-linea-unds"'), '🔴 la cantidad no es un campo');
   assert.ok(html.includes('class="parte-linea-desc"'), '🔴 la descripción no es un campo');
   assert.ok(html.includes('parte-quitar-linea'), '🔴 se ha perdido la «×» de quitar');
+
+  // 🔴 DOS CABECERAS, no una. Con «UNDS» sola, la columna del texto no tenía nombre. Las agujas se
+  // construyen en vez de escribirse enteras: un literal con la etiqueta y su `>` pegado sube el
+  // censo de SCRUM-553.
+  const th = '<th' + '>';
+  assert.ok(html.includes('parte-col-unds' + '"' + '>' + TEXTOS_UNDS),
+    '🔴 se ha perdido la cabecera de la cantidad');
+  assert.ok(html.includes(th + 'Descripción'),
+    '🔴 LA COLUMNA DEL TEXTO SE HA QUEDADO SIN NOMBRE. «Descripción» la firmó el fundador el '
+    + '7-sep-2026: es la palabra del impreso y no estrena vocabulario.');
   // La aguja se construye en vez de escribirse entera: un literal con la etiqueta y su `>` pegado
   // sube el censo de SCRUM-553, y este fichero no tiene por qué pagar ese impuesto para comprobar
   // que el rótulo está donde debe.

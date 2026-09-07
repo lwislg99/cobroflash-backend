@@ -65,3 +65,27 @@ discutirlo — si al final fue otro, manda quien fue de verdad y **nada lo revie
 texto nuevo y lo firma el fundador (regla 30). Poner ahí un marcador lo dejaría a la vista del
 técnico, que es justo lo que SCRUM-720 cerró. **Propuesta: «Descripción»**, que es la palabra del
 impreso.
+
+---
+
+## Addendum · «Descripción», firmada (7-sep-2026)
+
+El fundador firmó el único texto que quedaba: **«Descripción»**, la cabecera de la segunda columna
+de las líneas. Es la palabra del impreso, así que no estrena vocabulario — mismo criterio que
+«UNDS», «Mano de obra», «Entrada» o «REF». Consta en
+`docs/microcopy/2026-09-07-SCRUM-818-cabecera-de-la-descripcion.md`.
+
+Con eso las líneas ya tienen **las dos cabeceras** que pedía el ticket, y el parte queda **sin un
+solo texto sin firmar**.
+
+Y quedan confirmadas dos cosas que se midieron aquí y que el fundador ha dado por buenas:
+
+- **Las dos reglas de `.parte-quitar-linea` no eran duplicadas sino complementarias.** Borrar la de
+  arriba, como pedía el encargo, habría dejado la «×» como un botón por defecto. Fundirlas en una
+  es lo que cierra el problema que el encargo señalaba mal.
+- **Vacío es `null`, no cero.** Borrar los kilómetros es un dato ausente; 0 km es haber ido y no
+  recorrer nada. En un papel que se factura no son lo mismo.
+
+⚠️ **Lo que NO se toca, y queda anotado:** a 390 px una descripción larga se ve cortada dentro de su
+campo («Sustitución del videogr…»). El dato está entero y el campo hace scroll, pero de un vistazo
+no se lee completo. No está en el ticket y no se arregla de paso.
