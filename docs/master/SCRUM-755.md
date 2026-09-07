@@ -1,8 +1,8 @@
 # SCRUM-755 · El contador que cuadró solo, y el trinquete que no lo miraba
 
 **Fecha:** 7-sep-2026 · **Carril:** microcopy · instrumentos · **Gate:** sin gate
-**Medido contra:** `origin/main` = `349350c8a7a34f24e9263aba1ca2af36e3cb4a91` · 2026-09-07T02:15:00+01:00
-**Tanda:** TANDA_PENDIENTE
+**Medido contra:** `origin/main` = `6fb51ab77713af1261dcf2e3f7819545c57c35b6` · 2026-09-07T02:40:00+01:00
+**Tanda:** 5789 tests, 5687 pass, 0 fail, 102 skipped · `EXIT_REAL=0` (fichero y $? aparte, nunca al final de una tubería) · tras mezclar main
 
 > **Obligación 0 · NO estaba hecho.** Comprobado antes de empezar: `INV_SIN_APROBAR` sigue en
 > `main` sin que ningún test lo mire, no existe `docs/master/SCRUM-755.md`, y de las **536** ramas
