@@ -138,15 +138,91 @@ function instanteDe(y: number, m: number, d: number, hh: number, mm: number, ss:
   return ts;
 }
 
-/** El PRIMER instante del día `YYYY-MM-DD` en esa zona. */
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-749 · UN DÍA QUE NO EXISTE NO SE INVENTA: SE RECHAZA.
+ *
+ * `Date.UTC(y, m - 1, d, …)` **normaliza en silencio**, y estas dos funciones se apoyaban en él
+ * sin mirar. Medido el 6-sep-2026, con el merchant en `Europe/Madrid` y el MISMO resultado con el
+ * proceso en UTC y en `Europe/Madrid`:
+ *
+ *     '2026-02-31'  →  fin del día 2026-03-03T22:59:59.999Z     ← el 31 de febrero es 3 de marzo
+ *     '2026-06-31'  →  fin del día 2026-07-01T21:59:59.999Z
+ *     '2026-13-01'  →  fin del día 2027-01-01T22:59:59.999Z
+ *
+ * Y dónde se ve, con el filtro REAL de consolidación (`seleccionarConsolidablesDeCliente`):
+ *
+ *     hasta «2026-02-28» → corte 2026-02-28T22:59:59.999Z   ENTRAN: [ALB-…001]
+ *     hasta «2026-02-31» → corte 2026-03-03T22:59:59.999Z   ENTRAN: [ALB-…001, ALB-…002]
+ *
+ * `ALB-…002` es del **2 de marzo** y se cuela en una factura que el profesional acotó a febrero.
+ * La ruta `GET /consolidables` pasa `req.query.hasta` **sin validar el formato**.
+ *
+ * ── POR QUÉ RECHAZAR, Y NO AVISAR NI NORMALIZAR DECLARÁNDOLO ────────────────────────────────
+ * La doctrina de la casa: **un valor por defecto plausible es peor que un valor imposible**. Una
+ * fecha normalizada es el valor plausible perfecto — existe, es del mismo mes casi siempre, y
+ * nadie la eligió.
+ *
+ * ⛔ «Devolver el valor y un aviso» reproduce el defecto: en JavaScript nada obliga a mirar un
+ *    aviso, y el estado de hoy ya es «el valor, con un aviso que nadie escribió».
+ * ⛔ «Normalizar declarándolo» sigue emitiendo una fecha que nadie eligió; una línea de log no
+ *    para la factura equivocada, y esta ruta no lee logs.
+ *
+ * Rechazar es lo único que no se puede ignorar por construcción. Y es barato AHORA: dos
+ * llamadores de producto, los dos en el mismo fichero.
+ *
+ * ⚠️ LO QUE ESTO **NO** RESUELVE, y no lo decide esta sesión: la ruta convierte cualquier throw en
+ * `500 internal_error`, que le dice al profesional «se ha roto el servidor» cuando lo que pasa es
+ * que ese día no existe. Contestarle bien pide un 400 con su texto, y ese texto es microcopy.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+function componentesDelDia(diaISO: string): { y: number; m: number; d: number } {
+  const partes = String(diaISO).split('-');
+  const [y, m, d] = partes.map(Number);
+  const bienFormado = partes.length === 3
+    && [y, m, d].every((n) => Number.isInteger(n))
+    && partes[0].length === 4;
+  // Que EXISTA se comprueba con el ida y vuelta: `Date.UTC` normaliza, así que si lo que sale no
+  // son los mismos componentes que entraron, el día no existía.
+  const t = bienFormado ? Date.UTC(y, m - 1, d) : NaN;
+  const vuelta = Number.isFinite(t) ? new Date(t) : null;
+  const existe = vuelta !== null
+    && vuelta.getUTCFullYear() === y && vuelta.getUTCMonth() === m - 1 && vuelta.getUTCDate() === d;
+  if (!existe) {
+    throw new RangeError(
+      `dia_inexistente: "${diaISO}" no es un dia del calendario. No se normaliza a otro dia: `
+      + 'una fecha plausible que nadie eligio es peor que un rechazo (SCRUM-749).',
+    );
+  }
+  return { y, m, d };
+}
+
+/**
+ * ¿`YYYY-MM-DD` es un día del calendario? La pregunta en forma de predicado, para quien tenga que
+ * contestarle al profesional ANTES de llegar a la primitiva. Deriva de la misma comprobación: no
+ * hay aquí una segunda tabla de meses que se pueda quedar atrás.
+ */
+export function diaExiste(diaISO: string): boolean {
+  try {
+    componentesDelDia(diaISO);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** El PRIMER instante del día `YYYY-MM-DD` en esa zona. Lanza si ese día no existe. */
 export function inicioDelDiaEn(diaISO: string, zona: string): Date {
-  const [y, m, d] = diaISO.split('-').map(Number);
+  const { y, m, d } = componentesDelDia(diaISO);
   return new Date(instanteDe(y, m, d, 0, 0, 0, zona));
 }
 
-/** El ÚLTIMO instante del día `YYYY-MM-DD` en esa zona — «hasta el 31» incluye el 31 entero. */
+/**
+ * El ÚLTIMO instante del día `YYYY-MM-DD` en esa zona — «hasta el 31» incluye el 31 entero.
+ * Lanza si ese día no existe.
+ */
 export function finDelDiaEn(diaISO: string, zona: string): Date {
-  const [y, m, d] = diaISO.split('-').map(Number);
+  const { y, m, d } = componentesDelDia(diaISO);
   return new Date(instanteDe(y, m, d, 23, 59, 59, zona) + 999);
 }
 

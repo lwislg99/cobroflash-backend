@@ -229,3 +229,146 @@ es el que hay escrito»*— y tenía razón. Recompilado y vuelto a medir.
 Y **mi propio censo dio 0 de 43 en la primera pasada**, que es el otro modo de estar ciego. Las
 dos veces el aviso vino de la misma regla de la casa: **un cero hay que saber de cuál de los dos
 es.**
+
+---
+
+# APÉNDICE (7-sep-2026) · La cabecera corregida, la cobertura declarada, y el guard que lo impide
+
+**Medido contra:** `origin/main` = `5af8e7e9cdcd15ac90eb9b8a1473737872b6625c` · 2026-09-06T23:20:04+01:00
+
+El ticket no se cerró con la medición: se re-apuntó. Esto entrega las tres piezas.
+
+---
+
+## 🔴 EL ROJO, ANTES DE CORREGIR LA CABECERA
+
+El guard se escribió PRIMERO y se corrió contra el documento **sin tocar**. Cazó la línea:
+
+```
+✖ SCRUM-758 · 🔴 NINGUNA cabecera del log contradice a su propio cuerpo
+  · docs/MIGRATIONS_PENDING.md:575
+      título: LOTE ÚNICO · 9 columnas en 4 tablas (…) — 🔴 SIN APLICA…
+      la cabecera dice SIN APLICAR EN NINGUNA y el cuerpo tiene 2 casilla(s) MARCADA(S)
+```
+
+✅ **Y el control positivo pasó en la misma pasada**: `SCRUM-195 · 🟡 PARCIAL` tiene tres casillas
+marcadas (paso 1, en las tres bases) y tres sin marcar (paso 2, en ninguna) — su cabecera dice
+exactamente lo que dice su cuerpo, y el guard **no la acusa**. Si hubiera saltado en las dos, se
+habría roto por el otro lado.
+
+---
+
+## ① LA CABECERA, CORREGIDA
+
+`— 🔴 SIN APLICAR en ninguna de las tres` → `— 🟡 PARCIAL: ✅ APLICADO en staging y producción
+(10-ago-2026) · ⏳ pendiente en desarrollo`.
+
+Y debajo queda **por qué cambió**, para que la corrección no se lea como que siempre dijo eso: la
+línea se quedó sin actualizar cuando se marcaron las casillas, y de ella salieron un enunciado
+falso y una hipótesis equivocada sobre la caída de producción.
+
+⚠️ **Se elige `🟡 PARCIAL` y no una frase libre a propósito:** es vocabulario que el guard sabe
+juzgar. Una cabecera redactada fuera de ese vocabulario habría quedado **no medible**, o sea que
+arreglarla la habría sacado de la vigilancia — el arreglo desactivando el guard.
+
+---
+
+## ② EL LOG DECLARA SU COBERTURA
+
+Cabecera nueva del documento: **«ESTE LOG NO CUBRE LAS MIGRACIONES DE DATOS»**, con el mecanismo
+delante y la tabla de las tres ejecuciones del clasificador que lo demuestran (DDL puro `ok:true`;
+`INSERT…SELECT` RECHAZADA; `ADD COLUMN`+`UPDATE` → el `UPDATE` rechazado).
+
+Es la decisión firmada: **el log declara, el aplicador no cambia.** Un log que aparenta
+completitud es peor que uno que dice qué no ve.
+
+Y el guard exige las dos mitades: que la declaración **exista** y que **nombre el mecanismo** (la
+lista blanca). Sin el porqué es una frase bonita, y una frase bonita se borra en el primer
+refactor del documento.
+
+---
+
+## ③ EL GUARD · `tests/scrum758-cabecera-no-miente.test.mjs`
+
+**La regla sale del vocabulario del propio documento**, no de mi cabeza:
+
+| la cabecera dice | el cuerpo no puede tener |
+|---|---|
+| «SIN APLICAR en ninguna» | ni una casilla marcada |
+| «APLICADO … en las TRES» | ninguna sin marcar |
+| «PARCIAL» | todas iguales (tiene que haber de las dos) |
+
+### 🔴 EL TITULAR QUE PEDÍAS: cuántas cabeceras más mienten
+
+**UNA de DOS juzgables — y la otra 44 NO SON MEDIBLES.** El guard lo imprime en su suelo cada vez
+que corre, derivado, para que la cifra no envejezca en un comentario:
+
+```
+· entradas: 46 · con casillas (juzgables): 2 · en prosa (NO medibles por este guard): 44
+```
+
+**No las doy por buenas: las declaro no medibles.** Dicen su estado en prosa, y no hay forma de
+contrastarla sin adivinar.
+
+⚠️ **Y descarté la población que parecía fácil.** Nueve entradas tienen tablas que nombran bases,
+y un detector que las leyera subiría la población de 2 a 11 — pero da **falsos positivos**: la
+tabla de la línea 230 lista Host / Nombre de base / Recuento de facturas, que son
+**discriminadores de destino, no estados de migración**. Un guard que gritara sobre una entrada
+sana se acaba apagando. **Se queda fuera, y se dice por qué.**
+
+🔴 **Así que no he corregido ninguna otra cabecera, y no porque estén bien: porque no lo sé.**
+Decidir si las 44 se vuelven medibles —convirtiendo su estado en casillas— es tuyo.
+
+---
+
+## MUTACIONES
+
+**Tres declaradas, las tres VIVAS**, y cada una deshace la entrega por una vía distinta:
+
+| # | qué imita | cae |
+|---|---|---|
+| ① | vuelve la cabecera mentirosa, tal cual estaba | el guard de concordancia |
+| ② | el log deja de declarar su cobertura | el guard de la declaración |
+| ③ | el detector deja de ver «dice ninguna y hay marcadas» | el control positivo fabricado |
+
+③ importa por sí sola: sin ella, el verde del guard sobre el documento **ya corregido** no
+distinguiría «no miente» de «no miro».
+
+`npm run meta:mutaciones` — **tres pasadas**: **vivas 98 · mudas 0 · ciegas 0 · ficheros muertos
+0**, idénticas.
+
+---
+
+## LO QUE ME CAZÓ A MÍ (otra vez)
+
+**SCRUM-737** (*cifras sin ancla*): el censo pasó de 81 a 82 porque escribí «de las 46 entradas,
+sólo 2 exponen casillas» **en un comentario**. Es literalmente el defecto que este fichero viene a
+impedir un piso más arriba: una cifra de recuento que envejece en silencio.
+
+**No la actualicé al valor de hoy** —eso lo reproduce mañana—: tomé el primer escalón que el guard
+ofrece y **la derivé**. Ahora la cuenta el propio guard y la imprime al correr.
+
+---
+
+## HUECOS DECLARADOS
+
+- ⛔ **Cero conexiones a ninguna base.** Este encargo era documento y guard.
+- ⛔ **No he ejecutado `docs/sql/deriva-prod.sql`**: lo ejecuta el fundador.
+- ⛔ **No he tocado el aplicador ni su lista blanca** (decisión firmada), ni la ceguera del censo
+  en `scrum205-vf-estado.sql` (limitación de SCRUM-395, sigue declarada).
+- 🔴 **44 cabeceras quedan sin juzgar**, con su motivo. No están verificadas.
+- **El guard no lee las tablas por base**, y por eso su población es 2 y no 11. Está medido que
+  ese lector daría falsos positivos.
+- **La corrección de :575 la hice yo leyendo su cuerpo**, no consultando ninguna base: afirmo lo
+  que dicen sus casillas, no el estado real de staging o producción hoy.
+
+---
+
+## TANDA DEL APÉNDICE
+
+**5.734 tests · 5.632 pass · 0 fail · 102 skipped · estado 0**, sobre el árbol ya mezclado con
+`main` (`5af8e7e9`, que trajo la primera mitad de este mismo ticket ya mergeada).
+
+Los 102 saltados declaran su motivo y **suman**: 90 `QA_DB_TEST` + 9 `LIBRO_PG_URL` +
+1 `BOT_SUITE_TEST` + 1 `A55_DB_TEST` + 1 EPERM de enlace en Windows. **El apéndice añade 6 tests**,
+todos sin gate: no necesitan base.

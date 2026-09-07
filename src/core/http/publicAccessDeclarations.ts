@@ -167,6 +167,11 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
   { method: 'GET', path: '/pay/quote/:token/accept', kind: 'token', reason: 'Quote.decisionToken (alias de la ruta anterior)' },
   { method: 'GET', path: '/pay/quote/:token/reject', kind: 'token', reason: 'Quote.decisionToken' },
   { method: 'POST', path: '/pay/quote/:token/reject', kind: 'token', reason: 'Quote.decisionToken (reenvía a /quote/:token/decision)' },
+  // SCRUM-806 · el PDF que el CLIENTE puede leer. Mismo token que las cuatro de arriba y a
+  // propósito: quien lo tiene ya veía este presupuesto entero en la landing, así que servirle
+  // además su PDF no expone a nadie nuevo. Sin `:id` —eso es justo lo que cerró SCRUM-95— y
+  // sólo LEE: no muta estado ni escribe `quote.pdfUrl`.
+  { method: 'GET', path: '/pay/quote/:token/pdf', kind: 'token', reason: 'Quote.decisionToken' },
   {
     method: 'POST',
     path: '/quote/:token/accept',
