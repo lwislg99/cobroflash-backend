@@ -150,10 +150,9 @@ Sin lista cableada: la población son los `.mjs` del árbol y la evidencia es el
 | 🔴 **SIN RED** | `scripts/censo-mudez.mjs` | **`tests/_guard-texto.mjs`**, un fichero VERSIONADO, tres veces dentro de un `try` cuyo `finally` lo devuelve |
 
 **`censo-mudez` tiene el defecto idéntico**, y hasta lleva una comprobación posterior —«y se
-COMPRUEBA, no se supone»— que **tampoco corre si el proceso muere**. La adopción de la red es hoy
-de tres líneas, porque `marcarEnVuelo`/`restaurarDesdeMarca` están exportadas. **No se ha hecho
-aquí:** este ticket censaba, y meter mano a un segundo instrumento sin encargo es lo que la casa no
-hace. Queda propuesto.
+COMPRUEBA, no se supone»— que **tampoco corre si el proceso muere**.
+
+**→ CERRADO en la continuación del ticket. Ver el apéndice.**
 
 Lo demás —12 ficheros— **generan o borran lo suyo**: no prometen devolver ningún fichero a como
 estaba, así que no hay nada que se les pueda quedar a medias.
@@ -196,5 +195,133 @@ el hook `guard-dangerous`.
 4. **La marca no distingue dos pasadas simultáneas.** Si alguien lanzase dos a la vez, la segunda
    sobrescribiría la marca de la primera. Nadie lo hace —y no debería, porque medirían un árbol
    mutado la una por la otra— pero no hay nada que lo impida.
-5. **`censo-mudez.mjs` sigue sin red**, medido y nombrado arriba. Es una adopción de tres líneas y
-   se deja propuesta, no hecha.
+5. ~~**`censo-mudez.mjs` sigue sin red**~~ → **CERRADO en el apéndice**, con la MISMA pieza.
+
+---
+
+# APÉNDICE · 7-sep-2026 · la red, a la segunda herramienta — y era peor que la primera
+
+**Medido contra:** `origin/main` = `6fb51ab77713af1261dcf2e3f7819545c57c35b6` · 2026-09-07T03:45:45+01:00
+**Tanda:** **5759 pruebas · 5657 en verde · 0 rojas · 102 saltadas** · 311,4 s · salida 0. Los 102
+saltos declaran motivo y **suman 102** (92 base · 9 `LIBRO_PG_URL` · 1 EPERM de enlace).
+
+`npm run meta:mutaciones` → **111 vivas · 0 mudas · 0 ciegas · 0 ficheros muertos**, salida 0, y
+**0 denuncias** (pasada sana). Antes de reapuntar las anclas salía **2 · CIEGO**: ver abajo.
+
+## 🔴 EL ROJO DE `censo-mudez`, reproducido antes de tocarlo
+
+```
+$ git status --porcelain
+ M tests/_guard-texto.mjs
+
+$ git diff
++  if (!globalThis.__filtroVisto) { globalThis.__filtroVisto = 1; process.stderr.write('__FILTRO_LLAMADO__\n'); }
+```
+
+**Y es peor que el caso original, por dos motivos medidos:**
+
+1. **El fichero está VERSIONADO** y lo usan decenas de guards. Un resto aquí no se queda en un
+   fichero cualquiera: se queda en algo que otro mergea sin mirar.
+2. **Lo que queda puesto ESCRIBE EN `stderr` en cada llamada al filtro.** No es una línea inerte:
+   es instrumentación viva en el camino que recorre media suite.
+
+Y su comprobación posterior —«y se COMPRUEBA, no se supone»— **tampoco corre**: vive después del
+`finally`, en el mismo hilo que ya no existe.
+
+## LA MISMA PIEZA, NO UNA PARECIDA
+
+La red se ha **extraído** a `scripts/_marca-de-arbol.mjs` y las dos herramientas la **importan**.
+No se le ha escrito una red propia a `censo-mudez`: dos implementaciones del mismo remedio son la
+regla 2, y dentro de seis meses una de las dos está rota sin que nadie lo sepa.
+
+**Cada herramienta tiene su carpeta y su lista `enVuelo`**, y el módulo **no guarda estado
+compartido**: dos marcas en el mismo sitio se pisarían, y una lista común haría que la red de una
+intentara devolver las piezas de la otra. Por eso `dir` y `enVuelo` son argumentos **sin valor por
+defecto que los una**.
+
+`meta-guard-mutaciones` **re-exporta** lo que ya exportaba, para no romper a quien lo lea de fuera.
+
+## 🔴 DOS DEFECTOS QUE CAZARON LOS CONTROLES, Y LOS DOS ERAN MÍOS
+
+### ① El suelo de la tanda miraba UNA carpeta
+
+Al matar `censo-mudez` con la red puesta, el árbol quedó mutado… **y el test siguió VERDE**. Miraba
+`DIR_MARCA`, la carpeta del meta-guard, no todas. Cerrado con `marcasHuerfanas()`, que **barre
+`.cache/` entero**: una herramienta nueva que adopte la marca queda vigilada sin volver a tocar el
+test.
+
+### ②bis Y la extracción dejó caducada la declaración de OTRO guard
+
+Mover `restaurarYVerificar` a la pieza compartida dejó a
+`tests/restauracion-del-arbol-ejecutable.test.mjs` apuntando al sitio viejo. **Lo cazó el propio
+meta-guard**, que salió con **2 · CIEGO** —«el ancla no está… la declaración caducó»— en vez de
+seguir verde con una mutación menos. Reapuntada, y con el motivo escrito al lado: **una pieza que
+se mueve deja atrás las declaraciones que la apuntaban**, y eso es cobertura retirada en silencio
+si nadie mira. Tras reapuntar: **111 vivas · 0 ciegas**.
+
+### ② 🔴 El orden convertía un resto REPARABLE en uno DEFINITIVO
+
+La primera versión reparaba **después** de capturar los bytes de referencia:
+
+```js
+const ORIGINAL = fs.readFileSync(HELPER);   // ← lee el fichero TODAVÍA MUTADO
+restaurarDesdeMarca(DIR_MARCA);             // ← repara, pero ORIGINAL ya está sucio
+```
+
+Reproducido: la pasada toma como línea base el fichero mutado, su propio `finally` «restaura» **a
+un estado mutado**, y el resto se vuelve **permanente** — encima **apilado**, dos líneas de
+instrumentación una debajo de otra, con la marca nueva guardando como «original» unos bytes que ya
+llevaban la mutación de la pasada muerta.
+
+**El remedio, mal ordenado, empeoraba el defecto que venía a cerrar.** Sujeto con un test que
+comprueba el orden **donde vive**: en `censo-mudez` por posición en el texto (es un script de nivel
+superior), y en el meta-guard **dentro del bloque de arranque**, porque allí la mutación vive en una
+función y su posición en el fichero no dice nada. *(La primera versión de ese test comparaba texto
+y acusó al meta-guard, que está bien: el criterio equivocado acusa al inocente.)*
+
+## 🔴 EL CONTROL QUE DECIDE, los dos sentidos
+
+```
+① matar censo-mudez a mitad  →  tests/_guard-texto.mjs MUTADO
+② la tanda, acto seguido     →  ✖ «EL ÁRBOL ESTÁ MUTADO AHORA MISMO, por una pasada MUERTA
+                                  · censo-mudez (pid 13428, …): tests/_guard-texto.mjs»
+③ volver a lanzarlo          →  ⚠️ UNA PASADA ANTERIOR MURIÓ CON LA MUTACIÓN PUESTA (pid 13428…).
+                                  Devuelto a sus bytes: `tests/_guard-texto.mjs`.
+④ el árbol después           →  limpio
+```
+
+## ② EL CENSO, DESPUÉS — la comprobación que pedía el encargo
+
+```
+ficheros .mjs barridos                                     : 941
+ESCRIBEN dentro del árbol                                  : 14
+🔴 CAPTURAN un fichero, lo escriben y prometen devolverlo   : 2
+…de ésos, con la red de SCRUM-808                          : 2     ← era 1
+   ✅ con red  scripts/censo-mudez.mjs
+   ✅ con red  scripts/meta-guard-mutaciones.mjs
+```
+
+**2 de 2.** Y la pieza compartida no se vuelve invisible: `scripts/_marca-de-arbol.mjs` sale en
+`NO CONCLUYENTES` —escribe en un `p.abs` que llega por parámetro—, que es exactamente lo que este
+instrumento sabe y no sabe decir.
+
+## ✅ CONTROL POSITIVO · la pasada SANA de `censo-mudez`
+
+Corrido entero: **0 denuncias**, marca borrada, `tests/_guard-texto.mjs` **intacto** (`git status`
+limpio). Veredicto: **81 VIVO · 1 MUDO · 0 CIEGO · 10 NO APLICA · 0 YA ROJO**.
+
+⚠️ **Sale con código 1, y no es la red:** es su veredicto de siempre —encuentra **1 MUDO**,
+`scrum589-nombre-por-documento.test.mjs`—. Este ticket tiene **prohibido tocar el juicio**, así que
+se deja como **hallazgo**, no como defecto de esta entrega. Y el árbol que midió es **byte a byte
+el de siempre**: `_guard-texto.mjs` no cambia, la población sigue siendo 92 y la mutación es la
+misma, así que el veredicto no lo mueve nada de lo hecho aquí. **No se ha corrido `censo-mudez`
+sobre el árbol de antes para compararlo**, y por eso se dice como razonamiento y no como medida.
+
+## Huecos que siguen declarados
+
+* **En Windows la reparación no es instantánea**, y no se ha intentado arreglar: ya está medido que
+  no se puede desde dentro del proceso —ni señal ni hijo desprendido—. Entre el kill y la siguiente
+  invocación el árbol sigue mutado; **lo que cambia es que ahora se dice**.
+* **`censo-mudez` no tiene un modo rápido** equivalente a `--solo-censo`: para que repare hay que
+  lanzarlo entero. La tanda lo denuncia igual, y el aviso dice qué comando lo repara.
+* Los otros tres huecos de la entrada siguen en pie sin cambios.

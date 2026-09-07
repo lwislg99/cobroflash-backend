@@ -26,10 +26,13 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   marcarEnVuelo, borrarMarca, restaurarDesdeMarca, restaurarYVerificar,
-  redDeSeguridad, DIR_MARCA, SALIDA_NO_RESTAURADO,
+  redDeSeguridad, marcasHuerfanas, SALIDA_NO_RESTAURADO,
 } from '../scripts/meta-guard-mutaciones.mjs';
 import { censar as censarEscritores, analizar as analizarEscritor }
   from '../scripts/censo-escritores-del-arbol.mjs';
+
+import { fileURLToPath } from 'node:url';
+const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /** Un arbolito de mentira: un fichero «del árbol» y su directorio de marca, los dos temporales. */
 function banco() {
@@ -166,27 +169,70 @@ test('SCRUM-808 · 🔴 NO hay una marca HUÉRFANA en este árbol ahora mismo', 
   // HUÉRFANA = hay marca y el proceso que la dejó YA NO VIVE. Una marca de una pasada VIVA no es
   // un defecto: es el instrumento trabajando, y ponerse rojo por eso sería ruido.
   // ═════════════════════════════════════════════════════════════════════════════════════════
-  const manifiesto = path.join(DIR_MARCA, 'en-vuelo.json');
-  if (!fs.existsSync(manifiesto)) return; // el caso normal
+  // 🔴 SE BARREN TODAS LAS MARCAS, no sólo la del meta-guard — y esto lo cazó el control de la
+  // continuación del ticket: al darle la red a `censo-mudez`, se le mató a mitad, el árbol quedó
+  // con `tests/_guard-texto.mjs` mutado… y este test siguió VERDE, porque miraba UNA carpeta.
+  // Una herramienta nueva que adopte la marca queda vigilada sin volver a tocar esto.
+  const huerfanas = marcasHuerfanas();
+  const ilegibles = huerfanas.filter((h) => h.ilegible).map((h) => h.herramienta);
+  assert.deepEqual(ilegibles, [],
+    `🔴 hay una marca ILEGIBLE (${ilegibles.join(', ')}): una pasada murió y NO SE SABE qué dejó `
+    + 'puesto en el árbol. Repárala corriendo esa herramienta, que la mira al arrancar.');
 
-  let datos = null;
-  try { datos = JSON.parse(fs.readFileSync(manifiesto, 'utf8')); } catch { /* ilegible */ }
-  assert.ok(datos, `🔴 hay una marca ILEGIBLE en \`${DIR_MARCA}\`: una pasada murió y no se sabe `
-    + 'qué dejó puesto en el árbol. Corre `node scripts/meta-guard-mutaciones.mjs --solo-censo`.');
+  assert.deepEqual(huerfanas.map((h) => `${h.herramienta} → ${h.sucias.join(', ')}`), [],
+    '🔴 EL ÁRBOL ESTÁ MUTADO AHORA MISMO, por una pasada MUERTA'
+    + huerfanas.map((h) => `\n  · ${h.herramienta} (pid ${h.pid}, ${h.cuando}): ${h.sucias.join(', ')}`).join('')
+    + '\n  Todo lo que mida esta tanda mide un árbol que no es el que está escrito.\n'
+    + '  Se repara volviendo a lanzar esa herramienta, que mira la marca al arrancar:\n'
+    + '    · meta-guard-mutaciones → `node scripts/meta-guard-mutaciones.mjs --solo-censo` (≈1 s)\n'
+    + '    · censo-mudez           → `npm run censo:mudez`');
+});
 
-  let viva = false;
-  try { process.kill(datos.pid, 0); viva = true; } catch { viva = false; }
-  if (viva) return; // hay una pasada trabajando ahora mismo: no es un defecto
+// ═══ ⑥bis 🔴 EL ORDEN QUE CONVIERTE UN RESTO REPARABLE EN UNO DEFINITIVO ═════════════════════
 
-  const sucios = (datos.piezas || []).filter((p) => {
-    try { return Buffer.compare(fs.readFileSync(p.abs), fs.readFileSync(p.copia)) !== 0; }
-    catch { return true; }
-  });
-  assert.deepEqual(sucios.map((p) => p.ruta), [],
-    `🔴 EL ÁRBOL ESTÁ MUTADO AHORA MISMO. Lo dejó una pasada muerta (pid ${datos.pid}, `
-    + `${datos.cuando}) y todo lo que mida esta tanda mide un árbol que no es el que está escrito.\n`
-    + '  Repáralo con `node scripts/meta-guard-mutaciones.mjs --solo-censo` (≈1 s), que devuelve '
-    + 'los bytes originales y lo dice en voz alta.');
+test('SCRUM-808 · 🔴 la reparación va ANTES de capturar el original, en las dos herramientas', () => {
+  // ═════════════════════════════════════════════════════════════════════════════════════════
+  // ESTO ME MORDIÓ AL ESCRIBIRLO, y por eso está sujeto. La primera versión de la red en
+  // `censo-mudez` reparaba DESPUÉS de leer el helper:
+  //
+  //     const ORIGINAL = fs.readFileSync(HELPER);   // ← lee el fichero TODAVÍA MUTADO
+  //     restaurarDesdeMarca(DIR_MARCA);             // ← repara, pero ORIGINAL ya está sucio
+  //
+  // Consecuencia REPRODUCIDA: la pasada toma como línea base el fichero mutado, su propio
+  // `finally` «restaura» a un estado mutado, y el resto se vuelve PERMANENTE — encima apilado,
+  // dos líneas de instrumentación una debajo de otra, con la marca nueva guardando como
+  // «original» unos bytes que ya llevaban la mutación de la pasada muerta.
+  //
+  // El remedio mal ordenado convertía un resto reparable en uno definitivo. Se comprueba por
+  // POSICIÓN en el fuente, que es donde vive la propiedad.
+  // ═════════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 Y EL CRITERIO SE MIDE DONDE VIVE EL ORDEN, que NO es el mismo sitio en las dos:
+  //   · `censo-mudez` es un script de nivel superior → la posición en el texto ES el orden.
+  //   · en el meta-guard la mutación vive dentro de `aplicarUna`, una FUNCIÓN, así que su
+  //     posición en el fichero no dice nada; lo que decide es el orden DENTRO del bloque de
+  //     arranque. (La primera versión de este test comparaba texto y acusó al meta-guard, que
+  //     está bien: el criterio equivocado acusa al inocente.)
+  const mudez = fs.readFileSync(path.join(RAIZ, 'scripts/censo-mudez.mjs'), 'utf8');
+  const iRepara = mudez.indexOf('restaurarDesdeMarca(');
+  const iCaptura = mudez.indexOf('const ORIGINAL = fs.readFileSync(HELPER');
+  assert.ok(iRepara > 0, '🔴 `censo-mudez` ya no repara la marca al arrancar: ha perdido la red.');
+  assert.ok(iCaptura > 0, '🔴 CIEGO: no encuentro dónde captura el helper `censo-mudez`.');
+  assert.ok(iRepara < iCaptura,
+    '🔴 en `censo-mudez` la reparación va DESPUÉS de capturar los bytes de referencia. Así, una '
+    + 'pasada que arranque sobre un árbol sucio toma la MUTACIÓN como línea base y su propio '
+    + '`finally` la deja PERMANENTE. El resto deja de ser reparable.');
+
+  const meta = fs.readFileSync(path.join(RAIZ, 'scripts/meta-guard-mutaciones.mjs'), 'utf8');
+  const iPuerta = meta.indexOf('if (ejecutadoDirectamente(import.meta.url))');
+  assert.ok(iPuerta > 0, '🔴 CIEGO: no encuentro la puerta de arranque del meta-guard.');
+  const bloque = meta.slice(iPuerta);
+  const iReparaMeta = bloque.indexOf('restaurarDesdeMarca(DIR_MARCA)');
+  const iAplica = bloque.indexOf('aplicarUna(');
+  assert.ok(iReparaMeta > 0, '🔴 el meta-guard ya no repara la marca al arrancar.');
+  assert.ok(iAplica > 0, '🔴 CIEGO: no encuentro dónde el bloque de arranque muta.');
+  assert.ok(iReparaMeta < iAplica,
+    '🔴 el meta-guard empieza a mutar ANTES de haber reparado una marca pendiente: mediría sobre '
+    + 'un árbol que no es el que está escrito.');
 });
 
 // ═══ ⑦ EL CENSO DE LA OBLIGACIÓN 4 · ¿está el patrón en más sitios? ══════════════════════════
@@ -244,21 +290,21 @@ test('SCRUM-808 · leer un fichero del árbol NO es escribirlo', () => {
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // La marca se borra aunque quede algo sucio: se destruye la evidencia.
-    fichero: 'scripts/meta-guard-mutaciones.mjs',
+    fichero: 'scripts/_marca-de-arbol.mjs',
     de: '  if (!sucios.length) borrarMarca(dir);',
     a: '  borrarMarca(dir);',
     cae: 'lo que NO se puede devolver sale NOMBRADO, y la marca se queda',
   },
   {
     // Se deja de contar como reparado lo que sí se reparó: el aviso enmudece.
-    fichero: 'scripts/meta-guard-mutaciones.mjs',
+    fichero: 'scripts/_marca-de-arbol.mjs',
     de: '      reparadas.push(p.ruta);',
     a: '      /* no lo cuenta */',
     cae: 'una mutación que sobrevivió a la pasada se REPARA, y se dice',
   },
   {
     // Una marca ilegible se trata como si no hubiera marca.
-    fichero: 'scripts/meta-guard-mutaciones.mjs',
+    fichero: 'scripts/_marca-de-arbol.mjs',
     de: "    return { habia: true, reparadas: [], sucios: [`(marca ilegible en ${dir}: ${e.message})`] };",
     a: '    return { habia: false, reparadas: [], sucios: [] };',
     cae: 'una marca ILEGIBLE se denuncia',

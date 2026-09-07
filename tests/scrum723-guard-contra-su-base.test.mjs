@@ -285,6 +285,14 @@ const INDIRECTAS_DECLARADAS = [
   // nombra al listar `refs/remotes/origin/` y al explicar el motor que consulta.
   'scripts/censo-tablero-vs-arbol.mjs',
   'scripts/censo-reparto.mjs',   // el mensaje de error del CLI de arriba
+  // SCRUM-810 · el suelo de la vigilancia. Nombra `origin/main` en una constante y en la prosa,
+  // pero NO compara contra su punta: compara contra la BASE DE FUSIÓN, que es lo que este mismo
+  // guard defiende. Lo aprendió a golpes — su control positivo salió ROJO por comparar contra la
+  // punta, porque la rama iba por detrás y «había perdido» algo que nunca tuvo.
+  'scripts/_suelo-contra-main.mjs',
+  // …y su guard, que la nombra en la prosa que explica POR QUÉ la base y no la punta, y en el
+  // motivo literal del salto que SCRUM-456 le exige («sin origin/main en este clon»).
+  'tests/scrum810-el-suelo-a-la-primera.test.mjs',
   'tests/_censo-eol.mjs',        // la lista de referencias que `merge-base` prueba: es la SOLUCIÓN
   'tests/_censo-tickets.mjs',    // recibe la referencia por parámetro (`ref = 'origin/main'`)
   'tests/scrum723-guard-contra-su-base.test.mjs',  // los mensajes y los comentarios de aquí mismo
