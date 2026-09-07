@@ -2,8 +2,15 @@
 --
 -- LA EMPRESA A LA QUE PERTENECE UNA PERSONA. Una columna, un índice y una clave ajena.
 --
--- ⛔ NO APLICADA EN NINGUNA BASE. Ni producción, ni staging, ni desarrollo. La aplica el
---    fundador. El checklist con las tres bases sin marcar vive en `docs/MIGRATIONS_PENDING.md`.
+-- ESTADO (8-sep-2026) · el checklist vivo está en `docs/MIGRATIONS_PENDING.md`:
+--    · desarrollo → ✅ columna e índice aplicados. 🔴 LA CLAVE AJENA NO.
+--    · staging y producción → ⛔ nada aplicado. Las aplica el fundador.
+--
+-- 🔴 LA TERCERA SENTENCIA NO ENTRA POR `scripts/aplicar-sql-dev.mjs`, EN NINGUNA BASE. Su lista
+--    blanca acepta `ADD COLUMN`, `CREATE INDEX` y `CREATE TABLE`, y nada más; además es
+--    fail-closed, así que con ella dentro no aplica NI UNA. **La clave ajena se aplica a mano.**
+--    (Ojo: `scripts/_clasificador-sql.mjs` sí la da por permitida — son DOS listas blancas
+--    distintas y la que gobierna lo que corre contra una base es la del APLICADOR.)
 --
 -- 🔴 EL PR QUE TRAE ESTE FICHERO **NO ES MERGEABLE HASTA QUE ESTA MIGRACIÓN ESTÉ APLICADA**, y no
 --    es prudencia: `src/core/db/schemaDrift.ts` compara «esperado ⊆ real» en TABLAS y COLUMNAS y

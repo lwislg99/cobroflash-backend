@@ -1,15 +1,22 @@
-# SCRUM-576 · CONT-03: asociar persona ↔ empresa — y la columna que sale escrita y SIN aplicar
+# SCRUM-576 · CONT-03: asociar persona ↔ empresa — la columna en dev, la clave ajena en ninguna
 
-**Fecha:** 7-sep-2026 · **Carril:** producto · **Gate:** aprobado por el fundador el 24-ago-2026
-**Medido contra:** `origin/main` = `d271d29aff85ed155d23397b7e6a1fca64a86bb0`
+**Fecha:** 7-sep-2026 · **actualizado el 8-sep-2026** (microcopy firmada + migración en dev)
+**Carril:** producto · **Gate:** aprobado por el fundador el 24-ago-2026
+**Medido contra:** `origin/main` = `d271d29aff85ed155d23397b7e6a1fca64a86bb0` · 2026-09-08T00:00:00+02:00
 **Tanda:** 5919 tests, 5817 pass, **0 fail**, 102 skipped — `npm test`, exit **0** (comprobado por
-código de salida, no por `| tail`)
+código de salida, no por `| tail`). Re-corrida entera tras la firma de la microcopy y la migración
+en dev: **mismas cifras**.
 
 > ⚠️ Esa fecha es la del trabajo de esta rama, no una lectura de reloj — criterio R14.
 
 **Lo entregado:** la OBLIGACIÓN 0 verificada, el campo «Empresa» en el lado Persona de los **dos**
-formularios, la validación en servidor, la migración **escrita y sin aplicar en ninguna base**, y
-el control que decide en verde — enseñando el antes ciego y el después.
+formularios, la validación en servidor, y el control que decide en verde — enseñando el antes ciego
+y el después.
+
+**8-sep-2026 · segunda pasada:** los dos rótulos **firmados** por el fundador y aplicados byte a
+byte (el censo de ranuras baja **6 → 4**, medido con el lector oficial), y la migración **aplicada
+en dev** — columna e índice, **26 → 27** columnas. 🔴 **La clave ajena no entró: la rechaza el
+aplicador**, y hay que aplicarla a mano en las tres bases.
 
 ---
 
@@ -44,8 +51,12 @@ nombra `companyId`. Mergear antes de aplicar es reproducir SCRUM-574 — **nueve
 sirviendo el código del PR #862**.
 
 - **El SQL:** `docs/sql/scrum-576-customers-company-id.sql`
-- **El registro con las tres bases sin marcar:** `docs/MIGRATIONS_PENDING.md`
-- **Ni producción, ni staging, ni dev.** Contra dev sólo hubo **lecturas**.
+- **El registro por base:** `docs/MIGRATIONS_PENDING.md`
+- **8-sep-2026 · dev:** columna e índice **aplicados** (26 → 27 columnas, medido antes y después
+  con control positivo). **Staging y producción, sin tocar.**
+- 🔴 **La clave ajena no está en NINGUNA base, dev incluida:** `aplicar-sql-dev.mjs` la rechaza —su
+  lista blanca sólo admite `ADD COLUMN`, `CREATE INDEX` y `CREATE TABLE`— y es fail-closed. **Se
+  aplica a mano en las tres.** No se tocó ninguna lista blanca para que pasara (regla 37).
 
 **El orden correcto lo dejó escrito SCRUM-588:** la columna primero, la línea del schema después.
 Aquí la línea va delante porque el ticket entero es media función sin ella — decisión del fundador
@@ -95,10 +106,11 @@ prohibido por el fundador desde el 24-ago-2026). Donde sí cabe la preferencia e
 | 🔴 **SUELO** | si no encuentra fichas de persona, **falla declarándose ciego** | quitar el `appendChild` del campo → **cae** |
 | **Quinto eslabón** | el `select` del servidor devuelve `companyId` y **no** la relación | comentar `companyId: true` → **cae** |
 
-**Lo que estos controles NO prueban, declarado:** la escritura en Postgres. La columna no está
-aplicada —es el punto del ticket— y este entorno no tiene Postgres desechable (`psql` y `docker`,
-ausentes). Lo que la base garantiza —que ese entero apunte a una fila que existe— lo declara la
-**clave ajena** de la migración, y el test comprueba que la migración la lleva.
+**Lo que estos controles NO prueban, declarado:** la escritura en Postgres. Este entorno no tiene
+Postgres desechable (`psql` y `docker`, ausentes) y la suite no toca ninguna base. Lo que la base
+garantiza —que ese entero apunte a una fila que existe— lo declara la **clave ajena**, y el test
+comprueba que la MIGRACIÓN la lleva, no que esté aplicada. **A 8-sep-2026 no lo está en ninguna
+base**, así que esa garantía todavía no rige en ningún sitio.
 
 ## Los dos rojos que encontró la propia verificación
 
@@ -116,24 +128,37 @@ petición: `ReferenceError: ultimoLote is not defined`. Ese identificador vive e
 que un documento también pudiera abrirlo. **No era una optimización: reventaba el modal al
 abrirlo.** Ahora se pide la lista siempre, que además es lo único correcto en los dos caminos.
 
-## 🔴 Lo que necesita al fundador — MICROCOPY (regla 30)
+## ✅ MICROCOPY — firmada el 7-sep-2026 por la noche
 
-**Dos textos nuevos, y no están aprobados.** Salen con el marcador oficial más una palabra de
-trabajo, igual que los del switch de SCRUM-574:
+| Dónde | Texto aprobado |
+|---|---|
+| El rótulo del campo, en el lado Persona | **«Empresa»** |
+| La primera opción del desplegable | **«Sin empresa»** |
 
-| Dónde | Lo que se ve hoy | Qué tiene que decir |
+Aplicados byte a byte; salen ya **sin marca**. Entraron marcados el día que nació el campo y
+estuvieron marcados hasta que se firmaron: eso es el mecanismo funcionando, no un provisional que
+se quedó.
+
+### 🔴 EL CENSO BAJA A 4, NO A 0 — y la premisa de que «los seis se apagan» era falsa
+
+El encargo decía que los **seis** marcadores se apagaban de golpe. **Medido con el lector oficial**
+(`ranurasDelPanel` de `tests/_ranuras-con-marcador.mjs`), no supuesto:
+
+| | ranuras | líneas |
 |---|---|---|
-| El rótulo del campo, en el lado Persona | `[PENDIENTE microcopy oficial] Empresa` | a qué empresa pertenece esta persona |
-| La primera opción del desplegable | `[PENDIENTE microcopy oficial] Sin empresa` | que no pertenece a ninguna — el campo es opcional |
+| antes | **6** | 64, 88, 117, 280, 299, 341 |
+| después | **4** | 64, 88, 117, 343 |
 
-**Salen del MISMO `MARCADOR` que ya usaba el switch**, no de literales nuevos. Consecuencia medida:
-el censo de SCRUM-402 (cuenta literales por AST) **sigue diciendo 1** para este fichero; el de
-SCRUM-755 (cuenta ranuras que pintan, que es el hueco que aquél no ve) **sube 4 → 6 a conciencia**,
-con su motivo escrito. Los seis se apagan de golpe desde una sola constante el día que los firmes,
-y entonces ese número **baja**.
+Se apagan **dos**, que son exactamente las dos firmadas. Las cuatro que quedan **no son mías y no
+están firmadas**: la pregunta «Este contacto es» (64), las dos etiquetas del switch (88) —las tres
+de SCRUM-574— y las dos posiciones donde `MARCADOR` se expone (117 y 343). El propio encargo lo
+corregía al pedir «6 → 4», que es lo que sale.
 
-Un `<select>` sin etiqueta no es entregable, así que el campo entra con la marca puesta y a la
-vista — no con un texto inventado.
+Por eso la entrada del censo **se actualiza a 4 y NO se borra**: borrarla (precedente
+SCRUM-424/405) diría «este fichero ya no tiene nada que vigilar», y es falso. El censo de SCRUM-402
+**sigue en 1**, y tampoco se movió al añadir las ranuras: cuenta literales por AST, y el único
+literal aquí es la declaración de `MARCADOR`. Ése es justo el hueco que el contador de SCRUM-755
+existe para tapar.
 
 ## Lo que se anotó y NO se arregló (regla 37)
 

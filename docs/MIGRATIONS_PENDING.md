@@ -2297,7 +2297,7 @@ tablas y columnas — **no mira defectos de columna**. La columna existe en las 
 después, así que el esquema puede ir por delante sin impedir arrancar (que es lo que costó
 SCRUM-220).
 
-## SCRUM-576 (CONT-03) · `customers.company_id` — ⛔ **SIN APLICAR EN NINGUNA** (7-sep-2026)
+## SCRUM-576 (CONT-03) · `customers.company_id` — ✅ **DEV** (columna e índice) · ⛔ **STAGING Y PRODUCCIÓN, NO** · 🔴 **LA CLAVE AJENA, EN NINGUNA** (8-sep-2026)
 
 > # 🔴 EL PR QUE TRAE ESTA ENTRADA **NO ES MERGEABLE HASTA APLICAR LA COLUMNA EN LAS TRES BASES**
 >
@@ -2330,6 +2330,11 @@ fila, así que deja de ser un parecido ortográfico.
 tablas**. Veredicto de la herramienta: **✔ aditiva**. Veredicto de
 `scripts/_clasificador-sql.mjs` sobre el fichero: **`ok: true`**, las tres sentencias permitidas.
 
+> 🔴 **ESE `ok: true` NO ES EL QUE DECIDE — corregido el 8-sep-2026 al ir a aplicar.** Hay DOS
+> listas blancas y sólo una gobierna lo que corre contra una base: la de
+> `scripts/_aplicar-sql-dev.mjs`, y ésa **rechaza la clave ajena**. Detalle abajo, en «LA CLAVE
+> AJENA NO ESTÁ EN NINGUNA BASE».
+
 ### ⚠️ El clasificador rotula la clave ajena como «ADD COLUMN ×1», y el rótulo es falso
 
 El **veredicto** es correcto —`ADD CONSTRAINT` es aditivo y no toca datos— pero la `forma` que
@@ -2358,14 +2363,67 @@ texto que alguien escribió es cómo se pierden datos.
 **Con 0 de 14 en dev, no hay nada que migrar ahí.** El número que decide es el de **producción**, y
 ése lo tiene que mirar el fundador. Si sale > 0, es un ticket de migración aparte.
 
-### ⛔ NO se ha aplicado en ninguna base
+### Estado por base — 8-sep-2026
 
 - [ ] **producción · autorack** — pendiente. La aplica el fundador. Desde un árbol de trabajo no
       hay credencial de producción (regla 3), y no la ha habido en ningún momento de este ticket.
-- [ ] **staging · acela/railway** — pendiente. El encargo lo prohíbe expresamente.
-- [ ] **desarrollo · acela/yaqu_dev_javier** — pendiente. **Ni siquiera aquí**: el fundador lo dijo
-      explícitamente el 7-sep-2026 («ni en dev, salvo que lo pida»). Lo único que se hizo contra
-      dev fueron **lecturas** (`count`, `groupBy`, `information_schema`) para la tabla de arriba.
+- [ ] **staging · acela/railway** — pendiente. La aplica el fundador.
+- [x] **desarrollo · acela/yaqu_dev_javier** — ✅ **aplicada la columna y el índice** el 8-sep-2026
+      por petición explícita del fundador («aplicas tu migración en dev, tú, sólo dev»), con
+      `scripts/aplicar-sql-dev.mjs --go` y `exigirDestinoCorrecto` cuadrando. 🔴 **LA CLAVE AJENA
+      NO** — ver el bloque siguiente, que es lo importante de esta entrada.
 
-**Verificado antes de escribir esto:** `company_id` **no existe** en `yaqu_dev_javier` — leído en
-`information_schema.columns` el 7-sep-2026, junto con las otras 24 columnas de `customers`.
+### 🔴 LA CLAVE AJENA NO ESTÁ EN NINGUNA BASE, DEV INCLUIDA — y no es un olvido
+
+`scripts/aplicar-sql-dev.mjs` **rechaza** `ALTER TABLE … ADD CONSTRAINT … FOREIGN KEY`. Su lista
+blanca (`scripts/_aplicar-sql-dev.mjs`) acepta exactamente tres formas —`ADD COLUMN`,
+`CREATE [UNIQUE] INDEX`, `CREATE TABLE`— y es **fail-closed**: con una sola sentencia no
+reconocida **no aplica ninguna** del fichero. Verificado en el ensayo antes de aplicar nada.
+
+> ⚠️ **Y CORRIGE ALGO QUE ESTA MISMA ENTRADA DABA POR BUENO.** Más arriba se dijo que
+> `scripts/_clasificador-sql.mjs` daba el fichero por `ok: true`. Es cierto **y no era la lista
+> que decide**: son DOS listas blancas distintas y sólo la del aplicador gobierna lo que corre
+> contra una base. La del clasificador la aceptaba —además rotulándola mal como «ADD COLUMN ×1»—;
+> la del aplicador la rechaza. **Manda la del aplicador.**
+
+**Consecuencia, y es lo que hay que hacer:** la tercera sentencia del fichero canónico se aplica
+**a mano** en las tres bases, dev incluida. No se tocó ninguna de las dos listas blancas para que
+pasara: ampliar lo que puede correr contra producción no es un arreglo de paso (regla 37), y el
+fundador lo aparcó expresamente.
+
+```sql
+ALTER TABLE "customers" ADD CONSTRAINT "customers_company_id_fkey" FOREIGN KEY ("company_id") REFERENCES "customers"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+```
+
+- [ ] clave ajena · **producción** — pendiente
+- [ ] clave ajena · **staging** — pendiente
+- [ ] clave ajena · **desarrollo** — pendiente
+
+**Sin ella, `company_id` admite un entero que no apunta a nadie**, y borrar una empresa deja a sus
+personas señalando una fila que ya no existe. El servidor comprueba existencia y merchant al
+ESCRIBIR (`exigirEmpresaValida`); lo que sólo da la clave ajena es lo que pasa al BORRAR.
+
+### La medida en dev — ANTES y DESPUÉS, con control positivo
+
+```
+ANTES                                          DESPUÉS
+[destino] DATABASE_URL_DEV →                   [destino] DATABASE_URL_DEV →
+  acela.proxy.rlwy.net/yaqu_dev_javier ✅        acela.proxy.rlwy.net/yaqu_dev_javier ✅
+✔ control positivo: el catálogo responde       ✔ control positivo: el catálogo responde
+COLUMNAS DE customers: 26                      COLUMNAS DE customers: 27
+¿company_id?: false                            ¿company_id?: true
+¿mobile?    : true                             ¿mobile?    : true
+¿índice?    : false                            ¿índice?    : true
+¿clave ajena?: false                           ¿clave ajena?: false   🔴 sigue faltando
+FILAS en customers: 14                         FILAS en customers: 14
+```
+
+**26 → 27**, y el estado de partida es lo que hace que el número signifique algo: una lectura
+suelta de «27» no distingue «la he creado» de «ya estaba». **El control positivo va dentro**: si el
+catálogo devolviera 0 columnas, eso no sería «no está», sería «no pude leer», y el script se planta
+en vez de afirmar nada.
+
+**Las 14 filas siguen ahí, intactas.** `ADD COLUMN` nullable no reescribe la tabla.
+
+⚠️ **`customers` tenía 26 columnas, no 25:** `mobile` (SCRUM-590) ya estaba en dev al medir. Se
+cuenta lo que devuelve el catálogo, no lo que diga una nota.

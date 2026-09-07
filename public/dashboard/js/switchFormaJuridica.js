@@ -259,12 +259,14 @@
    * facturación pactada, el de la ficha 360 al revés— porque cada uno se editó por su lado
    * (`docs/CONTACTOS_CAMPOS_POR_LADO.md` §2). Un campo construido dos veces diverge dos veces.
    *
-   * ── MICROCOPY (regla 30) ──────────────────────────────────────────────────────────────────
-   * Ni el rótulo ni la opción de «ninguna» están aprobados: son del fundador. Salen del MISMO
-   * `MARCADOR` que ya usa el switch, no de un literal nuevo, y eso tiene una consecuencia
-   * medible: el trinquete de SCRUM-402 cuenta marcadores EN LITERALES por AST, así que
-   * `switchFormaJuridica.js` **sigue contando 1** — el fichero entero se apaga el día que el
-   * fundador firme, desde una sola constante.
+   * ── MICROCOPY · ✅ FIRMADO (regla 30) ──────────────────────────────────────────────────────
+   * Los dos textos —«Empresa» y «Sin empresa»— los **aprobó el fundador el 7-sep-2026**, así que
+   * salen SIN marca. Entraron marcados el día que nació el campo y estuvieron marcados hasta que
+   * los firmó: eso es el mecanismo funcionando, no un provisional que se quedó.
+   *
+   * ⚠️ EL FICHERO SIGUE PINTANDO MARCA, y por eso el censo BAJA en vez de desaparecer: las
+   * ranuras del SWITCH (la pregunta «Este contacto es» y sus dos etiquetas, SCRUM-574) **no
+   * están firmadas**. `MARCADOR` se queda donde está.
    *
    * @param {{valor?: number|null, clientes?: Array, excluirId?: number|null}} o
    * @returns {{nodo: HTMLElement, leer: Function, escribir: Function, refrescar: Function}}
@@ -277,7 +279,7 @@
     campo.className = 'field';
 
     var etiqueta = document.createElement('label');
-    etiqueta.textContent = MARCADOR + ' Empresa';
+    etiqueta.textContent = 'Empresa';
     campo.appendChild(etiqueta);
 
     var select = document.createElement('select');
@@ -296,7 +298,7 @@
       // defecto que SCRUM-579 documentó con el país.
       var ninguna = document.createElement('option');
       ninguna.value = '';
-      ninguna.textContent = MARCADOR + ' Sin empresa';
+      ninguna.textContent = 'Sin empresa';
       select.appendChild(ninguna);
 
       empresasElegibles(clientes, excluirId).forEach(function (c) {

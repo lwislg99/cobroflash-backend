@@ -75,16 +75,19 @@ const CENSO_DE_SITIOS = {
   'providersView.js': 3,
   'quotesView.js': 3,
   'settingsView.js': 2,
-  // SCRUM-576 (CONT-03) · 4 → 6, A CONCIENCIA. Las dos ranuras nuevas son el campo «Empresa» del
-  // lado Persona: su RÓTULO y su opción de «ninguna». Salen del MISMO `MARCADOR` que las cuatro
-  // de SCRUM-574 —no de un literal nuevo, por eso el censo de SCRUM-402 sigue diciendo 1 para
-  // este fichero— y ése es justo el hueco que este contador existe para tapar: una ranura que
-  // pinta a través de una constante no mueve aquel número.
+  // SCRUM-576 (CONT-03) · 4 → 6 y de vuelta a 4. El campo «Empresa» del lado Persona entró con
+  // sus dos ranuras marcadas (rótulo y opción de «ninguna») el 7-sep-2026, y el fundador **firmó
+  // los dos textos esa misma noche**: «Empresa» y «Sin empresa». Salen ya sin marca.
   //
-  // 🔴 NO ESTÁN APROBADAS (regla 30). Un `<select>` sin etiqueta no es entregable, así que el
-  // campo entra con la marca puesta y a la vista, no con un texto inventado. Las dos se apagan
-  // el día que el fundador firme, desde una sola constante, y entonces este número BAJA.
-  'switchFormaJuridica.js': 6,
+  // 🔴 EL NÚMERO BAJA A 4, NO A 0, Y LA ENTRADA SE QUEDA — que es la diferencia que importa. Las
+  // cuatro que quedan son de SCRUM-574 y **no están firmadas**: la pregunta «Este contacto es»,
+  // sus dos etiquetas, y las dos posiciones donde `MARCADOR` se expone. Borrar la entrada aquí
+  // (precedente SCRUM-424/405) diría «este fichero ya no tiene nada que vigilar», y es falso.
+  //
+  // El censo de SCRUM-402 no se mueve —sigue en 1— y tampoco se movió al añadirlas: cuenta
+  // LITERALES por AST, y el único literal de este fichero es la declaración de `MARCADOR`. Ése
+  // es exactamente el hueco que este contador existe para tapar.
+  'switchFormaJuridica.js': 4,
   'tipoDestinatarioPendiente.js': 2,
 };
 const TOTAL_DE_SITIOS = Object.values(CENSO_DE_SITIOS).reduce((t, n) => t + n, 0);
