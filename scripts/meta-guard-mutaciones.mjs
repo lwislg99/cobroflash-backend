@@ -51,6 +51,20 @@ import { fileURLToPath } from 'node:url'; // SCRUM-730: `pathname` no decodifica
 import { run } from 'node:test'; // SCRUM-745 (adopción): eventos, no reporter
 import ts from 'typescript';
 import { ejecutadoDirectamente } from './_puerta-de-entrada.mjs'; // SCRUM-765
+// 🔴 SCRUM-808 · LA RED VIVE EN UNA PIEZA APARTE, y no por estética: `censo-mudez` tiene el mismo
+// defecto sobre un fichero VERSIONADO, y darle una red PARECIDA sería la regla 2 — dentro de seis
+// meses una de las dos estaría rota sin que nadie lo supiera. Se le da ÉSTA. Aquí se re-exporta lo
+// que ya se importaba de este módulo, para no romper a quien lo lea desde fuera.
+import {
+  SALIDA_NO_RESTAURADO, marcaDe, marcarEnVuelo, borrarMarca, restaurarDesdeMarca,
+  restaurarYVerificar, redDeSeguridad, instalarRedDeSeguridad, marcasHuerfanas,
+} from './_marca-de-arbol.mjs';
+
+export {
+  SALIDA_NO_RESTAURADO, marcarEnVuelo, borrarMarca, restaurarDesdeMarca,
+  restaurarYVerificar, redDeSeguridad, instalarRedDeSeguridad, marcasHuerfanas,
+};
+
 import { correspondencia, destinoEnDist, emitirDesdeFuente } from './frontera-dist.mjs'; // SCRUM-763
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -58,7 +72,12 @@ const DIR_TESTS = path.join(RAIZ, 'tests');
 
 export const SALIDA_MUDO = 1;
 export const SALIDA_CIEGO = 2;
-export const SALIDA_NO_RESTAURADO = 3;
+
+/** La carpeta de la marca DE ESTA herramienta. Cada una tiene la suya: dos se pisarían. */
+export const DIR_MARCA = marcaDe('meta-guard-mutaciones');
+
+/** Las piezas escritas y todavía sin restaurar. La lee el manejador de señal. */
+const EN_VUELO = [];
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════════════════
@@ -471,175 +490,6 @@ export function piezasARestaurar({ fichero, abs, ORIGINAL, destino, absDist, ORI
   return piezas;
 }
 
-/**
- * Devuelve cada pieza a sus BYTES originales y lo VERIFICA leyendo el disco otra vez. Devuelve la
- * lista de las que no cuadraron — vacía si todo volvió a su sitio.
- *
- * No traga fallos de escritura: si una pieza no se puede escribir, revienta. Un restaurador que
- * devuelve «todo bien» porque no pudo ni intentarlo es peor que no tenerlo.
- */
-export function restaurarYVerificar(piezas) {
-  const sinRestaurar = [];
-  for (const p of piezas) {
-    fs.writeFileSync(p.abs, p.ORIGINAL);
-    if (Buffer.compare(fs.readFileSync(p.abs), p.ORIGINAL) !== 0) sinRestaurar.push(p.ruta);
-  }
-  return sinRestaurar;
-}
-
-/**
- * ═══════════════════════════════════════════════════════════════════════════════════════════
- * 🔴 SCRUM-808 · LA MARCA EN DISCO — porque el `finally` NO es una promesa.
- *
- * QUÉ PASABA, reproducido antes de tocar nada: se lanza la pasada, se mata a mitad, y el fichero
- * mutado **se queda en el árbol**. El `finally` que restaura no llega a correr, porque una
- * terminación no es un final: es una ausencia de final. Ocurrió DOS VECES el 6-sep-2026, a dos
- * sesiones distintas (SCRUM-801 y SCRUM-784), y las dos veces se cazó porque a alguien se le
- * ocurrió mirar `git status`. Eso es vigilancia por costumbre, no por mecanismo.
- *
- * Y lo que lo hace grave: **matar la pasada es la conducta correcta** —se mata para no medir
- * sobre un árbol caducado, que es lo que la casa pide—. El instrumento castigaba la conducta que
- * él mismo exige.
- *
- * ── POR QUÉ NO BASTA CON ATRAPAR LA SEÑAL, Y ESTÁ MEDIDO ───────────────────────────────────
- * Se sondeó este entorno con un proceso que escuchaba `SIGINT`, `SIGTERM`, `SIGHUP`, `SIGBREAK`
- * y `SIGQUIT`, más `exit` y `beforeExit`. Al matarlo **no se ejecutó NINGUNO**: en Windows la
- * terminación no entrega señal atrapable. Un remedio que sólo escuchara señales habría parecido
- * protección sin serlo, justo en la máquina donde el defecto ocurrió las dos veces.
- *
- * ── Y TAMPOCO SALVA UN VIGILANTE EXTERNO. También medido, antes de montarlo: un hijo
- * `detached` + `unref()` que vigilaba al padre **murió con él** — se termina el árbol de procesos
- * entero, y su registro dejó de crecer en el mismo instante. O sea: en esta máquina **nada que
- * viva dentro del proceso moribundo puede devolver el árbol**. Por eso la reparación NO es
- * instantánea: la hace **la siguiente invocación**, y `--solo-censo` la hace en ~1 s.
- *
- * Así que hay DOS capas, y la que salva es la segunda:
- *   ① las señales, para donde SÍ llegan (Ctrl+C en terminal, `kill` en CI POSIX);
- *   ② **la marca**: antes de escribir la mutación se deja en disco una copia BYTE A BYTE de cada
- *      pieza original y un manifiesto; al restaurar bien, se borra. Si el proceso muere sin
- *      borrarla, **la marca sobrevive** y la siguiente pasada la encuentra y repara — o denuncia.
- *
- * Vive en `.cache/`, que `.gitignore` ya ignora: la marca NO puede ensuciar el árbol que protege.
- * Y guarda los BYTES, no una referencia a git: el árbitro son los bytes de disco y no el blob
- * (un fichero normalizado tiene el blob limpio y CR en la copia de trabajo, SCRUM-570).
- * ═══════════════════════════════════════════════════════════════════════════════════════════
- */
-export const DIR_MARCA = path.join(RAIZ, '.cache', 'meta-guard-mutaciones');
-const MANIFIESTO = 'en-vuelo.json';
-
-/** Las piezas escritas y todavía sin restaurar. La lee el manejador de señal. */
-const EN_VUELO = [];
-
-/**
- * CAPA ① · las señales. **No salvan en Windows** —medido: al matar el proceso no se ejecuta
- * ninguna, ni `exit`— pero sí en un terminal POSIX y en CI, que es donde `kill` entrega señal de
- * verdad. Se instalan una sola vez y sólo si hay algo que proteger.
- *
- * El manejador es SÍNCRONO a propósito: dentro de `exit` no corre nada asíncrono, y una
- * restauración que devuelve el control antes de haber escrito no restaura nada.
- */
-export function redDeSeguridad(salir = (c) => process.exit(c), enVuelo = EN_VUELO, dir = DIR_MARCA) {
-  return function devolver(motivo) {
-    if (!enVuelo.length) return false;
-    const piezas = enVuelo.map((p) => p.ruta);
-    let sinRestaurar;
-    try {
-      sinRestaurar = restaurarYVerificar(enVuelo);
-    } catch (e) {
-      // 🔴 AQUÍ NO SE REVIENTA. `restaurarYVerificar` sí revienta a propósito en el camino normal
-      // —un restaurador que traga fallos de escritura es peor que ninguno—, pero esto corre
-      // dentro de un manejador de señal y de `exit`: una excepción ahí sale como un volcado sin
-      // nombre de fichero, que es justo la denuncia que el ticket exige que NO falte.
-      sinRestaurar = [`${piezas.join('` y `')} (${e.message})`];
-    }
-    enVuelo.length = 0;
-    if (sinRestaurar.length) {
-      console.error(`\n🔴🔴 ${motivo} Y NO PUDE RESTAURAR \`${sinRestaurar.join('` y `')}\`. `
-        + 'EL ÁRBOL SE QUEDA SUCIO — MÍRALO A MANO.');
-      console.error(`   Los bytes originales siguen en \`${dir}\`.`);
-      salir(SALIDA_NO_RESTAURADO);
-      return true;
-    }
-    console.error(`\n⚠️ ${motivo} Devuelto a su sitio: \`${piezas.join('` y `')}\`.`);
-    borrarMarca(dir);
-    return true;
-  };
-}
-
-/** Engancha la red a las señales y a `exit`. Separado de `redDeSeguridad` para que se pueda
- *  ejercitar la restauración sin ensuciar los manejadores del proceso que corre los tests. */
-export function instalarRedDeSeguridad(salir = (c) => process.exit(c), enVuelo = EN_VUELO) {
-  const devolver = redDeSeguridad(salir, enVuelo);
-  for (const s of ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGBREAK']) {
-    try { process.on(s, () => { devolver(`Me han parado (${s}).`); salir(SALIDA_NO_RESTAURADO); }); }
-    catch { /* la plataforma no la conoce: no es un fallo, es que ahí no existe */ }
-  }
-  process.on('exit', () => { devolver('El proceso terminó con una mutación puesta.'); });
-  return devolver;
-}
-
-/** Deja en disco la copia de cada pieza y el manifiesto. Se llama ANTES de escribir la mutación. */
-export function marcarEnVuelo(piezas, dir = DIR_MARCA) {
-  fs.mkdirSync(dir, { recursive: true });
-  const apuntes = piezas.map((p, i) => {
-    const copia = path.join(dir, `pieza-${i}.bin`);
-    fs.writeFileSync(copia, p.ORIGINAL);
-    return { ruta: p.ruta, abs: p.abs, copia };
-  });
-  fs.writeFileSync(path.join(dir, MANIFIESTO),
-    JSON.stringify({ pid: process.pid, cuando: new Date().toISOString(), piezas: apuntes }, null, 2));
-  return apuntes;
-}
-
-/** Retira la marca. Sólo se llama cuando la restauración ha CUADRADO por bytes. */
-export function borrarMarca(dir = DIR_MARCA) {
-  fs.rmSync(dir, { recursive: true, force: true });
-}
-
-/**
- * ¿Quedó una mutación puesta de una pasada anterior? Repara, y dice qué encontró.
- *
- * Devuelve `{ habia, reparadas, sucios, cuando }`:
- *   · `habia` false  → no había marca. El caso normal, y NO se dice nada (control positivo: una
- *      pasada sana no puede empezar a denunciar).
- *   · `reparadas`    → ficheros que estaban mutados y se han devuelto a sus bytes.
- *   · `sucios`       → los que NO se han podido devolver. Ésos son el suelo: el llamante tiene
- *      que salir con código distinto de cero NOMBRÁNDOLOS.
- *
- * 🔴 Una pieza que ya coincide con su copia NO se cuenta como reparada: el `finally` sí corrió y
- * la marca quedó huérfana por otro motivo. Contarla haría que una pasada sana gritara.
- */
-export function restaurarDesdeMarca(dir = DIR_MARCA) {
-  const manifiesto = path.join(dir, MANIFIESTO);
-  if (!fs.existsSync(manifiesto)) return { habia: false, reparadas: [], sucios: [] };
-
-  let datos;
-  try {
-    datos = JSON.parse(fs.readFileSync(manifiesto, 'utf8'));
-  } catch (e) {
-    // 🔴 Una marca ILEGIBLE no se borra ni se ignora: es la peor de las tres: hubo una pasada
-    // muerta y no se sabe qué dejó puesto. Se denuncia como sucio SIN nombre de fichero, que es
-    // exactamente lo que se sabe.
-    return { habia: true, reparadas: [], sucios: [`(marca ilegible en ${dir}: ${e.message})`] };
-  }
-
-  const reparadas = [];
-  const sucios = [];
-  for (const p of datos.piezas || []) {
-    try {
-      const copia = fs.readFileSync(p.copia);
-      if (fs.existsSync(p.abs) && Buffer.compare(fs.readFileSync(p.abs), copia) === 0) continue;
-      fs.writeFileSync(p.abs, copia);
-      if (Buffer.compare(fs.readFileSync(p.abs), copia) !== 0) { sucios.push(p.ruta); continue; }
-      reparadas.push(p.ruta);
-    } catch (e) {
-      sucios.push(`${p.ruta} (${e.message})`);
-    }
-  }
-  // La marca sólo se retira si NO queda nada sucio: mientras quede, es la evidencia.
-  if (!sucios.length) borrarMarca(dir);
-  return { habia: true, reparadas, sucios, cuando: datos.cuando, pid: datos.pid };
-}
 
 export async function aplicarUna(mut, guard, limpia) {
   const abs = path.join(RAIZ, mut.fichero);
@@ -700,7 +550,7 @@ export async function aplicarUna(mut, guard, limpia) {
   // 🔴 SCRUM-808 · LA MARCA VA ANTES DE LA PRIMERA ESCRITURA, y las piezas quedan «en vuelo» para
   // que el manejador de señal sepa qué devolver si el proceso no llega a su `finally`.
   const piezas = piezasARestaurar({ fichero: mut.fichero, abs, ORIGINAL, destino, absDist, ORIGINAL_DIST });
-  marcarEnVuelo(piezas);
+  marcarEnVuelo(piezas, DIR_MARCA);
   EN_VUELO.length = 0;
   EN_VUELO.push(...piezas);
   try {
@@ -751,7 +601,7 @@ export async function aplicarUna(mut, guard, limpia) {
         + 'originales: la siguiente pasada intentará repararlo y, si no puede, lo volverá a decir.');
       process.exit(SALIDA_NO_RESTAURADO);
     }
-    borrarMarca();
+    borrarMarca(DIR_MARCA);
   }
   return resultado;
 }
@@ -795,7 +645,7 @@ if (ejecutadoDirectamente(import.meta.url)) {
   //   · había y se reparó   → se dice EN VOZ ALTA qué se ha devuelto, y se sigue;
   //   · había y NO se pudo  → se sale con código ≠ 0 NOMBRANDO el fichero que queda sucio.
   // ═══════════════════════════════════════════════════════════════════════════════════════════
-  const pendiente = restaurarDesdeMarca();
+  const pendiente = restaurarDesdeMarca(DIR_MARCA);
   if (pendiente.sucios.length) {
     console.error('🔴🔴 EL ÁRBOL SE QUEDÓ SUCIO Y NO HE PODIDO REPARARLO.');
     for (const s of pendiente.sucios) console.error(`   · ${s}`);
@@ -809,7 +659,7 @@ if (ejecutadoDirectamente(import.meta.url)) {
     console.error(`⚠️ UNA PASADA ANTERIOR MURIÓ CON LA MUTACIÓN PUESTA (pid ${pendiente.pid}, `
       + `${pendiente.cuando}). Devuelto a sus bytes: \`${pendiente.reparadas.join('` y `')}\`.`);
   }
-  instalarRedDeSeguridad();
+  instalarRedDeSeguridad(undefined, EN_VUELO, DIR_MARCA);
 
   const censo = censoDeDeclaraciones();
 
