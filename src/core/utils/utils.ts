@@ -271,4 +271,40 @@ export function normalizePhone(input?: string | null): string {
   export function esc(v?: string | number | null) {
     return String(v ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'} as any)[s]);
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-807 · LA HERMANA DE `esc`, Y ESTÁ AL LADO A PROPÓSITO — NO DENTRO
+  //
+  // `esc` escapa HTML y lo hace bien. Un href NO se defiende escapando HTML: se defiende
+  // validando el ESQUEMA. En `javascript:alert(1)` no hay un solo carácter que escapar, así que
+  // `esc` lo devuelve intacto — y no es un fallo suyo, es que le estábamos pidiendo otro trabajo.
+  // MEDIDO en SCRUM-807: cinco de seis cargas llegaban crudas al atributo, y dos de tres
+  // variantes de navegación las EJECUTABAN en el origen de la aplicación.
+  //
+  // 🔴 Y NO SE METIÓ DENTRO DE `esc`: darle dos trabajos garantiza que un día haga mal uno de los
+  // dos. Vive aquí pegada para que quien busque `esc` para un href se tropiece con ella.
+  //
+  // 🔴 LISTA BLANCA, NUNCA LISTA NEGRA. Las seis cargas de aquel censo enseñan por qué: bastaron
+  // las MAYÚSCULAS (`JaVaScRiPt:`) y un ESPACIO delante para pasar por encima de cualquier
+  // prohibición escrita a mano. Una lista negra es un censo de lo que se le ocurrió a alguien un
+  // martes; una lista blanca es lo que la aplicación necesita de verdad, que aquí es poco:
+  //   · un camino propio (`/outbox/…`, que es lo que produce el flujo real), y
+  //   · http/https, para un enlace externo legítimo.
+  // Todo lo demás sale `'#'`: un ancla inerte, que no es copy sino la forma estándar de no ir
+  // a ninguna parte. Se prefiere a borrar el enlace porque no cambia el texto de nadie.
+  //
+  // `//evil.example` y `/\evil.example` NO cuentan como camino propio: el navegador los lleva a
+  // OTRO ORIGEN. Por eso se mira el segundo carácter, y no sólo el primero.
+  const ESQUEMAS_DE_HREF_PERMITIDOS = new Set(['http:', 'https:']);
+
+  export function hrefSeguro(v?: string | null): string {
+    const s = String(v ?? '').trim();
+    if (!s) return '#';
+    if (s.startsWith('/')) return s[1] === '/' || s[1] === '\\' ? '#' : s;
+    try {
+      return ESQUEMAS_DE_HREF_PERMITIDOS.has(new URL(s).protocol) ? s : '#';
+    } catch {
+      return '#'; // ni camino propio ni URL absoluta que el navegador entienda
+    }
+  }
   
