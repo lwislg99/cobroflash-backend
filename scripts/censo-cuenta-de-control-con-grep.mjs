@@ -81,6 +81,105 @@ const CR = 13;
  * EL INSTRUMENTO CORRECTO, y el único de este fichero que emite un número sobre bytes.
  * Recibe bytes, devuelve un número. Sin decodificar, sin `grep`, sin `split`.
  */
+/**
+ * ═════════════════════════════════════════════════════════════════════════════════════════════
+ * SCRUM-766 (enmienda del 7-sep-2026) · QUÉ `grep` HAY DELANTE — Y SE RESUELVE **SIN MIRAR LA
+ * MEDIDA**, porque usar la medida para decidir qué medida se espera es un test que siempre pasa.
+ *
+ * DE DÓNDE SALE: el defecto que este ticket midió —el CR comido dentro de `$( )`— es del **bash
+ * de MSYS en Windows**, que es donde trabajan las sesiones. En `ubuntu-latest`, que es donde corre
+ * CI, el `grep` de GNU **acierta las dos caras**. El test daba rojo en CI, y el rojo era el
+ * correcto: decía «el entorno ha cambiado». Lo que cambia no es el defecto: es la plataforma.
+ *
+ * ⛔ NO SE CONVIERTE EN UN SKIP. Un skip esconde el día que CI se mueva a una plataforma que SÍ
+ * tenga el defecto, y entonces nadie se entera. Aquí cada plataforma tiene su AFIRMACIÓN, y la
+ * que no reproduce el defecto lo dice como VEREDICTO IMPRESO. La diferencia entre eso y un skip
+ * es que el veredicto se puede leer; un skip es un silencio con forma de verde.
+ *
+ * ⛔ Y NO SE RETIRA EL AVISO. Sigue siendo CIERTO para las máquinas donde se trabaja. Si el
+ * defecto no existe en un entorno, se dice ENCIMA de lo viejo: un aviso retirado en silencio
+ * vuelve a morder.
+ *
+ * 🔴 EL SUELO: si no se sabe qué plataforma hay delante, esto devuelve `null` y quien lo use
+ * tiene que declararse CIEGO. «No sé dónde estoy» NO es «aquí no pasa».
+ * ═════════════════════════════════════════════════════════════════════════════════════════════
+ */
+
+/** Las dos plataformas conocidas. El tercer estado —no saberlo— NO es ninguna de las dos. */
+export const MSYS_WINDOWS = 'MSYS_WINDOWS';
+export const GNU_LINUX = 'GNU_LINUX';
+
+/**
+ * Clasifica el entorno con DOS señales independientes de la medida: `uname -o` y el `$MACHTYPE`
+ * del propio bash. Se piden las dos y tienen que estar de acuerdo — si una dice MSYS y la otra
+ * Linux, no se elige la que convenga: se devuelve `null`.
+ *
+ * Medido el 7-sep-2026 en esta máquina: `uname -o` = `Msys` · `MACHTYPE` = `x86_64-pc-cygwin`.
+ * En `ubuntu-latest`: `GNU/Linux` y `x86_64-pc-linux-gnu`.
+ *
+ * ⚠️ `grep --version` NO sirve para esto, y por eso no se usa: el de MSYS **también** es GNU grep
+ * (3.0 en esta máquina). Lo que distingue no es el binario, es el bash y qué hace con el CR.
+ */
+export function clasificarEntorno({ uname, machtype } = {}) {
+  const u = String(uname ?? '').trim().toLowerCase();
+  const m = String(machtype ?? '').trim().toLowerCase();
+  if (!u && !m) return null; // sin ninguna señal no se adivina
+
+  const marcaWindows = /msys|cygwin|mingw/;
+  const marcaLinux = /gnu\/linux|linux-gnu|^linux$/;
+
+  const windows = marcaWindows.test(u) || marcaWindows.test(m);
+  const linux = marcaLinux.test(u) || marcaLinux.test(m);
+
+  if (windows && !linux) return MSYS_WINDOWS;
+  if (linux && !windows) return GNU_LINUX;
+  return null; // ni las dos a la vez, ni ninguna: CIEGO
+}
+
+/**
+ * Qué se espera de cada plataforma, y con qué palabras se cuenta.
+ *
+ * `acierta` es LA MEDIDA: ¿este `grep` da la respuesta conocida en las DOS caras?
+ *
+ * Devuelve `{ ok, ciego, titular }`. `ciego` se distingue de `ok:false` a propósito: son dos
+ * fallos distintos —«no supe mirar» y «miré y no cuadra»— y el arreglo no es el mismo.
+ */
+export function veredictoDelEntorno({ clase, acierta }) {
+  if (clase !== MSYS_WINDOWS && clase !== GNU_LINUX) {
+    return {
+      ok: false,
+      ciego: true,
+      titular: 'CIEGO: no sé qué shell/grep tengo delante, así que ni reproduzco el defecto ni '
+        + 'absuelvo a esta plataforma. «No sé dónde estoy» no es «aquí no pasa».',
+    };
+  }
+  if (clase === MSYS_WINDOWS) {
+    return acierta
+      ? {
+          ok: false, ciego: false,
+          titular: 'EL grep DE MSYS/Windows ACIERTA LAS DOS CARAS, y eso contradice lo que este '
+            + 'árbol tiene MEDIDO para esta plataforma. No es un fallo del código: es que el '
+            + 'entorno ha cambiado. Se dice ENCIMA de lo viejo, nunca se borra.',
+        }
+      : {
+          ok: true, ciego: false,
+          titular: 'VEREDICTO · MSYS/Windows: el defecto SE REPRODUCE aquí, tal como está escrito.',
+        };
+  }
+  return acierta
+    ? {
+        ok: true, ciego: false,
+        titular: 'VEREDICTO DECLARADO · GNU/Linux: esta plataforma NO tiene el defecto, MEDIDO '
+          + 'aquí mismo y no supuesto. El aviso sigue en pie para MSYS/Windows, que es donde se '
+          + 'trabaja a diario.',
+      }
+    : {
+        ok: false, ciego: false,
+        titular: 'GNU/Linux ha DEJADO de acertar las dos caras. Eso es un hallazgo NUEVO, no un '
+          + 'fallo de este test: el defecto habría llegado a la plataforma donde corre CI.',
+      };
+}
+
 export function contarCR(buf) {
   let n = 0;
   for (const b of buf) if (b === CR) n += 1;

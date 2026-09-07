@@ -294,3 +294,84 @@ blob. Los tres son el mismo patrón: escribir algo que se lee bien antes de medi
 y sale como saltado — nunca en verde silencioso. Y si algún día `grep` acierta las dos caras, el
 caso **cae a propósito**, con un mensaje que manda releer los avisos antes de tocarlos: si el
 defecto deja de existir hay que escribirlo **encima** de lo viejo, no borrarlo.
+
+
+---
+
+# ✅ ENMIENDA (7-sep-2026) · EL CASO CAYÓ EN CI, Y EL ROJO ERA EL CORRECTO
+
+El caso del entorno **se puso rojo en CI** con su propio mensaje:
+
+> *«EL `grep` DE ESTE ENTORNO ACIERTA LAS DOS CARAS, y eso contradice lo que este árbol tiene
+> escrito. No es un fallo del código: es que el entorno ha cambiado.»*
+
+**Y tenía razón.** El defecto —el CR comido dentro de `$( )`— es del **bash de MSYS en Windows**,
+que es donde corren las sesiones. En `ubuntu-latest`, que es donde corre CI, el `grep` de GNU
+**acierta las dos caras**. Lo que faltaba en el árbol no era el defecto: era **dónde** pasa.
+
+## ⛔ Lo que NO se hizo, y por qué
+
+- **NO se convirtió en un `skip`.** Un skip esconde el día que CI se mueva a una plataforma que
+  SÍ tenga el defecto, y entonces no se entera nadie. La diferencia entre un veredicto y un skip
+  es que el veredicto **se imprime y se puede leer**; un skip es un silencio con forma de verde.
+- **NO se retiró el aviso.** Sigue siendo cierto para las máquinas donde se trabaja. Es lo que el
+  propio mensaje del caso mandaba hacer: si el defecto ya no existe en un entorno, se dice
+  **ENCIMA** de lo viejo. Un aviso retirado en silencio vuelve a morder.
+
+## Lo que se hizo: AFIRMAR POR PLATAFORMA
+
+| plataforma | qué afirma el caso |
+|---|---|
+| **MSYS/Windows** (`uname -o` = `Msys`) | **REPRODUCE** el defecto, exactamente como hasta hoy, con las dos caras nombradas |
+| **GNU/Linux** (`ubuntu-latest`) | lo declara ausente como **VEREDICTO IMPRESO** — y lo **afirma**: si esa plataforma lo ganara, rojo igual |
+| **cualquier otra / no se sabe** | 🔴 **CIEGO**: ni reproduce ni absuelve |
+
+🔴 **La clasificación NO mira la medida** —eso sería un test que siempre pasa—: sale de `uname -o`
+y de `$MACHTYPE`, **dos** señales que existen antes de medir nada y que tienen que estar de
+acuerdo. Si se contradicen, la respuesta es `null`, no la que convenga.
+
+⚠️ **`grep --version` no sirve para esto** y por eso no se usa: el de MSYS **también** es GNU grep
+(3.0 medido en esta máquina). Lo que distingue no es el binario: es el bash y qué hace con el CR.
+
+## 🔴 EL SUELO, que es lo que impide que esto se vuelva un apagado
+
+*«No sé en qué plataforma estoy» no es «aquí no pasa».* Si `clasificarEntorno` devuelve `null`,
+el caso falla **como ceguera** y con un mensaje distinto del de «no cuadra» — son dos averías
+distintas y el arreglo no es el mismo.
+
+## Verificación, los DOS sentidos
+
+**En esta máquina (MSYS/Windows), medido:**
+
+```
+plataforma: uname -o = "Msys" · MACHTYPE = "x86_64-pc-cygwin" → MSYS_WINDOWS
+  n=$(grep -c $'\r' F)   = 50      (wc -l = 50)
+  grep -c $'\r' F directo = 0
+VEREDICTO · MSYS/Windows: el defecto SE REPRODUCE aquí, tal como está escrito.
+```
+
+Sigue reproduciendo las dos caras **exactamente como antes de la enmienda**.
+
+**La rama de Linux no es código muerto**, y no se afirma: se ejercita. Dos vías, porque aquí no
+hay Linux con el que correrla de verdad y **eso se dice**:
+
+1. un caso PURO ejercita `clasificarEntorno` y `veredictoDelEntorno` con los valores **reales** de
+   las dos plataformas y con los dos desenlaces de cada una (acierta / no acierta), más la ceguera;
+2. **por MUTACIÓN**, forzando que esta máquina se clasifique como `GNU_LINUX`: el caso se pone
+   **rojo** con *«GNU/Linux ha DEJADO de acertar las dos caras… el defecto habría llegado a la
+   plataforma donde corre CI»*. O sea que esa rama está cableada a una aserción de verdad.
+   Forzando `null`, cae por **CEGUERA**, con su mensaje propio.
+
+🕳️ **Hueco declarado:** en esta máquina no hay Linux (ni WSL ni Docker, comprobado), así que el
+verde de CI es lo único que confirma la rama de GNU/Linux **de extremo a extremo**. Lo de arriba
+prueba la decisión y su cableado, no la ejecución en esa plataforma.
+
+## Los dos avisos, AMPLIADOS y sin perder una línea
+
+`tests/scrum480-fin-de-linea.test.mjs` y `scripts/censo-cr-en-disco.mjs` ganan el dato nuevo
+—qué plataforma tiene el defecto y cuál no— **debajo** de lo que ya decían. Comprobado con
+`git diff --numstat`: **13 y 10 líneas añadidas, 0 borradas** en cada uno.
+
+🔴 **Y la regla práctica no cambia ni un pelo:** aquí se cuenta en BYTES con node, nunca con
+`grep`. Que una plataforma acierte no convierte a `grep` en el instrumento — significa que en ESA
+plataforma el defecto no se manifiesta, y el código se escribe una vez para todas.

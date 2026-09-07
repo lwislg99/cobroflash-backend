@@ -145,6 +145,19 @@ test('SCRUM-480 · 🔴 ningún blob de TEXTO lleva CR (salvo lo declarado)', ()
 //     orden de magnitud sobre el mismo árbol, así que la salida no delata nada. Contra un valor
 //     ilegible se puede programar una barrera; contra uno plausible no hay síntoma.
 //     El control que decide y el censo del árbol están en tests/scrum766-el-grep-que-cuenta-lineas.test.mjs.
+//   · 🔴 SCRUM-766 (enmienda del 7-sep-2026) · Y EL DEFECTO ES **DE LA PLATAFORMA**, dato que
+//     faltaba. NADA DE LO DE ARRIBA SE RETIRA: sigue siendo cierto en las máquinas donde se
+//     trabaja. Lo que se añade es DÓNDE pasa y dónde no, medido:
+//         MSYS/Windows (uname -o = Msys)          →  las dos caras FALLAN. Es lo escrito arriba.
+//         GNU/Linux (ubuntu-latest, donde va CI)  →  el grep de GNU ACIERTA las dos caras.
+//     Lo destapó CI poniéndose roja con el mensaje «el entorno ha cambiado», que era exacto.
+//     ⛔ No se resolvió con un skip: el test AFIRMA por plataforma y la que no reproduce el
+//     defecto lo dice con un VEREDICTO IMPRESO — y si algún día GNU/Linux lo ganara, se pone
+//     roja igual. Un skip habría escondido justo eso.
+//     🔴 LA REGLA PRÁCTICA NO CAMBIA NI UN PELO: aquí se cuenta en BYTES con node, nunca con
+//     `grep`. Que una plataforma acierte no convierte a `grep` en el instrumento — sólo
+//     significa que en ESA plataforma el defecto no se manifiesta, y el código se escribe una
+//     vez para todas.
 //   · `git show <rev>:<ruta>` se reportó el 17-ago-2026 como que APLICA el filtro de salida y
 //     hace concluir que tus commits meten CR en el repositorio. NO lo he reproducido el
 //     19-ago-2026 con git 2.55.0.windows.2: sobre un blob anterior a la renormalización dio

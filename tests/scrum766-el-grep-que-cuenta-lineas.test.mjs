@@ -36,6 +36,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   contarCR, fabricarControl, hallazgosEn, censar, AUTORREFERENCIA, puedeContener,
+  clasificarEntorno, veredictoDelEntorno, MSYS_WINDOWS, GNU_LINUX,
 } from '../scripts/censo-cuenta-de-control-con-grep.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -119,7 +120,54 @@ const BASH = (() => {
   return r.status === 0 && r.stdout.trim() === 'ok';
 })();
 
-test('SCRUM-766 · 🔴 el `grep` de este entorno NO reproduce la respuesta conocida',
+/**
+ * QUÉ PLATAFORMA HAY DELANTE. Se resuelve ANTES de medir nada y SIN mirar la medida: usar la
+ * medida para decidir qué medida se espera sería un test que siempre pasa.
+ *
+ * Dos señales, no una, y tienen que estar de acuerdo (ver `clasificarEntorno`). Si no lo
+ * están, o si no hay bash con el que preguntar, la clase sale `null` y el caso se declara
+ * CIEGO en vez de absolver a nadie.
+ */
+const ENTORNO = (() => {
+  if (!BASH) return { clase: null, uname: null, machtype: null };
+  const leer = (orden) => {
+    const r = spawnSync('bash', ['-c', orden], { encoding: 'utf8' });
+    return r.status === 0 ? r.stdout.trim() : null;
+  };
+  const uname = leer('uname -o');
+  const machtype = leer('echo "$MACHTYPE"');
+  return { clase: clasificarEntorno({ uname, machtype }), uname, machtype };
+})();
+
+/**
+ * 🔴 QUÉ CONTESTA EL `grep` DE **ESTA** PLATAFORMA — y cuál es, dicho antes de juzgarlo.
+ *
+ * ═════════════════════════════════════════════════════════════════════════════════════════════
+ * ENMIENDA DEL 7-sep-2026, Y EL MOTIVO ESTÁ MEDIDO
+ *
+ * Este caso afirmaba «el grep de este entorno NO reproduce la respuesta conocida», a secas. En CI
+ * dio ROJO, y **el rojo era el correcto**: su propio mensaje decía «el entorno ha cambiado».
+ * Y había cambiado. El defecto —el CR comido dentro de `$( )`— es del **bash de MSYS en
+ * Windows**, que es donde trabajan las sesiones; en `ubuntu-latest`, donde corre CI, el `grep` de
+ * GNU **acierta las dos caras**.
+ *
+ * ⛔ NO SE ARREGLA CON UN SKIP. Un skip escondería el día que CI se mueva a una plataforma que SÍ
+ * tenga el defecto. Ahora cada plataforma tiene su AFIRMACIÓN:
+ *
+ *   · MSYS/Windows → REPRODUCE el defecto, exactamente como hasta hoy, con las dos caras nombradas;
+ *   · GNU/Linux    → lo declara ausente como VEREDICTO IMPRESO, y **lo afirma**: si algún día esa
+ *                     plataforma dejara de acertar, esto se pone rojo igual.
+ *
+ * La diferencia con un skip es que el veredicto se imprime y se puede leer. Un skip es un
+ * silencio con forma de verde.
+ *
+ * 🔴 EL SUELO QUE IMPIDE QUE ESTO SE VUELVA UN APAGADO: si no se logra determinar QUÉ shell hay
+ * delante, este caso es CIEGO — ni reproduce ni absuelve. «No sé en qué plataforma estoy» no es
+ * «aquí no pasa». Y la clasificación NO mira la medida, que sería circular: sale de `uname -o` y
+ * de `$MACHTYPE`, dos señales que existen antes de medir nada.
+ * ═════════════════════════════════════════════════════════════════════════════════════════════
+ */
+test('SCRUM-766 · 🔴 qué contesta el `grep` de ESTA plataforma, y cuál es',
   { skip: BASH ? false : 'NO APLICA: no hay `bash` con el que medir la otra cara del instrumento' },
   (t) => {
     const dir = tempPropio();
@@ -150,42 +198,103 @@ test('SCRUM-766 · 🔴 el `grep` de este entorno NO reproduce la respuesta cono
       const [subA, dirA, lenA, wcA] = medir('a.txt');
       const [subB, dirB] = medir('b.txt');
 
+      t.diagnostic(`plataforma: uname -o = ${JSON.stringify(ENTORNO.uname)} · MACHTYPE = ${JSON.stringify(ENTORNO.machtype)} → ${ENTORNO.clase}`);
       t.diagnostic(`fichero con ${CON_CR} CR en ${LINEAS} líneas · verdad por bytes = ${CON_CR}`);
       t.diagnostic(`  n=$(grep -c $'\\r' F)   = ${subA}      (wc -l = ${wcA})`);
       t.diagnostic(`  grep -c $'\\r' F directo = ${dirA}`);
       t.diagnostic(`  len($'\\r') DENTRO de $() = ${lenA}   ← 0 significa PATRÓN VACÍO`);
       t.diagnostic(`fichero LF puro · verdad = 0 · sustitución ${subB} · directo ${dirB}`);
 
-      // SUELO: si la sonda no ha medido nada, el resto de este caso no significa nada.
+      // SUELO 1: si la sonda no ha medido nada, el resto de este caso no significa nada.
       assert.equal(wcA, LINEAS,
         `🔴 CIEGO: la sonda cuenta ${wcA} líneas donde hay ${LINEAS}. No ha medido el fichero.`);
 
       const acierta = (subA === CON_CR && dirA === CON_CR && subB === 0 && dirB === 0);
-      assert.ok(!acierta,
-        '🔴 EL `grep` DE ESTE ENTORNO ACIERTA LAS DOS CARAS, y eso contradice lo que este árbol\n'
-        + '  tiene escrito. No es un fallo del código: es que el entorno ha cambiado.\n'
-        + '  ANTES DE TOCAR NADA, vuelve a leer los avisos de scrum480-fin-de-linea.test.mjs y de\n'
-        + '  scripts/censo-cr-en-disco.mjs: si el defecto ya no existe, hay que decirlo ahí\n'
-        + '  ENCIMA de lo viejo, no borrarlo. Un aviso retirado en silencio vuelve a morder.');
+      const v = veredictoDelEntorno({ clase: ENTORNO.clase, acierta });
 
-      // Y LAS DOS CARAS, NOMBRADAS. No basta con «falla»: hay que saber POR CUÁL falla, porque el
-      // arreglo es distinto (`-U` cura la A y NO cura la B).
-      if (dirA !== CON_CR) {
-        assert.equal(dirA, 0,
-          `🔴 CARA A inesperada: el grep directo dice ${dirA}. Lo medido es 0 (falso negativo: la `
-          + 'lectura en modo texto se come el CR antes de casar).');
-      }
-      if (subA !== CON_CR) {
-        assert.equal(subA, wcA,
-          `🔴 CARA B inesperada: dentro de $( ) el grep dice ${subA} y wc -l dice ${wcA}. Lo `
-          + 'medido es que son IGUALES, porque `$\'\\r\'` llega vacío y un patrón vacío casa con '
-          + 'todas las líneas. Si ya no coinciden, el mecanismo no es el que está escrito.');
-        assert.equal(lenA, 0,
-          `🔴 la cara B se cae pero \`$'\\r'\` mide ${lenA} dentro de la sustitución. El mecanismo `
-          + 'escrito en el árbol (patrón vacío) NO es el que está pasando aquí.');
+      // 🔴 EL VEREDICTO SE IMPRIME SIEMPRE, se pase o se falle. Es lo que lo separa de un skip.
+      t.diagnostic(v.titular);
+
+      // SUELO 2 · LA CEGUERA, y es un fallo distinto de «no cuadra».
+      assert.equal(v.ciego, false,
+        '🔴 ' + v.titular + '\n'
+        + `  uname -o = ${JSON.stringify(ENTORNO.uname)} · MACHTYPE = ${JSON.stringify(ENTORNO.machtype)}\n`
+        + '  Si esta plataforma es legítima, dale su marca en `clasificarEntorno`\n'
+        + '  (scripts/censo-cuenta-de-control-con-grep.mjs) y DECIDE qué se espera de ella. Lo que\n'
+        + '  no vale es pasar en verde sin saber a quién se está absolviendo.');
+
+      assert.ok(v.ok,
+        '🔴 ' + v.titular + '\n'
+        + '  ANTES DE TOCAR NADA, vuelve a leer los avisos de scrum480-fin-de-linea.test.mjs y de\n'
+        + '  scripts/censo-cr-en-disco.mjs: si el defecto ya no existe en una plataforma, hay que\n'
+        + '  decirlo ahí ENCIMA de lo viejo, no borrarlo. Un aviso retirado en silencio vuelve a\n'
+        + '  morder.');
+
+      // ── Y LAS DOS CARAS, NOMBRADAS · sólo donde el defecto se reproduce ────────────────────
+      // No basta con «falla»: hay que saber POR CUÁL falla, porque el arreglo es distinto (`-U`
+      // cura la A y NO cura la B). En la plataforma que acierta no hay caras que nombrar.
+      if (ENTORNO.clase === MSYS_WINDOWS) {
+        if (dirA !== CON_CR) {
+          assert.equal(dirA, 0,
+            `🔴 CARA A inesperada: el grep directo dice ${dirA}. Lo medido es 0 (falso negativo: la `
+            + 'lectura en modo texto se come el CR antes de casar).');
+        }
+        if (subA !== CON_CR) {
+          assert.equal(subA, wcA,
+            `🔴 CARA B inesperada: dentro de $( ) el grep dice ${subA} y wc -l dice ${wcA}. Lo `
+            + 'medido es que son IGUALES, porque `$\'\\r\'` llega vacío y un patrón vacío casa con '
+            + 'todas las líneas. Si ya no coinciden, el mecanismo no es el que está escrito.');
+          assert.equal(lenA, 0,
+            `🔴 la cara B se cae pero \`$'\\r'\` mide ${lenA} dentro de la sustitución. El mecanismo `
+            + 'escrito en el árbol (patrón vacío) NO es el que está pasando aquí.');
+        }
       }
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
   });
+
+/**
+ * 🔴 LAS DOS RAMAS, EJERCITADAS DESDE CUALQUIER PLATAFORMA.
+ *
+ * El caso de arriba sólo puede recorrer la rama de la máquina en la que corre. Sin esto, la rama
+ * de la OTRA plataforma no la mira nadie hasta que CI la pisa — y un camino que nadie ha
+ * ejercitado es un camino que no se sabe si funciona. Aquí se ejercita la decisión PURA con los
+ * valores REALES de las dos plataformas (medidos: MSYS el 7-sep-2026, ubuntu-latest en CI).
+ */
+test('SCRUM-766 · 🔴 la decisión por plataforma se sostiene en LAS DOS, y la ceguera es un tercer estado', () => {
+  assert.equal(clasificarEntorno({ uname: 'Msys', machtype: 'x86_64-pc-cygwin' }), MSYS_WINDOWS,
+    '🔴 no reconoce esta máquina.');
+  assert.equal(clasificarEntorno({ uname: 'GNU/Linux', machtype: 'x86_64-pc-linux-gnu' }), GNU_LINUX,
+    '🔴 no reconoce `ubuntu-latest`, que es donde corre CI.');
+  for (const raro of [{ uname: 'Plan9', machtype: '???' }, {}, { uname: 'Msys', machtype: 'x86_64-pc-linux-gnu' }]) {
+    assert.equal(clasificarEntorno(raro), null,
+      `🔴 «${JSON.stringify(raro)}» se ha clasificado como una plataforma conocida. La última es `
+      + 'la que importa: dos señales que se contradicen NO son una respuesta, y elegir la que '
+      + 'convenga es cómo un guard se apaga solo.');
+  }
+
+  // MSYS: reproduce el defecto → verde. Y si dejara de reproducirlo → ROJO, no silencio.
+  assert.equal(veredictoDelEntorno({ clase: MSYS_WINDOWS, acierta: false }).ok, true,
+    '🔴 en MSYS, reproducir el defecto tiene que ser el caso ESPERADO.');
+  assert.equal(veredictoDelEntorno({ clase: MSYS_WINDOWS, acierta: true }).ok, false,
+    '🔴 si el defecto DESAPARECIERA de MSYS, esto tiene que ponerse rojo: es donde se trabaja, y '
+    + 'lo que hay escrito en el árbol dejaría de ser cierto sin que nadie lo dijera.');
+
+  // GNU/Linux: NO tiene el defecto → verde CON veredicto. Y si lo ganara → ROJO.
+  const linux = veredictoDelEntorno({ clase: GNU_LINUX, acierta: true });
+  assert.equal(linux.ok, true, '🔴 en GNU/Linux, acertar las dos caras es lo esperado.');
+  assert.match(linux.titular, /VEREDICTO DECLARADO/,
+    '🔴 la rama que NO reproduce el defecto tiene que decirlo con un veredicto legible. Sin texto '
+    + 'esto sería un skip con otro nombre.');
+  assert.equal(veredictoDelEntorno({ clase: GNU_LINUX, acierta: false }).ok, false,
+    '🔴 si el defecto llegara a la plataforma de CI, esto tiene que ponerse rojo.');
+
+  // Y la CEGUERA es un estado propio, no un «no pasa nada».
+  const ciego = veredictoDelEntorno({ clase: null, acierta: true });
+  assert.equal(ciego.ciego, true, '🔴 no saber la plataforma tiene que marcarse como ceguera.');
+  assert.equal(ciego.ok, false,
+    '🔴 CIEGO ha salido en verde. «No sé en qué plataforma estoy» no es «aquí no pasa»: es '
+    + 'exactamente el silencio que este ticket existe para impedir.');
+});
 
 // ── ③ EL CENSO DEL ÁRBOL, CON SU CONTROL POSITIVO ──────────────────────────────────────────
 
