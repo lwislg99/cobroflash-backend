@@ -2297,7 +2297,7 @@ tablas y columnas — **no mira defectos de columna**. La columna existe en las 
 después, así que el esquema puede ir por delante sin impedir arrancar (que es lo que costó
 SCRUM-220).
 
-## SCRUM-576 (CONT-03) · `customers.company_id` — ✅ **DEV** (columna e índice) · ⛔ **STAGING Y PRODUCCIÓN, NO** · 🔴 **LA CLAVE AJENA, EN NINGUNA** (8-sep-2026)
+## SCRUM-576 (CONT-03) · `customers.company_id` — ✅ **DEV** · ⛔ **STAGING Y PRODUCCIÓN, PENDIENTES** (8-sep-2026)
 
 > # 🔴 EL PR QUE TRAE ESTA ENTRADA **NO ES MERGEABLE HASTA APLICAR LA COLUMNA EN LAS TRES BASES**
 >
@@ -2310,12 +2310,17 @@ SCRUM-220).
 > Aquí la línea va delante porque el ticket entero es media función sin ella (decisión del
 > fundador, 7-sep-2026, al descartar trocear el ticket en dos PR); el riesgo se gestiona **con el
 > orden del despliegue**, y por eso está en mayúsculas arriba del todo.
+>
+> **8-sep-2026 · faltan DOS:** dev ✅. Con staging y producción aplicadas, el PR es mergeable — no
+> queda nada más pendiente, porque la clave ajena se retiró (más abajo).
 
 ```sql
 ALTER TABLE "customers" ADD COLUMN IF NOT EXISTS "company_id" INTEGER;
 CREATE INDEX IF NOT EXISTS "customers_company_id_idx" ON "customers"("company_id");
-ALTER TABLE "customers" ADD CONSTRAINT "customers_company_id_fkey" FOREIGN KEY ("company_id") REFERENCES "customers"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 ```
+
+> **DOS sentencias, no tres.** Llevó una `ADD CONSTRAINT … FOREIGN KEY … ON DELETE SET NULL`
+> y **el fundador la retiró el 8-sep-2026** — ver «LA CLAVE AJENA SE RETIRA» más abajo.
 
 Fichero aplicable: `docs/sql/scrum-576-customers-company-id.sql` (mismo contenido, con el
 porqué de cada sentencia dentro).
@@ -2330,10 +2335,11 @@ fila, así que deja de ser un parecido ortográfico.
 tablas**. Veredicto de la herramienta: **✔ aditiva**. Veredicto de
 `scripts/_clasificador-sql.mjs` sobre el fichero: **`ok: true`**, las tres sentencias permitidas.
 
-> 🔴 **ESE `ok: true` NO ES EL QUE DECIDE — corregido el 8-sep-2026 al ir a aplicar.** Hay DOS
+> 🔴 **ESE `ok: true` NO ERA EL QUE DECIDE — corregido el 8-sep-2026 al ir a aplicar.** Hay DOS
 > listas blancas y sólo una gobierna lo que corre contra una base: la de
-> `scripts/_aplicar-sql-dev.mjs`, y ésa **rechaza la clave ajena**. Detalle abajo, en «LA CLAVE
-> AJENA NO ESTÁ EN NINGUNA BASE».
+> `scripts/_aplicar-sql-dev.mjs`. **Aquella comprobación se hizo sobre la lista equivocada.**
+> El fichero de hoy son dos `ADD COLUMN`/`CREATE INDEX` y las dos listas coinciden en él, así
+> que el aviso se queda por la lección, no por este fichero.
 
 ### ⚠️ El clasificador rotula la clave ajena como «ADD COLUMN ×1», y el rótulo es falso
 
@@ -2368,40 +2374,68 @@ texto que alguien escribió es cómo se pierden datos.
 - [ ] **producción · autorack** — pendiente. La aplica el fundador. Desde un árbol de trabajo no
       hay credencial de producción (regla 3), y no la ha habido en ningún momento de este ticket.
 - [ ] **staging · acela/railway** — pendiente. La aplica el fundador.
-- [x] **desarrollo · acela/yaqu_dev_javier** — ✅ **aplicada la columna y el índice** el 8-sep-2026
-      por petición explícita del fundador («aplicas tu migración en dev, tú, sólo dev»), con
-      `scripts/aplicar-sql-dev.mjs --go` y `exigirDestinoCorrecto` cuadrando. 🔴 **LA CLAVE AJENA
-      NO** — ver el bloque siguiente, que es lo importante de esta entrada.
+- [x] **desarrollo · acela/yaqu_dev_javier** — ✅ **APLICADA ENTERA** el 8-sep-2026 por petición
+      explícita del fundador («aplicas tu migración en dev, tú, sólo dev»), con
+      `scripts/aplicar-sql-dev.mjs --go` y `exigirDestinoCorrecto` cuadrando. Las dos sentencias
+      que tiene el fichero, que son todas las que tiene.
 
-### 🔴 LA CLAVE AJENA NO ESTÁ EN NINGUNA BASE, DEV INCLUIDA — y no es un olvido
+### 🔴 LA CLAVE AJENA SE RETIRA DEL TICKET — decisión del fundador, 8-sep-2026
 
-`scripts/aplicar-sql-dev.mjs` **rechaza** `ALTER TABLE … ADD CONSTRAINT … FOREIGN KEY`. Su lista
-blanca (`scripts/_aplicar-sql-dev.mjs`) acepta exactamente tres formas —`ADD COLUMN`,
-`CREATE [UNIQUE] INDEX`, `CREATE TABLE`— y es **fail-closed**: con una sola sentencia no
-reconocida **no aplica ninguna** del fichero. Verificado en el ensayo antes de aplicar nada.
+**No se aplica en ninguna base y sale del fichero SQL.** El motivo no es la lista blanca: es una
+firma que **ya existía en este mismo documento**, en la entrada de SCRUM-195 para `Quote.jobId`:
 
-> ⚠️ **Y CORRIGE ALGO QUE ESTA MISMA ENTRADA DABA POR BUENO.** Más arriba se dijo que
-> `scripts/_clasificador-sql.mjs` daba el fichero por `ok: true`. Es cierto **y no era la lista
-> que decide**: son DOS listas blancas distintas y sólo la del aplicador gobierna lo que corre
-> contra una base. La del clasificador la aceptaba —además rotulándola mal como «ADD COLUMN ×1»—;
-> la del aplicador la rechaza. **Manda la del aplicador.**
+> «Nullable y SIN FK, a propósito (decisión del fundador): coherencia con el resto del schema,
+> reversibilidad (`DROP COLUMN` limpio, sin constraint que arrastre) y sobre todo porque la FK
+> que importaría aquí es `onDelete`, y eso ya se decidió en SCRUM-192 — servicio de borrado, no
+> cascadas. La integridad la sostiene el CÓDIGO.»
 
-**Consecuencia, y es lo que hay que hacer:** la tercera sentencia del fichero canónico se aplica
-**a mano** en las tres bases, dev incluida. No se tocó ninguna de las dos listas blancas para que
-pasara: ampliar lo que puede correr contra producción no es un arreglo de paso (regla 37), y el
-fundador lo aparcó expresamente.
+**576 con clave ajena y 195 sin ella serían DOS CRITERIOS para la misma clase de relación.** Y
+aquí es peor que allí: es **autorreferente** sobre `customers`, así que deshacerla cuesta más.
 
-```sql
-ALTER TABLE "customers" ADD CONSTRAINT "customers_company_id_fkey" FOREIGN KEY ("company_id") REFERENCES "customers"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+⚠️ **QUE EL APLICADOR LA RECHAZARA FUE OTRA COSA.** Al ir a aplicar en dev se descubrió que
+`scripts/_aplicar-sql-dev.mjs` no admite `ADD CONSTRAINT` y es fail-closed —con una sentencia no
+reconocida no aplica NINGUNA—. Eso fue el **hallazgo**; la retirada es una **decisión**, y se
+sostiene sola. **No se ensanchó ninguna lista blanca**: ampliar lo que puede correr contra
+producción no es un arreglo de paso (regla 37).
+
+### 🔴 LO QUE LA CLAVE AJENA DABA, AHORA LO HACE EL CÓDIGO — medido contra dev
+
+`deleteCustomer` desvincula a las personas **antes** de borrar la empresa, **en la misma
+transacción** (`src/modules/system/customerAdmin.ts`). El orden importa: al revés queda una
+ventana con filas apuntando a un id que ya no existe, y **sin clave ajena nada protestaría**.
+
+Sembrado, ejercido por el camino real y limpiado — 8-sep-2026, `acela/yaqu_dev_javier`:
+
+```
+── ANTES ──────────────────────────────────
+   empresa id = 983
+   id=983 companyId=null · SCRUM576-EVIDENCIA Fincas SL
+   id=984 companyId=983 · SCRUM576-EVIDENCIA Ana
+   id=985 companyId=983 · SCRUM576-EVIDENCIA Luis
+   ✔ suelo: 2 personas vinculadas a la empresa 983
+
+── BORRANDO la empresa por el camino real ──
+   deleteMany count = 1
+
+── DESPUÉS ────────────────────────────────
+   id=984 companyId=null · SCRUM576-EVIDENCIA Ana
+   id=985 companyId=null · SCRUM576-EVIDENCIA Luis
+
+   ¿la empresa se borró?           true
+   ¿sobreviven las personas?       true
+   ¿su companyId es NULL?          true
+   ¿alguien apunta al id borrado?  false (0)
+
+── LIMPIEZA ── borradas 2 · restos con la marca: 0
 ```
 
-- [ ] clave ajena · **producción** — pendiente
-- [ ] clave ajena · **staging** — pendiente
-- [ ] clave ajena · **desarrollo** — pendiente
+**El suelo va dentro:** si la siembra no hubiera dejado dos personas vinculadas, el script se
+planta — «no encontré a nadie» y «nadie quedó colgado» no pueden salir por la misma puerta.
 
-**Sin ella, `company_id` admite un entero que no apunta a nadie**, y borrar una empresa deja a sus
-personas señalando una fila que ya no existe. El servidor comprueba existencia y merchant al
-ESCRIBIR (`exigirEmpresaValida`); lo que sólo da la clave ajena es lo que pasa al BORRAR.
+⚠️ **No se importó `deleteCustomer` directamente:** usa el `prisma` del módulo, que pide
+`DATABASE_URL`, y **en un árbol de trabajo esa clave no existe** (regla 3 — medido: reventó con
+«Environment variable not found: DATABASE_URL» antes de sembrar nada). Se ejerció la misma
+función que él llama, `desvincularYBorrar`, dentro de la misma transacción.
 
 ### La medida en dev — ANTES y DESPUÉS, con control positivo
 

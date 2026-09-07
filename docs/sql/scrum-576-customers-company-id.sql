@@ -1,22 +1,36 @@
 -- docs/sql/scrum-576-customers-company-id.sql — SCRUM-576 (CONT-03)
 --
--- LA EMPRESA A LA QUE PERTENECE UNA PERSONA. Una columna, un índice y una clave ajena.
+-- LA EMPRESA A LA QUE PERTENECE UNA PERSONA. Una columna y su índice. **Nada más.**
 --
 -- ESTADO (8-sep-2026) · el checklist vivo está en `docs/MIGRATIONS_PENDING.md`:
---    · desarrollo → ✅ columna e índice aplicados. 🔴 LA CLAVE AJENA NO.
---    · staging y producción → ⛔ nada aplicado. Las aplica el fundador.
+--    · desarrollo → ✅ aplicada
+--    · staging y producción → ⛔ pendientes. Las aplica el fundador.
 --
--- 🔴 LA TERCERA SENTENCIA NO ENTRA POR `scripts/aplicar-sql-dev.mjs`, EN NINGUNA BASE. Su lista
---    blanca acepta `ADD COLUMN`, `CREATE INDEX` y `CREATE TABLE`, y nada más; además es
---    fail-closed, así que con ella dentro no aplica NI UNA. **La clave ajena se aplica a mano.**
---    (Ojo: `scripts/_clasificador-sql.mjs` sí la da por permitida — son DOS listas blancas
---    distintas y la que gobierna lo que corre contra una base es la del APLICADOR.)
+-- ─────────────────────────────────────────────────────────────────────────────────────────
+-- 🔴 SIN CLAVE AJENA, A PROPÓSITO — y no es por la lista blanca del aplicador
 --
--- 🔴 EL PR QUE TRAE ESTE FICHERO **NO ES MERGEABLE HASTA QUE ESTA MIGRACIÓN ESTÉ APLICADA**, y no
---    es prudencia: `src/core/db/schemaDrift.ts` compara «esperado ⊆ real» en TABLAS y COLUMNAS y
---    **para el arranque** cuando el esquema nombra una columna que la base no tiene. Es lo que
---    dejó yaqu.app nueve días sirviendo el código del PR #862 en SCRUM-574. El orden correcto es
---    el que dejó escrito SCRUM-588: **la columna primero, la línea del schema después.**
+-- Este fichero llevó una tercera sentencia (`ADD CONSTRAINT … FOREIGN KEY … ON DELETE SET NULL`)
+-- y **se retiró por decisión del fundador el 8-sep-2026**, aplicando aquí la firma que ya existía
+-- en `docs/MIGRATIONS_PENDING.md` para `Quote.jobId` (SCRUM-195):
+--
+--   «Nullable y SIN FK, a propósito: coherencia con el resto del schema, reversibilidad
+--    (`DROP COLUMN` limpio, sin constraint que arrastre) y sobre todo porque la FK que importaría
+--    aquí es `onDelete`, y eso ya se decidió en SCRUM-192 — servicio de borrado, no cascadas.»
+--
+-- **576 con clave ajena y 195 sin ella serían DOS CRITERIOS para la misma clase de relación.** Y
+-- aquí es peor que allí: es AUTORREFERENTE sobre `customers`, así que deshacerla cuesta más.
+--
+-- ⚠️ QUE EL APLICADOR LA RECHAZARA FUE OTRA COSA, y conviene no confundirlas: al ir a aplicar en
+-- dev se descubrió que `scripts/_aplicar-sql-dev.mjs` no admite `ADD CONSTRAINT` y es fail-closed.
+-- Eso fue el HALLAZGO; la retirada es una DECISIÓN, y se sostiene sola. **No se ensanchó ninguna
+-- lista blanca** para que pasara: ampliar lo que puede correr contra producción no es un arreglo
+-- de paso (regla 37).
+--
+-- 🔴 LO QUE LA CLAVE AJENA HABRÍA HECHO AL BORRAR, LO HACE EL CÓDIGO. `deleteCustomer`
+-- (`src/modules/system/customerAdmin.ts`) desvincula a las personas de esa empresa **antes** de
+-- borrarla, **en la misma transacción**. Sin eso, `company_id` se quedaría apuntando a una fila
+-- que ya no existe y nada protestaría. Lo ejercita
+-- `tests/scrum576-persona-vinculada-a-empresa.test.mjs`.
 --
 -- ─────────────────────────────────────────────────────────────────────────────────────────
 -- EL SQL NO SE ESCRIBIÓ A MANO
@@ -25,8 +39,8 @@
 -- Prisma; `npx` está prohibido, regla 3), con su control positivo en verde: **27 tablas**. Sin
 -- ese control, un diff vacío se leería como «no hay cambios» — el incidente del 5-ago-2026.
 --
--- Veredicto de la herramienta: **✔ aditiva** — ni DROP, ni RENAME, ni TRUNCATE, ni DELETE, ni
--- SET NOT NULL.
+-- Veredicto de la herramienta: **✔ aditiva**. Veredicto del ENSAYO del aplicador (`--file` sin
+-- `--go`, que es el que de verdad decide): **2 sentencias, todas de forma conocida**.
 --
 -- ─────────────────────────────────────────────────────────────────────────────────────────
 -- POR QUÉ `INTEGER` NULLABLE Y SIN `DEFAULT`
@@ -40,28 +54,9 @@
 -- reescribe la tabla ni la bloquea. Un `NOT NULL` sin default fallaría en seco — y la lista
 -- blanca de `scripts/_clasificador-sql.mjs` lo rechaza por eso mismo.
 --
--- ─────────────────────────────────────────────────────────────────────────────────────────
--- LA CLAVE AJENA ES EL TICKET, NO UN ADORNO
---
--- Lo que este ticket promete es que dos personas de la misma empresa apunten a **la misma
--- empresa**, no a dos cadenas parecidas. Sin la clave ajena, `company_id` sería un entero suelto
--- que puede señalar a una fila que ya no existe: texto libre con otro disfraz.
---
--- `ON DELETE SET NULL` y no `CASCADE`: borrar la empresa **no puede llevarse por delante a las
--- personas**. Pierden el vínculo y siguen existiendo, con sus presupuestos y sus facturas.
---
--- ⚠️ VALIDA TRIVIALMENTE HOY: la columna nace `NULL` en todas las filas, así que no hay ni un
--- valor huérfano que pueda hacerla fallar. Aplicada más tarde, sobre datos ya escritos, esa
--- garantía deja de ser gratis.
---
--- ⚠️ LA CLAVE AJENA **NO ES RE-EJECUTABLE**, y se dice porque las otras dos sí lo son. Postgres
--- no admite `ADD CONSTRAINT IF NOT EXISTS`; la única forma de darle esa propiedad es un bloque
--- `DO $$ … $$`, y la lista blanca del aplicador lo rechaza — con razón: dentro de un bloque
--- procedural cabe cualquier cosa, incluido un `DROP`. **Si se re-ejecuta este fichero, la tercera
--- sentencia dará `already exists`; las dos primeras no harán nada.** Es ruido, no daño.
+-- RE-EJECUTABLES LAS DOS (`IF NOT EXISTS`): donde ya estén, no hacen nada. En dev ya están, así
+-- que este fichero es inofensivo ahí — sólo muerde en staging y producción.
 
 ALTER TABLE "customers" ADD COLUMN IF NOT EXISTS "company_id" INTEGER;
 
 CREATE INDEX IF NOT EXISTS "customers_company_id_idx" ON "customers"("company_id");
-
-ALTER TABLE "customers" ADD CONSTRAINT "customers_company_id_fkey" FOREIGN KEY ("company_id") REFERENCES "customers"("id") ON DELETE SET NULL ON UPDATE CASCADE;

@@ -28,6 +28,10 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+// 🔴 EL FILTRO DE COMENTARIOS ES ÉSTE, NUNCA UNO A MANO (SCRUM-694). Hace falta porque el `.sql`
+// EXPLICA en sus comentarios la clave ajena que se retiró —con su sentencia entera dentro— y un
+// `includes` sobre el texto crudo confundiría «lo explica» con «la ejecuta».
+import { sinComentarios } from '../scripts/_aplicar-sql-dev.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -137,14 +141,10 @@ test('SCRUM-576 · 🔴 EL DESPUÉS: las dos fichas mandan el MISMO id, no dos c
   assert.equal(Number(uno.campo.value), EMPRESA.id,
     '🔴 lo que viaja no es el id de la empresa. Un nombre que viaja es texto libre con otro disfraz.');
 
-  // Y lo que garantiza que ese entero señale a una fila que EXISTE no es el navegador: es la
-  // clave ajena de la migración. Sin ella, `company_id` sería un entero suelto.
-  const sql = fs.readFileSync(path.join(RAIZ, 'docs/sql/scrum-576-customers-company-id.sql'), 'utf8');
-  assert.match(sql, /FOREIGN KEY\s*\(\s*"company_id"\s*\)\s*REFERENCES\s+"customers"\s*\(\s*"id"\s*\)/,
-    '🔴 la migración no declara la clave ajena. Sin ella la base admite un `company_id` que no ' +
-    'apunta a nadie, y «son la misma empresa» vuelve a ser una coincidencia.');
-  assert.match(sql, /ON DELETE SET NULL/,
-    '🔴 borrar la empresa se llevaría por delante a las personas. Pierden el vínculo, no la ficha.');
+  // ⚠️ Y AQUÍ ACABA LO QUE ESTE TEST PUEDE AFIRMAR. Que ese entero siga señalando a una fila que
+  // existe **no lo garantiza ninguna clave ajena**: se retiró el 8-sep-2026 (firma de SCRUM-195 —
+  // servicio de borrado, no cascadas). Lo garantiza el CÓDIGO, y eso se ejerce más abajo, en el
+  // bloque del borrado. Se dice aquí para que nadie lea este verde como más de lo que es.
 });
 
 // ═══ ✅ EL POSITIVO: una persona SIN empresa sigue funcionando exactamente igual ═══════════
@@ -269,4 +269,176 @@ test('SCRUM-576 · el `select` del servidor DEVUELVE `companyId`', async () => {
   assert.ok(!/^\s*(company|people):\s*true,/m.test(select),
     '🔴 se está exponiendo la RELACIÓN, no el entero. El lado inverso `people` existe sólo porque ' +
     'Prisma lo exige; sacarlo crearía el segundo sitio que este ticket evita.');
+});
+
+// ═══ EL BORRADO — lo que la CLAVE AJENA habría hecho, y ahora hace el código ═══════════════
+//
+// 🔴 POR QUÉ ESTO EXISTE. `customers.company_id` nace **sin clave ajena** (decisión del fundador,
+// 8-sep-2026, aplicando la firma de SCRUM-195 para `Quote.jobId`: «la FK que importaría aquí es
+// `onDelete`, y eso ya se decidió en SCRUM-192 — servicio de borrado, no cascadas»). Este ticket
+// llegó a llevarla y se retiró: con FK aquí y sin ella allí habría **dos criterios** para la misma
+// clase de relación, y ésta además es autorreferente sobre `customers`.
+//
+// Retirarla mueve la promesa al código, y una promesa que sólo está escrita en un comentario no es
+// una promesa. Aquí se ejecuta.
+//
+// ── LA MESA DE PRUEBAS, Y SU SUELO ─────────────────────────────────────────────────────────
+// Es una `customers` de mentira con la semántica de `updateMany`/`deleteMany` que se usa: filtro
+// por igualdad de campos. **Un doble que miente no mide de menos: mide otra cosa** (la lección del
+// banco de vistas), así que abajo se le exige que reproduzca los dos comportamientos conocidos
+// —que `deleteMany` borre lo que casa y `updateMany` escriba lo que casa— antes de creerse nada
+// de lo que diga sobre el producto.
+
+function mesaDeClientes(filas) {
+  const tabla = filas.map((f) => ({ ...f }));
+  const casa = (fila, where) => Object.entries(where).every(([k, v]) => fila[k] === v);
+  return {
+    tabla,
+    customer: {
+      async updateMany({ where, data }) {
+        let n = 0;
+        for (const f of tabla) if (casa(f, where)) { Object.assign(f, data); n += 1; }
+        return { count: n };
+      },
+      async deleteMany({ where }) {
+        let n = 0;
+        for (let i = tabla.length - 1; i >= 0; i -= 1) {
+          if (casa(tabla[i], where)) { tabla.splice(i, 1); n += 1; }
+        }
+        return { count: n };
+      },
+    },
+  };
+}
+
+/**
+ * ⚠️ MERCHANT 71 Y 72, NO 1 Y 2 — SCRUM-409, y su guard lo cazó aquí. El merchant 1 es el DEMO y
+ * NO se comporta como uno normal: la política de WhatsApp corta por su id, el PDF lleva marca de
+ * agua y la pasarela se desvía. Un fixture ahí desactiva comprobaciones sin tocar ningún guard, y
+ * el test seguiría verde midiendo otra cosa. Aquí no se prueba el demo: son ids inventados.
+ */
+/** LA SIEMBRA: una empresa del merchant 1 con DOS personas vinculadas, y una tercera sin empresa. */
+const SEMBRADO = () => [
+  { id: 7, merchantId: 71, name: 'Fincas García SL', contactKind: 'EMPRESA', companyId: null },
+  { id: 11, merchantId: 71, name: 'Ana Ruiz', contactKind: 'PERSONA', companyId: 7 },
+  { id: 12, merchantId: 71, name: 'Luis Soto', contactKind: 'PERSONA', companyId: 7 },
+  { id: 13, merchantId: 71, name: 'Suelta', contactKind: 'PERSONA', companyId: null },
+  // De OTRO merchant, con el MISMO companyId por número. La regla 2 dice que no se toca.
+  { id: 21, merchantId: 72, name: 'De otro dueño', contactKind: 'PERSONA', companyId: 7 },
+];
+
+test('SCRUM-576 · 🔴 SUELO del borrado: hay una empresa CON personas vinculadas, y la mesa no miente', async () => {
+  const m = mesaDeClientes(SEMBRADO());
+  const vinculadas = m.tabla.filter((f) => f.companyId === 7 && f.merchantId === 71);
+  assert.ok(vinculadas.length >= 2,
+    `🔴 CIEGO: la siembra tiene ${vinculadas.length} persona(s) vinculadas a la empresa 7. Sin al ` +
+    'menos dos, «las personas sobreviven» no está midiendo nada: un cero pasaría solo.');
+
+  // Y la mesa tiene que comportarse como la de verdad en los dos casos conocidos, o lo de abajo
+  // estaría midiendo el doble en vez del producto.
+  const r1 = await m.customer.updateMany({ where: { id: 13 }, data: { companyId: 99 } });
+  assert.equal(r1.count, 1, '🔴 la mesa no escribe lo que casa: `updateMany` no vale como medida.');
+  assert.equal(m.tabla.find((f) => f.id === 13).companyId, 99);
+  const r2 = await m.customer.deleteMany({ where: { id: 13 } });
+  assert.equal(r2.count, 1, '🔴 la mesa no borra lo que casa: `deleteMany` no vale como medida.');
+  assert.equal(m.tabla.some((f) => f.id === 13), false);
+});
+
+test('SCRUM-576 · 🔴 EL ANTES: sin desvincular, las personas quedan apuntando a una fila que no existe', async () => {
+  // Esto es EXACTAMENTE lo que hacía `deleteCustomer` antes: un `deleteMany` a secas.
+  const m = mesaDeClientes(SEMBRADO());
+  await m.customer.deleteMany({ where: { id: 7, merchantId: 71 } });
+
+  assert.equal(m.tabla.some((f) => f.id === 7), false, 'suelo: la empresa sí se borró.');
+  const colgadas = m.tabla.filter((f) => f.companyId === 7);
+  assert.ok(colgadas.length >= 2,
+    '🔴 este test ha dejado de reproducir el defecto: si aquí no quedan personas colgadas, el ' +
+    '«después» de abajo no demuestra nada.');
+  // 🔴 Y ÉSTE ES EL DAÑO: apuntan a la empresa 7, que ya no está. Sin clave ajena, NADA protesta.
+  assert.equal(m.tabla.some((f) => f.id === colgadas[0].companyId), false,
+    'la fila apuntada ya no existe — el vínculo es un entero que no lleva a ningún sitio.');
+});
+
+test('SCRUM-576 · 🔴 EL DESPUÉS: borrar la empresa desvincula a sus personas y NO se las lleva', async () => {
+  const { desvincularYBorrar } = await import('../dist/modules/system/customerAdmin.js');
+  const m = mesaDeClientes(SEMBRADO());
+
+  const r = await desvincularYBorrar(m, 71, 7);
+
+  // ① La empresa se ha ido.
+  assert.equal(r.count, 1, '🔴 no se borró la empresa.');
+  assert.equal(m.tabla.some((f) => f.id === 7), false, '🔴 la empresa sigue ahí.');
+
+  // ② 🔴 LAS PERSONAS SOBREVIVEN. Ni cascada, ni desaparición silenciosa.
+  const ana = m.tabla.find((f) => f.id === 11);
+  const luis = m.tabla.find((f) => f.id === 12);
+  assert.ok(ana && luis,
+    '🔴 BORRAR UNA EMPRESA SE HA LLEVADO A SUS PERSONAS POR DELANTE. Un cliente no desaparece ' +
+    'porque desaparezca la empresa para la que trabajaba: tiene presupuestos, facturas e historial.');
+
+  // ③ 🔴 Y NO QUEDAN APUNTANDO AL VACÍO.
+  assert.equal(ana.companyId, null, '🔴 Ana sigue apuntando a una empresa que ya no existe.');
+  assert.equal(luis.companyId, null, '🔴 Luis sigue apuntando a una empresa que ya no existe.');
+  assert.equal(m.tabla.some((f) => f.merchantId === 71 && f.companyId === 7), false,
+    '🔴 queda alguien colgado de la empresa borrada.');
+});
+
+test('SCRUM-576 · ✅ POSITIVO: borrar una empresa SIN personas vinculadas funciona igual que hoy', async () => {
+  const { desvincularYBorrar } = await import('../dist/modules/system/customerAdmin.js');
+  const m = mesaDeClientes(SEMBRADO());
+  const antes = m.tabla.length;
+
+  const r = await desvincularYBorrar(m, 71, 13); // «Suelta»: nadie la referencia
+
+  assert.equal(r.count, 1, '🔴 borrar un cliente sin personas vinculadas ha dejado de funcionar.');
+  assert.equal(m.tabla.length, antes - 1, '🔴 se ha borrado de más o de menos: sólo cae ella.');
+  assert.equal(m.tabla.some((f) => f.id === 13), false);
+  // Y no ha tocado a nadie por el camino: los vínculos que existían siguen exactamente igual.
+  assert.equal(m.tabla.find((f) => f.id === 11).companyId, 7,
+    '🔴 borrar un cliente suelto ha desvinculado a personas de OTRA empresa.');
+  assert.equal(m.tabla.find((f) => f.id === 12).companyId, 7);
+});
+
+test('SCRUM-576 · ✅ el desvinculado NO cruza de merchant (regla 2)', async () => {
+  const { desvincularYBorrar } = await import('../dist/modules/system/customerAdmin.js');
+  const m = mesaDeClientes(SEMBRADO());
+
+  await desvincularYBorrar(m, 71, 7);
+
+  const ajeno = m.tabla.find((f) => f.id === 21);
+  assert.ok(ajeno, '🔴 se ha borrado una fila de otro merchant.');
+  assert.equal(ajeno.companyId, 7,
+    '🔴 FUGA ENTRE INQUILINOS: se ha escrito en la fila de otro merchant porque su `companyId` ' +
+    'coincidía POR NÚMERO. Sin `merchantId` en el `where`, un entero alcanza a quien no debe.');
+});
+
+test('SCRUM-576 · 🔴 los dos pasos van en UNA transacción, no sueltos', () => {
+  const fuente = fs.readFileSync(path.join(RAIZ, 'src/modules/system/customerAdmin.ts'), 'utf8');
+  const cuerpo = fuente.slice(fuente.indexOf('export async function deleteCustomer'));
+  assert.match(cuerpo, /prisma\.\$transaction\(/,
+    '🔴 sin transacción, un fallo al borrar deja a las personas desvinculadas de una empresa que ' +
+    'SIGUE EXISTIENDO: se pierde un dato del profesional sin que nadie haya borrado nada.');
+});
+
+test('SCRUM-576 · 🔴 el schema NO declara la clave ajena que se retiró', () => {
+  const schema = fs.readFileSync(path.join(RAIZ, 'prisma/schema.prisma'), 'utf8');
+  const modelo = schema.slice(schema.indexOf('model Customer '), schema.indexOf('@@map("customers")'));
+  assert.equal(/@relation\("PersonaEnEmpresa"/.test(modelo), false,
+    '🔴 la relación ha vuelto al schema. Declararla hace que `prisma db push` CREE la clave ajena ' +
+    'que el fundador retiró el 8-sep-2026 (firma de SCRUM-195: servicio de borrado, no cascadas), ' +
+    'y el esquema prometería una integridad que la base no tiene.');
+  assert.match(modelo, /companyId Int\? @map\("company_id"\)/,
+    'suelo: la columna escalar sigue declarada, así que lo de arriba no pasa por haberla perdido.');
+
+  // 🔴 SOBRE EL SQL **EJECUTABLE**, no sobre el texto crudo.
+  const sql = fs.readFileSync(path.join(RAIZ, 'docs/sql/scrum-576-customers-company-id.sql'), 'utf8');
+  const ejecutable = sinComentarios(sql);
+  assert.ok(/FOREIGN KEY/.test(sql),
+    'suelo del filtro: el fichero SÍ menciona la clave ajena en sus comentarios, al explicar por ' +
+    'qué se retiró. Si dejara de mencionarla, la comprobación de abajo pasaría por VACÍA y no por ' +
+    'limpia, y nadie se enteraría.');
+  assert.equal(/FOREIGN KEY/.test(ejecutable), false,
+    '🔴 la clave ajena ha vuelto al SQL QUE SE EJECUTA.');
+  assert.match(ejecutable, /ADD COLUMN IF NOT EXISTS "company_id"/,
+    'suelo: la migración sigue trayendo la columna.');
 });

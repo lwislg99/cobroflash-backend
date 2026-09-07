@@ -298,6 +298,64 @@ export async function updateCustomer(merchantId: number, id: number, data: Custo
   return prisma.customer.updateMany({ where: { id, merchantId }, data: normalizarEtiquetas(normalizarIdentificadores(data)) });
 }
 
+/**
+ * SCRUM-576 (CONT-03) · BORRAR UN CLIENTE SIN DEJAR PERSONAS APUNTANDO AL VACÍO.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 ESTO ES LO QUE HARÍA LA CLAVE AJENA, Y POR ESO NO HAY CLAVE AJENA
+ *
+ * `customers.company_id` nace **sin FK**, por decisión del fundador (8-sep-2026), aplicando la
+ * firma que ya existía para `Quote.jobId` en SCRUM-195: «la FK que importaría aquí es
+ * `onDelete`, y eso ya se decidió en SCRUM-192 — **servicio de borrado, no cascadas**. La
+ * integridad la sostiene el CÓDIGO.» Tener FK aquí y no allí serían dos criterios para la misma
+ * clase de relación, y ésta es autorreferente sobre `customers`: deshacerla cuesta más.
+ *
+ * **Entonces la promesa hay que cumplirla aquí, y es ésta:** borrar una empresa NO puede dejar a
+ * sus personas señalando una fila que ya no existe. Se desvinculan; **no se borran**. Un cliente
+ * no desaparece porque desaparezca la empresa para la que trabajaba — tiene sus presupuestos, sus
+ * facturas y su historial.
+ *
+ * ── EL ORDEN NO ES INDIFERENTE ──────────────────────────────────────────────────────────────
+ * Se desvincula **ANTES** de borrar. Al revés —borrar y luego limpiar— deja una ventana en la que
+ * las filas apuntan a un id que ya no existe, y si el segundo paso falla la ventana no se cierra
+ * nunca. Sin FK **nada protestaría**: el defecto sería MUDO, que es el peor.
+ *
+ * ── Y POR ESO ES UNA TRANSACCIÓN ────────────────────────────────────────────────────────────
+ * Los dos pasos caen juntos o no cae ninguno. Sin ella, un fallo al borrar dejaría a las personas
+ * desvinculadas de una empresa que **sigue existiendo**: se habría perdido un dato del profesional
+ * sin que nadie borrara nada.
+ *
+ * ⚠️ `updateMany` filtra por `merchantId` además de por `companyId`, y no es redundante: es la
+ * regla 2. Un `companyId` es un entero, y sin el dueño en el `WHERE` esta escritura alcanzaría
+ * filas de otro inquilino que casaran por número.
+ *
+ * Devuelve lo mismo que antes —el resultado del `deleteMany`— para no cambiarle nada a la ruta.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+/**
+ * LOS DOS PASOS, EN ORDEN, SOBRE EL CLIENTE QUE SE LE DÉ. Vive suelta y recibe el cliente en vez
+ * de cerrar sobre `prisma` por el mismo motivo que `examinarVinculoDeEmpresa` justo arriba: una
+ * secuencia enterrada dentro de una llamada a `$transaction` sólo se puede auditar LEYENDO el
+ * fuente, y leer no ejecuta nada. Así la suite la ejerce entera —el orden, los filtros y el valor
+ * que escribe— sin levantar Postgres.
+ *
+ * @param tx el cliente Prisma (o el de la transacción: la firma es la misma)
+ */
+export async function desvincularYBorrar(
+  tx: { customer: { updateMany: Function; deleteMany: Function } },
+  merchantId: number,
+  id: number,
+) {
+  // ① PRIMERO desvincular. Ver el porqué del orden en `deleteCustomer`.
+  await tx.customer.updateMany({
+    where: { merchantId, companyId: id },
+    data: { companyId: null },
+  });
+  // ② y sólo entonces borrar.
+  return tx.customer.deleteMany({ where: { id, merchantId } });
+}
+
 export async function deleteCustomer(merchantId: number, id: number) {
-  return prisma.customer.deleteMany({ where: { id, merchantId } });
+  // `$transaction` y no dos llamadas sueltas: los dos pasos caen juntos o no cae ninguno.
+  return prisma.$transaction((tx) => desvincularYBorrar(tx as any, merchantId, id));
 }

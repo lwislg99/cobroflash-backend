@@ -247,15 +247,24 @@ model Customer {
   // Nullable y SIN `@default`, como sus vecinos: NULL = «no pertenece a ninguna empresa, o nadie
   // lo ha declarado». La inmensa mayoría de los clientes de un fontanero son personas sueltas.
   //
-  // `onDelete: SetNull` y no `Cascade`: borrar la empresa NO puede llevarse por delante a las
-  // personas. Pierden el vínculo —que es un dato— y siguen existiendo, con sus presupuestos y
-  // sus facturas.
-  companyId Int?       @map("company_id")
-  company   Customer?  @relation("PersonaEnEmpresa", fields: [companyId], references: [id], onDelete: SetNull)
-  // El lado inverso lo EXIGE Prisma para poder declarar la relación; no es un campo de la ficha
-  // de empresa ni una columna. No se expone en `CUSTOMER_SELECT_NO_TOKEN`: la ficha de empresa no
-  // gana nada, que es el control negativo del ticket.
-  people    Customer[] @relation("PersonaEnEmpresa")
+  // 🔴 NULLABLE Y **SIN CLAVE AJENA**, A PROPÓSITO — decisión del fundador del 8-sep-2026, que
+  // aplica aquí la firma que ya existía en `docs/MIGRATIONS_PENDING.md` para `Quote.jobId`
+  // (SCRUM-195): «coherencia con el resto del schema, reversibilidad (`DROP COLUMN` limpio, sin
+  // constraint que arrastre) y sobre todo porque la FK que importaría aquí es `onDelete`, y eso
+  // ya se decidió en SCRUM-192 — servicio de borrado, no cascadas».
+  //
+  // Este ticket nació CON relación y `onDelete: SetNull`, y se retiró: 576 con clave ajena y 195
+  // sin ella serían DOS CRITERIOS para la misma clase de relación. Y aquí es peor que allí — es
+  // AUTORREFERENTE sobre `customers`, así que deshacerla cuesta más.
+  //
+  // ⚠️ NO HAY `@relation`, Y ESO NO ES UN OLVIDO: declararla haría que `prisma db push` volviera
+  // a crear la clave ajena que se acaba de retirar, y el esquema prometería una integridad que la
+  // base no tiene.
+  //
+  // 🔴 LO QUE LA CLAVE AJENA HABRÍA HECHO AL BORRAR, LO HACE EL CÓDIGO: `deleteCustomer`
+  // desvincula a las personas ANTES de borrar la empresa, en la misma transacción. Sin eso, esta
+  // columna se queda apuntando a una fila que ya no existe — y nada protestaría.
+  companyId Int? @map("company_id")
 
   // A20.4 (EXT3): cliente empresa — razón social y NIF (el NIF además es
   // requisito del F1 VeriFactu futuro, hallazgo S1-C)

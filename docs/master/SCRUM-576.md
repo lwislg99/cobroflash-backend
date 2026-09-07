@@ -1,4 +1,4 @@
-# SCRUM-576 · CONT-03: asociar persona ↔ empresa — la columna en dev, la clave ajena en ninguna
+# SCRUM-576 · CONT-03: asociar persona ↔ empresa — sin clave ajena, con servicio de borrado
 
 **Fecha:** 7-sep-2026 · **actualizado el 8-sep-2026** (microcopy firmada + migración en dev)
 **Carril:** producto · **Gate:** aprobado por el fundador el 24-ago-2026
@@ -13,10 +13,14 @@ en dev: **mismas cifras**.
 formularios, la validación en servidor, y el control que decide en verde — enseñando el antes ciego
 y el después.
 
-**8-sep-2026 · segunda pasada:** los dos rótulos **firmados** por el fundador y aplicados byte a
-byte (el censo de ranuras baja **6 → 4**, medido con el lector oficial), y la migración **aplicada
-en dev** — columna e índice, **26 → 27** columnas. 🔴 **La clave ajena no entró: la rechaza el
-aplicador**, y hay que aplicarla a mano en las tres bases.
+**8-sep-2026 · segunda pasada:** los dos rótulos **firmados** y aplicados byte a byte (el censo de
+ranuras baja **6 → 4**, medido con el lector oficial), y la migración **aplicada en dev** —
+**26 → 27** columnas.
+
+**8-sep-2026 · tercera pasada:** 🔴 **la clave ajena se RETIRA del ticket** por decisión del
+fundador, y lo que ella daba —qué pasa al borrar— **lo hace ahora el código**, con su evidencia
+medida contra dev. El fichero SQL queda en dos sentencias. **Con staging y producción aplicadas, el
+PR es mergeable: no queda nada más pendiente.**
 
 ---
 
@@ -54,9 +58,8 @@ sirviendo el código del PR #862**.
 - **El registro por base:** `docs/MIGRATIONS_PENDING.md`
 - **8-sep-2026 · dev:** columna e índice **aplicados** (26 → 27 columnas, medido antes y después
   con control positivo). **Staging y producción, sin tocar.**
-- 🔴 **La clave ajena no está en NINGUNA base, dev incluida:** `aplicar-sql-dev.mjs` la rechaza —su
-  lista blanca sólo admite `ADD COLUMN`, `CREATE INDEX` y `CREATE TABLE`— y es fail-closed. **Se
-  aplica a mano en las tres.** No se tocó ninguna lista blanca para que pasara (regla 37).
+- ✅ **Ya no hay clave ajena pendiente:** se retiró del ticket el 8-sep-2026 (abajo). El fichero son
+  dos sentencias y **dev ya las tiene**, así que sólo faltan staging y producción.
 
 **El orden correcto lo dejó escrito SCRUM-588:** la columna primero, la línea del schema después.
 Aquí la línea va delante porque el ticket entero es media función sin ella — decisión del fundador
@@ -73,8 +76,72 @@ que es justo el defecto que este ticket viene a cerrar.
 ficha de persona tiene «Empresa»; la de empresa **no** tiene «personas». Un solo sitio donde se
 escribe el vínculo; con dos, uno podría contradecir al otro y nada diría cuál manda.
 
-`onDelete: SetNull` y no `Cascade`: borrar la empresa **no** puede llevarse por delante a las
-personas. Pierden el vínculo —que es un dato— y siguen existiendo, con sus presupuestos y facturas.
+## 🔴 La clave ajena se retira — y la promesa se muda al código
+
+El ticket nació con `@relation` y `onDelete: SetNull`. **El fundador la retiró el 8-sep-2026**,
+aplicando aquí una firma que ya existía en `docs/MIGRATIONS_PENDING.md` para `Quote.jobId`
+(SCRUM-195): «la FK que importaría aquí es `onDelete`, y eso ya se decidió en SCRUM-192 —
+**servicio de borrado, no cascadas**. La integridad la sostiene el CÓDIGO».
+
+**576 con clave ajena y 195 sin ella serían dos criterios para la misma clase de relación**, y ésta
+es autorreferente sobre `customers`: deshacerla cuesta más.
+
+⚠️ **Que el aplicador la rechazara fue OTRA COSA, y no conviene mezclarlas.** Al ir a aplicar en dev
+se descubrió que `_aplicar-sql-dev.mjs` no admite `ADD CONSTRAINT` y es fail-closed. Eso fue el
+**hallazgo**; la retirada es una **decisión** y se sostiene sola. No se ensanchó ninguna lista
+blanca (regla 37).
+
+**La `@relation` sale del schema, no sólo la sentencia del `.sql`**, y eso no es cosmética:
+dejarla declarada haría que `prisma db push` volviera a crear la clave ajena retirada, y el
+esquema prometería una integridad que la base no tiene. Verificado con
+`preview-migracion.mjs --desde`: el schema de hoy genera **dos** sentencias, sin `FOREIGN KEY`.
+
+### Lo que hace el código en su lugar
+
+`deleteCustomer` desvincula a las personas **antes** de borrar la empresa, **en la misma
+transacción**. Las dos decisiones tienen su porqué:
+
+* **El orden** — al revés queda una ventana con filas apuntando a un id que ya no existe, y si el
+  segundo paso falla no se cierra nunca. Sin clave ajena **nada protestaría**: el defecto sería
+  mudo, que es el peor.
+* **La transacción** — sin ella, un fallo al borrar dejaría a las personas desvinculadas de una
+  empresa que **sigue existiendo**: se habría perdido un dato del profesional sin que nadie borrara
+  nada.
+
+Y el `updateMany` filtra por `merchantId` además de por `companyId` (regla 2): un `companyId` es
+un entero, y sin el dueño en el `WHERE` alcanzaría filas de otro inquilino que casaran por número.
+
+### La evidencia, medida contra dev — sembrada, ejercida y limpiada
+
+```
+── ANTES ──────────────────────────────────
+   empresa id = 983
+   id=983 companyId=null · SCRUM576-EVIDENCIA Fincas SL
+   id=984 companyId=983 · SCRUM576-EVIDENCIA Ana
+   id=985 companyId=983 · SCRUM576-EVIDENCIA Luis
+   ✔ suelo: 2 personas vinculadas a la empresa 983
+
+── BORRANDO la empresa por el camino real ──
+   deleteMany count = 1
+
+── DESPUÉS ────────────────────────────────
+   id=984 companyId=null · SCRUM576-EVIDENCIA Ana
+   id=985 companyId=null · SCRUM576-EVIDENCIA Luis
+
+   ¿la empresa se borró?           true
+   ¿sobreviven las personas?       true
+   ¿su companyId es NULL?          true
+   ¿alguien apunta al id borrado?  false (0)
+
+── LIMPIEZA ── borradas 2 · restos con la marca: 0
+```
+
+**El suelo va dentro:** sin dos personas vinculadas el script se planta — «no encontré a nadie» y
+«nadie quedó colgado» no pueden salir por la misma puerta. Y **no quedaron restos**.
+
+⚠️ No se importó `deleteCustomer` directamente: usa el `prisma` del módulo, que pide
+`DATABASE_URL`, y **en un árbol de trabajo esa clave no existe** (regla 3 — medido: reventó antes
+de sembrar nada). Se ejerció la misma función que él llama, dentro de la misma transacción.
 
 ## El punto fino: «Razón social» NO se borra y NO se migra
 
@@ -105,6 +172,13 @@ prohibido por el fundador desde el 24-ago-2026). Donde sí cabe la preferencia e
 | ✅ **NEGATIVO** | en el lado EMPRESA el campo se esconde, en la regla **y en el DOM** | `SOLO_PERSONA` vacío → **caen los dos** |
 | 🔴 **SUELO** | si no encuentra fichas de persona, **falla declarándose ciego** | quitar el `appendChild` del campo → **cae** |
 | **Quinto eslabón** | el `select` del servidor devuelve `companyId` y **no** la relación | comentar `companyId: true` → **cae** |
+| 🔴 **SUELO del borrado** | hay una empresa **con** personas vinculadas, y la mesa de pruebas reproduce `updateMany`/`deleteMany` de verdad | — |
+| 🔴 **EL ANTES del borrado** | sin desvincular, las personas quedan apuntando a una fila que ya no existe | — |
+| 🔴 **EL DESPUÉS del borrado** | borrar la empresa **desvincula** y **no se lleva** a sus personas | — |
+| ✅ **POSITIVO del borrado** | borrar una empresa **sin** personas vinculadas funciona igual que hoy | — |
+| ✅ **Regla 2** | el desvinculado no toca filas de otro merchant que casen por número | — |
+| 🔴 **Transacción** | los dos pasos van juntos, no sueltos | — |
+| 🔴 **Sin FK** | ni el schema declara la relación ni el SQL **ejecutable** trae `FOREIGN KEY` | — |
 
 **Lo que estos controles NO prueban, declarado:** la escritura en Postgres. Este entorno no tiene
 Postgres desechable (`psql` y `docker`, ausentes) y la suite no toca ninguna base. Lo que la base
