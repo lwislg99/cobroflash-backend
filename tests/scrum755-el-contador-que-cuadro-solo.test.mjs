@@ -75,7 +75,16 @@ const CENSO_DE_SITIOS = {
   'providersView.js': 3,
   'quotesView.js': 3,
   'settingsView.js': 2,
-  'switchFormaJuridica.js': 4,
+  // SCRUM-576 (CONT-03) · 4 → 6, A CONCIENCIA. Las dos ranuras nuevas son el campo «Empresa» del
+  // lado Persona: su RÓTULO y su opción de «ninguna». Salen del MISMO `MARCADOR` que las cuatro
+  // de SCRUM-574 —no de un literal nuevo, por eso el censo de SCRUM-402 sigue diciendo 1 para
+  // este fichero— y ése es justo el hueco que este contador existe para tapar: una ranura que
+  // pinta a través de una constante no mueve aquel número.
+  //
+  // 🔴 NO ESTÁN APROBADAS (regla 30). Un `<select>` sin etiqueta no es entregable, así que el
+  // campo entra con la marca puesta y a la vista, no con un texto inventado. Las dos se apagan
+  // el día que el fundador firme, desde una sola constante, y entonces este número BAJA.
+  'switchFormaJuridica.js': 6,
   'tipoDestinatarioPendiente.js': 2,
 };
 const TOTAL_DE_SITIOS = Object.values(CENSO_DE_SITIOS).reduce((t, n) => t + n, 0);

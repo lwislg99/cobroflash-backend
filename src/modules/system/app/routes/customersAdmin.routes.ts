@@ -107,6 +107,10 @@ router.post('/', async (req, res) => {
     res.status(201).json(customer);
   } catch (err: any) {
     if (err?.name === 'ZodError') return res.status(400).json({ error: 'validation_error', details: err.errors });
+    // SCRUM-576 (CONT-03): un vínculo de empresa que no se sostiene —no existe, es de otro
+    // merchant, o es el propio cliente— es un dato MAL MANDADO, no un fallo del servidor. Sin
+    // esta línea saldría un 500 y el log diría «internal_error» de algo que no lo es.
+    if (err?.message === 'empresa_no_valida') return res.status(400).json({ error: 'empresa_no_valida' });
     console.error('[POST /admin/customers]', err);
     res.status(500).json({ error: 'internal_error' });
   }
@@ -122,6 +126,10 @@ router.put('/:id', async (req, res) => {
     res.json(updated);
   } catch (err: any) {
     if (err?.name === 'ZodError') return res.status(400).json({ error: 'validation_error', details: err.errors });
+    // SCRUM-576 (CONT-03): un vínculo de empresa que no se sostiene —no existe, es de otro
+    // merchant, o es el propio cliente— es un dato MAL MANDADO, no un fallo del servidor. Sin
+    // esta línea saldría un 500 y el log diría «internal_error» de algo que no lo es.
+    if (err?.message === 'empresa_no_valida') return res.status(400).json({ error: 'empresa_no_valida' });
     console.error('[PUT /admin/customers/:id]', err);
     res.status(500).json({ error: 'internal_error' });
   }

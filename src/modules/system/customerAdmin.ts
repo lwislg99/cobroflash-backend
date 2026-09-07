@@ -20,6 +20,15 @@ const CUSTOMER_SELECT_NO_TOKEN = {
   id: true, merchantId: true, name: true, phone: true, email: true, notes: true,
   legalName: true, taxId: true, waOptOut: true, createdAt: true, updatedAt: true,
   contactKind: true, // SCRUM-574: forma jurídica (EMPRESA|PERSONA). NO es tipoDestinatario.
+  // 🔴 SCRUM-576 (CONT-03) · EL QUINTO ESLABÓN, POR TERCERA VEZ, y esta vez se buscó ANTES de
+  // escribir una línea. Sin esto el vínculo se guardaría y `getCustomer` devolvería un cliente
+  // sin empresa: el formulario se recargaría vacío, el profesional lo volvería a elegir — y la
+  // tanda seguiría VERDE, porque el dato SÍ está en la base.
+  //
+  // ⛔ Sale `companyId` (el entero) y NO la relación `company`. La ficha de EMPRESA no gana
+  // nada: el lado inverso (`people`) existe sólo porque Prisma lo exige para declarar la
+  // relación, y exponerlo crearía el segundo sitio que este ticket existe para evitar.
+  companyId: true,
   tipoDestinatario: true, // SCRUM-69: para editar en la ficha y para la bandeja de facturación
   billingPeriodicity: true, // SCRUM-171b: periodicidad pactada (solo para AVISAR, ver bandeja)
   recargoEquivalencia: true, // SCRUM-294-a: el dato del cliente; NO cableado al total (regla 38)
@@ -143,7 +152,67 @@ function normalizarEtiquetas<T extends { tags?: unknown }>(data: T): SinNullDeJs
   return { ...data, tags: v === null ? Prisma.DbNull : v } as SinNullDeJs<T>;
 }
 
+/**
+ * SCRUM-576 (CONT-03) · ¿PUEDE ESTE CLIENTE APUNTAR A ESE ID? La mitad que NO necesita base.
+ *
+ * Vive suelta y pura por el mismo motivo que `debeEsconder` en `switchFormaJuridica.js`: una
+ * regla enterrada dentro de una función `async` que consulta Postgres sólo se puede auditar
+ * LEYENDO el fuente, y leer no ejecuta nada. Aquí se ejecuta.
+ *
+ * Responde a las dos preguntas que no hacen falta consultar:
+ *   · `undefined` → «no toques el campo» en una edición parcial. No es lo mismo que `null`.
+ *   · un cliente apuntándose a SÍ MISMO → imposible. No es una regla de negocio inventada
+ *     (regla 27): es un dato que no puede significar nada. «Esta persona pertenece a sí misma».
+ *
+ * Lo que NO decide, y por qué: si la empresa **existe** y es del **mismo merchant** (regla 2).
+ * Eso exige la base y se resuelve abajo.
+ */
+export type VeredictoDeVinculo = 'no-tocar' | 'desvincular' | 'hay-que-consultar' | 'es-el-propio-cliente';
+
+export function examinarVinculoDeEmpresa(
+  clienteId: number | null,
+  companyId: number | null | undefined,
+): VeredictoDeVinculo {
+  if (companyId === undefined) return 'no-tocar';
+  if (companyId === null) return 'desvincular';
+  // En un ALTA todavía no hay id, así que no puede apuntarse a sí mismo: no hay a qué.
+  if (clienteId !== null && companyId === clienteId) return 'es-el-propio-cliente';
+  return 'hay-que-consultar';
+}
+
+/**
+ * La otra mitad: la que sí necesita la base. Lanza si el vínculo no se sostiene.
+ *
+ * 🔴 EL FILTRO POR `merchantId` ES LA REGLA 2 Y NO ES OPCIONAL. Sin él, un profesional podría
+ * vincular a su cliente con una empresa de OTRO merchant escribiendo un id a mano — y a partir de
+ * ahí ese id viajaría en el JSON de su propia ficha. Es fuga entre inquilinos, no un 404.
+ *
+ * ⚠️ LO QUE **NO** SE EXIGE, Y ES DELIBERADO: que la empresa apuntada tenga
+ * `contactKind = 'EMPRESA'`. Medido en desarrollo el 7-sep-2026: de 14 clientes, **12 están en
+ * `NULL`** — nadie ha declarado su forma jurídica. Rechazar todo lo que no esté declarado
+ * convertiría un campo opcional en un muro, y deducir «es una empresa» de otra cosa está
+ * PROHIBIDO por el fundador (24-ago-2026). El formulario sólo OFRECE las declaradas `EMPRESA`,
+ * que es donde esa preferencia sí cabe sin cerrarle la puerta a nadie.
+ */
+export async function exigirEmpresaValida(
+  merchantId: number,
+  clienteId: number | null,
+  companyId: number | null | undefined,
+): Promise<void> {
+  const veredicto = examinarVinculoDeEmpresa(clienteId, companyId);
+  if (veredicto === 'no-tocar' || veredicto === 'desvincular') return;
+  if (veredicto === 'es-el-propio-cliente') throw new Error('empresa_no_valida');
+
+  const empresa = await prisma.customer.findFirst({
+    where: { id: companyId as number, merchantId },
+    select: { id: true },
+  });
+  if (!empresa) throw new Error('empresa_no_valida');
+}
+
 export async function createCustomer(merchantId: number, data: CustomerCreateInput) {
+  // En el alta todavía no hay id propio, así que se pasa `null`: no hay a qué apuntarse.
+  await exigirEmpresaValida(merchantId, null, data.companyId);
   return prisma.customer.create({
     data: { ...normalizarEtiquetas(normalizarIdentificadores(data)), merchantId, portalToken: generatePortalToken() },
     select: CUSTOMER_SELECT_NO_TOKEN,
@@ -222,6 +291,10 @@ export async function ensurePortalToken(merchantId: number, customerId: number):
 export async function updateCustomer(merchantId: number, id: number, data: CustomerUpdateInput) {
   // SCRUM-578: la edicion normaliza igual que el alta. Si solo lo hiciera el alta, editar un
   // cliente seria la puerta trasera por la que vuelve a entrar un telefono sin normalizar.
+  // SCRUM-576: la edición comprueba igual que el alta. Si sólo lo hiciera el alta, editar sería
+  // la puerta trasera por la que entra un `companyId` de otro merchant — la misma lección que
+  // SCRUM-578 dejó escrita con el teléfono y SCRUM-580 con las etiquetas.
+  await exigirEmpresaValida(merchantId, id, data.companyId);
   return prisma.customer.updateMany({ where: { id, merchantId }, data: normalizarEtiquetas(normalizarIdentificadores(data)) });
 }
 

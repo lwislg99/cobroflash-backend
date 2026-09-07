@@ -2296,3 +2296,76 @@ arriba cierra el mismo agujero para quien escriba SQL en crudo, que es el camino
 tablas y columnas — **no mira defectos de columna**. La columna existe en las tres bases antes y
 después, así que el esquema puede ir por delante sin impedir arrancar (que es lo que costó
 SCRUM-220).
+
+## SCRUM-576 (CONT-03) · `customers.company_id` — ⛔ **SIN APLICAR EN NINGUNA** (7-sep-2026)
+
+> # 🔴 EL PR QUE TRAE ESTA ENTRADA **NO ES MERGEABLE HASTA APLICAR LA COLUMNA EN LAS TRES BASES**
+>
+> No es prudencia y no es una fórmula: `src/core/db/schemaDrift.ts` compara **esperado ⊆ real** en
+> TABLAS y COLUMNAS y **para el arranque** cuando el esquema nombra una columna que la base no
+> tiene. `prisma/schema.prisma` ya nombra `companyId`. Mergear antes de aplicar es reproducir
+> SCRUM-574 — **nueve días de yaqu.app sirviendo el código del PR #862**.
+>
+> El orden correcto lo dejó escrito SCRUM-588: **la columna primero, la línea del schema después.**
+> Aquí la línea va delante porque el ticket entero es media función sin ella (decisión del
+> fundador, 7-sep-2026, al descartar trocear el ticket en dos PR); el riesgo se gestiona **con el
+> orden del despliegue**, y por eso está en mayúsculas arriba del todo.
+
+```sql
+ALTER TABLE "customers" ADD COLUMN IF NOT EXISTS "company_id" INTEGER;
+CREATE INDEX IF NOT EXISTS "customers_company_id_idx" ON "customers"("company_id");
+ALTER TABLE "customers" ADD CONSTRAINT "customers_company_id_fkey" FOREIGN KEY ("company_id") REFERENCES "customers"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+```
+
+Fichero aplicable: `docs/sql/scrum-576-customers-company-id.sql` (mismo contenido, con el
+porqué de cada sentencia dentro).
+
+**Qué es.** La empresa a la que pertenece una persona. Hasta hoy eso se escribía en «Razón social»,
+que es **texto libre**: el administrador de fincas teclea «Fincas García SL» en una ficha y
+«FINCAS GARCIA, S.L.» en otra, y el sistema no sabe que son la misma. Un entero apunta a **una**
+fila, así que deja de ser un parecido ortográfico.
+
+**El SQL no se escribió a mano:** lo generó `node scripts/preview-migracion.mjs --desde` (CLI
+**local** de Prisma; `npx` está prohibido, regla 3) con su control positivo en verde — **27
+tablas**. Veredicto de la herramienta: **✔ aditiva**. Veredicto de
+`scripts/_clasificador-sql.mjs` sobre el fichero: **`ok: true`**, las tres sentencias permitidas.
+
+### ⚠️ El clasificador rotula la clave ajena como «ADD COLUMN ×1», y el rótulo es falso
+
+El **veredicto** es correcto —`ADD CONSTRAINT` es aditivo y no toca datos— pero la `forma` que
+imprime dice «ADD COLUMN». Sale de que la regla casa por `^ADDs+(COLUMNs+)?`, y un
+`ADD CONSTRAINT` empieza por `ADD`. **Se anota aquí y no se arregla en este ticket** (regla 37):
+tocar la lista blanca de lo que puede correr contra producción no es un arreglo «de paso».
+
+### ⚠️ La clave ajena NO es re-ejecutable (las otras dos sí)
+
+Postgres no admite `ADD CONSTRAINT IF NOT EXISTS`. La única forma de dárselo es un bloque
+`DO $$ … $$`, y la lista blanca del aplicador lo rechaza — con razón: dentro cabe cualquier cosa,
+incluido un `DROP`. Re-ejecutar el fichero da `already exists` en la tercera sentencia. **Ruido,
+no daño.**
+
+### La medida que decide si hay que migrar «Razón social» — y no la decido yo
+
+`legalName` **no se borra y no se migra en este ticket**: convivir es correcto, y migrar a ciegas
+texto que alguien escribió es cómo se pierden datos.
+
+| base | clientes | con razón social escrita |
+|---|---|---|
+| **desarrollo** · `acela/yaqu_dev_javier` (medido 7-sep-2026, sólo lectura) | 14 | **0** |
+| producción · `autorack/railway` | — | **no medible desde un árbol de trabajo** (regla 3) |
+| staging · `acela/railway` | — | no medida: prohibida por el encargo, y SCRUM-668 la declara **contaminada** como fuente de cifra |
+
+**Con 0 de 14 en dev, no hay nada que migrar ahí.** El número que decide es el de **producción**, y
+ése lo tiene que mirar el fundador. Si sale > 0, es un ticket de migración aparte.
+
+### ⛔ NO se ha aplicado en ninguna base
+
+- [ ] **producción · autorack** — pendiente. La aplica el fundador. Desde un árbol de trabajo no
+      hay credencial de producción (regla 3), y no la ha habido en ningún momento de este ticket.
+- [ ] **staging · acela/railway** — pendiente. El encargo lo prohíbe expresamente.
+- [ ] **desarrollo · acela/yaqu_dev_javier** — pendiente. **Ni siquiera aquí**: el fundador lo dijo
+      explícitamente el 7-sep-2026 («ni en dev, salvo que lo pida»). Lo único que se hizo contra
+      dev fueron **lecturas** (`count`, `groupBy`, `information_schema`) para la tabla de arriba.
+
+**Verificado antes de escribir esto:** `company_id` **no existe** en `yaqu_dev_javier` — leído en
+`information_schema.columns` el 7-sep-2026, junto con las otras 24 columnas de `customers`.

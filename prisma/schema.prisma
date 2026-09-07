@@ -223,6 +223,40 @@ model Customer {
   // tipo de Postgres.
   contactKind String? @map("contact_kind")
 
+  // SCRUM-576 (CONT-03) · LA EMPRESA A LA QUE PERTENECE ESTA PERSONA.
+  //
+  // 🔴 NO ES `legalName`, Y ÉSA ES LA DECISIÓN ENTERA. «Razón social» es TEXTO LIBRE: el
+  // administrador de fincas escribe «Fincas García SL» en una ficha y «FINCAS GARCIA, S.L.» en
+  // otra, y para el sistema son dos cadenas que no se parecen en nada. Aquí las dos personas
+  // apuntan al MISMO entero, así que «son de la misma empresa» deja de ser una coincidencia de
+  // ortografía y pasa a ser una IGUALDAD.
+  //
+  // ⛔ `legalName` NO SE BORRA NI SE MIGRA (decisión del ticket): convivir es correcto, y migrar a
+  // ciegas texto que alguien escribió es cómo se pierden datos. Medido en desarrollo el
+  // 7-sep-2026: 14 clientes, 0 con razón social escrita. Si hay que migrar, es OTRO ticket.
+  //
+  // AUTO-RELACIÓN A `customers` Y NO UNA TABLA `companies` NUEVA: una empresa YA es un contacto
+  // —`contactKind = 'EMPRESA'`, SCRUM-574— con su teléfono, su NIF y su dirección. Una tabla
+  // aparte obligaría a mantener los mismos campos en dos sitios, que es exactamente el defecto
+  // que este ticket viene a cerrar.
+  //
+  // LA DIRECCIÓN ES LA DE HOLDED Y NO ES CAPRICHO: la relación se declara desde el lado PERSONA
+  // (la ficha de persona tiene «Empresa»; la de empresa NO tiene «personas»). Una sola columna,
+  // un solo sitio donde se escribe — dos sitios podrían contradecirse.
+  //
+  // Nullable y SIN `@default`, como sus vecinos: NULL = «no pertenece a ninguna empresa, o nadie
+  // lo ha declarado». La inmensa mayoría de los clientes de un fontanero son personas sueltas.
+  //
+  // `onDelete: SetNull` y no `Cascade`: borrar la empresa NO puede llevarse por delante a las
+  // personas. Pierden el vínculo —que es un dato— y siguen existiendo, con sus presupuestos y
+  // sus facturas.
+  companyId Int?       @map("company_id")
+  company   Customer?  @relation("PersonaEnEmpresa", fields: [companyId], references: [id], onDelete: SetNull)
+  // El lado inverso lo EXIGE Prisma para poder declarar la relación; no es un campo de la ficha
+  // de empresa ni una columna. No se expone en `CUSTOMER_SELECT_NO_TOKEN`: la ficha de empresa no
+  // gana nada, que es el control negativo del ticket.
+  people    Customer[] @relation("PersonaEnEmpresa")
+
   // A20.4 (EXT3): cliente empresa — razón social y NIF (el NIF además es
   // requisito del F1 VeriFactu futuro, hallazgo S1-C)
   legalName String? @map("legal_name")
@@ -378,6 +412,8 @@ model Customer {
   events       CustomerEvent[]
 
   @@index([merchantId])
+  // Se busca «las personas de esta empresa»; sin índice sería un recorrido de toda la tabla.
+  @@index([companyId])
   @@map("customers")
 }
 
