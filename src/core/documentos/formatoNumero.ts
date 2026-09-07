@@ -6,6 +6,7 @@
  *
  *     Presupuesto  P   → P260001      (antes: `#26`, `#28`, `#32`)
  *     Albarán      AB  → AB260001     (antes: `ALB-2026-006`)
+ *     Factura      F   → F260001      (antes: `2026-CF-001`)  ← SCRUM-780, POR CORTE DE FECHA
  *
  * ── LA VÍCTIMA ──────────────────────────────────────────────────────────────────────────
  *
@@ -20,17 +21,34 @@
  * una rellene a 4 y la otra a 3 para que el profesional tenga dos formatos en la misma pantalla.
  * Es el mismo criterio que `formatImporteEs` (SCRUM-636), donde ese defecto ya se pagó.
  *
- * 🔴 LA FACTURA NO ENTRA AQUÍ, y no es un olvido. Su formato es `2026-CF-001` con **prefijo por
- * merchant** (`Merchant.invoiceSeriesPrefix`), que es un campo real y configurable: migrarla a
- * `F260001` lo perdería. Y su numeración es CAMINO DE EMISIÓN — leerlo no es STOP, cambiarlo sí.
- * Queda fuera hasta que se resuelva el expediente del justificante, que hoy se define «sin
- * numeración de factura».
+ * ── SCRUM-780 (7-sep-2026) · LA FACTURA YA ENTRA, Y AQUÍ ESTÁ POR QUÉ CAMBIÓ ────────────
+ *
+ * Este bloque decía: «LA FACTURA NO ENTRA AQUÍ, y no es un olvido. Su formato es `2026-CF-001`
+ * con prefijo por merchant (`Merchant.invoiceSeriesPrefix`), que es un campo real y configurable:
+ * migrarla a `F260001` lo perdería.» **Era cierto y ya no lo es**: el fundador RETIRÓ el prefijo
+ * del número el 7-sep-2026 —un solo formato para todos—, así que el motivo de la exclusión ha
+ * desaparecido. No se borra la frase vieja: se escribe encima, porque un motivo retirado en
+ * silencio vuelve a discutirse dentro de seis meses sin que nadie sepa qué se decidió.
+ *
+ * 🔴 LO QUE **NO** CAMBIÓ, Y ES LA DIFERENCIA CON P Y AB: presupuestos y albaranes se
+ * RENUMERARON al adoptar el formato. La factura **NO SE RENUMERA JAMÁS** (regla 29). Aquí sólo se
+ * añade la letra; quién recibe el formato nuevo lo decide `CORTE_FORMATO_F` por FECHA, en
+ * `modules/invoicing/domain/invoiceNumber.service.ts`. Una factura anterior al corte se sigue
+ * componiendo con su prefijo, byte a byte, para siempre.
+ *
+ * ⚠️ LA RECTIFICATIVA NO TIENE LETRA AQUÍ, a propósito: su serie sigue en `AAAA-PREF-R-NNN`
+ * porque su letra no está firmada, y meterla en `F` sin letra propia la haría CHOCAR con la
+ * ordinaria (contadores independientes). Está probado en `tests/scrum780-…`.
  * ═════════════════════════════════════════════════════════════════════════════════════════
 
 /** Las letras de serie que existen. Cerrado a propósito: una serie nueva se DECIDE, no se cuela. */
 export const SERIES = {
   presupuesto: 'P',
   albaran: 'AB',
+  // SCRUM-780. `F` no colisiona por prefijo con `P` ni con `AB`, así que `parseNumeroDocumento`
+  // la distingue sin tocar su desempate por longitud. La serie de RECTIFICATIVAS no está aquí:
+  // su letra no está firmada (ver la cabecera).
+  factura: 'F',
 } as const;
 
 export type Serie = typeof SERIES[keyof typeof SERIES];
