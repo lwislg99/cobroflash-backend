@@ -123,7 +123,14 @@ literalmente una recarga.
 
 ## 6 · LOS CONTROLES, Y LAS MUTACIONES EN ROJO
 
-`tests/scrum783-seleccion-sobrevive-navegacion.test.mjs` — **8 tests, 8 verdes.**
+`tests/scrum783-seleccion-sobrevive-navegacion.test.mjs` — **7 tests, 7 verdes.**
+
+> ⚠️ **CORRECCIÓN (6-sep-2026, SCRUM-792):** esta línea decía **8** y son **7**. Conté a ojo en vez
+> de medir, que es justo lo que esta casa no hace. `grep -c '^test(' ` sobre el fichero: **7**.
+>
+> Y dos de sus aserciones cambiaron en SCRUM-792: miraban `barra.style.display`, y ese `display`
+> se mudó al CSS porque la decisión depende del ancho. Ahora miran la CLASE, que es el contrato
+> que el banco sí puede juzgar; la visibilidad real se mide en navegador.
 
 | control | qué exige |
 |---|---|
