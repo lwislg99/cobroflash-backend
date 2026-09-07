@@ -338,6 +338,23 @@ caracterización      ·  5 zonas · verde en Madrid/UTC/Kiritimati · 3 rojos e
 censados, ni `now.getFullYear()` en ninguno de los cuatro sitios de SCRUM-643 §2·A. Nada contra
 producción ni contra staging. Ninguna dependencia nueva (regla 36). Ningún estado ni flag nuevo.
 
+## 9 · Re-medido tras mezclar `main` (7-sep-2026)
+
+`main` avanzó mientras esta rama se construía —el ancla de arriba sigue siendo la del trabajo—, así
+que se mezcló y **se volvió a medir todo**. El conflicto fue el de siempre en `package.json`, el
+que su propio `//guards` de SCRUM-548 describe: los dos lados añadiendo scripts en el mismo punto.
+Se resolvió como manda ese comentario, **conservando los dos**.
+
+```
+tanda      ·  5.927 tests · 5.825 pass · 0 fail · 102 skipped · exit 0
+trinquete  ·  721 ficheros + 4 canarios · 5.915 pruebas/zona · 175 s + 177 s · árbol quieto
+              autocontrol 4/4 · repesca 4/4 · cambian 3 = censadas 3 · VERDE · exit 0
+```
+
+Los nueve ficheros de test que `main` trajo **no añaden dependientes de zona**, y las tres censadas
+siguen ahí. Es la primera vez que este instrumento contesta a un `main` que no había visto: es
+exactamente para lo que existe.
+
 ## Tests que introduce esta entrada
 
 * `tests/scrum813-trinquete-de-zona.test.mjs` — la red que corre en cada tanda: los cuatro
