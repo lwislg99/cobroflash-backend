@@ -37,7 +37,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { describirBD, partirBDParaHijo, redactarSecretos, parseBDSegura } from './_db-guard.mjs';
+import { describirBD, partirBDParaHijo, redactarSecretos, parseBDSegura, PROD_HOST } from './_db-guard.mjs';
 import {
   tablasDelInventario, veredictoDelBackup, destinoDeclarado, VERIFICADO, NO_VERIFICADO, CIEGO,
 } from './_backup-nucleo.mjs';
@@ -95,6 +95,14 @@ async function main() {
     abortar('falta `BACKUP_PG_BIN` (carpeta con pg_dump/pg_restore/psql). No se puede volcar nada.');
   }
 
+  // 🛑 PRODUCCION NO SE TOCA, NI PARA LEER (GO del fundador, 12-ago-2026). Un volcado de prod se
+  // lleva la base de clientes entera a disco: eso es una decision suya en cada ocasion, no algo
+  // que este script pueda hacer porque alguien exporto una variable.
+  if (parseBDSegura(urlOrigen).host === PROD_HOST) {
+    abortar('el ORIGEN apunta a PRODUCCION. Este script no vuelca produccion: un volcado se lleva ' +
+      'la base de clientes entera a disco. Apunta a staging.');
+  }
+
   const origen = partirBDParaHijo(urlOrigen);
   console.log(`▶ base de origen: ${describirBD(urlOrigen)}`);   // host/base y nada más
 
@@ -128,9 +136,30 @@ async function main() {
   } else if (describirBD(urlVerif) === describirBD(urlOrigen)) {
     abortar('`BACKUP_VERIFICACION_URL` apunta a la MISMA base que el origen. Se restaura con '
       + '`--clean`: eso borraría la base que se acaba de copiar.');
+  } else if (parseBDSegura(urlVerif).host === PROD_HOST) {
+    abortar('`BACKUP_VERIFICACION_URL` apunta a PRODUCCIÓN. Se restaura con `--clean`.');
   } else {
     const verif = partirBDParaHijo(urlVerif);
     console.log(`▶ restaurando en: ${describirBD(urlVerif)}`);
+
+    // 🔴 EL DESTINO TIENE QUE ESTAR VACÍO, Y SE COMPRUEBA ANTES DE ESCRIBIR NADA.
+    //
+    // `pg_restore --clean` borra lo que encuentre. Si esa base no estaba vacía, lo que había NO
+    // era lo que se esperaba —otra copia, un experimento de alguien, una base en uso— y
+    // machacarlo no se deshace. Y además invalida la prueba: restaurar sobre algo distinto de
+    // cero hace que el recuento final no diga lo que parece.
+    const yaHabia = contarTablas(binDir, verif.urlSinPass, verif.password);
+    if (yaHabia === null) {
+      abortar('no se pudo contar las tablas del destino ANTES de restaurar. Sin saber si estaba '
+        + 'vacío no se escribe: `--clean` es destructivo y no se deshace.');
+    }
+    if (yaHabia > 0) {
+      abortar(`el destino de verificación NO estaba vacío: tiene ${yaHabia} tablas. No se ha `
+        + 'escrito nada. Restaurar encima de algo que no esperabas es destructivo y no se '
+        + 'deshace — vacíalo a conciencia o apunta a otra base desechable.');
+    }
+    console.log('▶ destino vacío antes de restaurar: sí (0 tablas)');
+
     pg(binDir, 'pg_restore', ['--clean', '--if-exists', '--no-owner', '--no-acl', '-d', verif.urlSinPass, fichero], verif.password);
     tablasDestino = contarTablas(binDir, verif.urlSinPass, verif.password);
     console.log(`▶ tablas tras restaurar: ${tablasDestino ?? '🔴 no se pudo contar'}`);
