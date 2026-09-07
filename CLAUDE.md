@@ -14,6 +14,11 @@ firma del cliente → cobro de señal/total → (post SIF-1) factura VeriFactu. 
 
 > **Flujo Git completo (ramas + PR + trabajo en equipo): `docs/FLUJO_DE_TRABAJO.md`.**
 
+🔴 **LECTURA OBLIGATORIA, cada tanda: [`docs/equipo/00-normas-comunes.md`](docs/equipo/00-normas-comunes.md)** —
+las normas comunes de todas las sesiones: preámbulo, PASO 0, cómo se mide aquí, git, el orden del
+esquema, lo que no se toca y cómo se entrega. Tu identidad y tus trampas propias, en
+`docs/equipo/sesion-N.md`.
+
 1. Leer este archivo → abrir `docs/YAQU_MASTER.md` → localizar el **sprint activo en la Parte U**.
    Duda → preguntar, nunca asumir.
 2. **Una tarea → una RAMA (`scrum-<n>-<slug>`) → commit de feature (+ commit del máster aparte, misma rama) → PR a `main`.** `main` protegida: push directo BLOQUEADO. El merge del PR lo hace un HUMANO, nunca Claude. `git pull` de `main` antes de empezar cada tarea. Plan de archivos ANTES de tocar código (skill `/yaqu-sprint`).

@@ -49,6 +49,10 @@ import { generateQuotePdf } from '../../../../lib/pdf';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+// SCRUM-814 · el tramo tiene que seguir libre DENTRO de la transaccion. Aqui pesa mas que en
+// ningun otro sitio: esta ruta la dispara el CLIENTE FINAL desde WhatsApp, y pulsar dos veces con
+// mala cobertura es el caso NORMAL, no el raro.
+import { exigirTramoLibre, esTramoTomado } from '../../../invoicing/domain/tramoSinCarrera';
 import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 
@@ -637,6 +641,12 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         let invoice: any = null;
         try {
         invoice = await prisma.$transaction(async (tx) => {
+          // SCRUM-814 · PRIMERA sentencia: `stage` se eligio ARRIBA, fuera de la transaccion, con
+          // el recuento de `quote.Invoice`. Si otra peticion ya emitio ese tramo, se aborta y la
+          // transaccion se deshace entera — ni factura, ni numero consumido.
+          await exigirTramoLibre(tx, {
+            quoteId: quote.id, merchantId: quote.merchantId, tramosPreparados: existingInvoices.length,
+          });
           const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
             camino: 'C1',
             // Quien emite aquí NO es el pro: es el cliente final pulsando en WhatsApp.
@@ -690,12 +700,26 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         await sellarTrasEmision(invoice, quote.merchant, prisma);
 
         } catch (e: any) {
-          // El caso conocido es la colisión de serie (P2002 sobre `invoices.number`), que
-          // SCRUM-234 elimina de raíz con el cerrojo. El catch se queda igualmente: cubre
-          // cualquier fallo de emisión, y lo que NO puede volver a pasar es que el cliente
-          // se lleve un error técnico por algo que su aceptación ya resolvió.
-          console.error('[quote_decision_C1] emisión fallida tras aceptar:', e?.code || '', e?.message || e);
-          facturaPendiente = true;
+          // SCRUM-814 · EL TRAMO TOMADO NO ES UN FALLO, y aqui NO se contesta 409.
+          //
+          // Esta ruta no es «emitir factura»: es la ACEPTACION del cliente, y esa aceptacion ha
+          // salido bien. Si otra peticion simultanea —el mismo cliente pulsando dos veces con mala
+          // cobertura, que es el caso normal aqui— ya emitio ese tramo, la factura EXISTE. Marcar
+          // `facturaPendiente` le diria «tu factura esta en proceso; si no la recibes hoy,
+          // coméntaselo al profesional»: una llamada de soporte por algo que no ha pasado.
+          //
+          // Y de paso evita el segundo `payment_request` por WhatsApp, que seria el mismo aviso
+          // dos veces al mismo cliente (regla 28).
+          if (esTramoTomado(e)) {
+            console.log('[quote_decision_C1] el tramo ya lo emitio una peticion simultanea; no se repite');
+          } else {
+            // El caso conocido es la colisión de serie (P2002 sobre `invoices.number`), que
+            // SCRUM-234 elimina de raíz con el cerrojo. El catch se queda igualmente: cubre
+            // cualquier fallo de emisión, y lo que NO puede volver a pasar es que el cliente
+            // se lleve un error técnico por algo que su aceptación ya resolvió.
+            console.error('[quote_decision_C1] emisión fallida tras aceptar:', e?.code || '', e?.message || e);
+            facturaPendiente = true;
+          }
         }
 
         createdInvoice = invoice;

@@ -52,12 +52,22 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { parseBDSegura } from '../scripts/_db-guard.mjs';
 import { withMerchant } from './_merchant-fixture.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const UNA_PETICION = path.join(RAIZ, 'docs', 'master', 'evidencias', 'scrum814', 'una-peticion.mjs');
+
+/**
+ * LOS TRES CAMINOS QUE EMITEN UN TRAMO, con quién dispara cada uno — que es lo que decide cuánto
+ * muerde la carrera. El del cliente final es el que más: pulsar dos veces con mala cobertura es
+ * ahí el caso NORMAL, no el raro.
+ */
+const CAMINO_ADMIN = { fichero: 'src/modules/system/app/routes/quotesAdmin.routes.ts', ruta: '/:id/invoice' };
+const CAMINO_CLIENTE = { fichero: 'src/modules/quotes/app/routes/quotes.routes.ts', ruta: '/:token/decision' };
+const CAMINO_RESTO = { fichero: 'src/modules/jobs/app/routes/jobs.routes.ts', ruta: '/:id/collect-rest' };
 
 const URL_BANCO = process.env.TRAMOS_PG_URL || '';
 const ENABLED = URL_BANCO !== '';
@@ -126,12 +136,17 @@ const facturasDe = (quoteId) => prisma.invoice.findMany({
   select: { number: true, stageLabel: true, total: true },
 });
 
-/** Las dos peticiones, en dos procesos, con la misma hora de salida. */
-function correrCarrera(quoteId, merchantId) {
+/**
+ * Las dos peticiones, en DOS PROCESOS, con la misma hora de salida.
+ *
+ * `camino` dice a QUÉ ruta se pega y con qué `req`; el resto es igual para los tres, que es
+ * justo lo que se quiere comprobar: el mismo patrón, cerrado del mismo modo en los tres sitios.
+ */
+function correrCarrera(camino, req) {
   const salida = Date.now() + 9000;   // margen para que los dos estén ESPERANDO antes de la señal
   const lanzar = (etiqueta) => new Promise((resolve) => {
     const p = spawn(process.execPath,
-      [UNA_PETICION, RAIZ, String(quoteId), String(merchantId), String(salida), etiqueta],
+      [UNA_PETICION, RAIZ, camino.fichero, camino.ruta, JSON.stringify(req), String(salida), etiqueta],
       { env: { ...process.env, DATABASE_URL: URL_BANCO } });
     let out = ''; let err = '';
     p.stdout.on('data', (d) => { out += d; });
@@ -215,7 +230,7 @@ test('SCRUM-814 · banco de tramos', { skip: ENABLED ? false : 'sin TRAMOS_PG_UR
 
       for (let ronda = 1; ronda <= 3; ronda += 1) {
         const q = await nuevoPresupuesto(merchant.id, cliente.id);
-        const [a, b] = await correrCarrera(q.id, merchant.id);
+        const [a, b] = await correrCarrera(CAMINO_ADMIN, { params: { id: String(q.id) }, merchantId: merchant.id });
         exigirCarreraReal(a, b, ronda);
 
         const emitidas = await facturasDe(q.id);
@@ -245,7 +260,7 @@ test('SCRUM-814 · banco de tramos', { skip: ENABLED ? false : 'sin TRAMOS_PG_UR
       const cliente = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Pepe' } });
       const q = await nuevoPresupuesto(merchant.id, cliente.id);
 
-      const [a, b] = await correrCarrera(q.id, merchant.id);
+      const [a, b] = await correrCarrera(CAMINO_ADMIN, { params: { id: String(q.id) }, merchantId: merchant.id });
       exigirCarreraReal(a, b, 'dinero');
 
       // Quien perdió, reintenta — que es exactamente lo que su 409 le dice que haga. Y se sigue
@@ -266,6 +281,97 @@ test('SCRUM-814 · banco de tramos', { skip: ENABLED ? false : 'sin TRAMOS_PG_UR
         `🔴 facturado ${facturado} € sobre un presupuesto de ${TOTAL} €. Con el mecanismo viejo `
         + 'aquí salían 726 € y 484 € se quedaban SIN PODER FACTURARSE: las dos facturas del mismo '
         + 'tramo agotaban el plan, y por la regla 29 no se borran.');
+    });
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// LOS OTROS DOS CAMINOS · mismo patrón, mismas tres carreras
+//
+// El de `/:token/decision` es el que MÁS pesa y no es el que abrió el ticket: lo dispara el
+// CLIENTE FINAL desde WhatsApp, y pulsar dos veces con mala cobertura es ahí el caso NORMAL.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-814 · los otros dos caminos', { skip: ENABLED ? false : 'sin TRAMOS_PG_URL' }, async (t) => {
+  exigirBancoDesechable(URL_BANCO);
+  await cargar();
+
+  await t.test('🔴 CLIENTE FINAL · tres carreras en `/:token/decision`: nunca dos del mismo tramo', async () => {
+    await withMerchant(prisma, { name: 'Tecnosel', taxId: 'B12345678', email: 'e814@t.test' }, async (merchant) => {
+      const cliente = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Pepe' } });
+
+      for (let ronda = 1; ronda <= 3; ronda += 1) {
+        // Aquí el presupuesto nace SIN aceptar: lo que se acepta —y lo que emite— es la propia
+        // petición del cliente. Ése es el hecho que dispara la factura en este camino.
+        const q = await prisma.quote.create({
+          data: {
+            merchantId: merchant.id, customerId: cliente.id, status: 'pending',
+            total: TOTAL, currency: 'EUR', lines: LINEAS, customBillingPlan: PLAN,
+            // 🔴 HEX de 32, como el de verdad (`crypto.randomBytes(16).toString('hex')`):
+            // `parseToken` se queda SOLO con hex, así que un token con letras fuera de a-f se
+            // convierte en otra cosa y la ruta contesta 404 sin llegar a emitir nada. Me pasó, y
+            // el suelo lo cazó: 0 facturas donde tenía que haber 1.
+            decisionToken: randomBytes(16).toString('hex'),
+          },
+        });
+        const [a, b] = await correrCarrera(CAMINO_CLIENTE, {
+          params: { token: q.decisionToken }, body: { decision: 'accept' },
+        });
+        exigirCarreraReal(a, b, 'cliente/' + ronda);
+
+        const emitidas = await facturasDe(q.id);
+        const tramos = emitidas.map((i) => i.stageLabel);
+        assert.equal(new Set(tramos).size, tramos.length,
+          `🔴 RONDA ${ronda}: DOS FACTURAS DEL MISMO TRAMO ${JSON.stringify(tramos)} en el camino `
+          + 'del CLIENTE FINAL. Aquí el defecto muerde en el caso normal: el cliente pulsa dos '
+          + 'veces porque la cobertura va mal.');
+        assert.equal(emitidas.length, 1,
+          `🔴 RONDA ${ronda}: la carrera ha dejado ${emitidas.length} facturas y sólo una podía `
+          + 'ganar el tramo.');
+
+        // 🔴 Y AL CLIENTE NO SE LE DICE NADA: su aceptación salió bien y su factura EXISTE (la
+        // emitió la gemela). Las dos respuestas son de éxito; ninguna marca «factura pendiente»,
+        // que le mandaría a llamar al profesional por algo que no ha pasado.
+        for (const r of [a, b]) {
+          assert.ok(r.code < 400,
+            `🔴 RONDA ${ronda}: el cliente recibe ${r.code} ${JSON.stringify(r.cuerpo)}. Su `
+            + 'aceptación salió bien: no puede llevarse un error por una carrera nuestra.');
+          assert.notEqual(r.cuerpo?.facturaPendiente, true,
+            `🔴 RONDA ${ronda}: se le dice «factura pendiente» y la factura EXISTE. Eso es una `
+            + 'llamada de soporte por algo que no ha pasado.');
+        }
+      }
+    });
+  });
+
+  await t.test('🔴 COBRAR EL RESTO · tres carreras en `/:id/collect-rest`: nunca dos del mismo tramo', async () => {
+    await withMerchant(prisma, { name: 'Tecnosel', taxId: 'B12345678', email: 'f814@t.test' }, async (merchant) => {
+      const cliente = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Pepe' } });
+
+      for (let ronda = 1; ronda <= 3; ronda += 1) {
+        const q = await nuevoPresupuesto(merchant.id, cliente.id);
+        const job = await prisma.job.create({
+          data: { merchantId: merchant.id, customerId: cliente.id, quoteId: q.id, status: 'terminado' },
+        });
+        const [a, b] = await correrCarrera(CAMINO_RESTO, {
+          params: { id: String(job.id) }, merchantId: merchant.id,
+        });
+        exigirCarreraReal(a, b, 'resto/' + ronda);
+
+        const emitidas = await facturasDe(q.id);
+        const tramos = emitidas.map((i) => i.stageLabel);
+        assert.equal(new Set(tramos).size, tramos.length,
+          `🔴 RONDA ${ronda}: DOS FACTURAS DEL MISMO TRAMO ${JSON.stringify(tramos)} al «cobrar el `
+          + 'resto». El comentario de esa ruta ya decía que pulsar dos veces tenía que emitir '
+          + 'siempre el mismo tramo; ahora además es verdad.');
+        assert.equal(emitidas.length, 1,
+          `🔴 RONDA ${ronda}: la carrera ha dejado ${emitidas.length} facturas.`);
+
+        const codigos = [a, b].map((r) => (r.code === 201 || r.code === 200 ? 'ok' : r.cuerpo?.error)).sort();
+        assert.deepEqual(codigos, ['ok', 'stage_taken_concurrently'].sort(),
+          `🔴 RONDA ${ronda}: respuestas ${JSON.stringify([a.code, b.code])} / `
+          + `${JSON.stringify([a.cuerpo, b.cuerpo])}. Se esperaba una buena y una 409 de reintento.`);
+      }
     });
   });
 });

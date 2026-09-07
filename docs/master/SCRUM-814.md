@@ -296,3 +296,107 @@ es el mismo patrón en cada uno; con un «sí» van en este PR o en el siguiente
 
 `prisma/schema.prisma` · el cerrojo de SCRUM-728 · `@@unique([merchantId, number])` · el veredicto
 ni los umbrales de ningún censo salvo los tres declarados arriba, cada uno con su motivo.
+
+---
+---
+
+# 7-sep-2026 (tarde) · LOS TRES CAMINOS, LA MICROCOPY FIRMADA, Y LA LECCIÓN DEL 387
+
+**Medido contra:** `origin/main` = `f2d1589041d04e5f465cc4deba010f5563ffea72` (mezclado dentro de la rama, AA2)
+**Preámbulo:** `prisma generate` rc=0 · `HEAD..origin/main` = 0 · **`npm run build` rc=0**
+
+## 1 · La invariante vive en UN sitio
+
+`src/modules/invoicing/domain/tramoSinCarrera.ts` — el cerrojo, el recuento, el código del error y
+el texto. Los tres caminos lo llaman; ninguno cuenta por su cuenta, y hay un guard que lo impide.
+
+Tres copias del mismo recuento son tres sitios que pueden separarse: basta que alguien
+«simplifique» uno para reabrir el agujero **justo donde más muerde**.
+
+| camino | ruta | quién lo dispara | qué contesta al perder |
+| --- | --- | --- | --- |
+| `quotesAdmin.routes.ts` | `POST /admin/quotes/:id/invoice` | el profesional | **409** `stage_taken_concurrently` |
+| `jobs.routes.ts` | `POST /admin/jobs/:id/collect-rest` | el profesional | **409** `stage_taken_concurrently` |
+| `quotes.routes.ts` | `POST /quote/:token/decision` | **el CLIENTE FINAL desde WhatsApp** | **nada — y es deliberado** |
+
+### Por qué el del cliente final NO contesta 409
+
+Esa ruta no es «emitir factura»: es la **aceptación**, y la aceptación ha salido bien. Si el
+cliente pulsó dos veces con mala cobertura —el caso normal ahí, no el raro— su factura **existe**,
+la emitió su gemela. Devolverle un error, o marcar `facturaPendiente`, le diría *«tu factura está
+en proceso; si no la recibes hoy, coméntaselo al profesional»*: una llamada de soporte por algo
+que no ha pasado. Y de paso se evita el segundo `payment_request` por WhatsApp — el mismo aviso
+dos veces al mismo cliente (regla 28).
+
+Lo comprueba el test: en las tres carreras del cliente, **las dos respuestas son de éxito y
+ninguna marca «factura pendiente»**.
+
+## 2 · La verificación, tres carreras por sitio
+
+```
+✔ POSITIVO · dos secuenciales dan «Anticipo» 363 € y «Final» 847 €, exigiendo el NÚMERO
+✔ NEGATIVO · el 409 «ya se han emitido todas» SIGUE saliendo cuando de verdad lo están
+✔ 🔴 tres carreras · /:id/invoice        — nunca dos del mismo tramo
+✔ 🔴 tres carreras · /:token/decision    — nunca dos, y al cliente no se le dice nada
+✔ 🔴 tres carreras · /:id/collect-rest   — nunca dos del mismo tramo
+✔ DINERO · tras la carrera, 363 + 847 = 1210 € — el presupuesto se factura ENTERO
+```
+
+**Y el rojo con el mecanismo viejo, inyectado en el módulo compartido:** caen **los tres** caminos
+y el caso del dinero — y el positivo y el negativo **siguen verdes**. El test discrimina, no grita
+por todo.
+
+Dos correcciones a mi propio banco por el camino, las dos cazadas por su suelo:
+
+- el token de decisión es **hex opaco de 32** (`parseToken` se queda sólo con hex): con un
+  `tok-1-…` la ruta contestaba 404 sin emitir nada, y el suelo lo dijo — *0 facturas donde tenía
+  que haber 1*, en vez de un verde silencioso;
+- el que ya conté: `Promise.all` en un solo node **no** es dos peticiones simultáneas.
+
+## 3 · Microcopy FIRMADA
+
+Aprobada por el fundador el 7-sep-2026, sin cambios. Registro:
+`docs/microcopy/2026-09-07-SCRUM-814-tramo-tomado.md`. Sale de **una sola constante**
+(`COPY_TRAMO_TOMADO`), y hay un guard que compara el texto **palabra por palabra**: un texto
+aprobado que se edita sin volver a firmarlo deja de estar aprobado, y nadie se entera.
+
+---
+
+## 4 · 🔒 LA LECCIÓN — una avería con forma de mejora
+
+**No es el arreglo del 387: es lo que ese arreglo enseña, y vale para cualquier censo de esta casa.**
+
+El censo de procedencia de SCRUM-387 leía los comentarios con `ts.createScanner` a pelo. Un
+escáner suelto no conoce la gramática: ante un template literal **con sustituciones** hace falta
+`reScanTemplateToken`, y sin eso se descarrila y deja de reconocer los tokens siguientes. Metí un
+`` $executeRaw`…${SERIE_LOCK_NS}…` `` y el fichero entero se volvió invisible a partir de ahí.
+
+```
+sin el template  → 143 comentarios vistos, 1 con marca de aprobación
+con el template  →  72 comentarios vistos, 0 con marca      ← CIEGO
+```
+
+**Y así es como se manifestó: el número BAJÓ, de 9 a 8.** Una bajada, en un trinquete de deuda, se
+lee como una mejora. Nadie mira dos veces un número que mejora.
+
+Lo cazó **la mitad del trinquete que vigila que el número no baje en silencio** — la que hasta hoy
+parecía la menos útil, la que obliga a escribir la mejora en vez de dejarla pasar. Sin esa mitad,
+mi PR habría entrado en verde dejando el censo ciego, y las **ocho marcas de aprobación sin
+procedencia** que salieron al arreglarlo (`SIN_PROCEDENCIA` 9 → 17, enumeradas una a una en el
+propio scrum387) habrían seguido ocultas sin que nada lo dijera.
+
+Tres cosas que quedan escritas:
+
+1. **Un trinquete necesita sus DOS mitades.** «No sube» detecta el descuido; «no baja en silencio»
+   detecta que el instrumento se ha roto. Son averías distintas y sólo la segunda es invisible.
+2. **Un número que mejora sin que nadie lo haya mejorado es un instrumento roto**, hasta que se
+   demuestre lo contrario. La pregunta ante una bajada no es «¿qué arreglé?», es «¿qué he dejado
+   de ver?».
+3. **Un escáner sin gramática no vale para censar código.** SCRUM-718 ya lo había medido —«pierde
+   el 37,7 % de los comentarios»— y había dejado scrum387 como carril ajeno. La deuda declarada de
+   otro ticket sigue siendo deuda: aquí mordió.
+
+## 5 · Lo que NO se ha tocado
+
+`prisma/schema.prisma` · el cerrojo de SCRUM-728 · `@@unique([merchantId, number])` · el veredicto
+ni los umbrales de ningún censo salvo los declarados, cada uno con su motivo escrito.

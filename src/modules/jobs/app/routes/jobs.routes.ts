@@ -20,6 +20,8 @@ import { datosDeTrabajoDirecto, filaDeTrabajoDirecto, tituloDeTrabajo } from '..
 import { veredictoAlbaranSinPresupuesto } from '../../domain/albaranSinPresupuesto'; // SCRUM-684
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+// SCRUM-814 · la invariante del tramo, compartida por los tres caminos que emiten por tramos.
+import { exigirTramoLibre, esTramoTomado, cuerpoTramoTomado } from '../../../invoicing/domain/tramoSinCarrera';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-173
 import { allocateAlbaranNumber } from '../../domain/albaranNumber.service';
 // SCRUM-358 (H3): el alta de albarán, idempotente.
@@ -1258,6 +1260,11 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     exigirTiposDeIvaEmitibles(scaledLines);
 
     const invoice = await prisma.$transaction(async (tx) => {
+      // SCRUM-814 · PRIMERA sentencia: `stage` se eligio ARRIBA con `emitted`, fuera de la
+      // transaccion. «Cobrar el resto» pulsado dos veces emitia dos veces el MISMO tramo.
+      await exigirTramoLibre(tx, {
+        quoteId: quote.id, merchantId: quote.merchantId, tramosPreparados: emitted,
+      });
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
         camino: 'C2', actor: actorDeRequest(req),
       });
@@ -1346,6 +1353,9 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     if (esErrorSinLineas(err)) {
       return res.status(409).json({ error: ERROR_SIN_LINEAS, message: COPY_ADMIN_SIN_LINEAS });
     }
+    // SCRUM-814: otra peticion emitio este tramo mientras esta lo preparaba. La transaccion se
+    // deshizo entera —ni factura, ni numero consumido—, asi que volver a pulsar da el SIGUIENTE.
+    if (esTramoTomado(err)) return res.status(409).json(cuerpoTramoTomado());
     return res.status(500).json({ error: 'internal_error' });
   }
 });

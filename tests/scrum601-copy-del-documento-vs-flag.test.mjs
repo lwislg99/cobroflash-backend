@@ -59,15 +59,16 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
  * 7-sep-2026 · `aPelo` sube de 151 a 152 por SCRUM-814, y queda dicho en el mismo commit que lo
  * mueve — un ancla que se sube sin motivo escrito deja de ser un ancla.
  *
- * El +1 es UNA línea, medida y no supuesta: `quotesAdmin.routes.ts:336`, el mensaje del 409
+ * El +1 es UNA línea, medida y no supuesta: el mensaje del 409
  * `stage_taken_concurrently` («Se acaba de emitir otra factura de este presupuesto…»), que avisa
- * al profesional de que dos peticiones simultáneas pidieron el mismo tramo y que vuelva a
- * pedirlo. Los otros cuatro «a pelo» de ese fichero ya estaban.
+ * al profesional de que dos peticiones simultáneas pidieron el mismo tramo y que vuelva a pedirlo.
  *
- * ⚠️ Es MICROCOPY NUEVA y por tanto NO APROBADA (regla 30): va PROPUESTA en
- * `docs/master/SCRUM-814.md`, no firmada. Un 409 sin mensaje dejaría la pantalla muda ante una
- * carrera —el profesional vería un error sin saber que basta reintentar—, así que el texto va, y
- * va declarado como pendiente en vez de colado en silencio.
+ * Vive en `src/modules/invoicing/domain/tramoSinCarrera.ts` —una sola constante para los tres
+ * caminos, regla 30— y NO en la ruta: al llevarlo allí el número no cambió, sólo el fichero. Lo
+ * que sí cambió es `NO_LEGIBLES_AL_MEDIR`, ver abajo.
+ *
+ * ✅ APROBADA por el fundador el 7-sep-2026, sin cambios. Registro:
+ * `docs/microcopy/2026-09-07-SCRUM-814-tramo-tomado.md`.
  */
 const VEREDICTO_AL_MEDIR = { flag: 16, tipo: 7, aPelo: 152 };
 
@@ -159,7 +160,16 @@ test('SCRUM-601 · EL VEREDICTO: las tres categorías, ancladas, y SUMAN', () =>
  *
  * Medido el 6-sep-2026 sobre `main` = 00c6cb0c (re-medido tras mezclarlo: la población pasó a 356 ficheros y 19.978 literales, y el reparto NO se movió).
  */
-const NO_LEGIBLES_AL_MEDIR = 31;
+/**
+ * 7-sep-2026 · 31 → 32, por SCRUM-814, y el motivo es interesante: **el +1 lo produce hacer lo
+ * correcto**. El texto del 409 vive en UNA constante (`COPY_TRAMO_TOMADO`, regla 30) y llega al
+ * sumidero por REFERENCIA, no como literal pegado allí. Desde el fuente del sumidero, el censo no
+ * puede afirmar el texto final — que es exactamente lo que esta lista mide.
+ *
+ * No es un fallo del árbol ni una excepción: es el límite del instrumento, y crece cuando se
+ * centraliza copy. Ya pasó en SCRUM-776 al mover los rótulos del documento suelto.
+ */
+const NO_LEGIBLES_AL_MEDIR = 32;
 
 test('SCRUM-601 · el censo DECLARA lo que no sabe leer, y esa lista no crece sola', () => {
   const n = censo.noLegibles.length;
