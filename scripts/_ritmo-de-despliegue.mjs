@@ -96,6 +96,44 @@ function mismoCommit(a, b) {
 }
 
 /**
+ * La lectura ANTERIOR, sacada del renglón de constancia que dejó la ejecución pasada.
+ *
+ * El renglón lo escribe `constanciaDeEjecucion` y tiene esta forma:
+ *
+ *     vigía · 2026-09-07T01:29:14Z · al-dia · prod=349350c8 · main=349350c8 · hueco=0.0h · commits=0
+ *
+ * 🔴 SE LEE `prod=` Y NADA MÁS, porque es lo único que el ritmo necesita. Cuanto menos se lea de
+ * un formato ajeno, menos se rompe cuando ese formato cambie — y el test de esta función NO
+ * copia el renglón a mano: se lo pide a `constanciaDeEjecucion`, así que si el formato cambia, el
+ * test cae y avisa en vez de dejar esto leyendo el pasado.
+ *
+ * @returns `{ versionDeProduccion }` o `null` si no hay renglón legible. `prod=?` es `null`: el
+ *          vigía escribe `?` cuando no supo leer producción, y eso no es una lectura.
+ */
+export function lecturaDeLaConstancia(renglon) {
+  const m = /(?:^|\s)prod=([0-9a-fA-F]{7,40})(?:\s|$)/.exec(String(renglon == null ? '' : renglon));
+  return m ? { versionDeProduccion: m[1] } : null;
+}
+
+/**
+ * La ÚLTIMA lectura de un fichero de constancias (una por línea, la más nueva al final).
+ *
+ * 🔴 SE RECORRE DE ATRÁS HACIA DELANTE y se devuelve la primera que sirva: si la ejecución
+ * anterior salió ciega, su renglón lleva `prod=?` y no es una lectura — pero la de antes puede
+ * serlo, y compararse con ella sigue contestando la pregunta («¿se ha movido producción desde la
+ * última vez que se pudo mirar?»). Quedarse sólo con la última línea tiraría una medición buena
+ * por culpa de una ejecución ciega.
+ */
+export function ultimaLectura(contenido) {
+  const lineas = String(contenido == null ? '' : contenido).split('\n');
+  for (let i = lineas.length - 1; i >= 0; i--) {
+    const l = lecturaDeLaConstancia(lineas[i]);
+    if (l) return l;
+  }
+  return null;
+}
+
+/**
  * El ritmo de despliegue a partir de DOS lecturas.
  *
  * @param anterior  `{ versionDeProduccion }` de la lectura previa, o `null` si no la hay
@@ -136,5 +174,94 @@ export function ritmoDeDespliegue(anterior, actual) {
     ritmo: DESPLIEGA,
     motivo: `producción pasó de ${antes.slice(0, 8)} a ${ahora.slice(0, 8)}: SÍ se mueve, `
       + 'aunque vaya por detrás de `main`.',
+  };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// QUÉ SALIDA LLEVA CADA COMBINACIÓN, Y POR QUÉ CADA NÚMERO
+//
+// El vocabulario de salidas NO se estrena aquí: es el que ya usa el vigía —0 midió, 1 encontró un
+// defecto, 2 NO SUPE MIRAR— y se reutiliza a propósito, porque inventar un cuarto código obligaría
+// a que alguien lo aprendiera para nada.
+//
+// 🔴 EL RITMO SÓLO CALIFICA UN «ATRASADO» CON HUECO MEDIDO. Y esto es lo que impide que el vigía
+// se vuelva CIEGO SIEMPRE, que es el otro modo de fallo y el que se desactiva antes:
+//
+//   · Si NO hay hueco, no hay nada que diagnosticar. Producción está en lo mismo que `main`, y da
+//     igual si la caché se perdió: sigue siendo **0**. Sin esta regla, cada ejecución con la caché
+//     vacía saldría en 2 estando todo perfecto, y a la tercera semana alguien apaga el vigía.
+//   · Si el veredicto ya es ciego (`no-supe-mirar`), el ritmo no lo rescata: sigue siendo **2**.
+//   · Si producción corre algo que NO está en `main` (`horas` sin medir), el ritmo no lo explica —
+//     eso es un force-push, un revert o un despliegue a mano— y se queda en **1**.
+//
+// Y entonces, con hueco medido y pasado el margen:
+//
+//   · DESPLIEGA  → **0**. Es el 6-sep: producción se movió de ff4e1c4a a 50312d32 en dos horas.
+//     Iba por detrás, pero iba. Ese día el vigía lo pintó como incidente, mandó a buscar un
+//     healthcheck sano y bloqueó cinco ramas media jornada. Un retraso que se está cerrando solo
+//     NO puede costar eso. Se dice en la salida, no se calla — pero no se pone en rojo.
+//   · CONGELADO  → **1**. Es el caso de los nueve días, y es la razón de existir del vigía. Aquí
+//     canta, y este número no se abarata por nada.
+//   · NO_SE_SABE → **2**. Hay hueco y no se sabe si se está cerrando. No es verde (habría hueco sin
+//     mirar) y no es congelado (nadie lo ha medido). Es ceguera, y este ticket nació justo de
+//     confundir ceguera con «al día».
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+/** Midió y no hay nada que decir. */
+export const SALIDA_OK = 0;
+/** Encontró un defecto: producción congelada con hueco, o corriendo algo fuera de `main`. */
+export const SALIDA_CANTA = 1;
+/** No supo mirar. El mismo 2 del vigía, y por el mismo motivo. */
+export const SALIDA_CIEGO = 2;
+
+/**
+ * El veredicto del vigía, CALIFICADO por el ritmo.
+ *
+ * @param v  lo que devolvió `veredictoDeDespliegue` — se LEE, no se toca
+ * @param r  lo que devolvió `ritmoDeDespliegue`
+ * @returns `{ salida, titulo, detalle, califica }` — `califica` dice si el ritmo llegó a pintar
+ *          algo, para que quien lea la salida no tenga que deducirlo.
+ */
+export function salidaConRitmo(v, r) {
+  const salidaBase = (v && Number.isFinite(v.salida)) ? v.salida : SALIDA_CIEGO;
+  const sinCalificar = (motivo) => ({
+    salida: salidaBase, califica: false, titulo: (v && v.titulo) || '', detalle: motivo,
+  });
+
+  // El ritmo sólo tiene algo que decir sobre un hueco MEDIDO. Ver el bloque de arriba.
+  if (!v || v.veredicto !== 'atrasado') {
+    return sinCalificar('el ritmo no califica este veredicto: sólo interviene cuando hay un hueco '
+      + 'medido que decidir.');
+  }
+  if (!Number.isFinite(v.horas)) {
+    return sinCalificar('producción corre algo que no está en `main`, y eso el ritmo no lo '
+      + 'explica: sigue cantando.');
+  }
+
+  const ritmo = r && r.ritmo;
+  const motivo = (r && r.motivo) || '';
+  if (ritmo === DESPLIEGA) {
+    return {
+      salida: SALIDA_OK, califica: true,
+      titulo: 'RETRASADO, PERO DESPLEGANDO',
+      detalle: `${motivo}\n   Hay ${v.horas.toFixed(1)} h de hueco y se está cerrando solo: es un `
+        + 'retraso, no un incidente. NO se pone en rojo — el 6-sep-2026 esto bloqueó cinco ramas '
+        + 'media jornada buscando un healthcheck que estaba sano.',
+    };
+  }
+  if (ritmo === CONGELADO) {
+    return {
+      salida: SALIDA_CANTA, califica: true,
+      titulo: '🔴 PRODUCCIÓN CONGELADA',
+      detalle: `${motivo}\n   Y hay ${v.horas.toFixed(1)} h de hueco. Producción NO se mueve y `
+        + 'los commits se acumulan: es el caso de los nueve días, el que hizo nacer este vigía.',
+    };
+  }
+  return {
+    salida: SALIDA_CIEGO, califica: true,
+    titulo: '⚠️ HAY HUECO Y NO SÉ SI SE ESTÁ CERRANDO',
+    detalle: `${motivo}\n   Hay ${v.horas.toFixed(1)} h de hueco, pero sin lectura anterior no se `
+      + 'puede saber si producción se mueve. Esto NO es «al día» ni «congelada»: es que no se ha '
+      + 'podido comprobar.',
   };
 }

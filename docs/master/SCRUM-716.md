@@ -456,3 +456,125 @@ re-ancló.
 `continue-on-error` · el contrato de `GET /version` · el job y su checkout · el margen de 6 h ·
 `scrum-716c`, leída en sólo lectura y **sigue en `08650118`** · y la pieza 2 **no está conectada a
 nada**.
+---
+
+# APÉNDICE III (7-sep-2026) · Construido: el vigía ya distingue congelado de retrasado
+
+**Medido contra:** `origin/main` = `6fb51ab77713af1261dcf2e3f7819545c57c35b6` · 2026-09-07T03:16:20+01:00
+**Tanda:** 5800 tests, 5698 pass, 0 fail, 102 skipped (salida 0) — corrida DESPUÉS de mezclar `main`
+**Autorización:** el fundador autorizó tocar `vigilante-de-despliegue.mjs` el 7-sep-2026, con las
+palabras **«Sí autorizo»**. Sin eso, nada de este apéndice existiría.
+
+## E0 · Obligación 0 · Las dos ya estaban en main
+
+| ticket | comprobado POR CONTENIDO | estado |
+|---|---|---|
+| **SCRUM-801** | `package.json` de `main` trae `"censo:respaldo-n": "node scripts/censo-respaldo-de-la-n.mjs"` con su bloque `//censo:respaldo-n`, y el script existe | ✅ **en main** |
+| **SCRUM-775** | `censo-tablero-vs-arbol.mjs:136` dice `suelo.length > 0` — la forma «SÍ está»; `suelo.ok === false` no aparece | ✅ **en main** |
+
+Por eso GitHub no ofrece nada que comparar: no hay nada pendiente que comparar.
+
+## E1 · Las tres decisiones, aplicadas
+
+① **716c descartada** — no se ha mezclado ni tocado; sigue en `08650118`.
+② **El almacén es `actions/cache`** — sin permisos nuevos y sin escribir en el repositorio.
+③ **El rechazo de todo-dígitos queda firmado**, con su precio en el código.
+
+## E2 · Obligación 3 · Las salidas, y por qué cada número
+
+El vocabulario **no se estrena**: es el que ya usaba el vigía —0 midió, 1 defecto, 2 no supe
+mirar— y se reutiliza a propósito para que nadie tenga que aprender un cuarto código.
+
+| situación | salida | por qué |
+|---|---|---|
+| sin hueco | **0** | no hay nada que diagnosticar |
+| veredicto ciego | **2** | ni se pudo medir el hueco; el ritmo no lo rescata |
+| producción **fuera de `main`** (hueco sin medir) | **1** | un force-push o un despliegue a mano; el ritmo no lo explica |
+| hueco medido + **DESPLIEGA** | **0** | es el 6-sep: va por detrás pero va. **Se dice, no se calla — pero no se pone en rojo** |
+| hueco medido + **CONGELADO** | **1** | el caso de los nueve días. **Este número no se abarata por nada** |
+| hueco medido + **NO_SE_SABE** | **2** | hay hueco y no se sabe si se cierra. Ni verde ni congelado: ceguera |
+
+🔴 **La regla que evita el OTRO modo de fallo:** el ritmo **sólo califica un `atrasado` con hueco
+medido**. Sin ella, cada ejecución con la caché vacía saldría en 2 estando todo perfecto — y un
+vigía que se pone ciego siempre se desactiva antes que uno que se pone verde siempre, porque
+molesta todos los días. Tiene su test y su mutación.
+
+## E3 · Obligación 4 · El 6-sep, reproducido — y el resto, de extremo a extremo
+
+**Como test** (`scrum716-ritmo-de-despliegue.test.mjs`), con los datos de aquel día y usando el
+veredicto REAL, no uno de mentira:
+
+```
+20:21 → prod ff4e1c4a · main 388dc045 · hueco  9,5 h ·  8 commits
+22:12 → prod 50312d32 · main c6c84261 · hueco 10,4 h · 10 commits
+
+ANTES  (veredicto suelto)  → atrasado · salida 1     ← bloqueó cinco ramas media jornada
+DESPUÉS (calificado)       → RETRASADO, PERO DESPLEGANDO · salida 0
+```
+
+**Y el vigía ENTERO ejecutado**, con un `/version` de mentira que devuelve **commits reales** de la
+historia de `main` y el historial de verdad en disco:
+
+```
+  ① caché vacía + 33,6 h de hueco  -> salida 2   CIEGO (ni verde ni congelado)
+  ② producción quieta + 33,6 h     -> salida 1   CANTA
+  ③ producción movida + 15,5 h     -> salida 0   NO BLOQUEA
+
+  historial acumulado:
+    vigía · …02:19:27Z · atrasado · prod=4c0dcc5d · main=6fb51ab7 · hueco=33.6h · commits=208
+    vigía · …02:19:28Z · atrasado · prod=4c0dcc5d · main=6fb51ab7 · hueco=33.6h · commits=208
+    vigía · …02:19:28Z · atrasado · prod=10225d66 · main=6fb51ab7 · hueco=15.5h · commits=101
+```
+
+⚠️ **Y la primera versión de esta prueba no probaba lo que decía.** Cogió los commits por posición
+y el caso ③ salió con **5,8 h de hueco — dentro del margen**: el veredicto era «al día» y el ritmo
+ni llegaba a intervenir, así que el 0 era correcto por el motivo equivocado. Se rehízo eligiendo
+los commits **por edad, con suelo** (los dos por encima del margen), y entonces ③ da 15,5 h de
+hueco y sale 0 **porque producción se movió**, que es lo que había que demostrar.
+
+## E4 · Lo construido
+
+| fichero | qué |
+|---|---|
+| `scripts/_ritmo-de-despliegue.mjs` | `salidaConRitmo` (la decisión), `lecturaDeLaConstancia` y `ultimaLectura` (leer el historial) |
+| `scripts/vigilante-de-despliegue.mjs` | lee el historial, califica, escribe el renglón y sale con `final.salida` |
+| `.github/workflows/vigia-despliegue.yml` | `actions/cache` (caché rodante) + `VIGIA_ESTADO` |
+| `.gitignore` | `.vigia/` — estado de ejecución, no fuente |
+
+**El historial se lee HACIA ATRÁS**, y no es un detalle: si la ejecución anterior salió ciega, su
+renglón lleva `prod=?` y no es una lectura — pero la de antes puede serlo. Quedarse sólo con la
+última línea tiraría una medición buena por culpa de una ejecución ciega.
+
+## E5 · Los controles
+
+| control | resultado |
+|---|---|
+| 🔴 **EL QUE DECIDE** · el 6-sep, antes y después | `atrasado · 1` → `RETRASADO, PERO DESPLEGANDO · 0` ✅ |
+| 🔴 **CONGELADO DE VERDAD** · prod igual, pasado el margen | `🔴 PRODUCCIÓN CONGELADA · 1` ✅, y con su mutación declarada |
+| ✅ **NO_SE_SABE** en la primera ejecución (caché vacía) | `2` — ni verde ni congelado ✅, medido también ejecutando el vigía |
+| ✅ el enumerado de los 12 caminos | **sigue verde**: ninguno dice «al día» sin las dos puntas ✅ |
+
+**17 tests** en el fichero y **7 mutaciones declaradas, las siete VIVAS** — incluida la peor, la que
+apaga la alarma de los nueve días. El módulo quedó restaurado, comprobado ancla por ancla.
+
+## E6 · 🔴 Un trinquete que saltó, y se DECIDE
+
+`npm test` se puso en rojo con **dos guards de SCRUM-727**, y los dos fijaban el **texto**
+`v.salida`:
+
+- `el AVISO sigue siendo condicional`
+- `la constancia NO cambia el veredicto ni la salida`
+
+**Las dos propiedades que protegen siguen vivas**: la anotación sigue dentro de su `if`, y la
+constancia sigue sin decidir nada. Lo que cambió es de dónde sale el código de salida, y ese
+segundo decisor —el ritmo— **está autorizado y declarado**.
+
+No se ensancha la lista: se re-apuntan **a la propiedad**. El primero acepta `v.salida` o
+`final.salida` y **sigue cayendo** si alguien vuelve incondicional la anotación. El segundo pasa a
+comprobar por AST el argumento de `process.exit` y exige además que **`constancia` no aparezca en
+él** — cosa que el `match` anterior no comprobaba, así que queda **más estricto que antes**.
+
+## E7 · No tocado
+
+`continue-on-error: true` · `permissions` · `concurrency` · el contrato de `GET /version` · el
+margen de 6 h · `scrum-716c` (sigue en `08650118`) · ningún árbol ajeno.
