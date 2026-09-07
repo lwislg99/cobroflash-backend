@@ -8,7 +8,8 @@ import fetch from 'node-fetch';
 import { prisma } from '../../../core/db/prisma';
 import { BASE_URL } from '../../../core/config/env';
 import { internalHeaders } from '../../../core/http/internalAuth';
-import { normalizePhone, formatMoneyEs } from '../../../core/utils/utils';
+import { formatMoneyEs } from '../../../core/utils/utils';
+import { canalDeWhatsApp, tieneNumeroDeContacto } from '../../../core/contacto/canalDeWhatsApp'; // SCRUM-590 (CONT-19)
 import { sendWhatsAppWindowFirst } from '../../../integrations/whatsapp';
 import { buildPaymentRequest } from '../../../integrations/whatsappTemplates';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
@@ -35,9 +36,10 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
   if (!invoice) return { ok: false, reason: 'invoice_not_found' };
   // SCRUM-126: "customer_missing_phone" (no "customer_without_phone") — mismo código que
   // usan albaranWhatsApp.service.ts y sendQuote.service.ts para la misma condición.
-  if (!invoice.customer?.phone) return { ok: false, reason: 'customer_missing_phone' };
+  // SCRUM-590 (CONT-19): móvil si consta, fijo si no. Los dos guards siguen diciendo cosas distintas.
+  if (!tieneNumeroDeContacto(invoice.customer)) return { ok: false, reason: 'customer_missing_phone' };
 
-  const to = normalizePhone(invoice.customer.phone);
+  const to = canalDeWhatsApp(invoice.customer);
   if (!to) return { ok: false, reason: 'invalid_phone_format' };
 
   // Asegurar cobro (idempotente): reutiliza el existente o crea uno nuevo.
