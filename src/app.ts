@@ -110,6 +110,7 @@ import { getMerchantProfile, updateMerchantProfile, SlugError, SerieError } from
 import { TIT_SERIE_YA_EMITIDA, MSG_SERIE_YA_EMITIDA } from './modules/system/merchantAdmin';
 import { arranqueDeSerie, numerosDeLaSerie, bloqueoCambioDeSerie, invalidPrefijoSerie, debeOfrecerArranqueDeSerie, resumenSerieEmitida } from './core/validation/fiscalInput';
 import { vistaPreviaSerie } from './modules/invoicing/domain/vistaPreviaSerie';
+import { leerSeqDeLaSerieF } from './modules/invoicing/domain/invoiceNumber.service'; // SCRUM-780
 import { SERIE_LOCK_NS } from './modules/invoicing/domain/invoiceNumber.service';
 import QRCode from 'qrcode'; // A14.2: QR del perfil público (PNG alta res para furgoneta/tarjeta)
 import { resolverOpcionesQr, ErrorQr } from './modules/system/domain/qrPagina.service'; // SCRUM-230
@@ -892,12 +893,17 @@ app.post('/admin/onboarding/serie/previa', requireRole('admin'), async (req, res
 
     const prefijoPedido = typeof req.body?.serie === 'string' ? req.body.serie.trim() : '';
     const prefijo = prefijoPedido || merchant.invoiceSeriesPrefix;
+    // SCRUM-780: la secuencia de la serie F se DERIVA de lo emitido, no del contador viejo.
+    const ahora = new Date();
     return res.json({
       ok: true,
       proximoNumero: vistaPreviaSerie(
         prefijo,
         { invoiceSeriesYear: arranque.invoiceSeriesYear, nextInvoiceNumber: arranque.nextInvoiceNumber },
         año,
+        false,
+        ahora,
+        await leerSeqDeLaSerieF(prisma, req.merchantId, año),
       ),
     });
   } catch (err) {
@@ -1009,6 +1015,9 @@ app.post('/admin/onboarding/serie', requireRole('admin'), async (req, res, next)
           nextInvoiceNumber: actualizado.nextInvoiceNumber,
         },
         año,
+        false,
+        new Date(),                                        // SCRUM-780: el corte decide por fecha
+        await leerSeqDeLaSerieF(prisma, req.merchantId, año),
       ),
     });
   } catch (err) {
