@@ -54,6 +54,20 @@ const DECLARADAS = {
     'FILA. Un «✓ Aprobar» por cada presupuesto pendiente de la lista.',
   'templatesView.js:btnUse':
     'FILA. Un «Usar» por cada plantilla.',
+  // SCRUM-727b · los cuatro de la lista de Trabajos, clasificados leyendo cada sitio.
+  'jobsView.js:okAgendar':
+    'MODAL. Confirma el diálogo de agendar, que existe justo porque el `datetime-local` salió de '
+    + 'la fila: dentro de la fila era lo que la hacía gigante.',
+  'jobsView.js:okAsignar':
+    'MODAL. El «Guardar» del diálogo de técnicos, y es el CANDADO del ticket: asignar no puede '
+    + 'dispararse con el mismo gesto con el que se navega, así que hay que entrar en el menú y '
+    + 'confirmar aquí.',
+  'jobsView.js:bSiguiente':
+    'FILA. Una por trabajo: la acción siguiente que dicta `jobNextAction`, y NAVEGA al detalle, '
+    + 'no ejecuta. Hay tantas como filas tenga la lista.',
+  'jobsView.js:cobrarBtn':
+    'FILA. El «Cobrar el resto» de cada trabajo terminado con saldo. Es el momento de dinero, '
+    + 'pero va por fila: la pantalla no existe para cobrar UNO en concreto.',
   'signaturePad.js:okBtn':
     'MODAL de firma. ⚠️ DECLARADO CON DUDA, y se dice en vez de decidirlo solo: es un modal, pero '
     + 'lo pulsa el CLIENTE en una obra y es el momento más irrepetible del producto (SCRUM-404). '

@@ -188,9 +188,15 @@ test('SCRUM-692 · la asimetría medida sigue siendo la que se declaró', () => 
   // esto, sólo en el modal, y este test cayó nombrándolo. No es un fallo —la ficha 360 no lo envía,
   // así que no lo borra— pero la asimetría creció y ahora consta. Era la tercera columna en un día:
   // `internalRef`, los cinco `billing*` y `tags`.
+  // 🔴 SCRUM-587 (4-sep-2026) · ENTRA `dtoPorDefecto`, Y ESTE GUARD VOLVIÓ A HACER SU TRABAJO.
+  // El descuento pactado se edita SÓLO en el modal: la ficha 360 no lo muestra, así que tampoco lo
+  // envía y por tanto no lo borra — el guardado sigue siendo parcial. No es un fallo, pero la
+  // asimetría crece y tiene que constar, que es exactamente lo que pasó con `tags` el día que
+  // nació el guard. Si algún día la ficha 360 tiene que poder editarlo, se decide arriba: aquí
+  // sólo queda anotado que hoy NO puede.
   assert.deepEqual(soloModal,
     ['billingAddress', 'billingCity', 'billingCountry', 'billingPostalCode', 'billingProvince',
-      'internalRef', 'recargoEquivalencia', 'tags'],
+      'dtoPorDefecto', 'internalRef', 'recargoEquivalencia', 'tags'],
     '🔴 ha cambiado la lista de campos que SÓLO se editan en el modal:\n    ' + soloModal.join(', ') +
     '\n\n  Si has añadido uno, la ficha 360 no lo muestra: el profesional no podrá editarlo desde ' +
     'ahí. No es un fallo —el guardado es parcial y no se borra— pero tiene que constar.');

@@ -56,6 +56,9 @@ const SHELL = [
   '/dashboard/js/quoteSuplido.js',
   '/dashboard/js/quoteApartados.js',
   '/dashboard/js/quoteDescuentos.js',
+  '/dashboard/js/quoteCaducidad.js', // SCRUM-633
+  '/dashboard/js/descuentoPorDefecto.js', // SCRUM-587 (CONT-14)
+  '/dashboard/js/formaDePagoPorDefecto.js', // SCRUM-586 (CONT-13)
   '/dashboard/js/quoteDireccionObra.js', // SCRUM-602 (DOC-12)
   '/dashboard/js/quoteRevisiones.js',
   '/dashboard/js/quoteAtajosVencimiento.js',
@@ -68,6 +71,9 @@ const SHELL = [
   '/dashboard/js/productsView.js',
   '/dashboard/js/providersView.js',
   '/dashboard/js/tipoDestinatarioPendiente.js', // SCRUM-615
+  // SCRUM-776: la fuente única de cómo se llama el documento; va ANTES de invoicesView y
+  // nuevaFacturaModal, igual que en el índice — los dos la leen al pintar.
+  '/dashboard/js/rotulosDelDocumento.js',
   '/dashboard/js/invoicesView.js',
   '/dashboard/js/cobrosView.js', // SCRUM-285 (B4)
   '/dashboard/js/nuevaFacturaModal.js', // SCRUM-289 (A0.3)
@@ -85,6 +91,7 @@ const SHELL = [
   '/dashboard/js/jobAsignados.js', // SCRUM-650 (T1): quien EJECUTA el trabajo
   '/dashboard/js/albaranActionsRegistry.js', // SCRUM-302 (C2)
   '/dashboard/js/albaranDetailView.js',
+  '/dashboard/js/albaranDesdePresupuestoModal.js', // SCRUM-606 (ALB-01)
   '/dashboard/js/albaranesView.js', // SCRUM-301 (C1)
   '/dashboard/js/expensesView.js',
   '/dashboard/js/settingsSubmenus.js', // SCRUM-284

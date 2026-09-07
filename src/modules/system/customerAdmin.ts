@@ -23,6 +23,12 @@ const CUSTOMER_SELECT_NO_TOKEN = {
   tipoDestinatario: true, // SCRUM-69: para editar en la ficha y para la bandeja de facturación
   billingPeriodicity: true, // SCRUM-171b: periodicidad pactada (solo para AVISAR, ver bandeja)
   recargoEquivalencia: true, // SCRUM-294-a: el dato del cliente; NO cableado al total (regla 38)
+  // 🔴 SCRUM-587 (CONT-14) · EL QUINTO ESLABÓN OTRA VEZ, y el aviso que dejó SCRUM-580 doce
+  // líneas más abajo se leyó ANTES esta vez: este `select` es EXPLÍCITO y lo usan `listCustomers`
+  // Y `getCustomer`. Sin esta línea, el descuento pactado se guardaría en la base y el documento
+  // NUNCA lo vería —la propuesta no aparecería jamás—, y la tanda seguiría VERDE porque el dato
+  // SÍ estaría guardado. Es el editor quien lee la lista de clientes para proponer.
+  dtoPorDefecto: true,
   // 🔴 SCRUM-580 (CONT-07) · EL QUINTO ESLABON, Y ES EL QUE MAS FACIL SE PIERDE. Este `select` es
   // EXPLICITO y lo usan `listCustomers` Y `getCustomer`: sin esta linea el alta guardaria las
   // etiquetas y devolveria un cliente sin ellas, la pantalla se recargaria vacia, el profesional
@@ -144,13 +150,73 @@ export async function createCustomer(merchantId: number, data: CustomerCreateInp
   });
 }
 
+/**
+ * El token del portal de un cliente, generándolo si todavía no tiene.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-793 · LA CONDICIÓN VIVE EN EL `WHERE`, NO EN UN `if` DE JAVASCRIPT
+ *
+ * Aquí había un read-then-write desnudo: `findFirst` → `if (!token)` → `update`. Entre el SELECT
+ * y el UPDATE no había nada, así que dos peticiones simultáneas leían las dos «sin token»,
+ * generaban dos tokens distintos y escribían las dos: **ganaba la última**, y la primera devolvía
+ * a su llamador un token que ya no estaba en la base.
+ *
+ * MEDIDO contra Postgres de desarrollo (SCRUM-767, reproducido en SCRUM-793 antes de tocar nada):
+ *
+ *     DOS a la vez  → 4 de 5 pasadas con un enlace MUERTO
+ *     DIEZ a la vez → hasta 10 tokens distintos, 9 de 10 muertos
+ *
+ * LA VÍCTIMA no ve ningún error: el profesional copia el enlace del portal, se lo manda al
+ * cliente por WhatsApp, y **el enlace no abre** — `GET /cliente/:token` busca por `portalToken` y
+ * no encuentra nada. Es el momento en que el cliente decide si firma.
+ *
+ * ── POR QUÉ ESTO LO CIERRA, Y NO ES UNA CARRERA MÁS PEQUEÑA ──────────────────────────────
+ *
+ * `portalToken: null` **dentro del `WHERE`** convierte la comprobación en parte de la MISMA
+ * sentencia que escribe. En READ COMMITTED, la segunda `UPDATE` se bloquea sobre la fila que la
+ * primera tiene tomada y, cuando aquélla confirma, **vuelve a evaluar su `WHERE`**: ya no hay
+ * `null`, así que casa 0 filas y no pisa nada. El motor serializa lo que un `if` no puede.
+ *
+ * Y por eso se devuelve `count`: si casó 1, el token de la base es el nuestro. Si casó 0, la
+ * carrera la ganó otro y **se devuelve el suyo**, releído — nunca el que este hilo generó.
+ *
+ * ⚠️ EL `if` DE ARRIBA SE QUEDA, y no contradice nada: es un atajo de LECTURA sobre un valor ya
+ * confirmado. Es seguro porque **un token no nulo no lo sobrescribe nadie** — medido: `portalToken`
+ * no existe en los esquemas zod, así que `updateCustomer` no puede tocarlo, y los únicos dos
+ * escritores del árbol son `createCustomer` (al nacer) y esta función (sólo si está a `null`).
+ *
+ * ⛔ NO se ha añadido `@@unique` ni ningún índice: `Customer.portalToken` ya es `String? @unique`
+ *    y `prisma/schema.prisma` no se toca.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
 export async function ensurePortalToken(merchantId: number, customerId: number): Promise<string> {
-  const customer = await prisma.customer.findFirst({ where: { id: customerId, merchantId } });
+  const customer = await prisma.customer.findFirst({
+    where: { id: customerId, merchantId },
+    select: { portalToken: true },
+  });
   if (!customer) throw new Error('customer_not_found');
   if (customer.portalToken) return customer.portalToken;
+
   const token = generatePortalToken();
-  await prisma.customer.update({ where: { id: customerId }, data: { portalToken: token } });
-  return token;
+  // `updateMany` y no `update` PORQUE `update` exige clave única y no admite más condiciones: la
+  // condición `portalToken: null` es justo lo que hay que meter en el `WHERE`. De paso, el
+  // `merchantId` entra también en la escritura, que antes sólo filtraba en la lectura (regla 2).
+  const escrito = await prisma.customer.updateMany({
+    where: { id: customerId, merchantId, portalToken: null },
+    data: { portalToken: token },
+  });
+  if (escrito.count === 1) return token;
+
+  // Casó 0 filas: otro llegó antes. Se devuelve EL SUYO, que es el que está en la base y el que
+  // va a funcionar cuando el cliente abra el enlace.
+  const yaPuesto = await prisma.customer.findFirst({
+    where: { id: customerId, merchantId },
+    select: { portalToken: true },
+  });
+  // Fail-closed: si a estas alturas no hay token, el cliente se ha borrado por debajo. No se
+  // inventa uno ni se devuelve el que este hilo generó y que NO está guardado.
+  if (!yaPuesto?.portalToken) throw new Error('customer_not_found');
+  return yaPuesto.portalToken;
 }
 
 export async function updateCustomer(merchantId: number, id: number, data: CustomerUpdateInput) {

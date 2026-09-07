@@ -58,6 +58,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import { leerSiSigueAhi, exigirCorpusLeido } from './_barrido-estable.mjs'; // SCRUM-740
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VARIABLE = 'LIBRO_PG_URL';
@@ -93,8 +94,13 @@ function todosLosSaltos() {
   let nodos = 0;
   const ficheros = fs.readdirSync(path.join(RAIZ, 'tests')).filter((f) => f.endsWith('.test.mjs'));
 
+  let leidos = 0;
   for (const f of ficheros) {
-    const src = fs.readFileSync(path.join(RAIZ, 'tests', f), 'utf8');
+    // SCRUM-740: `tests/` es a la vez el árbol que se barre y el sitio donde cuatro autopruebas
+    // fabrican ficheros temporales. Se tolera SÓLO su desaparición; el suelo va al salir.
+    const src = leerSiSigueAhi(path.join(RAIZ, 'tests', f));
+    if (src === null) continue;
+    leidos++;
     const sf = ts.createSourceFile('x.mjs', src, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
     const encontrados = [];
     const visitar = (n) => {
@@ -120,7 +126,11 @@ function todosLosSaltos() {
     visitar(sf);
     if (encontrados.length) porFichero.set(f, encontrados);
   }
-  return { porFichero, nodos, ficherosMirados: ficheros.length };
+  // SCRUM-740: `ficherosMirados` cuenta lo que listó `readdir`. Éste cuenta lo que se LEYÓ, que
+  // es lo que de verdad se analizó — sin él, tolerar la desaparición podría acabar en un censo
+  // vacío que se leería como «ningún skip sin motivo».
+  exigirCorpusLeido(leidos, 100, 'SCRUM-419 · censo de skips declarados');
+  return { porFichero, nodos, ficherosMirados: ficheros.length, leidos };
 }
 
 /**

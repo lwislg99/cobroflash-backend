@@ -230,11 +230,11 @@ async function initApp() {
     document.querySelectorAll('.nav-item[data-view]').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.view === menuView);
     });
-    document.querySelectorAll('.nav-group').forEach((group) => {
-      const subitems = group.querySelectorAll('.nav-subitem[data-view]');
-      const shouldOpen = Array.from(subitems).some((b) => b.dataset.view === menuView);
-      group.classList.toggle('open', shouldOpen);
-    });
+    // SCRUM-768: aquí se abría el grupo del submenú buscando `.nav-subitem[data-view]`. Desde
+    // SCRUM-599 no queda ni un `.nav-subitem` en el árbol, así que este bucle recorría el único
+    // `.nav-group` que sobrevivía para no encontrar nada y alternar una clase que ya no estilaba
+    // nadie. Se retira con el resto del residuo: código que no puede hacer nada no protege nada,
+    // y de paso sostenía la ilusión de que la barra todavía tiene submenús.
   }
 
   // 7. Render view
@@ -301,7 +301,12 @@ async function initApp() {
         break;
       case 'jobs-detail':
         viewTitle.textContent = 'Trabajo';
-        if (state.jobId != null && typeof renderJobDetailView === 'function') renderJobDetailView(viewContainer, state.jobId);
+        // SCRUM-606 (ALB-01): `altaAlbaran` viaja como ARGUMENTO y a propósito NO se guarda en
+        // `state` — mismo criterio que la plantilla de `quotes-new` (SCRUM-140): es de un solo uso,
+        // y persistirlo haría que la hoja de «Nuevo albarán» se abriera sola la próxima vez que
+        // alguien entrara en ese Trabajo por cualquier otro camino. Las navegaciones que no lo
+        // mandan —que son todas las demás— reciben `null` y abren el Trabajo tal cual.
+        if (state.jobId != null && typeof renderJobDetailView === 'function') renderJobDetailView(viewContainer, state.jobId, options.altaAlbaran || null);
         else viewContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔧</div><div class="empty-state-title">Sin trabajo seleccionado</div></div>`;
         break;
       case 'customer-360':
@@ -493,15 +498,11 @@ async function initApp() {
     btn.addEventListener('click', () => renderView(btn.dataset.view));
   });
 
-  // Submenú toggle
-  document.querySelectorAll('.nav-group').forEach((group) => {
-    const parentBtn = group.querySelector('.nav-item-parent');
-    parentBtn?.addEventListener('click', () => {
-      const isOpen = group.classList.contains('open');
-      document.querySelectorAll('.nav-group').forEach((g) => g.classList.remove('open'));
-      if (!isOpen) group.classList.add('open');
-    });
-  });
+  // SCRUM-768: aquí vivía el «Submenú toggle». Le colgaba a `.nav-item-parent` un SEGUNDO
+  // manejador de click —además del de arriba, que es el que navega— para alternar la clase `open`
+  // del grupo. Sin subítems que abrir y sin chevron que girar, ese segundo manejador no hacía
+  // nada observable. La navegación no cambia: la entrada de Presupuestos la sigue moviendo el
+  // manejador de `.nav-item[data-view]`, igual que Albaranes, Facturas y Clientes.
 
   // Hash inicial
   try {

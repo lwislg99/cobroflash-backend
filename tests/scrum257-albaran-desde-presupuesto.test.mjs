@@ -139,22 +139,50 @@ function sustituirPrisma(job) {
   });
 }
 
-const REQ = (id) => ({ params: { id: String(id) }, body: {}, merchantId: 7, query: {}, headers: {} });
+const REQ = (id, body = {}) => ({ params: { id: String(id) }, body, merchantId: 7, query: {}, headers: {} });
 
-test('SCRUM-257 · (b) job SIN presupuesto → 409 con el texto aprobado', async () => {
+// 🔴 RE-ANCLADO el 4-sep-2026 (SCRUM-684), y NO es un debilitamiento: es que la REGLA cambió.
+//
+// El fundador decidió que una AVERÍA abierta como trabajo directo (SCRUM-651) SÍ puede entregar
+// albarán — «nadie presupuesta una urgencia» y «hay que dejar papel al irse» (ALB-02) son la misma
+// escena, y el guard viejo la partía en dos. El guard se ACOTA, no se quita: lo que sigue
+// devolviendo 409 es el caso donde la falta de presupuesto de verdad importa, **una línea que dice
+// venir de un presupuesto que no existe** (`quoteLineIndex` sin `quoteId`).
+//
+// El caso de antes —cuerpo vacío sobre un job sin presupuesto— ahora es un 201, y tiene su propio
+// control justo debajo. Los dos siguen aquí: si se pierde cualquiera de los dos, se nota.
+test('SCRUM-257 · (b) 🔴 una línea que afirma un origen INEXISTENTE → 409 (acotado en SCRUM-684)', async () => {
+  sustituirPrisma({ id: 3, merchantId: 7, quoteId: null });
+  const r = await invocar(REQ(3, {
+    lineas: [{ concepto: 'Sustituir diferencial', cantidad: 1, unidad: 'ud', quoteLineIndex: 0 }],
+  }));
+
+  assert.equal(
+    r?.code, 409,
+    '🔴 SE ACEPTA UNA LÍNEA QUE DICE VENIR DE UN PRESUPUESTO QUE NO EXISTE. `validarLineas` ' +
+      'conserva ese índice sin poder validarlo, y el motor de entrega pendiente se lo cree. ' +
+      `Respondió ${r?.code} con ${JSON.stringify(r?.body)}`,
+  );
+  assert.equal(r.body?.error, 'job_without_quote');
+  // ⚠️ EL TEXTO APROBADO YA NO SIRVE, y por eso no se exige: decía «no se puede crear un albarán»
+  // y hoy eso es FALSO. El mensaje nuevo sale con marcador (regla 30) y nombra QUÉ línea.
+  assert.match(
+    r.body?.message || '', /línea 1\b/,
+    '🔴 el mensaje no dice QUÉ línea afirma el origen. Sin `message`, el dashboard enseñaría el ' +
+      'código crudo «job_without_quote» — el defecto que cerró SCRUM-275 en la página de acceso.',
+  );
+});
+
+test('SCRUM-257 · (b) 🔴 y una AVERÍA sin líneas enlazadas SÍ crea albarán (SCRUM-684)', async () => {
+  // El otro lado del acotado, y es el ticket entero: el técnico abre la avería, la arregla y tiene
+  // que poder dejar papel. Sin este control, «acotar» sería indistinguible de «bloquear siempre».
   sustituirPrisma({ id: 3, merchantId: 7, quoteId: null });
   const r = await invocar(REQ(3));
 
   assert.equal(
-    r?.code, 409,
-    '🔴 SE CREA UN ALBARÁN SOBRE UN TRABAJO SIN PRESUPUESTO. Decisión 1 del fundador: no se puede. ' +
+    r?.code, 201,
+    '🔴 UNA AVERÍA SIGUE SIN PODER ENTREGAR PAPEL: el guard volvió a ser de brocha gorda. ' +
       `Respondió ${r?.code} con ${JSON.stringify(r?.body)}`,
-  );
-  assert.equal(r.body?.error, 'job_without_quote');
-  assert.equal(
-    r.body?.message, COPY_SIN_PRESUPUESTO,
-    '🔴 el mensaje no es el aprobado (regla 30). Sin `message`, el dashboard enseñaría el código ' +
-      'crudo «job_without_quote» — el defecto que cerró SCRUM-275 en la página de acceso.',
   );
 });
 
@@ -181,9 +209,20 @@ test('SCRUM-257 · (b) el guard NO se ha puesto en la ruta equivocada', async ()
   assert.ok(iAlb !== -1 && iCollect !== -1, '🔴 no encuentro las dos rutas para distinguirlas');
 
   const cuerpoAlbaranes = src.slice(iAlb, iCollect > iAlb ? iCollect : undefined);
+  // 🔴 RE-ANCLADO (SCRUM-684): antes se buscaba el TEXTO aprobado, que ya no vive en esta ruta —
+  // el mensaje lo compone `albaranSinPresupuesto.ts`, que es donde vive la decisión. Se ancla a la
+  // LLAMADA, que es más fuerte: el texto se puede reescribir sin cambiar quién decide, y lo que
+  // este control tiene que distinguir es de QUÉ RUTA sale el rechazo.
   assert.ok(
-    cuerpoAlbaranes.includes(COPY_SIN_PRESUPUESTO),
-    '🔴 el texto aprobado no está en la ruta de albaranes. Si solo está en collect-rest, lo que ' +
+    cuerpoAlbaranes.includes('veredictoAlbaranSinPresupuesto('),
+    '🔴 la ruta de albaranes no consulta el veredicto. Si solo está en collect-rest, lo que ' +
       'hay es el precedente que el ticket cita, no la tarea.',
+  );
+  // Y el control del propio control: `collect-rest` sigue teniendo SU `job_without_quote`, que es
+  // otro rechazo y no éste. Si desapareciera, este test estaría distinguiendo dos cosas iguales.
+  const cuerpoCollect = src.slice(iCollect);
+  assert.ok(
+    cuerpoCollect.includes('job_without_quote'),
+    '🔴 el precedente de `collect-rest` ha desaparecido: este control ya no distingue nada.',
   );
 });

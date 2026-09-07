@@ -247,11 +247,13 @@ export function nodo(tag, reg) {
     // Se apoya en el mismo parser que `innerHTML` —no se escribe un segundo— y respeta las
     // cuatro posiciones del estándar. `beforebegin`/`afterend` necesitan padre: sin él el
     // navegador NO hace nada, y aquí tampoco, en vez de inventarse un sitio donde ponerlo.
-    insertAdjacentHTML(posicion, html) {
-      const cuna = nodo('div', reg);
-      cuna.innerHTML = String(html ?? '');
-      const nuevos = cuna.hijos.slice();
-      for (const h of nuevos) h._padre = null;
+    /**
+     * SCRUM-760 · LA COLOCACIÓN, EN UN SOLO SITIO. La usan `insertAdjacentHTML` y
+     * `insertAdjacentElement`: son la MISMA regla del estándar con distinta materia prima, y
+     * escribirla dos veces es cómo una de las dos se queda atrás el día que alguien corrija un
+     * borde. Recibe los nodos YA desenganchados de su cuna.
+     */
+    _colocarAdyacente(posicion, nuevos, quien) {
       const dentro = (i) => { for (const h of nuevos) { desengancha(h); h._padre = n; } n.hijos.splice(i, 0, ...nuevos); };
       const fuera = (desplaza) => {
         const p = n._padre;
@@ -267,7 +269,31 @@ export function nodo(tag, reg) {
       else if (donde === 'afterend') fuera(1);
       // Una posición que no existe NO se trata como `beforeend`: el navegador lanza, y adivinar
       // aquí pondría el marcado en un sitio que el producto no pidió.
-      else throw new SyntaxError(`insertAdjacentHTML: posición no válida «${posicion}»`);
+      else throw new SyntaxError(`${quien}: posición no válida «${posicion}»`);
+    },
+    insertAdjacentHTML(posicion, html) {
+      const cuna = nodo('div', reg);
+      cuna.innerHTML = String(html ?? '');
+      const nuevos = cuna.hijos.slice();
+      for (const h of nuevos) h._padre = null;
+      n._colocarAdyacente(posicion, nuevos, 'insertAdjacentHTML');
+    },
+    /**
+     * 🔴 SCRUM-760 · `insertAdjacentElement`. NO EXISTÍA, y por eso `attachVoiceInput` REVENTABA
+     * en cuanto una vista pintaba el micro (`voiceInput.js:85-86`): **el camino del DICTADO
+     * entero era inalcanzable para el banco**, que es justo lo que este ticket tiene que poder
+     * mirar. Y no era sólo la voz — `productsView.js:1036` lo llama SIN CONDICIÓN.
+     *
+     * Es el mismo hueco que `prepend` (SCRUM-460), `parentNode` (SCRUM-609) e
+     * `insertAdjacentHTML` (SCRUM-698): una pantalla fuera del alcance del banco por una API que
+     * el banco no tenía, no por nada del producto. Se corrige AQUÍ y no se rodea desde el test.
+     *
+     * Devuelve el elemento insertado, como el estándar.
+     */
+    insertAdjacentElement(posicion, el) {
+      if (!el) return null;
+      n._colocarAdyacente(posicion, [el], 'insertAdjacentElement');
+      return el;
     },
     // ⚠️ SCRUM-444 · `children`, `firstElementChild` y un `remove()` QUE DE VERDAD QUITA.
     //
@@ -351,7 +377,39 @@ export function nodo(tag, reg) {
       while (p) { if (casa(p, s) === true) return p; p = p._padre; }
       return null;
     },
-    classList: { add() {}, remove() {}, toggle() {}, contains: () => false },
+    /**
+     * 🔴 SCRUM-792 · `classList` DE VERDAD. Era `{ add(){}, remove(){}, toggle(){}, contains: () => false }`:
+     * cuatro no-ops y un `contains` que MENTÍA SIEMPRE que no.
+     *
+     * Lo que costaba, medido: `customersView` marca la barra de selección con
+     * `classList.toggle('barra-seleccion--vacia', …)`, y el banco se tragaba la llamada sin
+     * cambiar `className`. El marcado serializado salía SIN la clase, así que el guard de
+     * navegador medía una barra que en el producto está oculta y aquí salía visible — y el fallo
+     * se leía como un defecto del CSS que no existía.
+     *
+     * Es el mismo hueco que `prepend` (SCRUM-460), `parentNode` (SCRUM-609),
+     * `insertAdjacentHTML` (SCRUM-698) e `insertAdjacentElement` (SCRUM-760): una pieza entera
+     * fuera del alcance del banco por una API que el banco no tenía, no por nada del producto.
+     * Se corrige AQUÍ y no se rodea desde el test.
+     *
+     * ⚠️ Y el `contains: () => false` era peor que un no-op: un test que preguntara «¿tiene la
+     * clase?» recibía un NO firme sobre un nodo que sí la tenía. Ahora se apoya en `className`,
+     * que es de donde el resto del banco lee las clases (`clasesDeLasHojas`, los tests que
+     * filtran por clase), así que no hay dos verdades.
+     */
+    classList: {
+      add(...cs) { const s = new Set(String(n.className || '').split(/\s+/).filter(Boolean)); for (const c of cs) if (c) s.add(String(c)); n.className = [...s].join(' '); },
+      remove(...cs) { const s = new Set(String(n.className || '').split(/\s+/).filter(Boolean)); for (const c of cs) s.delete(String(c)); n.className = [...s].join(' '); },
+      contains(c) { return String(n.className || '').split(/\s+/).filter(Boolean).includes(String(c)); },
+      toggle(c, forzar) {
+        // El estándar: con el segundo argumento manda ÉL; sin él, alterna. Si aquí se ignorara,
+        // `toggle(x, false)` AÑADIRÍA la clase — el contrario exacto de lo que pide el llamador.
+        const tiene = n.classList.contains(c);
+        const poner = forzar === undefined ? !tiene : !!forzar;
+        if (poner) n.classList.add(c); else n.classList.remove(c);
+        return poner;
+      },
+    },
     getBoundingClientRect: () => ({ width: 0, height: 0, top: 0, left: 0 }),
     set textContent(v) { n._texto = String(v); n.hijos = []; },
     get textContent() { return n._texto; },
@@ -742,6 +800,10 @@ export function clasesEscritas(fuente, nombre = 'x.js') {
 export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'aiQuoteAssistant.js',
   'albaranActionsRegistry.js',
+  // SCRUM-606 (ALB-01): el buscador de presupuesto de «Nuevo albarán». Va ANTES de
+  // `albaranesView.js`, que es quien lo abre, y después de `modalHeader.js` y `atajoNuevo.js`,
+  // de los que lee la cabecera del modal y el rótulo. Ambas relaciones se DECLARAN abajo.
+  'albaranDesdePresupuestoModal.js',
   'albaranDetailView.js',
   'albaranesView.js',
   'almacenLocal.js',
@@ -753,11 +815,20 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'csvImport.js',
   'customerDetailView.js',
   'customersView.js',
+  // SCRUM-587 (CONT-14) · el descuento pactado con el cliente, PROPUESTO. Va DESPUÉS de
+  // `quoteDescuentos.js`, del que lee la aritmética y sin el cual se niega a funcionar, y ANTES
+  // de `quotesView.js`, que le pide la propuesta al elegir cliente.
+  'descuentoPorDefecto.js',
   'estadoFirma.js',
   'expensesView.js',
   'exportView.js',
   'facturaPreEmision.js',
   'filtroClientes.js',
+  // SCRUM-586 (CONT-13) · las formas de pago pactadas con el cliente, PROPUESTAS. Va ANTES de
+  // `quotesView.js`, que le pide la propuesta al elegir cliente. A diferencia de su hermana del
+  // 587, NO cuelga de `quoteDescuentos.js` —aquí no hay aritmética que leer—, así que declara UNA
+  // sola relación de orden y no dos.
+  'formaDePagoPorDefecto.js',
   'globalSearch.js',
   'homeView.js',
   'invoiceActionsRegistry.js',
@@ -804,6 +875,7 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   // SCRUM-594 (DOC-04) · la aritmética de los descuentos del presupuesto. Va ANTES de
   // `quotesView.js`, que la consume en `recalcTotals` y al componer el payload.
   'quoteDescuentos.js',
+  'quoteCaducidad.js', // SCRUM-633
   'quoteDireccionObra.js', // SCRUM-602 (DOC-12)
   'quoteRevisiones.js',
   'quoteAtajosVencimiento.js',
@@ -816,6 +888,7 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'quotesListView.js',
   'quotesTabs.js',
   'quotesView.js',
+  'rotulosDelDocumento.js',
   'reportsView.js',
   'resistenciaAlmacen.js',
   'selectorMetodoCobro.js',
@@ -845,6 +918,7 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
 export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   { antes: 'filtroClientes.js', despues: 'customersView.js', motivo: 'SCRUM-581: pestañas y orden de la lista' },
   { antes: 'margenCatalogo.js', despues: 'productsView.js', motivo: 'SCRUM-609: la aritmética del margen' },
+  { antes: 'margenCatalogo.js', despues: 'reportsView.js', motivo: 'SCRUM-764: el criterio de margen negativo' },
   { antes: 'switchTipoArticulo.js', despues: 'productsView.js', motivo: 'SCRUM-609: el switch Producto|Servicio' },
   { antes: 'quoteApartados.js', despues: 'quotesDetailView.js', motivo: 'SCRUM-655: apartados, numeración y descripción' },
   { antes: 'signaturePad.js', despues: 'parteDetailView.js', motivo: 'SCRUM-652: el parte abre el pad de firma' },
@@ -855,6 +929,23 @@ export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   // antes de que exista el consumidor, el rojo aparecería en la pantalla del profesional.
   { antes: 'textoDelDocumento.js', despues: 'jobDetailView.js', motivo: 'SCRUM-593: el campo de cabecera del albaran' },
   { antes: 'textoDelDocumento.js', despues: 'quotesView.js', motivo: 'SCRUM-593: los dos textos libres (consumidor tras SCRUM-598)' },
+  // SCRUM-587 (CONT-14): las DOS direcciones se declaran, porque la pieza está en medio. Si un
+  // merge la colocara antes que `quoteDescuentos.js`, se quedaría sin la aritmética que lee —y
+  // ella LANZA en vez de improvisar una segunda, así que el rojo saldría en la pantalla.
+  { antes: 'quoteDescuentos.js', despues: 'descuentoPorDefecto.js', motivo: 'SCRUM-587: lee `dtoDeLinea` y no reimplementa la aritmética' },
+  { antes: 'descuentoPorDefecto.js', despues: 'quotesView.js', motivo: 'SCRUM-587: el editor le pide la propuesta al elegir cliente' },
+  // SCRUM-586 (CONT-13): UNA sola dirección, y la ausencia de la segunda es la diferencia con la
+  // línea de arriba. La pieza no lee aritmética de nadie, así que no tiene un «antes» del que
+  // colgar; lo que sí rompería el producto es cargarla DESPUÉS del editor, porque entonces
+  // `window.formaDePagoPorDefecto` no existe cuando el editor se monta y la tira no aparecería
+  // JAMÁS — en silencio y con la tanda verde, que es el modo en que este defecto se esconde.
+  { antes: 'formaDePagoPorDefecto.js', despues: 'quotesView.js', motivo: 'SCRUM-586: el editor le pide la propuesta al elegir cliente' },
+  // SCRUM-606 (ALB-01) · las TRES del buscador de presupuesto. La del rótulo no es cosmética:
+  // el modal titula con `atajoNuevo.textoDe('albaranes')`, así que si se cargara antes se
+  // quedaría sin título y el marcador de microcopy sin firmar no se vería en pantalla.
+  { antes: 'modalHeader.js', despues: 'albaranDesdePresupuestoModal.js', motivo: 'SCRUM-606: la cabecera del modal sale de `cabeceraModal`' },
+  { antes: 'atajoNuevo.js', despues: 'albaranDesdePresupuestoModal.js', motivo: 'SCRUM-606: el título del modal ES el rótulo del botón, leído de su fuente única' },
+  { antes: 'albaranDesdePresupuestoModal.js', despues: 'albaranesView.js', motivo: 'SCRUM-606: el botón «Nuevo albarán» de la lista abre este modal' },
 ]);
 
 /** Nombre a secas, venga con prefijo `js/` o sin él, y sea cadena u objeto `{fichero}`. */
@@ -1046,7 +1137,17 @@ export function datosDeMuestra(url) {
   return [];
 }
 
-export async function pintarVista(banco, nombreFn) {
+// 🔴 SCRUM-795 · `argumentos`: LO QUE EL PRODUCTO YA LE PASA A LA VISTA, y el banco no.
+//
+// `app.js:314` monta la ficha 360 con DOS argumentos —`renderCustomer360View(contenedor, id)`—
+// y aquí se llamaba siempre con uno. Consecuencia medida: la 360 montaba 2 nodos y el censo la
+// dejaba fuera declarándose ciego («⚠️ sólo 2 nodos»). El suelo funcionaba; lo que faltaba era
+// poder darle el id. Con un resto OPCIONAL, los 91 sitios que llaman sin argumentos —contados
+// el 7-sep-2026 sobre 6fb51ab7 con `git grep -c 'pintarVista('`— se comportan EXACTAMENTE
+// igual: ninguno pasa un tercer argumento, comprobado uno a uno. Quien necesite montar una
+// vista con parámetro lo pide explícitamente. No hay tabla de argumentos escondida en el banco:
+// el que sabe qué id hace falta es el que mide, no el banco.
+export async function pintarVista(banco, nombreFn, ...argumentos) {
   const fn = banco.ctx[nombreFn];
   if (typeof fn !== 'function') {
     return { error: new Error(`la vista no publica \`${nombreFn}\` (es ${typeof fn})`), contenedor: null };
@@ -1079,7 +1180,7 @@ export async function pintarVista(banco, nombreFn) {
   };
 
   try {
-    const r = fn(contenedor);
+    const r = fn(contenedor, ...argumentos);
     // 🔴 SCRUM-448 · SE ESPERA LA VISTA **O** UNOS TICKS, LO QUE PASE ANTES.
     //
     // El `await r` a secas colgaba el test PARA SIEMPRE en cuanto la vista era `async` y esperaba

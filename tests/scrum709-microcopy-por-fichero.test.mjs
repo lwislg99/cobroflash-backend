@@ -1,9 +1,14 @@
 // tests/scrum709-microcopy-por-fichero.test.mjs — SCRUM-709
 //
-// LA VÍCTIMA: la PR que no entra. La #982 se quedó bloqueada con la suite verde —4872 pass, 0
-// fail— por UN fichero de documentación en conflicto. Fue la octava colisión en dos días, y las
-// ocho se resolvieron igual: conservar los dos addenda. Un conflicto cuya resolución es SIEMPRE
-// la misma no informa de nada; es una factura que se paga por par de ramas.
+// LA VÍCTIMA: la PR que no entra. La #982 se quedó bloqueada **con la suite entera en verde y
+// cero fallos** por UN fichero de documentación en conflicto. Fue la octava colisión en dos días,
+// y las ocho se resolvieron igual: conservar los dos addenda. Un conflicto cuya resolución es
+// SIEMPRE la misma no informa de nada; es una factura que se paga por par de ramas.
+//
+// (Aquí vivía el recuento exacto de tests en verde de aquel día. No sostenía el argumento —que la
+// suite estuviera verde ya lo dice— y envejeció al día siguiente. Retirado en SCRUM-737: una frase
+// sin número no se desincroniza. Y la cifra tampoco se repite aquí: un guard de texto se caza a sí
+// mismo en el comentario que explica la prohibición.)
 //
 // EL DEFECTO, dicho como mecanismo: un fichero único al que todas las sesiones AÑADEN AL FINAL
 // colisiona una vez por cada PAR de ramas vivas. Cuatro sesiones aprobando el mismo día son seis

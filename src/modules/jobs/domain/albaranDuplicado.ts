@@ -46,6 +46,12 @@ export const CAMPOS_QUE_VIAJAN: Record<string, string> = {
   // teclearía idéntico mañana. No afirma que se haya entregado nada: eso lo dice `fechaEntrega`,
   // que está en el otro cubo justamente por eso.
   lugarEntrega: 'es la dirección de la OBRA, que no cambia al duplicar: describe, no afirma',
+  // SCRUM-607 (ALB-02): VIAJA, y por el mismo motivo que `modoValoracion` justo arriba — es una
+  // DECISIÓN sobre el parte, no un hecho ocurrido sobre el anterior. Y el caso real lo pide: un
+  // profesional que entrega sin precios a un cliente lo hace con TODOS sus albaranes, no con uno.
+  // Si no viajara, el duplicado saldría con los márgenes a la vista y el pro lo descubriría
+  // cuando el papel ya está entregado.
+  ocultarPreciosEnDocumento: 'es una decisión sobre qué enseña el papel, no un hecho ocurrido',
 };
 
 /**

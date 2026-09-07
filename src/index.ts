@@ -3,6 +3,9 @@ import { app } from './app';
 import { config, warnMissingWebhookSecrets, warnEmptyOwnerEmails, assertPublicBaseUrl, assertVerifactuIdSistema } from './core/config/env';
 import { startCronJobs } from './core/cron/cron';
 import { assertSchemaSinDeriva } from './core/db/schemaDrift';
+// SCRUM-631: el hermano del de arriba. Aquel mira TABLAS y COLUMNAS y declara que NO mira
+// indices; este mira el unico indice del que depende una garantia de producto.
+import { assertUnicidadDeNombre } from './core/db/unicidadNombreProducto';
 // SCRUM-475: si el job que manda un aviso no queda programado, ese aviso no sale NUNCA. Consta.
 import { dejarConstancia } from './modules/messaging/domain/avisoConstancia';
 
@@ -23,6 +26,10 @@ warnEmptyOwnerEmails(); // SCRUM-102: mismo motivo, para OWNER_EMAILS
 // tumbar produccion por un hipo de red seria una cura peor que la enfermedad.
 async function arrancar(): Promise<void> {
   await assertSchemaSinDeriva();
+
+  // SCRUM-631 · DESPUES del de esquema y con el mismo criterio: si falta la columna, la unicidad
+  // sobre ella no significa nada, asi que el orden no es libre.
+  await assertUnicidadDeNombre();
 
   app.listen(config.PORT, () => {
     console.log(`YaQu API listening on ${config.PUBLIC_BASE_URL}`);

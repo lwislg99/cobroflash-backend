@@ -58,6 +58,63 @@ export function telefonoDePrueba(n) {
   return PREFIJO_IMPOSIBLE + cuerpo;
 }
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-629 · EL TRAMO NACIONAL SE DESTRUYE, Y EL NÚMERO COMPLETO NO. LOS DOS SON CIERTOS.
+//
+// MEDIDO, no razonado (barrido de 206 índices + búsqueda binaria de la frontera):
+//
+//   · `telefonoDePrueba(n)` COMPLETO  → `normalizePhone` lo devuelve INTACTO, para todo `n`
+//     que quepa en el rango. Cero destruidos. Aquí no hay defecto.
+//   · el TRAMO NACIONAL (los 9 dígitos sin el `34`) → se destruye para `n < 10.000.000`.
+//
+// POR QUÉ. El tramo de un índice pequeño empieza por `00` (`telefonoDePrueba(1)` → `000000001`),
+// y `normalizePhone` trata el `00` como prefijo internacional y lo quita. Quedan 7 dígitos, no
+// pasa su propio `^\d{8,15}$`, y devuelve **la cadena vacía**.
+//
+// 🔴 POR QUÉ ESO ES PEOR QUE UN FALLO. Un test de duplicados escrito con el par natural
+// —el mismo número con y sin prefijo— compara `""` contra `""`. **Son iguales, y el test pasa
+// sin haber ejercitado una sola línea.** No falla, no avisa, y da confianza. Comprobado
+// montándolo y viéndolo en verde.
+//
+// LA FRONTERA, con número: el último que muere es `n = 9.999.999`; el primero que sobrevive es
+// `n = 10.000.000`. No se calculó: se buscó por bisección y se comprobó a los dos lados.
+//
+// ⚠️ `normalizePhone` NO SE TOCA. Tiene ~40 llamadores y es el número al que se manda el
+// WhatsApp; su tratamiento del `00` puede ser correcto para lo suyo. El defecto está aquí: en el
+// generador que produce números que ella no puede procesar.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Primer índice cuyo TRAMO NACIONAL sobrevive a una normalización E.164. MEDIDO por bisección
+ * el 4-sep-2026, no deducido: `9.999.999` muere, `10.000.000` sobrevive.
+ *
+ * El número COMPLETO sobrevive con cualquier índice: esto sólo gobierna el tramo.
+ */
+export const PRIMER_INDICE_NACIONAL_ESTABLE = 10000000;
+
+/**
+ * El TRAMO NACIONAL del teléfono de prueba `n` — los 9 dígitos sin el `34`, que es lo que
+ * guardaría un formulario donde el profesional teclea sin prefijo.
+ *
+ * 🔴 FALLA EN VOZ ALTA en la zona donde el tramo se destruiría, en vez de devolverlo. Ésta es la
+ * razón de ser de la función: el `.slice(2)` escrito a mano en un test devuelve callando un
+ * número que la normalización convierte en `""`, y ahí es donde nace el falso verde. El suelo
+ * vive AQUÍ, en el sitio único, y no copiado en cada test — que es como se propagan estas cosas.
+ */
+export function tramoNacionalDePrueba(n) {
+  if (n < PRIMER_INDICE_NACIONAL_ESTABLE) {
+    throw new Error(
+      `tramoNacionalDePrueba: el índice ${n} produce el tramo `
+      + `«${telefonoDePrueba(n).slice(2)}», que empieza por «00» y una `
+      + 'normalización E.164 lo convierte en la CADENA VACÍA — dos vacíos comparan iguales y el '
+      + `test pasa sin medir nada. Usa un índice >= ${PRIMER_INDICE_NACIONAL_ESTABLE} `
+      + '(p. ej. `tramoNacionalDePrueba(12345678)`). El número COMPLETO sí es válido con '
+      + 'cualquier índice: para eso está `telefonoDePrueba(n)`.',
+    );
+  }
+  return telefonoDePrueba(n).slice(2);
+}
+
 /**
  * ¿Es un teléfono del rango imposible? Tolera el `+` y los separadores, porque los datos de
  * prueba se escriben a veces con formato sucio a propósito.

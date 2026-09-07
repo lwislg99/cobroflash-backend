@@ -125,6 +125,40 @@
     left.appendChild(subtitle);
     header.appendChild(left);
 
+    // ── SCRUM-606 (ALB-01) · «NUEVO ALBARÁN», Y EMPIEZA POR EL PRESUPUESTO ──────────────────
+    //
+    // Va en la CABECERA y no en la toolbar de filtros, que es donde lo ponen sus tres hermanas
+    // (`invoicesView`, `quotesListView`, `customersView`): la acción primaria de una lista no es un
+    // filtro. Y se monta AQUÍ ARRIBA, antes de `cargar()`, a propósito — así sigue estando cuando
+    // la lectura del listado falla. Un fallo al LEER los albaranes que existen no puede impedir
+    // crear el que falta; ese camino termina en `pintarError`, que solo vacía el cuerpo.
+    //
+    // 🔴 EL BOTÓN NO CREA NADA. Abre el buscador de presupuesto, y el alta sigue viviendo en su
+    // único sitio (`openAlbCrearSheet`, SCRUM-303). El porqué entero, en
+    // `albaranDesdePresupuestoModal.js`.
+    const nuevoBtn = document.createElement('button');
+    nuevoBtn.type = 'button';
+    nuevoBtn.className = 'btn btn-primary';
+    nuevoBtn.addEventListener('click', () => {
+      if (typeof window.abrirModalAlbaranDesdePresupuesto !== 'function') return;
+      window.abrirModalAlbaranDesdePresupuesto((elegido) => {
+        // Se ATERRIZA en el Trabajo del presupuesto y se le pide que abra el alta ya prellenada.
+        // `altaAlbaran` viaja como ARGUMENTO de un solo uso y NO entra en `appState`: es el patrón
+        // que SCRUM-140 dejó escrito para la plantilla de presupuesto, y por el mismo motivo —un
+        // estado residual reabriría la hoja sola en la siguiente visita al Trabajo.
+        if (window.renderAppView) {
+          window.renderAppView('jobs-detail', { jobId: elegido.jobId, altaAlbaran: { quoteId: elegido.quoteId } });
+        }
+      });
+    });
+    if (window.atajoNuevo) {
+      // Rótulo + tecla «N» desde la fuente única. El rótulo nace CON MARCADOR (regla 30) y por eso
+      // se ve el marcador en el botón: es deliberado (SCRUM-402/667).
+      window.atajoNuevo.etiquetar(nuevoBtn, 'albaranes');
+      window.atajoNuevo.registrar('albaranes', () => nuevoBtn.click());
+    }
+    header.appendChild(nuevoBtn);
+
     // Cuerpo: se rellena cuando llegan los datos. Antes de eso NO existe ninguna pestaña ni
     // ningún contador — es lo que impide que un fallo se lea como un cero.
     const body = document.createElement('div');

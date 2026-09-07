@@ -27,6 +27,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
+import { fileURLToPath } from 'node:url'; // SCRUM-730: decodifica el `%20`; `pathname` no.
 
 import { evaluar } from '../.claude/hooks/guard-dangerous.mjs';
 
@@ -114,7 +115,17 @@ test('SCRUM-176b · 🔴 CONTROL NEGATIVO: lo peligroso SIGUE bloqueado, uno a u
 // La lista de exentas es la superficie del agujero: si crece sin que nadie lo note, el guard se
 // vacía por goteo. Se fija aquí para que ampliarla obligue a tocar ESTE fichero y explicarlo.
 test('SCRUM-176b · 🔴 LAS EXENTAS SON EXACTAMENTE ÉSTAS: la lista no puede crecer sola', async () => {
-  const AQUI = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
+  // 🔴 SCRUM-730 · AQUÍ SE RESOLVÍA LA RUTA A MANO, y en una ruta con un espacio no existía.
+  //
+  // Era `new URL(import.meta.url).pathname` + un `replace` para quitarle la barra de delante.
+  // `pathname` devuelve la ruta PERCENT-CODIFICADA: en `C:\Users\Javier Pereira\…` el espacio
+  // llega como `%20`, se buscaba un directorio llamado `Javier%20Pereira` y el `readFileSync`
+  // reventaba con ENOENT. El fichero estaba donde tenía que estar.
+  //
+  // En CI no se veía —la ruta del runner no lleva espacios— así que el instrumento se comportaba
+  // distinto justo donde trabaja la gente: seis worktrees de esta máquina entregaban con `fail 1`.
+  // `fileURLToPath` DECODIFICA, y es lo que usa el resto de la casa. Lo vigila `scrum730`.
+  const AQUI = path.dirname(fileURLToPath(import.meta.url));
   const fuente = fs.readFileSync(path.join(AQUI, '..', '.claude', 'hooks', 'guard-dangerous.mjs'), 'utf8');
   const bloque = fuente.match(/FORCE_EXENTAS\s*=\s*new Set\(\[([\s\S]*?)\]\)/);
   assert.ok(bloque, '🔴 no encuentro la lista de exentas: si se ha renombrado, este control dejó de mirar.');

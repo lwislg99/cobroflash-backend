@@ -22,6 +22,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { analizar, NOMBRES_ADQUISICION } from './_espera-automatica.mjs';
+import { leerSiSigueAhi, exigirCorpusLeido } from './_barrido-estable.mjs'; // SCRUM-740
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
@@ -43,7 +44,13 @@ function ficheros(dir, out = []) {
 }
 
 const CENSO = ARBOLES.flatMap((d) => ficheros(path.join(RAIZ, d)));
-const ANALISIS = CENSO.map((p) => ({ ruta: rel(p), ...analizar(fs.readFileSync(p, 'utf8'), rel(p)) }));
+// SCRUM-740: otro test del mismo `npm test` puede borrar un fichero entre el `readdir` que lo
+// listó y esta lectura. Se tolera SÓLO su desaparición; el suelo de abajo mira lo LEÍDO, no lo
+// listado, para que tolerarla no se convierta en analizar un censo vacío.
+const ANALISIS = CENSO
+  .map((p) => ({ ruta: rel(p), fuente: leerSiSigueAhi(p) }))
+  .filter((x) => x.fuente !== null)
+  .map((x) => ({ ruta: x.ruta, ...analizar(x.fuente, x.ruta) }));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1 · EL SUELO. Sin esto, «no hay bucle esperador» y «no supe mirar» son el mismo
@@ -53,6 +60,9 @@ test('SCRUM-268 · SUELO: el censo se recorrió de verdad', () => {
   assert.ok(CENSO.length >= 100,
     `🔴 solo ${CENSO.length} ficheros en el censo: el recorrido del árbol está roto y este guard ` +
     'no está mirando el repo. Un censo vacío da verde por no ver, no por estar limpio.');
+  // SCRUM-740: y lo que de verdad se LEYÓ, que es otro número. El de arriba mira `readdir`, así
+  // que sobreviviría a que todas las lecturas fallaran.
+  exigirCorpusLeido(ANALISIS.length, 100, 'SCRUM-268 · censo de esperas automáticas');
 });
 
 test('SCRUM-268 · SUELO: el detector VE los bucles que hay en el repo', () => {

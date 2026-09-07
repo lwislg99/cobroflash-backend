@@ -38,9 +38,18 @@
 // **inerte sobre los datos reales**. Se dice porque es la diferencia entre un cambio arriesgado y
 // uno que no puede alterar nada todavía.
 //
-// ⏳ PENDIENTE DE CONT-18 (SCRUM-589): ese ticket añade el control de «mostrar nombre comercial
-// en facturas». Cuando llegue, **su sitio es este fichero**: pasará a recibir la preferencia del
-// merchant y a decidir con ella. Aquí no se construye —no es su ticket— pero el hueco queda hecho.
+// ✅ CONT-18 (SCRUM-589) YA LLEGÓ, y entró por donde este comentario decía: **este fichero**.
+// Sólo cambió una cosa respecto a lo previsto — la elección resultó ser POR DOCUMENTO y no por
+// merchant (decisión del asesor, 6-sep-2026):
+//
+//   · por merchant habría necesitado una COLUMNA nueva, y hay cola de ALTERs sin aplicar;
+//   · la víctima escrita («el profesional no puede evitarlo») se resuelve igual eligiéndolo en
+//     cada documento;
+//   · y el precedente más parecido del árbol, `Albaran.ocultarPreciosEnDocumento`, también vive
+//     POR DOCUMENTO.
+//
+// Así que la preferencia viaja dentro de `Quote.docFields`, que ya era `Json`: cero migración.
+// La preferencia POR MERCHANT —la capa de encima— es otro ticket, con su diff ya medido.
 
 /** Lo mínimo que hace falta para decidir. Sirve tanto un `Customer` como un `Provider`. */
 export interface ConNombres {
@@ -49,22 +58,48 @@ export interface ConNombres {
 }
 
 /**
+ * SCRUM-589 (CONT-18) · LA ELECCIÓN, que este fichero llevaba escrito que iba a recibir.
+ *
+ * `usarRazonSocial` es **opcional y su ausencia significa `true`**, y eso no es pereza: es lo que
+ * hace que los documentos YA GUARDADOS —que no traen el campo— y las cuatro rutas que no
+ * preguntan nada (libro, albarán, bandeja de pendientes, factura) sigan imprimiendo EXACTAMENTE
+ * lo de siempre. Un `boolean` con `!== false` es el mismo idioma que ya habla `docFields` en el
+ * PDF (`!params.docFields || params.docFields[k] !== false`): se deriva, no se inventa otro.
+ */
+export interface OpcionesDeNombre {
+  /** `false` = el profesional pidió el NOMBRE COMERCIAL en este documento. Ausente = como hoy. */
+  usarRazonSocial?: boolean | null;
+}
+
+/**
  * El nombre del cliente que va impreso en un documento.
  *
- * Prefiere la **denominación legal** y cae al nombre con el que se le conoce. Es el criterio que
- * ya seguían las cinco copias, sin cambiarlo.
+ * Por defecto prefiere la **denominación legal** y cae al nombre con el que se le conoce — el
+ * criterio que ya seguían las cinco copias. Desde SCRUM-589 el documento puede pedir lo
+ * contrario, y entonces se invierte la PREFERENCIA, no el respaldo.
+ *
+ * 🔴 LOS DOS SENTIDOS CAEN AL OTRO NOMBRE, y es lo que sostiene dos de los controles del ticket:
+ * un cliente sin razón social sale con su nombre comercial elija lo que elija, y uno sin nombre
+ * sale con su razón social elija lo que elija. La elección decide QUIÉN VA PRIMERO, nunca deja
+ * al documento sin nombre teniendo uno a mano.
  *
  * @param respaldo qué devolver cuando no hay ninguno de los dos. Cada documento tenía el suyo
  *   —`'—'` en el PDF, `null` en el libro y en el albarán— y **se respeta**: unificarlo sería
  *   cambiar lo que se imprime, que es justo lo que este módulo NO viene a hacer.
+ * @param opciones la elección del DOCUMENTO. Omitirlo = el comportamiento de siempre.
  */
 export function nombreParaDocumento<T extends string | null>(
   cliente: ConNombres | null | undefined,
   respaldo: T,
+  opciones?: OpcionesDeNombre | null,
 ): string | T {
   const legal = (cliente?.legalName ?? '').trim();
-  if (legal) return legal;
   const comun = (cliente?.name ?? '').trim();
-  if (comun) return comun;
+  // Ausente, `null` o `true` → la razón social manda, como siempre. Sólo un `false` explícito
+  // invierte el orden: cualquier otra cosa cae del lado de lo que la pantalla lleva años haciendo.
+  const primero = opciones?.usarRazonSocial === false ? comun : legal;
+  const segundo = opciones?.usarRazonSocial === false ? legal : comun;
+  if (primero) return primero;
+  if (segundo) return segundo;
   return respaldo;
 }

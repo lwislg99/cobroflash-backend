@@ -156,6 +156,18 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // hay partes, de qué clientes y con qué fechas: exactamente lo que la puerta principal le niega,
   // servido por la puerta de atrás. Cerrar de más es un incordio; abrir de más no se deshace.
   { method: 'GET',   path: '/admin/albaranes/pendientes-facturar', why: 'SCRUM-69: bandeja de facturación, mismo criterio S1 que GET /admin/invoices ("facturas: ver sí")' },
+  // SCRUM-606 (ALB-01) · el buscador de presupuesto de «Nuevo albarán». Va aquí y no en admin-only
+  // por COHERENCIA con el alta que abre: `POST /admin/jobs/:id/albaranes` está tres líneas más
+  // arriba en esta misma lista, y con este motivo —«crear el parte de trabajo EN LA OBRA»—. Un
+  // técnico que puede crear el albarán desde el Trabajo y no desde la pestaña Albaranes tendría
+  // el mismo permiso por un camino y no por el otro, que es como se fabrica un 403 incomprensible.
+  //
+  // Y NO ABRE SUPERFICIE NUEVA: el contenido son presupuestos de `listQuotesAdmin`, la misma
+  // función de `GET /admin/quotes` —declarada aquí arriba con «S1: quotes crear-ver ✅»—, así que
+  // no enseña ni un presupuesto que el llamante no pudiera pedir por su cuenta. Lo que SÍ acota
+  // por rol es a qué Trabajo puede aterrizar: `seesOnlyOwnJobs` marca como NO elegibles los
+  // Trabajos que no son suyos (SCRUM-467), con su motivo y sin darle el `jobId`.
+  { method: 'GET',   path: '/admin/albaranes/presupuestos', why: 'SCRUM-606: elegir de qué presupuesto nace el albarán que va a rellenar en la obra; mismo criterio que POST /admin/jobs/:id/albaranes' },
   { method: 'GET',   path: '/admin/albaranes/consolidables', why: 'SCRUM-70: vista previa de la recapitulativa (cliente+mes). MISMO criterio que la bandeja de SCRUM-69 — es la misma información, agrupada: solo lectura y ningún dato que el técnico no vea ya ahí. NO emite.' },
 
   // Productos — S1: "productos crear-ver" ✅. El tarifario en bloque (export/import/

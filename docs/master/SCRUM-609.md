@@ -9,6 +9,66 @@ intacto. Esto mide y propone, que es lo que pedía el encargo.
 
 ---
 
+## ✍️ P-DOC-8 · FIRMADA — 5-sep-2026 · el fundador
+
+> **EL IVA GUARDADO EN EL PRODUCTO NO SE USA COMO VALOR POR DEFECTO DE LA LÍNEA.**
+> **Se conserva sin usar, y con FECHA DE CADUCIDAD.**
+
+Es la **salida ③** de las tres que se propusieron abajo, y se elige por ser **la única reversible**.
+Firmada el **5-sep-2026**, con la medición del 1-sep delante y sin re-medir la tabla.
+
+**El motivo, que es el que salió de la medición y no de una preferencia:**
+
+`POST /admin/products/load-catalog` escribe **0,21 por defecto del SISTEMA**, no por decisión de
+nadie — es `getLocale(country).defaultVat` en el onboarding por gremio. Usar ese valor como defecto
+de la línea **ascendería un default accidental a decisión**, y encima **por delante** del IVA que el
+profesional puso en su propio documento. Y no hace falta: **ya existe un defecto de IVA al nivel
+correcto**, el `vatDefault` del presupuesto. La salida ② no crearía un sitio para ese defecto:
+crearía un **segundo** sitio, y con él la pregunta de cuál manda.
+
+**Qué significa en la práctica, para que nadie lo lea de más:**
+
+| | qué pasa |
+|---|---|
+| la columna `products.vat` | **se queda**. No se borra, no se migra, no se rellena |
+| las 3 filas del merchant 22 con `vat = 0.1000` | **siguen visibles** en la tabla del catálogo. Huérfanas y a la vista, que era el criterio |
+| quién lee `vat` para decidir el IVA de una línea | **nadie nuevo.** El formulario ya dejó de escribirlo (apéndice 1); lo que ya lo leía sigue como estaba |
+| un producto sin `vat` | cae al `vatDefault` del documento, **exactamente como hoy** |
+| rellenar los vacíos con 21 % | 🛑 **sigue prohibido.** Un vacío no es un 21 % |
+
+### 🗓️ La caducidad, que es la condición de la firma
+
+Una columna que nadie lee ni mantiene se pudre, y dentro de seis meses nadie sabrá si ese 0,21
+significa algo. Por eso la firma **no es indefinida**:
+
+> **FECHA LÍMITE: 5-mar-2027.** Si en esa fecha **nadie ha usado `products.vat`** para nada,
+> **la columna se retira.**
+
+**De dónde sale la fecha, para que moverla sea una línea y no una discusión:** son **seis meses
+justos desde la firma**, el plazo en el que DOC-16 (SCRUM-623/624) o bien ha dicho qué quiere hacer
+con un IVA por artículo, o bien ha demostrado con su silencio que no lo necesita. No es una fecha
+sagrada: es un tope para que la decisión no se convierta en olvido. **Quien la mueva, que escriba
+por qué.**
+
+**Y un disparador que puede adelantarla, porque ya existe y es evaluable — no prosa:** el argumento
+entero de arriba («ese 0,21 lo escribió el sistema, y hoy no hay merchants reales») descansa en el
+mismo supuesto que el backfill de SCRUM-205, y ese supuesto **tiene puerta**:
+**`npm run puerta:cliente-real`** (SCRUM-390, `src/modules/system/domain/puertaClienteReal.ts`).
+**El día que esa puerta se abra, esta decisión hay que releerla antes del 5-mar-2027**: con clientes
+reales dentro, un `vat` puesto a mano por un profesional deja de ser un dato de prueba.
+
+### 🕳️ Lo que esta firma NO decide, dicho para que no se dé por decidido
+
+1. **No decide qué hace DOC-16** con el IVA por artículo. La columna se queda quieta *esperando* esa
+   decisión; si DOC-16 la quiere, la encontrará ahí.
+2. **No autoriza tocar `products.vat`** en ninguna dirección: ni borrarla, ni rellenarla, ni
+   migrarla. «Conservar sin usar» es literal.
+3. **No hay número de producción.** Cuántos merchants pusieron un IVA a mano en producción sigue
+   sin medirse — desde un árbol de trabajo no se puede (regla 3). La firma se toma **sabiendo que
+   ese dato falta**, y eso es parte de la firma, no un descuido de ella.
+
+---
+
 ## 🔴 LO PRIMERO, PORQUE CAMBIA CÓMO SE LEE TODO LO DEMÁS
 
 **La tabla que el ticket describe está en PRODUCCIÓN, y desde un árbol de trabajo no se puede
@@ -125,6 +185,11 @@ un defecto de IVA **ya está construido**, y no es el producto.
   el comportamiento de hoy. **No hay que inventar nada para ellos.**
 
 ### ③ Se CONSERVA sin usarse, y se decide con DOC-16
+
+> ✍️ **ÉSTA ES LA FIRMADA** (5-sep-2026). La decisión, su motivo y su fecha de caducidad
+> (**5-mar-2027**) están arriba del todo, en «P-DOC-8 · FIRMADA». Lo de abajo es la propuesta
+> tal y como se escribió el 1-sep, y se deja intacta como historia fechada.
+
 - El switch entra, el IVA sale del formulario (que es lo que CAT-01 pide), y la columna se queda
   quieta hasta que 623/624 se desbloqueen y DOC-16 diga qué quiere.
 - **A favor:** no destruye ni asciende nada. Es la única reversible.

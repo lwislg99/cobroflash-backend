@@ -299,10 +299,16 @@ router.get('/:token', async (req, res) => {
                 }).join('')}
               </div>
             </div>` : '';
-        const pdfUrl = q.pdfUrl && q.pdfUrl !== 'PENDING_PDF'
-          ? (q.pdfUrl.startsWith('http') ? q.pdfUrl : BASE_URL + q.pdfUrl)
-          : null;
-        const btnPdf    = pdfUrl ? `<a class="pf-btn pf-btn-pdf" href="${esc(pdfUrl)}" target="_blank">📄 Ver PDF</a>` : '';
+        // SCRUM-806 · el botón NO sale de `q.pdfUrl`. Esa columna la escribe la ruta de ADMIN
+        // con su propia URL (`/admin/quotes/<id>/pdf`), así que el cliente pulsaba y recibía
+        // `401 {"error":"not_authenticated"}` — medido, en la pantalla donde decide si firma.
+        //
+        // Se usa el `decisionToken` que YA tiene la fila y que este portal ya reparte en «Ver y
+        // responder» (SCRUM-95: token opaco, nunca el id). No se acuña ninguno nuevo: si no lo
+        // tiene —un borrador que nunca se envió— el botón NO se pinta, que es preferible a
+        // pintarlo hacia un sitio donde el cliente no puede entrar.
+        const pdfToken  = quoteTokens.get(q.id) ?? q.decisionToken;
+        const btnPdf    = pdfToken ? `<a class="pf-btn pf-btn-pdf" href="/pay/quote/${pdfToken}/pdf" target="_blank">📄 Ver PDF</a>` : '';
         const btnAccept = q.status === 'sent' ? `<a class="pf-btn pf-btn-pay" href="/pay/quote/${quoteTokens.get(q.id)}/accept">✅ Ver y responder</a>` : '';
         const hasActions = btnAccept || btnPdf;
         return `

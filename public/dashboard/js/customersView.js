@@ -30,6 +30,40 @@ function createField(labelText, name, type = "text", required = false, isTextare
   return { wrapper, input };
 }
 
+/**
+ * ═══ SCRUM-783 (CONT-09) · LA SELECCIÓN SOBREVIVE A LA NAVEGACIÓN, NO A RECARGAR ═══════════
+ *
+ * LA VÍCTIMA: el profesional marca doce clientes, entra en la ficha de uno para comprobar algo
+ * antes de actuar sobre los doce, y vuelve. Hasta hoy había perdido los doce, sin aviso.
+ * **Comprobar antes de actuar es lo que hace alguien prudente, y el mecanismo castigaba la
+ * prudencia.** Decisión del asesor (6-sep-2026).
+ *
+ * 🔴 POR QUÉ ESTA VARIABLE VIVE AQUÍ Y NO DENTRO DE `renderCustomersView`, QUE ES DONDE ESTABA.
+ *
+ * `openCustomer360` hace `renderAppView('customer-360')`: **NAVEGA, no abre un modal**. Al volver,
+ * `renderCustomersView` se ejecuta OTRA VEZ y todo lo que viva en su cierre nace de cero. Medido
+ * antes de tocar nada: se marcaban tres, se pulsaba una fila, se volvía, y quedaban **cero**.
+ *
+ * En el ámbito del SCRIPT la variable sobrevive al remontaje —el fichero se evalúa UNA vez por
+ * carga de página— y muere al recargar, que es exactamente la línea que el asesor pidió:
+ *
+ *     navegar y volver  → la selección SIGUE      (el trabajo del profesional no se tira)
+ *     recargar la página → la selección SE VA     (recargar es empezar de cero, y así se espera)
+ *
+ * ⛔ NO VA EN EL DOM, y no es preferencia: dejar estado colgado del DOM es lo que mató la tecla
+ * «N» en toda la aplicación (SCRUM-777), y ese arreglo acaba de entrar. Un `data-` en un nodo
+ * sobrevive a lo que no debe y desaparece cuando no toca.
+ * ⛔ NO VA EN UNA COLUMNA: no hace falta persistencia de verdad. Si algún día se pidiera que
+ * sobreviviera a recargar, eso YA es otra decisión y otro ticket — y llevaría diff de esquema.
+ * ⛔ NO VA EN `sessionStorage` por lo mismo: sobreviviría a la recarga, que es justo lo que el
+ * asesor decidió que NO debe pasar.
+ *
+ * ⚠️ SIGUE SIENDO UN SUBCONJUNTO DE LO VISIBLE, y eso no lo cambia este ticket: `pintar()` llama a
+ * `FC.limitarAVisibles` en CADA pintado, incluido el primero de cada montaje. Por eso el contador
+ * no puede mentir —nunca hay marcados fuera de pantalla— y por eso filtrar sigue recortando.
+ */
+let seleccion = [];
+
 function renderCustomersView(container) {
   container.innerHTML = "";
 
@@ -302,9 +336,11 @@ function renderCustomersView(container) {
   // dinero por una pantalla de clientes.
   // ═══════════════════════════════════════════════════════════════════════════════════════
 
-  /** Las ids marcadas. Siempre cadenas, y siempre un subconjunto de lo VISIBLE. */
-  let seleccion = [];
-  /** Lo que la tabla está enseñando ahora mismo: lo que ya pasó por los cuatro filtros. */
+  /**
+   * Lo que la tabla está enseñando ahora mismo: lo que ya pasó por los cuatro filtros.
+   *
+   * Éste SÍ es del montaje: es la página que hay delante, no una preferencia del profesional.
+   */
   let visibles = [];
 
   /**
@@ -318,6 +354,18 @@ function renderCustomersView(container) {
     // AB6 · objetivo táctil. El `input` de fábrica mide 13px: se agranda aquí porque en el móvil
     // esta casilla es lo primero que toca el pulgar.
     cb.style.cssText = "width:18px;height:18px;cursor:pointer;accent-color:var(--brand,#16a34a)";
+    // 🔴 SCRUM-782 · Y LOS 18px DE CAJA NO SON 18px DE DEDO. Medido con `elementsFromPoint` (el
+    // árbitro de `_medidor-de-toque.mjs`, no la caja CSS): las TRES casillas —fila, cabecera y
+    // barra— daban un área de toque de **19 px** contra los 44 de AB6, a 929 y a 390. La caja de
+    // la CELDA sí llegaba a 44 en escritorio, y por eso una medición por caja las daba por buenas:
+    // pero la celda no es pulsable, sólo lo es el `input`.
+    //
+    // El área se agranda con un PSEUDO-ELEMENTO —la clase la lee `styles.css`—, que es la técnica
+    // que la landing ya usa en `.announce a::after`. Se eligió MIDIENDO los cuatro candidatos: con
+    // `border`, `padding` y `outline` transparentes el área se queda en 19 px (el `input` nativo
+    // no los cuenta para el hit-test), y con un `<label>` de 44px envolviéndolo el área pasa a
+    // pertenecer AL LABEL, no a la casilla. Sólo el pseudo sube a 45 px dejando la casilla en 18.
+    cb.className = "casilla-seleccion";
     return cb;
   }
 
@@ -335,8 +383,13 @@ function renderCustomersView(container) {
   //
   // Lleva la MISMA casilla —tres estados incluidos— para no inventar un segundo control ni un
   // texto nuevo: marcarla selecciona lo visible, desmarcarla lo suelta.
-  const barraSeleccion = createElement("div");
-  barraSeleccion.style.cssText = "display:none;align-items:center;gap:10px;padding:10px 14px;"
+  // 🔴 SCRUM-792 · EL `display` SALE DE AQUÍ Y SE VA AL CSS, y no es cosmética: la decisión de si
+  // esta barra se ve con CERO seleccionados depende del ANCHO, y un ancho sólo se puede preguntar
+  // desde una `@media`. Un `style.display` en línea gana a cualquier regla, así que mientras
+  // viviera aquí la barra no podía comportarse distinto en móvil. Lo demás sigue en línea: sólo se
+  // muda lo que la media query necesita decidir.
+  const barraSeleccion = createElement("div", "barra-seleccion");
+  barraSeleccion.style.cssText = "align-items:center;gap:10px;padding:10px 14px;"
     + "border-top:1px solid var(--border);background:var(--neutral-50,#f8faf9)";
   const casillaTodosBarra = casillaConNombre(FC.TEXTOS_SELECCION.todos);
   const contadorSeleccion = document.createElement("span");
@@ -344,7 +397,23 @@ function renderCustomersView(container) {
   barraSeleccion.appendChild(casillaTodosBarra);
   barraSeleccion.appendChild(contadorSeleccion);
 
-  outerCard.appendChild(table);
+  // 🔴 SCRUM-699 · AQUÍ HABÍA UN `outerCard.appendChild(table)`, Y SACABA LA TABLA DE SU CARRIL.
+  //
+  // La tabla ya entró en el `.table-scroll` en la l. 266. Insertar MUEVE —un nodo está en un
+  // sitio, no en dos—, así que esta línea la devolvía al `.data-card` y dejaba el envoltorio de
+  // scroll VACÍO. Y no es reciente: el envoltorio nació ya inerte en `bc4cf146` («fix(UI): layout
+  // desktop + scroll móvil en todas las vistas»), que añadió las dos líneas de arriba y se dejó
+  // ésta, que venía del primer commit del fichero.
+  //
+  // LO QUE COSTABA, MEDIDO EN NAVEGADOR (Edge, 9 columnas, 7 clientes ordinarios): la página NO
+  // desbordaba nunca —`html, body { overflow-x: clip }` (styles.css:359) lo impide—, pero
+  // `.data-card { overflow: hidden }` (styles.css:1819) RECORTABA la tabla, y sin envoltorio no
+  // quedaba ningún carril por el que llegar a lo recortado. A partir de 1196 px de ventana se
+  // perdía «📊 Historial»; a 1024 px y por debajo, los TRES botones de la fila —Editar, Portal e
+  // Historial— eran inalcanzables con el ratón. Por debajo de 768 px no se notaba porque ahí la
+  // propia `.table` es `display:block; overflow-x:auto` (styles.css:1762).
+  //
+  // No se añade nada en su lugar: el sitio correcto ya estaba escrito en la l. 266.
   outerCard.appendChild(barraSeleccion);
 
   /** Pone las DOS casillas y el contador a lo que dice el estado. Un solo sitio que pinta. */
@@ -356,8 +425,22 @@ function renderCustomersView(container) {
       // profesional no puede saber si «todos» está puesto o no.
       cb.indeterminate = estado === FC.CABECERA_PARCIAL;
     }
-    contadorSeleccion.textContent = FC.textoDelContador(seleccion.length);
-    barraSeleccion.style.display = seleccion.length > 0 ? "flex" : "none";
+    // 🔴 SCRUM-792 · CON CERO, LA BARRA DICE «Seleccionar todos» EN VEZ DEL CONTADOR.
+    //
+    // No es un literal nuevo: es `FC.TEXTOS_SELECCION.todos`, el MISMO texto ya aprobado que esta
+    // casilla lleva hoy como `aria-label`. Hacer visible un texto que ya estaba en el control, y
+    // ya aprobado, es derivación — no invención (regla 30).
+    //
+    // «0 clientes seleccionados» sería una frase que hoy no ve nadie: con cero, la barra no se
+    // abre en escritorio, y en móvil no se abría en absoluto. Y en el móvil ese hueco es lo que
+    // el profesional necesita PULSAR, no un recuento de nada.
+    contadorSeleccion.textContent = seleccion.length > 0
+      ? FC.textoDelContador(seleccion.length)
+      : FC.TEXTOS_SELECCION.todos;
+    // 🔴 UNA CLASE, NO UN `data-`, Y NO ES UN ALMACÉN. La verdad sigue siendo `seleccion`; esto es
+    // su REFLEJO, se reescribe en cada refresco y NO SE LEE NUNCA (hay un test que lo exige). El
+    // `display` real lo decide `styles.css`, que es el único sitio que sabe de anchos.
+    barraSeleccion.classList.toggle("barra-seleccion--vacia", seleccion.length === 0);
   }
 
   function alternarTodos() {
@@ -647,6 +730,44 @@ function renderCustomersView(container) {
   let avisar = function () {};
   let trasGuardar = async function () {};
 
+  // SCRUM-756 · la caja propia del formulario, y QUIÉN lo abrió esta vez.
+  //
+  // `avisarEnLaVista` NO es una preferencia: es la diferencia entre pintar donde el usuario está
+  // mirando y pintar en una pantalla que no está delante. La vista de Clientes presta su caja y
+  // la usa cuando abre ELLA; el alta desde un documento usa la del modal. Sin esta bandera, y
+  // con `avisar` siendo un solo valor global, en cuanto alguien visitaba Clientes los avisos del
+  // alta abierta desde el DOCUMENTO se pintaban en la caja de CLIENTES — el arreglo que parece
+  // bueno porque el mensaje existe, sólo que nadie lo ve. Medido en SCRUM-591.
+  let modalAlertBox = null;
+  let avisarEnLaVista = false;
+
+  /**
+   * El aviso del formulario: a la caja de quien lo abrió, y SIEMPRE a alguna.
+   *
+   * Ésta es la función que usa el envío; `avisar` a secas ya no se llama desde ahí. Que el
+   * formulario no dependa de haber sido «configurado» para poder hablar es todo el ticket.
+   */
+  function avisarDelFormulario(tipo, msg) {
+    if (avisarEnLaVista) return avisar(tipo, msg);
+    if (!modalAlertBox) return;
+    modalAlertBox.textContent = msg || "";
+    modalAlertBox.className = "alert";
+    if (tipo === "success") modalAlertBox.classList.add("success");
+    if (tipo === "error") modalAlertBox.classList.add("error");
+    modalAlertBox.style.display = (tipo || msg) ? "block" : "none";
+
+    // 🔴 Y SE TRAE A LA VISTA. `.modal` lleva `max-height: calc(100vh - 40px)` con
+    // `overflow-y: auto`, y este formulario tiene veinte campos: quien pulsa «Guardar» está
+    // ABAJO, junto al botón, y un aviso pintado arriba del cuerpo le queda fuera de la pantalla.
+    // Sería el mismo defecto de este ticket en su versión sutil — el mensaje existe y no se ve.
+    //
+    // Sin `behavior: 'smooth'` a propósito: un aviso de error no se anuncia con una animación, y
+    // así no hay motion que reconciliar con `prefers-reduced-motion` (AB6).
+    if (msg) {
+      try { modalAlertBox.scrollIntoView({ block: "nearest" }); } catch (_e) { /* el banco no lo trae */ }
+    }
+  }
+
   // De un solo uso: quien abre desde un documento espera el cliente creado.
   let alGuardarUnaVez = null;
 
@@ -660,6 +781,32 @@ function renderCustomersView(container) {
   let fieldName, fieldPhone, fieldEmail, fieldNotes;
   let fieldTags; // SCRUM-580 (CONT-07)
   let fieldInternalRef; // SCRUM-588 (CONT-16)
+  let fieldDtoPorDefecto; // SCRUM-587 (CONT-14)
+
+  // ── SCRUM-587 (CONT-14) · EL RÓTULO DEL DESCUENTO PACTADO ────────────────────────────────
+  // ✅ MICROCOPY APROBADA por el ASESOR el 4-sep-2026, PROVISIONAL a la espera del fundador.
+  //
+  // «pactado» y no «por defecto» porque es la palabra del dominio: es un acuerdo con ESE cliente,
+  // no una preferencia de la aplicación. Y el `(%)` va DENTRO del rótulo porque sin él el
+  // profesional no sabe si escribe `10` o `0,10`.
+  //
+  // Firmado CON LA CAJA MEDIDA delante (Playwright, 4-sep-2026): 21 caracteres en los 342 px de
+  // 390 —donde caben 29 caracteres anchos en una línea— y en los 462,6 px de 929 sin discusión.
+  //
+  // 🔴 EL REGISTRO VA EN `docs/master/SCRUM-587.md` Y **NO** EN `docs/microcopy/`: ese directorio
+  // es el registro del FUNDADOR y `constaAprobado()` lo barre (SCRUM-726), así que una firma del
+  // asesor metida ahí se leería como la suya. Hay un test que lo impide.
+  const DTO_POR_DEFECTO_ROTULO = "Descuento pactado (%)";
+  // 🔴 Y EL CONTADOR, que es lo que distingue «sin marcador» de «firmado por el fundador». Es UNA
+  // ranura y el número tiene que decirlo: si mañana entra un segundo texto sin firma y esto se
+  // queda en 1, el hueco deja de estar declarado y el texto entra en pantalla en silencio.
+  //
+  // ⚠️ NO SE SUMA AL `SIN_APROBAR` DE `filtroClientes.js` (hoy 7), y es deliberado: aquél cuenta
+  // los textos que viven EN ESE módulo —el filtro y la selección de la lista—, y meter aquí un
+  // rótulo del FORMULARIO haría que el mismo número significara dos cosas. El contador vive donde
+  // vive el texto, que es la regla que ya seguían `atajoNuevo`, `filtroClientes` y
+  // `quoteDireccionObra`.
+  const DTO_POR_DEFECTO_SIN_APROBAR = 1;
   // ═════════════════════════════════════════════════════════════════════════════════════
   // SCRUM-575 (2-sep-2026) · LA CONSTANTE COMPARTIDA SE PARTE EN DOS, Y ERA LO QUE FALTABA.
   //
@@ -825,9 +972,32 @@ function renderCustomersView(container) {
 
     modal.appendChild(header);
 
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-756 · LA CAJA DE AVISOS DEL FORMULARIO, QUE ES SUYA.
+    //
+    // 🔴 Un formulario que puede RECHAZAR tiene que poder DECIRLO por sí mismo: la protección
+    // vive donde está la acción, no un nivel más allá (fundador, 5-sep-2026).
+    //
+    // Hasta hoy el único sitio donde el rechazo se pintaba era la caja de la pantalla de
+    // Clientes, prestada en `configurar`. Quien abría el alta desde el selector de un documento
+    // SIN haber pasado nunca por Clientes se comía el no-op: pulsaba Guardar, el formulario
+    // rechazaba —bien— y no lo decía. Medido en SCRUM-591.
+    //
+    // Va DENTRO del modal y encima del formulario a propósito: es donde ya está mirando quien
+    // acaba de pulsar Guardar. Reutiliza las clases `alert` / `error` / `success` que la casa ya
+    // tiene, así que no estrena ni un token (DESIGN.md) ni un texto (regla 30).
+    // ═══════════════════════════════════════════════════════════════════════════════════
     modalForm = document.createElement("form");
 
     const body = createElement("div", "modal-body");
+
+    // 🔴 VA DENTRO DE `.modal-body`, Y LO DECIDIÓ EL CSS, no el gusto. Como hijo directo de
+    // `.modal` salía SIN padding lateral —`.modal` no tiene, lo ponen `.modal-header` (20px 24px)
+    // y `.modal-body` (16px 24px)— o sea pegada a los dos bordes. Aquí hereda el padding y el
+    // `gap: 14px` de la columna, así que se separa de los campos sola y no estrena ni una regla.
+    modalAlertBox = createElement("div", "alert");
+    modalAlertBox.style.display = "none";
+    body.appendChild(modalAlertBox);
     fieldName = createField("Nombre", "name", "text", true);
     // ── SCRUM-580 (CONT-07) · LAS ETIQUETAS ───────────────────────────────────────────────
     // ✅ MICROCOPY APROBADA por el ASESOR el 2-sep-2026, PROVISIONAL a la espera del fundador.
@@ -907,6 +1077,21 @@ function renderCustomersView(container) {
     // día que la ayuda tenga que llevar una REGLA, esto ya no valdrá.
     fieldInternalRef = createField("Referencia interna", "internalRef", "text");
     fieldInternalRef.input.placeholder = "Nº de expediente, finca, código…";
+
+    // 🔴 SCRUM-587 (CONT-14) · EL DESCUENTO PACTADO CON ESTE CLIENTE.
+    //
+    // El rótulo sale de `DTO_POR_DEFECTO_ROTULO`, arriba, con su firma y su contador. Sin marcador
+    // en pantalla — y que no se pinte NO significa que esté firmado por el FUNDADOR: eso lo dice
+    // `DTO_POR_DEFECTO_SIN_APROBAR`.
+    //
+    // `type="number"` con `step="0.01"`: los MISMOS dos decimales que `DECIMALES_PORCENTAJE` le
+    // exige al `dto` de la línea donde este valor va a aterrizar. Y `min/max` 0-100 porque un
+    // 150 % dejaría el precio NEGATIVO — el navegador lo dice antes de que el servidor tenga que.
+    // Sin `min-height`: el input mide 44,5 px medidos, así que ya cumple AB6.
+    fieldDtoPorDefecto = createField(DTO_POR_DEFECTO_ROTULO, "dtoPorDefecto", "number");
+    fieldDtoPorDefecto.input.min = "0";
+    fieldDtoPorDefecto.input.max = "100";
+    fieldDtoPorDefecto.input.step = "0.01";
 
     fieldNotes = createField("Notas", "notes", null, false, true);
 
@@ -1055,6 +1240,9 @@ function renderCustomersView(container) {
     // SCRUM-588 (CONT-16): la referencia interna va JUSTO ENCIMA de «Notas», que es donde el
     // profesional la metía hasta hoy por no tener sitio propio.
     body.appendChild(fieldInternalRef.wrapper);
+    // SCRUM-587: al lado de la referencia interna — los dos son datos del ACUERDO con ese
+    // cliente, no de su identidad, y el profesional los rellena en el mismo momento.
+    body.appendChild(fieldDtoPorDefecto.wrapper);
     body.appendChild(fieldNotes.wrapper);
 
     // J3: baja manual de WhatsApp (hasta WA-0b el "BAJA" entrante no se procesa solo)
@@ -1139,6 +1327,10 @@ function renderCustomersView(container) {
   function openModal(mode, customer) {
     if (!modalBackdrop) {
       buildModal();
+    } else if (!modalBackdrop.parentNode) {
+      // SCRUM-777 · al cerrarse se descolgó del `body`. Se vuelve a colgar el MISMO nodo: sus
+      // campos, su formulario y sus oyentes siguen cableados desde `buildModal`.
+      document.body.appendChild(modalBackdrop);
     }
 
     editingCustomer = mode === "edit" ? customer : null;
@@ -1150,6 +1342,13 @@ function renderCustomersView(container) {
     // SCRUM-578: el aviso se APAGA al abrir. Sin esto arrastraria el del cliente anterior y
     // acusaria de duplicado a uno que no lo es — el peor falso positivo posible.
     if (avisoDuplicado) avisoDuplicado.hidden = true;
+    // SCRUM-756: y la caja del formulario, por el MISMO motivo. Un «Error guardando cliente» del
+    // alta anterior recibiria al siguiente cliente como si acabara de fallar.
+    if (modalAlertBox) {
+      modalAlertBox.textContent = "";
+      modalAlertBox.className = "alert";
+      modalAlertBox.style.display = "none";
+    }
     if (avisoNif) avisoNif.hidden = true; // SCRUM-575: no arrastrar el aviso del cliente anterior
     if (fieldPrefijo) fieldPrefijo.value = prefijosPais.ESPANA.prefijo;
     // SCRUM-579: Espana por defecto EN EL FORMULARIO, nunca en la columna. La columna es
@@ -1172,6 +1371,9 @@ function renderCustomersView(container) {
       // SCRUM-588: si esto no estuviera, editar un cliente BORRARIA su referencia al guardar —
       // el campo saldria vacio y el payload mandaria null encima del dato bueno.
       fieldInternalRef.input.value = editingCustomer.internalRef || "";
+      // SCRUM-587 · `?? ""` y NO `|| ""`: con `||`, un 0 % PACTADO se pintaria como campo vacio
+      // y el profesional volveria a verlo sin declarar. `0` y `null` son distintos hasta aqui.
+      fieldDtoPorDefecto.input.value = editingCustomer.dtoPorDefecto ?? "";
       fieldLegalName.input.value = editingCustomer.legalName || ""; // A20.4
       fieldTaxId.input.value = editingCustomer.taxId || "";
       fieldWaOptOut.checked = !!editingCustomer.waOptOut;
@@ -1213,13 +1415,32 @@ function renderCustomersView(container) {
   function closeModal() {
     if (modalBackdrop) {
       modalBackdrop.style.display = "none";
+      // 🔴 SCRUM-777 · Y SE DESCUELGA DEL BODY, que es lo que faltaba.
+      //
+      // Esconderlo dejaba el nodo colgado del `body` para siempre, y eso tiene DOS víctimas
+      // medidas —ninguna avisa, ninguna da error—:
+      //   ① el atajo «N»: `sePuedeDisparar` miraba la PRESENCIA de un `.modal-overlay`, así que
+      //      abrir y cerrar una ficha mataba la tecla en TODAS las pantallas hasta recargar.
+      //   ② el botón flotante de ayuda: `styles.css:2552` dice
+      //      `body:has(.modal-overlay) #tut-help-btn { display:none !important }`, y `:has()` es
+      //      ESTRUCTURAL — mira si el nodo existe, no si se ve. Medido en Edge: con el residuo,
+      //      el «?» computa `display:none` y una caja de 0×0; al borrarlo, vuelve.
+      //
+      // La pieza se arregló también (mira VISIBILIDAD, no presencia), y eso cierra ①. Pero ② NO
+      // pasa por la pieza: es CSS. Por eso hacían falta las dos cosas, y está medido, no supuesto.
+      //
+      // ⚠️ SE DESCUELGA, NO SE DESTRUYE. `openModal` reutiliza este mismo nodo (`if
+      // (!modalBackdrop) buildModal()`), con sus campos y sus oyentes ya cableados; volver a
+      // construirlo en cada apertura sería otro ciclo de vida y no es lo que este ticket arregla.
+      // `remove()` sólo lo separa del árbol: al reengancharlo sigue siendo el mismo nodo.
+      if (typeof modalBackdrop.remove === "function") modalBackdrop.remove();
     }
     editingCustomer = null;
   }
 
   async function onModalSubmit(ev) {
     ev.preventDefault();
-    avisar(null, "");
+    avisarDelFormulario(null, "");
 
     let creado = null;
     const payload = {
@@ -1232,6 +1453,13 @@ function renderCustomersView(container) {
       // SCRUM-588: «ausente ≠ vacio». Lo vacio viaja como null, NUNCA como cadena vacia: una
       // cadena vacia diria «tiene referencia, y es nada», que no es lo mismo que no tenerla.
       internalRef: fieldInternalRef.input.value.trim() || null,
+      // 🔴 SCRUM-587 · «ausente ≠ 0», y aquí se decide. Vacío viaja como `null` («no hay descuento
+      // pactado»); un `0` tecleado viaja como `0` («se pactó un 0 %»), que es un dato legítimo y
+      // distinto. Un `|| null` los colapsaría en la última línea del ticket que existe para
+      // distinguirlos, y un `Number("")` daría `0` — que es la misma mentira por el otro lado.
+      dtoPorDefecto: fieldDtoPorDefecto.input.value.trim() === ""
+        ? null
+        : Number(fieldDtoPorDefecto.input.value),
       // SCRUM-574: forma jurídica. `null` = nadie la ha declarado, y viaja como null hasta la BD:
       // NO se cae a un lado por defecto, que sería declarar por el profesional.
       contactKind: switchForma.leer(),
@@ -1256,7 +1484,7 @@ function renderCustomersView(container) {
     };
 
     if (!payload.name) {
-      avisar("error", "El nombre es obligatorio.");
+      avisarDelFormulario("error", "El nombre es obligatorio.");
       fieldName.input.focus();
       return;
     }
@@ -1265,12 +1493,12 @@ function renderCustomersView(container) {
       modalSaveBtn.disabled = true;
       if (editingCustomer) {
         await updateCustomer(editingCustomer.id, payload);
-        avisar("success", "Cliente actualizado correctamente.");
+        avisarDelFormulario("success", "Cliente actualizado correctamente.");
       } else {
         // SCRUM-591 · se GUARDA lo que devuelve el servidor: el alta desde un documento
         // necesita el `id` para dejarlo seleccionado, y no se lo puede inventar.
         creado = await createCustomer(payload);
-        avisar("success", "Cliente creado correctamente.");
+        avisarDelFormulario("success", "Cliente creado correctamente.");
       }
       closeModal();
       await trasGuardar();
@@ -1279,7 +1507,7 @@ function renderCustomersView(container) {
       // SOLO USO: se limpia, para que el siguiente alta normal no dispare al anterior.
       if (creado && alGuardarUnaVez) { const cb = alGuardarUnaVez; alGuardarUnaVez = null; cb(creado); }
     } catch (err) {
-      avisar("error", "Error guardando cliente: " + err.message);
+      avisarDelFormulario("error", "Error guardando cliente: " + err.message);
     } finally {
       modalSaveBtn.disabled = false;
     }
@@ -1295,8 +1523,16 @@ function renderCustomersView(container) {
       if (opciones && opciones.trasGuardar) trasGuardar = opciones.trasGuardar;
     },
 
-    /** La entrada de siempre: los dos botones de la tabla de Clientes. */
-    abrir: openModal,
+    /**
+     * La entrada de siempre: los dos botones de la tabla de Clientes.
+     *
+     * SCRUM-756 · marca que avisa LA VISTA, porque su caja SÍ está delante. Lo que funcionaba
+     * sigue funcionando igual: el aviso se pinta donde el profesional lleva viéndolo siempre.
+     */
+    abrir: function (mode, customer) {
+      avisarEnLaVista = true;
+      return openModal(mode, customer);
+    },
 
     /**
      * SCRUM-591 · la entrada NUEVA: alta desde el selector de un documento.
@@ -1310,6 +1546,11 @@ function renderCustomersView(container) {
     abrirNuevo: function (opciones) {
       const o = opciones || {};
       alGuardarUnaVez = typeof o.alGuardar === 'function' ? o.alGuardar : null;
+      // 🔴 SCRUM-756 · el documento NO presta caja, así que el formulario usa la SUYA. Y se pone
+      // en cada apertura, no una vez: si se dejara al valor que quedó de la vez anterior, abrir
+      // desde el documento DESPUÉS de haber abierto desde Clientes seguiría avisando en la caja
+      // de Clientes — que es el defecto entero, sólo que más difícil de ver.
+      avisarEnLaVista = false;
       openModal('create', null);
       // El prellenado va DESPUÉS de abrir: `openModal` hace `reset()` y lo borraría.
       if (o.nombre && fieldName && fieldName.input) {

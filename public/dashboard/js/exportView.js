@@ -325,7 +325,23 @@ async function renderExportView(container) {
       // recuento en `X-Yaqu-Filas` para que aquí se pueda distinguir. El fichero se descarga igual
       // —un libro vacío es una respuesta legítima—, pero deja de ser silencioso.
       const filas = Number(res.headers.get('X-Yaqu-Filas'));
-      // Microcopy PROPUESTA, sin aprobar (regla 30): «No hay facturas emitidas en ese periodo.»
+      // ✅ MICROCOPY APROBADA POR EL FUNDADOR el 17-ago-2026 (regla 30), y APLICADA. Consta en
+      // `docs/MICROCOPY_APROBADA_SIN_APLICAR.md` §Addendum, entrada «exportView.js:330 — estado
+      // vacío del libro · APLICADO». El texto aprobado es UNA sola frase: la segunda línea quedó
+      // RETIRADA por decisión del fundador ese mismo día.
+      //
+      // 🔴 ESTE COMENTARIO DECLARABA EL TEXTO COMO PROPUESTO Y SIN APROBAR, Y ERA FALSO POR
+      // PARTIDA DOBLE (SCRUM-714, 4-sep-2026): llevaba firmado desde el 17-ago, y además citaba
+      // una frase DISTINTA de la que se pinta aquí abajo —con «emitidas» y «ese periodo»— que,
+      // medido, no aparece en ningún otro sitio del árbol.
+      //
+      // ⚠️ Ni la afirmación vieja ni la cita inventada se reproducen aquí a propósito: el guard de
+      // SCRUM-714 busca esas dos cadenas en este fichero, y escribirlas para explicarlas lo
+      // pondría rojo. Es la trampa del guard que se caza a sí mismo, y se evita describiendo en
+      // vez de citando.
+      //
+      // La víctima no es el profesional: es la siguiente sesión que lo lea y «corrija» un texto
+      // que el fundador ya firmó, creyendo que estaba haciendo lo correcto.
       infoLibro.textContent = filas === 0
         ? 'No hay facturas en este periodo.'
         : 'Descarga lista.';

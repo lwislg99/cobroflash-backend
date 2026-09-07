@@ -101,6 +101,14 @@ export async function getMerchantProfile(merchantId: number = DEFAULT_MERCHANT_I
       address: true,
       trade: true,
       defaultCurrency: true,
+      // 🔴 SCRUM-633 · LA ZONA, Y ESTE ES EL ESLABÓN QUE MÁS FÁCIL SE PIERDE.
+      //
+      // El `select` es EXPLÍCITO: lo que no esté aquí NO SALE, aunque esté en la columna. Sin
+      // esta línea, el navegador del profesional no sabría en qué calendario vive su negocio y
+      // volvería a calcular la caducidad en UTC — que es el defecto entero de este ticket. Es la
+      // misma advertencia que dejó SCRUM-579 con la dirección de facturación, y por eso hay un
+      // test que la ata en vez de confiar en que nadie la borre.
+      timezone: true,
       invoiceSeriesPrefix: true,
       logoUrl: true,
       whatsappPhone: true,

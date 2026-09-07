@@ -63,9 +63,38 @@ jobs:
         with:
           node-version: '22'
 
+      # ═══════════════════════════════════════════════════════════════════════════════════════
+      # SCRUM-716 · LA LECTURA ANTERIOR, para poder distinguir CONGELADO de RETRASADO
+      #
+      # El vigía sin memoria pintaba igual «producción parada» y «producción desplegando despacio».
+      # El 6-sep-2026 eso mandó a buscar un healthcheck sano y bloqueó cinco ramas media jornada.
+      # El discriminador es comparar con la lectura de la ejecución anterior — y para eso hace
+      # falta que sobreviva algo entre ejecuciones, que hasta hoy no sobrevivía NADA: runner
+      # efímero, checkout limpio, sin caché y sin artifacts.
+      #
+      # 🔴 ES `actions/cache` Y NO UN ARTIFACT NI `contents: write`, y el motivo es el que hace
+      # que el diseño aguante: **cuando la caché se pierde, la respuesta es NO SE SABE** — un
+      # valor de primera clase que el vigía ya sabe emitir, ni verde ni congelado. No pide
+      # permisos nuevos y no escribe una sola línea en el repositorio.
+      #
+      # La clave lleva el `run_id` para que CADA ejecución guarde la suya (una clave repetida no
+      # se vuelve a guardar), y `restore-keys` recupera la más reciente que empiece igual. Es el
+      # patrón de caché rodante, no uno inventado.
+      - name: Recuperar la constancia de la ejecución anterior
+        uses: actions/cache@v4
+        with:
+          path: .vigia
+          key: vigia-estado-${{ github.run_id }}
+          restore-keys: |
+            vigia-estado-
+
       # Sin `npm ci`: el vigía no importa nada de `node_modules`. Sólo `node:child_process` y
       # `fetch`. Instalar dependencias aquí sería tiempo y superficie que no hace falta.
       - name: ¿Está producción corriendo lo que hay en main?
+        # Sin esta variable el vigía no lee ni escribe historial y contesta «no se sabe», que es
+        # lo honrado. La ruta va bajo `path:` de la caché de arriba, o no sobreviviría.
+        env:
+          VIGIA_ESTADO: .vigia/constancias.log
         run: |
           if [ -n "${{ inputs.margen }}" ]; then
             node scripts/vigilante-de-despliegue.mjs --margen "${{ inputs.margen }}"
