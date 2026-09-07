@@ -73,10 +73,9 @@ async function renderCustomer360View(container, customerId) {
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0">
       <button class="btn-secondary btn-sm" id="btn-edit-360" title="Editar los datos del cliente">✎ Editar</button>
-      ${customer.portalUrl ? `
-        <button class="btn-secondary btn-sm" id="btn-copy-portal-360" title="Copiar enlace del portal del cliente">
-          🔗 Portal
-        </button>` : ''}
+      <button class="btn-secondary btn-sm" id="btn-copy-portal-360" title="Copiar enlace del portal del cliente">
+        🔗 Portal
+      </button>
       <button class="btn-primary btn-sm" id="btn-new-quote-360">+ ${L.quoteNew || 'Nuevo presupuesto'}</button>
     </div>
   `;
@@ -87,14 +86,33 @@ async function renderCustomer360View(container, customerId) {
     openEdit360Modal(customer, id, container);
   };
 
-  if (customer.portalUrl) {
-    header.querySelector('#btn-copy-portal-360').onclick = async () => {
-      await navigator.clipboard.writeText(customer.portalUrl).catch(() => {});
-      const btn = header.querySelector('#btn-copy-portal-360');
+  // SCRUM-795 · EL BOTÓN SE PINTA SIEMPRE, Y EL ENLACE SE PIDE AL PULSAR — como en la lista.
+  //
+  // Antes se pintaba sólo `if (customer.portalUrl)`, y el detalle sirve esa URL EN CRUDO
+  // (`customersAdmin.routes.ts`: `customer.portalToken ? url : null`). Sin token el botón NO
+  // EXISTÍA: no fallaba el enlace, desaparecía el botón y sin decir nada. Medido en navegador el
+  // 6-sep-2026 — y los SIETE clientes del demo estaban en ese caso.
+  //
+  // 🔴 LA LLAMADA ES DEL CLIC, NO DEL RENDER, y ésa es la decisión entera. `/portal-url` pasa por
+  // `ensurePortalToken`, que ESCRIBE. Curar al abrir la ficha convertiría el simple hecho de mirar
+  // un cliente en una escritura, disparada sola y sin que nadie pulse nada. La lista ya lo resuelve
+  // así desde siempre: esto pone la ficha de acuerdo con ella, no estrena un patrón.
+  header.querySelector('#btn-copy-portal-360').onclick = async () => {
+    const btn = header.querySelector('#btn-copy-portal-360');
+    try {
+      const res = await apiRequest(`/admin/customers/${id}/portal-url`);
+      await navigator.clipboard.writeText(res.portalUrl).catch(() => {});
       btn.textContent = '¡Copiado!';
       setTimeout(() => { btn.innerHTML = '🔗 Portal'; }, 2000);
-    };
-  }
+    } catch {
+      // 🔴 SIN el `.message` del servidor, y no es una omisión: el trinquete de SCRUM-644 lo cazó
+      // en mi primera versión. Un identificador como `customer_not_found` en pantalla no es un
+      // mensaje mal redactado, es una tubería interna asomando a la interfaz — y el techo de este
+      // fichero es CERO. El texto es el que la lista ya usa para esta misma acción
+      // (`customersView.js`), sin la parte que filtra el mensaje: no estrena microcopy.
+      setAlert('error', 'Error al obtener el portal');
+    }
+  };
   header.querySelector('#btn-new-quote-360').onclick = () => {
     if (window.renderAppView) renderAppView('quotes-new');
   };

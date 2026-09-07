@@ -340,3 +340,90 @@ Repetida **sola**, tras terminar el meta-guard: **0 fallos**.
 Ya lo había medido el 6-sep y volví a hacerlo. La regla, escrita otra vez y con su motivo: **nada
 en paralelo con `meta:mutaciones`, ni siquiera una lectura de la suite**, porque durante su pasada
 el árbol NO es el árbol — y una tanda concurrente no mide lo que cree medir.
+
+---
+
+# SCRUM-795 · APÉNDICE · el botón del portal, puesto de acuerdo con la lista
+
+**Fecha:** 7-sep-2026 · **Carril:** producto · front clientes · **Gate:** sin gate
+**Medido contra:** `origin/main` = `349350c8a7a34f24e9263aba1ca2af36e3cb4a91` · 2026-09-07T02:39:27+01:00
+**Tanda:** 5753 tests, 5651 pass, 0 fail, 102 skipped
+
+La recomendación ④ de esta misma entrada queda ejecutada: **arreglo de pantalla**, no de endpoint.
+
+## 🔴 EL ROJO, en navegador real — antes de tocar nada
+
+`npm run guard:portal-en-la-ficha` (Edge vía puppeteer-core, DOM renderizado):
+
+```
+  caso        LISTA    FICHA 360
+  SIN token   botón    NO EXISTE     ← el defecto
+  CON token   botón    botón         ← control positivo
+                                        exit 1
+```
+
+**Se mide el DOM, no el fuente**: un `${cond ? botón : ''}` bien puesto y uno mal puesto se leen
+igual (lección de SCRUM-515). Las vistas son las de verdad, con sus dependencias reales
+(`api.js`, `csvImport.js`, `filtroClientes.js` en el orden que declara `_banco-vistas.mjs`); lo
+único doblado es `apiRequest`, que es el punto por el que las dos piden datos.
+
+## El cambio
+
+`customerDetailView.js`: el botón deja de colgar de `customer.portalUrl` y **se pinta siempre**;
+la URL se pide **al pulsar**, con la misma llamada que ya hacía la lista. Sin estado nuevo y sin
+literal nuevo: el rótulo `🔗 Portal` ya estaba en el fichero y el texto de error es el que la
+lista usa para esta misma acción.
+
+```
+  caso        LISTA    FICHA 360
+  SIN token   botón    botón
+  CON token   botón    botón          exit 0
+```
+
+## 🔴 Y LA MITAD QUE MÁS IMPORTA: no se ha añadido una escritura
+
+Se descartó curar en el endpoint del detalle **con este argumento**, así que caer en ello al
+arreglarlo habría sido peor que no arreglarlo. **Medido**, no razonado, con el contador de
+consultas de SCRUM-58 (`QA_QUERY_LOG=1`), contra desarrollo y por el camino real (el handler
+compilado, con `req.merchantId` inyectado):
+
+| | consultas | **escrituras** |
+| --- | --- | --- |
+| ① ABRIR la ficha (`GET /detail`) | 5 | **0** ✅ |
+| ② PULSAR el botón (`GET /portal-url`) | 4 | **1** — `UPDATE "customers" SET "portal_token" …` ✅ |
+
+Token presente tras el clic. Limpieza verificada: 0 clientes y 0 merchants con la marca.
+
+## Lo que vigila la suite (el navegador no corre en `npm test`)
+
+`tests/scrum795-el-portal-en-la-ficha.test.mjs`, por AST y con dos mutaciones declaradas:
+① el botón no cuelga de una condición sobre `portalUrl`; ② la llamada a `/portal-url` está
+**dentro del manejador del clic**, nunca en el render. Con control positivo del detector: se le
+enseña una llamada puesta en el render (la reconoce) y una dentro de un `onclick` (no la acusa).
+
+## 🔴 CUATRO TRINQUETES DE LA CASA ME CAZARON, y uno era un defecto de verdad
+
+| trinquete | qué cazó |
+| --- | --- |
+| **SCRUM-644** | 🔴 **defecto real mío**: mi primera versión pintaba `err.message` del servidor en la ficha, cuyo techo de mensajes crudos es CERO. Un `customer_not_found` en pantalla es una tubería interna asomando. Corregido: el texto de la lista, sin la parte que filtra el mensaje |
+| **SCRUM-262** | mi guard sembraba `34600000000`, un rango de **móvil español ordinario**. Al rango imposible (`340…`) |
+| **SCRUM-522** | guards fuera de la tanda 12 → 13, declarado con su motivo |
+| **SCRUM-548** | mi guard entra en el conjunto de destinos **no derivables** (su ruta sale de una variable): se declara para que su solape invisible no se lea como «no tiene» |
+
+Y un quinto, mío y ya conocido: la primera versión de mi test miraba el fichero entero y salió
+roja **contra mi propio comentario**, que cita la construcción prohibida para explicarla. Es el
+defecto de `_guard-texto.mjs` y van tres veces que muerde en esta sesión. Se mira código
+ejecutable.
+
+## Un intermitente, dicho y no escondido
+
+En la primera tanda con mis cambios cayó también
+`SCRUM-738 · SCRUM-684 NO se da por hecho`. Corrido solo, **dos veces, con mis cambios puestos:
+7/7 en verde**; y en la tanda siguiente, verde. Ese test censa contra refs de `origin`, que otras
+sesiones mueven mientras corre — el mismo fenómeno de base compartida que ya está escrito arriba.
+**No lo he tocado.** Queda anotado por si a alguien le sale.
+
+## Lo que no se ha tocado
+
+`ensurePortalToken`, `botFlow`, `charges`, `prisma/schema.prisma`, ningún backfill. El
+`@default(1)` sigue en la mesa del fundador con la cifra de esta entrada dentro.
