@@ -219,6 +219,19 @@ async function fetchInvoiceDetail(id) {
     dataSec.appendChild(dl);
     page.appendChild(dataSec);
 
+    // --- Sección: etiquetas (SCRUM-595, DOC-05) ---
+    // LA MISMA PIEZA que la ficha del presupuesto. Es el punto del ticket: el bloque aplica a los
+    // DOS documentos y con el mismo mecanismo.
+    //
+    // 🔴 Y NO ES EDITAR UNA FACTURA EMITIDA (regla 29). Escribe un campo de la FICHA que no sale
+    // del documento por ningún lado: la huella de VeriFactu es una lista cerrada de ocho campos y
+    // los parámetros del PDF son lista blanca — las dos cosas MEDIDAS en
+    // `tests/scrum595-etiquetas-del-documento.test.mjs`, no supuestas. Va DESPUÉS de «Datos» y
+    // ANTES de «Acciones» a propósito: es un dato de la ficha, no una acción sobre el documento.
+    if (window.montarEtiquetasDelDocumento) {
+      window.montarEtiquetasDelDocumento(page, invoice, `/admin/invoices/${invoice.id}/tags`);
+    }
+
     // --- Sección: acciones (SCRUM-283 · la LEY del patrón: 1 primaria + ≤2 secundarias + ⋮) ---
     // Se PINTA desde el registro declarativo (invoiceActionsRegistry.js), la MISMA fuente que el
     // guard verifica: nadie escribe la tabla dos veces. El estado decide el destino de cada acción;

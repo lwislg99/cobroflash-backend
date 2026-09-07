@@ -3,6 +3,23 @@
 function renderQuotesListView(container) {
   container.innerHTML = "";
 
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-595 (DOC-05) · LAS ETIQUETAS DEL DOCUMENTO
+  //
+  // 🔴 SE CONSUME LA PIEZA DE CONT-07, NO SE ESCRIBE UNA SEGUNDA. `filtroClientes.js` se llama
+  // así por el ticket que lo estrenó, pero `filtrarPorEtiqueta`, `etiquetasUsadas` y `tagsDe`
+  // no saben qué es un cliente: leen `.tags` de un objeto. Mover esas piezas a un fichero con
+  // mejor nombre es la generalización que el fundador aplazó a propósito (ver
+  // `docs/master/SCRUM-595.md`); lo que NO se hace mientras tanto es copiarlas, porque dos
+  // filtros de etiquetas divergen y el documento y el cliente acabarían decidiendo distinto.
+  //
+  // Sin fallback a propósito: `index.html` carga esta pieza ANTES que esta vista, y eso lo
+  // vigila un test. Degradar en silencio escondería una pantalla rota en vez de enseñarla.
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  const FC = window.filtroClientes;
+  let etiquetaActiva = null;
+  let loteActual = [];
+
   // SCRUM-432 (B1 · incremento 3): `Historial · Plantillas`. La tira va ANTES de la tarjeta, que es
   // donde el diseño la coloca: pertenece a Presupuestos, no al historial.
   renderPestanasPresupuestos(container, "quotes-list");
@@ -90,8 +107,24 @@ function renderQuotesListView(container) {
   qToInput.style.cssText = "width:140px";
   qToInput.title = "Hasta";
 
+  // SCRUM-595 · el filtro por etiqueta. Las opciones salen de las etiquetas que ESTOS
+  // presupuestos ya usan —del lote que el servidor acotó por tenencia (regla 2)—, nunca de otro
+  // merchant, y se recalculan en cada carga.
+  //
+  // ✅ MICROCOPY: `sinFiltro` es el MISMO literal aprobado de CONT-07, reutilizado sin cambiar
+  // ni un carácter. No es una ranura nueva: es la misma palabra para la misma cosa. El texto
+  // vive en la pieza, no aquí — repetirlo lo dejaría derivar sin que nada chille (regla 30).
+  const etiquetaSel = document.createElement("select");
+  etiquetaSel.className = "input";
+  etiquetaSel.style.cssText = "width:auto;max-width:220px";
+  etiquetaSel.addEventListener("change", () => {
+    etiquetaActiva = etiquetaSel.value || null;
+    pintar();
+  });
+
   toolbar.appendChild(searchInput);
   toolbar.appendChild(statusSel);
+  toolbar.appendChild(etiquetaSel);
   toolbar.appendChild(qFromInput);
   toolbar.appendChild(qToInput);
 
@@ -113,6 +146,7 @@ function renderQuotesListView(container) {
       <th style="text-align:right">Importe</th>
       <th>Estado</th>
       <th class="col-hide-mobile">Método</th>
+      <th class="col-hide-mobile">${FC.TEXTOS_ETIQUETAS.columna}</th>
       <th>Acciones</th>
     </tr>
   `;
@@ -180,7 +214,10 @@ function renderQuotesListView(container) {
     if (!list || list.length === 0) {
       const tr = document.createElement("tr");
       const td = document.createElement("td");
-      td.colSpan = 7;
+      // 🔴 SCRUM-595 · SALE DE LA CABECERA, no de un número escrito a mano. Aquí había un 7 y
+      // este ticket mete una columna: un vacío descuadrado no lo ve ninguna tanda, y es
+      // exactamente el defecto que SCRUM-584 tuvo que arreglar en la lista de clientes.
+      td.colSpan = numeroDeColumnas();
       const L = window.appLocale || {};
       td.innerHTML =
         '<div class="empty-state"><div class="empty-state-icon">📋</div>' +
@@ -229,6 +266,26 @@ function renderQuotesListView(container) {
       tdMethod.style.color = "var(--muted)";
       tdMethod.textContent =
         q.method === "bank" ? "Pay-by-bank" : q.method === "card" ? "Tarjeta" : "—";
+
+      // SCRUM-595 · las etiquetas, con `.badge .badge-slate` — el componente que YA existe en el
+      // inventario (AB3). Cero tokens nuevos y cero estilo inventado. Con `textContent` por
+      // etiqueta y no concatenando markup: la escribe el profesional, y meterla en un
+      // `innerHTML` sería una inyección con su nombre.
+      const tdTags = document.createElement("td");
+      tdTags.className = "col-hide-mobile";
+      const susTags = FC.tagsDe(q);
+      if (susTags.length > 0) {
+        const caja = document.createElement("div");
+        caja.style.cssText = "display:flex;flex-wrap:wrap;gap:4px";
+        susTags.forEach((t) => {
+          const chip = document.createElement("span");
+          chip.className = "badge badge-slate";
+          chip.textContent = t;
+          caja.appendChild(chip);
+        });
+        tdTags.appendChild(caja);
+        tdTags.title = susTags.join(", ");
+      }
 
       const tdActions = document.createElement("td");
       tdActions.className = "cell-actions";
@@ -282,10 +339,54 @@ function renderQuotesListView(container) {
       tr.appendChild(tdAmount);
       tr.appendChild(tdStatus);
       tr.appendChild(tdMethod);
+      tr.appendChild(tdTags);
       tr.appendChild(tdActions);
 
       tbody.appendChild(tr);
     });
+  }
+
+  /** Cuántas columnas tiene la tabla. Sale del MISMO sitio que la cabecera: el `thead`. */
+  function numeroDeColumnas() {
+    return thead.querySelectorAll("th").length;
+  }
+
+  /**
+   * SCRUM-595 · repuebla el selector conservando lo elegido, o SOLTÁNDOLO si esa etiqueta ya no
+   * existe en el lote. Dejarlo puesto enseñaría una lista vacía sin decir por qué.
+   *
+   * 🔴 Y de aquí sale una propiedad que evita microcopy nueva: como las opciones salen del lote
+   * que se está mirando, filtrar por una de ellas SIEMPRE devuelve al menos una fila. El vacío
+   * «no hay nada con esta etiqueta» es inalcanzable por construcción, así que no hace falta un
+   * texto que nadie ha aprobado.
+   */
+  function repoblarEtiquetas(lote) {
+    const usadas = FC.etiquetasUsadas(lote);
+    if (etiquetaActiva && !usadas.some((t) => t.toLocaleLowerCase("es") === String(etiquetaActiva).toLocaleLowerCase("es"))) {
+      etiquetaActiva = null;
+    }
+    etiquetaSel.innerHTML = "";
+    const todas = document.createElement("option");
+    todas.value = "";
+    todas.textContent = FC.TEXTOS_ETIQUETAS.sinFiltro;
+    etiquetaSel.appendChild(todas);
+    usadas.forEach((t) => {
+      const op = document.createElement("option");
+      op.value = t;
+      op.textContent = t;
+      etiquetaSel.appendChild(op);
+    });
+    etiquetaSel.value = etiquetaActiva || "";
+    // Sin ninguna etiqueta en la cartera el selector no sirve de nada: se oculta en vez de
+    // ofrecer un control con una sola opción que no filtra. Es lo que hace CONT-07.
+    etiquetaSel.hidden = usadas.length === 0;
+  }
+
+  /** Pinta lo que hay que pintar: el lote del servidor, pasado por el filtro de etiqueta. */
+  function pintar() {
+    const visibles = FC.filtrarPorEtiqueta(loteActual, etiquetaActiva);
+    renderRows(visibles);
+    setCount(`${visibles.length} presupuesto${visibles.length !== 1 ? "s" : ""}`);
   }
 
   let currentSearch = "";
@@ -305,17 +406,22 @@ function renderQuotesListView(container) {
     try {
       setError("");
       setCount("Cargando…");
-      uiSkeletonRows(tbody, 7, 6);
+      uiSkeletonRows(tbody, numeroDeColumnas(), 6);
       const params = new URLSearchParams();
       if (currentSearch) params.set("search", currentSearch);
       if (currentStatus !== "all") params.set("status", currentStatus);
       if (currentDateFrom) params.set("dateFrom", currentDateFrom);
       if (currentDateTo) params.set("dateTo", currentDateTo);
       const list = await apiRequest("/admin/quotes" + (params.toString() ? "?" + params.toString() : ""));
-      renderRows(list);
-      setCount(`${list.length} presupuesto${list.length !== 1 ? "s" : ""}`);
+      // El selector se repuebla con el lote ENTERO que trajo el servidor; el filtro se aplica
+      // después. Al revés, una etiqueta dejaría de ofrecerse en cuanto se filtrara por otra.
+      loteActual = Array.isArray(list) ? list : [];
+      repoblarEtiquetas(loteActual);
+      pintar();
     } catch (err) {
       console.error(err);
+      loteActual = [];
+      repoblarEtiquetas([]);
       renderRows([]);
       setCount("");
       setError("Error cargando presupuestos.");

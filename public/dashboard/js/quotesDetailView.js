@@ -937,6 +937,14 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     }, 1200);
   });
 
+  // ── Sección: ETIQUETAS (SCRUM-595, DOC-05) ──────────────────
+  // El bloque lo monta una pieza compartida con la ficha de la FACTURA: el mismo bloque para los
+  // dos documentos, no dos que se parezcan. Va detrás de las notas internas porque es lo mismo
+  // que ellas —cómo el profesional organiza SU documento—, y ninguna de las dos sale en el papel.
+  if (window.montarEtiquetasDelDocumento) {
+    window.montarEtiquetasDelDocumento(page, quote, `/admin/quotes/${quote.id}/tags`);
+  }
+
   // ── Sección: GASTOS Y MARGEN ────────────────────────────────
   const marginSec = document.createElement('div');
   marginSec.className = 'detail-section';

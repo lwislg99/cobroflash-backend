@@ -1,5 +1,6 @@
 // src/modules/system/quoteAdmin.ts
 import { prisma } from '../../core/db/prisma';
+import { tagsParaPrisma } from './tagsDelCliente'; // SCRUM-595 (DOC-05): el MISMO mecanismo que CONT-07
 import { allocateInvoiceNumber, isReceiptNumber } from '../invoicing/domain/invoiceNumber.service';
 import { buildBillingPlanView } from '../quotes/domain/billingPlanView'; // SCRUM-34
 import { ensureQuoteDecisionToken } from '../quotes/domain/quoteToken.service'; // SCRUM-95
@@ -103,8 +104,43 @@ export async function listQuotesAdmin(
       method: q.charge?.method ?? null,
       chargeId: q.charge?.id ?? null,
       internalNotes: q.internalNotes ?? null,
+      // 🔴 SCRUM-595 (DOC-05) · EL QUINTO ESLABON, Y AQUI ES EL QUE MAS FACIL SE PIERDE.
+      //
+      // Esto NO es un `select` de Prisma: es una proyeccion A MANO. La consulta trae la fila
+      // entera y lo que no se copie aqui NO SALE, aunque la columna exista y aunque el guardado
+      // haya funcionado. Sin esta linea, el profesional escribiria la etiqueta, la lista se
+      // recargaria sin ella, volveria a escribirla — y la tanda seguiria VERDE, porque el dato SI
+      // estaria en la base. El defecto seria MUDO. Es el aviso de SCRUM-580, buscado ANTES.
+      //
+      // ⚠️ Y la FACTURA no lo necesita: `listInvoicesAdmin` devuelve `findMany` sin `select`, asi
+      // que alli la columna sale sola. El quinto eslabon NO es simetrico entre los dos documentos.
+      tags: q.tags ?? null,
     };
   });
+}
+
+/**
+ * SCRUM-595 (DOC-05) · LAS ETIQUETAS DE UN PRESUPUESTO.
+ *
+ * Mismo mecanismo que el cliente: la decision es `normalizarTags` y la ortografia del NULL es
+ * `tagsParaPrisma` — las dos compartidas, ninguna reescrita aqui.
+ *
+ * 🔴 LA TENENCIA VIVE EN EL `WHERE`, no en un `if` de JavaScript (regla 2). Es el mismo patron
+ * que `PUT /:id/notes`: con `updateMany` acotado, un id ajeno no escribe nada y devuelve 0 — no
+ * hace falta leer antes para comprobar de quien es, y por tanto no hay hueco entre la lectura y
+ * la escritura.
+ *
+ * Devuelve cuantas filas ha tocado: 0 significa «no es tuyo o no existe», y el llamador lo
+ * traduce a 404. Un `ok: true` sobre cero filas le diria al profesional que ha guardado algo.
+ */
+export async function setQuoteTags(merchantId: number, id: number, tags: unknown): Promise<number> {
+  const valor = tagsParaPrisma(tags);
+  // `undefined` es «no toques el campo», y esta ruta existe justo para tocarlo: si llegara aqui,
+  // escribir seria inventarse una intencion. No pasa —la ruta valida antes—, pero un 0 es una
+  // respuesta y `undefined` no lo es.
+  if (valor === undefined) return 0;
+  const r = await prisma.quote.updateMany({ where: { id, merchantId }, data: { tags: valor } });
+  return r.count;
 }
 
 /**
@@ -197,6 +233,10 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
     tiers: quote.tiers ?? null,
     selectedTierId: quote.selectedTierId ?? null,
     internalNotes: quote.internalNotes ?? null,
+    // 🔴 SCRUM-595 · EL QUINTO ESLABON, SEGUNDA VEZ. El detalle es OTRA proyeccion explicita, y
+    // se buscaron LAS DOS: sin esta linea la lista ensenaria las etiquetas y la ficha del
+    // presupuesto saldria sin ellas, que es la misma perdida muda en otra pantalla.
+    tags: quote.tags ?? null,
     
     merchant: {
       id: quote.merchant.id,

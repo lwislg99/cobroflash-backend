@@ -10,6 +10,7 @@ import {
   NO_SE_MARCAN_PAGADAS_EN_LOTE,
   markInvoicePaidAdmin,
   markInvoicePendingAdmin,
+  setInvoiceTags,
 } from '../../invoiceAdmin';
 
 import { BASE_URL } from '../../../../core/config/env';
@@ -423,6 +424,42 @@ router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
 /**
  * PUT /admin/invoices/:id/status
  * Cambia el estado (pending / paid / expired) – lo usa el botón del BO.
+ */
+/**
+ * PUT /admin/invoices/:id/tags — SCRUM-595 (DOC-05) · las etiquetas de la factura.
+ *
+ * 🔴 ESTO NO ABRE UNA PUERTA DE EDICION SOBRE UNA FACTURA EMITIDA (regla 29). Escribe UN campo
+ * que no es el documento —ni numero, ni total, ni lineas, ni sello, ni PDF— y el porque, con sus
+ * medidas, vive junto a `setInvoiceTags` en `invoiceAdmin.ts`. Es la misma familia que
+ * `/:id/pay` o `/:id/status`, que ya escriben sobre facturas emitidas sin tocarlas.
+ *
+ * ⚠️ Y NO ROZA EL GUARD DE SCRUM-289b, que vigila otra cosa: que el ENTRYPOINT DE ALTA
+ * (`POST /`) no edite ni borre, y que la COLECCION no acepte patch/put/delete. Esta ruta va por
+ * `:id`, que es donde ya viven `rectify` y `annul`.
+ */
+router.put('/:id/tags', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    // 🔴 SE VALIDA ESTRICTO, Y NO ES CELO: `normalizarTags` convierte en `null` cualquier cosa que
+    // no sea una lista —es su suelo, y es el correcto para un formulario—, pero en ESTA ruta ese
+    // suelo seria destructivo: un cuerpo mal formado BORRARIA las etiquetas y devolveria `ok`. Un
+    // 400 dice que no se ha guardado; un 200 sobre un borrado accidental, no.
+    const bruto = (req.body ?? {}).tags;
+    if (bruto !== null && !Array.isArray(bruto)) {
+      return res.status(400).json({ error: 'invalid_tags' });
+    }
+    const tocadas = await setInvoiceTags(req.merchantId, id, bruto);
+    if (tocadas === 0) return res.status(404).json({ error: 'invoice_not_found' });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[PUT /admin/invoices/:id/tags]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * PUT /admin/invoices/:id/status
  */
 router.put('/:id/status', requireRole('admin'), async (req, res) => {
   try {

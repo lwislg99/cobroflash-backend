@@ -3,24 +3,24 @@
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 // LAS ETIQUETAS DEL DOCUMENTO · LOS CONTROLES DEL ENCARGO
 //
-// LA VÍCTIMA: hoy el profesional no puede etiquetar sus documentos de ninguna forma. No existe.
+// LA VÍCTIMA: hasta hoy el profesional no podía etiquetar sus documentos de ninguna forma.
 //
-// 🔴 ESTOS TESTS EJERCITAN EL MECANISMO DE CONT-07 **SIN TOCARLO**, sobre PRESUPUESTOS Y FACTURAS.
-// Ése es su objeto: la Obligación 0 del encargo pregunta si el mecanismo de SCRUM-580 (CONT-07)
-// es reutilizable o está atado a `Customer`, y la respuesta no se afirma — se EJECUTA. Si estos
-// casos pasan, la capa de decisión sirve a los dos documentos tal cual está escrita; si fallan,
-// está atada y la respuesta era otra.
+// 🔴 EL MECANISMO ES EL DE CONT-07 (SCRUM-580), SIN TOCARLO. La Obligación 0 del encargo preguntó
+// si estaba atado a `Customer`, y la respuesta no se afirma: se EJECUTA. Estos casos importan ese
+// módulo tal cual y lo corren sobre PRESUPUESTOS Y FACTURAS. Si estuviera atado, no podrían
+// existir.
 //
-// ── LO QUE ESTE FICHERO **NO** PRUEBA, Y SE DICE ANTES QUE NADA ─────────────────────────────
-// No hay ni una lectura ni una escritura contra la base, y no es un olvido: **las columnas
-// `quotes.tags` e `invoices.tags` NO EXISTEN todavía**. Medido el 7-sep-2026 contra desarrollo con
-// `node scripts/censo-etiquetas-del-documento.mjs`: las dos AUSENTES, con `customers.tags` y
-// `quotes.lines` como controles positivos presentes, sobre 15 presupuestos y 5 facturas.
+// ── 🔴 ESTE PR NO ES MERGEABLE HASTA APLICAR LA COLUMNA EN LAS TRES BASES ───────────────────
+// `quotes.tags` e `invoices.tags` NO EXISTEN todavía en ninguna base: medido el 7-sep-2026 contra
+// desarrollo con `node scripts/censo-etiquetas-del-documento.mjs` —las dos AUSENTES, con
+// `customers.tags` y `quotes.lines` como controles positivos presentes, sobre 15 presupuestos y 5
+// facturas—. El esquema, el SQL y el código viajan JUNTOS (regla de la casa, 7-sep-2026) para que
+// no haya media función ni dos PR por ticket; el riesgo se gestiona con el ORDEN DEL MERGE: el
+// fundador aplica el `ALTER` y luego mergea. `schemaDrift` compara esperado ⊆ real al arrancar, y
+// mergear esto antes del `ALTER` deja producción sin levantar.
 //
-// El `ALTER` está escrito (`docs/sql/scrum-595-etiquetas-del-documento.sql`) y **no aplicado**: lo
-// aplica el fundador. El orden es inviolable y costó nueve días sin desplegar (SCRUM-580):
-// `schemaDrift` compara esperado ⊆ real al arrancar, así que un `prisma/schema.prisma` que nombre
-// una columna que la base no tiene **impide arrancar producción**.
+// Aquí no hay ni una lectura ni una escritura contra la base: todo es mecanismo puro más lecturas
+// del árbol.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -131,9 +131,8 @@ test('SCRUM-595 · las etiquetas del selector salen de las que ESE lote ya usa, 
     '🔴 no devuelve las etiquetas usadas por los documentos, ordenadas y sin duplicar.');
   assert.deepEqual(tagsUsadas(LOTE_DOCUMENTOS), ['garantía', 'obra puerto'],
     '🔴 el lado servidor no devuelve las mismas.');
-  // Y «garantía» sólo está en el lote porque hay UNA FACTURA que la lleva junto a un presupuesto:
-  // si el recolector mirara sólo un tipo, seguiría saliendo. Se comprueba con la que es EXCLUSIVA
-  // de los presupuestos.
+  // «garantía» la llevan un presupuesto y una factura; «obra puerto» SÓLO presupuestos. Si el
+  // recolector mirara un único tipo, la segunda desaparecería y la primera seguiría saliendo.
   assert.ok(FC.etiquetasUsadas(LOTE_DOCUMENTOS).includes('obra puerto'),
     '🔴 falta una etiqueta que sólo llevan presupuestos.');
   assert.deepEqual(FC.etiquetasUsadas([]), [],
@@ -190,15 +189,43 @@ test('SCRUM-595 · 🔴 «ausente ≠ vacío» vale igual para un documento: sin
     '🔴 devuelve null también con contenido: entonces sus nulls no significarían nada.');
 });
 
+test('SCRUM-595 · 🔴 los TRES escritores traducen el NULL igual, y sólo `DbNull` vale', async () => {
+  // Con el documento entran DOS escritores nuevos. La elección entre `Prisma.DbNull` y
+  // `Prisma.JsonNull` deja de ser un detalle de un fichero para ser algo que tres sitios tienen
+  // que acertar — así que la traducción vive en UNA función y los tres pasan por ella.
+  const { tagsParaPrisma } = await import('../dist/modules/system/tagsDelCliente.js');
+  const { Prisma } = await import('@prisma/client');
+
+  assert.equal(tagsParaPrisma(undefined), undefined,
+    '🔴 `undefined` deja de ser «no toques el campo».');
+  assert.equal(tagsParaPrisma(null), Prisma.DbNull,
+    '🔴 «sin etiquetas» no se traduce a `Prisma.DbNull`. Con `Prisma.JsonNull` la columna NO '
+    + 'quedaría NULL: guardaría el valor JSON `null` DENTRO, y un `IS NOT NULL` diría que ese '
+    + 'documento tiene etiquetas. Es «ausente ≠ vacío» con otro nombre.');
+  assert.notEqual(tagsParaPrisma(null), Prisma.JsonNull,
+    '🔴 se está devolviendo `Prisma.JsonNull`.');
+  assert.deepEqual(tagsParaPrisma([' garantía ']), ['garantía'],
+    '🔴 con contenido no devuelve la lista normalizada: entonces sus nulls no significan nada.');
+
+  // 🔴 Y LOS TRES ESCRITORES PASAN POR AQUÍ. Si uno se escribiera su propia traducción, el día que
+  // diverjan un documento y un cliente guardarían cosas distintas bajo el mismo nombre.
+  for (const rel of ['src/modules/system/customerAdmin.ts',
+                     'src/modules/system/quoteAdmin.ts',
+                     'src/modules/system/invoiceAdmin.ts']) {
+    const codigo = leerFuente(path.join(RAIZ, rel), { ancla: 'tagsParaPrisma' });
+    assert.match(codigo, /tagsParaPrisma\(/,
+      `🔴 ${rel} no usa la traducción compartida: se ha escrito la suya.`);
+  }
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 // 🔴 EL QUE PROTEGE LA REGLA 29
 //
 // «Etiquetar una factura YA EMITIDA no cambia su número, ni su total, ni su PDF. Mídelo, no lo
 //  supongas.»
 //
-// ⚠️ Estos tres casos SÓLO LEEN el camino de emisión y el sellado. No extraen un helper, no
-// exportan nada y no cambian una firma: es explícitamente lo que la regla 38 permite hacer sin
-// pedir GO, y lo que separa un guard de tocar el sellado.
+// ⚠️ Estos casos SÓLO LEEN el camino de emisión y el sellado. No extraen un helper, no exportan
+// nada y no cambian una firma: es lo que la regla 38 permite hacer sin pedir GO.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-595 · 🔴 REGLA 29: una etiqueta NO puede cambiar la HUELLA de una factura sellada', async () => {
@@ -285,8 +312,8 @@ test('SCRUM-595 · 🔴 REGLA 29: el camino de emisión NO escribe etiquetas', (
 });
 
 test('SCRUM-595 · 🔴 REGLA 29: ni el sellado ni el registro AEAT nombran las etiquetas', () => {
-  // La huella ya se ejercitó arriba; esto cubre los otros dos ficheros del camino, que no se
-  // pueden ejercitar sin base ni red. Sólo se LEEN.
+  // La huella ya se ejercitó arriba; esto cubre los otros ficheros del camino, que no se pueden
+  // ejercitar sin base ni red. Sólo se LEEN.
   const ficheros = [
     'src/modules/invoicing/domain/verifactu.service.ts',
     'src/modules/fiscal/verifactu/registro.builder.ts',
@@ -304,14 +331,38 @@ test('SCRUM-595 · 🔴 REGLA 29: ni el sellado ni el registro AEAT nombran las 
   }
 });
 
+test('SCRUM-595 · 🔴 `setInvoiceTags` escribe UN SOLO campo, y ese campo es `tags`', () => {
+  // Ésta es la CONTRAPARTIDA de haber añadido `PUT /:id/tags` al ALLOWLIST de
+  // `tests/scrum124-r29-no-borrado-facturas.test.mjs`. Aquella lista se ensancha en UNA ruta; lo
+  // que esa ruta puede escribir queda atado aquí, más apretado que antes.
+  //
+  // Sin esto, la entrada del allowlist sería una puerta: mañana alguien le pasa un objeto de
+  // cambios a esta función y la regla 29 se rompe sin tocar el guard que la vigila.
+  const codigo = leerFuente(path.join(RAIZ, 'src/modules/system/invoiceAdmin.ts'), {
+    ancla: 'export async function setInvoiceTags',
+  });
+  const i = codigo.indexOf('export async function setInvoiceTags');
+  const cuerpo = codigo.slice(i, codigo.indexOf('\n}', i));
+
+  assert.ok(cuerpo.includes('prisma.invoice.updateMany'),
+    '🔴 CIEGO: el trozo acotado no contiene la escritura.');
+  assert.match(cuerpo, /data: \{ tags: valor \}/,
+    '🔴 `setInvoiceTags` ya no escribe EXACTAMENTE `{ tags: valor }`. Cualquier otro campo en ese '
+    + '`data` es editar una factura emitida (regla 29), y este ticket lo dijo por escrito al '
+    + 'meterse en el allowlist de SCRUM-124.');
+  // TENENCIA en el WHERE (regla 2): un id ajeno no escribe y devuelve 0.
+  assert.match(cuerpo, /where: \{ id, merchantId \}/,
+    '🔴 la escritura no está acotada al merchant: se podría etiquetar la factura de otro.');
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
-// EL MECANISMO ES **UNO**, no dos — que es la Obligación 0 del encargo, convertida en guard
+// EL MECANISMO ES **UNO**, no dos — la Obligación 0 del encargo, convertida en guard
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-595 · 🔴 hay UNA sola definición de `normalizarTags` en `src/`', () => {
-  // «Conviene que sea el mismo mecanismo, no dos.» El día que el lado documento se cablee (③), la
-  // tentación es escribir su propia normalización porque la de hoy vive en un fichero que se
-  // llama `tagsDelCliente.ts`. Esto lo impide antes de que pase.
+  // «Conviene que sea el mismo mecanismo, no dos.» La tentación al cablear el documento era
+  // escribir su propia normalización, porque la de hoy vive en un fichero que se llama
+  // `tagsDelCliente.ts`. Esto lo impide, hoy y en el próximo ticket.
   const encontrados = [];
   const recorrer = (dir) => {
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -336,7 +387,7 @@ test('SCRUM-595 · 🔴 hay UNA sola definición de `normalizarTags` en `src/`',
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
-// EL `ALTER` · escrito, NO aplicado — y cubre LOS DOS documentos
+// EL `ALTER` Y EL ESQUEMA · viajan JUNTOS, y cubren LOS DOS documentos
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-595 · 🔴 el DDL cubre `quotes` **y** `invoices`: una sola no es el ticket', () => {
@@ -364,14 +415,15 @@ test('SCRUM-595 · 🔴 el DDL cubre `quotes` **y** `invoices`: una sola no es e
   }
 });
 
-test('SCRUM-595 · 🔴 EL ORDEN: el esquema NO nombra `tags` en los documentos hasta que el ② esté aplicado', () => {
-  // `schemaDrift` compara esperado ⊆ real AL ARRANCAR. Una columna que el esquema nombra y la base
-  // no tiene IMPIDE ARRANCAR PRODUCCIÓN. Ésta es la secuencia que costó nueve días sin desplegar
-  // (SCRUM-580), y por eso el esquema entra en el ③, con el código y los tests, cuando las TRES
-  // bases tengan la columna.
+test('SCRUM-595 · 🔴 el esquema nombra `tags` en LOS DOS documentos, y su DDL va con él', () => {
+  // 🔴 ESTE GUARD ESTABA AL REVÉS Y SE HA INVERTIDO A PROPÓSITO (7-sep-2026). Antes exigía que el
+  // esquema NO nombrara la columna, porque el ALTER iba a ir en otro PR. La regla de la casa
+  // cambió: el esquema, el SQL y el código viajan JUNTOS, y lo que gestiona el riesgo es el ORDEN
+  // DEL MERGE —el fundador aplica y luego mergea—, no retener media función.
   //
-  // ⚠️ ESTE GUARD SE INVIERTE EN EL ③, y eso es lo correcto: entonces afirmará la PRESENCIA. Lo
-  // que no puede pasar es que el esquema se adelante al ALTER sin que nada chille.
+  // Lo que sigue vigilado es lo mismo y por el mismo motivo: que el esquema y el DDL digan LO
+  // MISMO sobre LOS DOS documentos. Un esquema que nombre una columna que su propio SQL no crea
+  // es exactamente lo que impide arrancar producción (`schemaDrift`, esperado ⊆ real).
   const schema = fs.readFileSync(path.join(RAIZ, 'prisma/schema.prisma'), 'utf8');
 
   const modeloDe = (nombre) => {
@@ -380,20 +432,193 @@ test('SCRUM-595 · 🔴 EL ORDEN: el esquema NO nombra `tags` en los documentos 
     return schema.slice(i, schema.indexOf('\n}', i));
   };
 
-  // SUELO: el recorte es el modelo de verdad.
+  // SUELO: los recortes son los modelos de verdad.
   assert.match(modeloDe('Quote'), /quoteNumber/, '🔴 CIEGO: el recorte de Quote no parece Quote.');
   assert.match(modeloDe('Invoice'), /vfHash/, '🔴 CIEGO: el recorte de Invoice no parece Invoice.');
-  // Y el control positivo de que este guard SABE ver un `tags` cuando lo hay: en `Customer` está.
+  // Control positivo del lector: en `Customer` está desde SCRUM-580.
   assert.match(modeloDe('Customer'), /^\s*tags\s+Json\?/m,
-    '🔴 CIEGO: no veo `tags` ni en `Customer`, donde SÍ está (SCRUM-580). Este guard no sabe '
-    + 'mirar, así que su «no está» en los documentos no significa nada.');
+    '🔴 CIEGO: no veo `tags` ni en `Customer`, donde SÍ está (SCRUM-580). Este lector no sabe '
+    + 'mirar, así que lo que diga de los documentos no significa nada.');
 
-  for (const modelo of ['Quote', 'Invoice']) {
-    assert.equal(/^\s*tags\s+Json\?/m.test(modeloDe(modelo)), false,
-      `🔴 \`prisma/schema.prisma\` ya nombra \`tags\` en \`${modelo}\`, y el ALTER de este ticket `
-      + 'NO consta aplicado en las tres bases. Si esta rama se mergea, `schemaDrift` se niega a '
-      + 'arrancar y PRODUCCIÓN NO LEVANTA. El orden es inviolable: las tres bases primero.');
+  const sql = fs.readFileSync(path.join(RAIZ, 'docs/sql/scrum-595-etiquetas-del-documento.sql'), 'utf8');
+
+  for (const [modelo, tabla] of [['Quote', 'quotes'], ['Invoice', 'invoices']]) {
+    assert.match(modeloDe(modelo), /^\s*tags\s+Json\? @map\("tags"\)/m,
+      `🔴 el esquema NO nombra \`tags\` en \`${modelo}\`. El bloque aplica a los DOS documentos: `
+      + 'con uno solo, etiquetar funcionaría en un documento y no en el otro.');
+    // 🔴 Y LO QUE DE VERDAD IMPIDE ARRANCAR: que el esquema nombre algo que el DDL no crea.
+    assert.ok(sql.includes(`ALTER TABLE "${tabla}"`),
+      `🔴 el esquema nombra \`tags\` en \`${modelo}\` pero el DDL no toca "${tabla}". `
+      + '`schemaDrift` compara esperado ⊆ real: una columna que el código nombra y la base no '
+      + 'tiene IMPIDE ARRANCAR PRODUCCIÓN. Los dos van juntos o no va ninguno.');
   }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 EL QUINTO ESLABÓN · SE RELEE, o el defecto es MUDO
+//
+// «Se escribe · se envía · se valida · se guarda · SE RELEE.» Y aquí NO es simétrico entre los dos
+// documentos: eso se buscó ANTES de construir.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-595 · 🔴 el PRESUPUESTO proyecta a mano: sin `tags` ahí, el guardado se pierde MUDO', () => {
+  const src = fs.readFileSync(path.join(RAIZ, 'src/modules/system/quoteAdmin.ts'), 'utf8');
+
+  // LA LISTA. `listQuotesAdmin` no usa `select`: construye un objeto a mano con `.map()`.
+  const lista = src.slice(src.indexOf('export async function listQuotesAdmin'),
+                          src.indexOf('export async function setQuoteTags'));
+  assert.ok(lista.includes('internalNotes: q.internalNotes'),
+    '🔴 CIEGO: el trozo acotado no es la proyección de la lista.');
+  assert.match(lista, /tags: q\.tags/,
+    '🔴 la lista de presupuestos NO proyecta `tags`. El profesional escribiría la etiqueta, la '
+    + 'lista se recargaría sin ella, volvería a escribirla — y la tanda seguiría VERDE, porque el '
+    + 'dato SÍ estaría en la base. El defecto sería MUDO.');
+
+  // EL DETALLE. Es OTRA proyección explícita, y se buscaron LAS DOS.
+  const detalle = src.slice(src.indexOf('export async function getQuoteDetailAdmin'));
+  assert.ok(detalle.includes('numeroConRevision'),
+    '🔴 CIEGO: el trozo acotado no es la proyección del detalle.');
+  assert.match(detalle, /tags: quote\.tags/,
+    '🔴 el DETALLE del presupuesto no proyecta `tags`: la lista las enseñaría y la ficha saldría '
+    + 'vacía. Es la misma pérdida muda en otra pantalla.');
+});
+
+test('SCRUM-595 · 🔴 la FACTURA no necesita ese eslabón, y hay que saber POR QUÉ', () => {
+  // Su lista devuelve `findMany` SIN `select` al nivel del documento, así que la columna sale
+  // sola. Si alguien pusiera ahí un `select` explícito, este guard cae y obliga a acordarse — de
+  // `tags` y de todo lo demás.
+  const src = fs.readFileSync(path.join(RAIZ, 'src/modules/system/invoiceAdmin.ts'), 'utf8');
+  const lista = src.slice(src.indexOf('export async function listInvoicesAdmin'),
+                          src.indexOf('export async function setInvoiceTags'));
+  assert.ok(lista.includes('prisma.invoice.findMany'),
+    '🔴 CIEGO: el trozo acotado no contiene el `findMany` de la lista de facturas.');
+  // El `select` de las RELACIONES sí existe (customer, quote) y es legítimo; lo que no puede
+  // aparecer es un `select` al nivel del propio `findMany`, que recortaría los escalares.
+  const nivelSuperior = lista.slice(lista.indexOf('prisma.invoice.findMany'), lista.indexOf('include:'));
+  assert.equal(/\bselect:/.test(nivelSuperior), false,
+    '🔴 `listInvoicesAdmin` ha ganado un `select` explícito. Desde ese momento `tags` deja de '
+    + 'salir sola y hay que nombrarla ahí, como en el presupuesto — si no, la etiqueta de una '
+    + 'factura se guarda y no vuelve, en silencio.');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// LA PANTALLA · el bloque aplica a los DOS documentos, y con la MISMA pieza
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-595 · 🔴 las DOS listas montan el filtro, y las DOS lo sacan de la MISMA pieza', () => {
+  for (const rel of ['public/dashboard/js/quotesListView.js', 'public/dashboard/js/invoicesView.js']) {
+    const codigo = leerFuente(path.join(RAIZ, rel), { ancla: 'window.filtroClientes' });
+    assert.match(codigo, /FC\.filtrarPorEtiqueta\(/,
+      `🔴 ${rel} no filtra por etiqueta: el selector no filtraría nada.`);
+    assert.match(codigo, /FC\.etiquetasUsadas\(/,
+      `🔴 ${rel} no saca las opciones del lote: o las inventa, o las pide a otro sitio.`);
+    assert.match(codigo, /FC\.TEXTOS_ETIQUETAS\.sinFiltro/,
+      `🔴 ${rel} no lee de la pieza el texto de «sin filtro»: si lo repite a mano, deriva.`);
+    assert.match(codigo, /FC\.TEXTOS_ETIQUETAS\.columna/,
+      `🔴 ${rel} no lee de la pieza el rótulo de la columna.`);
+    assert.match(codigo, /FC\.tagsDe\(/,
+      `🔴 ${rel} no pinta las etiquetas de cada fila.`);
+    assert.match(codigo, /badge badge-slate/,
+      `🔴 ${rel} no usa el componente del inventario (AB3) para el chip: eso es estilo inventado.`);
+    // Y NO repite los literales aprobados a mano.
+    assert.equal(/Todas las etiquetas/.test(codigo), false,
+      `🔴 ${rel} repite un texto aprobado a mano. Dos copias de una microcopy divergen, y la `
+      + 'segunda deja de estar aprobada sin que nadie lo decida (regla 30).');
+  }
+});
+
+test('SCRUM-595 · 🔴 el `colSpan` de los vacíos SALE de la cabecera, no de un número a mano', () => {
+  // Este ticket mete una columna en las dos listas. Los dos vacíos tenían su número escrito a
+  // mano (7 y 6) y habrían quedado descuadrados — y un vacío descuadrado no lo ve ninguna tanda.
+  // Es la lección que SCRUM-584 tuvo que aprender en la lista de clientes.
+  for (const rel of ['public/dashboard/js/quotesListView.js', 'public/dashboard/js/invoicesView.js']) {
+    const codigo = leerFuente(path.join(RAIZ, rel), { ancla: 'numeroDeColumnas' });
+    const aMano = [...codigo.matchAll(/colSpan = (\d+)/g)];
+    assert.deepEqual(aMano.map((m) => m[1]), [],
+      `🔴 ${rel} tiene un \`colSpan\` con un número escrito a mano: en cuanto entre otra columna `
+      + 'quedará descuadrado, y eso no lo ve ninguna tanda.');
+    assert.match(codigo, /colSpan = numeroDeColumnas\(\)/,
+      `🔴 ${rel} no deriva su \`colSpan\` de la cabecera.`);
+    assert.match(codigo, /uiSkeletonRows\([^,]+, numeroDeColumnas\(\)/,
+      `🔴 ${rel} pinta el esqueleto con un número de columnas distinto del de la tabla.`);
+  }
+});
+
+test('SCRUM-595 · 🔴 las DOS fichas montan EL MISMO bloque de edición, no dos parecidos', () => {
+  const fichas = [
+    ['public/dashboard/js/quotesDetailView.js', '/admin/quotes/'],
+    ['public/dashboard/js/invoiceDetailView.js', '/admin/invoices/'],
+  ];
+  for (const [rel, ruta] of fichas) {
+    const codigo = leerFuente(path.join(RAIZ, rel), { ancla: 'montarEtiquetasDelDocumento' });
+    assert.match(codigo, /window\.montarEtiquetasDelDocumento\(/,
+      `🔴 ${rel} no monta la pieza compartida: si ha escrito su propio bloque, son dos.`);
+    assert.ok(codigo.includes(ruta) && codigo.includes('/tags'),
+      `🔴 ${rel} no apunta a su propio endpoint de etiquetas (${ruta}…/tags).`);
+  }
+});
+
+test('SCRUM-595 · ⛔ la pieza de la ficha NO inventa ni un literal', () => {
+  const rel = 'public/dashboard/js/etiquetasDelDocumento.js';
+  const codigo = leerFuente(path.join(RAIZ, rel), { ancla: 'montarEtiquetasDelDocumento' });
+
+  // El rótulo sale de la pieza de CONT-07, no se escribe aquí.
+  assert.match(codigo, /FC\.TEXTOS_ETIQUETAS\.rotulo/,
+    '🔴 el rótulo del bloque no sale de la pieza: escrito a mano, deriva (regla 30).');
+
+  // 🔴 Y NO HAY PLACEHOLDER. El de CONT-07 nombra ejemplos de CLIENTE («comunidad,
+  // administrador, urgencias…»), así que uno para documento sería un literal NUEVO — y el
+  // microcopy es del fundador. Se describe en `docs/master/SCRUM-595.md` y NO se escribe.
+  assert.equal(/placeholder\s*=/.test(codigo), false,
+    '🔴 el campo ha ganado un `placeholder`. El de CONT-07 nombra ejemplos de CLIENTE y uno de '
+    + 'documento sería microcopy NUEVA: es del fundador (regla 30). Se describe y se para.');
+
+  // Los tres avisos son los MISMOS que ya usa el bloque de notas internas: ninguna ranura nueva.
+  const notas = leerFuente(path.join(RAIZ, 'public/dashboard/js/quotesDetailView.js'), {
+    ancla: 'Guardado automáticamente',
+  });
+  for (const aviso of ['Escribiendo…', '✓ Guardado automáticamente', 'Error al guardar']) {
+    assert.ok(codigo.includes(aviso),
+      `🔴 la pieza ya no usa «${aviso}»: si lo ha cambiado por otro texto, ése es literal nuevo.`);
+    assert.ok(notas.includes(aviso),
+      `🔴 «${aviso}» ya NO existe en el bloque de notas internas, así que este fichero ha dejado `
+      + 'de reutilizar un texto que ya estaba en pantalla y ha pasado a estrenarlo.');
+  }
+});
+
+test('SCRUM-595 · 🔴 `index.html` carga la pieza ANTES que quien la consume', () => {
+  // Las vistas leen `window.filtroClientes` sin fallback, a propósito: degradar en silencio
+  // escondería una pantalla rota. Lo que sostiene esa decisión es este orden.
+  const html = fs.readFileSync(path.join(RAIZ, 'public/dashboard/index.html'), 'utf8');
+  const pos = (f) => {
+    const i = html.indexOf('./js/' + f);
+    assert.notEqual(i, -1, `🔴 CIEGO: ${f} no se carga en index.html.`);
+    return i;
+  };
+  const pieza = pos('filtroClientes.js');
+  for (const consumidor of ['etiquetasDelDocumento.js', 'quotesListView.js', 'invoicesView.js',
+                            'quotesDetailView.js', 'invoiceDetailView.js']) {
+    assert.ok(pieza < pos(consumidor),
+      `🔴 ${consumidor} se carga ANTES que filtroClientes.js: leería \`window.filtroClientes\` `
+      + 'sin que exista y la pantalla se caería al abrirla.');
+  }
+  for (const ficha of ['quotesDetailView.js', 'invoiceDetailView.js']) {
+    assert.ok(pos('etiquetasDelDocumento.js') < pos(ficha),
+      `🔴 la pieza de la ficha se carga DESPUÉS de ${ficha}, que es quien la monta.`);
+  }
+});
+
+test('SCRUM-595 · 🔴 una revisión del presupuesto HEREDA sus etiquetas', async () => {
+  // Lo cazó el guard de SCRUM-655b, que existe justo para esto: una columna nueva de `Quote` nace
+  // SIN clasificar, y sin clasificar simplemente no viaja. El defecto sería MUDO — revisar un
+  // presupuesto lo sacaría del filtro «obra puerto», y el profesional vería una lista con un
+  // documento menos sin forma de saber que le falta.
+  const { REVISION_HEREDA } = await import('../dist/modules/quotes/domain/revision.js');
+  assert.ok(REVISION_HEREDA.length > 10,
+    '🔴 CIEGO: la lista de campos heredados casi no tiene campos; pertenecer a ella no diría nada.');
+  assert.ok(REVISION_HEREDA.includes('tags'),
+    '🔴 `tags` ha dejado de heredarse al revisar. Una revisión es otra versión del MISMO trabajo: '
+    + 'la etiqueta no caduca porque cambie un precio.');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════

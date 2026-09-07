@@ -5,10 +5,32 @@
 **Medido contra:** `origin/main` = `d271d29aff85ed155d23397b7e6a1fca64a86bb0` · 2026-09-07T16:56:51Z
 
 **Tanda:** medida ANTES de tocar nada y DESPUÉS, con el **código de salida de verdad**, no con la
-última línea: **5909 tests · 0 fail · 102 skipped · exit 0** en las dos.
+última línea:
 
-**Estado:** ✅ **PASO 0 y PASO ② entregados.** ⛔ **El ③ está BLOQUEADO por el ②** y el motivo no
-es de tiempo: el orden es inviolable y el `ALTER` no es mío. Ver «Lo que NO se ha construido».
+| | tests | pass | fail | skipped | exit |
+|---|---|---|---|---|---|
+| antes (`origin/main`) | 5909 | 5807 | **0** | 102 | **0** |
+| después | 5933 | 5831 | **0** | 102 | **0** |
+
+**+24 tests, +24 pass, y los `skipped` no se mueven**: los 24 nuevos son exactamente los de este
+ticket, y no se ha colado ninguno en SKIP silencioso.
+
+**Estado:** ✅ **ENTREGADO ENTERO** — PASO 0, el `ALTER`, el esquema, el servidor y las dos
+pantallas.
+
+> ## 🔴 NO MERGEABLE HASTA APLICAR LA COLUMNA EN LAS TRES BASES
+>
+> `docs/sql/scrum-595-etiquetas-del-documento.sql`. **El fundador aplica y luego mergea.** Esta
+> sesión no ha aplicado nada en ninguna base. Si esto se mergeara antes, `schemaDrift` compara
+> esperado ⊆ real al arrancar y **producción no levanta**.
+
+**Nota de proceso (7-sep-2026).** La primera pasada de este ticket entregó sólo el PASO 0 y el
+`ALTER`, y **retuvo la línea del esquema** para no dejar en la rama algo que tumbara producción.
+El fundador cerró esa ambigüedad con una regla: **cuando un ticket necesita columna nueva, el PR
+lleva todo junto** —esquema, SQL, entrada en `MIGRATIONS_PENDING.md` con las tres bases sin marcar,
+y el aviso en mayúsculas encabezando el PR—, porque retener el esquema produce media función y dos
+PR por ticket, que es el patrón que costó los nueve días. El riesgo se gestiona con el **orden del
+merge**, no reteniendo trabajo. Esta entrada queda reescrita con esa regla aplicada.
 
 ---
 
@@ -66,8 +88,8 @@ etiquetas y el filtro se construiría sobre esa mentira. `undefined` es un terce
 ### 🔴 Y no se afirma: se EJECUTA
 
 `tests/scrum595-etiquetas-del-documento.test.mjs` importa el módulo de CONT-07 **sin tocarlo** y lo
-corre sobre un lote de **presupuestos y facturas**. Los 14 casos pasan. Si la capa de decisión
-estuviera atada a `Customer`, esos casos no podrían existir.
+corre sobre un lote de **presupuestos y facturas**. Si la capa de decisión estuviera atada a
+`Customer`, esos casos no podrían existir.
 
 ## ✅ LA SALIDA: **(b) SE GENERALIZA — y es pequeña justamente porque la decisión ya es reutilizable**
 
@@ -94,17 +116,26 @@ No es (a) «tal cual» porque tres cosas **sí** están atadas, y una de ellas d
 
 **Total: 4 ficheros de código y 2 de test, sin un solo cambio de comportamiento.**
 
-### ⚠️ Pero el movimiento va CON su consumidor, en el ③ — y no antes
+### ⚠️ EL MOVIMIENTO SIGUE SIN EJECUTARSE — decisión del fundador, 7-sep-2026
 
-**No se ha ejecutado en esta sesión**, y es una decisión, no un olvido. El consumidor del módulo
-compartido es el lado documento, y el lado documento **no se puede construir hasta que el `ALTER`
-esté aplicado** (abajo). Un módulo compartido con **un solo** consumidor es un refactor sin motivo
-en `main`, que además rompe dos guards de un ticket cerrado para habilitar algo que todavía no
-existe. Esta casa ya escribió la regla en SCRUM-581: *«no se ha construido preparado por si acaso»*.
+El fundador hizo suyo el razonamiento y lo dejó fuera de este ticket: *«un módulo compartido con un
+solo consumidor es un refactor sin motivo en main que además rompe guards cerrados»*. Así que
+`tagsDelCliente.ts` **no se mueve, no se renombra y no se parte**, y las dos pantallas de documento
+consumen `window.filtroClientes` tal cual — con el nombre que tiene, y dicho en el código.
 
-Lo que sí queda en `main` desde hoy es el **guard que hace que esa generalización siga siendo la
-única salida**: `hay UNA sola definición de normalizarTags en src/`. El día que el ③ escriba una
-segunda normalización «porque la de hoy se llama `tagsDelCliente`», el guard cae.
+**Lo que sí se ha hecho, porque el cableado lo exigía:** con el documento entran **dos escritores
+nuevos**, y la traducción de «sin etiquetas» al lenguaje de Prisma dejaba de ser cosa de un fichero
+para ser algo que **tres sitios** tienen que acertar. Estaba PRIVADA dentro de `customerAdmin.ts`.
+Ahora es `tagsParaPrisma` en `tagsDelCliente.ts` —donde ya vive `normalizarTags`, que es quien
+decide— y **los tres pasan por ella**.
+
+🔴 Eso NO es el movimiento aplazado, y la diferencia se mide: **no rompe ni un guard**. Los 23 de
+CONT-07 siguen en verde, incluido el que exige `Prisma.DbNull` en `customerAdmin.ts` —el tipo
+`SinNullDeJs<T>` lo sigue nombrando ahí—. El coste declarado del movimiento era romper dos guards;
+esto cuesta cero. Un test nuevo ata que los tres escritores usan la misma traducción.
+
+Y sigue en pie el guard que hace que la generalización siga siendo la única salida: **`hay UNA sola
+definición de normalizarTags en src/`**.
 
 ---
 
@@ -176,7 +207,7 @@ tabla `quotes` y no sólo `customers`. Uno solo no distingue «no está» de «n
 
 ---
 
-# 🛑 PASO ② · EL `ALTER`, ESCRITO Y **NO APLICADO**
+# 🛑 EL `ALTER` · ESCRITO Y **NO APLICADO**, Y VIAJA EN ESTE MISMO PR
 
 **Fichero:** `docs/sql/scrum-595-etiquetas-del-documento.sql` ·
 **Verificación:** `docs/sql/scrum-595-verificar.sql` · **Registro:** `docs/MIGRATIONS_PENDING.md`
@@ -198,13 +229,36 @@ que sólo toca una.
 ⛔ **No se ha aplicado en ninguna base, y no se ha intentado.** Ni producción, ni staging, ni
 desarrollo. Lo aplica el fundador.
 
-### 🔴 `prisma/schema.prisma` NO SE HA TOCADO, y es deliberado
+### 🔴 EL TIPO NO ESTÁ ADIVINADO
 
-`schemaDrift` compara **esperado ⊆ real** al arrancar: una rama cuyo esquema nombre `tags` en
-`Quote` o `Invoice` **impide arrancar producción** mientras el `ALTER` no esté. Es la secuencia que
-costó nueve días sin desplegar (SCRUM-580). Hay un guard que lo vigila —con control positivo: sabe
-ver el `tags` que **sí** está en `Customer`, así que su «no está» en los documentos significa algo—
-y **se invierte en el ③**, cuando las tres bases tengan la columna.
+Lo generó `node scripts/preview-migracion.mjs --desde` —o sea `prisma migrate diff` sobre el
+esquema viejo sacado de `origin/main`—, con **control positivo** (la herramienta respondió y vio 27
+tablas) y **veredicto aditivo**: ni DROP, ni RENAME, ni TRUNCATE, ni DELETE, ni SET NOT NULL.
+
+```
+-- AlterTable
+ALTER TABLE "quotes" ADD COLUMN     "tags" JSONB;
+-- AlterTable
+ALTER TABLE "invoices" ADD COLUMN   "tags" JSONB;
+```
+
+Importa porque **`schemaDrift` comprueba que la columna EXISTA, no su tipo**: un `tags` creado como
+TEXT arrancaría en verde y se pudriría semanas después, al guardar un array y leerlo como cadena.
+
+### 🔴 EL ESQUEMA VIAJA CON ÉL, Y EL RIESGO LO GESTIONA EL ORDEN DEL MERGE
+
+`prisma/schema.prisma` **sí nombra** `tags` en `Quote` y en `Invoice` en esta rama, con su
+comentario y su porqué. Lo que no puede pasar es el **merge** antes del `ALTER`: `schemaDrift`
+compara esperado ⊆ real al arrancar y producción no levantaría. De ahí el aviso que encabeza el PR.
+
+Un guard lo vigila por los dos lados y **con control positivo** —sabe ver el `tags` que sí está en
+`Customer`, así que lo que diga de los documentos significa algo—: exige que el esquema nombre la
+columna en los DOS modelos **y** que el DDL cree esa tabla. Un esquema que nombre algo que su
+propio SQL no crea es exactamente lo que tumba el arranque.
+
+**Derivados regenerados, no editados a mano:** `docs/sql/deriva-prod.sql` pasa de **426 a 428
+columnas** (las dos nuevas, sin tablas nuevas) con `node scripts/generar-sql-deriva.mjs`, y el
+cliente de Prisma con `npm run prisma:generate` — nunca `npx`.
 
 ---
 
@@ -248,10 +302,20 @@ guard estático para que nadie retire el suelo sin darse cuenta.
 | el **esquema se adelanta** al `ALTER` (`tags` en `Quote`) | el guard del orden |
 | el **DDL** se queda sólo con `quotes` | el guard de las dos tablas |
 | aparece una **segunda** `normalizarTags` | el guard del mecanismo único |
+| la lista de presupuestos deja de **proyectar `tags`** (el quinto eslabón) | el guard del defecto mudo |
+| `setInvoiceTags` escribe **además otro campo** | el guard del «un solo campo» (regla 29) |
+| la lista de facturas se queda **sin filtro** (sólo funciona en un documento) | el guard de las dos listas |
+| el campo de la ficha **estrena un placeholder** | el guard de «ni un literal nuevo» |
+| una revisión **deja de heredar** las etiquetas | **2**: el de este ticket y el de SCRUM-655b |
+| vuelve un **`colSpan` a mano** en la lista de facturas | el guard del vacío descuadrado |
 | **control negativo** · se cambia sólo un comentario | **nada** |
 
-Restaurado todo: `git status` sin una sola modificación rastreada, y `prisma/schema.prisma`
-verificado **byte a byte** con `git diff --quiet`.
+Restaurado todo tras cada una, y comprobado. En la primera vuelta —cuando el esquema todavía no
+entraba— `prisma/schema.prisma` quedó verificado **byte a byte** con `git diff --quiet` después de
+mutarlo.
+
+🔴 **Y cada mutación se comprueba PRESENTE en el fichero antes de correr nada** (`grep` sobre una
+huella propia). Es obligatorio desde esta sesión, y sale de aquí mismo: ver abajo.
 
 ### ⚠️ Y una lección de esta misma sesión, porque casi cuela
 
@@ -263,16 +327,90 @@ encargo sobre `| tail`: el instrumento que no mide se lee igual que el verde.
 
 ---
 
-## Lo que NO se ha construido, y por qué
+## LO CONSTRUIDO · el cableado, documento por documento
 
-**Todo el ③**: el esquema, el `select`/proyección de cada documento, la normalización en servidor,
-las rutas, el campo en el editor, la columna en las dos listas y el selector de filtro.
+| # | Eslabón | Presupuesto | Factura |
+|---|---|---|---|
+| 1 | se escribe | `etiquetasDelDocumento.js` en la ficha | **la MISMA pieza** en su ficha |
+| 2 | se envía | `{ tags: […] }` o `null` — nunca `[]` | íd. |
+| 3 | se valida | `PUT /:id/tags` rechaza lo que no sea lista ni `null` | íd. |
+| 4 | se guarda | `setQuoteTags` → `tagsParaPrisma` | `setInvoiceTags` → `tagsParaPrisma` |
+| 5 | **SE RELEE** | 🔴 `listQuotesAdmin` **y** `getQuoteDetailAdmin`, las DOS a mano | ✅ sale sola: `findMany` sin `select` |
+| 6 | se filtra | selector + columna en la lista | selector + columna en la lista |
 
-**No por falta de tiempo: porque el orden es inviolable y el ② no es mío.** Construirlo ahora
-significaría dejar en la rama un esquema que tumba producción si alguien la mergea antes del
-`ALTER`. Es literalmente lo que hizo CONT-07 en su día, y por lo mismo.
+### 🔴 EL QUINTO ESLABÓN NO ES SIMÉTRICO, y estaba localizado ANTES de construir
 
-### El ③, especificado para quien lo tome — con los eslabones ya localizados
+En la **factura** no hay nada que hacer: `listInvoicesAdmin` devuelve `findMany` sin `select` al
+nivel del documento y el detalle hace `{...invoice}`, así que la columna sale sola. Hay un guard
+que cae si alguien le pone un `select` explícito, porque desde ese momento habría que acordarse.
+
+En el **presupuesto** hay **DOS** proyecciones escritas a mano —la lista y el detalle— y las dos
+había que tocarlas. Sin ellas el defecto es el de SCRUM-580 palabra por palabra: el profesional
+escribe la etiqueta, la pantalla se recarga sin ella, la reescribe, **y la tanda sigue verde
+porque el dato SÍ está en la base**. Los dos sitios tienen su guard, con suelo.
+
+### 🔴 LA TRADUCCIÓN DEL NULL, EN UN SOLO SITIO PORQUE AHORA SON TRES ESCRITORES
+
+`tagsParaPrisma` (en `tagsDelCliente.ts`, junto a `normalizarTags`, que es quien decide). Los tres
+—cliente, presupuesto y factura— pasan por ella, y un test lo ata. Con la elección repartida, uno
+de los tres acabaría escribiendo `Prisma.JsonNull`, que **no deja la columna en NULL**: guardaría
+el valor JSON `null` dentro y un `IS NOT NULL` diría que ese documento tiene etiquetas. Es
+«ausente ≠ vacío» con otro nombre.
+
+### La UI, según la casa
+
+`.badge .badge-slate` para los chips — el componente que **ya está en el inventario (AB3)**: cero
+tokens nuevos, cero estilo inventado. `textContent` por etiqueta y nunca `innerHTML`: la escribe
+el profesional. Un campo separado por comas y **no** un editor de chips, que sería componente nuevo
+y por tanto propuesta de inventario. La columna nace `col-hide-mobile`, como sus vecinas.
+
+🔴 **Y los dos `colSpan` de los vacíos dejan de ser números a mano.** Había un `7` y un `6`
+escritos, y este ticket mete una columna en cada lista: ahora salen de `numeroDeColumnas()`, que
+cuenta el `thead`. Un vacío descuadrado no lo ve ninguna tanda — es la lección de SCRUM-584, que
+tuvo que arreglar exactamente esto en la lista de clientes cuando entró la columna de CONT-07.
+
+### 🔴 DOS GUARDS AJENOS CAYERON, Y LOS DOS TENÍAN RAZÓN
+
+Ninguno se relajó: los dos ofrecían una vía de DECLARACIÓN y se usó esa.
+
+**1 · `SCRUM-655b` — «TODO campo de Quote está clasificado».** Una columna nueva de `Quote` nace
+sin clasificar, y sin clasificar **no viaja a la revisión**. Decidido: **HEREDA**, con el
+precedente de `internalNotes` (metadato del profesional que no sale en el papel). El defecto que
+evita es mudo: sin heredar, revisar un presupuesto lo **saca del filtro** «obra puerto» y el
+profesional ve una lista con un documento menos, sin forma de saber que le falta. Heredar es
+reversible; no heredar no lo es. ⚠️ Clasificar no es que viaje, y aquí no hay viaje que probar:
+`nuevaRevisionDe` **sigue sin llamador** (SCRUM-688 abierto).
+
+**2 · `SCRUM-124` — «ninguna mutación destructiva de facturas».** `PUT /:id/tags` es el **primer
+miembro del allowlist que no es un cambio de estado**, así que se declara despacio. Que no sea
+edición de contenido está MEDIDO —huella, PDF y emisión, los tres—, y la entrada **no ensancha la
+protección neta**: a cambio, este ticket ata que `setInvoiceTags` escribe **un solo campo**. La
+lista crece en una ruta; lo que esa ruta puede escribir queda más apretado que antes.
+
+**Y tres registros más hubo que declarar** para el script nuevo, porque esta casa los tiene: el
+`SHELL` de `public/sw.js` (sin él, la primera visita sin cobertura se queda sin el bloque y **con
+red no se nota**), la lista de scripts del dashboard y las **cinco** dependencias de orden de carga
+en `_banco-vistas.mjs`.
+
+**3 · `SCRUM-662` — y este obligó a TOCAR LA ASERCIÓN de un guard ajeno, así que se dice fuerte.**
+Su auto-test movía la primera dependencia declarada detrás de su consumidor y exigía **exactamente
+una** rota. Eso era cierto mientras cada pieza tenía UN consumidor; al declarar las cinco de este
+ticket, `filtroClientes.js` pasa a tener varios y moverlo rompe **dos**. El detector estaba
+funcionando, no fallando.
+
+🔴 **No se relajó nada.** Lo que el caso afirma —«se detecta, y nombrando los dos»— sigue igual; lo
+que se retiró es una aritmética incidental que este ticket falsificó. Y queda **más apretado**: se
+exige además que el detector **no invente** ninguna, o sea que todo lo que reporte cuelgue del
+fichero movido. Comprobado por mutación sobre el índice REAL —cargando `filtroClientes.js` después
+de `invoicesView.js`— y caen dos guards, el de SCRUM-662 y el de este ticket.
+
+### Lo que queda fuera, dicho
+
+- El **placeholder** del campo — ver microcopy, abajo. Es del fundador.
+- La **generalización** de `tagsDelCliente.ts`, aplazada por el fundador (arriba).
+- El viaje de `tags` en `nuevaRevisionDe`, que no tiene llamador (SCRUM-688).
+
+### Los eslabones, para quien siga
 
 | # | Eslabón | Presupuesto | Factura |
 |---|---|---|---|
@@ -286,38 +424,66 @@ significaría dejar en la rama un esquema que tumba producción si alguien la me
 encargo pedía. En la factura no hay nada que hacer; en el presupuesto sí, y es exactamente el
 defecto mudo de SCRUM-580: el dato **sí** estaría en la base.
 
-**Además, para el ③:**
+**Las dos rutas nuevas**, una por documento, copiando la forma de `PUT /:id/notes` —el metadato de
+documento que ya existía—: verbo, acotadas por `:id`, tenencia en el `WHERE` (regla 2) y nada más.
+Un id ajeno no escribe y devuelve **404**, no un `ok` sobre cero filas.
 
-- El escritor de la factura va en una ruta **propia** (`PUT /admin/invoices/:id/tags`), nunca en
-  `POST /` ni en `emitInvoice`. El guard de SCRUM-289b prohíbe `update`/`delete` en el **entrypoint
-  de alta** y prohíbe `patch`/`put`/`delete` sobre la **colección** — una ruta por `:id` no lo
-  toca, pero conviene saber que ese guard existe y qué vigila exactamente.
-- La generalización de arriba (4 ficheros de código, 2 de test) va **con** ese cableado.
+- `PUT /admin/quotes/:id/tags`
+- `PUT /admin/invoices/:id/tags` — nunca en `POST /` ni en `emitInvoice`. El guard de SCRUM-289b
+  prohíbe `update`/`delete` en el **entrypoint de alta** y `patch`/`put`/`delete` sobre la
+  **colección**; una ruta por `:id` no lo toca, y es donde ya viven `rectify` y `annul`.
+
+⚠️ **Las dos llevan `requireRole('admin')`, y es una elección que se declara.** `/notes` no lo lleva
+y todas las escrituras de `invoicesAdmin` sí: se ha tomado **el gate más cerrado de los dos**,
+porque el mismo bloque con dos permisos según el documento sería una asimetría que nadie decidió.
+Si el fundador quiere que el técnico etiquete, es **quitar** un gate —reversible y visible— y no
+añadirlo después.
+
+🔴 **Y la validación es ESTRICTA en las dos**: un cuerpo que no traiga lista ni `null` da **400**.
+`normalizarTags` convierte en `null` cualquier cosa que no sea lista —su suelo, correcto para un
+formulario—, pero en estas rutas ese suelo **borraría las etiquetas y devolvería `ok`**.
 
 ---
 
-## ⛔ MICROCOPY · NO SE PROPONE NINGÚN LITERAL NUEVO, Y SE PARA
+## ⛔ MICROCOPY · CERO LITERALES NUEVOS, Y UNA RANURA DESCRITA SIN ESCRIBIR
 
-Regla 30. **Cero literales nuevos en lo entregado**: no hay pantalla, así que no hay texto.
+Regla 30. **Hay pantalla y aun así no hay ni un texto nuevo.** Lo que se pinta sale de sitios que
+ya estaban aprobados y se lee de la pieza, nunca copiado:
 
-Para el ③ hay que decidir algo que **es del fundador y no de la sesión**, y se describe sin
-construirlo: CONT-07 ya tiene cuatro ranuras aprobadas por el **asesor** en `TEXTOS_ETIQUETAS`
-(rótulo `Etiquetas`, cabecera `Etiquetas`, placeholder `comunidad, administrador, urgencias…`,
-sin filtro `Todas las etiquetas`). Las dos primeras y la cuarta **se reutilizarían tal cual** —
-misma palabra, mismo mecanismo, cero ranuras nuevas—. **El placeholder no vale**: nombra ejemplos
-de *cliente* («comunidad, administrador»), y en un documento los ejemplos son otros. Ese texto es
-**una ranura nueva**, es del fundador, y **aquí se para**: se describe la necesidad y no se escribe
-el literal.
+| Ranura | Texto | De dónde sale |
+|---|---|---|
+| rótulo del bloque en la ficha | `Etiquetas` | `TEXTOS_ETIQUETAS.rotulo` (CONT-07) |
+| cabecera de columna, las dos listas | `Etiquetas` | `TEXTOS_ETIQUETAS.columna` (CONT-07) |
+| opción «sin filtro», los dos selectores | `Todas las etiquetas` | `TEXTOS_ETIQUETAS.sinFiltro` (CONT-07) |
+| los tres avisos de guardado | `Escribiendo…` · `✓ Guardado automáticamente` · `Error al guardar` | el bloque de **notas internas**, que ya los pinta hoy |
 
-Si el fundador decide que el documento merece sus **propias** cuatro ranuras en vez de reutilizar
-las del cliente, `SIN_APROBAR` sube — hoy vale **7** y no se ha tocado.
+Misma palabra para la misma cosa: **cero ranuras nuevas**, así que **`SIN_APROBAR` se queda en 7**
+y no se ha tocado. Un test fija que ninguna vista repite esos literales a mano —una segunda copia
+deriva y deja de estar aprobada sin que nadie lo decida— y que los tres avisos siguen existiendo
+en el bloque de notas: si desaparecieran de allí, este fichero habría pasado de reutilizar a
+estrenar sin que nada chillara.
+
+### 🔴 LA ÚNICA RANURA NUEVA: EL PLACEHOLDER. DESCRITA Y **NO ESCRITA**
+
+El campo de la ficha **sale sin placeholder**, y no es un olvido: el de CONT-07
+(`comunidad, administrador, urgencias…`) nombra ejemplos de **CLIENTE**, y en un documento los
+ejemplos son otros —una obra, una garantía, una urgencia—. Escribir ese texto sería estrenar
+microcopy, y el microcopy es del fundador.
+
+**Lo que hace falta, descrito:** una ranura, en el campo de etiquetas de la ficha de documento,
+que sugiera con ejemplos qué se escribe ahí; en el mismo tono que la de cliente y del mismo
+tamaño (36 caracteres cabían). **Aquí se para.** Un guard exige que ese campo siga sin
+`placeholder` hasta que exista un literal firmado — si alguien le pone uno, cae.
 
 ---
 
 ## 🕳️ Huecos declarados
 
-1. **Nada se ha ejercitado contra una base con la columna.** No existe: el `ALTER` está escrito y
-   sin aplicar. Todo lo verificado es mecanismo puro, más lecturas del árbol.
+1. 🔴 **Nada se ha ejercitado contra una base con la columna, porque la columna no existe todavía.**
+   El `ALTER` está escrito y **sin aplicar**: lo aplica el fundador antes de mergear. Todo lo
+   verificado es mecanismo puro más lecturas del árbol, y eso incluye el cableado nuevo: compila,
+   sus guards pasan, y **nadie ha guardado una etiqueta de verdad en un documento**. La primera
+   pasada real es del fundador tras aplicar.
 2. **El control que decide se ejerce sobre el MECANISMO, no de extremo a extremo.** Filtra un lote
    de presupuestos y facturas y salen los dos; que salgan de la **base** por la **pantalla** es del
    ③ y no se puede probar hoy. Se dice en vez de dejarlo entender de otra forma.

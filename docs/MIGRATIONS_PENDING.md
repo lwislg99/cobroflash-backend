@@ -2348,13 +2348,20 @@ consulta alcance la tabla `quotes`. Un único control no distingue «no está» 
 **código 2** declarándose ciego, y rompiendo el control positivo también. Restaurado y
 re-ejecutado: fichero idéntico y exit 0.
 
-### 🔴 EL ESQUEMA **NO** ENTRA TODAVÍA, Y ES DELIBERADO
+### 🔴 EL ESQUEMA VIAJA EN EL MISMO PR, Y EL RIESGO SE GESTIONA CON EL ORDEN DEL MERGE
 
-`prisma/schema.prisma` **no se ha tocado** y sigue idéntico a `main`. `schemaDrift` compara
-**esperado ⊆ real** al arrancar: una rama cuyo esquema nombre `tags` en `Quote` o `Invoice`
-**impide arrancar producción** mientras el `ALTER` no esté aplicado. Es exactamente la secuencia
-que costó nueve días sin desplegar (SCRUM-580). Un guard de este ticket lo vigila por los dos
-lados — y se invierte en el ③, cuando las tres bases tengan la columna.
+**Regla de la casa, 7-sep-2026 (fundador):** cuando un ticket necesita columna nueva, el PR lleva
+**todo junto** — la línea del esquema, el SQL aditivo, esta entrada con las tres bases sin marcar,
+y el cuerpo del PR empezando por **NO MERGEABLE HASTA APLICAR LA COLUMNA EN LAS TRES BASES**.
+Retener la línea del esquema produce media función y dos PR por ticket, que es el patrón que costó
+los nueve días.
+
+Así que `prisma/schema.prisma` **sí nombra** `tags` en `Quote` y en `Invoice` en esta rama. Lo que
+NO puede pasar es el MERGE antes del `ALTER`: `schemaDrift` compara **esperado ⊆ real** al
+arrancar, y producción no levantaría. **El fundador aplica y luego mergea.**
+
+Un guard de este ticket vigila que el esquema y el DDL digan lo mismo sobre los DOS documentos: un
+esquema que nombre una columna que su propio SQL no crea es exactamente lo que tumba el arranque.
 
 ### Lo que esta columna **no** toca — medido, no supuesto
 
