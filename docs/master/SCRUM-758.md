@@ -372,3 +372,140 @@ ofrece y **la derivé**. Ahora la cuenta el propio guard y la imprime al correr.
 Los 102 saltados declaran su motivo y **suman**: 90 `QA_DB_TEST` + 9 `LIBRO_PG_URL` +
 1 `BOT_SUITE_TEST` + 1 `A55_DB_TEST` + 1 EPERM de enlace en Windows. **El apéndice añade 6 tests**,
 todos sin gate: no necesitan base.
+
+---
+
+# APÉNDICE 2 (7-sep-2026) · El suelo que impide que el guard nazca caducando
+
+**Medido contra:** `origin/main` = `0cc6a3a684f702095074bbd1ef2b7cb996f07935` · 2026-09-07T02:48:35+01:00
+
+---
+
+## 🔴 EL AGUJERO, ENSEÑADO ANTES DE CONSTRUIR
+
+El guard del apéndice anterior juzga 2 de 46, y esa proporción **sólo puede empeorar**. Provocado
+sobre texto fabricado, sin tocar el documento:
+
+```
+documento REAL             entradas:  46 · juzgables: 2 · mentirosas: 0 · veredicto: VERDE
++ ENTRADA NUEVA EN PROSA   entradas:  47 · juzgables: 2 · mentirosas: 0 · veredicto: VERDE
+```
+
+**La zona ciega crece de 44 a 45 y el guard no se entera.** Ése era el agujero.
+
+---
+
+## «NUEVA» RESPECTO A QUÉ — el filo, y por qué no hace falta contestarlo
+
+Las dos formas obvias de anclar «nueva» fallan, y por motivos distintos:
+
+| forma | por qué no |
+|---|---|
+| una **lista** de entradas conocidas | es un censo congelado el día que se escribe — justo lo que el encargo prohíbe |
+| `git blame` de la cabecera | editar una cabecera vieja la convertiría en «nueva», y un clon superficial dejaría al guard **ciego sin decirlo** |
+
+🔴 **Así que no se cuenta quién es nueva: se capa el TAMAÑO de la zona ciega.** Es el trinquete que
+la casa ya usa en SCRUM-737 —*«el censo de cifras SIN ancla no crece, y si baja hay que anotarlo»*—
+y resuelve las cinco situaciones de golpe:
+
+| qué pasa | veredicto |
+|---|---|
+| entrada NUEVA en prosa muda | el recuento sube → **🔴 ROJO** |
+| entrada NUEVA con casillas | no sube → verde |
+| entrada NUEVA en prosa **con motivo** | cae en «declaradas» → verde |
+| alguien EDITA una vieja y la deja igual de muda | no cambia nada → verde |
+| alguien EDITA una vieja y le pone casillas o motivo | el recuento **BAJA** → hay que bajar el tope, y la mejora queda **anotada** en vez de absorberse |
+
+**Ésa es la respuesta a «qué pasa cuando alguien edita una entrada vieja»:** nada, salvo que la
+mejore — y entonces se anota.
+
+---
+
+## EL ESCAPE, DERIVADO · `NO MEDIBLE: <por qué>`
+
+No es una forma inventada. Medido sobre `docs/` el 7-sep-2026: `HUECO DECLARADO` ×17,
+`NO MEDIBLE`/`no medible` ×10, `SIN MEDIR` ×3. Se toma **`NO MEDIBLE`** porque es el que **este
+mismo guard ya imprime** en su suelo: el documento y el guard hablan igual.
+
+⚠️ **Y se exige motivo detrás, no el marcador a secas.** Un `NO MEDIBLE.` pelado cuenta como muda
+—hay un caso que lo prueba—: el marcador sin motivo es un silencio con etiqueta.
+
+---
+
+## LOS CONTROLES
+
+```
+ok · 🔴 EL SUELO: la zona ciega NO CRECE — una entrada nueva en prosa muda es ROJO
+ok · 🔴 EL QUE DECIDE: prosa nueva SIN motivo crece; CON motivo, no
+ok · ✅ CONTROL POSITIVO: el detector CAZA una cabecera que miente (fabricada)
+ok · 🔴 NINGUNA cabecera del log contradice a su propio cuerpo
+ok · ✅ CONTROL POSITIVO sobre el documento REAL: la entrada PARCIAL pasa
+ok · el log DECLARA que no cubre migraciones de DATOS
+# tests 8 · pass 8 · fail 0
+```
+
+✅ **Las 44 que ya existen NO se ponen rojas**: el tope se ancló en su valor de hoy, así que el
+documento real está exactamente en el límite y en verde. Si el suelo las hubiera cazado, habría
+roto el árbol entero.
+✅ **Y los de siempre siguen**: `SCRUM-195 · 🟡 PARCIAL` sin acusarse, y `:575` corregida en verde.
+
+**El recuento sale derivado y por la misma línea**, con la cifra nueva dentro:
+
+```
+· entradas: 46 · con casillas (juzgables): 2 · en prosa (NO medibles por este guard): 44
+  · de ésas, DECLARADAS: 0 · MUDAS: 44 (tope 44)
+```
+
+---
+
+## EL TOPE, ANCLADO
+
+`TOPE_PROSA_MUDA = 44`, medido el **7-sep-2026** sobre `5af8e7e9` y **re-medido sin cambio** tras
+mezclar `0cc6a3a6`, que es el árbol sobre el que se entrega. Va anclado con fecha y sha
+porque una cifra de recuento sin ancla es el defecto de SCRUM-737 — el mismo que me cazó ayer.
+
+⛔ **Y el mensaje del rojo dice explícitamente que NO se suba el tope:** subirlo es apagar el
+aviso, no atenderlo. Las dos salidas legítimas son casillas o motivo.
+
+---
+
+## MUTACIONES
+
+**Cinco declaradas, las cinco VIVAS.** Las dos nuevas cubren **las dos direcciones** del trinquete:
+
+| # | qué imita | dirección |
+|---|---|---|
+| ④ | entra al log una entrada nueva en prosa muda | **por arriba**: la ceguera crece |
+| ⑤ | el tope se queda por encima del real (44 → 99) | **por abajo**: queda hueco para crecer sin aviso |
+
+Las dos declaran **el mismo test** (`🔴 EL SUELO: la zona ciega NO CRECE`) porque es ese único test
+el que sostiene las dos direcciones; se declaran por separado porque son dos formas distintas de
+deshacerlo y **cada una cae por su cuenta**.
+
+`npm run meta:mutaciones` — **tres pasadas**: **vivas 115 · mudas 0 · ciegas 0 · ficheros muertos
+0**, idénticas. La cifra sube de 98 a 115 por lo que trajo el merge de `main`, no por este ticket.
+
+⚠️ El campo `a` de las cinco va como **literal único, nunca concatenado**: el lector por AST
+descarta el resto en silencio, y eso ya ha mordido a tres sesiones.
+
+---
+
+## HUECOS DECLARADOS
+
+- ⛔ **Las 44 siguen sin corregir, y sigue siendo lo correcto**: no están bien — **no lo sabemos**.
+  Ponerles casillas exigiría auditar dev, staging y producción de cada una, y escribir 44 estados
+  que nadie ha medido sería fabricar la misma mentira que este ticket quitó de una.
+- **El guard sigue juzgando 2 de 46.** El suelo no amplía su alcance: impide que la ceguera
+  CREZCA. Es menos de lo que parece y más de lo que había.
+- **No se amplió el lector a las tablas por base**: ya está medido que da falsos positivos.
+- **Cero bases, cero `deriva-prod.sql`, sin tocar el aplicador ni su lista blanca.**
+
+---
+
+## TANDA DEL APÉNDICE 2
+
+**5.770 tests · 5.668 pass · 0 fail · 102 skipped · estado 0**, sobre el árbol ya mezclado con
+`main` (`0cc6a3a6`) y **recompilado tras mezclar** (la lección de SCRUM-763).
+
+Los 102 saltados suman: 90 `QA_DB_TEST` + 9 `LIBRO_PG_URL` + 1 `BOT_SUITE_TEST` +
+1 `A55_DB_TEST` + 1 EPERM. Este apéndice añade **2 tests**, los dos sin gate.
