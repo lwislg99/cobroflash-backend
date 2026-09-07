@@ -64,6 +64,29 @@ export const CLIENTES_DE_MUESTRA = [
   { id: 3, name: 'Comunidad de Propietarios Av. del Puerto 118', phone: '34000000003', email: 'cp118@ejemplo.es', notes: 'Factura a nombre de la comunidad', tags: ['moroso'], createdAt: '2026-03-05T10:00:00Z' },
 ];
 
+// ═══ SCRUM-795 · EL DETALLE DE LA FICHA 360 ═══════════════════════════════════════════════════
+//
+// La 360 pide `/admin/customers/:id/detail` y DESESTRUCTURA seis cosas de la respuesta; servirle
+// la lista de arriba la revienta en `invoices[0]` y mediría una pantalla que no existe. El cliente
+// NO se inventa otra vez: es el primero de `CLIENTES_DE_MUESTRA` —una copia a mano de un fixture
+// es la avería que este repo ya conoce (tres listas de zona roja que habían derivado)—.
+//
+// Vive aquí y no dentro del guard porque lo usan DOS instrumentos: `guard-objetivo-tactil` (que
+// vigila) y `censo-objetivo-tactil-panel` (que cuenta). Si cada uno llevara el suyo, el día que
+// uno cambie el número del censo y el veredicto del guard dejarían de hablar de la misma pantalla.
+export const DETALLE_360_DE_MUESTRA = Object.freeze({
+  customer: CLIENTES_DE_MUESTRA[0],
+  quotes: [{ id: 11, quoteNumber: 'P-2026-0011', status: 'accepted', total: 1234.56, currency: 'EUR', createdAt: '2026-04-02T09:00:00.000Z' }],
+  invoices: [{ id: 21, number: 'F-2026-0021', status: 'paid', total: 999.99, currency: 'EUR', createdAt: '2026-04-09T09:00:00.000Z', pdfUrl: '/x.pdf' }],
+  stats: { totalQuotes: 3, acceptedQuotes: 2, totalBilled: 2500, totalPaid: 1500, profit: 800 },
+  events: [{ type: 'quote_accepted', title: 'Presupuesto aceptado', detail: 'P-2026-0011', createdAt: '2026-04-02T10:00:00.000Z' }],
+});
+
+/** Los argumentos que el PRODUCTO le pasa a cada vista. Hoy sólo la 360 necesita uno (`app.js:314`). */
+export const ARGUMENTOS_DE_VISTA = Object.freeze({
+  renderCustomer360View: [DETALLE_360_DE_MUESTRA.customer.id],
+});
+
 /**
  * Monta `renderCustomersView` y devuelve `{ html, aviso }`.
  *
@@ -117,10 +140,12 @@ export async function paginaDeClientes(raiz, { extra = '', seleccionar = true } 
  * cumplimiento. Por eso se exige un mínimo de nodos y, si no llega, se devuelve `aviso` y decide
  * quien llama. Es la misma lección que dejó escrita SCRUM-787 con sus ocho vistas sin fixture.
  */
-export async function paginaDeVista(raiz, nombreFn, { datos = null, minimoNodos = 20, extra = '' } = {}) {
+export async function paginaDeVista(raiz, nombreFn, { datos = null, minimoNodos = 20, extra = '', args = [] } = {}) {
   let r;
   try {
-    r = await pintarVista(cargarDashboard(raiz, datos ? { datos } : {}), nombreFn);
+    // SCRUM-795 · `args` son los argumentos que el producto le pasa a la vista (la ficha 360 va con
+    // su id, como en `app.js:314`). Sin `args` esto llama igual que siempre.
+    r = await pintarVista(cargarDashboard(raiz, datos ? { datos } : {}), nombreFn, ...args);
   } catch (e) {
     return { html: null, aviso: `${nombreFn} reventó al montarse: ${String(e.message).slice(0, 90)}` };
   }

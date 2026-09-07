@@ -45,7 +45,7 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { lanzarNavegador } from './_navegador.mjs';
 import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL } from './_medidor-de-toque.mjs';
-import { serializar, paginaDeClientes, CLIENTES_DE_MUESTRA } from './_pagina-panel.mjs';
+import { serializar, paginaDeClientes, CLIENTES_DE_MUESTRA, DETALLE_360_DE_MUESTRA, ARGUMENTOS_DE_VISTA } from './_pagina-panel.mjs';
 import { cargarDashboard, pintarVista, todos } from '../tests/_banco-vistas.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -62,6 +62,9 @@ const noSupe = (s) => { console.error(s); salida = 2; };
 /** Datos de muestra generosos: cuantas más vistas monten, mayor la población medida. */
 const DATOS = (url) => {
   const u = String(url || '');
+  // SCRUM-795 · el DETALLE va antes que la lista: `/admin/customers/7/detail` casa con las dos, y
+  // servirle un array a la 360 la revienta en `invoices[0]`.
+  if (/\/admin\/customers\/\d+\/detail/.test(u)) return DETALLE_360_DE_MUESTRA;
   if (u.includes('/admin/merchant')) return { id: 1, name: 'Fontanería Soler' };
   if (/\/admin\/customers/.test(u)) return CLIENTES_DE_MUESTRA;
   if (/\/admin\/products\b/.test(u)) return { ok: true, items: [{ id: 1, name: 'Grifo', price: 100, cost: 60, description: '', providerId: null, itemKind: null, active: true }] };
@@ -82,7 +85,9 @@ const superficies = [];
 const noMedidas = [];
 for (const fn of VISTAS) {
   let r;
-  try { r = await pintarVista(cargarDashboard(RAIZ, { datos: DATOS }), fn); }
+  // SCRUM-795 · con los argumentos que el producto le pasa a la vista, si los necesita. La ficha
+  // 360 montaba 2 nodos y salía en «NO MEDIDAS» por esto, no por estar vacía.
+  try { r = await pintarVista(cargarDashboard(RAIZ, { datos: DATOS }), fn, ...(ARGUMENTOS_DE_VISTA[fn] || [])); }
   catch (e) { noMedidas.push([fn, 'el banco no la pudo montar: ' + String(e.message).slice(0, 70)]); continue; }
   if (r.error) { noMedidas.push([fn, 'no monta: ' + String(r.error.message).slice(0, 70)]); continue; }
   let html;

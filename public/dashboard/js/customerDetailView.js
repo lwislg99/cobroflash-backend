@@ -105,12 +105,17 @@ async function renderCustomer360View(container, customerId) {
       btn.textContent = '¡Copiado!';
       setTimeout(() => { btn.innerHTML = '🔗 Portal'; }, 2000);
     } catch {
-      // 🔴 SIN el `.message` del servidor, y no es una omisión: el trinquete de SCRUM-644 lo cazó
-      // en mi primera versión. Un identificador como `customer_not_found` en pantalla no es un
-      // mensaje mal redactado, es una tubería interna asomando a la interfaz — y el techo de este
-      // fichero es CERO. El texto es el que la lista ya usa para esta misma acción
-      // (`customersView.js`), sin la parte que filtra el mensaje: no estrena microcopy.
-      setAlert('error', 'Error al obtener el portal');
+      // 🔴 EL LITERAL ES EL DE LA LISTA, BYTE A BYTE — no un recorte. `customersView.js:660` pinta
+      // esta misma acción y su literal son 28 bytes que terminan en `: `; aquí van los 28, medidos
+      // (mismo sha256). Un recorte —quitarle los dos caracteres finales para que la frase quedara
+      // redonda— sería microcopy NUEVO, y la regla 30 no distingue entre inventar una frase y
+      // recortar la oficial.
+      //
+      // ⚠️ LO QUE NO VA, Y CUESTA: la lista sigue con `+ err.message`. Este fichero NO puede
+      // (SCRUM-644: techo CERO, y su segundo trinquete impide volver a la tabla del censo
+      // heredado). Así que el usuario ve un `: ` sin nada detrás. Es feo y está DECLARADO:
+      // se prefiere a estrenar texto por mi cuenta o a asomar `customer_not_found` a la interfaz.
+      setAlert('error', 'Error al obtener el portal: ');
     }
   };
   header.querySelector('#btn-new-quote-360').onclick = () => {
