@@ -1,0 +1,27 @@
+banco → host=127.0.0.1 puerto=55432 base=yaqu_tramos_test
+
+cerrojo real del proyecto · SERIE_LOCK_NS = 1749 (SCRUM-728)
+
+═══ A · restricción única ("quoteId", stage_label) ═══
+   A.0 · grupos que YA violarían la restricción en esta base: 1
+        quoteId=2 stage_label="Anticipo" → 2 facturas
+        🔴 con estas filas dentro, `CREATE UNIQUE INDEX` FALLA. No es un detalle de
+        este banco: son las facturas que dejó la carrera, y en producción serían
+        facturas EMITIDAS que la regla 29 no deja borrar.
+
+   A.1 · índice único creado (parcial, sólo sobre el presupuesto 5).
+        caso 1 · plan CUSTOM — dos facturas con la MISMA etiqueta «Anticipo»:
+            → RECHAZADA (P2002) ✔ el índice la para
+        caso 2 · plan PRESET — dos facturas con stage_label NULL:
+            → 🔴 ENTRA — el índice NO la para: en Postgres dos NULL no chocan
+   índice retirado (era una medición, no una migración).
+
+═══ B · recuento dentro de la transacción, con el cerrojo tomado ═══
+   A · cerrojo tomado
+   A · factura insertada (aún SIN commit)
+   B · pide el cerrojo…
+   A · commit
+   B · cerrojo tomado (A ya ha hecho commit)
+   B · cuenta DENTRO de la transacción: 1
+
+   VEREDICTO B: ✔ SÍ la ve (1). El nivel es READ COMMITTED —cada sentencia toma su propia instantánea— y el `count` se ejecuta DESPUÉS de esperar el cerrojo, o sea después del commit de A. Recontar ahí dentro SÍ decide bien.
