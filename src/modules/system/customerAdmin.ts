@@ -18,6 +18,12 @@ function generatePortalToken() {
 // recortado; solo el token).
 const CUSTOMER_SELECT_NO_TOKEN = {
   id: true, merchantId: true, name: true, phone: true, email: true, notes: true,
+  // 🔴 SCRUM-590 (CONT-19) · EL QUINTO ESLABÓN OTRA VEZ — y aquí no es sólo que el dato no se
+  // vea. Este `select` es EXPLÍCITO y lo usan `listCustomers` Y `getCustomer`. Sin esta línea
+  // el móvil se guardaría en la base y volvería `undefined` a la ficha: el profesional lo
+  // escribiría, la pantalla se recargaría vacía, y lo volvería a escribir. Es el aviso que ya
+  // dejaron escrito SCRUM-579, SCRUM-580 y SCRUM-587 aquí mismo; esta vez se leyó ANTES.
+  mobile: true,
   legalName: true, taxId: true, waOptOut: true, createdAt: true, updatedAt: true,
   contactKind: true, // SCRUM-574: forma jurídica (EMPRESA|PERSONA). NO es tipoDestinatario.
   tipoDestinatario: true, // SCRUM-69: para editar en la ficha y para la bandeja de facturación
@@ -106,13 +112,29 @@ export async function getCustomer(merchantId: number, id: number) {
  *
  * `undefined` se respeta: en una actualización parcial significa «no toques este campo», y
  * confundirlo con «bórralo» sería perder el teléfono de un cliente al editarle las notas.
+ *
+ * 🔴 SCRUM-590 (CONT-19) · LOS DOS NÚMEROS, NO SÓLO EL FIJO. El motivo de arriba vale MÁS para
+ * el móvil que para el fijo: el móvil es el número al que sale el documento, así que guardarlo
+ * sin normalizar es exactamente el defecto de SCRUM-578 —`+34 662629419` y `662629419` como
+ * dos cosas distintas— en el campo que además decide a dónde se manda el WhatsApp. Se recorre
+ * una lista y no se copia la línea: dos copias son dos sitios donde divergir.
  */
-function normalizarIdentificadores<T extends { phone?: string | null }>(data: T): T {
-  if (data.phone === undefined) return data;
-  const limpio = normalizePhone(data.phone);
-  // Si no se puede normalizar, se guarda lo que escribió el profesional: este ticket avisa de
-  // duplicados, no valida teléfonos. Rechazar aquí sería un bloqueo que nadie ha decidido.
-  return { ...data, phone: limpio || data.phone };
+type ConNumeros = { phone?: string | null; mobile?: string | null };
+function normalizarIdentificadores<T extends ConNumeros>(data: T): T {
+  // 🔴 SE ACUMULA APARTE Y SE ESPARCE `...data` AL FINAL, en vez de reasignar en el bucle. El
+  // guard ④ de SCRUM-579 lo exige literalmente, y tiene razón de fondo: un normalizador que
+  // construye su salida campo a campo se come en silencio todo lo que no nombre —la dirección
+  // de facturación, las etiquetas— entre lo que Zod validó y lo que se guarda. Con `...data`
+  // delante, lo que este bucle no toca pasa intacto por construcción.
+  const limpiados: ConNumeros = {};
+  for (const campo of ['phone', 'mobile'] as const) {
+    if (data[campo] === undefined) continue; // edición parcial: no se toca
+    const limpio = normalizePhone(data[campo]);
+    // Si no se puede normalizar, se guarda lo que escribió el profesional: este ticket avisa de
+    // duplicados, no valida teléfonos. Rechazar aquí sería un bloqueo que nadie ha decidido.
+    limpiados[campo] = limpio || data[campo];
+  }
+  return { ...data, ...limpiados };
 }
 
 /**

@@ -506,6 +506,20 @@ export type ItemKind = (typeof ITEM_KIND)[number];
 export const customerCreateSchema = z.object({
   name: z.string().min(1),
   phone: z.string().min(5).optional(),
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-590 (CONT-19) · EL MÓVIL, y es el número que RECIBE los documentos por WhatsApp.
+  //
+  // MISMA FORMA QUE `phone` —`z.string().min(5).optional()`— y no es pereza: los dos campos
+  // son el mismo tipo de dato y validarlos distinto crearía la asimetría de que el fijo
+  // acepta lo que el móvil rechaza, sin que nadie lo haya decidido. Quien normaliza es el
+  // servidor (`normalizarIdentificadores`), igual que con el fijo desde SCRUM-578.
+  //
+  // `optional()` y NO `nullable()`, otra vez como `phone`: en una edición parcial, ausente
+  // significa «no toques este campo». El día que haga falta poder BORRAR el móvil desde la
+  // ficha habrá que añadir `nullable()` a los dos a la vez — hoy `phone` tampoco se puede
+  // borrar, así que esto no estrena una limitación, la hereda.
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  mobile: z.string().min(5).optional(),
   email: z.string().email().optional(),
   notes: z.string().max(1000).optional(),
   // J3: baja de WhatsApp (manual desde la ficha hasta WA-0b/BOT-1)
