@@ -154,8 +154,17 @@ const CENSO = Object.freeze({
   // NO se inventa el texto mientras tanto (regla 30) ni se aplaza el ticket: el mecanismo existe
   // y funciona entero; lo que falta es la firma. El día que llegue, las DOS entradas se BORRAN —
   // no se ponen a 0 (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista ficheros CON marcadores.
+  // 🔴 SCRUM-722 · 7-sep-2026 · `atajoNuevo.js` SALIÓ. El fundador firmó «Nuevo albarán» y su
+  // entrada se BORRA, no se pone a 0 (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista ficheros
+  // CON marcadores, y el trinquete APRIETA. Ese marcador estuvo TRES DÍAS en pantalla y ningún
+  // guard lo vio, porque estaba DENTRO de este censo: contado y permitido. Lo cierra el guard
+  // nuevo `guard:marcadores-en-pantalla`, que mide el DOM y no el fuente.
+  //
+  // `albaranDesdePresupuestoModal.js` SE QUEDA, y no es un descuido: sus marcadores no son el
+  // rótulo del botón sino SEIS ranuras propias (`ALB_ORIGEN_SIN_APROBAR = 6`) que siguen sin
+  // firmar. Comprobado en el fichero antes de tocar nada, en vez de bajar las dos porque el
+  // comentario de arriba las nombraba juntas.
   'albaranDesdePresupuestoModal.js': 1,
-  'atajoNuevo.js': 1,
   // 🔴 SCRUM-587 (CONT-14) · 4-sep-2026 · `quotesView.js` VUELVE A ENTRAR, con 2, y a conciencia.
   //
   // Salió el 3-sep cuando el asesor firmó «+ Nuevo cliente» (SCRUM-591). Entra ahora por la tira

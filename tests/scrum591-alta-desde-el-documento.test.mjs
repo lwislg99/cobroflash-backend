@@ -271,7 +271,10 @@ test('SCRUM-591 · ✅ la microcopy FIRMADA es literal, y es la MISMA que la de 
   // 🔴 5-sep-2026 · 0 → 1 (SCRUM-606 · ALB-01): entró «Nuevo albarán» sin firmar. Lo que este
   // test ata sigue INTACTO —el rótulo de Clientes, comprobado literal justo arriba—: lo que
   // cambia es el recuento global del atajo, que ahora lleva una ranura pendiente que no es suya.
-  assert.match(atajo, /SIN_APROBAR = 1/,
+  // ✅ 7-sep-2026 · 1 → 0 (SCRUM-722): el fundador firmó «Nuevo albarán» y su marcador se retira.
+  // Lo que este test ata sigue INTACTO —el rótulo de Clientes, comprobado literal justo arriba—;
+  // lo que baja es el recuento global del atajo, que vuelve a no tener ninguna ranura pendiente.
+  assert.match(atajo, /SIN_APROBAR = 0/,
     '🔴 el número de ranuras sin firmar del atajo ha cambiado. Si ha entrado un rótulo nuevo sin\n' +
     '   firma, hay que decirlo; y si se ha movido sin motivo, no es este test lo que hay que tocar.');
 
