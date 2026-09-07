@@ -55,7 +55,21 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
  * anclar sólo el total dejaría pasar un trasvase silencioso entre categorías — que es
  * exactamente cómo este defecto se disolvería sin que nadie lo viera.
  */
-const VEREDICTO_AL_MEDIR = { flag: 16, tipo: 7, aPelo: 151 };
+/**
+ * 7-sep-2026 · `aPelo` sube de 151 a 152 por SCRUM-814, y queda dicho en el mismo commit que lo
+ * mueve — un ancla que se sube sin motivo escrito deja de ser un ancla.
+ *
+ * El +1 es UNA línea, medida y no supuesta: `quotesAdmin.routes.ts:336`, el mensaje del 409
+ * `stage_taken_concurrently` («Se acaba de emitir otra factura de este presupuesto…»), que avisa
+ * al profesional de que dos peticiones simultáneas pidieron el mismo tramo y que vuelva a
+ * pedirlo. Los otros cuatro «a pelo» de ese fichero ya estaban.
+ *
+ * ⚠️ Es MICROCOPY NUEVA y por tanto NO APROBADA (regla 30): va PROPUESTA en
+ * `docs/master/SCRUM-814.md`, no firmada. Un 409 sin mensaje dejaría la pantalla muda ante una
+ * carrera —el profesional vería un error sin saber que basta reintentar—, así que el texto va, y
+ * va declarado como pendiente en vez de colado en silencio.
+ */
+const VEREDICTO_AL_MEDIR = { flag: 16, tipo: 7, aPelo: 152 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA

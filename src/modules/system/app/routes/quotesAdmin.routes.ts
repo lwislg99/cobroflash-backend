@@ -21,7 +21,9 @@ import { sendTechQuoteApprovedEmail } from '../../../messaging/domain/merchantNo
 import { conConstancia } from '../../../messaging/domain/avisoConstancia';
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
-import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+// SCRUM-814 · `SERIE_LOCK_NS` se IMPORTA, no se copia: el número del cerrojo vive en un solo
+// sitio (SCRUM-728) y aquí sólo se usa. No se toca nada de ese fichero.
+import { allocateInvoiceNumber, isReceiptNumber, SERIE_LOCK_NS } from '../../../invoicing/domain/invoiceNumber.service';
 import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: emitir factura = admin)
 
@@ -34,6 +36,16 @@ import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaE
 import { paramsDePresupuestoParaPdf } from '../../../quotes/domain/presupuestoParaPdf';
 
 const router = Router();
+
+/**
+ * SCRUM-814 · el tramo que esta petición preparó ya lo emitió OTRA petición mientras tanto.
+ *
+ * Código propio y no `no_more_invoices_for_payment_terms`: aquel significa «este presupuesto ya
+ * está facturado entero», que es un final legítimo. Éste significa «vuelve a pedirlo y saldrá el
+ * siguiente tramo». Un solo código para las dos cosas obligaría a leer el texto para saber si hay
+ * que reintentar, y el texto es lo único que no se debe parsear (SCRUM-151).
+ */
+export const TRAMO_TOMADO = 'stage_taken_concurrently';
 
 /**
  * GET /admin/quotes
@@ -207,6 +219,55 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     exigirTiposDeIvaEmitibles(scaledLines);
 
     const invoice = await prisma.$transaction(async (tx) => {
+      // ── SCRUM-814 · EL RECUENTO, DENTRO DE LA TRANSACCIÓN Y BAJO EL CERROJO ──────────────
+      //
+      // 🔴 EL DEFECTO QUE CIERRA ESTO: el tramo se elegía arriba (`plan[existingInvoices.length]`)
+      // con el recuento de una lectura hecha ANTES de abrir la transacción. Envolver la creación
+      // en una transacción no protege una decisión tomada antes de abrirla. Medido corriendo con
+      // dos procesos y hora de salida común: salían DOS facturas del mismo tramo, 3 de 3, y con un
+      // plan 30/70 el presupuesto se quedaba con 726 € facturados de 1210 — **484 € que ya no se
+      // podían facturar**, en dos facturas selladas que la regla 29 no deja borrar.
+      //
+      // EL MISMO CERROJO QUE YA EXISTE, no uno nuevo. `allocateInvoiceNumber` toma
+      // `pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)` como su primera sentencia (SCRUM-728).
+      // Aquí se toma ANTES, con la misma clave: es re-entrante dentro de la misma transacción y
+      // los dos se sueltan en el commit, así que el cerrojo de la serie no se toca ni se duplica —
+      // sólo se adelanta el momento en que esta transacción entra en su sección crítica.
+      //
+      // Y SE TOMA ANTES DE PEDIR NÚMERO, no después, por lo mismo que SCRUM-246 y SCRUM-771: las
+      // comprobaciones van antes de consumir un número. Aquí un `throw` posterior también lo
+      // devolvería —el contador se incrementa en esta misma `tx` y el rollback lo deshace—, pero
+      // entonces la regla dependería de un detalle del rollback en vez de del orden, y el orden se
+      // lee.
+      //
+      // POR QUÉ VE LO DE LA OTRA PETICIÓN, que es lo que hace que esto funcione: el cerrojo es de
+      // transacción y se libera en el commit, así que la segunda no entra hasta que la primera ya
+      // escribió Y confirmó; y el nivel es READ COMMITTED, donde cada sentencia toma su propia
+      // instantánea, así que este `count` —ejecutado DESPUÉS de esperar— la ve. Medido corriendo
+      // en `docs/master/evidencias/scrum814/los-dos-caminos.mjs`. Con REPEATABLE READ NO la vería:
+      // la instantánea se tomaría al abrir la transacción, antes de esperar el cerrojo.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LOCK_NS}::int, ${quote.merchantId}::int)`;
+      // Filtra TAMBIÉN por `merchantId` (regla 2), aunque `quote` ya venga acotado por él y el
+      // 404 de arriba ya haya descartado los ajenos. La alternativa era apoyarse en la
+      // procedencia del id, y el censo de SCRUM-348 llama a eso «correcto hoy y frágil siempre»:
+      // nada comprueba que mañana el id siga viniendo de una fila acotada. Aquí el merchant está
+      // a mano y no cuesta nada, así que se pone en vez de sumar una deuda declarada más.
+      const emitidasAhora = await tx.invoice.count({
+        where: { quoteId: quote.id, merchantId: quote.merchantId },
+      });
+      if (emitidasAhora !== existingInvoices.length) {
+        // Se ABORTA en vez de recalcular el tramo aquí dentro. Recalcular obligaría a meter
+        // `stageLinesReconciled`, `exigirLineasFacturables` y `exigirTiposDeIvaEmitibles` dentro
+        // de la transacción — mover medio camino de emisión para arreglar una carrera. Abortar es
+        // lo pequeño y lo seguro: quien pidió, vuelve a pedir y recibe el tramo siguiente, y el
+        // presupuesto acaba facturado entero. Lo comprueba el caso del dinero del test de carrera.
+        const e: any = new Error(TRAMO_TOMADO);
+        e.code = TRAMO_TOMADO;
+        e.preparadoSobre = existingInvoices.length;
+        e.encontradas = emitidasAhora;
+        throw e;
+      }
+
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
         camino: 'C3', actor: actorDeRequest(req),
       });
@@ -271,6 +332,16 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     // profesional arregla el presupuesto y vuelve — la serie sigue intacta.
     if (esErrorSinLineas(err)) {
       return res.status(409).json({ error: ERROR_SIN_LINEAS, message: COPY_ADMIN_SIN_LINEAS });
+    }
+    // SCRUM-814: otra petición emitió este tramo mientras ésta lo preparaba. La transacción se
+    // deshizo entera —ni factura, ni número consumido, ni asiento de auditoría—, así que la serie
+    // queda intacta y volver a pedir da el tramo SIGUIENTE. Por IDENTIDAD del código, nunca por
+    // subcadena del mensaje.
+    if ((err as any)?.code === TRAMO_TOMADO) {
+      return res.status(409).json({
+        error: TRAMO_TOMADO,
+        message: 'Se acaba de emitir otra factura de este presupuesto. Vuelve a intentarlo y saldrá el tramo siguiente.',
+      });
     }
     return res.status(500).json({ error: 'internal_error' });
   }

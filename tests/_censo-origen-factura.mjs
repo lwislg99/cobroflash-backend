@@ -266,6 +266,12 @@ export const CENSO = {
   'src/modules/reports/app/routes/reports.routes.ts::invoice.findMany#1': { veredicto: 'TRATADO', nota: 'P&L: trae TODAS y usa quoteId para separar «no atribuible» de «del propietario» (SCRUM-228)' },
   'src/modules/system/app/routes/customersAdmin.routes.ts::expense.aggregate#1': { veredicto: 'HUECO', nota: 'gastos de un cliente atribuidos SOLO vía quote.customerId. Un gasto sin presupuesto no llega nunca a su cliente. Hueco PREEXISTENTE: Expense no tiene customerId' },
   'src/modules/system/app/routes/invoicesAdmin.routes.ts::invoice.findFirst#1': { veredicto: 'PROYECCION', nota: 'detalle de factura; accesos al quote ya guardados (SCRUM-287) y sin `as any` (SCRUM-342)' },
+  // SCRUM-814 · el recuento que cierra la carrera de tramos, DENTRO de la transacción y bajo el
+  // `pg_advisory_xact_lock`. Ata al origen a propósito, y aquí eso es lo correcto: la pregunta que
+  // contesta es «¿cuántos tramos de ESTE presupuesto se han emitido ya?». Una factura suelta no
+  // nació de ningún presupuesto, así que quedar fuera de este recuento no es un hueco: es la
+  // definición de la población.
+  'src/modules/system/app/routes/quotesAdmin.routes.ts::invoice.count#1': { veredicto: 'POBLACION', nota: 'tramos ya emitidos DE ESTE presupuesto (SCRUM-814); una suelta no pertenece a ninguno' },
   'src/modules/system/invoiceAdmin.ts::invoice.findMany#1': { veredicto: 'PROYECCION', nota: 'listado admin; include quote opcional' },
   'src/modules/system/invoiceAdmin.ts::invoice.findFirst#1': { veredicto: 'PROYECCION', nota: 'detalle admin; el OPACO es el spread condicional de merchantId, no el origen' },
   'src/modules/system/invoiceAdmin.ts::invoice.findFirst#2': { veredicto: 'OPACO', nota: 'spread condicional de merchantId; no ata al origen' },
