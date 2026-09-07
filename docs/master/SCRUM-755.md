@@ -2,7 +2,8 @@
 
 **Fecha:** 7-sep-2026 · **Carril:** microcopy · instrumentos · **Gate:** sin gate
 **Medido contra:** `origin/main` = `6fb51ab77713af1261dcf2e3f7819545c57c35b6` · 2026-09-07T02:40:00+01:00
-**Tanda:** 5789 tests, 5687 pass, 0 fail, 102 skipped · `EXIT_REAL=0` (fichero y $? aparte, nunca al final de una tubería) · tras mezclar main
+**Tanda:** TANDA_PENDIENTE
+**Tanda (1ª vuelta):** 5789 tests, 5687 pass, 0 fail, 102 skipped · `EXIT_REAL=0` (fichero y $? aparte, nunca al final de una tubería) · tras mezclar main
 
 > **Obligación 0 · NO estaba hecho.** Comprobado antes de empezar: `INV_SIN_APROBAR` sigue en
 > `main` sin que ningún test lo mire, no existe `docs/master/SCRUM-755.md`, y de las **536** ramas
@@ -178,3 +179,110 @@ fallo— fue lo que lo delató. Con el nombre bueno, la línea base sale limpia.
 - **Nada en paralelo con `meta:mutaciones`**, y el campo `a` de las dos mutaciones es literal único.
 - **Cero producción y staging**; este ticket no toca base de datos.
 - **La tanda no se canalizó por una tubería**: fichero y `$?` aparte.
+
+---
+
+# SEGUNDA VUELTA · los que pintan y no cuentan
+
+> **Y lo primero es una corrección de mi propia cifra.** Dije «15 ficheros, 10 sin contador». Es
+> **12 y 7**: mi lector contaba como ranura pintada la **exportación** de la constante
+> (`module.exports = { …, MARCA_ASIGNADOS }` en `jobAsignados.js`, `MICROCOPY_PENDIENTE` en
+> `patronDetalleAcciones.js`, y la tabla de `settingsSubmenus.js`). Exportar una constante no la
+> pinta en ninguna pantalla. Arreglado el lector, esos tres ficheros **salen del censo enteros** y
+> `switchFormaJuridica.js` baja de 5 sitios a 4. Un instrumento que cuenta de más asusta con
+> ficheros que no pintan nada, y el susto se paga desactivándolo.
+
+## Obligación 1 · los siete, uno a uno — y ninguno estaba desnudo
+
+Los leí uno a uno, y la respuesta no es la que esperaba: **los siete están en el censo de
+SCRUM-402**, comprobado leyendo SUS claves y no copiándolas. Y cada uno tiene además al menos un
+test que lo nombra *y* habla del marcador.
+
+| fichero | sitios | por qué no lleva contador |
+|---|---|---|
+| `exportView.js` | 2 | son literales dentro del HTML de la vista; SCRUM-402 los ve uno a uno |
+| `libroRegistroView.js` | 1 | **la pantalla entera va marcada por decisión escrita en su cabecera**, y `scrum296-pantalla-libro` la compara ranura a ranura |
+| `parteDetailView.js` | 1 | su propio comentario dice que entra en el censo de SCRUM-402 con su número |
+| `providersView.js` | 3 | mensajes de error y respaldo de último recurso; `scrum644` los vigila |
+| `settingsView.js` | 2 | el rótulo del modo de emisión, cubierto por `scrum298-modo-visible` |
+| `switchFormaJuridica.js` | 4 | los rótulos del control, cubiertos por `scrum574` |
+| `tipoDestinatarioPendiente.js` | 2 | el aviso **es** la ranura; `scrum615` y `scrum622` la sujetan |
+
+**Lo que sí les faltaba** —y es lo único que este ticket añade— es que el censo de SCRUM-402
+cuenta **literales**, así que en los que pintan a través de una constante su número es el de la
+**declaración** y no se mueve al añadirle usos. Por ahí entraba una ranura nueva sin que nadie la
+viera.
+
+Los motivos ya no viven en mi informe: viven en el propio guard, en `PINTAN_Y_NO_CUENTAN`, con un
+test que exige que ninguno esté en blanco. **Un hueco sin motivo se lee como un olvido.**
+
+## Obligación 2 · la recomendación, con la unidad delante
+
+**El cuadro entero, medido:** 84 ficheros en el panel · 9 declaran contador · 12 pintan marcador.
+
+| grupo | cuántos | qué instrumento puede verlos |
+|---|---|---|
+| ① pintan y **no** cuentan | **7** | el árbol: se derivan sus sitios |
+| ② cuentan y **no** pintan | **4** | **sólo un contador**: en el árbol no hay nada que leer |
+| ③ cuentan **y** pintan | 5 | los dos |
+
+Y la respuesta a las dos preguntas del encargo:
+
+**¿Los siete llevan contador? NO.** Un contador cuenta RANURAS, que es un juicio humano —una
+ranura puede pintarse en tres sitios, y `quotesView` lo demuestra—. Ponerles siete números a mano
+sería multiplicar por siete el defecto que abrió este ticket: siete cosas más que pueden
+desincronizarse y volver a cuadrar solas. Lo que esos siete necesitaban era que sus sitios se
+**derivaran**, y eso ya está.
+
+**¿Un contador único? Tampoco, y es peor.** Perdería el fichero —el rojo dejaría de poder decir
+dónde— y seguiría siendo un número a mano. Además no arregla ② : el caso `filtroClientes`, **7
+ranuras pendientes y cero marcadores**, no lo ve ningún instrumento derivado, ni por fichero ni
+global.
+
+**Lo que se recomienda:** que cada instrumento cubra la unidad que puede medir. El árbol da
+sitios y los cubre el censo de este ticket, para los doce. El contador se queda **exactamente
+donde es irremplazable**: los cuatro ficheros que declaran ranuras y no pintan nada. Ahí no sobra;
+ahí es el único testigo que hay. Y los cuatro tienen ahora su propio test, para que ese grupo no
+cambie en silencio.
+
+## Obligación 3 · lo construido en esta vuelta
+
+Ni un literal nuevo, ni estado nuevo: sólo `tests/`.
+
+- El lector deja de contar exportaciones como ranuras (`esFontaneria`).
+- `PINTAN_Y_NO_CUENTAN` — los siete **con su motivo escrito**, y un test que rechaza un motivo en
+  blanco.
+- Un test que comprueba que **ninguno está desnudo**: todos tienen que estar en el censo de
+  SCRUM-402, leído de su fichero. Si mañana aparece uno que ni cuenta ni está censado, ése es el
+  caso peor y sale nombrado.
+- `CUENTAN_Y_NO_PINTAN` — el otro lado del hueco, con su test: es el argumento de por qué los
+  contadores no sobran.
+
+**No se duplica SCRUM-402:** aquél cuenta literales y sigue siendo el dueño de esa forma; éste
+cuenta SITIOS —literal y constante— y es el único que ve la segunda.
+
+## Los tres controles de esta vuelta
+
+```
+[sin tocar] mi guard: VERDE ✅
+
+════ 🔴 EL QUE DECIDE, repetido sobre los ficheros NUEVOS ════
+   ✅ exportView.js                  ranura nueva -> ROJO · restaurado byte a byte
+   ✅ libroRegistroView.js           ranura nueva -> ROJO · restaurado byte a byte
+   ✅ providersView.js               ranura nueva -> ROJO · restaurado byte a byte
+   ✅ tipoDestinatarioPendiente.js   ranura nueva -> ROJO · restaurado byte a byte
+
+════ ✅ EL POSITIVO — los cinco que HOY están bien ════
+   ✅ con el árbol tal como está, mi guard sigue VERDE
+
+════ ✅ LA DISCRIMINACIÓN — no marcar todo lo que se mueve ════
+   ✅ un COMENTARIO                      -> verde (esperado verde)
+   ✅ un const cualquiera SIN marcador   -> verde (esperado verde)
+   ✅ un USO del marcador (la ranura)    -> ROJO ✅
+```
+
+**Y el arnés se cazó a sí mismo dos veces, otra vez de la misma familia.** La primera pasada dio
+dos rojos en `providersView.js`: uno porque mi «ranura» era un `const` **sin marcador** —o sea,
+ninguna ranura, y el guard tenía razón en quedarse verde— y otro porque el ancla del tercer caso
+no existía en el fichero. El arnés **dijo que no había podido correr el control** en vez de
+contarlo como verde, que es exactamente para lo que se escribió esa línea.

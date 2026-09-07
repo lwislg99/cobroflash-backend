@@ -33,6 +33,27 @@ const cuantasVeces = (texto) => {
   }
 };
 
+/**
+ * ¿Esta referencia es FONTANERÍA en vez de una ranura? Lo es cuando vive dentro del objeto que se
+ * asigna a `module.exports` o a `window.…`: exportar la constante no la pinta en ninguna pantalla.
+ *
+ * 🔴 SE AÑADIÓ TRAS LEER LOS DIEZ FICHEROS UNO A UNO, y cambió el censo: `jobAsignados.js:210`,
+ * `patronDetalleAcciones.js:83` y `settingsSubmenus.js:364` eran EXACTAMENTE eso —
+ * `module.exports = { …, MARCA_ASIGNADOS }` y `{ MARCA_MICROCOPY_SUBMENU: MARCA_… }`— y el lector
+ * los daba por ranuras pintadas. Un instrumento que cuenta de más asusta con ficheros que no
+ * pintan nada, y el susto se paga desactivándolo.
+ */
+function esFontaneria(nodo, sf) {
+  for (let p = nodo.parent; p; p = p.parent) {
+    if (ts.isBinaryExpression(p) && p.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
+      const izq = p.left.getText(sf);
+      return /^module\.exports\b/.test(izq) || /^window\./.test(izq);
+    }
+    if (ts.isFunctionLike(p)) return false;   // dentro de una función ya no es una tabla de export
+  }
+  return false;
+}
+
 /** Los sitios de un fichero, con su línea, para que el rojo pueda NOMBRARLOS. */
 export function ranurasDe(ruta) {
   const fuente = fs.readFileSync(ruta, 'utf8');
@@ -69,8 +90,10 @@ export function ranurasDe(ruta) {
       const esPuenteIzq = p && ts.isPropertyAccessExpression(p) && p.name === n;              // window.X (el nombre)
       const esPuenteAsig = p && ts.isBinaryExpression(p) && ts.isPropertyAccessExpression(p.left)
         && p.left.getText(sf).startsWith('window.') && p.right === n;                          // window.X = X
-      const esPropiedad = p && ts.isPropertyAssignment(p) && p.name === n;                     // { X: … }
-      if (!esDeclaracion && !esPuenteIzq && !esPuenteAsig && !esPropiedad) sitios.push({ linea: linea(n), via: 'constante' });
+      const esClave = p && ts.isPropertyAssignment(p) && p.name === n;                         // { X: … } — la clave
+      if (!esDeclaracion && !esPuenteIzq && !esPuenteAsig && !esClave && !esFontaneria(n, sf)) {
+        sitios.push({ linea: linea(n), via: 'constante' });
+      }
     }
     ts.forEachChild(n, visita);
   };

@@ -62,32 +62,49 @@ const CENSO_DE_SITIOS = {
   'atajoNuevo.js': 1,
   'exportView.js': 2,
   'invoicesView.js': 1,
-  'jobAsignados.js': 1,
   'libroRegistroView.js': 1,
   'parteDetailView.js': 1,
-  'patronDetalleAcciones.js': 1,
   'productsView.js': 3,
   'providersView.js': 3,
   'quotesView.js': 3,
-  'settingsSubmenus.js': 1,
   'settingsView.js': 2,
-  'switchFormaJuridica.js': 5,
+  'switchFormaJuridica.js': 4,
   'tipoDestinatarioPendiente.js': 2,
 };
-const TOTAL_DE_SITIOS = Object.values(CENSO_DE_SITIOS).reduce((t, n) => t + n, 0); // 33
+const TOTAL_DE_SITIOS = Object.values(CENSO_DE_SITIOS).reduce((t, n) => t + n, 0);
 
 /**
- * Los ficheros que pintan marcador y NO declaran ningún contador. **DIEZ de quince**, medido.
- * No se les inventa un contador: cuántas RANURAS son es un juicio humano —una ranura puede
- * pintarse en tres sitios— y eso no lo decide quien programa. Lo que sí se puede es impedir que
- * la lista CREZCA: un marcador nuevo en un fichero que no cuenta nada es la misma historia otra
- * vez, un escalón más abajo.
+ * LOS QUE PINTAN Y NO CUENTAN — y **por qué**, que es la mitad que faltaba.
+ *
+ * Un hueco sin motivo escrito se lee como un olvido, y alguien lo «arregla» mañana inventando
+ * contadores. Éstos NO son olvidos: **los siete están en el censo de `SCRUM-402`**, comprobado
+ * mecánicamente abajo leyendo SUS claves, y cada uno tiene además al menos un test que lo nombra
+ * y habla del marcador. O sea: hay instrumento, lo que no hay es un CONTADOR — y no lo hay porque
+ * un contador cuenta RANURAS, que es un juicio humano, y ninguno de estos siete lo necesita para
+ * lo que ya se les vigila.
+ *
+ * 🔴 LO QUE SÍ LES FALTABA, y es lo que cubre este fichero: el censo de SCRUM-402 cuenta
+ * LITERALES, así que en los que pintan a través de una constante su número es el de la
+ * DECLARACIÓN y no se mueve al añadir usos. Ahí es donde entraba una ranura nueva sin que nadie
+ * la viera, y ahí es donde muerde el censo de sitios de arriba.
  */
-const HUERFANOS = [
-  'exportView.js', 'jobAsignados.js', 'libroRegistroView.js', 'parteDetailView.js',
-  'patronDetalleAcciones.js', 'providersView.js', 'settingsSubmenus.js', 'settingsView.js',
-  'switchFormaJuridica.js', 'tipoDestinatarioPendiente.js',
-];
+const PINTAN_Y_NO_CUENTAN = {
+  'exportView.js': 'sus dos ranuras son literales dentro del HTML de la vista; SCRUM-402 las ve una a una',
+  'libroRegistroView.js': 'la pantalla entera va marcada por decisión escrita en su cabecera, y `scrum296-pantalla-libro` la compara ranura a ranura',
+  'parteDetailView.js': 'su propio comentario dice que entra en el censo de SCRUM-402 con su número',
+  'providersView.js': 'mensajes de error y respaldo de último recurso; `scrum644-trinquete-mensaje-crudo` los vigila',
+  'settingsView.js': 'rótulo del modo de emisión, cubierto por `scrum298-modo-visible`',
+  'switchFormaJuridica.js': 'los rótulos del control, cubiertos por `scrum574-switch-forma-juridica`',
+  'tipoDestinatarioPendiente.js': 'el aviso entero es la ranura; `scrum615` y `scrum622` la sujetan',
+};
+
+/**
+ * EL OTRO LADO DEL HUECO, y es el que decide la recomendación: ficheros que DECLARAN ranuras
+ * pendientes y NO pintan ni un marcador. Un contador por fichero es el ÚNICO instrumento posible
+ * aquí, porque en el árbol no hay nada que leer — y por eso los contadores no sobran: hacen falta
+ * exactamente donde el árbol se queda mudo, y no donde ya habla.
+ */
+const CUENTAN_Y_NO_PINTAN = ['customersView.js', 'filtroClientes.js', 'jobDetailView.js', 'quoteDireccionObra.js'];
 
 /**
  * Lo que tumba a este guard. Las dos ESTRENAN UNA RANURA sin tocar ningún contador, que es
@@ -148,14 +165,52 @@ test('SCRUM-755 · 🔴 EL QUE DECIDE: estrenar una ranura con marcador sin decl
   assert.equal(total, TOTAL_DE_SITIOS, `el total de sitios con marcador es ${total} y el censo declara ${TOTAL_DE_SITIOS}`);
 });
 
-test('SCRUM-755 · los huérfanos no crecen: un marcador nuevo donde no se cuenta nada, en rojo', () => {
+test('SCRUM-755 · los que pintan y no cuentan: cada uno con su MOTIVO escrito', () => {
   const panel = ranurasDelPanel(RAIZ);
-  const huerfanosHoy = Object.keys(panel).filter((f) => contadoresDe(path.join(JS, f)).length === 0).sort();
-  assert.deepEqual(huerfanosHoy, [...HUERFANOS].sort(),
-    '🔴 ha cambiado la lista de ficheros que pintan marcador SIN declarar ningún contador.\n' +
-    '  Si es uno nuevo: o declara su contador, o entra aquí con su motivo. Si uno ha salido\n' +
-    '  porque ya cuenta lo suyo, quítalo de la lista: bajar es para lo que sirve un censo.');
-  assert.equal(huerfanosHoy.length, 10, 'el número de huérfanos ha cambiado');
+  const hoy = Object.keys(panel).filter((f) => contadoresDe(path.join(JS, f)).length === 0).sort();
+  assert.deepEqual(hoy, Object.keys(PINTAN_Y_NO_CUENTAN).sort(),
+    '🔴 ha cambiado la lista de ficheros que pintan marcador SIN declarar contador.\n' +
+    '  Si es uno nuevo: o declara su contador, o entra arriba CON SU MOTIVO — un hueco en blanco\n' +
+    '  se lee como un olvido y alguien lo «arregla» inventando un número. Si uno ha salido porque\n' +
+    '  ya cuenta lo suyo, quítalo: bajar es para lo que sirve un censo.');
+
+  // Y el motivo no puede ser una cadena vacía puesta para callar al guard.
+  for (const [f, motivo] of Object.entries(PINTAN_Y_NO_CUENTAN)) {
+    assert.ok(motivo && motivo.length > 20, `«${f}» está en la lista con un motivo que no dice nada`);
+  }
+});
+
+test('SCRUM-755 · ninguno de ellos está DESNUDO: los cubre el censo de SCRUM-402', () => {
+  // No se copia aquí el censo de SCRUM-402: se LEEN sus claves. Copiarlo sería crear la segunda
+  // lista a mano que este ticket entero viene a evitar.
+  const fuente402 = fs.readFileSync(path.join(RAIZ, 'tests/scrum402-marcador-no-se-pinta.test.mjs'), 'utf8');
+  const ini = fuente402.indexOf('const CENSO = Object.freeze({');
+  const bloque = fuente402.slice(ini, fuente402.indexOf('});', ini));
+  const censo402 = new Set([...bloque.matchAll(/^\s*'([^']+\.js)':\s*\d+/gm)].map((m) => m[1]));
+
+  // SUELO: si el lector no encuentra el censo ajeno, el «todos cubiertos» de abajo sería el
+  // verde de no haber mirado.
+  assert.ok(censo402.size > 5, `sólo leo ${censo402.size} entradas del censo de SCRUM-402: no lo estoy leyendo`);
+  assert.ok(censo402.has('invoicesView.js'), 'no encuentro una entrada conocida en el censo de SCRUM-402');
+
+  const desnudos = Object.keys(PINTAN_Y_NO_CUENTAN).filter((f) => !censo402.has(f));
+  assert.deepEqual(desnudos, [],
+    `🔴 ESTOS PINTAN MARCADOR, NO CUENTAN, Y NO LOS CONOCE NADIE:\n    ${desnudos.join('\n    ')}\n\n` +
+    '  Es el caso peor de los tres: ni contador que pueda desincronizarse ni censo que lo mire.');
+});
+
+test('SCRUM-755 · el otro lado del hueco: los que CUENTAN y no pintan siguen ahí', () => {
+  // Éstos son la razón por la que los contadores NO sobran, y por la que la recomendación de este
+  // ticket no es «un contador por fichero»: aquí el árbol no tiene nada que leer.
+  const mudos = CUENTAN_Y_NO_PINTAN.filter((f) => {
+    const cont = contadoresDe(path.join(JS, f));
+    return cont.length > 0 && cont.reduce((t, c) => t + c.valor, 0) > 0 && ranurasDe(path.join(JS, f)).length === 0;
+  });
+  assert.deepEqual(mudos.sort(), [...CUENTAN_Y_NO_PINTAN].sort(),
+    '🔴 ha cambiado el grupo de ficheros que declaran ranuras pendientes SIN pintar marcador.\n' +
+    '  Si uno ha empezado a pintar, entra en el censo de sitios de arriba. Si su contador bajó a\n' +
+    '  cero, sácalo de aquí. Este grupo es el argumento de por qué el contador sigue haciendo\n' +
+    '  falta: es el único instrumento que puede verlos.');
 });
 
 test('SCRUM-755 · lo que este guard NO cubre, dicho aquí y no en una nota al pie', () => {
