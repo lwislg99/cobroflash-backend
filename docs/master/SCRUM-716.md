@@ -169,3 +169,152 @@ añadírselo «por simetría»: hacerlo escondería la razón por la que el otro
 
 El `continue-on-error: true` (hay test que lo comprueba) · `scripts/vigilante-de-despliegue.mjs` ·
 ninguna base.
+---
+---
+
+# APÉNDICE (7-sep-2026) · Se vuelve a pedir el verde ciego: YA ESTÁ ARREGLADO. Medido, no leído
+
+**Carril:** despliegue · instrumentos · **Gate:** sin gate — módulo puro, y una ejecución real del vigía
+**Medido contra:** `origin/main` = `349350c8a7a34f24e9263aba1ca2af36e3cb4a91` · 2026-09-07T02:06:56+01:00
+**Tanda:** 5749 tests, 5647 pass, 0 fail, 102 skipped (salida 0)
+
+## C0 · Obligación 0 · Esto ya está hecho, y está en `main`
+
+`git ls-remote --heads origin` **completo** (536 refs) y contenido de `main`:
+
+| qué | dónde | estado |
+|---|---|---|
+| el arreglo del verde ciego | **dentro de `main`** | ✅ hecho — la rama `scrum-716-vigia-no-dice-al-dia-sin-mirar` se mergeó y se borró |
+| esta entrada (`SCRUM-716.md`) | en `main` desde el 4-sep | ✅ existe, con el enumerado y los cuatro controles |
+| SCRUM-716b (el job) | en `main` | ✅ hecho, y es el que la propia entrada declaraba pendiente |
+| `constanciaDeEjecucion` | en `main` (llegó con SCRUM-727) | ✅ existe |
+| `scrum-716c-historial-del-vigia` | **VIVA, sin mergear, 1 commit** | ⚠️ de otra sesión — **no se toca** |
+
+**Y no se da por bueno porque lo diga el documento.** Todo lo de abajo está ejecutado hoy contra
+el módulo de `main`.
+
+## C1 · Obligación 1 · Los caminos que emiten veredicto, contados y ejecutados
+
+Cada fila es una llamada real a `veredictoDeDespliegue`. «Puntas» son los dos commits que la
+comparación necesita: lo que dice **producción** y lo que dice **`main`**.
+
+| # | camino | prod / main | veredicto | salida |
+|---|---|---|---|---|
+| 1 | producción NO RESPONDE | ✗ / ✓ | `no-supe-mirar` | 2 |
+| 2 | producción responde VACÍO | ✗ / ✓ | `no-supe-mirar` | 2 |
+| 3 | `/version` devuelve algo que NO es un commit (el fallback de `env.ts`) | ✓ / ✓ | `no-supe-mirar` | 2 |
+| 4 | el commit de producción NO está en el clon | ✓ / ✓ | `no-supe-mirar` | 2 |
+| **5** | **`origin/main` NO se resuelve** — *el verde ciego del ticket* | ✓ / **✗** | **`no-supe-mirar`** | **2** |
+| **6** | **`origin/main` resuelve a VACÍO** | ✓ / **✗** | **`no-supe-mirar`** | **2** |
+| **7** | **las dos puntas, pero no se pudo CONTAR el hueco** | ✓ / ✓ | **`no-supe-mirar`** | **2** |
+| 8 | hay hueco pero no se pudo FECHAR el más antiguo | ✓ / ✓ | `no-supe-mirar` | 2 |
+| 9 | producción corre algo que no está en `main` | ✓ / ✓ | `atrasado` | 1 |
+| 10 | sin hueco | ✓ / ✓ | `al-dia` | 0 |
+| 11 | hueco dentro del margen (0,9 h) | ✓ / ✓ | `al-dia` | 0 |
+| 12 | hueco pasado el margen (30 h) | ✓ / ✓ | `atrasado` | 1 |
+
+**🔴 EL QUE DECIDE:** ¿algún camino dice «al día» sin las dos puntas? **NINGUNO.** Los únicos
+`al-dia` son el 10 y el 11, y los dos tienen las dos puntas resueltas.
+
+**Suelos del propio enumerado**, porque una regla se cumple sola si no encuentra nada:
+`12 caminos ejercitados` (si diera 1, el barrido está roto) y `3 veredictos distintos`
+(si todos dijeran lo mismo, tampoco probaría nada). Los dos verdes.
+
+## C2 · Obligación 2 · El verde ciego NO SE REPRODUCE, y eso es el hallazgo
+
+Se pidió enseñarlo corriendo. **No se puede**, y ésa es la respuesta:
+
+```
+entrada  : conoceElCommit: true, shaDeMain: null
+veredicto: no-supe-mirar   salida: 2
+título   : ⚠️ NO SUPE MIRAR: no se pudo resolver `main` en este repositorio.
+detalle  : Producción dice estar en 2d826de6, pero no hay contra qué compararlo:
+           `git rev-parse origin/main` no devolvió un sha. Suele ser un checkout sin la rama de
+           seguimiento (un PR) o un `git fetch` que falta.
+           Esto NO es «producción está al día»: es que no se ha podido comprobar.
+           Un vigilante que confunde las dos cosas es peor que ninguno.
+```
+
+Donde el ticket esperaba `al-dia · 0`, hoy sale `no-supe-mirar · 2`. La frase que el fichero
+llevaba escrita como prohibición **ahora la dice el veredicto**.
+
+### Y el vigía de verdad, ejecutado hoy — el control positivo en el mundo real
+
+```
+[vigilante de despliegue] https://yaqu.app/version
+producción dice 349350c8 · `main` está en 349350c8 · sin hueco
+vigía · 2026-09-07T01:29:14Z · al-dia · prod=349350c8 · main=349350c8 · hueco=0.0h · commits=0
+salida real: 0
+```
+
+No se ha vuelto ciego siempre, que era el otro modo de fallo: con las dos puntas y sin hueco dice
+«al día» y sale 0.
+
+### ⚠️ Y una corrección de mi propio instrumento, que casi acusa al producto
+
+La primera pasada dio el camino 11 como `atrasado` y **30.000 horas** para un hueco de 30 h. No
+era el vigía: `epochDelPrimeroSinDesplegar` y `ahoraEpoch` van en **segundos** (`%ct` de git,
+`Math.floor(Date.now()/1000)`, y el módulo divide entre 3600), y mi ayudante pasaba milisegundos.
+Se detectó por el `30000`, que no se parecía a nada. Corregido antes de concluir.
+
+## C3 · Obligación 3 · Qué haría falta para distinguir CONGELADO de RETRASADO (descrito, NO construido)
+
+Esto sí está sin hacer. El vigía de hoy es **sin memoria**: cada ejecución mira un instante y no
+sabe nada del anterior, así que sólo puede decir «hay hueco» — no puede decir si ese hueco se está
+cerrando. Las dos lecturas del 6-sep son el caso exacto:
+
+```
+20:21 UTC → prod ff4e1c4a · main 388dc045 · hueco  9,5 h ·  8 commits
+22:12 UTC → prod 50312d32 · main c6c84261 · hueco 10,4 h · 10 commits
+```
+
+**Producción SE MOVIÓ** (`ff4e1c4a` → `50312d32`): desplegaba, sólo que más despacio de lo que se
+mergeaba. El vigía pintó las dos igual, «atrasado», y eso mandó a buscar un healthcheck que no
+estaba roto.
+
+**El discriminador es el que ya está en el encargo, y es barato:** dos lecturas consecutivas con
+**`prod` DISTINTO** significan que despliega (retraso); con **`prod` IGUAL**, que no (congelado).
+
+Lo que haría falta, en tres piezas y por orden de coste:
+
+1. **Persistir la lectura anterior.** La materia prima YA EXISTE y está medida: `constanciaDeEjecucion`
+   (en `main` desde SCRUM-727) escribe por ejecución `prod=`, `main=`, `hueco=`, `commits=` y la
+   fecha. Lo que falta es que ese renglón **sobreviva** al job y que alguien lo **lea**: hoy nadie
+   lee una constancia anterior — medido, los únicos consumidores son el propio script y su test.
+2. **Una función pura que compare dos lecturas** y devuelva `DESPLEGANDO` / `CONGELADO` /
+   `NO_SUPE_MIRAR`, con la misma disciplina que el resto del módulo: sin reloj, sin red, sin git, y
+   con el tercer valor **obligatorio** — sin lectura anterior no hay comparación, y eso no es
+   «congelado», es que no se sabe. Es el mismo error que este ticket vino a arreglar, por la otra
+   cara: confundir «no medido» con un veredicto.
+3. **Un veredicto distinto para cada uno.** Congelado con hueco pasado el margen es lo que costó
+   nueve días y debe cantar; **retrasado con producción moviéndose no debería bloquear cinco ramas
+   media jornada.** Qué salida tiene cada uno es decisión del fundador, no mía: cambia qué checks
+   se ponen en rojo.
+
+**🛑 NO SE CONSTRUYE.** La obligación 4 pide autorización explícita del fundador con esas palabras,
+y en este encargo no aparece. Además, **la pieza 1 pisa exactamente lo que hay vivo en
+`scrum-716c-historial-del-vigia`** (sin mergear, 1 commit, toca `_vigilante-de-despliegue.mjs`,
+`vigilante-de-despliegue.mjs` y este mismo fichero). Construirlo aquí sería dos sesiones sobre los
+mismos ficheros — SCRUM-774.
+
+## C4 · Los cuatro controles del encargo, ejecutados
+
+| control | resultado |
+|---|---|
+| 🔴 **EL QUE DECIDE** · `origin/main` sin resolver → nunca verde | `no-supe-mirar` · **2** ✅ (antes: `al-dia` · 0) |
+| ✅ **POSITIVO** · dos puntas y sin hueco | `al-dia` · **0** ✅ — y confirmado con el vigía real |
+| ✅ **NEGATIVO** · dos puntas y CON hueco (30 h) | `atrasado` · **1**, `horas 30`, «commits de `main` que producción no dice tener: 10» ✅ |
+| ✅ commit ausente del clon | `no-supe-mirar` · **2** ✅ |
+
+## C5 · ⚠️ Aviso de colisión
+
+Este apéndice se añade al final de `docs/master/SCRUM-716.md`. **`scrum-716c-historial-del-vigia`
+también modifica este fichero** (+63 líneas). Quien mergee segundo tendrá conflicto aquí; es un
+conflicto de documento, no de código, y las dos partes son aditivas.
+
+## C6 · No tocado
+
+El `continue-on-error: true` del job · el contrato de `GET /version` · el job y su checkout · el
+margen de 6 h · `scripts/vigilante-de-despliegue.mjs` y `scripts/_vigilante-de-despliegue.mjs`
+(**cero líneas**) · la rama `scrum-716c`, que se ha leído en sólo lectura y no se ha tocado.
+Esta entrega es medición y documento.
