@@ -1119,6 +1119,47 @@ function invoiceStatusMeta(status) {
 }
 window.invoiceStatusMeta = invoiceStatusMeta;
 
+// ── SCRUM-820 · ESTADO DEL PRESUPUESTO → etiqueta + clase, EN UN SOLO SITIO ─────────────────
+//
+// LA VÍCTIMA: el fontanero que abre Presupuestos y lee DRAFT, SENT, ACCEPTED y REJECTED. Y la
+// app contradiciéndose: el MISMO presupuesto salía «Aceptado» en Inicio y ACCEPTED en la lista.
+// Medido corriendo, con las dos pantallas pintadas y el mismo dato: discrepaban los SEIS estados.
+//
+// 🔴 NO ES UN MAPA NUEVO. Había CUATRO copias del mismo diccionario en este directorio
+// —`customerDetailView`, `globalSearch`, `homeView` y el medio-mapa de `quotesListView`— y cada
+// una traducía un subconjunto distinto. La contradicción no era un olvido: era que nadie leía del
+// mismo sitio. Se toma el más completo (el de `customerDetailView`, con sus claves y su mapa de
+// clases) y se trae AQUÍ, que es donde ya viven `invoiceStatusMeta`, `cobroPillClass` y
+// `jobStatusMeta`. Mismo patrón `{label, pillClass}`, para no estrenar forma.
+//
+// LOS LITERALES SON LOS QUE YA ESTÁN EN PRODUCCIÓN, sin cambiar una letra (regla 30). Donde dos
+// copias discrepaban se ha tomado la de la pantalla de Presupuestos, que es la que se arregla:
+//   · `expired` → «Caducado» (y no «Caducada», que es la forma de la FACTURA).
+//   · `pending_approval` → «Pendiente de aprobación», que es el literal que LA PROPIA LISTA ya
+//     usa en su filtro (`quotesListView.js:73`). Y ahí estaba la contradicción más fina de todas:
+//     se filtraba por «Pendiente de aprobación» y la fila respondía «PENDIENTE APROBACIÓN». El
+//     jefe filtra por lo que ve escrito, así que manda el del filtro. Hay tres formas vivas
+//     —ésta, «PENDIENTE APROBACIÓN» y «Pend. aprob.»— y van reportadas para que el fundador firme
+//     una; aquí no se inventa una cuarta.
+//
+// 🔴 Y EL RESPALDO NO VUELCA EL IDENTIFICADOR. Un estado sin mapear no puede disfrazarse del más
+// inocente —ésa es la lección de SCRUM-153 y se respeta— pero tampoco se le escupe `pending_x` a
+// la cara a un profesional. Cae al guion que este mismo fichero ya usa de respaldo, con pill
+// neutra. El rótulo definitivo («qué poner cuando no se reconoce el estado») está propuesto y sin
+// firmar: hasta que llegue, un guion dice menos que un identificador y miente mucho menos.
+function quoteStatusMeta(status) {
+  const M = {
+    draft:            { label: 'Borrador',             pillClass: 'status-pill-draft' },
+    sent:             { label: 'Enviado',              pillClass: 'status-pill-pending' },
+    accepted:         { label: 'Aceptado',             pillClass: 'status-pill-accepted' },
+    rejected:         { label: 'Rechazado',            pillClass: 'status-pill-rejected' },
+    expired:          { label: 'Caducado',             pillClass: 'status-pill-draft' },
+    pending_approval: { label: 'Pendiente de aprobación', pillClass: 'status-pill-approval' },
+  };
+  return M[String(status || '').toLowerCase()] || { label: '—', pillClass: 'status-pill-draft' };
+}
+window.quoteStatusMeta = quoteStatusMeta;
+
 // SCRUM-31 (F1): estado del TRABAJO (FSM Parte L) → etiqueta + clase de status-pill CANÓNICA.
 // Antes hand-styled en JOB_STATE_META (jobsView, deuda SCRUM-11). El color codifica la
 // disponibilidad de cobro (verde=terminado→cobrar · ámbar=en curso · neutro=aún no / cerrado);
