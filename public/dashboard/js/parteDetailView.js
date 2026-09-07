@@ -257,8 +257,9 @@
       '<div data-dictado-propuesta="1"></div></div>';
   }
 
-  function pintarLineaPropuesta(linea, bloque, indice, avisos) {
+  function pintarLineaPropuesta(linea, bloque, indice, avisos, inventado) {
     var sinCantidad = !(typeof linea.unds === 'number' && linea.unds > 0);
+    var conInventado = !!(inventado && inventado[linea.descripcion]);
     return '' +
       '<li data-propuesta="1" data-bloque="' + esc(bloque) + '" data-indice="' + indice + '"' +
       ' style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)">' +
@@ -272,6 +273,17 @@
       (sinCantidad
         ? '<em data-falta-cantidad="1" style="font-size:12px;color:var(--muted);font-style:normal">' +
           esc(avisos.cantidadesRetiradas) + '</em>'
+        : '') +
+      // 🔴 SCRUM-725 · EL DATO QUE EL DICTADO NO DICE, DICHO EN SU LÍNEA.
+      //
+      // El servidor ya sabe cuál sobra (`datosRetirados`) y hasta hoy la pantalla se lo callaba:
+      // un mecanismo que detecta y no avisa es medio mecanismo. Va en la línea que lo lleva, no
+      // como resumen, por lo mismo que su hermana de arriba — un aviso de cabecera no dice CUÁL.
+      //
+      // El texto viene del SERVIDOR (`avisos.datosRetirados`), no reteclado aquí: un texto
+      // aprobado que se reescribe en cada pantalla deja de ser el aprobado sin que nadie lo decida.
+      (conInventado
+        ? '<em data-dato-inventado="1">' + esc(avisos.datosRetirados) + '</em>'
         : '') +
       '</li>';
   }
@@ -292,8 +304,14 @@
       return false;
     }
 
+    // Qué líneas llevan un dato que el dictado no respalda. Se arma UNA vez, no por línea.
+    var inventado = {};
+    (p.datosRetirados || []).forEach(function (d) {
+      if (d && d.descripcion) inventado[d.descripcion] = true;
+    });
+
     var bloques = BLOQUES.map(function (b) {
-      var suyas = (p[b] || []).map(function (l, i) { return pintarLineaPropuesta(l, b, i, avisos); });
+      var suyas = (p[b] || []).map(function (l, i) { return pintarLineaPropuesta(l, b, i, avisos, inventado); });
       if (!suyas.length) return '';
       return '<h4 style="margin:12px 0 4px;font-size:13px;color:var(--muted)">' +
         esc(ETIQUETA_BLOQUE[b]) + '</h4><ul style="list-style:none;margin:0;padding:0">' +
@@ -302,7 +320,7 @@
 
     // Lo que el modelo no supo colocar tampoco se tira: se propone aparte para que él lo coloque.
     var sueltas = (p.sinBloque || []).map(function (l, i) {
-      return pintarLineaPropuesta(l, 'sinBloque', i, avisos);
+      return pintarLineaPropuesta(l, 'sinBloque', i, avisos, inventado);
     });
     var resto = sueltas.length
       ? '<h4 style="margin:12px 0 4px;font-size:13px;color:var(--muted)">' +
