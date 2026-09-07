@@ -3,6 +3,7 @@
 **Fecha:** 7-sep-2026 · **Carril:** microcopy · instrumentos · **Gate:** sin gate
 **Medido contra:** `origin/main` = `6fb51ab77713af1261dcf2e3f7819545c57c35b6` · 2026-09-07T02:40:00+01:00
 **Tanda:** TANDA_PENDIENTE
+**Meta-guard:** vivas 129 · mudas 0 · ciegas 0 · ficheros muertos 0 · `exit 0`
 **Tanda (1ª vuelta):** 5789 tests, 5687 pass, 0 fail, 102 skipped · `EXIT_REAL=0` (fichero y $? aparte, nunca al final de una tubería) · tras mezclar main
 
 > **Obligación 0 · NO estaba hecho.** Comprobado antes de empezar: `INV_SIN_APROBAR` sigue en
@@ -286,3 +287,75 @@ dos rojos en `providersView.js`: uno porque mi «ranura» era un `const` **sin m
 ninguna ranura, y el guard tenía razón en quedarse verde— y otro porque el ancla del tercer caso
 no existía en el fichero. El arnés **dijo que no había podido correr el control** en vez de
 contarlo como verde, que es exactamente para lo que se escribió esa línea.
+
+---
+
+# TERCERA VUELTA · mis dos declaraciones estaban CIEGAS
+
+**Y el dato que faltaba en mi entrega anterior era justo ése.** Traje `npm test` en verde y no
+traje `vivas · mudas · ciegas`. No corrí el meta-guard antes de empujar, así que entregué media
+medición y el rojo lo encontró CI.
+
+```
+? scrum755-el-contador-que-cuadro-solo.test.mjs · CIEGO   (×2)
+vivas 127 · mudas 0 · ciegas 2 · exit 2
+```
+
+## Las tres causas, discriminadas — no me creí la hipótesis, la medí
+
+El propio meta-guard lista tres posibles. Las tres, con su prueba:
+
+| causa | veredicto | cómo se midió |
+|---|---|---|
+| el fichero no llegó a ejecutarse (`dist/` sin compilar) | **falsa** | con main mezclado y **recompilado**, el fichero corre y sus 8 tests salen **en verde** |
+| ese test ya fallaba | **falsa** | no puede fallar lo que no existe: ninguno de los dos nombres aparecía como `test()` |
+| el nombre de la declaración caducó | **ÉSA ERA** | comparados carácter a carácter: los dos `cae` no casaban con ningún `test()` del fichero |
+
+El mecanismo, leído en el propio meta-guard y no supuesto: decide CIEGA **por línea base** — si
+el test que la declaración nombra no aparece en verde en la pasada limpia, **ni siquiera muta**.
+Por eso CIEGO no es MUDO: no dice que el guard no sirva, dice que no se pudo medir.
+
+## Y no me limité a renombrar
+
+Renombrar habría bastado para que el rojo desapareciera, y habría sido un falso verde con otra
+forma: **mis dos mutaciones decían medir cosas distintas** —una añade un uso en un fichero YA
+censado, la otra estrena un fichero nuevo— y las dos caían en el mismo test, «EL QUE DECIDE».
+Apuntando las dos al mismo nombre, el meta-guard habría dicho VIVA dos veces sin distinguir qué
+mide cada una.
+
+Se parte el test en **sus dos ramas**, con los nombres que las declaraciones ya decían:
+
+- `🔴 EL ÁRBOL PINTA MÁS MARCADORES DE LOS DECLARADOS` — la rama `distintos` + el total.
+- `🔴 UN FICHERO NUEVO EMPIEZA A PINTAR MARCADOR` — la rama `nuevos` + la mitad que aprieta
+  cuando un fichero deja de pintar.
+
+**Comprobado que cada una sigue midiendo lo suyo**, y no sólo que «tumba algo»:
+
+```
+   ✅ invoicesView.js
+      declara que cae: SCRUM-755 · 🔴 EL ÁRBOL PINTA MÁS MARCADORES DE LOS DECLARADOS
+      cayó SU test   : SÍ · y sólo ése
+      por la rama    : EL ÁRBOL YA NO PINTA LO QUE EL CENSO DICE
+   ✅ homeView.js
+      declara que cae: SCRUM-755 · 🔴 UN FICHERO NUEVO EMPIEZA A PINTAR MARCADOR
+      cayó SU test   : SÍ · además cayeron 2 colaterales
+      por la rama    : FICHEROS QUE EMPIEZAN A PINTAR MARCADOR
+```
+
+Los dos colaterales de la segunda son esperables y se dicen: un fichero nuevo que pinta cambia
+también el total de sitios y la lista de los que pintan sin contar. Las dos restauradas byte a
+byte.
+
+## El veredicto
+
+```
+vivas 129 · mudas 0 · ciegas 0 · ficheros muertos 0 · exit 0
+  ✔ scrum755 · SCRUM-755 · 🔴 EL ÁRBOL PINTA MÁS MARCADORES DE LOS DECLARADOS
+  ✔ scrum755 · SCRUM-755 · 🔴 UN FICHERO NUEVO EMPIEZA A PINTAR MARCADOR
+```
+
+127 → **129**: las dos que no se podían medir ahora se miden, y ninguna sale muda.
+
+> **Lo que me llevo, y no es la primera vez esta sesión:** mi propio arnés me había impreso la
+> prueba dos vueltas antes —`esperaba: … / cayó: …`, con nombres distintos— y seguí adelante. El
+> instrumento no falló; falló que leí su salida buscando el ✅ en vez de leer lo que decía.

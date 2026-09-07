@@ -143,26 +143,47 @@ test('SCRUM-755 · SUELO: el lector VE los marcadores que hay (si no, el cero de
   assert.ok(porVia.constante > 0, 'el lector no ve ni un marcador puesto a través de su constante');
 });
 
-test('SCRUM-755 · 🔴 EL QUE DECIDE: estrenar una ranura con marcador sin declararla se ve', () => {
+/**
+ * ── POR QUÉ SON DOS TESTS Y NO UNO ──────────────────────────────────────────────────────────
+ * Eran uno solo, «EL QUE DECIDE», y mis dos `MUTACIONES_QUE_ME_TUMBAN` nombraban dos tests que
+ * NO EXISTÍAN. El meta-guard no lo contó como mudo —eso acusaría al guard— sino como **CIEGO**:
+ * el test que la declaración nombra no aparecía en verde en la pasada limpia, así que ni se
+ * mutaba. `vivas 127 · mudas 0 · ciegas 2 · exit 2`.
+ *
+ * 🔴 Y NO SE ARREGLA SÓLO RENOMBRANDO LA DECLARACIÓN. Cada mutación decía medir una cosa
+ * distinta —una toca un fichero YA censado, la otra estrena uno nuevo— y las dos caían en el
+ * mismo test. Renombrarlas al nombre real habría dejado las dos declaraciones apuntando al mismo
+ * sitio: verde, sí, pero sin distinguir qué mide cada una. Se parte por sus dos ramas, con los
+ * nombres que las declaraciones ya decían.
+ */
+const PISTA = '\n\n  Si la ranura es LEGÍTIMA: actualiza el censo de arriba Y MIRA el `*_SIN_APROBAR`' +
+  '\n  del fichero — es justo el paso que se saltó SCRUM-648 fase B y por el que el contador' +
+  '\n  estuvo un día diciendo 1 habiendo 2. Si la ranura ya está firmada, el número BAJA.';
+
+test('SCRUM-755 · 🔴 EL ÁRBOL PINTA MÁS MARCADORES DE LOS DECLARADOS', () => {
+  const panel = ranurasDelPanel(RAIZ);
+  const reales = Object.fromEntries(Object.entries(panel).map(([f, s]) => [f, s.length]));
+
+  const distintos = Object.keys(CENSO_DE_SITIOS)
+    .filter((f) => f in reales && reales[f] !== CENSO_DE_SITIOS[f])
+    .map((f) => `${f}: censo ${CENSO_DE_SITIOS[f]} → ahora ${reales[f]} (líneas ${panel[f].map((s) => s.linea).join(', ')})`);
+  assert.deepEqual(distintos, [], `🔴 EL ÁRBOL YA NO PINTA LO QUE EL CENSO DICE:\n    ${distintos.join('\n    ')}${PISTA}`);
+
+  const total = Object.values(reales).reduce((t, n) => t + n, 0);
+  assert.equal(total, TOTAL_DE_SITIOS, `el total de sitios con marcador es ${total} y el censo declara ${TOTAL_DE_SITIOS}`);
+});
+
+test('SCRUM-755 · 🔴 UN FICHERO NUEVO EMPIEZA A PINTAR MARCADOR', () => {
   const panel = ranurasDelPanel(RAIZ);
   const reales = Object.fromEntries(Object.entries(panel).map(([f, s]) => [f, s.length]));
 
   const nuevos = Object.keys(reales).filter((f) => !(f in CENSO_DE_SITIOS));
+  assert.deepEqual(nuevos, [], `🔴 FICHEROS QUE EMPIEZAN A PINTAR MARCADOR y no estaban en el censo:\n    ${nuevos.join('\n    ')}${PISTA}`);
+
+  // La otra mitad del trinquete: si un fichero DEJA de pintar —porque se firmó su rótulo— hay que
+  // anotarlo. Un trinquete que no se aprieta cuando puede deja de ser un trinquete.
   const idos = Object.keys(CENSO_DE_SITIOS).filter((f) => !(f in reales));
-  const distintos = Object.keys(CENSO_DE_SITIOS)
-    .filter((f) => f in reales && reales[f] !== CENSO_DE_SITIOS[f])
-    .map((f) => `${f}: censo ${CENSO_DE_SITIOS[f]} → ahora ${reales[f]} (líneas ${panel[f].map((s) => s.linea).join(', ')})`);
-
-  const pista = '\n\n  Si la ranura es LEGÍTIMA: actualiza el censo de arriba Y MIRA el `*_SIN_APROBAR`' +
-    '\n  del fichero — es justo el paso que se saltó SCRUM-648 fase B y por el que el contador' +
-    '\n  estuvo un día diciendo 1 habiendo 2. Si la ranura ya está firmada, el número BAJA.';
-
-  assert.deepEqual(nuevos, [], `🔴 FICHEROS QUE EMPIEZAN A PINTAR MARCADOR y no estaban en el censo:\n    ${nuevos.join('\n    ')}${pista}`);
-  assert.deepEqual(distintos, [], `🔴 EL ÁRBOL YA NO PINTA LO QUE EL CENSO DICE:\n    ${distintos.join('\n    ')}${pista}`);
-  assert.deepEqual(idos, [], `🔴 FICHEROS DEL CENSO QUE YA NO PINTAN MARCADOR (¿se firmó el rótulo?):\n    ${idos.join('\n    ')}${pista}`);
-
-  const total = Object.values(reales).reduce((t, n) => t + n, 0);
-  assert.equal(total, TOTAL_DE_SITIOS, `el total de sitios con marcador es ${total} y el censo declara ${TOTAL_DE_SITIOS}`);
+  assert.deepEqual(idos, [], `🔴 FICHEROS DEL CENSO QUE YA NO PINTAN MARCADOR (¿se firmó el rótulo?):\n    ${idos.join('\n    ')}${PISTA}`);
 });
 
 test('SCRUM-755 · los que pintan y no cuentan: cada uno con su MOTIVO escrito', () => {
