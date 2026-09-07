@@ -1,18 +1,27 @@
 // scripts/guard-objetivo-tactil.mjs — SCRUM-542 · panel en SCRUM-782 · dos más en SCRUM-791
+//                                    · la ficha 360 del cliente en SCRUM-795
 //
 // Mide EN NAVEGADOR (Edge vía puppeteer-core) el ÁREA QUE RECIBE EL TOQUE de cada objetivo
-// interactivo, contra los 44 px de AB6, en CUATRO superficies:
+// interactivo, contra los 44 px de AB6, en CINCO superficies:
 //
 //   · LA LANDING (`/`) a 1280 y 360 px — lo que este guard hizo desde SCRUM-542.
 //   · EL PANEL · lista de Clientes a 929 y 390 px — desde SCRUM-782.
 //   · EL PANEL · editor de presupuesto y ficha de Trabajo a 929 y 390 px — desde SCRUM-791.
+//   · EL PANEL · ficha 360 del cliente a 929 y 390 px — desde SCRUM-795. Entra porque ese
+//     ticket le AÑADE un objetivo («🔗 Portal», 30,5–30,9 px) y porque nadie la había medido
+//     nunca: el banco la montaba con 2 nodos por llamarla sin su id.
 //
-// 🔴 SON CUATRO Y NO DIECIOCHO, y eso es una decisión medida: SCRUM-787 censó el panel entero
+// 🔴 SON CINCO Y NO DIECIOCHO, y eso es una decisión medida: SCRUM-787 censó el panel entero
 // —76 objetivos cortos distintos, de los que 57 son `.btn-sm`— y dejó escrito que MEDIR es barato
 // pero VIGILAR se paga en cada PR. Estas dos entran por su motivo: el editor es la pantalla que
 // más se usa, y la ficha de Trabajo tiene los dos peores del árbol (14,0 y 19,6 px) y se usa de
-// pie en obra. Las otras dieciséis siguen medidas por el censo (`npm run censo:tactil-panel`) y
+// pie en obra. Las otras quince siguen medidas por el censo (`npm run censo:tactil-panel`) y
 // sin vigilar, a propósito.
+//
+// 🔴 EL NÚMERO DEL CENSO, RE-FECHADO EL 7-sep-2026 (SCRUM-795): 82 objetivos cortos distintos,
+// 62 de ellos `.btn-sm`. No son 6 nuevos defectos: son los 7 de la ficha 360, que hasta hoy el
+// censo NO PODÍA montar y declaraba «no medida». El 76 de SCRUM-787 no se toca — era verdad
+// sobre la población que aquel día se podía medir.
 //
 // 🔴 POR QUÉ ENTRA EL PANEL, Y POR QUÉ NO BASTABA CON RENOMBRAR ESTE GUARD.
 //
@@ -79,7 +88,7 @@ import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL } from './_medidor-de-toque
 // SCRUM-782 · la vista del panel, montada por el banco y serializada. `scripts/` importando de
 // `tests/` no es nuevo: ya lo hacen censo-internos-de-prisma, censo-tablero-vs-arbol y
 // diagnostico-dependencias.
-import { paginaDeClientes, paginaDeVista, CLIENTES_DE_MUESTRA } from './_pagina-panel.mjs';
+import { paginaDeClientes, paginaDeVista, CLIENTES_DE_MUESTRA, DETALLE_360_DE_MUESTRA, ARGUMENTOS_DE_VISTA } from './_pagina-panel.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
@@ -193,6 +202,17 @@ const envolver = (cuerpo) => `<!doctype html><html lang="es"><head><meta charset
 <link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/dashboard/css/styles.css">
 </head><body><div class="view-container">${cuerpo}</div></body></html>`;
 
+// ═══ SCRUM-795 · LOS DATOS DE LA FICHA 360 ════════════════════════════════════════════════════
+//
+// El fixture vive en `_pagina-panel.mjs`, compartido con el censo de SCRUM-787: el guard vigila y
+// el censo cuenta, y tienen que estar hablando de LA MISMA pantalla.
+const DATOS_795 = (url) => {
+  const u = String(url || '');
+  if (/\/admin\/customers\/\d+\/detail/.test(u)) return DETALLE_360_DE_MUESTRA;
+  if (u.includes('/admin/merchant')) return { id: 1, name: 'Fontanería Soler' };
+  return [];
+};
+
 const SUPERFICIES_791 = [
   // 🔴 SCRUM-794 · 6-sep-2026 · 8 → 7, y el que falta VA NOMBRADO. Este suelo hizo justo lo que
   // se le pide: saltó en cuanto la pantalla dejó de pintar uno de los objetivos censados. No era
@@ -207,9 +227,21 @@ const SUPERFICIES_791 = [
   // debiera: hay un objetivo menos porque hay un botón menos, y encima uno que no cumplía AB6.
   { ruta: '/__quotes', vista: 'renderQuotesView', titulo: 'editor de presupuesto', distintosEsperados: 7 },
   { ruta: '/__jobdetail', vista: 'renderJobDetailView', titulo: 'ficha de Trabajo', distintosEsperados: 6 },
+  // 🔴 SCRUM-795 · LA FICHA 360, y por qué entra AHORA y no en SCRUM-791.
+  //
+  // El censo de SCRUM-787 no pudo proponerla: la 360 nunca llegó a montarse. El banco llamaba a
+  // todas las vistas con UN argumento y ésta necesita dos —`renderCustomer360View(caja, id)`, como
+  // hace `app.js:314`—, así que se quedaba en 2 nodos y el censo la declaraba NO MEDIDA. No era
+  // una vista sin objetivos cortos: era una vista sin medir. Entra con `args`.
+  //
+  // Y entra porque este ticket le AÑADE un objetivo: el botón «🔗 Portal», que para un cliente sin
+  // token no existía. Meter el botón y no meter la vista sería dejar la deuda sin contador.
+  { ruta: '/__cliente360', vista: 'renderCustomer360View', titulo: 'ficha 360 del cliente',
+    datos: DATOS_795, args: ARGUMENTOS_DE_VISTA.renderCustomer360View, distintosEsperados: 7,
+    origen: 'SCRUM-795 (7-sep-2026, con la lista de excepciones VACÍA)' },
 ];
 for (const s of SUPERFICIES_791) {
-  const p = await paginaDeVista(RAIZ, s.vista, { datos: DATOS_791, minimoNodos: 10 });
+  const p = await paginaDeVista(RAIZ, s.vista, { datos: s.datos || DATOS_791, args: s.args || [], minimoNodos: 10 });
   s.aviso = p.aviso;
   s.html = p.html && envolver(p.html);
   s.htmlSonda = p.html && envolver(p.html + SONDA_HTML);
@@ -525,6 +557,28 @@ const EXCEPCIONES_791 = {
     { sel: 'BUTTON.btn.btn-secondary', motivo: 'el BOTÓN BASE a 36,8 px — «Limpiar formulario». Mismo grupo que el anterior. (Hasta SCRUM-794 este motivo nombraba también «+ Añadir línea»: era el duplicado de la cabecera de «2. Líneas», y se borró. El que quedó mide 44,9 px y cumple.)' },
     { sel: 'INPUT', motivo: 'casillas del editor a 17,0 px de área de toque. TERCER grupo de SCRUM-787: no es cuestión de una clase compartida, sino de darles área en este sitio. Sin decidir.' },
   ],
+  // 🔴 SCRUM-795 · LA FICHA 360 · SIETE CORTOS DE SIETE, y uno lo pongo YO.
+  //
+  // Medido el 7-sep-2026 a 929 y 390 px con la superficie recién metida y ESTA LISTA VACÍA, que es
+  // la única forma de ver lo que hay antes de excusar nada: 7 interactivos, 7 por debajo de 44.
+  //
+  // 🔴 EL QUE AÑADE ESTE TICKET NO SE ESCONDE DETRÁS DE LA DEUDA VIEJA. El botón «🔗 Portal» mide
+  // 30,9 px a 929 y 30,6 a 390 (caja CSS 30, área de toque 80 × 30) y ANTES NO EXISTÍA para un
+  // cliente sin token: donde no había objetivo corto ahora hay uno. Que la clase sea vieja no hace
+  // vieja la deuda.
+  //
+  // ⚠️ Y HAY QUE DECIR CÓMO FALLA ESTE MECANISMO: las excepciones casan por SELECTOR, y
+  // `BUTTON.btn-secondary.btn-sm` es el mismo para «✎ Editar» (que ya estaba) y para «🔗 Portal»
+  // (que pongo yo). Una sola línea excusa a los dos y no sabe distinguirlos. No se arregla aquí
+  // —tocar el emparejador cambiaría el veredicto de las otras dos superficies, que son de otras
+  // sesiones—, así que se declara: el motivo NOMBRA a los dos y el guard imprime cada elemento con
+  // su texto y sus píxeles, uno por uno. Quien lea la salida ve «🔗 Portal 30,9px» escrito.
+  renderCustomer360View: [
+    { sel: 'BUTTON.btn-ghost.btn-sm', motivo: 'clase compartida `.btn-sm` (30,5–31,0 px) — «← Volver a Clientes» y «Ver →». Pre-existentes. Las retira el fundador al decidir sobre `.btn-sm` (SCRUM-786; SCRUM-787 midió que 57 de los 76 cortos del panel son de esa clase).' },
+    { sel: 'BUTTON.btn-secondary.btn-sm', motivo: '🔴 DOS VÍCTIMAS Y NO SON IGUALES: «✎ Editar» (30,5–30,9 px) es pre-existente, y «🔗 Portal» (30,5–30,9 px) LO AÑADE SCRUM-795 — antes, sin token, ese botón no se pintaba. La clase es la de SCRUM-786, pero el objetivo corto es nuevo y se cuenta como nuevo. El emparejador va por selector y no sabe separarlos.' },
+    { sel: 'BUTTON.btn-primary.btn-sm', motivo: 'clase compartida `.btn-sm` (30,5–30,9 px) — «+ Nuevo presupuesto». Pre-existente, misma decisión que las anteriores.' },
+    { sel: 'BUTTON', motivo: 'las DOS pestañas del historial, «Presupuestos (1)» y «Facturas (1)», a 41,0 px (caja 40). No llevan clase de botón: es el TERCER grupo de SCRUM-787 —los que no se arreglan con `.btn-sm` sino dándoles área donde están—. Sin decidir. ⚠️ Este selector es el más ancho de todo el fichero: excusa cualquier <button> SIN CLASE de esta pantalla, y hoy son exactamente esos dos (7 interactivos censados, 7 nombrados arriba).' },
+  ],
   renderJobDetailView: [
     { sel: 'BUTTON.btn-ghost.btn-sm', motivo: 'clase compartida `.btn-sm` (30,9 px) — «Cambiar». Pre-existente; la retira el fundador con `.btn-sm`.' },
     { sel: 'BUTTON.btn-secondary.btn-sm', motivo: 'clase compartida `.btn-sm` (30,9 px) — «+ Nuevo albarán», «Parte de trabajo». Ídem.' },
@@ -610,13 +664,15 @@ for (const s of SUPERFICIES_791) {
   // mediciones: el mismo botón medido a dos anchuras es UNO, y confundirlo fue el error del dato
   // de partida de SCRUM-787 (los «13» de Clientes eran 11 sumados dos veces).
   if (distintos.size < s.distintosEsperados) {
-    mal(`   🔴 CIEGO · ${s.vista}: he encontrado ${distintos.size} objetivos cortos DISTINTOS y el `
-      + `censo de SCRUM-787 midió ${s.distintosEsperados}. Faltan ${s.distintosEsperados - distintos.size}: `
+    mal(`   🔴 CIEGO · ${s.vista}: he encontrado ${distintos.size} objetivos cortos DISTINTOS y `
+      + `${s.origen || 'el censo de SCRUM-787'} midió ${s.distintosEsperados}. Faltan ${s.distintosEsperados - distintos.size}: `
       + 'o la vista ya no pinta lo mismo con estos datos, o el censo dejó de verlos. Un verde aquí '
       + 'diría que la pantalla está cubierta cuando no lo está.');
   } else {
+    // El ORIGEN del suelo va en el mensaje: la ficha 360 no la midió SCRUM-787 —no podía, no
+    // montaba—, y atribuirle su número sería inventarle una medición a otro ticket.
     decir(`\n   ✅ suelo de ${s.vista}: ${distintos.size} objetivos cortos DISTINTOS `
-      + `(el censo de SCRUM-787 midió ${s.distintosEsperados}).`);
+      + `(${s.origen || 'el censo de SCRUM-787'} midió ${s.distintosEsperados}).`);
   }
 
   // Y el detector de sobrantes, ACOTADO a esta superficie y SOBRE LAS DOS ANCHURAS — que es la
@@ -659,9 +715,10 @@ if (fallos) {
     + `${MINIMO} px, va a EXCEPCIONES con su motivo y quién la retira.`);
   process.exit(1);
 }
-// El mensaje final NOMBRA LAS CUATRO. Un «todo bien» que no dice de qué es cómo este guard
+// El mensaje final NOMBRA LAS CINCO. Un «todo bien» que no dice de qué es cómo este guard
 // empezó: se llamaba «objetivo-tactil» y sólo miraba la landing (SCRUM-782).
 decir('✅ objetivos de toque: todos llegan a los 44 px de AB6 (o están excusados con motivo) — '
-  + 'LANDING (1280 y 360) · PANEL/clientes, editor de presupuesto y ficha de Trabajo (929 y 390). '
-  + 'SCRUM-542 + SCRUM-782 + SCRUM-791. Las otras 16 vistas del panel NO se vigilan aquí: están '
+  + 'LANDING (1280 y 360) · PANEL/clientes, editor de presupuesto, ficha de Trabajo y ficha 360 '
+  + 'del cliente (929 y 390). SCRUM-542 + SCRUM-782 + SCRUM-791 + SCRUM-795. Las otras 15 vistas '
+  + 'del panel NO se vigilan aquí: están '
   + 'medidas en `npm run censo:tactil-panel` (SCRUM-787).');

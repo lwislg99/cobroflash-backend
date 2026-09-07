@@ -1137,7 +1137,17 @@ export function datosDeMuestra(url) {
   return [];
 }
 
-export async function pintarVista(banco, nombreFn) {
+// 🔴 SCRUM-795 · `argumentos`: LO QUE EL PRODUCTO YA LE PASA A LA VISTA, y el banco no.
+//
+// `app.js:314` monta la ficha 360 con DOS argumentos —`renderCustomer360View(contenedor, id)`—
+// y aquí se llamaba siempre con uno. Consecuencia medida: la 360 montaba 2 nodos y el censo la
+// dejaba fuera declarándose ciego («⚠️ sólo 2 nodos»). El suelo funcionaba; lo que faltaba era
+// poder darle el id. Con un resto OPCIONAL, los 91 sitios que llaman sin argumentos —contados
+// el 7-sep-2026 sobre 6fb51ab7 con `git grep -c 'pintarVista('`— se comportan EXACTAMENTE
+// igual: ninguno pasa un tercer argumento, comprobado uno a uno. Quien necesite montar una
+// vista con parámetro lo pide explícitamente. No hay tabla de argumentos escondida en el banco:
+// el que sabe qué id hace falta es el que mide, no el banco.
+export async function pintarVista(banco, nombreFn, ...argumentos) {
   const fn = banco.ctx[nombreFn];
   if (typeof fn !== 'function') {
     return { error: new Error(`la vista no publica \`${nombreFn}\` (es ${typeof fn})`), contenedor: null };
@@ -1170,7 +1180,7 @@ export async function pintarVista(banco, nombreFn) {
   };
 
   try {
-    const r = fn(contenedor);
+    const r = fn(contenedor, ...argumentos);
     // 🔴 SCRUM-448 · SE ESPERA LA VISTA **O** UNOS TICKS, LO QUE PASE ANTES.
     //
     // El `await r` a secas colgaba el test PARA SIEMPRE en cuanto la vista era `async` y esperaba

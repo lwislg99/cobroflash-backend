@@ -122,7 +122,12 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // «porque no se añade un guard nuevo, se amplía uno». Era falso — ampliarlo cambió su destino.
   //
   // MEDIDO: las dos rutas nuevas (`/__quotes` y `/__jobdetail`) no las sirve ningún otro guard.
-  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo', 'guard:caja-documento-suelto', 'guard:caja-datos-del-cliente', 'guard:objetivo-tactil'],
+  // SCRUM-795 · entra `guard:portal-en-la-ficha`. Su destino tampoco se deriva, y por el mismo
+  // motivo que los anteriores: sirve UNA página por caso desde un servidor propio, con la ruta
+  // construida a partir del nombre del caso (`${base}/${caso.nombre…}`). De una variable no sale
+  // ningún destino, así que su solape es INVISIBLE para este detector y se declara en vez de
+  // contarse como «no tiene». Lo que sí se sabe es que su página la fabrica él y no la comparte.
+  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo', 'guard:caja-documento-suelto', 'guard:portal-en-la-ficha', 'guard:caja-datos-del-cliente', 'guard:objetivo-tactil'],
     '🔴 ha cambiado el conjunto de guards cuyo destino NO se puede derivar. Se declaran para que\n'
     + '  su solape invisible no se lea como «no tiene».');
 });

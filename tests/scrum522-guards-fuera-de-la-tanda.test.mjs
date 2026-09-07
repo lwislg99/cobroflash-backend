@@ -55,8 +55,13 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // cliente en el documento» en los DOS estados del control nuevo. Sube por lo mismo que los
   // once anteriores: el texto lo firma el asesor, la caja se adapta al texto y eso no se
   // comprueba con aritmética. Cuesta 5,3 s — el más barato de los cinco guards de caja.
-  assert.equal(fuera.length, 12,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ 12 → ${fuera.length}.\n`
+  // SCRUM-795 · 12 → 13: entra `guard:portal-en-la-ficha`, que mide en navegador que la LISTA y
+  // la FICHA 360 digan lo mismo sobre el botón del portal. Sube por un motivo distinto al de los
+  // cinco guards de caja: aquí no se mide si un texto CABE, sino si un elemento EXISTE. Y no vale
+  // mirarlo en el fuente — un `${cond ? botón : ''}` bien puesto y uno mal puesto se leen igual,
+  // que es la lección de SCRUM-515. El árbitro tiene que ser el DOM renderizado.
+  assert.equal(fuera.length, 13,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ 13 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);
