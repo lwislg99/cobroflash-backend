@@ -10,17 +10,21 @@
 // módulo tal cual y lo corren sobre PRESUPUESTOS Y FACTURAS. Si estuviera atado, no podrían
 // existir.
 //
-// ── 🔴 ESTE PR NO ES MERGEABLE HASTA APLICAR LA COLUMNA EN LAS TRES BASES ───────────────────
-// `quotes.tags` e `invoices.tags` NO EXISTEN todavía en ninguna base: medido el 7-sep-2026 contra
-// desarrollo con `node scripts/censo-etiquetas-del-documento.mjs` —las dos AUSENTES, con
-// `customers.tags` y `quotes.lines` como controles positivos presentes, sobre 15 presupuestos y 5
-// facturas—. El esquema, el SQL y el código viajan JUNTOS (regla de la casa, 7-sep-2026) para que
-// no haya media función ni dos PR por ticket; el riesgo se gestiona con el ORDEN DEL MERGE: el
-// fundador aplica el `ALTER` y luego mergea. `schemaDrift` compara esperado ⊆ real al arrancar, y
-// mergear esto antes del `ALTER` deja producción sin levantar.
+// ── 🔴 ESTE PR NO ES MERGEABLE HASTA APLICAR LA COLUMNA EN STAGING Y PRODUCCIÓN ─────────────
+// `quotes.tags` e `invoices.tags` están **aplicadas en DESARROLLO** (7-sep-2026: quotes 43→44,
+// invoices 35→36, `customers` de testigo sin moverse) y **pendientes en staging y producción**,
+// que las aplica el fundador. El esquema, el SQL y el código viajan JUNTOS (regla de la casa,
+// 7-sep-2026); el riesgo lo gestiona el ORDEN DEL MERGE. `schemaDrift` compara esperado ⊆ real al
+// arrancar, y mergear esto antes deja producción sin levantar.
 //
+// ── QUÉ CUBRE ESTE FICHERO Y QUÉ NO ────────────────────────────────────────────────────────
 // Aquí no hay ni una lectura ni una escritura contra la base: todo es mecanismo puro más lecturas
-// del árbol.
+// del árbol, y por eso corre en `npm test` sin base y sin navegador.
+//
+// El USO real —guardar una etiqueta en un presupuesto y en una factura por las rutas de verdad, y
+// releerlas— lo ejercita `node scripts/pasada-real-etiquetas-del-documento.mjs`, que necesita la
+// base de desarrollo y por eso no vive en la tanda. Un guard que lee el árbol no distingue «esto
+// funciona» de «el código dice que funcionaría»; esa distinción es de aquel script.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -641,9 +645,28 @@ test('SCRUM-595 · 🔴 SUELO: el censo se declara CIEGO si no encuentra ni un d
   assert.match(ejecutable, /faltanControles/,
     '🔴 el censo ha perdido su CONTROL POSITIVO de columnas. Sin él, «no está» y «no se vio '
     + 'nada» se leen igual.');
-  // Y no toca la base: es un censo, no una migración.
-  for (const escritura of ['INSERT', 'UPDATE', 'DELETE', 'ALTER', 'DROP']) {
-    assert.equal(new RegExp(`\\b${escritura}\\b`).test(ejecutable), false,
-      `🔴 el censo contiene «${escritura}». Sólo lee: el ALTER lo aplica el fundador.`);
+  // ── Y NO TOCA LA BASE: es un censo, no una migración ──────────────────────────────────
+  //
+  // 🔴 ESTA COMPROBACIÓN SE CAZÓ A SÍ MISMA, y se deja escrito porque es la lección de SCRUM-349
+  // apareciendo otra vez. Buscaba la PALABRA `ALTER` y saltó cuando el censo ganó un
+  // `console.log('… la toca el ALTER')` — texto de pantalla, no SQL. Un guard que confunde una
+  // palabra con una sentencia acusa al inocente, y quien lo ve en rojo aprende a ignorarlo.
+  //
+  // Ahora busca FORMAS DE SENTENCIA, no palabras sueltas. Es MÁS estricto donde importa: `UPDATE`
+  // a secas no distinguía `prisma.quote.update` de un UPDATE de SQL, y ahora `UPDATE … SET` sí.
+  const ESCRITURAS = [
+    /\bALTER\s+TABLE\b/i, /\bDROP\s+(TABLE|COLUMN|INDEX)\b/i, /\bTRUNCATE\b/i,
+    /\bINSERT\s+INTO\b/i, /\bUPDATE\s+[\w".]+\s+SET\b/i, /\bDELETE\s+FROM\b/i,
+  ];
+  for (const forma of ESCRITURAS) {
+    assert.equal(forma.test(ejecutable), false,
+      `🔴 el censo contiene una escritura (${forma}). Sólo lee: el ALTER se aplica con `
+      + '`scripts/aplicar-sql-dev.mjs`, que comprueba el destino, o lo aplica el fundador.');
   }
+  // 🔴 CONTROL POSITIVO DEL DETECTOR: que sepa ver una escritura cuando la hay. Sin esto, seis
+  // negaciones sobre un texto que el detector no sabe leer darían el mismo verde.
+  const CEBO = 'await prisma.$executeRawUnsafe("ALTER TABLE quotes ADD COLUMN x TEXT");';
+  assert.ok(ESCRITURAS.some((f) => f.test(CEBO)),
+    '🔴 CIEGO: el detector no reconoce ni un ALTER TABLE evidente. Sus «no hay escrituras» de '
+    + 'arriba no significan nada.');
 });

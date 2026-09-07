@@ -2373,7 +2373,7 @@ es la señal funcionando, no un fallo del PR.
 
 ---
 
-## SCRUM-595 (paso ②) · `quotes.tags` + `invoices.tags` — ⛔ **SIN APLICAR EN NINGUNA** (7-sep-2026)
+## SCRUM-595 · `quotes.tags` + `invoices.tags` — ✅ APLICADO **sólo en DEV** (7-sep-2026)
 
 Las **etiquetas del documento** (DOC-05). El mismo mecanismo que `customers.tags` (SCRUM-580,
 CONT-07), en las **dos** tablas de documento: presupuesto y factura.
@@ -2393,34 +2393,53 @@ ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "tags" JSONB;
 **Las DOS o ninguna.** Con una sola tabla el bloque funcionaría en un documento y no en el otro,
 y eso el ticket lo declara **no hecho**. La verificación pide las dos y lo dice si falta una.
 
-### ⛔ NO se ha aplicado en ninguna base — y no se ha intentado
+### Estado por base
 
-- [ ] **producción · autorack** — la aplica el fundador. Desde un árbol de trabajo no hay
-      credencial de producción (regla 3), y en esta sesión no la ha habido en ningún momento:
-      `node scripts/comprobar-claves-bd.mjs` en `cobroflash-b20` → `DATABASE_URL` **ausente**.
-- [ ] **staging · acela/railway** — pendiente. **Fuera del encargo de esta sesión**; el turno de
-      staging no se tomó.
-- [ ] **desarrollo · acela/yaqu_dev_javier** — pendiente. Aquí **sólo se LEYÓ**, con
-      `node scripts/censo-etiquetas-del-documento.mjs`. Ni una escritura.
+- [ ] **producción · autorack** — pendiente, **la aplica el fundador**. Desde un árbol de trabajo
+      no hay credencial de producción (regla 3), y en esta sesión no la ha habido en ningún
+      momento: `node scripts/comprobar-claves-bd.mjs` en `cobroflash-b20` → `DATABASE_URL`
+      **ausente**.
+- [ ] **staging · acela/railway** — pendiente, **la aplica el fundador**. Fuera del encargo; el
+      turno de staging no se tomó.
+- [x] **desarrollo · acela/yaqu_dev_javier** — **APLICADO el 7-sep-2026 por la sesión**, con
+      `node scripts/aplicar-sql-dev.mjs --file docs/sql/scrum-595-etiquetas-del-documento.sql --go`.
+      Esa herramienta **sólo acepta `DATABASE_URL_DEV`** y contrasta la clave contra su destino
+      DECLARADO antes de abrir nada: `[destino] DATABASE_URL_DEV → acela.proxy.rlwy.net/yaqu_dev_javier (DESARROLLO) ✅`.
+      Ensayo primero (sin `--go`), y sólo entonces la aplicación.
 
-### Medición ANTES, en desarrollo (7-sep-2026)
+### 🔴 ANTES Y DESPUÉS, CON EL RECUENTO DE COLUMNAS COMO CONTROL
 
-| Columna | Estado |
-|---|---|
-| `quotes.tags` | **AUSENTE** |
-| `invoices.tags` | **AUSENTE** |
-| `customers.tags` | presente — **CONTROL POSITIVO** (SCRUM-580 aplicada aquí) |
-| `quotes.lines` | presente — **CONTROL POSITIVO** de que la consulta llega a `quotes` |
+Una fila sin estado de partida **no distingue «la he creado» de «ya estaba»**. Por eso se mide el
+recuento de columnas de cada tabla tocada, y se deja un **TESTIGO** que no debe moverse.
 
-**Filas:** 15 presupuestos · 5 facturas. Clientes con etiquetas declaradas: **0**.
+| Tabla | ANTES | DESPUÉS | |
+|---|---|---|---|
+| `quotes` | **43** columnas | **44** | +1 · la toca el ALTER |
+| `invoices` | **35** columnas | **36** | +1 · la toca el ALTER |
+| `customers` | **27** columnas | **27** | **TESTIGO — no se mueve, y no se movió** |
+
+| Columna | ANTES | DESPUÉS |
+|---|---|---|
+| `quotes.tags` | **AUSENTE** | `jsonb` · nullable=YES · default=NINGUNO |
+| `invoices.tags` | **AUSENTE** | `jsonb` · nullable=YES · default=NINGUNO |
+| `customers.tags` | presente | presente — **CONTROL POSITIVO** (SCRUM-580) |
+| `quotes.lines` | presente | presente — **CONTROL POSITIVO** de que la consulta llega a `quotes` |
+
+**El tipo salió `jsonb` en las dos**, que es lo que de verdad había que comprobar: `schemaDrift`
+mira que la columna exista, **no su tipo**. Y **sin default**, que es lo que sostiene
+«ausente ≠ vacío».
 
 🔴 **Los dos controles positivos son de cosas distintas a propósito.** Sin `customers.tags` no
 consta que se esté mirando una base donde el mecanismo vive; sin `quotes.lines` no consta que la
 consulta alcance la tabla `quotes`. Un único control no distingue «no está» de «no se vio nada».
 
 **El suelo del censo está probado por MUTACIÓN, no declarado:** forzando cero documentos sale con
-**código 2** declarándose ciego, y rompiendo el control positivo también. Restaurado y
-re-ejecutado: fichero idéntico y exit 0.
+**código 2** declarándose ciego, y rompiendo el control positivo también.
+
+⚠️ **Y una honestidad sobre el recuento de FILAS:** entre el antes y el después pasó de 16 a 15
+presupuestos. **No lo hizo este ALTER** —un `ADD COLUMN` no borra filas—: la base de desarrollo la
+comparten varios árboles de trabajo y otra sesión estaba tocándola. Se dice en vez de dejar un
+número que no cuadra sin explicación.
 
 ### 🔴 EL ESQUEMA VIAJA EN EL MISMO PR, Y EL RIESGO SE GESTIONA CON EL ORDEN DEL MERGE
 

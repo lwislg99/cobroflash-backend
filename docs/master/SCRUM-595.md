@@ -18,11 +18,12 @@ ticket, y no se ha colado ninguno en SKIP silencioso.
 **Estado:** ✅ **ENTREGADO ENTERO** — PASO 0, el `ALTER`, el esquema, el servidor y las dos
 pantallas.
 
-> ## 🔴 NO MERGEABLE HASTA APLICAR LA COLUMNA EN LAS TRES BASES
+> ## 🔴 NO MERGEABLE HASTA APLICAR LA COLUMNA EN STAGING Y PRODUCCIÓN
 >
-> `docs/sql/scrum-595-etiquetas-del-documento.sql`. **El fundador aplica y luego mergea.** Esta
-> sesión no ha aplicado nada en ninguna base. Si esto se mergeara antes, `schemaDrift` compara
-> esperado ⊆ real al arrancar y **producción no levanta**.
+> `docs/sql/scrum-595-etiquetas-del-documento.sql`. **Desarrollo: aplicado** por la sesión el
+> 7-sep-2026 (medición antes-y-después abajo). **Staging y producción: las aplica el fundador**, y
+> luego mergea. Si esto se mergeara antes, `schemaDrift` compara esperado ⊆ real al arrancar y
+> **producción no levanta**.
 
 **Nota de proceso (7-sep-2026).** La primera pasada de este ticket entregó sólo el PASO 0 y el
 `ALTER`, y **retuvo la línea del esquema** para no dejar en la rama algo que tumbara producción.
@@ -226,8 +227,107 @@ y eso el encargo lo declara **no hecho**. Un guard lo exige sobre el fichero, mi
 ejecutable**: el porqué de la cabecera nombra las dos tablas, y contarlas ahí daría verde con un DDL
 que sólo toca una.
 
-⛔ **No se ha aplicado en ninguna base, y no se ha intentado.** Ni producción, ni staging, ni
-desarrollo. Lo aplica el fundador.
+## ✅ APLICADO EN **DESARROLLO** (7-sep-2026) · staging y producción, del fundador
+
+`node scripts/aplicar-sql-dev.mjs --file docs/sql/scrum-595-etiquetas-del-documento.sql --go`.
+Esa herramienta **sólo acepta `DATABASE_URL_DEV`** y contrasta la clave contra su destino
+DECLARADO —host **y** nombre de base, porque staging y dev comparten host— antes de abrir nada:
+
+```
+[destino] DATABASE_URL_DEV → acela.proxy.rlwy.net/yaqu_dev_javier (DESARROLLO) ✅
+```
+
+Ensayo primero (sin `--go`, no toca nada), y sólo entonces la aplicación.
+
+### 🔴 ANTES Y DESPUÉS, CON RECUENTO DE COLUMNAS Y UN TESTIGO
+
+Una fila sin estado de partida **no distingue «la he creado» de «ya estaba»**.
+
+| Tabla | ANTES | DESPUÉS | |
+|---|---|---|---|
+| `quotes` | **43** | **44** | +1 · la toca el ALTER |
+| `invoices` | **35** | **36** | +1 · la toca el ALTER |
+| `customers` | **27** | **27** | **TESTIGO — no debía moverse, y no se movió** |
+
+| Columna | ANTES | DESPUÉS |
+|---|---|---|
+| `quotes.tags` | **AUSENTE** | `jsonb` · nullable=YES · default=NINGUNO |
+| `invoices.tags` | **AUSENTE** | `jsonb` · nullable=YES · default=NINGUNO |
+| `customers.tags` · `quotes.lines` | presentes | presentes — **controles positivos** |
+
+**El tipo salió `jsonb` en las dos**, que es lo que de verdad había que comprobar: `schemaDrift`
+mira que la columna exista, **no su tipo**. Y **sin default**, que es lo que sostiene «ausente ≠
+vacío».
+
+⚠️ **Honestidad sobre el recuento de FILAS:** entre el antes y el después pasó de 16 a 15
+presupuestos. **No lo hizo este ALTER** —un `ADD COLUMN` no borra filas—: la base de desarrollo la
+comparten varios árboles y otra sesión estaba tocándola. Se dice, en vez de dejar un número que no
+cuadra sin explicación.
+
+⛔ **Staging y producción: pendientes, y no se han tocado.** Desde un árbol de trabajo no hay
+credencial de producción (regla 3) y el turno de staging no se toma para esto.
+
+---
+
+# ✅ LA PRIMERA PASADA REAL · por el camino de verdad
+
+`node scripts/pasada-real-etiquetas-del-documento.mjs` — levanta la app de verdad, se autentica
+como el merchant demo y usa **las rutas HTTP que usa el dashboard**. Hasta aquí el ticket estaba
+probado sobre MECANISMO, no sobre USO: un guard que lee el árbol no distingue «esto funciona» de
+«el código dice que funcionaría».
+
+**Documentos reales:** presupuesto **#356** y factura **2026-FG-005** (id 238), del merchant demo.
+Los dos partían de `tags = null`.
+
+```
+1 · SE GUARDA
+  ✅ PUT /admin/quotes/356/tags → 200
+  ✅ PUT /admin/invoices/238/tags → 200
+
+2 · SE RELEE (el quinto eslabón, y aquí es donde se pierde en silencio)
+  ✅ la LISTA de presupuestos las devuelve: ["obra puerto","garantía"]
+  ✅ el DETALLE del presupuesto las devuelve: ["obra puerto","garantía"]
+  ✅ la LISTA de facturas las devuelve: ["obra puerto"]
+  ✅ el DETALLE de la factura las devuelve: ["obra puerto"]
+
+3 · 🔴 EL CONTROL: se filtra por la etiqueta y salen LOS DOS
+  ✅ filtrando por «obra puerto» sale el PRESUPUESTO #356  (1 de 12)
+  ✅ filtrando por «obra puerto» sale la FACTURA 2026-FG-005  (1 de 5)
+  ✅ sin etiqueta seleccionada, las dos listas salen ENTERAS (el positivo)
+
+4 · 🔴 REGLA 29: etiquetar una factura emitida no la cambia
+  ✅ number: "2026-FG-005" → SIN CAMBIO
+  ✅ total: "2383.7" → SIN CAMBIO
+  ✅ pdfUrl: "PENDING_PDF" → SIN CAMBIO
+  ✅ vfHash: null → SIN CAMBIO
+  ✅ qrData: "PENDING_QR" → SIN CAMBIO
+  ✅ status: "pending" → SIN CAMBIO
+  ✅ y la etiqueta SÍ está guardada: la invariancia de arriba no es la de un no-op
+
+5 · la validación no deja borrar por accidente
+  ✅ un cuerpo mal formado → 400
+  ✅ y las etiquetas SIGUEN ahí tras el 400: el suelo no las borró
+  ✅ un id que no existe → 404, no un `ok` sobre cero filas
+
+↩ restaurado: presupuesto.tags=null · factura.tags=null
+
+✅ PASADA REAL COMPLETA, 0 fallos.
+```
+
+**La base queda como estaba**: el script guarda el valor previo y lo restaura en un `finally`,
+pase lo que pase, y lo reimprime al final para que no haya que creérselo.
+
+### 🕳️ Y LO QUE ESTA PASADA **NO** PRUEBA, medido
+
+🔴 **En desarrollo hay CERO facturas selladas** (`vfHash` no nulo) y **cero con PDF pintado** —
+contado, no supuesto—. Así que en la tabla de arriba el «SIN CAMBIO» de `vfHash` y `pdfUrl` es
+**trivialmente cierto**: eran `null` y `PENDING_PDF` antes y después. No se disimula.
+
+Lo que SÍ cubre el sello es más fuerte que comparar una fila: el test **ejercita
+`computeVeriFactuHash`** pasándole `tags` y la huella sale idéntica, **y sí se mueve al cambiar el
+importe** (control negativo). Y el PDF lo cubre la lista blanca de `generateInvoicePdf`. Etiquetar
+una factura **sellada** de verdad queda sin ejercitar hasta que exista una — en staging o en
+producción, y eso es del fundador.
 
 ### 🔴 EL TIPO NO ESTÁ ADIVINADO
 

@@ -20,6 +20,10 @@
 //   1. CONTROL POSITIVO DE COLUMNA — `customers.tags` (CONT-07, ya aplicada en las tres bases) y
 //      `quotes.lines`. Si NO salen, la consulta no estaba mirando esta base: la ausencia de
 //      `quotes.tags` no significaría «no está», significaría «no se vio nada».
+//   1b. 🔴 RECUENTO DE COLUMNAS DE CADA TABLA TOCADA — el control del ANTES-Y-DESPUÉS. Una fila
+//      sin estado de partida NO distingue «la he creado» de «ya estaba»: sólo el recuento que
+//      SUBE de N a N+1 en `quotes` y en `invoices` demuestra que este ALTER hizo algo. Y
+//      `customers` va de testigo: su recuento NO puede moverse, porque este ALTER no la toca.
 //   2. 🔴 SUELO DE FILAS — si NO se encuentra NI UN documento (cero presupuestos Y cero facturas),
 //      el censo NO da un verde: sale con código 2 declarándose CIEGO. Sobre una base vacía,
 //      «ningún documento tiene etiquetas» es cierto y no dice absolutamente nada.
@@ -112,7 +116,25 @@ async function main() {
 
     const visto = new Set(cols.map((c) => `${c.table_name}.${c.column_name}`));
 
-    console.log('  (a) COLUMNAS DE ETIQUETAS');
+    // ── (a0) 🔴 EL RECUENTO POR TABLA · el control del ANTES-Y-DESPUÉS ───────────────────────
+    // `quotes` e `invoices` son las tablas que toca el ALTER; `customers` es el TESTIGO: si su
+    // recuento se moviera, este ALTER habría hecho algo que no le tocaba.
+    const recuentos = await prisma.$queryRaw`
+      SELECT table_name, COUNT(*)::int AS columnas
+      FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name IN ('quotes', 'invoices', 'customers')
+      GROUP BY table_name ORDER BY table_name`;
+    console.log('  (a0) RECUENTO DE COLUMNAS POR TABLA');
+    if (recuentos.length !== 3) {
+      console.log('      🔴 CIEGO: esperaba 3 tablas y veo ' + recuentos.length + '.');
+      ciego = true;
+    }
+    for (const r of recuentos) {
+      const papel = r.table_name === 'customers' ? 'TESTIGO — no la toca este ALTER' : 'la toca el ALTER';
+      console.log(`      ${r.table_name}: ${Number(r.columnas)} columnas   (${papel})`);
+    }
+
+    console.log('\n  (a) COLUMNAS DE ETIQUETAS');
     for (const { tabla } of DOCUMENTOS) {
       const fila = cols.find((c) => c.table_name === tabla && c.column_name === 'tags');
       console.log(

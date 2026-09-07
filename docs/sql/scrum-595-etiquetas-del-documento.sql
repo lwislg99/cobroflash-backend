@@ -1,7 +1,12 @@
 -- SCRUM-595 (DOC-05) · Las etiquetas DEL DOCUMENTO. Los DOS documentos.
 --
--- ⛔ ESTE FICHERO NO SE HA APLICADO EN NINGUNA BASE. Lo escribe la sesión; lo aplica el fundador.
---    En desarrollo estaba medido AUSENTE el 7-sep-2026 (`node scripts/censo-etiquetas-del-documento.mjs`).
+-- ✅ APLICADO EN **DESARROLLO** el 7-sep-2026 por la sesión, con `scripts/aplicar-sql-dev.mjs --go`
+--    (esa herramienta sólo acepta `DATABASE_URL_DEV` y contrasta el destino antes de abrir nada).
+--    ANTES: quotes 43 columnas · invoices 35 · customers 27 (testigo) — `tags` AUSENTE en las dos.
+--    DESPUÉS: quotes 44 · invoices 36 · customers 27 — `tags` = `jsonb`, nullable, sin default.
+--
+-- ⛔ STAGING Y PRODUCCIÓN: **pendientes, y las aplica el FUNDADOR**. Desde un árbol de trabajo no
+--    hay credencial de producción (regla 3) y el turno de staging no se toma para esto.
 --
 -- ═══════════════════════════════════════════════════════════════════════════════════════════════
 -- POR QUÉ DOS TABLAS Y NO UNA
