@@ -127,7 +127,12 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // construida a partir del nombre del caso (`${base}/${caso.nombre…}`). De una variable no sale
   // ningún destino, así que su solape es INVISIBLE para este detector y se declara en vez de
   // contarse como «no tiene». Lo que sí se sabe es que su página la fabrica él y no la comparte.
-  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo', 'guard:caja-documento-suelto', 'guard:portal-en-la-ficha', 'guard:caja-datos-del-cliente', 'guard:objetivo-tactil'],
+  // SCRUM-722 · entra `guard:marcadores-en-pantalla`, por lo mismo: no visita ninguna página del
+  // árbol. Se FABRICA su banco en un temporal —derivando la lista de scripts del `index.html`
+  // real— y lo abre por `file://` desde una variable, así que de aquí no sale ningún destino. Su
+  // solape es invisible para este detector y se declara en vez de contarse como «no tiene».
+  // MEDIDO: la página la fabrica él en un `mkdtemp` y la borra al acabar; no la comparte con nadie.
+  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo', 'guard:caja-documento-suelto', 'guard:portal-en-la-ficha', 'guard:caja-datos-del-cliente', 'guard:objetivo-tactil', 'guard:marcadores-en-pantalla'],
     '🔴 ha cambiado el conjunto de guards cuyo destino NO se puede derivar. Se declaran para que\n'
     + '  su solape invisible no se lea como «no tiene».');
 });
