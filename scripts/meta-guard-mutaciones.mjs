@@ -138,11 +138,14 @@ export function sueloDeEjecucion({ vivas, mudas }) {
  * Devuelve `[]` si no declara ninguna — no es un error: la mayoría de los guards todavía no lo
  * hacen, y este mecanismo se adopta guard a guard.
  */
+export const CAMPOS_DE_LA_DECLARACION = ['fichero', 'de', 'a', 'cae'];
+
 export function lecturaDeDeclaraciones(codigo, nombre = 'x.mjs') {
   const sf = ts.createSourceFile(nombre, codigo, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
   const buenas = [];
   const incompletas = [];
   const textoDe = (nodo) => (ts.isStringLiteralLike(nodo) ? nodo.text : null);
+  const lineaDe = (nodo) => sf.getLineAndCharacterOfPosition(nodo.getStart(sf)).line + 1;
 
   const v = (n) => {
     if (ts.isVariableDeclaration(n) && n.name && ts.isIdentifier(n.name)
@@ -151,23 +154,90 @@ export function lecturaDeDeclaraciones(codigo, nombre = 'x.mjs') {
       for (const el of n.initializer.elements) {
         if (!ts.isObjectLiteralExpression(el)) continue;
         const m = {};
+        // 🔴 SCRUM-757 · LO QUE EL LECTOR NO SABE EVALUAR SE APUNTA, NO SE TIRA.
+        const noEvaluables = [];
         for (const p of el.properties) {
           if (!ts.isPropertyAssignment(p) || !p.name) continue;
           const clave = p.name.getText(sf).replace(/['"]/g, '');
           const valor = textoDe(p.initializer);
-          if (valor !== null) m[clave] = valor;
+          if (valor !== null) { m[clave] = valor; continue; }
+          if (CAMPOS_DE_LA_DECLARACION.includes(clave)) {
+            noEvaluables.push({
+              clave,
+              linea: lineaDe(p),
+              forma: ts.SyntaxKind[p.initializer.kind],
+              texto: p.initializer.getText(sf).replace(/\s+/g, ' ').slice(0, 70),
+            });
+          }
         }
-        if (m.fichero && m.de && typeof m.a === 'string' && m.cae) buenas.push(m);
-        // 🔴 LA QUE SE CAE POR EL AGUJERO. Antes se descartaba con un `continue` mudo, y el
-        // recuento del job bajaba de N a N-1 sin que nada lo dijera: una declaración a la que le
-        // falta un campo DESAPARECE, y el verde de al lado se lee como si siguiera cubriendo.
-        else incompletas.push({ faltan: ['fichero', 'de', 'a', 'cae'].filter((k) => typeof m[k] !== 'string'), tiene: m });
+        if (!noEvaluables.length && m.fichero && m.de && typeof m.a === 'string' && m.cae) {
+          buenas.push(m);
+          continue;
+        }
+        // ═══════════════════════════════════════════════════════════════════════════════════
+        // 🔴 LA QUE SE CAE POR EL AGUJERO — y desde SCRUM-757 son DOS agujeros distintos, y
+        // se distinguen, porque decirlos igual manda a quien lo lea a buscar lo que no es.
+        //
+        //   · FALTAN     → el campo no está escrito. Media declaración.
+        //   · NO EVALUABLES → el campo ESTÁ, pero no en una forma que este lector sepa leer:
+        //     una concatenación `'…' + '…'`, una plantilla, una variable. Antes se contaba
+        //     como «le faltan: a» —una MENTIRA: el campo está delante— y la declaración
+        //     desaparecía del recuento.
+        //
+        // Ha mordido a TRES sesiones en un día, y las tres se enteraron sólo porque
+        // reescribieron la declaración por otro motivo. Si no la tocan, invisible.
+        // ═══════════════════════════════════════════════════════════════════════════════════
+        incompletas.push({
+          fichero: nombre,
+          linea: lineaDe(el),
+          faltan: CAMPOS_DE_LA_DECLARACION.filter(
+            (k) => typeof m[k] !== 'string' && !noEvaluables.some((x) => x.clave === k)),
+          noEvaluables,
+          tiene: m,
+        });
       }
     }
     ts.forEachChild(n, v);
   };
   v(sf);
   return { buenas, incompletas };
+}
+
+/**
+ * 🔴 SCRUM-757 · EL SUELO · Todo lo que PRETENDE ser una declaración y no se puede evaluar,
+ * con su fichero y su línea. Vacío = no hay nada que denunciar.
+ *
+ * Vive FUERA del bloque de arranque para que se le pueda exigir el rojo sin pagar los minutos
+ * del trabajo entero, y para que lo vean los DOS caminos: el completo y `--solo-censo`.
+ *
+ * ⚠️ SÓLO mira dentro de `MUTACIONES_QUE_ME_TUMBAN`. Un objeto cualquiera del fichero, por raro
+ * que sea, NO es una declaración y no se denuncia: marcar todo lo que no se entiende convertiría
+ * el suelo en ruido, y el ruido se aprende a ignorar.
+ */
+export function declaracionesIlegibles(dir = DIR_TESTS) {
+  const out = [];
+  for (const { guard, incompletas } of censoDeDeclaraciones(dir)) {
+    for (const inc of incompletas || []) {
+      out.push({
+        guard,
+        linea: inc.linea,
+        faltan: inc.faltan,
+        noEvaluables: inc.noEvaluables || [],
+      });
+    }
+  }
+  return out;
+}
+
+/** El motivo, ya escrito, de una entrada de `declaracionesIlegibles`. */
+export function motivoDeIlegible(x) {
+  const partes = [];
+  for (const ne of x.noEvaluables) {
+    partes.push(`el campo \`${ne.clave}\` (línea ${ne.linea}) ESTÁ, pero no es un literal: es `
+      + `${ne.forma} — \`${ne.texto}\``);
+  }
+  if (x.faltan.length) partes.push(`faltan los campos: ${x.faltan.join(', ')}`);
+  return `${x.guard}:${x.linea} · ${partes.join(' · ')}`;
 }
 
 /**
@@ -661,6 +731,34 @@ if (ejecutadoDirectamente(import.meta.url)) {
   }
   instalarRedDeSeguridad(undefined, EN_VUELO, DIR_MARCA);
 
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 SCRUM-757 · SUELO · UNA DECLARACIÓN QUE NO SE PUEDE EVALUAR SE DENUNCIA, NO SE DESCARTA.
+  //
+  // MEDIDO antes de escribir esto, sobre el árbol y corriendo:
+  //   · `--solo-censo` con una `a` concatenada → **127 → 126 declaraciones, salida 0, y ni una
+  //     palabra**. El guard que esa declaración vigilaba se queda sin vigilar y nadie se entera.
+  //   · la pasada completa SÍ decía algo —`CIEGO (declaración incompleta)`, salida 2— pero con
+  //     un diagnóstico FALSO: «le faltan: a», cuando el campo está delante; y sin la línea.
+  //
+  // Por eso el suelo va AQUÍ ARRIBA, antes de que ningún camino se bifurque: lo ven los dos, y
+  // dice fichero, línea, campo y QUÉ FORMA tiene lo que no supo leer.
+  //
+  // 🔴 Y el suelo NO es «aceptar concatenaciones»: aceptar una forma más deja el mismo agujero
+  // para la siguiente. Que el lector entienda o no una concatenación es secundario; que se calle
+  // cuando no entiende es el defecto.
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  const ilegibles = declaracionesIlegibles();
+  if (ilegibles.length) {
+    console.error(`🔴 ${ilegibles.length} DECLARACIÓN(ES) QUE NO PUEDO EVALUAR. No se descartan en `
+      + 'silencio: cada una es un guard que se queda SIN VIGILAR y un recuento que baja sin que '
+      + 'nada lo diga.');
+    for (const x of ilegibles) console.error(`   · ${motivoDeIlegible(x)}`);
+    console.error('\n   Los cuatro campos van como UN literal de cadena. Ni concatenaciones, ni '
+      + 'plantillas, ni variables:\n     a: \'primera línea\\nsegunda línea\'   ← así\n'
+      + '     a: \'primera \' + \'línea\'          ← así NO');
+    process.exit(SALIDA_CIEGO);
+  }
+
   const censo = censoDeDeclaraciones();
 
   // ── SUELO ① · EL TAMAÑO DEL CENSO ─────────────────────────────────────────────────────────
@@ -691,10 +789,16 @@ if (ejecutadoDirectamente(import.meta.url)) {
     // Se descartaba en silencio y el recuento bajaba sin que nadie lo dijera — «parece cobertura»,
     // que es el defecto que este mecanismo entero vino a cerrar. Provocado el 5-sep-2026 al perder
     // yo mismo la línea `fichero:` de una declaración en una edición: el job siguió verde.
+    // 🔴 SCRUM-757 · ESTE BUCLE YA NO DEBERÍA ALCANZARSE, y se deja A PROPÓSITO. El suelo de
+    // arriba sale antes con `SALIDA_CIEGO` sobre las MISMAS incompletas —las dos derivan de
+    // `censoDeDeclaraciones()`—, así que llegar aquí significa que alguien ha movido o aflojado
+    // ese suelo. Entonces esto sigue siendo la segunda línea, y no un verde.
     for (const inc of incompletas || []) {
-      ciegos.push(`${guard} · una declaración está INCOMPLETA (le faltan: ${inc.faltan.join(', ')}) `
-        + `y por eso no se ha ejecutado. Media declaración es peor que ninguna: parece cobertura.`);
-      console.log(`  ? ${guard} · CIEGO (declaración incompleta)`);
+      ciegos.push(`${guard}:${inc.linea ?? '?'} · declaración que NO SE PUEDE EVALUAR `
+        + `${(inc.noEvaluables || []).map((n) => `(campo \`${n.clave}\`, línea ${n.linea}, es `
+          + `${n.forma})`).join(' ')}${inc.faltan.length ? ` (faltan: ${inc.faltan.join(', ')})` : ''}`
+        + ' y por eso no se ha ejecutado. Media declaración es peor que ninguna: parece cobertura.');
+      console.log(`  ? ${guard} · CIEGO (declaración que no se puede evaluar)`);
     }
     if (!mutaciones.length) continue;
     // La línea base se corre UNA VEZ por guard, no por mutación: es la misma pasada limpia para
