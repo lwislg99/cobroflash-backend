@@ -40,6 +40,7 @@
 // SCRUM-745; ésta es la otra mitad: la declaración que desaparece ENTERA.
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { lecturaDeDeclaraciones } from './meta-guard-mutaciones.mjs';
 
@@ -161,4 +162,110 @@ export function sueloContraMain({ medible, perdidas, motivo }) {
     + perdidas.map((p) => `  · ${p.guard}: ${p.antes} → ${p.ahora}`).join('\n')
     + '\n  Si la retirada es A PROPÓSITO, apunta el guard en RETIRADAS_A_PROPOSITO con su motivo,\n'
     + '  EN EL MISMO COMMIT, y que el diff lo diga en voz alta. Si no lo es, la has perdido sin verla.';
+}
+
+// ══════════════════════════════════════════════════════════════════════════════════════════
+// SEGUNDA VUELTA · el MISMO mecanismo para cualquier población, no sólo para las declaraciones
+// ══════════════════════════════════════════════════════════════════════════════════════════
+//
+// Lo de arriba compara declaraciones por guard. Lo de abajo hace LO MISMO con cualquier censo,
+// y por eso vive aquí y no en un fichero parecido: dos implementaciones de la misma derivación
+// son regla 2, y dentro de seis meses una está rota.
+//
+// ── LO QUE HIZO FALTA PARA GENERALIZARLO ──────────────────────────────────────────────────
+// Una población que no sea un hecho del árbol (contar ficheros) hay que CALCULARLA, y hay que
+// calcularla con el censo de HOY sobre el árbol de la BASE — no con el censo de entonces, o se
+// confundiría «la población encogió» con «el censo cambió». Así que la base se materializa.
+
+/** Las dos direcciones. Un TOPE es el mismo trinquete del revés: lo que viola es CRECER. */
+export const DIRECCIONES = {
+  'no-encoger': {
+    viola: (ahora, antes) => ahora < antes,
+    verbo: 'PERDIDO', consejo: 'la has perdido sin verla',
+  },
+  'no-crecer': {
+    viola: (ahora, antes) => ahora > antes,
+    verbo: 'CRECIDO', consejo: 'ha crecido sin que nadie lo decidiera',
+  },
+};
+
+/**
+ * Materializa el árbol de la BASE DE FUSIÓN en un directorio temporal y devuelve su ruta.
+ * `null` si no se puede: no haber podido mirar NO se devuelve como un árbol vacío.
+ *
+ * Se cachea por SHA, así que la segunda llamada es gratis. Es una extracción de SÓLO LECTURA de
+ * un commit del propio repositorio: no es «otro árbol de trabajo», no lleva metadatos de git y
+ * no toca `.git/worktrees` — que es lo que sí compartiría con las demás sesiones.
+ */
+const yaExtraidos = new Map(); // caché DENTRO del proceso: la de disco no puede existir (ver abajo)
+
+export function arbolDeLaBase(raiz = process.cwd(), base = null) {
+  const sha = base ?? referenciaDe(raiz);
+  if (!sha) return null;
+  if (yaExtraidos.has(sha)) return yaExtraidos.get(sha);
+  // 🔴 `mkdtemp`, NO una ruta fija con el SHA dentro. Lo cazó SCRUM-258: en esta máquina hay
+  // CINCO árboles de trabajo, y dos en la misma base habrían compartido el mismo directorio del
+  // temporal — que es exactamente el defecto de la nota de turno que aquel ticket persigue.
+  // El precio es no poder cachear entre procesos: 1,6 s por proceso. Barato al lado de que dos
+  // sesiones se pisen un árbol.
+  const destino = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-base-'));
+  const testigo = path.join(destino, 'package.json');
+  const tar = path.join(destino, 'arbol.tar');
+  try {
+    execFileSync('git', ['archive', '--format=tar', '-o', tar, sha], { cwd: raiz, stdio: 'ignore' });
+    // 🔴 `--force-local`: sin él, GNU tar lee `C:\Users\…` como `host:ruta` y contesta
+    // «Cannot connect to C: resolve failed». En Windows no es opcional.
+    execFileSync('tar', ['--force-local', '-xf', tar, '-C', destino], { stdio: 'ignore' });
+  } catch {
+    try { fs.rmSync(destino, { recursive: true, force: true }); } catch { /* temporal */ }
+    return null;
+  } finally {
+    try { fs.rmSync(tar, { force: true }); } catch { /* temporal */ }
+  }
+  const vale = fs.existsSync(testigo) ? destino : null;
+  if (!vale) { try { fs.rmSync(destino, { recursive: true, force: true }); } catch { /* temporal */ } }
+  yaExtraidos.set(sha, vale);
+  return vale;
+}
+
+// Lo que se crea en el temporal se recoge al salir: un árbol de 63 MB por proceso se acumula.
+process.on('exit', () => {
+  for (const d of yaExtraidos.values()) {
+    if (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch { /* temporal */ } }
+  }
+});
+
+/**
+ * Un suelo DERIVADO: compara la población de HOY con la de la base, con el censo de hoy en los
+ * dos lados. Devuelve `{ medible, ahora, antes, motivo }` — y jamás un veredicto inventado.
+ *
+ * `censo` recibe una raíz y devuelve un número. Si revienta en cualquiera de los dos árboles,
+ * el resultado es NO MEDIBLE: un censo que falla no es una población de cero.
+ */
+export function poblacionesContraLaBase(nombre, censo, raiz = process.cwd()) {
+  const base = arbolDeLaBase(raiz);
+  if (!base) return { nombre, medible: false, motivo: `no pude materializar la base de fusión con ${RAMA_DE_REFERENCIA}` };
+  let ahora; let antes;
+  try { ahora = censo(raiz); } catch (e) { return { nombre, medible: false, motivo: `el censo revienta en el árbol: ${e.message}` }; }
+  try { antes = censo(base); } catch (e) { return { nombre, medible: false, motivo: `el censo revienta en la base: ${e.message}` }; }
+  if (!Number.isFinite(ahora) || !Number.isFinite(antes)) {
+    return { nombre, medible: false, motivo: 'el censo no devolvió un número en alguno de los dos árboles' };
+  }
+  return { nombre, medible: true, ahora, antes, motivo: null };
+}
+
+/**
+ * El texto de un suelo derivado, o `null` si no hay nada que decir.
+ * Crecer (o menguar, según la dirección) es gratis: sólo habla la violación.
+ */
+export function sueloDerivado(medida, direccion = 'no-encoger', retiradas = RETIRADAS_A_PROPOSITO) {
+  if (!medida.medible) return null;
+  if (retiradas.some((r) => r.guard === medida.nombre)) return null;
+  const dir = DIRECCIONES[direccion];
+  if (!dir) throw new RangeError(`dirección desconocida: ${direccion}`);
+  if (!dir.viola(medida.ahora, medida.antes)) return null;
+  return `LA POBLACIÓN «${medida.nombre}» HA ${dir.verbo} CONTRA LA BASE DE FUSIÓN: `
+    + `${medida.antes} → ${medida.ahora}.\n`
+    + `  Si es A PROPÓSITO, apúntala en RETIRADAS_A_PROPOSITO con su motivo, EN EL MISMO COMMIT,\n`
+    + `  y que el diff lo diga en voz alta. Si no lo es, ${dir.consejo}.`;
 }
