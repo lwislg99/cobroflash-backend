@@ -131,6 +131,20 @@ test('SCRUM-480 · 🔴 ningún blob de TEXTO lleva CR (salvo lo declarado)', ()
 // AVISO DE INSTRUMENTO, PORQUE LOS DE ANDAR POR CASA MIENTEN SOBRE PRECISAMENTE ESTO:
 //   · el `grep` de Git Bash NORMALIZA CRLF al leer, y `grep -c $'\r'` da falso NEGATIVO.
 //     MEDIDO el 19-ago-2026: fichero con 3 CR en el disco, `grep -c` dice 0, node dice 3.
+//   · 🔴 SCRUM-766 · Y TIENE UNA SEGUNDA CARA QUE ESTE AVISO NO DECÍA, que es la peligrosa.
+//     Lo de arriba SIGUE SIENDO CIERTO y no se retira: es la cara del falso negativo, la que
+//     sale al escribir el grep DIRECTO. Pero dentro de una sustitución de órdenes —o sea
+//     `n=$(grep -c ...)`, que es LA forma de capturar un recuento en shell— el bash de MSYS se
+//     come el byte CR del texto de la orden, así que el patrón llega VACÍO y un patrón vacío
+//     casa con TODAS las líneas. Resultado: falso positivo del 100 %, y el número que sale es
+//     EXACTAMENTE `wc -l`. Medido el 7-sep-2026 sobre el mismo fichero de 3 CR en 50 líneas:
+//         len($'\r') FUERA de $() = 1   ·   DENTRO = 0   ·   len($'\t') DENTRO = 1
+//     O sea que le pasa al CR y no a la sustitución en general. `-U` arregla la primera cara y
+//     NO arregla ésta: cura la lectura, y aquí lo que falta es el patrón.
+//     🔴 POR QUÉ IMPORTA MÁS QUE LA OTRA: `wc -l` y «ficheros con CR» son números del mismo
+//     orden de magnitud sobre el mismo árbol, así que la salida no delata nada. Contra un valor
+//     ilegible se puede programar una barrera; contra uno plausible no hay síntoma.
+//     El control que decide y el censo del árbol están en tests/scrum766-el-grep-que-cuenta-lineas.test.mjs.
 //   · `git show <rev>:<ruta>` se reportó el 17-ago-2026 como que APLICA el filtro de salida y
 //     hace concluir que tus commits meten CR en el repositorio. NO lo he reproducido el
 //     19-ago-2026 con git 2.55.0.windows.2: sobre un blob anterior a la renormalización dio
