@@ -5,6 +5,9 @@ import { esc, parseToken, formatMoneyEs } from '../../../../core/utils/utils';
 import { getLocale } from '../../../../core/i18n/locales';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { isQuoteExpired } from '../../../quotes/domain/expire.service';
+// SCRUM-806 · la MISMA puerta que usa la ruta de admin para armar el PDF: si el documento del
+// cliente se armara por otro sitio, serían dos documentos distintos con el mismo nombre.
+import { paramsDePresupuestoParaPdf } from '../../../quotes/domain/presupuestoParaPdf';
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
 // SCRUM-633 · el calendario en el que vive el merchant. Sitio único desde SCRUM-643.
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant';
@@ -793,6 +796,54 @@ quoteDecisionLandingRouter.post('/quote/:token/reject', express.urlencoded({ ext
     res.status(500).setHeader('Content-Type', 'text/html; charset=utf-8').send(
       renderPage('Error', `<div class="status-error"><strong>Error inesperado.</strong> Inténtalo más tarde.</div>`)
     );
+  }
+});
+
+/**
+ * GET /pay/quote/:token/pdf — SCRUM-806 · el mismo documento, para quien tiene el token.
+ *
+ * ── EL DEFECTO QUE CIERRA ──────────────────────────────────────────────────────────────────
+ * El portal del cliente (`/cliente/:token`, público) enlazaba su botón «Ver PDF» a
+ * `BASE_URL + quote.pdfUrl`, y esa columna la escribe la ruta de ADMIN con su propio valor:
+ * `/admin/quotes/<id>/pdf`. Medido: el cliente pulsaba y recibía `401 {"error":
+ * "not_authenticated"}` — JSON crudo, en la pantalla donde decide si firma.
+ *
+ * ── POR QUÉ AQUÍ Y POR QUÉ POR TOKEN ───────────────────────────────────────────────────────
+ * 🔴 NO lleva `:id`, y es deliberado: SCRUM-95 sacó el `quote.id` de los botones de ese portal
+ * por enumerable («la sexta puerta de la misma fuga»). Volver a meterlo para servir un PDF
+ * sería deshacer aquello. Se usa el MISMO `decisionToken` (16 bytes aleatorios) que ya resuelve
+ * `/quote/:token` justo arriba: quien lo tiene ya podía ver este presupuesto entero en la
+ * landing, así que esta ruta NO expone a nadie nuevo — sólo el documento que ya le pertenece.
+ *
+ * ⚠️ HEREDA SCRUM-799: regenera el PDF con el código de hoy en cada apertura, como la ruta de
+ * admin. Eso está MEDIDO y su salida es del fundador; aquí no se toca ese mecanismo.
+ */
+quoteDecisionLandingRouter.get('/quote/:token/pdf', async (req: Request, res: Response) => {
+  const token = parseToken(req.params.token); // tolera URLs sucias
+  if (!token) return res.status(404).json({ error: 'not_found' });
+
+  try {
+    // `loadQuote` no sirve aquí: su `select` de merchant/customer está recortado para la
+    // landing y el PDF necesita la fila entera.
+    const quote = await prisma.quote.findUnique({
+      where: { decisionToken: token },
+      include: { merchant: true, customer: true },
+    });
+    if (!quote) return res.status(404).json({ error: 'not_found' });
+
+    const { generateQuotePdf } = await import('../../../../lib/pdf');
+    const pdf = await generateQuotePdf(paramsDePresupuestoParaPdf({
+      quote, merchant: quote.merchant, customer: quote.customer,
+    }));
+
+    // 🔴 NO se escribe `quote.pdfUrl`: la ruta de admin lo hace con su propia URL y ésta no
+    // tiene por qué pisarla. Ese ida y vuelta es justo lo que creó el defecto.
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="presupuesto-${quote.quoteNumber ?? quote.id}.pdf"`);
+    return res.sendFile(pdf.outPath);
+  } catch (err) {
+    console.error('[GET /pay/quote/:token/pdf]', err);
+    return res.status(500).json({ error: 'internal_error' });
   }
 });
 

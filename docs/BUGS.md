@@ -349,6 +349,10 @@
 - **CAUSA RAÍZ (9 jun):** usaba `merchant.name` (nombre de cuenta). Commit `3d64887`: usa `legalName||name`, como presupuesto/factura/landing. Aplicado en psp y mpWebhook.
 
 ### [ ] P1-PORTAL-PDF · El botón «📄 Ver PDF» del portal PÚBLICO apunta a una URL bajo `requireAuth`
+- **ARREGLADO EN SCRUM-806, PENDIENTE DE VERIFICAR EN yaqu.app.** Sigue en `[ ]` a propósito: la regla de arriba dice que se verifica en yaqu.app, y desde el árbol de trabajo no se puede. Quien mezcle ese PR y lo abra en producción, que lo tache.
+  - **Qué se cambió:** el botón deja de derivar de `q.pdfUrl` y apunta a `/pay/quote/<decisionToken>/pdf`, ruta pública nueva en el router que YA resolvía por ese token. Sin `:id` (SCRUM-95). No se acuña ningún token: se lee el que la fila ya tiene; si no lo tiene, el botón no se pinta.
+  - **Medido con servidor y dos merchants:** el cliente sin sesión recibe `200 application/pdf` y es SU documento; el profesional lo sigue viendo y es EL MISMO texto; y contra la ruta nueva, el id de otro merchant → 404, el propio → 404, un token inventado → 404, un byte cambiado → 404, 40 ids enumerados → 0 PDFs.
+  - **Lo que NO cierra:** el botón hermano «📄 Descargar factura» (`customerPortal.routes.ts:347-350`) sigue igual — pasa por `ensureInvoicePdf`, camino de emisión, SCRUM-762.
 - **Encontrado:** 6-sep-2026, midiendo SCRUM-799 (hallazgo colateral: ese ticket era MEDIR el PDF que cambia). **No se arregla ahí.**
 - **Dónde:** `customerPortal.routes.ts:302-305` construye el href como `BASE_URL + quote.pdfUrl`, y el portal es **público** (`app.use('/cliente', …)`, `src/app.ts:139`, montado 220 líneas antes del `requireAuth` de la 359).
 - **Por qué el valor es malo:** `quotes.pdf_url` lo escribe la propia ruta del PDF con su valor de retorno (`quotesAdmin.routes.ts:548`), y ese valor es **`/admin/quotes/<id>/pdf`** — MEDIDO, no deducido: el generador devolvió `publicUrlPath = "/admin/quotes/362/pdf"`. El cliente acaba pinchando una ruta de admin.

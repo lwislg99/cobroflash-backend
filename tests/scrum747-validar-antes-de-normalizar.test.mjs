@@ -136,10 +136,14 @@ test('SCRUM-747 · `avisoDeFacturacion` recibe el mismo mesKey, y ya no se lo tr
  * aviso—, que son los que producen un plazo del art. 13.2. Los otros cuatro quedan censados:
  * subir un total sin decir qué lo compone es cómo un censo deja de vigilar.
  */
+// 🔧 SCRUM-749 · SALEN `inicioDelDiaEn` y `finDelDiaEn`: ya validan y RECHAZAN el día que no
+// existe, así que el censo deja de verlos y esta lista se vacía de ellos — que es lo que manda el
+// mensaje de abajo. Su motivo de aquí decía «su entrada ya viene de `diaNaturalEn`, que sólo
+// produce días bien formados», y **eso estaba MEDIDO al revés**: en `dentroDeRangoFecha`, el
+// ayudante `diaISO(v, zona)` devuelve `v.slice(0, 10)` cuando `v` llega como CADENA — o sea el
+// `req.query.hasta` crudo, sin validar—, y sólo pasa por `diaNaturalEn` cuando llega un `Date`.
+// Por ahí entraba «2026-02-31», que salía como 3 de marzo.
 const PENDIENTES = [
-  { fichero: 'src/core/zonaDelMerchant.ts', fn: 'inicioDelDiaEn',
-    porque: 'primitiva usada por cuatro cálculos; su entrada ya viene de `diaNaturalEn`, que sólo produce días bien formados. Arreglarla toca los cuatro y merece su paso' },
-  { fichero: 'src/core/zonaDelMerchant.ts', fn: 'finDelDiaEn', porque: 'idéntico al anterior' },
   { fichero: 'src/modules/expenses/domain/expenses.service.ts', fn: 'listExpenses',
     porque: 'otro módulo, otro carril (regla 9)' },
   { fichero: 'src/modules/jobs/domain/albaran.service.ts', fn: 'mesNaturalLabel',
