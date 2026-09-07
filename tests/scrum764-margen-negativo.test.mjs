@@ -224,6 +224,91 @@ test('SCRUM-764 · 🔴 y la clase existe en el CSS con esa tinta', () => {
     + 'foco, porque su `border-color` en rojo gana al del foco.');
 });
 
+// ═══ ⑥ LA SEGUNDA PANTALLA: INFORMES ═════════════════════════════════════════════════════
+//
+// 🔴 EL CENSO DEL ② SE QUEDÓ CORTO, Y AQUÍ ESTÁ POR QUÉ. Preguntó quién LLAMA a
+// `margenDesde`/`precioDesde`/`autocompletar` —dos ficheros— y quién tiene una división cuyo
+// numerador es una RESTA. `reportsView.js:242` hace `Math.round(m.profit / m.revenue * 100)`: la
+// resta ya viene hecha del servidor dentro de `m.profit`, así que **la forma no está en este
+// fichero** y el detector sintáctico no podía verla. Lo único que el censo cazó de aquí fue el
+// rótulo `<th>Margen</th>` — y eso se clasificó como «otra magnitud» sin comprobar si además se
+// calculaba en la vista. Se calculaba.
+//
+// Medido en navegador ANTES de tocar, con un mes de −2.000,00 €:
+//     Beneficio  -2.000,00   rgb(220, 38, 38)   ← rojo
+//     Margen         -50%    rgb(107,117,111)   ← el gris de siempre, EN LA MISMA FILA
+const INFORMES = path.join(RAIZ, 'public/dashboard/js/reportsView.js');
+
+test('SCRUM-764 · 🔴 Informes decide con el MÓDULO, no con un `< 0` propio', () => {
+  const codigo = fs.readFileSync(INFORMES, 'utf8');
+  const sf = ts.createSourceFile('reportsView.js', codigo, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const llamadas = [];
+  const v = (n) => {
+    if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression)
+      && n.expression.name.text === 'bajoCoste') {
+      llamadas.push(sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1);
+    }
+    ts.forEachChild(n, v);
+  };
+  v(sf);
+  assert.ok(llamadas.length >= 2,
+    `🔴 sólo ${llamadas.length} llamada(s) a \`bajoCoste\` en Informes y hacen falta DOS: la fila `
+    + 'del MES y la fila del TOTAL del año. Un año entero en pérdidas con el total en gris es el '
+    + `mismo defecto en la fila que más se mira. Líneas: ${llamadas.join(', ')}.`);
+});
+
+test('SCRUM-764 · 🔴 y las dos celdas de Informes usan `--danger-ink`', () => {
+  const codigo = fs.readFileSync(INFORMES, 'utf8');
+  const ejecutable = codigo.split('\n').filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n');
+  // Hermano del token (SCRUM-237): el detector reconoce su forma antes de que su «no está» valga.
+  assert.match("const c = 'var(--danger-ink)';", /var\(--danger-ink\)/,
+    '🔴 el detector no reconoce su propia forma.');
+  const veces = (ejecutable.match(/var\(--danger-ink\)/g) || []).length;
+  assert.equal(veces, 2,
+    `🔴 \`--danger-ink\` aparece ${veces} vez/veces en el código ejecutable de Informes y tienen `
+    + 'que ser DOS (mes y total). Es el token que llega a AA; con `--red-600` el contraste baja.');
+  // ✅ POSITIVO EN EL FUENTE: el gris de siempre sigue siendo la otra rama, no se ha sustituido.
+  assert.match(ejecutable, /\?\s*'var\(--danger-ink\)'\s*:\s*'var\(--neutral-500\)'/,
+    '🔴 el margen NO negativo ya no se pinta con `--neutral-500`. El aviso tiene que cambiar sólo '
+    + 'el caso malo: si tiñe también el bueno, deja de avisar de nada.');
+});
+
+test('SCRUM-764 · 🔴 y el módulo carga ANTES que Informes en el índice', () => {
+  // Los scripts clásicos comparten ámbito y corren en el orden del índice. La llamada es en
+  // tiempo de pintado, así que hoy no hay carrera — pero la dependencia es real y se comprueba.
+  const html = fs.readFileSync(path.join(RAIZ, 'public/dashboard/index.html'), 'utf8');
+  const pos = (f) => html.indexOf(`js/${f}"`);
+  const modulo = pos('margenCatalogo.js');
+  const informes = pos('reportsView.js');
+  assert.ok(modulo > 0 && informes > 0,
+    `🔴 CIEGO: no encuentro los dos scripts en el índice (modulo=${modulo}, informes=${informes}).`);
+  assert.ok(modulo < informes,
+    '🔴 `margenCatalogo.js` ha pasado a cargarse DESPUÉS de `reportsView.js`. Hoy la llamada es '
+    + 'en tiempo de pintado y aguantaría, pero la dependencia es real y esto la fija.');
+});
+
+test('SCRUM-764 · ✅ AB6: el rojo de Informes llega a AA SOBRE SUS PROPIOS FONDOS', () => {
+  // 🔴 NO SE HEREDA LA CIFRA DE LA FICHA. Allí el fondo es `--danger-bg`; aquí la celda es
+  // TRANSPARENTE y detrás está la tabla (`--surface`, blanco) o, en la fila del total,
+  // `--neutral-50`. Medidos los dos en navegador: 8,31 y 7,8.
+  const styles = fs.readFileSync(CSS, 'utf8');
+  const tinta = token('danger-ink');
+  const blanco = token('surface');
+  const totales = (/--neutral-50:\s*(#[0-9a-fA-F]{6})/.exec(styles) || [])[1];
+  assert.ok(tinta && blanco && totales,
+    `🔴 CIEGO: falta algún token (tinta=${tinta}, surface=${blanco}, neutral-50=${totales}).`);
+  assert.equal(Math.round(contraste('#000000', '#ffffff')), 21,
+    '🔴 el medidor de contraste no vale para juzgar nada.');
+
+  for (const [nombre, fondo] of [['la tabla', blanco], ['la fila de totales', totales]]) {
+    const r = contraste(tinta, fondo);
+    assert.ok(r >= AA_TEXTO_NORMAL,
+      `🔴 sobre ${nombre} (${fondo}) el margen en rojo da ${r.toFixed(2)}, por debajo de los `
+      + `${AA_TEXTO_NORMAL} de AA. La cifra del DESTINO es la que manda: heredar la de otra `
+      + 'pantalla es exactamente lo que falló con `--danger` a 4,41.');
+  }
+});
+
 /** 🔴 LAS MUTACIONES QUE TIENEN QUE TUMBARME (contrato de SCRUM-745). */
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
@@ -259,5 +344,19 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: '  color: var(--danger-ink);\n  border-color: var(--red-600);',
     a: '  color: var(--red-600);\n  border-color: var(--red-600);',
     cae: 'y la clase existe en el CSS con esa tinta',
+  },
+  {
+    // ⑤ Informes vuelve a decidir por su cuenta: dos pantallas comparando `< 0` cada una.
+    fichero: 'public/dashboard/js/reportsView.js',
+    de: "      const marginColor = window.margenCatalogo.bajoCoste(margin)\n        ? 'var(--danger-ink)' : 'var(--neutral-500)';",
+    a: "      const marginColor = 'var(--neutral-500)';",
+    cae: 'Informes decide con el MÓDULO, no con un `< 0` propio',
+  },
+  {
+    // ⑥ El TOTAL del año se queda en gris: el defecto en la fila que más se mira.
+    fichero: 'public/dashboard/js/reportsView.js',
+    de: "    const totalMarginColor = window.margenCatalogo.bajoCoste(totalMargin) ? 'var(--danger-ink)' : '';",
+    a: "    const totalMarginColor = '';",
+    cae: 'y las dos celdas de Informes usan `--danger-ink`',
   },
 ];
