@@ -21,6 +21,35 @@
 > ⚠️ Y hay una trampa más, de nombres: la base de STAGING vive dentro de un entorno de Railway
 > llamado **«production»**. **El nombre del entorno miente.** Guíate por host + nombre de base.
 
+> ## 🔴 ESTE LOG **NO CUBRE LAS MIGRACIONES DE DATOS** — SCRUM-758 (6-sep-2026)
+>
+> Y no por descuido: **por diseño del aplicador**. `scripts/aplicar-sql-dev.mjs` sólo ejecuta la
+> **lista blanca** de formas aditivas de `_clasificador-sql.mjs` —`ADD COLUMN`, `CREATE INDEX`,
+> `CREATE TABLE`, `CREATE TYPE`, `ALTER TYPE ADD VALUE`, `COMMENT ON`— y **rechaza por defecto**
+> todo lo que no reconozca. El DML entra ahí: **no está en la lista blanca y no va a estarlo**,
+> porque esa lista existe para que un `DROP` no pase.
+>
+> **Medido ejecutando el clasificador sobre el árbol** (SCRUM-758), no razonado:
+>
+> | fichero | veredicto del aplicador |
+> |---|---|
+> | `docs/sql/scrum-425-clave-idempotencia.sql` (DDL puro) | `ok: true` — `ADD COLUMN` + `CREATE INDEX` permitidos |
+> | `docs/sql/scrum-650-paso-c-backfill.sql` (`INSERT … SELECT`) | **RECHAZADA** — «forma no reconocida» |
+> | `prisma/backfill/scrum609-item-kind.sql` (`ADD COLUMN` + `UPDATE`) | `ADD COLUMN` permitido · **el `UPDATE` RECHAZADO** |
+>
+> **Consecuencia, y es lo que este aviso existe para decir:** toda migración que cambie DATOS se
+> aplica **por otra vía** —un `.mjs` con su propio cliente, o a mano en la consola— y esa vía **no
+> pasa por el aplicador que escribe aquí**. *No es un olvido: es que el camino no tiene por dónde
+> apuntarlas.*
+>
+> **Qué significa para quien lea este fichero:** que esté completo sobre ESTRUCTURA no dice nada
+> sobre DATOS. Una base reconstruida siguiendo sólo este log tendría las columnas y **no** los
+> backfills, y el esquema cuadraría: `schemaDrift` no ve filas, sólo tablas y columnas.
+>
+> **Dónde están las de datos, censadas sin lista cableada:** `node scripts/censo-migraciones.mjs`.
+> Viven en TRES idiomas —`.sql`, llamadas de Prisma, y `cliente.query(sql)` con `pg` en crudo—, así
+> que buscarlas en uno solo las subestima.
+
 > ## ⛔ ESTE FICHERO YA NO CONTESTA «¿existe esa columna en esa base?» — SCRUM-225
 >
 > Lo contestaba **a mano**, y una lista a mano se desfasa en silencio. Sus dos direcciones de
@@ -572,7 +601,21 @@ que sí siempre:
 > dev 0 · staging 7 · producción 55. ⚠️ El **0 de dev lo he medido yo** hoy; los de staging y
 > producción salen de este mismo fichero, **medidos el 7-ago-2026**, y son estado que caduca.
 
-## LOTE ÚNICO · 9 columnas en 4 tablas (SCRUM-403 · A5 · E4 · SCRUM-195 · SCRUM-16/142) — 🔴 SIN APLICAR en ninguna de las tres
+## LOTE ÚNICO · 9 columnas en 4 tablas (SCRUM-403 · A5 · E4 · SCRUM-195 · SCRUM-16/142) — 🟡 PARCIAL: ✅ APLICADO en staging y producción (10-ago-2026) · ⏳ pendiente en desarrollo
+
+> 🔴 **ESTE TÍTULO DECÍA «SIN APLICAR EN NINGUNA DE LAS TRES», y era falso.** Corregido el
+> 6-sep-2026 (SCRUM-758). El cuerpo de esta misma entrada ya tenía **dos de las tres casillas
+> marcadas** —staging y producción, las dos con verificación independiente por
+> `information_schema`— desde el 10-ago-2026. La línea se quedó sin actualizar cuando se marcaron
+> las casillas, y **nadie miraba esa concordancia**.
+>
+> **No fue cosmético:** de este título salió un ticket entero con un enunciado falso («nueve
+> migraciones que MUTAN datos no constan en el log» — son nueve `ADD COLUMN`, constan, y están
+> aplicadas) y una hipótesis equivocada sobre por qué producción estaba caída.
+>
+> Ahora lo vigila `tests/scrum758-cabecera-no-miente.test.mjs`: si una cabecera vuelve a decir lo
+> contrario que sus casillas, la tanda se pone roja. **Se corrige el título, nunca las casillas:**
+> ellas llevan fecha, autor y verificación; el título es un resumen.
 
 **Medido contra:** `origin/main` = `ff5698f` · 2026-08-10 · rama `scrum-lote-migracion-unica`
 
