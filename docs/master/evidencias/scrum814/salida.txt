@@ -1,0 +1,25 @@
+banco → host=127.0.0.1 puerto=55432 base=yaqu_tramos_test
+
+handler localizado · POST /:id/invoice · 2 capas (la última es el handler)
+
+CONTROL POSITIVO · dos peticiones SECUENCIALES sobre el mismo presupuesto:
+[verifactu] invoice=2026-CF-001 hash=5F1FF22587BBACC6…
+[verifactu] invoice=2026-CF-002 hash=BC15A86E1972ADF1…
+   1ª → HTTP 201   2ª → HTTP 201
+     2026-CF-001 · tramo «Anticipo» · 363 €
+     2026-CF-002 · tramo «Final» · 847 €
+   ¿avanza de tramo?  SÍ — 2 facturas, 2 tramos distintos ✔
+
+🔴 EL CONTROL QUE DECIDE · dos peticiones SIMULTÁNEAS al mismo presupuesto:
+   A → HTTP 201 (arrancó 0 ms tras la señal, tardó 49 ms)
+   B → HTTP 201 (arrancó 0 ms tras la señal, tardó 39 ms)
+     2026-CF-003 · tramo «Anticipo» · 363 €
+     2026-CF-004 · tramo «Anticipo» · 363 €
+   (salieron con 0 ms de desfase: la carrera es real)
+
+   VEREDICTO: 🔴 DOS FACTURAS DEL MISMO TRAMO («Anticipo»). El defecto EXISTE.
+
+LA CONSECUENCIA · 3ª petición, la que emitiría el tramo que falta:
+   → HTTP 409 · {"error":"no_more_invoices_for_payment_terms","message":"Ya se han emitido todas las facturas de este presupuesto."}
+   facturado en total: 726 € sobre un presupuesto de 1210.00 €
+   → 484.00 € que ya NO se pueden facturar.
