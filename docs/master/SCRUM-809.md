@@ -1,9 +1,12 @@
 # SCRUM-809 · PAYWALL: cancelar deja de borrar la fecha, y el bloqueo vuelve a alcanzar a quien debe
 
 **Fecha:** 7-sep-2026 · **Carril:** producto · cobro · **Gate:** gateado (`QA_DB_TEST=1`)
-**Medido contra:** `origin/main` = `64b5d80ae3b11dcc34d736de21670eb6b5ce6dda` · 2026-09-07T06:47:30Z
-Re-medido al CERRAR, no al empezar: main no se movió en toda la duración del ticket (0 commits).
-**Tanda:** 5845 tests, 5736 pass, 0 fail, 109 skipped (exit 0)
+**Medido contra:** `origin/main` = `e8ae10697d61fef37f87156cc227eecae4a9a39d` · 2026-09-07T07:56:14Z
+Re-medido al CERRAR, no al empezar, y **cambió**: el trabajo se hizo sobre `64b5d80a` y main avanzó
+7 commits (SCRUM-759 y SCRUM-797) mientras tanto. Se ha MEZCLADO main DENTRO de la rama —sin reescribir
+historia— y todo lo de abajo está re-medido sobre el árbol mezclado. Ninguno de esos 7 toca
+`stripe.routes.ts` ni `authMiddleware.ts`: el merge salió sin conflicto y las dos puertas quedaron intactas.
+**Tanda:** 5862 tests, 5753 pass, 0 fail, 109 skipped (exit 0) — sobre el árbol YA mezclado con main
 
 ## El defecto
 
@@ -160,6 +163,21 @@ Por eso las tres de arriba se midieron **acotadas**, reutilizando el mecanismo d
 capa mía— más una post-condición propia sobre los bytes del árbol, porque ya quedó demostrado que
 un proceso que muere se salta el `finally`. **No se suman las dos pasadas como si fueran una
 medición**: son dos, con alcances distintos, y así se dejan escritas.
+
+### El merge trajo un schema nuevo, y el cliente de Prisma había que regenerarlo
+
+SCRUM-797 quitó el `@default(1)` de `merchantId` («la columna deja de donárselo al demo»), así que
+tras mezclar, `pretest` cayó con **PROCEDENCIA DEL CLIENTE DE PRISMA**: el cliente generado no salía
+de este `schema.prisma`. Dos cosas antes de regenerar, ninguna supuesta:
+
+* **`npm run topologia`** primero — si este árbol compartiera `node_modules` con otro worktree,
+  regenerar el mío rompería la tanda de otra sesión. Medido: *«NO COMPARTEN: cada árbol llega a un
+  `node_modules` distinto»*.
+* **Sin `npx`**, aunque sea lo que imprime el propio guard como remedio: si falta el CLI local, `npx`
+  se baja otro de la red en silencio (incidente del 5-ago-2026). Se usó el binario local,
+  `node node_modules/prisma/build/index.js generate`.
+
+`prisma/schema.prisma` **no se ha tocado** en esta rama: lo que cambió vino de main por el merge.
 
 ## Lo que NO cubre
 
