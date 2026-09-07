@@ -202,3 +202,136 @@ Ningún literal (aquí sólo hay color). `quotesView` — SCRUM-794 acaba de mer
 El detector de sobrantes del guard táctil, que tiene su propio ticket. `_banco-vistas.mjs`, aunque
 su hueco sea el que obligó a cambiar de instrumento. La columna **Margen** de `reportsView`, que se
 queda neutra con beneficio negativo: es otro carril y se reporta, no se arregla (regla 9).
+---
+---
+
+# APÉNDICE · La segunda pantalla: la columna Margen de Informes
+
+**Fecha:** 6-sep-2026 (misma rama, reabierta) · **Gate:** sin gate
+**Medido contra:** `origin/main` = `5af8e7e9cdcd15ac90eb9b8a1473737872b6625c` · 2026-09-06T23:20:04+01:00
+**Tanda:** 5741 tests, 5639 pass, 0 fail, 102 skipped (salida 0)
+
+> El apartado 8 de arriba decía que la columna Margen de `reportsView` se queda neutra con
+> beneficio negativo, y que se reportaba sin arreglar. El asesor lo devuelve a esta misma rama:
+> es el mismo defecto en otra pantalla, la decisión ya está firmada y el token ya existe.
+
+## A1 · El rojo, provocado otra vez en la pantalla
+
+Mismo instrumento que la ficha: Edge real, CSS real, los scripts del dashboard, y se llega a
+Informes pulsando su botón del menú. Un año con meses buenos y malos en el mismo informe, para que
+el control positivo y el que decide salgan del mismo montaje.
+
+| mes | beneficio | color del beneficio | MARGEN | color del margen |
+|---|---|---|---|---|
+| Ene | 7.000,00 | `rgb(21,128,61)` verde | 70 % | `rgb(107,117,111)` gris |
+| Feb | 2.400,00 | verde | 30 % | gris |
+| **Mar** | **−2.000,00** | **`rgb(220,38,38)` ROJO** | **−50 %** | **`rgb(107,117,111)` GRIS** |
+| Abr | 0,00 | verde | 0 % | gris |
+| **May** | **−900,00** | **`rgb(220,38,38)` ROJO** | **−100 %** | **`rgb(107,117,111)` GRIS** |
+| TOTAL | 6.500,00 | verde | 24 % | `rgb(51,60,55)` |
+
+**Confirmado, y es peor que «neutra»:** el Beneficio **sí** avisa. En la fila de marzo hay un
+número rojo justo al lado de un `−50 %` en gris, y un gris pegado a un rojo se lee como que ese
+porcentaje está bien. El TOTAL del año no traía color ninguno.
+
+## A2 · 🔴 Y sí: Informes calcula el margen POR SU CUENTA. Mi censo se quedó corto
+
+`reportsView.js:242` hace `Math.round(m.profit / m.revenue * 100)` y **no usa
+`margenCatalogo.js`**. O sea que en el árbol hay **dos** cálculos de margen porcentual, en vistas
+distintas y con la misma convención —`(ingresos − gastos) / ingresos` es la misma forma que
+`(precio − coste) / precio`—, cada uno por su lado.
+
+**Por qué el censo del apartado 2 no lo vio, exactamente:**
+
+- La pregunta **(B)** era «quién llama a `margenDesde`/`precioDesde`/`autocompletar`». Informes no
+  llama a ninguna: se lo calcula. Invisible para esa pregunta **por construcción**.
+- La pregunta **(A)** era «quién tiene una división cuyo numerador es una RESTA». Aquí el
+  numerador es `m.profit`, que **ya viene restado del servidor**: la resta no está en este
+  fichero. El detector sintáctico no podía verla. De `reportsView` sólo cazó la línea 187,
+  `(value − prev) / Math.abs(prev)`, que es la variación interanual y no el margen.
+- La pregunta **(C)** **sí** vio el rótulo `<th>Margen</th>` (línea 228), y ahí falló la lectura y
+  no el instrumento: lo clasifiqué como «otra magnitud» y no comprobé si además se calculaba en la
+  vista. Se calculaba.
+
+La conclusión del apartado 2 —«no son cuatro, es uno»— **era falsa para el margen porcentual**. Lo
+cierto es: el margen **del catálogo** vive en un sitio; el **porcentaje de margen** se calcula en
+dos, y desde hoy los dos comparten al menos el CRITERIO. Unificar también la **aritmética** no
+procede: Informes recibe sus cifras ya agregadas del servidor y `margenDesde` pide el coste y el
+precio de un artículo — son dos entradas distintas para la misma fórmula.
+
+## A3 · Lo construido, y una desviación que se declara
+
+| fichero | qué |
+|---|---|
+| `reportsView.js` | `marginColor` en la fila del mes · `totalMarginColor` en la del TOTAL |
+
+La **regla** es la del módulo: `window.margenCatalogo.bajoCoste(…)`, en las dos. Ninguna
+comparación nueva y ningún literal.
+
+**⚠️ DESVIACIÓN DECLARADA: no se usa la clase `catalogo-margen--bajo-coste`, y no es por
+comodidad.** Se midió en la página viva: se inyectó una regla
+`td.margen--bajo-coste{color:var(--danger-ink)}` y se le puso la clase a la celda del `−50 %`.
+
+```
+antes:     "rgb(107, 117, 111)"
+conClase:  "rgb(107, 117, 111)"
+enLinea:   "text-align:right;color:var(--neutral-500)"
+gana:      false
+```
+
+**La clase pierde:** un `style=` en línea gana a cualquier selector sin `!important`. Y las cinco
+celdas de esa tabla se colorean en línea —`profitColor`, dos líneas más arriba, es la vecina—, así
+que ése es el idioma del fichero. Se comparte lo que importa: **el mismo token y la misma regla**.
+
+## A4 · Los tres controles
+
+### 🔴 EL QUE DECIDE
+
+| celda | ANTES | DESPUÉS |
+|---|---|---|
+| Mar, `−50 %` | `rgb(107,117,111)` | **`rgb(153,27,27)`** |
+| May, `−100 %` | `rgb(107,117,111)` | **`rgb(153,27,27)`** |
+| TOTAL de un año en pérdidas, `−300 %` | `rgb(51,60,55)` | **`rgb(153,27,27)`** |
+
+### ✅ POSITIVO
+
+`70 %`, `30 %` y `0 %` siguen en `rgb(107,117,111)`; el TOTAL de un año bueno (`24 %`) sigue en
+`rgb(51,60,55)`; y el mes sin actividad sigue pintando `—` en gris. Idénticos a antes.
+
+El **cero** y el **`—`** son los dos bordes que no se tiñen, y no por casualidad: `bajoCoste(0)` es
+`false` porque trabajar a precio de coste no es perder dinero, y `bajoCoste(null)` es `false`
+porque «no se sabe» no es «va mal».
+
+### ✅ AB6 · CONTRASTE MEDIDO AQUÍ, NO HEREDADO
+
+En la ficha el fondo era `--danger-bg`. **Aquí la celda es transparente** y detrás está la tabla o,
+en la fila del total, `--neutral-50`. Son fondos distintos, así que la cifra se vuelve a medir —que
+es exactamente lo que no hice la primera vez, y por eso salió un 4,41:
+
+```
+control negro sobre blanco: 21
+Mar     -50%   rgb(153,27,27) sobre rgb(255,255,255)  ->  8.31  CUMPLE AA
+May    -100%   rgb(153,27,27) sobre rgb(255,255,255)  ->  8.31  CUMPLE AA
+TOTAL  -300%   rgb(153,27,27) sobre rgb(247,248,246)  ->  7.80  CUMPLE AA
+```
+
+## A5 · Tests y mutaciones
+
+Cuatro tests más —**13** en el fichero— y **dos mutaciones más: seis, y las seis VIVAS**.
+
+| test | qué caza |
+|---|---|
+| `Informes decide con el MÓDULO` | por AST, que vuelva a compararse `< 0` en la vista. Exige **DOS** llamadas: la del mes y la del TOTAL |
+| `las dos celdas usan --danger-ink` | el token flojo, y con **control positivo**: el gris `--neutral-500` sigue siendo la otra rama |
+| `el módulo carga ANTES que Informes` | que un merge reordene el índice |
+| `AB6 sobre SUS PROPIOS FONDOS` | heredar la cifra de otra pantalla, que es justo lo que falló con `--danger` a 4,41 |
+
+## A6 · Lo que queda dicho y no se toca
+
+- La dependencia de carga `margenCatalogo.js` → `reportsView.js` **es real y no está declarada** en
+  `DEPENDENCIAS_DE_CARGA`. Hoy se cumple (línea 284 < línea 335) y el test de arriba la fija, pero
+  la lista canónica vive en `tests/_banco-vistas.mjs`, que este encargo prohíbe tocar. **Una línea,
+  para quien pueda:**
+  `{ antes: 'margenCatalogo.js', despues: 'reportsView.js', motivo: 'SCRUM-764: el criterio de margen negativo' }`
+- Las dos condiciones redundantes del techo siguen las dos, como estaban.
+- `quotesView`, el detector de sobrantes y `_banco-vistas.mjs`: sin tocar. Ningún literal nuevo.
