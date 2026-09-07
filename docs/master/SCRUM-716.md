@@ -318,3 +318,141 @@ El `continue-on-error: true` del job · el contrato de `GET /version` · el job 
 margen de 6 h · `scripts/vigilante-de-despliegue.mjs` y `scripts/_vigilante-de-despliegue.mjs`
 (**cero líneas**) · la rama `scrum-716c`, que se ha leído en sólo lectura y no se ha tocado.
 Esta entrega es medición y documento.
+---
+
+# APÉNDICE II (7-sep-2026) · La pieza 2, aislada — y una medición que tumba la pieza 1
+
+**Medido contra:** `origin/main` = `0cc6a3a684f702095074bbd1ef2b7cb996f07935` · 2026-09-07T02:48:35+01:00
+**Tanda:** 5777 tests, 5675 pass, 0 fail, 102 skipped (salida 0) — corrida DESPUÉS de mezclar `main`, que trajo SCRUM-764. La de antes de la mezcla fue 5758/5656/0/102.
+
+Sigue **sin autorización** para tocar `vigilante-de-despliegue.mjs`. Aquí no se toca ni una línea.
+
+## D1 · 🔴 Obligación 2 · La medición que hay que leer ANTES de que nadie construya
+
+La pieza 1 era «persistir y leer la lectura anterior». **En CI no hay lectura anterior que leer,
+nunca.** Medido sobre `.github/workflows/vigia-despliegue.yml`, que es el job que corre el vigía:
+
+| lo que hace el job | consecuencia |
+|---|---|
+| `runs-on: ubuntu-latest` | runner **efímero**: sistema de ficheros nuevo cada ejecución |
+| `actions/checkout@v4` | clon **limpio** cada vez |
+| **no hay `actions/cache`** | nada se guarda entre ejecuciones |
+| **no hay `upload-artifact` / `download-artifact`** | nada se sube ni se recupera |
+| `permissions: contents: read` | **no podría ni escribir en el repositorio** |
+| `concurrency: cancel-in-progress: true` | una ejecución puede morir a media |
+
+**Dónde acaba hoy el renglón**, medido: `constanciaDeEjecucion` (en `main` desde SCRUM-727) hace
+`console.log` del renglón y lo apunta en `$GITHUB_STEP_SUMMARY`. **Las dos cosas mueren con el
+run**: viven en el log y en el resumen de ESA ejecución, no en un sitio acumulado. Y **nadie lee
+una constancia anterior** — los únicos consumidores en el árbol son el propio script y su test.
+
+**Formato de hoy**, una línea por ejecución:
+
+```
+vigía · 2026-09-07T01:29:14Z · al-dia · prod=349350c8 · main=349350c8 · hueco=0.0h · commits=0
+```
+
+**Cuánto dura:** lo que dure el log de ese run (retención de GitHub), y siempre **por run**, sin
+acumular.
+
+### Lo que esto significa para el ticket
+
+**La pieza 1, tal como la describí, no existe todavía y no basta con «hacer que se escriba».**
+Hace falta además **un sitio donde el renglón sobreviva entre ejecuciones**, y eso es una decisión
+con coste y con superficie:
+
+- **caché de Actions** (`actions/cache`) — la más barata; se desaloja sola y no es un almacén.
+- **artifact retenido + `download-artifact`** — sobrevive, pero hay que decidir retención y
+  encadenar la descarga.
+- **un fichero en el repositorio** — exige subir `permissions` a `contents: write` en un job
+  programado, que es superficie nueva y no es mía.
+
+Ninguna se elige aquí. **Es lo que el asesor pidió contestar antes de construir: contestado, y
+cambia el diseño.**
+
+## D2 · Obligación 3 · Qué es `scrum-716c-historial-del-vigia` (leída, no tocada)
+
+Leída con `git show`/`git diff` contra la ref remota. **Ni checkout, ni merge, ni nada que la
+mueva**; sigue en `08650118`, donde estaba.
+
+Un commit, de Luis, del 4-sep: *«el vigia deja constancia — un renglon por ejecucion, tambien en
+verde»*. Añade `renglonDeHistorial` (TSV) al módulo puro y, en el runner, `console.log` **más un
+`appendFileSync` a `process.env.VIGIA_HISTORIAL`**.
+
+**¿Está ahí la pieza 1? A medias, y hoy inerte:**
+
+| | 716c | ¿es la pieza 1? |
+|---|---|---|
+| formatea un renglón por ejecución | ✅ `renglonDeHistorial`, en TSV | **ya lo hace `main`** con `constanciaDeEjecucion` (SCRUM-727), en otro formato |
+| lo **apenda a un fichero** | ✅ si `VIGIA_HISTORIAL` está puesta | es el primer paso real hacia la pieza 1 |
+| **algo pone `VIGIA_HISTORIAL`** | ❌ nadie, en todo el árbol | sin eso no escribe nada |
+| **el fichero sobrevive entre runs** | ❌ ni caché ni artifact (D1) | se lo lleva el runner |
+| **alguien lo LEE** | ❌ ninguna lectura en ninguna parte | sin esto no hay comparación |
+
+**Conclusión:** 716c **no cierra la pieza 1**, y además su mitad de «formatear» quedó
+**solapada por SCRUM-727**, que llegó a `main` después haciendo lo mismo por otro camino. Lo que
+aporta y `main` no tiene es el `appendFileSync` — que hoy no se activa nunca. Quien la retome
+debería mirar primero si lo que quiere conservar es eso, y no el renglón.
+
+## D3 · Obligación 1 · La pieza 2, construida y AISLADA
+
+`scripts/_ritmo-de-despliegue.mjs` — puro: sin reloj, sin red, sin git. **No la llama nadie**, y
+hay un test que lo vigila: si alguien la conecta, se pone rojo y hay que borrarlo a mano diciendo
+quién autorizó.
+
+```
+ritmoDeDespliegue(anterior, actual) → { ritmo, motivo }
+   DESPLIEGA    prod distinto entre las dos lecturas
+   CONGELADO    prod igual entre las dos lecturas
+   NO_SE_SABE   no hay con qué comparar
+```
+
+**El tercero es de primera clase, no un respaldo.** Y hoy **es el único que se emitiría**, por D1:
+mientras no exista la pieza 1, lo honrado es contestar que no se sabe. Decir «congelado» la primera
+vez que corre —y en CI corre siempre por primera vez— sería una alarma cantando sin haber medido:
+el defecto de SCRUM-716 con otro traje.
+
+### 🔴 El caso que me cazó mi propio test
+
+`'1788742571305'` — el `String(Date.now())` que publica el fallback de `env.ts` cuando falta
+`RAILWAY_GIT_COMMIT_SHA` — son **trece caracteres que son todos hexadecimales válidos**, así que mi
+filtro `^[0-9a-f]{7,40}$` los daba por sha. Dos lecturas de ésas habrían dicho **«despliega» todas
+las veces**, porque el reloj siempre avanza: la alarma diciendo que todo va bien justo cuando no se
+sabe qué corre. Se rechaza lo que sea **todo dígitos**, con su precio declarado en el código: un sha
+abreviado que salga todo dígitos (~2 % con 8 caracteres) se rechaza también, y se acepta porque el
+error va en la dirección segura — callar de más, nunca inventar un movimiento.
+
+### Y el prefijo, declarado en vez de escondido
+
+Una lectura puede traer 8 caracteres (el renglón de constancia) y la otra 40 (`/version`). Se
+comparan **por prefijo**, con el riesgo escrito: dos commits distintos que compartan los primeros 8
+se leerían como el mismo. Exigir la misma longitud daría `NO_SE_SABE` cada vez que se comparase una
+constancia con una lectura fresca — o sea siempre, que es lo que rompería la pieza.
+
+## D4 · Los controles
+
+| control | resultado |
+|---|---|
+| 🔴 los **TRES** valores, cada uno con su caso | `DESPLIEGA` (ff4e1c4a→50312d32, el caso real del 6-sep) · `CONGELADO` (mismo sha) · `NO_SE_SABE` (`null` y `undefined`) ✅ |
+| 🔴 **NEGATIVO** · dos lecturas iguales NO devuelven «no se sabe» | devuelven `CONGELADO` ✅ — y las distintas, `DESPLIEGA` |
+| ✅ el enumerado de los 12 caminos, sobre `main` | **sigue verde**: 12 caminos, 3 veredictos, y **ningún** «al día» sin las dos puntas ✅ |
+| mutaciones declaradas | **3 de 3 VIVAS**, con el módulo restaurado byte a byte |
+
+**Dos suelos más**, porque una regla se cumple sola si no encuentra nada: los tres valores tienen
+que ser **distintos entre sí**, y el filtro de lo ilegible tiene que **seguir aceptando lo bueno**
+(si rechazara todo, su «no se sabe» no significaría nada).
+
+### ⚠️ Y una mutación mía que salió mal antes de salir bien
+
+La primera declaración del contrato cortaba a media llamada y dejaba el fichero **sin cerrar**: el
+runner dictó «EL FICHERO MURIÓ AL MUTAR» — el guard se ponía rojo, pero por un error de sintaxis y
+no por el defecto. Una mutación con más radio que el defecto que imita no prueba nada. Se acotó al
+bloque entero. La tercera tenía el ancla caducada por mi propio arreglo del `Date.now()`, y se
+re-ancló.
+
+## D5 · No tocado
+
+`vigilante-de-despliegue.mjs` y `_vigilante-de-despliegue.mjs` (**cero líneas**) · el
+`continue-on-error` · el contrato de `GET /version` · el job y su checkout · el margen de 6 h ·
+`scrum-716c`, leída en sólo lectura y **sigue en `08650118`** · y la pieza 2 **no está conectada a
+nada**.
