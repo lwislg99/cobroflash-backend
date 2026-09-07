@@ -380,6 +380,15 @@
 - **Lo mismo hay que mirar en la factura del portal:** `customerPortal.routes.ts:347-350` («📄 Descargar factura») repite el patrón con `inv.pdfUrl`. En dev las 5 facturas están en `PENDING_PDF`, así que tampoco se pinta: **no medido en producción**.
 - **Done cuando:** desde `/cliente` (sin sesión de admin) el botón o lleva a un documento que se ve, o no se pinta. Verificado en yaqu.app, no en localhost.
 
+### [ ] P1-GUARD-601-LINEA · SCRUM-601 se pone ROJO si alguien inserta UNA LÍNEA en `invoicesView.js`
+- **Encontrado:** 7-sep-2026, midiendo SCRUM-755. **Es un guard MÍO**, de SCRUM-601, y por eso lo registro yo.
+- **Dónde:** `tests/scrum601-copy-del-documento-vs-flag.test.mjs:102` ancla a `public/dashboard/js/invoicesView.js` **línea 223** a pelo — `en('public/dashboard/js/invoicesView.js', 223)`.
+- **Medido, tres casos y su control:** con el árbol sin tocar sale VERDE; insertando (a) un COMENTARIO, (b) un `const` cualquiera sin marcador, o (c) un uso del marcador, sale **ROJO en los tres**. O sea que no detecta lo que dice detectar: detecta que se ha movido su ancla.
+- **Y el mensaje ENGAÑA:** dice «no se encuentra el rótulo «+ Nuevo justificante» donde se midió», que suena a que el rótulo desapareció de la pantalla. Quien lo lea irá a buscar un defecto de producto que no existe.
+- **Por qué importa más de lo que parece:** es exactamente el antipatrón que la casa tiene escrito —en el censo de SCRUM-243 y en el de SCRUM-402— con estas palabras: anclar a fichero-y-línea pone el guard en rojo cada vez que alguien añade un import diez líneas más arriba, y un guard que grita sin motivo se acaba puenteando igual que uno que no grita nunca. Lo escribí y lo incumplí en el mismo repo.
+- **NO se arregla aquí:** SCRUM-755 va de contadores de microcopy. Tocar el censo de 601 de paso es cómo se cuela el siguiente defecto.
+- **Done cuando:** insertar una línea inocua en `invoicesView.js` NO pone rojo a SCRUM-601, y lo que ese test sí quiere sujetar —que el rótulo deriva del flag— sigue sujeto.
+
 ---
 
 ## P2 — Mejoras de producto / UX
