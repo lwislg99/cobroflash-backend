@@ -207,3 +207,136 @@ turno. Este ticket no toca ninguna ruta ni el schema.
 **f) Limpieza de lo sembrado en dev:** 0 clientes y 0 merchants con la marca `QA795`, verificado.
 La primera limpieza me falló —usé un modelo inexistente, `chargeEvent`— y dejó tres filas; se
 borraron en una segunda pasada comprobada.
+
+---
+
+# SCRUM-795 · APÉNDICE · re-medido tras la interrupción, sobre un árbol que se movió
+
+**Fecha:** 6-sep-2026 · **Carril:** producto · backend clientes — **MEDICIÓN** · **Gate:** sin gate
+**Medido contra:** `origin/main` = `5af8e7e9cdcd15ac90eb9b8a1473737872b6625c` · 2026-09-07T01:36:00+01:00
+**Tanda:** 5714 tests, 5612 pass, 0 fail, 102 skipped · `meta:mutaciones`: vivas 95 · mudas 0 · ciegas 0
+
+El ticket se pausó a mitad para cerrar el rojo de CI de SCRUM-778. Al volver, `main` había
+avanzado y **traía cambios en lo que este censo mide**, así que las cifras se rehacen en vez de
+citarse. Lo que sigue **sustituye** a las medidas del cuerpo de la entrada donde discrepe.
+
+## Lo que main movió, y lo que no
+
+`git log 8c03231a..origin/main` sobre los ficheros medidos devuelve **un** commit:
+**SCRUM-793**, que cerró la carrera del token del portal por el `WHERE`. Tocó
+`ensurePortalToken`, **no los caminos de alta**.
+
+**El censo no se mueve** (árbol `ce189353`, 2026-09-06T22:09:25Z): 91 creaciones, mismas 7 de
+`Customer`, misma tabla de `merchantId`/`portalToken`, mismos 4 llamadores de `createCustomer`.
+
+## ⑥ La cifra que decide — sin cambio
+
+> **UN (1) `create` en todo el árbol omite `merchantId` sobre una columna con `@default(1)`:**
+> **`src/modules/billing/app/routes/charges.routes.ts:24`**
+
+| forma de la columna | modelos | creaciones | omiten | no se sabe |
+| --- | --- | --- | --- | --- |
+| `@default(1)` | **1** (`Customer`) | 7 | **1** | 0 |
+| nullable | 1 (`BotSession`) | 1 | 0 | 0 |
+| obligatorio | 21 | 71 | 0 | 7 |
+
+**✅ Control positivo del punto 6:** encuentra `charges.routes.ts:24`, que es el que ya sabíamos.
+**✅ Control de los tres caminos:** `botFlow:264` ✔ directo · `charges:24` ✔ directo · sembrador ✔
+vía `createCustomer` (SCRUM-767 lo movió de cubo, y se dice en vez de esconderse).
+
+## ④ La ficha 360 — la recomendación se sostiene, y ahora mejor fundada
+
+Comprobado sobre el árbol de hoy: la 360 sigue leyendo en crudo
+(`customerDetailView.js:76`, y `customersAdmin.routes.ts:262` calcula
+`customer.portalToken ? url : null`); la lista sigue pintando siempre.
+
+Y **`ensurePortalToken` sigue escribiendo dentro de un GET** — SCRUM-793 lo hizo más correcto
+(`updateMany` con `portalToken: null` en el `WHERE`, y el `merchantId` también en la escritura),
+pero sigue siendo una escritura. Eso **refuerza** la recomendación: el arreglo es **de pantalla**
+—que la 360 pinte el botón siempre y llame al mismo `/portal-url`—, porque curar en el endpoint
+del detalle metería una **segunda** escritura dentro de un GET, y encima disparada sola al abrir
+la ficha. Contiene el problema; no lo resuelve.
+
+## ⑤ Los clientes sin token — y dos series que no cuadran
+
+> ⚠️ **FOTO de una base COMPARTIDA.** `…/yaqu_dev_javier`, **2026-09-06T22:09:38Z**.
+
+**14 clientes · 11 sin token · 3 con token.**
+
+| origen | cuántos |
+| --- | --- |
+| sembrador (`seed-demo.mjs`) | **7** (merchant 1, mismo segundo 05:20:47–49, seis nombres verificados en el fuente) |
+| fixtures de test (`scrum74`/`scrum85`) | **3** |
+| sin atribuir | **1** («Cliente QA», merchant 2, 23-jul) |
+
+### 🔴 El desacuerdo con S3, dicho y no redondeado
+
+El encargo cita que S3 midió **14 de 16** hacia las 21:00. Mi serie del mismo día no pasa por ahí:
+
+| hora (UTC) | clientes | sin token | quién |
+| --- | --- | --- | --- |
+| ~20:0x | 17 | 14 | yo |
+| ~20:2x | 16 | 13 | yo (tras mi provocación y su limpieza) |
+| 20:25:52 | 14 | 11 | yo |
+| ~21:00 | 16 | 14 | S3 (citado, no medido por mí) |
+| **22:09:38** | **14** | **11** | yo |
+
+**No lo resuelvo inventando una explicación.** La hipótesis que encaja —y va marcada como
+hipótesis— es que los tests gateados de SCRUM-793 **escriben clientes**: su motivo de salto lo
+dice literalmente («necesita Postgres real: escribe clientes y provoca concurrencia»). Filas
+transitorias de una pasada gateada explicarían un 16 entre dos 14. **No lo observé**, así que no
+lo afirmo.
+
+Lo que sí es un hecho es lo de fondo, y ya está escrito: **la base de dev es compartida y se
+mueve**. Dos sesiones que la miden con una hora de diferencia obtienen números distintos y las
+dos tienen razón.
+
+## Lo que no se ha podido tener en cuenta
+
+El encargo dice que **la decisión del backfill de `portalToken` se ha plegado a este ticket, como
+comentario en Jira**. **No tengo acceso a Jira y ese comentario no está en el árbol**, así que no
+he podido tenerlo presente al medir. Si contiene un criterio que cambie qué hay que contar —por
+ejemplo, si el backfill debe alcanzar también a los 3 clientes de fixtures o sólo a los 7 del
+demo—, esta medición no lo refleja. Se dice aquí en vez de suponerlo.
+
+## Y el árbol se movió OTRA VEZ mientras se escribía este apéndice
+
+El ancla de arriba es la **segunda**: la primera (`50312d32`, 6-sep 23:10) caducó antes de empujar
+porque `main` avanzó a `5af8e7e9` — entre otras cosas, con **mi propio SCRUM-778 ya mergeado** y
+con **SCRUM-792**, que toca `customersView.js`, una de las dos pantallas de ④.
+
+Se volvió a medir todo sobre el árbol mezclado (`61029954`, 2026-09-07T00:35Z) en vez de citar lo
+de antes:
+
+| medida | resultado |
+| --- | --- |
+| creaciones en `src/`+`scripts/` | **91** · suelo `[]` |
+| caminos directos de `Customer` | **7** |
+| 🔴 donaciones silenciosas | **1** — `charges.routes.ts:24` |
+| modelos con `merchantId @default(1)` | **1** — `Customer` |
+| controles | `botFlow` ✔ · `charges` ✔ · sembrador ✔ vía `createCustomer` |
+| dev (`…/yaqu_dev_javier`) | **14 clientes · 11 sin token** · 2026-09-07T00:35:46Z |
+
+Y las dos pantallas, re-verificadas tras SCRUM-792: la lista **sigue** pintando siempre y curando
+al pulsar (`customersView.js:649` y `:655` — el ticket sólo movió líneas), y la 360 **sigue**
+leyendo en crudo (`customerDetailView.js:76`). **La recomendación de ④ no cambia.**
+
+Nada de esto altera ninguna cifra. Se deja escrito porque el hecho —que el árbol y la base se
+mueven bajo una medición larga— es parte del resultado, no ruido alrededor.
+
+## Y un fallo fantasma que me hice yo, por segunda vez
+
+Corriendo la tanda con reporter TAP **a la vez que** `npm run meta:mutaciones`, salió **1 fallo**:
+
+```
+not ok 5404 - SCRUM-745/748 · 🔴 el meta-guard mira la LÍNEA BASE, y NO reconoce mensajes de error
+  error: '🔴 el meta-guard ya no consulta la pasada limpia.'
+```
+
+No era un fallo: en ese instante el meta-guard tenía **mutado su propio fichero** —la mutación ①
+de SCRUM-745 sustituye la comprobación de línea base por `if (false)`— y la tanda leyó ese árbol.
+Repetida **sola**, tras terminar el meta-guard: **0 fallos**.
+
+Ya lo había medido el 6-sep y volví a hacerlo. La regla, escrita otra vez y con su motivo: **nada
+en paralelo con `meta:mutaciones`, ni siquiera una lectura de la suite**, porque durante su pasada
+el árbol NO es el árbol — y una tanda concurrente no mide lo que cree medir.
