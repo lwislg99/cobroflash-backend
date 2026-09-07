@@ -240,6 +240,26 @@ model Customer {
   merchantId  Int     @map("merchant_id")
   name        String
   phone       String?
+  /// SCRUM-590 (CONT-19) · EL MÓVIL DEL CONTACTO, y es el número que RECIBE los documentos.
+  ///
+  /// Hasta aquí `phone` era a la vez la ficha del cliente y el canal de WhatsApp, porque no
+  /// había otro. Con una empresa eso obliga a elegir entre guardar la centralita y poder
+  /// escribirle a la persona: lo que se guarda es lo que recibe.
+  ///
+  /// 🔴 LA MARCA DEL CANAL ES ESTRUCTURAL, NO UN FLAG. Recibe el número que esté aquí; si está
+  /// vacío, el de `phone`. La columna `wa_canal` que la medición dejó propuesta NO se crea:
+  /// sus valores serían un estado nuevo y los estados son cerrados (regla 27). Queda medida en
+  /// `docs/master/SCRUM-590.md` §4, y añadirla más tarde seguiría siendo aditivo.
+  ///
+  /// 🔴 NULLABLE Y SIN `@default`, y aquí eso es lo que hace que no rompa nada: NULL = «no
+  /// consta un móvil», que no es «no tiene». Todo cliente de hoy nace con NULL, y entonces
+  /// `canalDeWhatsApp()` devuelve exactamente lo de antes — `normalizePhone(phone)`. Un
+  /// `@default` copiando `phone` habría declarado móvil a la centralita de todos.
+  ///
+  /// `@map` EXPLÍCITO aunque coincida con el nombre del campo: deja escrito que el nombre
+  /// físico está elegido y no heredado. Las 24 columnas de `customers` son snake_case y ésta,
+  /// al ser una sola palabra, coincide — que coincida no es lo mismo que no haberlo mirado.
+  mobile      String? @map("mobile")
   email       String?
   notes       String?
   portalToken String? @unique @map("portal_token")
@@ -390,6 +410,11 @@ model Charge {
   currency   String    @map("moneda")
   method     String
   status     String
+  /// ⚠️ ESTE `vencimiento` ES DEL COBRO, NO DE LA FACTURA. Es hasta cuándo vale ESTE enlace de
+  /// pago. `Invoice` NO tiene campo de vencimiento —medido en SCRUM-605—, así que quien busque
+  /// «vencimiento» en el esquema y encuentre esta línea puede creer que la factura ya lo tiene.
+  /// Ya estuvo a punto de pasar. El comentario vive aquí y no en un `.md` porque quien se
+  /// confunde está mirando este fichero (SCRUM-722).
   expiresAt  DateTime? @map("vencimiento")
   reference  String?   @map("referencia")
   intentId   String?   @map("intent_id")
@@ -1398,6 +1423,35 @@ model ParteTrabajo {
   firmadoAt         DateTime? @map("firmado_at")
   firmadoPorNombre  String?   @map("firmado_por_nombre")
   firmadoPorCalidad String?   @map("firmado_por_calidad")
+
+  // ═════════════════════════════════════════════════════════════════════════════
+  // SCRUM-653 · LAS DOS FIRMAS DEL PAPEL: «FIRMA CLIENTE» y «FIRMA TÉCNICO»
+  // ═════════════════════════════════════════════════════════════════════════════
+  //
+  // 🔴 `signatureUrl` NO ES «la segunda mitad»: ES UN DEFECTO QUE SE ARREGLA AQUÍ.
+  //
+  // Medido el 3-sep-2026: la ruta de firmar del parte VALIDA `signatureData` —regex de PNG/JPEG y
+  // tope de tamaño— y luego **no lo guarda en ninguna parte**. El `update` escribe estado, fecha,
+  // nombre, calidad y el hash; el TRAZO SE TIRA. O sea que hasta hoy el parte guardaba que se
+  // firmó y quién dijo ser, pero no la firma. El albarán sí la guarda (`Albaran.signatureUrl`).
+  // Es un defecto de la fase C, y sale a la luz al ir a añadir la segunda.
+  //
+  // Mismo nombre y misma forma que en `Albaran`: data-URI en `@db.Text`.
+  signatureUrl String? @map("signature_url") @db.Text
+
+  // ── LA FIRMA DEL TÉCNICO ──────────────────────────────────────────────────────────
+  //
+  // 🔴 Y AQUÍ NO HAY `firmadoTecnicoCalidad`, A PROPÓSITO. Las seis opciones de
+  // `albaranFirmante.ts` —«el propio cliente», «un familiar o conviviente», «portero o
+  // conserje»…— existen porque quien firma en la obra POR EL CLIENTE puede ser cualquiera, y hay
+  // que dejar constancia de EN CALIDAD DE QUÉ firma.
+  //
+  // El técnico no es «alguien en calidad de»: es un empleado identificado del merchant. Darle una
+  // ranura de calidad sería ofrecerle declarar que firma «en nombre del cliente», que es
+  // exactamente lo que no puede hacer.
+  signatureTecnicoUrl  String?   @map("signature_tecnico_url") @db.Text
+  firmadoTecnicoAt     DateTime? @map("firmado_tecnico_at")
+  firmadoTecnicoNombre String?   @map("firmado_tecnico_nombre")
   /// Huella del CONTENIDO (sin precios) y su versión de canónico.
   contenidoHash     String?   @map("contenido_hash")
   contenidoVersion  Int?      @map("contenido_version")

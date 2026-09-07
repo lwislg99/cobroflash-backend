@@ -2,24 +2,29 @@
 
 > Compare: https://github.com/lwislg99/cobroflash-backend/compare/main...scrum-805-que-firmo-el-cliente
 
-## ⛔ ESTE PR NO SE PUEDE MERGEAR TODAVÍA
+## ✅ LA COLUMNA ESTÁ EN LAS TRES BASES — el PR es MERGEABLE
 
-Toca `prisma/schema.prisma`, y `assertSchemaSinDeriva` corre en `src/index.ts` **antes de
+> Aquí ponía **«⛔ ESTE PR NO SE PUEDE MERGEAR TODAVÍA»**, y era cierto cuando se escribió. Se
+> retira el 7-sep-2026 porque el motivo dejó de existir, no porque estorbara.
+
+Este PR toca `prisma/schema.prisma`, y `assertSchemaSinDeriva` corre en `src/index.ts` **antes de
 escuchar**: una columna que el cliente Prisma nombra y la base no tiene **no es un aviso, es un
-`throw` que impide arrancar**. Mergear sin el `ALTER` aplicado **tumba producción en el siguiente
-despliegue**.
-
-Y aquí el código y el esquema **no se pueden separar** como en SCRUM-758: el camino de firma
-escribe la columna, así que sin ella el cliente final no puede aceptar su presupuesto.
+`throw` que impide arrancar**. Por eso el orden importaba — y por eso se dice aquí que ya se ha
+cumplido, en vez de borrar el aviso y dejar al que lo lea sin saber que hubo una condición.
 
 ```sql
 ALTER TABLE "quotes" ADD COLUMN     "evidencia_firma" JSONB;
 ```
 
-**Secuencia:** ① dev → ② staging → ③ producción (lo aplicas tú) → ④ merge.
-**Esta sesión no ha aplicado nada en ninguna base.** El preview se hizo **offline** (schema viejo →
-schema actual): *«✔ control positivo: la herramienta responde (27 tablas)»* · **«✔ aditiva: ni DROP,
-ni RENAME, ni TRUNCATE, ni DELETE, ni SET NOT NULL.»**
+**Secuencia ① dev → ② staging → ③ producción → ④ merge: los tres primeros, HECHOS.**
+
+| base | estado | quién y cómo |
+| --- | --- | --- |
+| desarrollo · `acela/yaqu_dev_javier` | ✅ `jsonb` | esta sesión, `aplicar-sql-dev.mjs --go` (exit 0), verificado en `information_schema` |
+| staging · `acela/railway` | ✅ `jsonb` | el fundador, consola de Railway, verificado en `information_schema` |
+| producción · `autorack` | ✅ `jsonb` | el fundador, consola de Railway, verificado en `information_schema` |
+
+Detalle, con las medidas de antes y después y su control positivo, en `docs/MIGRATIONS_PENDING.md`.
 
 ## El defecto, medido corriendo
 

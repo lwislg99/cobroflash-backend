@@ -22,7 +22,8 @@
 import { prisma } from '../../../core/db/prisma';
 import { sendWhatsAppWindowFirst, sendWhatsAppText } from '../../../integrations/whatsapp';
 import { buildPaymentRequest } from '../../../integrations/whatsappTemplates';
-import { normalizePhone, formatMoneyEs } from '../../../core/utils/utils';
+import { formatMoneyEs } from '../../../core/utils/utils';
+import { canalDeWhatsApp } from '../../../core/contacto/canalDeWhatsApp'; // SCRUM-590 (CONT-19)
 import { BASE_URL } from '../../../core/config/env';
 import { isReceiptNumber, appendStageLabel } from '../../invoicing/domain/invoiceNumber.service';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
@@ -45,7 +46,10 @@ export async function sendInvoicePaymentReminders(): Promise<void> {
       // quien se dio de baja no es «reintentar de más»: es un problema legal (J3). Además,
       // resolverlo en la consulta mantiene honesto el candado — `reminderXSentAt` sigue
       // significando «se envió» y no hay que marcarlo en falso para evitar el reintento.
-      customer: { phone: { not: null }, waOptOut: false },
+      // SCRUM-590 (CONT-19): «tiene canal» pasa a ser «tiene ALGUNO de los dos». Con solo
+      // phone: { not: null } un cliente que únicamente tenga móvil quedaría fuera del lote
+      // y no recibiría NUNCA su recordatorio, sin que nada lo dijera.
+      customer: { OR: [{ phone: { not: null } }, { mobile: { not: null } }], waOptOut: false },
     },
     include: {
       customer: true,
@@ -62,7 +66,7 @@ export async function sendInvoicePaymentReminders(): Promise<void> {
       createdAt: { lte: cut14 },
       reminder14SentAt: null,
       // reminder7SentAt puede ser null si el cliente no tiene WA → no bloquear el de 14d
-      customer: { phone: { not: null }, waOptOut: false }, // SCRUM-116 (J3), ver arriba
+      customer: { OR: [{ phone: { not: null } }, { mobile: { not: null } }], waOptOut: false }, // SCRUM-116 (J3) + SCRUM-590 (CONT-19), ver arriba
     },
     include: {
       customer: true,
@@ -117,13 +121,13 @@ async function sendReminderWA(
     currency: string;
     chargeId: number | null;
     charge: { id: number } | null;
-    customer: { name: string; phone: string | null } | null;
+    customer: { name: string; phone: string | null; mobile?: string | null } | null; // SCRUM-590 (CONT-19)
     merchant: { name: string } | null;
     stageLabel: string | null; // SCRUM-33
   },
   day: 7 | 14,
 ): Promise<boolean> {
-  const phone = normalizePhone(inv.customer?.phone);
+  const phone = canalDeWhatsApp(inv.customer);
   if (!phone) return false; // sin teléfono no hay envío: no se marca (SCRUM-116)
 
   const customerName  = inv.customer?.name  || 'Cliente';

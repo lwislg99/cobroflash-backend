@@ -7,10 +7,14 @@
 **Mutaciones re-corridas tras mezclar:** 3 vivas · 0 mudas · 0 ciegas, árbol restaurado byte a byte.
 **Guards de entrada:** 4 en verde (21 tests).
 
-> ⛔ **ESTE PR NO SE PUEDE MERGEAR HASTA QUE EL `ALTER` ESTÉ EN LAS TRES BASES.** Toca
-> `prisma/schema.prisma`, y `assertSchemaSinDeriva` **impide arrancar** si la base no tiene la
-> columna: mergear antes tumba producción en el siguiente despliegue. Detalle y secuencia en
-> `docs/MIGRATIONS_PENDING.md`. **Esta sesión no ha aplicado nada en ninguna base.**
+> ✅ **7-sep-2026 · EL `ALTER` YA ESTÁ EN LAS TRES BASES, así que el PR es MERGEABLE.** Aquí ponía
+> «⛔ ESTE PR NO SE PUEDE MERGEAR HASTA QUE EL `ALTER` ESTÉ EN LAS TRES BASES», y era cierto
+> cuando se escribió: la sesión que lo escribió no había aplicado nada en ninguna base. Hoy
+> `quotes.evidencia_firma` es `jsonb` en dev (aplicada por la sesión del 7-sep con
+> `aplicar-sql-dev.mjs`), en staging y en producción (aplicadas por el fundador), las tres
+> verificadas leyendo `information_schema`. El motivo del bloqueo —`assertSchemaSinDeriva`
+> **impide arrancar** si la base no tiene la columna— no se borra: es lo que explica por qué el
+> orden importaba. Detalle y medidas en `docs/MIGRATIONS_PENDING.md`.
 
 
 > **`main` se movió 7 commits mientras trabajaba** (SCRUM-759, SCRUM-797 y sus merges). Se

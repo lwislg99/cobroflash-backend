@@ -307,14 +307,27 @@ function subirFirmaDeLaCola(firma) {
   // SCRUM-652 no tiene `tipo`, y es de un albarán por construcción —era lo único que se podía
   // firmar—. Sin el default se quedaría sin ruta y sin subir, después de haber sobrevivido a la
   // falta de cobertura que la puso ahí.
-  const RUTAS = { albaran: '/admin/albaranes', parte: '/admin/partes' };
+  // 🔴 SCRUM-653 · EL MAPA GUARDA LA RUTA ENTERA, NO LA BASE.
+  //
+  // Antes era `{ albaran: '/admin/albaranes', parte: '/admin/partes' }` y se le pegaba
+  // `/${id}/firmar`. La firma del TÉCNICO no cambia la base: cambia el SUFIJO
+  // (`/firmar-tecnico`), así que con el mapa viejo no había forma de expresarla sin meter un `if`
+  // aquí dentro. Con la ruta entera, añadir un tipo es añadir una línea.
+  //
+  // ⚠️ `albaran` sigue PRIMERO y sigue siendo el default: una firma encolada por una versión
+  // anterior no tiene `tipo`, y es de un albarán por construcción.
+  const RUTAS = {
+    albaran: (id) => `/admin/albaranes/${id}/firmar`,
+    parte: (id) => `/admin/partes/${id}/firmar`,
+    'parte-tecnico': (id) => `/admin/partes/${id}/firmar-tecnico`,
+  };
   const base = RUTAS[firma.tipo || 'albaran'];
   if (!base) {
     // Ni se adivina ni se cae al albarán: subir la firma de un documento desconocido a la ruta
     // equivocada es peor que no subirla. Se queda en la cola y se dice cuál.
     return Promise.reject(Object.assign(new Error(`tipo de documento desconocido: ${firma.tipo}`), { tipoDesconocido: true }));
   }
-  return window.apiRequest(`${base}/${firma.albaranId}/firmar`, {
+  return window.apiRequest(base(firma.albaranId), {
     method: 'POST',
     body: JSON.stringify(cuerpo),
   });

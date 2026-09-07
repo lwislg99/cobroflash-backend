@@ -24,7 +24,7 @@
 -- ajenas ni valores de enum. Y no reporta columnas de MÁS en la base: que la base vaya por
 -- delante del código es el orden seguro de un cambio aditivo, no un problema.
 --
--- Columnas esperadas: 423. Tablas: 27.
+-- Columnas esperadas: 428. Tablas: 27.
 
 WITH esperado (tabla, columna) AS (
   VALUES
@@ -134,6 +134,7 @@ WITH esperado (tabla, columna) AS (
     ('customers','internal_ref'),
     ('customers','legal_name'),
     ('customers','merchant_id'),
+    ('customers','mobile'),
     ('customers','name'),
     ('customers','notes'),
     ('customers','phone'),
@@ -328,6 +329,8 @@ WITH esperado (tabla, columna) AS (
     ('partes_trabajo','firmado_at'),
     ('partes_trabajo','firmado_por_calidad'),
     ('partes_trabajo','firmado_por_nombre'),
+    ('partes_trabajo','firmado_tecnico_at'),
+    ('partes_trabajo','firmado_tecnico_nombre'),
     ('partes_trabajo','id'),
     ('partes_trabajo','job_id'),
     ('partes_trabajo','kilometros'),
@@ -338,6 +341,8 @@ WITH esperado (tabla, columna) AS (
     ('partes_trabajo','obra'),
     ('partes_trabajo','referencia'),
     ('partes_trabajo','salida'),
+    ('partes_trabajo','signature_tecnico_url'),
+    ('partes_trabajo','signature_url'),
     ('partes_trabajo','tecnicos'),
     ('partes_trabajo','tipo'),
     ('partes_trabajo','updated_at'),
