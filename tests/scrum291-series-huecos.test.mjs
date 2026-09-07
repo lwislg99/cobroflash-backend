@@ -274,7 +274,32 @@ const EMISOR = 'src/modules/invoicing/domain/invoiceNumber.service.ts';
 // (`resolveSeriesSeq`, los dos contadores, el reinicio anual, el `merchant.update`) no tiene ni una
 // línea tocada; el `recordAuditOrThrow` sigue dentro de la misma `tx` y en el mismo punto. El
 // justificante NO consume serie fiscal ni antes ni ahora.
-const EMISOR_SHA256 = 'def716fd0dcaaceddb8e1dabab328f5b97f64d504d1b6e39f85d8a7649a7c56d';
+// ⚠️ SELLO ACTUALIZADO OTRA VEZ — SCRUM-780. **GO del fundador 7-sep-2026:** «Se adopta el
+// F260001 desde ya», con el corte por fecha y la retirada de `invoiceSeriesPrefix` FIRMADAS en el
+// mismo mensaje. Cuarta vez que este trinquete hace su trabajo: avisó, y el hash se toca en el
+// MISMO commit que el cambio, que es lo que deja el permiso escrito en el diff.
+//
+//   anterior: def716fd0dcaaceddb8e1dabab328f5b97f64d504d1b6e39f85d8a7649a7c56d   (SCRUM-396)
+//   nuevo:    4ea68c579d53c8d0fc5640c12bf2a6a70986d643845e1c8596c3c22839fdd9f9   (SCRUM-780)
+//
+// QUÉ CAMBIÓ: (1) `formatInvoiceNumber` recibe DOS parámetros opcionales al final —`emitidaEn` y
+// `corte`— y, cuando la fecha cae en el corte o después, compone `F<AA><NNNN>` con el sitio único
+// (`core/documentos/formatoNumero`). (2) Nacen `CORTE_FORMATO_F`, `usaFormatoF`,
+// `siguienteSeqDeLaSerieF` y `leerSeqDeLaSerieF`. (3) Dentro de `allocateInvoiceNumber`, la
+// secuencia de la serie ORDINARIA se deriva de lo ya emitido cuando toca formato F, porque el
+// fundador firmó que esa serie empieza en 0001 y `nextInvoiceNumber` no puede darlo (en dev vale
+// 6). (4) `nextInvoiceNumber` pasa a escribirse con `Math.max(...)`: NO retrocede.
+//
+// QUÉ **NO** CAMBIÓ, verificable en el diff y no sólo afirmado: el `pg_advisory_xact_lock` sigue
+// siendo la PRIMERA sentencia y con el mismo `SERIE_LOCK_NS` —y es lo que hace que derivar la
+// secuencia dentro de él no tenga carrera—; el `recordAuditOrThrow` sigue dentro de la misma `tx`
+// y en el mismo punto; el reinicio anual y los DOS contadores siguen donde estaban; el
+// justificante no consume serie fiscal; y **la serie de RECTIFICATIVAS no se toca**: su letra R no
+// está firmada y `usaFormatoF` la excluye explícitamente.
+//
+// 🔴 SIN RENUMERAR NI UNA: el control que decide de `tests/scrum780-…` compone los cinco números
+// REALES de dev con su fecha y exige que salgan byte a byte iguales.
+const EMISOR_SHA256 = '4ea68c579d53c8d0fc5640c12bf2a6a70986d643845e1c8596c3c22839fdd9f9';
 
 test('SCRUM-291 · el camino de emisión sigue INTACTO (regla 38)', () => {
   // El fundador puso el límite y esto lo COMPRUEBA en vez de prometerlo. Si algún día hace falta

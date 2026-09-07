@@ -400,6 +400,20 @@ export const DECLARADOS = [
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'La lista de orígenes de C7. Ni siquiera su propio módulo la usa: su único lector es su test.',
     exports: ['ORIGENES_C7'] },
+  { modulo: 'src/modules/invoicing/domain/invoiceNumber.service.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-07',
+    motivo: 'SCRUM-780 · LA FECHA DE CORTE AL FORMATO F, firmada por el fundador. Se exporta para '
+      + 'que exista UN solo sitio donde vive ese dato y para que su test pueda comprobar que sigue '
+      + 'siendo la firmada: moverla renumeraría facturas ya emitidas, que es la regla 29. Hoy la '
+      + 'leen su propio módulo (por defecto de `usaFormatoF`) y su test.',
+    exports: ['CORTE_FORMATO_F'] },
+  { modulo: 'src/modules/invoicing/domain/invoiceNumber.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-07',
+    motivo: 'SCRUM-780 · la mitad PURA del contador de la serie F. La consume `leerSeqDeLaSerieF` '
+      + 'de su propio módulo, que es quien pone la consulta; se exporta aparte para poder probar la '
+      + 'aritmética —máximo y no recuento, y el reinicio anual— sin base de datos, que es donde '
+      + 'está el error que costaría un número repetido.',
+    exports: ['siguienteSeqDeLaSerieF'] },
   { modulo: 'src/modules/invoicing/domain/lineasFacturables.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
