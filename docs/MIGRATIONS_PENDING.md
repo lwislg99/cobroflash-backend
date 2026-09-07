@@ -2296,3 +2296,71 @@ arriba cierra el mismo agujero para quien escriba SQL en crudo, que es el camino
 tablas y columnas — **no mira defectos de columna**. La columna existe en las tres bases antes y
 después, así que el esquema puede ir por delante sin impedir arrancar (que es lo que costó
 SCRUM-220).
+
+---
+
+## SCRUM-595 (paso ②) · `quotes.tags` + `invoices.tags` — ⛔ **SIN APLICAR EN NINGUNA** (7-sep-2026)
+
+Las **etiquetas del documento** (DOC-05). El mismo mecanismo que `customers.tags` (SCRUM-580,
+CONT-07), en las **dos** tablas de documento: presupuesto y factura.
+
+**Fichero:** `docs/sql/scrum-595-etiquetas-del-documento.sql` ·
+**Verificación:** `docs/sql/scrum-595-verificar.sql`
+
+```sql
+ALTER TABLE "quotes"   ADD COLUMN IF NOT EXISTS "tags" JSONB;
+ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "tags" JSONB;
+```
+
+**JSONB, nullable, SIN default** — idéntico a `customers.tags`, y por el mismo motivo: `null` =
+«no se declararon etiquetas», que **no es** `[]` = «se miraron y no hay ninguna». Con un
+`DEFAULT '[]'` un `IS NOT NULL` diría que **todos** los documentos tienen etiquetas.
+
+**Las DOS o ninguna.** Con una sola tabla el bloque funcionaría en un documento y no en el otro,
+y eso el ticket lo declara **no hecho**. La verificación pide las dos y lo dice si falta una.
+
+### ⛔ NO se ha aplicado en ninguna base — y no se ha intentado
+
+- [ ] **producción · autorack** — la aplica el fundador. Desde un árbol de trabajo no hay
+      credencial de producción (regla 3), y en esta sesión no la ha habido en ningún momento:
+      `node scripts/comprobar-claves-bd.mjs` en `cobroflash-b20` → `DATABASE_URL` **ausente**.
+- [ ] **staging · acela/railway** — pendiente. **Fuera del encargo de esta sesión**; el turno de
+      staging no se tomó.
+- [ ] **desarrollo · acela/yaqu_dev_javier** — pendiente. Aquí **sólo se LEYÓ**, con
+      `node scripts/censo-etiquetas-del-documento.mjs`. Ni una escritura.
+
+### Medición ANTES, en desarrollo (7-sep-2026)
+
+| Columna | Estado |
+|---|---|
+| `quotes.tags` | **AUSENTE** |
+| `invoices.tags` | **AUSENTE** |
+| `customers.tags` | presente — **CONTROL POSITIVO** (SCRUM-580 aplicada aquí) |
+| `quotes.lines` | presente — **CONTROL POSITIVO** de que la consulta llega a `quotes` |
+
+**Filas:** 15 presupuestos · 5 facturas. Clientes con etiquetas declaradas: **0**.
+
+🔴 **Los dos controles positivos son de cosas distintas a propósito.** Sin `customers.tags` no
+consta que se esté mirando una base donde el mecanismo vive; sin `quotes.lines` no consta que la
+consulta alcance la tabla `quotes`. Un único control no distingue «no está» de «no se vio nada».
+
+**El suelo del censo está probado por MUTACIÓN, no declarado:** forzando cero documentos sale con
+**código 2** declarándose ciego, y rompiendo el control positivo también. Restaurado y
+re-ejecutado: fichero idéntico y exit 0.
+
+### 🔴 EL ESQUEMA **NO** ENTRA TODAVÍA, Y ES DELIBERADO
+
+`prisma/schema.prisma` **no se ha tocado** y sigue idéntico a `main`. `schemaDrift` compara
+**esperado ⊆ real** al arrancar: una rama cuyo esquema nombre `tags` en `Quote` o `Invoice`
+**impide arrancar producción** mientras el `ALTER` no esté aplicado. Es exactamente la secuencia
+que costó nueve días sin desplegar (SCRUM-580). Un guard de este ticket lo vigila por los dos
+lados — y se invierte en el ③, cuando las tres bases tengan la columna.
+
+### Lo que esta columna **no** toca — medido, no supuesto
+
+- **El sello:** `computeVeriFactuHash` es una lista **cerrada de ocho campos**. Ejercitado: la
+  huella sale **idéntica** pasándole `tags`, y **sí** cambia al mover el importe (control negativo,
+  para que la igualdad no sea la de una función que no mira nada).
+- **El PDF:** los parámetros de `generateInvoicePdf` son lista blanca y `tags` no está en ella.
+- **El camino de emisión:** una etiqueta **no se copia al emitir**, así que no hace falta escritor
+  en `emitInvoice` — que es justo lo que bloqueó el lado factura de SCRUM-602 (DOC-12).
