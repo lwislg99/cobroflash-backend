@@ -241,19 +241,41 @@ async function renderReportsView(container) {
     months.forEach(m => {
       const margin = m.revenue > 0 ? Math.round(m.profit / m.revenue * 100) : (m.revenue === 0 && m.expenses === 0 ? null : -100);
       const profitColor = m.profit >= 0 ? 'var(--green-700)' : 'var(--red-600)';
+      // 🔴 SCRUM-764 · EL MARGEN NEGATIVO SE VE, TAMBIÉN AQUÍ.
+      //
+      // Medido en navegador ANTES de tocar: un mes con −2.000,00 € pintaba el Beneficio en
+      // `rgb(220,38,38)` y, EN LA MISMA FILA, el −50 % en `rgb(107,117,111)` — el gris de
+      // siempre. Un rojo al lado de un gris se lee como que el porcentaje está bien.
+      //
+      // La REGLA no se escribe aquí: es `margenCatalogo.bajoCoste`, la misma que decide en la
+      // ficha del catálogo (SCRUM-764). Si cada pantalla comparara `< 0` por su cuenta, acabarían
+      // decidiendo distinto — y este fichero es la prueba de que pasa: calcula su margen sin
+      // usar el módulo, y por eso el aviso llegó aquí un ticket más tarde.
+      //
+      // ⚠️ VA EN LÍNEA Y NO EN LA CLASE `margen--bajo-coste`, y no es por comodidad: MEDIDO, un
+      // `style="color:…"` en línea GANA a la clase (se inyectó la regla en la página y el color
+      // no se movió de `rgb(107,117,111)`). Todas las celdas de esta tabla se colorean en línea
+      // —`profitColor`, dos líneas arriba, es la de al lado—, así que el token se comparte y el
+      // mecanismo es el del fichero. `null` (mes sin actividad, «—») no se pinta: `bajoCoste`
+      // devuelve `false` porque «no se sabe» no es «va mal».
+      const marginColor = window.margenCatalogo.bajoCoste(margin)
+        ? 'var(--danger-ink)' : 'var(--neutral-500)';
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td style="font-weight:600">${m.label}</td>
         <td style="text-align:right;color:var(--green-700)">${m.revenue > 0 ? fmt(m.revenue) : '<span style="color:var(--neutral-300)">—</span>'}</td>
         <td style="text-align:right;color:var(--red-600)">${m.expenses > 0 ? fmt(m.expenses) : '<span style="color:var(--neutral-300)">—</span>'}</td>
         <td style="text-align:right;font-weight:600;color:${profitColor}">${fmt(m.profit)}</td>
-        <td style="text-align:right;color:var(--neutral-500)">${margin !== null ? margin + '%' : '—'}</td>
+        <td style="text-align:right;color:${marginColor}">${margin !== null ? margin + '%' : '—'}</td>
       `;
       tbody.appendChild(tr);
     });
 
     // Fila de totales
     const totalMargin = totals.revenue > 0 ? Math.round(totals.profit / totals.revenue * 100) : null;
+    // SCRUM-764 · el TOTAL del año también. Esta celda no traía color —hereda— así que sólo se
+    // le pone uno cuando hay algo que decir; el año bueno se queda exactamente como estaba.
+    const totalMarginColor = window.margenCatalogo.bajoCoste(totalMargin) ? 'var(--danger-ink)' : '';
     const trTotal = document.createElement('tr');
     trTotal.style.cssText = 'background:var(--neutral-50);font-weight:700;border-top:2px solid var(--neutral-200)';
     trTotal.innerHTML = `
@@ -261,7 +283,7 @@ async function renderReportsView(container) {
       <td style="text-align:right;color:var(--green-700)">${fmt(totals.revenue)}</td>
       <td style="text-align:right;color:var(--red-600)">${fmt(totals.expenses)}</td>
       <td style="text-align:right;color:${totals.profit >= 0 ? 'var(--green-700)' : 'var(--red-600)'}">${fmt(totals.profit)}</td>
-      <td style="text-align:right">${totalMargin !== null ? totalMargin + '%' : '—'}</td>
+      <td style="text-align:right${totalMarginColor ? ';color:' + totalMarginColor : ''}">${totalMargin !== null ? totalMargin + '%' : '—'}</td>
     `;
     tbody.appendChild(trTotal);
 
