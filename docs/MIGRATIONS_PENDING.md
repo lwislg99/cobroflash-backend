@@ -2220,3 +2220,41 @@ es lo correcto en un árbol de trabajo). Turno de staging **tomado y soltado**; 
 `schemaDrift` compara **esperado ⊆ real** al arrancar: una columna de MÁS en la base es inocua,
 una de MENOS **impide arrancar producción**. El esquema entra en el PR ③ **cuando las tres bases la
 tengan**, junto con el cableado y los tests. Sin partir.
+
+## SCRUM-805 · `Quote.evidencia_firma` — 7-sep-2026 · ⛔ PENDIENTE EN LAS TRES BASES
+
+**Qué firmó el cliente**: el presupuesto se firma y no queda constancia de QUÉ documento tenía
+delante. Esta columna guarda el sobre de evidencias, igual que `Albaran.evidencia_firma`
+(SCRUM-68). Nullable y aditiva: los presupuestos ya firmados se quedan en `NULL`, que significa
+«se firmó antes de que esto existiera» y **no** «firma inválida».
+
+```sql
+-- AlterTable
+ALTER TABLE "quotes" ADD COLUMN     "evidencia_firma" JSONB;
+```
+
+**Preview OFFLINE** (`node scripts/preview-migracion.mjs --desde <schema de HEAD>`), sin tocar
+ninguna base: *«✔ control positivo: la herramienta responde (27 tablas)»* · veredicto
+**«✔ aditiva: ni DROP, ni RENAME, ni TRUNCATE, ni DELETE, ni SET NOT NULL.»**
+
+- [ ] **desarrollo · acela/yaqu_dev_javier** — pendiente. `DATABASE_URL_DEV`.
+- [ ] **staging · acela/railway** — pendiente. `DATABASE_URL_STAGING` **y** `DATABASE_URL_TESTS`
+      apuntan las DOS a esta base: un solo ALTER las cubre.
+- [ ] **producción · autorack** — pendiente, **la aplica el fundador**.
+
+**La sesión de SCRUM-805 no ha aplicado nada en ninguna de las tres**: el preview se hizo OFFLINE
+(schema viejo → schema actual), sin abrir conexión a ninguna base.
+
+### 🔴 EL ORDEN, Y AQUÍ NO ES UNA RECOMENDACIÓN: EL PR NO SE PUEDE MERGEAR ANTES DEL ALTER
+
+A diferencia de las entradas de arriba, **este PR SÍ toca `prisma/schema.prisma`**, y eso cambia
+el riesgo por completo: `assertSchemaSinDeriva` corre en `src/index.ts` **antes de escuchar** y
+compara *esperado ⊆ real*. Una columna que el cliente Prisma nombra y la base no tiene **no es un
+aviso: es un `throw` que impide arrancar**.
+
+O sea: **mergear a `main` sin el `ALTER` aplicado tumba producción en el siguiente despliegue**,
+no rompe una ruta suelta. El código y el esquema no se pueden separar aquí porque el camino de
+firma escribe la columna: sin ella, el cliente final no puede aceptar su presupuesto.
+
+**Secuencia obligatoria:** ① `ALTER` en dev → ② en staging → ③ en producción (lo aplica el
+fundador) → ④ merge del PR. La sesión de SCRUM-805 **no ha aplicado nada en ninguna base**.

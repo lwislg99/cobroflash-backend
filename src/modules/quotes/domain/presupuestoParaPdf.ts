@@ -129,6 +129,9 @@ export function paramsDePresupuestoParaPdf(f: FuentesDelPresupuesto): ParamsComp
     // La firma sale de la FILA y no de la petición: cuando P2 llega aquí ya la ha escrito.
     signatureData: quote.signatureUrl ?? null,
     signedAt: quote.acceptedAt ?? null,
+    // SCRUM-805 · el sobre sellado al firmar. Null en todo lo firmado ANTES de este ticket, y su
+    // PDF sale exactamente como salía: el bloque sólo se pinta si hay `contentHash`.
+    evidencia: (quote.evidenciaFirma as any) ?? null,
     country: merchant.country ?? null,
     // SCRUM-647 · la resolución por PAÍS vive aquí y no dentro del documento: es la que miente en
     // Canarias (IGIC) y en Ceuta y Melilla (IPSI). Cuando SCRUM-646 traiga el territorio, se

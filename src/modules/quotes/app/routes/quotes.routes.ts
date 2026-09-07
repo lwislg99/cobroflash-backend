@@ -51,6 +51,10 @@ import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
+// SCRUM-805 · el sello del PRESUPUESTO. Canónico PROPIO: el del albarán no sella `total`,
+// `validUntil`, `paymentTerms` ni las cláusulas, que es justo lo que se discute.
+import { buildFirmaEvidenciaPresupuesto, contenidoDePresupuesto } from '../../domain/presupuestoSello';
+import { requestIp } from '../../../system/audit.service';
 
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-206b
 import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206b
@@ -520,6 +524,43 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         }
       }
 
+      // ── SCRUM-805 · QUÉ FIRMÓ EL CLIENTE ──────────────────────────────────────────────────
+      //
+      // 🔴 SE SELLA EL CONTENIDO **FINAL**, y el orden de estas líneas es la mitad del ticket.
+      // Esta misma ruta reescribe `total` y `lines` cuando el cliente elige un tramo (justo
+      // debajo), así que sellar la fila de ANTES certificaría el presupuesto que el cliente NO
+      // eligió. Es el mismo defecto que SCRUM-734 encontró en el PDF de esta ruta, un paso más
+      // abajo: allí el papel enseñaba el total viejo; aquí el sello lo certificaría.
+      //
+      // Va en el MISMO `update` que la firma: lo que se sella y lo que se guarda salen del mismo
+      // objeto y de la misma escritura. Dos escrituras dejarían una ventana en la que el
+      // documento está firmado y sin sellar (SCRUM-438).
+      //
+      // Sólo se sella SI HAY TRAZO. Una aceptación sin firma no es una firma, y `evidenciaFirma`
+      // es nullable justamente para eso: `null` significa «no se firmó» o «se firmó antes de que
+      // esto existiera», y ninguna de las dos es «firma inválida».
+      const evidenciaFirma = signatureData
+        ? buildFirmaEvidenciaPresupuesto({
+          contenido: contenidoDePresupuesto({
+            ...quote,
+            total: tierTotal ?? quote.total,
+            lines: selectedLines ?? quote.lines,
+          }),
+          contenidoCongelado: {
+            cliente: quote.customer?.legalName || quote.customer?.name || null,
+            emisor: quote.merchant?.legalName || quote.merchant?.name || null,
+            emisorNif: quote.merchant?.taxId || null,
+          },
+          canal: 'remoto',
+          ip: requestIp(req),
+          ua: (req.headers['user-agent'] as string) || null,
+          tokenId: quote.decisionToken,
+          // ⛔ EL RELOJ DEL SERVIDOR (`now`), nunca el del cliente. Una marca de tiempo que pone
+          // quien firma no es una marca de tiempo: es una afirmación suya.
+          firmadoAt: now,
+        })
+        : null;
+
       updatedQuote = await prisma.quote.update({
         where: { id: quote.id },
         data: {
@@ -530,6 +571,7 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
           rejectionReason: null,
           rejectedAt: null,
           ...(signatureData ? { signatureUrl: signatureData } : {}),
+          ...(evidenciaFirma ? { evidenciaFirma: evidenciaFirma as any } : {}),
           ...(tierId ? { selectedTierId: tierId } : {}),
           ...(tierTotal ? { total: tierTotal } : {}),
           ...(selectedLines ? { lines: selectedLines } : {}),
