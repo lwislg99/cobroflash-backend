@@ -1,10 +1,11 @@
 # SCRUM-780 · El formato `F260001` en la factura — por CORTE, jamás por migración
 
 **Fecha:** 7-sep-2026 · **Carril:** fiscal / documentos · **Gate:** sin gate — corre en `npm test`
-**Medido contra:** `origin/main` = `9c989bf0ef2faa3db33d00cd06601c1664aa54fe` · 2026-09-07T08:11:26+01:00
-**Tanda:** **5863 pruebas · 5761 en verde · 0 rojas · 102 saltadas** · 229,3 s · **salida real 0**
-(comprobada con el codigo de salida REAL de `npm test`, no con `| tail`, que devuelve el de
-`tail`: en la primera pasada eso habria leido **18 rojas como verde**)
+**Medido contra:** `origin/main` = `e8ae10697d61fef37f87156cc227eecae4a9a39d` · 2026-09-07T08:40:28+01:00
+Mezclado DENTRO de la rama (base de partida: `9c989bf0ef2faa3db33d00cd06601c1664aa54fe`).
+**Tanda (arbol YA MEZCLADO con main):** **5868 pruebas · 5766 en verde · 0 rojas · 102 saltadas** · 281,0 s · **salida real 0**
+(comprobada con el codigo de salida REAL de `npm test`, no con `| tail`, que devuelve el de `tail`:
+en la primera pasada eso habria leido **18 rojas como verde**)
 
 **Firmas del fundador (7-sep-2026), las tres:** «Se adopta el F260001 desde ya» · corte por fecha
 desde hoy, serie nueva que empieza en 0001 · **`invoiceSeriesPrefix` SE RETIRA** del número.
