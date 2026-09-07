@@ -610,3 +610,33 @@ El backend **ya lo acepta y lo devuelve** (Zod, los `select`, la normalización)
   «no juzgado», nunca como aprobado), y por eso lleva suelo de población.
 - **`normalizePhone` no se ha tocado**, y era tentador: tiene ~40 llamadores y **es el número al
   que se envía el WhatsApp**. Cambiar lo que devuelve cambia a dónde se manda un mensaje.
+
+---
+
+## A7 · CORRECCIÓN DEL 7-sep-2026 (misma sesión, más tarde): **DEV YA ESTÁ APLICADA**
+
+El §A2 de arriba dice «ninguna base ha sido tocada». **Eso dejó de ser cierto** cuando el fundador
+pidió expresamente aplicar la columna en desarrollo. No se borra la frase —era verdad cuando se
+escribió y el apéndice no se reescribe— pero **manda ésta**, que es posterior:
+
+| base | estado |
+| --- | --- |
+| **desarrollo** (`acela` / `yaqu_dev_javier`) | ✅ **APLICADA y VERIFICADA** leyendo `information_schema`: `mobile \| text \| YES`, 1 fila. El catálogo pasó de 25 a 26 columnas en `customers` |
+| **staging** (`acela` / `railway`) | ⏳ pendiente · la aplica el fundador |
+| **producción** (`autorack` / `railway`) | ⏳ pendiente · la aplica el fundador |
+
+Se aplicó con `scripts/aplicar-sql-dev.mjs --go`, que **sólo acepta `DATABASE_URL_DEV`** y se niega
+si la base no es `yaqu_dev_javier`; el destino se comprobó ANTES con `_db-guard.mjs`
+(`¿es el host de PRODUCCIÓN? NO` · `¿es la base de STAGING? NO` · `exigirDestinoCorrecto: CUADRA`).
+El detalle, con la medida de antes y de después y su control positivo, está en
+`docs/MIGRATIONS_PENDING.md`.
+
+⚠️ **Y una re-medición que contradice a `CLAUDE.md`, dicha porque su regla 3 pide re-fecharla:**
+ese fichero registra (10-ago-2026) que «los cuatro worktrees llevan `DATABASE_URL_STAGING`, `_DEV`
+y `_TESTS`». **En `cobroflash-b4`, el 7-sep-2026, sólo está `DATABASE_URL_DEV`**: las otras dos NO
+existen (`node scripts/comprobar-claves-bd.mjs` sale 1 por eso). `DATABASE_URL` tampoco, que es lo
+correcto. Para esta tarea era el estado más seguro posible —no había credencial de staging que
+tocar— pero el registro del máster está desfasado para este árbol y alguien debería re-fecharlo.
+
+**El PR sigue SIN SER MERGEABLE:** faltan staging y producción, y `schemaDrift` compara
+esperado ⊆ real — una columna de MENOS impide arrancar producción.
