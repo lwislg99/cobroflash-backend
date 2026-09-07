@@ -383,8 +383,13 @@ function renderCustomersView(container) {
   //
   // Lleva la MISMA casilla —tres estados incluidos— para no inventar un segundo control ni un
   // texto nuevo: marcarla selecciona lo visible, desmarcarla lo suelta.
-  const barraSeleccion = createElement("div");
-  barraSeleccion.style.cssText = "display:none;align-items:center;gap:10px;padding:10px 14px;"
+  // 🔴 SCRUM-792 · EL `display` SALE DE AQUÍ Y SE VA AL CSS, y no es cosmética: la decisión de si
+  // esta barra se ve con CERO seleccionados depende del ANCHO, y un ancho sólo se puede preguntar
+  // desde una `@media`. Un `style.display` en línea gana a cualquier regla, así que mientras
+  // viviera aquí la barra no podía comportarse distinto en móvil. Lo demás sigue en línea: sólo se
+  // muda lo que la media query necesita decidir.
+  const barraSeleccion = createElement("div", "barra-seleccion");
+  barraSeleccion.style.cssText = "align-items:center;gap:10px;padding:10px 14px;"
     + "border-top:1px solid var(--border);background:var(--neutral-50,#f8faf9)";
   const casillaTodosBarra = casillaConNombre(FC.TEXTOS_SELECCION.todos);
   const contadorSeleccion = document.createElement("span");
@@ -420,8 +425,22 @@ function renderCustomersView(container) {
       // profesional no puede saber si «todos» está puesto o no.
       cb.indeterminate = estado === FC.CABECERA_PARCIAL;
     }
-    contadorSeleccion.textContent = FC.textoDelContador(seleccion.length);
-    barraSeleccion.style.display = seleccion.length > 0 ? "flex" : "none";
+    // 🔴 SCRUM-792 · CON CERO, LA BARRA DICE «Seleccionar todos» EN VEZ DEL CONTADOR.
+    //
+    // No es un literal nuevo: es `FC.TEXTOS_SELECCION.todos`, el MISMO texto ya aprobado que esta
+    // casilla lleva hoy como `aria-label`. Hacer visible un texto que ya estaba en el control, y
+    // ya aprobado, es derivación — no invención (regla 30).
+    //
+    // «0 clientes seleccionados» sería una frase que hoy no ve nadie: con cero, la barra no se
+    // abre en escritorio, y en móvil no se abría en absoluto. Y en el móvil ese hueco es lo que
+    // el profesional necesita PULSAR, no un recuento de nada.
+    contadorSeleccion.textContent = seleccion.length > 0
+      ? FC.textoDelContador(seleccion.length)
+      : FC.TEXTOS_SELECCION.todos;
+    // 🔴 UNA CLASE, NO UN `data-`, Y NO ES UN ALMACÉN. La verdad sigue siendo `seleccion`; esto es
+    // su REFLEJO, se reescribe en cada refresco y NO SE LEE NUNCA (hay un test que lo exige). El
+    // `display` real lo decide `styles.css`, que es el único sitio que sabe de anchos.
+    barraSeleccion.classList.toggle("barra-seleccion--vacia", seleccion.length === 0);
   }
 
   function alternarTodos() {
