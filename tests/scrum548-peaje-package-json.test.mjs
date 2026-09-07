@@ -106,7 +106,28 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
     + '  suerte de un conflicto de merge; medidos, sobre la landing son cinco.\n'
     + `  Ahora mismo: ${JSON.stringify(s.solapes)}`);
 
-  assert.deepEqual(s.noResueltos, ['guard:contraste'],
+  // SCRUM-648 (fase B) · entra `guard:caja-semaforo`: sirve su página desde una ruta VIRTUAL
+  // (`/__caja-semaforo.html`), igual que `guard:caja-avisos`, así que el censo no puede derivar su
+  // destino de un fichero del árbol. Se declara para que ese hueco no se lea como «no solapa».
+  // Medido: no comparte página con ninguno — es la única que sirve esa ruta.
+  // SCRUM-776 · entra `guard:caja-documento-suelto`, por lo mismo: sirve DOS rutas virtuales
+  // (`/__caja-justificante.html` y `/__caja-factura.html`), una por modo, así que su destino
+  // tampoco sale de un fichero del árbol. Medido: no comparte página con ninguno.
+  // 🔴 SCRUM-791 · entra `guard:objetivo-tactil`, y ENTRA A MEDIAS, que es lo interesante: sigue
+  // midiendo `/` (la landing) con un `goto` literal —por eso sigue contando en el `5×/index.html`
+  // de arriba— pero sus DOS superficies nuevas del panel se sirven desde rutas virtuales elegidas
+  // EN UN BUCLE (`${PUERTO}${s.ruta}`), y de una variable no se deriva ningún destino.
+  //
+  // Este guard me cazó a mí: la entrada de SCRUM-791 decía que no hacía falta mirar el solape
+  // «porque no se añade un guard nuevo, se amplía uno». Era falso — ampliarlo cambió su destino.
+  //
+  // MEDIDO: las dos rutas nuevas (`/__quotes` y `/__jobdetail`) no las sirve ningún otro guard.
+  // SCRUM-795 · entra `guard:portal-en-la-ficha`. Su destino tampoco se deriva, y por el mismo
+  // motivo que los anteriores: sirve UNA página por caso desde un servidor propio, con la ruta
+  // construida a partir del nombre del caso (`${base}/${caso.nombre…}`). De una variable no sale
+  // ningún destino, así que su solape es INVISIBLE para este detector y se declara en vez de
+  // contarse como «no tiene». Lo que sí se sabe es que su página la fabrica él y no la comparte.
+  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo', 'guard:caja-documento-suelto', 'guard:portal-en-la-ficha', 'guard:caja-datos-del-cliente', 'guard:objetivo-tactil'],
     '🔴 ha cambiado el conjunto de guards cuyo destino NO se puede derivar. Se declaran para que\n'
     + '  su solape invisible no se lea como «no tiene».');
 });

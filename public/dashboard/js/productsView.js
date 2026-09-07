@@ -24,7 +24,83 @@
 // quien puede mapearlo, no quien está intentando cobrar.
 // ═══════════════════════════════════════════════════════════════════════════════════════
 
+// ⚠️ EL MARCADOR YA NO SE PINTA: se queda SÓLO como respaldo de ÚLTIMO RECURSO, para el caso en
+// que una llamada no traiga respaldo en castellano. Hoy las ocho lo traen, así que no es
+// alcanzable; se conserva porque una llamada nueva que lo olvide tiene que enseñar que falta un
+// texto, no una cadena vacía (`.alert:empty` no se pinta, y el error desaparecería en silencio).
+// Es el mismo reparto que el fichero gemelo `providersView.js` (SCRUM-644), que ya convive con un
+// texto aprobado en el mapa y el marcador aquí abajo. Criterio COPIADO, no inventado.
 const PV_MARCADOR_MICROCOPY = '[PENDIENTE microcopy oficial]';
+
+// ── SCRUM-641 · EL TEXTO DEL NOMBRE COGIDO ───────────────────────────────────────────────────
+//
+// ✅ APROBADO POR EL ASESOR el 4-sep-2026, PROVISIONAL a la espera de la firma del fundador.
+// El registro va en `docs/master/SCRUM-641.md` y NO en `docs/microcopy/`: ese directorio es el
+// registro del FUNDADOR y `constaAprobado()` lo barre (SCRUM-726), así que meter ahí la firma del
+// asesor la haría pasar por la suya.
+//
+// 🔴 DICE «YA TIENES» Y NO «ese nombre está en uso»: le dice al profesional que el choque es con
+// algo SUYO. Quien lee «en uso» se pregunta de quién es, y en un multi-tenant esa duda es peor
+// que el error.
+//
+// 🔴 NO LLEVA SALIDA («cambia el nombre»): se lee con el campo del nombre delante, así que la
+// salida es obvia y la frase sobraría. Precedente de la casa: un 409 que decía «no lo hemos
+// duplicado» y acababa mandando a crearlo otra vez.
+//
+// 🔴 NO MENCIONA LOS DESACTIVADOS aunque sean probablemente la causa frecuente: eso es SCRUM-631
+// y está esperando al fundador. No se explica algo que todavía no es verdad.
+//
+// LA CAJA, MEDIDA en el DOM renderizado (Playwright) antes de aprobarlo — 37 caracteres:
+//   · 929 px → útil 561 px (546 con barra de scroll): una línea, sobra el triple.
+//   · 390 px → útil 279 px CON barra de scroll: una línea, capacidad medida 45 caracteres.
+//   · 320 px → útil 224 px: dos líneas, y la página no scrollea en horizontal (SCRUM-469).
+//
+// ⚠️ SIN MARCADOR en pantalla, mismo criterio que `jobDetailView.js` (SCRUM-607) y
+// `filtroClientes.js` (SCRUM-582). Que no se pinte el corchete NO significa que esté firmado por
+// el fundador: eso lo dice `PV_SIN_APROBAR`, aquí abajo.
+const PV_NOMBRE_DUPLICADO = 'Ya tienes un producto con ese nombre.';
+
+// Cuántas ranuras estrena esta pantalla SIN la firma del fundador. UNA: el texto de arriba.
+//
+// Se queda aunque llegue a 0, por el motivo de `filtroClientes.js` y `quoteDireccionObra.js`: el
+// día que el traductor gane un segundo texto, ese texto nace sin firma y este número tiene que
+// subir. Borrarlo dejaría el hueco sin sitio donde declararse.
+
+// ── SCRUM-631 · EL NOMBRE COGIDO **AL REACTIVAR** ────────────────────────────────────────────
+//
+// 🔴 PENDIENTE DE FIRMA: LLEVA MARCADOR EN PANTALLA. No lo ha aprobado nadie todavia — ni el
+// asesor ni el fundador. Es la otra mitad del reparto que este fichero ya usa: SIN marcador =
+// aprobado por el asesor (PV_NOMBRE_DUPLICADO, arriba); CON marcador = sin aprobar por nadie.
+//
+// POR QUE NO VALE `PV_NOMBRE_DUPLICADO` AQUI. Aquel dice «Ya tienes un producto con ese nombre»
+// y se lee CON EL CAMPO DEL NOMBRE DELANTE, en un alta. Al pulsar «Activar» no hay campo que
+// cambiar y el choque es con OTRO producto que esta ACTIVO: el texto tiene que decir eso, o el
+// profesional lee un mensaje de alta sobre una accion que no es un alta.
+//
+// ⚠️ Y HOY NO PUEDE SALIR EN PANTALLA: reactivar solo choca cuando el nombre se ha liberado, y
+// eso exige el paso 2 de la opcion B, que espera al fundador. Nace marcado y sin camino que lo
+// pinte en produccion — que es exactamente como debe nacer un texto sin firmar.
+//
+// 🔴 LA CAJA: **NO MEDIDA**, y por eso este texto NO se puede aprobar todavia (regla 30).
+//
+// No es que no se haya intentado: el navegador de esta maquina NO ARRANCA. Y no es culpa del
+// medidor — control hecho: `scripts/guard-caja-avisos.mjs`, que es un guard de navegador que ya
+// existe y funciona en CI, falla EXACTAMENTE igual aqui («CORTADA EN proceso+ws» en 0,2-0,4 s,
+// tres intentos, salida 3). Edge esta instalado y se resuelve; lo que no levanta es el proceso.
+//
+// Asi que esto es NO MEDIDO, no «cabe». Mientras no haya caja medida a 929 y 390 px, el asesor
+// no puede firmarlo y el marcador se queda. Referencia para cuando se mida: el texto aprobado
+// de SCRUM-641 son 37 caracteres y a 390 px la capacidad medida fue 45; este candidato, SIN el
+// marcador, son 46 — o sea que esta JUSTO en el borde y por eso hay que verlo, no calcularlo.
+const PV_NOMBRE_ACTIVO_DUPLICADO =
+  PV_MARCADOR_MICROCOPY + ' Ya tienes otro producto activo con ese nombre.';
+
+/** El codigo del servidor, en UN solo sitio: lo usan el mapa de abajo y el camino de Activar. */
+const PV_COD_NOMBRE_DUPLICADO = 'name_duplicate';
+
+// Cuantas ranuras estrena esta pantalla SIN firma. DOS desde SCRUM-631: el texto de arriba
+// (aprobado por el asesor, pendiente del fundador) y el de reactivar (sin aprobar por nadie).
+const PV_SIN_APROBAR = 2;
 
 // Un identificador interno no lleva espacios ni mayúsculas: `name_duplicate`, `forbidden`,
 // `trial_expired`. Una frase escrita para una persona siempre lleva una de las dos cosas.
@@ -39,11 +115,11 @@ const PV_ES_IDENTIFICADOR = /^[a-z][a-z0-9_]*$/;
 function mensajeDeErrorCatalogo(codigoOMensaje, respaldo) {
   const bruto = String(codigoOMensaje == null ? '' : codigoOMensaje).trim();
 
-  // El que necesita decir algo DISTINTO del respaldo genérico. El marcador va con su palabra
-  // distintiva —no solo— porque es un control de varios lados: si todos los errores dijeran lo
-  // mismo, la pantalla perdería la distinción que este ticket viene a dar.
+  // El que necesita decir algo DISTINTO del respaldo genérico: es un control de varios lados —este
+  // caso frente a todos los demás, que caen a su respaldo en castellano—, así que si todos los
+  // errores dijeran lo mismo la pantalla perdería la distinción que este ticket vino a dar.
   const M = {
-    name_duplicate: PV_MARCADOR_MICROCOPY + ' nombre ya en uso',
+    [PV_COD_NOMBRE_DUPLICADO]: PV_NOMBRE_DUPLICADO,
   };
   if (M[bruto]) return M[bruto];
 
@@ -56,6 +132,9 @@ function mensajeDeErrorCatalogo(codigoOMensaje, respaldo) {
 if (typeof window !== 'undefined') {
   window.mensajeDeErrorCatalogo = mensajeDeErrorCatalogo;
   window.PV_MARCADOR_MICROCOPY = PV_MARCADOR_MICROCOPY;
+  window.PV_NOMBRE_DUPLICADO = PV_NOMBRE_DUPLICADO;
+  window.PV_NOMBRE_ACTIVO_DUPLICADO = PV_NOMBRE_ACTIVO_DUPLICADO;
+  window.PV_SIN_APROBAR = PV_SIN_APROBAR;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════════════
@@ -292,6 +371,10 @@ function renderProductsView(container) {
 
         function openEditModal(it) {
           if (!editOverlay) editOverlay = buildEditModal();
+          // SCRUM-785 · al cerrarse se DESCUELGA del `body` (ver `closeEditModal`), así que al
+          // reabrir hay que volver a colgarlo. Se reengancha el MISMO nodo: sus campos y sus
+          // oyentes siguen cableados desde `buildEditModal`, que sólo corre una vez.
+          else if (!editOverlay.parentNode) document.body.appendChild(editOverlay);
           _editing = { merchantId: _merchantId, id: it.id };
 
           const body = editOverlay.querySelector('.modal-body');
@@ -302,6 +385,10 @@ function renderProductsView(container) {
           // hay margen que enseñar, y el campo se queda vacío — que es «no se sabe», no 0.
           const mg = window.margenCatalogo.margenDesde(it.cost, it.price);
           body.querySelector('[name="margen"]').value = mg === null ? '' : String(mg);
+          // SCRUM-764 · al ABRIR. `cablearMargen` sólo pinta cuando alguien teclea, y aquí el
+          // valor lo escribe la vista: sin esta línea, el artículo que ya está por debajo del
+          // coste se abriría en negro y no se enseñaría hasta tocar un campo.
+          pintarMargen(body.querySelector('[name="margen"]'));
           body.querySelector('[name="description"]').value = it.description || '';
 
           // SCRUM-609 · EL LADO GUARDADO MANDA AL ABRIR, y esto es lo que hace que el switch
@@ -332,7 +419,21 @@ function renderProductsView(container) {
         }
 
         function closeEditModal() {
-          if (editOverlay) editOverlay.style.display = 'none';
+          if (editOverlay) {
+            editOverlay.style.display = 'none';
+            // 🔴 SCRUM-785 · Y SE DESCUELGA DEL BODY. Esconderlo dejaba el nodo colgado para
+            // siempre, y eso apaga el botón flotante de ayuda: `styles.css` tiene
+            // `body:has(.modal-overlay) #tut-help-btn { display:none !important }`, y `:has()` es
+            // ESTRUCTURAL — mira si el nodo EXISTE, no si se ve. Medido en Edge: con el residuo el
+            // «?» computa `display:none` y caja 0×0; al borrarlo vuelve a `inline-block` 9,98×21.
+            //
+            // El atajo «N» ya no sufría por esto —SCRUM-777 hizo que la pieza mire visibilidad—,
+            // pero esta segunda víctima NO pasa por la pieza: es CSS. Por eso el arreglo es aquí.
+            //
+            // ⚠️ SE DESCUELGA, NO SE DESTRUYE: `openEditModal` reutiliza este mismo nodo y lo
+            // vuelve a colgar. `remove()` sólo lo separa del árbol.
+            if (typeof editOverlay.remove === 'function') editOverlay.remove();
+          }
           _editing = null;
         }
     
@@ -424,10 +525,42 @@ function renderProductsView(container) {
         }, cambiado);
         if (r.precio !== null && cambiado !== 'precio') campoPrecio.value = String(r.precio);
         if (r.margen !== null && cambiado !== 'margen') campoMargen.value = String(r.margen);
+        // 🔴 SIEMPRE, y también cuando no se ha escrito nada: si sólo se pintara al escribir, un
+        // margen que pasa a positivo se quedaría en rojo para siempre.
+        pintarMargen(campoMargen);
       };
       campoCoste.addEventListener('input', () => aplicar('coste'));
       campoPrecio.addEventListener('input', () => aplicar('precio'));
+      // 🔴 También cuando el margen lo teclea el profesional. `aplicar('margen')` NO reescribe
+      // ese campo —pisarle lo que está tecleando es el defecto que evita la línea de arriba—,
+      // así que sin este `input` un «-50» escrito a mano no se pintaría.
       campoMargen.addEventListener('input', () => aplicar('margen'));
+    }
+
+    /**
+     * SCRUM-764 · QUE EL MARGEN NEGATIVO SE VEA.
+     *
+     * `margenDesde(150, 100)` devuelve **−50** y hasta hoy la ficha lo enseñaba con la misma tinta
+     * que un 30 %: mismo color, mismo borde, mismo fondo (medido en navegador). El profesional
+     * firma un presupuesto perdiendo dinero y se entera al facturar.
+     *
+     * 🔴 SE AVISA, NO SE IMPIDE. Vender por debajo del coste es una decisión legítima —una oferta
+     * gancho, un trabajo que se quiere ganar— y rechazarlo dejaría catálogos reales sin poder
+     * guardarse. Es un ÁMBAR, no un rojo irreversible: se avisa, no se bloquea.
+     *
+     * 🔴 Y EL TRATAMIENTO NO SE INVENTA AQUÍ: es el que el producto YA aplica al margen del
+     * trabajo en `quotesDetailView.js` (`data.margin >= 0 ? var(--brand) : var(--red-600)`, con
+     * `--red-50` de fondo). Esto no estrena una política: pone al catálogo de acuerdo con una que
+     * ya está en producción. Por eso no hace falta ni un texto nuevo — sólo color (regla 30).
+     *
+     * La regla de QUÉ es «bajo coste» no vive aquí: está en `margenCatalogo.bajoCoste`, con la
+     * aritmética y con su test, para que dos pantallas no puedan decidirlo distinto.
+     */
+    const MARGEN_BAJO_COSTE = 'catalogo-margen--bajo-coste';
+    function pintarMargen(campoMargen) {
+      if (!campoMargen) return;
+      campoMargen.classList.toggle(
+        MARGEN_BAJO_COSTE, window.margenCatalogo.bajoCoste(campoMargen.value));
     }
     const costI = form.querySelector('input[name="cost"]');
     const providerSelect = form.querySelector('select[name="providerId"]');
@@ -437,6 +570,23 @@ function renderProductsView(container) {
     // y con null se ven todos los campos (invariante de CONT-01). Preseleccionar Producto
     // aqui declararia por el profesional en cada alta, que es lo que la columna nullable evita.
     const altaSwitch = cablearTipoArticulo(form, form.querySelector('.quote-form-row'), null);
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    // 🔴 ESTA PANTALLA **NO** LLEVA EL ATAJO «N», Y NO ES UN HUECO. Decisión del fundador,
+    // 6-sep-2026 (SCRUM-769), con estas palabras:
+    //
+    //     «Colgar N de un botón que confirma es atar una tecla a un guardado. N abre, no guarda.»
+    //
+    // El motivo, medido antes de decidirlo: aquí NO hay un botón que ABRA un alta. El formulario
+    // está SIEMPRE visible y este botón es su ENVÍO — lee los campos y crea. `atajoNuevo.registrar`
+    // ata la tecla a `boton.click()`, así que la «N» intentaría crear con lo que hubiera escrito;
+    // con el formulario vacío, dispararía un error en la cara del profesional.
+    //
+    // Por lo mismo, su RÓTULO tampoco se toca: «Nuevo producto» es lo que se lee para ABRIR un
+    // alta, y aquí rotularía el botón que la CONFIRMA.
+    //
+    // ⛔ Si vienes a «arreglar el hueco»: no lo es. Lo que haría falta primero es un botón que
+    //    abra el alta; entonces el atajo tendría a qué colgarse. Ver `docs/master/SCRUM-769.md`.
+    // ═══════════════════════════════════════════════════════════════════════════════════════
     const createBtn = form.querySelector("#pf-create-product");
   
     // --- table ---
@@ -643,7 +793,14 @@ function renderProductsView(container) {
             setAlert("success", "Estado actualizado.");
             await refresh();
           } catch (e) {
-            setAlert("error", mensajeDeErrorCatalogo(e && e.message, "Error actualizando estado."));
+            // SCRUM-631 · El cliente SABE que estaba ACTIVANDO, asi que puede elegir el texto sin
+            // que el servidor invente un codigo nuevo (regla 27). El 409 es el mismo `name_duplicate`
+            // del alta; lo que cambia es la accion que lo provoco, y por eso cambia la frase.
+            const activando = !it.isActive;
+            const codigo = String((e && e.message) == null ? "" : e.message).trim();
+            setAlert("error", activando && codigo === PV_COD_NOMBRE_DUPLICADO
+              ? PV_NOMBRE_ACTIVO_DUPLICADO
+              : mensajeDeErrorCatalogo(e && e.message, "Error actualizando estado."));
           }
         });
   
@@ -822,6 +979,9 @@ function renderProductsView(container) {
         priceI.value = "";
         margenI.value = "";
         costI.value = "";
+        // SCRUM-764 · vaciar el campo no le quita la clase: sin esto, el formulario recién
+        // limpiado se queda en rojo para el alta siguiente, avisando de un margen que ya no hay.
+        pintarMargen(margenI);
         if (providerSelect) providerSelect.value = "";
         descI.value = "";
   

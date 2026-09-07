@@ -39,6 +39,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import { bocasDeEmision, desprotegidas } from './_bocas-de-emision.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(RAIZ, 'src');
@@ -49,6 +50,9 @@ const EMBUDO = 'allocateInvoiceNumber';
 // a `applyVeriFactu`, y que nadie lo puentee lo garantiza aparte
 // `tests/scrum205-un-solo-punto-de-sellado.test.mjs`, que solo deja sellar a `selladoEstado.ts`.
 const SELLADORA = 'sellarTrasEmision';
+
+/** Trinquete SCRUM-778: llamadas a `emitInvoice` medidas el 6-sep-2026. No puede bajar. */
+const MINIMO_LLAMADORES_DE_EMIT = 4;
 
 /**
  * ÚNICA exención, declarada y COMPROBADA abajo en vez de supuesta.
@@ -62,10 +66,8 @@ const DELEGA = {
     'emitInvoice recibe la transacción y no la posee: sellar aquí sería sellar dentro de la tx '
     + 'del llamador. Delega, y sus DOS llamadores se comprueban en el test siguiente.',
 };
-const LLAMADORES_DE_EMIT = [
-  'src/modules/jobs/app/routes/albaranes.routes.ts',
-  'src/modules/jobs/domain/recapitulativa.service.ts',
-];
+// 🔴 SCRUM-778 · aquí había una lista CABLEADA de dos ficheros y el árbol tiene tres, y
+// comprobaba POR FICHERO. La población se deriva ahora con `bocasDeEmision()`.
 
 const rel = (p) => path.relative(RAIZ, p).split(path.sep).join('/');
 
@@ -161,17 +163,25 @@ test('SCRUM-206b · toda emisión sella (o delega, y se dice en quién)', () => 
 });
 
 test('SCRUM-206b · los llamadores de `emitInvoice` sellan (la delegación no es un agujero)', () => {
-  for (const r of LLAMADORES_DE_EMIT) {
-    const abs = path.join(RAIZ, r);
-    assert.ok(fs.existsSync(abs), `🔴 ESCÁNER CIEGO: no encuentro ${r} — ¿se movió el llamador?`);
-    assert.ok(
-      llamaEnElFichero(SELLADORA, abs),
-      `🔴 ${r} llama a \`emitInvoice\` y NO sella.\n\n` +
-        '  `emitInvoice` está exento PORQUE delega en sus llamadores. Si un llamador deja de\n' +
-        '  sellar, la exención pasa de justificada a falsa y la emisión queda huérfana sin que\n' +
-        '  nada lo diga — que es peor que no haber tenido exención.',
-    );
-  }
+  // SCRUM-778: población DERIVADA del árbol y comprobada POR LLAMADA. `cuando: 'despues'` porque
+  // el sellado va después del commit — el punto único de SCRUM-205.
+  const bocas = bocasDeEmision({ raiz: RAIZ, porton: SELLADORA, cuando: 'despues' })
+    .filter((b) => b.tipo === 'emisor');
+
+  assert.ok(bocas.length >= MINIMO_LLAMADORES_DE_EMIT,
+    `🔴 ESCÁNER CIEGO: ${bocas.length} llamadas a \`emitInvoice\` y se midieron `
+    + `${MINIMO_LLAMADORES_DE_EMIT} el 6-sep-2026. Si el censo encoge, deja de vigilar en silencio.`);
+
+  const fuera = desprotegidas(bocas);
+  assert.deepEqual(
+    fuera, [],
+    '🔴 HAY UNA LLAMADA A `emitInvoice` QUE NO SELLA:\n    · ' + fuera.join('\n    · ')
+      + '\n\n  `emitInvoice` está exento PORQUE delega en sus llamadores. Si un llamador deja de\n'
+      + '  sellar, la exención pasa de justificada a falsa y la emisión queda huérfana sin que\n'
+      + '  nada lo diga — que es peor que no haber tenido exención.\n\n'
+      + '  Se comprueba POR LLAMADA: un fichero con dos bocas no queda cubierto porque UNA de las\n'
+      + '  dos selle (SCRUM-778).',
+  );
 });
 
 test('SCRUM-206b (autoprueba) · el escáner ve una emisión sin sellar, y no confunde la buena', () => {

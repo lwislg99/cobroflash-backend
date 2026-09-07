@@ -28,6 +28,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { extraerTextoPdf, vecesEnPdf } from './_texto-del-pdf.mjs';
+// SCRUM-734 · las claves que produce el constructor unico de los params del presupuesto.
+import { clavesDelConstructor } from './_puertas-del-presupuesto.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -208,7 +210,24 @@ test('SCRUM-647 · 🔴 TODOS los llamantes pasan el impuesto, o Perú regresa e
   assert.ok(llamadas.length >= 3,
     `🔴 CIEGO: sólo veo ${llamadas.length} llamadas a generateQuotePdf y eran TRES.`);
 
-  const sinImpuesto = llamadas.filter((c) => !/taxName\s*:/.test(c.trozo)).map((c) => c.rel);
+  // 🔴 SCRUM-734 · UNA LLAMADA QUE DELEGA SÍ PASA EL IMPUESTO, aunque no escriba `taxName`.
+  //
+  // Las tres puertas dejaron de armar su objeto y le piden la carga entera a
+  // `paramsDePresupuestoParaPdf`, que es quien resuelve `getLocale(merchant.country).vatName`. Este
+  // guard cayó en rojo el día del cambio, y ésa era la señal correcta: su modelo —buscar el texto
+  // dentro de la llamada— dejó de valer. Se le devuelve la PREGUNTA, no el verde.
+  //
+  // Y delegar no se da por bueno a ciegas: primero se comprueba que el constructor SIGUE
+  // produciendo `taxName`. Si dejara de hacerlo, las tres puertas perderían el impuesto a la vez y
+  // esta línea es la única que lo vería.
+  const delConstructor = clavesDelConstructor();
+  assert.ok(delConstructor.includes('taxName'),
+    '🔴 el constructor único de los params del presupuesto ya NO produce `taxName`. Delegar en él '
+    + 'dejaría de pasar el impuesto por las TRES puertas a la vez, y un merchant peruano volvería a '
+    + 'ver «IVA» en su presupuesto sin que nada fallara.');
+  const sinImpuesto = llamadas
+    .filter((c) => !/taxName\s*:/.test(c.trozo) && !/paramsDePresupuestoParaPdf\s*\(/.test(c.trozo))
+    .map((c) => c.rel);
   assert.deepEqual(sinImpuesto, [],
     '🔴 UNA LLAMADA NO PASA EL NOMBRE DEL IMPUESTO:\n' + sinImpuesto.map((r) => '   · ' + r).join('\n')
     + '\n\n  El documento ya no lo resuelve por país (a propósito: eso miente en Canarias), así\n'

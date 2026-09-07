@@ -18,12 +18,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import { bocasDeEmision, desprotegidas } from './_bocas-de-emision.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(RAIZ, 'src');
 
 const EMBUDO = 'allocateInvoiceNumber';
 const PORTON = 'exigirLineasFacturables';
+
+/** Trinquete: llamadas a `emitInvoice` medidas el 6-sep-2026. No puede bajar sin anotarlo. */
+const MINIMO_LLAMADORES_DE_EMIT = 4;
 
 /**
  * ÚNICA exención, y se comprueba abajo en vez de suponerse.
@@ -36,10 +40,15 @@ const DELEGA = {
     'emitInvoice es el helper compartido: sus DOS llamadores comprueban las líneas antes de '
     + 'llamarlo, y eso se verifica en el test siguiente.',
 };
-const LLAMADORES_DE_EMIT = [
-  'src/modules/jobs/app/routes/albaranes.routes.ts',
-  'src/modules/jobs/domain/recapitulativa.service.ts',
-];
+// 🔴 SCRUM-778 · AQUÍ HABÍA UNA LISTA CABLEADA DE DOS FICHEROS, Y EL ÁRBOL TIENE TRES.
+//
+// `invoicesAdmin.routes.ts` (la boca de la factura suelta) entró después y esta lista no creció.
+// Peor: comprobaba POR FICHERO —«¿aparece el portón en algún sitio?»—, así que un fichero con dos
+// bocas pasaba teniendo UNA protegida, y `albaranes.routes.ts` tiene dos.
+//
+// Provocado el 6-sep-2026 con una TERCERA llamada a `emitInvoice` sin portón en ese mismo
+// fichero: este test pasaba en verde, 6/6. La población se deriva ahora del árbol y se comprueba
+// POR LLAMADA — ver `tests/_bocas-de-emision.mjs` y `tests/scrum778-la-lista-cableada.test.mjs`.
 
 const rel = (p) => path.relative(RAIZ, p).split(path.sep).join('/');
 const fuentes = (d, out = []) => {
@@ -110,14 +119,14 @@ test('SCRUM-246 · ninguna emisión pide número sin comprobar que hay algo que 
       'Si el embudo cambió de nombre, este guard dejó de vigilar y su verde no significa nada.',
   );
 
-  const desprotegidas = todas
+  const sinPorton = todas
     .filter((e) => !e.protegida && !DELEGA[e.fichero])
     .map((e) => `${e.fichero}:${e.linea}`);
 
   assert.deepEqual(
-    desprotegidas, [],
+    sinPorton, [],
     '🔴 HAY UNA EMISIÓN QUE PIDE NÚMERO SIN COMPROBAR LAS LÍNEAS:\n' +
-      desprotegidas.map((s) => `    ${s}`).join('\n') +
+      sinPorton.map((s) => `    ${s}`).join('\n') +
       '\n\n  Una factura fiscal sin líneas con importe NO se puede sellar (`applyVeriFactu` la\n' +
       '  rechaza) y desde SCRUM-205 tampoco produce documento. Si el número ya se ha consumido\n' +
       `  cuando eso se descubre, las dos salidas son malas: modificar una factura numerada, o\n` +
@@ -127,18 +136,26 @@ test('SCRUM-246 · ninguna emisión pide número sin comprobar que hay algo que 
 });
 
 test('SCRUM-246 · los llamadores de `emitInvoice` comprueban (la delegación no es un agujero)', () => {
-  for (const r of LLAMADORES_DE_EMIT) {
-    const abs = path.join(RAIZ, r);
-    assert.ok(fs.existsSync(abs), `🔴 ESCÁNER CIEGO: no encuentro ${r}`);
-    const arbol = ts.createSourceFile(abs, fs.readFileSync(abs, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-    assert.ok(
-      posicionDe(arbol, PORTON) !== null,
-      `🔴 ${r} llama a \`emitInvoice\` y NO comprueba las líneas.\n\n` +
-        '  `emitInvoice` está exento PORQUE delega: recibe la transacción y no ve las líneas antes\n' +
-        '  que su llamador. Si un llamador deja de comprobar, la exención pasa de justificada a\n' +
-        '  falsa y no hay nada que lo diga.',
-    );
-  }
+  // SCRUM-778: población DERIVADA del árbol y comprobada POR LLAMADA, no por fichero.
+  const bocas = bocasDeEmision({ raiz: RAIZ, porton: PORTON, cuando: 'antes' })
+    .filter((b) => b.tipo === 'emisor');
+
+  // SUELO: cero llamadores se lee igual que «todos comprueban». Y no puede encoger.
+  assert.ok(bocas.length >= MINIMO_LLAMADORES_DE_EMIT,
+    `🔴 ESCÁNER CIEGO: ${bocas.length} llamadas a \`emitInvoice\` y se midieron `
+    + `${MINIMO_LLAMADORES_DE_EMIT} el 6-sep-2026. O el emisor cambió de nombre, o el barrido no `
+    + 'está llegando a `src/` — y en los dos casos su verde no significa nada.');
+
+  const fuera = desprotegidas(bocas);
+  assert.deepEqual(
+    fuera, [],
+    '🔴 HAY UNA LLAMADA A `emitInvoice` QUE NO COMPRUEBA LAS LÍNEAS:\n    · ' + fuera.join('\n    · ')
+      + '\n\n  `emitInvoice` está exento PORQUE delega: recibe la transacción y no ve las líneas\n'
+      + '  antes que su llamador. Si un llamador deja de comprobar, la exención pasa de\n'
+      + '  justificada a falsa y no hay nada que lo diga.\n\n'
+      + `  Se comprueba POR LLAMADA: un fichero con dos bocas no queda cubierto porque UNA de las\n`
+      + '  dos llame al portón (SCRUM-778).',
+  );
 });
 
 // ── la regla en sí, ejercitada ────────────────────────────────────────────────────────────

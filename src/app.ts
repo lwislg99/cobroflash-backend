@@ -651,8 +651,16 @@ app.get('/admin/merchant', async (req, res, next) => {
     // id/nombre/moneda/logo; lo fiscal y bancario (NIF, IBAN, CLABE, serie,
     // umbral de aprobación, prefs de email, reseñas) es solo del admin.
     if (req.userRole !== 'admin') {
-      const { id, name, legalName, trade, defaultCurrency, logoUrl, whatsappPhone, country, brandColor, brandAccentColor } = merchant;
-      return res.json({ id, name, legalName, trade, defaultCurrency, logoUrl, whatsappPhone, country, brandColor, brandAccentColor });
+      // 🔴 SCRUM-633 · `timezone` ENTRA TAMBIÉN AQUÍ, y no es un descuido de alcance.
+      //
+      // Un técnico CREA presupuestos, así que necesita saber en qué calendario vive el negocio:
+      // sin la zona vería una caducidad distinta de la que rige el documento. Negársela sería
+      // crear el defecto que este ticket viene a cerrar, sólo que para un rol.
+      //
+      // Es dato de CALENDARIO, no fiscal ni bancario: no abre la puerta que esta rama protege
+      // (NIF, IBAN, CLABE, serie, umbral de aprobación). Decisión del asesor, 4-sep-2026.
+      const { id, name, legalName, trade, defaultCurrency, logoUrl, whatsappPhone, country, brandColor, brandAccentColor, timezone } = merchant;
+      return res.json({ id, name, legalName, trade, defaultCurrency, logoUrl, whatsappPhone, country, brandColor, brandAccentColor, timezone });
     }
     // A14.1: estado EFECTIVO del flag del perfil público (merchant > env > default)
     // para que Configuración pinte "activa/aún no activa" sin duplicar la lógica.

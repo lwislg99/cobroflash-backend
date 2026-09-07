@@ -262,3 +262,52 @@ test('SCRUM-582 · CONTROL NEGATIVO: la vista NO repite los textos, los lee de l
   assert.match(codigo, /FC\.TEXTOS_SELECCION\.todos/,
     '🔴 la vista ya no lee el texto de la pieza.');
 });
+
+test('SCRUM-582 · 🔴 tras REPINTAR, la casilla de cada fila REFLEJA la selección', async () => {
+  // 🔴 POR QUÉ ESTE TEST ENTRA HOY (6-sep-2026), en un ticket que ya estaba entregado.
+  //
+  // Se le inyectó a la vista este defecto —una sola línea—:
+  //
+  //     -  casillaFila.checked = FC.estaMarcado(seleccion, c.id);
+  //     +  casillaFila.checked = false;
+  //
+  // …y los CATORCE tests siguieron en VERDE. O sea que «la casilla de fila refleja el estado de
+  // la selección» era un requisito del ticket SIN GUARD: el mecanismo se podía romper entero y la
+  // tanda no se enteraba.
+  //
+  // No lo cazaba ninguno porque los que miran la pantalla la miran RECIÉN MONTADA, y con la
+  // selección vacía «todas desmarcadas» es indistinguible de «no reflejo nada». Hay que REPINTAR
+  // con una selección no vacía, y el camino del producto para eso es la casilla de cabecera.
+  const { r } = await listaMontada();
+  assert.equal(r.error, null, `🔴 la lista no se monta: ${r.error && r.error.message}`);
+
+  const antes = casillasDeFila(r.contenedor);
+  assert.equal(antes.length, CLIENTES.length,
+    `🔴 CIEGO: ${antes.length} casillas de fila; esperaba ${CLIENTES.length}.`);
+  assert.equal(antes.filter((c) => c.checked).length, 0,
+    '🔴 la lista NACE con filas marcadas: el estado de partida ya no es el de siempre.');
+
+  const cabecera = casillas(r.contenedor)
+    .find((c) => c.getAttribute('aria-label') === FC.TEXTOS_SELECCION.todos && !c.dataset.columna);
+  assert.ok(cabecera, '🔴 CIEGO: no encuentro la casilla de «seleccionar todos».');
+
+  cabecera.checked = true;
+  cabecera.disparar('change');
+
+  // Tras el repintado, las filas tienen que venir MARCADAS. Es lo único que distingue «la casilla
+  // lee la selección» de «la casilla nace apagada y nadie la mira».
+  const despues = casillasDeFila(r.contenedor);
+  assert.equal(despues.length, CLIENTES.length,
+    `🔴 tras seleccionar todo hay ${despues.length} casillas de fila: el repintado ha perdido filas.`);
+  assert.equal(despues.filter((c) => c.checked).length, CLIENTES.length,
+    `🔴 tras «seleccionar todos» sólo ${despues.filter((c) => c.checked).length} de `
+    + `${CLIENTES.length} casillas salen marcadas. La casilla de la fila NO está leyendo la `
+    + 'selección: el profesional marca y no ve lo que ha marcado.');
+
+  // Y CONTROL POSITIVO DEL PROPIO TEST: desmarcar tiene que volver a apagarlas. Sin esto, un
+  // `checked = true` fijo pasaría este test igual de bien que el código correcto.
+  cabecera.checked = false;
+  cabecera.disparar('change');
+  assert.equal(casillasDeFila(r.contenedor).filter((c) => c.checked).length, 0,
+    '🔴 al soltar la selección las casillas siguen marcadas: reflejan un `true` fijo, no el estado.');
+});

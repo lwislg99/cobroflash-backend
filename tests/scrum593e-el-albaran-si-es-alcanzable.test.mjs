@@ -147,7 +147,17 @@ test('SCRUM-593e · 🔴 viaja en el POST (crear) — la capa que se olvidó al 
   // montarlo la primera vez, y el editor daba verde igual porque el editor SÍ lo mandaba.
   const i = src.indexOf('onGuardar: async ({');
   assert.notEqual(i, -1, '🔴 CIEGO: no encuentro el receptor de `onGuardar`.');
-  const receptor = src.slice(i, i + 900);
+  // 🔴 RE-ANCLADO el 4-sep-2026 (SCRUM-607), y no es cosmética: el recorte era `i + 900`, o sea
+  // una VENTANA DE BYTES. Al meter otro campo en el mismo receptor —el interruptor de los precios
+  // del albarán— el `cuerpo.docHeaderText` se salió de los 900 y este guard se puso rojo sin que
+  // nada de lo que vigila hubiera cambiado. Referenciar por POSICIÓN caduca; por IDENTIDAD no
+  // (SCRUM-710). Ahora el recorte va del receptor a su CIERRE, así que crece con él.
+  const fin = src.indexOf('\n      },', i);
+  assert.notEqual(fin, -1, '🔴 CIEGO: no encuentro el final del receptor de `onGuardar`.');
+  const receptor = src.slice(i, fin);
+  assert.ok(receptor.length > 300,
+    `🔴 CIEGO: el receptor recortado mide ${receptor.length} caracteres. Con tan poco, cualquier `
+    + '«no está» de abajo sería cierto por falta de texto donde mirar.');
   assert.match(receptor, /onGuardar: async \(\{[^}]*docHeaderText[^}]*\}\)/,
     '🔴 el receptor de `onGuardar` NO desestructura `docHeaderText`: el campo se pinta, se lee, se '
     + 'manda... y muere aquí, en silencio. Es «construido ≠ alcanzable» una capa más abajo.');

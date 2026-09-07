@@ -21,6 +21,35 @@
 > ⚠️ Y hay una trampa más, de nombres: la base de STAGING vive dentro de un entorno de Railway
 > llamado **«production»**. **El nombre del entorno miente.** Guíate por host + nombre de base.
 
+> ## 🔴 ESTE LOG **NO CUBRE LAS MIGRACIONES DE DATOS** — SCRUM-758 (6-sep-2026)
+>
+> Y no por descuido: **por diseño del aplicador**. `scripts/aplicar-sql-dev.mjs` sólo ejecuta la
+> **lista blanca** de formas aditivas de `_clasificador-sql.mjs` —`ADD COLUMN`, `CREATE INDEX`,
+> `CREATE TABLE`, `CREATE TYPE`, `ALTER TYPE ADD VALUE`, `COMMENT ON`— y **rechaza por defecto**
+> todo lo que no reconozca. El DML entra ahí: **no está en la lista blanca y no va a estarlo**,
+> porque esa lista existe para que un `DROP` no pase.
+>
+> **Medido ejecutando el clasificador sobre el árbol** (SCRUM-758), no razonado:
+>
+> | fichero | veredicto del aplicador |
+> |---|---|
+> | `docs/sql/scrum-425-clave-idempotencia.sql` (DDL puro) | `ok: true` — `ADD COLUMN` + `CREATE INDEX` permitidos |
+> | `docs/sql/scrum-650-paso-c-backfill.sql` (`INSERT … SELECT`) | **RECHAZADA** — «forma no reconocida» |
+> | `prisma/backfill/scrum609-item-kind.sql` (`ADD COLUMN` + `UPDATE`) | `ADD COLUMN` permitido · **el `UPDATE` RECHAZADO** |
+>
+> **Consecuencia, y es lo que este aviso existe para decir:** toda migración que cambie DATOS se
+> aplica **por otra vía** —un `.mjs` con su propio cliente, o a mano en la consola— y esa vía **no
+> pasa por el aplicador que escribe aquí**. *No es un olvido: es que el camino no tiene por dónde
+> apuntarlas.*
+>
+> **Qué significa para quien lea este fichero:** que esté completo sobre ESTRUCTURA no dice nada
+> sobre DATOS. Una base reconstruida siguiendo sólo este log tendría las columnas y **no** los
+> backfills, y el esquema cuadraría: `schemaDrift` no ve filas, sólo tablas y columnas.
+>
+> **Dónde están las de datos, censadas sin lista cableada:** `node scripts/censo-migraciones.mjs`.
+> Viven en TRES idiomas —`.sql`, llamadas de Prisma, y `cliente.query(sql)` con `pg` en crudo—, así
+> que buscarlas en uno solo las subestima.
+
 > ## ⛔ ESTE FICHERO YA NO CONTESTA «¿existe esa columna en esa base?» — SCRUM-225
 >
 > Lo contestaba **a mano**, y una lista a mano se desfasa en silencio. Sus dos direcciones de
@@ -324,6 +353,99 @@ un índice ausente no rompe ninguna consulta, solo la degrada cuando la tabla cr
 * **La ausencia en un reflog no prueba que algo no se hiciera aquí**: un rebase reescribe el SHA y
   rompe el enlace. Por eso ① lleva su control de sensibilidad (47/50) y no se apoya en el silencio.
 
+## SCRUM-609 (CAT-01) · `products.item_kind` — ✅ COLUMNA APLICADA en las TRES bases · ✋ backfill SIN VERIFICAR en producción (2-sep-2026 · registrado el 5-sep-2026)
+
+**REGISTRO TARDÍO, y el retraso es parte del registro.** El `ALTER` se aplicó el **2-sep-2026** y el
+PR con el esquema mergeó ese mismo día. **Este fichero no se tocó**, así que durante tres días una
+migración aplicada en las tres bases —producción incluida— no constaba en el log de `db push`.
+Lo escribe el 5-sep-2026 la sesión que lo detectó, **no** la que lo aplicó: todo lo que va abajo
+sobre dev y staging es **lo que aquella sesión declaró**, y se marca como tal.
+
+```sql
+-- prisma/backfill/scrum609-item-kind.sql
+ALTER TABLE "products" ADD COLUMN "item_kind" TEXT;
+UPDATE "products" SET "item_kind" = 'PRODUCTO' WHERE "item_kind" IS NULL;
+```
+
+Fichero: **`prisma/backfill/scrum609-item-kind.sql`** (no en `docs/sql/`, a diferencia del resto).
+Aditivo, nullable y **sin `DEFAULT`**, por el mismo motivo que `customers.contact_kind` de CONT-01:
+un `DEFAULT` convertiría cada fila futura en «declarada» sin que nadie lo haya dicho. NULL = sin
+clasificar, y el switch no preselecciona ningún lado. El `WHERE item_kind IS NULL` lo hace
+re-ejecutable sin pisar nada ya declarado.
+
+### Las dos afirmaciones de esta entrada, separadas como manda la cabecera
+
+Esta entrada es el caso de manual de la distinción de SCRUM-225 — **la columna la puede verificar
+una máquina; el backfill no** — así que van en dos filas y con dos símbolos distintos:
+
+| # | afirmación | clase | quién la sostiene |
+|---|---|---|---|
+| ① | **existe `products.item_kind`** en dev, staging y **producción** | 🔎 **VERIFICABLE** | ① dev/staging: la sesión del 2-sep. ② producción: **medido el 5-sep**, método abajo |
+| ② | **las filas están a `'PRODUCTO'`** | ✋ **DECLARACIÓN MANUAL** | dev (8 filas) y staging (0): la sesión del 2-sep. **Producción: NADIE. No verificado.** |
+
+| base | columna | filas declaradas al aplicar | backfill |
+|---|---|---:|---|
+| **DEV** (`yaqu_dev_javier`) | ✅ declarada aplicada (2-sep) | 8 → tocó 8 | ✋ declarado, no re-verificado aquí |
+| **STAGING** (`railway` @ `acela`) | ✅ declarada aplicada (2-sep) | 0 → tocó 0 | ⚪ **no ejercitó nada**: staging tiene 0 productos |
+| **PRODUCCIÓN** (`railway` @ `autorack`) | ✅ **PROBADA el 5-sep** (método abajo) | 58 (dato del fundador, **no medido**) | 🕳️ **SIN VERIFICAR — ver abajo** |
+
+### 🔎 ① Cómo se probó que producción TIENE la columna, sin una sola credencial
+
+Producción no se puede consultar desde un árbol de trabajo (regla 3), así que no se consultó: se
+midió **por el arranque**, que es un instrumento que ya existe.
+
+`src/index.ts` llama a `assertSchemaSinDeriva`, y `src/core/db/schemaDrift.ts:276` hace
+`if (!d.arranca) throw new Error(d.mensaje)`. En producción, **una columna del esquema que la base
+no tiene impide arrancar**. Luego: si el proceso está sirviendo el código que nombra `item_kind`,
+la columna está. Sólo hay que probar las dos mitades, y las dos son lectura pública:
+
+| lo que se pidió | respuesta (5-sep-2026, 16:31–16:38 +0100) | qué prueba |
+|---|---|---|
+| `GET /dashboard/js/switchTipoArticulo.js` — **fichero nacido en ese PR** | **200 · 8 579 bytes** · `x-powered-by: Express` | el proceso vivo sirve el código del PR |
+| `GET /admin/products` | **401** | el router está montado: no es un CDN sirviendo estáticos sueltos |
+| **control negativo** · `GET /dashboard/js/noExisteJamas-609.js` | **404 · 21 bytes** | el servidor **no** responde 200 a cualquier cosa: el 200 de arriba significa algo |
+| `last-modified` del asset | `Sat, 05 Sep 2026 01:23:31 GMT` | el instante exacto del merge de `28b04585` — el despliegue es el de `main` de hoy |
+
+**Sin el control negativo esto no valdría.** Un servidor que devuelve 200 a todo habría dado el
+mismo 200 al fichero del PR, y la prueba habría sido un espejismo.
+
+> ⚠️ **El límite de este método, dicho:** prueba que la columna **existe**. No dice nada de su tipo,
+> su nullability ni su default en producción. Eso sigue siendo `docs/sql/deriva-prod.sql`, que se
+> pega en la consola de esa base — y es el instrumento que manda sobre este fichero (SCRUM-225).
+
+### 🕳️ ② Lo que NO está probado, y no se va a escribir como si lo estuviera
+
+**Que las filas de producción quedaran a `'PRODUCTO'` NO ESTÁ VERIFICADO POR NADIE.**
+
+No es un descuido de esta entrada: es estructural, y la cabecera de este fichero ya lo dice —
+«la columna existe, así que el mecanismo dirá "en sync" con toda la razón **mientras las filas
+siguen a NULL**». El backfill es exactamente ese caso.
+
+Y aquí hay una consecuencia concreta, no teórica: **`item_kind` es nullable y NULL es un valor
+legítimo** («sin clasificar»). Así que un producto de producción a NULL **no rompe nada y no
+avisa**: la ficha simplemente enseña todos los campos, que es el comportamiento diseñado para
+`null`. **Un backfill que no corrió es indistinguible de uno que corrió, mirando desde fuera.**
+
+**Qué lo cerraría, y es una sola consulta de lectura:**
+
+```sql
+SELECT "item_kind", COUNT(*) FROM "products" GROUP BY 1 ORDER BY 2 DESC;
+```
+
+Si sale una sola fila `PRODUCTO | 58`, el backfill corrió. Si aparece `NULL | 58`, no corrió y
+**no ha roto nada** — sólo hay que ejecutar el `UPDATE`, que es re-ejecutable. La ejecuta el
+fundador en la consola de producción; esta sesión no puede y no debe.
+
+> 🔴 **Y el límite de la decisión del backfill, que se copia aquí porque el que la reutilice leerá
+> esta entrada y no el ticket:** todas las filas nacen `'PRODUCTO'` **por el ESTADO de los datos, no
+> por el criterio** — no hay merchants reales, todos son de prueba, así que no se declara nada por
+> nadie. **Con catálogos reales, un backfill masivo SÍ estaría declarando por el profesional**
+> (diciendo que su catálogo son productos cuando quizá son servicios) y sería la decisión
+> equivocada. Mismo límite que se dejó escrito con `timezone`. La condición es **evaluable**, no
+> prosa: `npm run puerta:cliente-real` (SCRUM-390).
+
+---
+
 ## SCRUM-441 · `invoices.paid_via` — ✅ APLICADO en staging y producción (12-ago-2026)
 
 **Lo aplicó el FUNDADOR, no esta sesión.** Se registra lo que él reportó, y con eso queda dicho el
@@ -479,7 +601,21 @@ que sí siempre:
 > dev 0 · staging 7 · producción 55. ⚠️ El **0 de dev lo he medido yo** hoy; los de staging y
 > producción salen de este mismo fichero, **medidos el 7-ago-2026**, y son estado que caduca.
 
-## LOTE ÚNICO · 9 columnas en 4 tablas (SCRUM-403 · A5 · E4 · SCRUM-195 · SCRUM-16/142) — 🔴 SIN APLICAR en ninguna de las tres
+## LOTE ÚNICO · 9 columnas en 4 tablas (SCRUM-403 · A5 · E4 · SCRUM-195 · SCRUM-16/142) — 🟡 PARCIAL: ✅ APLICADO en staging y producción (10-ago-2026) · ⏳ pendiente en desarrollo
+
+> 🔴 **ESTE TÍTULO DECÍA «SIN APLICAR EN NINGUNA DE LAS TRES», y era falso.** Corregido el
+> 6-sep-2026 (SCRUM-758). El cuerpo de esta misma entrada ya tenía **dos de las tres casillas
+> marcadas** —staging y producción, las dos con verificación independiente por
+> `information_schema`— desde el 10-ago-2026. La línea se quedó sin actualizar cuando se marcaron
+> las casillas, y **nadie miraba esa concordancia**.
+>
+> **No fue cosmético:** de este título salió un ticket entero con un enunciado falso («nueve
+> migraciones que MUTAN datos no constan en el log» — son nueve `ADD COLUMN`, constan, y están
+> aplicadas) y una hipótesis equivocada sobre por qué producción estaba caída.
+>
+> Ahora lo vigila `tests/scrum758-cabecera-no-miente.test.mjs`: si una cabecera vuelve a decir lo
+> contrario que sus casillas, la tanda se pone roja. **Se corrige el título, nunca las casillas:**
+> ellas llevan fecha, autor y verificación; el título es un resumen.
 
 **Medido contra:** `origin/main` = `ff5698f` · 2026-08-10 · rama `scrum-lote-migracion-unica`
 
@@ -2084,3 +2220,79 @@ es lo correcto en un árbol de trabajo). Turno de staging **tomado y soltado**; 
 `schemaDrift` compara **esperado ⊆ real** al arrancar: una columna de MÁS en la base es inocua,
 una de MENOS **impide arrancar producción**. El esquema entra en el PR ③ **cuando las tres bases la
 tengan**, junto con el cableado y los tests. Sin partir.
+
+## SCRUM-797 · `customers.merchant_id` pierde su `DEFAULT 1` — ⛔ **SIN APLICAR EN NINGUNA** (7-sep-2026)
+
+```sql
+ALTER TABLE "customers" ALTER COLUMN "merchant_id" DROP DEFAULT;
+```
+
+**Una sentencia, y es la migración entera.** La columna **YA era `NOT NULL`** (medido en
+`information_schema` de `yaqu_dev_javier` el 7-sep-2026: `data_type=integer`, `is_nullable=NO`,
+`column_default=1`), así que esto **no añade una restricción nueva**: sólo quita el defecto.
+
+**Por qué.** El merchant 1 **es la cuenta demo**. Con el defecto puesto, un `create` que se
+olvidara del dueño archivaba el cliente bajo el demo **sin un solo error**. Reproducido por el
+camino real contra dev: `POST /charges` del merchant 1044 → HTTP 201 → cliente `id=932` con
+`merchant_id = 1`; el demo lo veía en su lista y su dueño no. 🟢 Firmado por el fundador.
+
+**El SQL no se escribió a mano:** lo generó `node scripts/preview-migracion.mjs --desde` (CLI
+**local** de Prisma; `npx` está prohibido, regla 3) con su control positivo — **27 tablas**.
+
+### 🔴 EL VEREDICTO DEL PREVIEW DICE «DESTRUCTIVA», Y NO SIGNIFICA LO QUE PARECE
+
+`preview-migracion.mjs` la marca **🔴 destructiva**. Leído `_clasificador-sql.mjs`, la regla que
+casa es `PALABRA('DROP')` — la que existe para cazar `ALTER TABLE … DROP COLUMN`. Es una **lista
+blanca**: lo que no reconoce se rechaza por defecto, y `DROP DEFAULT` no está en ella.
+
+**O sea que la etiqueta dice «no reconozco esta forma», no «borra datos».** Y esa distinción no se
+resuelve razonando: se mide.
+
+### La medida — la sentencia aplicada DE VERDAD y REVERTIDA
+
+DDL dentro de una transacción contra `yaqu_dev_javier`, con `ROLLBACK` a propósito
+(**@ 2026-09-07T06:42:21Z** — dev es compartida y se mueve):
+
+| | filas | de las cuales del demo (`merchant_id=1`) | huella SHA-256 de `(id, merchant_id)` | `column_default` |
+|---|---|---|---|---|
+| antes | 14 | **7** | `5ef05d5434f8d8ab` | `"1"` |
+| **dentro**, ya aplicada | 14 | **7** | `5ef05d5434f8d8ab` | **`null`** ✅ |
+| después del `ROLLBACK` | 14 | **7** | `5ef05d5434f8d8ab` | `"1"` |
+
+- ✅ **Control positivo:** dentro de la transacción `column_default` pasó a `null`. Sin eso, una
+  huella idéntica sólo probaría que la DDL **no corrió**, no que sea inocua.
+- 🔴 **La respuesta:** **cero filas tocadas.** Los **7 clientes que hoy pertenecen al demo
+  legítimamente siguen perteneciéndole**, con el mismo `merchant_id`. `DROP DEFAULT` cambia el
+  catálogo, no las filas.
+- **Dev quedó exactamente como estaba**, verificado después del `ROLLBACK`. Nada persiste.
+
+### ⛔ NO se ha aplicado en ninguna base
+
+- [ ] **producción · autorack** — pendiente. La aplica el fundador. Desde un árbol de trabajo no
+      hay credencial de producción (regla 3), y no la ha habido en ningún momento de este ticket.
+- [ ] **staging · acela/railway** — pendiente. No se tomó el turno de staging: no hacía falta.
+- [ ] **desarrollo · acela/yaqu_dev_javier** — pendiente. La sentencia se aplicó aquí **dentro de
+      una transacción REVERTIDA** para medir si tocaba filas (tabla de arriba); tras el
+      `ROLLBACK` la base quedó con su `column_default = 1`, verificado. **No persiste nada.**
+
+Ni producción, ni staging, ni dev. **La aplica el fundador.** Desde un árbol de trabajo no vive
+producción (regla 3), y este ticket no tenía por qué tocar ninguna: ver lo siguiente.
+
+### 🔴 LA PROTECCIÓN **NO** ESPERA A ESTA MIGRACIÓN — y por eso el schema entra ya
+
+Quitar el `@default(1)` de `prisma/schema.prisma` cambia los **tipos generados**: `merchantId`
+pasa a ser obligatorio en `CustomerCreateInput`. **Medido**, quitando la línea del arreglo y
+compilando:
+
+```
+src/modules/billing/app/routes/charges.routes.ts(25,9): error TS2322:
+  Property 'merchant' is missing in type '{ name; phone; email }' but required in type 'CustomerCreateInput'.
+```
+
+**El olvido que originó el ticket ya no compila**, con la base todavía sin migrar. La sentencia de
+arriba cierra el mismo agujero para quien escriba SQL en crudo, que es el camino que Prisma no ve.
+
+**Y no hay riesgo de drift mientras esté pendiente:** `schemaDrift` compara **esperado ⊆ real** en
+tablas y columnas — **no mira defectos de columna**. La columna existe en las tres bases antes y
+después, así que el esquema puede ir por delante sin impedir arrancar (que es lo que costó
+SCRUM-220).

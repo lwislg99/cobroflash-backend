@@ -26,6 +26,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
+// SCRUM-734 · el censo COMPARTIDO de las puertas del presupuesto (ver la nota de abajo).
+import { censarPuertasDelPresupuesto } from './_puertas-del-presupuesto.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 
@@ -72,7 +74,28 @@ function llamadasCon(rutaRelativa, nombre) {
   return fuera;
 }
 
-const puertasPresupuesto = FUENTES_PRESUPUESTO.flatMap((f) => llamadasCon(f, 'generateQuotePdf'));
+// ── 🔴 SCRUM-734 · ESTE CENSO SE QUEDÓ CIEGO, Y NO SE HA «ADAPTADO» PARA QUE SIGA EN VERDE ──
+//
+// Las tres puertas del presupuesto ya no arman un objeto literal: le piden la carga entera a
+// `paramsDePresupuestoParaPdf`, que es el único sitio donde se decide qué lleva el documento. El
+// lector de aquí abajo sólo sabía leer literales, así que este fichero cayó en rojo — y esa era
+// LA SEÑAL CORRECTA: un censo cuyo modelo se rompe tiene que fallar, no seguir reportando.
+//
+// La propiedad que vigila —«las tres puertas llevan los dos textos»— sigue siendo cierta y sigue
+// importando. Lo que cambia es cómo se comprueba: una puerta que delega lleva todo lo que el
+// constructor produce. El censo compartido vive en `_puertas-del-presupuesto.mjs` porque los
+// CUATRO tickets que preguntan esto (593c, 602, 731, 734) tenían el mismo supuesto escrito
+// cuatro veces, y por eso se rompieron los cuatro el mismo día.
+//
+// El lector local (`llamadasCon`) se CONSERVA: la puerta del ALBARÁN sigue armando su literal y
+// es quien lo mide. Borrarlo dejaría esa mitad sin censo.
+const puertasPresupuesto = censarPuertasDelPresupuesto().map((p) => ({
+  fichero: p.fichero,
+  linea: Number(p.donde.split(':').pop()),
+  props: p.props,
+  // «el censo pudo leer sus claves»: delegando o con literal. `otra` es lo que NO se da por bueno.
+  esObjeto: p.forma !== 'otra',
+}));
 const puertasAlbaran = FUENTES_ALBARAN.flatMap((f) => llamadasCon(f, 'generateAlbaranPdf'));
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════

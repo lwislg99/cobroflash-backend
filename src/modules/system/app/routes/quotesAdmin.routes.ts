@@ -29,6 +29,9 @@ import fetch from 'node-fetch';
 import { sendSuccessBody, sendFailureBody } from '../../../../lib/sendOutcome'; // SCRUM-126
 import { sellarTrasEmision, SELLADO_HECHO, SELLADO_PENDIENTE } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
+import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
+// SCRUM-734 · el ÚNICO sitio donde se decide qué lleva el PDF del presupuesto.
+import { paramsDePresupuestoParaPdf } from '../../../quotes/domain/presupuestoParaPdf';
 
 const router = Router();
 
@@ -198,6 +201,10 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     // ni se entera: comprobarlo DESPUÉS obligaría a modificar una factura ya numerada o a
     // deshacerla, y deshacer es lo que crea el hueco que hay que justificar ante Hacienda.
     exigirLineasFacturables(scaledLines);
+    // SCRUM-771 · y que el tipo de IVA EXISTA. Mismo sitio y misma razón que la línea de
+    // arriba: ANTES de pedir número, nunca después. Deriva de `invalidTipoIva`; aquí no
+    // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
+    exigirTiposDeIvaEmitibles(scaledLines);
 
     const invoice = await prisma.$transaction(async (tx) => {
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
@@ -401,6 +408,10 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
     // ni se entera: comprobarlo DESPUÉS obligaría a modificar una factura ya numerada o a
     // deshacerla, y deshacer es lo que crea el hueco que hay que justificar ante Hacienda.
     exigirLineasFacturables(scaledLines);
+    // SCRUM-771 · y que el tipo de IVA EXISTA. Mismo sitio y misma razón que la línea de
+    // arriba: ANTES de pedir número, nunca después. Deriva de `invalidTipoIva`; aquí no
+    // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
+    exigirTiposDeIvaEmitibles(scaledLines);
 
     const invoice = await prisma.$transaction(async (tx) => {
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
@@ -527,38 +538,12 @@ router.get('/:id/pdf', async (req, res) => {
     if (!quote) return res.status(404).json({ error: 'not_found' });
 
     const { generateQuotePdf } = await import('../../../../lib/pdf');
-    const pdf = await generateQuotePdf({
-      quoteId: quote.id,
-      quoteNumber: quote.quoteNumber,
-      merchant: {
-        name: quote.merchant.name, legalName: quote.merchant.legalName,
-        taxId: quote.merchant.taxId, address: quote.merchant.address,
-        whatsappPhone: quote.merchant.whatsappPhone,
-        logoUrl: quote.merchant.logoUrl,
-      },
-      customer: { name: quote.customer.name, phone: quote.customer.phone, email: quote.customer.email, legalName: (quote.customer as any).legalName, taxId: (quote.customer as any).taxId }, // A20.4
-      // SCRUM-602 (DOC-12) · la dirección de la obra, EN CRUDO: modo, texto y cliente. Quien
-      // resuelve los tres modos es el documento, con `resolverDireccionObra`, para que las tres
-      // puertas de este PDF no puedan decir direcciones distintas del mismo presupuesto.
-      direccionObra: {
-        modo: (quote as any).shippingAddressMode ?? null,
-        personalizada: (quote as any).shippingAddress ?? null,
-        cliente: quote.customer,
-      },
-      docFields: ((quote as any).docFields as any) ?? null, // A20.4
-      // SCRUM-593 (DOC-03): la 3ª puerta del mismo documento (el porqué, en scrum593c).
-      docHeaderText: (quote as any).docHeaderText ?? null,
-      docFooterText: (quote as any).docFooterText ?? null,
-      currency: quote.currency,
-      total: quote.total.toString(),
-      lines: (Array.isArray(quote.lines) ? quote.lines : []) as any,
-      tiers: (quote.tiers as any) ?? undefined,
-      signatureData: quote.signatureUrl || undefined,
-      signedAt: quote.acceptedAt ?? undefined,
-      country: quote.merchant.country,
-      // SCRUM-647 · la resolución por PAÍS vive AQUÍ y no dentro del documento.
-      taxName: getLocale(quote.merchant.country).vatName,
-    });
+    const pdf = await generateQuotePdf(paramsDePresupuestoParaPdf({
+      // SCRUM-734 · la puerta que SOBRESCRIBE `quote.pdfUrl`, o sea la que acaba en manos del
+      // cliente, era la que menos campos conocía: le faltaban `modoIva`, `clausulas` y
+      // `clausulasExcluidas` (y `discountGlobalAmount` hasta SCRUM-731). Ya no enumera nada.
+      quote, merchant: quote.merchant, customer: quote.customer,
+    }));
 
     await prisma.quote.update({ where: { id }, data: { pdfUrl: pdf.publicUrlPath } }).catch(() => {});
 

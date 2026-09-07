@@ -227,8 +227,16 @@ test('SCRUM-727 · CONTROL NEGATIVO: el AVISO sigue siendo condicional, y eso es
   const i = codigo.indexOf("'::'");
   assert.notEqual(i, -1, '🔴 CIEGO: no encuentro la anotación de GitHub en el vigía');
   const antes = codigo.slice(0, i);
+  // 🔴 SCRUM-716 · ACEPTA `final.salida` ADEMÁS DE `v.salida`, y es una DECISIÓN, no una holgura.
+  //
+  // Este guard nació cuando el único origen del código de salida era `v.salida`. El 7-sep-2026 el
+  // fundador autorizó tocar el vigía («Sí autorizo») y SCRUM-716 metió un segundo decisor
+  // declarado: el RITMO, que baja a 0 un retraso que se está cerrando solo. Así que el texto
+  // cambió legítimamente — pero **la propiedad que este control protege es la misma y sigue
+  // exigiéndose**: que la anotación siga dentro de un `if` y siga pidiendo salida distinta de 0.
+  // Si alguien la vuelve incondicional, esto cae igual que antes.
   assert.match(antes.slice(antes.lastIndexOf('if (')),
-    /if \(process\.env\.GITHUB_ACTIONS === 'true' && v\.salida !== 0\)/,
+    /if \(process\.env\.GITHUB_ACTIONS === 'true' && (?:v|final)\.salida !== 0\)/,
     '🔴 la anotación ha dejado de ser condicional: el vigía avisaría también en verde, doce veces '
     + 'al día. Lo que este ticket pide es ANOTAR el verde, no gritarlo.');
 });
@@ -262,8 +270,25 @@ test('SCRUM-727 · 🔴 CONTROL NEGATIVO: la constancia NO cambia el veredicto n
       `🔴 la constancia ha modificado los datos de entrada de «${e.que}»`);
   }
   // Y el código de salida lo sigue decidiendo el veredicto, no el registro.
-  assert.match(leer(CLI), /process\.exit\(v\.salida\)/,
-    '🔴 el código de salida ha dejado de salir de `v.salida`. El registro no puede decidir nada.');
+  //
+  // 🔴 SCRUM-716 · SE COMPRUEBA LA PROPIEDAD, NO EL LITERAL, y es una DECISIÓN tomada al saltar
+  // este trinquete. Lo que este control defiende es que **la CONSTANCIA no decide**; que el
+  // veredicto salga solo (`v.salida`) o calificado por el ritmo (`final.salida`) le da igual — ese
+  // segundo decisor lo autorizó el fundador el 7-sep-2026 con «Sí autorizo», está declarado y
+  // tiene sus propios tests. Fijar el texto exacto habría obligado a ensanchar la lista cada vez
+  // que el vigía cambia por una razón legítima, que es como un guard se vuelve ruido y se borra.
+  //
+  // Y de paso queda MÁS ESTRICTO que antes: ahora se exige explícitamente que el registro no
+  // aparezca en la decisión, cosa que el `match` anterior no comprobaba.
+  const cli = leer(CLI);
+  const m = /process\.exit\(([^)]*)\)/.exec(cli);
+  assert.ok(m, '🔴 CIEGO: el vigía ya no sale con `process.exit`, así que no sé qué decide nada.');
+  assert.match(m[1], /^(?:v|final)\.salida$/,
+    `🔴 el código de salida sale de \`${m[1]}\`, que no es el veredicto ni el veredicto calificado. `
+    + 'El registro no puede decidir nada.');
+  assert.doesNotMatch(m[1], /constancia/,
+    '🔴 la CONSTANCIA está decidiendo el código de salida. En cuanto el registro toque lo que '
+    + 'registra, deja de ser un registro y pasa a ser un juez.');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────────────────

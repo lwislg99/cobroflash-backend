@@ -17,6 +17,7 @@ import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; /
 import { primeroConTramoPendiente, restanteDelTrabajo } from '../../domain/presupuestosDelTrabajo';
 // SCRUM-651 (T2): el nucleo del Trabajo sin presupuesto, puro y probado sin base.
 import { datosDeTrabajoDirecto, filaDeTrabajoDirecto, tituloDeTrabajo } from '../../domain/trabajoDirecto';
+import { veredictoAlbaranSinPresupuesto } from '../../domain/albaranSinPresupuesto'; // SCRUM-684
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-173
@@ -63,6 +64,7 @@ import { SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/s
 import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206b
 import { sellarTrasEmision } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
+import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
 // SCRUM-650 (T1): la asignacion a VARIOS vive en su dominio; aqui no se decide nada de ella.
 import {
   normalizarAsignados, principalDe, escribirAsignados, type ClienteDeAsignacion,
@@ -1009,11 +1011,14 @@ router.post('/:id/albaranes', async (req, res) => {
     //
     // El `message` va porque sin él el dashboard enseñaría el código crudo — `apiRequest` cae al
     // identificador cuando no hay texto, que es el defecto que cerró SCRUM-275 en /login.html.
-    if (!job.quoteId) {
-      return res.status(409).json({
-        error: 'job_without_quote',
-        message: 'Este trabajo no tiene presupuesto; no se puede crear un albarán.',
-      });
+    // 🔴 SCRUM-684 · ACOTADO, NO RETIRADO. Decisión del fundador: una avería abierta como
+    // TRABAJO DIRECTO (SCRUM-651) SÍ puede entregar albarán — «nadie presupuesta una urgencia» y
+    // «hay que dejar papel al irse» (ALB-02) son la MISMA escena. Lo que sigue devolviendo 409 es
+    // el caso donde la falta de presupuesto de verdad importa: una línea que dice venir de uno.
+    // El motivo entero, medido, en `albaranSinPresupuesto.ts`.
+    const vOrigen = veredictoAlbaranSinPresupuesto(job.quoteId != null, req.body?.lineas);
+    if (!vOrigen.ok) {
+      return res.status(409).json({ error: vOrigen.error, message: vOrigen.message });
     }
 
     // SCRUM-65: modo de valoración al crear (default SIN_VALORAR = comportamiento de siempre).
@@ -1042,6 +1047,18 @@ router.post('/:id/albaranes', async (req, res) => {
     // el mismo tipo de campo acaban divergiendo (es la lección de SCRUM-424 con `lugarEntrega`).
     const docHeaderText = req.body?.docHeaderText !== undefined
       ? String(req.body.docHeaderText || '').slice(0, 2000) || null : null;
+
+    // SCRUM-607 (ALB-02) · el interruptor del papel, TAMBIEN al crear. Si el PATCH lo guardara y
+    // el create no, marcar la casilla al dar de alta se perderia en silencio — que es el defecto
+    // que SCRUM-424 cazo aqui mismo con la fecha de entrega.
+    //
+    // Booleano ESTRICTO, igual que en el PATCH: un `Boolean()` convertiria la cadena "false" en
+    // `true`, y en este campo eso significa ensenar los precios de alguien a su cliente.
+    if (req.body?.ocultarPreciosEnDocumento !== undefined
+        && typeof req.body.ocultarPreciosEnDocumento !== 'boolean') {
+      return res.status(400).json({ error: 'ocultar_precios_invalido' });
+    }
+    const ocultarPreciosEnDocumento = req.body?.ocultarPreciosEnDocumento === true;
 
     // SCRUM-424 · la fecha de entrega, con el MISMO criterio que el PATCH: admite vaciarse
     // (undefined o '' -> null, el documento puede no tenerla) y una ilegible NO se guarda como
@@ -1103,6 +1120,8 @@ router.post('/:id/albaranes', async (req, res) => {
           // SCRUM-593 (DOC-03): si el PATCH lo guarda y el create no, lo que el profesional
           // teclea al crear se pierde EN SILENCIO — el defecto entero de SCRUM-424.
           docHeaderText,
+          // SCRUM-607 (ALB-02): ver arriba.
+          ocultarPreciosEnDocumento,
           // ── SCRUM-424 · LO QUE SE ESCRIBE AL CREAR SE PERDÍA EN SILENCIO ──────────────────
           //
           // El PATCH guarda `lugarEntrega` y `fechaEntrega` (albaranes.routes.ts:474-486) y este
@@ -1233,6 +1252,10 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     // ni se entera: comprobarlo DESPUÉS obligaría a modificar una factura ya numerada o a
     // deshacerla, y deshacer es lo que crea el hueco que hay que justificar ante Hacienda.
     exigirLineasFacturables(scaledLines);
+    // SCRUM-771 · y que el tipo de IVA EXISTA. Mismo sitio y misma razón que la línea de
+    // arriba: ANTES de pedir número, nunca después. Deriva de `invalidTipoIva`; aquí no
+    // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
+    exigirTiposDeIvaEmitibles(scaledLines);
 
     const invoice = await prisma.$transaction(async (tx) => {
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {

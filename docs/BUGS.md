@@ -297,6 +297,24 @@
 - **Done cuando:** tras pagar, el cliente recibe la factura por email (si tiene) y por WhatsApp (enlace o PDF).
 - **CAUSA RAÍZ (9 jun):** el email no llegaba porque `sendInvoiceEmail` usaba nodemailer/SMTP; sin `SMTP_URL` (prod usa Resend) caía a `streamTransport` → solo escribía un `.eml` a disco, **no enviaba**. Commit `0bf44f7`: ahora envía por **Resend** con el PDF en base64 adjunto; helper `ensureInvoicePdf` genera el PDF si falta; el email post-pago se intenta SIEMPRE (psp/mp). **WhatsApp PENDIENTE:** entregar la factura por WhatsApp necesita un botón "Ver factura" (URL dinámica) en una plantilla de confirmación → **alta/re-aprobación en Meta** (no se puede añadir botón a una plantilla aprobada sin re-aprobarla). El código del builder se añadirá cuando exista la plantilla. **VERIFICAR:** tras un pago, que llegue el email con PDF (requiere `RESEND_API_KEY` ok + cliente con email).
 
+### [ ] P0-SEC-8 · `/recibo/:token?mail=saved&eml=…` mete un href SIN VALIDAR EL ESQUEMA (SCRUM-807, 7-sep-2026)
+- **🔴 MEDIDO, no supuesto.** `receipt.routes.ts:115` pinta `<a href="${esc(emlParam)}">` con `emlParam = req.query.eml` en crudo. `esc()` escapa HTML y hace bien lo suyo; un href no se defiende escapando HTML sino **validando el esquema**, y en `javascript:alert(1)` no hay nada que escapar.
+- **Llegan al atributo las SEIS cargas probadas** — `javascript:`, `JaVaScRiPt:` (mayúsculas), `data:text/html,…`, `vbscript:`, con espacio delante y partida por un salto de línea. **CORRIJO MI PROPIA CIFRA:** el primer informe dijo «5 de 6» porque la sexta la mandé mal codificada; con `encodeURIComponent` llega también. Medido las dos veces.
+- **Y SE EJECUTA, comprobado en Edge de verdad** (no razonado): con el ancla tal cual se emite —lleva `target="_blank"`— Edge **no** lo ejecutó; **sin** el target y por navegación directa a ese mismo href, **sí**: corrió código en el origen de la aplicación. Otros navegadores NO medidos.
+- **Alcance medido:** la página **no tiene CSP** (ni `X-Frame-Options` ni `X-Content-Type-Options`). A favor: la cookie de sesión es `HttpOnly; SameSite=Lax` (+`Secure` en producción), así que no se puede leer desde JS. Hace falta un `receiptToken` válido, o sea que quien **manda** el enlace del recibo controla también la carga.
+- **Lo que lo hace evitable del todo:** el ÚNICO productor legítimo de `?mail=saved&eml=` es `dev.routes.ts:99-100`, y `/dev` sólo se monta si `NODE_ENV!=='production'` (`app.ts:354`). En producción **nadie** genera ese banner y la página lo sigue pintando a quien se lo pida. El texto dice «(modo dev)» pero el código no lo comprueba.
+- **De regalo, en la misma línea:** es el único `target="_blank"` del fichero **sin** `rel="noopener"` — las otras tres anclas sí lo llevan. Con una URL externa eso da acceso a `window.opener`.
+- **NO SE HA ARREGLADO A PROPÓSITO:** el encargo manda parar y avisar antes de construir. Arreglo propuesto y no hecho: **validar el esquema donde se construye el href** (no dentro de `esc()`: darle dos trabajos garantiza que un día haga mal uno de los dos), y/o poner el banner tras el mismo gate de entorno que su único productor.
+- **Done cuando:** `?eml=javascript:…` no produce un href con ese esquema, y un `https://` legítimo sigue funcionando. Verificado en yaqu.app.
+- **✅ ARREGLADO EN SCRUM-807 (segunda parte), PENDIENTE DE VERIFICAR EN yaqu.app.** Sigue en `[ ]` a propósito: la regla de este fichero exige verificarlo en producción y desde el árbol de trabajo no se puede.
+  - **Qué se cambió, tres cosas en la misma línea:** ① el href pasa por `hrefSeguro()` —lista blanca de esquemas, en `core/utils/utils.ts` **al lado de `esc` y no dentro**—; ② el banner queda tras `config.NODE_ENV !== 'production'`, el MISMO gate que su único productor (`/dev`), con lo que el código cumple lo que su rótulo «(modo dev)» ya prometía; ③ `rel="noopener"`, que era el único `target="_blank"` del fichero sin él.
+  - **Antes y después, pegados:** llegaban **6 de 6**, ahora llegan **0 de 6** (todas salen `#`), y el `.eml` real del flujo de dev y un `https://` legítimo siguen pasando intactos. Con el gate: en producción simulada el banner NO se pinta; en dev sí.
+  - **Guard:** `tests/scrum807-esquemas-del-href.test.mjs` (6 tests). Retirar cualquiera de las cuatro defensas lo pone en rojo — comprobado mutándolas una a una y restaurando byte a byte.
+
+### [ ] P0-SEC-8b · NOTA de lo que se midió y NO era vulnerable (mismo censo)
+- `googleReviewUrl` (`receipt.routes.ts:255` y `:261`, más el perfil público) **NO es inyectable por su puerta real**: las 6 cargas dan `PUT /admin/merchant` → **400** y no se guarda nada; un `https://` legítimo → 200 y se pinta. Lo para el `z.preprocess` que antepone `https://` a todo lo que no empiece por http, que rompe cualquier otro esquema antes de `.url()`. Censados TODOS los escritores de la columna: sólo hay uno de usuario, y es ése.
+- Queda escrito porque una defensa que funciona **por un efecto lateral** (el prefijo se puso para tolerar `g.page/r/…` sin protocolo, no para bloquear esquemas) es una defensa que alguien puede quitar sin saber lo que sujetaba.
+
 ---
 
 ## P1 — Bugs visibles al cliente / datos incorrectos
@@ -347,6 +365,29 @@
 - **Síntoma:** dice "Gracias por confiar en Electricista prueba", pero el resto de mensajes al cliente usan "Demo ES S.L.".
 - **Arreglo:** usar el nombre del negocio (el que aparece en presupuesto/factura/landing) de forma consistente en todos los mensajes al cliente.
 - **CAUSA RAÍZ (9 jun):** usaba `merchant.name` (nombre de cuenta). Commit `3d64887`: usa `legalName||name`, como presupuesto/factura/landing. Aplicado en psp y mpWebhook.
+
+### [ ] P1-PORTAL-PDF · El botón «📄 Ver PDF» del portal PÚBLICO apunta a una URL bajo `requireAuth`
+- **ARREGLADO EN SCRUM-806, PENDIENTE DE VERIFICAR EN yaqu.app.** Sigue en `[ ]` a propósito: la regla de arriba dice que se verifica en yaqu.app, y desde el árbol de trabajo no se puede. Quien mezcle ese PR y lo abra en producción, que lo tache.
+  - **Qué se cambió:** el botón deja de derivar de `q.pdfUrl` y apunta a `/pay/quote/<decisionToken>/pdf`, ruta pública nueva en el router que YA resolvía por ese token. Sin `:id` (SCRUM-95). No se acuña ningún token: se lee el que la fila ya tiene; si no lo tiene, el botón no se pinta.
+  - **Medido con servidor y dos merchants:** el cliente sin sesión recibe `200 application/pdf` y es SU documento; el profesional lo sigue viendo y es EL MISMO texto; y contra la ruta nueva, el id de otro merchant → 404, el propio → 404, un token inventado → 404, un byte cambiado → 404, 40 ids enumerados → 0 PDFs.
+  - **Lo que NO cierra:** el botón hermano «📄 Descargar factura» (`customerPortal.routes.ts:347-350`) sigue igual — pasa por `ensureInvoicePdf`, camino de emisión, SCRUM-762.
+- **Encontrado:** 6-sep-2026, midiendo SCRUM-799 (hallazgo colateral: ese ticket era MEDIR el PDF que cambia). **No se arregla ahí.**
+- **Dónde:** `customerPortal.routes.ts:302-305` construye el href como `BASE_URL + quote.pdfUrl`, y el portal es **público** (`app.use('/cliente', …)`, `src/app.ts:139`, montado 220 líneas antes del `requireAuth` de la 359).
+- **Por qué el valor es malo:** `quotes.pdf_url` lo escribe la propia ruta del PDF con su valor de retorno (`quotesAdmin.routes.ts:548`), y ese valor es **`/admin/quotes/<id>/pdf`** — MEDIDO, no deducido: el generador devolvió `publicUrlPath = "/admin/quotes/362/pdf"`. El cliente acaba pinchando una ruta de admin.
+- **Hoy está LATENTE:** los 15 presupuestos de dev tienen `pdf_url = NULL` y el botón no se pinta (`btnPdf = pdfUrl ? … : ''`). **Se activa en cuanto el profesional abre UNA vez el PDF desde el panel**, porque esa apertura escribe la columna.
+- **La casa YA LO SABE, en otro sitio:** `email.service.ts:145` deriva la ruta del adjunto del nombre canónico y NO de `quote.pdfUrl`, y explica el motivo — «que ahora apunta al endpoint auth» (SCRUM-72). El correo se enteró; el portal no.
+- **Ya pasó una vez:** es el mismo error que P0-2 (línea 284) cerró para la FACTURA —enlazar el `pdfUrl` crudo en vez de una ruta que sirva el documento—, reaparecido en la cara del cliente.
+- **Lo mismo hay que mirar en la factura del portal:** `customerPortal.routes.ts:347-350` («📄 Descargar factura») repite el patrón con `inv.pdfUrl`. En dev las 5 facturas están en `PENDING_PDF`, así que tampoco se pinta: **no medido en producción**.
+- **Done cuando:** desde `/cliente` (sin sesión de admin) el botón o lleva a un documento que se ve, o no se pinta. Verificado en yaqu.app, no en localhost.
+
+### [ ] P1-GUARD-601-LINEA · SCRUM-601 se pone ROJO si alguien inserta UNA LÍNEA en `invoicesView.js`
+- **Encontrado:** 7-sep-2026, midiendo SCRUM-755. **Es un guard MÍO**, de SCRUM-601, y por eso lo registro yo.
+- **Dónde:** `tests/scrum601-copy-del-documento-vs-flag.test.mjs:102` ancla a `public/dashboard/js/invoicesView.js` **línea 223** a pelo — `en('public/dashboard/js/invoicesView.js', 223)`.
+- **Medido, tres casos y su control:** con el árbol sin tocar sale VERDE; insertando (a) un COMENTARIO, (b) un `const` cualquiera sin marcador, o (c) un uso del marcador, sale **ROJO en los tres**. O sea que no detecta lo que dice detectar: detecta que se ha movido su ancla.
+- **Y el mensaje ENGAÑA:** dice «no se encuentra el rótulo «+ Nuevo justificante» donde se midió», que suena a que el rótulo desapareció de la pantalla. Quien lo lea irá a buscar un defecto de producto que no existe.
+- **Por qué importa más de lo que parece:** es exactamente el antipatrón que la casa tiene escrito —en el censo de SCRUM-243 y en el de SCRUM-402— con estas palabras: anclar a fichero-y-línea pone el guard en rojo cada vez que alguien añade un import diez líneas más arriba, y un guard que grita sin motivo se acaba puenteando igual que uno que no grita nunca. Lo escribí y lo incumplí en el mismo repo.
+- **NO se arregla aquí:** SCRUM-755 va de contadores de microcopy. Tocar el censo de 601 de paso es cómo se cuela el siguiente defecto.
+- **Done cuando:** insertar una línea inocua en `invoicesView.js` NO pone rojo a SCRUM-601, y lo que ese test sí quiere sujetar —que el rótulo deriva del flag— sigue sujeto.
 
 ---
 
@@ -472,6 +513,22 @@
 
 ## P3 — Técnico / raíz (registrar, abordar después de P1)
 
+### [x] P3-CENSO-402 · `CENSO` de SCRUM-402 tenia una CLAVE REPETIDA, y JavaScript se comia una
+- **Medido el 5-sep-2026** desde la rama de SCRUM-606, sobre `origin/main` = `28b04585` SIN
+  ninguna rama encima: `tests/scrum402-marcador-no-se-pinta.test.mjs` salia **ROJO** en R4
+  (`invoicesView.js: 1 -> 2`). Causa: la clave `'invoicesView.js'` estaba **dos veces** en el
+  objeto —lineas 139 (SCRUM-748) y 578 (SCRUM-648b), a 439 de distancia, asi que git las
+  mezclo sin conflicto— y JS se queda con la ultima en silencio: 2 marcadores reales, 1
+  declarado. Comprobado con control positivo del instrumento (un marcador en literal cuenta 1;
+  el mismo en comentario, 0).
+- **CERRADO por SCRUM-751, no por esta entrada.** Se registro aqui como bug ajeno —era de otros
+  dos tickets— y `main` lo arreglo el mismo dia, ANTES de que la rama de SCRUM-606 se empujara:
+  la entrada duplicada se fundio en una con valor 2 y entro un guard que lo cierra por
+  construccion (`tests/_claves-duplicadas.mjs` + `tests/scrum751-clave-duplicada-en-silencio.test.mjs`),
+  sobre el FUENTE, porque en ejecucion la clave repetida ya no existe. Registro entero en
+  `docs/master/SCRUM-751.md`.
+- **Se conserva** porque dos sesiones midieron el mismo defecto por separado y llegaron al
+  mismo numero: eso es lo que hace creible el diagnostico, y borrarlo lo perderia.
 ### [~] P3-9 · Tests que dependen del merchant `id=1` quemado por SCRUM-42 (22-jul, hallazgo en SCRUM-73; 3/5 corregidos en SCRUM-78+SCRUM-80)
 - **Síntoma:** varios tests gateados asumen que el merchant `id=1` (demo) tiene
   quotes/invoices/customers reales — SCRUM-42 (12-jul-2026) lo quemó como placeholder INERTE

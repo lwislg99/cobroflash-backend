@@ -256,9 +256,60 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
     //
     // Las casillas POR FILA no entran en este número: el banco monta la vista sin datos, así que
     // no hay filas. Es otra medición y no se mezcla con ésta.
-  // SCRUM-602 (4-sep-2026) · 242 → 250: los ocho nodos del control de la dirección de la obra,
-  // aislados POR IDENTIDAD (los dos subárboles del `.field`); sin ellos la vista da 242 exactas.
-  for (const [vista, nodos] of [['renderQuotesView', 250], ['renderProductsView', 166],
+    //
+    // 🔴 4-sep-2026 · `renderQuotesView` 242 → 253, y son DOS tickets a la vez. Las dos subidas
+    // son del PRODUCTO, no del banco, y SE SUMAN:
+    //   · SCRUM-602 · +8 · el control de la dirección de la obra (los dos subárboles del
+    //     `.field`), aislados por identidad.
+    //   · SCRUM-587 · +3 · la tira que PROPONE el descuento pactado — el `div.alert`, su `<span>`
+    //     y el botón—, que nace `hidden` y sólo se enseña si ese cliente trae descuento y queda
+    //     alguna línea sin él.
+    // MEDIDO sobre el árbol mezclado y comprobado por mitades: sin la tira da 250, sin los dos
+    // `.field` da 245. Las otras tres vistas, intactas.
+    //
+    // 🔴 SCRUM-586 (CONT-13) · 6-sep-2026 · `renderQuotesView` 253 → 256. TRES nodos, y aquí están
+    // CUÁLES, identificados POR IDENTIDAD sobre el árbol montado antes de tocar el número —no
+    // restando 256 − 253, que es como se cuela un cuarto nodo sin que nadie lo vea:
+    //
+    //   1. `div.alert.info.quote-propuesta-pago` — la tira que propone las formas de pago pactadas
+    //   2. su `span.quote-propuesta-pago__texto`
+    //   3. su `button.btn-ghost.btn-sm` (hoy con el marcador de microcopy sin firmar)
+    //
+    // Es la MISMA forma que la tira del 587 —medida: su subárbol también da 3— porque una deriva
+    // de la otra. Nace `hidden` y sólo se enseña si el cliente elegido trae formas pactadas que
+    // cambien alguna casilla, así que estos tres nodos existen SIEMPRE y se ven CASI NUNCA: por eso
+    // suben el número aunque la pantalla parezca la de ayer.
+  // 🔴 SCRUM-589 (CONT-18) · 6-sep-2026 · `renderQuotesView` 256 → 263. SIETE nodos, y aquí están
+  // CUÁLES, identificados POR IDENTIDAD sobre el árbol montado ANTES de tocar el número — no
+  // restando 263 − 256, que es como se cuela un octavo nodo sin que nadie lo vea:
+  //
+  //   1. `div.inline-options` — la elección de con qué nombre sale el cliente
+  //   2. y 3. sus dos `label.radio-label`
+  //   4. y 5. sus dos `input[type=radio][name="df-nombre"]`
+  //   6. y 7. los dos `#TEXT` de los rótulos: « Razón social» y « Nombre comercial»
+  //
+  // AISLADO Y COMPROBADO: los siete son EXACTAMENTE el subárbol del `div.inline-options`
+  // (`todos(div)` devuelve 7), así que el delta entero vive dentro del control nuevo y este
+  // ticket no ha movido ni un nodo del resto de la pantalla. Las otras tres vistas, intactas.
+  //
+  // La subida es del PRODUCTO, no del banco: el bloque «Datos del cliente en el documento» pasa
+  // de decir qué campos salen a decir además CUÁL de los dos nombres del cliente se imprime.
+  // 🔴 SCRUM-794 · 6-sep-2026 · `renderQuotesView` 263 → 262. Es la PRIMERA BAJADA que registra
+  // este número, y por eso conviene decir qué la hace legítima: no es una vista que se haya
+  // dejado de montar (eso lo cazaría el `r.error` de abajo), es UN nodo que el fundador mandó
+  // borrar. Había DOS botones «+ Añadir línea» con el mismo rótulo y la misma función en la
+  // sección «2. Líneas»; se queda el de abajo.
+  //
+  // IDENTIFICADO POR IDENTIDAD sobre el árbol de ANTES, no restando 263 − 262:
+  //
+  //   1. `button.btn.btn-secondary` con textContent «+ Añadir línea», el de la cabecera.
+  //
+  // Y AISLADO: su subárbol medido es de 1 nodo —`textContent` en el banco es una propiedad, no
+  // un hijo, así que no arrastra ningún `#TEXT`—, y el botón que se queda
+  // (`button.btn-ghost.quote-add-line`) sigue montándose con su subárbol de 1. El delta entero
+  // es el botón borrado: este ticket no ha movido ni un nodo del resto de la pantalla, y las
+  // otras tres vistas siguen intactas.
+  for (const [vista, nodos] of [['renderQuotesView', 262], ['renderProductsView', 166],
     ['renderCustomersView', 68], ['renderHomeView', 109]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
@@ -276,10 +327,21 @@ test('SCRUM-698 · CONTROL NEGATIVO: el fixture NO se impone a quien ya pasaba l
   assert.equal(conLoSuyo.error, null, '🔴 pasar datos propios ha dejado de funcionar.');
 
   const desnuda = await pintarVista(cargarDashboard(RAIZ), 'renderQuotesView');
-  // SCRUM-591 + SCRUM-594 + SCRUM-602 · las TRES subidas, acumuladas y MEDIDAS sobre el árbol
-  // mezclado (ver arriba). Lo que este control vigila —que el fixture no se imponga— sigue
-  // intacto: lo que importa es que los dos montajes den el mismo número, sea cual sea.
-  assert.equal(todos(desnuda.contenedor).length, 250,
+  // SCRUM-591 + SCRUM-594 + SCRUM-602 + SCRUM-587 · las CUATRO subidas, acumuladas y MEDIDAS
+  // sobre el árbol mezclado (ver arriba). Lo que este control vigila —que el fixture no se
+  // imponga— sigue intacto: lo que importa es que los dos montajes den el mismo número, sea cual sea.
+  // SCRUM-586 (6-sep-2026): la QUINTA subida, +3 por la tira de formas de pago. Identificada por
+  // identidad en el bloque de arriba. Este control sigue vigilando lo suyo —que los dos montajes
+  // den el MISMO número—, no cuál sea ese número.
+  // SCRUM-589 (6-sep-2026): la SEXTA subida, +7 por la elección de con qué nombre sale el
+  // cliente. Los siete están identificados por identidad en el bloque de arriba y son el
+  // subárbol completo de su `div.inline-options`. Lo que este control vigila —que el fixture no
+  // se imponga, o sea que los DOS montajes den el mismo número— sigue intacto.
+  // SCRUM-794 (6-sep-2026): la SÉPTIMA anotación y la primera que RESTA, −1 por el
+  // «+ Añadir línea» duplicado que se borra. Identificado por identidad en el bloque de arriba.
+  // Lo que este control vigila —que el fixture no se imponga, o sea que los DOS montajes den el
+  // mismo número— sigue intacto: le da igual cuál sea ese número, y por eso baja sin perder nada.
+  assert.equal(todos(desnuda.contenedor).length, 262,
     '🔴 montar sin `datos` ya no da lo de siempre: el fixture se ha colado como valor por '
     + 'defecto y está moviendo lo que miden otros.');
 });
