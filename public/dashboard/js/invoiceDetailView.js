@@ -219,6 +219,35 @@ async function fetchInvoiceDetail(id) {
     dataSec.appendChild(dl);
     page.appendChild(dataSec);
 
+    // ── SCRUM-597 (DOC-07) · QUIÉN LLEVA ESTE DOCUMENTO ───────────────────────────────────
+    //
+    // Categorización, no permiso: dice de quién es el asunto. No cambia quién puede editar ni
+    // emitir, y no abre coste ni margen — un técnico asignado sigue sin verlos (P-DOC-3).
+    //
+    // 🔴 Y NO TOCA LA FACTURA (regla 29). El PATCH escribe SOLO en `invoice_assignees`: asignar
+    // una factura EMITIDA no puede cambiar su número, su total ni su PDF. Por eso esta sección
+    // puede existir en el detalle de una factura ya sellada sin ser una excepción a nada.
+    //
+    // El cableado vive en `documentoAsignados.js`, compartido con el presupuesto.
+    if (typeof cablearAsignadosDeDocumento === 'function') {
+      const asigSec = document.createElement('div');
+      asigSec.className = 'detail-section';
+      asigSec.dataset.seccion = 'asignados';
+      page.appendChild(asigSec);
+      cablearAsignadosDeDocumento(document, {
+        doc: 'invoice',
+        documentoId: invoice.id,
+        contenedor: asigSec,
+        asignados: invoice.asignados || [],
+        // Editar es admin-only, igual que el endpoint (`requireRole('admin')`). Al técnico se le
+        // pinta en solo lectura con los nombres que ya trae el detalle.
+        puedeEditar: window.appUserRole !== 'tecnico' && window.appUserRole !== 'operario',
+        pedir: apiRequest,
+        avisar: setStatus,
+        alGuardar: () => {},
+      });
+    }
+
     // --- Sección: acciones (SCRUM-283 · la LEY del patrón: 1 primaria + ≤2 secundarias + ⋮) ---
     // Se PINTA desde el registro declarativo (invoiceActionsRegistry.js), la MISMA fuente que el
     // guard verifica: nadie escribe la tabla dos veces. El estado decide el destino de cada acción;

@@ -853,6 +853,12 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'jobNuevoModal.js',
   'jobRailBlocks.js',
   'jobAsignados.js',
+  // SCRUM-597 (DOC-07, 7-sep-2026): entran DOS. `economiaVisible.js` responde quién ve coste
+  // y margen (P-DOC-3) y va ANTES de `productsView.js`, `quotesView.js` e
+  // `invoiceDetailView.js`, que lo consultan. `documentoAsignados.js` es el selector de
+  // quién lleva el documento y va ANTES de los dos detalles que lo montan.
+  'documentoAsignados.js',
+  'economiaVisible.js',
   'jobsCierreTrabajo.js',
   'jobsView.js',
   'libroRegistroView.js',
@@ -918,6 +924,13 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
 export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   { antes: 'filtroClientes.js', despues: 'customersView.js', motivo: 'SCRUM-581: pestañas y orden de la lista' },
   { antes: 'margenCatalogo.js', despues: 'productsView.js', motivo: 'SCRUM-609: la aritmética del margen' },
+  // SCRUM-597 (DOC-07): si `economiaVisible.js` se cargara DESPUÉS, `window.veoEconomia` no
+  // existiría al montar la pantalla y los campos de coste y margen se pintarían a un técnico —
+  // que es exactamente lo que el ticket cierra. Se declaran los TRES consumidores.
+  { antes: 'economiaVisible.js', despues: 'productsView.js', motivo: 'SCRUM-597: quién ve coste y margen en la ficha del catálogo' },
+  { antes: 'economiaVisible.js', despues: 'quotesView.js', motivo: 'SCRUM-597: si la columna «Coste» de la línea se pinta o no' },
+  { antes: 'documentoAsignados.js', despues: 'quotesDetailView.js', motivo: 'SCRUM-597: el selector de quién lleva el documento' },
+  { antes: 'documentoAsignados.js', despues: 'invoiceDetailView.js', motivo: 'SCRUM-597: el mismo selector en la factura' },
   { antes: 'margenCatalogo.js', despues: 'reportsView.js', motivo: 'SCRUM-764: el criterio de margen negativo' },
   { antes: 'switchTipoArticulo.js', despues: 'productsView.js', motivo: 'SCRUM-609: el switch Producto|Servicio' },
   { antes: 'quoteApartados.js', despues: 'quotesDetailView.js', motivo: 'SCRUM-655: apartados, numeración y descripción' },

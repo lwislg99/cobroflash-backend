@@ -24,6 +24,28 @@ const INVOICES_PREFIX = '/admin/invoices';
 // otro PUT/PATCH, o cualquier DELETE, rompe la regla 29.
 const ALLOWED_MUTATIONS = new Set(['PUT /:id/status']);
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-597 (DOC-07) · UNA TERCERA CATEGORÍA QUE ESTE GUARD NO CONTEMPLABA
+//
+// El guard reparte toda mutación bajo `/admin/invoices` en dos: cambio de ESTADO (permitido) o
+// edición de CONTENIDO (rompe la regla 29). `PATCH /:id/asignados` no es ninguna de las dos:
+// **no escribe en `invoices`**. Escribe filas en `invoice_assignees`, la tabla puente de quién
+// lleva el documento, y el número, el total y el PDF viven en `invoices`, que no toca.
+//
+// ⚠️ ESTO ES UNA AMPLIACIÓN DE LO QUE EL GUARD EXIGE, Y SE DECLARA COMO TAL — no se ha colado en
+// `ALLOWED_MUTATIONS` disfrazada de cambio de estado, que es lo que la habría hecho invisible.
+// Va en su propia lista, con su motivo, para que se lea qué se ha permitido y por qué.
+//
+// 🔴 Y NO ES UN CHEQUE EN BLANCO: la afirmación «no toca `invoices`» está EJERCITADA, no
+// razonada. `tests/scrum597-asignar-usuario-al-documento.test.mjs` levanta la app real, asigna
+// una factura emitida y comprueba sobre el registro de escrituras que el ÚNICO modelo escrito es
+// `invoiceAssignee` — con su control positivo de que el instrumento sí anota. Si esa ruta
+// empezara a escribir la factura, ese test cae aunque esta entrada siga aquí.
+//
+// La alternativa era montar la ruta bajo otro prefijo para que este guard no la viera. Sería
+// esquivarlo, que es peor que ampliarlo a la vista de todos.
+const MUTACIONES_QUE_NO_TOCAN_LA_FACTURA = new Set(['PATCH /:id/asignados']);
+
 function enumerateInvoiceRoutes() {
   const found = [];
   for (const mount of getAdminMounts()) {
@@ -62,7 +84,7 @@ test('SCRUM-124 (r29): ninguna mutación destructiva de facturas — solo /statu
   );
 
   const mutations = routes.filter((r) => r.startsWith('PUT ') || r.startsWith('PATCH '));
-  const unexpected = mutations.filter((r) => !ALLOWED_MUTATIONS.has(r));
+  const unexpected = mutations.filter((r) => !ALLOWED_MUTATIONS.has(r) && !MUTACIONES_QUE_NO_TOCAN_LA_FACTURA.has(r));
   assert.equal(
     unexpected.length,
     0,

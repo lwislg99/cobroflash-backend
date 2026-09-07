@@ -1,5 +1,13 @@
 // src/modules/system/app/routes/quotesAdmin.routes.ts
 import { Router } from 'express';
+// SCRUM-597 (DOC-07 · P-DOC-3): el coste congelado en la línea es economía del negocio.
+// Quién lo ve se PREGUNTA a la política, no se decide aquí.
+import { veEconomiaDelNegocio, sinCosteEnDocumento, sinCosteEnDocumentos } from '../../../../core/visibilidadEconomica';
+import {
+  normalizarAsignados, escribirAsignadosDeDocumento, leerAsignadosDeDocumento,
+  type ClienteDeAsignacionDeDocumento,
+} from '../../../../core/documentos/asignacionDeDocumento'; // SCRUM-597 (DOC-07)
+
 import {
   listQuotesAdmin,
   getQuoteDetailAdmin,
@@ -717,12 +725,77 @@ router.get('/:id', async (req, res) => {
       console.error('[GET /admin/quotes/:id] maintenance enrich:', (e as Error)?.message);
     }
 
-    return res.json({ ...detail, waDelivery, ...(maintenance ? { maintenance } : {}) });
+    // SCRUM-597 (DOC-07): quién lleva este documento. Viaja SIEMPRE, y una lista vacía significa
+    // «sin asignar» — que es como está hoy todo lo que existe, y se comporta igual que siempre.
+    const asignados = await leerAsignadosDeDocumento(
+      prisma as unknown as ClienteDeAsignacionDeDocumento, 'quote', id,
+    );
+    const cuerpo = { ...detail, waDelivery, asignados, ...(maintenance ? { maintenance } : {}) };
+    return res.json(veEconomiaDelNegocio(req.userRole) ? cuerpo : sinCosteEnDocumento(cuerpo as unknown as Record<string, unknown>));
   } catch (err: any) {
     console.error('[GET /admin/quotes/:id]', err);
     if (err.message === 'quote_not_found') {
       return res.status(404).json({ error: 'not_found' });
     }
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * PATCH /admin/quotes/:id/asignados — SCRUM-597 (DOC-07) · ASIGNAR USUARIOS AL DOCUMENTO
+ *
+ * Cuerpo: `{ assignedUserIds: number[] }`. Es la MISMA forma que ya manda el selector de los
+ * trabajos (`cuerpoDeAsignacion` en `jobAsignados.js`), y se reutiliza a propósito: dos formas
+ * distintas para la misma idea acaban divergiendo.
+ *
+ * 🔴 ASIGNAR NO ES UN PERMISO. Esta ruta escribe QUIÉN LLEVA el documento; no cambia quién puede
+ * editarlo ni emitirlo, que lo siguen decidiendo el rol y `requireRole` en cada una de esas
+ * rutas. Y tampoco abre la economía: un técnico asignado sigue sin ver coste ni margen, porque
+ * eso lo decide `visibilidadEconomica.ts` por ROL y la asignación no entra en esa pregunta.
+ *
+ * 🔴 Y NO TOCA EL DOCUMENTO (regla 29). Escribe SOLO en la tabla puente. Asignar a una factura
+ * emitida no puede cambiar su número, su total ni su PDF: no hay ninguna escritura que pudiera.
+ *
+ * `requireRole('admin')` por RUTA y no por campo: así entra sola en la red fail-closed de
+ * SCRUM-55, que reconoce el marcador que deja `requireRole` y no sabría ver un `if` dentro del
+ * handler. El criterio es el de S1 —el reparto del trabajo es del admin— y es el mismo que ya
+ * aplica el selector de asignados de los trabajos.
+ */
+router.patch('/:id/asignados', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+
+    // Tenancy ANTES de escribir (regla 2): el id es un entero consecutivo, así que sin esto se
+    // asignarían documentos de otro merchant sabiendo contar.
+    const documento = await prisma.quote.findFirst({
+      where: { id, merchantId: req.merchantId },
+      select: { id: true },
+    });
+    if (!documento) return res.status(404).json({ error: 'not_found' });
+
+    const ids = normalizarAsignados(req.body?.assignedUserIds);
+
+    // Cada asignado, comprobado UNO A UNO y dentro del merchant. Comprobar solo el primero
+    // dejaría colar los demás — y con varios asignados eso es la mayoría de la lista.
+    for (const uid of ids) {
+      const miembro = await prisma.teamMember.findFirst({
+        where: { id: uid, merchantId: req.merchantId },
+        select: { id: true },
+      });
+      if (!miembro) return res.status(400).json({ error: 'invalid_assignee' });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await escribirAsignadosDeDocumento(tx as unknown as ClienteDeAsignacionDeDocumento, 'quote', id, ids);
+    });
+
+    const asignados = await leerAsignadosDeDocumento(
+      prisma as unknown as ClienteDeAsignacionDeDocumento, 'quote', id,
+    );
+    return res.json({ ok: true, asignados });
+  } catch (err) {
+    console.error('[PATCH /admin/quotes/:id/asignados]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });

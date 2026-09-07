@@ -10,6 +10,9 @@ import { getLocale } from '../../../../core/i18n/locales';
 import { requireRole } from '../../../../core/http/authMiddleware';
 import { itemKindSchema } from '../../../../core/validation/schemas'; // SCRUM-609 (CAT-01)
 import { conceptosFrecuentes, VENTANA_DIAS } from '../../domain/frequentConcepts'; // SCRUM-162
+// SCRUM-597 (DOC-07 · P-DOC-3): el coste del catálogo es economía del negocio. Quién lo ve se
+// PREGUNTA aquí, nunca se decide en la ruta (mismo trato que `entitlements.ts`, regla 34).
+import { veEconomiaDelNegocio, sinCosteDeCatalogoEnLista, sinCosteDeCatalogo } from '../../../../core/visibilidadEconomica';
 
 const router = Router();
 
@@ -165,7 +168,9 @@ router.get('/autocomplete', async (req, res) => {
     const q = String(req.query.q || '').trim();
     if (!q) return res.json({ ok: true, items: [] });
     const items = await searchProducts(req.merchantId, q);
-    return res.json({ ok: true, items });
+    // El autocompletado de la línea del presupuesto: es POR AQUÍ por donde el coste llegaba al
+    // formulario, así que taparlo sólo en la ficha habría dejado la puerta de al lado abierta.
+    return res.json({ ok: true, items: veEconomiaDelNegocio(req.userRole) ? items : sinCosteDeCatalogoEnLista(items) });
   } catch (err) {
     console.error('[GET /admin/products/autocomplete]', err);
     return res.status(500).json({ ok: false, error: 'internal_error' });
@@ -240,7 +245,7 @@ router.post('/import', requireRole('admin'), async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const items = await listProducts(req.merchantId);
-    return res.json({ ok: true, items });
+    return res.json({ ok: true, items: veEconomiaDelNegocio(req.userRole) ? items : sinCosteDeCatalogoEnLista(items) });
   } catch (err) {
     console.error('[GET /admin/products]', err);
     return res.status(500).json({ ok: false, error: 'internal_error' });
@@ -253,7 +258,7 @@ router.get('/:id', async (req, res) => {
     if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
     const item = await getProductById(req.merchantId, id);
     if (!item) return res.status(404).json({ ok: false, error: 'not_found' });
-    return res.json({ ok: true, item });
+    return res.json({ ok: true, item: veEconomiaDelNegocio(req.userRole) ? item : sinCosteDeCatalogo(item) });
   } catch (err) {
     console.error('[GET /admin/products/:id]', err);
     return res.status(500).json({ ok: false, error: 'internal_error' });
@@ -274,7 +279,9 @@ router.post('/', async (req, res) => {
     const created = await createProduct(req.merchantId, {
       name, description,
       price: priceNum,
-      cost: cost == null ? null : Number(cost),
+      // SCRUM-597 · mismo criterio que el PUT: quien no ve el coste no lo fija. `null` es «no se
+      // sabe», que es exactamente lo que un alta hecha por un técnico puede afirmar.
+      cost: veEconomiaDelNegocio(req.userRole) && cost != null ? Number(cost) : null,
       vat: vat == null ? null : Number(vat),
       providerId: providerId == null ? null : Number(providerId),
       isActive: isActive === undefined ? true : Boolean(isActive),
@@ -297,7 +304,13 @@ router.put('/:id', async (req, res) => {
     if (body.name !== undefined)       patch.name = body.name;
     if (body.description !== undefined) patch.description = body.description;
     if (body.price !== undefined)      patch.price = Number(body.price);
-    if (body.cost !== undefined)       patch.cost = body.cost == null ? null : Number(body.cost);
+    // SCRUM-597 · quien NO ve el coste tampoco lo escribe. No es celo: su formulario ya no trae
+    // el campo, así que un `cost` en ESTE cuerpo sólo puede venir de un cliente que se lo inventa
+    // — y aceptarlo dejaría que un técnico pusiera a null el coste de un artículo que ni siquiera
+    // puede leer. Se IGNORA la clave (no se rechaza la petición entera): el resto del PUT es suyo.
+    if (body.cost !== undefined && veEconomiaDelNegocio(req.userRole)) {
+      patch.cost = body.cost == null ? null : Number(body.cost);
+    }
     if (body.vat !== undefined)        patch.vat  = body.vat  == null ? null : Number(body.vat);
     if (body.isActive !== undefined)   patch.isActive = Boolean(body.isActive);
     if (body.providerId !== undefined) patch.providerId = body.providerId == null ? null : Number(body.providerId);

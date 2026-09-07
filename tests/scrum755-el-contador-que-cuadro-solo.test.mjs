@@ -59,6 +59,20 @@ const JS = path.join(RAIZ, 'public/dashboard/js');
  */
 const CENSO_DE_SITIOS = {
   'albaranDesdePresupuestoModal.js': 6,
+  // 🔴 SCRUM-597 (DOC-07) · 7-sep-2026 · ENTRA `documentoAsignados.js` con 5, a conciencia.
+  //
+  // Es el selector de QUIÉN LLEVA el documento, y EL MECANISMO NO EXISTE SIN TEXTO: un selector
+  // sin rótulos no se puede usar — quien lo abre no sabe si está marcando a quien lo lleva, a
+  // quien lo redactó o a quien cobra, que son tres cosas distintas en esa pantalla. Mismo caso y
+  // mismo trato que `jobAsignados.js` en el censo de SCRUM-402.
+  //
+  // 5 SITIOS y UNA sola marca escrita: el rótulo, el hueco, la nota de solo-lectura del técnico,
+  // el aviso de equipo vacío y el fallo al guardar. Los cinco salen de `MARCA_DOC_ASIGNADOS`, y
+  // `DOC_ASIGNADOS_SIN_APROBAR = 5` lo dice dentro del propio fichero. 28 → 33 sitios.
+  //
+  // El día que el fundador firme los cinco, esta entrada se BORRA — no se pone a 0
+  // (SCRUM-424 / SCRUM-405).
+  'documentoAsignados.js': 5,
   // 🔴 SCRUM-722 · 7-sep-2026 · `atajoNuevo.js` SALE: el fundador firmó «Nuevo albarán». La
   // entrada se borra, no se pone a 0. 29 → 28 sitios.
   //
