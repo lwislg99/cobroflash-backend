@@ -203,7 +203,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // La restauración deja de escribir: devolvería «todo bien» sin haber devuelto nada.
-    fichero: 'scripts/meta-guard-mutaciones.mjs',
+    //
+    // 🔴 SCRUM-808 · `restaurarYVerificar` se MUDÓ a `_marca-de-arbol.mjs` al compartir la red con
+    // `censo-mudez`, y esta declaración se quedó apuntando al sitio viejo. **Lo cazó el propio
+    // meta-guard**, que la declaró CIEGA («el ancla no está… la declaración caducó») en vez de
+    // seguir verde: una pieza que se mueve deja atrás las declaraciones que la apuntaban, y eso
+    // es cobertura retirada en silencio si nadie mira.
+    fichero: 'scripts/_marca-de-arbol.mjs',
     de: '    fs.writeFileSync(p.abs, p.ORIGINAL);',
     a: '    /* no restaura */',
     cae: 'devuelve LOS DOS ficheros a sus bytes',

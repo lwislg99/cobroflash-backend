@@ -47,6 +47,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+// 🔴 SCRUM-808 · LA MISMA red que el meta-guard, no una parecida (regla 2).
+import {
+  marcaDe, marcarEnVuelo, borrarMarca, restaurarDesdeMarca, instalarRedDeSeguridad,
+} from './_marca-de-arbol.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const HELPER = path.join(RAIZ, 'tests', '_guard-texto.mjs');
@@ -91,6 +95,33 @@ function correr(fichero) {
   return { verde, tests: m ? Number(m[1]) : 0, llamoAlFiltro: salida.includes(MARCA) };
 }
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-808 · LA REPARACIÓN VA **ANTES** DE CAPTURAR `ORIGINAL`. No es un detalle de orden:
+// es el defecto que se midió al escribir esto.
+//
+// La primera versión reparaba DESPUÉS de leer el helper. Consecuencia, reproducida: la pasada
+// leía el fichero TODAVÍA MUTADO, lo tomaba como su línea base, y a partir de ahí su propio
+// `finally` «restauraba» **a un estado mutado**. El resto se volvía permanente y encima se
+// apilaba: dos líneas de instrumentación una debajo de otra, y la marca nueva guardando como
+// «original» unos bytes que ya llevaban la mutación de la pasada muerta.
+//
+// O sea: el remedio, mal ordenado, CONVERTÍA un resto reparable en uno definitivo.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+const DIR_MARCA = marcaDe('censo-mudez');
+const pendiente = restaurarDesdeMarca(DIR_MARCA);
+if (pendiente.sucios.length) {
+  console.error('🔴🔴 EL ÁRBOL SE QUEDÓ SUCIO DE UNA PASADA ANTERIOR Y NO HE PODIDO REPARARLO.');
+  for (const s of pendiente.sucios) console.error(`   · ${s}`);
+  console.error(`   La dejó una pasada muerta (pid ${pendiente.pid}, ${pendiente.cuando}). Los bytes `
+    + `originales siguen en \`${path.relative(RAIZ, DIR_MARCA)}\`. MÍRALO A MANO: no se mide nada `
+    + 'sobre un árbol mutado.');
+  process.exit(3);
+}
+if (pendiente.reparadas.length) {
+  console.error(`⚠️ UNA PASADA ANTERIOR MURIÓ CON LA MUTACIÓN PUESTA (pid ${pendiente.pid}, `
+    + `${pendiente.cuando}). Devuelto a sus bytes: \`${pendiente.reparadas.join('` y `')}\`.`);
+}
+
 const ORIGINAL = fs.readFileSync(HELPER, 'utf8');
 if (ORIGINAL.split(FIRMA).length !== 2) {
   console.error('🔴 CIEGO: no encuentro la firma de `soloEjecutable`. Sin poder mutar no hay medida, '
@@ -99,7 +130,35 @@ if (ORIGINAL.split(FIRMA).length !== 2) {
 }
 const conCuerpo = (linea) => ORIGINAL.replace(FIRMA, FIRMA + linea);
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-808 · LA RED, Y ES **LA MISMA PIEZA** QUE LA DEL META-GUARD, NO UNA PARECIDA.
+//
+// Lo de abajo restaura en un `finally`, y **una terminación no ejecuta ese `finally`**.
+// Reproducido antes de tocar nada: lanzado y matado a mitad, `tests/_guard-texto.mjs` se queda
+// con la línea de instrumentación puesta —una que **escribe en `stderr` en CADA llamada al
+// filtro**—. Y ese fichero está VERSIONADO y lo usan decenas de guards: aquí un resto no se
+// queda en un fichero cualquiera, se queda en algo que otro mergea sin mirar. Es PEOR que el
+// caso que originó el ticket.
+//
+// La comprobación posterior («y se COMPRUEBA, no se supone») tampoco corre si el proceso muere:
+// vive después del `finally`, en el mismo hilo que ya no existe.
+//
+// ⛔ Y por eso NO se le ha escrito una red propia: dos implementaciones del mismo remedio son la
+// regla 2, y dentro de seis meses una de las dos está rota sin que nadie lo sepa. Se importa
+// `_marca-de-arbol.mjs`, con SU carpeta y SU lista en vuelo — dos marcas en el mismo sitio se
+// pisarían.
+//
+// ⚠️ Lo que la red NO hace, y queda declarado igual que en el meta-guard: en Windows no llega
+// señal atrapable y un hijo desprendido muere con el padre, así que entre el kill y la siguiente
+// invocación **el árbol sigue mutado**. Lo que cambia es que ahora SE DICE.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+const EN_VUELO = [];
+const PIEZAS = [{ ruta: 'tests/_guard-texto.mjs', abs: HELPER, ORIGINAL: Buffer.from(ORIGINAL, 'utf8') }];
+
 const resultado = [];
+marcarEnVuelo(PIEZAS, DIR_MARCA);
+EN_VUELO.push(...PIEZAS);
+instalarRedDeSeguridad(undefined, EN_VUELO, DIR_MARCA);
 try {
   // ── ① PASADA LIMPIA E INSTRUMENTADA ──────────────────────────────────────────────────
   // El comportamiento no cambia: sólo avisa la primera vez que lo llaman. De aquí salen las dos
@@ -125,14 +184,18 @@ try {
   }
 } finally {
   fs.writeFileSync(HELPER, ORIGINAL, 'utf8');
+  EN_VUELO.length = 0; // ya no hay nada que la red tenga que devolver
 }
 
 // ⛔ Y se COMPRUEBA, no se supone: el `finally` pudo correr con el disco lleno.
 if (fs.readFileSync(HELPER, 'utf8') !== ORIGINAL) {
   console.error('🔴🔴 `tests/_guard-texto.mjs` NO ha quedado como estaba. NO COMMITEES NADA. '
-    + 'Restaura con: git checkout -- tests/_guard-texto.mjs');
+    + `Los bytes originales están en \`${path.relative(RAIZ, DIR_MARCA)}\`, y la marca se queda `
+    + 'ahí: la siguiente pasada intentará repararlo y, si no puede, lo volverá a decir.');
   process.exit(3);
 }
+// Cuadró: la marca se retira. Sólo aquí, y sólo después de haberlo verificado.
+borrarMarca(DIR_MARCA);
 
 // ── ③ EL VEREDICTO, por sus cuatro puertas ──────────────────────────────────────────────
 const de = (c) => resultado.filter((r) => r.clase === c);
