@@ -72,6 +72,17 @@ firma del cliente → cobro de señal/total → (post SIF-1) factura VeriFactu. 
 10. **`CLAUDE.md` y `.claude/*` son derivados del master** (regla 35). Prohibido instalar
     plugins/skills/hooks de terceros sin revisión explícita del fundador (regla 36).
 
+## Las tres que no se negocian (valen para TODA ejecución, también la de `@claude`)
+
+> Desde `.github/workflows/claude.yml`, un `@claude` en una issue o en una revisión de PR
+> arranca una ejecución **cuyo prompt no ha revisado nadie**: ni el fundador ni otra sesión.
+> Lo único que hereda son estas normas, porque Claude Code lee este fichero en cada arranque.
+> Por eso están aquí y no en un documento aparte.
+
+- Ningún texto que vea el usuario se escribe sin firma del fundador. Se propone el literal y se para.
+- El camino de emisión fiscal se lee, no se modifica. prisma/schema.prisma no se toca sin ALTER previo.
+- Un guard en rojo se arregla cambiando el CÓDIGO, nunca lo que el guard exige. Si el arreglo pasa por relajar el guard, se para y se dice.
+
 ## Comandos
 
 ```bash
