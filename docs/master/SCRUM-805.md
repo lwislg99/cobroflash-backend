@@ -3,13 +3,21 @@
 **Fecha:** 7-sep-2026 · **Carril:** producto · documentos firmados · **Gate:** sin gate — corre en `npm test`
 **Medido contra:** `origin/main` = `64b5d80ae3b11dcc34d736de21670eb6b5ce6dda` · 2026-09-07T07:01:07+01:00
 **Mutaciones:** **3 vivas · 0 mudas · 0 ciegas**, árbol restaurado byte a byte.
-**Tanda:** **5849 pruebas · 5747 en verde · 0 rojas · 102 saltadas** · 283,3 s · salida 0.
+**Tanda (árbol YA MEZCLADO con main):** **5866 pruebas · 5764 en verde · 0 rojas · 102 saltadas** · 226,0 s · salida 0.
+**Mutaciones re-corridas tras mezclar:** 3 vivas · 0 mudas · 0 ciegas, árbol restaurado byte a byte.
 **Guards de entrada:** 4 en verde (21 tests).
 
 > ⛔ **ESTE PR NO SE PUEDE MERGEAR HASTA QUE EL `ALTER` ESTÉ EN LAS TRES BASES.** Toca
 > `prisma/schema.prisma`, y `assertSchemaSinDeriva` **impide arrancar** si la base no tiene la
 > columna: mergear antes tumba producción en el siguiente despliegue. Detalle y secuencia en
 > `docs/MIGRATIONS_PENDING.md`. **Esta sesión no ha aplicado nada en ninguna base.**
+
+
+> **`main` se movió 7 commits mientras trabajaba** (SCRUM-759, SCRUM-797 y sus merges). Se
+> mezcló DENTRO, se recompiló, se regeneró el cliente Prisma y se volvió a medir TODO: tanda,
+> guards de entrada y mutaciones. El único conflicto fue en `docs/MIGRATIONS_PENDING.md` y era de
+> POSICIÓN, no de significado —dos entradas nuevas al final del mismo documento—: **se conservan
+> las dos**, verificado que no queda ningún marcador y que los dos `ALTER` siguen presentes.
 
 ---
 
