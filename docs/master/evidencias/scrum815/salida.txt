@@ -1,0 +1,21 @@
+SCRUM-815 · idempotencia del webhook de Stripe
+
+🔴 EL CONTROL QUE DECIDE · el MISMO evento dos veces, con fallo en medio del 1º:
+   1ª entrega (falla a mitad)                     → HTTP 400 · FALLO a medio procesar (la base de datos no responde) → Stripe reintentará
+   2ª entrega (reintento de Stripe)               → HTTP 200 · DESCARTADO como duplicado
+
+CONTROL POSITIVO · lo que la idempotencia SÍ debe hacer:
+  a) dos eventos DISTINTOS se procesan los dos:
+   evt_A                                          → HTTP 200 · PROCESADO
+   evt_B                                          → HTTP 200 · PROCESADO
+  b) el MISMO evento repetido SIN fallo se descarta una vez:
+   evt_C (1ª)                                     → HTTP 200 · PROCESADO
+   evt_C (2ª)                                     → HTTP 200 · DESCARTADO como duplicado
+
+Para la otra mitad —¿memoria o base de datos?— este mismo fichero, en un proceso
+nuevo:  PASO0_SEGUNDA_VIDA=1 node docs/master/evidencias/scrum815/idempotencia-webhook.mjs
+
+── y en un proceso NUEVO ──
+🔁 PROCESO NUEVO (el reinicio de Railway, o una segunda instancia):
+   evt_C, ya PROCESADO en el proceso anterior     → HTTP 200 · PROCESADO
+   (si sale PROCESADO, el estado no sobrevive al proceso: es memoria, no base de datos)
