@@ -158,12 +158,29 @@ function vocabularioFacturaSuelta(linea) {
 // se le factura pueden decir precios distintos. **Es el hueco declarado de este ticket, no un
 // olvido, y entra cuando la asesoría fije la convención.**
 // ─────────────────────────────────────────────────────────────────────────────────────────
-const VOC_PRESUPUESTO = ['apartado', 'concept', 'costeUnitario', 'dto', 'price', 'qty', 'suplido', 'tax'];
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 SCRUM-632 · 8-sep-2026 · ENTRA `description`, Y ESTE TRINQUETE VOLVIÓ A HACER SU TRABAJO:
+// saltó en la tanda sin que nadie fuera a mirarlo.
+//
+// La línea gana descripción PROPIA —distinta de la del producto, decisión del fundador del
+// 8-sep-2026— y por tanto una clave nueva en `Quote.lines`.
+//
+// ⚠️ ENTRA TAMBIÉN EN `DIVERGENCIA`, y conviene leer QUÉ significa aquí exactamente: la CLAVE
+// no sobrevive al facturar, porque los cuatro caminos de emisión reconstruyen la línea con
+// `concept/qty/price/tax`. Pero **el TEXTO sí sobrevive**, porque va además pegado al `concept`
+// con un `\n` (el mecanismo de SCRUM-603, que este ticket no toca). O sea: en la factura la
+// descripción sigue saliendo en el papel, pero deja de ser un dato separado y vuelve a ser
+// parte del concepto.
+//
+// Eso NO es lo deseable a largo plazo y se dice: lo deseable es que `pdf.service` prefiera la
+// clave y la pegada se retire. Eso es camino de emisión (regla 38) y va en su propio ticket.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+const VOC_PRESUPUESTO = ['apartado', 'concept', 'costeUnitario', 'description', 'dto', 'price', 'qty', 'suplido', 'tax'];
 const VOC_FACTURA = ['concept', 'price', 'qty', 'tax'];
 // `apartado`, `costeUnitario` y ahora `dto` se unen a `suplido` en la lista de lo que el
 // presupuesto guarda y la factura no. Que la lista CREZCA no es neutro: cada entrada es un dato
 // que muere al facturar.
-const DIVERGENCIA = ['apartado', 'costeUnitario', 'dto', 'suplido'];
+const DIVERGENCIA = ['apartado', 'costeUnitario', 'description', 'dto', 'suplido'];
 
 /**
  * Los sitios que reconstruyen una linea con la firma EXACTA de `Invoice.lines`. Fijado POR

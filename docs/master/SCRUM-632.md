@@ -192,3 +192,147 @@ por lo medido, el caso en el que la casilla **no puede** hacer nada.
 4. **Dos lectores distintos del mismo dato.** La vista previa (`:1271` → `:1445`) lo lee como
    `l.description` de un objeto propio; el PDF (`:2987`) lo lee del `dataset` directamente. Hoy
    coinciden; nada los obliga a coincidir mañana.
+
+---
+
+# SCRUM-632b · La línea gana descripción propia — construido
+
+**Fecha:** 08-sep-2026 · **Carril:** producto · **Gate:** ninguno — `prisma/schema.prisma` NO se toca
+
+**Medido contra:** `origin/main` = `2f123b7071d148bc93b87a42354f52ede8bef065` · 2026-09-08T05:41:39+01:00
+
+## La decisión que lo ordena
+
+> «Sí tiene que haberlo. Además la descripción del presupuesto/factura es DISTINTA a la de
+> producto: es algo que aparece en el doc, que se utiliza para poner el texto que quiera el
+> merchant.» — el fundador, 8-sep-2026
+
+Son **dos datos**, y hasta hoy el producto tenía **uno**:
+
+* descripción del **PRODUCTO** → vive en el catálogo, la escribe quien lo mantiene;
+* descripción de la **LÍNEA** → vive en el documento, la escribe el profesional, y es **suya**.
+
+Por eso se borraba al teclear: colgaba de `conceptInput.dataset.pfProductDescription`, es decir
+**del input del concepto**. Cualquier cosa que invalidara «este producto» se la llevaba por
+delante — incluido el propio profesional escribiendo.
+
+## Lo construido
+
+| | |
+|---|---|
+| **Esquema** | `QuoteLineSchema` gana `description: z.string().optional()`. **`prisma/schema.prisma` no se toca**: `Quote.lines` es `Json`, así que esa clave es todo el cambio. Sin ALTER y sin migración — no hay nada que parar. |
+| **El campo** | Un `textarea` propio en la hoja de ajustes de la línea (con el coste y el descuento; en la fila principal costaría alto por línea, medición de SCRUM-594). |
+| **Precarga (req. 2)** | Elegir del catálogo **propone**: rellena el campo desde `it.description`. A partir de ahí es de la línea. Y **no pisa** lo que el profesional ya escribiera — sobrescribir sería el mismo defecto por la otra puerta. |
+| **Req. 3, por construcción** | Los **dos sitios de defecto** dejan de tocar la descripción: sueltan el producto (`pfProductId`, `pfProductName`), que es cierto, pero el texto ya no cuelga de ahí. El **tercero es legítimo** —vacía la línea entera— y ahí sí se limpia también el campo. |
+| **Req. 4** | Una línea escrita **a mano** con descripción y la casilla marcada ya llega al papel. |
+| **Borrador** | La descripción sobrevive a un F5, igual que `costeUnitario`. |
+
+## 🔴 La decisión de diseño que hay que leer entera
+
+`pdf.service` **es camino de emisión** y el encargo lo prohíbe expresamente (regla 38). Así que la
+descripción **se sigue pegando al `concept` con `\n`** —el mecanismo que SCRUM-603 ya sabe partir—
+y **además** viaja como clave propia.
+
+**Queda una redundancia y se declara en vez de esconderse:** el mismo texto está pegado al
+`concept` y en `description`. La dirección es **una sola** —el campo manda, y el concepto se
+compone de él en un único sitio— pero mientras el PDF lea el concepto hay dos sitios con el mismo
+texto.
+
+**Lo deseable es retirar la pegada**, y eso exige que `pdf.service` prefiera la clave: camino de
+emisión, su propio ticket y su propio GO. Se deja dicho para que nadie lo lea como olvido.
+
+**Consecuencia medida, del trinquete de SCRUM-619:** `description` entra en `DIVERGENCIA` — la
+CLAVE no sobrevive al facturar, porque los cuatro caminos de emisión reconstruyen la línea con
+`concept/qty/price/tax`. Pero el **texto sí** sobrevive, dentro del `concept`. En la factura la
+descripción sigue saliendo en el papel; deja de ser un dato separado.
+
+## Verificación
+
+| Control | Cómo | Resultado |
+|---|---|---|
+| 🔴 **ROJO 1** · línea a mano + casilla → descripción en el PDF | **leído del PDF generado** con `extraerTextoPdf`, no del fuente | ✅ |
+| 🔴 **ROJO 2** · editar el concepto ya no la pierde | los dos sitios de defecto, sobre el fuente EJECUTABLE (`soloEjecutable`) | ✅ |
+| ✅ **POSITIVO** · línea sin descripción sale exactamente como hoy | PDF generado: no aparece ninguna | ✅ |
+| ✅ **NEGATIVO** · editar la línea no toca el catálogo | no existe ninguna escritura a `it.description`; y la precarga no pisa lo escrito | ✅ |
+| 🔴 **SUELO** · el barrido de sitios que sueltan el producto no da cero | son tres, y el suelo exige ≥ 3 | ✅ |
+
+**Probado EN ROJO, cada arreglo por separado:** devolviendo el borrado al teclear cae exactamente
+el control de los sitios de defecto; devolviendo la lectura del `dataset` en el envío cae
+exactamente el del campo propio. Ninguno de los dos arrastra al otro.
+
+**Microcopy:** el rótulo del campo nace con `[PENDIENTE microcopy oficial]` desde una sola
+constante (`MARCA_DESC_LINEA`). Censos declarados: SCRUM-402 y SCRUM-755, `quotesView.js` de 3 a 4.
+
+**Suite:** 6137 tests · 6032 pass · 0 fail · 105 skipped · exit 0.
+
+⛔ Sin tocar `conceptoLinea.ts` ni su trinquete (SCRUM-603), sin dependencias nuevas, sin
+producción ni staging, y sin tocar el camino de emisión.
+
+---
+
+# SCRUM-632c · La unión con SCRUM-597, y el corte que la unión no contestaba
+
+**Fecha:** 08-sep-2026 · **Carril:** producto · **Gate:** ninguno
+
+**Medido contra:** `origin/main` = `1bbf60afb9eae547e083e1c716fa97c88306d791` · 2026-09-08T07:15:37+01:00
+
+## La unión: dos hunks, los dos lados
+
+Al mergear main —que ya trae SCRUM-597— git marcó **dos** conflictos en `quotesView.js`, los dos
+en el mismo sitio de la línea. Se resuelven por UNIÓN, cero líneas borradas:
+
+* **Hunk ①** — se quedan los dos bloques y sus dos declaraciones: `descTd`/`descInput` (632, con su
+  explicación de por qué la descripción deja de colgar del `dataset` del concepto) y
+  `const veEconomia` (597, con su comentario de P-DOC-3).
+* **Hunk ②** — se conserva **íntegro** el comentario de main de los «DOS MOTIVOS INDEPENDIENTES» y
+  su línea `if (veEconomia && !esDocumentoSuelto)`. **No** se sustituye por el `if` de esta rama:
+  eso habría perdido el motivo de 597, que es justo lo que ese comentario advierte.
+
+## 🔴 La pregunta que la unión no contestaba, decidida MIDIENDO
+
+La rama pintaba `descTd` **siempre**, también en documento suelto. La regla del fichero:
+
+> «Un control aparece en modo documento suelto SI Y SÓLO SI SU DATO SOBREVIVE AL EMISOR.»
+
+**Los dos hechos, comprobados EJECUTANDO y no leyendo:**
+
+**①** Se ejecutó `cuerpoDelDocumentoSuelto(7, [{…, description: 'TEXTO DEL PROFESIONAL'}])`. El
+cuerpo salió así:
+
+```json
+{ "customerId": 7, "lines": [ { "concept": "Grifo monomando", "qty": 1, "price": 100, "tax": 0.21 } ] }
+```
+
+La descripción **no viaja**: ni como clave, ni pegada al concepto.
+
+**②** `descCheck` cuelga de `descLabel` → `descWrapper` → `blockDelivery`, y `blockDelivery` sólo se
+añade a la tarjeta con `if (!esDocumentoSuelto)`. En ese modo la casilla **no está en el DOM**: ni
+se ve ni se puede marcar.
+
+**Decisión:** `if (!esDocumentoSuelto) ajustesCampos.appendChild(descTd);`, con el motivo escrito al
+lado. En ese modo el campo sería lo que este fichero enumera tres veces como defecto: un control que
+el profesional rellena y que no llega a ningún sitio.
+
+⚠️ El nodo se sigue **construyendo** —lo leen el autocompletado y el borrador—; lo que no ocurre es
+que se pinte. Mismo trato que el coste y por el mismo motivo.
+
+## Verificación de la unión, ejecutada
+
+`tests/scrum632-los-dos-cortes-de-la-linea.test.mjs` extrae del fuente las líneas que deciden y las
+**ejecuta** con un DOM de juguete, en los dos modos y con los dos mecanismos:
+
+| Escenario | Coste | Descripción |
+|---|---|---|
+| técnico · presupuesto | ausente (597) | **presente** — no es economía del negocio, es el texto del documento |
+| propietario · presupuesto | presente | presente |
+| documento suelto | ausente (600/616) | ausente (632, medido) |
+
+Y la medición que sostiene el corte va **dentro** del test: si algún día la descripción empezara a
+viajar en documento suelto, ese caso cae y hay que volver a decidir. Sin él, el corte sería una
+opinión de hoy.
+
+**Probado EN ROJO por los dos lados:** dejando el `if` de 600 solo cae el control; dejando el
+`appendChild` de la descripción sin gate, también. Cada uno tumba su caso.
+
+**Suite:** 6163 tests · 6058 pass · 0 fail · 105 skipped · exit 0.
+Control TAP de `scrum821b`: 3 `ok` · `# skipped 0`.
