@@ -336,3 +336,81 @@ opinión de hoy.
 
 **Suite:** 6163 tests · 6058 pass · 0 fail · 105 skipped · exit 0.
 Control TAP de `scrum821b`: 3 `ok` · `# skipped 0`.
+
+---
+
+# SCRUM-632c · La variable que no salía del `try` — main roto, y mi suite en verde
+
+**Fecha:** 08-sep-2026 · **Carril:** corrección urgente · **Gate:** ninguno
+
+**Medido contra:** `origin/main` = `f0ec26e86a04a21e9e60b748b4c7c5c2c83bace9` · 2026-09-08T08:04:34+01:00
+
+## El defecto, y es mío
+
+SCRUM-632 declaró `const desc` **dentro** de un `try { … } catch {}` y usó `desc` en el spread
+`...(desc ? { description: desc } : {})` **sesenta líneas más abajo, fuera del bloque**. `const` es
+de ámbito de bloque, así que **cada línea válida** de un presupuesto lanzaba:
+
+```
+ReferenceError: desc is not defined
+    at js/quotesView.js   ← dentro del manejador de «Generar presupuesto»
+```
+
+**Crear presupuestos dejó de funcionar en `main`.**
+
+## 🔴 Reproducido ANTES de tocar, sobre los bytes de `origin/main`
+
+Se extrajo la región real del payload del `quotesView.js` de main —`git show origin/main:…`, sin una
+línea de esta rama— y se **ejecutó** con una línea válida (concepto, cantidad, precio):
+
+```
+región extraída de origin/main: 69 líneas
+🔴 REVIENTA: ReferenceError: desc is not defined
+```
+
+## El arreglo
+
+```js
+let desc = '';
+try { desc = (…).trim(); if (includeDesc && desc) { … } } catch (_e) {}
+```
+
+La declaración sale del bloque **con valor inicial**, para que exista pase lo que pase. El `''` no
+es adorno: con él la clave **no viaja** cuando no hay texto, que es exactamente lo que hacía antes
+de romperse (ausente ≠ vacío, el criterio de `costeUnitario`).
+
+⛔ El spread **no** se mete dentro del `try`: cambiaría *cuándo* viaja la clave, y eso es otra cosa.
+⛔ El `catch` **no** se amplía. No se tragaba el `ReferenceError` —ése nace fuera— pero sí tapaba
+cualquier fallo de la lectura, y por eso nadie miró aquí. Un `catch` que se traga más de lo que
+vigilaba es cómo esto llegó a main en silencio.
+
+## 🔴 LA LECCIÓN, que es lo que de verdad hay que llevarse
+
+**La tanda de SCRUM-632 salió con 6163 tests en verde, y NINGUNO pasaba por aquí.**
+
+Mis casos miraban el **fuente** —que la clave estuviera escrita, que los sitios de defecto ya no
+borraran— o el **PDF ya generado**. Ninguno **ejecutaba la construcción del payload**, que es la
+línea que el profesional pulsa. Un guard de texto habría dicho «la clave `description` está ahí»:
+y estaba. Lo que no estaba era que se pudiera **llegar** a ella.
+
+Lo encontró el CI de otra rama (scrum-600d), no mi suite. Va escrito en la cabecera del test nuevo
+para que quien lo lea entienda por qué existe.
+
+## El control que faltaba
+
+`tests/scrum632c-el-payload-se-construye.test.mjs` **ejecuta** la región real del fichero con una
+línea válida, en vez de leerla:
+
+| Control | |
+|---|---|
+| 🔴 una línea válida **no revienta** y llega al payload | ✅ |
+| ✅ con descripción y casilla marcada: viaja en `description` **Y** pegada al `concept` | ✅ |
+| con descripción y casilla **sin** marcar: viaja la clave, **no** se pega al papel | ✅ |
+| ✅ NEGATIVO: sin descripción la clave **no** viaja (ausente ≠ vacío) | ✅ |
+| el respaldo del `dataset` sigue vivo para borradores anteriores al campo | ✅ |
+
+**Probado EN ROJO contra el código de main:** los **cinco** caen con `ReferenceError`. Con el
+arreglo, los cinco pasan.
+
+Y el **documento suelto sigue igual**: su camino hace `return` antes y no pasa por esta región —
+lo sigue midiendo `scrum632-los-dos-cortes-de-la-linea`, que ya está en main.
