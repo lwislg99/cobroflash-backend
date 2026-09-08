@@ -2,14 +2,14 @@
 
 **Fecha de cierre:** 8-sep-2026 · **Rama:** `scrum-626-el-arranque-en-frio-que-se-paga-una-vez`
 
-**Medido contra:** `origin/main` = `24f8cb4dcfd1dba2c9d9d857880952639273f214` · 2026-09-08T07:20:07+01:00
+**Medido contra:** `origin/main` = `160497a57f96ac15da10d48f946ed68411b8c63f` · 2026-09-08T08:00:28+01:00
 
-> ⚠️ **El antes/después de `guards:visuales` se corrió contra `15b42968`, no contra este sha** —
-> `main` se movió dos veces mientras se trabajaba, que es exactamente el incidente que originó
-> SCRUM-267—. No se repite la medida, y el motivo está **medido, no supuesto**: pasar de
-> `15b42968` a `24f8cb4d` trajo **4 ficheros, los cuatro bajo `docs/`**
-> (`git diff --name-only 15b42968 origin/main | grep -v "^docs/"` da **0**). No hay una línea de
-> código que pueda haber movido esos números. Si hubiera tocado `scripts/`, habría que repetirla.
+> ⚠️ **`main` se movió TRES veces mientras se cerraba este ticket** —`15b42968` → `24f8cb4d` →
+> `160497a5` → `fb7a1d78`, en menos de una hora—, que es literalmente el incidente que originó
+> SCRUM-267. Lo que dice el ancla es lo que se midió: **`160497a5`, mergeado, con la tanda y los
+> guards visuales corridos ENCIMA de él**. Cuando esto se empujó, `main` ya estaba en `fb7a1d78`.
+> **No se persigue**: perseguirlo es una cinta de correr, y el ancla existe justamente para que
+> ese desfase se VEA en vez de taparse.
 
 > Este ticket se trabajó en **dos ramas**, y las dos entran: una **DIAGNOSTICA** y la otra
 > **MITIGA**. No se parte el ticket y no se elige entre ellas — sin el diagnóstico, el
@@ -298,53 +298,66 @@ mirarlo en el runner antes de dar el problema por cerrado.
 
 ## ✅ EL CONTROL, CORRIDO AQUÍ — con números de la salida real
 
-`npm run guards:visuales`, los 15 guards, **tres pasadas reales**, las tres **15 verdes · 0 no
-verdes** y las tres con exit 0 leído de fichero:
+`npm run guards:visuales`, **cinco pasadas reales**, las cinco **15 verdes · 0 no verdes** y las
+cinco con **exit 0 leído de fichero**, nunca de un `| tail`:
 
-| | `guard:contraste` · **arranque** | ese guard, total | la serie entera |
-|---|---|---|---|
-| **A · ANTES** — `main`, SIN calentamiento, máquina en reposo | **0,8 s** | 57,3 s | 278,7 s |
-| **B · DESPUÉS** — esta rama, con calentamiento, máquina en reposo | **0,4 s** | 8,1 s | 212,5 s |
-| **C · DESPUÉS** — el árbol que se empuja, con calentamiento, **máquina CARGADA** | **0,5 s** | 39,8 s | 537,5 s |
+| | árbol | calentamiento | la serie | `guard:contraste` | su **arranque** |
+|---|---|---|---|---|---|
+| **A** | `main` (`cobroflash-b24`) | ⛔ no | 278,7 s | 57,3 s | 0,8 s |
+| **A′** | `main` (`cobroflash-b24`) | ⛔ no | 191,8 s | 27,4 s | 0,5 s |
+| **B** | esta rama | ✅ sí | 212,5 s | 8,1 s | 0,4 s |
+| **C** | esta rama, **máquina cargada** | ✅ sí | 537,5 s | 39,8 s | 0,5 s |
+| **D** | **el árbol que se empuja** | ✅ sí | 105,5 s | 7,4 s | **0,3 s** |
 
-Y el calentamiento **se cuenta aparte**, como pedía el ticket, con su propia marca (pasada C):
+### ⛔ Los totales NO dicen nada, y estas cinco pasadas son la prueba
 
-```
-⟦calentamiento⟧ 0.9 s · proceso+ws 0.9 s · primera-página 0.0 s  (tope 120000 ms)
-   ✔ guard:contraste             39.8 s   arranque   0.5 s   verde
-   15 guards · 537.5 s en serie   ·   verdes: 15 · no verdes: 0
-```
+**105,5 · 191,8 · 212,5 · 278,7 · 537,5 segundos.** Misma máquina, y B/C/D son además **el mismo
+árbol**. La horquilla entre tiradas es de **×5**, o sea mucho mayor que el efecto que se busca
+medir: restar dos totales aquí daría el signo de la CARGA, no el del arreglo. Es exactamente lo
+que SCRUM-790 prohibió, así que **no se resta**. Si en algún sitio de este documento apareciera un
+«de X s a Y s», estaría mal.
 
-### 🔴 De estos números, LO ÚNICO que se puede leer — y por qué los demás no dicen nada
+### ✅ LO QUE SÍ SE MIDE: la comparación DENTRO de una misma pasada
 
-⛔ **Los totales NO se comparan, y la pasada C es la prueba de por qué.** B y C son **el mismo
-árbol, la misma máquina y el mismo binario**: 212,5 s y **537,5 s**. `guard:contraste` dio 8,1 s
-y 39,8 s. La única diferencia es que C se corrió justo después de una tanda de 453 s y la máquina
-venía cargada. Restar dos totales aquí es exactamente lo que SCRUM-790 prohibió — **y la
-diferencia entre tiradas es mayor que el efecto que se busca medir**, así que el signo saldría de
-la carga, no del arreglo.
-
-✅ **Lo que SÍ se sostiene es la comparación DENTRO de una misma pasada, que la carga no puede
-falsear.** En C, con la máquina ahogada, los quince arranques fueron:
+La carga del momento afecta a los quince guards por igual, así que **comparar los arranques entre
+sí, dentro de una sola tirada, es inmune a ella**. Los arranques en el ORDEN DE LA FILA:
 
 ```
-guard:contraste (el PRIMERO de la fila) ......... 0,5 s   ← el MENOR de los quince
-los otros catorce .............................. 0,7 – 1,7 s
+A′ · SIN calentamiento (main)
+  0,5 · 0,7 · 0,7 · 0,6 · 0,6 · 0,5 · 0,4 · 0,4 · 0,3 · 0,3 · 0,3 · 0,3 · 0,3 · 0,3
+  └─────── la CABEZA paga 0,4–0,7 ───────┘ └────── la COLA se estabiliza en 0,3 ──────┘
+
+D · CON calentamiento (el árbol que se empuja)
+  0,3 · 0,3 · 0,3 · 0,3 · 0,3 · 0,3 · 0,3 · 0,3 · 0,3 · 0,3 · 0,3 · 0,3 · 0,3 · 0,3
+  └────────────── 0,3 s DESDE EL PRIMERO, los catorce ──────────────┘
 ```
 
-**El primero de la fila pagó MENOS que todos los que van detrás.** Eso es justo lo que el
-calentamiento tenía que conseguir: el primero deja de pagar la entrada. Sin calentar (pasada A) el
-primero pagaba 0,8 s; calentando paga 0,4 y 0,5 s **incluso con la máquina peor**. Es la única de
-las tres cifras que se queda quieta, y es la que el ticket iba a mover.
+🔴 **Sin calentar, la fila SE CALIENTA SOLA**: los seis primeros guards pagan de más y a partir
+del séptimo se estabiliza en 0,3 s. Eso es la firma del arranque en frío **vista en la propia
+salida**, y no depende de con qué se compare. **Con el calentamiento, esa cabeza desaparece: los
+catorce arrancan en 0,3 s desde el primero.** Es justo lo que el ticket afirmaba —el coste se paga
+UNA vez— y ahora está medido en vez de argumentado.
+
+Y el calentamiento **se cuenta aparte**, con su marca propia, como pedía el ticket (pasada D):
+
+```
+⟦calentamiento⟧ 0.5 s · proceso+ws 0.5 s · primera-página 0.0 s  (tope 120000 ms)
+   ✔ guard:contraste              7.4 s   arranque   0.3 s   verde
+   15 guards · 105.5 s en serie   ·   verdes: 15 · no verdes: 0
+```
 
 ### 🔴 Y lo que esta medida local NO demuestra — se dice, no se vende
 
-**Aquí no hay 32,5 s que quitar.** El coste en frío de esta máquina es de menos de un segundo, no
-de 32,5: lo que mata a `guard:contraste` es **del runner**, no de un portátil. El antes/después
-local **apunta en la dirección correcta y no puede probar el arreglo** — quien lo prueba es el
-dato del fundador del principio de este documento. Lo que aquí queda demostrado es el
-COMPORTAMIENTO: **el calentamiento corre, dice su coste aparte, no aborta, no cambia ningún
-veredicto, y quita la penalización de ir primero.**
+Aquí la cabeza de la fila cuesta **décimas de segundo**: sumando los catorce arranques, 6,2 s sin
+calentar y 4,2 s calentando. **Dos segundos.** El fenómeno que mata a `guard:contraste` en el
+runner es de **32,5 s en un solo guard**: es el mismo mecanismo, pero de otro tamaño. Así que lo
+que estas cinco pasadas demuestran es **la FORMA del efecto y que el arreglo se comporta**; el
+TAMAÑO que justifica el ticket lo prueba el dato del fundador del principio de este documento, no
+este portátil.
+
+⚠️ Y una salvedad de método: **A/A′ se corrieron en `cobroflash-b24`** (un árbol sin calentamiento,
+sobre `d873a6c2`) y **B/C/D en esta rama**. Comparar arranques ENTRE esos dos árboles sería flojo —
+por eso lo que se lee arriba es la forma **dentro** de cada pasada, que no lo necesita.
 ### 🔴 El tope, intacto
 
 `TOPE_ARRANQUE_POR_DEFECTO = 30_000` — **sin tocar**, comprobado en `scripts/_navegador.mjs:142`.
