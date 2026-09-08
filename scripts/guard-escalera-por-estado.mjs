@@ -189,6 +189,43 @@ for (const [ruta, quienEs, sel] of [
 }
 
 di('\n══════════════════════════════════════════════════════════════════════════════════════');
+di('②-bis «▶ Empezar» ESCRIBE en las dos — y escribe la transición que la FSM admite');
+di('══════════════════════════════════════════════════════════════════════════════════════');
+for (const [ruta, quienEs, sel] of [
+  ['/lista-agendado', 'LISTA', '#view-container tr.jobs-fila .jobs-acciones > button.btn-primary'],
+  ['/detalle-agendado', 'DETALLE', '#view-container .detail-head button.btn-primary'],
+]) {
+  const { page } = await abrirVista(browser, puerto, ruta, 1280);
+  const antes = await page.evaluate(`(() => {
+    const b = document.querySelector('${sel}');
+    return b ? { rotulo: b.textContent.trim() } : null;
+  })()`);
+  if (!antes) { nosupe(`   🔴 NO SUPE MIRAR · ${quienEs}: no encuentro el primario que pulsar.`); await page.close(); continue; }
+  if (antes.rotulo !== '▶ Empezar') {
+    mal(`   🔴 ${quienEs}: el primario de un Trabajo agendado dice «${antes.rotulo}».`);
+    await page.close();
+    continue;
+  }
+  await page.click(sel);
+  await new Promise((r) => setTimeout(r, 600));
+  const r = await page.evaluate(`(() => {
+    const escrituras = window.__peticiones.filter((p) => p.metodo === 'PATCH');
+    return {
+      escrituras: escrituras.map((p) => p.metodo + ' ' + p.ruta + ' ' + p.cuerpo),
+      navegaciones: window.__navegaciones.length,
+    };
+  })()`);
+  const cuerpoOk = r.escrituras.length === 1 && /"status":"en_curso"/.test(r.escrituras[0]);
+  di(`   ${quienEs}: ${r.escrituras.join(' | ') || '(ninguna escritura)'} · navegó ${r.navegaciones === 0 ? 'no ✅' : '🔴 SÍ'}`);
+  if (!cuerpoOk) {
+    mal(`   🔴 ${quienEs} no escribe la transición \`agendado → en_curso\`, que es la única que la FSM\n`
+      + '      admite desde ahí (`JOB_TRANSITIONS` de `job.service.ts`).');
+  }
+  if (r.navegaciones !== 0) mal(`   🔴 ${quienEs}: «▶ Empezar» navegó en vez de escribir.`);
+  await page.close();
+}
+
+di('\n══════════════════════════════════════════════════════════════════════════════════════');
 di('③ UN TRABAJO CERRADO NO PROPONE NADA — en ninguna de las dos');
 di('══════════════════════════════════════════════════════════════════════════════════════');
 for (const [ruta, quienEs, sel] of [
@@ -205,6 +242,43 @@ for (const [ruta, quienEs, sel] of [
   else if (r.hay) mal(`   🔴 ${quienEs}: un Trabajo CERRADO propone «${r.rotulo}». Cerrar es irreversible.`);
   else di(`   ✅ ${quienEs}: sin acción principal (${r.nodos} nodos pintados, o sea la pantalla está ahí)`);
   await page.close();
+}
+
+// ── ③-bis · Y LA PUERTA QUE LA ESCALERA NO VIGILA ────────────────────────────────────────
+//
+// Arreglar lo que el producto PROPONE y dejar abierto lo que PERMITE es media reparación. La
+// barra de la sección de Documentos no pasa por la escalera —es un `btn-secondary`— y seguía
+// ofreciendo dar de alta un albarán sobre un Trabajo cerrado.
+{
+  const CONTAR = `(() => {
+    const barra = document.querySelector('#view-container .job-doc-toolbar');
+    const visible = !!barra && !barra.hidden && barra.offsetParent !== null;
+    return {
+      hayBarra: !!barra,
+      visible,
+      nodos: document.querySelectorAll('#view-container *').length,
+    };
+  })()`;
+  // CONTROL POSITIVO primero: en un Trabajo EN CURSO la barra TIENE que verse. Sin esto, un
+  // «no se ve» en el cerrado podría significar que la sección entera dejó de pintarse.
+  const a = await abrirVista(browser, puerto, '/detalle-en_curso', 1280);
+  const enCurso = await a.page.evaluate(CONTAR);
+  await a.page.close();
+  const b = await abrirVista(browser, puerto, '/detalle-cerrado', 1280);
+  const cerrado = await b.page.evaluate(CONTAR);
+  await b.page.close();
+
+  if (!enCurso.hayBarra) {
+    nosupe('   🔴 NO SUPE MIRAR: la barra de «+ Nuevo albarán» no existe ni en un Trabajo EN CURSO.\n'
+      + '      Entonces «no está en el cerrado» no significa nada.');
+  } else if (!enCurso.visible) {
+    mal('   🔴 la barra de «+ Nuevo albarán» tampoco se ve en un Trabajo EN CURSO: se ha escondido de más.');
+  } else if (cerrado.visible) {
+    mal('   🔴 un Trabajo CERRADO sigue ofreciendo «+ Nuevo albarán» en la sección de Documentos.\n'
+      + '      La escalera ya no lo propone, pero esta barra no pasa por ella: el mismo defecto por otra puerta.');
+  } else {
+    di('   ✅ la barra de «+ Nuevo albarán»: se ve en EN CURSO y no en CERRADO (control positivo incluido)');
+  }
 }
 
 await browser.close();

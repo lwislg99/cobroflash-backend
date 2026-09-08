@@ -34,6 +34,10 @@
 //
 //   · `pendiente_agendar` — no hay fecha. Es un trabajo que todavía no se ha hecho, y se le
 //     ofrecía crear el albarán, EMITIRLO y hasta MANDARLO AL CLIENTE A FIRMAR.
+//   · `agendado` — tiene fecha, pero **NO SE HA EMPEZADO**. Prepararle el documento de entrega es
+//     el mismo error que hacerlo sin fecha, sólo que más tarde. (Fundador, 8-sep-2026: la tabla
+//     original del ticket 816 decía «Agendado / en marcha → Nuevo albarán» y metía en una fila dos
+//     estados que no son lo mismo — que es justo lo que este ticket vino a separar.)
 //   · `cerrado` — es el único acto irreversible de la FSM. Un trabajo cerrado no recibe
 //     documentos nuevos; ofrecerlo invita a reabrir algo que se dio por acabado.
 //
@@ -45,7 +49,7 @@
 // pasar solo el estado que se olvide; una de inclusiones deja fuera al sexto estado que alguien
 // añada mañana, y eso es un botón de menos —visible y reportable— en vez de un albarán emitido
 // sobre un trabajo que no se ha hecho.
-const JOB_ESTADOS_CON_DOCUMENTOS = ['agendado', 'en_curso', 'terminado'];
+const JOB_ESTADOS_CON_DOCUMENTOS = ['en_curso', 'terminado'];
 
 // SCRUM-31 (F4): resolver de la SIGUIENTE acción del héroe (escalera aprobada por el fundador).
 // PURO: decide CUÁL acción mostrar a partir de `job`; NO ejecuta nada (quien lo llama reutiliza
@@ -103,6 +107,21 @@ function jobNextAction(job, isAdmin = true) {
   if (job.status === 'pendiente_agendar') {
     return { level: 2.5, kind: 'agendar', label: 'Agendar' };
   }
+  // ── 2-ter · SCRUM-823 · TIENE FECHA Y NO SE HA EMPEZADO: lo siguiente es ponerse ─────────
+  //
+  // Mismo razonamiento que el peldaño de arriba, un paso más adelante. Un Trabajo `agendado` está
+  // esperando a que alguien vaya: el documento de entrega viene DESPUÉS de hacer el trabajo, no
+  // antes. Con este peldaño, los albaranes empiezan a proponerse exactamente cuando el trabajo
+  // está en marcha.
+  //
+  // El rótulo tampoco es nuevo: «▶ Empezar» ya estaba en el «⋯» de la fila (SCRUM-727b), y sólo
+  // ahí — con la MISMA condición de estado que aquí, así que esto no amplía dónde se puede
+  // empezar un Trabajo: sube a primaria lo que ya estaba permitido en ese estado.
+  //
+  // Y la transición es la que la FSM ya admite: `agendado → en_curso` (la declara `JOB_TRANSITIONS` en `job.service.ts`).
+  if (job.status === 'agendado') {
+    return { level: 2.6, kind: 'empezar', label: '▶ Empezar' };
+  }
   // ── 3/4/5 · LOS DOCUMENTOS, SÓLO EN LOS ESTADOS QUE LOS ADMITEN (SCRUM-823) ──────────────
   //
   // Un albarán es el papel de que algo se ha ENTREGADO. En un Trabajo `cerrado` —el único acto
@@ -130,7 +149,7 @@ function jobNextAction(job, isAdmin = true) {
 // ninguna superficie inventa una acción principal por su cuenta, sin tener que enumerar ficheros.
 // SCRUM-823 · entra `agendar`. La lista lo tiene que saber ejecutar, y el detalle también: el
 // guard `scrum823` comprueba que CADA `kind` de aquí tenga rama en las DOS pantallas.
-const JOB_NEXT_ACTION_KINDS = ['cobrar', 'recordar', 'agendar', 'firmar', 'emitir', 'nuevo'];
+const JOB_NEXT_ACTION_KINDS = ['cobrar', 'recordar', 'agendar', 'empezar', 'firmar', 'emitir', 'nuevo'];
 
 // Sin módulos (regla 4: vanilla, sin bundler): se cuelga del global para que las dos vistas la
 // alcancen. Es exactamente lo que faltaba — la función era correcta y no era NOMBRABLE desde fuera.

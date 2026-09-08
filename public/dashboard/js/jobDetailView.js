@@ -794,6 +794,15 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
               falloDelCta(e);
             }
           });
+        } else if (nextAct.kind === 'empezar') {
+          // SCRUM-823 · la transición `agendado → en_curso`, la que la FSM ya admite
+          // (la declara `JOB_TRANSITIONS`). A diferencia de `agendar`, esto SÍ envía: el botón se queda en
+          // «Enviando…» hasta que vuelve, que es lo que ya hacen `cobrar`, `emitir` y `firmar`.
+          //
+          // ⚠️ Y a diferencia de CERRAR, es reversible: por eso puede ser acción principal. El
+          // acto irreversible se queda en el «⋯» con su explicación (SCRUM-344).
+          await apiRequest(`/admin/jobs/${job.id}`, { method: 'PATCH', body: JSON.stringify({ status: 'en_curso' }) });
+          refresh();
         }
       } catch (err) {
         falloDelCta(err);
@@ -1215,6 +1224,22 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   const albSec = docsSec;
   const newAlbRow = document.createElement('div');
   newAlbRow.className = 'job-doc-toolbar';
+  // ── 🔴 SCRUM-823 · LA PUERTA QUE LA ESCALERA NO VIGILA ──────────────────────────────────
+  //
+  // La escalera ya no propone crear un albarán en un Trabajo CERRADO. Pero esta barra **no pasa
+  // por la escalera**: es un `btn-secondary` de la sección, y seguía ofreciendo dar de alta un
+  // documento de entrega sobre algo que se dio por acabado. Arreglar lo que el producto PROPONE y
+  // dejar abierto lo que PERMITE es media reparación — el mismo defecto por otra puerta.
+  //
+  // Se OCULTA la barra entera en vez de deshabilitar el botón: deshabilitar sin decir por qué deja
+  // al usuario delante de un control muerto, y decírselo exigiría un texto que nadie ha firmado
+  // (regla 30). Un Trabajo cerrado es terminal; la sección sigue listando sus albaranes, que es lo
+  // que hay que poder consultar.
+  //
+  // ⚠️ SÓLO `cerrado`. En `pendiente_agendar` y `agendado` la barra SE QUEDA: ahí la escalera no
+  // lo propone —hay algo más urgente que hacer— pero el profesional puede tener su motivo, y el
+  // estado es reversible. Cerrar no.
+  if (job.status === 'cerrado') newAlbRow.hidden = true;
   const newAlbBtn = document.createElement('button');
   newAlbBtn.className = 'btn-secondary btn-sm';
   newAlbBtn.textContent = '+ Nuevo albarán';

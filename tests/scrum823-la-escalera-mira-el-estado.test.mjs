@@ -92,6 +92,65 @@ test('SCRUM-823 · 🔴 sin fecha se propone AGENDAR, y ninguna acción de docum
   }
 });
 
+test('SCRUM-823 · 🔴 AGENDADO no se ha empezado: se propone empezar, no documentar', () => {
+  const { jobNextAction } = cargarEscalera();
+  const DOCS = [[], [{ id: 2, estado: 'borrador' }], [{ id: 3, estado: 'emitido' }]];
+  for (const albaranes of DOCS) {
+    const r = jobNextAction({ id: 1, status: 'agendado', albaranes, invoices: [], customer: {}, remaining: null }, true);
+    assert.equal(
+      r && r.kind, 'empezar',
+      `🔴 un Trabajo AGENDADO con ${albaranes.length ? 'un albarán ' + albaranes[0].estado : 'ningún albarán'} ` +
+      `propone «${r && r.label}».\n` +
+      '  Un trabajo agendado NO SE HA EMPEZADO: prepararle el documento de entrega es el mismo\n' +
+      '  error que hacerlo sin fecha, sólo que más tarde. (Fundador, 8-sep-2026, corrigiendo su\n' +
+      '  propia tabla del 816, que metía «agendado» y «en marcha» en la misma fila.)',
+    );
+    assert.equal(r.label, '▶ Empezar', '🔴 el rótulo tiene que ser el que ya estaba en el «⋯» (regla 30)');
+  }
+});
+
+test('SCRUM-823 · ⛔ el acto IRREVERSIBLE no sube a acción principal', () => {
+  const { jobNextAction, JOB_NEXT_ACTION_KINDS } = cargarEscalera();
+  // 🔒 Un acto irreversible no puede ser NUNCA la acción principal de una fila: la principal es la
+  // que se pulsa sin leer, y para eso está. Cerrar es el único irreversible de la FSM y SCRUM-344
+  // lo puso en el «⋯» con su explicación entera — «el riesgo no es el clic accidental, es no
+  // entender lo que se hace». Se propuso subirlo a primaria de `terminado` y se descartó.
+  assert.equal(
+    [...JOB_NEXT_ACTION_KINDS].includes('cerrar'), false,
+    '🔴 la escalera ha ganado un peldaño para CERRAR. Ése es el único acto irreversible de la FSM\n' +
+    '  y su sitio es el «⋯», con el modal que lo explica (SCRUM-344).',
+  );
+  const etiquetas = [...soloEjecutable(ESCALERA, { almohadillaEsComentario: false }).matchAll(/label: '([^']+)'/g)].map((m) => m[1]);
+  assert.equal(
+    etiquetas.includes('Cerrar trabajo'), false,
+    '🔴 «Cerrar trabajo» ha entrado en la escalera. Sigue viviendo en el «⋯».',
+  );
+  // Y el control por el otro lado: un `terminado` sin saldo y sin documentos pendientes propone el
+  // documento que le falta, NO cerrar. El orden importa: primero se emite, después se cierra.
+  const r = jobNextAction({ id: 1, status: 'terminado', albaranes: [], invoices: [], customer: {}, remaining: null }, true);
+  assert.equal(r && r.kind, 'nuevo',
+    '🔴 un Trabajo terminado sin albarán todavía tiene que emitirlo antes de cerrarse.');
+});
+
+test('SCRUM-823 · la puerta que la escalera NO vigila: la barra de Documentos en un cerrado', () => {
+  // Arreglar lo que el producto PROPONE y dejar abierto lo que PERMITE es media reparación. La
+  // barra de «+ Nuevo albarán» de la sección es un `btn-secondary` y no pasa por la escalera.
+  const codigo = soloEjecutable(DETALLE, { almohadillaEsComentario: false });
+  assert.ok(
+    /if \(job\.status === 'cerrado'\) newAlbRow\.hidden = true;/.test(codigo),
+    '🔴 la sección de Documentos vuelve a ofrecer «+ Nuevo albarán» en un Trabajo CERRADO.\n' +
+    '  Es el mismo defecto que la escalera acaba de cerrar, por una puerta que ella no vigila.',
+  );
+  // Y que sea SÓLO `cerrado`: en los otros estados la barra se queda, porque el profesional puede
+  // tener su motivo y el estado es reversible.
+  const i = codigo.indexOf("newAlbRow.hidden = true");
+  const contexto = codigo.slice(Math.max(0, i - 200), i);
+  assert.ok(
+    !/pendiente_agendar|agendado/.test(contexto),
+    '🔴 se está escondiendo la barra en más estados que `cerrado`. Cerrar es terminal; los demás no.',
+  );
+});
+
 test('SCRUM-823 · el DINERO sigue mandando por encima del estado', () => {
   const { jobNextAction } = cargarEscalera();
   // Una factura sin pagar de hace un mes, en un Trabajo SIN FECHA: se reclama el dinero, no se
@@ -120,8 +179,10 @@ test('SCRUM-823 · los estados CON documentos no han cambiado de comportamiento'
   const { jobNextAction } = cargarEscalera();
   // Control de NO REGRESIÓN: los tres estados que sí admiten documentos tienen que contestar
   // exactamente lo de antes. Si este test cae, el ticket ha movido más de lo que dijo.
+  // ⚠️ `agendado` SALE de esta tabla en la segunda vuelta (fundador, 8-sep-2026): un Trabajo
+  // agendado NO SE HA EMPEZADO, así que prepararle el documento de entrega es el mismo error que
+  // hacerlo sin fecha, sólo que más tarde. Su caso lo cubre el test de «▶ Empezar» de abajo.
   const esperado = {
-    agendado: ['+ Nuevo albarán', 'Emitir albarán', 'Enviar para firmar', null],
     en_curso: ['+ Nuevo albarán', 'Emitir albarán', 'Enviar para firmar', null],
     terminado: ['+ Nuevo albarán', 'Emitir albarán', 'Enviar para firmar', null],
   };
@@ -226,15 +287,21 @@ test('SCRUM-823 · el detalle NO deja el botón colgado al abrir el modal', () =
 
 // ═══ ④ CERO MICROCOPY NUEVA ═════════════════════════════════════════════════════════════════
 
-test('SCRUM-823 · cero microcopy nueva: los dos rótulos ya estaban en pantalla', () => {
+test('SCRUM-823 · cero microcopy nueva: los tres rótulos ya estaban en pantalla', () => {
   // «Agendar» y «Reagendar» venían del «⋯» de la fila (SCRUM-727b). El ticket los SUBE de sitio.
   for (const literal of ['Agendar', 'Reagendar']) {
     assert.ok(AGENDAR.includes(`'${literal}'`), `🔴 falta el literal «${literal}» en el ejecutor.`);
   }
+  // Y «▶ Empezar» sigue estando en el «⋯» de la lista, con ese literal exacto: es de donde sube.
+  assert.ok(
+    /'▶ Empezar'/.test(LISTA),
+    '🔴 ha desaparecido «▶ Empezar» del «⋯». La escalera lo propone como primaria de `agendado`, y\n' +
+    '  ese literal viene de ahí: si se borra su origen, el rótulo pasa a ser texto sin firmar.',
+  );
   const escalera = soloEjecutable(ESCALERA, { almohadillaEsComentario: false });
   const etiquetas = [...escalera.matchAll(/label: '([^']+)'/g)].map((m) => m[1]);
   assert.deepEqual(
-    etiquetas.filter((t) => !['Recordar pago', 'Enviar para firmar', 'Emitir albarán', '+ Nuevo albarán', 'Agendar'].includes(t)),
+    etiquetas.filter((t) => !['Recordar pago', 'Enviar para firmar', 'Emitir albarán', '+ Nuevo albarán', 'Agendar', '▶ Empezar'].includes(t)),
     [],
     '🔴 la escalera ha estrenado un rótulo. Los textos son vocabulario cerrado (regla 30): un\n' +
     '  rótulo nuevo lo firma el fundador antes de escribirse.',

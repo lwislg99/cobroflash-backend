@@ -194,15 +194,40 @@ export function arbolDePartida(raiz, etiqueta = 'antes') {
   };
 }
 
-/** El navegador. Si no hay ninguno, se PARA con 2: «no supe mirar» no es «está bien». */
+/**
+ * El navegador, con los TRES desenlaces separados — que es lo que hace útil un código de salida:
+ *   · 2 «NO SUPE MIRAR»  — no hay navegador que usar.
+ *   · 3 «no arrancó»     — lo hay, y no ha querido levantarse.
+ *   · 0/1 los deja el guard, que es quien juzga.
+ *
+ * 🔴 EL 3 ESTABA PROMETIDO Y NO IMPLEMENTADO. Las cabeceras de los dos guards de esta familia
+ * anunciaban «3 no arrancó el navegador» y el `launch` iba a pelo: cuando Edge dejó un proceso
+ * huérfano reteniendo su perfil, la excepción subió sin tratar → exit 1, que en esta casa
+ * significa **«he encontrado un defecto»**. Un guard que grita «defecto» porque no pudo abrir el
+ * navegador enseña a ignorar sus rojos, que es la familia de SCRUM-822. Lo mismo que ya arregló
+ * SCRUM-620 con los servidores, aquí para el navegador.
+ */
 export async function abrirNavegador(puppeteer) {
   const nav = resolverNavegador();
   if (!nav.ok) {
     console.error('🔴 NO SUPE MIRAR: ' + nav.motivo);
     process.exit(2);
   }
-  const browser = await puppeteer.launch({ executablePath: nav.ruta, headless: 'new', args: ['--no-sandbox'] });
-  return { browser, quien: nav.quien };
+  try {
+    const browser = await puppeteer.launch({ executablePath: nav.ruta, headless: 'new', args: ['--no-sandbox'] });
+    return { browser, quien: nav.quien };
+  } catch (e) {
+    console.error('🔴 NO PUDE ARRANCAR EL NAVEGADOR.');
+    console.error(`   ejecutable: ${nav.ruta}  (${nav.quien})`);
+    console.error(`   detalle: ${e && e.message ? e.message : e}`);
+    if (/already running/i.test(String(e && e.message))) {
+      console.error('   Hay un proceso anterior reteniendo el perfil temporal. Ciérralo (en Windows,');
+      console.error('   `taskkill /F /IM msedge.exe /T`) y vuelve a lanzarlo.');
+    }
+    console.error('   Esto NO es «he encontrado un defecto» (eso sale con 1) ni «no supe mirar»');
+    console.error('   (2): el guard NO HA LLEGADO A MEDIR NADA, así que su silencio no dice nada.');
+    process.exit(3);
+  }
 }
 
 /** Abre una página ya pintada al ancho pedido, con `page.setViewport` REAL (nunca `--window-size`). */

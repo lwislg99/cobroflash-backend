@@ -864,18 +864,26 @@ function jobRow(j, container, equipo) {
     const bSiguiente = document.createElement('button');
     bSiguiente.className = 'btn-primary btn-sm';
     bSiguiente.textContent = siguiente.label;
-    // ── SCRUM-823 · «Agendar» SE EJECUTA AQUÍ, no lleva al detalle ─────────────────────────
+    // ── SCRUM-823 · «Agendar» y «▶ Empezar» SE EJECUTAN AQUÍ, no llevan al detalle ─────────
     //
     // El resto de acciones de la escalera abren el Trabajo, y está bien: firmar, emitir o crear un
-    // albarán se hacen mirando el documento. Agendar no: es poner una fecha, y el jefe la pone
-    // repartiendo el día sobre la lista entera. Mandarlo al detalle para escribir una fecha y
-    // volver es justo el paseo que esta pantalla existe para ahorrar.
+    // albarán se hacen mirando el documento. Estas dos no: son la agenda del día, y el jefe la
+    // reparte sobre la lista entera. Mandarlo al detalle para poner una fecha —o para decir que se
+    // ha empezado— y volver es justo el paseo que esta pantalla existe para ahorrar.
     //
-    // 🔒 Y NO LEVANTA EL CANDADO DE SCRUM-727: sigue siendo un `<button>` —un gesto distinto del
-    // que navega, que es el clic en la fila— y el modal pide fecha y hay que confirmar. Dos gestos
-    // deliberados, ninguno de ellos el de abrir el Trabajo.
+    // 🔒 Y NO LEVANTAN EL CANDADO DE SCRUM-727: siguen siendo un `<button>`, un gesto distinto del
+    // que navega —el clic en la fila—. «Agendar» además pide fecha y hay que confirmar.
+    //
+    // ⚠️ «▶ Empezar» SÍ escribe con un solo clic, y es correcto: es la transición `agendado →
+    // en_curso`, **reversible** por la FSM (`agendado` admite volver de `en_curso`… y si no, el
+    // remedio es re-agendar). El acto que NO tiene vuelta atrás —cerrar— se queda en el «⋯» con su
+    // explicación entera, que es la decisión de SCRUM-344 y no se toca:
+    // 🔒 un acto irreversible no puede ser nunca la acción principal de una fila, porque la
+    // principal es la que se pulsa sin leer.
     if (siguiente.kind === 'agendar' && typeof abrirAgendarTrabajo === 'function') {
       bSiguiente.addEventListener('click', () => abrirAgendarTrabajo(j, patch));
+    } else if (siguiente.kind === 'empezar') {
+      bSiguiente.addEventListener('click', () => patch({ status: 'en_curso' }));
     } else {
       // SCRUM-727 · `jobs-detail`, en plural. En singular el router caía en su `default:` y este
       // botón —el del dinero— dejaba al usuario en Inicio, sin aviso ni traza.
