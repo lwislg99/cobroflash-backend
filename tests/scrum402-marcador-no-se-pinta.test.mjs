@@ -112,22 +112,11 @@ const CENSO = Object.freeze({
   //
   // El dia que el fundador firme los cuatro textos, esta entrada se BORRA — no se pone a 0.
   'jobAsignados.js': 1,
-  // 🔴 SCRUM-597 (DOC-07) · 7-sep-2026 · ENTRA `documentoAsignados.js` con 1, y por el MISMO
-  // motivo que `jobAsignados.js` justo arriba: EL MECANISMO NO EXISTE SIN TEXTO. Es el selector
-  // de QUIÉN LLEVA el documento —factura y presupuesto—, y un selector sin rótulo no se puede
-  // usar: quien lo abre no sabe si marca a quien lo lleva, a quien lo redactó o a quien cobra.
-  //
-  // Se cuenta 1 y son CINCO textos: el rótulo, el hueco, la nota de solo-lectura del técnico, el
-  // aviso de equipo vacío y el fallo al guardar. Los cinco salen de una sola constante
-  // `MARCA_DOC_ASIGNADOS`, así que aprobar el copy los apaga de golpe. Su contador propio
-  // —`DOC_ASIGNADOS_SIN_APROBAR = 5`— dice cuántos son de verdad, que es lo que este 1 no puede
-  // decir (la lección de SCRUM-575), y el censo de SCRUM-755 los cuenta como SITIOS PINTADOS, que
-  // es otro eje. Ninguna de las dos cifras se repite aquí: viven en código —`DOC_ASIGNADOS_SIN_APROBAR`
-  // y la entrada del censo de 755— y las dos las comprueba un guard, así que escribirlas otra vez
-  // en esta frase sería una tercera copia que envejece sola (SCRUM-737).
-  //
-  // El día que el fundador firme los cinco textos, esta entrada se BORRA — no se pone a 0.
-  'documentoAsignados.js': 1,
+  // 🔴 SCRUM-597 · 8-sep-2026 · `documentoAsignados.js` SALE: el fundador firmó los cinco
+  // rótulos («me parecen genial los rótulos»), registrados en
+  // `docs/microcopy/2026-09-08-SCRUM-597-quien-lleva-el-documento.md`. La entrada se BORRA, no
+  // se pone a 0 (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista ficheros CON marcadores, y
+  // el trinquete APRIETA. Un marcador censado sigue en pantalla; uno firmado desaparece.
   // 🔴 SCRUM-748 (4-sep-2026) · SUBIDA A CONCIENCIA: `invoicesView.js` ENTRA con 1.
   //
   // La bandeja de pendientes decidía con `SEMAFORO_META[grupo.semaforo] || SEMAFORO_META.verde`,

@@ -189,3 +189,62 @@ trata: fabricar un hecho, que es justo lo que SCRUM-661 existe para impedir.
 No hay riesgo de que la ocultación **borre** nada, y está medido: `Quote.lines` se escribe en un
 solo sitio (`POST /quote/create`) y no existe ningún endpoint que reescriba las líneas de un
 presupuesto ya creado.
+
+---
+
+# SCRUM-597b · Los cinco rótulos, FIRMADOS — el marcador desaparece
+
+**Fecha:** 08-sep-2026 · **Carril:** microcopy · **Gate:** ninguno
+
+**Medido contra:** `origin/main` = `15b42968cff2dffdeb1e4ec6ab6ed733b3908ce1` · 2026-09-08T06:50:59+01:00
+
+## El rojo que lo trae
+
+`guard:marcadores-en-pantalla` (SCRUM-722) puso en rojo `quotes-detail` e `invoice-detail`: pintaban
+«[PENDIENTE microcopy oficial] quién lleva este documento» **en el DOM renderizado** y no estaban en
+su censo. Hizo exactamente su trabajo — son dos vistas nuevas con marcador, y ese guard mide el DOM,
+no el fuente. Es el eje que SCRUM-722 abrió justamente porque un marcador contado en el censo
+**sigue delante del cliente**.
+
+## La firma
+
+El fundador, 8-sep-2026: **«me parecen genial los rótulos»**. Los cinco entran tal cual, sin
+reescribir ni una coma (regla 30). Registrados en
+`docs/microcopy/2026-09-08-SCRUM-597-quien-lleva-el-documento.md` — una aprobación, un fichero
+(SCRUM-709).
+
+| Ranura | Texto aprobado |
+|---|---|
+| Etiqueta del campo | `Responsable` |
+| Sin nadie asignado | `Sin asignar` |
+| Un técnico intenta cambiarlo | `Solo un administrador puede cambiar el responsable.` |
+| Aún no hay equipo | `Aún no tienes a nadie en tu equipo. Añade a alguien en Equipo.` |
+| Falla el guardado | `No se ha podido guardar el responsable. Inténtalo otra vez.` |
+
+## Lo que la firma apaga, y por qué se retira en vez de censarse
+
+**Un marcador censado sigue en pantalla; uno firmado desaparece.** Así que se retiran ENTEROS la
+constante `MARCA_DOC_ASIGNADOS` y su contador `DOC_ASIGNADOS_SIN_APROBAR`, y las dos entradas de
+`documentoAsignados.js` se **borran** de los censos de SCRUM-402 y SCRUM-755 — borran, no se ponen
+a 0 (SCRUM-424 / SCRUM-405: `censoActual()` sólo lista ficheros CON marcadores, y el trinquete
+aprieta).
+
+Comprobado sobre el fuente **EJECUTABLE** (`soloEjecutable`, no el texto plano): cero apariciones de
+`MARCA_DOC_ASIGNADOS`, `DOC_ASIGNADOS_SIN_APROBAR` y `PENDIENTE microcopy oficial` en código, y los
+cinco textos firmados presentes.
+
+⚠️ La primera comprobación dio un falso rojo: el nombre de la constante aparecía **en el comentario
+que explica su retirada**. Es el caso que el cerebro avisa —un guard de texto se caza a sí mismo en
+el comentario de la prohibición— y por eso se remidió sobre el ejecutable.
+
+## Una nota sobre el rótulo
+
+Es **«Responsable»**, singular, y el dato admite **varios** (la tabla puente es N a N y el selector
+es de casillas). No es incoherencia: la palabra que ve el profesional y el nombre interno del dato
+no tienen por qué coincidir. Queda dicho porque quien lea `asignados` en el código y «Responsable»
+en la pantalla se lo va a preguntar.
+
+## Verificación
+
+`npm run guards:visuales` → **`guard:marcadores-en-pantalla` VERDE**, leído de su salida, y los
+otros catorce siguen verdes (exit 0).

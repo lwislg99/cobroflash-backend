@@ -23,28 +23,27 @@
 // devuelven datos o nodos, y su test las CORRE con un DOM de juguete — el mismo patrón de
 // `jobAsignados.js` (SCRUM-650) y de SCRUM-229/500/655.
 //
-// ─────────────────────────────────────────────────────────────────────────────────────────
-// ⚠️ MICROCOPY SIN APROBAR (regla 30) · el marcador se ve EN PANTALLA a propósito
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// ✅ MICROCOPY FIRMADA POR EL FUNDADOR — 8-sep-2026: «me parecen genial los rótulos».
 //
-// El mecanismo NO EXISTE SIN TEXTO: un selector sin rótulos no se puede usar — quien lo abre no
-// sabría si está marcando a quien lo lleva, a quien lo redactó o a quien cobra, que son tres cosas
-// distintas en esta pantalla. Mismo caso y mismo trato que `jobAsignados.js`.
+// Los cinco rótulos entran TAL CUAL, sin reescribir ni una coma: el microcopy es suyo
+// (regla 30). Aprobación registrada en `docs/microcopy/2026-09-08-SCRUM-597-quien-lleva-el-
+// documento.md` — una aprobación, un fichero (SCRUM-709).
 //
-// Los CINCO textos salen de UNA sola constante, así que el día que el fundador los firme se
-// apagan de golpe y la entrada del censo se BORRA (no se pone a 0: SCRUM-424 / SCRUM-405).
-// `DOC_ASIGNADOS_SIN_APROBAR` dice cuántos son de verdad, que es lo que el «1» del censo de
-// SCRUM-402 —que cuenta marcas ESCRITAS, no superficies pintadas— no puede decir.
-var MARCA_DOC_ASIGNADOS = '[PENDIENTE microcopy oficial]';
-
-/** Cuántas ranuras sin firmar hay de verdad — el 1 del censo no lo puede decir. */
-var DOC_ASIGNADOS_SIN_APROBAR = 5;
-
+// 🔴 CON ESTO DESAPARECE EL MARCADOR, no se censa. Un marcador censado sigue en pantalla; uno
+// firmado desaparece. Por eso `MARCA_DOC_ASIGNADOS` y su contador se RETIRAN enteros en vez de
+// quedarse a 0, y las dos entradas de los censos (SCRUM-402 y SCRUM-755) se BORRAN.
+//
+// ⚠️ El rótulo es «Responsable», no «asignados». La palabra que ve el profesional y el nombre
+// interno del dato no tienen por qué coincidir, y aquí no coinciden a propósito: el dato admite
+// VARIOS —la tabla puente es N a N— y el rótulo es el que el fundador firmó.
+// ═════════════════════════════════════════════════════════════════════════════════════════
 var TEXTOS_DOC_ASIGNADOS = {
-  titulo: MARCA_DOC_ASIGNADOS + ' quién lleva este documento',
-  vacio: MARCA_DOC_ASIGNADOS + ' no lo lleva nadie',
-  soloAdmin: MARCA_DOC_ASIGNADOS + ' solo un administrador puede cambiar quién lleva este documento',
-  sinEquipo: MARCA_DOC_ASIGNADOS + ' todavía no has dado de alta a nadie en tu equipo',
-  noSeGuardo: MARCA_DOC_ASIGNADOS + ' no se ha podido guardar quién lleva este documento',
+  titulo: 'Responsable',
+  vacio: 'Sin asignar',
+  soloAdmin: 'Solo un administrador puede cambiar el responsable.',
+  sinEquipo: 'Aún no tienes a nadie en tu equipo. Añade a alguien en Equipo.',
+  noSeGuardo: 'No se ha podido guardar el responsable. Inténtalo otra vez.',
 };
 
 /**
@@ -279,6 +278,6 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     construirAsignadosDeDocumento, cablearAsignadosDeDocumento, asignablesDelDocumento, nombresDeAsignadosDoc,
     cuerpoDeAsignacionDeDocumento, rutaDeAsignacion,
-    TEXTOS_DOC_ASIGNADOS, MARCA_DOC_ASIGNADOS, DOC_ASIGNADOS_SIN_APROBAR,
+    TEXTOS_DOC_ASIGNADOS,
   };
 }
