@@ -65,6 +65,26 @@ const CENSO_ARITMETICA = {
       + 'ninguna cifra que salga en un documento, y además es IVA SOPORTADO, no repercutido: no entra '
       + 'en la casilla que el censo protege.',
   },
+  'src/modules/jobs/app/routes/partes.routes.ts': {
+    veredicto: 'DOCUMENTO',
+    nota: 'Sprint Tecnosel · `serializeParteParaLaOficina` da el importe de CADA LÍNEA de UN parte '
+      + 'como `precioUnitario * unds`, y suma esas líneas para el total de ese documento. '
+      + 'Precisión que importa para este censo: NO deriva IVA — `tipoIva` se copia tal cual, sin '
+      + 'entrar en ninguna multiplicación. Lo que hace es la BASE de una línea, no una cuota. No '
+      + 'agrupa por tipo, no mira periodos y no sale de ese documento. Y estos importes no entran '
+      + 'en el sello del parte: el canónico no lleva precios a propósito, así que esta aritmética '
+      + 'no puede mover ninguna huella firmada.',
+  },
+  'src/modules/jobs/domain/parteTrabajo.ts': {
+    veredicto: 'DOCUMENTO',
+    nota: 'SCRUM-652 (T3) · `totalesPorBloque` deriva la cuota de CADA LÍNEA de UN parte '
+      + '(`base * tipoIva / 100`, en céntimos enteros) y suma los dos bloques. No agrupa por tipo de '
+      + 'IVA, no mira periodos y no sale de ese documento: es el total de lo que tiene delante, '
+      + 'igual que `calcAlbaranTotales`. '
+      + 'Y una precisión que importa para este censo: estos importes NO entran en el sello del parte '
+      + '—el canónico no lleva precios a propósito—, así que esta aritmética no puede mover ninguna '
+      + 'huella firmada.',
+  },
   'src/modules/invoicing/domain/recargoEquivalencia.ts': {
     veredicto: 'DOCUMENTO',
     nota: 'Calcula la cuota del RECARGO DE EQUIVALENCIA sobre una base (`b * tipoRecargo / 100`). Es otro '
@@ -84,11 +104,9 @@ const CENSO_ARITMETICA = {
       + 'LÍNEA a propósito — su propio comentario explica que dos formas de redondear la misma factura '
       + 'dan importes distintos, que es la lección de SCRUM-627 dicha antes de tiempo.',
   },
-  'src/modules/quotes/app/routes/quotes.routes.ts': {
-    veredicto: 'DOCUMENTO',
-    nota: '`calcTierTotal`: el total de UNA opción (tier) de UN presupuesto. Un presupuesto ni siquiera '
-      + 'entra en el 303.',
-  },
+  // ✅ SCRUM-655: `quotes.routes.ts` sale del censo. `calcTierTotal` ya no reimplementa nada —
+  // delega en `calcTotal`— así que su entrada aquí ya no describe a nadie y se retira en el mismo
+  // commit que lo arregla, que es lo que este trinquete exige.
   'src/modules/system/app/routes/customerPortal.routes.ts': {
     veredicto: 'DOCUMENTO',
     nota: 'Pinta el importe de cada línea en el portal del cliente. Es PRESENTACIÓN de un documento que '
@@ -104,12 +122,16 @@ const CENSO_ARITMETICA = {
       + 'reconoce lo que dice reconocer.',
   },
   'src/modules/invoicing/infra/pdf/pdf.service.ts': {
-    veredicto: 'REIMPLEMENTACION', ademasDe389: true,
-    nota: '🔴 DOS COSAS DISTINTAS EN EL MISMO FICHERO, y ésta es la razón de ser de esta tabla. '
-      + '(1) Una LLAMADA a la primitiva para el desglose del PRESUPUESTO (SCRUM-604): eso es lo que '
-      + 'SCRUM-389 clasifica como DOCUMENTO. (2) Veinte líneas al lado —el bloque de totales de la '
-      + 'FACTURA— que agrupan por tipo con su propio `vatMap` y NO llaman a nadie. El veredicto de allí '
-      + 'cubre la llamada y NO cubre estas veinte líneas. '
+    veredicto: 'REIMPLEMENTACION', ademasDe389: false,
+    nota: '🔴 2-sep-2026 · SCRUM-656 · YA NO ESTÁ EN LAS DOS TABLAS, Y ESO LO EMPEORA, no lo mejora. '
+      + 'Tenía DOS cosas: una LLAMADA a la primitiva para el desglose del PRESUPUESTO y, al lado, '
+      + 'veinte líneas que agrupan el IVA de la FACTURA con su propio `vatMap` sin llamar a nadie. '
+      + 'La llamada se ha MUDADO a `quotes/domain/presentacionIva.ts`, así que este fichero sale del '
+      + 'censo de llamadores de SCRUM-389 y aquí se queda solo con lo que siempre fue: una '
+      + 'reimplementación. '
+      + '⚠️ Y esa llamada era lo que lo TAPABA: el criterio de SCRUM-627 es por FICHERO, así que '
+      + 'mientras un documento llamaba a la primitiva, la aritmética a mano del otro no salía en la '
+      + 'lista de invisibles. Llevaba ahí desde siempre. '
       + 'NO se convierte a la primitiva: eso es la opción B, mueve un céntimo en el 25 % de los '
       + 'documentos de dos tipos (medido) y son las mismas veinte líneas de SCRUM-623 y SCRUM-624, '
       + 'parados esperando a la asesoría. Aquí se DECLARA, para que no aparezca una segunda.',
@@ -196,9 +218,16 @@ test('SCRUM-627b · 🔴 los que están en LAS DOS tablas lo dicen, y dicen qué
   }
   // Y son exactamente los dos que hacen aritmética Y llaman.
   const dobles = Object.entries(CENSO_ARITMETICA).filter(([, e]) => e.ademasDe389).map(([f]) => f).sort();
+  // 🔴 2-sep-2026 · SCRUM-656 · BAJA DE DOS A UNO, y la bajada es una MALA noticia disfrazada de
+  // limpieza: `pdf.service.ts` sale porque su LLAMADA a la primitiva se mudó a
+  // `quotes/domain/presentacionIva.ts`, no porque haya dejado de reimplementar nada. Sigue
+  // agrupando el IVA de la FACTURA a mano, igual que siempre.
+  //
+  // Lo que se pierde al salir es la MÁSCARA: mientras tuvo la llamada, el criterio por fichero de
+  // SCRUM-627 lo daba por «visto» y sus veinte líneas no aparecían en la lista de invisibles. Ahora
+  // aparece — y ésa es la única diferencia real.
   assert.deepEqual(dobles, [
     'src/modules/invoicing/domain/vat.service.ts',
-    'src/modules/invoicing/infra/pdf/pdf.service.ts',
   ], '🔴 cambió quién tiene dos entradas: mírelo, porque es el caso que este censo existe para cubrir');
 });
 
@@ -370,7 +399,17 @@ test('SCRUM-627b · 🔴 ① la remisión en SCRUM-389 existe SI Y SÓLO SI hay 
     + 'SCRUM-389 (medido el 25-ago-2026: 1.560). Si no sé extraer comentarios, «no hay remisión» y '
     + '«no supe leerla» son el mismo número, y el ⟺ de abajo pasaría en vacío.');
 
-  const faltaPuntero = [...conVeredicto].filter((f) => !conPuntero.has(f));
+  // 🔴 2-sep-2026 · SCRUM-656 · EL PUNTERO SE EXIGE A LOS QUE ESTÁN EN LAS DOS TABLAS, no a todo
+  // el que tenga veredicto REIMPLEMENTACION. Lo dice el propio mensaje de abajo: el daño que se
+  // evita es que «quien lea AQUEL censo vea el fichero clasificado y deje de buscar». Si el
+  // fichero NO está en aquel censo, no hay lector al que despistar y no hay entrada a la que
+  // pegar el aviso — exigirlo sería pedir un puntero que no puede existir.
+  //
+  // Salió al mudar la llamada de `pdf.service.ts` a `quotes/domain/presentacionIva.ts`: el
+  // fichero sigue reimplementando el desglose de la FACTURA, pero ya no aparece en el censo de
+  // llamadores. No se relaja nada: el ⟺ sigue siendo exacto sobre la población donde importa.
+  const enAmbasTablas = new Set(censo389());
+  const faltaPuntero = [...conVeredicto].filter((f) => enAmbasTablas.has(f) && !conPuntero.has(f));
   assert.deepEqual(faltaPuntero, [],
     `🔴 FALTA EL PUNTERO en el censo de SCRUM-389 para: ${faltaPuntero.join(', ')}.\n`
     + `  Ese fichero está declarado aquí como REIMPLEMENTACION, pero su entrada de allí no remite a\n`

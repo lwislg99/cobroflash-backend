@@ -19,6 +19,7 @@ import {
   type DatosDestinatario, type DatosProveedor, type FilaLibro,
 } from './librosAeat';
 import { criterioDelMerchantParaElLibro } from '../../invoicing/domain/criterioDelMerchant'; // SCRUM-294 fase C
+import { nombreParaDocumento } from '../../../core/documentos/nombreParaDocumento'; // SCRUM-577
 
 export interface ClienteDeLibros extends ClienteDelLibro {
   customer: { findMany(args: any): Promise<any[]> };
@@ -55,7 +56,9 @@ export async function leerLibroExpedidasDelTrimestre(
   const destinatarios = new Map<number, DatosDestinatario>(
     clientes.map((c: any) => [c.id, {
       // La razón social manda sobre el nombre comercial: en un libro identifica a quien factura.
-      nombre: c.legalName || c.name || null,
+      // SCRUM-577: el criterio sale del SITIO UNICO. Mismo resultado que antes; el respaldo
+      // sigue siendo `null`, que es lo que este libro esperaba.
+      nombre: nombreParaDocumento(c, null),
       nif: c.taxId || null,
     }]),
   );

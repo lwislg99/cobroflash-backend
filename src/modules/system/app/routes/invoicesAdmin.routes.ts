@@ -10,6 +10,7 @@ import {
   NO_SE_MARCAN_PAGADAS_EN_LOTE,
   markInvoicePaidAdmin,
   markInvoicePendingAdmin,
+  setInvoiceTags,
 } from '../../invoiceAdmin';
 
 import { BASE_URL } from '../../../../core/config/env';
@@ -27,7 +28,7 @@ import { generateInvoicePdf } from '../../../../lib/pdf';
 import { sendWhatsAppTemplate, sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { buildPaymentRequest } from '../../../../integrations/whatsappTemplates';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
-import { normalizePhone } from '../../../../core/utils/utils';
+import { canalDeWhatsApp } from '../../../../core/contacto/canalDeWhatsApp'; // SCRUM-590 (CONT-19)
 import fs from 'fs';
 import { ensureInvoicePdf, ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { sendSuccessBody, sendFailureBody, SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
@@ -35,6 +36,7 @@ import { esErrorSinSellar, ERROR_SIN_SELLAR } from '../../../invoicing/domain/po
 import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { resolverFechaDeCobro } from '../../../billing/domain/fechaDeCobro'; // SCRUM-397
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
+import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-289 (C7)
 import { puedeRectificarse } from '../../../invoicing/domain/rectificabilidad'; // SCRUM-308
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-289
@@ -120,6 +122,10 @@ router.post('/', requireRole('admin'), async (req, res) => {
     // entera. Comprobarlo después obligaría a deshacer una factura ya numerada, que es el hueco
     // que hay que justificar ante Hacienda.
     exigirLineasFacturables(val.lineas);
+    // SCRUM-771 · y que el tipo de IVA EXISTA. Mismo sitio y misma razón que la línea de
+    // arriba: ANTES de pedir número, nunca después. Deriva de `invalidTipoIva`; aquí no
+    // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
+    exigirTiposDeIvaEmitibles(val.lineas);
 
     const invoice = await prisma.$transaction(async (tx) =>
       emitInvoice(tx, {
@@ -419,6 +425,42 @@ router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
  * PUT /admin/invoices/:id/status
  * Cambia el estado (pending / paid / expired) – lo usa el botón del BO.
  */
+/**
+ * PUT /admin/invoices/:id/tags — SCRUM-595 (DOC-05) · las etiquetas de la factura.
+ *
+ * 🔴 ESTO NO ABRE UNA PUERTA DE EDICION SOBRE UNA FACTURA EMITIDA (regla 29). Escribe UN campo
+ * que no es el documento —ni numero, ni total, ni lineas, ni sello, ni PDF— y el porque, con sus
+ * medidas, vive junto a `setInvoiceTags` en `invoiceAdmin.ts`. Es la misma familia que
+ * `/:id/pay` o `/:id/status`, que ya escriben sobre facturas emitidas sin tocarlas.
+ *
+ * ⚠️ Y NO ROZA EL GUARD DE SCRUM-289b, que vigila otra cosa: que el ENTRYPOINT DE ALTA
+ * (`POST /`) no edite ni borre, y que la COLECCION no acepte patch/put/delete. Esta ruta va por
+ * `:id`, que es donde ya viven `rectify` y `annul`.
+ */
+router.put('/:id/tags', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    // 🔴 SE VALIDA ESTRICTO, Y NO ES CELO: `normalizarTags` convierte en `null` cualquier cosa que
+    // no sea una lista —es su suelo, y es el correcto para un formulario—, pero en ESTA ruta ese
+    // suelo seria destructivo: un cuerpo mal formado BORRARIA las etiquetas y devolveria `ok`. Un
+    // 400 dice que no se ha guardado; un 200 sobre un borrado accidental, no.
+    const bruto = (req.body ?? {}).tags;
+    if (bruto !== null && !Array.isArray(bruto)) {
+      return res.status(400).json({ error: 'invalid_tags' });
+    }
+    const tocadas = await setInvoiceTags(req.merchantId, id, bruto);
+    if (tocadas === 0) return res.status(404).json({ error: 'invoice_not_found' });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[PUT /admin/invoices/:id/tags]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * PUT /admin/invoices/:id/status
+ */
 router.put('/:id/status', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -619,7 +661,7 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
     if (!invoice) return res.status(404).json({ ok: false, error: 'not_found' });
     if (invoice.status === 'paid') return res.status(409).json({ ok: false, error: 'invoice_already_paid' });
 
-    const phone = normalizePhone(invoice.customer?.phone);
+    const phone = canalDeWhatsApp(invoice.customer);
     if (!phone) return res.status(400).json({ ok: false, error: 'customer_missing_phone' });
 
     const customerName = invoice.customer?.name || 'Cliente';

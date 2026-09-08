@@ -4,7 +4,7 @@
 // EL DEFECTO
 //
 // `barridoDeHuerfanas` tomaba `merchant.findMany()` UNA vez y luego borraba con
-// `merchantId: { notIn: ids }` durante los 22 `deleteMany` siguientes: decidía con una foto y
+// `merchantId: { notIn: ids }` durante los `deleteMany` siguientes: decidía con una foto y
 // borraba después. La dirección peligrosa es la que no se ve — **un merchant creado DESPUÉS de la
 // foto no está en `ids`, así que sus filas CASAN el criterio y se borran**, aunque exista.
 //
@@ -92,9 +92,10 @@ test('SCRUM-272 · el criterio viaja EN la sentencia y lo evalúa la base', asyn
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-272 · tabla y columna salen del DMMF, no se derivan a mano', async () => {
-  // Medido en el schema real: de los 22 modelos, **20 llevan `@map("merchant_id")` y 2 NO** —
-  // `invoices.merchantId` es camelCase en la propia BD. Derivar el nombre a snake_case a ojo
-  // habría roto 2 de 21, que es exactamente cómo murió el backfill de SCRUM-205.
+  // Medido en el schema real: casi todos llevan `@map("merchant_id")` y **DOS no** — `Quote` e
+  // `Invoice`; `invoices.merchantId` es camelCase en la propia BD. Derivar el nombre a
+  // snake_case a ojo habría roto esos dos, que es exactamente cómo murió el backfill de
+  // SCRUM-205. Se nombran en vez de contarlos (SCRUM-680): los nombres no caducan.
   const p = prismaEspia();
   await barridoDeHuerfanas(p, DMMF);
 

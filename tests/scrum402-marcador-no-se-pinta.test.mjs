@@ -52,6 +52,179 @@ const MARCA = '[PENDIENTE';
  * a otra tiene que verse, y un total lo escondería (la lección del suelo por FUNCIÓN de SCRUM-392).
  */
 const CENSO = Object.freeze({
+  // Sprint Tecnosel (3-sep-2026) · el título de `app.js` ENTRÓ y SALIÓ el mismo día: el fundador
+  // firmó «Partes por valorar». Su entrada se BORRA y no se pone a 0 (SCRUM-424 / SCRUM-405):
+  // `censoActual()` sólo lista ficheros CON marcadores. El trinquete APRIETA.
+  //
+  // 🔴 Y `parteOficinaView.js` SALIÓ el mismo día: quedaba UN texto sin firmar —el error de abrir
+  // un parte— y el fundador lo firmó como «No se ha podido abrir el parte». Al no quedar ningún
+  // marcador, la constante que los sujetaba se retiró ENTERA: dejarla habría mantenido el fichero
+  // aquí por un literal que ya no pinta nada. COMPROBADO antes de bajar la entrada, no asumido.
+  // (el boton de Trabajos que lleva ahi NO entra: usa la constante `MARCA_651`, no un literal,
+  // asi que este censo —que cuenta LITERALES por AST— no lo ve, y con razon.)
+  // SCRUM-651 (T2) · ENTRA A CONCIENCIA con 1, y el motivo es que EL MECANISMO NO EXISTE SIN
+  // Sprint Tecnosel (3-sep-2026) · `jobNuevoModal.js` SALIÓ: el fundador firmó los diez textos
+  // que quedaban y `MARCA_651` se retiró ENTERA. Mientras quedó UNO sin firmar, la constante
+  // tenía que seguir viva —retirarla antes habría dado por aprobados los demás sin que nadie los
+  // firmara—, y ése era exactamente el motivo por el que esta entrada no bajaba a 0 antes de
+  // tiempo. La entrada se BORRA, no se pone a 0: `censoActual()` sólo lista ficheros CON
+  // marcadores. COMPROBADO antes de borrarla: cero marcadores en el fichero (SCRUM-703).
+  // 🔴 SCRUM-591 (DOC-01) · 3-sep-2026 · `quotesView.js` ENTRÓ y SALIÓ EL MISMO DÍA.
+  //
+  // Entró con 1 —la opción de alta del selector del documento, y una `<option>` sin rótulo no se
+  // puede elegir— y el asesor firmó el texto esa misma tarde: **«+ Nuevo cliente»**, 15
+  // caracteres, con la caja medida delante (901px, 247,7px útiles ≈ 18 caracteres anchos). Su
+  // entrada se BORRA, no se pone a 0 (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista ficheros
+  // CON marcadores, y el trinquete APRIETA.
+  //
+  // 🔴 MEDIDO AL RETIRARLO — Y CON EL ÁRBOL Y LA FECHA, QUE ES LA PARTE QUE FALTABA:
+  //
+  //     14 → 13 marcadores pintables (y de 14 a 13 ficheros)
+  //     árbol: `origin/main` = 9747d16a con la rama scrum-591 dentro · 3-sep-2026
+  //
+  // Y cuadra con el suelo de más abajo, que dice «hay 13 medidos»: 13 entradas declaradas aquí,
+  // 13 marcadores reales en el árbol, ninguno sin declarar. Barrido entrada por entrada.
+  //
+  // ⚠️ LA CIFRA SE ESCRIBE CON SU ÁRBOL PORQUE YA CADUCÓ DOS VECES EN ESTE MISMO TICKET: primero
+  // 18 → 17 (entró SCRUM-703 y sacó `jobNuevoModal.js`), después 15 → 14 (entró la salida de
+  // `jobDetailView.js`). Las dos eran correctas cuando se escribieron. **Una cifra sin árbol es
+  // una cifra que va a caducar sin avisar**, y quien la lea no tendrá forma de saberlo.
+  // Sprint Tecnosel · `jobDetailView.js` ENTRÓ con 2 el 2-sep-2026 —la PUERTA al parte: el rótulo
+  // del botón y el aviso de cuando no se puede abrir— y SALIÓ el 3-sep: el fundador firmó el
+  // rótulo primero y el aviso después, en SCRUM-402. Bajó de 2 a 1 y luego se BORRA, que es el
+  // camino que dejó escrito su propia nota: bajar el número mientras quedaba marca, borrar la
+  // entrada cuando no queda ninguna (precedente SCRUM-424/405). COMPROBADO antes de borrarla:
+  // cero marcadores en el fichero, medidos con `soloEjecutable`, no supuestos.
+  //
+  // El registro de esa aprobación estrena `docs/microcopy/` (SCRUM-709): una aprobación, un
+  // fichero. Está en `docs/microcopy/2026-09-03-SCRUM-402-abrir-parte-fallo.md`.
+  // SCRUM-650 (T1) · ENTRA A CONCIENCIA con 1, y por el MISMO motivo que `jobNuevoModal.js`:
+  // EL MECANISMO NO EXISTE SIN TEXTO. Es el selector de QUIEN EJECUTA el trabajo —el campo
+  // «Tecnico» del parte de papel, donde Tecnosel escribe «Israel, Miguel y Jesus.L»—, y un
+  // selector sin rotulo no se puede usar: quien lo abre no sabe si esta marcando al que ejecuta,
+  // al que lo redacto o al que cobra, que son tres cosas distintas en esta pantalla.
+  //
+  // Se cuenta 1 y son CINCO textos: el rotulo, el hueco, la nota de solo-lectura del tecnico, el
+  // aviso de equipo vacio y el fallo al guardar. Los cinco salen de una sola constante
+  // `MARCA_ASIGNADOS`, asi que
+  // aprobar el copy los apaga de golpe — y hay un test en `scrum650d` que EXIGE que el literal
+  // con marcador sea uno solo, para que ese 1 no pueda convertirse en cuatro sin que salte.
+  //
+  // El dia que el fundador firme los cuatro textos, esta entrada se BORRA — no se pone a 0.
+  'jobAsignados.js': 1,
+  // 🔴 SCRUM-748 (4-sep-2026) · SUBIDA A CONCIENCIA: `invoicesView.js` ENTRA con 1.
+  //
+  // La bandeja de pendientes decidía con `SEMAFORO_META[grupo.semaforo] || SEMAFORO_META.verde`,
+  // así que CUALQUIER estado que el servidor no supiera nombrar salía en pantalla como **«AL
+  // DÍA»**. Medido ejecutando esa misma línea: los cinco casos desconocidos —uno nuevo, cadena
+  // vacía, `undefined`, `null`— pintaban lo mismo que el bueno.
+  //
+  // POR QUÉ CON MARCADOR Y NO CON TEXTO: quitar la mentira exige poner OTRA cosa, y esa otra cosa
+  // es el rótulo de «no sé qué estado es esto», que es microcopy que nadie ha escrito (regla 30).
+  // Se ve en pantalla A PROPÓSITO: es la única forma de que nadie encienda por descuido un texto
+  // sin firmar. Y el cuarto estado NO se construye aquí: eso es del fundador (regla 27).
+  //
+  // VA CON EL CÓDIGO DETRÁS —`[PENDIENTE microcopy oficial] CUARTO_ESTADO`—, y no solo. Es el
+  // criterio de `invoiceStatusMeta` en `api.js:1118`, que ante un estado sin mapear no elige uno
+  // sino que enseña el suyo. Es el REVERSO exacto de SCRUM-641: en un aviso de error enseñar el
+  // código ES el defecto; en un rótulo de estado, esconderlo lo es.
+  //
+  // 🔴 CUENTA 1 Y PINTA 1, HOY, y el literal está escrito UNA sola vez (`INV_MARCADOR_MICROCOPY`).
+  // Si el siguiente ticket añade otro rótulo reutilizando esa constante, **este número NO se
+  // moverá** y entrará una superficie nueva en silencio — la lección de SCRUM-575. Quien añada uno
+  // le pone SU constante, para que el fundador pueda firmar uno sin firmar los dos.
+  //
+  // ⚠️ Que esto no dispare HOY no lo hace decorativo: el semáforo tiene tres estados y los tres
+  // están mapeados. Es un guard que se abre solo (SCRUM-537) con el disparador ya en el plan.
+  'invoicesView.js': 1,
+  // 🔴 SCRUM-606 (ALB-01) · 5-sep-2026 · ENTRAN DOS FICHEROS, con 1 cada uno, A CONCIENCIA.
+  //
+  // `albaranDesdePresupuestoModal.js` cuenta 1 y son SEIS textos: el placeholder del buscador,
+  // el vacío, los DOS motivos por los que un presupuesto no puede estrenar albarán, el aviso de
+  // «puede haber más» y el fallo de carga. Los seis salen de una sola constante `MARCA`, igual
+  // que `MARCA_ASIGNADOS` en la entrada de arriba, así que la firma del fundador los apaga de
+  // golpe. Su contador propio —`ALB_ORIGEN_SIN_APROBAR = 6`— dice cuántos son de verdad, que es
+  // lo que este 1 no puede decir.
+  //
+  // `atajoNuevo.js` entra por PRIMERA VEZ, y no es una casualidad: su propio comentario lo había
+  // anunciado el 4-sep con estas palabras — «el día que una cuarta lista estrene su atajo, su
+  // rótulo nace sin firma, este número sube y esto cae». Es «Nuevo albarán», el rótulo de la
+  // cuarta lista, y su `SIN_APROBAR` ha subido de 0 a 1 en el mismo commit.
+  //
+  // NO se inventa el texto mientras tanto (regla 30) ni se aplaza el ticket: el mecanismo existe
+  // y funciona entero; lo que falta es la firma. El día que llegue, las DOS entradas se BORRAN —
+  // no se ponen a 0 (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista ficheros CON marcadores.
+  // 🔴 SCRUM-722 · 7-sep-2026 · `atajoNuevo.js` SALIÓ. El fundador firmó «Nuevo albarán» y su
+  // entrada se BORRA, no se pone a 0 (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista ficheros
+  // CON marcadores, y el trinquete APRIETA. Ese marcador estuvo TRES DÍAS en pantalla y ningún
+  // guard lo vio, porque estaba DENTRO de este censo: contado y permitido. Lo cierra el guard
+  // nuevo `guard:marcadores-en-pantalla`, que mide el DOM y no el fuente.
+  //
+  // `albaranDesdePresupuestoModal.js` SE QUEDA, y no es un descuido: sus marcadores no son el
+  // rótulo del botón sino SEIS ranuras propias (`ALB_ORIGEN_SIN_APROBAR = 6`) que siguen sin
+  // firmar. Comprobado en el fichero antes de tocar nada, en vez de bajar las dos porque el
+  // comentario de arriba las nombraba juntas.
+  'albaranDesdePresupuestoModal.js': 1,
+  // 🔴 SCRUM-587 (CONT-14) · 4-sep-2026 · `quotesView.js` VUELVE A ENTRAR, con 2, y a conciencia.
+  //
+  // Salió el 3-sep cuando el asesor firmó «+ Nuevo cliente» (SCRUM-591). Entra ahora por la tira
+  // que PROPONE el descuento pactado con el cliente: son DOS literales —el rótulo del botón que
+  // acepta la propuesta y el texto que enuncia el acuerdo—, y los dos se PINTAN.
+  //
+  // No se inventa el texto mientras tanto (regla 30) y no se aplaza el ticket: el mecanismo sí
+  // existe y funciona; lo que falta es la firma. El asesor la da CON LA CAJA MEDIDA delante —así
+  // firmó el 591, con 901 px y 247,7 px útiles— y el servidor de medición lleva caído toda la
+  // sesión (`CONNECT_TIMEOUT`). Darle un número calculado como si estuviera medido es exactamente
+  // lo que él pidió que no se hiciera, así que se espera y se deja el marcador puesto.
+  //
+  // El DATO sí se enseña junto al marcador (el «10 %»): es del profesional, no es microcopy, y sin
+  // él la tira no le dejaría decidir nada — que es todo el punto del ticket.
+  //
+  // El día que se firmen los dos textos, esta entrada se BORRA — no se pone a 0 (SCRUM-424 /
+  // SCRUM-405): `censoActual()` sólo lista ficheros CON marcadores, y el trinquete APRIETA.
+  //
+  // 🔴 SCRUM-586 (CONT-13) · 6-sep-2026 · SUBE DE 2 A 4, Y ESTO ES LA DECISIÓN, NO EL TRÁMITE.
+  //
+  // El trinquete SALTÓ («quotesView.js: 2 → 4») y ese salto es el aviso funcionando, no un
+  // estorbo. Se sube porque los dos textos nuevos existen, se PINTAN y están declarados; no se
+  // sube «para que pase». Son la tira que propone las FORMAS DE PAGO pactadas con el cliente: el
+  // rótulo del botón que acepta la propuesta y el texto que enuncia el acuerdo — los mismos dos
+  // huecos que abrió la tira del 587 en este fichero, por el mismo motivo y sin firmar tampoco.
+  //
+  // ⚠️ SON CUATRO LITERALES Y DOS FRASES. Las dos tiras dicen lo mismo con distinto sujeto, y sus
+  // botones dicen exactamente lo mismo. Cuando el asesor firme, lo más probable es que firme DOS
+  // textos y este número baje de 4 a 0 de una vez; si firmara sólo los del 587, bajaría a 2. Que
+  // el número no sea el de las frases está escrito aquí para que nadie lo lea como cuatro
+  // decisiones de microcopy pendientes: son dos, duplicadas por sujeto.
+  //
+  // La caja de los dos nuevos SÍ está medida —en navegador, a 929 y a 390 px, con texto dentro—
+  // y las medidas están en `docs/master/SCRUM-586.md`. Lo que falta es la FIRMA, no la medida.
+  //
+  // 🔴 6-sep-2026 · BAJA DE 4 A 3, y una BAJADA también se anota: el asesor FIRMÓ el texto de la
+  // tira del 586 —«Formas de pago pactadas»— y su marcador se retiró EN EL MISMO COMMIT que la
+  // firma. Medido con el censo oficial antes y después: `quotesView.js` 4 → 3, total 29 → 28.
+  //
+  // La entrada NO se borra, al revés que las de `customersView.js` o `aiQuoteAssistant.js`: aquí
+  // quedan TRES marcadores vivos —el botón del 586 y los dos del 587—, y `censoActual()` sigue
+  // listando el fichero. Se borra cuando llegue a cero, no antes.
+  //
+  // ⛔ Y esta firma NO alcanza a «[PENDIENTE microcopy oficial] Nuevo albarán» de `atajoNuevo.js`,
+  // que es de otro ticket. Comprobado con el censo: sigue en 1 antes y después.
+  'quotesView.js': 3,
+  // 🔴 SCRUM-587 (CONT-14) · 4-sep-2026 · `customersView.js` ENTRÓ Y SALIÓ EL MISMO DÍA.
+  //
+  // Entró con 1 —el rótulo del campo del descuento pactado en la ficha del cliente— y el asesor lo
+  // firmó esa misma tarde: **«Descuento pactado (%)»**, 21 caracteres, CON LA CAJA MEDIDA delante
+  // (342 px a 390, donde caben 29 caracteres anchos en una línea; 462,6 px a 929). Es la primera
+  // firma de esta casa que no ha tenido que esperar a que volviera el medidor.
+  //
+  // Su entrada se BORRA, no se pone a 0 (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista
+  // ficheros CON marcadores, así que un 0 sería una bajada permanente sin anotar, y el trinquete
+  // dejaría de apretar. COMPROBADO antes de borrarla: el censo dice `customersView.js: 1 → 0`.
+  //
+  // ⚠️ Y salir del censo NO saca de la vigilancia — lo fija R4b. El texto sigue SIN LA FIRMA DEL
+  // FUNDADOR, y eso lo declara `DTO_POR_DEFECTO_SIN_APROBAR = 1` en la propia vista: que no se
+  // pinte marcador no significa que esté firmado arriba.
   // SCRUM-507 (13-ago-2026): `aiQuoteAssistant.js` ENTRO y SALIO del censo el mismo dia. Entro con
   // 2 —el aviso de la linea que no se propone porque su IVA era ilegible, y la marca por linea de
   // lo que la IA se invento— y el fundador FIRMO los dos textos en el mismo ticket.
@@ -162,7 +335,122 @@ const CENSO = Object.freeze({
   // eso **aprobar UNO de los dos textos NO apaga el otro**: son dos textos distintos que hoy
   // comparten marcador, y habrá que partir la constante el día que el fundador escriba el
   // primero. Decir «se apagan de golpe» aquí sería falso.
-  'customersView.js': 1,
+  // SCRUM-575 (24-ago-2026) · 1 → 2. SUBIDA A CONCIENCIA: entra el aviso de NIF/CIF mal formado
+  // (CONT-02), con CONSTANTE PROPIA y no reutilizando la de CONT-05.
+  //
+  // 🔴 Y LA CONSTANTE SEPARADA ES LA DECISIÓN, no un descuido. Reutilizar la de CONT-05 habría
+  // dejado el censo en 1 —el número no se habría movido— metiendo una superficie nueva EN
+  // SILENCIO, que es justo lo que este trinquete existe para impedir. Y peor: ataría la
+  // aprobación de este texto a la de los otros dos, así que el fundador no podría firmar uno sin
+  // firmar los tres. Una constante por ticket es lo que permite apagarlos por separado.
+  //
+  // Estado real de este fichero: 2 MARCAS · 3 SUPERFICIES.
+  //   · CONT-05 (`MARCADOR_MICROCOPY`) pinta 2: el rótulo del teléfono y el aviso de duplicado.
+  //   · CONT-02 (`MARCADOR_NIF`) pinta 1: el aviso de NIF mal formado.
+  // La de CONT-05 sigue necesitando partirse el día que se apruebe uno de sus dos textos.
+  //
+  // El rótulo «NIF/CIF (opcional)» NO se ha marcado: sigue describiendo el campo con exactitud.
+  // Sólo se marca lo NUEVO — marcar de más obliga al fundador a reescribir lo que ya estaba bien.
+  // SCRUM-641 (1-sep-2026) · SUBIDA A CONCIENCIA: `productsView.js` ENTRA en el censo (y NO `api.js`, que salió con
+  // SCRUM-405. Entra con 1: el traductor de códigos de error del servidor a texto para una
+  // persona (`mensajeDeError`).
+  //
+  // POR QUÉ CON MARCADOR Y NO CON TEXTO: hasta hoy el aviso pintaba `e.message`, y cuando el
+  // servidor contestaba `{error:"name_duplicate"}` eso es lo que leía el profesional en su
+  // catálogo — un identificador en inglés con guion bajo. Quitarlo exige poner OTRA cosa, y esa
+  // otra cosa es la frase que le dice que el nombre está cogido: microcopy que el fundador no ha
+  // escrito (regla 30). Se ve en pantalla A PROPÓSITO, que es la única forma de que nadie
+  // encienda por descuido un texto sin firmar.
+  //
+  // VA CON PALABRA DE TRABAJO detrás («nombre ya en uso»), al revés que `customersView` (CONT-05):
+  // allí el marcador iba solo porque era UN texto; aquí es un control de VARIOS LADOS —este caso
+  // frente a todos los demás errores, que caen a su respaldo en castellano—, y un marcador pelado
+  // borraría justo la distinción que este ticket viene a dar.
+  //
+  // 🔴 CUENTA 1 Y PINTA 1, HOY. Y la advertencia, que es la lección de SCRUM-575 aplicada antes de
+  // que muerda: el mapa `M` de `mensajeDeError` tiene UNA entrada. Si el siguiente ticket añade
+  // otra reutilizando `MARCADOR_MICROCOPY`, **este número NO se moverá** y entrará una superficie
+  // nueva EN SILENCIO — que es exactamente lo que este trinquete existe para impedir. Quien
+  // añada un código mapeado le pone SU constante, para que el fundador pueda firmar uno sin
+  // firmar los dos.
+  //
+  // ── SCRUM-641 (2/2) · 4-sep-2026 · SIGUE CONTANDO 1, PERO YA PINTA 0 ─────────────────────
+  //
+  // El asesor aprobó el texto —«Ya tienes un producto con ese nombre.»— con las cajas medidas
+  // delante (929, 390 y 320 px, en el DOM renderizado). El mapa `M` ya no lleva marcador: lo
+  // pinta `PV_NOMBRE_DUPLICADO`.
+  //
+  // 🔴 LA ENTRADA NO SE BORRA, y aquí está la diferencia con SCRUM-582 y SCRUM-607, que sí la
+  // borraron: allí no quedaba ningún literal con marca. Aquí SÍ queda uno —la constante
+  // `PV_MARCADOR_MICROCOPY`, que se conserva como respaldo de ÚLTIMO RECURSO para una llamada
+  // que no traiga respaldo en castellano— y `censoActual()` cuenta LITERALES, no pintados. Con
+  // el número delante: el trinquete sigue viendo `productsView.js: 1`, así que borrar la entrada
+  // habría puesto la tanda roja. Es el mismo reparto que el gemelo `providersView.js`
+  // (SCRUM-644), que también convive con un texto aprobado y su marcador de último recurso.
+  //
+  // ⚠️ Que ya no se pinte NO significa que esté firmado por el FUNDADOR: es del asesor y
+  // provisional. Eso lo dice `PV_SIN_APROBAR` en `productsView.js`, y su registro vive en
+  // `docs/master/SCRUM-641.md` — nunca en `docs/microcopy/`, que es del fundador y
+  // `constaAprobado()` lo barre (SCRUM-726).
+  // SCRUM-593 (2-sep-2026) · LA ENTRADA SE BORRA, no baja a 0 — como dejaron escrito SCRUM-424 y
+  // SCRUM-405 aquí mismo. `textoDelDocumento.js` entró ese día con 1 marcador (el rótulo del campo
+  // de cabecera del documento) y salió el MISMO día: el fundador lo firmó —«Añadir texto en el
+  // documento»— unas horas después. Un marcador que se firma desaparece; no se queda de adorno.
+  // 🔴 SCRUM-582 (CONT-09) · 4-sep-2026 · `filtroClientes.js` ENTRÓ y SALIÓ EL MISMO DÍA.
+  //
+  // Entró con 1 —el CONTADOR de la selección múltiple, y una barra que no dice cuántos hay
+  // marcados no informa de nada— y el asesor firmó el texto esa misma tarde, con plural de verdad:
+  // **«1 cliente seleccionado» / «N clientes seleccionados»**. La entrada se BORRA, no se pone a 0
+  // (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista ficheros CON marcadores.
+  //
+  // MEDIDO AL RETIRARLO, con su árbol y su fecha:
+  //     14 → 13 marcadores pintables (y de 14 a 13 ficheros)
+  //     árbol: `origin/main` = 1a359f6e con la rama scrum-582 dentro · 4-sep-2026
+  //
+  // Es la SEGUNDA vez que este fichero entra y sale: SCRUM-581 retiró sus seis cuando el fundador
+  // dijo «nada de marcadores en pantalla». Éste era uno nuevo, no aquéllos.
+  //
+  // ⚠️ Y la caja de ese texto está **CALCULADA, no medida**: el MCP de Playwright estaba caído. El
+  // asesor firmó sabiéndolo y dejando la condición escrita — si al medirla no cabe, el que falla
+  // es el cálculo y se cambia el texto. Consta en `docs/microcopy/`.
+  'productsView.js': 1,
+  // SCRUM-644 (2-sep-2026) · SUBIDA A CONCIENCIA: `providersView.js` ENTRA con 1. Es el MISMO
+  // defecto y el MISMO criterio que SCRUM-641 arriba —no se inventa uno nuevo—, en el otro fichero
+  // que tenía el camino COMPLETO: `throw new Error(data?.error || …)` en un extremo y `e.message`
+  // pintado en el otro. Un profesional leía `name_duplicate` en su pantalla de proveedores.
+  //
+  // Y NO en `api.js`: es zona sin marcador por decisión (SCRUM-405), ya se intentó y la tanda lo
+  // tumbó. Queda además más honesto — el texto sin firmar lo pinta ESTA pantalla.
+  //
+  // 🔴 CUENTA 1 Y MARCA 1 RÓTULO, HOY: sólo `name_duplicate` lleva marcador. El mapa tiene DOS
+  // entradas, y la otra —`provider_in_use`— NO lo lleva a propósito: su texto YA EXISTÍA en este
+  // fichero y ya se enseñaba, así que se MUDÓ al mapa sin tocarlo. Marcar texto aprobado obligaría
+  // al fundador a refirmar lo que ya firmó.
+  //
+  // ⚠️ La lección de SCRUM-575, otra vez y por escrito: las otras dos apariciones de
+  // `PRV_MARCADOR_MICROCOPY` son respaldos de ÚLTIMO RECURSO (sólo se ven si la llamada no trae
+  // respaldo en castellano), y este censo cuenta el LITERAL, que está escrito una sola vez. O sea
+  // que si el siguiente ticket añade otro código mapeado reutilizando la constante, **este número
+  // NO se moverá** y entrará una superficie sin firmar en silencio. Quien añada un código mapeado
+  // le pone SU constante, para que el fundador pueda firmar uno sin firmar los dos.
+  'providersView.js': 1,
+  // 🔴 SCRUM-575 (2-sep-2026) · `customersView.js` SALE DEL CENSO: pasó de 2 a 1 y de 1 a 0 en el
+  // mismo ticket, y la entrada se BORRA — no se pone a 0 — como dejaron escrito SCRUM-424,
+  // SCRUM-405 y SCRUM-593 aquí mismo: `censoActual()` sólo lista ficheros CON marcadores, así que
+  // un 0 sería una bajada permanente sin anotar.
+  //
+  // Las TRES marcas que tenía, con quién las firmó:
+  //   · el aviso de NIF/CIF mal formado ....... «Ese NIF/CIF no es válido. Compruébalo.»
+  //   · el rótulo del teléfono ................ «Teléfono»
+  //   · el aviso de identificador ya usado .... «Ese dato ya lo tiene otro cliente. Revísalo por
+  //                                              si es un duplicado.»
+  // Los dos últimos compartían UNA constante, y por eso hubo que PARTIRLA: sin partirla, aprobar
+  // el rótulo le habría cambiado el texto al aviso, que dice otra cosa. Lo dejó avisado SCRUM-615.
+  //
+  // ⚠️ SALIR DEL CENSO NO ES SALIR DE LA VIGILANCIA, y aquí no es una frase: lo fija **R4b**, y
+  // además se ha comprobado a propósito en este ticket metiendo un marcador nuevo en este mismo
+  // fichero y viendo que R4 lo caza por la rama `nuevos`. Un cero sin control positivo no es un
+  // cero: es un guard que dejó de mirar.
   'exportView.js': 1,
   // 🔴 17-ago-2026 · `invoiceDetailView.js` SALE DEL CENSO (tenía 9). El fundador aprobó los ocho
   // rótulos de acción, y el noveno era `MARCA_MICRO`, una constante que ya no consumía nadie y que
@@ -188,6 +476,25 @@ const CENSO = Object.freeze({
   //
   // SCRUM-483 dejó escrito que se partiría «el día que se aprueben, partiendo y rellenando en el
   // mismo commit». Ese día es hoy, así que `NF_PENDIENTE` se borra. Entrada BORRADA, no puesta a 0.
+  // SCRUM-605 (25-ago-2026) · SUBIDA A CONCIENCIA: 8 → 9 ficheros. Los tres atajos de «Válido
+  // hasta» del presupuesto (7 / 14 / 30) necesitan rótulo y nombre accesible, y ése es texto que
+  // NO existe. El encargo daba por hecho que no haría falta microcopy; hace falta, porque un
+  // botón sin nombre no es accesible y un número suelto («7») no dice de qué.
+  //
+  // Se cuenta 1: los TRES botones y sus tres `aria-label` salen de una sola constante
+  // `MARCA_MICROCOPY`, así que aprobar el copy los apaga de golpe. El NÚMERO va delante del
+  // marcador y no es microcopy —es el dato del atajo—, que es lo que los mantiene
+  // distinguibles entre sí mientras el texto no llegue.
+  //
+  // Lo que NO se hizo, y merece quedar escrito: el encargo pedía `[copy: fundador]`. Ese
+  // marcador NO lo cuenta este censo (cuenta `[PENDIENTE`), así que habría sido un marcador
+  // invisible para el trinquete que existe justo para verlo. Se usa el de la casa.
+  // 🔴 4-sep-2026 · SALE DEL CENSO: el ASESOR firmo los seis literales de los tres atajos de
+  // «Valido hasta» —tres rotulos («7 dias», «14 dias», «30 dias») y tres nombres accesibles
+  // («Valido hasta dentro de N dias»)—, a la espera de la firma del fundador. La entrada se
+  // BORRA y no se pone a 0 (SCRUM-424 / SCRUM-405):  solo lista ficheros CON
+  // marcadores. COMPROBADO antes de borrarla: cero marcas en el fichero, y el censo baja de 13
+  // a 12 entradas con el numero delante.
   'patronDetalleAcciones.js': 1,
   // 🔴 17-ago-2026 (tanda B) · SALE DEL CENSO: el fundador aprobó «Con errores» del resumen de importación de CSV. Entrada BORRADA, no
   // puesta a 0 (SCRUM-424 / SCRUM-405): `censoActual()` solo lista ficheros CON marcadores.
@@ -208,7 +515,32 @@ const CENSO = Object.freeze({
   // dirían exactamente lo mismo y el profesional no sabría cuál está eligiendo. Es la distinción
   // que `censo-marcadores.mjs` ya hace entre el rótulo que pinta A CIEGAS y el que al menos se
   // puede leer y juzgar.
+  // 🔴 SCRUM-667 (2-sep-2026) · `switchTipoArticulo.js` SALE DEL CENSO (tenía 1, que pintaba 3).
+  // El fundador aprobó los tres textos TAL CUAL —«Esto es» · «Producto» · «Servicio»— y se retiró
+  // el prefijo. Entrada BORRADA, no puesta a 0: el censo lista lo que QUEDA pendiente, y un 0 sería
+  // una entrada que no significa nada. El precedente es el de las once entradas del 17-ago.
+  //
+  // Y se apagaron LOS TRES A LA VEZ, que es justo lo que la entrada anterior avisaba de que NO se
+  // podía dar por hecho: salían de una sola constante `MARCADOR`, así que aprobar uno solo habría
+  // obligado a partirla. Se aprobaron los tres, así que la constante se retira entera.
+  //
+  // POR QUÉ AHORA: producción llevaba nueve días sin desplegar por deriva de esquema. Al arreglarse
+  // desapareció el hueco entre mergear y desplegar, y estos tres se estaban LEYENDO en la primera
+  // pantalla del catálogo, en producción.
   'switchFormaJuridica.js': 1,
+  // SCRUM-581 (1-sep-2026) · SUBIDA A CONCIENCIA, autorizada por el asesor: las pestañas
+  // Todos|Empresas|Personas y el desplegable de orden de la lista de clientes. El criterio de la
+  // casa se cumple — el copy NO es el objeto del ticket (el objeto es filtrar y ordenar), son
+  // pocos, y esta pantalla YA lleva marcador en producción por el switch de CONT-01: no se abre
+  // una puerta nueva, se usa la que está abierta, y todos se apagan con la misma decisión.
+  //
+  // CUENTA 1 Y PINTA 6, y la distinción es la de SCRUM-615: este censo cuenta MARCAS —una sola
+  // SCRUM-581 (2-sep-2026) · LA ENTRADA SE BORRA, no baja a 0 — la convención que dejaron
+  // escrita aquí mismo SCRUM-424 y SCRUM-405. `filtroClientes.js` entró con 1 marcador (una
+  // constante que servía a seis ranuras) y sale porque el fundador RETIRÓ el marcador de la
+  // pantalla: «nada de marcadores en pantalla». Los seis textos siguen SIN APROBAR — lo que
+  // desaparece es el corchete visible, no la aprobación—, y eso lo vigila ahora
+  // `tests/scrum581-pestanas-y-orden-clientes.test.mjs`, no este censo.
   // SCRUM-615 (24-ago-2026) · SUBIDA A CONCIENCIA: la salida D+C pinta con marcador el aviso de
   // «este plazo se ha calculado sin el dato» en la bandeja de pendientes, y el error de guardado.
   //
@@ -226,7 +558,26 @@ const CENSO = Object.freeze({
   // texto no las apaga las dos: son dos textos distintos que hoy comparten marcador, y el día que
   // el fundador los escriba habrá que partir la constante.
   'tipoDestinatarioPendiente.js': 1,
+  // 🔴 SCRUM-652 (T3 fase C) · 2-sep-2026 · `parteDetailView.js` ENTRA con 1, A CONCIENCIA.
+  //
+  // Es la pantalla del parte en el móvil del técnico. Su microcopy NO está aprobada (regla 30):
+  // se propone con las palabras del impreso que ya rellenan —«UNDS», «Mano de obra»,
+  // «Materiales», «Entrada», «Salida», «Desplazamiento», «Kilómetros», «REF»— porque estrenar
+  // sinónimos obligaría al técnico a traducir entre el papel y la pantalla en casa de un cliente.
+  //
+  // ⚠️ EL «1» ENGAÑA SI NO SE DICE, y se dice: el censo cuenta MARCAS ESCRITAS, y aquí hay UNA
+  // sola —`var M`— concatenada a **20 rótulos**. Es exactamente el caso de `libroRegistroView`
+  // (SCRUM-514), donde una marca pintaba 23. Un 1 aquí no significa «un rótulo provisional»:
+  // significa «esta pantalla entera está sin firmar».
+  //
+  // Sale del censo el commit que apruebe los textos, y ese commit BORRA la entrada, no la pone a
+  // 0 (precedente SCRUM-424/405).
+  'parteDetailView.js': 1,
   'settingsSubmenus.js': 1,
+  // SCRUM-674 (2-sep-2026) · `voiceInput.js` SALE del censo: el fundador aprobo el texto del
+  // aviso de dictado sin conexion, y sale ya sin marca. La entrada se BORRA, no se pone a 0:
+  // un 0 declara «este fichero se vigila y tiene cero», y aqui lo cierto es que no hay nada
+  // que vigilar (precedente SCRUM-424/405). Anotado en MICROCOPY_APROBADA_SIN_APLICAR.md.
   // SCRUM-294 (fase C) · 1 -> 5: el criterio de caja entra en Configuracion con marcador A
   // CONCIENCIA. Son 4 literales —el rotulo y sus TRES opciones— y el texto NO esta aprobado:
   // explicarle a un profesional si le conviene el RECC es asesorarle, y eso lo dictamina el
@@ -260,6 +611,31 @@ const CENSO = Object.freeze({
   // `PENDIENTE_MODO_EMISION` — su rama `receipt` toca terreno de la regla 26 y esa pregunta se
   // responde SOLO con el guion H2, así que no se aprueba de refilón con el resto de la pantalla.
   'settingsView.js': 1,
+  // 🔴 SCRUM-648 (fase B) · 5-sep-2026 · `invoicesView.js` ENTRÓ con 1 y SALIÓ el mismo día: el
+  // fundador firmó «No hemos podido comprobar el plazo.» (35 caracteres; el tope de 50 lo ata
+  // `scrum648b`). Entrada BORRADA, no puesta a 0 — un 0 es un sujeto que se mide y da cero; una
+  // entrada borrada es un sujeto que ya no existe.
+  //
+  // ⚠️ Y ESTA ENTRADA NUNCA CONTÓ: `invoicesView.js` YA ESTABA en el censo desde SCRUM-748, así
+  // que eran DOS claves iguales en el MISMO literal y en JavaScript **la última gana, en**
+  // **silencio**. `Object.freeze` no protege de esto: el pisado ocurre al construir el objeto,
+  // antes de congelarlo. El censo declaraba 1 mientras la pantalla pintaba 2, el trinquete no
+  // podía apretar y el PR #1065 se mergeó en ROJO. Lo que faltaba no era una entrada nueva: era
+  // subir a 2 la que ya había. Que no vuelva a colarse lo vigila **R4c**.
+  // ── SCRUM-607 (ALB-02) · 4-sep-2026 · ENTRÓ CON 2 Y SALIÓ EL MISMO DÍA ─────────────────
+  //
+  // Los dos literales del interruptor que quita los precios del albarán entraron con marcador por
+  // la mañana —comprobado con el número delante: el trinquete dijo `jobDetailView.js (+2)`— y el
+  // asesor los aprobó por la tarde: «Ocultar precios en el albarán» y «Tú sigues viendo los
+  // precios y puedes facturarlo.», con las cajas medidas a 929 y 390 px.
+  //
+  // La entrada se BORRA y no se pone a 0 (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista
+  // ficheros CON marcadores. COMPROBADO antes de borrarla: cero marcadores en el fichero.
+  //
+  // ⚠️ Que no quede marcador NO significa que estén firmados por el FUNDADOR: son del asesor y
+  // provisionales. Eso lo dice `ALB_OCULTAR_PRECIOS_SIN_APROBAR` en `jobDetailView.js`, y su
+  // registro vive en `docs/master/SCRUM-607.md` — nunca en `docs/microcopy/`, que es del fundador
+  // y `constaAprobado()` lo barre (SCRUM-726).
 });
 
 /** Marcadores que viven en un LITERAL (los que pueden pintarse). Los comentarios no son literales. */
@@ -302,8 +678,20 @@ test('SCRUM-402 · R6 · SUELO: el escáner encuentra la ranura `btnBizum` y el 
     'se movió — en los dos casos los tests de abajo dejarían de vigilar el botón y saldrían verdes ' +
     'por no encontrar nada. ARREGLA EL ESCÁNER, no el número.');
 
+  // 🔴 EL NÚMERO SE DERIVA, NO SE ESCRIBE (SCRUM-710). Aquí ponía «hay 36 medidos» cuando el censo
+  // sumaba 13: un número escrito a mano no miente el día que se escribe, sólo envejece — y éste
+  // llevaba tiempo haciéndolo. Se deriva del CENSO declarado, que es justo lo que el trinquete de
+  // abajo obliga a mantener al día.
+  //
+  // Ojo con la distinción, que no es la misma para todos los números de este fichero: esto es una
+  // AFIRMACIÓN DE CANTIDAD y por eso se deriva. Los SUELOS DE ALCANCE («>= 100 ficheros leídos»)
+  // se escriben a mano a propósito: derivarlos haría que añadir un fichero subiera el listón solo,
+  // y el suelo dejaría de poder caer nunca (la lección que SCRUM-377 dejó escrita).
+  const declarado = Object.values(CENSO).reduce((a, b) => a + b, 0);
   const total = Object.values(censoActual()).reduce((a, b) => a + b, 0);
-  assert.ok(total > 0, '🔴 ESCÁNER CIEGO: cero marcadores en literales. Imposible: hay 36 medidos.');
+  assert.ok(total > 0,
+    `🔴 ESCÁNER CIEGO: cero marcadores en literales, y el censo declara ${declarado}. `
+    + 'ARREGLA EL ESCÁNER, no el número.');
 });
 
 // ── R1/R2/R3 · EL BOTÓN Y SU RANURA ─────────────────────────────────────────────────────────

@@ -1,0 +1,37 @@
+ramas vivas (ls-remote): 550 · refs locales: 560 (10 obsoletas)
+merges leídos: 1542 · ramas en el histórico: 985 · commits: 4316
+docs/master: 444 ficheros · foto de Jira: 803 tickets, tomada el 2026-09-07
+
+═══ CONTROLES ═══════════════════════════════════════════════════════════════════
+POSITIVO 1 · scrum-653-dos-firmas encontrada y MERGEADA → ✅
+POSITIVO 2 · scrum-818-parte-de-trabajo VIVA Y SIN MERGEAR → ✅ (0 d parada)
+EL QUE DECIDE · SCRUM-706: su docs/master NO coincide con Jira → ✅ (0 % de coincidencia)
+NEGATIVO · SCRUM-653: su docs/master SÍ coincide y NO se marca → ✅
+SUELO · un número con rama y commits conocidos NO devuelve cero → ✅
+
+SCRUM-653  Finalizada · T4 · Las DOS firmas en el móvil del técnico, sin cobertura — y con quién firma por el cl
+  rama    · scrum-653-dos-firmas  MERGEADA Y BORRADA del remoto (merge del 2026-09-07)
+  rama    · scrum-653-sql-y-censo  MERGEADA Y BORRADA del remoto (merge del 2026-09-04)
+  commits · 15 lo mencionan · 15 ancestros de origin/main · 0 fuera
+  master  · SCRUM-653.md — Las DOS firmas del parte: FIRMA CLIENTE y FIRMA TÉCNICO
+  ⚠️ CRIBADO — parecido bajo. NO es un veredicto: puede ser sólo otro vocabulario.
+       rama scrum-653-sql-y-censo ↔ Jira  (coincidencia 0 %)
+         repo: sql y censo
+         jira: T4 · Las DOS firmas en el móvil del técnico, sin cobertura — y con quién firma por e
+
+SCRUM-818  Tareas por hacer · 🎨 C · El parte de trabajo tiene SIETE campos que parecen rellenables y son guiones muer
+  rama    · scrum-818-parte-de-trabajo  🔴 VIVA Y SIN MERGEAR  · último commit 2026-09-07 (0 d)
+  commits · 0 lo mencionan · 0 ancestros de origin/main · 0 fuera
+  master  · sin fichero en docs/master/
+
+SCRUM-706  Tareas por hacer · El agujero ① de SCRUM-664: el trinquete del IVA vigila el NOMBRE y no el VALOR — medido,
+  rama    · scrum-706-cablear-el-dictado  MERGEADA Y BORRADA del remoto (merge del 2026-09-03)
+  commits · 4 lo mencionan · 4 ancestros de origin/main · 0 fuera
+  master  · SCRUM-706.md — el cable del dictado — la cadena de Tecnosel, OCHO DE OCHO
+  ⚠️ CRIBADO — parecido bajo. NO es un veredicto: puede ser sólo otro vocabulario.
+       docs/master ↔ Jira  (coincidencia 0 %)
+         repo: el cable del dictado — la cadena de Tecnosel, OCHO DE OCHO
+         jira: El agujero ① de SCRUM-664: el trinquete del IVA vigila el NOMBRE y no el VALOR — med
+       rama scrum-706-cablear-el-dictado ↔ Jira  (coincidencia 0 %)
+         repo: cablear el dictado
+         jira: El agujero ① de SCRUM-664: el trinquete del IVA vigila el NOMBRE y no el VALOR — med

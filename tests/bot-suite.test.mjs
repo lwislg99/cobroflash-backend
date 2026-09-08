@@ -32,6 +32,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-159 (①)
+// SCRUM-681: esperar la CONDICION, no el reloj — y un techo vencido no produce veredicto.
+import { esperarCondicion, esperarQuieto } from './_espera-quieta.mjs';
 
 const ENABLED = process.env.BOT_SUITE_TEST === '1';
 
@@ -87,22 +89,24 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED && 'si
   };
 
   // El webhook ACKea y procesa en background → esperar a que el buzón crezca
+  // SCRUM-681 · UN TECHO VENCIDO YA NO SE CALLA. Esto devolvia `outbox.length` pasara lo que
+  // pasara, y MEDIDO: de sus 23 llamadas, NINGUNA mira lo que devuelve. O sea que cuando el techo
+  // vencia, el assert siguiente corria contra un buzon a medio llenar y decidia igual.
   const waitOutbox = async (minLen, ms = 6000) => {
-    const t = Date.now();
-    while (outbox.length < minLen && Date.now() - t < ms) await new Promise((r) => setTimeout(r, 100));
+    await esperarCondicion(() => outbox.length >= minLen, {
+      techoMs: ms, pasoMs: 100, que: `${minLen} mensaje(s) en el buzon`,
+    });
     return outbox.length;
   };
   const last = () => outbox[outbox.length - 1];
   // Espera a que el buzón esté QUIETO (el handler de un paso puede seguir
   // enviando menú/avisos tras el primer mensaje y guardando sesión después)
+  // SCRUM-681 · igual: si al vencer el techo el buzon SEGUIA moviendose, eso no es «ya esta
+  // quieto», es que no se ha llegado a comprobar. Antes salia del bucle y seguia como si nada.
   const settle = async (quietMs = 900, maxMs = 6000) => {
-    const t = Date.now();
-    let lastLen = outbox.length, lastChange = Date.now();
-    while (Date.now() - t < maxMs) {
-      await new Promise((r) => setTimeout(r, 120));
-      if (outbox.length !== lastLen) { lastLen = outbox.length; lastChange = Date.now(); }
-      else if (Date.now() - lastChange >= quietMs) break;
-    }
+    await esperarQuieto(() => outbox.length, {
+      quietoMs: quietMs, techoMs: maxMs, pasoMs: 120, que: 'el buzon',
+    });
   };
   const log = (step, ok, extra = '') => console.log(`${ok ? '✔' : '✖'} ${step}${extra ? ' — ' + extra : ''}`);
 
@@ -165,7 +169,10 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED && 'si
       await settle(); // deja terminar el paso 3 (menú extra + guardado de sesión)
       len = outbox.length;
       await post(listMsg('bot_pay'));
-      await new Promise((r) => setTimeout(r, 1500));
+      // SCRUM-681 · aqui se afirma un NEGATIVO («no llego nada mas»), y para eso no vale dormir
+      // un plazo: hay que esperar a que el buzon este QUIETO. Con la maquina cargada, el plazo
+      // fijo hacia el assert con el bot todavia respondiendo — y salia VERDE.
+      await settle();
       assert.equal(outbox.length, len, 'el doble tap no debe responder de nuevo');
       log('4 doble tap idempotente', true);
 
@@ -177,7 +184,10 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED && 'si
       await settle();
       const afterFirst = outbox.length;
       await post(textMsg('hola', dupId)); // MISMO wamid
-      await new Promise((r) => setTimeout(r, 1500));
+      // SCRUM-681 · aqui se afirma un NEGATIVO («no llego nada mas»), y para eso no vale dormir
+      // un plazo: hay que esperar a que el buzon este QUIETO. Con la maquina cargada, el plazo
+      // fijo hacia el assert con el bot todavia respondiendo — y salia VERDE.
+      await settle();
       assert.equal(outbox.length, afterFirst, 'el reintento con el mismo wamid no duplica');
       log('5 dedupe wamid', true);
 
@@ -307,7 +317,10 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED && 'si
       await settle(); // el handoff termina de avisar al pro y guardar sesión
       len = outbox.length;
       await post(textMsg('¿sigues ahí?'));
-      await new Promise((r) => setTimeout(r, 1500));
+      // SCRUM-681 · aqui se afirma un NEGATIVO («no llego nada mas»), y para eso no vale dormir
+      // un plazo: hay que esperar a que el buzon este QUIETO. Con la maquina cargada, el plazo
+      // fijo hacia el assert con el bot todavia respondiendo — y salia VERDE.
+      await settle();
       assert.equal(outbox.length, len, 'el bot debe estar MUDO tras handoff');
       log('10 mudo post-handoff', true);
 

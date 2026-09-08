@@ -30,14 +30,17 @@ test('SCRUM-139 F4: los inputs de la hoja son LOS DE LA LÍNEA, no copias', () =
   // fuentes de verdad: el usuario cambiaría el IVA en la hoja y el payload seguiría enviando
   // el viejo, porque `lineObj.vatInput` apuntaría al original. Silencioso y con dinero dentro.
   assert.ok(
-    /ajustesCampos\.appendChild\(markupTd\)/.test(src) && /ajustesCampos\.appendChild\(vatTd\)/.test(src),
+    // SCRUM-598 · el campo del margen sale de la hoja (DOC-08). Quedan SUPLIDO y el IVA, y el
+    // orden entre ellos no cambia: sólo desaparece el de en medio.
+    /ajustesCampos\.appendChild\(suplidoTd\)/.test(src) && /ajustesCampos\.appendChild\(vatTd\)/.test(src),
     'margen e IVA ya no van al contenedor que viaja a la hoja: revisa que no se hayan duplicado'
   );
   assert.ok(
     !/cloneNode/.test(src),
     'aparece cloneNode en el editor: un input clonado es una segunda fuente de verdad para un número que va en el presupuesto'
   );
-  for (const clave of ['markupInput,', 'vatInput,']) {
+  // SCRUM-598 · `markupInput` ya no existe: el margen sale del documento.
+  for (const clave of ['vatInput,']) {
     assert.ok(
       src.includes('      ' + clave),
       `lineObj pierde ${clave.replace(',', '')}: es el contrato que consumen payload, borrador, plantillas, IA y autocompletado`

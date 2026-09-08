@@ -3,6 +3,7 @@
 // transiciones borrador→emitido→firmado, validación del shape de lineas (condición 4
 // del OK del fundador), serialización y regeneración del PDF bajo demanda (el disco
 // de Railway es efímero — mismo patrón que ensureInvoicePdf).
+import { ZONA_POR_DEFECTO, mesNaturalEn } from '../../../core/zonaDelMerchant'; // SCRUM-643
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
@@ -12,6 +13,7 @@ import { generateAlbaranPdf } from '../infra/albaranPdf.service';
 // SCRUM-438 (v:3): UN solo sitio declara de dónde sale cada uno de los cinco campos, y LANZA ante
 // una versión desconocida. Sustituye la rama por defecto de `obraSegunVersion`.
 import { contenidoSegunVersion, type ContenidoCongelado } from './albaranContenidoFuentes';
+import { referenciaPresupuesto } from './albaranPrecios'; // SCRUM-607 (ALB-02)
 
 export const ALBARAN_ESTADOS = ['borrador', 'emitido', 'firmado'] as const;
 export type AlbaranEstado = (typeof ALBARAN_ESTADOS)[number];
@@ -264,10 +266,17 @@ export function validarConsolidacion(
   return { ok: true };
 }
 
-/** Clave de mes natural (YYYY-MM) de una fecha — la rotura del art. 13. */
-export function mesNaturalKey(fecha: Date | string): string {
+/**
+ * Clave de mes natural (YYYY-MM) de una fecha — la rotura del art. 13.
+ *
+ * 🔴 SCRUM-643 · EN LA ZONA DEL MERCHANT, no en la del proceso. Antes usaba
+ * `getFullYear()`/`getMonth()`, o sea el reloj de la máquina: con el servidor en UTC y el pro en
+ * la península, un albarán del 1 de abril a las 00:30 hora española devolvía `2026-03` y entraba
+ * en la recapitulativa del MES ANTERIOR. La zona la resuelve `core/zonaDelMerchant`.
+ */
+export function mesNaturalKey(fecha: Date | string, zona: string = ZONA_POR_DEFECTO): string {
   const d = fecha instanceof Date ? fecha : new Date(fecha);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  return mesNaturalEn(d, zona);
 }
 
 const MESES_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -288,10 +297,10 @@ export interface RoturaGrupo {
  * validación/diseño: 1 Job = 1 cliente, serie ALB única por merchant). Grupos ORDENADOS por
  * mes ascendente → 1 mes = 1 factura, N meses = N facturas. tipoIva NO rompe (decisión 22-jul).
  */
-export function groupByRotura(albaranes: AlbaranConsolidable[]): RoturaGrupo[] {
+export function groupByRotura(albaranes: AlbaranConsolidable[], zona: string = ZONA_POR_DEFECTO): RoturaGrupo[] {
   const map = new Map<string, AlbaranConsolidable[]>();
   for (const a of albaranes) {
-    const key = mesNaturalKey(a.fecha);
+    const key = mesNaturalKey(a.fecha, zona);
     if (!map.has(key)) map.set(key, []);
     map.get(key)!.push(a);
   }
@@ -634,6 +643,17 @@ export async function buildFirmaEvidencia(params: {
       : Promise.resolve(null),
     prisma.merchant.findUnique({ where: { id: a.merchantId }, select: { name: true, legalName: true, taxId: true } }),
   ]);
+  // 🔴 SCRUM-577 · ESTA LÍNEA **NO** SE LLEVA AL SITIO ÚNICO, Y NO ES UN OLVIDO.
+  //
+  // Se intentó y el guard de SCRUM-371 lo cazó: esta expresión es una **FUENTE DEL SELLADOR**, y
+  // ese guard exige que el barrido y el sellador la resuelvan con el MISMO TEXTO. El hash de los
+  // sobres v:1 y v:2 se recalcula con estas fuentes vivas, así que cambiar sólo un lado haría que
+  // el barrido dijera «no coincide» sobre albaranes INTACTOS — y sobre la población entera a la
+  // vez, que es la peor salida posible de esa herramienta.
+  //
+  // O sea: de las cinco copias de `legalName || name`, ésta **está sujeta por un guard a otra
+  // expresión en otro fichero**. Unificarla exige mover las DOS a la vez y es trabajo del ticket
+  // que toque el sellado, no de éste. Queda dicho para que nadie lo lea como un descuido.
   const cliente = customer?.legalName || customer?.name || null;
   const firmadoPorNombre = params.firmadoPorNombre ?? null;
   const firmadoPorCalidad = params.firmadoPorCalidad ?? null;
@@ -725,6 +745,15 @@ export function serializeAlbaran(a: any) {
     version: a.version,
     firmadoAt: a.firmadoAt,
     notas: a.notas,
+    // SCRUM-593 (DOC-03): sin esta línea el campo se guarda y el formulario sale SIEMPRE
+    // VACÍO — el serializador es una lista BLANCA, así que lo que no se nombra no llega al
+    // navegador. Y entonces la siguiente edición lo guardaría en blanco: el texto no se
+    // pierde al leerlo, se pierde al volver a guardar.
+    docHeaderText: a.docHeaderText ?? null,
+    // SCRUM-607 (ALB-02) · el interruptor del papel. El serializador es una lista BLANCA: sin
+    // esta linea el formulario saldria siempre desmarcado y la siguiente edicion lo apagaria
+    // sola — el mismo defecto que describe `docHeaderText` justo arriba.
+    ocultarPreciosEnDocumento: a.ocultarPreciosEnDocumento === true,
     // SCRUM-300 (C5). ⚠️ `evidenciaFirma` sigue SIN salir de aquí: lleva ip/ua (dato personal).
     // Estos cuatro son contenido del documento, no evidencia técnica.
     // null = «No se pidió al firmar»: son los albaranes anteriores a esta tarea, y el front lo
@@ -769,6 +798,19 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
   ]);
   const customer = job
     ? await prisma.customer.findUnique({ where: { id: job.customerId }, select: { name: true, legalName: true, taxId: true } })
+    : null;
+
+  // SCRUM-607 (ALB-02) · EL PRESUPUESTO DE ORIGEN, para el pie del papel.
+  //
+  // Se resuelve por `Job.quoteId` y con la MISMA forma que ya usan `jobs.routes.ts:275` y
+  // `albaranes.routes.ts:689` (numero con caida al id): dos formas del mismo dato acaban
+  // divergiendo y el profesional ve dos numeros para un presupuesto. El dato ya existia desde
+  // SCRUM-302 — lo que faltaba era que llegase al PDF.
+  const quoteOrigen = job?.quoteId
+    ? await prisma.quote.findFirst({
+        where: { id: job.quoteId, merchantId: albaran.merchantId },
+        select: { id: true, quoteNumber: true },
+      })
     : null;
 
   const modoValoracion: AlbaranModoValoracion = albaran.modoValoracion === 'VALORADO' ? 'VALORADO' : 'SIN_VALORAR';
@@ -833,6 +875,17 @@ export async function ensureAlbaranPdf(albaranId: number, force = false): Promis
     lineas,
     totales: modoValoracion === 'VALORADO' ? calcAlbaranTotales(lineas) : null,
     notas: albaran.notas,
+    // SCRUM-593 (DOC-03): la cabecera. El PIE de este documento sigue siendo `notas`, arriba.
+    docHeaderText: (albaran as any).docHeaderText ?? null,
+    // SCRUM-607 (ALB-02) · el interruptor del papel y la trazabilidad que viene con el.
+    //
+    // ✅ SIN `as any`: la columna esta aplicada en las tres bases y el campo vive en el schema
+    // con su `@map("ocultar_precios_en_documento")`. Ese `@map` NO es decorativo — medido:
+    // `albaranes` es snake al 100 %, y preguntar en camel falla con 42703.
+    ocultarPreciosEnDocumento: albaran.ocultarPreciosEnDocumento === true,
+    presupuestoRef: referenciaPresupuesto(
+      quoteOrigen ? { id: quoteOrigen.id, number: quoteOrigen.quoteNumber ?? quoteOrigen.id } : null,
+    ),
     signatureData: albaran.signatureUrl,
     firmadoAt: albaran.firmadoAt,
     // SCRUM-300 (C5): QUIÉN firmó y EN CALIDAD DE QUÉ, junto al trazo. Salen de las columnas del

@@ -34,8 +34,11 @@ const {
   resolveTipoDestinatario,
   fechaLimiteRecapitulativa,
   calcularSemaforo,
-  toIsoDateLocal,
 } = await import('../dist/modules/jobs/domain/pendientesFacturar.service.js');
+// SCRUM-643: la zona se fija A MANO. Sin esto, este fichero volvería a medir la máquina donde
+// corre — el defecto que SCRUM-640 cazó en otros cinco.
+const { diaNaturalEn, diasEntre } = await import('../dist/core/zonaDelMerchant.js');
+const MADRID = 'Europe/Madrid';
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────
 
@@ -43,13 +46,15 @@ test('SCRUM-615 · SUELO: las cuatro piezas del plazo existen y responden', () =
   // Si alguna llegara `undefined`, todo lo de abajo pasaría en verde comparando `undefined`
   // consigo mismo. Se comprueba antes de afirmar nada.
   for (const [nombre, fn] of Object.entries({
-    resolveTipoDestinatario, fechaLimiteRecapitulativa, calcularSemaforo, toIsoDateLocal,
+    resolveTipoDestinatario, fechaLimiteRecapitulativa, calcularSemaforo,
   })) {
     assert.equal(typeof fn, 'function', `🔴 falta \`${nombre}\`: este fichero no mediría nada`);
   }
   // Y que de verdad DISTINGUEN los dos tipos — si dieran lo mismo, no habría nada que medir.
-  const p = toIsoDateLocal(fechaLimiteRecapitulativa('2026-03', 'PARTICULAR'));
-  const e = toIsoDateLocal(fechaLimiteRecapitulativa('2026-03', 'EMPRESARIO'));
+  // SCRUM-643: ya devuelven el DÍA (`YYYY-MM-DD`); `toIsoDateLocal` se retiró junto con la
+  // trampa que existía para esquivar.
+  const p = fechaLimiteRecapitulativa('2026-03', 'PARTICULAR');
+  const e = fechaLimiteRecapitulativa('2026-03', 'EMPRESARIO');
   assert.notEqual(p, e, '🔴 los dos tipos dan la MISMA fecha: el instrumento no distingue');
 });
 
@@ -78,10 +83,10 @@ test('SCRUM-615 · el plazo que se ENSEÑA con NULL es 16 días MÁS CORTO que e
   const conNull = fechaLimiteRecapitulativa(mes, resolveTipoDestinatario({ tipoDestinatario: null }));
   const siEmpresario = fechaLimiteRecapitulativa(mes, 'EMPRESARIO');
 
-  assert.equal(toIsoDateLocal(conNull), '2026-03-31', 'último día del mes (art. 13.2, particular)');
-  assert.equal(toIsoDateLocal(siEmpresario), '2026-04-16', 'día 16 del mes siguiente (art. 13.2, empresario)');
+  assert.equal(conNull, '2026-03-31', 'último día del mes (art. 13.2, particular)');
+  assert.equal(siEmpresario, '2026-04-16', 'día 16 del mes siguiente (art. 13.2, empresario)');
 
-  const dias = Math.round((siEmpresario.getTime() - conNull.getTime()) / 86_400_000);
+  const dias = diasEntre(conNull, siEmpresario);
   assert.equal(dias, 16, `🔴 la distancia entre lo enseñado y lo legal ha cambiado: ${dias} días`);
 });
 
@@ -95,9 +100,9 @@ test('SCRUM-615 · 🔴 LA CONSECUENCIA QUE SE VE: 16 días de ROJO sobre un pla
 
   const rojosFalsos = [];
   for (let d = 1; d <= 20; d += 1) {
-    const hoy = new Date(2026, 3, d, 12, 0, 0); // abril de 2026
-    if (calcularSemaforo(pintada, hoy) === 'rojo' && calcularSemaforo(legal, hoy) !== 'rojo') {
-      rojosFalsos.push(toIsoDateLocal(hoy));
+    const hoy = new Date(Date.UTC(2026, 3, d, 10, 0)); // abril de 2026, 12:00 en Madrid
+    if (calcularSemaforo(pintada, hoy, MADRID) === 'rojo' && calcularSemaforo(legal, hoy, MADRID) !== 'rojo') {
+      rojosFalsos.push(diaNaturalEn(hoy, MADRID));
     }
   }
 
@@ -116,10 +121,10 @@ test('SCRUM-615 · ✅ CONTROL NEGATIVO: con el cliente DECLARADO no hay ni un r
   const legal = fechaLimiteRecapitulativa(mes, 'EMPRESARIO');
   const declarada = fechaLimiteRecapitulativa(mes, resolveTipoDestinatario({ tipoDestinatario: 'EMPRESARIO' }));
   for (let d = 1; d <= 20; d += 1) {
-    const hoy = new Date(2026, 3, d, 12, 0, 0);
+    const hoy = new Date(Date.UTC(2026, 3, d, 10, 0));
     assert.equal(
-      calcularSemaforo(declarada, hoy), calcularSemaforo(legal, hoy),
-      `🔴 con el tipo DECLARADO el semáforo diverge del legal el ${toIsoDateLocal(hoy)}`,
+      calcularSemaforo(declarada, hoy, MADRID), calcularSemaforo(legal, hoy, MADRID),
+      `🔴 con el tipo DECLARADO el semáforo diverge del legal el ${diaNaturalEn(hoy, MADRID)}`,
     );
   }
 });

@@ -37,8 +37,19 @@
 // posición en la pila es justo el dato que hace falta. Por eso el censo de SCRUM-562 clasifica
 // por LA PREGUNTA y no por la sintaxis.
 
-/** Qué cuenta como «se puede pulsar». Una sola definición para todos los guards. */
-export const INTERACTIVOS = 'a[href], button, [role="button"], summary, input[type="submit"], input[type="button"]';
+/**
+ * Qué cuenta como «se puede pulsar». Una sola definición para todos los guards.
+ *
+ * 🔴 SCRUM-782 · ENTRAN LAS CASILLAS, y no es un detalle: sin `input[type="checkbox"]` este
+ * selector no veía NI UNA de las 11 casillas de la lista de Clientes. Medido: el guard, aunque
+ * hubiera visitado esa página, habría dado «✅ todo cumple» sin mirar el control del que va el
+ * ticket. Un selector incompleto es la misma ceguera que una página no visitada, y más difícil de
+ * ver porque no se nota en el nombre.
+ *
+ * ⚠️ NO cambia lo que mide la landing: allí hay CERO casillas (medido, `grep -c` sobre
+ * `public/` fuera de `dashboard/` = 0), así que su población es la misma antes y después.
+ */
+export const INTERACTIVOS = 'a[href], button, [role="button"], summary, input[type="submit"], input[type="button"], input[type="checkbox"]';
 
 /** AB6. No se baja: si un caso no llega, va como excepción declarada con su motivo. */
 export const MINIMO_TACTIL = 44;

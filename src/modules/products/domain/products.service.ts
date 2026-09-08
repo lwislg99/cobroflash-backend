@@ -4,7 +4,24 @@ import { prisma } from '../../../core/db/prisma';
 // el importador del navegador), y no eran equivalentes.
 import { parsearLineaCsv, quitarBom, detectarSeparador } from '../../../core/csv/csv';
 
-function normalizeSearch(s: string) {
+/**
+ * La sombra normalizada de `name`. Es la ÚNICA normalización del catálogo del proyecto.
+ *
+ * SCRUM-761 · Se EXPORTA para que ningún sembrador tenga que escribir la suya. Había una segunda
+ * en `seed-video.mjs:406` (`p.name.toLowerCase()`) y estaba MAL: no quita diacríticos, así que
+ * `'Sustitución de grifo monomando'` quedaba como `'sustitución …'` y una búsqueda sin tilde
+ * —la que teclea cualquiera— no la encontraba. Medido antes de tocarlo, con los dos literales
+ * del catálogo puestos uno al lado del otro. Dos normalizaciones del mismo hecho se
+ * desincronizan solas; ésta ya lo estaba.
+ *
+ * ⚠️ Derivar la NORMALIZACIÓN es el escalón 2. El escalón 1 —derivar el CAMINO ENTERO llamando a
+ * `createProduct`— es el que usa `seed-demo.mjs`, y es mejor: trae gratis cualquier columna
+ * derivada FUTURA. `seed-video.mjs` no puede subir a ese escalón por una imposibilidad MEDIDA,
+ * no de calendario: siembra dentro de `prisma.$transaction` con el `tx`, y `createProduct`
+ * escribe con el cliente global — llamarlo desde ahí dejaría el producto FUERA de la
+ * transacción que envuelve al resto de la siembra.
+ */
+export function normalizeSearch(s: string) {
   return String(s || '')
     .trim()
     .toLowerCase()
@@ -22,6 +39,8 @@ type CreateProductInput = {
   vat?: number | null;
   providerId?: number | null;
   isActive?: boolean;
+  /** SCRUM-609 (CAT-01) · el LADO: PRODUCTO | SERVICIO. `null` = sin clasificar. */
+  itemKind?: string | null;
 };
 
 export async function createProduct(merchantId: number, input: CreateProductInput) {
@@ -36,6 +55,9 @@ export async function createProduct(merchantId: number, input: CreateProductInpu
       vat: input.vat ?? null,
       providerId: input.providerId ?? null,
       isActive: input.isActive ?? true,
+      // Sin `?? 'PRODUCTO'`: un default aquí declararía el lado por el profesional, que es
+      // justo lo que la columna nullable evita. Ausente entra como NULL = sin clasificar.
+      itemKind: input.itemKind ?? null,
     },
   });
 }
@@ -208,6 +230,24 @@ export async function searchProducts(merchantId: number, q: string) {
       name: true,
       description: true,
       price: true,
+      /**
+       * SCRUM-661 (①) · EL COSTE SALE HACIA EL FRONT, y sin filtro por rol.
+       *
+       * Hace falta porque el coste se CONGELA en la línea en el momento de la venta: `cost` es
+       * mutable y no tiene histórico, así que el día que alguien actualice el coste de un
+       * material se reescribe el pasado de todas las ventas que lo usaron. Sin este `select` el
+       * front no tiene el dato que tendría que congelar — medido en SCRUM-661: cero apariciones
+       * de `costeUnitario` en todo el front, porque no había de dónde sacarlo.
+       *
+       * 🔴 SIN FILTRO POR ROL, Y ES UNA DECISIÓN TOMADA, no un descuido: «Sí, el operario ve el
+       * precio de compra» (fundador, 02-sep-2026). La consecuencia —un operario que se va puede
+       * llevarse los precios de compra— está asumida y escrita. No se enmascara ni se devuelve
+       * una respuesta distinta por rol: eso sería inventar una regla que nadie ha decidido.
+       *
+       * ⚠️ `Decimal?` → llega como STRING o como `null`. `null` significa «no se sabe» (medido en
+       * SCRUM-609: 8 de 8 productos de desarrollo no tienen coste), y eso NO es cero.
+       */
+      cost: true,
       vat: true,
       providerId: true,
       isActive: true,

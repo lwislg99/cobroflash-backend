@@ -45,8 +45,15 @@ import {
   LEYENDA_IMPORTES_ORIENTATIVOS,
 } from '../dist/modules/jobs/app/routes/albaranPublicVista.js';
 import { calcAlbaranTotales } from '../dist/modules/jobs/domain/albaran.service.js';
+// SCRUM-636 · el formateador del PDF ya no es autosuficiente: DELEGA en el sitio único del dinero.
+// Este guard saca su cuerpo del árbol y lo EJECUTA, así que necesita poder resolver lo que ese
+// cuerpo llama. Se le dan los helpers REALES —no dobles— para que lo que se ejecute siga siendo el
+// código de verdad; si `formatImporteEs` cambiara, este guard lo vería.
+import * as UTILS from '../dist/core/utils/utils.js';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+/** Nombres de `utils` que se pueden pasar como parámetros a `new Function`. */
+const AYUDAS = Object.keys(UTILS).filter((n) => n !== 'default' && /^[A-Za-z_$][\w$]*$/.test(n));
 const leer = (p) => fs.readFileSync(path.join(RAIZ, p), 'utf8');
 const FUENTE_PDF = 'src/modules/jobs/infra/albaranPdf.service.ts';
 
@@ -72,7 +79,9 @@ function pdfValorado() {
     // El formateador de dinero del PDF: se saca su CUERPO y se convierte en función.
     if (ts.isFunctionDeclaration(n) && n.name?.text === 'fmtMoney' && n.body) {
       const cuerpo = n.body.getText(sf).replace(/^\{|\}$/g, '');
-      out.fmtMoney = new Function('v', cuerpo);
+      // SCRUM-636 · con los helpers de `utils` en el ámbito: el cuerpo real delega en ellos.
+      const f = new Function(...AYUDAS, 'v', cuerpo);
+      out.fmtMoney = (v) => f(...AYUDAS.map((n2) => UTILS[n2]), v);
     }
     // `const importe = Number(l.precioUnitario) * Number(l.cantidad)` — la aritmética por línea.
     if (ts.isVariableDeclaration(n) && n.name.getText(sf) === 'importe' && n.initializer) {

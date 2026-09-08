@@ -117,39 +117,48 @@ test('SCRUM-604 · un solo tipo: el bloque de totales, entero', async () => {
     '🔴 cambió lo que imprime el bloque de totales de una factura de un solo tipo');
 });
 
-test('SCRUM-604 · dos tipos CON cuota: una fila por tipo', async () => {
+test('SCRUM-604 · dos tipos CON cuota: una fila por tipo, con SU BASE (SCRUM-623)', async () => {
   const bloque = bloqueDeTotales(await textoDeFactura('B', DOS_TASAS, '122.10'));
-  assert.equal(bloque, 'Base imponible:105,00 EURIVA 21%:12,60 EURIVA 10%:4,50 EURTOTAL:122,10 EUR',
+  // 🔴 ACTUALIZADO POR SCRUM-623, con el GO que este mismo fichero pedía unas líneas más abajo.
+  // Cada fila lleva ahora SU BASE además de su cuota. **Ninguna cifra de las que ya se
+  // imprimían ha cambiado** —105,00 · 12,60 · 4,50 · 122,10 siguen ahí, en el mismo sitio—:
+  // lo único que ocurre es que se añaden las bases por tipo, que antes no salían.
+    assert.equal(bloque, 'Base imponible:105,00 EUR[PENDIENTE microcopy oficial]21%60,00 EURIVA 21%:12,60 EUR10%45,00 EURIVA 10%:4,50 EURTOTAL:122,10 EUR',
     '🔴 cambió el bloque de totales con dos tipos que sí llevan cuota');
 });
 
-test('SCRUM-604 · 🔴 DEFECTO ①: con un SUPLIDO, la base al 0 % NO se imprime', async () => {
+test('SCRUM-604 · ✅ DEFECTO ① RESUELTO (SCRUM-623): la base al 0 % ya se imprime', async () => {
   const conSuplido = bloqueDeTotales(await textoDeFactura('C', CON_SUPLIDO, '117.60'));
 
-  // El bloque ENTERO, con `===`. Aquí está el defecto a la vista: base 105,00 con 12,60 de IVA
-  // al 21 % — y 105 × 21 % son 22,05. Los 45,00 al 0 % no salen por ningún lado del desglose.
-  assert.equal(conSuplido, 'Base imponible:105,00 EURIVA 21%:12,60 EURTOTAL:117,60 EUR',
-    'CARACTERIZACIÓN: esto es lo que hoy imprime una factura con suplido. Si ha cambiado, o se '
-    + 'arregló el defecto ① (bien, pero es un cambio en documento fiscal y necesita constar con '
-    + 'su GO) o se rompió el cálculo.');
+  // 🔴 ESTE TEST CARACTERIZABA EL DEFECTO Y AHORA FIJA SU ARREGLO. El GO es SCRUM-623, que es
+  // exactamente la condición que este mismo bloque pedía: «si ha cambiado, o se arregló el
+  // defecto ① (bien, pero es un cambio en documento fiscal y necesita constar con su GO) o se
+  // rompió el cálculo». Se arregló, y **el cálculo no se ha tocado**: 105,00 · 12,60 · 117,60
+  // son las mismas tres cifras que imprimía antes, en el mismo sitio. Lo que se añade son las
+  // dos bases por tipo, que es lo que faltaba para poder cuadrarlo desde el papel.
+    assert.equal(conSuplido, 'Base imponible:105,00 EUR[PENDIENTE microcopy oficial]21%60,00 EURIVA 21%:12,60 EUR0%45,00 EURIVA 0%:0,00 EURTOTAL:117,60 EUR',
+    'Si esto cambia, o se ha movido la maqueta del desglose (SCRUM-623) o se ha roto el cálculo. '
+    + 'Las dos cosas son graves en un documento fiscal y ninguna se hace de paso.');
 
-  // 🔴 EL DEFECTO, DICHO COMO PROPIEDAD Y NO COMO CIFRA: un documento de DOS bases sale con la
-  // MISMA forma que uno de UNA. Es lo que hace el desglose irreconstruible, y sobrevive a
-  // cualquier cambio de importes — que es justo lo que una cifra fijada no haría.
+  // ✅ LA PROPIEDAD, INVERTIDA, y sigue dicha como propiedad y no como cifra: un documento de
+  // DOS bases ya NO puede salir con la misma forma que uno de una sola. Sobrevive a cualquier
+  // cambio de importes, que es justo lo que una cifra fijada no haría.
   const unaSola = bloqueDeTotales(await textoDeFactura('A2', UNA_TASA, '72.60'));
   const filas = (b) => b.split('IVA ').length - 1;
-  assert.equal(filas(conSuplido), filas(unaSola),
-    'CARACTERIZACIÓN: hoy la factura con DOS bases (21 % y 0 %) imprime el MISMO número de filas '
-    + 'de IVA que la de una sola. Si esto falla, la del 0 % ya aparece — y el defecto ① está '
-    + 'resuelto.');
-  assert.equal(filas(conSuplido), 1, '🔴 cambió el número de filas de IVA del caso con suplido');
+  assert.notEqual(filas(conSuplido), filas(unaSola),
+    '🔴 la factura con DOS bases vuelve a imprimir el MISMO número de filas que la de una sola: '
+    + 'el defecto ① ha regresado y el desglose vuelve a ser irreconstruible desde el papel.');
+  assert.equal(filas(conSuplido), 2, '🔴 el caso con suplido debe imprimir DOS filas: 21 % y 0 %.');
+  assert.equal(filas(unaSola), 1, '🔴 la de un solo tipo debe seguir imprimiendo UNA.');
 });
 
 test('SCRUM-604 · 🔴 DEFECTO ②: el total IMPRESO se recalcula e ignora el guardado', async () => {
   // Se le pasa un total que NO cuadra con las líneas — «una base que no cuadra con sus líneas»,
   // el caso que pide el encargo. Sirve para saber QUIÉN gana: el papel o el registro.
   const bloque = bloqueDeTotales(await textoDeFactura('D', DOS_TASAS, '999.99'));
-  assert.equal(bloque, 'Base imponible:105,00 EURIVA 21%:12,60 EURIVA 10%:4,50 EURTOTAL:122,10 EUR',
+  // Cadena actualizada por SCRUM-623 (las bases por tipo). LA CARACTERIZACIÓN NO CAMBIA: el total
+  // impreso sigue siendo el recalculado y sigue ignorando el guardado — 122,10, no 999,99.
+  assert.equal(bloque, 'Base imponible:105,00 EUR[PENDIENTE microcopy oficial]21%60,00 EURIVA 21%:12,60 EUR10%45,00 EURIVA 10%:4,50 EURTOTAL:122,10 EUR',
     'CARACTERIZACIÓN: con líneas, el PDF recalcula y el total GUARDADO (999,99) no llega al papel. '
     + 'Si el total sellado y la suma de las líneas se separasen, el documento diría una cosa y el '
     + 'registro otra, y el documento no avisa.');

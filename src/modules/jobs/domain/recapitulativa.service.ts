@@ -24,6 +24,7 @@ import { calcVatBreakdown } from '../../invoicing/domain/vat.service';
 import type { ActorAudit } from '../../system/audit.service'; // SCRUM-207
 import { sellarTrasEmision, SELLADO_PENDIENTE } from '../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { exigirLineasFacturables } from '../../invoicing/domain/lineasFacturables'; // SCRUM-246
+import { exigirTiposDeIvaEmitibles } from '../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
 
 /** Un albarán ya validado y listo para entrar en una factura. */
 export interface AlbaranAEmitir {
@@ -86,6 +87,10 @@ export async function emitirRecapitulativas(
       // SCRUM-246 · antes de que `emitInvoice` pida número. Un grupo de albaranes sin nada
       // que cobrar no produce factura, y así no gasta número de serie.
       exigirLineasFacturables(lines);
+      // SCRUM-771 · y que el tipo de IVA EXISTA. Mismo sitio y misma razón que la línea de
+      // arriba: ANTES de pedir número, nunca después. Deriva de `invalidTipoIva`; aquí no
+      // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
+      exigirTiposDeIvaEmitibles(lines);
 
       const bd = calcVatBreakdown(lines);
       const total = (bd.base + bd.cuota).toFixed(2);

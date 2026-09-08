@@ -121,3 +121,134 @@ se prepara el diff y se para.
 * **No se ha tocado nada**: ni `normalizePhone`, ni el esquema, ni la importación, ni el
   formulario, ni `contact_kind`, ni `tipoDestinatario`.
 * **Cero microcopy.**
+
+---
+
+# APÉNDICE · 24-ago-2026 · ENTREGADOS (a) (b) (c) (d)
+
+**Medido contra:** `origin/main` = `bcf30775b0e535c9c6534eb7636558b9a4200a3e`
+**Tanda final:** 4131 tests, 4052 pass, 0 fail, 79 skipped · `guards:entrada` verde ·
+los 9 de navegador verdes (54,5 s), **sólo como no-regresión de la landing**: no cubren este
+formulario (SCRUM-628).
+
+## (a) El selector de prefijo — el presupuesto se cumple CON LA LISTA COMPLETA
+
+No hubo que recortar ni decidir nada. Medido con `node scripts/censo-peso-prefijos.mjs`:
+
+| | |
+|---|---|
+| `prefijosPais.js` en disco | **7.584 B** |
+| **gzip** — lo que viaja | **3.773 B · 3,7 KB** |
+| brotli | 2,9 KB |
+| Países | **222**, España incluida, derivado del módulo y sin ISO repetidos |
+| Proporción | **0,8 %** del JS comprimido del panel |
+| A 200 KB/s (4G lenta) | **18 ms** (presupuesto: <1.500 ms la pantalla entera) |
+
+**Cabe porque lo caro NO VIAJA**, y son las dos decisiones que hacen reproducible el número:
+
+1. **El nombre lo pone el navegador.** `Intl.DisplayNames(['es'], {type:'region'})` traduce el ISO
+   a «España», «Francia», «Alemania»… **sin un byte de descarga**. Así que en el fichero sólo
+   viajan ISO + prefijo. Con respaldo: si no existe, se enseña el código ISO — un selector que
+   dice «FR +33» sigue siendo usable; uno que revienta deja al profesional sin poder escribir.
+2. **La bandera se calcula, no se descarga.** Los emoji de bandera son dos *indicadores
+   regionales*, que son las letras A-Z desplazadas a otro bloque Unicode: **la bandera de `ES` ES
+   `ES` con otro código de carácter**. Cero imágenes, cero sprites, cero peticiones.
+
+Ninguna librería (regla 36). Objetivo táctil 44 px cumplido a mano, porque aquí no hay guard.
+
+## El censo de marcadores: **+1 marca · 2 superficies**
+
+`customersView.js`, de una sola constante `MARCADOR_MICROCOPY`. Las dos superficies son el
+**rótulo del teléfono** y el **aviso de duplicado**.
+
+> 🔴 **LA LETRA PEQUEÑA, y no es un detalle:** el censo cuenta **MARCAS**, no rótulos — medido en
+> SCRUM-615. Estas dos superficies comparten constante, así que **aprobar UNO de los dos textos NO
+> apaga el otro**: son dos textos distintos que hoy van juntos por comodidad de implementación.
+> **Habrá que PARTIR la constante** el día que el fundador escriba el primero de los dos. Decir
+> «se apagan de golpe», como sí pasaba con `NF_PENDIENTE`, aquí sería falso.
+
+El rótulo **tenía** texto —«Teléfono (E.164 sin +)»— y pasa a marcador a propósito: con el prefijo
+en un selector aparte, describe un campo que ya no existe. Y era, él mismo, la prueba del ticket
+de que una regla escrita en una etiqueta no la aplica nadie.
+
+## (b) y (c) · resumen
+
+* **(b)** `createCustomer` **y** `updateCustomer` normalizan con la `normalizePhone` que ya existe.
+  Los dos: si sólo lo hiciera el alta, editar sería la puerta trasera. `normalizePhone` **no se
+  toca** (~40 llamadores; es el número al que se manda el WhatsApp).
+* **(c)** `identificadoresDuplicados.ts` — la lista de campos identificadores en **un sitio único**.
+  Es aviso y no bloqueo, nunca el nombre, y compara sobre valor **canónico** (`canonParaComparar`
+  llama a `normalizePhone` y le añade el prefijo por defecto **sólo para comparar**, en memoria:
+  no escribe en ninguna fila, así que (d) se respeta entero).
+* **(d)** No se ha auditado ni fusionado nada. No requería código.
+
+## ⏳ PENDIENTE DE SCRUM-590 (CONT-19) — con la línea exacta
+
+El cruce **móvil↔fijo** que fijó P-CONT-3 **no se construye aquí porque el segundo campo no
+existe**: `Customer` tiene un solo `phone` (comprobado sobre el modelo completo).
+
+Cuando SCRUM-590 cree el campo, el cruce **sale solo**: la búsqueda ya compara TODOS los
+identificadores contra TODOS. Basta añadir **una línea** a `IDENTIFICADORES`, en
+`src/modules/system/domain/identificadoresDuplicados.ts`:
+
+```ts
+{ campo: 'mobile', canon: canonParaComparar },
+```
+
+Hay un test que lo sostiene —«el cruce entre campos YA funciona: es lo que SCRUM-590 necesita»—
+para que ese día no haya que rehacer el mecanismo, sólo declarar el campo.
+
+## 🔴 Las tres correcciones que me hicieron
+
+**1 · `SCRUM-311` cazó un `|| "34"`** en la lectura del selector de prefijo. El guard vigila
+«cantidades inventadas» y aquí era un prefijo, no una cantidad — **pero tiene razón igual**: el
+patrón es el mismo, un valor escrito a mano como respaldo de la lectura de un control. Ahora sale
+de la fuente declarada (`prefijosPais.ESPANA.prefijo`), no de un literal.
+
+**2 · Dos de mis propios guards se cazaban a sí mismos** en los comentarios que explican la
+prohibición: el que comprueba que «E.164 sin +» ya no está caía por el comentario que dice que ya
+no está, y el del `|| "34"` por el que lo explica. **Es exactamente el error de SCRUM-574**, y por
+eso el filtro quita las líneas de comentario **y los comentarios al final de línea** — con su
+suelo, que exige que el filtrado no se haya llevado el código por delante.
+
+**3 · Una suposición mía sobre `Intl`:** escribí que `nombreDe('ZZ')` caería al respaldo. **Falso:
+`ZZ` es un código VÁLIDO de ICU y devuelve «Región desconocida».** El test decía lo que yo creía,
+no lo que pasa. Corregido, y de paso reforzado con el invariante que de verdad importa: **ninguna
+de las 222 opciones se queda sin rótulo**, que es como se rompería el selector de verdad.
+
+## Lo que NO cubre
+
+* **La importación (`importarClientes.service.ts`) sigue deduplicando por igualdad literal.** Está
+  medido y dicho, y **no se ha tocado**: comparte el defecto pero tiene su propio camino.
+* **Ni una comprobación contra registro externo.** Fuera de alcance por decisión.
+* **Los duplicados existentes**, intactos (d) — y con la consecuencia asumida: nadie sabe cuántos
+  son, porque no se va a auditar.
+* **Cero microcopy escrita.**
+* **🕳️ No pude leer SCRUM-578 en Jira** (MCP de Atlassian caído): las cuatro consecuencias contra
+  reglas del máster llegaron por el encargo, no del ticket.
+
+## 🔴 DOS CORRECCIONES A LO QUE ESTE MISMO DOCUMENTO DICE MÁS ARRIBA
+
+No se borra nada (SCRUM-273: un fichero por ticket). Pero dejar en pie una frase que la
+medición posterior desmintió es justo de donde salen las premisas falsas — es lo que yo mismo
+reproché al comentario obsoleto de `scrum262-…:142`. Así que se corrigen aquí, con el número.
+
+**① El encabezado dice «Gate: 🛑 PARADO».** Ya no: el fundador contestó los dos hallazgos
+(el cruce va por la lectura **A**, sin tocar esquema; la ceguera se resolvió con la forma canónica
+en vez de aceptarse) y (a)(b)(c)(d) están **entregados**. El encabezado es la foto del día en que
+se paró, no el estado.
+
+**② «El rango imposible SIRVE, no hay hallazgo ahí» — ERA FALSO, y lo hay.** Esa frase se escribió
+midiendo sólo la forma CON prefijo. Al construir el test hizo falta también la forma **nacional**,
+y ahí:
+
+```
+telefonoDePrueba(1) = 34000000001  →  nacional "000000001"  →  normalizePhone = ""
+```
+
+`normalizePhone` quita el `00` inicial por prefijo internacional, quedan 7 dígitos y falla su
+propio `^\d{8,15}$`. O sea que **el par natural para este test compara `""` contra `""` y pasaría
+en VERDE sin probar nada.** Con `n` grande el tramo nacional empieza por `01…` y sobrevive; por eso
+los fixtures usan `telefonoDePrueba(12345678)` y llevan un suelo que exige que no sean vacíos.
+
+Está abierto como **SCRUM-629** y no es de este ticket. Ningún número real se usó en su lugar.

@@ -29,6 +29,15 @@ export interface RouteDeclaration {
 export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // Sesión y negocio (perfil REDUCIDO para técnico — el filtrado vive en app.ts)
   { method: 'GET', path: '/admin/me', why: 'Perfil de la propia sesión; no expone datos de otros' },
+  // SCRUM-651 (T2) · DECISIÓN DE PERMISOS, no un trámite: abrir un Trabajo SIN presupuesto es
+  // trabajo de CAMPO. El caso es una AVERÍA —el más frecuente del primer cliente real— y quien
+  // la coge es el técnico, en la calle. Dejarlo admin-only obligaría a llamar a la oficina para
+  // poder empezar, que es resolverlo para la persona equivocada (misma lección que SCRUM-464).
+  //
+  // Y no abre nada de dinero ni de reparto: esta ruta NO escribe ninguno de los campos con gate
+  // (tipoOperacion, assignedUserId, cerrar), que siguen bloqueados en el PATCH. Además el Trabajo
+  // nace con su autoria (operarioId) = quien lo abre, así que el técnico solo se crea trabajos SUYOS.
+  { method: 'POST', path: '/admin/jobs', why: 'Abrir un Trabajo sin presupuesto (avería) es trabajo de campo del Operario; no toca campos de dinero ni de reparto' },
   // SCRUM-464 (H1 fase 4). DECISIÓN DEL FUNDADOR, no un trámite: el que baja al sótano es el
   // operario, así que dejar la precarga admin-only era resolver H1 para la persona equivocada. El
   // paquete que recibe va FILTRADO a sus trabajos —los que se le asignaron o los que creó él—,
@@ -106,6 +115,38 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   { method: 'GET',   path: '/admin/albaranes/:id', why: 'Ver la ficha del parte que él mismo rellena y firma (SCRUM-302)' },
   { method: 'POST',  path: '/admin/albaranes/:id/emitir', why: 'Emitir ALBARÁN (no factura): documento NO fiscal' },
   { method: 'POST',  path: '/admin/albaranes/:id/firmar', why: 'Firma del cliente en el móvil del operario (SCRUM-49)' },
+
+  // ── SCRUM-652 (T3 fase C) · EL PARTE DE TRABAJO ────────────────────────────────────────
+  //
+  // ⚠️ OJO CON EL NOMBRE: las entradas de arriba llaman «parte de trabajo» a los ALBARANES, por
+  // herencia de cuando era lo único que había. Desde hoy hay un ParteTrabajo de verdad, con su
+  // tabla (`partes_trabajo`) y sus rutas. Son DOS documentos distintos.
+  //
+  // Van a TECNICO_ALLOWED y no a admin, y no es una concesión: el parte ES el trabajo de campo
+  // del Operario. Lo rellena él en la obra, lo firma el cliente delante de él, y lo hace sin
+  // cobertura. Dejarlo admin-only sería entregar una pantalla que su único usuario no puede abrir.
+  //
+  // 🔴 Y NO ABRE NINGUNA PUERTA A DINERO: `/admin/partes` no sirve ni un importe en ninguna de sus
+  // cinco rutas —`serializeParteParaElTecnico` se construye con `lineasParaElTecnico`— y no hay
+  // ruta de facturar (eso es T8, bloqueado por regla 24). La valoración vive en la pantalla de
+  // oficina, que todavía no existe y que cuando exista tendrá que declarar SU rol aquí.
+  { method: 'GET',   path: '/admin/partes', why: 'Sus partes, para retomar el que dejó a medias en la obra' },
+  { method: 'POST',  path: '/admin/partes', why: 'Abrir el parte al llegar a la obra (documento NO fiscal, sin importes)' },
+  { method: 'GET',   path: '/admin/partes/:id', why: 'Ver el parte que él mismo rellena y firma; sin importes (SCRUM-652)' },
+  { method: 'PATCH', path: '/admin/partes/:id', why: 'Rellenar el parte en la obra: horas, kilómetros, mano de obra y materiales. Sin precios: los pone la oficina después' },
+  { method: 'POST',  path: '/admin/partes/:id/firmar', why: 'Firma del cliente en el móvil del operario, con la cola sin cobertura que ya existe (SCRUM-358)' },
+  // SCRUM-653 · la SEGUNDA firma del papel. Va a TECNICO_ALLOWED por el mismo motivo que la
+  // primera y con más razón: es LA SUYA. Dejarla admin-only sería pedirle al técnico que llame al
+  // jefe para firmar su propio parte en la obra.
+  //
+  // ⚠️ Y no abre puerta a dinero: escribe en `signature_tecnico_url`, `firmado_tecnico_at` y
+  // `firmado_tecnico_nombre`, y responde con el serializador del técnico, que no lleva importes.
+  { method: 'POST',  path: '/admin/partes/:id/firmar-tecnico', why: 'La firma del PROPIO técnico en su parte, en la obra y sin cobertura (SCRUM-653)' },
+  // SCRUM-683: trabajo de campo puro. El técnico dicta EN LA OBRA con el micro del teclado de su
+  // móvil y esto solo ORDENA ese texto en las dos listas. No escribe en el parte —devuelve una
+  // propuesta que él confirma— y no sirve ni un importe: el esquema que se le pide al modelo no
+  // tiene campo de precio, y el saneador tampoco lo dejaría pasar.
+  { method: 'POST',  path: '/admin/partes/:id/dictado', why: 'Ordenar en líneas lo que dictó en la obra; devuelve una PROPUESTA que él confirma, no escribe en el parte, y sin importes' },
   { method: 'POST',  path: '/admin/albaranes/:id/duplicar', why: 'Duplicar el parte de ayer para el de hoy: el técnico rellena partes en obra, y el duplicado nace en BORRADOR sin firma ni evidencia (SCRUM-302)' },
   { method: 'GET',   path: '/admin/albaranes/:id/pdf', why: 'Enseñar/enviar el parte firmado' },
   { method: 'POST',  path: '/admin/albaranes/:id/fotos', why: 'Fotos del trabajo hecho (MEDIA-1)' },
@@ -122,6 +163,18 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // hay partes, de qué clientes y con qué fechas: exactamente lo que la puerta principal le niega,
   // servido por la puerta de atrás. Cerrar de más es un incordio; abrir de más no se deshace.
   { method: 'GET',   path: '/admin/albaranes/pendientes-facturar', why: 'SCRUM-69: bandeja de facturación, mismo criterio S1 que GET /admin/invoices ("facturas: ver sí")' },
+  // SCRUM-606 (ALB-01) · el buscador de presupuesto de «Nuevo albarán». Va aquí y no en admin-only
+  // por COHERENCIA con el alta que abre: `POST /admin/jobs/:id/albaranes` está tres líneas más
+  // arriba en esta misma lista, y con este motivo —«crear el parte de trabajo EN LA OBRA»—. Un
+  // técnico que puede crear el albarán desde el Trabajo y no desde la pestaña Albaranes tendría
+  // el mismo permiso por un camino y no por el otro, que es como se fabrica un 403 incomprensible.
+  //
+  // Y NO ABRE SUPERFICIE NUEVA: el contenido son presupuestos de `listQuotesAdmin`, la misma
+  // función de `GET /admin/quotes` —declarada aquí arriba con «S1: quotes crear-ver ✅»—, así que
+  // no enseña ni un presupuesto que el llamante no pudiera pedir por su cuenta. Lo que SÍ acota
+  // por rol es a qué Trabajo puede aterrizar: `seesOnlyOwnJobs` marca como NO elegibles los
+  // Trabajos que no son suyos (SCRUM-467), con su motivo y sin darle el `jobId`.
+  { method: 'GET',   path: '/admin/albaranes/presupuestos', why: 'SCRUM-606: elegir de qué presupuesto nace el albarán que va a rellenar en la obra; mismo criterio que POST /admin/jobs/:id/albaranes' },
   { method: 'GET',   path: '/admin/albaranes/consolidables', why: 'SCRUM-70: vista previa de la recapitulativa (cliente+mes). MISMO criterio que la bandeja de SCRUM-69 — es la misma información, agrupada: solo lectura y ningún dato que el técnico no vea ya ahí. NO emite.' },
 
   // ── Productos ──────────────────────────────────────────────────────────────────────────

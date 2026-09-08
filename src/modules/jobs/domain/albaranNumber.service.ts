@@ -10,15 +10,41 @@
  */
 import { Prisma } from '@prisma/client';
 import { SERIE_LOCK_NS } from '../../invoicing/domain/invoiceNumber.service'; // SCRUM-234: un solo namespace
+import { SERIES, formatoNumeroDocumento, parseNumeroDocumento } from '../../../core/documentos/formatoNumero'; // SCRUM-592
 
+/**
+ * El prefijo VIEJO, `ALB-2026-001`. Se conserva **sólo para reconocer** los albaranes que aún no
+ * se han renumerado: nada nuevo se emite con él (SCRUM-592).
+ */
 export const ALBARAN_NUMBER_PREFIX = 'ALB-';
 
+/**
+ * ¿Es un número de albarán? Reconoce las DOS formas, y eso no es transitorio por pereza:
+ * mientras haya una base sin renumerar —producción espera a que el fundador decida—, un lector
+ * que sólo conozca la nueva daría por «no es un albarán» a documentos que sí lo son.
+ */
 export function isAlbaranNumber(numero: string | null | undefined): boolean {
-  return typeof numero === 'string' && numero.startsWith(ALBARAN_NUMBER_PREFIX);
+  if (typeof numero !== 'string') return false;
+  if (numero.startsWith(ALBARAN_NUMBER_PREFIX)) return true;
+  const p = parseNumeroDocumento(numero);
+  return p !== null && p.serie === SERIES.albaran;
 }
 
+/** ¿Está ya en el formato de SCRUM-592? Es la pregunta que hace la renumeración. */
+export function esAlbaranRenumerado(numero: string | null | undefined): boolean {
+  const p = parseNumeroDocumento(numero);
+  return p !== null && p.serie === SERIES.albaran;
+}
+
+/**
+ * SCRUM-592 (DOC-02) · `AB260001`. Antes: `ALB-2026-001`.
+ *
+ * El formato sale del sitio único (`core/documentos/formatoNumero`), el mismo que usa el
+ * presupuesto: dos plantillas separadas divergen en cuanto una rellena a 4 y la otra a 3, y el
+ * profesional acaba con dos formatos en la misma pantalla.
+ */
 export function formatAlbaranNumber(year: number, seq: number): string {
-  return `${ALBARAN_NUMBER_PREFIX}${year}-${String(seq).padStart(3, '0')}`;
+  return formatoNumeroDocumento(SERIES.albaran, year, seq);
 }
 
 /**

@@ -1,3 +1,63 @@
+// public/dashboard/js/providersView.js
+
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-644 · UN CÓDIGO DEL SERVIDOR NO ES UN MENSAJE PARA UNA PERSONA.
+//
+// MISMO defecto y MISMO criterio que SCRUM-641 en `productsView.js`; no se inventa uno nuevo.
+// Este fichero tenía el camino COMPLETO: las llamadas hacen `throw new Error(data?.error || …)`
+// y los avisos pintaban `e.message`. Cuando el servidor contesta `{ok:false,error:"name_duplicate"}`
+// el identificador GANA al respaldo en castellano, así que un profesional leía literalmente
+// `name_duplicate`. No es un mensaje mal redactado: es una tubería interna asomando a la interfaz.
+//
+// POR QUÉ VIVE AQUÍ Y NO EN `api.js`: `api.js` es ZONA SIN MARCADOR por decisión —lo fija
+// `scrum405-microcopy-descarga.test.mjs`, que falla si vuelve a aparecer uno— y esto necesita
+// marcador. Ya se intentó y la tanda lo tumbó (SCRUM-641). Además queda más honesto: el texto sin
+// firmar lo pinta ESTA pantalla, así que es ésta la que entra en el censo de marcadores.
+//
+// ⚠️ LO DESCONOCIDO CAE AL RESPALDO, NO AL CÓDIGO. Es lo contrario que `invoiceStatusMeta`, donde
+// un estado sin mapear «se ve» a propósito. En un aviso de error enseñar el código ES el defecto,
+// así que el identificador sale por `console.warn` —donde lo ve quien puede mapearlo— y a la
+// persona le llega el respaldo en castellano que cada llamada YA traía.
+// ═══════════════════════════════════════════════════════════════════════════════════════
+
+const PRV_MARCADOR_MICROCOPY = '[PENDIENTE microcopy oficial]';
+
+// Un identificador interno no lleva espacios ni mayúsculas: `name_duplicate`, `not_found`,
+// `provider_in_use`. Una frase escrita para una persona siempre lleva una de las dos cosas.
+const PRV_ES_IDENTIFICADOR = /^[a-z][a-z0-9_]*$/;
+
+/**
+ * El texto que se le enseña a la persona a partir de lo que dijo el servidor.
+ *
+ * `respaldo` es el mensaje en castellano que la llamada ya traía: no es microcopy nueva, es la que
+ * estaba escrita y que el identificador estaba tapando.
+ */
+function mensajeDeErrorProveedor(codigoOMensaje, respaldo) {
+  const bruto = String(codigoOMensaje == null ? '' : codigoOMensaje).trim();
+
+  // Sólo los que necesitan decir algo DISTINTO del respaldo genérico.
+  const M = {
+    // Texto NUEVO → marcador. Va con su palabra distintiva, no solo: si todos los errores dijeran
+    // lo mismo, la pantalla perdería la distinción que este ticket viene a dar.
+    name_duplicate: PRV_MARCADOR_MICROCOPY + ' nombre ya en uso',
+    // Texto que YA EXISTÍA en esta pantalla y ya se enseñaba: se mueve, no se inventa. Por eso
+    // NO lleva marcador — marcarlo diría que está sin aprobar, y lleva aprobado desde que se
+    // escribió.
+    provider_in_use: 'No se puede borrar el proveedor porque está asignado a uno o más productos.',
+  };
+  if (M[bruto]) return M[bruto];
+
+  if (PRV_ES_IDENTIFICADOR.test(bruto)) {
+    try { console.warn('[providersView] código sin traducir:', bruto); } catch (_) { /* sin consola */ }
+    return respaldo || PRV_MARCADOR_MICROCOPY;
+  }
+  return bruto || respaldo || PRV_MARCADOR_MICROCOPY;
+}
+if (typeof window !== 'undefined') {
+  window.mensajeDeErrorProveedor = mensajeDeErrorProveedor;
+  window.PRV_MARCADOR_MICROCOPY = PRV_MARCADOR_MICROCOPY;
+}
+
 function renderProvidersView(container) {
     container.innerHTML = "";
   
@@ -92,7 +152,7 @@ function renderProvidersView(container) {
           setAlert('success', 'Proveedor actualizado.');
           await refresh();
         } catch (e) {
-          setAlert('error', e.message || 'Error actualizando.');
+          setAlert('error', mensajeDeErrorProveedor(e && e.message, 'Error actualizando.'));
         } finally {
           saveBtn.disabled = false;
           saveBtn.textContent = 'Guardar';
@@ -104,6 +164,10 @@ function renderProvidersView(container) {
 
     function openProviderEditModal(it) {
       if (!editProviderOverlay) editProviderOverlay = buildProviderEditModal();
+      // SCRUM-785 · al cerrarse se DESCUELGA del `body` (ver `closeProviderEditModal`), así que al
+      // reabrir hay que volver a colgarlo. Se reengancha el MISMO nodo: sus campos y sus oyentes
+      // siguen cableados desde `buildProviderEditModal`, que sólo corre una vez.
+      else if (!editProviderOverlay.parentNode) document.body.appendChild(editProviderOverlay);
       _editingProvider = { merchantId: _merchantId, id: it.id };
 
       const body = editProviderOverlay.querySelector('.modal-body');
@@ -117,7 +181,16 @@ function renderProvidersView(container) {
     }
 
     function closeProviderEditModal() {
-      if (editProviderOverlay) editProviderOverlay.style.display = 'none';
+      if (editProviderOverlay) {
+        editProviderOverlay.style.display = 'none';
+        // 🔴 SCRUM-785 · Y SE DESCUELGA DEL BODY, por lo mismo que en Productos: un overlay
+        // escondido pero PRESENTE dispara `body:has(.modal-overlay) #tut-help-btn`, que es una
+        // regla ESTRUCTURAL, y apaga el botón flotante de ayuda para el resto de la sesión.
+        // Medido en Edge, con su control positivo (al borrarlo, vuelve).
+        //
+        // ⚠️ SE DESCUELGA, NO SE DESTRUYE: `openProviderEditModal` reutiliza este mismo nodo.
+        if (typeof editProviderOverlay.remove === 'function') editProviderOverlay.remove();
+      }
       _editingProvider = null;
     }
   
@@ -160,6 +233,24 @@ function renderProvidersView(container) {
     const phoneI = form.querySelector('input[name="phone"]');
     const emailI = form.querySelector('input[name="email"]');
     const notesI = form.querySelector('input[name="notes"]');
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    // 🔴 ESTA PANTALLA **NO** LLEVA EL ATAJO «N», Y NO ES UN HUECO. Decisión del fundador,
+    // 6-sep-2026 (SCRUM-769), con estas palabras:
+    //
+    //     «Colgar N de un botón que confirma es atar una tecla a un guardado. N abre, no guarda.»
+    //
+    // El motivo, medido antes de decidirlo: aquí NO hay un botón que ABRA un alta. El formulario
+    // está SIEMPRE visible —bajo el título «Nuevo proveedor», unas líneas más arriba— y este botón
+    // es su ENVÍO: lee los campos y crea; sin nombre devuelve `name_required`.
+    // `atajoNuevo.registrar` ata la tecla a `boton.click()`, así que la «N» intentaría crear con el
+    // formulario a medias.
+    //
+    // Por lo mismo, su RÓTULO tampoco se toca: dejaría el mismo texto dos veces en la misma
+    // tarjeta —título del bloque y botón— y además diría «abrir» donde se confirma.
+    //
+    // ⛔ Si vienes a «arreglar el hueco»: no lo es. Lo que haría falta primero es un botón que
+    //    abra el alta; entonces el atajo tendría a qué colgarse. Ver `docs/master/SCRUM-769.md`.
+    // ═══════════════════════════════════════════════════════════════════════════════════════
     const createBtn = form.querySelector("#pf-create-provider");
   
     const tableWrap = document.createElement("div");
@@ -303,7 +394,7 @@ function renderProvidersView(container) {
             await refresh();
   
           } catch (e) {
-            setAlert("error", e.message || "Error actualizando proveedor.");
+            setAlert("error", mensajeDeErrorProveedor(e && e.message, "Error actualizando proveedor."));
           }
         });
   
@@ -316,19 +407,11 @@ function renderProvidersView(container) {
               setAlert("success", "Proveedor borrado.");
               await refresh();
             } catch (e) {
-              const msg =
-                e && e.message
-                  ? e.message
-                  : typeof e === "string"
-                  ? e
-                  : "";
-    
-              if (msg === "provider_in_use") {
-                setAlert("error", "No se puede borrar el proveedor porque está asignado a uno o más productos.");
-                return;
-              }
-    
-              setAlert("error", msg || "Error borrando proveedor.");
+              // SCRUM-644 · el `provider_in_use` que se traducía AQUÍ a mano se ha mudado al
+              // mapa de `mensajeDeErrorProveedor`, con su texto INTACTO. Antes ese `if` era la
+              // única traducción del fichero: todo lo demás caía al identificador crudo.
+              const bruto = e && e.message ? e.message : (typeof e === "string" ? e : "");
+              setAlert("error", mensajeDeErrorProveedor(bruto, "Error borrando proveedor."));
             }
           });
   
@@ -350,7 +433,7 @@ function renderProvidersView(container) {
         setAlert(null, "");
         await refresh();
       } catch (e) {
-        setAlert("error", e.message || "Error recargando.");
+        setAlert("error", mensajeDeErrorProveedor(e && e.message, "Error recargando."));
       }
     });
   
@@ -382,11 +465,11 @@ function renderProvidersView(container) {
         setAlert("success", "Proveedor creado.");
         await refresh();
       } catch (e) {
-        setAlert("error", e.message || "Error creando proveedor.");
+        setAlert("error", mensajeDeErrorProveedor(e && e.message, "Error creando proveedor."));
       }
     });
   
-    refresh().catch((e) => setAlert("error", e.message || "Error cargando proveedores."));
+    refresh().catch((e) => setAlert("error", mensajeDeErrorProveedor(e && e.message, "Error cargando proveedores.")));
   }
   
   window.renderProvidersView = renderProvidersView;

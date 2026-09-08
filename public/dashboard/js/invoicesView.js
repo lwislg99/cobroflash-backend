@@ -104,6 +104,54 @@ async function fetchInvoices(options = {}) {
     rojo:  { pillClass: 'status-pill-rejected', label: 'PLAZO VENCIDO' },
   };
 
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-748 · UN «NO LO SÉ» NO SE PINTA COMO ÉXITO.
+  //
+  // Aquí se decidía con `SEMAFORO_META[grupo.semaforo] || SEMAFORO_META.verde`, así que
+  // CUALQUIER estado que el servidor no supiera nombrar —uno nuevo, uno vacío, un `null`—
+  // salía en pantalla como **«AL DÍA»**. Medido ejecutando esa línea: los cinco casos
+  // desconocidos pintaban lo mismo que el bueno.
+  //
+  // 🔴 HOY NO DISPARA, y por eso es un guard que se abre solo (SCRUM-537). El semáforo tiene
+  // tres estados y los tres están en el mapa. Pero el disparador ya está en el plan: el día
+  // que exista un CUARTO —cuyo único propósito sería no afirmar lo que no se sabe— el
+  // navegador lo convertiría en la mentira que ese estado venía a evitar. Se cierra ahora,
+  // que es barato, y no el día que muerda.
+  //
+  // EL CRITERIO NO SE INVENTA: es el de `invoiceStatusMeta` en `api.js`, que ante un estado
+  // sin mapear NO elige uno — construye una insignia neutra con el código a la vista. Lo
+  // desconocido SE VE. Ahí está escrito por qué, y es el reverso exacto de SCRUM-641: en un
+  // aviso de error enseñar el código ES el defecto; en un rótulo de estado, ESCONDERLO lo es.
+  //
+  // ⚠️ EL RÓTULO NO ESTÁ ESCRITO. Va con marcador hasta que lo firme quien puede: no es una
+  // frase que pueda inventar quien programa (regla 30). Y no se construye el cuarto estado:
+  // eso es del fundador (regla 27). Esto sólo deja de mentir sobre él.
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  const INV_MARCADOR_MICROCOPY = '[PENDIENTE microcopy oficial]';
+
+  /** Cuántas ranuras estrena esta pantalla SIN la firma del fundador. UNA: el rótulo de abajo. */
+  const INV_SIN_APROBAR = 1;
+
+  /**
+   * La insignia de un semáforo. Un estado que no está en el mapa NO se disfraza del más
+   * inocente: se pinta con marcador y con su código a la vista, y se avisa por consola —donde
+   * lo ve quien puede mapearlo, no quien está mirando si le deben dinero.
+   */
+  function metaDelSemaforo(semaforo) {
+    const conocido = SEMAFORO_META[semaforo];
+    if (conocido) return conocido;
+    // Un código vacío es tan desconocido como uno ausente: los dos salen con el guion, para que
+    // el rótulo nunca termine en un espacio colgando que se leería como un fallo de pintado.
+    const codigo = String(semaforo == null ? '' : semaforo).trim().toUpperCase() || '—';
+    try { console.warn('[invoicesView] semáforo sin mapear:', semaforo); } catch (_) { /* sin consola */ }
+    return { pillClass: 'status-pill-draft', label: INV_MARCADOR_MICROCOPY + ' ' + codigo };
+  }
+  if (typeof window !== 'undefined') {
+    window.metaDelSemaforo = metaDelSemaforo;
+    window.INV_MARCADOR_MICROCOPY = INV_MARCADOR_MICROCOPY;
+    window.INV_SIN_APROBAR = INV_SIN_APROBAR;
+  }
+
   // SCRUM-210: `copyRojo` se MUDÓ a api.js sin tocar una letra de su texto. Motivo: el semáforo
   // fiscal reutiliza este mismo copy aprobado como cuerpo de su aviso ámbar de plazo vencido, y
   // dejar dos copias de un texto aprobado es el fallo de «dos listas a mano que deben cuadrar»
@@ -135,7 +183,9 @@ async function fetchInvoices(options = {}) {
 
     const left = document.createElement('div');
     const title = document.createElement('h2');
-    title.textContent = 'Facturas';
+    // SCRUM-776: el título sigue al documento. Un merchant ES real (flag OFF) emite
+    // JUSTIFICANTES, y esta pantalla se los listaba bajo el rótulo «Facturas».
+    title.textContent = window.rotulosDelDocumento.tituloListado();
     title.style.cssText = 'margin:0;font-size:18px';
     left.appendChild(title);
     const subtitle = document.createElement('p');
@@ -155,7 +205,7 @@ async function fetchInvoices(options = {}) {
     // existe cuando lo que se va a crear ES una factura — el veredicto lo calcula el servidor
     // con `modoDocumentoSuelto` y viaja en /admin/me: aquí NO se reimplementa la regla.
     // Rótulo con [PENDIENTE microcopy oficial] (regla 30) y su guard en la suite.
-    if (window.appDocumentoSuelto !== 'no' && typeof openNuevaFacturaModal === 'function') {
+    if (window.appDocumentoSuelto !== 'no') { // SCRUM-600: ya no cuelga del modal, ver abajo
       const nuevaFacturaBtn = document.createElement('button');
       nuevaFacturaBtn.type = 'button';
       nuevaFacturaBtn.className = 'btn-primary';
@@ -167,12 +217,43 @@ async function fetchInvoices(options = {}) {
       // ⚠️ REGLA 26 · NO se acompaña de ningún texto que explique POR QUÉ sale un justificante y
       // no una factura. Ni aquí, ni en un aviso, ni en un tooltip: esa pregunta se responde SOLO
       // con el guion H2, y un texto que explica mal una obligación fiscal no es feo, es peligroso.
+      // SCRUM-599 · el rótulo de FACTURA sale de la pieza (aprobado); el de JUSTIFICANTE se
+      // conserva tal cual estaba —no está en la microcopy de este ticket y la regla 26 lo blinda—.
       nuevaFacturaBtn.textContent = window.appDocumentoSuelto === 'justificante'
         ? '+ Nuevo justificante'
-        : '+ Nueva factura';
+        : ((window.atajoNuevo && window.atajoNuevo.textoDe('invoices')) || 'Nueva factura');
+      // 🔴 SCRUM-600 (DOC-10) · ESTE BOTÓN YA NO ABRE UN MODAL: LLEVA A LA PÁGINA.
+      //
+      // Es el cambio que hace que haya UN solo front del documento y no dos. Se navega con
+      // `window.renderAppView`, que es la única forma de navegar de la casa (SCRUM-599), y el
+      // rótulo del botón no se toca: sigue saliendo del veredicto, como en las tres líneas de
+      // arriba.
+      //
+      // `nuevaFacturaModal.js` se queda en el árbol y DEJA DE TENER PUERTA. No es un descuido:
+      // es la referencia contra la que `scrum600b` comprueba que la página emite exactamente lo
+      // mismo, y es lo que `guard:caja-documento-suelto` sigue midiendo en navegador. Su borrado
+      // es una decisión aparte, del día que esa equivalencia deje de hacer falta.
       nuevaFacturaBtn.addEventListener('click', () => {
-        openNuevaFacturaModal(() => renderInvoicesView(container));
+        if (window.renderAppView) window.renderAppView('invoices-new');
       });
+      if (window.atajoNuevo) {
+        // La tecla se pinta en los DOS casos: el atajo funciona igual, y un botón con atajo y
+        // otro sin él en la misma pantalla enseñaría que a veces no va.
+        //
+        // 🔴 SCRUM-768 · LA PINTA LA PIEZA, NO UNA COPIA. Aquí vivían las cinco líneas del `<kbd>`
+        // calcadas de `etiquetar` —misma clase, mismo `aria-label`, mismo `appendChild`—, así que
+        // Facturas era la ÚNICA de las cuatro listas que no compartía el mecanismo que este
+        // ticket presume de tener único. El día que la tecla cambie de forma, ésta se queda atrás
+        // y nadie se entera: es el mismo motivo por el que los rótulos viven en la pieza.
+        //
+        // Se le pasa `null` como vista A PROPÓSITO, y no `'invoices'`: `etiquetar` sólo reescribe
+        // el texto si su `textoDe` devuelve algo, y con `null` no devuelve nada. Así el rótulo que
+        // se acaba de poner arriba se conserva TAL CUAL en los dos modos —el de FACTURA, que ya
+        // sale de la pieza, y el de JUSTIFICANTE, que la regla 26 blinda— y lo único que se añade
+        // es la «N». Medido: el literal visible no cambia ni un byte en ninguno de los dos.
+        window.atajoNuevo.etiquetar(nuevaFacturaBtn, null);
+        window.atajoNuevo.registrar('invoices', () => nuevaFacturaBtn.click());
+      }
       header.appendChild(nuevaFacturaBtn);
     }
 
@@ -211,6 +292,17 @@ async function fetchInvoices(options = {}) {
     tabPendientes.addEventListener('click', () => activateTab('pendientes'));
 
     // Toolbar: filtros
+    // ═════════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-595 (DOC-05) · LAS ETIQUETAS DEL DOCUMENTO — LA MISMA PIEZA QUE EL PRESUPUESTO
+    //
+    // 🔴 Y ES EL PUNTO DEL TICKET: el bloque aplica a los DOS documentos, con el MISMO mecanismo.
+    // Si aquí se escribiera un segundo filtro, la factura y el presupuesto acabarían decidiendo
+    // distinto sobre la misma etiqueta —mayúsculas, espacios, acentos— y nadie lo notaría hasta
+    // que un documento dejara de salir en su propio filtro.
+    // ═════════════════════════════════════════════════════════════════════════════════════
+    const FC = window.filtroClientes;
+    let etiquetaActiva = null;
+
     const toolbar = document.createElement('div');
     toolbar.className = 'data-card-toolbar';
     panelEmitidas.appendChild(toolbar);
@@ -231,6 +323,18 @@ async function fetchInvoices(options = {}) {
       <option value="expired">Vencidas</option>
     `;
     toolbar.appendChild(selectStatus);
+
+    // SCRUM-595 · el filtro por etiqueta. ✅ MICROCOPY: `sinFiltro` es el MISMO literal aprobado
+    // de CONT-07, reutilizado sin cambiar un carácter — misma palabra para la misma cosa, cero
+    // ranuras nuevas (regla 30). El texto sale de la pieza; repetirlo aquí lo dejaría derivar.
+    const selectEtiqueta = document.createElement('select');
+    selectEtiqueta.className = 'input';
+    selectEtiqueta.style.cssText = 'width:auto;max-width:220px';
+    selectEtiqueta.addEventListener('change', () => {
+      etiquetaActiva = selectEtiqueta.value || null;
+      reload();
+    });
+    toolbar.appendChild(selectEtiqueta);
 
     const inputFrom = document.createElement('input');
     inputFrom.type = 'date';
@@ -254,6 +358,41 @@ async function fetchInvoices(options = {}) {
 
     function setCount(text) { subtitle.textContent = text; }
 
+    /** Cuántas columnas tiene la tabla. Sale del MISMO sitio que la cabecera: el `thead`. */
+    function numeroDeColumnas() {
+      return thead.querySelectorAll('th').length;
+    }
+
+    /**
+     * SCRUM-595 · repuebla el selector conservando lo elegido, o SOLTÁNDOLO si esa etiqueta ya no
+     * existe en el lote: dejarlo puesto enseñaría una lista vacía sin decir por qué.
+     *
+     * 🔴 Como las opciones salen del lote que se está mirando, filtrar por una de ellas SIEMPRE
+     * devuelve al menos una fila: el vacío «no hay nada con esta etiqueta» es inalcanzable por
+     * construcción, y por eso este ticket no necesita microcopy que nadie ha aprobado.
+     */
+    function repoblarEtiquetas(lote) {
+      const usadas = FC.etiquetasUsadas(lote);
+      if (etiquetaActiva && !usadas.some((t) => t.toLocaleLowerCase('es') === String(etiquetaActiva).toLocaleLowerCase('es'))) {
+        etiquetaActiva = null;
+      }
+      selectEtiqueta.innerHTML = '';
+      const todas = document.createElement('option');
+      todas.value = '';
+      todas.textContent = FC.TEXTOS_ETIQUETAS.sinFiltro;
+      selectEtiqueta.appendChild(todas);
+      usadas.forEach((t) => {
+        const op = document.createElement('option');
+        op.value = t;
+        op.textContent = t;
+        selectEtiqueta.appendChild(op);
+      });
+      selectEtiqueta.value = etiquetaActiva || '';
+      // Sin ninguna etiqueta, el selector no sirve de nada: se oculta en vez de ofrecer un
+      // control con una sola opción que no filtra.
+      selectEtiqueta.hidden = usadas.length === 0;
+    }
+
     const tableScroll = document.createElement('div');
     tableScroll.className = 'table-scroll';
     panelEmitidas.appendChild(tableScroll);
@@ -266,11 +405,12 @@ async function fetchInvoices(options = {}) {
     thead.innerHTML = `
       <tr>
         <th style="width:36px" class="col-hide-mobile"><input type="checkbox" id="inv-check-all" title="Seleccionar todas"/></th>
-        <th>Nº factura</th>
+        <th>${window.rotulosDelDocumento.columnaNumero()}</th>
         <th>Cliente</th>
         <th style="text-align:right">Total</th>
         <th>Estado</th>
         <th class="col-hide-mobile">Fecha</th>
+        <th class="col-hide-mobile">${FC.TEXTOS_ETIQUETAS.columna}</th>
       </tr>
     `;
     table.appendChild(thead);
@@ -381,10 +521,14 @@ async function fetchInvoices(options = {}) {
     async function reload() {
       setCount('Cargando…');
       statusBox.style.display = 'none';
-      uiSkeletonRows(tbody, 6, 6);
+      uiSkeletonRows(tbody, numeroDeColumnas(), 6);
 
       try {
-        const invoices = await fetchInvoices({ status: currentStatus, search: currentSearch, dateFrom: currentDateFrom, dateTo: currentDateTo });
+        const traidas = await fetchInvoices({ status: currentStatus, search: currentSearch, dateFrom: currentDateFrom, dateTo: currentDateTo });
+        // El selector se repuebla con el lote ENTERO que trajo el servidor y el filtro se aplica
+        // después: al revés, una etiqueta dejaría de ofrecerse en cuanto se filtrara por otra.
+        repoblarEtiquetas(traidas);
+        const invoices = FC.filtrarPorEtiqueta(traidas, etiquetaActiva);
         tbody.innerHTML = '';
         selectedIds.clear();
         updateBulkBar();
@@ -394,7 +538,9 @@ async function fetchInvoices(options = {}) {
           const filtering = currentSearch || currentStatus !== 'all' || currentDateFrom || currentDateTo;
           const tr = document.createElement('tr');
           const td = document.createElement('td');
-          td.colSpan = 6;
+          // 🔴 SCRUM-595 · SALE DE LA CABECERA. Aquí había un 6 y este ticket mete una columna:
+          // un vacío descuadrado no lo ve ninguna tanda (lección de SCRUM-584).
+          td.colSpan = numeroDeColumnas();
           td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🧾</div>'
             + '<div class="empty-state-title">' + (filtering ? 'Nada con estos filtros' : 'Aquí verás tus cobros') + '</div>'
             + '<div class="empty-state-desc">' + (filtering
@@ -488,6 +634,26 @@ async function fetchInvoices(options = {}) {
           tdDate.textContent = inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('es-ES') : '—';
           tr.appendChild(tdDate);
 
+          // SCRUM-595 · las etiquetas, con `.badge .badge-slate` del inventario (AB3): cero
+          // tokens nuevos. `textContent` por etiqueta, nunca `innerHTML`: la escribe el
+          // profesional y concatenar markup sería una inyección con su nombre.
+          const tdTags = document.createElement('td');
+          tdTags.className = 'col-hide-mobile';
+          const susTags = FC.tagsDe(inv);
+          if (susTags.length > 0) {
+            const caja = document.createElement('div');
+            caja.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px';
+            susTags.forEach((t) => {
+              const chip = document.createElement('span');
+              chip.className = 'badge badge-slate';
+              chip.textContent = t;
+              caja.appendChild(chip);
+            });
+            tdTags.appendChild(caja);
+            tdTags.title = susTags.join(', ');
+          }
+          tr.appendChild(tdTags);
+
           tr.style.cursor = 'pointer';
           tr.addEventListener('click', (e) => {
             if (e.target === cb) return; // no navegar si click en checkbox
@@ -517,7 +683,7 @@ async function fetchInvoices(options = {}) {
     panelPendientes.appendChild(pendBody);
 
     function renderGrupoCard(customer, grupo) {
-      const meta = SEMAFORO_META[grupo.semaforo] || SEMAFORO_META.verde;
+      const meta = metaDelSemaforo(grupo.semaforo); // SCRUM-748: lo desconocido NO cae a «AL DÍA»
       const card = document.createElement('div');
       card.style.cssText = 'border:1px solid var(--neutral-200);border-radius:var(--radius-lg);'
         + 'padding:16px;margin-bottom:12px;background:#fff';
@@ -549,6 +715,29 @@ async function fetchInvoices(options = {}) {
       rowTop.appendChild(rightCol);
 
       card.appendChild(rowTop);
+
+      // ── SCRUM-648 (fase B) · POR QUÉ ESTE ÁMBAR ─────────────────────────────────────────
+      //
+      // `ambar` significa dos cosas: «se acerca el plazo» y «no he podido comprobarlo». La ACCIÓN
+      // correcta es la misma —mirar esto— y por eso comparten color; pero el porqué no se
+      // comparte, y sin él el profesional no sabe si tiene que facturar o revisar un dato.
+      //
+      // 🔴 SÓLO se pinta cuando el motivo es `no_computable`. Con `plazo`, la pastilla y la fecha
+      // de arriba ya lo dicen, y repetirlo sería ruido — el mismo criterio que el aviso de
+      // periodicidad de aquí debajo.
+      //
+      // ✅ RÓTULO FIRMADO POR EL FUNDADOR (5-sep-2026): «No hemos podido comprobar el plazo.», 35
+      // caracteres. LA FIRMA Y LA RETIRADA DEL MARCADOR VAN EN EL MISMO COMMIT: si el rótulo se
+      // aprueba en un chat y el código sigue diciendo `[PENDIENTE`, el repositorio afirma algo que
+      // ha dejado de ser verdad. Así se mergeó el PR #1065 en rojo, y el guard del 402 tenía razón.
+      // La caja se midió ANTES de pedir el texto (SCRUM-648 fase B, `guard:caja-semaforo`):
+      // 559 px de ancho útil a 929 y 292 px a 390, y en una línea caben 50 caracteres a 390.
+      if (grupo.motivoSemaforo === 'no_computable') {
+        const motivoLine = document.createElement('div');
+        motivoLine.style.cssText = 'margin-top:8px;font-size:13px;color:var(--neutral-700)';
+        motivoLine.textContent = 'No hemos podido comprobar el plazo.';
+        card.appendChild(motivoLine);
+      }
 
       // SCRUM-171b: aviso de que TOCA facturar. Solo se pinta cuando el motivo es la
       // PERIODICIDAD pactada: si el motivo es el plazo legal, el semáforo y la fecha límite de

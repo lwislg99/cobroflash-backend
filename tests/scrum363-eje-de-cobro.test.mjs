@@ -105,7 +105,16 @@ test('SCRUM-363 · CONTROL: con eje, los tres estados siguen saliendo', () => {
 
 test('SCRUM-363 · el detalle DELEGA en el serializer del listado: no puede divergir', () => {
   const rutas = leer('src', 'modules', 'jobs', 'app', 'routes', 'jobs.routes.ts');
-  assert.match(rutas, /async function serializeJobDetail\(job: any\) \{\s*\n\s*const base = await serializeJob\(job\);/,
+  // 🔴 SCRUM-710 · EL TIPO DEL PARÁMETRO NO ES EL HECHO. Aquí ponía `\(job: any\)`, y eso no
+  // vigilaba la delegación: vigilaba que nadie tipara la firma. SCRUM-717d fue a tiparla —una
+  // mejora— y este guard se ponía rojo **sin que la delegación se hubiera roto**; hubo que
+  // revertir y dejar `any` con el motivo escrito en el código. Un control que cobra un impuesto
+  // por mejorar el código acaba pagándose apagándolo.
+  //
+  // Lo que este test afirma es que el detalle DERIVA del serializer del listado, y eso vive
+  // entero en la línea siguiente: `const base = await serializeJob(job)`. El paréntesis se deja
+  // abierto a cualquier firma a propósito.
+  assert.match(rutas, /async function serializeJobDetail\([^)]*\)\s*\{\s*\n\s*const base = await serializeJob\(job\);/,
     '🔴 el detalle ha dejado de derivar del serializer del listado: entonces el estado se calcula ' +
     'en dos sitios y el defecto puede volver en uno solo');
   // Y el estado se calcula UNA vez.
