@@ -1541,7 +1541,6 @@ function renderCustomersView(container) {
     avisarDelFormulario(null, "");
 
     let creado = null;
-    const movil = movilCompleto();
     const payload = {
       name: fieldName.input.value.trim(),
       phone: telefonoCompleto(),
@@ -1561,7 +1560,19 @@ function renderCustomersView(container) {
       // tiene NO lo borra (ausente = «no toques este campo»). Es la misma limitación que ya
       // tiene `phone` — que además hoy manda `""` y por eso da 400, ver el hallazgo del PR—:
       // se hereda, no se estrena, y se cierra el día que Zod acepte `null` en los dos a la vez.
-      ...(movil ? { mobile: movil } : {}),
+      //
+      // 🔴 `|| undefined` Y NO UN SPREAD CONDICIONAL, y lo decidió un guard: `JSON.stringify`
+      // BORRA las claves cuyo valor es `undefined`, así que en el cable pasa exactamente lo
+      // mismo —la clave no viaja— pero aquí queda ESCRITA. Con el spread, el censo de SCRUM-692
+      // no veía `mobile` en este formulario y lo declaraba «editable sólo en la ficha 360»: una
+      // asimetría que no existe. Un payload que un censo no puede leer es un payload que nadie
+      // puede vigilar.
+      // 🔴 Y LA LECTURA VA INLINE (`movilCompleto()`), no por una variable de arriba: el censo de
+      // SCRUM-692 comprueba que TODA clave del payload salga de un control del formulario, y con
+      // `const movil = …` sólo veía `movil || undefined` — una expresión que no toca ningún
+      // control. Su veredicto era «el modal envía campos que NO MUESTRA», que es exactamente la
+      // acusación que ese guard existe para hacer, y aquí habría sido falsa.
+      mobile: movilCompleto() || undefined,
       email: fieldEmail.input.value.trim(),
       notes: fieldNotes.input.value.trim(),
       legalName: fieldLegalName.input.value.trim() || null, // A20.4

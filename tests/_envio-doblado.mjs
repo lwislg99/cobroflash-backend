@@ -70,16 +70,29 @@ export function dobleDeLaBase(respuestas) {
   });
 }
 
-/** Inyecta el doble de la base y descarta los módulos que lo capturaron. */
-export function inyectarBase(respuestas) {
+/**
+ * Inyecta el doble de la base y descarta los módulos que lo capturaron.
+ *
+ * `ademas` son otros módulos de `dist/` que también tomaron el `prisma` bueno y hay que releer —
+ * p. ej. `customerAdmin`, cuando el test quiere ejercitar el ALTA de cliente además del envío.
+ */
+export function inyectarBase(respuestas, ademas = []) {
   const rutaPrisma = requiere.resolve('../dist/core/db/prisma.js');
   requiere.cache[rutaPrisma] = {
     id: rutaPrisma, filename: rutaPrisma, loaded: true,
     exports: { prisma: dobleDeLaBase(respuestas) },
   };
-  for (const m of ['../dist/modules/quotes/domain/sendQuote.service.js', '../dist/integrations/whatsapp.js']) {
-    delete requiere.cache[requiere.resolve(m)];
-  }
+  const modulos = [
+    '../dist/modules/quotes/domain/sendQuote.service.js',
+    '../dist/integrations/whatsapp.js',
+    ...ademas,
+  ];
+  for (const m of modulos) delete requiere.cache[requiere.resolve(m)];
+}
+
+/** Lo que `dist/` exporta, leído DESPUÉS de haber inyectado el doble. */
+export function moduloDeDist(ruta) {
+  return requiere(ruta);
 }
 
 /**
