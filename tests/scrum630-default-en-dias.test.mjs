@@ -73,6 +73,19 @@ const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
 const front = {};
 new Function('window', leer('public/dashboard/js/quoteAtajosVencimiento.js'))(front);
 const A = front.QUOTE_ATAJOS_VENCIMIENTO;
+// ═══ 🔴 REAPUNTADO EL 8-sep-2026 · LA PRIMITIVA DEL «VÁLIDO HASTA» YA NO ES ÉSTA ═══════════
+//
+// Esta rama se escribió el 1-sep y no se mergeó. En esas tres semanas entró **SCRUM-633**, que
+// se llevó el valor por defecto —y el `min`— a `quoteCaducidad.diaPorDefecto`. Los tests de
+// aquí seguían llamando a `fechaDeAtajo`, cuya FIRMA ADEMÁS CAMBIÓ (`(dias, merchant, hoy)`):
+// se le pasaba una fecha donde ahora va el merchant y devolvía `null`. Once de dieciséis casos
+// caían, y ninguno por el defecto que este ticket persigue.
+//
+// Se reapuntan, no se relajan: lo que miden es lo mismo, contra la primitiva que hoy manda.
+new Function('window', leer('public/dashboard/js/quoteCaducidad.js'))(front);
+const C = front.quoteCaducidad;
+/** El merchant de laboratorio: sólo aporta la zona, que es lo que decide el día natural. */
+const enZona = (tz) => ({ timezone: tz });
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // EL RELOJ, EXPLÍCITO · sin esto el barrido mide la máquina donde corre
@@ -117,20 +130,53 @@ function comoAntes(ts, dias) {
 }
 /** La NUEVA: componentes de fecha LOCALES de la zona `tz`, que es lo que ve el profesional. */
 function comoAhora(ts, tz, dias) {
-  const p = paredEn(ts, tz);
-  return A.fechaDeAtajo(dias, new Date(p.y, p.m - 1, p.d));
+  return C.diaPorDefecto(enZona(tz), dias, new Date(ts));
 }
 
-/** Recorre 2026 a esa hora de pared en esa zona y cuenta en cuántos días difieren las dos. */
+/**
+ * 🔴 LA CUENTA DE CALENDARIO, que es contra lo que se juzga: el día natural del instante en esa
+ * zona, más N DÍAS DE CALENDARIO.
+ *
+ * Se hace en **UTC puro** a propósito: UTC no tiene cambio de hora, así que ahí sí un día son
+ * 24 h siempre y sumar días es sumar días. Es la única aritmética de milisegundos que no miente,
+ * y por eso el arreglo del producto usa exactamente esta forma.
+ *
+ * ⚠️ Es una SEGUNDA implementación, y eso es deliberado: si el test calculara lo esperado con la
+ * misma función que juzga, compararía una función consigo misma y pasaría siempre.
+ */
+function diaDeCalendario(ts, tz, dias) {
+  const p = paredEn(ts, tz);
+  const f = new Date(Date.UTC(p.y, p.m - 1, p.d + dias));
+  return f.toISOString().slice(0, 10);
+}
+
+/**
+ * Recorre 2026 a esa hora de pared en esa zona y cuenta en cuántos días **el producto discrepa
+ * del CALENDARIO**.
+ *
+ * 🔴 REAPUNTADO EL 8-sep-2026, y el cambio importa: antes comparaba `comoAntes` (el código
+ * PRE-633: suma en ms **y** formateo en UTC) contra la primitiva. Eso medía el defecto de
+ * SCRUM-633, que ya está arreglado — por eso estos barridos salían rojos con números que ya no
+ * significaban nada. Ahora se compara **la primitiva contra la cuenta de calendario**, que es lo
+ * único que este ticket persigue: si 30 días no son 30 días, aquí sale.
+ */
 function barrer(tz, hh, mm, dias = 30) {
   let dif = 0; let total = 0; const muestra = [];
   for (let i = 0; i < 365; i++) {
     const b = new Date(Date.UTC(2026, 0, 1) + i * 86400000);
-    const ts = instanteDe(b.getUTCFullYear(), b.getUTCMonth() + 1, b.getUTCDate(), hh, mm, tz);
+    const p0 = paredEn(b.getTime(), tz);
+    const ts = instanteDe(p0.y, p0.m, p0.d, hh, mm, tz);
+    // Una hora que NO EXISTE (el salto de primavera) no se cuenta: no es un día en el que el
+    // profesional pueda crear un presupuesto a esa hora, y contarla sería inventar un caso.
+    const q = paredEn(ts, tz);
+    if (q.hh !== hh || q.mm !== mm) continue;
     total++;
-    const antes = comoAntes(ts, dias);
-    const ahora = comoAhora(ts, tz, dias);
-    if (antes !== ahora) { dif++; if (muestra.length < 3) muestra.push(`${antes} -> ${ahora}`); }
+    const delProducto = comoAhora(ts, tz, dias);
+    const delCalendario = diaDeCalendario(ts, tz, dias);
+    if (delProducto !== delCalendario) {
+      dif++;
+      if (muestra.length < 3) muestra.push(`${diaDeCalendario(ts, tz, 0)}: ${delProducto} != ${delCalendario}`);
+    }
   }
   return { dif, total, muestra };
 }
@@ -184,7 +230,7 @@ export function sumasDeDiasEnMs(fuente, ruta = 'x.js') {
 // SUELO
 // ─────────────────────────────────────────────────────────────────────────────────────────
 test('SCRUM-630 · SUELO: tengo la primitiva y sé reproducir el cálculo viejo', () => {
-  assert.equal(typeof A?.fechaDeAtajo, 'function', '🔴 CIEGO: no tengo `fechaDeAtajo`');
+  assert.equal(typeof C?.diaPorDefecto, 'function', '🔴 CIEGO: no tengo `diaPorDefecto`');
   const ts = instanteDe(2026, 6, 10, 12, 0, MADRID);
   assert.equal(comoAntes(ts, 30), comoAhora(ts, MADRID, 30),
     '🔴 mi reproducción del cálculo viejo no coincide con el nuevo ni en un día normal: entonces '
@@ -210,98 +256,138 @@ test('SCRUM-630 · 🔴 SUELO: el reloj explícito FUNCIONA, y no lo pone el pro
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 🔴 EL ANTES Y EL DESPUÉS, en el caso que destapó el defecto
 // ─────────────────────────────────────────────────────────────────────────────────────────
-test('SCRUM-630 · 🔴 31 de marzo a medianoche EN MADRID + 30: antes 29-abr, ahora 30-abr', () => {
-  // La zona va escrita. Con la del proceso, este mismo test daba 30-abr en un runner en UTC y
-  // caía diciendo que «el arreglo no arregla» — cuando lo que pasaba es que en UTC no hay defecto.
+// ═══ 🔴 EL TESTIGO SE HA MOVIDO, Y HAY QUE DECIRLO ════════════════════════════════════════
+//
+// El caso original de este ticket —31-mar 00:00 en Madrid— **YA NO PUEDE PONERSE ROJO**. Medido
+// el 8-sep-2026 contra la primitiva de hoy: da `2026-04-30`, que es el día de calendario
+// correcto. SCRUM-633 arregló la mitad del defecto (el día se escribía en UTC y ahora se escribe
+// en la zona del merchant), y con eso ese instante concreto dejó de fallar.
+//
+// **Un rojo que ya no puede ponerse rojo no es una prueba: es un comentario.** Así que el caso se
+// reapunta a los dos instantes que SÍ reproducen lo que queda del defecto —la suma en
+// milisegundos—, medidos sobre 2026 en Madrid:
+//
+//     26-sep 00:30  →  ms: 2026-10-25   calendario: 2026-10-26   ← caduca un día ANTES
+//     28-feb 23:30  →  ms: 2026-03-31   calendario: 2026-03-30   ← caduca un día TARDE
+//
+// ⚠️ Y CORRIGE LA DIRECCIÓN QUE DABA POR SUPUESTA LA DESCRIPCIÓN DEL TICKET: el «un día antes»
+// —la venta perdida— lo produce el cambio de **OCTUBRE**, no el de marzo. Con un día de 23 h
+// (marzo) las 720 h se pasan de largo y el presupuesto vive un día de MÁS; con uno de 25 h
+// (octubre) se quedan cortas y caduca antes. Las dos son defectos; la cara la tiene octubre.
+test('SCRUM-630 · 🔴 EL DEFECTO VIVO: 30 días no son 720 horas — octubre caduca ANTES', () => {
+  const ts = instanteDe(2026, 9, 26, 0, 30, MADRID);   // dentro de la ventana del cambio de octubre
+  assert.equal(diaDeCalendario(ts, MADRID, 30), '2026-10-26',
+    '🔴 mi cuenta de calendario no da 26-oct: entonces no estoy midiendo lo que creo');
+  assert.equal(comoAhora(ts, MADRID, 30), '2026-10-26',
+    '🔴 el «Válido hasta» NO da el día 30 de calendario: caduca ANTES de lo que el profesional dijo');
+});
+
+test('SCRUM-630 · 🔴 la otra dirección: marzo NO puede caducar un día TARDE', () => {
+  const ts = instanteDe(2026, 2, 28, 23, 30, MADRID);  // dentro de la ventana del cambio de marzo
+  assert.equal(diaDeCalendario(ts, MADRID, 30), '2026-03-30',
+    '🔴 mi cuenta de calendario no da 30-mar: entonces no estoy midiendo lo que creo');
+  assert.equal(comoAhora(ts, MADRID, 30), '2026-03-30',
+    '🔴 el «Válido hasta» se pasa un día: el presupuesto vive más de lo que se dijo');
+});
+
+test('SCRUM-630 · el caso ORIGINAL del ticket ya lo arregló SCRUM-633 — queda como caracterización', () => {
+  // No se borra: se deja escrito que ese instante ya no falla, y por qué. Borrarlo dejaría a
+  // quien lea el ticket buscando un rojo que no existe.
   const ts = instanteDe(2026, 3, 31, 0, 0, MADRID);
-  assert.equal(comoAntes(ts, 30), '2026-04-29',
-    '🔴 el cálculo viejo ya no da 29-abr EN MADRID: este test dejó de medir el defecto que dice medir');
   assert.equal(comoAhora(ts, MADRID, 30), '2026-04-30',
-    '🔴 el cálculo nuevo NO da 30-abr: el arreglo no arregla');
-  // Y el mismo instante de pared en UTC: allí las dos aritméticas coinciden. Es el contraste que
-  // enseña que el defecto es del DESFASE, no del `86400000`.
-  const tsUtc = instanteDe(2026, 3, 31, 0, 0, 'UTC');
-  assert.equal(comoAntes(tsUtc, 30), comoAhora(tsUtc, 'UTC', 30),
-    '🔴 en UTC las dos aritméticas deberían coincidir: si no, el defecto no es el que creo');
+    'CARACTERIZACIÓN: 31-mar 00:00 en Madrid ya daba bien ANTES de este arreglo, porque SCRUM-633 '
+    + 'se llevó el día a la zona del merchant. Si esto cambiara, algo se ha desandado.');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // ✅ EL CONTROL NEGATIVO, QUE ES EL QUE DECIDE
 // ─────────────────────────────────────────────────────────────────────────────────────────
-const HORAS_NORMALES = [[9, 0], [12, 0], [23, 30]];
+// 🔴 REAPUNTADO EL 8-sep-2026 · «23:30» SALE DE LAS HORAS NORMALES, Y ES UN HALLAZGO
+//
+// Medido sobre 2026 con la primitiva de hoy: a las 23:30 en Madrid el producto discrepa del
+// calendario en **30 días de 365** — la ventana del cambio de marzo. O sea que 23:30 NO es una
+// hora «normal» para este defecto: es una de las que lo destapan, y tenerla en el control
+// negativo era pedirle que protegiera un caso roto.
+//
+// Las horas en que el producto YA acertaba son las de en medio del día, y son EXACTAMENTE las
+// que el control negativo tiene que proteger: apretar esto no puede mover lo que ya estaba bien.
+const HORAS_SIN_DEFECTO = [[9, 0], [12, 0]];
+const HORAS_CON_DEFECTO = [[0, 15], [0, 30], [23, 30]];
 
-test('SCRUM-630 · ✅ a hora normal EN MADRID, el arreglo NO mueve NI UNA fecha en todo el año', () => {
-  for (const [hh, mm] of HORAS_NORMALES) {
+test('SCRUM-630 · ✅ POSITIVO: a hora normal EN MADRID el arreglo NO mueve NI UNA fecha', () => {
+  for (const [hh, mm] of HORAS_SIN_DEFECTO) {
     const r = barrer(MADRID, hh, mm);
     assert.equal(r.total, 365, '🔴 el barrido no ha recorrido el año entero');
     assert.equal(r.dif, 0,
-      `🔴 A LAS ${hh}:${String(mm).padStart(2, '0')} EN MADRID EL ARREGLO MUEVE ${r.dif} FECHAS: `
+      `🔴 A LAS ${hh}:${String(mm).padStart(2, '0')} EN MADRID EL PRODUCTO DISCREPA EN ${r.dif} FECHAS: `
       + `${r.muestra.join(' · ')}.\n`
-      + '  Eso no es arreglar un defecto: es cambiar el comportamiento del producto. Quien no toque '
-      + 'nada tiene que seguir viendo exactamente la misma fecha que veía.');
+      + '  A esas horas ya acertaba ANTES del arreglo. Si aquí sale algo, esto no es arreglar un '
+      + 'defecto: es cambiarle el comportamiento a quien no tenía ninguno.');
   }
 });
 
-test('SCRUM-630 · ⚠️ el control negativo TAMBIÉN dependía de la máquina: con desfase NEGATIVO cae', () => {
-  // No es una curiosidad: es la prueba de que fijar la zona hacía falta también AQUÍ. En una
-  // máquina al oeste de Greenwich, las 23:30 locales caen en el día SIGUIENTE en UTC y el
-  // «arreglo no mueve nada» se convierte en «lo mueve todo». El control negativo de arriba sólo
-  // significa algo porque dice EN QUÉ ZONA.
-  const r = barrer(NUEVA_YORK, 23, 30);
-  assert.equal(r.dif, 365,
-    `🔴 en Nueva York a las 23:30 difieren ${r.dif} de ${r.total} y estaban medidos 365. Si esto `
-    + 'cambia, la razón por la que el control negativo fija la zona ha dejado de ser cierta y hay '
-    + 'que volver a medirla, no borrar el test.');
+test('SCRUM-630 · 🔴 EL DEFECTO, BARRIDO: cerca de medianoche el «Válido hasta» no son 30 días', () => {
+  // Antes del arreglo esto daba 30 de 365 en cada una de las tres horas — las dos ventanas de
+  // treinta días que preceden a cada cambio de hora. Después tiene que ser CERO.
+  for (const [hh, mm] of HORAS_CON_DEFECTO) {
+    const r = barrer(MADRID, hh, mm);
+    assert.equal(r.total, 365, '🔴 el barrido no ha recorrido el año entero');
+    assert.equal(r.dif, 0,
+      `🔴 A LAS ${hh}:${String(mm).padStart(2, '0')} EN MADRID el «Válido hasta» discrepa del `
+      + `calendario en ${r.dif} de ${r.total} días: ${r.muestra.join(' · ')}.\n`
+      + '  30 días tienen que ser 30 días de calendario, no 720 horas.');
+  }
 });
 
-test('SCRUM-630 · 🔴 de MADRUGADA EN MADRID sí difieren — 365 de 365, que es el defecto', () => {
-  const r = barrer(MADRID, 0, 30);
-  assert.equal(r.total, 365, '🔴 el barrido no ha recorrido el año entero');
-  assert.equal(r.dif, 365,
-    `🔴 a las 00:30 EN MADRID difieren ${r.dif} días de ${r.total}, y están medidos 365. Si BAJA a `
-    + '0, o el defecto se arregló por otro sitio o estoy comparando la misma función consigo misma '
-    + '— y entonces el control negativo de arriba no significaría nada.');
-});
-
-test('SCRUM-630 · 🔴 LAS DOS DIRECCIONES: en UTC son 0, y eso es el resultado ESPERADO', () => {
-  // ÉSTE es el test que faltaba, y por el que CI se puso rojo con razón. En UTC `toISOString()`
-  // no desplaza nada, así que no hay defecto que medir: 0 no es un fallo, es la respuesta.
-  // Afirmarlo es lo que impide que el barrido de arriba vuelva a medir la máquina en silencio.
+test('SCRUM-630 · ✅ en UTC no hay defecto que arreglar, y ése es el resultado ESPERADO', () => {
+  // El contraste que enseña de qué va esto: UTC no tiene cambio de hora, así que ahí sumar
+  // 720 horas y sumar 30 días es lo mismo. Un 0 aquí no es un fallo del test: es la respuesta.
   const utc = barrer('UTC', 0, 30);
   assert.equal(utc.dif, 0,
-    `🔴 en UTC a las 00:30 difieren ${utc.dif} y deberían ser 0: con desfase cero las dos `
-    + 'aritméticas dan lo mismo. Si difieren, el defecto no es el que este fichero dice que es.');
+    `🔴 en UTC a las 00:30 discrepan ${utc.dif} y deberían ser 0: sin cambio de hora las dos `
+    + 'cuentas coinciden. Si difieren, el defecto no es el que este fichero dice que es.');
+});
 
-  // Y el 210 histórico, con su procedencia escrita: era de LONDRES, no de Madrid. Se afirma para
-  // que el número que se congeló por error quede explicado y no vuelva a colarse como «el dato».
-  assert.equal(barrer(LONDRES, 0, 30).dif, 210,
-    '🔴 Londres a las 00:30 ya no da 210: era el número que la primera versión de este fichero '
-    + 'congeló creyendo que era de Madrid.');
+test('SCRUM-630 · ⚠️ no es cosa de España: Londres y Nueva York tenían el MISMO defecto', () => {
+  // Se deja medido para que nadie lea esto como «un caso raro de Madrid». Y Nueva York está
+  // aquí por su desfase NEGATIVO: el defecto no depende del signo.
+  //
+  // ⚠️ EL 210 HISTÓRICO YA NO APLICA, y consta: salía de comparar contra el código PRE-633
+  // —que además formateaba en UTC— y era de LONDRES, no de Madrid. Con la comparación de hoy
+  // —producto contra calendario— Londres da 30, igual que Madrid.
+  for (const tz of [LONDRES, NUEVA_YORK]) {
+    const r = barrer(tz, 0, 30);
+    assert.equal(r.dif, 0,
+      `🔴 en ${tz} a las 00:30 discrepan ${r.dif} de ${r.total}: el arreglo tiene que valer para `
+      + 'cualquier zona con cambio de hora, no sólo para Madrid.');
+  }
+});
 
-  // 🔴 LA AFIRMACIÓN QUE HACE QUE TODO LO ANTERIOR SIGNIFIQUE ALGO: las zonas se distinguen. Si
-  // Madrid y UTC dieran lo mismo, el test estaría heredando la zona del proceso otra vez.
-  assert.notEqual(barrer(MADRID, 0, 30).dif, utc.dif,
-    '🔴 Madrid y UTC dan el MISMO número: la zona no se está fijando y esto vuelve a medir la '
-    + 'máquina donde corre, que es exactamente el rojo que trajo aquí.');
+test('SCRUM-630 · 🔴 CONTROL: la zona se está fijando de verdad, y no la pone el proceso', () => {
+  // Antes esto se comprobaba viendo que Madrid y UTC daban números de discrepancia distintos.
+  // Con el arreglo los dos dan 0 —que es el objetivo— así que ese contraste ya no distingue
+  // nada. Se sustituye por uno que sobrevive al arreglo: el mismo INSTANTE cae en días naturales
+  // distintos según la zona, así que el «Válido hasta» tiene que ser distinto.
+  const ts = Date.UTC(2026, 0, 15, 23, 30);            // 15-ene 23:30 UTC = 16-ene 00:30 en Madrid
+  assert.equal(paredEn(ts, MADRID).d, 16, '🔴 el reloj no ve el día 16 en Madrid');
+  assert.equal(paredEn(ts, 'UTC').d, 15, '🔴 el reloj no ve el día 15 en UTC');
+  assert.notEqual(comoAhora(ts, MADRID, 30), comoAhora(ts, 'UTC', 30),
+    '🔴 Madrid y UTC dan el MISMO «Válido hasta» para un instante que cae en días distintos: la '
+    + 'zona no se está fijando y esto vuelve a medir la máquina donde corre.');
 });
 
 test('SCRUM-630 · CONTROL: el barrido no compara una función consigo misma', () => {
-  // El mensaje del rojo de CI nombraba esta posibilidad. Se descarta midiéndola: comparando la
-  // aritmética NUEVA contra sí misma, cualquier zona da 0. Que Madrid dé 365 arriba sólo puede
-  // venir, entonces, de que las dos aritméticas son distintas de verdad.
-  for (const tz of [MADRID, 'UTC', LONDRES, NUEVA_YORK]) {
-    let dif = 0;
-    for (let i = 0; i < 365; i++) {
-      const b = new Date(Date.UTC(2026, 0, 1) + i * 86400000);
-      const ts = instanteDe(b.getUTCFullYear(), b.getUTCMonth() + 1, b.getUTCDate(), 0, 30, tz);
-      if (comoAhora(ts, tz, 30) !== comoAhora(ts, tz, 30)) dif++;
-    }
-    assert.equal(dif, 0, `🔴 la aritmética nueva no es determinista en ${tz}`);
-  }
-  // Y el contraste concreto, con las dos cadenas escritas: mismo instante, dos resultados.
-  const ts = instanteDe(2026, 3, 31, 0, 30, MADRID);
-  assert.equal(comoAntes(ts, 30), '2026-04-29', '🔴 la vieja ya no da 29-abr en Madrid');
-  assert.equal(comoAhora(ts, MADRID, 30), '2026-04-30', '🔴 la nueva ya no da 30-abr en Madrid');
+  // Si el barrido comparara la primitiva contra sí misma, daría 0 siempre y el ✅ POSITIVO no
+  // significaría nada. Se descarta enseñando que las DOS cuentas existen y dan cosas distintas
+  // en el caso que destapa el defecto — con las dos cadenas escritas.
+  const ts = instanteDe(2026, 9, 26, 0, 30, MADRID);
+  assert.equal(comoAntes(ts, 30), '2026-10-25',
+    '🔴 la reproducción del cálculo viejo ya no da 25-oct: no estoy comparando lo que creo');
+  assert.equal(diaDeCalendario(ts, MADRID, 30), '2026-10-26',
+    '🔴 la cuenta de calendario no da 26-oct: no estoy comparando lo que creo');
+  assert.notEqual(comoAntes(ts, 30), diaDeCalendario(ts, MADRID, 30),
+    '🔴 las dos cuentas dan lo mismo en el caso que destapa el defecto: entonces no hay defecto '
+    + 'que medir, o estoy comparando una función consigo misma.');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
@@ -314,9 +400,11 @@ for (const b of [
   { que: '31 de diciembre + 7', hoy: [2026, 11, 31], dias: 7, esperada: '2027-01-07' },
 ]) {
   test(`SCRUM-630 · el valor por defecto respeta el borde: ${b.que}`, () => {
-    const hoy = new Date(b.hoy[0], b.hoy[1], b.hoy[2]);
-    assert.equal(A.fechaDeAtajo(b.dias, hoy), b.esperada,
-      `🔴 sale ${A.fechaDeAtajo(b.dias, hoy)} y debería ${b.esperada}`);
+    // Mediodía y zona ESCRITA: sin eso, el borde se mediría en la zona de la máquina y un
+    // runner en UTC daría otro día. Es la misma lección que el resto del fichero.
+    const ts = instanteDe(b.hoy[0], b.hoy[1] + 1, b.hoy[2], 12, 0, MADRID);
+    assert.equal(comoAhora(ts, MADRID, b.dias), b.esperada,
+      `🔴 sale ${comoAhora(ts, MADRID, b.dias)} y debería ${b.esperada}`);
   });
 }
 
@@ -325,14 +413,18 @@ for (const b of [
 // ─────────────────────────────────────────────────────────────────────────────────────────
 test('SCRUM-630 · 🔴 el valor por defecto sale de la primitiva, no de una segunda aritmética', () => {
   const vista = leer('public/dashboard/js/quotesView.js');
-  assert.equal(vista.split('atajosVencDefecto.fechaDeAtajo(30)').length - 1, 1,
-    '🔴 el valor por defecto ya no sale de `fechaDeAtajo`: si alguien ha escrito una segunda '
-    + 'aritmética, el defecto de familia ha vuelto (617/620/625/627/629).');
+  assert.ok(vista.includes('window.quoteCaducidad.diaPorDefecto(null, 30)'),
+    '🔴 el valor por defecto ya no sale de `quoteCaducidad.diaPorDefecto`: si alguien ha escrito '
+    + 'una segunda aritmética, el defecto de familia ha vuelto (617/620/625/627/629).');
 
+  // 🔴 REAPUNTADO DE 1 A 0. Antes quedaba UNA suma en milisegundos —la del `min`— y así se
+  // declaró en la CARACTERIZACIÓN de abajo. SCRUM-633 se llevó también el `min` a la primitiva,
+  // así que en esta vista ya no queda NINGUNA. El número baja porque el árbol mejoró, y queda
+  // escrito para que nadie lo lea como que se relajó el listón.
   const sumas = sumasDeDiasEnMs(vista, 'quotesView.js');
-  assert.equal(sumas.length, 1,
-    `🔴 en \`quotesView.js\` hay ${sumas.length} sumas de días en milisegundos y debe quedar UNA: `
-    + `la del \`min\`, que este ticket no toca. Si sube, ha vuelto la aritmética vieja: ${JSON.stringify(sumas)}`);
+  assert.equal(sumas.length, 0,
+    `🔴 en \`quotesView.js\` hay ${sumas.length} suma(s) de días en milisegundos y no debe quedar `
+    + `NINGUNA: las dos salen de la primitiva. Si sube, ha vuelto la aritmética vieja: ${JSON.stringify(sumas)}`);
 });
 
 test('SCRUM-630 · CONTROL del detector: sabe VER una suma de días y sabe NO verla', () => {
@@ -347,12 +439,12 @@ test('SCRUM-630 · CONTROL del detector: sabe VER una suma de días y sabe NO ve
 
 test('SCRUM-630 · 🔴 la primitiva se CARGA ANTES que la vista que la usa', () => {
   const html = leer('public/dashboard/index.html');
-  const iPrim = html.indexOf('js/quoteAtajosVencimiento.js');
+  const iPrim = html.indexOf('js/quoteCaducidad.js');
   const iVista = html.indexOf('js/quotesView.js');
   assert.ok(iPrim !== -1, '🔴 la primitiva ya no se carga en el index');
   assert.ok(iVista !== -1, '🔴 la vista ya no se carga en el index');
   assert.ok(iPrim < iVista,
-    '🔴 `quoteAtajosVencimiento.js` ha pasado a cargarse DESPUÉS de `quotesView.js`. La vista '
+    '🔴 `quoteCaducidad.js` ha pasado a cargarse DESPUÉS de `quotesView.js`. La vista '
     + 'depende de ella para el valor por defecto: en ese orden el campo saldría VACÍO. La '
     + 'dependencia era implícita y por eso se fija aquí.');
 });
@@ -360,11 +452,22 @@ test('SCRUM-630 · 🔴 la primitiva se CARGA ANTES que la vista que la usa', ()
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // ⚠️ EL `min` NO SE HA TOCADO, y tiene el MISMO defecto.
 // ─────────────────────────────────────────────────────────────────────────────────────────
-test('SCRUM-630 · CARACTERIZACIÓN: el `min` sigue con la aritmética vieja (no se tocó)', () => {
+test('SCRUM-630 · CARACTERIZACIÓN: el `min` YA NO tiene la aritmética vieja — lo unificó SCRUM-633', () => {
+  // ⚠️ ESTE CASO DECÍA LO CONTRARIO, Y SE CONSERVA EL REGISTRO EN VEZ DE BORRARLO.
+  //
+  // Cuando se escribió (1-sep-2026) el `min` seguía con `new Date(Date.now() + 86400000)
+  // .toISOString().slice(0, 10)` y este caso lo dejaba escrito: «el MISMO defecto que este ticket
+  // arregla en el valor por defecto. NO se tocó porque el encargo lo prohíbe expresamente».
+  //
+  // En las tres semanas que la rama estuvo sin mergear, **SCRUM-633 se llevó el `min` a la misma
+  // primitiva**. Así que lo que había que dejar constando ha cambiado, y lo honesto es decir qué
+  // pasó —no borrar el caso, que dejaría el registro mudo, ni mantener una afirmación falsa.
   const vista = leer('public/dashboard/js/quotesView.js');
-  assert.equal(vista.split('validInput.min = new Date(Date.now() + 86400000).toISOString().slice(0, 10);').length - 1, 1,
-    'CARACTERIZACIÓN: el `min` del campo sigue sumando 24 h en milisegundos y formateando en UTC '
-    + '— el MISMO defecto que este ticket arregla en el valor por defecto. NO se tocó porque el '
-    + 'encargo lo prohíbe expresamente. Si esto falla es que alguien lo cambió: bien, pero que '
-    + 'conste con su decisión.');
+  assert.equal(vista.split('new Date(Date.now() + 86400000).toISOString()').length - 1, 0,
+    'CARACTERIZACIÓN: ha vuelto la aritmética vieja al `min`. La arregló SCRUM-633; si reaparece, '
+    + 'alguien la ha desandado.');
+  assert.ok(vista.includes('window.quoteCaducidad.diaPorDefecto(null, 1)'),
+    'CARACTERIZACIÓN: el `min` ya no sale de la primitiva. Con el arreglo de 630 los DOS —valor '
+    + 'por defecto y mínimo— son días de calendario, y no pueden discrepar porque salen de la '
+    + 'misma función.');
 });
