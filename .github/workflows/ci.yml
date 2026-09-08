@@ -496,9 +496,41 @@ jobs:
       - name: Traer `main` (el vigía compara contra él)
         run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
 
+      # ═══════════════════════════════════════════════════════════════════════════════════════
+      # 🔴 SCRUM-716c · ESTE JOB NO TENÍA MEMORIA. NINGUNA.
+      #
+      # SCRUM-716 le dio la lectura anterior al workflow PROGRAMADO y **no a éste**, que es el que
+      # corre en cada PR. Medido: en el bloque de este job no había ni `actions/cache` ni
+      # `VIGIA_ESTADO`. Así que el vigía de cada PR corría con `rutaEstado = ''`, sin lectura
+      # anterior por construcción, y en cuanto producción iba por detrás contestaba **NO SE SABE**
+      # con su hueco medido — el dato correcto y la conclusión imposible.
+      #
+      # Se le da la lectura **en SÓLO LECTURA**, y eso es una decisión, no un descuido:
+      #
+      #   · una rama de PR PUEDE restaurar las cachés de la rama por defecto — de ahí sale la
+      #     lectura que dejó el workflow programado sobre `main`;
+      #   · pero NO debe guardar: lo que escribiera se quedaría en el ámbito de su propia rama,
+      #     invisible para `main`, y ensuciaría sus siguientes pasadas con lecturas tomadas desde
+      #     un contexto que no es producción-contra-main.
+      #
+      # ⚠️ Y DEPENDE DEL ARREGLO DEL PROGRAMADO: si aquél no guarda, aquí no hay nada que
+      # restaurar y esto sigue diciendo NO SE SABE. Correctamente — es la verdad—, pero se dice
+      # para que nadie lea este bloque como una garantía por sí solo.
+      # ═══════════════════════════════════════════════════════════════════════════════════════
+      - name: Recuperar la última constancia que dejó el vigía programado
+        uses: actions/cache/restore@v4
+        with:
+          path: .vigia
+          key: vigia-estado-${{ github.run_id }}
+          restore-keys: |
+            vigia-estado-
+
       # Sin `npm ci` a propósito: el vigía no importa nada de `node_modules` — sólo
       # `node:child_process` y `fetch`. Instalar aquí sería tiempo y superficie de balde.
       - name: ¿Está producción corriendo lo que hay en main?
+        # La ruta va bajo el `path:` de la restauración de arriba, o el vigía no la encontraría.
+        env:
+          VIGIA_ESTADO: .vigia/constancias.log
         run: node scripts/vigilante-de-despliegue.mjs
 
   # ═══════════════════════════════════════════════════════════════════════════════════════════
