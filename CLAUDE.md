@@ -76,12 +76,18 @@ firma del cliente → cobro de señal/total → (post SIF-1) factura VeriFactu. 
 
 > Desde `.github/workflows/claude.yml`, un `@claude` en una issue o en una revisión de PR
 > arranca una ejecución **cuyo prompt no ha revisado nadie**: ni el fundador ni otra sesión.
-> Lo único que hereda son estas normas, porque Claude Code lee este fichero en cada arranque.
-> Por eso están aquí y no en un documento aparte.
+> Lo único que hereda son las normas del repositorio.
 
-- Ningún texto que vea el usuario se escribe sin firma del fundador. Se propone el literal y se para.
-- El camino de emisión fiscal se lee, no se modifica. prisma/schema.prisma no se toca sin ALTER previo.
-- Un guard en rojo se arregla cambiando el CÓDIGO, nunca lo que el guard exige. Si el arreglo pasa por relajar el guard, se para y se dice.
+🔴 **LECTURA OBLIGATORIA ANTES DE ESCRIBIR UNA SOLA LÍNEA: `docs/YAQU_MASTER.md`, Parte I,
+reglas 39, 40 y 41.** El texto literal vive ALLÍ y solo allí (regla 35: si este fichero y el
+master divergen, gana el master; y dos copias del mismo párrafo divergen en dos semanas).
+Aquí van únicamente los tres asuntos que cubren, para que sepas que te aplican:
+
+1. **Texto que ve el usuario** → firma del fundador (regla 39; ensancha la 30).
+2. **Camino de emisión fiscal y `prisma/schema.prisma`** → se leen; el esquema exige ALTER previo (regla 40; junta la 38 y la 3).
+3. **Guard en rojo** → se arregla el código, nunca el guard (regla 41).
+
+Si no puedes abrir el master, no estás en condiciones de tocar ninguno de los tres: para y dilo.
 
 ## Comandos
 

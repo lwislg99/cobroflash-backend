@@ -18,23 +18,18 @@
 # usan `fetch-depth: 0` — `ci.yml` (líneas 110, 394, 466), `vigia-despliegue.yml` (60) y
 # `zona-roja.yml` (58). Este es el cuarto y va igual.
 #
-# ⚠️ LÍMITE HONESTO, MEDIDO EN ESTE MISMO REPOSITORIO Y AÚN SIN RESOLVER AQUÍ.
+# 🔴 Y POR ESO VAN DOS PASOS, NO UNO. `fetch-depth: 0` trae la historia completa pero UNA
+# SOLA REF, y eso deja `origin/main` SIN RESOLVER — con lo cual los dos primeros guards de
+# la lista de arriba no pueden medir aunque la historia esté entera. No es hipótesis: es la
+# tabla que `ci.yml` (SCRUM-765, medida el 6-sep-2026) tiene escrita en sus líneas 369-395:
 #
-# `fetch-depth: 0` trae la historia completa pero UNA SOLA REF. En el evento `pull_request`,
-# eso deja `origin/main` SIN RESOLVER, y entonces los dos primeros guards de la lista de
-# arriba no pueden medir aunque la historia esté entera. No es una hipótesis: es la tabla
-# que `ci.yml` (SCRUM-765, medida el 6-sep-2026) tiene escrita en sus líneas 369-395 —
-# «historia completa, UNA ref (fetch-depth: 0) → FALLA», y sólo pasa con «historia completa,
-# UNA ref + `main`». Por eso ese job lleva DOS pasos, y el vigía tuvo que añadir el segundo
-# por el mismo motivo (SCRUM-716b):
+#     forma del clon                                veredicto    colisión   scrum738
+#     historia completa, UNA ref (fetch-depth: 0)   NADA         AUSENTE    FALLA
+#     historia completa, UNA ref + `main`           NO_MEDIBLE   683        PASA
 #
-#     - name: Traer `main`
-#       run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
-#
-# Ese paso NO está aquí a propósito. Los eventos de este workflow son `issue_comment` y
-# `pull_request_review_comment`, no `pull_request`, y no se ha medido si se comportan igual;
-# y el fundador entregó este fichero literal. Añadirlo es una línea y lo decide él. Si un
-# `@claude` responde que un guard salió CIEGO, la primera hipótesis es ésta.
+# Hacen falta LAS DOS COSAS y ninguna basta sola. `ci.yml` lo aprendió ahí y el vigía tuvo
+# que añadir lo mismo por el mismo motivo (SCRUM-716b). Aquí se COPIA ese patrón —la orden
+# es idéntica byte a byte— en vez de inventar una variante: la casa ya lo midió.
 #
 # ⚠️ `actions/checkout@v6` viene del encargo. Los tres workflows de la casa van en `@v4`.
 # Se deja como se pidió; queda anotada la divergencia.
@@ -62,6 +57,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+      # La SEGUNDA mitad. `fetch-depth: 0` sola trae historia completa pero UNA ref, y sin
+      # esto `origin/main` no resuelve: ver la tabla de la cabecera. La orden es la MISMA,
+      # byte a byte, que la de `ci.yml` y `vigia-despliegue.yml` — se copia el patrón de la
+      # casa, que ya está medido, en vez de inventar otro.
+      - name: Traer `main` (los guards lo consultan)
+        run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
