@@ -322,6 +322,23 @@ async function initApp() {
         viewTitle.textContent = 'Facturas';
         renderInvoicesView(viewContainer);
         break;
+      // SCRUM-600 (DOC-10) · el documento suelto tiene PÁGINA PROPIA, la misma que el
+      // presupuesto. Antes se hacía en un modal que se abría desde un botón: sin ruta, no se
+      // podía enlazar, ni recargar, ni volver — y una recarga a media factura lo perdía todo.
+      //
+      // El rótulo NO se escribe aquí: sale de `rotulosDelDocumento`, que ya sabe si este
+      // profesional emite facturas o justificantes (SCRUM-776). Escribir 'Facturas' a pelo sería
+      // decirle «factura» a un merchant español real, que con el flag en su valor por defecto
+      // emite JUSTIFICANTES.
+      // ⚠️ La ruta llama a `renderDocumentoSueltoView(viewContainer)` y NO a
+      // `renderQuotesView(viewContainer, null, true)`. El destino es el mismo; la FORMA no. El
+      // guard de marcadores (SCRUM-722) monta cada vista del router con un argumento como mucho,
+      // así que con la llamada de tres argumentos montaba esta ruta SIN el tercero — o sea,
+      // pintaba el PRESUPUESTO y contaba sus marcadores como si fueran de aquí. Medido.
+      case 'invoices-new':
+        viewTitle.textContent = window.rotulosDelDocumento.tituloModal();
+        renderDocumentoSueltoView(viewContainer);
+        break;
       // Sprint Tecnosel · LA OFICINA VALORA LOS PARTES FIRMADOS. Sin este `case` el fichero se
       // cargaría y no llevaría a él ninguna puerta — que es exactamente lo que le pasa hoy a
       // `parteDetailView.js`, medido en la certificación del sprint.
@@ -450,7 +467,10 @@ async function initApp() {
   // NOTA: las vistas de DETALLE (`albaran-detail`, …) NO van aquí a propósito: necesitan un id que
   // el hash no lleva, así que un deep-link a ellas abriría una ficha vacía.
   const HASH_VIEWS = ['home','cobros','quotes-list','quotes-new','customers','products','providers',
-    'invoices','expenses','export','reports','templates','quote-requests','jobs','plans','team','settings',
+    // SCRUM-600 (DOC-10) · el TERCER sitio, que es justo el que este comentario dice que se
+    // olvida. Sin esto, quien recargue estando a media factura suelta pierde la pantalla — que
+    // es exactamente lo que le pasaba con el modal, y medio motivo del ticket.
+    'invoices','invoices-new','expenses','export','reports','templates','quote-requests','jobs','plans','team','settings',
       'libro-registro','albaranes',
     // sprint Tecnosel · el TERCER sitio, que es el que se olvida: sin esto, quien recargue
     // estando en «Partes por valorar» pierde la vista. Se entra desde Trabajos.
@@ -461,7 +481,24 @@ async function initApp() {
   }
   const _origRender = renderView;
   window.renderAppView = function (view, opts) {
-    try { history.replaceState(null, '', '#' + view); } catch (_e) {}
+    // 🔴 SCRUM-819 · `pushState` PARA LO QUE SE PUEDE RECUPERAR; `replaceState` PARA LO DEMÁS.
+    //
+    // Antes era `replaceState` SIEMPRE, y eso no crea entrada de historial: medido, 17 clics =
+    // **0 entradas**, y «atrás» sacaba de la aplicación. Arreglar sólo el menú habría dejado la
+    // URL correcta y el botón de atrás igual de roto — son dos defectos, no uno.
+    //
+    // ⚠️ Y NO SE APILA TODO, a propósito. Sólo las vistas que el hash sabe RESTAURAR
+    // (`HASH_VIEWS`). Las de DETALLE no están ahí porque necesitan un id que el hash no lleva
+    // —ya lo dice la nota de arriba—, así que apilarlas daría un «atrás» que cambia la URL y no
+    // la pantalla: la incoherencia de hoy, del revés.
+    //
+    // Tampoco se apila navegar al sitio donde ya estás: pulsar dos veces el mismo botón del menú
+    // no puede obligar a dar dos veces atrás.
+    try {
+      const actual = (window.location.hash || '').replace('#', '');
+      const apilable = HASH_VIEWS.includes(view) && actual !== view;
+      history[apilable ? 'pushState' : 'replaceState'](null, '', '#' + view);
+    } catch (_e) {}
     return _origRender(view, opts);
   };
   window.addEventListener('hashchange', () => {
@@ -495,7 +532,16 @@ async function initApp() {
 
   // Clicks en el sidebar
   document.querySelectorAll('.nav-item[data-view]').forEach((btn) => {
-    btn.addEventListener('click', () => renderView(btn.dataset.view));
+    // 🔴 SCRUM-819 · POR EL ENVOLTORIO, NO POR `renderView` CRUDO.
+    //
+    // Aquí ponía `renderView(...)`, que pinta la vista y NO toca el hash. Medido pulsando los 17
+    // destinos en un navegador de verdad: **0 de 17** dejaban la URL diciendo dónde estabas, así
+    // que F5 te llevaba a otra pantalla y un enlace guardado abría la vista anterior.
+    //
+    // `window.renderAppView` —y no `renderView`— porque para cuando corre este `click` ya es el
+    // envoltorio: se reasigna arriba, después de declararse `HASH_VIEWS`. Llamar al crudo desde
+    // aquí era saltarse el único sitio que escribe la URL.
+    btn.addEventListener('click', () => window.renderAppView(btn.dataset.view));
   });
 
   // SCRUM-768: aquí vivía el «Submenú toggle». Le colgaba a `.nav-item-parent` un SEGUNDO

@@ -41,6 +41,7 @@ const SHELL = [
   '/dashboard/js/modalHeader.js', // SCRUM-446
   '/dashboard/js/switchFormaJuridica.js', // SCRUM-574
   '/dashboard/js/filtroClientes.js', // SCRUM-581
+  '/dashboard/js/etiquetasDelDocumento.js', // SCRUM-595 (DOC-05)
   '/dashboard/js/jobNextAction.js',
   '/dashboard/js/semaforoFiscal.js',
   '/dashboard/js/homeView.js',
@@ -64,9 +65,13 @@ const SHELL = [
   '/dashboard/js/quoteAtajosVencimiento.js',
   '/dashboard/js/tiposDeIva.js', // SCRUM-611 (DOC-16)
   '/dashboard/js/textoDelDocumento.js', // SCRUM-593 (DOC-03)
+  '/dashboard/js/cuerpoDelDocumentoSuelto.js', // SCRUM-600 (DOC-10)
+  '/dashboard/js/buscadorDeClientes.js', // SCRUM-713
   '/dashboard/js/quotesView.js',
   '/dashboard/js/quotesDetailView.js',
   '/dashboard/js/switchTipoArticulo.js', // SCRUM-609 (CAT-01)
+  '/dashboard/js/economiaVisible.js', // SCRUM-597 (DOC-07): quién ve coste y margen
+  '/dashboard/js/documentoAsignados.js', // SCRUM-597 (DOC-07): quién lleva el documento
   '/dashboard/js/margenCatalogo.js', // SCRUM-609
   '/dashboard/js/productsView.js',
   '/dashboard/js/providersView.js',

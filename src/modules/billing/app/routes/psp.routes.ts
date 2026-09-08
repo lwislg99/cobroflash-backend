@@ -5,7 +5,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { PSPWebhookSchema } from '../../../../core/validation/schemas';
 import { ensureInvoiceForCharge, ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { sendInvoiceEmail } from '../../../../lib/email';
-import { normalizePhone } from '../../../../core/utils/utils';
+import { canalDeWhatsApp, tieneNumeroDeContacto } from '../../../../core/contacto/canalDeWhatsApp'; // SCRUM-590 (CONT-19)
 import { config } from '../../../../core/config/env';
 import { sendWhatsAppCtaUrl } from '../../../../integrations/whatsapp';
 import { sendPaymentConfirmationInvoice, notifyMerchantPaid } from '../../../../integrations/whatsappNotifications';
@@ -232,11 +232,11 @@ router.post('/', async (req, res) => {
         : null;
       // P1-6: nº de documento REAL (sin '#') — factura o justificante, no el id del cobro.
       const documentNumber = invConf?.number || paidInvoiceNumber || String(updated.id);
-      if (updated.customer?.phone) {
+      if (updated.customer && tieneNumeroDeContacto(updated.customer)) { // SCRUM-590 (CONT-19)
         // SCRUM-74: token OPACO del recibo público, NUNCA el chargeId (IDOR/RGPD).
         const receiptToken = await ensureChargeReceiptToken(updated.id, prisma);
         sendPaymentConfirmationInvoice({
-          toPhone: updated.customer.phone,
+          toPhone: canalDeWhatsApp(updated.customer),
           customerName: updated.customer.name,
           merchantId: updated.merchantId, // J3: respeta waOptOut
           customerId: updated.customerId ?? undefined, // A5.3: vía ventana (0 €) si hay entrante <24 h
@@ -260,8 +260,8 @@ router.post('/', async (req, res) => {
 
       // Solicitud de reseña Google al cliente — A23: BOTÓN-ENLACE (fire-and-forget; solo
       // en ventana, que está abierta porque el cliente acaba de pagar por el enlace).
-      if (merchant?.googleReviewUrl && updated.customer?.phone) {
-        const reviewPhone = normalizePhone(updated.customer.phone);
+      if (merchant?.googleReviewUrl && updated.customer && tieneNumeroDeContacto(updated.customer)) { // SCRUM-590 (CONT-19)
+        const reviewPhone = canalDeWhatsApp(updated.customer);
         if (reviewPhone) {
           const customerName = updated.customer.name || 'Cliente';
           const merchantName = merchant.name || 'tu proveedor';

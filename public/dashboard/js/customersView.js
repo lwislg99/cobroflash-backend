@@ -773,6 +773,7 @@ function renderCustomersView(container) {
 
   let editingCustomer = null;
   let fieldLegalName, fieldTaxId; // A20.4
+  let selectorEmpresa = null; // SCRUM-576 (CONT-03): la empresa a la que pertenece la persona
 
   // -------- Modal --------
 
@@ -839,6 +840,26 @@ function renderCustomersView(container) {
   const ROTULO_TELEFONO = "Teléfono";
 
   /**
+   * ═══ SCRUM-590 (CONT-19) · EL RÓTULO DEL MÓVIL ═══════════════════════════════════════════
+   *
+   * ✅ **FIRMADO POR EL FUNDADOR** el 7-sep-2026. Literal exacto, y va SIN marcador porque está
+   * firmado — no como los provisionales de arriba.
+   *
+   * 🔴 EL PARÉNTESIS NO ES DECORACIÓN, ES EL TICKET. Un campo llamado «Móvil» a secas guarda un
+   * segundo número y no dice nada; lo que el profesional necesita saber es que **los documentos
+   * salen por ahí**. Sin esa palabra, el campo es un dato más y la separación vuelve a ser
+   * decorativa — que es exactamente el defecto que CONT-19 existe para cerrar.
+   *
+   * CAJA MEDIDA antes de escribirlo (SCRUM-590 §5, navegador real, CSS del árbol): 16 caracteres,
+   * **una línea a 929 px y a 390 px**, en la caja de este mismo modal. No hay que recortarlo.
+   *
+   * Fijado con `===` en `tests/scrum590b-el-campo-en-la-pantalla.test.mjs`, igual que el de
+   * SCRUM-575: un retoque «de paso» no puede cambiar un texto firmado sin que algo se ponga rojo.
+   * ═════════════════════════════════════════════════════════════════════════════════════════
+   */
+  const ROTULO_MOVIL = "Móvil (WhatsApp)";
+
+  /**
    * El aviso de identificador ya usado. PROVISIONAL del asesor, pendiente de confirmación del
    * fundador (regla 30).
    *
@@ -851,6 +872,8 @@ function renderCustomersView(container) {
    * vive ARRIBA del modal y donde caben.
    */
   const AVISO_DUPLICADO = "Ese dato ya lo tiene otro cliente. Revísalo por si es un duplicado.";  let fieldPrefijo = null;   // SCRUM-578 (a): el prefijo de pais, fuera del numero
+  let fieldMovil = null;        // SCRUM-590 (CONT-19): el movil, que es el canal de WhatsApp
+  let fieldPrefijoMovil = null; // ...y su prefijo, PROPIO. El porque, en buildModal
   let avisoDuplicado = null; // SCRUM-578 (c): el aviso de identificador ya usado
   // SCRUM-575 (CONT-02) · CONSTANTE PROPIA, no la de CONT-05, y a proposito: son tickets
   // distintos. Compartirla ataria la aprobacion de este texto a la de los otros dos — el
@@ -890,16 +913,38 @@ function renderCustomersView(container) {
 
   /** Junta prefijo + número para el payload. Es lo que se envía; el servidor normaliza. */
   function telefonoCompleto() {
-    const numero = fieldPhone.input.value.trim().replace(/\s/g, "");
+    return numeroCompleto(fieldPhone, fieldPrefijo);
+  }
+
+  /**
+   * SCRUM-590 (CONT-19) · LA REGLA DE UNIÓN, EN UN SOLO SITIO PARA LOS DOS NÚMEROS.
+   *
+   * Copiarla para el móvil habría sido dejar dos sitios donde divergir — la lección de
+   * `identificadoresDuplicados` (SCRUM-578) y de `_navegador.mjs`. Y aquí divergir no es un
+   * detalle: el que se quedara sin el «no dupliques el prefijo» produciría `3434…`, un número
+   * que no existe, justo en el campo por el que sale el documento.
+   *
+   * ⚠️ VIVE ENTRE `telefonoCompleto` y `repartirTelefono` A PROPÓSITO: los guards de SCRUM-578
+   * leen EXACTAMENTE esa región del fichero para comprobar que el prefijo no se duplica y que el
+   * respaldo no es un literal escrito a mano. Sacando la regla de ahí, aquellos guards pasarían a
+   * vigilar un delegador de una línea: verdes sin medir nada.
+   */
+  function numeroCompleto(campo, selector) {
+    const numero = campo.input.value.trim().replace(/\s/g, "");
     if (!numero) return "";
     // El respaldo NO es un literal: sale de la fuente declarada. Un `|| "34"` aquí es un número
     // escrito a mano en la lectura de un control, que es justo lo que caza el guard de SCRUM-311
     // — y tiene razón aunque aquí sea un prefijo y no una cantidad: el patrón es el mismo.
-    const prefijo = (fieldPrefijo && fieldPrefijo.value) || prefijosPais.ESPANA.prefijo;
+    const prefijo = (selector && selector.value) || prefijosPais.ESPANA.prefijo;
     // Si el profesional ya escribió el prefijo dentro del número, NO se duplica. Pasa al pegar
     // un número copiado de WhatsApp, y `3434…` sería un teléfono inventado.
     const yaLoLleva = numero.startsWith(prefijo) || numero.startsWith("+" + prefijo) || numero.startsWith("00" + prefijo);
     return yaLoLleva ? numero : prefijo + numero;
+  }
+
+  /** SCRUM-590 (CONT-19) · el móvil, por la MISMA regla que el fijo y con su propio prefijo. */
+  function movilCompleto() {
+    return numeroCompleto(fieldMovil, fieldPrefijoMovil);
   }
 
   /**
@@ -910,19 +955,29 @@ function renderCustomersView(container) {
    * adivina troceando a ciegas: partir mal un teléfono es peor que enseñarlo entero.
    */
   function repartirTelefono(guardado) {
+    repartirNumero(guardado, fieldPhone, fieldPrefijo);
+  }
+
+  /** SCRUM-590 (CONT-19) · el móvil se reparte por la MISMA regla. */
+  function repartirMovil(guardado) {
+    repartirNumero(guardado, fieldMovil, fieldPrefijoMovil);
+  }
+
+  /** SCRUM-590 (CONT-19) · el reparto, en un solo sitio para los dos números (ver `numeroCompleto`). */
+  function repartirNumero(guardado, campo, selector) {
     const limpio = String(guardado || "").replace(/[\s\-()]/g, "").replace(/^\+/, "");
-    if (!fieldPrefijo) { fieldPhone.input.value = limpio; return; }
+    if (!selector) { campo.input.value = limpio; return; }
     const prefijos = prefijosPais.listaDePrefijos().map((p) => p.prefijo)
       .sort((a, b) => b.length - a.length); // el más largo primero: `1` no puede ganarle a `1809`
     for (const p of prefijos) {
       if (limpio.length > p.length && limpio.startsWith(p)) {
-        fieldPrefijo.value = p;
-        fieldPhone.input.value = limpio.slice(p.length);
+        selector.value = p;
+        campo.input.value = limpio.slice(p.length);
         return;
       }
     }
-    fieldPrefijo.value = prefijosPais.ESPANA.prefijo;
-    fieldPhone.input.value = limpio;
+    selector.value = prefijosPais.ESPANA.prefijo;
+    campo.input.value = limpio;
   }
 
   /**
@@ -1034,10 +1089,48 @@ function renderCustomersView(container) {
     filaTel.appendChild(fieldPrefijo);
     filaTel.appendChild(fieldPhone.input);
     fieldPhone.wrapper.appendChild(filaTel);
+    // ═══ SCRUM-590 (CONT-19) · EL MÓVIL, Y ES EL NÚMERO QUE RECIBE LOS DOCUMENTOS ══════════
+    //
+    // Va PEGADO al teléfono y con la MISMA forma —selector de prefijo + número— porque son el
+    // mismo tipo de dato, y dos controles distintos para lo mismo se leen como dos cosas
+    // distintas.
+    //
+    // 🔴 SELECTOR DE PREFIJO **PROPIO**, y no compartido con el fijo. Compartirlo ahorraba un
+    // control y abría un camino de corrupción silenciosa: `repartirNumero` coloca el selector
+    // leyendo el número que reparte, así que al abrir un cliente el selector acabaría puesto por
+    // el fijo; si el móvil tuviera otro prefijo, al guardar se recompondría con el del fijo y
+    // **se escribiría encima un número que el profesional nunca tecleó**. Un control de más es
+    // más barato que un teléfono cambiado sin avisar.
+    //
+    // 🔴 NO SE VE DISTINTO POR LADO (Empresa/Persona). Medido, no supuesto: `SOLO_EMPRESA` de
+    // `switchFormaJuridica.js` es `['legalName']` — la razón social y nada más—, y
+    // `docs/CONTACTOS_CAMPOS_POR_LADO.md` §3.1 pone `phone` entre los COMUNES. El móvil es un
+    // canal de contacto, no una forma jurídica: una persona tiene móvil, y una empresa tiene el
+    // de su persona de contacto — que es literalmente la víctima de este ticket. Por eso NO
+    // entra en el mapa que se le pasa a `aplicarLado`.
+    fieldMovil = createField(ROTULO_MOVIL, "mobile", "text");
+    fieldMovil.input.addEventListener("input", () => {
+      const limpio = fieldMovil.input.value.replace(/\s/g, "");
+      if (limpio !== fieldMovil.input.value) fieldMovil.input.value = limpio;
+    });
+    fieldPrefijoMovil = prefijosPais.selectorDePrefijo({});
+    // Nombre propio: dos controles con el mismo `name` dentro del mismo formulario no rompen
+    // nada aquí (se leen por referencia), pero un formulario que dice dos veces lo mismo es un
+    // formulario que alguien leerá mal más adelante.
+    fieldPrefijoMovil.name = "prefijoPaisMovil";
+    const filaMovil = createElement("div", "campo-telefono");
+    fieldMovil.wrapper.removeChild(fieldMovil.input);
+    filaMovil.appendChild(fieldPrefijoMovil);
+    filaMovil.appendChild(fieldMovil.input);
+    fieldMovil.wrapper.appendChild(filaMovil);
+
     fieldEmail = createField("Email", "email", "email");
     // A20.4: cliente empresa (opcional) — el NIF además lo exigirá VeriFactu
     fieldLegalName = createField("Razón social (empresa, opcional)", "legalName", "text");
     fieldTaxId = createField("NIF/CIF (opcional)", "taxId", "text");
+    // SCRUM-576 (CONT-03) · el selector de empresa. Se construye VACÍO: la lista de empresas sale
+    // del lote que la vista ya tiene cargado, y ese lote cambia — se rellena en `openModal`.
+    selectorEmpresa = switchFormaJuridica.selectorDeEmpresa({});
     // SCRUM-575 (CONT-02) · el aviso de NIF mal formado. Va PEGADO a su campo —y no arriba, como
     // el de duplicados— porque señala un error EN ESE campo: un mensaje lejos de su causa obliga
     // a buscarla. Nace oculto; sólo aparece con un valor escrito y mal.
@@ -1199,6 +1292,9 @@ function renderCustomersView(container) {
       alCambiar: (lado) => switchFormaJuridica.aplicarLado(lado, {
         legalName: fieldLegalName.wrapper,
         taxId: fieldTaxId.wrapper,
+        // SCRUM-576: el campo del lado PERSONA. La regla de qué se esconde no vive aquí — vive en
+        // `switchFormaJuridica`, y este mapa sólo dice DÓNDE está cada campo en este formulario.
+        companyId: selectorEmpresa.nodo,
       }),
     });
     body.appendChild(switchForma.nodo);
@@ -1217,9 +1313,14 @@ function renderCustomersView(container) {
 
     body.appendChild(fieldName.wrapper);
     body.appendChild(fieldPhone.wrapper);
+    body.appendChild(fieldMovil.wrapper); // SCRUM-590 (CONT-19): justo debajo del fijo
     body.appendChild(fieldEmail.wrapper);
     body.appendChild(fieldLegalName.wrapper);
     body.appendChild(fieldTaxId.wrapper);
+    // Va PEGADO a «Razón social» a propósito: son las dos formas de decir «la empresa de este
+    // cliente», y el ticket existe porque una de ellas —el texto libre— no vale para agrupar.
+    // Verlas juntas es lo que le enseña al profesional cuál es cuál.
+    body.appendChild(selectorEmpresa.nodo);
 
     // SCRUM-578 (c) · se comprueba al SALIR del campo, no en cada tecla: preguntar por cada
     // pulsación haría una petición por letra y el aviso parpadearía mientras se escribe.
@@ -1324,6 +1425,35 @@ function renderCustomersView(container) {
     return partes.length ? partes : null;
   }
 
+  /**
+   * SCRUM-576 (CONT-03) · DE DÓNDE SALEN LAS EMPRESAS DEL DESPLEGABLE.
+   *
+   * 🔴 SE PIDE LA LISTA, SIEMPRE. La primera versión leía `ultimoLote` —el lote que la vista de
+   * Clientes ya tiene cargado— para ahorrarse la petición, y **el banco de vistas la tumbó en el
+   * acto**: `ReferenceError: ultimoLote is not defined`. Ese identificador vive en el ámbito de
+   * `renderCustomersView`, y este formulario NO está ahí dentro — es la superficie compartida que
+   * SCRUM-591 sacó fuera para que un documento también pudiera abrirlo. Leerlo desde aquí no era
+   * una optimización: era un fallo que reventaba el modal al abrirlo.
+   *
+   * Y pedirla, además de funcionar, es lo ÚNICO correcto en los dos caminos: desde la lista, el
+   * lote podría llevar minutos ahí y no incluir una empresa creada después; desde un documento
+   * (`window.altaClienteModal`, SCRUM-591) no hay lote ninguno. Un solo camino, sin ramas.
+   *
+   * NO se espera: `openModal` es síncrono y bloquearlo pondría una petición de red entre el clic
+   * y el formulario. `refrescar` conserva lo que hubiera elegido mientras tanto, así que llegar
+   * tarde no pisa nada. Si la petición falla, el desplegable se queda con «sin empresa» y el
+   * resto del alta funciona igual: un campo opcional no puede tumbar un formulario.
+   */
+  function poblarEmpresas() {
+    const excluir = editingCustomer ? editingCustomer.id : null;
+    // Se vacía primero: si el modal se reabre para OTRO cliente, las opciones del anterior
+    // seguirían colgadas hasta que llegara la respuesta.
+    selectorEmpresa.refrescar([], excluir);
+    getCustomers("")
+      .then((lista) => { selectorEmpresa.refrescar(lista, excluir); })
+      .catch(() => { /* el campo es opcional: sin lista se queda en «sin empresa» */ });
+  }
+
   function openModal(mode, customer) {
     if (!modalBackdrop) {
       buildModal();
@@ -1351,6 +1481,10 @@ function renderCustomersView(container) {
     }
     if (avisoNif) avisoNif.hidden = true; // SCRUM-575: no arrastrar el aviso del cliente anterior
     if (fieldPrefijo) fieldPrefijo.value = prefijosPais.ESPANA.prefijo;
+    // SCRUM-590: el del móvil también. `modalForm.reset()` NO lo deja en España: el selector se
+    // construye poniendo `value`, que no marca `selected` en ninguna opción, así que un reset lo
+    // manda a la PRIMERA de la lista. Es el mismo motivo por el que la línea de arriba existe.
+    if (fieldPrefijoMovil) fieldPrefijoMovil.value = prefijosPais.ESPANA.prefijo;
     // SCRUM-579: Espana por defecto EN EL FORMULARIO, nunca en la columna. La columna es
     // nullable y sin DEFAULT a proposito: un default habria declarado por el profesional que
     // sus clientes de siempre estan en Espana. Aqui es una comodidad del alta, y en edicion lo
@@ -1361,11 +1495,19 @@ function renderCustomersView(container) {
     // nueva — nadie ha declarado nada todavía. En edición lo sobrescribe el bloque de abajo.
     switchForma.escribir(null);
 
+    // SCRUM-576 (CONT-03) · las empresas que puede elegir. Se pueblan DESPUÉS del `reset()`, que
+    // vacía el `select`, y ANTES de escribir el valor del cliente que se edita.
+    poblarEmpresas();
+
     if (editingCustomer) {
       fieldName.input.value = editingCustomer.name || "";
       // SCRUM-578: lo guardado puede venir CON prefijo o sin el (filas viejas). Se reparte para
       // que el selector no mienta, y sin tocar la fila: (d) dice que no se migra nada.
       repartirTelefono(editingCustomer.phone || "");
+      // SCRUM-590: sin esta línea, editar un cliente que TIENE móvil lo enseñaría vacío y el
+      // guardado lo dejaría intacto —porque el vacío no viaja—, así que el profesional creería
+      // haberlo borrado y no lo habría borrado. Peor que perderlo: mentir sobre él.
+      repartirMovil(editingCustomer.mobile || "");
       fieldEmail.input.value = editingCustomer.email || "";
       fieldNotes.input.value = editingCustomer.notes || "";
       // SCRUM-588: si esto no estuviera, editar un cliente BORRARIA su referencia al guardar —
@@ -1376,6 +1518,7 @@ function renderCustomersView(container) {
       fieldDtoPorDefecto.input.value = editingCustomer.dtoPorDefecto ?? "";
       fieldLegalName.input.value = editingCustomer.legalName || ""; // A20.4
       fieldTaxId.input.value = editingCustomer.taxId || "";
+      selectorEmpresa.escribir(editingCustomer.companyId ?? null); // SCRUM-576
       fieldWaOptOut.checked = !!editingCustomer.waOptOut;
       fieldTipoDestinatario.value = editingCustomer.tipoDestinatario || ""; // SCRUM-69
       // SCRUM-294-a: los tres estados NO colapsan. `|| ""` habria mandado el `false` a «no consta».
@@ -1406,6 +1549,7 @@ function renderCustomersView(container) {
     switchFormaJuridica.aplicarLado(switchForma.leer(), {
       legalName: fieldLegalName.wrapper,
       taxId: fieldTaxId.wrapper,
+      companyId: selectorEmpresa.nodo, // SCRUM-576
     });
 
     modalBackdrop.style.display = "flex";
@@ -1446,10 +1590,42 @@ function renderCustomersView(container) {
     const payload = {
       name: fieldName.input.value.trim(),
       phone: telefonoCompleto(),
+      // ═══ 🔴 SCRUM-590 (CONT-19) · EL MÓVIL SÓLO VIAJA SI HAY MÓVIL ═══════════════════════
+      //
+      // MEDIDO ejecutando `customerCreateSchema`, no deducido:
+      //   mobile: "…"        ACEPTA
+      //   mobile: ""         RECHAZA · «Too small: expected string to have >=5 characters»
+      //   mobile: null       RECHAZA · «expected string, received null»
+      //   (ausente)          ACEPTA
+      //
+      // O sea: mandar el vacío —en cualquiera de sus dos formas— haría que **guardar un cliente
+      // sin móvil devolviera un 400**. El campo es opcional, y un campo opcional que rompe el
+      // guardado del cliente entero se ha vuelto obligatorio de rebote. Por eso se OMITE.
+      //
+      // ⚠️ Y la consecuencia, dicha en vez de descubierta: borrar el móvil de un cliente que lo
+      // tiene NO lo borra (ausente = «no toques este campo»). Es la misma limitación que ya
+      // tiene `phone` — que además hoy manda `""` y por eso da 400, ver el hallazgo del PR—:
+      // se hereda, no se estrena, y se cierra el día que Zod acepte `null` en los dos a la vez.
+      //
+      // 🔴 `|| undefined` Y NO UN SPREAD CONDICIONAL, y lo decidió un guard: `JSON.stringify`
+      // BORRA las claves cuyo valor es `undefined`, así que en el cable pasa exactamente lo
+      // mismo —la clave no viaja— pero aquí queda ESCRITA. Con el spread, el censo de SCRUM-692
+      // no veía `mobile` en este formulario y lo declaraba «editable sólo en la ficha 360»: una
+      // asimetría que no existe. Un payload que un censo no puede leer es un payload que nadie
+      // puede vigilar.
+      // 🔴 Y LA LECTURA VA INLINE (`movilCompleto()`), no por una variable de arriba: el censo de
+      // SCRUM-692 comprueba que TODA clave del payload salga de un control del formulario, y con
+      // `const movil = …` sólo veía `movil || undefined` — una expresión que no toca ningún
+      // control. Su veredicto era «el modal envía campos que NO MUESTRA», que es exactamente la
+      // acusación que ese guard existe para hacer, y aquí habría sido falsa.
+      mobile: movilCompleto() || undefined,
       email: fieldEmail.input.value.trim(),
       notes: fieldNotes.input.value.trim(),
       legalName: fieldLegalName.input.value.trim() || null, // A20.4
       taxId: fieldTaxId.input.value.trim() || null,
+      // SCRUM-576 (CONT-03): «sin empresa» viaja como `null`, nunca como `""` ni como `0`. Es la
+      // misma regla de «ausente ≠ vacío» que SCRUM-588 dejó escrita dos campos más abajo.
+      companyId: selectorEmpresa.leer(),
       // SCRUM-588: «ausente ≠ vacio». Lo vacio viaja como null, NUNCA como cadena vacia: una
       // cadena vacia diria «tiene referencia, y es nada», que no es lo mismo que no tenerla.
       internalRef: fieldInternalRef.input.value.trim() || null,

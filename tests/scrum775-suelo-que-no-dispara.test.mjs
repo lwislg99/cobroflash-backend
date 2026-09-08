@@ -293,21 +293,47 @@ test('SCRUM-775 · el arreglo está puesto: `censo-tablero-vs-arbol.mjs` ya no p
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // LAS MUTACIONES QUE ME TUMBAN — las ejecuta `npm run meta:mutaciones`
 // ═════════════════════════════════════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 EL ANCLA SE ACORTÓ EL 8-SEP-2026, Y ÉSTA ES LA RAZÓN — que va aquí para que dentro de dos
+// semanas nadie tenga que reconstruirla.
+//
+//   ANTES:  '  const noSeFia = p.ticketsCensados === 0 || suelo.length > 0;'   ← la LÍNEA ENTERA
+//   AHORA:  'suelo.length > 0'                                                 ← sólo la DECISIÓN
+//
+// QUÉ LA MOVIÓ: SCRUM-804 añadió un tercer término a esa misma expresión —`|| esCiego(rastro
+// .resumen)`, la dimensión de rama viva—. La línea dejó de ser idéntica, el `includes(mut.de)`
+// del meta-guard no la encontró y el job salió **CIEGO con exit 2**. Ni rojo ni verde: «no supe
+// mirar», que es lo que este instrumento tiene que decir y dijo.
+//
+// POR QUÉ ESTE TROZO Y NO OTRO. El defecto que SCRUM-775 vigila es EXACTAMENTE éste: preguntar
+// `suelo.ok === false` sobre un ARRAY, que nunca es cierto, en vez de `suelo.length > 0`. Anclar
+// a la línea entera ataba la declaración a los VECINOS de esa decisión, y los vecinos cambian:
+// cualquiera que añada un término a `noSeFia` —que es lo normal, es la puerta del suelo— vuelve
+// a caducarla. `suelo.length > 0` es la decisión misma, y no cambia mientras el guard tenga
+// sentido. Medido: aparece **una sola vez** en el fichero, así que el `replace` (que sustituye la
+// PRIMERA aparición) no puede acertarle a otro sitio.
+//
+// ⛔ Y NO SE HA RELAJADO NADA. Las dos mutaciones siguen produciendo el MISMO código que antes en
+// la parte que importa, y los términos que SCRUM-804 añadió se conservan — o sea que ① sigue
+// dejando pasar un árbol encogido y ② sigue tumbando uno sano. Es la lección de SCRUM-636 y la
+// que volvió a morder hoy en SCRUM-632: una cita por posición caduca; una cita por contenido
+// estable, no.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // ① El defecto original, reconstruido: el suelo vuelve a preguntar por una propiedad que el
     // array nunca tiene. El CLI vuelve a salir con 0 sobre un árbol encogido.
     fichero: 'scripts/censo-tablero-vs-arbol.mjs',
-    de: '  const noSeFia = p.ticketsCensados === 0 || suelo.length > 0;',
-    a: '  const noSeFia = p.ticketsCensados === 0 || (suelo && suelo.ok === false);',
+    de: 'suelo.length > 0',
+    a: '(suelo && suelo.ok === false)',
     cae: 'SCRUM-775 · 🔴 EL QUE DECIDE: con el censo encogido el CLI sale con 2 y DICE por qué',
   },
   {
     // ② La avería CONTRARIA: un suelo que salta siempre. `[]` es truthy, así que preguntar por el
     // array sin más pondría rojo también el árbol sano — y un guard que grita siempre se apaga.
     fichero: 'scripts/censo-tablero-vs-arbol.mjs',
-    de: '  const noSeFia = p.ticketsCensados === 0 || suelo.length > 0;',
-    a: '  const noSeFia = p.ticketsCensados === 0 || Boolean(suelo);',
+    de: 'suelo.length > 0',
+    a: 'Boolean(suelo)',
     cae: 'SCRUM-775 · ✅ POSITIVO: con el censo SIN encoger el CLI sigue saliendo con 0',
   },
   {

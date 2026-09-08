@@ -186,6 +186,12 @@ test('SCRUM-723 · sin base que resolver dice que NO SABE, y no cae hacia `origi
 //
 // LAS PIEZAS DE HOY, medidas el 4-sep-2026 sobre `origin/main` = bf8cef31. Se declaran por NOMBRE
 // y no por línea: referenciar por posición caduca al primer commit (SCRUM-710).
+// 🔴 SCRUM-716c (8-sep-2026) · entra `tests/scrum716c-la-memoria-del-vigia.test.mjs`.
+//
+// Nombra `refs/remotes/origin/main` para FABRICAR esa referencia en un repo de usar y tirar,
+// no para compararse contra la de este repositorio. El vigía hace `git rev-parse origin/main`,
+// así que sin esa ref el repo de prueba no serviría para ejercitarlo. Es una referencia móvil
+// de un repo que vive tres segundos dentro del temporal del sistema y se borra al acabar.
 const AMBITO_DECLARADO = [
   'MARCADOR_MICROCOPY_DESGLOSE',
   'NOMBRE_IMPUESTO_POR_DEFECTO',
@@ -329,7 +335,8 @@ const INDIRECTAS_DECLARADAS = [
   // resuelta en la instantánea—, y una lista que declara de más deja de describir el árbol.
   'scripts/_censo-alcanzabilidad.mjs',
   'tests/_fixture-alcanzabilidad.mjs',             // el `origin/main` del repo SINTÉTICO, que no es el de nadie
-  'tests/scrum753-censo-de-alcanzabilidad.test.mjs',  // los mensajes que explican la regla R10
+  'tests/scrum753-censo-de-alcanzabilidad.test.mjs',
+  'tests/scrum716c-la-memoria-del-vigia.test.mjs',  // los mensajes que explican la regla R10
   // SCRUM-637 · el generador del borrado de ramas ya mergeadas. Nombra `origin/main` en
   // `git branch -r --merged origin/main` —un subcomando que no está en `LECTORES`, así que llega
   // aquí y no a la lista de arriba— y en la prosa que explica por qué cruza DOS fuentes.
@@ -338,6 +345,13 @@ const INDIRECTAS_DECLARADAS = [
   // mergeada, que es la respuesta inútil. EN SECO por defecto y fuera de CI.
   // Lo retira: quien borre `scripts/verificacion-s5/`.
   'scripts/verificacion-s5/ramas-borrables.mjs',
+  // SCRUM-804 · el guard de la dimensión «rama viva». Nombra `main` en la PROSA que explica la
+  // regla —«¿el trabajo de este ticket está dentro de `main`?»— y en la clase `'en-main'` que
+  // devuelve el clasificador de SCRUM-387. NO compara contra la referencia móvil: su árbitro le
+  // pregunta a `git merge-base --is-ancestor` contra `censo.inst.sha`, el sha que la instantánea
+  // de SCRUM-753 CONGELA. Es el mismo motivo por el que están arriba `scrum753` y `scrum775`.
+  // Lo retira: quien borre la dimensión de rama viva del censo del tablero.
+  'tests/scrum804-la-rama-viva.test.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {
