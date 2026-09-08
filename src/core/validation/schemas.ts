@@ -86,6 +86,27 @@ function conDecimales(base: z.ZodNumber, decimales: number, queEs: string) {
 
 const QuoteLineSchema = z.object({
   concept: z.string().min(1),
+  /**
+   * SCRUM-632 · LA DESCRIPCIÓN DE LA LÍNEA, que NO es la del producto.
+   *
+   * Decisión del fundador (8-sep-2026): «la descripción del presupuesto/factura es DISTINTA a la
+   * de producto: es algo que aparece en el doc, que se utiliza para poner el texto que quiera el
+   * merchant». Son DOS datos: el del CATÁLOGO lo mantiene quien mantiene el catálogo; el de la
+   * LÍNEA lo escribe el profesional y es SUYO. Hasta hoy sólo existía el primero, y por eso el
+   * front la borraba al teclear el concepto: creía que había una sola.
+   *
+   * Sin declararla aquí, `z.object` la BORRA en silencio —lo mismo que le pasaba a `suplido`
+   * antes de SCRUM-500 y a `costeUnitario` antes de SCRUM-661— y no llegaría nunca a
+   * `Quote.lines`.
+   *
+   * 🔴 `.optional()` Y NUNCA `.default('')`: que FALTE significa «esta línea no lleva
+   * descripción», que es lo que tienen todas las líneas de siempre. Un default convertiría el
+   * silencio de miles de líneas viejas en una afirmación que nadie hizo.
+   *
+   * ⚠️ `prisma/schema.prisma` NO se toca: `Quote.lines` es `Json`, así que esta clave es todo el
+   * cambio de esquema. Sin migración y sin ALTER.
+   */
+  description: z.string().optional(),
   // SCRUM-655 · OPCIONALES EN EL OBJETO, OBLIGATORIAS EN EL REFINE. Una CABECERA de apartado no
   // lleva cantidad ni precio —es un renglón de título—, así que exigirlas aquí la haría imposible.
   // Pero relajarlas sin más debilitaría la puerta para las líneas normales, que es donde vive el
