@@ -281,38 +281,37 @@ pantalla con ese literal exacto**. Subirlos a acción principal no estrena texto
 > Su hueco declarado nº 5 decía: *«la rama de 816 se ha MEDIDO, no ejecutado»*. **Aquí se ha
 > ejecutado**: se ha hecho `checkout` de ella, se ha corrido su tanda y se ha montado en navegador.
 
-## Dónde coinciden las dos sesiones, y dónde no
+## Las dos sesiones, y cómo se resolvieron las dos discrepancias
 
-| Estado | Sesión previa (PASO 0) | Esta sesión | |
+| Estado | Sesión previa (PASO 0) | Yo, en la primera vuelta | **Decisión del fundador (8-sep-2026)** |
 |---|---|---|---|
-| `pendiente_agendar` | **Agendar** | **Agendar** | ✅ construido |
-| `agendado` | **▶ Empezar** | escalera de documentos | ⚠️ **DISCREPAN** |
-| `en_curso` | escalera de documentos | escalera de documentos | ✅ sin cambio |
-| `terminado` | Cobrar; si no hay saldo, **Cerrar trabajo** | Cobrar; si no, escalera de documentos | ⚠️ **DISCREPAN** |
-| `cerrado` | ninguna | ninguna | ✅ construido |
+| `pendiente_agendar` | Agendar | Agendar | **Agendar** |
+| `agendado` | **▶ Empezar** | escalera de documentos | **▶ Empezar** — gana la sesión previa |
+| `en_curso` | documentos | documentos | **documentos**, sin cambio |
+| `terminado` | Cobrar; si no, **Cerrar trabajo** | Cobrar; si no, documentos | **documentos** — gana mi objeción |
+| `cerrado` | ninguna | ninguna | **ninguna** |
 
-**Construido lo que no admite discusión** (los dos extremos), y las dos discrepancias quedan
-ABIERTAS a decisión del fundador. Ninguna estrena rótulo: los ocho literales ya están en pantalla.
+### `agendado` → «▶ Empezar»: la tabla original del fundador estaba mal, y lo dice él
 
-### ⚠️ Mi objeción a «Cerrar trabajo» como acción principal
+> *«Un trabajo agendado NO SE HA EMPEZADO, y prepararle el documento de entrega es el mismo error
+> que hacerlo sin fecha, solo que más tarde. Mi tabla del 816 decía "agendado / en marcha → Nuevo
+> albarán" metiendo dos cosas distintas en una fila, que es justo lo que este ticket vino a
+> arreglar.»*
 
-Es un buen argumento —`puedeCerrarTrabajo` es exactamente `status === 'terminado'`, así que no
-inventa una transición— pero choca con una decisión deliberada que ya está escrita:
+Y con ello, una instrucción de método que queda escrita: **si una medición tumba una decisión
+firmada, gana la medición — se dice y se construye, no se para.** La primera vuelta paró por
+corregir algo firmado; eso era de más.
 
-> *«Cerrar es el único acto IRREVERSIBLE de la FSM y su explicación no se esconde: se abre en el
-> modal ENTERA… aquí el riesgo no es el clic accidental, es no entender lo que se hace.»*
-> (SCRUM-344, en `jobsView.js`)
+### `terminado` sin saldo → NO se sube «Cerrar trabajo»
 
-Subirlo a acción principal pone **un acto irreversible a un clic en la fila**, que es justo lo que
-esa decisión evita. Y hay un orden que se perdería: un Trabajo terminado sin albarán todavía tiene
-que emitirlo antes de cerrar. Lo dejo sin construir.
+> 🔒 **Un acto irreversible no puede ser NUNCA la acción principal de una fila. La acción principal
+> es la que se pulsa sin leer: para eso está en primaria y por eso funciona. Poner ahí lo que no
+> tiene vuelta atrás es usar el mecanismo justo al revés de para lo que sirve.** (Fundador.)
 
-### Sobre `agendado` → «▶ Empezar»
-
-La propuesta previa **me parece mejor que la mía**, y mejor que la tabla original del ticket 816
-(*«Agendado / en marcha → Nuevo albarán»*): un Trabajo agendado no se ha empezado, así que
-prepararle el documento de entrega es el mismo error que hacerlo sin fecha, sólo que más tarde.
-No lo he construido porque contradice una tabla que el fundador escribió, y esa corrección la firma él.
+Se queda en el «⋯» con su modal, que es la decisión de SCRUM-344 y sigue vigente. Y el segundo
+argumento lo remata: **un terminado sin albarán todavía tiene que emitirlo**, así que la escalera
+de documentos es lo correcto también por orden, no sólo por seguridad. Hay test por los dos lados:
+que `cerrar` no entre en la escalera, y que un terminado sin albarán proponga emitirlo.
 
 ## Lo construido, y verificado corriendo
 
@@ -394,11 +393,21 @@ La entrada de arriba lo midió contra `main`; aquí se ha vuelto a comprobar **c
   fichero era el único del árbol que lo usaba). No molestaba mientras la escalera no mirase el
   estado. Se corrige **el fixture**, no la lista de controles esperados.
 
-## Hallazgo reportado, NO arreglado (regla 37)
+## El hallazgo que se reportó SIN tocar, y que el fundador mandó cerrar aquí
 
-**La sección de Albaranes del detalle sigue ofreciendo «+ Nuevo albarán» en un Trabajo cerrado.**
-Es un `btn-secondary btn-sm` que no pasa por la escalera, así que este ticket no lo alcanza: se ha
-arreglado lo que el producto **propone**, no todo lo que permite.
+La sección de Albaranes del detalle seguía ofreciendo «+ Nuevo albarán» en un Trabajo CERRADO.
+Es un `btn-secondary` que **no pasa por la escalera**, así que el arreglo de arriba no lo
+alcanzaba: se había arreglado lo que el producto PROPONE y quedaba abierto lo que PERMITE.
+
+> *«Es el mismo defecto por una puerta que la escalera no vigila.»* (Fundador.)
+
+Cabía —mismo fichero ya tocado, una condición— así que se cierra aquí. Se **oculta la barra**
+en vez de deshabilitar el botón: deshabilitar sin decir por qué deja un control muerto, y
+decirlo exigiría un texto que nadie ha firmado (regla 30). Y **sólo en `cerrado`**: en los
+demás estados el profesional puede tener su motivo y el estado es reversible.
+
+El guard lo mide **con control positivo**: la barra TIENE que verse en un Trabajo en curso. Sin
+eso, un «no se ve» en el cerrado podría significar que la sección entera dejó de pintarse.
 
 ## Lo que NO se ha tocado
 
