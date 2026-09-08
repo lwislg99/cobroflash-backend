@@ -211,7 +211,9 @@ export function movimientosConfirmados(candidatos, desdeMs, raiz, stat = fs.stat
  * nombres que empiezan por punto (`_claves-duplicadas.mjs:77`, entre otros), así que el control
  * positivo no puede poner rojo a nadie. `fs.watch`, en cambio, sí la ve.
  */
-export async function controlPositivoDeVigilancia(raiz, familias = FAMILIAS_VIGILADAS) {
+// `watch` se inyecta para poder ejercitar el control positivo CON LA CAPA DE PLATAFORMA
+// APAGADA, que es la condicion exacta de `ubuntu-latest`: instalada y sin entregar nada.
+export async function controlPositivoDeVigilancia(raiz, familias = FAMILIAS_VIGILADAS, watch = fs.watch) {
   const dir = path.join(raiz, 'tests');
   if (!fs.existsSync(dir)) return { ok: false, motivo: 'no hay `tests/` que vigilar' };
 
@@ -232,12 +234,10 @@ export async function controlPositivoDeVigilancia(raiz, familias = FAMILIAS_VIGI
   fs.utimesSync(viejo, hace, hace);
 
   const desde = instanteDeReferencia();
-  const v = abrirVigilancia(raiz, familias);
-  if (v.sinVigilar.length === familias.length) {
-    v.cerrar();
-    fs.rmSync(viejo, { force: true });
-    return { ok: false, motivo: `no he podido vigilar NINGUNA familia: ${v.sinVigilar.join(', ')}` };
-  }
+  // 🔴 SCRUM-754b · SE ABRE EL OBSERVADOR COMPLETO, no sólo `fs.watch`. Que la vigilancia en vivo
+  // no entregue —lo que pasa en `ubuntu-latest`, medido— ya NO apaga el control positivo: la
+  // huella antes/después contesta igual, y es la capa que este control tiene que probar.
+  const v = abrirObservacion(raiz, familias, watch);
 
   const sonda = path.join(dir, `.quietud-sonda-${process.pid}-${Date.now().toString(36)}.tmp`);
   try {
@@ -250,17 +250,24 @@ export async function controlPositivoDeVigilancia(raiz, familias = FAMILIAS_VIGI
     fs.rmSync(sonda, { force: true });
   }
 
-  const movidos = movimientosConfirmados(v.candidatos, desde, raiz);
-  const vioLaSonda = movidos.some((m) => m.includes(path.basename(sonda)));
+  const movidos = v.movimientos(desde);
+  // 🔴 LA SONDA NACIÓ Y MURIÓ: puede salir con su NOMBRE (si `fs.watch` entregó) o como su
+  // DIRECTORIO (`tests/`, que es lo que la huella puede decir siempre). Las dos cuentan: lo que
+  // se le exige al instrumento es DENUNCIAR el transitorio, no nombrarlo.
+  const dirSonda = path.relative(raiz, path.dirname(sonda)).split(path.sep).join('/') + '/';
+  const vioLaSonda = movidos.some((m) => m.includes(path.basename(sonda)) || m.startsWith(dirSonda + ' '));
   const inventaLaLectura = movimientosConfirmados([viejo], desde, raiz).length > 0;
   fs.rmSync(viejo, { force: true }); // fuera de la ventana: borrarlo antes generaría su evento
 
   if (!vioLaSonda) {
     return {
       ok: false,
-      motivo: 'la vigilancia NO ha visto un fichero que ha nacido y muerto dentro de `tests/` '
-        + 'delante de ella. Está instalada y no entrega: en esta plataforma no puedo afirmar que '
-        + 'el árbol estuviera quieto, así que tampoco puedo firmar ningún veredicto sobre él.'
+      motivo: 'el observador NO ha visto un fichero que ha nacido y muerto dentro de `tests/` '
+        + 'delante de él — NI por el nombre (vigilancia en vivo) NI por el `mtime` de su '
+        + 'directorio (huella antes/después). La huella NO depende de la plataforma, así que esto '
+        + 'ya no se arregla declarando CIEGO: o el perímetro no incluye `tests/`, o este sistema '
+        + 'de ficheros no actualiza el `mtime` del directorio al crear y borrar una entrada. Hay '
+        + 'que ir a mirarlo: sin eso no se puede firmar ningún veredicto sobre este árbol.'
         + (v.sinVigilar.length ? ` (sin vigilar: ${v.sinVigilar.join(', ')})` : ''),
     };
   }
@@ -273,4 +280,187 @@ export async function controlPositivoDeVigilancia(raiz, familias = FAMILIAS_VIGI
     };
   }
   return { ok: true, sinVigilar: v.sinVigilar };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 LA HUELLA · SCRUM-754b — el observador que NO depende de la plataforma
+//
+// ── EL HECHO QUE LO TRAE ────────────────────────────────────────────────────────────────────
+// El hueco que este fichero dejó DECLARADO se cumplió palabra por palabra: en `ubuntu-latest`
+// `fs.watch` recursivo se instala y **no entrega**, así que el control positivo salió rojo y
+// `meta:mutaciones` salió CIEGO con exit 2. Y un CIEGO permanente se ignora igual que un rojo
+// fijo: el instrumento habría quedado apagado justo donde más falta hace.
+//
+// ── LO QUE NO SE TOCA ───────────────────────────────────────────────────────────────────────
+// La PREGUNTA —«¿estuvo el árbol quieto mientras medía?»— es obligatoria y sigue igual. Lo que
+// cambia es el INSTRUMENTO con el que se contesta. Una vigilancia en vivo era UNA forma de
+// contestarla, no la pregunta.
+//
+// ── POR QUÉ UNA HUELLA DE CONTENIDO NO BASTABA, Y QUÉ LA ARREGLA ────────────────────────────
+// La cabecera de arriba lo dice, y sigue siendo cierto: el caso que fabricó los tres verdes
+// falsos es un fichero que **nace y muere** dentro de la ventana, así que en las dos fotos está
+// AUSENTE. Una huella del CONTENIDO habría firmado «árbol quieto» sobre esa misma pasada.
+//
+// 🔴 Pero el fichero no es el único que deja rastro: **su DIRECTORIO sí lo deja**. Crear o borrar
+// una entrada actualiza el `mtime` del directorio que la contiene — POSIX lo garantiza para
+// `link`/`unlink` y NTFS hace lo mismo. MEDIDO aquí antes de escribir esto: un fichero creado y
+// borrado en el mismo instante deja el directorio con `mtime` DENTRO de la ventana, con el
+// fichero ya inexistente.
+//
+// Así que la huella mira las DOS cosas:
+//   · el `mtime` de cada FICHERO ....... lo escribieron mientras medía
+//   · el `mtime` de cada DIRECTORIO .... algo NACIÓ o MURIÓ dentro mientras medía
+//   · las altas y bajas de rutas ....... apareció / desapareció, con nombre
+//
+// Y conserva la mitad que impide apagar el instrumento por el otro lado: **LEER no mueve el
+// `mtime`**. Es incluso más limpia que `fs.watch`, que en Windows emite `change` al leer y
+// obligaba a confirmar cada candidato contra el disco. Los guards que importan de `dist/` —los
+// que el censo fechado de la cabecera midió como los únicos que «movían» el perímetro— no
+// pueden salir CIEGOS por esta vía. El recuento no se repite aquí: vive en esa medición, con
+// su fecha, y copiarlo sería una segunda cifra que envejece sola (SCRUM-737).
+//
+// ── 🔴 SU LÍMITE, ESCRITO Y NO CALLADO ──────────────────────────────────────────────────────
+// ① **No ve un cambio cuyo autor restaure también los tiempos.** Quien escriba un fichero y
+//    después le devuelva su `mtime` con `utimes` —y, si creó y borró, también el del
+//    directorio— es invisible para esta huella. No es hipotético: `utimesSync` está a una
+//    llamada. Lo que NO puede hacer es ocurrir por accidente.
+// ② **Dice DÓNDE, no siempre QUÉ.** De un transitorio queda el directorio, no el nombre del
+//    fichero: la huella acusa `tests/` y no `tests/x.mjs`. Por eso `fs.watch` NO se retira —
+//    donde entrega, añade el nombre; donde no, la huella sigue contestando la pregunta.
+// ③ **Granularidad del sistema de ficheros.** Un cambio que caiga dentro del mismo tic de
+//    `mtime` que la línea base no se distingue de ella. Es la misma medida que ya sostiene
+//    `MARGEN_MS` (aquí: salto mediano 1,0 ms, máximo 4,0 ms), y por eso el corte lleva margen.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * La huella del perímetro: cada ruta con su `mtime` y si es directorio.
+ *
+ * 🔴 SUELO DE CEGUERA: si no ve NADA, lanza. Una huella vacía comparada con otra huella vacía da
+ * «no se movió nada», que es indistinguible de «no he sabido mirar» — y ése es exactamente el
+ * error que este fichero existe para no volver a cometer.
+ */
+export function huellaDelPerimetro(raiz, familias = FAMILIAS_VIGILADAS) {
+  const huella = new Map();
+  const sinMirar = [];
+  const anda = (dir) => {
+    let entradas;
+    try {
+      entradas = fs.readdirSync(dir, { withFileTypes: true });
+      huella.set(dir, { m: fs.statSync(dir).mtimeMs, dir: true });
+    } catch (e) {
+      // Un directorio que desaparece a mitad del barrido ES movimiento, y se anota como tal en
+      // vez de tragarse: `readdir` fallando es un dato, no un contratiempo.
+      sinMirar.push(`${dir} (${e.code || e.message})`);
+      return;
+    }
+    for (const d of entradas) {
+      const p = path.join(dir, d.name);
+      if (d.isDirectory()) { anda(p); continue; }
+      try { huella.set(p, { m: fs.statSync(p).mtimeMs, dir: false }); }
+      catch (e) { sinMirar.push(`${p} (${e.code || e.message})`); }
+    }
+  };
+
+  const sinFamilia = [];
+  for (const fam of familias) {
+    const dir = path.join(raiz, fam);
+    if (!fs.existsSync(dir)) { sinFamilia.push(`${fam} (no existe)`); continue; }
+    anda(dir);
+  }
+
+  if (huella.size === 0) {
+    throw new Error(
+      'HUELLA CIEGA: el barrido del perímetro no ha visto NI UNA ruta. Comparar dos huellas '
+      + 'vacías da «el árbol no se movió», que es lo mismo que «no he mirado» con otra cara. '
+      + `Familias pedidas: ${familias.join(', ')}${sinFamilia.length ? ` · sin leer: ${sinFamilia.join(', ')}` : ''}`,
+    );
+  }
+  return { huella, sinFamilia, sinMirar };
+}
+
+/**
+ * Lo que cambió entre dos huellas, en rutas relativas y con su motivo.
+ *
+ * `propias` es el mismo descarte por BYTES que usa la vía de `fs.watch`: lo que escribió el
+ * propio instrumento es la medición, no el árbol moviéndose. No se descarta por ruta (taparía
+ * justo lo que hay que ver: que OTRO toque esa misma pieza mientras se mide).
+ */
+export function movimientosPorHuella(antes, despues, desdeMs, raiz, propias = null) {
+  const out = [];
+  const rel = (abs) => path.relative(raiz, abs).split(path.sep).join('/');
+
+  const esMia = (abs) => {
+    const mios = propias && propias.get(abs);
+    if (!mios) return false;
+    let ahora = null;
+    try { ahora = fs.readFileSync(abs); } catch { return false; }
+    if (Buffer.compare(ahora, mios) === 0) return true;
+    out.push(`${rel(abs)} — ES UNA PIEZA MÍA Y YA NO TIENE MIS BYTES: alguien más la ha tocado `
+      + 'mientras la usaba de mutación');
+    return true;
+  };
+
+  for (const [abs, d] of despues) {
+    if (!antes.has(abs)) {
+      if (esMia(abs)) continue;
+      out.push(`${rel(abs)} — apareció mientras medía`);
+      continue;
+    }
+    // 🔴 SE COMPARA CONTRA SU PROPIA LÍNEA BASE, NO CONTRA EL RELOJ — y no es un detalle: es la
+    // ventaja que tiene la huella y que `fs.watch` no puede tener.
+    //
+    // El corte por reloj (`mtime >= desde`) existe porque la vigilancia en vivo NO tiene foto
+    // previa: sin ella hay que preguntarle la hora al sistema, y de ahí sale todo el aparato de
+    // `MARGEN_MS` (desfase de `Date.now()` + granularidad del FS). Ese margen tiene un coste
+    // escrito: **los primeros 25 ms de cada pasada no se vigilan**.
+    //
+    // MEDIDO al probar esto: el control positivo escribe su sonda dentro de esos 25 ms, así que
+    // por reloj el transitorio NO salía. Aquí no hace falta ninguna hora — hay dos fotos, y basta
+    // con que el valor haya CAMBIADO. Sin ventana ciega y sin margen que ajustar.
+    if (d.m === (antes.get(abs) || {}).m) continue;   // mismo `mtime` que antes: no se tocó
+    if (esMia(abs)) continue;
+    out.push(d.dir
+      // El transitorio: el fichero ya no está, pero su directorio lo delata.
+      ? `${rel(abs)}/ — algo nació o murió aquí dentro mientras medía`
+      : `${rel(abs)} — lo escribieron mientras medía`);
+  }
+  for (const [abs] of antes) {
+    if (despues.has(abs)) continue;
+    if (esMia(abs)) continue;
+    out.push(`${rel(abs)} — desapareció mientras medía`);
+  }
+  return [...new Set(out)].sort();
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * EL OBSERVADOR COMPLETO · las DOS capas, y cuál manda.
+ *
+ *   ② LA HUELLA (antes/después) — obligatoria, y es la que contesta la pregunta. Puros
+ *      `readdir` y `stat`: UNA sola implementación en todas las plataformas, así que ejercitarla
+ *      en Windows ejercita exactamente el mismo código que corre en `ubuntu-latest`.
+ *   ① `fs.watch` — OPCIONAL, y sólo AÑADE. Donde entrega, pone el NOMBRE del fichero transitorio
+ *      que la huella sólo puede situar en su directorio. Donde no entrega —CI de Linux, medido—
+ *      no resta nada: la huella sigue contestando.
+ *
+ * 🔴 POR ESO ESTO YA NO PUEDE SALIR CIEGO POR LA PLATAFORMA. Antes, que `fs.watch` no entregara
+ * apagaba el instrumento entero. Ahora es un acompañante: se declara que no entregó y se sigue.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+export function abrirObservacion(raiz, familias = FAMILIAS_VIGILADAS, watch = fs.watch) {
+  const { huella: antes, sinFamilia } = huellaDelPerimetro(raiz, familias);
+  const vigia = abrirVigilancia(raiz, familias, watch);
+  return {
+    sinFamilia,
+    // Lo que `fs.watch` no ha podido vigilar. Ya NO es motivo de CIEGO: es una nota del veredicto.
+    sinVigilar: vigia.sinVigilar,
+    cerrar: () => vigia.cerrar(),
+    /** Los movimientos confirmados por las dos capas, sin repetir. */
+    movimientos(desdeMs, propias = null) {
+      const { huella: despues } = huellaDelPerimetro(raiz, familias);
+      const porHuella = movimientosPorHuella(antes, despues, desdeMs, raiz, propias);
+      const porVigilancia = movimientosConfirmados(vigia.candidatos, desdeMs, raiz, undefined, propias);
+      return [...new Set([...porHuella, ...porVigilancia])].sort();
+    },
+  };
 }

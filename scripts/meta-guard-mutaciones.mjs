@@ -69,7 +69,7 @@ import { correspondencia, destinoEnDist, emitirDesdeFuente } from './frontera-di
 // 🔴 SCRUM-754 · quién vigila que el árbol no se mueva mientras se mide. Vive aparte por lo mismo
 // que la marca: es una pieza que otros censos van a necesitar, y copiarla sería la regla 2.
 import {
-  abrirVigilancia, movimientosConfirmados, controlPositivoDeVigilancia, GRACIA_MS, FAMILIAS_VIGILADAS,
+  abrirObservacion, controlPositivoDeVigilancia, GRACIA_MS, FAMILIAS_VIGILADAS,
   instanteDeReferencia,
 } from './_arbol-quieto.mjs';
 
@@ -404,7 +404,9 @@ export async function correr(guard, propias = null) {
   // medía». Lo había escrito yo, un milisegundo antes; sus subprocesos lo IMPORTAN, y en Windows
   // leer emite `change`, así que entraba como candidato y el corte del `mtime` lo daba por movido.
   const desde = instanteDeReferencia();
-  const vigia = abrirVigilancia(RAIZ);
+  // SCRUM-754b · las DOS capas. La huella antes/despues es la que contesta la pregunta en
+  // cualquier plataforma; `fs.watch` solo ANADE el nombre del transitorio donde entrega.
+  const vigia = abrirObservacion(RAIZ);
   const flujo = run({
     files: [path.join(DIR_TESTS, guard)],
     cwd: RAIZ,
@@ -436,7 +438,7 @@ export async function correr(guard, propias = null) {
   // cerrar sin esperarlos devolvería «quieto» sin haber mirado, que es el defecto que se persigue.
   await new Promise((s) => setTimeout(s, GRACIA_MS));
   vigia.cerrar();
-  const movidos = movimientosConfirmados(vigia.candidatos, desde, RAIZ, undefined, propias);
+  const movidos = vigia.movimientos(desde, propias);
   return { pasados, caidos, errores, movidos, sinVigilar: vigia.sinVigilar, vigilada: true };
 }
 

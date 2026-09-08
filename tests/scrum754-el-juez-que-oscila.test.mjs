@@ -49,6 +49,7 @@ import ts from 'typescript';
 import {
   FAMILIAS_VIGILADAS, porQueEsMovimiento, movimientosConfirmados, abrirVigilancia,
   controlPositivoDeVigilancia, MARGEN_MS, instanteDeReferencia,
+  huellaDelPerimetro, movimientosPorHuella, // SCRUM-754b
 } from '../scripts/_arbol-quieto.mjs';
 import { aplicarUna } from '../scripts/meta-guard-mutaciones.mjs';
 import { procesoVivo, restaurarDesdeMarca, marcarEnVuelo } from '../scripts/_marca-de-arbol.mjs';
@@ -495,3 +496,123 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'una marca de OTRA pasada VIVA no se repara',
   },
 ];
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// ⑥ SCRUM-754b · EL INSTRUMENTO YA NO DEPENDE DE LA PLATAFORMA
+//
+// EL HECHO: el hueco que este fichero dejó DECLARADO se cumplió palabra por palabra. En
+// `ubuntu-latest` `fs.watch` recursivo se instala y NO ENTREGA, así que el control positivo salió
+// rojo y `meta:mutaciones` salió CIEGO con exit 2. Con eso en `main`, el juez habría quedado
+// apagado en TODA rama que pase por CI — y un CIEGO permanente se ignora igual que un rojo fijo.
+//
+// 🔴 CÓMO SE PRUEBA AQUÍ LO QUE PASA ALLÍ, Y POR QUÉ ESTO NO ES «PROBARLO SÓLO EN WINDOWS».
+//
+// La objeción es correcta y es la que manda: `fs.watch` tiene un backend por plataforma
+// —ReadDirectoryChangesW aquí, inotify allí—, así que verlo funcionar en Windows no dice NADA de
+// Linux. Por eso el arreglo NO es otro `fs.watch`: es una HUELLA de `readdir` + `stat`, que tiene
+// UNA sola implementación en todas las plataformas. Ejercitarla aquí ejercita exactamente el
+// mismo código que corre en `ubuntu-latest`.
+//
+// Y la condición de allí se reproduce EXACTAMENTE: se inyecta un `fs.watch` que se instala sin
+// reventar y no llama al callback jamás — que es, literalmente, lo que hace el de Linux según el
+// rojo del CI. Si el instrumento sigue discriminando con esa capa muda, lo que queda en pie es la
+// que no depende de la plataforma.
+//
+// ⚠️ LO QUE ESTO NO ES: una ejecución en `ubuntu-latest`. No hay Linux en esta máquina —ni WSL, ni
+// docker— y el CI sólo dispara con `pull_request`/`push` a `main`, que abre el fundador. Queda
+// dicho: la prueba de que el backend de Linux se comporta como el mudo la da el rojo del CI que
+// originó esto; lo que se prueba aquí es que con ese backend mudo el instrumento SIGUE contestando.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/** Un `fs.watch` que se instala sin reventar y NO ENTREGA NADA: la condición de ubuntu-latest. */
+const watchMudo = () => ({ close() {} });
+
+test('SCRUM-754b · 🔴 con `fs.watch` MUDO (la condición de CI) el control positivo SIGUE pasando', async () => {
+  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum754b-'));
+  try {
+    fs.mkdirSync(path.join(raiz, 'tests'));
+    const r = await controlPositivoDeVigilancia(raiz, ['tests'], watchMudo);
+    assert.equal(r.ok, true,
+      '🔴 con la vigilancia en vivo muda el control positivo NO pasa, así que `meta:mutaciones` '
+      + `seguiría saliendo CIEGO en TODA rama que pase por CI: ${r.motivo}`);
+  } finally { fs.rmSync(raiz, { recursive: true, force: true }); }
+});
+
+test('SCRUM-754b · 🔴 EL CASO QUE DECIDE: un fichero que NACE Y MUERE se denuncia SIN `fs.watch`', () => {
+  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum754b-'));
+  try {
+    const dir = path.join(raiz, 'tests');
+    fs.mkdirSync(dir);
+    const { huella: antes } = huellaDelPerimetro(raiz, ['tests']);
+
+    // Nace y muere DENTRO de la ventana: en las dos fotos está AUSENTE, que es exactamente lo que
+    // una huella del CONTENIDO no podría ver — y lo que fabricó los tres verdes falsos.
+    const f = path.join(dir, 'nace-y-muere.mjs');
+    fs.writeFileSync(f, 'x');
+    fs.rmSync(f);
+    assert.equal(fs.existsSync(f), false, 'el caso exige que el fichero YA NO ESTÉ');
+
+    const { huella: despues } = huellaDelPerimetro(raiz, ['tests']);
+    const movidos = movimientosPorHuella(antes, despues, instanteDeReferencia(), raiz);
+    assert.ok(movidos.length > 0,
+      '🔴 EL TRANSITORIO NO SE DENUNCIA. Es la avería entera de SCRUM-754: el árbol se movió y el '
+      + 'juez firmaría un veredicto sobre un árbol que no es el que midió.');
+    assert.ok(movidos.some((m) => m.startsWith('tests/')),
+      `🔴 se denuncia algo, pero no dice DÓNDE: ${JSON.stringify(movidos)}`);
+  } finally { fs.rmSync(raiz, { recursive: true, force: true }); }
+});
+
+test('SCRUM-754b · 🔴 LA OTRA MITAD: LEER no sale como movimiento (o el juez se apaga por el otro lado)', () => {
+  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum754b-'));
+  try {
+    const dir = path.join(raiz, 'tests');
+    fs.mkdirSync(dir);
+    const leido = path.join(dir, 'solo-se-lee.mjs');
+    fs.writeFileSync(leido, 'y');
+    // Directorio y fichero, los dos claramente ANTERIORES: si no, el alta los mueve y el caso
+    // mediría su propia preparación en vez de la lectura.
+    const hace = new Date(Date.now() - 60_000);
+    fs.utimesSync(leido, hace, hace);
+    fs.utimesSync(dir, hace, hace);
+
+    const { huella: antes } = huellaDelPerimetro(raiz, ['tests']);
+    fs.readFileSync(leido);                         // sólo se LEE
+    const { huella: despues } = huellaDelPerimetro(raiz, ['tests']);
+
+    assert.deepEqual(movimientosPorHuella(antes, despues, instanteDeReferencia(), raiz), [],
+      '🔴 FALSO POSITIVO: una LECTURA sale como movimiento. Con ese criterio saldrían CIEGOS los '
+      + 'guards sanos que importan de `dist/`, y eso no es arreglar el juez: es apagarlo por el '
+      + 'otro lado.');
+  } finally { fs.rmSync(raiz, { recursive: true, force: true }); }
+});
+
+test('SCRUM-754b · 🔴 SUELO: una huella que no ve NADA lanza, en vez de decir «no se movió»', () => {
+  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum754b-'));
+  try {
+    assert.throws(() => huellaDelPerimetro(raiz, ['no-existe-esta-familia']), /HUELLA CIEGA/,
+      '🔴 con el perímetro vacío la huella devuelve algo en vez de lanzar. Comparar dos huellas '
+      + 'vacías da «el árbol no se movió», que es «no he mirado» con otra cara — el mismo error '
+      + 'que este fichero existe para no repetir.');
+  } finally { fs.rmSync(raiz, { recursive: true, force: true }); }
+});
+
+test('SCRUM-754b · el escrito DURANTE se denuncia con su NOMBRE (no sólo su directorio)', () => {
+  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum754b-'));
+  try {
+    const dir = path.join(raiz, 'tests');
+    fs.mkdirSync(dir);
+    const f = path.join(dir, 'se-escribe.mjs');
+    fs.writeFileSync(f, 'antes');
+    const hace = new Date(Date.now() - 60_000);
+    fs.utimesSync(f, hace, hace);
+    fs.utimesSync(dir, hace, hace);
+
+    const { huella: antes } = huellaDelPerimetro(raiz, ['tests']);
+    fs.writeFileSync(f, 'DESPUES');               // se modifica, no se crea ni se borra
+    const { huella: despues } = huellaDelPerimetro(raiz, ['tests']);
+
+    const movidos = movimientosPorHuella(antes, despues, instanteDeReferencia(), raiz);
+    assert.ok(movidos.some((m) => m.includes('se-escribe.mjs')),
+      `🔴 un fichero escrito durante la medición no sale nombrado: ${JSON.stringify(movidos)}`);
+  } finally { fs.rmSync(raiz, { recursive: true, force: true }); }
+});
