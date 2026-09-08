@@ -298,35 +298,53 @@ mirarlo en el runner antes de dar el problema por cerrado.
 
 ## ✅ EL CONTROL, CORRIDO AQUÍ — con números de la salida real
 
-`npm run guards:visuales`, los 15 guards, en dos árboles: uno **sin** el calentamiento
-(`origin/main`) y otro **con** él (esta rama). Los dos, **15 verdes · 0 no verdes**.
+`npm run guards:visuales`, los 15 guards, **tres pasadas reales**, las tres **15 verdes · 0 no
+verdes** y las tres con exit 0 leído de fichero:
 
-| | `guard:contraste` · arranque | total de ese guard | los otros 14 · arranque |
+| | `guard:contraste` · **arranque** | ese guard, total | la serie entera |
 |---|---|---|---|
-| **ANTES** — `main`, sin calentamiento | **0,8 s** | 57,3 s | 0,3 – 1,2 s |
-| **DESPUÉS** — esta rama, con calentamiento | **0,4 s** | 8,1 s | 0,3 – 0,5 s |
+| **A · ANTES** — `main`, SIN calentamiento, máquina en reposo | **0,8 s** | 57,3 s | 278,7 s |
+| **B · DESPUÉS** — esta rama, con calentamiento, máquina en reposo | **0,4 s** | 8,1 s | 212,5 s |
+| **C · DESPUÉS** — el árbol que se empuja, con calentamiento, **máquina CARGADA** | **0,5 s** | 39,8 s | 537,5 s |
 
-Y el calentamiento **se cuenta aparte**, como pedía el ticket, con su propia marca:
+Y el calentamiento **se cuenta aparte**, como pedía el ticket, con su propia marca (pasada C):
 
 ```
-⟦calentamiento⟧ 0.4 s · proceso+ws 0.4 s · primera-página 0.0 s  (tope 120000 ms)
-   ✔ guard:contraste   8.1 s   arranque   0.4 s   verde
-       └ arranque COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+⟦calentamiento⟧ 0.9 s · proceso+ws 0.9 s · primera-página 0.0 s  (tope 120000 ms)
+   ✔ guard:contraste             39.8 s   arranque   0.5 s   verde
+   15 guards · 537.5 s en serie   ·   verdes: 15 · no verdes: 0
 ```
+
+### 🔴 De estos números, LO ÚNICO que se puede leer — y por qué los demás no dicen nada
+
+⛔ **Los totales NO se comparan, y la pasada C es la prueba de por qué.** B y C son **el mismo
+árbol, la misma máquina y el mismo binario**: 212,5 s y **537,5 s**. `guard:contraste` dio 8,1 s
+y 39,8 s. La única diferencia es que C se corrió justo después de una tanda de 453 s y la máquina
+venía cargada. Restar dos totales aquí es exactamente lo que SCRUM-790 prohibió — **y la
+diferencia entre tiradas es mayor que el efecto que se busca medir**, así que el signo saldría de
+la carga, no del arreglo.
+
+✅ **Lo que SÍ se sostiene es la comparación DENTRO de una misma pasada, que la carga no puede
+falsear.** En C, con la máquina ahogada, los quince arranques fueron:
+
+```
+guard:contraste (el PRIMERO de la fila) ......... 0,5 s   ← el MENOR de los quince
+los otros catorce .............................. 0,7 – 1,7 s
+```
+
+**El primero de la fila pagó MENOS que todos los que van detrás.** Eso es justo lo que el
+calentamiento tenía que conseguir: el primero deja de pagar la entrada. Sin calentar (pasada A) el
+primero pagaba 0,8 s; calentando paga 0,4 y 0,5 s **incluso con la máquina peor**. Es la única de
+las tres cifras que se queda quieta, y es la que el ticket iba a mover.
 
 ### 🔴 Y lo que esta medida local NO demuestra — se dice, no se vende
 
-**Aquí no hay 32,5 s que quitar.** El coste de arranque en frío en esta máquina es **~0,8 s**, no
-32,5: el fenómeno que mata a `guard:contraste` es **del runner**, no de un portátil. Así que el
-antes/después local **apunta en la dirección correcta pero no puede probar el arreglo** — quien lo
-prueba es el dato del fundador del principio de este documento.
-
-⚠️ **Y NO se compara el total en serie** (278,7 s → 212,5 s). Sería exactamente lo que SCRUM-790
-prohibió: dos totales de la misma máquina no son una dispersión, son una diferencia, y aquí el
-propio `guard:contraste` dio **30,1 s y 57,3 s** en dos tiradas del MISMO árbol sin tocar una línea.
-Lo que sí aguanta es lo cualitativo: **el calentamiento corre, dice su coste aparte, no aborta, y
-tras él los quince arrancan en 0,3–0,5 s.**
-
+**Aquí no hay 32,5 s que quitar.** El coste en frío de esta máquina es de menos de un segundo, no
+de 32,5: lo que mata a `guard:contraste` es **del runner**, no de un portátil. El antes/después
+local **apunta en la dirección correcta y no puede probar el arreglo** — quien lo prueba es el
+dato del fundador del principio de este documento. Lo que aquí queda demostrado es el
+COMPORTAMIENTO: **el calentamiento corre, dice su coste aparte, no aborta, no cambia ningún
+veredicto, y quita la penalización de ir primero.**
 ### 🔴 El tope, intacto
 
 `TOPE_ARRANQUE_POR_DEFECTO = 30_000` — **sin tocar**, comprobado en `scripts/_navegador.mjs:142`.
