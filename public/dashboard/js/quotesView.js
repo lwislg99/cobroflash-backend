@@ -19,6 +19,8 @@ let quoteFormCreatedVia = 'text';
  *
  * `null`/omitido = presupuesto en blanco. Es de un solo uso: no se guarda en `window.appState`.
  */
+const MARCA_DESC_LINEA = '[PENDIENTE microcopy oficial]'; // SCRUM-632
+
 function renderQuotesView(container, template, documentoSuelto) {
   container.innerHTML = "";
   quoteFormCreatedVia = 'text';
@@ -1931,6 +1933,10 @@ blockDelivery.appendChild(descWrapper);
         // Se guarda la cadena TAL CUAL (`""` si está vacío), igual que precio e IVA: el vacío
         // se restaura como vacío, que es «no se sabe», y no como 0.
         costeUnitario: (l.costeInput && l.costeInput.value) || "",
+        // SCRUM-632: la descripción de la línea sobrevive a un F5, igual que el coste. Sin esto,
+        // recargar con el borrador puesto devolvería la línea sin el texto que el profesional
+        // acababa de escribir — que es el mismo defecto que este ticket cierra, por otra puerta.
+        description: (l.descInput && l.descInput.value) || "",
         // SCRUM-500: sin esto, recuperar el borrador devolvía la línea con su IVA y sin la marca
         // — o sea, un suplido convertido en línea normal por el simple hecho de recargar.
         suplido: !!(l.suplidoCheck && l.suplidoCheck.checked),
@@ -2246,7 +2252,9 @@ blockDelivery.appendChild(descWrapper);
 
         return {
           concept,
-          description: line.conceptInput.dataset.pfProductDescription || "",
+          // SCRUM-632: la vista previa lee LA LÍNEA, que es donde vive el dato desde este
+          // ticket. Leer el `dataset` enseñaba la del catálogo y no la que el profesional ve.
+          description: (line.descInput && line.descInput.value) || "",
           qty: safeQty,
           price: finalPrice,
           vatPerc: safeVat,
@@ -2512,7 +2520,7 @@ tr.appendChild(tdConcept);
   // SCRUM-661 (②) · entra `costeInput`: el coste del catálogo se congela EN LA LÍNEA al elegir.
   // Es opcional a propósito —se lee con `if (costeInput)`— para que este autocompletado siga
   // sirviendo a quien no le pase el campo. Hoy hay UN solo sitio de llamada, medido.
-  function attachProductAutocomplete({ conceptInput, priceInput, vatInput, costeInput }) {
+  function attachProductAutocomplete({ conceptInput, priceInput, vatInput, costeInput, descInput }) {
 
     let box = null;
     let timer = null;
@@ -2810,6 +2818,14 @@ if (typeof it.price !== "undefined" && it.price !== null && it.price !== "") {
   // ═══════════════════════════════════════════════════════════════════════════════════
   // La REGLA vive en `costeDeCatalogo`, que la suite ejecuta. Aquí sólo se aplica.
   if (costeInput) costeInput.value = costeDeCatalogo(it.cost);
+  // 🔴 SCRUM-632 · ELEGIR DEL CATÁLOGO **PRECARGA**, NO ATA (requisito 2 del ticket).
+  // A partir de aquí la descripción es DE LA LÍNEA: editarla no toca el catálogo, y cambiar el
+  // concepto ya no se la lleva. El `dataset` se conserva porque es lo que PROPUSO el catálogo
+  // —lo usan los recientes—, pero quien manda es este campo.
+  //
+  // ⚠️ NO se pisa lo que el profesional ya haya escrito: si el campo tiene texto suyo, elegir un
+  // producto no se lo borra. Sobrescribir aquí sería el mismo defecto por la otra puerta.
+  if (descInput && !(descInput.value || "").trim()) descInput.value = (it.description || "").trim();
 
   hide();
 
@@ -2935,7 +2951,10 @@ if (typeof it.price !== "undefined" && it.price !== null && it.price !== "") {
 conceptInput.addEventListener("input", () => {
   if (!suppressOpenOnce) {
     conceptInput.dataset.pfProductId = "";
-    conceptInput.dataset.pfProductDescription = "";
+    // 🔴 SCRUM-632 · AQUÍ SE BORRABA LA DESCRIPCIÓN, y era el defecto que la ficha describe.
+    // Se sigue soltando el producto —el texto ya no es «ese producto», y eso es cierto— pero la
+    // descripción YA NO CUELGA DE AQUÍ: vive en el campo de la línea, y es del profesional.
+    // Teclear el concepto no puede llevarse por delante un texto que escribió él.
     conceptInput.dataset.pfProductName = "";
   }
 });
@@ -3235,6 +3254,35 @@ priceTd.querySelector(".quote-line__label").appendChild(priceHint);
     // mismo concepto. Aun así lo aprueba el asesor, y hasta entonces el nodo lo dice de sí mismo.
     // ═══════════════════════════════════════════════════════════════════════════════════
     // ═══════════════════════════════════════════════════════════════════════════════════
+    // 🔴 SCRUM-632 · LA DESCRIPCIÓN DE LA LÍNEA. NO es la del producto.
+    //
+    // Decisión del fundador (8-sep-2026): «la descripción del presupuesto/factura es DISTINTA a
+    // la de producto: es algo que aparece en el doc, que se utiliza para poner el texto que
+    // quiera el merchant». Son DOS datos, y hasta hoy el producto tenía uno solo — por eso se
+    // borraba al teclear el concepto: el código creía que sólo había una.
+    //
+    // El dato vive AQUÍ, en un campo propio de la línea, y NO en `dataset.pfProductDescription`
+    // del input del concepto. Ése era el defecto entero: colgada del concepto, cualquier cosa
+    // que invalidara «este producto» se la llevaba por delante. Ahora el `dataset` es sólo el
+    // valor que PROPONE el catálogo al elegir; lo que manda es lo que hay en este campo.
+    //
+    // 🛑 MICROCOPY PENDIENTE (regla 30): el rótulo nace con marcador y se ve en pantalla a
+    // propósito. Va en `MARCA_DESC_LINEA`, una sola constante, para que la firma lo apague de
+    // golpe. Declarado en el censo de SCRUM-402 y en el de SCRUM-755.
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    const descTd = campoLinea(MARCA_DESC_LINEA + " descripción", "quote-line__descripcion");
+    descTd.dataset.microcopy = "PENDIENTE_FUNDADOR";
+    const descInput = document.createElement("textarea");
+    descInput.rows = 2;
+    descInput.className = "input";
+    // Ausente ⇒ vacío: restaurar un borrador ANTERIOR a este campo no puede inventar una
+    // descripción que nadie escribió (mismo criterio que `costeUnitario`, SCRUM-661).
+    descInput.value =
+      initial && initial.description != null && initial.description !== ""
+        ? initial.description
+        : "";
+    descTd.appendChild(descInput);
+
     // 🔴 SCRUM-597 (DOC-07 · P-DOC-3) · ESTA COLUMNA NO ES PARA TODOS.
     //
     //   «Coste y margen los ven el PROPIETARIO y los ADMINS. Los técnicos NO.»
@@ -3280,7 +3328,7 @@ priceTd.querySelector(".quote-line__label").appendChild(priceHint);
     // El rótulo NO cambia: «IVA %» ya estaba aprobado. No hay microcopy nueva que marcar.
     // ═══════════════════════════════════════════════════════════════════════════════════
     const vatInput = window.tiposDeIva.montar(null);
-    attachProductAutocomplete({ conceptInput, priceInput, vatInput, costeInput });
+    attachProductAutocomplete({ conceptInput, priceInput, vatInput, costeInput, descInput });
     // SCRUM-132: el IVA llega en DOS unidades según de dónde venga la línea, y antes solo se
     // leía una — por eso el "IVA por defecto" PISABA el IVA real de plantillas y de la IA:
     //   · `vat`  = PORCENTAJE (21)   → borrador de localStorage, autocompletado de producto
@@ -3462,6 +3510,32 @@ priceTd.querySelector(".quote-line__label").appendChild(priceHint);
     // El nodo se construye igual en los dos casos —lo usan el autocompletado y el borrador—; lo
     // que no ocurre es que se PINTE.
     if (veEconomia && !esDocumentoSuelto) ajustesCampos.appendChild(costeTd);
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // 🔴 SCRUM-632 · LA DESCRIPCIÓN TAMPOCO SE PINTA EN DOCUMENTO SUELTO, y no es simetría:
+    // es la regla de este fichero, y se comprobó EJECUTANDO antes de decidirlo.
+    //
+    //   «Un control aparece en modo documento suelto SI Y SÓLO SI SU DATO SOBREVIVE AL EMISOR.»
+    //
+    // Los dos hechos, medidos el 8-sep-2026 y no leídos:
+    //
+    //   ① `cuerpoDelDocumentoSuelto(cliente, filas)` se EJECUTÓ con una línea que llevaba
+    //      descripción, y el cuerpo salió con `{concept, qty, price, tax}` y nada más. La
+    //      descripción NO viaja: ni como clave, ni pegada al concepto.
+    //   ② La casilla «Incluir descripción en el PDF» cuelga de `blockDelivery`, y `blockDelivery`
+    //      sólo se añade a la tarjeta `if (!esDocumentoSuelto)`. En este modo no está en el DOM:
+    //      ni se ve ni se puede marcar.
+    //
+    // O sea que aquí el campo sería exactamente lo que este fichero enumera tres veces como
+    // defecto: un control que el profesional rellena y que no llega a ningún sitio. Fuera.
+    //
+    // ⚠️ El nodo se sigue CONSTRUYENDO —lo leen el autocompletado y el borrador—; lo que no
+    // ocurre es que se pinte. Mismo trato que el coste, y por el mismo motivo.
+    //
+    // Y cuando SÍ se pinta, va en la hoja de ajustes —con el coste y el descuento— y no en la
+    // fila principal: es texto largo y allí costaría alto por línea, que es la medición por la
+    // que SCRUM-594 rechazó meter «Dto. %» en la tarjeta (+77 px POR FILA).
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    if (!esDocumentoSuelto) ajustesCampos.appendChild(descTd);
     // 🔴 SCRUM-594 · «Dto. %» VA EN LA HOJA, Y LO DECIDIÓ LA MEDICIÓN, NO EL GUSTO.
     //
     // Se montó primero en la TARJETA, junto al precio, que es lo natural: se descuenta sobre el
@@ -3504,6 +3578,7 @@ priceTd.querySelector(".quote-line__label").appendChild(priceHint);
       // borrador, igual que `suplidoCheck`. Es el MISMO input que se ve en la hoja de ajustes:
       // no hay copia ni espejo que sincronizar (F4 de SCRUM-139).
       costeInput,
+      descInput, // SCRUM-632: la descripción de la línea, editable y propia
       // SCRUM-594 (DOC-04) — el descuento de ESTA línea, en %. Lo leen `recalcTotals`, el
       // payload y el borrador, igual que `costeInput`.
       dtoInput,
@@ -3546,7 +3621,8 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
         const now = (conceptInput.value || "").trim();
         if (storedName && now !== storedName) {
           conceptInput.dataset.pfProductId = "";
-          conceptInput.dataset.pfProductDescription = "";
+          // 🔴 SCRUM-632 · el segundo de los dos sitios de defecto: por la misma razón que el de
+          // arriba, soltar el producto NO borra la descripción de la línea.
           conceptInput.dataset.pfProductName = "";
         }
       } catch (_e) {}
@@ -3599,6 +3675,10 @@ if (Number.isFinite(n) && n >= 0) {
         conceptInput.dataset.pfProductId = "";
         conceptInput.dataset.pfProductDescription = "";
         conceptInput.dataset.pfProductName = "";
+        // SCRUM-632 · el TERCER sitio es LEGÍTIMO y se queda: aquí se vacía la línea ENTERA
+        // —concepto, precio, IVA—, así que su descripción se va con ella. No es el defecto de
+        // los otros dos: allí se borraba mientras el profesional escribía.
+        if (descInput) descInput.value = "";
         priceInput.dataset.pfBasePrice = "";
 
         if (priceHint) {
@@ -4267,7 +4347,12 @@ if (Number.isFinite(n) && n >= 0) {
 
 try {
   const includeDesc = !!descCheck?.checked;
-  const desc = (line.conceptInput.dataset.pfProductDescription || line.conceptInput.dataset.pfProductDesc || "").trim();
+  // 🔴 SCRUM-632 · SE LEE EL CAMPO DE LA LÍNEA, no el `dataset` del concepto. Ése era el
+  // defecto: colgada del concepto, se perdía al teclear. El `dataset` queda como respaldo para
+  // una línea que venga de un borrador anterior a este ticket y aún no tenga campo.
+  const desc = ((line.descInput && line.descInput.value)
+    || line.conceptInput.dataset.pfProductDescription
+    || line.conceptInput.dataset.pfProductDesc || "").trim();
 
   if (includeDesc && desc) {
     conceptForPdf = `${conceptForPdf}\n${desc}`; // ✅ descripción completa, sin "…"
@@ -4308,6 +4393,22 @@ payloadLines.push(lineaParaPayload({
   price: finalPrice,
   tax: safeVat / 100,
   suplido: !!(line.suplidoCheck && line.suplidoCheck.checked),
+  // 🔴 SCRUM-632 · LA DESCRIPCIÓN VIAJA COMO DATO PROPIO, además de pegada al concepto.
+  //
+  // Se pega al concepto porque es lo que el PDF sabe leer HOY (`partirConceptoYDescripcion`,
+  // SCRUM-603), y el camino de emisión NO SE TOCA en este ticket (regla 38). Y viaja aparte
+  // porque es un dato distinto del concepto: es lo que permite editarla sin tocar el título y
+  // recuperarla sin volver a partir una cadena.
+  //
+  // ⚠️ QUEDA UNA REDUNDANCIA, Y SE DECLARA EN VEZ DE ESCONDERSE: el mismo texto está pegado al
+  // `concept` y en `description`. La dirección es UNA sola —el campo manda, el concepto se
+  // compone de él aquí y en ningún otro sitio—, pero mientras el PDF siga leyendo el concepto
+  // hay dos sitios con el mismo texto. Retirarlo exige que `pdf.service` prefiera la clave, y
+  // eso es camino de emisión: va en su propio ticket, con su GO.
+  //
+  // Mismo criterio que `costeUnitario`: si no hay texto, la clave NO viaja. Una línea que nadie
+  // tocó sigue siendo el mismo objeto que antes de este ticket.
+  ...(desc ? { description: desc } : {}),
   ...costeDeLaLinea,
   ...dtoDeLaLinea,
 }));
