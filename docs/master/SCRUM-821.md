@@ -202,3 +202,91 @@ borrando las 9 huérfanas y actualizando esa cita.
 - **Tanda completa:** `npm test` → **5988 tests · 5883 pasan · 0 fallos · 105 saltados** · exit
   code **0**, leído de fichero y NO a través de `head`/`tail`.
 - `npm run guards:entrada`: 4/4.
+
+---
+
+# SCRUM-821c · El espejo que se mueve — el rojo fijo que bloqueaba todos los merges
+
+**Fecha:** 08-sep-2026 · **Carril:** instrumento · **Gate:** ninguno — no toca producto
+
+**Medido contra:** `origin/main` = `da938ba0cee102b560edc7f4d935d7b0f67c1f14` · 2026-09-08T03:32:55+01:00
+
+## La causa: era (b), y sola
+
+El encargo planteaba dos hipótesis. Medidas las dos, con su comando:
+
+**(b) — CONFIRMADA.** `AUTH_VIEWS` **sí existe** en `origin/main`, pero ya no es un array literal:
+
+```
+$ git show origin/main:scripts/capture-demo.mjs | grep -n "AUTH_VIEWS"
+35:const AUTH_VIEWS = vistasDelBarrido(RAIZ).map((v) => [v.nombre, v.url]);
+81:  for (const [name, url] of AUTH_VIEWS) await shoot(page, name, url);
+```
+
+El test buscaba la cadena `const AUTH_VIEWS = [`. Al mergearse SCRUM-821 —cuyo ticket era
+justamente que *la lista dejara de mantenerse a mano*— ese literal desapareció. **La premisa del
+test murió con su propio ticket**, y toda rama nacida después nace con un punto de partida donde
+no está.
+
+**(a) — DESCARTADA.** El job de tests ya clona entero:
+
+```
+$ sed -n "93,112p" .github/workflows/ci.yml
+      - uses: actions/checkout@v4
+        with:
+          …
+          fetch-depth: 0
+```
+
+El clon superficial no era la causa, y el rojo se reproduce **en un árbol completo**.
+
+## 🔴 Rojo reproducido ANTES de tocar nada
+
+Rama nueva desde `origin/main`, árbol completo:
+
+```
+$ node --test tests/scrum821b-las-capturas-que-ya-existian.test.mjs   → exit 1 · 3 fallos
+🔴 CIEGO: no se pudo leer la lista vieja de `origin/main`: no encuentro `AUTH_VIEWS` en la
+   versión de origin/main
+```
+
+Mensaje idéntico al del runner.
+
+## El defecto de fondo, y la mitad que NO daba rojo
+
+El espejo se movía en **dos** sitios:
+
+1. **La lista vieja** — dejó de poder leerse. Es el rojo visible.
+2. **Los hashes de imagen** — y éste era peor, porque estaba **verde**. `bytesEnLaBase` comparaba
+   cada captura contra el punto de partida de la rama, y una vez 821 mergeado ese punto **ya
+   contiene las capturas de hoy**: se comparaba cada fichero **contra sí mismo**. Verde garantizado
+   sobre nada. Un guard silenciosamente vacío — exactamente lo que ese test existe para no dejar
+   pasar.
+
+Arreglar sólo ① habría devuelto el job a verde dejando ② hueco.
+
+## El arreglo: trinquete
+
+`tests/_foto-antes-de-821.mjs` congela, commiteadas, **las 12 vistas** que `AUTH_VIEWS` enumeraba a
+mano **y el `sha256` de la captura de cada una**, leídos de `6cbb60fd` (`a902726c^`, el commit
+anterior a que 821 derivara la lista). El test compara el presente contra esa foto: no depende de
+git, ni de la profundidad del clon, ni de si la base ya se mergeó, ni del runner. Mismo patrón que
+el número congelado a mano de `scrum522`.
+
+## Verificación
+
+| Control | Resultado |
+|---|---|
+| 🔴 **ROJO reproducido** antes de tocar, en árbol completo, con el mensaje del runner | ✅ |
+| ✅ **POSITIVO**: no se reduce lo vigilado | **12 comparadas por hash de verdad** (antes: 0 reales, cada fichero contra sí mismo) · barrido derivado hoy **21** vistas |
+| ✅ **NEGATIVO**: quitar `providers` de `HASH_VIEWS` → cae **nombrándola** (`12-providers (/dashboard/#providers)`) | ✅ |
+| ✅ **SUELO**: con la foto vacía se declara **CIEGO**, no verde | ✅ |
+
+El negativo hubo que repetirlo: la primera vez perturbé `data-view=` en `index.html` y el test
+siguió verde — porque el barrido deriva de `HASH_VIEWS` en `app.js`, no del menú. Perturbada la
+fuente correcta, cae y la nombra. Queda dicho porque un control negativo que apunta al sitio
+equivocado **da un verde que parece una prueba y no lo es**.
+
+⛔ No se tocó `AUTH_VIEWS` ni `HASH_VIEWS` (las perturbaciones del control negativo se restauraron y
+se verificó con `git status`), ni el mensaje de CIEGO, ni el `fetch-depth` del workflow, ni se bajó
+ningún test a `skip`.
