@@ -215,7 +215,17 @@ const CENSO = Object.freeze({
   //
   // ⛔ Y esta firma NO alcanza a «[PENDIENTE microcopy oficial] Nuevo albarán» de `atajoNuevo.js`,
   // que es de otro ticket. Comprobado con el censo: sigue en 1 antes y después.
-  'quotesView.js': 3,
+  // 🔴 SCRUM-632 · 8-sep-2026 · `quotesView.js` SUBE de 3 a 4, y a conciencia.
+  //
+  // Entra el rótulo del campo de DESCRIPCIÓN DE LA LÍNEA. El mecanismo no existe sin él: la
+  // línea gana un dato nuevo —distinto de la descripción del PRODUCTO, decisión del fundador del
+  // 8-sep-2026— y un campo sin rótulo no se puede usar; quien lo abra no sabría si escribe la
+  // del catálogo o la del documento, que es justo la confusión que el ticket cierra.
+  //
+  // Sale de UNA sola constante, `MARCA_DESC_LINEA`, así que la firma lo apaga de golpe. El día
+  // que llegue, este número BAJA a 3 — no se borra la entrada, porque quedan otros marcadores
+  // en el fichero (SCRUM-424 / SCRUM-405: la entrada sólo se borra cuando no queda ninguno).
+  'quotesView.js': 4,
   // 🔴 SCRUM-587 (CONT-14) · 4-sep-2026 · `customersView.js` ENTRÓ Y SALIÓ EL MISMO DÍA.
   //
   // Entró con 1 —el rótulo del campo del descuento pactado en la ficha del cliente— y el asesor lo
