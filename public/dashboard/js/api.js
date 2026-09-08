@@ -1170,7 +1170,12 @@ function quoteStatusMeta(status) {
     paid:             { label: 'Pagado',               pillClass: 'status-pill-accepted' },
     pending:          { label: 'Pendiente',            pillClass: 'status-pill-pending' },
   };
-  return M[String(status || '').toLowerCase()] || { label: '—', pillClass: 'status-pill-draft' };
+  // ✅ SCRUM-820b · «Estado desconocido», FIRMADO por el fundador el 8-sep-2026, y sustituye al
+  // guion que iba aquí. Su motivo, literal: «un guion parece un dato que falta y se traga en
+  // silencio; "Estado desconocido" es honesto y, si alguien lo ve alguna vez, nos lo cuenta».
+  // Es la misma idea que SCRUM-153 —lo que no se reconoce no se disfraza— llevada un paso más:
+  // ni se disfraza, ni se esconde, ni se vuelca el identificador.
+  return M[String(status || '').toLowerCase()] || { label: 'Estado desconocido', pillClass: 'status-pill-draft' };
 }
 window.quoteStatusMeta = quoteStatusMeta;
 

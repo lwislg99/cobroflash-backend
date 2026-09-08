@@ -231,3 +231,80 @@ queda ningún rojo sin dueño.
 dejó pendientes de firma siguen pendientes y **no se ha elegido por gusto** ninguno.
 ⛔ `customerDetailView.js` y `globalSearch.js` conservan su copia: mezclan estados de presupuesto y
 de factura, separarlos es otro carril (regla 37) y siguen censados.
+
+---
+
+# 📌 SCRUM-820b · las tres firmas, aplicadas — 8-sep-2026
+
+**Medido contra:** `origin/main` = `1bbf60afb9eae547e083e1c716fa97c88306d791` · 2026-09-08T08:41:12+02:00
+**Rama:** `scrum-820b-una-sola-forma` · **Carril:** front / microcopy de estados
+
+Lo de arriba no se toca. Esto es lo que el fundador firmó el 8-sep y lo que se ha hecho con ello.
+
+## PASO 0 · qué quedaba HOY, medido antes de escribir
+
+Main ya traía `d03b1950` **y** el trabajo que otra sesión hizo encima (`f90a28af`), que cerró
+`quotesDetailView` y `teamView`. Así que de las tres firmas quedaba menos de lo que parecía:
+
+| firma | estado al abrir |
+|---|---|
+| ① `pending_approval` | quedaba **una** forma desalineada: «Pend. aprob.» en `customerDetailView.js:224` |
+| ② respaldo | seguía el «—» en `api.js` |
+| ③ `"DRAFT"` literal | **dos** sitios, no uno: `quotesView.js:309` y `:4412` — y también un `"SENT"` en `:263` y `:305` |
+
+## ① Una sola forma, y para eso hubo que separar dos documentos
+
+`customerDetailView` no era «una copia más»: era **la que hacía imposible el arreglo**. Pintaba la
+tabla de PRESUPUESTOS y la de FACTURAS con **el mismo mapa de ocho claves**, así que
+«Caducado»/«Caducada» y «Pagado»/«Pagada» no podían estar bien las dos a la vez — por construcción.
+
+No se ha alineado el mapa: **se ha retirado**. Cada tabla lee de su pieza (`quoteStatusMeta` /
+`invoiceStatusMeta`). Eso quita la copia **y** arregla el género de los dos documentos a la vez.
+
+## ② «Estado desconocido»
+
+Aplicado en el respaldo de `quoteStatusMeta`. Es la lección de SCRUM-153 un paso más allá: lo que
+no se reconoce **ni se disfraza del más inocente, ni se esconde en un guion, ni se vuelca crudo**.
+
+## ③ El `"DRAFT"` del previo — y el sitio real no era ese literal
+
+Tenías razón en que no era otro carril, y midiéndolo apareció que era **peor**: el vuelco no estaba
+en las llamadas, estaba en `setResult` (`quotesView.js:1674`), que hacía
+`(data.status || "draft").toUpperCase()` **sobre lo que le llegara** y lo pintaba en la píldora.
+
+El detalle que lo delata: una de las llamadas pasaba
+`pendingApproval ? "Pendiente de aprobación" : "DRAFT"` — **castellano e inglés en la misma
+expresión**, y el `toUpperCase()` convirtiendo el bueno en «PENDIENTE DE APROBACIÓN».
+
+Ahora quien llama pasa el **código** (`'draft'`, `'sent'`, `'pending_approval'`) y el rótulo lo
+pone la pieza. Cuatro llamadas corregidas y el `toUpperCase()` retirado.
+
+## El control, con las CUATRO superficies
+
+El ticket original comparaba dos pantallas. El defecto vivía en cuatro, así que el control las mide
+todas a la vez, corriendo, con el mismo dato — y con un **séptimo estado que no existe**:
+
+| estado | lista | Inicio | ficha del cliente | previo del documento |
+|---|---|---|---|---|
+| draft · sent · accepted · rejected | Borrador · Enviado · Aceptado · Rechazado | ídem | ídem | ídem |
+| expired | Caducado | Caducado | Caducado | Caducado |
+| pending_approval | Pendiente de aprobación | ídem | ídem | ídem |
+| **`zzz_no_existe`** | **Estado desconocido** | ídem | ídem | ídem |
+
+**Discrepan 0 de 7 · ciegos 0.**
+
+## Un suelo que iba a caducar, y se ha cambiado
+
+El censo de copias tenía dos suelos que **dependían de que quedara alguna copia**. Queda **una**
+(`globalSearch.js`): el día que se limpie, esos suelos dejarían de probar nada y el guard se
+volvería decorativo **sin ponerse rojo**.
+
+Se añade un control positivo que no caduca: el detector se prueba contra una cadena fabricada en el
+propio test —una que debe contar 1 y otra, en comentario, que debe contar 0— así que su ceguera se
+detecta aunque el árbol esté limpio.
+
+## Lo que sigue abierto
+
+- `globalSearch.js` mantiene su copia: pinta presupuestos, facturas y trabajos con un solo mapa,
+  el mismo problema que acaba de resolverse en la ficha del cliente. Queda censado.
+- El hueco de SCRUM-722: el censo de marcadores no mira los modales que se abren con un clic.

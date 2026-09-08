@@ -260,7 +260,7 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
         // miraba body.ok, que ya no es la señal del envío. waSendFailed mira sent.
         if (!waSendFailed(body)) {
           setAlert("success", "Presupuesto enviado por email.");
-          setResult({ quote_id: quoteId, number: displayNum, status: "SENT", sent: true });
+          setResult({ quote_id: quoteId, number: displayNum, status: "sent", sent: true });
           markDone(emailBtn, "✓ Enviado por email"); // la modal sigue abierta
         } else {
           throw new Error(body.message || "No se pudo enviar el email.");
@@ -302,11 +302,11 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
         // P3-2: si Meta rechazó, el backend devuelve 200 + sent:false con un mensaje claro.
         if (!waSendFailed(body)) {
           setAlert("success", "Presupuesto enviado por WhatsApp.");
-          setResult({ quote_id: quoteId, number: displayNum, status: "SENT", sent: true });
+          setResult({ quote_id: quoteId, number: displayNum, status: "sent", sent: true });
           markDone(sendBtn, "✓ Enviado por WhatsApp"); // la modal sigue abierta
         } else {
           setAlert("error", body.message || "Presupuesto creado, pero no se pudo enviar por WhatsApp.");
-          setResult({ quote_id: quoteId, number: displayNum, status: "DRAFT", sent: false });
+          setResult({ quote_id: quoteId, number: displayNum, status: "draft", sent: false });
           sendBtn.disabled = false;
           sendBtn.textContent = "Enviar por WhatsApp";
         }
@@ -1671,7 +1671,16 @@ blockDelivery.appendChild(descWrapper);
     // Normalizamos campos por si el backend cambia ligeramente
     const quoteId = data.quote_id || data.quoteId || data.id;
     const displayNum = data.number ?? quoteId; // A1.2: número por merchant
-    const status = (data.status || "draft").toUpperCase();
+    // 🔴 SCRUM-820b · AQUÍ ESTABA EL VUELCO, y no en los literales de quien llama. Esto hacía
+    // `.toUpperCase()` sobre lo que le llegara y lo pintaba en la píldora: por eso el previo decía
+    // DRAFT y SENT. Y es PEOR que en una lista — este previo es el del documento que el
+    // profesional ENVÍA A SU CLIENTE.
+    //
+    // Ojo al detalle que lo delataba: una de las llamadas pasaba `pendingApproval ? "Pendiente de
+    // aprobación" : "DRAFT"`. Castellano e inglés en la misma expresión, y el `toUpperCase()`
+    // convirtiendo el bueno en «PENDIENTE DE APROBACIÓN». Ahora quien llama pasa el CÓDIGO y el
+    // rótulo lo pone la pieza, que es la única que sabe cómo se dice cada estado.
+    const meta = window.quoteStatusMeta(data.status || "draft");
     const sent =
       typeof data.sent !== "undefined"
         ? !!data.sent
@@ -1685,8 +1694,8 @@ blockDelivery.appendChild(descWrapper);
     header.appendChild(idText);
   
     const statusPill = document.createElement("span");
-    statusPill.className = "status-pill";
-    statusPill.textContent = status;
+    statusPill.className = "status-pill " + meta.pillClass;
+    statusPill.textContent = meta.label;
     header.appendChild(statusPill);
   
     resultBox.appendChild(header);
@@ -4409,7 +4418,7 @@ payloadLines.push(lineaParaPayload({
       setResult({
         quote_id: quoteId,
         number: quoteNumber,
-        status: pendingApproval ? "Pendiente de aprobación" : "DRAFT",
+        status: pendingApproval ? "pending_approval" : "draft",
         sent: false,
       });
       clearDraft(); // el presupuesto ya está creado, descartamos el borrador local

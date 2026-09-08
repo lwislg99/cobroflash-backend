@@ -221,8 +221,18 @@ async function renderCustomer360View(container, customerId) {
   wrap.appendChild(tabsWrap);
   wrap.appendChild(tabContent);
 
-  const STATUS_LABELS = { draft:'Borrador', sent:'Enviado', accepted:'Aceptado', rejected:'Rechazado', pending:'Pendiente', paid:'Pagada', expired:'Caducada', pending_approval:'Pend. aprob.' };
-  const STATUS_CLASS  = { accepted:'status-pill-accepted', paid:'status-pill-accepted', sent:'status-pill-pending', pending:'status-pill-pending', rejected:'status-pill-rejected', expired:'status-pill-draft', draft:'status-pill-draft', pending_approval:'status-pill-approval' };
+  // 🔴 SCRUM-820b · AQUÍ HABÍA UN SOLO MAPA PARA DOS DOCUMENTOS DISTINTOS, y por eso no se podía
+  // arreglar el género sin romper el otro: esta ficha pinta la tabla de PRESUPUESTOS y la de
+  // FACTURAS con las mismas ocho claves. Un presupuesto es «Caducado» y una factura «Caducada»;
+  // con un diccionario compartido, una de las dos estaba mal por construcción.
+  //
+  // Y traía la forma que este ticket viene a retirar: «Pend. aprob.», la tercera redacción del
+  // mismo estado. El fundador firmó que las tres se alinean con la del filtro — «si no cabe en la
+  // columna, se adapta la columna, no la palabra».
+  //
+  // Ya no hay mapa: cada tabla lee de SU pieza (`quoteStatusMeta` / `invoiceStatusMeta`, api.js).
+  // Eso quita la copia Y arregla el género de las dos a la vez, que es lo que un mapa compartido
+  // impedía.
 
   function renderTab(key) {
     tabContent.innerHTML = '';
@@ -250,7 +260,7 @@ async function renderCustomer360View(container, customerId) {
           <td style="font-weight:600">#${q.quoteNumber ?? q.id}</td>
           <td style="color:var(--muted)">${new Date(q.createdAt).toLocaleDateString('es-ES')}</td>
           <td class="amount">${fmt(Number(q.total), q.currency)}</td>
-          <td><span class="status-pill ${STATUS_CLASS[q.status]||'status-pill-draft'}">${STATUS_LABELS[q.status]||q.status}</span></td>
+          <td><span class="status-pill ${window.quoteStatusMeta(q.status).pillClass}">${escC(window.quoteStatusMeta(q.status).label)}</span></td>
           <td><button class="btn-ghost btn-sm">Ver →</button></td>
         `;
         tr.querySelector('button').onclick = () => {
@@ -277,7 +287,7 @@ async function renderCustomer360View(container, customerId) {
           <td style="font-weight:600">${escC(inv.number)}</td>
           <td style="color:var(--muted)">${new Date(inv.createdAt).toLocaleDateString('es-ES')}</td>
           <td class="amount">${fmt(Number(inv.total), inv.currency)}</td>
-          <td><span class="status-pill ${STATUS_CLASS[inv.status]||'status-pill-draft'}">${STATUS_LABELS[inv.status]||inv.status}</span></td>
+          <td><span class="status-pill ${window.invoiceStatusMeta(inv.status).pillClass}">${escC(window.invoiceStatusMeta(inv.status).label)}</span></td>
           <td>
             <div style="display:flex;gap:6px;align-items:center">
               ${pdfCell}

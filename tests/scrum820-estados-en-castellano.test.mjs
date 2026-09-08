@@ -91,6 +91,11 @@ test('SCRUM-820 · cada estado trae su clase de píldora, y son las de la casa',
 test('SCRUM-820 · 🔴 un estado SIN mapear no le escupe el identificador al usuario', () => {
   const f = pieza();
   // Tres formas del mismo caso: el estado que alguien añada mañana, uno vacío y uno nulo.
+  // ✅ 8-sep-2026 · el respaldo es «Estado desconocido», FIRMADO. Antes iba un «—», y el motivo
+  // del cambio lo dio el fundador: «un guion parece un dato que falta y se traga en silencio».
+  assert.equal(f('pending_signature_v2').label, 'Estado desconocido',
+    '🔴 el respaldo ya no es el rótulo firmado. Si ha vuelto un guion, se está tragando en '
+    + 'silencio un estado que nadie reconoce — y nadie nos lo va a contar.');
   for (const st of ['pending_signature_v2', '', null, undefined]) {
     const meta = f(st);
     assert.ok(meta && typeof meta.label === 'string' && meta.label.length > 0,
@@ -119,13 +124,17 @@ test('SCRUM-820 · 🔴 un estado SIN mapear no le escupe el identificador al us
  * párrafos que explican el defecto contarían como copias. Es la trampa de auto-referencia que en
  * esta casa ya ha mordido cuatro veces.
  */
+/** El detector, SUELTO: así se puede probar contra una cadena y no sólo contra el árbol. */
+function detectaCopias(fuente) {
+  return [...soloCodigo(fuente).matchAll(/accepted\s*:\s*['"](Aceptad[oa])['"]/g)].length;
+}
+
 function copiasDelDiccionario() {
   const fuera = new Set(['api.js']); // la pieza oficial: ahí es donde TIENE que estar
   const copias = [];
   for (const f of fs.readdirSync(DIR_JS).filter((n) => n.endsWith('.js'))) {
     if (fuera.has(f)) continue;
-    const codigo = soloCodigo(fs.readFileSync(path.join(DIR_JS, f), 'utf8'));
-    const n = [...codigo.matchAll(/accepted\s*:\s*['"](Aceptad[oa])['"]/g)].length;
+    const n = detectaCopias(fs.readFileSync(path.join(DIR_JS, f), 'utf8'));
     if (n) copias.push([f, n]);
   }
   return copias;
@@ -135,8 +144,12 @@ function copiasDelDiccionario() {
 // se BORRA cuando el fichero deja de traducir por su cuenta (criterio de SCRUM-402/424/405).
 const CENSO_DE_COPIAS = Object.freeze({
   // Mezcla estados de presupuesto y de FACTURA (`paid`, `pending`) en el mismo diccionario.
-  // Separarlos es otro carril y no se toca aquí (regla 9); queda vigilado para que no crezca.
-  'customerDetailView.js': 1,
+  // 🔴 SCRUM-820b · 8-sep-2026 · `customerDetailView.js` SALE. Era el que hacía imposible el
+  // arreglo del género: pintaba la tabla de PRESUPUESTOS y la de FACTURAS con el MISMO mapa, así
+  // que «Caducado»/«Caducada» no podían estar bien las dos a la vez. Ahora cada tabla lee de su
+  // pieza. La entrada se BORRA, no se pone a 0 (criterio de SCRUM-402/424/405).
+  //
+  // `teamView.js` también salió, en el trabajo que otra sesión hizo encima de `d03b1950`.
   // Ídem: el buscador global pinta presupuestos, facturas y trabajos con un solo mapa.
   'globalSearch.js': 1,
   // 🔴 LA QUINTA COPIA — ENTRADA BORRADA el 8-sep-2026, no puesta a 0 (su propio criterio, y el
@@ -165,6 +178,17 @@ test('SCRUM-820 · SUELO: el barrido de copias VE las que sabemos que hay', () =
     `🔴 CIEGO: el barrido encuentra ${copias.length} copias del diccionario y el censo declara `
     + `${declaradas}. Si sale menos, el instrumento está roto — no es que se hayan limpiado solas, `
     + 'y el cero de las demás no significaría nada.');
+
+  // 🔴 Y EL SUELO QUE NO CADUCA. Los dos de arriba dependen de que QUEDE alguna copia: el día que
+  // se limpie la última —y va una— dejarían de probar nada y este guard se volvería decorativo sin
+  // que se pusiera rojo. Así que el detector se prueba contra una cadena FABRICADA aquí, que no
+  // depende del estado del árbol.
+  assert.equal(detectaCopias("var X = { accepted: 'Aceptado' };"), 1,
+    '🔴 el detector NO reconoce un diccionario de estados escrito delante de sus narices. '
+    + 'Entonces «no hay copias» significa «no sé mirar», y todo lo de abajo es un verde vacío.');
+  assert.equal(detectaCopias("// accepted: 'Aceptado' en un comentario"), 0,
+    '🔴 el detector cuenta COMENTARIOS: se cazaría a sí mismo y a los párrafos que explican el '
+    + 'defecto. Es la trampa de auto-referencia de SCRUM-203.');
 });
 
 test('SCRUM-820 · 🔴 nadie estrena una copia NUEVA del diccionario de estados', () => {
@@ -193,7 +217,9 @@ test('SCRUM-820 · 🔴 nadie estrena una copia NUEVA del diccionario de estados
 test('SCRUM-820 · 🔴 las pantallas del ticket LEEN de la pieza, no traducen', () => {
   // Éste es el que ata el arreglo: si mañana alguien vuelve a escribir el ternario en la lista,
   // los tests de arriba seguirían verdes (la pieza estaría bien) y la pantalla volvería a mentir.
-  for (const f of ['quotesListView.js', 'homeView.js']) {
+  // 8-sep-2026 · entran `customerDetailView` (su tabla de presupuestos) y `quotesView` (el previo
+  // del documento que el profesional ENVÍA A SU CLIENTE — por eso no era «otro carril»).
+  for (const f of ['quotesListView.js', 'homeView.js', 'customerDetailView.js', 'quotesView.js']) {
     const codigo = soloCodigo(fs.readFileSync(path.join(DIR_JS, f), 'utf8'));
     assert.match(codigo, /quoteStatusMeta\s*\(/,
       `🔴 «${f}» ya no lee de \`quoteStatusMeta\`. Si vuelve a decidir el rótulo por su cuenta, `
