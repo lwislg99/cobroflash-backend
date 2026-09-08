@@ -3,9 +3,8 @@
 **Fecha:** 7-sep-2026 · **actualizado el 8-sep-2026** (microcopy firmada + migración en dev)
 **Carril:** producto · **Gate:** aprobado por el fundador el 24-ago-2026
 **Medido contra:** `origin/main` = `d271d29aff85ed155d23397b7e6a1fca64a86bb0` · 2026-09-08T00:00:00+02:00
-**Tanda:** 5919 tests, 5817 pass, **0 fail**, 102 skipped — `npm test`, exit **0** (comprobado por
-código de salida, no por `| tail`). Re-corrida entera tras la firma de la microcopy y la migración
-en dev: **mismas cifras**.
+**Tanda:** 5927 tests, 5825 pass, **0 fail**, 102 skipped — `npm test`, exit **0** (comprobado por
+código de salida, no por `| tail`). Re-corrida entera en cada pasada.
 
 > ⚠️ Esa fecha es la del trabajo de esta rama, no una lectura de reloj — criterio R14.
 
