@@ -44,9 +44,9 @@ Verificado antes de apoyarse en ello, no supuesto:
 | El merge | PR #861 (`2363343b`) | ✅ en `main` |
 | La columna en la base | `contact_kind` en `acela/yaqu_dev_javier` | ✅ leída en `information_schema` |
 
-## 🔴 LO QUE HAY QUE HACER ANTES DE MERGEAR
+## ✅ LA MIGRACIÓN, APLICADA EN LAS TRES BASES (8-sep-2026)
 
-> ## NO MERGEABLE HASTA APLICAR `customers.company_id` EN LAS TRES BASES
+> ## El bloqueo «NO MERGEABLE HASTA APLICAR LA COLUMNA EN LAS TRES BASES» queda LEVANTADO
 
 `src/core/db/schemaDrift.ts` compara **esperado ⊆ real** en tablas y columnas y **para el
 arranque** cuando el esquema nombra una columna que la base no tiene. `prisma/schema.prisma` ya
@@ -57,8 +57,12 @@ sirviendo el código del PR #862**.
 - **El registro por base:** `docs/MIGRATIONS_PENDING.md`
 - **8-sep-2026 · dev:** columna e índice **aplicados** (26 → 27 columnas, medido antes y después
   con control positivo). **Staging y producción, sin tocar.**
-- ✅ **Ya no hay clave ajena pendiente:** se retiró del ticket el 8-sep-2026 (abajo). El fichero son
-  dos sentencias y **dev ya las tiene**, así que sólo faltan staging y producción.
+- ✅ **dev** — aplicada y **medida por mí** (26 → 27 columnas, con control positivo).
+- ✅ **staging y producción** — aplicadas **por el fundador** el 8-sep-2026. Esas dos casillas las
+  marca su palabra, no una medida mía: desde un árbol de trabajo no hay credencial de producción
+  (regla 3) y staging estaba prohibida por el encargo. Se dice así porque decir APLICADO sobre algo
+  que no lo está es un 500 en producción (SCRUM-220).
+- ✅ **Sin clave ajena pendiente:** se retiró del ticket (abajo). El fichero son dos sentencias.
 
 **El orden correcto lo dejó escrito SCRUM-588:** la columna primero, la línea del schema después.
 Aquí la línea va delante porque el ticket entero es media función sin ella — decisión del fundador

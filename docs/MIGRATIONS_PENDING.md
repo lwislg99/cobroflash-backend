@@ -2297,22 +2297,24 @@ tablas y columnas — **no mira defectos de columna**. La columna existe en las 
 después, así que el esquema puede ir por delante sin impedir arrancar (que es lo que costó
 SCRUM-220).
 
-## SCRUM-576 (CONT-03) · `customers.company_id` — ✅ **DEV** · ⛔ **STAGING Y PRODUCCIÓN, PENDIENTES** (8-sep-2026)
+## SCRUM-576 (CONT-03) · `customers.company_id` — ✅ **APLICADA EN LAS TRES BASES** (8-sep-2026)
 
-> # 🔴 EL PR QUE TRAE ESTA ENTRADA **NO ES MERGEABLE HASTA APLICAR LA COLUMNA EN LAS TRES BASES**
+> # ✅ APLICADA EN LAS TRES. El bloqueo de merge de esta entrada queda LEVANTADO (8-sep-2026)
 >
-> No es prudencia y no es una fórmula: `src/core/db/schemaDrift.ts` compara **esperado ⊆ real** en
-> TABLAS y COLUMNAS y **para el arranque** cuando el esquema nombra una columna que la base no
-> tiene. `prisma/schema.prisma` ya nombra `companyId`. Mergear antes de aplicar es reproducir
-> SCRUM-574 — **nueve días de yaqu.app sirviendo el código del PR #862**.
+> Esta entrada llevó en mayúsculas **«NO ES MERGEABLE HASTA APLICAR LA COLUMNA EN LAS TRES
+> BASES»**, y el motivo sigue siendo verdad aunque ya no aplique: `src/core/db/schemaDrift.ts`
+> compara **esperado ⊆ real** en TABLAS y COLUMNAS y **para el arranque** cuando el esquema
+> nombra una columna que la base no tiene. `prisma/schema.prisma` nombra `companyId` desde el
+> 7-sep. Mergear antes de aplicar habría reproducido SCRUM-574 — **nueve días de yaqu.app
+> sirviendo el código del PR #862**.
 >
-> El orden correcto lo dejó escrito SCRUM-588: **la columna primero, la línea del schema después.**
-> Aquí la línea va delante porque el ticket entero es media función sin ella (decisión del
-> fundador, 7-sep-2026, al descartar trocear el ticket en dos PR); el riesgo se gestiona **con el
-> orden del despliegue**, y por eso está en mayúsculas arriba del todo.
+> **Se levanta porque las tres casillas están marcadas, no porque haya pasado el tiempo.** El
+> orden que pedía SCRUM-588 —la columna primero, la línea del schema después— se invirtió aquí a
+> propósito (decisión del fundador, 7-sep-2026: el ticket entero es media función sin la línea),
+> y el riesgo se gestionó **con el orden del despliegue**. Ese orden ya se ha cumplido.
 >
-> **8-sep-2026 · faltan DOS:** dev ✅. Con staging y producción aplicadas, el PR es mergeable — no
-> queda nada más pendiente, porque la clave ajena se retiró (más abajo).
+> ⚠️ **Se deja escrito en vez de borrarlo**: quien lea esta entrada dentro de un año tiene que
+> poder ver que hubo un bloqueo y por qué se levantó. Un aviso borrado no enseña nada.
 
 ```sql
 ALTER TABLE "customers" ADD COLUMN IF NOT EXISTS "company_id" INTEGER;
@@ -2371,13 +2373,24 @@ texto que alguien escribió es cómo se pierden datos.
 
 ### Estado por base — 8-sep-2026
 
-- [ ] **producción · autorack** — pendiente. La aplica el fundador. Desde un árbol de trabajo no
-      hay credencial de producción (regla 3), y no la ha habido en ningún momento de este ticket.
-- [ ] **staging · acela/railway** — pendiente. La aplica el fundador.
-- [x] **desarrollo · acela/yaqu_dev_javier** — ✅ **APLICADA ENTERA** el 8-sep-2026 por petición
-      explícita del fundador («aplicas tu migración en dev, tú, sólo dev»), con
-      `scripts/aplicar-sql-dev.mjs --go` y `exigirDestinoCorrecto` cuadrando. Las dos sentencias
-      que tiene el fichero, que son todas las que tiene.
+- [x] **producción · autorack** — ✅ aplicada el **8-sep-2026 POR EL FUNDADOR**. Desde un árbol de
+      trabajo no hay credencial de producción (regla 3) y no la ha habido en ningún momento de
+      este ticket: **esta casilla la marca su palabra, no una medida mía.** Se dice así a
+      propósito — decir APLICADO sobre algo que no lo está es un 500 en producción (SCRUM-220).
+- [x] **staging · acela/railway** — ✅ aplicada el **8-sep-2026 POR EL FUNDADOR**. Tampoco medida
+      desde aquí: el encargo prohibía tocar staging, y SCRUM-668 la declara contaminada como
+      fuente de cifra. **Su palabra, no una medida mía.**
+- [x] **desarrollo · acela/yaqu_dev_javier** — ✅ **aplicada y MEDIDA por mí** el 8-sep-2026, por
+      petición explícita del fundador («aplicas tu migración en dev, tú, sólo dev»), con
+      `scripts/aplicar-sql-dev.mjs --go` y `exigirDestinoCorrecto` cuadrando. Antes y después
+      con control positivo, abajo: **26 → 27 columnas**. Las dos sentencias del fichero, que son
+      todas las que tiene.
+
+> 🔴 **LAS TRES CASILLAS NO VALEN LO MISMO, Y POR ESO LLEVAN SU PROCEDENCIA.** Dos las marca la
+> palabra del fundador y una una lectura del catálogo. No es desconfianza: es que este fichero
+> existe porque una lista a mano se desfasa en silencio, y quien lo relea tiene que saber cuál de
+> las tres puede volver a comprobar y cuál no. **Producción se re-verifica** con
+> `docs/sql/deriva-prod.sql` (solo lectura, se pega en la consola de Railway).
 
 ### 🔴 LA CLAVE AJENA SE RETIRA DEL TICKET — decisión del fundador, 8-sep-2026
 
