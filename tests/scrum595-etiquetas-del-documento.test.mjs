@@ -10,12 +10,20 @@
 // módulo tal cual y lo corren sobre PRESUPUESTOS Y FACTURAS. Si estuviera atado, no podrían
 // existir.
 //
-// ── 🔴 ESTE PR NO ES MERGEABLE HASTA APLICAR LA COLUMNA EN STAGING Y PRODUCCIÓN ─────────────
-// `quotes.tags` e `invoices.tags` están **aplicadas en DESARROLLO** (7-sep-2026: quotes 43→44,
-// invoices 35→36, `customers` de testigo sin moverse) y **pendientes en staging y producción**,
-// que las aplica el fundador. El esquema, el SQL y el código viajan JUNTOS (regla de la casa,
-// 7-sep-2026); el riesgo lo gestiona el ORDEN DEL MERGE. `schemaDrift` compara esperado ⊆ real al
-// arrancar, y mergear esto antes deja producción sin levantar.
+// ── ✅ LA COLUMNA ESTÁ EN LAS TRES BASES (8-sep-2026) ───────────────────────────────────────
+// `quotes.tags` e `invoices.tags`: **desarrollo** medido por la sesión el 7-sep (quotes 43→44,
+// invoices 35→36, `customers` de testigo sin moverse); **staging y producción aplicadas y
+// VERIFICADAS por el fundador** el 8-sep en `information_schema` —`jsonb` · `YES` ·
+// `default NULL`— con los recuentos cuadrando con dev (`quotes` 44 · `invoices` 36).
+//
+// El bloqueo de merge que llevaba esta cabecera queda LEVANTADO, y se retira por esa medición.
+// La procedencia de cada casilla vive en `docs/MIGRATIONS_PENDING.md`: dos las sostiene la
+// verificación del fundador y una la lectura del catálogo desde aquí — quien relea tiene que
+// poder distinguir cuál puede volver a comprobar por su cuenta.
+//
+// ⚠️ Lo que NO caduca: el esquema, el SQL y el código viajan JUNTOS, y el orden del merge es lo
+// que gestiona el riesgo. `schemaDrift` compara esperado ⊆ real al arrancar, y eso vuelve a
+// valer entero para la siguiente columna.
 //
 // ── QUÉ CUBRE ESTE FICHERO Y QUÉ NO ────────────────────────────────────────────────────────
 // Aquí no hay ni una lectura ni una escritura contra la base: todo es mecanismo puro más lecturas

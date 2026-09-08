@@ -18,12 +18,26 @@ ticket, y no se ha colado ninguno en SKIP silencioso.
 **Estado:** ✅ **ENTREGADO ENTERO** — PASO 0, el `ALTER`, el esquema, el servidor y las dos
 pantallas.
 
-> ## 🔴 NO MERGEABLE HASTA APLICAR LA COLUMNA EN STAGING Y PRODUCCIÓN
+> ## ✅ EL BLOQUEO DE MERGE QUEDA LEVANTADO (8-sep-2026)
 >
-> `docs/sql/scrum-595-etiquetas-del-documento.sql`. **Desarrollo: aplicado** por la sesión el
-> 7-sep-2026 (medición antes-y-después abajo). **Staging y producción: las aplica el fundador**, y
-> luego mergea. Si esto se mergeara antes, `schemaDrift` compara esperado ⊆ real al arrancar y
-> **producción no levanta**.
+> Esta entrada llevó en mayúsculas **«NO MERGEABLE HASTA APLICAR LA COLUMNA EN STAGING Y
+> PRODUCCIÓN»**, y **se retira por lo que se midió, no porque haya pasado el tiempo**: las
+> **tres** casillas de `docs/MIGRATIONS_PENDING.md` están marcadas **con su procedencia**.
+>
+> | Base | Quién la sostiene |
+> |---|---|
+> | producción · `autorack` | **Verificación del fundador** — `jsonb` · `YES` · `default NULL`, 2 filas, con capturas |
+> | staging · `acela/railway` | **Verificación del fundador** — mismo resultado |
+> | desarrollo · `yaqu_dev_javier` | **Lectura del catálogo por la sesión** — re-ejecutable |
+>
+> Y los recuentos **cuadran con dev**: el fundador contó `quotes` 44 · `invoices` 36 en las dos,
+> exactamente los números a los que llegó dev tras el ALTER (43→44 · 35→36).
+>
+> ⚠️ **El razonamiento del bloqueo NO se borra** —vive más abajo, en «EL ESQUEMA VIAJA CON ÉL»—:
+> es el motivo por el que el orden importaba y vuelve a valer para la siguiente columna. Lo que
+> caduca es su conclusión, no su lógica. Y sigue siendo cierto que **estas casillas las sostiene
+> una verificación del fundador, no una medida mía**: esta sesión no ha tocado staging ni
+> producción en ningún momento.
 
 **Nota de proceso (7-sep-2026).** La primera pasada de este ticket entregó sólo el PASO 0 y el
 `ALTER`, y **retuvo la línea del esquema** para no dejar en la rama algo que tumbara producción.
