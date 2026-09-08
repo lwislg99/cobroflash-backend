@@ -73,7 +73,10 @@ import {
 const router = Router();
 
 const jobInclude = {
-  customer: { select: { id: true, name: true, phone: true } },
+  // SCRUM-590 (CONT-19): el panel decide con esto si ofrece «Recordar pago» (`if
+  // (job.customer?.phone)`). Sin `mobile`, a un cliente que sólo tenga móvil —al que SÍ se le
+  // puede escribir— se le esconderían los botones.
+  customer: { select: { id: true, name: true, phone: true, mobile: true } },
   // quote via relation? Job no tiene relación Prisma declarada — se resuelve a mano
 } as const;
 
@@ -89,7 +92,7 @@ const QUOTE_SELECT = {
   // mismo Trabajo. Es UN campo más en un `select` que ya viajaba: cero consultas nuevas.
   Invoice: { select: { id: true, status: true, total: true, createdAt: true } },
 } as const;
-const CUSTOMER_SELECT = { id: true, name: true, phone: true } as const;
+const CUSTOMER_SELECT = { id: true, name: true, phone: true, mobile: true } as const; // SCRUM-590 (CONT-19)
 
 /**
  * SCRUM-717b · LOS TIPOS DEL LOTE SALEN DEL `select`, NO SE ESCRIBEN A MANO.

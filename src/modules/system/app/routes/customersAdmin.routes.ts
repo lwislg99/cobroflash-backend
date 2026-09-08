@@ -233,7 +233,10 @@ router.get('/:id/detail', async (req, res) => {
 
     const customer = await prisma.customer.findFirst({
       where: { id, merchantId: req.merchantId },
-      select: { id: true, name: true, phone: true, email: true, notes: true, portalToken: true, createdAt: true, waOptOut: true },
+      // SCRUM-590 (CONT-19): `mobile` también aquí — este `select` es distinto del de
+      // `customerAdmin.ts` y alimenta la ficha 360. Sin él, la ficha enseñaría el fijo y
+      // callaría el número por el que de verdad se le escribe al cliente.
+      select: { id: true, name: true, phone: true, mobile: true, email: true, notes: true, portalToken: true, createdAt: true, waOptOut: true },
     });
     if (!customer) return res.status(404).json({ error: 'not_found' });
 
