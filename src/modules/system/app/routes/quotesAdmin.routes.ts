@@ -31,6 +31,11 @@ import { conConstancia } from '../../../messaging/domain/avisoConstancia';
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+// SCRUM-814 · el cerrojo de serie que YA EXISTE, tomado por el llamador para que el recuento de
+// tramos y la reserva del número queden bajo la MISMA sección crítica. No es un cerrojo nuevo:
+// es `pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)`, el de SCRUM-234/728, y esta función lo
+// expone desde SCRUM-358 para exactamente este uso (comprobar ANTES de consumir número).
+import { tomarCerrojoDeSerie } from '../../../jobs/domain/albaranIdempotencia';
 import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: emitir factura = admin)
 
@@ -183,15 +188,6 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     const existingInvoices = quote.Invoice || [];
     // SCRUM-27: plan efectivo (custom o preset); selección por conteo igual que antes.
     const plan = resolveBillingPlan(quote);
-    const stage = plan[existingInvoices.length] ?? null;
-
-    if (!stage) {
-      // SCRUM-151: CÓDIGO y motivo distintos — plan agotado vs. condiciones que nunca generan
-      // tramos (MANUAL/SIN_CONDICIONES). Un solo código para dos causas obliga a leer el texto
-      // para saber qué pasó, y el texto es lo único que no se debe parsear.
-      return res.status(409).json(motivoSinTramo(plan));
-    }
-
     const isCustomPlan = Array.isArray((quote as any).customBillingPlan) && (quote as any).customBillingPlan.length > 0;
     const merchant = quote.merchant;
 
@@ -201,41 +197,111 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     // podían diferir 1 cént., y esa diferencia quedaba SELLADA en la huella VeriFactu
     // (`importeTotal` del total vs `cuotaTotal` de las líneas). Ver invoiceLines.service.ts.
     const quoteLines = Array.isArray(quote.lines) ? quote.lines as any[] : [];
-    const scaledLines = stageLinesReconciled(
-      quoteLines, plan, stage.index, distributeStageAmounts(quote.total, plan)[stage.index],
-    );
-    const invoiceAmount = grossOfLines(scaledLines);
+
+    // ── SCRUM-814 · EL TRAMO ES UNA FUNCIÓN DEL RECUENTO, no un valor decidido una vez ──────
+    //
+    // Antes esto eran tres constantes calculadas aquí arriba (`stage`, `scaledLines`,
+    // `invoiceAmount`) a partir de `existingInvoices.length`, y 32 líneas más abajo se abría la
+    // transacción SIN volver a contar. Envolver la creación en una transacción no protege una
+    // decisión tomada ANTES de abrirla: la transacción garantiza que lo que se escribe se escribe
+    // entero; no garantiza que lo que se decidió siga siendo cierto.
+    //
+    // MEDIDO (7-sep-2026, plan 50/50, dos peticiones con hora de salida común): las dos leían
+    // CERO facturas, las dos elegían el tramo 0, y las dos emitían el «Anticipo» — 201 las dos,
+    // con números distintos. El cerrojo de SCRUM-728 hacía su trabajo: serializa la SERIE, no la
+    // DECISIÓN. Un candado que funciona perfectamente puede estar guardando una puerta que no es.
+    //
+    // Con plan 30/70 eso es dinero: dos «Anticipo» de 363 €, la tercera petición contesta 409
+    // «Ya se han emitido todas», y quedan 484 € de un presupuesto de 1210 € que ya NO se pueden
+    // facturar — con dos facturas emitidas que por la regla 29 no se editan ni se borran.
+    //
+    // Ahora el tramo se DERIVA del recuento, y el recuento se vuelve a hacer dentro del cerrojo.
+    const tramoTrasEmitidas = (emitidas: number) => {
+      const stage = plan[emitidas] ?? null;
+      if (!stage) return null;
+      const scaledLines = stageLinesReconciled(
+        quoteLines, plan, stage.index, distributeStageAmounts(quote.total, plan)[stage.index],
+      );
+      return { stage, scaledLines, invoiceAmount: grossOfLines(scaledLines) };
+    };
+
+    const tramoPrevio = tramoTrasEmitidas(existingInvoices.length);
+    if (!tramoPrevio) {
+      // SCRUM-151: CÓDIGO y motivo distintos — plan agotado vs. condiciones que nunca generan
+      // tramos (MANUAL/SIN_CONDICIONES). Un solo código para dos causas obliga a leer el texto
+      // para saber qué pasó, y el texto es lo único que no se debe parsear.
+      return res.status(409).json(motivoSinTramo(plan));
+    }
 
     // SCRUM-246 · ANTES de pedir número. Si no hay nada que cobrar, no se emite y la serie
     // ni se entera: comprobarlo DESPUÉS obligaría a modificar una factura ya numerada o a
     // deshacerla, y deshacer es lo que crea el hueco que hay que justificar ante Hacienda.
-    exigirLineasFacturables(scaledLines);
+    exigirLineasFacturables(tramoPrevio.scaledLines);
     // SCRUM-771 · y que el tipo de IVA EXISTA. Mismo sitio y misma razón que la línea de
     // arriba: ANTES de pedir número, nunca después. Deriva de `invalidTipoIva`; aquí no
     // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
-    exigirTiposDeIvaEmitibles(scaledLines);
+    exigirTiposDeIvaEmitibles(tramoPrevio.scaledLines);
 
-    const invoice = await prisma.$transaction(async (tx) => {
+    const emision = await prisma.$transaction(async (tx) => {
+      // ── SCRUM-814 · EL CERROJO PRIMERO, Y EL RECUENTO DENTRO ─────────────────────────────
+      //
+      // No es un cerrojo nuevo: es el MISMO `pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)`
+      // que `allocateInvoiceNumber` toma unas líneas más abajo (SCRUM-234/728). Tomarlo dos
+      // veces en la misma transacción es inocuo —es re-entrante y se libera al commit—, y
+      // tomarlo AQUÍ es lo que mete el recuento dentro de la sección crítica.
+      //
+      // 🔴 Y VA ANTES DE PEDIR NÚMERO A PROPÓSITO, que es la mitad de la corrección. Contar
+      // DESPUÉS también cerraría la carrera, pero para rechazar habría que deshacer un número
+      // ya reservado, y deshacer es lo que crea el HUECO en la serie que hay que justificar
+      // ante Hacienda. Contando antes no hay nada que deshacer: si se sale por el `return null`
+      // de abajo, esta transacción no ha escrito ni una fila. Es la lección literal de
+      // `albaranIdempotencia.ts` (SCRUM-358), de donde viene `tomarCerrojoDeSerie`.
+      await tomarCerrojoDeSerie(tx, quote.merchantId);
+
+      // El recuento de VERDAD, ya serializado. `quote.Invoice` se leyó fuera y pudo quedarse
+      // viejo entre aquel `findFirst` y este punto; esto no puede.
+      const emitidas = await tx.invoice.count({
+        where: { quoteId: quote.id, merchantId: quote.merchantId }, // regla 2: scoped
+      });
+      const tramo = tramoTrasEmitidas(emitidas);
+      if (!tramo) return null; // el plan se agotó mientras esperábamos: 409 fuera, sin número consumido
+
+      // Las mismas dos puertas, sobre las líneas que de verdad se van a emitir. No son las de
+      // arriba repetidas: si la carrera movió el tramo, éstas juzgan OTRAS líneas, y son las
+      // únicas que ven las que acabarán en la factura.
+      exigirLineasFacturables(tramo.scaledLines);
+      exigirTiposDeIvaEmitibles(tramo.scaledLines);
+
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
         camino: 'C3', actor: actorDeRequest(req),
       });
-      return tx.invoice.create({
+      const creada = await tx.invoice.create({
         data: {
           merchantId: quote.merchantId,
           customerId: quote.customerId,
           quoteId: quote.id,
           number: invoiceNumber,
           type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0
-          total: invoiceAmount.toFixed(2),
-          stageLabel: isCustomPlan ? stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
+          total: tramo.invoiceAmount.toFixed(2),
+          stageLabel: isCustomPlan ? tramo.stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
           currency: quote.currency,
-          lines: scaledLines.length > 0 ? scaledLines : undefined,
+          lines: tramo.scaledLines.length > 0 ? tramo.scaledLines : undefined,
           pdfUrl: 'PENDING_PDF',
           qrData: 'PENDING_QR',
           registerId: null,
         },
       });
+      return { invoice: creada, stage: tramo.stage };
     });
+
+    // SCRUM-814 · la carrera perdida NO es un error del profesional ni un 500: es exactamente el
+    // mismo caso que el 409 de arriba —ya no queda tramo— visto un instante después. Mismo
+    // código y mismo texto oficial (regla 30): no se ha redactado ninguna frase nueva.
+    if (!emision) {
+      return res.status(409).json(motivoSinTramo(plan));
+    }
+    const invoice = emision.invoice;
+    const stage = emision.stage;
 
     // Aplicar VeriFactu para merchants españoles con NIF (V0-0: nunca a justificantes)
     // ── SCRUM-205 sobre SCRUM-206 · los DOS, y no es un compromiso: son cosas distintas ──

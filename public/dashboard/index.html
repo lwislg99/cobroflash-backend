@@ -280,6 +280,8 @@
   <script src="./js/economiaVisible.js"></script> <!-- SCRUM-597 (DOC-07 · P-DOC-3): quien ve coste y margen; va ANTES de quotesView.js, productsView.js e invoiceDetailView.js, que lo consumen -->
   <script src="./js/documentoAsignados.js"></script> <!-- SCRUM-597 (DOC-07): el selector de usuarios asignados al documento; va ANTES de quotesDetailView.js e invoiceDetailView.js -->
   <script src="./js/textoDelDocumento.js"></script> <!-- SCRUM-593 (DOC-03): los dos textos libres del documento; va ANTES de quotesView.js, que los consumira en la fase 3 (schema+cableado) -->
+  <script src="./js/cuerpoDelDocumentoSuelto.js"></script> <!-- SCRUM-600 (DOC-10): la UNICA composicion del cuerpo de POST /admin/invoices; va ANTES de quotesView.js y de nuevaFacturaModal.js, que son las dos pantallas que la llaman -->
+  <script src="./js/buscadorDeClientes.js"></script> <!-- SCRUM-713: filtrar clientes al teclear (textos + regla de comparacion); va ANTES de quotesView.js, que lo llama al MONTAR el selector -->
   <script src="./js/quotesView.js"></script>
   <script src="./js/quotesDetailView.js"></script>
   <script src="./js/switchTipoArticulo.js"></script> <!-- SCRUM-609 (CAT-01): el switch Producto/Servicio, una pieza para los dos formularios -->

@@ -88,6 +88,39 @@ export const CATEGORIAS = {
  * `módulo::export`, no la longitud: por eso da igual cómo se agrupen las líneas.
  */
 export const DECLARADOS = [
+  // ── SCRUM-805 · el sello del PRESUPUESTO, y por qué sus cuatro exports son distintos ───
+  //
+  // Nacen en el mismo módulo y NO son el mismo caso, así que van en tres categorías. El guard
+  // proponía quitarles el `export` y medir por superficie pública: aquí eso rompería justo lo
+  // que el fundador exigió comprobar.
+  {
+    modulo: "src/modules/quotes/domain/presupuestoSello.ts",
+    cat: "ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE", desde: "2026-09-07",
+    motivo: "El canónico del presupuesto ES la regla: qué se firmó. Su test lo CORRE campo a "
+      + "campo —muta cada clave del contenido y exige que el hash se mueva— y ése es el control "
+      + "que el fundador puso como condición de que el ticket esté hecho. Medirlo sólo por la "
+      + "superficie pública (el sellador) probaría que el sobre se escribe, NO que cubre el "
+      + "total, la validez, las condiciones de pago y las cláusulas, que es el ticket entero.",
+    exports: ["computePresupuestoContentHash"],
+  },
+  {
+    modulo: "src/modules/quotes/domain/presupuestoSello.ts",
+    cat: "VOCABULARIO_DEL_MODULO", desde: "2026-09-07",
+    motivo: "La única fuente del número de versión del canónico. Viaja DENTRO de cada evidencia "
+      + "sellada, así que quien verifique un presupuesto firmado hoy dentro de dos años tiene "
+      + "que poder nombrarla. Su test comprueba que el sobre la lleva.",
+    exports: ["PRESUPUESTO_CONTENIDO_VERSION_ACTUAL"],
+  },
+  {
+    modulo: "src/modules/quotes/domain/presupuestoSello.ts",
+    cat: "MOTOR_EN_ESPERA", desde: "2026-09-07",
+    motivo: "La mitad VERIFICADORA del sello. Sellar sin poder verificar es guardar una huella "
+      + "que nadie compara —el defecto que SCRUM-369 encontró en el albarán, donde el hash se "
+      + "calculaba en un solo sitio y nada lo recalculaba—. Se construyen con el sellador y en "
+      + "el mismo commit, a propósito: su consumidor (enseñar la verificación al profesional) es "
+      + "trabajo de otro ticket y no se cablea de paso.",
+    exports: ["recomputarHashDeEvidenciaPresupuesto", "verificarEvidenciaPresupuesto"],
+  },
   // ── SCRUM-624 (fase C) · lo que destapa MOVER LA FRONTERA ──────────────────────────────
   //
   // `totalDeFacturables` se queda sin llamador porque el camino albarán→factura **deja de usarla
