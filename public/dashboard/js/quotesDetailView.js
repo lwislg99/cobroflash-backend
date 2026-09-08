@@ -180,15 +180,19 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   stateLabel.textContent = 'Estado';
   stateBlock.appendChild(stateLabel);
 
+  // 🔴 SCRUM-820 (encima de d03b1950) · EL MISMO DEFECTO, UN CLIC MÁS ADENTRO.
+  //
+  // Esta ficha es a donde llega el profesional al pinchar una fila de la lista, y tenía COPIADO el
+  // mismo ternario con `st.toUpperCase()`: pintaba `ACCEPTED` cuando la lista, ya arreglada, decía
+  // «Aceptado». Arreglar sólo la lista **mueve la contradicción un clic** en vez de cerrarla — y la
+  // deja en el sitio donde el jefe mira para decidir.
+  //
+  // El barrido por AST lo cazó: era el único `st.toUpperCase()` que quedaba en un camino de
+  // presupuesto después de d03b1950.
+  const meta = quoteStatusMeta(st);
   const statusSpan = document.createElement('span');
-  statusSpan.className = 'status-pill';
-  statusSpan.textContent = st === 'pending_approval' ? 'PENDIENTE APROBACIÓN'
-    : st === 'expired' ? 'CADUCADO' : st.toUpperCase(); // A16.2
-  if (st === 'accepted') statusSpan.classList.add('status-pill-accepted');
-  else if (st === 'rejected') statusSpan.classList.add('status-pill-rejected');
-  else if (st === 'draft' || st === 'expired') statusSpan.classList.add('status-pill-draft');
-  else if (st === 'pending_approval') statusSpan.classList.add('status-pill-approval');
-  else statusSpan.classList.add('status-pill-pending');
+  statusSpan.className = 'status-pill ' + meta.pillClass;
+  statusSpan.textContent = meta.label;
   stateBlock.appendChild(statusSpan);
 
   // WA-0b: chip de entrega del WhatsApp del presupuesto (J4)

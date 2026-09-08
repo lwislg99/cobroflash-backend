@@ -773,6 +773,7 @@ function renderCustomersView(container) {
 
   let editingCustomer = null;
   let fieldLegalName, fieldTaxId; // A20.4
+  let selectorEmpresa = null; // SCRUM-576 (CONT-03): la empresa a la que pertenece la persona
 
   // -------- Modal --------
 
@@ -1127,6 +1128,9 @@ function renderCustomersView(container) {
     // A20.4: cliente empresa (opcional) — el NIF además lo exigirá VeriFactu
     fieldLegalName = createField("Razón social (empresa, opcional)", "legalName", "text");
     fieldTaxId = createField("NIF/CIF (opcional)", "taxId", "text");
+    // SCRUM-576 (CONT-03) · el selector de empresa. Se construye VACÍO: la lista de empresas sale
+    // del lote que la vista ya tiene cargado, y ese lote cambia — se rellena en `openModal`.
+    selectorEmpresa = switchFormaJuridica.selectorDeEmpresa({});
     // SCRUM-575 (CONT-02) · el aviso de NIF mal formado. Va PEGADO a su campo —y no arriba, como
     // el de duplicados— porque señala un error EN ESE campo: un mensaje lejos de su causa obliga
     // a buscarla. Nace oculto; sólo aparece con un valor escrito y mal.
@@ -1288,6 +1292,9 @@ function renderCustomersView(container) {
       alCambiar: (lado) => switchFormaJuridica.aplicarLado(lado, {
         legalName: fieldLegalName.wrapper,
         taxId: fieldTaxId.wrapper,
+        // SCRUM-576: el campo del lado PERSONA. La regla de qué se esconde no vive aquí — vive en
+        // `switchFormaJuridica`, y este mapa sólo dice DÓNDE está cada campo en este formulario.
+        companyId: selectorEmpresa.nodo,
       }),
     });
     body.appendChild(switchForma.nodo);
@@ -1310,6 +1317,10 @@ function renderCustomersView(container) {
     body.appendChild(fieldEmail.wrapper);
     body.appendChild(fieldLegalName.wrapper);
     body.appendChild(fieldTaxId.wrapper);
+    // Va PEGADO a «Razón social» a propósito: son las dos formas de decir «la empresa de este
+    // cliente», y el ticket existe porque una de ellas —el texto libre— no vale para agrupar.
+    // Verlas juntas es lo que le enseña al profesional cuál es cuál.
+    body.appendChild(selectorEmpresa.nodo);
 
     // SCRUM-578 (c) · se comprueba al SALIR del campo, no en cada tecla: preguntar por cada
     // pulsación haría una petición por letra y el aviso parpadearía mientras se escribe.
@@ -1414,6 +1425,35 @@ function renderCustomersView(container) {
     return partes.length ? partes : null;
   }
 
+  /**
+   * SCRUM-576 (CONT-03) · DE DÓNDE SALEN LAS EMPRESAS DEL DESPLEGABLE.
+   *
+   * 🔴 SE PIDE LA LISTA, SIEMPRE. La primera versión leía `ultimoLote` —el lote que la vista de
+   * Clientes ya tiene cargado— para ahorrarse la petición, y **el banco de vistas la tumbó en el
+   * acto**: `ReferenceError: ultimoLote is not defined`. Ese identificador vive en el ámbito de
+   * `renderCustomersView`, y este formulario NO está ahí dentro — es la superficie compartida que
+   * SCRUM-591 sacó fuera para que un documento también pudiera abrirlo. Leerlo desde aquí no era
+   * una optimización: era un fallo que reventaba el modal al abrirlo.
+   *
+   * Y pedirla, además de funcionar, es lo ÚNICO correcto en los dos caminos: desde la lista, el
+   * lote podría llevar minutos ahí y no incluir una empresa creada después; desde un documento
+   * (`window.altaClienteModal`, SCRUM-591) no hay lote ninguno. Un solo camino, sin ramas.
+   *
+   * NO se espera: `openModal` es síncrono y bloquearlo pondría una petición de red entre el clic
+   * y el formulario. `refrescar` conserva lo que hubiera elegido mientras tanto, así que llegar
+   * tarde no pisa nada. Si la petición falla, el desplegable se queda con «sin empresa» y el
+   * resto del alta funciona igual: un campo opcional no puede tumbar un formulario.
+   */
+  function poblarEmpresas() {
+    const excluir = editingCustomer ? editingCustomer.id : null;
+    // Se vacía primero: si el modal se reabre para OTRO cliente, las opciones del anterior
+    // seguirían colgadas hasta que llegara la respuesta.
+    selectorEmpresa.refrescar([], excluir);
+    getCustomers("")
+      .then((lista) => { selectorEmpresa.refrescar(lista, excluir); })
+      .catch(() => { /* el campo es opcional: sin lista se queda en «sin empresa» */ });
+  }
+
   function openModal(mode, customer) {
     if (!modalBackdrop) {
       buildModal();
@@ -1455,6 +1495,10 @@ function renderCustomersView(container) {
     // nueva — nadie ha declarado nada todavía. En edición lo sobrescribe el bloque de abajo.
     switchForma.escribir(null);
 
+    // SCRUM-576 (CONT-03) · las empresas que puede elegir. Se pueblan DESPUÉS del `reset()`, que
+    // vacía el `select`, y ANTES de escribir el valor del cliente que se edita.
+    poblarEmpresas();
+
     if (editingCustomer) {
       fieldName.input.value = editingCustomer.name || "";
       // SCRUM-578: lo guardado puede venir CON prefijo o sin el (filas viejas). Se reparte para
@@ -1474,6 +1518,7 @@ function renderCustomersView(container) {
       fieldDtoPorDefecto.input.value = editingCustomer.dtoPorDefecto ?? "";
       fieldLegalName.input.value = editingCustomer.legalName || ""; // A20.4
       fieldTaxId.input.value = editingCustomer.taxId || "";
+      selectorEmpresa.escribir(editingCustomer.companyId ?? null); // SCRUM-576
       fieldWaOptOut.checked = !!editingCustomer.waOptOut;
       fieldTipoDestinatario.value = editingCustomer.tipoDestinatario || ""; // SCRUM-69
       // SCRUM-294-a: los tres estados NO colapsan. `|| ""` habria mandado el `false` a «no consta».
@@ -1504,6 +1549,7 @@ function renderCustomersView(container) {
     switchFormaJuridica.aplicarLado(switchForma.leer(), {
       legalName: fieldLegalName.wrapper,
       taxId: fieldTaxId.wrapper,
+      companyId: selectorEmpresa.nodo, // SCRUM-576
     });
 
     modalBackdrop.style.display = "flex";
@@ -1577,6 +1623,9 @@ function renderCustomersView(container) {
       notes: fieldNotes.input.value.trim(),
       legalName: fieldLegalName.input.value.trim() || null, // A20.4
       taxId: fieldTaxId.input.value.trim() || null,
+      // SCRUM-576 (CONT-03): «sin empresa» viaja como `null`, nunca como `""` ni como `0`. Es la
+      // misma regla de «ausente ≠ vacío» que SCRUM-588 dejó escrita dos campos más abajo.
+      companyId: selectorEmpresa.leer(),
       // SCRUM-588: «ausente ≠ vacio». Lo vacio viaja como null, NUNCA como cadena vacia: una
       // cadena vacia diria «tiene referencia, y es nada», que no es lo mismo que no tenerla.
       internalRef: fieldInternalRef.input.value.trim() || null,
