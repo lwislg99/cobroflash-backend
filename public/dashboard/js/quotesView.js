@@ -438,6 +438,47 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   clientFormRow.appendChild(fieldCustomer.wrapper);
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-713 · BUSCAR AL CLIENTE, DONDE YA SE BUSCA EN LA FACTURA.
+  //
+  // LA VÍCTIMA: el profesional con 200 clientes desplegaba una lista de 200 y bajaba con el dedo,
+  // en la pantalla que el máster quiere resuelta en 30 segundos. En el modal de la FACTURA no le
+  // pasa: allí hay buscador desde SCRUM-446.
+  //
+  // 🔴 ES EL PATRÓN DE `nuevaFacturaModal.js`, COPIADO — no un autocompletado nuevo. Campo de
+  // búsqueda encima, el `<select>` de siempre debajo. Se conserva el `<select>` a propósito: con
+  // él siguen vivos los doce sitios que leen `fieldCustomer.select.value`, el restaurador de
+  // borradores y el «+ Nuevo cliente» de SCRUM-591, cuyo texto se firmó PARA una `<option>`.
+  // (El otro candidato, el `pf-autocomplete` de este mismo fichero, autocompleta PRODUCTOS.)
+  //
+  // ⚠️ `nuevaFacturaModal.js` es camino de emisión (regla 38): se ha LEÍDO para copiar el patrón.
+  // No se ha tocado, y un test lo comprueba.
+  //
+  // DÓNDE VA: dentro del wrapper del campo, ENTRE la etiqueta y el `<select>`. Se saca el
+  // `<select>` y se vuelve a poner detrás en vez de usar `insertBefore` porque `createFieldSelect`
+  // ya dejó el wrapper montado y este orden es el único que se lee igual en el navegador y en el
+  // banco de pruebas.
+  //
+  // ⛔ SIN `debounce`, y la diferencia con el origen tiene motivo: aquél va a la red en cada
+  // pulsación y necesita esperar; éste filtra una lista que YA está en memoria. Retrasar 250 ms
+  // una respuesta instantánea sería empeorar a propósito la pantalla de los 30 segundos.
+  const buscadorCliente = document.createElement("input");
+  buscadorCliente.type = "search";
+  buscadorCliente.className = "input";
+  // Textos y regla de comparación: `buscadorDeClientes.js`. Ni un literal se escribe aquí suelto.
+  buscadorCliente.placeholder = window.buscadorDeClientes.TEXTOS.placeholder;
+  // El campo no tiene etiqueta propia —la del bloque es «Cliente», y es del `<select>`—, así que
+  // el nombre accesible es el MISMO texto aprobado que se lee en el placeholder. Un lector de
+  // pantalla diría «cuadro de búsqueda» a secas sin esto.
+  buscadorCliente.setAttribute("aria-label", window.buscadorDeClientes.TEXTOS.placeholder);
+  buscadorCliente.style.cssText = "width:100%;min-height:44px;margin-bottom:6px";
+  fieldCustomer.wrapper.removeChild(fieldCustomer.select);
+  fieldCustomer.wrapper.appendChild(buscadorCliente);
+  fieldCustomer.wrapper.appendChild(fieldCustomer.select);
+  buscadorCliente.addEventListener("input", function () {
+    pintarOpcionesDeCliente();
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
   // SCRUM-602 (DOC-12) · LA DIRECCIÓN DE LA OBRA.
   //
   // 🔴 VA EN «1. Cliente» Y NO EN «4. Envío», y no es una preferencia: «4. Envío» significa el
@@ -1716,12 +1757,43 @@ blockDelivery.appendChild(descWrapper);
     optAlta.textContent = TEXTO_ALTA_RAPIDA;
     select.appendChild(optAlta);
 
-    customersList.forEach(function (c) {
+    // SCRUM-713 · lo que la búsqueda deja ver. Sin nada tecleado devuelve la lista ENTERA, que es
+    // exactamente lo que se pintaba hasta hoy: abrir la pantalla y no tocar el buscador no cambia
+    // nada de lo que había.
+    //
+    // 🔴 El cliente YA ELEGIDO viaja en la llamada y `filtrar` lo conserva aunque no case. Sin eso,
+    // teclear otra cosa le quitaría su `<option>` al `<select>`, que se quedaría con un `value` que
+    // no puede mostrar: el documento perdería al cliente por teclear, y en silencio.
+    const visibles = window.buscadorDeClientes.filtrar(
+      customersList,
+      buscadorCliente.value,
+      seleccionado,
+    );
+
+    visibles.forEach(function (c) {
       const opt = document.createElement("option");
       opt.value = c.id;
       opt.textContent = c.name + (c.phone ? " (" + c.phone + ")" : "");
       select.appendChild(opt);
     });
+
+    // 🔴 UN DESPLEGABLE VACÍO NO DICE SI NO HAY NADIE O SI LA PANTALLA SE ROMPIÓ.
+    //
+    // Los dos textos son los que la LISTA DE CLIENTES ya enseña en estas dos mismas situaciones
+    // (`customersView.js`), y se distinguen porque son cosas distintas: «no tienes clientes» y «tu
+    // búsqueda no encuentra a ninguno de los que tienes». Van `disabled` porque son un aviso, no
+    // una opción: nadie puede elegirlos y no viajan en el `POST`.
+    //
+    // La salida SIEMPRE queda a mano: «+ Nuevo cliente» está dos entradas más arriba.
+    if (visibles.length === 0) {
+      const aviso = document.createElement("option");
+      aviso.value = "";
+      aviso.disabled = true;
+      aviso.textContent = customersList.length === 0
+        ? window.buscadorDeClientes.TEXTOS.sinNinguno
+        : window.buscadorDeClientes.TEXTOS.sinResultados;
+      select.appendChild(aviso);
+    }
 
     if (seleccionado && seleccionado !== VALOR_ALTA_RAPIDA) select.value = seleccionado;
   }
