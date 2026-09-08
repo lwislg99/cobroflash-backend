@@ -543,3 +543,201 @@ ya. **Leyendo el código, los cinco salían verdes.**
 * `tests/scrum600b-la-factura-usa-el-front.test.mjs` — 12 tests: los dos suelos, el control que
   decide con su control negativo, lo que se guarda, divergencia imposible, «no dice factura» con
   su control positivo, el presupuesto intacto, lo que el emisor no puede guardar, y regla 29 (×2).
+
+---
+
+# APÉNDICE · 8-sep-2026 · SCRUM-600d · EL ENVÍO, QUE FALTABA POR UN `return`
+
+**Medido contra:** `origin/main` = `2f123b7071d148bc93b87a42354f52ede8bef065` · 8-sep-2026
+
+**Alcance:** el **primero** de los tres huecos que el apéndice de SCRUM-600c clasificó como
+🟢 «se copia, cero esquema». Los 🟡 2 (columna sin escritor) y los 🔴 8 (columna inexistente)
+**no se tocan**. Ni `prisma/schema.prisma`, ni camino de emisión, ni dependencias nuevas.
+
+> ⚠️ **Esta rama nace de `main`, no de `scrum-600c`**, que sigue sin mergear y toca **este mismo
+> fichero**. Los dos apéndices se añaden al final, así que al mezclar habrá un conflicto de
+> ADICIÓN en `docs/master/SCRUM-600.md`: se resuelve conservando los dos, en orden 600c → 600d.
+> Se avisa aquí para que no cueste una vuelta.
+
+---
+
+## 1 · EL DEFECTO, MEDIDO PULSANDO
+
+No es que faltara una funcionalidad. Es que **la factura hacía `return` 163 líneas antes de
+llegar al envío**, dentro del mismo manejador que el presupuesto:
+
+```
+quotesView.js:4182   if (esDocumentoSuelto) {  …  return;  }   ← la factura sale por aquí
+quotesView.js:4381   openQuoteModal({ … })                     ← el envío vive aquí
+```
+
+Medido montando las dos pantallas, tecleando una línea y pulsando la acción primaria — **no
+leyendo el fichero**:
+
+| | destino tras crear el documento | salidas de envío |
+|---|---|---|
+| **PRESUPUESTO** | abre su hoja | **4** — WhatsApp · email · Descargar PDF · Abrir PDF |
+| **FACTURA** *(antes)* | `renderAppView("invoices")`, el listado | **0** |
+
+El profesional emitía y se quedaba sin ninguna forma de mandarlo: tenía que salir de la pantalla
+a buscarla.
+
+### 🔴 POR QUÉ NO SALIÓ EN EL CENSO DE 600c
+
+Porque **el envío no falta por una puerta**. El censo enumeró las 29 puertas
+`if (!esDocumentoSuelto)` y el envío no está en ninguna: hay una salida anticipada. Y un barrido
+de la pantalla recién montada tampoco lo alcanza, porque esto pasa **después** de pulsar
+«Emitir». Los dos instrumentos de 600c eran ciegos aquí, y consta allí.
+
+### 🔴 EL SUELO DEL INSTRUMENTO, Y SU AVERÍA REAL
+
+La primera pasada dio **cero destinos en las DOS pantallas** — lo que se habría leído como «el
+presupuesto tampoco envía», que es falso. Causa: el doble de red apuntaba a `/admin/quotes`, y el
+presupuesto postea a **`/quote/create`**. La pantalla decía «Respuesta inesperada al crear
+presupuesto.» y el cero era de la queja, no del producto.
+
+Por eso el fichero de tests abre con un SUELO que **exige ver el envío donde lo hay**: si tras
+generar un presupuesto no se ven al menos 3 salidas, se declara CIEGO. Un cero sin ese control no
+distingue «no hay envío» de «no sé mirar».
+
+---
+
+## 2 · EL ARREGLO: LLEGAR A UNA PANTALLA QUE YA EXISTE
+
+Tras el 201, se navega a la **ficha del documento** en vez de al listado:
+
+```js
+const idEmitido = emitida && emitida.factura && emitida.factura.id;
+if (window.renderAppView) {
+  if (idEmitido) window.renderAppView("invoice-detail", { invoiceId: idEmitido });
+  else window.renderAppView("invoices");
+}
+```
+
+**Un fichero, un bloque.** `invoiceDetailView.js` ya ofrece «Enviar por WhatsApp» y «Descargar
+PDF» contra `/admin/invoices/:id/resend-whatsapp` y `/:id/send-email`, que existen desde hace
+tickets. No faltaba código ni datos: faltaba llegar.
+
+Y la forma no se inventa: `renderAppView('invoice-detail', { invoiceId })` es **literalmente** cómo
+navega la propia ficha tras rectificar (`invoiceDetailView.js:512`) y tras anular (`:585`). El
+precedente de la casa es «recién creado un documento, vete a su ficha».
+
+### 🛑 POR QUÉ NO SE REUTILIZÓ `openQuoteModal` — y es la decisión del ticket
+
+Era lo primero que uno prueba, y **cuesta CINCO textos nuevos**, porque aquella hoja dice
+«presupuesto» en:
+
+| sitio | texto |
+|---|---|
+| `quotesView.js:143` | «Revisa el PDF del **presupuesto** antes de enviarlo por WhatsApp al cliente.» |
+| `:159` | título del visor: «PDF **Presupuesto** #N» |
+| `:262` | «**Presupuesto** enviado por email.» |
+| `:304` | «**Presupuesto** enviado por WhatsApp.» |
+| `:308` | «**Presupuesto** creado, pero no se pudo enviar por WhatsApp.» |
+
+Y un sexto problema que no es de palabra sino de regla: su botón de cierre es **«Seguir
+editando»**, y una factura emitida **no se edita jamás** (regla 29).
+
+El catálogo aprobado (`rotulosDelDocumento.js`) tiene **siete** entradas —listado, columna,
+título, acción primaria, aria, aviso de emitido y error al emitir— y **ninguna cubre la hoja de
+envío**. O sea: reutilizarla era abrir seis huecos de microcopy en un flujo fiscal. Regla 30.
+
+**La ficha no estrena nada.** Es una pantalla en producción con su copy ya aprobado, a la que
+hoy se llega igual — sólo que con un clic más desde el listado. Este ticket quita el clic.
+
+---
+
+## 3 · ⚠️ UNA DIVERGENCIA DE COMPORTAMIENTO, MEDIDA Y DECLARADA
+
+El encargo pedía que sin teléfono el botón se comportara «como en el presupuesto». **No lo hace,
+y hay que decirlo:**
+
+| | sin teléfono |
+|---|---|
+| **presupuesto** (`quotesView.js:296`) | el botón se pulsa, y el **servidor** contesta: «Este cliente no tiene teléfono; añádelo para enviar por WhatsApp.» |
+| **ficha** (`invoiceDetailView.js:302`) | el botón sale **deshabilitado**, con «El cliente no tiene teléfono de WhatsApp configurado.» en su `title` |
+
+**Ninguna de las dos está inventada: las dos están copiadas** de código que ya existe. Se elige
+la de la ficha por dos motivos medidos:
+
+1. Es la que ese profesional **ya ve en todas sus demás facturas**. Dos pantallas de factura que
+   se comportan distinto ante el mismo cliente sería un defecto nuevo, no el que se venía a
+   quitar.
+2. La del presupuesto **sólo se puede tener reutilizando `openQuoteModal`**, o sea pagando los
+   cinco textos del §2.
+
+Si el fundador prefiere la conducta del presupuesto, es una decisión de microcopy y se para ahí.
+El test la deja fijada en las dos direcciones, así que cambiarla será un rojo explícito y no un
+descuido.
+
+---
+
+## 4 · EL RESPALDO NO ES ADORNO
+
+Si la respuesta del alta no trae `id`, se vuelve al listado **exactamente como antes**. Sin eso,
+un cambio de forma en la respuesta dejaría al profesional en «Sin documento seleccionado»
+**después de haber emitido de verdad** — que parece que no se ha emitido, y es el peor de los
+fallos posibles en un flujo fiscal: el documento existe y la pantalla dice que no.
+
+El alta responde `{ok, factura:{id, number, total, currency}}`
+(`invoicesAdmin.routes.ts:176`). ⚠️ **No trae `pdfUrl`**, que es lo que `openQuoteModal` pediría —
+otro motivo por el que aquella hoja no era el camino corto. La ficha lo resuelve pidiendo el
+documento entero.
+
+---
+
+## 5 · 🔴 REGLA 38 · ESTO NO ES CAMINO DE EMISIÓN
+
+El 201 **ya ocurrió** cuando este código actúa. Quién numera la serie, quién sella y qué se
+guarda siguen intactos: no se ha tocado ni una línea de `src/`. Lo que cambia es **a dónde mira
+el navegador después**. Y hay un test que lo sujeta: el alta se sigue pidiendo a
+`POST /admin/invoices`, exactamente una vez.
+
+---
+
+## 6 · VERIFICACIÓN
+
+`tests/scrum600d-el-envio-tras-emitir.test.mjs` — **9 tests**, todos montando y pulsando:
+
+* **SUELO** — el barrido ve las salidas del presupuesto, o se declara ciego.
+* **🔴 el destino es la ficha, con su id** — y el id **no se escribe a mano** en el control: se
+  toma de la navegación observada y se monta la ficha con él. Además el banco devuelve la ficha
+  **con el id que venga en la URL**, así que pedir el documento equivocado no puede salir verde.
+* **🔴 el control que decide** — se MONTA ese destino y se comprueba que ofrece WhatsApp y PDF, y
+  que el botón llega vivo. Mirar sólo los argumentos de la navegación sería comprobar la edición
+  contra sí misma.
+* **🔴 respaldo** — sin id, al listado.
+* **✅ POSITIVO ×2** — la hoja del presupuesto sigue abriéndose, **no navega**, conserva sus
+  **cuatro** salidas *nombradas una a una* (un `length >= 3` dejaría perderse justo la de email),
+  y sigue pidiendo su detalle. Y la factura sigue emitiendo por donde emitía.
+* **✅ NEGATIVO ×2** — sin teléfono: el botón sigue estando (esconderlo dejaría al profesional sin
+  saber por qué), deshabilitado y **con motivo escrito**; y la factura **se sigue emitiendo**, que
+  es lo que separa «no puedo enviar» de «no puedo emitir».
+* **⛔ regla 30** — las salidas de envío del destino son exactamente las dos que la ficha ya
+  pintaba. Si aparece una nueva, es microcopy sin firmar.
+
+### El rojo, probado por mecanismo
+
+`MUTACIONES_QUE_ME_TUMBAN` declara tres, y `npm run meta:mutaciones` las ejecuta y **exige el
+rojo**:
+
+| mutación | qué reintroduce | tumba |
+|---|---|---|
+| volver a `renderAppView("invoices")` | el defecto exacto de antes del ticket | el destino + 4 tests más |
+| navegar a la ficha **sin** el id | «Sin documento seleccionado» — el fallo que más se parece a que funcione | el destino + 3 tests más |
+| respaldo a la ficha vacía | emitida de verdad, pantalla en blanco | el respaldo |
+
+---
+
+## 7 · LO QUE NO SE HA HECHO
+
+* **Los otros dos 🟢 de 600c** —«📋 Usar plantilla» / «💾 Guardar como plantilla», y el pie de la
+  vista previa— **no entran aquí**: una tarea, una rama (AA1.2). Siguen bloqueados por la firma de
+  la frase «…en el presupuesto actual» que abre la hoja de plantillas, tal y como quedó escrito en
+  `quotesView.js:1280`.
+* **Los 🟡 2 y los 🔴 8**: intactos.
+* **`nuevaFacturaModal.js`**: no se toca. Sigue muerto y sirviéndose (`index.html:295`,
+  `sw.js:82`), anotado en el apéndice de 600c.
+* **Ningún rótulo** nuevo, movido ni renombrado. **SCRUM-825 sigue parado**: no se toca
+  «justificante».
+* **Cero producción y cero staging.**
