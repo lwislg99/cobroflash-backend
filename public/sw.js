@@ -70,6 +70,8 @@ const SHELL = [
   '/dashboard/js/quotesView.js',
   '/dashboard/js/quotesDetailView.js',
   '/dashboard/js/switchTipoArticulo.js', // SCRUM-609 (CAT-01)
+  '/dashboard/js/economiaVisible.js', // SCRUM-597 (DOC-07): quién ve coste y margen
+  '/dashboard/js/documentoAsignados.js', // SCRUM-597 (DOC-07): quién lleva el documento
   '/dashboard/js/margenCatalogo.js', // SCRUM-609
   '/dashboard/js/productsView.js',
   '/dashboard/js/providersView.js',
