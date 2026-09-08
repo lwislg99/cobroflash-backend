@@ -2,6 +2,15 @@
 
 **Fecha de cierre:** 8-sep-2026 · **Rama:** `scrum-626-el-arranque-en-frio-que-se-paga-una-vez`
 
+**Medido contra:** `origin/main` = `24f8cb4dcfd1dba2c9d9d857880952639273f214` · 2026-09-08T07:20:07+01:00
+
+> ⚠️ **El antes/después de `guards:visuales` se corrió contra `15b42968`, no contra este sha** —
+> `main` se movió dos veces mientras se trabajaba, que es exactamente el incidente que originó
+> SCRUM-267—. No se repite la medida, y el motivo está **medido, no supuesto**: pasar de
+> `15b42968` a `24f8cb4d` trajo **4 ficheros, los cuatro bajo `docs/`**
+> (`git diff --name-only 15b42968 origin/main | grep -v "^docs/"` da **0**). No hay una línea de
+> código que pueda haber movido esos números. Si hubiera tocado `scripts/`, habría que repetirla.
+
 > Este ticket se trabajó en **dos ramas**, y las dos entran: una **DIAGNOSTICA** y la otra
 > **MITIGA**. No se parte el ticket y no se elige entre ellas — sin el diagnóstico, el
 > calentamiento sería una constante puesta a ojo; sin la mitigación, el diagnóstico se queda en
@@ -329,10 +338,10 @@ precisamente porque **no custodia ningún verde**.
 ## ⚠️ SCRUM-673 · ¿lo hace redundante el calentamiento? **NO. Y no se toca.**
 
 Atacan **causas distintas**, y se ve en el porqué que el propio 673 dejó escrito
-(`scripts/_navegador.mjs:218-229`):
+(`scripts/_navegador.mjs:218-230`), citado tal cual está escrito:
 
-> *«el mismo guard, el mismo binario y la misma máquina arrancaron en 0,3 s, en 12,9 s y en 38,2 s
-> en tiradas distintas. Eso no es el navegador: es la CARGA DEL RUNNER.»*
+> *«El mismo guard, el mismo binario y la misma maquina arrancaron en 0,3 s, en 12,9 s y en 38,2 s
+> en tiradas distintas. Eso no es el navegador: es la carga del runner.»*
 
 | | qué quita | qué NO quita |
 |---|---|---|
