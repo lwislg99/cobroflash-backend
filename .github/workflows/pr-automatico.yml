@@ -53,8 +53,18 @@
 #                               la detección de modo mire un solo sitio.
 #   · `YAQU_BOT_PRIVATE_KEY`  — la clave privada .pem que genera esa misma pantalla, entera.
 #
-# La App necesita permisos de repositorio: **Contents: Read** y **Pull requests: Read and
-# write**. Nada más. Instalada en este repositorio.
+# La App necesita permisos de repositorio: **Contents: Read and write** y **Pull requests:
+# Read and write**. Nada más. Instalada en este repositorio.
+#
+# 🔴 `Contents: Read` NO BASTA, y aquí decía `Read` hasta el 8-sep-2026. Medido ese día en la
+# primera ejecución en modo COMPLETO (run 25, PR #1196): la App acuñó su token, pasó el
+# control positivo, ABRIÓ el PR —y CI se disparó sobre él, que era toda la gracia de usar una
+# App y no el GITHUB_TOKEN— pero armar el auto-merge siguió fallando. El motivo es el mismo
+# que obligó a subir `contents` en el bloque `permissions:` de abajo: armar el auto-merge es
+# comprometer a GitHub a EMPUJAR un merge más tarde, y eso es escritura de contenido. El
+# token de una App está ADEMÁS acotado por los permisos declarados de la App, así que subir
+# solo el `permissions:` del job no alcanza: hay que subirlo en los dos sitios.
+# Al cambiarlo en la App, la instalación pide aceptar el permiso nuevo.
 #
 # ⚠️ Mientras `main` esté rojo (SCRUM-822) NINGÚN auto-merge se completará, ni el de este
 # workflow ni el de nadie. No es un fallo del workflow: es que la condición no se cumple.
@@ -71,10 +81,20 @@ concurrency:
   group: pr-auto-${{ github.ref }}
   cancel-in-progress: true
 
-# Mínimos. En modo COMPLETO quien actúa es el token de la App; esto es lo que necesita el
-# modo DEGRADADO para armar el auto-merge de un PR que ya existe.
+# Mínimos para lo que hace, y ni uno más.
+#
+# 🔴 `contents: write` NO es un ensanche caprichoso: es lo que pedía el fallo MEDIDO el
+# 8-sep-2026 en el PR #1181 — `GraphQL: Resource not accessible by integration
+# (enablePullRequestAutoMerge)`. Armar el auto-merge es comprometer a GitHub a EMPUJAR un
+# merge más tarde, y con `contents: read` el token no puede prometerlo. Con `read`, el paso
+# fallaba en todas las ejecuciones que encontraban un PR: seis runs, cuatro fallos, y
+# `auto_merge=no` en todos los PR que tocó.
+#
+# Y va AQUÍ, en el job, a propósito: es el lever ESTRECHO. El ancho —marcar «Read and write
+# permissions» en Settings del repositorio— le daría escritura a TODOS los workflows del repo
+# para arreglar uno. Este bloque solo afecta a este.
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
@@ -228,13 +248,55 @@ jobs:
             echo "  (En modo degradado esto es lo normal hasta que alguien abra el PR a mano.)"
             exit 0
           fi
-          if ! gh pr merge "$NUM" --auto --merge; then
-            echo "::error::No se pudo armar el auto-merge del PR #$NUM."
-            echo "Dos causas probables, las dos en Settings del repositorio:"
-            echo "  · 'Allow auto-merge' desactivado."
-            echo "  · '--merge' (commit de merge) no permitido — esta casa usa commits de"
-            echo "    merge; si el repo solo admite squash o rebase, hay que cambiar UNA de"
-            echo "    las dos cosas, y cuál es decisión del fundador, no de este workflow."
-            exit 1
+          if gh pr merge "$NUM" --auto --merge 2> "$RUNNER_TEMP/err.txt"; then
+            echo "Auto-merge ARMADO en el PR #$NUM. Mergea GitHub cuando pase el check obligatorio."
+            exit 0
           fi
-          echo "Auto-merge ARMADO en el PR #$NUM. Mergea GitHub cuando pase el check obligatorio."
+
+          # ── NO PUDO. ¿Es una avería o una situación normal? ─────────────────────────────
+          # Un PR en conflicto, o uno que ya no tiene nada que esperar, NO se puede armar — y
+          # eso no es un fallo del workflow. Pintarlo de rojo fabrica un rojo falso, y un rojo
+          # falso se aprende a ignorar. Lo decide `scripts/clasificar-fallo-automerge.mjs`
+          # MIRANDO EL ESTADO DEL PR (un enum), no el texto del mensaje.
+          cat "$RUNNER_TEMP/err.txt"
+
+          # `mergeable` se calcula en diferido: la doc de GitHub dice literalmente que si sale
+          # null hay que dar tiempo y volver a pedirlo. Medido el 8-sep-2026: 13 de 16 PR
+          # abiertos devolvían null a la primera. Sin estos reintentos, casi todo saldría
+          # UNKNOWN y el clasificador —que falla cerrado— lo pintaría rojo por no saber.
+          VISTA='{}'
+          for intento in 1 2 3 4 5; do
+            VISTA="$(gh pr view "$NUM" --json mergeable,mergeStateStatus 2>/dev/null || echo '{}')"
+            case "$VISTA" in
+              *'"UNKNOWN"'*|'{}') sleep 5 ;;
+              *) break ;;
+            esac
+          done
+
+          # El texto del error viaja SOLO para poder endurecer: si dice permisos, es rojo
+          # aunque el estado parezca benigno (fue la causa real del PR #1181).
+          #
+          # 🔴 VA COMO CONDICIÓN DE UN `if`, Y NO ES ESTILO. GitHub corre los `run:` con
+          # `bash -e`: un `exit 1` del clasificador abortaría el paso ANTES de poder leer su
+          # código, y entonces TODO saldría rojo — el arreglo quedaría inerte y con aspecto de
+          # funcionar. Los comandos que son condición de un `if` están exentos de `-e`.
+          if echo "$VISTA" \
+            | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const v=JSON.parse(s||'{}');v.error=require('fs').readFileSync(process.env.RUNNER_TEMP+'/err.txt','utf8');process.stdout.write(JSON.stringify(v))})" \
+            | node scripts/clasificar-fallo-automerge.mjs; then
+            VEREDICTO=0
+          else
+            VEREDICTO=1
+          fi
+
+          if [ "$VEREDICTO" -eq 0 ]; then
+            echo "No se armó el auto-merge del PR #$NUM, y es lo esperable. El PR queda ABIERTO"
+            echo "para que lo mire una persona. Esto NO es un fallo del workflow."
+            exit 0
+          fi
+
+          echo "::error::No se pudo armar el auto-merge del PR #$NUM y no consta un motivo legítimo."
+          echo "Dónde mirar, por orden:"
+          echo "  · permisos: ¿el job lleva 'contents: write'? ¿hay token de App, o corrió el de por defecto?"
+          echo "  · 'Allow auto-merge' desactivado en Settings del repositorio."
+          echo "  · '--merge' (commit de merge) no permitido — esta casa usa commits de merge."
+          exit 1

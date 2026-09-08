@@ -39,6 +39,9 @@ import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsA
 import { canalDeWhatsApp } from '../../../../core/contacto/canalDeWhatsApp'; // SCRUM-590 (CONT-19)
 import fs from 'fs';
 import { ensureInvoicePdf, ensureChargeReceiptToken } from '../../../../lib/invoicing';
+// SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
+// de un `internal_error`. NO sube el timeout ni toca el cerrojo.
+import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } from '../../../invoicing/domain/cerrojoSaturado';
 import { sendSuccessBody, sendFailureBody, SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 import { esErrorSinSellar, ERROR_SIN_SELLAR } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206
 import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
@@ -1056,6 +1059,10 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
       return res.status(409).json({ error: ERROR_SIN_LINEAS, message: COPY_ADMIN_SIN_LINEAS });
     }
     console.error('[POST /admin/invoices/:id/rectify]', err);
+    // SCRUM-728 · el cerrojo de serie no dio turno a tiempo. No es un fallo del servidor ni del
+    // profesional: es cola. La transaccion se deshizo entera —ni documento, ni numero consumido—,
+    // asi que repetir la misma accion unos segundos despues sale bien.
+    if (esCerrojoSaturado(err)) return res.status(ESTADO_CERROJO_SATURADO).json(cuerpoCerrojoSaturado());
     return res.status(500).json({ error: 'internal_error' });
   }
 });

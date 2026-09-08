@@ -48,6 +48,9 @@ import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaE
 // SCRUM-734 · el ÚNICO sitio donde se decide qué lleva el PDF del presupuesto.
 import { paramsDePresupuestoParaPdf } from '../../../quotes/domain/presupuestoParaPdf';
 
+// SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
+// de un `internal_error`. NO sube el timeout ni toca el cerrojo.
+import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } from '../../../invoicing/domain/cerrojoSaturado';
 const router = Router();
 
 /**
@@ -343,6 +346,10 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     });
   } catch (err) {
     console.error('[POST /admin/quotes/:id/invoice] error', err);
+    // SCRUM-728 · el cerrojo de serie no dio turno a tiempo. No es un fallo del servidor ni del
+    // profesional: es cola. La transaccion se deshizo entera —ni documento, ni numero consumido—,
+    // asi que repetir la misma accion unos segundos despues sale bien.
+    if (esCerrojoSaturado(err)) return res.status(ESTADO_CERROJO_SATURADO).json(cuerpoCerrojoSaturado());
     // SCRUM-246: no hay nada que cobrar. No se ha emitido NI consumido número, así que el
     // profesional arregla el presupuesto y vuelve — la serie sigue intacta.
     if (esErrorSinLineas(err)) {

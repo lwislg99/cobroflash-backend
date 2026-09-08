@@ -2,6 +2,8 @@
 
 Estas normas aplican a todas las sesiones, sin excepción.
 Tu identidad y tus trampas propias están en docs/equipo/sesion-N.md.
+Quien coordina también tiene ficha, y con sus trampas medidas dentro:
+docs/equipo/orquestador.md.
 
 ## A1 · Cada tanda, antes de nada
 

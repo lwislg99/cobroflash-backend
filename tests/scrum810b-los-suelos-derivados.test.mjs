@@ -40,6 +40,7 @@ import {
   DIRECCIONES, RAMA_DE_REFERENCIA, arbolDeLaBase,
   poblacionesContraLaBase, sueloDerivado,
 } from '../scripts/_suelo-contra-main.mjs';
+import { testsDeclaradosEn } from './_poblacion-de-tests.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -104,6 +105,33 @@ export const POBLACIONES = [
     guard: 'scrum274-huella-estaticos.test.mjs', suelo: 'MINIMO_SCRIPTS = 31',
     censo: (raiz) => (fs.readFileSync(path.join(raiz, 'public/dashboard/index.html'), 'utf8')
       .match(/<script\s+[^>]*src=/gi) || []).length,
+  },
+  {
+    // 🔴 SCRUM-708 (8-sep-2026) · LA POBLACIÓN PARA LA QUE ESTE REGISTRO SE INVENTÓ.
+    //
+    // `SUELO_TESTS` de `_suelo-de-la-tanda.mjs` es el caso de libro: declarado en **4798** el
+    // 2-sep, la tanda del 8-sep dio **6183**. Margen **+1385** — se podían perder mil trescientos
+    // ochenta y cinco tests y seguía verde.
+    //
+    // 🔒 Y no es que nadie pudiera verlo: ese guard IMPRIME el margen en CADA ejecución de CI,
+    // justamente como compensación declarada de ser un número a mano. Llevaba seis días
+    // imprimiendo 1385. La compensación elegida era IMPRIMIR, y está medido que imprimir no
+    // basta. El precedente lo cita el propio fichero: `SUELO_TOTAL` de `_evidencia-tanda.mjs`
+    // sigue en **646** con la tanda en más de 6.000, meses después de quedar declarado rancio
+    // POR ESCRITO en el fichero de al lado.
+    //
+    // ── IMPACTO MEDIDO ANTES DE CONECTAR (la obligación que dejó fuera a `bocas-de-emision`) ──
+    // Medido el 8-sep-2026 sobre los 40 últimos commits de `origin/main`: 5793 → 6098 tests, y
+    // 720 → 752 ficheros el 8-sep-2026. **BAJA en ninguno de los pasos.** No fabrica ni un rojo
+    // en la historia reciente. Y ese «ninguno» está controlado: la sonda SÍ se mueve entre
+    // árboles a lo largo del tramo, así que no es un cero de no haber mirado.
+    //
+    // ⚠️ NO SUSTITUYE al número declarado, y por eso éste no lo toca: aquél sigue siendo el suelo
+    // de CEGUERA (un TAP a medias, una tanda que ni arrancó). Éste es el otro: la pérdida contra
+    // la base de fusión, a la primera y sin que nadie tenga que acordarse de subir nada.
+    nombre: 'tests-declarados',
+    guard: 'scrum672-un-test-que-desaparece.test.mjs', suelo: 'SUELO_TESTS (declarado en su fichero)',
+    censo: testsDeclaradosEn,
   },
   // 🔴 `bocas-de-emision` NO ESTÁ AQUÍ, y no es un olvido.
   // Su censo (`bocasDeEmision({ raiz })`, scrum778/205/206b/246) corre perfectamente sobre los dos

@@ -60,6 +60,9 @@ import { getEmissionMode } from '../../../invoicing/domain/emission.service'; //
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-17: total con desglose IVA
 import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
+// SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
+// de un `internal_error`. NO sube el timeout ni toca el cerrojo.
+import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } from '../../../invoicing/domain/cerrojoSaturado';
 import { SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206b
 import { sellarTrasEmision } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
@@ -1172,6 +1175,10 @@ router.post('/:id/albaranes', async (req, res) => {
       });
     }
     console.error('[POST /admin/jobs/:id/albaranes]', err?.message || err);
+    // SCRUM-728 · el cerrojo de serie no dio turno a tiempo. No es un fallo del servidor ni del
+    // profesional: es cola. La transaccion se deshizo entera —ni documento, ni numero consumido—,
+    // asi que repetir la misma accion unos segundos despues sale bien.
+    if (esCerrojoSaturado(err)) return res.status(ESTADO_CERROJO_SATURADO).json(cuerpoCerrojoSaturado());
     return res.status(500).json({ error: 'internal_error' });
   }
 });
@@ -1381,6 +1388,10 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     });
   } catch (err: any) {
     console.error('[POST /admin/jobs/:id/collect-rest]', err?.message || err);
+    // SCRUM-728 · el cerrojo de serie no dio turno a tiempo. No es un fallo del servidor ni del
+    // profesional: es cola. La transaccion se deshizo entera —ni documento, ni numero consumido—,
+    // asi que repetir la misma accion unos segundos despues sale bien.
+    if (esCerrojoSaturado(err)) return res.status(ESTADO_CERROJO_SATURADO).json(cuerpoCerrojoSaturado());
     // SCRUM-246: no hay nada que cobrar. No se ha emitido NI consumido número, así que el
     // profesional arregla el presupuesto y vuelve — la serie sigue intacta.
     if (esErrorSinLineas(err)) {
