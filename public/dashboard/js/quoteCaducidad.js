@@ -89,16 +89,51 @@
   }
 
   /**
-   * El día por DEFECTO de la caducidad: hoy + `dias`, en la zona del merchant.
+   * El día por DEFECTO de la caducidad: hoy + `dias` DÍAS DE CALENDARIO, en la zona del merchant.
    *
-   * Los 30 días se suman en MILISEGUNDOS —24 h fijas—, igual que hacía el código de antes y
-   * igual que hace el servidor en su respaldo (`quotes.routes.ts`). Cambiar eso movería la
-   * caducidad de todos los presupuestos, y este ticket es sobre **cómo se escribe el día**, no
-   * sobre cuánto dura un presupuesto.
+   * ═════════════════════════════════════════════════════════════════════════════════════════
+   * 🔴 SCRUM-630 · TREINTA DÍAS NO SON SETECIENTAS VEINTE HORAS
+   *
+   * Aquí se sumaba `dias * 86400000`. SCRUM-633 lo dejó así a propósito —su ticket era **cómo se
+   * escribe el día**, no cuánto dura un presupuesto— y lo dejó escrito. Éste es el otro medio:
+   * un día no siempre dura 24 h. España cambia la hora dos veces al año, y en la ventana de
+   * treinta días anterior a cada cambio la suma en milisegundos se va un día.
+   *
+   * MEDIDO sobre 2026 en Madrid, comparando contra el calendario:
+   *
+   *     09:00 y 12:00 ...........  0 de 365     ← a media mañana no se nota, y por eso duró
+   *     00:15 · 00:30 · 23:30 ... 30 de 365     ← las dos ventanas, una por cada cambio
+   *
+   * Y la dirección importa, porque la del ticket estaba al revés:
+   *
+   *     OCTUBRE (día de 25 h) → 720 h se quedan CORTAS → caduca UN DÍA ANTES   ← la venta perdida
+   *     MARZO   (día de 23 h) → 720 h se pasan          → caduca UN DÍA TARDE
+   *
+   * El profesional le dijo a su cliente por WhatsApp una fecha, y el presupuesto caducaba antes.
+   *
+   * ── CÓMO, y por qué NO hace falta ninguna librería (regla 36) ────────────────────────────
+   *
+   * Se resuelve PRIMERO el día natural en la zona del merchant, y sobre ese día se suman días de
+   * calendario con `Date.UTC(y, m, d + dias)`: JS normaliza el desbordamiento de mes y de año, y
+   * **UTC no tiene cambio de hora**, así que ahí un día es un día siempre. Cero aritmética de
+   * husos, cero dependencias, y los bordes (31-ene + 30, bisiesto, cambio de año) salen solos —
+   * están fijados en `tests/scrum630-default-en-dias.test.mjs`.
+   *
+   * ⚠️ ESTO MUEVE LA CADUCIDAD, y es el ticket: la mueve **sólo** donde estaba mal. A hora
+   * normal no cambia ni una fecha en todo el año — medido arriba, y con su control negativo.
+   *
+   * 🔴 EL RESPALDO DEL SERVIDOR SIGUE EN MILISEGUNDOS, y consta:
+   * `src/modules/quotes/app/routes/quotes.routes.ts` (`validUntil: body.validUntil ?? …`) y
+   * `src/modules/system/app/routes/quoteDecisionLanding.routes.ts`. Sólo actúan cuando el
+   * presupuesto se crea SIN `validUntil` —el panel siempre lo manda—, así que no se
+   * desincronizan con esto. Van reportados, no arreglados (regla 37).
+   * ═════════════════════════════════════════════════════════════════════════════════════════
    */
   function diaPorDefecto(merchant, dias, ahora) {
-    var base = (ahora instanceof Date ? ahora : new Date()).getTime();
-    return diaNaturalEn(new Date(base + dias * 86400000), zonaDelMerchant(merchant));
+    var zona = zonaDelMerchant(merchant);
+    var hoy = diaNaturalEn(ahora instanceof Date ? ahora : new Date(), zona);
+    var p = hoy.split('-');
+    return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2] + dias)).toISOString().slice(0, 10);
   }
 
   var api = {

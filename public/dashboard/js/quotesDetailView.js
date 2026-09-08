@@ -468,6 +468,33 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   }
   page.appendChild(infoSec);
 
+
+  // ── SCRUM-597 (DOC-07) · QUIÉN LLEVA ESTE DOCUMENTO ─────────────────────────────────────
+  //
+  // Categorización, no permiso: dice de quién es el asunto. No cambia quién puede editar ni
+  // emitir, y no abre coste ni margen — un técnico asignado sigue sin verlos (P-DOC-3).
+  //
+  // Todo el cableado vive en `documentoAsignados.js`, compartido con la factura/el presupuesto:
+  // metido aquí serían dos copias de la misma pantalla y se separarían a la primera.
+  if (typeof cablearAsignadosDeDocumento === 'function') {
+    const asigSec = document.createElement('div');
+    asigSec.className = 'detail-section';
+    asigSec.dataset.seccion = 'asignados';
+    page.appendChild(asigSec);
+    cablearAsignadosDeDocumento(document, {
+      doc: 'quote',
+      documentoId: quote.id,
+      contenedor: asigSec,
+      asignados: quote.asignados || [],
+      // Editar es admin-only, igual que el endpoint (`requireRole('admin')`). Al técnico se le
+      // pinta en solo lectura con los nombres que ya trae el detalle.
+      puedeEditar: window.appUserRole !== 'tecnico' && window.appUserRole !== 'operario',
+      pedir: apiRequest,
+      avisar: setStatus,
+      alGuardar: () => {},
+    });
+  }
+
   // ── Sección: CONCEPTOS + TOTALES ────────────────────────────
   const concSec = document.createElement('div');
   concSec.className = 'detail-section';
@@ -940,6 +967,14 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       }
     }, 1200);
   });
+
+  // ── Sección: ETIQUETAS (SCRUM-595, DOC-05) ──────────────────
+  // El bloque lo monta una pieza compartida con la ficha de la FACTURA: el mismo bloque para los
+  // dos documentos, no dos que se parezcan. Va detrás de las notas internas porque es lo mismo
+  // que ellas —cómo el profesional organiza SU documento—, y ninguna de las dos sale en el papel.
+  if (window.montarEtiquetasDelDocumento) {
+    window.montarEtiquetasDelDocumento(page, quote, `/admin/quotes/${quote.id}/tags`);
+  }
 
   // ── Sección: GASTOS Y MARGEN ────────────────────────────────
   const marginSec = document.createElement('div');

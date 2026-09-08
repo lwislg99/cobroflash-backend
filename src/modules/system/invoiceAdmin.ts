@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import { recalcJobCobradoForInvoice } from '../jobs/domain/job.service'; // SCRUM-28
 // SCRUM-441: el conjunto cerrado de métodos se CONSUME desde su dueño. Aquí no se copia ni un valor.
 import { campoPaidViaAlMarcar } from '../billing/domain/metodoDeCobro';
+import { tagsParaPrisma } from './tagsDelCliente'; // SCRUM-595 (DOC-05): el MISMO mecanismo que CONT-07
 
 // Listado para el BO (con filtros)
 export async function listInvoicesAdmin(
@@ -57,6 +58,10 @@ export async function listInvoicesAdmin(
     if (dateTo)   (where.createdAt as any).lte = dateTo;
   }
 
+  // ⚠️ SCRUM-595 (DOC-05) · ESTE `findMany` NO LLEVA `select`, y por eso `tags` sale sola.
+  // Se deja dicho porque es lo CONTRARIO de lo que pasa en el presupuesto, donde la lista es una
+  // proyeccion a mano y hubo que anadir la columna. Si alguien pone aqui un `select` explicito
+  // algun dia, tiene que acordarse de `tags` — y de todo lo demas.
   return prisma.invoice.findMany({
     where,
     orderBy: { createdAt: 'desc' },
@@ -65,6 +70,39 @@ export async function listInvoicesAdmin(
       quote: { select: { id: true } },
     },
   });
+}
+
+/**
+ * SCRUM-595 (DOC-05) · LAS ETIQUETAS DE UNA FACTURA.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 ESTO NO ES EDITAR UNA FACTURA EMITIDA (regla 29), Y LA DIFERENCIA NO ES SEMANTICA
+ *
+ * La regla 29 protege el DOCUMENTO: su numero, su total, sus lineas, su sello y su papel. Una
+ * etiqueta no es ninguna de esas cosas — es como el profesional ORDENA sus facturas en su propio
+ * panel, y no sale del documento por ningun lado. MEDIDO, no supuesto
+ * (`tests/scrum595-etiquetas-del-documento.test.mjs`):
+ *
+ *   · la huella de VeriFactu es una lista CERRADA de ocho campos y sale IDENTICA con `tags`;
+ *   · los parametros de `generateInvoicePdf` son lista blanca y `tags` no esta en ella;
+ *   · `emitInvoice` no la nombra, porque una etiqueta NO se copia al emitir.
+ *
+ * Es la misma familia que `status`, `paidAt`, `paidVia` o `reminder7SentAt`: campos que se
+ * escriben DESPUES de emitir sin tocar el documento. Si etiquetar fuera editar la factura,
+ * marcarla como pagada tambien lo seria.
+ *
+ * 🔴 Y SE ESCRIBE **SOLO** `tags`. El `data` de este `updateMany` tiene un unico campo a
+ * proposito: una funcion que aceptara un objeto de cambios seria la puerta por la que un dia
+ * entra a esta tabla algo que si es el documento.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * Tenencia en el `WHERE` (regla 2), como el presupuesto. Devuelve las filas tocadas.
+ */
+export async function setInvoiceTags(merchantId: number, id: number, tags: unknown): Promise<number> {
+  const valor = tagsParaPrisma(tags);
+  if (valor === undefined) return 0;
+  const r = await prisma.invoice.updateMany({ where: { id, merchantId }, data: { tags: valor } });
+  return r.count;
 }
 
 // Detalle de una factura

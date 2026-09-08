@@ -809,6 +809,10 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'almacenLocal.js',
   'api.js',
   'app.js',
+  // SCRUM-713 · la regla con la que el presupuesto filtra sus clientes al teclear, y los tres
+  // textos que enseña al hacerlo. Va ANTES de `quotesView.js`, que la llama al MONTAR el selector
+  // —no sólo al buscar—, así que cargarla después dejaría la pantalla sin selector de cliente.
+  'buscadorDeClientes.js',
   'cobrosView.js',
   'colaDeFirmas.js',
   'contacto.js',
@@ -823,6 +827,10 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   // de `quotesView.js`, que le pide la propuesta al elegir cliente.
   'descuentoPorDefecto.js',
   'estadoFirma.js',
+  // SCRUM-595 (DOC-05) · el bloque de etiquetas de la ficha, COMPARTIDO por las dos fichas de
+  // documento. Va DESPUÉS de `filtroClientes.js`, de donde saca las decisiones y los textos, y
+  // ANTES de `quotesDetailView.js` e `invoiceDetailView.js`, que lo montan.
+  'etiquetasDelDocumento.js',
   'expensesView.js',
   'exportView.js',
   'facturaPreEmision.js',
@@ -856,6 +864,12 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'jobNuevoModal.js',
   'jobRailBlocks.js',
   'jobAsignados.js',
+  // SCRUM-597 (DOC-07, 7-sep-2026): entran DOS. `economiaVisible.js` responde quién ve coste
+  // y margen (P-DOC-3) y va ANTES de `productsView.js`, `quotesView.js` e
+  // `invoiceDetailView.js`, que lo consultan. `documentoAsignados.js` es el selector de
+  // quién lleva el documento y va ANTES de los dos detalles que lo montan.
+  'documentoAsignados.js',
+  'economiaVisible.js',
   'jobsCierreTrabajo.js',
   'jobsView.js',
   'libroRegistroView.js',
@@ -920,7 +934,24 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
  */
 export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   { antes: 'filtroClientes.js', despues: 'customersView.js', motivo: 'SCRUM-581: pestañas y orden de la lista' },
+  // SCRUM-595 (DOC-05) · las etiquetas del documento reutilizan la pieza de CONT-07 en CUATRO
+  // sitios más. Las vistas leen `window.filtroClientes` SIN fallback, a propósito: degradar en
+  // silencio escondería una pantalla rota en vez de enseñarla. Lo que sostiene esa decisión es
+  // este orden, así que se declara — que es lo que impide que un merge lo reordene y nadie note
+  // nada hasta que un profesional abra la lista de facturas.
+  { antes: 'filtroClientes.js', despues: 'etiquetasDelDocumento.js', motivo: 'SCRUM-595: de ahí saca las decisiones y los textos' },
+  { antes: 'filtroClientes.js', despues: 'quotesListView.js', motivo: 'SCRUM-595: el filtro por etiqueta del presupuesto' },
+  { antes: 'filtroClientes.js', despues: 'invoicesView.js', motivo: 'SCRUM-595: el filtro por etiqueta de la factura' },
+  { antes: 'etiquetasDelDocumento.js', despues: 'quotesDetailView.js', motivo: 'SCRUM-595: la ficha monta el bloque' },
+  { antes: 'etiquetasDelDocumento.js', despues: 'invoiceDetailView.js', motivo: 'SCRUM-595: la ficha monta el bloque' },
   { antes: 'margenCatalogo.js', despues: 'productsView.js', motivo: 'SCRUM-609: la aritmética del margen' },
+  // SCRUM-597 (DOC-07): si `economiaVisible.js` se cargara DESPUÉS, `window.veoEconomia` no
+  // existiría al montar la pantalla y los campos de coste y margen se pintarían a un técnico —
+  // que es exactamente lo que el ticket cierra. Se declaran los TRES consumidores.
+  { antes: 'economiaVisible.js', despues: 'productsView.js', motivo: 'SCRUM-597: quién ve coste y margen en la ficha del catálogo' },
+  { antes: 'economiaVisible.js', despues: 'quotesView.js', motivo: 'SCRUM-597: si la columna «Coste» de la línea se pinta o no' },
+  { antes: 'documentoAsignados.js', despues: 'quotesDetailView.js', motivo: 'SCRUM-597: el selector de quién lleva el documento' },
+  { antes: 'documentoAsignados.js', despues: 'invoiceDetailView.js', motivo: 'SCRUM-597: el mismo selector en la factura' },
   { antes: 'margenCatalogo.js', despues: 'reportsView.js', motivo: 'SCRUM-764: el criterio de margen negativo' },
   { antes: 'switchTipoArticulo.js', despues: 'productsView.js', motivo: 'SCRUM-609: el switch Producto|Servicio' },
   { antes: 'quoteApartados.js', despues: 'quotesDetailView.js', motivo: 'SCRUM-655: apartados, numeración y descripción' },
@@ -943,6 +974,10 @@ export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   // `window.formaDePagoPorDefecto` no existe cuando el editor se monta y la tira no aparecería
   // JAMÁS — en silencio y con la tanda verde, que es el modo en que este defecto se esconde.
   { antes: 'formaDePagoPorDefecto.js', despues: 'quotesView.js', motivo: 'SCRUM-586: el editor le pide la propuesta al elegir cliente' },
+  // SCRUM-713 · y ésta NO es del mismo tipo que la de arriba: el editor la llama al MONTAR, dentro
+  // de `pintarOpcionesDeCliente`, no al elegir cliente. Cargarla después no dejaría el selector sin
+  // buscador — lo dejaría SIN CLIENTES, porque el montaje reventaría antes de pintarlos.
+  { antes: 'buscadorDeClientes.js', despues: 'quotesView.js', motivo: 'SCRUM-713: el editor filtra y rotula el selector de cliente con ella' },
   // SCRUM-606 (ALB-01) · las TRES del buscador de presupuesto. La del rótulo no es cosmética:
   // el modal titula con `atajoNuevo.textoDe('albaranes')`, así que si se cargara antes se
   // quedaría sin título y el marcador de microcopy sin firmar no se vería en pantalla.

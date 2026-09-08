@@ -589,6 +589,22 @@ model Quote {
   shippingAddress     String? @map("shipping_address") @db.Text
   shippingAddressMode String? @map("shipping_address_mode")
 
+  // SCRUM-595 (DOC-05) · LAS ETIQUETAS DEL DOCUMENTO.
+  //
+  // MISMO MECANISMO QUE `customers.tags` (SCRUM-580, CONT-07), no un segundo: misma columna
+  // JSONB, mismo tipo, misma forma y las MISMAS funciones de decision
+  // (`src/modules/system/tagsDelCliente.ts`). Si el documento guardara sus etiquetas de otra
+  // forma no seria el mismo mecanismo, seria el segundo — y dos que deciden lo mismo divergen.
+  //
+  // 🔴 NULLABLE Y SIN `@default`: `null` = «no se declararon etiquetas», que NO es `[]` = «se
+  // miraron y no hay ninguna». Con un `@default([])` un `IS NOT NULL` diria que TODOS los
+  // documentos tienen etiquetas, y el filtro de la lista se construiria sobre esa mentira.
+  //
+  // ⛔ DEL DOCUMENTO, NO DE LA LINEA. Las lineas viven dentro de `lines` (JSONB) y esta columna
+  // no las mira: etiquetar un CONCEPTO exigiria meter la etiqueta DENTRO de ese JSON, que es
+  // otro ticket y otro mecanismo. No queda habilitado de rebote.
+  tags Json? @map("tags")
+
   id         Int @id @default(autoincrement())
   merchantId Int
   customerId Int
@@ -691,6 +707,11 @@ model Quote {
   Invoice   Invoice[]
   Expense   Expense[]
 
+  // SCRUM-597 (DOC-07): los usuarios de la cuenta asignados a ESTE presupuesto. Virtual, sin
+  // columna. NO es `teamMemberId`, que es la AUTORÍA (quién lo creó): un presupuesto lo redacta
+  // uno y puede estar asignado a tres.
+  asignados QuoteAssignee[]
+
   // SCRUM-195: los adicionales se buscan por Job, SIEMPRE dentro del merchant (regla 2).
   @@index([merchantId, jobId])
   @@map("quotes")
@@ -731,6 +752,19 @@ model Invoice {
   /// (`computeVeriFactuHash`) y ninguna columna nueva entra en ella. Estas dos no tocan el sello.
   shippingAddress     String? @map("shipping_address") @db.Text
   shippingAddressMode String? @map("shipping_address_mode")
+
+  // SCRUM-595 (DOC-05) · LAS ETIQUETAS DEL DOCUMENTO. La gemela de `quotes.tags`.
+  //
+  // 🔴 NO TOCA LA REGLA 29, Y ESTA MEDIDO (`tests/scrum595-etiquetas-del-documento.test.mjs`):
+  // la huella de VeriFactu es una lista CERRADA de ocho campos (`computeVeriFactuHash`) y sale
+  // IDENTICA pasandole `tags`; los parametros de `generateInvoicePdf` son lista blanca y `tags`
+  // no esta en ella. Etiquetar una factura YA EMITIDA no cambia su numero, ni su total, ni su
+  // PDF: cambia su FICHA, que es otra cosa.
+  //
+  // 🔴 Y NO SE COPIA AL EMITIR. La escribe el profesional cuando quiere, tambien despues. Por
+  // eso este campo NO necesita escritor en `emitInvoice` — que es exactamente el bloqueo que
+  // dejo a SCRUM-602 (DOC-12) sin cablear el lado factura de la direccion de obra.
+  tags Json? @map("tags")
   currency            String  @db.VarChar(3)
   pdfUrl              String
   qrData              String
@@ -855,6 +889,10 @@ model Invoice {
 
   rectifies   Invoice?  @relation("Rectification", fields: [rectifiesId], references: [id])
   rectifiedBy Invoice[] @relation("Rectification")
+
+  // SCRUM-597 (DOC-07): los usuarios de la cuenta asignados a ESTA factura. Virtual, sin columna
+  // — y por eso asignar no puede tocar el número, el total ni el PDF (regla 29).
+  asignados InvoiceAssignee[]
 
   // El número es único POR MERCHANT (antes era único global: dos merchants con el
   // mismo prefijo "CF" colisionaban; la serie es del emisor, no de la plataforma)
@@ -1053,10 +1091,13 @@ model TeamMember {
   role   String @default("tecnico") // admin | tecnico
   status String @default("invited") // invited | active | suspended
 
-  merchant       Merchant      @relation(fields: [merchantId], references: [id])
-  authSessions   AuthSession[]
+  merchant           Merchant          @relation(fields: [merchantId], references: [id])
+  authSessions       AuthSession[]
   // SCRUM-650 (T1): los trabajos que tiene asignados. Virtual, sin columna.
-  jobAssignments JobAssignee[]
+  jobAssignments     JobAssignee[]
+  // SCRUM-597 (DOC-07): los DOCUMENTOS que tiene asignados. Virtuales, sin columna.
+  quoteAssignments   QuoteAssignee[]
+  invoiceAssignments InvoiceAssignee[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1525,4 +1566,58 @@ model ParteTrabajo {
   @@index([merchantId, fecha])
   @@index([merchantId, estado])
   @@map("partes_trabajo")
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-597 (DOC-07) · ASIGNAR USUARIOS AL DOCUMENTO
+//
+// Dos tablas puente, una por documento. Aprobadas contra `docs/sql/scrum-597-asignados-de-
+// documento.sql`, que es el ALTER que las crea y que va PRIMERO (el schema no se toca sin él).
+//
+// 🔴 UNA SOLA FUENTE DE VERDAD, a diferencia de `JobAssignee`. El trabajo guarda su asignación
+// también en la columna `jobs.assigned_user_id` porque ésta ya existía, y eso obligó a escribir
+// los dos sitios a la vez y a montar un censo que caza cuándo se separan (SCRUM-650). Aquí no hay
+// columna heredada —ni `quotes` ni `invoices` han tenido nunca asignado—, así que el dato vive
+// SOLO aquí y esa discrepancia no puede producirse.
+//
+// ⚠️ NO CONFUNDIR CON `Quote.teamMemberId`, que es AUTORÍA: quién CREÓ el presupuesto. Un
+// documento lo redacta uno y puede estar asignado a varios. Son dos ideas y el schema las declara
+// aparte, igual que `operarioId` y `assignedUserId` en el trabajo.
+//
+// ⚠️ ASIGNAR NO ES UN PERMISO. Estas filas no deciden quién edita ni quién emite —eso lo dan el
+// rol y `requireRole`— y tampoco abren la visibilidad de coste ni de margen (P-DOC-3): un técnico
+// asignado a un documento sigue sin verlos.
+//
+// Un documento SIN NINGUNA fila aquí es exactamente lo que hay hoy: sin asignar, y se comporta
+// igual que siempre en listas, filtros y orden.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+model QuoteAssignee {
+  quoteId      Int      @map("quote_id")
+  teamMemberId Int      @map("team_member_id")
+  assignedAt   DateTime @default(now()) @map("assigned_at")
+
+  // onDelete: Cascade en LAS DOS, por la lección de SCRUM-244: sin él la FK es RESTRICT y borrar
+  // un empleado —o su merchant— revienta a mitad de recorrido con las tablas anteriores ya
+  // vaciadas. Y es lo correcto además de lo seguro: una asignación no significa nada sin la
+  // persona asignada, ni sin el documento asignado.
+  quote      Quote      @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  teamMember TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+
+  @@id([quoteId, teamMemberId])
+  @@index([teamMemberId])
+  @@map("quote_assignees")
+}
+
+model InvoiceAssignee {
+  invoiceId    Int      @map("invoice_id")
+  teamMemberId Int      @map("team_member_id")
+  assignedAt   DateTime @default(now()) @map("assigned_at")
+
+  invoice    Invoice    @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  teamMember TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+
+  @@id([invoiceId, teamMemberId])
+  @@index([teamMemberId])
+  @@map("invoice_assignees")
 }
