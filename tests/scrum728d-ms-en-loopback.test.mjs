@@ -150,8 +150,8 @@ test('SCRUM-728d · 🔴 LOS CUATRO CAMINOS, con 1 · 5 · 10 simultáneas',
       // que uno solo no puede dar los cuatro caminos. Y una RECTIFICATIVA sobre un merchant en
       // modo `receipt` no es lenta: **lanza `invoicing_es_disabled`** (las rectificativas no
       // existen para justificantes, regla 29), así que medirla ahí no habría medido nada.
-      const es = { email: `medicion-es-${process.pid}@yaqu.test`, country: 'ES' };
-      const fr = { email: `medicion-fr-${process.pid}@yaqu.test`, country: 'FR' };
+      const es = { name: 'QA SCRUM-728d ES', email: `medicion-es-${process.pid}@yaqu.test`, country: 'ES' };
+      const fr = { name: 'QA SCRUM-728d FR', email: `medicion-fr-${process.pid}@yaqu.test`, country: 'FR' };
 
       await conMerchantDeMedicion(prisma, es, async (mEs) => {
         await conMerchantDeMedicion(prisma, fr, async (mFr) => {
@@ -223,7 +223,7 @@ test('SCRUM-728d · 🔴 LA PENDIENTE DEL VIAJE QUE ESCALA: 10 · 100 · 1.000 f
         + 'test no está midiendo lo que dice. Si el corte se movió, hay que rehacer la medición.');
 
       // País no-ES para caer en el camino FISCAL, que es el que lee la serie F entera.
-      await conMerchantDeMedicion(prisma, { email: `escala-${process.pid}@yaqu.test`, country: 'FR' }, async (m) => {
+      await conMerchantDeMedicion(prisma, { name: 'QA SCRUM-728d escala', email: `escala-${process.pid}@yaqu.test`, country: 'FR' }, async (m) => {
         const cliente = await prisma.customer.create({
           data: { merchantId: m.id, name: 'Cliente de medición', phone: `+34600${String(m.id).padStart(6, '0')}` },
         });
