@@ -391,16 +391,95 @@ export function marcaDelArbol(raiz = RAIZ) {
     huella: createHash('sha256')
       .update(head.stdout).update(estado.stdout).update(diff.stdout)
       .digest('hex'),
+    // 🔴 SCRUM-813b · Y EL DETALLE POR RUTA, QUE ANTES SE TIRABA. Ver `huellaPorRuta`.
+    porRuta: huellaPorRuta(estado.stdout, diff.stdout),
   };
 }
 
-/** ¿Qué se movió entre las dos marcas? Lista vacía = el árbol estuvo quieto. */
+/**
+ * ═════════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-813b · QUÉ RUTA SE MOVIÓ — porque «se movió el árbol» no es accionable.
+ *
+ * EL DEFECTO QUE CIERRA: el instrumento medía las dos pasadas enteras, los cuatro canarios y las
+ * tres censadas… y entonces resumía el árbol a UN hash y tiraba el resto. Cuando ese hash
+ * cambiaba, lo único que sabía decir era «el contenido del árbol de trabajo cambió durante la
+ * medición»: ni qué fichero, ni de qué a qué. Con eso, quien recibe el CIEGO **no puede
+ * distinguir** «la tanda escribió algo» de «alguien editó un fichero mientras corría» — dos
+ * causas con arreglos opuestos. Y ante esa duda, la salida cómoda es relajar la puerta.
+ *
+ * ⛔ ESTO NO RELAJA NADA, Y ES LO PRIMERO QUE HAY QUE LEER. Cualquier ruta que se mueva sigue
+ * siendo CIEGO: no hay lista blanca, no hay excepciones, no hay zona franca. Lo único que cambia
+ * es que el CIEGO **dice el nombre**.
+ *
+ * CÓMO, y hacen falta las DOS fuentes:
+ *   · `git status --porcelain` ve la APARICIÓN y la DESAPARICIÓN de un fichero (y los que no
+ *     tienen seguimiento, que sólo salen ahí);
+ *   · `git diff HEAD`, troceado por fichero, ve el CONTENIDO — porque un fichero rastreado que se
+ *     mute y se restaure con otros bytes deja el código de estado IGUAL y el diff distinto.
+ *
+ * Medido en esta sesión: mirar sólo el código de estado da «0 rutas» sobre un árbol que podría
+ * haberse movido por contenido. Ese hueco es la razón de que se crucen las dos.
+ * ═════════════════════════════════════════════════════════════════════════════════════════════
+ */
+export function huellaPorRuta(estadoPorcelain, diffHead) {
+  const porRuta = new Map();
+  for (const linea of String(estadoPorcelain).split('\n')) {
+    if (!linea.trim()) continue;
+    // `XY ruta` — y en los renombrados, `XY origen -> destino`: se queda el DESTINO, que es donde
+    // el fichero está ahora.
+    const ruta = linea.slice(3).trim().split(' -> ').pop();
+    porRuta.set(ruta, 'estado:' + linea.slice(0, 2));
+  }
+  // El diff se trocea por su cabecera, para que el contenido viaje CON SU RUTA. Con un hash común
+  // para todo el diff, dos ficheros que cambian a la vez dan una sola señal indivisible — que es
+  // exactamente lo que este ticket viene a deshacer.
+  const trozos = String(diffHead).split(/^diff --git /m).slice(1);
+  for (const t of trozos) {
+    const cabecera = t.split('\n', 1)[0];
+    const casa = /b\/(.+)$/.exec(cabecera);
+    const ruta = casa ? casa[1].trim() : '(cabecera de diff ilegible: ' + cabecera.slice(0, 60) + ')';
+    const previo = porRuta.get(ruta) || '';
+    porRuta.set(ruta, previo + '|diff:' + createHash('sha256').update(t).digest('hex').slice(0, 16));
+  }
+  return porRuta;
+}
+
+/**
+ * ¿Qué se movió entre las dos marcas? Lista vacía = el árbol estuvo quieto.
+ *
+ * 🔴 SCRUM-813b · devuelve ADEMÁS `rutas`: qué ficheros se movieron, con su antes y su después.
+ * La puerta es la misma —una sola ruta movida ya es CIEGO— pero el motivo deja de ser una frase
+ * genérica y pasa a ser una lista de nombres, que es lo que permite arreglarlo en vez de
+ * discutirlo.
+ */
 export function arbolQuieto(antes, despues) {
-  if (!antes?.ok || !despues?.ok) return { medible: false, cambios: [] };
+  if (!antes?.ok || !despues?.ok) return { medible: false, cambios: [], rutas: [] };
   const cambios = [];
-  if (antes.head !== despues.head) cambios.push(`HEAD: ${antes.head.slice(0, 12)} → ${despues.head.slice(0, 12)}`);
-  else if (antes.huella !== despues.huella) cambios.push('el contenido del árbol de trabajo cambió durante la medición');
-  return { medible: true, cambios };
+  if (antes.head !== despues.head) {
+    cambios.push(`HEAD: ${antes.head.slice(0, 12)} → ${despues.head.slice(0, 12)}`);
+    return { medible: true, cambios, rutas: [] };
+  }
+
+  const rutas = [];
+  if (antes.porRuta && despues.porRuta) {
+    const todas = new Set([...antes.porRuta.keys(), ...despues.porRuta.keys()]);
+    for (const r of [...todas].sort()) {
+      const a = antes.porRuta.get(r);
+      const b = despues.porRuta.get(r);
+      if (a !== b) rutas.push({ ruta: r, antes: a ?? '(no aparecía)', despues: b ?? '(dejó de aparecer)' });
+    }
+    for (const x of rutas) cambios.push(`${x.ruta}   ${x.antes} → ${x.despues}`);
+  }
+
+  // 🔴 EL SUELO DEL DETALLE, y sin él este refinamiento SERÍA un agujero: si la huella GLOBAL dice
+  // que algo cambió y el detalle por ruta no encuentra NADA, lo honesto no es dar el árbol por
+  // quieto —eso convertiría un detector ciego en un verde— sino declarar que se movió y que no se
+  // supo dónde. La puerta se queda cerrada precisamente cuando el instrumento no sabe.
+  if (!rutas.length && antes.huella !== despues.huella) {
+    cambios.push('el contenido del árbol de trabajo cambió durante la medición, y el detalle por '
+      + 'ruta NO supo decir dónde — se trata como movimiento, nunca como quietud');
+  }
+  return { medible: true, cambios, rutas };
 }
 
 /**

@@ -104,6 +104,11 @@ for (const zona of ZONAS_USADAS) {
 
 const quieto = arbolQuieto(marcaAntes, marcaDelArbol(RAIZ));
 console.log(`\n   árbol ${quieto.medible ? (quieto.cambios.length ? '🔴 SE MOVIÓ durante la medición' : 'quieto durante las dos pasadas ✔') : '(sin marca: no se pudo comprobar)'}`);
+// 🔴 SCRUM-813b · Y SE DICE QUÉ SE MOVIÓ, AQUÍ MISMO. Antes esto era una frase y el detalle se
+// perdía: quien leía el CIEGO no podía distinguir «la tanda escribió algo» de «alguien editó un
+// fichero mientras corría», que se arreglan de formas opuestas. La puerta no cambia —una ruta
+// movida sigue siendo CIEGO—; lo que cambia es que ahora se puede actuar sobre ella.
+for (const r of (quieto.rutas || [])) console.log(`      · ${r.ruta}   ${r.antes} → ${r.despues}`);
 
 let cambian = medidas.every((m) => m.ok) ? cambianDeVeredicto(medidas) : [];
 

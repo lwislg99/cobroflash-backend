@@ -35,11 +35,12 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';   // SCRUM-730: `pathname` no decodifica el espacio
+import { execFileSync } from 'node:child_process'; // SCRUM-813b: contrastar la marca contra git
 
 import {
   AUSENTE, CANARIOS, CENSADAS, SALIDA_APAGADA, SALIDA_CIEGO, SALIDA_HABLA, SALIDA_OK, ZONAS,
   arbolQuieto, cambianDeVeredicto, claveDe, entornoLimpio, escribirCanarios, ficherosDeLaTanda,
-  juzgarCanarios, marcaDelArbol, medirEnZona, sondaDeZona, veredicto,
+  huellaPorRuta, juzgarCanarios, marcaDelArbol, medirEnZona, sondaDeZona, veredicto,
 } from '../scripts/_trinquete-de-zona.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -84,6 +85,35 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: '  const cieloRaso = cambianEnElArbol.length === 0 && censadas.length > 0;',
     a: '  const cieloRaso = false;',
     cae: 'SUELO: CERO dependientes teniendo censadas NO es un cero — es CIEGO',
+  },
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+  // SCRUM-813b · las tres del DETALLE POR RUTA. Las tres se han provocado a mano antes de
+  // escribirlas aquí, y las tres tumbaron SU caso y sólo el suyo.
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+  // ⑥ EL SUELO DEL DETALLE SE CAE: un árbol que se movió pero cuyo troceado por ruta no supo
+  //    leer pasaría por QUIETO. Es la única forma en que este refinamiento podría abrir un
+  //    agujero, así que es la que más falta hace vigilar.
+  {
+    fichero: 'scripts/_trinquete-de-zona.mjs',
+    de: '  if (!rutas.length && antes.huella !== despues.huella) {',
+    a: '  if (false) {',
+    cae: 'SUELO: si el detalle por ruta NO ve nada pero la huella global cambió, sigue siendo CIEGO',
+  },
+  // ⑦ EL CIEGO VUELVE A SER MUDO: sigue cerrando la puerta, pero deja de decir QUÉ se movió — que
+  //    es exactamente el defecto que este apartado cierra.
+  {
+    fichero: 'scripts/_trinquete-de-zona.mjs',
+    de: '    for (const x of rutas) cambios.push(`${x.ruta}   ${x.antes} → ${x.despues}`);',
+    a: '    for (const x of rutas) cambios.push("el contenido del arbol cambio");',
+    cae: 'EL QUE DECIDE: un fichero de TEST tocado durante la medición sigue siendo CIEGO',
+  },
+  // ⑧ LA MARCA DEJA DE TRAER EL DETALLE: el instrumento vuelve a tirar el resultado después de
+  //    calcularlo, que es la avería original con otra cara.
+  {
+    fichero: 'scripts/_trinquete-de-zona.mjs',
+    de: '    porRuta: huellaPorRuta(estado.stdout, diff.stdout),',
+    a: '    porRuta: new Map(),',
+    cae: 'la marca REAL trae el detalle, y cuadra con lo que dice git',
   },
 ];
 
@@ -411,4 +441,102 @@ test('SCRUM-813 · 🔴 el trinquete tiene comando propio Y job de CI: no depend
     '🔴 EL CI YA NO LO CORRE. Sin job, el trinquete vuelve a ser una medición que hay que '
     + 'acordarse de teclear — que es exactamente lo que permitió que SCRUM-592 reintrodujera los '
     + 'tres dos días después de arreglarlos.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-813b · EL CIEGO DICE QUÉ RUTA SE MOVIÓ
+//
+// EL DEFECTO: el instrumento medía las dos pasadas enteras, los cuatro canarios y las tres
+// censadas, y entonces resumía el árbol a UN hash y tiraba el resto. Un CIEGO que sólo sabe decir
+// «el contenido del árbol cambió» no permite distinguir «la tanda escribió algo» de «alguien
+// editó un fichero mientras corría» — dos causas con arreglos OPUESTOS. Y ante esa duda, la
+// salida cómoda es relajar la puerta, que es justo lo que no se puede hacer.
+//
+// ⛔ LO QUE ESTOS CASOS FIJAN NO ES UNA EXCEPCIÓN: es que la puerta sigue igual de cerrada y
+//    ADEMÁS nombra. Cualquier ruta que se mueva sigue siendo CIEGO.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-813b · SUELO: la huella por ruta SEPARA los ficheros, no los mezcla en un hash', () => {
+  // Dos ficheros que cambian a la vez tienen que dar DOS señales. Con un hash común daban una
+  // sola, indivisible — que es el defecto que este apartado cierra.
+  const estado = ' M scripts/uno.mjs\n?? tests/nuevo.test.mjs\n';
+  const diff = 'diff --git a/scripts/uno.mjs b/scripts/uno.mjs\n@@\n-a\n+b\n';
+  const h = huellaPorRuta(estado, diff);
+
+  assert.ok(h instanceof Map, 'la huella por ruta tiene que ser un mapa ruta → señal');
+  assert.deepEqual([...h.keys()].sort(), ['scripts/uno.mjs', 'tests/nuevo.test.mjs']);
+  assert.match(h.get('scripts/uno.mjs'), /diff:/, 'el fichero que aparece en el diff lleva su contenido');
+  assert.match(h.get('tests/nuevo.test.mjs'), /^estado:/, 'el que sólo sale en `status` lleva su código');
+
+  // CONTROL POSITIVO del detalle: cambiar el contenido de UNO cambia SÓLO su señal.
+  const h2 = huellaPorRuta(estado, 'diff --git a/scripts/uno.mjs b/scripts/uno.mjs\n@@\n-a\n+DISTINTO\n');
+  assert.notEqual(h.get('scripts/uno.mjs'), h2.get('scripts/uno.mjs'), 'el contenido no se está mirando');
+  assert.equal(h.get('tests/nuevo.test.mjs'), h2.get('tests/nuevo.test.mjs'),
+    '🔴 cambiar un fichero mueve la señal de OTRO: el detalle no separa por ruta');
+});
+
+test('SCRUM-813b · 🔴 EL QUE DECIDE: un fichero de TEST tocado durante la medición sigue siendo CIEGO — y ahora se NOMBRA', () => {
+  // Es el caso que la puerta existe para cazar: alguien edita un fichero que la medición JUZGA
+  // mientras las dos pasadas corren. Antes salía CIEGO sin decir cuál; ahora sale CIEGO y lo dice.
+  const antes = {
+    ok: true, head: 'abc', huella: 'A',
+    porRuta: huellaPorRuta(' M tests/quoteNumber.test.mjs\n', 'diff --git a/tests/quoteNumber.test.mjs b/tests/quoteNumber.test.mjs\n@@\n-uno\n'),
+  };
+  const despues = {
+    ok: true, head: 'abc', huella: 'B',
+    porRuta: huellaPorRuta(' M tests/quoteNumber.test.mjs\n', 'diff --git a/tests/quoteNumber.test.mjs b/tests/quoteNumber.test.mjs\n@@\n-otro\n'),
+  };
+
+  const q = arbolQuieto(antes, despues);
+  assert.equal(q.cambios.length, 1, 'un fichero de test movido tiene que salir como movimiento');
+  assert.equal(q.rutas.length, 1);
+  assert.equal(q.rutas[0].ruta, 'tests/quoteNumber.test.mjs',
+    '🔴 el CIEGO no NOMBRA el fichero que se movió: vuelve a ser inaccionable');
+
+  // Y el veredicto sigue siendo CIEGO: nombrar no es perdonar.
+  const v = veredicto({
+    cambianEnElArbol: [], censadas: CENSADAS, medidas: DOS_MEDIDAS, controles: CONTROLES_OK, quieto: q,
+  });
+  assert.equal(v.estado, 'CIEGO', '🔴 la puerta se ha abierto: un fichero de test movido ya no ciega');
+  assert.equal(v.salida, SALIDA_CIEGO);
+  assert.ok(v.motivos.some((m) => m.includes('tests/quoteNumber.test.mjs')),
+    'el motivo del CIEGO tiene que llevar el nombre del fichero');
+});
+
+test('SCRUM-813b · 🔴 SUELO: si el detalle por ruta NO ve nada pero la huella global cambió, sigue siendo CIEGO', () => {
+  // Sin este suelo, el refinamiento SERÍA un agujero: bastaría con que el troceado por ruta no
+  // supiera leer un diff raro para que un árbol movido pasara por quieto. Un detector que no sabe
+  // deja la puerta CERRADA, no abierta.
+  const iguales = huellaPorRuta('', '');
+  const q = arbolQuieto(
+    { ok: true, head: 'abc', huella: 'A', porRuta: iguales },
+    { ok: true, head: 'abc', huella: 'B', porRuta: iguales },
+  );
+  assert.equal(q.rutas.length, 0, 'el detalle no ve nada: es el caso que este suelo cubre');
+  assert.equal(q.cambios.length, 1, '🔴 el árbol se movió y el instrumento lo da por quieto');
+  assert.match(q.cambios[0], /NO supo decir dónde/, 'el motivo tiene que declarar la ceguera, no disimularla');
+});
+
+test('SCRUM-813b · CONTROL NEGATIVO: dos marcas iguales NO producen ni un movimiento', () => {
+  // Si esto fallara, el instrumento gritaría en cada pasada y acabaría apagado.
+  const m = { ok: true, head: 'abc', huella: 'A', porRuta: huellaPorRuta(' M x.mjs\n', '') };
+  const q = arbolQuieto(m, { ...m, porRuta: huellaPorRuta(' M x.mjs\n', '') });
+  assert.equal(q.cambios.length, 0);
+  assert.equal(q.rutas.length, 0);
+});
+
+test('SCRUM-813b · la marca REAL trae el detalle, y cuadra con lo que dice git', () => {
+  // Control positivo contra git de verdad, sólo lectura: lo que `marcaDelArbol` mete en `porRuta`
+  // tiene que ser exactamente lo que `git status --porcelain` está viendo en este árbol. Sin esto,
+  // los casos de arriba probarían una función que el instrumento no usa.
+  const m = marcaDelArbol();
+  if (!m.ok) assert.fail(`no se pudo tomar la marca del árbol: ${m.porque}`);
+  assert.ok(m.porRuta instanceof Map, '🔴 la marca ya no trae el detalle por ruta');
+
+  const porcelain = execFileSync('git', ['status', '--porcelain'], { cwd: RAIZ, encoding: 'utf8' });
+  const deGit = new Set(porcelain.split('\n').filter((l) => l.trim())
+    .map((l) => l.slice(3).trim().split(' -> ').pop()));
+  for (const r of deGit) {
+    assert.ok(m.porRuta.has(r), `🔴 git ve \`${r}\` con cambios y la marca no lo tiene`);
+  }
 });
