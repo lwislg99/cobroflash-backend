@@ -23,15 +23,15 @@
 //      pantalla**: misma URL y mismo `slug`. Si el arreglo hubiera reordenado o perdido una, aquí
 //      cae nombrándola.
 //
-// La lista VIEJA no se escribe a mano: se LEE de `origin/main`, que es donde vive. Copiarla aquí
-// sería fijar mi transcripción, no el hecho.
+// 🔴 SCRUM-821c · LA LISTA VIEJA YA NO SE LEE DE GIT: está CONGELADA en `_foto-antes-de-821.mjs`.
+// Leerla en ejecución medía EL CHECKOUT y no el código, y murió sola el día que 821 se mergeó.
+// El motivo largo, con el rojo reproducido y las DOS mitades del espejo, está en esa foto.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { vistasDelBarrido } from '../scripts/_vistas-del-barrido.mjs';
@@ -41,7 +41,8 @@ import { vistasDelBarrido } from '../scripts/_vistas-del-barrido.mjs';
 // razón: `origin/main` SE MUEVE. Comparar contra la punta hace que un guard acuse a una rama
 // limpia el día que otro PR toque su fichero — le pasó a SCRUM-605 el 4-sep-2026. El punto de
 // partida es un COMMIT, y no se mueve. El motor se importa; no se escribe un segundo `merge-base`.
-import { baseDeLaRama, contenidoEnLaBase } from './_base-de-la-rama.mjs';
+// SCRUM-821c: la foto CONGELADA sustituye a la lectura de git. Ver `_foto-antes-de-821.mjs`.
+import { VISTAS_ANTES_DE_821, COMMIT_DE_LA_FOTO } from './_foto-antes-de-821.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const EVIDENCIAS = path.join(RAIZ, 'docs', 'evidencias', 'demo-final');
@@ -50,34 +51,38 @@ const EVIDENCIAS = path.join(RAIZ, 'docs', 'evidencias', 'demo-final');
 const slug = (nombre) => String(nombre).replace(/^\d+-/, '');
 
 /**
- * La lista de vistas que el barrido fotografiaba ANTES del arreglo, leída del PUNTO DE PARTIDA.
+ * La lista de vistas que el barrido fotografiaba ANTES del arreglo.
  *
- * 🔴 SE LEE, NO SE COPIA. Una transcripción aquí fijaría lo que yo escribí, no lo que había — y
- * quien la mirara no sabría si el test compara contra el pasado o contra mi memoria. Si no se
- * puede resolver la base, esto se declara CIEGO en vez de comparar contra una lista vacía.
+ * 🔴 SCRUM-821c · SE LEE DE UNA FOTO CONGELADA, NO DE GIT. La versión anterior la leía de
+ * `capture-demo.mjs` en el punto de partida de la rama, buscando `const AUTH_VIEWS = [`. Ese
+ * literal DEJÓ DE EXISTIR el día que SCRUM-821 se mergeó —su ticket era justamente que la lista
+ * dejara de mantenerse a mano—, así que toda rama nacida después nace con un punto de partida
+ * donde no está, y los tres casos salían CIEGOS con el job entero en rojo.
+ *
+ * El fondo no era el literal: era que el espejo se movía. Un test que lee git en ejecución mide
+ * EL CHECKOUT —profundidad del clon, si la base ya se mergeó, qué runner—, y nada de eso es una
+ * propiedad del producto. La foto está en `_foto-antes-de-821.mjs`, commiteada, con el commit del
+ * que salió y el motivo de por qué no se «actualiza».
+ *
+ * ⚠️ El SUELO no se pierde: si la foto llegara vacía o descabalada, esto se declara CIEGO igual
+ * que antes. Ceguera y verde siguen sin ser el mismo resultado.
  */
 function listaVieja() {
-  const { contenido, base } = contenidoEnLaBase(RAIZ, 'scripts/capture-demo.mjs');
-  if (!base) return { ok: false, porque: 'no se pudo resolver el punto de partida de la rama' };
-  if (contenido == null) return { ok: false, porque: `\`capture-demo.mjs\` no existe en ${base.ref}` };
-  const i = contenido.indexOf('const AUTH_VIEWS = [');
-  if (i < 0) return { ok: false, porque: `no encuentro \`AUTH_VIEWS\` en la versión de ${base.ref}` };
-  const bloque = contenido.slice(i, contenido.indexOf('];', i));
-  const pares = [...bloque.matchAll(/\['([^']+)',\s*'([^']+)'\]/g)]
-    .map((m) => ({ nombre: m[1], url: m[2] }));
-  return { ok: true, pares, base };
+  const pares = VISTAS_ANTES_DE_821.map((v) => ({ nombre: v.nombre, url: v.url }));
+  if (!pares.length) return { ok: false, porque: 'la foto congelada de `_foto-antes-de-821.mjs` está VACÍA' };
+  return { ok: true, pares, base: { ref: `la foto congelada (${COMMIT_DE_LA_FOTO.slice(0, 8)})` } };
 }
 
-/** Los BYTES de un fichero en el punto de partida. `utf8` no vale: aquí se comparan PNG. */
-function bytesEnLaBase(ruta) {
-  const base = baseDeLaRama(RAIZ);
-  if (!base) return null;
-  try {
-    return execFileSync('git', ['show', `${base.sha}:${ruta}`],
-      { cwd: RAIZ, maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] });
-  } catch {
-    return null; // no estaba en la base: la crea esta rama, y no hay contra qué comparar
-  }
+/**
+ * El `sha256` que tenía la captura ANTES de SCRUM-821, de la foto congelada.
+ *
+ * 🔴 ESTO TAMBIÉN ERA ESPEJO, y era el peor de los dos porque NO daba rojo. Antes se leía con
+ * `git show <base>:<ruta>`, y una vez 821 mergeado el punto de partida YA CONTIENE las capturas
+ * de hoy: se comparaba cada fichero contra sí mismo. Verde garantizado sobre nada.
+ */
+function shaEnLaFoto(nombre) {
+  const v = VISTAS_ANTES_DE_821.find((x) => x.nombre === nombre);
+  return v ? v.sha256 : null;
 }
 
 const sha = (f) => createHash('sha256').update(fs.readFileSync(f)).digest('hex');
@@ -120,10 +125,9 @@ test('SCRUM-821b · ✅ las capturas que YA existían siguen byte a byte iguales
     const rel = `docs/evidencias/demo-final/${v.nombre}.png`;
     const abs = path.join(RAIZ, rel);
     if (!fs.existsSync(abs)) continue; // no todas las de la lista tienen captura commiteada
-    const enLaBase = bytesEnLaBase(rel);
-    if (!enLaBase) continue; // no estaba en la base: no hay contra qué comparar
+    const antes = shaEnLaFoto(v.nombre);
+    if (!antes) continue; // no tenía captura congelada: no hay contra qué comparar
     comparadas += 1;
-    const antes = createHash('sha256').update(enLaBase).digest('hex');
     const ahora = sha(abs);
     if (ahora !== antes) distintas.push(`${v.nombre}.png  ${antes.slice(0, 12)} → ${ahora.slice(0, 12)}`);
   }
