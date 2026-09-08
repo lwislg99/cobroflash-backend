@@ -158,7 +158,7 @@ depende de esa columna: no hay nada que declarar como «falta el ALTER».
 **Medido contra:** `origin/main` = `2c161c38cfba4ad81479dd302a933412d496f58c` · 2026-09-04T12:55:17+02:00
 **Rama:** `scrum-705-procedimiento-unico`
 
-## PASO 0 (regla 39) · la contradicción seguía viva
+## PASO 0 (cita de regla RETIRADA — SCRUM-637) · la contradicción seguía viva
 
 `main` se movió desde la medición anterior. Recomprobados los cuatro sitios: **intactos, nadie los
 había corregido.**

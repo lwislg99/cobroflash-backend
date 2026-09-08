@@ -142,6 +142,51 @@ pase por bueno.
 
 ---
 
+## 🔴 Las 15 citas que este merge convirtió en mentiras silenciosas
+
+**Y las creamos nosotros, con el commit de la unión.** Va escrito porque el daño no lo causó quien
+escribió las citas: lo causó resolver este conflicto.
+
+Trece ficheros de `docs/master/` encabezaban su medición con `## PASO 0 (regla 39)`. **Medido en el
+historial del máster, no supuesto:**
+
+| fecha | cabecera de la Parte I | ¿existía una regla 39? |
+|---|---|---|
+| hasta el 4-sep-2026 (`77b85abd`) | `REGLAS (1-37` — cuerpo hasta la **38** | **no** |
+| 7-sep-2026 (`9947e48f`) | `REGLAS (1-41` | sí, la de `main` |
+| 8-sep-2026 (`45969838`) | `REGLAS (1-42` | sí |
+
+La primera de esas citas entró el **4-sep** (`165dd13c`), cuando la regla 39 **no existía**. Eran
+citas rotas: quien las siguiera no encontraba nada y lo notaba. **Desde la unión del 8-sep el 39
+existe y es otra regla** —«Ningún texto que vea el usuario se escribe sin firma del fundador»—, así
+que pasaron de chillar a mentir en voz baja. Ése es el cambio de estado, y es el peor de los dos.
+
+### Qué se hizo: RETIRAR el número, no reescribirlo
+
+`## PASO 0 (regla 39)` → `## PASO 0 (cita de regla RETIRADA — SCRUM-637)`, en los 13 ficheros.
+
+**No se les ha inventado destino, y el motivo es que NO SE PUEDE DETERMINAR.** Buscado en todo lo
+versionado: `PASO 0` no está definido como regla numerada en `docs/YAQU_MASTER.md` (ni en la Parte I
+ni en la AA), ni en `CLAUDE.md`, ni en `docs/ASESOR.md` —que numera sus secciones 0-11—, ni en
+`.claude/skills/`. La hipótesis razonable, por el CONTENIDO de las quince (todas remiden la premisa
+del ticket antes de construir), es que apuntaran a la **obligación de medir antes de tocar** que los
+encargos llaman «OBLIGACIÓN 0»; pero eso vive en los encargos, no en un documento con numeración.
+
+> **Quince citas marcadas como rotas valen más que una sola reescrita a ojo.** Una marca dice la
+> verdad —«esto apuntaba a algo que no sabemos»— y se puede cerrar el día que alguien lo recuerde.
+> Un destino inventado se lee como bueno para siempre.
+
+⬜ **Queda abierto para el fundador:** si «PASO 0» debe ser regla del máster con su número, se
+escribe y estas quince se apuntan a ella. Hasta entonces, marcadas.
+
+### Lo que NO se tocó, y se comprobó dos veces
+
+`CLAUDE.md` (bloque de las tres que no se negocian) cita **regla 39 / 40 / 41** apuntando a las de
+`main`, y apunta BIEN: su línea de la 39 dice «Texto que ve el usuario → firma del fundador», que es
+literalmente esa regla. Se dejó intacta.
+
+---
+
 ## Lo que queda fuera, y por qué
 
 * ⬜ **El punto 1 completo** —que la rama se publique **en Jira**— sigue sin resolverse: se ha

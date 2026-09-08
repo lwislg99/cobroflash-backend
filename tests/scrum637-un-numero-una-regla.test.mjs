@@ -49,14 +49,27 @@ export function parteI(texto = fs.readFileSync(MASTER, 'utf8')) {
 }
 
 /**
- * Los números de regla del cuerpo, EN ORDEN DE APARICIÓN.
+ * Los números de regla DECLARADOS en el cuerpo, en orden de aparición.
  *
- * El ancla es `N) **`: así se escriben las reglas de esta parte —número, paréntesis y el título
- * en negrita— y es lo que las distingue de una enumeración cualquiera. Se admite hasta dos
- * dígitos: la Parte I va por 42 y una regla de tres cifras sería otra cosa.
+ * 🔴 LA PRIMERA VERSIÓN DE ESTO ESTABA MAL Y HABRÍA HECHO INSERVIBLES LOS DOS GUARDS DE ABAJO.
+ * Anclaba en `N) **` —número, paréntesis y título en negrita— porque así se escriben las reglas
+ * 37-42. Pero las **1 a 36 van en párrafo corrido**, sin negrita
+ * (`**Técnicas heredadas:** 1) NUNCA n8n — … 2) Multi-tenant: …`), así que capturaba SIETE de
+ * cuarenta y dos. Con ese conjunto, «ninguna regla comparte número» era cierto sobre un 17 % del
+ * cuerpo y una colisión entre la 12 y la 12 habría pasado en verde.
+ *
+ * Lo destapó la aserción ⑤ al acusar de rotas citas a las reglas 1, 9, 24 y 30, que existen desde
+ * siempre: cuando el analizador y el árbol discrepan, el roto es el analizador.
+ *
+ * Ahora se captura `N)` y se descartan los DOS falsos positivos que trae este cuerpo, los dos
+ * medidos, no supuestos:
+ *   · precedido de dígito o guion → `(SCRUM-637):` contiene «37)» y es un número de TICKET;
+ *   · precedido de «regla »/«reglas » → es una CITA dentro del texto de otra regla (la 41 cita
+ *     a la 37), no una declaración.
  */
 export function numerosDeRegla(cuerpo) {
-  return [...cuerpo.matchAll(/(?:^|[^0-9a-zA-Z])(\d{1,2})\) \*\*/g)].map((m) => Number(m[1]));
+  const re = /(?<![0-9A-Za-zÀ-ÿ-])(?<!regla )(?<!reglas )(\d{1,2})\)/g;
+  return [...cuerpo.matchAll(re)].map((m) => Number(m[1]));
 }
 
 /** Lo que la cabecera DICE que hay: el `N` de «REGLAS (1-N; cerradas)». */
@@ -71,10 +84,22 @@ test('SCRUM-637 · 🔴 SUELO: el escáner VE la Parte I y sus reglas', () => {
   const { ini, texto } = parteI();
   assert.ok(ini >= 0, '🔴 no encuentro el encabezado `# PARTE I` en el máster: ¿se renombró?');
   const nums = numerosDeRegla(texto);
-  assert.ok(nums.length >= 4,
-    `🔴 ESCÁNER CIEGO: sólo veo ${nums.length} reglas en el cuerpo de la Parte I. Si el formato\n`
-    + '   cambió (otro ancla que `N) **`), los dos guards de abajo pasarían sobre un conjunto casi\n'
-    + '   vacío y una colisión nueva no se vería.');
+  assert.ok(nums.length >= 40,
+    `🔴 ESCÁNER CIEGO: sólo veo ${nums.length} reglas en el cuerpo de la Parte I, y hay más de 40.\n`
+    + '   Con un conjunto parcial, «ninguna comparte número» sería cierto sobre el trozo que el\n'
+    + '   escáner alcanza a ver — que es exactamente el estado en que nació este fichero: anclaba\n'
+    + '   en `N) **` y capturaba 7 de 42, porque las 1-36 van sin negrita.');
+
+  // 🔴 Y LA COBERTURA SE COMPRUEBA CONTRA UNA RESPUESTA CONOCIDA, no contra un mínimo: la Parte I
+  // está numerada de 1 a N sin saltos. Si falta un número intermedio, el extractor se ha vuelto a
+  // dejar una familia de reglas fuera y hay que arreglarlo A ÉL, no bajar la exigencia.
+  const maximo = Math.max(...nums);
+  const faltan = [];
+  for (let i = 1; i <= maximo; i++) if (!nums.includes(i)) faltan.push(i);
+  assert.deepEqual(faltan, [],
+    `🔴 EL EXTRACTOR SE DEJA REGLAS: no ve la(s) ${faltan.join(', ')} pese a llegar hasta la ${maximo}.\n`
+    + '   La Parte I va de 1 a N sin huecos; un hueco aquí es del analizador, no del máster.\n'
+    + `   Números vistos: ${[...nums].sort((a, b) => a - b).join(' ')}`);
   assert.ok(topeDeLaCabecera(texto) !== null,
     '🔴 la cabecera ya no tiene la forma «REGLAS (1-N; cerradas)»: el guard ② no puede leer el tope.');
 });
@@ -143,7 +168,58 @@ test('SCRUM-637 · ✅ CONTROL NEGATIVO: los dos detectores cazan lo que persigu
     '🔴 una cabecera desfasada NO se detecta: el guard ③ no distinguiría nada.');
 });
 
-// ═══ ⑤ LAS CUATRO REGLAS DE LA COLISIÓN SIGUEN AHÍ, Y NINGUNA PERDIÓ SU TEXTO ════════════
+// ═══ ⑤ NINGUNA CITA NOMBRA UN NÚMERO QUE NO EXISTE ═══════════════════════════════════════
+
+/** Los `.md` de `docs/` más `CLAUDE.md`. El máster se excluye: es la FUENTE, no una cita. */
+function documentosQueCitan() {
+  const fuera = [];
+  const anda = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) anda(p);
+      else if (e.name.endsWith('.md') && p !== MASTER) fuera.push(p);
+    }
+  };
+  anda(path.join(RAIZ, 'docs'));
+  fuera.push(path.join(RAIZ, 'CLAUDE.md'));
+  return fuera;
+}
+
+test('SCRUM-637 · 🔴 ninguna cita «regla N» nombra un número que no existe en la Parte I', () => {
+  // 🔴 EL DAÑO QUE ESTE TICKET SE HIZO A SÍ MISMO. Trece ficheros de `docs/master/` citaban
+  // «(regla 39)» desde el 4-sep, cuando la Parte I llegaba a la 38: citas ROTAS, que chillan si
+  // alguien las sigue. La unión del 8-sep creó una regla 39 de verdad y las convirtió en citas
+  // que apuntan a OTRA regla — y ésas no chillan nunca. Se retiraron; esto impide que vuelvan.
+  //
+  // ⚠️ Lo que este guard SÍ caza: un número que no existe. Lo que NO puede cazar: una cita a un
+  // número que existe pero es el equivocado — para eso no hay señal automática, y por eso las
+  // quince se resolvieron RETIRANDO el número en vez de dejarlo apuntando a la regla de al lado.
+  const existentes = new Set(numerosDeRegla(parteI().texto));
+  assert.ok(existentes.size >= 4, '🔴 SUELO: no leo reglas del máster; lo de abajo no mide nada.');
+
+  const rotas = [];
+  for (const doc of documentosQueCitan()) {
+    const lineas = fs.readFileSync(doc, 'utf8').split('\n');
+    lineas.forEach((linea, i) => {
+      for (const m of linea.matchAll(/\bregla\s+(\d{1,3})\b/gi)) {
+        const n = Number(m[1]);
+        if (!existentes.has(n)) {
+          rotas.push(`${path.relative(RAIZ, doc).replace(/\\/g, '/')}:${i + 1} → regla ${n}`);
+        }
+      }
+    });
+  }
+  assert.deepEqual(rotas, [],
+    '🔴 HAY CITAS A REGLAS QUE NO EXISTEN EN LA PARTE I:\n'
+    + rotas.map((r) => '       ' + r).join('\n')
+    + '\n\n   Una cita a un número inexistente es una cita rota: quien la sigue no encuentra nada.\n'
+    + '   Y es la antesala del defecto peor — el día que alguien cree esa regla, la cita pasa a\n'
+    + '   apuntar a algo que no tiene nada que ver, y entonces ya no chilla. Pasó el 8-sep-2026\n'
+    + '   con quince citas a «regla 39».\n'
+    + `   Números que SÍ existen hoy: ${[...existentes].sort((a, b) => a - b).join(' ')}`);
+});
+
+// ═══ ⑥ LAS CUATRO REGLAS DE LA COLISIÓN SIGUEN AHÍ, Y NINGUNA PERDIÓ SU TEXTO ════════════
 
 test('SCRUM-637 · 🔴 la unión conservó LAS CUATRO reglas del choque', () => {
   // Renumerar es lo barato; perder una regla en el merge es lo caro. Se ancla por CONTENIDO —el
