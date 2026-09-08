@@ -23,6 +23,7 @@
 // PowerShell) y por eso van llenos de NUL. Cero acusaciones en falso sin enumerar nada — y una
 // lista de extensiones envejece en silencio, que es lo que este ticket viene a impedir.
 import { execFileSync, spawnSync } from 'node:child_process';
+import { soloEjecutable } from './_guard-texto.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -94,7 +95,7 @@ export function censoEol(raiz) {
  * medido: `src/app.ts`, `public/dashboard/js/app.js`, `scripts/_db-guard.mjs`. O sea que
  * **renormalizar los blobs no quita ni un `\r` de lo que un guard lee**. Eso lo hace `eol=lf`.
  *
- * Y no es incomodidad de merges: **ciega guards en silencio**. `linea.replace(/\/\/.*$/, '')`
+ * Y no es incomodidad de merges: **ciega guards en silencio**. `soloEjecutable(linea)`
  * sobre una línea que arrastra `\r` NO HACE NADA —sin `m`, `$` exige fin de cadena y el `\r` está
  * en medio—, así que un guard que promete «miro el código, no los comentarios» acaba mirando
  * también los comentarios. Le pasó al de SCRUM-409 durante semanas, y solo en Windows.

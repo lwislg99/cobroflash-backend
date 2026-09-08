@@ -26,7 +26,17 @@
 // el fundador aprobó las 22 ranuras de esta pantalla, así que **la constante se BORRA** en vez de
 // quedarse sin usar. Un marcador sin consumidores es el que alguien reutiliza sin querer.
 const NF_TITULO_BLOQUE = { cliente: 'Cliente', lineas: 'Líneas' };
-const NF_ACCION_PRIMARIA = 'Emitir factura';
+// SCRUM-776 · AQUÍ VIVÍA `NF_ACCION_PRIMARIA = 'Emitir factura'`, y ya no vive nada.
+//
+// El rótulo depende del documento que este profesional emite —con el flag en su valor por
+// defecto, un merchant español real emite JUSTIFICANTES— así que sale de
+// `rotulosDelDocumento.accionPrimaria()`, LLAMADO EN EL SITIO donde se pinta (:199).
+//
+// ⚠️ Y se llama ahí y no desde un envoltorio local, que fue como se escribió primero: un
+// `const nfAccionPrimaria = () => …` no aportaba nada y METÍA UN NIVEL MÁS entre el texto y su
+// sumidero. El censo de SCRUM-601 sigue UN nivel de indirección, así que ese rótulo —y sólo
+// ése— se le quedaba fuera: 12 literales vistos en vez de 14. Un envoltorio inútil no es neutral
+// si esconde el texto de quien lo vigila.
 
 function nfEsc(v) {
   return String(v == null ? '' : v)
@@ -40,7 +50,9 @@ function openNuevaFacturaModal(onCreated) {
   overlay.className = 'modal-overlay';
   overlay.setAttribute('role', 'dialog');
   overlay.setAttribute('aria-modal', 'true');
-  overlay.setAttribute('aria-label', 'Crear una factura nueva');
+  // SCRUM-776: el nombre del documento también en el árbol de accesibilidad. Un lector de
+  // pantalla que anuncia «crear una factura nueva» miente igual que el título visible.
+  overlay.setAttribute('aria-label', window.rotulosDelDocumento.ariaDialogo());
 
   const modal = document.createElement('div');
   modal.className = 'modal';
@@ -49,7 +61,7 @@ function openNuevaFacturaModal(onCreated) {
 
   // SCRUM-446: cabecera del constructor compartido. La etiqueta del botón sigue siendo el MARCADOR
   // de microcopy sin aprobar, no «Cerrar»: cambiarlo resolvería en silencio una aprobación pendiente.
-  const header = cabeceraModal({ titulo: 'Nueva factura', etiquetaCierre: 'Cerrar' });
+  const header = cabeceraModal({ titulo: window.rotulosDelDocumento.tituloModal(), etiquetaCierre: 'Cerrar' });
   const cerrarX = header.querySelector('.modal-close');
   modal.appendChild(header);
 
@@ -81,6 +93,18 @@ function openNuevaFacturaModal(onCreated) {
   const selCliente = document.createElement('select');
   selCliente.className = 'input';
   selCliente.style.cssText = 'width:100%;margin-top:6px;min-height:44px';
+  // 🔴 [PENDIENTE microcopy oficial] · SCRUM-776 — EL SÉPTIMO, Y EL ASESOR NO LO FIRMÓ.
+  //
+  // Los otros seis del flujo son mecánicos («factura»→«justificante»). Éste NO: «cliente al que
+  // justificas» no existe en castellano, así que hace falta REDACCIÓN NUEVA, y la redacción nueva
+  // de un flujo fiscal no se firma de pasada (regla 30).
+  //
+  // Se queda EXACTAMENTE como estaba —texto aprobado por el fundador el 17-ago-2026— y NO se hace
+  // derivar de nada. Ojo con la tentación de «arreglarlo» a medias: dejarlo en blanco o poner el
+  // marcador COMO aria-label sería peor que el defecto, porque un lector de pantalla leería el
+  // andamio en vez del rótulo. Un texto que miente un poco se puede leer; uno que no está, no.
+  //
+  // El parte de SCRUM-776 lleva las opciones con su caja medida. Entra en su propio commit.
   selCliente.setAttribute('aria-label', 'Cliente al que facturas');
   body.appendChild(selCliente);
 
@@ -179,7 +203,7 @@ function openNuevaFacturaModal(onCreated) {
   const emitir = document.createElement('button');
   emitir.type = 'button';
   emitir.className = 'btn-primary';
-  emitir.textContent = NF_ACCION_PRIMARIA;
+  emitir.textContent = window.rotulosDelDocumento.accionPrimaria();
   footer.append(cancelar, emitir);
   modal.appendChild(footer);
 
@@ -193,18 +217,23 @@ function openNuevaFacturaModal(onCreated) {
 
   emitir.addEventListener('click', async () => {
     err.style.display = 'none';
-    const lines = [];
-    for (const r of filas.children) {
-      const concept = r.querySelector('.nf-concepto').value.trim();
-      const qty = Number(r.querySelector('.nf-cantidad').value);
-      const price = Number(r.querySelector('.nf-precio').value);
-      const ivaPct = Number(r.querySelector('.nf-iva').value);
-      if (!concept && !r.querySelector('.nf-precio').value) continue; // fila vacía se ignora
-      // El servidor espera el IVA en FRACCIÓN (0.21). La pantalla lo pide en porcentaje porque
-      // es como lo dice un profesional; la conversión vive aquí, en un solo sitio.
-      lines.push({ concept, qty, price, tax: ivaPct / 100 });
-    }
-    const cuerpo = { customerId: Number(selCliente.value), lines };
+    // SCRUM-600 (DOC-10) · EL CUERPO YA NO SE COMPONE AQUÍ. Lo compone
+    // `cuerpoDelDocumentoSuelto.js`, y lo llaman las DOS pantallas que emiten este documento:
+    // ésta y la página del formulario. La regla de la fila vacía y la conversión del IVA a
+    // fracción se mudaron ENTERAS y sin cambiar ni un byte de comportamiento.
+    //
+    // 🔴 El motivo no es de estilo: DOC-10 se juega en que la pantalla nueva emita EXACTAMENTE
+    // la misma factura que ésta. Con una sola composición eso es cierto por construcción; con
+    // dos, sería una afirmación que habría que vigilar — y las dos copias divergen (SCRUM-569).
+    const cuerpo = window.documentoSuelto.cuerpoDelDocumentoSuelto(
+      selCliente.value,
+      Array.prototype.map.call(filas.children, (r) => ({
+        concepto: r.querySelector('.nf-concepto').value,
+        cantidad: r.querySelector('.nf-cantidad').value,
+        precio: r.querySelector('.nf-precio').value,
+        iva: r.querySelector('.nf-iva').value,
+      })),
+    );
 
     emitir.disabled = true;
     const antes = emitir.textContent;
@@ -212,12 +241,18 @@ function openNuevaFacturaModal(onCreated) {
     try {
       const r = await apiRequest('/admin/invoices', { method: 'POST', body: JSON.stringify(cuerpo) });
       cerrar();
-      showToast('Factura emitida');
+      // 🔴 EL PEOR DE LOS SIETE: afirmaba EN PASADO que se había emitido una factura que no se
+      // había emitido. Los demás prometen; éste certifica.
+      showToast(window.rotulosDelDocumento.avisoEmitido());
       if (typeof onCreated === 'function') onCreated(r && r.factura);
     } catch (e) {
       // El servidor manda `message` legible en cada error nombrado; se muestra tal cual porque
       // es SUYO, no microcopy de esta pantalla.
-      err.textContent = (e && e.data && e.data.message) ? e.data.message : 'No hemos podido emitir la factura. Inténtalo otra vez.';
+      // SCRUM-600 · quién decide si ese mensaje es presentable es ahora la pieza común, la misma
+      // que usa la página: las dos dicen lo mismo porque es la misma función. El RESPALDO sigue
+      // escrito aquí a propósito, pegado a su sumidero — es el rótulo firmado de SCRUM-776 y el
+      // censo de SCRUM-601 tiene que poder verlo.
+      err.textContent = window.documentoSuelto.mensajeDelServidor(e) || window.rotulosDelDocumento.errorAlEmitir();
       err.style.display = 'block';
       emitir.disabled = false;
       emitir.textContent = antes;

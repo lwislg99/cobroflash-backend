@@ -57,7 +57,12 @@ test('SCRUM-71 · VALORADO: el precio SÍ pasa, y saneado', () => {
   assert.equal(salida[0].precioUnitario, 320);
   assert.equal(salida[0].tipoIva, 0.21);
   assert.equal(salida[1].precioUnitario, 0, 'un precio negativo se corta a 0');
-  assert.equal(salida[1].tipoIva, 1, 'el IVA se acota a [0,1]');
+  // 🔴 SCRUM-760 · AQUÍ ESTABA ESCRITO EL DEFECTO, Y EN VERDE: decía `tipoIva === 1` con el
+  // motivo «el IVA se acota a [0,1]». Acotar era el defecto — un `3` recortado a `1` es un
+  // 100 % de IVA en la pantalla, plausible para la máquina e imposible para el negocio. El caso
+  // se conserva porque sigue siendo bueno; lo que cambia es qué se espera de él: RECHAZO.
+  assert.equal(salida[1].tipoIva, undefined, 'un tipo imposible NO se recorta: se rechaza');
+  assert.match(String(salida[1].tipoIvaRechazado), /\b3\b/, 'y el rechazo nombra el valor');
 });
 
 // ── 2. `unidad`, que hoy no la produce nadie ─────────────────────────────────────────────

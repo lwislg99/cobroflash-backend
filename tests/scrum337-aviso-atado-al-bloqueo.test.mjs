@@ -163,6 +163,11 @@ const CORRESPONDENCIA = {
 // Los borrados del árbol, congelados por identidad (fichero + modelo.método + nº de ocurrencia),
 // nunca por línea. Es la ATADURA de `trialExpired`: ver el bloque del censo C en el derivador.
 const BORRADOS_DECLARADOS = [
+  // SCRUM-650 (T1) · CONTESTADA la pregunta del guard: NO se dispara al vencer la prueba ni por
+  // inactividad. Se dispara cuando un ADMIN reasigna un trabajo: la lista de asignados se
+  // reescribe entera (borrar + crear) en la misma transaccion que la columna. `trialExpired`
+  // —«tus datos siguen aqui»— sigue siendo cierto.
+  'src/modules/jobs/domain/asignacionDeTrabajo.ts::jobAssignee.deleteMany#1',
   'src/modules/auth/domain/auth.service.ts::authSession.deleteMany#1',
   'src/modules/expenses/domain/expenses.service.ts::expense.delete#1',
   'src/modules/maintenance/domain/maintenance.service.ts::quote.delete#1',

@@ -172,8 +172,14 @@ test('SCRUM-463 · LA PÚBLICA sí pinta las líneas y el cliente (y desde SCRUM
     '🔴 la página pública ha dejado de pintar la tabla de líneas: el cliente firmaría a ciegas.');
   assert.match(vista, /l\?\.concepto/, '🔴 la tabla ya no pinta el concepto de cada línea.');
   assert.match(vista, /l\?\.cantidad/, '🔴 la tabla ya no pinta la cantidad de cada línea.');
-  assert.match(publica, /renderLineasAlbaran\(albaran\.lineas, albaran\.modoValoracion\)/,
-    '🔴 la página ya no llama a la vista de líneas: el módulo existiría sin que lo pinte nadie.');
+  // 🔴 RE-ANCLADO el 4-sep-2026 (SCRUM-607): la llamada ganó un TERCER argumento —el interruptor
+  // que quita los precios del papel— y este ancla fijaba la forma de DOS. No se relaja, al
+  // contrario: ahora exige la llamada Y que le llegue el interruptor. Sin esa segunda mitad, la
+  // pantalla del cliente sabría ocultar precios y nadie se lo diría — y es la que se abre desde
+  // el móvil, donde más duele.
+  assert.match(publica, /renderLineasAlbaran\([\s\S]{0,200}albaran\.modoValoracion,[\s\S]{0,120}ocultarPreciosEnDocumento/,
+    '🔴 la página ya no llama a la vista de líneas —o no le pasa el interruptor de los precios—: '
+    + 'el módulo existiría sin que lo pinte nadie, o pintaría precios que el papel oculta.');
   assert.match(publica, /Hola, \$\{customerName\}/,
     '🔴 la página ya no saluda al cliente por su nombre: no consta a quién se le enseña.');
 

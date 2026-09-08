@@ -21,16 +21,27 @@ import {
 } from '../dist/modules/jobs/domain/albaran.service.js';
 
 // ── Numeración (pura) ────────────────────────────────────────────────────────
-test('formatAlbaranNumber: ALB-2026-001 y sin truncar >999', () => {
-  assert.equal(formatAlbaranNumber(2026, 1), 'ALB-2026-001');
-  assert.equal(formatAlbaranNumber(2026, 42), 'ALB-2026-042');
-  assert.equal(formatAlbaranNumber(2026, 1234), 'ALB-2026-1234');
+// 🔴 SCRUM-592 (DOC-02) · el formato pasa a `AB260001`. El de antes —`ALB-2026-001`— sigue
+// RECONOCIÉNDOSE mientras haya bases sin renumerar (lo fija el test de `isAlbaranNumber` justo
+// debajo), pero ya no se emite: una sola numeración, no dos formatos conviviendo.
+test('formatAlbaranNumber: AB260001, y al desbordar CRECE en vez de truncarse', () => {
+  assert.equal(formatAlbaranNumber(2026, 1), 'AB260001');
+  assert.equal(formatAlbaranNumber(2026, 42), 'AB260042');
+  assert.equal(formatAlbaranNumber(2026, 1234), 'AB261234');
+  // Truncar daría dos albaranes con el mismo número, y ese número se cita en la recapitulativa.
+  assert.equal(formatAlbaranNumber(2026, 12345), 'AB2612345');
 });
 
-test('isAlbaranNumber distingue la serie ALB de la fiscal y la J-', () => {
+test('isAlbaranNumber distingue LAS DOS formas de la serie, de la fiscal y de la J-', () => {
+  assert.equal(isAlbaranNumber('AB260001'), true);
+  // 🔴 EL VIEJO SIGUE RECONOCIÉNDOSE, y este caso casi se pierde: al sustituir el formato en los
+  // asserts se cambió también éste, que es justo el que vigila la transición. Mientras haya bases
+  // sin renumerar —producción espera a que el fundador decida—, un lector que sólo conozca la
+  // forma nueva daría por «no es un albarán» a documentos que sí lo son.
   assert.equal(isAlbaranNumber('ALB-2026-001'), true);
   assert.equal(isAlbaranNumber('2026-CF-001'), false);
   assert.equal(isAlbaranNumber('J-20260713-ABCD'), false);
+  assert.equal(isAlbaranNumber('P260001'), false, '🔴 confunde un PRESUPUESTO con un albarán');
   assert.equal(isAlbaranNumber(null), false);
 });
 
@@ -67,8 +78,9 @@ test('allocateAlbaranNumber: correlativo y avanza el contador (tx mock)', async 
     },
   };
   const now = new Date('2026-07-13T12:00:00Z');
-  assert.equal(await allocateAlbaranNumber(tx, 7, now), 'ALB-2026-001');
-  assert.equal(await allocateAlbaranNumber(tx, 7, now), 'ALB-2026-002');
+  // SCRUM-592 (DOC-02): mismo comportamiento —correlativo y con cerrojo—, formato nuevo.
+  assert.equal(await allocateAlbaranNumber(tx, 7, now), 'AB260001');
+  assert.equal(await allocateAlbaranNumber(tx, 7, now), 'AB260002');
   assert.equal(state.nextAlbaranNumber, 3);
   // SCRUM-234: una reserva, un cerrojo. Si esto baja a 0, la carrera está de vuelta.
   assert.equal(cerrojos.length, 2, 'cada reserva de serie toma su advisory lock');
@@ -78,7 +90,7 @@ test('allocateAlbaranNumber: correlativo y avanza el contador (tx mock)', async 
   );
   assert.equal(state.albaranSeriesYear, 2026);
   // Cambio de año → serie nueva desde 1
-  assert.equal(await allocateAlbaranNumber(tx, 7, new Date('2027-01-02T09:00:00Z')), 'ALB-2027-001');
+  assert.equal(await allocateAlbaranNumber(tx, 7, new Date('2027-01-02T09:00:00Z')), 'AB270001');
   assert.equal(updates.length, 3);
 });
 

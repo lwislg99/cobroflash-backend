@@ -19,6 +19,7 @@ import {
   ERROR_PDF_SIN_SELLAR,
 } from '../modules/invoicing/domain/selladoEstado';
 import { exigirLineasFacturables } from '../modules/invoicing/domain/lineasFacturables'; // SCRUM-246
+import { exigirTiposDeIvaEmitibles } from '../core/validation/tiposIvaEmitibles'; // SCRUM-771
 
 /**
  * Asegura que el PDF de una factura existe en disco (genera bajo demanda si está
@@ -110,7 +111,9 @@ export async function ensureInvoicePdf(
         phone: inv.merchant.whatsappPhone, // A2.4: emisor completo
         email: inv.merchant.email,
       },
-      customer: { name: inv.customer.name, email: inv.customer.email, phone: inv.customer.phone },
+      // SCRUM-577: se pasa `legalName`. Hasta hoy NO viajaba, asi que la factura no podia
+      // imprimir la denominacion legal aunque el cliente la tuviera rellena.
+      customer: { name: inv.customer.name, legalName: (inv.customer as any).legalName, email: inv.customer.email, phone: inv.customer.phone },
       currency: inv.currency,
       total: inv.total.toString(),
       qrData,
@@ -246,7 +249,8 @@ export async function ensureInvoiceForCharge(
           phone: merchant.whatsappPhone, // A2.4: emisor completo
           email: merchant.email,
         },
-        customer: { name: customer.name, email: (customer as any).email, phone: (customer as any).phone },
+        // SCRUM-577: idem — el segundo camino que arma la factura.
+        customer: { name: customer.name, legalName: (customer as any).legalName, email: (customer as any).email, phone: (customer as any).phone },
         currency: inv.currency,
         total: inv.total.toString(),
         qrData,
@@ -310,6 +314,10 @@ export async function ensureInvoiceForCharge(
   // `price: Number(ch.amount)`: un cobro de 0 € produce una línea sin importe igual. No es
   // excepción, es el sexto camino.
   exigirLineasFacturables(invoiceLines);
+  // SCRUM-771 · y que el tipo de IVA EXISTA. Mismo sitio y misma razón que la línea de
+  // arriba: ANTES de pedir número, nunca después. Deriva de `invalidTipoIva`; aquí no
+  // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
+  exigirTiposDeIvaEmitibles(invoiceLines);
 
   const inv = await prisma.$transaction(async (tx) => {
     const number = await allocateInvoiceNumber(tx, ch.merchantId, {

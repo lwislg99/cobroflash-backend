@@ -41,7 +41,14 @@ function renderQuotesListView(container) {
 
   const createBtn = document.createElement("button");
   createBtn.className = "btn-primary";
-  createBtn.textContent = "+ Crear presupuesto";
+  // SCRUM-599 · rótulo APROBADO y la tecla al final. El texto sale de la pieza, no se escribe
+  // aquí: si se escribiera, cambiar el copy sería tocar tres ficheros y el tercero se quedaría.
+  createBtn.textContent = "Nuevo presupuesto";
+  if (window.atajoNuevo) {
+    window.atajoNuevo.etiquetar(createBtn, "quotes-list");
+    // Y el MISMO destino que el botón, para que la «N» no pueda abrir otra cosa que el botón.
+    window.atajoNuevo.registrar("quotes-list", () => createBtn.click());
+  }
 
   headerActions.appendChild(exportQBtn);
   headerActions.appendChild(createBtn);
@@ -147,23 +154,19 @@ function renderQuotesListView(container) {
     return fmtMoneyEs(amount, currency || (window.appLocale && window.appLocale.currency) || "EUR");
   }
 
+  // SCRUM-820 · ESTO TRADUCÍA DOS ESTADOS Y DEJABA CAER LOS OTROS CUATRO a `st.toUpperCase()`,
+  // así que la lista enseñaba DRAFT, SENT, ACCEPTED y REJECTED a un profesional español —12 de 12
+  // filas— mientras Inicio decía «Aceptado» del mismo presupuesto. Medido con las dos pantallas
+  // pintadas: discrepaban los SEIS estados.
+  //
+  // Ya no decide nada aquí: lee de `quoteStatusMeta` (api.js), que es la única copia y la que
+  // leen también Inicio y la ficha del cliente. El `else` que volcaba el identificador se va con
+  // ella — lo desconocido lo resuelve la pieza, y no cada pantalla a su manera.
   function buildStatusPill(status) {
-    const st = String(status || "").toLowerCase();
+    const meta = window.quoteStatusMeta(status);
     const pill = document.createElement("span");
-    pill.className = "status-pill";
-
-    if (st === "pending_approval") {
-      pill.textContent = "PENDIENTE APROBACIÓN";
-      pill.classList.add("status-pill-approval");
-      return pill;
-    }
-
-    pill.textContent = st === "expired" ? "CADUCADO" : st.toUpperCase(); // A16.2
-    if (st === "accepted") pill.classList.add("status-pill-accepted");
-    else if (st === "rejected") pill.classList.add("status-pill-rejected");
-    else if (st === "draft" || st === "expired") pill.classList.add("status-pill-draft");
-    else pill.classList.add("status-pill-pending");
-
+    pill.className = "status-pill " + meta.pillClass;
+    pill.textContent = meta.label;
     return pill;
   }
 
@@ -327,8 +330,19 @@ function renderQuotesListView(container) {
   qFromInput.addEventListener("change", () => { currentDateFrom = qFromInput.value; updateQuoteExportHref(); loadQuotes(); });
   qToInput.addEventListener("change", () => { currentDateTo = qToInput.value; updateQuoteExportHref(); loadQuotes(); });
 
+  // 🔴 SCRUM-599 · EL CAMINO IBA POR EL SUBMENÚ, Y EL SUBMENÚ SE RETIRA EN ESTE MISMO COMMIT.
+  //
+  // Esto hacía `querySelector('.nav-item[data-view="quotes-new"]').click()`: el botón primario de
+  // la lista no navegaba, PULSABA EL SUBÍTEM DEL MENÚ. Al quitar el submenú, `menuBtn` es `null`,
+  // el `if` se lo traga y el botón se queda INERTE — la creación de presupuesto sin ningún camino
+  // desde su propia lista, en silencio y sin un error en consola.
+  //
+  // Lo cazó el censo de caminos que este ticket exige hacer ANTES y DESPUÉS. Ahora navega al
+  // destino directamente, que es como lo hacen las otras cinco puertas a `quotes-new`
+  // (`customerDetailView`, `invoicesView`, `quoteRequestsView`, `templatesView` y
+  // `quotesDetailView`): una sola forma de llegar, y no una que dependa de que exista un botón
+  // en otra parte de la pantalla.
   createBtn.addEventListener("click", () => {
-    const menuBtn = document.querySelector('.nav-item[data-view="quotes-new"]');
-    if (menuBtn) menuBtn.click();
+    if (window.renderAppView) window.renderAppView("quotes-new");
   });
 }

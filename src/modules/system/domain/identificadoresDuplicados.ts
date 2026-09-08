@@ -40,6 +40,7 @@
 // escribe en ninguna fila, así que la decisión (d) —los duplicados que ya existen no se tocan— se
 // respeta entera.
 import { normalizePhone } from '../../../core/utils/utils';
+import { normalizarNif } from '../../../core/validation/nifEspanol'; // SCRUM-575: UNA normalización
 
 // ⚠️ ESTOS TRES NO SE EXPORTAN, y no es descuido: fuera de este módulo nadie los consume salvo su
 // test, y el guard de SCRUM-411 lo caza. Se prueban por la SUPERFICIE PÚBLICA —`buscarCoincidencias`—
@@ -72,9 +73,15 @@ export function canonEmail(valor: string | null | undefined): string {
   return String(valor ?? '').trim().toLowerCase();
 }
 
-/** NIF/CIF: mayúsculas y sin separadores — `B-12345678` y `b12345678` son el mismo. */
+/**
+ * NIF/CIF: mayúsculas y sin separadores — `B-12345678` y `b12345678` son el mismo documento.
+ *
+ * 🔴 DELEGA en `normalizarNif` (SCRUM-575) en vez de tener su propia copia. Dos normalizaciones
+ * del mismo dato son dos sitios donde divergir, que es exactamente el defecto que este ticket
+ * documentó con los teléfonos: no se comete otra vez con los NIF.
+ */
 export function canonNif(valor: string | null | undefined): string {
-  return String(valor ?? '').toUpperCase().replace(/[\s.-]/g, '');
+  return normalizarNif(valor);
 }
 
 export interface CampoIdentificador {

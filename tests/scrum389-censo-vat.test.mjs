@@ -81,22 +81,16 @@ const CENSO = {
   // paso» — que habría sido la segunda cifra oficial del mismo dinero que este censo persigue.
   // Su propio guard (`scrum500-suplidos.test.mjs` §7) exige que la llamada sea exactamente UNA.
   'src/modules/invoicing/domain/suplidos.ts': { veredicto: 'DOCUMENTO', nota: 'el desglose de UNA factura sacando los suplidos de la base; el IVA lo delega en la primitiva' },
-  // 🔴 SCRUM-627 · ESTE FICHERO TIENE DOS COSAS, Y ESTA TABLA SÓLO PUEDE DECLARAR UNA.
-  // Lo que hay debajo clasifica la LLAMADA. Al lado, en el mismo fichero, el bloque de totales de
-  // la FACTURA se escribe el desglose a mano con su propio `vatMap` y NO llama a nadie — así que
-  // este censo, que busca llamadores, no puede verlo. Su veredicto está en la tabla hermana:
-  // `tests/scrum627b-censo-declara-reimplementaciones.test.mjs` (veredicto REIMPLEMENTACION).
-  // Se dice aquí porque el riesgo es justo éste: ver el fichero clasificado y dejar de buscar.
-  // (Este comentario NO cambia nada de lo que este censo hace ni de lo que exige.)
+  // ✅ 2-sep-2026 · SCRUM-656 · SALE `pdf.service.ts` y ENTRA el módulo que ahora hace esa
+  // llamada. No es que se haya dejado de desglosar el presupuesto: es que el desglose se ha
+  // mudado a `quotes/domain/presentacionIva.ts`, donde además decide QUÉ se pinta según el modo
+  // de IVA del documento. La maqueta ya no calcula; pinta lo que le dan.
   //
-  // SCRUM-604 (DOC-14) · llamador NUEVO, y es de los buenos: desglosa UN presupuesto para
-  // imprimirlo. NO agrega periodo — ni siquiera toca facturas: un presupuesto no entra en el 303.
-  //
-  // Y entra LLAMANDO a la primitiva en vez de copiar el bucle, que es lo que hace el bloque de
-  // totales de la FACTURA en este mismo fichero (tiene su propio `vatMap` escrito a mano). Ése no
-  // aparece en este censo justamente porque no llama: es la segunda cifra que este censo existe
-  // para perseguir, y está declarada en SCRUM-623/624. El nuevo no repite el error.
-  'src/modules/invoicing/infra/pdf/pdf.service.ts': { veredicto: 'DOCUMENTO', nota: 'el desglose de UN presupuesto para pintarlo en su PDF (SCRUM-604); no agrega periodo' },
+  // ⚠️ Y la mudanza destapó algo que conviene no perder: mientras el bloque del presupuesto
+  // llamaba a la primitiva DESDE EL MISMO FICHERO, el bloque de totales de la FACTURA —que
+  // agrupa el IVA a mano, a propósito— quedaba fuera del censo de SCRUM-627, porque su criterio
+  // es por fichero. Al irse la llamada, aquel fichero aparece por lo que lleva haciendo siempre.
+  'src/modules/quotes/domain/presentacionIva.ts': { veredicto: 'DOCUMENTO', nota: 'el pie de UN presupuesto: llama a la primitiva y solo decide qué filas se pintan según el modo de IVA (SCRUM-656)' },
 };
 
 test('SCRUM-389 · SUELO: el extractor ENCUENTRA llamadores', () => {

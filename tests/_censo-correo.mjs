@@ -13,6 +13,7 @@
 // ⚠️ Y el receptor de la llamada no se filtra por nombre (`axios`, `http`, el que sea): lo que
 // define un emisor es a DÓNDE llama, no cómo se llame la variable.
 import fs from 'node:fs';
+import { soloEjecutable } from './_guard-texto.mjs';
 import path from 'node:path';
 import ts from 'typescript';
 
@@ -456,7 +457,7 @@ export function censarLlamadores(nombresDeEmisor, canales = canalDeFallo()) {
         }
         let veredicto = 'sube';
         if (cuerpoManejador !== null) {
-          const cuerpo = cuerpoManejador.replace(/\/\/.*$/gm, '');
+          const cuerpo = soloEjecutable(cuerpoManejador);
           const relanza = /\bthrow\b/.test(cuerpo);
           // ¿El `catch` CONTESTA que no salió? Ése es el hecho, no si loguea.
           const avisa = /sendFailureBody|res\.status\(|res\.json\(/.test(cuerpo);

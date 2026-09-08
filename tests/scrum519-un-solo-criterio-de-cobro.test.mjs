@@ -33,6 +33,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+// SCRUM-694: el scanner de TypeScript, no un filtro por lineas.
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = pathToFileURL(path.join(RAIZ, 'dist')).href + '/';
@@ -168,10 +170,10 @@ test('SCRUM-519 · 🔴 ninguna vista vuelve a calcular el criterio por su cuent
     // Se ignoran los comentarios: los de este mismo ticket CITAN la expresión vieja para explicar
     // qué se quitó, y un guard que se caza a sí mismo por su propia documentación se acaba
     // relajando (ha pasado cinco veces en esta casa, SCRUM-267 lo deja escrito).
-    const ejecutable = fuente
-      .split('\n')
-      .filter((l) => !l.trim().startsWith('//'))
-      .join('\n');
+    // SCRUM-694 · antes se filtraban SÓLO las líneas `//`: un bloque `/* */` que citara la forma
+    // prohibida —para explicar por qué se retiró— habría hecho saltar el guard por su propia
+    // documentación. Ahora lo tokeniza el scanner de TypeScript.
+    const ejecutable = soloCodigo(fuente);
     assert.ok(!/iban\s*\|\|\s*\w*\.?bizumPhone/i.test(ejecutable),
       `🔴 «${rel}» ha vuelto a calcular por su cuenta si el merchant puede cobrar, con la forma `
       + '`iban || bizumPhone`.\n\n'

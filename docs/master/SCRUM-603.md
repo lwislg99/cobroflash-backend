@@ -146,3 +146,111 @@ para el sellado** (SCRUM-438). Eso es camino de documento firmado: **no se toca 
 
 * `tests/scrum603-descripcion-en-el-pdf.test.mjs` — la función pura y sus bordes, el control
   positivo y negativo en los dos documentos, la descripción larga y el recuento de copias.
+
+---
+
+# FASE 2 · EL ALBARÁN (3-sep-2026)
+
+**Medido contra:** `origin/main` = `9747d16ad1699b57b6738728e938b530d006f1b8` · 2026-09-03T14:24:13+01:00
+
+**Tanda:** **5.019 pruebas · 4.935 en verde · 0 fallos · 84 saltadas** — con `main` mergeado dentro
+y medida DESPUÉS del último cambio de código.
+
+## PASO 0 · casi todo estaba hecho, y lo que faltaba tenía una premisa caída
+
+**ENTRADA.** La casilla «Incluir descripción en el PDF» está en
+`public/dashboard/js/quotesView.js:459`. Su valor no viaja en un campo propio: el editor
+**concatena la descripción al concepto detrás de un `\n`** (`quotesView.js:2943`). Ese es el punto
+exacto donde el dato entra en el documento, y **no se pierde en ningún sitio**.
+
+**MECANISMO.** El pintado **NO es común**: `generateInvoicePdf` (130-582) y `generateQuotePdf`
+(588-1058) son funciones separadas del mismo fichero —medido por AST, no a ojo—, y el albarán vive
+aparte en `albaranPdf.service.ts`. **Por eso la acotación de esta sesión era aplicable**: se puede
+tocar el albarán sin rozar el camino de la factura.
+
+**Estado de los tres elementos, medido antes de escribir una línea:**
+
+| | presupuesto | factura | albarán |
+|---|---|---|---|
+| (a) descripción por línea | ya la separaba | arreglada el 1-sep | **faltaba** ← esta fase |
+| (b) texto libre de cabecera | `pdf.service.ts:718` | no lo tiene, y es SCRUM-665 | `albaranPdf.service.ts:194` |
+| (c) observaciones al pie | `pdf.service.ts:979` | no lo tiene, y es SCRUM-665 | `albaranPdf.service.ts:278` |
+
+## 🔴 La premisa que dejó fuera al albarán YA NO ERA CIERTA
+
+El 1-sep se declaró que el albarán «no tiene descripción que partir» porque su línea es
+`{concepto, cantidad, unidad}`. **Hoy se ha medido que sí la tiene**: el albarán copia el concepto
+del presupuesto **tal cual** —`jobDetailView.js:426` hace `l.concept.trim()`— y ese concepto es
+justo el que lleva el `\n` cuando la casilla está marcada. Así que la descripción **llegaba** al
+albarán, y su PDF la imprimía con el mismo tamaño y peso: indistinguible de un concepto largo.
+
+## 🔴 Y NO TOCA EL SELLADO — la medición que había que hacer antes de nada
+
+El hash del albarán certifica el **contenido canónico** —`numero`, `fecha`, `cliente`, `lineas`…—
+y **no el PDF** (`albaran.service.ts:532`). Aquí sólo cambia **cómo se pinta** un texto que ya
+estaba: el papel imprime exactamente lo mismo que se selló, que es lo que exige SCRUM-452. Ni un
+byte del canónico cambia, y por eso esto no necesitaba GO.
+
+El `26` del salto de página **se conserva como mínimo**: sin descripción, la decisión es idéntica
+a la de antes; sólo reserva más cuando hay algo más que pintar.
+
+## 🔴 LA PRUEBA DE QUE LA ACOTACIÓN SE CUMPLIÓ
+
+Un test compara el **blob** de `pdf.service.ts` con el de `origin/main` —**byte a byte**, sin
+interpretación posible— y otro comprueba que la factura **sigue saliendo con su contenido**: un
+fichero intacto que ya no generase nada pasaría el primero.
+
+## Mi test de presencia no probaba lo que decía, y lo destapó la prueba de rojo
+
+Al cortar el paso del dato el test «con descripción APARECE» **seguía verde**, y con razón: el
+texto sale igual porque PDFKit respeta el salto de línea. **Lo que faltaba nunca fue que llegara:
+era que se distinguiera.** Llamar a eso «la descripción no llega al PDF» era prometer más de lo
+que se mide. Entró un test propio para la DISTINCIÓN, con su suelo (que el concepto siga a 10: si
+los dos fueran 8, tampoco habría distinción).
+
+Se mide sobre el código y **no por comodidad**: el instrumento lee el TEXTO del PDF, no sus
+estilos (SCRUM-623), y **medido** — el tamaño 8 ya aparece en otras partes del documento, así que
+«hay un 8» no distingue nada.
+
+### Las cuatro mutaciones, con post-condición
+
+| se rompe a propósito | cae |
+|---|---|
+| el albarán vuelve a imprimir el concepto entero | «la descripción se DISTINGUE del concepto» |
+| la descripción se pinta al mismo tamaño | la misma |
+| **se toca el PDF de la factura** | «EL PDF DE LA FACTURA NO SE HA TOCADO: byte a byte» |
+| la partición se escribe a mano (segunda copia) | «la partición sigue viviendo UNA vez» |
+
+## Copias: siguen siendo CERO
+
+Se usa la misma función que factura y presupuesto (`conceptoLinea.ts`), escrita pensando en este
+día: *«el día que la tenga, la función ya está y no habrá que escribirla por tercera vez»*.
+
+## Ficheros de esta fase
+
+`src/modules/jobs/infra/albaranPdf.service.ts` ·
+`tests/scrum603b-descripcion-en-el-albaran.test.mjs` (**nuevo**, 9 tests) · esta sección.
+
+**No se ha tocado:** `src/modules/invoicing/infra/pdf/pdf.service.ts` —**byte a byte como
+`main`**, y hay un test que lo fija— · `prisma/schema.prisma` —este ticket **no lleva columnas
+nuevas**— · el camino de emisión · el sellado · `scripts/_suelo-de-la-tanda.mjs`.
+
+## Los huecos que declaro
+
+1. **Nadie ha mirado el PDF.** El instrumento lee texto, no renderiza: que la descripción del
+   albarán se vea bien es juicio visual y no está hecho.
+2. **El censo (d) del encargo no lo he conseguido hacer fiable.** Comparar los campos de `Quote`
+   con los nombres que aparecen en el generador devolvió «44 de 44 sin pintar», que es un
+   instrumento roto y no un hallazgo: el PDF recibe los datos con nombres de parámetro propios.
+   **No doy ese número como dato.** Lo que sí está medido es el estado de los tres elementos.
+3. **No he comprobado un albarán YA FIRMADO.** El razonamiento sobre el sellado está medido en el
+   código (el hash es del canónico), pero no he regenerado el PDF de un albarán firmado real.
+4. **Tres grises y tres tamaños distintos** siguen conviviendo: presupuesto `#444` a 9 pt, factura
+   y albarán `MUTED` a 8. Unificar es decisión de diseño y no de este ticket.
+5. **No he medido si otros documentos** (parte de trabajo, libro registro) tienen el mismo caso.
+
+## Hallazgos fuera de carril
+
+* Los dos campos de DOC-03 (`docHeaderText`, `docFooterText`) **no existen para la factura**, y el propio esquema declara por qué: `ensureInvoicePdf` regenera el PDF con el código de hoy, así que un bloque nuevo cambiaría facturas ya emitidas — está abierto como SCRUM-665.
+* La descripción **sólo existe si la línea vino del catálogo**: se borra al escribir el concepto a mano (`quotesView.js:1850, 2318, 2367`), así que con una línea tecleada marcar la casilla no puede hacer nada, y la casilla no lo advierte.
+* El albarán **copia el concepto del presupuesto sin tocarlo**, así que hereda cualquier cosa que el editor meta ahí — hoy la descripción; mañana, lo que sea que se concatene.

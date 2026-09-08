@@ -57,7 +57,7 @@ function montar(lineasAlbaran) {
   p.albaranLineaFacturada = { findMany: async () => [], createMany: async () => {} };
 
   const tx = new Proxy({
-    invoice: { create: async ({ data }) => { cap.facturaEmitida = data; return { ...data, id: 33, total: { toString: () => data.total } }; } },
+    invoice: { findMany: async () => [], create: async ({ data }) => { cap.facturaEmitida = data; return { ...data, id: 33, total: { toString: () => data.total } }; } },
     albaranLineaFacturada: { createMany: async () => {} },
     merchant: {
       findUnique: async () => ({ id: 7, country: 'ES', flags: { INVOICING_ES_ENABLED: true }, invoiceSeq: 0, quoteSeq: 0 }),

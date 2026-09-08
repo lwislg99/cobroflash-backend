@@ -2,6 +2,8 @@ import crypto from 'crypto';
 import { prisma } from '../../core/db/prisma';
 import { Prisma } from '@prisma/client';
 import { CustomerCreateInput, CustomerUpdateInput } from '../../core/validation/schemas';
+// SCRUM-580 (CONT-07): la decision de las etiquetas vive aparte y es pura — ver ese fichero.
+import { normalizarTags } from './tagsDelCliente';
 import { normalizePhone } from '../../core/utils/utils'; // SCRUM-578: la que YA existe, sin tocarla
 
 function generatePortalToken() {
@@ -16,11 +18,60 @@ function generatePortalToken() {
 // recortado; solo el token).
 const CUSTOMER_SELECT_NO_TOKEN = {
   id: true, merchantId: true, name: true, phone: true, email: true, notes: true,
+  // 🔴 SCRUM-590 (CONT-19) · EL QUINTO ESLABÓN OTRA VEZ — y aquí no es sólo que el dato no se
+  // vea. Este `select` es EXPLÍCITO y lo usan `listCustomers` Y `getCustomer`. Sin esta línea
+  // el móvil se guardaría en la base y volvería `undefined` a la ficha: el profesional lo
+  // escribiría, la pantalla se recargaría vacía, y lo volvería a escribir. Es el aviso que ya
+  // dejaron escrito SCRUM-579, SCRUM-580 y SCRUM-587 aquí mismo; esta vez se leyó ANTES.
+  mobile: true,
   legalName: true, taxId: true, waOptOut: true, createdAt: true, updatedAt: true,
   contactKind: true, // SCRUM-574: forma jurídica (EMPRESA|PERSONA). NO es tipoDestinatario.
+  // 🔴 SCRUM-576 (CONT-03) · EL QUINTO ESLABÓN, POR TERCERA VEZ, y esta vez se buscó ANTES de
+  // escribir una línea. Sin esto el vínculo se guardaría y `getCustomer` devolvería un cliente
+  // sin empresa: el formulario se recargaría vacío, el profesional lo volvería a elegir — y la
+  // tanda seguiría VERDE, porque el dato SÍ está en la base.
+  //
+  // ⛔ Sale `companyId` (el entero) y NO la relación `company`. La ficha de EMPRESA no gana
+  // nada: el lado inverso (`people`) existe sólo porque Prisma lo exige para declarar la
+  // relación, y exponerlo crearía el segundo sitio que este ticket existe para evitar.
+  companyId: true,
   tipoDestinatario: true, // SCRUM-69: para editar en la ficha y para la bandeja de facturación
   billingPeriodicity: true, // SCRUM-171b: periodicidad pactada (solo para AVISAR, ver bandeja)
   recargoEquivalencia: true, // SCRUM-294-a: el dato del cliente; NO cableado al total (regla 38)
+  // 🔴 SCRUM-587 (CONT-14) · EL QUINTO ESLABÓN OTRA VEZ, y el aviso que dejó SCRUM-580 doce
+  // líneas más abajo se leyó ANTES esta vez: este `select` es EXPLÍCITO y lo usan `listCustomers`
+  // Y `getCustomer`. Sin esta línea, el descuento pactado se guardaría en la base y el documento
+  // NUNCA lo vería —la propuesta no aparecería jamás—, y la tanda seguiría VERDE porque el dato
+  // SÍ estaría guardado. Es el editor quien lee la lista de clientes para proponer.
+  dtoPorDefecto: true,
+  // 🔴 SCRUM-580 (CONT-07) · EL QUINTO ESLABON, Y ES EL QUE MAS FACIL SE PIERDE. Este `select` es
+  // EXPLICITO y lo usan `listCustomers` Y `getCustomer`: sin esta linea el alta guardaria las
+  // etiquetas y devolveria un cliente sin ellas, la pantalla se recargaria vacia, el profesional
+  // volveria a escribirlas — y la tanda seguiria VERDE, porque el dato SI estaria en la base.
+  // Es el mismo aviso que dejo SCRUM-579 doce lineas mas abajo, y esta vez se busco ANTES.
+  tags: true,
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+  // SCRUM-579 (CONT-06) · LA DIRECCIÓN DE FACTURACIÓN, Y ESTE `select` ES EL ESLABÓN QUE MÁS
+  // FÁCIL SE PIERDE.
+  //
+  // 🔴 Es EXPLÍCITO: lo que no esté aquí NO SALE, aunque esté en la columna y aunque el alta lo
+  // haya guardado. Sin estas cinco líneas, `createCustomer` guardaría la dirección y devolvería
+  // un cliente sin ella; la pantalla se recargaría vacía y el profesional volvería a escribirla.
+  // Y la tanda seguiría VERDE, porque el dato SÍ estaría en la base: el defecto sería mudo.
+  //
+  // Por eso los tests de este ticket no se conforman con «se guarda»: releen (`getCustomer`,
+  // que usa este mismo select) y exigen que siga ahí. Un `select` explícito es una lista a mano,
+  // y una lista a mano envejece en silencio cada vez que alguien añade una columna.
+  billingAddress: true,
+  billingCity: true,
+  billingPostalCode: true,
+  billingProvince: true,
+  billingCountry: true,
+  // SCRUM-588 (CONT-16) · la referencia interna. Va aquí por el motivo escrito arriba, que es EL
+  // eslabón que más fácil se pierde: sin esta línea el alta la guardaría, `getCustomer` devolvería
+  // un cliente sin ella, la pantalla se recargaría vacía y el profesional la reescribiría — con la
+  // tanda en VERDE, porque el dato sí está en la base.
+  internalRef: true,
 } as const;
 
 export async function listCustomers(merchantId: number, search?: string) {
@@ -32,6 +83,16 @@ export async function listCustomers(merchantId: number, search?: string) {
         { name:  { contains: search, mode: 'insensitive' } },
         { phone: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } },
+        // 🔴 SCRUM-588 (CONT-16) · SIN ESTA LÍNEA EL CAMPO NO RESUELVE NADA.
+        //
+        // La referencia interna existe para poder ENCONTRAR al cliente por el número con el que el
+        // profesional lo conoce — el expediente de la aseguradora, la finca, el código del sistema
+        // viejo. Guardarla sin poder buscarla es exactamente lo que ya hacía `notes`: un sitio
+        // donde el dato entra y no vuelve a salir.
+        //
+        // Va en el MISMO `OR` que nombre, teléfono y email, no en un buscador aparte: el
+        // profesional escribe lo que recuerda y no tiene por qué decirnos de qué tipo es.
+        { internalRef: { contains: search, mode: 'insensitive' } },
       ],
     }];
   }
@@ -60,37 +121,263 @@ export async function getCustomer(merchantId: number, id: number) {
  *
  * `undefined` se respeta: en una actualización parcial significa «no toques este campo», y
  * confundirlo con «bórralo» sería perder el teléfono de un cliente al editarle las notas.
+ *
+ * 🔴 SCRUM-590 (CONT-19) · LOS DOS NÚMEROS, NO SÓLO EL FIJO. El motivo de arriba vale MÁS para
+ * el móvil que para el fijo: el móvil es el número al que sale el documento, así que guardarlo
+ * sin normalizar es exactamente el defecto de SCRUM-578 —`+34 662629419` y `662629419` como
+ * dos cosas distintas— en el campo que además decide a dónde se manda el WhatsApp. Se recorre
+ * una lista y no se copia la línea: dos copias son dos sitios donde divergir.
  */
-function normalizarIdentificadores<T extends { phone?: string | null }>(data: T): T {
-  if (data.phone === undefined) return data;
-  const limpio = normalizePhone(data.phone);
-  // Si no se puede normalizar, se guarda lo que escribió el profesional: este ticket avisa de
-  // duplicados, no valida teléfonos. Rechazar aquí sería un bloqueo que nadie ha decidido.
-  return { ...data, phone: limpio || data.phone };
+type ConNumeros = { phone?: string | null; mobile?: string | null };
+function normalizarIdentificadores<T extends ConNumeros>(data: T): T {
+  // 🔴 SE ACUMULA APARTE Y SE ESPARCE `...data` AL FINAL, en vez de reasignar en el bucle. El
+  // guard ④ de SCRUM-579 lo exige literalmente, y tiene razón de fondo: un normalizador que
+  // construye su salida campo a campo se come en silencio todo lo que no nombre —la dirección
+  // de facturación, las etiquetas— entre lo que Zod validó y lo que se guarda. Con `...data`
+  // delante, lo que este bucle no toca pasa intacto por construcción.
+  const limpiados: ConNumeros = {};
+  for (const campo of ['phone', 'mobile'] as const) {
+    if (data[campo] === undefined) continue; // edición parcial: no se toca
+    const limpio = normalizePhone(data[campo]);
+    // Si no se puede normalizar, se guarda lo que escribió el profesional: este ticket avisa de
+    // duplicados, no valida teléfonos. Rechazar aquí sería un bloqueo que nadie ha decidido.
+    limpiados[campo] = limpio || data[campo];
+  }
+  return { ...data, ...limpiados };
+}
+
+/**
+ * SCRUM-580 (CONT-07) · las etiquetas, normalizadas EN SERVIDOR y en los DOS caminos.
+ *
+ * 🔴 Va en el alta Y en la edición. Si sólo lo hiciera el alta, editar un cliente sería la puerta
+ * trasera por la que entra un `[]` — y un `[]` guardado dice «este cliente tiene etiquetas», que
+ * es justo la mentira sobre la que se construiría el filtro. Es la misma lección que SCRUM-578
+ * dejó escrita arriba con el teléfono.
+ *
+ * `undefined` se respeta: en una edición parcial significa «no toques este campo».
+ */
+type SinNullDeJs<T> = Omit<T, 'tags'> & { tags?: string[] | typeof Prisma.DbNull };
+
+function normalizarEtiquetas<T extends { tags?: unknown }>(data: T): SinNullDeJs<T> {
+  if (!('tags' in (data as object))) return data as SinNullDeJs<T>;
+  const v = normalizarTags((data as { tags?: unknown }).tags);
+  if (v === undefined) return data as SinNullDeJs<T>;
+  // 🔴 `Prisma.DbNull`, NO `null` NI `Prisma.JsonNull`, y el compilador obliga a elegir — que es
+  // una suerte, porque son tres cosas distintas y sólo una es la que quiere este ticket:
+  //
+  //   · `Prisma.DbNull`   → NULL de SQL: «no se declararon etiquetas». ESTE.
+  //   · `Prisma.JsonNull` → el valor JSON `null` DENTRO de la columna. La columna NO sería NULL,
+  //                          así que un `IS NOT NULL` diría que este cliente tiene etiquetas.
+  //   · `undefined`       → «no toques el campo», que ya se ha resuelto arriba.
+  //
+  // Confundir las dos primeras es exactamente el defecto de «ausente ≠ vacío» con otro nombre.
+  return { ...data, tags: v === null ? Prisma.DbNull : v } as SinNullDeJs<T>;
+}
+
+/**
+ * SCRUM-576 (CONT-03) · ¿PUEDE ESTE CLIENTE APUNTAR A ESE ID? La mitad que NO necesita base.
+ *
+ * Vive suelta y pura por el mismo motivo que `debeEsconder` en `switchFormaJuridica.js`: una
+ * regla enterrada dentro de una función `async` que consulta Postgres sólo se puede auditar
+ * LEYENDO el fuente, y leer no ejecuta nada. Aquí se ejecuta.
+ *
+ * Responde a las dos preguntas que no hacen falta consultar:
+ *   · `undefined` → «no toques el campo» en una edición parcial. No es lo mismo que `null`.
+ *   · un cliente apuntándose a SÍ MISMO → imposible. No es una regla de negocio inventada
+ *     (regla 27): es un dato que no puede significar nada. «Esta persona pertenece a sí misma».
+ *
+ * Lo que NO decide, y por qué: si la empresa **existe** y es del **mismo merchant** (regla 2).
+ * Eso exige la base y se resuelve abajo.
+ */
+export type VeredictoDeVinculo = 'no-tocar' | 'desvincular' | 'hay-que-consultar' | 'es-el-propio-cliente';
+
+export function examinarVinculoDeEmpresa(
+  clienteId: number | null,
+  companyId: number | null | undefined,
+): VeredictoDeVinculo {
+  if (companyId === undefined) return 'no-tocar';
+  if (companyId === null) return 'desvincular';
+  // En un ALTA todavía no hay id, así que no puede apuntarse a sí mismo: no hay a qué.
+  if (clienteId !== null && companyId === clienteId) return 'es-el-propio-cliente';
+  return 'hay-que-consultar';
+}
+
+/**
+ * La otra mitad: la que sí necesita la base. Lanza si el vínculo no se sostiene.
+ *
+ * 🔴 EL FILTRO POR `merchantId` ES LA REGLA 2 Y NO ES OPCIONAL. Sin él, un profesional podría
+ * vincular a su cliente con una empresa de OTRO merchant escribiendo un id a mano — y a partir de
+ * ahí ese id viajaría en el JSON de su propia ficha. Es fuga entre inquilinos, no un 404.
+ *
+ * ⚠️ LO QUE **NO** SE EXIGE, Y ES DELIBERADO: que la empresa apuntada tenga
+ * `contactKind = 'EMPRESA'`. Medido en desarrollo el 7-sep-2026: de 14 clientes, **12 están en
+ * `NULL`** — nadie ha declarado su forma jurídica. Rechazar todo lo que no esté declarado
+ * convertiría un campo opcional en un muro, y deducir «es una empresa» de otra cosa está
+ * PROHIBIDO por el fundador (24-ago-2026). El formulario sólo OFRECE las declaradas `EMPRESA`,
+ * que es donde esa preferencia sí cabe sin cerrarle la puerta a nadie.
+ */
+export async function exigirEmpresaValida(
+  merchantId: number,
+  clienteId: number | null,
+  companyId: number | null | undefined,
+): Promise<void> {
+  const veredicto = examinarVinculoDeEmpresa(clienteId, companyId);
+  if (veredicto === 'no-tocar' || veredicto === 'desvincular') return;
+  if (veredicto === 'es-el-propio-cliente') throw new Error('empresa_no_valida');
+
+  const empresa = await prisma.customer.findFirst({
+    where: { id: companyId as number, merchantId },
+    select: { id: true },
+  });
+  if (!empresa) throw new Error('empresa_no_valida');
 }
 
 export async function createCustomer(merchantId: number, data: CustomerCreateInput) {
+  // En el alta todavía no hay id propio, así que se pasa `null`: no hay a qué apuntarse.
+  await exigirEmpresaValida(merchantId, null, data.companyId);
   return prisma.customer.create({
-    data: { ...normalizarIdentificadores(data), merchantId, portalToken: generatePortalToken() },
+    data: { ...normalizarEtiquetas(normalizarIdentificadores(data)), merchantId, portalToken: generatePortalToken() },
     select: CUSTOMER_SELECT_NO_TOKEN,
   });
 }
 
+/**
+ * El token del portal de un cliente, generándolo si todavía no tiene.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-793 · LA CONDICIÓN VIVE EN EL `WHERE`, NO EN UN `if` DE JAVASCRIPT
+ *
+ * Aquí había un read-then-write desnudo: `findFirst` → `if (!token)` → `update`. Entre el SELECT
+ * y el UPDATE no había nada, así que dos peticiones simultáneas leían las dos «sin token»,
+ * generaban dos tokens distintos y escribían las dos: **ganaba la última**, y la primera devolvía
+ * a su llamador un token que ya no estaba en la base.
+ *
+ * MEDIDO contra Postgres de desarrollo (SCRUM-767, reproducido en SCRUM-793 antes de tocar nada):
+ *
+ *     DOS a la vez  → 4 de 5 pasadas con un enlace MUERTO
+ *     DIEZ a la vez → hasta 10 tokens distintos, 9 de 10 muertos
+ *
+ * LA VÍCTIMA no ve ningún error: el profesional copia el enlace del portal, se lo manda al
+ * cliente por WhatsApp, y **el enlace no abre** — `GET /cliente/:token` busca por `portalToken` y
+ * no encuentra nada. Es el momento en que el cliente decide si firma.
+ *
+ * ── POR QUÉ ESTO LO CIERRA, Y NO ES UNA CARRERA MÁS PEQUEÑA ──────────────────────────────
+ *
+ * `portalToken: null` **dentro del `WHERE`** convierte la comprobación en parte de la MISMA
+ * sentencia que escribe. En READ COMMITTED, la segunda `UPDATE` se bloquea sobre la fila que la
+ * primera tiene tomada y, cuando aquélla confirma, **vuelve a evaluar su `WHERE`**: ya no hay
+ * `null`, así que casa 0 filas y no pisa nada. El motor serializa lo que un `if` no puede.
+ *
+ * Y por eso se devuelve `count`: si casó 1, el token de la base es el nuestro. Si casó 0, la
+ * carrera la ganó otro y **se devuelve el suyo**, releído — nunca el que este hilo generó.
+ *
+ * ⚠️ EL `if` DE ARRIBA SE QUEDA, y no contradice nada: es un atajo de LECTURA sobre un valor ya
+ * confirmado. Es seguro porque **un token no nulo no lo sobrescribe nadie** — medido: `portalToken`
+ * no existe en los esquemas zod, así que `updateCustomer` no puede tocarlo, y los únicos dos
+ * escritores del árbol son `createCustomer` (al nacer) y esta función (sólo si está a `null`).
+ *
+ * ⛔ NO se ha añadido `@@unique` ni ningún índice: `Customer.portalToken` ya es `String? @unique`
+ *    y `prisma/schema.prisma` no se toca.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
 export async function ensurePortalToken(merchantId: number, customerId: number): Promise<string> {
-  const customer = await prisma.customer.findFirst({ where: { id: customerId, merchantId } });
+  const customer = await prisma.customer.findFirst({
+    where: { id: customerId, merchantId },
+    select: { portalToken: true },
+  });
   if (!customer) throw new Error('customer_not_found');
   if (customer.portalToken) return customer.portalToken;
+
   const token = generatePortalToken();
-  await prisma.customer.update({ where: { id: customerId }, data: { portalToken: token } });
-  return token;
+  // `updateMany` y no `update` PORQUE `update` exige clave única y no admite más condiciones: la
+  // condición `portalToken: null` es justo lo que hay que meter en el `WHERE`. De paso, el
+  // `merchantId` entra también en la escritura, que antes sólo filtraba en la lectura (regla 2).
+  const escrito = await prisma.customer.updateMany({
+    where: { id: customerId, merchantId, portalToken: null },
+    data: { portalToken: token },
+  });
+  if (escrito.count === 1) return token;
+
+  // Casó 0 filas: otro llegó antes. Se devuelve EL SUYO, que es el que está en la base y el que
+  // va a funcionar cuando el cliente abra el enlace.
+  const yaPuesto = await prisma.customer.findFirst({
+    where: { id: customerId, merchantId },
+    select: { portalToken: true },
+  });
+  // Fail-closed: si a estas alturas no hay token, el cliente se ha borrado por debajo. No se
+  // inventa uno ni se devuelve el que este hilo generó y que NO está guardado.
+  if (!yaPuesto?.portalToken) throw new Error('customer_not_found');
+  return yaPuesto.portalToken;
 }
 
 export async function updateCustomer(merchantId: number, id: number, data: CustomerUpdateInput) {
   // SCRUM-578: la edicion normaliza igual que el alta. Si solo lo hiciera el alta, editar un
   // cliente seria la puerta trasera por la que vuelve a entrar un telefono sin normalizar.
-  return prisma.customer.updateMany({ where: { id, merchantId }, data: normalizarIdentificadores(data) });
+  // SCRUM-576: la edición comprueba igual que el alta. Si sólo lo hiciera el alta, editar sería
+  // la puerta trasera por la que entra un `companyId` de otro merchant — la misma lección que
+  // SCRUM-578 dejó escrita con el teléfono y SCRUM-580 con las etiquetas.
+  await exigirEmpresaValida(merchantId, id, data.companyId);
+  return prisma.customer.updateMany({ where: { id, merchantId }, data: normalizarEtiquetas(normalizarIdentificadores(data)) });
+}
+
+/**
+ * SCRUM-576 (CONT-03) · BORRAR UN CLIENTE SIN DEJAR PERSONAS APUNTANDO AL VACÍO.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 ESTO ES LO QUE HARÍA LA CLAVE AJENA, Y POR ESO NO HAY CLAVE AJENA
+ *
+ * `customers.company_id` nace **sin FK**, por decisión del fundador (8-sep-2026), aplicando la
+ * firma que ya existía para `Quote.jobId` en SCRUM-195: «la FK que importaría aquí es
+ * `onDelete`, y eso ya se decidió en SCRUM-192 — **servicio de borrado, no cascadas**. La
+ * integridad la sostiene el CÓDIGO.» Tener FK aquí y no allí serían dos criterios para la misma
+ * clase de relación, y ésta es autorreferente sobre `customers`: deshacerla cuesta más.
+ *
+ * **Entonces la promesa hay que cumplirla aquí, y es ésta:** borrar una empresa NO puede dejar a
+ * sus personas señalando una fila que ya no existe. Se desvinculan; **no se borran**. Un cliente
+ * no desaparece porque desaparezca la empresa para la que trabajaba — tiene sus presupuestos, sus
+ * facturas y su historial.
+ *
+ * ── EL ORDEN NO ES INDIFERENTE ──────────────────────────────────────────────────────────────
+ * Se desvincula **ANTES** de borrar. Al revés —borrar y luego limpiar— deja una ventana en la que
+ * las filas apuntan a un id que ya no existe, y si el segundo paso falla la ventana no se cierra
+ * nunca. Sin FK **nada protestaría**: el defecto sería MUDO, que es el peor.
+ *
+ * ── Y POR ESO ES UNA TRANSACCIÓN ────────────────────────────────────────────────────────────
+ * Los dos pasos caen juntos o no cae ninguno. Sin ella, un fallo al borrar dejaría a las personas
+ * desvinculadas de una empresa que **sigue existiendo**: se habría perdido un dato del profesional
+ * sin que nadie borrara nada.
+ *
+ * ⚠️ `updateMany` filtra por `merchantId` además de por `companyId`, y no es redundante: es la
+ * regla 2. Un `companyId` es un entero, y sin el dueño en el `WHERE` esta escritura alcanzaría
+ * filas de otro inquilino que casaran por número.
+ *
+ * Devuelve lo mismo que antes —el resultado del `deleteMany`— para no cambiarle nada a la ruta.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+/**
+ * LOS DOS PASOS, EN ORDEN, SOBRE EL CLIENTE QUE SE LE DÉ. Vive suelta y recibe el cliente en vez
+ * de cerrar sobre `prisma` por el mismo motivo que `examinarVinculoDeEmpresa` justo arriba: una
+ * secuencia enterrada dentro de una llamada a `$transaction` sólo se puede auditar LEYENDO el
+ * fuente, y leer no ejecuta nada. Así la suite la ejerce entera —el orden, los filtros y el valor
+ * que escribe— sin levantar Postgres.
+ *
+ * @param tx el cliente Prisma (o el de la transacción: la firma es la misma)
+ */
+export async function desvincularYBorrar(
+  tx: { customer: { updateMany: Function; deleteMany: Function } },
+  merchantId: number,
+  id: number,
+) {
+  // ① PRIMERO desvincular. Ver el porqué del orden en `deleteCustomer`.
+  await tx.customer.updateMany({
+    where: { merchantId, companyId: id },
+    data: { companyId: null },
+  });
+  // ② y sólo entonces borrar.
+  return tx.customer.deleteMany({ where: { id, merchantId } });
 }
 
 export async function deleteCustomer(merchantId: number, id: number) {
-  return prisma.customer.deleteMany({ where: { id, merchantId } });
+  // `$transaction` y no dos llamadas sueltas: los dos pasos caen juntos o no cae ninguno.
+  return prisma.$transaction((tx) => desvincularYBorrar(tx as any, merchantId, id));
 }
