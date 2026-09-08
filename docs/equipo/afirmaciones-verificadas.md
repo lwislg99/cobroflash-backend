@@ -37,6 +37,17 @@ pero **no** se han vuelto a medir — y eso se dice en vez de callarlo.
 | «el auto-merge falla por el conflicto» | **fallaba por permisos**. **[del registro]** — no se puede medir desde aquí: hace falta el log del workflow | `gh run list --workflow=pr-automatico.yml` — ⚠️ **`gh` NO está instalado en este entorno**, así que esta fila queda declarada como NO verificable localmente |
 | «Jira no funciona en Visual» | **sí funciona**. **[re-medido hoy]** — el MCP de Atlassian ha contestado en esta misma sesión sobre `cloudId 30938fdf-…` | consulta JQL por el MCP de Atlassian; sin MCP, `docs/equipo/00-normas-comunes.md` no promete otra vía |
 
+## Casos nuevos
+
+Primer caso real del filtro: **dos sesiones escribieron dos hechos incompatibles y hubo que medir
+cuál era.** Y el tercero es mío, que es lo que hace que esto valga para todos.
+
+| lo que se afirmó | lo que se midió | comando exacto |
+| --- | --- | --- |
+| **S0:** «`revert-1192-…` ya no existe en el remoto, sólo queda su ref local; en un clon nuevo no pasaría» · **S3:** «main está rojo por esa rama REMOTA» | **Gana S0.** La rama NO está en el remoto: `ls-remote` devuelve vacío (control: ve 103 refs). Era una ref local obsoleta, y tras `git fetch --prune` **SCRUM-753 pasa a verde**. ⚠️ Declarado: el `for-each-ref` sale vacío hoy porque yo mismo pruné en el turno anterior — la prueba es `ls-remote`, que ya daba 0 ayer con la ref local presente | `git ls-remote --heads origin \| grep revert-1192` · `git for-each-ref refs/remotes/origin/ \| grep revert-1192` · `git fetch --prune origin && node --test tests/scrum753-censo-de-alcanzabilidad.test.mjs` |
+| «main está verde en CI» (mi primera lectura del listado de Actions) | **ROJO.** El listado se leyó mal; la página del run dice `Failure` y «build + tests (con banco desechable)» sale con `exit code 1`. Run #2140 sobre `da5ac06a`. 🔒 Gana la fuente detallada sobre el resumen | `https://github.com/lwislg99/cobroflash-backend/actions/runs/34210697350` — ⚠️ los LOGS no son visibles sin `gh`, así que la causa no se lee de CI: se sostiene reproduciéndola |
+| «el tapón de los 22 PR son 22 problemas» | **Es UNO, y es mío.** Sobre el mismo `da5ac06a`, en local y con las refs ya podadas, falla **sólo `scrum804-la-rama-viva`** (3 de 8), por la barrida de 456 ramas que ejecuté: su control enumerado busca la rama de SCRUM-821 —que borré, y con razón: su trabajo está en main por el PR #1167— y sus dos suelos codifican «558 ramas» y «464 dentro de main» | `git checkout --detach origin/main && node --test tests/scrum804-la-rama-viva.test.mjs` |
+
 ## Lo que estas nueve tienen en común
 
 Ninguna es una mentira: **todas empiezan en una observación real**. Lo que falla es el paso
