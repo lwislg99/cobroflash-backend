@@ -6,6 +6,7 @@ import {
   getQuoteDetailAdmin,
   acceptQuoteAdmin,
   rejectQuoteAdmin,
+  setQuoteTags,
 } from '../../quoteAdmin';
 
 import { prisma } from '../../../../core/db/prisma';
@@ -738,6 +739,41 @@ router.put('/:id/notes', async (req, res) => {
     return res.json({ ok: true });
   } catch (err) {
     console.error('[PUT /admin/quotes/:id/notes]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * PUT /admin/quotes/:id/tags — SCRUM-595 (DOC-05) · las etiquetas del presupuesto.
+ *
+ * Copia exacta de la forma de `PUT /:id/notes`, que es el metadato del documento que ya existia:
+ * verbo, acotado por `:id`, tenencia en el `WHERE` y nada mas. Ni un patron nuevo.
+ *
+ * ⚠️ `requireRole('admin')` — y es MAS estricto que `/notes`, que no lo lleva. Se elige el gate
+ * mas cerrado de los dos documentos a proposito: la ruta gemela vive en `invoicesAdmin`, donde
+ * TODAS las escrituras lo llevan, y el mismo bloque con dos permisos distintos segun el documento
+ * seria una asimetria que nadie decidio. Si el fundador quiere que el tecnico etiquete, es QUITAR
+ * un gate —reversible y visible— y no anadirlo despues.
+ */
+router.put('/:id/tags', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    // 🔴 SE VALIDA ESTRICTO, Y NO ES CELO: `normalizarTags` convierte en `null` cualquier cosa que
+    // no sea una lista —es su suelo, y es el correcto para un formulario—, pero en ESTA ruta ese
+    // suelo seria destructivo: un cuerpo mal formado BORRARIA las etiquetas y devolveria `ok`. Un
+    // 400 dice que no se ha guardado; un 200 sobre un borrado accidental, no.
+    const bruto = (req.body ?? {}).tags;
+    if (bruto !== null && !Array.isArray(bruto)) {
+      return res.status(400).json({ error: 'invalid_tags' });
+    }
+    const tocadas = await setQuoteTags(req.merchantId, id, bruto);
+    // 0 filas = no es suyo o no existe. Un `ok: true` aqui le diria al profesional que ha
+    // guardado algo que no se ha guardado.
+    if (tocadas === 0) return res.status(404).json({ error: 'quote_not_found' });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[PUT /admin/quotes/:id/tags]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });
