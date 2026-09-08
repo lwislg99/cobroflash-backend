@@ -4,7 +4,7 @@
 // DOS PETICIONES SIMULTÁNEAS EMITÍAN DOS FACTURAS DEL MISMO TRAMO.
 //
 // `POST /admin/quotes/:id/invoice` leía el presupuesto con sus facturas, decidía el tramo con
-// `plan[existingInvoices.length]`, y 35 líneas más abajo abría la transacción SIN volver a
+// `plan[existingInvoices.length]`, y 32 líneas más abajo abría la transacción SIN volver a
 // contar. Envolver la creación en una transacción no protege una decisión tomada ANTES de
 // abrirla: la transacción garantiza que lo que se escribe se escribe entero; no garantiza que
 // lo que se decidió siga siendo cierto.
@@ -50,7 +50,9 @@ import path from 'node:path';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 const ENABLED = process.env.QA_DB_TEST === '1';
-const SIN_GATE = 'sin QA_DB_TEST=1 · npm run test:staging:gated';
+// 🔴 EL MOTIVO DEL SALTO VA LITERAL EN CADA `skip`, y no en una constante: SCRUM-456 lo lee
+// por AST, y de un identificador no puede sacar el texto — el salto sale MUDO y su tanda roja.
+// Cazado por el guard al primer intento, que es exactamente para lo que está.
 
 /** Suelo del banco: por encima de esto, las dos peticiones no compitieron y no se concluye nada. */
 const DESFASE_MAXIMO_MS = 120;
@@ -146,7 +148,7 @@ const emitir = (base, cookie, quoteId) => fetch(`${base}/admin/quotes/${quoteId}
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // ① LA CARRERA — el rojo que este ticket existe para apagar
 // ═════════════════════════════════════════════════════════════════════════════════════════════
-test('SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo', { skip: !ENABLED && SIN_GATE }, async (t) => {
+test('SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 
@@ -208,7 +210,7 @@ test('SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo',
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // ② EL DINERO — 30/70, que es donde el defecto se cobra
 // ═════════════════════════════════════════════════════════════════════════════════════════════
-test('SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto', { skip: !ENABLED && SIN_GATE }, async (t) => {
+test('SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const { motivoSinTramo } = await import('../dist/modules/quotes/domain/billingPlan.js');
@@ -271,7 +273,7 @@ test('SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del pres
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // ③ POSITIVO ENUMERADO — que cerrar la carrera no haya roto el camino normal
 // ═════════════════════════════════════════════════════════════════════════════════════════════
-test('SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y luego «Final»', { skip: !ENABLED && SIN_GATE }, async (t) => {
+test('SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y luego «Final»', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 

@@ -192,7 +192,7 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     // ── SCRUM-814 · EL TRAMO ES UNA FUNCIÓN DEL RECUENTO, no un valor decidido una vez ──────
     //
     // Antes esto eran tres constantes calculadas aquí arriba (`stage`, `scaledLines`,
-    // `invoiceAmount`) a partir de `existingInvoices.length`, y 35 líneas más abajo se abría la
+    // `invoiceAmount`) a partir de `existingInvoices.length`, y 32 líneas más abajo se abría la
     // transacción SIN volver a contar. Envolver la creación en una transacción no protege una
     // decisión tomada ANTES de abrirla: la transacción garantiza que lo que se escribe se escribe
     // entero; no garantiza que lo que se decidió siga siendo cierto.
