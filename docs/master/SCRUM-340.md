@@ -1,8 +1,11 @@
 # SCRUM-340 · Lo MEDIDO al intentar traer su rama a `main` (8-sep-2026)
 
 **Medido contra:** `origin/main` = `1bbf60afb9eae547e083e1c716fa97c88306d791` · 2026-09-08T07:41:43Z
-**Estado de este apéndice: SÓLO DOCUMENTO.** No trae ni una línea de código —`git diff origin/main
--- src/ tests/ public/` sale vacío—, así que se puede mergear solo y no depende de ninguna decisión.
+**Estado (actualizado 8-sep-2026, tras la firma del fundador):** ya NO es sólo documento.
+Entra la REGLA firmada como predicado puro con sus dos rojos, el ALTER preparado y SIN aplicar, y
+el guard de SCRUM-330 recolocado. Lo que NO entra: el cableado del contador —necesita la columna,
+y `prisma/schema.prisma` es del fundador—, las tres superficies públicas y el test de
+`founding_no_resoluble`. Ver §8.
 
 > **⚠️ LA REGLA DE ESTA RAMA NO ESTÁ EN `main`.** `main` sigue con
 > `PLAZA_OCUPADA = { plan: 'founding', subscriptionStatus: 'active' }`
@@ -110,3 +113,55 @@ su mitad de superficies se va con ellas.
 3. Y escribir la prueba de que `founding_no_resoluble` **se emite de verdad**: el corte
    fail-closed del checkout es correcto, pero un rastro que nadie ha visto emitir es una promesa.
    Se paró a propósito: sin el criterio final, el arnés puede no valer.
+
+## 8 · Lo que ENTRA con la firma del fundador (8-sep-2026)
+
+**LA REGLA, entera:** ocupa plaza quien tiene `founding_purchased_at` NOT NULL. Y punto. Cancelar
+no libera; `past_due` no libera; la plaza sólo desaparece con el merchant.
+
+| pieza | estado |
+| --- | --- |
+| `docs/sql/scrum-340-la-plaza-comprada.sql` | DDL, **sin aplicar**. Nadie ha ejecutado nada contra ninguna base |
+| `docs/sql/scrum-340-verificar.sql` | la comprobación, **en fichero aparte** (lección SCRUM-650: el clasificador rechaza un `SELECT` dentro de DDL). Su consulta ① va **ANTES** del ALTER |
+| `founding.ts` · `plazaOcupada` | la regla, **pura**, con su 🛑 y su fecha de caducidad al lado |
+| `tests/scrum340-la-plaza-comprada.test.mjs` | 5 casos, `# skipped 0` |
+| `tests/scrum330-…` ① | **retirado** por decisión del fundador, con la cita literal dentro del test |
+| `tests/scrum330-…` ② | **mudado**, no duplicado — vive donde vive la regla |
+| `tests/_huerfanos-declarados.mjs` | `plazaOcupada` declarado `MOTOR_EN_ESPERA` |
+
+### Los dos rojos, ejecutados
+
+Fuente restaurado byte a byte, **sha256 `1cf136a270f3f99ad117f4318f24fa3f4d16ff72a26ae8e28b70e41746656461`**:
+
+| se inyecta | cae |
+| --- | --- |
+| el criterio de la RAMA (por estado `active`/`past_due`) | «🔴 EL CONTROL QUE DECIDE: un suscriptor PRO activo NO ocupa plaza de fundador» |
+| el criterio de MAIN (por `plan`, que revierte a `trial`) | «la plaza NO se libera: ni al cancelar, ni con un cobro fallido» |
+
+### Por qué ② se MUDÓ en vez de reescribirse en su sitio
+
+Lo que protegía —«`plan` dice QUÉ compró y `subscriptionStatus` dice SI sigue pagando: ninguna
+sustituye a la otra»— sigue vigente y es lo que sostiene el ticket. Lo que caducó fue la FORMA que
+miraba: contaba las claves de un `where` de dos columnas, y ése dejó de ser el mecanismo. Dejar una
+copia en SCRUM-330 sería **la misma regla escrita en dos sitios**, que es exactamente cómo se
+perdió la primera vez. Vive donde vive la regla, y SCRUM-330 dice dónde.
+
+**Medido tras la mudanza:** en `scrum330` quedan **10 tests vivos con 13 aserciones**, y todas
+muerden comportamiento — ejecutan la condición real extraída de cada página. No es un fichero
+vacío en verde, así que no se borra.
+
+## 9 · Lo que NO entra, y por qué — el siguiente movimiento es del fundador
+
+1. **El cableado de `getFoundingStatus`.** No se puede: la columna no existe ni en la base ni en
+   `prisma/schema.prisma`, que es dominio del fundador. Mientras tanto el contador sigue con
+   `PLAZA_OCUPADA`, **con su fecha de caducidad escrita al lado en el código**: es correcto sólo
+   mientras nadie tenga plan `founding`; el día que el primero compre y cancele, ese criterio
+   libera una plaza que no está libre.
+2. **Las tres superficies públicas** (`plansView.js`, `index.html`, `precios.html`) → su propio
+   ticket, con el reparto ya medido: de los 6 casos del fichero de la rama, **5 miden la regla y 1
+   mide las superficies**; el caso de SUELO es mixto y se parte.
+3. **La prueba de que `founding_no_resoluble` se emite.** Vive en el bloque *fail-closed* del
+   checkout, que sólo tiene sentido con el contador nuevo. Forzarla ahora sería montar un arnés
+   que puede no valer.
+
+⇒ **El orden es: ALTER → campo en `schema.prisma` → cableado → (2) y (3) de una.**
