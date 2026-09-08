@@ -239,9 +239,15 @@ veces en una semana:
     🔒 Convierte una observación en un diagnóstico y lo escribe como
        hecho.
 
-LA REGLA QUE LO CORTA, obligatoria: cualquier cosa que vaya a escribir
-como HECHO sobre el código pasa antes por la sesión 0, o se escribe
-como PREGUNTA. Cinco de los nueve los habría cazado ella.
+LA REGLA QUE LO CORTA, obligatoria:
+
+    «Todo lo que el orquestador escriba como HECHO sobre el código pasa
+     por la Sesión 0 antes, o se escribe como PREGUNTA.»
+
+Cinco de los nueve los habría cazado ella. Y el mecanismo, porque sin
+mecanismo esto es un buen propósito: docs/equipo/afirmaciones-verificadas.md
+— lo que se afirmó, lo que se midió, y el comando exacto que lo midió. Si no
+hay comando que lo mida, no es un hecho: es una pregunta.
 
 **DESPACHA SIN COMPROBAR SI ALGUIEN MÁS ESTÁ EN ELLO.** Quince
 duplicados en una semana. Antes de despachar: ¿hay rama con ese
