@@ -9,6 +9,7 @@
 // (409 albaran_locked).
 import { zonaDelMerchant, diaExiste } from '../../../../core/zonaDelMerchant'; // SCRUM-643 · SCRUM-749
 import { Router } from 'express';
+import path from 'path'; // SCRUM-822 · `root` de `res.sendFile`
 import { prisma } from '../../../../core/db/prisma';
 import { recordAudit, actorDeRequest, requestIp } from '../../../system/audit.service'; // SCRUM-207
 import { requireActivePlan } from '../../../../core/http/authMiddleware'; // SCRUM-47 (S1: enviar WA ✅ técnico, sin requireRole)
@@ -960,7 +961,9 @@ router.get('/:id/pdf', async (req, res) => {
     const { diskPath, numero } = await ensureAlbaranPdf(albaran.id);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${numero}.pdf"`);
-    return res.sendFile(diskPath);
+    // SCRUM-822 · `root` obligatorio: sin él `send` aplica su regla de dotfiles a la ruta
+    // ABSOLUTA entera y devuelve 404 si el árbol vive bajo un directorio con punto.
+    return res.sendFile(path.basename(diskPath), { root: path.dirname(diskPath) });
   } catch (err: any) {
     console.error('[GET /admin/albaranes/:id/pdf]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });

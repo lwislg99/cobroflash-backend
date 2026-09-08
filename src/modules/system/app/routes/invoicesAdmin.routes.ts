@@ -27,7 +27,7 @@ import { generateInvoicePdf } from '../../../../lib/pdf';
 import { sendWhatsAppTemplate, sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { buildPaymentRequest } from '../../../../integrations/whatsappTemplates';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
-import { normalizePhone } from '../../../../core/utils/utils';
+import { canalDeWhatsApp } from '../../../../core/contacto/canalDeWhatsApp'; // SCRUM-590 (CONT-19)
 import fs from 'fs';
 import { ensureInvoicePdf, ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { sendSuccessBody, sendFailureBody, SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
@@ -624,7 +624,7 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
     if (!invoice) return res.status(404).json({ ok: false, error: 'not_found' });
     if (invoice.status === 'paid') return res.status(409).json({ ok: false, error: 'invoice_already_paid' });
 
-    const phone = normalizePhone(invoice.customer?.phone);
+    const phone = canalDeWhatsApp(invoice.customer);
     if (!phone) return res.status(400).json({ ok: false, error: 'customer_missing_phone' });
 
     const customerName = invoice.customer?.name || 'Cliente';
