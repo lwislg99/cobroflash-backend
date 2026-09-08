@@ -78,7 +78,17 @@ const CENSO_DE_SITIOS = {
   'parteDetailView.js': 1,
   'productsView.js': 3,
   'providersView.js': 3,
-  'quotesView.js': 3,
+  // 🔴 SCRUM-632 · 8-sep-2026 · `quotesView.js` SUBE de 3 a 4, y a conciencia.
+  //
+  // Entra el rótulo del campo de DESCRIPCIÓN DE LA LÍNEA. El mecanismo no existe sin él: la
+  // línea gana un dato nuevo —distinto de la descripción del PRODUCTO, decisión del fundador del
+  // 8-sep-2026— y un campo sin rótulo no se puede usar; quien lo abra no sabría si escribe la
+  // del catálogo o la del documento, que es justo la confusión que el ticket cierra.
+  //
+  // Sale de UNA sola constante, `MARCA_DESC_LINEA`, así que la firma lo apaga de golpe. El día
+  // que llegue, este número BAJA a 3 — no se borra la entrada, porque quedan otros marcadores
+  // en el fichero (SCRUM-424 / SCRUM-405: la entrada sólo se borra cuando no queda ninguno).
+  'quotesView.js': 4,
   'settingsView.js': 2,
   // SCRUM-576 (CONT-03) · 4 → 6 y de vuelta a 4. El campo «Empresa» del lado Persona entró con
   // sus dos ranuras marcadas (rótulo y opción de «ninguna») el 7-sep-2026, y el fundador **firmó
