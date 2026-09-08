@@ -275,6 +275,19 @@ const HALLAZGOS_DECLARADOS = [
   // dentro de un repo SINTÉTICO —su `origin/main` no es el de nadie— y desaparece el día que se
   // borre el caso ①, no antes: sin ella, «ahora está verde» no se puede contrastar con nada.
   'tests/scrum723-guard-contra-su-base.test.mjs [show]',
+  // SCRUM-637 · el enlace ticket↔rama. Su pregunta es literalmente sobre la PUNTA: «¿esta rama ya
+  // está DENTRO de main, y qué commits de este ticket son ancestros de `origin/main` HOY?». La
+  // referencia móvil es el SUJETO de la pregunta, no un descuido — misma familia que
+  // `censo-reparto.mjs` y `vigilante-de-despliegue.mjs`. Anclarlo a `merge-base` NO lo arreglaría:
+  // contestaría a otra pregunta (qué había cuando la rama salió) y su respuesta sería siempre «no
+  // está mergeada», que es justo el dato inútil. No corre en CI: es herramienta de mano y lo dice
+  // en su cabecera.
+  // 🔴 ENTRÓ EN SILENCIO Y ESTE GUARD LO CAZÓ, que es para lo que existe: la rama
+  // `scrum-637-verificacion-s5` pasó su suite en verde en su propio árbol y CI la tumbó al probar
+  // el MERGE. El guard acertó y la rama estaba mal declarada, no al revés.
+  // Lo retira: quien borre `scripts/verificacion-s5/`, o quien lleve el enlace ticket↔rama a un
+  // mecanismo que no necesite consultar la punta de `main`.
+  'scripts/verificacion-s5/enlace-ticket-rama.mjs [log]',
 ];
 
 /** Ficheros que llaman a git y nombran la referencia móvil FUERA de los argumentos. */
@@ -317,6 +330,14 @@ const INDIRECTAS_DECLARADAS = [
   'scripts/_censo-alcanzabilidad.mjs',
   'tests/_fixture-alcanzabilidad.mjs',             // el `origin/main` del repo SINTÉTICO, que no es el de nadie
   'tests/scrum753-censo-de-alcanzabilidad.test.mjs',  // los mensajes que explican la regla R10
+  // SCRUM-637 · el generador del borrado de ramas ya mergeadas. Nombra `origin/main` en
+  // `git branch -r --merged origin/main` —un subcomando que no está en `LECTORES`, así que llega
+  // aquí y no a la lista de arriba— y en la prosa que explica por qué cruza DOS fuentes.
+  // Su pregunta es «¿esta rama ya está DENTRO de la punta de main?»: la referencia móvil es el
+  // sujeto, igual que en SCRUM-753. Contra la base de una rama respondería que ninguna está
+  // mergeada, que es la respuesta inútil. EN SECO por defecto y fuera de CI.
+  // Lo retira: quien borre `scripts/verificacion-s5/`.
+  'scripts/verificacion-s5/ramas-borrables.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {

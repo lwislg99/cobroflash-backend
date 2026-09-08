@@ -1,0 +1,237 @@
+Foto de ramas vivas — SCRUM-637, sesión de verificación, 2026-09-07
+Generada con: node scripts/verificacion-s5/enlace-ticket-rama.mjs --foto
+Árbol: origin/main = f2d1589041d04e5f465cc4deba010f5563ffea72 · HEAD..origin/main = 0
+
+ramas vivas (ls-remote): 550 · refs locales: 560 (10 obsoletas)
+merges leídos: 1542 · ramas en el histórico: 985 · commits: 4316
+docs/master: 444 ficheros · foto de Jira: 803 tickets, tomada el 2026-09-07
+
+═══ ① RAMAS VIVAS SIN MERGEAR — 82 de 550 ═══════════════════════════
+   ⚠️  13 con el ticket AÚN ABIERTO — esto es lo que puede ser trabajo perdido
+      69 con el ticket ya Finalizada — resto que nadie barrió
+
+parada  ticket      estado Jira        rama
+  57 d  SCRUM-38    Finalizada            scrum-38-staging-expres
+  42 d  SCRUM-166   Finalizada            scrum-166-un-solo-comando
+  41 d  SCRUM-37    Finalizada            scrum-37b-agregacion-por-job
+  41 d  SCRUM-161   Finalizada            scrum-161-tanda-en-ci
+  41 d  SCRUM-172   Finalizada            scrum-172-tier3-tenencia-nullable
+  40 d  SCRUM-198   Finalizada            scrum-198-spike-xsd
+  40 d  SCRUM-205   Finalizada            scrum-205-206-sellado
+  40 d  SCRUM-215   Finalizada            scrum-215-destinatarios
+  40 d  SCRUM-216   Finalizada            scrum-216-p12-contradiccion
+  40 d  SCRUM-223   Finalizada            scrum-223-wrapper-silencioso
+  40 d  SCRUM-224   Finalizada            scrum-224-sw-revalida
+  39 d  SCRUM-205   Finalizada            scrum-205-206-sellado-rebasada
+  39 d  SCRUM-216   Finalizada            scrum-216-consolidar
+  39 d  SCRUM-222   Finalizada            scrum-222-deriva-prod
+  39 d  SCRUM-234   Finalizada            scrum-234-carrera-numeracion
+  36 d  SCRUM-245   Finalizada            scrum-245-fuera-listas-blancas
+  36 d  SCRUM-253   Finalizada            scrum-253-adopcion-mismo-dueno
+  35 d  SCRUM-240   Finalizada            scrum-240-sobre-duplicado-rebasada
+  35 d  SCRUM-240   Finalizada            scrum-240-sobre-duplicado-rebasada-2
+  35 d  SCRUM-255   Finalizada            scrum-255-migrar-sondeos
+  35 d  SCRUM-275   Finalizada            scrum-275-message-en-el-acceso
+  34 d  SCRUM-268   Finalizada            scrum-268-p3-guard-espera-automatica
+  34 d  SCRUM-270   Finalizada            scrum-270-evidencia-reunida
+  34 d  SCRUM-284   Finalizada            scrum-284-censo-configuracion
+  33 d  SCRUM-284   Finalizada            scrum-284-configuracion-submenus
+  33 d  SCRUM-284   Finalizada            scrum-284-configuracion-submenus-rebasada
+  33 d  SCRUM-300   Finalizada            scrum-300-firmado-por
+  33 d  SCRUM-304   Finalizada            scrum-304-albaranes-tabla
+  33 d  SCRUM-304   Finalizada            scrum-304-albaranes-tabla-rebasada
+  33 d  SCRUM-304   Finalizada            scrum-304-albaranes-tabla-rebasada-2
+  33 d  SCRUM-309   Finalizada            scrum-309-g0-medir-el-trabajo
+  33 d  SCRUM-312   Finalizada            scrum-312-importador-clientes-rebasada
+  33 d  SCRUM-329   Finalizada            scrum-329-legal-pagina-publica
+  33 d  SCRUM-340   Finalizada            scrum-340-contador-plazas-reales
+  33 d  SCRUM-368   Finalizada            scrum-368-a1-texto-grande
+  33 d  SCRUM-368   Finalizada            scrum-368-contraste-texto-y-guard-rebasada
+  32 d  SCRUM-300   Finalizada            scrum-300-c5-fusion-rebasada
+  32 d  SCRUM-381   Finalizada            scrum-381-sembradores
+  31 d  SCRUM-325   Finalizada            scrum-325-libros-por-periodo
+  31 d  SCRUM-388   Finalizada            scrum-388-censo-contra-main
+  31 d  SCRUM-388   Finalizada            scrum-388-censo-contra-main-rebasada
+  31 d  SCRUM-388   Finalizada            scrum-388-censo-contra-main-rebasada-2
+  31 d  SCRUM-397   Finalizada            scrum-397-fecha-de-cobro
+  31 d  SCRUM-397   Finalizada            scrum-397-fecha-de-cobro-rebasada
+  31 d  SCRUM-404   Finalizada            scrum-404-trazo-no-se-pierde
+  31 d  SCRUM-405   Finalizada            scrum-405-descarga-verificada
+  28 d  SCRUM-390   Finalizada            scrum-390-puerta-cliente-real
+  28 d  SCRUM-412   Finalizada            scrum-412-primarias-tactiles
+  28 d  SCRUM-415   Finalizada            scrum-415-fixture-version
+  28 d  SCRUM-433   Finalizada            scrum-433-censo-un-salto
+  27 d  SCRUM-418   Finalizada            scrum-418-puerta-de-produccion
+  27 d  SCRUM-440   Finalizada            scrum-440-tenencia-supresion
+  27 d  SCRUM-471   Finalizada            scrum-471-pretest-antes-de-la-suite
+  27 d  SCRUM-474   Finalizada            scrum-474-filtro-cobros
+  27 d  SCRUM-475   Finalizada            scrum-475-constancia-correo
+  26 d  SCRUM-242   Acción del fundador ⚠️ scrum-242-backup-verificado
+  26 d  SCRUM-474   Finalizada            scrum-474-fase2-INCOMPLETO
+  26 d  SCRUM-482   Tareas por hacer   ⚠️ scrum-482-contador-offline
+  26 d  SCRUM-484   Finalizada            scrum-484-clasificar-59
+  25 d  SCRUM-222   Finalizada            scrum-222-deriva-al-dia
+  18 d  SCRUM-566   Finalizada            scrum-566-marca-de-estado
+   6 d  SCRUM-609   Finalizada            scrum-609-medir-el-catalogo
+   6 d  SCRUM-609   Finalizada            scrum-609-switch-y-margen
+   6 d  SCRUM-614   Tareas por hacer   ⚠️ scrum-614-censo-rutas-sin-rol
+   6 d  SCRUM-626   Tareas por hacer   ⚠️ scrum-626-arranque-en-frio
+   6 d  SCRUM-630   Tareas por hacer   ⚠️ scrum-630-default-en-dias-de-calendario
+   6 d  SCRUM-632   Tareas por hacer   ⚠️ scrum-632-casilla-que-promete
+   5 d  SCRUM-593   Finalizada            scrum-593-texto-y-observaciones
+   5 d  SCRUM-626   Tareas por hacer   ⚠️ scrum-626-calentar-el-navegador
+   5 d  SCRUM-661   Finalizada            scrum-661-coste-unitario-congelado
+   4 d  SCRUM-650   Finalizada            scrum-650-microcopy-aprobada
+   4 d  SCRUM-683   Finalizada            scrum-683b-acotado-al-hecho
+   2 d  SCRUM-598   Finalizada            scrum-598-cierre-medido
+   2 d  SCRUM-606   Finalizada            scrum-606-albaran-desde-presupuesto
+   1 d  SCRUM-592   Finalizada            scrum-592-doc02-verificacion
+   0 d  SCRUM-640   Finalizada            scrum-640-la-zona-de-la-maquina
+   0 d  SCRUM-729   Acción del fundador ⚠️ scrum-729-cliente-en-vivo
+   0 d  SCRUM-762   En curso           ⚠️ scrum-762b-el-control-en-ci
+   0 d  SCRUM-805   En curso           ⚠️ scrum-805-que-firmo-el-cliente
+   0 d  SCRUM-809   En curso           ⚠️ scrum-809-el-paywall-del-reves
+   0 d  SCRUM-817   Tareas por hacer   ⚠️ scrum-817-detalle-del-trabajo
+   0 d  SCRUM-818   Tareas por hacer   ⚠️ scrum-818-parte-de-trabajo
+
+═══ ② CRIBADO DE NÚMEROS AMBIGUOS — 196 marcados, 124 por docs/master ═══
+   Sólo se listan los de docs/master: es un registro de trabajo completo. El slug de
+   una rama son 2-4 palabras y su desacuerdo casi nunca significa nada.
+   De peor a mejor parecido — para mirar a ojo, NO para actuar en automático:
+
+    0 %  SCRUM-16  [Tareas por hacer]
+         repo: SCRUM-16 / 142 · Qué falta EXACTAMENTE para cablear `buildFinalInvoice`
+         jira: FISCAL-1 · Factura de anticipo con IVA + descuento en factura final ("lo del trimestre")
+
+    0 %  SCRUM-212  [Finalizada]
+         repo: ¿SCRUM-292 lo absorbe? Contraste punto por punto + medición por contenido
+         jira: EXENTAS-1 · Falta la calificación de la operación —exenta (OperacionExenta E1..E6), no sujet
+
+    0 %  SCRUM-242  [Acción del fundador]
+         repo: Recuperabilidad: la foto completa
+         jira: 🔴 BACKUP-PROCESO-1 · No hay backup programado, no hay copia fuera de la infraestructura, no
+
+    0 %  SCRUM-245  [Finalizada]
+         repo: La prohibición de listas blancas, RE-DERIVADA (cierra SCRUM-410 ①)
+         jira: 🔴 WA-RASTRO-2 · 21 llamadores del bot envían WhatsApp sin merchantId y no dejan rastro — pe
+
+    0 %  SCRUM-300  [Finalizada]
+         repo: C5 — MAPA DE FUSIÓN de las dos implementaciones paralelas
+         jira: C5 · Los tres campos que faltan — y FIRMADO POR, que convierte nuestra firma en la más difíc
+
+    0 %  SCRUM-357  [Finalizada]
+         repo: H1 — que el profesional sepa qué lleva encima
+         jira: H1 · Bajar al sótano con lo que hace falta — precargar el albarán, y poder CREARLO sin red
+
+    0 %  SCRUM-360  [Finalizada]
+         repo: H5 fase 1 — saber cuántos tienen la app instalada
+         jira: H5 · 🔴 Almacenamiento — iOS BORRA el origen entero a los 7 días, y ahí se pierden firmas en
+
+    0 %  SCRUM-361  [Finalizada]
+         repo: H6 — La `version` que el móvil vio viaja con la firma
+         jira: H6 · Conflictos — lo firmado NO se toca, ni siquiera para arreglarlo
+
+    0 %  SCRUM-421  [Finalizada]
+         repo: SCRUM-421 (cierre) · el escáner sin ventana, y el guard que hace aritmética la promesa
+         jira: El patrón de detalle de B2 no se aplicó al PRESUPUESTO — existen los registros de factura, a
+
+    0 %  SCRUM-424  [Finalizada]
+         repo: Lo que se escribe al CREAR un albarán se perdía en silencio
+         jira: 🔴 El enlace a mapa de G3 —el 🏆 «que no lo tiene nadie»— está CONSTRUIDO Y NO SE PINTA NUNC
+
+    0 %  SCRUM-438  [Finalizada]
+         repo: Fase 1 — Atestiguar el sobre mientras todavía verifica (+ propuesta de v:3, SIN construir)
+         jira: 🔵 FUNDADOR · Corregir la razón social de un cliente convierte en «manipulados» TODOS sus al
+
+    0 %  SCRUM-444  [Finalizada]
+         repo: los avisos dejan de pisarse
+         jira: 🔴 Dos errores seguidos y el profesional solo ve el segundo — el toast se reemplaza a sí mis
+
+    0 %  SCRUM-467  [Finalizada]
+         repo: PASO 0 medido y los tres puntos de cambio
+         jira: 🔵 FUNDADOR · El rol de técnico no está definido: lleva los albaranes precargados y no puede
+
+    0 %  SCRUM-473  [Finalizada]
+         repo: El censo de escritores de `Charge.method` y el validador de la FORMA
+         jira: 🔴 El conjunto cerrado de métodos de pago (regla 22) NO LO CONSUME NADIE — y ya ha derivado 
+
+    0 %  SCRUM-486  [Finalizada]
+         repo: PASO 0 · La puerta abierta son TRES, y la peor no es la del ticket
+         jira: 🔴 `charges.routes.ts:39` escribe `'mp'`, que no está en PAID_VIA — y escribe directo a `pri
+
+    0 %  SCRUM-498  [Finalizada]
+         repo: El «21» se cuenta, y las doce frases que lo escriben quedan atadas
+         jira: Nueve afirmaciones de «21 modelos» pasarán a ser falsas EN CUANTO `EmailMessage` entre en el
+
+    0 %  SCRUM-512  [Acción del fundador]
+         repo: SCRUM-512 (mitad independiente) · Que el producto no olvide que alguien pagó
+         jira: 🔴 El contador de plazas de la landing va HACIA ATRÁS: si un fundador cancela, «quedan 17» p
+
+    0 %  SCRUM-614  [Tareas por hacer]
+         repo: El censo de rutas sin rol, y por qué `/admin/products` no era lo que yo dije
+         jira: El catálogo guarda el margen (DOC-08) y el Operario puede verlo, editarlo y borrar la fila —
+
+    0 %  SCRUM-646  [Finalizada]
+         repo: El cortafuegos del `defaultVat` por país
+         jira: Si Canarias es mercado, el producto no puede facturar allí: un canario no repercute IVA, rep
+
+    0 %  SCRUM-648  [Finalizada]
+         repo: «AL DÍA» cuando el sistema no ha podido saberlo
+         jira: Un semáforo que no sabe leer la fecha límite dice que todo va bien: calcularSemaforo devuelv
+
+    0 %  SCRUM-652  [Finalizada]
+         repo: T3 fase A — reconocimiento antes de construir
+         jira: T3 · Parte de trabajo con los campos reales — y DOS candados: el contenido se congela al fir
+
+    0 %  SCRUM-661  [Finalizada]
+         repo: ①②③ · El coste unitario viaja y se CONGELA en la línea
+         jira: P6 · El margen real de una venta no es recuperable ni en teoría: no se guarda el hecho del q
+
+    0 %  SCRUM-684  [Finalizada]
+         repo: SCRUM-683 (cableado) · el dictado, cableado — y el aviso que la medición puso en singular
+         jira: 🔴 DECISIÓN DEL FUNDADOR · ¿Una avería abierta como trabajo directo puede entregar albarán? 
+
+    0 %  SCRUM-705  [Finalizada]
+         repo: la cadena de Tecnosel, recorrida como MECANISMO
+         jira: 🔴 EL MÁSTER dice que `db-push-prod` es el «procedimiento canónico» contra producción, y el 
+
+    0 %  SCRUM-710  [Finalizada]
+         repo: `constaAprobado` compara el hecho, no la forma
+         jira: 🔴 El censo de SCRUM-622 ancla su única excepción por NÚMERO DE LÍNEA: cualquier edición por
+
+    0 %  SCRUM-748  [Finalizada]
+         repo: Un «no lo sé» pintado como éxito
+         jira: 🔴 BOMBA DE RELOJERÍA · El `||` de invoicesView pinta «AL DÍA» CUALQUIER estado desconocido:
+
+    0 %  SCRUM-787  [En curso]
+         repo: El número que falta para poder decidir sobre `.btn-sm`
+         jira: Contar cuántos táctiles de la aplicación entera están por debajo de los 44 px de AB6 — hoy s
+
+    0 %  SCRUM-807  [Finalizada]
+         repo: Los esquemas del href: uno de los tres era de verdad
+         jira: 🔴🔴 P0-SEC-8 · CONFIRMADO: ?eml= es inyectable y SE EJECUTA en el origen de la aplicación —
+
+    0 %  SCRUM-811  [En curso]
+         repo: El foco que nadie miraba: 105 de 114, y un solo culpable
+         jira: 🖋️🔴 DOS SKILLS SE DECLARAN OBLIGATORIAS Y NINGUNA SESIÓN LAS CARGA: yaqu-premium-ui lleva 
+
+   11 %  SCRUM-307  [Tareas por hacer]
+         repo: Censo del bloque H sin iPhone — **SUELO DISPARADO: no he podido leer los tres tickets**
+         jira: BLOQUE H · Firmar sin cobertura — el albarán se firma en un sótano, y hoy necesita red
+
+  … y 94 más, entre 11 % y 33 %.
+
+═══ ③ DECLARADOS, no callados ══════════════════════════════════════════════════
+ramas vivas SIN número de ticket (23): Javierpf28-patch-1, Javierpf28-patch-2, bloque-b-albaranes-navegable, censo-marcadores-microcopy, chore-flujo-pr, codeowners-zona-roja-v2, cola-370-377-380-368, docs-390-camino-de-vuelta, docs-entradas-mecanismo-sin-entrada, docs-glosario-real-vs-test-local, docs-requisito-sin-listas-blancas, fix-tests-vfestado-explicito, main, medicion-626-arranque-frio, medicion-dist-en-el-meta-guard, road-38-excepcion-facturacion-pioneer, road-39-medicion-rectificativas, road-44-reglas-demos-whatsapp, road-45-lineas-de-negocio-y-canal, scrum-D-puerta-serie, scrum-e4-medir, scrum-e6-recorrido-entre-vistas, scrum-tecnosel-tipo-y-precios
+números sin asunto en la foto de Jira (0): ninguno
+ramas vivas que no se pueden fechar (0): ninguna
+ramas vivas YA MERGEADAS, borrables: 445
+
+═══ ④ REPARTO DEL PARECIDO (n=945, umbral 0.34) ══════════════════════════
+    0-20 %  ███████████████████████████████████████████ 242
+   20-40 %  █████████████████████ 120
+   40-60 %  █████████████████████████████████████ 209
+   60-80 %  ████████████████████ 114
+  80-100 %  ██████████████████████████████████████████████ 260
+  El umbral vale si los dos montones están separados. Si el reparto es plano, el
+  número que sale de aquí es una opinión con decimales y hay que decirlo.

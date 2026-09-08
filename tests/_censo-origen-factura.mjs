@@ -266,6 +266,12 @@ export const CENSO = {
   'src/modules/reports/app/routes/reports.routes.ts::invoice.findMany#1': { veredicto: 'TRATADO', nota: 'P&L: trae TODAS y usa quoteId para separar «no atribuible» de «del propietario» (SCRUM-228)' },
   'src/modules/system/app/routes/customersAdmin.routes.ts::expense.aggregate#1': { veredicto: 'HUECO', nota: 'gastos de un cliente atribuidos SOLO vía quote.customerId. Un gasto sin presupuesto no llega nunca a su cliente. Hueco PREEXISTENTE: Expense no tiene customerId' },
   'src/modules/system/app/routes/invoicesAdmin.routes.ts::invoice.findFirst#1': { veredicto: 'PROYECCION', nota: 'detalle de factura; accesos al quote ya guardados (SCRUM-287) y sin `as any` (SCRUM-342)' },
+  // SCRUM-814 · el recuento que decide QUÉ TRAMO toca, rehecho dentro de la transacción y bajo el
+  // cerrojo de serie. Atar al origen aquí no es un descuido: es la definición del sitio — un tramo
+  // sólo existe dentro del plan de UN presupuesto, y una factura suelta (A0.3) no tiene plan ni
+  // tramo que ocupar. Si esta consulta dejara de filtrar por `quoteId`, contaría las facturas de
+  // otros presupuestos del mismo merchant y saltaría tramos: el defecto contrario al que cierra.
+  'src/modules/system/app/routes/quotesAdmin.routes.ts::invoice.count#1': { veredicto: 'POBLACION', nota: 'tramo que toca emitir = facturas DE ESE presupuesto. Una suelta no pertenece a ningún plan de tramos' },
   'src/modules/system/invoiceAdmin.ts::invoice.findMany#1': { veredicto: 'PROYECCION', nota: 'listado admin; include quote opcional' },
   'src/modules/system/invoiceAdmin.ts::invoice.findFirst#1': { veredicto: 'PROYECCION', nota: 'detalle admin; el OPACO es el spread condicional de merchantId, no el origen' },
   'src/modules/system/invoiceAdmin.ts::invoice.findFirst#2': { veredicto: 'OPACO', nota: 'spread condicional de merchantId; no ata al origen' },
