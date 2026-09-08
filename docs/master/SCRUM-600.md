@@ -1189,7 +1189,8 @@ DOC-10 escribió una regla y no dejó quién la hiciera cumplir:
 
 > **un control aparece en el documento suelto si y sólo si su dato sobrevive al emisor.**
 
-Vive en cuatro comentarios y en 29 usos de una bandera escritos a mano. **SCRUM-600 la infringió
+Vive en 32 comentarios de `quotesView.js` y en 24 `if` sobre la bandera escritos a mano (20
+negados, 4 no), sobre 29 usos en total. **SCRUM-600 la infringió
 dos veces él mismo** —la tira de propuesta de descuento y la vista previa de condiciones— y las
 dos las cazó una persona montando la pantalla.
 
