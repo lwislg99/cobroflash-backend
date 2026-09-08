@@ -94,12 +94,26 @@ test('SCRUM-769 · 🔴 el registro de microcopy declara firmados EXACTAMENTE lo
     assert.ok(constaAprobado(t).includes(`docs/microcopy/${NOMBRE}`),
       `🔴 «${t}» está FIRMADO y ya no consta aprobado en su propio registro.`);
   }
-  for (const t of ['Nuevo producto', 'Nuevo proveedor', 'Nuevo albarán']) {
+  // ⚠️ «Nuevo albarán» SALE de esta lista el 7-sep-2026, y no por comodidad: el fundador **volvió
+  // a firmarlo** en SCRUM-722, un día después de retirarlo aquí. No se reescribe la historia —el
+  // registro del 6-sep se queda tal cual, con su motivo—: la firma nueva vive en su propio fichero
+  // (`docs/microcopy/2026-09-07-SCRUM-722-nuevo-albaran.md`), que es como este directorio dice que
+  // se hacen las cosas: una aprobación, un fichero, y el último fechado manda.
+  //
+  // El motivo de la retirada era «N abre, no guarda», y por eso los otros dos SIGUEN retirados:
+  // sus botones ENVÍAN un formulario. El de albaranes ABRE un modal — medido corriendo en el
+  // barrido de SCRUM-721—, así que encaja en el patrón y su firma vuelve.
+  for (const t of ['Nuevo producto', 'Nuevo proveedor']) {
     assert.deepEqual(constaAprobado(t), [],
       `🔴 «${t}» consta APROBADO y el fundador RETIRÓ su firma el 6-sep-2026. Un registro que `
       + 'dice «aprobado» sobre un texto sin firma es justo lo que este directorio existe para '
       + 'impedir.');
   }
+  // Y el otro lado, que es el que impide que esto sea una excusa: si la firma nueva desapareciera
+  // del directorio, el rótulo estaría pintándose sin respaldo y hay que enterarse.
+  assert.ok(constaAprobado('Nuevo albarán').includes('docs/microcopy/2026-09-07-SCRUM-722-nuevo-albaran.md'),
+    '🔴 «Nuevo albarán» se pinta sin marcador y su firma del 7-sep-2026 NO consta. O vuelve el '
+    + 'registro, o vuelve el marcador: pintarlo sin respaldo es lo que la regla 30 prohíbe.');
 });
 
 // ═══ ② QUIÉN REGISTRA Y QUIÉN NO — sobre las vistas REALES ══════════════════════════════════

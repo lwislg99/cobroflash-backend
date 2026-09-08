@@ -4,6 +4,7 @@ import { maskPhone } from '../core/utils/utils'; // A11.2 (S3): PII fuera de log
 import { config } from '../core/config/env';
 import { prisma } from '../core/db/prisma';
 import { normalizePhone } from '../core/utils/utils';
+import { numerosDelContacto } from '../core/contacto/canalDeWhatsApp'; // SCRUM-590 (CONT-19)
 import { validateTemplateComponents } from './whatsappTemplates';
 import { demoSendBlocked, salidaAMetaBloqueada, MOTIVO_SALIDA_BLOQUEADA } from './whatsappPolicy';
 import type { MotivoExencionDemo } from './whatsappPolicy';
@@ -106,16 +107,33 @@ export type DestinoDeEnvio =
 
 /**
  * J3: ¿el destinatario se dio de baja de WhatsApp para este merchant?
- * Compara el teléfono normalizado contra los clientes con `waOptOut=true`
- * (los teléfonos guardados pueden venir con separadores/prefijos sucios).
+ *
+ * 🔴 COMPARA CONTRA **LOS DOS** NÚMEROS DEL CLIENTE — SCRUM-590 (CONT-19).
+ *
+ * Esta función ya estaba atada al NÚMERO y no al registro: no mira el `waOptOut` del cliente al
+ * que se envía, sino si el DESTINO coincide con el de alguien dado de baja. Eso era correcto y
+ * no cambia. Lo que cambia es que un cliente tiene ahora dos números, y mirar sólo `phone`
+ * abría un agujero exacto y mudo:
+ *
+ *   el cliente pide la baja · su ficha tiene el fijo en `phone` y el móvil en `mobile` ·
+ *   el documento sale al MÓVIL (que es el canal) · aquí se compara el móvil contra los `phone`
+ *   de los dados de baja · no coincide · **el envío pasa**.
+ *
+ * O sea: partir el teléfono en dos, sin tocar esto, habría convertido una baja respetada en una
+ * baja ignorada, sin error, sin log y sin que nadie se enterara. El opt-out protege a un
+ * DESTINATARIO, y un destinatario es un número: enviar mira UNO —al que toca—, proteger mira
+ * LOS DOS (`numerosDelContacto`).
+ *
+ * (Los números guardados pueden venir con separadores/prefijos sucios: por eso se normalizan
+ * los dos lados antes de comparar, igual que antes.)
  */
 async function isWaOptedOut(merchantId: number, to: string): Promise<boolean> {
   try {
     const optedOut = await prisma.customer.findMany({
-      where: { merchantId, waOptOut: true, phone: { not: null } },
-      select: { phone: true },
+      where: { merchantId, waOptOut: true, OR: [{ phone: { not: null } }, { mobile: { not: null } }] },
+      select: { phone: true, mobile: true },
     });
-    return optedOut.some((c) => normalizePhone(c.phone || '') === to);
+    return optedOut.some((c) => numerosDelContacto(c).includes(to));
   } catch (err: any) {
     console.error('[WhatsApp] Error comprobando waOptOut:', err?.message || err);
     return false; // ante la duda no bloquear: el guard es best-effort, el dato manda en BD

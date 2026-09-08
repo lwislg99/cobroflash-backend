@@ -66,6 +66,12 @@ export {
 };
 
 import { correspondencia, destinoEnDist, emitirDesdeFuente } from './frontera-dist.mjs'; // SCRUM-763
+// 🔴 SCRUM-754 · quién vigila que el árbol no se mueva mientras se mide. Vive aparte por lo mismo
+// que la marca: es una pieza que otros censos van a necesitar, y copiarla sería la regla 2.
+import {
+  abrirObservacion, controlPositivoDeVigilancia, GRACIA_MS, FAMILIAS_VIGILADAS,
+  instanteDeReferencia,
+} from './_arbol-quieto.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIR_TESTS = path.join(RAIZ, 'tests');
@@ -386,11 +392,29 @@ export const MUERTE_CUENTA_COMO = 'ciega'; // 'ciega' | 'caida'
  * Y de propina cierra un caso que antes no se veía: una declaración que nombra un test
  * **renombrado o borrado** salía MUDA —acusaba al guard— y ahora sale CIEGA, que es lo que es.
  */
-export async function correr(guard) {
+export async function correr(guard, propias = null) {
   const pasados = [];
   const caidos = [];
+  // SCRUM-754c · los que node:test dio por «pasados» pero NO CORRIERON. Van aparte a propósito:
+  // mezclarlos con `pasados` es exactamente el defecto que este cubo viene a cerrar.
+  const saltados = [];
+  // 🔴 SCRUM-754 · LA VIGILANCIA SE ABRE ANTES DE LA PRIMERA LÍNEA DE LA PASADA.
+  //
+  // `propias` son las piezas que ESTE proceso acaba de escribir para esta medición, con sus
+  // bytes. Sin ellas el instrumento se autodenuncia, y está MEDIDO: la primera pasada completa
+  // con las puertas puestas sacó `vivas 144 · mudas 0 · ciegas 4`, y las cuatro ciegas eran
+  // `scrum765` acusando a `scripts/meta-guard-mutaciones.mjs` de haberse escrito «mientras
+  // medía». Lo había escrito yo, un milisegundo antes; sus subprocesos lo IMPORTAN, y en Windows
+  // leer emite `change`, así que entraba como candidato y el corte del `mtime` lo daba por movido.
+  const desde = instanteDeReferencia();
+  // SCRUM-754b · las DOS capas. La huella antes/despues es la que contesta la pregunta en
+  // cualquier plataforma; `fs.watch` solo ANADE el nombre del transitorio donde entrega.
+  const vigia = abrirObservacion(RAIZ);
   const flujo = run({
-    files: [path.join(DIR_TESTS, guard)],
+    // SCRUM-754c · se admite una ruta ABSOLUTA para poder ejercitar esto con un fichero de
+    // fuera del árbol. No es una concesión al test: crear el fichero de prueba DENTRO de
+    // `tests/` movería el árbol, y este mismo instrumento lo denunciaría (y con razón).
+    files: [path.isAbsolute(guard) ? guard : path.join(DIR_TESTS, guard)],
     cwd: RAIZ,
     forceExit: true,
     timeout: 300000,
@@ -404,7 +428,28 @@ export async function correr(guard) {
   // opinar. Es el dato que separa cobertura de arrastre, y hasta hoy se tiraba.
   const errores = {};
   for await (const ev of flujo) {
-    if (ev.type === 'test:pass') pasados.push(ev.data.name);
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    // 🔴 SCRUM-754c · UN TEST SALTADO NO ES UN TEST APROBADO.
+    //
+    // MEDIDO con una sonda propia sobre `node:test` (Node 24, 8-sep-2026): un test declarado
+    // `test('…', { skip: '…' }, …)` emite **`test:pass`** con `ev.data.skip` puesto. Mirando
+    // sólo `ev.type` —que es lo que se hacía— un test que NO SE EJECUTÓ entraba en `pasados`.
+    //
+    // LA CONSECUENCIA, y es la avería entera: los tests gateados por `QA_DB_TEST` no corren en
+    // el job del meta-guard, que corre SIN BASE POR DISEÑO. Así que PUERTA 1 veía su test «en
+    // verde», abría, se mutaba, el test seguía sin correr, seguía «pasando», y el veredicto
+    // salía **MUDO** — acusando al guard de no vigilar— donde tenía que salir **CIEGO**.
+    // «No pude mirar» y «miré y no cayó» son OPUESTOS y salían por la misma puerta.
+    //
+    // ⚠️ EL OTRO CASO, medido en la misma sonda y por eso NO se toca: `t.skip()` DENTRO del
+    // cuerpo no detiene la ejecución, así que si lo que sigue lanza sale `test:fail` (con
+    // `skip` puesto también). Un fallo es un fallo y sigue contando como caída: tratar ahí el
+    // `skip` como ceguera se tragaría rojos de verdad. Sólo se corrige el `test:pass`.
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    if (ev.type === 'test:pass') {
+      if (ev.data.skip) saltados.push({ nombre: ev.data.name, motivo: String(ev.data.skip) });
+      else pasados.push(ev.data.name);
+    }
     else if (ev.type === 'test:fail') {
       caidos.push(ev.data.name);
       const e = ev.data?.details?.error;
@@ -416,7 +461,12 @@ export async function correr(guard) {
       };
     }
   }
-  return { pasados, caidos, errores };
+  // 🔴 SCRUM-754 · Y AHORA, ¿SOBRE QUÉ ÁRBOL SE HA MEDIDO ESTO? Los eventos llegan con retardo:
+  // cerrar sin esperarlos devolvería «quieto» sin haber mirado, que es el defecto que se persigue.
+  await new Promise((s) => setTimeout(s, GRACIA_MS));
+  vigia.cerrar();
+  const movidos = vigia.movimientos(desde, propias);
+  return { pasados, caidos, saltados, errores, movidos, sinVigilar: vigia.sinVigilar, vigilada: true };
 }
 
 /**
@@ -565,9 +615,55 @@ export async function aplicarUna(mut, guard, limpia) {
   const abs = path.join(RAIZ, mut.fichero);
   if (!fs.existsSync(abs)) return { ok: false, ciego: `el fichero \`${mut.fichero}\` no existe` };
 
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 PUERTA 0 (SCRUM-754) · ¿ESTABA EL ÁRBOL QUIETO CUANDO SE TOMÓ LA LÍNEA BASE?
+  //
+  // Va ANTES que PUERTA 1 porque PUERTA 1 LEE la línea base, y una línea base tomada sobre un
+  // árbol que se movía no dice lo que parece decir. Medido el 7-sep-2026: con un fichero naciendo
+  // y muriendo dentro de `tests/`, el test que estas declaraciones nombran se pone rojo por un
+  // ENOENT que no tiene nada que ver con ellas, y PUERTA 1 dictaba CIEGO **acusando a tres
+  // inocentes** — «el fichero no llegó a ejecutarse, o ese test ya fallaba, o el nombre caducó».
+  // Ninguno de los tres era. Ésa es la oscilación de SCRUM-754 vista desde dentro.
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  if (limpia?.movidos?.length) {
+    return {
+      ok: false,
+      ciego: `EL ÁRBOL SE MOVIÓ BAJO MIS PIES MIENTRAS TOMABA LA LÍNEA BASE, así que no se ha `
+        + 'mutado nada. Lo que la pasada limpia diga NO describe el árbol que está escrito:\n'
+        + limpia.movidos.map((m) => `      · ${m}`).join('\n')
+        + '\n    Casi siempre es otra cosa corriendo a la vez sobre este mismo worktree (una '
+        + 'suite, un `npm run build`, un editor guardando). Deja el árbol quieto y vuelve a '
+        + 'correrme. NO reintentes hasta que salga el número que esperabas: eso es dejar de medir.',
+    };
+  }
+
   // 🔴 PUERTA 1 · ¿EXISTE EN VERDE LO QUE VAMOS A JUZGAR? Si el test que la declaración nombra no
   // pasó en la pasada limpia —porque el fichero no cargó, porque está renombrado, porque ya
   // fallaba— no hay nada que juzgar sobre él, y NI SIQUIERA SE MUTA.
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 PUERTA 1a (SCRUM-754c) · ¿ES QUE EL TEST NI SIQUIERA CORRIÓ?
+  //
+  // Va ANTES del mensaje genérico de PUERTA 1 porque aquel acusa de TRES cosas —«el fichero no
+  // llegó a ejecutarse, o ese test ya fallaba, o el nombre caducó»— y con un test SALTADO
+  // ninguna de las tres es cierta. Mandar a alguien a buscar un fichero que no cargó cuando lo
+  // que pasa es que su test está gateado es la misma falsa acusación de SCRUM-748/754, otra vez.
+  //
+  // Y el caso NO es raro: los tests gateados por `QA_DB_TEST` no corren en el job del meta-guard,
+  // que corre SIN BASE POR DISEÑO. Antes entraban en `pasados`, la puerta abría, se mutaba, el
+  // test seguía sin correr y el veredicto salía MUDO. Un guard cuyos tests no corren es CIEGO.
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  const saltado = (limpia?.saltados || []).find((s) => s.nombre.includes(mut.cae));
+  if (saltado) {
+    return {
+      ok: false,
+      ciego: `el test «${mut.cae}» está SALTADO en la pasada limpia (${saltado.motivo}), así que `
+        + 'no se ha mutado nada. NO ES QUE EL GUARD ESTÉ MUDO: es que su test no ha corrido, y '
+        + 'sobre un test que no corre no se puede emitir ningún veredicto. `node:test` lo emite '
+        + 'como `test:pass` con `skip` puesto, así que hasta SCRUM-754c contaba como aprobado y '
+        + 'esto salía MUDO — acusando al guard de no vigilar cuando nadie había mirado.',
+    };
+  }
+
   if (!paso(limpia, mut.cae)) {
     return {
       ok: false,
@@ -626,13 +722,46 @@ export async function aplicarUna(mut, guard, limpia) {
   try {
     const mutado = texto.replace(mut.de, mut.a);
     fs.writeFileSync(abs, mutado);
-    if (Buffer.compare(fs.readFileSync(abs), ORIGINAL) === 0) {
+    const BYTES_MUTADOS = fs.readFileSync(abs);
+    if (Buffer.compare(BYTES_MUTADOS, ORIGINAL) === 0) {
       return { ok: false, ciego: 'la mutación no cambió el fichero: no probaría nada' };
     }
     // El árbol ejecutable tiene que llevar la mutación TAMBIÉN, o el guard mide el de antes.
     if (absDist) fs.writeFileSync(absDist, emitirDesdeFuente(abs, mutado, RAIZ));
-    const tras = await correr(guard);
-    if (cayo(tras, mut.cae)) {
+    // 🔴 SCRUM-754 · las piezas que acabo de escribir viajan CON SUS BYTES, para que la vigilancia
+    // no me denuncie a mí mismo — y para que sí denuncie si OTRO las toca mientras las uso.
+    const propias = new Map([[abs, BYTES_MUTADOS]]);
+    if (absDist) propias.set(absDist, fs.readFileSync(absDist));
+    const tras = await correr(guard, propias);
+    // ═════════════════════════════════════════════════════════════════════════════════════════
+    // 🔴 PUERTA 3 (SCRUM-754) · ¿ESTABA QUIETO EL ÁRBOL MIENTRAS SE JUZGABA LA MUTACIÓN?
+    //
+    // Va ANTES de `cayo()` a propósito, y ES EL ORDEN LO QUE ARREGLA EL TICKET. `cayo()` no se
+    // toca: sigue preguntando lo suyo —«¿está el test declarado entre los caídos?»—. Lo que se
+    // arregla es que esa pregunta se estaba contestando sobre un árbol que no era el medido.
+    //
+    // 🔴🔴 MEDIDO, Y ES LA AVERÍA GRAVE (7-sep-2026): con la línea base tomada EN QUIETO y la
+    // agitación entrando SÓLO aquí, una mutación que NO introduce el defecto —o sea, un guard que
+    // TIENE que salir MUDO— salió **VIVA 3 veces de 4**. El test declarado caía, sí, pero por un
+    // ENOENT del barrido, no por la mutación; `cayo()` lo veía caído y firmaba «vivo». Y con
+    // `colaterales 0`, así que ni la instrumentación de SCRUM-784 lo insinuaba.
+    //
+    // Un verde falso es peor que cualquier CIEGO: el CIEGO manda a alguien a mirar; el verde
+    // falso cierra el asunto.
+    // ═════════════════════════════════════════════════════════════════════════════════════════
+    if (tras.movidos?.length) {
+      resultado = {
+        ok: false,
+        ciego: 'EL ÁRBOL SE MOVIÓ BAJO MIS PIES MIENTRAS JUZGABA LA MUTACIÓN, así que NO puedo '
+          + 'decir si el rojo (o su ausencia) lo ha producido la mutación o el movimiento:\n'
+          + tras.movidos.map((m) => `      · ${m}`).join('\n')
+          + '\n    Sin esta puerta esto habría salido '
+          + (cayo(tras, mut.cae)
+            ? 'VIVA, y nadie podría distinguir esa VIVA de un VERDE FALSO'
+            : 'MUDA, acusando al guard de algo que quizá no es suyo')
+          + '. Deja el árbol quieto y vuelve a correrme.',
+      };
+    } else if (cayo(tras, mut.cae)) {
       // 📌 SCRUM-784 (medición, no veredicto): qué OTROS tests se han caído además del que la
       // declaración nombra. Hoy no cambia nada; se cuenta porque hasta entonces era invisible.
       //
@@ -716,6 +845,24 @@ if (ejecutadoDirectamente(import.meta.url)) {
   //   · había y NO se pudo  → se sale con código ≠ 0 NOMBRANDO el fichero que queda sucio.
   // ═══════════════════════════════════════════════════════════════════════════════════════════
   const pendiente = restaurarDesdeMarca(DIR_MARCA);
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 SCRUM-754 · HAY OTRA PASADA VIVA CON UNA MUTACIÓN PUESTA. NO SE MIDE Y NO SE TOCA NADA.
+  //
+  // Dos pasadas a la vez sobre el mismo árbol se sabotean: la de dentro «repara» la mutación de
+  // la de fuera y la de fuera emite su veredicto sobre un árbol ya restaurado. Reproducido: la
+  // mutación de `scrum765` que abre la puerta hace que su sonda ejecute ESTE bloque dentro del
+  // test, y hasta hoy lo primero que hacía era devolverle la mutación a quien lo estaba midiendo.
+  //
+  // Salir CIEGO aquí es lo correcto por los dos lados: no se mide sobre un árbol mutado por otro,
+  // y —sobre todo— NO SE LE TOCA EL ÁRBOL A QUIEN ESTÁ MIDIENDO.
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  if (pendiente.enVuelo) {
+    console.error(`🔴 CIEGO · HAY OTRA PASADA VIVA (pid ${pendiente.pid}, ${pendiente.cuando}) con `
+      + `una mutación puesta en \`${(pendiente.piezas || []).join('` y `')}\`.`);
+    console.error('   No mido: dos pasadas a la vez se sabotean, y reparar su marca sería quitarle '
+      + 'la mutación mientras la está midiendo. Espera a que termine y vuelve a correrme.');
+    process.exit(SALIDA_CIEGO);
+  }
   if (pendiente.sucios.length) {
     console.error('🔴🔴 EL ÁRBOL SE QUEDÓ SUCIO Y NO HE PODIDO REPARARLO.');
     for (const s of pendiente.sucios) console.error(`   · ${s}`);
@@ -779,6 +926,35 @@ if (ejecutadoDirectamente(import.meta.url)) {
     process.exit(0);
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 SCRUM-754 · SUELO ③ · ¿PUEDO SIQUIERA SABER SI EL ÁRBOL SE MUEVE?
+  //
+  // PUERTA 0 y PUERTA 3 sólo valen lo que valga el vigilante. Un `fs.watch` que se instala sin
+  // reventar y luego no entrega nada es un vigilante MUDO, y un vigilante mudo dentro del arreglo
+  // de un juez mudo dejaría el ticket donde estaba con una línea verde encima. Así que antes de
+  // fiarse se le enseña un movimiento fabricado —un fichero que nace y muere dentro de `tests/`—
+  // y se le exige verlo; y la otra mitad, que NO cuente una simple lectura como movimiento.
+  //
+  // Va DESPUÉS de `--solo-censo` a propósito: aquel modo no emite ningún veredicto sobre el árbol,
+  // así que no necesita el vigilante y sigue costando lo que costaba.
+  //
+  // ⚠️ Si esto sale CIEGO en una plataforma, NO se resuelve quitando la puerta: se resuelve
+  // sabiendo por qué esa plataforma no puede vigilar. Un veredicto emitido sin saber sobre qué
+  // árbol se emite es lo que este ticket vino a cerrar.
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  const vigilancia = await controlPositivoDeVigilancia(RAIZ);
+  if (!vigilancia.ok) {
+    console.error(`🔴 CIEGO · NO PUEDO VIGILAR EL ÁRBOL: ${vigilancia.motivo}`);
+    console.error('   Sin vigilancia, un veredicto de este instrumento no dice sobre qué árbol se '
+      + 'emitió: medido el 7-sep-2026, con el árbol moviéndose el MISMO guard salió VIVA, MUDA y '
+      + 'CIEGA sobre la MISMA declaración, y tres de cada cuatro veces el verde era FALSO.');
+    process.exit(SALIDA_CIEGO);
+  }
+  if (vigilancia.sinVigilar?.length) {
+    console.error(`⚠️ FAMILIAS SIN VIGILAR: ${vigilancia.sinVigilar.join(', ')}. Un movimiento ahí `
+      + 'no lo voy a ver, y los veredictos de abajo no lo saben.');
+  }
+
   const mudos = [];
   const ciegos = [];
   const muertos = [];
@@ -816,6 +992,10 @@ if (ejecutadoDirectamente(import.meta.url)) {
       else { ciegos.push(`${guard} · ${r.ciego}`); console.log(`  ? ${guard} · CIEGO`); }
     }
   }
+  // 🔴 SCRUM-754 · el recuento va CON la condición en la que se tomó. «vivas N · mudas 0» sin
+  // decir sobre qué árbol es exactamente lo que se pudo creer una vez y no era verdad.
+  console.log(`\nárbol VIGILADO durante las ${vivas + mudos.length + muertos.length} mediciones `
+    + `(${FAMILIAS_VIGILADAS.join(', ')})`);
   console.log(`\nvivas ${vivas} · mudas ${mudos.length} · ciegas ${ciegos.length} `
     + `· ficheros muertos ${muertos.length}`);
 

@@ -1812,27 +1812,17 @@ html, body { overflow-x: clip; }
 
   .topbar-hamburger { display: flex; }
 
-  /* Bottom nav (keep for quick access) */
-  .sidebar-nav-bottom {
-    display: flex;
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    background: var(--neutral-900);
-    padding: 8px 4px;
-    z-index: 35;
-    justify-content: space-around;
-    border-top: 1px solid var(--neutral-800);
-  }
-  .bottom-nav-item {
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
-    padding: 6px 10px; border-radius: var(--radius-sm);
-    border: none; background: transparent;
-    color: var(--neutral-500); font-size: 10px; font-weight: 600;
-    cursor: pointer; transition: color .12s;
-  }
-  .bottom-nav-item svg { width: 20px; height: 20px; }
-  .bottom-nav-item.active { color: var(--green-500); }
+  /* SCRUM-727 · AQUÍ VIVÍA UNA BARRA DE NAVEGACIÓN INFERIOR QUE NO EXISTE.
+     `.sidebar-nav-bottom` y `.bottom-nav-item` se estilizaban enteros —posición fija, fondo,
+     iconos, estado activo— y **ningún HTML ni ningún JS los pinta**: 4 apariciones en la hoja,
+     0 en todo lo que se sirve al navegador y 0 en `src/`. Se quitan.
 
+     ⚠️ EL RELLENO INFERIOR NO SE QUITA CON ELLAS, y por una razón medida. Estaba puesto «para
+     bottom-nav», pero lo que de verdad hay flotando ahí abajo es el botón de ayuda
+     (`#tut-help-btn`: fijo, 48 px, a 20 del borde). Cuando en SCRUM-720e se comprobó que ese
+     botón no tapa ningún control ni ninguna cifra, lo que lo impedía era ESTE hueco. Quitarlo
+     por muerto habría creado el defecto que aquel ticket midió que no existía. Cambia el motivo,
+     no la medida. */
   .view-container { padding: 16px 14px 80px; }
   .kpi-grid { grid-template-columns: 1fr 1fr; }
 
@@ -2435,24 +2425,40 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .detail-dl dt { font-size: 13px; color: var(--muted); }
 .detail-dl dd { font-size: 13.5px; color: var(--body); margin: 0; }
 
-/* ── SCRUM-650 (T1) · QUIÉN EJECUTA EL TRABAJO — y pueden ser tres ──────────────────────
+/* ── SCRUM-597 (DOC-07) · QUIÉN LLEVA EL DOCUMENTO, y SCRUM-650 · quién ejecuta el trabajo
+   Las dos pantallas COMPARTEN estas reglas en vez de tener cada una las suyas: son el mismo
+   componente en dos sitios, y duplicarlas sería duplicar el 44 px táctil de AB6 — dos fuentes
+   para el mismo número, que se separan en cuanto alguien toca una.
+   ⚠️ EL ORDEN DE LOS SELECTORES NO ES ESTÉTICO: `.job-…` va SEGUNDO para que su regla siga
+   empezando línea y terminando en `{`, que es lo que ancla el guard de SCRUM-650d al medir los
+   44 px. Ponerla primera lo dejaba sin encontrar la regla — y el guard no se toca.
+   Cero componentes nuevos y cero colores inventados (Parte AB): tokens de `tokens.css`.
+   ── SCRUM-650 (T1) · QUIÉN EJECUTA EL TRABAJO — y pueden ser tres ──────────────────────
    El campo «Técnico» del parte de papel de Tecnosel dice «Israel, Miguel y Jesús.L».
    Cero componentes nuevos y cero colores inventados (Parte AB): tokens de `tokens.css` y la
    misma familia visual que `.detail-dl`. El anillo de foco lo pone la regla global de :94. */
+.doc-asignados-titulo,
 .job-asignados-titulo {
   font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
   color: var(--muted); margin-bottom: 4px;
 }
+.doc-asignados-lista,
 .job-asignados-lista { display: grid; gap: 2px; }
 /* 44 px (AB6): se marca de pie, en la obra y con guantes. */
+.doc-asignados-fila,
 .job-asignados-fila {
   display: flex; align-items: center; gap: 10px; min-height: 44px;
   padding: 0 8px; border-radius: var(--radius-md); cursor: pointer;
 }
+.doc-asignados-fila:hover,
 .job-asignados-fila:hover { background: var(--bg, #f6f7f5); }
+.doc-asignados-casilla,
 .job-asignados-casilla { width: 20px; height: 20px; flex: none; accent-color: var(--brand); }
+.doc-asignados-nombre,
 .job-asignados-nombre { font-size: 14px; color: var(--ink); }
+.doc-asignados-lectura,
 .job-asignados-lectura { font-size: 14px; font-weight: 600; color: var(--ink); }
+.doc-asignados-nota,
 .job-asignados-nota { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
 
 /* Tarjetas de margen (planas, dentro de su sección) */
@@ -3061,7 +3067,13 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 }
 [data-parte-firmar]:hover:not(:disabled) { background: var(--green-700, var(--brand-700)); color: #fff; }
 
-/* Quitar una línea: presente, pero nunca compitiendo con la acción principal. */
+/* Quitar una línea: presente, pero nunca compitiendo con la acción principal.
+   ⚠️ AQUÍ ESTÁ TODO LO DE ESTA CLASE, y en un solo sitio a propósito (SCRUM-818). Vivía partida en
+   dos reglas —el aspecto aquí y el área táctil 50 líneas más abajo— y no eran duplicadas sino
+   COMPLEMENTARIAS: borrar cualquiera de las dos rompía algo. Se tropezó con eso una búsqueda que
+   encontró sólo la primera y concluyó que la «×» no llegaba a 44 px cuando sí llega. Un CSS que
+   dice una cosa en un sitio y otra cincuenta líneas más abajo hace que el siguiente lector
+   concluya lo contrario de lo que ocurre. */
 .parte-quitar-linea {
   border: 0;
   background: transparent;
@@ -3071,6 +3083,12 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   padding: 2px 6px;
   border-radius: var(--radius-full);
   cursor: pointer;
+  /* De 22 a 44 px SIN engordar el dibujo ni la fila: crece el área, no la «×» (SCRUM-720d). */
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .parte-quitar-linea:hover { background: var(--danger-bg, #fef2f2); color: var(--danger, #dc2626); }
 
@@ -3115,14 +3133,104 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 [data-dictado-ordenar],
 [data-propuesta-confirmar] { min-height: 44px; }
 
-/* La «×» pasa de 22 a 44 sin engordar la fila: crece el área, no el dibujo. */
-.parte-quitar-linea {
-  min-width: 44px;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+/* La «×» ya no se estiliza aquí: su regla ENTERA —aspecto y área táctil— vive junto a las demás
+   de `.parte-quitar-linea`, más arriba en este mismo fichero (SCRUM-818). */
+
+/* ══ SCRUM-818 · LA CABECERA DEL PARTE DEJA DE MENTIR ════════════════════════════════════════
+   Los siete de arriba —obra, REF, entrada, salida, desplazamiento, kilómetros, técnicos— se
+   pintaban como un rótulo con un guion debajo: PARECÍAN campos y no se podían tocar. Los siete
+   existen en la base y los siete tienen camino de escritura (medido en el PASO 0), así que pasan
+   a ser campos de verdad. Si algo parece un campo, la gente escribe; si no puede, la pantalla ha
+   mentido y se deja de fiar del resto.
+
+   Una columna a 390 px —que es donde se usa, de pie y con una mano— y dos en cuanto hay sitio. */
+.parte-datos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
 }
+@media (min-width: 560px) { .parte-datos { grid-template-columns: 1fr 1fr; } }
+
+.parte-campo { display: block; }
+.parte-campo-rotulo {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--neutral-600, var(--muted));
+  margin-bottom: 3px;
+}
+.parte-campo input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 10px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md, 10px);
+  font-size: 16px;              /* 16 evita el zoom automático de iOS al enfocar */
+  color: var(--ink);
+  background: var(--surface, #fff);
+}
+.parte-campo input:focus {
+  outline: none;
+  border-color: var(--brand-600, var(--brand));
+  box-shadow: 0 0 0 3px var(--focus-ring, rgba(22,163,74,.18));
+}
+/* Un parte FIRMADO no se edita (T3, SCRUM-652): el dato se enseña, y se ve que no es un hueco. */
+.parte-campo-dato {
+  display: block;
+  min-height: 44px;
+  padding: 10px 0;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+/* El grupo de los tres tipos ya dice de qué es (rótulo firmado en SCRUM-703). */
+.parte-tipo legend {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--neutral-600, var(--muted));
+  padding: 0;
+  margin-bottom: 4px;
+}
+
+/* ── Las líneas: dos campos con borde y dos cabeceras ──────────────────────────────────────
+   Hoy es `2  Tiempo de espera ×` sin bordes: con las manos sucias no se ve dónde acaba la
+   cantidad y dónde empieza la descripción. Los dos campos se ven, y la cantidad abre teclado
+   numérico en el móvil. */
+.parte-linea-unds,
+.parte-linea-desc {
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md, 10px);
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--surface, #fff);
+}
+.parte-linea-unds { width: 100%; text-align: right; }
+.parte-linea-desc { width: 100%; }
+.parte-linea-unds:focus,
+.parte-linea-desc:focus {
+  outline: none;
+  border-color: var(--brand-600, var(--brand));
+  box-shadow: 0 0 0 3px var(--focus-ring, rgba(22,163,74,.18));
+}
+/* La columna de la cantidad, estrecha: el número cabe y la descripción se queda con el ancho. */
+.parte-bloque th.parte-col-unds,
+.parte-bloque td.parte-col-unds { width: 88px; }
+.parte-bloque th.parte-col-quitar,
+.parte-bloque td.parte-col-quitar { width: 48px; }
+.parte-bloque th {
+  text-align: left;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--neutral-600, var(--muted));
+  padding: 0 8px 4px 0;
+}
+.parte-bloque th.parte-col-unds { text-align: right; }
+.parte-bloque td { padding: 5px 8px 5px 0; vertical-align: top; }
 
 /* Las tres casillas de tipo: el objetivo es la etiqueta entera, que es lo que ya recibe el toque. */
 .parte-tipo label { min-height: 44px; box-sizing: border-box; }
@@ -3130,3 +3238,104 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 /* El campo del dictado y las cantidades de la propuesta, al mismo mínimo. */
 [data-parte-dictado] textarea { min-height: 88px; }
 [data-propuesta] input[type="number"] { min-height: 44px; }
+
+/* ══ SCRUM-727b · LA LISTA DE TRABAJOS ═══════════════════════════════════════════════════════
+   Barrido del PASO 0: Clientes, Presupuestos, Albaranes y Facturas usan las cuatro
+   `table-scroll` + `table.table--cards-mobile`; Trabajos, ninguno. Así que aquí NO se estrena
+   componente: se usa el de la casa y solo se añade lo que esa pantalla tiene y las otras no —
+   una columna de técnicos.
+
+   ⚠️ POR QUÉ UN MODIFICADOR Y NO TOCAR LA REJILLA COMPARTIDA. La card de móvil de
+   `.table--cards-mobile` declara sus áreas (`id`, `client`, `amount`, `date`, `status`,
+   `actions`) y no tiene hueco para una sexta. Añadírselo allí habría movido las CUATRO listas
+   hermanas de golpe — justo lo que el control positivo de este ticket vigila. `.table--trabajos`
+   redefine las áreas SOLO para esta tabla. */
+.jobs-pantalla { max-width: 980px; }
+.jobs-cabecera { margin-bottom: 16px; }
+.jobs-cabecera h2 { margin: 0 0 4px; font-size: 18px; font-weight: 700; color: var(--ink); }
+.jobs-cabecera p { margin: 0; font-size: 13px; color: var(--muted); }
+.jobs-nuevo { margin-bottom: 14px; }
+.jobs-filtros { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.jobs-lista { display: flex; flex-direction: column; gap: 12px; }
+.jobs-card { padding: 0; overflow: hidden; }
+
+/* El filtro de técnico, con su etiqueta visible: un desplegable sin rótulo obliga a abrirlo
+   para saber qué filtra. */
+.jobs-filtro-tecnico { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.jobs-filtro-tecnico label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.jobs-filtro-tecnico select { width: auto; min-height: 30px; padding: 4px 10px; font-size: 12.5px; }
+
+/* Cabecera de grupo dentro de la tabla: los grupos se conservan porque su rótulo lleva el
+   importe de «Terminados» y su salvedad, que son microcopy aprobada (SCRUM-428). */
+.jobs-grupo-titulo td {
+  font-size: 12px; font-weight: 700; color: var(--neutral-600);
+  text-transform: uppercase; letter-spacing: .04em;
+  padding: 14px 14px 6px; border-bottom: 0;
+}
+.jobs-grupo-salvedad td { font-size: 12px; color: var(--muted); padding: 0 14px 8px; border-bottom: 0; }
+.jobs-grupo-abrir td { padding: 6px 14px 12px; border-bottom: 0; }
+.jobs-fila { cursor: pointer; }
+
+/* La columna nueva. Aguanta VARIOS nombres envolviendo dentro de su celda: recortar a «Israel…»
+   deja al jefe sin saber si falta uno o faltan cuatro, que es justo lo que viene a preguntar. */
+.cell-tecnicos { overflow-wrap: anywhere; max-width: 220px; }
+.cell-tecnicos-vacio { color: var(--muted); font-style: italic; }
+
+.jobs-importe-total { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.jobs-importe-cobrado { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* El estado de la FSM, por CLASE. Antes venía como `style=` en línea desde el JS
+   (`JOB_STATE_META.pill`): los mismos colores, ahora en la hoja y sin inline. */
+.jobs-estado-pill {
+  display: inline-block; white-space: nowrap; font-size: 11px; font-weight: 700;
+  padding: 3px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: .03em;
+}
+.jobs-estado-pendiente_agendar { background: var(--neutral-100); color: var(--neutral-600); }
+.jobs-estado-agendado          { background: #eff6ff; color: #1d4ed8; }
+.jobs-estado-en_curso          { background: #fffbeb; color: #b45309; }
+.jobs-estado-terminado         { background: var(--brand-tint, #ecfdf5); color: #166534; }
+.jobs-estado-cerrado           { background: var(--neutral-100); color: var(--neutral-500); }
+
+.jobs-acciones { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.jobs-vacio-filtro { text-align: center; color: var(--muted); font-size: 13px; padding: 18px; }
+
+/* El modal de la casa, con su cuerpo. `.modal-overlay`/`.modal` ya existen: esto solo viste lo
+   de dentro. */
+.jobs-modal { max-width: 420px; }
+.jobs-modal-titulo { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 12px; }
+.jobs-modal-cuerpo { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.jobs-modal-label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.jobs-modal-vacio { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.jobs-modal-pie { display: flex; gap: 8px; justify-content: flex-end; }
+.jobs-asignar-fila {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 6px; border-radius: var(--radius-sm); cursor: pointer;
+  min-height: 44px; /* AB6: la fila entera es el objetivo, no solo la casilla de 13px */
+}
+.jobs-asignar-fila:hover { background: var(--neutral-100); }
+
+@media (max-width: 640px) {
+  /* La card de móvil de ESTA tabla: se le añade la fila de técnicos que la rejilla compartida
+     no tiene. Todo lo demás lo sigue heredando de `.table--cards-mobile`. */
+  .table--trabajos tbody tr.jobs-fila {
+    grid-template-areas:
+      "client   amount"
+      "tecnicos amount"
+      "date     status"
+      "actions  actions";
+  }
+  .table--trabajos td.cell-tecnicos { grid-area: tecnicos; font-size: 12.5px; color: var(--muted); max-width: none; }
+  /* El nombre del cliente ENVUELVE en la card. La tabla hereda `white-space: nowrap`, y medido a
+     390 px eso dejaba «Cliente con nombre largo número 2» cortado a media palabra y pegado al
+     importe: no se solapaban —hay 12 px de hueco, medidos— pero se leían como una sola cadena.
+     En una card el nombre del cliente es el identificador de la fila; cortarlo es perder la fila. */
+  .table--trabajos td.cell-client,
+  .table--trabajos td.cell-tecnicos { white-space: normal; }
+  .table--trabajos .jobs-grupo-titulo,
+  .table--trabajos .jobs-grupo-salvedad,
+  .table--trabajos .jobs-grupo-abrir { display: block; margin: 10px 12px 0; }
+  .table--trabajos .jobs-grupo-titulo td,
+  .table--trabajos .jobs-grupo-salvedad td,
+  .table--trabajos .jobs-grupo-abrir td { padding-left: 0; padding-right: 0; }
+  .jobs-filtro-tecnico { margin-left: 0; width: 100%; }
+}

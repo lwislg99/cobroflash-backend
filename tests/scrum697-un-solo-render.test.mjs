@@ -305,11 +305,25 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   // subárbol medido es de 1 nodo —`textContent` en el banco es una propiedad, no un hijo—.
   // Medido también el que SE QUEDA (`button.btn-ghost.quote-add-line`): subárbol de 1 nodo, y
   // sigue ahí. O sea que el delta entero es el botón borrado y esta pantalla no ha movido nada más.
-  assert.equal(nodos.length, 262,
-    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 262 `
+  // 🔴 SCRUM-713 · 8-sep-2026 · 262 → 264. Y SÍ se ha tocado el banco en esa rama —entra
+  // `buscadorDeClientes.js` en `SCRIPTS_DEL_DASHBOARD`—, así que la advertencia de abajo aplica de
+  // lleno y por eso el delta se aisló ANTES de mover el número: los DOS nodos son del PRODUCTO.
+  //
+  // IDENTIFICADOS POR IDENTIDAD sobre el árbol montado, no restando 264 − 262:
+  //
+  //   1. `input[type=search]` del bloque «1. Cliente», el buscador. Subárbol medido: 1 nodo.
+  //   2. la `<option disabled>` del selector de cliente. Subárbol medido: 1 nodo. Aparece porque
+  //      este banco monta SIN clientes, y con la lista vacía el desplegable ahora DICE que no hay
+  //      ninguno en vez de quedarse mudo. Con clientes en la lista, esta segunda no se pinta.
+  //
+  // AISLADO: quitando esos dos subárboles el árbol vuelve a 262 exactos, así que el delta entero
+  // vive en el control nuevo y esta pantalla no ha movido nada más. El script añadido al banco no
+  // aporta ningún nodo: sólo publica `window.buscadorDeClientes`.
+  assert.equal(nodos.length, 264,
+    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 264 `
     + '(236 sobre `origin/main` = 80db312b, + la opción de alta de SCRUM-591, + el bloque de '
     + 'descuento global de SCRUM-594, + el control de la dirección de la obra de SCRUM-602, '
-    + '+ la tira de propuesta de SCRUM-587, + la tira de formas de pago de SCRUM-586, + la elección de nombre de SCRUM-589, − el «+ Añadir línea» duplicado de SCRUM-794). Un arreglo del BANCO no debe cambiar ni uno: si '
+    + '+ la tira de propuesta de SCRUM-587, + la tira de formas de pago de SCRUM-586, + la elección de nombre de SCRUM-589, − el «+ Añadir línea» duplicado de SCRUM-794, + el buscador de cliente y su aviso de lista vacía de SCRUM-713). Un arreglo del BANCO no debe cambiar ni uno: si '
     + 'has tocado el banco y esto se mueve, el arreglo pinta.');
 
   const tablas = nodos.filter((n) => n.tagName === 'TABLE');

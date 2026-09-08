@@ -773,6 +773,18 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   }
 
   // ── Datos: cliente, dirección, presupuesto origen (link por quoteNumber) ──
+  // ── SCRUM-817 · EL ORDEN LO MANDA LO QUE SE HACE, NO CÓMO ESTÁN GUARDADOS LOS CAMPOS ─────
+  //
+  // «Quién ejecuta este trabajo» era el ÚLTIMO bloque de la pantalla, dentro de «Datos» y detrás de
+  // las notas internas — debajo del NOMBRE del trabajo, que se escribe una vez y no se vuelve a
+  // mirar. Es la decisión que el jefe toma cada mañana, así que sube a lo primero.
+  //
+  // ⚠️ NO ES UN RÓTULO NUEVO: el título lo trae ya `construirSelectorAsignados`
+  // (`jobAsignados.js`, `titulo: 'Quién ejecuta este trabajo'`). Aquí sólo se le da sección propia.
+  const quienSec = document.createElement('div');
+  quienSec.className = 'detail-section';
+  quienSec.dataset.seccion = 'asignados';
+
   const infoSec = document.createElement('div');
   infoSec.className = 'detail-section';
   infoSec.innerHTML = '<h3 class="detail-section-title">Datos</h3>';
@@ -885,7 +897,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   if (typeof construirSelectorAsignados === 'function') {
     const asigWrap = document.createElement('div');
     asigWrap.style.cssText = 'margin-top:12px';
-    infoSec.appendChild(asigWrap);
+    quienSec.appendChild(asigWrap);
 
     (async () => {
       try {
@@ -1029,7 +1041,6 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   tipoSec.appendChild(tipoExpanded);
 
   syncTipoCollapsed();
-  body.appendChild(tipoSec);
 
   // ── Documentos (SCRUM-31 F5): UNA lista cronológica que FUSIONA presupuesto + albaranes +
   // facturas. Cada fila es un .job-doc-row (icono + qué es + estado/fecha/importe + acciones).
@@ -1042,7 +1053,6 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // SCRUM-319 (G4): esta sección ya solo lleva ALBARANES; lo demás salió al rail o a su propio
   // bloque. El rótulo ya existía en el producto: no es microcopy nueva.
   docsSec.innerHTML = '<h3 class="detail-section-title">Albaranes</h3>';
-  body.appendChild(docsSec);
 
   // ── SCRUM-370 · GASTOS DE ESTE TRABAJO ──────────────────────────────────────
   //
@@ -1058,13 +1068,12 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // tiene su propio ticket. Y el importe se enseña **tal como está guardado**, sin llamarlo «base»
   // ni «con IVA»: hasta la migración de `Expense` no consta cuál de las dos cosas es, y ponerle
   // nombre sería afirmar algo que no sabemos (SCRUM-403).
-  pintarNotasInternas(body, job);
 
   const gastosSec = document.createElement('div');
   gastosSec.className = 'detail-section';
   gastosSec.dataset.seccion = 'gastos';
   gastosSec.innerHTML = '<h3 class="detail-section-title">Gastos de este trabajo</h3>';
-  body.appendChild(gastosSec);
+
   apiRequest(`/admin/jobs/${job.id}/gastos`)
     .then((r) => {
       const gastos = (r && r.gastos) || [];
@@ -1105,7 +1114,29 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
       gastosSec.appendChild(err);
     });
 
-  body.appendChild(infoSec); // SCRUM-31 (F6): "Datos" a segundo plano, bajo lo operativo.
+  // ⚠️ Y EL BLOQUE DE ARRIBA VA AQUÍ, DESPUÉS de la carga de gastos, no pegado a su rótulo.
+  // `scrum370` acota su comprobación a 2.600 caracteres desde el texto «Gastos de este
+  // trabajo», así que veinte líneas metidas en medio le sacan su `.catch(` de la ventana y lo
+  // ponen rojo sin que se haya tragado nada. Es un anclaje por POSICIÓN (SCRUM-710) y es de
+  // otro carril: se reporta, no se toca — y aquí se le deja su ventana en paz.
+  // ── SCRUM-817 · EL ORDEN DE LA PANTALLA, EN UN SOLO SITIO ───────────────────────────
+  //
+  //   ① quién ejecuta   ② albaranes   ③ el trabajo (tipo + datos)   ④ notas   ⑤ gastos
+  //
+  // Los cinco `appendChild` vivían repartidos por 300 líneas y el orden de la pantalla no se podía
+  // leer sin recorrerlas todas — que es cómo «quién ejecuta» acabó el último sin que nadie lo
+  // decidiera. Juntos, el orden ES esta lista.
+  //
+  // 🔴 CADA SECCIÓN SE AÑADE UNA SOLA VEZ, y su contenido se sigue rellenando después: son los
+  // MISMOS nodos, sólo cambia cuándo se cuelgan. Nada de re-`appendChild` para mover, que en un
+  // DOM de verdad mueve y en un banco puede duplicar.
+  body.appendChild(quienSec);
+  body.appendChild(docsSec);
+  body.appendChild(tipoSec);
+  body.appendChild(infoSec);
+  pintarNotasInternas(body, job);
+  body.appendChild(gastosSec);
+
   const docs = []; // { when, el } — se ordena ascendente y se vuelca al final en la lista.
   // Formato de fecha ÚNICO de la lista: día + mes + año + hora. Conserva la HORA (que solo tenía el
   // timeline) y el AÑO (que tenían las secciones) → cero pérdida al fusionar (auditoría F5).

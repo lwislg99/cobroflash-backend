@@ -88,6 +88,39 @@ export const CATEGORIAS = {
  * `módulo::export`, no la longitud: por eso da igual cómo se agrupen las líneas.
  */
 export const DECLARADOS = [
+  // ── SCRUM-805 · el sello del PRESUPUESTO, y por qué sus cuatro exports son distintos ───
+  //
+  // Nacen en el mismo módulo y NO son el mismo caso, así que van en tres categorías. El guard
+  // proponía quitarles el `export` y medir por superficie pública: aquí eso rompería justo lo
+  // que el fundador exigió comprobar.
+  {
+    modulo: "src/modules/quotes/domain/presupuestoSello.ts",
+    cat: "ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE", desde: "2026-09-07",
+    motivo: "El canónico del presupuesto ES la regla: qué se firmó. Su test lo CORRE campo a "
+      + "campo —muta cada clave del contenido y exige que el hash se mueva— y ése es el control "
+      + "que el fundador puso como condición de que el ticket esté hecho. Medirlo sólo por la "
+      + "superficie pública (el sellador) probaría que el sobre se escribe, NO que cubre el "
+      + "total, la validez, las condiciones de pago y las cláusulas, que es el ticket entero.",
+    exports: ["computePresupuestoContentHash"],
+  },
+  {
+    modulo: "src/modules/quotes/domain/presupuestoSello.ts",
+    cat: "VOCABULARIO_DEL_MODULO", desde: "2026-09-07",
+    motivo: "La única fuente del número de versión del canónico. Viaja DENTRO de cada evidencia "
+      + "sellada, así que quien verifique un presupuesto firmado hoy dentro de dos años tiene "
+      + "que poder nombrarla. Su test comprueba que el sobre la lleva.",
+    exports: ["PRESUPUESTO_CONTENIDO_VERSION_ACTUAL"],
+  },
+  {
+    modulo: "src/modules/quotes/domain/presupuestoSello.ts",
+    cat: "MOTOR_EN_ESPERA", desde: "2026-09-07",
+    motivo: "La mitad VERIFICADORA del sello. Sellar sin poder verificar es guardar una huella "
+      + "que nadie compara —el defecto que SCRUM-369 encontró en el albarán, donde el hash se "
+      + "calculaba en un solo sitio y nada lo recalculaba—. Se construyen con el sellador y en "
+      + "el mismo commit, a propósito: su consumidor (enseñar la verificación al profesional) es "
+      + "trabajo de otro ticket y no se cablea de paso.",
+    exports: ["recomputarHashDeEvidenciaPresupuesto", "verificarEvidenciaPresupuesto"],
+  },
   // ── SCRUM-624 (fase C) · lo que destapa MOVER LA FRONTERA ──────────────────────────────
   //
   // `totalDeFacturables` se queda sin llamador porque el camino albarán→factura **deja de usarla
@@ -146,6 +179,19 @@ export const DECLARADOS = [
     motivo: 'La convención de redondeo POR LÍNEA del albarán, escrita y ejecutable. Perdió su llamador al mover la frontera albarán→factura (SCRUM-624): el total de la FACTURA sale ahora de la canónica. Se conserva porque es donde la convención del albarán está declarada, y su test la corre.',
     exports: ['totalDeFacturables'],
   },
+
+  // SCRUM-653 · `ordenDeFirmaExigido` no tiene llamador Y NO SE LE QUITA EL `export`.
+  //
+  // Devuelve `null` a propósito: es la DECISIÓN de que el orden de firma no se exige, escrita en
+  // un sitio y no repartida por dos rutas. Su consumidor es el test que la fija — el día que
+  // alguien quiera exigir un orden, lo cambia aquí y el rojo dice dónde mirar.
+  //
+  // Es exactamente la categoría de «la regla vive en la función»: borrarla no quita código muerto,
+  // quita la única constancia de que esa decisión se tomó.
+  { modulo: 'src/modules/jobs/domain/parteTrabajo.ts',
+    cat: 'ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE', desde: '2026-09-03',
+    motivo: 'Es la decisión ESCRITA de que las dos firmas no llevan orden: la corre su test, y borrarla borraría la única constancia de esa decisión.',
+    exports: ['ordenDeFirmaExigido'] },
   // ── SCRUM-683 (cableado) · lo que destapa DARLE SUPERFICIE AL DICTADO ──────────────────
   //
   // Mismo efecto que el bloque de abajo: al cablear `parteDictado.ts`, el censo deja de contarlo
@@ -400,6 +446,20 @@ export const DECLARADOS = [
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'La lista de orígenes de C7. Ni siquiera su propio módulo la usa: su único lector es su test.',
     exports: ['ORIGENES_C7'] },
+  { modulo: 'src/modules/invoicing/domain/invoiceNumber.service.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-07',
+    motivo: 'SCRUM-780 · LA FECHA DE CORTE AL FORMATO F, firmada por el fundador. Se exporta para '
+      + 'que exista UN solo sitio donde vive ese dato y para que su test pueda comprobar que sigue '
+      + 'siendo la firmada: moverla renumeraría facturas ya emitidas, que es la regla 29. Hoy la '
+      + 'leen su propio módulo (por defecto de `usaFormatoF`) y su test.',
+    exports: ['CORTE_FORMATO_F'] },
+  { modulo: 'src/modules/invoicing/domain/invoiceNumber.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-07',
+    motivo: 'SCRUM-780 · la mitad PURA del contador de la serie F. La consume `leerSeqDeLaSerieF` '
+      + 'de su propio módulo, que es quien pone la consulta; se exporta aparte para poder probar la '
+      + 'aritmética —máximo y no recuento, y el reinicio anual— sin base de datos, que es donde '
+      + 'está el error que costaría un número repetido.',
+    exports: ['siguienteSeqDeLaSerieF'] },
   { modulo: 'src/modules/invoicing/domain/lineasFacturables.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',

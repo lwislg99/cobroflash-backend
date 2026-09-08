@@ -43,7 +43,11 @@
 import crypto from 'crypto';
 
 /** La versión del contenido sellado que se escribe HOY. Nace en 1. */
-export const PARTE_CONTENIDO_VERSION_ACTUAL = 1;
+// 🔴 SCRUM-653 · 1 → 2. Lo que cambia es QUÉ SE SELLA, y el motivo está en
+// `contenidoCanonicoParte`: con DOS firmas, sellar la identidad del firmante hacía que la huella
+// del documento dependiera de QUIÉN FIRMA PRIMERO. La v:1 se conserva entera e intacta — un parte
+// ya sellado con ella se sigue verificando con ella.
+export const PARTE_CONTENIDO_VERSION_ACTUAL = 2;
 
 /**
  * LOS DOS BLOQUES, cerrados.
@@ -166,6 +170,50 @@ function contenidoCanonicoParte(params: ParteContenidoParams, version: number): 
     };
   }
 
+  // ═══════════════════════════════════════════════════════
+  // v:2 · SCRUM-653 · EL SELLO ES DEL CONTENIDO, Y NADIE MÁS ENTRA
+  // ═══════════════════════════════════════════════════════
+  //
+  // 🔴 LA DECISIÓN DEL TICKET, Y ES ESTA LÍNEA: `firmadoPorNombre` y `firmadoPorCalidad`
+  // ESTABAN en v:1 y SALEN en v:2.
+  //
+  // El papel lleva DOS firmas. Si la identidad del firmante entra en el sello, la huella se
+  // calcula con lo que hay EN ESE MOMENTO:
+  //
+  //     firma el cliente  → técnico aún null  →  hash H1
+  //     firma el técnico  → los dos rellenos   →  hash H2 ≠ H1
+  //
+  // Y al revés, otro par. O sea: **un documento cuya huella depende de quién firmó primero**, con
+  // el MISMO contenido. Eso no es un sello: es un número que cambia solo.
+  //
+  // La alternativa era meter las dos y recalcular al completarse — pero entonces el hash que se
+  // le enseñó al primer firmante deja de valer, que es peor.
+  //
+  // Así que el sello es del CONTENIDO: qué se hizo, cuánto y dónde. Las firmas son EVIDENCIA
+  // ADHERIDA — cada una con su trazo, su fecha y su nombre, en la fila y FUERA del hash. Que el
+  // contenido no cambie después lo garantiza `puedeEditarContenido`, no el sello.
+  //
+  // ⚠️ Escrito ENTERO y no derivado de v:1: si alguien añadiera un campo a una forma compartida,
+  // entraría en v:2 sin que nadie lo decidiera y los partes ya sellados dejarían de verificar.
+  if (version === 2) {
+    return {
+      v: 2,
+      numero: params.numero,
+      fecha,
+      cliente: params.cliente ?? null,
+      obra: params.obra ?? null,
+      referencia: params.referencia ?? null,
+      entrada: params.entrada ?? null,
+      salida: params.salida ?? null,
+      desplazamientos: params.desplazamientos ?? null,
+      kilometros: params.kilometros ?? null,
+      tecnicos: Array.isArray(params.tecnicos) ? [...params.tecnicos] : [],
+      tipo: params.tipo ?? null,
+      lineas: lineasCanonicasParte(params.lineas),
+      notas: params.notas ?? null,
+    };
+  }
+
   throw new Error(`parteTrabajo: versión de contenido desconocida (${version}). No se adivina.`);
 }
 
@@ -185,6 +233,19 @@ export function computeParteContentHash(
 
 /**
  * El CONTENIDO se congela al firmar. Es lo que el cliente vio y firmó.
+ *
+ * 🔴 SCRUM-653 · SE CONGELA CON LA **PRIMERA** FIRMA, Y NO SE CAMBIA NADA AQUÍ. Medido antes de
+ * tocar: hoy cualquier estado distinto de `borrador` cierra el contenido, o sea que ya congelaba
+ * con la primera. Se conserva, y con dos firmas el motivo es más fuerte que con una:
+ *
+ *   · lo que el PRIMER firmante avaló no puede cambiar después. Si el contenido siguiera abierto
+ *     hasta la segunda firma, se podría modificar lo que el otro ya había firmado — y no volvería
+ *     a mirarlo;
+ *   · la segunda firma es una ADICIÓN: pone su trazo, su fecha y su nombre, y no toca el
+ *     contenido, así que el sello (v:2, sólo contenido) no se mueve.
+ *
+ * En el papel se rellena, se firma y se firma. Lo que queda prohibido es rellenar ENTRE las dos
+ * firmas, que es justo lo que no se ve.
  *
  * Devuelve el motivo en vez de un booleano pelado: quien lo llame tiene que poder decir POR QUÉ
  * no se puede, y «no se puede» a secas manda al profesional a adivinar.
@@ -277,6 +338,63 @@ export function puedeFirmarse(lineas: LineaParte[]): { ok: boolean; motivo: stri
     };
   }
   return { ok: true, motivo: null };
+}
+
+// ───────────────────────────────────────────────────────
+// SCRUM-653 · LAS DOS FIRMAS
+// ───────────────────────────────────────────────────────
+
+/** Lo que hace falta saber de un parte para decidir sobre sus firmas. */
+export interface FirmasDelParte {
+  firmadoAt?: Date | string | null;
+  firmadoTecnicoAt?: Date | string | null;
+}
+
+const yaFirmo = (v: Date | string | null | undefined) => v !== null && v !== undefined;
+
+/**
+ * ¿Está el parte COMPLETO? Las dos firmas puestas.
+ *
+ * Se DERIVA de las dos fechas, y no es una bandera nueva: una bandera puede contradecir a los
+ * datos —decir «completo» con una firma sin poner— y entonces hay dos verdades. Además
+ * `ESTADOS_PARTE` es vocabulario CERRADO (Parte L): añadirle un cuarto estado es cambio de
+ * máster, no una línea aquí.
+ */
+export function firmasCompletas(parte: FirmasDelParte): boolean {
+  return yaFirmo(parte.firmadoAt) && yaFirmo(parte.firmadoTecnicoAt);
+}
+
+/**
+ * ¿Puede firmar el CLIENTE? Una vez, y no dos.
+ *
+ * Una segunda firma sobre la misma ranura pisaría el trazo ya recogido, y de eso no queda ni
+ * rastro: la fila no guarda historial. Devuelve el motivo, como los demás candados.
+ */
+export function puedeFirmarCliente(parte: FirmasDelParte): { ok: boolean; motivo: string | null } {
+  if (yaFirmo(parte.firmadoAt)) {
+    return { ok: false, motivo: 'el cliente ya ha firmado este parte' };
+  }
+  return { ok: true, motivo: null };
+}
+
+/** ¿Puede firmar el TÉCNICO? Mismo criterio, ranura propia. */
+export function puedeFirmarTecnico(parte: FirmasDelParte): { ok: boolean; motivo: string | null } {
+  if (yaFirmo(parte.firmadoTecnicoAt)) {
+    return { ok: false, motivo: 'el técnico ya ha firmado este parte' };
+  }
+  return { ok: true, motivo: null };
+}
+
+/**
+ * 🔴 EL ORDEN NO IMPORTA, Y ESO ES UNA DECISIÓN ESCRITA.
+ *
+ * En la obra firma quien esté libre primero. Exigir un orden obligaría a uno de los dos a esperar
+ * con el móvil en la mano, y no protege de nada: el sello es del CONTENIDO (v:2), así que la
+ * huella es la misma firme quien firme primero. Esta función existe para que la decisión viva en
+ * UN sitio y no repartida por dos rutas.
+ */
+export function ordenDeFirmaExigido(): null {
+  return null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────

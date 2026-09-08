@@ -371,3 +371,499 @@ guarda, la caracterización habría fijado un comportamiento que va a cambiar. P
 lo que el encargo pedía vigilar.
 
 **No se ha construido: se propone.** No estaba en el encargo de esta tanda.
+
+# APÉNDICE · 8-sep-2026 · DOC-10 CODIFICADO — la factura suelta usa la página del presupuesto
+
+**Medido contra:** `origin/main` = `b521d0a7` · rama `scrum-600b-la-factura-usa-el-front`.
+
+> ⚠️ Esa referencia es la del trabajo de esta rama, no una lectura de reloj — criterio R14.
+
+**Lo que cambia respecto al informe del 24-ago:** aquel paró declarando DOS bloqueos. El de
+**emisión** sigue en pie y aquí no se toca — y resulta que es el que DECIDE el alcance. El de
+**microcopy** se ha reducido a dos rótulos, los ha firmado el asesor derivando, y con eso la
+página se ha podido codificar.
+
+---
+
+## 1 · OBLIGACIÓN 0 — el punto de partida, medido antes de tocar
+
+**No estaba hecho ni a medias.** Lo previo de SCRUM-600 (`beab60d1`, ya en `main`) era el censo y
+la red de F7–F14; el front seguía siendo dos ficheros y dos formas.
+
+Y los dos bloqueos seguían **vivos en el árbol**, no sólo en el informe:
+
+* `validarFacturaSuelta` (`facturaSuelta.ts`) sigue reconstruyendo cada línea como
+  `{concept, qty, price, tax}`: **sin campo de fecha y descartando `suplido`**;
+* en `docs/microcopy/` **no hay ninguna aprobación para DOC-10** (7 ficheros, ninguno del ticket).
+
+### La tabla ANTES / DESPUÉS, montando las pantallas (no leyéndolas)
+
+| | modal (ANTES) | página · documento suelto (DESPUÉS) | página · presupuesto |
+|---|---|---|---|
+| forma | modal 560 px | **PÁGINA**, dos tarjetas | PÁGINA, dos tarjetas |
+| ruta propia | **no** (sólo un botón) | **sí** — `invoices-new`, en `HASH_VIEWS` | `quotes-new` |
+| nodos pintados | 26 | **159** | 263 |
+| **controles pintados** | **12** | **22** | 46 |
+
+| capacidad | modal | doc suelto | presupuesto |
+|---|---|---|---|
+| vista previa en vivo (F7) | ❌ | ✅ | ✅ |
+| bloque Cliente · bloque Líneas | ❌ | ✅ | ✅ |
+| total destacado (KPI) | ❌ | ✅ | ✅ |
+| Sugerir con IA (F11) | ❌ | ✅ | ✅ |
+| Condiciones · Envío · panel de estado | ❌ | ❌ | ✅ |
+| plantillas (F11) · borrador · dirección de obra · IVA por documento | ❌ | ❌ | ✅ |
+
+---
+
+## 2 · 🔴 LA REGLA QUE DECIDE QUÉ SE PINTA, Y NO ES UNA LISTA DE GUSTOS
+
+> **Un control aparece en modo documento suelto si y sólo si su dato SOBREVIVE al emisor.**
+
+`validarFacturaSuelta` admite `customerId` + líneas de `{concept, qty, price, tax}` y **descarta
+el resto en silencio** — medido y fijado en SCRUM-616. Así que condiciones de pago, envío,
+dirección de la obra, IVA por documento, descuentos, coste y suplido **no se pintan**: pedirlos
+sería recoger datos que el servidor tira sin decírselo al profesional, que es **peor** que el
+modal estrecho que se sustituye.
+
+El caso que lo ilustra es el **suplido** (F8): el `tax: 0` sobrevive y la MARCA no, así que
+quedaría guardado como una línea normal al 0 %, indistinguible de una exención legítima. Sin
+error, sin aviso y sin diferencia de importe.
+
+**Ampliar lo que la factura admite es camino de emisión (reglas 29/38) y puede tocar
+`prisma/schema.prisma`.** Es STOP: se declara y se para. **No se ha tocado.**
+
+---
+
+## 3 · La microcopy: de 25 decisiones a 2, y las 2 firmadas derivando
+
+**El alcance forzado por el emisor reduce el bloqueo A casi entero**: la mayoría de las ranuras
+pendientes pertenecen a bloques que ya no se pintan. Quedaban **dos**, las dos el mismo rótulo:
+el KPI del total y el pie de la vista previa, hoy «Total presupuesto».
+
+> ✅ **FIRMA DEL ASESOR (7-sep-2026), derivando y no inventando.** Modo documento suelto →
+> **«Total»**, que es el rótulo con el que `invoiceDetailView.js` ya destaca el total de una
+> factura. **No entra palabra nueva en el árbol.** Precedente: SCRUM-776. Queda **sujeta a
+> revisión del fundador**; si veta «Total» a secas es un cambio de una línea.
+>
+> El presupuesto **no cambia**: sigue diciendo «Total presupuesto», byte a byte.
+
+**Y ni un literal más.** Lo que necesitaba texto nuevo se ha **omitido y declarado**:
+
+| se omite | por qué | qué haría falta |
+|---|---|---|
+| **plantillas** (usar y guardar) | sus dos hojas dicen «…en el presupuesto actual» y «…futuros presupuestos» | esas dos frases, firmadas |
+| **coletilla legal** del pie del PDF | en un documento fiscal una frase ahí puede ser afirmación fiscal (reglas 7/17) | decidir **si va algo**, antes que redactarlo |
+| **subtítulo** de la página | describe el flujo de mandar un enlace para que el cliente acepte | — |
+| **pista** del bloque de líneas | «que vas a presupuestar»: el verbo es del presupuesto | — |
+| **tooltip** de Sugerir con IA | nombra el documento; el botón se queda, con su rótulo neutro | — |
+
+---
+
+## 4 · La verificación, y CADA UNA probada en rojo
+
+`tests/scrum600b-la-factura-usa-el-front.test.mjs` **monta las dos pantallas** en el banco de
+SCRUM-417 y las conduce: teclea, pulsa y recoge lo que sale por la red.
+
+### 🔴 EL CONTROL QUE DECIDE — mismo cuerpo, byte a byte
+
+Misma entrada en las dos pantallas (`cliente 7`, «Mano de obra» × 2 a 50 €):
+
+```
+PÁGINA → POST /admin/invoices {"customerId":7,"lines":[{"concept":"Mano de obra","qty":2,"price":50,"tax":0.21}]}
+MODAL  → POST /admin/invoices {"customerId":7,"lines":[{"concept":"Mano de obra","qty":2,"price":50,"tax":0.21}]}
+IGUALES BYTE A BYTE ✅
+```
+
+Y lo que **queda guardado**, por las funciones puras del servidor (regla 38: sólo LEE):
+`[{concept:'Mano de obra', qty:2, price:50, tax:0.21}]` · total **121.00**.
+
+**Divergencia imposible, no vigilada:** el cuerpo lo compone `cuerpoDelDocumentoSuelto.js`, y hay
+un guard que exige que **cada pantalla lo llame UNA vez** y no componga por su cuenta.
+
+### 🔴 Con `INVOICING_ES_ENABLED` en su valor por defecto, la página no dice «factura»
+
+Montada en modo justificante: **cero ranuras** con la palabra. **Control positivo:** la MISMA
+página en modo factura dice «factura» en **exactamente dos** sitios, y son los dos rótulos
+aprobados (SCRUM-289b): «Nueva factura» y «Emitir factura». Sin ese control, el verde de arriba
+lo daría también una pantalla en blanco.
+
+### Los tres rojos, medidos
+
+| rotura a propósito | cae | nombrando |
+|---|---|---|
+| vuelve la dirección de la obra al documento suelto | ✅ | «no dice factura EN NINGÚN SITIO» (su opción dice «…de FACTURACIÓN») |
+| «3. Condiciones» deja de pintarse también en el presupuesto | ✅ | «EL PRESUPUESTO NO PIERDE NADA» |
+| la página compone el cuerpo por su cuenta | ✅ | «EL CONTROL QUE DECIDE» |
+
+Árbol restaurado tras cada rotura: `Buffer.compare` = 0, CR = 0.
+
+---
+
+## 5 · 🔴 LOS HALLAZGOS — los cinco que sólo se ven MONTANDO la pantalla
+
+Ninguno vivía en una ranura que el censo marcara como pendiente: vivían en piezas que se pintan y
+ya. **Leyendo el código, los cinco salían verdes.**
+
+1. el selector de **dirección de la obra**, cuya opción dice «Utilizar dirección de **FACTURACIÓN**»
+   — o sea la palabra prohibida, en la pantalla de un justificante;
+2. el rótulo **«IVA del presupuesto»**;
+3. la pista **«Añade los conceptos que vas a presupuestar.»**;
+4. el **tooltip** de Sugerir con IA;
+5. 🔴 la peor: la **vista previa imprimía «Pago 100% al aceptar el presupuesto.»** — una condición
+   que **nadie había elegido** (el bloque ya no se pinta, así que el selector conservaba su valor
+   de fábrica), en el papel que ve el cliente del profesional.
+
+### Y dos más, que son del instrumento y **anteriores a esta rama**
+
+* **El extractor de ranuras no bajaba a las ramas de un ternario.** La lista que el fundador tenía
+  delante decía **27 posiciones / 25 textos** y son **29 / 27**: se le escapaban los dos `setAlert`
+  del alta («📋 Presupuesto enviado a un administrador para aprobación.» y «Presupuesto creado en
+  borrador.»). Se arregla el instrumento; **no se baja el número**.
+* **Un envoltorio mío escondió dos rótulos firmados.** Al meter el error del alta en un traductor,
+  el censo de SCRUM-601 dejó de ver los dos textos de `errorAlEmitir()`: **16 → 14** literales
+  dependientes del flag. Los textos seguían siendo correctos y seguían llegando a la pantalla; lo
+  que se perdía era **quien los mira**. Se corrigió la FORMA —el respaldo vuelve a escribirse
+  pegado a su sumidero— en vez de ensanchar el guard. Vuelve a 16.
+
+---
+
+## 6 · Lo que NO se ha hecho, con su motivo
+
+* **El vencimiento** (B1 / DOC-15): sigue sin dónde guardarse. Es bloqueo de EMISIÓN, no de texto.
+* **Suplido, coste, descuentos, condiciones, envío** en el documento suelto: lo mismo.
+* **Plantillas y coletilla legal**: esperan microcopy del fundador (§3).
+* **`nuevaFacturaModal.js` se queda en el árbol y deja de tener puerta.** No es descuido: es la
+  referencia contra la que `scrum600b` comprueba la equivalencia, y lo que
+  `guard:caja-documento-suelto` sigue midiendo en navegador. Borrarlo es decisión aparte.
+* **Nada de producción ni staging.** Ni schema, ni camino de emisión, ni `INVOICING_ES_ENABLED`.
+
+## Tests que introduce esta entrada
+
+* `tests/scrum600b-la-factura-usa-el-front.test.mjs` — 12 tests: los dos suelos, el control que
+  decide con su control negativo, lo que se guarda, divergencia imposible, «no dice factura» con
+  su control positivo, el presupuesto intacto, lo que el emisor no puede guardar, y regla 29 (×2).
+
+---
+
+# APÉNDICE · 8-sep-2026 · SCRUM-600c · ¿CUÁNTO FALTA? LAS DOS PANTALLAS COMO CONJUNTOS
+
+**Medido contra:** `origin/main` = `2f123b7071d148bc93b87a42354f52ede8bef065` · 8-sep-2026
+
+**Este apéndice NO construye nada.** Mide y para. Ni una línea de `public/`, `src/` ni
+`prisma/` — el árbol de trabajo lo confirma abajo.
+
+**LA PREGUNTA:** 600 y 600b están mergeados. El ticket pedía que la factura reutilizara el front
+del presupuesto **entero** —vista previa en vivo, plantillas, condiciones, formas de pago, datos
+del cliente en el documento y envío—. Nadie había medido cuánto queda.
+
+---
+
+## 0 · QUIÉNES SON LAS DOS PANTALLAS, HOY
+
+No se dan por sabidas: se derivan del router.
+
+| | ruta del panel | entrada | fichero |
+|---|---|---|---|
+| **PRESUPUESTO** | `quotes-new` | `renderQuotesView(cont, template)` | `public/dashboard/js/quotesView.js:22` |
+| **FACTURA** | `invoices-new` | `renderDocumentoSueltoView(cont)` | `public/dashboard/js/quotesView.js:4426` |
+
+Y `renderDocumentoSueltoView(container)` es, literal, `renderQuotesView(container, null, true)`
+(`quotesView.js:4427`). **Son el MISMO fichero y la MISMA función.** Lo que las separa es el
+tercer argumento, que dentro se llama `esDocumentoSuelto` (`:53`) y actúa en **29 sitios**.
+
+> ⚠️ **El par que mide `tests/_censo-dos-fronts.mjs` ya no es este par.** Aquel censo compara
+> `quotesView.js` contra `nuevaFacturaModal.js`, que era la pareja de ANTES de 600b. Sigue siendo
+> válido para lo que mide; no es el instrumento de esta pregunta.
+
+---
+
+## 1 · CÓMO SE MIDIÓ, Y POR QUÉ NO LEYENDO
+
+Las dos pantallas se **MONTAN** en el banco de vistas (`tests/_banco-vistas.mjs`) y se enumera lo
+que de verdad aparece en el DOM. No se lee el código y se deduce.
+
+El motivo no es de gusto: **el propio historial de este ticket lo dice** — el commit `286ea50d`
+se llama «la verificacion, y los CINCO defectos que solo se ven montando». Y una lista de puertas
+`if (!esDocumentoSuelto)` habría dado un número **redondo y falso**, porque hay cosas que faltan
+sin pasar por ninguna puerta (§5, el envío).
+
+**Unidad de medida:** cada rótulo visible —`h1..h4`, `label`, `button`, `legend`, `summary`,
+`th`, más `.quote-block-title`, `.preview-section-title` y `.field-label`— con la **región** a la
+que pertenece, sacada de su ancestro (`.quote-block` titulado, o la tarjeta). La clave de
+comparación es `región ▸ texto`, así que dos rótulos iguales en bloques distintos no se
+confunden.
+
+### 🔴 EL SUELO, y su resultado
+
+| | bloques titulados | rótulos | montaje |
+|---|---|---|---|
+| presupuesto | 4 | **63** | 264 nodos · sin error · 0 rechazos |
+| factura | 2 | **33** | 157 nodos · sin error · 0 rechazos |
+
+Umbral: menos de 3 secciones en cualquiera de las dos ⇒ instrumento roto. **✅ Las dos lo pasan
+con holgura.** Y las dos montan limpias: si alguna hubiera reventado, el número sería del fallo y
+no de la pantalla.
+
+### 🔴 EL INSTRUMENTO ESTUVO CIEGO, Y SE ARREGLÓ ANTES DE PUBLICAR NADA
+
+La primera pasada dio 60 y 32 rótulos, y **«📋 Usar plantilla» y «✨ Sugerir con IA» no salían en
+NINGUNA de las tres listas** — ni en «en las dos», ni en «falta», ni en «sobra». Desaparecían.
+
+Causa: los dos botones ponen su rótulo con **`innerHTML`**, y el parser del mini-DOM
+(`_banco-vistas.mjs:416`) sólo crea nodos a partir de `<etiqueta>`. Un `innerHTML` de **texto
+plano** no deja hijos **ni** `textContent`: sólo `_html`. En un navegador de verdad esos botones
+tienen texto.
+
+Es el defecto más caro que puede tener un censo: **un hueco del instrumento se lee igual que una
+ausencia del producto**, y aquí escondía justo una de las seis capacidades que nombra el ticket.
+Se corrigió el barrido (respaldo a `_html` cuando no hay texto y el `_html` no lleva marcado) y se
+comprobó **en positivo** que los dos botones aparecen. Los números de arriba son los de después.
+
+⚠️ **Es hueco del BANCO, no del producto**, y queda reportado sin arreglar (regla 37): lo mismo le
+pasará a cualquier otra vista que rotule con `innerHTML`.
+
+---
+
+## 2 · ① LAS QUE ESTÁN EN LAS DOS — 19
+
+```
+  (bloque sin título) ▸ Limpiar formulario
+  1. Cliente          ▸ 1. Cliente
+  1. Cliente          ▸ Cliente
+  2. Líneas           ▸ 2. Líneas
+  2. Líneas           ▸ Concepto · Cantidad · Precio · IVA 21 %
+  2. Líneas           ▸ IVA por defecto (%)
+  2. Líneas           ▸ + Añadir línea
+  2. Líneas           ▸ Total —
+  2. Líneas           ▸ ⋯
+  2. Líneas           ▸ ✨ Sugerir con IA
+  ▸ PANEL DERECHO     ▸ Vista previa del documento
+  ▸ PANEL DERECHO     ▸ Cliente · Concepto · Cant. · Precio · Total
+```
+
+**Lo que 600b sí dejó puesto, y es real:** el bloque de cliente, el cuadernillo de líneas entero
+con su IVA por defecto y sus ajustes, la sugerencia con IA, y **la vista previa en vivo**.
+
+---
+
+## 3 · ② LAS QUE ESTÁN SOLO EN PRESUPUESTO — 32 · **ESTO ES LO QUE FALTA DE 600**
+
+Cada una con el sitio que la apaga. Todas las líneas son de `public/dashboard/js/quotesView.js`
+salvo donde se diga.
+
+### Bloque «3. Condiciones» — NO LLEGA A LA PANTALLA (puerta `:419`)
+
+| rótulo | nace en | dato que lleva |
+|---|---|---|
+| 3. Condiciones | `:420` | — |
+| Condiciones de pago | `:635` | `Quote.paymentTerms` |
+| + Añadir tramo | `:687` | `Quote.tiers` · `Quote.selectedTierId` |
+| Válido hasta | `:773` | `Quote.validUntil` |
+| 7 días · 14 días · 30 días | `quoteAtajosVencimiento.js:63` (`DIAS_ATAJO`) y `:136` (`rotuloDeAtajo`) | `Quote.validUntil` |
+
+### Bloque «4. Envío» — NO LLEGA A LA PANTALLA (puerta `:427`)
+
+| rótulo | nace en | dato que lleva |
+|---|---|---|
+| 4. Envío | `:428` | — |
+| Datos del cliente en el documento | `:1119` | `Quote.docFields` |
+| Nombre · Razón social · Nombre comercial · NIF · Email · Teléfono | `:1160-1161` y alrededor | `Quote.docFields` |
+| Formas de pago que verá el cliente | `:880` | `Quote.payMethods` |
+| 🏦 Transferencia · 💳 Tarjeta · 📲 Bizum | idem | `Quote.payMethods` |
+| Incluir descripción en el PDF | `:625` | campo del documento |
+| «acepto la propuesta» *(marcador `[PENDIENTE microcopy oficial]`)* | `:1000` | forma de pago del cliente (SCRUM-586) |
+
+### Sueltas, fuera de bloque
+
+| rótulo | puerta | dato que lleva |
+|---|---|---|
+| Dirección de la obra | `:510` y `:528` (rótulo en `quoteDireccionObra.js:63`) | `shippingAddress` · `shippingAddressMode` |
+| IVA del presupuesto | `:607` (rótulo `:587`) | `Quote.ivaModo` |
+| 📋 Usar plantilla | `:1280` (rótulo `:1271`) | sólo LÍNEAS |
+| 💾 Guardar como plantilla | `:1623` (rótulo `:1610`) | sólo LÍNEAS |
+| Descuento global · + Añadir descuento | `:1460` (rótulos `:1439` · `:1432`) | `discountGlobalAmount` |
+| «acepto la propuesta» *(marcador)* | `:1507` (rótulo `:1490`) | descuento propuesto (SCRUM-587) |
+| Crear presupuesto *(título)* / Generar presupuesto *(acción)* | `:78` · `:1600` | — *(renombrados, ver §4)* |
+| Estado del presupuesto | `:1655` | estado del presupuesto |
+| *(caja de estado, sin rótulo propio)* | `:1659` | número, estado y si se envió |
+| Condiciones de pago **en la vista previa** | `:2356` | `Quote.paymentTerms` |
+| *(pie de la vista previa)* | `:2505` | coletilla del documento |
+
+### 🔴 Y TRES QUE EL MONTAJE NO PUEDE VER — detrás del botón `⋯`
+
+`abrirHojaAjustes()` (`:3044`) sólo se abre al pulsar (`:3505`), así que **ningún barrido de
+montaje las alcanza**. Se completan con el censo de puertas, y se declaran como lo que son:
+
+| rótulo | puerta | por qué está apagado, según el código |
+|---|---|---|
+| Suplido | `:3431` | el validador descarta la clave `suplido`: quedaría como línea al 0 %, **indistinguible de una exención legítima** |
+| Coste | `:3442` | `costeUnitario` se descarta; y no sale en el papel, así que nadie lo echaría de menos |
+| Dto. % de línea | `:3457` | `dto` no pasa del validador: cambiaría el importe que el profesional espera |
+
+---
+
+## 4 · ③ LAS QUE ESTÁN SOLO EN FACTURA — 2, Y **NO SON SECCIONES**
+
+```
+  ▸ IZQUIERDA ▸ Nueva factura        (título,  quotesView.js:78)
+  (sin bloque) ▸ Emitir factura      (acción,  quotesView.js:1600)
+```
+
+Son **los MISMOS dos controles** que en presupuesto dicen «Crear presupuesto» y «Generar
+presupuesto», con el nombre del documento. No hay ni una sección que la factura tenga y el
+presupuesto no.
+
+> ⚠️ **El montaje enseña la voz «factura», y en producción se lee «justificante».**
+> `rotulosDelDocumento.tituloModal()` decide por `window.appDocumentoSuelto` (`app.js:38`), que el
+> banco nunca fija porque no sirve `/me`; sin él cae a la voz «factura». Un merchant español real
+> está **en modo justificante**, así que hoy esa pantalla se titula **«Nuevo justificante»** y su
+> botón dice **«Emitir justificante»** (`rotulosDelDocumento.js:74-75`). **Ningún rótulo se toca**
+> — SCRUM-825 está parado. Se declara para que nadie lea esta tabla como una discrepancia.
+
+---
+
+## 5 · 🔴 EL ENVÍO NO ESTÁ EN NINGUNA DE LAS TRES LISTAS, Y ES EL HUECO MAYOR
+
+El ticket nombra **ENVÍO** entre las seis. No aparece arriba porque **no falta por una puerta**:
+falta por un `return`.
+
+* El envío de verdad —WhatsApp, email y PDF— vive en `openQuoteModal()` (`quotesView.js:117`),
+  que se abre en **`:4381`**.
+* La rama de la factura es `if (esDocumentoSuelto) { … }` en **`:4182`**, y termina con
+  **`return` en `:4218`**.
+* Los dos están **dentro del mismo** `submitBtn.addEventListener("click", …)`. Comprobado, no
+  supuesto.
+
+⇒ **La factura hace `return` 163 líneas antes de llegar al envío.** Lo que hace en su lugar es
+`showToast(…)` y `renderAppView("invoices")`: emite y se va al listado.
+
+Esto **no lo veía ninguno de mis dos instrumentos**: el montaje no llega (es post-submit) y el
+censo de las 29 puertas tampoco (no hay puerta, hay salida anticipada). Sólo sale leyendo el flujo.
+
+**Y no está bloqueado por datos:** las rutas gemelas **YA EXISTEN** —
+`invoicesAdmin.routes.ts:562` (`/:id/resend-whatsapp`) y `:613` (`/:id/send-email`). Lo que falta
+es la hoja de front y su microcopy.
+
+⚠️ Un detalle medido que quien lo construya necesita: el alta devuelve
+`{ok, factura:{id, number, total, currency}, veriFactu}` (`invoicesAdmin.routes.ts:176`) — **sin
+`pdfUrl`**, que es lo que `openQuoteModal` pide. Y hoy el front **descarta la respuesta entera**.
+
+---
+
+## 6 · LAS SEIS QUE NOMBRA EL TICKET, UNA A UNA
+
+| | capacidad | estado |
+|---|---|---|
+| 1 | **Vista previa en vivo** | ✅ **ESTÁ** — falta sólo el pie (`:2505`) y las condiciones dentro de la previa (`:2356`) |
+| 2 | **Plantillas** | ❌ falta (usar `:1280`, guardar `:1623`) |
+| 3 | **Condiciones** | ❌ falta el bloque entero (`:419`) |
+| 4 | **Formas de pago** | ❌ falta (dentro del bloque 4, `:427`) |
+| 5 | **Datos del cliente en el documento** | ❌ falta (dentro del bloque 4, `:427`) |
+| 6 | **Envío** | ❌ falta entero (§5) |
+
+**Una de seis.**
+
+---
+
+## 7 · QUÉ TAMAÑO TIENE CADA HUECO — se copia, o no tiene dónde guardarse
+
+Esto es lo que decide el trabajo que queda, y **se midió en la fuente**, no en los comentarios:
+`validarFacturaSuelta` (`src/modules/invoicing/domain/facturaSuelta.ts:101`) devuelve
+**exactamente** `{customerId, lineas:[{concept, qty, price, tax}]}`. **Todo lo demás del cuerpo se
+cae en silencio.**
+
+### 🟢 GRUPO A · bloque suelto — se copia, no necesita dato nuevo
+
+| qué | por qué cabe |
+|---|---|
+| **Plantillas** (usar y guardar) | mueven **líneas**, y la factura ya guarda líneas |
+| **Envío** | las rutas ya existen (§5); es hoja de front |
+| Pie de la vista previa | es texto pintado, no dato guardado |
+
+**Bloqueo real de este grupo: MICROCOPY, no datos.** El código lo dice de sí mismo en `:1280`: la
+hoja de plantillas dice «…en el presupuesto actual», y se retiraron las dos juntas porque «dejar
+"Usar" sin "Guardar" sería media función». Se enciende **cuando el fundador firme esas frases**
+(regla 30).
+
+### 🟡 GRUPO B · la columna existe, falta quien la escriba
+
+| qué | columna | estado |
+|---|---|---|
+| Dirección de la obra | `Invoice.shippingAddress` · `shippingAddressMode` | existen desde SCRUM-602, **nadie las escribe** — y está declarado allí |
+| Descuento global | `Invoice.discountGlobalAmount` | existe, **sin usar**, declarado en el propio schema |
+
+🛑 **Es STOP del fundador**: escribirlas obliga a tocar `emitInvoice` o los `invoice.create`, y
+**modificar el camino de emisión** es STOP (CLAUDE.md AA1.4). Leerlo no lo es (regla 38); esto no
+es leerlo.
+
+### 🔴 GRUPO C · no hay dónde guardarlo — cambio de `prisma/schema.prisma`
+
+Campos que **`Quote` tiene y `Invoice` NO** (derivado comparando los dos modelos):
+
+| qué falta en pantalla | campo que necesitaría |
+|---|---|
+| Condiciones de pago | `paymentTerms` |
+| Tramos | `tiers` · `selectedTierId` |
+| Válido hasta (y los atajos 7/14/30) | `validUntil` |
+| IVA del documento | `ivaModo` |
+| Formas de pago que verá el cliente | `payMethods` |
+| Datos del cliente en el documento | `docFields` |
+| Textos de cabecera y pie | `docHeaderText` · `docFooterText` |
+| Suplido · Coste · Dto. de línea | viajan dentro de `lines`, y el validador los descarta |
+
+🛑 **`prisma/schema.prisma` es dominio exclusivo del fundador.** Este apéndice lo **lee** y no
+propone ALTER: la propuesta es un encargo aparte.
+
+> Esto **confirma medido** lo que §6 de la entrada original dejó escrito («el vencimiento sigue
+> sin dónde guardarse; suplido, coste, descuentos, condiciones, envío, lo mismo»). No lo
+> contradice: lo cuantifica y le pone los campos con nombre.
+
+---
+
+## 8 · 🔴 VEREDICTO: **FALTA LA MITAD** — y por el lado largo
+
+Los tres recuentos apuntan al mismo sitio, y ninguno se apoya en el otro:
+
+* **bloques titulados:** 2 de 4 · faltan **«3. Condiciones»** y **«4. Envío»** enteros
+* **rótulos:** 19 comunes · **32 sólo en presupuesto** · 2 sólo en factura *(y esos 2 son los
+  mismos controles renombrados)*
+* **capacidades del ticket:** **1 de 6** — sólo la vista previa en vivo
+
+**Lo hecho es el esqueleto: cliente, líneas, previa, IA, y el cuerpo compartido.** Lo que falta es
+**todo lo que rodea al documento**: qué condiciones lleva, hasta cuándo vale, qué datos del cliente
+salen impresos, cómo se cobra, y **cómo llega al cliente**.
+
+**Y el reparto del trabajo restante no es parejo:**
+
+* **3 huecos se desbloquean con una FIRMA** (plantillas y envío: microcopy). Cero schema.
+* **2 necesitan escritor en el camino de emisión** (dirección de obra, descuento global) — STOP.
+* **8 necesitan columnas que no existen** — STOP, y del fundador.
+
+Dicho de otro modo: **lo barato son las plantillas y el envío**, y el envío es además la única de
+las seis que el ticket nombra y que el backend ya sabe hacer.
+
+---
+
+## 9 · HALLAZGOS APARTE (reportados, NO arreglados — regla 37)
+
+1. **`nuevaFacturaModal.js` está MUERTO y sigue viajando al navegador.** Nadie llama a
+   `openNuevaFacturaModal` en todo `public/` — medido. Y sigue cargándose en
+   `public/dashboard/index.html:295` y precacheado en `public/sw.js:82`: **266 líneas que se
+   descargan y no se pueden alcanzar**. La entrada original lo dejó a propósito («es la referencia
+   contra la que `scrum600b` comprueba la equivalencia») — **eso justifica que siga en el árbol,
+   no que se siga SIRVIENDO**. Decisión aparte, y hay que tomarla.
+2. **Hueco del banco de vistas:** `innerHTML` con texto plano no deja `textContent` (§1). Cualquier
+   censo por montaje es ciego a esos rótulos, y no lo dice.
+3. **`tests/_censo-dos-fronts.mjs` mide un par que ya no es el par** (§0). No está roto; está
+   desapuntado respecto de la pregunta de hoy.
+
+---
+
+## 10 · LO QUE ESTE APÉNDICE NO HA HECHO
+
+* **Ni una línea de `public/`, `src/` ni `prisma/`.** El aporte de la rama sobre `main` es este
+  fichero y nada más.
+* **Ningún rótulo** nuevo, movido ni renombrado (regla 30). SCRUM-825 sigue parado.
+* **Cero producción y cero staging.** Ninguna base tocada.
+* **No se propone el ALTER** del grupo C: es del fundador, y se para aquí.

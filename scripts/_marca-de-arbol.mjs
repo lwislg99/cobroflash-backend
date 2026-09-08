@@ -189,7 +189,46 @@ export function borrarMarca(dir) {
  * 🔴 Una pieza que ya coincide con su copia NO se cuenta como reparada: el `finally` sí corrió y
  * la marca quedó huérfana por otro motivo. Contarla haría que una pasada sana gritara.
  */
-export function restaurarDesdeMarca(dir) {
+/**
+ * ¿Sigue vivo el proceso que dejó la marca? `kill(pid, 0)` no manda ninguna señal: sólo pregunta.
+ * `EPERM` significa que EXISTE y no es mío, o sea vivo; `ESRCH`, que no existe.
+ */
+export function procesoVivo(pid, matar = process.kill.bind(process)) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try { matar(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; }
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-754 · UNA MARCA DE UN PROCESO VIVO NO ES «UNA PASADA ANTERIOR»: ES UNA EN VUELO.
+ *
+ * Este restaurador nació (SCRUM-808) para devolver el árbol que dejó puesto **una pasada que
+ * murió**. Su propio texto lo dice: «¿quedó una mutación puesta de una pasada ANTERIOR?». Pero no
+ * lo comprobaba: reparaba cualquier marca que encontrase, viva o muerta.
+ *
+ * ── LO QUE ESO PROVOCABA, REPRODUCIDO Y DISCRIMINADO (7-sep-2026) ───────────────────────────
+ * `scrum765` declara una mutación que abre la puerta de entrada SIEMPRE. Con ella puesta, el
+ * `import` que su sonda hace del meta-guard **ejecuta el bloque principal dentro del test**, y lo
+ * primero que hace ese meta-guard ANIDADO es llamar aquí… encontrando la marca de la pasada de
+ * FUERA, que está viva y midiendo. Le devolvía la mutación a sus bytes originales **en pleno
+ * vuelo**, y el veredicto de fuera se emitía sobre un árbol ya restaurado.
+ *
+ * Medido con las dos mitades, que es lo que lo convierte en causa y no en sospecha:
+ *
+ *     marca en disco: SÍ → 🔴 la mutación VUELVE A LOS BYTES ORIGINALES a mitad de medición
+ *     marca en disco: NO →    la mutación SIGUE PUESTA — nadie la toca
+ *
+ * Determinista: 3 repeticiones, 1 VIVA + 4 CIEGA idénticas. Y hasta hoy era INVISIBLE, porque
+ * quien restauraba lo hacía con los bytes buenos y `git status` no veía nada.
+ *
+ * ⛔ NO se arregla dejando de reparar: eso devolvería el árbol sucio de SCRUM-808. Se arregla
+ * preguntando lo que aquel comentario ya afirmaba sin comprobarlo — si el dueño sigue vivo.
+ *
+ * ⚠️ HUECO DECLARADO: si el sistema reutiliza el pid de una pasada muerta, esta marca dejará de
+ * repararse. No se silencia: sale como `enVuelo` con su pid y su hora, y el llamante lo dice.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+export function restaurarDesdeMarca(dir, vivo = procesoVivo) {
   const manifiesto = path.join(dir, MANIFIESTO);
   if (!fs.existsSync(manifiesto)) return { habia: false, reparadas: [], sucios: [] };
 
@@ -201,6 +240,17 @@ export function restaurarDesdeMarca(dir) {
     // muerta y no se sabe qué dejó puesto. Se denuncia como sucio SIN nombre de fichero, que es
     // exactamente lo que se sabe.
     return { habia: true, reparadas: [], sucios: [`(marca ilegible en ${dir}: ${e.message})`] };
+  }
+
+  // 🔴 «OTRA pasada viva», no «una pasada viva»: una marca con MI propio pid es mía, y mía la
+  // puedo reparar —es lo que hace el banco de pruebas de SCRUM-808, que fabrica la marca y la
+  // repara dentro del mismo proceso—. Lo que no se toca es la de un proceso AJENO que sigue vivo.
+  if (datos.pid !== process.pid && vivo(datos.pid)) {
+    return {
+      habia: true, enVuelo: true, reparadas: [], sucios: [],
+      cuando: datos.cuando, pid: datos.pid,
+      piezas: (datos.piezas || []).map((p) => p.ruta),
+    };
   }
 
   const reparadas = [];

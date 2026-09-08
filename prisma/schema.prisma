@@ -223,6 +223,49 @@ model Customer {
   // tipo de Postgres.
   contactKind String? @map("contact_kind")
 
+  // SCRUM-576 (CONT-03) · LA EMPRESA A LA QUE PERTENECE ESTA PERSONA.
+  //
+  // 🔴 NO ES `legalName`, Y ÉSA ES LA DECISIÓN ENTERA. «Razón social» es TEXTO LIBRE: el
+  // administrador de fincas escribe «Fincas García SL» en una ficha y «FINCAS GARCIA, S.L.» en
+  // otra, y para el sistema son dos cadenas que no se parecen en nada. Aquí las dos personas
+  // apuntan al MISMO entero, así que «son de la misma empresa» deja de ser una coincidencia de
+  // ortografía y pasa a ser una IGUALDAD.
+  //
+  // ⛔ `legalName` NO SE BORRA NI SE MIGRA (decisión del ticket): convivir es correcto, y migrar a
+  // ciegas texto que alguien escribió es cómo se pierden datos. Medido en desarrollo el
+  // 7-sep-2026: 14 clientes, 0 con razón social escrita. Si hay que migrar, es OTRO ticket.
+  //
+  // AUTO-RELACIÓN A `customers` Y NO UNA TABLA `companies` NUEVA: una empresa YA es un contacto
+  // —`contactKind = 'EMPRESA'`, SCRUM-574— con su teléfono, su NIF y su dirección. Una tabla
+  // aparte obligaría a mantener los mismos campos en dos sitios, que es exactamente el defecto
+  // que este ticket viene a cerrar.
+  //
+  // LA DIRECCIÓN ES LA DE HOLDED Y NO ES CAPRICHO: la relación se declara desde el lado PERSONA
+  // (la ficha de persona tiene «Empresa»; la de empresa NO tiene «personas»). Una sola columna,
+  // un solo sitio donde se escribe — dos sitios podrían contradecirse.
+  //
+  // Nullable y SIN `@default`, como sus vecinos: NULL = «no pertenece a ninguna empresa, o nadie
+  // lo ha declarado». La inmensa mayoría de los clientes de un fontanero son personas sueltas.
+  //
+  // 🔴 NULLABLE Y **SIN CLAVE AJENA**, A PROPÓSITO — decisión del fundador del 8-sep-2026, que
+  // aplica aquí la firma que ya existía en `docs/MIGRATIONS_PENDING.md` para `Quote.jobId`
+  // (SCRUM-195): «coherencia con el resto del schema, reversibilidad (`DROP COLUMN` limpio, sin
+  // constraint que arrastre) y sobre todo porque la FK que importaría aquí es `onDelete`, y eso
+  // ya se decidió en SCRUM-192 — servicio de borrado, no cascadas».
+  //
+  // Este ticket nació CON relación y `onDelete: SetNull`, y se retiró: 576 con clave ajena y 195
+  // sin ella serían DOS CRITERIOS para la misma clase de relación. Y aquí es peor que allí — es
+  // AUTORREFERENTE sobre `customers`, así que deshacerla cuesta más.
+  //
+  // ⚠️ NO HAY `@relation`, Y ESO NO ES UN OLVIDO: declararla haría que `prisma db push` volviera
+  // a crear la clave ajena que se acaba de retirar, y el esquema prometería una integridad que la
+  // base no tiene.
+  //
+  // 🔴 LO QUE LA CLAVE AJENA HABRÍA HECHO AL BORRAR, LO HACE EL CÓDIGO: `deleteCustomer`
+  // desvincula a las personas ANTES de borrar la empresa, en la misma transacción. Sin eso, esta
+  // columna se queda apuntando a una fila que ya no existe — y nada protestaría.
+  companyId Int? @map("company_id")
+
   // A20.4 (EXT3): cliente empresa — razón social y NIF (el NIF además es
   // requisito del F1 VeriFactu futuro, hallazgo S1-C)
   legalName String? @map("legal_name")
@@ -240,6 +283,26 @@ model Customer {
   merchantId  Int     @map("merchant_id")
   name        String
   phone       String?
+  /// SCRUM-590 (CONT-19) · EL MÓVIL DEL CONTACTO, y es el número que RECIBE los documentos.
+  ///
+  /// Hasta aquí `phone` era a la vez la ficha del cliente y el canal de WhatsApp, porque no
+  /// había otro. Con una empresa eso obliga a elegir entre guardar la centralita y poder
+  /// escribirle a la persona: lo que se guarda es lo que recibe.
+  ///
+  /// 🔴 LA MARCA DEL CANAL ES ESTRUCTURAL, NO UN FLAG. Recibe el número que esté aquí; si está
+  /// vacío, el de `phone`. La columna `wa_canal` que la medición dejó propuesta NO se crea:
+  /// sus valores serían un estado nuevo y los estados son cerrados (regla 27). Queda medida en
+  /// `docs/master/SCRUM-590.md` §4, y añadirla más tarde seguiría siendo aditivo.
+  ///
+  /// 🔴 NULLABLE Y SIN `@default`, y aquí eso es lo que hace que no rompa nada: NULL = «no
+  /// consta un móvil», que no es «no tiene». Todo cliente de hoy nace con NULL, y entonces
+  /// `canalDeWhatsApp()` devuelve exactamente lo de antes — `normalizePhone(phone)`. Un
+  /// `@default` copiando `phone` habría declarado móvil a la centralita de todos.
+  ///
+  /// `@map` EXPLÍCITO aunque coincida con el nombre del campo: deja escrito que el nombre
+  /// físico está elegido y no heredado. Las 24 columnas de `customers` son snake_case y ésta,
+  /// al ser una sola palabra, coincide — que coincida no es lo mismo que no haberlo mirado.
+  mobile      String? @map("mobile")
   email       String?
   notes       String?
   portalToken String? @unique @map("portal_token")
@@ -378,6 +441,8 @@ model Customer {
   events       CustomerEvent[]
 
   @@index([merchantId])
+  // Se busca «las personas de esta empresa»; sin índice sería un recorrido de toda la tabla.
+  @@index([companyId])
   @@map("customers")
 }
 
@@ -390,6 +455,11 @@ model Charge {
   currency   String    @map("moneda")
   method     String
   status     String
+  /// ⚠️ ESTE `vencimiento` ES DEL COBRO, NO DE LA FACTURA. Es hasta cuándo vale ESTE enlace de
+  /// pago. `Invoice` NO tiene campo de vencimiento —medido en SCRUM-605—, así que quien busque
+  /// «vencimiento» en el esquema y encuentre esta línea puede creer que la factura ya lo tiene.
+  /// Ya estuvo a punto de pasar. El comentario vive aquí y no en un `.md` porque quien se
+  /// confunde está mirando este fichero (SCRUM-722).
   expiresAt  DateTime? @map("vencimiento")
   reference  String?   @map("referencia")
   intentId   String?   @map("intent_id")
@@ -519,6 +589,22 @@ model Quote {
   shippingAddress     String? @map("shipping_address") @db.Text
   shippingAddressMode String? @map("shipping_address_mode")
 
+  // SCRUM-595 (DOC-05) · LAS ETIQUETAS DEL DOCUMENTO.
+  //
+  // MISMO MECANISMO QUE `customers.tags` (SCRUM-580, CONT-07), no un segundo: misma columna
+  // JSONB, mismo tipo, misma forma y las MISMAS funciones de decision
+  // (`src/modules/system/tagsDelCliente.ts`). Si el documento guardara sus etiquetas de otra
+  // forma no seria el mismo mecanismo, seria el segundo — y dos que deciden lo mismo divergen.
+  //
+  // 🔴 NULLABLE Y SIN `@default`: `null` = «no se declararon etiquetas», que NO es `[]` = «se
+  // miraron y no hay ninguna». Con un `@default([])` un `IS NOT NULL` diria que TODOS los
+  // documentos tienen etiquetas, y el filtro de la lista se construiria sobre esa mentira.
+  //
+  // ⛔ DEL DOCUMENTO, NO DE LA LINEA. Las lineas viven dentro de `lines` (JSONB) y esta columna
+  // no las mira: etiquetar un CONCEPTO exigiria meter la etiqueta DENTRO de ese JSON, que es
+  // otro ticket y otro mecanismo. No queda habilitado de rebote.
+  tags Json? @map("tags")
+
   id         Int @id @default(autoincrement())
   merchantId Int
   customerId Int
@@ -563,7 +649,28 @@ model Quote {
   tiers                Json?
   selectedTierId       String?
   internalNotes        String?   @map("internal_notes") @db.Text // Notas privadas del profesional, nunca visibles al cliente
+  // ⚠️ NO es la evidencia de la FIRMA, y la distinción costó medirla (SCRUM-805): esto lo escribe
+  // el camino de ADMIN cuando el profesional marca a mano «aceptado/rechazado» ({method,
+  // typedName, …}, ver `quotesAdmin.ts`). El camino público de firma NUNCA la toca. Se deja
+  // intacta: mezclar las dos rompería lo que ya lee `invoicesAdmin.routes.ts`.
   evidence             Json?
+  // SCRUM-805: evidencias probatorias de la firma DEL CLIENTE — { v, canal(remoto|in_situ),
+  // firmadoAt, ip, ua, tokenId, firmante, hashAlg, contentHash } + el bloque congelado que
+  // permite verificar sin depender de datos vivos. Mismo patrón que `Albaran.evidenciaFirma`
+  // (SCRUM-68), porque el presupuesto también se firma EN REMOTO y tiene canal/ip/ua/token que
+  // registrar — a diferencia del parte, que se firma en mano y por eso le bastan dos escalares.
+  //
+  // 🔴 El `contentHash` es del CONTENIDO canónico del PRESUPUESTO, no del binario del PDF y NO
+  // del canónico del albarán: aquél no sella `total`, `validUntil`, `paymentTerms` ni las
+  // cláusulas, que es justo lo que se discute. Sellador propio en `quotes/domain/presupuestoSello.ts`.
+  // ⛔ NO ES VERIFACTU y no se rotula como tal: la huella fiscal es la de la FACTURA, encadenada
+  // y con QR, y a ésa no se le añade nada (regla 24).
+  //
+  // ⚠️ IP y UA son datos personales → viven SOLO aquí; NUNCA se exponen (ni PDF, ni HTML público,
+  // ni serializer/API del cliente). Aditivo, Json nullable: los presupuestos YA firmados se
+  // quedan en `null` y siguen siendo válidos — `null` es «se firmó antes de que esto existiera»,
+  // que no es «firma inválida».
+  evidenciaFirma       Json?     @map("evidencia_firma")
   chargeId             Int?
   reminderSentAt       DateTime?
   teamMemberId         Int?      @map("team_member_id") // técnico que creó la cotización (null = propietario)
@@ -599,6 +706,11 @@ model Quote {
   updatedAt DateTime  @updatedAt
   Invoice   Invoice[]
   Expense   Expense[]
+
+  // SCRUM-597 (DOC-07): los usuarios de la cuenta asignados a ESTE presupuesto. Virtual, sin
+  // columna. NO es `teamMemberId`, que es la AUTORÍA (quién lo creó): un presupuesto lo redacta
+  // uno y puede estar asignado a tres.
+  asignados QuoteAssignee[]
 
   // SCRUM-195: los adicionales se buscan por Job, SIEMPRE dentro del merchant (regla 2).
   @@index([merchantId, jobId])
@@ -640,6 +752,19 @@ model Invoice {
   /// (`computeVeriFactuHash`) y ninguna columna nueva entra en ella. Estas dos no tocan el sello.
   shippingAddress     String? @map("shipping_address") @db.Text
   shippingAddressMode String? @map("shipping_address_mode")
+
+  // SCRUM-595 (DOC-05) · LAS ETIQUETAS DEL DOCUMENTO. La gemela de `quotes.tags`.
+  //
+  // 🔴 NO TOCA LA REGLA 29, Y ESTA MEDIDO (`tests/scrum595-etiquetas-del-documento.test.mjs`):
+  // la huella de VeriFactu es una lista CERRADA de ocho campos (`computeVeriFactuHash`) y sale
+  // IDENTICA pasandole `tags`; los parametros de `generateInvoicePdf` son lista blanca y `tags`
+  // no esta en ella. Etiquetar una factura YA EMITIDA no cambia su numero, ni su total, ni su
+  // PDF: cambia su FICHA, que es otra cosa.
+  //
+  // 🔴 Y NO SE COPIA AL EMITIR. La escribe el profesional cuando quiere, tambien despues. Por
+  // eso este campo NO necesita escritor en `emitInvoice` — que es exactamente el bloqueo que
+  // dejo a SCRUM-602 (DOC-12) sin cablear el lado factura de la direccion de obra.
+  tags Json? @map("tags")
   currency            String  @db.VarChar(3)
   pdfUrl              String
   qrData              String
@@ -764,6 +889,10 @@ model Invoice {
 
   rectifies   Invoice?  @relation("Rectification", fields: [rectifiesId], references: [id])
   rectifiedBy Invoice[] @relation("Rectification")
+
+  // SCRUM-597 (DOC-07): los usuarios de la cuenta asignados a ESTA factura. Virtual, sin columna
+  // — y por eso asignar no puede tocar el número, el total ni el PDF (regla 29).
+  asignados InvoiceAssignee[]
 
   // El número es único POR MERCHANT (antes era único global: dos merchants con el
   // mismo prefijo "CF" colisionaban; la serie es del emisor, no de la plataforma)
@@ -962,10 +1091,13 @@ model TeamMember {
   role   String @default("tecnico") // admin | tecnico
   status String @default("invited") // invited | active | suspended
 
-  merchant       Merchant      @relation(fields: [merchantId], references: [id])
-  authSessions   AuthSession[]
+  merchant           Merchant          @relation(fields: [merchantId], references: [id])
+  authSessions       AuthSession[]
   // SCRUM-650 (T1): los trabajos que tiene asignados. Virtual, sin columna.
-  jobAssignments JobAssignee[]
+  jobAssignments     JobAssignee[]
+  // SCRUM-597 (DOC-07): los DOCUMENTOS que tiene asignados. Virtuales, sin columna.
+  quoteAssignments   QuoteAssignee[]
+  invoiceAssignments InvoiceAssignee[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1377,6 +1509,35 @@ model ParteTrabajo {
   firmadoAt         DateTime? @map("firmado_at")
   firmadoPorNombre  String?   @map("firmado_por_nombre")
   firmadoPorCalidad String?   @map("firmado_por_calidad")
+
+  // ═════════════════════════════════════════════════════════════════════════════
+  // SCRUM-653 · LAS DOS FIRMAS DEL PAPEL: «FIRMA CLIENTE» y «FIRMA TÉCNICO»
+  // ═════════════════════════════════════════════════════════════════════════════
+  //
+  // 🔴 `signatureUrl` NO ES «la segunda mitad»: ES UN DEFECTO QUE SE ARREGLA AQUÍ.
+  //
+  // Medido el 3-sep-2026: la ruta de firmar del parte VALIDA `signatureData` —regex de PNG/JPEG y
+  // tope de tamaño— y luego **no lo guarda en ninguna parte**. El `update` escribe estado, fecha,
+  // nombre, calidad y el hash; el TRAZO SE TIRA. O sea que hasta hoy el parte guardaba que se
+  // firmó y quién dijo ser, pero no la firma. El albarán sí la guarda (`Albaran.signatureUrl`).
+  // Es un defecto de la fase C, y sale a la luz al ir a añadir la segunda.
+  //
+  // Mismo nombre y misma forma que en `Albaran`: data-URI en `@db.Text`.
+  signatureUrl String? @map("signature_url") @db.Text
+
+  // ── LA FIRMA DEL TÉCNICO ──────────────────────────────────────────────────────────
+  //
+  // 🔴 Y AQUÍ NO HAY `firmadoTecnicoCalidad`, A PROPÓSITO. Las seis opciones de
+  // `albaranFirmante.ts` —«el propio cliente», «un familiar o conviviente», «portero o
+  // conserje»…— existen porque quien firma en la obra POR EL CLIENTE puede ser cualquiera, y hay
+  // que dejar constancia de EN CALIDAD DE QUÉ firma.
+  //
+  // El técnico no es «alguien en calidad de»: es un empleado identificado del merchant. Darle una
+  // ranura de calidad sería ofrecerle declarar que firma «en nombre del cliente», que es
+  // exactamente lo que no puede hacer.
+  signatureTecnicoUrl  String?   @map("signature_tecnico_url") @db.Text
+  firmadoTecnicoAt     DateTime? @map("firmado_tecnico_at")
+  firmadoTecnicoNombre String?   @map("firmado_tecnico_nombre")
   /// Huella del CONTENIDO (sin precios) y su versión de canónico.
   contenidoHash     String?   @map("contenido_hash")
   contenidoVersion  Int?      @map("contenido_version")
@@ -1405,4 +1566,58 @@ model ParteTrabajo {
   @@index([merchantId, fecha])
   @@index([merchantId, estado])
   @@map("partes_trabajo")
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-597 (DOC-07) · ASIGNAR USUARIOS AL DOCUMENTO
+//
+// Dos tablas puente, una por documento. Aprobadas contra `docs/sql/scrum-597-asignados-de-
+// documento.sql`, que es el ALTER que las crea y que va PRIMERO (el schema no se toca sin él).
+//
+// 🔴 UNA SOLA FUENTE DE VERDAD, a diferencia de `JobAssignee`. El trabajo guarda su asignación
+// también en la columna `jobs.assigned_user_id` porque ésta ya existía, y eso obligó a escribir
+// los dos sitios a la vez y a montar un censo que caza cuándo se separan (SCRUM-650). Aquí no hay
+// columna heredada —ni `quotes` ni `invoices` han tenido nunca asignado—, así que el dato vive
+// SOLO aquí y esa discrepancia no puede producirse.
+//
+// ⚠️ NO CONFUNDIR CON `Quote.teamMemberId`, que es AUTORÍA: quién CREÓ el presupuesto. Un
+// documento lo redacta uno y puede estar asignado a varios. Son dos ideas y el schema las declara
+// aparte, igual que `operarioId` y `assignedUserId` en el trabajo.
+//
+// ⚠️ ASIGNAR NO ES UN PERMISO. Estas filas no deciden quién edita ni quién emite —eso lo dan el
+// rol y `requireRole`— y tampoco abren la visibilidad de coste ni de margen (P-DOC-3): un técnico
+// asignado a un documento sigue sin verlos.
+//
+// Un documento SIN NINGUNA fila aquí es exactamente lo que hay hoy: sin asignar, y se comporta
+// igual que siempre en listas, filtros y orden.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+model QuoteAssignee {
+  quoteId      Int      @map("quote_id")
+  teamMemberId Int      @map("team_member_id")
+  assignedAt   DateTime @default(now()) @map("assigned_at")
+
+  // onDelete: Cascade en LAS DOS, por la lección de SCRUM-244: sin él la FK es RESTRICT y borrar
+  // un empleado —o su merchant— revienta a mitad de recorrido con las tablas anteriores ya
+  // vaciadas. Y es lo correcto además de lo seguro: una asignación no significa nada sin la
+  // persona asignada, ni sin el documento asignado.
+  quote      Quote      @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  teamMember TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+
+  @@id([quoteId, teamMemberId])
+  @@index([teamMemberId])
+  @@map("quote_assignees")
+}
+
+model InvoiceAssignee {
+  invoiceId    Int      @map("invoice_id")
+  teamMemberId Int      @map("team_member_id")
+  assignedAt   DateTime @default(now()) @map("assigned_at")
+
+  invoice    Invoice    @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  teamMember TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+
+  @@id([invoiceId, teamMemberId])
+  @@index([teamMemberId])
+  @@map("invoice_assignees")
 }
