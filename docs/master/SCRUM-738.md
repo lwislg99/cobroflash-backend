@@ -21,7 +21,7 @@
 
 ---
 
-## 1 · PASO 0 (regla 39) — y una parte la hice MAL
+## 1 · PASO 0 (cita de regla RETIRADA — SCRUM-637) — y una parte la hice MAL
 
 ### a) ENTRADA — no hay pantalla, y la víctima es una sesión
 

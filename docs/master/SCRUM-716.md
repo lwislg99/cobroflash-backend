@@ -3,7 +3,7 @@
 **Medido contra:** `origin/main` = `2c161c38cfba4ad81479dd302a933412d496f58c` · 2026-09-04T12:30:44+02:00
 **Rama:** `scrum-716-vigia-no-dice-al-dia-sin-mirar`
 
-## PASO 0 (regla 39) · el defecto sigue vivo HOY
+## PASO 0 (cita de regla RETIRADA — SCRUM-637) · el defecto sigue vivo HOY
 
 El hallazgo era del 3-sep y `main` se ha movido tres veces desde entonces. Recomprobado sobre
 `main` de hoy, con la función pura:
