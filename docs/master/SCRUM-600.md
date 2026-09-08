@@ -1062,3 +1062,201 @@ rojo**:
 * **Ningún rótulo** nuevo, movido ni renombrado. **SCRUM-825 sigue parado**: no se toca
   «justificante».
 * **Cero producción y cero staging.**
+
+---
+
+# APÉNDICE · 8-sep-2026 · SCRUM-600e · «3. CONDICIONES»: EL REPARTO ERA OTRO
+
+**Medido contra:** `origin/main` = `56fed4234542f565c3dece1428147347950c770d` · 8-sep-2026
+**Rama:** `scrum-600e-condiciones-en-la-factura`, nacida de `main`.
+
+**Alcance pedido:** construir en la factura suelta las 🟢 de «3. Condiciones» — las que no
+necesitan columna nueva. **Alcance entregado:** ninguna, porque **no hay ninguna**, y el
+mecanismo que impide encenderlas a medias. El motivo está medido abajo.
+
+---
+
+## 0 · OBLIGACIÓN 0 — ninguna rama viva toca Condiciones
+
+`git ls-remote --heads origin` (553 ramas) filtrado por `scrum-600`: queda **una**,
+`scrum-600-un-solo-front-documento`, y `git merge-base --is-ancestor` la da **MERGEADA**. Las
+locales `600b`, `600c` y `600d` también, y sus ramas remotas ya no existen (el `fetch --prune` de
+esta sesión borró la de `600d`).
+
+Se comprobaron además las tres ramas del árbol cuyo nombre toca este bloque —
+`scrum-605-atajos-vencimiento`, `scrum-605-vencimiento-con-atajos`,
+`scrum-564-documentar-la-condicion`—: **las tres mergeadas**. Nadie más está en Condiciones.
+
+---
+
+## 1 · 🔴 EL REPARTO DEL ENCARGO NO ERA EL DE ESTE BLOQUE
+
+La hipótesis de partida —🟢 3 · 🟡 2 · 🔴 8— **es correcta**, y es literalmente la del apéndice de
+SCRUM-600c §7. Lo que no es, es el reparto de «3. Condiciones»: aquélla mide **todo lo que falta
+de DOC-10** (los dos bloques, más las sueltas, más lo de detrás del `⋯`). Este bloque solo tiene
+tres campos, y salen así:
+
+| control | campo | ¿columna en `model Invoice`? | veredicto |
+|---|---|---|---|
+| `fieldPaymentTerms` | `paymentTerms` | **NO** | 🔴 |
+| `stagesWrapper` | `customBillingPlan` | **NO** | 🔴 |
+| `validWrapper` (y los atajos 7/14/30) | `validUntil` | **NO** | 🔴 |
+
+### **«3. Condiciones» es 0 🟢 · 0 🟡 · 3 🔴.**
+
+Medido por tres caminos que no se apoyan entre sí:
+
+1. **El schema.** `model Quote` menos `model Invoice` (nombres de campo, comentarios fuera): los
+   tres están en la lista de los que `Quote` tiene y `Invoice` no.
+2. **El validador.** `ResultadoValidacion` de `facturaSuelta.ts:101` acepta exactamente
+   `{ customerId, lineas }` — dos claves. Todo lo demás del cuerpo se cae en silencio.
+3. **El PDF.** `generateInvoicePdf` no conoce `paymentTerms`, ni `validUntil`, ni vencimiento, ni
+   condiciones. `ParamsPdfPresupuesto` existe; su gemelo de factura no tiene esos parámetros.
+
+**Consecuencia:** de este encargo no sale funcionalidad. Encender cualquiera de los tres exige un
+ALTER de `prisma/schema.prisma` (dominio del fundador) **y además** un escritor, que hoy solo
+cabe en `emitInvoice` — camino de emisión, STOP de AA1.4. Son dos permisos, no uno.
+
+---
+
+## 2 · TRES PRECISIONES SOBRE EL REPARTO GLOBAL, que se piden al contrastar
+
+**① Las 🟢 hoy son DOS, no tres.** El grupo A de 600c eran «Plantillas», «Envío» y «Pie de la
+vista previa». **SCRUM-600d ya construyó el Envío** (ese apéndice lo dice: «el primero de los tres
+huecos que 600c clasificó como 🟢»). Quedan Plantillas y el pie.
+
+**② 🔴 TRAMPA DE NOMBRE, y muerde justo en este encargo.** El «Envío» 🟢 de 600c es el **envío del
+documento** por WhatsApp o correo (§5 de aquel apéndice). **No** es el bloque «4. Envío» del
+formulario, que lleva `docFields` y `payMethods` y está en 🔴. Son dos cosas con el mismo nombre
+en la misma pantalla — el propio `CAMPO_A_BLOQUE` avisa de esto para la dirección de obra. Quien
+lea «Envío: 🟢» y abra el bloque 4 se encuentra dos columnas que no existen.
+
+**③ Las 🔴 son 8 FILAS de tabla, no 8 campos.** Tres filas agrupan: `tiers`·`selectedTierId` (2),
+`docHeaderText`·`docFooterText` (2) y «Suplido · Coste · Dto. de línea» (3, y viajan dentro de
+`lines`). Contando campos son **doce**, no ocho. La cifra de filas no está mal escrita; está
+contando otra cosa, y para dimensionar el ALTER importa la de campos.
+
+**④ El «29 sitios» del tercer argumento: CORRECTO.** `esDocumentoSuelto` aparece en 31 líneas de
+`quotesView.js`; menos la declaración (`:55`) y una mención en comentario (`:3525`), **29 usos**.
+No se ha tocado ninguno.
+
+---
+
+## 3 · LO QUE LE FALTA A CADA UNA — el inventario para abrir (o no) el ticket
+
+Ninguna se ha empezado. Esto es lo que habría que decidir en cada una.
+
+### 🔴 `paymentTerms` — Condiciones de pago
+
+* **Columna:** no existe en `Invoice`. En `Quote` es `String?` con cinco valores de front
+  (`FULL_UPFRONT`, `FIFTY_FIFTY`, `MANUAL`, `CUSTOM`, y vacío).
+* **Escritor:** solo cabe en `emitInvoice` → STOP.
+* **🔴 Y MICROCOPY, que es un bloqueo aparte:** los cuatro literales de la vista previa nombran el
+  presupuesto — *«Pago 100% al aceptar el presupuesto.»*, *«Solo presupuesto, facturación
+  manual.»*. En una factura ya emitida no significan nada. Son textos nuevos del fundador
+  (regla 30), no una adaptación mecánica.
+* **Pregunta de producto antes que de esquema:** ¿qué es «condición de pago» en un documento que
+  nace emitido y cobrado? Si la respuesta es «el plazo para pagarlo», el campo que falta no es
+  `paymentTerms`: es un vencimiento (ver abajo).
+
+### 🔴 `customBillingPlan` — Tramos de cobro
+
+* **Columna:** no existe. En `Quote` son tres: `tiers`, `selectedTierId`, `customBillingPlan`.
+* **⚠️ Vecina que NO sirve:** `Invoice.stageLabel` existe («etiqueta del tramo, congelada al crear
+  la factura», SCRUM-27). Guarda **de qué tramo salió** esta factura, no un plan de tramos futuro.
+  Reutilizarla sería meter dos significados en una columna, que es el defecto que el propio
+  schema documenta en `Charge.method` y decidió no repetir.
+* **Pregunta de producto:** una factura suelta se emite por el total. Un plan por tramos dentro de
+  ella describe cobros que ya no puede gobernar. Puede que esta 🔴 no haya que construirla nunca.
+
+### 🔴 `validUntil` — Válido hasta (y los atajos 7 · 14 · 30 días)
+
+* **Columna:** no existe.
+* **🔴 EL NOMBRE NO SE PUEDE COPIAR.** En un presupuesto «válido hasta» es la caducidad de una
+  oferta. Una factura no caduca: **vence**. Copiar `validUntil` a `Invoice` metería el nombre
+  equivocado en una tabla fiscal, para siempre. Lo que falta es un `dueDate`, que es otro campo.
+* **Vecindad medida:** `reminder7SentAt` y `reminder14SentAt` implican que hoy el plazo de pago es
+  **fijo** (7 y 14 días desde `createdAt`). Un vencimiento por documento cambiaría a quién y
+  cuándo se le recuerda: no es una columna suelta, arrastra los recordatorios.
+* **Microcopy:** «Válido hasta» y los rótulos de los atajos (`quoteAtajosVencimiento.js`) tampoco
+  sirven tal cual.
+
+---
+
+## 4 · LO QUE SÍ SALE: la regla de DOC-10, hecha mecanismo
+
+DOC-10 escribió una regla y no dejó quién la hiciera cumplir:
+
+> **un control aparece en el documento suelto si y sólo si su dato sobrevive al emisor.**
+
+Vive en 32 comentarios de `quotesView.js` y en 24 `if` sobre la bandera escritos a mano (20
+negados, 4 no), sobre 29 usos en total. **SCRUM-600 la infringió
+dos veces él mismo** —la tira de propuesta de descuento y la vista previa de condiciones— y las
+dos las cazó una persona montando la pantalla.
+
+`tests/_condiciones-vs-emisor.mjs` la deriva:
+
+* **LADO A** — qué se PINTA: AST de `quotesView.js` (no `grep`), **alcanzabilidad desde la raíz**.
+* **LADO B** — qué se GUARDA: `prisma/schema.prisma` + `ResultadoValidacion` de `facturaSuelta.ts`.
+
+### 🔴 Por qué el guard que ya había no bastaba
+
+`scrum600b-la-factura-usa-el-front.test.mjs:307` comprueba lo mismo con una **lista de rótulos
+escrita a mano** (`NO_DEBEN_ESTAR`). Vigila el síntoma, y eso le cuesta las dos direcciones:
+
+* un control **nuevo** en el bloque cuyo dato tampoco sobreviva no está en la lista → entra mudo;
+* y el día del ALTER seguiría exigiendo que «3. Condiciones» **no** aparezca: **bloquearía la
+  función correcta**, y habría que editarlo a mano para que dejara de mentir.
+
+Éste no lo sustituye — aquél fija los rótulos de hoy. Éste deriva la regla, y **el día del ALTER
+se pone verde solo**.
+
+### 🔴 El control negativo apunta a otro sitio (la lección de SCRUM-821c)
+
+Los dos lados son **dos ficheros que no se leen entre sí**. Por eso se pueden mutar por separado:
+
+| test | qué se muta | veredicto |
+|---|---|---|
+| ROJO ① | **solo** `quotesView.js` (se abre la puerta) | 🔴 nombra los tres campos |
+| NEGATIVO | lo mismo **+** `schema.prisma` con las tres columnas | ✅ verde |
+
+El segundo es el que prueba que el primero mide: el LADO A es **idéntico** en los dos, y lo único
+que cambia es un fichero que el LADO A no lee. Si el veredicto no se moviera, los dos lados serían
+el mismo lado y el verde no significaría nada.
+
+### El suelo, y un defecto propio corregido en el sitio
+
+El censo **lanza** `CensoCiego` —no da verde— si no encuentra la raíz, si no ve ninguna guarda, si
+no lee `model Invoice` o si no lee `ResultadoValidacion`.
+
+🔴 **Y el primer intento estuvo mal, con el rojo delante.** Miraba el `if` que envuelve a cada
+`appendChild`, y dijo que los tres controles **sí** se pintan. Falso: los tres cuelgan de
+`blockConditions` **sin guarda**, y la guarda está una arista más arriba
+(`leftCard.appendChild(blockConditions)`), así que el bloque queda huérfano con sus hijos dentro.
+Se rehízo por **alcanzabilidad desde la raíz** — que es la pregunta de verdad — y la raíz no se
+escribe a mano: la deriva `_orden-pintado-presupuesto.mjs`, que ya la calcula.
+
+Un segundo defecto salió del ROJO ③: una guarda de forma desconocida sacaba el bloque del grafo, y
+entonces el control positivo del instrumento cantaba *«no sé recorrer el grafo»* sobre un grafo que
+se recorría bien. **Dos diagnósticos opuestos por la misma puerta.** La arista opaca entra ahora en
+el grafo marcada como excluida —lo conservador— y se reporta aparte.
+
+---
+
+## 5 · LO QUE ESTE APÉNDICE NO HA HECHO
+
+* **Ni una línea de `public/`, `src/` ni `prisma/`.** El aporte sobre `main` son dos ficheros de
+  tests y este texto. El rojo del §4 se produjo mutando el árbol y se revirtió **byte a byte**
+  (`Buffer.compare = 0`); `quotesView.js` es CASO B (normalizado), así que la referencia fueron
+  los bytes de disco y no el blob (SCRUM-570).
+* **Ningún rótulo** nuevo, movido ni renombrado (regla 30).
+* **No se tocó «4. Envío»**, ni el tercer argumento de `renderQuotesView`, ni sus 29 usos.
+* **No se propone el ALTER.** Los tres campos del §3 son del fundador.
+
+---
+
+## Tests que introduce esta entrada
+
+* `tests/_condiciones-vs-emisor.mjs` — el censo de los dos lados (helper).
+* `tests/scrum600e-condiciones-contra-el-emisor.test.mjs` — 10 casos: 3 de suelo, el control que
+  decide, la medición del reparto, 3 rojos, el negativo apuntado y el positivo del presupuesto.
