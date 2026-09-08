@@ -218,23 +218,120 @@ jobs:
       # casa usa commits de merge («Merge pull request #NNNN from …»), no squash ni rebase.
       # En modo degradado actúa el GITHUB_TOKEN, que para esto basta: el PR ya existe y su
       # CI ya corrió cuando lo abrió una persona.
+      #
+      # ─────────────────────────────────────────────────────────────────────────────────
+      # 🔴 EL MENSAJE DE FALLO SE REESCRIBIÓ EL 8-sep-2026, Y ÉSTE ES EL PORQUÉ
+      #
+      # El anterior decía «dos causas probables, las dos en Settings del repositorio» y
+      # nombraba «Allow auto-merge» y el método de merge. Contra el PR #1181 la respuesta
+      # real de GitHub fue «Resource not accessible by integration», que la documentación
+      # oficial define como PERMISOS INSUFICIENTES DEL TOKEN — o sea, la causa que el
+      # mensaje NO nombraba. Llevaba semanas mandando a mirar donde no era.
+      #
+      # No era un error de redacción: era una HIPÓTESIS CON FORMA DE DIAGNÓSTICO. Dos causas
+      # presentadas como «probables» sin ninguna medición detrás, y con la tercera fuera.
+      #
+      # Lo que cambia, y por qué cada cosa:
+      #   ① la respuesta de GitHub se CAPTURA y se imprime VERBATIM. Es el único dato que
+      #      decide, y antes se perdía entre el ruido del log.
+      #   ② se dice qué token actuó, que este workflow SÍ sabe (modo completo o degradado) y
+      #      cambia por completo la ruta de Settings que hay que tocar.
+      #   ③ se separan «lo que se sabe» de «lo que no se sabe»: un workflow no puede leer
+      #      Settings, así que NO PUEDE saber cuál es la causa. Lo que sí puede es dar el
+      #      criterio para decidirlo, porque cada causa tiene un mensaje DISTINTO.
+      #   ④ las tres causas van SIN ORDENAR por probabilidad. Ordenarlas era el defecto.
+      #
+      # Los literales de A y B están tomados de la respuesta real de GitHub; el de C, de
+      # informes de usuarios y no de documentación, y se dice ahí mismo.
+      # ─────────────────────────────────────────────────────────────────────────────────
       - name: Armar el auto-merge
         env:
           GH_TOKEN: ${{ steps.token.outputs.token || github.token }}
           NUM: ${{ steps.crear.outputs.numero || steps.pr.outputs.numero }}
+          MODO_COMPLETO: ${{ steps.token.outputs.token != '' }}
         run: |
           if [ -z "$NUM" ]; then
             echo "No hay PR sobre el que armar el auto-merge."
             echo "  (En modo degradado esto es lo normal hasta que alguien abra el PR a mano.)"
             exit 0
           fi
-          if ! gh pr merge "$NUM" --auto --merge; then
-            echo "::error::No se pudo armar el auto-merge del PR #$NUM."
-            echo "Dos causas probables, las dos en Settings del repositorio:"
-            echo "  · 'Allow auto-merge' desactivado."
-            echo "  · '--merge' (commit de merge) no permitido — esta casa usa commits de"
-            echo "    merge; si el repo solo admite squash o rebase, hay que cambiar UNA de"
-            echo "    las dos cosas, y cuál es decisión del fundador, no de este workflow."
-            exit 1
+
+          # La respuesta de GitHub se CAPTURA porque es el dato que decide. Sin ella este
+          # mensaje solo puede especular, que es exactamente lo que hacia antes.
+          if RESPUESTA=$(gh pr merge "$NUM" --auto --merge 2>&1); then
+            [ -n "$RESPUESTA" ] && echo "$RESPUESTA"
+            echo "Auto-merge ARMADO en el PR #$NUM. Mergea GitHub cuando pase el check obligatorio."
+            exit 0
           fi
-          echo "Auto-merge ARMADO en el PR #$NUM. Mergea GitHub cuando pase el check obligatorio."
+
+          echo "::error::No se pudo armar el auto-merge del PR #$NUM."
+          echo ""
+          echo "=============================================================================="
+          echo "1) QUE HA FALLADO, EXACTAMENTE"
+          echo ""
+          echo "   comando : gh pr merge $NUM --auto --merge"
+          echo "   GitHub  : $RESPUESTA"
+          if [ "$MODO_COMPLETO" = "true" ]; then
+            echo "   token   : el de la GitHub App (modo COMPLETO)"
+          else
+            echo "   token   : el GITHUB_TOKEN de Actions (modo DEGRADADO)"
+          fi
+          echo ''
+          echo '2) QUE SE SABE Y QUE NO SE SABE'
+          echo ''
+          echo '   SE SABE: el comando, la respuesta literal de GitHub y que token la recibio.'
+          echo '   Los tres estan escritos aqui arriba.'
+          echo ''
+          echo '   NO SE SABE desde aqui: como esta configurado el repositorio. Un workflow no'
+          echo '   puede leer Settings, asi que este mensaje NO PUEDE decirte cual de las causas'
+          echo '   de abajo es la tuya, y no va a fingir que si. Lo que si puede darte es el'
+          echo '   CRITERIO para decidirlo tu en diez segundos: cada causa tiene un mensaje'
+          echo '   DISTINTO. Compara el tuyo de arriba con los tres de abajo.'
+          echo ''
+          echo '   Este mensaje llevaba semanas nombrando SOLO DOS causas y llamandolas'
+          echo '   probables sin ninguna medicion detras. Por eso ahora van las TRES y van SIN'
+          echo '   ORDENAR por probabilidad: ordenarlas era el defecto.'
+          echo ''
+          echo '3) LAS TRES CAUSAS, cada una con el mensaje de GitHub y su ruta COMPLETA'
+          echo ''
+          echo '   A) PERMISOS DEL TOKEN'
+          echo "      GitHub dice: Resource not accessible by integration (enablePullRequestAutoMerge)"
+          echo '      Documentacion oficial de GitHub (Troubleshooting the REST API): si usas una'
+          echo '      GitHub App o un token de acceso personal de grano fino y recibes ese error,'
+          echo '      tu token tiene permisos insuficientes.'
+          echo '      Ruta, segun QUE TOKEN actuo (lo dice la linea token de aqui arriba):'
+          echo '        - App: Settings > Developer settings > GitHub Apps > tu App >'
+          echo '               Permissions and events > Repository permissions >'
+          echo '               Pull requests: Read and write'
+          echo '               y DESPUES aceptar los permisos nuevos en la instalacion:'
+          echo '               Settings > Applications > Installed GitHub Apps > tu App >'
+          echo '               Configure   (una App no gana permisos hasta que la instalacion'
+          echo '               los acepta), y comprobar que esta instalada EN ESTE repositorio.'
+          echo '        - GITHUB_TOKEN: Settings > Actions > General > Workflow permissions >'
+          echo '               Read and write permissions'
+          echo '               (el bloque permissions: de este workflow ya pide'
+          echo '               pull-requests: write; el ajuste del repositorio lo recorta por'
+          echo '               encima y gana el mas restrictivo)'
+          echo ''
+          echo '   B) AUTO-MERGE DESACTIVADO EN EL REPOSITORIO'
+          echo "      GitHub dice: Auto merge is not allowed for this repository (enablePullRequestAutoMerge)"
+          echo '      Ruta: Settings > General > Pull Requests > Allow auto-merge'
+          echo ''
+          echo '   C) METODO DE MERGE NO PERMITIDO'
+          echo "      GitHub dice: The selected merge method (...) is not allowed"
+          echo '      Ruta: Settings > General > Pull Requests > Allow merge commits'
+          echo '      Este tercer literal viene de informes de usuarios, NO de documentacion'
+          echo '      oficial. Si tu error de arriba no se parece a ninguno de los tres, no lo'
+          echo '      metas a la fuerza en esta casilla: dilo y se vuelve a medir.'
+          echo ''
+          echo '4) SI LA CAUSA ES LA C, LEE ESTO ANTES DE TOCAR NADA'
+          echo ''
+          echo '   Si el repo NO admite commits de merge, la salida NO es pasar a squash.'
+          echo '   Con squash, el commit de una rama nunca llega a main, y'
+          echo '   git merge-base --is-ancestor <sha> origin/main -- que es la OBLIGACION 0'
+          echo '   de las seis sesiones -- pasaria a decir SIN MERGEAR para todo, siempre.'
+          echo '   No fallaria ruidosamente: daria una respuesta plausible y falsa.'
+          echo '   Cambiar a squash es romper el instrumento con el que medimos si el'
+          echo '   trabajo existe. La decision es del fundador y va escrita.'
+          echo "=============================================================================="
+          exit 1
