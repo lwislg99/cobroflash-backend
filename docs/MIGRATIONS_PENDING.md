@@ -2448,9 +2448,196 @@ tenerla antes del despliegue.
 > razonamiento de arriba NO se borra — es el motivo por el que el orden importaba, y volverá a
 > valer para la siguiente columna.
 
+## SCRUM-576 (CONT-03) · `customers.company_id` — ✅ **APLICADA EN LAS TRES BASES** (8-sep-2026)
+
+> # ✅ APLICADA EN LAS TRES. El bloqueo de merge de esta entrada queda LEVANTADO (8-sep-2026)
+>
+> Esta entrada llevó en mayúsculas **«NO ES MERGEABLE HASTA APLICAR LA COLUMNA EN LAS TRES
+> BASES»**, y el motivo sigue siendo verdad aunque ya no aplique: `src/core/db/schemaDrift.ts`
+> compara **esperado ⊆ real** en TABLAS y COLUMNAS y **para el arranque** cuando el esquema
+> nombra una columna que la base no tiene. `prisma/schema.prisma` nombra `companyId` desde el
+> 7-sep. Mergear antes de aplicar habría reproducido SCRUM-574 — **nueve días de yaqu.app
+> sirviendo el código del PR #862**.
+>
+> **Se levanta porque las tres casillas están marcadas, no porque haya pasado el tiempo.** El
+> orden que pedía SCRUM-588 —la columna primero, la línea del schema después— se invirtió aquí a
+> propósito (decisión del fundador, 7-sep-2026: el ticket entero es media función sin la línea),
+> y el riesgo se gestionó **con el orden del despliegue**. Ese orden ya se ha cumplido.
+>
+> ⚠️ **Se deja escrito en vez de borrarlo**: quien lea esta entrada dentro de un año tiene que
+> poder ver que hubo un bloqueo y por qué se levantó. Un aviso borrado no enseña nada.
+
+```sql
+ALTER TABLE "customers" ADD COLUMN IF NOT EXISTS "company_id" INTEGER;
+CREATE INDEX IF NOT EXISTS "customers_company_id_idx" ON "customers"("company_id");
+```
+
+> **DOS sentencias, no tres.** Llevó una `ADD CONSTRAINT … FOREIGN KEY … ON DELETE SET NULL`
+> y **el fundador la retiró el 8-sep-2026** — ver «LA CLAVE AJENA SE RETIRA» más abajo.
+
+Fichero aplicable: `docs/sql/scrum-576-customers-company-id.sql` (mismo contenido, con el
+porqué de cada sentencia dentro).
+
+**Qué es.** La empresa a la que pertenece una persona. Hasta hoy eso se escribía en «Razón social»,
+que es **texto libre**: el administrador de fincas teclea «Fincas García SL» en una ficha y
+«FINCAS GARCIA, S.L.» en otra, y el sistema no sabe que son la misma. Un entero apunta a **una**
+fila, así que deja de ser un parecido ortográfico.
+
+**El SQL no se escribió a mano:** lo generó `node scripts/preview-migracion.mjs --desde` (CLI
+**local** de Prisma; `npx` está prohibido, regla 3) con su control positivo en verde — **27
+tablas**. Veredicto de la herramienta: **✔ aditiva**. Veredicto de
+`scripts/_clasificador-sql.mjs` sobre el fichero: **`ok: true`**, las tres sentencias permitidas.
+
+> 🔴 **ESE `ok: true` NO ERA EL QUE DECIDE — corregido el 8-sep-2026 al ir a aplicar.** Hay DOS
+> listas blancas y sólo una gobierna lo que corre contra una base: la de
+> `scripts/_aplicar-sql-dev.mjs`. **Aquella comprobación se hizo sobre la lista equivocada.**
+> El fichero de hoy son dos `ADD COLUMN`/`CREATE INDEX` y las dos listas coinciden en él, así
+> que el aviso se queda por la lección, no por este fichero.
+
+### ⚠️ El clasificador rotula la clave ajena como «ADD COLUMN ×1», y el rótulo es falso
+
+El **veredicto** es correcto —`ADD CONSTRAINT` es aditivo y no toca datos— pero la `forma` que
+imprime dice «ADD COLUMN». Sale de que la regla casa por `^ADDs+(COLUMNs+)?`, y un
+`ADD CONSTRAINT` empieza por `ADD`. **Se anota aquí y no se arregla en este ticket** (regla 37):
+tocar la lista blanca de lo que puede correr contra producción no es un arreglo «de paso».
+
+### ⚠️ La clave ajena NO es re-ejecutable (las otras dos sí)
+
+Postgres no admite `ADD CONSTRAINT IF NOT EXISTS`. La única forma de dárselo es un bloque
+`DO $$ … $$`, y la lista blanca del aplicador lo rechaza — con razón: dentro cabe cualquier cosa,
+incluido un `DROP`. Re-ejecutar el fichero da `already exists` en la tercera sentencia. **Ruido,
+no daño.**
+
+### La medida que decide si hay que migrar «Razón social» — y no la decido yo
+
+`legalName` **no se borra y no se migra en este ticket**: convivir es correcto, y migrar a ciegas
+texto que alguien escribió es cómo se pierden datos.
+
+| base | clientes | con razón social escrita |
+|---|---|---|
+| **desarrollo** · `acela/yaqu_dev_javier` (medido 7-sep-2026, sólo lectura) | 14 | **0** |
+| producción · `autorack/railway` | — | **no medible desde un árbol de trabajo** (regla 3) |
+| staging · `acela/railway` | — | no medida: prohibida por el encargo, y SCRUM-668 la declara **contaminada** como fuente de cifra |
+
+**Con 0 de 14 en dev, no hay nada que migrar ahí.** El número que decide es el de **producción**, y
+ése lo tiene que mirar el fundador. Si sale > 0, es un ticket de migración aparte.
+
+### Estado por base — 8-sep-2026
+
+- [x] **producción · autorack** — ✅ aplicada el **8-sep-2026 POR EL FUNDADOR**, que la **verificó
+      en `information_schema`**: `company_id` · `integer` · `is_nullable = YES` (capturas suyas).
+      Desde un árbol de trabajo no hay credencial de producción (regla 3) y no la ha habido en
+      ningún momento de este ticket: **esta casilla la sostiene su verificación, no una medida
+      mía.** Se dice así a propósito — decir APLICADO sobre algo que no lo está es un 500 en
+      producción (SCRUM-220).
+- [x] **staging · acela/railway** — ✅ aplicada el **8-sep-2026 POR EL FUNDADOR**, verificada por él
+      en `information_schema` con el mismo resultado: `integer` · `is_nullable = YES`. Tampoco
+      medida desde aquí: el encargo prohibía tocar staging, y SCRUM-668 la declara contaminada como
+      fuente de cifra. **Su verificación, no una medida mía.**
+- [x] **desarrollo · acela/yaqu_dev_javier** — ✅ **aplicada y MEDIDA por mí** el 8-sep-2026, por
+      petición explícita del fundador («aplicas tu migración en dev, tú, sólo dev»), con
+      `scripts/aplicar-sql-dev.mjs --go` y `exigirDestinoCorrecto` cuadrando. Antes y después
+      con control positivo, abajo: **26 → 27 columnas**. Las dos sentencias del fichero, que son
+      todas las que tiene.
+
+> 🔴 **LAS TRES CASILLAS NO VALEN LO MISMO, Y POR ESO LLEVAN SU PROCEDENCIA.** Dos las sostiene la
+> verificación del fundador —`information_schema`, `integer` · `YES`, con capturas— y una, una
+> lectura del catálogo hecha desde aquí, con su antes y después. No es desconfianza: **es que este
+> fichero existe porque una lista a mano se desfasa en silencio**, y quien lo relea tiene que saber
+> cuál de las tres puede volver a comprobar por su cuenta y cuál no. **Producción y staging se
+> re-verifican** con `docs/sql/deriva-prod.sql` (solo lectura, se pega en la consola de Railway);
+> **dev, ejecutando la medición de abajo otra vez.**
+>
+> ⚠️ Y el tipo verificado dice algo más: `is_nullable = YES` confirma que la columna entró
+> **nullable**, que es la mitad de la decisión escrita arriba. Una `NOT NULL` habría fallado en
+> seco sobre una tabla con filas.
+
+### 🔴 LA CLAVE AJENA SE RETIRA DEL TICKET — decisión del fundador, 8-sep-2026
+
+**No se aplica en ninguna base y sale del fichero SQL.** El motivo no es la lista blanca: es una
+firma que **ya existía en este mismo documento**, en la entrada de SCRUM-195 para `Quote.jobId`:
+
+> «Nullable y SIN FK, a propósito (decisión del fundador): coherencia con el resto del schema,
+> reversibilidad (`DROP COLUMN` limpio, sin constraint que arrastre) y sobre todo porque la FK
+> que importaría aquí es `onDelete`, y eso ya se decidió en SCRUM-192 — servicio de borrado, no
+> cascadas. La integridad la sostiene el CÓDIGO.»
+
+**576 con clave ajena y 195 sin ella serían DOS CRITERIOS para la misma clase de relación.** Y
+aquí es peor que allí: es **autorreferente** sobre `customers`, así que deshacerla cuesta más.
+
+⚠️ **QUE EL APLICADOR LA RECHAZARA FUE OTRA COSA.** Al ir a aplicar en dev se descubrió que
+`scripts/_aplicar-sql-dev.mjs` no admite `ADD CONSTRAINT` y es fail-closed —con una sentencia no
+reconocida no aplica NINGUNA—. Eso fue el **hallazgo**; la retirada es una **decisión**, y se
+sostiene sola. **No se ensanchó ninguna lista blanca**: ampliar lo que puede correr contra
+producción no es un arreglo de paso (regla 37).
+
+### 🔴 LO QUE LA CLAVE AJENA DABA, AHORA LO HACE EL CÓDIGO — medido contra dev
+
+`deleteCustomer` desvincula a las personas **antes** de borrar la empresa, **en la misma
+transacción** (`src/modules/system/customerAdmin.ts`). El orden importa: al revés queda una
+ventana con filas apuntando a un id que ya no existe, y **sin clave ajena nada protestaría**.
+
+Sembrado, ejercido por el camino real y limpiado — 8-sep-2026, `acela/yaqu_dev_javier`:
+
+```
+── ANTES ──────────────────────────────────
+   empresa id = 983
+   id=983 companyId=null · SCRUM576-EVIDENCIA Fincas SL
+   id=984 companyId=983 · SCRUM576-EVIDENCIA Ana
+   id=985 companyId=983 · SCRUM576-EVIDENCIA Luis
+   ✔ suelo: 2 personas vinculadas a la empresa 983
+
+── BORRANDO la empresa por el camino real ──
+   deleteMany count = 1
+
+── DESPUÉS ────────────────────────────────
+   id=984 companyId=null · SCRUM576-EVIDENCIA Ana
+   id=985 companyId=null · SCRUM576-EVIDENCIA Luis
+
+   ¿la empresa se borró?           true
+   ¿sobreviven las personas?       true
+   ¿su companyId es NULL?          true
+   ¿alguien apunta al id borrado?  false (0)
+
+── LIMPIEZA ── borradas 2 · restos con la marca: 0
+```
+
+**El suelo va dentro:** si la siembra no hubiera dejado dos personas vinculadas, el script se
+planta — «no encontré a nadie» y «nadie quedó colgado» no pueden salir por la misma puerta.
+
+⚠️ **No se importó `deleteCustomer` directamente:** usa el `prisma` del módulo, que pide
+`DATABASE_URL`, y **en un árbol de trabajo esa clave no existe** (regla 3 — medido: reventó con
+«Environment variable not found: DATABASE_URL» antes de sembrar nada). Se ejerció la misma
+función que él llama, `desvincularYBorrar`, dentro de la misma transacción.
+
+### La medida en dev — ANTES y DESPUÉS, con control positivo
+
+```
+ANTES                                          DESPUÉS
+[destino] DATABASE_URL_DEV →                   [destino] DATABASE_URL_DEV →
+  acela.proxy.rlwy.net/yaqu_dev_javier ✅        acela.proxy.rlwy.net/yaqu_dev_javier ✅
+✔ control positivo: el catálogo responde       ✔ control positivo: el catálogo responde
+COLUMNAS DE customers: 26                      COLUMNAS DE customers: 27
+¿company_id?: false                            ¿company_id?: true
+¿mobile?    : true                             ¿mobile?    : true
+¿índice?    : false                            ¿índice?    : true
+¿clave ajena?: false                           ¿clave ajena?: false   🔴 sigue faltando
+FILAS en customers: 14                         FILAS en customers: 14
+```
+
+**26 → 27**, y el estado de partida es lo que hace que el número signifique algo: una lectura
+suelta de «27» no distingue «la he creado» de «ya estaba». **El control positivo va dentro**: si el
+catálogo devolviera 0 columnas, eso no sería «no está», sería «no pude leer», y el script se planta
+en vez de afirmar nada.
+
+**Las 14 filas siguen ahí, intactas.** `ADD COLUMN` nullable no reescribe la tabla.
+
+⚠️ **`customers` tenía 26 columnas, no 25:** `mobile` (SCRUM-590) ya estaba en dev al medir. Se
+cuenta lo que devuelve el catálogo, no lo que diga una nota.
+
 ---
 
-## SCRUM-595 · `quotes.tags` + `invoices.tags` — ✅ APLICADO **sólo en DEV** (7-sep-2026)
+## SCRUM-595 · `quotes.tags` + `invoices.tags` — ✅ **APLICADA EN LAS TRES BASES** (8-sep-2026)
 
 Las **etiquetas del documento** (DOC-05). El mismo mecanismo que `customers.tags` (SCRUM-580,
 CONT-07), en las **dos** tablas de documento: presupuesto y factura.
@@ -2470,20 +2657,37 @@ ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "tags" JSONB;
 **Las DOS o ninguna.** Con una sola tabla el bloque funcionaría en un documento y no en el otro,
 y eso el ticket lo declara **no hecho**. La verificación pide las dos y lo dice si falta una.
 
-### Estado por base
+### Estado por base — 8-sep-2026
 
-- [ ] **producción · autorack** — pendiente, **la aplica el fundador**. Desde un árbol de trabajo
-      no hay credencial de producción (regla 3), y en esta sesión no la ha habido en ningún
-      momento: `node scripts/comprobar-claves-bd.mjs` en `cobroflash-b20` → `DATABASE_URL`
-      **ausente**.
-- [ ] **staging · acela/railway** — pendiente, **la aplica el fundador**. Fuera del encargo; el
-      turno de staging no se tomó.
-- [x] **desarrollo · acela/yaqu_dev_javier** — **APLICADO el 7-sep-2026 por la sesión**, con
-      `node scripts/aplicar-sql-dev.mjs --file docs/sql/scrum-595-etiquetas-del-documento.sql --go`.
-      Esa herramienta **sólo acepta `DATABASE_URL_DEV`** y contrasta la clave contra su destino
-      DECLARADO antes de abrir nada: `[destino] DATABASE_URL_DEV → acela.proxy.rlwy.net/yaqu_dev_javier (DESARROLLO) ✅`.
-      Ensayo primero (sin `--go`), y sólo entonces la aplicación.
+- [x] **producción · autorack** — ✅ aplicada el **8-sep-2026 POR EL FUNDADOR**, que la
+      **verificó en `information_schema`**: `quotes.tags` y `invoices.tags` · `jsonb` ·
+      `is_nullable = YES` · `default NULL` — **2 filas**, con capturas suyas de la consola de
+      Railway. Desde un árbol de trabajo no hay credencial de producción (regla 3) y no la ha
+      habido en ningún momento de este ticket: **esta casilla la sostiene su verificación, no
+      una medida mía.**
+- [x] **staging · acela/railway** — ✅ aplicada el **8-sep-2026 POR EL FUNDADOR**, verificada por
+      él en `information_schema` con el **mismo resultado**: `jsonb` · `YES` · `default NULL`,
+      2 filas. Tampoco medida desde aquí: el encargo prohibía tocar staging, y SCRUM-668 la
+      declara contaminada como fuente de cifra. **Su verificación, no una medida mía.**
+- [x] **desarrollo · acela/yaqu_dev_javier** — ✅ **aplicada y MEDIDA por mí** el 7-sep-2026, por
+      petición explícita del fundador («aplicas tu ALTER en dev, tú, sólo dev»), con
+      `scripts/aplicar-sql-dev.mjs --go` y `exigirDestinoCorrecto` cuadrando contra
+      `acela.proxy.rlwy.net/yaqu_dev_javier`. Antes y después con control positivo y testigo,
+      abajo: **quotes 43 → 44 · invoices 35 → 36 · customers 27 → 27 (no se movió)**.
 
+> 🔴 **LAS TRES CASILLAS NO VALEN LO MISMO, Y POR ESO LLEVAN SU PROCEDENCIA.** Dos las sostiene
+> la **verificación del fundador** —`information_schema`, `jsonb` · `YES` · `default NULL`, con
+> capturas de las dos consolas— y una, una **lectura del catálogo hecha desde aquí**, con su
+> antes y su después. No es desconfianza: **este fichero existe porque una lista a mano se
+> desfasa en silencio**, y quien lo relea dentro de seis meses tiene que poder distinguir cuál
+> de las tres puede volver a comprobar por su cuenta y cuál no. **Producción y staging se
+> re-verifican** con `docs/sql/scrum-595-verificar.sql` (sólo lee, se pega en la consola de
+> Railway); **dev, ejecutando otra vez la medición de abajo.**
+
+> ✅ **Y LOS RECUENTOS CUADRAN CON DEV, que es el control cruzado.** El fundador contó en las
+> dos bases **`quotes` 44 · `invoices` 36** — exactamente los números a los que llegó dev tras
+> el ALTER (43→44 y 35→36). Tres bases que salen del mismo sitio y llegan al mismo sitio: eso
+> es más que tres casillas marcadas por separado.
 ### 🔴 ANTES Y DESPUÉS, CON EL RECUENTO DE COLUMNAS COMO CONTROL
 
 Una fila sin estado de partida **no distingue «la he creado» de «ya estaba»**. Por eso se mide el
@@ -2532,6 +2736,13 @@ arrancar, y producción no levantaría. **El fundador aplica y luego mergea.**
 
 Un guard de este ticket vigila que el esquema y el DDL digan lo mismo sobre los DOS documentos: un
 esquema que nombre una columna que su propio SQL no crea es exactamente lo que tumba el arranque.
+
+> ✅ **EL BLOQUEO DE MERGE DE ESTA ENTRADA QUEDA LEVANTADO (8-sep-2026).** Este apartado decía
+> que el PR **no es mergeable** hasta aplicar la columna en staging y producción. Era cierto
+> cuando se escribió, con la columna sólo en dev. **El fundador las aplicó y las verificó el
+> 8-sep-2026**, y las tres casillas de arriba están marcadas **con su procedencia**. El
+> razonamiento NO se borra —es el motivo por el que el orden importaba, y vuelve a valer para
+> la siguiente columna—: lo que caduca es su conclusión, no su lógica.
 
 ### Lo que esta columna **no** toca — medido, no supuesto
 
