@@ -44,6 +44,10 @@ UNION ALL SELECT 'albaran_lineas_facturadas', count(*)::int FROM albaran_lineas_
 UNION ALL SELECT 'charges',                   count(*)::int FROM charges
 UNION ALL SELECT 'events',                    count(*)::int FROM events
 UNION ALL SELECT 'reconciliations',           count(*)::int FROM reconciliations
+-- SCRUM-597: las asignaciones de persona al documento. El guion las vacía en ②bis, y además su
+-- FK declara Cascade — por las dos vías tienen que quedar a cero.
+UNION ALL SELECT 'quote_assignees',           count(*)::int FROM quote_assignees
+UNION ALL SELECT 'invoice_assignees',         count(*)::int FROM invoice_assignees
  ORDER BY tabla;
 
 -- ②b LAS QUE **NO** SE BORRAN. Aquí el número tiene que ser EL MISMO antes y después: es el
@@ -105,3 +109,31 @@ UNION ALL
 SELECT 'email_messages',    related_type, count(*)::int
   FROM email_messages     WHERE related_type IN ('invoice', 'quote') GROUP BY related_type
  ORDER BY tabla, tipo;
+
+-- ⑥ 🔴 LA ACCIÓN REAL DE LAS CLAVES AJENAS — «declarado» y «aplicado» no son lo mismo.
+--
+--    El schema de Prisma DECLARA `onDelete: Cascade` en las cuatro FK de SCRUM-597. Lo que la
+--    base APLICA vive aquí, y es lo que manda cuando se ejecuta el borrado. La sesión que
+--    escribió el guion NO pudo medirlo: en dev las dos tablas no existen (la migración de 597
+--    no está aplicada allí) y staging y producción estaban prohibidas para ella.
+--
+--    🔴 PÁSALO EN **STAGING** ANTES DE EJECUTAR EL BORRADO. Se espera `CASCADE` en las cuatro.
+--      · Si salen las cuatro CASCADE → confirmado; el orden del guion es el correcto y las dos
+--        líneas de ②bis son redundancia barata que puedes dejar.
+--      · Si alguna sale RESTRICT o NO ACTION → ②bis deja de ser redundante y pasa a ser
+--        IMPRESCINDIBLE. No cambies nada: el guion ya la vacía antes. Pero anótalo.
+SELECT tc.table_name       AS tabla,
+       kcu.column_name     AS columna,
+       ccu.table_name      AS destino,
+       rc.delete_rule      AS al_borrar,
+       tc.constraint_name  AS restriccion
+  FROM information_schema.table_constraints tc
+  JOIN information_schema.key_column_usage kcu
+    ON kcu.constraint_name = tc.constraint_name AND kcu.table_schema = tc.table_schema
+  JOIN information_schema.constraint_column_usage ccu
+    ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema
+  JOIN information_schema.referential_constraints rc
+    ON rc.constraint_name = tc.constraint_name AND rc.constraint_schema = tc.table_schema
+ WHERE tc.constraint_type = 'FOREIGN KEY'
+   AND tc.table_name IN ('quote_assignees', 'invoice_assignees')
+ ORDER BY tc.table_name, kcu.column_name;
