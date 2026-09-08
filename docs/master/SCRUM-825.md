@@ -509,3 +509,74 @@ que es el control de que la limpieza no se llevó por delante lo que debía qued
 - **Ninguna base.** Ni dev. Sólo se leyó dev en la primera vuelta, para contar.
 - `prisma/schema.prisma` · el camino de emisión · ningún rótulo · ningún estado ni flag nuevo ·
   ninguna dependencia nueva.
+
+---
+
+# APÉNDICE · 8-sep-2026 · FASE 0 (3ª vuelta) · rederivado con SCRUM-597 dentro
+
+**Medido contra:** `origin/main` = `1bbf60afb9eae547e083e1c716fa97c88306d791` · 2026-09-08T22:00:00+02:00
+
+> ⚠️ Esa hora es la del trabajo de esta rama, no una lectura de reloj — criterio R14.
+
+Era el punto ⑤, el único que la vuelta anterior dejó sin dar por bueno. **Ya se puede cerrar, con
+una salvedad que se declara en vez de callarse.**
+
+## Lo rederivado, sobre el schema YA MEZCLADO
+
+`main` = `1bbf60af` trae SCRUM-597 (PR #1172). Vuelto a correr el derivador del árbol:
+
+| columna | destino | onDelete | schema |
+|---|---|---|---|
+| `quote_assignees.quote_id` | `quotes` | **Cascade** | `:1596` |
+| `invoice_assignees.invoice_id` | `invoices` | **Cascade** | `:1613` |
+| `quote_assignees.team_member_id` | `team_members` | Cascade | `:1597` |
+| `invoice_assignees.team_member_id` | `team_members` | Cascade | `:1614` |
+
+**Las cuatro, Cascade.** Las dos que apuntan a un documento se arrastran solas, así que
+**el orden del guion NO cambia**: ninguna tiene que subir por delante de su documento como
+tuvieron que hacer `events` y `reconciliations`.
+
+El resto del árbol sigue igual: **de las nueve columnas que apuntan a un documento, cuatro tienen
+FK** (las dos nuevas con Cascade, más `expenses.quote_id` e `invoices."quoteId"` con SetNull) y
+**cinco no las ata nada**.
+
+## 🔴 LA SALVEDAD, y por qué el guion no depende de ella
+
+Lo de arriba es lo que **DECLARA** el schema. Lo que la **BASE APLICA** vive en
+`information_schema.referential_constraints`, y **no se ha podido medir desde ninguna base
+permitida**:
+
+* en **dev** las dos tablas **NO EXISTEN** — la migración de SCRUM-597 no está aplicada allí.
+  Medido, no supuesto: el script se declaró incapaz y salió con 3 en vez de devolver un verde;
+* **staging y producción** están prohibidas para esta sesión. El fundador confirmó que las tablas
+  EXISTEN en las dos, que es otra pregunta distinta de cuál es su `DELETE RULE`.
+
+**Así que no se ha hecho depender el guion de un dato que no se puede comprobar.** El bloque
+②bis **vacía las dos tablas explícitamente**, y con eso el guion es correcto en los dos casos:
+
+* si son CASCADE → borra filas que se habrían ido igual. Coste: cero, y el recuento queda a la
+  vista en vez de desaparecer en un borrado invisible;
+* si alguna llegó como RESTRICT → son **imprescindibles**: sin ellas, ⑤ o ⑦ fallarían y —al ir
+  todo en una transacción— tumbarían el borrado entero.
+
+Es más barato que acertar. Y para cerrarlo del todo, el fichero de verificación gana un **bloque
+⑥ que LEE el `DELETE RULE` de verdad**: pasado en staging antes de ejecutar, la salvedad deja de
+existir con una consulta.
+
+## Lo demás que cambia
+
+* Bloque ② de la verificación: entran `quote_assignees` e `invoice_assignees` — el guion las
+  vacía, así que **después tienen que dar cero**. No van al ②b (las que no se tocan).
+* Bloque ②b, sin cambios: `customers`, `audit_log`, `whatsapp_messages`, `email_messages`.
+
+## VEREDICTO
+
+**EJECUTABLE.** El guion queda listo para que lo pase el fundador: staging primero, producción
+después. Con sus tres condiciones, que no son negociables porque no hay copia de seguridad:
+
+1. pasada **ANTES** de la verificación, en **PRODUCCIÓN** y **el mismo día** — bloque ① y su
+   ⛔ sobre Tecnosel;
+2. bloque ⑥ en **staging** antes de ejecutar, para cerrar la salvedad de arriba;
+3. pasada **DESPUÉS**, y **comparar** las dos salidas.
+
+**Nada ejecutado por esta sesión.** Ni en dev.
