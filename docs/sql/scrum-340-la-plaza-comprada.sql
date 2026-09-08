@@ -6,7 +6,46 @@
 --    · desarrollo, staging y producción → ⛔ TODAS pendientes. Las aplica el fundador.
 --    · esta sesión NO ha ejecutado nada contra ninguna base. Ni con `--dry-run`.
 --
--- ─────────────────────────────────────────────────────────────────────────────────────────
+-- ═════════════════════════════════════════════════════════════════════════════════════════
+-- 🔴 LOS NOMBRES FÍSICOS ESTÁN MEDIDOS, NO RECORDADOS — y por DOS fuentes independientes
+--
+-- La primera versión de este fichero los escribió de memoria. Este esquema es MIXTO
+-- (`quotes."merchantId"` en camello, `partes_trabajo` en guiones bajos), así que «aplicar la
+-- regla» no es una comprobación: es una suposición con buena pinta. Medido el 8-sep-2026:
+--
+--   Prisma                       físico                      schema.prisma      deriva-prod.sql
+--   ──────────────────────────── ─────────────────────────── ────────────────── ──────────────
+--   model Merchant               merchants                   @@map("merchants") 61 filas
+--   id                           id                          (sin @map)         línea 287
+--   email                        email                       (sin @map)         línea 281
+--   plan                         plan                        (sin @map)         línea 303
+--   subscriptionStatus           subscription_status         @map               línea 320
+--   stripeSubscriptionId         stripe_subscription_id      @map               línea 319
+--   lifecycleEmailsSent          lifecycle_emails_sent       @map               línea 292
+--
+-- `docs/sql/deriva-prod.sql` es la segunda fuente y vale porque se escribió CONTRA LA BASE REAL,
+-- no contra el esquema: si el esquema y la base hubieran divergido, ahí se vería.
+--
+-- Y se comprobó que **ninguna columna `founding_*` existe ya** (0 coincidencias en el manifiesto),
+-- así que el nombre nuevo no pisa nada.
+--
+-- ── LA CONVENCIÓN, MEDIDA ANTES DE ELEGIR EL NOMBRE ──────────────────────────────────────
+-- En `model Merchant`, **todas** las propiedades camelCase llevan `@map` a guiones bajos, sin una
+-- sola excepción (comprobado: cero camellos sin `@map`). Las que van «desnudas» —`id`, `email`,
+-- `plan`— son de una palabra, así que no distinguen. Por eso el nombre físico es:
+--
+--        founding_purchased_at
+--
+-- 🔴 Y ESO OBLIGA A UN `@map` EN `schema.prisma`, que el fundador tiene que escribir A MANO y no
+-- puede adivinar. La línea, para pegar dentro de `model Merchant`, junto a las otras de plan:
+--
+--        foundingPurchasedAt  DateTime? @map("founding_purchased_at")
+--
+-- Sin ese `@map`, Prisma buscaría una columna llamada `foundingPurchasedAt` (camello, entre
+-- comillas) que no existe, y fallaría en la primera consulta. **Renombrar después es otro ALTER
+-- contra producción**, así que el nombre se decide aquí y no luego.
+--
+-- ═════════════════════════════════════════════════════════════════════════════════════════
 -- POR QUÉ HACE FALTA, Y POR QUÉ NINGUNA COLUMNA EXISTENTE SIRVE
 --
 -- Decisión del fundador (8-sep-2026), literal:
@@ -17,14 +56,14 @@
 -- O sea: **cancelar NO libera la plaza. `past_due` NO libera la plaza.** La plaza sólo desaparece
 -- cuando desaparece el merchant. Ninguna de las columnas de hoy puede expresar eso:
 --
---   · `plan`                        → vuelve a `'trial'` al cancelar (`stripe.routes.ts:138,151`),
---                                     así que LIBERA la plaza. Es el criterio de `main` hoy.
---   · `subscriptionStatus`          → dice SI paga, no QUÉ compró. Y el webhook escribe `'active'`
---                                     para `pro` y para `founding` por igual (`:77`), así que
---                                     contar por él hace que **cada suscriptor PRO activo ocupe
---                                     una plaza de fundador** — medido el 8-sep-2026.
---   · `lifecycleEmailsSent.firstPayment` → acredita que hubo un primer cobro, pero **no dice de
---                                     qué plan**. Mismo defecto que el anterior.
+--   · `plan`                   → vuelve a `'trial'` al cancelar (`stripe.routes.ts:138,151`), así
+--                                que LIBERA la plaza. Es el criterio de `main` hoy.
+--   · `subscription_status`    → dice SI paga, no QUÉ compró. Y el webhook escribe `'active'` para
+--                                `pro` y para `founding` por igual (`:77`), así que contar por él
+--                                hace que **cada suscriptor PRO activo ocupe una plaza de
+--                                fundador** — medido el 8-sep-2026.
+--   · `lifecycle_emails_sent -> 'firstPayment'` → acredita que hubo un primer cobro, pero **no
+--                                dice de qué plan**. Mismo defecto que el anterior.
 --
 -- 🔒 LO QUE ESTA COLUMNA REPARA no es un contador: es un SIGNIFICADO. El guard de SCRUM-330
 -- defendía que «el estado de la suscripción NO se deduce del plan: son DOS columnas». Con esto las
@@ -38,32 +77,28 @@
 --
 -- `NULL` = «no consta que comprara plaza de fundador», que es la verdad de todas las filas de hoy.
 -- Un `DEFAULT` convertiría a TODOS los merchants históricos en fundadores de golpe, y eso no lo ha
--- dicho nadie. Es el mismo criterio que `Invoice.suplidos` (SCRUM-500) y `Merchant.paidVia`
+-- dicho nadie. Mismo criterio que `Invoice.suplidos` (SCRUM-500) y `Merchant.paid_via`
 -- (SCRUM-441): sin default, para que «no consta» no se confunda con un valor.
 --
--- RELLENO INICIAL: **NULL para todas las filas**, y está justificado con una medición, no con una
+-- RELLENO INICIAL: **NULL para todas las filas**, justificado con una medición y no con una
 -- suposición: **nadie ha comprado jamás plaza de fundador** (SCRUM-41 abierto, cero clientes de
 -- pago). La landing dirá «20 de 20» y será CIERTO.
---   ⚠️ Antes de aplicar esto, córrase `docs/sql/scrum-340-verificar.sql`. Si alguna fila
---      contradice lo anterior, **NO se aplica**: se para y se decide el backfill.
+--   ⚠️ ANTES de aplicar esto, córrase `docs/sql/scrum-340-verificar.sql` —sus consultas ⓪ y ①—.
+--      Si ⓪ no lista las columnas que usa ①, o si ① devuelve una sola fila, **NO se aplica**:
+--      se para y se decide el backfill.
 --
--- ─────────────────────────────────────────────────────────────────────────────────────────
--- ⛔ SIN ÍNDICE, y es deliberado
---
--- La oferta son 20 plazas y la tabla `merchants` es pequeña; un índice sobre una columna casi toda
--- a `NULL` no paga su coste de escritura. Si algún día la tabla crece, se añade entonces — con la
--- medición delante, no antes.
---
+-- ⛔ SIN ÍNDICE, deliberado: son 20 plazas y `merchants` es pequeña; un índice sobre una columna
+--    casi toda a `NULL` no paga su coste de escritura. Si la tabla crece, se añade entonces — con
+--    la medición delante, no antes.
 -- ⛔ SIN CLAVE AJENA: no apunta a nada. Es un sello temporal.
 --
--- ─────────────────────────────────────────────────────────────────────────────────────────
--- ADITIVA Y REVERSIBLE: `ADD COLUMN` nullable no toca ni una fila existente, y se deshace con un
--- `DROP COLUMN` limpio. Nada de lo que hay hoy deja de funcionar al aplicarla: el contador actual
--- no la lee (todavía), así que aplicar esto NO cambia el número que pinta la landing.
+-- ADITIVA Y REVERSIBLE: `ADD COLUMN` nullable no toca ni una fila existente y se deshace con un
+-- `DROP COLUMN` limpio. Aplicarla NO cambia el número que pinta la landing: el contador de hoy
+-- todavía no la lee.
 --
 -- 🔴 ESTE FICHERO ES SÓLO DDL. La comprobación vive aparte, en
 -- `docs/sql/scrum-340-verificar.sql`: el clasificador del aplicador rechaza un `SELECT` dentro de
 -- un fichero de DDL (lección de SCRUM-650), y mezclarlos deja el ALTER sin poder ejecutarse.
--- ─────────────────────────────────────────────────────────────────────────────────────────
+-- ═════════════════════════════════════════════════════════════════════════════════════════
 
 ALTER TABLE merchants ADD COLUMN IF NOT EXISTS founding_purchased_at TIMESTAMP(3);
