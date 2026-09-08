@@ -2425,24 +2425,40 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .detail-dl dt { font-size: 13px; color: var(--muted); }
 .detail-dl dd { font-size: 13.5px; color: var(--body); margin: 0; }
 
-/* ── SCRUM-650 (T1) · QUIÉN EJECUTA EL TRABAJO — y pueden ser tres ──────────────────────
+/* ── SCRUM-597 (DOC-07) · QUIÉN LLEVA EL DOCUMENTO, y SCRUM-650 · quién ejecuta el trabajo
+   Las dos pantallas COMPARTEN estas reglas en vez de tener cada una las suyas: son el mismo
+   componente en dos sitios, y duplicarlas sería duplicar el 44 px táctil de AB6 — dos fuentes
+   para el mismo número, que se separan en cuanto alguien toca una.
+   ⚠️ EL ORDEN DE LOS SELECTORES NO ES ESTÉTICO: `.job-…` va SEGUNDO para que su regla siga
+   empezando línea y terminando en `{`, que es lo que ancla el guard de SCRUM-650d al medir los
+   44 px. Ponerla primera lo dejaba sin encontrar la regla — y el guard no se toca.
+   Cero componentes nuevos y cero colores inventados (Parte AB): tokens de `tokens.css`.
+   ── SCRUM-650 (T1) · QUIÉN EJECUTA EL TRABAJO — y pueden ser tres ──────────────────────
    El campo «Técnico» del parte de papel de Tecnosel dice «Israel, Miguel y Jesús.L».
    Cero componentes nuevos y cero colores inventados (Parte AB): tokens de `tokens.css` y la
    misma familia visual que `.detail-dl`. El anillo de foco lo pone la regla global de :94. */
+.doc-asignados-titulo,
 .job-asignados-titulo {
   font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
   color: var(--muted); margin-bottom: 4px;
 }
+.doc-asignados-lista,
 .job-asignados-lista { display: grid; gap: 2px; }
 /* 44 px (AB6): se marca de pie, en la obra y con guantes. */
+.doc-asignados-fila,
 .job-asignados-fila {
   display: flex; align-items: center; gap: 10px; min-height: 44px;
   padding: 0 8px; border-radius: var(--radius-md); cursor: pointer;
 }
+.doc-asignados-fila:hover,
 .job-asignados-fila:hover { background: var(--bg, #f6f7f5); }
+.doc-asignados-casilla,
 .job-asignados-casilla { width: 20px; height: 20px; flex: none; accent-color: var(--brand); }
+.doc-asignados-nombre,
 .job-asignados-nombre { font-size: 14px; color: var(--ink); }
+.doc-asignados-lectura,
 .job-asignados-lectura { font-size: 14px; font-weight: 600; color: var(--ink); }
+.doc-asignados-nota,
 .job-asignados-nota { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
 
 /* Tarjetas de margen (planas, dentro de su sección) */
