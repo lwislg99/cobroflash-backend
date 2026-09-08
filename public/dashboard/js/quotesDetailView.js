@@ -180,15 +180,19 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   stateLabel.textContent = 'Estado';
   stateBlock.appendChild(stateLabel);
 
+  // 🔴 SCRUM-820 (encima de d03b1950) · EL MISMO DEFECTO, UN CLIC MÁS ADENTRO.
+  //
+  // Esta ficha es a donde llega el profesional al pinchar una fila de la lista, y tenía COPIADO el
+  // mismo ternario con `st.toUpperCase()`: pintaba `ACCEPTED` cuando la lista, ya arreglada, decía
+  // «Aceptado». Arreglar sólo la lista **mueve la contradicción un clic** en vez de cerrarla — y la
+  // deja en el sitio donde el jefe mira para decidir.
+  //
+  // El barrido por AST lo cazó: era el único `st.toUpperCase()` que quedaba en un camino de
+  // presupuesto después de d03b1950.
+  const meta = quoteStatusMeta(st);
   const statusSpan = document.createElement('span');
-  statusSpan.className = 'status-pill';
-  statusSpan.textContent = st === 'pending_approval' ? 'PENDIENTE APROBACIÓN'
-    : st === 'expired' ? 'CADUCADO' : st.toUpperCase(); // A16.2
-  if (st === 'accepted') statusSpan.classList.add('status-pill-accepted');
-  else if (st === 'rejected') statusSpan.classList.add('status-pill-rejected');
-  else if (st === 'draft' || st === 'expired') statusSpan.classList.add('status-pill-draft');
-  else if (st === 'pending_approval') statusSpan.classList.add('status-pill-approval');
-  else statusSpan.classList.add('status-pill-pending');
+  statusSpan.className = 'status-pill ' + meta.pillClass;
+  statusSpan.textContent = meta.label;
   stateBlock.appendChild(statusSpan);
 
   // WA-0b: chip de entrega del WhatsApp del presupuesto (J4)
@@ -463,6 +467,33 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     infoSec.appendChild(buildDecisionPanel(quote, d, container, setStatus, st));
   }
   page.appendChild(infoSec);
+
+
+  // ── SCRUM-597 (DOC-07) · QUIÉN LLEVA ESTE DOCUMENTO ─────────────────────────────────────
+  //
+  // Categorización, no permiso: dice de quién es el asunto. No cambia quién puede editar ni
+  // emitir, y no abre coste ni margen — un técnico asignado sigue sin verlos (P-DOC-3).
+  //
+  // Todo el cableado vive en `documentoAsignados.js`, compartido con la factura/el presupuesto:
+  // metido aquí serían dos copias de la misma pantalla y se separarían a la primera.
+  if (typeof cablearAsignadosDeDocumento === 'function') {
+    const asigSec = document.createElement('div');
+    asigSec.className = 'detail-section';
+    asigSec.dataset.seccion = 'asignados';
+    page.appendChild(asigSec);
+    cablearAsignadosDeDocumento(document, {
+      doc: 'quote',
+      documentoId: quote.id,
+      contenedor: asigSec,
+      asignados: quote.asignados || [],
+      // Editar es admin-only, igual que el endpoint (`requireRole('admin')`). Al técnico se le
+      // pinta en solo lectura con los nombres que ya trae el detalle.
+      puedeEditar: window.appUserRole !== 'tecnico' && window.appUserRole !== 'operario',
+      pedir: apiRequest,
+      avisar: setStatus,
+      alGuardar: () => {},
+    });
+  }
 
   // ── Sección: CONCEPTOS + TOTALES ────────────────────────────
   const concSec = document.createElement('div');
@@ -936,6 +967,14 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       }
     }, 1200);
   });
+
+  // ── Sección: ETIQUETAS (SCRUM-595, DOC-05) ──────────────────
+  // El bloque lo monta una pieza compartida con la ficha de la FACTURA: el mismo bloque para los
+  // dos documentos, no dos que se parezcan. Va detrás de las notas internas porque es lo mismo
+  // que ellas —cómo el profesional organiza SU documento—, y ninguna de las dos sale en el papel.
+  if (window.montarEtiquetasDelDocumento) {
+    window.montarEtiquetasDelDocumento(page, quote, `/admin/quotes/${quote.id}/tags`);
+  }
 
   // ── Sección: GASTOS Y MARGEN ────────────────────────────────
   const marginSec = document.createElement('div');

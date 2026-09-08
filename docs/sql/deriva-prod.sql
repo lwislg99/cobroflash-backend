@@ -24,7 +24,7 @@
 -- ajenas ni valores de enum. Y no reporta columnas de MÁS en la base: que la base vaya por
 -- delante del código es el orden seguro de un cambio aditivo, no un problema.
 --
--- Columnas esperadas: 426. Tablas: 27.
+-- Columnas esperadas: 437. Tablas: 29.
 
 WITH esperado (tabla, columna) AS (
   VALUES
@@ -126,6 +126,7 @@ WITH esperado (tabla, columna) AS (
     ('customers','billing_periodicity'),
     ('customers','billing_postal_code'),
     ('customers','billing_province'),
+    ('customers','company_id'),
     ('customers','contact_kind'),
     ('customers','created_at'),
     ('customers','dto_por_defecto'),
@@ -134,6 +135,7 @@ WITH esperado (tabla, columna) AS (
     ('customers','internal_ref'),
     ('customers','legal_name'),
     ('customers','merchant_id'),
+    ('customers','mobile'),
     ('customers','name'),
     ('customers','notes'),
     ('customers','phone'),
@@ -181,6 +183,9 @@ WITH esperado (tabla, columna) AS (
     ('expenses','vat_amount'),
     ('expenses','vat_deducible'),
     ('expenses','vat_rate'),
+    ('invoice_assignees','assigned_at'),
+    ('invoice_assignees','invoice_id'),
+    ('invoice_assignees','team_member_id'),
     ('invoices','albaran_refs'),
     ('invoices','charge_id'),
     ('invoices','client_comment'),
@@ -207,6 +212,7 @@ WITH esperado (tabla, columna) AS (
     ('invoices','stage_label'),
     ('invoices','status'),
     ('invoices','suplidos'),
+    ('invoices','tags'),
     ('invoices','total'),
     ('invoices','type'),
     ('invoices','vf_anul_hash'),
@@ -369,6 +375,9 @@ WITH esperado (tabla, columna) AS (
     ('providers','phone'),
     ('providers','tax_id'),
     ('providers','updated_at'),
+    ('quote_assignees','assigned_at'),
+    ('quote_assignees','quote_id'),
+    ('quote_assignees','team_member_id'),
     ('quote_requests','created_at'),
     ('quote_requests','customer_id'),
     ('quote_requests','description'),
@@ -403,6 +412,7 @@ WITH esperado (tabla, columna) AS (
     ('quotes','doc_header_text'),
     ('quotes','es_adicional'),
     ('quotes','evidence'),
+    ('quotes','evidencia_firma'),
     ('quotes','id'),
     ('quotes','internal_notes'),
     ('quotes','iva_modo'),
@@ -423,6 +433,7 @@ WITH esperado (tabla, columna) AS (
     ('quotes','shipping_address_mode'),
     ('quotes','signatureUrl'),
     ('quotes','status'),
+    ('quotes','tags'),
     ('quotes','team_member_id'),
     ('quotes','tiers'),
     ('quotes','total'),

@@ -1,0 +1,62 @@
+-- docs/sql/scrum-576-customers-company-id.sql — SCRUM-576 (CONT-03)
+--
+-- LA EMPRESA A LA QUE PERTENECE UNA PERSONA. Una columna y su índice. **Nada más.**
+--
+-- ESTADO (8-sep-2026) · el checklist vivo está en `docs/MIGRATIONS_PENDING.md`:
+--    · desarrollo → ✅ aplicada
+--    · staging y producción → ⛔ pendientes. Las aplica el fundador.
+--
+-- ─────────────────────────────────────────────────────────────────────────────────────────
+-- 🔴 SIN CLAVE AJENA, A PROPÓSITO — y no es por la lista blanca del aplicador
+--
+-- Este fichero llevó una tercera sentencia (`ADD CONSTRAINT … FOREIGN KEY … ON DELETE SET NULL`)
+-- y **se retiró por decisión del fundador el 8-sep-2026**, aplicando aquí la firma que ya existía
+-- en `docs/MIGRATIONS_PENDING.md` para `Quote.jobId` (SCRUM-195):
+--
+--   «Nullable y SIN FK, a propósito: coherencia con el resto del schema, reversibilidad
+--    (`DROP COLUMN` limpio, sin constraint que arrastre) y sobre todo porque la FK que importaría
+--    aquí es `onDelete`, y eso ya se decidió en SCRUM-192 — servicio de borrado, no cascadas.»
+--
+-- **576 con clave ajena y 195 sin ella serían DOS CRITERIOS para la misma clase de relación.** Y
+-- aquí es peor que allí: es AUTORREFERENTE sobre `customers`, así que deshacerla cuesta más.
+--
+-- ⚠️ QUE EL APLICADOR LA RECHAZARA FUE OTRA COSA, y conviene no confundirlas: al ir a aplicar en
+-- dev se descubrió que `scripts/_aplicar-sql-dev.mjs` no admite `ADD CONSTRAINT` y es fail-closed.
+-- Eso fue el HALLAZGO; la retirada es una DECISIÓN, y se sostiene sola. **No se ensanchó ninguna
+-- lista blanca** para que pasara: ampliar lo que puede correr contra producción no es un arreglo
+-- de paso (regla 37).
+--
+-- 🔴 LO QUE LA CLAVE AJENA HABRÍA HECHO AL BORRAR, LO HACE EL CÓDIGO. `deleteCustomer`
+-- (`src/modules/system/customerAdmin.ts`) desvincula a las personas de esa empresa **antes** de
+-- borrarla, **en la misma transacción**. Sin eso, `company_id` se quedaría apuntando a una fila
+-- que ya no existe y nada protestaría. Lo ejercita
+-- `tests/scrum576-persona-vinculada-a-empresa.test.mjs`.
+--
+-- ─────────────────────────────────────────────────────────────────────────────────────────
+-- EL SQL NO SE ESCRIBIÓ A MANO
+--
+-- Lo generó `node scripts/preview-migracion.mjs --desde <schema anterior>` (CLI **local** de
+-- Prisma; `npx` está prohibido, regla 3), con su control positivo en verde: **27 tablas**. Sin
+-- ese control, un diff vacío se leería como «no hay cambios» — el incidente del 5-ago-2026.
+--
+-- Veredicto de la herramienta: **✔ aditiva**. Veredicto del ENSAYO del aplicador (`--file` sin
+-- `--go`, que es el que de verdad decide): **2 sentencias, todas de forma conocida**.
+--
+-- ─────────────────────────────────────────────────────────────────────────────────────────
+-- POR QUÉ `INTEGER` NULLABLE Y SIN `DEFAULT`
+--
+-- Sale de `companyId Int? @map("company_id")`. NULL = «esta persona no pertenece a ninguna
+-- empresa, o nadie lo ha declarado», que es el caso de la inmensa mayoría de los clientes de un
+-- fontanero. Un `DEFAULT` aquí no tendría ni siquiera un valor que poner: no existe «la empresa
+-- por defecto».
+--
+-- Y es lo que hace la sentencia SEGURA sobre una tabla con filas: `ADD COLUMN` nullable no
+-- reescribe la tabla ni la bloquea. Un `NOT NULL` sin default fallaría en seco — y la lista
+-- blanca de `scripts/_clasificador-sql.mjs` lo rechaza por eso mismo.
+--
+-- RE-EJECUTABLES LAS DOS (`IF NOT EXISTS`): donde ya estén, no hacen nada. En dev ya están, así
+-- que este fichero es inofensivo ahí — sólo muerde en staging y producción.
+
+ALTER TABLE "customers" ADD COLUMN IF NOT EXISTS "company_id" INTEGER;
+
+CREATE INDEX IF NOT EXISTS "customers_company_id_idx" ON "customers"("company_id");

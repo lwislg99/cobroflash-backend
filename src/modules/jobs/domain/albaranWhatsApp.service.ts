@@ -10,7 +10,7 @@
 import crypto from 'crypto';
 import fs from 'fs';
 import { prisma } from '../../../core/db/prisma';
-import { normalizePhone } from '../../../core/utils/utils';
+import { canalDeWhatsApp } from '../../../core/contacto/canalDeWhatsApp'; // SCRUM-590 (CONT-19)
 import { sendWhatsAppTemplate, sendWhatsAppWindowFirst, uploadWhatsAppMedia } from '../../../integrations/whatsapp';
 import { BASE_URL } from '../../../core/config/env'; // SCRUM-62
 import { buildAlbaranFirmado, buildAlbaranParaFirmar } from '../../../integrations/whatsappTemplates';
@@ -50,9 +50,9 @@ export async function sendAlbaranFirmadoWhatsApp(albaranId: number): Promise<Alb
   if (!job) return { ok: false, reason: 'job_not_found', message: 'El trabajo del albarán no existe.', status: 404 };
   const customer = await prisma.customer.findFirst({
     where: { id: job.customerId, merchantId: albaran.merchantId },
-    select: { id: true, name: true, phone: true },
+    select: { id: true, name: true, phone: true, mobile: true }, // SCRUM-590 (CONT-19): sin mobile el envío se iría al fijo
   });
-  const to = normalizePhone(customer?.phone || '');
+  const to = canalDeWhatsApp(customer);
   // SCRUM-126: "customer_missing_phone" (no "sin_telefono") — mismo código que usan
   // invoiceWhatsApp.service.ts y sendQuote.service.ts para la misma condición.
   if (!to) return { ok: false, reason: 'customer_missing_phone', message: 'Este cliente no tiene WhatsApp guardado.', status: 409 };
@@ -121,9 +121,9 @@ export async function sendAlbaranParaFirmarWhatsApp(albaranId: number): Promise<
   if (!job) return { ok: false, reason: 'job_not_found', message: 'El trabajo del albarán no existe.', status: 404 };
   const customer = await prisma.customer.findFirst({
     where: { id: job.customerId, merchantId: albaran.merchantId },
-    select: { id: true, name: true, phone: true },
+    select: { id: true, name: true, phone: true, mobile: true }, // SCRUM-590 (CONT-19): sin mobile el envío se iría al fijo
   });
-  const to = normalizePhone(customer?.phone || '');
+  const to = canalDeWhatsApp(customer);
   // SCRUM-126: "customer_missing_phone" (no "sin_telefono") — mismo código que usan
   // invoiceWhatsApp.service.ts y sendQuote.service.ts para la misma condición.
   if (!to) return { ok: false, reason: 'customer_missing_phone', message: 'Este cliente no tiene WhatsApp guardado.', status: 409 };

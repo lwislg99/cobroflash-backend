@@ -86,6 +86,27 @@ function conDecimales(base: z.ZodNumber, decimales: number, queEs: string) {
 
 const QuoteLineSchema = z.object({
   concept: z.string().min(1),
+  /**
+   * SCRUM-632 · LA DESCRIPCIÓN DE LA LÍNEA, que NO es la del producto.
+   *
+   * Decisión del fundador (8-sep-2026): «la descripción del presupuesto/factura es DISTINTA a la
+   * de producto: es algo que aparece en el doc, que se utiliza para poner el texto que quiera el
+   * merchant». Son DOS datos: el del CATÁLOGO lo mantiene quien mantiene el catálogo; el de la
+   * LÍNEA lo escribe el profesional y es SUYO. Hasta hoy sólo existía el primero, y por eso el
+   * front la borraba al teclear el concepto: creía que había una sola.
+   *
+   * Sin declararla aquí, `z.object` la BORRA en silencio —lo mismo que le pasaba a `suplido`
+   * antes de SCRUM-500 y a `costeUnitario` antes de SCRUM-661— y no llegaría nunca a
+   * `Quote.lines`.
+   *
+   * 🔴 `.optional()` Y NUNCA `.default('')`: que FALTE significa «esta línea no lleva
+   * descripción», que es lo que tienen todas las líneas de siempre. Un default convertiría el
+   * silencio de miles de líneas viejas en una afirmación que nadie hizo.
+   *
+   * ⚠️ `prisma/schema.prisma` NO se toca: `Quote.lines` es `Json`, así que esta clave es todo el
+   * cambio de esquema. Sin migración y sin ALTER.
+   */
+  description: z.string().optional(),
   // SCRUM-655 · OPCIONALES EN EL OBJETO, OBLIGATORIAS EN EL REFINE. Una CABECERA de apartado no
   // lleva cantidad ni precio —es un renglón de título—, así que exigirlas aquí la haría imposible.
   // Pero relajarlas sin más debilitaría la puerta para las líneas normales, que es donde vive el
@@ -506,6 +527,20 @@ export type ItemKind = (typeof ITEM_KIND)[number];
 export const customerCreateSchema = z.object({
   name: z.string().min(1),
   phone: z.string().min(5).optional(),
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-590 (CONT-19) · EL MÓVIL, y es el número que RECIBE los documentos por WhatsApp.
+  //
+  // MISMA FORMA QUE `phone` —`z.string().min(5).optional()`— y no es pereza: los dos campos
+  // son el mismo tipo de dato y validarlos distinto crearía la asimetría de que el fijo
+  // acepta lo que el móvil rechaza, sin que nadie lo haya decidido. Quien normaliza es el
+  // servidor (`normalizarIdentificadores`), igual que con el fijo desde SCRUM-578.
+  //
+  // `optional()` y NO `nullable()`, otra vez como `phone`: en una edición parcial, ausente
+  // significa «no toques este campo». El día que haga falta poder BORRAR el móvil desde la
+  // ficha habrá que añadir `nullable()` a los dos a la vez — hoy `phone` tampoco se puede
+  // borrar, así que esto no estrena una limitación, la hereda.
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  mobile: z.string().min(5).optional(),
   email: z.string().email().optional(),
   notes: z.string().max(1000).optional(),
   // J3: baja de WhatsApp (manual desde la ficha hasta WA-0b/BOT-1)
@@ -517,6 +552,27 @@ export const customerCreateSchema = z.object({
   // `nullable().optional()` da los tres casos sin inventar ninguno, igual que sus vecinos:
   // ausente = no se toca · null = no declarado · 'EMPRESA'/'PERSONA' = declarado por el profesional.
   contactKind: z.enum(['EMPRESA', 'PERSONA']).nullable().optional(),
+  /**
+   * SCRUM-576 (CONT-03) · LA EMPRESA A LA QUE PERTENECE ESTA PERSONA.
+   *
+   * 🔴 ES UN `id`, NO UN NOMBRE, y ahí está el ticket entero. `legalName` —tres líneas más
+   * abajo— es texto libre: dos personas de la misma empresa la escriben distinto y el sistema no
+   * sabe que son la misma. Un entero apunta a UNA fila, así que «misma empresa» pasa de ser un
+   * parecido ortográfico a ser una igualdad.
+   *
+   * `nullable().optional()` como sus vecinos, y da los tres casos sin inventar ninguno:
+   * ausente = no se toca · `null` = no pertenece a ninguna empresa · entero = el vínculo.
+   * **Nunca `.default()`:** no existe «la empresa por defecto».
+   *
+   * 🔴 AQUÍ SÓLO SE COMPRUEBA LA FORMA. Que esa empresa EXISTA, sea del MISMO merchant y no sea
+   * el propio cliente se decide en `customerAdmin.ts`, que es donde se puede consultar la base.
+   * Zod no tiene forma de saberlo, y un esquema que aparentara validarlo sería peor que no
+   * validar: nadie volvería a mirar.
+   *
+   * `.int().positive()`: los ids de `customers` son `autoincrement()`. Un `0` o un `-3` no son
+   * «otra empresa», son un dato roto, y rechazarlos aquí evita una consulta inútil.
+   */
+  companyId: z.number().int().positive().nullable().optional(),
   // A20.4 (EXT3): cliente empresa — el NIF además es requisito del VeriFactu
   // futuro (hallazgo S1-C: F1 exige NIF del destinatario)
   legalName: z.string().max(200).nullable().optional(),

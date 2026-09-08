@@ -58,6 +58,7 @@ function montar(merchant, { customer = { id: 5 } } = {}) {
   p.invoice = { update: async ({ data }) => ({ id: 44, ...data }), findUnique: async () => null };
   const tx = new Proxy({
     invoice: {
+      findMany: async () => [],
       create: async ({ data }) => {
         cap.emitido = data;
         // El número lo pone `allocateInvoiceNumber`; aquí se simula según el modo real del
