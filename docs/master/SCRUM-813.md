@@ -473,3 +473,37 @@ ningún cambio. Eso es, por sí solo, evidencia de que el sujeto no hacía falta
 - `npm run meta:mutaciones` **no se ha corrido entero** en esta sesión: el intento se cortó con un
   `| head -20` y su exit 0 era el de `head`. Se sustituyó por la comprobación de anclas del §A3,
   que cubre el fallo que importaba; el job de CI lo corre completo.
+
+---
+
+## A6 · ⛔ REGLA DEL FUNDADOR (8-sep-2026): `Boolean(suelo)` NO SE APLICA
+
+Hay trabajo **sin commitear** en el árbol de `cobroflash-b4` sobre este ticket, en
+`scripts/censo-tablero-vs-arbol.mjs`:
+
+```diff
+-  const noSeFia = p.ticketsCensados === 0 || suelo.length > 0;
++  const noSeFia = p.ticketsCensados === 0 || Boolean(suelo);
+```
+
+**⛔ Ese cambio NO se aplica.** Decisión del fundador, subida a regla el 8-sep-2026.
+
+**Por qué, con la aritmética delante:**
+
+```
+Boolean([])    = true      ← lo que haría el cambio
+[].length > 0  = false     ← lo que hace lo commiteado
+```
+
+`comprobarSuelo()` (`tests/_censo-tickets.mjs`) devuelve un **array** de problemas. Un array
+vacío es *truthy*, así que `Boolean(suelo)` es **siempre verdadero**: `noSeFia` quedaría fijado a
+`true` y **el censo se declararía no fiable SIEMPRE**, hubiera problemas o no. No es un matiz de
+estilo: **invierte el sentido de la comprobación**.
+
+Y es exactamente la familia de defectos que SCRUM-775 existe para cazar —«un suelo que no
+dispara», o aquí uno que dispara siempre—, por lo que su guard exige literalmente la comparación
+por longitud (`assert.match(codigo, /suelo\.length > 0/)`).
+
+**Medido, no razonado:** con el cambio puesto, **3 tests de SCRUM-775 caen**; poniendo la versión
+de `HEAD` en el mismo árbol, **los 9 pasan**. Comprobado los dos sentidos el 8-sep-2026, y los
+bytes del trabajo en curso se devolvieron intactos (`Buffer.compare === 0`, 11.862 bytes).
