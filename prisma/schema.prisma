@@ -589,6 +589,22 @@ model Quote {
   shippingAddress     String? @map("shipping_address") @db.Text
   shippingAddressMode String? @map("shipping_address_mode")
 
+  // SCRUM-595 (DOC-05) · LAS ETIQUETAS DEL DOCUMENTO.
+  //
+  // MISMO MECANISMO QUE `customers.tags` (SCRUM-580, CONT-07), no un segundo: misma columna
+  // JSONB, mismo tipo, misma forma y las MISMAS funciones de decision
+  // (`src/modules/system/tagsDelCliente.ts`). Si el documento guardara sus etiquetas de otra
+  // forma no seria el mismo mecanismo, seria el segundo — y dos que deciden lo mismo divergen.
+  //
+  // 🔴 NULLABLE Y SIN `@default`: `null` = «no se declararon etiquetas», que NO es `[]` = «se
+  // miraron y no hay ninguna». Con un `@default([])` un `IS NOT NULL` diria que TODOS los
+  // documentos tienen etiquetas, y el filtro de la lista se construiria sobre esa mentira.
+  //
+  // ⛔ DEL DOCUMENTO, NO DE LA LINEA. Las lineas viven dentro de `lines` (JSONB) y esta columna
+  // no las mira: etiquetar un CONCEPTO exigiria meter la etiqueta DENTRO de ese JSON, que es
+  // otro ticket y otro mecanismo. No queda habilitado de rebote.
+  tags Json? @map("tags")
+
   id         Int @id @default(autoincrement())
   merchantId Int
   customerId Int
@@ -736,6 +752,19 @@ model Invoice {
   /// (`computeVeriFactuHash`) y ninguna columna nueva entra en ella. Estas dos no tocan el sello.
   shippingAddress     String? @map("shipping_address") @db.Text
   shippingAddressMode String? @map("shipping_address_mode")
+
+  // SCRUM-595 (DOC-05) · LAS ETIQUETAS DEL DOCUMENTO. La gemela de `quotes.tags`.
+  //
+  // 🔴 NO TOCA LA REGLA 29, Y ESTA MEDIDO (`tests/scrum595-etiquetas-del-documento.test.mjs`):
+  // la huella de VeriFactu es una lista CERRADA de ocho campos (`computeVeriFactuHash`) y sale
+  // IDENTICA pasandole `tags`; los parametros de `generateInvoicePdf` son lista blanca y `tags`
+  // no esta en ella. Etiquetar una factura YA EMITIDA no cambia su numero, ni su total, ni su
+  // PDF: cambia su FICHA, que es otra cosa.
+  //
+  // 🔴 Y NO SE COPIA AL EMITIR. La escribe el profesional cuando quiere, tambien despues. Por
+  // eso este campo NO necesita escritor en `emitInvoice` — que es exactamente el bloqueo que
+  // dejo a SCRUM-602 (DOC-12) sin cablear el lado factura de la direccion de obra.
+  tags Json? @map("tags")
   currency            String  @db.VarChar(3)
   pdfUrl              String
   qrData              String

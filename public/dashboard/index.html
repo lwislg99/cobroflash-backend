@@ -242,7 +242,8 @@
   <script src="./js/contacto.js"></script>
   <script src="./js/modalHeader.js"></script>
   <script src="./js/switchFormaJuridica.js"></script> <!-- SCRUM-574: el switch Empresa/Persona, una pieza para los dos modales -->
-  <script src="./js/filtroClientes.js"></script> <!-- SCRUM-581: pestañas y orden de la lista; va ANTES de customersView.js, que lo consume -->
+  <script src="./js/filtroClientes.js"></script> <!-- SCRUM-581: pestañas y orden de la lista; va ANTES de customersView.js, que lo consume. SCRUM-595: y ANTES de quotesListView.js / invoicesView.js / etiquetasDelDocumento.js, que consumen su filtro por etiqueta -->
+  <script src="./js/etiquetasDelDocumento.js"></script> <!-- SCRUM-595 (DOC-05): el bloque de etiquetas de la ficha, compartido por quotesDetailView.js e invoiceDetailView.js; va DESPUÉS de filtroClientes.js, que es de donde saca las decisiones y los textos -->
   <!-- SCRUM-366: la escalera de la siguiente accion, compartida por el listado y el detalle.
        Detras de api.js porque usa fmtMoneyEs; delante de las dos vistas que la consumen. -->
   <script src="./js/jobNextAction.js"></script>

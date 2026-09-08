@@ -827,6 +827,10 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   // de `quotesView.js`, que le pide la propuesta al elegir cliente.
   'descuentoPorDefecto.js',
   'estadoFirma.js',
+  // SCRUM-595 (DOC-05) · el bloque de etiquetas de la ficha, COMPARTIDO por las dos fichas de
+  // documento. Va DESPUÉS de `filtroClientes.js`, de donde saca las decisiones y los textos, y
+  // ANTES de `quotesDetailView.js` e `invoiceDetailView.js`, que lo montan.
+  'etiquetasDelDocumento.js',
   'expensesView.js',
   'exportView.js',
   'facturaPreEmision.js',
@@ -930,6 +934,16 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
  */
 export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   { antes: 'filtroClientes.js', despues: 'customersView.js', motivo: 'SCRUM-581: pestañas y orden de la lista' },
+  // SCRUM-595 (DOC-05) · las etiquetas del documento reutilizan la pieza de CONT-07 en CUATRO
+  // sitios más. Las vistas leen `window.filtroClientes` SIN fallback, a propósito: degradar en
+  // silencio escondería una pantalla rota en vez de enseñarla. Lo que sostiene esa decisión es
+  // este orden, así que se declara — que es lo que impide que un merge lo reordene y nadie note
+  // nada hasta que un profesional abra la lista de facturas.
+  { antes: 'filtroClientes.js', despues: 'etiquetasDelDocumento.js', motivo: 'SCRUM-595: de ahí saca las decisiones y los textos' },
+  { antes: 'filtroClientes.js', despues: 'quotesListView.js', motivo: 'SCRUM-595: el filtro por etiqueta del presupuesto' },
+  { antes: 'filtroClientes.js', despues: 'invoicesView.js', motivo: 'SCRUM-595: el filtro por etiqueta de la factura' },
+  { antes: 'etiquetasDelDocumento.js', despues: 'quotesDetailView.js', motivo: 'SCRUM-595: la ficha monta el bloque' },
+  { antes: 'etiquetasDelDocumento.js', despues: 'invoiceDetailView.js', motivo: 'SCRUM-595: la ficha monta el bloque' },
   { antes: 'margenCatalogo.js', despues: 'productsView.js', motivo: 'SCRUM-609: la aritmética del margen' },
   // SCRUM-597 (DOC-07): si `economiaVisible.js` se cargara DESPUÉS, `window.veoEconomia` no
   // existiría al montar la pantalla y los campos de coste y margen se pintarían a un técnico —

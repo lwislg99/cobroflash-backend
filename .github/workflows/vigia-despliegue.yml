@@ -80,8 +80,33 @@ jobs:
       # La clave lleva el `run_id` para que CADA ejecución guarde la suya (una clave repetida no
       # se vuelve a guardar), y `restore-keys` recupera la más reciente que empiece igual. Es el
       # patrón de caché rodante, no uno inventado.
+      #
+      # ═══════════════════════════════════════════════════════════════════════════════════════
+      # 🔴 SCRUM-716c · AQUÍ HABÍA UN `actions/cache@v4` A SECAS, Y NO GUARDABA NUNCA
+      #
+      # MEDIDO en la definición de la acción, no deducido: `actions/cache@v4` guarda en un paso
+      # POST declarado con **`post-if: "success()"`**. Y el vigía **falla el job a propósito** —
+      # ése es su mecanismo de aviso, «el aviso es el propio job en rojo», ahí arriba—. Así que:
+      #
+      #     vigía en ROJO  → el post no corre → NO SE GUARDA la lectura
+      #     vigía en VERDE → el post corre    → se guarda
+      #
+      # O sea que la memoria se guardaba **sólo cuando no hacía falta**, y nunca cuando sí: en
+      # cuanto producción se quedaba atrás, el vigía se ponía en rojo, no guardaba, y la ejecución
+      # siguiente volvía a no tener con qué comparar. NO_SE_SABE perpetuo, con el dato correcto y
+      # la conclusión imposible. Es lo que se vio el 7-sep-2026: prod=15fb3b2f · main=b07546cf ·
+      # 17,1 h · exit 2, mientras producción SÍ estaba desplegando (RETRASADO PERO DESPLEGANDO).
+      #
+      # Se parte en dos: `restore` al principio y `save` al final **con `if: always()`**.
+      # `actions/cache/save` es un paso NORMAL (`main:`, sin `post-if`), así que `always()` basta
+      # y se ejecuta también cuando el vigía ha salido en rojo — comprobado en su `action.yml`.
+      #
+      # ⛔ ESTO NO RELAJA NADA. El vigía sigue saliendo con el mismo código y el job sigue en rojo;
+      # lo único que cambia es que la lectura de ESTA ejecución sobrevive para la siguiente. Los
+      # tres veredictos siguen siendo tres y NO_SE_SABE sigue sin ser verde.
+      # ═══════════════════════════════════════════════════════════════════════════════════════
       - name: Recuperar la constancia de la ejecución anterior
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: .vigia
           key: vigia-estado-${{ github.run_id }}
@@ -101,3 +126,17 @@ jobs:
           else
             node scripts/vigilante-de-despliegue.mjs
           fi
+
+      # 🔴 SCRUM-716c · `if: always()` Y NO ES OPCIONAL: es la línea entera del arreglo.
+      #
+      # Sin ella, guardar vuelve a depender de que el vigía haya ido bien — y el vigía va mal
+      # exactamente cuando su lectura hace falta. Un paso de guardado condicionado al éxito del
+      # paso que vigila es una memoria que sólo recuerda los días buenos.
+      #
+      # Va DESPUÉS del vigía a propósito: guarda el renglón que ACABA de anotar, no el heredado.
+      - name: Guardar la constancia de ESTA ejecución (también si el vigía canta)
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .vigia
+          key: vigia-estado-${{ github.run_id }}

@@ -19,10 +19,28 @@ const { getAdminMounts } = await import('../dist/core/http/adminMounts.js');
 
 const INVOICES_PREFIX = '/admin/invoices';
 
-// La ÚNICA mutación permitida: PUT /:id/status (pending/paid/expired, auditada,
-// updateInvoiceStatusAdmin no toca líneas/total/número — ver invoiceAdmin.ts). Cualquier
-// otro PUT/PATCH, o cualquier DELETE, rompe la regla 29.
-const ALLOWED_MUTATIONS = new Set(['PUT /:id/status']);
+// Las mutaciones permitidas. Ninguna toca el DOCUMENTO —ni líneas, ni total, ni número, ni
+// sello, ni PDF—; todas escriben datos DE LA FICHA que se conocen después de emitir.
+//
+//   · `PUT /:id/status` — pending/paid/expired, auditada. `updateInvoiceStatusAdmin` no toca
+//     líneas/total/número (ver `invoiceAdmin.ts`).
+//
+//   · `PUT /:id/tags` — 🔴 SCRUM-595 (DOC-05), 7-sep-2026. **ES EL PRIMER MIEMBRO QUE NO ES UN
+//     CAMBIO DE ESTADO, y por eso se declara despacio.** Este guard ofrece dos casillas —cambio
+//     de estado o edición de contenido— y una etiqueta no es ninguna: es cómo el profesional
+//     ORDENA sus facturas en su propio panel. Que no sea contenido está MEDIDO, no argumentado,
+//     y las tres medidas viven en `tests/scrum595-etiquetas-del-documento.test.mjs`:
+//
+//         la huella de VeriFactu es una lista CERRADA de ocho campos y sale IDÉNTICA con `tags`
+//         los parámetros de `generateInvoicePdf` son lista blanca y `tags` no está en ella
+//         `emitInvoice` no la nombra: una etiqueta NO se copia al emitir
+//
+//     Y para que esta entrada no pueda crecer hacia la edición de contenido, ese mismo fichero
+//     exige que `setInvoiceTags` escriba **un solo campo**. Esta lista se ensancha en una ruta;
+//     lo que esa ruta puede escribir queda MÁS apretado que antes, no menos.
+//
+// Cualquier otro PUT/PATCH, o cualquier DELETE, rompe la regla 29.
+const ALLOWED_MUTATIONS = new Set(['PUT /:id/status', 'PUT /:id/tags']);
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // 🔴 SCRUM-597 (DOC-07) · UNA TERCERA CATEGORÍA QUE ESTE GUARD NO CONTEMPLABA

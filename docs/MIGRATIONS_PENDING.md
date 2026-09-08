@@ -2692,3 +2692,122 @@ en vez de afirmar nada.
 
 ⚠️ **`customers` tenía 26 columnas, no 25:** `mobile` (SCRUM-590) ya estaba en dev al medir. Se
 cuenta lo que devuelve el catálogo, no lo que diga una nota.
+
+---
+
+## SCRUM-595 · `quotes.tags` + `invoices.tags` — ✅ **APLICADA EN LAS TRES BASES** (8-sep-2026)
+
+Las **etiquetas del documento** (DOC-05). El mismo mecanismo que `customers.tags` (SCRUM-580,
+CONT-07), en las **dos** tablas de documento: presupuesto y factura.
+
+**Fichero:** `docs/sql/scrum-595-etiquetas-del-documento.sql` ·
+**Verificación:** `docs/sql/scrum-595-verificar.sql`
+
+```sql
+ALTER TABLE "quotes"   ADD COLUMN IF NOT EXISTS "tags" JSONB;
+ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "tags" JSONB;
+```
+
+**JSONB, nullable, SIN default** — idéntico a `customers.tags`, y por el mismo motivo: `null` =
+«no se declararon etiquetas», que **no es** `[]` = «se miraron y no hay ninguna». Con un
+`DEFAULT '[]'` un `IS NOT NULL` diría que **todos** los documentos tienen etiquetas.
+
+**Las DOS o ninguna.** Con una sola tabla el bloque funcionaría en un documento y no en el otro,
+y eso el ticket lo declara **no hecho**. La verificación pide las dos y lo dice si falta una.
+
+### Estado por base — 8-sep-2026
+
+- [x] **producción · autorack** — ✅ aplicada el **8-sep-2026 POR EL FUNDADOR**, que la
+      **verificó en `information_schema`**: `quotes.tags` y `invoices.tags` · `jsonb` ·
+      `is_nullable = YES` · `default NULL` — **2 filas**, con capturas suyas de la consola de
+      Railway. Desde un árbol de trabajo no hay credencial de producción (regla 3) y no la ha
+      habido en ningún momento de este ticket: **esta casilla la sostiene su verificación, no
+      una medida mía.**
+- [x] **staging · acela/railway** — ✅ aplicada el **8-sep-2026 POR EL FUNDADOR**, verificada por
+      él en `information_schema` con el **mismo resultado**: `jsonb` · `YES` · `default NULL`,
+      2 filas. Tampoco medida desde aquí: el encargo prohibía tocar staging, y SCRUM-668 la
+      declara contaminada como fuente de cifra. **Su verificación, no una medida mía.**
+- [x] **desarrollo · acela/yaqu_dev_javier** — ✅ **aplicada y MEDIDA por mí** el 7-sep-2026, por
+      petición explícita del fundador («aplicas tu ALTER en dev, tú, sólo dev»), con
+      `scripts/aplicar-sql-dev.mjs --go` y `exigirDestinoCorrecto` cuadrando contra
+      `acela.proxy.rlwy.net/yaqu_dev_javier`. Antes y después con control positivo y testigo,
+      abajo: **quotes 43 → 44 · invoices 35 → 36 · customers 27 → 27 (no se movió)**.
+
+> 🔴 **LAS TRES CASILLAS NO VALEN LO MISMO, Y POR ESO LLEVAN SU PROCEDENCIA.** Dos las sostiene
+> la **verificación del fundador** —`information_schema`, `jsonb` · `YES` · `default NULL`, con
+> capturas de las dos consolas— y una, una **lectura del catálogo hecha desde aquí**, con su
+> antes y su después. No es desconfianza: **este fichero existe porque una lista a mano se
+> desfasa en silencio**, y quien lo relea dentro de seis meses tiene que poder distinguir cuál
+> de las tres puede volver a comprobar por su cuenta y cuál no. **Producción y staging se
+> re-verifican** con `docs/sql/scrum-595-verificar.sql` (sólo lee, se pega en la consola de
+> Railway); **dev, ejecutando otra vez la medición de abajo.**
+
+> ✅ **Y LOS RECUENTOS CUADRAN CON DEV, que es el control cruzado.** El fundador contó en las
+> dos bases **`quotes` 44 · `invoices` 36** — exactamente los números a los que llegó dev tras
+> el ALTER (43→44 y 35→36). Tres bases que salen del mismo sitio y llegan al mismo sitio: eso
+> es más que tres casillas marcadas por separado.
+### 🔴 ANTES Y DESPUÉS, CON EL RECUENTO DE COLUMNAS COMO CONTROL
+
+Una fila sin estado de partida **no distingue «la he creado» de «ya estaba»**. Por eso se mide el
+recuento de columnas de cada tabla tocada, y se deja un **TESTIGO** que no debe moverse.
+
+| Tabla | ANTES | DESPUÉS | |
+|---|---|---|---|
+| `quotes` | **43** columnas | **44** | +1 · la toca el ALTER |
+| `invoices` | **35** columnas | **36** | +1 · la toca el ALTER |
+| `customers` | **27** columnas | **27** | **TESTIGO — no se mueve, y no se movió** |
+
+| Columna | ANTES | DESPUÉS |
+|---|---|---|
+| `quotes.tags` | **AUSENTE** | `jsonb` · nullable=YES · default=NINGUNO |
+| `invoices.tags` | **AUSENTE** | `jsonb` · nullable=YES · default=NINGUNO |
+| `customers.tags` | presente | presente — **CONTROL POSITIVO** (SCRUM-580) |
+| `quotes.lines` | presente | presente — **CONTROL POSITIVO** de que la consulta llega a `quotes` |
+
+**El tipo salió `jsonb` en las dos**, que es lo que de verdad había que comprobar: `schemaDrift`
+mira que la columna exista, **no su tipo**. Y **sin default**, que es lo que sostiene
+«ausente ≠ vacío».
+
+🔴 **Los dos controles positivos son de cosas distintas a propósito.** Sin `customers.tags` no
+consta que se esté mirando una base donde el mecanismo vive; sin `quotes.lines` no consta que la
+consulta alcance la tabla `quotes`. Un único control no distingue «no está» de «no se vio nada».
+
+**El suelo del censo está probado por MUTACIÓN, no declarado:** forzando cero documentos sale con
+**código 2** declarándose ciego, y rompiendo el control positivo también.
+
+⚠️ **Y una honestidad sobre el recuento de FILAS:** entre el antes y el después pasó de 16 a 15
+presupuestos. **No lo hizo este ALTER** —un `ADD COLUMN` no borra filas—: la base de desarrollo la
+comparten varios árboles de trabajo y otra sesión estaba tocándola. Se dice en vez de dejar un
+número que no cuadra sin explicación.
+
+### 🔴 EL ESQUEMA VIAJA EN EL MISMO PR, Y EL RIESGO SE GESTIONA CON EL ORDEN DEL MERGE
+
+**Regla de la casa, 7-sep-2026 (fundador):** cuando un ticket necesita columna nueva, el PR lleva
+**todo junto** — la línea del esquema, el SQL aditivo, esta entrada con las tres bases sin marcar,
+y el cuerpo del PR empezando por **NO MERGEABLE HASTA APLICAR LA COLUMNA EN LAS TRES BASES**.
+Retener la línea del esquema produce media función y dos PR por ticket, que es el patrón que costó
+los nueve días.
+
+Así que `prisma/schema.prisma` **sí nombra** `tags` en `Quote` y en `Invoice` en esta rama. Lo que
+NO puede pasar es el MERGE antes del `ALTER`: `schemaDrift` compara **esperado ⊆ real** al
+arrancar, y producción no levantaría. **El fundador aplica y luego mergea.**
+
+Un guard de este ticket vigila que el esquema y el DDL digan lo mismo sobre los DOS documentos: un
+esquema que nombre una columna que su propio SQL no crea es exactamente lo que tumba el arranque.
+
+> ✅ **EL BLOQUEO DE MERGE DE ESTA ENTRADA QUEDA LEVANTADO (8-sep-2026).** Este apartado decía
+> que el PR **no es mergeable** hasta aplicar la columna en staging y producción. Era cierto
+> cuando se escribió, con la columna sólo en dev. **El fundador las aplicó y las verificó el
+> 8-sep-2026**, y las tres casillas de arriba están marcadas **con su procedencia**. El
+> razonamiento NO se borra —es el motivo por el que el orden importaba, y vuelve a valer para
+> la siguiente columna—: lo que caduca es su conclusión, no su lógica.
+
+### Lo que esta columna **no** toca — medido, no supuesto
+
+- **El sello:** `computeVeriFactuHash` es una lista **cerrada de ocho campos**. Ejercitado: la
+  huella sale **idéntica** pasándole `tags`, y **sí** cambia al mover el importe (control negativo,
+  para que la igualdad no sea la de una función que no mira nada).
+- **El PDF:** los parámetros de `generateInvoicePdf` son lista blanca y `tags` no está en ella.
+- **El camino de emisión:** una etiqueta **no se copia al emitir**, así que no hace falta escritor
+  en `emitInvoice` — que es justo lo que bloqueó el lado factura de SCRUM-602 (DOC-12).
+
