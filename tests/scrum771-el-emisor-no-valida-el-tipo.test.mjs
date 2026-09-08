@@ -366,6 +366,7 @@ const MODELOS_DOBLE = {
   merchant: { findUnique: async () => MERCHANT_DOBLE, update: async () => ({}) },
   auditLog: { create: async () => ({ id: 1 }) },
   invoice: {
+    findMany: async () => [],
     findUnique: async () => null,
     findFirst: async () => null,
     update: async ({ data }) => ({ id: 99, ...data }),

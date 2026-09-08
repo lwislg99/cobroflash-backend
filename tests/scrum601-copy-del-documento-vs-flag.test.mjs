@@ -55,7 +55,18 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
  * anclar sólo el total dejaría pasar un trasvase silencioso entre categorías — que es
  * exactamente cómo este defecto se disolvería sin que nadie lo viera.
  */
-const VEREDICTO_AL_MEDIR = { flag: 16, tipo: 7, aPelo: 151 };
+// 🔴 151 → 152 · 7-sep-2026 (SCRUM-805) · CUÁL SE MOVIÓ Y POR QUÉ, que es lo que este trinquete
+// pide antes de tocar el número. NO es un trasvase entre categorías —ninguno pasó de «flag» a «a
+// pelo»—: es UN literal NUEVO en `pdf/pdf.service.ts`, el pie del PDF del presupuesto:
+//
+//     'Documento sin validez fiscal. No es una factura.'
+//
+// Entra en el censo porque lleva la diana («factura»), y cae en ③ porque no lo elige ningún flag.
+// Y ahí es donde tiene que estar: es una frase que **niega** ser una factura, así que su texto no
+// depende de si el merchant emite facturas o justificantes — dice lo mismo en los dos casos, y
+// con el flag OFF sigue siendo cierto. NO va a `PENDIENTES_DE_FIRMA`: es copy YA APROBADA
+// (SCRUM-67), copiada byte a byte del PDF del albarán y refirmada por el fundador para este uso.
+const VEREDICTO_AL_MEDIR = { flag: 16, tipo: 7, aPelo: 152 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA

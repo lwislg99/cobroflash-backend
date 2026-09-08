@@ -44,6 +44,29 @@ await new Promise((r) => server.once('listening', r));
 const BASE = `http://127.0.0.1:${server.address().port}`;
 after(() => new Promise((r) => server.close(r)));
 
+/**
+ * ¿El banco SIRVE ALGO? · SUELO añadido en SCRUM-822.
+ *
+ * La referencia es `/index.html` a propósito: la sirve `express.static`, o sea el camino que
+ * NO depende de ninguna ruta declarada a mano. Si ni eso responde, lo que venga después no mide
+ * el producto — mide que aquí no hay servidor.
+ *
+ * Y la diferencia no es cosmética. «/privacidad → 404» manda a arreglar la landing; «no sirvo
+ * nada» manda a mirar el arranque. SCRUM-822 costó exactamente esto: dos guards en rojo
+ * acusando a una landing sana porque el banco no podía servir lo que se le pedía. Un hueco
+ * declarado se ve; una acusación equivocada manda a buscar donde no está.
+ *
+ * @returns {Promise<string|null>} el motivo si el banco está mudo, `null` si sirve.
+ */
+const REFERENCIA_QUE_SIEMPRE_SIRVE = '/index.html';
+
+async function bancoMudo() {
+  const ruta = REFERENCIA_QUE_SIEMPRE_SIRVE; // el mensaje sale de la constante, no de un literal
+  const r = await fetch(BASE + ruta).catch((e) => ({ status: 0, _err: e?.message }));
+  if (r.status === 200) return null;
+  return `\`${ruta}\` → ${r.status || `sin respuesta (${r._err || 'error de red'})`}`;
+}
+
 /** Rutas que sostienen una obligación legal: se les exige además CONTENIDO, no solo un 200. */
 const ES_LEGAL = /^\/(privacidad|terminos|legal(\/|$)|aviso-legal|cookies)/;
 
@@ -83,6 +106,15 @@ test('SCRUM-329 · cada enlace interno responde 200 y con contenido', async () =
   // Un aviso legal que da 404 es PEOR que no tenerlo: el visitante ve que hay enlace, lo pulsa, y
   // se queda sin la información Y con la impresión de que existe. Y una página que responde 200
   // vacía es lo mismo con otra cara, así que se mide el cuerpo, no solo el estado.
+  // SUELO (SCRUM-822): antes de acusar a ningún enlace, comprobar que el banco sirve algo.
+  const mudo = await bancoMudo();
+  assert.equal(
+    mudo, null,
+    `🔴 CIEGO: el banco no sirve ni la página que siempre sirve el estático (${mudo}).\n` +
+      '  NO se acusa a ningún enlace: con el servidor mudo, un «404» no distingue una landing\n' +
+      '  rota de un arranque que no llegó a levantarse, y mandaría a buscar donde no está.',
+  );
+
   const fallos = [];
   for (const { href, origen } of enlacesInternos()) {
     const r = await fetch(BASE + href).catch((e) => ({ status: 0, _err: e?.message }));
@@ -160,12 +192,25 @@ test('SCRUM-329 · el producto NO escribe ninguna cookie no esencial', () => {
 test('SCRUM-329 · visitar la página pública no instala NINGUNA cookie', async () => {
   // El otro lado de la misma pregunta, medido en la respuesta real y no en el código: quien
   // aterriza en la landing sin registrarse no debe llevarse nada en el navegador.
+  //
+  // 🔴 EL `.catch` NO ES DEFENSIVO, ES LA DIFERENCIA ENTRE MEDIR Y NO MEDIR (SCRUM-822).
+  // Sin él, una petición que no llega tumbaba el FICHERO entero con un `fetch failed` sin
+  // nombrar ruta — y eso ya pasó: quedó anotado en `main` (commit a37427f0, SCRUM-637) como
+  // flake de concurrencia de esta misma línea, mientras la hermana de arriba sí lo llevaba.
+  // Una petición que no se hizo no puede sostener «no instala cookies»: eso es CIEGO, no verde.
+  const mudas = [];
   const conCookie = [];
   for (const ruta of ['/', '/precios', '/privacidad', '/terminos']) {
-    const r = await fetch(BASE + ruta);
+    const r = await fetch(BASE + ruta).catch((e) => ({ _fallo: e?.message || 'error de red' }));
+    if (r._fallo) { mudas.push(`${ruta} → sin respuesta (${r._fallo})`); continue; }
     const set = r.headers.get('set-cookie');
     if (set) conCookie.push(`${ruta} → ${set}`);
   }
+  assert.deepEqual(
+    mudas, [],
+    `🔴 CIEGO: hay peticiones que no llegaron a hacerse:\n    ${mudas.join('\n    ')}\n` +
+      '  No se afirma que la visita no instale cookies sobre una respuesta que no existe.',
+  );
   assert.deepEqual(conCookie, [], `🔴 la visita instala cookies sin pedir nada:\n    ${conCookie.join('\n    ')}`);
 });
 

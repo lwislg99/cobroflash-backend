@@ -110,6 +110,7 @@ import { getMerchantProfile, updateMerchantProfile, SlugError, SerieError } from
 import { TIT_SERIE_YA_EMITIDA, MSG_SERIE_YA_EMITIDA } from './modules/system/merchantAdmin';
 import { arranqueDeSerie, numerosDeLaSerie, bloqueoCambioDeSerie, invalidPrefijoSerie, debeOfrecerArranqueDeSerie, resumenSerieEmitida } from './core/validation/fiscalInput';
 import { vistaPreviaSerie } from './modules/invoicing/domain/vistaPreviaSerie';
+import { leerSeqDeLaSerieF } from './modules/invoicing/domain/invoiceNumber.service'; // SCRUM-780
 import { SERIE_LOCK_NS } from './modules/invoicing/domain/invoiceNumber.service';
 import QRCode from 'qrcode'; // A14.2: QR del perfil público (PNG alta res para furgoneta/tarjeta)
 import { resolverOpcionesQr, ErrorQr } from './modules/system/domain/qrPagina.service'; // SCRUM-230
@@ -267,12 +268,28 @@ app.use(
   }),
 );
 
+// ── SCRUM-822 · `root` NO ES DECORACIÓN, Y LO QUE EVITA NO SE VE LEYENDO LA LÍNEA ────────
+//
+// `res.sendFile(rutaAbsoluta)` SIN `root` hace que `send` parta la ruta ENTERA —el path de
+// instalación incluido— y le aplique su regla de dotfiles (`send/index.js:451-470`,
+// `containsDotFile`). Resultado: si CUALQUIER tramo del sitio donde vive el checkout empieza
+// por `.` (`.claude/worktrees/…`, un `.tmp`, un árbol desechable), estas tres rutas devuelven
+// **404 con el fichero presente y legible**. Con `root`, `send` sólo inspecciona el nombre
+// relativo — y de paso confina lo servido a `publicDir`.
+//
+// POR QUÉ NADIE LO VIO ANTES: `express.static` SÍ pasa `root`, así que la misma página seguía
+// respondiendo 200 como `/privacidad.html` y 404 como `/privacidad`. Y producción vive en
+// `/app` (Railway), sin ningún punto en la ruta, así que el sitio público nunca lo sufrió: el
+// defecto sólo se manifestaba en el banco de pruebas, donde se leía como «la landing enlaza a
+// un 404» — dos guards en rojo acusando a un producto sano. Medido en SCRUM-822 sobre el
+// `dist/` real: `/index.html` 200, `/privacidad` 404, `/privacidad.html` 200.
+
 // URLs limpias para políticas legales (privacidad requerida por Meta para publicar la app)
-app.get('/privacidad', (_req, res) => res.sendFile(path.join(publicDir, 'privacidad.html')));
-app.get('/terminos', (_req, res) => res.sendFile(path.join(publicDir, 'terminos.html')));
+app.get('/privacidad', (_req, res) => res.sendFile('privacidad.html', { root: publicDir }));
+app.get('/terminos', (_req, res) => res.sendFile('terminos.html', { root: publicDir }));
 
 // V0-4: página de precios + contador REAL de plazas founding (público, sin auth)
-app.get('/precios', (_req, res) => res.sendFile(path.join(publicDir, 'precios.html')));
+app.get('/precios', (_req, res) => res.sendFile('precios.html', { root: publicDir }));
 app.get('/public/founding-status', async (_req, res) => {
   try {
     const { getFoundingStatus } = await import('./modules/billing/domain/founding');
@@ -876,12 +893,17 @@ app.post('/admin/onboarding/serie/previa', requireRole('admin'), async (req, res
 
     const prefijoPedido = typeof req.body?.serie === 'string' ? req.body.serie.trim() : '';
     const prefijo = prefijoPedido || merchant.invoiceSeriesPrefix;
+    // SCRUM-780: la secuencia de la serie F se DERIVA de lo emitido, no del contador viejo.
+    const ahora = new Date();
     return res.json({
       ok: true,
       proximoNumero: vistaPreviaSerie(
         prefijo,
         { invoiceSeriesYear: arranque.invoiceSeriesYear, nextInvoiceNumber: arranque.nextInvoiceNumber },
         año,
+        false,
+        ahora,
+        await leerSeqDeLaSerieF(prisma, req.merchantId, año),
       ),
     });
   } catch (err) {
@@ -993,6 +1015,9 @@ app.post('/admin/onboarding/serie', requireRole('admin'), async (req, res, next)
           nextInvoiceNumber: actualizado.nextInvoiceNumber,
         },
         año,
+        false,
+        new Date(),                                        // SCRUM-780: el corte decide por fecha
+        await leerSeqDeLaSerieF(prisma, req.merchantId, año),
       ),
     });
   } catch (err) {
