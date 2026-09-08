@@ -227,6 +227,25 @@ export const REVISION_HEREDA = [
   // Van LAS DOS y no sólo el texto: heredar `shippingAddress` sin `shippingAddressMode` dejaría
   // una dirección guardada que el documento no imprime, porque el modo manda.
   'shippingAddress', 'shippingAddressMode',
+  // ── 7-sep-2026 · LAS ETIQUETAS DEL DOCUMENTO (SCRUM-595, DOC-05) ─────────────────────────
+  //
+  // Lo cazó este mismo guard, por CUARTA vez y otra vez antes de que costara nada. Una columna
+  // nueva de `Quote` nace SIN clasificar, y sin clasificar simplemente no viaja.
+  //
+  // HEREDA. El precedente exacto está tres líneas más arriba y es `internalNotes`: metadato del
+  // PROFESIONAL sobre el documento, que no sale en el papel ni lo ve el cliente. Una revisión es
+  // otra versión del MISMO trabajo, y el trabajo sigue siendo de la misma obra y del mismo
+  // cliente moroso: la etiqueta no caduca porque cambie un precio.
+  //
+  // 🔴 Y el defecto que evita es MUDO, que es lo que lo decide: sin heredar, revisar un
+  // presupuesto lo SACA del filtro «obra puerto» sin decir nada. El profesional no ve un error —
+  // ve una lista con un documento menos, y no tiene forma de saber que le falta. Heredar es
+  // REVERSIBLE (se quita la etiqueta); no heredar no lo es, porque ya no se sabe cuál llevaba.
+  //
+  // ⚠️ Clasificar NO es que viaje (ver arriba), y aquí no hay viaje que probar: `nuevaRevisionDe`
+  // sigue SIN LLAMADOR (SCRUM-688 abierto). Cuando lo tenga, `tags` tiene que ir en lo que ese
+  // llamador lea, igual que exigió SCRUM-686 para la cabecera y el pie.
+  'tags',
 ] as const;
 
 /**

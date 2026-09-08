@@ -3,7 +3,7 @@ import { prisma } from '../../core/db/prisma';
 import { Prisma } from '@prisma/client';
 import { CustomerCreateInput, CustomerUpdateInput } from '../../core/validation/schemas';
 // SCRUM-580 (CONT-07): la decision de las etiquetas vive aparte y es pura — ver ese fichero.
-import { normalizarTags } from './tagsDelCliente';
+import { tagsParaPrisma } from './tagsDelCliente';
 import { normalizePhone } from '../../core/utils/utils'; // SCRUM-578: la que YA existe, sin tocarla
 
 function generatePortalToken() {
@@ -160,7 +160,10 @@ type SinNullDeJs<T> = Omit<T, 'tags'> & { tags?: string[] | typeof Prisma.DbNull
 
 function normalizarEtiquetas<T extends { tags?: unknown }>(data: T): SinNullDeJs<T> {
   if (!('tags' in (data as object))) return data as SinNullDeJs<T>;
-  const v = normalizarTags((data as { tags?: unknown }).tags);
+  // SCRUM-595 · la traduccion vive en `tagsParaPrisma` (`tagsDelCliente.ts`), compartida con los
+  // dos documentos. Antes estaba aqui y era la unica; con tres escritores, tres copias de la
+  // eleccion entre `DbNull` y `JsonNull` es garantizar que una de las tres sea distinta.
+  const v = tagsParaPrisma((data as { tags?: unknown }).tags);
   if (v === undefined) return data as SinNullDeJs<T>;
   // 🔴 `Prisma.DbNull`, NO `null` NI `Prisma.JsonNull`, y el compilador obliga a elegir — que es
   // una suerte, porque son tres cosas distintas y sólo una es la que quiere este ticket:
@@ -171,7 +174,7 @@ function normalizarEtiquetas<T extends { tags?: unknown }>(data: T): SinNullDeJs
   //   · `undefined`       → «no toques el campo», que ya se ha resuelto arriba.
   //
   // Confundir las dos primeras es exactamente el defecto de «ausente ≠ vacío» con otro nombre.
-  return { ...data, tags: v === null ? Prisma.DbNull : v } as SinNullDeJs<T>;
+  return { ...data, tags: v } as SinNullDeJs<T>;
 }
 
 /**

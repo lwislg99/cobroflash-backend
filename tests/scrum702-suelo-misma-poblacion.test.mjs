@@ -189,7 +189,15 @@ test('SCRUM-702 · CONTROL NEGATIVO: por encima del suelo y sin mudos, no dice n
  * plataforma en la que corre, y esta línea es lo único que hace falta para que el caso del enlace
  * —el defecto que destapó CI— se pueda PROBAR en las dos en vez de saltarse en una.
  */
-const TOPE_LEEN_EL_ENTORNO = 13;
+// 🔴 SCRUM-716c (8-sep-2026) · SUBE A 14, y se dice qué hace la nueva.
+//
+// `tests/scrum716c-la-memoria-del-vigia.test.mjs` **NEUTRALIZA** `GITHUB_ACTIONS` en el
+// entorno del hijo (`GITHUB_ACTIONS: ''`) antes de ejecutar el vigía. No es una lectura para
+// decidir: es lo contrario — es para que el vigía recorra EL MISMO camino en CI y en el
+// portátil. Heredarla haría que en CI emitiera sus anotaciones `::error` y el test midiera
+// una cosa distinta en cada sitio, que es exactamente lo que este guard existe para impedir.
+// Es la misma decisión, y por el mismo motivo, que ya tomó `scrum727-constancia-del-vigia`.
+const TOPE_LEEN_EL_ENTORNO = 14;
 
 /**
  * 🔴 PARTIDAS A PROPÓSITO, para que el censo NO SE CACE A SÍ MISMO. Escritas enteras, este
