@@ -58,32 +58,38 @@
   }
 
   /**
-   * EL ERROR DEL ALTA, TRADUCIDO. La segunda pieza que las dos pantallas comparten.
+   * EL MENSAJE DEL SERVIDOR, SI ES PRESENTABLE. La segunda pieza que las dos pantallas comparten.
    *
-   * 🔴 POR QUÉ EXISTE, y no es ceremonia: el trinquete de SCRUM-644 prohíbe pintar un `.message`
-   * del servidor tal cual, porque así es como un identificador interno (`name_duplicate`) acaba
-   * en la cara del profesional. La ruta del documento suelto es una EXCEPCIÓN legítima —manda
-   * frases en castellano, escritas para leerse: «Falta el cliente de la factura.», «La factura
-   * necesita al menos una línea.»— y la forma que la casa tiene de declarar una excepción
-   * legítima es un TRADUCTOR con nombre, no un techo más alto. Un techo más alto vale para
-   * cualquier `.message`; esto vale para éste.
+   * Devuelve la frase que manda la ruta del documento suelto —«Falta el cliente de la factura.»,
+   * «La factura necesita al menos una línea.»: castellano, escrito para leerse— o CADENA VACÍA
+   * cuando no hay nada que enseñar. Una sola decisión para las dos pantallas.
    *
-   * El respaldo NO se escribe aquí: sale de `rotulosDelDocumento`, que ya dice «factura» o
-   * «justificante» según el documento que este profesional emite (SCRUM-776). Se recibe por
-   * parámetro para que la pieza siga siendo pura y la suite pueda ejercitarla sin navegador.
+   * 🔴 DEVUELVE '' Y NO EL RESPALDO, Y ESO ES EL PUNTO ENTERO DE SU FORMA. Se escribió primero
+   * al revés —recibiendo `rotulosDelDocumento` y devolviendo ya el texto final— y METÍA UN NIVEL
+   * entre el rótulo aprobado y el sitio donde se pinta. Medido: el censo de SCRUM-601 sigue UN
+   * nivel de indirección, así que los DOS textos de `errorAlEmitir()` desaparecían del censo
+   * entero —16 literales que dependen del flag pasaban a 14— y con ellos la vigilancia de que
+   * un merchant en modo justificante no lea «factura». Los textos seguían siendo correctos y
+   * seguían llegando a la pantalla: lo que se perdía era quien los mira.
+   *
+   * Así, el respaldo `rotulosDelDocumento.errorAlEmitir()` se queda ESCRITO EN CADA PANTALLA,
+   * pegado a su `setAlert`/`textContent`, que es la forma que el censo sabe leer. Un envoltorio
+   * no es neutral si esconde el texto de quien lo vigila (la lección literal de SCRUM-776).
+   *
+   * ⚠️ Y el `.message` del servidor se queda AQUÍ DENTRO, lejos de todo pintor: el trinquete de
+   * SCRUM-644 prohíbe pintar un `.message` crudo, y lo que sale de aquí ya no lo es.
    *
    * @param {any} e el error de `apiRequest`.
-   * @param {{errorAlEmitir: () => string}} rotulos normalmente `window.rotulosDelDocumento`.
+   * @returns {string} la frase del servidor, o '' si no mandó ninguna.
    */
-  function mensajeDeErrorDocumentoSuelto(e, rotulos) {
-    var delServidor = e && e.data && e.data.message;
-    if (typeof delServidor === 'string' && delServidor.trim()) return delServidor;
-    return rotulos.errorAlEmitir();
+  function mensajeDelServidor(e) {
+    var texto = e && e.data && e.data.message;
+    return (typeof texto === 'string' && texto.trim()) ? texto : '';
   }
 
   var api = {
     cuerpoDelDocumentoSuelto: cuerpoDelDocumentoSuelto,
-    mensajeDeErrorDocumentoSuelto: mensajeDeErrorDocumentoSuelto,
+    mensajeDelServidor: mensajeDelServidor,
   };
 
   // El `typeof window` es lo que permite que la suite CARGUE este fichero y EJECUTE la

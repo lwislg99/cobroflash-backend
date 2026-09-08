@@ -39,12 +39,6 @@ export const PINTORES = Object.freeze([
 export const TRADUCTORES = Object.freeze([
   'mensajeDeErrorCatalogo',   // SCRUM-641 · productsView
   'mensajeDeErrorProveedor',  // SCRUM-644 · providersView
-  // SCRUM-600 · el alta del documento suelto, en `cuerpoDelDocumentoSuelto.js`. Lo llaman las
-  // DOS pantallas del flujo (la página y el modal), y decide entre el mensaje del servidor —que
-  // ahí sí es una frase escrita para leerse— y el rótulo aprobado de `rotulosDelDocumento`.
-  // Entra aquí como TRADUCTOR y no como techo más alto a propósito: un techo ampara cualquier
-  // `.message` del fichero; esto ampara exactamente el que pasa por esta función.
-  'mensajeDeErrorDocumentoSuelto',
 ]);
 
 /** Las propiedades que traen texto del servidor y no se pueden pintar crudas. */

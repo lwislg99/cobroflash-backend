@@ -246,11 +246,13 @@ function openNuevaFacturaModal(onCreated) {
       showToast(window.rotulosDelDocumento.avisoEmitido());
       if (typeof onCreated === 'function') onCreated(r && r.factura);
     } catch (e) {
-      // SCRUM-600 · el mismo traductor que usa la página. El servidor manda `message` legible en
-      // cada error nombrado y se muestra tal cual porque es SUYO, no microcopy de esta pantalla;
-      // cuando no lo manda, sale el rótulo aprobado. Las dos pantallas dicen lo mismo porque es
-      // la misma función, no porque alguien las compare.
-      err.textContent = window.documentoSuelto.mensajeDeErrorDocumentoSuelto(e, window.rotulosDelDocumento);
+      // El servidor manda `message` legible en cada error nombrado; se muestra tal cual porque
+      // es SUYO, no microcopy de esta pantalla.
+      // SCRUM-600 · quién decide si ese mensaje es presentable es ahora la pieza común, la misma
+      // que usa la página: las dos dicen lo mismo porque es la misma función. El RESPALDO sigue
+      // escrito aquí a propósito, pegado a su sumidero — es el rótulo firmado de SCRUM-776 y el
+      // censo de SCRUM-601 tiene que poder verlo.
+      err.textContent = window.documentoSuelto.mensajeDelServidor(e) || window.rotulosDelDocumento.errorAlEmitir();
       err.style.display = 'block';
       emitir.disabled = false;
       emitir.textContent = antes;

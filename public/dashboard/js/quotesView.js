@@ -459,7 +459,14 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
     fieldDireccionObra.select.appendChild(opt);
   });
   fieldDireccionObra.select.value = window.quoteDireccionObra.MODOS.NO_MOSTRAR;
-  clientFormRow.appendChild(fieldDireccionObra.wrapper);
+  // SCRUM-600 · la DIRECCIÓN DE LA OBRA viaja en `shippingAddressMode` + `shippingAddress`, dos
+  // claves que el cuerpo del documento suelto no tiene: el emisor las descarta. Fuera, por el
+  // mismo criterio que los bloques 3 y 4.
+  //
+  // 🔴 Y aquí además se colaba una palabra: una de sus opciones es «Utilizar dirección de
+  // FACTURACIÓN», así que en modo justificante la pantalla decía «factura» sin que ninguna
+  // ranura del documento lo dijera. Lo cazó el banco montando la vista, no un `grep`.
+  if (!esDocumentoSuelto) clientFormRow.appendChild(fieldDireccionObra.wrapper);
 
   // El campo libre vive en su PROPIA fila, a ancho completo: `.quote-form-row` es una rejilla de
   // tres columnas y una dirección postal de 300 caracteres en un tercio de ancho se lee mal.
@@ -473,7 +480,11 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   // tope de aquí es para que el profesional vea dónde está el límite, no para validar.
   direccionObraInput.maxLength = 300;
   direccionObraWrap.appendChild(direccionObraInput);
-  blockClient.appendChild(direccionObraWrap);
+  // SCRUM-600 · el campo de texto de la dirección de la obra se va con su selector (arriba). Va
+  // aparte porque también se pinta aparte, y dejarlo suelto sería un `shipping_address` en la
+  // pantalla del documento suelto sin nada que lo gobierne — invisible por `hidden`, que es
+  // justo la clase de resto que nadie vuelve a mirar.
+  if (!esDocumentoSuelto) blockClient.appendChild(direccionObraWrap);
 
   /**
    * SCRUM-602 · enseña u oculta el campo libre, y le pone la SUGERENCIA como placeholder.
@@ -549,7 +560,10 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   blockLines.appendChild(linesVatRow);
   linesVatRow.appendChild(fieldVatDefault.wrapper);
   // SCRUM-656: al lado del IVA por defecto, que es su misma familia de decisiones.
-  linesVatRow.appendChild(fieldIvaModo.wrapper);
+  // SCRUM-600 · el IVA POR DOCUMENTO (`ivaModo`) es otra clave que el emisor descarta, y su
+  // rótulo dice «presupuesto». El IVA POR LÍNEA sí sobrevive y se queda: es `tax`, la única vía
+  // por la que el impuesto llega a la factura.
+  if (!esDocumentoSuelto) linesVatRow.appendChild(fieldIvaModo.wrapper);
 
     // Checkbox WhatsApp
     // A2.3: el checkbox "Enviar por WhatsApp automáticamente" desaparece — al
@@ -1175,7 +1189,10 @@ blockDelivery.appendChild(descWrapper);
 
   const lhText = document.createElement("span");
   lhText.textContent = "Añade los conceptos que vas a presupuestar.";
-  linesHeader.appendChild(lhText);
+  // SCRUM-600 · la pista del bloque de líneas usa el VERBO del presupuesto («que vas a
+  // presupuestar»), que en un documento suelto no dice lo que pasa. No se reescribe (regla 30):
+  // se omite. Es una pista, no un control: nada de lo que el profesional puede hacer se pierde.
+  if (!esDocumentoSuelto) linesHeader.appendChild(lhText);
 
   // 🔴 SCRUM-794 · AQUÍ HABÍA UN SEGUNDO «+ Añadir línea», y se ha BORRADO.
   //
@@ -1198,7 +1215,11 @@ blockDelivery.appendChild(descWrapper);
   aiBtn.className = "btn-ghost btn-sm";
   aiBtn.style.cssText = "font-size:12px;padding:4px 10px;border-radius:6px;border:1px dashed var(--neutral-300);color:var(--neutral-600)";
   aiBtn.innerHTML = "✨ Sugerir con IA";
-  aiBtn.title = "Describe el trabajo y Claude sugiere las líneas del presupuesto";
+  // SCRUM-600 · el BOTÓN se queda —la IA produce LÍNEAS, que es justo lo que el emisor sí
+  // guarda— pero su tooltip nombra el documento. Se omite SÓLO el tooltip: el rótulo visible
+  // («✨ Sugerir con IA») no nombra nada y se explica solo, así que no queda ningún control mudo.
+  // Escribir aquí otra frase sería microcopy nueva (regla 30).
+  if (!esDocumentoSuelto) aiBtn.title = "Describe el trabajo y Claude sugiere las líneas del presupuesto";
   linesHeader.appendChild(aiBtn);
 
   const useTemplateBtn = document.createElement("button");
@@ -1208,7 +1229,14 @@ blockDelivery.appendChild(descWrapper);
   useTemplateBtn.className = "btn-ghost btn-sm quote-header-btn";
   useTemplateBtn.innerHTML = "📋 Usar plantilla";
   useTemplateBtn.title = "Cargar líneas desde una plantilla guardada";
-  linesHeader.appendChild(useTemplateBtn);
+  // 🛑 SCRUM-600 · LA OTRA MITAD DE LA PARADA DE PLANTILLAS (la primera está en el bloque de
+  // acciones, con `saveTemplateBtn`). Este botón y su rótulo NO nombran el documento, pero la
+  // hoja que abre sí: «Elige una plantilla para cargar sus líneas en el presupuesto actual.».
+  //
+  // Se retiran los DOS juntos a propósito: dejar «Usar» sin «Guardar» sería media función, y
+  // dejar el botón para que la hoja hable del presupuesto dentro de una factura es peor que no
+  // tenerlo. Se enciende el día que el fundador firme esas dos frases; no antes (regla 30).
+  if (!esDocumentoSuelto) linesHeader.appendChild(useTemplateBtn);
 
   blockLines.appendChild(linesHeader);
 
@@ -2228,7 +2256,15 @@ blockDelivery.appendChild(descWrapper);
     previewBox.appendChild(clientBlock);
 
         // Condiciones de pago (preview)
-        const pTermsCode = paymentSelect.value || "";
+        // 🔴 SCRUM-600 · EN EL DOCUMENTO SUELTO LA VISTA PREVIA NO IMPRIME CONDICIONES DE PAGO, y
+        // no es sólo cuestión de rótulos. El bloque «3. Condiciones» ya no se pinta, así que
+        // `paymentSelect` conserva su valor de fábrica: la vista previa estaría imprimiendo en el
+        // papel del cliente una condición que NADIE ha elegido y que el emisor no guarda —
+        // «Pago 100% al aceptar el presupuesto.» sobre un documento que ya está emitido.
+        //
+        // Un dato inventado en el documento es peor que un hueco, y encima nombraba el
+        // presupuesto: lo cazó el banco montando la vista, no la lectura del código.
+        const pTermsCode = esDocumentoSuelto ? "" : (paymentSelect.value || "");
         if (pTermsCode) {
           const paymentBlock = document.createElement("div");
           paymentBlock.className = "preview-client-block";
@@ -4080,11 +4116,12 @@ if (Number.isFinite(n) && n >= 0) {
         // inerte sin que nadie lo note.
         if (window.renderAppView) window.renderAppView("invoices");
       } catch (e) {
-        // El error pasa por el traductor compartido: el servidor manda `message` legible en cada
-        // error nombrado y se muestra tal cual porque es SUYO, y si no lo manda sale el rótulo
-        // aprobado. Mismo trato que el modal, y por la MISMA función (SCRUM-644 exige traductor,
-        // no `.message` crudo).
-        setAlert("error", window.documentoSuelto.mensajeDeErrorDocumentoSuelto(e, window.rotulosDelDocumento));
+        // El servidor manda `message` legible en cada error nombrado y se muestra tal cual porque
+        // es SUYO; si no manda ninguno, sale el rótulo aprobado. La decisión de si hay mensaje
+        // presentable es de la pieza común —la misma que usa el modal—, y el RESPALDO se escribe
+        // aquí, pegado a su sumidero: así el censo de SCRUM-601 sigue viendo que ese texto
+        // depende del flag. Esconderlo detrás de un envoltorio le quitó la vigilancia una vez.
+        setAlert("error", window.documentoSuelto.mensajeDelServidor(e) || window.rotulosDelDocumento.errorAlEmitir());
         submitBtn.disabled = false;
         submitBtn.textContent = antes;
       }
