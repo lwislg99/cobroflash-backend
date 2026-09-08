@@ -294,6 +294,18 @@ const HALLAZGOS_DECLARADOS = [
   // Lo retira: quien borre `scripts/verificacion-s5/`, o quien lleve el enlace ticket↔rama a un
   // mecanismo que no necesite consultar la punta de `main`.
   'scripts/verificacion-s5/enlace-ticket-rama.mjs [log]',
+  // SCRUM-637 · el generador del borrado de ramas. Ya estaba en la lista de INDIRECTAS por su
+  // `branch -r --merged origin/main`; ahora lee además el HISTÓRICO DE MERGES de la punta
+  // (`git log --merges origin/main`) y por eso asciende también a ésta.
+  //
+  // El motivo es el mismo y sigue siendo el sujeto de la pregunta: para saber si borrar una rama
+  // cerraría un PR abierto hay que mirar si ALGÚN merge de `main` la nombra, y eso sólo existe en
+  // la punta. Contra la base de una rama el histórico estaría truncado justo por donde importa —
+  // los merges recientes— y el apartado saldría vacío, que es la respuesta peligrosa: diría «no
+  // hay ninguna de riesgo» sin haber mirado.
+  // Lo retira: quien borre `scripts/verificacion-s5/`, o el día que haya `gh` y el estado de los
+  // PR se pueda consultar de frente, que es lo que este rodeo sustituye.
+  'scripts/verificacion-s5/ramas-borrables.mjs [log]',
 ];
 
 /** Ficheros que llaman a git y nombran la referencia móvil FUERA de los argumentos. */
