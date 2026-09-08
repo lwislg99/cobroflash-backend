@@ -9,9 +9,18 @@
 -- «lo he borrado» de «aquí nunca hubo nada».
 -- ═══════════════════════════════════════════════════════════════════════════════════════════
 
--- ① EL RECUENTO POR MERCHANT, separando factura de justificante.
---    ANTES: enseña de quién es cada documento — es la comprobación de que el único merchant
---    ajeno (Tecnosel) sigue teniendo CERO. Si tuviera alguno, el borrado NO se ejecuta.
+-- ① 🔴 EL RECUENTO POR MERCHANT — Y ES LA COMPROBACIÓN QUE PUEDE PARAR EL BORRADO.
+--
+--    ANTES: enseña de quién es cada documento. Es la comprobación de que el único merchant que
+--    NO es del fundador —Tecnosel, la madre de Luis— sigue teniendo CERO documentos.
+--
+--    🔴 SE PASA CONTRA **PRODUCCIÓN** Y **EL MISMO DÍA** en que se vaya a ejecutar el borrado.
+--    La comprobación de ayer NO vale: entre ayer y hoy alguien ha podido emitir. Es un dato que
+--    caduca, y darlo por bueno sería exactamente el error que esta casa lleva meses cazando.
+--
+--    ⛔ SI TECNOSEL TIENE AUNQUE SEA UN DOCUMENTO, EL BORRADO **NO SE EJECUTA** tal cual: hay
+--    que acotarlo por merchant, y eso es otra decisión del fundador.
+--
 --    DESPUÉS: todo a cero.
 SELECT m.id,
        m.name,
@@ -24,13 +33,25 @@ SELECT m.id,
  GROUP BY m.id, m.name, m.email
  ORDER BY total DESC, m.id;
 
--- ② EL TAMAÑO DE CADA TABLA DE DOCUMENTO. Después del borrado, las seis a cero.
-SELECT 'invoices'                  AS tabla, count(*)::int AS filas FROM invoices
-UNION ALL SELECT 'quotes',                   count(*)::int FROM quotes
-UNION ALL SELECT 'albaranes',                count(*)::int FROM albaranes
-UNION ALL SELECT 'partes_trabajo',           count(*)::int FROM partes_trabajo
+-- ② EL TAMAÑO DE CADA TABLA QUE EL GUION VACÍA. Después del borrado, TODAS a cero.
+--    Los números de la pasada ANTES son los «recuentos esperados» que el guion cita al lado de
+--    cada `DELETE`: si al ejecutar sale otro, algo se movió entre las dos pasadas — parar.
+SELECT 'invoices'                   AS tabla, count(*)::int AS filas FROM invoices
+UNION ALL SELECT 'quotes',                    count(*)::int FROM quotes
+UNION ALL SELECT 'albaranes',                 count(*)::int FROM albaranes
+UNION ALL SELECT 'partes_trabajo',            count(*)::int FROM partes_trabajo
 UNION ALL SELECT 'albaran_lineas_facturadas', count(*)::int FROM albaran_lineas_facturadas
-UNION ALL SELECT 'charges (NO se borra)',    count(*)::int FROM charges
+UNION ALL SELECT 'charges',                   count(*)::int FROM charges
+UNION ALL SELECT 'events',                    count(*)::int FROM events
+UNION ALL SELECT 'reconciliations',           count(*)::int FROM reconciliations
+ ORDER BY tabla;
+
+-- ②b LAS QUE **NO** SE BORRAN. Aquí el número tiene que ser EL MISMO antes y después: es el
+--     control de que la limpieza no se ha llevado por delante lo que debía quedarse.
+SELECT 'customers (se queda)'         AS tabla, count(*)::int AS filas FROM customers
+UNION ALL SELECT 'audit_log (se queda)',        count(*)::int FROM audit_log
+UNION ALL SELECT 'whatsapp_messages (se queda)', count(*)::int FROM whatsapp_messages
+UNION ALL SELECT 'email_messages (se queda)',   count(*)::int FROM email_messages
  ORDER BY tabla;
 
 -- ③ 🔴 LAS HUÉRFANAS — la comprobación que de verdad decide si el orden fue el correcto.
@@ -55,8 +76,11 @@ SELECT 'maintenance_plans.quote_id', count(*)::int
    AND NOT EXISTS (SELECT 1 FROM quotes q WHERE q.id = p.quote_id)
  ORDER BY referencia;
 
--- ④ LOS CONTADORES DE SERIE. El borrado NO los toca: esto enseña dónde quedan, para que el
---    fundador vea con qué número emitiría el primer documento de verdad.
+-- ④ LOS CONTADORES DE SERIE. 🔴 EL GUION **SÍ** LOS REINICIA (decisión del fundador, 8-sep-2026).
+--    ANTES: enseña dónde estaban — merchant #1 en dev iba por `next_invoice_number = 6` con 5
+--    facturas, o sea que sin reiniciar la primera factura real habría salido `2026-FG-006`.
+--    DESPUÉS: los cuatro contadores a **1** y los dos `*_series_year` a **NULL**, en TODOS los
+--    merchants. Si alguno no está a 1, el `UPDATE` del bloque ⑨ no llegó a correr.
 SELECT id,
        name,
        next_invoice_number      AS siguiente_factura,
@@ -67,9 +91,11 @@ SELECT id,
   FROM merchants
  ORDER BY id;
 
--- ⑤ LAS REFERENCIAS POLIMÓRFICAS que quedan colgando y que este guion NO borra a propósito.
---    No es un fallo: es el rastro de lo que pasó. Se enseña para que la decisión de conservarlo
---    o no la tome el fundador con el número delante.
+-- ⑤ LAS REFERENCIAS POLIMÓRFICAS que quedan colgando. El guion NO las borra: decisión del
+--    fundador (8-sep-2026), y el motivo es que son el registro de LO QUE PASÓ. Que apunten a
+--    ids muertos está BIEN: son un LOG, no una relación.
+--    Aquí el número tiene que ser EL MISMO antes y después. Se enseña para que quede constancia
+--    de cuántas quedan apuntando a documentos que ya no existen — a propósito.
 SELECT 'audit_log'          AS tabla, entity_type  AS tipo, count(*)::int AS filas
   FROM audit_log          WHERE entity_type  IN ('invoice', 'quote', 'albaran') GROUP BY entity_type
 UNION ALL

@@ -422,3 +422,90 @@ obstáculo que rodear — es la señal de que esto no es una migración de rutin
 - **Ninguna base**: ni dev, ni staging, ni producción. Sólo se ha LEÍDO dev para contar.
 - `prisma/schema.prisma` · el camino de emisión (sólo lectura, regla 38) · ningún rótulo · ningún
   estado ni flag nuevo · ninguna dependencia nueva.
+
+---
+
+# APÉNDICE · 8-sep-2026 · FASE 0 (2ª vuelta) · el guion, EJECUTABLE
+
+**Medido contra:** `origin/main` = `2f123b7071d148bc93b87a42354f52ede8bef065` · 2026-09-08T20:00:00+02:00
+
+> ⚠️ Esa hora es la del trabajo de esta rama, no una lectura de reloj — criterio R14.
+
+Las **cinco respuestas del fundador (8-sep-2026)** están dentro del guion, cada una con su motivo
+escrito al lado de la sentencia que la aplica. Sigue **sin ejecutarse en ninguna base, ni en dev**.
+
+## Lo que cambia respecto a la primera vuelta
+
+| | 1ª vuelta | ahora |
+|---|---|---|
+| ① contadores | `UPDATE` comentado, pregunta abierta | **descomentado**, con los `*_series_year` a `NULL` |
+| ② charges | no se borraban, pregunta abierta | **se borran**, y `events` + `reconciliations` van LOS PRIMEROS |
+| ③ rastro polimórfico | pregunta abierta | **no se toca**, con el motivo escrito en el guion |
+| ④ Tecnosel | «pasar la verificación» | **bloqueante**: contra PRODUCCIÓN y EL MISMO DÍA |
+| ⑤ SCRUM-597 | «hay que rederivar» | derivado de su rama, **pendiente de confirmar en `main`** |
+
+## 🔴 ② El orden de `charges` no es de gusto: es una restricción MEDIDA
+
+Hacia `charges` hay **cuatro** referencias, con dos comportamientos:
+
+| referencia | onDelete | efecto al borrar el cobro |
+|---|---|---|
+| `events.charge_id` | **Restrict** (obligatoria, sin `onDelete`) | 🔴 **lo BLOQUEA** |
+| `reconciliations.charge_id` | **Restrict** (ídem) | 🔴 **lo BLOQUEA** |
+| `quotes."chargeId"` | SetNull | se anula sola |
+| `invoices.charge_id` | SetNull | se anula sola |
+
+Con **una sola fila** en `events`, el `DELETE FROM charges` falla y —al ir todo en una
+transacción— tumba el borrado entero. Por eso `events` y `reconciliations` son ① y ②, antes que
+ningún documento. La instrucción del fundador era correcta; ahora está medida.
+
+## ① Los contadores: el número exacto que lo justifica
+
+`next_invoice_number` es una **columna guardada** (`schema.prisma:22-29`), no un derivado de
+contar filas. Medido en dev: merchant #1 con **5 facturas** y `next_invoice_number = 6`. Sin el
+reinicio, **la primera factura real saldría `2026-FG-006`** sobre una tabla vacía.
+
+Los `*_series_year` van a `NULL` con los contadores: son el año de la serie **en curso**, y una
+serie que empieza de nuevo no tiene año en curso hasta que se emita algo. Dejarlos puestos con el
+contador a 1 sería declarar un ejercicio que ya no tiene documentos.
+
+## ⑤ SCRUM-597 — derivado de su rama, y NO dado por bueno
+
+**No está en `main`.** Comprobado dos veces durante esta sesión: `origin/main` = `2f123b70`, sin
+commit que lo mencione y sin las tablas en el schema. La rama
+`scrum-597-asignar-usuario-al-documento` (`7450af1f`) sigue viva.
+
+Leído **en esa rama**, las dos tablas declaran `onDelete: Cascade` sobre el documento:
+
+```prisma
+quote   Quote   @relation(fields: [quoteId],   references: [id], onDelete: Cascade)
+invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+```
+
+Con su propio comentario: *«onDelete: Cascade en LAS DOS, por la lección de SCRUM-244: sin él la
+FK es RESTRICT y borrar un empleado —o su merchant— revienta a mitad de recorrido».*
+
+⇒ **Se arrastran solas y el orden del guion NO cambia.** Pero eso es una **previsión derivada de
+una rama sin mergear**, no una medición del árbol que se va a ejecutar. Queda escrito en el guion
+que **antes de ejecutar hay que rederivar con las dos tablas ya en `main`** y confirmar que el
+Cascade sobrevivió a la mezcla: si alguna llegara con RESTRICT, tendría que ir antes que su
+documento, como `events`.
+
+## Lo que exige la ausencia de copia de seguridad
+
+El guion se abre con **qué NO se puede deshacer**, enumerado: las facturas y su cadena de huellas
+(irreconstruible: cada huella encadena con la anterior, y la anterior ya no está), los
+presupuestos con sus firmas, los albaranes y partes, los cobros con su traza de pasarela, y los
+contadores, que vuelven a 1 sin dejar constancia de por dónde iban.
+
+Todo en **una transacción**. Cada `DELETE` lleva al lado **el recuento que debe salir** —el de la
+pasada ANTES— para que quien ejecuta sepa si el número que ve es el que debía ver. Y la
+verificación gana un bloque **②b** con las tablas que NO se tocan (`customers`, `audit_log`,
+`whatsapp_messages`, `email_messages`): ahí el número tiene que ser **el mismo antes y después**,
+que es el control de que la limpieza no se llevó por delante lo que debía quedarse.
+
+## Lo que NO se ha tocado
+
+- **Ninguna base.** Ni dev. Sólo se leyó dev en la primera vuelta, para contar.
+- `prisma/schema.prisma` · el camino de emisión · ningún rótulo · ningún estado ni flag nuevo ·
+  ninguna dependencia nueva.
