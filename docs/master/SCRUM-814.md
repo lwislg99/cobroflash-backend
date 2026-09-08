@@ -183,6 +183,12 @@ comprobado — este banco **emite facturas**.
 pregunta 2 se creó **parcial y sobre un banco desechable**, y se tiró en la misma ejecución.
 
 ---
+> 🔴 **ESTE FICHERO TIENE DOS APÉNDICES DEL MISMO DÍA, y ninguno se borra.** Dos sesiones
+> arreglaron SCRUM-814 en paralelo sin saberlo. El de abajo —el que entró en `main`— es el que
+> manda para `POST /admin/quotes/:id/invoice`, y es MEJOR que el mío: recalcula el tramo dentro
+> del cerrojo en vez de abortar, así que quien llega segundo emite el tramo SIGUIENTE en la misma
+> petición y no hace falta redactar ninguna frase nueva. El segundo apéndice es el mío: cede ese
+> camino, adopta su mecanismo y cierra **los otros dos**, que él no tocó.
 
 # APÉNDICE · 7-sep-2026 · EL ARREGLO (vía ①), y la vía ② que se PARA
 
@@ -391,3 +397,217 @@ No se ha fijado `timeout` ni `maxWait` en ninguna transacción (③ de SCRUM-728
 `prisma/schema.prisma` · `allocateInvoiceNumber` y su cerrojo · `@@unique([merchantId, number])` ·
 las facturas ya emitidas · los caminos C1 y C2 · ningún estado, flag, texto o dependencia nueva ·
 producción y staging (todo contra la base de pruebas del carril, acreditada antes de correr).
+
+---
+---
+
+---
+
+# 7-sep-2026 · EL ARREGLO — camino B, y lo que se llevó por delante
+
+**Medido contra:** `origin/main` = `3a487daaac1654ba0d03cdae3b6e91cb31221b83` (mezclado dentro de la rama, AA2)
+**Preámbulo:** `prisma generate` rc=0 · `HEAD..origin/main` = 0 · **`npm run build` rc=0**
+
+> Decisión del fundador sobre la medición de arriba: **B ahora, A no se pide, A′ ticket aparte.**
+> `prisma/schema.prisma` NO se toca. El cerrojo de serie de SCRUM-728 y `@@unique([merchantId,
+> number])` NO se tocan: funcionan y no eran el problema.
+
+## 1 · El cambio, en una frase
+
+El recuento de tramos ya emitidos pasa **dentro de la transacción**, después de tomar el
+`pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)` que ya existía y **antes** de pedir número. Si
+lo que encuentra no coincide con lo que esta petición preparó, la transacción se deshace entera y
+la ruta contesta **409 `stage_taken_concurrently`**.
+
+- El cerrojo se toma **antes** de pedir número por la misma razón que SCRUM-246 y SCRUM-771: las
+  comprobaciones van antes de consumir un número de la serie. Que el rollback también lo devuelva
+  es un detalle del motor; el orden se lee.
+- `SERIE_LOCK_NS` se **importa**, no se copia. Dos sitios que sepan el número del cerrojo acaban
+  sabiendo números distintos.
+- **Se aborta, no se recalcula.** Recalcular el tramo ahí dentro obligaría a meter
+  `stageLinesReconciled`, `exigirLineasFacturables` y `exigirTiposDeIvaEmitibles` en la
+  transacción: medio camino de emisión movido para arreglar una carrera. Quien pierde, reintenta
+  y recibe el tramo siguiente.
+- Código **propio** para el 409, distinto de `no_more_invoices_for_payment_terms`: uno dice
+  «vuelve a pedirlo» y el otro «no queda nada». Un solo código obligaría a parsear el texto.
+
+## 2 · La verificación
+
+| control | resultado |
+| --- | --- |
+| 🔴 **rojo con el mecanismo viejo** | quitando el recuento: `RONDA 1: DOS FACTURAS DEL MISMO TRAMO ["Anticipo","Anticipo"]`. El positivo y el negativo **siguen verdes** en ese rojo: el test discrimina |
+| 🔴 **3 carreras seguidas** | ninguna emite dos veces el mismo tramo. Una gana con 201, la otra pierde con `stage_taken_concurrently` |
+| 🔴 **suelo de carrera** | si arrancan con >120 ms de diferencia el test **falla declarándose ciego**; en las corridas buenas, 0-27 ms |
+| ✅ **positivo** | dos secuenciales → «Anticipo» 363 € y «Final» 847 €, exigiendo el **número** (2 facturas, 2 tramos), no longitudes que pueden ser `0 === 0` |
+| ✅ **negativo** | el 409 `no_more_invoices_for_payment_terms` sigue saliendo cuando de verdad están todas |
+| ✅ **dinero** | tras la carrera, reintentando: 363 + 847 = **1210 €**. Antes se quedaban 484 € sin poder facturarse |
+
+**Y el recuento queda ATADO**, que era mi propia condición al recomendar B:
+
+- `tests/scrum814-carrera-de-tramos-postgres.test.mjs` — la carrera real, con banco, y **lanza el
+  mismo `docs/master/evidencias/scrum814/una-peticion.mjs`** que produjo la evidencia del defecto.
+- `tests/scrum814-recuento-dentro.test.mjs` — **sin gate, corre siempre en `npm test`**, por AST:
+  vigila que el recuento siga dentro de la transacción, que el cerrojo se tome antes, que
+  `SERIE_LOCK_NS` se importe y que el test con banco siga existiendo con su suelo. Un ticket cuyo
+  único guard está detrás de un gate es un ticket cuyo guard el CI no ejecuta nunca (SCRUM-296).
+  Probado en rojo por las **dos** vías por las que esto regresa: quitando el recuento, y
+  moviéndolo detrás de `allocateInvoiceNumber`.
+
+## 3 · Lo que el arreglo destapó, y no era mío
+
+**El censo de procedencia de SCRUM-387 estaba ciego tras cualquier template literal con `${}`.**
+Al meter el `` $executeRaw`…${SERIE_LOCK_NS}…` `` el número de marcas sin procedencia **bajó** de
+9 a 8 — o sea, la avería tenía forma de mejora. `ts.createScanner` a pelo no sabe de gramática y
+necesita `reScanTemplateToken`; sin eso se descarrila. Medido sobre el mismo fichero:
+
+```
+sin el template  → 143 comentarios vistos, 1 con marca de aprobación
+con el template  →  72 comentarios vistos, 0 con marca      ← CIEGO
+```
+
+Migrado a `getLeadingCommentRanges`, aparecieron **ocho marcas de aprobación sin procedencia que
+llevaban ocultas** (`SIN_PROCEDENCIA` 9 → 17), enumeradas una a una en el propio scrum387. Ninguna
+es de este ticket: es deuda vieja que el instrumento no alcanzaba. SCRUM-718 ya había medido que
+ese escáner «pierde el 37,7 % de los comentarios» y había dejado scrum387 como carril ajeno; su
+lista de usuarios y su control positivo se actualizan aquí.
+
+📌 Lo cazó **la mitad del trinquete que vigila que el número no baje en silencio** — la que hasta
+hoy parecía la menos útil.
+
+## 4 · Los otros tres censos que hubo que atender
+
+- **SCRUM-289** (origen de la factura): el nuevo `invoice.count` queda clasificado como
+  `POBLACION` — «tramos de ESTE presupuesto»; una factura suelta no pertenece a ninguno.
+- **SCRUM-348** (tenencia): la primera versión filtraba sólo por `quoteId` y habría sido la
+  **sexta** deuda por procedencia con el tope en 5. En vez de subir el tope se le puso su
+  `merchantId`, que estaba a mano en `quote` (regla 2). Un tope que se sube en cuanto estorba deja
+  de ser un tope.
+- **SCRUM-601** (copy): `aPelo` 151 → 152 por el mensaje del 409, movido **en el mismo commit** y
+  con su motivo escrito.
+
+## 5 · ⚠️ Microcopy: PROPUESTA, no aprobada (regla 30)
+
+Un texto nuevo, el del 409:
+
+> «Se acaba de emitir otra factura de este presupuesto. Vuelve a intentarlo y saldrá el tramo
+> siguiente.»
+
+Va **sin firmar**. Un 409 sin mensaje dejaría la pantalla muda ante una carrera —el profesional
+vería un error sin saber que basta reintentar—, así que el texto va, declarado como pendiente en
+vez de colado en silencio. Firma o corrección, y se aplica.
+
+## 6 · El hueco que este ticket NO cierra, medido
+
+La misma forma —contar fuera, decidir fuera, transacción después— está en otros **dos** caminos:
+
+| fichero | línea | quién lo dispara |
+| --- | :-: | --- |
+| `src/modules/quotes/app/routes/quotes.routes.ts` | `:654` | **el CLIENTE FINAL**, aceptando el presupuesto desde WhatsApp (C1) |
+| `src/modules/jobs/app/routes/jobs.routes.ts` | `:1272` | consolidar albaranes de un trabajo |
+
+El primero preocupa más que el que se arregla aquí: lo dispara alguien sin login que puede pulsar
+dos veces. **No se tocan en este PR** porque el encargo nombraba `quotesAdmin.routes.ts` y ampliar
+el alcance de un arreglo de dinero por mi cuenta es lo contrario de lo que pide la casa. El arreglo
+es el mismo patrón en cada uno; con un «sí» van en este PR o en el siguiente.
+
+## 7 · Lo que NO se ha tocado
+
+`prisma/schema.prisma` · el cerrojo de SCRUM-728 · `@@unique([merchantId, number])` · el veredicto
+ni los umbrales de ningún censo salvo los tres declarados arriba, cada uno con su motivo.
+
+---
+---
+
+# 8-sep-2026 · LOS OTROS DOS CAMINOS — y lo que cedí al mezclar
+
+**Medido contra:** `origin/main` = `1bbf60afb9eae547e083e1c716fa97c88306d791` (mezclado dentro de la rama, AA2)
+**Preámbulo:** `prisma generate` rc=0 (RE-generado DESPUÉS del merge) · `HEAD..origin/main` = 0 · **`npm run build` rc=0**
+
+## 1 · Lo primero: qué cedí, y por qué
+
+Mientras yo escribía el arreglo, **otra sesión cerró el mismo ticket en `main`**. Medido antes de
+elegir nada, y su versión es **mejor que la mía** para el camino que las dos tocábamos:
+
+- **recalcula el tramo dentro del cerrojo** (`tramoTrasEmitidas`) en vez de abortar, así que quien
+  llega segundo emite el tramo **siguiente en la misma petición** — sin reintento y sin 409;
+- por eso **no necesita microcopy nueva**: el único 409 que queda es el que ya existía, «ya se han
+  emitido todas», con su texto ya firmado;
+- y usa `tomarCerrojoDeSerie` de `albaranIdempotencia.ts` (SCRUM-358), que es el patrón que esta
+  casa ya tenía resuelto, en vez de un módulo nuevo.
+
+**Así que `quotesAdmin.routes.ts` se toma entero de `main`, y mi `tramoSinCarrera.ts` se retira.**
+Mantener los dos habría dejado dos mecanismos para una sola invariante, que es exactamente contra
+lo que yo argumentaba al escribirlo.
+
+## 2 · Lo que sí faltaba, y es lo que aporta esta rama
+
+Medido sobre `main`: su arreglo cubre **un** camino. Los otros dos seguían abiertos.
+
+| camino | ¿lo cubría `main`? | quién lo dispara |
+| --- | :-: | --- |
+| `POST /admin/quotes/:id/invoice` | **sí** | el profesional |
+| `POST /quote/:token/decision` | **no** | **el CLIENTE FINAL desde WhatsApp** |
+| `POST /admin/jobs/:id/collect-rest` | **no** | el profesional |
+
+*(El `tomarCerrojoDeSerie` que ya había en `jobs.routes.ts` está en `/:id/albaranes`, otra ruta y
+de otro ticket. Comprobado por línea, no por presencia del nombre en el fichero.)*
+
+Los dos se cierran **con su mecanismo**, no con el mío: mismo cerrojo, mismo recuento dentro,
+misma forma de `tramoTrasEmitidas`. Un solo patrón para los tres.
+
+### La diferencia deliberada del camino del cliente
+
+En los dos del profesional, quien pierde la carrera **emite el tramo siguiente**: quien pulsó pedía
+«emite lo que toque». En `/:token/decision` **no se recalcula**, y es la decisión que hay que
+proteger: lo que el cliente hizo fue **aceptar una vez**, aunque el dedo tocara dos. Recalcular le
+emitiría el «Final» de golpe junto al «Anticipo» —los dos tramos de una tacada por un doble
+toque—, que es cobrarle antes de tiempo. Se sale sin escribir nada: su factura ya existe.
+
+Y **no se le dice nada**: su aceptación salió bien. Marcar `facturaPendiente` le diría «tu factura
+está en proceso; si no la recibes hoy, coméntaselo al profesional» por una factura que **sí**
+existe — una llamada de soporte por algo que no ha pasado. De paso no se manda el segundo
+`payment_request` por WhatsApp (regla 28). Hay un guard sin gate que lo vigila.
+
+## 3 · La verificación
+
+- `tests/scrum814-recuento-dentro.test.mjs` — **sin gate, corre en `npm test`**, por AST: los
+  **tres** caminos toman el cerrojo, recuentan dentro, y **ambas cosas antes de pedir número**;
+  el recuento filtra por `merchantId` (regla 2); y el del cliente **no** recalcula.
+- `tests/scrum814-carrera-de-tramos-postgres.test.mjs` — tres carreras por sitio, dos procesos y
+  hora de salida común, sobre los **dos caminos que el test de staging no cubre**. No se duplica
+  el de `main`: para `/:id/invoice` el suyo mide mejor, porque pasa por HTTP real.
+- Un guard comprueba que **entre los dos tests con base** los tres caminos quedan cubiertos.
+
+## 4 · La microcopy firmada que se queda sin sitio
+
+El texto que firmaste sigue registrado en `docs/microcopy/2026-09-07-SCRUM-814-tramo-tomado.md`,
+**marcado como aprobado y NO aplicado, con su motivo**: con el arreglo de `main` no hay carrera
+que contarle al profesional —emite el tramo siguiente y ya está— y al cliente no se le dice nada.
+La firma se conserva porque ocurrió; lo que no se conserva es una constante sin consumidor en
+`src/` para justificarla. Un texto aprobado que no se usa es un apunte; una constante muerta es
+deuda.
+
+## 5 · 🔒 UNA CIFRA DERIVADA NO SE ELIGE NI SE DEDUCE: SE RECALCULA
+
+En el merge, `tests/scrum601` traía conflicto en `aPelo`: **las dos ramas lo habían subido de 151
+a 152 el mismo día, cada una por SU literal**. Razoné que el árbol fusionado tendría los dos y que
+el número sería **153**.
+
+**El censo dijo 152.** Y tenía razón: al ceder el arreglo, el módulo que llevaba mi literal se
+retiró, así que sólo queda el de `main`. Lo mismo con `NO_LEGIBLES_AL_MEDIR`, que vuelve a **31**.
+
+Mi «153» habría sido un ancla que miente por uno — y un ancla que miente por uno deja pasar el
+siguiente cambio sin decir nada. **Deducir el resultado de un merge es tan malo como elegir un
+lado.** Se regenera con el generador, sobre el árbol que va a quedar.
+
+📌 Y queda anotado el caso que lo hizo interesante: mi `NO_LEGIBLES` había subido **porque el
+texto llegaba al sumidero por REFERENCIA desde su única constante** — o sea, el +1 lo producía
+**hacer lo correcto** (regla 30: un solo sitio para cada texto). Un censo que penaliza centralizar
+copy acabará empujando a duplicarla. Hoy no muerde porque esa constante ya no existe, pero el día
+que otra sesión centralice un rótulo se lo va a encontrar.
+
+## 6 · Lo que NO se ha tocado
+
+`prisma/schema.prisma` · el cerrojo de SCRUM-728 · `@@unique([merchantId, number])` · el arreglo
+de `main` en `quotesAdmin.routes.ts`, que se toma tal cual · ningún veredicto ni umbral de censo
+salvo los declarados, cada uno con su motivo.
