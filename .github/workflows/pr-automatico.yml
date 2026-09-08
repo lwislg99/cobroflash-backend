@@ -53,8 +53,18 @@
 #                               la detección de modo mire un solo sitio.
 #   · `YAQU_BOT_PRIVATE_KEY`  — la clave privada .pem que genera esa misma pantalla, entera.
 #
-# La App necesita permisos de repositorio: **Contents: Read** y **Pull requests: Read and
-# write**. Nada más. Instalada en este repositorio.
+# La App necesita permisos de repositorio: **Contents: Read and write** y **Pull requests:
+# Read and write**. Nada más. Instalada en este repositorio.
+#
+# 🔴 `Contents: Read` NO BASTA, y aquí decía `Read` hasta el 8-sep-2026. Medido ese día en la
+# primera ejecución en modo COMPLETO (run 25, PR #1196): la App acuñó su token, pasó el
+# control positivo, ABRIÓ el PR —y CI se disparó sobre él, que era toda la gracia de usar una
+# App y no el GITHUB_TOKEN— pero armar el auto-merge siguió fallando. El motivo es el mismo
+# que obligó a subir `contents` en el bloque `permissions:` de abajo: armar el auto-merge es
+# comprometer a GitHub a EMPUJAR un merge más tarde, y eso es escritura de contenido. El
+# token de una App está ADEMÁS acotado por los permisos declarados de la App, así que subir
+# solo el `permissions:` del job no alcanza: hay que subirlo en los dos sitios.
+# Al cambiarlo en la App, la instalación pide aceptar el permiso nuevo.
 #
 # ⚠️ Mientras `main` esté rojo (SCRUM-822) NINGÚN auto-merge se completará, ni el de este
 # workflow ni el de nadie. No es un fallo del workflow: es que la condición no se cumple.
