@@ -217,18 +217,23 @@ function openNuevaFacturaModal(onCreated) {
 
   emitir.addEventListener('click', async () => {
     err.style.display = 'none';
-    const lines = [];
-    for (const r of filas.children) {
-      const concept = r.querySelector('.nf-concepto').value.trim();
-      const qty = Number(r.querySelector('.nf-cantidad').value);
-      const price = Number(r.querySelector('.nf-precio').value);
-      const ivaPct = Number(r.querySelector('.nf-iva').value);
-      if (!concept && !r.querySelector('.nf-precio').value) continue; // fila vacía se ignora
-      // El servidor espera el IVA en FRACCIÓN (0.21). La pantalla lo pide en porcentaje porque
-      // es como lo dice un profesional; la conversión vive aquí, en un solo sitio.
-      lines.push({ concept, qty, price, tax: ivaPct / 100 });
-    }
-    const cuerpo = { customerId: Number(selCliente.value), lines };
+    // SCRUM-600 (DOC-10) · EL CUERPO YA NO SE COMPONE AQUÍ. Lo compone
+    // `cuerpoDelDocumentoSuelto.js`, y lo llaman las DOS pantallas que emiten este documento:
+    // ésta y la página del formulario. La regla de la fila vacía y la conversión del IVA a
+    // fracción se mudaron ENTERAS y sin cambiar ni un byte de comportamiento.
+    //
+    // 🔴 El motivo no es de estilo: DOC-10 se juega en que la pantalla nueva emita EXACTAMENTE
+    // la misma factura que ésta. Con una sola composición eso es cierto por construcción; con
+    // dos, sería una afirmación que habría que vigilar — y las dos copias divergen (SCRUM-569).
+    const cuerpo = window.documentoSuelto.cuerpoDelDocumentoSuelto(
+      selCliente.value,
+      Array.prototype.map.call(filas.children, (r) => ({
+        concepto: r.querySelector('.nf-concepto').value,
+        cantidad: r.querySelector('.nf-cantidad').value,
+        precio: r.querySelector('.nf-precio').value,
+        iva: r.querySelector('.nf-iva').value,
+      })),
+    );
 
     emitir.disabled = true;
     const antes = emitir.textContent;
@@ -243,7 +248,11 @@ function openNuevaFacturaModal(onCreated) {
     } catch (e) {
       // El servidor manda `message` legible en cada error nombrado; se muestra tal cual porque
       // es SUYO, no microcopy de esta pantalla.
-      err.textContent = (e && e.data && e.data.message) ? e.data.message : window.rotulosDelDocumento.errorAlEmitir();
+      // SCRUM-600 · quién decide si ese mensaje es presentable es ahora la pieza común, la misma
+      // que usa la página: las dos dicen lo mismo porque es la misma función. El RESPALDO sigue
+      // escrito aquí a propósito, pegado a su sumidero — es el rótulo firmado de SCRUM-776 y el
+      // censo de SCRUM-601 tiene que poder verlo.
+      err.textContent = window.documentoSuelto.mensajeDelServidor(e) || window.rotulosDelDocumento.errorAlEmitir();
       err.style.display = 'block';
       emitir.disabled = false;
       emitir.textContent = antes;

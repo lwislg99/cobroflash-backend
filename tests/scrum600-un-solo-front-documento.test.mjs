@@ -216,6 +216,17 @@ const RANURAS_A = [
   ["innerHTML", "MODAL-GUARDAR-PLANTILLA"],
   ["setAlert", "Plantilla \"${template.name}\" cargada — completa los datos del cliente y genera el presupuesto."],
   ["new Error", "Respuesta inesperada al crear presupuesto."],
+  // 🔴 SCRUM-600 (7-sep-2026) · ESTAS DOS SON NUEVAS EN LA LISTA Y NO SON RANURAS NUEVAS.
+  //
+  // Llevaban aqui desde siempre, escondidas detras de un ternario dentro de un `setAlert`, y el
+  // extractor no bajaba a las ramas de una condicional: devolvia `null` y las perdia. O sea que
+  // la lista que el fundador tenia delante decia 27 cuando eran 29 — un censo que se calla dos
+  // ranuras no dice «no las veo», dice un numero mas pequeno.
+  //
+  // Se destaparon al arreglar el instrumento, no al escribir codigo nuevo. Van con su motivo
+  // aqui para que nadie las lea como «dos textos que alguien anadio».
+  ["setAlert", "📋 Presupuesto enviado a un administrador para aprobación."],
+  ["setAlert", "Presupuesto creado en borrador."],
   ["textContent", "Generar presupuesto"],
 ];
 
@@ -236,7 +247,7 @@ test('SCRUM-600 · SUELO: el extractor de ranuras VE las dos pantallas enteras',
   assert.ok(f.length >= 15, `🔴 EXTRACTOR CIEGO sobre la factura: ${f.length} ranuras visibles`);
 });
 
-test('SCRUM-600 · 🔴 LAS RANURAS QUE ESPERAN AL FUNDADOR: 27 posiciones, 25 textos', () => {
+test('SCRUM-600 · 🔴 LAS RANURAS QUE ESPERAN AL FUNDADOR: 29 posiciones, 27 textos', () => {
   const ranuras = ranurasDelDocumento(leer(FRONT_PRESUPUESTO), 'quotesView.js');
 
   assert.equal(ranuras.length, RANURAS_A.length,
@@ -261,8 +272,10 @@ test('SCRUM-600 · 🔴 LAS RANURAS QUE ESPERAN AL FUNDADOR: 27 posiciones, 25 t
 
   const distintos = new Set(ranuras.map((r) => r.texto));
   // 24 → 25 (SCRUM-656): entra el rótulo del selector de IVA del presupuesto.
-  assert.equal(distintos.size, 25,
-    `🔴 textos distintos: ${distintos.size}. Eran 24: 26 posiciones menos las dos parejas que `
+  // 25 → 27 (SCRUM-600, 7-sep-2026): NO entra texto nuevo. El extractor aprendió a bajar a las
+  // dos ramas de un ternario y destapó los dos `setAlert` del alta que estaban escondidos ahí.
+  assert.equal(distintos.size, 27,
+    `🔴 textos distintos: ${distintos.size}. Son 29 posiciones menos las dos parejas que `
     + 'comparten texto («Generar presupuesto» en el boton y al restaurarlo; el vacio del panel de '
     + 'estado, que sale dos veces de la MISMA constante).');
 });
