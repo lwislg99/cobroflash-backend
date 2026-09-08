@@ -6,6 +6,45 @@ debe coincidir **exactamente** con esto, y las plantillas creadas en
 **Meta → WhatsApp Manager** deben crearse igual. Si algo cambia aquí, cambia en
 los dos sitios.
 
+## Inventario medido — LAS SIETE DEL CICLO
+
+> **De dónde sale cada dato, para que el siguiente lector no tenga que fiarse:** los NOMBRES y
+> la ESTRUCTURA salen de `src/integrations/whatsappTemplates.ts` (objeto `WA_TEMPLATES` y
+> `WA_TEMPLATE_SPECS`), derivados por AST el **8-sep-2026** — no copiados a mano. El estado en
+> Meta sale del inventario de **ROAD-51 en WhatsApp Manager, 19-ago-2026**, y por eso lleva su
+> fecha: una foto sin fecha es una afirmación sin caducidad.
+>
+> 🔴 **Este documento decía que `quote_decision_es` era «la ÚNICA plantilla del ciclo».** Lo era
+> en el sentido de COSTE —la única que se paga con ventana-first— pero la frase se leyó como
+> inventario y se citó así en tickets vivos (SCRUM-195) y en el propio código. Son siete.
+
+| # | Plantilla | Constante | Vars | Botón URL | Cabecera PDF | La envía |
+|---|-----------|-----------|:----:|:---------:|:------------:|----------|
+| §1 | `quote_decision_es` | `quoteDecision` | 4 | sí | — | `quotes/domain/sendQuote.service.ts` · `quotes/domain/reminder.service.ts` |
+| §2 | `payment_request_es` | `paymentRequest` | 4 | sí | — | `billing/domain/invoiceWhatsApp.service.ts` · `billing/domain/invoiceReminder.service.ts` · `system/app/routes/invoicesAdmin.routes.ts` |
+| §3 | `payment_confirmation_es` | `paymentConfirmation` | 4 | — | — | `integrations/whatsappNotifications.ts` |
+| §4 | `payment_confirmation_invoice_es` | `paymentConfirmationInvoice` | 4 | sí | — | `integrations/whatsappNotifications.ts` |
+| §5 | `merchant_alert_es` | `merchantAlert` | 3 | — | — | `integrations/whatsappNotifications.ts` |
+| §7 | `albaran_firmado_es` | `albaranFirmado` | 3 | — | **sí** | `jobs/domain/albaranWhatsApp.service.ts` |
+| §8 | `albaran_para_firmar_es` | `albaranParaFirmar` | 3 | sí | — | `jobs/domain/albaranWhatsApp.service.ts` |
+
+**Declaradas y NO conectadas** (no cuentan como del ciclo, y consta por qué):
+- `maintenance_proposal_es` — **§6**, alta en Meta pendiente. Hoy la propuesta sale como mensaje
+  interactivo de sesión; no hay envío de plantilla, así que J6 queda intacto (regla 28).
+- `quote_reminder_es` — **no se usa** y no está en el código: el recordatorio de presupuesto
+  reutiliza `quote_decision_es` a propósito (ver el aviso de §1).
+
+**⚠️ DE META POR DEFECTO — NO SON NUESTRAS, no las cuentes:** `hello_world` y
+`3p_direct_integration_test_template`. WhatsApp Manager las trae de fábrica. El inventario de
+ROAD-51 vio **nueve** plantillas activas: estas dos más las siete de arriba. Quien vuelva a
+contar en Meta y vea nueve, que no busque dos plantillas perdidas — son éstas.
+
+> 🔒 **El trinquete:** `tests/scrum527-la-unica-que-eran-siete.test.mjs` deriva `WA_TEMPLATES`
+> por AST y falla si alguna plantilla que el producto ENVÍA no aparece en este documento. La
+> octava no podrá entrar en silencio, que es como entró la séptima.
+
+---
+
 ## Reglas comunes
 - **Categoría:** UTILITY
 - **Idioma:** `es`
@@ -33,7 +72,7 @@ recategorizar.
 
 | # | Momento | Mensaje | HOY (canal → coste) | CON VENTANA-FIRST (A5.2/A5.3) |
 |---|---------|---------|---------------------|-------------------------------|
-| 1 | Envío del presupuesto | `quote_decision_es` (§1) | Plantilla Utility → **0,023 €** | Igual: **la ÚNICA plantilla del ciclo** (es la que abre la conversación) → 0,023 € |
+| 1 | Envío del presupuesto | `quote_decision_es` (§1) | Plantilla Utility → **0,023 €** | Igual: **la única que se PAGA** en el ciclo feliz — es la que abre la conversación, y las demás pasan a ventana. **NO es la única que existe: son SIETE** (ver «Inventario medido»). → 0,023 € |
 | 2 | Recordatorio 24 h sin respuesta | `quote_decision_es` (§1, reuso) | Plantilla Utility → 0,023 € | Ventana si el cliente escribió/tocó botón (<24 h) → **0 €**; si no, plantilla |
 | 3 | Aviso al PRO (aceptado/rechazado) | `merchant_alert_es` (§5) | Texto si ventana PRO abierta, si no plantilla Marketing → 0–0,06 € | Igual (ya es ventana-first desde J1); el PRO que usa el bot casi siempre tiene ventana → **~0 €** |
 | 4 | Cobro (enlace de pago) | `payment_request_es` (§2) | Plantilla Utility → 0,023 € | **Ventana-first**: texto con enlace si ventana abierta → **0 €**; plantilla solo si expiró |
@@ -65,6 +104,16 @@ recategorizar.
 
 ## 1. `quote_decision_es`
 Envío de un presupuesto al cliente para que lo vea, acepte o rechace.
+
+> 🛑 **NO LA REUTILICES PARA UN PRESUPUESTO ADICIONAL.** Ésta es la plantilla que **abre la
+> conversación**: volver a mandarla le llega al cliente **como el mensaje de antes**, y ésa es
+> la receta del *«pero si esto ya lo firmé»* — justo la disputa que un presupuesto adicional
+> viene a evitar. Con la ventana cerrada es MEJOR NO MANDAR y avisar al profesional.
+> **Decisión 3 de SCRUM-195** (fundador, 28-jul-2026), implementada en
+> `sendQuoteWhatsAppToCustomer({ sinPlantilla: true })`.
+>
+> ⚠️ Este aviso **no caduca con el recuento**. Lo que era falso es que fuese «la única»; que
+> reenviarla confunde al cliente sigue siendo cierto, y es lo que hay que conservar.
 
 - **Cuerpo — 4 variables (en orden):**
   1. `{{1}}` = nombre del cliente
@@ -193,7 +242,7 @@ de cobro. **Sustituirá** a `payment_confirmation_es` cuando esté aprobada.
   - URL base: `https://yaqu.app/recibo/{{1}}` (SIN CAMBIOS — la BASE aprobada en Meta es la
     misma) → variable = **token OPACO del recibo** (`Charge.receiptToken`, SCRUM-74; antes era
     el `chargeId`, ej. `42` — cambiado por IDOR/RGPD: el id era enumerable). Mismo mecanismo que
-    el botón de `albaran_para_firmar_es` (§ abajo, SCRUM-49): Meta aprueba la URL BASE fija + la
+    el botón de `albaran_para_firmar_es` (**§8**, SCRUM-49): Meta aprueba la URL BASE fija + la
     POSICIÓN del sufijo dinámico, no el formato del valor que se sustituye en runtime — por eso
     este cambio NO requiere re-aprobación de la plantilla en Meta.
   - La página `/recibo/:token` (✅ existe, pública) muestra el recibo y el enlace de descarga.
@@ -251,6 +300,34 @@ cae a plantilla si falla; NO se registra `lastInboundAt` (no justificaba un camb
 
 ---
 
+## 7. `albaran_firmado_es`  (SCRUM-47) · CABECERA DE DOCUMENTO (PDF)
+Copia **firmada** del albarán al cliente, con el PDF en la cabecera.
+
+- **Cuerpo — 3 variables** · **Sin botón de URL dinámica** · **Cabecera: documento (PDF)**
+  (`hasDocumentHeader: true` en `WA_TEMPLATE_SPECS` — el validador exige su `media_id` ANTES
+  de llamar a Meta; sin él, el fallo sólo aparecería allí como #132012).
+- El quick-reply «👍 Recibido» es **estático**: no viaja como componente en el envío.
+- **Código que lo envía:** `src/modules/jobs/domain/albaranWhatsApp.service.ts`
+  (también la nombran `jobs/app/routes/albaranes.routes.ts` y el webhook entrante).
+
+> ⚠️ **El TEXTO exacto no se transcribe aquí.** Está aprobado en Meta y es del fundador
+> (regla 30); esta sección documenta la ESTRUCTURA, que es lo que el código puede afirmar.
+> Para el literal, WhatsApp Manager manda.
+
+---
+
+## 8. `albaran_para_firmar_es`  (SCRUM-49)
+Enlace «para firmar» a distancia: el cliente firma el albarán desde su móvil.
+
+- **Cuerpo — 3 variables** · **Botón URL dinámica** → `/albaran/{{token}}` · **Sin cabecera**.
+- Mismo mecanismo de token que §2 y §4: Meta aprueba la **URL base fija** y la POSICIÓN del
+  sufijo dinámico, no el formato del valor — por eso cambiar el token no exige re-aprobación.
+- **Código que lo envía:** `src/modules/jobs/domain/albaranWhatsApp.service.ts`.
+
+> ⚠️ Mismo aviso que §7: aquí va la estructura, no el copy.
+
+---
+
 ## Cómo probar (cuando Meta las apruebe)
 
 Script de prueba manual: `scripts/wa-test.mjs`. Envía UNA plantilla a UN número de
@@ -285,7 +362,7 @@ aprobada; **#132001** = nombre/idioma de plantilla no encontrado.
 - **§4 y §5 ✅ Approved y CONECTADAS** (pago 15-jun; decisión de presupuesto 16-jun).
   Quedaron en categoría **Marketing**; recategorizar a **Utility** (P3-3).
 - `quote_reminder_es` (si existe en Meta) **no se usa**: el recordatorio de
-  presupuesto reutiliza `quote_decision_es`.
+  presupuesto reutiliza `quote_decision_es` — ver «Inventario medido» y el aviso de §1.
 
 ## §6 · maintenance_proposal_es (OPCIONAL — MANT-1, Ola 15 EXT3) 🔒 alta en Meta pendiente
 La propuesta de mantenimiento AL PRO sale hoy como **mensaje interactivo de sesión**
