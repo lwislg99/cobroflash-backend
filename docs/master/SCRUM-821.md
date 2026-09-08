@@ -96,3 +96,109 @@ direcciones: un hueco declarado **no** enrojece —si no, nadie declararía ning
 
 `HASH_VIEWS` ni sus cinco tests · ningún rótulo · `prisma/schema.prisma` · el camino de emisión ·
 las cinco vistas no deterministas (se declaran, no se arreglan aquí).
+
+---
+
+# APÉNDICE · 8-sep-2026 — EL ✅ POSITIVO QUE FALTABA: las que ya se fotografiaban, por HASH DE IMAGEN
+
+**Medido contra:** el punto de partida de esta rama (`merge-base`, no `origin/main` — ver §C3)
+**Rama:** `scrum-821-la-lista-que-decide-al-dia`, **derivada de**
+`scrum-821-la-lista-que-decide-que-se-mira` con `main` mezclado (sin conflictos).
+
+> ⛔ **NO SE HA REESCRITO NADA DE LA RAMA DE ORIGEN.** Ni un fichero suyo modificado: sólo `main`
+> dentro y **un fichero de test nuevo**. Este apéndice se AÑADE al final, como manda la casa.
+
+## C1 · 🔴 SU HALLAZGO ES CORRECTO, Y SE VERIFICA EJECUTÁNDOLO: eran OCHO, no seis
+
+El cuerpo de este ticket dice **seis**. Medido con las poblaciones reales:
+
+```
+fotografiadas ANTES ......................... 12
+vistas del MENÚ ............................. 17     navegables por HASH_VIEWS ... 20
+
+faltaban contra el MENÚ (lo que dice el ticket) .... 6
+   jobs · albaranes · partes-oficina · cobros · libro-registro · plans
+
+faltaban contra HASH_VIEWS (lo que dice la rama) ... 8
+   los mismos 6  +  export  ·  templates
+```
+
+**El ticket estaba corto**, y con esas palabras: nombró seis porque midió contra el menú. Contra la
+lista que **sí está vigilada** —`HASH_VIEWS`, con sus cinco ficheros de tests— eran **ocho**. Las
+dos que no nombraba son **`export`** y **`templates`**.
+
+## C2 · LO QUE SE AÑADE, Y NADA MÁS
+
+`tests/scrum821b-las-capturas-que-ya-existian.test.mjs` — el ✅ POSITIVO del ticket:
+
+> «las 11 que ya se fotografiaban salen IGUAL, comparadas por hash» ← **hash de IMAGEN**
+
+| caso | qué fija |
+|---|---|
+| 🔴 **SUELO** | se leen las dos cosas que se comparan —la lista vieja y las capturas— o se declara CIEGO |
+| ✅ **hash de imagen** | las capturas commiteadas siguen **byte a byte** iguales a las del punto de partida. Con su propio suelo: exige **≥10 comparaciones**, porque un «ninguna cambió» sobre cero no es un cero |
+| ✅ **ninguna se ha perdido** | cada URL que la lista vieja fotografiaba sigue fotografiándose, y con el **mismo `slug`** |
+
+**Probado en rojo, dos mutaciones:** alterar un byte de `06-customers.png` → cae el hash
+nombrándola; hacer que la derivación pierda `customers` → cae el segundo caso. Restauradas con
+`Buffer.compare` → 3/3.
+
+### ⚠️ QUÉ PRUEBA ESE HASH Y QUÉ NO — dicho para que nadie lea de más
+
+`capture-demo.mjs` necesita **navegador y `https://yaqu.app`**. Esta tanda no arranca navegador y
+no toca producción, así que **no re-fotografía**. El hash compara las capturas **commiteadas**
+contra las del punto de partida: prueba que **este arreglo no las ha tocado**, que es lo que estaba
+en riesgo. **No** prueba que una re-captura futura salga idéntica píxel a píxel — para eso hace
+falta el navegador, y eso es otra pasada.
+
+## C3 · 🔴 EL ANCLAJE: contra el PUNTO DE PARTIDA, nunca contra `origin/main`
+
+La primera versión de este test leía `origin/main:…`, y **el guard de SCRUM-723 la tumbó**:
+
+> «o compara contra su punto de partida (`merge-base`), o se declara aquí con el motivo. Lo que no
+> puede es entrar en silencio: acusará a una rama limpia el día que otro PR toque su fichero.»
+
+Tenía razón, y el arreglo fue del código: se importa `baseDeLaRama` de `_base-de-la-rama.mjs` —el
+motor de la casa, no un segundo `merge-base`—. Para los PNG hace falta leer **bytes** y no texto,
+así que se usa `baseDeLaRama` directamente con `git show` sin encoding, y queda dicho en el fichero.
+
+Y para lo que este test afirma es **mejor**, no sólo más correcto: «el arreglo no cambió las
+capturas» significa *respecto a donde arrancó esta rama*.
+
+## C4 · HALLAZGO: la derivación RENUMERA 9 de las 12 — se reporta, no se arregla
+
+Medido comparando la lista vieja con la derivada:
+
+```
+/dashboard/#quotes-list      05-quotes-list     → 03-quotes-list
+/dashboard/#customers        06-customers       → 05-customers
+/dashboard/#products         07-products        → 06-products
+/dashboard/#reports          09-reports         → 11-reports
+/dashboard/#quote-requests   10-quote-requests  → 13-quote-requests
+/dashboard/#expenses         11-expenses        → 09-expenses
+/dashboard/#providers        12-providers       → 07-providers
+/dashboard/#team             13-team            → 16-team
+/dashboard/#settings         14-settings        → 17-settings
+                                                  (9 de 12)
+```
+
+**El `slug` se conserva en las doce** —`customers` sigue siendo `customers`— y por eso el ✅ de
+arriba pasa: cada captura apunta a la MISMA pantalla. Lo que cambia es el **prefijo numérico**, que
+es POSICIÓN dentro de la lista, y la lista pasó de 12 a 20 entradas: **renumerar es la consecuencia
+esperada de añadir ocho, no un defecto.** Por eso **no se ha tocado la derivación** ni se ha puesto
+un rojo.
+
+**Pero tiene una consecuencia que conviene decidir**, y es de otro carril (regla 37): al
+re-fotografiar, las nuevas se escriben con nombres nuevos y **las 9 viejas se quedan en el repo
+como evidencia obsoleta**, indistinguibles de las frescas. Alcance medido: **1 cita** afectada —
+`05-quotes-list.png`, en `docs/SPRINT_DEMO_READY_EXT.md`.
+
+Dos salidas, y son del fundador: conservar el prefijo por `slug`, o regenerar el directorio entero
+borrando las 9 huérfanas y actualizando esa cita.
+
+## C5 · VERIFICACIÓN
+
+- **Su tanda de 9 + mis 3 → 12/12.**
+- **Tanda completa:** `npm test` → **5988 tests · 5883 pasan · 0 fallos · 105 saltados** · exit
+  code **0**, leído de fichero y NO a través de `head`/`tail`.
+- `npm run guards:entrada`: 4/4.
