@@ -79,7 +79,15 @@
   var TEXTOS = {
     placeholder: 'Buscar por nombre, teléfono, email o referencia…',
     sinResultados: 'Sin resultados para tu búsqueda',
-    sinNinguno: 'Añade a tu primer cliente',
+    // ✅ SCRUM-713c · FIRMADO POR EL FUNDADOR el 7-sep-2026 PARA ESTA RANURA, y registrado en
+    // `docs/microcopy/2026-09-07-SCRUM-713-buscador-cliente.md`: «Firmados los dos. Escríbelos
+    // exactamente así». Con punto final, que es parte del literal.
+    //
+    // Antes iba «Añade a tu primer cliente», que NO consta aprobado —comprobado con
+    // `constaAprobado`, por identidad—. No lo inventó este fichero: lo reutilizó de
+    // `customersView.js`, donde lleva tiempo en pantalla sin firma. Ese sigue igual y va
+    // reportado: cambiarlo es de otro carril y otra pantalla.
+    sinNinguno: 'Primero necesitas un cliente.',
   };
 
   /**
