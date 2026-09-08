@@ -937,3 +937,114 @@ rojo falso esperando a pasar. Se vigila lo estructural, que es lo que no depende
 
 * `tests/_viajes-de-la-reserva.mjs` — el contador de viajes por doble (helper).
 * `tests/scrum728d-viajes-de-la-reserva.test.mjs` — 9 casos.
+
+---
+
+# APÉNDICE · 8-sep-2026 · SCRUM-728d (2) · LA MEDICIÓN, EN LOOPBACK
+
+**Resuelve el hueco de §D5.** Decisión del fundador: no se instala software en su máquina; se
+mide en CI, que ya levanta `postgres:16-alpine` en loopback con `LIBRO_PG_URL`.
+
+**Y es mejor instrumento, no un apaño.** En loopback el RTT es ~0, así que lo que quede es
+**trabajo del servidor**, separado del coste de **red**. Contra una base remota las dos vienen
+sumadas y no se pueden repartir; ése es justo el error que arrastraba el ~5.200 ms del ticket.
+
+Con eso, el umbral deja de ser una extrapolación y pasa a ser dos números medidos y una suma:
+
+```
+tiempo(N simultáneas) ≈ N × (trabajo + viajes × RTT)
+                              ↑ este apéndice   ↑ el conteo de §D1 (7 · 8 · 7 · 5)
+```
+
+---
+
+## E1 · Qué mide, exactamente
+
+`tests/scrum728d-ms-en-loopback.test.mjs`, **3 casos gateados por `LIBRO_PG_URL`**:
+
+| | qué |
+|---|---|
+| **SUELO** | RTT desnudo (`SELECT 1`, n=30). **Falla si el RTT mediano ≥ 5 ms** — sin eso, el fichero no estaría separando trabajo de red, estaría midiendo red otra vez con otro nombre |
+| **Los cuatro caminos** | albarán · justificante · F1 · R1, con **1 (n=15), 5 y 10 simultáneas** del mismo merchant |
+| **La pendiente** | la reserva F1 con **10, 100 y 1.000 filas** en la serie F, y el factor entre décadas |
+
+### 🔴 No asevera ni un milisegundo, y es deliberado
+
+Un umbral de tiempo en CI es un rojo falso esperando a pasar: el runner comparte máquina y su
+carga no la decide nadie. Se **mide y se reporta** con `t.diagnostic` (visible en el log del job).
+Lo único que se asevera es lo que no depende del reloj:
+
+* el RTT es de loopback (si no, la medición no vale y hay que saberlo);
+* **ningún número se repite** con 5 y con 10 simultáneas — que es lo que el cerrojo existe para
+  garantizar, y la regla 29 por la peor vía si fallara;
+* con 1.000 filas en la serie, la siguiente es la **1001** — si la derivación se rompiera al
+  crecer la serie, saldría aquí y no en un número de milisegundos.
+
+---
+
+## E2 · 🔴 DOS DEFECTOS DEL PROPIO TEST, cazados ANTES de que el CI los viera
+
+**① El assert de unicidad habría puesto el CI en rojo, y por una razón que enseña algo del
+producto.** En formato F la secuencia **se deriva de las facturas ya emitidas**, no de un
+contador. Diez reservas concurrentes que no crean la fila devuelven **todas el mismo número** — y
+eso no es el cerrojo fallando: es que la medición no estaba emitiendo. Arreglado creando la
+factura de verdad dentro de la transacción, que además **es el viaje que se paga de verdad** ahí
+dentro. El albarán se queda con el `SELECT 1` equivalente (su número sale de un contador, así que
+avanza igual) y va declarado.
+
+> Y de paso deja dicho algo que el arreglo tendrá que tener en cuenta: **en formato F, reservar
+> sin crear no reserva nada.** El número sólo queda tomado cuando la fila existe.
+
+**② El motivo del salto iba en una constante**, y el censo de SCRUM-456 lo lee **por AST**: un
+`Identifier` no se puede leer, así que los tres saltos salían como mudos. Corregido a literal en
+el sitio. El guard tenía razón y **no se tocó**; lo que se cambió fue el código.
+
+Los tres gateados quedan **declarados** en el inventario de SCRUM-419 con su motivo, que es lo que
+ese guard exige y el mecanismo por el que un salto nuevo no entra en silencio.
+
+---
+
+## E3 · ⛔ LOS NÚMEROS TODAVÍA NO ESTÁN AQUÍ, y no se inventan
+
+Esta sesión **no ha podido ver correr el test**: en esta máquina no hay Postgres, que es lo que
+abrió esta fase. Lo que se entrega es **el instrumento**, verificado en todo lo que no necesita
+base: sintaxis, carga, los tres saltos con motivo, el inventario de 419 actualizado y la tanda
+completa en verde.
+
+**Los números se leen en el log del job de CI del PR de esta rama** — las líneas `t.diagnostic`
+del fichero, con esta forma:
+
+```
+banco: 127.0.0.1:5432/yaqu_libro_test
+RTT desnudo (SELECT 1, n=30): mediana … ms
+albarán       · 1 sola  (n=15): mediana … ms
+albarán       ·  5 a la vez: … ms en total · 5 ok · 0 fallos
+…
+serie F con   10 filas → reserva: mediana … ms
+serie F con 1000 filas → reserva: mediana … ms
+PENDIENTE: ×… al pasar de 10 a 100 filas · ×… de 100 a 1.000
+```
+
+**Cómo leer la pendiente:** ×1 por década = plano (el coste no depende del tamaño de la serie);
+×10 por década = lineal en el número de facturas del año. Cualquier cosa por encima de ×2 hace de
+la palanca 2 de §D4 —quitarle la pendiente al viaje que escala— la más urgente de las dos, por
+delante de ahorrar un viaje.
+
+**Cuando estén, van a un apéndice nuevo con su fecha y el número de run**, no editando éste: una
+medición sin decir de qué ejecución sale no se puede repetir.
+
+---
+
+## E4 · Lo que NO se ha hecho
+
+* **Cero `src/`, cero `prisma/`.** `invoiceNumber.service.ts` y `albaranNumber.service.ts` se
+  **llaman**; no se modifica ni una firma (regla 38 / AA1.4). **El STOP sigue en pie.**
+* **No se ha tocado ningún guard para que dejase de morder.** SCRUM-419 y SCRUM-456 se pusieron
+  rojos con razón y se arregló el código; a 419 se le **añadió** la declaración que él mismo pide.
+* **No se ha medido contra producción, staging ni dev.** La URL viaja por entorno y nunca en
+  `argv`; `exigirBancoDesechable` exige loopback y base terminada en `_test`, y no se relaja.
+* **No se ha usado `npx`** para nada.
+
+## Tests que introduce esta entrada
+
+* `tests/scrum728d-ms-en-loopback.test.mjs` — 3 casos gateados por `LIBRO_PG_URL`.
