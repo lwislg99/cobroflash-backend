@@ -41,6 +41,15 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { censarTicket, comprobarSuelo } from '../tests/_censo-tickets.mjs';
+// SCRUM-804 · LA DIMENSIÓN QUE FALTABA: dónde está el trabajo, no sólo si algo lo nombra.
+//
+// ⚠️ ESTE IMPORT CIERRA UN CICLO, y se declara en vez de descubrirse: `_rastro-del-ticket.mjs`
+// importa `_censo-alcanzabilidad.mjs`, que importa `numeroDeRama` de ESTE fichero. En ESM es
+// benigno porque las tres son declaraciones de función (hoisted) y ninguna se usa durante la
+// evaluación del módulo — sólo dentro de funciones. Comprobado ejecutándolo, no razonándolo.
+// La alternativa era copiar `numeroDeRama` a un cuarto sitio, que es peor: la misma regla escrita
+// dos veces es cómo una de las dos se queda atrás (lección del PASO 0 de este mismo ticket).
+import { rastroDeLosTickets, RASTRO, esCiego } from './_rastro-del-ticket.mjs';
 
 const RAIZ = process.cwd();
 
@@ -132,10 +141,33 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   // salida no rompe ningún llamador. El suelo viaja además DENTRO del JSON, para que no haya que
   // deducirlo del código de salida.
   const suelo = comprobarSuelo({ raiz: RAIZ });
-  const noSeFia = p.ticketsCensados === 0 || suelo.length > 0;
+
+  // SCRUM-804 · la dimensión se calcula AQUÍ ARRIBA, antes de que se bifurquen las dos bocas.
+  // Si se calculara sólo en la de texto, la salida `--json` —cuya cabecera dice «para otro
+  // programa»— seguiría publicando tickets EN RAMA VIVA como si su trabajo estuviera en `main`,
+  // y el consumidor no tendría forma de distinguirlo. Es el mismo defecto de SCRUM-775 (el suelo
+  // que salía después del `--json`) por la misma puerta.
+  const rastro = rastroDeLosTickets({ raiz: RAIZ, traer: true });
+  const rastroDe = (n) => (rastro.porTicket.get(n) || {}).rastro || RASTRO.SIN_RASTRO;
+  const soloRamaViva = (f) =>
+    f.fuentes.length === 1 && f.fuentes[0] === 'ramas' && rastroDe(f.numero) === RASTRO.EN_RAMA_VIVA;
+
+  // 🔴 CIEGO ≠ «no hay nada vivo». Aquí sólo entra `esCiego` —cero ramas remotas, o sea que no se ha
+  // mirado—. «Cero ramas VIVAS» es legítimo en un repo ordenado y tumbaba el CLI sobre la fixture
+  // sana de SCRUM-775: se AVISA abajo, no se convierte en exit 2. Un suelo que salta siempre se
+  // desactiva, y ése es justo el ticket que me lo cazó.
+  const noSeFia = p.ticketsCensados === 0 || suelo.length > 0 || esCiego(rastro.resumen);
 
   if (process.argv.includes('--json')) {
-    console.log(JSON.stringify({ ...censo, suelo, fiable: !noSeFia }, null, 2));
+    const filas = censo.filas.map((f) => ({
+      ...f,
+      rastro: rastroDe(f.numero),
+      ramasVivas: (rastro.porTicket.get(f.numero) || { ramas: [] }).ramas.filter((r) => r.clase === 'viva'),
+    }));
+    console.log(JSON.stringify({
+      ...censo, filas, suelo, sueloRamaViva: rastro.suelo, ramas: rastro.resumen,
+      shaMedido: rastro.inst.sha, fiable: !noSeFia,
+    }, null, 2));
     process.exit(noSeFia ? 2 : 0);
   }
 
@@ -173,15 +205,60 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       + 'significa que no se ha visto ni una rama ni una entrada de máster.');
     if (p.ticketsCensados === 0) console.error('   · CERO tickets censados.');
     for (const m of suelo) console.error(`   · ${m}`);
+    // SCRUM-804 · el suelo de la dimensión de rama viva se imprime AQUÍ, y no en un `if` propio
+    // más abajo: `noSeFia` ya lo incluye, así que aquel bloque nacía INALCANZABLE — la condición
+    // que su propio código hace imposible de satisfacer, que es un modo de fallo ya pagado aquí.
+    for (const m of rastro.suelo) console.error(`   · rama viva: ${m}`);
     console.error(`   árbol: ${RAIZ}`);
     process.exit(2);
   }
 
   const DIAS = Number((process.argv.find((a) => a.startsWith('--dias=')) || '--dias=7').split('=')[1]);
   const corte = new Date(Date.now() - DIAS * 86400000).toISOString().slice(0, 10);
-  const enMain = censo.filas.filter((f) => f.veredicto === 'ENTERO' || f.veredicto === 'PARCIAL');
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 SCRUM-804 · LA DIMENSIÓN QUE FALTABA, Y EL FALSO POSITIVO QUE QUITA
+  //
+  // Este censo cuenta la EXISTENCIA de una rama como fuente. Existir no es estar mergeada, así que
+  // un ticket cuya ÚNICA evidencia es una rama sin mergear salía `ENTERO` y se imprimía debajo del
+  // titular «tienen trabajo suyo en `main`» — donde no hay ni una línea suya.
+  //
+  // Medido el 8-sep-2026, y no es hipotético: los cuatro tickets que originaron SCRUM-804 (819,
+  // 816, 820 y 821) salían los cuatro `ENTERO` con `ramas` como única fuente, y cuatro sesiones se
+  // encargaron de ellos y pararon una por una. Ése es el coste de este falso positivo.
+  //
+  // ⛔ NO se retira a nadie por tener una rama viva: 600, 597 y 595 tienen trabajo EN `main` **y**
+  // rama viva a la vez, y siguen siendo propuesta legítima. Lo que se retira es el caso exacto del
+  // defecto: **`ramas` como única fuente Y ninguna de ellas mergeada** (`soloRamaViva`, arriba).
+  const enMain = censo.filas
+    .filter((f) => f.veredicto === 'ENTERO' || f.veredicto === 'PARCIAL')
+    .filter((f) => !soloRamaViva(f));
+  const enRamaViva = censo.filas.filter(soloRamaViva);
   const recientes = enMain.filter((f) => f.ultima && f.ultima >= corte)
     .sort((a, b) => String(b.ultima).localeCompare(String(a.ultima)));
+
+  // Los motivos NO fatales se dicen igual — pero por **stdout**, con el informe, y no por stderr.
+  //
+  // 🔴 ME LO CAZÓ SCRUM-775, QUE EXIGE stderr VACÍO SOBRE UN ÁRBOL SANO. Y tiene razón: un aviso
+  // por el canal de errores convierte «he mirado y no había ninguna viva» en algo que un CI lee
+  // como avería. La salvedad es parte del informe, no una queja del instrumento.
+  for (const m of rastro.suelo) console.log(`⚠️  rama viva · ${m}`);
+
+  console.log('═══ 🔴 SCRUM-804 · EN RAMA VIVA · su trabajo NO está en `main` ═══');
+  console.log('    Tienen rama en el remoto SIN MERGEAR y ninguna otra evidencia. El tablero puede');
+  console.log('    decir que están por hacer y estar construidos enteros: es la otra mitad del');
+  console.log('    desfase, y la que hace que una sesión los reconstruya desde cero.');
+  console.log(`    (+N) = commits que esa rama tiene FUERA de \`main\` — el tamaño del trabajo vivo.\n`);
+  for (const f of enRamaViva.sort((a, b) => b.numero - a.numero)) {
+    const ramas = (rastro.porTicket.get(f.numero) || { ramas: [] }).ramas
+      .filter((r) => r.clase === 'viva')
+      .map((r) => `${r.nombre} (+${r.adelanto})`).join(' · ');
+    console.log(`  ${f.ticket}`.padEnd(15) + ramas);
+  }
+  console.log(`\n  → ${enRamaViva.length} ticket(s) con trabajo vivo sin mergear, sobre `
+    + `${rastro.resumen.vivas} ramas vivas de ${rastro.resumen.total} remotas.`);
+  console.log('  ⚠️ Cuántos de ésos siguen ABIERTOS en el tablero NO se contesta aquí: este censo no');
+  console.log('     lee Jira. Se cruza a mano, y así queda dicho de qué mitad responde cada uno.\n');
 
   console.log('═══ PROPUESTA · tienen trabajo suyo en `main` ═══');
   console.log('    Contrástalo con el tablero: si alguno figura como NO hecho, ahí está el desfase.');
