@@ -1155,6 +1155,20 @@ function quoteStatusMeta(status) {
     rejected:         { label: 'Rechazado',            pillClass: 'status-pill-rejected' },
     expired:          { label: 'Caducado',             pillClass: 'status-pill-draft' },
     pending_approval: { label: 'Pendiente de aprobación', pillClass: 'status-pill-approval' },
+    // 🔴 LOS DOS DERIVADOS DEL COBRO, y NO son un extra: sin ellos esta pieza convierte en «—» un
+    // estado que el servidor SÍ manda. `listQuotesAdmin` (`src/modules/system/quoteAdmin.ts:79-91`)
+    // sustituye `draft` por `paid` o `pending` cuando el presupuesto tiene cobro, y ESA es la ruta
+    // que alimenta la LISTA (`quotesAdmin.routes.ts:65`) — no sólo la ficha de un miembro.
+    //
+    // Medido sobre esta misma rama antes de añadirlos: un presupuesto ya cobrado caía al respaldo y
+    // se pintaba «—». Mejor que el `PAID` en inglés de antes, pero se perdía el dato: «pagado» y
+    // «no lo reconozco» acababan diciendo lo mismo en pantalla.
+    //
+    // Los literales NO son nuevos: son los de `teamView.js`, que es de donde vienen estos dos
+    // estados y el único mapa que los tiene en MASCULINO. Es el mismo criterio que ya decidió
+    // «Caducado» y no «Caducada»: un presupuesto es masculino; la factura es la que es «Pagada».
+    paid:             { label: 'Pagado',               pillClass: 'status-pill-accepted' },
+    pending:          { label: 'Pendiente',            pillClass: 'status-pill-pending' },
   };
   return M[String(status || '').toLowerCase()] || { label: '—', pillClass: 'status-pill-draft' };
 }
