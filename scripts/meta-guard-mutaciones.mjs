@@ -395,6 +395,9 @@ export const MUERTE_CUENTA_COMO = 'ciega'; // 'ciega' | 'caida'
 export async function correr(guard, propias = null) {
   const pasados = [];
   const caidos = [];
+  // SCRUM-754c · los que node:test dio por «pasados» pero NO CORRIERON. Van aparte a propósito:
+  // mezclarlos con `pasados` es exactamente el defecto que este cubo viene a cerrar.
+  const saltados = [];
   // 🔴 SCRUM-754 · LA VIGILANCIA SE ABRE ANTES DE LA PRIMERA LÍNEA DE LA PASADA.
   //
   // `propias` son las piezas que ESTE proceso acaba de escribir para esta medición, con sus
@@ -408,7 +411,10 @@ export async function correr(guard, propias = null) {
   // cualquier plataforma; `fs.watch` solo ANADE el nombre del transitorio donde entrega.
   const vigia = abrirObservacion(RAIZ);
   const flujo = run({
-    files: [path.join(DIR_TESTS, guard)],
+    // SCRUM-754c · se admite una ruta ABSOLUTA para poder ejercitar esto con un fichero de
+    // fuera del árbol. No es una concesión al test: crear el fichero de prueba DENTRO de
+    // `tests/` movería el árbol, y este mismo instrumento lo denunciaría (y con razón).
+    files: [path.isAbsolute(guard) ? guard : path.join(DIR_TESTS, guard)],
     cwd: RAIZ,
     forceExit: true,
     timeout: 300000,
@@ -422,7 +428,28 @@ export async function correr(guard, propias = null) {
   // opinar. Es el dato que separa cobertura de arrastre, y hasta hoy se tiraba.
   const errores = {};
   for await (const ev of flujo) {
-    if (ev.type === 'test:pass') pasados.push(ev.data.name);
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    // 🔴 SCRUM-754c · UN TEST SALTADO NO ES UN TEST APROBADO.
+    //
+    // MEDIDO con una sonda propia sobre `node:test` (Node 24, 8-sep-2026): un test declarado
+    // `test('…', { skip: '…' }, …)` emite **`test:pass`** con `ev.data.skip` puesto. Mirando
+    // sólo `ev.type` —que es lo que se hacía— un test que NO SE EJECUTÓ entraba en `pasados`.
+    //
+    // LA CONSECUENCIA, y es la avería entera: los tests gateados por `QA_DB_TEST` no corren en
+    // el job del meta-guard, que corre SIN BASE POR DISEÑO. Así que PUERTA 1 veía su test «en
+    // verde», abría, se mutaba, el test seguía sin correr, seguía «pasando», y el veredicto
+    // salía **MUDO** — acusando al guard de no vigilar— donde tenía que salir **CIEGO**.
+    // «No pude mirar» y «miré y no cayó» son OPUESTOS y salían por la misma puerta.
+    //
+    // ⚠️ EL OTRO CASO, medido en la misma sonda y por eso NO se toca: `t.skip()` DENTRO del
+    // cuerpo no detiene la ejecución, así que si lo que sigue lanza sale `test:fail` (con
+    // `skip` puesto también). Un fallo es un fallo y sigue contando como caída: tratar ahí el
+    // `skip` como ceguera se tragaría rojos de verdad. Sólo se corrige el `test:pass`.
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    if (ev.type === 'test:pass') {
+      if (ev.data.skip) saltados.push({ nombre: ev.data.name, motivo: String(ev.data.skip) });
+      else pasados.push(ev.data.name);
+    }
     else if (ev.type === 'test:fail') {
       caidos.push(ev.data.name);
       const e = ev.data?.details?.error;
@@ -439,7 +466,7 @@ export async function correr(guard, propias = null) {
   await new Promise((s) => setTimeout(s, GRACIA_MS));
   vigia.cerrar();
   const movidos = vigia.movimientos(desde, propias);
-  return { pasados, caidos, errores, movidos, sinVigilar: vigia.sinVigilar, vigilada: true };
+  return { pasados, caidos, saltados, errores, movidos, sinVigilar: vigia.sinVigilar, vigilada: true };
 }
 
 /**
@@ -613,6 +640,30 @@ export async function aplicarUna(mut, guard, limpia) {
   // 🔴 PUERTA 1 · ¿EXISTE EN VERDE LO QUE VAMOS A JUZGAR? Si el test que la declaración nombra no
   // pasó en la pasada limpia —porque el fichero no cargó, porque está renombrado, porque ya
   // fallaba— no hay nada que juzgar sobre él, y NI SIQUIERA SE MUTA.
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 PUERTA 1a (SCRUM-754c) · ¿ES QUE EL TEST NI SIQUIERA CORRIÓ?
+  //
+  // Va ANTES del mensaje genérico de PUERTA 1 porque aquel acusa de TRES cosas —«el fichero no
+  // llegó a ejecutarse, o ese test ya fallaba, o el nombre caducó»— y con un test SALTADO
+  // ninguna de las tres es cierta. Mandar a alguien a buscar un fichero que no cargó cuando lo
+  // que pasa es que su test está gateado es la misma falsa acusación de SCRUM-748/754, otra vez.
+  //
+  // Y el caso NO es raro: los tests gateados por `QA_DB_TEST` no corren en el job del meta-guard,
+  // que corre SIN BASE POR DISEÑO. Antes entraban en `pasados`, la puerta abría, se mutaba, el
+  // test seguía sin correr y el veredicto salía MUDO. Un guard cuyos tests no corren es CIEGO.
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  const saltado = (limpia?.saltados || []).find((s) => s.nombre.includes(mut.cae));
+  if (saltado) {
+    return {
+      ok: false,
+      ciego: `el test «${mut.cae}» está SALTADO en la pasada limpia (${saltado.motivo}), así que `
+        + 'no se ha mutado nada. NO ES QUE EL GUARD ESTÉ MUDO: es que su test no ha corrido, y '
+        + 'sobre un test que no corre no se puede emitir ningún veredicto. `node:test` lo emite '
+        + 'como `test:pass` con `skip` puesto, así que hasta SCRUM-754c contaba como aprobado y '
+        + 'esto salía MUDO — acusando al guard de no vigilar cuando nadie había mirado.',
+    };
+  }
+
   if (!paso(limpia, mut.cae)) {
     return {
       ok: false,

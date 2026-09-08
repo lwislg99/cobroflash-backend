@@ -46,12 +46,14 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url'; // SCRUM-730
 import ts from 'typescript';
+import { execFileSync } from 'node:child_process'; // SCRUM-754c: la sonda va en subproceso
 import {
   FAMILIAS_VIGILADAS, porQueEsMovimiento, movimientosConfirmados, abrirVigilancia,
   controlPositivoDeVigilancia, MARGEN_MS, instanteDeReferencia,
   huellaDelPerimetro, movimientosPorHuella, // SCRUM-754b
 } from '../scripts/_arbol-quieto.mjs';
 import { aplicarUna } from '../scripts/meta-guard-mutaciones.mjs';
+import { veredictoDelCenso } from '../scripts/censo-guards-gateados.mjs'; // SCRUM-754c
 import { procesoVivo, restaurarDesdeMarca, marcarEnVuelo } from '../scripts/_marca-de-arbol.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -615,4 +617,211 @@ test('SCRUM-754b · el escrito DURANTE se denuncia con su NOMBRE (no sólo su di
     assert.ok(movidos.some((m) => m.includes('se-escribe.mjs')),
       `🔴 un fichero escrito durante la medición no sale nombrado: ${JSON.stringify(movidos)}`);
   } finally { fs.rmSync(raiz, { recursive: true, force: true }); }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// ⑦ SCRUM-754c · UN TEST SALTADO NO ES UN TEST APROBADO
+//
+// EL DEFECTO, medido con sonda propia sobre `node:test` (Node 24, 8-sep-2026):
+//
+//   test('…', { skip: 'sin QA_DB_TEST=1' }, …)   →  test:pass   con `data.skip` puesto
+//   test('…', () => { … })            (pasa)     →  test:pass   sin `skip`
+//
+// El bucle de eventos miraba SÓLO `ev.type`, así que un test que NO SE EJECUTÓ entraba en
+// `pasados`. Y los tests gateados por `QA_DB_TEST` no corren en el job del meta-guard, que corre
+// SIN BASE POR DISEÑO: PUERTA 1 veía su test «en verde», abría, se mutaba, el test seguía sin
+// correr, seguía «pasando», y el veredicto salía **MUDO** donde tenía que salir **CIEGO**.
+//
+// «No pude mirar» y «miré y no cayó» son OPUESTOS, y salían por la misma puerta.
+//
+// ⚠️ EL OTRO CASO, medido en la misma sonda y NO tocado a propósito: `t.skip()` DENTRO del cuerpo
+// no detiene la ejecución, así que si lo que sigue lanza sale `test:fail` (con `skip` puesto
+// también). Un fallo es un fallo: tratar ahí el `skip` como ceguera se tragaría rojos de verdad.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Clasifica un fichero por el camino REAL, en un SUBPROCESO limpio.
+ *
+ * 🔴 No se llama a `correr()` aquí dentro, y no es manía: MEDIDO, un `run()` de `node:test`
+ * ANIDADO dentro de un test que ya corre NO entrega los eventos por test — `saltados` y
+ * `pasados` llegan vacíos. Un caso que se conformara con eso mediría el vacío y saldría verde.
+ */
+function sonda(rutaFixture) {
+  // 🔴 SE LE LIMPIA `NODE_TEST_CONTEXT` AL HIJO, y esto costó un rojo: `node --test` lo pone en
+  // el entorno, el subproceso lo HEREDA, y con esa variable puesta `run()` se cree dentro de un
+  // test y deja de entregar los eventos por test — la sonda devolvía `saltados: []` desde dentro
+  // del test y lo correcto desde una terminal. Un caso que se hubiera conformado con ese vacío
+  // habría salido verde midiendo nada.
+  const entorno = { ...process.env };
+  delete entorno.NODE_TEST_CONTEXT;
+  const salida = execFileSync(process.execPath, [path.join(RAIZ, 'tests', '_sonda-saltados.mjs'), rutaFixture],
+    { cwd: RAIZ, encoding: 'utf8', env: entorno });
+  const linea = salida.trim().split(/\r?\n/).filter((l) => l.startsWith('{')).pop();
+  assert.ok(linea, `🔴 la sonda no ha devuelto JSON. Salida:
+${salida}`);
+  return JSON.parse(linea);
+}
+
+/**
+ * 🔴 UN ANCLA QUE NO PUEDE EXISTIR EN EL FUENTE, y esto costó SIETE CIEGAS.
+ *
+ * La primera versión de los casos de 754c pasaba el ancla como LITERAL. Ese literal quedaba
+ * escrito EN ESTE MISMO FICHERO, así que `aplicarUna` lo encontraba, pasaba la puerta del ancla
+ * y **mutaba de verdad el test del repositorio**. Lo restauraba —`git status` salía limpio— pero
+ * le movía el `mtime`, y la pasada completa del meta-guard sacó `ciegas 7`: las siete de este
+ * guard, todas con «lo escribieron mientras medía».
+ *
+ * O sea: el caso que probaba el instrumento estaba moviendo el árbol que el instrumento vigila.
+ * Lo cazó él solo, que es exactamente para lo que existe.
+ *
+ * Construida en ejecución, la cadena no aparece en el fuente y `aplicarUna` se para en la puerta
+ * del ancla SIN escribir nada.
+ *
+ * ⚠️ El caso de PUERTA 0 (arriba) SÍ puede usar un literal: allí el árbol sale movido y
+ * `aplicarUna` devuelve antes de mirar el ancla. Se deja como está para no tocar lo que ya vigila.
+ */
+function anclaImposible() {
+  return ['ANCLA', 'QUE', 'NO', 'EXISTE', process.pid, Math.random().toString(36).slice(2)].join('-');
+}
+
+/** Escribe un fichero de test FUERA del árbol: crearlo dentro movería el árbol (SCRUM-754). */
+function fixture(cuerpo) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum754c-'));
+  const abs = path.join(dir, 'fixture.test.mjs');
+  fs.writeFileSync(abs, cuerpo);
+  return { dir, abs, borrar: () => fs.rmSync(dir, { recursive: true, force: true }) };
+}
+
+const TODOS_SALTADOS = `import test from 'node:test';
+import assert from 'node:assert/strict';
+const ENABLED = process.env.QA_DB_TEST === '1';
+test('el unico test de este guard', { skip: !ENABLED && 'sin QA_DB_TEST=1' }, () => {
+  assert.equal(1, 2);
+});
+`;
+
+const CORRE_DE_VERDAD = `import test from 'node:test';
+import assert from 'node:assert/strict';
+test('el unico test de este guard', () => { assert.equal(1, 1); });
+`;
+
+test('SCRUM-754c · 🔴 EL CONTROL QUE DECIDE: un fichero con TODOS sus tests saltados sale CIEGO', async () => {
+  const f = fixture(TODOS_SALTADOS);
+  try {
+    const limpia = sonda(f.abs);
+
+    // ① La clasificación, medida contra `node:test` de verdad — no contra una idea de él.
+    assert.deepEqual(limpia.pasados, [],
+      '🔴 un test SALTADO ha entrado en `pasados`. Es el defecto entero: `node:test` lo emite '
+      + `como \`test:pass\` con \`skip\` puesto. Pasados: ${JSON.stringify(limpia.pasados)}`);
+    assert.equal(limpia.saltados.length, 1,
+      `🔴 el saltado no se ha registrado como tal: ${JSON.stringify(limpia.saltados)}`);
+    assert.match(limpia.saltados[0].motivo, /QA_DB_TEST/,
+      '🔴 se registra que se saltó pero no POR QUÉ: sin el motivo nadie puede arreglarlo.');
+
+    // ② Y el veredicto: CIEGO, y NOMBRANDO que fue un salto.
+    const mut = {
+      fichero: 'tests/scrum754-el-juez-que-oscila.test.mjs', // existe: la primera puerta no aplica
+      de: anclaImposible(), // 🔴 NO literal: ver `anclaImposible`. Un literal se mutaría a sí mismo.
+      a: 'da igual',
+      cae: 'el unico test de este guard',
+    };
+    const r = await aplicarUna(mut, 'fixture.test.mjs', limpia);
+    assert.equal(r.ok, false);
+    assert.match(String(r.ciego), /SALTADO/,
+      '🔴 el veredicto NO dice que el test estaba saltado. Antes de SCRUM-754c esto salía MUDO: '
+      + 'acusaba al guard de no vigilar cuando en realidad nadie había mirado.');
+    assert.match(String(r.ciego), /QA_DB_TEST/,
+      '🔴 dice que se saltó y no dice por qué gate: sin eso no se puede ir a mirar.');
+
+    // 🔴 Y NO puede salir el mensaje genérico de PUERTA 1, que acusa de TRES cosas que aquí no
+    // son ninguna. Una falsa acusación manda a alguien a buscar lo que no está roto.
+    assert.doesNotMatch(String(r.ciego), /el fichero no llegó a ejecutarse/,
+      '🔴 sale el CIEGO genérico de PUERTA 1 en vez del de SALTADO: acusa de que el fichero no '
+      + 'cargó, de que el test ya fallaba o de que el nombre caducó, y no es ninguna de las tres.');
+  } finally { f.borrar(); }
+});
+
+test('SCRUM-754c · ✅ NEGATIVO: un guard que CORRE de verdad y no cae SIGUE saliendo MUDO', async () => {
+  const f = fixture(CORRE_DE_VERDAD);
+  try {
+    const limpia = sonda(f.abs);
+
+    // Sin esto, lo de abajo no significa nada: si TODO saliera CIEGO, el instrumento estaría
+    // apagado por el otro lado — que es el riesgo que este mismo fichero ya identificó en 754b.
+    assert.deepEqual(limpia.saltados, [],
+      '🔴 un test que CORRE se está contando como saltado. Con ese criterio todo saldría CIEGO '
+      + 'y el meta-guard quedaría apagado por el otro lado.');
+    assert.equal(limpia.pasados.length, 1,
+      `🔴 un test que corre y pasa no aparece en \`pasados\`: ${JSON.stringify(limpia)}`);
+
+    const mut = {
+      fichero: 'tests/scrum754-el-juez-que-oscila.test.mjs',
+      de: anclaImposible(), // 🔴 NO literal: ver `anclaImposible`.
+      a: 'da igual',
+      cae: 'el unico test de este guard',
+    };
+    const r = await aplicarUna(mut, 'fixture.test.mjs', limpia);
+    assert.doesNotMatch(String(r.ciego ?? ''), /SALTADO/,
+      '🔴 un guard cuyo test SÍ corrió sale como saltado. La puerta nueva dispara sobre sanos.');
+  } finally { f.borrar(); }
+});
+
+test('SCRUM-754c · 🔴 SUELO del censo: el árbol TIENE guards con todos sus tests gateados', () => {
+  // Medido el 8-sep-2026 ejecutando los 721 ficheros de `tests/`: 48 tienen TODOS sus tests
+  // gateados. El número exacto NO se congela aquí —se mueve con cada ticket que añade un test
+  // gateado— y por eso el suelo es de EXISTENCIA, no de cantidad: lo que no puede pasar es que
+  // el censo devuelva CERO, porque entonces no está mirando.
+  //
+  // El recuento vive en `npm run censo:gateados`, que los EJECUTA. Aquí sólo se comprueba que la
+  // clasificación sobre la que se apoya distingue de verdad, con un caso de cada.
+  const clasifica = (ev) => (ev.type === 'test:pass' && ev.data.skip ? 'saltado' : ev.type === 'test:pass' ? 'real' : 'caido');
+  assert.equal(clasifica({ type: 'test:pass', data: { skip: 'sin QA_DB_TEST=1' } }), 'saltado');
+  assert.equal(clasifica({ type: 'test:pass', data: {} }), 'real');
+  assert.equal(clasifica({ type: 'test:fail', data: {} }), 'caido');
+});
+
+// ── EL CENSO · su suelo y su trinquete ───────────────────────────────────────────────────
+//
+// El recuento real lo da `npm run censo:gateados`, que EJECUTA la carpeta `tests/` entera y por
+// eso no cabe aquí. Lo que se prueba en la tanda normal es el VEREDICTO: que un cero se declare
+// ciego y que un expuesto se ponga rojo. Sin esto, el censo podría devolver cualquier cosa y
+// nadie lo sabría hasta que alguien lo corriera a mano.
+
+test('SCRUM-754c · 🔴 SUELO del censo: CERO gateados es CIEGO, no verde', () => {
+  const todosCorren = new Map([['a.test.mjs', { reales: 3, saltados: 0 }]]);
+  const v = veredictoDelCenso(todosCorren, new Set());
+  assert.equal(v.ok, false,
+    '🔴 el censo da por bueno un CERO. El árbol tiene tests gateados por `QA_DB_TEST`, '
+    + '`LIBRO_PG_URL`, `A55_DB_TEST` y `BOT_SUITE_TEST`: un cero es «no he sabido ver los saltos», '
+    + 'que es justo el defecto que este censo vigila.');
+  assert.match(String(v.ciego), /CERO/);
+
+  // Y sin ni un fichero, con más razón.
+  const vacio = veredictoDelCenso(new Map(), new Set());
+  assert.equal(vacio.ok, false, '🔴 un censo que no ve NI UN fichero se da por bueno');
+  assert.match(String(vacio.ciego), /NI UN fichero/);
+});
+
+test('SCRUM-754c · 🔴 EL TRINQUETE: un guard gateado que ADEMÁS declara mutaciones sale EXPUESTO', () => {
+  const porFichero = new Map([
+    ['sano.test.mjs', { reales: 5, saltados: 0 }],
+    ['gateado-sin-declarar.test.mjs', { reales: 0, saltados: 2 }],
+    ['gateado-y-declarado.test.mjs', { reales: 0, saltados: 1 }],
+  ]);
+
+  // Hoy: hay gateados, pero ninguno declara. Medido el 8-sep-2026 sobre el árbol: 48 y 0.
+  const hoy = veredictoDelCenso(porFichero, new Set(['sano.test.mjs']));
+  assert.equal(hoy.ok, true);
+  assert.equal(hoy.gateados.length, 2, '🔴 no se están contando los gateados');
+  assert.deepEqual(hoy.expuestos, [],
+    '🔴 se acusa de veredicto hueco a un guard que no declara mutaciones: sobre ése no se emite '
+    + 'ningún veredicto, así que no hay nada hueco.');
+
+  // 🔴 Y el día que alguien declare una mutación en un guard gateado, esto TIENE que hablar.
+  const manana = veredictoDelCenso(porFichero, new Set(['gateado-y-declarado.test.mjs']));
+  assert.equal(manana.expuestos.length, 1,
+    '🔴 un guard cuyos tests NO CORREN y que ADEMÁS declara mutaciones no sale señalado. Es el '
+    + 'único caso en el que el veredicto hueco se emite de verdad, y el censo se lo pierde.');
+  assert.equal(manana.expuestos[0].fichero, 'gateado-y-declarado.test.mjs');
 });
