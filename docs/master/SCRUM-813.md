@@ -363,3 +363,113 @@ exactamente para lo que existe.
   portable entre Windows y Linux, y la comprobación de que el trinquete sigue **conectado**
   (comando en `package.json` y job en `ci.yml`). Declara **5 mutaciones** para
   `npm run meta:mutaciones`.
+
+---
+
+# APÉNDICE · 8-sep-2026 — EL CIEGO QUE NO SABÍA DECIR QUÉ SE HABÍA MOVIDO
+
+**Medido contra:** `origin/main` = `b521d0a7299efa22153fa776c82cd28e0f907cd9` · 2026-09-08T00:18Z
+**Rama:** `scrum-813-el-trinquete-de-zona-horaria` · **Worktree:** `cobroflash-b4`
+
+## A1 · 🔴 LO PRIMERO: NO SE HA REPRODUCIDO EL CIEGO, Y SE DICE ANTES DE NADA
+
+El encargo parte de que **la tanda mueve el árbol por definición** —12 ficheros de `tests/` y
+`scripts/` que escriben dentro— y de ahí sale la petición de acotar el sujeto de la quietud a una
+lista cerrada de rutas permitidas.
+
+**Se intentó reproducir por tres caminos independientes. Ninguno movió el árbol:**
+
+| medición | cómo | resultado |
+|---|---|---|
+| rutas movidas por CÓDIGO de `git status` | 100 muestras durante 152 s de tanda completa | **0 rutas** |
+| las TRES piezas exactas de la marca (`HEAD` · `status` · **`git diff HEAD` entero**) | ~178 muestras durante 215 s | **ninguna cambió en ningún momento** |
+| **el trinquete real, dos pasadas** (299 s + 374 s, 5.915 pruebas cada una) | `npm run trinquete:zona` | `árbol quieto durante las dos pasadas ✔` · **exit 0** · 3 = 3 censadas |
+
+Y los sospechosos señalados no lo son, medidos uno a uno:
+
+- los **10 ficheros gateados por `LIBRO_PG_URL`** —que en local se saltan y en CI sí corren, que es
+  la diferencia obvia entre las dos máquinas— tienen **0 escrituras** de fichero;
+- los **21 que nombran `meta-guard-mutaciones`** (el único de la casa que muta ficheros
+  RASTREADOS) **lo importan y leen su fuente; ninguno lo ejecuta**.
+
+**Y hay un motivo de diseño por el que encaja que no se mueva:** el instrumento ya estaba
+construido contra eso. Su propio comentario lo dice — usa git y no `mtime` **precisamente** porque
+hay ~12 escritores, y «un fichero creado y borrado no deja rastro» en una marca por CONTENIDO.
+Los 12 ya estaban absorbidos el día que se escribió.
+
+### 🔴 POR QUÉ NO SE HA MONTADO LA LISTA DE EXCEPCIONES
+
+Con la causa sin identificar, una lista cerrada de rutas permitidas **es un hueco en la puerta** —
+la misma que el encargo pide expresamente no relajar— y además **no cerraría el CIEGO real**, que
+seguiría apareciendo sin poder explicarse y ya sin poder atribuirse a la lista.
+
+El mecanismo queda descrito y listo para escribirse **en cuanto haya una ruta con nombre**: con el
+cambio de abajo, el próximo CIEGO la dice. Hace falta el log del CI donde ocurrió.
+
+## A2 · LO QUE SÍ SE HA HECHO: EL INSTRUMENTO DEJA DE TIRAR EL RESULTADO
+
+El diagnóstico del fundador —*«funcionó entero y luego tiró el resultado»*— describe **literalmente**
+lo que hacía la comprobación de quietud: medía `HEAD` + `status` + `diff HEAD`, lo resumía a **UN
+hash** y tiraba el detalle. Cuando ese hash cambiaba, lo único que sabía decir era «el contenido
+del árbol de trabajo cambió durante la medición»: sin fichero, sin antes ni después.
+
+Con eso, **quien recibe el CIEGO no puede distinguir dos causas con arreglos opuestos** —«la tanda
+escribió algo» y «alguien editó un fichero mientras corría»—, y ante esa duda la salida cómoda es
+relajar la puerta.
+
+**Ahora la marca guarda huella POR RUTA** (`huellaPorRuta`), cruzando dos fuentes porque hacen
+falta las dos: `git status --porcelain` ve la aparición y la desaparición (y lo no rastreado, que
+sólo sale ahí), y `git diff HEAD` **troceado por fichero** ve el contenido — un fichero rastreado
+mutado y restaurado con otros bytes deja el código de estado IGUAL y el diff distinto. Ese hueco
+no es teórico: es el que tenía la primera sonda de esta sesión, que dio «0 rutas» mirando sólo el
+código.
+
+**⛔ LA PUERTA NO SE HA TOCADO.** Una sola ruta movida sigue siendo CIEGO: sin lista blanca, sin
+excepciones. Lo único que cambia es que el CIEGO **dice el nombre**, y el comando lo imprime.
+
+**Y lleva su suelo, que es lo que impide que el refinamiento se convierta en un agujero:** si la
+huella GLOBAL dice que algo cambió y el detalle por ruta no encuentra NADA, se trata como
+movimiento y **nunca** como quietud. Un detector que no sabe deja la puerta cerrada.
+
+## A3 · PROBADO EN ROJO — tres mutaciones, cada una tumbando SÓLO su caso
+
+| mutación | qué imita | cae |
+|---|---|---|
+| `if (!rutas.length && …)` → `if (false)` | el suelo del detalle se cae: un árbol movido que el troceado no supo leer pasaría por quieto | *SUELO: si el detalle por ruta NO ve nada…* |
+| el `push` con el nombre → un texto genérico | el CIEGO vuelve a ser mudo | *EL QUE DECIDE: un fichero de TEST tocado…* |
+| `porRuta: huellaPorRuta(…)` → `new Map()` | la marca vuelve a tirar el detalle: la avería original con otra cara | *la marca REAL trae el detalle…* |
+
+Restauradas → **23/23 en verde**, los 18 que ya estaban (incluido «si el árbol se MUEVE entre las
+dos pasadas, el veredicto es CIEGO») más 5 nuevos.
+
+Las tres quedan registradas en `MUTACIONES_QUE_ME_TUMBAN`, así que las ejercita `npm run
+meta:mutaciones` en su job de CI. **Comprobado además que no son decorativas:** las **8** anclas
+declaradas en ese array casan **exactamente una vez** en `scripts/_trinquete-de-zona.mjs` — una
+mutación cuyo texto no casara se aplicaría sobre nada y pasaría en verde sin haber mutado.
+
+## A4 · LOS TRES DE SCRUM-592 SIGUEN ROJOS
+
+La pasada real los listó uno a uno, con su censo:
+
+```
+CAMBIAN DE VEREDICTO EN EL ÁRBOL: 3  (censadas: 3)
+   · allocateQuoteNumber: toma el cerrojo ANTES de leer, y avanza la serie
+   · SCRUM-592 · el display se DERIVA: no hay columna de texto que pueda discrepar
+   · SCRUM-592 · una mezcla de renumerados y sin renumerar no se pisa
+        Pacific/Kiritimati → pass   ·   Pacific/Midway → fail
+```
+
+La alarma no se ha tocado, y el control positivo que pedía el encargo —«la tanda escribiendo sus
+12 de siempre → el trinquete EMITE veredicto, y el veredicto es 3 = 3»— **ya pasa hoy**, sin
+ningún cambio. Eso es, por sí solo, evidencia de que el sujeto no hacía falta acotarlo.
+
+## A5 · HUECOS DECLARADOS
+
+- **No se ha reproducido el CIEGO de CI**, y por eso no se ha escrito la lista de excepciones.
+  Falta el log de esa ejecución.
+- Las mediciones son de **Windows**, con la tanda local (los gateados por `LIBRO_PG_URL`,
+  `QA_DB_TEST` y `BOT_SUITE_TEST` se saltan). Se comprobó a mano que ninguno de los de
+  `LIBRO_PG_URL` escribe ficheros, pero **no se ha corrido el trinquete en Linux con esa base**.
+- `npm run meta:mutaciones` **no se ha corrido entero** en esta sesión: el intento se cortó con un
+  `| head -20` y su exit 0 era el de `head`. Se sustituyó por la comprobación de anclas del §A3,
+  que cubre el fallo que importaba; el job de CI lo corre completo.
