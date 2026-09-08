@@ -65,15 +65,37 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // tres estados. Sube por el motivo de SCRUM-795 y no por el de los cinco guards de caja: aquí
   // el árbitro tiene que ser el DOM. Había CUATRO guards de marcadores mirando el FUENTE y
   // ninguno vio uno que estuvo tres días en pantalla — estaba contado y permitido en sus censos.
-  // SCRUM-816 · 14 → 15: entra `guard:lista-trabajos`, y sube por un motivo NUEVO en esta lista:
-  // los catorce anteriores OBSERVAN una pantalla (miden una caja, leen un árbol, buscan un
+  // SCRUM-819 · 13 → 14: entra `guard:rastro-del-menu`, que pulsa los 17 destinos del menú y
+  // pregunta por `location.hash`, `window.appState.view` e `history`. Sube por un motivo que
+  // ninguno de los trece anteriores tenía: **no mide cómo se ve nada**, mide si navegar DEJA
+  // RASTRO. Y no puede vivir en la tanda porque el banco de vistas navega poniendo el hash él
+  // mismo — en su mundo hash y vista coinciden por construcción, así que esa pregunta no se le
+  // puede hacer. Un `history.back()` de banco es la implementación que el banco haya hecho de la
+  // semántica que se quiere medir. Cuesta unos 10 s.
+  // ⚠️ SCRUM-722 y SCRUM-819 entraron a la vez y LOS DOS escribieron «13 → 14», cada uno por su
+  // guard. Es la colisión de contador de SCRUM-662 otra vez: dos ramas que añaden cosas distintas
+  // no pueden escribir el mismo número. Aquí la resolución correcta es SUMAR —los dos añaden—, y
+  // por eso son 15. Ninguno de los dos comentarios se tira: cada uno dice por qué sube el suyo.
+  //
+  // ⚠️⚠️ Y HA PASADO TRES VECES: SCRUM-662, luego SCRUM-722 + SCRUM-819, y ahora SCRUM-816, que
+  // llegaba con «14 → 15» escrito cuando `main` ya estaba en 15. No es mala suerte: es lo que
+  // hace un contador escrito a mano en un fichero que varias ramas tocan a la vez, y por eso la
+  // marca de conflicto sólo sale en los COMENTARIOS — el `assert.equal` de abajo no la lleva, así
+  // que git lo auto-mezcla y el fichero queda mintiendo sin que nadie lo vea.
+  // 🔴 LA RESOLUCIÓN CORRECTA ES SIEMPRE LA MISMA, Y NUNCA ES ELEGIR UN LADO NI CALCULAR: se
+  // SUMAN los comentarios —cada rama añade el suyo, ninguno se tira— y después se vuelve a MEDIR
+  // corriendo este test, que imprime lo que `fueraDeLaTanda` devuelve de verdad. Poner el número
+  // por aritmética es exactamente el fallo que este fichero existe para denunciar: quien lo hace
+  // ajusta el número a lo que esperaba en vez de a lo que hay.
+  // SCRUM-816 · 15 → 16: entra `guard:lista-trabajos`, y sube por un motivo NUEVO en esta lista:
+  // los quince anteriores OBSERVAN una pantalla (miden una caja, leen un árbol, buscan un
   // marcador); éste la PULSA. Tiene que probar que el clic en el desplegable de técnicos asigna
   // sin navegar y que el clic en la fila navega sin asignar — dos afirmaciones sobre lo que pasa
   // DESPUÉS de un gesto, y eso no existe en un DOM servido muerto. Por lo mismo no podía usar
   // `_pagina-panel.mjs`, que serializa el mini-DOM: carga los scripts de verdad en el navegador.
   // Comprobado en rojo quitando `[data-fila-no-navega]`: caen las dos afirmaciones de ①.
-  assert.equal(fuera.length, 15,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ 15 → ${fuera.length}.\n`
+  assert.equal(fuera.length, 16,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ 16 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);

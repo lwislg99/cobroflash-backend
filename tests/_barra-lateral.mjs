@@ -193,6 +193,13 @@ export const VISTAS_SIN_ENTRADA = {
   'jobs-detail': { motivo: 'detalle: se llega desde el listado de trabajos' },
   'customer-360': { motivo: 'detalle: la ficha de un cliente, se llega desde el listado de clientes' },
   'quotes-new': { motivo: 'es subitem del grupo Presupuestos, no entrada de primer nivel' },
+  // SCRUM-600 (DOC-10) · el alta del documento suelto (factura o justificante) tiene página
+  // propia desde este ticket. NO lleva entrada en la barra a propósito: se entra desde el botón
+  // primario de Facturas, que es el que YA decidía si ese profesional emite factura o
+  // justificante. Una entrada suelta en la barra tendría que decidir ese rótulo por su cuenta y
+  // sería un segundo sitio donde el nombre del documento se elige — justo el defecto que cerró
+  // SCRUM-776. Alcanzable además por `#invoices-new`, que está en `HASH_VIEWS`.
+  'invoices-new': { motivo: 'alta del documento suelto: se llega desde el botón primario de Facturas', ticket: 'SCRUM-600' },
   export: {
     ticket: 'SCRUM-420',
     motivo:

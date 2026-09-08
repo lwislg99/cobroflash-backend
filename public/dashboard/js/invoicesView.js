@@ -205,7 +205,7 @@ async function fetchInvoices(options = {}) {
     // existe cuando lo que se va a crear ES una factura — el veredicto lo calcula el servidor
     // con `modoDocumentoSuelto` y viaja en /admin/me: aquí NO se reimplementa la regla.
     // Rótulo con [PENDIENTE microcopy oficial] (regla 30) y su guard en la suite.
-    if (window.appDocumentoSuelto !== 'no' && typeof openNuevaFacturaModal === 'function') {
+    if (window.appDocumentoSuelto !== 'no') { // SCRUM-600: ya no cuelga del modal, ver abajo
       const nuevaFacturaBtn = document.createElement('button');
       nuevaFacturaBtn.type = 'button';
       nuevaFacturaBtn.className = 'btn-primary';
@@ -222,8 +222,19 @@ async function fetchInvoices(options = {}) {
       nuevaFacturaBtn.textContent = window.appDocumentoSuelto === 'justificante'
         ? '+ Nuevo justificante'
         : ((window.atajoNuevo && window.atajoNuevo.textoDe('invoices')) || 'Nueva factura');
+      // 🔴 SCRUM-600 (DOC-10) · ESTE BOTÓN YA NO ABRE UN MODAL: LLEVA A LA PÁGINA.
+      //
+      // Es el cambio que hace que haya UN solo front del documento y no dos. Se navega con
+      // `window.renderAppView`, que es la única forma de navegar de la casa (SCRUM-599), y el
+      // rótulo del botón no se toca: sigue saliendo del veredicto, como en las tres líneas de
+      // arriba.
+      //
+      // `nuevaFacturaModal.js` se queda en el árbol y DEJA DE TENER PUERTA. No es un descuido:
+      // es la referencia contra la que `scrum600b` comprueba que la página emite exactamente lo
+      // mismo, y es lo que `guard:caja-documento-suelto` sigue midiendo en navegador. Su borrado
+      // es una decisión aparte, del día que esa equivalencia deje de hacer falta.
       nuevaFacturaBtn.addEventListener('click', () => {
-        openNuevaFacturaModal(() => renderInvoicesView(container));
+        if (window.renderAppView) window.renderAppView('invoices-new');
       });
       if (window.atajoNuevo) {
         // La tecla se pinta en los DOS casos: el atajo funciona igual, y un botón con atajo y
