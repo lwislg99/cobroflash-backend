@@ -27,7 +27,7 @@ import { generateInvoicePdf } from '../../../../lib/pdf';
 import { sendWhatsAppTemplate, sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { buildPaymentRequest } from '../../../../integrations/whatsappTemplates';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
-import { normalizePhone } from '../../../../core/utils/utils';
+import { canalDeWhatsApp } from '../../../../core/contacto/canalDeWhatsApp'; // SCRUM-590 (CONT-19)
 import fs from 'fs';
 import { ensureInvoicePdf, ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { sendSuccessBody, sendFailureBody, SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
@@ -35,6 +35,7 @@ import { esErrorSinSellar, ERROR_SIN_SELLAR } from '../../../invoicing/domain/po
 import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { resolverFechaDeCobro } from '../../../billing/domain/fechaDeCobro'; // SCRUM-397
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
+import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-289 (C7)
 import { puedeRectificarse } from '../../../invoicing/domain/rectificabilidad'; // SCRUM-308
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-289
@@ -120,6 +121,10 @@ router.post('/', requireRole('admin'), async (req, res) => {
     // entera. Comprobarlo después obligaría a deshacer una factura ya numerada, que es el hueco
     // que hay que justificar ante Hacienda.
     exigirLineasFacturables(val.lineas);
+    // SCRUM-771 · y que el tipo de IVA EXISTA. Mismo sitio y misma razón que la línea de
+    // arriba: ANTES de pedir número, nunca después. Deriva de `invalidTipoIva`; aquí no
+    // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
+    exigirTiposDeIvaEmitibles(val.lineas);
 
     const invoice = await prisma.$transaction(async (tx) =>
       emitInvoice(tx, {
@@ -619,7 +624,7 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
     if (!invoice) return res.status(404).json({ ok: false, error: 'not_found' });
     if (invoice.status === 'paid') return res.status(409).json({ ok: false, error: 'invoice_already_paid' });
 
-    const phone = normalizePhone(invoice.customer?.phone);
+    const phone = canalDeWhatsApp(invoice.customer);
     if (!phone) return res.status(400).json({ ok: false, error: 'customer_missing_phone' });
 
     const customerName = invoice.customer?.name || 'Cliente';

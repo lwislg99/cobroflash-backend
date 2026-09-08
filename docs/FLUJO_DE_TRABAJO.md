@@ -82,6 +82,9 @@
   seguridad del magic link real no se toca.
 - **Seed reproducible:** `scripts/seed-staging.mjs` (idempotente; merchant QA + cliente + 3
   presupuestos: 50/50, 100 %, custom 30/40/30 de 100,01 €). Guard anti-prod integrado.
+- **Schema de PRODUCCIÓN:** 🔴 **nunca `db push`** (SCRUM-705). ① decisión → ② ALTER aditivo en
+  las TRES bases → ③ un solo PR; **nunca ③ sin ②**. El DDL sale de `prisma migrate diff`.
+  Procedimiento entero: `docs/MIGRATIONS_PENDING.md`.
 - **Schema de staging:** con `DATABASE_URL=<staging> bash scripts/db-push-prod` (MISMO
   mecanismo que prod). ⚠️ NO usar `migrate deploy`/`dev`: `prisma/migrations` se archivó en
   `docs/historico/prisma-migrations-frozen-2026-03/` (congelada mar-2026; aplicaría schema viejo

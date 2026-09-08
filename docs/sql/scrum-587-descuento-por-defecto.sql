@@ -1,0 +1,59 @@
+-- SCRUM-587 (CONT-14) · El descuento pactado por defecto con el cliente.
+--
+-- LA VÍCTIMA: el profesional que tiene un 10 % acordado con un administrador de fincas hoy tiene
+-- que ACORDARSE y teclearlo en cada presupuesto. El día que se le olvida factura de más y lo
+-- descubre cuando el cliente se queja; o factura de menos y no lo descubre nunca.
+--
+-- ⚠️ NOMBRE DE LA BASE (snake_case), NO DEL MODELO: el campo es `dtoPorDefecto` en el modelo y
+-- `dto_por_defecto` en la columna, igual que `recargo_equivalencia` o `wa_opt_out`.
+--
+-- 🔴 EL TIPO NO ESTÁ ADIVINADO: lo generó `prisma migrate diff` (CLI **local**, nunca `npx` a la
+-- red) entre dos datamodels, sin tocar ninguna base ni `prisma/schema.prisma`:
+--
+--     prisma migrate diff --from-schema-datamodel actual.prisma \
+--                         --to-schema-datamodel candidato.prisma --script
+--     → ALTER TABLE "customers" ADD COLUMN "dto_por_defecto" DECIMAL(5,2);
+--
+-- Su veredicto: **aditiva — ni DROP, ni RENAME, ni TRUNCATE, ni DELETE, ni SET NOT NULL**, con
+-- control positivo: la herramienta respondió y el recuento pasó de 29 a 30.
+--
+-- 🔴 CORRECCIÓN DEL 4-sep-2026, porque ese 29→30 estaba MAL ROTULADO: son **líneas de campo del
+-- modelo `Customer`**, y SEIS de ellas son RELACIONES (`merchant`, `charges`, `Quote`, `Invoice`,
+-- `QuoteRequest`, `events`), que no generan columna. Las **COLUMNAS FÍSICAS** van de **23 a 24**,
+-- medidas en `information_schema` contra la base de desarrollo. El ALTER no cambia —sigue siendo
+-- una sola columna aditiva—, pero un número con la etiqueta equivocada se hereda como si fuera
+-- una medición, y aquí ya se había citado dos veces.
+--
+-- Si hubiera devuelto vacío sin decir nada, no se habría podido distinguir «no hay cambios» de
+-- «no ha mirado» — que es el incidente del 5-ago-2026.
+--
+-- 🔴 `DECIMAL(5,2)` Y NO OTRA COSA. Tres enteros para que quepa el 100 y **dos decimales, los
+-- mismos que `DECIMALES_PORCENTAJE` le exige al `dto` de la línea** (`src/core/validation/
+-- schemas.ts`). Si aquí cupieran más, el valor propuesto no pasaría el validador de la línea en
+-- la que va a aterrizar: un `33,333 %` guardado en el cliente sería un presupuesto que no se
+-- puede guardar, y el profesional no tendría forma de saber por qué.
+-- Y esto importa porque `schemaDrift` comprueba que la columna **EXISTA, no su tipo**: creada como
+-- TEXT o como INTEGER arrancaría EN VERDE y se pudriría al primer 12,50 %.
+--
+-- 🔴 SIN `NOT NULL` Y SIN `DEFAULT`, y no es cosmética: `NULL` = «no hay descuento pactado» y
+-- `0` = «se pactó un 0 %» son cosas DISTINTAS y las dos son legítimas. Con un `DEFAULT 0` los
+-- clientes que ya existen pasarían a estar «declarados con un 0 %» y no habría forma de saber a
+-- cuáles se les llegó a preguntar. Es el mismo motivo escrito en `recargo_equivalencia`,
+-- `tipo_destinatario`, `contact_kind` y `tags`.
+--
+-- PORCENTAJE y no importe. No es incoherencia con `quotes.discount_global_amount`, que sí es en €:
+-- el acuerdo con un administrador de fincas se pacta en %, y el único % que existe en el documento
+-- es el `dto` de la LÍNEA. La asimetría está escrita a propósito en el modelo `Quote` y no se
+-- armoniza.
+--
+-- ADITIVO Y RE-EJECUTABLE: `IF NOT EXISTS`, así que volver a correrlo sobre una base ya aplicada
+-- no hace nada y no falla.
+--
+-- ⚠️ ORDEN ①②③: esto va ANTES de que `prisma/schema.prisma` nombre el campo. `schemaDrift` compara
+-- esperado ⊆ real al arrancar: una columna de MÁS en la base es inocua, una de MENOS **impide
+-- arrancar producción** y Railway deja vivo el anterior. Las tres bases primero; el esquema, el
+-- cableado y los tests después y juntos. El guard `constancia-del-alter` (SCRUM-687) ya tumbó un
+-- PR hoy por exactamente esto.
+
+ALTER TABLE "customers"
+  ADD COLUMN IF NOT EXISTS "dto_por_defecto" DECIMAL(5,2);

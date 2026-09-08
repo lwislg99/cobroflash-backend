@@ -99,9 +99,21 @@ test('SCRUM-149: el camino muerto que creaba facturas sin líneas ya no existe',
   const { fileURLToPath } = await import('node:url');
   const raiz = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
-  const quoteAdmin = leerFuente(path.join(raiz, 'src/modules/system/quoteAdmin.ts'));
-  const rutas = leerFuente(path.join(raiz, 'src/modules/system/app/routes/quotesAdmin.routes.ts'));
-  const codigo = (s) => s.split('\n').filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n');
+  const { ejecutableDe } = await import('./_guard-texto.mjs');
+  const fsSync = (await import('node:fs')).default;
+  // SUELO (SCRUM-719): cada fuente se ancla en algo que tiene que seguir estando. Sin esto, las
+  // dos prohibiciones de abajo pasaban sobre la cadena vacía.
+  //
+  // ⚠️ Y AQUÍ VIVÍA UN SEGUNDO FILTRO DE COMENTARIOS ESCRITO A MANO, encima de `leerFuente`,
+  // que ya filtra. Filtraba por LÍNEAS —sólo las que EMPIEZAN por `//`— así que un comentario
+  // al final de una línea con código sobrevivía: exactamente el hueco que `soloEjecutable`
+  // existe para cerrar (SCRUM-176). Se retira: filtrar dos veces con el peor de los dos no es
+  // más seguro, es más difícil de leer (SCRUM-694).
+  const quoteAdmin = ejecutableDe(fsSync.readFileSync(path.join(raiz, 'src/modules/system/quoteAdmin.ts'), 'utf8'),
+    { ancla: 'listQuotesAdmin', donde: 'quoteAdmin.ts' });
+  const rutas = ejecutableDe(fsSync.readFileSync(path.join(raiz, 'src/modules/system/app/routes/quotesAdmin.routes.ts'), 'utf8'),
+    { ancla: 'router', donde: 'quotesAdmin.routes.ts' });
+  const codigo = (s) => s;
 
   assert.doesNotMatch(codigo(quoteAdmin), /createInvoiceFromQuoteAdmin/,
     'la función muerta no debe volver: emitía sin líneas y saltándose el plan de tramos');

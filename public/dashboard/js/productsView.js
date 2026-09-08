@@ -1,4 +1,177 @@
 // public/dashboard/js/productsView.js
+
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-641 · UN CÓDIGO DEL SERVIDOR NO ES UN MENSAJE PARA UNA PERSONA.
+//
+// LO QUE PASABA: las llamadas de aquí abajo hacen `throw new Error(data?.error || "Error
+// actualizando…")`, y el aviso pintaba `e.message`. Cuando el servidor contesta
+// `{ok:false, error:"name_duplicate"}`, el identificador GANA al respaldo en castellano — así
+// que un fontanero mirando su catálogo leía literalmente `name_duplicate`: una cadena en
+// inglés con guion bajo, sin forma de saber qué le dicen. No es un mensaje mal redactado; es
+// una tubería interna asomando a la interfaz.
+//
+// POR QUÉ VIVE AQUÍ Y NO EN `api.js`, que es donde están los mapeos canónicos
+// (`invoiceStatusMeta`, `jobStatusMeta`): porque `api.js` es ZONA SIN MARCADOR por decisión
+// —lo fija `scrum405-microcopy-descarga.test.mjs`, que falla si vuelve a aparecer uno— y esto
+// necesita marcador. Y además queda más honesto: el texto sin aprobar lo pinta ESTA pantalla,
+// así que es esta la que entra en el censo de marcadores.
+//
+// ⚠️ EL CRITERIO DE `invoiceStatusMeta` SE INVIERTE A PROPÓSITO, que si no parecería un
+// descuido. Allí lo desconocido «se ve» —cae al propio código en mayúsculas— para que un
+// estado sin mapear no se disfrace del más inocente. Un aviso de error NO puede hacer eso:
+// enseñar el código ES el defecto que esto cierra. Así que lo desconocido cae al respaldo en
+// castellano que cada llamada YA traía, y el código sale por `console.warn` — donde lo ve
+// quien puede mapearlo, no quien está intentando cobrar.
+// ═══════════════════════════════════════════════════════════════════════════════════════
+
+// ⚠️ EL MARCADOR YA NO SE PINTA: se queda SÓLO como respaldo de ÚLTIMO RECURSO, para el caso en
+// que una llamada no traiga respaldo en castellano. Hoy las ocho lo traen, así que no es
+// alcanzable; se conserva porque una llamada nueva que lo olvide tiene que enseñar que falta un
+// texto, no una cadena vacía (`.alert:empty` no se pinta, y el error desaparecería en silencio).
+// Es el mismo reparto que el fichero gemelo `providersView.js` (SCRUM-644), que ya convive con un
+// texto aprobado en el mapa y el marcador aquí abajo. Criterio COPIADO, no inventado.
+const PV_MARCADOR_MICROCOPY = '[PENDIENTE microcopy oficial]';
+
+// ── SCRUM-641 · EL TEXTO DEL NOMBRE COGIDO ───────────────────────────────────────────────────
+//
+// ✅ APROBADO POR EL ASESOR el 4-sep-2026, PROVISIONAL a la espera de la firma del fundador.
+// El registro va en `docs/master/SCRUM-641.md` y NO en `docs/microcopy/`: ese directorio es el
+// registro del FUNDADOR y `constaAprobado()` lo barre (SCRUM-726), así que meter ahí la firma del
+// asesor la haría pasar por la suya.
+//
+// 🔴 DICE «YA TIENES» Y NO «ese nombre está en uso»: le dice al profesional que el choque es con
+// algo SUYO. Quien lee «en uso» se pregunta de quién es, y en un multi-tenant esa duda es peor
+// que el error.
+//
+// 🔴 NO LLEVA SALIDA («cambia el nombre»): se lee con el campo del nombre delante, así que la
+// salida es obvia y la frase sobraría. Precedente de la casa: un 409 que decía «no lo hemos
+// duplicado» y acababa mandando a crearlo otra vez.
+//
+// 🔴 NO MENCIONA LOS DESACTIVADOS aunque sean probablemente la causa frecuente: eso es SCRUM-631
+// y está esperando al fundador. No se explica algo que todavía no es verdad.
+//
+// LA CAJA, MEDIDA en el DOM renderizado (Playwright) antes de aprobarlo — 37 caracteres:
+//   · 929 px → útil 561 px (546 con barra de scroll): una línea, sobra el triple.
+//   · 390 px → útil 279 px CON barra de scroll: una línea, capacidad medida 45 caracteres.
+//   · 320 px → útil 224 px: dos líneas, y la página no scrollea en horizontal (SCRUM-469).
+//
+// ⚠️ SIN MARCADOR en pantalla, mismo criterio que `jobDetailView.js` (SCRUM-607) y
+// `filtroClientes.js` (SCRUM-582). Que no se pinte el corchete NO significa que esté firmado por
+// el fundador: eso lo dice `PV_SIN_APROBAR`, aquí abajo.
+const PV_NOMBRE_DUPLICADO = 'Ya tienes un producto con ese nombre.';
+
+// Cuántas ranuras estrena esta pantalla SIN la firma del fundador. UNA: el texto de arriba.
+//
+// Se queda aunque llegue a 0, por el motivo de `filtroClientes.js` y `quoteDireccionObra.js`: el
+// día que el traductor gane un segundo texto, ese texto nace sin firma y este número tiene que
+// subir. Borrarlo dejaría el hueco sin sitio donde declararse.
+
+// ── SCRUM-631 · EL NOMBRE COGIDO **AL REACTIVAR** ────────────────────────────────────────────
+//
+// 🔴 PENDIENTE DE FIRMA: LLEVA MARCADOR EN PANTALLA. No lo ha aprobado nadie todavia — ni el
+// asesor ni el fundador. Es la otra mitad del reparto que este fichero ya usa: SIN marcador =
+// aprobado por el asesor (PV_NOMBRE_DUPLICADO, arriba); CON marcador = sin aprobar por nadie.
+//
+// POR QUE NO VALE `PV_NOMBRE_DUPLICADO` AQUI. Aquel dice «Ya tienes un producto con ese nombre»
+// y se lee CON EL CAMPO DEL NOMBRE DELANTE, en un alta. Al pulsar «Activar» no hay campo que
+// cambiar y el choque es con OTRO producto que esta ACTIVO: el texto tiene que decir eso, o el
+// profesional lee un mensaje de alta sobre una accion que no es un alta.
+//
+// ⚠️ Y HOY NO PUEDE SALIR EN PANTALLA: reactivar solo choca cuando el nombre se ha liberado, y
+// eso exige el paso 2 de la opcion B, que espera al fundador. Nace marcado y sin camino que lo
+// pinte en produccion — que es exactamente como debe nacer un texto sin firmar.
+//
+// 🔴 LA CAJA: **NO MEDIDA**, y por eso este texto NO se puede aprobar todavia (regla 30).
+//
+// No es que no se haya intentado: el navegador de esta maquina NO ARRANCA. Y no es culpa del
+// medidor — control hecho: `scripts/guard-caja-avisos.mjs`, que es un guard de navegador que ya
+// existe y funciona en CI, falla EXACTAMENTE igual aqui («CORTADA EN proceso+ws» en 0,2-0,4 s,
+// tres intentos, salida 3). Edge esta instalado y se resuelve; lo que no levanta es el proceso.
+//
+// Asi que esto es NO MEDIDO, no «cabe». Mientras no haya caja medida a 929 y 390 px, el asesor
+// no puede firmarlo y el marcador se queda. Referencia para cuando se mida: el texto aprobado
+// de SCRUM-641 son 37 caracteres y a 390 px la capacidad medida fue 45; este candidato, SIN el
+// marcador, son 46 — o sea que esta JUSTO en el borde y por eso hay que verlo, no calcularlo.
+const PV_NOMBRE_ACTIVO_DUPLICADO =
+  PV_MARCADOR_MICROCOPY + ' Ya tienes otro producto activo con ese nombre.';
+
+/** El codigo del servidor, en UN solo sitio: lo usan el mapa de abajo y el camino de Activar. */
+const PV_COD_NOMBRE_DUPLICADO = 'name_duplicate';
+
+// Cuantas ranuras estrena esta pantalla SIN firma. DOS desde SCRUM-631: el texto de arriba
+// (aprobado por el asesor, pendiente del fundador) y el de reactivar (sin aprobar por nadie).
+const PV_SIN_APROBAR = 2;
+
+// Un identificador interno no lleva espacios ni mayúsculas: `name_duplicate`, `forbidden`,
+// `trial_expired`. Una frase escrita para una persona siempre lleva una de las dos cosas.
+const PV_ES_IDENTIFICADOR = /^[a-z][a-z0-9_]*$/;
+
+/**
+ * El texto que se le enseña a la persona a partir de lo que dijo el servidor.
+ *
+ * `respaldo` es el mensaje en castellano que la llamada ya traía: no es microcopy nueva, es la
+ * que estaba escrita y que el identificador estaba tapando.
+ */
+function mensajeDeErrorCatalogo(codigoOMensaje, respaldo) {
+  const bruto = String(codigoOMensaje == null ? '' : codigoOMensaje).trim();
+
+  // El que necesita decir algo DISTINTO del respaldo genérico: es un control de varios lados —este
+  // caso frente a todos los demás, que caen a su respaldo en castellano—, así que si todos los
+  // errores dijeran lo mismo la pantalla perdería la distinción que este ticket vino a dar.
+  const M = {
+    [PV_COD_NOMBRE_DUPLICADO]: PV_NOMBRE_DUPLICADO,
+  };
+  if (M[bruto]) return M[bruto];
+
+  if (PV_ES_IDENTIFICADOR.test(bruto)) {
+    try { console.warn('[productsView] código sin traducir:', bruto); } catch (_) { /* sin consola */ }
+    return respaldo || PV_MARCADOR_MICROCOPY;
+  }
+  return bruto || respaldo || PV_MARCADOR_MICROCOPY;
+}
+if (typeof window !== 'undefined') {
+  window.mensajeDeErrorCatalogo = mensajeDeErrorCatalogo;
+  window.PV_MARCADOR_MICROCOPY = PV_MARCADOR_MICROCOPY;
+  window.PV_NOMBRE_DUPLICADO = PV_NOMBRE_DUPLICADO;
+  window.PV_NOMBRE_ACTIVO_DUPLICADO = PV_NOMBRE_ACTIVO_DUPLICADO;
+  window.PV_SIN_APROBAR = PV_SIN_APROBAR;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-609 (CAT-01) · EL SWITCH Producto | Servicio, cableado en UN solo sitio.
+//
+// El alta y la edición son dos formularios distintos de este mismo fichero y ya divergieron
+// una vez (el IVA salió de uno antes que del otro). La regla de qué se ve en cada lado vive en
+// `switchTipoArticulo.js`; esto sólo la conecta al DOM de cada formulario.
+//
+// ⚠️ El switch se monta ANTES de los campos que oculta, porque es el que decide si se ven: un
+// control que aparece debajo de lo que gobierna se lee como si fuera un campo más.
+// ═══════════════════════════════════════════════════════════════════════════════════════
+function cablearTipoArticulo(raiz, filaCampos, valorInicial) {
+  const envoltorio = (nombre) => {
+    const entrada = raiz.querySelector(`[name="${nombre}"]`);
+    return entrada ? entrada.closest('.field') : null;
+  };
+  const campos = {
+    cost: envoltorio('cost'),
+    margen: envoltorio('margen'),
+    providerId: envoltorio('providerId'),
+  };
+  const sw = switchTipoArticulo({
+    valor: valorInicial,
+    alCambiar: (lado) => switchTipoArticulo.aplicarLado(lado, campos),
+  });
+  filaCampos.parentNode.insertBefore(sw.nodo, filaCampos);
+  // Al abrir: el lado guardado manda. Es la razón por la que este ticket paró hasta tener
+  // columna — un switch sin dónde guardarse olvida lo que elegiste en cuanto recargas.
+  switchTipoArticulo.aplicarLado(sw.leer(), campos);
+  // Se expone para que quien reescriba el valor pueda REAPLICAR: `escribir()` sólo marca el
+  // radio; sin esto el modal enseñaría el lado nuevo con los campos del anterior — el switch
+  // PARECERÍA funcionar, que es la peor forma de no funcionar.
+  sw.aplicar = () => switchTipoArticulo.aplicarLado(sw.leer(), campos);
+  return sw;
+}
+
 function renderProductsView(container) {
     container.innerHTML = "";
   
@@ -112,6 +285,7 @@ function renderProductsView(container) {
         // --- edit modal (custom modal-overlay) ---
         let editOverlay = null;
         let _editing = null; // { merchantId, id }
+        let _editSwitch = null; // SCRUM-609: el switch del modal de edición, para leerlo al guardar
 
         function buildEditModal() {
           const ov = document.createElement('div');
@@ -123,8 +297,8 @@ function renderProductsView(container) {
                 <div class="quote-form-row">
                   <div class="field"><label>Nombre *</label><input name="name"/></div>
                   <div class="field"><label>Precio *</label><input name="price" type="number" step="0.01" min="0"/></div>
-                  <div class="field"><label>IVA (0..1)</label><input name="vat" type="number" step="0.01" min="0" max="1"/></div>
                   <div class="field"><label>Coste</label><input name="cost" type="number" step="0.01" min="0"/></div>
+                  <div class="field"><label>Margen %</label><input name="margen" type="number" step="0.01"/></div>
                   <div class="field"><label>Proveedor</label><select name="providerId"><option value="">— Sin proveedor —</option></select></div>
                 </div>
                 <div class="field"><label>Descripción</label><input name="description"/></div>
@@ -139,6 +313,12 @@ function renderProductsView(container) {
           ov.querySelector('.modal').prepend(cabeceraModal({ titulo: "Editar producto", idCierre: "pf-edit-close" }));
           document.body.appendChild(ov);
 
+          cablearMargen(
+            ov.querySelector('[name="cost"]'),
+            ov.querySelector('[name="price"]'),
+            ov.querySelector('[name="margen"]'),
+          );
+          _editSwitch = cablearTipoArticulo(ov, ov.querySelector('.quote-form-row'), null);
           ov.querySelector('#pf-edit-close').addEventListener('click', closeEditModal);
           ov.querySelector('#pf-edit-cancel').addEventListener('click', closeEditModal);
           ov.addEventListener('click', (e) => { if (e.target === ov) closeEditModal(); });
@@ -148,7 +328,6 @@ function renderProductsView(container) {
             const body = ov.querySelector('.modal-body');
             const name = body.querySelector('[name="name"]').value.trim();
             const price = Number(body.querySelector('[name="price"]').value);
-            const vatRaw = body.querySelector('[name="vat"]').value.trim();
             const costRaw = body.querySelector('[name="cost"]').value.trim();
             const providerRaw = body.querySelector('[name="providerId"]').value.trim();
             const description = body.querySelector('[name="description"]').value.trim();
@@ -160,9 +339,15 @@ function renderProductsView(container) {
               name,
               description: description || null,
               price,
-              vat: vatRaw === '' ? null : Number(vatRaw),
+              // SCRUM-609 · la EDICIÓN tampoco escribe ya el IVA. No se manda `vat: null` —eso
+              // BORRARÍA el que hay al guardar cualquier otro cambio—: simplemente no viaja, y
+              // `updateProduct` sólo toca las claves presentes. Dejar de escribir ≠ borrar.
               cost: costRaw === '' ? null : Number(costRaw),
               providerId: providerRaw === '' ? null : Number(providerRaw),
+              // SCRUM-609 · el lado elegido. Viaja SIEMPRE (aunque sea null) porque el PUT
+              // sólo toca las claves presentes: si no viajara, no se podría volver a «sin
+              // clasificar» una vez declarado.
+              itemKind: _editSwitch ? _editSwitch.leer() : null,
             };
 
             const saveBtn = ov.querySelector('#pf-edit-save');
@@ -174,7 +359,7 @@ function renderProductsView(container) {
               setAlert('success', 'Producto actualizado.');
               await refresh();
             } catch (e) {
-              setAlert('error', e.message || 'Error actualizando.');
+              setAlert('error', mensajeDeErrorCatalogo(e && e.message, 'Error actualizando.'));
             } finally {
               saveBtn.disabled = false;
               saveBtn.textContent = 'Guardar';
@@ -186,14 +371,38 @@ function renderProductsView(container) {
 
         function openEditModal(it) {
           if (!editOverlay) editOverlay = buildEditModal();
+          // SCRUM-785 · al cerrarse se DESCUELGA del `body` (ver `closeEditModal`), así que al
+          // reabrir hay que volver a colgarlo. Se reengancha el MISMO nodo: sus campos y sus
+          // oyentes siguen cableados desde `buildEditModal`, que sólo corre una vez.
+          else if (!editOverlay.parentNode) document.body.appendChild(editOverlay);
           _editing = { merchantId: _merchantId, id: it.id };
 
           const body = editOverlay.querySelector('.modal-body');
           body.querySelector('[name="name"]').value = it.name || '';
           body.querySelector('[name="price"]').value = it.price ?? '';
-          body.querySelector('[name="vat"]').value = it.vat === null ? '' : String(it.vat);
           body.querySelector('[name="cost"]').value = it.cost === null ? '' : String(it.cost);
+          // SCRUM-609 · el margen NO se guarda: se DERIVA de coste y precio. Si no hay coste no
+          // hay margen que enseñar, y el campo se queda vacío — que es «no se sabe», no 0.
+          const mg = window.margenCatalogo.margenDesde(it.cost, it.price);
+          body.querySelector('[name="margen"]').value = mg === null ? '' : String(mg);
+          // SCRUM-764 · al ABRIR. `cablearMargen` sólo pinta cuando alguien teclea, y aquí el
+          // valor lo escribe la vista: sin esta línea, el artículo que ya está por debajo del
+          // coste se abriría en negro y no se enseñaría hasta tocar un campo.
+          pintarMargen(body.querySelector('[name="margen"]'));
           body.querySelector('[name="description"]').value = it.description || '';
+
+          // SCRUM-609 · EL LADO GUARDADO MANDA AL ABRIR, y esto es lo que hace que el switch
+          // sirva de algo: uno que no lee lo guardado OLVIDA lo que elegiste en cuanto
+          // recargas, y eso es peor que no tenerlo. Es la razón por la que este ticket paró
+          // hasta tener columna.
+          //
+          // Se escribe DESPUÉS de rellenar los campos a propósito: `aplicarLado` decide mirando
+          // si el campo tiene valor (invariante ② de CONT-01), así que necesita los valores ya
+          // puestos. Al revés escondería un coste que estaba a punto de aparecer.
+          if (_editSwitch) {
+            _editSwitch.escribir(it.itemKind || null);
+            _editSwitch.aplicar();
+          }
 
           const provSel = body.querySelector('[name="providerId"]');
           provSel.innerHTML = '<option value="">— Sin proveedor —</option>';
@@ -210,7 +419,21 @@ function renderProductsView(container) {
         }
 
         function closeEditModal() {
-          if (editOverlay) editOverlay.style.display = 'none';
+          if (editOverlay) {
+            editOverlay.style.display = 'none';
+            // 🔴 SCRUM-785 · Y SE DESCUELGA DEL BODY. Esconderlo dejaba el nodo colgado para
+            // siempre, y eso apaga el botón flotante de ayuda: `styles.css` tiene
+            // `body:has(.modal-overlay) #tut-help-btn { display:none !important }`, y `:has()` es
+            // ESTRUCTURAL — mira si el nodo EXISTE, no si se ve. Medido en Edge: con el residuo el
+            // «?» computa `display:none` y caja 0×0; al borrarlo vuelve a `inline-block` 9,98×21.
+            //
+            // El atajo «N» ya no sufría por esto —SCRUM-777 hizo que la pieza mire visibilidad—,
+            // pero esta segunda víctima NO pasa por la pieza: es CSS. Por eso el arreglo es aquí.
+            //
+            // ⚠️ SE DESCUELGA, NO SE DESTRUYE: `openEditModal` reutiliza este mismo nodo y lo
+            // vuelve a colgar. `remove()` sólo lo separa del árbol.
+            if (typeof editOverlay.remove === 'function') editOverlay.remove();
+          }
           _editing = null;
         }
     
@@ -218,6 +441,25 @@ function renderProductsView(container) {
     // --- form create ---
     const form = document.createElement("div");
     form.style.cssText = "padding:0 20px 4px";
+    // ── SCRUM-609 (CAT-01) · QUÉ CAMBIA EN ESTE FORMULARIO ─────────────────────────────────
+    //
+    // SALE «IVA (0..1)». El tipo depende del trabajo y del destinatario, no del artículo: se fija
+    // en la línea del documento, donde YA existe su sitio (`vatDefault`). Y pedirle una fracción
+    // decimal a un fontanero era la mitad del defecto que abrió el ticket.
+    //
+    // 🔴 DEJAR DE ESCRIBIRLO NO ES BORRAR LO ESCRITO. El `vat` de los productos que ya existen se
+    // queda donde está, huérfano y VISIBLE en la tabla de abajo. Borrarlo es migración
+    // irreversible y espera su número de producción — el de cuántos lo tienen distinto del
+    // `defaultVat` de su locale, que son los únicos tecleados a mano.
+    //
+    // ENTRA «Margen %», sobre PRECIO DE VENTA. No es obligatorio, y eso no es un detalle: medido
+    // en este mismo ticket, 8 de 8 productos de hoy no tienen coste. Si el margen fuera
+    // obligatorio, el catálogo que ya existe dejaría de poder guardarse.
+    //
+    // ⚠️ Y los comentarios de este bloque van AQUÍ y no dentro del literal de abajo: el DOM del
+    // banco de vistas (`tests/_banco-vistas.mjs`) trae su propio parser de `innerHTML`, y ninguna
+    // vista que monta llevaba un comentario HTML hasta hoy. El primero que puse reventó su
+    // `querySelector`. No se cambia el banco por un comentario.
     form.innerHTML = `
       <div class="quote-block">
         <h3 class="quote-block-title">Nuevo producto</h3>
@@ -234,13 +476,13 @@ function renderProductsView(container) {
         </div>
 
         <div class="field">
-          <label>IVA (0..1)</label>
-          <input name="vat" type="number" step="0.01" min="0" max="1" placeholder="0.21" />
+          <label>Coste</label>
+          <input name="cost" type="number" step="0.01" min="0" placeholder="60.00" />
         </div>
 
         <div class="field">
-          <label>Coste</label>
-          <input name="cost" type="number" step="0.01" min="0" placeholder="60.00" />
+          <label>Margen %</label>
+          <input name="margen" type="number" step="0.01" placeholder="70" />
         </div>
 
         <div class="field">
@@ -265,10 +507,86 @@ function renderProductsView(container) {
   
     const nameI = form.querySelector('input[name="name"]');
     const priceI = form.querySelector('input[name="price"]');
-    const vatI = form.querySelector('input[name="vat"]');
+    // SCRUM-609: el campo de IVA ya no existe en el alta. Entra el de margen.
+    const margenI = form.querySelector('input[name="margen"]');
+
+    /**
+     * SCRUM-609 · el autocompletado coste ↔ margen ↔ precio. La aritmética NO vive aquí: está en
+     * `margenCatalogo.js`, sin DOM y con su test. Aquí sólo se cablea.
+     *
+     * 🔴 Se escribe SÓLO el campo que el módulo devuelve, y nunca el que el usuario acaba de
+     * tocar: pisarle lo que está tecleando es como se pierde un número a medio escribir.
+     * Y «sólo precio» no autocompleta NADA — es un caso válido, no un formulario a medias.
+     */
+    function cablearMargen(campoCoste, campoPrecio, campoMargen) {
+      const aplicar = (cambiado) => {
+        const r = window.margenCatalogo.autocompletar({
+          coste: campoCoste.value, precio: campoPrecio.value, margen: campoMargen.value,
+        }, cambiado);
+        if (r.precio !== null && cambiado !== 'precio') campoPrecio.value = String(r.precio);
+        if (r.margen !== null && cambiado !== 'margen') campoMargen.value = String(r.margen);
+        // 🔴 SIEMPRE, y también cuando no se ha escrito nada: si sólo se pintara al escribir, un
+        // margen que pasa a positivo se quedaría en rojo para siempre.
+        pintarMargen(campoMargen);
+      };
+      campoCoste.addEventListener('input', () => aplicar('coste'));
+      campoPrecio.addEventListener('input', () => aplicar('precio'));
+      // 🔴 También cuando el margen lo teclea el profesional. `aplicar('margen')` NO reescribe
+      // ese campo —pisarle lo que está tecleando es el defecto que evita la línea de arriba—,
+      // así que sin este `input` un «-50» escrito a mano no se pintaría.
+      campoMargen.addEventListener('input', () => aplicar('margen'));
+    }
+
+    /**
+     * SCRUM-764 · QUE EL MARGEN NEGATIVO SE VEA.
+     *
+     * `margenDesde(150, 100)` devuelve **−50** y hasta hoy la ficha lo enseñaba con la misma tinta
+     * que un 30 %: mismo color, mismo borde, mismo fondo (medido en navegador). El profesional
+     * firma un presupuesto perdiendo dinero y se entera al facturar.
+     *
+     * 🔴 SE AVISA, NO SE IMPIDE. Vender por debajo del coste es una decisión legítima —una oferta
+     * gancho, un trabajo que se quiere ganar— y rechazarlo dejaría catálogos reales sin poder
+     * guardarse. Es un ÁMBAR, no un rojo irreversible: se avisa, no se bloquea.
+     *
+     * 🔴 Y EL TRATAMIENTO NO SE INVENTA AQUÍ: es el que el producto YA aplica al margen del
+     * trabajo en `quotesDetailView.js` (`data.margin >= 0 ? var(--brand) : var(--red-600)`, con
+     * `--red-50` de fondo). Esto no estrena una política: pone al catálogo de acuerdo con una que
+     * ya está en producción. Por eso no hace falta ni un texto nuevo — sólo color (regla 30).
+     *
+     * La regla de QUÉ es «bajo coste» no vive aquí: está en `margenCatalogo.bajoCoste`, con la
+     * aritmética y con su test, para que dos pantallas no puedan decidirlo distinto.
+     */
+    const MARGEN_BAJO_COSTE = 'catalogo-margen--bajo-coste';
+    function pintarMargen(campoMargen) {
+      if (!campoMargen) return;
+      campoMargen.classList.toggle(
+        MARGEN_BAJO_COSTE, window.margenCatalogo.bajoCoste(campoMargen.value));
+    }
     const costI = form.querySelector('input[name="cost"]');
     const providerSelect = form.querySelector('select[name="providerId"]');
     const descI = form.querySelector('input[name="description"]');
+    cablearMargen(costI, priceI, margenI);
+    // SCRUM-609 · el switch del ALTA. Nace SIN lado marcado: null = «nadie lo ha declarado»,
+    // y con null se ven todos los campos (invariante de CONT-01). Preseleccionar Producto
+    // aqui declararia por el profesional en cada alta, que es lo que la columna nullable evita.
+    const altaSwitch = cablearTipoArticulo(form, form.querySelector('.quote-form-row'), null);
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    // 🔴 ESTA PANTALLA **NO** LLEVA EL ATAJO «N», Y NO ES UN HUECO. Decisión del fundador,
+    // 6-sep-2026 (SCRUM-769), con estas palabras:
+    //
+    //     «Colgar N de un botón que confirma es atar una tecla a un guardado. N abre, no guarda.»
+    //
+    // El motivo, medido antes de decidirlo: aquí NO hay un botón que ABRA un alta. El formulario
+    // está SIEMPRE visible y este botón es su ENVÍO — lee los campos y crea. `atajoNuevo.registrar`
+    // ata la tecla a `boton.click()`, así que la «N» intentaría crear con lo que hubiera escrito;
+    // con el formulario vacío, dispararía un error en la cara del profesional.
+    //
+    // Por lo mismo, su RÓTULO tampoco se toca: «Nuevo producto» es lo que se lee para ABRIR un
+    // alta, y aquí rotularía el botón que la CONFIRMA.
+    //
+    // ⛔ Si vienes a «arreglar el hueco»: no lo es. Lo que haría falta primero es un botón que
+    //    abra el alta; entonces el atajo tendría a qué colgarse. Ver `docs/master/SCRUM-769.md`.
+    // ═══════════════════════════════════════════════════════════════════════════════════════
     const createBtn = form.querySelector("#pf-create-product");
   
     // --- table ---
@@ -475,7 +793,14 @@ function renderProductsView(container) {
             setAlert("success", "Estado actualizado.");
             await refresh();
           } catch (e) {
-            setAlert("error", e.message || "Error actualizando estado.");
+            // SCRUM-631 · El cliente SABE que estaba ACTIVANDO, asi que puede elegir el texto sin
+            // que el servidor invente un codigo nuevo (regla 27). El 409 es el mismo `name_duplicate`
+            // del alta; lo que cambia es la accion que lo provoco, y por eso cambia la frase.
+            const activando = !it.isActive;
+            const codigo = String((e && e.message) == null ? "" : e.message).trim();
+            setAlert("error", activando && codigo === PV_COD_NOMBRE_DUPLICADO
+              ? PV_NOMBRE_ACTIVO_DUPLICADO
+              : mensajeDeErrorCatalogo(e && e.message, "Error actualizando estado."));
           }
         });
   
@@ -487,7 +812,7 @@ function renderProductsView(container) {
             setAlert("success", "Producto borrado.");
             await refresh();
           } catch (e) {
-            setAlert("error", e.message || "Error borrando.");
+            setAlert("error", mensajeDeErrorCatalogo(e && e.message, "Error borrando."));
           }
         });
   
@@ -545,7 +870,7 @@ function renderProductsView(container) {
         setAlert(null, "");
         await refresh();
       } catch (e) {
-        setAlert("error", e.message || "Error recargando.");
+        setAlert("error", mensajeDeErrorCatalogo(e && e.message, "Error recargando."));
       }
     });
 
@@ -556,7 +881,7 @@ function renderProductsView(container) {
         const url = `/admin/products/export?merchantId=${encodeURIComponent(merchantId)}`;
         window.open(url, "_blank");
       } catch (e) {
-        setAlert("error", e.message || "Error exportando.");
+        setAlert("error", mensajeDeErrorCatalogo(e && e.message, "Error exportando."));
       }
     });
 
@@ -612,7 +937,7 @@ function renderProductsView(container) {
         setAlert("success", `CSV importado. Insertados: ${data.created ?? 0} · Duplicados omitidos: ${data.skipped ?? 0}${errNota}`);
         await refresh();
       } catch (err) {
-        setAlert("error", err.message || "Error importando.");
+        setAlert("error", mensajeDeErrorCatalogo(err && err.message, "Error importando."));
       } finally {
         // MUY importante: limpiar value para que no se “re-dispare” con el mismo archivo
         importFile.value = "";
@@ -629,7 +954,6 @@ function renderProductsView(container) {
   
         const name = String(nameI.value || "").trim();
         const price = Number(priceI.value);
-        const vatRaw = String(vatI.value || "").trim();
         const costRaw = String(costI.value || "").trim();
         const providerRaw = String(providerSelect?.value || "").trim();
         const description = String(descI.value || "").trim();
@@ -641,24 +965,30 @@ function renderProductsView(container) {
           name,
           description: description || null,
           price,
-          vat: vatRaw === "" ? null : Number(vatRaw),
+          // SCRUM-609: el alta DEJA DE ESCRIBIR el IVA. No se manda: no es que se mande null,
+          // es que el campo ya no existe. El `vat` de lo que ya hay no se toca.
           cost: costRaw === "" ? null : Number(costRaw),
           providerId: providerRaw === "" ? null : Number(providerRaw),
+          // SCRUM-609 · el lado elegido, o null si nadie tocó el switch.
+          itemKind: altaSwitch.leer(),
         };
   
         await createProduct(merchantId, payload);
   
         nameI.value = "";
         priceI.value = "";
-        vatI.value = "";
+        margenI.value = "";
         costI.value = "";
+        // SCRUM-764 · vaciar el campo no le quita la clase: sin esto, el formulario recién
+        // limpiado se queda en rojo para el alta siguiente, avisando de un margen que ya no hay.
+        pintarMargen(margenI);
         if (providerSelect) providerSelect.value = "";
         descI.value = "";
   
         setAlert("success", "Producto creado.");
         await refresh();
       } catch (e) {
-        setAlert("error", e.message || "Error creando producto.");
+        setAlert("error", mensajeDeErrorCatalogo(e && e.message, "Error creando producto."));
       }
     });
   
@@ -670,7 +1000,7 @@ function renderProductsView(container) {
 
 
     // init
-    refresh().catch((e) => setAlert("error", e.message || "Error cargando productos."));
+    refresh().catch((e) => setAlert("error", mensajeDeErrorCatalogo(e && e.message, "Error cargando productos.")));
   }
   
 // ═══════════════════════════════════════════════════════════════════════════════════════════

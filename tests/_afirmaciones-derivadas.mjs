@@ -45,6 +45,7 @@
 // dice *«el 30-jul había 21»*, y eso seguirá siendo cierto cuando sean 22. No se registra, y se
 // dice por qué: lo que caduca en silencio es el número SIN fecha.
 import fs from 'node:fs';
+import { soloEjecutable } from './_guard-texto.mjs';
 import path from 'node:path';
 
 /** El campo que marca la pertenencia. Un solo sitio lo nombra (igual que `CAMPO_TENENCIA`). */
@@ -66,7 +67,7 @@ export function modelosDelTexto(texto) {
     if (abre) { actual = { nombre: abre[1], campos: [] }; continue; }
     if (actual && /^\s*\}\s*$/.test(linea)) { out.push(actual); actual = null; continue; }
     if (!actual) continue;
-    const campo = /^\s*([A-Za-z0-9_]+)\s+\S/.exec(linea.replace(/\/\/.*$/, ''));
+    const campo = /^\s*([A-Za-z0-9_]+)\s+\S/.exec(soloEjecutable(linea));
     if (campo) actual.campos.push(campo[1]);
   }
   return {
@@ -84,18 +85,25 @@ export function modelosDelTexto(texto) {
  * frase ya no dice 21» y «no sé leer la frase» no pueden salir por la misma línea.
  */
 export const AFIRMACIONES = [
-  { fichero: 'src/app.ts', patron: /cubre los (\d+) modelos con/ },
-  { fichero: 'src/modules/exports/domain/portabilidadCompleta.ts', patron: /\*\*de los (\d+) modelos/ },
-  { fichero: 'src/modules/system/domain/barridoDemo.ts', patron: /\*\*10 de los (\d+) modelos con/ },
-  { fichero: 'src/modules/system/domain/barridoDemo.ts', patron: /Los (\d+) con `merchantId`, en el orden/ },
-  { fichero: 'tests/_censo-merchant-de-la-url.mjs', patron: /medido: (\d+) modelos la tienen/ },
-  { fichero: 'tests/scrum244-cobertura-portabilidad.test.mjs', patron: /De los (\d+) modelos con merchantId/ },
-  { fichero: 'tests/scrum272-criterio-referencial.test.mjs', patron: /durante los (\d+) `deleteMany`/ },
-  { fichero: 'tests/scrum272-criterio-referencial.test.mjs', patron: /de los (\d+) modelos, \*\*\d+ llevan/ },
-  { fichero: 'tests/scrum314-wipedemo-derivado.test.mjs', patron: /\*\*10 de los (\d+) modelos con/ },
-  { fichero: 'tests/scrum314-wipedemo-derivado.test.mjs', patron: /«cubrir los (\d+)»/ },
-  { fichero: 'tests/scrum314-wipedemo-derivado.test.mjs', patron: /los (\d+) por merchant/ },
-  { fichero: 'tests/scrum440-tenencia-supresion.test.mjs', patron: /medido: (\d+) modelos la tienen/ },
+  // ── SCRUM-680 · VACÍO A PROPÓSITO, Y ES EL FINAL BUENO DE ESTE GUARD ──────────────────
+  //
+  // Aquí vivían DOCE entradas: doce frases del árbol que escribían a mano el tamaño de esta
+  // población. Este guard las ataba al recuento derivado para que no envejecieran en silencio,
+  // y funcionó — el día que entró `EmailMessage` cayeron nombradas, y otra vez con
+  // `ParteTrabajo` (SCRUM-674): la población pasó de 22 a 23.
+  //
+  // 🔴 PERO ATAR LA PROSA ERA EL PARCHE, NO LA CURA. Cada modelo nuevo obligaba a repasar doce
+  // frases a mano, y ese repaso ya se estaba haciendo: se cazó una que decía «de los 23
+  // modelos, 19 mapean y DOS no» — que además de vieja **no sumaba** (19 + 2 = 21, no 23), y
+  // vivía en `portabilidadCompleta.ts`, que es lo que se ejecuta cuando un cliente pide TODOS
+  // sus datos. Quien audite el RGPD lee esa línea y se la cree.
+  //
+  // Así que las doce frases dejaron de decir un número (SCRUM-680). No se derivan: se
+  // REFORMULAN — lo que hacía falta saber era CUÁLES (`Quote` e `Invoice` mapean en camelCase),
+  // y los nombres no caducan. **Una frase sin número no se desincroniza.**
+  //
+  // ⚠️ SI ALGUIEN VUELVE A ESCRIBIR EL NÚMERO EN PROSA, su sitio es esta lista. Que esté vacía
+  // no es que el guard sobre: es que hoy no hay ninguna afirmación que atar.
 ];
 
 /**

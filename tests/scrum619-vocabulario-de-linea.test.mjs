@@ -99,9 +99,71 @@ function vocabularioFacturaSuelta(linea) {
 }
 
 // ── LO FIJADO ────────────────────────────────────────────────────────────────────────────
-const VOC_PRESUPUESTO = ['concept', 'price', 'qty', 'suplido', 'tax'];
+// 🔴 2-sep-2026 · SCRUM-655 · ENTRA `apartado`, Y LA DECISIÓN QUE ESTE GUARD EXIGE, ESCRITA:
+//
+// QUÉ HACE LA FACTURA CON ELLA: **nada, y es deliberado, no un olvido.** Un apartado es la
+// estructura de lectura del PRESUPUESTO —«1. DEMOLICIONES» y sus partidas 1.01, 1.02—, o sea
+// una decisión de cómo se presenta una OFERTA. La factura es otro documento y no la hereda.
+//
+// Consecuencia, dicha en voz alta porque es justo lo que este guard existe para que no se caiga
+// en silencio: al facturar un presupuesto con apartados, `Invoice.lines` recibe las líneas SIN
+// las cabeceras y SIN la marca. Los importes NO cambian —las cabeceras nunca sumaron— así que
+// no hay un euro en juego; lo que se pierde es el agrupamiento visual del documento.
+//
+// ⚠️ Y NO SE ARREGLA AQUÍ: tocar la puerta de la factura es camino de emisión y está fuera de
+// esta tanda (T6). Queda declarado para que la decisión sea de alguien y no del descuido.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-661 · ENTRA `costeUnitario`, Y ESTE TRINQUETE HIZO SU TRABAJO: saltó en la tanda y
+// obligó a tomar la decisión antes de que la clave pasara sin que nadie se enterase.
+//
+// LA DECISIÓN: **NO se añade a la puerta de la factura en este ticket.** Dos motivos, y el
+// primero manda:
+//
+//   1. Tocar `validarFacturaSuelta` es **camino de emisión** (reglas 29/38) y es **STOP**: pide
+//      el OK del fundador, no se hace de paso. Es la misma frontera que este fichero declara
+//      arriba para `suplido` y que SCRUM-655 respetó para `apartado`.
+//   2. Y hoy no rellenaría nada: la factura suelta se teclea a mano en `nuevaFacturaModal.js`,
+//      que **no tiene catálogo ni campo de coste** (el censo de SCRUM-600 le contó CERO
+//      capacidades). Añadir la clave allí crearía un campo que nadie rellena — exactamente el
+//      error que SCRUM-661 evitó al no ensanchar el esquema antes de tener los otros dos
+//      eslabones.
+//
+// 🔴 LO QUE SE PIERDE, DICHO EN VOZ ALTA porque es la víctima del propio SCRUM-661: **ninguno**
+// de los cuatro caminos de emisión copia `Quote.lines` — MEDIDO el 2-sep-2026, los cuatro
+// reconstruyen la línea a mano con `concept/qty/price/tax` (`albaranes.routes.ts` ×2,
+// `recapitulativa.service.ts`, `invoicesAdmin.routes.ts`). Así que el coste congelado vive en el
+// PRESUPUESTO y no viaja a la factura. El margen real sigue siendo reconstruible desde el
+// presupuesto, que es donde están el coste y el precio; **no lo será desde una factura que no
+// tenga presupuesto detrás.** Eso es una decisión del fundador, y queda escrita aquí para que
+// sea suya y no del descuido.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-594 (DOC-04) · ENTRA `dto`, Y EL TRINQUETE VOLVIÓ A HACER SU TRABAJO: saltó en la tanda
+// y obligó a escribir la decisión antes de que la clave pasara en silencio.
+//
+// LA DECISIÓN: **NO se añade a la puerta de la factura**, y aquí no es una frontera heredada
+// sino LA ACOTACIÓN EXPLÍCITA del ticket:
+//
+//   1. El PDF de la factura **RECALCULA** su total desde `lines` con un motor distinto del que
+//      alimenta el libro registro, el modelo 303 y VeriFactu — eso es SCRUM-624, ABIERTO y
+//      medido. Meter descuentos en ese camino **multiplicaría** ese defecto en vez de heredarlo.
+//   2. Y el prorrateo del descuento global entre tipos de IVA es una regla que vale para el
+//      PRESUPUESTO, que **no es documento fiscal**. Antes de que un descuento llegue a una
+//      factura, esa regla va a la asesoría con SCRUM-619, 623 y 624.
+//
+// 🔴 LO QUE SE PIERDE, DICHO EN VOZ ALTA: **un presupuesto con descuento que se convierte en
+// factura pierde el descuento de sus líneas.** Hoy eso no rompe ningún importe —los cuatro
+// caminos de emisión reconstruyen la línea a mano con `concept/qty/price/tax`, así que la
+// factura sale del `price` de tarifa— pero significa que el papel que firma el cliente y el que
+// se le factura pueden decir precios distintos. **Es el hueco declarado de este ticket, no un
+// olvido, y entra cuando la asesoría fije la convención.**
+// ─────────────────────────────────────────────────────────────────────────────────────────
+const VOC_PRESUPUESTO = ['apartado', 'concept', 'costeUnitario', 'dto', 'price', 'qty', 'suplido', 'tax'];
 const VOC_FACTURA = ['concept', 'price', 'qty', 'tax'];
-const DIVERGENCIA = ['suplido'];
+// `apartado`, `costeUnitario` y ahora `dto` se unen a `suplido` en la lista de lo que el
+// presupuesto guarda y la factura no. Que la lista CREZCA no es neutro: cada entrada es un dato
+// que muere al facturar.
+const DIVERGENCIA = ['apartado', 'costeUnitario', 'dto', 'suplido'];
 
 /**
  * Los sitios que reconstruyen una linea con la firma EXACTA de `Invoice.lines`. Fijado POR
@@ -121,7 +183,18 @@ const ESTRECHAMIENTOS = Object.freeze({
   'src/modules/jobs/domain/albaranAFactura.ts': 2,
   'src/modules/jobs/domain/recapitulativa.service.ts': 1,
   'src/modules/maintenance/domain/maintenance.service.ts': 1,
-  'src/modules/products/app/routes/products.routes.ts': 1,
+  // 🔴 SCRUM-646 (2-sep-2026) · BAJA A 0, Y SE ANOTA porque el trinquete manda anotarlo: «un
+  // arreglo sin anotar se deshace solo».
+  //
+  // El estrechamiento que había aquí construía las líneas de la PLANTILLA de presupuesto del
+  // catálogo por gremio, y una de sus propiedades era `tax: vat` — el tipo impositivo derivado
+  // del PAÍS del merchant. Al retirar ese cableado (que es el objeto de SCRUM-646) la línea de
+  // la plantilla deja de llevar impuesto, y el estrechamiento desaparece con él.
+  //
+  // NO se ha «arreglado el estrechamiento»: ha desaparecido su motivo. Si alguien vuelve a
+  // construir líneas ahí, tendrá que volver a declararlo — y este comentario le dirá que lo que
+  // NO puede volver es el `tax` derivado del país (lo impide el guard de SCRUM-646).
+  // 'src/modules/products/app/routes/products.routes.ts': 1,   ← retirado, no puesto a 0
   'src/modules/system/app/routes/invoicesAdmin.routes.ts': 1,
 });
 
@@ -184,7 +257,7 @@ test('SCRUM-619 · el vocabulario de la FACTURA SUELTA sigue siendo de cuatro cl
     '🔴 la puerta de la factura y la firma declarada en el censo ya no dicen lo mismo');
 });
 
-test('SCRUM-619 · 🔴 LA DIVERGENCIA, NOMBRADA: hoy es `suplido`, y es exactamente una', () => {
+test('SCRUM-619 · 🔴 LA DIVERGENCIA, NOMBRADA: hoy son tres, y cada una es un dato que muere al facturar', () => {
   // Se compara lo DECLARADO por el presupuesto contra lo que la factura deja pasar: una clave
   // recién declarada y todavía sin usar YA es divergencia, porque el día que alguien la mande
   // se caerá. Esperar a que se use es esperar a perder el primer dato.

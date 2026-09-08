@@ -17,6 +17,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+// SCRUM-694: el scanner de TypeScript, no un filtro por lineas.
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const { nombreParaDocumento } = await import('../dist/core/documentos/nombreParaDocumento.js');
@@ -76,10 +78,10 @@ test('SCRUM-577 · se recorta el espacio en blanco, pero no se toca nada más', 
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
 // Solo el código: sin esto, los guards de abajo se cazarían en los comentarios que explican la
 // regla — el error que ya cometí en SCRUM-574 y en SCRUM-578.
-const soloCodigo = (s) => s.split(/\r?\n/)
-  .filter((l) => !l.trimStart().startsWith('//') && !l.trimStart().startsWith('*') && !l.trimStart().startsWith('/*'))
-  .map((l) => l.replace(/\s*\/\/.*$/, ''))
-  .join('\n');
+// SCRUM-694 · lo hace el scanner de TypeScript (`tests/_solo-codigo.mjs`). Éste era de los
+// «completos» —quitaba `//`, `*` y `/*`— y aun así fallaba en el sentido caro: el
+// `.replace(/\s*\/\/.*$/)` cortaba en el `//` de una URL dentro de una cadena y se llevaba por
+// delante código real, que dejaba de vigilarse SIN que nadie lo notara.
 
 test('SCRUM-577 · SUELO: los ficheros que se auditan existen y son los que creo', () => {
   const pdf = leer('src/modules/invoicing/infra/pdf/pdf.service.ts');

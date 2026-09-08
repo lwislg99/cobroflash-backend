@@ -67,15 +67,55 @@ test('SCRUM-397 · EN LOTE: la fecha elegida se conserva, y es UNA para toda la 
 // ── EL CRITERIO ─────────────────────────────────────────────────────────────────────────
 
 test('SCRUM-397 · una fecha FUTURA se rechaza: no puede ser un hecho', () => {
+  // 🔴 SCRUM-640 · LA ENTRADA VA COMO `Date`, Y ES DELIBERADO. Antes iba como cadena
+  // `'2026-04-03'`, y eso hacía que ESTE test midiera la ZONA DE LA MÁQUINA: `new Date('…')` sin
+  // hora es medianoche **UTC**, mientras que el `finDeHoy` del producto es fin de día **LOCAL**.
+  // En una máquina con desfase negativo el mañana-UTC cae dentro del hoy-local y la fecha futura
+  // se ACEPTABA — el test caía sin que el criterio hubiera cambiado. Con `Date` explícito los dos
+  // lados hablan la misma zona y lo que se mide es EL CRITERIO, que es lo que dice el nombre.
+  // La cadena ISO no se pierde de vista: tiene su propia caracterización, justo debajo.
   const hoy = new Date(2026, 3, 2, 11, 30);
-  const r = resolverFechaDeCobro('2026-04-03', hoy);
+  const r = resolverFechaDeCobro(new Date(2026, 3, 3, 11, 30), hoy);
   assert.equal(r.ok, false, '🔴 se admitió una fecha futura: el dinero no ha entrado todavía');
   assert.equal(r.error, 'fecha_futura');
   assert.equal(r.message, COPY_FECHA_FUTURA);
 
-  // HOY sí vale, aunque el reloj vaya por la tarde y la fecha llegue como medianoche.
-  const hoyMismo = resolverFechaDeCobro('2026-04-02', hoy);
-  assert.equal(hoyMismo.ok, true, '🔴 se rechazó HOY: la fecha ISO llega a medianoche y sigue siendo hoy');
+  // HOY sí vale, aunque el reloj vaya por la tarde y la fecha llegue a primera hora.
+  const hoyMismo = resolverFechaDeCobro(new Date(2026, 3, 2, 0, 0), hoy);
+  assert.equal(hoyMismo.ok, true, '🔴 se rechazó HOY: la fecha llega a medianoche y sigue siendo hoy');
+});
+
+test('SCRUM-397 · 🔴 CARACTERIZACIÓN: con cadena `YYYY-MM-DD` el veredicto DEPENDE del servidor', () => {
+  // Esto NO se arregla moviendo el fixture, y por eso se escribe en vez de taparse.
+  //
+  // El front manda `paid_at` desde un `<input type="date">`, o sea una cadena `YYYY-MM-DD`.
+  // `new Date('2026-04-03')` es medianoche **UTC**; `finDeHoy` (`fechaDeCobro.ts:60-61`) es
+  // `setHours(23,59,59,999)`, o sea fin de día **LOCAL**. Se comparan dos convenciones distintas.
+  //
+  //   · desfase ≥ 0 (UTC, Madrid, Tokio) → el mañana-UTC queda FUERA del hoy-local → se rechaza ✅
+  //   · desfase < 0 (América)            → el mañana-UTC cae DENTRO del hoy-local → se ACEPTA 🔴
+  //
+  // **En Railway el desfase es 0** (sin variable `TZ` → UTC), así que hoy el producto se comporta
+  // bien donde corre. Es un defecto LATENTE, no uno vivo: se despierta el día que el proceso
+  // arranque al oeste de Greenwich. NO se arregla aquí — cambiar el producto para que un test
+  // pase es justo lo que este ticket no hace. Queda como ticket propio.
+  const hoy = new Date(2026, 3, 2, 11, 30);
+  const desfaseMin = -hoy.getTimezoneOffset(); // minutos al este de Greenwich
+  const r = resolverFechaDeCobro('2026-04-03', hoy);
+
+  if (desfaseMin >= 0) {
+    assert.equal(r.ok, false,
+      `🔴 con desfase ${desfaseMin} min (≥ 0) el mañana-UTC debe quedar fuera del hoy-local y `
+      + 'rechazarse. Si esto falla, ha cambiado el criterio, no la máquina.');
+  } else {
+    assert.equal(r.ok, true,
+      `CARACTERIZACIÓN: con desfase ${desfaseMin} min (< 0) el producto ACEPTA una fecha de `
+      + 'mañana. Si esto empieza a fallar, alguien ha arreglado el defecto latente: bien — '
+      + 'bórrese esta rama del test y anótese la decisión.');
+  }
+  // Y en las dos zonas, HOY tiene que valer: es el caso que el ticket protege.
+  assert.equal(resolverFechaDeCobro('2026-04-02', hoy).ok, true,
+    '🔴 se rechazó HOY: la fecha ISO llega a medianoche UTC y sigue siendo hoy');
 });
 
 test('SCRUM-397 · hacia atrás NO hay límite, y es deliberado', () => {

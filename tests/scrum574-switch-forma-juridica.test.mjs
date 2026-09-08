@@ -14,6 +14,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+// SCRUM-694: el scanner de TypeScript, no un filtro por lineas.
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const COMPONENTE = path.join(RAIZ, 'public/dashboard/js/switchFormaJuridica.js');
@@ -34,11 +36,10 @@ const leer = (p) => fs.readFileSync(p, 'utf8');
 // posible es descartar de más —perder una mezcla escondida tras un `//` dentro de un literal, algo
 // que no existe en estos tres ficheros— y el contrario sería un guard que nadie puede dejar verde
 // y que alguien apagaría en una tarde.
-const soloCodigo = (s) => s
-  .split(/\r?\n/)
-  .filter((l) => !l.trimStart().startsWith('//'))
-  .map((l) => l.replace(/\s*\/\/.*$/, ''))
-  .join('\n');
+// SCRUM-694 · lo hace el scanner de TypeScript (`tests/_solo-codigo.mjs`), no este filtro. El de
+// aquí quitaba las líneas `//` y el `//` de final de línea, pero NO los bloques `/* */` — y ese
+// `.replace(/\s*\/\/.*$/)` se comía media línea de código real en cuanto una cadena llevaba una
+// URL dentro. Un guard que no mira parte del fichero no dice «no hay defecto»: dice «no supe mirar».
 
 const require_ = createRequire(import.meta.url);
 const mod = require_(COMPONENTE);

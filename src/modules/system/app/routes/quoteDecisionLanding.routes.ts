@@ -1,11 +1,17 @@
 import express, { Router, Request, Response } from 'express';
+import path from 'path'; // SCRUM-822 · `root` de `res.sendFile`
 import fetch from 'node-fetch';
 import { prisma } from '../../../../core/db/prisma';
 import { esc, parseToken, formatMoneyEs } from '../../../../core/utils/utils';
 import { getLocale } from '../../../../core/i18n/locales';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { isQuoteExpired } from '../../../quotes/domain/expire.service';
+// SCRUM-806 · la MISMA puerta que usa la ruta de admin para armar el PDF: si el documento del
+// cliente se armara por otro sitio, serían dos documentos distintos con el mismo nombre.
+import { paramsDePresupuestoParaPdf } from '../../../quotes/domain/presupuestoParaPdf';
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
+// SCRUM-633 · el calendario en el que vive el merchant. Sitio único desde SCRUM-643.
+import { zonaDelMerchant } from '../../../../core/zonaDelMerchant';
 
 type DecisionApiError = { message?: string; error?: string };
 
@@ -180,7 +186,10 @@ async function loadQuote(token: string) {
   return prisma.quote.findUnique({
     where: { decisionToken: token },
     include: {
-      merchant: { select: { name: true, legalName: true, logoUrl: true, address: true, country: true, brandColor: true, brandAccentColor: true, whatsappPhone: true } },
+      // SCRUM-633 · `timezone`: la página que ve el CLIENTE imprime la fecha de caducidad DOS
+      // veces, y sin este campo las dos saldrían en la zona del contenedor. Mismo `select`
+      // explícito, mismo riesgo: lo que no esté aquí no sale.
+      merchant: { select: { name: true, legalName: true, logoUrl: true, address: true, country: true, brandColor: true, brandAccentColor: true, whatsappPhone: true, timezone: true } },
       customer: { select: { name: true } },
     },
   });
@@ -342,7 +351,14 @@ function renderQuoteDetail(
     ? new Date((quote as any).validUntil)
     : ((quote as any).createdAt ? new Date(new Date((quote as any).createdAt).getTime() + 30 * 86_400_000) : null);
   if (untilRaw) {
-    const untilStr = untilRaw.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+    // 🔴 SCRUM-633 · `timeZone` EXPLÍCITO. Sin él, `toLocaleDateString` usa la zona del PROCESO,
+    // y nadie la fija en el despliegue: la fecha que lee el cliente salía de con qué zona
+    // arrancara el contenedor. Ahora sale de la del NEGOCIO — que es de quien es la validez, no
+    // del dispositivo que la mira ni de la máquina que la sirve.
+    const untilStr = untilRaw.toLocaleDateString('es-ES', {
+      timeZone: zonaDelMerchant((quote as any).merchant),
+      day: '2-digit', month: 'long', year: 'numeric',
+    });
     validityHtml = `<div class="validity-badge">⏳ Válido hasta el ${untilStr}</div>`;
   }
 
@@ -467,7 +483,13 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
       // también sent con validUntil pasado (el cron horario aún no barrió).
       if (isQuoteExpired(quote as any)) {
         const fechaCad = (quote as any).validUntil
-          ? new Date((quote as any).validUntil).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+          // SCRUM-633 · la MISMA fecha, impresa por segunda vez en esta página. El encargo contaba
+          // cuatro sitios y éste es el quinto: sin `timeZone`, el cliente que llega tarde lee un día
+          // y el que llega a tiempo lee otro, los dos de la zona del contenedor.
+          ? new Date((quote as any).validUntil).toLocaleDateString('es-ES', {
+              timeZone: zonaDelMerchant((quote as any).merchant),
+              day: '2-digit', month: 'long', year: 'numeric',
+            })
           : null;
         const proPhoneExp = (quote.merchant as any)?.whatsappPhone
           ? String((quote.merchant as any).whatsappPhone).replace(/[^\d]/g, '')
@@ -498,8 +520,16 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
         }
       } else if (quote.status === 'accepted') {
         // PC-C (N3): estado aceptado digno con FECHA + siguiente paso (igual que rejected).
+        // SCRUM-633 · MISMA PÁGINA, MISMA ZONA. El censo del encargo contaba dos impresiones y hay
+        // CUATRO: ésta y la del rechazo también salían en la zona del contenedor. Se arreglan con
+        // las otras dos y no después, porque dejarlas fuera crearía en la MISMA página justo lo que
+        // este ticket viene a cerrar: unas fechas en el calendario del negocio y otras en el de la
+        // máquina que las sirve.
         const fechaAcept = quote.acceptedAt
-          ? new Date(quote.acceptedAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+          ? new Date(quote.acceptedAt).toLocaleDateString('es-ES', {
+            timeZone: zonaDelMerchant((quote as any).merchant),
+            day: '2-digit', month: 'long', year: 'numeric',
+          })
           : null;
         return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
           renderPage(`${locale.quote} ya aceptada`, `<div class="status-ok" style="text-align:center">
@@ -510,8 +540,12 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
       } else if (quote.status === 'rejected') {
         // N3 (copy oficial decidido por el fundador 12-jun): estado rechazado digno,
         // nunca el formulario de firma.
+        // SCRUM-633 · la cuarta, por el mismo motivo que la de arriba.
         const fechaRechazo = quote.rejectedAt
-          ? new Date(quote.rejectedAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+          ? new Date(quote.rejectedAt).toLocaleDateString('es-ES', {
+            timeZone: zonaDelMerchant((quote as any).merchant),
+            day: '2-digit', month: 'long', year: 'numeric',
+          })
           : null;
         const proPhone = (quote.merchant as any)?.whatsappPhone
           ? String((quote.merchant as any).whatsappPhone).replace(/[^\d]/g, '')
@@ -763,6 +797,56 @@ quoteDecisionLandingRouter.post('/quote/:token/reject', express.urlencoded({ ext
     res.status(500).setHeader('Content-Type', 'text/html; charset=utf-8').send(
       renderPage('Error', `<div class="status-error"><strong>Error inesperado.</strong> Inténtalo más tarde.</div>`)
     );
+  }
+});
+
+/**
+ * GET /pay/quote/:token/pdf — SCRUM-806 · el mismo documento, para quien tiene el token.
+ *
+ * ── EL DEFECTO QUE CIERRA ──────────────────────────────────────────────────────────────────
+ * El portal del cliente (`/cliente/:token`, público) enlazaba su botón «Ver PDF» a
+ * `BASE_URL + quote.pdfUrl`, y esa columna la escribe la ruta de ADMIN con su propio valor:
+ * `/admin/quotes/<id>/pdf`. Medido: el cliente pulsaba y recibía `401 {"error":
+ * "not_authenticated"}` — JSON crudo, en la pantalla donde decide si firma.
+ *
+ * ── POR QUÉ AQUÍ Y POR QUÉ POR TOKEN ───────────────────────────────────────────────────────
+ * 🔴 NO lleva `:id`, y es deliberado: SCRUM-95 sacó el `quote.id` de los botones de ese portal
+ * por enumerable («la sexta puerta de la misma fuga»). Volver a meterlo para servir un PDF
+ * sería deshacer aquello. Se usa el MISMO `decisionToken` (16 bytes aleatorios) que ya resuelve
+ * `/quote/:token` justo arriba: quien lo tiene ya podía ver este presupuesto entero en la
+ * landing, así que esta ruta NO expone a nadie nuevo — sólo el documento que ya le pertenece.
+ *
+ * ⚠️ HEREDA SCRUM-799: regenera el PDF con el código de hoy en cada apertura, como la ruta de
+ * admin. Eso está MEDIDO y su salida es del fundador; aquí no se toca ese mecanismo.
+ */
+quoteDecisionLandingRouter.get('/quote/:token/pdf', async (req: Request, res: Response) => {
+  const token = parseToken(req.params.token); // tolera URLs sucias
+  if (!token) return res.status(404).json({ error: 'not_found' });
+
+  try {
+    // `loadQuote` no sirve aquí: su `select` de merchant/customer está recortado para la
+    // landing y el PDF necesita la fila entera.
+    const quote = await prisma.quote.findUnique({
+      where: { decisionToken: token },
+      include: { merchant: true, customer: true },
+    });
+    if (!quote) return res.status(404).json({ error: 'not_found' });
+
+    const { generateQuotePdf } = await import('../../../../lib/pdf');
+    const pdf = await generateQuotePdf(paramsDePresupuestoParaPdf({
+      quote, merchant: quote.merchant, customer: quote.customer,
+    }));
+
+    // 🔴 NO se escribe `quote.pdfUrl`: la ruta de admin lo hace con su propia URL y ésta no
+    // tiene por qué pisarla. Ese ida y vuelta es justo lo que creó el defecto.
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="presupuesto-${quote.quoteNumber ?? quote.id}.pdf"`);
+    // SCRUM-822 · `root` obligatorio: sin él `send` aplica su regla de dotfiles a la ruta
+    // ABSOLUTA entera y devuelve 404 si el árbol vive bajo un directorio con punto.
+    return res.sendFile(path.basename(pdf.outPath), { root: path.dirname(pdf.outPath) });
+  } catch (err) {
+    console.error('[GET /pay/quote/:token/pdf]', err);
+    return res.status(500).json({ error: 'internal_error' });
   }
 });
 

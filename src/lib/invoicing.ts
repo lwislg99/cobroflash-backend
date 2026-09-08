@@ -19,6 +19,7 @@ import {
   ERROR_PDF_SIN_SELLAR,
 } from '../modules/invoicing/domain/selladoEstado';
 import { exigirLineasFacturables } from '../modules/invoicing/domain/lineasFacturables'; // SCRUM-246
+import { exigirTiposDeIvaEmitibles } from '../core/validation/tiposIvaEmitibles'; // SCRUM-771
 
 /**
  * Asegura que el PDF de una factura existe en disco (genera bajo demanda si está
@@ -313,6 +314,10 @@ export async function ensureInvoiceForCharge(
   // `price: Number(ch.amount)`: un cobro de 0 € produce una línea sin importe igual. No es
   // excepción, es el sexto camino.
   exigirLineasFacturables(invoiceLines);
+  // SCRUM-771 · y que el tipo de IVA EXISTA. Mismo sitio y misma razón que la línea de
+  // arriba: ANTES de pedir número, nunca después. Deriva de `invalidTipoIva`; aquí no
+  // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
+  exigirTiposDeIvaEmitibles(invoiceLines);
 
   const inv = await prisma.$transaction(async (tx) => {
     const number = await allocateInvoiceNumber(tx, ch.merchantId, {

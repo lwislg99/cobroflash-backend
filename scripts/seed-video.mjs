@@ -22,6 +22,9 @@ import { allocateQuoteNumber } from '../dist/modules/quotes/domain/quoteNumber.s
 import { allocateInvoiceNumber, isReceiptNumber } from '../dist/modules/invoicing/domain/invoiceNumber.service.js';
 import { allocateAlbaranNumber } from '../dist/modules/jobs/domain/albaranNumber.service.js';
 import { resolveBillingPlan, distributeStageAmounts } from '../dist/modules/quotes/domain/billingPlan.js';
+// SCRUM-761: la normalización del catálogo se DERIVA del alta real. Aquí vivía una segunda copia
+// (`p.name.toLowerCase()`) que no quitaba diacríticos — ver el comentario en la escritura.
+import { normalizeSearch } from '../dist/modules/products/domain/products.service.js';
 // SCRUM-381: quien mira una URL de BD pasa por aquí (`parseBDSegura` no tiene forma de devolver
 // la cadena), y `destinoSembrable` es la allowlist de dónde puede escribir un sembrador.
 import { parseBDSegura, destinoSembrable } from './_db-guard.mjs';
@@ -403,7 +406,16 @@ async function seed() {
         data: {
           merchantId: mid,
           name: p.name,
-          nameSearch: p.name.toLowerCase(),
+          // SCRUM-761 · era `p.name.toLowerCase()`: una SEGUNDA normalización, y equivocada.
+          // No quita diacríticos, así que sembraba `'sustitución de grifo monomando'` mientras
+          // `searchProducts` normaliza la consulta a `'sustitucion …'` — teclear la palabra sin
+          // tilde no encontraba la fila. Medido con los dos literales del propio catálogo.
+          //
+          // No sube al escalón 1 (llamar a `createProduct`) por una imposibilidad MEDIDA, no de
+          // calendario: esta siembra va dentro de `prisma.$transaction` y escribe con `tx`,
+          // mientras `createProduct` escribe con el cliente global — el producto se quedaría
+          // FUERA de la transacción. Así que escalón 2: se deriva la normalización.
+          nameSearch: normalizeSearch(p.name),
           price: p.price.toFixed(2),
           cost: p.cost != null ? p.cost.toFixed(2) : null,
           vat: p.vat.toFixed(4),

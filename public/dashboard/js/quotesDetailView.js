@@ -180,15 +180,19 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   stateLabel.textContent = 'Estado';
   stateBlock.appendChild(stateLabel);
 
+  // 🔴 SCRUM-820 (encima de d03b1950) · EL MISMO DEFECTO, UN CLIC MÁS ADENTRO.
+  //
+  // Esta ficha es a donde llega el profesional al pinchar una fila de la lista, y tenía COPIADO el
+  // mismo ternario con `st.toUpperCase()`: pintaba `ACCEPTED` cuando la lista, ya arreglada, decía
+  // «Aceptado». Arreglar sólo la lista **mueve la contradicción un clic** en vez de cerrarla — y la
+  // deja en el sitio donde el jefe mira para decidir.
+  //
+  // El barrido por AST lo cazó: era el único `st.toUpperCase()` que quedaba en un camino de
+  // presupuesto después de d03b1950.
+  const meta = quoteStatusMeta(st);
   const statusSpan = document.createElement('span');
-  statusSpan.className = 'status-pill';
-  statusSpan.textContent = st === 'pending_approval' ? 'PENDIENTE APROBACIÓN'
-    : st === 'expired' ? 'CADUCADO' : st.toUpperCase(); // A16.2
-  if (st === 'accepted') statusSpan.classList.add('status-pill-accepted');
-  else if (st === 'rejected') statusSpan.classList.add('status-pill-rejected');
-  else if (st === 'draft' || st === 'expired') statusSpan.classList.add('status-pill-draft');
-  else if (st === 'pending_approval') statusSpan.classList.add('status-pill-approval');
-  else statusSpan.classList.add('status-pill-pending');
+  statusSpan.className = 'status-pill ' + meta.pillClass;
+  statusSpan.textContent = meta.label;
   stateBlock.appendChild(statusSpan);
 
   // WA-0b: chip de entrega del WhatsApp del presupuesto (J4)
@@ -484,8 +488,29 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   let totalBase = 0;
   let totalIva = 0;
 
-  lines.forEach((line) => {
+  // SCRUM-655 · La numeración se DERIVA de la posición, de una vez y para todas las líneas.
+  // No se teclea nunca: si se tecleara, dos líneas podrían acabar con el mismo 1.02 y «quítame la
+  // 1.03» dejaría de tener respuesta.
+  const numeracion = numerarLineas(lines);
+
+  lines.forEach((line, i) => {
     const l = line || {};
+    const num = numeracion[i] || { cabecera: false, numero: null };
+
+    // ── CABECERA DE APARTADO ────────────────────────────────────────────────────────────
+    // Una fila a todo lo ancho: es un título, no una línea que cobre. No toca los totales —no
+    // lleva cantidad ni precio— y por eso ni siquiera pasa por la aritmética de abajo.
+    if (num.cabecera) {
+      const trA = document.createElement('tr');
+      trA.className = 'quote-apartado';
+      const td = document.createElement('td');
+      td.colSpan = 5;
+      td.appendChild(celdaConcepto(document, `${num.numero}. ${l.concept || ''}`));
+      trA.appendChild(td);
+      tbody.appendChild(trA);
+      return;
+    }
+
     const qty = Number(l.qty) || 0;
     const price = Number(l.price) || 0;
     const tax = Number(l.tax ?? 0);
@@ -497,11 +522,27 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
 
     const tr = document.createElement('tr');
     tr.innerHTML =
-      `<td>${escHtml(l.concept || '—')}</td>` +
+      `<td class="quote-line-cel"></td>` +
       `<td>${qty}</td>` +
       `<td>${fmtQuoteMoney(price, cur)}</td>` +
       `<td>${(tax * 100).toFixed(0)} %</td>` +
       `<td style="text-align:right" class="amount">${fmtQuoteMoney(total, cur)}</td>`;
+
+    // 🔴 EL CONCEPTO SE CONSTRUYE COMO NODOS, no como cadena de HTML. La descripción larga viaja
+    // dentro del concepto detrás de un salto de línea (SCRUM-603) y el HTML COLAPSA los saltos:
+    // ocho renglones
+    // de texto técnico salían aquí en una línea corrida. `celdaConcepto` los devuelve como un
+    // elemento por renglón — estructura, no estilo—, así que el salto sobrevive sin depender de
+    // ninguna propiedad de CSS. Y con `textContent`, el texto del profesional no puede inyectar
+    // marcado aunque nadie se acuerde de escaparlo.
+    const celda = tr.querySelector('.quote-line-cel');
+    if (num.numero) {
+      const n = document.createElement('span');
+      n.className = 'quote-line-num';
+      n.textContent = num.numero;
+      celda.appendChild(n);
+    }
+    celda.appendChild(celdaConcepto(document, l.concept || ''));
     tbody.appendChild(tr);
   });
 
@@ -666,7 +707,12 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
           body: JSON.stringify({ customBillingPlan: leerTramos() }),
         });
         showToast('✓ Plan de cobro actualizado');
-        if (window.renderAppView) window.renderAppView('quote-detail', { quoteId: quote.id });
+        // SCRUM-727 · decía `quote-detail` y el router atiende `quotes-detail`: al guardar el
+        // plan de cobro salía el «✓ Plan de cobro actualizado» y acto seguido te plantaba en
+        // Inicio. Lo encontró el mecanismo del guard de vistas, no una mirada — es el segundo
+        // huérfano con la misma `s` de menos, en otra pantalla. Se arregla aquí porque sin esto
+        // el guard nace en rojo; es de otro carril y queda declarado en el informe.
+        if (window.renderAppView) window.renderAppView('quotes-detail', { quoteId: quote.id });
       } catch (e) {
         showToast(e && e.message ? e.message : 'No se pudo guardar el plan', 'error');
         btnGuardar.textContent = antes;

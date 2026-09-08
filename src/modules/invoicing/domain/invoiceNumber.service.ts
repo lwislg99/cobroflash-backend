@@ -13,6 +13,8 @@ import { Prisma } from '@prisma/client';
 import { getEmissionMode } from './emission.service';
 import { isFlagEnabled } from '../../../core/flags';
 import { recordAuditOrThrow, sobreFiscal, type ActorAudit } from '../../system/audit.service';
+// SCRUM-780: el formato del número nuevo sale del sitio único, el mismo que compone P y AB.
+import { SERIES, formatoNumeroDocumento, parseNumeroDocumento } from '../../../core/documentos/formatoNumero';
 
 /**
  * SCRUM-207 · los 7 caminos por los que puede nacer una factura (mapa de SCRUM-200 §2.1).
@@ -179,13 +181,90 @@ async function reservarReferenciaJustificante(
   throw new ReferenciaJustificanteAgotada(merchantId, candidatas);
 }
 
-/** Formatea un número de la serie. `rectifying` usa la serie propia de rectificativas (R). */
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-780 · EL CORTE AL FORMATO `F<AA><NNNN>`
+//
+// ── POR QUÉ UN CORTE Y NUNCA UNA MIGRACIÓN ──────────────────────────────────────────────────
+// REGLA 29: una factura EMITIDA no se edita, no se borra y NO SE RENUMERA. La regla **no
+// distingue si el merchant era de prueba** — distingue si el documento SALIÓ. En dev hay cinco
+// facturas emitidas (`2026-FG-001..005`, medidas el 7-sep-2026 en `yaqu_dev_javier`) y ninguna
+// cambia de número: ni aquí, ni en ningún otro entorno, por ningún motivo.
+//
+// De ahí sale la forma del código: el formato NO se decide por «lo que hay configurado hoy», que
+// cambiaría el pasado cada vez que alguien toque una preferencia. Se decide por LA FECHA DE LA
+// FACTURA, que es un dato de la factura y no cambia nunca.
+//
+// ── LA FECHA DE CORTE ES UN DATO, NO CÓDIGO ─────────────────────────────────────────────────
+// Firmada por el fundador el 7-sep-2026. Vive en `CORTE_FORMATO_F` y en ningún otro sitio: quien
+// la mueva está renumerando facturas ya emitidas, y por eso tiene que ser UN valor con nombre y
+// no una condición escrita dentro de un `if`.
+//
+// 🔴 SIN FECHA SE FORMATEA COMO SIEMPRE, y no es una comodidad: es lo que protege a los
+//    llamadores que COMPONEN números ya emitidos sin saber su fecha —`huecosSerie` (SCRUM-291) y
+//    `vistaPreviaSerie` (SCRUM-313)—. Si al no saber la fecha esto eligiera el formato nuevo, el
+//    detector de huecos dejaría de casar lo ya emitido y lo daría por perdido.
+//
+// ⚠️ LA RECTIFICATIVA NO ENTRA, y su letra R sigue SIN FIRMAR. No es cosmético: las dos series
+//    tienen contadores independientes (`nextInvoiceNumber` y `nextRectInvoiceNumber`), así que
+//    una `F260003` ordinaria y una `F260003` rectificativa CHOCARÍAN en cuanto un merchant emita
+//    tres de cada — y con `@@unique([merchantId, number])` la segunda emisión, que era válida,
+//    revienta con un 500. Un formato para la rectificativa necesita letra propia, y esa letra es
+//    decisión del fundador. Hasta entonces se queda en `AAAA-PREF-R-NNN`, intacta.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+/** Cuándo empieza el formato nuevo. `desde: null` sería el corte APAGADO. */
+export interface CorteDeFormato {
+  readonly desde: Date | null;
+}
+
+/**
+ * EL DATO FIRMADO: 7-sep-2026, 00:00 UTC. El instante EXACTO cae ya del lado nuevo (`>=`), porque
+ * un corte con el borde abierto deja un instante en el que no se sabe qué formato toca.
+ */
+export const CORTE_FORMATO_F: CorteDeFormato = Object.freeze({
+  desde: new Date('2026-09-07T00:00:00.000Z'),
+});
+
+/**
+ * ¿Le toca a esta factura el formato nuevo? Pura, y separada del formateo para que un guard pueda
+ * preguntarlo sin componer un número.
+ */
+export function usaFormatoF(
+  emitidaEn: Date | null | undefined,
+  rectifying: boolean,
+  corte: CorteDeFormato = CORTE_FORMATO_F,
+): boolean {
+  if (corte.desde == null) return false;                       // corte apagado
+  if (rectifying) return false;                                // R sin firmar: intacta
+  if (!(emitidaEn instanceof Date) || Number.isNaN(emitidaEn.getTime())) return false;
+  return emitidaEn.getTime() >= corte.desde.getTime();
+}
+
+/**
+ * Formatea un número de la serie. `rectifying` usa la serie propia de rectificativas (R).
+ *
+ * `emitidaEn` es LA FECHA DE LA FACTURA — no «ahora». Pasar `new Date()` aquí para una factura
+ * vieja la renumeraría, que es justo lo que la regla 29 prohíbe.
+ *
+ * 🔴 DESPUÉS DEL CORTE EL PREFIJO YA NO DECIDE. El fundador retiró `invoiceSeriesPrefix` del
+ *    número el 7-sep-2026: un solo formato para todos. El parámetro se conserva porque sigue
+ *    decidiendo el de las facturas ANTERIORES al corte, que no se renumeran nunca.
+ */
 export function formatInvoiceNumber(
   prefix: string | null | undefined,
   year: number,
   seq: number,
   rectifying = false,
+  emitidaEn?: Date | null,
+  corte: CorteDeFormato = CORTE_FORMATO_F,
 ): string {
+  if (usaFormatoF(emitidaEn, rectifying, corte)) {
+    // El formato sale del SITIO ÚNICO (`core/documentos/formatoNumero`), el mismo que compone
+    // `P260001` y `AB260001`. Escribir aquí una segunda plantilla sería el defecto que ese módulo
+    // existe para impedir: basta con que una rellene a 4 y la otra a 3 para que el profesional
+    // vea dos formatos en la misma pantalla.
+    return formatoNumeroDocumento(SERIES.factura, year, seq);
+  }
   const p = (prefix ?? '').trim() || 'CF';
   return `${year}-${p}${rectifying ? '-R' : ''}-${String(seq).padStart(3, '0')}`;
 }
@@ -201,6 +280,73 @@ export function formatInvoiceNumber(
  */
 export function appendStageLabel(number: string, stageLabel?: string | null): string {
   return stageLabel ? `${number} — ${stageLabel}` : number;
+}
+
+/**
+ * SCRUM-780 · LA SECUENCIA DE LA SERIE `F`, DERIVADA DE LO YA EMITIDO.
+ *
+ * ── POR QUÉ NO SALE DE `nextInvoiceNumber` ──────────────────────────────────────────────────
+ * El fundador firmó que `F26xxxx` es una serie **NUEVA que empieza en 0001 y es correlativa
+ * dentro de sí misma**. `nextInvoiceNumber` NO puede darla: es el contador de la serie vieja y en
+ * dev vale 6 para el merchant 1, que ya gastó `2026-FG-001..005`. Con él, su primera factura del
+ * formato nuevo saldría `F260006` y la serie F nacería con cinco huecos que nadie podría cerrar
+ * jamás — porque cerrarlos exigiría renumerar, y eso es la regla 29.
+ *
+ * Un contador propio querría una columna nueva, y el schema es del fundador. Así que se DERIVA de
+ * lo emitido, que es la única fuente que no puede desincronizarse de la realidad.
+ *
+ * 🔴 ES SEGURO PORQUE VIVE DENTRO DEL CERROJO. `allocateInvoiceNumber` toma
+ * `pg_advisory_xact_lock` como PRIMERA sentencia, así que dos emisiones del mismo merchant no
+ * pueden derivar el mismo máximo. Fuera de ese cerrojo esto sería un read-then-write con carrera,
+ * exactamente el defecto que SCRUM-234 arregló.
+ *
+ * ⚠️ AQUÍ SÍ SE PARSEA, y `huecosSerie` (SCRUM-291) explícitamente NO. No es una contradicción:
+ * allí se parsearía un formato AJENO y viejo, que envejece; aquí se parsea el formato PROPIO y
+ * actual, con el MISMO parser del módulo que lo compone (`parseNumeroDocumento`), así que los dos
+ * no pueden divergir. Si mañana cambia la forma, cambia en un sitio y esto lo sigue solo.
+ */
+/**
+ * Lo ÚNICO que necesita `leerSeqDeLaSerieF`: poder listar números de factura. Se declara aquí en
+ * vez de pedir un `Prisma.TransactionClient`, y no es cosmética de tipos.
+ *
+ * 🔴 SCRUM-219 CAZÓ LA PRIMERA VERSIÓN, y tenía razón. Pedía `TransactionClient`, y la vista
+ * previa le pasa el cliente GLOBAL —que compila limpio porque `TransactionClient` es un `Omit` de
+ * `PrismaClient`—. Ese guard existe porque pasar el cliente global a quien ESCRIBE deja la
+ * escritura sin rollback, y en la serie fiscal eso convierte un hueco imposible en uno real. Aquí
+ * no se escribe nada, pero la forma de decirlo no es hacer una excepción al guard: es pedir
+ * exactamente lo que se usa. Así la vista previa puede pasar el cliente global sin mentir, y la
+ * emisión sigue pasando su `tx` — que es lo que hace que derivar dentro del cerrojo no tenga
+ * carrera.
+ */
+export interface LectorDeFacturas {
+  invoice: {
+    findMany(args: {
+      where: { merchantId: number; number: { startsWith: string } };
+      select: { number: true };
+    }): Promise<{ number: string }[]>;
+  };
+}
+
+export async function leerSeqDeLaSerieF(
+  db: LectorDeFacturas,
+  merchantId: number,
+  year: number,
+): Promise<number> {
+  const prefijoF = `${SERIES.factura}${String(year % 100).padStart(2, '0')}`;
+  const emitidas = await db.invoice.findMany({
+    where: { merchantId, number: { startsWith: prefijoF } },
+    select: { number: true },
+  });
+  return siguienteSeqDeLaSerieF(emitidas.map((f) => f.number), year);
+}
+
+export function siguienteSeqDeLaSerieF(numeros: readonly string[], year: number): number {
+  let max = 0;
+  for (const n of numeros) {
+    const p = parseNumeroDocumento(n);
+    if (p && p.serie === SERIES.factura && p.year === year && p.seq > max) max = p.seq;
+  }
+  return max + 1;
 }
 
 /** Secuencia que toca emitir: si la serie guardada no es la del año en curso, empieza serie nueva en 1. */
@@ -347,9 +493,27 @@ export async function allocateInvoiceNumber(
     return numero;
   }
   const sameYear = m.invoiceSeriesYear === year;
-  const seq = rect
-    ? (sameYear ? m.nextRectInvoiceNumber : 1)
-    : resolveSeriesSeq(m, year);
+
+  // ── SCRUM-780 · DE QUÉ CONTADOR SALE LA SECUENCIA ──────────────────────────────────────
+  // Después del corte la serie ordinaria es `F<AA><NNNN>` y empieza en 0001, así que su
+  // secuencia se DERIVA de lo ya emitido en esa serie (ver `siguienteSeqDeLaSerieF`). Antes del
+  // corte, y siempre para las rectificativas, no cambia ni una línea de lo de antes.
+  const enFormatoF = usaFormatoF(now, rect);
+  let seq: number;
+  if (rect) {
+    seq = sameYear ? m.nextRectInvoiceNumber : 1;
+  } else if (enFormatoF) {
+    // El `startsWith` acota la lectura a la serie F de ESTE año; el veredicto lo da el parser,
+    // no el prefijo, para que un número parecido no cuele.
+    const prefijoF = `${SERIES.factura}${String(year % 100).padStart(2, '0')}`;
+    const emitidas = await tx.invoice.findMany({
+      where: { merchantId, number: { startsWith: prefijoF } },
+      select: { number: true },
+    });
+    seq = siguienteSeqDeLaSerieF(emitidas.map((f) => f.number), year);
+  } else {
+    seq = resolveSeriesSeq(m, year);
+  }
 
   await tx.merchant.update({
     where: { id: merchantId },
@@ -357,10 +521,16 @@ export async function allocateInvoiceNumber(
       invoiceSeriesYear: year,
       ...(rect
         ? { nextRectInvoiceNumber: seq + 1, ...(sameYear ? {} : { nextInvoiceNumber: 1 }) }
-        : { nextInvoiceNumber: seq + 1, ...(sameYear ? {} : { nextRectInvoiceNumber: 1 }) }),
+        // 🔴 EN FORMATO F EL CONTADOR NO RETROCEDE. La secuencia sale derivada, así que
+        // `nextInvoiceNumber` ya no la manda; pero bajarlo (de 6 a 2 en el merchant 1 de dev)
+        // dejaría el contador de la serie VIEJA apuntando a `2026-FG-002`, que ya existe. Hoy eso
+        // no puede emitirse —los 7 llamadores usan el reloj real y el corte queda atrás, medido—,
+        // y precisamente por eso no se apoya el diseño en ello: se conserva el máximo y el
+        // duplicado deja de ser posible aunque mañana alguien emita con una fecha pasada.
+        : { nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 1), ...(sameYear ? {} : { nextRectInvoiceNumber: 1 }) }),
     },
   });
-  const numero = formatInvoiceNumber(m.invoiceSeriesPrefix, year, seq, rect);
+  const numero = formatInvoiceNumber(m.invoiceSeriesPrefix, year, seq, rect, now);
   await auditar(numero, false);
   return numero;
 }

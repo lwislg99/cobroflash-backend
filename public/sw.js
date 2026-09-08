@@ -16,6 +16,21 @@ const CACHE_NAME = 'yaqu-v4'; // último bump manual: con network-first ya no ha
 // ⚠️ El modo de fallo del otro sentido es peor: `cache.addAll` es ATÓMICO. Una sola ruta que ya
 // no exista hace que RECHACE ENTERA — el precache no se queda a medias, se queda en NADA y el
 // `install` falla. Por eso el guard mira también SHELL → HTML.
+//
+// 🔴 SCRUM-670 · ESTA LISTA ES DE POBLACIÓN, NO DE ORDEN, y aquí decía lo contrario. El
+// comentario de abajo pedía añadir los scripts «en el mismo orden que el HTML», y **eso ya era
+// falso cuando se midió** (2-sep-2026, sobre `main` = c438ffa1): las dos listas coinciden en los
+// **71** nombres —cero faltan, cero sobran, cero duplicados— y **difieren en 9 posiciones**; la
+// primera es la 34, `albaranActionsRegistry.js` en el índice donde aquí hay `invoiceDetailView.js`.
+//
+// Y da igual, que es lo que hay que saber: **el precache DESCARGA, no ejecuta**. El orden de
+// ejecución lo fijan las dependencias declaradas del índice (`filtroClientes.js` antes de
+// `customersView.js`, `tiposDeIva.js` antes de `quotesView.js`, `margenCatalogo.js` y
+// `switchTipoArticulo.js` antes de `productsView.js`), y ahí sí importa. Quien añada uno aquí
+// puede ponerlo donde quiera: lo que no puede es olvidarse, y de eso ya avisa el guard.
+//
+// Se corrige porque una frase falsa en un comentario se lee como una medición. (El «71» de arriba
+// es un DERIVADO: si alguien lo relee, que lo vuelva a contar en vez de creérselo.)
 const SHELL = [
   '/dashboard/',
   '/tokens.css',
@@ -25,6 +40,7 @@ const SHELL = [
   '/dashboard/js/contacto.js',
   '/dashboard/js/modalHeader.js', // SCRUM-446
   '/dashboard/js/switchFormaJuridica.js', // SCRUM-574
+  '/dashboard/js/filtroClientes.js', // SCRUM-581
   '/dashboard/js/jobNextAction.js',
   '/dashboard/js/semaforoFiscal.js',
   '/dashboard/js/homeView.js',
@@ -34,15 +50,31 @@ const SHELL = [
   '/dashboard/js/prefijosPais.js', // SCRUM-578
   '/dashboard/js/customersView.js',
   '/dashboard/js/quotesTabs.js', // SCRUM-432
+  '/dashboard/js/atajoNuevo.js',
   '/dashboard/js/quotesListView.js',
   '/dashboard/js/quoteMargen.js',
   '/dashboard/js/quoteSuplido.js',
+  '/dashboard/js/quoteApartados.js',
+  '/dashboard/js/quoteDescuentos.js',
+  '/dashboard/js/quoteCaducidad.js', // SCRUM-633
+  '/dashboard/js/descuentoPorDefecto.js', // SCRUM-587 (CONT-14)
+  '/dashboard/js/formaDePagoPorDefecto.js', // SCRUM-586 (CONT-13)
+  '/dashboard/js/quoteDireccionObra.js', // SCRUM-602 (DOC-12)
+  '/dashboard/js/quoteRevisiones.js',
   '/dashboard/js/quoteAtajosVencimiento.js',
+  '/dashboard/js/tiposDeIva.js', // SCRUM-611 (DOC-16)
+  '/dashboard/js/textoDelDocumento.js', // SCRUM-593 (DOC-03)
+  '/dashboard/js/cuerpoDelDocumentoSuelto.js', // SCRUM-600 (DOC-10)
   '/dashboard/js/quotesView.js',
   '/dashboard/js/quotesDetailView.js',
+  '/dashboard/js/switchTipoArticulo.js', // SCRUM-609 (CAT-01)
+  '/dashboard/js/margenCatalogo.js', // SCRUM-609
   '/dashboard/js/productsView.js',
   '/dashboard/js/providersView.js',
   '/dashboard/js/tipoDestinatarioPendiente.js', // SCRUM-615
+  // SCRUM-776: la fuente única de cómo se llama el documento; va ANTES de invoicesView y
+  // nuevaFacturaModal, igual que en el índice — los dos la leen al pintar.
+  '/dashboard/js/rotulosDelDocumento.js',
   '/dashboard/js/invoicesView.js',
   '/dashboard/js/cobrosView.js', // SCRUM-285 (B4)
   '/dashboard/js/nuevaFacturaModal.js', // SCRUM-289 (A0.3)
@@ -57,8 +89,10 @@ const SHELL = [
   '/dashboard/js/jobCobroHuecos.js', // SCRUM-320 (G5)
   '/dashboard/js/facturaPreEmision.js', // SCRUM-292 (A1)
   '/dashboard/js/jobRailBlocks.js', // SCRUM-318 (G3)
+  '/dashboard/js/jobAsignados.js', // SCRUM-650 (T1): quien EJECUTA el trabajo
   '/dashboard/js/albaranActionsRegistry.js', // SCRUM-302 (C2)
   '/dashboard/js/albaranDetailView.js',
+  '/dashboard/js/albaranDesdePresupuestoModal.js', // SCRUM-606 (ALB-01)
   '/dashboard/js/albaranesView.js', // SCRUM-301 (C1)
   '/dashboard/js/expensesView.js',
   '/dashboard/js/settingsSubmenus.js', // SCRUM-284
@@ -69,6 +103,7 @@ const SHELL = [
   '/dashboard/js/teamView.js',
   '/dashboard/js/jobsCierreTrabajo.js', // SCRUM-344
   '/dashboard/js/terminadoSinCobrar.js',
+  '/dashboard/js/jobNuevoModal.js',
   '/dashboard/js/jobsView.js',
   '/dashboard/js/signaturePad.js',
   '/dashboard/js/jobDetailView.js',
@@ -85,6 +120,11 @@ const SHELL = [
   '/dashboard/js/almacenLocal.js',
   '/dashboard/js/estadoFirma.js',
   '/dashboard/js/colaDeFirmas.js',
+  // SCRUM-652 (T3 fase C) · la pantalla del parte se precachea POR LA MISMA RAZON que las
+  // otras piezas de firma: se firma en obra, y en obra puede no haber cobertura. Un fichero
+  // que hay que ir a buscar a la red no esta cuando hace falta.
+  '/dashboard/js/parteDetailView.js',
+  '/dashboard/js/parteOficinaView.js',
   '/dashboard/js/resistenciaAlmacen.js',
   '/dashboard/js/app.js',
 ];

@@ -3,8 +3,9 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // POR QUÉ ESTO VA ANTES QUE EL BOTÓN, Y NO AL REVÉS
 //
-// `wipeDemo` borraba **10 de los 22 modelos con `merchantId`**. Los once que faltaban —medidos
-// por derivación propia sobre `schema.prisma` y coincidentes con el delta de SCRUM-310— eran
+// `wipeDemo` borraba una lista a mano, no todos los modelos con `merchantId`. Los que faltaban
+// —medidos por derivación propia sobre `schema.prisma` y coincidentes con el delta de
+// SCRUM-310— eran
 // `authSession`, `provider`, `quoteTemplate`, `teamMember`, `legalAcceptance`, `job`,
 // `maintenancePlan`, `auditLog`, `attachment`, `albaran` y `albaranLineaFacturada`.
 //
@@ -116,7 +117,7 @@ model FacturaRecurrente {
 
 test('SCRUM-314 · CONTROL: ningún borrado sale sin filtro del demo', async () => {
   // Un barrido de demo que se lleva datos reales no se deshace. Este control es tan importante
-  // como la cobertura: sin él, «cubrir los 22» se podría lograr borrando las tablas enteras.
+  // como la cobertura: sin él, «cubrirlos todos» se podría lograr borrando las tablas enteras.
   const p = prismaEspia();
   const { modelos } = await barridoDemo(p, DEMO_ID);
   assert.equal(p.borrados.length, modelos.length, '🔴 hay recorridos que no acabaron en un borrado');
@@ -125,7 +126,7 @@ test('SCRUM-314 · CONTROL: ningún borrado sale sin filtro del demo', async () 
   for (const { modelo, where } of p.borrados) {
     const w = JSON.stringify(where ?? null);
     const acotado =
-      where?.merchantId === DEMO_ID ||                       // los 22 por merchant
+      where?.merchantId === DEMO_ID ||                       // por merchant
       where?.charge?.merchantId === DEMO_ID ||               // los colgados de charge
       where?.phone?.startsWith === PREFIJO_TELEFONO_DEMO;    // las sesiones del bot, por teléfono
     if (!acotado) sinFiltro.push(`${modelo} → ${w}`);

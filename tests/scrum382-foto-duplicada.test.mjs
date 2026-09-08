@@ -9,6 +9,7 @@
 // adjuntos al sellado de la firma.
 
 import test from 'node:test';
+import { ejecutableDe } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -66,7 +67,10 @@ test('SCRUM-382 · el dedupe NO usa el hash del SELLO de la firma', () => {
   // Son dos cosas distintas con la palabra «hash» en medio. Atarlas habría metido el dedupe de
   // adjuntos dentro del camino de emisión (regla 38).
   const src = fs.readFileSync(path.join(RAIZ, 'src/modules/jobs/domain/fotoDuplicada.ts'), 'utf8');
-  const sinComentarios = src.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  // SUELO (SCRUM-719): `huellaDeBytes` la IMPORTA este mismo fichero arriba, así que tiene que
+  // estar en el fuente. El respaldo que ya había —que `computeAlbaranContentHash` exista en la
+  // casa— prueba que el nombre prohibido es real, no que este texto se haya leído.
+  const sinComentarios = ejecutableDe(src, { ancla: 'huellaDeBytes', donde: 'fotoDuplicada.ts' });
   assert.ok(!sinComentarios.includes('computeAlbaranContentHash'),
     '🔴 el dedupe de fotos está usando el sellador del albarán: son cosas distintas');
   assert.ok(!/^import /m.test(sinComentarios.replace(/import crypto[^\n]*\n/, '')),

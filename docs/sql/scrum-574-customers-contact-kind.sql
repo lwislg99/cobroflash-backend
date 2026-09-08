@@ -1,0 +1,33 @@
+-- docs/sql/scrum-574-customers-contact-kind.sql — SCRUM-574, la columna que falta en PRODUCCIÓN
+--
+-- LA FORMA JURÍDICA DEL CONTACTO (Empresa | Persona). Entró en el esquema el 24-ago-2026 con
+-- `b47e8341` y **nunca se aplicó a la base de producción**: por eso `schemaDrift.ts` para el
+-- arranque desde entonces y yaqu.app lleva nueve días sirviendo el código del PR #862.
+--
+-- ⚠️ ESTO NO ES EL `tipoDestinatario` FISCAL, y el esquema lo prohíbe expresamente (fundador,
+-- 24-ago-2026): `contactKind` es FORMA JURÍDICA —qué campos enseña la ficha— y `tipoDestinatario`
+-- es CAPACIDAD FISCAL a efectos de IVA. Un autónomo es `PERSONA` aquí y `EMPRESARIO` allí. No se
+-- deduce uno del otro ni aquí ni en ningún sitio.
+--
+-- ─────────────────────────────────────────────────────────────────────────────────────────
+-- POR QUÉ NULLABLE Y SIN `DEFAULT` — es una decisión, no un olvido
+--
+-- Lo dice el propio esquema: NULL = «no declarado», que es distinto de declarado. Un `DEFAULT`
+-- convertiría a los clientes que ya existen en «declarados» sin que nadie lo haya dicho, y ese
+-- valor inventado mandaría después sobre lo que enseña la ficha.
+--
+-- Y es además lo que hace la sentencia SEGURA sobre una tabla con filas: `ADD COLUMN` nullable no
+-- reescribe la tabla ni bloquea. Un `NOT NULL` sin default fallaría en seco — y la lista blanca
+-- del aplicador lo rechaza por eso mismo.
+--
+-- TIPO: `TEXT`. Sale de `contactKind String? @map("contact_kind")` — String y no enum a propósito
+-- (esquema): la lista cerrada de valores vive en Zod, así que añadir uno no obliga a migrar un
+-- tipo de Postgres.
+--
+-- RE-EJECUTABLE (`IF NOT EXISTS`): en `yaqu_dev_javier` y en `railway` esta columna YA ESTÁ
+-- —medido el 2-sep-2026— así que ahí no hace nada. Sólo muerde en producción.
+--
+-- ⚠️ LA VERIFICACIÓN NO VIVE AQUÍ: `docs/sql/verificacion-deriva-produccion.sql`. La lista blanca
+-- del aplicador rechaza un `SELECT`, y un fichero que mezcle DDL y comprobación queda inaplicable.
+
+ALTER TABLE "customers" ADD COLUMN IF NOT EXISTS "contact_kind" TEXT;

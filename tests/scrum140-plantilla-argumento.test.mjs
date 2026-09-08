@@ -61,8 +61,14 @@ test('SCRUM-140: los dos escritores pasan la plantilla como argumento de la nave
 
 test('SCRUM-140: el acoplamiento es VISIBLE en la firma, y la vista lo recibe', () => {
   // Antes nada en `renderQuotesView(container)` decía que su contenido podía venir de otra vista.
-  assert.match(codigo('quotesView.js'), /function renderQuotesView\(\s*container\s*,\s*template\s*\)/,
-    'renderQuotesView debe declarar `template` en su firma');
+  //
+  // SCRUM-600 (DOC-10) · la firma CRECE a un tercer parámetro, `documentoSuelto`, y el criterio
+  // de este test es justo el que lo exige: lo que cambia lo que la vista pinta va EN LA FIRMA,
+  // visible, y no por un global que nadie ve al leerla. Se sigue anclando el nombre —no un
+  // comodín— porque un `\(.*\)` daría verde con cualquier cosa, incluido volver a `sessionStorage`.
+  assert.match(codigo('quotesView.js'),
+    /function renderQuotesView\(\s*container\s*,\s*template\s*,\s*documentoSuelto\s*\)/,
+    'renderQuotesView debe declarar `template` y `documentoSuelto` en su firma');
   assert.match(codigo('app.js'), /renderQuotesView\(\s*viewContainer\s*,\s*options\.template/,
     'app.js debe pasar options.template a la vista');
 });
