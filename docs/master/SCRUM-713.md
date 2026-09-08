@@ -100,3 +100,42 @@ que ya está en memoria es **coherente**; lo que no lo es, es que esté en memor
 
 Sin tocar ni un texto (regla 30). Lo único que cambia de comportamiento es el estilo del buscador,
 y está medido igual al píxel.
+
+---
+
+## 🛑 CORRECCIÓN, media hora después: la firma SÍ existe para esta ranura, y hay trabajo de otra sesión SIN EMPUJAR
+
+Todo lo de arriba se midió sobre el árbol que yo tenía, y era cierto **de ese árbol**. Al terminar
+apareció lo que faltaba, y cambia la conclusión de ①.
+
+**En el disco de este worktree hay `docs/microcopy/2026-09-07-SCRUM-713-buscador-cliente.md`, SIN
+SEGUIR POR GIT**, con la firma del fundador del 7-sep-2026 **para esta ranura exacta**:
+
+| Qué es | Texto aprobado |
+|---|---|
+| Búsqueda sin resultados | Sin resultados para tu búsqueda |
+| **Cero clientes en total** | **Primero necesitas un cliente.** |
+
+Con su frase: *«Firmados los dos. Escríbelos exactamente así»*.
+
+**Mi ① queda corregido**: no es que la firma sea de otra ranura — es que **ese registro no existía
+en mi árbol cuando pregunté**, y `constaAprobado` sólo pudo ver el congelado. Lo trajo, sin querer,
+un `git stash pop` que aplicó el stash de OTRA SESIÓN que trabaja el mismo ticket en este mismo
+worktree. La medición no estaba mal; **estaba hecha sobre un árbol incompleto**, que es otra forma
+del error del contador de commits.
+
+### 🔴 Y lo urgente: ese trabajo puede perderse
+
+- **No existe ninguna rama `scrum-713` en el remoto.** Comprobado con `git ls-remote`.
+- Su trabajo vive en `stash@{0}` (`On scrum-713-buscador-cliente: scrum713-before-main-20260908-…`)
+  y toca `styles.css`, `quotesView.js` (+88 líneas) y dos tests — **los mismos ficheros que yo**.
+- Sus tres ficheros nuevos están **sin seguir**: el registro de microcopy y dos tests.
+
+**No he tocado su stash ni sus ficheros.** Y no aplico el literal firmado: hacerlo duplicaría su
+trabajo y garantizaría el conflicto. Es el quinto caso de dos sesiones sobre el mismo ticket.
+
+### Lo que sigue en pie de mi tanda
+
+**②** —el `cssText` mudado a la hoja, medido idéntico al píxel— y **③** —la medición de que la
+pantalla se trae los 2000 clientes y de que eso viene del commit fundacional, no del 713—. Las dos
+son independientes de qué implementación del buscador gane.
