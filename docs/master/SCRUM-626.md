@@ -284,3 +284,64 @@ mirarlo en el runner antes de dar el problema por cerrado.
 
 `TOPE_ARRANQUE_POR_DEFECTO` (SCRUM-617, con trinquete) · el marcador `⟦arranque⟧` y sus tramos
 (SCRUM-642) · `tests/_banco-vistas.mjs` y `sw.js` (S2) · `prisma/schema.prisma`.
+
+---
+
+## ✅ EL CONTROL, CORRIDO AQUÍ — con números de la salida real
+
+`npm run guards:visuales`, los 15 guards, en dos árboles: uno **sin** el calentamiento
+(`origin/main`) y otro **con** él (esta rama). Los dos, **15 verdes · 0 no verdes**.
+
+| | `guard:contraste` · arranque | total de ese guard | los otros 14 · arranque |
+|---|---|---|---|
+| **ANTES** — `main`, sin calentamiento | **0,8 s** | 57,3 s | 0,3 – 1,2 s |
+| **DESPUÉS** — esta rama, con calentamiento | **0,4 s** | 8,1 s | 0,3 – 0,5 s |
+
+Y el calentamiento **se cuenta aparte**, como pedía el ticket, con su propia marca:
+
+```
+⟦calentamiento⟧ 0.4 s · proceso+ws 0.4 s · primera-página 0.0 s  (tope 120000 ms)
+   ✔ guard:contraste   8.1 s   arranque   0.4 s   verde
+       └ arranque COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+```
+
+### 🔴 Y lo que esta medida local NO demuestra — se dice, no se vende
+
+**Aquí no hay 32,5 s que quitar.** El coste de arranque en frío en esta máquina es **~0,8 s**, no
+32,5: el fenómeno que mata a `guard:contraste` es **del runner**, no de un portátil. Así que el
+antes/después local **apunta en la dirección correcta pero no puede probar el arreglo** — quien lo
+prueba es el dato del fundador del principio de este documento.
+
+⚠️ **Y NO se compara el total en serie** (278,7 s → 212,5 s). Sería exactamente lo que SCRUM-790
+prohibió: dos totales de la misma máquina no son una dispersión, son una diferencia, y aquí el
+propio `guard:contraste` dio **30,1 s y 57,3 s** en dos tiradas del MISMO árbol sin tocar una línea.
+Lo que sí aguanta es lo cualitativo: **el calentamiento corre, dice su coste aparte, no aborta, y
+tras él los quince arrancan en 0,3–0,5 s.**
+
+### 🔴 El tope, intacto
+
+`TOPE_ARRANQUE_POR_DEFECTO = 30_000` — **sin tocar**, comprobado en `scripts/_navegador.mjs:142`.
+El del calentamiento es **otro** (`TOPE_CALENTAMIENTO_POR_DEFECTO = 120_000`) y puede ser generoso
+precisamente porque **no custodia ningún verde**.
+
+---
+
+## ⚠️ SCRUM-673 · ¿lo hace redundante el calentamiento? **NO. Y no se toca.**
+
+Atacan **causas distintas**, y se ve en el porqué que el propio 673 dejó escrito
+(`scripts/_navegador.mjs:218-229`):
+
+> *«el mismo guard, el mismo binario y la misma máquina arrancaron en 0,3 s, en 12,9 s y en 38,2 s
+> en tiradas distintas. Eso no es el navegador: es la CARGA DEL RUNNER.»*
+
+| | qué quita | qué NO quita |
+|---|---|---|
+| **el calentamiento** (este ticket) | el **coste de arranque en frío**, que se paga UNA vez y antes de la fila | la varianza entre tiradas |
+| **los tres intentos** (SCRUM-673) | que **una tirada lenta produzca veredicto** | el coste en frío: sin calentar, se paga igual en el primero |
+
+El dato del fundador lo confirma por su lado: los catorce siguientes arrancan en **0,3 s** — o sea
+que lo que el calentamiento elimina es el **primero**, no la dispersión. Y la dispersión de 673
+—0,3 · 12,9 · 38,2 en tiradas distintas— **sigue existiendo** con el navegador ya caliente.
+
+**Quitarlos sería cambiar una red por otra que cubre otra cosa.** No se tocan en este ticket, como
+manda el encargo, y queda escrito por qué tampoco deberían tocarse en el siguiente.
