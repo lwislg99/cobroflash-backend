@@ -604,7 +604,28 @@ model Quote {
   tiers                Json?
   selectedTierId       String?
   internalNotes        String?   @map("internal_notes") @db.Text // Notas privadas del profesional, nunca visibles al cliente
+  // ⚠️ NO es la evidencia de la FIRMA, y la distinción costó medirla (SCRUM-805): esto lo escribe
+  // el camino de ADMIN cuando el profesional marca a mano «aceptado/rechazado» ({method,
+  // typedName, …}, ver `quotesAdmin.ts`). El camino público de firma NUNCA la toca. Se deja
+  // intacta: mezclar las dos rompería lo que ya lee `invoicesAdmin.routes.ts`.
   evidence             Json?
+  // SCRUM-805: evidencias probatorias de la firma DEL CLIENTE — { v, canal(remoto|in_situ),
+  // firmadoAt, ip, ua, tokenId, firmante, hashAlg, contentHash } + el bloque congelado que
+  // permite verificar sin depender de datos vivos. Mismo patrón que `Albaran.evidenciaFirma`
+  // (SCRUM-68), porque el presupuesto también se firma EN REMOTO y tiene canal/ip/ua/token que
+  // registrar — a diferencia del parte, que se firma en mano y por eso le bastan dos escalares.
+  //
+  // 🔴 El `contentHash` es del CONTENIDO canónico del PRESUPUESTO, no del binario del PDF y NO
+  // del canónico del albarán: aquél no sella `total`, `validUntil`, `paymentTerms` ni las
+  // cláusulas, que es justo lo que se discute. Sellador propio en `quotes/domain/presupuestoSello.ts`.
+  // ⛔ NO ES VERIFACTU y no se rotula como tal: la huella fiscal es la de la FACTURA, encadenada
+  // y con QR, y a ésa no se le añade nada (regla 24).
+  //
+  // ⚠️ IP y UA son datos personales → viven SOLO aquí; NUNCA se exponen (ni PDF, ni HTML público,
+  // ni serializer/API del cliente). Aditivo, Json nullable: los presupuestos YA firmados se
+  // quedan en `null` y siguen siendo válidos — `null` es «se firmó antes de que esto existiera»,
+  // que no es «firma inválida».
+  evidenciaFirma       Json?     @map("evidencia_firma")
   chargeId             Int?
   reminderSentAt       DateTime?
   teamMemberId         Int?      @map("team_member_id") // técnico que creó la cotización (null = propietario)

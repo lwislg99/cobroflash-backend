@@ -255,6 +255,7 @@ export const REVISION_HEREDA = [
 export const REVISION_NO_HEREDA: Readonly<Record<string, string>> = Object.freeze({
   signatureUrl:    'el trazo del cliente cubre LO QUE VIO. Copiarlo a una versión distinta es firmar por él',
   evidence:        'la evidencia técnica de aquella decisión: hora, IP, canal. No es de este documento',
+  evidenciaFirma:  'el SELLO de lo que se firmó (SCRUM-805). Heredarlo sería peor que heredar el trazo: su `contentHash` certifica el contenido de AQUEL documento, así que en esta versión no cuadraría — y un sello que no cuadra se lee como una falsificación que nadie ha cometido',
   acceptedAt:      'aceptó AQUELLO. Esta versión aún no la ha visto nadie',
   rejectedAt:      'rechazó AQUELLO, por lo mismo',
   decisionChannel: 'por dónde decidió aquella vez',

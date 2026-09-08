@@ -188,23 +188,19 @@ function renderQuotesListView(container) {
     return fmtMoneyEs(amount, currency || (window.appLocale && window.appLocale.currency) || "EUR");
   }
 
+  // SCRUM-820 · ESTO TRADUCÍA DOS ESTADOS Y DEJABA CAER LOS OTROS CUATRO a `st.toUpperCase()`,
+  // así que la lista enseñaba DRAFT, SENT, ACCEPTED y REJECTED a un profesional español —12 de 12
+  // filas— mientras Inicio decía «Aceptado» del mismo presupuesto. Medido con las dos pantallas
+  // pintadas: discrepaban los SEIS estados.
+  //
+  // Ya no decide nada aquí: lee de `quoteStatusMeta` (api.js), que es la única copia y la que
+  // leen también Inicio y la ficha del cliente. El `else` que volcaba el identificador se va con
+  // ella — lo desconocido lo resuelve la pieza, y no cada pantalla a su manera.
   function buildStatusPill(status) {
-    const st = String(status || "").toLowerCase();
+    const meta = window.quoteStatusMeta(status);
     const pill = document.createElement("span");
-    pill.className = "status-pill";
-
-    if (st === "pending_approval") {
-      pill.textContent = "PENDIENTE APROBACIÓN";
-      pill.classList.add("status-pill-approval");
-      return pill;
-    }
-
-    pill.textContent = st === "expired" ? "CADUCADO" : st.toUpperCase(); // A16.2
-    if (st === "accepted") pill.classList.add("status-pill-accepted");
-    else if (st === "rejected") pill.classList.add("status-pill-rejected");
-    else if (st === "draft" || st === "expired") pill.classList.add("status-pill-draft");
-    else pill.classList.add("status-pill-pending");
-
+    pill.className = "status-pill " + meta.pillClass;
+    pill.textContent = meta.label;
     return pill;
   }
 

@@ -813,6 +813,9 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'colaDeFirmas.js',
   'contacto.js',
   'csvImport.js',
+  // SCRUM-600 (DOC-10) · la única composición del cuerpo de `POST /admin/invoices`. Va ANTES de
+  // `quotesView.js` y de `nuevaFacturaModal.js`: son las dos pantallas que la llaman.
+  'cuerpoDelDocumentoSuelto.js',
   'customerDetailView.js',
   'customersView.js',
   // SCRUM-587 (CONT-14) · el descuento pactado con el cliente, PROPUESTO. Va DESPUÉS de

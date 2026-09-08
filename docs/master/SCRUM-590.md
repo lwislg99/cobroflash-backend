@@ -640,3 +640,148 @@ tocar— pero el registro del máster está desfasado para este árbol y alguien
 
 **El PR sigue SIN SER MERGEABLE:** faltan staging y producción, y `schemaDrift` compara
 esperado ⊆ real — una columna de MENOS impide arrancar producción.
+
+---
+
+# APÉNDICE 2 · 8-sep-2026 — LA PANTALLA (el ticket, reabierto y cerrado)
+
+**Medido contra:** `origin/main` = `b521d0a7299efa22153fa776c82cd28e0f907cd9` · 2026-09-08T00:18Z
+**Rama:** `scrum-590b-el-campo-en-la-pantalla` · **Worktree:** `cobroflash-b4`
+
+> El fundador **reabrió el ticket** con el motivo escrito: *«lo cerré con la mitad que toca el
+> usuario sin construir. Tú dejaste el campo fuera a propósito y lo dijiste; yo lo cerré igual. Un
+> falso verde es peor que un falso rojo, siempre.»* El apéndice 1 dejó el backend entero y el
+> campo fuera **porque el rótulo no estaba firmado**. Ya lo está.
+
+## B0 · ✅ EL RÓTULO, FIRMADO
+
+**«Móvil (WhatsApp)»** — firmado por el fundador el 7-sep-2026. Va **sin marcador**, porque está
+firmado, y **byte a byte en los dos formularios**. Fijado con `===` en su test, la lección de
+SCRUM-575: un retoque «de paso» no puede cambiar un texto aprobado sin que algo se ponga rojo.
+
+El paréntesis no es decoración: un campo llamado «Móvil» a secas guarda un segundo número y no
+dice nada. Lo que el profesional necesita saber es que **los documentos salen por ahí** — sin esa
+palabra, el campo es un dato más y la separación vuelve a ser decorativa.
+
+## B1 · DÓNDE ENTRA, Y EL LADO — medido, no supuesto
+
+El encargo avisa: *«Lado Persona y lado Empresa según corresponda — mídelo, no lo supongas»*.
+
+```
+switchFormaJuridica.SOLO_EMPRESA  =  ['legalName']      ← la razón social, y NADA más
+docs/CONTACTOS_CAMPOS_POR_LADO.md §3.1 (COMUNES)  incluye  `phone`
+```
+
+**El móvil se ve en los DOS lados**, y por eso NO entra en el mapa que se le pasa a `aplicarLado`.
+Un móvil es canal de contacto, no forma jurídica: una persona tiene móvil, y una empresa tiene el
+de su persona de contacto — que es literalmente la víctima de este ticket.
+
+**Va en LOS DOS formularios** (modal de la lista y ficha 360). El §2 de
+`docs/CONTACTOS_CAMPOS_POR_LADO.md` deja medido que los dos YA divergen —`recargoEquivalencia`
+sólo en uno, `billingPeriodicity` sólo en el otro— y meter el campo en uno solo habría añadido una
+divergencia más, con el agravante de que ésta decide a dónde va el documento.
+
+### Dos decisiones de forma, con su coste dicho
+
+| | qué se hizo | por qué |
+|---|---|---|
+| **selector de prefijo PROPIO en el modal** | no se comparte con el fijo | compartirlo abría **corrupción silenciosa**: `repartirNumero` coloca el selector leyendo el número que reparte, así que al abrir un cliente quedaría puesto por el fijo; con prefijos distintos, al guardar se recompondría el móvil con el del fijo y **se escribiría encima un número que nadie tecleó** |
+| **la ficha 360 NO lleva selector** | su móvil es un input llano, como su fijo | la regla de unión/reparto vive DENTRO de `customersView.js` y los guards de SCRUM-578 leen **esa región** del fichero; sacarla los dejaría vigilando un delegador vacío, y copiarla serían dos sitios donde divergir. Su coste está dicho en el propio fichero: ahí se puede guardar un número sin prefijo — **el mismo riesgo que ese formulario ya tiene con `phone`**, que hoy es el canal de todo |
+
+## B2 · 🔴 EL MÓVIL SE OMITE DEL PAYLOAD CUANDO ESTÁ VACÍO — y no es estilo
+
+**Medido ejecutando `customerCreateSchema`, no deducido:**
+
+```
+mobile: "34020000002"   ACEPTA
+mobile: ""              RECHAZA · «Too small: expected string to have >=5 characters»
+mobile: null            RECHAZA · «expected string, received null»
+(ausente)               ACEPTA
+```
+
+Mandar el vacío —en cualquiera de sus dos formas— haría que **guardar un cliente sin móvil
+devolviera un 400**. Un campo opcional que rompe el guardado del cliente entero se ha vuelto
+**obligatorio de rebote**, que es exactamente lo que el control positivo del encargo prohíbe.
+
+Consecuencia dicha en vez de descubierta: **vaciar** el móvil de un cliente que lo tiene NO lo
+borra (ausente = «no toques este campo»). Es la limitación que ya tienen `phone` y `email`: se
+hereda, no se estrena, y se cierra el día que el esquema acepte `null` en los tres a la vez.
+
+### 🔴 Y LA FORMA DE ESCRIBIRLO LA DECIDIERON DOS GUARDS, no el gusto
+
+La primera versión omitía la clave con un *spread* condicional —`...(movil ? { mobile: movil } :
+{})`—. Funcionaba, y la tanda la tumbó dos veces:
+
+| guard | qué dijo | por qué tenía razón |
+|---|---|---|
+| **SCRUM-692** · «ha cambiado la lista de campos que SÓLO se editan en la ficha 360: `billingPeriodicity, mobile`» | su censo por AST **no puede leer un spread**, así que no veía `mobile` en el modal y declaraba una asimetría **que no existe** | un payload que un censo no puede leer es un payload que nadie puede vigilar |
+| **SCRUM-692** (el otro) · «EL MODAL ENVÍA CAMPOS QUE NO MUESTRA: `mobile ← movil || undefined`» | con `const movil = movilCompleto()` arriba, la expresión del payload no tocaba ningún control | es la acusación que ese guard existe para hacer, y aquí habría sido **falsa** |
+
+**Arreglo, en el código y no en el guard:** la clave se escribe literal y la lectura va *inline* —
+`mobile: movilCompleto() || undefined`—. En el cable pasa **exactamente lo mismo**, porque
+`JSON.stringify` **borra** las claves cuyo valor es `undefined`; la diferencia es que ahora queda
+ESCRITA y el censo la ve. Y se añadió `movilCompleto()` a `LEE_UN_CONTROL` —el punto de extensión
+que el propio guard documenta en su mensaje— al lado de su hermano `telefonoCompleto()`.
+
+**Y un tercero, en mi propio test:** SCRUM-553 (`el número de etiquetas con el `>` pegado NO
+SUBE`) cazó que yo comprobaba el rótulo de la ficha con `` `<label>…</label>` `` literal — que
+deja de encontrarlo **en silencio** en cuanto alguien añade un atributo. Cambiado a una expresión
+regular que tolera atributos. Los tres se arreglaron cambiando el código; ninguno se relajó.
+## B3 · VERIFICACIÓN · de la pantalla al número, EJECUTADO
+
+`tests/scrum590b-el-campo-en-la-pantalla.test.mjs` recorre **los cinco eslabones**, ninguno
+simulado salvo la base y Meta:
+
+> ① el modal REAL (banco de vistas: los scripts del panel, en orden, en un solo contexto) → ② se
+> pulsa Guardar y se captura el payload que sale por `fetch` → ③ cruza la puerta REAL
+> (`customerCreateSchema`) → ④ se guarda por el camino REAL (`createCustomer`, con su
+> normalización de servidor) → ⑤ esa fila entra en el camino REAL de envío.
+
+| control | resultado |
+|---|---|
+| 🔴 **EL QUE DECIDE** · se guarda un móvil DESDE LA PANTALLA y el documento sale **a ese número** | ✅ |
+| 🔴 **el sentido contrario, pegado** · y **NO** sale al fijo | ✅ |
+| ✅ **POSITIVO** · sólo fijo → se guarda igual que hoy, la clave `mobile` **no viaja**, y el documento le llega | ✅ |
+| ✅ **NEGATIVO** · opt-out sobre el MÓVIL → no se manda, con el fijo limpio | ✅ |
+| el campo se ve en **los dos lados** (ejecutando `SOLO_EMPRESA`, no leyéndolo) | ✅ |
+| ⛔ el móvil **NO** ha entrado en la deduplicación (ejecutando `buscarCoincidencias`, con control positivo) | ✅ |
+| 🔴 **SUELO** · si el campo no está en pantalla, el test falla declarándose CIEGO | ✅ |
+
+**Probado en rojo, dos mutaciones:**
+
+```
+A · el campo existe pero NO viaja en el payload  (la separación DECORATIVA)
+  ✖ EL QUE DECIDE → «el móvil NO viaja en el alta. Payload: {…sin `mobile`…}»
+B · el campo desaparece de la pantalla
+  ✖ ×3 → «CIEGO: esperaba UN control llamado `mobile` en el modal y hay 0»
+```
+
+Restauradas → **6/6 en verde**.
+
+⛔ **Cero mensajes reales**: base y Meta doblados (`_envio-doblado.mjs` + `WHATSAPP_DRY_RUN=1`), y
+los números salen del **rango imposible `34 0XX…`** (SCRUM-262) — ningún abonado puede tenerlos.
+
+## B4 · 🔴 LO QUE EL TEST DESTAPÓ AL RECORRER EL CAMINO REAL
+
+**Hoy no se puede guardar un cliente sin email desde el modal** (ni sin teléfono): el formulario
+manda `""` y el esquema lo rechaza — 400 y «Error guardando cliente». Ningún test lo veía porque
+los de formulario comprobaban el payload, **no la puerta**.
+
+**Registrado como `P1-CONT-19b` en `docs/BUGS.md`. NO se arregla aquí:** cambia el comportamiento
+de dos campos que este ticket no tenía encargados, y arreglarlo «de paso» sin registrarlo es justo
+lo que la casa prohíbe. El test le da un email para poder medir **lo de este ticket**, y lo dice
+en el sitio donde lo hace.
+
+## B5 · HUECOS DECLARADOS
+
+- **Sin capturas ni matriz de dispositivos.** La caja del rótulo estaba medida en navegador real
+  en el §5 (16 car., una línea a 929 y a 390 px), pero **el campo montado no se ha vuelto a medir
+  en navegador**: se han añadido dos filas al modal y eso alarga la columna. La skill
+  `yaqu-premium-ui` se cargó; el componente y las clases son las que ya existían (`createField`,
+  `.campo-telefono`, `selectorDePrefijo`), así que **no se estrena ni un token ni una regla CSS**.
+- **La ficha 360 sigue sin selector de prefijo**, con su coste escrito en el propio fichero. Es la
+  divergencia del §2 de `CONTACTOS_CAMPOS_POR_LADO.md`, de otro carril.
+- **El móvil no entra en la deduplicación**, y por tanto **un móvil duplicado no avisa**. Sigue en
+  la mesa del fundador, con su medición en el apéndice 1.
+- **`charges.routes.ts`** (la segunda puerta que crea clientes) sigue sin `mobile`: omitirlo no
+  abre agujero — los clientes que nacen ahí no tienen móvil, que es el comportamiento de hoy.
