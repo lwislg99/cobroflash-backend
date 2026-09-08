@@ -3,7 +3,7 @@
 **Medido contra:** `origin/main` = `c9cf435b20287ad7a0dc02a3a17d3fe182dfa372` · 2026-09-04T17:25:14+02:00
 **Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-718-escaner-con-parser`
 
-## PASO 0 (regla 39) — remedido, el defecto sigue
+## PASO 0 (cita de regla RETIRADA — SCRUM-637) — remedido, el defecto sigue
 
 `src/app.ts`: **352** líneas empiezan por `//`, el escáner a pelo ve **148**, el parser completo
 **395**. Sin contexto sintáctico no sabe si un `/` abre una expresión regular o divide, y en cuanto
