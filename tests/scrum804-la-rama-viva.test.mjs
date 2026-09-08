@@ -25,6 +25,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { RASTRO, rastroDeLosTickets, rastroDe, motivosParaNoFiarse, esCiego } from '../scripts/_rastro-del-ticket.mjs';
 
 const RAIZ = path.join(import.meta.dirname, '..');
@@ -38,22 +39,11 @@ const censo = rastroDeLosTickets({ raiz: RAIZ, traer: false });
 const LOS_CUATRO = [819, 816, 820, 821];
 
 /**
- * 🔴 Y EL REPARTO DE LOS CUATRO CAMBIÓ MIENTRAS SE ESCRIBÍA ESTE GUARD, que es la mejor prueba de
- * que el instrumento sirve — y de que un control positivo atado a un estado del árbol tiene que
- * poder envejecer A MANO, nunca solo.
- *
- * Medido el 8-sep-2026: los cuatro salían EN RAMA VIVA. Horas después, con el guard ya escrito,
- * **SCRUM-819 y SCRUM-820 entraron en `main`** por los PR #1161 y #1162, y el guard cayó
- * nombrándolos. No se relajó: se actualizó esta lista y se dijo cuál entró y cuándo, que es lo que
- * su propio mensaje de rojo ordena hacer.
- *
- * Los dos cubos siguen siendo el control: el instrumento tiene que saber decir VIVA de unos y
- * EN MAIN de otros, sobre la misma población y en la misma pasada.
+ * El quinto interrogado. Entró como control NEGATIVO nombrado («su rama está mergeada») y hoy ya
+ * no lo es: le nació `scrum-716c-el-cache-del-vigia`. Se queda en la población del árbitro —que no
+ * le exige un estado, sino coherencia con git— porque un ticket con una rama dentro y otra fuera
+ * es justo el caso mixto que más vale la pena interrogar.
  */
-const VIVOS_HOY = [816, 821];
-const ENTRARON_EN_MAIN = [819, 820];
-
-/** Su rama está mergeada desde antes. Distingue «existe el nombre» de «hay trabajo pendiente». */
 const MERGEADO = 716;
 
 test('SCRUM-804 · 🔴 SUELO: el instrumento ve ramas, y ve ramas VIVAS', () => {
@@ -83,45 +73,115 @@ test('SCRUM-804 · 🔴 CONTROL POSITIVO ENUMERADO: ve a los cuatro que pararon,
     + 'su número. Un `SIN RASTRO` aquí no dice «no hay trabajo»: dice que el barrido no llega a '
     + 'sus ramas, y entonces la lista entera de este censo está incompleta y no se sabe cuánto.');
 
-  // ② El reparto medido, en sus dos cubos. Que los dos tengan gente es el control de verdad: un
-  // clasificador que contestara siempre lo mismo pasaría cualquiera de los dos por separado.
-  assert.deepEqual(VIVOS_HOY.map((n) => rastroDe(censo.porTicket, n)),
-    VIVOS_HOY.map(() => RASTRO.EN_RAMA_VIVA),
-    '🔴 alguno de ' + JSON.stringify(VIVOS_HOY) + ' ha dejado de salir EN RAMA VIVA. Reparto '
-    + 'visto: ' + JSON.stringify(vistos) + '.\n\n'
-    + '  ⚠️ SI CAE PORQUE SE MERGEÓ, el guard NO se relaja: se mueve ese número de `VIVOS_HOY` a\n'
-    + '  `ENTRARON_EN_MAIN` a mano y se dice en el commit cuál entró y cuándo. Un control positivo\n'
-    + '  que se autoajusta al árbol deja de controlar el día que el árbol se rompe.');
+  // ② El reparto de hoy se DIAGNOSTICA, no se assertea: cambió tres veces en una sola sesión y
+  // ninguna por un defecto. Quien lo vigila es el árbitro de abajo. Aquí queda impreso para que
+  // una tanda sirva de foto fechada del estado, sin convertir esa foto en una condición.
+  console.log(`    · reparto medido ahora: ${JSON.stringify(vistos)}`);
 
-  assert.deepEqual(ENTRARON_EN_MAIN.map((n) => rastroDe(censo.porTicket, n)),
-    ENTRARON_EN_MAIN.map(() => RASTRO.EN_MAIN),
-    '🔴 alguno de ' + JSON.stringify(ENTRARON_EN_MAIN) + ' ya no sale EN MAIN. Estos dos entraron '
-    + 'por los PR #1161 y #1162 el 8-sep-2026; su trabajo no puede salirse de `main`.');
-
-  // ③ Con sha, tamaño y fecha — que es lo que convierte la lista en accionable.
-  for (const n of VIVOS_HOY) {
-    for (const r of censo.porTicket.get(n).ramas.filter((x) => x.clase === 'viva')) {
-      assert.match(r.sha || '', /^[0-9a-f]{40}$/, `🔴 SCRUM-${n}: la rama ${r.nombre} sale sin sha`);
-      assert.ok(r.adelanto > 0,
-        `🔴 SCRUM-${n}: la rama ${r.nombre} sale VIVA con adelanto ${r.adelanto}. Una rama viva `
-        + 'tiene por definición commits fuera de `main`; un 0 aquí es el clasificador y el contador '
-        + 'diciendo cosas distintas sobre la misma rama.');
-      assert.match(r.fecha || '', /^\d{4}-\d{2}-\d{2}$/, `🔴 SCRUM-${n}: ${r.nombre} sale sin fecha`);
-    }
+  // ③ Con sha, tamaño y fecha — sobre las que estén vivas EN ESTA PASADA, sean cuales sean. Es lo
+  // que convierte la lista en accionable, y no depende de QUIÉN esté vivo.
+  const vivas = LOS_CUATRO.flatMap((n) => (censo.porTicket.get(n) || { ramas: [] }).ramas
+    .filter((x) => x.clase === 'viva').map((r) => [n, r]));
+  for (const [n, r] of vivas) {
+    assert.match(r.sha || '', /^[0-9a-f]{40}$/, `🔴 SCRUM-${n}: la rama ${r.nombre} sale sin sha`);
+    assert.ok(r.adelanto > 0,
+      `🔴 SCRUM-${n}: la rama ${r.nombre} sale VIVA con adelanto ${r.adelanto}. Una rama viva `
+      + 'tiene por definición commits fuera de `main`; un 0 aquí es el clasificador y el contador '
+      + 'diciendo cosas distintas sobre la misma rama.');
+    assert.match(r.fecha || '', /^\d{4}-\d{2}-\d{2}$/, `🔴 SCRUM-${n}: ${r.nombre} sale sin fecha`);
   }
 });
 
-test('SCRUM-804 · ✅ CONTROL NEGATIVO: una rama MERGEADA sale EN MAIN, no EN RAMA VIVA', () => {
-  // Es el caso que separa «existe el nombre» de «hay trabajo pendiente». Sin él, un clasificador
-  // que dijera «viva» a todo pasaría el control positivo entero.
-  assert.equal(rastroDe(censo.porTicket, MERGEADO), RASTRO.EN_MAIN,
-    `🔴 SCRUM-${MERGEADO} tiene rama (\`scrum-716-el-verde-ciego\`) y está MERGEADA. Si sale `
-    + 'EN RAMA VIVA, el instrumento está llamando «pendiente» a trabajo que ya entró, y la lista '
-    + 'se llena de tickets que no hay que mirar — que es como se desactiva una lista.');
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 EL ÁRBITRO — el control que NO caduca, y por qué reemplazó al que sí caducaba
+//
+// La primera versión de este fichero asserteaba el ESTADO de cinco tickets nombrados: «819, 816,
+// 820 y 821 salen EN RAMA VIVA; 716 sale EN MAIN». Cayó **tres veces en una sola sesión**, y
+// ninguna por un defecto:
+//
+//   · 819 y 820 entraron en `main` (PR #1161 y #1162) mientras se escribía el guard;
+//   · 821 entró unas horas después;
+//   · y SCRUM-716 —el control NEGATIVO— pasó a EN RAMA VIVA porque le nació una rama de fase,
+//     `scrum-716c-el-cache-del-vigia` (+1), y la regla «basta UNA viva» hizo lo que debe.
+//
+// Las tres veces el instrumento acertó y el control mintió. Un control positivo atado al estado
+// de un árbol que nueve sesiones mueven a diario **no vigila: envejece**, y lo que se acaba
+// tocando para que pase en verde es el control.
+//
+// Lo que NO caduca es la RELACIÓN: diga lo que diga el árbol, la clase de cada rama tiene que
+// coincidir con lo que contesta `git merge-base --is-ancestor` sobre esa misma rama. Es el mismo
+// árbitro que SCRUM-753 usa para reconciliar su clasificador a granel con la pregunta rama a rama,
+// aplicado aquí a la dimensión nueva. Los cinco tickets siguen ENUMERADOS —la lista es la
+// población que se interroga— pero lo que se les exige ya no es un estado: es coherencia.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+test('SCRUM-804 · 🔴 EL ÁRBITRO: cada clase coincide con `git merge-base --is-ancestor`', () => {
+  const sha = censo.inst.sha;
+  const esAncestro = (objeto) => {
+    try {
+      execFileSync('git', ['merge-base', '--is-ancestor', objeto, sha],
+        { cwd: RAIZ, stdio: ['ignore', 'ignore', 'ignore'] });
+      return true;
+    } catch { return false; }
+  };
 
-  const ramas = censo.porTicket.get(MERGEADO).ramas;
-  assert.ok(ramas.every((r) => r.clase === 'en-main'), 'sus ramas deben salir todas como en-main');
-  assert.ok(ramas.every((r) => r.adelanto === 0), 'una rama en `main` no puede tener adelanto');
+  const interrogadas = [...LOS_CUATRO, MERGEADO]
+    .flatMap((n) => (censo.porTicket.get(n) || { ramas: [] }).ramas.map((r) => [n, r]));
+
+  // SUELO del propio árbitro: sin ramas que interrogar, este test pasaría vacío.
+  assert.ok(interrogadas.length >= 5,
+    `🔴 sólo ${interrogadas.length} ramas que interrogar entre ${[...LOS_CUATRO, MERGEADO].join(', ')}. `
+    + 'Un árbitro sin sujetos no arbitra nada.');
+
+  const discrepan = [];
+  for (const [n, r] of interrogadas) {
+    if (r.clase === 'indeterminada') continue; // no contesta: no se le puede exigir coherencia
+    const dentro = esAncestro(r.sha);
+    const dice = r.clase === 'en-main';
+    if (dentro !== dice) discrepan.push(`SCRUM-${n} · ${r.nombre}: el censo dice «${r.clase}» y `
+      + `\`merge-base --is-ancestor\` dice ${dentro ? 'DENTRO' : 'FUERA'}`);
+  }
+  assert.deepEqual(discrepan, [],
+    '🔴 EL CLASIFICADOR A GRANEL Y GIT NO DICEN LO MISMO:\n   · ' + discrepan.join('\n   · ')
+    + '\n\n  `--merged`/`--no-merged` y `merge-base --is-ancestor` son la MISMA relación contestada '
+    + 'por el mismo motor. Si difieren, la cifra entera de este censo está mal y no se sabe hacia '
+    + 'qué lado.');
+
+  // Y el árbitro tiene que saber decir las dos cosas, o no está midiendo.
+  const dentro = interrogadas.filter(([, r]) => r.clase === 'en-main').length;
+  const fuera = interrogadas.filter(([, r]) => r.clase === 'viva').length;
+  assert.ok(dentro > 0 && fuera > 0,
+    `🔴 entre las ramas interrogadas hay ${dentro} en main y ${fuera} vivas. Con un cubo vacío, `
+    + 'la coincidencia con git no prueba que el clasificador distinga: prueba que contesta siempre '
+    + 'lo mismo y que git le da la razón por casualidad.');
+});
+
+test('SCRUM-804 · ✅ CONTROL NEGATIVO: una rama mergeada NO se cuenta como trabajo pendiente', () => {
+  // Separa «existe el nombre» de «hay trabajo pendiente». Sin esto, un clasificador que dijera
+  // «viva» a todo pasaría el control positivo entero.
+  //
+  // 🔴 SE DERIVA DEL ÁRBOL, y ya no nombra un ticket. El que estaba nombrado aquí —SCRUM-716—
+  // pasó a EN RAMA VIVA en cuanto le nació `scrum-716c-el-cache-del-vigia` (+1), y el control cayó
+  // sobre un instrumento que había acertado: «basta UNA viva» es la regla, y la aplicó. La
+  // población se coge del propio censo, así que siempre hay sujeto y nunca hay que retocar una
+  // lista para que el guard siga pasando.
+  const soloMergeadas = [...censo.porTicket.entries()]
+    .filter(([, v]) => v.ramas.length > 0 && v.ramas.every((r) => r.clase === 'en-main'));
+
+  assert.ok(soloMergeadas.length > 10,
+    `🔴 sólo ${soloMergeadas.length} tickets con TODAS sus ramas mergeadas. Había 464 ramas dentro `
+    + 'de `main` al escribir esto: con una población así de corta este control no distingue nada.');
+
+  const malos = soloMergeadas.filter(([, v]) => v.rastro !== RASTRO.EN_MAIN).map(([n]) => `SCRUM-${n}`);
+  assert.deepEqual(malos, [],
+    '🔴 hay tickets con TODAS sus ramas dentro de `main` que NO salen EN MAIN: ' + malos.join(', ')
+    + '. El instrumento estaría llamando «pendiente» a trabajo que ya entró, y una lista llena de '
+    + 'tickets que no hay que mirar es una lista que se deja de mirar.');
+
+  for (const [n, v] of soloMergeadas) {
+    assert.ok(v.ramas.every((r) => r.adelanto === 0),
+      `🔴 SCRUM-${n}: una rama dentro de \`main\` no puede tener adelanto. El clasificador y el `
+      + 'contador estarían diciendo cosas distintas de la misma rama.');
+  }
 });
 
 test('SCRUM-804 · ✅ SIN RASTRO es un veredicto, no un hueco', () => {
