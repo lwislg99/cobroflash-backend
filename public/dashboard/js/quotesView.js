@@ -472,7 +472,16 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   // el nombre accesible es el MISMO texto aprobado que se lee en el placeholder. Un lector de
   // pantalla diría «cuadro de búsqueda» a secas sin esto.
   buscadorCliente.setAttribute("aria-label", window.buscadorDeClientes.TEXTOS.placeholder);
-  buscadorCliente.style.cssText = "width:100%;min-height:44px;margin-bottom:6px";
+  // 🔴 SCRUM-713b · AQUÍ IBA UN `style.cssText`, y «ni un style en línea» (regla 4) no distingue
+  // entre escribirlo en el HTML y escribirlo desde JavaScript: acaba siendo el mismo atributo
+  // en el mismo nodo. Los tres valores se mudan a la hoja, sin cambiar ni un píxel.
+  //
+  // ⚠️ Y queda dicho para que el arreglo no parezca más de lo que es: este fichero tiene
+  // OTROS 18 `cssText` y el dashboard 352 en 34 ficheros —contados sobre CÓDIGO, porque este
+  // mismo comentario los nombra y un grep a pelo se caza a sí mismo—. Se quita EL QUE ENTRÓ CON ESTE
+  // TICKET —que es lo que restaura el estado— y el resto va reportado: congelarlos pide un
+  // trinquete propio, del patrón de SCRUM-402, y eso es otro ticket.
+  buscadorCliente.classList.add("quote-buscador-cliente");
   fieldCustomer.wrapper.removeChild(fieldCustomer.select);
   fieldCustomer.wrapper.appendChild(buscadorCliente);
   fieldCustomer.wrapper.appendChild(fieldCustomer.select);
