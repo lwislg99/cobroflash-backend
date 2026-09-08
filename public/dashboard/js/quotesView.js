@@ -3283,6 +3283,20 @@ priceTd.querySelector(".quote-line__label").appendChild(priceHint);
         : "";
     descTd.appendChild(descInput);
 
+    // 🔴 SCRUM-597 (DOC-07 · P-DOC-3) · ESTA COLUMNA NO ES PARA TODOS.
+    //
+    //   «Coste y margen los ven el PROPIETARIO y los ADMINS. Los técnicos NO.»
+    //
+    // Aquí estaba la fuga más directa que había: el coste, EN LA MISMA FILA que el precio. No
+    // hacía falta deducir ningún margen — se leía restando dos casillas contiguas.
+    //
+    // El servidor ya no le manda `costeUnitario` a un técnico (`core/visibilidadEconomica.ts`),
+    // así que el campo le saldría siempre vacío; retirarlo es lo que evita dejar una casilla
+    // muerta con su rótulo (norma de SCRUM-89). `costeInput` sigue existiendo como nodo suelto
+    // —NO se añade a la fila— para que `attachProductAutocomplete` y el guardado de borrador
+    // sigan funcionando sin un solo `if` repartido por el fichero.
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    const veEconomia = !window.veoEconomia || window.veoEconomia();
     const costeTd = campoLinea("Coste", "quote-line__coste");
     costeTd.dataset.microcopy = "PENDIENTE_FUNDADOR";
     const costeInput = document.createElement("input");
@@ -3485,13 +3499,43 @@ priceTd.querySelector(".quote-line__label").appendChild(priceHint);
     // (SCRUM-598) a proposito: ese hueco se lee como «ha vuelto el margen», y el coste es otra
     // cosa —el margen era una conclusion que salia en el papel del cliente; el coste es un HECHO
     // del profesional que NO sale—. Anadir al final no reordena nada de lo que ya habia.
-    // SCRUM-600 · el COSTE tampoco: `costeUnitario` es otra de las claves que el emisor descarta
-    // (SCRUM-616). Aquí la pérdida es más silenciosa todavía, porque el coste no sale en el papel
-    // y nadie lo echaría de menos mirando el documento.
-    // SCRUM-632 · la descripción va en la hoja de ajustes, con el coste y el descuento: es
-    // texto largo y en la fila principal costaría alto por línea (la medición de SCRUM-594).
-    ajustesCampos.appendChild(descTd);
-    if (!esDocumentoSuelto) ajustesCampos.appendChild(costeTd);
+    // 🔴 DOS MOTIVOS INDEPENDIENTES PARA NO PINTAR EL COSTE, y se conservan LOS DOS. Elegir uno
+    // en el merge habría reabierto en silencio lo que el otro cerró.
+    //
+    // · SCRUM-600: en un DOCUMENTO SUELTO el emisor descarta `costeUnitario` (SCRUM-616), y la
+    //   pérdida es silenciosa porque el coste no sale en el papel y nadie lo echa de menos.
+    // · SCRUM-597 (P-DOC-3): quien no ve economía no ve el coste. El servidor ya no se lo manda,
+    //   así que pintarlo dejaría una casilla muerta con su rótulo (norma de SCRUM-89).
+    //
+    // El nodo se construye igual en los dos casos —lo usan el autocompletado y el borrador—; lo
+    // que no ocurre es que se PINTE.
+    if (veEconomia && !esDocumentoSuelto) ajustesCampos.appendChild(costeTd);
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // 🔴 SCRUM-632 · LA DESCRIPCIÓN TAMPOCO SE PINTA EN DOCUMENTO SUELTO, y no es simetría:
+    // es la regla de este fichero, y se comprobó EJECUTANDO antes de decidirlo.
+    //
+    //   «Un control aparece en modo documento suelto SI Y SÓLO SI SU DATO SOBREVIVE AL EMISOR.»
+    //
+    // Los dos hechos, medidos el 8-sep-2026 y no leídos:
+    //
+    //   ① `cuerpoDelDocumentoSuelto(cliente, filas)` se EJECUTÓ con una línea que llevaba
+    //      descripción, y el cuerpo salió con `{concept, qty, price, tax}` y nada más. La
+    //      descripción NO viaja: ni como clave, ni pegada al concepto.
+    //   ② La casilla «Incluir descripción en el PDF» cuelga de `blockDelivery`, y `blockDelivery`
+    //      sólo se añade a la tarjeta `if (!esDocumentoSuelto)`. En este modo no está en el DOM:
+    //      ni se ve ni se puede marcar.
+    //
+    // O sea que aquí el campo sería exactamente lo que este fichero enumera tres veces como
+    // defecto: un control que el profesional rellena y que no llega a ningún sitio. Fuera.
+    //
+    // ⚠️ El nodo se sigue CONSTRUYENDO —lo leen el autocompletado y el borrador—; lo que no
+    // ocurre es que se pinte. Mismo trato que el coste, y por el mismo motivo.
+    //
+    // Y cuando SÍ se pinta, va en la hoja de ajustes —con el coste y el descuento— y no en la
+    // fila principal: es texto largo y allí costaría alto por línea, que es la medición por la
+    // que SCRUM-594 rechazó meter «Dto. %» en la tarjeta (+77 px POR FILA).
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    if (!esDocumentoSuelto) ajustesCampos.appendChild(descTd);
     // 🔴 SCRUM-594 · «Dto. %» VA EN LA HOJA, Y LO DECIDIÓ LA MEDICIÓN, NO EL GUSTO.
     //
     // Se montó primero en la TARJETA, junto al precio, que es lo natural: se descuenta sobre el

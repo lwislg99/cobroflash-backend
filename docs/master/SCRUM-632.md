@@ -267,3 +267,72 @@ constante (`MARCA_DESC_LINEA`). Censos declarados: SCRUM-402 y SCRUM-755, `quote
 
 ⛔ Sin tocar `conceptoLinea.ts` ni su trinquete (SCRUM-603), sin dependencias nuevas, sin
 producción ni staging, y sin tocar el camino de emisión.
+
+---
+
+# SCRUM-632c · La unión con SCRUM-597, y el corte que la unión no contestaba
+
+**Fecha:** 08-sep-2026 · **Carril:** producto · **Gate:** ninguno
+
+**Medido contra:** `origin/main` = `1bbf60afb9eae547e083e1c716fa97c88306d791` · 2026-09-08T07:15:37+01:00
+
+## La unión: dos hunks, los dos lados
+
+Al mergear main —que ya trae SCRUM-597— git marcó **dos** conflictos en `quotesView.js`, los dos
+en el mismo sitio de la línea. Se resuelven por UNIÓN, cero líneas borradas:
+
+* **Hunk ①** — se quedan los dos bloques y sus dos declaraciones: `descTd`/`descInput` (632, con su
+  explicación de por qué la descripción deja de colgar del `dataset` del concepto) y
+  `const veEconomia` (597, con su comentario de P-DOC-3).
+* **Hunk ②** — se conserva **íntegro** el comentario de main de los «DOS MOTIVOS INDEPENDIENTES» y
+  su línea `if (veEconomia && !esDocumentoSuelto)`. **No** se sustituye por el `if` de esta rama:
+  eso habría perdido el motivo de 597, que es justo lo que ese comentario advierte.
+
+## 🔴 La pregunta que la unión no contestaba, decidida MIDIENDO
+
+La rama pintaba `descTd` **siempre**, también en documento suelto. La regla del fichero:
+
+> «Un control aparece en modo documento suelto SI Y SÓLO SI SU DATO SOBREVIVE AL EMISOR.»
+
+**Los dos hechos, comprobados EJECUTANDO y no leyendo:**
+
+**①** Se ejecutó `cuerpoDelDocumentoSuelto(7, [{…, description: 'TEXTO DEL PROFESIONAL'}])`. El
+cuerpo salió así:
+
+```json
+{ "customerId": 7, "lines": [ { "concept": "Grifo monomando", "qty": 1, "price": 100, "tax": 0.21 } ] }
+```
+
+La descripción **no viaja**: ni como clave, ni pegada al concepto.
+
+**②** `descCheck` cuelga de `descLabel` → `descWrapper` → `blockDelivery`, y `blockDelivery` sólo se
+añade a la tarjeta con `if (!esDocumentoSuelto)`. En ese modo la casilla **no está en el DOM**: ni
+se ve ni se puede marcar.
+
+**Decisión:** `if (!esDocumentoSuelto) ajustesCampos.appendChild(descTd);`, con el motivo escrito al
+lado. En ese modo el campo sería lo que este fichero enumera tres veces como defecto: un control que
+el profesional rellena y que no llega a ningún sitio.
+
+⚠️ El nodo se sigue **construyendo** —lo leen el autocompletado y el borrador—; lo que no ocurre es
+que se pinte. Mismo trato que el coste y por el mismo motivo.
+
+## Verificación de la unión, ejecutada
+
+`tests/scrum632-los-dos-cortes-de-la-linea.test.mjs` extrae del fuente las líneas que deciden y las
+**ejecuta** con un DOM de juguete, en los dos modos y con los dos mecanismos:
+
+| Escenario | Coste | Descripción |
+|---|---|---|
+| técnico · presupuesto | ausente (597) | **presente** — no es economía del negocio, es el texto del documento |
+| propietario · presupuesto | presente | presente |
+| documento suelto | ausente (600/616) | ausente (632, medido) |
+
+Y la medición que sostiene el corte va **dentro** del test: si algún día la descripción empezara a
+viajar en documento suelto, ese caso cae y hay que volver a decidir. Sin él, el corte sería una
+opinión de hoy.
+
+**Probado EN ROJO por los dos lados:** dejando el `if` de 600 solo cae el control; dejando el
+`appendChild` de la descripción sin gate, también. Cada uno tumba su caso.
+
+**Suite:** 6163 tests · 6058 pass · 0 fail · 105 skipped · exit 0.
+Control TAP de `scrum821b`: 3 `ok` · `# skipped 0`.

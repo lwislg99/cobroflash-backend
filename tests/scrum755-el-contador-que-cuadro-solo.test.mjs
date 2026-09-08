@@ -59,6 +59,11 @@ const JS = path.join(RAIZ, 'public/dashboard/js');
  */
 const CENSO_DE_SITIOS = {
   'albaranDesdePresupuestoModal.js': 6,
+  // 🔴 SCRUM-597 · 8-sep-2026 · `documentoAsignados.js` SALE: el fundador firmó los cinco
+  // rótulos («me parecen genial los rótulos»), registrados en
+  // `docs/microcopy/2026-09-08-SCRUM-597-quien-lleva-el-documento.md`. La entrada se BORRA, no
+  // se pone a 0 (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista ficheros CON marcadores, y
+  // el trinquete APRIETA. Un marcador censado sigue en pantalla; uno firmado desaparece.
   // 🔴 SCRUM-722 · 7-sep-2026 · `atajoNuevo.js` SALE: el fundador firmó «Nuevo albarán». La
   // entrada se borra, no se pone a 0. 29 → 28 sitios.
   //

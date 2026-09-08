@@ -113,6 +113,11 @@ const TABLES = [
   // negocio. Un parte firmado es la prueba de que el trabajo se hizo; que no esté en el dump
   // se descubriria despues de restaurar, que es cuando ya no tiene arreglo.
   'partes_trabajo',
+  // SCRUM-597 (DOC-07): quién LLEVA cada documento. Entran las dos por el mismo motivo que
+  // `job_assignees`: el reparto del trabajo es un hecho del negocio, y un backup que no lo lleva
+  // restaura una cuenta donde nadie sabe de quién era cada presupuesto ni cada factura. Se
+  // descubriría DESPUÉS de restaurar, que es cuando ya no tiene arreglo.
+  'quote_assignees', 'invoice_assignees',
 ];
 
 async function logicalDump(prisma) {

@@ -278,6 +278,8 @@
   <script src="./js/quoteRevisiones.js"></script>
   <script src="./js/quoteAtajosVencimiento.js"></script> <!-- SCRUM-605: atajos de «Válido hasta» -->
   <script src="./js/tiposDeIva.js"></script> <!-- SCRUM-611 (DOC-16): los tipos del selector de la linea, UN solo sitio; va ANTES de quotesView.js -->
+  <script src="./js/economiaVisible.js"></script> <!-- SCRUM-597 (DOC-07 · P-DOC-3): quien ve coste y margen; va ANTES de quotesView.js, productsView.js e invoiceDetailView.js, que lo consumen -->
+  <script src="./js/documentoAsignados.js"></script> <!-- SCRUM-597 (DOC-07): el selector de usuarios asignados al documento; va ANTES de quotesDetailView.js e invoiceDetailView.js -->
   <script src="./js/textoDelDocumento.js"></script> <!-- SCRUM-593 (DOC-03): los dos textos libres del documento; va ANTES de quotesView.js, que los consumira en la fase 3 (schema+cableado) -->
   <script src="./js/cuerpoDelDocumentoSuelto.js"></script> <!-- SCRUM-600 (DOC-10): la UNICA composicion del cuerpo de POST /admin/invoices; va ANTES de quotesView.js y de nuevaFacturaModal.js, que son las dos pantallas que la llaman -->
   <script src="./js/buscadorDeClientes.js"></script> <!-- SCRUM-713: filtrar clientes al teclear (textos + regla de comparacion); va ANTES de quotesView.js, que lo llama al MONTAR el selector -->
