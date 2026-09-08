@@ -3234,6 +3234,21 @@ priceTd.querySelector(".quote-line__label").appendChild(priceHint);
     // pantalla en el catálogo (`productsView.js`, en el alta y en la edición), reusado para el
     // mismo concepto. Aun así lo aprueba el asesor, y hasta entonces el nodo lo dice de sí mismo.
     // ═══════════════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // 🔴 SCRUM-597 (DOC-07 · P-DOC-3) · ESTA COLUMNA NO ES PARA TODOS.
+    //
+    //   «Coste y margen los ven el PROPIETARIO y los ADMINS. Los técnicos NO.»
+    //
+    // Aquí estaba la fuga más directa que había: el coste, EN LA MISMA FILA que el precio. No
+    // hacía falta deducir ningún margen — se leía restando dos casillas contiguas.
+    //
+    // El servidor ya no le manda `costeUnitario` a un técnico (`core/visibilidadEconomica.ts`),
+    // así que el campo le saldría siempre vacío; retirarlo es lo que evita dejar una casilla
+    // muerta con su rótulo (norma de SCRUM-89). `costeInput` sigue existiendo como nodo suelto
+    // —NO se añade a la fila— para que `attachProductAutocomplete` y el guardado de borrador
+    // sigan funcionando sin un solo `if` repartido por el fichero.
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    const veEconomia = !window.veoEconomia || window.veoEconomia();
     const costeTd = campoLinea("Coste", "quote-line__coste");
     costeTd.dataset.microcopy = "PENDIENTE_FUNDADOR";
     const costeInput = document.createElement("input");
@@ -3436,10 +3451,17 @@ priceTd.querySelector(".quote-line__label").appendChild(priceHint);
     // (SCRUM-598) a proposito: ese hueco se lee como «ha vuelto el margen», y el coste es otra
     // cosa —el margen era una conclusion que salia en el papel del cliente; el coste es un HECHO
     // del profesional que NO sale—. Anadir al final no reordena nada de lo que ya habia.
-    // SCRUM-600 · el COSTE tampoco: `costeUnitario` es otra de las claves que el emisor descarta
-    // (SCRUM-616). Aquí la pérdida es más silenciosa todavía, porque el coste no sale en el papel
-    // y nadie lo echaría de menos mirando el documento.
-    if (!esDocumentoSuelto) ajustesCampos.appendChild(costeTd);
+    // 🔴 DOS MOTIVOS INDEPENDIENTES PARA NO PINTAR EL COSTE, y se conservan LOS DOS. Elegir uno
+    // en el merge habría reabierto en silencio lo que el otro cerró.
+    //
+    // · SCRUM-600: en un DOCUMENTO SUELTO el emisor descarta `costeUnitario` (SCRUM-616), y la
+    //   pérdida es silenciosa porque el coste no sale en el papel y nadie lo echa de menos.
+    // · SCRUM-597 (P-DOC-3): quien no ve economía no ve el coste. El servidor ya no se lo manda,
+    //   así que pintarlo dejaría una casilla muerta con su rótulo (norma de SCRUM-89).
+    //
+    // El nodo se construye igual en los dos casos —lo usan el autocompletado y el borrador—; lo
+    // que no ocurre es que se PINTE.
+    if (veEconomia && !esDocumentoSuelto) ajustesCampos.appendChild(costeTd);
     // 🔴 SCRUM-594 · «Dto. %» VA EN LA HOJA, Y LO DECIDIÓ LA MEDICIÓN, NO EL GUSTO.
     //
     // Se montó primero en la TARJETA, junto al precio, que es lo natural: se descuenta sobre el

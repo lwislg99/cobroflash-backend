@@ -19,12 +19,14 @@ firma del cliente → cobro de señal/total → (post SIF-1) factura VeriFactu. 
 2. **Una tarea → una RAMA (`scrum-<n>-<slug>`) → commit de feature (+ commit del máster aparte, misma rama) → PR a `main`.** `main` protegida: push directo BLOQUEADO. El merge del PR lo hace un HUMANO, nunca Claude. `git pull` de `main` antes de empezar cada tarea. Plan de archivos ANTES de tocar código (skill `/yaqu-sprint`).
 3. Tests relevantes en verde antes de commit (`npm test`); verificación en **yaqu.app**
    (no localhost) antes de cerrar la tarea.
-3bis. **El informe de cierre lleva SIEMPRE el nombre EXACTO de la rama y su URL de compare,
-   copiada, no escrita a mano** (SCRUM-637). Se copia de la salida de `git push` o de
-   `npm run ramas:sin-mergear`; **no se construye a partir del número del ticket.** El defecto
-   que lo obliga está medido: dos días dando `…/pull/new/scrum-614` para una rama que se llama
-   `scrum-614-censo-rutas-sin-rol`, con GitHub contestando «There isn't anything to compare», y
-   pidiendo el log de un CI de PRs que no había forma de abrir. La referencia se LEE, no se deduce.
+3bis. **REGLA 39 del master — un ticket no se cierra mientras su rama siga sin mergear.** El
+   enunciado firmado por el fundador vive en `docs/YAQU_MASTER.md`, Parte I, regla 39, y **NO se
+   repite aquí**: este archivo es derivado (regla 35) y una regla escrita dos veces son dos reglas
+   que pueden divergir. Aquí va sólo CÓMO se cumple:
+   · El enlace de comparación se **COPIA** de la salida de `git push` o de
+     `npm run ramas:sin-mergear`. **Nunca se construye a partir del número del ticket** — ése es
+     el defecto medido en SCRUM-637: `…/pull/new/scrum-614` para una rama que se llama
+     `scrum-614-censo-rutas-sin-rol`. La referencia se LEE, no se deduce.
    · Qué hay esperando a que alguien lo mire: `npm run ramas:sin-mergear` (las que NO están en
      `main`, con su edad y su compare) · `npm run ramas:borrables` (las que ya están y se pueden
      tirar) · `npm run enlace:ticket-rama` (cuándo rama, commit, `docs/master/` y Jira discrepan).

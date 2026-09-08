@@ -353,6 +353,64 @@ un índice ausente no rompe ninguna consulta, solo la degrada cuando la tabla cr
 * **La ausencia en un reflog no prueba que algo no se hiciera aquí**: un rebase reescribe el SHA y
   rompe el enlace. Por eso ① lleva su control de sensibilidad (47/50) y no se apoya en el silencio.
 
+## SCRUM-597 (DOC-07) · dos tablas nuevas `quote_assignees` + `invoice_assignees` — 🔴 SIN APLICAR en ninguna de las tres (7-sep-2026)
+
+Las tablas puente de **quién LLEVA cada documento**: un presupuesto o una factura se asignan a uno
+o varios usuarios de la cuenta. SQL aplicable y re-ejecutable en
+**`docs/sql/scrum-597-asignados-de-documento.sql`**.
+
+### 🔴 EL PR ESTÁ DECLARADO **NO MERGEABLE** HASTA QUE ESTAS DOS TABLAS EXISTAN
+
+`prisma/schema.prisma` SÍ entra en este PR —con `QuoteAssignee` e `InvoiceAssignee`— porque el
+código que las usa entra con él. Eso significa que **`schemaDrift.ts` no dejará arrancar
+producción** mientras las tablas no estén: compara *esperado ⊆ real* y una TABLA de menos es
+exactamente lo que impide el arranque (la lección de SCRUM-220).
+
+**Orden obligatorio: primero el `ALTER`, después el merge.** Al revés deja producción sin arrancar.
+
+| Base **física** | La resuelven | Estado |
+|---|---|---|
+| **`yaqu_dev_javier`** (host `acela`) | `DATABASE_URL_DEV` | ⬜ **SIN APLICAR** |
+| **`railway`** (host `acela`) | `DATABASE_URL_STAGING` **+** `DATABASE_URL_TESTS` | ⬜ **SIN APLICAR** |
+| **producción** (host `autorack`) | — | ⬜ **SIN APLICAR — la aplica el fundador** |
+
+**NO MEDIBLE por esta sesión, y el motivo es la orden: el encargo prohibía expresamente tocar
+staging y producción, y aplicar la migración.** Ninguna de las tres se ha tocado
+(«⛔ Cero producción y staging», y la migración «NO la aplicas»). No hay medición del estado previo
+de ninguna base en esta entrada, y **eso es lo que hay**: las tres casillas están sin marcar porque
+nadie ha mirado, no porque se haya comprobado que faltan. Quien las aplique, que las marque aquí
+con su verificación, como hicieron SCRUM-593 y SCRUM-425.
+
+### La migración está VERIFICADA contra lo que Prisma emitiría, que es lo que sí se pudo medir
+
+Sin tocar ninguna base:
+
+* **`node scripts/preview-migracion.mjs --desde <schema anterior>`** (offline, con su control
+  positivo: la herramienta respondió, 29 tablas). El SQL que Prisma emite coincide con el escrito a
+  mano —mismas columnas, misma PK compuesta, mismos índices y las cuatro FK con
+  `ON DELETE CASCADE ON UPDATE CASCADE`—. Veredicto de la herramienta: **aditiva** (ni DROP, ni
+  RENAME, ni TRUNCATE, ni DELETE, ni SET NOT NULL).
+* **`clasificarFichero`** de `scripts/_clasificador-sql.mjs`, el mismo clasificador que usa el
+  aplicador: **`ok: true`**, 4 sentencias, todas de la lista blanca (2 `CREATE TABLE` + 2
+  `CREATE INDEX`).
+
+Alinear las FK con lo que Prisma genera es la lección de **SCRUM-670b**: sin `ON UPDATE CASCADE`
+explícito quedaría `NO ACTION` y la base diría una cosa y el esquema otra — deriva silenciosa, que
+ni `schemaDrift.ts` ni `deriva-prod.sql` ven, porque sólo miran que EXISTAN tabla y columna.
+
+### `ON DELETE CASCADE` en las cuatro claves, y es la lección de SCRUM-244
+
+Sin él la FK es RESTRICT y borrar un empleado —o su merchant— revienta a mitad de recorrido con las
+tablas anteriores ya vaciadas. Y es lo correcto además de lo seguro: una asignación no significa
+nada sin la persona asignada, ni sin el documento asignado. Por eso los dos modelos entran en
+`FUERA_DEL_BARRIDO_GENERICO` de `borradoMerchant.ts` con su motivo, igual que `jobAssignee`.
+
+### Sin backfill, y por eso no hay nada que este log no cubra
+
+No hay ninguna migración de DATOS asociada: las dos tablas nacen VACÍAS y «vacío» es exactamente el
+estado de hoy —ningún documento está asignado—. El aviso de SCRUM-758 sobre lo que este fichero no
+ve (los backfills) no aplica aquí, y se dice para que no haya que averiguarlo.
+
 ## SCRUM-609 (CAT-01) · `products.item_kind` — ✅ COLUMNA APLICADA en las TRES bases · ✋ backfill SIN VERIFICAR en producción (2-sep-2026 · registrado el 5-sep-2026)
 
 **REGISTRO TARDÍO, y el retraso es parte del registro.** El `ALTER` se aplicó el **2-sep-2026** y el
