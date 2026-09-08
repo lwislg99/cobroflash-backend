@@ -615,3 +615,137 @@ cuentas cuadran ticket a ticket: `cherry` == commits sin merges (`rev-list --cou
 No hubo ceguera.
 
 ⛔ Ninguna rama borrada. Ningún ticket cerrado ni reabierto.
+
+---
+
+# APÉNDICE · 8-sep-2026 (tarde) · Los suelos que sobreviven al auto-borrado de ramas
+
+**Fecha:** 8-sep-2026 · **Carril:** proceso · censo · **Gate:** sin gate — corre en `npm test`
+**Medido contra:** `origin/main` = `da5ac06ac169fca5d3692a63b10b01a6aed7d3d6` · 2026-09-08T10:33:34Z
+**Fichero tocado:** `tests/scrum804-la-rama-viva.test.mjs` (y esta entrada). Nada más.
+
+> 🛑 **ESTE APÉNDICE NO CIERRA NADA** ni toca el instrumento. `scripts/_rastro-del-ticket.mjs` y
+> `scripts/censo-tablero-vs-arbol.mjs` quedan **exactamente como estaban**: acertaban.
+
+## 0 · El síntoma que llegó, y la hipótesis que hubo que matar
+
+Llegó como «CI ve 100 ramas y en local se ven 553; sus suelos caen por población corta», con la
+hipótesis de que el censo pedía las ramas a la API de GitHub sin paginar —100 es el tamaño de
+página por defecto—. **Se paró y se midió antes de arreglar nada.** Murió por dos sitios:
+
+| medición | resultado |
+| --- | --- |
+| `grep -rn "api.github.com\|gh api\|octokit\|GITHUB_TOKEN" scripts/ tests/ package.json` | **0 resultados.** El censo lee `git for-each-ref refs/remotes/origin/` — [censo-tablero-vs-arbol.mjs:78](../../scripts/censo-tablero-vs-arbol.mjs#L78), [_rastro-del-ticket.mjs:150](../../scripts/_rastro-del-ticket.mjs#L150), [_censo-alcanzabilidad.mjs:185](../../scripts/_censo-alcanzabilidad.mjs#L185). Un tamaño de página no trunca lo que nunca se pide por red |
+| `git ls-remote --heads origin \| wc -l`, dos veces con 20 min de diferencia | **102**, luego **105**. Un truncamiento por paginación da 100 clavado siempre; esto es una cuenta real que se mueve |
+
+**El sentido era el contrario: CI tenía razón y el local estaba rancio.** `for-each-ref` lee refs
+locales, que conservan las ramas borradas hasta que alguien poda; CI clona en limpio
+(`actions/checkout@v4` + `fetch-depth: 0`) y por eso veía el remoto de verdad. Y los 26 worktrees
+de esta máquina **comparten un único almacén de refs**: dos sesiones que miden «por separado» leen
+el mismo almacén, así que los 553 eran una medición, no dos.
+
+## 1 · La causa real: el auto-borrado de ramas al mergear
+
+Activado ese mismo día. `_censo-alcanzabilidad.mjs:179` dejó escrito que el 6-sep `ls-remote` daba
+**491**; el 8-sep daba **105**. Se llevó ~390 ramas mergeadas. Las refs dentro de `main` pasaron de
+**464** (cifra que este mismo fichero escribió esa mañana) a **15**.
+
+Tres controles de `tests/scrum804-la-rama-viva.test.mjs` cayeron. **Ninguno por un defecto:**
+
+| control | qué exigía | por qué cayó |
+| --- | --- | --- |
+| positivo enumerado | «SCRUM-821 tiene rama en el remoto con su número» | se mergeó y **su rama se borró** |
+| árbitro | `interrogadas.length >= 5` entre 819, 816, 820, 821, 716 | quedaban **4** (821 y 716 sin rama) |
+| negativo | `soloMergeadas.length > 10`, con «había 464 ramas dentro de `main` al escribir esto» | quedaban **9**. Esa cifra se escribió esa mañana: **caducó en horas** |
+
+`SCRUM-821 → SIN RASTRO` es hoy la respuesta **correcta**. Y el instrumento **ya lo tenía escrito**:
+[_rastro-del-ticket.mjs:295](../../scripts/_rastro-del-ticket.mjs#L295) dice literal que «una rama
+mergeada Y BORRADA deja el ticket sin rama y su trabajo dentro de `main`». El módulo lo sabía; el
+test afirmaba lo contrario.
+
+## 2 · 🔴 Por qué cambiar lo que el guard EXIGE no viola la regla 41
+
+La regla 41 —«guard en rojo → se arregla el código, nunca el guard»— **presupone que lo que el
+guard exige sigue siendo cierto.** Aquí la premisa dejó de serlo.
+
+> **Un guard que exige que existan ramas ya borradas no protege nada: AFIRMA UN HECHO FALSO.
+> Cambiar lo que exige NO es relajarlo cuando lo que exigía ha dejado de existir.**
+
+La distinción que separa esto de una relajación: no se ha bajado ningún umbral para que pase. Se
+han **retirado los umbrales** y se han sustituido por igualdades contra lo que `git` contesta en la
+misma pasada. El guard de hoy es más estricto que el de ayer, no menos: el `> 100` no cazaba que
+el censo perdiera ramas concretas mientras el total siguiera cómodo; la igualdad sí.
+
+## 3 · El anclaje nuevo: `git log --merges`, que el auto-borrado no puede tocar
+
+Un merge de PR deja rastro **permanente** en `main`: el commit de merge y su segundo padre siguen
+siendo alcanzables aunque la rama desaparezca el mismo día. Hoy son **1.055 merges con nombre de
+rama y número de ticket**, y esa población **sólo puede crecer**.
+
+| control | antes | ahora |
+| --- | --- | --- |
+| SUELO | `resumen.total > 100` («había 558»), `enMain > 0`, `vivas > 0` | **igualdad** con `for-each-ref`, `--merged` y `--no-merged` en la misma pasada. Sin cifras |
+| POSITIVO | `LOS_CUATRO = [819, 816, 820, 821]` | **no nombra a nadie**: re-deriva la agrupación con git en crudo y exige que el censo no **pierda** ni **invente** ninguna rama |
+| ÁRBITRO | 5 tickets enumerados, `>= 5` ramas | población de `git log --merges` + **respuesta conocida** (el segundo padre de un merge está dentro de `main` por construcción) + coherencia sobre **las 104 ramas**, no sobre 5 |
+| NEGATIVO | `soloMergeadas.length > 10` | igualdad de conjuntos contra `--merged`, más un sujeto de la historia de merges para cuando no quede ninguna ref mergeada |
+
+El árbitro va **a granel con un solo `git rev-list`** (1.660 merges sin 1.660 procesos) y contrasta
+ese atajo contra `merge-base --is-ancestor` en los dos sentidos, para que no se crea a sí mismo.
+
+**El positivo enumerado no se ha debilitado al dejar de nombrar tickets: se ha ensanchado.** Antes
+comprobaba que se vieran 4 tickets; ahora comprueba que no se pierda **ninguna** de las 99 ramas
+con forma canónica, que es el modo de fallo que la enumeración quería cazar.
+
+## 4 · 🔴 El control que evita la sexta vez: el guard se vigila a sí mismo
+
+Los tres que cayeron tenían la misma forma —`> 100`, `>= 5`, `> 10`—: tres cifras escritas a mano,
+las tres **bien medidas el día que se escribieron**, las tres caducadas por un cambio de política
+que ninguna podía prever. «No escribas umbrales a mano» como comentario es un recordatorio, y los
+recordatorios se incumplen.
+
+El último test recorre **su propia fuente con AST** y cae si encuentra cualquier comparación
+relacional contra un literal numérico distinto de `0`. El `0` es la única excepción y está
+justificada: `x.length > 0` no afirma una magnitud del árbol, dice «hay población o estoy ciego».
+
+**AST y no `grep`**, por la razón de siempre: un guard de texto se caza a sí mismo en el párrafo
+que explica la prohibición — ese párrafo lleva un `> 100` escrito.
+
+**Su rojo, ejecutado:** inyectado `historia.length > 0` → `> 10`, la tanda cae con
+
+```
+🔴 UMBRAL ESCRITO A MANO en este fichero:
+   · scrum804-la-rama-viva.test.mjs:238 · historia.length > 10
+```
+
+Restaurado byte a byte y verificado por `sha256`
+(`5ff45eddfea9e8f6bd910828d7cafaca599934db88f664ab4f99061940a640d9` antes y después).
+
+**Y cazó un caso mío antes que el inyectado:** `partes.length < 3` en el parseo de `git log`. Es una
+constante de formato, no un umbral del árbol — pero **no se le puso excepción**: una lista de
+excepciones es deuda. Se reescribió el parseo para no necesitar el número.
+
+## 5 · ⚠️ Hallazgo de otro carril: `scrum637:164` está en la misma cuenta atrás
+
+Medido de paso, **no arreglado** (regla 9: hallazgo de otro carril se reporta):
+
+| dónde | qué exige | hoy | veredicto |
+| --- | --- | --- | --- |
+| [scrum637-la-rama-que-nadie-mira.test.mjs:164](../../tests/scrum637-la-rama-que-nadie-mira.test.mjs#L164) | `dentro.length > 10` — ramas **dentro de `main`** | **14** | 🔴 **MISMA FORMA Y MISMA POBLACIÓN.** Cuenta justo lo que el auto-borrado destruye. Margen: **4 ramas**. Cae en los próximos merges |
+| [scrum775-suelo-que-no-dispara.test.mjs:264](../../tests/scrum775-suelo-que-no-dispara.test.mjs#L264) | `real.conectados.length > 10` y `real.guards > 20` | verde | ⚠️ misma **forma** (magnitud escrita a mano), **población distinta**: cuenta guards del árbol, que sólo crecen. No está en cuenta atrás |
+
+La distinción importa: lo que pone a `scrum637` en peligro no es tener un número escrito, es tener
+un número escrito **sobre una población que una política del repositorio está vaciando**.
+
+## 6 · Verificación
+
+- **9/9 en verde**, `# skipped 0`. Los 8 controles reescritos pasan sobre el árbol vivo.
+- **El rojo del control nuevo, ejecutado y pegado** (§4), con restauración verificada por `sha256`.
+- **Tanda completa en verde**: los 3 rojos que frenaban los PR quedan en 0.
+- ⛔ No se ha podado el almacén de refs: es **compartido por los 26 worktrees**, y podar aquí se lo
+  poda a las otras cinco sesiones. Sólo `git fetch origin main`.
+
+## 7 · Lo que NO se ha tocado
+
+`scripts/_rastro-del-ticket.mjs`, `scripts/censo-tablero-vs-arbol.mjs`, `scripts/_censo-reparto.mjs`
+y `scripts/_censo-alcanzabilidad.mjs` quedan intactos: el defecto no estaba en ellos. Ninguna rama
+borrada, ningún ticket cerrado ni reabierto, ninguna dependencia nueva.
