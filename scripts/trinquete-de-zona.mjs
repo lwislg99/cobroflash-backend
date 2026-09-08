@@ -25,7 +25,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';   // SCRUM-730: `pathname` no decodifica el espacio
 
 import {
-  CANARIOS, CENSADAS, RAIZ, SALIDA_CIEGO, ZONAS,
+  CANARIOS, CENSADAS, ESCRITURAS_DE_LA_TANDA, RAIZ, SALIDA_CIEGO, ZONAS,
   arbolQuieto, cambianDeVeredicto, escribirCanarios, ficherosDeLaTanda, juzgarCanarios,
   marcaDelArbol, medirEnZona, sondaDeZona, veredicto,
 } from './_trinquete-de-zona.mjs';
@@ -109,6 +109,15 @@ console.log(`\n   árbol ${quieto.medible ? (quieto.cambios.length ? '🔴 SE MO
 // fichero mientras corría», que se arreglan de formas opuestas. La puerta no cambia —una ruta
 // movida sigue siendo CIEGO—; lo que cambia es que ahora se puede actuar sobre ella.
 for (const r of (quieto.rutas || [])) console.log(`      · ${r.ruta}   ${r.antes} → ${r.despues}`);
+// 🔴 SCRUM-813c · Y LAS AMPARADAS SE ENSEÑAN, no se callan. La lista de lo que la propia medición
+// ESCRIBE es una excepción cerrada, y una excepción que no se ve es la que engorda sola hasta
+// tapar el defecto que evita. Se imprime cuántas hay declaradas y cuáles se usaron de verdad: una
+// declarada que ya nunca aparece es una entrada que sobra, y así se nota.
+if ((quieto.amparadas || []).length) {
+  console.log(`      (${quieto.amparadas.length} de ${ESCRITURAS_DE_LA_TANDA.length} declarada(s) `
+    + 'como escritura de la propia tanda — NO ciegan, ver `ESCRITURAS_DE_LA_TANDA`)');
+  for (const r of quieto.amparadas) console.log(`      · ${r.ruta}   ${r.antes} → ${r.despues}   [declarada]`);
+}
 
 let cambian = medidas.every((m) => m.ok) ? cambianDeVeredicto(medidas) : [];
 

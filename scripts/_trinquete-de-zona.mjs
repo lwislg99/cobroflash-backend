@@ -445,41 +445,122 @@ export function huellaPorRuta(estadoPorcelain, diffHead) {
 }
 
 /**
+ * ═════════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-813c · LO QUE LA MEDICIÓN **ESCRIBE** — lista CERRADA, con nombre y motivo.
+ *
+ * LA DISTINCIÓN QUE HACE HONESTA A LA PUERTA: la quietud se exige sobre lo que la medición
+ * **JUZGA** —los ficheros de `tests/` y de `src/`, que es lo que los guards leen para dar su
+ * veredicto— y NO sobre lo que la medición **ESCRIBE** al correr. El sujeto de la medida no puede
+ * incluir los ficheros que la propia medida crea: eso es pedirle a la tanda que no corra.
+ *
+ * ⛔ Y ES UNA LISTA CERRADA, NO UNA ZONA FRANCA. Cualquier ruta que se mueva y NO esté aquí sigue
+ * siendo CIEGO, sin excepción. Está en código y no en un JSON para que añadir una entrada
+ * **aparezca en el diff del PR** y alguien tenga que escribir por qué.
+ *
+ * ── CÓMO SE LLEGÓ A ESTA ENTRADA, porque el camino importa ───────────────────────────────────
+ *
+ * El CIEGO de CI decía sólo «EL ÁRBOL SE MOVIÓ», sin ruta, y **no se reproducía en Windows**: se
+ * midió tres veces (100 muestras del código de `git status`, ~178 de las tres piezas de la marca,
+ * y el trinquete real en dos pasadas) y las tres salieron limpias. Con el detalle por ruta de
+ * SCRUM-813b, la siguiente pasada de CI lo dijo a la primera:
+ *
+ *     árbol 🔴 SE MOVIÓ durante la medición
+ *        · scrum659/   (no aparecía) → estado:??
+ *
+ * ⚠️ **Y LA ENTRADA DE ABAJO TAPA UN DEFECTO DE ORIGEN, así que queda dicho aquí:** ese directorio
+ * no debería nacer nunca dentro del árbol. Sale de
+ * `tests/scrum659-lector-de-lineas-del-pdf.test.mjs`, cuyo respaldo es **el directorio actual**:
+ *
+ *     path.join(process.env.TEMP || process.env.TMPDIR || '.', 'scrum659')
+ *
+ * En Windows `TEMP` existe y el fixture se va al temporal —por eso no se reproducía—; en el runner
+ * de Linux no, y cae en el repo. El arreglo de raíz es `os.tmpdir()`, que es lo que usa el resto
+ * de la casa (`fs.mkdtempSync(path.join(os.tmpdir(), …))`). **Se reporta y no se arregla aquí**:
+ * es otro carril (regla 37). El día que se arregle, esta entrada se retira — y el suelo de abajo
+ * obliga a decirlo en voz alta en vez de dejar la lista vacía en silencio.
+ * ═════════════════════════════════════════════════════════════════════════════════════════════
+ */
+export const ESCRITURAS_DE_LA_TANDA = Object.freeze([
+  Object.freeze({
+    ruta: 'scrum659/',
+    quien: 'tests/scrum659-lector-de-lineas-del-pdf.test.mjs',
+    // 🔴 ANCLADA POR LO QUE ES, NO POR DÓNDE ESTÁ (SCRUM-710b, que me lo tumbó al primer intento:
+    // esto citaba `…:27`). Un número de línea caduca en cuanto alguien edita por encima, y quien
+    // lo pague no sabrá por qué. La EXPRESIÓN no se mueve — y además hace la entrada
+    // autoverificable: el día que alguien la arregle a `os.tmpdir()`, su test cae y obliga a
+    // retirar esta excepción en vez de dejarla amparando algo que ya no existe.
+    expresion: "process.env.TEMP || process.env.TMPDIR || '.'",
+    porque: 'fixture de PDF. El `finally` borra el FICHERO de dentro, no el DIRECTORIO, así que '
+      + 'éste persiste. Y su respaldo es `.` cuando no hay `TEMP` ni `TMPDIR` (el runner de '
+      + 'Linux), así que nace DENTRO del repo. Defecto de origen: debería usar `os.tmpdir()`. '
+      + 'Medido en CI el 8-sep-2026 con el detalle por ruta de SCRUM-813b.',
+  }),
+]);
+
+/** ¿Esta ruta la escribe la propia medición? Un directorio declarado ampara lo que cuelga de él. */
+export function laEscribeLaTanda(ruta, declaradas = ESCRITURAS_DE_LA_TANDA) {
+  const r = String(ruta || '');
+  return declaradas.some((d) => r === d.ruta
+    || (d.ruta.endsWith('/') && r.startsWith(d.ruta)));
+}
+
+/**
  * ¿Qué se movió entre las dos marcas? Lista vacía = el árbol estuvo quieto.
  *
  * 🔴 SCRUM-813b · devuelve ADEMÁS `rutas`: qué ficheros se movieron, con su antes y su después.
  * La puerta es la misma —una sola ruta movida ya es CIEGO— pero el motivo deja de ser una frase
  * genérica y pasa a ser una lista de nombres, que es lo que permite arreglarlo en vez de
  * discutirlo.
+ *
+ * 🔴 SCRUM-813c · y separa las que **la propia medición escribe** (`ESCRITURAS_DE_LA_TANDA`) de
+ * las **ajenas**. Sólo las ajenas ciegan. Devuelve las dos listas: `amparadas` no es un cajón
+ * silencioso, se enseña en cada pasada para que una lista que engorda se vea.
  */
-export function arbolQuieto(antes, despues) {
-  if (!antes?.ok || !despues?.ok) return { medible: false, cambios: [], rutas: [] };
+export function arbolQuieto(antes, despues, declaradas = ESCRITURAS_DE_LA_TANDA) {
+  if (!antes?.ok || !despues?.ok) return { medible: false, cambios: [], rutas: [], amparadas: [] };
   const cambios = [];
   if (antes.head !== despues.head) {
     cambios.push(`HEAD: ${antes.head.slice(0, 12)} → ${despues.head.slice(0, 12)}`);
-    return { medible: true, cambios, rutas: [] };
+    return { medible: true, cambios, rutas: [], amparadas: [] };
+  }
+
+  // 🔴 EL SUELO DE LA PROPIA LISTA. Una lista vacía NO significa «la tanda no escribe nada»:
+  // significa que la declaración se ha perdido. Se midió al menos UNA (`scrum659/`), así que un
+  // cero aquí es una declaración rota, y con ella la puerta pasaría a ser la de antes sin que
+  // nadie lo hubiera decidido. Si de verdad se arregla en origen, se retira la entrada Y este
+  // suelo, a la vez y diciéndolo.
+  if (!declaradas.length) {
+    cambios.push('LA LISTA DE ESCRITURAS DE LA TANDA ESTÁ VACÍA. Se midió al menos una '
+      + '(`scrum659/`, SCRUM-813c): un cero aquí es una declaración perdida, no un árbol limpio.');
+    return { medible: true, cambios, rutas: [], amparadas: [] };
   }
 
   const rutas = [];
+  const amparadas = [];
   if (antes.porRuta && despues.porRuta) {
     const todas = new Set([...antes.porRuta.keys(), ...despues.porRuta.keys()]);
     for (const r of [...todas].sort()) {
       const a = antes.porRuta.get(r);
       const b = despues.porRuta.get(r);
-      if (a !== b) rutas.push({ ruta: r, antes: a ?? '(no aparecía)', despues: b ?? '(dejó de aparecer)' });
+      if (a === b) continue;
+      const movimiento = { ruta: r, antes: a ?? '(no aparecía)', despues: b ?? '(dejó de aparecer)' };
+      // La ampara la lista SÓLO si está declarada. Todo lo demás —incluido cualquier fichero de
+      // `tests/` o de `src/`, que es lo que la medición JUZGA— ciega igual que antes.
+      if (laEscribeLaTanda(r, declaradas)) amparadas.push(movimiento);
+      else rutas.push(movimiento);
     }
     for (const x of rutas) cambios.push(`${x.ruta}   ${x.antes} → ${x.despues}`);
   }
 
   // 🔴 EL SUELO DEL DETALLE, y sin él este refinamiento SERÍA un agujero: si la huella GLOBAL dice
-  // que algo cambió y el detalle por ruta no encuentra NADA, lo honesto no es dar el árbol por
-  // quieto —eso convertiría un detector ciego en un verde— sino declarar que se movió y que no se
-  // supo dónde. La puerta se queda cerrada precisamente cuando el instrumento no sabe.
-  if (!rutas.length && antes.huella !== despues.huella) {
+  // que algo cambió y el detalle por ruta no encuentra NADA —ni ajeno ni amparado—, lo honesto no
+  // es dar el árbol por quieto —eso convertiría un detector ciego en un verde— sino declarar que
+  // se movió y que no se supo dónde. La puerta se queda cerrada precisamente cuando no se sabe.
+  if (!rutas.length && !amparadas.length && antes.huella !== despues.huella) {
     cambios.push('el contenido del árbol de trabajo cambió durante la medición, y el detalle por '
       + 'ruta NO supo decir dónde — se trata como movimiento, nunca como quietud');
   }
-  return { medible: true, cambios, rutas };
+  return { medible: true, cambios, rutas, amparadas };
 }
 
 /**

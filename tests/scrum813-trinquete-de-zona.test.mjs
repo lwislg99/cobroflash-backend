@@ -40,7 +40,8 @@ import { execFileSync } from 'node:child_process'; // SCRUM-813b: contrastar la 
 import {
   AUSENTE, CANARIOS, CENSADAS, SALIDA_APAGADA, SALIDA_CIEGO, SALIDA_HABLA, SALIDA_OK, ZONAS,
   arbolQuieto, cambianDeVeredicto, claveDe, entornoLimpio, escribirCanarios, ficherosDeLaTanda,
-  huellaPorRuta, juzgarCanarios, marcaDelArbol, medirEnZona, sondaDeZona, veredicto,
+  ESCRITURAS_DE_LA_TANDA, huellaPorRuta, juzgarCanarios, marcaDelArbol, medirEnZona,
+  sondaDeZona, veredicto,
 } from '../scripts/_trinquete-de-zona.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -95,7 +96,10 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   //    agujero, así que es la que más falta hace vigilar.
   {
     fichero: 'scripts/_trinquete-de-zona.mjs',
-    de: '  if (!rutas.length && antes.huella !== despues.huella) {',
+    // ⚠️ REAPUNTADA en SCRUM-813c: la condición ganó `!amparadas.length` al acotar el sujeto, y
+    // el texto viejo pasó a casar CERO veces — o sea que esta mutación se aplicaba sobre nada y
+    // pasaba en verde sin haber mutado. Lo cazó la comprobación de anclas del propio ticket.
+    de: '  if (!rutas.length && !amparadas.length && antes.huella !== despues.huella) {',
     a: '  if (false) {',
     cae: 'SUELO: si el detalle por ruta NO ve nada pero la huella global cambió, sigue siendo CIEGO',
   },
@@ -114,6 +118,34 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: '    porRuta: huellaPorRuta(estado.stdout, diff.stdout),',
     a: '    porRuta: new Map(),',
     cae: 'la marca REAL trae el detalle, y cuadra con lo que dice git',
+  },
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+  // SCRUM-813c · las tres del SUJETO ACOTADO. Las tres provocadas a mano antes de escribirlas:
+  // cada una tumbó SU caso y sólo el suyo.
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+  // ⑨ LA LISTA SE VUELVE ZONA FRANCA: se ampara TODO, y entonces tocar un fichero de `tests/`
+  //    durante la medición ya no ciega. Es la forma en que este acotado apagaría la puerta.
+  {
+    fichero: 'scripts/_trinquete-de-zona.mjs',
+    de: '      if (laEscribeLaTanda(r, declaradas)) amparadas.push(movimiento);',
+    a: '      if (true) amparadas.push(movimiento);',
+    cae: 'EL QUE DECIDE: un fichero de TEST tocado a mano DURANTE la medición sigue siendo CIEGO',
+  },
+  // ⑩ SE QUITA EL SUELO DE LA LISTA VACÍA: vaciar la declaración devolvería la puerta al estado
+  //    de antes —cegando siempre— y encima en verde, sin que nadie lo hubiera decidido.
+  {
+    fichero: 'scripts/_trinquete-de-zona.mjs',
+    de: '  if (!declaradas.length) {',
+    a: '  if (false) {',
+    cae: 'SUELO: con la lista de escrituras VACÍA es CIEGO, no «árbol limpio»',
+  },
+  // ⑪ NADA SE AMPARA: el acotado deja de existir y el instrumento vuelve a callarse en cada
+  //    pasada de CI. Es el defecto que este apartado cierra.
+  {
+    fichero: 'scripts/_trinquete-de-zona.mjs',
+    de: '  return declaradas.some((d) => r === d.ruta',
+    a: '  return [].some((d) => r === d.ruta',
+    cae: 'POSITIVO: la tanda escribiendo LO SUYO no ciega — el trinquete EMITE veredicto',
   },
 ];
 
@@ -538,5 +570,123 @@ test('SCRUM-813b · la marca REAL trae el detalle, y cuadra con lo que dice git'
     .map((l) => l.slice(3).trim().split(' -> ').pop()));
   for (const r of deGit) {
     assert.ok(m.porRuta.has(r), `🔴 git ve \`${r}\` con cambios y la marca no lo tiene`);
+  }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-813c · EL SUJETO DE LA QUIETUD SE ACOTA: lo que la medición JUZGA, no lo que ESCRIBE
+//
+// EL CIEGO de CI, ya con nombre gracias al detalle de SCRUM-813b:
+//
+//     árbol 🔴 SE MOVIÓ durante la medición
+//        · scrum659/   (no aparecía) → estado:??
+//
+// Un directorio que la propia tanda crea al correr. Exigir quietud sobre lo que la medición
+// escribe es pedirle a la tanda que no corra; exigirla sobre lo que la medición JUZGA —los
+// ficheros de `tests/` y de `src/`, que es lo que los guards leen— es la puerta de verdad.
+//
+// ⛔ LA EXCEPCIÓN ES UNA LISTA CERRADA, NO UNA ZONA FRANCA, y estos casos lo fijan en los dos
+//    sentidos: lo declarado no ciega, y TODO lo demás sigue cegando.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+/** Dos marcas que sólo difieren en las rutas que se le digan. */
+const marcasQueMueven = (rutas) => {
+  const antes = { ok: true, head: 'abc', huella: 'A', porRuta: new Map() };
+  const despues = { ok: true, head: 'abc', huella: 'B', porRuta: new Map(rutas.map((r) => [r, 'estado:??'])) };
+  return [antes, despues];
+};
+
+test('SCRUM-813c · ✅ POSITIVO: la tanda escribiendo LO SUYO no ciega — el trinquete EMITE veredicto', () => {
+  // Es el caso que se estaba comiendo el instrumento: la pasada funcionaba entera y se callaba.
+  const [antes, despues] = marcasQueMueven(['scrum659/']);
+  const q = arbolQuieto(antes, despues);
+
+  assert.deepEqual(q.cambios, [], '🔴 lo que la propia medición ESCRIBE sigue cegando: no se ha acotado nada');
+  assert.equal(q.amparadas.length, 1, 'la ruta declarada tiene que salir, no desaparecer');
+  assert.equal(q.amparadas[0].ruta, 'scrum659/');
+
+  // Y con el árbol así, el veredicto se EMITE: 3 censadas vistas, 3 censadas. Lo que ya salía.
+  const v = veredicto({
+    cambianEnElArbol: CENSADAS.map((c) => cambio(c.clave)),
+    censadas: CENSADAS,
+    medidas: DOS_MEDIDAS,
+    controles: CONTROLES_OK,
+    quieto: q,
+  });
+  assert.equal(v.estado, 'OK', `🔴 el trinquete sigue sin emitir veredicto: ${JSON.stringify(v.motivos)}`);
+  assert.equal(v.salida, SALIDA_OK);
+  assert.equal(v.nuevas.length, 0);
+  assert.equal(v.apagadas.length, 0, '🔴 una censada se ha apagado: los tres de SCRUM-592 tienen que seguir ahí');
+});
+
+test('SCRUM-813c · 🔴 EL QUE DECIDE: un fichero de TEST tocado a mano DURANTE la medición sigue siendo CIEGO', () => {
+  // Si esto dejara de cegar, la puerta se habría apagado en vez de acotarse. Es el caso por el
+  // que la comprobación existe: alguien edita lo que la medición JUZGA mientras las dos pasadas
+  // corren, y los guards que leen el árbol cambian de veredicto por eso y no por la zona.
+  const [antes, despues] = marcasQueMueven(['tests/quoteNumber.test.mjs']);
+  const q = arbolQuieto(antes, despues);
+
+  assert.equal(q.amparadas.length, 0, '🔴 un fichero de `tests/` se está amparando como escritura de la tanda');
+  assert.equal(q.cambios.length, 1);
+  assert.equal(q.rutas[0].ruta, 'tests/quoteNumber.test.mjs', 'el CIEGO tiene que NOMBRARLO');
+
+  const v = veredicto({
+    cambianEnElArbol: [], censadas: CENSADAS, medidas: DOS_MEDIDAS, controles: CONTROLES_OK, quieto: q,
+  });
+  assert.equal(v.estado, 'CIEGO', '🔴 LA PUERTA SE HA APAGADO: tocar un test durante la medición ya no ciega');
+  assert.equal(v.salida, SALIDA_CIEGO);
+  assert.ok(v.motivos.some((m) => m.includes('tests/quoteNumber.test.mjs')));
+});
+
+test('SCRUM-813c · 🔴 la excepción es CERRADA: lo que NO está declarado ciega, aunque se le parezca', () => {
+  // Un `src/` cualquiera, y un directorio con nombre PARECIDO al declarado. Los dos ciegan.
+  for (const ruta of ['src/core/utils/utils.ts', 'scrum659bis/', 'otro/scrum659/']) {
+    const [antes, despues] = marcasQueMueven([ruta]);
+    const q = arbolQuieto(antes, despues);
+    assert.equal(q.amparadas.length, 0, `🔴 \`${ruta}\` se está amparando sin estar declarada`);
+    assert.equal(q.cambios.length, 1, `🔴 \`${ruta}\` ha dejado de cegar: la lista se ha vuelto una zona franca`);
+  }
+
+  // Y el directorio declarado SÍ ampara lo que cuelga de él — un fixture no es una ruta sola.
+  const [a2, d2] = marcasQueMueven(['scrum659/pagina-1.pdf']);
+  const q2 = arbolQuieto(a2, d2);
+  assert.equal(q2.cambios.length, 0, 'un directorio declarado tiene que amparar su contenido');
+  assert.equal(q2.amparadas.length, 1);
+});
+
+test('SCRUM-813c · 🔴 SUELO: con la lista de escrituras VACÍA es CIEGO, no «árbol limpio»', () => {
+  // Una lista vacía NO significa «la tanda no escribe nada»: significa que la declaración se
+  // perdió. Sin este suelo, vaciarla devolvería la puerta al estado de antes sin que nadie lo
+  // hubiera decidido — y encima en verde.
+  const [antes, despues] = marcasQueMueven(['scrum659/']);
+  const q = arbolQuieto(antes, despues, []);
+  assert.equal(q.cambios.length, 1, '🔴 con la lista vacía el instrumento da el árbol por quieto');
+  assert.match(q.cambios[0], /VACÍA/, 'el motivo tiene que decir que la declaración se ha perdido');
+});
+
+test('SCRUM-813c · la lista declarada es EXACTAMENTE ésta, y cada entrada dice quién y por qué', () => {
+  // Fijada por CONTENIDO: si crece, este caso cae y alguien tiene que escribir el motivo aquí Y
+  // en la lista. Una lista de excepciones que engorda sola acaba tapando el defecto que evita.
+  assert.deepEqual(ESCRITURAS_DE_LA_TANDA.map((e) => e.ruta), ['scrum659/'],
+    '🔴 HA CAMBIADO LA LISTA DE ESCRITURAS DE LA TANDA. Cada entrada es una ruta que deja de '
+    + 'cegar: se añade con su medición delante, nunca para que el trinquete se calle.');
+
+  for (const e of ESCRITURAS_DE_LA_TANDA) {
+    assert.ok(e.quien && e.porque && e.expresion,
+      `🔴 \`${e.ruta}\` no dice quién la escribe, por qué, o con qué expresión. Una excepción sin `
+      + 'motivo es una lista blanca.');
+
+    // 🔴 ANCLADA POR IDENTIDAD, NO POR POSICIÓN (SCRUM-710b): el fichero tiene que existir Y
+    // seguir conteniendo LA EXPRESIÓN que lo hace escribir dentro del árbol.
+    //
+    // Esto es lo que hace la entrada AUTOVERIFICABLE, y es la mitad que evita que una lista de
+    // excepciones se pudra: el día que alguien arregle ese respaldo a `os.tmpdir()`, este caso
+    // CAE y obliga a retirar la excepción. Sin él, la entrada seguiría amparando una ruta que ya
+    // nadie escribe — y una excepción que sobra es exactamente cómo una lista engorda.
+    assert.ok(fs.existsSync(path.join(RAIZ, e.quien)),
+      `🔴 \`${e.ruta}\` dice que la escribe \`${e.quien}\`, y ese fichero no existe.`);
+    assert.ok(fs.readFileSync(path.join(RAIZ, e.quien), 'utf8').includes(e.expresion),
+      `🔴 \`${e.quien}\` ya NO contiene \`${e.expresion}\`. O se arregló —y entonces esta entrada `
+      + 'SOBRA y hay que retirarla— o se reescribió y la excepción está amparando otra cosa.');
   }
 });
