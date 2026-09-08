@@ -294,6 +294,18 @@ const HALLAZGOS_DECLARADOS = [
   // Lo retira: quien borre `scripts/verificacion-s5/`, o quien lleve el enlace ticket↔rama a un
   // mecanismo que no necesite consultar la punta de `main`.
   'scripts/verificacion-s5/enlace-ticket-rama.mjs [log]',
+  // SCRUM-637 · el generador del borrado de ramas. Ya estaba en la lista de INDIRECTAS por su
+  // `branch -r --merged origin/main`; ahora lee además el HISTÓRICO DE MERGES de la punta
+  // (`git log --merges origin/main`) y por eso asciende también a ésta.
+  //
+  // El motivo es el mismo y sigue siendo el sujeto de la pregunta: para saber si borrar una rama
+  // cerraría un PR abierto hay que mirar si ALGÚN merge de `main` la nombra, y eso sólo existe en
+  // la punta. Contra la base de una rama el histórico estaría truncado justo por donde importa —
+  // los merges recientes— y el apartado saldría vacío, que es la respuesta peligrosa: diría «no
+  // hay ninguna de riesgo» sin haber mirado.
+  // Lo retira: quien borre `scripts/verificacion-s5/`, o el día que haya `gh` y el estado de los
+  // PR se pueda consultar de frente, que es lo que este rodeo sustituye.
+  'scripts/verificacion-s5/ramas-borrables.mjs [log]',
 ];
 
 /** Ficheros que llaman a git y nombran la referencia móvil FUERA de los argumentos. */
@@ -352,6 +364,20 @@ const INDIRECTAS_DECLARADAS = [
   // de SCRUM-753 CONGELA. Es el mismo motivo por el que están arriba `scrum753` y `scrum775`.
   // Lo retira: quien borre la dimensión de rama viva del censo del tablero.
   'tests/scrum804-la-rama-viva.test.mjs',
+  // SCRUM-637 · la pregunta CONTRARIA a la de arriba: qué ramas NO están dentro de main, con su
+  // edad. Nombra `origin/main` en la prosa y como valor por defecto de `instantanea({ ref })`.
+  //
+  // 🔴 Y AQUÍ LA REFERENCIA MÓVIL ES EL SUJETO, no un descuido: «¿qué trabajo hay esperando fuera
+  // de la punta de main?» sólo se puede contestar contra la punta de main. Anclarlo a la base de
+  // esta rama respondería que TODAS las ramas están fuera —incluidas las que se mergearon ayer—,
+  // que es la respuesta inútil de SCRUM-753 con el signo cambiado.
+  //
+  // Lo que sí hace, y por eso no reintroduce el defecto que este guard vigila: **congela el sha**
+  // en `instantanea()` y mide todo contra ESE objeto, imprimiéndolo en la primera línea de su
+  // salida. La referencia se resuelve una vez; a partir de ahí la pregunta ya no es móvil.
+  // Sólo lee: no borra, no empuja, y está fuera de CI.
+  // Lo retira: quien borre `scripts/verificacion-s5/`.
+  'scripts/verificacion-s5/ramas-sin-mergear.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {

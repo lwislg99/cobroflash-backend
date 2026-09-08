@@ -3393,3 +3393,8 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   .table--trabajos .jobs-grupo-abrir td { padding-left: 0; padding-right: 0; }
   .jobs-filtro-tecnico { margin-left: 0; width: 100%; }
 }
+
+/* SCRUM-713b · el buscador de cliente del presupuesto.
+   Venía como `style.cssText` desde `quotesView.js`. Mismos tres valores, sin cambiar un píxel:
+   el `min-height` de 44 es AB6 y no se toca. */
+.quote-buscador-cliente { width: 100%; min-height: 44px; margin-bottom: 6px; }

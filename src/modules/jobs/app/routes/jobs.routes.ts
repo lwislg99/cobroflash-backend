@@ -60,6 +60,9 @@ import { getEmissionMode } from '../../../invoicing/domain/emission.service'; //
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-17: total con desglose IVA
 import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
+// SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
+// de un `internal_error`. NO sube el timeout ni toca el cerrojo.
+import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } from '../../../invoicing/domain/cerrojoSaturado';
 import { SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206b
 import { sellarTrasEmision } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
@@ -1260,6 +1263,10 @@ router.post('/:id/albaranes', async (req, res) => {
       });
     }
     console.error('[POST /admin/jobs/:id/albaranes]', err?.message || err);
+    // SCRUM-728 · el cerrojo de serie no dio turno a tiempo. No es un fallo del servidor ni del
+    // profesional: es cola. La transaccion se deshizo entera —ni documento, ni numero consumido—,
+    // asi que repetir la misma accion unos segundos despues sale bien.
+    if (esCerrojoSaturado(err)) return res.status(ESTADO_CERROJO_SATURADO).json(cuerpoCerrojoSaturado());
     return res.status(500).json({ error: 'internal_error' });
   }
 });
@@ -1328,16 +1335,25 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
       // no lo veía porque el cuerpo del JSON es `any`.
       return res.status(409).json(motivoSinTramo(plan, 'nothing_pending'));
     }
-    const stage = plan[emitted];
     const isCustomPlan = Array.isArray((quote as any).customBillingPlan) && (quote as any).customBillingPlan.length > 0;
     // SCRUM-141: líneas del tramo primero, importe DERIVADO de ellas (el total es consecuencia de
     // las líneas). Antes venía de `distributeStageAmounts` con las líneas escaladas aparte: el
     // desfase de redondeo acababa sellado en la huella VeriFactu. Ver invoiceLines.service.ts.
     const quoteLines = Array.isArray(quote.lines) ? (quote.lines as any[]) : [];
-    const scaledLines = stageLinesReconciled(
-      quoteLines, plan, stage.index, distributeStageAmounts(quote.total, plan)[stage.index],
-    );
-    const amount = grossOfLines(scaledLines);
+
+    // SCRUM-814 · el tramo se DERIVA del recuento, para poder recalcularlo DENTRO del cerrojo.
+    // Misma forma exacta que `quotesAdmin.routes.ts`: un solo patrón para los tres caminos.
+    const tramoTrasEmitidas = (n: number) => {
+      const stage = plan[n] ?? null;
+      if (!stage) return null;
+      const scaledLines = stageLinesReconciled(
+        quoteLines, plan, stage.index, distributeStageAmounts(quote.total, plan)[stage.index],
+      );
+      return { stage, scaledLines, amount: grossOfLines(scaledLines) };
+    };
+    const tramoPrevio = tramoTrasEmitidas(emitted);
+    if (!tramoPrevio) return res.status(409).json(motivoSinTramo(plan, 'nothing_pending'));
+    const scaledLines = tramoPrevio.scaledLines;
 
     // SCRUM-246 · ANTES de pedir número. Si no hay nada que cobrar, no se emite y la serie
     // ni se entera: comprobarlo DESPUÉS obligaría a modificar una factura ya numerada o a
@@ -1349,6 +1365,29 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     exigirTiposDeIvaEmitibles(scaledLines);
 
     const invoice = await prisma.$transaction(async (tx) => {
+      // ── SCRUM-814 · EL CERROJO PRIMERO, Y EL RECUENTO DENTRO ─────────────────────────────
+      //
+      // «Cobrar el resto» pulsado dos veces emitía DOS FACTURAS DEL MISMO TRAMO: `emitted` se
+      // contó arriba, fuera de la transacción, y envolver la creación no protege una decisión
+      // tomada antes de abrirla. Mismo arreglo y mismo cerrojo que `quotesAdmin.routes.ts`:
+      // `tomarCerrojoDeSerie` es el `pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)` de
+      // SCRUM-234/728, re-entrante, que `allocateInvoiceNumber` vuelve a tomar más abajo.
+      //
+      // Y ANTES de pedir número: si el tramo se agotó mientras esperábamos se sale por el
+      // `return null` sin haber escrito una fila, así que no hay número que deshacer — y
+      // deshacer es lo que crea el hueco en la serie que hay que justificar ante Hacienda.
+      await tomarCerrojoDeSerie(tx, quote.merchantId);
+      const emitidasAhora = await tx.invoice.count({
+        where: { quoteId: quote.id, merchantId: quote.merchantId }, // regla 2: scoped
+      });
+      const tramo = tramoTrasEmitidas(emitidasAhora);
+      if (!tramo) return null;   // el plan se agotó mientras esperábamos: 409 fuera
+
+      // Las mismas dos puertas, sobre las líneas que de verdad se van a emitir: si la carrera
+      // movió el tramo, éstas juzgan OTRAS líneas.
+      exigirLineasFacturables(tramo.scaledLines);
+      exigirTiposDeIvaEmitibles(tramo.scaledLines);
+
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
         camino: 'C2', actor: actorDeRequest(req),
       });
@@ -1359,16 +1398,21 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
           quoteId: quote.id,
           number: invoiceNumber,
           type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0 (regla 26)
-          total: amount.toFixed(2),
-          stageLabel: isCustomPlan ? stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
+          total: tramo.amount.toFixed(2),
+          stageLabel: isCustomPlan ? tramo.stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
           currency: quote.currency,
-          lines: scaledLines.length > 0 ? scaledLines : undefined,
+          lines: tramo.scaledLines.length > 0 ? tramo.scaledLines : undefined,
           pdfUrl: 'PENDING_PDF',
           qrData: 'PENDING_QR',
           registerId: null,
         },
       });
     });
+
+    // SCRUM-814 · la carrera perdida no es un error del profesional: es el mismo «ya no queda
+    // tramo» de arriba visto un instante después. Mismo código y mismo texto ya firmado — no se
+    // redacta ninguna frase nueva.
+    if (!invoice) return res.status(409).json(motivoSinTramo(plan, 'nothing_pending'));
 
     // Enviar el enlace de cobro (payment_request / ventana-first A5.5)
     // ── SCRUM-206b · SELLAR AL EMITIR. Este camino NO sellaba en absoluto.
@@ -1432,6 +1476,10 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     });
   } catch (err: any) {
     console.error('[POST /admin/jobs/:id/collect-rest]', err?.message || err);
+    // SCRUM-728 · el cerrojo de serie no dio turno a tiempo. No es un fallo del servidor ni del
+    // profesional: es cola. La transaccion se deshizo entera —ni documento, ni numero consumido—,
+    // asi que repetir la misma accion unos segundos despues sale bien.
+    if (esCerrojoSaturado(err)) return res.status(ESTADO_CERROJO_SATURADO).json(cuerpoCerrojoSaturado());
     // SCRUM-246: no hay nada que cobrar. No se ha emitido NI consumido número, así que el
     // profesional arregla el presupuesto y vuelve — la serie sigue intacta.
     if (esErrorSinLineas(err)) {

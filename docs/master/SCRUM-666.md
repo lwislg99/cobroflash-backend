@@ -193,7 +193,7 @@ nombres, un duplicado es el mismo nombre dos veces y se ve sin leer prosa.
 **Medido contra:** `origin/main` = `d9f60f7e89cc600e4d518af50ad2a977ed1876ba` · 2026-09-04T14:10:05+02:00
 **Rama:** `scrum-666-el-banco-ve-el-css`
 
-## 1 · PASO 0 (regla 39) — el ticket estaba medio arreglado, y el hueco era otro
+## 1 · PASO 0 (cita de regla RETIRADA — SCRUM-637) — el ticket estaba medio arreglado, y el hueco era otro
 
 El encargo decía: «el banco de vistas no aplica CSS externo». **Eso ya no es cierto.** Lo cerró
 este mismo ticket en el PR #916 (`45a2474c`), y el banco lee las dos hojas locales desde entonces.

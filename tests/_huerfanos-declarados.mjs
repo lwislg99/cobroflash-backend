@@ -430,6 +430,14 @@ export const DECLARADOS = [
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
     exports: ['ERROR_LINEAS_INVALIDAS'] },
+  // SCRUM-728 · el aviso del cerrojo saturado. `cuerpoCerrojoSaturado()` es lo que usan las seis
+  // rutas; estos dos son su CONTRATO, y se exportan para que el guard compare contra ellos por
+  // identidad en vez de copiar el literal. Copiarlo seria tener dos fuentes del mismo texto
+  // aprobado, que es justo lo que la regla 30 evita.
+  { modulo: 'src/modules/invoicing/domain/cerrojoSaturado.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-08',
+    motivo: 'Codigo y texto oficial del 503 `serie_ocupada`; su lector de fuera es el guard, que los compara por identidad para no duplicar el literal aprobado.',
+    exports: ['ERROR_CERROJO_SATURADO', 'COPY_CERROJO_SATURADO'] },
   { modulo: 'src/modules/invoicing/domain/invoiceLines.service.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
@@ -821,6 +829,28 @@ export const DECLARADOS = [
     cat: 'SUPLANTADO_POR_UNA_COPIA', desde: '2026-08-12',
     motivo: 'El profesional SÍ ve su equipo: lo sirven `teamOverview.service.ts:58` y consultas inline en rutas (`jobs.routes.ts:133`, `reports.routes.ts:99`). No es una promesa rota, es la misma consulta escrita en varios sitios, con varios sitios donde divergir.',
     exports: ['listTeamMembers'] },
+  // ── SCRUM-340 · la regla de la plaza de fundador, escrita ANTES que su columna ──────────
+  //
+  // El fundador firmó el 8-sep-2026 que «la plaza se queda con él; si se retrasa en un pago tiene
+  // un tiempo para pagarla, y si no, esa plaza desaparece con el merchant». Ocupa quien tiene
+  // `founding_purchased_at` NOT NULL — y esa columna NO EXISTE todavía: el ALTER está escrito y
+  // sin aplicar (`docs/sql/scrum-340-la-plaza-comprada.sql`) porque `prisma/schema.prisma` es
+  // dominio del fundador. Sin la columna, `getFoundingStatus` no puede seleccionarla y el
+  // predicado se queda sin cable.
+  //
+  // NO es código muerto y NO se borra: es la regla que repara el significado que se rompió dos
+  // veces —por `plan` (se resetea al cancelar y LIBERA la plaza) y por `subscriptionStatus` (lo
+  // comparten `pro` y `founding`, así que cada PRO activo ocupaba una plaza)—. Está probada con
+  // sus dos rojos en `tests/scrum340-la-plaza-comprada.test.mjs`.
+  //
+  // Lo retira: quien cablee `getFoundingStatus` a la columna, el día que se aplique el ALTER.
+  { modulo: 'src/modules/billing/domain/founding.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-09-08',
+    motivo: 'La regla firmada de quién ocupa plaza de fundador, construida antes que su columna: '
+      + '`merchants.founding_purchased_at` no existe todavía y `prisma/schema.prisma` es del '
+      + 'fundador, así que el contador no puede leerla. Pura y con sus dos rojos; su cable es el '
+      + 'ALTER de SCRUM-340.',
+    exports: ['plazaOcupada'] },
 ];
 
 /** Los pares `módulo::export` declarados, aplanados. */

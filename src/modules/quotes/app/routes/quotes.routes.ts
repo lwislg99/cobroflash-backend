@@ -49,6 +49,11 @@ import { generateQuotePdf } from '../../../../lib/pdf';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+// SCRUM-814 · el MISMO cerrojo de serie que toman `quotesAdmin` y `collect-rest`
+// (`pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)`, SCRUM-234/728/358). Aquí pesa más que en
+// ningún otro sitio: esta ruta la dispara el CLIENTE FINAL desde WhatsApp, y pulsar dos veces con
+// mala cobertura es el caso NORMAL, no el raro.
+import { tomarCerrojoDeSerie } from '../../../jobs/domain/albaranIdempotencia';
 import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 // SCRUM-805 · el sello del PRESUPUESTO. Canónico PROPIO: el del albarán no sella `total`,
@@ -68,6 +73,9 @@ import { normalizarDireccionObra, normalizarModoDireccionObra } from '../../../.
 import { paramsDePresupuestoParaPdf } from '../../domain/presupuestoParaPdf';
 
 
+// SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
+// de un `internal_error`. NO sube el timeout ni toca el cerrojo.
+import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } from '../../../invoicing/domain/cerrojoSaturado';
 const router = Router();
 
 // SCRUM-95: rate limit por IP como defensa EN PROFUNDIDAD además del token opaco
@@ -267,6 +275,10 @@ router.post('/create', async (req, res) => {
       });
     }
     console.error('POST /quote/create error', err);
+    // SCRUM-728 · el cerrojo de serie no dio turno a tiempo. No es un fallo del servidor ni del
+    // profesional: es cola. La transaccion se deshizo entera —ni documento, ni numero consumido—,
+    // asi que repetir la misma accion unos segundos despues sale bien.
+    if (esCerrojoSaturado(err)) return res.status(ESTADO_CERROJO_SATURADO).json(cuerpoCerrojoSaturado());
     return res.status(500).json({ error: 'internal_error' });
   }
 });
@@ -679,6 +691,27 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         let invoice: any = null;
         try {
         invoice = await prisma.$transaction(async (tx) => {
+          // ── SCRUM-814 · EL CERROJO PRIMERO, Y EL RECUENTO DENTRO ───────────────────────────
+          //
+          // `stage` se eligió ARRIBA con el recuento de `quote.Invoice`, fuera de la transacción.
+          // Envolver la creación no protege una decisión tomada antes de abrirla, y aquí el
+          // disparador es el CLIENTE FINAL: dos toques con mala cobertura emitían dos facturas
+          // del MISMO tramo. Mismo cerrojo y mismo orden que los otros dos caminos.
+          await tomarCerrojoDeSerie(tx, quote.merchantId);
+          const emitidasAhora = await tx.invoice.count({
+            where: { quoteId: quote.id, merchantId: quote.merchantId }, // regla 2: scoped
+          });
+
+          // 🔴 AQUÍ NO SE RECALCULA EL TRAMO, y es la diferencia con los otros dos caminos.
+          //
+          // En `quotesAdmin` y en «cobrar el resto» quien pierde la carrera emite el tramo
+          // SIGUIENTE, porque quien pulsó pedía «emite lo que toque». Aquí no: lo que el cliente
+          // hizo fue ACEPTAR, una sola vez, aunque el dedo tocara dos. Recalcular emitiría el
+          // «Final» de golpe junto al «Anticipo» —los dos tramos de una tacada por un doble
+          // toque—, que es cobrar antes de tiempo. Se sale sin escribir nada: su factura ya
+          // existe, la emitió su gemela.
+          if (emitidasAhora !== existingInvoices.length) return null;
+
           const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
             camino: 'C1',
             // Quien emite aquí NO es el pro: es el cliente final pulsando en WhatsApp.
@@ -729,7 +762,10 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         // C1 lo dispara el CLIENTE FINAL, y eso es legítimo: el hecho que emite es que ACEPTE
         // el presupuesto, no que abra un PDF. Lo que el ticket corrige es lo segundo.
         // Este camino tampoco sellaba: dependía del sellado perezoso de `ensureInvoicePdf`.
-        await sellarTrasEmision(invoice, quote.merchant, prisma);
+        // SCRUM-814 · si la carrera la ganó la gemela no hay factura que sellar, y llamar aquí
+        // con `null` reventaría: caería en el `catch` de abajo y marcaría `facturaPendiente` por
+        // una factura que SÍ existe — sellada ya por la petición que la creó.
+        if (invoice) await sellarTrasEmision(invoice, quote.merchant, prisma);
 
         } catch (e: any) {
           // El caso conocido es la colisión de serie (P2002 sobre `invoices.number`), que
@@ -740,6 +776,14 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
           facturaPendiente = true;
         }
 
+        // SCRUM-814 · `null` = la carrera la ganó la gemela. NO se marca `facturaPendiente`: eso
+        // le diría al cliente «tu factura está en proceso; si no la recibes hoy, coméntaselo al
+        // profesional» por una factura que SÍ existe — una llamada de soporte por algo que no ha
+        // pasado. Y al dejar `createdInvoice` vacío tampoco se manda el segundo `payment_request`
+        // por WhatsApp: el mismo aviso dos veces al mismo cliente (regla 28).
+        if (invoice === null) {
+          console.log('[quote_decision_C1] el tramo lo emitió una petición simultánea; no se repite');
+        }
         createdInvoice = invoice;
 
 

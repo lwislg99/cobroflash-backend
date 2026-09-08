@@ -472,7 +472,16 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   // el nombre accesible es el MISMO texto aprobado que se lee en el placeholder. Un lector de
   // pantalla diría «cuadro de búsqueda» a secas sin esto.
   buscadorCliente.setAttribute("aria-label", window.buscadorDeClientes.TEXTOS.placeholder);
-  buscadorCliente.style.cssText = "width:100%;min-height:44px;margin-bottom:6px";
+  // 🔴 SCRUM-713b · AQUÍ IBA UN `style.cssText`, y «ni un style en línea» (regla 4) no distingue
+  // entre escribirlo en el HTML y escribirlo desde JavaScript: acaba siendo el mismo atributo
+  // en el mismo nodo. Los tres valores se mudan a la hoja, sin cambiar ni un píxel.
+  //
+  // ⚠️ Y queda dicho para que el arreglo no parezca más de lo que es: este fichero tiene
+  // OTROS 18 `cssText` y el dashboard 352 en 34 ficheros —contados sobre CÓDIGO, porque este
+  // mismo comentario los nombra y un grep a pelo se caza a sí mismo—. Se quita EL QUE ENTRÓ CON ESTE
+  // TICKET —que es lo que restaura el estado— y el resto va reportado: congelarlos pide un
+  // trinquete propio, del patrón de SCRUM-402, y eso es otro ticket.
+  buscadorCliente.classList.add("quote-buscador-cliente");
   fieldCustomer.wrapper.removeChild(fieldCustomer.select);
   fieldCustomer.wrapper.appendChild(buscadorCliente);
   fieldCustomer.wrapper.appendChild(fieldCustomer.select);
@@ -4298,14 +4307,63 @@ if (Number.isFinite(n) && n >= 0) {
       const antes = submitBtn.textContent;
       submitBtn.textContent = "Emitiendo…"; // SCRUM-289b, texto aprobado de este mismo flujo
       try {
-        await apiRequest("/admin/invoices", { method: "POST", body: JSON.stringify(cuerpo) });
+        const emitida = await apiRequest("/admin/invoices", { method: "POST", body: JSON.stringify(cuerpo) });
         showToast(window.rotulosDelDocumento.avisoEmitido());
-        // Se vuelve al listado, que es donde el documento recién emitido se ve con su número.
-        // El modal recargaba la lista por debajo; aquí la lista ES la pantalla a la que se vuelve.
-        // `window.renderAppView` es la ÚNICA forma de navegar de la casa (SCRUM-599): las seis
-        // puertas a `quotes-new` van por ahí, y una segunda forma sería la que un día se quede
-        // inerte sin que nadie lo note.
-        if (window.renderAppView) window.renderAppView("invoices");
+        // ═══════════════════════════════════════════════════════════════════════════════════
+        // 🔴 SCRUM-600d · SE VA A LA FICHA DEL DOCUMENTO, NO AL LISTADO. AHÍ ESTÁ EL ENVÍO.
+        //
+        // Hasta hoy esto volvía al listado, y el resultado medido era que **emitir y enviar
+        // estaban partidos**: el profesional emitía y se quedaba sin ninguna forma de mandarlo.
+        // Medido montando las dos pantallas y pulsando la acción primaria (no leyendo):
+        //
+        //     PRESUPUESTO → hoja con 4 salidas: WhatsApp · email · PDF · abrir PDF
+        //     FACTURA     → `renderAppView("invoices")` y **CERO** botones de envío
+        //
+        // Y no faltaba ni código ni datos: `/admin/invoices/:id/resend-whatsapp` y
+        // `/:id/send-email` existen desde hace tickets, y la FICHA del documento
+        // (`invoiceDetailView.js`) ya los ofrece con «Enviar por WhatsApp» y «Descargar PDF».
+        // Lo único que faltaba era llegar. Se llega.
+        //
+        // ── 🔴 POR QUÉ LA FICHA Y NO LA HOJA DEL PRESUPUESTO (`openQuoteModal`) ────────────
+        //
+        // Reutilizar aquella hoja era lo primero que uno prueba, y **cuesta CINCO textos
+        // nuevos**: dice «presupuesto» en su descripción (:143), en el título del visor de PDF
+        // (:159) y en sus tres avisos (:262, :304, :308). Y su cierre es «Seguir editando»,
+        // que en un documento EMITIDO no se puede ofrecer (regla 29). Cinco literales nuevos
+        // en un flujo fiscal es microcopy sin firmar, y la regla 30 lo prohíbe.
+        //
+        // La ficha, en cambio, es una pantalla que **ya está en producción con su copy
+        // aprobado**. Esto NO estrena ni un rótulo: acorta el camino a una pantalla a la que
+        // hoy se llega igual, sólo que con un clic más desde el listado.
+        //
+        // ⚠️ Y HAY UNA DIFERENCIA DE COMPORTAMIENTO, MEDIDA Y DECLARADA — sin teléfono:
+        //     presupuesto → el botón se pulsa y el SERVIDOR contesta el motivo (:296)
+        //     ficha       → el botón sale DESHABILITADO con su motivo en el `title`
+        // Las dos están copiadas, ninguna inventada. Se elige la de la ficha porque es la que
+        // ese profesional ya ve en TODAS sus demás facturas: dos pantallas de factura que se
+        // comportan distinto ante el mismo cliente sería el defecto que este ticket viene a
+        // quitar, no uno nuevo. Si se prefiere la del presupuesto, son los cinco textos.
+        //
+        // ── EL RESPALDO NO ES ADORNO ──────────────────────────────────────────────────────
+        // Si la respuesta no trae `id`, se vuelve al listado EXACTAMENTE como antes. Un destino
+        // que depende de un campo tiene que decir qué hace cuando ese campo no viene: sin esto,
+        // un cambio de forma en la respuesta dejaría al profesional en la ficha vacía —«Sin
+        // documento seleccionado»— después de emitir de verdad. El alta responde
+        // `{ok, factura:{id, number, total, currency}}` (`invoicesAdmin.routes.ts:176`).
+        //
+        // 🔴 NADA DE ESTO ES CAMINO DE EMISIÓN (regla 38): el 201 ya ocurrió. Quién numera,
+        // quién sella y qué se guarda siguen intactos; esto es a dónde mira el navegador después.
+        //
+        // `window.renderAppView` es la ÚNICA forma de navegar de la casa (SCRUM-599), y
+        // `('invoice-detail', { invoiceId })` es su forma ya establecida: es literalmente cómo
+        // navega la propia ficha tras rectificar (`invoiceDetailView.js:512`) y tras anular
+        // (`:585`) — o sea, el precedente es «recién creado un documento, vete a su ficha».
+        // ═══════════════════════════════════════════════════════════════════════════════════
+        const idEmitido = emitida && emitida.factura && emitida.factura.id;
+        if (window.renderAppView) {
+          if (idEmitido) window.renderAppView("invoice-detail", { invoiceId: idEmitido });
+          else window.renderAppView("invoices");
+        }
       } catch (e) {
         // El servidor manda `message` legible en cada error nombrado y se muestra tal cual porque
         // es SUYO; si no manda ninguno, sale el rótulo aprobado. La decisión de si hay mensaje
@@ -4345,12 +4403,26 @@ if (Number.isFinite(n) && n >= 0) {
 
       let conceptForPdf = concept; // ✅ SIN truncar
 
+// 🔴 SCRUM-632c · `desc` SE DECLARA FUERA DEL `try`, Y ESO ES EL ARREGLO ENTERO.
+//
+// Estaba `const desc` DENTRO del bloque, y el spread que lo usa —`...(desc ? … : {})`— está
+// SESENTA líneas más abajo, FUERA. `const` es de bloque, así que cada línea válida de un
+// presupuesto lanzaba `ReferenceError: desc is not defined` y **crear presupuestos dejó de
+// funcionar en main**. Reproducido ejecutando la región sobre los bytes de `origin/main`.
+//
+// ⚠️ Y EL `catch` VACÍO ES LO QUE LO HIZO SILENCIOSO EN LA PANTALLA: no traga el ReferenceError
+// —ése nace fuera— pero sí tapaba cualquier fallo de la lectura, así que nadie miró aquí. No se
+// amplía: un `catch` que se traga más de lo que vigilaba es cómo este defecto llegó a main.
+//
+// El valor inicial `''` no es adorno: con él la clave NO viaja cuando no hay texto, que es
+// exactamente lo que hacía antes de romperse (ausente ≠ vacío, criterio de `costeUnitario`).
+let desc = '';
 try {
   const includeDesc = !!descCheck?.checked;
-  // 🔴 SCRUM-632 · SE LEE EL CAMPO DE LA LÍNEA, no el `dataset` del concepto. Ése era el
-  // defecto: colgada del concepto, se perdía al teclear. El `dataset` queda como respaldo para
-  // una línea que venga de un borrador anterior a este ticket y aún no tenga campo.
-  const desc = ((line.descInput && line.descInput.value)
+  // SCRUM-632 · SE LEE EL CAMPO DE LA LÍNEA, no el `dataset` del concepto. Ése era el defecto
+  // original: colgada del concepto, se perdía al teclear. El `dataset` queda como respaldo para
+  // una línea que venga de un borrador anterior a aquel ticket y aún no tenga campo.
+  desc = ((line.descInput && line.descInput.value)
     || line.conceptInput.dataset.pfProductDescription
     || line.conceptInput.dataset.pfProductDesc || "").trim();
 

@@ -119,7 +119,13 @@
     "//puerta:cliente-real": "SCRUM-390: avisa de que entro el primer cliente real (dos senales). Necesita DATABASE_URL; por eso es comando y no test.",
     "puerta:cliente-real": "node scripts/puerta-cliente-real.mjs",
     "//guard:marcadores-en-pantalla": "SCRUM-722: mide EN NAVEGADOR (Edge via puppeteer-core) que ningun [PENDIENTE microcopy oficial] llegue al DOM RENDERIZADO de las 26 vistas del panel, en sus tres estados (con datos, sin datos, error). Trinquete con censo: solo baja. Lleva su CONTROL NEGATIVO dentro y se corre en cada ejecucion.",
-    "guard:marcadores-en-pantalla": "node scripts/guard-marcadores-en-pantalla.mjs"
+    "guard:marcadores-en-pantalla": "node scripts/guard-marcadores-en-pantalla.mjs",
+    "//ramas:sin-mergear": "SCRUM-637: las ramas remotas que NO estan en origin/main, con su EDAD y su URL de compare, la mas vieja primero. Solo LEE. Reutiliza el clasificador de SCRUM-804 (instantanea + alcanzabilidadDe); no escribe un segundo censo. Acepta --dias N. Su suelo sale con 2 si la lista viene vacia: con ~550 ramas vivas, un cero es ceguera y no buenas noticias.",
+    "ramas:sin-mergear": "node scripts/verificacion-s5/ramas-sin-mergear.mjs",
+    "//ramas:borrables": "SCRUM-637: la pregunta CONTRARIA a la de arriba — las ramas remotas que YA estan dentro de origin/main y se pueden borrar. EN SECO por defecto; borra de verdad solo con --ejecutar, que lo pone una persona. Antes de lanzarlo hay que mirar los PR abiertos: aqui no hay `gh` y el script no puede comprobarlo.",
+    "ramas:borrables": "node scripts/verificacion-s5/ramas-borrables.mjs",
+    "//enlace:ticket-rama": "SCRUM-637: cruza las CUATRO fuentes del enlace ticket-rama (nombre de rama, mensaje de commit, docs/master/SCRUM-n.md y el asunto de Jira en docs/verificacion/asuntos-jira.tsv) y dice cuando NO se ponen de acuerdo. Solo reporta, no falla nada.",
+    "enlace:ticket-rama": "node scripts/verificacion-s5/enlace-ticket-rama.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.98.0",

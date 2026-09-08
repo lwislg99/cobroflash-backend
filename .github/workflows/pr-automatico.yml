@@ -1,0 +1,302 @@
+# .github/workflows/pr-automatico.yml — paso 6 de la automatización
+#
+# QUÉ HACE: al empujar una rama `scrum-*`, ABRE el PR contra `main` y le ACTIVA el
+# auto-merge. Los dos clics que hoy da el fundador seis o siete veces al día.
+#
+# QUÉ NO HACE, Y ES LA MITAD DEL DISEÑO:
+#   · NO mergea. `--auto` sólo deja el PR armado; quien mergea es GitHub cuando el check
+#     obligatorio pasa. Aquí no se usa `--admin` ni nada que salte una comprobación.
+#   · NO toca ramas que no empiecen por `scrum-`: filtrado en el disparador Y comprobado
+#     otra vez en el primer paso, a propósito (un filtro de YAML no se lee en el log; un
+#     paso que falla, sí).
+#   · NO corre sobre `main` — `main` no está en el disparador.
+#
+# ─────────────────────────────────────────────────────────────────────────────────────────
+# 🔴 POR QUÉ NO ABRE EL PR CON EL `GITHUB_TOKEN` POR DEFECTO — MEDIDO, NO SUPUESTO
+#
+# La doc de GitHub (Events that trigger workflows · «Triggering a workflow from a workflow»):
+# «With the exception of `workflow_dispatch` and `repository_dispatch`, other `GITHUB_TOKEN`-
+# triggered events do not create workflow runs at all.»
+#
+# Y aquí eso muerde entero, porque `ci.yml` dispara SOLO en `pull_request` contra `main` y en
+# `push` a `main` — nunca en el push de una rama `scrum-*`. Encadenado:
+#
+#   PR abierto por GITHUB_TOKEN → no hay evento `pull_request` → CI NO CORRE NUNCA →
+#   el check obligatorio no aparece → el auto-merge espera PARA SIEMPRE.
+#
+# Un PR así es PEOR que no abrirlo: parece trabajo hecho y no avanza. De ahí el token de
+# GitHub App, cuyos eventos sí disparan workflows.
+#
+# ─────────────────────────────────────────────────────────────────────────────────────────
+# LOS TRES ESTADOS. NO DOS.
+#
+# El error fácil aquí es `continue-on-error` en el paso del token: si los secretos existen
+# pero son inválidos, el token no se acuña, el workflow «sigue» y abre el PR de todas formas
+# con el token por defecto. Eso produce EXACTAMENTE el PR eterno de arriba, y encima en
+# verde. Por eso son tres:
+#
+#   1. COMPLETO   — los dos secretos están y el token FUNCIONA (comprobado llamando a la
+#                   API, no sólo mirando que el paso no diera error): abre el PR y arma el
+#                   auto-merge.
+#   2. DEGRADADO  — los secretos NO existen todavía: no falla y no avisa en rojo. Se limita
+#                   a armar el auto-merge en el PR que ya exista, y lo DICE en el log. Es el
+#                   estado del día que esto entra, antes de que exista la App.
+#   3. CIEGO      — los secretos existen pero no acuñan token, o el token no puede con la
+#                   API. Entonces NO se abre nada y el job FALLA declarándolo. No se cae al
+#                   degradado en silencio: no saber en qué modo estás no es un modo.
+#
+# ─────────────────────────────────────────────────────────────────────────────────────────
+# LO QUE HAY QUE CREAR PARA PASAR DE DEGRADADO A COMPLETO (dos secretos, por NOMBRE):
+#
+#   · `YAQU_BOT_CLIENT_ID`    — Settings → Developer settings → GitHub Apps → tu App →
+#                               «Client ID». No es secreto, pero se guarda igual para que
+#                               la detección de modo mire un solo sitio.
+#   · `YAQU_BOT_PRIVATE_KEY`  — la clave privada .pem que genera esa misma pantalla, entera.
+#
+# La App necesita permisos de repositorio: **Contents: Read and write** y **Pull requests:
+# Read and write**. Nada más. Instalada en este repositorio.
+#
+# 🔴 `Contents: Read` NO BASTA, y aquí decía `Read` hasta el 8-sep-2026. Medido ese día en la
+# primera ejecución en modo COMPLETO (run 25, PR #1196): la App acuñó su token, pasó el
+# control positivo, ABRIÓ el PR —y CI se disparó sobre él, que era toda la gracia de usar una
+# App y no el GITHUB_TOKEN— pero armar el auto-merge siguió fallando. El motivo es el mismo
+# que obligó a subir `contents` en el bloque `permissions:` de abajo: armar el auto-merge es
+# comprometer a GitHub a EMPUJAR un merge más tarde, y eso es escritura de contenido. El
+# token de una App está ADEMÁS acotado por los permisos declarados de la App, así que subir
+# solo el `permissions:` del job no alcanza: hay que subirlo en los dos sitios.
+# Al cambiarlo en la App, la instalación pide aceptar el permiso nuevo.
+#
+# ⚠️ Mientras `main` esté rojo (SCRUM-822) NINGÚN auto-merge se completará, ni el de este
+# workflow ni el de nadie. No es un fallo del workflow: es que la condición no se cumple.
+name: PR automático (ramas scrum-)
+
+on:
+  push:
+    branches:
+      - 'scrum-**'
+
+# Un push nuevo a la misma rama cancela el anterior: el que importa es el último. Mismo
+# criterio que `ci.yml`.
+concurrency:
+  group: pr-auto-${{ github.ref }}
+  cancel-in-progress: true
+
+# Mínimos para lo que hace, y ni uno más.
+#
+# 🔴 `contents: write` NO es un ensanche caprichoso: es lo que pedía el fallo MEDIDO el
+# 8-sep-2026 en el PR #1181 — `GraphQL: Resource not accessible by integration
+# (enablePullRequestAutoMerge)`. Armar el auto-merge es comprometer a GitHub a EMPUJAR un
+# merge más tarde, y con `contents: read` el token no puede prometerlo. Con `read`, el paso
+# fallaba en todas las ejecuciones que encontraban un PR: seis runs, cuatro fallos, y
+# `auto_merge=no` en todos los PR que tocó.
+#
+# Y va AQUÍ, en el job, a propósito: es el lever ESTRECHO. El ancho —marcar «Read and write
+# permissions» en Settings del repositorio— le daría escritura a TODOS los workflows del repo
+# para arreglar uno. Este bloque solo afecta a este.
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  abrir-pr-y-armar-automerge:
+    # Un borrado de rama también es un evento `push`. Ahí no hay nada que abrir.
+    if: ${{ github.event.deleted == false }}
+    runs-on: ubuntu-latest
+    steps:
+      # ── 1 · CANDADO DE RAMA ────────────────────────────────────────────────────────────
+      # Redundante con el filtro del disparador Y ESO ES LO QUE SE QUIERE: si alguien
+      # ensancha el filtro de arriba sin pensarlo, esto sigue cerrado y se ve en el log.
+      # La rama va por `env` y no interpolada en el script: un nombre de rama es texto que
+      # escribe otra persona, y no se mete texto ajeno dentro de un `run`.
+      - name: Candado — solo ramas scrum-
+        env:
+          RAMA: ${{ github.ref_name }}
+        run: |
+          case "$RAMA" in
+            scrum-*) echo "rama admitida: $RAMA" ;;
+            *) echo "::error::rama fuera de alcance: $RAMA (este workflow solo toca scrum-*)"; exit 1 ;;
+          esac
+
+      # ── 2 · EL ÁRBOL, Y CON HISTORIA ───────────────────────────────────────────────────
+      # Hace falta de verdad: el paso que abre el PR compone su título y su cuerpo con
+      # `git log origin/main..HEAD`, y sin checkout el workspace está vacío.
+      # Y van DOS pasos por lo mismo que en `claude.yml`: `fetch-depth: 0` trae la historia
+      # completa pero UNA ref, y sin traer `main` explícitamente `origin/main` NO RESUELVE
+      # (tabla medida en `ci.yml`, líneas 369-395, SCRUM-765). La orden es la de la casa,
+      # byte a byte.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Traer `main` (el rango origin/main..HEAD lo necesita)
+        run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
+
+      # ── 3 · ¿EN QUÉ MODO ESTOY? ────────────────────────────────────────────────────────
+      # Los secretos se leen por `env` (única forma de mirarlos sin imprimirlos) y solo se
+      # comprueba si están VACÍOS. Aquí no se decide si son válidos: eso se mide después,
+      # usándolos, que es la única manera de saberlo.
+      - id: modo
+        name: Detectar modo (completo / degradado)
+        env:
+          CLIENT_ID: ${{ secrets.YAQU_BOT_CLIENT_ID }}
+          PRIVATE_KEY: ${{ secrets.YAQU_BOT_PRIVATE_KEY }}
+        run: |
+          if [ -n "$CLIENT_ID" ] && [ -n "$PRIVATE_KEY" ]; then
+            echo "hay_secretos=true" >> "$GITHUB_OUTPUT"
+            echo "Secretos de la App PRESENTES → se intentará el modo COMPLETO."
+          else
+            echo "hay_secretos=false" >> "$GITHUB_OUTPUT"
+            echo "Secretos de la App AUSENTES → modo DEGRADADO."
+            echo "  No es un error: este workflow entró antes de que exista la App."
+            echo "  Qué hace ahora: NO abre PR; solo arma el auto-merge si el PR ya existe."
+            echo "  Para el modo completo faltan: YAQU_BOT_CLIENT_ID y YAQU_BOT_PRIVATE_KEY."
+          fi
+
+      # ── 4 · ACUÑAR EL TOKEN ────────────────────────────────────────────────────────────
+      # `continue-on-error` aquí NO es para seguir como si nada: es para poder DISTINGUIR
+      # «falló» de «no se intentó», y convertirlo en el estado CIEGO del paso 5. Sin esto,
+      # el fallo sería un error opaco de la acción en vez de un diagnóstico.
+      - id: token
+        name: Acuñar token de la GitHub App
+        if: steps.modo.outputs.hay_secretos == 'true'
+        continue-on-error: true
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.YAQU_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.YAQU_BOT_PRIVATE_KEY }}
+
+      # ── 5 · CIEGO: los secretos están pero no sirven ───────────────────────────────────
+      - name: 🔴 CIEGO — hay secretos pero no acuñan token
+        if: steps.modo.outputs.hay_secretos == 'true' && steps.token.outcome != 'success'
+        run: |
+          echo "::error::Los secretos de la App EXISTEN pero no acuñan token."
+          echo "No se abre ningún PR y no se cae al modo degradado: no saber en qué modo"
+          echo "estás no es un modo. Un PR abierto sin token de App no dispara CI nunca, y"
+          echo "se queda con el auto-merge armado esperando para siempre."
+          echo "Dónde mirar: YAQU_BOT_CLIENT_ID correcto, la .pem entera (con cabecera y pie),"
+          echo "y la App instalada en este repositorio."
+          exit 1
+
+      # ── 6 · CONTROL POSITIVO DEL TOKEN ─────────────────────────────────────────────────
+      # Que la acción no diera error no prueba que el token PUEDA. Se le pide algo real a la
+      # API antes de confiar en él. Si esto calla, el modo completo es mentira.
+      - name: Control positivo — el token responde a la API
+        if: steps.modo.outputs.hay_secretos == 'true'
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          if ! gh api "repos/$REPO" -q .full_name; then
+            echo "::error::El token se acuñó pero no puede con la API (permisos o instalación)."
+            echo "CIEGO: no se abre PR. La App necesita Contents:Read y Pull requests:Read+write,"
+            echo "e instalada en este repositorio."
+            exit 1
+          fi
+
+      # ── 7 · ¿HAY YA UN PR ABIERTO PARA ESTA RAMA? ──────────────────────────────────────
+      # Idempotencia: empujar otra vez a la misma rama no debe abrir un segundo PR.
+      - id: pr
+        name: Buscar PR abierto de esta rama
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RAMA: ${{ github.ref_name }}
+        run: |
+          NUM="$(gh pr list --head "$RAMA" --state open --json number -q '.[0].number' || true)"
+          if [ -n "$NUM" ]; then
+            echo "numero=$NUM" >> "$GITHUB_OUTPUT"
+            echo "Ya hay PR abierto: #$NUM"
+          else
+            echo "numero=" >> "$GITHUB_OUTPUT"
+            echo "No hay PR abierto para $RAMA"
+          fi
+
+      # ── 8 · ABRIR EL PR (solo en modo COMPLETO) ────────────────────────────────────────
+      - id: crear
+        name: Abrir el PR
+        if: steps.modo.outputs.hay_secretos == 'true' && steps.pr.outputs.numero == ''
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          RAMA: ${{ github.ref_name }}
+        run: |
+          # Sin commits por delante de main no hay PR que abrir, y `gh pr create` fallaría
+          # con un error que parece roto sin serlo. `origin/main` resuelve porque el paso 2
+          # lo trajo explícitamente.
+          ADELANTE="$(git rev-list --count origin/main..HEAD)"
+          if [ "$ADELANTE" -eq 0 ]; then
+            echo "La rama no tiene commits por delante de main: no hay PR que abrir."
+            echo "numero=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          NUM="$(gh pr create --base main --head "$RAMA" \
+                   --title "$(git log -1 --pretty=%s)" \
+                   --body "$(printf 'Abierto automáticamente al empujar \`%s\`.\n\nCommits:\n\n%s\n\nEl auto-merge queda ARMADO: GitHub mezclará cuando pase el check obligatorio. Este workflow no mergea ni salta comprobaciones.\n' "$RAMA" "$(git log --reverse --pretty='- %s' origin/main..HEAD)")" \
+                 | grep -oE '[0-9]+$')"
+          echo "numero=$NUM" >> "$GITHUB_OUTPUT"
+          echo "PR abierto: #$NUM"
+
+      # ── 9 · ARMAR EL AUTO-MERGE ────────────────────────────────────────────────────────
+      # `--auto` NO mergea: deja el PR esperando al check obligatorio. `--merge` porque esta
+      # casa usa commits de merge («Merge pull request #NNNN from …»), no squash ni rebase.
+      # En modo degradado actúa el GITHUB_TOKEN, que para esto basta: el PR ya existe y su
+      # CI ya corrió cuando lo abrió una persona.
+      - name: Armar el auto-merge
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token || github.token }}
+          NUM: ${{ steps.crear.outputs.numero || steps.pr.outputs.numero }}
+        run: |
+          if [ -z "$NUM" ]; then
+            echo "No hay PR sobre el que armar el auto-merge."
+            echo "  (En modo degradado esto es lo normal hasta que alguien abra el PR a mano.)"
+            exit 0
+          fi
+          if gh pr merge "$NUM" --auto --merge 2> "$RUNNER_TEMP/err.txt"; then
+            echo "Auto-merge ARMADO en el PR #$NUM. Mergea GitHub cuando pase el check obligatorio."
+            exit 0
+          fi
+
+          # ── NO PUDO. ¿Es una avería o una situación normal? ─────────────────────────────
+          # Un PR en conflicto, o uno que ya no tiene nada que esperar, NO se puede armar — y
+          # eso no es un fallo del workflow. Pintarlo de rojo fabrica un rojo falso, y un rojo
+          # falso se aprende a ignorar. Lo decide `scripts/clasificar-fallo-automerge.mjs`
+          # MIRANDO EL ESTADO DEL PR (un enum), no el texto del mensaje.
+          cat "$RUNNER_TEMP/err.txt"
+
+          # `mergeable` se calcula en diferido: la doc de GitHub dice literalmente que si sale
+          # null hay que dar tiempo y volver a pedirlo. Medido el 8-sep-2026: 13 de 16 PR
+          # abiertos devolvían null a la primera. Sin estos reintentos, casi todo saldría
+          # UNKNOWN y el clasificador —que falla cerrado— lo pintaría rojo por no saber.
+          VISTA='{}'
+          for intento in 1 2 3 4 5; do
+            VISTA="$(gh pr view "$NUM" --json mergeable,mergeStateStatus 2>/dev/null || echo '{}')"
+            case "$VISTA" in
+              *'"UNKNOWN"'*|'{}') sleep 5 ;;
+              *) break ;;
+            esac
+          done
+
+          # El texto del error viaja SOLO para poder endurecer: si dice permisos, es rojo
+          # aunque el estado parezca benigno (fue la causa real del PR #1181).
+          #
+          # 🔴 VA COMO CONDICIÓN DE UN `if`, Y NO ES ESTILO. GitHub corre los `run:` con
+          # `bash -e`: un `exit 1` del clasificador abortaría el paso ANTES de poder leer su
+          # código, y entonces TODO saldría rojo — el arreglo quedaría inerte y con aspecto de
+          # funcionar. Los comandos que son condición de un `if` están exentos de `-e`.
+          if echo "$VISTA" \
+            | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const v=JSON.parse(s||'{}');v.error=require('fs').readFileSync(process.env.RUNNER_TEMP+'/err.txt','utf8');process.stdout.write(JSON.stringify(v))})" \
+            | node scripts/clasificar-fallo-automerge.mjs; then
+            VEREDICTO=0
+          else
+            VEREDICTO=1
+          fi
+
+          if [ "$VEREDICTO" -eq 0 ]; then
+            echo "No se armó el auto-merge del PR #$NUM, y es lo esperable. El PR queda ABIERTO"
+            echo "para que lo mire una persona. Esto NO es un fallo del workflow."
+            exit 0
+          fi
+
+          echo "::error::No se pudo armar el auto-merge del PR #$NUM y no consta un motivo legítimo."
+          echo "Dónde mirar, por orden:"
+          echo "  · permisos: ¿el job lleva 'contents: write'? ¿hay token de App, o corrió el de por defecto?"
+          echo "  · 'Allow auto-merge' desactivado en Settings del repositorio."
+          echo "  · '--merge' (commit de merge) no permitido — esta casa usa commits de merge."
+          exit 1
