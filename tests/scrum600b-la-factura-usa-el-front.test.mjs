@@ -330,6 +330,65 @@ test('SCRUM-600b · 🔴 y el modo documento suelto NO arrastra lo que el emisor
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 LA FORMA DE LA RUTA · que el instrumento pueda VER esta pantalla
+//
+// El guard de marcadores (SCRUM-722) monta cada vista del router con UN argumento como mucho. La
+// ruta llamaba `renderQuotesView(cont, null, true)`, así que el guard la montaba sin el tercero:
+// pintaba el PRESUPUESTO y contaba sus 6 marcadores como si fueran de la factura. No se midió
+// mal — se midió OTRA PANTALLA, que es peor, porque el número parecía real.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-600b · 🔴 la ruta se monta con UN argumento: el instrumento tiene que poder verla', async () => {
+  const app = leer('public/dashboard/js/app.js');
+
+  // ① El `case` llama a la puerta, no a la vista con tres argumentos.
+  const caso = (app.match(/case 'invoices-new':([\s\S]*?)break;/) || [])[1] || '';
+  assert.ok(caso, '🔴 no existe el `case` de `invoices-new` en el router');
+  assert.match(caso, /renderDocumentoSueltoView\(\s*viewContainer\s*\)/,
+    '🔴 la ruta ha vuelto a montarse con más de un argumento. El guard de SCRUM-722 deriva las '
+    + 'vistas del router y las llama con `window[fn](cont)`: con tres argumentos monta OTRA '
+    + 'pantalla y cuenta sus marcadores como si fueran de ésta.');
+  assert.doesNotMatch(caso, /renderQuotesView\s*\(/,
+    '🔴 el `case` vuelve a llamar directamente a `renderQuotesView`: eso es la forma que el guard '
+    + 'no sabe montar.');
+
+  // ② Y la puerta existe, se publica y lleva el tercer argumento puesto.
+  const vista = leer(PAGINA);
+  assert.match(vista, /function renderDocumentoSueltoView\(\s*container\s*\)/,
+    '🔴 la puerta `renderDocumentoSueltoView` ya no existe');
+  assert.match(vista, /renderQuotesView\(\s*container\s*,\s*null\s*,\s*true\s*\)/,
+    '🔴 la puerta ya no pide el documento suelto: montaría el presupuesto en la ruta de la factura');
+  assert.match(vista, /window\.renderDocumentoSueltoView\s*=/,
+    '🔴 la puerta no se publica en `window`: el router no la encontraría');
+
+  // ③ Y montada POR LA PUERTA pinta lo mismo que montada a mano. Si no, la puerta miente.
+  const { banco } = bancoConRed('justificante');
+  const porLaPuerta = await pintarVista(banco, 'renderDocumentoSueltoView');
+  assert.equal(porLaPuerta.error, null, `🔴 la puerta no monta: ${porLaPuerta.error && porLaPuerta.error.message}`);
+  const textos = ranurasLegibles(porLaPuerta.contenedor).map((x) => x.texto);
+  assert.ok(textos.some((t) => t.includes('Emitir justificante')),
+    '🔴 montada por la puerta, la pantalla no es la del documento suelto');
+  assert.ok(!textos.some((t) => t.includes('3. Condiciones')),
+    '🔴 montada por la puerta, la pantalla trae bloques del presupuesto');
+});
+
+test('SCRUM-600b · 🔴 la tira de propuesta de descuento NO se pinta en el documento suelto', async () => {
+  // El descuento no sobrevive al emisor —`dto` y `discountGlobalAmount` se descartan—, así que
+  // este ticket ya retiró los DOS campos. La tira que PROPONE rellenarlos se había quedado: un
+  // control que el profesional acepta, que no cambia nada en pantalla porque sus campos no están,
+  // y cuyo dato el servidor tiraría igual. Medido en navegador: pintaba 1 nodo por estado.
+  const r = await pintarPagina('justificante', true);
+  const clases = todos(r.contenedor).map((n) => String(n.className || ''));
+  assert.ok(!clases.some((c) => c.includes('quote-propuesta-dto')),
+    '🔴 ha vuelto la tira de la propuesta de descuento a la pantalla del documento suelto.');
+  // SUELO: en el presupuesto SÍ está — si no, este test daría verde por mirar mal.
+  const q = await pintarPagina('justificante', undefined);
+  const clasesQ = todos(q.contenedor).map((n) => String(n.className || ''));
+  assert.ok(clasesQ.some((c) => c.includes('quote-propuesta-dto')),
+    '🔴 CIEGO: la tira tampoco está en el presupuesto, así que el cero de arriba no significa nada.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
 // 🔴 REGLA 29 · una factura emitida no se edita, no se borra y no se renumera
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 

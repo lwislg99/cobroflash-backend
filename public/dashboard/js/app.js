@@ -330,9 +330,14 @@ async function initApp() {
       // profesional emite facturas o justificantes (SCRUM-776). Escribir 'Facturas' a pelo sería
       // decirle «factura» a un merchant español real, que con el flag en su valor por defecto
       // emite JUSTIFICANTES.
+      // ⚠️ La ruta llama a `renderDocumentoSueltoView(viewContainer)` y NO a
+      // `renderQuotesView(viewContainer, null, true)`. El destino es el mismo; la FORMA no. El
+      // guard de marcadores (SCRUM-722) monta cada vista del router con un argumento como mucho,
+      // así que con la llamada de tres argumentos montaba esta ruta SIN el tercero — o sea,
+      // pintaba el PRESUPUESTO y contaba sus marcadores como si fueran de aquí. Medido.
       case 'invoices-new':
         viewTitle.textContent = window.rotulosDelDocumento.tituloModal();
-        renderQuotesView(viewContainer, null, true);
+        renderDocumentoSueltoView(viewContainer);
         break;
       // Sprint Tecnosel · LA OFICINA VALORA LOS PARTES FIRMADOS. Sin este `case` el fichero se
       // cargaría y no llevaría a él ninguna puerta — que es exactamente lo que le pasa hoy a

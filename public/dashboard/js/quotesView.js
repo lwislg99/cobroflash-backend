@@ -1450,7 +1450,20 @@ blockDelivery.appendChild(descWrapper);
 
   propuestaWrap.appendChild(propuestaTexto);
   propuestaWrap.appendChild(propuestaBtn);
-  blockTotals.appendChild(propuestaWrap);
+  // 🔴 SCRUM-600 (DOC-10) · LA TIRA DE LA PROPUESTA DE DESCUENTO NO SE PINTA EN EL DOCUMENTO
+  // SUELTO, y esto corrige una INCONSISTENCIA MÍA, no un defecto heredado.
+  //
+  // Este ticket ya retiró el descuento por línea (`dtoTd`) y el global (`dtoGlobalWrap`) porque
+  // `dto` y `discountGlobalAmount` no sobreviven a `validarFacturaSuelta`. Y dejé en pie la tira
+  // que PROPONE rellenar justo esos campos. Con los campos fuera, el botón escribiría en unos
+  // `dtoInput` que no están en la pantalla: el profesional ve una propuesta, la acepta, no cambia
+  // nada a la vista y el descuento no llega al documento. **Un control muerto que además pide un
+  // dato que el servidor tira.**
+  //
+  // Mi propia regla decide esto sin consultar a nadie: un control aparece si y sólo si su dato
+  // sobrevive al emisor. Éste no sobrevive, así que no aparece — ni con marcador ni sin él.
+  // No hace falta firmar ningún literal: el que había se va con la tira.
+  if (!esDocumentoSuelto) blockTotals.appendChild(propuestaWrap);
 
   /** El cliente elegido AHORA, o `null`. Mismo criterio que la vista previa (una sola forma). */
   function clienteElegido() {
@@ -1469,6 +1482,10 @@ blockDelivery.appendChild(descWrapper);
   }
 
   function refrescarPropuestaDeDescuento() {
+    // SCRUM-600 · se corta también EL CÁLCULO, no sólo el pintado: en el documento suelto la tira
+    // no cuelga de la tarjeta, así que recalcular su alcance en cada tecla sería trabajo para
+    // decidir si enseñar algo que no se puede enseñar.
+    if (esDocumentoSuelto) return;
     const M = window.descuentoPorDefecto;
     // Sin la pieza —o con un cliente sin descuento pactado— la tira no existe y el editor se
     // comporta EXACTAMENTE como antes de este ticket. Es el caso normal, no una degradación.
@@ -4310,3 +4327,31 @@ payloadLines.push(lineaParaPayload({
     }
   });
 }
+
+/**
+ * LA PUERTA DEL DOCUMENTO SUELTO · SCRUM-600 (DOC-10).
+ *
+ * No aporta comportamiento: llama a `renderQuotesView` con el tercer argumento puesto. Y aun así
+ * hace falta, por una razón medida.
+ *
+ * 🔴 EL INSTRUMENTO SÓLO SABE LEER UNA FORMA, Y LA RUTA NO LA TENÍA. El guard de SCRUM-722
+ * (`guard-marcadores-en-pantalla.mjs`) deriva las vistas del `switch` del router y las monta con
+ * `window[fn](cont)` o `window[fn](cont, arg)`: UN argumento como mucho, y qué rutas lo llevan
+ * sale de un conjunto escrito a mano. Una ruta que necesita un TERCERO no es que se mida mal: se
+ * mide OTRA PANTALLA. Medido —`invoices-new` pintaba los 6 marcadores del PRESUPUESTO, los mismos
+ * dos nodos que `quotes-new`, porque sin el tercer argumento la página se pintaba como un
+ * presupuesto—, y el guard lo denunciaba con razón aunque el defecto no fuera el que parecía.
+ *
+ * Se arregla EN LA RUTA y no en el guard, que es donde estaba el defecto: el contrato que el guard
+ * lee («un `case` nombra un `render…View` montable con el contenedor») existía antes que esta
+ * ruta, y era ella la que no lo cumplía. Ensanchar el guard para que aceptara mi forma habría
+ * dejado su lista escrita a mano un poco más atrás cada vez.
+ *
+ * ⚠️ No esconde ningún texto de ningún censo: no lleva literales, sólo el destino. Es lo contrario
+ * del envoltorio que SCRUM-776 prohíbe —aquél metía un nivel entre un rótulo y su sumidero; éste
+ * no toca ningún rótulo y hace que la pantalla SEA VISIBLE para quien la vigila.
+ */
+function renderDocumentoSueltoView(container) {
+  return renderQuotesView(container, null, true);
+}
+window.renderDocumentoSueltoView = renderDocumentoSueltoView;
