@@ -94,3 +94,77 @@ test('SCRUM-824b · 🔴 SUELO: un sha de ocho todo dígitos es FRECUENTE, no un
     + 'longitud y este arreglo se apoya en algo que ya no es cierto.');
   assert.equal(RELOJ.length, 13, '🔴 `String(Date.now())` ha dejado de tener trece caracteres.');
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// ✅ EL CONTROL SIMÉTRICO — y va por la CADENA REAL, no por copias a mano
+//
+// 🔴 ES EL DE S6 DADO LA VUELTA, y el crédito es suyo: su control ⑤
+// (`scrum-824b-el-vigia-que-no-deja-pasar`, ce14d37f) afirmaba que un `prod=` de ocho dígitos NO
+// se puede leer, y con su arreglo —minar el sha en el fixture— eso era cierto. Con éste ya no lo
+// es: el vigía SÍ lo lee, que es justamente lo que se ha arreglado. Su test no se tira, se
+// invierte.
+//
+// Lo que SÍ se conserva entero de ella, porque estaba bien hecho: **no se copia el renglón a
+// mano, se le PIDE al formateador de verdad** (`constanciaDeEjecucion`) y se lee con
+// `ultimaLectura`. Si mañana cambia el formato de la constancia, esto cae y avisa, en vez de
+// seguir comparando contra una transcripción que ya no corresponde.
+//
+// Las DOS mitades van en el MISMO test a propósito: un control que sólo probara «el sha se lee»
+// pasaría con un vigía que lo lee TODO, incluido el reloj — y eso es el defecto de enfrente.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-824b · ✅ SIMÉTRICO por la cadena real: el sha de ocho dígitos SE LEE, el reloj de trece NO', async () => {
+  const { constanciaDeEjecucion } = await import('../scripts/_vigilante-de-despliegue.mjs');
+  const { ultimaLectura, ritmoDeDespliegue, NO_SE_SABE } = await import('../scripts/_ritmo-de-despliegue.mjs');
+
+  const otro = 'deadbeef' + '0'.repeat(32);
+  const porLaCadena = (versionDeProduccion) => {
+    const { renglon } = constanciaDeEjecucion(
+      { veredicto: 'atrasado', horas: 48, titulo: '' },
+      { versionDeProduccion, shaDeMain: otro, commitsPorDelante: 1, ahoraEpoch: 1757000000 },
+    );
+    return { renglon, ritmo: ritmoDeDespliegue(ultimaLectura(renglon), { versionDeProduccion: otro }).ritmo };
+  };
+
+  // ── ① EL SHA DE OCHO DÍGITOS SE LEE. Es el caso del informe (`40606975`) y el que bloqueaba.
+  const sha = porLaCadena('40606975' + 'a'.repeat(32));
+  assert.match(sha.renglon, /prod=\d{8} /,
+    '🔴 CIEGO: la constancia no ha salido con `prod=` de ocho dígitos, así que lo de abajo no '
+    + 'prueba nada. Se le pide al formateador de verdad justamente para que esto no se dé por hecho.');
+  assert.notEqual(sha.ritmo, NO_SE_SABE,
+    '🔴 el vigía SIGUE sin leer un sha corto de ocho dígitos. Es el rojo intermitente entero: pasa '
+    + 'en el 2,3 % de los shas y no manda a nadie a mirar, sólo a relanzar la tanda.');
+
+  // ── ② Y EL RELOJ NO. Sin esta mitad, el control de arriba lo pasaría un vigía que lo lee TODO.
+  const reloj = porLaCadena(String(Date.now()));
+  assert.equal(reloj.ritmo, NO_SE_SABE,
+    '🔴 EL VIGÍA SE CREE UN RELOJ. Sin `RAILWAY_GIT_COMMIT_SHA`, producción publica '
+    + '`String(Date.now())`; dos lecturas de ésas darían «despliega» siempre, porque el tiempo '
+    + 'avanza. Leer el sha corto no puede costar esto.');
+
+  // ⚠️ Y POR QUÉ NO SE CONFUNDEN AL GUARDARSE, medido aquí y no supuesto: `corto()` sólo abrevia
+  // lo que es un sha40; cualquier otra cosa se escribe como `?`. Así que un reloj NUNCA queda en
+  // la constancia truncado a ocho dígitos, que es lo único que rompería el criterio por longitud.
+  assert.match(reloj.renglon, /prod=\? /,
+    '🔴 la constancia ha guardado el RELOJ como si fuera un sha. Si se truncara a ocho dígitos, '
+    + 'sería indistinguible de un sha corto y el arreglo por longitud dejaría de valer.');
+  // ── ③ 🔴 EL RELOJ CRUDO, POR EL LADO DE `/version` — y esta pata hubo que añadirla porque la
+  // mutación la destapó.
+  //
+  // Al mutar el vigía para que ACEPTE trece dígitos, las dos mitades de arriba seguían VERDES: por
+  // la constancia el reloj nunca llega a `shaLegible` como trece dígitos, porque `corto()` ya lo
+  // ha convertido en `?`. O sea que esa mitad la protege el FORMATEADOR, no el criterio nuevo — y
+  // un control que no vigila lo que dice vigilar es el defecto que este ticket entero persigue.
+  //
+  // En producción el reloj SÍ llega crudo: `/version` se lee tal cual y no pasa por `corto()`.
+  // Ése es el camino que prueba el criterio, y es el que cae si alguien se lo quita.
+  const conSha = constanciaDeEjecucion(
+    { veredicto: 'atrasado', horas: 48, titulo: '' },
+    { versionDeProduccion: '40606975' + 'a'.repeat(32), shaDeMain: otro, commitsPorDelante: 1, ahoraEpoch: 1757000000 },
+  ).renglon;
+  const relojCrudo = ritmoDeDespliegue(ultimaLectura(conSha), { versionDeProduccion: String(Date.now()) }).ritmo;
+  assert.equal(relojCrudo, NO_SE_SABE,
+    '🔴 con la lectura de AHORA siendo un reloj de trece dígitos leído de `/version`, el vigía la '
+    + 'da por buena. Dos lecturas así dirían «despliega» siempre, porque el tiempo avanza: una '
+    + 'alarma que firma un verde justo cuando no se sabe qué corre.');
+});
