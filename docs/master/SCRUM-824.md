@@ -468,3 +468,97 @@ Lo que sí está cerrado es **el mecanismo**: correlación 200/200 sin excepcion
 antes y después, el `40606975` del informe explicado exactamente, y diez pasadas limpias tras el
 merge. Lo que queda abierto es la observación directa en CI, y se dice porque darlo por cerrado de
 gratis sería lo mismo que el defecto que se acaba de arreglar: firmar un verde sin haber mirado.
+
+---
+
+# 🕐 UN CASO, UNA HORA · el ancla que era una foto del reloj de mi máquina
+
+`tests/scrum824b-el-mas-antiguo-no-es-el-primero.test.mjs:105` caía en CI con una diferencia de
+**exactamente 3600 s**. No era lógica: era huso.
+
+## La causa, medida — tres hipótesis daban 3600, y sólo una es
+
+El fixture creaba los commits con fechas **sin huso** (`'2026-09-02T09:00:00'`), y git las interpreta
+en la hora **local** de quien corre el test. Mismo comando, mismo repo:
+
+```
+git SIN huso · TZ=UTC                → 1788339600
+git SIN huso · huso del sistema      → 1788336000     ← 3600 exactos
+git SIN huso · TZ=EST5EDT            → 1788354000
+git CON Z    · en todos              → 1788339600
+```
+
+**No era el cambio de horario** (septiembre no tiene transición) **ni Europe/Madrid**: el
+`1788336000` que yo había escrito a mano es `2026-09-02T08:00:00Z`, o sea la lectura de la máquina
+donde se escribió — **Europe/London, +1 en septiembre** — y CI corre en UTC.
+
+Reproducido sobre los bytes exactos del fichero anterior:
+
+```
+fichero VIEJO · huso del sistema → pass 2 · fail 0
+fichero VIEJO · TZ=UTC           → pass 1 · fail 1   (expected: 1788336000)
+```
+
+## El arreglo — en el FIXTURE, que es de donde salía el número
+
+Las tres fechas pasan a una constante `FECHAS` **con huso explícito** (`…Z`), y **el epoch se
+deriva de ellas** con `epochDe()` en vez de escribirse. Lo que el caso afirma ahora es lo que de
+verdad quiere afirmar: **que git grabó las fechas que el escenario declaró**. Un timestamp absoluto
+en un test es una referencia que caduca, igual que referenciar por posición.
+
+⛔ El vigía no se ha tocado: el defecto no estaba ahí.
+
+## El trinquete, con su suelo
+
+`SCRUM-824b · 🔴 TRINQUETE: las fechas del escenario declaran su huso, no lo heredan` — exige que
+cada fecha de `FECHAS` traiga huso, y **comprueba que la comprobación sabe decir que no**
+(`doesNotMatch` sobre una fecha sin huso): sin ese suelo, una expresión regular mal escrita
+aprobaría cualquier cosa y el trinquete sería un adorno. Y afirma la forma del escenario desde las
+fechas —el hijo más antiguo que el padre—, que es lo que hace discrepar a `--reverse` y al mínimo.
+
+## El control, y lo que NO se pudo correr
+
+|  | resultado |
+|---|---|
+| `TZ=UTC` (offset 0) | 3 pass · 0 fail · 0 skipped |
+| huso del sistema, `Europe/London` (+1) | 3 pass · 0 fail · 0 skipped |
+| `TZ=EST5EDT` (−4) | 3 pass · 0 fail · 0 skipped |
+| `TZ=Europe/Madrid` | 3 pass · 0 fail · 0 skipped — **pero no cuenta**, ver abajo |
+
+🔴 **`TZ=Europe/Madrid` NO TOMA EFECTO en esta máquina.** Ni node ni git resuelven ahí los nombres
+IANA: los dos caen al huso del sistema (`Europe/London`). Medido, no supuesto — con `TZ=Europe/Madrid`
+git devuelve `1788336000`, que es el valor de +1 y no el de +2 que Madrid tendría en septiembre.
+Se dice en vez de pegar una salida verde que parecería lo que no es. El par que sí cubre lo que
+importa es **UTC vs +1**, que es exactamente el que rompió CI, y `EST5EDT` añade un tercero en −4.
+
+## 🔎 HALLAZGO DE OTRO CARRIL · `scrum804-la-rama-viva` tiene la MISMA enfermedad
+
+Encontrado al correr la tanda completa de este ticket. **No se arregla aquí** (regla 9: hallazgo de
+otro carril se reporta), pero se deja escrito porque es literalmente el mismo defecto que este
+ticket acaba de corregir, en otro sitio y con otra cara.
+
+`tests/scrum804-la-rama-viva.test.mjs:39` lleva una lista fija:
+
+```js
+const LOS_CUATRO = [819, 816, 820, 821];
+```
+
+y afirma de ella que «estos cuatro tienen rama en el remoto con su número». **Ya no es verdad**:
+medido con `git ls-remote --heads origin`, no queda ninguna rama `scrum-821-*` — se mergeó y se
+borró. Caen tres casos:
+
+```
+✖ CONTROL POSITIVO ENUMERADO: ve a los cuatro que pararon   → SIN RASTRO: SCRUM-821
+✖ EL ÁRBITRO: cada clase coincide con `merge-base`          → «sólo 4 ramas que interrogar»
+✖ CONTROL NEGATIVO: una rama mergeada no es trabajo pendiente → «sólo 10 tickets», esperaba más
+```
+
+Los tres son **suelos**, y por eso fallan bien: se niegan a medir sobre una población que ha
+encogido, en vez de dar un verde vacío. El problema no es el suelo: es que el sujeto —la lista de
+tickets— es una **foto de un remoto que se mueve**, igual que mi `1788336000` era una foto de un
+reloj. Un ticket propio tendría que decidir si la lista se deriva del remoto o se congela con su
+sha, como se hizo en SCRUM-821c con `_foto-antes-de-821.mjs`.
+
+⚠️ **No es de esta rama**: lo único que toca este commit es
+`tests/scrum824b-el-mas-antiguo-no-es-el-primero.test.mjs`. En la tanda completa de hace una hora,
+sobre este mismo árbol, los tres estaban en verde; lo que cambió entre medias fue el remoto.

@@ -40,6 +40,35 @@ import { soloEjecutable } from './_guard-texto.mjs';
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CLI = path.join(RAIZ, 'scripts', 'vigilante-de-despliegue.mjs');
 
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// LAS FECHAS DEL ESCENARIO — CON HUSO EXPLÍCITO, Y EL NÚMERO SE DERIVA DE ELLAS
+//
+// 🔴 LA `Z` NO ES DECORATIVA, y este caso lo aprendió cayéndose. Iban sin huso, y entonces git
+// las interpreta en la hora LOCAL de quien corre el test: el epoch sale distinto según el huso
+// del runner. Medido, con el mismo comando y el mismo repo:
+//
+//     git SIN huso · TZ=UTC              → 1788339600
+//     git SIN huso · huso del sistema     → 1788336000     ← 3600 exactos de diferencia
+//     git CON Z    · en los dos           → 1788339600
+//
+// Y el caso comparaba contra un `1788336000` ESCRITO A MANO, que era la lectura de la máquina
+// donde se escribió (Europe/London, +1 en septiembre) y no la de CI (UTC). O sea que no fallaba
+// en CI por lógica: fallaba porque el número era una foto del reloj de otro sitio.
+//
+// ⚠️ Y POR ESO EL NÚMERO YA NO SE ESCRIBE: se calcula de estas mismas constantes. Un timestamp
+// absoluto en un test es una referencia que caduca, y referenciar por posición o por foto ya nos
+// ha mordido cuatro veces en esta casa. Lo que el caso afirma ahora es lo que de verdad quiere
+// afirmar: **que git grabó las fechas que el escenario declaró**.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+const FECHAS = {
+  base:  '2026-09-01T10:00:00Z',   // lo que estaría desplegado
+  padre: '2026-09-05T12:00:00Z',   // el padre, con fecha NUEVA
+  hijo:  '2026-09-02T09:00:00Z',   // el hijo, con fecha VIEJA — el más antiguo de los que faltan
+};
+
+/** El epoch en segundos de una de las fechas de arriba. Con huso explícito no depende del runner. */
+const epochDe = (iso) => Math.trunc(Date.parse(iso) / 1000);
+
 /**
  * Un repo con UN PADRE MÁS NUEVO QUE SU HIJO. No es una rareza fabricada para pasar: es lo que
  * deja un rebase o un cherry-pick, y lo que un `--reverse` no sabe ordenar.
@@ -58,12 +87,12 @@ function repoConFechasCruzadas() {
   g('config', 'user.email', 'v@test.local');
   g('config', 'user.name', 'vigia');
 
-  commit('2026-09-01T10:00:00', 'base — lo que está desplegado');
+  commit(FECHAS.base, 'base — lo que está desplegado');
   const base = g('rev-parse', 'HEAD');
   // 🔴 EL PADRE ES MÁS NUEVO QUE EL HIJO. Al recorrer el grafo, el hijo sale antes que el padre;
   // al invertir, el PADRE queda arriba — y no es el más antiguo.
-  commit('2026-09-05T12:00:00', 'padre, con fecha NUEVA');
-  commit('2026-09-02T09:00:00', 'hijo, con fecha VIEJA');
+  commit(FECHAS.padre, 'padre, con fecha NUEVA');
+  commit(FECHAS.hijo, 'hijo, con fecha VIEJA');
   g('update-ref', 'refs/remotes/origin/main', g('rev-parse', 'HEAD'));
 
   const epochs = g('log', '--format=%ct', `${base}..HEAD`).split('\n').map(Number);
@@ -129,8 +158,41 @@ test('SCRUM-824b · 🔴 el vigía calcula desde el commit MÁS ANTIGUO, no desd
     const g = (...a) => String(execFileSync('git', a, { cwd: r.dir, encoding: 'utf8' })).trim();
     const epochs = g('log', '--format=%ct', `${r.base}..HEAD`).split('\n').map(Number);
     assert.equal(Math.min(...epochs), Math.min(...r.epochs));
-    assert.equal(Math.min(...r.epochs), 1788336000,
-      '🔴 el commit más antiguo del escenario ha cambiado de fecha: lo que este caso afirma se '
-      + 'apoya en ese número.');
+    assert.equal(Math.min(...r.epochs), epochDe(FECHAS.hijo),
+      '🔴 git NO ha grabado la fecha que el escenario declara para el commit más antiguo. Eso es '
+      + 'lo que este caso se apoya, y se DERIVA de `FECHAS` en vez de escribirse: un timestamp '
+      + 'absoluto aquí sería una foto del reloj de la máquina donde se escribió, y en un runner '
+      + 'con otro huso deja de valer — que es exactamente como este caso se cayó en CI.');
   } finally { r.borrar(); }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 EL TRINQUETE: LAS FECHAS DEL ESCENARIO LLEVAN HUSO, O ESTO VUELVE A SEGUIR AL RUNNER
+//
+// Sin esto, alguien quita una `Z` al retocar el escenario y el caso vuelve a pasar aquí y caer
+// en CI — que es un rojo intermitente por geografía, el peor de todos: no manda a nadie a mirar.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-824b · 🔴 TRINQUETE: las fechas del escenario declaran su huso, no lo heredan', () => {
+  const conHuso = /(Z|[+-]@@BS@@d{2}:?@@BS@@d{2})$/;
+
+  for (const [nombre, iso] of Object.entries(FECHAS)) {
+    assert.match(iso, conHuso,
+      `🔴 la fecha «${nombre}» (${iso}) no dice en qué huso está, así que git la lee en la hora `
+      + 'LOCAL de quien corra el test y su epoch cambia con el runner. Medido: entre UTC y el huso '
+      + 'de esta máquina hay 3600 s exactos, y eso es lo que tiró este caso en CI.');
+    assert.ok(Number.isFinite(epochDe(iso)), `🔴 la fecha «${nombre}» no se puede leer: ${iso}`);
+  }
+
+  // 🔴 SUELO DEL TRINQUETE: que la comprobación de arriba SEPA decir que no. Sin esto, una
+  // expresión regular mal escrita aprobaría cualquier cosa y el trinquete sería un adorno.
+  assert.doesNotMatch('2026-09-02T09:00:00', conHuso,
+    '🔴 la comprobación da por buena una fecha SIN huso: entonces no comprueba nada.');
+
+  // Y la forma del escenario, dicha desde las fechas y no desde un número: el hijo es el más
+  // antiguo de los dos que faltan, y el padre el más nuevo. Es lo que hace que `--reverse` y el
+  // mínimo discrepen, o sea la razón de ser del fichero entero.
+  assert.ok(epochDe(FECHAS.hijo) < epochDe(FECHAS.padre),
+    '🔴 el «hijo» ya no es más antiguo que el «padre»: el escenario ha dejado de reproducir el '
+    + 'defecto, y los casos de arriba pasarían sin medir nada.');
 });
