@@ -112,6 +112,11 @@ const CENSO = Object.freeze({
   //
   // El dia que el fundador firme los cuatro textos, esta entrada se BORRA — no se pone a 0.
   'jobAsignados.js': 1,
+  // 🔴 SCRUM-597 · 8-sep-2026 · `documentoAsignados.js` SALE: el fundador firmó los cinco
+  // rótulos («me parecen genial los rótulos»), registrados en
+  // `docs/microcopy/2026-09-08-SCRUM-597-quien-lleva-el-documento.md`. La entrada se BORRA, no
+  // se pone a 0 (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista ficheros CON marcadores, y
+  // el trinquete APRIETA. Un marcador censado sigue en pantalla; uno firmado desaparece.
   // 🔴 SCRUM-748 (4-sep-2026) · SUBIDA A CONCIENCIA: `invoicesView.js` ENTRA con 1.
   //
   // La bandeja de pendientes decidía con `SEMAFORO_META[grupo.semaforo] || SEMAFORO_META.verde`,

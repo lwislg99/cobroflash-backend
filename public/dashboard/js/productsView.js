@@ -229,6 +229,30 @@ function renderProductsView(container) {
     // se llevaría un 403 después de haber hecho el trabajo. Se VETA en vez de ocultar —helpers de
     // SCRUM-89, con su copy ya aprobada— porque un botón que desaparece no explica nada y quien
     // lo busque pensará que la pantalla está rota.
+  /**
+   * SCRUM-597 (DOC-07 · P-DOC-3) · QUITA «Coste» y «Margen %» A QUIEN NO LOS VE.
+   *
+   * 🔴 La ocultación de verdad la hace el SERVIDOR: `GET /admin/products` ya no manda `cost` a un
+   * técnico, así que aunque esta función no existiera el dato no llegaría. Esto es lo otro que hay
+   * que hacer: no dejar la pantalla rota. Sin ello, al técnico se le pintarían dos campos
+   * permanentemente vacíos que además, si los rellenara, el servidor ignoraría — y un control que
+   * no hace nada es peor que ninguno (norma de SCRUM-89).
+   *
+   * Se BORRAN los dos `.field` enteros, con su rótulo: esconder sólo el input dejaría un «Coste»
+   * suelto encima de la nada. Y se hace ANTES de cablear el margen, porque `cablearMargen` exige
+   * los tres campos y con dos de ellos fuera no hay nada que cablear.
+   */
+  function retirarEconomiaSiNoLaVe(raiz) {
+    if (window.veoEconomia && window.veoEconomia()) return false;
+    ['cost', 'margen'].forEach(function (nombre) {
+      const campo = raiz.querySelector('[name="' + nombre + '"]');
+      const caja = campo && campo.closest ? campo.closest('.field') : null;
+      if (caja && caja.parentNode) caja.parentNode.removeChild(caja);
+      else if (campo && campo.parentNode) campo.parentNode.removeChild(campo);
+    });
+    return true;
+  }
+
     const esTecnico = window.appUserRole === 'tecnico';
     if (esTecnico) {
       lockActionForRole(exportBtn);
@@ -313,11 +337,15 @@ function renderProductsView(container) {
           ov.querySelector('.modal').prepend(cabeceraModal({ titulo: "Editar producto", idCierre: "pf-edit-close" }));
           document.body.appendChild(ov);
 
-          cablearMargen(
-            ov.querySelector('[name="cost"]'),
-            ov.querySelector('[name="price"]'),
-            ov.querySelector('[name="margen"]'),
-          );
+          // SCRUM-597 · si esta sesión no ve economía los dos campos se van, y no se cablea nada:
+          // `cablearMargen` necesita los tres y aquí sólo queda el precio.
+          if (!retirarEconomiaSiNoLaVe(ov)) {
+            cablearMargen(
+              ov.querySelector('[name="cost"]'),
+              ov.querySelector('[name="price"]'),
+              ov.querySelector('[name="margen"]'),
+            );
+          }
           _editSwitch = cablearTipoArticulo(ov, ov.querySelector('.quote-form-row'), null);
           ov.querySelector('#pf-edit-close').addEventListener('click', closeEditModal);
           ov.querySelector('#pf-edit-cancel').addEventListener('click', closeEditModal);
@@ -328,7 +356,10 @@ function renderProductsView(container) {
             const body = ov.querySelector('.modal-body');
             const name = body.querySelector('[name="name"]').value.trim();
             const price = Number(body.querySelector('[name="price"]').value);
-            const costRaw = body.querySelector('[name="cost"]').value.trim();
+            // SCRUM-597 · el campo puede NO EXISTIR (sesión que no ve economía). Entonces la clave
+            // no viaja, y el servidor además la ignora por rol: dos puertas, no una.
+            const campoCoste = body.querySelector('[name="cost"]');
+            const costRaw = campoCoste ? campoCoste.value.trim() : null;
             const providerRaw = body.querySelector('[name="providerId"]').value.trim();
             const description = body.querySelector('[name="description"]').value.trim();
 
@@ -342,7 +373,7 @@ function renderProductsView(container) {
               // SCRUM-609 · la EDICIÓN tampoco escribe ya el IVA. No se manda `vat: null` —eso
               // BORRARÍA el que hay al guardar cualquier otro cambio—: simplemente no viaja, y
               // `updateProduct` sólo toca las claves presentes. Dejar de escribir ≠ borrar.
-              cost: costRaw === '' ? null : Number(costRaw),
+              cost: costRaw === null ? undefined : (costRaw === '' ? null : Number(costRaw)),
               providerId: providerRaw === '' ? null : Number(providerRaw),
               // SCRUM-609 · el lado elegido. Viaja SIEMPRE (aunque sea null) porque el PUT
               // sólo toca las claves presentes: si no viajara, no se podría volver a «sin
@@ -380,15 +411,20 @@ function renderProductsView(container) {
           const body = editOverlay.querySelector('.modal-body');
           body.querySelector('[name="name"]').value = it.name || '';
           body.querySelector('[name="price"]').value = it.price ?? '';
-          body.querySelector('[name="cost"]').value = it.cost === null ? '' : String(it.cost);
+          // SCRUM-597 · con los campos retirados no hay nada que rellenar ni margen que pintar.
+          const _coste = body.querySelector('[name="cost"]');
+          const _margen = body.querySelector('[name="margen"]');
+          if (_coste && _margen) {
+          _coste.value = it.cost === null ? '' : String(it.cost);
           // SCRUM-609 · el margen NO se guarda: se DERIVA de coste y precio. Si no hay coste no
           // hay margen que enseñar, y el campo se queda vacío — que es «no se sabe», no 0.
           const mg = window.margenCatalogo.margenDesde(it.cost, it.price);
-          body.querySelector('[name="margen"]').value = mg === null ? '' : String(mg);
+          _margen.value = mg === null ? '' : String(mg);
           // SCRUM-764 · al ABRIR. `cablearMargen` sólo pinta cuando alguien teclea, y aquí el
           // valor lo escribe la vista: sin esta línea, el artículo que ya está por debajo del
           // coste se abriría en negro y no se enseñaría hasta tocar un campo.
-          pintarMargen(body.querySelector('[name="margen"]'));
+          pintarMargen(_margen);
+          }
           body.querySelector('[name="description"]').value = it.description || '';
 
           // SCRUM-609 · EL LADO GUARDADO MANDA AL ABRIR, y esto es lo que hace que el switch
@@ -507,6 +543,8 @@ function renderProductsView(container) {
   
     const nameI = form.querySelector('input[name="name"]');
     const priceI = form.querySelector('input[name="price"]');
+    // SCRUM-597 · fuera los dos campos si esta sesión no ve economía. ANTES de leerlos.
+    retirarEconomiaSiNoLaVe(form);
     // SCRUM-609: el campo de IVA ya no existe en el alta. Entra el de margen.
     const margenI = form.querySelector('input[name="margen"]');
 
