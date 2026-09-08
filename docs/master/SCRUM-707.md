@@ -123,3 +123,102 @@ Si prefieres otra redacción, la aplico tal cual la firmes. **Hasta entonces no 
 
 `patronDetalleAcciones.js` · las dos vistas de detalle · `prisma/schema.prisma` · ningún rótulo ·
 el camino de emisión.
+
+
+---
+
+# SCRUM-707b · Aplicado: se oculta y se dice
+
+**Medido contra:** `origin/main` = `f0ec26e86a04a21e9e60b748b4c7c5c2c83bace9` · 2026-09-08T09:13:26+02:00
+**Rama:** `scrum-707-estado-no-contemplado`
+
+> El fundador aprobó **(c)** y firmó el rótulo tal cual. Esta entrada continúa la de arriba, que es
+> la medición que lo decidió.
+
+---
+
+## 1 · Lo aplicado
+
+**① La ley deja de devolver `undefined`.** `destinoEfectivo` devuelve `'oculta'` — uno de los cinco
+DESTINOS, que **los dos consumidores ya trataban** (`continue` en el albarán, `return` en la
+factura). No hubo que enseñarles nada, y no necesitaba rótulo.
+
+**② La pantalla lo dice**, con el texto firmado el 8-sep-2026 y registrado en
+`docs/microcopy/2026-09-08-SCRUM-707-estado-no-reconocido.md`:
+
+> No reconocemos el estado de este documento — no podemos ofrecerte acciones aquí.
+
+**③ Y distingue los dos casos.** `estadoReconocido(registro, estado)` pregunta a **las propias
+acciones**, no a una lista aparte — una lista aparte sería la quinta mantenida a mano de este árbol
+y ya sabemos cómo acaban (SCRUM-821).
+
+⚠️ **El aviso NO se dispara por «cero botones».** Una factura `annulled` ofrece dos acciones y
+podría ofrecer cero mañana sin que eso signifique que no la entendemos. Si se disparara por lista
+vacía saldría en documentos correctos, y en dos días nadie lo leería.
+
+## 2 · Verificación
+
+| | |
+|---|---|
+| 🔴 **el rojo** | `rectificada`, `draft` y `''` dejan de lanzar en los **dos** consumidores. Revirtiendo la línea del arreglo caen 2 tests |
+| ✅ **positivo** | `pending` sigue a secundaria, **0/9 `undefined`**, y ofrece **las mismas seis** |
+| ✅ **positivo (2)** | los **siete** estados conocidos ofrecen exactamente lo de antes — **enumerado, no contado** (SCRUM-727) |
+| ✅ **negativo** | **cero** acciones con un estado no contemplado, y las **siete vetadas** comprobadas **por nombre**: `btnAnular`, `btnBizum`, `btnFacturar`, `btnConvertirFactura`, `btnEmitir`, `btnEnviarFirmar`, `btnFirmarAqui` |
+| ✅ **el aviso** | sale con el estado no reconocido y **no** con `annulled`, que se reconoce y ofrece dos. El caso que separa los dos hechos está fijado con su suelo |
+
+Y la clase del aviso nace **con su regla en la hoja**: una clase pintada sin regla se ve desnuda, y
+eso lo caza `scrum666b`.
+
+## 3 · 🔴 Y TENÍA VÍCTIMA: la pantalla del albarán llevaba meses sin montarse por esto
+
+Al correr la tanda, `scrum698` se puso rojo con un cambio que YO no esperaba: **sale
+`renderAlbaranDetailView` de la lista de «vistas que necesitan datos para montarse»**.
+
+Medido quitando y poniendo la línea del arreglo:
+
+```
+sin el arreglo → Cannot read properties of undefined (reading 'push')
+con el arreglo → monta, 23 nodos
+```
+
+**Nunca necesitó datos: reventaba.** Sin `alb.estado`, `destinoEfectivo` devolvía `undefined` y
+`cubos[undefined].push(...)` lanzaba — el defecto de este ticket, exactamente.
+
+> 🔒 La pantalla llevaba tiempo clasificada como «le faltan datos», que suena a limitación del
+> banco, cuando lo que tenía era un defecto de producto. **Una lista de excepciones sin la CAUSA al
+> lado convierte un fallo en una característica.**
+
+Y corrige mi propio informe de arriba: dije que el disparador «no lo produce nuestro código hoy».
+Es cierto para los estados que ESCRIBIMOS — y falso para el estado AUSENTE, que es el caso que el
+banco venía pisando cada día sin que nadie lo leyera como tal.
+
+## 3 · 📌 La puerta sin cerradura — declarada, sin ticket
+
+**No abre ticket, y queda escrito para que no parezca que se ignora.**
+
+`Invoice.status` y `Albaran.estado` son **`String` a secas**, con `@default` y sin restricción:
+
+```prisma
+status  String  @default("pending")     // Invoice
+estado  String  @default("borrador")    // Albaran
+```
+
+**El esquema entero tiene CERO enums.** La máquina de estados de la Parte L es una convención del
+código, no una propiedad del dato: un SQL a mano, un backfill o una migración pueden dejar
+cualquier cadena ahí.
+
+**Pero no hay víctima.** Barrido el **8-sep-2026** sobre **275 ficheros de `src/`**, acotando a
+`prisma.invoice.*` y `prisma.albaran.*`: lo único que el producto escribe es **`paid`**, **`emitido`**
+y **`firmado`**, los tres declarados. **Nada de lo que escribimos cae fuera del registro.**
+
+> 🔒 Poner enums en tres bases vivas es el orden ①→②→③ entero. Sin víctima, no se paga por algo
+> hipotético — y ahora la pantalla ya no revienta si aparece.
+
+**El día que salga un estado raro, el sitio donde mirar es éste**, y la medición que dice que hoy no
+lo producimos lleva fecha y alcance. Si alguien encuentra uno, esta entrada es la que hay que
+releer: lo que cambió no es el riesgo, es que apareció la víctima.
+
+## ⛔ No tocado
+
+`prisma/schema.prisma` · el camino de emisión · los registros de acciones (sus tablas siguen
+igual) · ningún otro rótulo · ni un `style=` en línea nuevo.

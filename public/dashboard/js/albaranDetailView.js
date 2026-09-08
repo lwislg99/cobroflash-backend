@@ -641,6 +641,32 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
       alb.modoValoracion !== 'VALORADO' && !!alb.quote && alb.estadoFacturacion !== 'facturado',
   };
 
+
+  /**
+   * 🔴 SCRUM-707 · EL ESTADO QUE NO RECONOCEMOS SE DICE, NO SE CALLA.
+   *
+   * Con un estado que la tabla no contempla, `destinoEfectivo` devuelve ahora `'oculta'` para
+   * todas las acciones: cero botones y cero TypeError. Pero cero botones **en silencio** no se
+   * distingue de un documento que legítimamente no admite nada — una factura `annulled` ofrece
+   * dos y podría ofrecer cero mañana. Son dos hechos distintos.
+   *
+   * ⚠️ Sólo cuando el estado NO está en la tabla (`estadoReconocido`), nunca por tener la lista
+   * de acciones vacía: si se disparara por «cero botones», saldría en documentos correctos y en
+   * dos días nadie lo leería.
+   *
+   * ✅ Texto APROBADO por el fundador el 8-sep-2026 (regla 30), en
+   * `docs/microcopy/2026-09-08-SCRUM-707-estado-no-reconocido.md`. LITERAL.
+   */
+  function avisoEstadoNoReconocido(doc, registro, estado) {
+    if (typeof window.estadoReconocido !== 'function') return;
+    if (window.estadoReconocido(registro, estado)) return;
+    const p = doc.createElement('p');
+    p.className = 'detail-estado-desconocido';
+    p.dataset.estadoDesconocido = '1';
+    p.textContent = 'No reconocemos el estado de este documento — no podemos ofrecerte acciones aquí.';
+    return p;
+  }
+
   const cubos = { primaria: [], secundaria: [], overflow: [] };
   for (const accion of (window.ALBARAN_ACTION_REGISTRY || [])) {
     const destino = window.destinoEfectivo(accion, alb.estado, ctx);
@@ -652,6 +678,8 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
       : (destino === 'secundaria' ? 'btn-secondary btn-sm' : 'btn-ghost btn-sm');
     cubos[destino].push(b);
   }
+  const avisoA = avisoEstadoNoReconocido(document, window.ALBARAN_ACTION_REGISTRY || [], alb.estado);
+  if (avisoA) acts.appendChild(avisoA);
   for (const b of cubos.primaria) acts.appendChild(b);
   for (const b of cubos.secundaria) acts.appendChild(b);
   if (cubos.overflow.length) {
