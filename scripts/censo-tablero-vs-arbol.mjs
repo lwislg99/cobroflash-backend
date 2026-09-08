@@ -149,14 +149,37 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   // que salía después del `--json`) por la misma puerta.
   const rastro = rastroDeLosTickets({ raiz: RAIZ, traer: true });
   const rastroDe = (n) => (rastro.porTicket.get(n) || {}).rastro || RASTRO.SIN_RASTRO;
-  const soloRamaViva = (f) =>
-    f.fuentes.length === 1 && f.fuentes[0] === 'ramas' && rastroDe(f.numero) === RASTRO.EN_RAMA_VIVA;
 
-  // 🔴 CIEGO ≠ «no hay nada vivo». Aquí sólo entra `esCiego` —cero ramas remotas, o sea que no se ha
-  // mirado—. «Cero ramas VIVAS» es legítimo en un repo ordenado y tumbaba el CLI sobre la fixture
-  // sana de SCRUM-775: se AVISA abajo, no se convierte en exit 2. Un suelo que salta siempre se
-  // desactiva, y ése es justo el ticket que me lo cazó.
-  const noSeFia = p.ticketsCensados === 0 || suelo.length > 0 || esCiego(rastro.resumen);
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 SCRUM-804 · LA DIMENSIÓN NO ES DUEÑA DEL `exit` DEL CENSO, Y ESO SE APRENDIÓ CAYENDO
+  //
+  // Aquí puse `|| esCiego(rastro.resumen)` dentro de `noSeFia`, y el meta-guard salió **MUDO**:
+  //
+  //     scrum775 · el guard NO cayó. Test que debía ponerse rojo:
+  //     «SCRUM-775 · 🔴 EL QUE DECIDE: con el censo encogido el CLI sale con 2 y DICE por qué»
+  //
+  // Medido provocándolo (mutación ① aplicada a mano, test corrido, fuente restaurado byte a byte):
+  // con el término de `suelo` neutralizado, el CLI **seguía saliendo con 2** sobre el árbol
+  // encogido, porque MI término ya lo ponía a `true` por su cuenta. O sea que el fallo del suelo
+  // AJENO había dejado de ser observable: **dos condiciones independientes compartiendo un solo
+  // `exit` hacen incazable una mutación sobre cualquiera de las dos.**
+  //
+  // ⛔ NO se arregla relajando el suelo de SCRUM-775 —ése chilla bien— sino devolviéndole la
+  // propiedad de su decisión: `noSeFia` vuelve a ser SÓLO del censo, exactamente como estaba.
+  //
+  // ¿Y qué pasa cuando MI dimensión no se puede medir? Que no se imprime su lista. Es la salida
+  // honesta y además la única segura: una lista vacía y una lista no medida se leen igual, así
+  // que no se enseña ninguna. Matar el informe entero —incluida la propuesta del censo, que sí se
+  // pudo medir— por una sección que no, era desproporcionado; y encima cegaba a otro guard.
+  const ramasFiables = !esCiego(rastro.resumen);
+
+  // 🔴 Y SI NO ES FIABLE, NO FILTRA. Retirar filas de la propuesta usando una dimensión que no se
+  // ha podido medir es dejar caer tickets en silencio — el mismo defecto que este censo persigue,
+  // cometido con la pieza nueva.
+  const soloRamaViva = (f) => ramasFiables
+    && f.fuentes.length === 1 && f.fuentes[0] === 'ramas' && rastroDe(f.numero) === RASTRO.EN_RAMA_VIVA;
+
+  const noSeFia = p.ticketsCensados === 0 || suelo.length > 0;
 
   if (process.argv.includes('--json')) {
     const filas = censo.filas.map((f) => ({
@@ -167,6 +190,10 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     console.log(JSON.stringify({
       ...censo, filas, suelo, sueloRamaViva: rastro.suelo, ramas: rastro.resumen,
       shaMedido: rastro.inst.sha, fiable: !noSeFia,
+      // Dos banderas y no una: `fiable` es del CENSO y `ramasFiables` de la DIMENSIÓN. Un
+      // programa tiene que poder saber que el censo se midió y la dimensión no — con una sola
+      // bandera tendría que elegir entre tirar todo o creerse la mitad no medida.
+      ramasFiables,
     }, null, 2));
     process.exit(noSeFia ? 2 : 0);
   }
@@ -244,6 +271,16 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   // como avería. La salvedad es parte del informe, no una queja del instrumento.
   for (const m of rastro.suelo) console.log(`⚠️  rama viva · ${m}`);
 
+  if (!ramasFiables) {
+    // 🔴 NO SE IMPRIME LISTA. Una lista vacía y una lista NO MEDIDA se leen exactamente igual, y
+    // la segunda dice lo contrario de lo que parece. El censo sí se pudo medir, así que su
+    // propuesta sigue abajo y el `exit` no cambia: lo que falta es esta sección, y se dice.
+    console.log('═══ 🔴 SCRUM-804 · EN RAMA VIVA · NO SE HA PODIDO MEDIR ═══');
+    for (const m of rastro.suelo) console.log(`    · ${m}`);
+    console.log('    No se enseña la lista a propósito: vacía y no-medida son el mismo texto y');
+    console.log('    significan lo contrario. El resto del informe sí está medido.\n');
+  } else {
+
   console.log('═══ 🔴 SCRUM-804 · EN RAMA VIVA · su trabajo NO está en `main` ═══');
   console.log('    Tienen rama en el remoto SIN MERGEAR y ninguna otra evidencia. El tablero puede');
   console.log('    decir que están por hacer y estar construidos enteros: es la otra mitad del');
@@ -259,6 +296,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     + `${rastro.resumen.vivas} ramas vivas de ${rastro.resumen.total} remotas.`);
   console.log('  ⚠️ Cuántos de ésos siguen ABIERTOS en el tablero NO se contesta aquí: este censo no');
   console.log('     lee Jira. Se cruza a mano, y así queda dicho de qué mitad responde cada uno.\n');
+  } // fin del `else` de `ramasFiables`
 
   console.log('═══ PROPUESTA · tienen trabajo suyo en `main` ═══');
   console.log('    Contrástalo con el tablero: si alguno figura como NO hecho, ahí está el desfase.');
