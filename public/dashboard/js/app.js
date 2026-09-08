@@ -461,7 +461,24 @@ async function initApp() {
   }
   const _origRender = renderView;
   window.renderAppView = function (view, opts) {
-    try { history.replaceState(null, '', '#' + view); } catch (_e) {}
+    // 🔴 SCRUM-819 · `pushState` PARA LO QUE SE PUEDE RECUPERAR; `replaceState` PARA LO DEMÁS.
+    //
+    // Antes era `replaceState` SIEMPRE, y eso no crea entrada de historial: medido, 17 clics =
+    // **0 entradas**, y «atrás» sacaba de la aplicación. Arreglar sólo el menú habría dejado la
+    // URL correcta y el botón de atrás igual de roto — son dos defectos, no uno.
+    //
+    // ⚠️ Y NO SE APILA TODO, a propósito. Sólo las vistas que el hash sabe RESTAURAR
+    // (`HASH_VIEWS`). Las de DETALLE no están ahí porque necesitan un id que el hash no lleva
+    // —ya lo dice la nota de arriba—, así que apilarlas daría un «atrás» que cambia la URL y no
+    // la pantalla: la incoherencia de hoy, del revés.
+    //
+    // Tampoco se apila navegar al sitio donde ya estás: pulsar dos veces el mismo botón del menú
+    // no puede obligar a dar dos veces atrás.
+    try {
+      const actual = (window.location.hash || '').replace('#', '');
+      const apilable = HASH_VIEWS.includes(view) && actual !== view;
+      history[apilable ? 'pushState' : 'replaceState'](null, '', '#' + view);
+    } catch (_e) {}
     return _origRender(view, opts);
   };
   window.addEventListener('hashchange', () => {
@@ -495,7 +512,16 @@ async function initApp() {
 
   // Clicks en el sidebar
   document.querySelectorAll('.nav-item[data-view]').forEach((btn) => {
-    btn.addEventListener('click', () => renderView(btn.dataset.view));
+    // 🔴 SCRUM-819 · POR EL ENVOLTORIO, NO POR `renderView` CRUDO.
+    //
+    // Aquí ponía `renderView(...)`, que pinta la vista y NO toca el hash. Medido pulsando los 17
+    // destinos en un navegador de verdad: **0 de 17** dejaban la URL diciendo dónde estabas, así
+    // que F5 te llevaba a otra pantalla y un enlace guardado abría la vista anterior.
+    //
+    // `window.renderAppView` —y no `renderView`— porque para cuando corre este `click` ya es el
+    // envoltorio: se reasigna arriba, después de declararse `HASH_VIEWS`. Llamar al crudo desde
+    // aquí era saltarse el único sitio que escribe la URL.
+    btn.addEventListener('click', () => window.renderAppView(btn.dataset.view));
   });
 
   // SCRUM-768: aquí vivía el «Submenú toggle». Le colgaba a `.nav-item-parent` un SEGUNDO
