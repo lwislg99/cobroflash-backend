@@ -2,7 +2,7 @@
 
 **Fecha:** 8-sep-2026 · **Rama:** `scrum-828-el-mensaje-que-manda-a-mirar-donde-no-es`
 
-**Medido contra:** `origin/main` = `61d14a15bd414116a69ed8f6a8f88367164bff65` · 2026-09-08T09:54:22+01:00
+**Medido contra:** `origin/main` = `da5ac06ac169fca5d3692a63b10b01a6aed7d3d6` · 2026-09-08T11:05:00+01:00
 
 > ⚠️ La entrega se hizo antes en `automerge-el-mensaje-que-manda-a-mirar-donde-no-es` @ `dd686572`,
 > cuando este ticket todavía no tenía número. La rama nueva sale de **esa misma punta**: no se
@@ -49,6 +49,23 @@ La cita de **A**, entera, porque es la que decide:
 > — GitHub Docs · REST API · *Troubleshooting the REST API*
 
 **El literal que salió en el #1181 es el A** — la única causa que el mensaje viejo no nombraba.
+
+### ✅ Y la causa A quedó CONFIRMADA EN EJECUCIÓN (run 25, PR #1196)
+
+Esto ya no descansa sólo en la documentación. La primera ejecución en modo COMPLETO lo midió:
+la App acuñó su token, pasó el control positivo, **abrió el PR** —y CI se disparó sobre él, que
+era toda la gracia de usar una App y no el `GITHUB_TOKEN`— **y aun así armar el auto-merge
+siguió fallando**. El permiso que faltaba era **`Contents: Read and write`**.
+
+🔴 **`Contents: Read` no basta**, y el porqué importa más que el dato: **armar el auto-merge es
+comprometer a GitHub a EMPUJAR un merge más tarde, y eso es escritura de contenido.** Y hay que
+subirlo **en los dos sitios**: el bloque `permissions:` del job **y** los permisos declarados de
+la App, porque el token de una App está acotado además por lo que la App declara.
+
+⚠️ Consecuencia, dicha porque cambia cómo se vigila esto: **con el permiso ya arreglado, la causa
+A puede no volver a salir nunca en un log real.** Eso es bueno —es lo que se buscaba— y a la vez
+deja el mensaje sin nadie que lo mire. Por eso el mensaje está fijado por TEST y no por haberlo
+visto salir una vez: **el log ya no lo va a cubrir**.
 
 ### 🔴 LOS DOS LÍMITES. Si se pierden, alguien volverá a ordenar por probabilidad
 
@@ -103,6 +120,44 @@ completo — y con uno que responde bien — verde y `exit 0`. Va en este orden:
 Cambiar a squash es **romper el instrumento con el que medimos si el trabajo existe**. La decisión
 es del fundador y va escrita.
 
+## 🔴 DOS DEFECTOS DISTINTOS, Y CADA MITAD ARREGLA EL SUYO
+
+Mientras esto se entregaba, `main` ganó `scripts/clasificar-fallo-automerge.mjs`. **No compiten:
+arreglan cosas distintas y ninguna sustituye a la otra.**
+
+| | el defecto | qué decide | cómo lo decide |
+|---|---|---|---|
+| **①** | **el rojo falso** — se pintaba de rojo CUALQUIER fallo al armar, incluido el PR en conflicto, que es una situación normal | **SI hay que gritar** | el **ESTADO** del PR, que es un enum |
+| **②** | **el diagnóstico ciego** — cuando sí había que gritar, el mensaje nombraba dos causas de tres y las ordenaba por una probabilidad que nadie midió | **QUÉ MIRAR** una vez decidido que se grita | los **LITERALES** de GitHub, comparados por quien lee |
+
+Y se ve mejor por lo que pasa si falta una:
+
+- **sin ①**, el mensaje bueno saldría también en los casos benignos. Un PR en conflicto es normal,
+  y llenarle el log de rutas de Settings es **el mismo rojo falso, sólo que más largo**: quien lo
+  lee dos veces deja de leerlo, y el día que haya avería de verdad ya no lo mira nadie.
+- **sin ②**, el clasificador acierta al gritar y a quien lo lee le sigue faltando dónde mirar.
+
+### Cómo quedó la unión, pieza por pieza
+
+**Se queda el clasificador de `main`, entero**, con las dos cosas que lo sostienen y que son
+mediciones, no precauciones:
+
+- **los reintentos de `mergeable`** — la doc de GitHub dice que `null` significa «todavía no lo
+  sé» y hay que volver a pedirlo; medido en vivo, **13 de 16 PR abiertos devolvían `null` a la
+  primera**. Sin reintentar, casi todo saldría `UNKNOWN` y el clasificador —que falla cerrado— lo
+  pintaría rojo por no saber;
+- **la nota del `bash -e`** — el clasificador va como condición de un `if` y eso NO es estilo:
+  GitHub corre los `run:` con `bash -e`, así que un `exit 1` suyo abortaría el paso **antes** de
+  poder leer su código, y todo saldría rojo. El arreglo quedaría inerte y con aspecto de
+  funcionar. Los comandos que son condición de un `if` están exentos de `-e`.
+
+**Se sustituye el mensaje de la rama de avería** —las tres líneas de «Dónde mirar, por orden»—
+por el de este ticket, entero.
+
+**Y una sola fuente del texto del error.** La captura de la respuesta de GitHub NO va en paralelo
+a la de `main`: el mensaje lee **el mismo `$RUNNER_TEMP/err.txt`** que ya alimentó al
+clasificador. Dos capturas del mismo texto son dos cosas que pueden divergir.
+
 ## El control
 
 `tests/pr-automatico-el-mensaje-del-automerge.test.mjs`, 6 casos.
@@ -116,6 +171,31 @@ del comentario esté en el fichero y NO en lo acotado—, así que si alguien ca
 **Ocho mutaciones, cada una verificada presente en el disco antes de correr, todas caen:** borrar
 cada una de las seis rutas de Settings, borrar una sola línea del aviso del squash, y devolver el
 texto viejo («dos causas probables»). **Control negativo:** tocar sólo un comentario no tumba nada.
+
+### 🔴 Y EL CONTROL DE LA JUNTA, que es lo que ninguna de las dos mitades prueba por su cuenta
+
+Cuatro casos más que **ejecutan el paso de verdad** —el guión que hay en el YAML, con el
+clasificador REAL delante y un `gh` de mentira que devuelve lo que se le diga—. No se simula la
+decisión: se corre.
+
+| caso | qué se inyecta | qué se exige |
+|---|---|---|
+| **avería** | error de permisos, PR en estado normal | exit **1** y el mensaje entero SALE |
+| **situación normal** | PR en conflicto (`CONFLICTING` / `DIRTY`) | exit **0** y el mensaje **NO** sale — pero sí dice por qué |
+| suelo | — | hay `bash`; si no, se declara CIEGO **en rojo**, nunca saltado (SCRUM-754) |
+| suelo del banco | una marca que no escribe nadie más | aparece en la salida, o el banco no está inyectando su `gh` y los dos casos de arriba miden otra cosa |
+
+Y sus dos mutaciones, en las dos direcciones:
+
+```
+N1 · se ignora el veredicto benigno  → el mensaje sale SIEMPRE
+     ✖ situación normal → NO sale el mensaje, exit 0
+       «un PR en CONFLICTO ha salido en rojo. Es una situación normal: pintarla de
+        avería fabrica el rojo falso que este ticket vino a quitar.»
+
+N2 · todo se considera benigno       → el mensaje NO sale NUNCA
+     ✖ AVERÍA → SALE el mensaje entero, exit 1
+```
 
 ## 🕳️ Hueco declarado
 

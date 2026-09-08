@@ -69,11 +69,39 @@
  * tests se han perdido y a decidirlo a la vista del número.
  *
  * ⚠️ CONFLICTO ENTRE RAMAS: **se queda el MÁS ALTO** (ver la cabecera).
+ *
+ * ── 🔴 SCRUM-708 (8-sep-2026) · SUBIDO DE 4798 A 6246, Y LO QUE SE APRENDIÓ SUBIÉNDOLO ──────
+ *
+ * Estuvo en 4798 desde el 2-sep-2026. El 8-sep-2026 la tanda daba 6246: margen +1448 ese día. Se
+ * podían perder mil cuatrocientos cuarenta y ocho tests y esto seguía verde. **Margen al declararlo
+ * hoy: 0.**
+ *
+ * Y lo caro no es que estuviera rancio: es que **la compensación elegida para que no lo estuviera
+ * era IMPRIMIR EL MARGEN** en cada ejecución — está escrito ahí arriba, «un suelo rancio tiene que
+ * verse sin que nadie vaya a buscarlo». Llevaba seis días imprimiéndolo en CI y nadie lo subió. Y
+ * el precedente que esa misma cabecera cita seguía igual el 8-sep-2026: el `SUELO_TOTAL` de
+ * `_evidencia-tanda.mjs`, con la tanda por encima de seis mil.
+ *
+ * 🔒 IMPRIMIR NO ES UN MECANISMO. Un dato que sólo sirve si alguien lo lee depende de que alguien
+ * se acuerde, que es justo lo que este número no podía permitirse.
+ *
+ * ── ✅ Y ESO YA NO DEPENDE DE QUE NADIE SE ACUERDE ──────────────────────────────────────────
+ * No por ESTE número, que volverá a envejecer: por el de al lado. SCRUM-708 conectó la población
+ * `tests-declarados` al registro de suelos DERIVADOS de SCRUM-810 (`scripts/_suelo-contra-main.mjs`,
+ * usado desde `tests/scrum810b-los-suelos-derivados.test.mjs`), que compara contra la **base de
+ * fusión con `main`** en vez de contra un número escrito: **no caduca**, porque main se mueve solo,
+ * y **habla a la PRIMERA pérdida** en vez de esperar a que el margen se agote.
+ *
+ * Los dos números tienen trabajos distintos y ninguno sobra:
+ *   · éste (declarado) → CEGUERA: un TAP a medias, una tanda que ni arrancó, media suite fuera.
+ *   · el derivado      → PÉRDIDA: esta rama trae menos tests que la base de la que salió.
+ *
+ * Que éste se vuelva a quedar corto ya no deja la vigilancia en nada. Súbelo igual cuando lo veas.
  */
-export const SUELO_TESTS = 4798;
+export const SUELO_TESTS = 6246;
 
 /** Contra qué se midió, para que el suelo no sea un número sin procedencia. */
-export const MEDIDO_CONTRA = 'origin/main = 80db312b · 2026-09-02';
+export const MEDIDO_CONTRA = 'origin/main = fd290d4a · 2026-09-08';
 
 export const SALIDA_POR_DEBAJO = 1;
 export const SALIDA_NO_SUPE_MIRAR = 2;
@@ -189,7 +217,10 @@ export function veredictoDelSuelo(textoTap, suelo = SUELO_TESTS) {
         + '     · ¿tu rama sale de un `main` ANTERIOR al que declaró este suelo? Entonces no falta\n'
         + '       nada: mezcla `main` y vuelve a mirar.\n'
         + '     · ¿se ha renombrado o movido un fichero de `tests/` y ya no casa con el patrón?\n'
-        + '       (ése es el único caso que este número ve y los ficheros mudos no.)\n'
+        + '       SCRUM-708: eso YA NO hay que deducirlo de este número. `scrum708-el-fichero-que-\n'
+        + '       no-corre` lo dice DIRECTAMENTE y nombra el fichero — cruza quién registra tests\n'
+        + '       (por AST) con el patrón que `npm test` expande de verdad. Si ese guard está en\n'
+        + '       verde, no es esto.\n'
         + '     · ¿se han borrado tests A PROPÓSITO? Entonces esto es correcto: BAJA el suelo\n'
         + '       conscientemente, en el mismo commit y diciendo cuántos y por qué.\n\n'
         + `   Suelo medido contra: ${MEDIDO_CONTRA}.`,

@@ -181,3 +181,139 @@ test('mensaje del auto-merge · 🔴 EL AVISO DEL SQUASH sigue entero', () => {
     + 'existe pasaría a contestar SIN MERGEAR para todo, siempre. No fallaría a gritos: daría '
     + 'una respuesta plausible y falsa, que es el peor modo de fallo que hay.');
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-828 · EL MENSAJE SOLO SALE CUANDO EL CLASIFICADOR DICE «AVERÍA»
+//
+// Aquí hay DOS defectos distintos y cada mitad arregla el suyo:
+//
+//   ① EL ROJO FALSO   → lo decide `scripts/clasificar-fallo-automerge.mjs` mirando el ESTADO
+//                       del PR. Dice SI hay que gritar.
+//   ② EL DIAGNÓSTICO  → lo dice el mensaje de arriba. Dice QUÉ MIRAR cuando ya se gritó.
+//
+// 🔴 Y ESTE CONTROL ES LA JUNTA ENTRE LOS DOS, que es lo que ninguno de los dos prueba por su
+// cuenta: **si el mensaje bueno sale también en los casos benignos, se ha vuelto a fabricar
+// ruido** — un PR en conflicto es una situación normal, y llenarle el log de rutas de Settings
+// es exactamente el rojo falso que ① vino a quitar, sólo que más largo.
+//
+// Se corre EL PASO DE VERDAD: el guión que hay en el YAML, con el clasificador REAL delante y un
+// `gh` de mentira que devuelve lo que se le diga. No se simula la decisión: se ejecuta.
+//
+// ⚠️ POR QUÉ HACE FALTA ESTE TEST Y NO BASTA CON MIRAR EL LOG. El permiso quedó arreglado en
+// `main` el 8-sep-2026 (run 25, PR #1196: `Contents: Read and write`), así que **la causa A puede
+// no volver a salir nunca en una ejecución real**. Eso es bueno, y a la vez deja el mensaje sin
+// nadie que lo mire: si se rompe, el log ya no lo va a delatar. Lo delata esto.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+import os from 'node:os';
+import { execFileSync } from 'node:child_process';
+
+/** El guión del paso, escrito a fichero para poder EJECUTARLO tal cual está en el YAML. */
+function bancoDelPaso({ error, vista }) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum828-'));
+
+  // Un `gh` de mentira: `pr merge` falla escribiendo en stderr lo que le digamos (que es por
+  // donde el paso lo captura), y `pr view` devuelve el estado que le digamos.
+  fs.writeFileSync(path.join(dir, 'gh'),
+    '#!/bin/bash\n'
+    + 'if [ "$1" = "pr" ] && [ "$2" = "merge" ]; then\n'
+    + '  printf "%s\\n" ' + JSON.stringify(error) + ' >&2\n'
+    + '  exit 1\n'
+    + 'fi\n'
+    + 'if [ "$1" = "pr" ] && [ "$2" = "view" ]; then\n'
+    + '  printf "%s\\n" ' + JSON.stringify(JSON.stringify(vista)) + '\n'
+    + '  exit 0\n'
+    + 'fi\n'
+    + 'exit 0\n');
+  fs.chmodSync(path.join(dir, 'gh'), 0o755);
+
+  fs.writeFileSync(path.join(dir, 'paso.sh'), guionDelPaso(texto, PASO));
+
+  // 🔴 EL PATH SE MONTA DENTRO DE BASH, no desde Node. En Windows, pasarle a `bash` un PATH con
+  // `C:\…` no lo entiende; calculando el directorio desde el propio script el envoltorio vale
+  // igual en el portátil y en el runner, que es donde tiene que valer.
+  fs.writeFileSync(path.join(dir, 'correr.sh'),
+    '#!/bin/bash\n'
+    + 'D="$(cd "$(dirname "$0")" && pwd)"\n'
+    + 'export PATH="$D:$PATH"\n'
+    + 'export RUNNER_TEMP="$D"\n'
+    + 'exec bash "$D/paso.sh"\n');
+
+  try {
+    const salida = execFileSync('bash', [path.join(dir, 'correr.sh')], {
+      cwd: RAIZ, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, NUM: '1181', MODO_COMPLETO: 'true' },
+    });
+    return { codigo: 0, salida };
+  } catch (e) {
+    return { codigo: e.status, salida: String(e.stdout || '') + String(e.stderr || '') };
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+/** Marcas del mensaje largo. Si aparecen, el mensaje se imprimió. */
+const MARCAS_DEL_MENSAJE = [
+  'LAS TRES CAUSAS',
+  'Settings > General > Pull Requests > Allow auto-merge',
+  'la salida NO es pasar a squash',
+];
+
+test('SCRUM-828 · 🔴 SUELO: hay `bash` y el banco puede correr el paso de verdad', () => {
+  // Si no hubiera `bash`, los dos casos de abajo no probarían nada y saldrían verdes por no
+  // haber mirado. Se declara CIEGO en rojo: un salto se cuenta como pasado (SCRUM-754).
+  let hay = false;
+  try { execFileSync('bash', ['--version'], { stdio: 'ignore' }); hay = true; } catch { hay = false; }
+  assert.ok(hay, '🔴 CIEGO: no hay `bash` en esta máquina, así que los dos casos de abajo no '
+    + 'pueden ejecutar el paso. No se saltan: se declara que no se ha mirado.');
+});
+
+test('SCRUM-828 · ✅ AVERÍA: el clasificador dice fallo real → SALE el mensaje entero, exit 1', () => {
+  // Permisos: el clasificador escala a rojo aunque el estado parezca cualquier cosa.
+  const r = bancoDelPaso({
+    error: 'GraphQL: Resource not accessible by integration (enablePullRequestAutoMerge)',
+    vista: { mergeable: 'MERGEABLE', mergeStateStatus: 'BLOCKED' },
+  });
+  assert.equal(r.codigo, 1,
+    '🔴 el paso no ha salido en rojo con un fallo de PERMISOS. El clasificador lo escala a '
+    + 'avería a propósito: fue la causa real del PR #1181.\n' + r.salida);
+  const faltan = MARCAS_DEL_MENSAJE.filter((m) => !r.salida.includes(m));
+  assert.deepEqual(faltan, [],
+    '🔴 se decidió que hay avería y el mensaje NO salió: falta ' + JSON.stringify(faltan)
+    + '.\nGritar sin decir dónde mirar es el diagnóstico ciego otra vez.\n' + r.salida);
+});
+
+test('SCRUM-828 · 🔴 EL CONTROL QUE IMPIDE FABRICAR RUIDO: situación normal → NO sale el mensaje, exit 0', () => {
+  // Un PR en conflicto no se puede armar, y eso es NORMAL. Ni rojo, ni parrafada.
+  const r = bancoDelPaso({
+    error: 'X GraphQL: Pull Request is in unmergeable state',
+    vista: { mergeable: 'CONFLICTING', mergeStateStatus: 'DIRTY' },
+  });
+  assert.equal(r.codigo, 0,
+    '🔴 un PR en CONFLICTO ha salido en rojo. Es una situación normal: pintarla de avería '
+    + 'fabrica el rojo falso que este ticket vino a quitar.\n' + r.salida);
+
+  const sobran = MARCAS_DEL_MENSAJE.filter((m) => r.salida.includes(m));
+  assert.deepEqual(sobran, [],
+    '🔴 EL MENSAJE LARGO HA SALIDO EN UN CASO BENIGNO: ' + JSON.stringify(sobran)
+    + '.\nEso es fabricar ruido otra vez, y del peor: rutas de Settings para un PR que solo '
+    + 'tiene un conflicto. Quien lo lea dos veces deja de leerlo, y el día que haya avería de '
+    + 'verdad el mensaje bueno ya no lo mira nadie.\n' + r.salida);
+
+  // Y SÍ dice lo que pasó: callar el motivo sería el otro extremo.
+  assert.match(r.salida, /NO ES UNA AVERÍA|es lo esperable/,
+    '🔴 sale en verde pero sin decir POR QUÉ no se armó. Un verde mudo no se puede auditar.\n'
+    + r.salida);
+});
+
+test('SCRUM-828 · 🔴 SUELO del banco: el `gh` de mentira se está usando de verdad', () => {
+  // Si el banco no lograra inyectar su `gh`, los dos casos de arriba medirían otra cosa: el
+  // paso llamaría al `gh` real (o a ninguno) y el veredicto no vendría del estado inyectado.
+  const r = bancoDelPaso({
+    error: 'MARCA-DEL-BANCO-QUE-NADIE-MAS-ESCRIBE',
+    vista: { mergeable: 'MERGEABLE', mergeStateStatus: 'BLOCKED' },
+  });
+  assert.match(r.salida, /MARCA-DEL-BANCO-QUE-NADIE-MAS-ESCRIBE/,
+    '🔴 CIEGO: el texto que el banco le puso a `gh` no aparece en la salida, así que el paso '
+    + 'no está leyendo el error inyectado. Los dos casos de arriba no prueban lo que dicen.\n'
+    + r.salida);
+});
