@@ -430,3 +430,79 @@ hermanas, y por eso la cifra va SIEMPRE con él.
 
 `_censo-alcanzabilidad.mjs` · `_censo-reparto.mjs` · `_censo-tickets.mjs` (el motor) · ninguna rama
 ajena · el tablero · ningún ticket cerrado. Sólo `ls-remote` y `merge-base`, lectura.
+
+
+---
+
+# APÉNDICE · 8-sep-2026 · SCRUM-804b · El caso INVERSO: trabajo vivo sobre tickets CERRADOS
+
+**Ancla:** `origin/main` = `15b42968cff2dffdeb1e4ec6ab6ed733b3908ce1`, congelado a las
+**2026-09-08T05:51:28Z**. Todo lo de abajo se mide contra ese objeto.
+**Tablero:** Jira **en vivo**, no la foto versionada (que llega hasta SCRUM-818).
+
+> ⛔ No se ha borrado ninguna rama, no se ha cerrado ni reabierto nada en Jira. Sólo `ls-remote`,
+> `merge-base`, `log` y lectura de Jira.
+
+## Población
+
+554 ramas remotas · **468 en `main`** · **86 vivas** · 0 indeterminadas.
+De las 86 vivas, 81 llevan número de ticket → **64 tickets**, de los cuales **54 están CERRADOS**.
+
+**69 ramas vivas cuelgan de esos 54 tickets cerrados.**
+
+## 🔴 El corte (a)/(b) que pedía el encargo — y por qué sale degenerado
+
+| | |
+| --- | --- |
+| **(a)** rama viva con **0** commits por delante | **0** |
+| **(b)** rama viva **CON** commits por delante | **69**, sobre 54 tickets |
+
+**(a) es cero POR CONSTRUCCIÓN, y conviene decirlo antes de que parezca un hallazgo.** Una rama
+con 0 commits por delante de `main` es, por definición, alcanzable desde `main` — o sea, el
+clasificador la llama `en-main` y no `viva`. El «residuo que se borra y ya» **no vive en la lista
+de vivas: son las 468 refs `en-main`**, que es donde hay que ir a limpiar.
+
+Y no es una deducción de sobremesa: se midió. **Cero ramas vivas con `+0`** en toda la población,
+que es justo la coherencia que el árbitro del guard exige (`viva` ⟹ adelanto ≥ 1).
+
+## ⚠️ Lo que este censo NO puede afirmar, y sin esto la lista se lee mal
+
+`merge-base --is-ancestor` mide **ASCENDENCIA, no CONTENIDO**. Una rama mergeada por *squash* o
+reescrita por *rebase* mete su contenido en `main` con SHAs distintos: por ascendencia sigue
+«viva», y su trabajo está dentro. Así que **de estas 69 no se puede decir «hay 69 trabajos
+perdidos»** — se puede decir que hay 69 puntas de rama que `main` no alcanza.
+
+Tres señales, medidas, que separan el grano:
+
+| señal | ramas |
+| --- | --- |
+| llevan el sufijo `-rebasada` / `-rebasada-N` (la convención de re-empuje de la casa) | **12** |
+| su ticket tiene **además** otra rama YA EN `main` → el trabajo entró plausiblemente por ella | **35** |
+| 🔴 su ticket **no tiene NINGUNA rama en `main`** | **34**, sobre **30 tickets** |
+
+**Los 30 del último grupo son la lista corta**, y son éstos:
+
+`37 · 38 · 161 · 166 · 172 · 198 · 215 · 216 · 222 · 223 · 224 · 234 · 240 · 253 · 255 · 268 ·
+270 · 275 · 309 · 312 · 329 · 340 · 381 · 390 · 397 · 412 · 440 · 566 · 606 · 683`
+
+Aun así, «sin rama hermana en `main`» **tampoco prueba** que el trabajo falte: pudo entrar por un
+commit directo o por un PR cuya rama se borró (medido en SCRUM-637 con `scrum-653-dos-firmas`).
+**Lo que zanjaría la pregunta es una comparación por CONTENIDO** —`git cherry` / patch-id, que
+marca los commits cuya versión equivalente ya está en `main`—. No se ha corrido: queda fuera de
+las herramientas que este encargo autorizaba, y es el paso siguiente natural.
+
+## La tabla — 69 ramas, 54 tickets cerrados, la más antigua primero
+
+Reparto por mes del último commit: **julio 15 · agosto 44 · septiembre 10**.
+Las cinco con más trabajo fuera: SCRUM-205 (+7) · SCRUM-300 (+7) · SCRUM-368 (+6) ·
+SCRUM-475 (+6) · SCRUM-37 (+5).
+
+*(La tabla completa, con ticket, título, rama, `+main`, fecha y autor, se entregó en el parte de
+la sesión; se resume aquí por los cortes que la hacen accionable.)*
+
+## Lo que esto sugiere hacer, sin hacerlo
+
+1. **Las 468 refs `en-main`** son el residuo de verdad: se borran sin pensar. `ls-remote` dice que
+   más de cuatro de cada cinco ramas del remoto ya están dentro.
+2. **Los 30 tickets sin hermana en `main`** merecen una pasada por contenido antes de tocar nada.
+3. **Nada de esto cierra ni reabre un ticket.** El tablero lo lleva el asesor.
