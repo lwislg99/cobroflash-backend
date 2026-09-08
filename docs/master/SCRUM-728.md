@@ -745,3 +745,195 @@ importa. Pero pierde cobertura en CI, y ese cambio de trato **no lo decide una s
 * **No sé qué hacían las otras cinco sesiones** mientras medía contra dev, que es compartida.
 * **`FOR UPDATE` dentro de un CTE** lo sostengo por medición contra este Postgres, no por haber
   leído la garantía en la especificación.
+
+---
+
+# APÉNDICE · 8-sep-2026 · SCRUM-728d · LA FACTURA NO HACE CINCO VIAJES
+
+**Medido contra:** `origin/main` = `ae9292df` · 8-sep-2026
+**Rama:** `scrum-728d-los-viajes-de-la-factura`, nacida de `main`.
+
+**Alcance:** medir. **Cero ficheros de `src/` y de `prisma/`.** El arreglo cae dentro de
+`invoiceNumber.service.ts`, que es camino de emisión fiscal: se declara y **se para** (AA1.4).
+
+---
+
+## D0 · OBLIGACIÓN 0
+
+`git ls-remote --heads origin` filtrado por `728`: tres ramas —`scrum-728-cerrojo-de-serie`,
+`scrum-728b-reserva-en-un-viaje`, `scrum-728c-adoptar-el-candidato`—, **las tres MERGEADAS** por
+`git merge-base --is-ancestor`. Ningún worktree con 728. Nadie vivo.
+
+---
+
+## D1 · 🔴 EL NÚMERO DEL TICKET ES DE OTRA COSA
+
+El ticket dimensiona con **«880 ms = 5 viajes × 175 ms»**. Ese desglose es de
+`allocateAlbaranNumber` — la fase A lo escribe entero: *«los cinco son `BEGIN` +
+`pg_advisory_xact_lock` + `findUnique` + `update` + `COMMIT`»*. Y **§C5 lo declara como hueco**:
+*«Sólo albaranes. No he medido `allocateInvoiceNumber` ni `allocateQuoteNumber`».*
+
+**Medido ahora, en EJECUCIÓN** (`tests/_viajes-de-la-reserva.mjs`: se le pasa a la reserva un
+`tx` doble que apunta cada llamada; el servicio se ejecuta de verdad, no se lee):
+
+| camino | viajes de la reserva | **transacción completa** | dentro del cerrojo |
+|---|---|---|---|
+| albarán *(lo que midió el ticket)* | 5 | — | 4 |
+| **justificante** — el ES real de HOY | 6 | **7** | 6 |
+| **factura F1** | 7 | **8** | 7 |
+| rectificativa R1 | 6 | 7 | 6 |
+
+### **La emisión de una factura cuesta 8 viajes, no 5. Un 60 % más de lo dimensionado.**
+
+Por qué no se cuentan leyendo el fichero: hay tres ramas que hacen consultas distintas, y un
+`await` dentro de un `if` no es un viaje hasta que ese `if` se cumple. El doble ejecuta el camino.
+
+> ⚠️ **Trampa del fixture, y costó una medición:** con `id: 1` el merchant es el DEMO (regla 8) y
+> `getEmissionMode` devuelve `demo`, no `receipt`. El primer intento midió el camino fiscal
+> creyendo medir el del profesional español. Los fixtures van con ids lejos del 1, y dicho aquí.
+
+---
+
+## D2 · 🔴 EL RTT DECIDE SI ESTE DEFECTO EXISTE — y el encargo tenía razón
+
+La fase A verificó que el coste **es red casi entera**: 5 × 175,1 = 875,5 contra 878,0 medidos,
+**0,3 % de error**. Con esa relación ya validada y el conteo de arriba, el tamaño del defecto sale
+en función del RTT. **Esto es una PROYECCIÓN, no una medición** — va marcada como tal:
+
+| RTT | albarán (5) | justificante (7) | factura F1 (8) | 10 F1 simultáneas |
+|---|---|---|---|---|
+| **175 ms** *(la máquina que midió)* | 875 ms | 1.225 ms | 1.400 ms | **14,0 s** 🔴 |
+| 50 ms *(red normal)* | 250 | 350 | 400 | 4,0 s |
+| 10 ms *(misma región)* | 50 | 70 | 80 | 0,8 s ✅ |
+| 1 ms *(loopback)* | 5 | 7 | 8 | 0,08 s ✅ |
+
+### El umbral, que es el número que decide el ticket
+
+Con 10 simultáneas se cruza el timeout de 5 s **sólo si**:
+
+| camino | RTT a partir del cual falla |
+|---|---|
+| albarán | > 100,0 ms |
+| justificante | > 71,4 ms |
+| **factura F1** | **> 62,5 ms** |
+
+**Si SCRUM-826 tiene razón —aplicación y base las dos en US West—, el RTT real es de un dígito y
+este defecto NO REPRODUCE en producción: 10 simultáneas costarían ~0,8 s, no 5,2.** El ~5.200 ms
+del ticket sería un artefacto de la máquina que midió, igual que los 175 ms.
+
+**Pero el ticket no se cierra, y por dos motivos que el RTT no arregla:**
+
+1. **El margen es estrecho.** 62,5 ms no es una frontera cómoda: cualquier degradación de red, un
+   *cold start* o una base con más latencia lo cruza, y entonces falla la emisión — que es lo
+   único que no puede fallar.
+2. **Hay un viaje cuyo coste NO es constante** (abajo). Ése empeora solo, sin que cambie la red.
+
+---
+
+## D3 · 🔴 EL VIAJE QUE ESCALA CON LOS DATOS, dentro de la sección crítica
+
+`allocateInvoiceNumber` deriva la secuencia de la serie F **leyendo la serie F entera del año**:
+
+```ts
+const emitidas = await tx.invoice.findMany({
+  where: { merchantId, number: { startsWith: prefijoF } },
+  select: { number: true },
+});
+seq = siguienteSeqDeLaSerieF(emitidas.map((f) => f.number), year);
+```
+
+Trae **N filas** y las parsea en JS. Es la misma forma de defecto que la §4 del ticket encontró en
+la recapitulativa —una sección crítica cuyo coste depende de los datos mientras **el timeout de
+5 s no depende de nada**—, pero aquí no hace falta un bucle: basta con que el merchant facture.
+
+Un profesional con 800 facturas al año paga 800 filas **en cada emisión**, y las paga **dentro del
+cerrojo**, con todos los demás esperando detrás.
+
+---
+
+## D4 · ⛔ LA PREGUNTA DEL ENCARGO: «¿cuáles caben fuera?» — **ninguno, y por una razón de forma**
+
+El cerrojo es `pg_advisory_**xact**_lock`: **se libera en el COMMIT, no al salir de la función.**
+Así que la sección crítica no es «lo que hace la reserva», es **todo lo que pasa entre el cerrojo
+y el COMMIT** — incluido el `invoice.create` del llamador.
+
+| viaje | ¿cabe fuera del cerrojo? |
+|---|---|
+| `pg_advisory_xact_lock` | es el cerrojo |
+| `merchant.findUnique` | **no** — es el *read* del read-then-write |
+| `invoice.findMany` (serie F) | **no** — tiene que ser consistente con lo que se reserva |
+| `merchant.update` | **no** — es el *write* |
+| `auditLog.create` | **no puede**, aunque no compita: sacarlo del cerrojo es sacarlo de la transacción, y SCRUM-207 lo puso dentro a propósito (registro fiscal atómico) |
+| `invoice.create` (llamador) | **no** — misma razón |
+
+**Con un cerrojo de transacción, «sacar algo fuera del cerrojo» y «sacarlo de la transacción» son
+la misma operación.** No hay nada que mover sin tocar la semántica fiscal.
+
+**Quedan dos palancas, las dos DENTRO de `invoiceNumber.service.ts`:**
+
+1. **Fundir `findUnique` + `update` en un `UPDATE … RETURNING`** → **−1 viaje (8 → 7, −12 %)**. Es
+   el candidato que la fase B ya midió y la C dejó sin adoptar (para albaranes) por el guard de
+   SCRUM-306. Ese guard concreto **no aplica** a facturas —es de `resolveAlbaranSeq`—, **pero hay
+   otro que sí**: `scrum234-censo-reserva-serie` deriva por AST que toda escritura de
+   `next*Number` lleve cerrojo, y la reconoce como un `PropertyAssignment` de Prisma. Llevarla a
+   un `UPDATE … RETURNING` en SQL crudo **dejaría ese censo ciego sin que fallara**, que es el
+   mismo tropiezo de la fase C con otro nombre. Quien adopte la palanca 1 tiene que mirar 234
+   ANTES, no después.
+2. **Hacer constante el viaje que escala**: derivar la secuencia con un agregado en vez de traer N
+   filas. No quita un viaje, pero le quita la pendiente.
+
+**Las dos son modificar el camino de emisión fiscal ⇒ STOP. No se han hecho.**
+
+---
+
+## D5 · ⛔ LO QUE NO HE PODIDO MEDIR, y por qué
+
+**Los milisegundos contra base desechable local: NO MEDIDOS.** En esta máquina **no hay Postgres
+de ninguna forma** — comprobado: sin `docker`, sin `psql`, sin servicio Windows, sin binarios en
+`Program Files`, y nada escuchando en 5432/55432.
+
+**No se ha medido contra dev ni staging**, que además daría justo el número inflado que el
+encargo quiere descartar.
+
+Las dos vías, para decidir:
+
+1. **Instalar un Postgres local** (o Docker). Es software nuevo en la máquina del fundador: no se
+   hace sin permiso.
+2. **Medirlo en CI**, que ya levanta `postgres:16-alpine` en loopback y expone `LIBRO_PG_URL`
+   (`ci.yml`). Es la vía de la casa y no instala nada. **No he escrito ese test a ciegas**: con
+   auto-merge activo, un artefacto que no he visto correr no se empuja.
+
+---
+
+## D6 · Lo que se construye
+
+`tests/_viajes-de-la-reserva.mjs` + `tests/scrum728d-viajes-de-la-reserva.test.mjs` — **9 casos,
+sin base y sin gate**, así que vigilan en cada push:
+
+* el conteo por camino (7 · 8 · 7), que es lo que decide el tamaño del ticket;
+* que el cerrojo siga siendo **la primera** sentencia;
+* que **siga habiendo exactamente un** viaje que escala (si aparece otro, salta);
+* **ROJO probado:** añadir un viaje a la sección crítica sube el conteo y el guard cae. Se simula
+  con el doble **porque modificar el emisor es STOP**: el rojo no puede costar tocar el camino
+  fiscal.
+* **SUELO en rojo:** cero viajes, o el cerrojo en segunda posición, **lanzan** `CensoCiego` en vez
+  de dar verde — «no toca la base» y «no supe mirar» no salen por la misma puerta.
+
+**Los ms NO se asertan**, y es deliberado: dependen del RTT, y un guard de tiempos en CI es un
+rojo falso esperando a pasar. Se vigila lo estructural, que es lo que no depende de dónde se mida.
+
+---
+
+## D7 · Lo que NO se ha hecho
+
+* **Cero `src/`, cero `prisma/`.** `invoiceNumber.service.ts` se ha **leído** y se ha **llamado**
+  con un doble; no se ha modificado ni una firma (regla 38).
+* **No se ha subido el timeout** ni se ha tocado el cerrojo — las dos cosas que el encargo veta.
+* **No se ha medido contra producción ni staging.** Ninguna URL de base en `argv`, ningún `npx`.
+* **No se ha adoptado el candidato** de la fase B ni se ha tocado el guard de SCRUM-306.
+* **`allocateQuoteNumber` sigue sin medir** — el otro hueco de §C5.
+
+## Tests que introduce esta entrada
+
+* `tests/_viajes-de-la-reserva.mjs` — el contador de viajes por doble (helper).
+* `tests/scrum728d-viajes-de-la-reserva.test.mjs` — 9 casos.
