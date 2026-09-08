@@ -426,3 +426,84 @@ exactamente la condición que el CI reportó.
 Queda dicho para que nadie lo lea de más: la prueba de que el backend de Linux se comporta como el
 mudo la da el rojo del CI que originó esto; lo que aquí se prueba es que **con ese backend mudo el
 instrumento sigue contestando**.
+
+---
+
+# SCRUM-754c · Tercer defecto del mismo instrumento: un test SALTADO contaba como aprobado
+
+**Fecha:** 08-sep-2026 · **Carril:** instrumento · **Gate:** ninguno — no toca producto
+
+**Medido contra:** `origin/main` = `15fb3b2f179cb03221377198227a65abf2659acd` · 2026-09-08T01:59:28+01:00
+
+## El defecto, reproducido con sonda propia antes de tocar nada
+
+`node:test` (Node 24, medido el 8-sep-2026):
+
+| Declaración | Evento | `data.skip` |
+|---|---|---|
+| `test('…', { skip: 'sin QA_DB_TEST=1' }, …)` | **`test:pass`** | `"sin QA_DB_TEST=1"` |
+| `test('…', () => {…})` que pasa | `test:pass` | `undefined` |
+
+El bucle de eventos miraba **sólo `ev.type`**, así que un test que NO SE EJECUTÓ entraba en
+`pasados`. Y los tests gateados por `QA_DB_TEST` **no corren en el job del meta-guard, que corre
+sin base POR DISEÑO**: PUERTA 1 veía su test «en verde», abría, se mutaba, el test seguía sin
+correr, seguía «pasando», y el veredicto salía **MUDO** donde tenía que salir **CIEGO**.
+
+**«No pude mirar» y «miré y no cayó» son opuestos, y salían por la misma puerta.**
+
+## Lo arreglado
+
+1. **`test:pass` con `skip` deja de contar como aprobado**: va a un cubo propio, `saltados`, con su
+   motivo. Mezclarlo con `pasados` era el defecto entero.
+2. **PUERTA 1a**: si el test que la declaración nombra está saltado → **CIEGO**, nombrando el gate.
+   Va **antes** del mensaje genérico de PUERTA 1, que acusa de tres cosas —«el fichero no llegó a
+   ejecutarse, o ese test ya fallaba, o el nombre caducó»— y con un test saltado **ninguna es
+   cierta**. Mandar a alguien a buscar un fichero que no cargó cuando lo que pasa es que su test
+   está gateado es la falsa acusación de SCRUM-748/754 otra vez.
+
+⚠️ **Lo que NO se toca, y es una decisión medida:** `t.skip()` **dentro** del cuerpo no detiene la
+ejecución, así que si lo que sigue lanza sale `test:fail` (con `skip` puesto también). Un fallo es
+un fallo y sigue contando como caída: tratar ahí el `skip` como ceguera se tragaría rojos de
+verdad. Sólo se corrige el `test:pass`.
+
+## El censo — `npm run censo:gateados`
+
+**Ejecuta** los ficheros; no los lee. Un `{ skip: !ENABLED && … }` depende del entorno, y leerlo
+del fuente diría lo que el código *podría* hacer, no lo que hace en el job del meta-guard.
+
+**Medido el 8-sep-2026 sobre los 721 ficheros de `tests/`:**
+
+| | |
+|---|---|
+| ① **GATEADOS** — todos sus tests saltados | **48** |
+| ② **EXPUESTOS** — de ésos, los que además declaran mutaciones | **0** |
+
+Los dos números importan y no son el mismo. ① es la **superficie**: dónde un veredicto hueco
+*podría* emitirse. ② es dónde **se emite de verdad**.
+
+**Que ② sea cero hoy no hace decorativo al censo, y conviene decirlo sin adornar: el veredicto
+hueco no se estaba emitiendo sobre ningún guard.** Lo que había era la puerta abierta — bastaba
+que alguien declarase una mutación en uno de esos 48. Es un trinquete que se abre solo (patrón de
+SCRUM-537): el día que ② deje de ser cero, el censo se pone rojo sin que nadie tenga que acordarse.
+
+**Suelo:** si ① sale cero, el censo está roto y sale CIEGO. El árbol tiene tests gateados por
+`QA_DB_TEST`, `LIBRO_PG_URL`, `A55_DB_TEST` y `BOT_SUITE_TEST`; un cero ahí es «no he sabido ver
+los saltos», que es exactamente el defecto vigilado.
+
+## Verificación
+
+- 🔴 **CONTROL POSITIVO**: un fichero con TODOS sus tests saltados sale **CIEGO**, y el CIEGO
+  nombra el gate. **Probado en rojo con el código de antes**: revirtiendo la clasificación cae
+  exactamente ese caso y **sólo** ése.
+- ✅ **NEGATIVO**: un guard que corre de verdad y no cae **sigue saliendo MUDO**. Sin esto, «todo a
+  CIEGO» habría apagado el instrumento por el otro lado — el riesgo que ya identificó 754b.
+- 🔴 **SUELO y TRINQUETE del censo**, en la tanda normal (el recuento real cuesta como la suite).
+
+### Una trampa que costó un rojo y queda escrita
+
+La sonda del control positivo va en **subproceso** (`tests/_sonda-saltados.mjs`), y no por gusto:
+un `run()` de `node:test` **anidado** dentro de un test que ya corre **no entrega los eventos por
+test** — `saltados` y `pasados` llegan vacíos. Y hay un segundo escalón: `node --test` pone
+`NODE_TEST_CONTEXT` en el entorno, **el subproceso lo hereda**, y con esa variable puesta vuelve a
+no entregar. Se le limpia al hijo. Un caso que se hubiera conformado con ese vacío habría salido
+verde midiendo nada — dentro del arreglo de un instrumento que existe para no medir nada en falso.
