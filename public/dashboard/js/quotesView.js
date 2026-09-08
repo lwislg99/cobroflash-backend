@@ -4394,12 +4394,26 @@ if (Number.isFinite(n) && n >= 0) {
 
       let conceptForPdf = concept; // ✅ SIN truncar
 
+// 🔴 SCRUM-632c · `desc` SE DECLARA FUERA DEL `try`, Y ESO ES EL ARREGLO ENTERO.
+//
+// Estaba `const desc` DENTRO del bloque, y el spread que lo usa —`...(desc ? … : {})`— está
+// SESENTA líneas más abajo, FUERA. `const` es de bloque, así que cada línea válida de un
+// presupuesto lanzaba `ReferenceError: desc is not defined` y **crear presupuestos dejó de
+// funcionar en main**. Reproducido ejecutando la región sobre los bytes de `origin/main`.
+//
+// ⚠️ Y EL `catch` VACÍO ES LO QUE LO HIZO SILENCIOSO EN LA PANTALLA: no traga el ReferenceError
+// —ése nace fuera— pero sí tapaba cualquier fallo de la lectura, así que nadie miró aquí. No se
+// amplía: un `catch` que se traga más de lo que vigilaba es cómo este defecto llegó a main.
+//
+// El valor inicial `''` no es adorno: con él la clave NO viaja cuando no hay texto, que es
+// exactamente lo que hacía antes de romperse (ausente ≠ vacío, criterio de `costeUnitario`).
+let desc = '';
 try {
   const includeDesc = !!descCheck?.checked;
-  // 🔴 SCRUM-632 · SE LEE EL CAMPO DE LA LÍNEA, no el `dataset` del concepto. Ése era el
-  // defecto: colgada del concepto, se perdía al teclear. El `dataset` queda como respaldo para
-  // una línea que venga de un borrador anterior a este ticket y aún no tenga campo.
-  const desc = ((line.descInput && line.descInput.value)
+  // SCRUM-632 · SE LEE EL CAMPO DE LA LÍNEA, no el `dataset` del concepto. Ése era el defecto
+  // original: colgada del concepto, se perdía al teclear. El `dataset` queda como respaldo para
+  // una línea que venga de un borrador anterior a aquel ticket y aún no tenga campo.
+  desc = ((line.descInput && line.descInput.value)
     || line.conceptInput.dataset.pfProductDescription
     || line.conceptInput.dataset.pfProductDesc || "").trim();
 
