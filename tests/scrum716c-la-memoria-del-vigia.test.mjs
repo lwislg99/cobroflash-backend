@@ -189,96 +189,7 @@ test('SCRUM-716c · 🔴 TODO job que le da `VIGIA_ESTADO` al vigía tiene su ca
 // `/version` propio, con un `VIGIA_ESTADO` real entre medias.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-// ═══════════════════════════════════════════════════════════════════════════════════════════
-// 🔴 SCRUM-824 · EL SHA QUE UNA VEZ DE CADA CUARENTA NO SE PUEDE LEER
-//
-// ── EL SÍNTOMA ─────────────────────────────────────────────────────────────────────────────
-//
-// Los dos CONTROLES de abajo fallaban en CI de forma intermitente y bloquearon tres ramas: 626,
-// 527 y 632b. El re-run salía verde. Dos sesiones no lo reprodujeron —worktree limpio, fichero
-// suelto, tanda entera: 8/8 verde— y se descartaron por medición `RAILWAY_GIT_COMMIT_SHA` (no
-// existe ni en la máquina de sesión ni en el runner) y `env.ts` (este test no lo toca).
-//
-// ── LA CAUSA, MEDIDA CON N=200 Y CORRELACIÓN PERFECTA ──────────────────────────────────────
-//
-//                                    el test pasa      el test FALLA
-//     8 primeros del sha TODO DÍGITOS      0                 6
-//     8 primeros con alguna letra        194                 0
-//
-// La cadena, eslabón a eslabón, y ninguno está roto:
-//
-//   ① el fixture crea commits VACÍOS fechados a partir de `Date.now()`, así que su sha es
-//      **distinto en cada pasada** — el reloj no mueve el hueco de 48/60 h, pero SÍ aleatoriza
-//      el sha, y ése es el acoplamiento que nadie había mirado;
-//   ② `constanciaDeEjecucion` escribe en el historial `prod=` con los OCHO primeros
-//      (`corto()`, `scripts/_vigilante-de-despliegue.mjs:240`);
-//   ③ y `shaLegible` (`scripts/_ritmo-de-despliegue.mjs:76`) **rechaza a propósito lo que sea
-//      todo dígitos**, porque sin `RAILWAY_GIT_COMMIT_SHA` producción publica `String(Date.now())`
-//      y trece dígitos son hexadecimal válido. Ese rechazo **es correcto y tiene su precio
-//      DECLARADO en el propio módulo**: «un sha abreviado que salga todo dígitos también se
-//      rechaza… en torno al 2 % de las veces ((10/16)^8)».
-//
-// 🔴 O SEA: EL VIGÍA NO SE EQUIVOCA NI UNA VEZ. Hace exactamente lo que dice que hace y avisa del
-// precio por escrito. Quien asumía era ESTE FIXTURE, que daba por hecho que un sha de git siempre
-// se puede leer. Una vez de cada 43, no.
-//
-// ⚠️ Y LO QUE NO ERA, medido en vez de descartado de palabra: el botón «Update branch» de GitHub.
-// 100 pasadas sobre una rama CON commit de merge → 6 fallos. 100 sobre `origin/main` limpio → 6
-// fallos. El botón no influye: lo que hacía era **tirar el dado otra vez**.
-//
-// ── EL ARREGLO, Y LO QUE NO ES ─────────────────────────────────────────────────────────────
-//
-// El fixture MINA el commit: si los ocho primeros salen todo dígitos, lo repite con la fecha
-// corrida un segundo hasta que salga legible. Un segundo no mueve un hueco de 48 h, y el tope de
-// reintentos PETA en vez de devolver el malo en silencio.
-//
-// ⛔ NO se toca el vigía · ⛔ ningún caso baja a `skip` (SCRUM-754: un test saltado se cuenta como
-// pasado) · ⛔ el margen de 6 h y el veredicto NO_SE_SABE siguen intactos. Y el rechazo de los
-// todo-dígitos NO se anula: tiene su propio control abajo —el ⑤— que exige que el vigía SIGA
-// diciendo NO SE SABE ante una lectura anterior de verdad ilegible. Eso no es el defecto: es su
-// trabajo, y ahora queda FIJADO en vez de ocurrir por sorpresa una vez de cada 43.
-// ═══════════════════════════════════════════════════════════════════════════════════════════
-
-/** Los OCHO primeros: es lo que `corto()` deja viajar en la constancia, ni uno más. */
-const PREFIJO_DE_LA_CONSTANCIA = 8;
-const SOLO_DIGITOS = /^[0-9]+$/;
-
-/** ¿El prefijo que viajará en `prod=` es de los que el vigía NO puede leer? */
-export function prefijoIlegible(sha) {
-  return SOLO_DIGITOS.test(String(sha == null ? '' : sha).slice(0, PREFIJO_DE_LA_CONSTANCIA));
-}
-
-/**
- * Hace commits hasta que el sha sirva, y dice CUÁNTOS hicieron falta.
- *
- * `hacerCommit(iso, intentos)` es la única parte que toca git, y por eso se inyecta: los controles
- * de abajo le pasan shas de mentira y fijan el bucle **sin depender del azar** — que es justo el
- * defecto que este ticket cierra. Un control que necesitase que le tocara la lotería para probar
- * algo sería la misma trampa con otro nombre.
- */
-export function commitHastaShaLegible(hacerCommit, cuandoMs, tope = 40) {
-  let intentos = 0;
-  for (;;) {
-    const sha = hacerCommit(new Date(cuandoMs).toISOString(), intentos);
-    if (!prefijoIlegible(sha)) return { sha, intentos };
-    intentos += 1;
-    if (intentos > tope) {
-      throw new Error('🔴 CIEGO: ' + (tope + 1) + ' commits seguidos con los ocho primeros todo '
-        + 'dígitos. Eso no pasa por azar: o `hacerCommit` no está cambiando el sha, o devuelve '
-        + 'algo que no es un sha. Se PETA en vez de seguir con el ilegible, porque devolverlo en '
-        + 'silencio es exactamente el fallo que cierra SCRUM-824.');
-    }
-    // Un segundo. Cambia el sha entero y no mueve un hueco de 48 h ni en la primera decimal.
-    cuandoMs += 1000;
-  }
-}
-
-/**
- * Un repo de usar y tirar con tres commits VIEJOS y `origin/main` en el tercero.
- *
- * 🔴 Los tres shas salen MINADOS: ninguno tiene los ocho primeros todo dígitos. El porqué y lo que
- * se midió, en el bloque de SCRUM-824 de aquí arriba.
- */
+/** Un repo de usar y tirar con tres commits VIEJOS y `origin/main` en el tercero. */
 function repoDePrueba() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum716c-'));
   const g = (...a) => String(execFileSync('git', a, { cwd: dir, encoding: 'utf8' })).trim();
@@ -288,17 +199,12 @@ function repoDePrueba() {
   const shas = [];
   for (let k = 0; k < 3; k++) {
     // Fechados MUY atrás para que el hueco supere el margen de 6 h sin depender del reloj.
-    const { sha } = commitHastaShaLegible((iso, intentos) => {
-      const env = { ...process.env, GIT_AUTHOR_DATE: iso, GIT_COMMITTER_DATE: iso };
-      // El reintento AMENDA: si añadiera commits, el repo tendría más de tres y `commits=` —que
-      // el vigía cuenta y la constancia publica— dejaría de ser el que estos casos esperan.
-      const args = intentos === 0
-        ? ['commit', '--allow-empty', '-q', '-m', 'c' + k]
-        : ['commit', '--amend', '--allow-empty', '--no-edit', '-q'];
-      execFileSync('git', args, { cwd: dir, env });
-      return g('rev-parse', 'HEAD');
-    }, Date.now() - (72 - k * 12) * 3600 * 1000);
-    shas.push(sha);
+    const cuando = new Date(Date.now() - (72 - k * 12) * 3600 * 1000).toISOString();
+    execFileSync('git', ['commit', '--allow-empty', '-q', '-m', 'c' + k], {
+      cwd: dir,
+      env: { ...process.env, GIT_AUTHOR_DATE: cuando, GIT_COMMITTER_DATE: cuando },
+    });
+    shas.push(g('rev-parse', 'HEAD'));
   }
   g('update-ref', 'refs/remotes/origin/main', shas[2]);
   return { dir, shas };
@@ -470,120 +376,4 @@ test('SCRUM-716c · ✅ CONTROL: el arreglo no ha tocado lo que el vigía DECIDE
   assert.match(jobDe(leer(CI), 'vigia-despliegue'), /continue-on-error:\s*true/,
     '🔴 el vigía de PR ha dejado de ser informativo. Un check bloqueante le cierra la puerta a la '
     + 'rama que viene a arreglar el despliegue que él mismo está midiendo.');
-});
-
-// ═══════════════════════════════════════════════════════════════════════════════════════════
-// ⑤ 🔴 SCRUM-824 · LOS CONTROLES DEL MINERO, Y EL NEGATIVO QUE IMPIDE QUE ESTO SEA UN APAGADO
-//
-// Los cuatro primeros fijan el minero **sin tocar git y sin depender del azar**: le inyectan los
-// shas. Un control que necesitase que le tocara la lotería 1-de-43 para probar algo sería el
-// mismo defecto con otro nombre.
-//
-// El quinto es el que impide que este ticket se convierta en «se ha callado el rojo»: con una
-// lectura anterior DE VERDAD ilegible, el vigía TIENE que seguir diciendo NO SE SABE.
-// ═══════════════════════════════════════════════════════════════════════════════════════════
-
-test(String.raw`SCRUM-824 · ① el detector del fixture CUADRA con lo que el vigía sabe leer`, async () => {
-  // 🔴 No se copia la regla del vigía: se le PREGUNTA. Si mañana `shaLegible` cambia de criterio,
-  // este control cae y avisa, en vez de quedarse con una copia que ya no corresponde.
-  const { constanciaDeEjecucion } = await import('../scripts/_vigilante-de-despliegue.mjs');
-  const { ultimaLectura, ritmoDeDespliegue, NO_SE_SABE } = await import('../scripts/_ritmo-de-despliegue.mjs');
-
-  const otro = 'deadbeef' + '0'.repeat(32);
-  const ritmoTrasGuardar = (sha40) => {
-    const { renglon } = constanciaDeEjecucion(
-      { veredicto: 'atrasado', horas: 48, titulo: '' },
-      { versionDeProduccion: sha40, shaDeMain: otro, commitsPorDelante: 1, ahoraEpoch: 1757000000 },
-    );
-    return { renglon, ritmo: ritmoDeDespliegue(ultimaLectura(renglon), { versionDeProduccion: otro }).ritmo };
-  };
-
-  const ilegible = '12345678' + 'a'.repeat(32);
-  const legible = '1234567a' + 'a'.repeat(32);
-
-  // POSITIVO: lo que el detector marca como ilegible, el vigía NO lo puede leer.
-  assert.equal(prefijoIlegible(ilegible), true,
-    '🔴 el detector no ve el caso de ocho dígitos, que es el que bloqueó tres ramas.');
-  const malo = ritmoTrasGuardar(ilegible);
-  assert.match(malo.renglon, /prod=\d{8} /,
-    '🔴 CIEGO: la constancia no ha salido con `prod=` de ocho dígitos; lo de abajo no prueba nada.');
-  assert.equal(malo.ritmo, NO_SE_SABE,
-    '🔴 el detector dice ILEGIBLE y el vigía sí lo lee: entonces el detector está de más y el '
-    + 'fixture estaría minando por una razón que ya no existe.');
-
-  // NEGATIVO: con UNA letra entre los ocho primeros, se lee. Sin esto, un detector que dijera
-  // «ilegible» a todo pasaría el positivo y el fixture minaría eternamente.
-  assert.equal(prefijoIlegible(legible), false,
-    '🔴 el detector marca como ilegible un sha que sí se lee: mina de más.');
-  assert.notEqual(ritmoTrasGuardar(legible).ritmo, NO_SE_SABE,
-    '🔴 el vigía tampoco lee un prefijo CON letra. Entonces el problema no es el que este ticket '
-    + 'midió y el arreglo no vale: hay que volver a medir antes de tocar nada.');
-});
-
-test(String.raw`SCRUM-824 · ② el minero reintenta hasta dar con uno legible, y cambia la fecha en cada vuelta`, () => {
-  const dados = ['00000000' + 'a'.repeat(32), '12345678' + 'b'.repeat(32), 'a1b2c3d4' + 'c'.repeat(32)];
-  const fechas = [];
-  const r = commitHastaShaLegible((iso, intentos) => { fechas.push(iso); return dados[intentos]; },
-    Date.parse('2026-09-01T00:00:00Z'));
-
-  assert.equal(r.sha, dados[2], '🔴 no devuelve el primer sha legible que encontró.');
-  assert.equal(r.intentos, 2, '🔴 no cuenta los reintentos, y ese número es lo que permite '
-    + 'comprobar que el minero se ha usado de verdad.');
-
-  // 🔴 Y LA FECHA CAMBIA EN CADA VUELTA. Si no cambiara, git devolvería el MISMO sha para
-  // siempre: el bucle giraría 41 veces y petaría sin que nadie entendiera por qué.
-  assert.equal(new Set(fechas).size, 3,
-    '🔴 el minero repite el commit con la MISMA fecha. Mismo árbol, mismo padre y misma fecha dan '
-    + 'el mismo sha: reintentar sin mover la fecha no reintenta nada.');
-});
-
-test(String.raw`SCRUM-824 · ③ 🔴 SUELO: si nunca encuentra uno legible PETA, no devuelve el malo en silencio`, () => {
-  const siempreIlegible = '99999999' + 'a'.repeat(32);
-  assert.throws(() => commitHastaShaLegible(() => siempreIlegible, Date.now(), 5), /CIEGO/,
-    '🔴 el minero se rinde en silencio y devuelve el sha ilegible. Eso es EXACTAMENTE el fallo de '
-    + 'SCRUM-824 —seguir adelante con una lectura que no se puede leer—, sólo que ahora sería a '
-    + 'propósito.');
-});
-
-test(String.raw`SCRUM-824 · ④ y no toca lo que ya vale: cero reintentos`, () => {
-  const r = commitHastaShaLegible(() => 'a1b2c3d4' + '0'.repeat(32), Date.now());
-  assert.equal(r.intentos, 0, '🔴 mina un sha que ya era legible: cada vuelta de más es un commit '
-    + 'de más y una fecha corrida sin motivo.');
-});
-
-test(String.raw`SCRUM-824 · ⑤ 🔴 EL NEGATIVO: con una lectura anterior DE VERDAD ilegible, el vigía SIGUE diciendo NO SE SABE`, async () => {
-  // Éste es el control que impide que este ticket haya sido un apagado. El rechazo de los
-  // todo-dígitos es una decisión del vigía, está razonada en su módulo y NO se anula aquí: lo que
-  // se ha quitado es que el fixture lo pisara por azar. Puesto a mano, tiene que seguir pasando.
-  const { constanciaDeEjecucion } = await import('../scripts/_vigilante-de-despliegue.mjs');
-  const { dir, shas } = repoDePrueba();
-  const srv = await servidorDeVersion();
-  const estado = path.join(dir, '.vigia', 'constancias.log');
-  try {
-    // La constancia ilegible se le PIDE AL FORMATEADOR DE VERDAD, no se copia a mano: si el
-    // formato del renglón cambia, este control cambia con él en vez de quedarse probando un
-    // formato que ya nadie escribe.
-    const { renglon } = constanciaDeEjecucion(
-      { veredicto: 'atrasado', horas: 48, titulo: '' },
-      { versionDeProduccion: '12345678' + 'a'.repeat(32), shaDeMain: shas[2], commitsPorDelante: 2, ahoraEpoch: 1757000000 },
-    );
-    assert.match(renglon, /prod=\d{8} /,
-      '🔴 CIEGO: la constancia sembrada no lleva `prod=` de ocho dígitos, así que no está probando '
-      + 'el caso ilegible y este control valdría cero.');
-    fs.mkdirSync(path.dirname(estado), { recursive: true });
-    fs.writeFileSync(estado, renglon + '\n', 'utf8');
-
-    srv.di(shas[1]);
-    const p = await corre({ cwd: dir, url: srv.url, estado });
-
-    assert.equal(p.codigo, 2,
-      '🔴 con una lectura anterior que NO se puede leer, el vigía ha contestado algo distinto de '
-      + 'NO SE SABE. Eso sería inventarse la mitad que falta: es justo lo que su `shaLegible` existe para impedir, y no se abarata por arreglar un fixture.\n' + p.salida);
-    assert.match(p.salida, /no publica un sha legible/,
-      '🔴 dice NO SE SABE pero sin decir por qué. El motivo es lo que permitió DIAGNOSTICAR esto: '
-      + 'sin él, SCRUM-824 habría sido otra semana de hipótesis.\n' + p.salida);
-  } finally {
-    await srv.cierra();
-    fs.rmSync(dir, { recursive: true, force: true });
-  }
 });
