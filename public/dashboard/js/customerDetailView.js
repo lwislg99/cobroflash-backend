@@ -332,6 +332,10 @@ function openEdit360Modal(customer, customerId, container) {
       <div class="field"><label>Email</label><input type="email" id="e360-email"/></div>
       <div class="field"><label>Razón social (empresa, opcional)</label><input type="text" id="e360-legalname"/></div>
       <div class="field"><label>NIF/CIF (opcional)</label><input type="text" id="e360-taxid"/></div>
+      <!-- SCRUM-576 (CONT-03): hueco para el selector de empresa. El nodo se inserta después, como
+           el switch: es un componente con comportamiento (switchFormaJuridica.js) y una plantilla
+           de texto no puede tenerlo. SIN COMILLAS INVERSAS AQUÍ DENTRO. -->
+      <div id="e360-empresa"></div>
       <div class="field"><label>Facturación pactada</label>
         <select id="e360-periodicidad" class="input">
           <option value="NINGUNA">Cuando toque (sin periodicidad)</option>
@@ -383,6 +387,19 @@ function openEdit360Modal(customer, customerId, container) {
   // La forma jurídica sale de `contactKind` y de NADA MÁS: nunca se deduce de `tipoDestinatario`
   // (que está tres campos más abajo y responde otra pregunta) ni de si hay razón social.
   const wrapperDe = (sel) => $(sel).closest('.field');
+
+  // SCRUM-576 (CONT-03) · el selector de empresa, en el SEGUNDO de los dos formularios.
+  //
+  // 🔴 SALE DE LA MISMA PIEZA que el de la lista (`switchFormaJuridica.selectorDeEmpresa`) y no de
+  // una copia. Es la lección medida de `docs/CONTACTOS_CAMPOS_POR_LADO.md` §2: estos dos modales
+  // YA divergieron una vez —uno tiene recargo de equivalencia y le falta facturación pactada, el
+  // otro al revés— porque cada uno se editó por su lado. Un campo construido dos veces diverge.
+  //
+  // Aquí NO hay lista de clientes cargada: la ficha 360 sólo conoce a SU cliente. Se pide, y se
+  // refresca cuando llegue — sin esperar, porque el modal ya está en pantalla. `refrescar`
+  // conserva lo elegido, así que llegar tarde no desvincula a nadie.
+  const selectorEmpresa = switchFormaJuridica.selectorDeEmpresa({ valor: customer.companyId ?? null });
+  $('#e360-empresa').appendChild(selectorEmpresa.nodo);
   // ═══ SCRUM-590 (CONT-19) · POR QUÉ EL MÓVIL DE ESTA PANTALLA NO LLEVA SELECTOR DE PREFIJO
   //
   // El modal de la lista sí lo lleva (SCRUM-578). Aquí NO, y es una decisión con su motivo:
@@ -404,7 +421,17 @@ function openEdit360Modal(customer, customerId, container) {
   // 🔴 EL CAMPO SE VE EN LOS DOS LADOS (Empresa/Persona), y por eso NO entra en este mapa:
   // `SOLO_EMPRESA` es `['legalName']` y §3.1 pone `phone` entre los comunes. Un móvil es canal
   // de contacto, no forma jurídica.
-  const camposPorLado = { legalName: wrapperDe('#e360-legalname'), taxId: wrapperDe('#e360-taxid') };
+  //
+  // 🔴 Y SCRUM-576 (CONT-03) AÑADE LA TERCERA ENTRADA: `companyId`, que SÍ es de un solo lado —el
+  // de PERSONA—. Conviven en el mismo mapa sin contradecirse porque responden a la misma
+  // pregunta desde los dos extremos: `legalName` sólo se ve en Empresa, `companyId` sólo en
+  // Persona, y el móvil de arriba en los dos. La regla de quién esconde a quién no vive aquí:
+  // vive en `switchFormaJuridica`, y este mapa sólo dice DÓNDE está cada campo.
+  const camposPorLado = {
+    legalName: wrapperDe('#e360-legalname'),
+    taxId: wrapperDe('#e360-taxid'),
+    companyId: selectorEmpresa.nodo, // SCRUM-576: el campo del lado PERSONA
+  };
   const switchForma = switchFormaJuridica({
     valor: customer.contactKind,
     alCambiar: (lado) => switchFormaJuridica.aplicarLado(lado, camposPorLado),
@@ -412,6 +439,19 @@ function openEdit360Modal(customer, customerId, container) {
   $('#e360-forma').appendChild(switchForma.nodo);
   // Después de rellenar los campos: la regla mira si «razón social» tiene algo para no esconderlo.
   switchFormaJuridica.aplicarLado(switchForma.leer(), camposPorLado);
+
+  // SCRUM-576 · la lista de empresas llega DESPUÉS, y va aquí abajo a propósito: usa
+  // `switchForma` y `camposPorLado`, que se declaran justo encima. Ponerlo antes funcionaría
+  // —el `.then` no corre hasta que el turno síncrono acaba— pero obligaría a razonar sobre
+  // microtareas para leer cuatro líneas.
+  getCustomers("")
+    .then((lista) => {
+      selectorEmpresa.refrescar(lista, customer.id);
+      // Repasa la regla: el campo pudo pasar de vacío a con valor, y un valor escrito no se
+      // esconde nunca (invariante ② de `switchFormaJuridica`).
+      switchFormaJuridica.aplicarLado(switchForma.leer(), camposPorLado);
+    })
+    .catch(() => { /* el campo es opcional: sin lista se queda con lo que ya tenía */ });
 
   $('#e360-cancel').onclick = () => overlay.remove();
 
@@ -433,6 +473,8 @@ function openEdit360Modal(customer, customerId, container) {
       notes: $('#e360-notes').value.trim() || undefined,
       legalName: $('#e360-legalname').value.trim() || null, // A20.4
       taxId: $('#e360-taxid').value.trim() || null,
+      // SCRUM-576 (CONT-03): «sin empresa» viaja como `null`, nunca `""` ni `0`.
+      companyId: selectorEmpresa.leer(),
       tipoDestinatario: $('#e360-tipodestinatario').value || null, // SCRUM-69
       // SCRUM-574: forma jurídica. `null` = sin declarar, y viaja como null: no se cae a un lado.
       // Va PEGADO a `tipoDestinatario` en el payload y son campos INDEPENDIENTES — el uno no se

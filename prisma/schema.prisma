@@ -223,6 +223,49 @@ model Customer {
   // tipo de Postgres.
   contactKind String? @map("contact_kind")
 
+  // SCRUM-576 (CONT-03) · LA EMPRESA A LA QUE PERTENECE ESTA PERSONA.
+  //
+  // 🔴 NO ES `legalName`, Y ÉSA ES LA DECISIÓN ENTERA. «Razón social» es TEXTO LIBRE: el
+  // administrador de fincas escribe «Fincas García SL» en una ficha y «FINCAS GARCIA, S.L.» en
+  // otra, y para el sistema son dos cadenas que no se parecen en nada. Aquí las dos personas
+  // apuntan al MISMO entero, así que «son de la misma empresa» deja de ser una coincidencia de
+  // ortografía y pasa a ser una IGUALDAD.
+  //
+  // ⛔ `legalName` NO SE BORRA NI SE MIGRA (decisión del ticket): convivir es correcto, y migrar a
+  // ciegas texto que alguien escribió es cómo se pierden datos. Medido en desarrollo el
+  // 7-sep-2026: 14 clientes, 0 con razón social escrita. Si hay que migrar, es OTRO ticket.
+  //
+  // AUTO-RELACIÓN A `customers` Y NO UNA TABLA `companies` NUEVA: una empresa YA es un contacto
+  // —`contactKind = 'EMPRESA'`, SCRUM-574— con su teléfono, su NIF y su dirección. Una tabla
+  // aparte obligaría a mantener los mismos campos en dos sitios, que es exactamente el defecto
+  // que este ticket viene a cerrar.
+  //
+  // LA DIRECCIÓN ES LA DE HOLDED Y NO ES CAPRICHO: la relación se declara desde el lado PERSONA
+  // (la ficha de persona tiene «Empresa»; la de empresa NO tiene «personas»). Una sola columna,
+  // un solo sitio donde se escribe — dos sitios podrían contradecirse.
+  //
+  // Nullable y SIN `@default`, como sus vecinos: NULL = «no pertenece a ninguna empresa, o nadie
+  // lo ha declarado». La inmensa mayoría de los clientes de un fontanero son personas sueltas.
+  //
+  // 🔴 NULLABLE Y **SIN CLAVE AJENA**, A PROPÓSITO — decisión del fundador del 8-sep-2026, que
+  // aplica aquí la firma que ya existía en `docs/MIGRATIONS_PENDING.md` para `Quote.jobId`
+  // (SCRUM-195): «coherencia con el resto del schema, reversibilidad (`DROP COLUMN` limpio, sin
+  // constraint que arrastre) y sobre todo porque la FK que importaría aquí es `onDelete`, y eso
+  // ya se decidió en SCRUM-192 — servicio de borrado, no cascadas».
+  //
+  // Este ticket nació CON relación y `onDelete: SetNull`, y se retiró: 576 con clave ajena y 195
+  // sin ella serían DOS CRITERIOS para la misma clase de relación. Y aquí es peor que allí — es
+  // AUTORREFERENTE sobre `customers`, así que deshacerla cuesta más.
+  //
+  // ⚠️ NO HAY `@relation`, Y ESO NO ES UN OLVIDO: declararla haría que `prisma db push` volviera
+  // a crear la clave ajena que se acaba de retirar, y el esquema prometería una integridad que la
+  // base no tiene.
+  //
+  // 🔴 LO QUE LA CLAVE AJENA HABRÍA HECHO AL BORRAR, LO HACE EL CÓDIGO: `deleteCustomer`
+  // desvincula a las personas ANTES de borrar la empresa, en la misma transacción. Sin eso, esta
+  // columna se queda apuntando a una fila que ya no existe — y nada protestaría.
+  companyId Int? @map("company_id")
+
   // A20.4 (EXT3): cliente empresa — razón social y NIF (el NIF además es
   // requisito del F1 VeriFactu futuro, hallazgo S1-C)
   legalName String? @map("legal_name")
@@ -398,6 +441,8 @@ model Customer {
   events       CustomerEvent[]
 
   @@index([merchantId])
+  // Se busca «las personas de esta empresa»; sin índice sería un recorrido de toda la tabla.
+  @@index([companyId])
   @@map("customers")
 }
 
