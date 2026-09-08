@@ -320,3 +320,109 @@ tocar `schema.prisma`.
 - **Los suelos `SUELO_GUARDS`/`SUELO_DECLARACIONES` no se tocan**: están muy por debajo del árbol
   real desde antes de este ticket, y subirlos toca a las cinco ramas vivas. El trinquete que sí
   muerde es el de SCRUM-810 contra `main`, y sólo penaliza pérdidas; aquí se añaden 7.
+
+---
+
+# SCRUM-754b · El hueco declarado se cumplió — y el arreglo no es quitar la puerta
+
+**Fecha:** 07-sep-2026 · **Carril:** instrumento · **Gate:** ninguno — no toca producto
+
+**Medido contra:** `origin/main` = `d271d29aff85ed155d23397b7e6a1fca64a86bb0` · 2026-09-07T18:56:51+02:00
+
+## Lo que pasó, y por qué vale más que si no hubiera salido
+
+La entrada anterior dejó escrito que en `ubuntu-latest` la vigilancia podía no entregar, que saldría
+CIEGO diciendo por qué, y que si salía **«no se quita la puerta — se mira por qué esa plataforma no
+puede vigilar»**. Salió con ese texto:
+
+```
+build+tests      → ✖ CONTROL POSITIVO: la vigilancia no vio un fichero que nació
+                     y murió dentro de tests/ delante de ella.
+meta:mutaciones  → 🔴 CIEGO · exit 2, mismo motivo.
+```
+
+**La consecuencia es la que manda:** con eso en `main`, `meta:mutaciones` saldría CIEGO en TODA rama
+que pase por CI. Un CIEGO permanente se ignora igual que un rojo fijo, así que el instrumento habría
+quedado apagado justo donde más falta hace.
+
+## Lo que NO cambia: la pregunta
+
+«¿Estuvo el árbol quieto mientras medía?» sigue siendo obligatoria y no se toca. Lo que cambia es el
+**instrumento** con el que se contesta. Una vigilancia en vivo era UNA forma de contestarla, no la
+pregunta.
+
+## 🔴 La contradicción que había que resolver, dicha antes de resolverla
+
+La dirección propuesta era «una huella del contenido comparada antes y después». Y a la vez se
+exigía que **un fichero que nace y muere durante la medición sea DENUNCIADO**.
+
+Una huella del **contenido** no puede hacer las dos cosas: el transitorio está AUSENTE en las dos
+fotos — es literalmente lo que fabricó los tres verdes falsos de la entrada anterior. Aplicada sola,
+habría apagado el control positivo que la misma orden prohibía quitar.
+
+**Lo que lo resuelve, y está MEDIDO aquí antes de escribir una línea:** el fichero no deja rastro,
+pero **su DIRECTORIO sí**. Crear o borrar una entrada actualiza el `mtime` del directorio que la
+contiene — POSIX lo garantiza para `link`/`unlink`, y NTFS hace lo mismo. Medido: un fichero creado y
+borrado en el mismo instante deja el directorio con `mtime` movido, con el fichero ya inexistente.
+
+Así que la huella no es del contenido: es de **`mtime` de ficheros Y de directorios**, más las altas
+y bajas de rutas. Y conserva la mitad que impide apagar el juez por el otro lado, incluso mejor que
+`fs.watch`: **leer no mueve el `mtime`** (en Windows `fs.watch` sí emite `change` al leer, y por eso
+necesitaba confirmar cada candidato contra el disco).
+
+## El instrumento, en dos capas
+
+| | |
+|---|---|
+| **② La huella (antes/después)** | **Obligatoria.** Puros `readdir` + `stat`: UNA implementación en todas las plataformas. Es la que contesta la pregunta. |
+| **① `fs.watch`** | **Opcional, y sólo AÑADE**: donde entrega, pone el NOMBRE del transitorio que la huella sólo puede situar en su directorio. Donde no entrega, no resta nada. |
+
+Que `fs.watch` no entregue ya **no** es motivo de CIEGO: es una nota del veredicto.
+
+### Y una mejora que salió de probarlo
+
+El corte por reloj (`mtime >= desde`, con `MARGEN_MS = 25`) existe porque la vigilancia en vivo **no
+tiene foto previa**. La huella sí la tiene, así que compara contra **su propia línea base** y no
+contra el reloj: sin ventana ciega y sin margen que ajustar.
+
+No es teórico: al probarlo, el control positivo escribía su sonda **dentro** de esos 25 ms, y por
+reloj el transitorio no salía. Con línea base, sale.
+
+## 🔴 SU LÍMITE, ESCRITO Y NO CALLADO
+
+1. **No ve un cambio cuyo autor restaure también los tiempos.** Quien escriba y después devuelva el
+   `mtime` con `utimes` —del fichero y, si creó y borró, del directorio— es invisible. `utimesSync`
+   está a una llamada. Lo que **no** puede es ocurrir por accidente.
+2. **Dice DÓNDE, no siempre QUÉ.** De un transitorio queda el directorio, no el nombre: acusa
+   `tests/`, no `tests/x.mjs`. Por eso `fs.watch` no se retira.
+3. **Granularidad del sistema de ficheros.** Un cambio dentro del mismo tic de `mtime` que la línea
+   base no se distingue de ella (medido aquí: salto mediano 1,0 ms, máximo 4,0 ms).
+
+## Verificación
+
+Se reproduce la condición EXACTA del CI —un `fs.watch` que se instala sin reventar y **no llama al
+callback jamás**— y se exige que el instrumento siga discriminando:
+
+* control positivo con `fs.watch` mudo → **pasa**;
+* fichero que nace y muere → **denunciado** (`tests/ — algo nació o murió aquí dentro mientras medía`);
+* fichero sólo leído → **no** sale como movimiento;
+* suelo: huella que no ve nada → **lanza**, en vez de decir «no se movió»;
+* fichero escrito durante → denunciado **con su nombre**.
+
+**Probado EN ROJO en los dos sentidos.** Cegando la huella a los directorios caen exactamente los dos
+casos del transitorio y **sólo** ésos; haciéndola gritar siempre cae exactamente el de la lectura.
+
+### ⚠️ Lo que esta verificación NO es, y por qué
+
+**No es una ejecución en `ubuntu-latest`.** En esta máquina no hay Linux —ni WSL (`wsl --status`: no
+instalado), ni docker— y el CI sólo dispara con `pull_request`/`push` a `main`, que abre el fundador.
+
+Lo que sí sostiene la prueba: el arreglo **no es otro `fs.watch`**. `fs.watch` tenía un backend por
+plataforma (ReadDirectoryChangesW aquí, inotify allí), y por eso verlo funcionar en Windows no decía
+nada de Linux. La huella es `readdir` + `stat`: **una sola implementación**, así que ejercitarla aquí
+ejercita el mismo código que corre allí. Y se ejercita con la capa de plataforma APAGADA, que es
+exactamente la condición que el CI reportó.
+
+Queda dicho para que nadie lo lea de más: la prueba de que el backend de Linux se comporta como el
+mudo la da el rojo del CI que originó esto; lo que aquí se prueba es que **con ese backend mudo el
+instrumento sigue contestando**.
