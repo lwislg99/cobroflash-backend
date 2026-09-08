@@ -19,12 +19,15 @@
 //
 //   ① las capturas que YA existen en el repo **no las ha tocado este arreglo** — hash de imagen,
 //      byte a byte, contra las que están commiteadas;
-//   ② cada pantalla que la lista vieja fotografiaba **sigue fotografiándose, y es LA MISMA
-//      pantalla**: misma URL y mismo `slug`. Si el arreglo hubiera reordenado o perdido una, aquí
-//      cae nombrándola.
+//   ② cada pantalla que ya tenía captura **sigue fotografiándose, y es LA MISMA pantalla**:
+//      mismo `slug`. Si el arreglo hubiera reordenado o perdido una, aquí cae nombrándola.
 //
-// La lista VIEJA no se escribe a mano: se LEE de `origin/main`, que es donde vive. Copiarla aquí
-// sería fijar mi transcripción, no el hecho.
+// LA POBLACIÓN NO SE ESCRIBE A MANO: sale de las capturas COMMITEADAS, que son el registro de lo
+// que de verdad se fotografiaba. Copiar una lista aquí fijaría mi transcripción, no el hecho.
+//
+// ⚠️ Antes salía de leer `AUTH_VIEWS` en el punto de partida de la rama, y eso hacía el test
+// AUTOINVALIDABLE: en cuanto el arreglo se mergeó, esa lista dejó de existir en la base y el test
+// no podía volver a ponerse verde. El porqué entero está en `capturasExistentes`.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -34,14 +37,14 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-import { vistasDelBarrido } from '../scripts/_vistas-del-barrido.mjs';
+import { vistasDelBarrido, vistasNavegablesPorHash } from '../scripts/_vistas-del-barrido.mjs';
 // 🔴 SCRUM-723 · CONTRA EL PUNTO DE PARTIDA DE LA RAMA, NUNCA CONTRA `origin/main`.
 //
 // La primera versión de este fichero leía `origin/main:…`, y el guard de SCRUM-723 la tumbó con
 // razón: `origin/main` SE MUEVE. Comparar contra la punta hace que un guard acuse a una rama
 // limpia el día que otro PR toque su fichero — le pasó a SCRUM-605 el 4-sep-2026. El punto de
 // partida es un COMMIT, y no se mueve. El motor se importa; no se escribe un segundo `merge-base`.
-import { baseDeLaRama, contenidoEnLaBase } from './_base-de-la-rama.mjs';
+import { baseDeLaRama } from './_base-de-la-rama.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const EVIDENCIAS = path.join(RAIZ, 'docs', 'evidencias', 'demo-final');
@@ -52,20 +55,35 @@ const slug = (nombre) => String(nombre).replace(/^\d+-/, '');
 /**
  * La lista de vistas que el barrido fotografiaba ANTES del arreglo, leída del PUNTO DE PARTIDA.
  *
- * 🔴 SE LEE, NO SE COPIA. Una transcripción aquí fijaría lo que yo escribí, no lo que había — y
- * quien la mirara no sabría si el test compara contra el pasado o contra mi memoria. Si no se
- * puede resolver la base, esto se declara CIEGO en vez de comparar contra una lista vacía.
+ * ═══ 🔴 REESCRITO EL 8-sep-2026 · ESTE TEST SE AUTOINVALIDABA AL MERGEARSE ═══════════════════
+ *
+ * La primera versión sacaba «las que ya se fotografiaban» leyendo `const AUTH_VIEWS = [...]` en el
+ * PUNTO DE PARTIDA de la rama. Funcionó mientras el arreglo estaba sin mergear. En cuanto
+ * SCRUM-821 entró en `main`, el punto de partida de cualquier rama nueva **ya lleva el arreglo
+ * dentro** — y ahí esa lista literal no existe, porque justo lo que hizo el ticket fue
+ * sustituirla por una derivación.
+ *
+ * Resultado: el test se declaraba CIEGO —honesto, no daba un falso verde— pero **no podía volver
+ * a ponerse verde nunca**, y dejaba la tanda en rojo en TODAS las ramas. Lo cazó la tanda de
+ * SCRUM-630 al mezclar `main`.
+ *
+ * 🔴 LA LECCIÓN: **un test no puede depender de que su propio arreglo NO esté mergeado.** La
+ * referencia contra la que compara tiene que sobrevivir al merge del ticket que la escribe.
+ *
+ * LA POBLACIÓN AHORA SALE DE LAS CAPTURAS COMMITEADAS, que son el registro de lo que de verdad se
+ * fotografiaba y no desaparecen al mergear nada. El nombre de cada fichero —`NN-slug.png`— lleva
+ * dentro a qué pantalla corresponde.
  */
-function listaVieja() {
-  const { contenido, base } = contenidoEnLaBase(RAIZ, 'scripts/capture-demo.mjs');
-  if (!base) return { ok: false, porque: 'no se pudo resolver el punto de partida de la rama' };
-  if (contenido == null) return { ok: false, porque: `\`capture-demo.mjs\` no existe en ${base.ref}` };
-  const i = contenido.indexOf('const AUTH_VIEWS = [');
-  if (i < 0) return { ok: false, porque: `no encuentro \`AUTH_VIEWS\` en la versión de ${base.ref}` };
-  const bloque = contenido.slice(i, contenido.indexOf('];', i));
-  const pares = [...bloque.matchAll(/\['([^']+)',\s*'([^']+)'\]/g)]
-    .map((m) => ({ nombre: m[1], url: m[2] }));
-  return { ok: true, pares, base };
+function capturasExistentes() {
+  if (!fs.existsSync(EVIDENCIAS)) return { ok: false, porque: `no existe ${EVIDENCIAS}` };
+  const pngs = fs.readdirSync(EVIDENCIAS).filter((f) => f.endsWith('.png')).sort();
+  return {
+    ok: true,
+    pngs: pngs.map((f) => {
+      const nombre = f.replace(/\.png$/, '');
+      return { fichero: f, nombre, slug: slug(nombre) };
+    }),
+  };
 }
 
 /** Los BYTES de un fichero en el punto de partida. `utf8` no vale: aquí se comparan PNG. */
@@ -87,21 +105,23 @@ const sha = (f) => createHash('sha256').update(fs.readFileSync(f)).digest('hex')
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-821b · 🔴 SUELO: se leen las dos cosas que se comparan, o esto se declara CIEGO', () => {
-  const vieja = listaVieja();
-  assert.ok(vieja.ok, `🔴 CIEGO: no se pudo leer la lista vieja de \`origin/main\`: ${vieja.porque}`);
-  assert.ok(vieja.pares.length >= 10,
-    `🔴 CIEGO: la lista vieja da ${vieja.pares.length} vistas y tenía DOCE. Si el extractor se `
-    + 'rompió, «todas siguen ahí» sería cierto sobre casi nada.');
-
-  assert.ok(fs.existsSync(EVIDENCIAS),
-    `🔴 CIEGO: no existe \`${path.relative(RAIZ, EVIDENCIAS)}\`. Sin capturas no hay hash que comparar.`);
-  const pngs = fs.readdirSync(EVIDENCIAS).filter((f) => f.endsWith('.png'));
-  assert.ok(pngs.length >= 12,
-    `🔴 CIEGO: sólo ${pngs.length} capturas en el directorio de evidencias, y había 18.`);
+  const c = capturasExistentes();
+  assert.ok(c.ok, `🔴 CIEGO: ${c.porque}. Sin capturas no hay hash que comparar.`);
+  assert.ok(c.pngs.length >= 12,
+    `🔴 CIEGO: sólo ${c.pngs.length} capturas en el directorio de evidencias, y había 18.`);
 
   const barrido = vistasDelBarrido(RAIZ);
   assert.ok(barrido.length >= 17,
     `🔴 CIEGO: el barrido derivado da ${barrido.length} vistas y el menú tiene 17.`);
+
+  // Y que ALGUNAS de esas capturas correspondan a pantallas del panel: si ninguna casara por
+  // `slug`, «todas siguen fotografiándose» sería cierto sobre el conjunto vacío — que es el falso
+  // verde que este suelo existe para impedir.
+  const delPanel = new Set(barrido.map((v) => slug(v.nombre)));
+  const casan = c.pngs.filter((p) => delPanel.has(p.slug));
+  assert.ok(casan.length >= 10,
+    `🔴 CIEGO: sólo ${casan.length} de ${c.pngs.length} capturas corresponden a una pantalla del `
+    + 'panel, y eran doce. Si el emparejamiento por slug se rompió, lo de abajo no mide nada.');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -111,21 +131,19 @@ test('SCRUM-821b · 🔴 SUELO: se leen las dos cosas que se comparan, o esto se
 test('SCRUM-821b · ✅ las capturas que YA existían siguen byte a byte iguales (hash de imagen)', () => {
   // Se compara contra las que había en el PUNTO DE PARTIDA de la rama: si este arreglo hubiera
   // re-fotografiado, recortado o regenerado alguna, aquí saldría con su nombre y su hash.
-  const vieja = listaVieja();
-  assert.ok(vieja.ok, `🔴 CIEGO: ${vieja.porque}`);
+  const c = capturasExistentes();
+  assert.ok(c.ok, `🔴 CIEGO: ${c.porque}`);
 
   const distintas = [];
   let comparadas = 0;
-  for (const v of vieja.pares) {
-    const rel = `docs/evidencias/demo-final/${v.nombre}.png`;
-    const abs = path.join(RAIZ, rel);
-    if (!fs.existsSync(abs)) continue; // no todas las de la lista tienen captura commiteada
+  for (const p of c.pngs) {
+    const rel = `docs/evidencias/demo-final/${p.fichero}`;
     const enLaBase = bytesEnLaBase(rel);
-    if (!enLaBase) continue; // no estaba en la base: no hay contra qué comparar
+    if (!enLaBase) continue; // no estaba en la base: la crea esta rama, no hay contra qué comparar
     comparadas += 1;
     const antes = createHash('sha256').update(enLaBase).digest('hex');
-    const ahora = sha(abs);
-    if (ahora !== antes) distintas.push(`${v.nombre}.png  ${antes.slice(0, 12)} → ${ahora.slice(0, 12)}`);
+    const ahora = sha(path.join(RAIZ, rel));
+    if (ahora !== antes) distintas.push(`${p.fichero}  ${antes.slice(0, 12)} → ${ahora.slice(0, 12)}`);
   }
 
   // 🔴 SUELO del propio caso: un cero de diferencias sobre CERO comparaciones no es un cero.
@@ -145,20 +163,24 @@ test('SCRUM-821b · ✅ las capturas que YA existían siguen byte a byte iguales
 test('SCRUM-821b · ✅ ninguna de las que ya salían se ha perdido, y apuntan a la MISMA pantalla', () => {
   // Lo que de verdad estaba en riesgo al cambiar una lista a mano por una derivada: que la
   // derivación añada seis y, de paso, se deje una de las doce por el camino.
-  const vieja = listaVieja();
-  assert.ok(vieja.ok, `🔴 CIEGO: ${vieja.porque}`);
+  const c = capturasExistentes();
+  assert.ok(c.ok, `🔴 CIEGO: ${c.porque}`);
 
-  const porUrl = new Map(vistasDelBarrido(RAIZ).map((v) => [v.url, v.nombre]));
+  // El universo de pantallas del panel. Si el `slug` de una captura está aquí, esa captura ES de
+  // una pantalla del panel — y por tanto tiene que seguir fotografiándose.
+  const universo = new Set(vistasNavegablesPorHash(RAIZ));
+  const porSlug = new Map(vistasDelBarrido(RAIZ).map((v) => [slug(v.nombre), v.nombre]));
   const perdidas = [];
   const cambiadas = [];
-  for (const v of vieja.pares) {
-    const ahora = porUrl.get(v.url);
-    if (!ahora) { perdidas.push(`${v.nombre}  (${v.url})`); continue; }
-    // 🔴 SE COMPARA EL `slug`, NO EL NOMBRE ENTERO, y es una decisión medida: el prefijo numérico
-    // es POSICIÓN dentro de la lista, y la lista creció de 12 a 20 — así que renumerar es la
-    // consecuencia esperada de añadir ocho, no un defecto. Lo que NO puede cambiar es a qué
-    // pantalla apunta cada captura, y eso es el `slug` + la URL.
-    if (slug(ahora) !== slug(v.nombre)) cambiadas.push(`${v.url}: ${v.nombre} → ${ahora}`);
+  for (const p of c.pngs) {
+    if (!universo.has(p.slug)) continue; // no es pantalla del panel (modales, landing, 404…)
+    const ahora = porSlug.get(p.slug);
+    if (!ahora) { perdidas.push(`${p.fichero}  (slug ${p.slug})`); continue; }
+    // 🔴 SE EMPAREJA POR `slug`, NO POR EL NOMBRE ENTERO, y es una decisión medida: el prefijo
+    // numérico es POSICIÓN dentro de la lista, y la lista creció de 12 a 20 — así que renumerar es
+    // la consecuencia esperada de añadir ocho, no un defecto. Lo que NO puede cambiar es que esa
+    // pantalla siga fotografiándose.
+    if (slug(ahora) !== p.slug) cambiadas.push(`${p.fichero}: ${p.nombre} → ${ahora}`);
   }
 
   assert.deepEqual(perdidas, [],
