@@ -284,7 +284,11 @@ export const LOS_OCHO = [
     detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'payMethodsWrapper', argumento: 'pmFee' }) },
   { id: 'F11', que: 'plantillas + Sugerir con IA + Usar plantilla, GRATIS Y EN PRIMER PLANO',
     fichero: 'public/dashboard/js/quotesView.js',
-    ancla: '  linesHeader.appendChild(useTemplateBtn);',
+    // SCRUM-600 · el ancla sigue a su línea: desde que la página sirve a los dos documentos, el
+    // `appendChild` va bajo condición (en el documento suelto las plantillas son parada
+    // declarada). Lo que el ancla sujeta es el CONTROL NEGATIVO —quitarla tiene que cambiar la
+    // respuesta del detector—, así que tiene que ser la línea que de verdad está en el fichero.
+    ancla: '  if (!esDocumentoSuelto) linesHeader.appendChild(useTemplateBtn);',
     detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'linesHeader', argumento: 'aiBtn' })
                   && hayLlamada(sf, { nombre: 'appendChild', receptor: 'linesHeader', argumento: 'useTemplateBtn' }) },
   { id: 'F12', que: 'EL SELECTOR DE FORMAS DE PAGO DICE QUE FALTA',
