@@ -507,3 +507,142 @@ por longitud (`assert.match(codigo, /suelo\.length > 0/)`).
 **Medido, no razonado:** con el cambio puesto, **3 tests de SCRUM-775 caen**; poniendo la versión
 de `HEAD` en el mismo árbol, **los 9 pasan**. Comprobado los dos sentidos el 8-sep-2026, y los
 bytes del trabajo en curso se devolvieron intactos (`Buffer.compare === 0`, 11.862 bytes).
+
+---
+
+# APÉNDICE 2 · 8-sep-2026 — EL SUJETO ACOTADO, ya con el nombre delante
+
+**Medido contra:** `origin/main` = `19360172` · 2026-09-08
+**Rama:** `scrum-813-el-trinquete-de-zona-horaria`
+
+## B0 · 🔴 LA CAUSA, Y POR QUÉ NO SE REPRODUCÍA
+
+El apéndice 1 dejó escrito que **no se reprodujo el CIEGO** por tres caminos y que por eso NO se
+acotó el sujeto. Con el detalle por ruta que ese mismo apéndice construyó, la siguiente pasada de
+CI lo dijo a la primera:
+
+```
+árbol 🔴 SE MOVIÓ durante la medición
+   · scrum659/   (no aparecía) → estado:??
+```
+
+Un directorio que la propia tanda crea. Y **explica por qué las tres mediciones de Windows salieron
+limpias** — la causa está en una línea:
+
+```js
+tests/scrum659-lector-de-lineas-del-pdf.test.mjs:27
+const TMP = path.join(process.env.TEMP || process.env.TMPDIR || '.', 'scrum659');
+```
+
+El respaldo es `'.'`, **el directorio actual**. En Windows `TEMP` existe y el fixture se va al
+temporal de verdad; en el runner de Linux no, y **cae dentro del repo**. No era un árbol distinto:
+era la misma tanda escribiendo en otro sitio según la máquina.
+
+> ⚠️ **El arreglo de raíz es de otro carril y se reporta:** ese respaldo debería ser `os.tmpdir()`,
+> que es lo que usa el resto de la casa. Mientras no se arregle, la entrada de abajo lo ampara —
+> y el suelo de la lista obliga a decirlo en voz alta el día que se retire.
+
+## B1 · EL ACOTADO — lo que la medición JUZGA, no lo que ESCRIBE
+
+`ESCRITURAS_DE_LA_TANDA` es una lista **cerrada**, en código y con nombre y motivo por entrada, de
+las rutas que la propia medición escribe al correr. **Sólo esas dejan de cegar.**
+
+```
+scrum659/   ← tests/scrum659-lector-de-lineas-del-pdf.test.mjs:27
+```
+
+⛔ **No es una zona franca.** Cualquier ruta que se mueva y no esté declarada sigue siendo CIEGO,
+incluido **cualquier fichero de `tests/` o de `src/`** — que es exactamente lo que la medición
+juzga. Un directorio declarado ampara lo que cuelga de él (`scrum659/pagina-1.pdf`) y **nada más**:
+`scrum659bis/` y `otro/scrum659/` ciegan.
+
+### Los tres suelos, y qué impide cada uno
+
+| suelo | qué impide |
+|---|---|
+| **fuera de la lista → CIEGO** | que el acotado se convierta en «el árbol puede moverse» |
+| **lista VACÍA → CIEGO** | que vaciar la declaración devuelva la puerta al estado de antes **en verde**, sin que nadie lo decida |
+| **la lista se ENSEÑA en cada pasada** (cuántas declaradas y cuáles se usaron) | que una lista de excepciones engorde sola hasta tapar el defecto que evita — y que una entrada que ya no aparece se quede ahí para siempre |
+
+Y sigue el suelo de 813b: si la huella global dice que algo cambió y el detalle por ruta no
+encuentra nada —ni ajeno ni amparado—, es movimiento y **nunca** quietud.
+
+## B2 · VERIFICACIÓN
+
+| control | resultado |
+|---|---|
+| ✅ **POSITIVO** · la tanda escribiendo lo suyo (`scrum659/`) → el trinquete **EMITE veredicto**, y es **3 = 3 censadas** | ✅ |
+| 🔴 **EL QUE DECIDE** · un fichero de TEST tocado a mano durante la medición → **sigue siendo CIEGO**, y lo NOMBRA | ✅ |
+| 🔴 la excepción es CERRADA · `src/…`, `scrum659bis/` y `otro/scrum659/` ciegan; `scrum659/pagina-1.pdf` no | ✅ |
+| 🔴 **SUELO** · lista vacía → CIEGO, diciendo que la declaración se perdió | ✅ |
+| la lista declarada es **exactamente** ésta, cada entrada con quién y por qué, y **apuntando a un fichero que existe** | ✅ |
+| ✅ **los tres de SCRUM-592 siguen ROJOS** (`apagadas.length === 0` con las 3 censadas) | ✅ |
+
+**Probado en rojo, tres mutaciones, cada una tumbando SÓLO su caso:**
+
+```
+⑨ la lista se vuelve ZONA FRANCA (se ampara todo)  → ✖ EL QUE DECIDE · ✖ la excepción es CERRADA
+⑩ se quita el suelo de la lista vacía              → ✖ SUELO: lista VACÍA
+⑪ nada se ampara                                   → ✖ POSITIVO · ✖ la excepción es CERRADA
+```
+
+Restauradas → **28/28 en verde**. Las tres quedan en `MUTACIONES_QUE_ME_TUMBAN`.
+
+### 🔴 Y la comprobación de anclas cazó una mutación MÍA que había quedado decorativa
+
+Al acotar el sujeto, la condición del suelo de 813b ganó `!amparadas.length`, y el texto de su
+mutación ⑥ pasó a casar **cero veces**: se habría aplicado sobre nada y habría pasado en verde
+**sin haber mutado**. Reapuntada, y vuelve a morder. Las **11** anclas del array casan ahora
+exactamente una vez.
+
+## B2b · 🔴 EL NÚMERO: NO ES UN FICHERO, ES UNA CLASE — 5 sitios en 3 ficheros
+
+El fundador pidió convertirlo en un número antes de cerrar: **¿cuántos tests construyen una ruta
+temporal cuyo respaldo cae DENTRO del repo en un runner sin `TEMP`?** Medido sobre **código
+ejecutable** (con el filtro de comentarios de la casa: un comentario que cite `|| '.'` para
+explicar la prohibición sería un falso positivo — la trampa de SCRUM-129), sobre **1.448 ficheros**.
+
+| fichero:línea | qué escribe | ¿persiste al terminar? |
+|---|---|---|
+| `tests/scrum235-cliente-por-columnas.test.mjs:218` | `scrum235-sin-modelos-<pid>.prisma` | no — `unlinkSync` en `finally` |
+| `tests/scrum235-cliente-por-columnas.test.mjs:326` | `scrum235-cliente-falso-<pid>.mjs` | no — `unlinkSync` en `finally` |
+| `tests/scrum262-telefonos-de-prueba.test.mjs:124` | `scrum262-sonda-<pid>.mjs` | no — `unlinkSync` en `finally` |
+| `tests/scrum262-telefonos-de-prueba.test.mjs:145` | `scrum262-formato-<pid>.mjs` | no — `unlinkSync` en `finally` |
+| `tests/scrum659-lector-de-lineas-del-pdf.test.mjs:27` | el **directorio** `scrum659/` | 🔴 **sí** |
+
+*(Las líneas se citan como CONTEXTO del informe, no como anclaje: la lista del instrumento se
+ancla a la EXPRESIÓN — ver §B1 y SCRUM-710b, que tumbó la primera versión de esta entrada.)*
+
+**Los cinco tienen la misma firma** — `process.env.TMPDIR || process.env.TEMP || '.'` — y por
+tanto **son la misma bomba esperando a la máquina equivocada**. La diferencia entre el que estalló
+y los otros cuatro es sólo la limpieza:
+
+> `scrum659` borra en su `finally` el **FICHERO** de dentro (`outPath`), **no el DIRECTORIO**. Los
+> otros cuatro sí borran lo que crean. Por eso sólo el directorio sobrevive a la pasada, y por eso
+> sólo él rompía la marca de quietud — que se toma en los dos EXTREMOS.
+
+**Consecuencia, dicha para que no sorprenda:** los otros cuatro **no ciegan hoy** (son transitorios
+y las marcas no los ven), así que **NO se declaran en `ESCRITURAS_DE_LA_TANDA`** — declarar «por si
+acaso» es exactamente cómo una lista de excepciones engorda sin medición. Pero **sí escriben dentro
+del repo en CI**, y una pasada que muera a mitad los deja ahí: es el incidente de SCRUM-808 con
+otra cara.
+
+**⛔ NO SE ARREGLAN AQUÍ** (otro carril, regla 37). El arreglo de raíz es el mismo para los cinco, y
+es una línea cada uno:
+
+```js
+// en vez de:  process.env.TMPDIR || process.env.TEMP || '.'
+os.tmpdir()   // lo que usa el resto de la casa: fs.mkdtempSync(path.join(os.tmpdir(), …))
+```
+
+**SUELO del propio censo:** si devuelve CERO está roto —sabemos que hay al menos uno— y lleva
+control positivo (tiene que encontrar `scrum659`). Los dos pasaron.
+
+## B3 · HUECOS DECLARADOS
+
+- **El positivo con `scrum659/` REAL no se ha ejercitado en esta máquina**, y no se puede: en
+  Windows `TEMP` existe, así que ese directorio nunca cae en el árbol. Se prueba con las dos
+  marcas reales y el `veredicto` real, pero la pasada de dos zonas de aquí no lo reproduce. **Lo
+  reproduce CI**, que es donde ocurrió.
+- **El defecto de origen de `scrum659` no se arregla aquí** (otro carril, regla 37): su respaldo
+  debería ser `os.tmpdir()`.

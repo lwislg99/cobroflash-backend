@@ -384,3 +384,62 @@ pone lento, mide cuánto»—: en ejecuciones, ×3,8; en segundos, **no medible 
   declaradas cada uno**, todas comprobadas.
 * `tests/scrum745-comparar-por-identidad.test.mjs` — fixtures estructuradas, el trinquete del
   reporter, el de la declaración coja, y **+2 mutaciones propias** (4 en total).
+
+---
+
+# APÉNDICE · 8-sep-2026 — 🔴 REGLA DE LA CASA: EL ANCLA DE UNA MUTACIÓN TIENE QUE CASAR **EXACTAMENTE UNA VEZ**
+
+**Subida a regla por el fundador el 8-sep-2026**, tras la segunda vez en la misma semana y por
+caminos distintos.
+
+## La regla
+
+> **Comprobar que la mutación se APLICÓ no basta. Antes hay que comprobar que su ancla (`de`) casa
+> EXACTAMENTE UNA VEZ en el fichero objetivo.**
+>
+> · **Cero veces** → la mutación se aplica **sobre nada**. El guard corre, no muta, y **pasa en
+>   verde**. Un meta-guard que no muta se lee igual que uno que muta y cuyo caso resiste: los dos
+>   dicen «✔».
+> · **Dos o más veces** → la mutación **toca de más**. Cae un caso que no es el suyo, y el rojo
+>   acusa al sitio equivocado.
+
+## Por qué no es una anécdota: dos veces, dos caminos
+
+| cuándo | cómo se rompió |
+|---|---|
+| **SCRUM-813c** (8-sep) | Al acotar el sujeto de la quietud, la condición del suelo de 813b ganó `!amparadas.length`. El `de` de su mutación ⑥ pasó a casar **cero veces**: **el fichero que la declaraba seguía en verde y la mutación ya no mutaba nada.** La cazó una comprobación de anclas escrita al vuelo, no el meta-guard. |
+| **el mismo día, otro camino** | Una sustitución que **el shell se comió** (`\&\&` escapado) dejó el fichero objetivo con un error de sintaxis. Ahí el rojo sí salió, pero por el motivo equivocado: no era la mutación mordiendo, era el módulo sin cargar. |
+
+Las dos tienen la misma forma: **el instrumento creía haber mutado y no había mutado.** La
+diferencia es que la segunda hace ruido y **la primera no** — y la que no hace ruido es la que
+deja un guard mudo creyéndose vigilado.
+
+## La comprobación, tal cual se hizo
+
+Sobre el array `MUTACIONES_QUE_ME_TUMBAN` de un fichero, contra su objetivo:
+
+```
+mutaciones declaradas: 11
+  🔴  0x    if (!rutas.length && antes.huella !== despues.huella) {
+  ✅ las 11 anclas casan EXACTAMENTE una vez     ← tras reapuntarla
+```
+
+Y el arreglo NO es relajar nada: es **reapuntar el ancla al texto que hoy existe**, y dejar
+escrito en la entrada por qué cambió.
+
+## ⚠️ HOY ESTA REGLA ES DOCUMENTACIÓN, Y ESO ES UNA DEBILIDAD DECLARADA
+
+Se sostiene a mano. `scripts/meta-guard-mutaciones.mjs` comprueba que el fichero **cambió** tras
+aplicar la mutación, pero **no exige que el ancla sea única antes de aplicarla** — así que una
+mutación de cero coincidencias no llega a cambiar nada y su caso pasa en verde.
+
+**Mecanizarlo son unas pocas líneas dentro de ese script** —contar `objetivo.split(de).length - 1`
+y declararse CIEGO si no es exactamente 1, con el fichero y el ancla en el mensaje—, y es lo que
+convierte esta regla en un trinquete. **No se ha hecho aquí a propósito:** `meta-guard-mutaciones.mjs`
+es de otro carril y tocarlo sin encargo es justo lo que la casa prohíbe (regla 37). Queda
+propuesto, con el sitio y la forma escritos, para que sea un cambio de cinco minutos y no una
+investigación.
+
+> Mientras no se mecanice, esto es una **medición de una vez** — exactamente la clase de artefacto
+> que SCRUM-813 nació para sustituir por un trinquete. Se dice aquí para que quien la lea sepa lo
+> que tiene: una regla escrita, no una puerta.
