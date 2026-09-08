@@ -251,15 +251,6 @@ export const CENSO = {
   // gastos que vivía en `exports.routes.ts` NO desapareció, se MOVIÓ aquí (`buildGastos`). Esta
   // entrada ya existía y cubre las dos descargas, así que la vieja quedó fantasma y se retiró.
   'src/modules/exports/domain/exportData.ts::expense.findMany#1': { veredicto: 'OPACO', nota: 'where construido por whereRango(); no ata al origen' },
-  // SCRUM-814 · el recuento que cierra la carrera de tramos, DENTRO de la transacción y bajo el
-  // `pg_advisory_xact_lock`. Ata al origen a propósito, y aquí eso es lo correcto: la pregunta que
-  // contesta es «¿cuántos tramos de ESTE presupuesto se han emitido ya?». Una factura suelta no
-  // nació de ningún presupuesto, así que quedar fuera de este recuento no es un hueco: es la
-  // definición de la población.
-  //
-  // Vive en `tramoSinCarrera.ts` y no en las tres rutas que lo usan: la invariante se escribe UNA
-  // vez. Tres copias del mismo recuento son tres sitios que pueden separarse.
-  'src/modules/invoicing/domain/tramoSinCarrera.ts::invoice.count#1': { veredicto: 'POBLACION', nota: 'tramos ya emitidos DE ESTE presupuesto (SCRUM-814); una suelta no pertenece a ninguno' },
   'src/modules/invoicing/domain/verifactu.service.ts::invoice.findFirst#1': { veredicto: 'OPACO', nota: 'encadenado de huella: filtra por vfHash y merchant, no por origen' },
   // SCRUM-296 (A6) · el Libro de Registro. Es el sitio donde atar al origen sería MÁS grave: un
   // libro que se presenta como completo y no lleva la factura suelta no es un libro incompleto —
@@ -273,8 +264,21 @@ export const CENSO = {
   'src/modules/metrics/domain/metrics.service.ts::invoice.count#2': { veredicto: 'POBLACION', nota: 'embudo de PRESUPUESTOS: etapa «cobradas». La asimetría con la anterior es EL bug que cerró SCRUM-236' },
   'src/modules/metrics/domain/metrics.service.ts::invoice.findMany#1': { veredicto: 'TRATADO', nota: 'rendimiento del equipo: SCRUM-236 quitó el quoteId:{not:null}; lo no atribuible se ve en «Sin asignar»' },
   'src/modules/reports/app/routes/reports.routes.ts::invoice.findMany#1': { veredicto: 'TRATADO', nota: 'P&L: trae TODAS y usa quoteId para separar «no atribuible» de «del propietario» (SCRUM-228)' },
+  // SCRUM-814 · los recuentos que cierran la carrera de tramos, DENTRO de la transacción y bajo el
+  // cerrojo de serie. Atan al origen a propósito, y aquí eso es lo correcto: la pregunta que
+  // contestan es «¿cuántos tramos de ESTE presupuesto se han emitido ya?». Una factura suelta no
+  // nació de ningún presupuesto, así que quedar fuera no es un hueco: es la definición de la
+  // población. El tercero, en `quotesAdmin.routes.ts`, lo declara su propia entrada.
+  'src/modules/jobs/app/routes/jobs.routes.ts::invoice.count#1': { veredicto: 'POBLACION', nota: 'tramos ya emitidos DE ESTE presupuesto al «cobrar el resto» (SCRUM-814)' },
+  'src/modules/quotes/app/routes/quotes.routes.ts::invoice.count#1': { veredicto: 'POBLACION', nota: 'tramos ya emitidos DE ESTE presupuesto al aceptarlo el cliente (SCRUM-814)' },
   'src/modules/system/app/routes/customersAdmin.routes.ts::expense.aggregate#1': { veredicto: 'HUECO', nota: 'gastos de un cliente atribuidos SOLO vía quote.customerId. Un gasto sin presupuesto no llega nunca a su cliente. Hueco PREEXISTENTE: Expense no tiene customerId' },
   'src/modules/system/app/routes/invoicesAdmin.routes.ts::invoice.findFirst#1': { veredicto: 'PROYECCION', nota: 'detalle de factura; accesos al quote ya guardados (SCRUM-287) y sin `as any` (SCRUM-342)' },
+  // SCRUM-814 · el recuento que decide QUÉ TRAMO toca, rehecho dentro de la transacción y bajo el
+  // cerrojo de serie. Atar al origen aquí no es un descuido: es la definición del sitio — un tramo
+  // sólo existe dentro del plan de UN presupuesto, y una factura suelta (A0.3) no tiene plan ni
+  // tramo que ocupar. Si esta consulta dejara de filtrar por `quoteId`, contaría las facturas de
+  // otros presupuestos del mismo merchant y saltaría tramos: el defecto contrario al que cierra.
+  'src/modules/system/app/routes/quotesAdmin.routes.ts::invoice.count#1': { veredicto: 'POBLACION', nota: 'tramo que toca emitir = facturas DE ESE presupuesto. Una suelta no pertenece a ningún plan de tramos' },
   'src/modules/system/invoiceAdmin.ts::invoice.findMany#1': { veredicto: 'PROYECCION', nota: 'listado admin; include quote opcional' },
   'src/modules/system/invoiceAdmin.ts::invoice.findFirst#1': { veredicto: 'PROYECCION', nota: 'detalle admin; el OPACO es el spread condicional de merchantId, no el origen' },
   'src/modules/system/invoiceAdmin.ts::invoice.findFirst#2': { veredicto: 'OPACO', nota: 'spread condicional de merchantId; no ata al origen' },

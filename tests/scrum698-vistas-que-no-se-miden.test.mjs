@@ -309,7 +309,12 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // (`button.btn-ghost.quote-add-line`) sigue montándose con su subárbol de 1. El delta entero
   // es el botón borrado: este ticket no ha movido ni un nodo del resto de la pantalla, y las
   // otras tres vistas siguen intactas.
-  for (const [vista, nodos] of [['renderQuotesView', 262], ['renderProductsView', 166],
+  // 🔴 SCRUM-713 · 8-sep-2026 · `renderQuotesView` 262 → 264, y NINGUNA de las otras tres se mueve
+  // —que es la mitad del valor de este control—. Los dos nodos, POR IDENTIDAD sobre el árbol
+  // montado y no restando 264 − 262: el `input[type=search]` del bloque «1. Cliente» (subárbol de
+  // 1) y la `<option disabled>` que el selector pinta cuando la lista viene VACÍA, que es como
+  // este banco la monta (subárbol de 1). AISLADO: quitando los dos, el árbol vuelve a 262 exactos.
+  for (const [vista, nodos] of [['renderQuotesView', 264], ['renderProductsView', 166],
     ['renderCustomersView', 68], ['renderHomeView', 109]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
@@ -341,7 +346,13 @@ test('SCRUM-698 · CONTROL NEGATIVO: el fixture NO se impone a quien ya pasaba l
   // «+ Añadir línea» duplicado que se borra. Identificado por identidad en el bloque de arriba.
   // Lo que este control vigila —que el fixture no se imponga, o sea que los DOS montajes den el
   // mismo número— sigue intacto: le da igual cuál sea ese número, y por eso baja sin perder nada.
-  assert.equal(todos(desnuda.contenedor).length, 262,
+  // SCRUM-713 (8-sep-2026): la OCTAVA anotación, +2 — el buscador de cliente y la `<option>` con
+  // que el selector avisa de que la lista viene vacía. Identificados por identidad en el bloque de
+  // arriba. Lo que este control vigila —que los DOS montajes den el mismo número— sigue intacto, y
+  // aquí los dos vienen sin clientes: el de `datos` propios manda `{items, quotes}`, que no es una
+  // lista de clientes, y el desnudo no manda nada. Los dos pintan el aviso, y por eso siguen
+  // coincidiendo.
+  assert.equal(todos(desnuda.contenedor).length, 264,
     '🔴 montar sin `datos` ya no da lo de siempre: el fixture se ha colado como valor por '
     + 'defecto y está moviendo lo que miden otros.');
 });

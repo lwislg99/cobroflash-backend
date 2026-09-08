@@ -55,6 +55,11 @@ const LEE_UN_CONTROL = [
   /field\w+\.(input\.)?(value|checked)/, // modal: fieldX.input.value / fieldX.value
   /\.leer\(\)/,                // los switches (forma jurídica, tipo de artículo)
   /telefonoCompleto\(\)/,      // helper del modal que compone prefijo + número
+  // SCRUM-590 (CONT-19): el mismo helper para el MÓVIL. Lee `fieldMovil.input.value` y su propio
+  // selector de prefijo, exactamente igual que su hermano de arriba — el valor lo escribe el
+  // profesional en un control que ve. Se añade aquí porque este censo mira la EXPRESIÓN del
+  // payload, no a dónde llega por dentro.
+  /movilCompleto\(\)/,
   /direccionParaPayload\(field/, // helper del modal que normaliza cada campo de dirección
 ];
 

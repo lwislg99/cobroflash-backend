@@ -391,6 +391,29 @@
 
 ---
 
+### [ ] P1-CONT-19b · el alta de cliente RECHAZA un cliente sin email (y sin teléfono)
+- **Síntoma:** en el modal de Clientes, guardar un cliente dejando el **email** vacío devuelve
+  **400 `validation_error`**. Con el **teléfono** vacío, igual. El profesional ve «Error guardando
+  cliente: …» y no puede dar de alta a alguien de quien sólo tiene el nombre y un número.
+- **Causa raíz:** `customersView.js` construye el payload con `email: fieldEmail.input.value.trim()`
+  y `phone: telefonoCompleto()`, que devuelven **cadena vacía** cuando el campo está vacío. Los dos
+  esquemas los declaran `.optional()` pero NO `.nullable()`, así que Zod recibe `""` y lo rechaza:
+  `email` por formato y `phone` por `min(5)`. **Medido ejecutando `customerCreateSchema`:**
+  `""` RECHAZA · `null` RECHAZA · **ausente ACEPTA**.
+- **Cómo se destapó:** el test de SCRUM-590b recorre el alta por el camino REAL (modal → payload →
+  esquema → guardado) y chocó con esto. Ningún test lo veía porque los de formulario comprobaban el
+  payload, no la puerta.
+- **Arreglo:** omitir la clave cuando el valor está vacío, que es lo que YA hace la ficha 360
+  (`if (phone) payload.phone = phone;`) y lo que hace `mobile` desde SCRUM-590b. **No se arregló de
+  paso a propósito:** cambia el comportamiento de dos campos que aquel ticket no tenía encargados,
+  y la casa prohíbe los arreglos «de paso» sin registrar.
+- **⚠️ Y hay una decisión detrás, no es sólo un `if`:** con la clave omitida, **vaciar** un email o
+  un teléfono que ya existen no los borra (ausente = «no toques»). Borrarlos de verdad pide
+  `.nullable()` en el esquema, y eso son los TRES campos a la vez (`phone`, `email`, `mobile`).
+- **Done cuando:** desde el modal se guarda un cliente con sólo nombre y teléfono, y otro con sólo
+  nombre y email, sin error; y el test de SCRUM-590b puede dejar el email vacío.
+
+---
 ## P2 — Mejoras de producto / UX
 
 ### [x] P2-1 · Acciones sobre presupuestos rechazados

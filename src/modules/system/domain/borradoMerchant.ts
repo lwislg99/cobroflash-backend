@@ -118,6 +118,15 @@ export const FUERA_DEL_BARRIDO_GENERICO: Readonly<Record<string, string>> = {
   // cualquiera de los dos padres. Es la diferencia con los colgados de `Charge` de abajo, que son
   // RESTRICT y por eso sí necesitan ir antes que su padre.
   jobAssignee: 'cascada por sus dos padres (SCRUM-650): Job y TeamMember declaran onDelete Cascade',
+  // SCRUM-597 (DOC-07): quién LLEVA el documento. Mismo caso exacto que `jobAssignee` justo
+  // arriba y por el mismo motivo — no tienen `merchantId` (cuelgan de `Quote`/`Invoice` y de
+  // `TeamMember`, que sí lo tienen) y sus DOS `@relation` declaran `onDelete: Cascade`, así que
+  // Postgres barre las filas cuando cae cualquiera de los dos padres. No necesitan paso propio.
+  //
+  // ⚠️ Y NO SON COMO LOS COLGADOS DE `Charge` de abajo, que son RESTRICT y por eso sí van antes
+  // que su padre. La diferencia se decidió en el ALTER (`docs/sql/scrum-597-…`), no aquí.
+  quoteAssignee: 'cascada por sus dos padres (SCRUM-597): Quote y TeamMember declaran onDelete Cascade',
+  invoiceAssignee: 'cascada por sus dos padres (SCRUM-597): Invoice y TeamMember declaran onDelete Cascade',
 };
 
 /**

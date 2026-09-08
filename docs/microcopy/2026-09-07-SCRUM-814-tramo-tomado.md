@@ -1,7 +1,25 @@
 # El aviso de cuando otra petición ya emitió ese tramo
 
 **Aprobado por el fundador** el 7-sep-2026, en **SCRUM-814**.
-**Aplicado en el mismo acto** (regla 30).
+
+## ⚠️ ESTADO: APROBADO Y **NO APLICADO**, con su motivo
+
+**La firma se conserva porque ocurrió.** Lo que cambió es el sitio donde iba a aparecer.
+
+Entre la propuesta y el merge, **otra sesión cerró la misma carrera en `main`** con un arreglo
+mejor: en vez de abortar y pedir que se reintente, **recalcula el tramo dentro de la transacción**
+(`tramoTrasEmitidas`), así que quien llega segundo emite el tramo SIGUIENTE en la misma petición.
+Con eso no hay nada que contarle al profesional: no ha perdido una carrera, ha emitido su factura.
+El único 409 que queda es el que ya existía —«ya se han emitido todas»— con su texto ya firmado.
+
+Y en el camino del CLIENTE FINAL (`/quote/:token/decision`) tampoco se pinta: su aceptación salió
+bien y su factura existe, así que no se le dice nada — decisión registrada en
+`docs/master/SCRUM-814.md`.
+
+**Resultado: este texto no tiene hoy dónde aparecer, y no se ha dejado en el código una constante
+sin consumidor para justificarlo.** Queda aquí, firmado y fechado, disponible el día que haga
+falta un aviso de «otra petición se te ha adelantado». Un texto aprobado que no se usa es un
+apunte; una constante muerta en `src/` es deuda.
 
 ## Texto aprobado, literal
 

@@ -1,10 +1,20 @@
 // src/modules/system/app/routes/quotesAdmin.routes.ts
 import { Router } from 'express';
+import path from 'path'; // SCRUM-822 · `root` de `res.sendFile`
+// SCRUM-597 (DOC-07 · P-DOC-3): el coste congelado en la línea es economía del negocio.
+// Quién lo ve se PREGUNTA a la política, no se decide aquí.
+import { veEconomiaDelNegocio, sinCosteEnDocumento, sinCosteEnDocumentos } from '../../../../core/visibilidadEconomica';
+import {
+  normalizarAsignados, escribirAsignadosDeDocumento, leerAsignadosDeDocumento,
+  type ClienteDeAsignacionDeDocumento,
+} from '../../../../core/documentos/asignacionDeDocumento'; // SCRUM-597 (DOC-07)
+
 import {
   listQuotesAdmin,
   getQuoteDetailAdmin,
   acceptQuoteAdmin,
   rejectQuoteAdmin,
+  setQuoteTags,
 } from '../../quoteAdmin';
 
 import { prisma } from '../../../../core/db/prisma';
@@ -22,8 +32,11 @@ import { conConstancia } from '../../../messaging/domain/avisoConstancia';
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
-// SCRUM-814 · la invariante del tramo vive en UN sitio, compartida por los tres caminos.
-import { exigirTramoLibre, esTramoTomado, cuerpoTramoTomado } from '../../../invoicing/domain/tramoSinCarrera';
+// SCRUM-814 · el cerrojo de serie que YA EXISTE, tomado por el llamador para que el recuento de
+// tramos y la reserva del número queden bajo la MISMA sección crítica. No es un cerrojo nuevo:
+// es `pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)`, el de SCRUM-234/728, y esta función lo
+// expone desde SCRUM-358 para exactamente este uso (comprobar ANTES de consumir número).
+import { tomarCerrojoDeSerie } from '../../../jobs/domain/albaranIdempotencia';
 import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: emitir factura = admin)
 
@@ -176,15 +189,6 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     const existingInvoices = quote.Invoice || [];
     // SCRUM-27: plan efectivo (custom o preset); selección por conteo igual que antes.
     const plan = resolveBillingPlan(quote);
-    const stage = plan[existingInvoices.length] ?? null;
-
-    if (!stage) {
-      // SCRUM-151: CÓDIGO y motivo distintos — plan agotado vs. condiciones que nunca generan
-      // tramos (MANUAL/SIN_CONDICIONES). Un solo código para dos causas obliga a leer el texto
-      // para saber qué pasó, y el texto es lo único que no se debe parsear.
-      return res.status(409).json(motivoSinTramo(plan));
-    }
-
     const isCustomPlan = Array.isArray((quote as any).customBillingPlan) && (quote as any).customBillingPlan.length > 0;
     const merchant = quote.merchant;
 
@@ -194,48 +198,111 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     // podían diferir 1 cént., y esa diferencia quedaba SELLADA en la huella VeriFactu
     // (`importeTotal` del total vs `cuotaTotal` de las líneas). Ver invoiceLines.service.ts.
     const quoteLines = Array.isArray(quote.lines) ? quote.lines as any[] : [];
-    const scaledLines = stageLinesReconciled(
-      quoteLines, plan, stage.index, distributeStageAmounts(quote.total, plan)[stage.index],
-    );
-    const invoiceAmount = grossOfLines(scaledLines);
+
+    // ── SCRUM-814 · EL TRAMO ES UNA FUNCIÓN DEL RECUENTO, no un valor decidido una vez ──────
+    //
+    // Antes esto eran tres constantes calculadas aquí arriba (`stage`, `scaledLines`,
+    // `invoiceAmount`) a partir de `existingInvoices.length`, y 32 líneas más abajo se abría la
+    // transacción SIN volver a contar. Envolver la creación en una transacción no protege una
+    // decisión tomada ANTES de abrirla: la transacción garantiza que lo que se escribe se escribe
+    // entero; no garantiza que lo que se decidió siga siendo cierto.
+    //
+    // MEDIDO (7-sep-2026, plan 50/50, dos peticiones con hora de salida común): las dos leían
+    // CERO facturas, las dos elegían el tramo 0, y las dos emitían el «Anticipo» — 201 las dos,
+    // con números distintos. El cerrojo de SCRUM-728 hacía su trabajo: serializa la SERIE, no la
+    // DECISIÓN. Un candado que funciona perfectamente puede estar guardando una puerta que no es.
+    //
+    // Con plan 30/70 eso es dinero: dos «Anticipo» de 363 €, la tercera petición contesta 409
+    // «Ya se han emitido todas», y quedan 484 € de un presupuesto de 1210 € que ya NO se pueden
+    // facturar — con dos facturas emitidas que por la regla 29 no se editan ni se borran.
+    //
+    // Ahora el tramo se DERIVA del recuento, y el recuento se vuelve a hacer dentro del cerrojo.
+    const tramoTrasEmitidas = (emitidas: number) => {
+      const stage = plan[emitidas] ?? null;
+      if (!stage) return null;
+      const scaledLines = stageLinesReconciled(
+        quoteLines, plan, stage.index, distributeStageAmounts(quote.total, plan)[stage.index],
+      );
+      return { stage, scaledLines, invoiceAmount: grossOfLines(scaledLines) };
+    };
+
+    const tramoPrevio = tramoTrasEmitidas(existingInvoices.length);
+    if (!tramoPrevio) {
+      // SCRUM-151: CÓDIGO y motivo distintos — plan agotado vs. condiciones que nunca generan
+      // tramos (MANUAL/SIN_CONDICIONES). Un solo código para dos causas obliga a leer el texto
+      // para saber qué pasó, y el texto es lo único que no se debe parsear.
+      return res.status(409).json(motivoSinTramo(plan));
+    }
 
     // SCRUM-246 · ANTES de pedir número. Si no hay nada que cobrar, no se emite y la serie
     // ni se entera: comprobarlo DESPUÉS obligaría a modificar una factura ya numerada o a
     // deshacerla, y deshacer es lo que crea el hueco que hay que justificar ante Hacienda.
-    exigirLineasFacturables(scaledLines);
+    exigirLineasFacturables(tramoPrevio.scaledLines);
     // SCRUM-771 · y que el tipo de IVA EXISTA. Mismo sitio y misma razón que la línea de
     // arriba: ANTES de pedir número, nunca después. Deriva de `invalidTipoIva`; aquí no
     // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
-    exigirTiposDeIvaEmitibles(scaledLines);
+    exigirTiposDeIvaEmitibles(tramoPrevio.scaledLines);
 
-    const invoice = await prisma.$transaction(async (tx) => {
-      // SCRUM-814 · PRIMERA sentencia de la transacción: el tramo tiene que seguir libre. El
-      // recuento va aquí dentro y bajo el cerrojo porque `stage` se eligió ARRIBA, fuera de la
-      // transacción, y envolver la creación no protege una decisión tomada antes de abrirla.
-      await exigirTramoLibre(tx, {
-        quoteId: quote.id, merchantId: quote.merchantId, tramosPreparados: existingInvoices.length,
+    const emision = await prisma.$transaction(async (tx) => {
+      // ── SCRUM-814 · EL CERROJO PRIMERO, Y EL RECUENTO DENTRO ─────────────────────────────
+      //
+      // No es un cerrojo nuevo: es el MISMO `pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)`
+      // que `allocateInvoiceNumber` toma unas líneas más abajo (SCRUM-234/728). Tomarlo dos
+      // veces en la misma transacción es inocuo —es re-entrante y se libera al commit—, y
+      // tomarlo AQUÍ es lo que mete el recuento dentro de la sección crítica.
+      //
+      // 🔴 Y VA ANTES DE PEDIR NÚMERO A PROPÓSITO, que es la mitad de la corrección. Contar
+      // DESPUÉS también cerraría la carrera, pero para rechazar habría que deshacer un número
+      // ya reservado, y deshacer es lo que crea el HUECO en la serie que hay que justificar
+      // ante Hacienda. Contando antes no hay nada que deshacer: si se sale por el `return null`
+      // de abajo, esta transacción no ha escrito ni una fila. Es la lección literal de
+      // `albaranIdempotencia.ts` (SCRUM-358), de donde viene `tomarCerrojoDeSerie`.
+      await tomarCerrojoDeSerie(tx, quote.merchantId);
+
+      // El recuento de VERDAD, ya serializado. `quote.Invoice` se leyó fuera y pudo quedarse
+      // viejo entre aquel `findFirst` y este punto; esto no puede.
+      const emitidas = await tx.invoice.count({
+        where: { quoteId: quote.id, merchantId: quote.merchantId }, // regla 2: scoped
       });
+      const tramo = tramoTrasEmitidas(emitidas);
+      if (!tramo) return null; // el plan se agotó mientras esperábamos: 409 fuera, sin número consumido
+
+      // Las mismas dos puertas, sobre las líneas que de verdad se van a emitir. No son las de
+      // arriba repetidas: si la carrera movió el tramo, éstas juzgan OTRAS líneas, y son las
+      // únicas que ven las que acabarán en la factura.
+      exigirLineasFacturables(tramo.scaledLines);
+      exigirTiposDeIvaEmitibles(tramo.scaledLines);
 
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
         camino: 'C3', actor: actorDeRequest(req),
       });
-      return tx.invoice.create({
+      const creada = await tx.invoice.create({
         data: {
           merchantId: quote.merchantId,
           customerId: quote.customerId,
           quoteId: quote.id,
           number: invoiceNumber,
           type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0
-          total: invoiceAmount.toFixed(2),
-          stageLabel: isCustomPlan ? stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
+          total: tramo.invoiceAmount.toFixed(2),
+          stageLabel: isCustomPlan ? tramo.stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
           currency: quote.currency,
-          lines: scaledLines.length > 0 ? scaledLines : undefined,
+          lines: tramo.scaledLines.length > 0 ? tramo.scaledLines : undefined,
           pdfUrl: 'PENDING_PDF',
           qrData: 'PENDING_QR',
           registerId: null,
         },
       });
+      return { invoice: creada, stage: tramo.stage };
     });
+
+    // SCRUM-814 · la carrera perdida NO es un error del profesional ni un 500: es exactamente el
+    // mismo caso que el 409 de arriba —ya no queda tramo— visto un instante después. Mismo
+    // código y mismo texto oficial (regla 30): no se ha redactado ninguna frase nueva.
+    if (!emision) {
+      return res.status(409).json(motivoSinTramo(plan));
+    }
+    const invoice = emision.invoice;
+    const stage = emision.stage;
 
     // Aplicar VeriFactu para merchants españoles con NIF (V0-0: nunca a justificantes)
     // ── SCRUM-205 sobre SCRUM-206 · los DOS, y no es un compromiso: son cosas distintas ──
@@ -281,10 +348,6 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     if (esErrorSinLineas(err)) {
       return res.status(409).json({ error: ERROR_SIN_LINEAS, message: COPY_ADMIN_SIN_LINEAS });
     }
-    // SCRUM-814: otra petición emitió este tramo mientras ésta lo preparaba. La transacción se
-    // deshizo entera —ni factura, ni número consumido, ni asiento de auditoría—, así que la serie
-    // queda intacta y volver a pedir da el tramo SIGUIENTE.
-    if (esTramoTomado(err)) return res.status(409).json(cuerpoTramoTomado());
     return res.status(500).json({ error: 'internal_error' });
   }
 });
@@ -562,7 +625,9 @@ router.get('/:id/pdf', async (req, res) => {
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="presupuesto-${quote.quoteNumber ?? quote.id}.pdf"`);
-    return res.sendFile(pdf.outPath);
+    // SCRUM-822 · `root` obligatorio: sin él `send` aplica su regla de dotfiles a la ruta
+    // ABSOLUTA entera y devuelve 404 si el árbol vive bajo un directorio con punto.
+    return res.sendFile(path.basename(pdf.outPath), { root: path.dirname(pdf.outPath) });
   } catch (err) {
     console.error('[GET /admin/quotes/:id/pdf]', err);
     return res.status(500).json({ error: 'internal_error' });
@@ -687,6 +752,41 @@ router.put('/:id/notes', async (req, res) => {
 });
 
 /**
+ * PUT /admin/quotes/:id/tags — SCRUM-595 (DOC-05) · las etiquetas del presupuesto.
+ *
+ * Copia exacta de la forma de `PUT /:id/notes`, que es el metadato del documento que ya existia:
+ * verbo, acotado por `:id`, tenencia en el `WHERE` y nada mas. Ni un patron nuevo.
+ *
+ * ⚠️ `requireRole('admin')` — y es MAS estricto que `/notes`, que no lo lleva. Se elige el gate
+ * mas cerrado de los dos documentos a proposito: la ruta gemela vive en `invoicesAdmin`, donde
+ * TODAS las escrituras lo llevan, y el mismo bloque con dos permisos distintos segun el documento
+ * seria una asimetria que nadie decidio. Si el fundador quiere que el tecnico etiquete, es QUITAR
+ * un gate —reversible y visible— y no anadirlo despues.
+ */
+router.put('/:id/tags', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    // 🔴 SE VALIDA ESTRICTO, Y NO ES CELO: `normalizarTags` convierte en `null` cualquier cosa que
+    // no sea una lista —es su suelo, y es el correcto para un formulario—, pero en ESTA ruta ese
+    // suelo seria destructivo: un cuerpo mal formado BORRARIA las etiquetas y devolveria `ok`. Un
+    // 400 dice que no se ha guardado; un 200 sobre un borrado accidental, no.
+    const bruto = (req.body ?? {}).tags;
+    if (bruto !== null && !Array.isArray(bruto)) {
+      return res.status(400).json({ error: 'invalid_tags' });
+    }
+    const tocadas = await setQuoteTags(req.merchantId, id, bruto);
+    // 0 filas = no es suyo o no existe. Un `ok: true` aqui le diria al profesional que ha
+    // guardado algo que no se ha guardado.
+    if (tocadas === 0) return res.status(404).json({ error: 'quote_not_found' });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[PUT /admin/quotes/:id/tags]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
  * GET /admin/quotes/:id
  * IMPORTANTE: siempre al final para no interceptar las rutas anteriores
  */
@@ -730,12 +830,77 @@ router.get('/:id', async (req, res) => {
       console.error('[GET /admin/quotes/:id] maintenance enrich:', (e as Error)?.message);
     }
 
-    return res.json({ ...detail, waDelivery, ...(maintenance ? { maintenance } : {}) });
+    // SCRUM-597 (DOC-07): quién lleva este documento. Viaja SIEMPRE, y una lista vacía significa
+    // «sin asignar» — que es como está hoy todo lo que existe, y se comporta igual que siempre.
+    const asignados = await leerAsignadosDeDocumento(
+      prisma as unknown as ClienteDeAsignacionDeDocumento, 'quote', id,
+    );
+    const cuerpo = { ...detail, waDelivery, asignados, ...(maintenance ? { maintenance } : {}) };
+    return res.json(veEconomiaDelNegocio(req.userRole) ? cuerpo : sinCosteEnDocumento(cuerpo as unknown as Record<string, unknown>));
   } catch (err: any) {
     console.error('[GET /admin/quotes/:id]', err);
     if (err.message === 'quote_not_found') {
       return res.status(404).json({ error: 'not_found' });
     }
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * PATCH /admin/quotes/:id/asignados — SCRUM-597 (DOC-07) · ASIGNAR USUARIOS AL DOCUMENTO
+ *
+ * Cuerpo: `{ assignedUserIds: number[] }`. Es la MISMA forma que ya manda el selector de los
+ * trabajos (`cuerpoDeAsignacion` en `jobAsignados.js`), y se reutiliza a propósito: dos formas
+ * distintas para la misma idea acaban divergiendo.
+ *
+ * 🔴 ASIGNAR NO ES UN PERMISO. Esta ruta escribe QUIÉN LLEVA el documento; no cambia quién puede
+ * editarlo ni emitirlo, que lo siguen decidiendo el rol y `requireRole` en cada una de esas
+ * rutas. Y tampoco abre la economía: un técnico asignado sigue sin ver coste ni margen, porque
+ * eso lo decide `visibilidadEconomica.ts` por ROL y la asignación no entra en esa pregunta.
+ *
+ * 🔴 Y NO TOCA EL DOCUMENTO (regla 29). Escribe SOLO en la tabla puente. Asignar a una factura
+ * emitida no puede cambiar su número, su total ni su PDF: no hay ninguna escritura que pudiera.
+ *
+ * `requireRole('admin')` por RUTA y no por campo: así entra sola en la red fail-closed de
+ * SCRUM-55, que reconoce el marcador que deja `requireRole` y no sabría ver un `if` dentro del
+ * handler. El criterio es el de S1 —el reparto del trabajo es del admin— y es el mismo que ya
+ * aplica el selector de asignados de los trabajos.
+ */
+router.patch('/:id/asignados', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+
+    // Tenancy ANTES de escribir (regla 2): el id es un entero consecutivo, así que sin esto se
+    // asignarían documentos de otro merchant sabiendo contar.
+    const documento = await prisma.quote.findFirst({
+      where: { id, merchantId: req.merchantId },
+      select: { id: true },
+    });
+    if (!documento) return res.status(404).json({ error: 'not_found' });
+
+    const ids = normalizarAsignados(req.body?.assignedUserIds);
+
+    // Cada asignado, comprobado UNO A UNO y dentro del merchant. Comprobar solo el primero
+    // dejaría colar los demás — y con varios asignados eso es la mayoría de la lista.
+    for (const uid of ids) {
+      const miembro = await prisma.teamMember.findFirst({
+        where: { id: uid, merchantId: req.merchantId },
+        select: { id: true },
+      });
+      if (!miembro) return res.status(400).json({ error: 'invalid_assignee' });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await escribirAsignadosDeDocumento(tx as unknown as ClienteDeAsignacionDeDocumento, 'quote', id, ids);
+    });
+
+    const asignados = await leerAsignadosDeDocumento(
+      prisma as unknown as ClienteDeAsignacionDeDocumento, 'quote', id,
+    );
+    return res.json({ ok: true, asignados });
+  } catch (err) {
+    console.error('[PATCH /admin/quotes/:id/asignados]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });

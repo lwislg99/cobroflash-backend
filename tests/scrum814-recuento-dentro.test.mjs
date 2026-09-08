@@ -1,24 +1,26 @@
 // tests/scrum814-recuento-dentro.test.mjs — SCRUM-814
 //
 // ═════════════════════════════════════════════════════════════════════════════════════════
-// LOS TRES CAMINOS QUE EMITEN POR TRAMOS EXIGEN EL TRAMO DENTRO DE SU TRANSACCIÓN. SIN GATE.
+// LOS TRES CAMINOS RECUENTAN DENTRO DE SU TRANSACCIÓN Y BAJO EL CERROJO. SIN GATE.
 //
-// El test que demuestra la carrera (`scrum814-carrera-de-tramos-postgres.test.mjs`) necesita un
-// Postgres de verdad y vive detrás de `TRAMOS_PG_URL`. **Un ticket cuyo único guard está detrás
-// de un gate es un ticket cuyo guard el CI no ejecuta nunca** (SCRUM-296). Éste corre siempre.
+// Los dos tests que demuestran la carrera necesitan una base y viven detrás de un gate:
+// `scrum814-carrera-del-tramo.gated.test.mjs` (staging, `QA_DB_TEST`) y
+// `scrum814-carrera-de-tramos-postgres.test.mjs` (banco desechable, `TRAMOS_PG_URL`).
+// **Un ticket cuyo único guard está detrás de un gate es un ticket cuyo guard el CI no ejecuta
+// nunca** (SCRUM-296). Éste corre siempre y vigila la forma del código.
 //
 // Vigila exactamente cómo llegó aquí el defecto: se contaban las facturas ANTES de abrir la
 // transacción y se decidía el tramo con ese número. Dentro de un año alguien «simplifica» un
-// bloque, saca la cuenta fuera otra vez, y nada lo diría — el test con banco no corre en CI, y el
-// positivo y el negativo seguirían verdes porque esto sólo falla bajo carrera.
+// bloque, saca la cuenta fuera otra vez, y nada lo diría — los tests con base no corren en CI, y
+// los controles positivos seguirían verdes porque esto sólo falla bajo carrera.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // POR AST Y POR IDENTIDAD, NUNCA POR SUBCADENA
 //
-// Un `grep` de «exigirTramoLibre» casaría con este mismo comentario y con la prosa que lo explica
-// (SCRUM-203, y la trampa de auto-referencia que ya ha mordido cinco veces). Aquí se navega el
-// árbol: se localiza cada handler, dentro de él su `prisma.$transaction`, y se pregunta por lo que
-// hay DENTRO del callback y EN QUÉ ORDEN.
+// Un `grep` de «tomarCerrojoDeSerie» casaría con este mismo comentario y con la prosa que lo
+// explica (SCRUM-203, y la trampa de auto-referencia que ya ha mordido cinco veces). Aquí se
+// navega el árbol: se localiza cada handler, dentro de él la transacción QUE EMITE, y se pregunta
+// por lo que hay DENTRO del callback y EN QUÉ ORDEN.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -87,7 +89,7 @@ function handlerDeLaRuta(sf, ruta, fichero) {
 
 /**
  * La transacción que EMITE, dentro de un handler: la que llama a `allocateInvoiceNumber`.
- * Se elige por lo que hace, no por su posición — `quotes.routes.ts` tiene otra transacción antes
+ * Se elige por lo que HACE, no por su posición — `quotes.routes.ts` tiene otra transacción antes
  * (la que acepta el presupuesto) y quedarse con la primera mediría el bloque equivocado.
  */
 function transaccionQueEmite(handler, sf, fichero) {
@@ -98,7 +100,7 @@ function transaccionQueEmite(handler, sf, fichero) {
     && buscar(n, (m) => ts.isCallExpression(m) && ts.isIdentifier(m.expression)
       && m.expression.text === 'allocateInvoiceNumber').length > 0);
   assert.equal(txs.length, 1,
-    `🔴 SUELO: ${txs.length} transacciones que piden número en ${fichero}, esperaba 1.`);
+    `🔴 SUELO: ${txs.length} transacciones que piden número en ${fichero} (${handler.getStart()}), esperaba 1.`);
   return txs[0].arguments[0];
 }
 
@@ -122,23 +124,32 @@ test('SCRUM-814 · 🔴 SUELO: los TRES caminos existen y tienen su transacción
 // § 1 · 🔴 LO QUE CIERRA LA CARRERA, EN LOS TRES
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-814 · 🔴 los tres exigen el tramo DENTRO de la transacción y ANTES de pedir número', () => {
+test('SCRUM-814 · 🔴 los tres: cerrojo, recuento y AMBOS antes de pedir número', () => {
   for (const c of CAMINOS) {
     const { sf } = arbolDe(c.fichero);
     const cb = transaccionQueEmite(handlerDeLaRuta(sf, c.ruta, c.fichero), sf, c.fichero);
 
-    // 🔴 LAS POSICIONES SALEN DEL ÁRBOL, NO DEL TEXTO. La primera versión hacía
+    // 🔴 LAS POSICIONES SALEN DEL ÁRBOL, NO DEL TEXTO. Una versión anterior hacía
     // `cuerpo.indexOf('allocateInvoiceNumber')` y casaba con **el comentario que lo explica**,
     // que iba antes: el guard se puso rojo acusando a un código correcto. Es la trampa de
-    // auto-referencia de SCRUM-203, que ya ha mordido cinco veces en esta casa.
+    // auto-referencia de SCRUM-203.
     const primero = (ok) => { const n = buscar(cb, ok); return n.length ? n[0].getStart() : -1; };
-    const posExige = primero((n) => ts.isCallExpression(n) && ts.isIdentifier(n.expression)
-      && n.expression.text === 'exigirTramoLibre');
+    const posCerrojo = primero((n) => ts.isCallExpression(n) && ts.isIdentifier(n.expression)
+      && n.expression.text === 'tomarCerrojoDeSerie');
+    const posCuenta = primero((n) => ts.isCallExpression(n)
+      && ts.isPropertyAccessExpression(n.expression)
+      && /^tx\.invoice\.count$/.test(n.expression.getText(sf)));
     const posNumero = primero((n) => ts.isCallExpression(n) && ts.isIdentifier(n.expression)
       && n.expression.text === 'allocateInvoiceNumber');
 
-    assert.notEqual(posExige, -1,
-      `🔴 ${c.fichero} (${c.ruta}) NO llama a \`exigirTramoLibre\` dentro de su transacción.\n\n`
+    assert.notEqual(posCerrojo, -1,
+      `🔴 ${c.fichero} (${c.ruta}) NO toma el cerrojo de serie dentro de su transacción.\n\n`
+      + `  Lo dispara: ${c.quien}.\n\n`
+      + '  `tomarCerrojoDeSerie` es el MISMO `pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)` de\n'
+      + '  SCRUM-234/728, expuesto por `albaranIdempotencia.ts` (SCRUM-358). No es un cerrojo\n'
+      + '  nuevo: sin él, el recuento de abajo no ve lo que acaba de escribir la otra petición.');
+    assert.notEqual(posCuenta, -1,
+      `🔴 ${c.fichero} (${c.ruta}) NO recuenta las facturas DENTRO de su transacción.\n\n`
       + `  Lo dispara: ${c.quien}.\n\n`
       + '  Así llegó aquí SCRUM-814: el tramo se decidía con `plan[<facturas ya emitidas>]`, y ese\n'
       + '  recuento venía de una lectura hecha ANTES de abrir la transacción. Envolver la creación\n'
@@ -147,129 +158,101 @@ test('SCRUM-814 · 🔴 los tres exigen el tramo DENTRO de la transacción y ANT
       + '  presupuesto se quedaba en 726 € de 1210 — 484 € que ya no se podían facturar, porque la\n'
       + '  regla 29 no deja borrar una factura emitida.');
     assert.notEqual(posNumero, -1, `🔴 SUELO: ${c.fichero} no pide número dentro de la transacción.`);
-    assert.ok(posExige < posNumero,
-      `🔴 ${c.fichero}: se pide número ANTES de exigir el tramo. Las comprobaciones van antes de `
-      + 'consumir un número de la serie (SCRUM-246 y SCRUM-771): que el rollback lo devuelva es un '
-      + 'detalle del motor, y el orden se lee.');
+
+    assert.ok(posCerrojo < posCuenta,
+      `🔴 ${c.fichero}: se recuenta ANTES de tomar el cerrojo. Ahí todavía puede colarse la otra `
+      + 'petición: el cerrojo es lo que garantiza que quien cuenta ya ve el commit del otro.');
+    assert.ok(posCuenta < posNumero,
+      `🔴 ${c.fichero}: se pide número ANTES de recontar. Rechazar después obligaría a deshacer un `
+      + 'número ya reservado, y deshacer es lo que crea el HUECO en la serie que hay que '
+      + 'justificar ante Hacienda (SCRUM-246, SCRUM-771, y la lección de SCRUM-358).');
   }
 });
 
-test('SCRUM-814 · 🔴 la invariante vive en UN solo sitio: nadie se copia el recuento', () => {
-  // Tres copias del mismo recuento son tres sitios que pueden separarse, y basta que alguien
-  // «simplifique» uno para reabrir el agujero justo donde más muerde.
+test('SCRUM-814 · 🔴 el recuento filtra por `merchantId`, no sólo por el presupuesto', () => {
+  // Regla 2. La alternativa era apoyarse en la procedencia del id, y el censo de SCRUM-348 llama
+  // a eso «correcto hoy y frágil siempre»: nada comprueba que mañana el id siga viniendo de una
+  // fila acotada. Aquí el merchant está a mano y no cuesta nada.
   for (const c of CAMINOS) {
-    const { sf, fuente } = arbolDe(c.fichero);
-    const cuentas = buscar(sf, (n) => ts.isCallExpression(n)
+    const { sf } = arbolDe(c.fichero);
+    const cb = transaccionQueEmite(handlerDeLaRuta(sf, c.ruta, c.fichero), sf, c.fichero);
+    const cuentas = buscar(cb, (n) => ts.isCallExpression(n)
       && ts.isPropertyAccessExpression(n.expression)
       && /^tx\.invoice\.count$/.test(n.expression.getText(sf)));
-    assert.equal(cuentas.length, 0,
-      `🔴 ${c.fichero} cuenta facturas por su cuenta dentro de una transacción en vez de llamar a `
-      + '`exigirTramoLibre`. La invariante tiene que estar escrita una vez.');
-    assert.match(fuente, /from '.*invoicing\/domain\/tramoSinCarrera'/,
-      `🔴 ${c.fichero} no importa \`tramoSinCarrera\`.`);
+    assert.equal(cuentas.length, 1, `🔴 ${c.fichero}: ${cuentas.length} recuentos, esperaba 1.`);
+    assert.match(cuentas[0].getText(sf), /merchantId/,
+      `🔴 ${c.fichero}: el recuento no filtra por \`merchantId\` (regla 2).`);
+    assert.match(cuentas[0].getText(sf), /quoteId/,
+      `🔴 ${c.fichero}: el recuento no filtra por \`quoteId\`: estaría contando otra población.`);
   }
 });
 
-test('SCRUM-814 · 🔴 el módulo toma el cerrojo de SCRUM-728, importado y no copiado', () => {
-  const { sf, fuente } = arbolDe('src/modules/invoicing/domain/tramoSinCarrera.ts');
-  const imports = buscar(sf, (n) => ts.isImportDeclaration(n))
-    .filter((n) => n.getText(sf).includes('SERIE_LOCK_NS'));
-  assert.equal(imports.length, 1,
-    '🔴 `SERIE_LOCK_NS` no se importa. Si el número del cerrojo se escribe a mano aquí hay dos '
-    + 'fuentes para la misma clave, y el día que una cambie dejarán de excluirse entre sí — sin '
-    + 'que nada falle, que es lo peor.');
-  assert.match(imports[0].getText(sf), /invoiceNumber\.service/,
-    '🔴 `SERIE_LOCK_NS` viene de otro sitio que no es `invoiceNumber.service` (SCRUM-728).');
-
-  const cerrojo = buscar(sf, (n) => ts.isTaggedTemplateExpression(n)
-    && n.getText(sf).includes('pg_advisory_xact_lock'));
-  assert.equal(cerrojo.length, 1,
-    '🔴 el módulo ya no toma `pg_advisory_xact_lock`. Sin el cerrojo, el recuento de dentro no ve '
-    + 'lo que hizo la otra petición y vuelve a decidir mal.');
-  const cuenta = buscar(sf, (n) => ts.isCallExpression(n)
-    && ts.isPropertyAccessExpression(n.expression) && /invoice\.count$/.test(n.expression.getText(sf)));
-  assert.equal(cuenta.length, 1, '🔴 el módulo no cuenta las facturas del presupuesto.');
-  assert.ok(cerrojo[0].getStart() < cuenta[0].getStart(),
-    '🔴 se cuenta ANTES de tomar el cerrojo. Ahí todavía puede colarse la otra petición: el '
-    + 'cerrojo es lo que garantiza que quien cuenta ya ve el commit del otro.');
-  assert.match(cuenta[0].getText(sf), /merchantId/,
-    '🔴 el `count` ya no filtra por `merchantId` (regla 2). La alternativa era apoyarse en la '
-    + 'procedencia del id, y el censo de SCRUM-348 llama a eso «correcto hoy y frágil siempre».');
-});
-
 // ═════════════════════════════════════════════════════════════════════════════════════════
-// § 2 · EL CÓDIGO Y EL TEXTO — uno solo, y distinto del de «plan agotado»
+// § 2 · 🔴 LA DIFERENCIA DELIBERADA DEL CAMINO DEL CLIENTE
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-814 · 🔴 el tramo tomado tiene código PROPIO, distinto del de plan agotado', () => {
-  // Los dos son 409 y significan cosas opuestas: éste dice «vuelve a pedirlo», el otro dice «no
-  // queda nada». Un solo código obligaría a leer el texto para saber si hay que reintentar, y el
-  // texto es lo único que no se debe parsear (SCRUM-151).
-  const { sf } = arbolDe('src/modules/invoicing/domain/tramoSinCarrera.ts');
-  const literal = (nombre) => {
-    const d = buscar(sf, (n) => ts.isVariableDeclaration(n)
-      && ts.isIdentifier(n.name) && n.name.text === nombre);
-    assert.equal(d.length, 1, `🔴 no existe la constante \`${nombre}\`.`);
-    assert.ok(d[0].initializer && ts.isStringLiteral(d[0].initializer),
-      `🔴 \`${nombre}\` no es un literal de cadena.`);
-    return d[0].initializer.text;
-  };
-  assert.notEqual(literal('TRAMO_TOMADO'), 'no_more_invoices_for_payment_terms',
-    '🔴 el tramo tomado usa el MISMO código que «plan agotado». Son estados opuestos: uno se '
-    + 'reintenta y el otro no.');
-
-  // 🔴 EL TEXTO, PALABRA POR PALABRA. Está FIRMADO (7-sep-2026, SCRUM-814) y su registro es
-  // `docs/microcopy/2026-09-07-SCRUM-814-tramo-tomado.md`. Un texto aprobado que se edita sin
-  // volver a firmarlo deja de estar aprobado, y nadie se entera.
-  assert.equal(literal('COPY_TRAMO_TOMADO'),
-    'Se acaba de emitir otra factura de este presupuesto. Vuelve a intentarlo y saldrá el tramo siguiente.',
-    '🔴 el texto aprobado ha cambiado. Si hace falta otro, se firma otro: esto es microcopy '
-    + 'oficial (regla 30) y su registro está en docs/microcopy/.');
-
-  const registro = path.join(RAIZ, 'docs', 'microcopy', '2026-09-07-SCRUM-814-tramo-tomado.md');
-  assert.ok(fs.existsSync(registro),
-    '🔴 falta el registro de la aprobación en `docs/microcopy/`. Un texto oficial sin registro es '
-    + 'un texto que nadie puede comprobar que se firmara.');
-  assert.match(fs.readFileSync(registro, 'utf8'), /\*\*Aprobado por el fundador\*\*/,
-    '🔴 el registro no lleva la firma del fundador.');
-});
-
-test('SCRUM-814 · 📌 los dos endpoints del PROFESIONAL contestan 409 con ese cuerpo', () => {
-  // El del cliente final NO: ahí la aceptación salió bien y su factura existe (la emitió la
-  // gemela). Enseñarle un aviso sería una llamada de soporte por algo que no ha pasado.
-  for (const f of [
-    'src/modules/system/app/routes/quotesAdmin.routes.ts',
-    'src/modules/jobs/app/routes/jobs.routes.ts',
-  ]) {
-    const { fuente } = arbolDe(f);
-    assert.match(fuente, /esTramoTomado\(err\)\)\s*return res\.status\(409\)\.json\(cuerpoTramoTomado\(\)\)/,
-      `🔴 ${f} ya no contesta 409 con el cuerpo común ante un tramo tomado.`);
-  }
-  const { fuente: cliente } = arbolDe('src/modules/quotes/app/routes/quotes.routes.ts');
-  assert.match(cliente, /if \(esTramoTomado\(e\)\)/,
-    '🔴 el camino del cliente final ya no distingue el tramo tomado, así que volvería a marcar '
-    + '«factura pendiente» por una factura que SÍ existe.');
-});
-
-// ═════════════════════════════════════════════════════════════════════════════════════════
-// § 3 · EL TEST CON BANCO SIGUE AHÍ — era mi condición al recomendar este camino
-// ═════════════════════════════════════════════════════════════════════════════════════════
-
-test('SCRUM-814 · 📌 el test de carrera existe, cubre los tres y conserva su suelo', () => {
-  const conBanco = path.join(RAIZ, 'tests', 'scrum814-carrera-de-tramos-postgres.test.mjs');
-  assert.ok(fs.existsSync(conBanco),
-    '🔴 falta `tests/scrum814-carrera-de-tramos-postgres.test.mjs`. Este guard vigila la FORMA del '
-    + 'código; el que demuestra que la carrera está cerrada es aquél.');
-  const t = fs.readFileSync(conBanco, 'utf8');
-  assert.match(t, /una-peticion\.mjs/,
-    '🔴 el test con banco ya no usa `docs/master/evidencias/scrum814/una-peticion.mjs`. La carrera '
-    + 'se PROVOCA con dos procesos y hora de salida común: `Promise.all` en un solo node comparte '
-    + 'bucle de eventos y da un falso «no se reproduce» — me pasó, y cerró la pregunta.');
-  assert.match(t, /arranque < 120/,
-    '🔴 el test con banco ha perdido su suelo de carrera. Sin él, un «no se reproduce» puede ser '
-    + 'sólo que las dos peticiones no llegaron a solaparse.');
+test('SCRUM-814 · 🔴 el camino del CLIENTE no recalcula el tramo: sale sin escribir', () => {
+  // En `quotesAdmin` y en «cobrar el resto», quien pierde la carrera emite el tramo SIGUIENTE:
+  // quien pulsó pedía «emite lo que toque». En `/:token/decision` NO, y es la diferencia que hay
+  // que proteger: lo que el cliente hizo fue ACEPTAR una vez, aunque el dedo tocara dos.
+  // Recalcular emitiría el «Final» de golpe junto al «Anticipo» — cobrarle antes de tiempo.
+  // 🔴 NO ES UNA NEGACIÓN SUELTA, Y ESO IMPORTA (SCRUM-237): «aquí no aparece `tramoTrasEmitidas`»
+  // sería verde para siempre el día que ese nombre cambie en toda la casa. Se comparan DOS
+  // CONJUNTOS: los dos caminos del profesional SÍ lo tienen y el del cliente NO. Si el nombre
+  // cambia, el hermano positivo cae primero y dice que hay que volver a mirar.
+  const recalculan = new Set();
   for (const c of CAMINOS) {
-    assert.ok(t.includes(c.ruta),
-      `🔴 el test con banco no cubre \`${c.ruta}\` (${c.fichero}). Lo dispara: ${c.quien}.`);
+    const { sf } = arbolDe(c.fichero);
+    const cb = transaccionQueEmite(handlerDeLaRuta(sf, c.ruta, c.fichero), sf, c.fichero);
+    const usos = buscar(cb, (n) => ts.isCallExpression(n) && ts.isIdentifier(n.expression)
+      && n.expression.text === 'tramoTrasEmitidas');
+    if (usos.length) recalculan.add(c.ruta);
   }
+  assert.deepEqual([...recalculan].sort(), ['/:id/collect-rest', '/:id/invoice'],
+    `🔴 el reparto de quién recalcula el tramo ha cambiado: ${JSON.stringify([...recalculan])}. `
+    + 'Los DOS caminos del profesional recalculan, porque quien pulsa pide «emite lo que toque»: '
+    + 'quien llega segundo emite el tramo SIGUIENTE. El del CLIENTE FINAL no, y es la diferencia '
+    + 'que hay que proteger — lo que hizo fue ACEPTAR una vez, aunque el dedo tocara dos, y '
+    + 'recalcular le emitiría el «Final» de golpe junto al «Anticipo»: cobrarle antes de tiempo.');
+
+  const c = CAMINOS.find((x) => x.ruta === '/:token/decision');
+  const { sf } = arbolDe(c.fichero);
+  const cb = transaccionQueEmite(handlerDeLaRuta(sf, c.ruta, c.fichero), sf, c.fichero);
+  const retornosNulos = buscar(cb, (n) => ts.isReturnStatement(n)
+    && n.expression && n.expression.kind === ts.SyntaxKind.NullKeyword);
+  assert.ok(retornosNulos.length >= 1,
+    '🔴 el camino del cliente ya no sale con `return null` cuando el recuento se ha movido. Sin esa '
+    + 'salida, o emite dos veces el mismo tramo o emite el siguiente: las dos están mal aquí.');
+
+  // Y el resultado nulo NO puede acabar en «factura pendiente»: eso le diría al cliente que
+  // llame al profesional por una factura que SÍ existe.
+  assert.match(sf.getFullText(), /invoice === null/,
+    '🔴 nadie distingue el `null` de la carrera perdida, así que caería en el camino de error y '
+    + 'marcaría `facturaPendiente` por una factura que existe.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// § 3 · LOS TESTS CON BASE SIGUEN AHÍ, Y SE REPARTEN LOS TRES CAMINOS SIN SOLAPARSE
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-814 · 📌 entre los dos tests con base, los TRES caminos quedan cubiertos', () => {
+  const gated = path.join(RAIZ, 'tests', 'scrum814-carrera-del-tramo.gated.test.mjs');
+  const banco = path.join(RAIZ, 'tests', 'scrum814-carrera-de-tramos-postgres.test.mjs');
+  assert.ok(fs.existsSync(gated), '🔴 falta el test de carrera contra staging.');
+  assert.ok(fs.existsSync(banco), '🔴 falta el test de carrera contra el banco desechable.');
+
+  const juntos = fs.readFileSync(gated, 'utf8') + fs.readFileSync(banco, 'utf8');
+  for (const c of CAMINOS) {
+    assert.ok(juntos.includes(c.ruta),
+      `🔴 ningún test con base ejercita \`${c.ruta}\` (${c.fichero}). Lo dispara: ${c.quien}.`);
+  }
+
+  const t = fs.readFileSync(banco, 'utf8');
+  assert.match(t, /una-peticion\.mjs/,
+    '🔴 el test del banco ya no usa `docs/master/evidencias/scrum814/una-peticion.mjs`. La carrera '
+    + 'se PROVOCA con dos procesos y hora de salida común: `Promise.all` en un solo node comparte '
+    + 'bucle de eventos y da un falso «no se reproduce» — pasó, y cerró la pregunta.');
+  assert.match(t, /arranque < 120/,
+    '🔴 el test del banco ha perdido su suelo de carrera. Sin él, un «no se reproduce» puede ser '
+    + 'sólo que las dos peticiones no llegaron a solaparse.');
 });

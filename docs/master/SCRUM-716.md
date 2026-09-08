@@ -578,3 +578,218 @@ comprobar por AST el argumento de `process.exit` y exige además que **`constanc
 
 `continue-on-error: true` · `permissions` · `concurrency` · el contrato de `GET /version` · el
 margen de 6 h · `scrum-716c` (sigue en `08650118`) · ningún árbol ajeno.
+
+
+---
+
+# ✅ ENMIENDA (8-sep-2026) · SCRUM-716c · LA MEMORIA NO SOBREVIVÍA A SU PROPIO AVISO
+
+**Rama:** `scrum-716c-el-cache-del-vigia` · **Árbol:** `cobroflash-b22`
+**Medido contra:** `origin/main` = `7d2d45bd568c4c924bb04cb82a4369e4e070fe79` · 2026-09-08T02:27:15+01:00
+
+> Va **dentro de esta entrada y no en un fichero propio** porque el guard de SCRUM-273 lo
+> exige y su motivo es correcto: el nombre `SCRUM-<n>.md` es lo que garantiza que dos tickets
+> nunca escriban el mismo fichero. Esto no es un ticket nuevo — es un defecto sobre el
+> mecanismo que este ticket construyó.
+# 🔴 OBLIGACIÓN 0 · ¿HAY YA RAMA CON ESTE NÚMERO?
+
+**Se pregunta al REMOTO, no a Jira**, y **por nombre de rama**, no con un `grep` suelto — un
+`grep 716` casa con SHAs por coincidencia y fabrica paradas falsas.
+
+```
+git ls-remote --heads origin | grep -E "refs/heads/scrum-716(-|$)"
+   → refs/heads/scrum-716-el-verde-ciego = 8de07cb3108ff76e99188a55136e48ae1c807961
+git merge-base --is-ancestor 8de07cb3 origin/main
+   → MERGEADA
+```
+
+**Hay rama, y está MERGEADA: 0 commits sobre `main`, 0 ficheros, 0 líneas.** Es una rama muerta que
+GitHub no borró al cerrar su PR, no trabajo sin integrar. La comprobación se paró y se preguntó
+antes de seguir; el fundador confirmó que lo que se trae es un **defecto sobre código vivo**, no una
+reconstrucción del ticket.
+
+📌 De aquí salió la enmienda a la propia Obligación 0, ya adoptada para toda la casa: **existir y
+contener trabajo sin mergear son cosas distintas**, y sólo la segunda es motivo de parar. Sin la
+segunda línea, cada rama muerta sin limpiar bloquea su ticket para siempre.
+
+---
+
+# EL HECHO
+
+Medido en CI dos veces el 8-sep-2026:
+
+```
+vigía · atrasado · prod=15fb3b2f · main=b07546cf · hueco=17.1h · exit 2
+«no hay lectura anterior con la que comparar. NO es congelado: es que nadie ha mirado antes.»
+```
+
+Y el desenlace, que es lo que lo convierte en ticket: **producción SÍ estaba desplegando.** El
+último verde de Railway era `4d9576fa`, el de SCRUM-814. O sea el caso **RETRASADO PERO
+DESPLEGANDO** — exactamente el que SCRUM-716 construyó para no confundir con CONGELADO.
+
+**El instrumento tenía el dato correcto y la conclusión imposible**, por no tener con qué comparar.
+
+---
+
+# 🔴 LA MEDICIÓN · ¿no se guarda, o se guarda y no se restaura?
+
+**Ninguna de las dos, y son DOS causas distintas en DOS workflows.** Mirado en los propios
+workflows, no deducido.
+
+## (a) `ci.yml` — el vigía de CADA PR **no tenía memoria en absoluto**
+
+```
+acotado el job `vigia-despliegue` de ci.yml:
+   actions/cache  → NO
+   VIGIA_ESTADO   → NO
+```
+
+SCRUM-716 le dio la lectura anterior al workflow **programado** y **no a éste**. Así que el vigía
+de cada PR corría con `rutaEstado = ''` —sin lectura anterior **por construcción**— y en cuanto
+producción iba por detrás contestaba NO SE SABE. **No es «se guarda y no se restaura»: es que nunca
+hubo caché.**
+
+Es la misma asimetría que ya mordió en SCRUM-716b, y el propio `ci.yml` la nombra sin darse cuenta:
+*«El workflow PROGRAMADO no necesita esto»* —lo dice del `git fetch` de `main`—, pero la diferencia
+entre los dos jobs era más grande de lo que ese comentario recoge.
+
+## (b) `vigia-despliegue.yml` — el programado la tenía, pero **guardaba sólo en verde**
+
+Usaba `actions/cache@v4` **a secas**. Medido en la definición de la acción, no de memoria:
+
+```yaml
+# actions/cache@v4 · action.yml
+runs:
+  using: 'node20'
+  main: 'dist/restore/index.js'
+  post: 'dist/save/index.js'
+  post-if: "success()"
+```
+
+Y el vigía **falla el job a propósito**: ése es su mecanismo de aviso, escrito en su propia cabecera
+—*«El aviso es el propio job en rojo»*—. Se cruzan las dos cosas y sale esto:
+
+| vigía | ¿corre el post? | ¿se guarda la lectura? |
+|---|---|---|
+| VERDE | sí | **sí** |
+| ROJO | **no** | **NO** |
+
+🔴 **La memoria se guardaba sólo cuando no hacía falta, y nunca cuando sí.** En cuanto producción se
+quedaba atrás el vigía se ponía en rojo, no guardaba, y la ejecución siguiente volvía a no tener con
+qué comparar. NO_SE_SABE perpetuo.
+
+## ¿Desde cuándo?
+
+`git log -S "actions/cache" -- .github/workflows/vigia-despliegue.yml` → **una sola entrada**:
+`8de07cb3`, **7-sep-2026 03:36**. O sea que este exit 2 tiene **un día**, no semanas.
+
+🔴 **Y NO SE HA PERDIDO NINGÚN «CONGELADO» LEGÍTIMO**, que era la pregunta que había detrás. Sin
+lectura anterior el vigía **tampoco puede emitir CONGELADO**: emite NO_SE_SABE, que también es rojo
+(salida 2). El job estaba en rojo de todas formas. Lo que se perdió no es la alerta: es la
+**discriminación** — y, en el job de PR, la credibilidad de un vigía que sale rojo en todas.
+
+---
+
+# EL ARREGLO
+
+## (a) El programado: `restore` al principio, `save` **con `if: always()`** al final
+
+`actions/cache/save@v4` es un paso **normal** (`main:`, sin `post` y sin `post-if` — comprobado en
+su `action.yml`), así que `always()` basta y se ejecuta también cuando el vigía ha cantado.
+
+## (b) El de cada PR: lectura anterior, **en SÓLO LECTURA**
+
+Y eso es una decisión, no un descuido:
+
+- una rama de PR **puede restaurar** las cachés de la rama por defecto — de ahí sale la lectura que
+  dejó el programado sobre `main`;
+- pero **no debe guardar**: lo que escribiera se queda en el ámbito de su propia rama, invisible
+  para `main`, y le ensuciaría sus siguientes pasadas con lecturas tomadas desde un contexto que no
+  es producción-contra-main.
+
+⚠️ **Y depende del arreglo (a)**: si el programado no guarda, aquí no hay nada que restaurar y el
+vigía de PR sigue diciendo NO SE SABE. Correctamente —es la verdad— pero queda dicho para que nadie
+lea (b) como una garantía por sí sola.
+
+## ⛔ Lo que NO cambia, y es la mitad del ticket
+
+- **Los tres veredictos siguen siendo tres.** NO_SE_SABE **no** pasa a verde.
+- **La primera pasada de todas SIGUE diciendo NO_SE_SABE**, y tiene su test. Eso no es un fallo: es
+  la verdad.
+- El vigía sale con **el mismo código** que antes; el job sigue en rojo cuando toca. Lo único que
+  cambia es que **la lectura sobrevive**.
+- El job de PR sigue siendo `continue-on-error: true`: un check bloqueante le cerraría la puerta a
+  la rama que viene a arreglar el despliegue que él mismo mide.
+
+---
+
+# LOS CONTROLES
+
+`tests/scrum716c-la-memoria-del-vigia.test.mjs` — **8 casos, 8 en verde.** Y guardan el
+**TRANSPORTE**, que es lo que nadie probaba: 716 ató la DECISIÓN a conciencia y el defecto estaba en
+que la lectura no llegaba de una ejecución a la siguiente.
+
+## 🔴 El control que decide, ejecutado de EXTREMO A EXTREMO
+
+No con dos lecturas puestas a mano: con el **CLI de verdad**, corrido **dos veces**, contra un repo
+de usar y tirar de tres commits viejos, un `/version` propio en `127.0.0.1` y un `VIGIA_ESTADO` real
+entre medias.
+
+| Escenario | Resultado exigido |
+|---|---|
+| dos lecturas · producción **se mueve** | **exit 0** y dice `RETRASADO, PERO DESPLEGANDO` |
+| dos lecturas · producción **quieta**, pasado el margen | **exit 1** y dice `PRODUCCIÓN CONGELADA` |
+| **primera pasada de todas** | **exit 2**, NO SE SABE — y tiene que seguir saliendo |
+| `/version` inalcanzable | **exit 2**, `no-supe-mirar`, jamás «al día» |
+
+Con su **suelo del transporte**: se comprueba que tras la primera pasada el historial tiene
+**exactamente un renglón**, y tras la segunda **dos**. Sin eso, el control mediría otra cosa.
+
+## 🔴 Y una invariante estructural, para que no vuelva a pasar
+
+Lo que dejó pasar este defecto es que 716 le dio memoria a **un** workflow y no al otro, y nada
+comprobaba la pareja. Ahora hay un barrido: **todo job que le dé `VIGIA_ESTADO` al vigía tiene que
+tener su paso de caché, y si guarda, el guardado no puede depender de que el vigía haya ido bien.**
+Con suelo: el barrido tiene que encontrar exactamente los dos workflows conocidos — cero no sería
+«todo correcto», sería que no ha mirado.
+
+## Los rojos, probados por MUTACIÓN
+
+| Mutación inyectada | Qué cayó |
+|---|---|
+| vuelve `actions/cache@v4` a secas | **2**: el del programado y la invariante estructural |
+| se le quita el `if: always()` al guardado | **2**: los mismos |
+| el vigía de PR se queda sin `VIGIA_ESTADO` | **2**: el del PR y la invariante |
+| 🔴 NO_SE_SABE pasa a **verde** | **3**: los dos controles y el POSITIVO de la primera pasada |
+| CONGELADO deja de cantar | el control del otro sentido |
+
+Cada mutación **comprobada presente en el fichero** antes de correr nada.
+
+---
+
+# 🕳️ Tres tropiezos propios, escritos porque son el mismo patrón
+
+1. **Un interbloqueo que no fallaba: se colgaba.** El test levantaba el `/version` en su propio
+   proceso y llamaba al vigía con `execFileSync`, que **bloquea el bucle de eventos**: el servidor
+   no podía contestar y el hijo esperaba su `fetch` para siempre. Sin síntoma —ni rojo ni verde—.
+   Arreglado con `execFile` asíncrono, y el porqué queda escrito en el test.
+2. **Una aserción que se cazaba a sí misma, por tercera vez en esta sesión.** El SUELO negaba
+   `/al día/` sobre la salida… y el vigía, cuando no puede mirar, **explica** que «esto NO es
+   producción está al día». Es la lección de SCRUM-349: se mira el **veredicto**, que es legible por
+   máquina, no la prosa que lo explica.
+3. **Un ancla de medición que casi miente.** Al corregir el formato del ancla se usó
+   `git rev-parse origin/main`, que ya se había movido — habría anclado contra un commit contra el
+   que no se midió. Va el `merge-base` real de la rama.
+
+# 🕳️ Huecos declarados
+
+1. **Nada de esto se ha ejecutado en un runner de GitHub.** Los guards del workflow son
+   **estructurales sobre el YAML** —con suelo—, y el control de extremo a extremo corre el CLI, no
+   la caché de Actions. Que `actions/cache/save` guarde de verdad con el job en rojo se apoya en su
+   `action.yml` (medido) y **lo confirmará la primera pasada real en CI**, no esta sesión.
+2. **No se ha podido contar cuántas ejecuciones salieron en exit 2**, porque eso vive en la API de
+   Actions y aquí no hay `gh`. Lo que sí está medido es la **ventana**: desde `8de07cb3`
+   (7-sep 03:36), o sea un día.
+3. **El caso de la caché EVICTADA no se ejercita.** GitHub retira las cachés no usadas en 7 días; si
+   eso pasa, el vigía vuelve —correctamente— a NO_SE_SABE en su siguiente pasada. Es el
+   comportamiento diseñado, pero aquí no se ha reproducido.

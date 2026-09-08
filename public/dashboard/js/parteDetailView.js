@@ -42,6 +42,10 @@
     materiales: 'Materiales',
     sinLineas: 'Todavía no has apuntado nada.',
     unds: 'UNDS',
+    // La segunda cabecera de las líneas. FIRMADA por el fundador el 7-sep-2026 (SCRUM-818): es la
+    // palabra del impreso y no estrena vocabulario. Consta en
+    // `docs/microcopy/2026-09-07-SCRUM-818-cabecera-de-la-descripcion.md`.
+    descripcion: 'Descripción',
     entrada: 'Entrada',
     salida: 'Salida',
     desplazamiento: 'Desplazamiento',
@@ -57,6 +61,10 @@
     // `docs/microcopy/2026-09-03-SCRUM-704-guardar-lineas-dictadas.md`.
     noSeGuardo: 'No se han podido guardar las líneas — vuelve a intentarlo',
     noSePudoCargar: 'No se ha podido cargar el parte. Vuelve a intentarlo.',
+    // El rótulo del GRUPO de los tres tipos (SCRUM-818). No es texto nuevo: es el literal que el
+    // fundador firmó en SCRUM-703 para este mismo vocabulario cerrado en «Trabajo nuevo», así que
+    // reutilizarlo no estrena microcopy ni pide firma (regla 30).
+    tituloTipo: 'Tipo de intervención',
     tipoReparacion: 'Reparación / asistencia',
     tipoMantenimiento: 'Mantenimiento',
     tipoInstalacion: 'Instalación',
@@ -111,18 +119,36 @@
   }
 
   /** Una fila del bloque. DOS columnas: unidades y descripción. No hay una tercera. */
+  /**
+   * Una línea del parte.
+   *
+   * 🔴 SCRUM-818 · DOS CAMPOS CON BORDE, no `2  Tiempo de espera` a pelo. Con las manos sucias y
+   * el móvil en una mano, el técnico no sabía dónde tocar para cambiar el número y dónde para
+   * cambiar el texto. La cantidad abre teclado numérico; la descripción se queda con el ancho.
+   *
+   * Un parte firmado no se edita: entonces son celdas de texto y no hay ningún hueco.
+   */
   function filaDeLinea(linea, indice, editable) {
+    var unds = linea && linea.unds !== undefined && linea.unds !== null ? String(linea.unds) : '';
+    var desc = linea && linea.descripcion ? String(linea.descripcion) : '';
+    if (!editable) {
+      return (
+        '<tr data-parte-linea="' + indice + '">' +
+        '<td class="parte-col-unds">' + esc(unds) + '</td>' +
+        '<td>' + esc(desc) + '</td></tr>'
+      );
+    }
     return (
       '<tr data-parte-linea="' + indice + '">' +
-      '<td style="padding:6px 8px 6px 0;border-bottom:1px solid var(--border);text-align:right;' +
-      'white-space:nowrap;width:64px">' + esc(linea && linea.unds) + '</td>' +
-      '<td style="padding:6px 0;border-bottom:1px solid var(--border)">' +
-      esc(linea && linea.descripcion) + '</td>' +
-      (editable
-        ? '<td style="padding:6px 0 6px 8px;border-bottom:1px solid var(--border);width:32px">' +
-          '<button type="button" class="parte-quitar-linea" data-indice="' + indice + '" ' +
-          'aria-label="Quitar línea">&times;</button></td>'
-        : '') +
+      '<td class="parte-col-unds">' +
+      '<input class="parte-linea-unds" type="number" inputmode="decimal" step="any"' +
+      ' data-linea-unds="' + indice + '" value="' + esc(unds) + '"' +
+      ' aria-label="' + esc(TEXTOS.unds) + '"></td>' +
+      '<td><input class="parte-linea-desc" type="text" data-linea-desc="' + indice + '"' +
+      ' value="' + esc(desc) + '"></td>' +
+      '<td class="parte-col-quitar">' +
+      '<button type="button" class="parte-quitar-linea" data-indice="' + indice + '" ' +
+      'aria-label="Quitar línea">&times;</button></td>' +
       '</tr>'
     );
   }
@@ -148,8 +174,12 @@
       '<h4 style="margin:0 0 6px;font-size:14px;font-weight:700;color:var(--ink)">' +
       esc(ETIQUETA_BLOQUE[bloque]) + '</h4>' +
       '<table style="width:100%;border-collapse:collapse;font-size:14px">' +
-      '<thead><tr><th style="text-align:right;padding:0 8px 4px 0;font-size:12px;color:var(--muted);' +
-      'font-weight:600">' + esc(TEXTOS.unds) + '</th><th></th>' + (editable ? '<th></th>' : '') +
+      // 🔴 DOS CABECERAS, no una. Con «UNDS» sola, la columna del texto no tenía nombre y el
+      // técnico no sabía qué se esperaba ahí. «Descripción» la firmó el fundador el 7-sep-2026: es
+      // la palabra del impreso, así que no estrena vocabulario.
+      '<thead><tr><th class="parte-col-unds">' + esc(TEXTOS.unds) + '</th>' +
+      '<th>' + esc(TEXTOS.descripcion) + '</th>' +
+      (editable ? '<th class="parte-col-quitar"></th>' : '') +
       '</tr></thead><tbody>' + filas + '</tbody></table>' +
       (editable
         ? '<button type="button" class="parte-anadir" data-bloque="' + esc(bloque) + '" ' +
@@ -163,6 +193,11 @@
   function pintarTipo(tipoActual, editable) {
     return (
       '<fieldset class="parte-tipo" style="border:0;padding:0;margin:0 0 14px" data-parte-tipo="1">' +
+      // 🔴 SCRUM-818 · EL GRUPO DICE DE QUÉ ES. Los tres flotaban sueltos entre la cabecera y el
+      // dictado, sin decir de qué eran opciones, y es un campo obligatorio del parte (SCRUM-703).
+      // El rótulo NO estrena texto: «Tipo de intervención» ya lo firmó el fundador en SCRUM-703
+      // para este MISMO vocabulario cerrado en el modal de Trabajo nuevo.
+      '<legend>' + esc(TEXTOS.tituloTipo) + '</legend>' +
       TIPOS.map(function (t) {
         return (
           '<label style="display:inline-flex;align-items:center;gap:6px;margin-right:14px;font-size:14px">' +
@@ -175,11 +210,63 @@
     );
   }
 
-  function campo(rotulo, valor) {
+  /**
+   * Lo tecleado en un campo → el cuerpo del `PATCH`, con SU tipo (SCRUM-818).
+   *
+   * 🔴 CADA COLUMNA TIENE UN TIPO Y LA RUTA LO VALIDA: `desplazamientos` es entero,
+   * `kilometros` número y `tecnicos` una lista. Mandar la cadena tal cual haría que la ruta
+   * devolviera 400 y el técnico viera que «no se guarda» sin saber por qué.
+   *
+   * ⚠️ VACÍO ES `null`, NO CERO NI CADENA VACÍA. Un campo que el técnico borra es un dato AUSENTE,
+   * y ausente no es cero: 0 kilómetros es haber ido y no recorrer nada; sin kilómetros es no
+   * haberlo apuntado. En un papel que se factura, esos dos no son lo mismo.
+   */
+  function cuerpoDeCampo(nombre, valor) {
+    var v = valor === null || valor === undefined ? '' : String(valor).trim();
+    var cuerpo = {};
+    if (nombre === 'tecnicos') {
+      // El papel los escribe en una línea separados por coma: se parte por ahí y se limpian los
+      // huecos, para que «Israel, , Miguel» no guarde un técnico vacío.
+      cuerpo.tecnicos = v === '' ? [] : v.split(',').map(function (x) { return x.trim(); })
+        .filter(function (x) { return x !== ''; });
+      return cuerpo;
+    }
+    if (nombre === 'desplazamientos' || nombre === 'kilometros') {
+      cuerpo[nombre] = v === '' ? null : Number(v);
+      return cuerpo;
+    }
+    cuerpo[nombre] = v === '' ? null : v;
+    return cuerpo;
+  }
+
+  /**
+   * Uno de los datos del parte. **Campo de verdad cuando se puede editar** (SCRUM-818).
+   *
+   * Un parte FIRMADO no se edita (T3, SCRUM-652): entonces se enseña el DATO, sin hueco de
+   * escritura, para que tampoco parezca un campo por el otro lado.
+   *
+   * @param {string}  rotulo    ya firmado; aquí no se estrena texto (regla 30).
+   * @param {*}       valor
+   * @param {string}  nombre    la clave del `PATCH`: es lo que ata la casilla a su columna.
+   * @param {boolean} editable
+   * @param {'number'} [modo]   abre el teclado numérico del móvil.
+   */
+  function campo(rotulo, valor, nombre, editable, modo) {
+    var v = valor === null || valor === undefined ? '' : String(valor);
+    if (!editable) {
+      return (
+        '<div class="parte-campo">' +
+        '<span class="parte-campo-rotulo">' + esc(rotulo) + '</span>' +
+        '<span class="parte-campo-dato" data-parte-dato="' + esc(nombre || '') + '">' +
+        esc(v || '—') + '</span></div>'
+      );
+    }
     return (
-      '<div style="margin-bottom:8px">' +
-      '<span style="display:block;font-size:12px;color:var(--muted)">' + esc(rotulo) + '</span>' +
-      '<span style="font-size:14px;color:var(--ink)">' + esc(valor || '—') + '</span></div>'
+      '<label class="parte-campo">' +
+      '<span class="parte-campo-rotulo">' + esc(rotulo) + '</span>' +
+      '<input type="' + (modo === 'number' ? 'number' : 'text') + '"' +
+      (modo === 'number' ? ' inputmode="decimal"' : '') +
+      ' data-parte-campo="' + esc(nombre || '') + '" value="' + esc(v) + '"></label>'
     );
   }
 
@@ -200,22 +287,33 @@
       esc(parte.numero) + '</h3>' +
       '<p style="margin:2px 0 0;font-size:13px;color:var(--muted)">' +
       esc(parte.clienteNombre || '') + '</p></header>' +
-      campo(TEXTOS.obra, parte.obra) +
-      campo(TEXTOS.referencia, parte.referencia) +
-      campo(TEXTOS.entrada, parte.entrada) +
-      campo(TEXTOS.salida, parte.salida) +
-      campo(TEXTOS.desplazamiento, parte.desplazamientos) +
-      campo(TEXTOS.kilometros, parte.kilometros) +
+      // 🔴 SCRUM-818 · LOS SIETE SON CAMPOS DE VERDAD. Antes eran un rótulo con un guion debajo:
+      // parecían campos y no se podían tocar, y fue lo primero que el fundador notó al abrir la
+      // pantalla. Los siete existen en la base y los siete se escriben por el `PATCH` — medido
+      // campo a campo en el PASO 0, ejecutando `permisoDeCampos`, no leyendo el código.
+      '<div class="parte-datos">' +
+      campo(TEXTOS.obra, parte.obra, 'obra', editable) +
+      campo(TEXTOS.referencia, parte.referencia, 'referencia', editable) +
+      campo(TEXTOS.entrada, parte.entrada, 'entrada', editable) +
+      campo(TEXTOS.salida, parte.salida, 'salida', editable) +
+      campo(TEXTOS.desplazamiento, parte.desplazamientos, 'desplazamientos', editable, 'number') +
+      campo(TEXTOS.kilometros, parte.kilometros, 'kilometros', editable, 'number') +
       // El papel admite VARIOS técnicos en la misma línea, así que se pintan juntos y separados
       // por coma, tal como se escriben ahí.
-      campo(TEXTOS.tecnicos, (parte.tecnicos || []).join(', ')) +
+      //
+      // 🔴 EDITABLE, aunque venga PRELLENADO de los asignados del Trabajo: el parte es la prueba
+      // de lo que PASÓ, no el registro de lo que se planeó, y lo firma un cliente que puede
+      // discutirlo. Si el técnico lo cambia respecto a la asignación, eso NO es un error: es el
+      // dato, y no se revierte al guardar.
+      campo(TEXTOS.tecnicos, (parte.tecnicos || []).join(', '), 'tecnicos', editable) +
+      '</div>' +
       pintarTipo(parte.tipo, editable) +
       // El dictado solo tiene sentido mientras el contenido se pueda tocar: ofrecerlo en un parte
       // firmado sería enseñar un camino que el siguiente paso cierra con un 409.
       (editable ? pintarDictado() : '') +
       pintarBloque('mano_obra', lineas, editable) +
       pintarBloque('materiales', lineas, editable) +
-      campo(TEXTOS.notas, parte.notas) +
+      '<div class="parte-datos">' + campo(TEXTOS.notas, parte.notas, 'notas', editable) + '</div>' +
       (editable
         ? pintarLasDosFirmas(parte)
         : pintarLasDosFirmas(parte));
@@ -575,6 +673,72 @@
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-818 · EL CABLE DE LOS SIETE CAMPOS Y DE LAS LÍNEAS.
+    //
+    // 🔴 Un campo pintado y sin `addEventListener` es exactamente lo que este árbol lleva tres
+    // tickets cerrando: parece que se puede escribir, se escribe, y no se guarda nada. Se ata
+    // aquí, en la misma función y con la misma forma que la firma y el dictado.
+    //
+    // Se guarda en `change` y no en cada tecla: `change` salta al salir del campo, así que es UNA
+    // petición por campo tocado y no una por letra. Y sólo se manda SI CAMBIÓ, para que abrir y
+    // cerrar un campo sin tocarlo no escriba nada.
+    //
+    // ⚠️ Si el `PATCH` falla NO se deja el valor nuevo en pantalla como si se hubiera guardado: se
+    // repinta desde el servidor, que es lo que quedó. Es el mismo criterio que tras firmar.
+    var guardarCampo = async function (nombre, valor) {
+      try {
+        await pedir('/admin/partes/' + parteId, {
+          method: 'PATCH',
+          body: JSON.stringify(cuerpoDeCampo(nombre, valor)),
+        });
+      } catch (e) {
+        await renderParteDetailView(contenedor, parteId, o);
+      }
+    };
+    var casillas = contenedor.querySelectorAll ? contenedor.querySelectorAll('[data-parte-campo]') : [];
+    for (var c = 0; c < casillas.length; c++) {
+      (function (casilla) {
+        var original = casilla.value;
+        casilla.addEventListener('change', function () {
+          if (casilla.value === original) return;   // abrir y cerrar sin tocar no escribe nada
+          original = casilla.value;
+          guardarCampo(casilla.getAttribute('data-parte-campo'), casilla.value);
+        });
+      }(casillas[c]));
+    }
+
+    // Las líneas: cantidad y descripción. El `PATCH` reemplaza la lista ENTERA, así que se manda
+    // la lista completa con la línea tocada cambiada — mandar sólo una borraría las demás.
+    var deLinea = contenedor.querySelectorAll
+      ? contenedor.querySelectorAll('[data-linea-unds],[data-linea-desc]') : [];
+    for (var d = 0; d < deLinea.length; d++) {
+      (function (casilla) {
+        var original = casilla.value;
+        casilla.addEventListener('change', async function () {
+          if (casilla.value === original) return;
+          original = casilla.value;
+          var esUnds = casilla.hasAttribute('data-linea-unds');
+          var indice = Number(casilla.getAttribute(esUnds ? 'data-linea-unds' : 'data-linea-desc'));
+          var lista = (Array.isArray(parte.lineas) ? parte.lineas : []).map(function (l, i) {
+            var base = { bloque: l.bloque, unds: l.unds, descripcion: l.descripcion };
+            if (i !== indice) return base;
+            if (esUnds) base.unds = casilla.value === '' ? null : Number(casilla.value);
+            else base.descripcion = casilla.value;
+            return base;
+          });
+          try {
+            await pedir('/admin/partes/' + parteId, {
+              method: 'PATCH',
+              body: JSON.stringify({ lineas: lista }),
+            });
+          } catch (e) {
+            await renderParteDetailView(contenedor, parteId, o);
+          }
+        });
+      }(deLinea[d]));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════════
     // SCRUM-706 · EL CABLE DEL DICTADO. Es el salto 4 de la cadena, y era el único roto.
     //
     // 🔴 Lo que faltaba no era la función: era el `addEventListener`. `ordenarElDictado` estaba
@@ -634,4 +798,5 @@
   window.firmarParte = firmarParte;
   window.PARTE_TEXTOS = TEXTOS;
   window.parteLineasOCeguera = lineasOCeguera;
+  window.parteCuerpoDeCampo = cuerpoDeCampo;
 })();

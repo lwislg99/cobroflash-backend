@@ -205,7 +205,7 @@ async function fetchInvoices(options = {}) {
     // existe cuando lo que se va a crear ES una factura — el veredicto lo calcula el servidor
     // con `modoDocumentoSuelto` y viaja en /admin/me: aquí NO se reimplementa la regla.
     // Rótulo con [PENDIENTE microcopy oficial] (regla 30) y su guard en la suite.
-    if (window.appDocumentoSuelto !== 'no' && typeof openNuevaFacturaModal === 'function') {
+    if (window.appDocumentoSuelto !== 'no') { // SCRUM-600: ya no cuelga del modal, ver abajo
       const nuevaFacturaBtn = document.createElement('button');
       nuevaFacturaBtn.type = 'button';
       nuevaFacturaBtn.className = 'btn-primary';
@@ -222,8 +222,19 @@ async function fetchInvoices(options = {}) {
       nuevaFacturaBtn.textContent = window.appDocumentoSuelto === 'justificante'
         ? '+ Nuevo justificante'
         : ((window.atajoNuevo && window.atajoNuevo.textoDe('invoices')) || 'Nueva factura');
+      // 🔴 SCRUM-600 (DOC-10) · ESTE BOTÓN YA NO ABRE UN MODAL: LLEVA A LA PÁGINA.
+      //
+      // Es el cambio que hace que haya UN solo front del documento y no dos. Se navega con
+      // `window.renderAppView`, que es la única forma de navegar de la casa (SCRUM-599), y el
+      // rótulo del botón no se toca: sigue saliendo del veredicto, como en las tres líneas de
+      // arriba.
+      //
+      // `nuevaFacturaModal.js` se queda en el árbol y DEJA DE TENER PUERTA. No es un descuido:
+      // es la referencia contra la que `scrum600b` comprueba que la página emite exactamente lo
+      // mismo, y es lo que `guard:caja-documento-suelto` sigue midiendo en navegador. Su borrado
+      // es una decisión aparte, del día que esa equivalencia deje de hacer falta.
       nuevaFacturaBtn.addEventListener('click', () => {
-        openNuevaFacturaModal(() => renderInvoicesView(container));
+        if (window.renderAppView) window.renderAppView('invoices-new');
       });
       if (window.atajoNuevo) {
         // La tecla se pinta en los DOS casos: el atajo funciona igual, y un botón con atajo y
@@ -281,6 +292,17 @@ async function fetchInvoices(options = {}) {
     tabPendientes.addEventListener('click', () => activateTab('pendientes'));
 
     // Toolbar: filtros
+    // ═════════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-595 (DOC-05) · LAS ETIQUETAS DEL DOCUMENTO — LA MISMA PIEZA QUE EL PRESUPUESTO
+    //
+    // 🔴 Y ES EL PUNTO DEL TICKET: el bloque aplica a los DOS documentos, con el MISMO mecanismo.
+    // Si aquí se escribiera un segundo filtro, la factura y el presupuesto acabarían decidiendo
+    // distinto sobre la misma etiqueta —mayúsculas, espacios, acentos— y nadie lo notaría hasta
+    // que un documento dejara de salir en su propio filtro.
+    // ═════════════════════════════════════════════════════════════════════════════════════
+    const FC = window.filtroClientes;
+    let etiquetaActiva = null;
+
     const toolbar = document.createElement('div');
     toolbar.className = 'data-card-toolbar';
     panelEmitidas.appendChild(toolbar);
@@ -301,6 +323,18 @@ async function fetchInvoices(options = {}) {
       <option value="expired">Vencidas</option>
     `;
     toolbar.appendChild(selectStatus);
+
+    // SCRUM-595 · el filtro por etiqueta. ✅ MICROCOPY: `sinFiltro` es el MISMO literal aprobado
+    // de CONT-07, reutilizado sin cambiar un carácter — misma palabra para la misma cosa, cero
+    // ranuras nuevas (regla 30). El texto sale de la pieza; repetirlo aquí lo dejaría derivar.
+    const selectEtiqueta = document.createElement('select');
+    selectEtiqueta.className = 'input';
+    selectEtiqueta.style.cssText = 'width:auto;max-width:220px';
+    selectEtiqueta.addEventListener('change', () => {
+      etiquetaActiva = selectEtiqueta.value || null;
+      reload();
+    });
+    toolbar.appendChild(selectEtiqueta);
 
     const inputFrom = document.createElement('input');
     inputFrom.type = 'date';
@@ -324,6 +358,41 @@ async function fetchInvoices(options = {}) {
 
     function setCount(text) { subtitle.textContent = text; }
 
+    /** Cuántas columnas tiene la tabla. Sale del MISMO sitio que la cabecera: el `thead`. */
+    function numeroDeColumnas() {
+      return thead.querySelectorAll('th').length;
+    }
+
+    /**
+     * SCRUM-595 · repuebla el selector conservando lo elegido, o SOLTÁNDOLO si esa etiqueta ya no
+     * existe en el lote: dejarlo puesto enseñaría una lista vacía sin decir por qué.
+     *
+     * 🔴 Como las opciones salen del lote que se está mirando, filtrar por una de ellas SIEMPRE
+     * devuelve al menos una fila: el vacío «no hay nada con esta etiqueta» es inalcanzable por
+     * construcción, y por eso este ticket no necesita microcopy que nadie ha aprobado.
+     */
+    function repoblarEtiquetas(lote) {
+      const usadas = FC.etiquetasUsadas(lote);
+      if (etiquetaActiva && !usadas.some((t) => t.toLocaleLowerCase('es') === String(etiquetaActiva).toLocaleLowerCase('es'))) {
+        etiquetaActiva = null;
+      }
+      selectEtiqueta.innerHTML = '';
+      const todas = document.createElement('option');
+      todas.value = '';
+      todas.textContent = FC.TEXTOS_ETIQUETAS.sinFiltro;
+      selectEtiqueta.appendChild(todas);
+      usadas.forEach((t) => {
+        const op = document.createElement('option');
+        op.value = t;
+        op.textContent = t;
+        selectEtiqueta.appendChild(op);
+      });
+      selectEtiqueta.value = etiquetaActiva || '';
+      // Sin ninguna etiqueta, el selector no sirve de nada: se oculta en vez de ofrecer un
+      // control con una sola opción que no filtra.
+      selectEtiqueta.hidden = usadas.length === 0;
+    }
+
     const tableScroll = document.createElement('div');
     tableScroll.className = 'table-scroll';
     panelEmitidas.appendChild(tableScroll);
@@ -341,6 +410,7 @@ async function fetchInvoices(options = {}) {
         <th style="text-align:right">Total</th>
         <th>Estado</th>
         <th class="col-hide-mobile">Fecha</th>
+        <th class="col-hide-mobile">${FC.TEXTOS_ETIQUETAS.columna}</th>
       </tr>
     `;
     table.appendChild(thead);
@@ -451,10 +521,14 @@ async function fetchInvoices(options = {}) {
     async function reload() {
       setCount('Cargando…');
       statusBox.style.display = 'none';
-      uiSkeletonRows(tbody, 6, 6);
+      uiSkeletonRows(tbody, numeroDeColumnas(), 6);
 
       try {
-        const invoices = await fetchInvoices({ status: currentStatus, search: currentSearch, dateFrom: currentDateFrom, dateTo: currentDateTo });
+        const traidas = await fetchInvoices({ status: currentStatus, search: currentSearch, dateFrom: currentDateFrom, dateTo: currentDateTo });
+        // El selector se repuebla con el lote ENTERO que trajo el servidor y el filtro se aplica
+        // después: al revés, una etiqueta dejaría de ofrecerse en cuanto se filtrara por otra.
+        repoblarEtiquetas(traidas);
+        const invoices = FC.filtrarPorEtiqueta(traidas, etiquetaActiva);
         tbody.innerHTML = '';
         selectedIds.clear();
         updateBulkBar();
@@ -464,7 +538,9 @@ async function fetchInvoices(options = {}) {
           const filtering = currentSearch || currentStatus !== 'all' || currentDateFrom || currentDateTo;
           const tr = document.createElement('tr');
           const td = document.createElement('td');
-          td.colSpan = 6;
+          // 🔴 SCRUM-595 · SALE DE LA CABECERA. Aquí había un 6 y este ticket mete una columna:
+          // un vacío descuadrado no lo ve ninguna tanda (lección de SCRUM-584).
+          td.colSpan = numeroDeColumnas();
           td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🧾</div>'
             + '<div class="empty-state-title">' + (filtering ? 'Nada con estos filtros' : 'Aquí verás tus cobros') + '</div>'
             + '<div class="empty-state-desc">' + (filtering
@@ -557,6 +633,26 @@ async function fetchInvoices(options = {}) {
           tdDate.style.color = 'var(--muted)';
           tdDate.textContent = inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('es-ES') : '—';
           tr.appendChild(tdDate);
+
+          // SCRUM-595 · las etiquetas, con `.badge .badge-slate` del inventario (AB3): cero
+          // tokens nuevos. `textContent` por etiqueta, nunca `innerHTML`: la escribe el
+          // profesional y concatenar markup sería una inyección con su nombre.
+          const tdTags = document.createElement('td');
+          tdTags.className = 'col-hide-mobile';
+          const susTags = FC.tagsDe(inv);
+          if (susTags.length > 0) {
+            const caja = document.createElement('div');
+            caja.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px';
+            susTags.forEach((t) => {
+              const chip = document.createElement('span');
+              chip.className = 'badge badge-slate';
+              chip.textContent = t;
+              caja.appendChild(chip);
+            });
+            tdTags.appendChild(caja);
+            tdTags.title = susTags.join(', ');
+          }
+          tr.appendChild(tdTags);
 
           tr.style.cursor = 'pointer';
           tr.addEventListener('click', (e) => {
