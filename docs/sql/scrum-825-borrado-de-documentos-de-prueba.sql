@@ -91,6 +91,35 @@ DELETE FROM events;
 --    recuento esperado: el de `reconciliations` en la pasada ANTES.
 DELETE FROM reconciliations;
 
+-- ②bis LAS ASIGNACIONES DE PERSONA AL DOCUMENTO (SCRUM-597, ya en `main`).
+--
+--    🔴 SE BORRAN EXPLÍCITAMENTE, Y NO PORQUE HAGA FALTA: PORQUE NO SE PUEDE MEDIR QUE NO HAGA
+--    FALTA. El schema ya mezclado declara `onDelete: Cascade` en las CUATRO claves ajenas
+--    (`schema.prisma:1596` y `:1613` hacia el documento; las otras dos van a `team_members`),
+--    así que ⑤ y ⑦ deberían arrastrarlas solas.
+--
+--    Pero eso es lo que DECLARA Prisma, no lo que APLICA la base, y esa distinción es justo la
+--    que decide aquí: la acción real vive en `information_schema.referential_constraints`, y
+--    **no se ha podido leer desde ninguna base permitida** — en dev las dos tablas NO EXISTEN
+--    (la migración de 597 no está aplicada allí), y staging y producción están prohibidas para
+--    esta sesión. El fundador confirmó que las tablas EXISTEN en las dos; que su `DELETE RULE`
+--    sea CASCADE es otra pregunta, y no se ha medido.
+--
+--    Con estas dos líneas el guion es correcto EN LOS DOS CASOS:
+--      · si son CASCADE → borran filas que se habrían ido igual. Coste: cero. Y el recuento
+--        queda a la vista, que es mejor que un borrado invisible.
+--      · si alguna llegó como RESTRICT → son IMPRESCINDIBLES: sin ellas, ⑤ o ⑦ fallarían y —al
+--        ir todo en una transacción— tumbarían el borrado entero.
+--    Es más barato que acertar: quita la dependencia de un dato que no se puede comprobar.
+--
+--    ✅ El bloque ⑥ de la verificación mide el `DELETE RULE` de verdad. Si se pasa en STAGING
+--       antes de ejecutar y salen las cuatro CASCADE, estas dos líneas se pueden quitar — pero
+--       no hace falta quitarlas.
+--    recuento esperado: el de cada tabla en la pasada ANTES (probablemente 0 si nadie ha
+--    asignado a nadie todavía).
+DELETE FROM invoice_assignees;
+DELETE FROM quote_assignees;
+
 -- ② Las líneas de albarán ya facturadas. Apuntan a DOS documentos a la vez (`albaran_id` e
 --    `invoice_id`) y NINGUNA de las dos columnas tiene clave ajena: si se borran después,
 --    quedan filas apuntando a nada y la base no dice ni una palabra.
@@ -112,8 +141,8 @@ DELETE FROM albaranes;
 --    `invoices."rectifiesId"` es una auto-referencia con SetNull; borrarlas todas de una vez la
 --    resuelve sola. Y con ellas se va la CADENA DE HUELLAS: `vf_hash`/`vf_prev_hash` son
 --    columnas de esta misma tabla, no hay tabla de registros aparte.
---    ⚠️ Cuando SCRUM-597 esté en `main`, esta línea arrastra sola `invoice_assignees`
---       (`invoice_id` con `onDelete: Cascade`). Ver la nota al final.
+--    (SCRUM-597 ya está en `main`: `invoice_assignees` declara Cascade y esta línea la
+--    arrastraría sola. Se vacía igualmente en ②bis, por el motivo que allí se explica.)
 --    recuento esperado: el de `invoices` en la pasada ANTES (facturas + justificantes).
 DELETE FROM invoices;
 
@@ -125,7 +154,7 @@ UPDATE jobs              SET quote_id = NULL WHERE quote_id IS NOT NULL;
 UPDATE maintenance_plans SET quote_id = NULL WHERE quote_id IS NOT NULL;
 
 -- ⑦ Los presupuestos: es el documento del que cuelgan los demás.
---    ⚠️ Cuando SCRUM-597 esté en `main`, arrastra solo `quote_assignees` (Cascade).
+--    (Igual que ⑤: `quote_assignees` declara Cascade y se arrastraría sola; se vacía en ②bis.)
 --    recuento esperado: el de `quotes` en la pasada ANTES.
 DELETE FROM quotes;
 
@@ -176,15 +205,24 @@ COMMIT;
 --    Tecnosel tuviera aunque fuera uno, este guion NO se ejecuta tal cual.
 --
 -- ═══════════════════════════════════════════════════════════════════════════════════════════
--- ⚠️ PENDIENTE DE RE-DERIVAR CUANDO SCRUM-597 ENTRE EN `main`
+-- ✅ RE-DERIVADO CON SCRUM-597 YA EN `main` (8-sep-2026, `main` = 1bbf60af)
 --
--- SCRUM-597 (`scrum-597-asignar-usuario-al-documento`, `7450af1f`, SIN MERGEAR al escribir esto)
--- añade `quote_assignees` e `invoice_assignees`. LEÍDAS EN ESA RAMA, las dos declaran
--- `onDelete: Cascade` sobre el documento, así que ⑤ y ⑦ las arrastran solas y **este orden no
--- cambia**.
+-- El árbol se ha vuelto a derivar sobre el schema MEZCLADO, no sobre la rama. Resultado:
 --
--- 🔴 Pero eso está derivado de una rama que NO está mergeada, así que es una previsión, no una
--- medición del árbol que se va a ejecutar. **Antes de ejecutar: volver a derivar el orden con
--- las dos tablas ya en `main` y confirmar que el Cascade sobrevivió a la mezcla.** Si alguna
--- llegara con RESTRICT, tendría que ir ANTES que su documento, como `events` en ①.
+--   · `quote_assignees.quote_id`     → `quotes`,   onDelete **Cascade**  (`schema.prisma:1596`)
+--   · `invoice_assignees.invoice_id` → `invoices`, onDelete **Cascade**  (`schema.prisma:1613`)
+--   · las otras dos FK nuevas van a `team_members`, también Cascade: no apuntan a un documento
+--     y no afectan a este orden.
+--
+-- ⇒ **EL ORDEN DEL GUION NO CAMBIA.** Ninguna llegó como RESTRICT, así que ninguna tiene que
+--   subir por delante de su documento como tuvieron que hacer `events` y `reconciliations`.
+--
+-- 🔴 LÍMITE DECLARADO DE ESTA MEDICIÓN, porque no es lo mismo declarar que aplicar: lo anterior
+--    es lo que dice el SCHEMA ya mezclado. La acción que la BASE aplica de verdad vive en
+--    `information_schema.referential_constraints`, y **no se ha podido leer**: en dev las dos
+--    tablas NO EXISTEN (la migración de 597 no está aplicada allí) y staging y producción están
+--    prohibidas para la sesión que escribió esto.
+--    Por eso ②bis las vacía explícitamente: así el guion es correcto con Cascade y sin él.
+--    Y por eso el bloque ⑥ de la verificación lee el `DELETE RULE` de verdad — pásalo en
+--    STAGING antes de ejecutar y quedará medido, no supuesto.
 -- ═══════════════════════════════════════════════════════════════════════════════════════════
