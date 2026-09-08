@@ -281,3 +281,140 @@ defecto es un caso raro o uno diario. **No se decide aquí.**
    Railway, o sea en UTC, que es donde están verdes— pero sí los hace **candidatos a la misma
    regla del §4**: fijar la zona de la máquina donde ese código corre de verdad, que para todos
    ellos es UTC.
+
+---
+
+# APÉNDICE · 8-sep-2026 — CERTIFICACIÓN Y CIERRE, tres semanas después
+
+**Medido contra:** `origin/main` = `da938ba0` · 2026-09-08 · **Rama:** la misma, `scrum-630-default-en-dias-de-calendario`
+
+> Esta rama se escribió el 1-sep-2026 y **no se mergeó**. El encargo de hoy no es rehacerla: es
+> **certificarla y cerrarla**, con la presunción de que el arreglo es bueno. Iba **1186 commits por
+> detrás**. Trae `main` con MERGE, nunca rebase.
+
+## A1 · 🔴 LA RAMA NO SEGUÍA VERDE: 11 de 16 caían, y ninguno por el defecto
+
+Al mezclar `main`, dos conflictos y once rojos. **Ninguno era el defecto de 630.** El motivo,
+medido: en esas tres semanas entró **SCRUM-633**, que se llevó el «Válido hasta» —y el `min`— a
+`quoteCaducidad.diaPorDefecto`, y **la firma de `fechaDeAtajo` cambió a `(dias, merchant, hoy)`**.
+Los tests le pasaban una fecha donde ahora va el merchant: devolvía `null`.
+
+**Los dos conflictos se resolvieron A FAVOR DE MAIN**, y no es una concesión: 633 **supera** el
+call-site que tocaba 630, e incluye el `min` que la CARACTERIZACIÓN de 630 dejó escrito sin
+arreglar. Mantener la versión de 630 habría sido deshacer 633.
+
+Los tests se **reapuntan, no se relajan**: miden lo mismo, contra la primitiva que hoy manda.
+
+## A2 · 🔴 633 NO ARREGLA 630, Y LO DICE ÉL MISMO
+
+Es lo primero que hubo que comprobar, porque decidía si el ticket seguía vivo:
+
+> «Los 30 días se suman en MILISEGUNDOS —24 h fijas—… este ticket es sobre **cómo se escribe el
+> día**, no sobre cuánto dura un presupuesto.» — comentario de `diaPorDefecto`, SCRUM-633
+
+**Son complementarios, no duplicados.** 633 arregló *en qué calendario* se escribe el día (UTC → la
+zona del merchant). 630 es la otra mitad: **30 días no son 720 horas**.
+
+## A3 · 🔴 EL TESTIGO SE HABÍA MOVIDO, Y HAY QUE DECIRLO
+
+**El caso original del ticket —31-mar 00:00 en Madrid— YA NO PUEDE PONERSE ROJO.** Medido: da
+`2026-04-30`, que es lo correcto. 633 arregló esa mitad y ese instante dejó de fallar.
+
+> **Un rojo que ya no puede ponerse rojo no es una prueba: es un comentario.**
+
+Se conserva como caracterización —borrarlo dejaría a quien lea el ticket buscando un rojo que no
+existe— y el caso se reapunta a los instantes que **sí** reproducen lo que queda.
+
+### ⚠️ Y LA DIRECCIÓN DEL TICKET ESTABA INVERTIDA
+
+La descripción dice: «en el cambio de marzo el día tiene 23 horas: el presupuesto caduca un día
+antes». Medido sobre 2026 en Madrid, es al revés:
+
+| cambio | el día dura | 720 h | efecto |
+|---|---|---|---|
+| **octubre** | 25 h | se quedan **cortas** | 🔴 **caduca UN DÍA ANTES** ← la venta perdida |
+| **marzo** | 23 h | se **pasan** | caduca un día TARDE |
+
+Las dos son defectos; **la cara la tiene octubre**. Y el reparto por hora local explica que durara
+tanto sin verse:
+
+```
+09:00 y 12:00 ...........  0 de 365     ← a media mañana no se nota
+00:15 · 00:30 · 23:30 ... 30 de 365     ← una ventana de 30 días antes de cada cambio
+```
+
+## A4 · EL ARREGLO — en la primitiva, y sin dependencias
+
+`public/dashboard/js/quoteCaducidad.js` · `diaPorDefecto`:
+
+```js
+// antes:  diaNaturalEn(new Date(base + dias * 86400000), zona)
+var hoy = diaNaturalEn(ahora, zona);              // el día natural en la zona del merchant
+var p = hoy.split('-');
+return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2] + dias)).toISOString().slice(0, 10);
+```
+
+Se resuelve **primero** el día natural y sobre él se suman días de calendario con `Date.UTC`, que
+normaliza el desbordamiento de mes y de año — y **UTC no tiene cambio de hora**, así que ahí un día
+es un día siempre. **Cero dependencias** (regla 36), cero aritmética de husos, y los bordes
+(31-ene + 30, bisiesto, cambio de año) salen solos.
+
+⚠️ **Esto mueve la caducidad, y es el ticket** — la mueve **sólo donde estaba mal**: a hora normal
+no cambia ni una fecha en todo el año, con su control negativo.
+
+## A5 · VERIFICACIÓN · el rojo primero, corrido por mí
+
+**ANTES de tocar el producto** (tests ya reapuntados):
+
+```
+✖ 🔴 EL DEFECTO VIVO: 30 días no son 720 horas — octubre caduca ANTES
+✖ 🔴 la otra dirección: marzo NO puede caducar un día TARDE
+✖ 🔴 EL DEFECTO, BARRIDO: cerca de medianoche el «Válido hasta» no son 30 días
+✖ ⚠️ no es cosa de España: Londres y Nueva York tenían el MISMO defecto
+✔ ✅ POSITIVO: a hora normal EN MADRID el arreglo NO mueve NI UNA fecha    ← verde YA antes
+```
+
+**DESPUÉS: 19/19.** Y la tanda completa: **6055 tests · 5950 pasan · 0 fallos · 105 saltados ·
+exit code 0**, leído de fichero y no a través de `head`/`tail`.
+
+**SUELO de zona horaria:** la zona se fija a mano con `Intl`, nunca se hereda del proceso, y hay un
+control que lo comprueba (el mismo instante en dos zonas tiene que dar días distintos).
+
+## A6 · EL BARRIDO QUE PEDÍA EL ENCARGO — 86 sitios en 55 ficheros
+
+Sobre **1469 ficheros de código** (filtro de comentarios de la casa), con **suelo** (cero = roto) y
+**control positivo** (tiene que encontrar `quoteCaducidad.js`). Los dos pasaron.
+
+**Los TRES que son el «Válido hasta» de este ticket:**
+
+| sitio | estado |
+|---|---|
+| `public/dashboard/js/quoteCaducidad.js:101` | ✅ **ARREGLADO** — es el que ve el profesional y el que se guarda |
+| `src/modules/quotes/app/routes/quotes.routes.ts:204` | 📋 **reportado**, no arreglado |
+| `src/modules/system/app/routes/quoteDecisionLanding.routes.ts:352` | 📋 **reportado**, no arreglado |
+
+Los dos del servidor **sólo actúan cuando el presupuesto se crea SIN `validUntil`** —el panel
+siempre lo manda—, así que **no se desincronizan** con este arreglo: un presupuesto o tiene
+`validUntil` (puesto por el panel, ya en días de calendario) o no lo tiene, y entonces servidor y
+landing coinciden entre sí. Entran cuando el fundador lo decida (regla 37).
+
+**Los otros 83 no son este defecto**: son ventanas, TTLs, cooldowns y topes (`weekAgo`,
+`SESSION_TTL_MS`, `PROPOSAL_COOLDOWN_DAYS`, cortes de métricas). Miden **duración**, no una fecha
+de calendario que un cliente vea escrita. Un plazo de sesión que dure 23 o 25 horas de más no le
+dice a nadie una fecha equivocada.
+
+## A7 · LA CARACTERIZACIÓN DEL `min` — se conserva el registro, con lo que pasó
+
+Decía: «el `min` sigue con la aritmética vieja (no se tocó)». **En estas tres semanas SCRUM-633 se
+lo llevó a la misma primitiva.** No se borra —dejaría el registro mudo— ni se mantiene la
+afirmación falsa: se actualiza diciendo **qué pasó y quién lo hizo**, y ahora fija lo contrario —
+que la aritmética vieja **no vuelva**. Con el arreglo de 630, valor por defecto y mínimo son los
+dos días de calendario y **no pueden discrepar, porque salen de la misma función**.
+
+## A8 · HUECOS DECLARADOS
+
+- **Los dos sitios del servidor NO se arreglan** (§A6), por acotación del encargo.
+- **El número «210 de Londres»** que la primera versión congeló ya no aplica: salía de comparar
+  contra el código pre-633. Consta en el test, con su procedencia.
+- **Nada contra producción ni staging.** Ni `prisma/schema.prisma`, ni camino de emisión, ni
+  microcopy: el arreglo no cambia un solo texto visible.
