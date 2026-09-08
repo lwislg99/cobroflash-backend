@@ -192,3 +192,78 @@ por lo medido, el caso en el que la casilla **no puede** hacer nada.
 4. **Dos lectores distintos del mismo dato.** La vista previa (`:1271` → `:1445`) lo lee como
    `l.description` de un objeto propio; el PDF (`:2987`) lo lee del `dataset` directamente. Hoy
    coinciden; nada los obliga a coincidir mañana.
+
+---
+
+# SCRUM-632b · La línea gana descripción propia — construido
+
+**Fecha:** 08-sep-2026 · **Carril:** producto · **Gate:** ninguno — `prisma/schema.prisma` NO se toca
+
+**Medido contra:** `origin/main` = `2f123b7071d148bc93b87a42354f52ede8bef065` · 2026-09-08T05:41:39+01:00
+
+## La decisión que lo ordena
+
+> «Sí tiene que haberlo. Además la descripción del presupuesto/factura es DISTINTA a la de
+> producto: es algo que aparece en el doc, que se utiliza para poner el texto que quiera el
+> merchant.» — el fundador, 8-sep-2026
+
+Son **dos datos**, y hasta hoy el producto tenía **uno**:
+
+* descripción del **PRODUCTO** → vive en el catálogo, la escribe quien lo mantiene;
+* descripción de la **LÍNEA** → vive en el documento, la escribe el profesional, y es **suya**.
+
+Por eso se borraba al teclear: colgaba de `conceptInput.dataset.pfProductDescription`, es decir
+**del input del concepto**. Cualquier cosa que invalidara «este producto» se la llevaba por
+delante — incluido el propio profesional escribiendo.
+
+## Lo construido
+
+| | |
+|---|---|
+| **Esquema** | `QuoteLineSchema` gana `description: z.string().optional()`. **`prisma/schema.prisma` no se toca**: `Quote.lines` es `Json`, así que esa clave es todo el cambio. Sin ALTER y sin migración — no hay nada que parar. |
+| **El campo** | Un `textarea` propio en la hoja de ajustes de la línea (con el coste y el descuento; en la fila principal costaría alto por línea, medición de SCRUM-594). |
+| **Precarga (req. 2)** | Elegir del catálogo **propone**: rellena el campo desde `it.description`. A partir de ahí es de la línea. Y **no pisa** lo que el profesional ya escribiera — sobrescribir sería el mismo defecto por la otra puerta. |
+| **Req. 3, por construcción** | Los **dos sitios de defecto** dejan de tocar la descripción: sueltan el producto (`pfProductId`, `pfProductName`), que es cierto, pero el texto ya no cuelga de ahí. El **tercero es legítimo** —vacía la línea entera— y ahí sí se limpia también el campo. |
+| **Req. 4** | Una línea escrita **a mano** con descripción y la casilla marcada ya llega al papel. |
+| **Borrador** | La descripción sobrevive a un F5, igual que `costeUnitario`. |
+
+## 🔴 La decisión de diseño que hay que leer entera
+
+`pdf.service` **es camino de emisión** y el encargo lo prohíbe expresamente (regla 38). Así que la
+descripción **se sigue pegando al `concept` con `\n`** —el mecanismo que SCRUM-603 ya sabe partir—
+y **además** viaja como clave propia.
+
+**Queda una redundancia y se declara en vez de esconderse:** el mismo texto está pegado al
+`concept` y en `description`. La dirección es **una sola** —el campo manda, y el concepto se
+compone de él en un único sitio— pero mientras el PDF lea el concepto hay dos sitios con el mismo
+texto.
+
+**Lo deseable es retirar la pegada**, y eso exige que `pdf.service` prefiera la clave: camino de
+emisión, su propio ticket y su propio GO. Se deja dicho para que nadie lo lea como olvido.
+
+**Consecuencia medida, del trinquete de SCRUM-619:** `description` entra en `DIVERGENCIA` — la
+CLAVE no sobrevive al facturar, porque los cuatro caminos de emisión reconstruyen la línea con
+`concept/qty/price/tax`. Pero el **texto sí** sobrevive, dentro del `concept`. En la factura la
+descripción sigue saliendo en el papel; deja de ser un dato separado.
+
+## Verificación
+
+| Control | Cómo | Resultado |
+|---|---|---|
+| 🔴 **ROJO 1** · línea a mano + casilla → descripción en el PDF | **leído del PDF generado** con `extraerTextoPdf`, no del fuente | ✅ |
+| 🔴 **ROJO 2** · editar el concepto ya no la pierde | los dos sitios de defecto, sobre el fuente EJECUTABLE (`soloEjecutable`) | ✅ |
+| ✅ **POSITIVO** · línea sin descripción sale exactamente como hoy | PDF generado: no aparece ninguna | ✅ |
+| ✅ **NEGATIVO** · editar la línea no toca el catálogo | no existe ninguna escritura a `it.description`; y la precarga no pisa lo escrito | ✅ |
+| 🔴 **SUELO** · el barrido de sitios que sueltan el producto no da cero | son tres, y el suelo exige ≥ 3 | ✅ |
+
+**Probado EN ROJO, cada arreglo por separado:** devolviendo el borrado al teclear cae exactamente
+el control de los sitios de defecto; devolviendo la lectura del `dataset` en el envío cae
+exactamente el del campo propio. Ninguno de los dos arrastra al otro.
+
+**Microcopy:** el rótulo del campo nace con `[PENDIENTE microcopy oficial]` desde una sola
+constante (`MARCA_DESC_LINEA`). Censos declarados: SCRUM-402 y SCRUM-755, `quotesView.js` de 3 a 4.
+
+**Suite:** 6137 tests · 6032 pass · 0 fail · 105 skipped · exit 0.
+
+⛔ Sin tocar `conceptoLinea.ts` ni su trinquete (SCRUM-603), sin dependencias nuevas, sin
+producción ni staging, y sin tocar el camino de emisión.
