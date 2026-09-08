@@ -8,7 +8,7 @@
 
 ---
 
-## 1 · PASO 0 (regla 39)
+## 1 · PASO 0 (cita de regla RETIRADA — SCRUM-637)
 
 ### a) ENTRADA — dónde vive hoy, con fichero y línea
 
