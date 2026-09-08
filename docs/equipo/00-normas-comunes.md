@@ -143,6 +143,10 @@ Una pantalla se ordena por lo que se hace en ella, no por cómo están
 guardados los campos.
 La lista que decide qué se mira es la única que nadie mira.
 Contar no es avisar.
+Un control que no se puede usar y no puede explicar por qué, no se
+deshabilita: se quita.
+Un acto irreversible no es nunca la acción principal.
+Si tu medición tumba una decisión firmada, gana tu medición.
 
 ## A11 · Cómo se actualiza esto
 

@@ -149,6 +149,27 @@ export async function servirListas(publico, rutas) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       return res.end(documento(publico, v.fnVista, v.datos, v.args || '[]'));
     }
+    // ═══ 🔴 LAS RUTAS QUE NO PASAN POR `apiRequest` ══════════════════════════════════════════
+    //
+    // `invoicesView` carga su lista y su bandeja de pendientes con **`fetch` CRUDO**
+    // (`fetchInvoices` y los pendientes de facturar), así que el doble de `apiRequest` NO las
+    // intercepta: llegan aquí, al servidor, y sin esto se iban por el 404 de abajo.
+    //
+    // MEDIDO el 8-sep-2026: la lista de Facturas se quedaba en `skeleton-row` — el marcador de
+    // carga— y dos censos distintos leyeron «0 controles en la fila». **Cero por no haber pintado,
+    // no por no haber botones.** Es la otra cara del mismo `fetch` crudo que ya obligó a contar
+    // las peticiones en vuelo para quitarle el temblor al guard: aquel afectaba a CUÁNDO se mira,
+    // éste a SI hay algo que mirar.
+    //
+    // La respuesta sale del mismo sitio que el resto (`reglasDatos`, evaluado en la página), así
+    // que aquí sólo se sirve lo que la ruta pida y se declara vacío si no se sabe: `[]` es una
+    // respuesta válida y visible (estado vacío), y nunca un esqueleto eterno.
+    if (p.startsWith('/admin/')) {
+      const cuerpo = (rutas.find((x) => x.api) || {}).api;
+      const dato = typeof cuerpo === 'function' ? cuerpo(p) : null;
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      return res.end(JSON.stringify(dato === null || dato === undefined ? [] : dato));
+    }
     const abs = path.join(publico, p);
     if (!abs.startsWith(publico) || !fs.existsSync(abs) || fs.statSync(abs).isDirectory()) { res.writeHead(404); return res.end('no'); }
     res.writeHead(200, { 'Content-Type': TIPOS[path.extname(abs)] || 'application/octet-stream' });
