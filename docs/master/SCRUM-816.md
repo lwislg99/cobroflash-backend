@@ -251,3 +251,105 @@ recordar actualizar. Queda propuesto; no se construye en este ticket porque es d
   componente**. Presupuestos pinta con `.status-pill*`; Trabajos pinta la FSM con `.jobs-estado-*`,
   suyas desde SCRUM-727b. Lo único común era `.status-pill`, que Trabajos usaba **sólo** para el
   chip de cobro — el que este ticket quita. **Reduce el acoplamiento, no lo aumenta.**
+
+---
+
+# APÉNDICE · 8-sep-2026 · CERTIFICACIÓN POR UNA SEGUNDA SESIÓN, y un flaky cerrado
+
+**Rama:** `scrum-816-lista-de-trabajos-al-dia`, derivada de `scrum-816-lista-de-trabajos` @
+`4dd6baa8` · **`main` dentro** (`15fb3b2f`). La rama de Luis **no se toca**.
+
+> Esto no es una segunda vuelta del ticket: es una certificación. Lo que sigue distingue a
+> propósito **lo que he verificado ejecutando** de **lo que afirma la entrada de arriba**.
+
+## 1 · La puesta al día — y un pronóstico mío que era falso
+
+`merge-tree` marcaba «changed in both» en `package.json` y `jobs.routes.ts`, y yo lo reporté como
+**dos conflictos**. **La mezcla entró limpia: cero conflictos.** «Changed in both» no es un choque;
+git los auto-mezcló. Queda escrito porque un pronóstico equivocado que nadie corrige se convierte
+en la razón por la que el siguiente no intenta mezclar.
+
+Verificado tras mezclar: `serializeJob` sigue mandando `albaranes` e `invoices` desde
+`albaranesPorJob`, y los cuatro scripts de guard siguen en `package.json`.
+
+## 2 · Lo que he VERIFICADO ejecutando
+
+| qué | resultado |
+|---|---|
+| `tests/scrum816-la-lista-no-miente.test.mjs` | **12/12** |
+| `npm run guard:lista-trabajos` (Edge, `page.setViewport` real) | **exit 0** |
+| 🔒 ① el clic en el DESPLEGABLE asigna y NO navega | ✅ abrir no navegó · marcar no navegó · `PATCH /admin/jobs/3 {"assignedUserIds":[1,3]}` · lo dice · el resumen cambia |
+| 🔒 ② el clic en la FILA navega y NO asigna | ✅ navegó `jobs-detail {"jobId":3}` · **cero PATCH** · las casillas intactas |
+| ③ guardado fallido revierte | ✅ lo dice y la casilla vuelve |
+| ⑤ anchos 390 / 1280 / 1700 con 20 y con 1 | ✅ cero scroll horizontal en los seis |
+| ⑥ las cuatro hermanas idénticas por hash | ✅ con su control positivo (Trabajos SÍ cambia) |
+| **PASO 0 del ancho, re-medido por mi cuenta** | ✅ `.jobs-pantalla { max-width: 980px }` es **una sola regla, en una sola vista**, y ningún otro selector lleva ese tope. **No es compartido** → el alcance no cambia |
+
+Las dos pruebas del candado son **distintas** y las he corrido **las dos**, separadas: son el único
+riesgo real del ticket y no valen leídas.
+
+## 3 · 🔴 EL HALLAZGO DEL `serializeJob`, CONFIRMADO EJECUTANDO
+
+No se hereda: decide si SCRUM-823 se puede construir. Se carga la escalera REAL
+(`jobNextAction.js`, el mismo fichero que corre en el navegador) y se le pasa **la misma fila en
+dos formas** — cinco estados de la FSM × con resto y sin resto = 10 casos:
+
+```
+SIN `albaranes`/`invoices` (lo que mandaba serializeJob ANTES):   10 × nuevo
+CON un albarán `emitido`   (lo que manda AHORA):                  10 × firmar
+```
+
+**Confirmado.** Sin los campos la escalera sabía decir **UNA sola cosa para los cinco estados**, y
+por eso las veinte filas ofrecían el mismo botón. No era una decisión de diseño a rehacer: era un
+dato que no viajaba. Con (A) dentro, **SCRUM-823 tiene con qué construirse**.
+
+## 4 · 🔴 LO QUE HE TOCADO DE SU TRABAJO, Y POR QUÉ
+
+**Un solo fichero: `scripts/_banco-lista.mjs`. La espera que faltaba, y sólo ésa.**
+
+### El defecto, medido
+
+`guard:lista-trabajos` dio **un rojo que no se reproducía**: «Facturas HA CAMBIADO ·
+`70559f8b6e8448ca` (5919) ≠ `31f05ec6e95b4a0c` (**5839**)» — **80 caracteres de menos** — contra
+una rama que **no toca facturas**. Dos pasadas después, idéntica.
+
+La causa, medida y no supuesta. El banco marcaba la página como lista así:
+
+```
+await window.<vista>(contenedor);                 ← vuelve cuando la vista RETORNA
+requestAnimationFrame(() => requestAnimationFrame(
+  () => { window.__listo = true; }));             ← ~32 ms después
+```
+
+Dos `requestAnimationFrame` son **un plazo, no una espera**: no sincronizan con ninguna promesa. Y
+`renderInvoicesView` **dispara carga que no espera**. Bajo carga —la comparación de las cuatro
+hermanas monta ocho páginas seguidas— el plazo se agota antes y se captura la pantalla a medio
+pintar.
+
+**Y el escape real estaba en un sitio concreto:** esa segunda carga usa **`fetch` CRUDO**, no
+`apiRequest` (`invoicesView.js:89`, la bandeja de «pendientes de facturar»). Contar sólo
+`apiRequest` la dejaba fuera de la cuenta. Ésos eran los 80 caracteres.
+
+### El arreglo, mínimo
+
+El banco es dueño de sus dobles, así que **cuenta las peticiones en vuelo** —`apiRequest` **y**
+`fetch`— y se declara listo cuando no queda ninguna **y sigue sin quedar ninguna un tick después**
+(una cadena A→B pasa por cero entre las dos). Con tope de 2 s, para que una vista que no termina
+se declare en vez de colgar la pasada. **No cambia qué se mide: cambia cuándo se mira.**
+
+### La prueba, porque un flaky no se cierra viéndolo pasar una vez
+
+**N = 10 pasadas CONSECUTIVAS del guard: las diez `exit 0`, y las cuatro hermanas con los MISMOS
+hashes en las diez.** Se declara N porque el intento anterior —contar sólo `apiRequest`— sobrevivió
+**tres** pasadas y cayó a la cuarta: tres no habrían bastado.
+
+**Por qué se toca esto y nada más:** un guard que se pone rojo al azar entra en `main` y pone un
+rojo falso en el PR de todo el mundo. Es la familia de SCRUM-822 — un rojo que no significa nada
+enseña a ignorar la suite.
+
+## 5 · Hallazgo reportado, NO arreglado (regla 37)
+
+**`invoicesView.js` pide su bandeja de pendientes con `fetch` crudo** en vez de con `apiRequest`
+(`:89`). Aquí sólo se ha hecho que el banco lo VEA. Que una vista se salte `apiRequest` la deja
+fuera de todo lo que `apiRequest` da —el registro de peticiones, el trato de errores tipado, y
+cualquier instrumento que lo doble— y no hay nada que lo impida hoy. Es del carril de Facturas.

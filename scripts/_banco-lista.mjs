@@ -72,12 +72,29 @@ window.__avisos = [];
 // se va a ningún sitio en mitad de la medición.
 window.renderAppView = function (vista, params) { window.__navegaciones.push({ vista: vista, params: params || null }); };
 const __datos = ${reglasDatos};
+// SCRUM-816 (certificación) · SE CUENTAN LAS PETICIONES EN VUELO. El banco es dueño de este doble,
+// así que sabe exactamente cuántas hay pendientes — no hay que adivinarlo desde fuera.
+window.__enVuelo = 0;
 window.apiRequest = function (ruta, opciones) {
   window.__peticiones.push({ ruta: String(ruta), metodo: (opciones && opciones.method) || 'GET', cuerpo: (opciones && opciones.body) || null });
   const r = __datos(String(ruta), opciones || {});
-  if (r && typeof r.then === 'function') return r;
-  if (r instanceof Error) return Promise.reject(r);
-  return Promise.resolve(r);
+  const p = (r && typeof r.then === 'function') ? r
+    : (r instanceof Error ? Promise.reject(r) : Promise.resolve(r));
+  window.__enVuelo++;
+  // El .finally devuelve una promesa que resuelve o RECHAZA igual que la de dentro: quien llama
+  // recibe lo mismo que antes. Lo único que se añade es el descuento.
+  // (Sin acentos graves en este bloque: va DENTRO de un template literal y cerrarían la cadena.)
+  return p.finally(function () { window.__enVuelo--; });
+};
+// 🔴 Y TAMBIÉN EL fetch CRUDO, que es por donde se escapaba de verdad. Contar sólo apiRequest
+// deja fuera a quien no lo usa: invoicesView carga su bandeja de «pendientes de facturar» con
+// fetch directo (invoicesView.js:89), así que esa petición no aparecía en la cuenta y la captura
+// podía llegar antes de que aterrizara. Ésos eran los 80 caracteres que faltaban.
+// Se envuelve, no se dobla: la petición sigue yendo al mismo sitio; sólo se apunta que está viva.
+const __fetch = window.fetch.bind(window);
+window.fetch = function () {
+  window.__enVuelo++;
+  return __fetch.apply(null, arguments).finally(function () { window.__enVuelo--; });
 };
 // Los avisos también se APUNTAN, además de pintarse: «lo dice» hay que poder comprobarlo, y el
 // toast se desvanece solo a los pocos segundos.
@@ -87,6 +104,30 @@ window.__listo = false;
 (async () => {
   try { await window.${fnVista}(document.getElementById('view-container'), ...${args}); }
   catch (e) { window.__errores.push('render: ' + e.message); }
+  // 🔴 SCRUM-816 (certificación, 8-sep-2026) · «AWAIT DEL RENDER» NO ES «PINTADA», Y ESO HACÍA
+  // OSCILAR AL GUARD.
+  //
+  // (Sin acentos graves en este bloque: va DENTRO de un template literal y cerrarían la cadena.)
+  //
+  // Las vistas disparan cargas que NO esperan: renderInvoicesView pide su lista y, aparte, los
+  // pendientes de facturar. El await del render vuelve antes de que la segunda aterrice, y dos
+  // requestAnimationFrame (~32 ms) no sincronizan con una promesa: son un plazo, no una espera.
+  // Bajo carga —la comparación de las cuatro hermanas monta ocho páginas seguidas— el plazo se
+  // agota antes y se captura la pantalla A MEDIO PINTAR.
+  //
+  // MEDIDO: la lista de Facturas salió una vez con 5.839 caracteres contra los 5.919 de siempre,
+  // 80 de menos, y el guard la denunció como «HA CAMBIADO» contra una rama que no toca facturas.
+  // No se reproducía: dos pasadas después, idéntica. Un guard que se pone rojo al azar enseña a
+  // ignorar la suite, que es la familia de defecto de SCRUM-822.
+  //
+  // Se espera a que no quede NINGUNA petición en vuelo, y a que siga sin quedar ninguna un tick
+  // después: una cadena A→B pasa por cero entre las dos, y un solo vistazo la daría por acabada.
+  // Con tope (2 s) para que una vista que nunca termina se declare, en vez de colgar la pasada.
+  let quietas = 0;
+  for (let i = 0; i < 400 && quietas < 2; i++) {
+    await new Promise((r) => setTimeout(r, 5));
+    quietas = window.__enVuelo === 0 ? quietas + 1 : 0;
+  }
   requestAnimationFrame(() => requestAnimationFrame(() => { window.__listo = true; }));
 })();
 </script>
