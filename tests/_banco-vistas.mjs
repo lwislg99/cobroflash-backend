@@ -809,10 +809,17 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'almacenLocal.js',
   'api.js',
   'app.js',
+  // SCRUM-713 · la regla con la que el presupuesto filtra sus clientes al teclear, y los tres
+  // textos que enseña al hacerlo. Va ANTES de `quotesView.js`, que la llama al MONTAR el selector
+  // —no sólo al buscar—, así que cargarla después dejaría la pantalla sin selector de cliente.
+  'buscadorDeClientes.js',
   'cobrosView.js',
   'colaDeFirmas.js',
   'contacto.js',
   'csvImport.js',
+  // SCRUM-600 (DOC-10) · la única composición del cuerpo de `POST /admin/invoices`. Va ANTES de
+  // `quotesView.js` y de `nuevaFacturaModal.js`: son las dos pantallas que la llaman.
+  'cuerpoDelDocumentoSuelto.js',
   'customerDetailView.js',
   'customersView.js',
   // SCRUM-587 (CONT-14) · el descuento pactado con el cliente, PROPUESTO. Va DESPUÉS de
@@ -940,6 +947,10 @@ export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   // `window.formaDePagoPorDefecto` no existe cuando el editor se monta y la tira no aparecería
   // JAMÁS — en silencio y con la tanda verde, que es el modo en que este defecto se esconde.
   { antes: 'formaDePagoPorDefecto.js', despues: 'quotesView.js', motivo: 'SCRUM-586: el editor le pide la propuesta al elegir cliente' },
+  // SCRUM-713 · y ésta NO es del mismo tipo que la de arriba: el editor la llama al MONTAR, dentro
+  // de `pintarOpcionesDeCliente`, no al elegir cliente. Cargarla después no dejaría el selector sin
+  // buscador — lo dejaría SIN CLIENTES, porque el montaje reventaría antes de pintarlos.
+  { antes: 'buscadorDeClientes.js', despues: 'quotesView.js', motivo: 'SCRUM-713: el editor filtra y rotula el selector de cliente con ella' },
   // SCRUM-606 (ALB-01) · las TRES del buscador de presupuesto. La del rótulo no es cosmética:
   // el modal titula con `atajoNuevo.textoDe('albaranes')`, así que si se cargara antes se
   // quedaría sin título y el marcador de microcopy sin firmar no se vería en pantalla.

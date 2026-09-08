@@ -1,4 +1,5 @@
 import express, { Router, Request, Response } from 'express';
+import path from 'path'; // SCRUM-822 · `root` de `res.sendFile`
 import fetch from 'node-fetch';
 import { prisma } from '../../../../core/db/prisma';
 import { esc, parseToken, formatMoneyEs } from '../../../../core/utils/utils';
@@ -840,7 +841,9 @@ quoteDecisionLandingRouter.get('/quote/:token/pdf', async (req: Request, res: Re
     // tiene por qué pisarla. Ese ida y vuelta es justo lo que creó el defecto.
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="presupuesto-${quote.quoteNumber ?? quote.id}.pdf"`);
-    return res.sendFile(pdf.outPath);
+    // SCRUM-822 · `root` obligatorio: sin él `send` aplica su regla de dotfiles a la ruta
+    // ABSOLUTA entera y devuelve 404 si el árbol vive bajo un directorio con punto.
+    return res.sendFile(path.basename(pdf.outPath), { root: path.dirname(pdf.outPath) });
   } catch (err) {
     console.error('[GET /pay/quote/:token/pdf]', err);
     return res.status(500).json({ error: 'internal_error' });
