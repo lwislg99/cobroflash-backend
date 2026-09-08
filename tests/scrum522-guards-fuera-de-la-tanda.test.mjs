@@ -94,8 +94,14 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // DESPUÉS de un gesto, y eso no existe en un DOM servido muerto. Por lo mismo no podía usar
   // `_pagina-panel.mjs`, que serializa el mini-DOM: carga los scripts de verdad en el navegador.
   // Comprobado en rojo quitando `[data-fila-no-navega]`: caen las dos afirmaciones de ①.
-  assert.equal(fuera.length, 16,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ 16 → ${fuera.length}.\n`
+  // SCRUM-823 · 16 → 17: entra `guard:escalera-por-estado`. Sube por el motivo de SCRUM-816 —
+  // PULSA, no observa— y por uno propio: es el único que monta LAS DOS pantallas del Trabajo a la
+  // vez y compara lo que dicen. La escalera es una sola función, pero «llamar a la misma función»
+  // no garantiza «decir y poder hacer lo mismo»: medido, el detalle pintaba el rótulo nuevo y se
+  // quedaba en «Enviando…» para siempre. Eso sólo se ve pulsando en las dos.
+  // Comprobado en rojo quitando la rama de `agendar` del detalle: cae ② nombrando el botón colgado.
+  assert.equal(fuera.length, 17,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ 17 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);

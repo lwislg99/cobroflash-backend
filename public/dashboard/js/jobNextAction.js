@@ -25,11 +25,34 @@
 // Depende de `fmtMoneyEs` (definida en `api.js`), así que este script CARGA DESPUÉS de api.js y
 // ANTES de las dos vistas que lo usan.
 
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-823 · LOS ESTADOS EN LOS QUE UN DOCUMENTO DE ENTREGA SIGNIFICA ALGO
+//
+// Un albarán es el papel de que se ha ENTREGADO un trabajo. Antes de este ticket la escalera no
+// preguntaba por el estado del Trabajo para nada que no fuera cobrar, así que ofrecía documentos
+// en los dos estados donde no significan nada:
+//
+//   · `pendiente_agendar` — no hay fecha. Es un trabajo que todavía no se ha hecho, y se le
+//     ofrecía crear el albarán, EMITIRLO y hasta MANDARLO AL CLIENTE A FIRMAR.
+//   · `cerrado` — es el único acto irreversible de la FSM. Un trabajo cerrado no recibe
+//     documentos nuevos; ofrecerlo invita a reabrir algo que se dio por acabado.
+//
+// MEDIDO sobre los cinco estados × cuatro situaciones de albarán × dos de dinero: **12 de 40
+// casos** proponían una acción de documento en un estado que no la admite. Y el caso que abrió el
+// ticket es el peor de leer: **un Trabajo CERRADO proponiendo «+ Nuevo albarán»**.
+//
+// ⚠️ SE EXPRESA COMO LOS ESTADOS QUE **SÍ**, no como los que no. Una lista de exclusiones deja
+// pasar solo el estado que se olvide; una de inclusiones deja fuera al sexto estado que alguien
+// añada mañana, y eso es un botón de menos —visible y reportable— en vez de un albarán emitido
+// sobre un trabajo que no se ha hecho.
+const JOB_ESTADOS_CON_DOCUMENTOS = ['agendado', 'en_curso', 'terminado'];
+
 // SCRUM-31 (F4): resolver de la SIGUIENTE acción del héroe (escalera aprobada por el fundador).
 // PURO: decide CUÁL acción mostrar a partir de `job`; NO ejecuta nada (quien lo llama reutiliza
 // los endpoints existentes). Prioridad: (1) Cobrar el resto si terminado con saldo · (2) Recordar
-// pago si hay factura sin pagar ≥7 días (y hay teléfono) · (3) Enviar para firmar un albarán
-// emitido · (4) Emitir un albarán en borrador · (5) Nuevo albarán si no hay ninguno · (6) nada.
+// pago si hay factura sin pagar ≥7 días (y hay teléfono) · (2-bis, SCRUM-823) Agendar si no tiene
+// fecha · (3) Enviar para firmar un albarán emitido · (4) Emitir un albarán en borrador · (5)
+// Nuevo albarán si no hay ninguno · (6) nada.
 // Entre albaranes gana el MÁS AVANZADO: emitido pesa más que borrador.
 function jobNextAction(job, isAdmin = true) {
   // SCRUM-89: los niveles de DINERO (1 cobrar, 2 recordar) son admin-only (403 para técnico) — un
@@ -57,6 +80,40 @@ function jobNextAction(job, isAdmin = true) {
     });
     if (vieja) return { level: 2, kind: 'recordar', label: 'Recordar pago', invoiceId: vieja.id };
   }
+  // ── 2-bis · SCRUM-823 · SIN FECHA, LO QUE TOCA ES PONERLE FECHA ─────────────────────────
+  //
+  // Va DESPUÉS del dinero y no antes, y es deliberado: una factura sin pagar de hace una semana es
+  // más urgente que colocar el trabajo en el calendario, y ese orden ya estaba decidido (AB1: todo
+  // gira alrededor del dinero). Lo que cambia es que por debajo del dinero ya no se cuela un
+  // documento de entrega de algo que no se ha hecho.
+  //
+  // El rótulo NO es nuevo: «Agendar» ya estaba en pantalla, con ese literal exacto, en el «⋯» de
+  // la fila desde SCRUM-727b. Sube de sitio, no se estrena (regla 30).
+  //
+  // ⚠️ NO ES ADMIN-ONLY, a diferencia de los dos niveles de arriba: agendar no es dinero, y el
+  // PATCH de `status`/`scheduledAt` no está en el gate por campo de SCRUM-164. Un técnico que abre
+  // una avería puede ponerle fecha.
+  //
+  // 🔴 Y EL EJECUTOR TIENE QUE EXISTIR EN LAS DOS PANTALLAS — `abrirAgendarTrabajo`
+  // (`jobAgendar.js`). Medido en Edge ANTES de escribir esto: doblando la escalera para que
+  // devolviera un `kind` que el detalle no conoce, su CTA se pintaba, se pulsaba y se quedaba en
+  // **«Enviando…» deshabilitado para siempre** — cero escrituras, cero avisos, ninguna modal. Un
+  // nivel nuevo sin ejecutor es un CTA muerto, que es justo lo que esta escalera prohíbe en el
+  // comentario de aquí arriba.
+  if (job.status === 'pendiente_agendar') {
+    return { level: 2.5, kind: 'agendar', label: 'Agendar' };
+  }
+  // ── 3/4/5 · LOS DOCUMENTOS, SÓLO EN LOS ESTADOS QUE LOS ADMITEN (SCRUM-823) ──────────────
+  //
+  // Un albarán es el papel de que algo se ha ENTREGADO. En un Trabajo `cerrado` —el único acto
+  // irreversible de la FSM— no hay nada nuevo que entregar, y ofrecerlo invita a reabrir lo que se
+  // dio por acabado. El caso que abrió el ticket era exactamente ése: una fila CERRADA proponiendo
+  // «+ Nuevo albarán».
+  //
+  // El dinero de arriba SÍ sigue vivo para un Trabajo cerrado, y es deliberado: cerrar con saldo
+  // puede ser legítimo (lo dice `jobsCierreTrabajo`), así que una factura vieja sin pagar se sigue
+  // pudiendo reclamar. Lo que se retira es el documento, no el cobro.
+  if (!JOB_ESTADOS_CON_DOCUMENTOS.includes(job.status)) return null;
   // 3/4 · albaranes: gana el MÁS AVANZADO (emitido → firmar; si no, borrador → emitir).
   const albaranes = Array.isArray(job.albaranes) ? job.albaranes : [];
   const emitido = albaranes.find((a) => a.estado === 'emitido');
@@ -71,7 +128,9 @@ function jobNextAction(job, isAdmin = true) {
 
 // Los `kind` que la escalera puede devolver. Los usa el guard para comprobar por ESTRUCTURA que
 // ninguna superficie inventa una acción principal por su cuenta, sin tener que enumerar ficheros.
-const JOB_NEXT_ACTION_KINDS = ['cobrar', 'recordar', 'firmar', 'emitir', 'nuevo'];
+// SCRUM-823 · entra `agendar`. La lista lo tiene que saber ejecutar, y el detalle también: el
+// guard `scrum823` comprueba que CADA `kind` de aquí tenga rama en las DOS pantallas.
+const JOB_NEXT_ACTION_KINDS = ['cobrar', 'recordar', 'agendar', 'firmar', 'emitir', 'nuevo'];
 
 // Sin módulos (regla 4: vanilla, sin bundler): se cuelga del global para que las dos vistas la
 // alcancen. Es exactamente lo que faltaba — la función era correcta y no era NOMBRABLE desde fuera.

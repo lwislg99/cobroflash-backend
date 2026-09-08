@@ -679,80 +679,15 @@ function jobCierreSection(j, patch) {
   return sec;
 }
 
-/**
- * El modal de la casa. No estrena componente: `.modal-overlay` + `.modal` son los que ya usan
- * el resto de pantallas, y el `Escape`/clic fuera se comportan igual que allí.
- */
-function jobsModal(titulo, cuerpo, acciones) {
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
-  const panel = document.createElement('div');
-  panel.className = 'modal jobs-modal';
-  panel.setAttribute('role', 'dialog');
-  panel.setAttribute('aria-modal', 'true');
-  panel.setAttribute('aria-label', titulo);
+// ── SCRUM-823 · `jobsModal` y `abrirAgendar` YA NO VIVEN AQUÍ ────────────────────────────────
+//
+// Se han mudado VERBATIM a `js/jobAgendar.js` (`abrirAgendarTrabajo`), y el motivo es el defecto
+// de SCRUM-366 en espejo: viviendo dentro de esta vista, **el detalle del Trabajo no podía
+// nombrarlas** — y por eso esta lista era el único sitio del producto donde se agendaba.
+//
+// Esta vista las sigue usando por el global, que es como se comparte todo en un panel sin bundler
+// (regla 4). No cambia ni un comportamiento: cambia quién más puede alcanzarlas.
 
-  const h = document.createElement('div');
-  h.className = 'jobs-modal-titulo';
-  h.textContent = titulo;
-  panel.appendChild(h);
-  panel.appendChild(cuerpo);
-
-  const pie = document.createElement('div');
-  pie.className = 'jobs-modal-pie';
-  const cerrar = () => { document.removeEventListener('keydown', onKey, true); overlay.remove(); };
-  function onKey(e) { if (e.key === 'Escape') cerrar(); }
-  const cancelar = document.createElement('button');
-  cancelar.className = 'btn-secondary btn-sm';
-  cancelar.textContent = 'Cancelar';
-  cancelar.addEventListener('click', cerrar);
-  pie.appendChild(cancelar);
-  acciones(pie, cerrar);
-  panel.appendChild(pie);
-
-  overlay.appendChild(panel);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
-  document.addEventListener('keydown', onKey, true);
-  document.body.appendChild(overlay);
-  return cerrar;
-}
-
-/**
- * Agendar. El `datetime-local` sale de la fila y entra aquí: dentro de la fila era lo que la
- * hacía gigante, y quitarlo sin más habría borrado la única forma de agendar que hay en todo el
- * producto — `jobDetailView.js` no tiene ninguna transición.
- */
-function abrirAgendar(j, patch) {
-  const cuerpo = document.createElement('div');
-  cuerpo.className = 'jobs-modal-cuerpo';
-  const dt = document.createElement('input');
-  dt.type = 'datetime-local';
-  dt.className = 'input';
-  dt.id = 'jobs-agendar-fecha';
-  if (j.scheduledAt) {
-    const d = new Date(j.scheduledAt);
-    dt.value = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-  }
-  const lab = document.createElement('label');
-  lab.className = 'jobs-modal-label';
-  lab.setAttribute('for', dt.id);
-  lab.textContent = 'Fecha y hora';
-  cuerpo.appendChild(lab);
-  cuerpo.appendChild(dt);
-
-  jobsModal(j.status === 'agendado' ? 'Reagendar' : 'Agendar', cuerpo, (pie, cerrar) => {
-    const okAgendar = document.createElement('button');
-    okAgendar.className = 'btn-primary btn-sm';
-    okAgendar.textContent = j.status === 'agendado' ? 'Reagendar' : 'Agendar';
-    okAgendar.addEventListener('click', () => {
-      if (!dt.value) { showToast('Elige fecha y hora primero.', 'warn'); return; }
-      cerrar();
-      patch({ status: 'agendado', scheduledAt: new Date(dt.value).toISOString() }, '📅 Trabajo agendado');
-    });
-    pie.appendChild(okAgendar);
-  });
-  setTimeout(() => dt.focus(), 0);
-}
 
 /**
  * Asignar técnicos SIN entrar en el Trabajo.
@@ -929,11 +864,25 @@ function jobRow(j, container, equipo) {
     const bSiguiente = document.createElement('button');
     bSiguiente.className = 'btn-primary btn-sm';
     bSiguiente.textContent = siguiente.label;
-    // SCRUM-727 · `jobs-detail`, en plural. En singular el router caía en su `default:` y este
-    // botón —el del dinero— dejaba al usuario en Inicio, sin aviso ni traza.
-    bSiguiente.addEventListener('click', () => {
-      if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: j.id });
-    });
+    // ── SCRUM-823 · «Agendar» SE EJECUTA AQUÍ, no lleva al detalle ─────────────────────────
+    //
+    // El resto de acciones de la escalera abren el Trabajo, y está bien: firmar, emitir o crear un
+    // albarán se hacen mirando el documento. Agendar no: es poner una fecha, y el jefe la pone
+    // repartiendo el día sobre la lista entera. Mandarlo al detalle para escribir una fecha y
+    // volver es justo el paseo que esta pantalla existe para ahorrar.
+    //
+    // 🔒 Y NO LEVANTA EL CANDADO DE SCRUM-727: sigue siendo un `<button>` —un gesto distinto del
+    // que navega, que es el clic en la fila— y el modal pide fecha y hay que confirmar. Dos gestos
+    // deliberados, ninguno de ellos el de abrir el Trabajo.
+    if (siguiente.kind === 'agendar' && typeof abrirAgendarTrabajo === 'function') {
+      bSiguiente.addEventListener('click', () => abrirAgendarTrabajo(j, patch));
+    } else {
+      // SCRUM-727 · `jobs-detail`, en plural. En singular el router caía en su `default:` y este
+      // botón —el del dinero— dejaba al usuario en Inicio, sin aviso ni traza.
+      bSiguiente.addEventListener('click', () => {
+        if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: j.id });
+      });
+    }
     caja.appendChild(bSiguiente);
   }
 
@@ -974,7 +923,10 @@ function jobRow(j, container, equipo) {
   opcion('Técnicos', () => abrirAsignar(j, refresh));
 
   if (j.status === 'pendiente_agendar' || j.status === 'agendado') {
-    opcion(j.status === 'agendado' ? 'Reagendar' : 'Agendar', () => abrirAgendar(j, patch));
+    // SCRUM-823 · la entrada del «⋯» SE QUEDA, y no es un duplicado del botón nuevo: para un
+    // Trabajo `agendado` la primaria es su documento, así que **«Reagendar» sólo existe aquí**.
+    // Retirarla habría borrado la única forma de cambiar una fecha ya puesta.
+    opcion(j.status === 'agendado' ? 'Reagendar' : 'Agendar', () => abrirAgendarTrabajo(j, patch));
   }
   if (j.status === 'agendado') {
     opcion('▶ Empezar', () => patch({ status: 'en_curso' }));

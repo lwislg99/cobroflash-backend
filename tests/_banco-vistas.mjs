@@ -850,6 +850,10 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'jobDetailView.js',
   'jobDocsReparto.js',
   'jobNextAction.js',
+  // SCRUM-823 · agendar un Trabajo, sacado de `jobsView.js` para que el DETALLE pueda nombrarlo:
+  // es el movimiento de SCRUM-366 en espejo. Sus DOS relaciones de orden se declaran abajo, y no
+  // es una formalidad — si se cargara después de sus consumidores, la pantalla revienta al abrirse.
+  'jobAgendar.js',
   // SCRUM-651 (2-sep-2026): entra `jobNuevoModal.js`, el modal para abrir un Trabajo SIN
   // presupuesto —una averia, el caso mas frecuente del primer cliente real—. Va ANTES de
   // `jobsView.js`, que lo consume, y despues de `modalHeader.js`, del que usa `cabeceraModal`.
@@ -956,6 +960,10 @@ export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   { antes: 'switchTipoArticulo.js', despues: 'productsView.js', motivo: 'SCRUM-609: el switch Producto|Servicio' },
   { antes: 'quoteApartados.js', despues: 'quotesDetailView.js', motivo: 'SCRUM-655: apartados, numeración y descripción' },
   { antes: 'signaturePad.js', despues: 'parteDetailView.js', motivo: 'SCRUM-652: el parte abre el pad de firma' },
+  // SCRUM-823 · las DOS pantallas ejecutan «Agendar» desde aquí. `jobsView` además le pide
+  // `jobsModal`, que se mudó con él, así que sin este orden la lista no monta.
+  { antes: 'jobAgendar.js', despues: 'jobsView.js', motivo: 'SCRUM-823: agendar y el modal de la casa' },
+  { antes: 'jobAgendar.js', despues: 'jobDetailView.js', motivo: 'SCRUM-823: el CTA «Agendar» del héroe' },
   { antes: 'colaDeFirmas.js', despues: 'parteDetailView.js', motivo: 'SCRUM-652: firma con la cola que ya existe' },
   // SCRUM-593 (DOC-03): la pieza se carga antes que sus DOS consumidores. `jobDetailView.js`
   // YA la consume (el campo de cabecera del albaran); `quotesView.js` la consumira cuando salga

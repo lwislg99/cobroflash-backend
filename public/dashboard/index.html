@@ -247,6 +247,10 @@
   <!-- SCRUM-366: la escalera de la siguiente accion, compartida por el listado y el detalle.
        Detras de api.js porque usa fmtMoneyEs; delante de las dos vistas que la consumen. -->
   <script src="./js/jobNextAction.js"></script>
+  <!-- SCRUM-823: agendar un Trabajo. Va JUNTO a la escalera y por el mismo motivo — la escalera
+       propone «Agendar» y las DOS vistas tienen que poder ejecutarlo. Detras de api.js porque usa
+       showToast; delante de jobsView.js y jobDetailView.js, sus dos consumidores. -->
+  <script src="./js/jobAgendar.js"></script>
   <!-- SCRUM-210: detrás de api.js a propósito — reutiliza su `copyRojo` (copy aprobado). -->
   <script src="./js/semaforoFiscal.js"></script>
   <script src="./js/homeView.js"></script>

@@ -43,6 +43,7 @@ const SHELL = [
   '/dashboard/js/filtroClientes.js', // SCRUM-581
   '/dashboard/js/etiquetasDelDocumento.js', // SCRUM-595 (DOC-05)
   '/dashboard/js/jobNextAction.js',
+  '/dashboard/js/jobAgendar.js', // SCRUM-823: agendar, compartido por la lista y el detalle
   '/dashboard/js/semaforoFiscal.js',
   '/dashboard/js/homeView.js',
   '/dashboard/js/onboardingView.js',

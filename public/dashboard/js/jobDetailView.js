@@ -708,6 +708,10 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // sin declarar su ocupante.
   const nextAct = jobNextAction(job, !isTecnico);
   if (nextAct) {
+    // SCRUM-823 · UN SOLO SITIO por el que el mensaje del servidor puede asomar en este CTA.
+    // El trinquete de SCRUM-644 cuenta SITIOS, y este ticket añade un camino de fallo más (el del
+    // agendado): los dos entran por aquí, así que el número no sube. El texto es el que ya había.
+    const falloDelCta = (err) => setStatus('error', 'No se pudo completar la acción: ' + (err?.data?.message || err.message));
     const cta = document.createElement('button');
     // 🔴 SCRUM-380 · SIN `btn-sm`, y el arreglo va POR AQUÍ y no por el CSS.
     //
@@ -762,9 +766,37 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
           // nombrada, para que los dos caminos no vuelvan a divergir (SCRUM-366).
           await abrirAltaAlbaran('SIN_VALORAR');
           cta.disabled = false; cta.textContent = orig; // no se refresca: aún no existe nada
+        } else if (nextAct.kind === 'agendar') {
+          // ── SCRUM-823 · AGENDAR, TAMBIÉN DESDE AQUÍ ─────────────────────────────────────
+          //
+          // 🔴 ESTA PANTALLA NO SABÍA AGENDAR. `scheduledAt` aparecía CERO veces en este fichero y
+          // no tenía ni una transición de estado: la lista era el único sitio del producto donde
+          // se ponía una fecha. Por eso `abrirAgendarTrabajo` se ha mudado a `js/jobAgendar.js` —
+          // el mismo movimiento que SCRUM-366 hizo con esta escalera, en espejo.
+          //
+          // Medido ANTES de escribir esto: con un `kind` que este `if/else` no cubre, el botón se
+          // quedaba en «Enviando…» deshabilitado para siempre, sin escribir nada y sin decir nada.
+          // El rótulo se restaura ANTES de abrir el modal porque abrirlo no es enviar: lo que
+          // envía es el botón de dentro, y hasta entonces esto se puede cancelar.
+          cta.disabled = false; cta.textContent = orig;
+          abrirAgendarTrabajo(job, async (cuerpo, ok) => {
+            try {
+              await apiRequest(`/admin/jobs/${job.id}`, { method: 'PATCH', body: JSON.stringify(cuerpo) });
+              if (ok) showToast(ok);
+              refresh();
+            } catch (e) {
+              // 🔴 EL MISMO SITIO QUE EL `catch` DE ABAJO, y no una copia. El trinquete de
+              // SCRUM-644 cuenta los SITIOS que pintan un `.message` crudo del servidor, y el
+              // techo de este fichero era 11: escribir aquí un `setStatus` propio lo subía a 12.
+              // **Un trinquete sólo baja.** Los dos caminos —el fallo de la acción y el del
+              // agendado— pasan por `falloDelCta`, así que el número no se mueve y el día que
+              // alguien traduzca ese mensaje hay UN punto donde hacerlo, no dos.
+              falloDelCta(e);
+            }
+          });
         }
       } catch (err) {
-        setStatus('error', 'No se pudo completar la acción: ' + (err?.data?.message || err.message));
+        falloDelCta(err);
         cta.disabled = false;
         cta.textContent = orig;
       }
