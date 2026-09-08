@@ -1,5 +1,6 @@
 // src/modules/system/app/routes/quotesAdmin.routes.ts
 import { Router } from 'express';
+import path from 'path'; // SCRUM-822 · `root` de `res.sendFile`
 // SCRUM-597 (DOC-07 · P-DOC-3): el coste congelado en la línea es economía del negocio.
 // Quién lo ve se PREGUNTA a la política, no se decide aquí.
 import { veEconomiaDelNegocio, sinCosteEnDocumento, sinCosteEnDocumentos } from '../../../../core/visibilidadEconomica';
@@ -557,7 +558,9 @@ router.get('/:id/pdf', async (req, res) => {
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="presupuesto-${quote.quoteNumber ?? quote.id}.pdf"`);
-    return res.sendFile(pdf.outPath);
+    // SCRUM-822 · `root` obligatorio: sin él `send` aplica su regla de dotfiles a la ruta
+    // ABSOLUTA entera y devuelve 404 si el árbol vive bajo un directorio con punto.
+    return res.sendFile(path.basename(pdf.outPath), { root: path.dirname(pdf.outPath) });
   } catch (err) {
     console.error('[GET /admin/quotes/:id/pdf]', err);
     return res.status(500).json({ error: 'internal_error' });

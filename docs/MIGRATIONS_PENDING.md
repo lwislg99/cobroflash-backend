@@ -374,7 +374,8 @@ exactamente lo que impide el arranque (la lección de SCRUM-220).
 | **`railway`** (host `acela`) | `DATABASE_URL_STAGING` **+** `DATABASE_URL_TESTS` | ⬜ **SIN APLICAR** |
 | **producción** (host `autorack`) | — | ⬜ **SIN APLICAR — la aplica el fundador** |
 
-**Ninguna de las tres se ha tocado, y no por descuido: el encargo lo prohibía expresamente**
+**NO MEDIBLE por esta sesión, y el motivo es la orden: el encargo prohibía expresamente tocar
+staging y producción, y aplicar la migración.** Ninguna de las tres se ha tocado
 («⛔ Cero producción y staging», y la migración «NO la aplicas»). No hay medición del estado previo
 de ninguna base en esta entrada, y **eso es lo que hay**: las tres casillas están sin marcar porque
 nadie ha mirado, no porque se haya comprobado que faltan. Quien las aplique, que las marque aquí
@@ -2353,3 +2354,77 @@ arriba cierra el mismo agujero para quien escriba SQL en crudo, que es el camino
 tablas y columnas — **no mira defectos de columna**. La columna existe en las tres bases antes y
 después, así que el esquema puede ir por delante sin impedir arrancar (que es lo que costó
 SCRUM-220).
+
+---
+
+## SCRUM-590 (CONT-19) · `customers.mobile` — ✅ APLICADO **solo en DEV** (7-sep-2026)
+
+```sql
+ALTER TABLE "customers" ADD COLUMN IF NOT EXISTS "mobile" TEXT;
+```
+
+Fichero: `docs/sql/scrum-590-movil-del-contacto.sql`. Aditiva: ni DROP, ni RENAME, ni TRUNCATE, ni
+DELETE, ni SET NOT NULL — veredicto de `scripts/preview-migracion.mjs --desde` (CLI **local**),
+con control positivo: la herramienta respondió y produjo UNA sentencia.
+
+### Cómo se aplicó, y por dónde NO pasó
+
+Con `node scripts/aplicar-sql-dev.mjs --file … --go`, que es la única vía que existe para esto y
+está **acotada a `yaqu_dev_javier` por construcción**: sólo acepta `DATABASE_URL_DEV`, contrasta la
+clave contra su destino declarado (`exigirDestinoCorrecto`, SCRUM-383) y se niega si el nombre de
+base no es ése — staging y dev comparten host, así que mirar sólo el host las daría por iguales.
+
+**Comprobación del destino ANTES de abrir nada**, con `_db-guard.mjs`, sin imprimir credencial:
+
+```
+destino ....................... acela.proxy.rlwy.net/yaqu_dev_javier (DESARROLLO) ✅
+¿es el host de PRODUCCIÓN? .... NO
+¿es la base de STAGING? ....... NO
+exigirDestinoCorrecto ......... CUADRA
+```
+
+⚠️ Y un dato del árbol que conviene tener escrito: en `cobroflash-b4` **NO existen
+`DATABASE_URL_STAGING` ni `DATABASE_URL_TESTS`** (medido el 7-sep-2026 con
+`node scripts/comprobar-claves-bd.mjs`, que sale 1 por eso). `DATABASE_URL` tampoco, que es lo
+correcto en un árbol de trabajo. O sea: desde aquí **no había credencial de staging que tocar**.
+
+### La verificación es del CATÁLOGO, no del mensaje del aplicador
+
+El propio aplicador lo dice al terminar («AHORA VERIFICA LEYENDO EL CATÁLOGO, no este mensaje»).
+Se midió **antes y después**, con control positivo para poder distinguir un cero de una ceguera:
+
+| | control positivo (columnas de `customers` que ve el catálogo) | `column_name \| data_type \| is_nullable` |
+| --- | --- | --- |
+| **antes** | 25 | *(0 filas)* |
+| **después** | **26** | **`mobile \| text \| YES`** — 1 fila |
+
+```
+SELECT column_name, data_type, is_nullable FROM information_schema.columns
+ WHERE table_name='customers' AND column_name='mobile';
+
+  mobile | text | YES
+  filas: 1
+```
+
+El salto 25 → 26 es el control cruzado: sin él, un «una fila» no distinguiría «la he creado ahora»
+de «ya estaba».
+
+### Estado por base
+
+- [x] **desarrollo · `acela` / `yaqu_dev_javier`** — ✅ **APLICADO y VERIFICADO** el 7-sep-2026
+      leyendo `information_schema` (tabla de arriba).
+- [ ] **staging · `acela` / `railway`** — ⏳ pendiente. **La aplica el fundador.** Desde este árbol
+      no hay `DATABASE_URL_STAGING`, y el encargo de esta sesión prohibía expresamente tocar
+      staging.
+- [ ] **producción · `autorack` / `railway`** — ⏳ pendiente. **La aplica el fundador.** Desde un
+      árbol de trabajo no vive producción (regla 3).
+
+### ⛔ Y por eso el PR NO es mergeable todavía
+
+`schemaDrift` compara **esperado ⊆ real** al arrancar: una columna de MÁS en la base es inocua,
+una de MENOS **impide arrancar producción** y Railway deja vivo el anterior (es lo que costó
+SCRUM-220). El código de la rama nombra `customers.mobile`, así que las **tres** bases tienen que
+tenerla antes del despliegue.
+
+Mientras falten staging y producción, `node scripts/constancia-del-alter.mjs` dirá **FALTAN**: eso
+es la señal funcionando, no un fallo del PR.
