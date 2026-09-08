@@ -435,6 +435,96 @@ jobs:
         run: npm run meta:mutaciones
 
   # ═══════════════════════════════════════════════════════════════════════════════════════════
+  # 🔴 SCRUM-813 · EL TRINQUETE DE ZONA HORARIA · BLOQUEANTE, Y ÉSE ES EL PUNTO
+  #
+  # SCRUM-640 arregló cinco tests que medían la zona horaria de la MÁQUINA en vez del producto, y
+  # censó el árbol entero para demostrar que no quedaban más. Se mezcló el **2-sep-2026** (PR
+  # #889). El **4-sep-2026** SCRUM-592 metió **tres nuevos**. Dos días.
+  #
+  # El defecto no sobrevivió a aquel arreglo: **volvió a entrar**, porque el censo de 640 fue una
+  # medición de una vez — alguien la tecleó, salió un número y el número se quedó en un documento.
+  # Este job es la diferencia entre eso y un trinquete: **corre solo, en cada PR, sin que nadie se
+  # acuerde**. Si no vetara, sería otra medición que se lee después del merge.
+  #
+  # ── POR QUÉ JOB PROPIO Y NO DENTRO DE `npm test` ──────────────────────────────────────────
+  # Son DOS pasadas completas de la tanda (medido en Windows: ~6,5 min cada una). Dentro de la
+  # tanda, ese coste se lo come cada `npm test` de cada sesión y el comando se vuelve el que la
+  # gente aprende a saltarse. Aquí corre EN PARALELO con `test`, así que **no alarga el PR**: le
+  # cuesta máquina, no espera. Es el mismo reparto que `meta-mutaciones`.
+  #
+  # La red que sí corre en cada `npm test` es `tests/scrum813-trinquete-de-zona.test.mjs`: mide
+  # los cuatro canarios por este mismo camino en segundos. Lo caro es barrer 800 ficheros;
+  # comprobar que el aparato ve, no.
+  #
+  # ── EL BANCO DESECHABLE TAMBIÉN AQUÍ, Y POR QUÉ ───────────────────────────────────────────
+  # Sin `LIBRO_PG_URL` hay 7 tests que se SALTAN — y son justo los del libro de facturación, que
+  # es donde viven las fechas que deciden a qué mes natural pertenece un documento. Saltados en
+  # las dos zonas por igual **no cambian de veredicto**, así que el trinquete saldría verde sin
+  # haberlos mirado. Se les da lo que piden, igual que en el job de la tanda (SCRUM-419).
+  #
+  # ⚠️ LO QUE ESTE JOB NO PUEDE DECIR: que el árbol no tenga defectos de zona. Sólo ve los que
+  # **cambian de veredicto** entre +14 y −11. Un borde que caiga fuera de esas dos no lo ve, y eso
+  # está escrito también en la salida del propio comando.
+  # ═══════════════════════════════════════════════════════════════════════════════════════════
+  trinquete-zona:
+    name: trinquete · ningún test nuevo mide la zona de la máquina
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        # Puerto DINÁMICO y health-check, los dos por el mismo motivo medido que el job de la
+        # tanda: un `55432:5432` fijo rompió CI para todas las PR el 10-ago-2026, y sin
+        # health-check los pasos arrancan antes de que Postgres acepte conexiones.
+        ports:
+          - 5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - run: npm ci
+
+      - name: Generar cliente de Prisma
+        run: npx prisma generate
+
+      # 🔴 SIN `dist/` MEDIA TANDA MUERE AL CARGAR **EN LAS DOS ZONAS POR IGUAL**, así que no
+      # cambia de veredicto y el censo saldría en un cero limpio habiendo medido nada. El comando
+      # se declara CIEGO si no encuentra `dist/`, pero eso es la red: aquí se compila.
+      - name: Compilar (tsc)
+        run: npm run build
+
+      # ⚠️ EL PUERTO SE LEE, NO SE ESCRIBE (misma lección que el job de la tanda: escribirlo a
+      # mano fue lo que rompió CI en su día).
+      - name: Banco desechable para los tests de libro
+        env:
+          PGPORT_HOST: ${{ job.services.postgres.ports['5432'] }}
+        run: |
+          test -n "$PGPORT_HOST" || { echo "🔴 no se pudo leer el puerto del servicio: no se toca ninguna base"; exit 1; }
+          psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/postgres" -c 'CREATE DATABASE yaqu_libro_test'
+          npx prisma migrate diff --from-empty \
+            --to-schema-datamodel prisma/schema.prisma --script > "$RUNNER_TEMP/esquema.sql"
+          test -s "$RUNNER_TEMP/esquema.sql" || { echo "🔴 el esquema salió VACÍO: no se aplica nada a ciegas"; exit 1; }
+          psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/yaqu_libro_test" -q -f "$RUNNER_TEMP/esquema.sql"
+
+      - name: La tanda entera en dos zonas extremas (+14 y −11)
+        env:
+          LIBRO_PG_URL: postgresql://postgres@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/yaqu_libro_test
+        run: npm run trinquete:zona
+
+  # ═══════════════════════════════════════════════════════════════════════════════════════════
   # 🔴 SCRUM-677 · EL VIGÍA DEL DESPLIEGUE, EN EL PR · INFORMATIVO, NUNCA BLOQUEANTE
   #
   # Producción estuvo NUEVE DÍAS sin desplegar y nadie se enteró: cuando un despliegue falla el
