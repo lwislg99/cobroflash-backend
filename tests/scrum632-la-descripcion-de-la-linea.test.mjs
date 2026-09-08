@@ -90,7 +90,11 @@ test('SCRUM-632 · 🔴 la descripción NO cuelga ya del input del concepto: es 
   assert.match(fuente, /description: \(line\.descInput && line\.descInput\.value\) \|\| ""/,
     '🔴 la vista previa sigue leyendo el `dataset`: enseñaría la del catálogo y no la que el '
     + 'profesional tiene delante.');
-  assert.match(fuente, /const desc = \(\(line\.descInput && line\.descInput\.value\)/,
+  // 🔴 RE-ANCLADO en SCRUM-632c: el ancla llevaba `const`, y `const` es EXACTAMENTE lo que hubo
+  // que quitar — declarada dentro del `try` y usada fuera, reventaba la creación de presupuestos.
+  // Lo que vigila este caso no es la palabra clave: es que el envío lea EL CAMPO DE LA LÍNEA y no
+  // el `dataset`. Anclar a `const` ataba el guard a un detalle que no era el suyo.
+  assert.match(fuente, /desc = \(\(line\.descInput && line\.descInput\.value\)/,
     '🔴 el envío sigue leyendo el `dataset` como fuente principal.');
 });
 
