@@ -345,6 +345,13 @@ const INDIRECTAS_DECLARADAS = [
   // mergeada, que es la respuesta inútil. EN SECO por defecto y fuera de CI.
   // Lo retira: quien borre `scripts/verificacion-s5/`.
   'scripts/verificacion-s5/ramas-borrables.mjs',
+  // SCRUM-804 · el guard de la dimensión «rama viva». Nombra `main` en la PROSA que explica la
+  // regla —«¿el trabajo de este ticket está dentro de `main`?»— y en la clase `'en-main'` que
+  // devuelve el clasificador de SCRUM-387. NO compara contra la referencia móvil: su árbitro le
+  // pregunta a `git merge-base --is-ancestor` contra `censo.inst.sha`, el sha que la instantánea
+  // de SCRUM-753 CONGELA. Es el mismo motivo por el que están arriba `scrum753` y `scrum775`.
+  // Lo retira: quien borre la dimensión de rama viva del censo del tablero.
+  'tests/scrum804-la-rama-viva.test.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {
