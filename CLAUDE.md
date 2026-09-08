@@ -24,6 +24,17 @@ esquema, lo que no se toca y cómo se entrega. Tu identidad y tus trampas propia
 2. **Una tarea → una RAMA (`scrum-<n>-<slug>`) → commit de feature (+ commit del máster aparte, misma rama) → PR a `main`.** `main` protegida: push directo BLOQUEADO. El merge del PR lo hace un HUMANO, nunca Claude. `git pull` de `main` antes de empezar cada tarea. Plan de archivos ANTES de tocar código (skill `/yaqu-sprint`).
 3. Tests relevantes en verde antes de commit (`npm test`); verificación en **yaqu.app**
    (no localhost) antes de cerrar la tarea.
+3bis. **REGLA 42 del master — un ticket no se cierra mientras su rama siga sin mergear.** El
+   enunciado firmado por el fundador vive en `docs/YAQU_MASTER.md`, Parte I, regla 42, y **NO se
+   repite aquí**: este archivo es derivado (regla 35) y una regla escrita dos veces son dos reglas
+   que pueden divergir. Aquí va sólo CÓMO se cumple:
+   · El enlace de comparación se **COPIA** de la salida de `git push` o de
+     `npm run ramas:sin-mergear`. **Nunca se construye a partir del número del ticket** — ése es
+     el defecto medido en SCRUM-637: `…/pull/new/scrum-614` para una rama que se llama
+     `scrum-614-censo-rutas-sin-rol`. La referencia se LEE, no se deduce.
+   · Qué hay esperando a que alguien lo mire: `npm run ramas:sin-mergear` (las que NO están en
+     `main`, con su edad y su compare) · `npm run ramas:borrables` (las que ya están y se pueden
+     tirar) · `npm run enlace:ticket-rama` (cuándo rama, commit, `docs/master/` y Jira discrepan).
 4. **STOP CONDITIONS — parar y pedir OK del fundador si la tarea toca:**
    - claims fiscales/VeriFactu (en UI, marketing o copy)
    - dinero real o flujo de cobro en producción
