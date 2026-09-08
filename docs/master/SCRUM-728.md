@@ -747,6 +747,130 @@ importa. Pero pierde cobertura en CI, y ese cambio de trato **no lo decide una s
   leído la garantía en la especificación.
 
 ---
+---
+
+# FASE D · 8-sep-2026 · LO QUE VE EL SEXTO PROFESIONAL
+
+**Medido contra:** `origin/main` = `02dd12b26972e394e907f18980842111554ce4c6` (mezclado dentro de la rama, AA2)
+**Preámbulo:** `prisma generate` rc=0 (RE-generado tras el merge) · `HEAD..origin/main` = 0 · **`npm run build` rc=0**
+
+> **Decisión del fundador sobre las fases A-C: NO se optimiza.** El candidato de la fase B gana un
+> 20 % y mueve el umbral de 6 a 7 —sigue siendo lineal, compra poco— y costaría el conflicto con
+> el guard de SCRUM-306, que **tiene razón**: dejar la reserva en SQL y la vista previa en JS son
+> dos implementaciones de la misma regla en dos lenguajes. Se queda como está.
+>
+> **La lentitud no tiene víctima hoy. El mensaje sí.**
+
+---
+
+## D1 · 🔴 PASO 0 · ¿POR DÓNDE SALE HOY ESE P2028? — la tercera de las tres
+
+Tres respuestas posibles y tres arreglos distintos. Medido **corriendo** el handler real de
+`POST /admin/jobs/:id/albaranes`:
+
+| | |
+| --- | --- |
+| ¿llega el P2028 tal cual? | **no** |
+| ¿revienta la pantalla? | **no** — la excepción no sale del handler |
+| **¿lo tapa un catch genérico?** | **SÍ** — `jobs.routes.ts` lo registra y contesta `500 {"error":"internal_error"}` |
+
+Y lo que de verdad lee el profesional, siguiendo la cadena hasta el panel: `apiRequest` construye
+`API ${status}: ${data.error}` cuando la respuesta **no trae `message`**, y `jobDetailView.js`
+pinta `'No se pudo crear el albarán: ' + …`. Literalmente:
+
+> No se pudo crear el albarán: **API 500: internal_error**
+
+### Cómo se provocó, y por qué la carrera de 6 no bastaba
+
+**Se hicieron las dos cosas, y la primera va escrita porque su verde es engañoso.** El defecto es
+de LATENCIA: en loopback una reserva cuesta **~100 ms**, no los ~880 de la base remota, así que
+**las seis pasan** (6/6, medido) y publicar eso como «no se reproduce» habría sido el falso
+negativo de siempre.
+
+Lo que sí lo provoca es **retener el cerrojo desde otra sesión** más de 5 s — exactamente donde la
+fase A capturó el P2028 («el fallo ocurre dentro de `$executeRaw`»):
+
+```
+Transaction already closed: … The timeout for this transaction was 5000 ms,
+however 6978 ms passed since the start of the transaction.
+   la petición esperó 7148 ms y contestó → HTTP 500
+   cuerpo: {"error":"internal_error"}
+   albaranes creados: 0 · contador antes/después: 8/8
+```
+
+⚠️ **Y un detalle que costó una vuelta y decide cómo se prueba esto:** el `timeout` de Prisma marca
+la transacción como expirada, pero `pg_advisory_xact_lock` **sigue esperando en Postgres** hasta
+que alguien suelte. **El P2028 no salta al vencer: salta cuando la consulta VUELVE.** Mi primera
+versión soltaba el cerrojo *después* de que la petición terminara, y se abrazaron.
+
+## D2 · El arreglo: traducir, no subir el timeout
+
+`src/modules/invoicing/domain/cerrojoSaturado.ts` — un módulo, tres cosas: el código propio
+(`serie_ocupada`), el texto **firmado** y el reconocimiento del error.
+
+**Se reconoce UN código de Prisma por identidad** (`P2028`, acotado además a
+`PrismaClientKnownRequestError`), nunca por subcadena del mensaje: ese texto está en inglés, cambia
+entre versiones y lleva dentro los milisegundos de cada caída.
+
+**503 y no 500**: no es un fallo del servidor, es una espera que no cupo — la misma petición
+repetida unos segundos después sale bien. Y no es 409: no hay conflicto, hay cola.
+
+Cableado en **seis rutas** que reservan número. Las tres que quedan fuera van **declaradas con su
+motivo** en el guard, no olvidadas:
+
+| ruta | |
+| --- | --- |
+| `/:token/decision` | **exenta**: la dispara el cliente final y no es «crear un documento», es la aceptación — que sí salió bien. Su camino de fallo lo decidió SCRUM-814 |
+| `/:id/convertir-en-factura`, `/:id/invoice-manual` | **pendientes, declaradas**: su `catch` mezcla varios modos de fallo del camino de emisión fiscal y separarlos es otro trabajo |
+
+## D3 · Los controles, corridos
+
+```
+✔ SUELO · una petición sola crea su albarán
+✔ seis simultáneas SÍ caben en loopback — y los SEIS números son distintos (el cerrojo hace su trabajo)
+✔ con el cerrojo retenido >5 s → 503 {"error":"serie_ocupada","message":"No hemos podido crear…"}
+   · albaranes creados: 0 · contador antes/después: sin mover
+✔ el reintento crea UNO, no dos, y el contador avanza exactamente 1
+✔ POSITIVO · un fallo que NO es el del cerrojo (job ajeno) sigue saliendo 404 `not_found`
+```
+
+**Y el rojo con el mecanismo viejo:** quitando la rama del `catch`, caen los dos casos que dependen
+de ella —`sale 500 {"error":"internal_error"}`— y **el suelo y el control positivo siguen verdes**.
+El test discrimina, no grita por todo.
+
+**Sin gate**, en `npm test`: `tests/scrum728b-aviso-legible.test.mjs` deriva del árbol las rutas que
+reservan número y exige que cada una traduzca **o esté declarada**; que el reconocimiento siga
+siendo por identidad de un solo código; y que **el módulo no fije `timeout` ni `maxWait`**.
+
+## D4 · Lo que NO se ha hecho
+
+* **No se ha subido el timeout.** Está medido por qué: a 20 s daría margen para 22 simultáneas y
+  **el usuario número 22 esperaría 19 segundos**. Se cambiaría un fallo rápido por una espera larga.
+* **No se ha tocado el cerrojo**, ni la reserva, ni `resolveAlbaranSeq`, ni el guard de SCRUM-306.
+* **Regla 29 intacta y demostrada:** el fallo no consume número —contador sin mover— y el reintento
+  avanza exactamente uno. Nada se renumera porque nada se numeró de más.
+
+## D5 · Hallazgo de otro carril, que se REPORTA y no se arregla
+
+`tests/scrum753…` está **rojo en `main`, sin relación con esta rama** — comprobado guardando mis
+cambios y volviéndolo a correr. Lo tumba una rama remota ajena,
+`revert-1192-scrum-824b-el-vigia-que-no-deja-pasar`: las dos reglas rama→ticket la leen distinto
+(una saca `824`, la otra `null`). Es de quien hizo ese revert.
+
+> ✅ **CERRADO el 8-sep-2026.** El fundador borró esa rama y el guard volvió a verde **solo**, sin
+> que nadie tocara su código — que es como se cierra un hallazgo de otro carril: quitando la
+> causa, no relajando al que la detecta.
+>
+> 🔴 **Y el mismo mecanismo muerde ahora por el otro lado**, medido en esta sesión (8-sep-2026):
+> `tests/scrum804-la-rama-viva.test.mjs` está **rojo en `main`**, y no por esta rama —sus tres
+> casos caídos no leen ninguno de los ficheros que toco—. Su control positivo **enumera ramas por
+> número** (819, 816, 820, 821, 716) y **de esas cinco ya no queda rastro de DOS** — medido:
+> `scrum-821-*` y `scrum-716-*` tienen **0 ramas** en el remoto (819 → 1, 816 → 2, 820 → 1):
+> *«sólo 4 ramas que interrogar … un árbitro sin sujetos no arbitra nada»*.
+>
+> **Borrar una rama arregló 753 y rompió 804.** Un guard cuyo control positivo depende de que
+> ciertas ramas sigan vivas **caduca solo** cada vez que alguien limpia el remoto. Se **reporta y
+> no se toca**: es de otro carril (regla 37), y el arreglo es suyo — no bajar el listón del censo.
 
 # APÉNDICE · 8-sep-2026 · SCRUM-728d · LA FACTURA NO HACE CINCO VIAJES
 
@@ -758,7 +882,70 @@ importa. Pero pierde cobertura en CI, y ese cambio de trato **no lo decide una s
 
 ---
 
-## D0 · OBLIGACIÓN 0
+## F-1 · 🔴 RECONCILIACIÓN CON LA DECISIÓN DE LA FASE D — dónde cae cada hallazgo
+
+La fase D, justo encima, cierra las fases A-C con una decisión del fundador:
+
+> **NO se optimiza.** El candidato gana un 20 %, mueve el umbral de 6 a 7, sigue siendo lineal,
+> compra poco, y costaría el conflicto con el guard de SCRUM-306, que tiene razón.
+> **La lentitud no tiene víctima hoy. El mensaje sí.**
+
+Esa decisión es sobre **albaranes** y sobre **el candidato de la fase B**. Lo que se mide abajo son
+**facturas**, que §C5 declaró explícitamente sin medir. Mis dos hallazgos **no caen del mismo
+lado**, y mezclarlos dejaría el fichero afirmando dos cosas:
+
+### (a) Los 8 viajes en vez de 5 → **DENTRO de la decisión. No se toca.**
+
+Es más grande de lo que se dimensionó, pero es **la misma clase de cosa**: un coste **constante**,
+lineal en el número de emisiones a la vez. Y la palanca 1 de §F4 es literalmente el candidato de la
+fase B aplicado a facturas: gana ~12 % (8 → 7), sigue siendo lineal, y **choca con un guard que
+tiene razón** — 234 en vez de 306, pero el mismo tropiezo. **El razonamiento de la fase D se aplica
+entero y da el mismo resultado.** Que el número fuera 8 y no 5 no lo cambia: cambia el tamaño del
+premio, no su naturaleza.
+
+### (b) El viaje que ESCALA (§F3) → **FUERA de la decisión — porque la decisión no lo evaluó.**
+
+Y no por ser más importante: **por ser de otra especie.**
+
+La decisión pesa «gana un 20 %, compra poco» y «no tiene víctima hoy». Los dos argumentos son
+válidos **sobre un coste constante** y ninguno se puede aplicar a un coste **sin cota**:
+
+* **«compra poco»** es un porcentaje, y un porcentaje sobre algo que crece no es una constante: el
+  20 % de hoy no es el de dentro de dos años.
+* **«no tiene víctima hoy»** es cierto y tiene fecha de caducidad puesta por los datos, no por una
+  decisión. La víctima **aparece sola**, y es **el profesional que más factura** — es decir, el
+  mejor cliente. Nadie tendrá que hacer nada para que empiece a doler.
+
+**Una optimización se puede aplazar indefinidamente; un coste sin cota se aplaza hasta que muerde.**
+Por eso esto no es «reabrir la decisión»: es un asunto que **no estaba sobre la mesa cuando se
+tomó**, y que sigue necesitando el visto bueno del fundador antes de tocar nada (§F4: la palanca 2
+también cae dentro de `invoiceNumber.service.ts` ⇒ **STOP, sigue en pie**).
+
+> **Contraste con la lectura del fundador:** coincide, y la medición la sostiene. La única
+> precisión que añado es *por qué* son cosas distintas — no es que (b) importe más, es que los dos
+> argumentos que cerraron (a) no son aplicables a (b). Si (b) se decide que no se arregla, hará
+> falta un motivo nuevo; el de la fase D no le sirve.
+
+### 🔴 Y UNA DISCREPANCIA ENTRE DOS MEDICIONES DE ESTA MISMA ENTRADA, que declaro sin resolver
+
+La fase D mide, para el albarán: **«en loopback una reserva cuesta ~100 ms»**.
+Mi §F2 proyecta con la relación que verificó la fase A —el coste es red casi entera, 5 × 175,1 =
+875,5 contra 878,0 medidos, **0,3 %**— y con ella, a RTT ≈ 0, una reserva tendería a **~0 ms**.
+
+**Las dos no pueden ser ciertas a la vez.** Si hubiera ~100 ms de trabajo constante, la fase A
+habría medido ~975 y no 878. Alguna de las dos mide algo distinto de lo que su nombre dice —la más
+probable: que los ~100 ms de la fase D sean de la **petición HTTP completa** y no de la reserva
+sola— o el loopback de aquella medición no era loopback puro.
+
+**No lo resuelvo por lectura, y no ajusto ninguna de las dos cifras para que cuadren.** Lo dejo
+declarado porque **es exactamente lo que el test de §G1 resuelve**: mide el **RTT desnudo** y la
+**reserva** en el mismo entorno y en la misma ejecución, así que separa los dos términos en vez de
+suponer uno. Hasta que ese log exista, **mi tabla de §F2 vale para RTT altos y es una cota
+optimista en el extremo bajo** — y va dicho ahí también.
+
+---
+
+## F0 · OBLIGACIÓN 0
 
 `git ls-remote --heads origin` filtrado por `728`: tres ramas —`scrum-728-cerrojo-de-serie`,
 `scrum-728b-reserva-en-un-viaje`, `scrum-728c-adoptar-el-candidato`—, **las tres MERGEADAS** por
@@ -766,7 +953,7 @@ importa. Pero pierde cobertura en CI, y ese cambio de trato **no lo decide una s
 
 ---
 
-## D1 · 🔴 EL NÚMERO DEL TICKET ES DE OTRA COSA
+## F1 · 🔴 EL NÚMERO DEL TICKET ES DE OTRA COSA
 
 El ticket dimensiona con **«880 ms = 5 viajes × 175 ms»**. Ese desglose es de
 `allocateAlbaranNumber` — la fase A lo escribe entero: *«los cinco son `BEGIN` +
@@ -794,11 +981,16 @@ Por qué no se cuentan leyendo el fichero: hay tres ramas que hacen consultas di
 
 ---
 
-## D2 · 🔴 EL RTT DECIDE SI ESTE DEFECTO EXISTE — y el encargo tenía razón
+## F2 · 🔴 EL RTT DECIDE SI ESTE DEFECTO EXISTE — y el encargo tenía razón
 
 La fase A verificó que el coste **es red casi entera**: 5 × 175,1 = 875,5 contra 878,0 medidos,
 **0,3 % de error**. Con esa relación ya validada y el conteo de arriba, el tamaño del defecto sale
 en función del RTT. **Esto es una PROYECCIÓN, no una medición** — va marcada como tal:
+
+> ⚠️ **Y con un límite que salió al unir con la fase D (ver §F-1):** esta tabla supone el término
+> constante ≈ 0, y la fase D midió ~100 ms en loopback. Las dos no cuadran y **no se ajusta
+> ninguna**. Para RTT altos vale; **en el extremo bajo es una cota optimista**, hasta que el log
+> de §G1 separe trabajo de red.
 
 | RTT | albarán (5) | justificante (7) | factura F1 (8) | 10 F1 simultáneas |
 |---|---|---|---|---|
@@ -830,7 +1022,7 @@ del ticket sería un artefacto de la máquina que midió, igual que los 175 ms.
 
 ---
 
-## D3 · 🔴 EL VIAJE QUE ESCALA CON LOS DATOS, dentro de la sección crítica
+## F3 · 🔴 EL VIAJE QUE ESCALA CON LOS DATOS, dentro de la sección crítica
 
 `allocateInvoiceNumber` deriva la secuencia de la serie F **leyendo la serie F entera del año**:
 
@@ -851,7 +1043,7 @@ cerrojo**, con todos los demás esperando detrás.
 
 ---
 
-## D4 · ⛔ LA PREGUNTA DEL ENCARGO: «¿cuáles caben fuera?» — **ninguno, y por una razón de forma**
+## F4 · ⛔ LA PREGUNTA DEL ENCARGO: «¿cuáles caben fuera?» — **ninguno, y por una razón de forma**
 
 El cerrojo es `pg_advisory_**xact**_lock`: **se libera en el COMMIT, no al salir de la función.**
 Así que la sección crítica no es «lo que hace la reserva», es **todo lo que pasa entre el cerrojo
@@ -886,7 +1078,7 @@ la misma operación.** No hay nada que mover sin tocar la semántica fiscal.
 
 ---
 
-## D5 · ⛔ LO QUE NO HE PODIDO MEDIR, y por qué
+## F5 · ⛔ LO QUE NO HE PODIDO MEDIR, y por qué
 
 **Los milisegundos contra base desechable local: NO MEDIDOS.** En esta máquina **no hay Postgres
 de ninguna forma** — comprobado: sin `docker`, sin `psql`, sin servicio Windows, sin binarios en
@@ -905,7 +1097,7 @@ Las dos vías, para decidir:
 
 ---
 
-## D6 · Lo que se construye
+## F6 · Lo que se construye
 
 `tests/_viajes-de-la-reserva.mjs` + `tests/scrum728d-viajes-de-la-reserva.test.mjs` — **9 casos,
 sin base y sin gate**, así que vigilan en cada push:
@@ -924,7 +1116,7 @@ rojo falso esperando a pasar. Se vigila lo estructural, que es lo que no depende
 
 ---
 
-## D7 · Lo que NO se ha hecho
+## F7 · Lo que NO se ha hecho
 
 * **Cero `src/`, cero `prisma/`.** `invoiceNumber.service.ts` se ha **leído** y se ha **llamado**
   con un doble; no se ha modificado ni una firma (regla 38).
@@ -942,7 +1134,7 @@ rojo falso esperando a pasar. Se vigila lo estructural, que es lo que no depende
 
 # APÉNDICE · 8-sep-2026 · SCRUM-728d (2) · LA MEDICIÓN, EN LOOPBACK
 
-**Resuelve el hueco de §D5.** Decisión del fundador: no se instala software en su máquina; se
+**Resuelve el hueco de §F5.** Decisión del fundador: no se instala software en su máquina; se
 mide en CI, que ya levanta `postgres:16-alpine` en loopback con `LIBRO_PG_URL`.
 
 **Y es mejor instrumento, no un apaño.** En loopback el RTT es ~0, así que lo que quede es
@@ -953,12 +1145,12 @@ Con eso, el umbral deja de ser una extrapolación y pasa a ser dos números medi
 
 ```
 tiempo(N simultáneas) ≈ N × (trabajo + viajes × RTT)
-                              ↑ este apéndice   ↑ el conteo de §D1 (7 · 8 · 7 · 5)
+                              ↑ este apéndice   ↑ el conteo de §F1 (7 · 8 · 7 · 5)
 ```
 
 ---
 
-## E1 · Qué mide, exactamente
+## G1 · Qué mide, exactamente
 
 `tests/scrum728d-ms-en-loopback.test.mjs`, **3 casos gateados por `LIBRO_PG_URL`**:
 
@@ -982,7 +1174,7 @@ Lo único que se asevera es lo que no depende del reloj:
 
 ---
 
-## E2 · 🔴 DOS DEFECTOS DEL PROPIO TEST, cazados ANTES de que el CI los viera
+## G2 · 🔴 DOS DEFECTOS DEL PROPIO TEST, cazados ANTES de que el CI los viera
 
 **① El assert de unicidad habría puesto el CI en rojo, y por una razón que enseña algo del
 producto.** En formato F la secuencia **se deriva de las facturas ya emitidas**, no de un
@@ -1004,7 +1196,7 @@ ese guard exige y el mecanismo por el que un salto nuevo no entra en silencio.
 
 ---
 
-## E3 · ⛔ LOS NÚMEROS TODAVÍA NO ESTÁN AQUÍ, y no se inventan
+## G3 · ⛔ LOS NÚMEROS TODAVÍA NO ESTÁN AQUÍ, y no se inventan
 
 Esta sesión **no ha podido ver correr el test**: en esta máquina no hay Postgres, que es lo que
 abrió esta fase. Lo que se entrega es **el instrumento**, verificado en todo lo que no necesita
@@ -1027,7 +1219,7 @@ PENDIENTE: ×… al pasar de 10 a 100 filas · ×… de 100 a 1.000
 
 **Cómo leer la pendiente:** ×1 por década = plano (el coste no depende del tamaño de la serie);
 ×10 por década = lineal en el número de facturas del año. Cualquier cosa por encima de ×2 hace de
-la palanca 2 de §D4 —quitarle la pendiente al viaje que escala— la más urgente de las dos, por
+la palanca 2 de §F4 —quitarle la pendiente al viaje que escala— la más urgente de las dos, por
 delante de ahorrar un viaje.
 
 **Cuando estén, van a un apéndice nuevo con su fecha y el número de run**, no editando éste: una
@@ -1035,7 +1227,7 @@ medición sin decir de qué ejecución sale no se puede repetir.
 
 ---
 
-## E4 · Lo que NO se ha hecho
+## G4 · Lo que NO se ha hecho
 
 * **Cero `src/`, cero `prisma/`.** `invoiceNumber.service.ts` y `albaranNumber.service.ts` se
   **llaman**; no se modifica ni una firma (regla 38 / AA1.4). **El STOP sigue en pie.**
