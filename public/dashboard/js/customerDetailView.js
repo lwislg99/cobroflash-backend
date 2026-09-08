@@ -328,6 +328,7 @@ function openEdit360Modal(customer, customerId, container) {
       <div id="e360-forma"></div>
       <div class="field"><label>Nombre</label><input type="text" id="e360-name"/></div>
       <div class="field"><label>Teléfono (E.164 sin +)</label><input type="text" id="e360-phone"/></div>
+      <div class="field"><label>Móvil (WhatsApp)</label><input type="text" id="e360-mobile"/></div>
       <div class="field"><label>Email</label><input type="email" id="e360-email"/></div>
       <div class="field"><label>Razón social (empresa, opcional)</label><input type="text" id="e360-legalname"/></div>
       <div class="field"><label>NIF/CIF (opcional)</label><input type="text" id="e360-taxid"/></div>
@@ -370,6 +371,10 @@ function openEdit360Modal(customer, customerId, container) {
   const $ = (sel) => modal.querySelector(sel);
   $('#e360-name').value = customer.name || '';
   $('#e360-phone').value = customer.phone || '';
+  // SCRUM-590 (CONT-19): sin esta línea, editar un cliente que TIENE móvil lo enseñaría vacío.
+  // Y como el vacío no viaja (ver el guardado), el profesional creería haberlo borrado sin
+  // haberlo borrado — que es peor que perderlo: es mentir sobre él.
+  $('#e360-mobile').value = customer.mobile || '';
   $('#e360-email').value = customer.email || '';
   $('#e360-notes').value = customer.notes || '';
   $('#e360-legalname').value = customer.legalName || ''; // A20.4
@@ -395,6 +400,33 @@ function openEdit360Modal(customer, customerId, container) {
   // conserva lo elegido, así que llegar tarde no desvincula a nadie.
   const selectorEmpresa = switchFormaJuridica.selectorDeEmpresa({ valor: customer.companyId ?? null });
   $('#e360-empresa').appendChild(selectorEmpresa.nodo);
+  // ═══ SCRUM-590 (CONT-19) · POR QUÉ EL MÓVIL DE ESTA PANTALLA NO LLEVA SELECTOR DE PREFIJO
+  //
+  // El modal de la lista sí lo lleva (SCRUM-578). Aquí NO, y es una decisión con su motivo:
+  //
+  //  · La regla que junta y reparte prefijo + número vive DENTRO de `customersView.js`, y los
+  //    guards de SCRUM-578 leen esa región del fichero para comprobarla. Sacarla a un módulo
+  //    compartido los dejaría vigilando un delegador vacío —verdes sin medir— y arreglar un
+  //    guard bajando lo que exige está prohibido. Copiarla aquí serían DOS sitios donde
+  //    divergir, que es justo lo que este ticket ha evitado en el backend.
+  //  · Y el fijo de AL LADO tampoco lo lleva: darle selector sólo al móvil dejaría dos campos
+  //    del mismo tipo con dos controles distintos en el mismo formulario.
+  //
+  // ⚠️ LO QUE ESTO CUESTA, dicho y no escondido: aquí se puede guardar «600111222» sin prefijo, y
+  // ése es un número que WhatsApp no sabe encaminar. **No es un riesgo nuevo**: es exactamente el
+  // que este formulario ya tiene con `phone`, que HOY es el canal de todos los documentos. Es la
+  // divergencia entre los dos formularios ya medida en `docs/CONTACTOS_CAMPOS_POR_LADO.md` §2 —
+  // reportada, y de otro carril (regla 37).
+  //
+  // 🔴 EL CAMPO SE VE EN LOS DOS LADOS (Empresa/Persona), y por eso NO entra en este mapa:
+  // `SOLO_EMPRESA` es `['legalName']` y §3.1 pone `phone` entre los comunes. Un móvil es canal
+  // de contacto, no forma jurídica.
+  //
+  // 🔴 Y SCRUM-576 (CONT-03) AÑADE LA TERCERA ENTRADA: `companyId`, que SÍ es de un solo lado —el
+  // de PERSONA—. Conviven en el mismo mapa sin contradecirse porque responden a la misma
+  // pregunta desde los dos extremos: `legalName` sólo se ve en Empresa, `companyId` sólo en
+  // Persona, y el móvil de arriba en los dos. La regla de quién esconde a quién no vive aquí:
+  // vive en `switchFormaJuridica`, y este mapa sólo dice DÓNDE está cada campo.
   const camposPorLado = {
     legalName: wrapperDe('#e360-legalname'),
     taxId: wrapperDe('#e360-taxid'),
@@ -433,6 +465,7 @@ function openEdit360Modal(customer, customerId, container) {
     const name = $('#e360-name').value.trim();
     if (!name) { showErr('El nombre es obligatorio.'); return; }
     const phone = $('#e360-phone').value.trim();
+    const mobile = $('#e360-mobile').value.trim(); // SCRUM-590 (CONT-19)
     const email = $('#e360-email').value.trim();
     // El schema del backend valida formato: omitir vacíos en vez de mandar ""
     const payload = {
@@ -451,6 +484,17 @@ function openEdit360Modal(customer, customerId, container) {
       waOptOut: $('#e360-waoptout').checked,
     };
     if (phone) payload.phone = phone;
+    // ═══ 🔴 SCRUM-590 (CONT-19) · EL MÓVIL SÓLO VIAJA SI HAY MÓVIL ══════════════════════════
+    //
+    // Misma regla que sus vecinos, y aquí NO es estilo. Medido ejecutando `customerCreateSchema`:
+    // `mobile: ""` RECHAZA («>=5 characters») y `mobile: null` RECHAZA («expected string»); sólo
+    // ausente pasa. Mandar el vacío haría que guardar un cliente SIN móvil devolviera un 400: un
+    // campo opcional que rompe el guardado del cliente entero se ha vuelto obligatorio de rebote.
+    //
+    // Consecuencia, dicha en vez de descubierta: vaciar el móvil de un cliente que lo tiene NO lo
+    // borra. Es la limitación que ya tienen `phone` y `email` en esta misma pantalla — se hereda,
+    // no se estrena — y se cierra el día que el esquema acepte `null` en los tres a la vez.
+    if (mobile) payload.mobile = mobile;
     if (email) payload.email = email;
 
     const btn = $('#e360-save');

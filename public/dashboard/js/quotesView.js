@@ -19,9 +19,38 @@ let quoteFormCreatedVia = 'text';
  *
  * `null`/omitido = presupuesto en blanco. Es de un solo uso: no se guarda en `window.appState`.
  */
-function renderQuotesView(container, template) {
+function renderQuotesView(container, template, documentoSuelto) {
   container.innerHTML = "";
   quoteFormCreatedVia = 'text';
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-600 (DOC-10) · ESTA PÁGINA SIRVE A DOS DOCUMENTOS. Firma del fundador (24-ago-2026).
+  //
+  // LA VÍCTIMA: hacer una factura suelta metía al profesional en un modal de 560 px con DIEZ
+  // controles —cliente, concepto, cantidad, precio, IVA— sin vista previa, mientras el
+  // presupuesto tenía una PÁGINA de 37 controles con vista previa en vivo al lado. El mismo
+  // profesional, el mismo trabajo, dos productos distintos.
+  //
+  // `documentoSuelto === true` ⇒ el formulario construye el DOCUMENTO SUELTO. Cómo se llama ese
+  // documento —factura o justificante— NO se decide aquí: lo decide `rotulosDelDocumento`, que
+  // lee el veredicto que el servidor ya mandó. Un `if` sobre el estado fiscal de alguien escrito
+  // en esta vista sería el defecto que SCRUM-776 vino a cerrar.
+  //
+  // ── 🔴 LA REGLA QUE DECIDE QUÉ SE PINTA, Y NO ES UNA LISTA DE GUSTOS ──────────────────
+  // Un control aparece en modo documento suelto **si y sólo si su dato sobrevive al emisor**.
+  // `validarFacturaSuelta` reconstruye cada línea como `{concept, qty, price, tax}` y el resto
+  // lo DESCARTA EN SILENCIO — medido y fijado en SCRUM-616. Así que las condiciones de pago, el
+  // envío, el suplido, el coste y los descuentos no se pintan: recogerlos sería pedirle al
+  // profesional datos que el servidor tira sin decírselo, que es peor que el modal estrecho.
+  //
+  // ⚠️ Y ESO NO SE ARREGLA AQUÍ: ampliar lo que la factura admite es camino de emisión
+  // (reglas 29/38) y puede tocar `prisma/schema.prisma`, que es del fundador. Se declara y se
+  // para. Lo que este ticket hace es front, y sólo front.
+  //
+  // 🔴 REGLA 29 · una factura EMITIDA no se edita, no se borra y no se renumera. Esta página
+  // sólo da de ALTA: no se llega a ella desde una factura existente, no carga un documento
+  // emitido y no tiene ninguna acción que lo modifique. El número lo pone el emisor.
+  const esDocumentoSuelto = documentoSuelto === true;
 
   // ---------- LAYOUT PRINCIPAL (responsive) ----------
   const layout = document.createElement("div");
@@ -41,7 +70,12 @@ function renderQuotesView(container, template) {
   heading.className = "quotes-header-block";
 
   const title = document.createElement("h2");
-  title.textContent = "Crear presupuesto";
+  // SCRUM-600 · el título del documento suelto es el que YA está aprobado para este mismo flujo
+  // (SCRUM-289b, y SCRUM-776 le puso las dos voces): no entra texto nuevo, entra que el rótulo
+  // que ya decía el modal lo diga también su página. El ternario va PEGADO a sus dos ramas y no
+  // detrás de un ayudante: el censo de SCRUM-601 clasifica un literal por la condición que lo
+  // elige, y un envoltorio inútil se lo esconde (medido en SCRUM-776: 14 literales → 12).
+  title.textContent = esDocumentoSuelto ? window.rotulosDelDocumento.tituloModal() : "Crear presupuesto";
   title.className = "quotes-title";
   heading.appendChild(title);
 
@@ -49,7 +83,10 @@ function renderQuotesView(container, template) {
   subtitle.className = "quotes-desc";
   subtitle.textContent =
     "Genera un presupuesto con varias líneas, calcula los totales y envía el link de pago por WhatsApp.";
-  heading.appendChild(subtitle);
+  // SCRUM-600 · el subtítulo describe el flujo del PRESUPUESTO —mandar un enlace para que el
+  // cliente acepte y pague—, y ése no es el flujo del documento suelto, que ya nace emitido. No
+  // se reescribe (regla 30: el microcopy es del fundador): se OMITE, que no necesita texto.
+  if (!esDocumentoSuelto) heading.appendChild(subtitle);
 
   const merchantInfo = document.createElement("p");
   merchantInfo.className = "quotes-merchant-info";
@@ -359,9 +396,27 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   blockLinesTitle.textContent = "2. Líneas";
   blockLines.appendChild(blockLinesTitle);
 
+  // SCRUM-600 (DOC-10) · LOS DOS BLOQUES QUE EL EMISOR NO PUEDE LLEVAR.
+  //
+  // «3. Condiciones» (plazos, formas de pago, caducidad, IVA del documento, descuento global) y
+  // «4. Envío» (qué datos del cliente salen, textos libres) recogen campos que
+  // `validarFacturaSuelta` DESCARTA EN SILENCIO: el cuerpo que admite es `customerId` + líneas
+  // de `{concept, qty, price, tax}` y nada más (medido y fijado en SCRUM-616).
+  //
+  // Se construyen igual —el código de sus campos NO se mueve, que es donde se pierde uno sin que
+  // nadie se entere— y sólo cambia si se CUELGAN de la tarjeta. En modo documento suelto se
+  // quedan sueltos y no llegan a la pantalla.
+  //
+  // ⚠️ Los `appendChild` siguen AQUÍ, al nivel del esqueleto y no dentro de una función: el censo
+  // de orden (`tests/_orden-pintado-presupuesto.mjs`) deriva el formulario como «los appendChild
+  // que NO están dentro de una función anidada», y meterlos en una factoría lo dejaría ciego sin
+  // fallar. Un `if` no es una función: el censo los sigue viendo, y el presupuesto —que es lo
+  // que ese censo mide— se pinta exactamente igual que antes.
+  //
+  // La numeración de los que quedan NO se toca: «1. Cliente» y «2. Líneas» siguen siendo 1 y 2.
   const blockConditions = document.createElement("div");
   blockConditions.className = "quote-block";
-  leftCard.appendChild(blockConditions);
+  if (!esDocumentoSuelto) leftCard.appendChild(blockConditions);
   const blockConditionsTitle = document.createElement("h3");
   blockConditionsTitle.className = "quote-block-title";
   blockConditionsTitle.textContent = "3. Condiciones";
@@ -369,7 +424,7 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
 
   const blockDelivery = document.createElement("div");
   blockDelivery.className = "quote-block";
-  leftCard.appendChild(blockDelivery);
+  if (!esDocumentoSuelto) leftCard.appendChild(blockDelivery); // SCRUM-600: ver el bloque de arriba
   const blockDeliveryTitle = document.createElement("h3");
   blockDeliveryTitle.className = "quote-block-title";
   blockDeliveryTitle.textContent = "4. Envío";
@@ -404,7 +459,14 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
     fieldDireccionObra.select.appendChild(opt);
   });
   fieldDireccionObra.select.value = window.quoteDireccionObra.MODOS.NO_MOSTRAR;
-  clientFormRow.appendChild(fieldDireccionObra.wrapper);
+  // SCRUM-600 · la DIRECCIÓN DE LA OBRA viaja en `shippingAddressMode` + `shippingAddress`, dos
+  // claves que el cuerpo del documento suelto no tiene: el emisor las descarta. Fuera, por el
+  // mismo criterio que los bloques 3 y 4.
+  //
+  // 🔴 Y aquí además se colaba una palabra: una de sus opciones es «Utilizar dirección de
+  // FACTURACIÓN», así que en modo justificante la pantalla decía «factura» sin que ninguna
+  // ranura del documento lo dijera. Lo cazó el banco montando la vista, no un `grep`.
+  if (!esDocumentoSuelto) clientFormRow.appendChild(fieldDireccionObra.wrapper);
 
   // El campo libre vive en su PROPIA fila, a ancho completo: `.quote-form-row` es una rejilla de
   // tres columnas y una dirección postal de 300 caracteres en un tercio de ancho se lee mal.
@@ -418,7 +480,11 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   // tope de aquí es para que el profesional vea dónde está el límite, no para validar.
   direccionObraInput.maxLength = 300;
   direccionObraWrap.appendChild(direccionObraInput);
-  blockClient.appendChild(direccionObraWrap);
+  // SCRUM-600 · el campo de texto de la dirección de la obra se va con su selector (arriba). Va
+  // aparte porque también se pinta aparte, y dejarlo suelto sería un `shipping_address` en la
+  // pantalla del documento suelto sin nada que lo gobierne — invisible por `hidden`, que es
+  // justo la clase de resto que nadie vuelve a mirar.
+  if (!esDocumentoSuelto) blockClient.appendChild(direccionObraWrap);
 
   /**
    * SCRUM-602 · enseña u oculta el campo libre, y le pone la SUGERENCIA como placeholder.
@@ -494,7 +560,10 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   blockLines.appendChild(linesVatRow);
   linesVatRow.appendChild(fieldVatDefault.wrapper);
   // SCRUM-656: al lado del IVA por defecto, que es su misma familia de decisiones.
-  linesVatRow.appendChild(fieldIvaModo.wrapper);
+  // SCRUM-600 · el IVA POR DOCUMENTO (`ivaModo`) es otra clave que el emisor descarta, y su
+  // rótulo dice «presupuesto». El IVA POR LÍNEA sí sobrevive y se queda: es `tax`, la única vía
+  // por la que el impuesto llega a la factura.
+  if (!esDocumentoSuelto) linesVatRow.appendChild(fieldIvaModo.wrapper);
 
     // Checkbox WhatsApp
     // A2.3: el checkbox "Enviar por WhatsApp automáticamente" desaparece — al
@@ -1120,7 +1189,10 @@ blockDelivery.appendChild(descWrapper);
 
   const lhText = document.createElement("span");
   lhText.textContent = "Añade los conceptos que vas a presupuestar.";
-  linesHeader.appendChild(lhText);
+  // SCRUM-600 · la pista del bloque de líneas usa el VERBO del presupuesto («que vas a
+  // presupuestar»), que en un documento suelto no dice lo que pasa. No se reescribe (regla 30):
+  // se omite. Es una pista, no un control: nada de lo que el profesional puede hacer se pierde.
+  if (!esDocumentoSuelto) linesHeader.appendChild(lhText);
 
   // 🔴 SCRUM-794 · AQUÍ HABÍA UN SEGUNDO «+ Añadir línea», y se ha BORRADO.
   //
@@ -1143,7 +1215,11 @@ blockDelivery.appendChild(descWrapper);
   aiBtn.className = "btn-ghost btn-sm";
   aiBtn.style.cssText = "font-size:12px;padding:4px 10px;border-radius:6px;border:1px dashed var(--neutral-300);color:var(--neutral-600)";
   aiBtn.innerHTML = "✨ Sugerir con IA";
-  aiBtn.title = "Describe el trabajo y Claude sugiere las líneas del presupuesto";
+  // SCRUM-600 · el BOTÓN se queda —la IA produce LÍNEAS, que es justo lo que el emisor sí
+  // guarda— pero su tooltip nombra el documento. Se omite SÓLO el tooltip: el rótulo visible
+  // («✨ Sugerir con IA») no nombra nada y se explica solo, así que no queda ningún control mudo.
+  // Escribir aquí otra frase sería microcopy nueva (regla 30).
+  if (!esDocumentoSuelto) aiBtn.title = "Describe el trabajo y Claude sugiere las líneas del presupuesto";
   linesHeader.appendChild(aiBtn);
 
   const useTemplateBtn = document.createElement("button");
@@ -1153,7 +1229,14 @@ blockDelivery.appendChild(descWrapper);
   useTemplateBtn.className = "btn-ghost btn-sm quote-header-btn";
   useTemplateBtn.innerHTML = "📋 Usar plantilla";
   useTemplateBtn.title = "Cargar líneas desde una plantilla guardada";
-  linesHeader.appendChild(useTemplateBtn);
+  // 🛑 SCRUM-600 · LA OTRA MITAD DE LA PARADA DE PLANTILLAS (la primera está en el bloque de
+  // acciones, con `saveTemplateBtn`). Este botón y su rótulo NO nombran el documento, pero la
+  // hoja que abre sí: «Elige una plantilla para cargar sus líneas en el presupuesto actual.».
+  //
+  // Se retiran los DOS juntos a propósito: dejar «Usar» sin «Guardar» sería media función, y
+  // dejar el botón para que la hoja hable del presupuesto dentro de una factura es peor que no
+  // tenerlo. Se enciende el día que el fundador firme esas dos frases; no antes (regla 30).
+  if (!esDocumentoSuelto) linesHeader.appendChild(useTemplateBtn);
 
   blockLines.appendChild(linesHeader);
 
@@ -1330,7 +1413,10 @@ blockDelivery.appendChild(descWrapper);
 
   dtoGlobalWrap.appendChild(dtoGlobalBtn);
   dtoGlobalWrap.appendChild(dtoGlobalCampo);
-  blockTotals.appendChild(dtoGlobalWrap);
+  // SCRUM-600 · el DESCUENTO GLOBAL viaja en `discountGlobalAmount`, una clave del cuerpo del
+  // presupuesto que el cuerpo del documento suelto no tiene. Mismo criterio que el descuento de
+  // línea: no se pide lo que el emisor no puede guardar.
+  if (!esDocumentoSuelto) blockTotals.appendChild(dtoGlobalWrap);
 
   // ═══ SCRUM-587 (CONT-14) · EL DESCUENTO PACTADO CON EL CLIENTE, PROPUESTO ═══════════════════
   //
@@ -1364,7 +1450,20 @@ blockDelivery.appendChild(descWrapper);
 
   propuestaWrap.appendChild(propuestaTexto);
   propuestaWrap.appendChild(propuestaBtn);
-  blockTotals.appendChild(propuestaWrap);
+  // 🔴 SCRUM-600 (DOC-10) · LA TIRA DE LA PROPUESTA DE DESCUENTO NO SE PINTA EN EL DOCUMENTO
+  // SUELTO, y esto corrige una INCONSISTENCIA MÍA, no un defecto heredado.
+  //
+  // Este ticket ya retiró el descuento por línea (`dtoTd`) y el global (`dtoGlobalWrap`) porque
+  // `dto` y `discountGlobalAmount` no sobreviven a `validarFacturaSuelta`. Y dejé en pie la tira
+  // que PROPONE rellenar justo esos campos. Con los campos fuera, el botón escribiría en unos
+  // `dtoInput` que no están en la pantalla: el profesional ve una propuesta, la acepta, no cambia
+  // nada a la vista y el descuento no llega al documento. **Un control muerto que además pide un
+  // dato que el servidor tira.**
+  //
+  // Mi propia regla decide esto sin consultar a nadie: un control aparece si y sólo si su dato
+  // sobrevive al emisor. Éste no sobrevive, así que no aparece — ni con marcador ni sin él.
+  // No hace falta firmar ningún literal: el que había se va con la tira.
+  if (!esDocumentoSuelto) blockTotals.appendChild(propuestaWrap);
 
   /** El cliente elegido AHORA, o `null`. Mismo criterio que la vista previa (una sola forma). */
   function clienteElegido() {
@@ -1383,6 +1482,10 @@ blockDelivery.appendChild(descWrapper);
   }
 
   function refrescarPropuestaDeDescuento() {
+    // SCRUM-600 · se corta también EL CÁLCULO, no sólo el pintado: en el documento suelto la tira
+    // no cuelga de la tarjeta, así que recalcular su alcance en cada tecla sería trabajo para
+    // decidir si enseñar algo que no se puede enseñar.
+    if (esDocumentoSuelto) return;
     const M = window.descuentoPorDefecto;
     // Sin la pieza —o con un cliente sin descuento pactado— la tira no existe y el editor se
     // comporta EXACTAMENTE como antes de este ticket. Es el caso normal, no una degradación.
@@ -1450,7 +1553,10 @@ blockDelivery.appendChild(descWrapper);
   const submitBtn = document.createElement("button");
   submitBtn.type = "button";
   submitBtn.className = "btn btn-primary";
-  submitBtn.textContent = "Generar presupuesto";
+  // SCRUM-600 · la acción primaria del documento suelto es la APROBADA para este flujo
+  // (SCRUM-289b, con sus dos voces desde SCRUM-776). Y no es un cambio cosmético: «Generar
+  // presupuesto» es reversible y «Emitir…» no lo es (regla 29). El botón tiene que decirlo.
+  submitBtn.textContent = esDocumentoSuelto ? window.rotulosDelDocumento.accionPrimaria() : "Generar presupuesto";
 
   const resetBtn = document.createElement("button");
   resetBtn.type = "button";
@@ -1465,13 +1571,28 @@ blockDelivery.appendChild(descWrapper);
 
   actionsRow.appendChild(submitBtn);
   actionsRow.appendChild(resetBtn);
-  actionsRow.appendChild(saveTemplateBtn);
+  // 🛑 SCRUM-600 · PLANTILLAS: PARADA DECLARADA, NO OMISIÓN POR COMODIDAD.
+  //
+  // El mecanismo serviría tal cual —una plantilla sólo carga LÍNEAS, y las líneas son lo único
+  // que el emisor admite—, pero sus dos hojas nombran el documento: «Elige una plantilla para
+  // cargar sus líneas en el presupuesto actual.» y «Dale un nombre a esta plantilla para
+  // reutilizarla en futuros presupuestos.». No hay texto aprobado para su versión de documento
+  // suelto y la regla 30 prohíbe escribirlo. Queda descrito en la entrada del máster como lo
+  // primero que se enciende el día que el fundador firme esas dos frases.
+  if (!esDocumentoSuelto) actionsRow.appendChild(saveTemplateBtn);
 
   // Indicador de autoguardado de borrador (FRONT1-4)
   const draftIndicator = document.createElement("span");
   draftIndicator.style.cssText = "font-size:12px;color:var(--neutral-400);align-self:center;margin-left:auto;transition:opacity .3s;opacity:0";
   draftIndicator.textContent = "✓ Guardado automáticamente";
-  actionsRow.appendChild(draftIndicator);
+  // 🔴 SCRUM-600 · EL DOCUMENTO SUELTO NO TIENE BORRADOR, Y ESTO NO ES UNA MERMA: ES UN DEFECTO
+  // QUE SE EVITA. La clave del borrador es `pf_quote_draft_<merchant>`, UNA por merchant, así
+  // que un formulario de documento suelto que autoguardara PISARÍA el presupuesto a medias del
+  // profesional, y al abrirse restauraría ese presupuesto —con sus condiciones de pago— dentro
+  // de un documento que no las admite. Dos documentos compartiendo una sola ranura de borrador
+  // es el defecto; darle otra ranura sería estado nuevo (regla 27) y tampoco es de este ticket.
+  // El rótulo se omite porque diría algo que no ocurre: aquí no se guarda nada solo.
+  if (!esDocumentoSuelto) actionsRow.appendChild(draftIndicator);
 
   // ---------- PANEL DERECHO: PREVIEW + ESTADO ----------
   const previewTitle = document.createElement("h3");
@@ -1483,14 +1604,18 @@ blockDelivery.appendChild(descWrapper);
   previewBox.className = "quote-preview";
   rightCard.appendChild(previewBox);
 
+  // SCRUM-600 · EL PANEL DE ESTADO NO APLICA AL DOCUMENTO SUELTO. No es que le falte el texto:
+  // es que no tiene estados que enseñar. El presupuesto vive en DRAFT / pendiente de aprobación
+  // y se envía; el documento suelto nace EMITIDO y no cambia de estado nunca (regla 29). Un
+  // panel que dijera «Emitida» y nada más sería un hueco con rótulo.
   const statusTitle = document.createElement("h3");
   statusTitle.textContent = "Estado del presupuesto";
   statusTitle.style.marginTop = "16px";
-  rightCard.appendChild(statusTitle);
+  if (!esDocumentoSuelto) rightCard.appendChild(statusTitle);
 
   const resultBox = document.createElement("div");
   resultBox.className = "quote-status-box";
-  rightCard.appendChild(resultBox);
+  if (!esDocumentoSuelto) rightCard.appendChild(resultBox);
 
   // Empty state DENTRO del panel (una sola voz: antes había un párrafo de
   // ayuda encima Y la caja vacía tipo input, que quedaba pobre)
@@ -1706,6 +1831,11 @@ blockDelivery.appendChild(descWrapper);
     return `pf_quote_draft_${mid}`;
   }
   function saveDraft() {
+    // 🔴 SCRUM-600 · se corta EN EL MECANISMO, no sólo en el rótulo. Quitar el indicador dejaría
+    // el autoguardado corriendo en silencio, que es la peor de las dos: la ranura de borrador es
+    // UNA por merchant (`pf_quote_draft_<mid>`) y el documento suelto machacaría el presupuesto
+    // a medias del profesional sin que nada se lo dijera.
+    if (esDocumentoSuelto) return;
     if (!currentMerchant || !currentMerchant.id) return;
     const snapshot = {
       customerId: fieldCustomer.select.value || "",
@@ -1753,6 +1883,10 @@ blockDelivery.appendChild(descWrapper);
     try { localStorage.removeItem(draftKey()); } catch (_e) {}
   }
   function loadDraft() {
+    // 🔴 SCRUM-600 · la otra mitad del corte, y hace falta las DOS. Sin ésta, abrir un documento
+    // suelto restauraría el borrador de un PRESUPUESTO —con sus condiciones de pago y su
+    // caducidad— dentro de un formulario que no las tiene y de un documento que no las admite.
+    if (esDocumentoSuelto) return false;
     try {
       const raw = localStorage.getItem(draftKey());
       if (!raw) return false;
@@ -1972,8 +2106,19 @@ blockDelivery.appendChild(descWrapper);
       <div class="quote-totals__apoyo"><span>Base imponible</span><strong>${fmtMoneyEs(base, cur)}</strong></div>
       <div class="quote-totals__apoyo"><span>IVA (${effVat}%)</span><strong>${fmtMoneyEs(vatTotal, cur)}</strong></div>
     `;
+    // ✅ SCRUM-600 (DOC-10) · «Total» · FIRMADO POR EL ASESOR el 7-sep-2026, DERIVANDO.
+    //
+    // PROCEDENCIA, porque «aprobado» sin decir dónde consta es una afirmación que nadie puede
+    // comprobar (SCRUM-387): la decisión está transcrita en `docs/master/SCRUM-600.md`, apéndice
+    // del 7-sep-2026. NO entra palabra nueva en el árbol — «Total» es el rótulo con el que la
+    // pantalla de detalle de la factura ya destaca su total (`invoiceDetailView.js`, bloque
+    // «total destacado»). Mismo criterio que SCRUM-776: se deriva lo ya decidido, no se inventa.
+    //
+    // Y el presupuesto NO CAMBIA: sigue diciendo «Total presupuesto», byte a byte. Por eso el
+    // ternario va pegado a sus dos ramas dentro de la plantilla — así el guard de las ranuras de
+    // SCRUM-600 sigue viendo el texto del presupuesto y sigue cayendo si alguien lo toca.
     kpiBox.innerHTML = `
-      <span class="quote-total-kpi__label">Total presupuesto</span>
+      <span class="quote-total-kpi__label">${esDocumentoSuelto ? 'Total' : 'Total presupuesto'}</span>
       <strong class="quote-total-kpi__cifra">${fmtMoneyEs(total, cur)}</strong>
     `;
 
@@ -2128,7 +2273,15 @@ blockDelivery.appendChild(descWrapper);
     previewBox.appendChild(clientBlock);
 
         // Condiciones de pago (preview)
-        const pTermsCode = paymentSelect.value || "";
+        // 🔴 SCRUM-600 · EN EL DOCUMENTO SUELTO LA VISTA PREVIA NO IMPRIME CONDICIONES DE PAGO, y
+        // no es sólo cuestión de rótulos. El bloque «3. Condiciones» ya no se pinta, así que
+        // `paymentSelect` conserva su valor de fábrica: la vista previa estaría imprimiendo en el
+        // papel del cliente una condición que NADIE ha elegido y que el emisor no guarda —
+        // «Pago 100% al aceptar el presupuesto.» sobre un documento que ya está emitido.
+        //
+        // Un dato inventado en el documento es peor que un hueco, y encima nombraba el
+        // presupuesto: lo cazó el banco montando la vista, no la lectura del código.
+        const pTermsCode = esDocumentoSuelto ? "" : (paymentSelect.value || "");
         if (pTermsCode) {
           const paymentBlock = document.createElement("div");
           paymentBlock.className = "preview-client-block";
@@ -2256,7 +2409,10 @@ tr.appendChild(tdConcept);
 
     const rowTotal = document.createElement("div");
     rowTotal.className = "preview-total-row preview-total-row-main";
-    rowTotal.innerHTML = `<span>Total presupuesto</span><strong>${formatMoney(
+    // ✅ SCRUM-600 · «Total» · la MISMA firma del asesor que el KPI (ver arriba). Es la misma
+    // decisión aplicada dos veces, no dos decisiones: el pie de la vista previa y el KPI son el
+    // mismo rótulo del mismo importe.
+    rowTotal.innerHTML = `<span>${esDocumentoSuelto ? 'Total' : 'Total presupuesto'}</span><strong>${formatMoney(
       totals.total,
       currency
     )}</strong>`;
@@ -2268,7 +2424,13 @@ tr.appendChild(tdConcept);
     const footer = document.createElement("div");
     footer.className = "preview-footer";
     footer.textContent = "Presupuesto válido durante 30 días salvo indicación en contrario.";
-    previewBox.appendChild(footer);
+    // 🔴 SCRUM-600 · EN EL DOCUMENTO SUELTO NO SE IMPRIME NINGUNA COLETILLA, y la omisión es la
+    // decisión prudente, no la perezosa. Ésta es una frase LEGAL estampada en el papel que ve el
+    // cliente del profesional; la del presupuesto habla de la validez de una OFERTA, que en un
+    // documento ya emitido no significa nada. Y escribir otra en su sitio sería redactar una
+    // afirmación en un documento fiscal: reglas 7 y 17, y microcopy del fundador (regla 30).
+    // Si ahí tiene que ir algo, lo decide él; hasta entonces, no va nada.
+    if (!esDocumentoSuelto) previewBox.appendChild(footer);
   }
 
   // ---------- GESTIÓN DE LÍNEAS ----------
@@ -3184,7 +3346,17 @@ priceTd.querySelector(".quote-line__label").appendChild(priceHint);
     // SCRUM-500: el suplido va PRIMERO. Es la decisión que manda sobre las otras dos —marcarlo
     // deja el IVA a 0 y bloqueado—, así que leerlo después de haber tocado el IVA sería leer el
     // orden al revés.
-    ajustesCampos.appendChild(suplidoTd);
+    // 🔴 SCRUM-600 (DOC-10) · EL SUPLIDO NO SE OFRECE EN EL DOCUMENTO SUELTO, Y ESTO EVITA UN
+    // DEFECTO MEDIDO, no una funcionalidad. `validarFacturaSuelta` reconstruye la línea con
+    // `{concept, qty, price, tax}` y DESCARTA la clave `suplido` en silencio (SCRUM-616 §4): el
+    // `tax: 0` sobrevive y la MARCA no, así que un suplido quedaría guardado como una línea
+    // normal al 0 % — indistinguible de una exención legítima. El documento dejaría de saber lo
+    // que es, sin error, sin aviso y sin diferencia de importe.
+    //
+    // Ofrecer la casilla sabiendo eso sería peor que no tenerla. Se enciende el día que la
+    // factura sepa guardar la marca, y ESO es camino de emisión (reglas 29/38) + posible cambio
+    // de `prisma/schema.prisma`: es del fundador, se declara y se para.
+    if (!esDocumentoSuelto) ajustesCampos.appendChild(suplidoTd);
     // SCRUM-598 · aqui iba el campo del margen. La hoja se queda con SUPLIDO y con el IVA:
     // no se reordena nada, solo desaparece el de en medio (regla 30, no se toca ningun rotulo).
     ajustesCampos.appendChild(vatTd);
@@ -3192,7 +3364,10 @@ priceTd.querySelector(".quote-line__label").appendChild(priceHint);
     // (SCRUM-598) a proposito: ese hueco se lee como «ha vuelto el margen», y el coste es otra
     // cosa —el margen era una conclusion que salia en el papel del cliente; el coste es un HECHO
     // del profesional que NO sale—. Anadir al final no reordena nada de lo que ya habia.
-    ajustesCampos.appendChild(costeTd);
+    // SCRUM-600 · el COSTE tampoco: `costeUnitario` es otra de las claves que el emisor descarta
+    // (SCRUM-616). Aquí la pérdida es más silenciosa todavía, porque el coste no sale en el papel
+    // y nadie lo echaría de menos mirando el documento.
+    if (!esDocumentoSuelto) ajustesCampos.appendChild(costeTd);
     // 🔴 SCRUM-594 · «Dto. %» VA EN LA HOJA, Y LO DECIDIÓ LA MEDICIÓN, NO EL GUSTO.
     //
     // Se montó primero en la TARJETA, junto al precio, que es lo natural: se descuenta sobre el
@@ -3204,7 +3379,10 @@ priceTd.querySelector(".quote-line__label").appendChild(priceHint);
     // Aquí cuesta 0 px por fila, y no queda escondido: el chip de ajustes DICE lo que lleva
     // dentro (F4), así que un descuento escrito se lee sin abrir la hoja. Eso es lo que cumple
     // CONT-01 ② —un dato que nadie ve es un dato que nadie corrige— sin pagar el scroll.
-    ajustesCampos.appendChild(dtoTd);
+    // SCRUM-600 · y el descuento de línea, por lo mismo: `dto` no viaja más allá del validador.
+    // Un descuento que el profesional teclea y el documento no recoge cambiaría el importe que
+    // él espera por otro, que es la peor forma de perder un dato.
+    if (!esDocumentoSuelto) ajustesCampos.appendChild(dtoTd);
 
     const ajustesBtn = document.createElement("button");
     ajustesBtn.type = "button";
@@ -3915,6 +4093,58 @@ if (Number.isFinite(n) && n >= 0) {
       return;
     }
 
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-600 (DOC-10) · EL ALTA DEL DOCUMENTO SUELTO. Camino APARTE, y a propósito.
+    //
+    // No se mezcla con el del presupuesto ni se «parametriza» el de abajo: el control que decide
+    // este ticket es que la página nueva emita EXACTAMENTE la misma factura que el modal, y eso
+    // se consigue haciendo lo MISMO que hacía el modal, no una versión generalizada de otra cosa.
+    // Es también lo que mantiene el camino del presupuesto intacto byte a byte: no pasa por aquí.
+    //
+    // El cuerpo lo compone `cuerpoDelDocumentoSuelto`, el mismo y único sitio que llama el modal.
+    // Lo que este bloque hace es leer la pantalla y contar lo que pasó — nada más.
+    //
+    // 🔴 NO HAY NADA DE EMISIÓN AQUÍ (regla 38): el número de serie, el sellado y qué se guarda
+    // siguen siendo del servidor, sin tocar. Y sólo se da de ALTA: no se edita ni se renumera
+    // nada que ya esté emitido (regla 29).
+    if (esDocumentoSuelto) {
+      const cuerpo = window.documentoSuelto.cuerpoDelDocumentoSuelto(
+        customerId,
+        lines.map(function (line) {
+          return {
+            concepto: line.conceptInput.value,
+            cantidad: line.qtyInput.value,
+            precio: line.priceInput.value,
+            iva: line.vatInput.value,
+          };
+        }),
+      );
+
+      submitBtn.disabled = true;
+      const antes = submitBtn.textContent;
+      submitBtn.textContent = "Emitiendo…"; // SCRUM-289b, texto aprobado de este mismo flujo
+      try {
+        await apiRequest("/admin/invoices", { method: "POST", body: JSON.stringify(cuerpo) });
+        showToast(window.rotulosDelDocumento.avisoEmitido());
+        // Se vuelve al listado, que es donde el documento recién emitido se ve con su número.
+        // El modal recargaba la lista por debajo; aquí la lista ES la pantalla a la que se vuelve.
+        // `window.renderAppView` es la ÚNICA forma de navegar de la casa (SCRUM-599): las seis
+        // puertas a `quotes-new` van por ahí, y una segunda forma sería la que un día se quede
+        // inerte sin que nadie lo note.
+        if (window.renderAppView) window.renderAppView("invoices");
+      } catch (e) {
+        // El servidor manda `message` legible en cada error nombrado y se muestra tal cual porque
+        // es SUYO; si no manda ninguno, sale el rótulo aprobado. La decisión de si hay mensaje
+        // presentable es de la pieza común —la misma que usa el modal—, y el RESPALDO se escribe
+        // aquí, pegado a su sumidero: así el censo de SCRUM-601 sigue viendo que ese texto
+        // depende del flag. Esconderlo detrás de un envoltorio le quitó la vigilancia una vez.
+        setAlert("error", window.documentoSuelto.mensajeDelServidor(e) || window.rotulosDelDocumento.errorAlEmitir());
+        submitBtn.disabled = false;
+        submitBtn.textContent = antes;
+      }
+      return;
+    }
+
     const payloadLines = [];
     lines.forEach(function (line) {
       let concept = line.conceptInput.value.trim();
@@ -4097,3 +4327,31 @@ payloadLines.push(lineaParaPayload({
     }
   });
 }
+
+/**
+ * LA PUERTA DEL DOCUMENTO SUELTO · SCRUM-600 (DOC-10).
+ *
+ * No aporta comportamiento: llama a `renderQuotesView` con el tercer argumento puesto. Y aun así
+ * hace falta, por una razón medida.
+ *
+ * 🔴 EL INSTRUMENTO SÓLO SABE LEER UNA FORMA, Y LA RUTA NO LA TENÍA. El guard de SCRUM-722
+ * (`guard-marcadores-en-pantalla.mjs`) deriva las vistas del `switch` del router y las monta con
+ * `window[fn](cont)` o `window[fn](cont, arg)`: UN argumento como mucho, y qué rutas lo llevan
+ * sale de un conjunto escrito a mano. Una ruta que necesita un TERCERO no es que se mida mal: se
+ * mide OTRA PANTALLA. Medido —`invoices-new` pintaba los 6 marcadores del PRESUPUESTO, los mismos
+ * dos nodos que `quotes-new`, porque sin el tercer argumento la página se pintaba como un
+ * presupuesto—, y el guard lo denunciaba con razón aunque el defecto no fuera el que parecía.
+ *
+ * Se arregla EN LA RUTA y no en el guard, que es donde estaba el defecto: el contrato que el guard
+ * lee («un `case` nombra un `render…View` montable con el contenedor») existía antes que esta
+ * ruta, y era ella la que no lo cumplía. Ensanchar el guard para que aceptara mi forma habría
+ * dejado su lista escrita a mano un poco más atrás cada vez.
+ *
+ * ⚠️ No esconde ningún texto de ningún censo: no lleva literales, sólo el destino. Es lo contrario
+ * del envoltorio que SCRUM-776 prohíbe —aquél metía un nivel entre un rótulo y su sumidero; éste
+ * no toca ningún rótulo y hace que la pantalla SEA VISIBLE para quien la vigila.
+ */
+function renderDocumentoSueltoView(container) {
+  return renderQuotesView(container, null, true);
+}
+window.renderDocumentoSueltoView = renderDocumentoSueltoView;

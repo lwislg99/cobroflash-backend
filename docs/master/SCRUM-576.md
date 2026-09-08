@@ -47,6 +47,16 @@ Verificado antes de apoyarse en ello, no supuesto:
 ## ✅ LA MIGRACIÓN, APLICADA EN LAS TRES BASES (8-sep-2026)
 
 > ## El bloqueo «NO MERGEABLE HASTA APLICAR LA COLUMNA EN LAS TRES BASES» queda LEVANTADO
+>
+> **Y se retira también del cuerpo del PR**, que es donde de verdad lo lee quien va a pulsar el
+> botón. Se retira porque **las tres casillas están marcadas**, no porque haya pasado el tiempo ni
+> porque el ticket lleve días abierto: producción y staging las aplicó y **verificó** el fundador
+> en `information_schema` (`integer` · `is_nullable = YES`, con capturas) y dev la apliqué y medí
+> yo (26 → 27 columnas, con control positivo).
+>
+> Lo que el aviso decía **sigue siendo verdad y por eso no se borra de aquí**: `schemaDrift` compara
+> esperado ⊆ real y **para el arranque** si el esquema nombra una columna que la base no tiene. Un
+> aviso borrado no enseña nada; uno levantado, con la fecha y el motivo, sí.
 
 `src/core/db/schemaDrift.ts` compara **esperado ⊆ real** en tablas y columnas y **para el
 arranque** cuando el esquema nombra una columna que la base no tiene. `prisma/schema.prisma` ya
