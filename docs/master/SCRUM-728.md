@@ -745,3 +745,114 @@ importa. Pero pierde cobertura en CI, y ese cambio de trato **no lo decide una s
 * **No sé qué hacían las otras cinco sesiones** mientras medía contra dev, que es compartida.
 * **`FOR UPDATE` dentro de un CTE** lo sostengo por medición contra este Postgres, no por haber
   leído la garantía en la especificación.
+
+---
+---
+
+# FASE D · 8-sep-2026 · LO QUE VE EL SEXTO PROFESIONAL
+
+**Medido contra:** `origin/main` = `02dd12b26972e394e907f18980842111554ce4c6` (mezclado dentro de la rama, AA2)
+**Preámbulo:** `prisma generate` rc=0 (RE-generado tras el merge) · `HEAD..origin/main` = 0 · **`npm run build` rc=0**
+
+> **Decisión del fundador sobre las fases A-C: NO se optimiza.** El candidato de la fase B gana un
+> 20 % y mueve el umbral de 6 a 7 —sigue siendo lineal, compra poco— y costaría el conflicto con
+> el guard de SCRUM-306, que **tiene razón**: dejar la reserva en SQL y la vista previa en JS son
+> dos implementaciones de la misma regla en dos lenguajes. Se queda como está.
+>
+> **La lentitud no tiene víctima hoy. El mensaje sí.**
+
+---
+
+## D1 · 🔴 PASO 0 · ¿POR DÓNDE SALE HOY ESE P2028? — la tercera de las tres
+
+Tres respuestas posibles y tres arreglos distintos. Medido **corriendo** el handler real de
+`POST /admin/jobs/:id/albaranes`:
+
+| | |
+| --- | --- |
+| ¿llega el P2028 tal cual? | **no** |
+| ¿revienta la pantalla? | **no** — la excepción no sale del handler |
+| **¿lo tapa un catch genérico?** | **SÍ** — `jobs.routes.ts` lo registra y contesta `500 {"error":"internal_error"}` |
+
+Y lo que de verdad lee el profesional, siguiendo la cadena hasta el panel: `apiRequest` construye
+`API ${status}: ${data.error}` cuando la respuesta **no trae `message`**, y `jobDetailView.js`
+pinta `'No se pudo crear el albarán: ' + …`. Literalmente:
+
+> No se pudo crear el albarán: **API 500: internal_error**
+
+### Cómo se provocó, y por qué la carrera de 6 no bastaba
+
+**Se hicieron las dos cosas, y la primera va escrita porque su verde es engañoso.** El defecto es
+de LATENCIA: en loopback una reserva cuesta **~100 ms**, no los ~880 de la base remota, así que
+**las seis pasan** (6/6, medido) y publicar eso como «no se reproduce» habría sido el falso
+negativo de siempre.
+
+Lo que sí lo provoca es **retener el cerrojo desde otra sesión** más de 5 s — exactamente donde la
+fase A capturó el P2028 («el fallo ocurre dentro de `$executeRaw`»):
+
+```
+Transaction already closed: … The timeout for this transaction was 5000 ms,
+however 6978 ms passed since the start of the transaction.
+   la petición esperó 7148 ms y contestó → HTTP 500
+   cuerpo: {"error":"internal_error"}
+   albaranes creados: 0 · contador antes/después: 8/8
+```
+
+⚠️ **Y un detalle que costó una vuelta y decide cómo se prueba esto:** el `timeout` de Prisma marca
+la transacción como expirada, pero `pg_advisory_xact_lock` **sigue esperando en Postgres** hasta
+que alguien suelte. **El P2028 no salta al vencer: salta cuando la consulta VUELVE.** Mi primera
+versión soltaba el cerrojo *después* de que la petición terminara, y se abrazaron.
+
+## D2 · El arreglo: traducir, no subir el timeout
+
+`src/modules/invoicing/domain/cerrojoSaturado.ts` — un módulo, tres cosas: el código propio
+(`serie_ocupada`), el texto **firmado** y el reconocimiento del error.
+
+**Se reconoce UN código de Prisma por identidad** (`P2028`, acotado además a
+`PrismaClientKnownRequestError`), nunca por subcadena del mensaje: ese texto está en inglés, cambia
+entre versiones y lleva dentro los milisegundos de cada caída.
+
+**503 y no 500**: no es un fallo del servidor, es una espera que no cupo — la misma petición
+repetida unos segundos después sale bien. Y no es 409: no hay conflicto, hay cola.
+
+Cableado en **seis rutas** que reservan número. Las tres que quedan fuera van **declaradas con su
+motivo** en el guard, no olvidadas:
+
+| ruta | |
+| --- | --- |
+| `/:token/decision` | **exenta**: la dispara el cliente final y no es «crear un documento», es la aceptación — que sí salió bien. Su camino de fallo lo decidió SCRUM-814 |
+| `/:id/convertir-en-factura`, `/:id/invoice-manual` | **pendientes, declaradas**: su `catch` mezcla varios modos de fallo del camino de emisión fiscal y separarlos es otro trabajo |
+
+## D3 · Los controles, corridos
+
+```
+✔ SUELO · una petición sola crea su albarán
+✔ seis simultáneas SÍ caben en loopback — y los SEIS números son distintos (el cerrojo hace su trabajo)
+✔ con el cerrojo retenido >5 s → 503 {"error":"serie_ocupada","message":"No hemos podido crear…"}
+   · albaranes creados: 0 · contador antes/después: sin mover
+✔ el reintento crea UNO, no dos, y el contador avanza exactamente 1
+✔ POSITIVO · un fallo que NO es el del cerrojo (job ajeno) sigue saliendo 404 `not_found`
+```
+
+**Y el rojo con el mecanismo viejo:** quitando la rama del `catch`, caen los dos casos que dependen
+de ella —`sale 500 {"error":"internal_error"}`— y **el suelo y el control positivo siguen verdes**.
+El test discrimina, no grita por todo.
+
+**Sin gate**, en `npm test`: `tests/scrum728b-aviso-legible.test.mjs` deriva del árbol las rutas que
+reservan número y exige que cada una traduzca **o esté declarada**; que el reconocimiento siga
+siendo por identidad de un solo código; y que **el módulo no fije `timeout` ni `maxWait`**.
+
+## D4 · Lo que NO se ha hecho
+
+* **No se ha subido el timeout.** Está medido por qué: a 20 s daría margen para 22 simultáneas y
+  **el usuario número 22 esperaría 19 segundos**. Se cambiaría un fallo rápido por una espera larga.
+* **No se ha tocado el cerrojo**, ni la reserva, ni `resolveAlbaranSeq`, ni el guard de SCRUM-306.
+* **Regla 29 intacta y demostrada:** el fallo no consume número —contador sin mover— y el reintento
+  avanza exactamente uno. Nada se renumera porque nada se numeró de más.
+
+## D5 · Hallazgo de otro carril, que se REPORTA y no se arregla
+
+`tests/scrum753…` está **rojo en `main`, sin relación con esta rama** — comprobado guardando mis
+cambios y volviéndolo a correr. Lo tumba una rama remota ajena,
+`revert-1192-scrum-824b-el-vigia-que-no-deja-pasar`: las dos reglas rama→ticket la leen distinto
+(una saca `824`, la otra `null`). Es de quien hizo ese revert.

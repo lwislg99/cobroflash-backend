@@ -72,6 +72,9 @@ import {
 } from '../../domain/albaranAFactura';
 // SCRUM-195: el número del adicional se reserva DENTRO de su transacción, igual que el del alta.
 import { allocateQuoteNumber } from '../../../quotes/domain/quoteNumber.service';
+// SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
+// de un `internal_error`. NO sube el timeout ni toca el cerrojo.
+import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } from '../../../invoicing/domain/cerrojoSaturado';
 import { sePuedeCambiarOcultarPrecios } from '../../domain/albaranPrecios'; // SCRUM-607 (ALB-02)
 import { veredictoAlbaranSinPresupuesto } from '../../domain/albaranSinPresupuesto'; // SCRUM-684
 
@@ -880,6 +883,10 @@ router.post('/:id/duplicar', async (req, res) => {
     return res.status(201).json(serializeAlbaran(copia));
   } catch (err: any) {
     console.error('[POST /admin/albaranes/:id/duplicar]', err?.message || err);
+    // SCRUM-728 · el cerrojo de serie no dio turno a tiempo. No es un fallo del servidor ni del
+    // profesional: es cola. La transaccion se deshizo entera —ni documento, ni numero consumido—,
+    // asi que repetir la misma accion unos segundos despues sale bien.
+    if (esCerrojoSaturado(err)) return res.status(ESTADO_CERROJO_SATURADO).json(cuerpoCerrojoSaturado());
     return res.status(500).json({ error: 'internal_error' });
   }
 });
