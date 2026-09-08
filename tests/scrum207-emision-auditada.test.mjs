@@ -48,7 +48,7 @@ function txFalso({ auditFalla = false, merchant = {} } = {}) {
     },
     // SCRUM-396: el camino del justificante comprueba que la referencia este libre contra el
     // indice `[merchantId, number]`. `null` = libre. Lo que mide este fichero es la AUDITORIA.
-    invoice: { findUnique: async () => null },
+    invoice: { findUnique: async () => null, findMany: async () => [] },
     auditLog: {
       create: async (args) => {
         if (auditFalla) throw new Error('audit_write_failed');
