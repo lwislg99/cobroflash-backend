@@ -430,6 +430,14 @@ export const DECLARADOS = [
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
     exports: ['ERROR_LINEAS_INVALIDAS'] },
+  // SCRUM-728 · el aviso del cerrojo saturado. `cuerpoCerrojoSaturado()` es lo que usan las seis
+  // rutas; estos dos son su CONTRATO, y se exportan para que el guard compare contra ellos por
+  // identidad en vez de copiar el literal. Copiarlo seria tener dos fuentes del mismo texto
+  // aprobado, que es justo lo que la regla 30 evita.
+  { modulo: 'src/modules/invoicing/domain/cerrojoSaturado.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-08',
+    motivo: 'Codigo y texto oficial del 503 `serie_ocupada`; su lector de fuera es el guard, que los compara por identidad para no duplicar el literal aprobado.',
+    exports: ['ERROR_CERROJO_SATURADO', 'COPY_CERROJO_SATURADO'] },
   { modulo: 'src/modules/invoicing/domain/invoiceLines.service.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',

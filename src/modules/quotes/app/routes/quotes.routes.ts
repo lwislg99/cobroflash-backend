@@ -73,6 +73,9 @@ import { normalizarDireccionObra, normalizarModoDireccionObra } from '../../../.
 import { paramsDePresupuestoParaPdf } from '../../domain/presupuestoParaPdf';
 
 
+// SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
+// de un `internal_error`. NO sube el timeout ni toca el cerrojo.
+import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } from '../../../invoicing/domain/cerrojoSaturado';
 const router = Router();
 
 // SCRUM-95: rate limit por IP como defensa EN PROFUNDIDAD además del token opaco
@@ -272,6 +275,10 @@ router.post('/create', async (req, res) => {
       });
     }
     console.error('POST /quote/create error', err);
+    // SCRUM-728 · el cerrojo de serie no dio turno a tiempo. No es un fallo del servidor ni del
+    // profesional: es cola. La transaccion se deshizo entera —ni documento, ni numero consumido—,
+    // asi que repetir la misma accion unos segundos despues sale bien.
+    if (esCerrojoSaturado(err)) return res.status(ESTADO_CERROJO_SATURADO).json(cuerpoCerrojoSaturado());
     return res.status(500).json({ error: 'internal_error' });
   }
 });
