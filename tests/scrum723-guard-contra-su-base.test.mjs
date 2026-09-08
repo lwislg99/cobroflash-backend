@@ -352,6 +352,20 @@ const INDIRECTAS_DECLARADAS = [
   // de SCRUM-753 CONGELA. Es el mismo motivo por el que están arriba `scrum753` y `scrum775`.
   // Lo retira: quien borre la dimensión de rama viva del censo del tablero.
   'tests/scrum804-la-rama-viva.test.mjs',
+  // SCRUM-637 · la pregunta CONTRARIA a la de arriba: qué ramas NO están dentro de main, con su
+  // edad. Nombra `origin/main` en la prosa y como valor por defecto de `instantanea({ ref })`.
+  //
+  // 🔴 Y AQUÍ LA REFERENCIA MÓVIL ES EL SUJETO, no un descuido: «¿qué trabajo hay esperando fuera
+  // de la punta de main?» sólo se puede contestar contra la punta de main. Anclarlo a la base de
+  // esta rama respondería que TODAS las ramas están fuera —incluidas las que se mergearon ayer—,
+  // que es la respuesta inútil de SCRUM-753 con el signo cambiado.
+  //
+  // Lo que sí hace, y por eso no reintroduce el defecto que este guard vigila: **congela el sha**
+  // en `instantanea()` y mide todo contra ESE objeto, imprimiéndolo en la primera línea de su
+  // salida. La referencia se resuelve una vez; a partir de ahí la pregunta ya no es móvil.
+  // Sólo lee: no borra, no empuja, y está fuera de CI.
+  // Lo retira: quien borre `scripts/verificacion-s5/`.
+  'scripts/verificacion-s5/ramas-sin-mergear.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {
