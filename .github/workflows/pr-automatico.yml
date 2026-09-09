@@ -6,6 +6,15 @@
 # QUÉ NO HACE, Y ES LA MITAD DEL DISEÑO:
 #   · NO mergea. `--auto` sólo deja el PR armado; quien mergea es GitHub cuando el check
 #     obligatorio pasa. Aquí no se usa `--admin` ni nada que salte una comprobación.
+#   · 🔴 SOLO ABRE PR A RAMAS QUE EMPIECEN POR `scrum-`, Y ESO TIENE UNA CONSECUENCIA QUE
+#     SORPRENDE: las ramas que empuja Claude desde un PR se llaman `claude/pr-<n>-<fecha>`, así
+#     que NO entran por el filtro y NO se les abre PR solo. Medido el 9-sep-2026 con
+#     `claude/pr-1211-20260909-0804`: el commit `c430b2e6` se quedó ahí sin PR, y el arreglo
+#     que llevaba dentro no habría llegado a `main` si nadie lo hubiera ido a buscar.
+#     ESTÁ BIEN ASÍ y se queda: el trabajo de un agente entra por una sesión que lo revisa,
+#     no por un automatismo. Pero queda escrito aquí porque un filtro silencioso es una regla
+#     que el siguiente no va a saber que existe — y el síntoma («mi rama no tiene PR») no se
+#     parece en nada a la causa («no empieza por scrum-»).
 #   · NO toca ramas que no empiecen por `scrum-`: filtrado en el disparador Y comprobado
 #     otra vez en el primer paso, a propósito (un filtro de YAML no se lee en el log; un
 #     paso que falla, sí).
