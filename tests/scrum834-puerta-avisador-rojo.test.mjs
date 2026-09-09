@@ -170,9 +170,20 @@ test('SUELO del censo: encuentra a los que YA SABEMOS que hablan como el bot', (
   assert.ok(censo.length >= 2, `censo demasiado corto (${censo.length}): está ciego`);
 });
 
-test('🔴 todo lo que habla como el bot pasa su texto por una de las dos comprobaciones', () => {
-  // Sin comentarios: la prosa que explica la regla nombra las funciones y se cazaría sola.
-  for (const f of vozDelBot()) {
+/** De los que hablan como el bot, los que además COMPONEN el texto en el propio YAML. */
+function componeTexto(f) {
+  const codigo = sinComentarios(fs.readFileSync(path.join(DIR_WF, f), 'utf8'));
+  return /--body|body=@/.test(codigo);
+}
+
+test('🔴 todo lo que habla como el bot Y COMPONE TEXTO pasa ese texto por una comprobación', () => {
+  // La distinción importa y la trajo el cambio de token de `claude.yml`: ese workflow habla
+  // como el bot pero NO compone ningún cuerpo — el texto lo escribe el agente en tiempo de
+  // ejecución, y el YAML no tiene nada que inspeccionar. Exigirle la comprobación sería pedir
+  // que revise un texto que no existe cuando el workflow corre.
+  //
+  // ⚠️ Eso NO quiere decir que ese camino esté protegido: ver el test siguiente.
+  for (const f of vozDelBot().filter(componeTexto)) {
     const codigo = sinComentarios(fs.readFileSync(path.join(DIR_WF, f), 'utf8'));
     const comprueba = /cuerpoDespierta|cuerpoNoDebeDespertar/.test(codigo);
     assert.ok(comprueba,
@@ -256,4 +267,109 @@ test('el workflow le pasa a la puerta los ficheros del PR', () => {
   assert.match(yml, /pulls\/\$PR\/files|\/files/,
     'sin la lista de ficheros la puerta fiscal falla cerrado y NADA despertaría nunca');
   assert.match(yml, /ficheros/, 'y tiene que llegar a la puerta con ese nombre');
+});
+
+// ── EL TOPE DEL BUCLE, SIMULADO DE VERDAD (SCRUM-834d) ────────────────────────────────────
+//
+// POR QUÉ ESTE CONTROL EXISTE, y por qué NO basta con la dedupe. El bucle que da miedo es:
+//
+//     CI rojo → el avisador despierta a Claude → Claude EMPUJA → CI corre → rojo → …
+//
+// La dedupe NO lo para, y esto es lo importante: es por `head_sha`, y CADA PUSH CREA UN SHA
+// NUEVO. Así que `YA-AVISADO` no salta ni una sola vez en un bucle real. Lo único que hay
+// debajo es el TOPE por PR, que cuenta AVISOS PUBLICADOS —no avisos coincidentes—, y por eso
+// sí sobrevive a que cambie el sha.
+//
+// Esto se vuelve crítico el día que `claude.yml` empuje con la llave de la App: hasta hoy sus
+// pushes no disparaban CI (medido: `check-runs total: 0` sobre `faebb1e6`), así que el ciclo
+// se cortaba solo por avería. Cuando eso se arregle, el tope será lo ÚNICO que lo pare.
+
+/**
+ * Simula N ciclos rojos sobre el MISMO PR, como los ejecutaría el workflow:
+ * cada ciclo trae un `head_sha` distinto, y cada aviso publicado deja su marca en el PR
+ * —que es de donde el workflow lee `marcasPrevias` en la pasada siguiente—.
+ */
+function simularCiclos(n, tope = 3) {
+  const marcasPrevias = [];
+  const historia = [];
+  for (let i = 1; i <= n; i++) {
+    const marcaActual = `sha${String(i).padStart(4, '0')}:build + tests`; // sha NUEVO cada vez
+    const r = decidir({ ...base, marcasPrevias: [...marcasPrevias], marcaActual, tope });
+    historia.push(r.codigo);
+    if (r.avisar) marcasPrevias.push(marcaActual); // el aviso publicado deja su marca
+  }
+  return { historia, publicados: marcasPrevias.length };
+}
+
+test('🔴 EL CONTROL DEL BUCLE · diez ciclos rojos seguidos y el avisador se PARA en el tope', () => {
+  const { historia, publicados } = simularCiclos(10, 3);
+  assert.equal(publicados, 3, 'se publican exactamente `tope` avisos y ni uno más');
+  assert.deepEqual(historia.slice(0, 3), ['AVISAR', 'AVISAR', 'AVISAR']);
+  assert.deepEqual(
+    [...new Set(historia.slice(3))], ['TOPE-ALCANZADO'],
+    'del cuarto ciclo en adelante NO se despierta a nadie, y siempre con el mismo veredicto',
+  );
+});
+
+test('🔴 y la DEDUPE no salva de nada aquí: nunca llega a saltar', () => {
+  // Es el punto que hace falta entender: con un sha nuevo por push, `YA-AVISADO` no aparece.
+  const { historia } = simularCiclos(10, 3);
+  assert.ok(!historia.includes('YA-AVISADO'),
+    'si esto fallara, el tope estaría descansando sobre la dedupe, que en un bucle real no actúa');
+});
+
+test('la dedupe SÍ actúa cuando el sha NO cambia (rearranque del mismo CI)', () => {
+  // El otro caso, que también existe: el mismo rojo re-evaluado sin push por medio.
+  const marca = 'shaigual:build + tests';
+  const r = decidir({ ...base, marcasPrevias: [marca], marcaActual: marca });
+  assert.equal(r.codigo, 'YA-AVISADO');
+});
+
+test('el tope cuenta AVISOS PUBLICADOS, no coincidencias: por eso sobrevive al cambio de sha', () => {
+  const r = decidir({ ...base, marcasPrevias: ['a:x', 'b:y', 'c:z'], marcaActual: 'd:w', tope: 3 });
+  assert.equal(r.codigo, 'TOPE-ALCANZADO');
+  assert.match(r.motivo, /para el bucle/);
+});
+
+test('🔴 el veredicto del tope se LEE sin abrir logs: sale al resumen del run', () => {
+  const yml = fs.readFileSync(WORKFLOW, 'utf8');
+  // El camino de «no avisar» escribe el CÓDIGO en el resumen, sea cual sea — incluido el tope.
+  assert.match(yml, /\$CODIGO\*\* — \$MOTIVO/,
+    'sin esta línea, TOPE-ALCANZADO solo existiría en el log y nadie lo vería');
+  assert.match(yml, /GITHUB_STEP_SUMMARY/);
+});
+
+test('🔴 claude.yml empuja con la llave de la App, no con el token por defecto', () => {
+  // Sin esto, TODO commit que Claude empuje produce un PR que no puede mergearse jamás:
+  // los eventos del GITHUB_TOKEN no crean ejecuciones, así que no hay CI, no hay check
+  // obligatorio, y el auto-merge espera para siempre. Medido en el #1212 (check-runs: 0).
+  const yml = fs.readFileSync(CLAUDE_YML, 'utf8');
+  const soloCodigo = yml.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n');
+  assert.match(soloCodigo, /create-github-app-token/,
+    'claude.yml tiene que acuñar el token de la App');
+  assert.match(soloCodigo, /github_token:\s*\$\{\{\s*steps\.token\.outputs\.token/,
+    'y pasárselo a la acción por `github_token`, que es lo que usa para empujar');
+});
+
+test('🔴 EL HUECO QUE DEJA ABIERTO EL CAMBIO DE TOKEN, escrito para que no se olvide', () => {
+  // Con la llave de la App, los comentarios que publica la acción salen como `yaqu-bot[bot]`
+  // — que ES quien está en `allowed_bots`. Antes salían como `claude[bot]`, que no lo está.
+  //
+  // Hoy eso no cierra ningún bucle, y está MEDIDO: el 9-sep, el run 12 de claude.yml disparado
+  // por `claude[bot]` salió `skipped`. Skipped significa que el `if` a nivel de job dio falso,
+  // o sea que el CUERPO no llevaba la mención. No fue la puerta de actores: fue el texto.
+  //
+  // Pero es una propiedad de HOY, y si una versión de la acción cambia su texto de respuesta,
+  // Claude se despierta a sí mismo. Y el TOPE DEL AVISADOR NO CUBRE ESE CAMINO: cuenta marcas
+  // `avisador-rojo`, y una autorrespuesta no lleva ninguna.
+  //
+  // Este test no lo impide —no hay dónde ponerle la puerta— pero fija las dos condiciones que
+  // lo mantienen cerrado, para que quien las cambie vea que existían.
+  const yml = fs.readFileSync(CLAUDE_YML, 'utf8');
+  const soloCodigo = yml.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n');
+  assert.match(soloCodigo, /allowed_bots:\s*["']?yaqu-bot\[bot\]/,
+    'condición 1: la lista de bots permitidos es explícita y de un solo nombre');
+  assert.match(soloCodigo, /if:\s*contains\(github\.event\.comment\.body,\s*'@claude'\)/,
+    'condición 2: el disparo depende de que el CUERPO lleve la mención — si la acción empieza '
+    + 'a escribirla en sus respuestas, esto se convierte en un bucle sin tope');
 });
