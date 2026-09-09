@@ -1,7 +1,10 @@
 # SCRUM-829 · Un lector de claves leyendo nombres de rama — y una ref rancia haciéndolo intermitente
 
-**Medido contra:** `origin/main` = `da5ac06ac169fca5d3692a63b10b01a6aed7d3d6` · 2026-09-08T13:05:00+02:00
+**Medido contra:** `origin/main` = `0269e8cd24b6a393e23d05db6ac13307b4ac1c1d` · 2026-09-09T09:34:24+02:00
 **Rama:** `scrum-829-una-sola-regla-rama-ticket`
+
+> Las mediciones de §1 a §4 son del **8-sep-2026** contra `da5ac06a`, y llevan su fecha dentro.
+> Esta cabecera es la del cierre, tras mezclar el `main` del 9-sep con el SCRUM-804 de Javier.
 
 ---
 
@@ -111,7 +114,7 @@ pregunta correcta es quién los MODIFICA por delante de su base (`git log main..
 | `scripts/_censo-reparto.mjs` | `agruparRamas` llama a la regla anclada; `numeroDeClave` se queda **para claves**, con el ⛔ de dónde NO usarla |
 | `scripts/_censo-alcanzabilidad.mjs` | el `fetch` **poda**; el costurón de dos reglas queda **cosido** en su cabecera |
 | `tests/scrum753-censo-de-alcanzabilidad.test.mjs` | el literal exacto en el corpus, el control re-anclado **a los dos consumidores**, el test propio de 829 y el `--prune` fijado |
-| `tests/scrum804-la-rama-viva.test.mjs` | sus **dos poblaciones se derivan de git** en vez de ser listas de números a mano (ver §5) |
+| `tests/scrum804-la-rama-viva.test.mjs` | **sólo una nota corregida**: mi cambio aquí se RETIRÓ entero por la colisión con Javier (ver §5) |
 
 ### 🔒 El control va anclado al mecanismo, no al nombre
 
@@ -124,43 +127,49 @@ Y el literal va **en el corpus, no en el árbol vivo**: la rama ya no existe y s
 un guard que sólo mirase el árbol estaría verde hoy **por no tener el caso delante** — verde por no
 mirar. En el corpus el caso no se puede ir.
 
-## 5 · 🔴 EL HALLAZGO QUE NO BUSCABA: dos guards estaban verdes GRACIAS a la caducidad
+## 5 · 🔴 COLISIÓN CON JAVIER, Y SU ANCLA GANA
 
-Al poner el `--prune`, `tests/scrum804-la-rama-viva.test.mjs` se puso rojo en **tres** tests. No era
-daño colateral: era el mismo defecto, un piso más arriba.
+Al poner el `--prune`, `tests/scrum804-la-rama-viva.test.mjs` se puso rojo en tres tests y lo
+arreglé derivando sus poblaciones de `git for-each-ref`. **Ese arreglo se ha retirado entero.**
 
-Ese guard interrogaba una **lista de cinco números escritos a mano** (`819, 816, 820, 821` y `716`)
-y les exigía tener rastro. **`scrum-821-…` y `scrum-716-…` ya no existen en `origin`**: se mergearon
-y se borraron. El guard sólo seguía en verde porque las **refs de seguimiento rancias** las mantenían
-visibles.
+Javier cerró SCRUM-804 la noche del 8-sep y su versión **ya está en `main`**: ancla las
+poblaciones a `git log --merges`. Al mezclar main el 9-sep hubo **conflicto en ese fichero**, y se
+resolvió tomando la suya tal cual — no fusionada con la mía.
 
-> 🔒 Un control que depende de que nadie pode no vigila el árbol: vigila la higiene del clon. Estaba
-> pasando gracias a la misma caducidad que este ticket viene a quitar.
+### Por qué gana la suya, y no es cuestión de gustos
 
-Y su suelo de población era `total > 100`, escrito cuando había **558 ramas**. El remoto bajó a 98 en
-la limpieza del 8-sep — **y siguió bajando mientras se escribía esto, de 104 a 98 en una hora**. Otro
-número envejecido, rojo sin que el instrumento hubiera perdido nada.
+`for-each-ref` lee **ramas del remoto**, que es exactamente la población que el auto-borrado
+vacía. Lo medí sin ver que estaba midiendo el problema de mi propia solución: dejé escrito «el
+remoto bajó a 98 — y siguió bajando de 104 a 98 mientras trabajaba». Mi lista de 97 será mucho
+menor el mes que viene. Un `git log --merges` **no se puede vaciar**: el commit de merge y su
+segundo padre siguen alcanzables desde `main` aunque la rama se borre el mismo día.
 
-### Lo que se hizo, y lo que NO
+> 🔒 Si el borrado de una rama puede cambiar tu medición, no estabas midiendo el trabajo:
+> estabas midiendo el envase.
 
-⛔ **No se bajó el umbral ni se quitaron los dos números de la lista.** Eso es «actualizar el número
-para que pase en verde», que es lo que el propio fichero prohíbe por escrito: *«un control positivo
-atado al estado de un árbol que nueve sesiones mueven a diario no vigila: envejece, y lo que se acaba
-tocando para que pase en verde es el control»*.
+⛔ Y no se fusionan las dos: **dos anclas para la misma comprobación es cómo nace la próxima
+contradicción** — que es, literalmente, el defecto de este ticket.
 
-✅ **Se derivan las dos poblaciones de `git for-each-ref`**, leído en el test y **aparte del
-instrumento** — así conserva lo que motivaba la lista enumerada (cazar que el censo deje de ver una
-familia entera de ramas) sin poder envejecer:
+### ✅ Lo que yo defendía SÍ está cubierto por la suya, y mejor
 
-| antes | ahora |
-|---|---|
-| `total > 100` | `censo.resumen.total === RAMAS_DE_GIT.length` — el censo ve **todas** las que git tiene |
-| rastro de 4 números escritos | rastro de **todos** los números con rama (97 hoy) |
-| árbitro sobre 5 números escritos | árbitro sobre los **12 tickets con rama más recientes**, acotado porque pregunta rama a rama (SCRUM-753 midió 52,6 s sobre 491 refs) |
+Mi lista existía para cazar **ceguera de familia** (que el censo deje de ver los `scrum-8xx`).
+Comprobado sobre su fichero: su `CONTROL POSITIVO DERIVADO` hace exactamente eso, y su comentario
+lo dice con esas palabras — *«¿ha dejado el barrido de ver una familia entera de ramas?»*.
 
-Los cuatro del origen **siguen impresos** en la salida del test, como foto fechada; lo que ya no
-hacen es decidir.
+| | la mía | la de Javier |
+|---|---|---|
+| ceguera de familia | por NÚMERO de ticket (97 números) | **por RAMA**: toda rama que `for-each-ref` lista tiene que estar agrupada bajo su número |
+| ramas inventadas | no lo miraba | **sí**: ninguna rama ajena metida en un ticket |
+| umbral de población | derivado | derivado, **y con un test por AST que prohíbe cualquier umbral escrito a mano en ese fichero** |
 
+**No se añade nada encima.** Está cubierto y con más alcance del que yo le daba.
+
+### Lo único que sí quedó desfasado por MI cambio, y se corrige
+
+Su nota del control ② decía «se pregunta con la MISMA regla que usa el instrumento
+(`numeroDeClave`)». Desde este ticket el instrumento agrupa con `numeroDeRama`. **Su comprobación
+no cambia** —es la permisiva, y todo lo que la regla anclada agrupa cumple también la subcadena—;
+lo que se corrige es la nota, para que no nombre una función que ya no es la que agrupa.
 ## 6 · Verificación — los rojos, provocados uno a uno
 
 | | |
@@ -170,14 +179,17 @@ hacen es decidir.
 | 🔴 **③** | quitándole el `^` a la regla —el defecto de subcadena, literalmente— cae el test de 829 nombrando al impostor |
 | ✅ **positivo** | la rama BUENA `scrum-824b-…` sí agrupa en 824; sin esto, los vacíos de arriba no dirían nada |
 | ✅ **negativo** | cuatro impostores con `scrum-N` en medio, todos a `null`; y `scrum-824b`, `scrum-72`, `scrum-727` siguen resolviendo |
-| 🔴 **⑤ A** | haciendo que el censo pierda UNA rama, el suelo derivado lo dice con los dos números: «cuenta 96 y git tiene 97» |
-| 🔴 **⑤ B** | dejando al instrumento ciego a la familia `scrum-8xx`, caen **tres** tests — la propiedad que protegía la lista de cuatro, ahora sobre las 97 |
+| ⛔ **retirados** | los dos rojos que probé sobre `scrum804` (perder una rama · ceguera de familia) NO figuran aquí: aquel arreglo se retiró entero (§5). Los conserva la versión de Javier, con sus propios rojos |
 
 ⚠️ **Y un rojo que no lo era:** el primer intento del ③ lo hice con `sed` y **la mutación no se
 aplicó** — el test se quedó verde y eso NO es un rojo probado. Se rehízo comprobando la línea mutada
 antes de creerse el resultado.
 
 ## 7 · ⚠️ Y un accidente que hay que contar: popé el stash de otra sesión
+
+> ✅ **Ya no es sólo una anécdota: es la norma A15** de `docs/equipo/00-normas-comunes.md`,
+> escrita en este mismo ticket. Le pasó a la sesión 2 hace unos días y a la 3 el 8-sep: dos
+> veces es un patrón, no un accidente.
 
 Al comprobar si `scrum804` fallaba también sin mis cambios hice `git stash push` de cuatro
 ficheros y luego `git stash pop`. **El stash se comparte entre worktrees, igual que los refs.** Mi

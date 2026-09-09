@@ -177,9 +177,16 @@ test('SCRUM-804 · 🔴 CONTROL POSITIVO DERIVADO: la agrupación no pierde ni i
     + 'entonces la lista entera de este censo está incompleta y no se sabe cuánto.');
 
   // ② NINGUNA RAMA SE INVENTA. La otra mitad: un agrupador que metiera ramas ajenas en un ticket
-  // fabricaría paradas falsas, que es peor que no avisar. Se pregunta con la MISMA regla que usa
-  // el instrumento (`numeroDeClave`: `SCRUM-<n>` en el nombre), no con una más estricta — un guard
-  // que exige más que el código que vigila acusa en falso.
+  // fabricaría paradas falsas, que es peor que no avisar. Se pregunta por SUBCADENA —`scrum-<n>` en
+  // cualquier parte del nombre—, que es MENOS estricto que la regla del instrumento: un guard que
+  // exige más que el código que vigila acusa en falso.
+  //
+  // ⚠️ SCRUM-829 (8-sep-2026): esta nota decía «la MISMA regla que usa el instrumento
+  // (`numeroDeClave`)», y ya no lo es. `agruparRamas` agrupaba con `numeroDeClave` —subcadena— y
+  // por eso `revert-1192-scrum-824b-…` le salía como SCRUM-824; ahora agrupa con `numeroDeRama`,
+  // anclada al principio del nombre (`scripts/_numero-de-rama.mjs`). La comprobación de aquí NO
+  // cambia y sigue siendo la correcta, precisamente porque es la permisiva: todo lo que la regla
+  // anclada agrupa cumple también la subcadena.
   const inventadas = [];
   for (const [n, v] of censo.porTicket) {
     for (const r of v.ramas) {
