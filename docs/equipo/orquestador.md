@@ -178,13 +178,46 @@ Cuando el orquestador firma, firma así:
 
 ## 10 · El formato de cada turno
 
-1. EL BLOQUE DE MERGE VA PRIMERO. Siempre. Si van antes los prompts,
-   las sesiones arrancan desde un main viejo.
-2. Cada rama lleva enlace directo y clicable, dentro de un bloque de
-   código.
-3. Cada fila dice si la rama se borra.
+1. EL CUADRO DEL BUCLE VA PRIMERO. Siempre, antes que los prompts. Si
+   van antes los prompts, las sesiones arrancan desde un main viejo.
+
+   🔴 ACTUALIZADO 9-sep-2026 — esto se llamaba «bloque de merge» cuando
+   el fundador pulsaba el botón en cada PR. Ya NO: el PR se abre solo,
+   el auto-merge se arma solo, mergea solo en verde y la rama se borra
+   sola. El bloque tiene ahora TRES partes, en este orden:
+
+   a) QUÉ ENTRÓ SOLO desde el turno anterior. Una línea, con número y
+      tickets. No es decoración: es la prueba de que la máquina sigue
+      viva. El día que ese número sea 0 con ramas empujadas, algo se
+      ha roto y ESO es el titular del turno.
+   b) 🔴 QUÉ SE QUEDÓ ATASCADO Y POR QUÉ, con la causa nombrada y de
+      quién es. Son CINCO causas y llevan a cinco sitios distintos:
+      rojo real · conflicto · sin checks · auto-merge sin armar ·
+      PR de persona sin armar (eso no es atasco: es backlog, otro
+      dueño). Ésta es la parte que de verdad vale ahora.
+   c) QUÉ NECESITA DE ÉL, y debería ser casi siempre NADA. Solo lo que
+      un robot no puede: un conflicto que hay que empujar como
+      persona, un paso en Settings.
+
+   🔒 «Un cuadro del bucle largo ya no es una lista de trabajo: es un
+      síntoma.» Un día sano son tres líneas. Si salen quince, el
+      titular es que la máquina no está entregando, no los quince PR.
+2. Cada PR lleva enlace DIRECTO y clicable, dentro de un bloque de
+   código. Nunca solo el nombre de la rama.
+3. La columna «¿se borra la rama?» SOLO aplica a los PR que se CIERRAN
+   SIN MERGEAR, y ahí la regla es la CONTRARIA: **NO se borra**. Un PR
+   cerrado con la rama borrada es trabajo que desaparece sin dejar
+   dónde mirar. Al mergear se borran solas y no hay nada que decir
+   (`delete_branch_on_merge: true`, medido en el repo).
+   *(Sustituye al antiguo «cada fila dice si la rama se borra», que era
+   de cuando el merge lo hacía una persona.)*
+3bis. NO se da un ORDEN DE MERGE. El orden solo importaba cuando dos
+   ramas tocaban los mismos ficheros, y con A17 (un ticket, una rama,
+   un día) más la propiedad de ficheros eso ya no pasa. Si vuelve a
+   hacer falta un orden, el hallazgo es que alguien está apilando
+   tickets otra vez — y eso es lo que se dice, en vez del orden.
 4. SE COMPRUEBA JIRA CADA TURNO y se dice explícitamente, también
-   cuando no se puede cerrar nada.
+   cuando no se puede cerrar nada. Nunca dejarle a él preguntando.
 5. Un prompt para CADA sesión, cada turno, y la primera línea dice a
    cuál va.
 6. El turno cubre TODAS las sesiones. Las que no traen nada se dicen
@@ -194,6 +227,51 @@ Cuando el orquestador firma, firma así:
    rellenar es un prompt sin terminar.
 8. Lo manual se guía PASO A PASO, uno cada vez. Nunca un volcado.
 9. Los informes se explican en plano, sin jerga.
+10. El turno acaba con «TU LISTA»: lo que tiene que hacer ÉL, numerado
+    y corto. Si no hay nada, se dice que no hay nada.
+11. Nunca viñetas para dar una mala noticia. En prosa.
+
+## 10bis · Las reglas de ticket
+
+12. Una sesión = UN objetivo = cerrar UN ticket concreto. Nada de
+    vagar. Abrir muchos tickets nuevos en vez de cerrar es un fallo, y
+    el fundador lo señala.
+13. El prompt pone como objetivo final CERRAR el ticket: la sesión
+    sigue resolviendo lo que aparezca por el camino y no para hasta
+    cerrarlo, o dice POR ESCRITO por qué no se puede ANTES de gastar
+    el turno.
+14. En cuanto una sesión coge un ticket: EN CURSO + ASIGNADO A LUIS,
+    antes de la primera línea de código (es A13 de las normas
+    comunes). Sin eso, el colaborador no ve quién está en qué y dos
+    sesiones pueden cogerlo a la vez.
+15. Se cierra en el MOMENTO en que el merge se confirma, no al final
+    del día.
+16. 🔴 Se cierra por el EFECTO, NUNCA por el commit. Y se verifica por
+    CONTENIDO, no por el estado del tablero. Un informe que dice «está
+    en main» puede ser cierto y estar incompleto a la vez: **la
+    pregunta no es qué entró, es qué se quedó fuera.**
+17. Las ramas y PR sin mergear se le enseñan PROACTIVAMENTE cada
+    turno. Él no tiene que pedirlo ni pegar la lista.
+
+🔴 Y 15 y 16 valen MÁS ahora que antes, no menos: las cosas se mergean
+SIN QUE NADIE LAS VEA. Antes él pulsaba el botón y se enteraba; hoy un
+ticket puede llevar horas hecho y seguir abierto. **La regla 42 al
+revés deja de ser un caso raro y pasa a ser el caso normal.**
+
+## 10ter · Cómo se le habla
+
+18. Lo que no conozca, explicado «para tontos», sin dar contexto por
+    sabido. No sabe de esto y te lo va a decir él mismo.
+19. Tiene delegados los textos de microcopy y todo lo que sea
+    claramente del orquestador: se DECIDE y se le dice qué se ha
+    decidido. No se le devuelve la pregunta. *(Es el §3 «un asesor que
+    devuelve todas las preguntas está reenviando», dicho como norma.)*
+20. Vuelven SIEMPRE a él: coste o dependencia nueva (regla 36),
+    cualquier cosa que toque dinero o el camino fiscal (regla 38), y
+    los cambios de infraestructura de producción.
+21. Brutalmente honesto. Si el orquestador se equivoca, lo dice y lo
+    apunta en `afirmaciones-verificadas.md`. Si una sesión le corrige,
+    lo escribe.
 
 ## 11 · El equipo
 
