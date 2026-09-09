@@ -1,6 +1,6 @@
 # SCRUM-840 · Qué se puede romper en el camino del dinero sin que caiga ningún test
 
-**Medido contra:** `origin/main` = `54ad4a68b807b8f3e22c709947096fd48dd1d4ae` · 2026-09-09T16:31:04+02:00
+**Medido contra:** `origin/main` = `54ad4a68b807b8f3e22c709947096fd48dd1d4ae` · 2026-09-09T17:05:00+02:00
 **Rama:** `scrum-840-la-tanda-en-el-camino-del-dinero`
 
 > ⚠️ **Esta lista caduca.** La Sesión 1 está escribiendo AHORA en este camino (SCRUM-729). Por eso
@@ -51,15 +51,15 @@ domain/cerrojoSaturado.js          app/routes/libroRegistro.routes.js
 
 ## 3 · 🔴 LA LISTA · lo que se rompe sin que caiga nadie, ordenado por lo que pasa si se rompe
 
-**467 de 500 puntos medidos** · 31/31 ficheros · `pdf.service.js` incompleto (ver §5).
+**500 de 500 puntos** · **31/31 ficheros** · `pdf.service.js` 53/53. El camino entero, sin redondear.
 
 | | |
 |---|---|
-| **muertos** — cae un test, y el instrumento **dice cuál** | **261** |
-| vivos | **206** |
+| **muertos** — cae un test, y el instrumento **dice cuál** | **274** |
+| vivos | **226** |
 | — artefacto de `tsc` (`__esModule`): ruido de mutar `dist/` | 29 |
 | — proyecciones de Prisma (`select: { x: true }`) → §4, hallazgo aparte | 68 |
-| **— LÓGICA DE PRODUCTO que nadie caza** | **109** |
+| **— LÓGICA DE PRODUCTO que nadie caza** | **129** |
 
 ### El filtro que decide el trabajo de esta semana
 
@@ -68,10 +68,10 @@ tiene que estar **exportada** y su cuerpo **no tocar `prisma`** — si necesita 
 un test».
 
 ```
-109 puntos de lógica viva
- ├─ 41  ✅ función exportada y SIN prisma  → cabe en un test
+129 puntos de lógica viva
+ ├─ 48  ✅ función exportada y SIN prisma  → cabe en un test
  ├─  5  🔴 exportada pero toca prisma      → hace falta base de datos
- └─ 63  ⚠️ no exportada, o dentro de una función que no supe localizar
+ └─ 76  ⚠️ no exportada, o dentro de una función que no supe localizar
 ```
 
 ### 🔴 (a) Y (b) — ESTOS SON EL TRABAJO. Cambian lo declarado o el importe, y caben en un test
@@ -131,6 +131,57 @@ Que `select: { id: false }` no rompa nada **no** dice que falte un test de esa l
 **ese camino no se ejercita contra una base de datos en la tanda**. Es un hallazgo distinto, de otra
 familia, y va aparte: meterlo en la lista sería exactamente el porcentaje que este ticket no quiere.
 
+## 4bis · 🔴 LA CAPA QUE MI INSTRUMENTO NO DISTINGUÍA: el test que existe y CI no corre
+
+La Sesión 1 midió que `tests/scrum173-cadena-verifactu-serializada.test.mjs` cubre dos puntos que yo
+di por descubiertos. Está **GATEADO** (`QA_DB_TEST=1` + base de staging) y en `npm test` sale
+**7 skipped, 0 pass**. O sea que mi medición **es correcta para CI**, y le faltaba una capa: desde
+donde yo miro, **«no hay test» y «hay un test que no se corre» se ven igual**.
+
+> 🔒 Un test gateado que CI no corre no es un test que existe.
+
+**En el árbol hay 57 tests gateados** (55 por `QA_DB_TEST`, 1 `A55_DB_TEST`, 1 `BOT_SUITE_TEST`).
+
+### De los 129 vivos de lógica: **57 tienen un gateado que importa su módulo DIRECTAMENTE**
+
+| módulo | puntos | el gateado que lo importa |
+|---|---|---|
+| `verifactu.service.js` | **25** (líneas 58, 143, 144, 146, **234**, 314, **329**, 383, 401, 422, 457-459, 483, 497, 498, 521, 529, 629, 692, 700, 739) | `scrum173-cadena-verifactu-serializada` |
+| `pdf.service.js` | 25 | `scrum72-pdfs-privados` · `scrum76-email-adjunto` |
+| `invoiceLines.service.js` | 4 | `scrum178-emision-manual` |
+| `invoiceNumber.service.js` | 3 (137, 276, **316 — la serie por año**) | `scrum178` · `scrum207-emision-auditada` · `scrum234-carrera-serie.gated` |
+
+**Los otros 72 no tienen ningún gateado que los importe: ésos son «hay que escribir un test».**
+
+### ✅ Y confirma las dos que dejé sin clasificar
+
+`verifactu:234` y `:329` —**las dos puertas de `verifactu_seal_inside_transaction`**, que dije que
+eran «a ojo, de las más serias»— **están en la lista de scrum173**, cuyos tests se llaman
+literalmente *«sellar DENTRO de una transacción está prohibido»* y *«sellar una ANULACIÓN dentro de
+una transacción está prohibido»*.
+
+**Hay test. CI no lo corre.** Son dos trabajos distintos y ahora se distinguen.
+
+### ⛔ Lo que este recuento NO afirma
+
+Que un gateado **importe** el módulo no prueba que **mataría** el mutante — llegar no es cubrir, que
+es la lección entera de este ticket. No los he desgateado, así que informo de **alcance directo**, no
+de cobertura. Para `:234` y `:329` la confirmación viene del NOMBRE del test, no de haberlo corrido.
+
+### 🔴 Y aquí mi instrumento volvió a mentir, por tercera vez
+
+Mi primer detector de puertas dio **CERO gateados** sobre un árbol que tiene 57. Buscaba
+`process.env` **dentro** del `skip`, y el patrón real del árbol es:
+
+```js
+const ENABLED = process.env.QA_DB_TEST === '1';
+test('…', { skip: !ENABLED && '…' }, async () => { … });
+```
+
+Casaba el literal en vez de **seguir la variable** — exactamente el defecto que SCRUM-829 persiguió.
+Y el cero no me lo creí porque me habías dado un caso concreto: **sin ese contraejemplo lo habría
+publicado.**
+
 ## 5 · Lo que cuesta el motor, y si cabe en un PR
 
 **Medido, no estimado:** 110 puntos en **31,9 min** → **17,4 s por punto**. Y el coste por llamada,
@@ -145,7 +196,7 @@ coste ≈ muertos × (0,5 + 0,47·directos) + vivos × (0,5 + 0,47·directos + 0
 |---|---|---|---|---|---|
 | `verifactu.service.js` | 73 | 46 | 11 | 57 | **27,8 min** |
 | `invoiceNumber.service.js` | 37 | 15 | 14 | 76 | 13,4 min |
-| `pdf.service.js` | 53 | — | 17 | 92 | ~10,5 min |
+| `pdf.service.js` | 53 | 25 | 17 | 92 | 10,5 min |
 | … | | | | | |
 | `finalInvoice.service.js` | 9 | 3 | 1 | 1 | **0,2 min** |
 
