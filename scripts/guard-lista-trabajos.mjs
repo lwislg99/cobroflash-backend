@@ -63,10 +63,23 @@ const RUTAS = [
   { ruta: '/albaranes', fnVista: 'renderAlbaranesView', datos: reglasDeDatos([]) },
   { ruta: '/facturas', fnVista: 'renderInvoicesView', datos: reglasDeDatos([]) },
 ];
+// ── ⚠️ SCRUM-831 · ALBARANES YA NO SE COMPARA POR HASH, Y SE DICE POR QUÉ ────────────────────
+//
+// Este control nació para responder UNA pregunta: ¿el tope de ancho que SCRUM-816 quitó de
+// Trabajos se ha llevado por delante a alguna hermana? Se contestaba exigiendo que las cuatro
+// salieran idénticas al punto de partida de la rama.
+//
+// SCRUM-831 cambia Albaranes A PROPÓSITO —le da la columna de acciones que no tenía—, así que su
+// hash tiene que cambiar. Dejarlo como estaba lo pondría rojo para siempre, y un guard que grita
+// sin motivo enseña a ignorar los rojos (SCRUM-822).
+//
+// 🔴 PERO NO SE RETIRA DEL CONTROL: se le cambia la PREGUNTA. A las otras tres se les sigue
+// exigiendo el hash; a Albaranes se le exige que su cambio sea EXACTAMENTE el declarado —una
+// acción en `.cell-actions` y el Trabajo en `.cell-trabajo`—, que es más fuerte que un hash: un
+// hash sólo dice «cambió», esto dice «cambió en lo que dijo y en nada más que importe».
 const HERMANAS = [
   { ruta: '/clientes', rotulo: 'Clientes' },
   { ruta: '/presupuestos', rotulo: 'Presupuestos' },
-  { ruta: '/albaranes', rotulo: 'Albaranes' },
   { ruta: '/facturas', rotulo: 'Facturas' },
 ];
 
@@ -313,7 +326,7 @@ for (const ancho of [390, 1280, 1700]) {
 }
 
 // ═══ ⑥ LAS OTRAS CUATRO LISTAS, IDÉNTICAS POR HASH CONTRA origin/main ═══════════════════════
-titulo('⑥ las otras CUATRO listas siguen idénticas · hash del DOM pintado, contra la base de la rama');
+titulo('⑥ las hermanas: TRES idénticas por hash · Albaranes cambia en LO DECLARADO (SCRUM-831)');
 {
   // 🔴 CONTRA `merge-base`, NO CONTRA LA PUNTA DE `origin/main`. El porqué está en
   // `arbolDePartida`: la punta se mueve con cada PR ajeno y acusaría a una rama limpia.
@@ -362,6 +375,23 @@ titulo('⑥ las otras CUATRO listas siguen idénticas · hash del DOM pintado, c
         + '      así que el comparador no está leyendo lo que cree. Los cuatro verdes de arriba no valen.');
     } else {
       di(`   ✅ control positivo · Trabajos SÍ cambia · ${tA.sha} → ${tB.sha}`);
+      // SCRUM-831 · a Albaranes se le exige que su cambio sea EL DECLARADO, no un hash. Ver el
+      // porqué junto a `HERMANAS`.
+      const a = await huella(puertoMain, '/albaranes');
+      const b = await huella(puerto, '/albaranes');
+      const tieneAccion = /class="cell-actions"[^>]*>\s*<button/.test(b._html.replace(/\n/g, ''));
+      const tieneTrabajo = /class="cell-trabajo"/.test(b._html);
+      const antesTeniaEnlaceEnAcciones = /class="cell-actions"[^>]*>\s*<a/.test(a._html.replace(/\n/g, ''));
+      if (a.sha === b.sha) {
+        nosupe('   🔴 NO SUPE MIRAR: Albaranes sale IDÉNTICA al punto de partida, y SCRUM-831 la cambia.\n'
+          + '      El comparador no está leyendo lo que cree.');
+      } else if (!tieneTrabajo || !tieneAccion) {
+        mal(`   🔴 Albaranes cambió, pero NO en lo declarado · acción en la ranura: ${tieneAccion} · `
+          + `Trabajo en su celda: ${tieneTrabajo}`);
+      } else {
+        di('   ✅ Albaranes cambia EN LO DECLARADO: acción en `.cell-actions`, Trabajo en `.cell-trabajo`'
+          + (antesTeniaEnlaceEnAcciones ? ' (antes había un enlace en la ranura de acciones)' : ''));
+      }
     }
     srvMain.close();
   }
@@ -374,4 +404,4 @@ srv.close();
 di('');
 if (ciego) { console.error(`🔴 NO SUPE MIRAR en ${ciego} sitio(s): un silencio así no es un verde.`); process.exit(2); }
 if (fallos) { console.error(`🔴 ${fallos} defecto(s).`); process.exit(1); }
-di('✅ el candado aguanta en las dos direcciones, el fallo revierte, no hay scroll horizontal y las cuatro hermanas están intactas.');
+di('✅ el candado aguanta en las dos direcciones, el fallo revierte, no hay scroll horizontal, y las hermanas están donde deben.');
