@@ -350,9 +350,12 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'DESPLIEGA: producción se movió entre las dos lecturas',
   },
   {
-    // ③ El filtro de lo ilegible, apagado: un número del fallback de `env.ts` pasaría por sha.
+    // ③ El filtro de formato, apagado: una cadena que no es un sha pasaría igual.
+    // Reanclada tras SCRUM-824b (partió este filtro en dos líneas: formato por un lado,
+    // longitud de reloj por otro — ver `shaLegible()`); el ancla anterior citaba el `if` viejo,
+    // fusionado con `TODO_DIGITOS`, que ya no existe como tal.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
-    de: '  if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;',
+    de: '  if (!ES_SHA.test(s)) return null;',
     a: '  if (false) return null;',
     cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
   },
