@@ -351,8 +351,12 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // ③ El filtro de lo ilegible, apagado: un número del fallback de `env.ts` pasaría por sha.
+    // ⚠️ SCRUM-824b partió el filtro en DOS líneas (formato + longitud de reloj). El ancla apunta
+    // a la primera —el filtro de FORMATO—, que es la que deja pasar cualquier basura no numérica
+    // (`no-soy-un-sha`, `zzzzzzzz`, `abc`, cadenas vacías) en cuanto se apaga; la segunda línea la
+    // cubre `scrum824b-el-sha-que-parecia-un-numero.test.mjs` por su cuenta.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
-    de: '  if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;',
+    de: '  if (!ES_SHA.test(s)) return null;',
     a: '  if (false) return null;',
     cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
   },
