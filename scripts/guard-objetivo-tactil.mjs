@@ -89,6 +89,9 @@ import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL } from './_medidor-de-toque
 // `tests/` no es nuevo: ya lo hacen censo-internos-de-prisma, censo-tablero-vs-arbol y
 // diagnostico-dependencias.
 import { paginaDeClientes, paginaDeVista, CLIENTES_DE_MUESTRA, DETALLE_360_DE_MUESTRA, ARGUMENTOS_DE_VISTA } from './_pagina-panel.mjs';
+// SCRUM-842 · el mismo Trabajo de muestra que usa `guard-escalera-por-estado.mjs`, para no
+// inventar una segunda forma de Trabajo con otros campos.
+import { trabajosDeMuestra } from './_trabajos-de-muestra.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
@@ -193,6 +196,27 @@ const DATOS_791 = (url) => {
   if (/\/albaranes\//.test(u)) return { id: 1, estado: 'borrador', lines: [], items: [] };
   return [];
 };
+// ═══ SCRUM-842 · EL TRABAJO DE LA FICHA, Y POR QUÉ HACÍA FALTA UNO ═══════════════════════════
+//
+// `renderJobDetailView` pide `/admin/jobs/:id`, y hasta hoy `DATOS_791` no tenía caso para esa
+// ruta: caía al `[]` por defecto, y el CTA del héroe (`.btn-primary`) se pintaba igual porque
+// `jobNextAction` caía al nivel 5 («+ Nuevo albarán») en cuanto no había `albaranes`, sin mirar
+// el estado. SCRUM-823 le puso puerta a eso: los documentos sólo se ofrecen en `en_curso` o
+// `terminado`, y el resto de niveles también exigen un `status` real. Un `job` vacío no cae en
+// NINGUNO, así que el CTA dejó de pintarse — y este guard se quedó CIEGO (5 de 6) sin que nadie
+// tocara AB6 ni la excepción `BUTTON.btn-primary` que ya lo declaraba.
+//
+// El mismo Trabajo que usa `guard-escalera-por-estado.mjs` (`trabajosDeMuestra`), para no
+// inventar una segunda forma de Trabajo: `pendiente_agendar` basta para que la escalera decida
+// «Agendar» y pinte el CTA — el selector que vigila la excepción no mira el rótulo.
+const JOB_JOBDETAIL = { ...trabajosDeMuestra(1, { conDocumentos: false })[0], id: 1 };
+const DATOS_JOBDETAIL = (url) => {
+  const u = String(url || '');
+  if (/\/admin\/jobs\/1\/gastos/.test(u)) return [];
+  if (/\/admin\/jobs\/1/.test(u)) return JOB_JOBDETAIL;
+  if (u.includes('/admin/merchant')) return { id: 1, name: 'Fontanería Soler' };
+  return [];
+};
 /** El elemento de la SONDA: 12 px, deliberadamente por debajo de todo. */
 const SONDA_TEXTO = '·';
 const SONDA_HTML = '<button id="__sonda-791" style="width:12px;height:12px;padding:0;border:0">' + SONDA_TEXTO + '</button>';
@@ -226,7 +250,8 @@ const SUPERFICIES_791 = [
   // eso nunca estuvo entre los cortos. O sea que la vista no ha dejado de pintar nada que
   // debiera: hay un objetivo menos porque hay un botón menos, y encima uno que no cumplía AB6.
   { ruta: '/__quotes', vista: 'renderQuotesView', titulo: 'editor de presupuesto', distintosEsperados: 7 },
-  { ruta: '/__jobdetail', vista: 'renderJobDetailView', titulo: 'ficha de Trabajo', distintosEsperados: 6 },
+  { ruta: '/__jobdetail', vista: 'renderJobDetailView', titulo: 'ficha de Trabajo',
+    datos: DATOS_JOBDETAIL, args: [1], distintosEsperados: 6 },
   // 🔴 SCRUM-795 · LA FICHA 360, y por qué entra AHORA y no en SCRUM-791.
   //
   // El censo de SCRUM-787 no pudo proponerla: la 360 nunca llegó a montarse. El banco llamaba a

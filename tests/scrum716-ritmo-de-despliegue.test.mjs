@@ -351,8 +351,12 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // ③ El filtro de lo ilegible, apagado: un número del fallback de `env.ts` pasaría por sha.
+    // 🔴 SCRUM-842 · ancla RE-FECHADA tras SCRUM-824b (`278a8bd7`): aquella pieza partió esta
+    // condición en dos líneas (por longitud de reloj, no por «todo dígitos») y el ancla vieja
+    // dejó de existir tal cual en el fuente — el meta-guard se quedó CIEGO, no MUDO: el filtro
+    // sigue vivo, sólo cambió de línea. Se apunta a la que hoy rechaza el fallback del reloj.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
-    de: '  if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;',
+    de: '  if (TODO_DIGITOS.test(s) && LONGITUDES_DE_RELOJ.has(s.length)) return null;',
     a: '  if (false) return null;',
     cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
   },
