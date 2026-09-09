@@ -3427,7 +3427,17 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   .table--albaranes td.cell-trabajo a { display: inline-flex; align-items: center; min-height: 44px; }
 }
 
-/* SCRUM-713b · el buscador de cliente del presupuesto.
-   Venía como `style.cssText` desde `quotesView.js`. Mismos tres valores, sin cambiar un píxel:
-   el `min-height` de 44 es AB6 y no se toca. */
-.quote-buscador-cliente { width: 100%; min-height: 44px; margin-bottom: 6px; }
+/* SCRUM-713b/c · el buscador de cliente del presupuesto.
+   Venía como `style.cssText` desde `quotesView.js` (SCRUM-713b lo mudó aquí). El `min-height: 44px`
+   es AB6 y no se toca.
+
+   SCRUM-713c añade `min-width: 0` y `box-sizing`, portados de la OTRA implementación de este mismo
+   ticket: sin ellos el campo se desborda de su columna en pantallas estrechas, y aquella ya lo
+   había medido. Es exactamente lo que se buscaba al leer su trabajo — lo que tiene y main no. */
+.quote-buscador-cliente {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  margin-bottom: 6px;
+  box-sizing: border-box;
+}
