@@ -3394,6 +3394,39 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   .jobs-filtro-tecnico { margin-left: 0; width: 100%; }
 }
 
+/* ═══ SCRUM-831 · LA LISTA DE ALBARANES RECUPERA SU RANURA DE ACCIONES ═══════════════════════
+   Medido en el censo de las cinco listas (8-sep-2026): era la ÚNICA con `.cell-actions` ocupada
+   por un enlace a otra pantalla, y la única con CERO acciones en la fila. El enlace al Trabajo
+   pasa a `cell-trabajo` y las acciones recuperan `cell-actions`.
+
+   Los tres de abajo venían como `style.cssText` desde `albaranesView.js`. Mismos valores, sin
+   cambiar un píxel — y el trinquete de estilos en línea SÓLO BAJA. */
+.alb-enlace { color: var(--green-700); }
+.alb-numero { font-weight: 600; color: var(--green-700); }
+.alb-chip-cobro { margin-left: 6px; }
+
+@media (max-width: 640px) {
+  /* La tarjeta de ESTA tabla gana un área para el Trabajo, que hasta hoy tomaba prestada la de
+     `actions`. Se redefine SÓLO para `.table--albaranes`: añadirla a la rejilla COMPARTIDA habría
+     movido las cuatro listas hermanas de golpe, que es justo lo que un modificador evita — el
+     mismo razonamiento y el mismo patrón que `.table--trabajos` en SCRUM-727b.
+
+     El Trabajo se queda a ANCHO COMPLETO, que es lo que pedía su comentario original: un título de
+     obra no cabe en media tarjeta. */
+  .table--albaranes tbody tr {
+    grid-template-areas:
+      "id       status"
+      "client   status"
+      "date     date"
+      "trabajo  trabajo"
+      "actions  actions";
+  }
+  .table--albaranes td.cell-trabajo { grid-area: trabajo; font-size: 12.5px; }
+  /* AB6 · el enlace del Trabajo CONSERVA el objetivo de 44 px que tenía por vivir en `actions`.
+     Cambiar de área no puede encoger un objetivo táctil: eso sería pagar el arreglo con un dedo. */
+  .table--albaranes td.cell-trabajo a { display: inline-flex; align-items: center; min-height: 44px; }
+}
+
 /* SCRUM-713b · el buscador de cliente del presupuesto.
    Venía como `style.cssText` desde `quotesView.js`. Mismos tres valores, sin cambiar un píxel:
    el `min-height` de 44 es AB6 y no se toca. */

@@ -800,6 +800,10 @@ export function clasesEscritas(fuente, nombre = 'x.js') {
 export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'aiQuoteAssistant.js',
   'albaranActionsRegistry.js',
+  // SCRUM-831 · el siguiente paso de un albarán, sacado de `jobDetailView.js` para que la LISTA
+  // pudiera nombrarlo: es el movimiento de SCRUM-366 por tercera vez. Sus relaciones de orden se
+  // declaran abajo — si cargara después de sus consumidores, la pantalla revienta al abrirse.
+  'albaranAccion.js',
   // SCRUM-606 (ALB-01): el buscador de presupuesto de «Nuevo albarán». Va ANTES de
   // `albaranesView.js`, que es quien lo abre, y después de `modalHeader.js` y `atajoNuevo.js`,
   // de los que lee la cabecera del modal y el rótulo. Ambas relaciones se DECLARAN abajo.
@@ -962,6 +966,12 @@ export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   { antes: 'signaturePad.js', despues: 'parteDetailView.js', motivo: 'SCRUM-652: el parte abre el pad de firma' },
   // SCRUM-823 · las DOS pantallas ejecutan «Agendar» desde aquí. `jobsView` además le pide
   // `jobsModal`, que se mudó con él, así que sin este orden la lista no monta.
+  // SCRUM-831 · las TRES superficies que preguntan cuál es el siguiente paso de un albarán. Y
+  // `albaranAccion` lee el registro y el resolutor del patrón, así que va detrás de los dos.
+  { antes: 'albaranActionsRegistry.js', despues: 'albaranAccion.js', motivo: 'SCRUM-831: la tabla de acciones que lee' },
+  { antes: 'patronDetalleAcciones.js', despues: 'albaranAccion.js', motivo: 'SCRUM-831: `destinoEfectivo`, el resolutor' },
+  { antes: 'albaranAccion.js', despues: 'albaranesView.js', motivo: 'SCRUM-831: la primaria de cada fila' },
+  { antes: 'albaranAccion.js', despues: 'jobDetailView.js', motivo: 'SCRUM-831: las filas de documento del Trabajo' },
   { antes: 'jobAgendar.js', despues: 'jobsView.js', motivo: 'SCRUM-823: agendar y el modal de la casa' },
   { antes: 'jobAgendar.js', despues: 'jobDetailView.js', motivo: 'SCRUM-823: el CTA «Agendar» del héroe' },
   { antes: 'colaDeFirmas.js', despues: 'parteDetailView.js', motivo: 'SCRUM-652: firma con la cola que ya existe' },

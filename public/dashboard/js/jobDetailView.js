@@ -270,20 +270,24 @@ function albFechaCorta(w) {
   return w ? new Date(w).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : '';
 }
 
-function ctxAlbaranEnFila(alb) {
-  return {
-    // Tres valores (`sin_facturar` · `parcial` · `facturado`), no un booleano: en una obra por
-    // fases `parcial` es lo normal, y aplanarlo escondería que AÚN QUEDA algo que facturar.
-    'valorado-con-pendiente': alb.modoValoracion === 'VALORADO' && alb.estadoFacturacion !== 'facturado',
-  };
-}
-
-/** La acción primaria de este albarán según C2, o `null` si su estado no tiene siguiente paso. */
-function primariaDeAlbaran(alb) {
-  const registro = (typeof window !== 'undefined' && window.ALBARAN_ACTION_REGISTRY) || [];
-  const ctx = ctxAlbaranEnFila(alb);
-  return registro.find((a) => window.destinoEfectivo(a, alb.estado, ctx) === 'primaria') || null;
-}
+// ── SCRUM-831 · `ctxAlbaranEnFila` y `primariaDeAlbaran` YA NO VIVEN AQUÍ ────────────────────
+//
+// Se han mudado VERBATIM a `js/albaranAccion.js` (`ctxAlbaranDeFila` · `primariaDeAlbaran`), y el
+// motivo es el de SCRUM-366 por TERCERA vez: viviendo dentro de esta vista, **la lista de
+// Albaranes no podía preguntarles cuál es el siguiente paso de un albarán** — y por eso era la
+// única de las cinco listas de la casa con CERO acciones en la fila.
+//
+// 🔴 Y AL MUDARLO SE DESTAPÓ UN HUECO QUE ESTABA AQUÍ. El contexto de esta vista declaraba UNA
+// sola condición (`valorado-con-pendiente`) y el registro de SCRUM-302 tiene DOS primarias
+// contextuales para `firmado`. La otra —`sin-valorar-convertible`, la del parte SIN precios, que
+// es el modo POR DEFECTO— **no se evaluaba nunca aquí**, así que en esta ficha un albarán firmado
+// sin precios no ofrecía su siguiente paso aunque le tocara. El detalle del albarán sí la
+// calculaba. Dos copias del mismo contexto y ésta se había quedado a medias: exactamente lo que
+// pasa cuando una regla vive en dos sitios.
+//
+// Esta vista las sigue usando por el global, que es como se comparte todo en un panel sin bundler
+// (regla 4). El que usa el nombre viejo dentro de este fichero es `destinoEnFila`, aquí debajo.
+const ctxAlbaranEnFila = (alb) => window.ctxAlbaranDeFila(alb);
 
 /**
  * Destino de UNA acción concreta en la fila, leído del registro de C2.
