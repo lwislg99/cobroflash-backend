@@ -145,6 +145,12 @@ Una pantalla se ordena por lo que se hace en ella, no por cómo están
 guardados los campos.
 La lista que decide qué se mira es la única que nadie mira.
 Contar no es avisar.
+Si el borrado de una rama puede cambiar tu medición, no estabas midiendo el
+trabajo: estabas midiendo el envase.
+Dos anclas para la misma comprobación no son redundancia: son la próxima
+contradicción esperando fecha.
+Un `git stash pop` a ciegas es un `git checkout` del trabajo de otro encima
+del tuyo.
 
 ## A11 · Cómo se actualiza esto
 
@@ -152,6 +158,25 @@ Cuando una sesión comete un error que volvería a cometer, se
 actualiza su línea de trampa recurrente. Cuando una frase nace de una
 medición, entra en A10. NO se añade una norma por cada susto: una
 norma que no ha costado nada dos veces es una norma que nadie lee.
+
+## A12 · Antes de cambiar una población, se censa quién mide sobre ella
+
+Antes de cambiar una POBLACIÓN (ramas, ficheros, tablas, filas), se censa qué
+guards miden sobre ella. **Un barrido correcto que rompe `main` sigue rompiendo
+`main`.**
+
+## A13 · Coger un ticket es moverlo en Jira, no empezar a escribir
+
+Nada más coger un ticket: **EN CURSO + ASIGNADO A LUIS** en Jira. Antes de la
+primera línea de código, no después. Un ticket que se trabaja sin estar En curso
+es trabajo que el colaborador no puede ver, y dos sesiones pueden cogerlo a la vez.
+
+## A14 · Todo informe empieza con la hora y el SHA
+
+Todo informe empieza con la **FECHA Y HORA de la medición** y el **SHA de
+`origin/main`** sobre el que se midió. Sin esas dos cosas, el orquestador no puede
+distinguir un informe de hace diez minutos de uno de hace seis horas — y ya ha
+mandado tres veces instrucciones basadas en un estado que había dejado de existir.
 
 ## A15 · `git stash` es estado COMPARTIDO: no se usa para apartar trabajo
 
@@ -183,3 +208,8 @@ la entrada.
 
 🔒 Un `git stash pop` a ciegas es un `git checkout` del trabajo de otro encima
 del tuyo.
+
+## A16 · Repite el encargo en una línea antes de empezar
+
+Al recibir un encargo, la sesión repite en UNA línea qué cree que se le ha pedido,
+antes de empezar. Los mensajes se pierden y nadie se entera hasta tres días después.
