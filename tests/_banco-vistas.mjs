@@ -846,6 +846,11 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'formaDePagoPorDefecto.js',
   'globalSearch.js',
   'homeView.js',
+  // SCRUM-845 · qué se puede hacer con una FACTURA, sacado de dentro de `renderInvoiceDetailView`
+  // para que la LISTA pudiera preguntarlo. Es el movimiento de SCRUM-366 por CUARTA vez, y el
+  // primero que encontró un instrumento —`censo:decisiones-encerradas`— en vez de una persona.
+  // Sus relaciones de orden se declaran abajo.
+  'invoiceAccion.js',
   'invoiceActionsRegistry.js',
   'invoiceDetailView.js',
   'invoicesView.js',
@@ -972,6 +977,17 @@ export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   { antes: 'patronDetalleAcciones.js', despues: 'albaranAccion.js', motivo: 'SCRUM-831: `destinoEfectivo`, el resolutor' },
   { antes: 'albaranAccion.js', despues: 'albaranesView.js', motivo: 'SCRUM-831: la primaria de cada fila' },
   { antes: 'albaranAccion.js', despues: 'jobDetailView.js', motivo: 'SCRUM-831: las filas de documento del Trabajo' },
+  // SCRUM-845 · `invoiceAccion` lee el registro de factura y el resolutor del patrón, igual que su
+  // hermano del albarán, así que va detrás de los dos.
+  //
+  // ⚠️ Y NO se declara `invoiceAccion.js` → `invoicesView.js`, que sería lo simétrico: en el índice
+  // la LISTA carga ANTES, y es correcto. La llama al PINTAR la tabla, no al cargarse, y para
+  // entonces el documento está entero. Declarar aquí un orden que el índice no cumple pondría rojo
+  // un guard por una dependencia que no existe — y el arreglo cómodo sería mover el `<script>`,
+  // tocando el orden de una pantalla que hoy funciona.
+  { antes: 'invoiceActionsRegistry.js', despues: 'invoiceAccion.js', motivo: 'SCRUM-845: la tabla de acciones que lee' },
+  { antes: 'patronDetalleAcciones.js', despues: 'invoiceAccion.js', motivo: 'SCRUM-845: `destinoEfectivo`, el resolutor' },
+  { antes: 'invoiceAccion.js', despues: 'invoiceDetailView.js', motivo: 'SCRUM-845: el estado y el destino de cada acción' },
   { antes: 'jobAgendar.js', despues: 'jobsView.js', motivo: 'SCRUM-823: agendar y el modal de la casa' },
   { antes: 'jobAgendar.js', despues: 'jobDetailView.js', motivo: 'SCRUM-823: el CTA «Agendar» del héroe' },
   { antes: 'colaDeFirmas.js', despues: 'parteDetailView.js', motivo: 'SCRUM-652: firma con la cola que ya existe' },
