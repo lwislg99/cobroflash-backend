@@ -1,0 +1,150 @@
+# .github/workflows/vigia-atascados.yml — SCRUM-840
+#
+# QUÉ HACE: cada tres horas mira qué PR llevan atascados y lo DICE. No arregla nada.
+#
+# POR QUÉ EXISTE, medido: el #1214 estuvo horas parado por conflicto y ninguna máquina se
+# enteró — lo vio una persona mirando la lista a mano, que es el trabajo que se venía a
+# eliminar. Y el #1212 llevaba desde ayer parado sin que nada lo dijera.
+#
+# ─────────────────────────────────────────────────────────────────────────────────────────
+# LAS DOS REGLAS QUE LO MANTIENEN LEGIBLE
+#
+#   · UN SOLO ISSUE, reescrito en cada pasada. Siempre al día, y reescribir no notifica.
+#   · COMENTARIO SOLO CUANDO LA LISTA EMPEORA (entra un PR nuevo, o uno cambia de causa).
+#     Un comentario por pasada es ruido, y el ruido se silencia el primer día. Si hay quince
+#     atascados, es UN aviso con los quince dentro.
+#
+# ─────────────────────────────────────────────────────────────────────────────────────────
+# 🔴 POR QUÉ ESTO USA EL `GITHUB_TOKEN` Y NO LA LLAVE DE LA APP — AL REVÉS QUE EL AVISADOR
+#
+# El avisador de rojos necesita la llave de la App precisamente porque sus comentarios TIENEN
+# que despertar a Claude. Aquí es lo contrario: este vigía habla con una PERSONA, y despertar
+# a Claude sería un accidente. Los eventos creados con el `GITHUB_TOKEN` por defecto NO crean
+# ejecuciones de workflow, así que usarlo es una segunda cerradura por debajo de la
+# comprobación de la mención: aunque el cuerpo la llevara, no arrancaría nada.
+#
+# Y la comprobación va igualmente, DENTRO del script (`cuerpoNoDebeDespertar`): es el espejo
+# exacto de la del avisador. El cuerpo lleva TÍTULOS DE PR dentro —texto que escribe otra
+# persona— así que basta un PR titulado con la mención. Una nota en un README no impide nada.
+#
+# ⚠️ `strict_required_status_checks_policy` se queda en `false` y NO es una palanca: gobierna
+# BEHIND, no DIRTY, así que subirlo no arregla un solo conflicto; lo que haría es invalidar
+# todos los PR abiertos varias veces al día con seis sesiones empujando. Está escrito en la
+# cabecera de `scripts/vigia-atascados.mjs`, que es donde se apoya el dato.
+name: Vigía de PR atascados
+
+on:
+  schedule:
+    # Cada tres horas. Justificación medida el 9-sep-2026: un PR sano se cierra en minutos, y
+    # el #1214 —el caso que motivó esto— tardó 1,2 h EN TOTAL con conflicto incluido y se
+    # mergeó solo. Por debajo de 2 h el vigía gritaría sobre PR que iban a resolverse solos;
+    # por encima de 6 h llegaría tarde. Se recalibra cuando haya días de pasadas.
+    - cron: '0 */3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+
+concurrency:
+  group: vigia-atascados
+  cancel-in-progress: false
+
+jobs:
+  vigilar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── 1 · REUNIR ────────────────────────────────────────────────────────────────────
+      # `gh` no existe dentro de node, así que los datos se reúnen aquí y la decisión la
+      # toma `scripts/vigia-pasada.mjs`, que sí se puede leer y ejecutar en la tanda.
+      - name: Reunir el estado de los PR abiertos
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh pr list --state open --limit 100 \
+            --json number,title,author,isDraft,labels,autoMergeRequest,createdAt,updatedAt,headRefOid \
+            > prs.json
+
+          : > estados.txt
+          for N in $(node -e "console.log(require('./prs.json').map(p=>p.number).join(' '))"); do
+            # `mergeStateStatus` se calcula en diferido — medido: UNKNOWN en 13 de 16 PR a la
+            # primera. Se reintenta; si sigue sin saberse NO se cuenta como limpio, lo dice
+            # el clasificador con SIN-ESTADO.
+            EST=UNKNOWN
+            for i in 1 2 3; do
+              EST="$(gh pr view "$N" --json mergeStateStatus -q .mergeStateStatus 2>/dev/null || echo UNKNOWN)"
+              [ "$EST" != "UNKNOWN" ] && break
+              sleep 4
+            done
+            SHA="$(gh pr view "$N" --json headRefOid -q .headRefOid 2>/dev/null || echo '')"
+            NCHECKS=0
+            if [ -n "$SHA" ]; then
+              NCHECKS="$(gh api "repos/$REPO/commits/$SHA/check-runs" -q .total_count 2>/dev/null || echo 0)"
+            fi
+            echo "$N|$EST|$NCHECKS" >> estados.txt
+          done
+          echo "PR reunidos: $(wc -l < estados.txt)"
+
+      # ── 2 · DECIDIR Y COMPONER ────────────────────────────────────────────────────────
+      - id: pasada
+        name: Clasificar (con su suelo) y componer el cuerpo
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITULO: '[vigía] PR atascados'
+        run: |
+          NUM="$(gh issue list --state open --search "$TITULO in:title" --json number,title \
+                 -q "[.[] | select(.title==\"$TITULO\")] | .[0].number" 2>/dev/null || true)"
+          [ "$NUM" = "null" ] && NUM=""
+          echo "issue=$NUM" >> "$GITHUB_OUTPUT"
+
+          ANTES='[]'
+          if [ -n "$NUM" ]; then
+            ANTES="$(gh issue view "$NUM" --json body -q .body \
+                     | sed -nE 's/.*<!-- vigia-atascados:estado (.*) -->.*/\1/p' | head -1)"
+            [ -z "$ANTES" ] && ANTES='[]'
+          fi
+
+          ANTES="$ANTES" node scripts/vigia-pasada.mjs
+
+      # ── 3 · PUBLICAR ──────────────────────────────────────────────────────────────────
+      - name: Reescribir el issue, y comentar SOLO si empeora
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITULO: '[vigía] PR atascados'
+          NUM: ${{ steps.pasada.outputs.issue }}
+        run: |
+          if [ -z "$NUM" ]; then
+            NUM="$(gh issue create --title "$TITULO" --body-file cuerpo.md | grep -oE '[0-9]+$')"
+            echo "- **ISSUE-CREADO** — #$NUM" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          gh issue edit "$NUM" --body-file cuerpo.md > /dev/null
+
+          EMPEORA="$(node -p "require('./veredicto.json').empeora")"
+          if [ "$EMPEORA" = "true" ]; then
+            {
+              echo "La lista de PR atascados ha EMPEORADO. El detalle está arriba, en el cuerpo del issue."
+              echo
+              node -p "const v=require('./veredicto.json'); 'nuevos: '+(v.nuevos.join(', ')||'—')+' · cambiaron de causa: '+(v.cambiados.join(', ')||'—')"
+            } > aviso.md
+            gh issue comment "$NUM" --body-file aviso.md > /dev/null
+            echo "- **EMPEORA** — comentado en #$NUM." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- **SIN CAMBIOS A PEOR** — #$NUM reescrito en silencio, sin notificar." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # ── 4 · EL SUELO DEL VEREDICTO ────────────────────────────────────────────────────
+      - name: Veredicto del run
+        if: always()
+        run: |
+          if [ -f veredicto.json ]; then
+            node -p "const v=require('./veredicto.json'); 'atascados '+v.atascados+' · empeora '+v.empeora"
+          else
+            echo "::warning::La pasada no llegó a producir veredicto: no se puede afirmar que no haya atascados."
+            echo "- **SIN VEREDICTO** — la pasada no vale. Un cero de hoy no significa cero atascados." >> "$GITHUB_STEP_SUMMARY"
+          fi
