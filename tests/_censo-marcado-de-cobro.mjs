@@ -76,9 +76,14 @@ function creaEventoPagado(obj) {
  * El límite lo pone la estructura, no una lista: es «una llamada de escritura al modelo `charge`
  * cuyo `data` declara ese estado». Si mañana aparece una sexta ruta, entra sola.
  */
-export function censarMarcadores() {
+export function censarMarcadores(raiz = RAIZ) {
+  // 🔴 LA RAIZ ENTRA POR PARAMETRO (SCRUM-846), y es lo unico que cambia. Sin ella este censo no
+  // podia recibir un CASO CONOCIDO: leia siempre el arbol de verdad, asi que su cero era
+  // indistinguible de «no he sabido mirar». Con un `raiz` fabricado se le puede poner delante un
+  // marcador que sabemos que esta y exigir que lo vea. El valor por defecto no cambia nada para
+  // quien ya lo llamaba.
   const salida = [];
-  for (const fichero of ficherosTs(path.join(RAIZ, 'src'))) {
+  for (const fichero of ficherosTs(path.join(raiz, 'src'))) {
     const codigo = fs.readFileSync(fichero, 'utf8');
     const sf = ts.createSourceFile(path.basename(fichero), codigo, ts.ScriptTarget.Latest, true);
     (function walk(n) {
@@ -120,9 +125,9 @@ export function censarMarcadores() {
  * evento de tipo `paid`, o de `updatedAt` sobre algo que se llame como un cobro. Lo que importa de
  * cada uno es si pasa por el lector común.
  */
-export function censarLectores() {
+export function censarLectores(raiz = RAIZ) {
   const salida = [];
-  for (const fichero of ficherosTs(path.join(RAIZ, 'src'))) {
+  for (const fichero of ficherosTs(path.join(raiz, 'src'))) {
     if (rel(fichero).includes('billing/domain/instanteDeCobro')) continue; // es el lector
     const codigo = fs.readFileSync(fichero, 'utf8');
     const sf = ts.createSourceFile(path.basename(fichero), codigo, ts.ScriptTarget.Latest, true);
