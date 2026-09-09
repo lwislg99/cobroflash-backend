@@ -102,6 +102,11 @@ function montar(status, { yaRectificada = null } = {}) {
     update: async ({ data }) => ({ id: 11, ...data }),
   };
   p.merchant = { findUnique: async () => MERCHANT };
+  // SCRUM-729 · la R1 hereda el congelado de la original; con la original anterior al escritor
+  // cae a leer la ficha viva antes de la transacción, y sin doble se va al Prisma de verdad.
+  p.customer = {
+    findFirst: async () => ({ name: 'Cliente QA', legalName: null, taxId: null, email: null, phone: null }),
+  };
   const tx = new Proxy({
     invoice: { create: async ({ data }) => { cap.emitida = data; return { ...data, id: 11, number: 'F-2026-R-001', total: { toString: () => data.total } }; } },
     merchant: {

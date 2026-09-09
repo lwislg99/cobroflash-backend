@@ -18,6 +18,7 @@
 //   · el sellado VeriFactu va FUERA de la transacción y EN SERIE (SCRUM-173).
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { emitInvoice } from '../../invoicing/domain/invoicing.service';
+import { congelarCliente } from '../../invoicing/domain/clienteCongelado'; // SCRUM-729
 import { applyVeriFactu } from '../../invoicing/domain/verifactu.service';
 import { isReceiptNumber } from '../../invoicing/domain/invoiceNumber.service';
 import { calcVatBreakdown } from '../../invoicing/domain/vat.service';
@@ -70,6 +71,11 @@ export async function emitirRecapitulativas(
 ): Promise<{ facturas: FacturaEmitida[]; sinSellar: string[] }> {
   const { merchantId, customerId, currency, taxId, grupos, actor } = params;
 
+  // SCRUM-729 · UNA sola lectura para TODAS las facturas del lote, y fuera de la transacción.
+  // La recapitulativa emite N facturas al mismo cliente en la misma tanda: congelarlas todas con
+  // la MISMA foto es además lo correcto —son el mismo acto de emisión— y evita N viajes.
+  const clienteCongelado = await congelarCliente(prisma, merchantId, customerId);
+
   const facturas = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const out: FacturaEmitida[] = [];
     for (const g of grupos) {
@@ -99,6 +105,7 @@ export async function emitirRecapitulativas(
       const invoice = await emitInvoice(tx, {
         merchantId, customerId, total, currency, type: 'F1', lines, albaranRefs, quoteId: null, actor,
         origen: 'C7-recapitulativa', // SCRUM-347: recapitulativa mensual
+        clienteCongelado, // SCRUM-729 · la misma foto para todo el lote
       });
       // Robustez fiscal: una recapitulativa JAMÁS puede salir como justificante J-. Si
       // `allocateInvoiceNumber` devolviera serie receipt (porque el gate de modo miró un

@@ -75,6 +75,86 @@ que el `<select>` no puede mostrar—. Quien abra el ticket empieza por ahí, no
 
 ---
 
+## La reserva de número lee la serie F ENTERA del año, dentro del cerrojo
+
+**Medido el 9-sep-2026** · `origin/main` = `16997ef40e309368d9d1a725e355787c891a4154`
+
+### Qué pasa
+
+Emitir una factura hace **8 viajes a la base, 7 de ellos dentro del cerrojo de serie**
+(`tests/scrum728d-viajes-de-la-reserva.test.mjs`, medido en ejecución con un doble). El **cuarto**
+—`invoiceNumber.service.ts:509`— es el único cuyo COSTE crece:
+
+```ts
+const emitidas = await tx.invoice.findMany({
+  where: { merchantId, number: { startsWith: prefijoF } },
+  select: { number: true },
+});
+seq = siguienteSeqDeLaSerieF(emitidas.map((f) => f.number), year);
+```
+
+Se traen a node **todas** las facturas de la serie F de ese merchant **en el año en curso** y se
+busca el máximo **en memoria**. Escala con `N` = facturas F de ese merchant ese año; crece todo el
+año y se reinicia en enero.
+
+**Y está dentro del cerrojo**, que es `pg_advisory_xact_lock` de transacción: no se suelta hasta el
+COMMIT, así que todo lo que cuesta se serializa entre emisiones simultáneas — contra un presupuesto
+que **no crece con nada**, el `timeout` de 5 s por defecto de Prisma (SCRUM-728).
+
+### La curva, medida (no estimada)
+
+Ejecutando `siguienteSeqDeLaSerieF` compilada, 50 repeticiones por punto, con suelo: con 500
+emitidas tiene que devolver 501 o el guion aborta —si la derivación no acierta, no está midiendo
+lo que dice—.
+
+| N (facturas F del año) | derivar el máximo | payload de la consulta |
+|---|---|---|
+| 100 | 0,13 ms | 2,1 KB |
+| 500 | 1,39 ms | 10,3 KB |
+| 1.000 | 1,95 ms | 20,5 KB |
+| 2.500 | 5,89 ms | 51,3 KB |
+| 5.000 | 7,46 ms | 102,5 KB |
+| 10.000 | 18,85 ms | 205,1 KB |
+
+**Lineal, y barato en CPU**: 19 ms con diez mil facturas es imperceptible. Lo que crece de verdad
+es el **payload que cruza la conexión dentro del cerrojo**.
+
+⚠️ **Lo que esta medición NO cubre, dicho para que no se le suponga más:** la hidratación de N
+filas por parte de Prisma y el tiempo de red hasta la base. No se pueden medir sin base, y son
+justamente los dos términos que en la práctica dominan. **Quien abra el ticket los mide primero**,
+con una base de verdad — mismo aviso que la entrada de `listCustomers` con la descarga en 4G.
+
+### El umbral: **1.000 facturas de la serie F en un merchant y un año**
+
+Por qué ese número y no otro:
+
+- **Por debajo no hay nada que arreglar, y está medido**: con 1.000 la derivación cuesta 1,95 ms y
+  el payload 20,5 KB. Dentro de una sección crítica con 5.000 ms de presupuesto, eso es el 0,04 %.
+- **Y por encima este NO es el primer problema.** `MAX_REGISTROS_POR_ENVIO = 1000`
+  (`registro.builder.ts`): un merchant con más de 1.000 facturas en el ejercicio **ya no puede
+  generar su XML anual** — `verifactu_demasiados_registros` lo corta en claro. O sea que el 1.000
+  ya es una frontera del producto, medida y escrita, y cruzarla obliga a una revisión de todos
+  modos. **Este viaje se arregla DENTRO de esa revisión, no antes y no aparte.**
+- Usar un número más bajo sería pedir una sesión para ahorrar dos milisegundos; uno más alto sería
+  ponerlo detrás de un fallo que ya salta antes.
+
+### Por qué hoy NO es un ticket
+
+**Cero merchants reales**, y en producción hay **55 filas en `invoices` en total**
+(`docs/MIGRATIONS_PENDING.md`, 7-10-ago-2026) contando todos los merchants y todos los años.
+Llegar a 1.000 en un solo merchant y un solo año son ~4 facturas por día laborable, todos los días.
+Regla 37: sin víctima hoy, no hay ticket.
+
+### El arreglo, cuando toque
+
+`orderBy: { number: 'desc' }, take: 1` sobre el mismo `where`: el índice `@@unique([merchantId,
+number])` lo resuelve sin traer filas. **Funciona porque la secuencia va con relleno de ceros a 4
+dígitos** (`F260007`), así que el orden de texto y el numérico coinciden dentro del mismo año —
+hasta `F269999`. Esa condición es parte del arreglo, no un detalle: si alguien quita el relleno, la
+optimización empieza a devolver el máximo equivocado y **en silencio**.
+
+---
+
 ## Al volver a una lista con «atrás», los FILTROS se pierden
 
 **Medido el 9-sep-2026** · `origin/main` = `2119c430` · en navegador real, 390 px

@@ -20,6 +20,8 @@ import { datosDeTrabajoDirecto, filaDeTrabajoDirecto, tituloDeTrabajo } from '..
 import { veredictoAlbaranSinPresupuesto } from '../../domain/albaranSinPresupuesto'; // SCRUM-684
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
+import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-173
 import { allocateAlbaranNumber } from '../../domain/albaranNumber.service';
 // SCRUM-358 (H3): el alta de albarán, idempotente.
@@ -1364,6 +1366,10 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
     exigirTiposDeIvaEmitibles(scaledLines);
 
+    // SCRUM-729 · fuera de la transacción a propósito: aquí el cerrojo de serie se toma en la
+    // PRIMERA línea de la tx (SCRUM-814), así que cualquier lectura de dentro se serializa.
+    const clienteCongelado = await congelarCliente(prisma, quote.merchantId, quote.customerId);
+
     const invoice = await prisma.$transaction(async (tx) => {
       // ── SCRUM-814 · EL CERROJO PRIMERO, Y EL RECUENTO DENTRO ─────────────────────────────
       //
@@ -1391,21 +1397,19 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
         camino: 'C2', actor: actorDeRequest(req),
       });
-      return tx.invoice.create({
-        data: {
-          merchantId: quote.merchantId,
-          customerId: quote.customerId,
-          quoteId: quote.id,
-          number: invoiceNumber,
-          type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0 (regla 26)
-          total: tramo.amount.toFixed(2),
-          stageLabel: isCustomPlan ? tramo.stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
-          currency: quote.currency,
-          lines: tramo.scaledLines.length > 0 ? tramo.scaledLines : undefined,
-          pdfUrl: 'PENDING_PDF',
-          qrData: 'PENDING_QR',
-          registerId: null,
-        },
+      return crearFacturaEmitida(tx, clienteCongelado, {
+        merchantId: quote.merchantId,
+        customerId: quote.customerId,
+        quoteId: quote.id,
+        number: invoiceNumber,
+        type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0 (regla 26)
+        total: tramo.amount.toFixed(2),
+        stageLabel: isCustomPlan ? tramo.stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
+        currency: quote.currency,
+        lines: tramo.scaledLines.length > 0 ? tramo.scaledLines : undefined,
+        pdfUrl: 'PENDING_PDF',
+        qrData: 'PENDING_QR',
+        registerId: null,
       });
     });
 

@@ -46,6 +46,33 @@ import ts from 'typescript';
 /** El embudo. Único asignador de números de factura del backend (invoiceNumber.service.ts). */
 export const EMBUDO = 'allocateInvoiceNumber';
 
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-729 · EL CENSO SIGUE AL CÓDIGO, Y AQUÍ EL CÓDIGO SE MOVIÓ A PROPÓSITO
+//
+// Los siete `tx.invoice.create` de `src/` pasaron a UN envoltorio, `crearFacturaEmitida`, para que
+// el cliente congelado se escriba en un solo sitio. Eso dejó a este censo mirando un `create` que
+// hace `{ ...datos }`: no ve el `number`, y lo llamó fuga. **Tenía razón** — lo que dejó de ser
+// visible AHÍ es un hecho.
+//
+// La respuesta no es una excepción por nombre («si se llama así, pasa»), que es como se vacían los
+// guards. Es MOVER LA PREGUNTA al sitio donde el hecho vive ahora: cada llamada a
+// `crearFacturaEmitida(tx, cliente, datos)` se analiza EXACTAMENTE igual que se analizaba su
+// `create` —¿de dónde sale `number`?—, y el `create` de dentro del envoltorio se admite SÓLO
+// porque está en ese fichero y porque es el ÚNICO.
+//
+// El censo sale reforzado, no relajado: antes comprobaba 7 creaciones; ahora comprueba las 7
+// llamadas MÁS que no exista ninguna otra puerta de creación en todo `src/`.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+/** El único creador de filas `Invoice` del backend (SCRUM-729). */
+export const ENVOLTORIO = 'crearFacturaEmitida';
+
+/**
+ * Y su fichero. La excepción va anclada a la RUTA y no al nombre de la función: copiar el cuerpo
+ * del envoltorio a otro sitio vuelve a salir en rojo, que es justo lo que tiene que pasar.
+ */
+export const RUTA_ENVOLTORIO = 'src/modules/invoicing/domain/crearFacturaEmitida.ts';
+
 /** Métodos de Prisma que pueden dejar una fila `Invoice` nueva en la tabla. */
 const METODOS_CREACION = new Set(['create', 'createMany', 'createManyAndReturn', 'upsert']);
 
@@ -143,6 +170,15 @@ function motivoDeFuga(llamada, sf) {
   if (!ts.isObjectLiteralExpression(data)) {
     return '`data` no es un objeto literal: el número puede venir de cualquier sitio';
   }
+  return motivoPorElData(data, llamada, sf);
+}
+
+/**
+ * La pregunta de siempre —¿de dónde sale `number`?— sobre el literal de datos, venga de un
+ * `create({ data: … })` o del tercer argumento de `crearFacturaEmitida`. Se extrajo para que las
+ * dos formas se juzguen con EL MISMO criterio y no puedan divergir (SCRUM-729).
+ */
+function motivoPorElData(data, llamada, sf) {
   const numero = propiedad(data, 'number');
   if (!numero) {
     return 'la factura se crea SIN campo `number` — el número quedaría al criterio de la BD';
@@ -154,6 +190,20 @@ function motivoDeFuga(llamada, sf) {
     return `\`number\` sale de \`${numero.text}\`, y \`${numero.text}\` no viene de ${EMBUDO}()`;
   }
   return '`number` se construye a mano, sin pasar por el embudo';
+}
+
+/** SCRUM-729 · `crearFacturaEmitida(tx, cliente, datos)`: el literal de datos es el TERCERO. */
+function motivoDelEnvoltorio(llamada, sf) {
+  const datos = llamada.arguments[2];
+  if (!datos || !ts.isObjectLiteralExpression(datos)) {
+    return `\`${ENVOLTORIO}\` sin literal de datos: no hay forma de ver de dónde sale el número`;
+  }
+  return motivoPorElData(datos, llamada, sf);
+}
+
+/** ¿La ruta analizada ES el fichero del envoltorio? Comparación por sufijo normalizado. */
+function esElEnvoltorio(ruta) {
+  return String(ruta).split(path.sep).join('/').endsWith(RUTA_ENVOLTORIO);
 }
 
 /**
@@ -173,6 +223,11 @@ export function analizarFuente(codigo, ruta = 'anonimo.ts') {
     linea: sf.getLineAndCharacterOfPosition(nodo.getStart(sf)).line + 1,
     forma,
     motivo,
+    // SCRUM-729 · `true` sólo para el `create` de dentro del envoltorio. Es la IMPLEMENTACIÓN
+    // del creador, no una boca de emisión: no pide número, se lo dan hecho. Los guards que
+    // cruzan «llamadas al embudo == bocas de emisión» tienen que poder descontarla, y por eso
+    // se marca aquí y no se les pide que reconozcan una ruta cada uno.
+    implementacion: esElEnvoltorio(ruta) && forma.startsWith('invoice.create'),
   });
 
   const visitar = (n) => {
@@ -182,12 +237,25 @@ export function analizarFuente(codigo, ruta = 'anonimo.ts') {
       if (METODOS_CREACION.has(metodo) && receptorEsInvoice(n.expression)) {
         anota(
           n,
-          `invoice.${metodo}`,
-          metodo === 'create'
-            ? motivoDeFuga(n, sf)
-            : `\`${metodo}\` no puede acreditar que cada fila lleve un número del embudo`,
+          // SCRUM-729 · el `create` que vive DENTRO del envoltorio es su implementación: hace
+          // `{ ...datos }` y el `number` viene ya resuelto de la llamada, que se juzga aparte
+          // (caso 1-bis). La excepción va por RUTA, y el test exige además que sea el único.
+          esElEnvoltorio(ruta) && metodo === 'create'
+            ? `invoice.${metodo} (implementación de ${ENVOLTORIO})`
+            : `invoice.${metodo}`,
+          esElEnvoltorio(ruta) && metodo === 'create'
+            ? null
+            : metodo === 'create'
+              ? motivoDeFuga(n, sf)
+              : `\`${metodo}\` no puede acreditar que cada fila lleve un número del embudo`,
         );
       }
+    }
+
+    // 1-bis · SCRUM-729 · `crearFacturaEmitida(tx, cliente, datos)`. Es la creación REAL desde el
+    //         punto de vista del llamador, y se le hace la MISMA pregunta que antes al `create`.
+    if (ts.isCallExpression(n) && nombreDe(n.expression) === ENVOLTORIO && !esElEnvoltorio(ruta)) {
+      anota(n, ENVOLTORIO, motivoDelEnvoltorio(n, sf));
     }
 
     // 2 · escritura ANIDADA: `{ Invoice: { create: … } }` desde Merchant/Customer/Quote/Charge.

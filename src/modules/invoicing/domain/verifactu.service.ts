@@ -35,6 +35,7 @@ import {
   RegistroNoEmitibleError,
   resolverSinDestinatario,
 } from '../../fiscal/verifactu/registro.builder';
+import { clienteDelDocumento } from './clienteCongelado'; // SCRUM-729
 
 // SCRUM-145: los namespaces oficiales de los XSD de la AEAT vivían aquí (`NS_LR`, `NS_INFO`)
 // SOLO para el sobre que se armaba en este fichero. SCRUM-240 se llevó el sobre a
@@ -556,6 +557,12 @@ export async function buildVerifactuRegistrosXml(
     // SCRUM-145: vfTimestamp (sello real de la huella) y los campos de ANULACIÓN.
     include: {
       // SCRUM-145 (gap 6): el NIF del cliente decide si se puede emitir `Destinatarios`.
+      //
+      // SCRUM-729 · SE SIGUE CARGANDO, pero ya NO manda: es el respaldo para las facturas
+      // anteriores al escritor. El destinatario sale de las columnas congeladas de la propia
+      // factura (`clienteDelDocumento`). Hasta hoy este `include` decidía, para el ejercicio
+      // ENTERO y en el momento de EXPORTAR, qué NIF se le declaraba a la AEAT — así que
+      // corregir la ficha de un cliente cambiaba registros de facturas ya selladas.
       customer:  { select: { name: true, taxId: true } },
       // SCRUM-216: `lines` de la factura RECTIFICADA — de ahi salen la base y la cuota
       // SUSTITUIDAS que exige `ImporteRectificacion` en las rectificativas por sustitucion
@@ -790,7 +797,27 @@ export async function buildVerifactuRegistrosXml(
       );
     }
     const tipoBase: 'F1' | 'R1' = veredicto.tipoAeat;
-    const sinDestinatario = !inv.customer?.taxId
+
+    // ── 🔴 SCRUM-729 · EL DESTINATARIO SALE DE LA FACTURA, NO DE LA FICHA DE HOY ──────────────
+    //
+    // Éste es el lector que más dolía de los cuatro, y no es el PDF. Aquí el NIF del cliente NO
+    // sólo se imprime: DECIDE. Con `MODO_SIN_DESTINATARIO = 'SIN_DICTAMEN'`, una factura cuyo
+    // cliente no tiene NIF queda FUERA del registro de la AEAT. Leyendo en vivo, eso significaba:
+    //
+    //   · rellenar el NIF de un cliente en septiembre METÍA en el registro una factura de marzo
+    //     que se emitió sin destinatario identificado;
+    //   · y borrarlo o corregirlo la SACABA, o le cambiaba el `TipoFactura` a F2.
+    //
+    // Y `TipoFactura` es uno de los OCHO campos de `computeVeriFactuHash`. Al sellar sale de
+    // `invoice.type` (columna congelada, línea 333); al exportar salía de aquí. O sea que editar
+    // una ficha de cliente podía dejar el XML declarando un `TipoFactura` distinto del que está
+    // dentro de la huella que ese mismo XML lleva firmada.
+    //
+    // Un documento firmado cuyo contenido se recalcula al exportarlo no está firmado: está
+    // sellado sobre algo que ya no existe.
+    const destinatario = clienteDelDocumento(inv, inv.customer);
+
+    const sinDestinatario = !destinatario.taxId
       ? resolverSinDestinatario(tipoBase, inv.number, opts.modoSinDestinatario ?? MODO_SIN_DESTINATARIO)
       : null;
 
@@ -798,11 +825,11 @@ export async function buildVerifactuRegistrosXml(
     // Va entre `DescripcionOperacion` y `Destinatarios`: es el orden del XSD (sequence).
     const marcadorSinDestinatario = sinDestinatario ? sinDestinatario.marcadorXml : '';
 
-    const destinatarios = inv.customer?.taxId ? `
+    const destinatarios = destinatario.taxId ? `
       <sum1:Destinatarios>
         <sum1:IDDestinatario>
-          <sum1:NombreRazon>${xmlEscape(inv.customer.name || 'Cliente')}</sum1:NombreRazon>
-          <sum1:NIF>${xmlEscape(inv.customer.taxId)}</sum1:NIF>
+          <sum1:NombreRazon>${xmlEscape(destinatario.name || 'Cliente')}</sum1:NombreRazon>
+          <sum1:NIF>${xmlEscape(destinatario.taxId)}</sum1:NIF>
         </sum1:IDDestinatario>
       </sum1:Destinatarios>` : '';
 

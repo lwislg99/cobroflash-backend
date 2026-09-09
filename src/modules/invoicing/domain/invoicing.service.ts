@@ -15,6 +15,8 @@ import { allocateInvoiceNumber, isReceiptNumber, type OrigenC7 } from './invoice
 import type { DeductRef } from './finalInvoice.service'; // SCRUM-16/142 (#2)
 import type { ActorAudit } from '../../system/audit.service'; // SCRUM-207
 import type { TipoDocumento } from './tipoDocumento'; // SCRUM-413: union CERRADA
+import { crearFacturaEmitida } from './crearFacturaEmitida'; // SCRUM-729
+import type { ClienteCongelado } from './clienteCongelado'; // SCRUM-729
 
 export interface AlbaranRef {
   albaranId: number;
@@ -69,6 +71,17 @@ export interface EmitInvoiceInput {
    * saltarse.
    */
   origen: OrigenC7;
+  /**
+   * SCRUM-729 · OBLIGATORIO: el cliente TAL Y COMO ESTÁ EN ESTE INSTANTE.
+   *
+   * Lo lee el llamador con `congelarCliente(prisma, merchantId, customerId)` **antes de abrir la
+   * `$transaction`**, no esta función: dentro estaría detrás del `pg_advisory_xact_lock` de
+   * `allocateInvoiceNumber`, o sea un viaje más en la sección crítica que SCRUM-728 mide.
+   *
+   * Obligatorio por tipo, mismo patrón que `actor` y `origen`: un llamador nuevo no compila hasta
+   * declarar de qué cliente es la factura que emite.
+   */
+  clienteCongelado: ClienteCongelado;
 }
 
 /**
@@ -81,24 +94,23 @@ export async function emitInvoice(tx: Prisma.TransactionClient, input: EmitInvoi
     // orígenes se registraban igual.
     camino: input.origen, actor: input.actor,
   });
-  return tx.invoice.create({
-    data: {
-      merchantId: input.merchantId,
-      customerId: input.customerId,
-      quoteId: input.quoteId ?? null,
-      number,
-      // V0-0 (regla 26): si la serie salió J- (merchant real sin INVOICING_ES_ENABLED) → JUST.
-      type: isReceiptNumber(number) ? 'JUST' : (input.type ?? 'F1'),
-      total: input.total,
-      currency: input.currency,
-      lines: (input.lines as any) ?? undefined,
-      albaranRefs: (input.albaranRefs as any) ?? undefined,
-      deductsRefs: (input.deductsRefs as any) ?? undefined,
-      stageLabel: input.stageLabel ?? null,
-      // LAZY: se rellenan bajo demanda en ensureInvoicePdf (VeriFactu + PDF).
-      pdfUrl: 'PENDING_PDF',
-      qrData: 'PENDING_QR',
-      registerId: null,
-    },
+  // SCRUM-729 · el cliente de este instante entra por el envoltorio, en el MISMO `INSERT`.
+  return crearFacturaEmitida(tx, input.clienteCongelado, {
+    merchantId: input.merchantId,
+    customerId: input.customerId,
+    quoteId: input.quoteId ?? null,
+    number,
+    // V0-0 (regla 26): si la serie salió J- (merchant real sin INVOICING_ES_ENABLED) → JUST.
+    type: isReceiptNumber(number) ? 'JUST' : (input.type ?? 'F1'),
+    total: input.total,
+    currency: input.currency,
+    lines: (input.lines as any) ?? undefined,
+    albaranRefs: (input.albaranRefs as any) ?? undefined,
+    deductsRefs: (input.deductsRefs as any) ?? undefined,
+    stageLabel: input.stageLabel ?? null,
+    // LAZY: se rellenan bajo demanda en ensureInvoicePdf (VeriFactu + PDF).
+    pdfUrl: 'PENDING_PDF',
+    qrData: 'PENDING_QR',
+    registerId: null,
   });
 }
