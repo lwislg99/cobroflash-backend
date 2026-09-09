@@ -134,6 +134,38 @@ export function cuerpoDespierta(cuerpo) {
   return String(cuerpo || '').includes('@claude');
 }
 
+/**
+ * EL ESPEJO, PARA TODO LO DEMÁS QUE HABLA COMO EL BOT.
+ *
+ * `allowed_bots` se pone sobre la IDENTIDAD `yaqu-bot[bot]`, NO sobre un workflow. O sea que
+ * CUALQUIER cosa que hable como ese bot despierta a Claude si su texto lleva la cadena.
+ *
+ * CENSO MEDIDO el 9-sep-2026 sobre origin/main 16997ef4 — quién habla como el bot:
+ *
+ *   fichero                 habla como          escribe            ¿despierta hoy?
+ *   ─────────────────────── ─────────────────── ────────────────── ────────────────
+ *   avisador-rojo.yml       yaqu-bot[bot]       comentario de PR   SÍ, y es su función
+ *   pr-automatico.yml       yaqu-bot[bot]       CUERPO de PR       no
+ *   zona-roja.yml           github-actions[bot] comentario de PR   no
+ *
+ * `zona-roja.yml` queda fuera por identidad: comenta con `GITHUB_TOKEN`, y los eventos de ese
+ * token no crean ejecuciones. Ponerle el espejo sería una comprobación que no puede dispararse
+ * nunca, y una comprobación que nunca dispara no se distingue de una rota.
+ *
+ * `pr-automatico.yml` SÍ lo lleva. Su seguridad de hoy descansa en dos accidentes, y cualquiera
+ * de los dos lo puede quitar un cambio futuro sin que nadie lo note:
+ *   ① `claude.yml` solo escucha `issue_comment` y `pull_request_review_comment`, y un CUERPO de
+ *      PR no es ninguno de los dos;
+ *   ② ese workflow escribe un cuerpo, no un comentario.
+ *
+ * Devuelve true si el texto es SEGURO (no despierta a nadie). Es la negación exacta de
+ * `cuerpoDespierta`, y se escribe aparte para que el call-site diga qué quiere en vez de
+ * negar a mano.
+ */
+export function cuerpoNoDebeDespertar(cuerpo) {
+  return !cuerpoDespierta(cuerpo);
+}
+
 // ── CLI ────────────────────────────────────────────────────────────────────────────────────
 // Lee por stdin el JSON que reúne el workflow y escribe DOS líneas: el código y el motivo.
 // Sale 0 si hay que avisar, 1 si no. Así el workflow no reimplementa la decisión: la

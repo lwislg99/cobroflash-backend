@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { decidir, esDeFork, cuerpoDespierta, BOT } from '../scripts/puerta-avisador-rojo.mjs';
+import { decidir, esDeFork, cuerpoDespierta, cuerpoNoDebeDespertar, BOT } from '../scripts/puerta-avisador-rojo.mjs';
 
 const REPO = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const WORKFLOW = path.join(REPO, '.github', 'workflows', 'avisador-rojo.yml');
@@ -142,4 +142,51 @@ test('🔴 `allowed_bots` nombra al bot LITERAL y nunca un comodín', () => {
     'sin allowed_bots el aviso se publica y no despierta a nadie');
   assert.ok(!/allowed_bots:\s*["']?\*/.test(soloCodigo),
     'JAMÁS el comodín: a los bots permitidos no se les comprueban los permisos, y el repo es público');
+});
+
+// ── EL CENSO CON MECANISMO ────────────────────────────────────────────────────────────────
+// `allowed_bots` se pone sobre la IDENTIDAD `yaqu-bot[bot]`, no sobre un workflow: cualquier
+// cosa que hable como ese bot puede despertar a Claude si su texto lleva la mención. Hoy son
+// dos ficheros y los dos están cubiertos — pero el que escriba el tercero no va a saber que
+// esta regla existe. Una prohibición sin mecanismo es una frase.
+
+const DIR_WF = path.join(REPO, '.github', 'workflows');
+const sinComentarios = (t) => t.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n');
+
+/** Workflows que pueden HABLAR como el bot: los que acuñan el token de la App. */
+function vozDelBot() {
+  return fs.readdirSync(DIR_WF)
+    .filter((f) => f.endsWith('.yml'))
+    .filter((f) => sinComentarios(fs.readFileSync(path.join(DIR_WF, f), 'utf8'))
+      .includes('create-github-app-token'));
+}
+
+test('SUELO del censo: encuentra a los que YA SABEMOS que hablan como el bot', () => {
+  const censo = vozDelBot();
+  // Si esto sale corto, el censo está ciego y todo lo de abajo mide sobre un conjunto falso.
+  assert.ok(censo.includes('avisador-rojo.yml'), 'el avisador acuña token de App: el censo debe verlo');
+  assert.ok(censo.includes('pr-automatico.yml'), 'pr-automatico acuña token de App: el censo debe verlo');
+  assert.ok(censo.length >= 2, `censo demasiado corto (${censo.length}): está ciego`);
+});
+
+test('🔴 todo lo que habla como el bot pasa su texto por una de las dos comprobaciones', () => {
+  // Sin comentarios: la prosa que explica la regla nombra las funciones y se cazaría sola.
+  for (const f of vozDelBot()) {
+    const codigo = sinComentarios(fs.readFileSync(path.join(DIR_WF, f), 'utf8'));
+    const comprueba = /cuerpoDespierta|cuerpoNoDebeDespertar/.test(codigo);
+    assert.ok(comprueba,
+      `${f} habla como yaqu-bot[bot] y no comprueba su texto. O despierta a propósito ` +
+      '(cuerpoDespierta) o se prohíbe despertar (cuerpoNoDebeDespertar), pero no puede ' +
+      'quedar a merced de lo que traiga el texto.');
+  }
+});
+
+test('el espejo es la negación exacta, no una comprobación parecida', () => {
+  for (const c of ['@claude arregla esto', 'x @claude y', '@claude']) {
+    assert.equal(cuerpoNoDebeDespertar(c), false, 'un texto que despierta NO es seguro');
+    assert.equal(cuerpoDespierta(c), true);
+  }
+  for (const c of ['sin mención', '', 'claude sin arroba', 'correo@claudela.com']) {
+    assert.equal(cuerpoNoDebeDespertar(c), !cuerpoDespierta(c), 'tienen que ser exactamente opuestas');
+  }
 });
