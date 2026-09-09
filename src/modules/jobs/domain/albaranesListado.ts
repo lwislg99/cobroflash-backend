@@ -80,6 +80,16 @@ export interface FilaAlbaranListado {
    * convivían en `jobDetailView.js`. Un nombre para dos datos es el defecto hermano (SCRUM-398).
    */
   estadoFacturacion: EstadoCobro;
+  /**
+   * SCRUM-831 · los DOS que le faltaban a la fila para saber cuál es su siguiente paso.
+   *
+   * El registro de acciones (SCRUM-302) decide la primaria de `firmado` con estos dos más
+   * `estadoFacturacion`. Sin ellos las dos condiciones dan `false` y la fila se queda sin acción
+   * **por falta de dato**, que se pinta igual que «no hay nada que hacer» y significa lo contrario.
+   */
+  modoValoracion: 'VALORADO' | 'SIN_VALORAR';
+  /** Misma forma que en el detalle. Aquí sólo importa SI EXISTE, así que viaja el id y nada más. */
+  quote: { id: number } | null;
   clienteId: number | null;
   cliente: string | null;
   jobId: number;
@@ -145,8 +155,13 @@ export interface LectorListado {
     id: number; merchantId: number; jobId: number; numero: string;
     fecha: Date | string; createdAt: Date | string; estado: string;
     lineas: unknown; invoiceId: number | null;
+    // SCRUM-831 · columna del propio albarán: sin ella la fila no sabe si su siguiente paso es
+    // facturar lo entregado o convertirlo en factura contra el presupuesto.
+    modoValoracion: string;
   }>>;
-  jobs(filtro: { merchantId: number; ids: number[] }): Promise<Array<{ id: number; titulo: string | null; customerId: number }>>;
+  // SCRUM-831 · `quoteId` viaja con el Trabajo, que este listado ya carga en lote: cero consultas
+  // nuevas. Decide si un albarán SIN precios tiene contra qué facturarse.
+  jobs(filtro: { merchantId: number; ids: number[] }): Promise<Array<{ id: number; titulo: string | null; customerId: number; quoteId: number | null }>>;
   customers(filtro: { merchantId: number; ids: number[] }): Promise<Array<{ id: number; name: string | null; legalName: string | null }>>;
   libro(filtro: { merchantId: number; albaranIds: number[] }): Promise<Array<{ albaranId: number; lineaIndex: number; cantidad: unknown; invoiceId: number }>>;
 }
@@ -196,6 +211,25 @@ export async function listarAlbaranesDelMerchant(
       emisionAt: a.createdAt,
       estado: a.estado,
       estadoFacturacion: estadoCobroAlbaran(lineas, facturado, !!a.invoiceId),
+      // ── SCRUM-831 · LOS DOS DATOS QUE LE FALTABAN A LA LISTA PARA SABER QUÉ TOCA ────────────
+      //
+      // El registro de acciones de SCRUM-302 declara DOS primarias contextuales para `firmado`
+      // —`btnFacturar` (parte VALORADO) y `btnConvertirFactura` (SIN precios, contra su
+      // presupuesto)— y sus condiciones se calculan con `modoValoracion`, `quote` y
+      // `estadoFacturacion`. Sólo viajaba el tercero.
+      //
+      // 🔴 Y NO ERA «UN CAMPO DE MENOS»: sin ellos las dos condiciones dan `false` —`undefined
+      // === 'VALORADO'` es `false`— y un albarán firmado se quedaba sin siguiente paso **por
+      // falta de dato, no por no tenerlo**. Los dos casos se pintan igual —celda vacía— y
+      // significan cosas opuestas. Es el defecto de SCRUM-816 con otro documento.
+      //
+      // Cero consultas nuevas: `modoValoracion` es columna del propio albarán y `quoteId` del
+      // Trabajo, que este listado ya carga en lote.
+      modoValoracion: a.modoValoracion === 'VALORADO' ? 'VALORADO' : 'SIN_VALORAR',
+      // La MISMA forma que manda el detalle (`quote: {id} | null`), para que el resolutor
+      // compartido no tenga que traducir nada: una traducción sería el segundo sitio por donde
+      // dos pantallas vuelven a separarse. Aquí sólo hace falta SI EXISTE, así que viaja el id.
+      quote: job?.quoteId != null ? { id: job.quoteId } : null,
       clienteId: customer?.id ?? null,
       cliente: customer?.legalName || customer?.name || null,
       jobId: a.jobId,

@@ -55,8 +55,14 @@ test('SCRUM-428 · SUELO: los dos ejes que se cruzan siguen existiendo donde se 
 
 test('SCRUM-428 · SUELO: la vista carga el módulo y lo usa', () => {
   const html = leer('public/dashboard/index.html');
-  const iTerm = html.indexOf('terminadoSinCobrar.js');
-  const iJobs = html.indexOf('jobsView.js');
+  // 🔒 SE BUSCA LA ETIQUETA, NO EL NOMBRE SUELTO. Preguntaba por `indexOf('jobsView.js')` sobre el
+  // HTML entero, y eso casa también con un COMENTARIO que mencione el fichero: SCRUM-823 añadió
+  // uno explicando qué se carga antes que él, y este test se puso rojo diciendo que el orden
+  // estaba mal cuando el orden no había cambiado. La pregunta es de ORDEN DE CARGA, así que el
+  // ancla tiene que ser lo que carga — el `<script src=`, no una mención.
+  const posicionDe = (fichero) => html.indexOf(`<script src="./js/${fichero}"`);
+  const iTerm = posicionDe('terminadoSinCobrar.js');
+  const iJobs = posicionDe('jobsView.js');
   assert.ok(iTerm !== -1, '🔴 `terminadoSinCobrar.js` no está cargado en el dashboard: el cruce no llega al navegador.');
   assert.ok(iTerm < iJobs,
     '🔴 `terminadoSinCobrar.js` se carga DESPUÉS de `jobsView.js`. Con scripts clásicos eso deja ' +

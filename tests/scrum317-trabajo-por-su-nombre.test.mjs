@@ -169,7 +169,14 @@ test('SCRUM-317 · el subtítulo que describía LA PANTALLA ha desaparecido', ()
 });
 
 test('SCRUM-317 · la fecha del subtítulo es NEUTRA: nada de «desde el»', () => {
-  const cabecera = recorte(VISTA, 'const fechaCorta =', 'const nombreWrap', 'la fecha del subtítulo');
+  // 🔒 LA VENTANA SE CIERRA DONDE ACABA EL SUBTÍTULO, no 250 líneas después. El corte iba de
+  // `const fechaCorta =` a `const nombreWrap`, que son **252 líneas**: dentro caben el CTA del
+  // héroe y todos sus comentarios, así que cualquier PROSA que dijera «desde el» tumbaba un test
+  // sobre el subtítulo. Pasó con SCRUM-823, que escribió «puede asomar desde el CTA» a 120 líneas
+  // de aquí. Una ventana de más no es más vigilancia: es un fallo que apunta al sitio equivocado.
+  // El nuevo cierre —`migaActual.textContent`— va DOS líneas después de `sub.textContent`, así que
+  // sigue cubriendo entera la composición que este test juzga.
+  const cabecera = recorte(VISTA, 'const fechaCorta =', 'migaActual.textContent', 'la fecha del subtítulo');
   assert.ok(
     !/desde el/i.test(cabecera),
     '🔴 el subtítulo dice «desde el». El Trabajo tiene CINCO estados y eso suena a abierto en uno ' +
