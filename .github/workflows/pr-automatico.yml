@@ -229,9 +229,27 @@ jobs:
             echo "- **SIN-COMMITS** — la rama no tiene nada por delante de \`main\`: no había PR que abrir." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
+          CUERPO="$(printf 'Abierto automáticamente al empujar \`%s\`.\n\nCommits:\n\n%s\n\nEl auto-merge queda ARMADO: GitHub mezclará cuando pase el check obligatorio. Este workflow no mergea ni salta comprobaciones.\n' "$RAMA" "$(git log --reverse --pretty='- %s' origin/main..HEAD)")"
+
+          # 🔴 EL ESPEJO. Este workflow habla como `yaqu-bot[bot]`, y `allowed_bots` está puesto
+          # sobre esa IDENTIDAD, no sobre un workflow: cualquier cosa que hable como el bot
+          # despierta a Claude si su texto lleva la mención. Hoy no la lleva —el cuerpo sale de
+          # los asuntos de los commits— pero el cuerpo lo compone `git log`, o sea texto que
+          # escribe otra persona: basta un commit titulado con la mención para que este PR
+          # despierte a una sesión que nadie llamó. Se comprueba aquí, no en un README.
+          if ! printf '%s' "$CUERPO" | node -e "
+            let s='';process.stdin.on('data',d=>s+=d).on('end',async()=>{
+              const {cuerpoNoDebeDespertar}=await import('./scripts/puerta-avisador-rojo.mjs');
+              process.exit(cuerpoNoDebeDespertar(s)?0:1);});"; then
+            echo "::error::El cuerpo del PR contiene la mención que despierta a Claude. No se abre."
+            echo "MENCION-EN-EL-CUERPO" >> "$RUNNER_TEMP/veredicto.txt"
+            echo "- **MENCIÓN-EN-EL-CUERPO** — el cuerpo del PR despertaría a una sesión que nadie llamó (suele venir del asunto de un commit). No se abrió el PR." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
           NUM="$(gh pr create --base main --head "$RAMA" \
                    --title "$(git log -1 --pretty=%s)" \
-                   --body "$(printf 'Abierto automáticamente al empujar \`%s\`.\n\nCommits:\n\n%s\n\nEl auto-merge queda ARMADO: GitHub mezclará cuando pase el check obligatorio. Este workflow no mergea ni salta comprobaciones.\n' "$RAMA" "$(git log --reverse --pretty='- %s' origin/main..HEAD)")" \
+                   --body "$CUERPO" \
                  | grep -oE '[0-9]+$')"
           echo "numero=$NUM" >> "$GITHUB_OUTPUT"
           echo "PR abierto: #$NUM"
