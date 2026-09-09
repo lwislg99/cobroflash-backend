@@ -316,6 +316,19 @@ const INDIRECTAS_DECLARADAS = [
   // nombra al listar `refs/remotes/origin/` y al explicar el motor que consulta.
   'scripts/censo-tablero-vs-arbol.mjs',
   'scripts/censo-reparto.mjs',   // el mensaje de error del CLI de arriba
+  // SCRUM-830 · el censo del rastro de un ticket. NO compara contra la punta: congela el sha con
+  // `instantanea` (SCRUM-753) y mide contra el, que es justo lo que este guard defiende. La nombra
+  // en la prosa que explica que hace cuando NO puede resolverla, y al listar `refs/remotes/origin/`.
+  //
+  // 📌 Y ESTA ENTRADA LLEGA TARDE, que es el hallazgo: el fichero ya la nombraba ANTES de que
+  // SCRUM-830 lo tocara —su comentario del `incapaz` es original— y no estaba declarado. No se
+  // veia porque este test tiene DOS aserciones y la primera fallaba: `assert` para en la primera,
+  // asi que la segunda lista llevaba desactualizada lo que durase el rojo de la de arriba.
+  'scripts/_rastro-del-ticket.mjs',
+  // SCRUM-830 · su guard. Nombra la referencia en la prosa que explica por que se mide contra la
+  // BASE de la rama y no contra la punta, y en el asunto de merge del banco («…branch 'origin/…'»),
+  // que es el texto que el lector tiene que saber leer.
+  'tests/scrum830-la-rama-que-ya-no-esta.test.mjs',
   // SCRUM-810 · el suelo de la vigilancia. Nombra `origin/main` en una constante y en la prosa,
   // pero NO compara contra su punta: compara contra la BASE DE FUSIÓN, que es lo que este mismo
   // guard defiende. Lo aprendió a golpes — su control positivo salió ROJO por comparar contra la

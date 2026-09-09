@@ -50,9 +50,47 @@ test('SCRUM-804 · 🔴 SUELO: el instrumento ve ramas, y ve ramas VIVAS', () =>
   assert.deepEqual(censo.suelo, [],
     '🔴 la dimensión se declara NO FIABLE en esta pasada:\n   · ' + censo.suelo.join('\n   · '));
 
-  assert.ok(censo.resumen.total > 100,
-    `🔴 CIEGO: sólo ${censo.resumen.total} ramas remotas. Había 558 al escribir esto; con una `
-    + 'población así de corta, un «nadie tiene trabajo vivo» no dice nada.');
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 SCRUM-830 · AQUÍ HABÍA UN NÚMERO, Y CADUCÓ: `total > 100`, con «había 558» al lado.
+  //
+  // El 8-sep-2026 se activó «Automatically delete head branches» y las refs vivas se desplomaron
+  // a 98. Cuatro tests en rojo para todos, reportado por tres sesiones. El guard no se rompió:
+  // **midió correctamente un mundo que dejó de existir.**
+  //
+  // Y NO se sube el suelo a 98, porque ese número caducaría igual: con borrado automático, las
+  // refs vivas ya no miden el tamaño de la casa — miden cuántos PR hay abiertos ahora mismo, que
+  // sube y baja cada día. **La magnitud dejó de tener sentido**, así que no se rebaja: se cambia
+  // por la que sí lo tiene.
+  //
+  // LO QUE AQUEL SUELO CAZABA, dicho antes de sustituirlo: que el barrido no llegara a las ramas
+  // —un `ls-remote` vacío, un fetch que no trajo nada— y se leyera como «nadie tiene trabajo
+  // vivo». Eso sigue vigilado, y por dos sitios: `censo.suelo` de arriba (cero población) y el
+  // `vivas > 0` / `enMain > 0` de abajo.
+  //
+  // LO QUE VIGILA AHORA, que es lo que la automatización puso en riesgo: **que el lector de los
+  // asuntos de merge siga viendo**. La segunda fuente saca los nombres de rama del historial de
+  // `main` (ver `ramasMergeadasYBorradas`), y si GitHub cambia el texto de sus merges, o alguien
+  // pasa a squash, ese lector se queda mudo — y el censo volvería a llamar `SIN RASTRO` a trabajo
+  // que está dentro. Se vigila con una PROPORCIÓN, no con un recuento: main sólo crece, así que
+  // una razón no caduca ni hay que acordarse de subirla.
+  //
+  // Medido el 8-sep-2026: **1.009 ramas recuperadas de 1.660 merges = 60,8 %**. El suelo se pone
+  // en 20 % —tres veces de holgura— porque lo que tiene que cazar es el desplome a cero, no una
+  // oscilación: un merge en fast-forward o un asunto reescrito a mano no dejan nombre, y eso es
+  // normal y está declarado.
+  const merges = Number(execFileSync('git', ['rev-list', '--count', '--merges', censo.inst.sha],
+    { cwd: RAIZ, encoding: 'utf8' }).trim());
+  const razon = merges ? censo.resumen.mergeadasYBorradas / merges : 0;
+  assert.ok(merges > 0,
+    '🔴 CIEGO: `main` no tiene ni un commit de merge. Sin historial no hay segunda fuente, y con '
+    + 'borrado automático la primera sola no distingue «mergeado» de «no lo veo».');
+  assert.ok(razon >= 0.2,
+    `🔴 EL LECTOR DE MERGES SE HA QUEDADO MUDO: ${censo.resumen.mergeadasYBorradas} ramas `
+    + `recuperadas de ${merges} merges (${(razon * 100).toFixed(1)} %). Se midió 60,8 % el `
+    + '8-sep-2026. Por debajo del 20 % lo más probable es que el asunto de los merges haya '
+    + 'cambiado de forma —otro texto de GitHub, o squash en vez de merge—, y entonces un ticket '
+    + 'entregado y con su rama borrada vuelve a salir `SIN RASTRO`, que es el veredicto de «no lo '
+    + 'veo» y se lee como «no hay trabajo».');
 
   assert.ok(censo.resumen.vivas > 0,
     '🔴 CERO ramas VIVAS. No se lee como «está todo mergeado»: se lee igual que un clasificador '
@@ -167,9 +205,20 @@ test('SCRUM-804 · ✅ CONTROL NEGATIVO: una rama mergeada NO se cuenta como tra
   const soloMergeadas = [...censo.porTicket.entries()]
     .filter(([, v]) => v.ramas.length > 0 && v.ramas.every((r) => r.clase === 'en-main'));
 
-  assert.ok(soloMergeadas.length > 10,
-    `🔴 sólo ${soloMergeadas.length} tickets con TODAS sus ramas mergeadas. Había 464 ramas dentro `
-    + 'de `main` al escribir esto: con una población así de corta este control no distingue nada.');
+  // 🔴 SCRUM-830 · aquí había otro número caducado —`> 10`, con «había 464» al lado— y cayó por
+  // lo mismo: contaba tickets cuyas ramas siguieran EXISTIENDO y mergeadas, y al borrarlas GitHub
+  // se quedó en 10. Ahora la población incluye las recuperadas del historial, y el suelo es una
+  // PROPORCIÓN sobre los tickets que el censo ve, que no depende del tamaño del repo.
+  //
+  // Medido el 8-sep-2026: **622 de 691 tickets = 90,0 %**. El suelo se pone en 25 % porque lo que
+  // tiene que cazar es el modo de fallo contrario —un clasificador que conteste «viva» a todo, y
+  // que dejaría esto en ~0—, no la oscilación normal entre sprints.
+  const razonMergeados = censo.porTicket.size ? soloMergeadas.length / censo.porTicket.size : 0;
+  assert.ok(razonMergeados >= 0.25,
+    `🔴 sólo ${soloMergeadas.length} de ${censo.porTicket.size} tickets tienen TODAS sus ramas `
+    + `mergeadas (${(razonMergeados * 100).toFixed(1)} %). Se midió 90,0 % el 8-sep-2026. Con una `
+    + 'proporción así de corta este control no distingue nada — y el modo de fallo que vigila es '
+    + 'un clasificador que conteste «viva» a todo, que la dejaría en cero.');
 
   const malos = soloMergeadas.filter(([, v]) => v.rastro !== RASTRO.EN_MAIN).map(([n]) => `SCRUM-${n}`);
   assert.deepEqual(malos, [],

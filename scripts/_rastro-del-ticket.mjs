@@ -111,6 +111,73 @@ export function motivosParaNoFiarse(resumen) {
 }
 
 /**
+ * LAS RAMAS QUE ESTUVIERON Y YA NO ESTÁN — recuperadas de los MERGES de `main`.
+ *
+ * ═════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-830 · POR QUÉ ESTA SEGUNDA FUENTE, Y POR QUÉ NO CADUCA
+ *
+ * El 8-sep-2026 se activó «Automatically delete head branches»: al mergear un PR, GitHub borra su
+ * rama. Este censo leía SÓLO `refs/remotes/origin/`, así que de un día para otro un ticket
+ * entregado y mergeado pasó a `SIN RASTRO` — que es el veredicto de «no lo veo», no el de «está
+ * dentro». El instrumento no se rompió: **midió correctamente un mundo que dejó de existir.**
+ *
+ * Este fichero YA declaraba el hueco al pie —«una rama mergeada Y BORRADA deja el ticket sin rama
+ * y su trabajo dentro de `main`»—. Era la excepción; la automatización la volvió el caso normal.
+ *
+ * **La segunda fuente es el historial de `main`**, elegida por la misma razón por la que
+ * `_suelo-contra-main.mjs` (SCRUM-810) deriva de main: **main sólo crece**. Una rama borrada
+ * desaparece de `ls-remote`, pero su nombre queda escrito para siempre en el asunto del commit de
+ * merge que la trajo. Medido el 8-sep-2026: **105 refs vivas y 1.009 ramas recuperadas** de 1.660
+ * merges. Mañana habrá más, nunca menos, y nadie tiene que acordarse de un número.
+ *
+ * ⚠️ SE CLASIFICAN `en-main` POR CONSTRUCCIÓN, no preguntándole a `alcanzabilidadDe`: ese
+ * clasificador va a granel por REFNAME (`--merged`/`--no-merged` sobre `refs/remotes/origin/`), así
+ * que a una rama que ya no existe le contesta `null` —indeterminada—, y eso sería falso: el commit
+ * que la trajo ES un commit de `main` (comprobado con `git merge-base --is-ancestor`).
+ *
+ * ⚠️ LO QUE ESTA FUENTE NO VE, escrito aquí y no descubierto en un rojo raro:
+ *   · un merge en fast-forward no deja commit de merge, así que su rama no consta;
+ *   · un asunto de merge reescrito a mano tampoco;
+ *   · y no sabe de ramas borradas SIN mergear — pero ésas no llegan aquí, porque sólo se leen
+ *     merges que están en `main`.
+ * Por eso es una fuente ADICIONAL y no un sustituto: las refs vivas siguen siendo las únicas que
+ * dicen qué hay SIN mergear, que es la pregunta que este censo vino a contestar.
+ *
+ * @returns {Map<string,string>} nombre de rama → sha del merge que la trajo. Sólo las que ya NO
+ *   existen como ref: de una viva sabe más `alcanzabilidadDe`, y se deja que la clasifique él.
+ */
+export function ramasMergeadasYBorradas({ raiz, sha, vivas = new Set() }) {
+  // Anclado al PRINCIPIO del asunto, que es donde git las escribe:
+  //   «Merge pull request #1164 from lwislg99/scrum-821-la-lista-que-decide-al-dia»
+  //   «Merge remote-tracking branch 'origin/scrum-728c-adoptar-el-candidato'»
+  const DE_PR = /^Merge pull request #\d+ from [^/\s]+\/(\S+)/;
+  const DE_REMOTA = /^Merge remote-tracking branch '(?:refs\/remotes\/)?origin\/(\S+?)'/;
+
+  const encontradas = new Map();
+  let salida;
+  try {
+    salida = execFileSync('git', ['log', sha, '--merges', '--format=%H%x09%s'],
+      { cwd: raiz, encoding: 'utf8', maxBuffer: 64e6, stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch {
+    // Sin historial se sigue con la fuente viva: esto AÑADE población, no la sustituye. Y no se
+    // calla: el suelo mira este número, así que un cero aquí se ve.
+    return encontradas;
+  }
+  for (const linea of salida.split('\n')) {
+    const corte = linea.indexOf('\t');
+    if (corte === -1) continue;
+    const shaMerge = linea.slice(0, corte);
+    const asunto = linea.slice(corte + 1);
+    const m = DE_PR.exec(asunto) || DE_REMOTA.exec(asunto);
+    if (!m) continue;
+    const nombre = m[1];
+    if (nombre === 'main' || vivas.has(nombre) || encontradas.has(nombre)) continue;
+    encontradas.set(nombre, shaMerge);
+  }
+  return encontradas;
+}
+
+/**
  * EL RASTRO DE CADA TICKET, derivado de las ramas del remoto y del sha congelado de `main`.
  *
  * @param {object}  o
@@ -156,11 +223,25 @@ export function rastroDeLosTickets({ raiz = process.cwd(), traer = true } = {}) 
   // `agruparRamas` quiere la forma `<sha> refs/heads/<nombre>`, que es la de `ls-remote`. La
   // instantánea ya trae `{objeto, nombre}`, así que se le entrega en su formato de entrada en vez
   // de reimplementar el parseo.
+  // SCRUM-830 · la segunda fuente: las que se mergearon y GitHub borró. Ver
+  // `ramasMergeadasYBorradas` para el porqué y para lo que no ve.
+  const vivas = new Set(inst.ramas.map((r) => r.nombre));
+  const borradas = ramasMergeadasYBorradas({ raiz, sha: inst.sha, vivas });
+
   const agrupadas = agruparRamas(
-    inst.ramas.map((r) => `${r.objeto} refs/heads/${r.nombre}`),
-    (sha, nombre) => anc(nombre, sha),
+    [
+      ...inst.ramas.map((r) => `${r.objeto} refs/heads/${r.nombre}`),
+      ...[...borradas].map(([nombre, shaMerge]) => `${shaMerge} refs/heads/${nombre}`),
+    ],
+    // Las vivas las clasifica el de a granel, que sabe más de ellas. Las borradas son `en-main`
+    // POR CONSTRUCCIÓN —su commit de merge es un commit de main— y preguntárselo a `anc` daría
+    // `null`, porque él busca por refname y esa ref ya no existe.
+    (sha, nombre) => (borradas.has(nombre) ? true : anc(nombre, sha)),
   );
-  const objetoDe = new Map(inst.ramas.map((r) => [r.nombre, r.objeto]));
+  const objetoDe = new Map([
+    ...inst.ramas.map((r) => [r.nombre, r.objeto]),
+    ...borradas,
+  ]);
 
   const porTicket = new Map();
   for (const [numero, ramas] of agrupadas.porTicket) {
@@ -187,6 +268,11 @@ export function rastroDeLosTickets({ raiz = process.cwd(), traer = true } = {}) 
     enMain: agrupadas.enMain,
     vivas: agrupadas.vivas,
     indeterminadas: agrupadas.indeterminadas,
+    // SCRUM-830 · las dos poblaciones, por separado y nombradas. Juntarlas en un solo `total`
+    // dejaría de distinguir «hay pocas refs porque se borran al mergear» de «no he podido leer
+    // las refs», que es justo la confusión que este ticket vino a deshacer.
+    refsVivas: inst.ramas.length,
+    mergeadasYBorradas: borradas.size,
   };
   return { inst, porTicket, resumen, suelo: motivosParaNoFiarse(resumen) };
 }
