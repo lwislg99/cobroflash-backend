@@ -17,6 +17,10 @@
 // ⚠️ NO decide nada: no cierra tickets, no borra ramas, no toca Jira. Produce LISTAS CON NOMBRES.
 // «Hay 7 desfases» no sirve para repartir; «SCRUM-304, SCRUM-367, SCRUM-319» sí.
 
+// SCRUM-829 · la regla rama->ticket se importa, no se copia. `_numero-de-rama.mjs` no importa
+// nada, asi que esto no mete a este fichero en el ciclo que documenta `censo-tablero-vs-arbol`.
+import { numeroDeRama } from './_numero-de-rama.mjs';
+
 /** Un fichero de entrada de máster → su número de ticket. `null` si no lo es (README, notas…). */
 export function numeroDeEntrada(ruta) {
   const m = /(?:^|[\\/])SCRUM-(\d+)\.md$/.exec(String(ruta));
@@ -38,7 +42,17 @@ export function ticketsConEntrada(ficheros) {
   return m;
 }
 
-/** `SCRUM-304` → 304. Tolera minúsculas y espacios; devuelve `null` si no hay número. */
+/**
+ * `SCRUM-304` → 304. Tolera minúsculas y espacios; devuelve `null` si no hay número.
+ *
+ * ⛔ SCRUM-829 · ESTO LEE **CLAVES DE JIRA**, NO NOMBRES DE RAMA. Busca la subcadena a propósito,
+ * porque en una clave la cadena entera ES la clave. Aplicado a un nombre de rama —texto libre,
+ * escrito por una persona o por GitHub— encuentra `scrum-824` EN MEDIO de
+ * `revert-1192-scrum-824b-el-vigia-que-no-deja-pasar` y contesta 824 con aplomo.
+ *
+ * Para nombres de rama está `numeroDeRama`, anclada. Los dos aciertan en los casos fáciles, que
+ * es exactamente donde no se nota la diferencia.
+ */
 export function numeroDeClave(clave) {
   const m = /SCRUM-(\d+)/i.exec(String(clave).trim());
   return m ? Number(m[1]) : null;
@@ -77,7 +91,11 @@ export function agruparRamas(entrada, esAncestroDeMain = null) {
     const estado = esAncestroDeMain ? esAncestroDeMain(sha, nombre) : null;
     const clase = estado === true ? 'en-main' : (estado === false ? 'viva' : 'indeterminada');
     if (clase === 'en-main') enMain++; else if (clase === 'viva') vivas++; else indeterminadas++;
-    const n = numeroDeClave(nombre.replace(/^scrum-/i, 'SCRUM-'));
+    // 🔴 SCRUM-829 · AQUÍ ESTABA EL DESACUERDO. Esta línea llamaba a `numeroDeClave`, que busca
+    // por SUBCADENA, sobre un NOMBRE DE RAMA — y `revert-1192-scrum-824b-…` salía como 824
+    // mientras `poblacionDe` (con `numeroDeRama`) decía `null`. Una sola fuente alimentada con
+    // dos datos distintos no es una sola fuente. Ahora los dos consumidores llaman a LA MISMA.
+    const n = numeroDeRama(nombre);
     if (n === null) { sinNumero.push({ nombre, clase }); continue; }
     if (!porTicket.has(n)) porTicket.set(n, []);
     porTicket.get(n).push({ nombre, clase });

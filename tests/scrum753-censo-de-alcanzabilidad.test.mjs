@@ -30,7 +30,7 @@ import { fileURLToPath } from 'node:url'; // SCRUM-730: `pathname` no decodifica
 import { execFileSync } from 'node:child_process';
 import { ejecutableDe } from './_guard-texto.mjs';
 import { mutacionesDeclaradas, censoDeDeclaraciones } from '../scripts/meta-guard-mutaciones.mjs';
-import { numeroDeClave } from '../scripts/_censo-reparto.mjs';
+import { numeroDeClave, agruparRamas } from '../scripts/_censo-reparto.mjs';
 import { numeroDeRama } from '../scripts/censo-tablero-vs-arbol.mjs';
 import { repoAlcanzabilidad, CASOS, RAMAS_DEL_BANCO } from './_fixture-alcanzabilidad.mjs';
 import { anclaEnElRepositorio } from './_ancla-en-el-repositorio.mjs'; // SCRUM-796
@@ -311,6 +311,16 @@ const CORPUS_DE_NOMBRES = [
   'codeowners-zona-roja-v2',
   'censo-marcadores-microcopy',
   'main',
+  // 🔴 SCRUM-829 · EL NOMBRE QUE ROMPIÓ ESTO, LITERAL Y PARA SIEMPRE.
+  //
+  // Lo genera GITHUB solo al pulsar «Revert» en un PR: `revert-<nº de PR>-<rama original>`. Con
+  // los PR abriéndose solos habrá más reverts, no menos. `numeroDeClave` encontraba `scrum-824`
+  // EN MEDIO del nombre y contestaba 824; `numeroDeRama`, anclada, contesta `null`.
+  //
+  // ⚠️ VA EN EL CORPUS Y NO SE DEJA AL ÁRBOL, a propósito: la rama ya no existe en `origin` y su
+  // ref rancia se ha podado, así que un guard que sólo mirase el árbol vivo estaría VERDE hoy por
+  // no tener el caso delante — verde por no mirar. Aquí el caso no se puede ir.
+  'revert-1192-scrum-824b-el-vigia-que-no-deja-pasar',
 ];
 
 test('SCRUM-753 · 🔴 las DOS reglas rama→ticket siguen de acuerdo (SCRUM-387 vs SCRUM-738)', () => {
@@ -332,14 +342,74 @@ test('SCRUM-753 · 🔴 las DOS reglas rama→ticket siguen de acuerdo (SCRUM-38
   assert.equal(numeroDeClave('SCRUM-684b-albaran'), 684, '🔴 el comparador no lee la letra de fase.');
   assert.equal(numeroDeRama('codeowners-zona-roja-v2'), null, '🔴 el comparador inventa números.');
 
+  // 🔴 SCRUM-829 · SE LE PREGUNTA A LOS DOS CONSUMIDORES, NO A DOS FUNCIONES POR SU NOMBRE.
+  //
+  // Antes esto comparaba `numeroDeClave` contra `numeroDeRama`. Al unificarlas en una sola regla,
+  // esa comparación se habría vuelto trivialmente cierta y habría dejado de fijar nada: bastaría
+  // con que alguien volviera a meter un tercer lector dentro de `agruparRamas` para que este
+  // guard siguiera verde SOBRE EL DEFECTO. Así que se le pregunta a QUIEN AGRUPA y a QUIEN
+  // ENUMERA — el mecanismo, no el nombre de la función.
+  const agrupadas = agruparRamas(nombres.filter((n) => n !== 'main'));
+  const deAgrupar = new Map();
+  for (const [numero, ramas] of agrupadas.porTicket) for (const r of ramas) deAgrupar.set(r.nombre, numero);
+  for (const r of agrupadas.sinNumero) deAgrupar.set(r.nombre, null);
+
   const desacuerdos = nombres
-    .map((n) => ({ rama: n, a: numeroDeClave(n.replace(/^scrum-/i, 'SCRUM-')), b: numeroDeRama(n) }))
-    .filter((x) => x.a !== x.b);
+    .filter((n) => n !== 'main')
+    .map((n) => ({ rama: n, agrupa: deAgrupar.get(n) ?? null, enumera: numeroDeRama(n) }))
+    .filter((x) => x.agrupa !== x.enumera);
   assert.deepEqual(desacuerdos, [],
-    '🔴 `agruparRamas` (que AGRUPA, con `numeroDeClave`) y la población (que ENUMERA, con '
-    + '`numeroDeRama`) ya no dicen lo mismo. Mientras coincidan, el censo tiene una sola regla; en '
-    + 'cuanto discrepen, un ticket se parte en dos sin que nadie lo vea. Decide cuál vale y déjala '
-    + 'sola.');
+    '🔴 quien AGRUPA (`agruparRamas`) y quien ENUMERA (`numeroDeRama`, vía `poblacionDe`) ya no '
+    + 'dicen lo mismo. Mientras coincidan, el censo tiene UNA regla; en cuanto discrepen, un '
+    + 'ticket se parte en dos sin que nadie lo vea.\n\n'
+    + '  · Si el nombre que discrepa lleva un `scrum-NNN` EN MEDIO (`revert-…`, `fix-…`), el fallo '
+    + 'es haber leído un nombre de rama con un lector de CLAVES. La regla única está en '
+    + '`scripts/_numero-de-rama.mjs` y va anclada.\n'
+    + '  · Si el nombre que discrepa ya no existe en `origin`, tu clon arrastra una ref rancia. El '
+    + 'censo poda solo desde SCRUM-829; para hacerlo a mano:\n'
+    + '        git fetch --prune origin "+refs/heads/*:refs/remotes/origin/*"');
+});
+
+test('SCRUM-829 · 🔴 una rama `revert-…` se declara SIN TICKET, y las dos partes lo dicen igual', () => {
+  // El literal exacto, en las dos preguntas, sin pasar por el corpus ni por el árbol vivo.
+  const REVERT = 'revert-1192-scrum-824b-el-vigia-que-no-deja-pasar';
+
+  assert.equal(numeroDeRama(REVERT), null,
+    '🔴 se le ha puesto número a una rama de REVERT. Una rama de revert no es trabajo del ticket: '
+    + 'es su deshacer. Atribuírsela hace que el censo diga «SCRUM-824 tiene rama viva» cuando lo '
+    + 'que hay es la marcha atrás de SCRUM-824 — peor que no decir nada, porque parece un dato.');
+
+  const { porTicket, sinNumero } = agruparRamas([REVERT]);
+  assert.deepEqual([...porTicket.keys()], [],
+    '🔴 `agruparRamas` ha metido la rama de revert dentro de algún ticket.');
+  assert.deepEqual(sinNumero.map((r) => r.nombre), [REVERT],
+    '🔴 la rama de revert no aparece en `sinNumero`. No basta con no agruparla: `agruparRamas` '
+    + 'promete por escrito que las que no llevan número NO se descartan en silencio, porque una '
+    + 'rama sin número es precisamente la que nadie relaciona con su ticket.');
+
+  // ✅ CONTROL POSITIVO, sobre el mismo mecanismo: la rama BUENA sí va a su ticket. Sin esto, los
+  // dos vacíos de arriba saldrían igual con un `agruparRamas` que no agrupara nada.
+  const bueno = agruparRamas(['scrum-824b-el-vigia-que-no-deja-pasar']);
+  assert.deepEqual([...bueno.porTicket.keys()], [824],
+    '🔴 CIEGO: tampoco agrupa la rama buena, así que los vacíos de arriba no dicen nada.');
+
+  // 🔴 CONTROL NEGATIVO DEL EMPAREJADOR — el defecto de este ticket es casar por SUBCADENA donde
+  // no debe. En ninguno de éstos el ticket va al principio, y ninguno puede resolver a un número.
+  for (const impostor of [
+    'revert-1192-scrum-824b-el-vigia-que-no-deja-pasar',
+    'fix-tests-para-scrum-999-notas',
+    'backport-scrum-100-a-la-otra',
+    'mi-scrum-42-personal',
+  ]) {
+    assert.equal(numeroDeRama(impostor), null,
+      '🔴 «' + impostor + '» ha resuelto a un ticket. El `scrum-N` va EN MEDIO del nombre, y casar '
+      + 'ahí es exactamente el defecto de SCRUM-829.');
+  }
+
+  // Y el ancla no se ha ido de más: los nombres de verdad siguen resolviendo, con letra de fase.
+  assert.equal(numeroDeRama('scrum-824b-el-vigia'), 824, '🔴 el ancla se ha comido la letra de fase.');
+  assert.equal(numeroDeRama('scrum-72-lo-que-sea'), 72);
+  assert.equal(numeroDeRama('scrum-727-constancia'), 727, '🔴 el delimitador ha dejado de separar.');
 });
 
 test('SCRUM-753 · 🔴 el clasificador a granel dice LO MISMO que `merge-base --is-ancestor`', () => {
@@ -489,6 +559,16 @@ test('SCRUM-753 · el `fetch` es PROCEDIMIENTO EJECUTADO, no una recomendación'
     + 'sesión que pasó por aquí — y los worktrees comparten el espacio de refs (R10).');
   assert.match(codigo, /refs\/heads\/\*:refs\/remotes\/origin\/\*/,
     '🔴 el fetch ya no pide TODAS las ramas.');
+  // 🔴 SCRUM-829 · Y PODA. Sin podar, este fetch sólo AÑADE: una rama borrada en `origin` deja su
+  // `refs/remotes/origin/…` en todos los worktrees vivos, el censo la cuenta como existente, y el
+  // guard sale ROJO aquí y VERDE en CI —que clona limpio— sobre una rama que ya no está. No era
+  // intermitencia: era el instrumento mirando una copia caducada.
+  assert.match(codigo, /'fetch',\s*'--prune'/,
+    '🔴 el `fetch` del censo ha dejado de podar, y entonces hereda las refs de ramas borradas.\n'
+    + '  Medido el 8-sep-2026, tres corridas: `--prune` cuesta CERO —es la misma llamada, la misma '
+    + 'ida y vuelta— mientras que preguntarle al remoto con `git ls-remote --heads origin` costaría '
+    + '~0,66 s de red POR CORRIDA (621/663/765 ms) para saber lo que este fetch ya trae.');
+
   // Y se mide sobre las refs YA TRAÍDAS, no con `ls-remote` contra la red.
   assert.match(codigo, /for-each-ref/, '🔴 ya no se leen las refs locales de origin.');
   assert.equal(/ls-remote/.test(codigo), false,

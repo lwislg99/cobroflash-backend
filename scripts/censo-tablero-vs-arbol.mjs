@@ -50,19 +50,20 @@ import { censarTicket, comprobarSuelo } from '../tests/_censo-tickets.mjs';
 // La alternativa era copiar `numeroDeRama` a un cuarto sitio, que es peor: la misma regla escrita
 // dos veces es cómo una de las dos se queda atrás (lección del PASO 0 de este mismo ticket).
 import { rastroDeLosTickets, RASTRO, esCiego } from './_rastro-del-ticket.mjs';
+// SCRUM-829 · la regla vive en una HOJA (no importa nada), así que este import no participa del
+// ciclo de arriba. `numerosDelArbol` la usa aquí dentro; el `export {…} from` de abajo no basta.
+import { numeroDeRama } from './_numero-de-rama.mjs';
 
 const RAIZ = process.cwd();
 
-/**
- * El número de ticket de un nombre de rama, o `null`.
- *
- * ⛔ ANCLADO Y CON DELIMITADOR: `scrum-72-x` da 72 y `scrum-727-x` da 727. Y `scrum-684b-…` da
- * 684, porque la letra es una FASE del mismo ticket, no otro número.
- */
-export function numeroDeRama(nombre) {
-  const m = /^scrum-0*(\d+)[a-z]?-/.exec(String(nombre ?? '').trim());
-  return m ? Number(m[1]) : null;
-}
+// 🔴 SCRUM-829 · LA REGLA SE MUDÓ; EL PATRÓN NO HA CAMBIADO NI UN CARÁCTER.
+//
+// Vivía aquí, y la copia de al lado —`numeroDeClave` aplicado a nombres de rama, dentro de
+// `agruparRamas`— contestaba OTRA COSA para `revert-1192-scrum-824b-el-vigia-que-no-deja-pasar`:
+// 824 contra `null`. Ahora hay UNA sola, en un módulo HOJA que los dos importan sin cerrar el
+// ciclo que este mismo fichero documenta arriba. Se reexporta para no romper a quien la importa
+// de aquí (`_censo-alcanzabilidad.mjs` y dos guards); el porqué está en `_numero-de-rama.mjs`.
+export { numeroDeRama } from './_numero-de-rama.mjs';
 
 /** El número de un nombre de fichero de máster (`SCRUM-714.md`), o `null`. */
 export function numeroDeEntrada(fichero) {
