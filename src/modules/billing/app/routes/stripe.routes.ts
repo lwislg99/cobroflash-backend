@@ -135,7 +135,11 @@ router.post('/', async (req, res) => {
         } else if (st === 'canceled' || st === 'incomplete_expired') {
           await prisma.merchant.update({
             where: { id: merchantId },
-            data: { plan: 'trial', subscriptionStatus: 'canceled', stripeSubscriptionId: null, planExpiresAt: null },
+            // SCRUM-809 · `planExpiresAt` NO se borra: el fundador firmó (7-sep-2026) que «el que
+            // cancela CONSERVA EL ACCESO HASTA EL FIN DEL PERIODO QUE YA PAGÓ». Ponerlo a null hacía
+            // INSATISFACIBLE la condición del paywall (`plan==='trial' && planExpiresAt && …`,
+            // authMiddleware.ts:72), así que quien cancelaba no podía ser alcanzado NUNCA.
+            data: { plan: 'trial', subscriptionStatus: 'canceled', stripeSubscriptionId: null },
           });
         } else {
           console.log(`[stripe] estado de suscripción sin mapeo directo: ${st} (merchant ${merchantId})`);
@@ -148,7 +152,9 @@ router.post('/', async (req, res) => {
       if (Number.isInteger(merchantId)) {
         await prisma.merchant.update({
           where: { id: merchantId },
-          data: { plan: 'trial', subscriptionStatus: 'canceled', stripeSubscriptionId: null, planExpiresAt: null }, // A10.2 (L)
+          // SCRUM-809 · la OTRA puerta de cancelación, mismo motivo que arriba: se conserva el fin
+          // del periodo pagado y el paywall vuelve a alcanzarle cuando esa fecha venza, no antes.
+          data: { plan: 'trial', subscriptionStatus: 'canceled', stripeSubscriptionId: null }, // A10.2 (L)
         });
       }
 
