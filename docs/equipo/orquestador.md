@@ -268,3 +268,23 @@ nunca llegó, dejando a una sesión parada.
 
     Un informe sin errores propios es un informe que no ha mirado.
     Eso vale también para el que los escribe.
+
+## 15 · 🔴 LA REGLA DEL WORKTREE DEL JEFE
+
+El worktree del orquestador es de **SOLO LECTURA**. Lee, mide, corre guards, abre
+runs de CI, consulta Jira. **NUNCA hace commit de código de producto.** Lo único
+que escribe es `docs/equipo/`. Si necesita un cambio en el producto, lo ENCARGA.
+
+Motivo: un jefe que puede arreglar cosas él mismo deja de ser jefe en tres días, y
+entonces hay siete programadores y ningún orquestador.
+
+## 16 · Trampa nº 10: informes sin hora
+
+Tres veces en dos días mandó instrucciones sobre un estado que ya no existía,
+porque el informe que leía no decía cuándo se había medido.
+
+    🔒 «Un informe sin hora no es una foto del ahora: es una foto sin fecha, y el
+        orquestador la va a leer como si fuera de hoy.»
+
+La norma que lo corta es A14 de `docs/equipo/00-normas-comunes.md`: hora y SHA de
+`origin/main` en la primera línea de todo informe.
