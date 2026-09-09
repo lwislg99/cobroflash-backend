@@ -191,6 +191,13 @@ const DATOS_791 = (url) => {
   if (u.includes('/admin/merchant')) return { id: 1, name: 'Fontanería Soler' };
   if (/\/admin\/customers/.test(u)) return CLIENTES_DE_MUESTRA;
   if (/\/albaranes\//.test(u)) return { id: 1, estado: 'borrador', lines: [], items: [] };
+  // 🔴 SCRUM-823 · `renderJobDetailView` pide `/admin/jobs/:id` y hasta hoy caía al `return []`
+  // de abajo: un Trabajo SIN `status`. La escalera de `jobNextAction` no miraba el estado y el
+  // CTA del héroe salía igual — desde SCRUM-823 mira `job.status` ANTES de nada, así que un
+  // Trabajo sin estado ya no es un caso real: es un Trabajo que este fixture nunca declaró. Se
+  // le da uno de los dos estados con documentos (`en_curso`) para volver a medir la MISMA
+  // pantalla que censó SCRUM-787, no una más pequeña.
+  if (/\/admin\/jobs\//.test(u)) return { id: 1, status: 'en_curso' };
   return [];
 };
 /** El elemento de la SONDA: 12 px, deliberadamente por debajo de todo. */
