@@ -224,6 +224,9 @@ jobs:
           if [ "$ADELANTE" -eq 0 ]; then
             echo "La rama no tiene commits por delante de main: no hay PR que abrir."
             echo "numero=" >> "$GITHUB_OUTPUT"
+            # Veredicto: este verde es «no había trabajo», no «hice el trabajo».
+            echo "SIN-COMMITS" >> "$RUNNER_TEMP/veredicto.txt"
+            echo "- **SIN-COMMITS** — la rama no tiene nada por delante de \`main\`: no había PR que abrir." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           NUM="$(gh pr create --base main --head "$RAMA" \
@@ -232,6 +235,8 @@ jobs:
                  | grep -oE '[0-9]+$')"
           echo "numero=$NUM" >> "$GITHUB_OUTPUT"
           echo "PR abierto: #$NUM"
+          echo "PR-ABIERTO" >> "$RUNNER_TEMP/veredicto.txt"
+          echo "- **PR-ABIERTO** — se abrió el PR #$NUM ($ADELANTE commit(s) por delante de \`main\`)." >> "$GITHUB_STEP_SUMMARY"
 
       # ── 9 · ARMAR EL AUTO-MERGE ────────────────────────────────────────────────────────
       # `--auto` NO mergea: deja el PR esperando al check obligatorio. `--merge` porque esta
@@ -270,10 +275,14 @@ jobs:
           if [ -z "$NUM" ]; then
             echo "No hay PR sobre el que armar el auto-merge."
             echo "  (En modo degradado esto es lo normal hasta que alguien abra el PR a mano.)"
+            echo "SIN-PR" >> "$RUNNER_TEMP/veredicto.txt"
+            echo "- **SIN-PR** — no había ningún PR sobre el que armar el auto-merge." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           if gh pr merge "$NUM" --auto --merge 2> "$RUNNER_TEMP/err.txt"; then
             echo "Auto-merge ARMADO en el PR #$NUM. Mergea GitHub cuando pase el check obligatorio."
+            echo "AUTO-MERGE-ARMADO" >> "$RUNNER_TEMP/veredicto.txt"
+            echo "- **AUTO-MERGE-ARMADO** — armado en el PR #$NUM; mergea GitHub cuando pase el check obligatorio." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
@@ -315,6 +324,8 @@ jobs:
           if [ "$VEREDICTO" -eq 0 ]; then
             echo "No se armó el auto-merge del PR #$NUM, y es lo esperable. El PR queda ABIERTO"
             echo "para que lo mire una persona. Esto NO es un fallo del workflow."
+            echo "NO-ARMADO-LEGITIMO" >> "$RUNNER_TEMP/veredicto.txt"
+            echo "- **NO-ARMADO (motivo legítimo)** — el PR #$NUM no se pudo armar (conflicto, o nada que esperar). Queda abierto para una persona." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
@@ -399,3 +410,32 @@ jobs:
           echo '   trabajo existe. La decision es del fundador y va escrita.'
           echo "=============================================================================="
           exit 1
+
+      # ── 10 · EL VEREDICTO, Y EL SUELO DEL VEREDICTO ────────────────────────────────────
+      #
+      # POR QUÉ EXISTE: este workflow salía VERDE tanto si abrió el PR y armó el auto-merge
+      # como si decidió que no había nada que hacer. Los pasos de arriba tienen salidas
+      # tempranas con `exit 0` legítimas —rama sin commits por delante, PR inexistente— y
+      # desde fuera las dos cosas se leen igual: una marca verde. El 8-sep-2026 eso hizo dudar
+      # de si `scrum-823` y `scrum-708` se habían quedado sin PR; se habían abierto los dos, y
+      # el run no lo decía. Un verde que no distingue «hice el trabajo» de «no había trabajo»
+      # obliga a abrir los logs para saber cuál fue, y los logs no los lee nadie.
+      #
+      # Cada camino verde escribe ahora una línea de vocabulario CERRADO en el resumen del run
+      # (`$GITHUB_STEP_SUMMARY`), que se ve sin abrir nada: PR-ABIERTO · SIN-COMMITS · SIN-PR ·
+      # AUTO-MERGE-ARMADO · NO-ARMADO (motivo legítimo).
+      #
+      # Y ESTE PASO ES EL SUELO: si el job llegó hasta aquí sin que NINGÚN camino declarara
+      # veredicto, es que hay un camino que no lo escribe. No pinta rojo —no ha fallado nada—
+      # pero lo dice con un aviso, porque un instrumento que solo sabe callar no es un
+      # instrumento. `always()` para que hable también cuando algo de arriba falló.
+      - name: Veredicto del run
+        if: always()
+        run: |
+          if [ -s "$RUNNER_TEMP/veredicto.txt" ]; then
+            echo "veredicto(s) declarado(s):"
+            cat "$RUNNER_TEMP/veredicto.txt"
+          else
+            echo "::warning::El run terminó sin declarar veredicto: hay un camino que no lo escribe."
+            echo "- **SIN VEREDICTO** — ningún camino declaró qué hizo. Es un hueco del propio workflow, no del PR." >> "$GITHUB_STEP_SUMMARY"
+          fi
