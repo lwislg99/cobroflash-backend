@@ -238,8 +238,10 @@ test('SCRUM-729 · 🔴 el envoltorio escribe los CINCO campos en el MISMO inser
   let visto = null;
   const tx = { invoice: { create: async ({ data }) => { visto = data; return { id: 1 }; } } };
 
+  // ⚠️ `merchantId` NO es 1: el 1 es el merchant DEMO (regla 8) y un fixture ahí desactiva
+  // comprobaciones sin tocar ningún guard. Lo cazó SCRUM-409 sobre este mismo fichero.
   await crearFacturaEmitida(tx, congelarDesdeFicha(FICHA_DE_ENTONCES), {
-    merchantId: 1, customerId: 7, number: 'F260003', total: '121.00', currency: 'EUR',
+    merchantId: MERCHANT.id, customerId: 7, number: 'F260003', total: '121.00', currency: 'EUR',
   });
 
   assert.ok(visto, '🔴 el envoltorio no ha llamado a `invoice.create`');

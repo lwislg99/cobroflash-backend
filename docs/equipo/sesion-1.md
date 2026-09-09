@@ -45,6 +45,36 @@ DE SCRUM-729 (9-sep-2026) — tres cosas que valen fuera de su ticket
    estaba en el sello: estaba en que lo sellado se volvía a calcular.
 
 ─────────────────────────────────────────────────────────────────────
+DOS MÁS, del cierre del 729 (dictadas por el fundador)
+
+🔒 UN TEST QUE NECESITA CAMBIAR EL CÓDIGO PARA PODER MIRAR MIDE EL
+   CÓDIGO CAMBIADO, NO EL TUYO.
+
+   Los tres reconstructores de documento reciben el cliente de Prisma
+   POR PARÁMETRO, así que el banco entero corre pasándoles un doble.
+   Ni una firma se tocó, nada se exportó «para poder verlo», y no hay
+   una sola línea de `src/` que exista sólo por el test.
+
+🔒 UN LÍMITE QUE SE DISPARA ANTES QUE EL TUYO HACE QUE TU PROBLEMA NO
+   EXISTA EN ESE TRAMO.
+
+   El cuarto viaje de la reserva escala con las facturas del año.
+   Buscar el umbral en la curva daba un número a ojo; encontrarlo en
+   `MAX_REGISTROS_POR_ENVIO = 1000` —que ya rompe el XML anual antes—
+   lo cierra: por debajo no hay nada que arreglar (1,95 ms sobre 5 s
+   de presupuesto) y por encima éste no es el primer problema.
+
+─────────────────────────────────────────────────────────────────────
+Y POR QUÉ CUATRO VERDES NO SON UN VERDE REPETIDO CUATRO VECES
+
+Los tres rojos se inyectaron de verdad en `src/` y cada uno tumbó
+SÓLO lo suyo: el tipo cae en el build, el lector del XML tumba el
+control 4 y no el 1, el lector del PDF tumba el 1 y no el 4. Eso es
+lo que prueba que los cuatro controles miden cosas distintas. Sin la
+discriminación, cuatro verdes pueden ser el mismo verde cuatro veces
+— y nadie lo sabría hasta el día que hiciera falta.
+
+─────────────────────────────────────────────────────────────────────
 Y LA PARTE QUE HAY QUE LEER CON EL «PORQUE» DENTRO
 
 El lector nuevo dice: columna presente → la columna; columna a NULL →

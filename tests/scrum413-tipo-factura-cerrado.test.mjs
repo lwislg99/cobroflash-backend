@@ -84,7 +84,14 @@ function censoDeTipos() {
     const L = (n) => sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
     const visitar = (n) => {
       nodos += 1;
-      if (ts.isCallExpression(n) && /\binvoice\.(create|update|updateMany|upsert)$/.test(n.expression.getText(sf))) {
+      // SCRUM-729 · `crearFacturaEmitida(tx, cliente, { type: … })` es hoy el ÚNICO creador de
+      // facturas del backend: los siete `tx.invoice.create` pasaron por él. Sin nombrarlo aquí el
+      // censo devolvía CERO tipos y el suelo se declaraba ciego — con razón. `update`,
+      // `updateMany` y `upsert` siguen igual: el envoltorio sólo crea.
+      if (ts.isCallExpression(n) && (
+        /\binvoice\.(create|update|updateMany|upsert)$/.test(n.expression.getText(sf))
+        || n.expression.getText(sf) === 'crearFacturaEmitida'
+      )) {
         const buscar = (x) => {
           if (ts.isPropertyAssignment(x) && x.name.getText(sf) === 'type') {
             const lits = [];
