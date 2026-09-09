@@ -350,9 +350,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'DESPLIEGA: producción se movió entre las dos lecturas',
   },
   {
-    // ③ El filtro de lo ilegible, apagado: un número del fallback de `env.ts` pasaría por sha.
+    // ③ El filtro de FORMATO, apagado. Desde SCRUM-824b `shaLegible` es DOS comprobaciones
+    // separadas (formato hex / forma de reloj); apagar sólo la primera basta para que la basura
+    // sin forma de hex (`''`, `'no-soy-un-sha'`, `'zzzzzzzz'`, …) deje de rechazarse, que es lo
+    // que este test mide. El número de 13 dígitos del fallback de `env.ts` lo sigue cazando el
+    // segundo `if`, intacto.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
-    de: '  if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;',
+    de: '  if (!ES_SHA.test(s)) return null;',
     a: '  if (false) return null;',
     cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
   },
