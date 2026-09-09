@@ -30,6 +30,9 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import ts from 'typescript';
 import { cargarDashboard, pintarVista, todos, datosDeMuestra } from './_banco-vistas.mjs';
+// SCRUM-832 · el registro de aprobaciones es la autoridad de la regla 30, y compara por
+// IDENTIDAD (SCRUM-715): un prefijo no es un nombre, y una subcadena tampoco.
+import { constaAprobado } from './_microcopy-aprobada.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require_ = createRequire(import.meta.url);
@@ -342,19 +345,69 @@ test('SCRUM-713 · 🔴 LA COPIA NO DIVERGE: la normalización del front da LO M
 
 // ═══ ⑧ MICROCOPY — regla 30: ni un literal estrenado ═════════════════════════════════════
 
-test('SCRUM-713 · 🔴 REGLA 30: los textos YA ESTABAN en pantalla, ninguno se estrena', () => {
+// 🔴 SCRUM-832 · ESTE GUARD MEDÍA LA PROCEDENCIA, Y LA REGLA 30 HABLA DE LA FIRMA.
+//
+// Nació exigiendo que los tres literales ESTUVIERAN YA en `customersView.js`. Era la forma
+// correcta el 7-sep por la mañana: sin firma para esta ranura, reutilizar un texto que ya estaba
+// en pantalla es lo más cerca de «no estrenar» que se puede llegar.
+//
+// Esa premisa CADUCÓ esa misma tarde: el fundador firmó dos de los tres EXPRESAMENTE para esta
+// ranura (`docs/microcopy/2026-09-07-SCRUM-713-buscador-cliente.md`, «Firmados los dos. Escríbelos
+// exactamente así»). Con la firma delante, seguir exigiendo que el texto esté copiado de otra
+// pantalla es exigir lo contrario de lo que manda la regla 30 — y de hecho lo prohibía: el
+// literal firmado, «Primero necesitas un cliente.», NO está en `customersView.js`.
+//
+// Así que se cambia el criterio, no el umbral: **la autoridad es el registro de aprobaciones**,
+// que compara por identidad (`constaAprobado`, SCRUM-715/726). Un texto vale si está FIRMADO,
+// venga de donde venga. Y sigue siendo el mismo guard: si alguien estrena un cuarto literal sin
+// firma, cae igual — y ahora además cae aunque lo haya copiado de otra pantalla, que era el
+// agujero de la versión anterior.
+test('SCRUM-713 · 🔴 REGLA 30: ningún literal del buscador se pinta sin firma', () => {
   const B = moduloBuscador();
-  const enClientes = literalesDe(leer(VISTA_CLIENTES), 'customersView.js');
   const claves = Object.keys(B.TEXTOS);
   assert.ok(claves.length >= 3,
     `🔴 CENSO CIEGO: \`TEXTOS\` sólo declara ${claves.length} entradas. Si un literal se pinta sin `
     + 'pasar por aquí, este guard no lo ve y la regla 30 deja de estar vigilada.');
-  for (const clave of claves) {
-    const texto = B.TEXTOS[clave];
-    assert.ok(enClientes.includes(texto),
-      `🔴 «${texto}» (TEXTOS.${clave}) NO existe en \`customersView.js\`. Es microcopy NUEVO y este `
-      + 'ticket tiene prohibido estrenarlo (regla 30): se propone al fundador y se para.');
-  }
+
+  // SUELO: el buscador de aprobaciones tiene que saber encontrar algo. Si devolviera vacío para
+  // todo, el bucle de abajo pasaría en verde sin haber comprobado ni una firma.
+  assert.ok(constaAprobado('Primero necesitas un cliente.').length > 0,
+    '🔴 CIEGO: el registro de microcopy no encuentra un literal que SÍ está firmado. Entonces «no '
+    + 'consta» significa «no sé mirar», y todo lo de abajo es un verde vacío.');
+
+  // ⚠️ EXCEPCIÓN DECLARADA, con fecha y con dueño — nunca silenciosa.
+  //
+  // El `placeholder` que se pinta hoy NO consta aprobado, y NO lo estrenó este ticket: lleva
+  // tiempo en `customersView.js:125` y el buscador lo reutilizó. Medido con `constaAprobado`:
+  //
+  //     «Busca por nombre…»                                  ✅ aprobado (patrón, 17-ago-2026)
+  //     «Buscar cliente por nombre»                          ✅ aprobado (el aria-label)
+  //     «Buscar por nombre, teléfono, email o referencia…»    🔴 NO consta   ← el que se pinta
+  //
+  // NO se cambia aquí: tocar un texto visible sin firma es lo que la regla 30 prohíbe, y además
+  // esto vive en OTRA pantalla. Se reporta al fundador con las dos salidas —firmar el que se
+  // pinta, o volver al «Busca por nombre…» que ya está firmado— y mientras tanto se declara aquí
+  // para que el guard siga cazando cualquier literal NUEVO en vez de quedarse rojo por uno
+  // preexistente. El día que se firme, esta entrada se BORRA: lo exige el control de más abajo.
+  const SIN_FIRMA_DECLARADOS = ['Buscar por nombre, teléfono, email o referencia…'];
+
+  const sinFirma = claves
+    .filter((c) => !SIN_FIRMA_DECLARADOS.includes(B.TEXTOS[c]))
+    .filter((c) => constaAprobado(B.TEXTOS[c]).length === 0)
+    .map((c) => `TEXTOS.${c} → «${B.TEXTOS[c]}»`);
+  assert.deepEqual(sinFirma, [],
+    '🔴 SE PINTA UN LITERAL QUE NADIE HA FIRMADO (regla 30). Se propone al fundador y se para. Y no '
+    + 'vale copiarlo de otra pantalla: un texto sin firma no se legitima por llevar tiempo en '
+    + 'producción en otro sitio.\n     ' + sinFirma.join('\n     '));
+
+  // 🔴 Y LA OTRA MITAD DE LA EXCEPCIÓN: una que ya no hace falta es ruido que tapa a la siguiente.
+  // Sin esto, el día que el fundador firme el placeholder la entrada se quedaría aquí y su ranura
+  // dejaría de estar vigilada sin que nadie se entere — que es como una excepción temporal se
+  // vuelve permanente.
+  const caducadas = SIN_FIRMA_DECLARADOS.filter((t) => constaAprobado(t).length > 0);
+  assert.deepEqual(caducadas, [],
+    '🔴 EXCEPCIÓN CADUCA: este texto YA está firmado y sigue declarado como pendiente. BÓRRALO de '
+    + '`SIN_FIRMA_DECLARADOS`:\n     ' + caducadas.join('\n     '));
 });
 
 test('SCRUM-713 · 🔴 el editor NO estrena un dropdown propio: reutiliza el `<select>` que ya estaba', async () => {
