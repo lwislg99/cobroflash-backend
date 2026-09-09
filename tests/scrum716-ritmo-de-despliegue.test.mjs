@@ -351,8 +351,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // ③ El filtro de lo ilegible, apagado: un número del fallback de `env.ts` pasaría por sha.
+    // 🔴 SCRUM-836 · el ancla original citaba el `if` combinado de antes de SCRUM-824b, que ese
+    // commit partió en dos líneas (`scripts/_ritmo-de-despliegue.mjs:100-101`). El texto exacto ya
+    // no existe, así que `meta:mutaciones` no podía inyectar la mutación y la declaraba CIEGA en
+    // vez de viva. Se apunta a la línea que hoy hace ese trabajo — la del filtro de «todo dígitos
+    // de longitud de reloj»— imitando el MISMO defecto: un timestamp de `Date.now()` cuela como sha.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
-    de: '  if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;',
+    de: '  if (TODO_DIGITOS.test(s) && LONGITUDES_DE_RELOJ.has(s.length)) return null;',
     a: '  if (false) return null;',
     cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
   },
