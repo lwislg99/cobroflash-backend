@@ -85,6 +85,12 @@ function sustituirPrisma(orig) {
   };
   moduloPrisma.prisma.$transaction = async (cb) => cb(tx);
   moduloPrisma.prisma.customerEvent = { create: async () => ({}) };
+  // SCRUM-729 · la R1 HEREDA el congelado de la original; si la original es anterior al escritor
+  // —como este fixture, y como las 55 de producción— cae a leer la ficha viva ANTES de abrir la
+  // transacción. Sin este doble, la ruta va al Prisma de verdad y muere sin `DATABASE_URL`.
+  moduloPrisma.prisma.customer = {
+    findFirst: async () => ({ name: 'Cliente QA', legalName: null, taxId: null, email: null, phone: null }),
+  };
   moduloPrisma.prisma.auditLog = { create: async () => ({}) };
   moduloPrisma.prisma.merchant = { findUnique: async () => MERCHANT, update: async () => ({}) };
 }

@@ -49,6 +49,8 @@ import { generateQuotePdf } from '../../../../lib/pdf';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
+import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
 // SCRUM-814 · el MISMO cerrojo de serie que toman `quotesAdmin` y `collect-rest`
 // (`pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)`, SCRUM-234/728/358). Aquí pesa más que en
 // ningún otro sitio: esta ruta la dispara el CLIENTE FINAL desde WhatsApp, y pulsar dos veces con
@@ -689,6 +691,9 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         // ocurrió. Aquí no se entrega ningún documento —`createdInvoice` se queda en null— así
         // que no hay fail-open: hay un aviso donde antes había un error técnico.
         let invoice: any = null;
+        // SCRUM-729 · antes de abrir la transacción: dentro está el cerrojo de serie desde la
+        // primera línea (SCRUM-814) y todo lo de dentro se serializa entre emisiones.
+        const clienteCongelado = await congelarCliente(prisma, quote.merchantId, quote.customerId);
         try {
         invoice = await prisma.$transaction(async (tx) => {
           // ── SCRUM-814 · EL CERROJO PRIMERO, Y EL RECUENTO DENTRO ───────────────────────────
@@ -718,21 +723,19 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
             // `ref` nombra la VÍA, nunca el token (sería guardar una credencial).
             actor: { tipo: 'cliente_final', ref: 'quote_token' },
           });
-          return tx.invoice.create({
-            data: {
-              merchantId: quote.merchantId,
-              customerId: quote.customerId,
-              quoteId: quote.id,
-              number: invoiceNumber,
-              type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0
-              total: invoiceAmount.toFixed(2),
-              stageLabel: isCustomPlan ? stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
-              currency: quote.currency,
-              lines: scaledLines.length > 0 ? scaledLines : undefined,
-              pdfUrl: 'PENDING_PDF',
-              qrData: 'PENDING_QR',
-              registerId: null,
-            },
+          return crearFacturaEmitida(tx, clienteCongelado, {
+            merchantId: quote.merchantId,
+            customerId: quote.customerId,
+            quoteId: quote.id,
+            number: invoiceNumber,
+            type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0
+            total: invoiceAmount.toFixed(2),
+            stageLabel: isCustomPlan ? stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
+            currency: quote.currency,
+            lines: scaledLines.length > 0 ? scaledLines : undefined,
+            pdfUrl: 'PENDING_PDF',
+            qrData: 'PENDING_QR',
+            registerId: null,
           });
         });
 

@@ -57,6 +57,7 @@ import {
   validarPeticionParcial,
 } from '../../domain/albaranFacturacion';
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service';
+import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { getEmissionMode } from '../../../invoicing/domain/emission.service';
@@ -1195,6 +1196,10 @@ router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
     // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
     exigirTiposDeIvaEmitibles(invoiceLines);
 
+    // SCRUM-729 · el cliente se congela AQUÍ, fuera de la transacción: dentro estaría detrás del
+    // cerrojo de serie y sería un viaje más en la sección crítica.
+    const clienteCongelado = await congelarCliente(prisma, req.merchantId!, job.customerId);
+
     const invoice = await prisma.$transaction(async (tx) => {
       const inv = await emitInvoice(tx, {
         merchantId: req.merchantId!, customerId: job.customerId, total,
@@ -1204,6 +1209,7 @@ router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
         quoteId: null,
         actor: actorDeRequest(req),
         origen: 'C7-parcial', // SCRUM-347: parcial de albarán, ya no «C7» a secas
+        clienteCongelado,
       });
       if (isReceiptNumber(inv.number)) throw new Error('facturacion_no_disponible');
 
@@ -1409,6 +1415,9 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
     // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
     exigirTiposDeIvaEmitibles(invoiceLines);
 
+    // SCRUM-729 · idem: el congelado va FUERA de la transacción, antes del cerrojo.
+    const clienteCongelado = await congelarCliente(prisma, req.merchantId!, job.customerId);
+
     const invoice = await prisma.$transaction(async (tx) => {
       const inv = await emitInvoice(tx, {
         merchantId: req.merchantId!, customerId: job.customerId, total,
@@ -1420,6 +1429,7 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
         quoteId: quote!.id,
         actor: actorDeRequest(req),
         origen: 'C7-albaran', // SCRUM-347: albarán → factura (A0.4)
+        clienteCongelado,
       });
       if (isReceiptNumber(inv.number)) throw new Error('facturacion_no_disponible');
 
