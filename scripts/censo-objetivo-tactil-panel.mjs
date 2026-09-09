@@ -45,7 +45,7 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { lanzarNavegador } from './_navegador.mjs';
 import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL } from './_medidor-de-toque.mjs';
-import { serializar, paginaDeClientes, CLIENTES_DE_MUESTRA, DETALLE_360_DE_MUESTRA, ARGUMENTOS_DE_VISTA } from './_pagina-panel.mjs';
+import { serializar, paginaDeClientes, CLIENTES_DE_MUESTRA, DETALLE_360_DE_MUESTRA, TRABAJO_DE_MUESTRA, ARGUMENTOS_DE_VISTA } from './_pagina-panel.mjs';
 import { cargarDashboard, pintarVista, todos } from '../tests/_banco-vistas.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -71,6 +71,12 @@ const DATOS = (url) => {
   if (/\/admin\/providers\b/.test(u)) return { ok: true, items: [{ id: 1, name: 'Proveedor QA', phone: '', email: '', notes: '' }] };
   if (/\/billing\/plans/.test(u)) return { plans: [], currentPlan: null, founding: null };
   if (/\/albaranes\//.test(u)) return { id: 1, estado: 'borrador', lines: [], items: [] };
+  // SCRUM-848 · la ficha de Trabajo, con un Trabajo QUE EXISTE. Antes caía en el `return []` de
+  // abajo —y ni eso le llegaba: el banco no le pasaba la ruta a `apiRequest`, así que esta función
+  // se llamaba sin url y contestaba siempre por la rama final—. Se medía un Trabajo sin `status`,
+  // que el producto no puede producir. Es el MISMO fixture que usa `guard:objetivo-tactil`: el que
+  // cuenta y el que vigila tienen que hablar de la misma pantalla.
+  if (/\/admin\/jobs\//.test(u)) return TRABAJO_DE_MUESTRA;
   return [];
 };
 
