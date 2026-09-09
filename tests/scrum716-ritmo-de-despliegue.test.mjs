@@ -351,9 +351,12 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // ③ El filtro de lo ilegible, apagado: un número del fallback de `env.ts` pasaría por sha.
+    // SCRUM-824b sustituyó el guardián de una línea por el de dos (distingue por LONGITUD, no
+    // por «ser todo dígitos» — ver el comentario de `LONGITUDES_DE_RELOJ` en el propio fichero).
+    // El ancla se sigue apagando ENTERA: sólo se actualiza el texto, no el radio de la mutación.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
-    de: '  if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;',
-    a: '  if (false) return null;',
+    de: "  if (!ES_SHA.test(s)) return null;\n  if (TODO_DIGITOS.test(s) && LONGITUDES_DE_RELOJ.has(s.length)) return null;",
+    a: '  if (false) return null;\n  if (false) return null;',
     cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
   },
   {

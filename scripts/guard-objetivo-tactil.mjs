@@ -226,7 +226,17 @@ const SUPERFICIES_791 = [
   // eso nunca estuvo entre los cortos. O sea que la vista no ha dejado de pintar nada que
   // debiera: hay un objetivo menos porque hay un botón menos, y encima uno que no cumplía AB6.
   { ruta: '/__quotes', vista: 'renderQuotesView', titulo: 'editor de presupuesto', distintosEsperados: 7 },
-  { ruta: '/__jobdetail', vista: 'renderJobDetailView', titulo: 'ficha de Trabajo', distintosEsperados: 6 },
+  // 🔴 SCRUM-823 · 6 → 5, y el que falta VA NOMBRADO — mismo patrón que SCRUM-794 arriba.
+  //
+  // El fixture de este guard no pasa `jobId` (`args: []`, ver el bucle de abajo): el Trabajo que
+  // monta `renderJobDetailView` llega con `job.status` sin valor. Antes de SCRUM-823 eso caía en
+  // el peldaño 5 de `jobNextAction` («sin ningún albarán → + Nuevo albarán») sin mirar el estado,
+  // así que el héroe pintaba un `BUTTON.btn-primary` — el mismo defecto de fondo que SCRUM-823
+  // cerró: ofrecer el documento de entrega a un Trabajo que no está `en_curso` ni `terminado`
+  // (`JOB_ESTADOS_CON_DOCUMENTOS`, `jobNextAction.js`). Con la puerta puesta, `job.status`
+  // indefinido no la pasa, `jobNextAction` devuelve `null` y el héroe no se pinta: un objetivo
+  // corto menos porque hay un botón menos, no porque el censo haya dejado de ver algo.
+  { ruta: '/__jobdetail', vista: 'renderJobDetailView', titulo: 'ficha de Trabajo', distintosEsperados: 5 },
   // 🔴 SCRUM-795 · LA FICHA 360, y por qué entra AHORA y no en SCRUM-791.
   //
   // El censo de SCRUM-787 no pudo proponerla: la 360 nunca llegó a montarse. El banco llamaba a
@@ -582,7 +592,10 @@ const EXCEPCIONES_791 = {
   renderJobDetailView: [
     { sel: 'BUTTON.btn-ghost.btn-sm', motivo: 'clase compartida `.btn-sm` (30,9 px) — «Cambiar». Pre-existente; la retira el fundador con `.btn-sm`.' },
     { sel: 'BUTTON.btn-secondary.btn-sm', motivo: 'clase compartida `.btn-sm` (30,9 px) — «+ Nuevo albarán», «Parte de trabajo». Ídem.' },
-    { sel: 'BUTTON.btn-primary', motivo: 'el BOTÓN BASE a 37,0 px — el CTA del héroe. Segundo grupo de SCRUM-787, decisión aparte de `.btn-sm`.' },
+    // SCRUM-823 · CADUCADA Y BORRADA: `BUTTON.btn-primary` era el CTA del héroe («+ Nuevo
+    // albarán»), y con la puerta de estado puesta ya no se pinta para el fixture de este guard
+    // (ver el comentario junto a `distintosEsperados: 5` arriba). No se retira un botón de la
+    // pantalla real: se retira una excepción que ya no tiene a quién excusar.
     { sel: 'BUTTON.detail-miga-link', motivo: '19,6 px de ÁREA DE TOQUE — la miga «Trabajos». Uno de los DOS PEORES del árbol, y su caja CSS no lo delata: es el ejemplo de por qué el árbitro es el área y no la caja. Sin decidir.' },
     { sel: 'INPUT', motivo: '14,0 px — la casilla de precios de la barra de documentos. EL PEOR del árbol entero, y en la pantalla que se usa de pie en obra. Sin decidir.' },
   ],
