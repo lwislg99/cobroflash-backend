@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { decidir, esDeFork, cuerpoDespierta, cuerpoNoDebeDespertar, BOT } from '../scripts/puerta-avisador-rojo.mjs';
+import { decidir, esDeFork, cuerpoDespierta, cuerpoNoDebeDespertar, tocaCaminoFiscal, BOT } from '../scripts/puerta-avisador-rojo.mjs';
 
 const REPO = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const WORKFLOW = path.join(REPO, '.github', 'workflows', 'avisador-rojo.yml');
@@ -26,6 +26,7 @@ const base = {
   autor: BOT,
   permisoAutor: '',
   marcasPrevias: [],
+  ficheros: ['public/dashboard/js/homeView.js'],
   marcaActual: 'abc1234:build + tests',
   tope: 3,
 };
@@ -189,4 +190,70 @@ test('el espejo es la negación exacta, no una comprobación parecida', () => {
   for (const c of ['sin mención', '', 'claude sin arroba', 'correo@claudela.com']) {
     assert.equal(cuerpoNoDebeDespertar(c), !cuerpoDespierta(c), 'tienen que ser exactamente opuestas');
   }
+});
+
+// ── LA PUERTA FISCAL (SCRUM-834c) ─────────────────────────────────────────────────────────
+// La regla 38 se les exige a las seis sesiones desde el primer día. Al robot no se le exigía,
+// y desde que el avisador está vivo la cadena avisador → Claude → push se cierra SIN ninguna
+// persona. En `verifactu.service` e `invoiceNumber.service` hay 28 piezas que se pueden
+// romper con la tanda en VERDE. Un robot suelto ahí dentro es exactamente lo que no puede
+// pasar.
+//
+// EL CONTROL QUE DECIDE ES EL NEGATIVO: un guardián que no has visto decir «no» no sabes si
+// sabe decirlo.
+
+const fiscal = { ...base, ficheros: ['src/modules/invoicing/domain/verifactu.service.ts'] };
+const inocuo = { ...base, ficheros: ['public/dashboard/js/homeView.js', 'README.md'] };
+
+test('🔴 CONTROL NEGATIVO · PR que toca verifactu.service → NO despierta y DICE ESCALADO-FISCAL', () => {
+  const r = decidir(fiscal);
+  assert.equal(r.avisar, false, 'un robot no toca el camino de emisión: lo mira una persona');
+  assert.equal(r.codigo, 'ESCALADO-FISCAL', 'el «no» tiene que venir con su código, no con silencio');
+  assert.match(r.motivo, /regla 38/);
+});
+
+test('las CUATRO rutas del alcance escalan', () => {
+  for (const f of [
+    'src/modules/invoicing/app/routes/invoices.routes.ts',
+    'src/modules/invoicing/domain/verifactu.service.ts',
+    'src/modules/invoicing/domain/invoiceNumber.service.ts',
+    'prisma/schema.prisma',
+  ]) {
+    assert.equal(decidir({ ...base, ficheros: [f] }).codigo, 'ESCALADO-FISCAL', f);
+  }
+});
+
+test('basta UN fichero fiscal entre muchos inocuos', () => {
+  const r = decidir({ ...base, ficheros: ['README.md', 'public/x.js', 'prisma/schema.prisma'] });
+  assert.equal(r.codigo, 'ESCALADO-FISCAL', 'no se mira la mayoría: se mira si hay alguno');
+});
+
+test('🔴 los dos .service siguen escalando si algún día los MUEVEN de invoicing/', () => {
+  // La regla por nombre es redundante hoy y deja de serlo el día de la mudanza.
+  const r = decidir({ ...base, ficheros: ['src/otro/sitio/verifactu.service.ts'] });
+  assert.equal(r.codigo, 'ESCALADO-FISCAL');
+});
+
+test('🔴 sin lista de ficheros → escala (falla CERRADO)', () => {
+  assert.equal(decidir({ ...base, ficheros: [] }).codigo, 'ESCALADO-FISCAL');
+  assert.equal(decidir({ ...base, ficheros: undefined }).codigo, 'ESCALADO-FISCAL');
+  assert.equal(tocaCaminoFiscal(null), true, 'no poder mirar no es haber mirado');
+});
+
+test('CONTROL POSITIVO de la puerta fiscal: un PR inocuo SÍ sigue despertando', () => {
+  // La mitad que impide que «poner la puerta» acabe apagando el avisador entero.
+  assert.equal(decidir(inocuo).avisar, true);
+  assert.equal(decidir(inocuo).codigo, 'AVISAR');
+});
+
+test('el fork manda sobre lo fiscal: contenido de un desconocido es la razón más fuerte', () => {
+  const r = decidir({ ...fiscal, repoOrigen: 'desconocido/cobroflash-backend' });
+  assert.equal(r.codigo, 'FORK-NO-DESPIERTA');
+});
+
+test('el workflow le pasa a la puerta los ficheros del PR', () => {
+  const yml = fs.readFileSync(WORKFLOW, 'utf8');
+  assert.match(yml, /pulls\/\$PR\/files|\/files/,
+    'sin la lista de ficheros la puerta fiscal falla cerrado y NADA despertaría nunca');
+  assert.match(yml, /ficheros/, 'y tiene que llegar a la puerta con ese nombre');
 });

@@ -136,6 +136,12 @@ jobs:
           # El permiso solo se pregunta para personas: la API devuelve 404 para un bot.
           PERMISO="$(gh api "repos/$REPO/collaborators/$AUTOR/permission" -q .permission 2>/dev/null || echo '')"
 
+          # 🔴 Los ficheros que toca el PR, para la PUERTA FISCAL (regla 38). Si esta lista
+          # llega vacía la puerta falla CERRADO y escala: no poder mirar no es haber mirado.
+          # `--paginate` a propósito: un PR grande trae los ficheros en varias páginas, y
+          # quedarse con la primera podría dejar fuera justo el fichero fiscal.
+          FICHEROS="$(gh api "repos/$REPO/pulls/$PR/files" --paginate -q '.[].filename' 2>/dev/null || true)"
+
           # Qué check cayó, para que la marca distinga un rojo de otro en el mismo commit.
           CHECK="$(gh api "repos/$REPO/commits/$SHA/check-runs" \
                    -q '[.check_runs[] | select(.conclusion=="failure")] | .[0].name' 2>/dev/null || echo 'ci')"
@@ -150,15 +156,16 @@ jobs:
                      | sed -E 's/<!-- avisador-rojo:(.*) -->/\1/' || true)"
 
           ENTRADA="$(MARCA="$MARCA" AUTOR="$AUTOR" PERMISO="$PERMISO" \
-                     PREVIAS="$PREVIAS" node -e "
-            const p=(process.env.PREVIAS||'').split('\n').map(s=>s.trim()).filter(Boolean);
+                     PREVIAS="$PREVIAS" FICHEROS="$FICHEROS" node -e "
+            const lineas=(t)=>(t||'').split('\n').map(s=>s.trim()).filter(Boolean);
             process.stdout.write(JSON.stringify({
               conclusionCI: process.env.CONCLUSION,
               repoBase: process.env.REPO,
               repoOrigen: process.env.REPO_ORIGEN,
               autor: process.env.AUTOR,
               permisoAutor: process.env.PERMISO,
-              marcasPrevias: p,
+              ficheros: lineas(process.env.FICHEROS),
+              marcasPrevias: lineas(process.env.PREVIAS),
               marcaActual: process.env.MARCA,
               tope: Number(process.env.TOPE),
             }));")"
