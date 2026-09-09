@@ -78,3 +78,18 @@ la pregunta. Y pasó de verdad en SCRUM-842: no encontré el filtro fiscal porqu
 
 Cuando salga ese veredicto, va con el suelo al lado: *«la misma búsqueda SÍ encuentra X, así que no
 está ciega»*.
+
+## CANON · por qué una lista de rutas la escribe quien conoce el módulo
+
+    🔒 «Una lista de rutas escrita por quien conoce el módulo tiene la forma de lo que él conoce.»
+
+SCRUM-842: la Sesión 5 construyó la puerta fiscal con cuidado, la probó con 28 tests y con su
+control negativo, y declaró —con razón— que nombraba los dos `.service.ts` además del directorio
+para que una mudanza no la burlara. Sus tres ataques previstos los caza los tres.
+
+Y aun así `RUTAS_FISCALES` no incluía `src/modules/fiscal/`: **20 de 20 ficheros de la capa SIF-1
+pasaban**. Ninguna de las dos hizo nada mal. Una lista de rutas no falla por descuido: falla por
+el borde del mapa de quien la escribe, y ese borde sólo lo ve alguien que no comparte el mapa.
+
+    🔒 «Un suelo no tiene por qué ser un mecanismo: a veces basta UN caso conocido encima de la
+        mesa. Un cero sin ningún caso conocido delante no se puede juzgar.»
