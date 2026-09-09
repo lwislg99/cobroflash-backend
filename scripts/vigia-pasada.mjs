@@ -33,10 +33,18 @@ if (!suelo.ok) {
 }
 
 const prs = JSON.parse(fs.readFileSync('prs.json', 'utf8'));
+// `numero|mergeStateStatus|nº de check-runs|minutos desde el push|sonda de conflicto`
+// La sonda llega como 'true' | 'false' | 'null'. `null` es «no se pudo medir», y NO es
+// «no hay conflicto»: por eso se conserva como null y no se convierte a false.
 const estados = new Map(
   fs.readFileSync('estados.txt', 'utf8').split('\n').filter(Boolean).map((l) => {
-    const [n, e, c] = l.split('|');
-    return [Number(n), { estado: e, checks: Number(c) }];
+    const [n, e, c, min, sonda] = l.split('|');
+    return [Number(n), {
+      estado: e,
+      checks: Number(c),
+      minutosDesdePush: min === '' || min === undefined ? undefined : Number(min),
+      sondaConflicto: sonda === 'true' ? true : sonda === 'false' ? false : null,
+    }];
   }),
 );
 
@@ -51,8 +59,16 @@ for (const p of prs) {
     autoMerge: !!p.autoMergeRequest,
   });
   if (!v.vigilar) { descartados.push(`#${p.number} · ${v.porque}`); continue; }
-  const o = estados.get(p.number) || { estado: 'UNKNOWN', checks: 0 };
+  // Sin observación no se inventa una: `sondaConflicto: null` es «no se midió», que el
+  // clasificador distingue de «no hay conflicto».
+  const o = estados.get(p.number) || { estado: 'UNKNOWN', checks: 0, sondaConflicto: null };
   const c = causaDelAtasco(o);
+
+  // `RECIEN-EMPUJADO` NO es un atasco: es un «todavía no». Si entrara en la lista, cada push
+  // haría «empeorar» el conjunto y dispararía un comentario, y el vigía se silenciaría el
+  // primer día por su propio ruido. Se descarta DICIENDO por qué, que es distinto de callarlo.
+  if (c.causa === 'RECIEN-EMPUJADO') { descartados.push(`#${p.number} · ${c.detalle}`); continue; }
+
   filas.push({
     numero: p.number, causa: c.causa, detalle: c.detalle,
     horas: horasDesde(p.createdAt, ahora), quieto: horasDesde(p.updatedAt, ahora),

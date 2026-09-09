@@ -55,7 +55,30 @@ jobs:
   vigilar:
     runs-on: ubuntu-latest
     steps:
+      # `fetch-depth: 0` + el fetch explícito de `main`: aquí SÍ hace falta historia, porque
+      # la segunda sonda del conflicto (`git merge-tree`) necesita los dos commits de verdad.
+      # Es el patrón medido de la casa (tabla de `ci.yml`, SCRUM-765): con una sola ref
+      # `origin/main` no resuelve, así que ninguna de las dos cosas basta sola.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Traer `main` (la sonda del conflicto compara contra él)
+        run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
+
+      # 🔴 LA SONDA SE VALIDA ANTES DE USARLA. Una que devolviera 1 siempre marcaría conflicto
+      # en todo y parecería que funciona. El control es comparar algo consigo mismo: tiene que
+      # dar 0. Si no lo da, la pasada NO usa la segunda sonda —y lo dice— en vez de fiarse.
+      - id: sonda
+        name: Validar la sonda del conflicto (main contra main → 0)
+        run: |
+          if git merge-tree --write-tree origin/main origin/main > /dev/null 2>&1; then
+            echo "valida=true" >> "$GITHUB_OUTPUT"
+            echo "sonda validada: main contra main da 0"
+          else
+            echo "valida=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::La sonda del conflicto NO pasa su control (main contra main no da 0)."
+            echo "Esta pasada usará SOLO mergeStateStatus, y lo dirá."
+          fi
 
       # ── 1 · REUNIR ────────────────────────────────────────────────────────────────────
       # `gh` no existe dentro de node, así que los datos se reúnen aquí y la decisión la
@@ -82,10 +105,31 @@ jobs:
             done
             SHA="$(gh pr view "$N" --json headRefOid -q .headRefOid 2>/dev/null || echo '')"
             NCHECKS=0
+            MINUTOS=''
+            SONDA=null
             if [ -n "$SHA" ]; then
               NCHECKS="$(gh api "repos/$REPO/commits/$SHA/check-runs" -q .total_count 2>/dev/null || echo 0)"
+
+              # Cuándo se empujó esa cabeza. Sin este dato NO se regala la gracia: no saber
+              # cuándo se empujó no es «se empujó hace un momento».
+              FECHA="$(gh api "repos/$REPO/commits/$SHA" -q .commit.committer.date 2>/dev/null || echo '')"
+              if [ -n "$FECHA" ]; then
+                MINUTOS="$(FECHA="$FECHA" node -pe "Math.round((Date.now()-new Date(process.env.FECHA))/60000)")"
+              fi
+
+              # LA SEGUNDA SONDA, solo si pasó su control. Se trae la cabeza del PR porque
+              # `merge-tree` necesita el commit de verdad, no su nombre.
+              if [ "${{ steps.sonda.outputs.valida }}" = "true" ]; then
+                if git fetch --no-tags --quiet origin "pull/$N/head" 2>/dev/null; then
+                  if git merge-tree --write-tree origin/main FETCH_HEAD > /dev/null 2>&1; then
+                    SONDA=false
+                  else
+                    SONDA=true
+                  fi
+                fi
+              fi
             fi
-            echo "$N|$EST|$NCHECKS" >> estados.txt
+            echo "$N|$EST|$NCHECKS|$MINUTOS|$SONDA" >> estados.txt
           done
           echo "PR reunidos: $(wc -l < estados.txt)"
 
