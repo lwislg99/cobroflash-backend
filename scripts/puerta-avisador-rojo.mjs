@@ -43,6 +43,106 @@ export const BOT = 'yaqu-bot[bot]';
 /** Permisos de repositorio que cuentan como «escritura» en la API de GitHub. */
 const PERMISOS_DE_ESCRITURA = new Set(['admin', 'write', 'maintain']);
 
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 LA PUERTA FISCAL — REGLA 38, APLICADA TAMBIÉN AL ROBOT
+//
+// La regla 38 se les exige a las seis sesiones desde el primer día: el camino de emisión se
+// LEE, no se modifica. Al avisador no se le exigía, y eso era un descuido con dos mitades
+// medidas el 9-sep-2026:
+//
+//   · la cadena avisador → Claude → push a la rama SE CIERRA SIN NINGUNA PERSONA (medido:
+//     `claude.yml` arrancó siete veces en media hora con `actor = yaqu-bot[bot]`);
+//   · y en `verifactu.service` e `invoiceNumber.service` hay 28 piezas de lógica que se
+//     pueden romper con la tanda en VERDE — entre ellas invertir qué eslabón cierra la cadena
+//     de huellas, quitar la puerta de sellar dentro de una transacción, emitir sin productor
+//     configurado, y el signo del huso horario del sello.
+//
+// Las dos juntas: un robot puede tocar el camino fiscal solo, y hay 28 maneras de romperlo
+// que ningún guard caza. Así que aquí no se despierta a nadie: se ESCALA a una persona.
+//
+// 🔒 «Una regla que le exiges a una persona y no a tu robot no es una regla: es una costumbre.»
+//
+// Los dos `.service.ts` viven HOY dentro de `src/modules/invoicing/`, así que la regla del
+// directorio ya los cubre. Se nombran igualmente A PROPÓSITO: el día que alguien los mueva,
+// la regla por nombre los sigue cazando. Una redundancia que sobrevive a una mudanza no es
+// una redundancia.
+// 🔴 LA LISTA A MANO SE QUEDÓ CORTA, Y SE QUEDÓ CORTA POR DONDE TENÍA QUE QUEDARSE.
+//
+// La primera versión enumeraba rutas: `src/modules/invoicing/`, los dos `.service.ts` y el
+// esquema. Sus tres defensas contra la mudanza funcionaban —fichero nuevo, `.service` movido,
+// ruta relativa rara: los tres cazados— y aun así **`src/modules/fiscal/` entero pasaba: 20
+// de 20 ficheros**. Ahí viven `verifactu/` (la huella y el registro que va a la AEAT),
+// `librosAeat/`, `modelo303/` y `evidencias/atestiguamiento`. O sea la capa de SIF-1: lo más
+// sensible del repositorio, tratado como un PR cualquiera.
+//
+// 🔒 «Una lista de rutas escrita por quien conoce el módulo tiene la forma de lo que él
+//     conoce.» Yo conocía `invoicing/` y escribí `invoicing/`.
+//
+// POR ESO YA NO SE ESCRIBE UNA LISTA DE FISCALES: SE CENSA. Cada directorio de
+// `src/modules/` tiene que estar clasificado en una de las dos listas, y `censarModulos`
+// devuelve los que no lo estén. El guard de la tanda lo ejerce contra el árbol real, así que
+// **un módulo nuevo rompe el test hasta que alguien lo clasifique** — que es exactamente lo
+// que no pasó con `fiscal/`. Y mientras no se clasifique, `tocaCaminoFiscal` lo trata como
+// fiscal: no saber si algo es el camino de emisión no es saber que no lo es.
+
+/** Módulos que SON camino de emisión fiscal (regla 38). */
+export const MODULOS_FISCALES = ['fiscal', 'invoicing'];
+
+/**
+ * Módulos declarados NO fiscales, uno a uno y a conciencia. No es una lista de relleno:
+ * meter un módulo aquí es afirmar que un robot puede tocarlo sin que lo mire una persona.
+ */
+export const MODULOS_NO_FISCALES = [
+  'ai', 'auth', 'billing', 'expenses', 'exports', 'jobs', 'maintenance', 'messaging',
+  'metrics', 'payments', 'products', 'providers', 'quoteRequests', 'quotes', 'reports',
+  'search', 'system', 'team', 'templates', 'whatsappBot',
+];
+
+/**
+ * EL SUELO: devuelve los módulos del árbol que nadie ha clasificado. Si esto no está vacío,
+ * la puerta fiscal está opinando sobre un árbol que no conoce.
+ * @param {string[]} directorios  nombres de directorio bajo `src/modules/`
+ */
+export function censarModulos(directorios = []) {
+  const conocidos = new Set([...MODULOS_FISCALES, ...MODULOS_NO_FISCALES]);
+  return directorios.filter((d) => !conocidos.has(d));
+}
+
+/**
+ * Las rutas que escalan. Se DERIVAN de `MODULOS_FISCALES` en vez de repetirse a mano, para
+ * que añadir un módulo fiscal sea una línea en un sitio y no dos en dos.
+ * Los `.service.ts` van además por NOMBRE: hoy viven dentro de `invoicing/`, y así la regla
+ * los sigue cazando el día que alguien los mueva fuera.
+ */
+export const RUTAS_FISCALES = [
+  ...MODULOS_FISCALES.map((m) => `src/modules/${m}/`),
+  'verifactu.service.ts',
+  'invoiceNumber.service.ts',
+  'prisma/schema.prisma',
+];
+
+/**
+ * ¿Toca el PR el camino de emisión fiscal?
+ * FALLA CERRADO: si no se sabe qué ficheros toca (lista vacía o ausente), se responde que SÍ.
+ * No poder mirar no es haber mirado, y aquí el coste de equivocarse es que un robot edite el
+ * sellado; el de acertar de más, que una persona mire un PR.
+ */
+export function tocaCaminoFiscal(ficheros) {
+  if (!Array.isArray(ficheros) || ficheros.length === 0) return true;
+  const conocidos = new Set([...MODULOS_FISCALES, ...MODULOS_NO_FISCALES]);
+  return ficheros.some((f) => {
+    const ruta = String(f || '').replace(/\\/g, '/');
+    const baja = ruta.toLowerCase();
+    if (RUTAS_FISCALES.some((r) => baja.includes(r.toLowerCase()))) return true;
+
+    // Un módulo que nadie ha clasificado se trata como fiscal. Es la mitad viva del censo:
+    // sin esto, un módulo nuevo pasaría igual que pasó `fiscal/` durante todo un día, y el
+    // guard del censo solo lo diría en la tanda — no aquí, que es donde decide.
+    const m = ruta.match(/(?:^|\/)src\/modules\/([^/]+)\//);
+    return !!(m && !conocidos.has(m[1]));
+  });
+}
+
 /**
  * ¿Es de un fork? `head.repo` puede venir a `null` (fork borrado): eso también es fork.
  * Se comparan los nombres completos `owner/repo`, no el owner suelto.
@@ -62,6 +162,7 @@ export function esDeFork({ repoBase, repoOrigen } = {}) {
  * @param {string} e.repoOrigen         'owner/repo' de la rama de origen
  * @param {string} e.autor              login de quien abrió el PR
  * @param {string} e.permisoAutor       'admin'|'write'|'maintain'|'read'|'none'|''
+ * @param {string[]} e.ficheros        rutas que toca el PR (para la puerta fiscal)
  * @param {string[]} e.marcasPrevias    marcas de avisos ya publicados en ese PR
  * @param {string} e.marcaActual        marca de ESTE rojo (head_sha + check)
  * @param {number} e.tope               máximo de avisos por PR
@@ -86,7 +187,20 @@ export function decidir(e = {}) {
     };
   }
 
-  // 3 · Y el permiso, otra vez, aquí. `allowed_bots` desactivó el que había.
+  // 3 · LA PUERTA FISCAL. Va con las de seguridad y antes que la de autor, por el mismo
+  //     motivo que el fork: una condición de seguridad no debe depender de que otra se
+  //     evalúe bien. Y va DESPUÉS del fork porque un PR de fork ya está rechazado por la
+  //     razón más fuerte —contenido de un desconocido— y ése es el veredicto que hay que leer.
+  if (tocaCaminoFiscal(e.ficheros)) {
+    return {
+      avisar: false,
+      codigo: 'ESCALADO-FISCAL',
+      motivo: 'el PR toca el camino de emisión fiscal (regla 38): no despierta a Claude, ' +
+              'lo mira una persona',
+    };
+  }
+
+  // 4 · Y el permiso, otra vez, aquí. `allowed_bots` desactivó el que había.
   const esElBot = autor === BOT;
   const tieneEscritura = PERMISOS_DE_ESCRITURA.has(String(permisoAutor || '').toLowerCase());
   if (!esElBot && !tieneEscritura) {
@@ -97,18 +211,18 @@ export function decidir(e = {}) {
     };
   }
 
-  // 4 · Sin marca no hay forma de saber si ya se avisó → no se avisa (falla cerrado).
+  // 5 · Sin marca no hay forma de saber si ya se avisó → no se avisa (falla cerrado).
   if (!marcaActual) {
     return { avisar: false, codigo: 'SIN-MARCA', motivo: 'no se pudo componer la marca del aviso' };
   }
 
-  // 5 · El MISMO rojo no se avisa dos veces. La marca lleva head_sha + check dentro, así que
+  // 6 · El MISMO rojo no se avisa dos veces. La marca lleva head_sha + check dentro, así que
   //     un rojo nuevo sobre un commit nuevo sí es un aviso nuevo.
   if (marcasPrevias.includes(marcaActual)) {
     return { avisar: false, codigo: 'YA-AVISADO', motivo: `ya hay un aviso para ${marcaActual}` };
   }
 
-  // 6 · El tope del bucle. Vive en el PR (los avisos previos), no en el job: un workflow no
+  // 7 · El tope del bucle. Vive en el PR (los avisos previos), no en el job: un workflow no
   //     recuerda nada entre ejecuciones y un contador dentro del job es un adorno.
   if (marcasPrevias.length >= tope) {
     return {
