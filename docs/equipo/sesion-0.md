@@ -66,3 +66,15 @@ precisión medida.
 Me cazó el guard de SCRUM-710b: declaré dos tautologías como `fichero:113`. Si la clave lleva
 la línea, corregir cualquier cosa por encima mueve la declaración y el trinquete grita sin que
 nada haya cambiado.
+
+## CANON · el veredicto que más importa no confundir
+
+    🔒 «"No lo encuentro" es un veredicto DISTINTO de "no tiene defecto".»
+
+Confundirlos es el peor error posible en este puesto: uno manda a mirar otra vez, el otro cierra
+la pregunta. Y pasó de verdad en SCRUM-842: no encontré el filtro fiscal porque **auditaba main y
+él vivía en una rama sin mergear**. Las dos mediciones eran correctas. Si lo hubiera reportado como
+«no existe», habría cerrado una pregunta que estaba abierta.
+
+Cuando salga ese veredicto, va con el suelo al lado: *«la misma búsqueda SÍ encuentra X, así que no
+está ciega»*.
