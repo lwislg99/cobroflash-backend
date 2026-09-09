@@ -58,11 +58,15 @@
 // la regex de frontera. Es un cambio aditivo y sin efecto sobre el motor; la alternativa era la
 // tercera copia de «SCRUM-29 no puede casar dentro de SCRUM-298».
 //
-// 🔴 EL COSTURÓN, VIGILADO: `agruparRamas` agrupa con `numeroDeClave` (SCRUM-387, SIN anclar) y la
-// población se deriva con `numeroDeRama` (SCRUM-738, anclada y con letra de fase). Son DOS reglas
-// para la misma pregunta. Medido (árbol `cobroflash-b16`, 6-sep-2026T05:07Z, 492 refs de
-// `refs/remotes/origin/`): **0 desacuerdos**. Y como un cero medido caduca, el guard
-// `tests/scrum753-…` las reconcilia sobre el árbol vivo en cada tanda: el día que discrepen, rojo.
+// ✅ EL COSTURÓN, COSIDO (SCRUM-829, 8-sep-2026). Aquí había DOS reglas para la misma pregunta:
+// `agruparRamas` agrupaba con `numeroDeClave` (subcadena) y la población se derivaba con
+// `numeroDeRama` (anclada). El cero medido el 6-sep-2026 caducó exactamente como se temía: al
+// aparecer `revert-1192-scrum-824b-el-vigia-que-no-deja-pasar` —un nombre que genera GITHUB solo
+// al revertir un PR— una dijo 824 y la otra `null`.
+//
+// Ahora hay UNA, en `scripts/_numero-de-rama.mjs`, y los dos consumidores la llaman. El guard
+// `tests/scrum753-…` sigue reconciliándolos, pero ya no compara dos funciones: compara los DOS
+// CONSUMIDORES sobre el mismo nombre, que es lo que de verdad tiene que coincidir.
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -108,10 +112,28 @@ function gitDe(raiz) {
  * que `refs/remotes/origin/*` se mueve **sin que tú hagas nada** cuando otra sesión trae. Un
  * censo que se limita a recomendar el fetch mide contra lo que dejó el último que pasó por aquí.
  *
- * Es lectura pura: `fetch` no toca el árbol de trabajo ni mueve ninguna rama local.
+ * No toca el árbol de trabajo ni mueve ninguna rama local. Sí SINCRONIZA `refs/remotes/origin/*`
+ * en los dos sentidos — ver `--prune` abajo, que es una escritura y se declara.
+ *
+ * ── 🔴 SCRUM-829 · `--prune`, Y POR QUÉ NO `ls-remote` ──────────────────────────────────────
+ * Sin podar, este fetch sólo AÑADE: una rama borrada en origin deja su `refs/remotes/origin/…`
+ * aquí para siempre, y el censo la cuenta como si existiera. Eso es lo que hizo que
+ * `revert-1192-scrum-824b-…` pusiera el guard en rojo en los seis worktrees vivos y VERDE en CI,
+ * que clona limpio. No era intermitencia: era el instrumento mirando una copia caducada.
+ *
+ * La alternativa era preguntarle al remoto con `ls-remote`. **Medido el 8-sep-2026, tres corridas
+ * cada uno:** `ls-remote --heads origin` 621/663/765 ms · `for-each-ref` local 85/92/107 ms · el
+ * fetch que este censo YA hace 860/902/925 ms. O sea que `ls-remote` añadiría ~0,66 s de red POR
+ * CORRIDA para averiguar algo que este fetch ya trae. `--prune` cuesta **cero**: es la misma
+ * llamada, con la misma ida y vuelta.
+ *
+ * ⚠️ Y ES UNA ESCRITURA SOBRE REFS COMPARTIDAS, así que se dice: los worktrees comparten
+ * `.git`, y podar borra la ref de seguimiento de ramas que YA NO EXISTEN en origin. No toca
+ * ninguna rama local ni `origin/HEAD` — comprobado el 8-sep-2026 sobre este árbol: 105 refs
+ * antes, 105 después, `origin/HEAD` en su sitio. Lo que se va es exactamente lo que miente.
  */
 export function traerRefs(raiz) {
-  gitDe(raiz)('fetch', '--quiet', 'origin', '+refs/heads/*:refs/remotes/origin/*');
+  gitDe(raiz)('fetch', '--prune', '--quiet', 'origin', '+refs/heads/*:refs/remotes/origin/*');
 }
 
 /**
