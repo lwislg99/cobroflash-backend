@@ -1,0 +1,221 @@
+# .github/workflows/avisador-rojo.yml — SCRUM-834 · la última pieza del bucle
+#
+# QUÉ HACE: cuando el CI de un PR se pone ROJO, comenta en ese PR llamando a la sesión, para
+# que se entere sin que una persona haga de mensajero. Ese trabajo de mensajero es justo lo
+# que el fundador quiere eliminar.
+#
+# QUÉ NO HACE: no arregla nada, no mergea, no cierra. Avisa.
+#
+# ─────────────────────────────────────────────────────────────────────────────────────────
+# 🔴 POR QUÉ EL CUERPO LLEVA `@claude`, Y POR QUÉ EN EL VIGÍA ESTÁ PROHIBIDO
+#
+# `claude.yml` dispara con `issue_comment` filtrado por `contains(..., '@claude')`. O sea que
+# esa cadena ES el mecanismo de despertar. En el vigía de PR atascados está PROHIBIDA —aquel
+# despierta a una persona y un despertar accidental es lo que viene a impedir—; aquí es
+# obligatoria. No se contradicen: la regla va POR INSTRUMENTO, no por repositorio, y cada uno
+# comprueba su invariante DENTRO de su script (`cuerpoDespierta`), no en una nota de README.
+#
+# Y hacen falta DOS cosas más, las dos medidas el 9-sep-2026:
+#   · `allowed_bots` en `claude.yml` con el nombre literal del bot. Sin eso, la doc de
+#     `claude-code-action` dice que «GitHub Apps and bots cannot trigger this action»: el
+#     comentario se publicaría y NO PASARÍA NADA. Silencio, no error — el peor modo de fallo.
+#   · El comentario va con la llave de la APP. Los eventos creados por el `GITHUB_TOKEN` no
+#     crean ejecuciones (doc de GitHub), así que con él tampoco despertaría.
+#
+# ─────────────────────────────────────────────────────────────────────────────────────────
+# 🔴 LA PUERTA DE LOS FORKS — LA CONDICIÓN SIN LA CUAL ESTO NO SE CONSTRUYE
+#
+# Meter al bot en `allowed_bots` DESACTIVA una comprobación de permisos: «Allowed bots are not
+# checked for repository permissions». Y este repositorio es PÚBLICO. Sin nada más quedaría
+# abierto este camino: un desconocido abre un PR desde un fork → su CI se pone rojo → esto
+# comenta `@claude` → Claude despierta sobre contenido que ha escrito un desconocido, que
+# puede llevar instrucciones dirigidas a él.
+#
+# Por eso el permiso se vuelve a preguntar en la puerta siguiente, con las DOS condiciones a
+# la vez, y las decide `scripts/puerta-avisador-rojo.mjs`, que se ejerce en la tanda:
+#   ① la rama de origen está en NUESTRO repositorio, no en un fork; Y
+#   ② el PR lo abrió `yaqu-bot[bot]` o una cuenta con permiso de ESCRITURA.
+# Un PR de fork no despierta a Claude nunca. Si está rojo, lo mira una persona.
+#
+# ⚠️ `workflow_run` se ejecuta SIEMPRE con la versión de este fichero que está en la rama por
+# defecto, nunca con la de la rama del PR. Es a propósito: un fork no puede editar esta puerta
+# para abrírsela.
+name: Avisador de PR en rojo
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+# Dos rojos seguidos del mismo PR no deben pisarse al contar avisos previos.
+concurrency:
+  group: avisador-rojo-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+# Mínimos: leer el repo y escribir un comentario. NO se toca `contents`.
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  avisar:
+    # Solo los rojos. Un CI verde no genera ni ejecución: la ausencia de run ES la ausencia de
+    # rojo, y no hay que fabricar ruido para decirlo.
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    steps:
+      # ── 1 · EL ÁRBOL ───────────────────────────────────────────────────────────────────
+      # `fetch-depth` por defecto basta y va a propósito: aquí no corre ningún guard que mida
+      # contra la historia, solo se lee `scripts/`. Si algún día esto compara contra
+      # `origin/main`, hará falta `fetch-depth: 0` MÁS el fetch explícito de `main` — la
+      # tabla de `ci.yml` (SCRUM-765) explica por qué uno solo no basta.
+      - uses: actions/checkout@v4
+
+      # ── 2 · ¿HAY LLAVE DE LA APP? ──────────────────────────────────────────────────────
+      # Sin ella el aviso no despertaría a nadie, así que no se publica. No es un fallo: es
+      # que no se dan las condiciones, y se dice.
+      - id: modo
+        name: ¿Hay llave de la App?
+        env:
+          CLIENT_ID: ${{ secrets.YAQU_BOT_CLIENT_ID }}
+          PRIVATE_KEY: ${{ secrets.YAQU_BOT_PRIVATE_KEY }}
+        run: |
+          if [ -n "$CLIENT_ID" ] && [ -n "$PRIVATE_KEY" ]; then
+            echo "hay=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "hay=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - id: token
+        name: Acuñar token de la GitHub App
+        if: steps.modo.outputs.hay == 'true'
+        continue-on-error: true
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.YAQU_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.YAQU_BOT_PRIVATE_KEY }}
+
+      # CIEGO: los secretos están pero no acuñan. No se publica nada y se declara. Igual que
+      # en `pr-automatico.yml`: no saber en qué modo estás no es un modo.
+      - name: 🔴 CIEGO — hay secretos pero no acuñan token
+        if: steps.modo.outputs.hay == 'true' && steps.token.outcome != 'success'
+        run: |
+          echo "::error::Los secretos de la App existen pero no acuñan token. No se avisa a nadie."
+          echo "- **CIEGO** — secretos presentes que no acuñan token; no se publicó ningún aviso." >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      # ── 3 · REUNIR LOS DATOS Y PREGUNTAR A LA PUERTA ───────────────────────────────────
+      - id: puerta
+        name: ¿Se puede avisar?
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token || github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          REPO_ORIGEN: ${{ github.event.workflow_run.head_repository.full_name }}
+          HAY_LLAVE: ${{ steps.modo.outputs.hay }}
+          TOPE: '3'
+        run: |
+          if [ "$HAY_LLAVE" != "true" ]; then
+            echo "codigo=SIN-LLAVE" >> "$GITHUB_OUTPUT"
+            echo "- **SIN-LLAVE** — no hay token de App: un aviso sin ella no despertaría a nadie, así que no se publica." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # El PR se resuelve por el sha del commit: `workflow_run.pull_requests` viene vacío
+          # para los PR de fork, y ésos son justo los que hay que reconocer para rechazarlos.
+          PR="$(gh api "repos/$REPO/commits/$SHA/pulls" -q '.[0].number' 2>/dev/null || true)"
+          if [ -z "$PR" ]; then
+            echo "codigo=SIN-PR" >> "$GITHUB_OUTPUT"
+            echo "- **SIN-PR** — el rojo no pertenece a ningún PR abierto (rama suelta o push a main)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "pr=$PR" >> "$GITHUB_OUTPUT"
+
+          AUTOR="$(gh api "repos/$REPO/pulls/$PR" -q .user.login)"
+          # El permiso solo se pregunta para personas: la API devuelve 404 para un bot.
+          PERMISO="$(gh api "repos/$REPO/collaborators/$AUTOR/permission" -q .permission 2>/dev/null || echo '')"
+
+          # Qué check cayó, para que la marca distinga un rojo de otro en el mismo commit.
+          CHECK="$(gh api "repos/$REPO/commits/$SHA/check-runs" \
+                   -q '[.check_runs[] | select(.conclusion=="failure")] | .[0].name' 2>/dev/null || echo 'ci')"
+          MARCA="${SHA:0:12}:${CHECK}"
+          echo "marca=$MARCA" >> "$GITHUB_OUTPUT"
+
+          # El tope y la dedupe viven en el PR, no en el job: un workflow no recuerda nada
+          # entre ejecuciones y un contador dentro del job es un adorno.
+          PREVIAS="$(gh api "repos/$REPO/issues/$PR/comments" --paginate \
+                     -q '.[].body' 2>/dev/null \
+                     | grep -oE '<!-- avisador-rojo:[^>]+ -->' \
+                     | sed -E 's/<!-- avisador-rojo:(.*) -->/\1/' || true)"
+
+          ENTRADA="$(MARCA="$MARCA" AUTOR="$AUTOR" PERMISO="$PERMISO" \
+                     PREVIAS="$PREVIAS" node -e "
+            const p=(process.env.PREVIAS||'').split('\n').map(s=>s.trim()).filter(Boolean);
+            process.stdout.write(JSON.stringify({
+              conclusionCI: process.env.CONCLUSION,
+              repoBase: process.env.REPO,
+              repoOrigen: process.env.REPO_ORIGEN,
+              autor: process.env.AUTOR,
+              permisoAutor: process.env.PERMISO,
+              marcasPrevias: p,
+              marcaActual: process.env.MARCA,
+              tope: Number(process.env.TOPE),
+            }));")"
+
+          # Como condición de un `if`: Actions corre los `run:` con `bash -e` y un `exit 1` de
+          # la puerta abortaría el paso antes de poder leer su código.
+          if SALIDA="$(printf '%s' "$ENTRADA" | node scripts/puerta-avisador-rojo.mjs)"; then
+            AVISAR=si
+          else
+            AVISAR=no
+          fi
+          CODIGO="$(printf '%s' "$SALIDA" | head -1)"
+          MOTIVO="$(printf '%s' "$SALIDA" | tail -1)"
+          echo "$CODIGO — $MOTIVO"
+          echo "codigo=$CODIGO" >> "$GITHUB_OUTPUT"
+          echo "avisar=$AVISAR" >> "$GITHUB_OUTPUT"
+          if [ "$AVISAR" = "no" ]; then
+            echo "- **$CODIGO** — $MOTIVO (PR #$PR)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # ── 4 · PUBLICAR EL AVISO ──────────────────────────────────────────────────────────
+      - name: Avisar a la sesión
+        if: steps.puerta.outputs.avisar == 'si'
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ steps.puerta.outputs.pr }}
+          MARCA: ${{ steps.puerta.outputs.marca }}
+          URL_RUN: ${{ github.event.workflow_run.html_url }}
+        run: |
+          CUERPO="$(printf '@claude el CI de este PR está en ROJO.\n\nRun: %s\n\nMira POR QUÉ falla antes de tocar nada. Y la regla 41 del máster: se arregla el CÓDIGO, nunca lo que el guard exige — si el arreglo pasa por relajar un guard, paras y lo dices.\n\n<!-- avisador-rojo:%s -->\n' "$URL_RUN" "$MARCA")"
+
+          # El invariante espejo del vigía, comprobado DENTRO del script: sin `@claude` el
+          # comentario se publicaría y no despertaría a nadie, y parecería que funcionó.
+          if ! printf '%s' "$CUERPO" | node -e "
+            let s='';process.stdin.on('data',d=>s+=d).on('end',async()=>{
+              const {cuerpoDespierta}=await import('./scripts/puerta-avisador-rojo.mjs');
+              process.exit(cuerpoDespierta(s)?0:1);});"; then
+            echo "::error::El cuerpo del aviso no contiene la mención: no despertaría a nadie. No se publica."
+            echo "- **CUERPO-MUDO** — el aviso no habría despertado a nadie; abortado antes de publicar." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          printf '%s' "$CUERPO" | gh pr comment "$PR" --body-file -
+          echo "AVISADO" > "$RUNNER_TEMP/aviso.txt"
+          echo "- **AVISADO** — PR #$PR, marca \`$MARCA\`." >> "$GITHUB_STEP_SUMMARY"
+
+      # ── 5 · EL SUELO DEL VEREDICTO ─────────────────────────────────────────────────────
+      # Si ningún camino declaró nada, es que hay un camino que no lo escribe. No pinta rojo
+      # —no ha fallado nada— pero lo dice: un instrumento que solo sabe callar no es un
+      # instrumento.
+      - name: Veredicto del run
+        if: always()
+        run: |
+          if [ -n "${{ steps.puerta.outputs.codigo }}" ] || [ -f "$RUNNER_TEMP/aviso.txt" ]; then
+            echo "veredicto: ${{ steps.puerta.outputs.codigo }}"
+          else
+            echo "::warning::El run terminó sin declarar veredicto: hay un camino que no lo escribe."
+            echo "- **SIN VEREDICTO** — ningún camino declaró qué hizo. Hueco del propio workflow." >> "$GITHUB_STEP_SUMMARY"
+          fi

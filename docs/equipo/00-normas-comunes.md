@@ -143,6 +143,26 @@ Una pantalla se ordena por lo que se hace en ella, no por cómo están
 guardados los campos.
 La lista que decide qué se mira es la única que nadie mira.
 Contar no es avisar.
+Un instrumento que solo sabe callar no es un instrumento.
+Si desactivas una comprobación de permisos para que tu robot pase, el
+permiso tiene que volver a preguntarse en la puerta siguiente.
+
+## A16 · Repite el encargo en una línea antes de empezar
+
+Al recibir un encargo, la sesión repite en UNA línea qué cree que se
+le ha pedido, antes de empezar. Si no coincide con lo que el
+orquestador quiso decir, se ve en el momento.
+
+Nace de dos sucesos del 9-sep-2026, y los dos son del mismo tipo: un
+encargo de cuatro puntos que NO llegó a la sesión, y un «el arreglo
+que ya hiciste» sobre algo que estaba a medias. Ninguno de los dos se
+habría visto hasta tres días después. La línea cuesta cinco segundos y
+es el único punto del proceso donde emisor y receptor comparan lo que
+creen que dice el mensaje.
+
+Corolario: si el encargo no te llegó, se dice. NO se reconstruye de
+memoria — un encargo inventado se parece mucho a uno recibido, y
+trabajar sobre él cuesta la tanda entera.
 
 ## A11 · Cómo se actualiza esto
 
@@ -150,3 +170,36 @@ Cuando una sesión comete un error que volvería a cometer, se
 actualiza su línea de trampa recurrente. Cuando una frase nace de una
 medición, entra en A10. NO se añade una norma por cada susto: una
 norma que no ha costado nada dos veces es una norma que nadie lee.
+
+## A12 · Antes de cambiar una POBLACIÓN, se censa quién mide sobre ella
+
+Ramas, ficheros, tablas, filas. Antes de barrer, borrar o renombrar en masa, se
+busca qué guards toman esa población como magnitud.
+
+    🔒 Un barrido correcto que rompe main sigue rompiendo main.
+
+Nace medido: el 8-sep-2026 se barrieron 456 ramas ya mergeadas —correctamente,
+todas con su trabajo dentro de `main`— y el suelo de SCRUM-804, que exigía «558
+ramas remotas», dejó el check obligatorio en rojo **para los 22 PR abiertos a la
+vez**. La orden era buena; lo que faltó fue mirar quién medía sobre eso.
+
+## A13 · Nada más coger un ticket: EN CURSO + ASIGNADO A LUIS
+
+En Jira, **antes de la primera línea de código, no después.**
+
+Un ticket que se trabaja sin estar En curso es trabajo que el colaborador no
+puede ver, y dos sesiones pueden cogerlo a la vez.
+
+## A14 · Todo informe empieza con la hora y el SHA
+
+Dos datos, en la PRIMERA línea: la **fecha y hora** en que se midió, y el **SHA
+de `origin/main`** sobre el que se midió.
+
+    9-sep-2026 11:40 · medido sobre origin/main da5ac06a · worktree wt-verif5
+
+Sin esas dos cosas el orquestador no puede distinguir un informe de hace diez
+minutos de uno de hace seis horas, y ya ha mandado tres veces instrucciones
+basadas en un estado que había dejado de existir.
+
+    🔒 Un informe sin hora no es una foto del ahora: es una foto sin fecha, y el
+       orquestador la va a leer como si fuera de hoy.
