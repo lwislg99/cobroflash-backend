@@ -177,8 +177,9 @@ const PANEL_HTML = PANEL.html && `<!doctype html><html lang="es"><head><meta cha
 //
 //   · `renderQuotesView`    — 8 cortos, y es la pantalla que más se usa: el presupuesto en 30
 //                             segundos es el producto entero.
-//   · `renderJobDetailView` — 6 cortos, y tiene LOS DOS PEORES DEL ÁRBOL (14,0 y 19,6 px de área
-//                             de toque). Se usa DE PIE EN OBRA, con una mano y con guantes.
+//   · `renderJobDetailView` — 5 cortos (medido de nuevo el 9-sep-2026, ver SCRUM-823 más abajo),
+//                             y tiene LOS DOS PEORES DEL ÁRBOL (14,0 y 19,6 px de área de toque).
+//                             Se usa DE PIE EN OBRA, con una mano y con guantes.
 //
 // ⚠️ `renderSettingsView` tiene MÁS (10) y NO entra: es configuración —se toca sentado y una vez—
 // y arrastra 9 nodos «sin pintar» que nadie ha mirado. Un guard sobre una población que no se sabe
@@ -226,7 +227,20 @@ const SUPERFICIES_791 = [
   // eso nunca estuvo entre los cortos. O sea que la vista no ha dejado de pintar nada que
   // debiera: hay un objetivo menos porque hay un botón menos, y encima uno que no cumplía AB6.
   { ruta: '/__quotes', vista: 'renderQuotesView', titulo: 'editor de presupuesto', distintosEsperados: 7 },
-  { ruta: '/__jobdetail', vista: 'renderJobDetailView', titulo: 'ficha de Trabajo', distintosEsperados: 6 },
+  // 🔴 9-sep-2026 · 6 → 5, y el mismo criterio que SCRUM-794: se DECIDE, no se baja el
+  // número y se sigue. El que se ha ido va nombrado: `BUTTON.btn-primary` era el CTA del héroe con
+  // etiqueta «+ Nuevo albarán» (nivel 5 de `jobNextAction`), que el fixture de este guard —un `job`
+  // vacío, sin `status`— disparaba directo antes de SCRUM-823 (8-sep-2026).
+  //
+  // SCRUM-823 metió una puerta delante de los niveles 3/4/5 (`JOB_ESTADOS_CON_DOCUMENTOS`,
+  // `jobNextAction.js`): sólo ofrecen un documento de entrega si `job.status` es `en_curso` o
+  // `terminado`. Un `job` sin `status` ya no pasa esa puerta, así que el CTA deja de pintarse con
+  // ESTE fixture — no porque el botón se haya roto: es la ausencia de estado la que hoy dice «nada
+  // que sugerir», y eso es justo lo que SCRUM-823 vino a arreglar (antes se ofrecía un albarán
+  // incluso sobre un Trabajo `cerrado`). La vista no ha dejado de pintar nada que debiera con un
+  // Trabajo real: hay un objetivo menos porque el dato de partida ya no encaja en ningún nivel de
+  // la escalera.
+  { ruta: '/__jobdetail', vista: 'renderJobDetailView', titulo: 'ficha de Trabajo', distintosEsperados: 5 },
   // 🔴 SCRUM-795 · LA FICHA 360, y por qué entra AHORA y no en SCRUM-791.
   //
   // El censo de SCRUM-787 no pudo proponerla: la 360 nunca llegó a montarse. El banco llamaba a
@@ -582,7 +596,10 @@ const EXCEPCIONES_791 = {
   renderJobDetailView: [
     { sel: 'BUTTON.btn-ghost.btn-sm', motivo: 'clase compartida `.btn-sm` (30,9 px) — «Cambiar». Pre-existente; la retira el fundador con `.btn-sm`.' },
     { sel: 'BUTTON.btn-secondary.btn-sm', motivo: 'clase compartida `.btn-sm` (30,9 px) — «+ Nuevo albarán», «Parte de trabajo». Ídem.' },
-    { sel: 'BUTTON.btn-primary', motivo: 'el BOTÓN BASE a 37,0 px — el CTA del héroe. Segundo grupo de SCRUM-787, decisión aparte de `.btn-sm`.' },
+    // 🔴 9-sep-2026 · `BUTTON.btn-primary` (el CTA del héroe, 37,0 px) SE RETIRA de aquí, y no
+    // porque el botón mida 44 px ahora: con el fixture de este guard —un `job` sin `status`— ya no
+    // pasa la puerta de SCRUM-823 y el CTA no se pinta. El detector de sobrantes de abajo lo habría
+    // marcado CADUCA igualmente; se quita a mano y se deja dicho, como en SCRUM-794.
     { sel: 'BUTTON.detail-miga-link', motivo: '19,6 px de ÁREA DE TOQUE — la miga «Trabajos». Uno de los DOS PEORES del árbol, y su caja CSS no lo delata: es el ejemplo de por qué el árbitro es el área y no la caja. Sin decidir.' },
     { sel: 'INPUT', motivo: '14,0 px — la casilla de precios de la barra de documentos. EL PEOR del árbol entero, y en la pantalla que se usa de pie en obra. Sin decidir.' },
   ],

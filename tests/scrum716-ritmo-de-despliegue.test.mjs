@@ -351,9 +351,15 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // ③ El filtro de lo ilegible, apagado: un número del fallback de `env.ts` pasaría por sha.
+    //
+    // 🔴 SCRUM-824b (9-sep-2026) partió el filtro en DOS líneas —`ES_SHA` y, sólo para lo que es
+    // TODO dígitos, `LONGITUDES_DE_RELOJ`— para dejar de rechazar un sha corto que por azar sale
+    // todo dígitos (el rojo intermitente medido: 2,32 %, 1 de cada 43). El ancla de aquí seguía
+    // citando la línea de una sola pieza que esa pieza sustituyó, así que este meta-guard se quedó
+    // CIEGO sin que nadie lo mirase. Se apagan las DOS líneas: es el mismo filtro con otro cuerpo.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
-    de: '  if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;',
-    a: '  if (false) return null;',
+    de: '  if (!ES_SHA.test(s)) return null;\n  if (TODO_DIGITOS.test(s) && LONGITUDES_DE_RELOJ.has(s.length)) return null;',
+    a: '  if (false) return null;\n  if (false) return null;',
     cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
   },
   {
