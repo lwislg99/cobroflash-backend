@@ -1,6 +1,8 @@
 # Censo de decisiones de producto encerradas dentro de una vista — SCRUM-837
 
-**Medido:** 2026-09-09T11:11:00+02:00 · `origin/main = 45e3012155ad5370a5404a5d725229cff7f55008`
+**Medido:** 2026-09-09T16:30:40+02:00 · `origin/main` = `54ad4a68b807b8f3e22c709947096fd48dd1d4ae`
+(primera medición sobre `45e3012155ad5370a5404a5d725229cff7f55008`; **recontado** tras fusionar
+`54ad4a68`, que trae SCRUM-832 tocando `quotesListView.js`. Las dos cuentas dan **10**.)
 **Instrumento:** `node scripts/censo-decisiones-encerradas.mjs` (AST, no `grep`)
 **Suelo:** `tests/scrum837-decisiones-encerradas.test.mjs` — corre en `npm test`
 

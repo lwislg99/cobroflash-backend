@@ -1,7 +1,12 @@
 # SCRUM-837 · Censo de decisiones de producto encerradas dentro de una vista
 
-**Medido contra:** `origin/main` = `45e3012155ad5370a5404a5d725229cff7f55008` · 2026-09-09T11:11:00+02:00
+**Medido contra:** `origin/main` = `54ad4a68b807b8f3e22c709947096fd48dd1d4ae` · 2026-09-09T16:30:40+02:00
 **Rama:** `scrum-837-decisiones-encerradas`, partida de `main` con el PR #1214 ya dentro.
+
+> El censo se midió primero contra `45e3012155ad5370a5404a5d725229cff7f55008` y se **recontó**
+> sobre el árbol ya fusionado con `54ad4a68`, que trae SCRUM-832 tocando `quotesListView.js` — un
+> fichero que este censo lee. Las dos cuentas dan **10**. Una cifra derivada que cruza un merge no
+> se arrastra: se vuelve a contar.
 **Entrega:** `docs/CENSO_DECISIONES_ENCERRADAS.md` — las tres columnas y el veredicto.
 
 ---
