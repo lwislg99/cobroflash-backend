@@ -73,6 +73,25 @@ export const CAMPOS_QUE_NO_VIAJAN: Record<string, string> = {
   createdAt: 'lo pone la base de datos al crear',
   updatedAt: 'lo pone la base de datos al escribir',
   invoiceId: 'la factura que consumió al ORIGINAL; el duplicado no lo ha facturado nadie',
+  // ── SCRUM-729 · EL CLIENTE CONGELADO ──────────────────────────────────────────────────
+  // 🔴 NO VIAJAN, y es el mismo criterio que `signatureUrl` y `pdfUrl`: son el retrato del
+  // cliente EN EL INSTANTE EN QUE SE EMITIÓ EL ORIGINAL. Copiarlos al duplicado afirmaría «éste
+  // era el cliente cuando se emitió esto», y el duplicado NO se ha emitido: nace en `borrador`.
+  //
+  // Y sería contradecir al ticket que los creó. SCRUM-729 existe porque el documento reimprime el
+  // cliente DE HOY en vez del que constaba el día de la emisión; heredar el congelado de otro
+  // documento pondría en el duplicado una foto con fecha que no le corresponde — el mismo defecto
+  // con el signo cambiado.
+  //
+  // ⚠️ Hoy los cinco están VACÍOS en todas las filas (`con_dato = 0`, verificado al aplicar el
+  // ALTER), así que ahora mismo copiarlos o no da el mismo resultado. Se clasifican igualmente:
+  // el día que exista el escritor —camino de emisión, del fundador— la decisión ya está tomada y
+  // escrita, en vez de resolverse por lo que hiciera el bucle.
+  customerName: 'retrato del cliente al EMITIR el original; el duplicado nace sin emitir',
+  customerLegalName: 'ídem: la razón social que constaba entonces, no la de este documento',
+  customerTaxId: 'ídem: el NIF congelado del original',
+  customerEmail: 'ídem: el email que constaba el día de aquella emisión',
+  customerPhone: 'ídem: el teléfono que constaba el día de aquella emisión',
   // ── SCRUM-425 / SCRUM-358 (H3) ────────────────────────────────────────────────────────
   // 🔴 LA CLAVE DE IDEMPOTENCIA DEL **ALTA**, y ahí está todo el motivo: identifica UN INTENTO
   // de creación, no un documento. Duplicar es un ALTA DISTINTA —otro día, otro parte— y necesita

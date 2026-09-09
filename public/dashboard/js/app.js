@@ -98,9 +98,21 @@ async function initApp() {
       }
     });
   }
+  // 🔴 SCRUM-827 · AQUÍ HABÍA UN `defaultVat: 0.21` ESCRITO A MANO, Y SE RETIRA.
+  //
+  // Era el único tipo impositivo tecleado fuera de la tabla de locales, y estaba en el respaldo
+  // que se usa cuando el servidor no manda `me.locale`. MEDIDO antes de tocarlo: en todo
+  // `public/`, quitando comentarios, `defaultVat` aparecía **una sola vez — esta**. CERO lectores.
+  //
+  // Y un valor por defecto que nadie lee es un valor que alguien va a leer algún día creyendo que
+  // manda: este respaldo estampaba el 21 % español a cualquiera, y `defaultVat` está indexado por
+  // PAÍS (MX 16 %, PE 18 %, CO/CL 19 %). Ahora, si alguien lo leyera, obtendría `undefined` y
+  // fallaría a la vista en vez de aplicar en silencio el tipo de otro país.
+  //
+  // El IVA de una línea sale de `tiposDeIva.js` y del documento, nunca de este respaldo.
   window.appLocale = me.locale || {
     quote: 'Presupuesto', quotePlural: 'Presupuestos', quoteNew: 'Nuevo presupuesto',
-    quoteVerb: 'presupuesto', currency: 'EUR', defaultVat: 0.21, vatName: 'IVA',
+    quoteVerb: 'presupuesto', currency: 'EUR', vatName: 'IVA',
   };
 
   // Ocultar elementos de navegación para técnicos
