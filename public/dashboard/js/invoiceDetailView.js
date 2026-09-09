@@ -294,6 +294,32 @@ async function fetchInvoiceDetail(id) {
     // `MARCA_MICRO` se BORRA el 17-ago-2026: ya no tenía ningún consumidor, y desde hoy los ocho
     // rótulos de acción de esta pantalla están aprobados. Dejar la constante habría dejado a mano
     // un marcador que alguien vuelve a enchufar sin querer.
+
+  /**
+   * 🔴 SCRUM-707 · EL ESTADO QUE NO RECONOCEMOS SE DICE, NO SE CALLA.
+   *
+   * Con un estado que la tabla no contempla, `destinoEfectivo` devuelve ahora `'oculta'` para
+   * todas las acciones: cero botones y cero TypeError. Pero cero botones **en silencio** no se
+   * distingue de un documento que legítimamente no admite nada — una factura `annulled` ofrece
+   * dos y podría ofrecer cero mañana. Son dos hechos distintos.
+   *
+   * ⚠️ Sólo cuando el estado NO está en la tabla (`estadoReconocido`), nunca por tener la lista
+   * de acciones vacía: si se disparara por «cero botones», saldría en documentos correctos y en
+   * dos días nadie lo leería.
+   *
+   * ✅ Texto APROBADO por el fundador el 8-sep-2026 (regla 30), en
+   * `docs/microcopy/2026-09-08-SCRUM-707-estado-no-reconocido.md`. LITERAL.
+   */
+  function avisoEstadoNoReconocido(doc, registro, estado) {
+    if (typeof window.estadoReconocido !== 'function') return;
+    if (window.estadoReconocido(registro, estado)) return;
+    const p = doc.createElement('p');
+    p.className = 'detail-estado-desconocido';
+    p.dataset.estadoDesconocido = '1';
+    p.textContent = 'No reconocemos el estado de este documento — no podemos ofrecerte acciones aquí.';
+    return p;
+  }
+
     const cubosAcc = { primaria: [], secundaria: [], overflow: [] };
 
     // Coloca un botón YA CREADO (con su handler intacto) según su destino en este estado. `oculta` no
@@ -711,6 +737,8 @@ async function fetchInvoiceDetail(id) {
     if (estadoFactura === 'pending' && typeof window.pintarSelectorMetodo === 'function') {
       selMetodo = window.pintarSelectorMetodo(actions, { id: 'metodo-cobro-factura' });
     }
+    const avisoF = avisoEstadoNoReconocido(document, REGISTRO_ACC, estadoFactura);
+    if (avisoF) actions.appendChild(avisoF);
     cubosAcc.primaria.forEach((b) => actions.appendChild(b));
     cubosAcc.secundaria.forEach((b) => actions.appendChild(b));
     if (cubosAcc.overflow.length) {
