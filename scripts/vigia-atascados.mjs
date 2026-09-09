@@ -55,6 +55,41 @@ export const ETIQUETA_NO_MERGEAR = 'no-mergear';
 export const BOT = 'yaqu-bot[bot]';
 
 /**
+ * Minutos de gracia tras un push antes de que «cero checks» signifique algo. Los check-runs
+ * aparecen cuando el workflow arranca —segundos—, así que diez minutos es holgado: si a los
+ * diez no hay ninguno, no va a haberlo.
+ */
+export const GRACIA_MINUTOS = 10;
+
+/**
+ * LA SEGUNDA SONDA, y su control. `git merge-tree --write-tree <base> <cabeza>` sale con 1 si
+ * hay conflicto y 0 si no. Es un cálculo PROPIO sobre los commits, sin nada en común con el
+ * campo `mergeStateStatus` que calcula GitHub en diferido — que es justo lo que la hace útil.
+ *
+ * 🔴 SE VALIDA ANTES DE USARLA, y no es ceremonia: una sonda que devuelve 1 siempre marcaría
+ * conflicto en todo y parecería que funciona. El control es `main` contra `main`, que TIENE
+ * que dar 0. Medido el 9-sep-2026 en los tres sentidos:
+ *
+ *     main contra main .............. 0   (sin conflicto)
+ *     dos ramas que tocan la misma línea .. 1   (conflicto)
+ *     dos ramas que tocan ficheros distintos 0  (limpio)
+ *
+ * @param {(base:string, cabeza:string) => number} correr  devuelve el código de salida
+ * @returns {{valida:boolean, motivo:string}}
+ */
+export function validarSonda(correr) {
+  try {
+    const mismo = correr('HEAD', 'HEAD');
+    if (mismo !== 0) {
+      return { valida: false, motivo: `la sonda da ${mismo} comparando algo consigo mismo: no vale` };
+    }
+    return { valida: true, motivo: 'sonda validada: comparar algo consigo mismo da 0' };
+  } catch (e) {
+    return { valida: false, motivo: 'la sonda no se pudo ejecutar' };
+  }
+}
+
+/**
  * ¿Es este PR asunto del vigía? Devuelve el motivo del descarte para que la pasada pueda
  * declararlo en vez de callárselo.
  * @param {{autor?:string, draft?:boolean, etiquetas?:string[], autoMerge?:boolean}} pr
@@ -81,13 +116,56 @@ export function esAsuntoDelVigia(pr = {}) {
 export function causaDelAtasco(obs = {}) {
   const estado = String(obs.estado || '').toUpperCase();
   const checks = Number(obs.checks);
+  const minutos = Number(obs.minutosDesdePush);
+  const sonda = obs.sondaConflicto; // true | false | null (no se pudo medir)
+
+  // ── LA GRACIA DEL PUSH RECIÉN HECHO ─────────────────────────────────────────────────────
+  // Cero checks NO significa nada durante los primeros minutos: los check-runs aparecen
+  // cuando el workflow arranca, no cuando se empuja. Sin esta ventana, cada push nuevo sale
+  // como atascado durante un rato y el vigía se vuelve ruido — que es como se silencia.
+  // La ventana es GENEROSA a propósito: si a los diez minutos no ha aparecido ningún check,
+  // no va a aparecer.
+  if (Number.isFinite(checks) && checks === 0 && Number.isFinite(minutos) && minutos < GRACIA_MINUTOS) {
+    return {
+      causa: 'RECIEN-EMPUJADO',
+      detalle: `empujado hace ${minutos} min: los checks aún pueden estar arrancando (gracia ${GRACIA_MINUTOS} min)`,
+    };
+  }
 
   // Va primero: sin checks no hay nada que esperar, y el estado del merge es irrelevante
   // porque el auto-merge no va a dispararse nunca. Es la causa, no un síntoma más.
   if (Number.isFinite(checks) && checks === 0) {
     return { causa: 'SIN-CHECKS', detalle: 'ningún check ha arrancado sobre el head actual: el auto-merge no se disparará nunca' };
   }
-  if (estado === 'DIRTY') return { causa: 'DIRTY', detalle: 'conflicto real con la base: necesita a una persona' };
+
+  // ── LAS DOS SONDAS DEL CONFLICTO ────────────────────────────────────────────────────────
+  // `mergeStateStatus` es un campo que calcula GitHub en diferido; `git merge-tree` es un
+  // cálculo propio sobre los mismos commits. No comparten código, así que cuando coinciden
+  // el dato vale el doble — y cuando NO coinciden, la discrepancia ES el dato y se dice.
+  // Elegir una en silencio sería justo el «de acuerdo dentro del error» que estas dos sondas
+  // existen para romper.
+  if (sonda === true && estado !== 'DIRTY') {
+    return {
+      causa: 'CONFLICTO-DISCREPA',
+      detalle: `git merge-tree dice CONFLICTO y mergeStateStatus dice ${estado || '(vacío)'}: `
+             + 'hay conflicto, pero el campo aún no lo refleja o miente. Se trata como conflicto',
+    };
+  }
+  if (sonda === false && estado === 'DIRTY') {
+    return {
+      causa: 'CONFLICTO-DISCREPA',
+      detalle: 'mergeStateStatus dice DIRTY y git merge-tree dice LIMPIO: una de las dos está '
+             + 'desfasada. No se decide en silencio',
+    };
+  }
+  if (estado === 'DIRTY') {
+    return {
+      causa: 'DIRTY',
+      detalle: sonda === true
+        ? 'conflicto real con la base, CONFIRMADO por las dos sondas: necesita a una persona'
+        : 'conflicto real con la base (segunda sonda no disponible): necesita a una persona',
+    };
+  }
   if (estado === 'BEHIND') return { causa: 'BEHIND', detalle: 'por detrás de main: se resuelve con un merge de main' };
   if (estado === 'UNKNOWN' || estado === '') {
     return { causa: 'SIN-ESTADO', detalle: 'GitHub no ha resuelto la mergeabilidad tras reintentar: NO se cuenta como limpio' };
