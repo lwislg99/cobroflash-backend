@@ -257,3 +257,73 @@ test('el workflow le pasa a la puerta los ficheros del PR', () => {
     'sin la lista de ficheros la puerta fiscal falla cerrado y NADA despertaría nunca');
   assert.match(yml, /ficheros/, 'y tiene que llegar a la puerta con ese nombre');
 });
+
+// ── EL TOPE DEL BUCLE, SIMULADO DE VERDAD (SCRUM-834d) ────────────────────────────────────
+//
+// POR QUÉ ESTE CONTROL EXISTE, y por qué NO basta con la dedupe. El bucle que da miedo es:
+//
+//     CI rojo → el avisador despierta a Claude → Claude EMPUJA → CI corre → rojo → …
+//
+// La dedupe NO lo para, y esto es lo importante: es por `head_sha`, y CADA PUSH CREA UN SHA
+// NUEVO. Así que `YA-AVISADO` no salta ni una sola vez en un bucle real. Lo único que hay
+// debajo es el TOPE por PR, que cuenta AVISOS PUBLICADOS —no avisos coincidentes—, y por eso
+// sí sobrevive a que cambie el sha.
+//
+// Esto se vuelve crítico el día que `claude.yml` empuje con la llave de la App: hasta hoy sus
+// pushes no disparaban CI (medido: `check-runs total: 0` sobre `faebb1e6`), así que el ciclo
+// se cortaba solo por avería. Cuando eso se arregle, el tope será lo ÚNICO que lo pare.
+
+/**
+ * Simula N ciclos rojos sobre el MISMO PR, como los ejecutaría el workflow:
+ * cada ciclo trae un `head_sha` distinto, y cada aviso publicado deja su marca en el PR
+ * —que es de donde el workflow lee `marcasPrevias` en la pasada siguiente—.
+ */
+function simularCiclos(n, tope = 3) {
+  const marcasPrevias = [];
+  const historia = [];
+  for (let i = 1; i <= n; i++) {
+    const marcaActual = `sha${String(i).padStart(4, '0')}:build + tests`; // sha NUEVO cada vez
+    const r = decidir({ ...base, marcasPrevias: [...marcasPrevias], marcaActual, tope });
+    historia.push(r.codigo);
+    if (r.avisar) marcasPrevias.push(marcaActual); // el aviso publicado deja su marca
+  }
+  return { historia, publicados: marcasPrevias.length };
+}
+
+test('🔴 EL CONTROL DEL BUCLE · diez ciclos rojos seguidos y el avisador se PARA en el tope', () => {
+  const { historia, publicados } = simularCiclos(10, 3);
+  assert.equal(publicados, 3, 'se publican exactamente `tope` avisos y ni uno más');
+  assert.deepEqual(historia.slice(0, 3), ['AVISAR', 'AVISAR', 'AVISAR']);
+  assert.deepEqual(
+    [...new Set(historia.slice(3))], ['TOPE-ALCANZADO'],
+    'del cuarto ciclo en adelante NO se despierta a nadie, y siempre con el mismo veredicto',
+  );
+});
+
+test('🔴 y la DEDUPE no salva de nada aquí: nunca llega a saltar', () => {
+  // Es el punto que hace falta entender: con un sha nuevo por push, `YA-AVISADO` no aparece.
+  const { historia } = simularCiclos(10, 3);
+  assert.ok(!historia.includes('YA-AVISADO'),
+    'si esto fallara, el tope estaría descansando sobre la dedupe, que en un bucle real no actúa');
+});
+
+test('la dedupe SÍ actúa cuando el sha NO cambia (rearranque del mismo CI)', () => {
+  // El otro caso, que también existe: el mismo rojo re-evaluado sin push por medio.
+  const marca = 'shaigual:build + tests';
+  const r = decidir({ ...base, marcasPrevias: [marca], marcaActual: marca });
+  assert.equal(r.codigo, 'YA-AVISADO');
+});
+
+test('el tope cuenta AVISOS PUBLICADOS, no coincidencias: por eso sobrevive al cambio de sha', () => {
+  const r = decidir({ ...base, marcasPrevias: ['a:x', 'b:y', 'c:z'], marcaActual: 'd:w', tope: 3 });
+  assert.equal(r.codigo, 'TOPE-ALCANZADO');
+  assert.match(r.motivo, /para el bucle/);
+});
+
+test('🔴 el veredicto del tope se LEE sin abrir logs: sale al resumen del run', () => {
+  const yml = fs.readFileSync(WORKFLOW, 'utf8');
+  // El camino de «no avisar» escribe el CÓDIGO en el resumen, sea cual sea — incluido el tope.
+  assert.match(yml, /\$CODIGO\*\* — \$MOTIVO/,
+    'sin esta línea, TOPE-ALCANZADO solo existiría en el log y nadie lo vería');
+  assert.match(yml, /GITHUB_STEP_SUMMARY/);
+});
