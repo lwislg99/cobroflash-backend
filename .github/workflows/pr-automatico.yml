@@ -238,10 +238,34 @@ jobs:
       # casa usa commits de merge («Merge pull request #NNNN from …»), no squash ni rebase.
       # En modo degradado actúa el GITHUB_TOKEN, que para esto basta: el PR ya existe y su
       # CI ya corrió cuando lo abrió una persona.
+      #
+      # ─────────────────────────────────────────────────────────────────────────────────
+      # 🔴 AQUÍ HAY DOS DEFECTOS DISTINTOS, Y CADA MITAD ARREGLA EL SUYO (SCRUM-828)
+      #
+      #   ① EL ROJO FALSO — se pintaba de rojo CUALQUIER fallo al armar, incluido el PR en
+      #      conflicto, que es una situación normal. Lo arregla el CLASIFICADOR de abajo,
+      #      mirando el ESTADO del PR (un enum), no el texto. Decide SI hay que gritar.
+      #
+      #   ② EL DIAGNÓSTICO CIEGO — cuando sí había que gritar, el mensaje decía «dos causas
+      #      probables» y nombraba dos de tres, dejando fuera precisamente la que el propio
+      #      error nombraba. Era una HIPÓTESIS CON FORMA DE DIAGNÓSTICO: causas ordenadas
+      #      por una probabilidad que nadie había medido. Lo arregla el MENSAJE de abajo.
+      #      Decide QUÉ MIRAR una vez decidido que hay que gritar.
+      #
+      # No se solapan y ninguno sustituye al otro: sin ①, el mensaje bueno saldría también
+      # en los casos benignos y volvería a ser ruido; sin ②, el clasificador acierta al
+      # gritar y a quien lo lee le sigue faltando dónde mirar.
+      #
+      # ⚠️ Y el permiso ya está arreglado en `main` (run 25, PR #1196: `Contents: Read and
+      # write`), así que la causa A puede no volver a salir nunca en el log. Eso es bueno, y
+      # es la razón de que el mensaje esté fijado por TEST y no sólo por haberlo visto una
+      # vez: el log ya no lo va a cubrir.
+      # ─────────────────────────────────────────────────────────────────────────────────
       - name: Armar el auto-merge
         env:
           GH_TOKEN: ${{ steps.token.outputs.token || github.token }}
           NUM: ${{ steps.crear.outputs.numero || steps.pr.outputs.numero }}
+          MODO_COMPLETO: ${{ steps.token.outputs.token != '' }}
         run: |
           if [ -z "$NUM" ]; then
             echo "No hay PR sobre el que armar el auto-merge."
@@ -294,9 +318,84 @@ jobs:
             exit 0
           fi
 
+          # Una SOLA fuente del texto del error: el mismo `err.txt` que ya alimentó al
+          # clasificador. No se vuelve a llamar a `gh` ni se captura por segunda vía.
+          RESPUESTA="$(cat "$RUNNER_TEMP/err.txt")"
+
           echo "::error::No se pudo armar el auto-merge del PR #$NUM y no consta un motivo legítimo."
-          echo "Dónde mirar, por orden:"
-          echo "  · permisos: ¿el job lleva 'contents: write'? ¿hay token de App, o corrió el de por defecto?"
-          echo "  · 'Allow auto-merge' desactivado en Settings del repositorio."
-          echo "  · '--merge' (commit de merge) no permitido — esta casa usa commits de merge."
+          echo ""
+          echo "=============================================================================="
+          echo "1) QUE HA FALLADO, EXACTAMENTE"
+          echo ""
+          echo "   comando : gh pr merge $NUM --auto --merge"
+          echo "   GitHub  : $RESPUESTA"
+          if [ "$MODO_COMPLETO" = "true" ]; then
+            echo "   token   : el de la GitHub App (modo COMPLETO)"
+          else
+            echo "   token   : el GITHUB_TOKEN de Actions (modo DEGRADADO)"
+          fi
+          echo ''
+          echo '2) QUE SE SABE Y QUE NO SE SABE'
+          echo ''
+          echo '   SE SABE: el comando, la respuesta literal de GitHub y que token la recibio.'
+          echo '   Los tres estan escritos aqui arriba. Y se sabe que NO es una situacion'
+          echo '   normal: el clasificador ya ha descartado conflicto y PR sin nada que'
+          echo '   esperar, mirando el estado del PR.'
+          echo ''
+          echo '   NO SE SABE desde aqui: como esta configurado el repositorio. Un workflow no'
+          echo '   puede leer Settings, asi que este mensaje NO PUEDE decirte cual de las causas'
+          echo '   de abajo es la tuya, y no va a fingir que si. Lo que si puede darte es el'
+          echo '   CRITERIO para decidirlo tu en diez segundos: cada causa tiene un mensaje'
+          echo '   DISTINTO. Compara el tuyo de arriba con los tres de abajo.'
+          echo ''
+          echo '   Este mensaje llevaba semanas nombrando SOLO DOS causas y llamandolas'
+          echo '   probables sin ninguna medicion detras. Por eso ahora van las TRES y van SIN'
+          echo '   ORDENAR por probabilidad: ordenarlas era el defecto.'
+          echo ''
+          echo '3) LAS TRES CAUSAS, cada una con el mensaje de GitHub y su ruta COMPLETA'
+          echo ''
+          echo '   A) PERMISOS DEL TOKEN'
+          echo "      GitHub dice: Resource not accessible by integration (enablePullRequestAutoMerge)"
+          echo '      Documentacion oficial de GitHub (Troubleshooting the REST API): si usas una'
+          echo '      GitHub App o un token de acceso personal de grano fino y recibes ese error,'
+          echo '      tu token tiene permisos insuficientes.'
+          echo '      MEDIDO EN EJECUCION el 8-sep-2026 (run 25, PR #1196): el permiso que'
+          echo '      faltaba era Contents: Read and write. Contents: Read NO basta, porque'
+          echo '      armar el auto-merge compromete a GitHub a EMPUJAR un merge despues, y eso'
+          echo '      es escritura de contenido. Y hay que subirlo en LOS DOS SITIOS: el bloque'
+          echo '      permissions: del job Y los permisos declarados de la App.'
+          echo '      Ruta, segun QUE TOKEN actuo (lo dice la linea token de aqui arriba):'
+          echo '        - App: Settings > Developer settings > GitHub Apps > tu App >'
+          echo '               Permissions and events > Repository permissions >'
+          echo '               Contents: Read and write  y  Pull requests: Read and write'
+          echo '               y DESPUES aceptar los permisos nuevos en la instalacion:'
+          echo '               Settings > Applications > Installed GitHub Apps > tu App >'
+          echo '               Configure   (una App no gana permisos hasta que la instalacion'
+          echo '               los acepta), y comprobar que esta instalada EN ESTE repositorio.'
+          echo '        - GITHUB_TOKEN: Settings > Actions > General > Workflow permissions >'
+          echo '               Read and write permissions'
+          echo '               (el ajuste del repositorio recorta por encima al bloque'
+          echo '               permissions: de este workflow, y gana el mas restrictivo)'
+          echo ''
+          echo '   B) AUTO-MERGE DESACTIVADO EN EL REPOSITORIO'
+          echo "      GitHub dice: Auto merge is not allowed for this repository (enablePullRequestAutoMerge)"
+          echo '      Ruta: Settings > General > Pull Requests > Allow auto-merge'
+          echo ''
+          echo '   C) METODO DE MERGE NO PERMITIDO'
+          echo "      GitHub dice: The selected merge method (...) is not allowed"
+          echo '      Ruta: Settings > General > Pull Requests > Allow merge commits'
+          echo '      Este tercer literal viene de informes de usuarios, NO de documentacion'
+          echo '      oficial. Si tu error de arriba no se parece a ninguno de los tres, no lo'
+          echo '      metas a la fuerza en esta casilla: dilo y se vuelve a medir.'
+          echo ''
+          echo '4) SI LA CAUSA ES LA C, LEE ESTO ANTES DE TOCAR NADA'
+          echo ''
+          echo '   Si el repo NO admite commits de merge, la salida NO es pasar a squash.'
+          echo '   Con squash, el commit de una rama nunca llega a main, y'
+          echo '   git merge-base --is-ancestor <sha> origin/main -- que es la OBLIGACION 0'
+          echo '   de las seis sesiones -- pasaria a decir SIN MERGEAR para todo, siempre.'
+          echo '   No fallaria ruidosamente: daria una respuesta plausible y falsa.'
+          echo '   Cambiar a squash es romper el instrumento con el que medimos si el'
+          echo '   trabajo existe. La decision es del fundador y va escrita.'
+          echo "=============================================================================="
           exit 1

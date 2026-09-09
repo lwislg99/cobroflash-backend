@@ -74,9 +74,31 @@ const ES_SHA = /^[0-9a-f]{7,40}$/;
  * segura**: callar de más, nunca inventar un movimiento que no se ha medido.
  */
 const TODO_DIGITOS = /^[0-9]+$/;
+/**
+ * 🔴 SCRUM-824b · SE DISTINGUE POR LONGITUD, NO POR «SER TODO DÍGITOS».
+ *
+ * El precio que el comentario de arriba declaraba —«un sha abreviado todo dígitos también se
+ * rechaza, en torno al 2 % de las veces»— NO era gratis: producía un **rojo INTERMITENTE en CI**,
+ * que entrena a relanzar la tanda y es peor que un rojo fijo. Medido aquí: **2,32 %, 1 de cada
+ * 43** shas de 8 (200.000 muestras). Reproducido en la tanda completa: `scrum716c` cayó con
+ * «la lectura anterior no publica un sha legible» sobre un sha corto perfectamente válido.
+ *
+ * Y es el mismo caso que el informe de CI describió como «producción dice `40606975`, un número».
+ * No era un número: era un sha corto cuyos ocho caracteres son dígitos.
+ *
+ * ⚠️ LA SEGURIDAD NO SE PIERDE, y ésa es la condición: lo que hay que cazar es el fallback de
+ * `env.ts`, que es `String(Date.now())` — un epoch en MILISEGUNDOS, **13 caracteres**. Se rechaza
+ * por esa forma, no por ser dígitos. Se incluye también 10 (epoch en segundos) por si algún día
+ * el fallback cambia de unidad: ninguna de las dos es una longitud que este sistema produzca para
+ * un sha — la constancia escribe 8 (`.slice(0, 8)`) y `/version` publica 40.
+ *
+ * O sea: se sigue callando ante un reloj, y se deja de callar ante un commit.
+ */
+const LONGITUDES_DE_RELOJ = new Set([10, 13]);
 function shaLegible(v) {
   const s = String(v == null ? '' : v).trim().toLowerCase();
-  if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;
+  if (!ES_SHA.test(s)) return null;
+  if (TODO_DIGITOS.test(s) && LONGITUDES_DE_RELOJ.has(s.length)) return null;
   return s;
 }
 

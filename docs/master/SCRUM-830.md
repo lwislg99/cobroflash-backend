@@ -114,3 +114,49 @@ del 804 y 5 del 830**, y siguen verdes los que no dependen de ella. Discrimina.
 `_censo-alcanzabilidad.mjs` y `_censo-reparto.mjs` —congelados por sus guards— no se tocan: la
 segunda fuente es **aditiva** y se les entrega en su formato de entrada. No se ha rebajado ningún
 umbral, no se ha retirado ninguna comprobación y no se ha tocado `prisma/schema.prisma`.
+
+---
+---
+
+# 9-sep-2026 · SE CEDE A LA VERSIÓN DE `main`, y por qué
+
+Mientras esta rama estaba en vuelo, **otra sesión reescribió `scrum804-la-rama-viva.test.mjs` en
+`main`** con la misma idea de fondo —una población que el auto-borrado no puede encoger, derivada
+de `git log --merges`— y **la suya es mejor en tres cosas medibles**:
+
+* usa **el segundo padre** del commit de merge (la punta que tenía la rama al mergearse) en vez
+  del sha del merge: es la respuesta conocida del árbitro, y es más fiel;
+* no deja **ningún** umbral escrito a mano, y lo vigila con un guard AST **sobre su propia fuente**;
+* y mantiene un contrato más estrecho y comprobable: **el censo tiene que cuadrar rama a rama con
+  lo que lista `for-each-ref`**, en la misma pasada.
+
+Ese último punto es el que decide, y es incompatible con lo que yo hice. Mi arreglo iba al
+**instrumento** (`_rastro-del-ticket.mjs`), añadiéndole una segunda fuente: la población pasaba de
+98 a 1.115, y su suelo lo llama —con razón— *«el censo y git contando la MISMA población en la
+MISMA pasada y no coincidiendo»*. Para conservar lo mío habría que **relajar un guard ajeno que
+tiene razón**, y eso no se hace.
+
+**Se retira, por tanto: la segunda fuente del módulo y su banco (`scrum830-la-rama-que-ya-no-esta`).**
+
+## Lo que se pierde al ceder, dicho en voz alta
+
+Con la versión de `main`, `rastroDe(821)` sigue contestando **`SIN RASTRO`** de un ticket cuyo
+trabajo **está dentro de `main`**. El propio fichero lo declara —*«hoy es la respuesta CORRECTA»*—
+y el módulo ya avisaba de que ese dato **se lee junto a las otras fuentes, nunca solo**. O sea: no
+es una mentira silenciosa, es una **limitación declarada**, y el censo del tablero (SCRUM-738) sí
+cruza las tres fuentes.
+
+Queda apuntado por si algún día se decide que el instrumento conteste la pregunta que la gente le
+hace de verdad —«¿hay trabajo de este ticket?»— en vez de la que contesta —«¿hay RAMA de este
+ticket?». Hoy no toca, y son dos preguntas distintas.
+
+## Lo que sí queda de esta rama
+
+El **hallazgo del guard de dos aserciones**, que no depende de nada de lo anterior:
+`scripts/_rastro-del-ticket.mjs` ya nombraba una referencia móvil **antes** de que nadie lo tocara
+y **no estaba declarado** en `scrum723`. No se veía porque ese test tiene **dos aserciones y
+`assert` para en la primera**: mientras la de arriba estuvo roja, la lista de abajo llevó
+desactualizada lo que durase el rojo — y nadie podía saberlo.
+
+🔒 **Un guard con dos aserciones sólo enseña la primera.** La segunda lleva sin comprobarse desde
+que la primera se puso roja, y no hay forma de saber cuánto tiempo.
