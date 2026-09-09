@@ -97,6 +97,7 @@ const SHELL = [
   '/dashboard/js/jobAsignados.js', // SCRUM-650 (T1): quien EJECUTA el trabajo
   '/dashboard/js/albaranActionsRegistry.js', // SCRUM-302 (C2)
   '/dashboard/js/albaranAccion.js', // SCRUM-831: el siguiente paso de un albarán, compartido
+  '/dashboard/js/invoiceAccion.js', // SCRUM-845: qué se puede hacer con una factura, compartido
   '/dashboard/js/albaranDetailView.js',
   '/dashboard/js/albaranDesdePresupuestoModal.js', // SCRUM-606 (ALB-01)
   '/dashboard/js/albaranesView.js', // SCRUM-301 (C1)
