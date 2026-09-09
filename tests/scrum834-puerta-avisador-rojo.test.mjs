@@ -170,9 +170,20 @@ test('SUELO del censo: encuentra a los que YA SABEMOS que hablan como el bot', (
   assert.ok(censo.length >= 2, `censo demasiado corto (${censo.length}): está ciego`);
 });
 
-test('🔴 todo lo que habla como el bot pasa su texto por una de las dos comprobaciones', () => {
-  // Sin comentarios: la prosa que explica la regla nombra las funciones y se cazaría sola.
-  for (const f of vozDelBot()) {
+/** De los que hablan como el bot, los que además COMPONEN el texto en el propio YAML. */
+function componeTexto(f) {
+  const codigo = sinComentarios(fs.readFileSync(path.join(DIR_WF, f), 'utf8'));
+  return /--body|body=@/.test(codigo);
+}
+
+test('🔴 todo lo que habla como el bot Y COMPONE TEXTO pasa ese texto por una comprobación', () => {
+  // La distinción importa y la trajo el cambio de token de `claude.yml`: ese workflow habla
+  // como el bot pero NO compone ningún cuerpo — el texto lo escribe el agente en tiempo de
+  // ejecución, y el YAML no tiene nada que inspeccionar. Exigirle la comprobación sería pedir
+  // que revise un texto que no existe cuando el workflow corre.
+  //
+  // ⚠️ Eso NO quiere decir que ese camino esté protegido: ver el test siguiente.
+  for (const f of vozDelBot().filter(componeTexto)) {
     const codigo = sinComentarios(fs.readFileSync(path.join(DIR_WF, f), 'utf8'));
     const comprueba = /cuerpoDespierta|cuerpoNoDebeDespertar/.test(codigo);
     assert.ok(comprueba,
@@ -326,4 +337,39 @@ test('🔴 el veredicto del tope se LEE sin abrir logs: sale al resumen del run'
   assert.match(yml, /\$CODIGO\*\* — \$MOTIVO/,
     'sin esta línea, TOPE-ALCANZADO solo existiría en el log y nadie lo vería');
   assert.match(yml, /GITHUB_STEP_SUMMARY/);
+});
+
+test('🔴 claude.yml empuja con la llave de la App, no con el token por defecto', () => {
+  // Sin esto, TODO commit que Claude empuje produce un PR que no puede mergearse jamás:
+  // los eventos del GITHUB_TOKEN no crean ejecuciones, así que no hay CI, no hay check
+  // obligatorio, y el auto-merge espera para siempre. Medido en el #1212 (check-runs: 0).
+  const yml = fs.readFileSync(CLAUDE_YML, 'utf8');
+  const soloCodigo = yml.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n');
+  assert.match(soloCodigo, /create-github-app-token/,
+    'claude.yml tiene que acuñar el token de la App');
+  assert.match(soloCodigo, /github_token:\s*\$\{\{\s*steps\.token\.outputs\.token/,
+    'y pasárselo a la acción por `github_token`, que es lo que usa para empujar');
+});
+
+test('🔴 EL HUECO QUE DEJA ABIERTO EL CAMBIO DE TOKEN, escrito para que no se olvide', () => {
+  // Con la llave de la App, los comentarios que publica la acción salen como `yaqu-bot[bot]`
+  // — que ES quien está en `allowed_bots`. Antes salían como `claude[bot]`, que no lo está.
+  //
+  // Hoy eso no cierra ningún bucle, y está MEDIDO: el 9-sep, el run 12 de claude.yml disparado
+  // por `claude[bot]` salió `skipped`. Skipped significa que el `if` a nivel de job dio falso,
+  // o sea que el CUERPO no llevaba la mención. No fue la puerta de actores: fue el texto.
+  //
+  // Pero es una propiedad de HOY, y si una versión de la acción cambia su texto de respuesta,
+  // Claude se despierta a sí mismo. Y el TOPE DEL AVISADOR NO CUBRE ESE CAMINO: cuenta marcas
+  // `avisador-rojo`, y una autorrespuesta no lleva ninguna.
+  //
+  // Este test no lo impide —no hay dónde ponerle la puerta— pero fija las dos condiciones que
+  // lo mantienen cerrado, para que quien las cambie vea que existían.
+  const yml = fs.readFileSync(CLAUDE_YML, 'utf8');
+  const soloCodigo = yml.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n');
+  assert.match(soloCodigo, /allowed_bots:\s*["']?yaqu-bot\[bot\]/,
+    'condición 1: la lista de bots permitidos es explícita y de un solo nombre');
+  assert.match(soloCodigo, /if:\s*contains\(github\.event\.comment\.body,\s*'@claude'\)/,
+    'condición 2: el disparo depende de que el CUERPO lleve la mención — si la acción empieza '
+    + 'a escribirla en sus respuestas, esto se convierte en un bucle sin tope');
 });

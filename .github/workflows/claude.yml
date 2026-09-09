@@ -80,7 +80,67 @@ jobs:
       # La comprobación de permisos que esta línea desactiva se vuelve a hacer en la puerta
       # siguiente: `scripts/puerta-avisador-rojo.mjs` exige que el PR NO sea de un fork Y que
       # lo haya abierto el bot o una cuenta con escritura.
+      # ── LA LLAVE CON LA QUE CLAUDE EMPUJA ──────────────────────────────────────────────
+      #
+      # 🔴 POR QUÉ HACE FALTA, MEDIDO EL 9-sep-2026 Y NO DEDUCIDO. El PR #1212 llevaba desde
+      # la víspera parado sin que nada lo dijera. No estaba en conflicto ni desactualizado:
+      #
+      #     check-runs para su head faebb1e6 ........ total: 0
+      #     ejecuciones de ci.yml para ese sha ...... 0
+      #
+      # Claude había empujado ese commit desde DENTRO de este workflow, con el `GITHUB_TOKEN`
+      # por defecto. Y los eventos creados con ese token NO crean ejecuciones (doc de GitHub,
+      # la misma que obligó a usar una App en `pr-automatico.yml`). Sin evento no hay CI, sin
+      # CI no aparece el check obligatorio, y el auto-merge espera para siempre.
+      #
+      # No era un PR raro: era TODO commit que Claude empujara. Un robot que arregla y no
+      # puede entregar consume, parece que trabaja, y su trabajo se entierra sin ruido.
+      #
+      # ⚠️ Y esto ENCIENDE el bucle que hasta hoy estaba apagado por avería: si sus pushes
+      # disparan CI, un CI rojo vuelve a despertarlo. Lo único que lo para es el TOPE POR PR
+      # del avisador, demostrado corriendo en `tests/scrum834-puerta-avisador-rojo.test.mjs`
+      # (diez ciclos con sha nuevo cada uno → 3 avisos y luego TOPE-ALCANZADO; con el tope
+      # quitado publican los diez). La dedupe NO sirve aquí: es por `head_sha`, y cada push
+      # crea un sha nuevo.
+      # Los secretos se leen por `env` y solo se mira si están VACÍOS: es la única forma de
+      # consultarlos sin imprimirlos, y la misma que ya se usa en los otros dos workflows.
+      - id: modo
+        name: ¿Hay llave de la App?
+        env:
+          CLIENT_ID: ${{ secrets.YAQU_BOT_CLIENT_ID }}
+          PRIVATE_KEY: ${{ secrets.YAQU_BOT_PRIVATE_KEY }}
+        run: |
+          if [ -n "$CLIENT_ID" ] && [ -n "$PRIVATE_KEY" ]; then
+            echo "hay=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "hay=false" >> "$GITHUB_OUTPUT"
+            echo "⚠️ Sin llave de App: lo que Claude empuje NO disparará CI."
+          fi
+
+      - id: token
+        name: Acuñar token de la GitHub App
+        if: steps.modo.outputs.hay == 'true'
+        continue-on-error: true
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.YAQU_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.YAQU_BOT_PRIVATE_KEY }}
+
+      # Si los secretos están y aun así no acuñan, se dice. Caer al token por defecto en
+      # silencio devolvería el defecto de arriba y con aspecto de funcionar.
+      - name: 🔴 CIEGO — hay secretos pero no acuñan token
+        if: steps.modo.outputs.hay == 'true' && steps.token.outcome != 'success'
+        run: |
+          echo "::error::Los secretos de la App existen pero no acuñan token. Claude empujaría"
+          echo "con el GITHUB_TOKEN y sus commits NO dispararían CI: el PR quedaría enterrado."
+          exit 1
+
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           allowed_bots: "yaqu-bot[bot]"
+          # «GitHub token with repo and pull request permissions». Con el de la App, lo que
+          # Claude empuje SÍ crea eventos y por tanto SÍ dispara CI. El respaldo al token por
+          # defecto se mantiene para no dejar el workflow muerto si la App no está: en ese
+          # caso vuelve el defecto conocido, y por eso el paso de arriba lo declara.
+          github_token: ${{ steps.token.outputs.token || github.token }}
