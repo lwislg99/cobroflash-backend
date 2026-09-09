@@ -120,6 +120,7 @@ const lectorAcotado = (jobIds: number[]): LectorListado => ({
     select: {
       id: true, merchantId: true, jobId: true, numero: true, fecha: true,
       createdAt: true, estado: true, lineas: true, invoiceId: true,
+      modoValoracion: true,
     },
   }),
 });
@@ -131,11 +132,12 @@ const lectorPrismaListado: LectorListado = {
     select: {
       id: true, merchantId: true, jobId: true, numero: true, fecha: true,
       createdAt: true, estado: true, lineas: true, invoiceId: true,
+      modoValoracion: true,
     },
   }),
   jobs: ({ merchantId, ids }) => prisma.job.findMany({
     where: { merchantId, id: { in: ids } },
-    select: { id: true, titulo: true, customerId: true },
+    select: { id: true, titulo: true, customerId: true, quoteId: true },
   }),
   customers: ({ merchantId, ids }) => prisma.customer.findMany({
     where: { merchantId, id: { in: ids } },

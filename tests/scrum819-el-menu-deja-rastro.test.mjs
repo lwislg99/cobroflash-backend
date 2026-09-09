@@ -85,12 +85,23 @@ test('SCRUM-819 · 🔴 el envoltorio APILA las vistas que el hash sabe restaura
   assert.match(bloque, /pushState/,
     '🔴 el envoltorio ha vuelto a usar sólo `replaceState`, que no crea entrada de historial: '
     + '17 clics = 0 entradas y «atrás» saca de la aplicación.');
-  // 🔴 Y NO APILA TODO: las vistas de detalle necesitan un id que el hash no lleva, así que
-  // apilarlas daría un «atrás» que cambia la URL y no la pantalla — la incoherencia, del revés.
+  // 🔴 Y NO APILA TODO: sólo lo que el router sabría volver a pintar. Apilar una vista que no
+  // sabe restaurarse daría un «atrás» que cambia la URL y no la pantalla — la incoherencia, del revés.
+  //
+  // 📌 SCRUM-832 CAMBIÓ LA PREMISA, y por eso este bloque se reescribió. Aquí ponía que las vistas
+  // de DETALLE «necesitan un id que el hash no lleva». Ya lo lleva: el hash pasó a ser
+  // `#quotes-detail/123`. Así que lo que no se apila ya no son las fichas — es lo DESCONOCIDO.
+  // La propiedad no ha cambiado; lo que cambió es cuánto entra dentro de ella.
   assert.match(bloque, /HASH_VIEWS\.includes\(view\)/,
-    '🔴 el envoltorio apila cualquier vista. Las de DETALLE no se pueden restaurar desde el hash, '
-    + 'y apilarlas cambia la URL sin cambiar la pantalla.');
-  assert.match(bloque, /actual !== view/,
+    '🔴 el envoltorio apila vistas que el hash no sabe restaurar, y eso da un «atrás» que cambia '
+    + 'la URL sin cambiar la pantalla.');
+  assert.match(bloque, /DETALLES\[view\]/,
+    '🔴 el envoltorio ha dejado de apilar las FICHAS. Desde SCRUM-832 su hash lleva el id y el '
+    + 'router sabe restaurarlas: si no se apilan, abrir un presupuesto vuelve a borrar la lista '
+    + 'del historial y el botón atrás vuelve a sacarte de la aplicación.');
+  // El destino se compara ENTERO —hash con id incluido—, no sólo la clave de vista: así ir del
+  // presupuesto 7 al 9 sí apila (son dos pantallas), y pulsar dos veces el mismo botón no.
+  assert.match(bloque, /actual !== \w+/,
     '🔴 se apila navegar al sitio donde ya estás: pulsar dos veces el mismo botón del menú '
     + 'obligaría a dar dos veces atrás.');
 });

@@ -270,20 +270,24 @@ function albFechaCorta(w) {
   return w ? new Date(w).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : '';
 }
 
-function ctxAlbaranEnFila(alb) {
-  return {
-    // Tres valores (`sin_facturar` · `parcial` · `facturado`), no un booleano: en una obra por
-    // fases `parcial` es lo normal, y aplanarlo escondería que AÚN QUEDA algo que facturar.
-    'valorado-con-pendiente': alb.modoValoracion === 'VALORADO' && alb.estadoFacturacion !== 'facturado',
-  };
-}
-
-/** La acción primaria de este albarán según C2, o `null` si su estado no tiene siguiente paso. */
-function primariaDeAlbaran(alb) {
-  const registro = (typeof window !== 'undefined' && window.ALBARAN_ACTION_REGISTRY) || [];
-  const ctx = ctxAlbaranEnFila(alb);
-  return registro.find((a) => window.destinoEfectivo(a, alb.estado, ctx) === 'primaria') || null;
-}
+// ── SCRUM-831 · `ctxAlbaranEnFila` y `primariaDeAlbaran` YA NO VIVEN AQUÍ ────────────────────
+//
+// Se han mudado VERBATIM a `js/albaranAccion.js` (`ctxAlbaranDeFila` · `primariaDeAlbaran`), y el
+// motivo es el de SCRUM-366 por TERCERA vez: viviendo dentro de esta vista, **la lista de
+// Albaranes no podía preguntarles cuál es el siguiente paso de un albarán** — y por eso era la
+// única de las cinco listas de la casa con CERO acciones en la fila.
+//
+// 🔴 Y AL MUDARLO SE DESTAPÓ UN HUECO QUE ESTABA AQUÍ. El contexto de esta vista declaraba UNA
+// sola condición (`valorado-con-pendiente`) y el registro de SCRUM-302 tiene DOS primarias
+// contextuales para `firmado`. La otra —`sin-valorar-convertible`, la del parte SIN precios, que
+// es el modo POR DEFECTO— **no se evaluaba nunca aquí**, así que en esta ficha un albarán firmado
+// sin precios no ofrecía su siguiente paso aunque le tocara. El detalle del albarán sí la
+// calculaba. Dos copias del mismo contexto y ésta se había quedado a medias: exactamente lo que
+// pasa cuando una regla vive en dos sitios.
+//
+// Esta vista las sigue usando por el global, que es como se comparte todo en un panel sin bundler
+// (regla 4). El que usa el nombre viejo dentro de este fichero es `destinoEnFila`, aquí debajo.
+const ctxAlbaranEnFila = (alb) => window.ctxAlbaranDeFila(alb);
 
 /**
  * Destino de UNA acción concreta en la fila, leído del registro de C2.
@@ -708,6 +712,10 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // sin declarar su ocupante.
   const nextAct = jobNextAction(job, !isTecnico);
   if (nextAct) {
+    // SCRUM-823 · UN SOLO SITIO por el que el mensaje del servidor puede asomar en este CTA.
+    // El trinquete de SCRUM-644 cuenta SITIOS, y este ticket añade un camino de fallo más (el del
+    // agendado): los dos entran por aquí, así que el número no sube. El texto es el que ya había.
+    const falloDelCta = (err) => setStatus('error', 'No se pudo completar la acción: ' + (err?.data?.message || err.message));
     const cta = document.createElement('button');
     // 🔴 SCRUM-380 · SIN `btn-sm`, y el arreglo va POR AQUÍ y no por el CSS.
     //
@@ -762,9 +770,46 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
           // nombrada, para que los dos caminos no vuelvan a divergir (SCRUM-366).
           await abrirAltaAlbaran('SIN_VALORAR');
           cta.disabled = false; cta.textContent = orig; // no se refresca: aún no existe nada
+        } else if (nextAct.kind === 'agendar') {
+          // ── SCRUM-823 · AGENDAR, TAMBIÉN DESDE AQUÍ ─────────────────────────────────────
+          //
+          // 🔴 ESTA PANTALLA NO SABÍA AGENDAR. `scheduledAt` aparecía CERO veces en este fichero y
+          // no tenía ni una transición de estado: la lista era el único sitio del producto donde
+          // se ponía una fecha. Por eso `abrirAgendarTrabajo` se ha mudado a `js/jobAgendar.js` —
+          // el mismo movimiento que SCRUM-366 hizo con esta escalera, en espejo.
+          //
+          // Medido ANTES de escribir esto: con un `kind` que este `if/else` no cubre, el botón se
+          // quedaba en «Enviando…» deshabilitado para siempre, sin escribir nada y sin decir nada.
+          // El rótulo se restaura ANTES de abrir el modal porque abrirlo no es enviar: lo que
+          // envía es el botón de dentro, y hasta entonces esto se puede cancelar.
+          cta.disabled = false; cta.textContent = orig;
+          abrirAgendarTrabajo(job, async (cuerpo, ok) => {
+            try {
+              await apiRequest(`/admin/jobs/${job.id}`, { method: 'PATCH', body: JSON.stringify(cuerpo) });
+              if (ok) showToast(ok);
+              refresh();
+            } catch (e) {
+              // 🔴 EL MISMO SITIO QUE EL `catch` DE ABAJO, y no una copia. El trinquete de
+              // SCRUM-644 cuenta los SITIOS que pintan un `.message` crudo del servidor, y el
+              // techo de este fichero era 11: escribir aquí un `setStatus` propio lo subía a 12.
+              // **Un trinquete sólo baja.** Los dos caminos —el fallo de la acción y el del
+              // agendado— pasan por `falloDelCta`, así que el número no se mueve y el día que
+              // alguien traduzca ese mensaje hay UN punto donde hacerlo, no dos.
+              falloDelCta(e);
+            }
+          });
+        } else if (nextAct.kind === 'empezar') {
+          // SCRUM-823 · la transición `agendado → en_curso`, la que la FSM ya admite
+          // (la declara `JOB_TRANSITIONS`). A diferencia de `agendar`, esto SÍ envía: el botón se queda en
+          // «Enviando…» hasta que vuelve, que es lo que ya hacen `cobrar`, `emitir` y `firmar`.
+          //
+          // ⚠️ Y a diferencia de CERRAR, es reversible: por eso puede ser acción principal. El
+          // acto irreversible se queda en el «⋯» con su explicación (SCRUM-344).
+          await apiRequest(`/admin/jobs/${job.id}`, { method: 'PATCH', body: JSON.stringify({ status: 'en_curso' }) });
+          refresh();
         }
       } catch (err) {
-        setStatus('error', 'No se pudo completar la acción: ' + (err?.data?.message || err.message));
+        falloDelCta(err);
         cta.disabled = false;
         cta.textContent = orig;
       }
@@ -1183,6 +1228,22 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   const albSec = docsSec;
   const newAlbRow = document.createElement('div');
   newAlbRow.className = 'job-doc-toolbar';
+  // ── 🔴 SCRUM-823 · LA PUERTA QUE LA ESCALERA NO VIGILA ──────────────────────────────────
+  //
+  // La escalera ya no propone crear un albarán en un Trabajo CERRADO. Pero esta barra **no pasa
+  // por la escalera**: es un `btn-secondary` de la sección, y seguía ofreciendo dar de alta un
+  // documento de entrega sobre algo que se dio por acabado. Arreglar lo que el producto PROPONE y
+  // dejar abierto lo que PERMITE es media reparación — el mismo defecto por otra puerta.
+  //
+  // Se OCULTA la barra entera en vez de deshabilitar el botón: deshabilitar sin decir por qué deja
+  // al usuario delante de un control muerto, y decírselo exigiría un texto que nadie ha firmado
+  // (regla 30). Un Trabajo cerrado es terminal; la sección sigue listando sus albaranes, que es lo
+  // que hay que poder consultar.
+  //
+  // ⚠️ SÓLO `cerrado`. En `pendiente_agendar` y `agendado` la barra SE QUEDA: ahí la escalera no
+  // lo propone —hay algo más urgente que hacer— pero el profesional puede tener su motivo, y el
+  // estado es reversible. Cerrar no.
+  if (job.status === 'cerrado') newAlbRow.hidden = true;
   const newAlbBtn = document.createElement('button');
   newAlbBtn.className = 'btn-secondary btn-sm';
   newAlbBtn.textContent = '+ Nuevo albarán';

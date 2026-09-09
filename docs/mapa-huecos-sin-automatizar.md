@@ -75,6 +75,51 @@ que el `<select>` no puede mostrar—. Quien abra el ticket empieza por ahí, no
 
 ---
 
+## Al volver a una lista con «atrás», los FILTROS se pierden
+
+**Medido el 9-sep-2026** · `origin/main` = `2119c430` · en navegador real, 390 px
+
+Con SCRUM-832 el botón atrás ya vuelve a la lista. Pero vuelve **en blanco**:
+
+| | buscador | estado |
+|---|---|---|
+| antes de abrir la ficha | `"Ruiz"` | `accepted` |
+| después de pulsar atrás | `""` | `all` |
+
+El hash guarda **qué vista** y **qué id**, no qué estaba filtrado. Al volver, la lista se pinta de
+cero.
+
+### Por qué no entra en SCRUM-832
+
+Porque **no sale gratis**, y el ticket lo decía: entra sólo si es un añadido pequeño. No lo es —
+son tres decisiones que no toca tomar de paso:
+
+1. **Qué filtros se guardan.** La lista de Presupuestos tiene cinco (texto, estado, etiqueta, desde,
+   hasta). ¿Todos? ¿Sólo los que se ven?
+2. **Dónde.** En el hash —y entonces el enlace compartido lleva los filtros de quien lo copió— o en
+   memoria, y entonces no sobrevive a recargar.
+3. **Para cuántas listas.** Las cinco tienen filtros distintos; hacerlo sólo en una repetiría el
+   defecto que este ticket vino a cerrar: cuatro pantallas comportándose de una manera y una de otra.
+
+### El umbral
+
+**Repasar 3 o más fichas seguidas de una misma lista filtrada.** Ese es el número, y sale de una
+cuenta, no de una intuición: hoy se pierden **los dos filtros** que se pusieron (de los **cinco**
+que tiene la lista de Presupuestos), así que revisar N fichas de una búsqueda cuesta **N−1
+refiltrados**. Con N=1 no hay daño; con N=2 es un trámite; a partir de **N=3** el usuario gasta
+más gestos volviendo a filtrar que leyendo, y entonces esto es un ticket y no un hueco.
+
+También sube a ticket si aparece una queja concreta, o si se toca el filtrado de listas por otro
+motivo y sale casi de balde.
+
+**Hoy la víctima es menor que la del ticket que lo destapó**: antes el atrás te sacaba de la
+aplicación; ahora vuelves a la lista y vuelves a filtrar. Molesta, no expulsa.
+
+La medición está en `scratchpad/banco/filtros.mjs`: pone dos filtros, abre una ficha, pulsa atrás y
+compara. Quien abra el ticket la tiene hecha.
+
+---
+
 # Medir sobre una población que se mueve bajo los pies — CUARTA vez
 
 **9-sep-2026 · medido sobre `origin/main = 0269e8cd` · worktree `wt-verif5`.**

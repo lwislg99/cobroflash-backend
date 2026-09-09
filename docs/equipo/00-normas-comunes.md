@@ -159,6 +159,10 @@ Contar no es avisar.
 Un instrumento que solo sabe callar no es un instrumento.
 Si desactivas una comprobación de permisos para que tu robot pase, el
 permiso tiene que volver a preguntarse en la puerta siguiente.
+Un control que no se puede usar y no puede explicar por qué, no se
+deshabilita: se quita.
+Un acto irreversible no es nunca la acción principal.
+Si tu medición tumba una decisión firmada, gana tu medición.
 
 ## A16 · Repite el encargo en una línea antes de empezar
 
@@ -230,3 +234,23 @@ pasó CI y **se mergeó solo sin que nadie mirara**.
 
 La diferencia entre los dos no es la suerte ni la complejidad del trabajo: es cuánto tiempo
 estuvo la rama separada de `main` mientras las otras cinco sesiones mergeaban debajo.
+
+## A18 · Un ticket puede estar ACABADO y seguir abierto
+
+Es el reverso de la regla 42. **SCRUM-833** llevaba «En curso» con su rama ya dentro de `main`
+desde hacía horas, y su enunciado seguía afirmando una bomba «a 4 ramas» que ya no existía.
+
+Antes de trabajar un ticket se comprueba si su rama ya es ancestro de `main`:
+
+    git merge-base --is-ancestor <sha> origin/main
+
+    🔒 «Mergear no es acabar; pero acabar tampoco es cerrar, y un tablero puede mentir en las
+        dos direcciones.»
+
+⚠️ **Y el enunciado tampoco acertaba el número, que es la otra mitad del mismo aviso.** El
+ticket decía «a 4 ramas» de un umbral concreto, `dentro.length > 10`, y ese margen **nunca fue
+4**: medido, era **7** al empezar y **5** al terminar. El **47** que se citó es de OTRO aserto
+—`inst.ramas.length > 50`, el tercero de la familia, que apareció dentro del mismo fichero— y
+hoy es 57. Dos umbrales distintos con dos márgenes distintos, y atribuirle a uno el número del
+otro es la misma clase de error que la norma viene a cortar: **un número heredado de un
+enunciado no es una medición.**
