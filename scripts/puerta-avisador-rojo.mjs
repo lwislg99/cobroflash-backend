@@ -43,6 +43,50 @@ export const BOT = 'yaqu-bot[bot]';
 /** Permisos de repositorio que cuentan como «escritura» en la API de GitHub. */
 const PERMISOS_DE_ESCRITURA = new Set(['admin', 'write', 'maintain']);
 
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 LA PUERTA FISCAL — REGLA 38, APLICADA TAMBIÉN AL ROBOT
+//
+// La regla 38 se les exige a las seis sesiones desde el primer día: el camino de emisión se
+// LEE, no se modifica. Al avisador no se le exigía, y eso era un descuido con dos mitades
+// medidas el 9-sep-2026:
+//
+//   · la cadena avisador → Claude → push a la rama SE CIERRA SIN NINGUNA PERSONA (medido:
+//     `claude.yml` arrancó siete veces en media hora con `actor = yaqu-bot[bot]`);
+//   · y en `verifactu.service` e `invoiceNumber.service` hay 28 piezas de lógica que se
+//     pueden romper con la tanda en VERDE — entre ellas invertir qué eslabón cierra la cadena
+//     de huellas, quitar la puerta de sellar dentro de una transacción, emitir sin productor
+//     configurado, y el signo del huso horario del sello.
+//
+// Las dos juntas: un robot puede tocar el camino fiscal solo, y hay 28 maneras de romperlo
+// que ningún guard caza. Así que aquí no se despierta a nadie: se ESCALA a una persona.
+//
+// 🔒 «Una regla que le exiges a una persona y no a tu robot no es una regla: es una costumbre.»
+//
+// Los dos `.service.ts` viven HOY dentro de `src/modules/invoicing/`, así que la regla del
+// directorio ya los cubre. Se nombran igualmente A PROPÓSITO: el día que alguien los mueva,
+// la regla por nombre los sigue cazando. Una redundancia que sobrevive a una mudanza no es
+// una redundancia.
+export const RUTAS_FISCALES = [
+  'src/modules/invoicing/',
+  'verifactu.service.ts',
+  'invoiceNumber.service.ts',
+  'prisma/schema.prisma',
+];
+
+/**
+ * ¿Toca el PR el camino de emisión fiscal?
+ * FALLA CERRADO: si no se sabe qué ficheros toca (lista vacía o ausente), se responde que SÍ.
+ * No poder mirar no es haber mirado, y aquí el coste de equivocarse es que un robot edite el
+ * sellado; el de acertar de más, que una persona mire un PR.
+ */
+export function tocaCaminoFiscal(ficheros) {
+  if (!Array.isArray(ficheros) || ficheros.length === 0) return true;
+  return ficheros.some((f) => {
+    const ruta = String(f || '').replace(/\\/g, '/').toLowerCase();
+    return RUTAS_FISCALES.some((r) => ruta.includes(r.toLowerCase()));
+  });
+}
+
 /**
  * ¿Es de un fork? `head.repo` puede venir a `null` (fork borrado): eso también es fork.
  * Se comparan los nombres completos `owner/repo`, no el owner suelto.
@@ -62,6 +106,7 @@ export function esDeFork({ repoBase, repoOrigen } = {}) {
  * @param {string} e.repoOrigen         'owner/repo' de la rama de origen
  * @param {string} e.autor              login de quien abrió el PR
  * @param {string} e.permisoAutor       'admin'|'write'|'maintain'|'read'|'none'|''
+ * @param {string[]} e.ficheros        rutas que toca el PR (para la puerta fiscal)
  * @param {string[]} e.marcasPrevias    marcas de avisos ya publicados en ese PR
  * @param {string} e.marcaActual        marca de ESTE rojo (head_sha + check)
  * @param {number} e.tope               máximo de avisos por PR
@@ -86,7 +131,20 @@ export function decidir(e = {}) {
     };
   }
 
-  // 3 · Y el permiso, otra vez, aquí. `allowed_bots` desactivó el que había.
+  // 3 · LA PUERTA FISCAL. Va con las de seguridad y antes que la de autor, por el mismo
+  //     motivo que el fork: una condición de seguridad no debe depender de que otra se
+  //     evalúe bien. Y va DESPUÉS del fork porque un PR de fork ya está rechazado por la
+  //     razón más fuerte —contenido de un desconocido— y ése es el veredicto que hay que leer.
+  if (tocaCaminoFiscal(e.ficheros)) {
+    return {
+      avisar: false,
+      codigo: 'ESCALADO-FISCAL',
+      motivo: 'el PR toca el camino de emisión fiscal (regla 38): no despierta a Claude, ' +
+              'lo mira una persona',
+    };
+  }
+
+  // 4 · Y el permiso, otra vez, aquí. `allowed_bots` desactivó el que había.
   const esElBot = autor === BOT;
   const tieneEscritura = PERMISOS_DE_ESCRITURA.has(String(permisoAutor || '').toLowerCase());
   if (!esElBot && !tieneEscritura) {
@@ -97,18 +155,18 @@ export function decidir(e = {}) {
     };
   }
 
-  // 4 · Sin marca no hay forma de saber si ya se avisó → no se avisa (falla cerrado).
+  // 5 · Sin marca no hay forma de saber si ya se avisó → no se avisa (falla cerrado).
   if (!marcaActual) {
     return { avisar: false, codigo: 'SIN-MARCA', motivo: 'no se pudo componer la marca del aviso' };
   }
 
-  // 5 · El MISMO rojo no se avisa dos veces. La marca lleva head_sha + check dentro, así que
+  // 6 · El MISMO rojo no se avisa dos veces. La marca lleva head_sha + check dentro, así que
   //     un rojo nuevo sobre un commit nuevo sí es un aviso nuevo.
   if (marcasPrevias.includes(marcaActual)) {
     return { avisar: false, codigo: 'YA-AVISADO', motivo: `ya hay un aviso para ${marcaActual}` };
   }
 
-  // 6 · El tope del bucle. Vive en el PR (los avisos previos), no en el job: un workflow no
+  // 7 · El tope del bucle. Vive en el PR (los avisos previos), no en el job: un workflow no
   //     recuerda nada entre ejecuciones y un contador dentro del job es un adorno.
   if (marcasPrevias.length >= tope) {
     return {

@@ -37,3 +37,32 @@ lo que se midió · el comando exacto**. Cada afirmación que pases deja fila.
 Si no hay comando que lo mida, no es un hecho: es una pregunta, y se devuelve
 como pregunta. Decir «no se puede medir desde aquí» es una respuesta completa;
 inventar el número no lo es.
+
+## CANON · lo que cuesta un guard lento
+
+    🔒 «Un guard de seis minutos se acaba sacando de la tanda, y entonces da igual lo bien
+        que mida.»
+
+De SCRUM-833: la primera versión del arreglo llamaba a `git merge-base --is-ancestor` una vez por
+sujeto — 1.200 procesos, 366 s medidos. A granel con UN `git rev-list`: 14 s. Lo mismo que mide,
+sesenta veces más barato. Un instrumento que nadie puede permitirse correr no protege nada.
+
+## CANON · tres del censo de tautologías (SCRUM-838)
+
+    🔒 «Un instrumento que normaliza la diferencia que busca no encuentra nada.»
+
+Mi detector colapsaba los espacios antes de comparar los dos lados de un aserto, y
+`scrum252` compara `normalizarSchema('id      Int')` con `normalizarSchema('id Int')`:
+su diferencia ES el espaciado. Lo normalicé y luego dije que eran idénticos.
+
+    🔒 «Un guard que nace con 35 falsos positivos lo silencia alguien la primera semana.»
+
+Por eso `magnitudes-sin-suelo` quedó como INFORME y no como trinquete: 35 candidatos, y de
+los cinco que revisé a mano los cinco tenían suelo propio. Bloquean sólo las dos formas con
+precisión medida.
+
+    🔒 «La identidad de un hallazgo no lleva el número de línea dentro.»
+
+Me cazó el guard de SCRUM-710b: declaré dos tautologías como `fichero:113`. Si la clave lleva
+la línea, corregir cualquier cosa por encima mueve la declaración y el trinquete grita sin que
+nada haya cambiado.

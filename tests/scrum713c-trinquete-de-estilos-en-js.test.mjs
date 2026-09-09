@@ -85,7 +85,19 @@ function censo() {
 //
 // Baja siempre que alguien limpie: entonces se aprieta AQUÍ, y el guard lo exige. No se pone un
 // número «con holgura» a propósito — la holgura es sitio para que vuelva a subir sin que caiga.
-const TECHO = 351;
+//
+// 351 → 348 · 9-sep-2026, al fusionar `origin/main` (ee13c63f) dentro de
+// `scrum-831-albaranes-sin-acciones`. SCRUM-831 sacó tres `style.cssText` de `albaranesView.js`
+// (de 9 a 6) a las clases `.alb-numero` / `.alb-enlace` / `.alb-chip-cobro` de `styles.css`, que
+// es exactamente lo que el rojo de aquí abajo pide hacer. Este guard lo dijo él solo en el merge:
+// «HAN BAJADO (enhorabuena) … aprieta el número aquí».
+//
+// 🔒 UN NÚMERO DERIVADO NO SE ELIGE: SE RECUENTA SOBRE EL ÁRBOL YA FUSIONADO. No se ha cogido el
+// 351 de main ni el 348 de la rama por ser «el mío»: se ha vuelto a contar después de mezclar, con
+// ESTE contador —el de `contarEnFuente`, no un `grep`—, y las dos cuentas independientes dieron
+// 348. Main no toca ninguna asignación en su lado (su único cambio en `dashboard/js` es un literal
+// de microcopy en `buscadorDeClientes.js`), así que la bajada es entera de SCRUM-831.
+const TECHO = 348;
 
 test('SCRUM-713c · SUELO: el contador VE lo que tiene que ver, y NO se caza a sí mismo', () => {
   // 🔴 El suelo que no caduca: se prueba contra cadenas fabricadas aquí, así que sigue probando
