@@ -143,6 +143,26 @@ Una pantalla se ordena por lo que se hace en ella, no por cómo están
 guardados los campos.
 La lista que decide qué se mira es la única que nadie mira.
 Contar no es avisar.
+Un instrumento que solo sabe callar no es un instrumento.
+Si desactivas una comprobación de permisos para que tu robot pase, el
+permiso tiene que volver a preguntarse en la puerta siguiente.
+
+## A16 · Repite el encargo en una línea antes de empezar
+
+Al recibir un encargo, la sesión repite en UNA línea qué cree que se
+le ha pedido, antes de empezar. Si no coincide con lo que el
+orquestador quiso decir, se ve en el momento.
+
+Nace de dos sucesos del 9-sep-2026, y los dos son del mismo tipo: un
+encargo de cuatro puntos que NO llegó a la sesión, y un «el arreglo
+que ya hiciste» sobre algo que estaba a medias. Ninguno de los dos se
+habría visto hasta tres días después. La línea cuesta cinco segundos y
+es el único punto del proceso donde emisor y receptor comparan lo que
+creen que dice el mensaje.
+
+Corolario: si el encargo no te llegó, se dice. NO se reconstruye de
+memoria — un encargo inventado se parece mucho a uno recibido, y
+trabajar sobre él cuesta la tanda entera.
 
 ## A11 · Cómo se actualiza esto
 

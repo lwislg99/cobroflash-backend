@@ -63,6 +63,24 @@ jobs:
       # casa, que ya está medido, en vez de inventar otro.
       - name: Traer `main` (los guards lo consultan)
         run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
+      # 🔴 `allowed_bots` — SCRUM-834, y va con su riesgo escrito al lado.
+      #
+      # Por defecto la acción NO deja que un bot la dispare: «By default, GitHub Apps and bots
+      # cannot trigger this action for security reasons». Sin esta línea, el avisador de PR en
+      # rojo publicaría su comentario y NO PASARÍA NADA — silencio, no error, que es el peor
+      # modo de fallo posible: parece que funciona.
+      #
+      # ⚠️ Y lo que se paga por ella, medido en la misma doc: «Allowed bots are NOT checked for
+      # repository permissions. A bot that matches an entry does not need to be installed on
+      # your repository or have write access.» Este repositorio es PÚBLICO, así que el comodín
+      # dejaría que la App de cualquiera despertase a Claude con un prompt que él controla.
+      # Por eso va el nombre LITERAL y solo uno. El comodín está prohibido y hay un test que
+      # lo vigila (`tests/scrum834-puerta-avisador-rojo.test.mjs`).
+      #
+      # La comprobación de permisos que esta línea desactiva se vuelve a hacer en la puerta
+      # siguiente: `scripts/puerta-avisador-rojo.mjs` exige que el PR NO sea de un fork Y que
+      # lo haya abierto el bot o una cuenta con escritura.
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_bots: "yaqu-bot[bot]"
