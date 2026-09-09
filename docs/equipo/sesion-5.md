@@ -35,3 +35,24 @@ Claude no se auto-despierta: su respuesta no lleva la mención.
   que la respuesta de la acción no incluya la cadena, y eso lo puede
   cambiar una versión nueva sin avisar. Si algún día el bucle
   CI→aviso→arreglo→CI se cierra solo, empezar a mirar por aquí.
+
+Un modo rápido que no ejerce el mecanismo no es una versión rápida del
+control: es otro control.
+
+  9-sep-2026, midiendo SCRUM-836. `meta:mutaciones` tarda más de una
+  hora, y tiene un `--solo-censo` que abre la misma puerta en 6 s. La
+  tentación era usarlo como control del ancla. Se probó con el ancla
+  ARREGLADA y con el ancla ROTA A PROPÓSITO:
+
+      A · ancla arreglada → censo · 54 guards · 166 declaraciones · EXIT 0
+      B · ancla ROTA      → censo · 54 guards · 166 declaraciones · EXIT 0
+
+  Salida idéntica. El modo censo CUENTA declaraciones pero no intenta
+  inyectar, así que no puede descubrir que el ancla ya no casa — que es
+  exactamente el defecto que se iba a medir. Seis segundos y un «todo
+  bien» falso.
+
+  Aplica igual a cualquier `--dry-run`, cualquier modo «rápido» y
+  cualquier prueba de humo: la pregunta no es cuánto tarda, es si
+  EJERCE el mecanismo que dice comprobar. Y se responde probándolo con
+  el defecto puesto, no leyendo su documentación.
