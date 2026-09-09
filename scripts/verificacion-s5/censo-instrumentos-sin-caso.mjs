@@ -43,6 +43,13 @@ function esFabricado(a, sf, fuente) {
   }
   // `s.src`, `x.fuente`… un acceso a propiedad de un objeto declarado con literales.
   if (ts.isPropertyAccessExpression(a)) return true;
+  // 🔴 UNA LLAMADA CON ARGUMENTOS LITERALES TAMBIEN ES UNA ENTRADA FABRICADA. Este censo
+  // no la veia: dijo que `clasificarBlob` seguia sin caso cuando yo acababa de sembrarselo
+  // con un Buffer construido a partir de un literal. Un literal envuelto sigue siendo un
+  // literal, y no reconocerlo hacia que el censo NO viera su propia mejora.
+  if (ts.isCallExpression(a) && a.arguments.length
+    && a.arguments.every((x) => ts.isStringLiteral(x) || ts.isNumericLiteral(x)
+      || ts.isNoSubstitutionTemplateLiteral(x) || ts.isArrayLiteralExpression(x))) return true;
   return false;
 }
 
@@ -71,9 +78,19 @@ for (const i of inst) {
   if (!porModulo.has(i.fichero)) porModulo.set(i.fichero, []);
   porModulo.get(i.fichero).push(i.fn);
 }
+// 🔴 Y AL BUSCARLE CASO AL MODULO SE MIRAN TODAS SUS EXPORTADAS, no solo las que casan con
+// VERBOS. Segundo punto ciego medido: `frontera-dist` exporta `censoDeLaFrontera` (censada) y
+// `correspondencia` (no censada), y el caso fabricado se lo puse a la segunda. El modulo SI
+// habia demostrado que ve; mi censo miraba por la rendija equivocada.
+const todasLasExportadas = new Map();
+for (const [fichero] of porModulo) {
+  const src = fs.readFileSync(fichero, 'utf8');
+  todasLasExportadas.set(fichero, [...src.matchAll(/export (?:async )?function (\w+)/g)].map((m) => m[1]));
+}
 const con = [], sin = [];
 for (const [fichero, fns] of porModulo) {
-  const hay = fns.some((fn) => corpus.some((t) => t.s.includes(fn) && tieneCasoFabricado(t.s, fn)));
+  const candidatas = todasLasExportadas.get(fichero) || fns;
+  const hay = candidatas.some((fn) => corpus.some((t) => t.s.includes(fn) && tieneCasoFabricado(t.s, fn)));
   (hay ? con : sin).push(`${fichero} :: ${fns.join(', ')}`);
 }
 
