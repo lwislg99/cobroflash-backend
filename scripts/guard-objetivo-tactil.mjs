@@ -226,7 +226,14 @@ const SUPERFICIES_791 = [
   // eso nunca estuvo entre los cortos. O sea que la vista no ha dejado de pintar nada que
   // debiera: hay un objetivo menos porque hay un botón menos, y encima uno que no cumplía AB6.
   { ruta: '/__quotes', vista: 'renderQuotesView', titulo: 'editor de presupuesto', distintosEsperados: 7 },
-  { ruta: '/__jobdetail', vista: 'renderJobDetailView', titulo: 'ficha de Trabajo', distintosEsperados: 6 },
+  // 🔴 SCRUM-823 (8-sep-2026) · 6 → 5, y el que falta VA NOMBRADO, mismo patrón que el 8 → 7 de
+  // arriba. `jobNextAction` no ramificaba por el ESTADO del Trabajo, y con los datos vacíos que
+  // pone este mismo guard (`DATOS_791` no conoce `/admin/jobs/...` y responde `[]`) el Trabajo de
+  // este fixture caía en uno de los 12/40 casos que aquel ticket cerró: se ofrecía el CTA de
+  // documento («BUTTON.btn-primary», el héroe) para un estado que no lo admite. Arreglado el
+  // defecto, la escalera devuelve «nada» para este Trabajo y el botón deja de pintarse — la
+  // pantalla no ha perdido cobertura, ha perdido un botón que no debía estar.
+  { ruta: '/__jobdetail', vista: 'renderJobDetailView', titulo: 'ficha de Trabajo', distintosEsperados: 5 },
   // 🔴 SCRUM-795 · LA FICHA 360, y por qué entra AHORA y no en SCRUM-791.
   //
   // El censo de SCRUM-787 no pudo proponerla: la 360 nunca llegó a montarse. El banco llamaba a
@@ -579,10 +586,12 @@ const EXCEPCIONES_791 = {
     { sel: 'BUTTON.btn-primary.btn-sm', motivo: 'clase compartida `.btn-sm` (30,5–30,9 px) — «+ Nuevo presupuesto». Pre-existente, misma decisión que las anteriores.' },
     { sel: 'BUTTON', motivo: 'las DOS pestañas del historial, «Presupuestos (1)» y «Facturas (1)», a 41,0 px (caja 40). No llevan clase de botón: es el TERCER grupo de SCRUM-787 —los que no se arreglan con `.btn-sm` sino dándoles área donde están—. Sin decidir. ⚠️ Este selector es el más ancho de todo el fichero: excusa cualquier <button> SIN CLASE de esta pantalla, y hoy son exactamente esos dos (7 interactivos censados, 7 nombrados arriba).' },
   ],
+  // 🔴 SCRUM-823 · `BUTTON.btn-primary` (el CTA del héroe) SE RETIRA de esta lista: con la
+  // escalera arreglada, este Trabajo ya no lo pinta (ver el `distintosEsperados: 5` de arriba), y
+  // una excepción para un selector que no aparece es la EXCEPCIÓN CADUCA que el guard denuncia.
   renderJobDetailView: [
     { sel: 'BUTTON.btn-ghost.btn-sm', motivo: 'clase compartida `.btn-sm` (30,9 px) — «Cambiar». Pre-existente; la retira el fundador con `.btn-sm`.' },
     { sel: 'BUTTON.btn-secondary.btn-sm', motivo: 'clase compartida `.btn-sm` (30,9 px) — «+ Nuevo albarán», «Parte de trabajo». Ídem.' },
-    { sel: 'BUTTON.btn-primary', motivo: 'el BOTÓN BASE a 37,0 px — el CTA del héroe. Segundo grupo de SCRUM-787, decisión aparte de `.btn-sm`.' },
     { sel: 'BUTTON.detail-miga-link', motivo: '19,6 px de ÁREA DE TOQUE — la miga «Trabajos». Uno de los DOS PEORES del árbol, y su caja CSS no lo delata: es el ejemplo de por qué el árbitro es el área y no la caja. Sin decidir.' },
     { sel: 'INPUT', motivo: '14,0 px — la casilla de precios de la barra de documentos. EL PEOR del árbol entero, y en la pantalla que se usa de pie en obra. Sin decidir.' },
   ],

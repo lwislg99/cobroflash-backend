@@ -351,9 +351,14 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // ③ El filtro de lo ilegible, apagado: un número del fallback de `env.ts` pasaría por sha.
+    //
+    // 🔴 SCRUM-824b partió el filtro en DOS líneas (antes era un único `||`): una comprueba la
+    // forma del sha, la otra rechaza específicamente el reloj de `env.ts` (10/13 dígitos). El
+    // ancla se actualiza para seguir apuntando al código real, apagando las DOS a la vez —mismo
+    // radio que la mutación original, ninguno de los dos filtros queda en pie—.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
-    de: '  if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;',
-    a: '  if (false) return null;',
+    de: '  if (!ES_SHA.test(s)) return null;\n  if (TODO_DIGITOS.test(s) && LONGITUDES_DE_RELOJ.has(s.length)) return null;',
+    a: '  if (false) return null;\n  if (false) return null;',
     cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
   },
   {
