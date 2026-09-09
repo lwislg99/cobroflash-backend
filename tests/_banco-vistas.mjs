@@ -1113,7 +1113,21 @@ export function cargarDashboard(raiz, opciones = {}) {
     // MISMA forma que el servidor —y los cubos salen de la MISMA función, importada de `dist`, no
     // de una lista escrita aquí— para que un test que pase un array siga midiendo la pantalla real
     // y no una respuesta que ningún servidor devuelve.
-    apiRequest: async (ruta) => (typeof opciones.datos === 'function' ? opciones.datos() : (opciones.datos ?? {})),
+    // 🔴 SCRUM-848 · LA RUTA SE LE PASA AL FIXTURE, igual que ya se hacía con `fetch` aquí debajo.
+    //
+    // No se hacía, y la consecuencia era invisible: un fixture por ruta —`(url) => …`, que es como
+    // están escritos los de `censo-objetivo-tactil-panel` y `DATOS_795`— se llamaba SIN url, así
+    // que caía siempre en su rama por defecto. Toda vista que pida por `apiRequest` —la ficha de
+    // Trabajo, entre otras— quedaba fuera del alcance de su propia fixture y se montaba con `[]`.
+    //
+    // Así se medía la ficha de Trabajo con un Trabajo SIN `status`, que el producto no puede
+    // producir (`Job.status` tiene `@default` en el esquema). Mientras la escalera caía al nivel 5
+    // con cualquier estado no se notó; SCRUM-823 le puso puerta por estado y entonces la pantalla
+    // medida dejó de tener acción de héroe. El guard lo cazó, y tenía razón.
+    //
+    // El segundo argumento va también: `apiRequest(ruta, opciones)` es su firma real, y un fixture
+    // que quiera distinguir un POST de un GET necesita verlo.
+    apiRequest: async (ruta, opts) => (typeof opciones.datos === 'function' ? opciones.datos(String(ruta), opts) : (opciones.datos ?? {})),
     // SCRUM-362 (H7): con escenario de red, el `fetch` es el suyo. Sin él, el de siempre —una red
     // que responde bien— para no cambiar lo que ya miden los demás tests.
     fetch: opciones.red?.fetch ?? (async (url, opts) => ({
