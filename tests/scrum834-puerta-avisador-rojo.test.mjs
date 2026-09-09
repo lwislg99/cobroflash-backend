@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { decidir, esDeFork, cuerpoDespierta, cuerpoNoDebeDespertar, tocaCaminoFiscal, BOT } from '../scripts/puerta-avisador-rojo.mjs';
+import { decidir, esDeFork, cuerpoDespierta, cuerpoNoDebeDespertar, tocaCaminoFiscal, censarModulos, MODULOS_FISCALES, RUTAS_FISCALES, BOT } from '../scripts/puerta-avisador-rojo.mjs';
 
 const REPO = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const WORKFLOW = path.join(REPO, '.github', 'workflows', 'avisador-rojo.yml');
@@ -372,4 +372,76 @@ test('🔴 EL HUECO QUE DEJA ABIERTO EL CAMBIO DE TOKEN, escrito para que no se 
   assert.match(soloCodigo, /if:\s*contains\(github\.event\.comment\.body,\s*'@claude'\)/,
     'condición 2: el disparo depende de que el CUERPO lleve la mención — si la acción empieza '
     + 'a escribirla en sus respuestas, esto se convierte en un bucle sin tope');
+});
+
+// ── EL AGUJERO DE LA LISTA A MANO, Y SU CENSO (SCRUM-834e) ────────────────────────────────
+// La puerta fiscal dejaba pasar src/modules/fiscal/ ENTERO: 20 de 20 ficheros. Ahi viven la
+// huella de VeriFactu, los libros de la AEAT, el modelo 303 y el atestiguamiento. Los 20
+// nombres van DENTRO del test a proposito: un control que dice «los del modulo» no prueba
+// nada el dia que el modulo cambie de forma.
+const LOS_20_DE_FISCAL = [
+  'src/modules/fiscal/evidencias/atestiguamiento.ts',
+  'src/modules/fiscal/evidencias/evidencias.routes.ts',
+  'src/modules/fiscal/evidencias/paquete.repo.ts',
+  'src/modules/fiscal/evidencias/paquete.ts',
+  'src/modules/fiscal/librosAeat/librosAeat.repo.ts',
+  'src/modules/fiscal/librosAeat/librosAeat.routes.ts',
+  'src/modules/fiscal/librosAeat/librosAeat.ts',
+  'src/modules/fiscal/librosAeat/librosAeatCsv.ts',
+  'src/modules/fiscal/modelo303/casillas.ts',
+  'src/modules/fiscal/modelo303/modelo303.repo.ts',
+  'src/modules/fiscal/modelo303/modelo303.routes.ts',
+  'src/modules/fiscal/modelo303/modelo303.ts',
+  'src/modules/fiscal/verifactu/productor.ts',
+  'src/modules/fiscal/verifactu/registro.builder.ts',
+  'src/modules/fiscal/verifactu/xsd/ConsultaLR.xsd',
+  'src/modules/fiscal/verifactu/xsd/RespuestaConsultaLR.xsd',
+  'src/modules/fiscal/verifactu/xsd/RespuestaSuministro.xsd',
+  'src/modules/fiscal/verifactu/xsd/SuministroInformacion.xsd',
+  'src/modules/fiscal/verifactu/xsd/SuministroLR.xsd',
+  'src/modules/fiscal/verifactu/xsd/xmldsig-core-schema.xsd',
+];
+
+test('🔴 los 20 ficheros de src/modules/fiscal/ escalan, uno por uno', () => {
+  assert.equal(LOS_20_DE_FISCAL.length, 20, "el control mide 20 ficheros, ni mas ni menos");
+  for (const f of LOS_20_DE_FISCAL) {
+    assert.equal(decidir({ ...base, ficheros: [f] }).codigo, "ESCALADO-FISCAL", f);
+  }
+});
+
+test('🔴 EL SUELO DEL CENSO: ningún módulo del árbol se queda sin clasificar', () => {
+  // Es la mitad que impide que esto se repita. `fiscal/` existía y nadie lo había clasificado
+  // ni como fiscal ni como no-fiscal: simplemente no estaba, y por eso pasaba.
+  const dirModulos = path.join(REPO, 'src', 'modules');
+  const enElArbol = fs.readdirSync(dirModulos, { withFileTypes: true })
+    .filter((d) => d.isDirectory()).map((d) => d.name);
+  assert.ok(enElArbol.length >= 20, `suelo: solo ${enElArbol.length} módulos, el censo mide sobre poco`);
+
+  const sinClasificar = censarModulos(enElArbol);
+  assert.deepEqual(sinClasificar, [],
+    `hay módulos sin clasificar: ${sinClasificar.join(', ')}. Cada uno tiene que ir a `
+    + 'MODULOS_FISCALES o a MODULOS_NO_FISCALES, y meterlo en la segunda es AFIRMAR que un '
+    + 'robot puede tocarlo sin que lo mire una persona.');
+});
+
+test('🔴 un módulo NUEVO sin clasificar se trata como fiscal, no como inocuo', () => {
+  // La mitad viva del censo: no espera a la tanda para protegerse.
+  assert.equal(tocaCaminoFiscal(['src/modules/moduloQueNadieHaClasificado/x.ts']), true);
+  assert.equal(decidir({ ...base, ficheros: ['src/modules/inventado/a.ts'] }).codigo, 'ESCALADO-FISCAL');
+});
+
+test('el censo detecta lo que le falta, no solo lo que tiene', () => {
+  assert.deepEqual(censarModulos(['fiscal', 'invoicing', 'auth']), []);
+  assert.deepEqual(censarModulos(['fiscal', 'nuevoModulo']), ['nuevoModulo']);
+});
+
+test('y un módulo declarado NO fiscal sigue sin escalar', () => {
+  // Si todo escalara, el avisador no despertaría nunca y habríamos apagado el aparato.
+  assert.equal(decidir({ ...base, ficheros: ['src/modules/quotes/app/routes/quotes.routes.ts'] }).avisar, true);
+});
+
+test('las rutas se DERIVAN de los módulos fiscales, no se repiten a mano', () => {
+  for (const m of MODULOS_FISCALES) {
+    assert.ok(RUTAS_FISCALES.includes(`src/modules/${m}/`), `falta la ruta derivada de ${m}`);
+  }
 });

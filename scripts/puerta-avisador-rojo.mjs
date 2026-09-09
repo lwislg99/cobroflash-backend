@@ -66,8 +66,56 @@ const PERMISOS_DE_ESCRITURA = new Set(['admin', 'write', 'maintain']);
 // directorio ya los cubre. Se nombran igualmente A PROPÓSITO: el día que alguien los mueva,
 // la regla por nombre los sigue cazando. Una redundancia que sobrevive a una mudanza no es
 // una redundancia.
+// 🔴 LA LISTA A MANO SE QUEDÓ CORTA, Y SE QUEDÓ CORTA POR DONDE TENÍA QUE QUEDARSE.
+//
+// La primera versión enumeraba rutas: `src/modules/invoicing/`, los dos `.service.ts` y el
+// esquema. Sus tres defensas contra la mudanza funcionaban —fichero nuevo, `.service` movido,
+// ruta relativa rara: los tres cazados— y aun así **`src/modules/fiscal/` entero pasaba: 20
+// de 20 ficheros**. Ahí viven `verifactu/` (la huella y el registro que va a la AEAT),
+// `librosAeat/`, `modelo303/` y `evidencias/atestiguamiento`. O sea la capa de SIF-1: lo más
+// sensible del repositorio, tratado como un PR cualquiera.
+//
+// 🔒 «Una lista de rutas escrita por quien conoce el módulo tiene la forma de lo que él
+//     conoce.» Yo conocía `invoicing/` y escribí `invoicing/`.
+//
+// POR ESO YA NO SE ESCRIBE UNA LISTA DE FISCALES: SE CENSA. Cada directorio de
+// `src/modules/` tiene que estar clasificado en una de las dos listas, y `censarModulos`
+// devuelve los que no lo estén. El guard de la tanda lo ejerce contra el árbol real, así que
+// **un módulo nuevo rompe el test hasta que alguien lo clasifique** — que es exactamente lo
+// que no pasó con `fiscal/`. Y mientras no se clasifique, `tocaCaminoFiscal` lo trata como
+// fiscal: no saber si algo es el camino de emisión no es saber que no lo es.
+
+/** Módulos que SON camino de emisión fiscal (regla 38). */
+export const MODULOS_FISCALES = ['fiscal', 'invoicing'];
+
+/**
+ * Módulos declarados NO fiscales, uno a uno y a conciencia. No es una lista de relleno:
+ * meter un módulo aquí es afirmar que un robot puede tocarlo sin que lo mire una persona.
+ */
+export const MODULOS_NO_FISCALES = [
+  'ai', 'auth', 'billing', 'expenses', 'exports', 'jobs', 'maintenance', 'messaging',
+  'metrics', 'payments', 'products', 'providers', 'quoteRequests', 'quotes', 'reports',
+  'search', 'system', 'team', 'templates', 'whatsappBot',
+];
+
+/**
+ * EL SUELO: devuelve los módulos del árbol que nadie ha clasificado. Si esto no está vacío,
+ * la puerta fiscal está opinando sobre un árbol que no conoce.
+ * @param {string[]} directorios  nombres de directorio bajo `src/modules/`
+ */
+export function censarModulos(directorios = []) {
+  const conocidos = new Set([...MODULOS_FISCALES, ...MODULOS_NO_FISCALES]);
+  return directorios.filter((d) => !conocidos.has(d));
+}
+
+/**
+ * Las rutas que escalan. Se DERIVAN de `MODULOS_FISCALES` en vez de repetirse a mano, para
+ * que añadir un módulo fiscal sea una línea en un sitio y no dos en dos.
+ * Los `.service.ts` van además por NOMBRE: hoy viven dentro de `invoicing/`, y así la regla
+ * los sigue cazando el día que alguien los mueva fuera.
+ */
 export const RUTAS_FISCALES = [
-  'src/modules/invoicing/',
+  ...MODULOS_FISCALES.map((m) => `src/modules/${m}/`),
   'verifactu.service.ts',
   'invoiceNumber.service.ts',
   'prisma/schema.prisma',
@@ -81,9 +129,17 @@ export const RUTAS_FISCALES = [
  */
 export function tocaCaminoFiscal(ficheros) {
   if (!Array.isArray(ficheros) || ficheros.length === 0) return true;
+  const conocidos = new Set([...MODULOS_FISCALES, ...MODULOS_NO_FISCALES]);
   return ficheros.some((f) => {
-    const ruta = String(f || '').replace(/\\/g, '/').toLowerCase();
-    return RUTAS_FISCALES.some((r) => ruta.includes(r.toLowerCase()));
+    const ruta = String(f || '').replace(/\\/g, '/');
+    const baja = ruta.toLowerCase();
+    if (RUTAS_FISCALES.some((r) => baja.includes(r.toLowerCase()))) return true;
+
+    // Un módulo que nadie ha clasificado se trata como fiscal. Es la mitad viva del censo:
+    // sin esto, un módulo nuevo pasaría igual que pasó `fiscal/` durante todo un día, y el
+    // guard del censo solo lo diría en la tanda — no aquí, que es donde decide.
+    const m = ruta.match(/(?:^|\/)src\/modules\/([^/]+)\//);
+    return !!(m && !conocidos.has(m[1]));
   });
 }
 
