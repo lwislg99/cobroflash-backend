@@ -6,6 +6,8 @@
 # TRASPASO DEL ORQUESTADOR — estado al 9-sep-2026
 
 Este documento es el ESTADO. `docs/equipo/orquestador.md` es el MÉTODO.
+Y `docs/equipo/limites-del-fundador.md` son los LÍMITES: lo que el fundador decidió de viva
+voz y no está escrito en ningún otro sitio. Se lee antes de mandar nada.
 El método no caduca; esto sí. Si algo de aquí contradice a una medición de hoy,
 gana la medición.
 

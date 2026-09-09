@@ -1,5 +1,18 @@
 # Normas comunes del equipo de sesiones
 
+> 🔴 **ESTE FICHERO TIENE UN SOLO DUEÑO: LA SESIÓN 0.** Nadie más lo edita — ni las otras cinco
+> sesiones, ni Codex, ni el orquestador.
+>
+> **Quien descubra una norma la escribe en SU informe y se la reporta a la Sesión 0**, que la mete
+> aquí. Las frases de canon propias de cada sesión van a su `docs/equipo/sesion-N.md`, que no
+> choca con nadie.
+>
+> El motivo está medido: en una semana se mandó a CUATRO sesiones distintas escribir normas en
+> este mismo fichero (A12, A13, A14, A15, A16 y varias frases de canon). El resultado fue el
+> PR #1214 — 51 ficheros y tres tickets parados por un conflicto AQUÍ. **Cuatro manos en un
+> fichero es un conflicto garantizado**, y no lo causó la herramienta: lo causó repartir el
+> trabajo mal.
+
 Estas normas aplican a todas las sesiones, sin excepción.
 Tu identidad y tus trampas propias están en docs/equipo/sesion-N.md.
 Quien coordina también tiene ficha, y con sus trampas medidas dentro:
@@ -207,3 +220,37 @@ basadas en un estado que había dejado de existir.
 
     🔒 Un informe sin hora no es una foto del ahora: es una foto sin fecha, y el
        orquestador la va a leer como si fuera de hoy.
+
+## A17 · Un ticket, una rama, un PR, y se empuja el mismo día
+
+Si un ticket no cabe en un día, **se parte**. Nunca se apilan varios tickets en una rama: al
+apilarlos, o entran todos o no entra ninguno.
+
+    🔒 Un conflicto no lo causa la herramienta: lo causa una rama que vive demasiado.
+
+**La evidencia, medida:** el **PR #1214** —3 tickets, 17 commits, 2 días, 51 ficheros— lleva horas
+parado por dos conflictos. El **PR #1209** de la Sesión 5 —1 ticket, 1 día— se abrió, se armó,
+pasó CI y **se mergeó solo sin que nadie mirara**.
+
+La diferencia entre los dos no es la suerte ni la complejidad del trabajo: es cuánto tiempo
+estuvo la rama separada de `main` mientras las otras cinco sesiones mergeaban debajo.
+
+## A18 · Un ticket puede estar ACABADO y seguir abierto
+
+Es el reverso de la regla 42. **SCRUM-833** llevaba «En curso» con su rama ya dentro de `main`
+desde hacía horas, y su enunciado seguía afirmando una bomba «a 4 ramas» que ya no existía.
+
+Antes de trabajar un ticket se comprueba si su rama ya es ancestro de `main`:
+
+    git merge-base --is-ancestor <sha> origin/main
+
+    🔒 «Mergear no es acabar; pero acabar tampoco es cerrar, y un tablero puede mentir en las
+        dos direcciones.»
+
+⚠️ **Y el enunciado tampoco acertaba el número, que es la otra mitad del mismo aviso.** El
+ticket decía «a 4 ramas» de un umbral concreto, `dentro.length > 10`, y ese margen **nunca fue
+4**: medido, era **7** al empezar y **5** al terminar. El **47** que se citó es de OTRO aserto
+—`inst.ramas.length > 50`, el tercero de la familia, que apareció dentro del mismo fichero— y
+hoy es 57. Dos umbrales distintos con dos márgenes distintos, y atribuirle a uno el número del
+otro es la misma clase de error que la norma viene a cortar: **un número heredado de un
+enunciado no es una medición.**

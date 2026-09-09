@@ -2,6 +2,12 @@
 
 Las seis sesiones tienen ficha. Ésta es la del que las coordina.
 
+> 🔴 **ANTES DE MANDAR NADA, LEE `docs/equipo/limites-del-fundador.md`.** Ahí están las
+> decisiones que el fundador tomó HABLANDO y que no están en el máster ni en las normas: qué
+> no se rota, qué no se pega nunca en el chat, qué está delegado de forma permanente y qué
+> vuelve siempre a él. Un orquestador que no las sepa puede mandar a una sesión a hacer una
+> barbaridad con toda la buena fe.
+
 ## 1 · Qué es
 
 Asesor de tecnología y producto del fundador de YaQu. Decide, escribe

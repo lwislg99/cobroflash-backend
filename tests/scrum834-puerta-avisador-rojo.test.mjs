@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { decidir, esDeFork, cuerpoDespierta, cuerpoNoDebeDespertar, BOT } from '../scripts/puerta-avisador-rojo.mjs';
+import { decidir, esDeFork, cuerpoDespierta, cuerpoNoDebeDespertar, tocaCaminoFiscal, censarModulos, MODULOS_FISCALES, RUTAS_FISCALES, BOT } from '../scripts/puerta-avisador-rojo.mjs';
 
 const REPO = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const WORKFLOW = path.join(REPO, '.github', 'workflows', 'avisador-rojo.yml');
@@ -26,6 +26,7 @@ const base = {
   autor: BOT,
   permisoAutor: '',
   marcasPrevias: [],
+  ficheros: ['public/dashboard/js/homeView.js'],
   marcaActual: 'abc1234:build + tests',
   tope: 3,
 };
@@ -169,9 +170,20 @@ test('SUELO del censo: encuentra a los que YA SABEMOS que hablan como el bot', (
   assert.ok(censo.length >= 2, `censo demasiado corto (${censo.length}): está ciego`);
 });
 
-test('🔴 todo lo que habla como el bot pasa su texto por una de las dos comprobaciones', () => {
-  // Sin comentarios: la prosa que explica la regla nombra las funciones y se cazaría sola.
-  for (const f of vozDelBot()) {
+/** De los que hablan como el bot, los que además COMPONEN el texto en el propio YAML. */
+function componeTexto(f) {
+  const codigo = sinComentarios(fs.readFileSync(path.join(DIR_WF, f), 'utf8'));
+  return /--body|body=@/.test(codigo);
+}
+
+test('🔴 todo lo que habla como el bot Y COMPONE TEXTO pasa ese texto por una comprobación', () => {
+  // La distinción importa y la trajo el cambio de token de `claude.yml`: ese workflow habla
+  // como el bot pero NO compone ningún cuerpo — el texto lo escribe el agente en tiempo de
+  // ejecución, y el YAML no tiene nada que inspeccionar. Exigirle la comprobación sería pedir
+  // que revise un texto que no existe cuando el workflow corre.
+  //
+  // ⚠️ Eso NO quiere decir que ese camino esté protegido: ver el test siguiente.
+  for (const f of vozDelBot().filter(componeTexto)) {
     const codigo = sinComentarios(fs.readFileSync(path.join(DIR_WF, f), 'utf8'));
     const comprueba = /cuerpoDespierta|cuerpoNoDebeDespertar/.test(codigo);
     assert.ok(comprueba,
@@ -188,5 +200,248 @@ test('el espejo es la negación exacta, no una comprobación parecida', () => {
   }
   for (const c of ['sin mención', '', 'claude sin arroba', 'correo@claudela.com']) {
     assert.equal(cuerpoNoDebeDespertar(c), !cuerpoDespierta(c), 'tienen que ser exactamente opuestas');
+  }
+});
+
+// ── LA PUERTA FISCAL (SCRUM-834c) ─────────────────────────────────────────────────────────
+// La regla 38 se les exige a las seis sesiones desde el primer día. Al robot no se le exigía,
+// y desde que el avisador está vivo la cadena avisador → Claude → push se cierra SIN ninguna
+// persona. En `verifactu.service` e `invoiceNumber.service` hay 28 piezas que se pueden
+// romper con la tanda en VERDE. Un robot suelto ahí dentro es exactamente lo que no puede
+// pasar.
+//
+// EL CONTROL QUE DECIDE ES EL NEGATIVO: un guardián que no has visto decir «no» no sabes si
+// sabe decirlo.
+
+const fiscal = { ...base, ficheros: ['src/modules/invoicing/domain/verifactu.service.ts'] };
+const inocuo = { ...base, ficheros: ['public/dashboard/js/homeView.js', 'README.md'] };
+
+test('🔴 CONTROL NEGATIVO · PR que toca verifactu.service → NO despierta y DICE ESCALADO-FISCAL', () => {
+  const r = decidir(fiscal);
+  assert.equal(r.avisar, false, 'un robot no toca el camino de emisión: lo mira una persona');
+  assert.equal(r.codigo, 'ESCALADO-FISCAL', 'el «no» tiene que venir con su código, no con silencio');
+  assert.match(r.motivo, /regla 38/);
+});
+
+test('las CUATRO rutas del alcance escalan', () => {
+  for (const f of [
+    'src/modules/invoicing/app/routes/invoices.routes.ts',
+    'src/modules/invoicing/domain/verifactu.service.ts',
+    'src/modules/invoicing/domain/invoiceNumber.service.ts',
+    'prisma/schema.prisma',
+  ]) {
+    assert.equal(decidir({ ...base, ficheros: [f] }).codigo, 'ESCALADO-FISCAL', f);
+  }
+});
+
+test('basta UN fichero fiscal entre muchos inocuos', () => {
+  const r = decidir({ ...base, ficheros: ['README.md', 'public/x.js', 'prisma/schema.prisma'] });
+  assert.equal(r.codigo, 'ESCALADO-FISCAL', 'no se mira la mayoría: se mira si hay alguno');
+});
+
+test('🔴 los dos .service siguen escalando si algún día los MUEVEN de invoicing/', () => {
+  // La regla por nombre es redundante hoy y deja de serlo el día de la mudanza.
+  const r = decidir({ ...base, ficheros: ['src/otro/sitio/verifactu.service.ts'] });
+  assert.equal(r.codigo, 'ESCALADO-FISCAL');
+});
+
+test('🔴 sin lista de ficheros → escala (falla CERRADO)', () => {
+  assert.equal(decidir({ ...base, ficheros: [] }).codigo, 'ESCALADO-FISCAL');
+  assert.equal(decidir({ ...base, ficheros: undefined }).codigo, 'ESCALADO-FISCAL');
+  assert.equal(tocaCaminoFiscal(null), true, 'no poder mirar no es haber mirado');
+});
+
+test('CONTROL POSITIVO de la puerta fiscal: un PR inocuo SÍ sigue despertando', () => {
+  // La mitad que impide que «poner la puerta» acabe apagando el avisador entero.
+  assert.equal(decidir(inocuo).avisar, true);
+  assert.equal(decidir(inocuo).codigo, 'AVISAR');
+});
+
+test('el fork manda sobre lo fiscal: contenido de un desconocido es la razón más fuerte', () => {
+  const r = decidir({ ...fiscal, repoOrigen: 'desconocido/cobroflash-backend' });
+  assert.equal(r.codigo, 'FORK-NO-DESPIERTA');
+});
+
+test('el workflow le pasa a la puerta los ficheros del PR', () => {
+  const yml = fs.readFileSync(WORKFLOW, 'utf8');
+  assert.match(yml, /pulls\/\$PR\/files|\/files/,
+    'sin la lista de ficheros la puerta fiscal falla cerrado y NADA despertaría nunca');
+  assert.match(yml, /ficheros/, 'y tiene que llegar a la puerta con ese nombre');
+});
+
+// ── EL TOPE DEL BUCLE, SIMULADO DE VERDAD (SCRUM-834d) ────────────────────────────────────
+//
+// POR QUÉ ESTE CONTROL EXISTE, y por qué NO basta con la dedupe. El bucle que da miedo es:
+//
+//     CI rojo → el avisador despierta a Claude → Claude EMPUJA → CI corre → rojo → …
+//
+// La dedupe NO lo para, y esto es lo importante: es por `head_sha`, y CADA PUSH CREA UN SHA
+// NUEVO. Así que `YA-AVISADO` no salta ni una sola vez en un bucle real. Lo único que hay
+// debajo es el TOPE por PR, que cuenta AVISOS PUBLICADOS —no avisos coincidentes—, y por eso
+// sí sobrevive a que cambie el sha.
+//
+// Esto se vuelve crítico el día que `claude.yml` empuje con la llave de la App: hasta hoy sus
+// pushes no disparaban CI (medido: `check-runs total: 0` sobre `faebb1e6`), así que el ciclo
+// se cortaba solo por avería. Cuando eso se arregle, el tope será lo ÚNICO que lo pare.
+
+/**
+ * Simula N ciclos rojos sobre el MISMO PR, como los ejecutaría el workflow:
+ * cada ciclo trae un `head_sha` distinto, y cada aviso publicado deja su marca en el PR
+ * —que es de donde el workflow lee `marcasPrevias` en la pasada siguiente—.
+ */
+function simularCiclos(n, tope = 3) {
+  const marcasPrevias = [];
+  const historia = [];
+  for (let i = 1; i <= n; i++) {
+    const marcaActual = `sha${String(i).padStart(4, '0')}:build + tests`; // sha NUEVO cada vez
+    const r = decidir({ ...base, marcasPrevias: [...marcasPrevias], marcaActual, tope });
+    historia.push(r.codigo);
+    if (r.avisar) marcasPrevias.push(marcaActual); // el aviso publicado deja su marca
+  }
+  return { historia, publicados: marcasPrevias.length };
+}
+
+test('🔴 EL CONTROL DEL BUCLE · diez ciclos rojos seguidos y el avisador se PARA en el tope', () => {
+  const { historia, publicados } = simularCiclos(10, 3);
+  assert.equal(publicados, 3, 'se publican exactamente `tope` avisos y ni uno más');
+  assert.deepEqual(historia.slice(0, 3), ['AVISAR', 'AVISAR', 'AVISAR']);
+  assert.deepEqual(
+    [...new Set(historia.slice(3))], ['TOPE-ALCANZADO'],
+    'del cuarto ciclo en adelante NO se despierta a nadie, y siempre con el mismo veredicto',
+  );
+});
+
+test('🔴 y la DEDUPE no salva de nada aquí: nunca llega a saltar', () => {
+  // Es el punto que hace falta entender: con un sha nuevo por push, `YA-AVISADO` no aparece.
+  const { historia } = simularCiclos(10, 3);
+  assert.ok(!historia.includes('YA-AVISADO'),
+    'si esto fallara, el tope estaría descansando sobre la dedupe, que en un bucle real no actúa');
+});
+
+test('la dedupe SÍ actúa cuando el sha NO cambia (rearranque del mismo CI)', () => {
+  // El otro caso, que también existe: el mismo rojo re-evaluado sin push por medio.
+  const marca = 'shaigual:build + tests';
+  const r = decidir({ ...base, marcasPrevias: [marca], marcaActual: marca });
+  assert.equal(r.codigo, 'YA-AVISADO');
+});
+
+test('el tope cuenta AVISOS PUBLICADOS, no coincidencias: por eso sobrevive al cambio de sha', () => {
+  const r = decidir({ ...base, marcasPrevias: ['a:x', 'b:y', 'c:z'], marcaActual: 'd:w', tope: 3 });
+  assert.equal(r.codigo, 'TOPE-ALCANZADO');
+  assert.match(r.motivo, /para el bucle/);
+});
+
+test('🔴 el veredicto del tope se LEE sin abrir logs: sale al resumen del run', () => {
+  const yml = fs.readFileSync(WORKFLOW, 'utf8');
+  // El camino de «no avisar» escribe el CÓDIGO en el resumen, sea cual sea — incluido el tope.
+  assert.match(yml, /\$CODIGO\*\* — \$MOTIVO/,
+    'sin esta línea, TOPE-ALCANZADO solo existiría en el log y nadie lo vería');
+  assert.match(yml, /GITHUB_STEP_SUMMARY/);
+});
+
+test('🔴 claude.yml empuja con la llave de la App, no con el token por defecto', () => {
+  // Sin esto, TODO commit que Claude empuje produce un PR que no puede mergearse jamás:
+  // los eventos del GITHUB_TOKEN no crean ejecuciones, así que no hay CI, no hay check
+  // obligatorio, y el auto-merge espera para siempre. Medido en el #1212 (check-runs: 0).
+  const yml = fs.readFileSync(CLAUDE_YML, 'utf8');
+  const soloCodigo = yml.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n');
+  assert.match(soloCodigo, /create-github-app-token/,
+    'claude.yml tiene que acuñar el token de la App');
+  assert.match(soloCodigo, /github_token:\s*\$\{\{\s*steps\.token\.outputs\.token/,
+    'y pasárselo a la acción por `github_token`, que es lo que usa para empujar');
+});
+
+test('🔴 EL HUECO QUE DEJA ABIERTO EL CAMBIO DE TOKEN, escrito para que no se olvide', () => {
+  // Con la llave de la App, los comentarios que publica la acción salen como `yaqu-bot[bot]`
+  // — que ES quien está en `allowed_bots`. Antes salían como `claude[bot]`, que no lo está.
+  //
+  // Hoy eso no cierra ningún bucle, y está MEDIDO: el 9-sep, el run 12 de claude.yml disparado
+  // por `claude[bot]` salió `skipped`. Skipped significa que el `if` a nivel de job dio falso,
+  // o sea que el CUERPO no llevaba la mención. No fue la puerta de actores: fue el texto.
+  //
+  // Pero es una propiedad de HOY, y si una versión de la acción cambia su texto de respuesta,
+  // Claude se despierta a sí mismo. Y el TOPE DEL AVISADOR NO CUBRE ESE CAMINO: cuenta marcas
+  // `avisador-rojo`, y una autorrespuesta no lleva ninguna.
+  //
+  // Este test no lo impide —no hay dónde ponerle la puerta— pero fija las dos condiciones que
+  // lo mantienen cerrado, para que quien las cambie vea que existían.
+  const yml = fs.readFileSync(CLAUDE_YML, 'utf8');
+  const soloCodigo = yml.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n');
+  assert.match(soloCodigo, /allowed_bots:\s*["']?yaqu-bot\[bot\]/,
+    'condición 1: la lista de bots permitidos es explícita y de un solo nombre');
+  assert.match(soloCodigo, /if:\s*contains\(github\.event\.comment\.body,\s*'@claude'\)/,
+    'condición 2: el disparo depende de que el CUERPO lleve la mención — si la acción empieza '
+    + 'a escribirla en sus respuestas, esto se convierte en un bucle sin tope');
+});
+
+// ── EL AGUJERO DE LA LISTA A MANO, Y SU CENSO (SCRUM-834e) ────────────────────────────────
+// La puerta fiscal dejaba pasar src/modules/fiscal/ ENTERO: 20 de 20 ficheros. Ahi viven la
+// huella de VeriFactu, los libros de la AEAT, el modelo 303 y el atestiguamiento. Los 20
+// nombres van DENTRO del test a proposito: un control que dice «los del modulo» no prueba
+// nada el dia que el modulo cambie de forma.
+const LOS_20_DE_FISCAL = [
+  'src/modules/fiscal/evidencias/atestiguamiento.ts',
+  'src/modules/fiscal/evidencias/evidencias.routes.ts',
+  'src/modules/fiscal/evidencias/paquete.repo.ts',
+  'src/modules/fiscal/evidencias/paquete.ts',
+  'src/modules/fiscal/librosAeat/librosAeat.repo.ts',
+  'src/modules/fiscal/librosAeat/librosAeat.routes.ts',
+  'src/modules/fiscal/librosAeat/librosAeat.ts',
+  'src/modules/fiscal/librosAeat/librosAeatCsv.ts',
+  'src/modules/fiscal/modelo303/casillas.ts',
+  'src/modules/fiscal/modelo303/modelo303.repo.ts',
+  'src/modules/fiscal/modelo303/modelo303.routes.ts',
+  'src/modules/fiscal/modelo303/modelo303.ts',
+  'src/modules/fiscal/verifactu/productor.ts',
+  'src/modules/fiscal/verifactu/registro.builder.ts',
+  'src/modules/fiscal/verifactu/xsd/ConsultaLR.xsd',
+  'src/modules/fiscal/verifactu/xsd/RespuestaConsultaLR.xsd',
+  'src/modules/fiscal/verifactu/xsd/RespuestaSuministro.xsd',
+  'src/modules/fiscal/verifactu/xsd/SuministroInformacion.xsd',
+  'src/modules/fiscal/verifactu/xsd/SuministroLR.xsd',
+  'src/modules/fiscal/verifactu/xsd/xmldsig-core-schema.xsd',
+];
+
+test('🔴 los 20 ficheros de src/modules/fiscal/ escalan, uno por uno', () => {
+  assert.equal(LOS_20_DE_FISCAL.length, 20, "el control mide 20 ficheros, ni mas ni menos");
+  for (const f of LOS_20_DE_FISCAL) {
+    assert.equal(decidir({ ...base, ficheros: [f] }).codigo, "ESCALADO-FISCAL", f);
+  }
+});
+
+test('🔴 EL SUELO DEL CENSO: ningún módulo del árbol se queda sin clasificar', () => {
+  // Es la mitad que impide que esto se repita. `fiscal/` existía y nadie lo había clasificado
+  // ni como fiscal ni como no-fiscal: simplemente no estaba, y por eso pasaba.
+  const dirModulos = path.join(REPO, 'src', 'modules');
+  const enElArbol = fs.readdirSync(dirModulos, { withFileTypes: true })
+    .filter((d) => d.isDirectory()).map((d) => d.name);
+  assert.ok(enElArbol.length >= 20, `suelo: solo ${enElArbol.length} módulos, el censo mide sobre poco`);
+
+  const sinClasificar = censarModulos(enElArbol);
+  assert.deepEqual(sinClasificar, [],
+    `hay módulos sin clasificar: ${sinClasificar.join(', ')}. Cada uno tiene que ir a `
+    + 'MODULOS_FISCALES o a MODULOS_NO_FISCALES, y meterlo en la segunda es AFIRMAR que un '
+    + 'robot puede tocarlo sin que lo mire una persona.');
+});
+
+test('🔴 un módulo NUEVO sin clasificar se trata como fiscal, no como inocuo', () => {
+  // La mitad viva del censo: no espera a la tanda para protegerse.
+  assert.equal(tocaCaminoFiscal(['src/modules/moduloQueNadieHaClasificado/x.ts']), true);
+  assert.equal(decidir({ ...base, ficheros: ['src/modules/inventado/a.ts'] }).codigo, 'ESCALADO-FISCAL');
+});
+
+test('el censo detecta lo que le falta, no solo lo que tiene', () => {
+  assert.deepEqual(censarModulos(['fiscal', 'invoicing', 'auth']), []);
+  assert.deepEqual(censarModulos(['fiscal', 'nuevoModulo']), ['nuevoModulo']);
+});
+
+test('y un módulo declarado NO fiscal sigue sin escalar', () => {
+  // Si todo escalara, el avisador no despertaría nunca y habríamos apagado el aparato.
+  assert.equal(decidir({ ...base, ficheros: ['src/modules/quotes/app/routes/quotes.routes.ts'] }).avisar, true);
+});
+
+test('las rutas se DERIVAN de los módulos fiscales, no se repiten a mano', () => {
+  for (const m of MODULOS_FISCALES) {
+    assert.ok(RUTAS_FISCALES.includes(`src/modules/${m}/`), `falta la ruta derivada de ${m}`);
   }
 });
