@@ -194,7 +194,14 @@ function respaldosQueAfirman(codigo, nombre = 'x.js') {
 const CENSO_RESPALDOS = Object.freeze({
   'api.js': 2,                 // :1135 → M.pendiente_agendar · :1285 → map.sent
   'expensesView.js': 1,        // :12   → CATEGORY_LABELS.otros
-  'jobsView.js': 1,            // :269  → JOB_STATE_META.pendiente_agendar
+  // 🔻 SCRUM-816 · BAJA DE 1 A 0, y el trinquete solo baja. Era
+  // `JOB_STATE_META[j.status] || JOB_STATE_META.pendiente_agendar`: un Trabajo con un estado que
+  // esta pantalla no conociera se pintaba como «Sin agendar» — o sea, un desconocido convertido
+  // en un estado concreto, con cara de estar bien. Desapareció al fundir ESTADO y FECHA en una
+  // sola columna: hoy la celda pregunta por `j.scheduledAt`, que es un HECHO (hay fecha o no la
+  // hay) y no admite respaldo. Se deja la entrada a 0 en vez de retirarla: si alguien vuelve a
+  // escribir un respaldo aquí, este número lo caza por su nombre.
+  'jobsView.js': 0,
   'parteDetailView.js': 1,     // :279  → avisos.sin_lineas_reconocidas
 });
 

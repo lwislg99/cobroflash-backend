@@ -43,6 +43,7 @@ const SHELL = [
   '/dashboard/js/filtroClientes.js', // SCRUM-581
   '/dashboard/js/etiquetasDelDocumento.js', // SCRUM-595 (DOC-05)
   '/dashboard/js/jobNextAction.js',
+  '/dashboard/js/jobAgendar.js', // SCRUM-823: agendar, compartido por la lista y el detalle
   '/dashboard/js/semaforoFiscal.js',
   '/dashboard/js/homeView.js',
   '/dashboard/js/onboardingView.js',
@@ -95,6 +96,7 @@ const SHELL = [
   '/dashboard/js/jobRailBlocks.js', // SCRUM-318 (G3)
   '/dashboard/js/jobAsignados.js', // SCRUM-650 (T1): quien EJECUTA el trabajo
   '/dashboard/js/albaranActionsRegistry.js', // SCRUM-302 (C2)
+  '/dashboard/js/albaranAccion.js', // SCRUM-831: el siguiente paso de un albarán, compartido
   '/dashboard/js/albaranDetailView.js',
   '/dashboard/js/albaranDesdePresupuestoModal.js', // SCRUM-606 (ALB-01)
   '/dashboard/js/albaranesView.js', // SCRUM-301 (C1)

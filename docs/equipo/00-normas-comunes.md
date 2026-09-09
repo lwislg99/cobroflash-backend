@@ -146,6 +146,10 @@ Contar no es avisar.
 Un instrumento que solo sabe callar no es un instrumento.
 Si desactivas una comprobación de permisos para que tu robot pase, el
 permiso tiene que volver a preguntarse en la puerta siguiente.
+Un control que no se puede usar y no puede explicar por qué, no se
+deshabilita: se quita.
+Un acto irreversible no es nunca la acción principal.
+Si tu medición tumba una decisión firmada, gana tu medición.
 
 ## A16 · Repite el encargo en una línea antes de empezar
 
