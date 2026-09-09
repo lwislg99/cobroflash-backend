@@ -81,6 +81,11 @@ const GATEADOS_DECLARADOS = Object.freeze({
   'scrum296-libro-postgres.test.mjs': 1,
   'scrum297-evidencias-postgres.test.mjs': 2,
   'scrum389-un-solo-iva.test.mjs': 2,
+  // SCRUM-728d: los tres de la MEDICIÓN en loopback — el suelo (RTT ~0), los cuatro caminos con
+  // 1/5/10 simultáneas y la pendiente del viaje que escala. Necesitan banco porque cronometran
+  // el trabajo REAL del servidor: sin base no hay nada que cronometrar. Y necesitan que sea
+  // DESECHABLE porque emiten números de serie y crean facturas — 1.000 en el de la pendiente.
+  'scrum728d-ms-en-loopback.test.mjs': 3,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 
