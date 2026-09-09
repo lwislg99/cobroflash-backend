@@ -37,3 +37,12 @@ lo que se midió · el comando exacto**. Cada afirmación que pases deja fila.
 Si no hay comando que lo mida, no es un hecho: es una pregunta, y se devuelve
 como pregunta. Decir «no se puede medir desde aquí» es una respuesta completa;
 inventar el número no lo es.
+
+## CANON · lo que cuesta un guard lento
+
+    🔒 «Un guard de seis minutos se acaba sacando de la tanda, y entonces da igual lo bien
+        que mida.»
+
+De SCRUM-833: la primera versión del arreglo llamaba a `git merge-base --is-ancestor` una vez por
+sujeto — 1.200 procesos, 366 s medidos. A granel con UN `git rev-list`: 14 s. Lo mismo que mide,
+sesenta veces más barato. Un instrumento que nadie puede permitirse correr no protege nada.

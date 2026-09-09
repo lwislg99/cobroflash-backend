@@ -72,3 +72,49 @@ que llaman `getCustomers("")` — no sólo la del presupuesto. Ese censo es part
 carrera por versión. No se portó porque **pierde una salvaguarda que main sí tiene** —conservar el
 cliente ya elegido aunque no case con la búsqueda, para que el documento no se quede con un `value`
 que el `<select>` no puede mostrar—. Quien abra el ticket empieza por ahí, no de cero.
+
+---
+
+# Medir sobre una población que se mueve bajo los pies — CUARTA vez
+
+**9-sep-2026 · medido sobre `origin/main = 0269e8cd` · worktree `wt-verif5`.**
+**No se abre ticket (regla 37): se resolvió al repetir la tanda.** Se anota porque es la cuarta
+vez de la misma familia y porque el mecanismo va a repetirse más, no menos.
+
+## El hecho
+
+Una tanda dio DOS fallos en `scrum804-la-rama-viva` que no eran de la rama que los provocó: a
+solas daba 9/9, y el fichero no se había tocado. Lo que cambió fue el mundo: **las ramas remotas
+pasaron de 98 a 100 mientras la tanda corría.**
+
+## El mecanismo, que es lo que hay que recordar
+
+Ese guard toma una INSTANTÁNEA del árbol al cargarse el módulo y luego la contrasta contra lo que
+`git` responde en vivo. Entre las dos cosas pasan minutos. Si en esos minutos otra sesión empuja o
+borra una rama, la instantánea y `git` **discrepan sin que nadie se haya equivocado**.
+
+    🔒 Un instrumento que compara su foto contra el mundo en vivo mide, además de lo suyo, cuánto
+       ha tardado en mirar.
+
+## Por qué va a pasar más
+
+Con seis sesiones empujando y el auto-borrado de ramas al mergear, el espacio de refs cambia
+varias veces por hora. Una tanda completa dura ~20 minutos. La ventana no se está cerrando: se
+está abriendo.
+
+## Las tres veces anteriores, para que se vea la familia
+
+* **SCRUM-753** — se caía por una ref LOCAL obsoleta de una rama ya borrada del remoto: el guard
+  leía `for-each-ref` en vez de `ls-remote`. Se arregló con `git fetch --prune`.
+* **SCRUM-804** — su suelo exigía 558 ramas remotas y el auto-borrado dejó 98. Lo cerró Javier
+  anclando a `git log --merges`, que el borrado no puede vaciar.
+* **SCRUM-833** — la misma forma en `scrum637:164`, a cinco ramas de caer. Mismo remedio.
+
+## Lo que NO se hace
+
+⛔ Congelar el espacio de refs durante la tanda: sería mentirle al guard sobre el mundo en el que
+vive. ⛔ Reintentar en silencio: convertiría un dato —«esto se mueve»— en ruido escondido.
+
+La salida honesta, si alguien la construye, es que el guard **declare** cuándo su instantánea y el
+árbol han divergido, en vez de acusar. Es la misma frase de SCRUM-822: «no pude mirar» y «está
+roto» no son el mismo suceso.
