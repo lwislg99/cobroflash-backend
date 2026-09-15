@@ -114,3 +114,87 @@ como está. Va con la parte 2, porque sin el arreglo pondría la tanda en rojo.
 `SCRUM-804` (dos tests) falla en este clon **también sobre `origin/main` sin este commit**: el censo
 cuenta 145 ramas y `for-each-ref` lista 146. Es el rojo dependiente del clon que ya reportó la Sesión 4.
 No se toca.
+
+---
+
+## Parte 2 · DECIDIDA y CERRADA — rama `scrum-711b-escritorio-36-y-nuevo-cliente`
+
+Medido el 15-sep-2026 a las 17:00 sobre `origin/main` `4671042158721c09a7b463cf5ffc7dbf8166b8e6`.
+
+### La decisión del fundador: opción B, y por qué no es relajar
+
+DESIGN.md §5 dice «**≥44px en móvil** (el escritorio se queda en 36px a propósito — con ratón
+cumple…)». El guard exigía 44 **también** a 929 y a 1280: más de lo que dice la única fuente de
+tokens. Se **alinea** el guard con esa regla, con una condición: **no quedarse ciego en escritorio**.
+Un `btn-sm` de 30 px haciendo de acción primaria tiene que seguir cayendo a 929.
+
+### Lo que cambia
+
+- **`scripts/_medidor-de-toque.mjs`** gana `CORTE_MOVIL = 768`, `MINIMO_ESCRITORIO = 36` y
+  `minimoPara(ancho)`. `MINIMO_TACTIL` sigue en 44 para móvil.
+- **`scripts/guard-objetivo-tactil.mjs`** mide cada ancho con `minimoPara(ancho)` en sus tres
+  superficies: landing (1280 y 360), lista de Clientes (929 y 390) y las vistas del panel.
+- **Tres sondas de umbral**, junto a la de 12 px, en **cada pasada** y en cada superficie del panel:
+
+  | sonda | ancho | tiene que | medido |
+  |---|---|---|---|
+  | 40 px | 390 | caer | 41 px · cae ✅ |
+  | 30 px | 929 | caer | 31 px · cae ✅ |
+  | 37 px | 929 | pasar | 38 px · pasa ✅ |
+
+- **`tests/scrum711b-escritorio-36.test.mjs`** ata el 36 al **texto** de DESIGN.md y el 768 al
+  `@media (max-width: …)` de `styles.css` que sube los botones a 44. Además exige que ninguna
+  medición del guard use un mínimo fijo y que las tres sondas sigan dentro.
+- **«Nuevo cliente» pierde `btn-sm`**, como sus cinco hermanas.
+- **`tests/scrum412-primaria-nunca-es-sm.test.mjs`** reconoce también la forma
+  `createElement("button", "btn-primary btn-sm", …)`, con caso conocido fabricado y mitad negativa.
+
+### Las excepciones que sólo existían por el escritorio, retiradas
+
+Las nombró el propio detector de sobrantes en cuanto el mínimo pasó a ser por ancho:
+
+| superficie | excepción | el objetivo | a 929 | a 390 |
+|---|---|---|---|---|
+| lista de Clientes | `BUTTON.btn-primary.btn-sm` | «Nuevo cliente» | ya no lleva `btn-sm` | — |
+| editor de presupuesto | `BUTTON.btn.btn-primary` | «Generar presupuesto» | 36,7 px | cumple |
+| editor de presupuesto | `BUTTON.btn.btn-secondary` | «Limpiar formulario» | 36,7 px | cumple |
+| ficha de Trabajo | `BUTTON.btn-primary` | CTA «+ Nuevo albarán» | 37,0 px | cumple |
+
+Y una **víctima de un motivo**: `quote-header-btn` nombraba «📋 Usar plantilla» y «💾 Guardar como
+plantilla». La segunda (36,7 px a 929) ya cumple. El selector sigue haciendo falta por la primera, así
+que ningún detector avisaba: se corrige a mano, que es la misma avería que dejó escrita SCRUM-794.
+
+### Los suelos, rederivados con nombre y no restando
+
+Comparando la salida de **este mismo guard** con el 44 fijo y con el mínimo por ancho:
+
+| superficie | antes | ahora | los que salen |
+|---|---|---|---|
+| editor de presupuesto | 7 | **4** | «Generar presupuesto», «Limpiar formulario», «💾 Guardar como plantilla» — los tres a 36,7 px a 929 y cumpliendo a 390 |
+| ficha de Trabajo | 6 | **5** | el CTA «+ Nuevo albarán», 37,0 px a 929 |
+| ficha 360 | 7 | 7 | — (sus pestañas miden 41 px también en móvil) |
+
+### «Nuevo cliente», medido en el DOM ejecutado
+
+| ancho | antes (`btn-primary btn-sm`) | ahora (`btn-primary`) | mínimo | veredicto |
+|---|---|---|---|---|
+| 360 | 31 px | **45 px** | 44 | ✅ |
+| 390 | 31 px | **45 px** | 44 | ✅ |
+| 929 | 31 px | **37 px** | 36 | ✅ |
+
+### Los tres rojos, inyectados en `minimoPara` y revertidos
+
+| inyección | lo que rompe | lo que dijo el guard |
+|---|---|---|
+| móvil ciego: 36 en todos los anchos | 40 px a 390 tiene que caer | `UMBRAL MAL APLICADO · @390px: «sonda-40» mide 41 px contra 36 y PASA`, en las tres superficies |
+| escritorio ciego: 30 por encima del corte | 30 px a 929 tiene que caer | `«sonda-30» mide 31 px contra 30 y PASA`, en las tres superficies |
+| el guard de antes: 44 en todos los anchos | 37 px a 929 tiene que pasar | `«sonda-37» mide 38 px contra 44 y CAE`, y reaparecen los cuatro de siempre: «Generar presupuesto», «Limpiar formulario», «+ Nuevo albarán» y «Nuevo cliente» |
+
+En los tres casos `scrum711b` cae también en la tanda. Revertido: guard con salida 0 y 7/7 en la tanda.
+
+### Hallazgo, reportado y NO tocado
+
+`scripts/guard-a11y-landing.mjs` **no importa** el mínimo del medidor único: declara su propio
+`const MINIMO_TACTIL = 44;` y mide la landing a 1280 con 44. Desde este cambio, los dos guards
+exigen cosas distintas a la misma página en escritorio. La decisión del fundador era para
+`guard-objetivo-tactil`; alinear el otro es otra decisión.
