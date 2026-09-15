@@ -166,11 +166,12 @@ Y el rojo de ⑥: añadido al helper un eje (`supervisorId`) que el `GET` no mir
    discrepancia **disco/blob** de `core.autocrlf=true`. Las únicas tres líneas en LF del fichero
    eran las mías, o sea que el CRLF ya estaba en disco y **tocarlo lo metió en el censo del
    guard**. Normalizado a LF (17440 → 17135 bytes, CR 305 → 0), test en 9/9.
-   ⚠️ **Y `grep -c $'\r'` MINTIÓ las dos veces que lo usé**: dijo `0` sobre este fichero cuando
-   tenía 305 CR. Los finales de línea se miden **sobre bytes, con Node**, nunca con el `grep` del
-   shell. (Por lo mismo, la comprobación de CRLF que se pegó en `docs/master/SCRUM-841.md` §3 no
-   vale como medición: su conclusión —que no había mezcla— la sostiene el `git diff --stat` de
-   34 líneas, no aquel `grep`.)
+   ⚠️ **Y contar los CR con `grep` MINTIÓ las dos veces que lo usé**: dijo `0` sobre este fichero
+   cuando tenía 305 CR. Los finales de línea se miden **sobre bytes, con Node** (`contarCR` en
+   `scripts/censo-cuenta-de-control-con-grep.mjs`, SCRUM-766), nunca con `grep` del shell. (Por lo
+   mismo, la comprobación de CRLF que se pegó en `docs/master/SCRUM-841.md` §3 no vale como
+   medición: su conclusión —que no había mezcla— la sostiene el `git diff --stat` de 34 líneas, no
+   aquel `grep`.)
 
 ---
 
