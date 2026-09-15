@@ -39,9 +39,9 @@ const T746 = 'tests/scrum746-barrera-y-punto-de-conexion.test.mjs';
 export const ROTURAS = [
   // ── 1 · tenencia
   { instrumento: 'scrum245 · censarLlamadas', fichero: T245, test: T245, patron: 'siembra:245',
-    sentido: 'da por declarado todo envío', buscar: "if (k === 'merchantId' || k === 'sinMerchant') declara = true;", cambiar: 'if (true) declara = true;' },
+    sentido: 'da por declarado todo envío', veces: 2, cual: 0, buscar: "if (k === 'merchantId' || k === 'sinMerchant') declara = true;", cambiar: 'if (true) declara = true;' },
   { instrumento: 'scrum245 · censarLlamadas', fichero: T245, test: T245, patron: 'siembra:245',
-    sentido: 'no da por declarado ninguno', buscar: "if (k === 'merchantId' || k === 'sinMerchant') declara = true;", cambiar: 'if (false) declara = true;' },
+    sentido: 'no da por declarado ninguno', veces: 2, cual: 0, buscar: "if (k === 'merchantId' || k === 'sinMerchant') declara = true;", cambiar: 'if (false) declara = true;' },
   // ── 2 · camino fiscal
   { instrumento: '_censo-copy-vs-flag', fichero: 'tests/_censo-copy-vs-flag.mjs', test: SIEMBRAS, patron: 'siembra:copy-vs-flag',
     sentido: 'todo rótulo depende del flag', buscar: 'dependeDelFlag: razones.eligen.length > 0,', cambiar: 'dependeDelFlag: true,' },
