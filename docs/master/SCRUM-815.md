@@ -572,3 +572,229 @@ Y `disputes.service.ts`, `stripe.routes.ts` y `connectWebhook.routes.ts` **no fi
 y su `Set` · los otros tres efectos (correo de factura, referido, timeline de otros eventos) · **el
 texto del WhatsApp** (regla 30) · el 400 ante fallo · el camino de emisión. Ninguna base, ninguna
 clave. **Nada ejecutado contra producción ni contra staging.**
+
+---
+
+# APÉNDICE · 15-sep-2026 · SCRUM-815c · El correo de factura duplicado (el efecto que quedaba)
+
+**Medido contra:** `origin/main` = `e96298e66933fef459218889118a2e6f08eff1e6` · 2026-09-15T12:05:00+02:00
+**Rama:** `scrum-815-el-correo-una-sola-vez` · **Carril:** dinero · webhook · **Gate:** sin gate
+
+> ⛔ El defecto NO se re-mide: está medido en el paso ① §3 y en el apéndice 815b §4 de este mismo
+> expediente. Esto lo arregla.
+
+## 0 · Obligación 0, con las dos causas separadas
+
+```
+git ls-remote --heads origin | grep -E "refs/heads/scrum-815(-|$)"
+  d7a8b276…  refs/heads/scrum-815-el-modelo-del-evento     ← VIVA, +2 commits, FUERA de main
+rastro en main: 12 commits de tres sesiones distintas  ·  docs/master/SCRUM-815.md: EXISTE
+```
+
+**No es (a) ni (b): hay rama viva Y trabajo en `main`.** Y la rama viva es de **otra sesión**, así
+que lo primero fue mirar si chocábamos: toca `prisma/schema.prisma`, `docs/`, `backup-dump.mjs` y
+un test propio. **No toca `psp.routes.ts`.** Cero colisión, y su schema no se toca desde aquí.
+
+El contraste del `ls-remote`: el `grep` suelto de `815` devuelve **2** líneas y el anclado **1**;
+la de más casa dentro de un sha, no en un nombre de rama.
+
+## 1 · 🔴 La comprobación que podía parar el encargo (regla 38)
+
+**`psp.routes.ts` NO figura en `docs/legal/AUDITORIA_CAMINO_EMISION.md`: cero menciones de «psp»
+y cero de «billing».** Control positivo del instrumento: ese mismo documento **sí** cita otros
+tres `*.routes.ts`, así que no está ciego. **No hay STOP.**
+
+> ⚠️ **Y lo que encontré de más, que se dice aunque no lo cambie nada:** `psp.routes.ts` sí
+> aparece en otros dos documentos de `docs/legal/` — **`SEMAFORO_MAPA_EMISION.md` (8 menciones)**
+> y `AUDITLOG_FISCAL_CONTRATO.md` (2). Leídas una a una: son el **mapa de ACTORES** (quién dispara
+> la ruta: «el PSP, no una persona», con su `requireInternalSecret`) y la taxonomía de actores del
+> AuditLog. No declaran la ruta como parte del camino de emisión. La regla que aplica es la del
+> fichero que la nombra, y ése dice que no. Queda dicho por si el fundador lo lee distinto.
+
+## 2 · 🔴 EL ROJO, EJECUTADO ANTES DEL ARREGLO
+
+```
+not ok 2 - SCRUM-815 · 🔴 tres entregas del MISMO cobro → UN correo, no tres
+  🔴 EL CLIENTE HA RECIBIDO 3 CORREOS CON LA MISMA FACTURA.
+  Facturas enviadas: [7000,7000,7000]
+  3 !== 1
+not ok 5 - SCRUM-815 · 🔴 EN DISCO: si se borra la marca de la base, el correo VUELVE a salir
+  2 !== 1
+# tests 5 · # pass 3 · # fail 2 · # skipped 0
+```
+
+La ruta entera es código de producción sin tocar, conducida por su propio `handle`. Se doblan la
+base (con `dobleDeLaBase`, el doble que ya existe), el envío y la emisión. Ni una clave, ni un
+byte de red, ninguna base real.
+
+## 3 · El arreglo
+
+`src/modules/billing/domain/correoDeFacturaEnviado.ts` — `yaSeEnvioElCorreo` y
+`marcarCorreoEnviado`, y dos puntos en `psp.routes.ts`:
+
+| dónde | qué |
+|---|---|
+| rama `already_paid` | **sólo envía si NO consta que ya saliera**. No es «nunca envía»: se conserva el caso en que el cobro llegó a `paid` por otro camino y esta entrega es la primera que puede mandarlo |
+| camino normal, tras `sendInvoiceEmail` | escribe la constancia |
+
+- 🔒 **En DISCO, no en memoria:** una fila de `events` con `type: 'emailed'` —que **ya existe** en
+  el árbol (`dev.routes.ts:93`)— y `payload: { invoiceId }`. La clave es el `invoiceId`, estable
+  entre reintentos porque `ensureInvoiceForCharge` devuelve la existente. Ninguna se inventa.
+- 🔒 **Se escribe AL TERMINAR, nunca antes.** Marcar antes es el defecto que se quita: un envío
+  que muera a medias dejaría la marca puesta y el cliente sin su factura.
+- ✅ **La fila `duplicate:true` SE QUEDA**, y hay un test que lo exige.
+
+### 🔴 Una asimetría INVERTIDA respecto al efecto ③, y a propósito
+
+`yaAtendida` (la disputa) devuelve `false` si la consulta falla — «no lo he visto, avisa».
+**`yaSeEnvioElCorreo` devuelve `true`** — «no lo sé, NO reenvíes». Allí equivocarse hacia el
+silencio cuesta que el profesional no se entere de una disputa; **aquí equivocarse hacia el envío
+cuesta otro correo al cliente final con una factura que ya tiene, que es literalmente el defecto
+que se quita** — y la factura sigue alcanzable por su enlace de recibo. Queda declarado porque dos
+funciones hermanas con asimetrías opuestas se leen como un descuido si no se explica cuál es cuál.
+
+## 4 · El banco · `tests/scrum815-el-correo-una-sola-vez.test.mjs` — 5 tests, `# skipped 0`
+
+| caso | qué sujeta |
+|---|---|
+| 🔴 SUELO | una entrega manda UNO; si el banco no ve **ningún** envío se declara **CIEGO** |
+| 🔴 DEFECTO | tres entregas del mismo cobro → **1**, no 3 |
+| ✅ POSITIVO | **dos facturas DISTINTAS siguen mandando DOS** — comerse la segunda sería romper el producto por el lado bueno |
+| ✅ | la fila `duplicate:true` sigue escribiéndose |
+| 🔴 EN DISCO | se borra la marca **de la base** y el correo VUELVE a salir — es lo que separa una marca en disco de una memoria del proceso |
+
+**Mutación, con su restauración:** con la comparación de la marca cambiada para que nunca case,
+caen dos casos (`3 !== 1` y `2 !== 1`). Fuente **y `dist/`** restaurados y comprobados con
+`Buffer.compare`: **IDÉNTICO** los dos (SCRUM-763: restaurar el fuente no es restaurar el árbol).
+
+## 5 · ⚠️ Los dos flags, y por qué esto NO cierra el ticket
+
+`AUTO_INVOICE_ON_PAID` y `AUTO_EMAIL_INVOICE_ON_PAID` gobiernan la rama, **y su valor en
+producción sigue sin poder leerse desde aquí** — límite declarado en el paso ①, no supuesto.
+
+> **Si los dos flags están APAGADOS en producción, el defecto es LATENTE, no inexistente.** El día
+> que se enciendan, cada reintento de Stripe vuelve a ser un correo. No se usa esto para cerrar el
+> ticket.
+
+## 6 · 🔴 Un verde mío que no valía, y lo cazó la norma A6
+
+La primera pasada tras el arreglo dio **5/5 en verde**… con **`BUILD_EXIT=2`**. Los tests leen
+`dist/`, así que estaban midiendo el **build anterior**: mi tipo `BaseMinima` usaba `unknown` para
+los argumentos y el cliente de Prisma —genérico— no lo cumplía. *Un build roto no es un rojo: es
+un verde que no vale.* Corregido a `any` con el motivo escrito en el propio tipo, `tsc` en 0, y
+los cinco repetidos contra el `dist/` bueno.
+
+## 7 · Lo NO tocado
+
+`prisma/schema.prisma` · `isDuplicateStripeEvent` y su `Set` · el 400 ante fallo · los otros huecos
+(referido, disputa, timeline) · la fila `duplicate:true` · el camino de emisión · microcopy (30) ·
+ningún estado ni flag nuevo (27) · ninguna dependencia (36) · la rama de la otra sesión.
+Nada ejecutado contra producción ni contra staging.
+
+## 8 · 🔴 Los dos rojos de SCRUM-411 eran MÍOS, y se midió antes de acusar a nadie
+
+La tanda completa trajo **dos rojos de `SCRUM-411`**, un fichero que no había tocado. La tentación
+era darlos por heredados del merge de `main`. **Se midió en vez de suponerlo**, y en un árbol que
+no es el mío: worktree nuevo desde `origin/main` (`b63ed424`), corriendo **sólo ese fichero**, que
+es lo que contesta la pregunta sin necesitar la tanda entera.
+
+| árbol | resultado |
+|---|---|
+| `origin/main` limpio, worktree nuevo | **25/25 · 0 fail** |
+| mi árbol, mismo momento | **23/25 · 2 fail** |
+
+**No venían de `main` ni eran de la 411: eran míos, y el guard tenía razón.** Lo dice él mismo:
+
+```
+src/modules/billing/domain/correoDeFacturaEnviado.ts:30  MARCA_CORREO
+→ DECLÁRALO en `_huerfanos-declarados.mjs` con su categoría y su motivo.
+240 !== 241
+```
+
+Exporté `MARCA_CORREO` y **no lo importaba nadie**: un export inalcanzable. El segundo rojo no era
+otro defecto, era **su consecuencia aritmética** — el censo de huérfanos pasaba de 240 a 241 y las
+categorías dejaban de sumar. Entender eso era la diferencia entre arreglar uno y arreglar el par.
+
+**Comprobado por AST antes de tocar, no leído:** 1.649 ficheros (`src/*.ts` + `dist/*.js` +
+`tests/*.mjs` + `scripts/*.mjs`), **0 usos ajenos** de `MARCA_CORREO` — las siete apariciones son
+de su propio fichero y su propio `dist/`. Con control positivo: sobre `marcarCorreoEnviado`, que sí
+se importa fuera, el mismo instrumento ve **5** usos ajenos, así que el cero de arriba no es
+ceguera.
+
+**El arreglo fue quitarle el `export`**, no declararlo en `_huerfanos-declarados.mjs`: esa lista es
+para lo que TIENE que estar sin llamador —como `borrarMerchant` y la promesa del RGPD—, y meter
+ahí algo que sobra es cambiar lo que el guard exige en vez de cambiar el código (regla 41).
+
+**Y se comprobó que el cambio ENTRÓ**, porque una mutación que no entra y una cobertura que no
+existe dan la misma salida: el fuente ya no casa `^export const MARCA_CORREO`, la constante sigue
+declarada, y `dist/` ya no emite `exports.MARCA_CORREO` pero sigue emitiendo las dos funciones.
+
+**Los dos rojos, uno por uno, antes y después:**
+
+| caso | antes | después |
+|---|---|---|
+| `CONTROL POSITIVO: los 190 de hoy, DECLARADOS, no hacen ruido` | ROJO | ✅ verde |
+| `las categorías SUMAN el total` | ROJO | ✅ verde |
+| recuento del fichero | 2 rojos de 25 | **0 de 25** |
+
+> ⚠️ **Y una sonda mía que mentía, dicha porque casi me la creo:** la primera comparación buscaba
+> el nombre del caso con un `includes` y casaba la línea `# Subtest:` en vez de la del veredicto,
+> así que imprimía «🔴 SIGUE» sobre un fichero que ya daba 25/25. El recuento del TAP la desmintió.
+> Un instrumento que mira la línea equivocada no da error: da un veredicto.
+
+## 9 · 🔴 LA TANDA COMPLETA NO TERMINÓ — y eso se nombra, no se redondea
+
+Con el export quitado se relanzó con `--test-concurrency=1` y **tope duro de 25 minutos**. Lo
+medido, para SCRUM-858 (este caso es uno de los dos que lo abrieron; aquí se **apunta**, no se
+investiga — otro carril):
+
+```
+ficheros ..................... 796
+arranque ..................... 2026-09-15T14:16:18.227Z
+ultimo byte del TAP .......... 2026-09-15T14:41:18.190Z   (1.527.488 bytes)
+ultimo fichero nombrado ...... scrum82-zip-verifactu.test.mjs
+minutos ...................... 25 (tope)
+recuento al corte ............ ok 6216 · not ok 0
+salida ....................... 124 (tope, no veredicto)
+```
+
+> **LA TANDA COMPLETA NO TERMINÓ.** «ok 6216 · not ok 0» **no es un verde**: es *cero fallos entre
+> los 6.216 que llegaron a correr*. Lo que no corrió no sale por ninguna parte. Vacía y no-medida
+> se leen igual y significan lo contrario.
+
+⚠️ **Y esta vez NO se colgó, que es un dato distinto del de las 11:08Z.** Aquella se quedó 161
+minutos sin tocar el TAP; ésta lo estaba escribiendo **en el segundo del corte** (último byte a las
+14:41:18, tope a las 14:41:18). O sea: con concurrencia 1 la tanda no se atasca, va lenta — 6.216
+casos en 25 minutos. Son dos fenómenos y se entregan separados.
+
+### Los tres intentos de lanzarla con concurrencia 1, y por qué sólo valió el tercero
+
+| vía | qué pasó |
+|---|---|
+| `--test-concurrency=1` en `NODE_OPTIONS` | **no se admite**: `--test-concurrency= is not allowed in NODE_OPTIONS` |
+| `spawn` con la lista por array de argumentos, sin shell | **`ENAMETOOLONG`**: 34.964 caracteres contra el tope de 32.767 de Windows |
+| **API `run({ files, concurrency: 1 })`** | la única que no pasa por línea de órdenes |
+
+Es el muro de [SCRUM-850](SCRUM-850.md) por un lado nuevo: allí el shell se comía el código de
+salida, aquí la lista de 796 ficheros no cabe **ni siquiera sin shell**. Queda escrito donde lo
+busque quien vuelva a intentarlo.
+
+### 🔴 Un fallo mío, corregido antes de que contaminara la medición
+
+El primer lanzador lo dejé **dentro del repositorio** mientras corría la tanda. Medido antes de
+seguir: **dos tests hacen `readdirSync` sobre la raíz** (`scrum233` y `scrum797`), así que ese
+fichero podía inventarse un rojo — exactamente el defecto de [SCRUM-824](SCRUM-824.md) y
+exactamente el lío del que acababa de salir con la 411. El lanzador se movió **fuera del árbol** y
+la medición buena se hizo con `git status` enseñando sólo los cuatro ficheros del ticket.
+
+## 10 · Qué se entrega, y con qué nombre
+
+| | |
+|---|---|
+| el guard del ticket, suelto | **5 tests · 5 pass · 0 fail · `# skipped 0`** ✅ |
+| su rojo, ejecutado antes del arreglo | `3 !== 1`, pegado en §2 ✅ |
+| su mutación | tumba dos casos; fuente **y `dist/`** restaurados `IDÉNTICO` ✅ |
+| `SCRUM-411` | **25/25**, los dos rojos míos caídos ✅ |
+| `npm run guards:entrada` | **22 tests · 22 pass · 0 fail · 0 skipped** ✅ |
+| `npm run build` (`tsc`) | **0** ✅ |
+| **la tanda completa** | **NO TERMINÓ** (§9) 🔴 |
