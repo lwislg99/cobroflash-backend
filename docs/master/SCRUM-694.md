@@ -315,3 +315,100 @@ distintas, no un descuido.
 - **No se relajó ningún guard** (regla 41): el arreglo va en el FILTRO, no en lo que cada guard
   exige. Ninguna prohibición cambió.
 - **Cero dependencias nuevas** (regla 36) y **cero estado o flag nuevo** (regla 27).
+
+---
+
+# SCRUM-694c · Los tres del corte a pelo — y por qué los otros 39 se declaran
+
+**Fecha:** 15-sep-2026 · **Carril:** instrumentos (guards de la casa) · **Gate:** sin gate — `npm test`
+
+**Medido contra:** `origin/main` = `c50c6a54b61d9518f6cb98ec14def5d3ed897222` · 2026-09-15T13:00:07Z
+
+---
+
+## ① Cuántos de los 42 siguen vivos
+
+**42, los mismos.** Censados hoy sobre `tests/` y `scripts/` con la misma definición del
+trinquete. El árbol se ha movido mucho desde ayer, pero ninguno de los 42 se fue ni entró otro.
+
+## ② Cuáles comparten la forma — y por qué la pregunta no es «¿cuántos?»
+
+Preguntar «¿hoy pierde algo en los ficheros que lee?» depende de que yo sepa resolver qué lee
+cada guard, y en **21 de los 42 no lo sabía**: un cero por esa vía sería cota inferior, no prueba,
+y aquí «vacío» y «no medido» no pueden leerse igual. Así que se preguntó por la **FORMA**,
+pasándole a cada filtro las cuatro maneras en que una URL aparece de verdad en este árbol —
+`'https://x'`, `` `https://${t}` ``, `/^https?:\/\//` y `'//cdn…'`:
+
+| forma | cuántos | ¿se come código detrás de una URL? |
+|---|---|---|
+| `^\s*//.*$` | 30 | **NO** — sólo borra la línea que EMPIEZA por `//` |
+| `(^\|\s)//.*$` | 9 | **NO** — `https://` lleva `:` delante, no un espacio |
+| 🔴 `//.*$` a pelo | **3** | **SÍ, las cuatro** |
+
+**Se migran los 3.** Los otros 39 se **declaran**, no se fuerzan: su filtro aguanta la URL, así
+que migrarlos sería otro ticket con otro motivo. Y la declaración no es una promesa — la ejerce
+un test: si alguna de esas dos formas dejara de aguantar una URL, cae.
+
+## 🔴 Dos declaraciones heredadas que no se sostenían
+
+**La de SCRUM-694:** dio dos de los tres por «no aplica, el scanner de TypeScript no parsea
+Prisma». Eso no se hereda, se mide. Sobre `prisma/schema.prisma` (1.634 líneas), `soloCodigo()`
+blanquea **852** líneas de comentario, con **0** blanqueos que no fueran comentario y **0**
+comentarios supervivientes. Era una suposición, y los dos eran migrables.
+
+**Y una mía, de SCRUM-694b:** dejé fuera `censo-anclas-bloque-f.mjs` alegando que ningún
+`scripts/` importaba de `tests/` y no quería estrenar esa dirección. Falso: lo hacen
+`_pagina-panel`, `_banco-lista`, `censo-internos-de-prisma`, `censo-objetivo-tactil-panel` y dos
+más. Miré sólo quién importaba `_solo-codigo.mjs`, no la dirección.
+
+⚠️ **El defecto no está vivo hoy**: los tres pierden **0 líneas** de lo que leen ahora mismo. Eso
+es suerte del contenido, no del filtro — un `@default("https://…")` en el schema bastaría. Se
+migra por la forma, y se dice que hoy no sangra.
+
+## ③ El rojo, con el caso real
+
+Sin tocar `prisma/schema.prisma` (está prohibido, y no hace falta): los dos guards de Prisma
+exponen su función **pura sobre texto**, así que se les da el schema REAL del árbol con la línea
+añadida en memoria. El fichero no se toca; la superficie es la de verdad.
+
+| guard | el caso real | qué pasaba con el corte a pelo |
+|---|---|---|
+| `_pares-del-schema` | `webhookUrl String @default("https://yaqu.app/hook") @map("webhook_url")` | la línea muere en `@default("https:` y **la columna desaparece del censo**, en verde |
+| `_prisma-procedencia-guard` | la misma línea, con dos `@map` distintos | las dos salen **iguales** tras normalizar: dos schemas distintos pasan por el mismo |
+| `censo-anclas-bloque-f` | — | **no se fabrica**: su entrada es una tabla de BOOLEANOS y ahí una URL no cabe en el código. Se migra por la forma; lo sujetan el trinquete y el control de forma. Decirlo es más barato que inventar un caso que se parezca |
+
+**El control**, con el fuente restaurado byte a byte y verificado:
+
+| vuelta atrás | tests en rojo |
+|---|---|
+| `paresDelSchema` vuelve al corte a pelo | **2** |
+| `normalizarSchema` vuelve al corte a pelo | **2** |
+| el censo de anclas vuelve al corte a pelo | **1** |
+
+## ④ El trinquete: 42 → 39
+
+**−3, y los tres son de esta bajada.** No hay ningún «ya no estaba» que apuntarse: 42 − 3 = 39,
+censado antes y después. El desglose vive en el propio `TOPE_FILTRAN_A_MANO`.
+
+## ⑤ El helper compartido no se ha tocado
+
+`tests/_solo-codigo.mjs` queda **intacto** — su suelo es el que entregó SCRUM-694b. Lo importan
+ya 51 ficheros, así que tocarlo habría sido el trabajo principal del día; no hacía falta.
+
+## 🔴 Dos guards de la casa me cazaron por el camino
+
+- **SCRUM-700** («el número de filtros que CIEGAN CÓDIGO no sube») contó **8** donde decía 7: el
+  octavo era **mi propio control**, la réplica del filtro retirado. Intenté sacarlo a un módulo
+  compartido y salió peor —ese módulo lo contaban los DOS censos—, así que se deshizo. La salida
+  es la que ya usa el trinquete de SCRUM-694 para su `EL_CORTE`: construir el patrón con
+  `String.fromCharCode(92)` en vez de escribirlo como literal. **No se subió ningún tope.**
+- **SCRUM-533** («los ficheros que TOCA ESTA RAMA no llevan ni un CR») saltó porque
+  `_pares-del-schema.mjs` estaba en CRLF. Convertido a LF, que es lo que el repo exige.
+
+## Lo que NO se hizo
+
+- **No se migraron los 39 restantes**, y esta vez no es «quedan pendientes»: están medidos y su
+  filtro **aguanta la URL**. Migrarlos necesita otro motivo, que sería el de los bloques `/* */`.
+- **No se tocó `prisma/schema.prisma`** (regla 40), ni el CLI de Prisma por `npx`.
+- **No se relajó ningún guard**: ni el de los 42, ni el de SCRUM-700, ni ninguno.
+- **Cero dependencias nuevas** (regla 36), **cero estado o flag nuevo** (regla 27).

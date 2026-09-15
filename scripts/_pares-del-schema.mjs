@@ -33,6 +33,7 @@
 // Hoy no está, y una dependencia nueva la pide el fundador (regla 36).
 import fs from 'node:fs';
 import { partirAtributos } from './_prisma-procedencia-guard.mjs';
+import { soloCodigo } from '../tests/_solo-codigo.mjs';
 
 /** El valor de un `@map("x")` / `@@map("x")` dentro de una lista de atributos. */
 function valorDeMap(atributos, doble) {
@@ -62,10 +63,17 @@ function tipoBase(tipo) {
  * @returns {{ pares: [string,string][], modelos: string[], enums: string[], campos: number }}
  */
 export function paresDelSchema(texto) {
-  const lineas = String(texto)
-    .replace(/\r\n/g, '\n')
+  // 🔴 SCRUM-694c · el corte a pelo se retira. `\/\/.*$` no aguanta NINGUNA forma de URL:
+  //   `'https://x'` -> se queda en `'https:`  ·  `` `https://wa.me/${t}` `` -> igual
+  //   `/^https?:\/\//` -> `/^https?:\/`  ·  `'//cdn…'` -> `'`
+  // Medido el 15-sep-2026: hoy no pierde ni una linea del schema que lee, pero eso es suerte
+  // del contenido, no del filtro — un `@default("https://…")` bastaria.
+  //
+  // Y se blanquea el texto ENTERO antes de partir en lineas: `soloCodigo()` conserva
+  // posiciones y saltos, asi que el `split` de despues ve exactamente las mismas lineas.
+  const lineas = soloCodigo(String(texto).replace(/\r\n/g, '\n'), 'schema.prisma')
     .split('\n')
-    .map((l) => l.replace(/\/\/.*$/, '').trim())
+    .map((l) => l.trim())
     .filter(Boolean);
 
   // ① Primero, QUÉ ES UN MODELO. Hace falta el conjunto entero antes de mirar ningún campo: una

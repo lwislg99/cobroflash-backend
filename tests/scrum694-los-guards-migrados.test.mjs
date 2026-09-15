@@ -146,15 +146,29 @@ test('SCRUM-694 · 🔴 CONTROL: el filtro VIEJO sí cegaba — la migración no
  *        · **−5** que ya no estaban: el árbol se movió entre el 2 y el 15 de septiembre. No los
  *          migró este ticket y no se apunta el mérito; se apunta que el censo los remidió.
  *
- * Lo que QUEDA son 42, y quedan por familias distintas, no por descuido:
- *   · 30 sólo borran la línea que EMPIEZA por `//` — no cortan a mitad de línea.
- *   ·  9 cortan detrás de un espacio, `(^|\s)//` — y `https://` lleva `:` delante, no espacio.
- *   ·  2 leen `prisma/schema.prisma`, que el scanner de TypeScript no parsea (ya declarado
- *        «no aplica» en SCRUM-694, y sigue siéndolo).
- *   ·  1 (`scripts/censo-anclas-bloque-f.mjs`) corta en cualquier `//`, pero medido el
- *        15-sep-2026 no pierde NI UNA línea del fichero que lee (`src/core/flags.ts`).
+ *   39 · 15-sep-2026 · SCRUM-694c. **−3, y los tres son de esta bajada**: la familia del corte
+ *        A PELO (`//.*$` sin ancla ninguna), la única de las que quedaban que no aguanta una URL.
+ *        Aquí no hay ningún «ya no estaba» que apuntarse: 42 − 3 = 39, censado antes y después.
+ *        Caso real y control: `scrum694c-el-corte-a-pelo`.
+ *
+ *        🔴 Y se retira una declaración heredada que no se sostenía: SCRUM-694 dio dos de esos
+ *        tres por «no aplica, el scanner de TypeScript no parsea Prisma». Medido ahora sobre
+ *        `prisma/schema.prisma` (1.634 líneas): `soloCodigo()` blanquea 852 líneas de comentario,
+ *        con CERO blanqueos que no fueran comentario y CERO comentarios supervivientes. Era una
+ *        suposición, no una medida, y los dos eran migrables.
+ *
+ * Lo que QUEDA son 39, y quedan por familias distintas, no por descuido. Medido pasándole a cada
+ * forma las CUATRO maneras en que una URL aparece en este árbol —`'https://x'`,
+ * `` `https://${t}` ``, `/^https?:\/\//` y `'//cdn…'`—:
+ *   · 30 sólo borran la línea que EMPIEZA por `//`: no cortan a mitad de línea, y aguantan las
+ *        cuatro. (Su hueco es otro —los bloques— y es otro ticket con otro motivo.)
+ *   ·  9 cortan detrás de un espacio, `(^|\s)//`: `https://` lleva `:` delante, no espacio, así
+ *        que también aguantan las cuatro.
+ *
+ * Esa declaración no es una promesa: la EJERCE un test en `scrum694c-el-corte-a-pelo`, y si
+ * alguna de las dos formas dejara de aguantar una URL, cae.
  */
-const TOPE_FILTRAN_A_MANO = 42;
+const TOPE_FILTRAN_A_MANO = 39;
 
 /** El corte que define la familia: un `replace` que trocea en `//` hasta el fin de línea. */
 const EL_CORTE = String.fromCharCode(92) + '/' + String.fromCharCode(92) + '/.*$';
