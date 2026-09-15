@@ -272,10 +272,12 @@ test('SCRUM-846b · siembra:245 · VE un envío sin merchant y NO acusa al que l
     const r = censarLlamadas([fich]);
 
     assert.equal(r.total, 4, `🔴 esperaba 4 envíos; cuenta ${r.total}`);
-    assert.deepEqual(r.pendientes.map((p) => p.linea), [1, 4],
-      '🔴 esperaba acusadas la línea 1 (sin merchant) y la 4 (un spread no se puede leer). Si no las ve, '
+    // Por IDENTIDAD —el motivo—, no por número de línea: SCRUM-710b no deja anclar por posición.
+    assert.deepEqual(r.pendientes.map((p) => p.motivo).sort(),
+      ['lleva un spread: no se puede leer estáticamente', 'no pasa merchantId ni declara sinMerchant'],
+      '🔴 esperaba dos acusados: el envío sin merchant y el del spread, que no se puede leer. Si no los ve, '
       + 'su cero sobre `src/` no dice que todo envío deje rastro con su merchant.');
-    assert.ok(!r.pendientes.some((p) => p.linea === 2 || p.linea === 3),
+    assert.equal(r.pendientes.length, 2,
       '🔴 acusa a un envío que declara `merchantId` o `sinMerchant`.');
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });

@@ -15,6 +15,11 @@
 // `node scripts/verificacion-s5/romper-los-quince.mjs`, que rompe, corre, restaura y comprueba que
 // el fichero ha vuelto byte a byte.
 //
+// ⚠️ LAS SIEMBRAS SE COMPARAN POR IDENTIDAD, NO POR NÚMERO DE LÍNEA. Aunque el fichero fabricado
+// lo escribe el propio test, un `linea: 2` es una posición, y SCRUM-710b lo cazó con razón: quien
+// añada una línea al caso lo tumbaría sin cambiar nada de lo que vigila. Se compara el fichero, el
+// motivo o el texto de lo que el instrumento encontró.
+//
 // ── EL ORDEN ES EL DE LO QUE GOBIERNAN, leído en cada instrumento y no en su nombre ─────────
 //   tenencia · camino fiscal · barrera de producción · secretos · documento con importes ·
 //   veredicto de los guards · privacidad · promesas públicas · corrección · resiliencia · UI.
@@ -99,8 +104,9 @@ test('SCRUM-846b · siembra:estrechamientos · VE una línea rehecha con las cua
   });
   const r = censarEstrechamientos(raiz);
 
-  assert.deepEqual(r.estrechamientos.map((e) => [e.ruta, e.linea]), [['src/modules/inventado/lineas.ts', 1]],
-    '🔴 esperaba UN estrechamiento, el de la línea 1. Si no lo ve, su cero sobre `src/` no dice que '
+  assert.deepEqual(r.estrechamientos.map((e) => [e.ruta, e.claves.join(',')]),
+    [['src/modules/inventado/lineas.ts', 'concept,price,qty,tax']],
+    '🔴 esperaba UN estrechamiento con las cuatro claves. Si no lo ve, su cero sobre `src/` no dice que '
     + 'ninguna línea pierda datos; si ve más, acusa al spread de la rectificativa, que conserva todo.');
   assert.equal(r.conForma, 3, `🔴 con forma de línea (llevan «concept») hay 3; cuenta ${r.conForma}`);
   assert.equal(r.ficheros, 1);
@@ -141,7 +147,8 @@ test('SCRUM-846b · siembra:puertas · VE los campos de las dos formas de puerta
   };
   const puertas = censarPuertasDelPresupuesto(fuentes);
 
-  assert.deepEqual(puertas.map((p) => p.forma), ['literal', 'constructor'],
+  assert.deepEqual(puertas.map((p) => [p.fichero, p.forma]),
+    [[FUENTES_PRESUPUESTO[0], 'literal'], [FUENTES_PRESUPUESTO[1], 'constructor']],
     `🔴 esperaba una puerta literal y una que delega en el constructor; vio: ${puertas.map((p) => p.forma).join(', ')}`);
   assert.ok(puertas.every((p) => p.props.has('direccionObra')),
     '🔴 las dos puertas llevan `direccionObra` —una escrita, otra heredada del constructor— y no la ve.');
@@ -153,9 +160,11 @@ test('SCRUM-846b · siembra:puertas · VE los campos de las dos formas de puerta
     [FUENTES_PRESUPUESTO[1]]: 'export const r = (q: any) => generateQuotePdf(paramsDePresupuestoParaPdf(q));',
     [RUTA_CONSTRUCTOR]: constructor,
   };
-  assert.deepEqual(puertasSinLosCampos(['direccionObra'], sinDireccion),
-    [`${FUENTES_PRESUPUESTO[0]}:1 no conoce: direccionObra`],
-    '🔴 una puerta que NO lleva la dirección de la obra no sale acusada: el PDF saldría sin ella y en verde.');
+  const acusadas = puertasSinLosCampos(['direccionObra'], sinDireccion);
+  assert.equal(acusadas.length, 1,
+    `🔴 esperaba UNA puerta acusada de no llevar la dirección de la obra; salen ${acusadas.length}`);
+  assert.ok(acusadas[0].startsWith(`${FUENTES_PRESUPUESTO[0]}:`) && acusadas[0].endsWith('no conoce: direccionObra'),
+    `🔴 la puerta acusada tiene que ser la literal sin la dirección, y es: ${acusadas[0]}`);
 });
 
 // ═══ 7 · VEREDICTO DE LOS GUARDS · `scripts/censo-guards-gateados.mjs` ═══════════════════════
@@ -232,9 +241,9 @@ test('SCRUM-846b · siembra:body · VE las tres formas de body y NO cuenta un fe
   });
   const r = censoDeBodies(raiz);
 
-  assert.deepEqual(r.llamadas.map((l) => [l.linea, l.forma]),
-    [[1, FORMAS.OBJETO], [2, FORMAS.STRINGIFY], [3, FORMAS.OTRA]],
-    '🔴 esperaba objeto, stringify y otra, en ese orden: si confunde una con otra, el arreglo que decide es el equivocado.');
+  assert.deepEqual(r.llamadas.map((l) => [l.texto, l.forma]),
+    [["{ nombre: 'x' }", FORMAS.OBJETO], ["JSON.stringify({ nombre: 'x' })", FORMAS.STRINGIFY], ['datos', FORMAS.OTRA]],
+    '🔴 esperaba objeto, stringify y otra, cada una en su body: si confunde una con otra, el arreglo que decide es el equivocado.');
   assert.equal(r.total, 3, '🔴 cuenta el body de un `fetch` o de una llamada comentada');
   assert.equal(censoDeBodies(arbolDeMentira({ 'src/x.ts': 'export {};' })).sinPublic, true,
     '🔴 sin `public/` tiene que DECIRLO, no devolver un cero que parezca «todo bien».');
@@ -250,8 +259,9 @@ test('SCRUM-846b · siembra:peticiones · VE un fetch a pelo y NO acusa al del c
   });
   const r = censarPeticiones(raiz);
 
-  assert.deepEqual(r.fetchCrudo, [{ fichero: 'public/dashboard/js/vista.js', linea: 2 }],
-    '🔴 esperaba UN fetch a pelo, el de vista.js:2 —el de api.js ES el camino común—.');
+  assert.deepEqual(r.fetchCrudo.map((f) => f.fichero), ['public/dashboard/js/vista.js'],
+    '🔴 esperaba UN fetch a pelo, el de la vista —el de api.js ES el camino común—.');
+  assert.deepEqual(r.porFichero, { 'public/dashboard/js/vista.js': 1 });
   assert.deepEqual([r.leidos, r.apiRequest.length], [2, 1]);
 });
 
@@ -339,10 +349,10 @@ test('SCRUM-846b · siembra:texto-fuera · VE una promesa de YaQu, cuenta la que
     '🔴 sin #comparativa tiene que declararse CIEGO, no devolver ceros.');
 });
 
-// ═══ 14 · UI · `_censo-modal-footer` ═════════════════════════════════════════════════════════
+// ═══ 14 · UI · los pies de modal (`censarPiesDeModal`) ═══════════════════════════════════════
 // Decide qué pies de modal hay y cuántos botones y caracteres llevan, que es lo que desborda.
 
-test('SCRUM-846b · siembra:modal-footer · VE un pie de modal con sus botones y NO inventa uno donde no lo hay', async () => {
+test('SCRUM-846b · siembra:pies-de-modal · VE un pie de modal con sus botones y NO inventa uno donde no lo hay', async () => {
   const { censarPiesDeModal } = await import('./_censo-modal-footer.mjs');
   const r = censarPiesDeModal([
     {
@@ -356,6 +366,6 @@ test('SCRUM-846b · siembra:modal-footer · VE un pie de modal con sus botones y
   ]);
 
   assert.deepEqual(r.pies.map((p) => [p.fichero, p.nBotones, p.rotuloMasLargo]), [['inventado.html', 2, 'Guardar cambios']],
-    '🔴 esperaba UN pie, con sus dos botones, y ninguno en el fichero que sólo tiene `modal-body`.');
+    '🔴 esperaba UN pie, con sus dos botones, y ninguno en el fichero que sólo tiene el cuerpo del modal.');
   assert.equal(r.ficheros, 2);
 });

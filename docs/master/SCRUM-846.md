@@ -2,10 +2,15 @@
 
 **Fecha:** 15-sep-2026 · **Carril:** verificación (Sesión 0) · **Gate:** censo + siembras vistas caer
 
-**Medido contra:** `origin/main` = `d9a05138cb61a30916300951a979db84121d8002` · 2026-09-15T12:25+02:00
+**Medido contra:** `origin/main` = `5359f41d9593c22cbba7926bbe5a41510d79f3a1` · 2026-09-15T12:45+02:00
 
 **Rama:** `scrum-846b-siembras-a-los-quince` · **Preámbulo:** `prisma generate` rc=0 ·
-`git rev-list --count HEAD..origin/main` = **0** al ramificar · árbol limpio.
+`git rev-list --count HEAD..origin/main` = **0** al ramificar (sobre `d9a05138cb61a30916300951a979db84121d8002`)
+· árbol limpio.
+
+> ⚠️ **`main` se movió 13 commits durante la tanda**, y entre ellos un censo nuevo
+> (`scripts/censo-estado-no-contemplado.mjs`, SCRUM-707). Como el cierre se juzga EN MAIN, se trajo
+> con `git merge origin/main`, se regeneró Prisma, se recompiló y se volvió a medir: **0 sin caso**.
 
 ## Qué es un caso conocido, y por qué hacía falta
 
@@ -78,6 +83,10 @@ caso fabricado.
 
 ## Límites declarados
 
+- **Lo que el censo no mira no sale en su cero.** Su población son las funciones EXPORTADAS con verbo
+  de medida en `scripts/` y `tests/`, sin subcarpetas. Un script que mide sin exportar nada —como
+  `scripts/censo-estado-no-contemplado.mjs`, que entró durante esta misma tanda— no cuenta ni para
+  bien ni para mal.
 - El censo sólo mira el PRIMER argumento de cada llamada.
 - Donde su criterio laxo y el estricto coinciden, no se ha juzgado a mano.
 - Una siembra demuestra que el instrumento VE su caso fabricado; no que su cifra sobre el árbol de
