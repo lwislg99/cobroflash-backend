@@ -84,8 +84,19 @@ test('SCRUM-698 · 🔴 y SIN datos, la lista de las que necesitan fixture NO CR
   // datos tiene que seguir haciéndolo, y si aparece una nueva en la lista es que se ha roto.
   const { rotas } = await montarTodas(undefined);
   const nombres = rotas.map((r) => r.split(' → ')[0]).sort();
+  // 🔴 SCRUM-707 · SALE `renderAlbaranDetailView`, Y NO PORQUE ALGUIEN LE HAYA DADO DATOS.
+  //
+  // Nunca los necesitó: **reventaba**. Sin `alb.estado`, `destinoEfectivo` devolvía `undefined` y
+  // `cubos[undefined].push(...)` lanzaba `TypeError: Cannot read properties of undefined`. Medido
+  // el 8-sep-2026 quitando y poniendo la línea del arreglo:
+  //
+  //     sin el arreglo → Cannot read properties of undefined (reading 'push')
+  //     con el arreglo → monta, 23 nodos
+  //
+  // ⚠️ Y ESO ES LO CARO DE ESTA LISTA: la pantalla llevaba tiempo aquí clasificada como «le faltan
+  // datos», que suena a limitación del banco, cuando lo que tenía era un defecto de producto. Una
+  // lista de excepciones sin la CAUSA al lado convierte un fallo en una característica.
   assert.deepEqual(nombres, [
-    'renderAlbaranDetailView',
     'renderPlansView',
     'renderQuoteRequestsView',
     'renderTeamView',
