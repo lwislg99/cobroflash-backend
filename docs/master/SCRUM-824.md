@@ -715,8 +715,31 @@ ANTES:   .tmp-471-0ZL5ds (67) · .tmp-471-BLzk7G (44) · tests/__tmp-sellado-sin
          tests/.tmp-gremios-8ThK1q (1) · tests/.tmp-549-YMmEgj (1)
 ```
 
-Sin fuente no hay carrera, y el trinquete es lo que mantiene el cero. Las diez pasadas confirman;
-el cero del vigía es lo que explica.
+```
+DESPUÉS: "muestras": 66.454 · "aparecidos": []
+```
+
+Sin fuente no hay carrera, y el trinquete es lo que mantiene el cero. El cero del vigía es lo que
+explica; las pasadas sólo confirman.
+
+### El resultado de las diez SIN vigía — las dos corridas, con sus condiciones
+
+| corrida | condición | resultado | duración media |
+|---|---|---|---|
+| 1ª | **con** vigía golpeando el sistema de ficheros | **9 verdes / 1 roja** (`scrum451`) | 461 s |
+| 2ª | sin vigía — lo que corre CI | ✅ **10 verdes / 10** | 159 s |
+
+La segunda es la que cumple el criterio del enunciado, y es además la condición representativa: el
+vigía es un instrumento mío, CI no lo tiene, y multiplicaba por 2,9 la duración de la tanda. La
+primera **no se descarta ni se esconde**: es la que destapó `scrum451`, y por eso está registrada
+en `docs/BUGS.md` → **P3-FLAKY-451** en vez de archivada como «ruido de la máquina».
+
+Y una comprobación más, por pasada y no al final: `git status --porcelain` después de cada una de
+las diez. **Las diez, cero líneas.** Ni un residuo dentro del árbol — que es lo que este ticket
+vino a conseguir, dicho por el estado del repositorio y no por un aserto.
+
+> 🔒 Lo que queda dicho, y no se adorna: **el arreglo de los temporales está verificado; la tanda
+> todavía no es determinista.** Son dos afirmaciones distintas y sólo la primera es de este ticket.
 
 ---
 
