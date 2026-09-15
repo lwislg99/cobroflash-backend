@@ -11,7 +11,7 @@
 | 2 | `19215875cc8100cbade1666767e6225da8d5c70c` | #1229 | 2026-09-09T15:03:44Z |
 | 3 | `5c35a66d5752bf4f28c5dca340379c68c860757e` | #1234 | 2026-09-09T15:19:47Z |
 
-**Rama de esta reconstrucción:** `scrum-858-expedientes-de-los-cinco`
+**Rama de esta reconstrucción:** `expedientes-de-los-cinco-15sep`
 
 ---
 

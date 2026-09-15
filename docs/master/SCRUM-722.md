@@ -10,7 +10,7 @@
 | 1 | `d7db9499ca9322da9cc414ecd40ac4777e1996e3` | #1140 | **`scrum-722-marcadores-a-la-vista`** (propia) | 2026-09-07T17:53:48+02:00 |
 | 2 | `855562acee8879f9714d0d3114c3ba6a0b5bc0e7` | #1143 | `scrum-818-parte-de-trabajo` (ajena) | 2026-09-07T18:05:20+02:00 |
 
-**Rama de esta reconstrucción:** `scrum-858-expedientes-de-los-cinco`
+**Rama de esta reconstrucción:** `expedientes-de-los-cinco-15sep`
 
 ---
 

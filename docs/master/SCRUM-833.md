@@ -6,7 +6,7 @@
 **Sha real del merge que entró sin expediente (SCRUM-267):**
 `ee13c63f6d904fed6abda667db4e96fab4e24e93` — PR #1204, 2026-09-09T08:11:36Z,
 rama `scrum-637-verificacion-s5`
-**Rama de esta reconstrucción:** `scrum-858-expedientes-de-los-cinco`
+**Rama de esta reconstrucción:** `expedientes-de-los-cinco-15sep`
 
 ---
 
