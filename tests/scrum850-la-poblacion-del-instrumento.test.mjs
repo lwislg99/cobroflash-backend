@@ -33,10 +33,12 @@
 // ════════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import {
-  censar, veredictoDeLinea, segmentar, sinComentario, deUnFicheroJs, VEREDICTOS,
+  censar, veredictoDeLinea, segmentar, sinComentario, deUnFicheroJs, dePackageJson, VEREDICTOS,
 } from '../scripts/_invocaciones-de-la-tanda.mjs';
 
 const RAIZ = path.join(import.meta.dirname, '..');
@@ -63,6 +65,41 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'un comentario no cuenta como invocación',
   },
 ];
+
+// ── 🔴 SCRUM-844 · LAS TRES REDES QUE `MUTACIONES_QUE_ME_TUMBAN` DECLARABA SIN TENER ──────────
+//
+// El meta-guard (SCRUM-745) exige que `cae` sea el nombre —o un trozo— de un test que aparezca EN
+// VERDE en la pasada limpia. Las tres declaraciones de arriba nombraban una frase que no era el
+// título de NINGÚN test de este fichero: el barrido de SCRUM-844 las encontró CIEGAS, no vivas.
+// Cada una de las tres redes de abajo prueba, aislada, exactamente el defecto que su mutación
+// imita — la misma disciplina que SCRUM-745 usa consigo mismo.
+test('SCRUM-850 · el censo ve una tubería', () => {
+  const h = veredictoDeLinea('npm test | tail');
+  assert.equal(h.length, 1);
+  assert.equal(h[0].veredicto, VEREDICTOS.TUBERIA);
+});
+
+test('SCRUM-850 · los //comentarios de package.json no son invocaciones', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum850-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({
+      scripts: {
+        real: 'npm test',
+        '//real': 'ejemplo de lo prohibido, sólo en prosa: npm test | tail',
+      },
+    }));
+    const h = dePackageJson(dir);
+    assert.deepEqual(h.map((x) => x.donde), ['scripts.real'],
+      'el `//`-comentario se ha contado como una invocación de verdad');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('SCRUM-850 · un comentario no cuenta como invocación', () => {
+  assert.equal(veredictoDeLinea(sinComentario('# npm test | tail')).length, 0);
+  assert.equal(veredictoDeLinea(sinComentario('  # ojo: npm test | grep x')).length, 0);
+});
 
 // ── ✅ CONTROL POSITIVO DEL DETECTOR: las formas que TIENE que ver ───────────────────────────
 test('SCRUM-850 · ✅ CONTROL POSITIVO: el detector ve cada forma que se come el código', () => {
