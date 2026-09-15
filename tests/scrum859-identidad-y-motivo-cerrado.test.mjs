@@ -30,13 +30,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'tests/scrum267-ancla-de-medicion.test.mjs',
     de: "const TOPE_INVISIBLE_HASTA_859 = 5;",
     a: "const TOPE_INVISIBLE_HASTA_859 = 99; // tope abierto a proposito",
-    cae: '🔴 un SEXTO uso de INVISIBLE_HASTA_859 tiene que tumbar el guard',
+    cae: 'SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO',
   },
   {
     fichero: 'tests/scrum267-ancla-de-medicion.test.mjs',
     de: "      const id = identidadDeEntrada(e.tituloCompleto);",
     a: "      const id = String(e.indice); // vuelta a la clave POSICIONAL, a proposito",
-    cae: '🔴 insertar una entrada NO puede desplazar ninguna clave',
+    cae: 'SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave',
   },
 ];
 
