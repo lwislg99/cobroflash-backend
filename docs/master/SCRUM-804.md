@@ -749,3 +749,315 @@ un número escrito **sobre una población que una política del repositorio est�
 `scripts/_rastro-del-ticket.mjs`, `scripts/censo-tablero-vs-arbol.mjs`, `scripts/_censo-reparto.mjs`
 y `scripts/_censo-alcanzabilidad.mjs` quedan intactos: el defecto no estaba en ellos. Ninguna rama
 borrada, ningún ticket cerrado ni reabierto, ninguna dependencia nueva.
+
+---
+
+# APÉNDICE · 15-sep-2026 · SCRUM-804c · El barrido de cierre: los 112 abiertos de hoy, en tres clases
+
+**Medido contra:** `origin/main` = `07ccd16c92e37350e785526232d03b7f0c637684` · 2026-09-09T16:03:28+00:00
+**Rama:** `scrum-804c-barrido-de-cierre` · **Carril:** proceso · censo · **Gate:** sin gate
+
+> ⛔ **ESTE APÉNDICE NO CIERRA NADA Y NO TOCA EL TABLERO.** Ni una transición, ni un comentario en
+> Jira. Entrega la tabla para que el fundador decida con ella delante.
+
+---
+
+## 0 · Obligación 0, y su contraste
+
+```
+git fetch origin --prune
+git ls-remote --heads origin | wc -l   ->  120   <- la poblacion de ramas
+git ls-remote origin refs/heads/main   ->  07ccd16c92e37350e785526232d03b7f0c637684
+git rev-parse origin/main              ->  07ccd16c92e37350e785526232d03b7f0c637684   (concuerdan)
+```
+
+Y el contraste que importa, porque sin él todo lo de abajo se mide contra un árbol que no existe:
+**el worktree desde el que se arrancó iba 145 commits por detrás de `origin/main`**, y su copia de
+`docs/master/` tenía **470** ficheros contra **481** en `main` — este mismo fichero, **617 líneas
+contra 751**. Anexar allí habría **borrado en silencio el apéndice del 8-sep**. Por eso todo lo que
+sigue se mide y se escribe sobre un árbol limpio en `origin/main`, y nada sobre el árbol de arranque.
+
+## 1 · La población: 163, 165 y 112 son tres números buenos de tres días distintos
+
+| número | de dónde sale | cuándo |
+|---|---|---|
+| **163** | el TÍTULO de SCRUM-804, escrito a mano | creado el **6-sep-2026 23:47** |
+| **165** | la medición de la cabecera de esta entrada | **7-sep-2026** |
+| **112** | `totalCount` de Jira en vivo, misma JQL | **15-sep-2026** |
+
+La JQL es la misma en los tres casos (`project = SCRUM AND statusCategory != Done`), así que
+**ninguno es erróneo: el tablero se movió**. El bueno para trabajar hoy es **112**, por la razón que
+ya escribió este ticket el 8-sep: *un número sin su fecha no es una medición, es una foto que nadie
+sabe de cuándo*. Por estado, hoy: **Tareas por hacer 54 · En curso 29 · Acción del fundador 18 · En
+revisión 11 = 112**. Rango `SCRUM-16 … SCRUM-848` (el 7-sep llegaba al 809). Épicas abiertas: **6**.
+
+## 2 · ⛔ Lo que NO he escrito, porque ya existía
+
+El encargo describía un censo que **este ticket ya construyó**. Reusado tal cual, sin tocar una línea:
+
+| pieza | qué aportó al barrido |
+|---|---|
+| `scripts/censo-tablero-vs-arbol.mjs --json` | los 498 tickets derivables del árbol, con sus commits, entrada y ramas |
+| `scripts/_rastro-del-ticket.mjs` (SCRUM-804) | la dimensión `EN MAIN` / `EN RAMA VIVA` / `SIN RASTRO` |
+| `tests/_censo-tickets.mjs` (SCRUM-388) | el motor y su suelo |
+| `tests/scrum835-credenciales-en-el-historial.test.mjs` | corrido aparte, ver §6 |
+
+Corrido sobre `origin/main` = `07ccd16c`: **`fiable: true` · `ramasFiables: true` · `suelo: []` ·
+`sueloRamaViva: []`** · 498 tickets censados · 481 entradas de máster · 121 ramas traídas.
+
+## 3 · 🔴 Lo que este apéndice AÑADE: el corte (a)/(b), que el instrumento declara que NO sabe hacer
+
+El límite está escrito en el apéndice del 8-sep de este mismo fichero, y es exacto:
+
+> **`SIN RASTRO` no es «no hay trabajo»**: una rama mergeada Y BORRADA deja el ticket sin rama y su
+> trabajo dentro.
+
+Medido hoy: **SCRUM-16 sale `rastro: SIN RASTRO`** y tiene seis commits suyos en `main` desde agosto.
+O sea que el veredicto de ramas, leído solo, **confunde «nunca se empujó» con «se mergeó y la
+borraron»** — que es justo el defecto que el encargo manda separar.
+
+El discriminador que lo parte es el **commit de merge**, que el autoborrado no puede tocar (la misma
+ancla que eligió el apéndice del 8-sep por la tarde para los suelos):
+
+- **(b) hubo rama y se mergeó** → existe en `origin/main` un `Merge pull request #N from
+  lwislg99/scrum-<n>-…` que **nombra** una rama de ese ticket. El nombre sobrevive al borrado porque
+  vive en el asunto del commit, no en la ref.
+- **(a) nunca se empujó** → ni rama viva, ni merge que la nombre, ni commit de autoría suyo.
+
+| causa | tickets |
+|---|---|
+| **(b) hubo rama, se mergeó, ya no está** | **51** |
+| **(a) nunca se empujó** | **51** |
+| tiene rama hoy en el remoto | **10** |
+| **suma** | **112** |
+
+⚠️ **Y una precisión que el encargo pedía y el dato no sostiene entera:** el autoborrado lleva activo
+desde el 8-sep, pero **la mayoría de esos 51 se mergearon mucho antes** (SCRUM-16 por el PR #579, el
+10-ago). Sus ramas no las quitó el autoborrado. Lo que las quitó se ve en la cifra: el 8-sep este
+ticket midió **558 ramas remotas**; hoy hay **120**. Han desaparecido ~438 en una semana, y eso es una
+limpieza, no una serie de merges. **(b) aquí significa «hubo rama y su trabajo entró», no «lo borró el
+autoborrado».** Distinguir quién la borró exige el registro de eventos de GitHub, que no es árbol.
+
+## 4 · ⚠️ El instrumento lee `refs/remotes/`, y hoy es fiable SÓLO porque se prunó antes
+
+`_rastro-del-ticket.mjs` resuelve las ramas con `for-each-ref refs/remotes/origin/`, que son refs
+**locales** y conservan ramas ya borradas hasta que alguien poda. Comprobado antes de creerle nada:
+
+```
+git ls-remote --heads origin            -> 120
+git for-each-ref refs/remotes/origin/   -> 121   (las 120 + refs/remotes/origin/HEAD)
+sobrantes reales                        -> 0
+```
+
+Están en sync **porque la obligación 0 prunó**. Su `traer: true` hace `fetch` **sin `--prune`**: en un
+árbol sin podar ese censo daría por vivas ramas que ya no existen. No es un defecto que arreglar aquí
+—hallazgo de otro carril, regla 37— pero sí una precondición que hay que cumplir antes de leerlo.
+
+## 5 · El criterio de cada clase
+
+| clase | exige |
+|---|---|
+| 🟢 **CERRABLE** | commit de autoría suyo en `origin/main` (con SHA) **+** entrada en `docs/master/` **+** ninguna rama viva sin mergear **+** la entrada **no** se autodeclara sin construcción |
+| 🟡 **DUDOSO** | hay rastro y algo no cuadra. Cada fila dice **qué** |
+| 🔴 **VIVO** | no hay trabajo suyo en `main`: o no se empujó nunca, o vive en una rama sin mergear |
+
+**Autoría, no mención.** La referencia tiene que ir en la CABECERA del asunto —`SCRUM-729 (paso 6):`,
+`docs(SCRUM-331):`, `feat(SCRUM-333):`— y no después de los dos puntos. Sin esa distinción,
+`SCRUM-710c: el trinquete era un cepo` contaba como trabajo del 331 por nombrarlo de pasada.
+
+🔴 **Y la entrada de máster no basta, porque algunas declaran que no construyeron nada.** Aplicado el
+filtro textual que este ticket midió el 7-sep, salieron **8 candidatos**. **Los leí los ocho**: seis lo
+dicen de verdad y salen de 🟢 — **16, 280, 307, 322, 323, 328**. Dos eran **falsos positivos**, y los
+retiré a mano en vez de dejar que el filtro decidiera:
+
+| retirado | por qué NO es «no construí» |
+|---|---|
+| **SCRUM-634** | su «cero código» habla de los commits **ajenos** #883 y #885, no de su propio trabajo |
+| **SCRUM-827** | su «sólo LEE» es la fórmula de la **regla 38** (no modifica el camino fiscal) |
+
+## 6 · Verificación
+
+- ✅ **CONTROL POSITIVO DE (b)** — `SCRUM-848`: su merge `07ccd16c` es la punta de `main` y su rama
+  `scrum-848-tactil-ficha-trabajo` **no** está en el remoto. Sale (b), que es lo correcto.
+- ✅ **CONTROL POSITIVO DE (a)** — `SCRUM-729`: un ticket sin rama, sin merge que la nombre y sin commit
+  de autoría sale (a) y **no** se pliega a (b).
+- ✅ **CONTROL DE TOKEN** — `scrum-16` **no** recoge `scrum-161`, `scrum-166` ni `scrum-172`: el número
+  se compara con delimitador, nunca como subcadena. Ejercitado sobre los tres.
+- ✅ **DOS SONDAS INDEPENDIENTES, Y CONCUERDAN.** El censo da `119 ramas / 17 en main / 102 vivas`; la
+  medición directa con `merge-base --is-ancestor` sobre la salida de `ls-remote` da `120 / 18 / 102`. La
+  de diferencia es **`main` misma**, que una cuenta como rama y el otro excluye. **Las 102 vivas coinciden.**
+- ✅ **CRUCE DE VEREDICTOS** — de los 112, **53 están en la población del censo**, y en los 53
+  coincidimos: **0 discrepancias**. Los otros 59 faltan por el límite que el propio censo declara: *su
+  población nace del ÁRBOL*, y un ticket que nadie tocó no llega a entrar.
+- ✅ **LOS 35 🔴 DE CAUSA (a), CONFIRMADOS POR LA SEGUNDA SONDA**: los 35 están **ausentes** del censo,
+  que deriva su población de ramas + entradas + commits. Cero rastro por dos caminos distintos.
+- ⚠️ **Los 4 que el censo llama `ENTERO` y aquí salen 🔴** (707, 809, 813, 829) **no son una
+  discrepancia**: su `fuentes` es `[ramas]` y su `rastro` es `EN RAMA VIVA`. Es el falso positivo que el
+  apéndice del 8-sep documentó y que su propia dimensión nueva ya corrige. La clase concuerda con
+  `rastro`, no con el `veredicto` crudo.
+- ✅ **SCRUM-835, corrido aparte porque lo pidió el encargo**:
+  `tests/scrum835-credenciales-en-el-historial.test.mjs` sobre `07ccd16c` →
+  **5/5 pass · 0 fail · 0 skipped · exit 0**. **9.920 blobs alcanzables · 387 binarios · 0 saltados por
+  tamaño · 0 hallazgos.** Su control positivo **sembrado** —comitear una credencial sintética, borrarla
+  al commit siguiente y comprobar que el barrido la sigue viendo— pasa. Y la población barrida es
+  **superconjunto de la de CI**: `rev-list --objects --all` alcanza también las refs de los ~26
+  worktrees. **Cero credenciales en el historial, y el cero está respaldado.**
+
+## 7 · 🟢 CERRABLE — **40**
+
+Trabajo suyo en `main` **con SHA de 40**, entrada de máster, y ninguna rama viva sin mergear.
+
+| ticket | estado en el tablero | SHA del commit de autoría | fecha | entrada |
+|---|---|---|---|---|
+| SCRUM-273 | Tareas por hacer | `1809690725b20043308b65ff771d89db259f1f9a` | 2026-08-20 | `docs/master/SCRUM-273.md` |
+| SCRUM-331 | Acción del fundador | `08ff895abf8c9afd0687d1e4b206a0ac09e965c9` | 2026-08-20 | `docs/master/SCRUM-331.md` |
+| SCRUM-333 | Acción del fundador | `a7198cf771a22221ff1b901cd0137be35be85ad2` | 2026-08-20 | `docs/master/SCRUM-333.md` |
+| SCRUM-512 | Acción del fundador | `c79bb4a7fde5bc2446abeb650286485d7af85ec3` | 2026-09-07 | `docs/master/SCRUM-512.md` |
+| SCRUM-567 | En revisión | `b3220e3f506a534f2702e80ec9a23fa5381fc849` | 2026-08-20 | `docs/master/SCRUM-567.md` |
+| SCRUM-568 | En revisión | `8554293e1d2027d158ee1e9bf30fe3d44dabcd79` | 2026-08-20 | `docs/master/SCRUM-568.md` |
+| SCRUM-600 | En curso | `a72d4b777562743c7490fdd5681a5a1f2bc64ee7` | 2026-09-08 | `docs/master/SCRUM-600.md` |
+| SCRUM-613 | Acción del fundador | `2bcd39981275255f224657876b55e224acb3b4ae` | 2026-08-24 | `docs/master/SCRUM-613.md` |
+| SCRUM-626 | Tareas por hacer | `e5ef45a4024ac831e0e0169a244299ac375dc911` | 2026-09-08 | `docs/master/SCRUM-626.md` |
+| SCRUM-632 | Tareas por hacer | `2b6d0a24bc904ef8e7177bfef3b57bcaea0d4104` | 2026-09-08 | `docs/master/SCRUM-632.md` |
+| SCRUM-634 | Tareas por hacer | `aea68989cc33efbecd7088379d404e64aaf0013e` | 2026-09-01 | `docs/master/SCRUM-634.md` |
+| SCRUM-637 | En curso | `efd4618dac9d6f0c20ac58af006f1fdc1707add3` | 2026-09-08 | `docs/master/SCRUM-637.md` |
+| SCRUM-638 | Tareas por hacer | `cfdd74694012f11ff6d84264b0b25d91940d75dc` | 2026-09-01 | `docs/master/SCRUM-638.md` |
+| SCRUM-644 | Tareas por hacer | `19ea5a4052340cbe9598451c9ede91f2c1a07170` | 2026-09-02 | `docs/master/SCRUM-644.md` |
+| SCRUM-654 | Acción del fundador | `36d685ff8cc2e551bbcfbff95fc18d42fcc48c0f` | 2026-09-02 | `docs/master/SCRUM-654.md` |
+| SCRUM-674 | En curso | `96e36cb8050fa4494681897f3abef54cab6858dd` | 2026-09-02 | `docs/master/SCRUM-674.md` |
+| SCRUM-694 | Tareas por hacer | `c71635ce15066fba817a7f2f19ea9637ba7f0e9d` | 2026-09-02 | `docs/master/SCRUM-694.md` |
+| SCRUM-726 | En curso | `8f6e0f08831440e24ad36e973271dcfab4169905` | 2026-09-04 | `docs/master/SCRUM-726.md` |
+| SCRUM-762 | En revisión | `09ce900808ab774affddb88cb261635738f91708` | 2026-09-07 | `docs/master/SCRUM-762.md` |
+| SCRUM-764 | En curso | `17144978c8859ad79b4d1e419f929e0e6a81c40b` | 2026-09-07 | `docs/master/SCRUM-764.md` |
+| SCRUM-766 | En curso | `bb78ade7119ec4dd1177acd2153c30a47d9810e5` | 2026-09-08 | `docs/master/SCRUM-766.md` |
+| SCRUM-780 | En revisión | `100735c75f0a3a0ef982b2375bbab27b82392167` | 2026-09-07 | `docs/master/SCRUM-780.md` |
+| SCRUM-782 | En revisión | `1eda1a6ea3af4ada3eb8fb2770a039b082967e30` | 2026-09-06 | `docs/master/SCRUM-782.md` |
+| SCRUM-787 | En curso | `d61f3feafdc6fbc014385fb86cf14390dc05974f` | 2026-09-06 | `docs/master/SCRUM-787.md` |
+| SCRUM-788 | En revisión | `dfe37cc2fb7c64a3dbfb78710526715e07abba15` | 2026-09-06 | `docs/master/SCRUM-788.md` |
+| SCRUM-790 | En revisión | `10225d66de530356885e362f4d173b7158052e96` | 2026-09-06 | `docs/master/SCRUM-790.md` |
+| SCRUM-801 | En curso | `ac2d17abae0eb233f7abee1ed970d6cbebe19351` | 2026-09-07 | `docs/master/SCRUM-801.md` |
+| SCRUM-804 | En curso | `a93b29eebbce82c2899d8773258afd4d6c83e4c8` | 2026-09-08 | `docs/master/SCRUM-804.md` |
+| SCRUM-805 | En revisión | `b39f3fde32d13e60bb1d2686239979b89c93b131` | 2026-09-07 | `docs/master/SCRUM-805.md` |
+| SCRUM-811 | En curso | `c34292577f5b52c83036db843a06118cbfeae6c3` | 2026-09-07 | `docs/master/SCRUM-811.md` |
+| SCRUM-815 | Acción del fundador | `36f06e093863ddc890529b96a1ae2f25b718807e` | 2026-09-08 | `docs/master/SCRUM-815.md` |
+| SCRUM-816 | En curso | `8981866ebb9ca906b992849a95f77438b9552c76` | 2026-09-08 | `docs/master/SCRUM-816.md` |
+| SCRUM-824 | Tareas por hacer | `2d821e57a6f16cb235cd080fd79301818ba454df` | 2026-09-08 | `docs/master/SCRUM-824.md` |
+| SCRUM-825 | Tareas por hacer | `6bf6ddbf48e479cb157a605bb72daced852a74bd` | 2026-09-08 | `docs/master/SCRUM-825.md` |
+| SCRUM-827 | Tareas por hacer | `a6eddd6f6e6b976b7478f5e5f65b9f83f63d8fba` | 2026-09-08 | `docs/master/SCRUM-827.md` |
+| SCRUM-828 | Tareas por hacer | `626ab5e237d44deccf11c701e3792805118d6aee` | 2026-09-08 | `docs/master/SCRUM-828.md` |
+| SCRUM-831 | En curso | `db60de753120dd03ae11fae3d789df9857d6fea0` | 2026-09-09 | `docs/master/SCRUM-831.md` |
+| SCRUM-840 | En curso | `9fe0a3e1212449197ddf894441407be05c6fb42e` | 2026-09-09 | `docs/master/SCRUM-840.md` |
+| SCRUM-844 | En curso | `0754a55e9fa3a91d9e280854414ce6b5762ebb8a` | 2026-09-09 | `docs/master/SCRUM-844.md` |
+| SCRUM-845 | En curso | `02cd8e41e5a8d3e2cf377d7be524af7c13f6bdcb` | 2026-09-09 | `docs/master/SCRUM-845.md` |
+
+## 8 · 🟡 DUDOSO — **33**
+
+Hay rastro y algo no cuadra. La columna de la derecha dice **qué**.
+
+| ticket | estado | SHA (si lo hay) | qué NO cuadra |
+|---|---|---|---|
+| SCRUM-16 | Tareas por hacer | `c09fc07a7659ac35645bc33a05a402c788edfc23` | la ENTRADA se autodeclara sin construcción («MEDICIÓN, NO CONSTRUCCI»): hay informe, no producto |
+| SCRUM-20 | Tareas por hacer | `3b927132d6f952e5b74bb92b0dadfa62932371e6` | trabajo en main pero SIN entrada en docs/master: no cumple el listón de 🟢 |
+| SCRUM-41 | Tareas por hacer | — | sólo lo NOMBRAN commits de otros tickets (1); ningún trabajo propio |
+| SCRUM-142 | Acción del fundador | — | sólo lo NOMBRAN commits de otros tickets (4); ningún trabajo propio |
+| SCRUM-276 | Tareas por hacer | — | sólo lo NOMBRAN commits de otros tickets (1); ningún trabajo propio |
+| SCRUM-280 | Tareas por hacer | `69dd7b036d8a01a56aa84386ea20a31ef26c5b91` | la ENTRADA se autodeclara sin construcción («cero construcci»): hay informe, no producto |
+| SCRUM-307 | Tareas por hacer | `44840ce6b848246655243b8dc82972986c877c13` | la ENTRADA se autodeclara sin construcción («esta tarea **solo lee»): hay informe, no producto |
+| SCRUM-322 | Tareas por hacer | `f35dc4627d1011fa3035b2eb37596d615ec906e3` | la ENTRADA se autodeclara sin construcción («Cero construcci»): hay informe, no producto |
+| SCRUM-323 | Tareas por hacer | `0c42404bcc0aafcddb417441f5c0534127a2a53f` | la ENTRADA se autodeclara sin construcción («Cero construcci»): hay informe, no producto |
+| SCRUM-326 | Tareas por hacer | — | sólo lo NOMBRAN commits de otros tickets (1); ningún trabajo propio |
+| SCRUM-328 | En curso | `80c24c3789972ccfbf9947c7dfc58a4504daa311` | la ENTRADA se autodeclara sin construcción («cero construcci»): hay informe, no producto |
+| SCRUM-332 | Acción del fundador | `143866cb05dbabaf44ebc950aa9fa21ac43090f5` | trabajo en main pero SIN entrada en docs/master: no cumple el listón de 🟢 |
+| SCRUM-334 | Acción del fundador | `4c4b8c59785b472f6ada786d1b98f973fc481019` | trabajo en main pero SIN entrada en docs/master: no cumple el listón de 🟢 |
+| SCRUM-340 | Tareas por hacer | `a4fd8efe007ccad9fc9803d3e8eb3daee0ae0dcc` | trabajo en main Y ADEMÁS rama viva sin mergear (scrum-340-contador-plazas-reales): falta algo por entrar |
+| SCRUM-523 | Tareas por hacer | — | sólo lo NOMBRAN commits de otros tickets (1); ningún trabajo propio |
+| SCRUM-525 | En curso | `6245478d1b225f284391ff23128186f77254b7b5` | trabajo en main pero SIN entrada en docs/master: no cumple el listón de 🟢 |
+| SCRUM-527 | Tareas por hacer | `94934a4024119313837312323af6c0fd7aed577f` | trabajo en main pero SIN entrada en docs/master: no cumple el listón de 🟢 |
+| SCRUM-534 | Acción del fundador | — | sólo lo NOMBRAN commits de otros tickets (2); ningún trabajo propio |
+| SCRUM-547 | En curso | `36386d4d590df47aa22c97f15fb8e101a0abe7ce` | trabajo en main pero SIN entrada en docs/master: no cumple el listón de 🟢 |
+| SCRUM-628 | Tareas por hacer | — | sólo lo NOMBRAN commits de otros tickets (5); ningún trabajo propio |
+| SCRUM-663 | Tareas por hacer | — | sólo lo NOMBRAN commits de otros tickets (2); ningún trabajo propio |
+| SCRUM-665 | Tareas por hacer | — | sólo lo NOMBRAN commits de otros tickets (2); ningún trabajo propio |
+| SCRUM-711 | Tareas por hacer | — | sólo lo NOMBRAN commits de otros tickets (2); ningún trabajo propio |
+| SCRUM-736 | En curso | — | sólo lo NOMBRAN commits de otros tickets (1); ningún trabajo propio |
+| SCRUM-774 | Acción del fundador | — | sólo lo NOMBRAN commits de otros tickets (2); ningún trabajo propio |
+| SCRUM-786 | En curso | — | sólo lo NOMBRAN commits de otros tickets (1); ningún trabajo propio |
+| SCRUM-823 | En curso | `20f3a2f551e8a36f26f4a7a3755e91eafbb8672a` | trabajo en main Y ADEMÁS rama viva sin mergear (scrum-823-la-escalera-mira-el-estado): falta algo por entrar |
+| SCRUM-826 | Tareas por hacer | — | sólo lo NOMBRAN commits de otros tickets (1); ningún trabajo propio |
+| SCRUM-836 | En curso | `2a2bff77a5c8c08053451dddac410a138f990d35` | trabajo en main pero SIN entrada en docs/master: no cumple el listón de 🟢 |
+| SCRUM-837 | En curso | `0e8364e294cd62317bf0e5033da69c384dd99f73` | trabajo en main Y ADEMÁS rama viva sin mergear (scrum-837-decisiones-encerradas): falta algo por entrar |
+| SCRUM-839 | Tareas por hacer | `d2990977dd9801ddd6810cf91b5bbdd74f0359dd` | trabajo en main pero SIN entrada en docs/master: no cumple el listón de 🟢 |
+| SCRUM-846 | En revision | `322a2a47304b0a5862926334575869e95290ac2d` | trabajo en main pero SIN entrada en docs/master: no cumple el listón de 🟢 |
+| SCRUM-848 | En curso | `404c0f59e6e6df63eed8d5022b40d25489661e4a` | trabajo en main pero SIN entrada en docs/master: no cumple el listón de 🟢 |
+
+## 9 · 🔴 VIVO — **39**
+
+Sigue habiendo trabajo pendiente de verdad. **Ninguno es (b)**, y no puede serlo: (b) significa que su
+trabajo entró en `main`, y eso lo sacaría de esta clase por construcción.
+
+| ticket | estado | causa | detalle |
+|---|---|---|---|
+| SCRUM-18 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-19 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-143 | Acción del fundador | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-281 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-335 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-505 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-511 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-524 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-529 | Acción del fundador | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-530 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-532 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-540 | Acción del fundador | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-554 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-572 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-573 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-612 | Acción del fundador | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-618 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-635 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-649 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-657 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-658 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-669 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-675 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-678 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-688 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-691 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-707 | Tareas por hacer | **rama viva sin mergear** | `scrum-707-estado-no-contemplado` · **+3 commits** sobre main · 2026-09-08 · `e9f66075179639c7bb4fd72c7443e2fbed2dfef7` |
+| SCRUM-732 | En curso | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-735 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-752 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-773 | Acción del fundador | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-779 | Acción del fundador | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-789 | Acción del fundador | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-809 | En revisión | **rama viva sin mergear** | `scrum-809-el-paywall-del-reves` · **+4 commits** sobre main · 2026-09-07 · `4cc758b6c715062f2368a31eabaeafadc5f39d5d` |
+| SCRUM-812 | En curso | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-813 | En revisión | **rama viva sin mergear** | `scrum-813-el-trinquete-de-zona-horaria` · **+9 commits** sobre main · 2026-09-08 · `2b317011fef4bf059d9261aaf1d0733e5998f5d8` |
+| SCRUM-829 | En curso | **rama viva sin mergear** | `scrum-829-una-sola-regla-rama-ticket` · **+6 commits** sobre main · 2026-09-09 · `faebb1e67003867674c58594a70170a7c57617e5` |
+| SCRUM-841 | En curso | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-843 | En curso | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+
+## 10 · Límites declarados
+
+1. **🟢 quiere decir «el trabajo aterrizó y está registrado», NO «el ticket está resuelto».** Un commit
+   de autoría más una entrada no demuestran que se hiciera *todo* lo que el ticket pide. Los 🟢 son
+   **candidatos a mirar**, no una orden de transición — y esa decisión es del fundador, no del censo.
+2. **No he aplicado el criterio E1/E2** —mutación declarada, o guard vivo que asevera sobre producto—
+   que esta misma entrada estrenó el 7-sep y que es **más fuerte** que el de aquí. Exige una tanda
+   completa atribuida por fichero, y no cabía en esta tanda. **Con él, algunos 🟢 bajarían a 🟡.**
+3. **El filtro de «cero construcción» lo leí sólo donde disparó** (8 de 49 candidatos). No he leído las
+   41 entradas que no disparó, así que **no puedo afirmar que no haya más**. Es el hueco nº 2 del 7-sep,
+   sin cerrar.
+4. **La patología del SCRUM-727 sigue viva**: una entrada puede llevar el número de un ticket y hablar
+   de otro asunto. No hay discriminador mecánico barato — este ticket ya probó dos y los tiró.
+5. **(b) no distingue quién borró la rama.** Ver §3.
+6. **Mi propio error, declarado:** el primer detector de autoría exigía que el asunto EMPEZARA por
+   `SCRUM-N`, y esta casa escribe `docs(SCRUM-331):` y `feat(SCRUM-333):`. Daba **cero commits de
+   autoría** a tickets que sí los tenían, y lo cazó un control sobre cuatro casos conocidos, no la
+   lectura del resultado. El resultado se leía perfectamente creíble.
+
+## 11 · Lo que NO se ha tocado
+
+Jira (ni una transición, ni un comentario) · ninguna rama ajena · ningún `git stash` ·
+`prisma/schema.prisma` · `src/` · los instrumentos del censo · ningún guard. Sólo `fetch`, `ls-remote`,
+`merge-base`, `log` y `for-each-ref`: lectura. El único fichero escrito es éste.
