@@ -33,6 +33,7 @@ import { exigirNombreFirmante, normalizarLugarEntrega, resolverCalidadFirmante }
 // SCRUM-361 (H6 · fase 2): dos editores a la vez dejaban de existir el uno para el otro.
 import { puedeEditarEstaVersion } from '../../domain/albaranEdicion';
 import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-467
+import { esSuyoElTrabajo, SELECT_DUENOS } from '../../domain/accesoAlTrabajo'; // SCRUM-849
 import { fotoYaSubida } from '../../domain/fotoDuplicada'; // SCRUM-382: la misma foto no se guarda dos veces
 import { getPendientesFacturar } from '../../domain/pendientesFacturar.service'; // SCRUM-69
 // SCRUM-606 (ALB-01): el buscador de «Nuevo albarán». La búsqueda se REUTILIZA (no se reescribe)
@@ -546,11 +547,36 @@ type FindAlbaranResult =
   | { ok: false; status: 400 | 404 }
   | { ok: true; albaran: NonNullable<Awaited<ReturnType<typeof prisma.albaran.findFirst>>> };
 
+// ── 🔴 SCRUM-849 · AQUI NO SE COMPROBABA DE QUIEN ES EL TRABAJO ──────────────────────────
+//
+// Este helper es la puerta por la que pasan ONCE handlers de `/admin/albaranes/:id` — las siete
+// escrituras del censo, las cuatro admin-only y los dos GET de `/pdf` y `/fotos` — y solo
+// filtraba por merchant (regla 2). El efecto medido: `GET /admin/albaranes/:id` devolvia 404
+// sobre la obra de otro tecnico y `POST /admin/albaranes/:id/firmar` sobre ESE MISMO id
+// funcionaba. Se podia firmar un albaran que no se podia ni abrir.
+//
+// 🔴 EL ARREGLO VA AQUI Y NO EN LOS ONCE SITIOS, y es lo importante del diff: once copias de una
+// comprobacion de acceso divergen, y la que se queda atras no da error, da ACCESO. Un handler
+// nuevo que use `findAlbaran` nace protegido sin que nadie se acuerde.
+//
+// Para el ADMIN no cambia nada: `seesOnlyOwnJobs('admin')` es false y no se pide el Trabajo, asi
+// que las cuatro rutas con `requireRole('admin')` siguen costando los mismos viajes.
+//
+// 404 y no 403, igual que las tres lineas de arriba y que `GET /:id`: el codigo de estado no
+// puede decirle si el documento existe.
 async function findAlbaran(req: any): Promise<FindAlbaranResult> {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) return { ok: false, status: 400 };
   const albaran = await prisma.albaran.findFirst({ where: { id, merchantId: req.merchantId } });
-  return albaran ? { ok: true, albaran } : { ok: false, status: 404 };
+  if (!albaran) return { ok: false, status: 404 };
+  if (seesOnlyOwnJobs(req.userRole)) {
+    const job = await prisma.job.findFirst({
+      where: { id: albaran.jobId, merchantId: req.merchantId },
+      select: SELECT_DUENOS,
+    });
+    if (!esSuyoElTrabajo(job, req.teamMemberId)) return { ok: false, status: 404 };
+  }
+  return { ok: true, albaran };
 }
 
 // PATCH /admin/albaranes/:id — editar lineas/notas/fecha SOLO si no está firmado.
