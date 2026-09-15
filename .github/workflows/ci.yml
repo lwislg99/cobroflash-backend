@@ -284,21 +284,7 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      # 🔴 SCRUM-831 · `guard:lista-trabajos` añadió un check («las hermanas») que compara el
-      # árbol de hoy contra el PUNTO DE PARTIDA de la rama (`merge-base HEAD origin/main`, vía
-      # `baseDeLaRama`/SCRUM-723). Un checkout desnudo no trae ni la historia ni la rama `main`,
-      # así que esa referencia no resuelve y el check se declara CIEGO — correctamente: no cae
-      # hacia la punta de `origin/main`, que es justo el defecto que SCRUM-723 quitó.
-      #
-      # Hacen falta LAS DOS COSAS, medido ya en `meta-mutaciones` (SCRUM-765) y en el vigía
-      # (SCRUM-716b) por el mismo motivo: en un `pull_request`, `fetch-depth: 0` trae historia
-      # completa pero UNA sola ref, y `origin/main` no resuelve sin el fetch explícito.
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Traer `main` (guard:lista-trabajos compara contra su base de fusión)
-        run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
 
       - uses: actions/setup-node@v4
         with:
