@@ -76,8 +76,37 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // guard. Es la colisión de contador de SCRUM-662 otra vez: dos ramas que añaden cosas distintas
   // no pueden escribir el mismo número. Aquí la resolución correcta es SUMAR —los dos añaden—, y
   // por eso son 15. Ninguno de los dos comentarios se tira: cada uno dice por qué sube el suyo.
-  assert.equal(fuera.length, 15,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ 15 → ${fuera.length}.\n`
+  //
+  // ⚠️⚠️ Y HA PASADO TRES VECES: SCRUM-662, luego SCRUM-722 + SCRUM-819, y ahora SCRUM-816, que
+  // llegaba con «14 → 15» escrito cuando `main` ya estaba en 15. No es mala suerte: es lo que
+  // hace un contador escrito a mano en un fichero que varias ramas tocan a la vez, y por eso la
+  // marca de conflicto sólo sale en los COMENTARIOS — el `assert.equal` de abajo no la lleva, así
+  // que git lo auto-mezcla y el fichero queda mintiendo sin que nadie lo vea.
+  // 🔴 LA RESOLUCIÓN CORRECTA ES SIEMPRE LA MISMA, Y NUNCA ES ELEGIR UN LADO NI CALCULAR: se
+  // SUMAN los comentarios —cada rama añade el suyo, ninguno se tira— y después se vuelve a MEDIR
+  // corriendo este test, que imprime lo que `fueraDeLaTanda` devuelve de verdad. Poner el número
+  // por aritmética es exactamente el fallo que este fichero existe para denunciar: quien lo hace
+  // ajusta el número a lo que esperaba en vez de a lo que hay.
+  // SCRUM-816 · 15 → 16: entra `guard:lista-trabajos`, y sube por un motivo NUEVO en esta lista:
+  // los quince anteriores OBSERVAN una pantalla (miden una caja, leen un árbol, buscan un
+  // marcador); éste la PULSA. Tiene que probar que el clic en el desplegable de técnicos asigna
+  // sin navegar y que el clic en la fila navega sin asignar — dos afirmaciones sobre lo que pasa
+  // DESPUÉS de un gesto, y eso no existe en un DOM servido muerto. Por lo mismo no podía usar
+  // `_pagina-panel.mjs`, que serializa el mini-DOM: carga los scripts de verdad en el navegador.
+  // Comprobado en rojo quitando `[data-fila-no-navega]`: caen las dos afirmaciones de ①.
+  // SCRUM-823 · 16 → 17: entra `guard:escalera-por-estado`. Sube por el motivo de SCRUM-816 —
+  // PULSA, no observa— y por uno propio: es el único que monta LAS DOS pantallas del Trabajo a la
+  // vez y compara lo que dicen. La escalera es una sola función, pero «llamar a la misma función»
+  // no garantiza «decir y poder hacer lo mismo»: medido, el detalle pintaba el rótulo nuevo y se
+  // quedaba en «Enviando…» para siempre. Eso sólo se ve pulsando en las dos.
+  // Comprobado en rojo quitando la rama de `agendar` del detalle: cae ② nombrando el botón colgado.
+  // SCRUM-831 · 17 → 18: entra `guard:albaranes-con-acciones`. Sube por el motivo de SCRUM-816
+  // —PULSA— y por uno propio: es el único que juzga si una lista OFRECE el siguiente paso de cada
+  // fila, que no es una caja ni un rótulo sino una decisión de producto. Y lleva una comprobación
+  // que ninguno de los diecisiete tenía: que el rótulo no sea un IDENTIFICADOR. Su primera pasada
+  // salió verde con «btnConvertirFactura» en pantalla porque contaba acciones sin mirar qué dicen.
+  assert.equal(fuera.length, 18,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ 18 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);

@@ -545,6 +545,16 @@ test('SCRUM-754b · 🔴 EL CASO QUE DECIDE: un fichero que NACE Y MUERE se denu
   try {
     const dir = path.join(raiz, 'tests');
     fs.mkdirSync(dir);
+    // 🔴 EL DIRECTORIO SE DEJA CLARAMENTE EN EL PASADO ANTES DE MEDIR, igual que hacen los dos
+    // casos de abajo. Sin esto el caso era NO DETERMINISTA —medido: 2 fallos de 5 pasadas— porque
+    // `mkdirSync` y el transitorio pueden caer en el MISMO tic de `mtime` del sistema de ficheros,
+    // y entonces las dos huellas traen el mismo valor.
+    //
+    // ⚠️ Esto NO relaja lo que el caso exige: se sigue pidiendo que el `mtime` del directorio
+    // CAMBIE. Lo que se quita es una carrera del fixture consigo mismo. Y es justo el límite ③ que
+    // `_arbol-quieto.mjs` deja escrito (granularidad del FS): aquí se ve en su propia casa.
+    const hace = new Date(Date.now() - 60_000);
+    fs.utimesSync(dir, hace, hace);
     const { huella: antes } = huellaDelPerimetro(raiz, ['tests']);
 
     // Nace y muere DENTRO de la ventana: en las dos fotos está AUSENTE, que es exactamente lo que

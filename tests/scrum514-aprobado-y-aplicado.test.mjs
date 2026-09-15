@@ -137,6 +137,18 @@ function corpus() {
  */
 const APARCADOS = [
   {
+    texto: 'Se acaba de emitir otra factura de este presupuesto. Vuelve a intentarlo y saldra el tramo siguiente.'.replace('saldra', 'saldrá'),
+    motivo: 'APROBADO Y SIN SITIO DONDE PINTARSE (SCRUM-814, 7-sep-2026). Se propuso para el 409 de '
+      + 'una carrera de tramos y el fundador lo firmo sin cambios. Entre la firma y el merge, otra '
+      + 'sesion cerro la misma carrera en `main` con un arreglo MEJOR: recalcula el tramo dentro '
+      + 'del cerrojo, asi que quien llega segundo emite el tramo SIGUIENTE en la misma peticion y '
+      + 'no hay carrera que contarle a nadie. Y en el camino del CLIENTE FINAL tampoco se pinta: '
+      + 'su aceptacion salio bien y su factura existe, asi que no se le dice nada. Se conserva la '
+      + 'firma porque ocurrio; NO se deja una constante sin consumidor en `src/` para justificarla. '
+      + 'Lo desbloquea el fundador el dia que quiera un aviso de «otra peticion se te ha '
+      + 'adelantado»; registro en `docs/microcopy/2026-09-07-SCRUM-814-tramo-tomado.md`.',
+  },
+  {
     texto: 'Válido hasta dentro de 7 días',
     motivo: 'CONSTRUIDO Y SIN CABLEAR (SCRUM-605, 4-sep-2026). El nombre accesible existe en '
       + '`quoteAtajosVencimiento.js` (`nombreAccesibleDeAtajo`) pero la vista pone el MISMO '

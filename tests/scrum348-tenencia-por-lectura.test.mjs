@@ -56,6 +56,10 @@ const CENSO = {
   'src/modules/jobs/app/routes/jobs.routes.ts::quote.findUnique': { veredicto: 'PROCEDENCIA', nota: '`job.quoteId` de un Job ya acotado; su hermana de la misma llamada SÍ filtra' },
   'src/modules/jobs/app/routes/jobs.routes.ts::customer.findUnique': { veredicto: 'PROCEDENCIA', nota: '`job.customerId` de un Job ya acotado (detalle y enriquecido de SCRUM-292)' },
   'src/modules/system/app/routes/quotesAdmin.routes.ts::teamMember.findUnique': { veredicto: 'PROCEDENCIA', nota: '`quote.teamMemberId` de un presupuesto ya leído en la misma ruta' },
+  // SCRUM-814 · el recuento de tramos NO entra en este censo, y merece decirse: la primera
+  // versión filtraba sólo por `quoteId` y habría sido la SEXTA deuda por procedencia, con el tope
+  // en 5. En vez de subir el tope se le puso su `merchantId` —que estaba a mano en `quote`— y
+  // pasó a estar CUBIERTA. Un tope que se sube en cuanto estorba deja de ser un tope.
   'src/modules/exports/app/routes/exports.routes.ts::charge.findMany': { veredicto: 'PLATAFORMA', nota: 'cobros de TODA la plataforma a propósito (marcador de Connect, C1-2)' },
 
 };

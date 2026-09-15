@@ -197,3 +197,73 @@ verdad que se le pone delante no es un barrido ciego: es que no había nada más
 
 Los 102 SKIP no son rojos escondidos: **todos declaran su motivo** (66 `QA_DB_TEST`, 9
 `LIBRO_PG_URL`, el resto con su razón escrita). Un hueco declarado se ve.
+
+---
+
+# SCRUM-822 · FASE 2 · el guard que fallaba COMO SI FUERA UN 404 cuando no podía conectar
+
+**Medido contra:** `origin/main` = `f0ec26e86a04a21e9e60b748b4c7c5c2c83bace9` · 2026-09-08T09:24:13+02:00
+**Carril:** verificación (S5) · `HEAD..origin/main` = 0 tras mezclar sus 134 commits.
+
+La fase 1 arregló el 404 de verdad (un punto en la ruta del árbol). Queda la otra mitad, que es
+la que convirtió aquel incidente en un ticket Highest contra un sistema sano.
+
+## El hecho, y esta vez reproducido a voluntad
+
+`scrum329-legal-pagina-publica` pedía con `fetch` sobre su propio `app.listen(0)`. **Medido antes
+de tocar nada, con 24 instancias en paralelo y 12 procesos quemando CPU: 24 de 24 abortaban, con
+72 `fetch failed`.** A una sola instancia no se reproduce NUNCA —0 de 20— y por eso vivió meses.
+
+> 🔒 Un defecto que sólo aparece bajo concurrencia no es «raro»: es **invisible en la única
+> condición en la que la gente lo prueba**, y visible justo en la que decide el merge.
+
+## 🔴 Y lo grave no era el aborto: era CÓMO lo contaba
+
+En el bucle de enlaces, un `status: 0` —no pude conectar— caía en el **mismo cubo** que un 404, y
+el assert lo publicaba como *«enlaces públicos rotos»*. O sea: **el instrumento, cuando no podía
+mirar, acusaba al producto**. Es la misma familia que «un cero no es *está limpio*, es *no he
+mirado*», y el precio está medido: una tanda entera perdida y un Highest abierto contra una
+landing sana.
+
+El suelo `bancoMudo()` no bastaba: mira UNA ruta al principio, así que si el servidor enmudecía a
+mitad del bucle, **todos** los enlaces siguientes salían acusados.
+
+## Lo que se hace
+
+1. **Fuera `fetch`**, con el patrón que SCRUM-560 ya dejó probado en `scrum334` (`efe1004f`):
+   `http.request` con `agent: false` — sin pool, cada petición abre y cierra su conexión.
+2. **Dos cubos separados**, petición a petición: `sin-respuesta` (CIEGO, no se acusa a nadie) y
+   `roto`/`vacio` (defecto real). La decisión vive en `clasificar()`, una función pura y
+   exportada, para que se pueda probar sin levantar nada.
+3. `scrum329` **sale de `CON_EL_PATRON_YA`** en este mismo commit, como su guard exige: *«una
+   lista que sobrevive a su causa deja de ser una fecha y pasa a ser un permiso»*. Era el
+   «segundo que aborta» que aquella lista se dejó anotado como condición para reabrirse.
+
+## Verificación
+
+| | antes | después |
+| --- | --- | --- |
+| 24 instancias en paralelo + 12 quemando CPU | **24 de 24 abortan** (72 `fetch failed`) | **0 de 24** |
+| una sola instancia | 0 de 20 | 0 de 20 |
+
+* ✅ **CONTROL POSITIVO:** roto `href="/privacidad"` → `href="/privacidad-roto"` en `index.html`,
+  **los dos guards siguen cayendo** y nombrando `/privacidad-roto → 404 (enlazado desde
+  public/index.html)`. Dice **404**, no «sin respuesta»: la distinción aguanta en los dos sentidos.
+* 🔴 **CONTROL NEGATIVO, el corazón:** contra un puerto **muerto de verdad** —se abre uno, se lee
+  su número y se cierra— el estado es `0`, `clasificar` lo manda a `sin-respuesta`, y su mensaje
+  **no contiene la cadena «404»**. Y con su mitad positiva pegada: un 404 real sigue siendo
+  `roto`, una legal casi vacía sigue siendo `vacio`, y una legal con contenido sigue siendo `ok`.
+  Sin esa mitad, un clasificador que dijera «sin-respuesta» a todo habría pasado — y sería un
+  guard apagado.
+* 🔴 **El guard hermano probado EN ROJO:** devuelto un `fetch` DENTRO DE UN BUCLE a `scrum329`,
+  SCRUM-560 cae nombrando fichero y motivo; retirado, vuelve a verde. Y al primer intento **NO**
+  cayó porque puse un `fetch` suelto: el umbral son 3 sueltos o 1 en bucle. El caso estaba mal
+  elegido, no sobraba el guard.
+
+## Nota sobre el número, que no decido yo
+
+`SCRUM-822` nombra ya tres cosas: el título en Jira (*«dan 404 en local»*, premisa que resultó
+falsa), la fase 1 de este mismo fichero (*«un punto en la ruta del árbol»*) y esta fase 2 (*la
+intermitencia*). Las tres pertenecen al mismo incidente, así que conviven aquí con su fecha; pero
+es la forma exacta que `scripts/verificacion-s5/enlace-ticket-rama.mjs` marca como AMBIGUA, y lo
+hará en cuanto se refresque la foto de asuntos. Jira lo lleva el asesor.

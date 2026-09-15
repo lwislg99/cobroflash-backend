@@ -144,7 +144,11 @@ test('SCRUM-445 · ROJO POR EL MECANISMO: la escritura de `chargeId` sigue ahí'
   const fs = require$$fs();
   const s = fs.readFileSync(new URL('../src/lib/invoicing.ts', import.meta.url), 'utf8');
   const sinComentarios = soloEjecutable(s);
-  assert.match(sinComentarios, /tx\.invoice\.create\(\{[\s\S]{0,400}?chargeId:\s*ch\.id/,
+  // SCRUM-729 · la creación pasó de `tx.invoice.create({ data: … })` al envoltorio
+  // `crearFacturaEmitida(tx, cliente, { … })`, único creador de facturas del backend. Se aceptan
+  // LAS DOS formas y se sigue exigiendo exactamente lo mismo: que `chargeId: ch.id` esté DENTRO
+  // de la creación. Lo que este guard vigila no cambia; cambió dónde hay que mirarlo.
+  assert.match(sinComentarios, /(?:tx\.invoice\.create\(\{|crearFacturaEmitida\()[\s\S]{0,600}?chargeId:\s*ch\.id/,
     '🔴 `ensureInvoiceForCharge` ha DEJADO DE ESCRIBIR `Invoice.chargeId`.\n\n'
     + '  Sin ese vínculo, cada cobro por pasarela vuelve a salir DOS VECES en la pantalla de\n'
     + '  Cobros: una por su `Charge` y otra por su `Invoice`, porque nada las relaciona. La\n'

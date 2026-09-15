@@ -15,6 +15,26 @@
 // entre los dos entornos es `# skipped` (84 en local, 74 en el CI: allí hay bases de datos que
 // aquí no) y algún `# fail`. Pero `# skipped` no entra en `# tests`, que es lo que se compara.
 //
+// ── ✅ SCRUM-708 (8-sep-2026) · Y ESO YA NO SE APOYA SÓLO EN DOS ÁRBOLES ─────────────────
+// Este ticket dejó declarado un hueco encima de la refutación de arriba: **se sostiene en dos
+// árboles, y un tercero podría comportarse distinto.** Cerrado, y sin necesitar un tercer
+// sistema operativo, porque la propiedad tiene CAUSA y la causa se mide desde cualquier máquina:
+//
+//   🔒 `# tests` sólo puede cambiar entre entornos si una lectura del entorno decide que un test
+//      SE REGISTRE. Un `skip` no vale: un test saltado se registra igual y suma en `# tests`
+//      —por eso `# skipped` va aparte—, así que saltar más o menos cosas no mueve el número.
+//
+// Medido por AST sobre los **1.009 `.mjs` de `tests/` y `scripts/`** —`if`, ternario y `&&`, y
+// siguiendo también las variables que nacen del entorno—: **0 ficheros condicionan el registro de
+// un test al entorno.** Con control positivo del instrumento: un cebo `if (process.env.CI) test(…)`
+// sí sale, así que el cero no es ceguera.
+//
+// ⚠️ Y el caso que quedaba fuera de ese barrido —un fichero que REVIENTE al cargar en otro SO, y
+// que por tanto no registre nada— **lo caza el detector de mudos de este mismo fichero**: `node
+// --test` emite `not ok N - fichero.test.mjs`, que es exactamente su patrón. No hace falta el
+// tercer árbol para saberlo; haría falta para el registro DINÁMICO sobre una colección que
+// dependiera del entorno, que no se ha encontrado ninguno pero tampoco se ha barrido como tal.
+//
 // ── LO QUE ERA: EL ÁRBOL, NO LA MÁQUINA ─────────────────────────────────────────────────
 //
 // El suelo se DECLARA en un commit y se EVALÚA en otro, y `main` se mueve deprisa. Medido sobre
@@ -197,11 +217,31 @@ test('SCRUM-702 · CONTROL NEGATIVO: por encima del suelo y sin mudos, no dice n
 // portátil. Heredarla haría que en CI emitiera sus anotaciones `::error` y el test midiera
 // una cosa distinta en cada sitio, que es exactamente lo que este guard existe para impedir.
 // Es la misma decisión, y por el mismo motivo, que ya tomó `scrum727-constancia-del-vigia`.
-const TOPE_LEEN_EL_ENTORNO = 14;
+// 🔴 SCRUM-708 (8-sep-2026) · SUBE A 15, y NO por un fichero nuevo: por uno que YA ESTABA y el
+// censo no veía. Medido sobre `origin/main` = f1c84a8a: el censo veía 14 de 14, justo en su
+// propio tope, y se le escapaba `tests/_banco-camino-real.mjs:125`:
+//
+//     process.env.NODE_ENV = process.env.NODE_ENV || 'test';
+//
+// No es una lectura cualquiera. Ese banco monta la app REAL para medir PERMISOS, y NODE_ENV
+// decide QUÉ app se monta: `/dev` (`app.ts:371`), `/outbox` (`app.ts:186`), el `isProd` de
+// `authMiddleware.ts:80`, el modo de MercadoPago y los `throw` de `env.ts`. Con NODE_ENV puesto,
+// ese banco mediría OTRA superficie — y su propia cabecera dice que eso, en un test de permisos,
+// «es lo peor que puede pasar».
+//
+// ⚠️ HOY NO DIVERGE: ni `ci.yml` ni el arranque local fijan NODE_ENV, así que en los dos sitios
+// vale `test`. Pero «hoy no diverge» y «no puede divergir» no son lo mismo, y el censo no podía
+// notar la diferencia porque no miraba esa señal.
+//
+// 🔒 Y ÉSE ES EL PATRÓN, no el descuido: las señales están PARTIDAS para que el censo no se cace
+// a sí mismo, y ese mismo cuidado es lo que deja la lista cerrada en cuatro. Lo que protege la
+// lista de la autorreferencia es lo mismo que impide que crezca. El blindaje es correcto y no se
+// toca; lo que se amplía es lo que MIRA.
+const TOPE_LEEN_EL_ENTORNO = 15;
 
 /**
  * 🔴 PARTIDAS A PROPÓSITO, para que el censo NO SE CACE A SÍ MISMO. Escritas enteras, este
- * fichero contendría las cuatro señales en su propio código y se contaría — que es el error que
+ * fichero contendría TODAS las señales en su propio código y se contaría — que es el error que
  * `scrum636` documenta al revés («escrita entera para que el censo no se cace solo», porque allí
  * la trampa era la contraria). La alternativa, excluirse de la lista, es peor: dejaría este
  * fichero fuera de vigilancia para siempre.
@@ -211,6 +251,7 @@ const SENALES = [
   'GITHUB' + '_ACTIONS',
   'process' + '.platform',
   'process.env' + '.RUNNER',
+  'process.env' + '.NODE_ENV',
 ];
 
 function censoDeEntorno() {
@@ -237,6 +278,19 @@ test('SCRUM-702 · 🔴 SUELO: el censo de dependencias del entorno VE las que h
   assert.ok(censo.some((f) => f.startsWith('tests/scrum480-fin-de-linea')),
     '🔴 el censo no ve `scrum480`, que es la que se encontró por accidente y sí condiciona un '
     + 'assert. Si no la ve, no está midiendo lo que dice.');
+});
+
+test('SCRUM-708 · 🔴 el censo SIGUE viendo la lectura de NODE_ENV que se le escapaba', () => {
+  // El tope es un `<=`: si alguien quita `NODE_ENV` de SENALES, el censo baja de 15 a 14, cumple
+  // el tope y SE QUEDA VERDE. El hallazgo se desharía solo y sin ruido. Por eso esto no mira el
+  // número: mira el FICHERO, que es lo que el censo dejó de ver durante SCRUM-702 entero.
+  const censo = censoDeEntorno();
+  assert.ok(censo.some((f) => f.startsWith('tests/_banco-camino-real.mjs')),
+    '🔴 el censo ha dejado de ver `tests/_banco-camino-real.mjs`, que lee NODE_ENV y monta la app '
+    + 'REAL para medir permisos. NODE_ENV decide QUÉ app se monta (/dev, /outbox, el isProd de '
+    + 'authMiddleware, MercadoPago, los throw de env.ts). Si esta señal se ha quitado de SENALES, '
+    + 'el censo vuelve a 14, cumple el tope y no dice nada: ése es el defecto que SCRUM-708 midió.'
+    + '\n  ' + censo.join('\n  '));
 });
 
 test('SCRUM-702 · 🔴 no entra NINGUNA dependencia del entorno nueva sin declararla', () => {

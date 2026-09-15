@@ -55,6 +55,20 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
  * anclar sólo el total dejaría pasar un trasvase silencioso entre categorías — que es
  * exactamente cómo este defecto se disolvería sin que nadie lo viera.
  */
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 8-sep-2026 · ESTE NÚMERO SE REGENERÓ EN UN MERGE, Y LA PREDICCIÓN ERA FALSA.
+//
+// Dos ramas subieron `aPelo` de 151 a 152 el mismo día, cada una por SU literal. Al mezclarlas
+// razoné que el árbol fusionado tendría los dos y que el número sería 153. **El censo dijo 152**,
+// y tenía razón: al ceder el arreglo de SCRUM-814 a la versión de `main` se retiró el módulo que
+// llevaba mi literal, así que sólo queda el suyo. Lo mismo con `NO_LEGIBLES_AL_MEDIR`, que
+// vuelve a 31.
+//
+// Es exactamente por esto por lo que una cifra derivada NO SE ELIGE NI SE DEDUCE: se recalcula
+// con el generador sobre el árbol que va a quedar. Mi «153» habría sido un ancla que miente por
+// uno, y un ancla que miente por uno deja pasar el siguiente cambio sin decir nada.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+
 // 🔴 151 → 152 · 7-sep-2026 (SCRUM-805) · CUÁL SE MOVIÓ Y POR QUÉ, que es lo que este trinquete
 // pide antes de tocar el número. NO es un trasvase entre categorías —ninguno pasó de «flag» a «a
 // pelo»—: es UN literal NUEVO en `pdf/pdf.service.ts`, el pie del PDF del presupuesto:
@@ -66,6 +80,7 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // depende de si el merchant emite facturas o justificantes — dice lo mismo en los dos casos, y
 // con el flag OFF sigue siendo cierto. NO va a `PENDIENTES_DE_FIRMA`: es copy YA APROBADA
 // (SCRUM-67), copiada byte a byte del PDF del albarán y refirmada por el fundador para este uso.
+
 const VEREDICTO_AL_MEDIR = { flag: 16, tipo: 7, aPelo: 152 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
@@ -156,6 +171,11 @@ test('SCRUM-601 · EL VEREDICTO: las tres categorías, ancladas, y SUMAN', () =>
  *
  * Medido el 6-sep-2026 sobre `main` = 00c6cb0c (re-medido tras mezclarlo: la población pasó a 356 ficheros y 19.978 literales, y el reparto NO se movió).
  */
+// 8-sep-2026 · sigue en 31, MEDIDO tras el merge. Mi rama lo había subido a 32 porque el texto
+// del 409 llegaba al sumidero por REFERENCIA desde su única constante —el +1 lo producía hacer lo
+// correcto—, pero ese arreglo cedió al de `main` y la constante ya no existe. El caso queda
+// anotado en `docs/master/SCRUM-814.md`: un censo que penaliza centralizar copy empuja a
+// duplicarla, y eso hay que verlo venir antes de que empuje a nadie.
 const NO_LEGIBLES_AL_MEDIR = 31;
 
 test('SCRUM-601 · el censo DECLARA lo que no sabe leer, y esa lista no crece sola', () => {

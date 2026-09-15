@@ -189,7 +189,37 @@ test('SCRUM-716c · 🔴 TODO job que le da `VIGIA_ESTADO` al vigía tiene su ca
 // `/version` propio, con un `VIGIA_ESTADO` real entre medias.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-/** Un repo de usar y tirar con tres commits VIEJOS y `origin/main` en el tercero. */
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// 🗃️ SCRUM-824b · AQUÍ VIVÍA EL MINADO DEL FIXTURE. SE RETIRA, y queda dicho por qué.
+//
+// ── QUÉ HABÍA, Y QUE NO ERA UNA TONTERÍA ────────────────────────────────────────────────
+// `prefijoIlegible()` y `commitHastaShaLegible()`: el fixture comítaba en bucle, corriendo la
+// fecha un segundo por vuelta, hasta que los ocho primeros del sha NO fueran todo dígitos.
+// Existía por algo real y bien medido: `repoDePrueba()` produce uno de esos una vez de cada 43,
+// el vigía lo rechazaba, y estos casos salían rojos en un ~2,3 % de las pasadas sin que nadie
+// hubiera tocado nada. Ese diagnóstico era CORRECTO, y es lo que permitió llegar al defecto.
+//
+// ── POR QUÉ DEJA DE SER CIERTO ────────────────────────────────────────────────────────────
+// Porque lo que se arregló en SCRUM-824b fue el VIGÍA, no el fixture. `shaLegible()` rechazaba
+// todo sha de sólo dígitos para callar el reloj que publica el fallback de `env.ts` cuando falta
+// `RAILWAY_GIT_COMMIT_SHA`. Pero un reloj tiene 10 o 13 dígitos y un sha corto tiene 8: el
+// filtro se llevaba por delante commits perfectamente legibles. Ahora decide la LONGITUD, y un
+// sha de ocho dígitos SE LEE. Minarlo sería esquivar un caso que el vigía ya atiende — y peor:
+// el fixture evitaría justo la única entrada que prueba el arreglo.
+//
+// 🔴 Y NO ES UN APAGADO, QUE ES LO ÚNICO QUE IMPORTA AL RETIRAR UN CONTROL. El rechazo del
+// RELOJ sigue entero y con dos negativos: el del CRITERIO, en
+// `tests/scrum824b-el-sha-que-parecia-un-numero.test.mjs`, y el de PUNTA A PUNTA por el CLI, AL
+// FINAL DE ESTE FICHERO — el sucesor del ⑤ que aquí se retira. Y `repoDePrueba()` vuelve a
+// comitar normal, así que un sha de ocho dígitos ENTRA aquí cuando el azar lo trae, y sale verde.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Un repo de usar y tirar con tres commits VIEJOS y `origin/main` en el tercero.
+ *
+ * Los shas salen COMO SALGAN: desde SCRUM-824b el vigía lee un sha corto de sólo dígitos, así
+ * que ya no hay nada que esquivar. La constancia de la retirada, en el bloque de aquí arriba.
+ */
 function repoDePrueba() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum716c-'));
   const g = (...a) => String(execFileSync('git', a, { cwd: dir, encoding: 'utf8' })).trim();
@@ -199,12 +229,17 @@ function repoDePrueba() {
   const shas = [];
   for (let k = 0; k < 3; k++) {
     // Fechados MUY atrás para que el hueco supere el margen de 6 h sin depender del reloj.
-    const cuando = new Date(Date.now() - (72 - k * 12) * 3600 * 1000).toISOString();
+    //
+    // 🔴 SIN MINAR, A PROPÓSITO. Aquí hubo un bucle que repetía el commit hasta que los ocho
+    // primeros del sha no fueran todo dígitos; se retiró en SCRUM-824b y el porqué está escrito
+    // arriba. Que el azar traiga uno de esos —una vez de cada 43— es ahora una ENTRADA VÁLIDA
+    // que el vigía tiene que saber leer, no un caso que este fixture deba esquivar.
+    const iso = new Date(Date.now() - (72 - k * 12) * 3600 * 1000).toISOString();
     execFileSync('git', ['commit', '--allow-empty', '-q', '-m', 'c' + k], {
-      cwd: dir,
-      env: { ...process.env, GIT_AUTHOR_DATE: cuando, GIT_COMMITTER_DATE: cuando },
+      cwd: dir, env: { ...process.env, GIT_AUTHOR_DATE: iso, GIT_COMMITTER_DATE: iso },
     });
-    shas.push(g('rev-parse', 'HEAD'));
+    const sha = g('rev-parse', 'HEAD');
+    shas.push(sha);
   }
   g('update-ref', 'refs/remotes/origin/main', shas[2]);
   return { dir, shas };
@@ -376,4 +411,77 @@ test('SCRUM-716c · ✅ CONTROL: el arreglo no ha tocado lo que el vigía DECIDE
   assert.match(jobDe(leer(CI), 'vigia-despliegue'), /continue-on-error:\s*true/,
     '🔴 el vigía de PR ha dejado de ser informativo. Un check bloqueante le cierra la puerta a la '
     + 'rama que viene a arreglar el despliegue que él mismo está midiendo.');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-824b · EL SUCESOR DEL ⑤ RETIRADO: LA PREGUNTA SIGUE VIVA, LO QUE MURIÓ ES SU FIXTURE
+//
+// El ⑤ de SCRUM-824 preguntaba lo correcto —«con una lectura anterior que NO se puede leer, ¿el
+// vigía SIGUE diciendo NO SE SABE?»— y por el camino bueno: el CLI de verdad, con su código de
+// salida y su motivo. Lo que se quedó sin valer es CON QUÉ lo preguntaba: sembraba `12345678…`
+// como ejemplo de «ilegible», y desde SCRUM-824b ese sha SE LEE. Un control cuyo caso de prueba
+// ha dejado de ser el caso no mide lo que su nombre dice — mide otra cosa, y en verde.
+//
+// ── QUÉ FIXTURE SIRVE HOY, MEDIDO Y NO SUPUESTO ─────────────────────────────────────────────
+// Se probaron los candidatos contra la cadena real, y sólo uno llega a la rama que interesa:
+//
+//     prod=1788742571305  → SÍ parsea · «la lectura anterior no publica un sha legible»  ← ÉSTA
+//     prod=1788742571     → SÍ parsea · misma rama (epoch en segundos)
+//     prod=40606975       → SÍ parsea · «despliega»   ← ya se lee: es el arreglo de 824b
+//     prod=?              → NO parsea · «no hay lectura anterior»  ← OTRA rama, la de más arriba
+//
+// 🔴 Y ESO ES UN SUELO, NO UN DETALLE: el primer intento de este control sembró `prod=?` dando
+// por hecho que «ilegible es ilegible». Salía en exit 2, o sea VERDE, pero por la rama de «no hay
+// lectura anterior»: habría sustituido al ⑤ sin cubrir nada de lo que el ⑤ cubría. Por eso abajo
+// se comprueba que el renglón sembrado PARSEA antes de creerse el veredicto.
+//
+// ── POR QUÉ SE SUSTITUYE EL CAMPO A MANO, Y POR QUÉ ES LEGÍTIMO ─────────────────────────────
+// `corto()` hoy escribe `?` ante un reloj, así que ESTE vigía no produce ya un renglón así. Pero
+// el fichero de constancias es una CACHÉ que sobrevive al código que la escribió: se restaura
+// entre ejecuciones, y una línea que esta versión no escribiría puede llegarle igual. Para eso
+// existe el suelo. El FORMATO se le sigue pidiendo al formateador de verdad; lo único que se
+// sustituye es el campo que este control interroga.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+test(String.raw`SCRUM-824b · 🔴 EL NEGATIVO: si la lectura anterior no publica un sha legible, el vigía SIGUE diciendo NO SE SABE`, async () => {
+  const { constanciaDeEjecucion } = await import('../scripts/_vigilante-de-despliegue.mjs');
+  const { lecturaDeLaConstancia } = await import('../scripts/_ritmo-de-despliegue.mjs');
+  const { dir, shas } = repoDePrueba();
+  const srv = await servidorDeVersion();
+  const estado = path.join(dir, '.vigia', 'constancias.log');
+  const RELOJ = '1788742571305';   // `String(Date.now())`, el fallback de `env.ts`, tal cual
+  try {
+    const { renglon } = constanciaDeEjecucion(
+      { veredicto: 'atrasado', horas: 48, titulo: '' },
+      { versionDeProduccion: shas[0], shaDeMain: shas[2], commitsPorDelante: 2, ahoraEpoch: 1757000000 },
+    );
+    const sembrado = renglon.replace('prod=' + shas[0].slice(0, 8), 'prod=' + RELOJ);
+
+    // 🔴 LOS DOS SUELOS, y el segundo es el que cazó el primer intento de este control.
+    assert.ok(sembrado.includes('prod=' + RELOJ + ' '),
+      '🔴 CIEGO: no he conseguido dejar el reloj en el campo `prod=`, así que lo de abajo no '
+      + 'prueba el caso ilegible: ' + sembrado);
+    assert.ok(lecturaDeLaConstancia(sembrado),
+      '🔴 CIEGO: el renglón sembrado NO PARSEA como lectura, así que el vigía dirá NO SE SABE por '
+      + '«no hay lectura anterior» y este control saldría verde sin haber tocado la rama que dice '
+      + 'vigilar. Es exactamente lo que pasó con `prod=?` al escribirlo.');
+
+    fs.mkdirSync(path.dirname(estado), { recursive: true });
+    fs.writeFileSync(estado, sembrado + '\n', 'utf8');
+
+    srv.di(shas[1]);
+    const p = await corre({ cwd: dir, url: srv.url, estado });
+
+    assert.equal(p.codigo, 2,
+      '🔴 con una lectura anterior que NO se puede leer, el vigía ha contestado algo distinto de '
+      + 'NO SE SABE. Eso es inventarse la mitad que falta, y es justo lo que su `shaLegible` '
+      + 'existe para impedir. Leer el sha corto de ocho dígitos (SCRUM-824b) NO se paga con esto.\n' + p.salida);
+    assert.match(p.salida, /no publica un sha legible/,
+      '🔴 dice NO SE SABE, pero por otro motivo: no ha entrado por la rama de la lectura anterior '
+      + 'ilegible, que es la única que este control cubre. El motivo es además lo que permitió '
+      + 'DIAGNOSTICAR esto; sin él, SCRUM-824 habría sido otra semana de hipótesis.\n' + p.salida);
+  } finally {
+    await srv.cierra();
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });

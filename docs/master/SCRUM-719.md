@@ -8,7 +8,7 @@
 
 ---
 
-## 1 · PASO 0 (regla 39) · el número que vale es otro, y el instrumento que lo dice también
+## 1 · PASO 0 (cita de regla RETIRADA — SCRUM-637) · el número que vale es otro, y el instrumento que lo dice también
 
 El encargo hablaba de **doce**, salidos de romper `soloEjecutable` sobre los 24 guards que
 SCRUM-700b migró. Remedido hoy sobre **toda** la población —los guards que llaman al filtro, no

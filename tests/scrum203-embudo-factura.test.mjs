@@ -80,8 +80,21 @@ test('SCRUM-203 · ninguna creación de factura en src/ se salta el embudo', () 
  * fichero+cantidad, un camino nuevo sigue saliendo rojo, que es lo que se vigila; el mensaje
  * del fallo sí da la línea exacta.
  */
+/**
+ * 🔴 SCRUM-729 · ESTA CIFRA SE REGENERÓ CON EL ANALIZADOR DE LA CASA, no se dedujo.
+ *
+ * Los siete `tx.invoice.create` pasaron a `crearFacturaEmitida` (un solo sitio donde escribir el
+ * cliente congelado). Las SIETE entradas de abajo son las mismas siete de siempre —el analizador
+ * ahora las ve como llamadas al envoltorio y les hace la MISMA pregunta— y la octava es el
+ * `create` de dentro del envoltorio, o sea la implementación.
+ *
+ * 7 → 8 no es un camino nuevo de emisión: es el mismo mapa con su implementación contada aparte.
+ * Y ese octavo es el que hace fuerte al resto: mientras esté ahí y sea uno solo, no hay ninguna
+ * otra puerta por la que nazca una factura sin cliente congelado.
+ */
 const CENSO_SRC = {
   'src/lib/invoicing.ts': 1,                                          // charge pagado → factura
+  'src/modules/invoicing/domain/crearFacturaEmitida.ts': 1,           // SCRUM-729: el ÚNICO create
   'src/modules/invoicing/domain/invoicing.service.ts': 1,             // emitInvoice(): el compartido
   'src/modules/jobs/app/routes/jobs.routes.ts': 1,                    // tramo de trabajo
   'src/modules/quotes/app/routes/quotes.routes.ts': 1,                // tramo al aceptar presupuesto

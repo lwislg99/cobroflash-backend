@@ -33,6 +33,7 @@ import { exigirNombreFirmante, normalizarLugarEntrega, resolverCalidadFirmante }
 // SCRUM-361 (H6 · fase 2): dos editores a la vez dejaban de existir el uno para el otro.
 import { puedeEditarEstaVersion } from '../../domain/albaranEdicion';
 import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-467
+import { esSuyoElTrabajo, SELECT_DUENOS } from '../../domain/accesoAlTrabajo'; // SCRUM-849
 import { fotoYaSubida } from '../../domain/fotoDuplicada'; // SCRUM-382: la misma foto no se guarda dos veces
 import { getPendientesFacturar } from '../../domain/pendientesFacturar.service'; // SCRUM-69
 // SCRUM-606 (ALB-01): el buscador de «Nuevo albarán». La búsqueda se REUTILIZA (no se reescribe)
@@ -57,6 +58,8 @@ import {
   validarPeticionParcial,
 } from '../../domain/albaranFacturacion';
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service';
+import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
+import { datosDeAlbaranEmitido } from '../../domain/albaranEmision'; // SCRUM-841
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { getEmissionMode } from '../../../invoicing/domain/emission.service';
@@ -72,6 +75,9 @@ import {
 } from '../../domain/albaranAFactura';
 // SCRUM-195: el número del adicional se reserva DENTRO de su transacción, igual que el del alta.
 import { allocateQuoteNumber } from '../../../quotes/domain/quoteNumber.service';
+// SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
+// de un `internal_error`. NO sube el timeout ni toca el cerrojo.
+import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } from '../../../invoicing/domain/cerrojoSaturado';
 import { sePuedeCambiarOcultarPrecios } from '../../domain/albaranPrecios'; // SCRUM-607 (ALB-02)
 import { veredictoAlbaranSinPresupuesto } from '../../domain/albaranSinPresupuesto'; // SCRUM-684
 
@@ -117,6 +123,7 @@ const lectorAcotado = (jobIds: number[]): LectorListado => ({
     select: {
       id: true, merchantId: true, jobId: true, numero: true, fecha: true,
       createdAt: true, estado: true, lineas: true, invoiceId: true,
+      modoValoracion: true,
     },
   }),
 });
@@ -128,11 +135,12 @@ const lectorPrismaListado: LectorListado = {
     select: {
       id: true, merchantId: true, jobId: true, numero: true, fecha: true,
       createdAt: true, estado: true, lineas: true, invoiceId: true,
+      modoValoracion: true,
     },
   }),
   jobs: ({ merchantId, ids }) => prisma.job.findMany({
     where: { merchantId, id: { in: ids } },
-    select: { id: true, titulo: true, customerId: true },
+    select: { id: true, titulo: true, customerId: true, quoteId: true },
   }),
   customers: ({ merchantId, ids }) => prisma.customer.findMany({
     where: { merchantId, id: { in: ids } },
@@ -540,11 +548,36 @@ type FindAlbaranResult =
   | { ok: false; status: 400 | 404 }
   | { ok: true; albaran: NonNullable<Awaited<ReturnType<typeof prisma.albaran.findFirst>>> };
 
+// ── 🔴 SCRUM-849 · AQUI NO SE COMPROBABA DE QUIEN ES EL TRABAJO ──────────────────────────
+//
+// Este helper es la puerta por la que pasan ONCE handlers de `/admin/albaranes/:id` — las siete
+// escrituras del censo, las cuatro admin-only y los dos GET de `/pdf` y `/fotos` — y solo
+// filtraba por merchant (regla 2). El efecto medido: `GET /admin/albaranes/:id` devolvia 404
+// sobre la obra de otro tecnico y `POST /admin/albaranes/:id/firmar` sobre ESE MISMO id
+// funcionaba. Se podia firmar un albaran que no se podia ni abrir.
+//
+// 🔴 EL ARREGLO VA AQUI Y NO EN LOS ONCE SITIOS, y es lo importante del diff: once copias de una
+// comprobacion de acceso divergen, y la que se queda atras no da error, da ACCESO. Un handler
+// nuevo que use `findAlbaran` nace protegido sin que nadie se acuerde.
+//
+// Para el ADMIN no cambia nada: `seesOnlyOwnJobs('admin')` es false y no se pide el Trabajo, asi
+// que las cuatro rutas con `requireRole('admin')` siguen costando los mismos viajes.
+//
+// 404 y no 403, igual que las tres lineas de arriba y que `GET /:id`: el codigo de estado no
+// puede decirle si el documento existe.
 async function findAlbaran(req: any): Promise<FindAlbaranResult> {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) return { ok: false, status: 400 };
   const albaran = await prisma.albaran.findFirst({ where: { id, merchantId: req.merchantId } });
-  return albaran ? { ok: true, albaran } : { ok: false, status: 404 };
+  if (!albaran) return { ok: false, status: 404 };
+  if (seesOnlyOwnJobs(req.userRole)) {
+    const job = await prisma.job.findFirst({
+      where: { id: albaran.jobId, merchantId: req.merchantId },
+      select: SELECT_DUENOS,
+    });
+    if (!esSuyoElTrabajo(job, req.teamMemberId)) return { ok: false, status: 404 };
+  }
+  return { ok: true, albaran };
 }
 
 // PATCH /admin/albaranes/:id — editar lineas/notas/fecha SOLO si no está firmado.
@@ -843,7 +876,39 @@ router.post('/:id/emitir', async (req, res) => {
     if (!canTransitionAlbaran(albaran.estado, 'emitido')) {
       return res.status(409).json({ error: 'invalid_transition', from: albaran.estado, to: 'emitido' });
     }
-    const updated = await prisma.albaran.update({ where: { id: albaran.id }, data: { estado: 'emitido' } });
+
+    // ── SCRUM-841 · EL CLIENTE SE CONGELA AQUÍ, AL EMITIR ──────────────────────────────────
+    //
+    // Hasta hoy este `update` mandaba exactamente `{ estado: 'emitido' }` —medido corriendo, con
+    // este mismo handler— y las cinco columnas de `albaranes` que SCRUM-729 dejó aplicadas se
+    // quedaban a NULL. El documento entregado reimprimía entonces el cliente de HOY.
+    //
+    // 🔴 DESPUÉS de la comprobación de transición, y no antes: un 409 no debe costar dos viajes.
+    // Y ANTES del `update`, que es el único que hay: el congelado viaja DENTRO de la escritura
+    // que ya se hacía, así que esta ruta pasa de 2 viajes a 4 y sigue sin abrir transacción.
+    //
+    // 🔴 Y NO SE RE-CONGELA: la salida idempotente de tres líneas más arriba devuelve el albarán
+    // ya emitido sin tocarlo. Re-congelar al segundo POST reescribiría el retrato con la ficha de
+    // hoy — que es el defecto entero, colado por la puerta del reintento.
+    const job = await prisma.job.findFirst({
+      where: { id: albaran.jobId, merchantId: req.merchantId },
+      select: { customerId: true },
+    });
+    // Inalcanzable por construcción —`findAlbaran` ya acotó por merchant y `Job.customerId` es
+    // `Int` no nulo— y se falla cerrado igualmente: emitir sin poder congelar sería emitir el
+    // documento sin retrato, que es justo lo que este ticket cierra. 404 como el resto del fichero.
+    if (!job) return res.status(404).json({ error: 'not_found' });
+    // `congelarCliente` es el de SCRUM-729, sin una línea nueva: filtra por merchant (regla 2) y
+    // lanza si la ficha no está. Se reutiliza en vez de copiar sus cinco asignaciones porque dos
+    // sitios que derivan el mismo dato acaban divergiendo.
+    const clienteCongelado = await congelarCliente(prisma, req.merchantId!, job.customerId);
+
+    const updated = await prisma.albaran.update({
+      where: { id: albaran.id },
+      // El estado y el retrato salen JUNTOS de `datosDeAlbaranEmitido`, y el cliente es parámetro
+      // obligatorio: un emisor que se olvide del congelado no compila.
+      data: datosDeAlbaranEmitido(clienteCongelado),
+    });
     return res.json(serializeAlbaran(updated));
   } catch (err: any) {
     console.error('[POST /admin/albaranes/:id/emitir]', err?.message || err);
@@ -880,6 +945,10 @@ router.post('/:id/duplicar', async (req, res) => {
     return res.status(201).json(serializeAlbaran(copia));
   } catch (err: any) {
     console.error('[POST /admin/albaranes/:id/duplicar]', err?.message || err);
+    // SCRUM-728 · el cerrojo de serie no dio turno a tiempo. No es un fallo del servidor ni del
+    // profesional: es cola. La transaccion se deshizo entera —ni documento, ni numero consumido—,
+    // asi que repetir la misma accion unos segundos despues sale bien.
+    if (esCerrojoSaturado(err)) return res.status(ESTADO_CERROJO_SATURADO).json(cuerpoCerrojoSaturado());
     return res.status(500).json({ error: 'internal_error' });
   }
 });
@@ -1188,6 +1257,10 @@ router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
     // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
     exigirTiposDeIvaEmitibles(invoiceLines);
 
+    // SCRUM-729 · el cliente se congela AQUÍ, fuera de la transacción: dentro estaría detrás del
+    // cerrojo de serie y sería un viaje más en la sección crítica.
+    const clienteCongelado = await congelarCliente(prisma, req.merchantId!, job.customerId);
+
     const invoice = await prisma.$transaction(async (tx) => {
       const inv = await emitInvoice(tx, {
         merchantId: req.merchantId!, customerId: job.customerId, total,
@@ -1197,6 +1270,7 @@ router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
         quoteId: null,
         actor: actorDeRequest(req),
         origen: 'C7-parcial', // SCRUM-347: parcial de albarán, ya no «C7» a secas
+        clienteCongelado,
       });
       if (isReceiptNumber(inv.number)) throw new Error('facturacion_no_disponible');
 
@@ -1402,6 +1476,9 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
     // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
     exigirTiposDeIvaEmitibles(invoiceLines);
 
+    // SCRUM-729 · idem: el congelado va FUERA de la transacción, antes del cerrojo.
+    const clienteCongelado = await congelarCliente(prisma, req.merchantId!, job.customerId);
+
     const invoice = await prisma.$transaction(async (tx) => {
       const inv = await emitInvoice(tx, {
         merchantId: req.merchantId!, customerId: job.customerId, total,
@@ -1413,6 +1490,7 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
         quoteId: quote!.id,
         actor: actorDeRequest(req),
         origen: 'C7-albaran', // SCRUM-347: albarán → factura (A0.4)
+        clienteCongelado,
       });
       if (isReceiptNumber(inv.number)) throw new Error('facturacion_no_disponible');
 

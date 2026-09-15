@@ -31,15 +31,24 @@ import { inventario, perdidas } from './_inventario-detalle-trabajo.mjs';
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const EQUIPO = [{ id: 1, name: 'Javier P.' }, { id: 2, name: 'Javier Pereira' }];
+// 🔴 SCRUM-823 · `status` ERA `'in_progress'`, QUE NO EXISTE EN EL PRODUCTO. La FSM tiene cinco
+// estados y son `pendiente_agendar · agendado · en_curso · terminado · cerrado` (Parte L,
+// `job.service.ts`); `in_progress` no aparece ni una vez en `src/modules/jobs/` ni en el schema.
+// Este fichero era el ÚNICO sitio del árbol que lo usaba.
+//
+// No importaba mientras la escalera no mirase el estado — y por eso llevaba aquí sin molestar.
+// Desde SCRUM-823 sí lo mira, y con un estado desconocido el CTA del héroe no se pinta: el test
+// denunció «he perdido «+ Nuevo albarán»», que era verdad y por la razón equivocada. Se corrige el
+// FIXTURE, que es lo que estaba mal, en vez de la lista de controles esperados.
 const JOB = {
-  id: 7, status: 'in_progress', createdAt: '2026-09-01T09:00:00Z', titulo: 'Revisión anual',
+  id: 7, status: 'en_curso', createdAt: '2026-09-01T09:00:00Z', titulo: 'Revisión anual',
   customer: { id: 3, name: 'IES Ramón y Cajal' }, asignados: [EQUIPO[0]], operario: null,
   albaranes: [], gastos: [], notes: 'una nota', quote: { currency: 'EUR' },
   direccion: 'C/ Mayor 1', totalAceptado: 480, totalCobrado: 0,
 };
 /** SUELO del encargo: sin albaranes, sin gastos, sin técnicos y sin dirección. */
 const JOB_VACIO = {
-  id: 8, status: 'in_progress', createdAt: '2026-09-01T09:00:00Z', titulo: '',
+  id: 8, status: 'en_curso', createdAt: '2026-09-01T09:00:00Z', titulo: '',
   customer: { id: 3, name: 'IES' }, asignados: [], operario: null,
   albaranes: [], gastos: [], notes: '', quote: { currency: 'EUR' }, direccion: null,
 };

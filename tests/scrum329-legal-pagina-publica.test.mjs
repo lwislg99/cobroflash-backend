@@ -29,6 +29,7 @@
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -41,7 +42,8 @@ process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://x:x@127.0.0
 const { app } = await import(pathToFileURL(path.join(RAIZ, 'dist', 'app.js')).href);
 const server = app.listen(0);
 await new Promise((r) => server.once('listening', r));
-const BASE = `http://127.0.0.1:${server.address().port}`;
+const PUERTO = server.address().port;
+const BASE = `http://127.0.0.1:${PUERTO}`;
 after(() => new Promise((r) => server.close(r)));
 
 /**
@@ -60,9 +62,71 @@ after(() => new Promise((r) => server.close(r)));
  */
 const REFERENCIA_QUE_SIEMPRE_SIRVE = '/index.html';
 
+/**
+ * 🔴 NO SE USA `fetch` A PROPÓSITO, y no es preferencia de estilo: es el remedio que SCRUM-560 ya
+ * aplicó a `scrum334-destino-de-los-cta` (`efe1004f`, 20-ago-2026: «2 abortos en 10 pasadas antes,
+ * 0 en 20 después»), heredado a su vez de SCRUM-100. Con varias peticiones de undici sobre el
+ * mismo `app.listen(0)`, sus conexiones agrupadas dejan el proceso en un estado que, bajo
+ * concurrencia, hace que la petición ni salga: `fetch failed`, sin ruta y sin estado.
+ *
+ * MEDIDO EN ESTE FICHERO antes de tocarlo (SCRUM-822, 8-sep-2026): con 24 instancias en paralelo
+ * y 12 procesos quemando CPU, **24 de 24 abortaban**, con 72 `fetch failed`. A una sola instancia
+ * no se reproduce nunca — por eso vivió meses y por eso costó una tanda entera y un ticket falso.
+ *
+ * `agent: false` es la pieza que lo evita: sin pool, cada petición abre y cierra su conexión.
+ *
+ * @returns {Promise<{status:number, cuerpo:string, cabeceras:object, _err?:string}>}
+ *   `status: 0` significa **no hubo respuesta**. NO es un 404 y abajo no se tratan igual.
+ */
+function pedirEn(puerto, ruta) {
+  return new Promise((resolve) => {
+    const req = http.request(
+      { host: '127.0.0.1', port: puerto, path: ruta, method: 'GET', agent: false },
+      (res) => {
+        let data = '';
+        res.setEncoding('utf8');
+        res.on('data', (t) => { data += t; });
+        res.on('end', () => resolve({ status: res.statusCode, cuerpo: data, cabeceras: res.headers }));
+      },
+    );
+    // Un fallo de red es «sin respuesta», no una excepción que tumbe el fichero entero sin decir
+    // qué ruta fue. El clasificador de abajo es quien decide qué significa un 0.
+    req.on('error', (e) => resolve({ status: 0, cuerpo: '', cabeceras: {}, _err: e?.message || 'error de red' }));
+    req.end();
+  });
+}
+
+const pedir = (ruta) => pedirEn(PUERTO, ruta);
+
+/**
+ * 🔴 EL CORAZÓN DE SCRUM-822 · «NO PUDE MIRAR» NO ES «ESTÁ ROTO».
+ *
+ * Antes, un `status: 0` caía en el MISMO cubo que un 404 y el assert lo publicaba como «enlaces
+ * públicos rotos». O sea: el instrumento, cuando no podía conectar, acusaba al producto. Ésa es
+ * la misma familia que «un cero no es *está limpio*, es *no he mirado*» — y aquí costó un ticket
+ * Highest abierto contra una landing sana.
+ *
+ * El suelo `bancoMudo()` no basta por sí solo: mira UNA ruta al principio, así que si el servidor
+ * enmudece a mitad del bucle, todos los enlaces siguientes salían acusados. Por eso la separación
+ * se hace petición a petición.
+ *
+ * @returns {{tipo:'sin-respuesta'|'roto'|'vacio'|'ok', texto:string}}
+ */
+export function clasificar(r, href, origen = '') {
+  const desde = origen ? ` (enlazado desde ${origen})` : '';
+  if (!r || r.status === 0) return { tipo: 'sin-respuesta', texto: `${href} → sin respuesta (${(r && r._err) || 'error de red'})${desde}` };
+  if (r.status !== 200) return { tipo: 'roto', texto: `${href} → ${r.status}${desde}` };
+  const visible = String(r.cuerpo || '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  if (ES_LEGAL.test(href) && visible.length < 800) {
+    return { tipo: 'vacio', texto: `${href} → 200 pero solo ${visible.length} car. de texto visible (página legal)${desde}` };
+  }
+  return { tipo: 'ok', texto: '' };
+}
+
 async function bancoMudo() {
   const ruta = REFERENCIA_QUE_SIEMPRE_SIRVE; // el mensaje sale de la constante, no de un literal
-  const r = await fetch(BASE + ruta).catch((e) => ({ status: 0, _err: e?.message }));
+  const r = await pedir(ruta);
   if (r.status === 200) return null;
   return `\`${ruta}\` → ${r.status || `sin respuesta (${r._err || 'error de red'})`}`;
 }
@@ -115,23 +179,25 @@ test('SCRUM-329 · cada enlace interno responde 200 y con contenido', async () =
       '  rota de un arranque que no llegó a levantarse, y mandaría a buscar donde no está.',
   );
 
+  // DOS CUBOS, y la separación es el ticket: lo que NO PUDE MIRAR va aparte de lo que está ROTO.
+  // El umbral de contenido (800 car.) se aplica SOLO a páginas con obligación legal, y el motivo
+  // importa: un formulario de acceso es legítimamente corto, así que exigirle párrafos sería un
+  // rojo falso — y un rojo falso enseña a ignorar este test. Una página LEGAL de 200 caracteres,
+  // en cambio, es una plantilla vacía haciéndose pasar por información. Vive en `clasificar`.
+  const mudas = [];
   const fallos = [];
   for (const { href, origen } of enlacesInternos()) {
-    const r = await fetch(BASE + href).catch((e) => ({ status: 0, _err: e?.message }));
-    const cuerpo = r.status === 200 ? await r.text() : '';
-    const visible = cuerpo.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-
-    if (r.status !== 200) { fallos.push(`${href} → ${r.status || 'sin respuesta'} (enlazado desde ${origen})`); continue; }
-
-    // El umbral de contenido se aplica SOLO a las páginas que sostienen una obligación legal, y
-    // el motivo importa: un formulario de acceso es legítimamente corto (dos etiquetas y un
-    // botón), así que exigirle párrafos sería un rojo falso — y un rojo falso enseña a ignorar
-    // este test. Una página LEGAL de 200 caracteres, en cambio, es una plantilla vacía haciéndose
-    // pasar por información, que es justo lo que hay que cazar.
-    if (ES_LEGAL.test(href) && visible.length < 800) {
-      fallos.push(`${href} → 200 pero solo ${visible.length} car. de texto visible (página legal)`);
-    }
+    const c = clasificar(await pedir(href), href, origen);
+    if (c.tipo === 'sin-respuesta') { mudas.push(c.texto); continue; }
+    if (c.tipo !== 'ok') fallos.push(c.texto);
   }
+  // Primero lo CIEGO: si hubo peticiones que no llegaron a hacerse, no se acusa a nadie.
+  assert.deepEqual(
+    mudas, [],
+    `🔴 CIEGO: hay peticiones que no llegaron a hacerse:\n    ${mudas.join('\n    ')}\n` +
+      '  NO se acusa a ningún enlace por esto: «no pude conectar» no es «respondió 404», y\n' +
+      '  confundirlos manda a arreglar una landing sana (SCRUM-822).',
+  );
   assert.deepEqual(fallos, [], `🔴 enlaces públicos rotos o vacíos:\n    ${fallos.join('\n    ')}`);
 });
 
@@ -201,10 +267,10 @@ test('SCRUM-329 · visitar la página pública no instala NINGUNA cookie', async
   const mudas = [];
   const conCookie = [];
   for (const ruta of ['/', '/precios', '/privacidad', '/terminos']) {
-    const r = await fetch(BASE + ruta).catch((e) => ({ _fallo: e?.message || 'error de red' }));
-    if (r._fallo) { mudas.push(`${ruta} → sin respuesta (${r._fallo})`); continue; }
-    const set = r.headers.get('set-cookie');
-    if (set) conCookie.push(`${ruta} → ${set}`);
+    const r = await pedir(ruta);
+    if (r.status === 0) { mudas.push(`${ruta} → sin respuesta (${r._err})`); continue; }
+    const set = r.cabeceras['set-cookie'];
+    if (set) conCookie.push(`${ruta} → ${Array.isArray(set) ? set.join(' · ') : set}`);
   }
   assert.deepEqual(
     mudas, [],
@@ -212,6 +278,48 @@ test('SCRUM-329 · visitar la página pública no instala NINGUNA cookie', async
       '  No se afirma que la visita no instale cookies sobre una respuesta que no existe.',
   );
   assert.deepEqual(conCookie, [], `🔴 la visita instala cookies sin pedir nada:\n    ${conCookie.join('\n    ')}`);
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-822 · EL CONTROL NEGATIVO: el instrumento sabe decir «no he podido mirar»
+// ═════════════════════════════════════════════════════════════════════════════════════════
+//
+// Sin esto, todo lo de arriba es una promesa. Un guard que no distingue «no pude conectar» de
+// «respondió 404» acusa al producto cada vez que le falla la red — y eso NO es hipotético: pasó
+// el 7-sep-2026 y costó una tanda entera y un ticket Highest abierto contra una landing sana.
+//
+// Se prueba contra un puerto MUERTO DE VERDAD (se abre uno, se lee su número y se cierra), no
+// contra un objeto de mentira: un doble que devuelve lo que yo decida probaría mi imaginación.
+test('SCRUM-822 · 🔴 «no pude conectar» NO se cuenta como 404', async () => {
+  const efimero = http.createServer();
+  await new Promise((r) => efimero.listen(0, '127.0.0.1', r));
+  const puertoMuerto = efimero.address().port;
+  await new Promise((r) => efimero.close(r));
+
+  // ── ① lo que de verdad pasa cuando no hay nadie escuchando ──
+  const r = await pedirEn(puertoMuerto, '/privacidad');
+  assert.equal(r.status, 0,
+    `🔴 contra un puerto cerrado el estado tendría que ser 0 y es ${r.status}: si `
+    + 'aquí sale un número HTTP, el resto de este fichero está midiendo otra cosa.');
+  assert.ok(r._err, '🔴 sin motivo apuntado, «sin respuesta» no se puede explicar a nadie');
+
+  // ── ② y el clasificador lo manda al cubo CIEGO, no al de rotos ──
+  const c = clasificar(r, '/privacidad', 'public/index.html');
+  assert.equal(c.tipo, 'sin-respuesta',
+    `🔴 EL DEFECTO DE SCRUM-822 HA VUELTO: un fallo de conexión se ha clasificado como `
+    + `«${c.tipo}». Así es como este guard acusó a una landing sana de servir 404.`);
+  assert.match(c.texto, /sin respuesta/, '🔴 el mensaje no dice que no hubo respuesta');
+  assert.doesNotMatch(c.texto, /404/, '🔴 el mensaje habla de 404 sin haber recibido ninguno');
+
+  // ── ③ CONTROL POSITIVO del mismo clasificador: un 404 DE VERDAD sigue siendo un fallo ──
+  // Sin esta mitad, un clasificador que dijera «sin-respuesta» a todo pasaría ① y ② y habría
+  // apagado el guard: nunca volvería a ver un enlace legal roto.
+  assert.equal(clasificar({ status: 404, cuerpo: '' }, '/privacidad').tipo, 'roto',
+    '🔴 un 404 real ha dejado de contar como enlace roto: el guard está apagado');
+  assert.equal(clasificar({ status: 200, cuerpo: '<p>hola</p>' }, '/privacidad').tipo, 'vacio',
+    '🔴 una página legal casi vacía ha dejado de contar');
+  assert.equal(clasificar({ status: 200, cuerpo: '<p>' + 'x'.repeat(900) + '</p>' }, '/privacidad').tipo, 'ok',
+    '🔴 una página legal con contenido se está marcando como defecto: rojo falso');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════

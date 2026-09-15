@@ -55,7 +55,11 @@ const DECLARADAS = {
   'templatesView.js:btnUse':
     'FILA. Un «Usar» por cada plantilla.',
   // SCRUM-727b · los cuatro de la lista de Trabajos, clasificados leyendo cada sitio.
-  'jobsView.js:okAgendar':
+  // SCRUM-823 · CAMBIA DE FICHERO, NO DE CLASIFICACIÓN. El diálogo de agendar se mudó VERBATIM de
+  // `jobsView.js` a `jobAgendar.js` para que el DETALLE pudiera nombrarlo — el defecto de
+  // SCRUM-366 en espejo. Es el mismo botón, del mismo modal, con el mismo motivo: lo único que
+  // cambió es quién más puede abrirlo.
+  'jobAgendar.js:okAgendar':
     'MODAL. Confirma el diálogo de agendar, que existe justo porque el `datetime-local` salió de '
     + 'la fila: dentro de la fila era lo que la hacía gigante.',
   'jobsView.js:okAsignar':

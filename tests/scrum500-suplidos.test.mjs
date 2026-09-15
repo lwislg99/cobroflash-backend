@@ -35,6 +35,7 @@ import { calcVatBreakdown } from '../dist/modules/invoicing/domain/vat.service.j
 import { grossOfLines } from '../dist/modules/invoicing/domain/invoiceLines.service.js';
 import { bloqueRetencion, calcularRetencion } from '../dist/modules/invoicing/domain/retencionIrpf.js';
 import { CreateQuoteSchema } from '../dist/core/validation/schemas.js';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (p) => fs.readFileSync(path.join(RAIZ, p), 'utf8');
@@ -485,9 +486,11 @@ test('SCRUM-500 · 🔴 `suplidos.ts` LLAMA a `calcVatBreakdown`, no la reimplem
 test('SCRUM-500 · 🔴 `vat.service.ts` no ha aprendido lo que es un suplido', () => {
   // Regla 38: el camino del que el sellado saca su base NO se toca en este ticket. Si esta palabra
   // apareciera ahí, el filtro se habría metido dentro de la función que consumen 16 ficheros.
-  const sinComentarios = leer('src/modules/invoicing/domain/vat.service.ts')
-    .replace(/\/\*[\s\S]*?\*\//g, '')   // el guard se cazaría a sí mismo en el comentario que lo
-    .replace(/(^|[^:])\/\/.*$/gm, '$1'); // explica: se lee el CÓDIGO, no lo que se dice de él
+  // SCRUM-694b · filtro a mano retirado: `(^|[^:])//` libraba a `https://` por los dos
+  // puntos, pero se comia la linea entera ante un regex de URL (`/^https?:\/\//`), que es
+  // como las URLs aparecen en el codigo de verdad. `soloCodigo()` tokeniza y no depende de eso.
+  const sinComentarios = soloCodigo(
+    leer('src/modules/invoicing/domain/vat.service.ts'), 'vat.service.ts');
   assert.ok(!/suplido/i.test(sinComentarios),
     '🔴 `vat.service.ts` menciona los suplidos en su CÓDIGO. Esa función alimenta la base que '
     + '`registro.builder.ts` manda literal al XML sellado: filtrar ahí es camino de emisión '

@@ -263,3 +263,154 @@ pantalla con ese literal exacto**. Subirlos a acción principal no estrena texto
 5. **La rama de 816 se ha MEDIDO, no ejecutado.** Se leyó su `serializeJob` con `git show`; no se
    ha hecho `checkout`, ni se ha corrido su tanda, ni se ha vuelto a pasar el censo contra ella.
    Que esos campos viajen **de verdad** por HTTP es de su sesión, no de ésta.
+
+
+---
+---
+
+# SESIÓN 4 · LA CONSTRUCCIÓN, YA CON (A) DENTRO
+
+**Medido contra:** `origin/main` = `a44ecb8df3fcb9ae009ed980235f808cc526ab47` · 2026-09-08T09:54:01+02:00
+**Rama:** `scrum-823-la-escalera-mira-el-estado`, partida de `scrum-816-lista-de-trabajos-al-dia`
+
+> 🔴 **LA ENTRADA DE ARRIBA NO SE TOCA.** Es el PASO 0 de otra sesión, que **paró con razón**: en
+> `origin/main` la dependencia sigue viva. Esta sección se añade debajo porque parte de un árbol
+> distinto —la rama de 816 ya certificada, donde `serializeJob` sí manda `albaranes` e
+> `invoices`—, no porque aquella medición haya caducado.
+>
+> Su hueco declarado nº 5 decía: *«la rama de 816 se ha MEDIDO, no ejecutado»*. **Aquí se ha
+> ejecutado**: se ha hecho `checkout` de ella, se ha corrido su tanda y se ha montado en navegador.
+
+## Las dos sesiones, y cómo se resolvieron las dos discrepancias
+
+| Estado | Sesión previa (PASO 0) | Yo, en la primera vuelta | **Decisión del fundador (8-sep-2026)** |
+|---|---|---|---|
+| `pendiente_agendar` | Agendar | Agendar | **Agendar** |
+| `agendado` | **▶ Empezar** | escalera de documentos | **▶ Empezar** — gana la sesión previa |
+| `en_curso` | documentos | documentos | **documentos**, sin cambio |
+| `terminado` | Cobrar; si no, **Cerrar trabajo** | Cobrar; si no, documentos | **documentos** — gana mi objeción |
+| `cerrado` | ninguna | ninguna | **ninguna** |
+
+### `agendado` → «▶ Empezar»: la tabla original del fundador estaba mal, y lo dice él
+
+> *«Un trabajo agendado NO SE HA EMPEZADO, y prepararle el documento de entrega es el mismo error
+> que hacerlo sin fecha, solo que más tarde. Mi tabla del 816 decía "agendado / en marcha → Nuevo
+> albarán" metiendo dos cosas distintas en una fila, que es justo lo que este ticket vino a
+> arreglar.»*
+
+Y con ello, una instrucción de método que queda escrita: **si una medición tumba una decisión
+firmada, gana la medición — se dice y se construye, no se para.** La primera vuelta paró por
+corregir algo firmado; eso era de más.
+
+### `terminado` sin saldo → NO se sube «Cerrar trabajo»
+
+> 🔒 **Un acto irreversible no puede ser NUNCA la acción principal de una fila. La acción principal
+> es la que se pulsa sin leer: para eso está en primaria y por eso funciona. Poner ahí lo que no
+> tiene vuelta atrás es usar el mecanismo justo al revés de para lo que sirve.** (Fundador.)
+
+Se queda en el «⋯» con su modal, que es la decisión de SCRUM-344 y sigue vigente. Y el segundo
+argumento lo remata: **un terminado sin albarán todavía tiene que emitirlo**, así que la escalera
+de documentos es lo correcto también por orden, no sólo por seguridad. Hay test por los dos lados:
+que `cerrar` no entre en la escalera, y que un terminado sin albarán proponga emitirlo.
+
+## Lo construido, y verificado corriendo
+
+```
+1 · cobrar    (terminado + resto)          — sin cambio
+2 · recordar  (factura vieja sin pagar)    — sin cambio
+2-bis · agendar   ← NUEVO, si pendiente_agendar
+3/4/5 · documentos — SÓLO si agendado | en_curso | terminado
+6 · nada
+```
+
+**La matriz completa** (5 estados × 4 situaciones de albarán × 2 de dinero): los casos en los que
+un trabajo sin fecha o ya cerrado recibía una acción de documento pasan de **12 de 40 a 0 de 40**.
+
+## 🔴 El riesgo que midió esta sesión antes de tocar nada
+
+Doblando la escalera para que devolviera un `kind` que el detalle no conoce, en Edge:
+
+```
+EL DETALLE, DESPUÉS DEL CLIC:
+  rótulo del botón : «Enviando…»      deshabilitado : true
+  escrituras : []   avisos : []   modal : false   navegaciones : 0
+```
+
+**Un CTA muerto que afirma estar enviando algo.** Causa: `jobDetailView` **no sabía agendar** —
+`scheduledAt` aparecía **0 veces** y no tenía ni una transición de estado. Es el defecto de
+SCRUM-366 **en espejo**: `abrirAgendar` y `jobsModal` vivían dentro de `jobsView.js` y la otra
+pantalla no podía nombrarlas. Se mudan VERBATIM a `public/dashboard/js/jobAgendar.js`.
+
+### La verificación enumerada que pidió el fundador
+
+`npm run guard:escalera-por-estado` — las DOS pantallas montadas, estado por estado:
+
+```
+estado              LISTA                   DETALLE
+pendiente_agendar   «Agendar»               «Agendar»
+agendado            «+ Nuevo albarán»       «+ Nuevo albarán»
+en_curso            «+ Nuevo albarán»       «+ Nuevo albarán»
+terminado           «+ Nuevo albarán»       «+ Nuevo albarán»
+cerrado             (ninguna)               (ninguna)
+   ✅ SUELO · los cinco estados dan 3 rótulos distintos: hay algo que comparar
+② «Agendar» ejecutable en las DOS: modal ✅ campo de fecha ✅ no navegó ✅ botón no colgado ✅
+③ Un Trabajo CERRADO no propone nada en ninguna (61 y 134 nodos pintados)
+```
+
+**Probado en rojo** quitando la rama de `agendar` del detalle: cae ② nombrando el botón colgado.
+
+**Y su suelo cazó un verde falso en la primera pasada:** el grupo «Cerrados» nace plegado, así que
+③ decía «✅ sin acción principal» **porque no había fila**. Ahora se despliega con el botón del
+producto antes de medir. Es el hueco nº 3 de la entrada de arriba —«un entorno con filas
+cerradas»— cerrado por construcción en vez de por datos.
+
+⛔ **El guard de SCRUM-366 no se ha tocado ni relajado**, y hay test que lo comprueba: conserva su
+pertenencia estructural, no menciona `jobAgendar`, y `jobAgendar.js` no habla con `/admin/jobs/`
+—el PATCH lo hace quien llama—, que es lo que lo mantiene fuera de «superficie que decide».
+
+## «Valorar»: sigue sin poderse encender, confirmado sobre el árbol con (A)
+
+La entrada de arriba lo midió contra `main`; aquí se ha vuelto a comprobar **con 816 dentro**:
+`sinValorar` no aparece en `serializeJob`. (A) añade `albaranes` e `invoices`, no los partes.
+
+## Los guards de la casa que reaccionaron — ninguno se relajó
+
+| guard | qué dijo | qué se hizo |
+|---|---|---|
+| SCRUM-274 | el shell del SW no precachea `jobAgendar.js` | añadido a `sw.js` |
+| SCRUM-412 | `btn-primary btn-sm` sin clasificar | la declaración **cambia de fichero, no de clasificación** |
+| SCRUM-644 | `jobDetailView` pasaba de 11 a 12 sitios con `.message` crudo | **no se subió el techo**: los dos caminos de fallo del CTA entran por un `falloDelCta` |
+| SCRUM-768/769 | `renderJobDetailView` desaparece del censo de «botón de crear» | medido: nunca tuvo uno propio (el suyo es `btn-secondary`); el censo contaba el CTA |
+| SCRUM-522 | 16 → 17 guards fuera de la tanda | declarado con su motivo |
+
+### 🔴 Dos hallazgos de instrumento, arreglados en la causa
+
+- **SCRUM-428** preguntaba `html.indexOf('jobsView.js')` sobre el índice ENTERO, así que casó con
+  un **comentario** que menciona el fichero y denunció un orden de carga que no había cambiado. Se
+  ancla en `<script src=`. La trampa de auto-referencia de siempre.
+- **SCRUM-817** usaba `status: 'in_progress'`, **un estado que el producto no tiene** (la FSM dice
+  `en_curso`; `in_progress` no aparece ni una vez en `src/modules/jobs/` ni en el schema, y ese
+  fichero era el único del árbol que lo usaba). No molestaba mientras la escalera no mirase el
+  estado. Se corrige **el fixture**, no la lista de controles esperados.
+
+## El hallazgo que se reportó SIN tocar, y que el fundador mandó cerrar aquí
+
+La sección de Albaranes del detalle seguía ofreciendo «+ Nuevo albarán» en un Trabajo CERRADO.
+Es un `btn-secondary` que **no pasa por la escalera**, así que el arreglo de arriba no lo
+alcanzaba: se había arreglado lo que el producto PROPONE y quedaba abierto lo que PERMITE.
+
+> *«Es el mismo defecto por una puerta que la escalera no vigila.»* (Fundador.)
+
+Cabía —mismo fichero ya tocado, una condición— así que se cierra aquí. Se **oculta la barra**
+en vez de deshabilitar el botón: deshabilitar sin decir por qué deja un control muerto, y
+decirlo exigiría un texto que nadie ha firmado (regla 30). Y **sólo en `cerrado`**: en los
+demás estados el profesional puede tener su motivo y el estado es reversible.
+
+El guard lo mide **con control positivo**: la barra TIENE que verse en un Trabajo en curso. Sin
+eso, un «no se ve» en el cerrado podría significar que la sección entera dejó de pintarse.
+
+## Lo que NO se ha tocado
+
+- El guard de SCRUM-366 · los niveles de dinero · el orden de la escalera.
+- Los dos estados en discrepancia (`agendado`, `terminado`): esperan decisión del fundador.
+- Ningún rótulo nuevo · ningún `style=` en línea · `prisma/schema.prisma` · el camino de emisión.

@@ -573,21 +573,43 @@ async function fetchInvoices(options = {}) {
           const tr = document.createElement('tr');
           const st = String(inv.status || '').toLowerCase();
 
-          // Checkbox
+          // ── SCRUM-845 · LA CASILLA SÓLO EN LAS FILAS QUE EL LOTE ADMITE ──────────────────
+          //
+          // Antes se creaba en TODAS, sin mirar el estado. Con «Seleccionar todas» —el camino por
+          // defecto— entraban las anuladas y las ya pagadas; el servidor las descarta en silencio
+          // (`NO_SE_MARCAN_PAGADAS_EN_LOTE`, SCRUM-496) y esta pantalla remataba pintando
+          // «✓ 3 facturas marcadas como pagadas» EN VERDE después de haber seleccionado 5. Sin
+          // decir cuáles no, ni por qué. La escritura siempre estuvo bien; la que mentía era la
+          // pantalla.
+          //
+          // 🔒 Un control que no se puede usar y no puede explicar por qué, no se deshabilita: se
+          // quita. Deshabilitarla dejaría una casilla muerta que no sabe decir si es el permiso,
+          // la carga o el estado — y decirlo exigiría un texto que nadie ha firmado (regla 30).
+          //
+          // 🔴 Y SE PREGUNTA A `sePuedeMarcarPagadaEnLote` (`invoiceAccion.js`), NO al registro de
+          // acciones. Son DOS preguntas distintas: el registro contesta dónde va el interruptor en
+          // el DETALLE y manda `paid` a `overflow` (visible); el lote lo RECHAZA. Con el registro,
+          // esto se habría quedado a medias justo en el caso más común.
+          //
+          // Va SIN guarda `typeof`, igual que `soloFacturas` aquí arriba y por el mismo motivo: si
+          // el resolutor no estuviera, esto tiene que reventar ruidosamente. Una guarda lo dejaría
+          // degradando al comportamiento VIEJO —casilla en todas— que es exactamente el defecto.
           const tdCheck = document.createElement('td');
           tdCheck.className = 'col-hide-mobile'; // bulk = flujo de escritorio
           tdCheck.style.cssText = 'width:36px;padding:12px 8px';
-          const cb = document.createElement('input');
-          cb.type = 'checkbox';
-          cb.className = 'inv-row-check';
-          cb.dataset.id = inv.id;
-          cb.addEventListener('change', function(e) {
-            e.stopPropagation();
-            if (this.checked) selectedIds.add(inv.id);
-            else selectedIds.delete(inv.id);
-            updateBulkBar();
-          });
-          tdCheck.appendChild(cb);
+          if (window.sePuedeMarcarPagadaEnLote(inv)) {
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.className = 'inv-row-check';
+            cb.dataset.id = inv.id;
+            cb.addEventListener('change', function(e) {
+              e.stopPropagation();
+              if (this.checked) selectedIds.add(inv.id);
+              else selectedIds.delete(inv.id);
+              updateBulkBar();
+            });
+            tdCheck.appendChild(cb);
+          }
           tr.appendChild(tdCheck);
 
           const tdNumber = document.createElement('td');

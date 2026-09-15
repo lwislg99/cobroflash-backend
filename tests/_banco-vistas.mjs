@@ -800,6 +800,10 @@ export function clasesEscritas(fuente, nombre = 'x.js') {
 export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'aiQuoteAssistant.js',
   'albaranActionsRegistry.js',
+  // SCRUM-831 · el siguiente paso de un albarán, sacado de `jobDetailView.js` para que la LISTA
+  // pudiera nombrarlo: es el movimiento de SCRUM-366 por tercera vez. Sus relaciones de orden se
+  // declaran abajo — si cargara después de sus consumidores, la pantalla revienta al abrirse.
+  'albaranAccion.js',
   // SCRUM-606 (ALB-01): el buscador de presupuesto de «Nuevo albarán». Va ANTES de
   // `albaranesView.js`, que es quien lo abre, y después de `modalHeader.js` y `atajoNuevo.js`,
   // de los que lee la cabecera del modal y el rótulo. Ambas relaciones se DECLARAN abajo.
@@ -842,6 +846,11 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'formaDePagoPorDefecto.js',
   'globalSearch.js',
   'homeView.js',
+  // SCRUM-845 · qué se puede hacer con una FACTURA, sacado de dentro de `renderInvoiceDetailView`
+  // para que la LISTA pudiera preguntarlo. Es el movimiento de SCRUM-366 por CUARTA vez, y el
+  // primero que encontró un instrumento —`censo:decisiones-encerradas`— en vez de una persona.
+  // Sus relaciones de orden se declaran abajo.
+  'invoiceAccion.js',
   'invoiceActionsRegistry.js',
   'invoiceDetailView.js',
   'invoicesView.js',
@@ -850,6 +859,10 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'jobDetailView.js',
   'jobDocsReparto.js',
   'jobNextAction.js',
+  // SCRUM-823 · agendar un Trabajo, sacado de `jobsView.js` para que el DETALLE pueda nombrarlo:
+  // es el movimiento de SCRUM-366 en espejo. Sus DOS relaciones de orden se declaran abajo, y no
+  // es una formalidad — si se cargara después de sus consumidores, la pantalla revienta al abrirse.
+  'jobAgendar.js',
   // SCRUM-651 (2-sep-2026): entra `jobNuevoModal.js`, el modal para abrir un Trabajo SIN
   // presupuesto —una averia, el caso mas frecuente del primer cliente real—. Va ANTES de
   // `jobsView.js`, que lo consume, y despues de `modalHeader.js`, del que usa `cabeceraModal`.
@@ -956,6 +969,27 @@ export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   { antes: 'switchTipoArticulo.js', despues: 'productsView.js', motivo: 'SCRUM-609: el switch Producto|Servicio' },
   { antes: 'quoteApartados.js', despues: 'quotesDetailView.js', motivo: 'SCRUM-655: apartados, numeración y descripción' },
   { antes: 'signaturePad.js', despues: 'parteDetailView.js', motivo: 'SCRUM-652: el parte abre el pad de firma' },
+  // SCRUM-823 · las DOS pantallas ejecutan «Agendar» desde aquí. `jobsView` además le pide
+  // `jobsModal`, que se mudó con él, así que sin este orden la lista no monta.
+  // SCRUM-831 · las TRES superficies que preguntan cuál es el siguiente paso de un albarán. Y
+  // `albaranAccion` lee el registro y el resolutor del patrón, así que va detrás de los dos.
+  { antes: 'albaranActionsRegistry.js', despues: 'albaranAccion.js', motivo: 'SCRUM-831: la tabla de acciones que lee' },
+  { antes: 'patronDetalleAcciones.js', despues: 'albaranAccion.js', motivo: 'SCRUM-831: `destinoEfectivo`, el resolutor' },
+  { antes: 'albaranAccion.js', despues: 'albaranesView.js', motivo: 'SCRUM-831: la primaria de cada fila' },
+  { antes: 'albaranAccion.js', despues: 'jobDetailView.js', motivo: 'SCRUM-831: las filas de documento del Trabajo' },
+  // SCRUM-845 · `invoiceAccion` lee el registro de factura y el resolutor del patrón, igual que su
+  // hermano del albarán, así que va detrás de los dos.
+  //
+  // ⚠️ Y NO se declara `invoiceAccion.js` → `invoicesView.js`, que sería lo simétrico: en el índice
+  // la LISTA carga ANTES, y es correcto. La llama al PINTAR la tabla, no al cargarse, y para
+  // entonces el documento está entero. Declarar aquí un orden que el índice no cumple pondría rojo
+  // un guard por una dependencia que no existe — y el arreglo cómodo sería mover el `<script>`,
+  // tocando el orden de una pantalla que hoy funciona.
+  { antes: 'invoiceActionsRegistry.js', despues: 'invoiceAccion.js', motivo: 'SCRUM-845: la tabla de acciones que lee' },
+  { antes: 'patronDetalleAcciones.js', despues: 'invoiceAccion.js', motivo: 'SCRUM-845: `destinoEfectivo`, el resolutor' },
+  { antes: 'invoiceAccion.js', despues: 'invoiceDetailView.js', motivo: 'SCRUM-845: el estado y el destino de cada acción' },
+  { antes: 'jobAgendar.js', despues: 'jobsView.js', motivo: 'SCRUM-823: agendar y el modal de la casa' },
+  { antes: 'jobAgendar.js', despues: 'jobDetailView.js', motivo: 'SCRUM-823: el CTA «Agendar» del héroe' },
   { antes: 'colaDeFirmas.js', despues: 'parteDetailView.js', motivo: 'SCRUM-652: firma con la cola que ya existe' },
   // SCRUM-593 (DOC-03): la pieza se carga antes que sus DOS consumidores. `jobDetailView.js`
   // YA la consume (el campo de cabecera del albaran); `quotesView.js` la consumira cuando salga
@@ -1079,7 +1113,33 @@ export function cargarDashboard(raiz, opciones = {}) {
     // MISMA forma que el servidor —y los cubos salen de la MISMA función, importada de `dist`, no
     // de una lista escrita aquí— para que un test que pase un array siga midiendo la pantalla real
     // y no una respuesta que ningún servidor devuelve.
-    apiRequest: async (ruta) => (typeof opciones.datos === 'function' ? opciones.datos() : (opciones.datos ?? {})),
+    // 🔴 SCRUM-848 · LA RUTA SE LE PASA AL FIXTURE, igual que ya se hacía con `fetch` aquí debajo.
+    //
+    // No se hacía, y la consecuencia era invisible: un fixture por ruta —`(url) => …`, que es como
+    // están escritos los de `censo-objetivo-tactil-panel` y `DATOS_795`— se llamaba SIN url, así
+    // que caía siempre en su rama por defecto. Toda vista que pida por `apiRequest` —la ficha de
+    // Trabajo, entre otras— quedaba fuera del alcance de su propia fixture y se montaba con `[]`.
+    //
+    // Así se medía la ficha de Trabajo con un Trabajo SIN `status`, que el producto no puede
+    // producir (`Job.status` tiene `@default` en el esquema). Mientras la escalera caía al nivel 5
+    // con cualquier estado no se notó; SCRUM-823 le puso puerta por estado y entonces la pantalla
+    // medida dejó de tener acción de héroe. El guard lo cazó, y tenía razón.
+    //
+    // El segundo argumento va también: `apiRequest(ruta, opciones)` es su firma real, y un fixture
+    // que quiera distinguir un POST de un GET necesita verlo.
+    //
+    // 🔴 SCRUM-848b · CORRECCIÓN MEDIDA, 15-sep-2026 — ESTA LÍNEA NO ERA LA CAUSA.
+    // Lo de arriba describe un arreglo real pero INERTE para las vistas, y conviene saberlo antes
+    // de volver a tocar aquí. Medido revirtiéndola y renderizando `renderCustomer360View` con un
+    // fixture por ruta: MISMO html (3.062 bytes) y el fixture recibiendo su ruta igual. El motivo
+    // está treinta líneas más arriba, escrito desde SCRUM-432: `api.js` declara su propio
+    // `apiRequest` y al cargarse PISA éste, así que las vistas piden por `fetch` — y a `fetch` el
+    // banco SIEMPRE le pasó la url. Los fixtures por ruta nunca estuvieron ciegos por aquí.
+    // Lo que curó la ficha de Trabajo fue el OTRO cambio de SCRUM-848: darle `datos` a la
+    // superficie `/__jobdetail`. La línea se queda —es correcta y es la firma buena—, pero si
+    // algún día una vista se mide con datos que nadie eligió, el defecto NO estará aquí.
+    // Lo fija `tests/scrum848b-el-fixture-llega-a-la-pantalla.test.mjs`.
+    apiRequest: async (ruta, opts) => (typeof opciones.datos === 'function' ? opciones.datos(String(ruta), opts) : (opciones.datos ?? {})),
     // SCRUM-362 (H7): con escenario de red, el `fetch` es el suyo. Sin él, el de siempre —una red
     // que responde bien— para no cambiar lo que ya miden los demás tests.
     fetch: opciones.red?.fetch ?? (async (url, opts) => ({

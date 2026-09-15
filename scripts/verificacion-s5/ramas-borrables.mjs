@@ -60,7 +60,32 @@ if (!vivas.size || !mergeadas.size) {
   process.exit(2);
 }
 
-const borrables = [...vivas].filter((r) => mergeadas.has(r) && !INTOCABLES.has(r)).sort();
+/**
+ * 🔴 LAS APARTADAS · dentro de `main`, pero SIN un commit de merge que las nombre.
+ *
+ * El riesgo de borrar una rama mergeada es que su PR siga ABIERTO — borrarla lo cierra. Aquí no
+ * hay `gh`, así que ese dato no se puede consultar… pero SÍ se puede acotar, y esto lo acota:
+ *
+ * · Una rama que entró por su PROPIO commit de merge («Merge pull request #N from …/<rama>»)
+ *   tiene su PR cerrado por definición: es el merge lo que lo cerró. Borrarla no cierra nada.
+ * · Una rama cuyo contenido está dentro de `main` pero a la que NINGÚN merge nombra llegó por
+ *   otra vía —la rebasaron, la absorbió otra, se aplicó a mano—. Su PR pudo quedarse abierto.
+ *
+ * Así que estas se APARTAN del barrido y se listan con su motivo, para mirarlas a mano. No es
+ * una lista escrita: se DERIVA del histórico en cada ejecución, así que no envejece.
+ *
+ * ⚠️ Y el riesgo cambió: desde que los PR se abren SOLOS hay muchos más abiertos que antes, así
+ * que este apartado pasó de ser prudencia a ser necesario.
+ */
+const nombradasPorUnMerge = new Set();
+for (const asunto of lineas(git('log', '--merges', '--format=%s', 'origin/main'))) {
+  for (const re of [/from\s+[\w.-]+\/([A-Za-z0-9._/-]+)/g, /\binto\s+([A-Za-z0-9._/-]+)/g]) {
+    for (const m of asunto.matchAll(re)) nombradasPorUnMerge.add(m[1].replace(/^origin\//, ''));
+  }
+}
+const dentroDeMain = [...vivas].filter((r) => mergeadas.has(r) && !INTOCABLES.has(r)).sort();
+const apartadas = dentroDeMain.filter((r) => !nombradasPorUnMerge.has(r));
+const borrables = dentroDeMain.filter((r) => nombradasPorUnMerge.has(r));
 
 // ── CONTROLES, antes de enseñar nada ────────────────────────────────────────────────────────
 const coladas = borrables.filter((r) => sinMergear.has(r));
@@ -69,10 +94,21 @@ console.log(`ramas vivas en el remoto: ${vivas.size} · mergeadas en main: ${mer
 console.log(`refs locales de más (ramas ya borradas por otro): ${[...mergeadas, ...sinMergear].filter((r) => !vivas.has(r)).length}`);
 console.log(`CONTROL · ninguna sin mergear en la lista: ${coladas.length === 0 ? '✅' : '🔴 ' + coladas.join(', ')}`);
 console.log(`CONTROL · main fuera de la lista: ${conMain.length === 0 ? '✅' : '🔴'}`);
+// SUELO del apartado: si NINGUNA rama queda apartada, o quedan casi todas, el emparejador de
+// nombres del histórico se ha roto y este reparto no describe nada.
+const proporcion = dentroDeMain.length ? apartadas.length / dentroDeMain.length : 1;
+console.log(`CONTROL · el reparto separa de verdad: ${apartadas.length} apartadas de ${dentroDeMain.length}`
+  + ` (${(proporcion * 100).toFixed(1)} %) ${proporcion > 0 && proporcion < 0.25 ? '✅' : '🔴 sospechoso: el emparejador de nombres puede estar roto'}`);
 if (coladas.length || conMain.length) process.exit(2);
 
+console.log(`\n⚠️  APARTADAS DEL BARRIDO — ${apartadas.length}. Están DENTRO de main pero ningún commit`);
+console.log('   de merge las nombra: su contenido llegó por otra vía, así que su PR puede seguir');
+console.log('   ABIERTO y borrarlas lo cerraría. Se miran A MANO; no entran en los comandos de abajo.');
+for (const r of apartadas) console.log('     ' + r);
+
 const conNum = borrables.filter((r) => /^scrum-\d+/i.test(r));
-console.log(`\nBORRABLES: ${borrables.length}  (${conNum.length} con número de ticket · ${borrables.length - conNum.length} sin número)\n`);
+console.log(`\nBORRABLES: ${borrables.length}  (${conNum.length} con número de ticket · ${borrables.length - conNum.length} sin número)`);
+console.log(`  — todas entraron por su PROPIO commit de merge, así que su PR se cerró al mergear.\n`);
 for (const r of borrables) console.log('  ' + r);
 
 // ── LOS COMANDOS ────────────────────────────────────────────────────────────────────────────
