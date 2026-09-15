@@ -284,19 +284,7 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      # ── `guard:lista-trabajos` compara contra `origin/main` (hermanas ⑥), y necesita SU MISMO
-      # ÁRBOL que `meta-mutaciones` (SCRUM-765) y `vigia-despliegue` (SCRUM-716b): un checkout
-      # DESNUDO no trae `origin/main`, así que `merge-base HEAD origin/main` no resuelve NADA
-      # (ni con `fetch-depth: 0` solo — medido en SCRUM-765, hacen falta las DOS líneas) y el
-      # guard sale CIEGO en vez de medir. `_base-de-la-rama.mjs` se niega a caer hacia la punta
-      # de `origin/main` a propósito (ése es el defecto de SCRUM-723), así que el árbol se le
-      # da completo en vez de relajar esa negativa.
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Traer `main` (guard:lista-trabajos compara contra su merge-base)
-        run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
 
       - uses: actions/setup-node@v4
         with:
