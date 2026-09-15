@@ -855,6 +855,27 @@ export const DECLARADOS = [
       + 'fundador, así que el contador no puede leerla. Pura y con sus dos rojos; su cable es el '
       + 'ALTER de SCRUM-340.',
     exports: ['plazaOcupada'] },
+
+  // ── SCRUM-815 (③) · la exclusión que se nombra para no parecer un olvido ────────────────
+  //
+  // El protocolo de `gateway_events` se enciende SOLO para los cinco tipos de evento seguros de
+  // repetir. Los DOS que no lo son quedan fuera por decisión del asesor (15-sep-2026): hoy el
+  // defecto es silencioso —se pierden eventos— y encenderlo ahí lo volvería ruidoso: correo de
+  // primer pago reenviado, WhatsApp de disputa repetido, posible mes gratis duplicado.
+  //
+  // `EVENTOS_CON_REGISTRO` NO está aquí, y es la diferencia: aquélla la consume `llevaRegistro`
+  // dentro del propio módulo, así que se le quitó el `export` en vez de declararla. Ésta no la
+  // consume nadie dentro —su trabajo es CONSTAR— y por eso se declara en vez de des-exportarla.
+  //
+  // Lo retira: quien cablee la exclusión a algo que la lea de verdad (un panel de eventos
+  // atascados, o el día que los dos tipos dejen de tener efectos irreversibles y entren).
+  { modulo: 'src/modules/billing/domain/gatewayEvents.service.ts',
+    cat: 'ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE', desde: '2026-09-15',
+    motivo: 'La lista de los dos eventos que NO llevan registro de idempotencia, enumerados a '
+      + 'propósito: una exclusión que no se nombra se lee como un descuido, y la siguiente '
+      + 'sesión la «arregla» encendiéndolos. Su test la recorre y exige que `llevaRegistro` diga '
+      + 'que no a los dos, que es el control positivo de la decisión.',
+    exports: ['EVENTOS_SIN_REGISTRO'] },
 ];
 
 /** Los pares `módulo::export` declarados, aplanados. */
