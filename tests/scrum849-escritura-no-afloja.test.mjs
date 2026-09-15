@@ -208,6 +208,73 @@ test('SCRUM-849 · ⑤ reconoce la comprobación hecha en un auxiliar del mismo 
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
+// ⑦ EL AGUJERO, CERRADO **CORRIENDO** — un guard por AST dice que la línea está, no que funcione
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-849 · 🔴 ⑦ un técnico ajeno NO puede escribir el albarán de otra obra', async () => {
+  // Handler REAL con `prisma` de doble (patrón SCRUM-302/263/257b). Esto es el defecto original
+  // reproducido: antes de este PR, este mismo POST devolvía 200.
+  const moduloPrisma = await import('../dist/core/db/prisma.js');
+  const routerDe = (mod) => mod.default?.default ?? mod.default;
+
+  const ALBARAN = {
+    id: 7, merchantId: 7, jobId: 42, numero: 'ALB-2026-0003', fecha: new Date('2026-09-15T10:00:00Z'),
+    modoValoracion: 'SIN_VALORAR', lineas: [], estado: 'borrador', version: 1,
+    signatureUrl: null, firmadoAt: null, evidenciaFirma: null, notas: null, pdfUrl: null, invoiceId: null,
+  };
+  const DUENO = 11;
+  const AJENO = 99;
+
+  async function emitirComo(teamMemberId) {
+    let escribio = false;
+    moduloPrisma.prisma.albaran = {
+      findFirst: async () => ALBARAN,
+      update: async ({ data }) => { escribio = true; return { ...ALBARAN, ...data }; },
+    };
+    // El Trabajo es de DUENO por los tres ejes; nadie más lo tiene.
+    moduloPrisma.prisma.job = {
+      findFirst: async () => ({
+        id: 42, merchantId: 7, customerId: 5,
+        operarioId: DUENO, assignedUserId: null, assignees: [],
+      }),
+    };
+    moduloPrisma.prisma.customer = {
+      findFirst: async () => ({ name: 'Ferretería Pepe', legalName: null, taxId: null, email: null, phone: null }),
+    };
+
+    const router = routerDe(await import('../dist/modules/jobs/app/routes/albaranes.routes.js'));
+    const capa = router.stack.find((l) => l.route?.path === '/:id/emitir' && l.route?.methods?.post);
+    assert.ok(capa, '🔴 no existe POST /:id/emitir: no hay nada que medir');
+
+    let salida = null;
+    const res = {
+      status(c) { this._c = c; return this; },
+      json(b) { salida = { code: this._c ?? 200, body: b }; return this; },
+      setHeader() { return this; },
+    };
+    const hs = capa.route.stack;
+    await hs[hs.length - 1].handle(
+      { params: { id: '7' }, body: {}, merchantId: 7, userRole: 'tecnico', teamMemberId, query: {}, headers: {} },
+      res, () => {},
+    );
+    return { salida, escribio };
+  }
+
+  const ajeno = await emitirComo(AJENO);
+  assert.equal(ajeno.salida?.code, 404,
+    '🔴 EL TÉCNICO AJENO EMITIÓ EL ALBARÁN DE OTRA OBRA. Es el defecto de SCRUM-849 corriendo: '
+    + `no puede ni abrirlo por GET y sí puede escribirlo. Devolvió ${ajeno.salida?.code}.`);
+  assert.equal(ajeno.escribio, false, '🔴 llegó una escritura a la base en una petición denegada');
+
+  // CONTROL POSITIVO: al dueño NO se le ha roto nada. Sin esto, un 404 para todos también pasaría.
+  const dueno = await emitirComo(DUENO);
+  assert.equal(dueno.salida?.code, 200,
+    `🔴 EL DUEÑO DEL TRABAJO YA NO PUEDE EMITIR SU PROPIO PARTE (${dueno.salida?.code}). `
+    + 'El filtro se ha pasado de frenada: eso no es cerrar un agujero, es romper el trabajo de campo.');
+  assert.equal(dueno.escribio, true, '🔴 el dueño recibió 200 pero no se escribió nada');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
 // ⑥ LOS EJES SE DERIVAN DEL ÁRBOL, no se copian aquí
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 
