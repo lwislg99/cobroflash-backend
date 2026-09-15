@@ -669,6 +669,113 @@ Prisma: el binario es el local de `node_modules`.
 **El protocolo del webhook**: ni una línea. El sitio queda abierto y ahí se para.
 **Ningún otro modelo** de `schema.prisma`, y ningún fichero de `src/`.
 
+
+---
+
+# SCRUM-815 · APÉNDICE · 15-sep-2026 · El efecto ② cerrado: la carrera del referido
+
+**Medido contra:** `origin/main` = `e12da8e394102d3f216dcc9b851b91014bf73458` · 2026-09-15T11:01:29Z
+**Rama:** `scrum-815-carrera-del-referido` · **Carril:** dinero · **Gate:** sin gate
+
+> 📌 Encabezado `# SCRUM-815` por el delimitador de `scrum267-ancla-de-medicion.test.mjs:147`.
+> No re-mide nada: parte del paso ① §3 y cierra **un solo efecto**.
+
+---
+
+## 1 · El defecto, y lo que se llevaba
+
+`rewardReferralOnFirstPayment` LEÍA `referralRewardedAt`, comprobaba en JavaScript y DESPUÉS
+escribía. Entre el `if` y el `update` no hay nada. Dos entregas simultáneas del mismo primer pago
+leen `null` las dos, las dos pasan la guarda y las dos incrementan `freeMonthsEarned`.
+
+### 🔴 EL ROJO, EJECUTADO ANTES DEL ARREGLO
+
+```
+not ok 2 - SCRUM-815 · 🔴 dos entregas SIMULTÁNEAS del mismo primer pago → UN mes, no dos
+  error: 🔴 EL REFERIDOR SE HA LLEVADO 2 MESES GRATIS POR UN SOLO REFERIDO. …
+  2 !== 1
+```
+
+---
+
+## 2 · El arreglo: la condición viaja DENTRO del UPDATE
+
+```ts
+const reclamo = await tx.merchant.updateMany({
+  where: { id: referredMerchantId, referralRewardedAt: null },
+  data: { referralRewardedAt: new Date() },
+});
+if (reclamo.count !== 1) return false;   // otra entrega se adelantó
+```
+
+La base comprueba y escribe **de una pieza**; el que llega segundo recibe `count: 0` y se va sin
+cobrar. Es el mismo patrón —y por el mismo motivo— que el guard anti-doble-consolidación de
+`recapitulativa.service.ts:118`, que este máster describe como «lo que hace segura la concurrencia».
+
+> 🔴 **`count` NO ES DECORATIVO.** Es lo único que distingue «he reclamado yo» de «alguien se me
+> adelantó». Medido con mutación: sustituyendo `if (reclamo.count !== 1)` por `if (false)`, el banco
+> vuelve a dar **`2 !== 1`**. Un update condicional cuyo resultado no se mira tiene el mismo defecto
+> con otra forma. Fuente restaurada byte a byte — sha256 `4c9f6cfb3da0972e` antes y después.
+
+La lectura de arriba **se queda, pero como atajo barato**, no como cerrojo: evita abrir transacción
+en el caso normal (la reentrega de días después). Está dicho en el código para que nadie la
+confunda con la guarda.
+
+---
+
+## 3 · El banco: `tests/scrum815-referido-una-sola-vez.test.mjs`
+
+| control | qué fija |
+|---|---|
+| 🔴 SUELO | un primer pago da **1** mes. Sin esto, «no da dos» se cumpliría sobre un sistema que no recompensa nunca |
+| 🔴 LA CARRERA | dos entregas **simultáneas** → **1** mes, no 2 |
+| ✅ LA BASE DECIDE | la segunda llamada afecta a **cero** filas |
+| ✅ POSITIVO | dos referidos **distintos** siguen dando un mes **cada uno** |
+| ✅ POSITIVO | sin referidor no se marca ni se paga a nadie |
+| 🔴 ESTRUCTURAL | la guarda está en el `where` **y** el código mira el `count` |
+
+### 🔴 Por qué este fichero NO usa `tests/_envio-doblado.mjs`
+
+Su doble corta por lo sano con todo lo que empieza por `$`:
+
+```js
+if (nombre.startsWith('$')) return async () => undefined;   // _envio-doblado.mjs:66
+```
+
+O sea que **`$transaction(cb)` devuelve `undefined` sin llamar a `cb`**. Con ese doble el cuerpo de
+la transacción no se ejecuta y el test saldría verde sin haber probado nada. Un doble que se traga
+la transacción no puede arbitrar una carrera que vive dentro de ella. Por eso hay un doble propio
+que modela lo único que decide: que un UPDATE condicional es atómico y devuelve cuántas filas tocó.
+
+> ⚠️ **LÍMITE DECLARADO:** ese doble es un MODELO, no Postgres. Por eso el banco lleva además el
+> control ESTRUCTURAL, que no depende del modelo: si alguien vuelve a leer-y-luego-escribir, el
+> modelo podría no enterarse y la forma sí.
+
+---
+
+## 4 · 🔴 EL PATRÓN SE REPITE: 3 sitios más en este mismo fichero
+
+Se arregla **sólo el del encargo** (regla 9), pero el censo se deja hecho y con línea:
+
+| sitio | forma | qué se lleva |
+|---|---|---|
+| 🔴 `redeemFreeMonth` :73 → :78 → :84 | lee `freeMonthsEarned`, comprueba `< 1`, y **después** `decrement: 1` | **es dinero y es la misma carrera**: dos canjes simultáneos con UN crédito pasan los dos → el saldo queda en **−1** y el merchant estira `planExpiresAt` **dos veces**. Su propio comentario dice «Idempotente por crédito», y la carrera lo desmiente |
+| `ensureReferralCode` :31 → :35 → :37 | lee `referralCode`, y si falta genera y escribe | dos llamadas a la vez generan dos códigos y gana el último. Molesto, no caro |
+| `generateUniqueReferralCode` :21 → :22 | comprueba existencia y el que escribe es otro | TOCTOU **amortiguado por la base**: `referralCode` es `@unique`, así que una colisión real revienta en vez de corromper |
+
+**`redeemFreeMonth` merece ticket propio**: mismo carril (dinero), misma forma, y el arreglo es la
+misma línea —`updateMany({ where: { id, freeMonthsEarned: { gte: 1 } }, data: { decrement: 1 } })`
+mirando el `count`—. No se toca aquí porque no es este encargo.
+
+## 5 · Lo NO tocado
+
+`prisma/schema.prisma` (S1 está en él, rama `scrum-815-el-modelo-del-evento`, viva al medir) · los
+otros huecos (correo de factura, disputa —cerrada en el apéndice anterior—) · el 400 ante fallo ·
+`redeemFreeMonth` y los otros dos del censo · microcopy. Ninguna base, ninguna clave. **Nada
+ejecutado contra producción ni contra staging.**
+
+---
+
 # SCRUM-815 · APENDICE · 15-sep-2026 · ③ el escritor, solo para los cinco seguros
 
 **Medido contra:** `origin/main` = `e96298e66933fef459218889118a2e6f08eff1e6` · 2026-09-15T12:35:08+01:00
