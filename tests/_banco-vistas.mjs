@@ -846,6 +846,11 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'formaDePagoPorDefecto.js',
   'globalSearch.js',
   'homeView.js',
+  // SCRUM-845 · qué se puede hacer con una FACTURA, sacado de dentro de `renderInvoiceDetailView`
+  // para que la LISTA pudiera preguntarlo. Es el movimiento de SCRUM-366 por CUARTA vez, y el
+  // primero que encontró un instrumento —`censo:decisiones-encerradas`— en vez de una persona.
+  // Sus relaciones de orden se declaran abajo.
+  'invoiceAccion.js',
   'invoiceActionsRegistry.js',
   'invoiceDetailView.js',
   'invoicesView.js',
@@ -972,6 +977,17 @@ export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   { antes: 'patronDetalleAcciones.js', despues: 'albaranAccion.js', motivo: 'SCRUM-831: `destinoEfectivo`, el resolutor' },
   { antes: 'albaranAccion.js', despues: 'albaranesView.js', motivo: 'SCRUM-831: la primaria de cada fila' },
   { antes: 'albaranAccion.js', despues: 'jobDetailView.js', motivo: 'SCRUM-831: las filas de documento del Trabajo' },
+  // SCRUM-845 · `invoiceAccion` lee el registro de factura y el resolutor del patrón, igual que su
+  // hermano del albarán, así que va detrás de los dos.
+  //
+  // ⚠️ Y NO se declara `invoiceAccion.js` → `invoicesView.js`, que sería lo simétrico: en el índice
+  // la LISTA carga ANTES, y es correcto. La llama al PINTAR la tabla, no al cargarse, y para
+  // entonces el documento está entero. Declarar aquí un orden que el índice no cumple pondría rojo
+  // un guard por una dependencia que no existe — y el arreglo cómodo sería mover el `<script>`,
+  // tocando el orden de una pantalla que hoy funciona.
+  { antes: 'invoiceActionsRegistry.js', despues: 'invoiceAccion.js', motivo: 'SCRUM-845: la tabla de acciones que lee' },
+  { antes: 'patronDetalleAcciones.js', despues: 'invoiceAccion.js', motivo: 'SCRUM-845: `destinoEfectivo`, el resolutor' },
+  { antes: 'invoiceAccion.js', despues: 'invoiceDetailView.js', motivo: 'SCRUM-845: el estado y el destino de cada acción' },
   { antes: 'jobAgendar.js', despues: 'jobsView.js', motivo: 'SCRUM-823: agendar y el modal de la casa' },
   { antes: 'jobAgendar.js', despues: 'jobDetailView.js', motivo: 'SCRUM-823: el CTA «Agendar» del héroe' },
   { antes: 'colaDeFirmas.js', despues: 'parteDetailView.js', motivo: 'SCRUM-652: firma con la cola que ya existe' },
@@ -1097,7 +1113,21 @@ export function cargarDashboard(raiz, opciones = {}) {
     // MISMA forma que el servidor —y los cubos salen de la MISMA función, importada de `dist`, no
     // de una lista escrita aquí— para que un test que pase un array siga midiendo la pantalla real
     // y no una respuesta que ningún servidor devuelve.
-    apiRequest: async (ruta) => (typeof opciones.datos === 'function' ? opciones.datos() : (opciones.datos ?? {})),
+    // 🔴 SCRUM-848 · LA RUTA SE LE PASA AL FIXTURE, igual que ya se hacía con `fetch` aquí debajo.
+    //
+    // No se hacía, y la consecuencia era invisible: un fixture por ruta —`(url) => …`, que es como
+    // están escritos los de `censo-objetivo-tactil-panel` y `DATOS_795`— se llamaba SIN url, así
+    // que caía siempre en su rama por defecto. Toda vista que pida por `apiRequest` —la ficha de
+    // Trabajo, entre otras— quedaba fuera del alcance de su propia fixture y se montaba con `[]`.
+    //
+    // Así se medía la ficha de Trabajo con un Trabajo SIN `status`, que el producto no puede
+    // producir (`Job.status` tiene `@default` en el esquema). Mientras la escalera caía al nivel 5
+    // con cualquier estado no se notó; SCRUM-823 le puso puerta por estado y entonces la pantalla
+    // medida dejó de tener acción de héroe. El guard lo cazó, y tenía razón.
+    //
+    // El segundo argumento va también: `apiRequest(ruta, opciones)` es su firma real, y un fixture
+    // que quiera distinguir un POST de un GET necesita verlo.
+    apiRequest: async (ruta, opts) => (typeof opciones.datos === 'function' ? opciones.datos(String(ruta), opts) : (opciones.datos ?? {})),
     // SCRUM-362 (H7): con escenario de red, el `fetch` es el suyo. Sin él, el de siempre —una red
     // que responde bien— para no cambiar lo que ya miden los demás tests.
     fetch: opciones.red?.fetch ?? (async (url, opts) => ({

@@ -49,6 +49,10 @@ import { resolverFechaDeCobro } from '../../../billing/domain/fechaDeCobro'; // 
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-289 (C7)
+import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
+import {
+  congelarDesdeFicha, congelarParaRectificativa, clienteDelDocumento,
+} from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
 import { puedeRectificarse } from '../../../invoicing/domain/rectificabilidad'; // SCRUM-308
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-289
 import {
@@ -120,9 +124,11 @@ router.post('/', requireRole('admin'), async (req, res) => {
 
     // TENENCIA (regla 2): el cliente tiene que ser DE ESTE merchant. Sin esto, un id ajeno
     // emitiría una factura a nombre del cliente de otro — y una factura emitida no se borra.
+    // SCRUM-729 · el `select` se ensancha a los cinco campos que se congelan: aquí el congelado
+    // sale a COSTE CERO, porque esta consulta de tenencia ya se hacía. Ni un viaje más.
     const customer = await prisma.customer.findFirst({
       where: { id: val.customerId, merchantId: req.merchantId },
-      select: { id: true },
+      select: { id: true, name: true, legalName: true, taxId: true, email: true, phone: true },
     });
     if (!customer) {
       return res.status(404).json({ error: ERROR_CLIENTE_INVALIDO, message: 'Ese cliente no existe.' });
@@ -151,6 +157,7 @@ router.post('/', requireRole('admin'), async (req, res) => {
         quoteId: null, // ESTO es la factura suelta
         actor: actorDeRequest(req),
         origen: 'C7-suelta', // SCRUM-347: nace sin presupuesto ni albarán detrás (A0.5)
+        clienteCongelado: congelarDesdeFicha(customer), // SCRUM-729 · sin viaje extra
       }),
     );
 
@@ -982,27 +989,29 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
     // que sea positivo: una R1 mueve dinero en la otra dirección, pero lo mueve.
     exigirLineasFacturables(negLines);
 
+    // SCRUM-729 · la R1 HEREDA el destinatario de la factura que rectifica. Fuera de la
+    // transacción, como todos: sólo viaja a la base si la original es anterior al escritor.
+    const clienteCongelado = await congelarParaRectificativa(prisma, original);
+
     const rect = await prisma.$transaction(async (tx) => {
       const number = await allocateInvoiceNumber(tx, req.merchantId, {
         rectifying: true, camino: 'C5', actor: actorDeRequest(req),
       });
-      return tx.invoice.create({
-        data: {
-          merchantId: original.merchantId,
-          customerId: original.customerId,
-          quoteId: original.quoteId,
-          number,
-          total: (-Number(original.total)).toFixed(2),
-          currency: original.currency,
-          lines: negLines,
-          type: 'R1',
-          rectifiesId: original.id,
-          status: 'paid',
-          paidAt: new Date(),
-          pdfUrl: 'PENDING_PDF',
-          qrData: 'PENDING_QR',
-          registerId: null,
-        },
+      return crearFacturaEmitida(tx, clienteCongelado, {
+        merchantId: original.merchantId,
+        customerId: original.customerId,
+        quoteId: original.quoteId,
+        number,
+        total: (-Number(original.total)).toFixed(2),
+        currency: original.currency,
+        lines: negLines,
+        type: 'R1',
+        rectifiesId: original.id,
+        status: 'paid',
+        paidAt: new Date(),
+        pdfUrl: 'PENDING_PDF',
+        qrData: 'PENDING_QR',
+        registerId: null,
       });
     });
 
@@ -1117,11 +1126,14 @@ router.post('/:id/regenerate-pdf', requireRole('admin'), async (req, res) => {
         address: merchant.address,
         logoUrl: merchant.logoUrl,
       },
-      customer: {
-        name:  invoice.customer.name,
-        email: invoice.customer.email,
-        phone: invoice.customer.phone,
-      },
+      // SCRUM-729 · el cliente CONGELADO, igual que los otros dos generadores de PDF.
+      //
+      // 🔴 Y aquí faltaba `legalName`, que los otros dos SÍ pasan desde SCRUM-577: la misma
+      // factura salía distinta según por dónde se pidiera el PDF —«Abrir PDF» imprimía la
+      // denominación legal y este botón el nombre comercial—. Es el mismo defecto del ticket por
+      // otra puerta (un destinatario que depende de por dónde se mire), así que entra aquí y no
+      // en un ticket aparte.
+      customer: clienteDelDocumento(invoice, invoice.customer),
       currency: invoice.currency,
       total: invoice.total.toString(),
       qrData,

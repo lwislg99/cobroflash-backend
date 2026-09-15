@@ -129,3 +129,189 @@ prueban `scrum693` y `scrum696`. Lo que fija es lo que sólo se puede perder aqu
 - **No se relajó ninguna prohibición** ni se tocó el código de producto: las nueve mutaciones se
   revirtieron y el worktree quedó limpio, verificado con `git status` después de cada una.
 - **Cero dependencias nuevas** (regla 36).
+
+---
+
+# SCRUM-694b · El filtro que se libraba de `https://` y se moría con `/^https?:\/\//`
+
+**Fecha:** 15-sep-2026 · **Carril:** instrumentos (guards de la casa) · **Gate:** sin gate — corre en `npm test`
+
+**Medido contra:** `origin/main` = `7bae70d0e15c18326b19cb75d23b5d47b5110402` · 2026-09-15T08:03:37Z
+
+**Tanda:** 6486 tests, 6376 pass, 0 fail, 110 skipped — medida DESPUÉS del último cambio.
+
+---
+
+## PASO 0
+
+**ENTRADA.** No hay entrada de usuario: **este carril no tiene pantalla**. Lo que hay son guards, y
+lo que cambia es cómo leen el código que vigilan.
+
+**MECANISMO.** Existía: `tests/_solo-codigo.mjs` (SCRUM-693, arreglado en SCRUM-696). Aquí no se
+construye otro — se le da superficie y, sobre todo, **se le pone suelo**.
+
+**EL TICKET DECÍA TRECE. HOY NO SON TRECE.** El censo de entrada es del 2-sep y el árbol se ha
+movido. Remedido el 15-sep sobre `tests/` y `scripts/`: **51** guards se fabrican su propio filtro
+de comentarios (eran 56). Pero el número bruto no es la pregunta — la pregunta es cuáles producen
+**verdes falsos**, y eso depende de la FORMA del corte:
+
+| forma del corte | cuántos | ¿se come código a mitad de línea? |
+|---|---|---|
+| 🔴 `(^|[^:])\/\/.*$` | **9** | **SÍ** — es la familia de este ticket |
+| `\/\/.*$` a pelo | 3 | sí, pero 2 leen `prisma/schema.prisma` (no aplica) y 1 hoy no pierde nada |
+| `^\s*\/\/.*$` | 30 | no: sólo borra la línea que EMPIEZA por `//` |
+| `(^|\s)\/\/.*$` | 9 | no ante URLs: `https://` lleva `:` delante, no un espacio |
+
+**Así que los trece de hoy son NUEVE**, y son los nueve que se migran aquí.
+
+---
+
+## 🔴 Por qué el `[^:]` parecía que ya lo resolvía
+
+Los nueve llevaban esto:
+
+```js
+.replace(/(^|[^:])\/\/.*$/, '$1')
+```
+
+Ese `[^:]` es un parche contra las URLs: como `https://` lleva **dos puntos** delante de las dos
+barras, el corte no salta y la línea se salva. Parece resuelto, y por eso nadie volvió a mirarlo.
+
+Pero una URL no aparece en el código sólo como texto. Aparece también como **el regex que la
+reconoce**, y ahí las dos barras van detrás de una **contrabarra**:
+
+```
+/^https?:\/\//     →   …`\/` + `/`…   →   dos barras seguidas con `\` delante   →   `[^:]` casa
+```
+
+Y entonces el filtro se come la línea entera **justo donde se valida una URL**.
+
+## 🔴 El caso REAL, pegado — no un ejemplo que se le parezca
+
+Las dos líneas existen en código de producto, medidas el 15-sep-2026:
+
+```
+public/dashboard/js/settingsView.js:1013
+  en disco     : if (!/^https?:\/\//i.test(v)) v = 'https://' + v;
+  filtro viejo : if (!/^https?:\/
+  soloCodigo() : if (!/^https?:\/\//i.test(v)) v = 'https://' + v;
+
+src/core/validation/schemas.ts:483
+  en disco     : (v) => (typeof v === 'string' && v.trim() && !/^https?:\/\//i.test(v.trim()) ? `https://${v.trim()}` : v),
+  filtro viejo : (v) => (typeof v === 'string' && v.trim() && !/^https?:\/
+  soloCodigo() : (v) => (typeof v === 'string' && v.trim() && !/^https?:\/\//i.test(v.trim()) ? `https://${v.trim()}` : v),
+```
+
+Y **una que un guard migrado ya desnudaba así en cada tanda**, que es la que convierte esto de
+riesgo en hecho — `scrum745` sobre `scripts/meta-guard-mutaciones.mjs:515`:
+
+```
+  en disco     : if (/(^|[^\w.])(\.\.\/)?dist\//.test(n.text)) visto = true;
+  filtro viejo : if (/(^|[^\w.])(\.\.\/)?dist\
+```
+
+`scrum745` prohíbe **en negativo** que ese fichero nombre un reporter. Sobre el texto que el
+filtro se lleva por delante, una negación se cumple sola.
+
+---
+
+## Lo que decide: las nueve siguen saltando, y el filtro viejo NO las habría visto
+
+La tanda en verde no prueba nada aquí: el riesgo de migrar un filtro es **cambiarlo por un guard
+muerto**, y un guard muerto sale más verde que uno sano. Así que la evidencia son **seis
+mutaciones reales, en disco**, sobre el código que cada guard vigila. Cada violación va detrás de
+un regex de URL **en la misma línea** —la forma de `schemas.ts:483`—, así que la misma mutación
+contesta las dos preguntas de golpe:
+
+| guard | violación inyectada | ① guard con el mecanismo | ② ¿la veía el filtro viejo? |
+|---|---|---|---|
+| `scrum500-suplidos` | `const suplido694b = 0;` en `vat.service.ts` | 🔴 ROJO | no |
+| `scrum611-tipo-iva-elegible` | `[21, 10, 4, 0]` en `quotesView.js` | 🔴 ROJO | no |
+| `scrum623-desglose-por-tipo` | `'IVA'` dentro de `generateInvoicePdf` | 🔴 ROJO | no |
+| `scrum647-presupuesto-tambien-neutral` | `locale.vatName` dentro de `generateQuotePdf` | 🔴 ROJO | no |
+| `scrum741-la-entrada-no-la-linea` | la regex anclada en `$` en su vigilante | 🔴 ROJO | no |
+| `scrum745-comparar-por-identidad` | `'--test-reporter=tap'` en el meta-guard | 🔴 ROJO | no |
+
+**6 de 6 saltan, y 0 de 6 eran visibles con el filtro que se retira.** El árbol quedó limpio tras
+cada una (`git status` verificado por el propio banco).
+
+Los otros tres migrados (`scrum598`, `scrum609b`, `scrum641`) afirman en POSITIVO. Ahí un filtro
+que se come código da **rojo**, no verde: se migran igual por el mismo motivo, pero no se les
+inventa una mutación para que la tabla quede más larga.
+
+---
+
+## 🔴 El suelo del helper, que es lo más caro que hay aquí
+
+`tests/_solo-codigo.mjs` lo importan ya **50** ficheros. Eso no es reutilización: es un **punto
+único de fallo para 50 protecciones**. Si un día devuelve algo peor sin decirlo, no cae un guard
+— se apagan todos a la vez, y la tanda sale MÁS VERDE que antes.
+
+Tenía un agujero exacto de la familia de la casa: las tres funciones empezaban por
+`String(fuente ?? '')`. Con `undefined` —una ruta mal montada, un `match()` que dio `null`, un
+`leer()` con `try/catch`— `soloCodigo` devolvía **la cadena vacía** y `literalesDe` **la lista
+vacía**, en silencio. Y los guards que llaman aquí preguntan casi siempre en NEGATIVO («esto no
+aparece», «esto no se pinta»): sobre la nada, todas esas preguntas se contestan solas que todo
+va bien. **Vacío y no-medido se leen igual y significan lo contrario.**
+
+Ahora el módulo **revienta** en vez de rellenar, y además **verifica el contrato que su cabecera
+prometía sin comprobar**: misma longitud, mismas líneas, y lo único que puede cambiar es un
+comentario convertido en espacio. Importa porque los guards acotan bloques con
+`slice(indexOf(…))`: si los índices se descolocan, cada uno mide un trozo que no es el suyo y no
+se entera. Verificado sobre los **1.776** ficheros del árbol ANTES de fijarlo — los 1.776 lo
+cumplen, así que el suelo no inventa un rojo: fija el que ya se cumplía para que no se pueda
+perder.
+
+### 🔴 Y lo que NO lleva el suelo, porque la tanda lo tumbó
+
+Se intentó añadir «si el fuente tiene contenido y la salida sale TODA en blanco, revienta». La
+tanda lo tiró en el acto, y con razón: **un fuente que es enteramente un comentario tiene que
+salir entero en blanco**, y ésa es la respuesta correcta. Lo usan de verdad `scrum713c` y
+`_cifras-sin-ancla.mjs`, que deriva los comentarios POR DIFERENCIA contra esta salida.
+
+Desde dentro del módulo, «lo he blanqueado todo porque todo era comentario» y «lo he blanqueado
+todo porque estoy roto» **no se distinguen**. Quien sí puede distinguirlo es quien llama, que sabe
+qué le dio. Queda escrito en el propio fichero para que no se vuelva a intentar. Un suelo que
+salta con entrada legítima no es un suelo: es lo que acaba haciendo que alguien lo relaje.
+
+---
+
+## Qué se construyó
+
+**`tests/scrum694b-el-filtro-que-no-ve-la-url.test.mjs`** — 9 tests. No repite lo que ya prueban
+`scrum693`, `scrum696` ni `scrum694`:
+
+- los nueve **importan** el mecanismo, y se mira sobre el CÓDIGO (nombrarlo en un comentario no
+  es importarlo);
+- ninguno se ha quedado **vacío**: cada uno conserva la aguja que le da sentido;
+- el corte `(^|[^:])//` **no ha vuelto** a ninguno de los nueve;
+- 🔴 **el caso real**: las líneas de `settingsView.js`, `schemas.ts` y `meta-guard-mutaciones.mjs`,
+  localizadas **por su contenido y no por su número de línea** (un test anclado a un número o
+  miente o se cae por nada), con su **suelo**: si dejaran de existir, eso no es «arreglado», es
+  «no medido», y el mensaje lo dice;
+- el suelo del helper en las dos direcciones: revienta con lo que no es un fuente, y **sigue
+  aceptando lo legítimo** (un suelo que también tumba los casos buenos es un estorbo);
+- el contrato del helper sobre **todo el árbol**, con suelo del suelo (si el recorrido viera menos
+  de 500 ficheros, el bucle pasaría vacío y no comprobaría nada).
+
+**Trinquete de SCRUM-694: 56 → 42**, con el desglose escrito en el propio fichero: −9 migrados
+aquí, −5 que ya no estaban cuando se remidió (el árbol se movió entre el 2 y el 15 de septiembre;
+no los migró este ticket y no se apunta el mérito). Y por qué los 42 que quedan son de familias
+distintas, no un descuido.
+
+---
+
+## Lo que NO se hizo
+
+- **No se migraron los 42 restantes.** Están medidos y clasificados por familia. Los 30 de
+  `^\s*//` y los 9 de `(^|\s)//` no cortan a mitad de línea ante una URL, que es el defecto de
+  este ticket; migrarlos es otra decisión (regla 9).
+- **No se migró `scripts/censo-anclas-bloque-f.mjs`**, que sí corta en cualquier `//`. Dos
+  motivos, los dos medidos: (a) el 15-sep-2026 **no pierde ni una línea** del fichero que lee
+  (`src/core/flags.ts`), y (b) ningún `scripts/` importa hoy `tests/_solo-codigo.mjs`, así que
+  migrarlo estrenaría una dirección de dependencia nueva `scripts/ → tests/` sin necesidad.
+- **No se tocó código de producto.** Las seis mutaciones se revirtieron y el árbol quedó limpio,
+  verificado tras cada una. El diff son sólo ficheros de `tests/`.
+- **No se relajó ningún guard** (regla 41): el arreglo va en el FILTRO, no en lo que cada guard
+  exige. Ninguna prohibición cambió.
+- **Cero dependencias nuevas** (regla 36) y **cero estado o flag nuevo** (regla 27).
