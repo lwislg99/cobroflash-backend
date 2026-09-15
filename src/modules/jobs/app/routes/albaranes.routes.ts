@@ -58,6 +58,7 @@ import {
 } from '../../domain/albaranFacturacion';
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service';
 import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
+import { datosDeAlbaranEmitido } from '../../domain/albaranEmision'; // SCRUM-841
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { getEmissionMode } from '../../../invoicing/domain/emission.service';
@@ -849,7 +850,39 @@ router.post('/:id/emitir', async (req, res) => {
     if (!canTransitionAlbaran(albaran.estado, 'emitido')) {
       return res.status(409).json({ error: 'invalid_transition', from: albaran.estado, to: 'emitido' });
     }
-    const updated = await prisma.albaran.update({ where: { id: albaran.id }, data: { estado: 'emitido' } });
+
+    // ── SCRUM-841 · EL CLIENTE SE CONGELA AQUÍ, AL EMITIR ──────────────────────────────────
+    //
+    // Hasta hoy este `update` mandaba exactamente `{ estado: 'emitido' }` —medido corriendo, con
+    // este mismo handler— y las cinco columnas de `albaranes` que SCRUM-729 dejó aplicadas se
+    // quedaban a NULL. El documento entregado reimprimía entonces el cliente de HOY.
+    //
+    // 🔴 DESPUÉS de la comprobación de transición, y no antes: un 409 no debe costar dos viajes.
+    // Y ANTES del `update`, que es el único que hay: el congelado viaja DENTRO de la escritura
+    // que ya se hacía, así que esta ruta pasa de 2 viajes a 4 y sigue sin abrir transacción.
+    //
+    // 🔴 Y NO SE RE-CONGELA: la salida idempotente de tres líneas más arriba devuelve el albarán
+    // ya emitido sin tocarlo. Re-congelar al segundo POST reescribiría el retrato con la ficha de
+    // hoy — que es el defecto entero, colado por la puerta del reintento.
+    const job = await prisma.job.findFirst({
+      where: { id: albaran.jobId, merchantId: req.merchantId },
+      select: { customerId: true },
+    });
+    // Inalcanzable por construcción —`findAlbaran` ya acotó por merchant y `Job.customerId` es
+    // `Int` no nulo— y se falla cerrado igualmente: emitir sin poder congelar sería emitir el
+    // documento sin retrato, que es justo lo que este ticket cierra. 404 como el resto del fichero.
+    if (!job) return res.status(404).json({ error: 'not_found' });
+    // `congelarCliente` es el de SCRUM-729, sin una línea nueva: filtra por merchant (regla 2) y
+    // lanza si la ficha no está. Se reutiliza en vez de copiar sus cinco asignaciones porque dos
+    // sitios que derivan el mismo dato acaban divergiendo.
+    const clienteCongelado = await congelarCliente(prisma, req.merchantId!, job.customerId);
+
+    const updated = await prisma.albaran.update({
+      where: { id: albaran.id },
+      // El estado y el retrato salen JUNTOS de `datosDeAlbaranEmitido`, y el cliente es parámetro
+      // obligatorio: un emisor que se olvide del congelado no compila.
+      data: datosDeAlbaranEmitido(clienteCongelado),
+    });
     return res.json(serializeAlbaran(updated));
   } catch (err: any) {
     console.error('[POST /admin/albaranes/:id/emitir]', err?.message || err);
