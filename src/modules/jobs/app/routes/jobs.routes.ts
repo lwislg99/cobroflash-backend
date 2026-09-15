@@ -894,6 +894,13 @@ router.patch('/:id', async (req, res) => {
     if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
     const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!job) return res.status(404).json({ error: 'not_found' });
+    // 🔴 SCRUM-849 · LA MISMA COMPROBACION QUE `GET /:id`, QUE AQUI NO ESTABA.
+    // Sin esto, un tecnico no podia ABRIR el Trabajo de otro (404 desde SCRUM-23) y si podia
+    // ESCRIBIR en el. Un eje y no tres, porque es el que aplica la lectura de ESTE recurso:
+    // subir aqui a los tres ejes de albaranes dejaria la escritura mas abierta que su lectura.
+    if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
+      return res.status(404).json({ error: 'not_found' });
+    }
 
     // SCRUM-120: gate por CAMPO (no por ruta — status/scheduledAt/notes del día a día son del operario).
     // Admin-only por afectar a FACTURACIÓN/DINERO: `tipoOperacion` (bandera fiscal: recapitulativa mensual
@@ -1094,6 +1101,13 @@ router.post('/:id/albaranes', async (req, res) => {
     if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
     const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!job) return res.status(404).json({ error: 'not_found' });
+    // 🔴 SCRUM-849 · LA MISMA COMPROBACION QUE `GET /:id`, QUE AQUI NO ESTABA.
+    // Sin esto, un tecnico no podia ABRIR el Trabajo de otro (404 desde SCRUM-23) y si podia
+    // ESCRIBIR en el. Un eje y no tres, porque es el que aplica la lectura de ESTE recurso:
+    // subir aqui a los tres ejes de albaranes dejaria la escritura mas abierta que su lectura.
+    if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
+      return res.status(404).json({ error: 'not_found' });
+    }
 
     // SCRUM-257 · UN ALBARÁN NACE DE UN PRESUPUESTO (decisión 1 del fundador, 2-ago-2026).
     //

@@ -110,7 +110,10 @@ async function invocarEmitir(albaran, ficha = FICHA_DE_ENTONCES) {
   };
   const hs = capa.route.stack;
   await hs[hs.length - 1].handle(
-    { params: { id: String(albaran.id) }, body: {}, merchantId: albaran.merchantId, query: {}, headers: {} },
+    // SCRUM-849 · `userRole` NO es decorado: sin el, `seesAllJobs` cae del lado RESTRINGIDO
+    // —allowlist fail-closed, a proposito— y `findAlbaran` devuelve 404. Un `req` real SIEMPRE
+    // lo trae (lo inyecta `requireAuth`), asi que el doble sin rol era el irreal.
+    { params: { id: String(albaran.id) }, body: {}, merchantId: albaran.merchantId, userRole: 'admin', query: {}, headers: {} },
     res, () => {},
   );
   return { salida, dataDelUpdate, whereDeLaFicha, vecesQueSeActualizo };
