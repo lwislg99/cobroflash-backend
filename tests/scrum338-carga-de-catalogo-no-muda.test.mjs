@@ -20,6 +20,7 @@
 // ⚠️ NO BLOQUEAR SIGUE SIENDO CORRECTO. Un catálogo que no carga no puede impedir empezar a
 // trabajar. Lo que se arregla no es el flujo: es el silencio.
 import test from 'node:test';
+import { bloqueDesde } from './_bloque-por-identidad.mjs'; // SCRUM-675
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -84,7 +85,19 @@ test('SCRUM-338 · pero SIGUE SIN BLOQUEAR el onboarding', () => {
   // El `save` del paso no puede propagar el error: el catch tiene que seguir tragándoselo.
   const i = s.indexOf("apiRequest('/admin/products/load-catalog'");
   assert.ok(i > 0, '🔴 no encuentro la llamada al catálogo.');
-  const bloque = s.slice(i, i + 1800);
+  // ── 🔴 SCRUM-675 (fase b) · ANCLA POR IDENTIDAD, NO POR DISTANCIA ──────────────────────
+  //
+  // Aqui ponia `s.slice(i, i + 1800)`. Medido: el `save` real del paso 3 son 2399 caracteres,
+  // asi que este guard NO MIRABA 599 de ellos — y como su aserto de abajo es `doesNotMatch`, un
+  // `throw` caido en ese hueco habria PASADO EN VERDE. Era la unica ceguera SILENCIOSA sobre
+  // fuente cruda del arbol (censo v2 de SCRUM-675).
+  //
+  // Ahora el bloque acaba donde acaba el `save`: un comentario ya no lo desborda. Y NO se subio
+  // el tope — subirlo reproduce el defecto con otro numero en tres meses (regla 41).
+  const paso3 = bloqueDesde(s, '// ── Paso 3 ─');
+  const bloque = bloqueDesde(paso3, 'save: async () => {');
+  assert.ok(bloque.includes("apiRequest('/admin/products/load-catalog'"),
+    '🔴 el `save` del paso 3 ya no llama al catalogo: este guard vigila otra cosa.');
   assert.match(bloque, /catch \(_\) \{/,
     '🔴 la carga del catálogo ha dejado de ir dentro de un `catch`: un catálogo que no carga NO ' +
     'puede impedir empezar a trabajar. Lo que se arregló fue el silencio, no el flujo.');
