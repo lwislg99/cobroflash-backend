@@ -262,3 +262,65 @@ Commit de las siembras: `19291ab63be7100c8c5ab8fa1d58a91dc67a79e6`, comiteado AN
 - Donde su criterio laxo y el estricto coinciden, no se ha juzgado a mano.
 - Una siembra demuestra que el instrumento VE su caso fabricado; no que su cifra sobre el árbol de
   verdad sea la correcta.
+
+---
+
+# APÉNDICE · SCRUM-846c (15-sep-2026) · El trinquete: el cero del censo, dentro de la tanda
+
+**Medido contra:** `origin/main` = `5e0817eb093154075575efdc899f4c55419207ef` · 2026-09-15T16:49+02:00
+
+**Rama:** `scrum-846c-trinquete-del-censo` · anexo de SCRUM-846, sin ticket nuevo · `prisma generate` rc=0 ·
+`HEAD..origin/main` = 0 al ramificar.
+
+## Qué es
+
+`tests/scrum846c-trinquete-instrumentos-con-caso.test.mjs` corre el censo dentro de `npm test` y **cae si
+aparece un instrumento de medición sin un caso conocido delante**. Nombra el fichero y la función y
+explica el arreglo: sembrar un caso que dé SÍ y otro que dé NO.
+
+«build + tests» es el único check obligatorio de `main`, así que este test puede parar el PR de
+cualquier carril. Por eso el mensaje está escrito para que quien lo lea lo arregle sin preguntar, y por
+eso lleva escritos sus límites: un trinquete que calla lo que no ve se lee como cobertura total.
+
+Cuatro controles:
+
+1. **Suelo:** tres casos que se sabe que existen, y las 19 reglas del control negativo sembrado del censo.
+2. **Rojo por mecanismo:** sobre un árbol fabricado, un instrumento sin caso sale acusado, y con su caso
+   deja de salir.
+3. **El trinquete:** sobre el árbol de verdad, cero instrumentos sin caso.
+4. **Excepciones:** cada una con su causa y todavía necesaria. **Hoy: 0.**
+
+## Qué cambió en el censo, y qué no
+
+- **Importable.** Exporta `censoDeInstrumentos(raiz)`, `sueloDelCenso` y `controlNegativoSembrado`, y el
+  trinquete usa la MISMA función que se corre a mano. La salida por consola es **idéntica** a la de antes,
+  comparada con `diff`.
+- **Exportadas por AST, no por regex.** La regex casaba `export function` también dentro de una cadena, y
+  el trinquete lleva a propósito un instrumento de mentira escrito en una cadena: se habría acusado a sí
+  mismo. Medido hoy, la población por AST es **exactamente** la de regex (141 funciones, 99 módulos). En
+  el árbol no había ningún falso export: el cambio cierra la puerta, no mueve la cifra.
+- **Cada fichero se parsea una sola vez.** El censo pasa de 3,5 s a 2,7 s.
+
+## Visto en rojo, de verdad
+
+Un instrumento real puesto en `tests/`: `_censo-trampa-846c.mjs`, con una `export function censarTrampa846c(raiz)`
+que sólo lee el árbol.
+
+- **Con él:** 3 de 4 pasan y **cae el trinquete**. El mensaje nombra
+  `tests/_censo-trampa-846c.mjs :: censarTrampa846c`, explica el arreglo y enumera los límites.
+- **Quitado:** 4 de 4, verde.
+
+## Lo que cuesta
+
+- **El trinquete solo:** 2,8 s (4 tests).
+- **La tanda completa:** 6719 tests en 265 s antes; 6723 tests en 234 s con el trinquete (-30 s). La tanda corre los ficheros en paralelo, así que la diferencia de pared entre dos corridas está dentro de su ruido: el coste que se puede afirmar es el del trinquete solo, 2,8 s de CPU.
+
+## Límites, escritos también en el mensaje del test
+
+- Sólo `export function` en `scripts/*.mjs` y `tests/*.mjs`, sin subcarpetas, con nombre de verbo de
+  medida. `export const f = () => …`, otros nombres y los scripts que miden sin exportar nada quedan fuera.
+- Sólo el PRIMER argumento de cada llamada.
+- La unidad es el módulo: basta un caso en una hermana con arista de llamada.
+- El criterio de «fabricado» se calibró a mano sólo donde un criterio laxo y uno estricto discrepaban.
+- Un caso demuestra que el instrumento VE su entrada fabricada; no que su cifra sobre el árbol de verdad
+  sea la correcta.

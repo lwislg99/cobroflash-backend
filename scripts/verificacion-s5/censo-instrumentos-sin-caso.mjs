@@ -1,28 +1,66 @@
-// Censo: ¿qué instrumentos de medición tienen un CASO CONOCIDO FABRICADO delante?
-// Se corre desde la raíz del worktree.
+// scripts/verificacion-s5/censo-instrumentos-sin-caso.mjs — SCRUM-846 · carril de VERIFICACIÓN
+//
+// ¿Qué instrumentos de medición tienen un CASO CONOCIDO FABRICADO delante?
+//
+// Un instrumento que sólo lee el árbol de verdad devuelve un cero que no distingue «no hay nada» de
+// «el detector está roto». Este censo busca, para cada función exportada que produce una medida, al
+// menos una llamada en `scripts/` o `tests/` cuyo primer argumento sea una entrada FABRICADA.
+//
+// Dos usos y UNA sola función, para que el trinquete no mida por otro camino que el censo:
+//   · a mano ....... node scripts/verificacion-s5/censo-instrumentos-sin-caso.mjs
+//   · en la tanda .. `tests/scrum846c-trinquete-instrumentos-con-caso.test.mjs` (SCRUM-846c) importa
+//                    `censoDeInstrumentos` y cae si aparece un instrumento sin caso.
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import { ejecutadoDirectamente } from '../_puerta-de-entrada.mjs';
+
+const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const NL = String.fromCharCode(10);
 
 const norm = (s) => String(s).replace(/\s+/g, ' ').trim();
 
-// ── POBLACIÓN: funciones exportadas cuyo nombre dice que producen una medida.
-const VERBOS = /^(censar|censo|detectar|barrer|analizar|clasificar|contar|medir|inventario|escanear|rastroDe|tautologiasDe|enPatronPeligroso)/i;
-const inst = [];
-for (const d of ['scripts', 'tests']) {
-  for (const f of fs.readdirSync(d)) {
-    if (!f.endsWith('.mjs')) continue;
-    const s = fs.readFileSync(`${d}/${f}`, 'utf8');
-    for (const m of s.matchAll(/export (?:async )?function (\w+)/g)) {
-      if (VERBOS.test(m[1])) inst.push({ fichero: `${d}/${f}`, fn: m[1] });
-    }
+// ── POBLACIÓN: funciones EXPORTADAS cuyo nombre dice que producen una medida.
+//
+// 🔴 POR AST, NO POR TEXTO (SCRUM-846c). La versión anterior buscaba `export function` con una regex
+// sobre el fichero, y eso casa también dentro de un literal de cadena. El trinquete de la tanda lleva,
+// a propósito, un instrumento de mentira escrito en una cadena para verse caer: con la regex, el
+// trinquete se habría acusado a sí mismo. Sólo cuenta una declaración `export function` de verdad,
+// de primer nivel.
+export const VERBOS = /^(censar|censo|detectar|barrer|analizar|clasificar|contar|medir|inventario|escanear|rastroDe|tautologiasDe|enPatronPeligroso)/i;
+export const CARPETAS = ['scripts', 'tests'];
+
+const cacheDeArboles = new Map();
+/** El AST de un texto, parseado UNA vez: el censo pregunta muchas veces por el mismo fichero. */
+function arbolDe(fuente) {
+  let sf = cacheDeArboles.get(fuente);
+  if (!sf) {
+    sf = ts.createSourceFile('x.mjs', fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+    cacheDeArboles.set(fuente, sf);
   }
+  return sf;
 }
 
-const corpus = [];
-for (const d of ['scripts', 'tests']) {
-  for (const f of fs.readdirSync(d)) {
-    if (f.endsWith('.mjs')) corpus.push({ f: `${d}/${f}`, s: fs.readFileSync(`${d}/${f}`, 'utf8') });
+/** Los nombres de las funciones que el módulo EXPORTA de verdad: declaraciones de primer nivel. */
+export function exportadasDe(fuente) {
+  return arbolDe(fuente).statements
+    .filter((s) => ts.isFunctionDeclaration(s) && s.name
+      && (s.modifiers || []).some((m) => m.kind === ts.SyntaxKind.ExportKeyword))
+    .map((s) => s.name.text);
+}
+
+/** Los `.mjs` de PRIMER NIVEL de las carpetas censadas, con su texto. Las subcarpetas no entran. */
+function leerCorpus(raiz) {
+  const corpus = [];
+  for (const d of CARPETAS) {
+    const dir = path.join(raiz, d);
+    if (!fs.existsSync(dir)) continue;
+    for (const f of fs.readdirSync(dir).sort()) {
+      if (f.endsWith('.mjs')) corpus.push({ f: `${d}/${f}`, s: fs.readFileSync(path.join(dir, f), 'utf8') });
+    }
   }
+  return corpus;
 }
 
 /**
@@ -209,7 +247,7 @@ function esFabricado(a, sf, _fuente, prof = 0) {
 }
 
 function tieneCasoFabricado(fuente, fn) {
-  const sf = ts.createSourceFile('x.mjs', fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const sf = arbolDe(fuente);
   let si = false;
   const visita = (n) => {
     if (ts.isCallExpression(n)) {
@@ -224,38 +262,22 @@ function tieneCasoFabricado(fuente, fn) {
   return si;
 }
 
-// 🔴 LA UNIDAD ES EL MODULO, NO LA FUNCION — y me lo enseño el propio censo. `censarReferenciaMovil`
+// 🔴 LA UNIDAD ES EL MODULO, NO LA FUNCION — y me lo enseñó el propio censo. `censarReferenciaMovil`
 // recibe la RAIZ del arbol, nunca un literal; quien recibe los casos fabricados es su hermana
 // `analizarFuente`, en el mismo modulo. Contando por funcion, el par salia acusado con un
 // autoexamen impecable al lado. Lo que importa es si el MODULO ha demostrado que ve.
-const porModulo = new Map();
-for (const i of inst) {
-  if (!porModulo.has(i.fichero)) porModulo.set(i.fichero, []);
-  porModulo.get(i.fichero).push(i.fn);
-}
-// 🔴 Y AL BUSCARLE CASO AL MODULO SE MIRAN TODAS SUS EXPORTADAS, no solo las que casan con
-// VERBOS. Segundo punto ciego medido: `frontera-dist` exporta `censoDeLaFrontera` (censada) y
-// `correspondencia` (no censada), y el caso fabricado se lo puse a la segunda. El modulo SI
-// habia demostrado que ve; mi censo miraba por la rendija equivocada.
-const todasLasExportadas = new Map();
-for (const [fichero] of porModulo) {
-  const src = fs.readFileSync(fichero, 'utf8');
-  todasLasExportadas.set(fichero, [...src.matchAll(/export (?:async )?function (\w+)/g)].map((m) => m[1]));
-}
-// 🔴 TERCERA CORRECCION, Y ESTA ERA LA GRAVE — la cazo el control negativo poniendose en rojo.
-// «Mirar TODAS las exportadas» era demasiado ancho: un modulo pasaba a CON porque CUALQUIER
-// exportada suya recibia un literal en algun sitio, aunque fuese un ayudante trivial.
-// `_censo-new-url` salia CON por `parseBDSegura` —que su censo ni siquiera llama: busca su
-// NOMBRE con una regex— y `_censo-peticiones-panel` por `repartoPorMetodo`, que consume la
-// SALIDA del censo sobre el arbol de verdad. Ninguno de los dos demuestra nada del detector.
 //
-// Lo que separa a la hermana buena de la trivial es DERIVABLE, no de ojo: una ARISTA DE LLAMADA
-// dentro del modulo, en cualquiera de los dos sentidos. `censoDeLaFrontera` LLAMA a
-// `correspondencia`; `revisarCondicionesContraEmisor` llama a `censarInsercionesDelSuelto`. Si
-// hay arista, la entrada fabricada LLEGA al detector. Comprobado a mano en los 5 candidatos: el
-// criterio reproduce el juicio 5/5, y deja fuera a `parseBDSegura` y `repartoPorMetodo`.
+// 🔴 Y AL BUSCARLE CASO AL MODULO SE MIRAN SUS OTRAS EXPORTADAS, no solo las que casan con VERBOS:
+// `frontera-dist` exporta `censoDeLaFrontera` (censada) y `correspondencia` (no censada), y el caso
+// fabricado lo recibe la segunda.
+//
+// 🔴 PERO SÓLO LAS QUE TIENEN ARISTA DE LLAMADA con la censada (tercera corrección). «Mirar todas»
+// era demasiado ancho: `_censo-new-url` salía CON por `parseBDSegura`, que su censo ni llama, y
+// `_censo-peticiones-panel` por `repartoPorMetodo`, que consume la SALIDA del árbol real. Una arista,
+// en cualquiera de los dos sentidos, es lo que hace que la entrada fabricada LLEGUE al detector.
+// Comprobado a mano en los 5 candidatos: el criterio reproduce el juicio 5/5.
 function aristasDe(fuente) {
-  const sf = ts.createSourceFile('x.mjs', fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const sf = arbolDe(fuente);
   const mapa = new Map();
   const v = (n) => {
     if (ts.isFunctionDeclaration(n) && n.name) {
@@ -274,8 +296,8 @@ function aristasDe(fuente) {
 }
 
 /**
- * ¿Ha DEMOSTRADO este módulo que ve? Una sola función, usada por el censo real y por su suelo
- * sembrado, porque un suelo que corre por otro camino no prueba el camino que importa.
+ * ¿Ha DEMOSTRADO este módulo que ve? Una sola función, usada por el censo real y por su control
+ * negativo sembrado, porque un suelo que corre por otro camino no prueba el camino que importa.
  * Devuelve `null`, `'propio'` (la censada misma) o `'hermana'` (una hermana con arista).
  */
 function moduloDemuestraQueVe(fuenteModulo, censadas, exportadas, corpusDado) {
@@ -290,51 +312,64 @@ function moduloDemuestraQueVe(fuenteModulo, censadas, exportadas, corpusDado) {
   return null;
 }
 
-const con = [], sin = [];
-let porHermana = 0;
-for (const [fichero, fns] of porModulo) {
-  const via = moduloDemuestraQueVe(fs.readFileSync(fichero, 'utf8'), fns,
-    todasLasExportadas.get(fichero) || fns, corpus);
-  if (via === 'hermana') porHermana += 1;
-  (via ? con : sin).push(`${fichero} :: ${fns.join(', ')}`);
+/**
+ * EL CENSO. Recorre `scripts/*.mjs` y `tests/*.mjs` bajo `raiz` y devuelve, por módulo, si alguna de
+ * sus funciones de medida recibe en algún sitio una entrada fabricada.
+ *
+ * `sin` es la lista que importa: `{ fichero, funciones }` de cada módulo sin ningún caso conocido.
+ */
+export function censoDeInstrumentos(raiz = RAIZ) {
+  const corpus = leerCorpus(raiz);
+  const porModulo = new Map();
+  let funciones = 0;
+  for (const t of corpus) {
+    for (const fn of exportadasDe(t.s)) {
+      if (!VERBOS.test(fn)) continue;
+      funciones += 1;
+      if (!porModulo.has(t.f)) porModulo.set(t.f, []);
+      porModulo.get(t.f).push(fn);
+    }
+  }
+  const textoDe = new Map(corpus.map((t) => [t.f, t.s]));
+  const con = [], sin = [];
+  let porHermana = 0;
+  for (const [fichero, fns] of porModulo) {
+    const fuente = textoDe.get(fichero);
+    const via = moduloDemuestraQueVe(fuente, fns, exportadasDe(fuente), corpus);
+    if (via === 'hermana') porHermana += 1;
+    (via ? con : sin).push({ fichero, funciones: fns, via });
+  }
+  return { funciones, modulos: porModulo.size, con, sin, porHermana };
 }
 
-console.log(`INSTRUMENTOS censados: ${inst.length} funciones en ${porModulo.size} modulos`);
-console.log(`  CON caso fabricado delante: ${con.length}  (${con.length - porHermana} en la función censada`
-  + ` misma, ${porHermana} en una hermana que ella llama o que la llama)`);
-console.log(`  SIN ninguno:                ${sin.length}`);
+// ── SUELO: tres módulos que SÉ que tienen caso. Si el censo no los ve, su lista no vale nada.
+export const SUELO_CONOCIDOS = ['tautologiasDe', 'enPatronPeligroso', 'censarReferenciaMovil'];
 
-console.log('\nSUELO — los tres que YA sé que lo tienen:');
-let sueloOk = true;
-for (const n of ['tautologiasDe', 'enPatronPeligroso', 'censarReferenciaMovil']) {
-  const ok = con.some((x) => x.includes(n));
-  if (!ok) sueloOk = false;
-  console.log(`  ${ok ? '✅ CON' : (sin.some((x) => x.includes(n)) ? '🔴 SIN' : '🔴 no censado')}  ${n}`);
+export function sueloDelCenso(censo) {
+  return SUELO_CONOCIDOS.map((nombre) => ({
+    nombre,
+    estado: censo.con.some((m) => m.funciones.includes(nombre)) ? 'CON'
+      : (censo.sin.some((m) => m.funciones.includes(nombre)) ? 'SIN' : 'NO CENSADO'),
+  }));
 }
-// ── CONTROL NEGATIVO, AHORA SEMBRADO ────────────────────────────────────────────────────────
-// Antes era una LISTA DE NOMBRES que yo sabía sin caso. Caducó: los tres tienen caso hoy, así
-// que el control se puso en rojo sin que hubiera nada roto — y al seguirlo encontré que lo roto
-// era otra cosa (la hermana trivial). Una lista cableada mide el pasado; un módulo SEMBRADO mide
-// el censo. Se juzgan con la MISMA función que los de verdad, o el suelo no prueba este suelo.
+
+// ── CONTROL NEGATIVO, SEMBRADO ──────────────────────────────────────────────────────────────
+// Antes era una LISTA DE NOMBRES que yo sabía sin caso. Caducó: los tres ganaron caso, así que el
+// control se puso en rojo sin que hubiera nada roto — y al seguirlo encontré que lo roto era otra cosa
+// (la hermana trivial). Una lista cableada mide el pasado; un módulo SEMBRADO mide el censo. Se juzga
+// con la MISMA función que los de verdad, o el suelo no prueba este suelo. Y hay una siembra por cada
+// regla del criterio de «fabricado», en el sentido que la rompería.
 const MODULO_SEMBRADO = [
   'export function censarInventado(raiz) { return leerElArbol(raiz); }',
   'export function ayudanteTrivial(t) { return t.trim(); }',
-].join('\n');
+].join(NL);
 const seSiembra = (llamada) => moduloDemuestraQueVe(MODULO_SEMBRADO, ['censarInventado'],
   ['censarInventado', 'ayudanteTrivial'], [{ f: 'sembrado.mjs', s: llamada }]);
 
-console.log('\nCONTROL NEGATIVO — sembrado, en los dos sentidos:');
-const negTrivial = seSiembra("ayudanteTrivial('literal'); censarInventado(RAIZ);");
-const negNada = seSiembra('censarInventado(RAIZ);');
-const posPropio = seSiembra("censarInventado('fuente fabricada');");
-const negOk = negTrivial === null && negNada === null;
-console.log(`  ${negNada === null ? '✅' : '🔴'} un censo que sólo recibe la raíz sale SIN`);
-console.log(`  ${negTrivial === null ? '✅' : '🔴'} una HERMANA trivial con literal, sin arista, NO lo salva`
-  + (negTrivial ? `  (dice «${negTrivial}»)` : ''));
-console.log(`  ${posPropio === 'propio' ? '✅' : '🔴'} y sí lo salva un literal en la censada misma`);
-// 🔴 Y UNA SIEMBRA POR CADA REGLA DE LA CUARTA CORRECCIÓN, en el sentido que la rompería. Sin
-// estas, cualquiera de las reglas podría aflojarse o endurecerse y el suelo de arriba seguiría verde.
-const REGLAS_SEMBRADAS = [
+export const REGLAS_SEMBRADAS = [
+  ['un censo que sólo recibe la raíz sale SIN', 'censarInventado(RAIZ);', null],
+  ['una HERMANA trivial con literal, sin arista, NO lo salva', "ayudanteTrivial('literal'); censarInventado(RAIZ);", null],
+  ['y sí lo salva un literal en la censada misma', "censarInventado('fuente fabricada');", 'propio'],
   ['una LECTURA con ruta literal no lo salva', "const T = fs.readFileSync('src/x.ts', 'utf8'); censarInventado(T);", null],
   ['una PROPIEDAD de lo leído no lo salva', 'const r = leerElArbol(RAIZ); censarInventado(r.texto);', null],
   ['un for-of desestructurado AJENO no lo salva', "for (const [a, b] of [['x', 'y']]) { usar(a, b); } censarInventado(RAIZ);", null],
@@ -352,20 +387,40 @@ const REGLAS_SEMBRADAS = [
   ['sí lo salva una ruta DENTRO de un árbol temporal', "const dir = fs.mkdtempSync('x'); censarInventado(path.join(dir, 'src/a.ts'));", 'propio'],
   ['no lo salva una ruta dentro del árbol REAL', "censarInventado(path.join(RAIZ, 'src/a.ts'));", null],
 ];
-let reglasOk = true;
-for (const [texto, llamada, esperado] of REGLAS_SEMBRADAS) {
-  const r = seSiembra(llamada);
-  if (r !== esperado) reglasOk = false;
-  console.log(`  ${r === esperado ? '✅' : '🔴'} ${texto}` + (r === esperado ? '' : `  (dice «${r}»)`));
-}
-const neg = negOk && posPropio === 'propio' && reglasOk;
 
-if (!sueloOk || !neg) {
-  console.log(`\n🔴 CENSO ${sueloOk ? 'DEMASIADO GENEROSO' : 'CIEGO'}: ${sueloOk
-    ? 'da por bueno un módulo sembrado que no tiene caso.'
-    : 'no reconoce casos fabricados que sé que existen.'}`);
-  console.log('   La lista de abajo NO se puede leer como «éstos son exactamente los que no tienen caso».');
-  process.exit(2);
+export function controlNegativoSembrado() {
+  return REGLAS_SEMBRADAS.map(([texto, llamada, esperado]) => {
+    const dice = seSiembra(llamada);
+    return { texto, esperado, dice, ok: dice === esperado };
+  });
 }
-console.log(`\nSIN CASO CONOCIDO (${sin.length}) — pueden dar un cero y nadie sabrá si es real:`);
-for (const x of sin) console.log('    ' + x);
+
+function principal() {
+  const censo = censoDeInstrumentos(RAIZ);
+  console.log(`INSTRUMENTOS censados: ${censo.funciones} funciones en ${censo.modulos} modulos`);
+  console.log(`  CON caso fabricado delante: ${censo.con.length}  (${censo.con.length - censo.porHermana} en la función censada`
+    + ` misma, ${censo.porHermana} en una hermana que ella llama o que la llama)`);
+  console.log(`  SIN ninguno:                ${censo.sin.length}`);
+
+  console.log(`${NL}SUELO — los tres que YA sé que lo tienen:`);
+  const suelo = sueloDelCenso(censo);
+  for (const s of suelo) console.log(`  ${s.estado === 'CON' ? '✅ CON' : `🔴 ${s.estado}`}  ${s.nombre}`);
+
+  console.log(`${NL}CONTROL NEGATIVO — sembrado, en los dos sentidos:`);
+  const control = controlNegativoSembrado();
+  for (const c of control) console.log(`  ${c.ok ? '✅' : '🔴'} ${c.texto}${c.ok ? '' : `  (dice «${c.dice}»)`}`);
+
+  const sueloOk = suelo.every((s) => s.estado === 'CON');
+  const controlOk = control.every((c) => c.ok);
+  if (!sueloOk || !controlOk) {
+    console.log(`${NL}🔴 CENSO ${sueloOk ? 'DESCALIBRADO' : 'CIEGO'}: ${sueloOk
+      ? 'su criterio de «fabricado» no distingue lo que su control negativo sembrado exige.'
+      : 'no reconoce casos fabricados que sé que existen.'}`);
+    console.log('   La lista de abajo NO se puede leer como «éstos son exactamente los que no tienen caso».');
+    process.exit(2);
+  }
+  console.log(`${NL}SIN CASO CONOCIDO (${censo.sin.length}) — pueden dar un cero y nadie sabrá si es real:`);
+  for (const m of censo.sin) console.log(`    ${m.fichero} :: ${m.funciones.join(', ')}`);
+}
+
+if (ejecutadoDirectamente(import.meta.url)) principal();
