@@ -668,3 +668,150 @@ test— y restauró después el fichero **y** el cliente: restaurar el fuente no
 Prisma: el binario es el local de `node_modules`.
 **El protocolo del webhook**: ni una línea. El sitio queda abierto y ahí se para.
 **Ningún otro modelo** de `schema.prisma`, y ningún fichero de `src/`.
+
+# SCRUM-815 · APENDICE · 15-sep-2026 · ③ el escritor, solo para los cinco seguros
+
+**Medido contra:** `origin/main` = `e96298e66933fef459218889118a2e6f08eff1e6` · 2026-09-15T12:35:08+01:00
+**Y main siguió moviéndose mientras:** a `c3dce7aa`. No se re-ancla porque **no se ha medido
+contra él**; comprobado que su diff no toca `src/modules/billing/`, `prisma/` ni los tests de
+este ticket. El ancla dice el árbol que se midió, no el último que pasó por delante.
+**Rama:** `scrum-815-el-escritor-de-los-cinco`
+
+> ⚠️ **Esta rama sale de `scrum-815-el-modelo-del-evento`, no de `main`.** El modelo
+> `GatewayEvent` está en esa rama y **todavía NO está en `main`** (medido: `merge-base
+> --is-ancestor` dice SIN MERGEAR, y `git show origin/main:prisma/schema.prisma` no lo tiene).
+> Sin el modelo esto no compila, así que la dependencia es real: **este PR no se puede mergear
+> antes que el del modelo.**
+
+---
+
+## 1 · Qué se enciende, y para quién
+
+`src/modules/billing/domain/gatewayEvents.service.ts` — tres pasos, y el orden es toda la
+propiedad:
+
+1. **Al recibir**, antes de despachar: `INSERT`. Choca contra `@@unique([provider, eventId])` →
+   si la fila tiene `processed_at` **no nulo**, duplicado real, ACK sin trabajo; si es **NULL**,
+   el intento anterior no terminó → `attempts++` **y se hace el trabajo**.
+2. **Al terminar con éxito**: `processed_at = now()`. **Nunca antes.**
+3. **Si falla**: `last_error` y el 400 de siempre, que es lo que hace que Stripe reintente.
+
+El `INSERT` es el mecanismo y no hay ventana de comprobar-y-escribir: no se comprueba nada, se
+escribe y se mira el choque. Dos réplicas a la vez → una escribe, la otra choca.
+
+### Los CINCO que entran, y los DOS que no
+
+Del censo por tipo (apéndice de SCRUM-815b): entran `payment_intent.payment_failed`, las tres de
+`customer.subscription.*` y `checkout.session.expired`.
+
+**Quedan FUERA a propósito** `charge.dispute.created` y `checkout.session.completed`, y la
+exclusión está escrita en el código —en `EVENTOS_SIN_REGISTRO`, enumerados, no omitidos— porque
+una exclusión que no se nombra parece un olvido.
+
+> 🔒 **Hoy el defecto es SILENCIOSO: se pierden eventos.** Encender el protocolo para los siete
+> lo volvería RUIDOSO —correo de primer pago reenviado, WhatsApp de disputa repetido, posible mes
+> gratis duplicado—. Cambiar un fallo callado por uno que el cliente ve no es progreso.
+
+Los dos excluidos siguen **exactamente** con el LRU en memoria de la ruta. La disputa, además, ya
+la dedupe su propio servicio en disco (efecto ③ de esta misma jornada): encenderla aquí sería un
+segundo mecanismo sobre el mismo evento.
+
+## 2 · 🔴 El rojo: el defecto, ejecutado contra la función REAL
+
+```
+SCRUM-815c · 🔴 EL DEFECTO: con la memoria, un evento que FALLA pierde su reintento
+  entrega 1 → isDuplicateStripeEvent = false → se hace el trabajo → REVIENTA → 400
+  entrega 2 → isDuplicateStripeEvent = TRUE  → descartada sin trabajo
+  trabajos hechos: 1. El evento se pierde, y nadie se entera: la ruta ya respondió 200.
+```
+
+La marca se pone al **recibir**. El trabajo no se pierde por el fallo: se pierde por la marca
+puesta antes de tiempo. Con el registro, esa misma segunda entrega devuelve `hacer`, el trabajo
+se rehace y `attempts` queda en 2.
+
+## 3 · Los siete rojos del arreglo
+
+| rojo inyectado | qué cae |
+|---|---|
+| se marca procesado AL RECIBIR (el defecto vuelto a nacer) | 2 |
+| el choque devuelve siempre `ya_procesado` (ignora el NULL) | 2 |
+| un excluido se cuela en la lista | 2 |
+| el motivo del fallo deja de recortarse a 500 | 1 |
+| `attempts` deja de subir | 1 |
+| la ruta abre registro FUERA de la puerta | 1 |
+| la ruta deja de marcar procesado al terminar | 1 |
+
+Fuente restaurado y verificado byte a byte tras cada uno.
+
+## 4 · 🔴 TRES COSAS QUE SALIERON MAL EN EL INSTRUMENTO, Y LAS TRES IMPORTAN
+
+**① El banco daba VERDE sobre el defecto central.** La mutación «marcar procesado al recibir»
+—que es literalmente el defecto que este ticket cierra— dejaba la tanda en **10 de 10**. La causa
+no estaba en los tests sino en el doble de la tabla: sus valores por defecto iban **detrás** del
+`...data`, así que machacaban a `null` el `processed_at` que el código mutado escribía. El banco
+se tragaba el defecto y contestaba que todo iba bien.
+
+> 🔒 Un doble que no guarda lo que le mandan no es la tabla: es un sitio donde el defecto no cabe.
+> Y eso no se ve mirando el test — se ve cuando el rojo no cae.
+
+**② Un rojo que no caía destapó un hueco de cobertura.** Envolver la marca de procesado en una
+condición imposible tampoco tumbaba nada: los casos probaban el SERVICIO y el guard de AST
+miraba que la ruta **abriera** el registro, pero **ninguno miraba que lo CERRARA**. De ahí sale
+el caso «LA RUTA CIERRA el registro al terminar, y sin más condiciones», que exige que la única
+guarda de esa llamada sea `entregaConRegistro`.
+
+**③ `import('…?v=1')` NO aísla el módulo.** Se iba a simular el reinicio del proceso con dos
+importaciones distintas del mismo fichero. Medido antes de usarlo:
+`a.isDuplicateStripeEvent === b.isDuplicateStripeEvent` → **`true`**. Habría dado un verde sobre
+la memoria del vecino. Un reinicio es un **proceso** nuevo, así que se mide con subprocesos, que
+además es lo fiel.
+
+## 4bis · 🔴 EL TRINQUETE DE ESTE MISMO TICKET ESTABA ANCLADO A UN NÚMERO DE LÍNEA
+
+`el censo de EFECTOS del manejador no crece sin decirlo` cortaba con **`if (linea >= 47)`** — el
+47 era «donde empieza el despacho» el día que se escribió. Al añadir el registro, todo bajó unas
+líneas y el censo empezó a contar `stripe.webhooks.constructEvent` e `isDuplicateStripeEvent`,
+**que llevan ahí desde siempre**. No midió un cambio del manejador: midió su propio
+desplazamiento.
+
+> 🔒 Un ancla por número de línea no vigila el código: vigila dónde estaba el código. El primer
+> commit que escriba encima la rompe, y lo que denuncia entonces no es un defecto.
+
+Se ancla al CONTENIDO: el despacho empieza donde `event.type` se **compara** con un tipo. Y hubo
+que afinarlo dos veces, lo cual es el propio ejemplo: «el primer `if` que NOMBRA `event.type`» se
+enganchaba a la puerta nueva (`if (llevaRegistro(event.type))`), que lo nombra sin despachar
+nada. La señal no es mencionar el tipo — es compararlo.
+
+Con el ancla arreglada, los efectos que de verdad añade este trabajo son **dos**, y se declaran
+con su motivo: `marcarEventoProcesado` y `anotarFalloDeEvento`. La APERTURA del registro no sale
+en el censo a propósito: vive en la puerta, antes del despacho.
+
+### Y el otro trinquete: cuatro exports huérfanos
+
+`SCRUM-411` los cazó y dijo qué hacer con cada uno, que no era lo mismo para todos:
+`PROVEEDOR_STRIPE`, `MAX_LAST_ERROR` y `EVENTOS_CON_REGISTRO` **pierden el `export`** —su
+consumidor real está dentro del módulo y de fuera sólo entraba su test—; `EVENTOS_SIN_REGISTRO`
+**lo conserva y se declara**, porque nadie la usa dentro: su trabajo es constar.
+
+El test, en consecuencia, ya no importa lo que no es superficie pública: lee la lista de los
+cinco por AST del fuente y **deriva el tope de `last_error` del propio `schema.prisma`**, que es
+mejor ancla que la constante — si la columna cambia de tamaño, el test lo sigue.
+
+## 5 · Lo que esto NO arregla, y sigue abierto
+
+El registro cierra la ventana del **proceso** (reinicio, segunda instancia, tope de 500 del LRU).
+**No hace idempotente el trabajo repetido** — y se repite a propósito: si el intento anterior
+murió a medias, el reintento vuelve a entrar. Los huecos que el apéndice anterior ya nombraba
+(correo de factura duplicado, carrera del referido, WhatsApp de disputa, fila de timeline) siguen
+donde estaban: son de los DOS tipos excluidos, y por eso están excluidos.
+
+## ⛔ No tocado
+
+**Los dos eventos excluidos**: ni su camino ni su deduplicación · **`prisma/schema.prisma`**: no
+se abre (el modelo ya estaba) · **el 400** de la ruta, que es lo que dispara el reintento ·
+**ningún estado ni flag nuevo** (regla 27) · **ninguna dependencia nueva** (regla 36) · **ningún
+microcopy** (regla 30) · **ninguna base**: ni producción, ni staging, ni `--dry-run`.
+
+**El camino de emisión fiscal**: `stripe.routes.ts` vive en `src/modules/billing/`, no bajo
+`src/modules/invoicing/` ni es `src/lib/invoicing.ts` — comprobado antes de escribir. No hay STOP
+de regla 38 que declarar.
