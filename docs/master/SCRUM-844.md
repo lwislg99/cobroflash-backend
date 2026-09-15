@@ -519,3 +519,165 @@ cobertura nueva. No hay ni un assert que antes no existiera.
 `src/` se han modificado) · el texto de ningún assert · los gates · `prisma/schema.prisma` · los 26
 asserts que volvieron dentro. Ninguna base, ninguna clave. **Nada ejecutado contra producción ni
 contra staging.**
+
+---
+
+# SCRUM-844 · APÉNDICE · 15-sep-2026 · ¿Está cumplida la promesa? 25 cubiertos, 0 descubiertos, 6 no medibles
+
+**Medido contra:** `origin/main` = `51fb635ca3391cc769a6583a8aab08945e1fb5e0` · 2026-09-15T13:29:27Z
+**Rama:** `scrum-844-promesa-cumplida` · **Carril:** medición · **Gate:** sin gate
+
+⛔ **Esta tanda NO construye nada.** No se cubre ningún punto que salga descubierto: se mide, se
+lista, y decide el fundador (regla 9). `src/` intacto, ni un test nuevo ni uno menos.
+
+---
+
+## 0 · 🔴 EL SUELO, Y VA ANTES QUE CUALQUIER CIFRA: los 31 NO se pueden enumerar desde el ticket
+
+El ticket promete «31 puntos … los 31 se cubren». Desglosado literalmente:
+
+| puesto | sujeto | puntos declarados |
+|---|---|---|
+| 1 | las dos puertas (`verifactu.service.ts:283`, `:398`) | 2 |
+| 2 | `exigirTipoDeclarable` (`:143·144·146`) | 3 |
+| 3 | `buildVerifactuRegistrosXml` (`:497×4·498·521·529·483`) | 8 |
+| 4 | `entraEnLaCadena` (`:68×3`) + `formatFechaHoraHuso` (`:58`) | 4 |
+| 5 | `construirLibroRegistro` (6) + `construirLibroRecibidas` (2) | 8 |
+| 6 | `calcularRecargo`, `leerTipoRetencion`, `clasificarPorCobro`, `leerMarcaSuplido`, `validarFacturaSuelta`, `vistaPreviaSerie`, `huecosSerie` | **sin reparto** |
+| | **identificables uno a uno** | **25** |
+
+Los 6 que faltan para 31 se reparten entre **SIETE** funciones **sin decir cuántos lleva cada una**.
+Siete no caben en seis, así que no hay forma de mapearlos uno a uno.
+
+Y hay una razón de fondo, escrita por la propia sesión que los trabajó (**§7 de este fichero**):
+
+> «El ticket pedía 31. Medidos hoy son **41 decisiones, 22 vivas**. […] SCRUM-840 enumeró **puntos
+> mutables en `dist/`** por número de línea […] **Los números de línea de `dist/` no se han vuelto
+> a usar: no son verificables desde el fuente.**»
+
+🔒 **Los «31» no son un inventario: son una foto de `dist/`.** Por eso los 6 sin reparto se declaran
+**NO MEDIBLES** y **no cuentan como cubiertos**: vacía y no-medida se leen igual y significan lo
+contrario.
+
+---
+
+## 1 · LOS TRES NÚMEROS, Y SUMAN 31
+
+| veredicto | nº |
+|---|---|
+| ✅ **CUBIERTO** — con test que CI corre y que CAE si se rompe | **25** |
+| 🔴 **NO CUBIERTO** | **0** |
+| ⚠️ **NO MEDIBLE** — no enumerable desde el ticket (puesto 6) | **6** |
+| | **31** |
+
+### El filtro que de verdad decide: ninguno está sólo escrito
+
+Un punto cuyo test esté gateado tras `QA_DB_TEST` **no está cubierto: está escrito**. Comprobado
+uno a uno — **todos los tests asignados salen `# skipped 0`**:
+
+`scrum844` (5) · `scrum844b` (6) · `scrum844c` (10) · `scrum844d` (9) · `scrum844e` (9) ·
+`scrum844f` (12) · `scrum426` (17) · `scrum294` (15) · `scrum291` (15) · `scrum293` (10).
+
+Eso es justo lo que denunciaba el ticket y ya no pasa: `scrum173` salía **7 skipped, 0 pass**, y las
+dos puertas las cubre ahora `scrum844`, sin base y sin gate.
+
+---
+
+## 2 · LOS 25, UNO A UNO, CON SU ROJO EJECUTADO
+
+Cada sujeto se rompió **en `dist/`** (salida de compilación — `src/` jamás se tocó) y se comprobó
+que el test asignado CAE. Restaurado y verificado por sha256: **los 7 ficheros idénticos**.
+
+| puesto | pts | sujeto | test que cae | rojos |
+|---|---|---|---|---|
+| 1 | 2 | las dos puertas del sellado | `tests/scrum844-sellar-dentro-de-transaccion.test.mjs` | **3** |
+| 2 | 3 | `exigirTipoDeclarable` | `tests/scrum844b-que-documento-se-declara.test.mjs` | **5** |
+| 3 | 8 | `buildVerifactuRegistrosXml` | `tests/scrum844c-el-xml-que-se-remite.test.mjs` | **8** |
+| 4 | 3 | `entraEnLaCadena` | `tests/scrum844d-quien-entra-en-la-cadena.test.mjs` | **5** |
+| 4 | 1 | `formatFechaHoraHuso` | `tests/scrum844d-quien-entra-en-la-cadena.test.mjs` | **4** |
+| 5 | 6 | `construirLibroRegistro` | `tests/scrum844e-el-libro-es-una-declaracion.test.mjs` | **7** |
+| 5 | 2 | `construirLibroRecibidas` | `tests/scrum426-libro-recibidas.test.mjs` | **15** |
+| | **25** | | | |
+
+### Puesto 6 — las siete funciones tienen cobertura, y los puntos siguen siendo NO MEDIBLES
+
+| función | test que cae | rojos |
+|---|---|---|
+| `calcularRecargo` | `tests/scrum294-recargo-caja.test.mjs` | **6** |
+| `leerTipoRetencion` | `tests/scrum293-retencion-irpf.test.mjs` | **1** |
+| `huecosDeLaSerie` | `tests/scrum291-series-huecos.test.mjs` | **6** |
+| `clasificarPorCobro` · `leerMarcaSuplido` · `validarFacturaSuelta` · `vistaPreviaSerie` | `tests/scrum844f-lo-que-cambia-el-importe.test.mjs` (12, `skipped 0`) | — |
+
+Las **siete** tienen test que CI corre. Pero el ticket no dice **cuáles 6 de las 7** son los puntos,
+así que no se pueden dar por cubiertos punto a punto. Se declara CIEGO sobre ellos, que es lo que
+pedía el suelo.
+
+---
+
+## 3 · 🔴 DOS DE MIS PROPIOS CONTROLES SALIERON MAL PRIMERO, Y ESO ES EL HALLAZGO
+
+**① El control POSITIVO dijo «no cae» sobre el punto nº 1 por gravedad de todo el ticket.**
+Sustituí `throw new Error('verifactu_seal_inside_transaction')` por `void 0`… y esa cadena **no
+existe**: el código real es `throw new Error('verifactu_seal_inside_transaction: applyVeriFactu
+debe…' + …)`. El `split().join()` casó **cero** veces, el fichero quedó intacto, y el test pasó en
+verde.
+
+> 🔒 **Una mutación que no se aplica y una cobertura que no existe dan EXACTAMENTE la misma
+> salida.** Sin comprobar que la mutación entró, habría declarado NO CUBIERTO el puesto 1.
+
+Rehecho contra el `if`, las dos puertas caen y tiran **3** tests — el mismo número que registró §1.
+
+**② La mutación del puesto 3 dio `pass 0 · fail 1`**, que parece «el test cae». No lo era: metí el
+`return` **dentro de una lista de parámetros de varias líneas**, rompí la sintaxis y el fichero no
+cargó. Rehecha sobre `opts = {}) {`, caen **8**.
+
+**③ Y el ayudante con aserción de ancla cazó otras dos.** `exigirTipoDeclarable(inv)` y
+`entraEnLaCadena(inv)` no existen —son `(tipo, numero)` y `(numero, merchant)`—. Al exigir que el
+ancla apareciera **exactamente una vez**, se negó a mutar y lo dijo, en vez de no hacer nada en
+silencio.
+
+🔒 La diferencia entre ① y ③ es la aserción del ancla. Es la lección de esta mañana —el `grep` que
+contaba mi propio comentario— en su versión cara: **un instrumento que no comprueba que ha hecho
+algo informa de lo que no midió.**
+
+---
+
+## 4 · La tanda, con su población
+
+| | |
+|---|---|
+| tests | **6681** |
+| pass | **6571** |
+| fail | **0** |
+| skipped | **110** ⚠️ |
+
+⚠️ **Los 110 saltados NO midieron nada**, y un test saltado se cuenta como pasado (SCRUM-754). El
+verde es sobre los **6571** que corrieron.
+
+> ⚠️ Antes de reconstruir salían **16 rojos**, y no eran del árbol: el cliente de Prisma estaba
+> desfasado respecto a un `schema.prisma` que se movió bajo mis pies (el `GatewayEvent` de otra
+> sesión). `prisma generate` + `build` y a cero. Se deja escrito porque es el segundo tropiezo igual
+> del día: **el cliente generado no es parte del árbol y caduca sin avisar.**
+
+---
+
+## 5 · Veredicto
+
+**La promesa no se puede declarar cumplida en sus términos literales** — y no porque falte trabajo:
+
+* **0 puntos descubiertos** de los que se pueden enumerar;
+* **25 de 25 cubiertos**, cada uno con test sin gate y rojo ejecutado;
+* **6 no medibles**, y la §7 explica por qué: los 31 eran líneas de `dist/`, no decisiones del
+  fuente.
+
+🔒 **Un ticket no se cierra porque haya trabajo suyo en main** (regla 23). Aquí hay bastante más que
+trabajo: hay 25 puntos cubiertos y vistos caer. Lo que no hay es forma de afirmar «los 31», porque
+los 31 nunca fueron enumerables. **Decide el fundador:** cerrar por los 25 dejando constancia de que
+la población era una foto, o redefinir los 6 antes de cerrar.
+
+## 6 · Lo NO tocado
+
+`src/` entero · el camino de emisión fiscal (regla 38: leído, y mutado sólo en `dist/`, que es
+salida de compilación, restaurado byte a byte) · ningún test nuevo ni uno menos · ningún punto
+cubierto de los que salieran sin cubrir (no salió ninguno). Ninguna base, ninguna clave. **Nada
+ejecutado contra producción ni contra staging.**
