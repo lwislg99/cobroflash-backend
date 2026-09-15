@@ -125,3 +125,140 @@ Se nombra en vez de rellenarse. Cada punto es algo que **sólo sabe quien hizo e
 
 No se ha modificado ni una línea de `scripts/verificacion-s5/censo-instrumentos-sin-caso.mjs` ni
 de ningún otro fichero del ticket. Esto es **sólo el registro que faltaba**.
+
+---
+
+# APÉNDICE · SCRUM-846 (15-sep-2026) · Lo escribe quien hizo el trabajo: los quince, sembrados y vistos caer
+
+**Medido contra:** `origin/main` = `9070f3d780938b6b1f53cf6afbeb55f71221229b` · 2026-09-15T16:15+02:00
+
+**Autor:** Sesión 0 (carril de verificación) · **Rama:** `scrum-846b-siembras-a-los-quince`, abierta desde
+`origin/main` = `d9a05138cb61a30916300951a979db84121d8002` con `HEAD..origin/main` = 0 · `prisma generate` rc=0.
+
+> Este apéndice **no corrige** la reconstrucción de arriba: la deja intacta y contesta, desde quien
+> hizo el trabajo, lo que su §5 nombró como imposible de saber. Donde su §4 y esto difieren en una
+> cifra, es porque miden `main` en momentos distintos; cada uno lleva su ancla.
+
+## A · El cierre
+
+El criterio de cierre lo fijó el orquestador: **el censo, ejecutado en `main`, da 0 sin caso, o sólo
+quedan excepciones declaradas con su causa.**
+
+Esta rama da a cada uno de los 15 que quedaban una siembra con una entrada FABRICADA que tiene que
+dar SÍ y otra que tiene que dar NO, y el censo pasa a **0 sin caso, sin excepciones declaradas**.
+Medido sobre el árbol con `main` traído dentro: 141 funciones en 99 módulos, las 99 con caso. Se comprueba con:
+
+```
+node scripts/verificacion-s5/censo-instrumentos-sin-caso.mjs      → SIN ninguno: 0
+node scripts/verificacion-s5/romper-los-quince.mjs                → 31 roturas, las 31 tumban su siembra
+```
+
+## B · Respuestas al §5, en su mismo orden
+
+**1 · Los rojos de las cuatro correcciones.** No están en el árbol, y la reconstrucción hizo bien en no
+inventarlos. Lo que sí está, y se puede ejecutar hoy, es su equivalente: **cada regla que salió de una
+corrección tiene una siembra en el control negativo del censo**, en el sentido que la rompería
+(«una lectura con ruta literal no lo salva», «un for-of desestructurado AJENO no lo salva»,
+«sí lo salva un árbol temporal»…). Son 19 y corren en cada ejecución del censo.
+
+**2 · La calibración de los 20 veredictos a mano.** No se comiteó a propósito —una lista cableada de
+módulos caduca el día que uno gana su caso—, pero los 20 veredictos, con su motivo, son éstos:
+
+| módulo | a mano | por qué |
+| --- | --- | --- |
+| `scripts/censo-guards-gateados.mjs` | SIN | `run({ files, cwd: RAIZ })` son opciones para ejecutar los tests de verdad |
+| `scripts/_solape-de-guards.mjs` | CON | `mkdtempSync` con `a.mjs…d.mjs` literales y respuesta sabida |
+| `scripts/_texto-fuera-del-censo.mjs` | SIN | `leerLanding(RAIZ)`: la landing de verdad |
+| `tests/_censo-copy-vs-flag.mjs` | SIN | `censoCopy(RAIZ, …)` |
+| `tests/_censo-emisores-con-fila.mjs` | CON | `ve('await enviarCorreo(…)')`: literal por un envoltorio |
+| `tests/_censo-literales-retencion.mjs` | CON | `mkdtempSync` + `cazado.js` / `inocente.js` fabricados |
+| `tests/_censo-superficies-configuracion.mjs` | SIN | `fs.readFileSync(VISTA)` |
+| `tests/_inventario-detalle-trabajo.mjs` | SIN | el DOM que pinta la vista real |
+| `tests/_censo-aviso-vs-bloqueo.mjs` | CON | `mutando(literal, literal)`: cinco promesas inyectadas |
+| `tests/_carga-de-pagina.mjs` | CON | `clasesQueUsa(html.replace('</body>', …))`, con arista a `analizarPagina` |
+| `tests/_censo-cierre-trabajo.mjs` | CON | `codigoReal.replace(texto, texto inventado)` y el guard tiene que cazarlo |
+| `tests/_alcance-desde-entradas.mjs` | CON | `conArbol((raiz) => …)` con `arbolSintetico()` sobre `mkdtempSync` |
+| `tests/_censo-marcado-de-cobro.mjs` | CON | `arbolDeMentira({ … })` (PR #1238) |
+| `tests/_censo-target-tactil.mjs` | CON | CSS literal (PR #1238) |
+| `scripts/frontera-dist.mjs` | CON | `TESTIGO` literal y el fuente mutado |
+| `tests/_censo-eol.mjs` | CON | `b('a…')`, `Buffer.from([…])` |
+| `scripts/_puerta-de-entrada.mjs` | CON | `puertasFragilesEn('if (…)', 'sintetico.mjs')` |
+| `tests/_condiciones-vs-emisor.mjs` | CON | `revisarCondicionesContraEmisor({ [RUTA]: … })` |
+| `tests/_censo-new-url.mjs` | SIN | su hermana `parseBDSegura` no tiene arista con el censo |
+| `tests/_censo-peticiones-panel.mjs` | SIN | `repartoPorMetodo` consume la salida del árbol real |
+
+Los seis SIN de esa tabla estaban entre los 15, y los seis tienen hoy su siembra.
+
+**3 · Por cuál se empezó.** Por lo que gobierna cada uno, leído en el instrumento y no en su nombre:
+
+| # | instrumento | qué gobierna | siembra |
+| --- | --- | --- | --- |
+| 1 | `censarLlamadas` (scrum245) | que cada envío de WhatsApp declare su merchant — tenencia | en su propio fichero |
+| 2 | `censoCopy` | si un rótulo con «factura» lo elige `INVOICING_ES_ENABLED` — camino fiscal | `scrum846b-siembras-a-los-quince` |
+| 3 | `censarEstrechamientos` | líneas de factura rehechas con cuatro claves que pierden lo demás | ídem |
+| 4 | `censoDeConexiones` (scrum746) | clientes de base que alcanzan producción sin comprobar el destino | en su propio fichero |
+| 5 | `censoNewUrl` | errores de `new URL()` alcanzables, que llevan la cadena de conexión | `scrum846b-siembras-a-los-quince` |
+| 6 | `censarPuertasDelPresupuesto` | qué campos lleva cada puerta del PDF del presupuesto | ídem |
+| 7 | `clasificarEvento` | que un test saltado no cuente como uno que corrió | ídem |
+| 8 | `censarAlmacenamiento` | qué guarda la landing en el navegador y qué enlaces al registro atribuyen | ídem |
+| 9 | `medirDetector` | promesas de capacidad en `#comparativa` — caso DIFERENCIAL, el registro de anclas es el real | ídem |
+| 10 | `censoDeBodies` | la forma del `body` de cada `apiRequest` | ídem |
+| 11 | `censarPeticiones` | los `fetch` que se saltan el plazo de red | ídem |
+| 12 | `inventario` | las acciones del detalle del trabajo | ídem |
+| 13 | `censarSuperficies` | los bloques de Configuración | ídem |
+| 14 | `censarPiesDeModal` | los pies de modal y sus botones | ídem |
+| 15 | `censarUsosDeBoton` | variantes de botón sin la base `btn` — lo último | ídem |
+
+Por nombre parecían ir detrás de scrum245 el 746 y los gateados; leídos, el camino fiscal y las líneas
+de factura van antes. Dos siembras viven en su propio fichero porque su instrumento está DENTRO de un
+`.test.mjs`: importarlo desde otro test volvería a registrar todos sus tests.
+
+**4 · Las correcciones ① y ②.** Ocurrieron el 9-sep **antes del primer commit del censo**: buscar la
+palabra «SUELO» dio 149 de 151 (contaba texto) y exigir un literal falló el suelo por un escapado del
+shell. No hay commit que las separe porque el censo no existía aún en el árbol.
+
+**5 · Por qué el trabajo viajó en ramas de `scrum-637`.** **No fue deliberado.** Era mi rama larga del
+carril de verificación y seguí comiteando en ella. El orquestador lo corrigió el 15-sep con la norma
+A17 —un ticket, una rama—, y desde entonces SCRUM-846 va en `scrum-846-caso-conocido-por-ast` (PR #1257)
+y en `scrum-846b-siembras-a-los-quince` (ésta). El hueco que el §2 declara en el guard de SCRUM-854
+es real y lo destapé yo.
+
+**6 · El estado real.** Con esta rama en `main`, el censo da 0. Jira lo lleva el orquestador, que
+decide el cierre.
+
+## C · Visto caer, y dos rojos de guard por el camino
+
+- **Suelo del rompedor:** las 15 siembras, sin romper nada, en verde y con al menos un test cada una.
+- **31 roturas** —«dice que sí a todo» y «dice que no a todo» por instrumento, tres en
+  almacenamiento—, **y las 31 tumban su siembra**. Cada fichero se restaura y se comprueba byte a byte.
+- **Un ancla caducada cuenta como fallo, no se salta.** En la primera corrida el texto que se rompía
+  en `scrum245` estaba dos veces —`censarLlamadas` y `censarTexto` repiten la comprobación— y el
+  rompedor lo dio en rojo en vez de romper el que no era.
+- **La tanda completa dio dos rojos, los dos míos y los dos con razón.** Se arregló el código, no lo
+  que exigen los guards:
+  - SCRUM-710b cazó un `linea: 2` en una siembra. Todas pasaron a compararse por identidad: fichero,
+    motivo del acusado o texto del body.
+  - SCRUM-350 cayó sobre el rompedor porque citaba una ruta que lleva en el nombre la clase CSS del
+    pie de modal. El rompedor dejó de citar rutas: cada rotura nombra la FUNCIÓN que rompe.
+- **Y el nombre solo tampoco identifica.** Al traer main, `censarLlamadas` apareció exportada por dos
+  ficheros (`scrum245` y `_censo-emisores-con-fila`). El rompedor no eligió uno: lo dio en rojo
+  (IDENTIDAD). Lo que identifica al instrumento es el ENLACE que usa su siembra: el propio test si la
+  define, o el único módulo que el test importa y la exporta.
+
+Commit de las siembras: `19291ab63be7100c8c5ab8fa1d58a91dc67a79e6`, comiteado ANTES de inyectar el primer rojo.
+
+## D · Cambios fuera de las siembras, todos aditivos
+
+- `censoDeConexiones` (scrum746) recibe la raíz por parámetro, con la de siempre por defecto.
+- `censarMarcadores` y `censarLectores` (PR #1238), lo mismo.
+
+## E · Límites declarados
+
+- **Lo que el censo no mira no sale en su cero.** Su población son las funciones EXPORTADAS con verbo
+  de medida en `scripts/` y `tests/`, sin subcarpetas. Un script que mide sin exportar nada —como
+  `scripts/censo-estado-no-contemplado.mjs`, que entró durante esta misma tanda— no cuenta ni para
+  bien ni para mal.
+- El censo sólo mira el PRIMER argumento de cada llamada.
+- Donde su criterio laxo y el estricto coinciden, no se ha juzgado a mano.
+- Una siembra demuestra que el instrumento VE su caso fabricado; no que su cifra sobre el árbol de
+  verdad sea la correcta.
