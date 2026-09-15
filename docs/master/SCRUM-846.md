@@ -146,7 +146,7 @@ quedan excepciones declaradas con su causa.**
 
 Esta rama da a cada uno de los 15 que quedaban una siembra con una entrada FABRICADA que tiene que
 dar SÍ y otra que tiene que dar NO, y el censo pasa a **0 sin caso, sin excepciones declaradas**.
-Medido sobre el árbol con `main` traído dentro. Se comprueba con:
+Medido sobre el árbol con `main` traído dentro: 141 funciones en 99 módulos, las 99 con caso. Se comprueba con:
 
 ```
 node scripts/verificacion-s5/censo-instrumentos-sin-caso.mjs      → SIN ninguno: 0
@@ -239,8 +239,11 @@ decide el cierre.
   - SCRUM-710b cazó un `linea: 2` en una siembra. Todas pasaron a compararse por identidad: fichero,
     motivo del acusado o texto del body.
   - SCRUM-350 cayó sobre el rompedor porque citaba una ruta que lleva en el nombre la clase CSS del
-    pie de modal. El rompedor dejó de citar rutas: cada rotura nombra la FUNCIÓN que rompe y el
-    fichero es el único que la exporta.
+    pie de modal. El rompedor dejó de citar rutas: cada rotura nombra la FUNCIÓN que rompe.
+- **Y el nombre solo tampoco identifica.** Al traer main, `censarLlamadas` apareció exportada por dos
+  ficheros (`scrum245` y `_censo-emisores-con-fila`). El rompedor no eligió uno: lo dio en rojo
+  (IDENTIDAD). Lo que identifica al instrumento es el ENLACE que usa su siembra: el propio test si la
+  define, o el único módulo que el test importa y la exporta.
 
 Commit de las siembras: `19291ab63be7100c8c5ab8fa1d58a91dc67a79e6`, comiteado ANTES de inyectar el primer rojo.
 

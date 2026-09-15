@@ -13,17 +13,20 @@
 // test ejecutado. Un rojo encima de algo que ya estaba rojo —o de un patrón que no casa con ningún
 // test— no prueba nada.
 //
-// ── EL INSTRUMENTO SE BUSCA POR LO QUE EXPORTA, NO POR SU RUTA ───────────────────────────────
-// Cada rotura nombra la FUNCIÓN que rompe, y el fichero se deriva: el único `.mjs` de `tests/` o
-// `scripts/` que la exporta. Referenciar por posición caduca, por identidad no. Y tiene un segundo
-// efecto que no es cosmético: la primera versión citaba las rutas, una de ellas lleva dentro el
-// nombre de la clase CSS del pie de modal, y el guard de cobertura de SCRUM-350 —«todo fichero que
-// la nombra está en su censo»— cayó con razón sobre un fichero que ni la usa ni necesitaba nombrarla.
+// ── EL INSTRUMENTO SE BUSCA POR EL ENLACE QUE USA SU SIEMBRA ─────────────────────────────────
+// Cada rotura nombra la FUNCIÓN que rompe, y el fichero se deriva de cómo la alcanza su siembra: el
+// propio test si la define, o el único módulo que el test importa y la exporta. Llegar aquí costó
+// dos intentos, y los dos rojos fueron del instrumento, no de las siembras:
+//   · citar RUTAS hizo caer el guard de cobertura de SCRUM-350, porque una de ellas lleva en el
+//     nombre la clase CSS del pie de modal y este fichero ni la usa ni necesitaba nombrarla;
+//   · buscar por NOMBRE en todo el árbol falló al traer `main`: `censarLlamadas` la exportan dos
+//     ficheros. El rompedor no eligió uno: dio IDENTIDAD en rojo, que es lo que tiene que hacer.
+// Lo que identifica al instrumento no es su ruta ni su nombre: es el enlace que la siembra usa.
 //
 // ── ANCLA CADUCADA ≠ SIEMBRA SANA ────────────────────────────────────────────────────────────
-// Si el texto que se rompe ya no está, o está más veces de las declaradas, o la función no la
-// exporta exactamente un fichero, NO se salta: cuenta como fallo con su nombre. «No pude romperlo»
-// y «lo rompí y no cayó» son sucesos distintos, y los dos son rojo.
+// Si el texto que se rompe ya no está, o está más veces de las declaradas, o la función no llega a
+// la siembra por exactamente un fichero, NO se salta: cuenta como fallo con su nombre. «No pude
+// romperlo» y «lo rompí y no cayó» son sucesos distintos, y los dos son rojo.
 //
 // USO: node scripts/verificacion-s5/romper-los-quince.mjs
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -125,16 +128,32 @@ export const ROTURAS = [
     buscar: "llevaBase: c.clases.includes('btn'),", cambiar: 'llevaBase: true,' },
 ];
 
-/** Los `.mjs` de `tests/` y `scripts/` que EXPORTAN esa función. Tiene que salir exactamente uno. */
-function ficherosQueExportan(nombre) {
+/** Los especificadores RELATIVOS que un test importa, estática (`from '…'`) o dinámicamente (`import('…')`). */
+function importsRelativos(texto) {
+  const salida = [];
+  for (const marca of ["from '", "import('"]) {
+    for (const trozo of texto.split(marca).slice(1)) {
+      const especificador = trozo.slice(0, trozo.indexOf("'"));
+      if (especificador.startsWith('.')) salida.push(especificador);
+    }
+  }
+  return [...new Set(salida)];
+}
+
+/**
+ * Los ficheros de los que la SIEMBRA toma la función: el propio test si la define, o los módulos
+ * que el test importa y la exportan. Tiene que salir exactamente uno.
+ */
+function ficherosDeLaSiembra(r) {
+  const define = (t) => t.includes(`export function ${r.exporta}(`) || t.includes(`export async function ${r.exporta}(`);
+  const testAbs = path.join(RAIZ, r.test);
+  const texto = fs.readFileSync(testAbs, 'utf8');
+  if (define(texto)) return [r.test];
   const hallados = [];
-  for (const dir of ['tests', 'scripts']) {
-    for (const f of fs.readdirSync(path.join(RAIZ, dir))) {
-      if (!f.endsWith('.mjs')) continue;
-      const texto = fs.readFileSync(path.join(RAIZ, dir, f), 'utf8');
-      if (texto.includes(`export function ${nombre}(`) || texto.includes(`export async function ${nombre}(`)) {
-        hallados.push(`${dir}/${f}`);
-      }
+  for (const especificador of importsRelativos(texto)) {
+    const abs = path.resolve(path.dirname(testAbs), especificador);
+    if (fs.existsSync(abs) && define(fs.readFileSync(abs, 'utf8'))) {
+      hallados.push(path.relative(RAIZ, abs).split(path.sep).join('/'));
     }
   }
   return hallados;
@@ -154,9 +173,9 @@ function correr(r) {
 }
 
 function romperYCorrer(r) {
-  const hallados = ficherosQueExportan(r.exporta);
+  const hallados = ficherosDeLaSiembra(r);
   if (hallados.length !== 1) {
-    return { estado: 'IDENTIDAD', detalle: `\`${r.exporta}\` la exportan ${hallados.length} ficheros (${hallados.join(', ') || 'ninguno'})` };
+    return { estado: 'IDENTIDAD', detalle: `la siembra alcanza \`${r.exporta}\` por ${hallados.length} ficheros (${hallados.join(', ') || 'ninguno'})` };
   }
   const abs = path.join(RAIZ, hallados[0]);
   const original = fs.readFileSync(abs);
