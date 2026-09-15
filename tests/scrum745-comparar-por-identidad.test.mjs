@@ -32,6 +32,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url'; // SCRUM-730
 import ts from 'typescript';
+import { soloCodigo } from './_solo-codigo.mjs';
 import {
   mutacionesDeclaradas, censoDeDeclaraciones, lecturaDeDeclaraciones,
   cayo, paso, // SCRUM-748: los dos veredictos, que dejaron de ser el mismo
@@ -354,9 +355,10 @@ test('SCRUM-745/748 · 🔴 el meta-guard mira la LÍNEA BASE, y NO reconoce men
 
   // ② 🔴 Y NO se cuela una lista negra de mensajes. Se mira el CÓDIGO desnudo, porque el
   // comentario que explica la prohibición CITA el mensaje que prohíbe reconocer (SCRUM-203).
-  const desnudo = src
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .split('\n').map((l) => l.replace(/(^|[^:])\/\/.*$/, '$1')).join('\n');
+  // SCRUM-694b · filtro a mano retirado: `(^|[^:])//` libraba a `https://` por los dos
+  // puntos, pero se comia la linea entera ante un regex de URL (`/^https?:\/\//`), que es
+  // como las URLs aparecen en el codigo de verdad. `soloCodigo()` tokeniza y no depende de eso.
+  const desnudo = soloCodigo(src, 'meta-guard-mutaciones.mjs');
   assert.ok(desnudo.includes('function aplicarUna'), '🔴 el desnudado se llevó el código por delante.');
   for (const cadena of ['Cannot find module', 'MODULE_NOT_FOUND', 'SyntaxError']) {
     assert.equal(desnudo.includes(cadena), false,
@@ -380,9 +382,10 @@ test('SCRUM-745/748 · 🔴 el meta-guard mira la LÍNEA BASE, y NO reconoce men
 
 test('SCRUM-745 · 🔴 los dos lectores NO cuelgan de ningún reporter', () => {
   const src = fs.readFileSync(path.join(RAIZ, 'scripts', 'meta-guard-mutaciones.mjs'), 'utf8');
-  const desnudo = src
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .split('\n').map((l) => l.replace(/(^|[^:])\/\/.*$/, '$1')).join('\n');
+  // SCRUM-694b · filtro a mano retirado: `(^|[^:])//` libraba a `https://` por los dos
+  // puntos, pero se comia la linea entera ante un regex de URL (`/^https?:\/\//`), que es
+  // como las URLs aparecen en el codigo de verdad. `soloCodigo()` tokeniza y no depende de eso.
+  const desnudo = soloCodigo(src, 'meta-guard-mutaciones.mjs');
 
   // 🔴 SUELO, Y NO ES ADORNO: los tres asserts de abajo son NEGACIONES, y una negación sobre un
   // fuente vacío pasa sola (SCRUM-719). El desnudado se lleva por delante toda la prosa que

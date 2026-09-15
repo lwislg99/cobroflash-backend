@@ -30,6 +30,7 @@ import { fileURLToPath } from 'node:url';
 import { extraerTextoPdf, vecesEnPdf } from './_texto-del-pdf.mjs';
 // SCRUM-734 · las claves que produce el constructor unico de los params del presupuesto.
 import { clavesDelConstructor } from './_puertas-del-presupuesto.mjs';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -141,9 +142,12 @@ test('SCRUM-647 · el documento ya no tiene DOS criterios: ni «IVA» grabado ni
   // 🔴 DESNUDAR NO ES COSMÉTICA: los comentarios que explican esto nombran «IVA», «IGIC», «IPSI»
   // y `locale.vatName` muchas veces. Sin quitarlos el guard se cazaría a sí mismo en la prosa que
   // explica la prohibición — ya pasó en SCRUM-614 y SCRUM-617.
-  const limpio = cuerpo
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .split('\n').map((l) => l.replace(/(^|[^:])\/\/.*$/, '$1')).join('\n');
+  // SCRUM-694b · filtro a mano retirado: `(^|[^:])//` libraba a `https://` por los dos
+  // puntos, pero se comia la linea entera ante un regex de URL (`/^https?:\/\//`), que es
+  // como las URLs aparecen en el codigo de verdad. `soloCodigo()` tokeniza y no depende de eso.
+  // Y se filtra el fichero ENTERO para cortar DESPUES con el MISMO indice:
+  // `soloCodigo()` conserva posiciones a proposito, justo para que esto sea legal.
+  const limpio = soloCodigo(src, 'pdf.service.ts').slice(ini);
 
   // SUELO en las dos direcciones: quitó prosa Y no se comió el código.
   assert.ok(cuerpo.includes('Canarias'), 'suelo: el comentario de este ticket existe.');

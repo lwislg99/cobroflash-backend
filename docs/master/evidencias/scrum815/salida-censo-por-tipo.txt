@@ -1,0 +1,28 @@
+TIPOS DE EVENTO DE STRIPE QUE EL WEBHOOK DESPACHA: 7
+  src/modules/billing/app/routes/stripe.routes.ts:47  charge.dispute.created
+  src/modules/billing/app/routes/stripe.routes.ts:53  checkout.session.completed
+  src/modules/billing/app/routes/stripe.routes.ts:96  payment_intent.payment_failed
+  src/modules/billing/app/routes/stripe.routes.ts:108  customer.subscription.updated
+  src/modules/billing/app/routes/stripe.routes.ts:109  customer.subscription.created
+  src/modules/billing/app/routes/stripe.routes.ts:145  customer.subscription.deleted
+  src/modules/billing/app/routes/stripe.routes.ts:155  checkout.session.expired
+
+EFECTOS POR TIPO:
+  [:47] charge.dispute.created
+       · handleStripeDispute — escritura en BD (disputa)
+  [:53] checkout.session.completed
+       · axios.post — SALIDA HTTP fuera del proceso
+       · prisma.merchant.update — escritura de plan
+       · rewardReferralOnFirstPayment — recompensa de referido
+       · conConstancia — envoltorio de correo
+       · sendFirstPaymentEmail — CORREO (no reversible)
+  [:96] payment_intent.payment_failed
+       · axios.post — SALIDA HTTP fuera del proceso
+  [:107] customer.subscription.updated | customer.subscription.created
+       · prisma.merchant.update — escritura de plan
+  [:145] customer.subscription.deleted
+       · prisma.merchant.update — escritura de plan
+  [:155] checkout.session.expired
+       · axios.post — SALIDA HTTP fuera del proceso
+
+CONTROL POSITIVO del extractor (fuente sintetica con 2 efectos): ve 2 ✅

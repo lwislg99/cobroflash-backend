@@ -20,6 +20,8 @@ import { datosDeTrabajoDirecto, filaDeTrabajoDirecto, tituloDeTrabajo } from '..
 import { veredictoAlbaranSinPresupuesto } from '../../domain/albaranSinPresupuesto'; // SCRUM-684
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
+import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-173
 import { allocateAlbaranNumber } from '../../domain/albaranNumber.service';
 // SCRUM-358 (H3): el alta de albarán, idempotente.
@@ -89,7 +91,11 @@ const QUOTE_SELECT = {
   id: true, quoteNumber: true, total: true, currency: true,
   paymentTerms: true, customBillingPlan: true, // SCRUM-27: para resolver el plan efectivo
   lines: true, // SCRUM-141: el importe de cada tramo se deriva de las líneas (= lo que se emitirá)
-  Invoice: { select: { id: true, status: true, total: true } },
+  // SCRUM-816 · `createdAt` entra porque la escalera de la siguiente acción (`jobNextAction`,
+  // nivel 2) pregunta si hay una factura sin pagar de HACE 7 DÍAS O MÁS. Sin la fecha ese nivel
+  // no se puede evaluar en la LISTA, y la lista propondría algo distinto del detalle para el
+  // mismo Trabajo. Es UN campo más en un `select` que ya viajaba: cero consultas nuevas.
+  Invoice: { select: { id: true, status: true, total: true, createdAt: true } },
 } as const;
 const CUSTOMER_SELECT = { id: true, name: true, phone: true, mobile: true } as const; // SCRUM-590 (CONT-19)
 
@@ -145,6 +151,32 @@ type JobRefs = {
    * SCRUM-52). Un presupuesto lo redacta uno y lo ejecutan tres; el esquema los declara aparte.
    */
   asignadosPorJob: Map<number, Array<{ id: number; name: string }>>;
+  /**
+   * ═══ SCRUM-816 · LOS ALBARANES DE CADA TRABAJO, EN LOTE — Y ESTO ES MEDIO TICKET ═══════════
+   *
+   * 🔴 EL DEFECTO QUE CIERRA. `jobNextAction` —la escalera ÚNICA de SCRUM-366— **no ramifica por
+   * el estado del Trabajo**: decide por sus ALBARANES y sus FACTURAS. Y este serializador, el de
+   * la LISTA, no mandaba ninguno de los dos: `albaranes` e `invoices` los añadía sólo
+   * `serializeJobDetail`. Así que la escalera caía SIEMPRE al nivel 5 y las veinte filas ofrecían
+   * `+ Nuevo albarán` — también un Trabajo CERRADO, medido en navegador el 7-sep-2026.
+   *
+   * Y lo caro no es el botón repetido: es que **la lista y el detalle decían cosas distintas del
+   * mismo Trabajo**, que es exactamente el defecto que SCRUM-366 se escribió para cerrar. Su
+   * guard pasaba en verde porque comprueba que las dos pantallas LLAMEN a la escalera; nunca que
+   * la llamen CON LOS MISMOS DATOS.
+   *
+   * ⚠️ POR QUÉ EN EL LOTE Y NO DENTRO DEL SERIALIZADOR. Una consulta por fila es el N+1 que
+   * SCRUM-58 quitó (2910 ms contra 1270 ms, medido allí) y que su test vigila comparando el
+   * conteo con 3 y con 12 Trabajos. Esto es UNA consulta para las 200 filas, el mismo patrón que
+   * `asignadosPorJob` justo arriba — copiado, no reinventado.
+   *
+   * ⚠️ Y NO SON LOS ALBARANES DEL DETALLE. Aquí viajan los DOS campos que lee la escalera (`id` y
+   * `estado`); el detalle sigue mandando el documento entero con sus líneas, su facturación y sus
+   * pendientes. Se llaman igual porque **son la misma cosa vista por la misma escalera**: si se
+   * llamaran distinto, la lista tendría que traducirlos antes de preguntar, y esa traducción
+   * sería el segundo sitio por donde las dos pantallas vuelven a separarse.
+   */
+  albaranesPorJob: Map<number, Array<{ id: number; estado: string }>>;
 };
 const operarioKey = (merchantId: number, operarioId: number) => `${merchantId}:${operarioId}`;
 
@@ -164,7 +196,7 @@ async function loadJobRefs(jobs: Job[]): Promise<JobRefs> {
   const jobIds = jobs.map((j) => j.id).filter((v): v is number => v != null);
   const merchantsDeJobs = [...new Set(jobs.map((j) => j.merchantId).filter((v): v is number => v != null))];
 
-  const [quotes, porJobId, customers, operarios, asignados] = await Promise.all([
+  const [quotes, porJobId, customers, operarios, asignados, albaranes] = await Promise.all([
     quoteIds.length
       ? prisma.quote.findMany({ where: { id: { in: quoteIds } }, select: QUOTE_SELECT })
       : Promise.resolve([]),
@@ -199,6 +231,17 @@ async function loadJobRefs(jobs: Job[]): Promise<JobRefs> {
           orderBy: { teamMemberId: 'asc' },
         })
       : Promise.resolve([]),
+    // SCRUM-816 · LOS ALBARANES, en la MISMA consulta única. Ver el porqué largo en `JobRefs`.
+    // `merchantId` acota la lectura (regla 2) igual que las cuatro de arriba, y el `orderBy` por
+    // `createdAt` es el mismo que usa el detalle: la escalera elige el MÁS AVANZADO, así que un
+    // orden que cambie entre dos cargas puede cambiar el botón sin que nadie haya tocado nada.
+    jobIds.length && merchantsDeJobs.length
+      ? prisma.albaran.findMany({
+          where: { jobId: { in: jobIds }, merchantId: { in: merchantsDeJobs } },
+          select: { id: true, jobId: true, estado: true },
+          orderBy: { createdAt: 'asc' },
+        })
+      : Promise.resolve([]),
   ]);
 
   const asignadosPorJob: JobRefs['asignadosPorJob'] = new Map();
@@ -207,6 +250,16 @@ async function loadJobRefs(jobs: Job[]): Promise<JobRefs> {
     const quien = { id: a.teamMember.id, name: a.teamMember.name };
     if (lista) lista.push(quien);
     else asignadosPorJob.set(a.jobId, [quien]);
+  }
+
+  // SCRUM-816 · se agrupan por Trabajo con el MISMO gesto que los asignados de arriba.
+  const albaranesPorJob: JobRefs['albaranesPorJob'] = new Map();
+  for (const a of albaranes) {
+    if (a.jobId == null) continue;   // un albarán suelto no es de ningún Trabajo
+    const lista = albaranesPorJob.get(a.jobId);
+    const cual = { id: a.id, estado: a.estado };
+    if (lista) lista.push(cual);
+    else albaranesPorJob.set(a.jobId, [cual]);
   }
 
   // Los tipos de los Map internos son los MISMOS que declara `JobRefs`: se escriben una vez.
@@ -238,6 +291,7 @@ async function loadJobRefs(jobs: Job[]): Promise<JobRefs> {
     customers: new Map(customers.map((c) => [c.id, c])),
     operarios: new Map(operarios.map((o) => [operarioKey(o.merchantId, o.id), { id: o.id, name: o.name }])),
     asignadosPorJob,
+    albaranesPorJob,
   };
 }
 
@@ -345,6 +399,37 @@ async function serializeJob(job: Job, refs?: JobRefs) {
         })
       ).map((a) => ({ id: a.teamMember.id, name: a.teamMember.name }));
 
+  // ── SCRUM-816 · LO QUE LEE LA ESCALERA, TAMBIÉN EN LA LISTA ─────────────────────────────
+  //
+  // Los dos campos por los que `jobNextAction` decide y que este serializador NO mandaba. El
+  // porqué largo está en `JobRefs.albaranesPorJob`; aquí sólo la mecánica, que es la misma que
+  // la de `asignados` de arriba: con lote se LEE del Map, sin lote se consulta (un Trabajo
+  // suelto, una consulta).
+  //
+  // El detalle SOBRESCRIBE los dos con su versión completa (`{ ...base, invoices, albaranes }`),
+  // así que esto no le cambia ni un campo: lo comprueba `scrum816-la-lista-no-miente`.
+  const albaranes = refs
+    ? refs.albaranesPorJob.get(job.id) ?? []
+    : (
+        await prisma.albaran.findMany({
+          where: { jobId: job.id, merchantId: job.merchantId },   // regla 2
+          select: { id: true, estado: true },
+          orderBy: { createdAt: 'asc' },
+        })
+      );
+
+  // 🔴 LAS FACTURAS NO CUESTAN NI UNA CONSULTA: `todosLosQuotes` ya las trae dentro
+  // (`QUOTE_SELECT.Invoice`), porque el importe de referencia las necesitaba desde SCRUM-363. Lo
+  // único que faltaba era `createdAt`, un campo en un `select` que ya viajaba.
+  //
+  // Se aplanan igual que en el detalle —todas las de todos los presupuestos del Trabajo, por
+  // fecha— porque omitir las de un adicional volvería a hacer que las dos pantallas contesten
+  // distinto, que es el defecto entero de este ticket.
+  const invoices = todosLosQuotes
+    .flatMap((q) => (q as { Invoice?: Array<{ id: number; status: string; createdAt: Date }> }).Invoice ?? [])
+    .map((inv) => ({ id: inv.id, status: inv.status, createdAt: inv.createdAt }))
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
   // A13.3: ¿queda tramo pendiente? (plan según paymentTerms vs facturas emitidas)
   let remaining: { amount: number; currency: string } | null = null;
   let planView: ReturnType<typeof buildBillingPlanView> | null = null; // SCRUM-34
@@ -423,6 +508,11 @@ async function serializeJob(job: Job, refs?: JobRefs) {
       : null,
     pendingStagesCount: planView?.pendingStagesCount ?? 0,
     hasCustomPlan: planView?.hasCustomPlan ?? false,
+    // SCRUM-816 · los dos que le faltaban a la escalera. El detalle los sobrescribe con su
+    // versión completa; para la lista éstos son los que hacen que su respuesta y la del detalle
+    // dejen de ser dos.
+    albaranes,
+    invoices,
   };
 }
 
@@ -804,6 +894,13 @@ router.patch('/:id', async (req, res) => {
     if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
     const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!job) return res.status(404).json({ error: 'not_found' });
+    // 🔴 SCRUM-849 · LA MISMA COMPROBACION QUE `GET /:id`, QUE AQUI NO ESTABA.
+    // Sin esto, un tecnico no podia ABRIR el Trabajo de otro (404 desde SCRUM-23) y si podia
+    // ESCRIBIR en el. Un eje y no tres, porque es el que aplica la lectura de ESTE recurso:
+    // subir aqui a los tres ejes de albaranes dejaria la escritura mas abierta que su lectura.
+    if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
+      return res.status(404).json({ error: 'not_found' });
+    }
 
     // SCRUM-120: gate por CAMPO (no por ruta — status/scheduledAt/notes del día a día son del operario).
     // Admin-only por afectar a FACTURACIÓN/DINERO: `tipoOperacion` (bandera fiscal: recapitulativa mensual
@@ -1004,6 +1101,13 @@ router.post('/:id/albaranes', async (req, res) => {
     if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
     const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!job) return res.status(404).json({ error: 'not_found' });
+    // 🔴 SCRUM-849 · LA MISMA COMPROBACION QUE `GET /:id`, QUE AQUI NO ESTABA.
+    // Sin esto, un tecnico no podia ABRIR el Trabajo de otro (404 desde SCRUM-23) y si podia
+    // ESCRIBIR en el. Un eje y no tres, porque es el que aplica la lectura de ESTE recurso:
+    // subir aqui a los tres ejes de albaranes dejaria la escritura mas abierta que su lectura.
+    if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
+      return res.status(404).json({ error: 'not_found' });
+    }
 
     // SCRUM-257 · UN ALBARÁN NACE DE UN PRESUPUESTO (decisión 1 del fundador, 2-ago-2026).
     //
@@ -1276,6 +1380,10 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
     exigirTiposDeIvaEmitibles(scaledLines);
 
+    // SCRUM-729 · fuera de la transacción a propósito: aquí el cerrojo de serie se toma en la
+    // PRIMERA línea de la tx (SCRUM-814), así que cualquier lectura de dentro se serializa.
+    const clienteCongelado = await congelarCliente(prisma, quote.merchantId, quote.customerId);
+
     const invoice = await prisma.$transaction(async (tx) => {
       // ── SCRUM-814 · EL CERROJO PRIMERO, Y EL RECUENTO DENTRO ─────────────────────────────
       //
@@ -1303,21 +1411,19 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
         camino: 'C2', actor: actorDeRequest(req),
       });
-      return tx.invoice.create({
-        data: {
-          merchantId: quote.merchantId,
-          customerId: quote.customerId,
-          quoteId: quote.id,
-          number: invoiceNumber,
-          type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0 (regla 26)
-          total: tramo.amount.toFixed(2),
-          stageLabel: isCustomPlan ? tramo.stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
-          currency: quote.currency,
-          lines: tramo.scaledLines.length > 0 ? tramo.scaledLines : undefined,
-          pdfUrl: 'PENDING_PDF',
-          qrData: 'PENDING_QR',
-          registerId: null,
-        },
+      return crearFacturaEmitida(tx, clienteCongelado, {
+        merchantId: quote.merchantId,
+        customerId: quote.customerId,
+        quoteId: quote.id,
+        number: invoiceNumber,
+        type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0 (regla 26)
+        total: tramo.amount.toFixed(2),
+        stageLabel: isCustomPlan ? tramo.stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
+        currency: quote.currency,
+        lines: tramo.scaledLines.length > 0 ? tramo.scaledLines : undefined,
+        pdfUrl: 'PENDING_PDF',
+        qrData: 'PENDING_QR',
+        registerId: null,
       });
     });
 

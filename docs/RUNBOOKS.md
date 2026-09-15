@@ -673,8 +673,15 @@ si saltó, y el reporter por defecto (`spec`) **no imprime el motivo del salto**
 durante meses que 67 tests se apagaban en silencio. Para verlos:
 
 ```bash
-node --test --test-force-exit --test-reporter=tap tests/*.test.mjs | grep "# SKIP"
+node --test --test-force-exit --test-reporter=spec --test-reporter-destination=stdout \
+     --test-reporter=tap --test-reporter-destination="${TMPDIR:-/tmp}/yaqu-tanda.tap" tests/*.test.mjs
+grep "# SKIP" "${TMPDIR:-/tmp}/yaqu-tanda.tap"
 ```
+
+> ⚠️ **SCRUM-850 · el TAP va a fichero y se lee en un SEGUNDO comando, nunca por tubería.** Aquí
+> ponía `… tests/*.test.mjs | grep "# SKIP"`, y en una tubería el código de salida es el del
+> **último** tramo: con esa forma, **una tanda en rojo salía `0`**. El fichero va fuera del árbol
+> porque un temporal dentro del repo es el rojo intermitente que midió SCRUM-824.
 
 Todo salto **declara su motivo** y el comando que lo arregla; que siga siendo así lo vigila
 `tests/scrum419-ci-declara-lo-que-no-corre.test.mjs`, que corre **sin gate** — el guard que vigila a

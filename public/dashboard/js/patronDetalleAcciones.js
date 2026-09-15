@@ -33,6 +33,26 @@ const MICROCOPY_PENDIENTE = '[PENDIENTE microcopy oficial]';
  */
 function destinoEfectivo(accion, estado, ctx) {
   const d = accion.destinos[estado];
+
+  // 🔴 SCRUM-707 · UN ESTADO QUE LA TABLA NO CONTEMPLA SE OCULTA. Aquí se devolvía
+  // `undefined`, y los dos consumidores hacen `cubos[destino].push(...)`: `cubos[undefined]` no
+  // existe y revienta con un TypeError que se lleva el resto del pintado. Medido sobre el main
+  // del 8-sep-2026: con `rectificada`, `draft` o `''` salen 9/9 y 11/11 destinos `undefined`.
+  //
+  // ⚠️ SE OCULTA, Y NO SE CAE A UN CUBO POR DEFECTO. Medido: un fallback OFRECERÍA las 9 acciones
+  // de la factura donde el máximo vetado en un estado conocido es 6 — y entre las que reaparecen
+  // está `btnAnular`, que está OCULTA EN LOS CUATRO estados conocidos. En el albarán, 11 sobre 6,
+  // con `btnEmitir`, `btnEnviarFirmar` y `btnFirmarAqui` dentro.
+  //
+  // 🔒 Un fallback no es neutral: abre, en el estado que nadie ha vetado, justo las acciones que
+  // alguien decidió ocultar en todos los que sí vetó. Anular una factura emitida es la regla 29;
+  // firmar un albarán lo congela.
+  //
+  // `'oculta'` no es un valor inventado para la ocasión: es uno de los cinco DESTINOS, y los dos
+  // consumidores ya lo tratan (`continue` en el albarán, `return` en la factura). No había que
+  // enseñarles nada.
+  if (d === undefined) return 'oculta';
+
   if (d !== 'primaria' || !accion.cuando) return d;
   const c = ctx || {};
   // Forma GENÉRICA: el registro nombra su condición y el contexto la responde.
@@ -45,6 +65,22 @@ function destinoEfectivo(accion, estado, ctx) {
   // Condición que nadie sabe responder: se OCULTA. Dejarla como primaria pintaría un siguiente
   // paso que quizá no toca, y el patrón entero se apoya en que la primaria sea de fiar.
   return 'oculta';
+}
+
+/**
+ * ¿Conoce el registro este estado? DERIVADO de la tabla, no de una lista aparte.
+ *
+ * 🔴 ES LA DISTINCIÓN QUE HACE HONESTO EL AVISO. Sin ella, una factura `annulled` —que
+ * legítimamente sólo ofrece dos acciones— y un estado que no sabemos leer se ven igual en
+ * pantalla: las dos con pocos botones. Son dos hechos distintos y el profesional tiene derecho a
+ * saber cuál le ha tocado.
+ *
+ * Se pregunta a las PROPIAS acciones y no a una constante de estados: una lista aparte sería la
+ * quinta lista mantenida a mano de este árbol, y ya sabemos cómo acaban (SCRUM-821).
+ */
+function estadoReconocido(registro, estado) {
+  return (registro || []).some((a) => a && a.destinos
+    && Object.prototype.hasOwnProperty.call(a.destinos, estado));
 }
 
 /**
@@ -77,8 +113,11 @@ if (typeof window !== 'undefined') {
   window.DESTINOS_PATRON = DESTINOS;
   window.MICROCOPY_PENDIENTE = MICROCOPY_PENDIENTE;
   window.destinoEfectivo = destinoEfectivo;
+  window.estadoReconocido = estadoReconocido;
   window.incumplimientosDeLaLey = incumplimientosDeLaLey;
 }
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { DESTINOS, MICROCOPY_PENDIENTE, destinoEfectivo, incumplimientosDeLaLey };
+  module.exports = {
+    DESTINOS, MICROCOPY_PENDIENTE, destinoEfectivo, estadoReconocido, incumplimientosDeLaLey,
+  };
 }

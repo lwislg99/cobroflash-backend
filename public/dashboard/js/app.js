@@ -258,6 +258,11 @@ async function initApp() {
     if (options.albaranId !== undefined) state.albaranId = options.albaranId; // SCRUM-302
     if (options.parteId !== undefined) state.parteId = options.parteId; // SCRUM-652 (fase D)
     if (options.jobId     !== undefined) state.jobId     = options.jobId;
+    // 🔴 SCRUM-832 · ÉSTE FALTABA. `case 'customer-360'` LEE `state.customerId360` y nadie lo
+    // escribía aquí: quien abría la ficha 360 tenía que tocar `window.appState` desde fuera.
+    // Funcionaba por costumbre, no por mecanismo — y el router no podía restaurarla desde el hash,
+    // que es lo que este ticket necesita. Aditivo: quien ya lo asignaba fuera sigue igual.
+    if (options.customerId360 !== undefined) state.customerId360 = options.customerId360;
 
     closeSidebar();
 
@@ -291,7 +296,17 @@ async function initApp() {
         renderQuotesView(viewContainer, options.template || null);
         break;
       case 'quotes-detail':
-        viewTitle.textContent = L.quotePlural;
+        // 🔴 SCRUM-832 · AQUÍ PONÍA `L.quotePlural` — «Presupuestos», en plural, para la ficha de
+        // UNO. Nadie lo veía porque `quotesListView.js` escribía el título A MANO antes de pintar
+        // la ficha, saltándose el router; al mandarla por el router, medido en navegador, el
+        // usuario pasaba de ver «Presupuesto #N-1» a ver «Presupuestos».
+        //
+        // Y hay un enganche que no se ve desde aquí: `quotesDetailView.js` corrige el título al
+        // número REAL del presupuesto **sólo si ya empieza por «Presupuesto #»** (su regex). O sea
+        // que quien navega escribe el rótulo provisional con el id, y la ficha lo corrige al
+        // cargar. Ese es el contrato que había, y es el que se conserva — con el mismo literal,
+        // que es el que la ficha sabe reconocer.
+        viewTitle.textContent = state.quoteId != null ? 'Presupuesto #' + state.quoteId : L.quotePlural;
         if (state.quoteId != null) renderQuoteDetailView(viewContainer, state.quoteId);
         else viewContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">Sin cotización seleccionada</div></div>`;
         break;
@@ -487,9 +502,75 @@ async function initApp() {
     // sprint Tecnosel · el TERCER sitio, que es el que se olvida: sin esto, quien recargue
     // estando en «Partes por valorar» pierde la vista. Se entra desde Trabajos.
       'partes-oficina'];
+  // ══ SCRUM-832 · LAS FICHAS TAMBIÉN VIVEN EN EL HASH, Y POR ESO EL «ATRÁS» VUELVE ═══════════
+  //
+  // LA VÍCTIMA: quien entra a un presupuesto en el móvil, da al botón atrás —que ahí es EL gesto
+  // de navegación— y se sale de la aplicación.
+  //
+  // 🔴 LA CAUSA NO ERA LA QUE PARECÍA, y está medida. El ticket decía que Presupuestos falla por
+  // saltarse el router. Falla, y se lo salta, pero no es eso: **fallaban las CINCO listas**, y las
+  // otras cuatro sí usan el router. Medido en navegador real, con historial real: abrir un detalle
+  // creaba **0 entradas** en las cinco, porque `apilable` era false y `replaceState` **sustituye**
+  // la entrada de la lista en vez de añadir una. Abrir una ficha BORRABA la lista del historial.
+  //
+  // La nota de arriba explicaba por qué los detalles no estaban en `HASH_VIEWS` —«necesitan un id
+  // que el hash no lleva»— y tenía razón: el problema no era la lista, era que **al hash le
+  // faltaba el id**. Así que se le añade, en vez de dejar las fichas fuera.
+  //
+  // ADITIVO: no se renombra ninguna clave de vista. El hash pasa a ser `#clave/id` y el router
+  // sólo aprende a partir por la PRIMERA barra; `#customers` sigue significando lo mismo.
+  const DETALLES = {
+    'quotes-detail':  { clave: 'quoteId',       lista: 'quotes-list', ruta: (id) => '/admin/quotes/' + id,     aviso: 'Ese presupuesto ya no existe.' },
+    'jobs-detail':    { clave: 'jobId',         lista: 'jobs',        ruta: (id) => '/admin/jobs/' + id,       aviso: 'Ese trabajo ya no existe.' },
+    'invoice-detail': { clave: 'invoiceId',     lista: 'invoices',    ruta: (id) => '/admin/invoices/' + id,   aviso: 'Esa factura ya no existe.' },
+    'albaran-detail': { clave: 'albaranId',     lista: 'albaranes',   ruta: (id) => '/admin/albaranes/' + id,  aviso: 'Ese albarán ya no existe.' },
+    'customer-360':   { clave: 'customerId360', lista: 'customers',   ruta: (id) => '/admin/customers/' + id,  aviso: 'Ese cliente ya no existe.' },
+  };
+
+  /** El hash, partido por la PRIMERA barra: `#quotes-detail/123` → `{ view, id }`. */
   function viewFromHash() {
     const h = (window.location.hash || '').replace('#', '');
-    return HASH_VIEWS.includes(h) ? h : null;
+    if (!h) return null;
+    const barra = h.indexOf('/');
+    if (barra === -1) return HASH_VIEWS.includes(h) ? { view: h, id: null } : null;
+    const view = h.slice(0, barra);
+    // Se descodifica porque `hashDe` codifica: sin esto, un id con un carácter reservado saldría
+    // del hash como `%2F` y se le pediría eso al servidor. Hoy los ids son números y no cambia
+    // nada; la asimetría sería una trampa esperando a que dejen de serlo.
+    let id = h.slice(barra + 1);
+    try { id = decodeURIComponent(id); } catch (_err) {}
+    return DETALLES[view] && id ? { view, id } : null;
+  }
+
+  /** El hash que le toca a una navegación. Las fichas llevan su id; las demás, sólo la clave. */
+  function hashDe(view, opts) {
+    const d = DETALLES[view];
+    if (!d) return '#' + view;
+    const id = opts && opts[d.clave] !== undefined ? opts[d.clave]
+      : (window.appState ? window.appState[d.clave] : null);
+    return id == null || id === '' ? '#' + view : '#' + view + '/' + encodeURIComponent(id);
+  }
+
+  /**
+   * Restaura una ficha desde el hash — el camino del ATRÁS y el del enlace compartido.
+   *
+   * 🔒 «NO EXISTE» Y «NO ES TUYO» RESPONDEN EXACTAMENTE LO MISMO. Mismo destino y mismo texto,
+   * carácter por carácter. Si se distinguieran, cualquiera podría recorrer ids y averiguar QUÉ
+   * documentos hay en otros negocios sin llegar a ver ninguno: es fuga de tenencia (regla 2)
+   * aunque no se enseñe un solo dato. Por eso aquí no se mira el CÓDIGO del error —404, 403 o el
+   * que sea— sino sólo si la petición salió bien.
+   */
+  async function abrirFichaDesdeHash(view, id) {
+    const d = DETALLES[view];
+    try {
+      await apiRequest(d.ruta(id));
+    } catch (_e) {
+      _origRender(d.lista);
+      if (typeof showToast === 'function') showToast(d.aviso, 'warn');
+      try { history.replaceState(null, '', '#' + d.lista); } catch (_e2) {}
+      return;
+    }
+    _origRender(view, { [d.clave]: id });
   }
   const _origRender = renderView;
   window.renderAppView = function (view, opts) {
@@ -507,15 +588,22 @@ async function initApp() {
     // Tampoco se apila navegar al sitio donde ya estás: pulsar dos veces el mismo botón del menú
     // no puede obligar a dar dos veces atrás.
     try {
-      const actual = (window.location.hash || '').replace('#', '');
-      const apilable = HASH_VIEWS.includes(view) && actual !== view;
-      history[apilable ? 'pushState' : 'replaceState'](null, '', '#' + view);
+      // SCRUM-832 · las FICHAS ya se pueden apilar, porque su hash lleva el id y el router sabe
+      // restaurarlas. Sigue sin apilarse navegar al sitio donde ya estás — se compara el hash
+      // ENTERO, así que ir del presupuesto 7 al 9 sí apila: son dos pantallas distintas.
+      const actual = window.location.hash || '';
+      const nuevo = hashDe(view, opts);
+      const conocida = HASH_VIEWS.includes(view) || !!DETALLES[view];
+      const apilable = conocida && actual !== nuevo;
+      history[apilable ? 'pushState' : 'replaceState'](null, '', nuevo);
     } catch (_e) {}
     return _origRender(view, opts);
   };
   window.addEventListener('hashchange', () => {
     const v = viewFromHash();
-    if (v) _origRender(v);
+    if (!v) return;
+    if (v.id != null) { abrirFichaDesdeHash(v.view, v.id); return; }
+    _origRender(v.view);
   });
 
   // Botón flotante de ayuda (guía de inicio)
@@ -563,16 +651,34 @@ async function initApp() {
   // manejador de `.nav-item[data-view]`, igual que Albaranes, Facturas y Clientes.
 
   // Hash inicial
+  //
+  // 🔴 SCRUM-832 · ESTO COGÍA EL HASH CRUDO, y con el id dentro (`#quotes-detail/123`) le habría
+  // dejado a `appState.view` la cadena entera: ninguna `case` casa con eso, así que el `default`
+  // te dejaba en Inicio. El enlace compartido a una ficha —y el ATRÁS, que llega por el mismo
+  // sitio— abrían la portada sin decir por qué.
+  let fichaInicial = null;
   try {
-    const hash = (window.location.hash || '').replace('#', '').trim();
-    if (hash) window.appState.view = hash;
+    const h = viewFromHash();
+    if (h && h.id != null) fichaInicial = h;             // una ficha: se comprueba antes de pintar
+    else if (h) window.appState.view = h.view;
+    else {
+      // Lo que no reconoce `viewFromHash` se deja como estaba: hay hashes que no son vistas.
+      const hash = (window.location.hash || '').replace('#', '').trim();
+      if (hash && hash.indexOf('/') === -1) window.appState.view = hash;
+    }
   } catch {}
 
   // 8. Onboarding o render
+  const pintarInicio = () => {
+    // Una ficha no se pinta a ciegas: si su id no existe —o no es de este negocio— se vuelve a la
+    // lista con su aviso, por el MISMO camino que el botón atrás. Ver `abrirFichaDesdeHash`.
+    if (fichaInicial) return abrirFichaDesdeHash(fichaInicial.view, fichaInicial.id);
+    return renderView(window.appState.view || 'home');
+  };
   if (!me.onboardingCompleted) {
-    showOnboardingWizard(() => renderView(window.appState.view || 'home'));
+    showOnboardingWizard(pintarInicio);
   } else {
-    renderView(window.appState.view || 'home');
+    pintarInicio();
   }
 
   // 9. SCRUM-358 (H3 · fase 3) · LA COLA DE FIRMAS SE VACÍA AL ABRIR.

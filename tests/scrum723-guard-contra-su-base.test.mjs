@@ -364,6 +364,15 @@ const INDIRECTAS_DECLARADAS = [
   // de SCRUM-753 CONGELA. Es el mismo motivo por el que están arriba `scrum753` y `scrum775`.
   // Lo retira: quien borre la dimensión de rama viva del censo del tablero.
   'tests/scrum804-la-rama-viva.test.mjs',
+  // SCRUM-833 · el guard de los tres instrumentos de SCRUM-637. Entra aquí por el MISMO motivo y
+  // con la misma forma que su hermano de arriba: al anclarlo a `git log --merges` nombra `main`
+  // en la prosa que explica por qué esa población es permanente, y en el mensaje del suelo del
+  // clon superficial. **NO compara contra la referencia móvil**: le pasa a `git` el `inst.sha` que
+  // la instantánea de SCRUM-753 CONGELA, nunca `origin/main`. Si comparase contra la punta, el
+  // histórico saldría truncado justo por los merges recientes y su suelo pasaría sobre el vacío.
+  // Lo retira: quien devuelva ese guard a una población de ramas vivas — que es el defecto que
+  // SCRUM-833 vino a quitar, así que no debería pasar.
+  'tests/scrum637-la-rama-que-nadie-mira.test.mjs',
   // SCRUM-637 · la pregunta CONTRARIA a la de arriba: qué ramas NO están dentro de main, con su
   // edad. Nombra `origin/main` en la prosa y como valor por defecto de `instantanea({ ref })`.
   //

@@ -34,6 +34,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PREFIJO_IMPOSIBLE, telefonoDePrueba, esTelefonoDePrueba } from '../scripts/_telefonos-prueba.mjs';
@@ -121,7 +122,7 @@ test('SCRUM-262 · todo teléfono sembrado está en el rango imposible', () => {
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-262 · CONTROL POSITIVO: un teléfono de rango real se caza', () => {
-  const tmp = process.env.TMPDIR || process.env.TEMP || '.';
+  const tmp = os.tmpdir();
   const ruta = path.join(tmp, `scrum262-sonda-${process.pid}.mjs`);
   // ⚠️ El número se COMPONE, no se escribe entero: si el literal apareciera aquí junto a
   // `phone:`, este fichero se cazaría a sí mismo — el guard escanea `tests/`, y este test vive
@@ -142,7 +143,7 @@ test('SCRUM-262 · CONTROL NEGATIVO: los tests de FORMATO no se tocan', () => {
   // `normalizePhone('34600…')` prueba que un móvil ES de 9 dígitos gana el prefijo: ahí el
   // número TIENE que ser realista. No se escribe en ninguna parte, así que no es asunto de este
   // guard — y si lo fuera, daría rojo sobre tests correctos y acabaría desactivado.
-  const tmp = process.env.TMPDIR || process.env.TEMP || '.';
+  const tmp = os.tmpdir();
   const ruta = path.join(tmp, `scrum262-formato-${process.pid}.mjs`);
   fs.writeFileSync(ruta, "assert.equal(normalizePhone('600111222'), '34600111222');\n");
   try {

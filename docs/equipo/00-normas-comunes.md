@@ -1,5 +1,18 @@
 # Normas comunes del equipo de sesiones
 
+> 🔴 **ESTE FICHERO TIENE UN SOLO DUEÑO: LA SESIÓN 0.** Nadie más lo edita — ni las otras cinco
+> sesiones, ni Codex, ni el orquestador.
+>
+> **Quien descubra una norma la escribe en SU informe y se la reporta a la Sesión 0**, que la mete
+> aquí. Las frases de canon propias de cada sesión van a su `docs/equipo/sesion-N.md`, que no
+> choca con nadie.
+>
+> El motivo está medido: en una semana se mandó a CUATRO sesiones distintas escribir normas en
+> este mismo fichero (A12, A13, A14, A15, A16 y varias frases de canon). El resultado fue el
+> PR #1214 — 51 ficheros y tres tickets parados por un conflicto AQUÍ. **Cuatro manos en un
+> fichero es un conflicto garantizado**, y no lo causó la herramienta: lo causó repartir el
+> trabajo mal.
+
 Estas normas aplican a todas las sesiones, sin excepción.
 Tu identidad y tus trampas propias están en docs/equipo/sesion-N.md.
 Quien coordina también tiene ficha, y con sus trampas medidas dentro:
@@ -30,6 +43,22 @@ arreglados.
 
 ## A3 · Cómo se mide aquí
 
+- 🔴 **Un instrumento declara su POBLACIÓN, no sólo su resultado.**
+  «0 fail» sin «sobre cuántos» no es un verde: es una frase. Lo mismo
+  vale para cualquier censo, barrido o guard. Si tu salida no dice
+  sobre qué población se calculó, nadie —tú incluido— puede saber si
+  mide el proyecto o una esquina. Medido el 15-sep-2026: una tanda
+  dijo «2.681 pass · 0 fail» habiendo mirado 355 ficheros de 781, y el
+  verde era REAL para lo que miró. No lo cazó leer el resultado, sino
+  exigirle al instrumento que dijera cuántos ficheros había visto.
+  El mismo día, el primer censo de SCRUM-850 dijo «scripts: 0» sobre
+  una superficie que tenía tres: lo destapó declarar la población.
+- 🔴 **El código de salida es del ÚLTIMO tramo de la tubería.**
+  `npm test | tail`, `| head`, `| grep` devuelven el suyo, así que una
+  tanda EN ROJO sale `0`. Un `A; B` hace lo mismo. Si necesitas la
+  salida, escríbela a un fichero —FUERA del árbol— y léela en un
+  SEGUNDO comando. Lo vigila
+  `tests/scrum850-la-poblacion-del-instrumento.test.mjs`.
 - Un CERO nunca significa «está limpio»: significa «no he mirado».
   Todo barrido lleva un control que demuestre que el instrumento ve
   algo que sabemos que está.
@@ -129,6 +158,9 @@ confesado sin que nadie preguntara.
 
 ## A10 · Frases de la casa
 
+Un instrumento declara su población, no sólo su resultado.
+«0 fail» sin «sobre cuántos» no es un verde: es una frase.
+El código de salida es el del último tramo de la tubería.
 Un prefijo no es un nombre, y una subcadena tampoco.
 Cero no es «está limpio»: es «no he mirado».
 CI prueba el MERGE, no la rama.
@@ -151,6 +183,30 @@ Dos anclas para la misma comprobación no son redundancia: son la próxima
 contradicción esperando fecha.
 Un `git stash pop` a ciegas es un `git checkout` del trabajo de otro encima
 del tuyo.
+Un instrumento que solo sabe callar no es un instrumento.
+Si desactivas una comprobación de permisos para que tu robot pase, el
+permiso tiene que volver a preguntarse en la puerta siguiente.
+Un control que no se puede usar y no puede explicar por qué, no se
+deshabilita: se quita.
+Un acto irreversible no es nunca la acción principal.
+Si tu medición tumba una decisión firmada, gana tu medición.
+
+## A16 · Repite el encargo en una línea antes de empezar
+
+Al recibir un encargo, la sesión repite en UNA línea qué cree que se
+le ha pedido, antes de empezar. Si no coincide con lo que el
+orquestador quiso decir, se ve en el momento.
+
+Nace de dos sucesos del 9-sep-2026, y los dos son del mismo tipo: un
+encargo de cuatro puntos que NO llegó a la sesión, y un «el arreglo
+que ya hiciste» sobre algo que estaba a medias. Ninguno de los dos se
+habría visto hasta tres días después. La línea cuesta cinco segundos y
+es el único punto del proceso donde emisor y receptor comparan lo que
+creen que dice el mensaje.
+
+Corolario: si el encargo no te llegó, se dice. NO se reconstruye de
+memoria — un encargo inventado se parece mucho a uno recibido, y
+trabajar sobre él cuesta la tanda entera.
 
 ## A11 · Cómo se actualiza esto
 
@@ -159,24 +215,38 @@ actualiza su línea de trampa recurrente. Cuando una frase nace de una
 medición, entra en A10. NO se añade una norma por cada susto: una
 norma que no ha costado nada dos veces es una norma que nadie lee.
 
-## A12 · Antes de cambiar una población, se censa quién mide sobre ella
+## A12 · Antes de cambiar una POBLACIÓN, se censa quién mide sobre ella
 
-Antes de cambiar una POBLACIÓN (ramas, ficheros, tablas, filas), se censa qué
-guards miden sobre ella. **Un barrido correcto que rompe `main` sigue rompiendo
-`main`.**
+Ramas, ficheros, tablas, filas. Antes de barrer, borrar o renombrar en masa, se
+busca qué guards toman esa población como magnitud.
 
-## A13 · Coger un ticket es moverlo en Jira, no empezar a escribir
+    🔒 Un barrido correcto que rompe main sigue rompiendo main.
 
-Nada más coger un ticket: **EN CURSO + ASIGNADO A LUIS** en Jira. Antes de la
-primera línea de código, no después. Un ticket que se trabaja sin estar En curso
-es trabajo que el colaborador no puede ver, y dos sesiones pueden cogerlo a la vez.
+Nace medido: el 8-sep-2026 se barrieron 456 ramas ya mergeadas —correctamente,
+todas con su trabajo dentro de `main`— y el suelo de SCRUM-804, que exigía «558
+ramas remotas», dejó el check obligatorio en rojo **para los 22 PR abiertos a la
+vez**. La orden era buena; lo que faltó fue mirar quién medía sobre eso.
+
+## A13 · Nada más coger un ticket: EN CURSO + ASIGNADO A LUIS
+
+En Jira, **antes de la primera línea de código, no después.**
+
+Un ticket que se trabaja sin estar En curso es trabajo que el colaborador no
+puede ver, y dos sesiones pueden cogerlo a la vez.
 
 ## A14 · Todo informe empieza con la hora y el SHA
 
-Todo informe empieza con la **FECHA Y HORA de la medición** y el **SHA de
-`origin/main`** sobre el que se midió. Sin esas dos cosas, el orquestador no puede
-distinguir un informe de hace diez minutos de uno de hace seis horas — y ya ha
-mandado tres veces instrucciones basadas en un estado que había dejado de existir.
+Dos datos, en la PRIMERA línea: la **fecha y hora** en que se midió, y el **SHA
+de `origin/main`** sobre el que se midió.
+
+    9-sep-2026 11:40 · medido sobre origin/main da5ac06a · worktree wt-verif5
+
+Sin esas dos cosas el orquestador no puede distinguir un informe de hace diez
+minutos de uno de hace seis horas, y ya ha mandado tres veces instrucciones
+basadas en un estado que había dejado de existir.
+
+    🔒 Un informe sin hora no es una foto del ahora: es una foto sin fecha, y el
+       orquestador la va a leer como si fuera de hoy.
 
 ## A15 · `git stash` es estado COMPARTIDO: no se usa para apartar trabajo
 
@@ -209,7 +279,36 @@ la entrada.
 🔒 Un `git stash pop` a ciegas es un `git checkout` del trabajo de otro encima
 del tuyo.
 
-## A16 · Repite el encargo en una línea antes de empezar
+## A17 · Un ticket, una rama, un PR, y se empuja el mismo día
 
-Al recibir un encargo, la sesión repite en UNA línea qué cree que se le ha pedido,
-antes de empezar. Los mensajes se pierden y nadie se entera hasta tres días después.
+Si un ticket no cabe en un día, **se parte**. Nunca se apilan varios tickets en una rama: al
+apilarlos, o entran todos o no entra ninguno.
+
+    🔒 Un conflicto no lo causa la herramienta: lo causa una rama que vive demasiado.
+
+**La evidencia, medida:** el **PR #1214** —3 tickets, 17 commits, 2 días, 51 ficheros— lleva horas
+parado por dos conflictos. El **PR #1209** de la Sesión 5 —1 ticket, 1 día— se abrió, se armó,
+pasó CI y **se mergeó solo sin que nadie mirara**.
+
+La diferencia entre los dos no es la suerte ni la complejidad del trabajo: es cuánto tiempo
+estuvo la rama separada de `main` mientras las otras cinco sesiones mergeaban debajo.
+
+## A18 · Un ticket puede estar ACABADO y seguir abierto
+
+Es el reverso de la regla 42. **SCRUM-833** llevaba «En curso» con su rama ya dentro de `main`
+desde hacía horas, y su enunciado seguía afirmando una bomba «a 4 ramas» que ya no existía.
+
+Antes de trabajar un ticket se comprueba si su rama ya es ancestro de `main`:
+
+    git merge-base --is-ancestor <sha> origin/main
+
+    🔒 «Mergear no es acabar; pero acabar tampoco es cerrar, y un tablero puede mentir en las
+        dos direcciones.»
+
+⚠️ **Y el enunciado tampoco acertaba el número, que es la otra mitad del mismo aviso.** El
+ticket decía «a 4 ramas» de un umbral concreto, `dentro.length > 10`, y ese margen **nunca fue
+4**: medido, era **7** al empezar y **5** al terminar. El **47** que se citó es de OTRO aserto
+—`inst.ramas.length > 50`, el tercero de la familia, que apareció dentro del mismo fichero— y
+hoy es 57. Dos umbrales distintos con dos márgenes distintos, y atribuirle a uno el número del
+otro es la misma clase de error que la norma viene a cortar: **un número heredado de un
+enunciado no es una medición.**

@@ -176,7 +176,12 @@ test('SCRUM-771 · CENSO: toda boca que emite comprueba el tipo de IVA antes de 
 
   // ── SUELO · cero bocas se lee igual que «todas protegidas» ───────────────────────────────
   const delEmbudo = todas.filter((b) => b.tipo === 'embudo');
-  const creaciones = analizarArbol(SRC); // el analizador OFICIAL de SCRUM-203
+  // SCRUM-729 · se descuenta la IMPLEMENTACIÓN. Los siete `invoice.create` pasaron a un
+  // envoltorio (`crearFacturaEmitida`) para escribir el cliente congelado en un solo sitio; ese
+  // `create` de dentro no es una boca de emisión —no pide número, se lo dan hecho— y contarlo
+  // aquí rompería el cruce por una razón que no es la que este suelo vigila. La marca la pone el
+  // analizador oficial de SCRUM-203, no una lista de rutas repetida en cada guard.
+  const creaciones = analizarArbol(SRC).filter((c) => !c.implementacion);
   assert.ok(
     creaciones.length > 0,
     '🔴 CENSO CIEGO: el analizador oficial de SCRUM-203 no ve ninguna creación de factura.',

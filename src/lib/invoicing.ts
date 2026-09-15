@@ -20,6 +20,8 @@ import {
 } from '../modules/invoicing/domain/selladoEstado';
 import { exigirLineasFacturables } from '../modules/invoicing/domain/lineasFacturables'; // SCRUM-246
 import { exigirTiposDeIvaEmitibles } from '../core/validation/tiposIvaEmitibles'; // SCRUM-771
+import { crearFacturaEmitida } from '../modules/invoicing/domain/crearFacturaEmitida'; // SCRUM-729
+import { congelarDesdeFicha, clienteDelDocumento } from '../modules/invoicing/domain/clienteCongelado'; // SCRUM-729
 
 /**
  * Asegura que el PDF de una factura existe en disco (genera bajo demanda si está
@@ -113,7 +115,10 @@ export async function ensureInvoicePdf(
       },
       // SCRUM-577: se pasa `legalName`. Hasta hoy NO viajaba, asi que la factura no podia
       // imprimir la denominacion legal aunque el cliente la tuviera rellena.
-      customer: { name: inv.customer.name, legalName: (inv.customer as any).legalName, email: inv.customer.email, phone: inv.customer.phone },
+      //
+      // SCRUM-729 · y ahora sale de la COLUMNA, no de la ficha viva. Hasta hoy, corregir el
+      // nombre de un cliente reescribia el PDF de sus facturas ya emitidas.
+      customer: clienteDelDocumento(inv, inv.customer),
       currency: inv.currency,
       total: inv.total.toString(),
       qrData,
@@ -250,7 +255,8 @@ export async function ensureInvoiceForCharge(
           email: merchant.email,
         },
         // SCRUM-577: idem — el segundo camino que arma la factura.
-        customer: { name: customer.name, legalName: (customer as any).legalName, email: (customer as any).email, phone: (customer as any).phone },
+        // SCRUM-729 · idem: la columna manda, la ficha viva sólo si el documento es anterior.
+        customer: clienteDelDocumento(inv, customer),
         currency: inv.currency,
         total: inv.total.toString(),
         qrData,
@@ -319,6 +325,12 @@ export async function ensureInvoiceForCharge(
   // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
   exigirTiposDeIvaEmitibles(invoiceLines);
 
+  // SCRUM-729 · el congelado sale de la ficha que `ensureInvoiceForCharge` YA cargó con el
+  // `Charge` (`include: { customer: true, … }`): aquí cuesta CERO viajes. Y va fuera de la
+  // transacción por la misma razón que en el resto: dentro estaría dentro del cerrojo de serie.
+  if (!ch.customer) throw new Error('missing_customer_in_charge');
+  const clienteCongelado = congelarDesdeFicha(ch.customer);
+
   const inv = await prisma.$transaction(async (tx) => {
     const number = await allocateInvoiceNumber(tx, ch.merchantId, {
       camino: 'C6',
@@ -327,33 +339,31 @@ export async function ensureInvoiceForCharge(
       // actor desde los 4 llamadores. Se registra lo que se sabe y NO se inventa el resto.
       actor: actorC6 ?? { tipo: 'sistema', ref: 'ensureInvoiceForCharge' },
     });
-    return tx.invoice.create({
-      data: {
-        // SCRUM-445 · EL VINCULO, ESCRITO. `Invoice.chargeId` existia y no lo escribia nadie, asi
-        // que la pantalla de Cobros no tenia con que saber que este Charge y esta Invoice son EL
-        // MISMO dinero: los pintaba dos veces. Toda la desduplicacion colgaba de que existiera un
-        // `Event{invoiced}` y de que su payload pasara un filtro de tipo — un solo canal fragil.
-        //
-        // Se escribe AQUI porque es el unico punto donde el Charge produce la Invoice: aqui el
-        // vinculo se SABE. Deducirlo despues seria inventarselo.
-        //
-        // ⚠️ Esto NO toca el dinero marcado a mano: una transferencia o un efectivo no pasan por
-        // aqui —no crean `Charge`— asi que su factura sigue con `chargeId` nulo y SIGUE SALIENDO
-        // en Cobros. Desduplicar no puede volver a esconder lo que la fase anterior saco a la luz.
-        chargeId: ch.id,
-        merchantId: ch.merchantId,
-        customerId: ch.customerId ?? (() => { throw new Error('missing_customer_in_charge'); })(),
-        quoteId: quote?.id ?? null,
-        number,
-        type: isReceiptNumber(number) ? 'JUST' : 'F1', // V0-0: justificante si ES real sin flag
-        total: ch.amount.toString(),
-        currency: ch.currency.toUpperCase(),
-        lines: invoiceLines,
-        // SCRUM-72: ya no se persiste una URL pública absoluta al crear. Nace PENDING y
-        // `ensurePdfAndEvent` la fija al endpoint auth cuando genera el PDF.
-        pdfUrl: 'PENDING_PDF',
-        qrData: `INV:${number}|AMOUNT:${ch.amount.toString()}|CUR:${ch.currency}|REF:${ch.reference ?? ''}`,
-      },
+    return crearFacturaEmitida(tx, clienteCongelado, {
+      // SCRUM-445 · EL VINCULO, ESCRITO. `Invoice.chargeId` existia y no lo escribia nadie, asi
+      // que la pantalla de Cobros no tenia con que saber que este Charge y esta Invoice son EL
+      // MISMO dinero: los pintaba dos veces. Toda la desduplicacion colgaba de que existiera un
+      // `Event{invoiced}` y de que su payload pasara un filtro de tipo — un solo canal fragil.
+      //
+      // Se escribe AQUI porque es el unico punto donde el Charge produce la Invoice: aqui el
+      // vinculo se SABE. Deducirlo despues seria inventarselo.
+      //
+      // ⚠️ Esto NO toca el dinero marcado a mano: una transferencia o un efectivo no pasan por
+      // aqui —no crean `Charge`— asi que su factura sigue con `chargeId` nulo y SIGUE SALIENDO
+      // en Cobros. Desduplicar no puede volver a esconder lo que la fase anterior saco a la luz.
+      chargeId: ch.id,
+      merchantId: ch.merchantId,
+      customerId: ch.customerId ?? (() => { throw new Error('missing_customer_in_charge'); })(),
+      quoteId: quote?.id ?? null,
+      number,
+      type: isReceiptNumber(number) ? 'JUST' : 'F1', // V0-0: justificante si ES real sin flag
+      total: ch.amount.toString(),
+      currency: ch.currency.toUpperCase(),
+      lines: invoiceLines,
+      // SCRUM-72: ya no se persiste una URL pública absoluta al crear. Nace PENDING y
+      // `ensurePdfAndEvent` la fija al endpoint auth cuando genera el PDF.
+      pdfUrl: 'PENDING_PDF',
+      qrData: `INV:${number}|AMOUNT:${ch.amount.toString()}|CUR:${ch.currency}|REF:${ch.reference ?? ''}`,
     });
   });
 

@@ -288,13 +288,16 @@ function renderQuotesListView(container) {
       const tdActionsDiv = document.createElement("div");
       tdActionsDiv.style.cssText = "display:flex;gap:6px;align-items:center";
 
+      // 🔴 SCRUM-832 · ESTO PINTABA LA FICHA A MANO, saltándose el router: cogía el título y el
+      // contenedor por su id y llamaba a `renderQuoteDetailView` directo. Sin router no hay hash,
+      // sin hash no hay historial, y sin historial el ATRÁS no vuelve.
+      //
+      // Era la ÚNICA de las cinco listas que lo hacía — las otras cuatro ya usaban `renderAppView`.
+      // Pero medido en navegador, el atrás fallaba en las CINCO: el defecto de fondo estaba en el
+      // router, que no sabía apilar fichas. Eso se arregla en `app.js`; esto es la otra mitad, y
+      // sin ella Presupuestos seguiría sin dejar rastro por mucho que el router aprendiera.
       const openDetail = () => {
-        const titleEl = document.getElementById("view-title");
-        if (titleEl) titleEl.textContent = `Presupuesto #${q.number ?? q.id}`;
-        const containerEl = document.getElementById("view-container");
-        if (typeof renderQuoteDetailView === "function") {
-          renderQuoteDetailView(containerEl, q.id);
-        }
+        window.renderAppView("quotes-detail", { quoteId: q.id });
       };
 
       const btnView = document.createElement("button");

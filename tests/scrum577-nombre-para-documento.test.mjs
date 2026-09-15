@@ -125,7 +125,28 @@ test('SCRUM-577 · 🔴 la factura recibe `legalName` — antes NO viajaba', () 
     /customer:\s*\{\s*name:\s*string;\s*legalName\?/.test(pdf),
     '🔴 el tipo de `customer` de la factura ha vuelto a quedarse sin `legalName`',
   );
-  const inv = soloCodigo(leer('src/lib/invoicing.ts'));
-  const conLegal = (inv.match(/customer:\s*\{[^}]*legalName/g) || []).length;
-  assert.equal(conLegal, 2, `🔴 sólo ${conLegal} de los 2 caminos de la factura pasan legalName`);
+  // 🔴 SCRUM-729 · ESTA COMPROBACIÓN SE ENDURECE, NO SE RELAJA.
+  //
+  // Antes contaba DOS literales `customer: { … legalName … }` en `lib/invoicing.ts`. Eso tenía dos
+  // problemas que se ven ahora: (a) sólo miraba dos de los TRES generadores de PDF de factura, y
+  // (b) el tercero —`invoicesAdmin.routes.ts`, el botón «regenerar PDF»— llevaba desde SCRUM-577
+  // SIN pasar `legalName`, así que la misma factura salía distinta según por dónde se pidiera. El
+  // guard no podía verlo porque no miraba ese fichero.
+  //
+  // Ahora los TRES pasan el cliente por `clienteDelDocumento`, que devuelve SIEMPRE los cinco
+  // campos —`legalName` incluido— desde la columna congelada. Así que lo que se exige es que los
+  // tres usen ese lector: es la misma garantía, comprobada en los tres sitios en vez de en dos, y
+  // sin depender de cómo esté escrito el literal.
+  const CAMINOS_PDF_DE_FACTURA = [
+    ['src/lib/invoicing.ts', 2],                                  // ensureInvoicePdf + ensureInvoiceForCharge
+    ['src/modules/system/app/routes/invoicesAdmin.routes.ts', 1],  // regenerar PDF (el que faltaba)
+  ];
+  for (const [ruta, esperados] of CAMINOS_PDF_DE_FACTURA) {
+    const codigo = soloCodigo(leer(ruta));
+    const usos = (codigo.match(/customer:\s*clienteDelDocumento\(/g) || []).length;
+    assert.equal(usos, esperados,
+      `🔴 ${ruta}: ${usos} de ${esperados} caminos pasan el cliente por \`clienteDelDocumento\`. `
+      + 'Ese lector es el que garantiza que `legalName` viaja SIEMPRE y desde el dato congelado; '
+      + 'quien lo esquive vuelve a poder imprimir un cliente distinto según por dónde se pida.');
+  }
 });
