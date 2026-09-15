@@ -351,8 +351,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // ③ El filtro de lo ilegible, apagado: un número del fallback de `env.ts` pasaría por sha.
+    // ⚠️ SCRUM-824b partió la línea original (`!ES_SHA.test(s) || TODO_DIGITOS.test(s)`) en DOS,
+    // para distinguir por LONGITUD de reloj y no por «ser todo dígitos» (ver el comentario de
+    // `LONGITUDES_DE_RELOJ` en `_ritmo-de-despliegue.mjs`). El ancla de aquí se quedó apuntando a
+    // la línea vieja —que ya no existe— y el meta-guard salía CIEGO sin haber medido nada. Se
+    // apunta a la línea que hoy hace ese trabajo: la que rechaza el reloj de 10/13 dígitos.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
-    de: '  if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;',
+    de: '  if (TODO_DIGITOS.test(s) && LONGITUDES_DE_RELOJ.has(s.length)) return null;',
     a: '  if (false) return null;',
     cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
   },
