@@ -171,3 +171,93 @@ y otro de 300 que **sí** entra como ventana pero **no** como peligrosa, que es 
 población, con suelo y control positivo corregido.
 `docs/master/evidencias/scrum675/margen-de-hoy.mjs` (+ `salida-margen.txt`) — el margen real y la
 comprobación de que el caso del ticket ya está arreglado.
+
+---
+
+# APÉNDICE · SCRUM-675 (fase b) · Las ciegas, reancladas — y el censo de la fase a corregido
+
+**Fecha:** 15-sep-2026 · **Rama:** `scrum-675b-reanclar-las-21`
+
+**Medido contra:** `origin/main` = `d66326721f4bae7237236b04cf7da96cb2741c4d` · 2026-09-15T15:21:17Z
+
+> ⚠️ **Esta fase depende de la a y ramifica desde ella**, no desde `main`: el mecanismo
+> (`tests/_bloque-por-identidad.mjs`) todavía no está mergeado. Si la fase a se revierte, ésta se
+> va con ella. Se dice en vez de disimularlo.
+
+---
+
+## b.1 · 🔴 EL CENSO DE LA FASE a CONTABA DE MÁS, Y LO CORRIJO YO
+
+Aquel censo dio **21 ventanas «que pueden cegar»** sin preguntar lo que lo decide todo:
+
+> **¿el texto sobre el que se abre la ventana viene YA LIMPIO de comentarios?**
+
+`leerFuente(ruta, { ancla })` y `soloEjecutable()` (SCRUM-719) **quitan los comentarios** antes de
+devolver el texto. Sobre un texto así, **escribir un comentario no empuja nada** — la fragilidad
+que este ticket persigue no existe. Re-censado:
+
+```
+VENTANAS QUE DECIDEN (las 21 de la fase a, re-examinadas): 21
+  · sobre texto YA LIMPIO -> un comentario NO las ciega:  5
+  · 🔴 sobre el fichero CRUDO -> un comentario SI las ciega: 16
+```
+
+**Y de las 2 «ciegas silenciosas» de la fase a, sólo UNA lo era.** Medido a mano antes de creerme
+el censo:
+
+| | cómo lee | veredicto |
+|---|---|---|
+| `scrum819:83` | `leerFuente(..., {ancla})` → **sin comentarios** | ✅ **no es ciega** — su bloque real son **401** caracteres contra una ventana de **700**: la ventana es más grande que el bloque |
+| `scrum338:87` | `fuente(VISTA)` → **fichero crudo** | 🔴 **ciega de verdad** |
+
+> **Cómo se destapó, porque es la parte instructiva:** medí `scrum819` sobre el fichero crudo y me
+> salió que dos de sus `assert.match` **no estaban en la ventana**… pero el test pasa hoy. Dos
+> cosas que no pueden ser ciertas a la vez. **Gana el instrumento sólo después de comprobar el
+> instrumento**: estaba midiendo un texto que ese test no lee nunca.
+
+## b.2 · La ciega real, reanclada — y NO destapa nada
+
+`tests/scrum338-carga-de-catalogo-no-muda.test.mjs` vigila que el `save` del paso 3 del wizard no
+propague el error de la carga de catálogo.
+
+* **Lo que debía vigilar:** el `save` entero. Mide **2399 caracteres**; la ventana leía **1800**.
+  **599 caracteres nunca se miraron**, y como su aserto es `doesNotMatch`, un `throw` ahí habría
+  pasado en verde.
+* **Reanclado** a `bloqueDesde(bloqueDesde(s, '// ── Paso 3 ─'), 'save: async () => {')`.
+  El ancla del paso 3 es **única** (1 aparición) y el bloque **no se come al Paso 4** (comprobado).
+* **¿Destapa algo al empezar a ver? NO.** No hay `throw` ni `reject` en el `save`. Su verde de hoy
+  **ya significa algo**, que antes no.
+
+### 🔴 EL CONTROL QUE DISTINGUE CIEGO DE MUDO, ejecutado
+
+Inyectado un `throw` **a 2091 caracteres** del `apiRequest` — o sea, en el hueco que la ventana de
+1800 no alcanzaba:
+
+```
+CON EL REANCLAJE:      not ok 3 — 🔴 el paso ahora propaga el error y bloquea el onboarding
+CON LA VENTANA FIJA:   ok 3  ·  # pass 6 · fail 0      ← 🔴 LA CEGUERA, EN VERDE
+```
+
+**Ése es el rojo que este ticket existía para tener.** El guard no ha pasado de ciego a mudo: ve
+lo que debe ver y cae cuando debe caer. `public/dashboard/js/onboardingView.js` **restaurado byte
+a byte** (verificado con `git status`: sin cambios).
+
+## b.3 · Las 16 restantes: por qué NO se reanclan en bloque, medido
+
+El encargo decía *«reanclarlas con el mecanismo es una»*. **Medido: no lo es, y conviene decirlo
+antes que entregar 16 reanclajes a ojo.**
+
+Cada ventana necesita **su propia ancla**, y esa ancla depende de **qué vigila ese guard**: el
+`save` de un paso, el cuerpo de una función, un bloque de UI. No hay transformación mecánica que
+la derive — elegirla es exactamente el juicio que el mecanismo **no** puede automatizar. Aplicarlo
+sin ese juicio produciría bloques que se comen al vecino, que es el defecto contrario y el que
+acaba con el guard relajado.
+
+**Entrega honesta: 1 de 16 reanclada** (la única con ceguera silenciosa, que era el defecto vivo),
+**15 pendientes con su lista, su fichero y su línea** en `salida-censo-v2.txt`. Ninguna de las 15
+es ciega silenciosa: sus asertos son `match`, así que si su símbolo sale de la ventana **caen**
+—ruidosas, no mudas—. Eso las hace deuda, no defecto vivo.
+
+## b.4 · El árbol quieto
+
+Ver §7 del cuerpo principal: horas de inicio y fin de la tanda, declaradas.
