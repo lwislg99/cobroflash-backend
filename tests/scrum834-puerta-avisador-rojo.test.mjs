@@ -18,7 +18,12 @@ const WORKFLOW = path.join(REPO, '.github', 'workflows', 'avisador-rojo.yml');
 const CLAUDE_YML = path.join(REPO, '.github', 'workflows', 'claude.yml');
 
 const NUESTRO = 'lwislg99/cobroflash-backend';
-/** Un PR nuestro, abierto por el bot, con el CI en rojo y sin avisos previos. */
+/**
+ * Un PR nuestro, ABIERTO, abierto por el bot, con el CHECK OBLIGATORIO en rojo y sin avisos
+ * previos. SCRUM-853: los tres últimos campos son las dos puertas nuevas (PR abierto, rojo en un
+ * obligatorio). Sin ellos la puerta falla cerrado, y ninguno de los controles de este fichero
+ * mediría ya lo que dice medir.
+ */
 const base = {
   conclusionCI: 'failure',
   repoBase: NUESTRO,
@@ -29,6 +34,9 @@ const base = {
   ficheros: ['public/dashboard/js/homeView.js'],
   marcaActual: 'abc1234:build + tests',
   tope: 3,
+  estadoPR: 'open',
+  reglas: [{ type: 'required_status_checks', parameters: { required_status_checks: [{ context: 'build + tests (con banco desechable)' }] } }],
+  checkRuns: [{ id: 1, name: 'build + tests (con banco desechable)', status: 'completed', conclusion: 'failure' }],
 };
 
 // ── CONTROL 1 · EL ROJO PROPIO DESPIERTA ───────────────────────────────────────────────────

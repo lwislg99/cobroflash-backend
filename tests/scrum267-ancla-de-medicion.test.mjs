@@ -73,7 +73,31 @@ const README = path.join(DIR_REGISTRO, 'README.md');
  * Anclado al principio de línea y con los dos campos OBLIGATORIOS. El huso admite `Z` o `±HH:MM`
  * porque las dos formas son ISO-8601 válidas y no ambiguas.
  */
-const RE_ANCLA = /^\*\*Medido contra:\*\*\s+`origin\/main`\s*=\s*`([0-9a-f]{40})`\s*·\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:Z|[+-]\d{2}:\d{2}))\s*$/m;
+// 🔴 SCRUM-859 · DOS ENSANCHES MEDIDOS, y ninguno baja el listón: lo que se exige —sha de 40 e
+// instante con huso— es EXACTAMENTE lo mismo. Lo que cambia es dónde se acepta que esté escrito.
+//
+//   ① el ancla no tiene por qué abrir la línea. Dos entradas la llevan detrás de `**Fecha:** · `:
+//      SCRUM-296:93 y SCRUM-297:126.
+//   ② el instante puede ir en la línea SIGUIENTE. Esas mismas dos parten el ancla en dos líneas.
+//   ③ entre el sha y el `· <instante>` puede haber un inciso. Cuatro entradas lo llevan:
+//      SCRUM-674 `(ya mergeado en la rama)`, SCRUM-728 y SCRUM-814 ×2 `(mezclado dentro de la
+//      rama, AA2)`. Dice CÓMO llegó ese main a la rama, que es información del ancla.
+//
+// Dos no es una errata y cuatro menos: un caso suelto es un descuido, varios son un formato.
+//
+// ⚠️ NO SE BAJA EL LISTÓN: se sigue exigiendo el sha de 40 Y el instante con huso. Lo único que
+// cambia es dónde se acepta que estén escritos. Y el FINAL DE LÍNEA se conserva: sin él, el `·`
+// podría casar con cualquier cosa más adelante del fichero.
+// El hueco entre el sha y el `· <instante>` va ACOTADO a 160 caracteres y es PEREZOSO: acotado
+// para que no pueda irse a buscar un instante tres párrafos más abajo —el defecto que SCRUM-516
+// midió y que costó cuatro guards en verde sobre un sha de 7—, y perezoso para que, cuando el
+// inciso lleva su propio `·` (SCRUM-358), siga encontrando el que de verdad precede al instante.
+//
+//   ④ y detrás del instante puede ir un INCISO ENTRE PARÉNTESIS que explica cómo se ancló
+//      («(anclado con `git ls-remote`; main se movió cuatro veces…)»). Lo llevan SCRUM-296 y
+//      297. Se acepta sólo si abre paréntesis: cualquier otra cosa detrás del instante sigue
+//      rompiendo el ancla, que es lo que impide que el `$` deje de servir para nada.
+const RE_ANCLA = /\*\*Medido contra:\*\*\s+`origin\/main`\s*=\s*`([0-9a-f]{40})`[\s\S]{0,160}?·\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:Z|[+-]\d{2}:\d{2}))(?:\s*\(.*)?\s*$/m;
 
 /** Las entradas del registro (no el README, que no es una entrada). */
 function entradas() {
@@ -205,9 +229,54 @@ export function esEncabezadoDeEntrada(linea) {
 export function trocearEntradas(texto) {
   const lineas = texto.split('\n');
   const enCodigo = lineasEnCodigo(lineas);
+
+  // ═══ 🔴 SCRUM-859 · EL CRITERIO DERIVADO, Y POR QUÉ NO ES UNA FORMA MÁS ═══════════════════
+  //
+  // Hasta aquí la pregunta era «¿cómo se TITULA esta sección?», y la respuesta era una lista:
+  // `# SCRUM-<n>`, luego `APÉNDICE` (SCRUM-532). Una lista sólo ve las formas que alguien se
+  // acordó de añadir, así que el hueco se reabre con cada forma nueva que nadie ha nombrado
+  // todavía — y había SEIS más en el árbol: `# TRAMO 2`, `# FASE B`, `# ═══ SEGUNDA ENTREGA`,
+  // `# 10-ago-2026 · …`, `# ✅ PASO ③`, `# SESIÓN 4`.
+  //
+  // La pregunta correcta no es cómo se titula, sino **qué declara**: una sección que trae su
+  // propia ancla `**Medido contra:**` ES una medición aparte, se llame como se llame. Eso es
+  // derivado del contenido y no caduca cuando alguien invente el séptimo título.
+  //
+  // ⚠️ Y NO se traga las secciones internas: medido el 15-sep-2026 sobre `docs/master/`, de los
+  // 153 encabezados invisibles sólo **59** llevan ancla. Los otros **94** —`# PUNTO 1`,
+  // `# TRAMO 2` sin medición, `# Qué se construyó`— siguen invisibles, que es justo lo que
+  // impide que esto parta por cualquier sección de 496 ficheros. Un guard demasiado amplio
+  // acaba relajado.
+  const traeAnclaPropia = (i) => {
+    let fin = lineas.length;
+    for (let j = i + 1; j < lineas.length; j++) {
+      if (!enCodigo[j] && /^# /.test(lineas[j])) { fin = j; break; }
+    }
+    return /\*\*Medido contra:\*\*/.test(lineas.slice(i, fin).join('\n'));
+  };
+
+  // 🔴 Y UN CORTE NO PUEDE DEJAR HUÉRFANO LO QUE CIERRA.
+  //
+  // Medido: `SCRUM-242.md` abre con `# SCRUM-242 · Recuperabilidad` y el ancla vive en el
+  // encabezado SIGUIENTE (`# 🔴 HOY NO PODRÍAMOS…`). Lo mismo en `SCRUM-356` y `SCRUM-358`, con
+  // un preámbulo en medio («Este fichero tiene TRES entradas»). Cortar ahí partía el título de
+  // su propio cuerpo y dejaba una «entrada» sin ancla que antes sí la tenía — tres regresiones
+  // que este ticket no venía a causar.
+  //
+  // La regla se deriva del principio que el troceador ya declaraba —que nada quede fuera de
+  // alguna entrada—: el corte por ancla propia sólo se aplica si el trozo que se está cerrando
+  // YA trae la suya. Si no, el encabezado era un título y lo de abajo es su cuerpo. No es un
+  // caso especial: un `# SCRUM-<n>` o un APÉNDICE siguen cortando siempre, tengan o no ancla.
   const cortes = [];
+  let acumulaDesde = 0;
   for (let i = 0; i < lineas.length; i++) {
-    if (esEncabezadoDeEntrada(lineas[i]) && !enCodigo[i]) cortes.push(i);
+    if (enCodigo[i] || !/^# /.test(lineas[i])) continue;
+    const canonico = esEncabezadoDeEntrada(lineas[i]);
+    const anclaDelTrozoAbierto = /\*\*Medido contra:\*\*/.test(lineas.slice(acumulaDesde, i).join('\n'));
+    if (canonico || (traeAnclaPropia(i) && (cortes.length === 0 ? false : anclaDelTrozoAbierto))) {
+      cortes.push(i);
+      acumulaDesde = i;
+    }
   }
   if (!cortes.length) return [];
   return cortes.map((ini, k) => {
@@ -217,23 +286,59 @@ export function trocearEntradas(texto) {
       indice: k + 1,                       // 1-based: los apéndices se añaden AL FINAL, así que no corre
       linea: ini + 1,                      // 1-based, para el mensaje de error
       titulo: lineas[ini].slice(0, 80),
+      // 🔴 SCRUM-859 · el de arriba va RECORTADO A 80 para que quepa en los mensajes, y por eso
+      // NO puede ser la identidad: dos entradas que coincidan en los primeros 80 caracteres
+      // compartirían clave, y una taparía a la otra. La identidad usa la línea entera.
+      tituloCompleto: lineas[ini],
       cuerpo: lineas.slice(desde, hasta).join('\n'),
     };
   });
 }
 
 /** Todas las entradas del registro, con su fichero. La unidad que vigila este guard. */
+/**
+ * 🔴 SCRUM-859 · LA CLAVE DE UNA ENTRADA ES SU TÍTULO, NO SU POSICIÓN.
+ *
+ * Hasta aquí era `fichero#<ordinal>`. Eso se rompe entero en cuanto entra una entrada nueva por
+ * delante: SCRUM-859 hizo visibles 59 secciones que el troceador no veía, y **las 55 claves de
+ * la lista de exentas se desplazaron a la vez**, tirando cuatro tests del propio guard. No es la
+ * primera vez —es la sexta que esta casa se come lo mismo—, y por eso lo dice su canon:
+ *
+ *   🔒 Referenciar por posición caduca. Referenciar por identidad no.
+ *
+ * El título es lo único de una entrada que no se mueve al insertar algo delante.
+ *
+ * ⚠️ Y NO ES ÚNICO SIEMPRE: medido el 15-sep-2026 sobre `docs/master/`, `SCRUM-300.md` repite
+ * dos títulos. Repetir el título no puede hacer que dos entradas compartan clave —una taparía a
+ * la otra y la lista encogería en silencio—, así que la repetición se desempata con `~2`, `~3`…
+ * en el orden en que aparecen DENTRO de su fichero. Sigue siendo estable ante una inserción en
+ * otro sitio, que es lo que se rompía.
+ */
+export function identidadDeEntrada(titulo) {
+  return String(titulo).replace(/^#+\s*/, '').replace(/\s+/g, ' ').trim();
+}
+
 function entradasTroceadas() {
-  return entradas().flatMap((f) => trocearEntradas(f.texto).map((e) => ({ ...e, fichero: f.nombre, clave: `${f.nombre}#${e.indice}` })));
+  return entradas().flatMap((f) => {
+    const vistos = new Map();
+    return trocearEntradas(f.texto).map((e) => {
+      const id = identidadDeEntrada(e.tituloCompleto);
+      const n = (vistos.get(id) || 0) + 1;
+      vistos.set(id, n);
+      return { ...e, fichero: f.nombre, clave: `${f.nombre}#${id}${n > 1 ? `~${n}` : ''}` };
+    });
+  });
 }
 
 /** Devuelve el motivo por el que un texto NO lleva ancla válida, o `null` si la lleva. */
 export function motivoSinAncla(texto) {
-  if (!/^\*\*Medido contra:\*\*/m.test(texto)) return 'no declara «Medido contra»';
+  // SCRUM-859 · sin `^`: el ancla puede ir detrás de `**Fecha:** … ·`, y va así en dos entradas
+  // del árbol. Lo que se exige debajo no cambia.
+  if (!/\*\*Medido contra:\*\*/.test(texto)) return 'no declara «Medido contra»';
   const m = RE_ANCLA.exec(texto);
   if (!m) {
     // Diagnóstico útil: distinguir el sha corto de la hora ausente ahorra el viaje de vuelta.
-    const linea = (/^\*\*Medido contra:\*\*.*$/m.exec(texto) || [''])[0];
+    const linea = (/^.*\*\*Medido contra:\*\*.*$/m.exec(texto) || [''])[0];
     if (/`[0-9a-f]{7,39}`/.test(linea)) return 'el sha está ABREVIADO (hacen falta las 40 posiciones)';
     if (!/\d{2}:\d{2}/.test(linea)) return 'falta la HORA (la fecha sola no dice si caducó)';
     return `el ancla no tiene la forma esperada: ${JSON.stringify(linea)}`;
@@ -352,37 +457,36 @@ const SIN_HORA = 'declara la fecha pero NO la hora, y la hora no se tomó — la
 const ANTERIOR_AL_GUARD = 'anterior a SCRUM-267 — el formato existía sin el campo';
 
 const HEREDADAS_SIN_ANCLA = {
-  'SCRUM-231.md#1': ANTERIOR_AL_GUARD,
-  'SCRUM-264.md#1': ANTERIOR_AL_GUARD,
+  'SCRUM-231.md#SCRUM-231 · CACHE-EDGE-1: la cabecera que no salía del repo era de Cloudflare': ANTERIOR_AL_GUARD,
+  'SCRUM-264.md#SCRUM-264 · MICROCOPY-SIN-LINEAS: los dos textos aprobados, y el copy que no llegaba a la pantalla': ANTERIOR_AL_GUARD,
 
   // Sin «Medido contra» (23 con las dos de arriba incluidas más abajo por fichero)
-  'SCRUM-242.md#2': SIN_DATO,
-  'SCRUM-242.md#3': SIN_DATO,
-  'SCRUM-242.md#4': SIN_DATO,
-  'SCRUM-244.md#1': SIN_DATO,
-  'SCRUM-244.md#2': SIN_DATO,
-  'SCRUM-244.md#3': SIN_DATO,
-  'SCRUM-244.md#4': SIN_DATO,
-  'SCRUM-244.md#5': SIN_DATO,
-  'SCRUM-244.md#7': SIN_DATO,
-  'SCRUM-313.md#2': SIN_DATO,
-  'SCRUM-328.md#2': SIN_DATO,
-  'SCRUM-328.md#3': SIN_DATO,
-  'SCRUM-328.md#4': SIN_DATO,
-  'SCRUM-328.md#5': SIN_DATO,
-  'SCRUM-397.md#2': SIN_DATO,
-  'SCRUM-397.md#3': SIN_DATO,
-  'SCRUM-445.md#2': SIN_DATO,
-  'SCRUM-446.md#2': SIN_DATO,
-  'SCRUM-446.md#3': SIN_DATO,
-  'SCRUM-467.md#2': SIN_DATO,
-  'SCRUM-485.md#2': SIN_DATO,
+  'SCRUM-242.md#SCRUM-242 · segunda entrega: EL RUNBOOK, ESCRITO Y **PROBADO**': SIN_DATO,
+  'SCRUM-242.md#SCRUM-242 · tercera entrega: ③ QUÉ DISPARA EL VOLCADO — **medición y propuesta**': SIN_DATO,
+  'SCRUM-242.md#SCRUM-242 · cuarta entrega: ① EL BASE64 — el techo pasa de **8 fotos a 76**': SIN_DATO,
+  'SCRUM-244.md#SCRUM-244 · RGPD: el borrado ya no revienta a mitad — y el resto queda a dictamen': SIN_DATO,
+  'SCRUM-244.md#SCRUM-244 · punto 3 (parte 1 de 2): EL REGISTRO de que se ejerció el derecho': SIN_DATO,
+  'SCRUM-244.md#SCRUM-244 · punto 2: LA COBERTURA — «dame TODO lo mío», derivado y no enumerado': SIN_DATO,
+  'SCRUM-244.md#SCRUM-244 · punto 3: LA PUERTA — el profesional ejerce el derecho desde su cuenta': SIN_DATO,
+  'SCRUM-244.md#SCRUM-244 · la descarga de portabilidad, EN EL MENÚ (donde se puede pulsar)': SIN_DATO,
+  'SCRUM-244.md#SCRUM-244 · los textos aprobados sustituyen a los marcadores (paso 3 CERRADO)': SIN_DATO,
+  'SCRUM-328.md#SCRUM-328 · F1 FASE 2 · CONTRASTE: lo que la landing PROMETE contra lo que el producto HACE': SIN_DATO,
+  'SCRUM-328.md#SCRUM-328 · F1 fase 1 · INVENTARIO MEDIDO de lo que el producto hace HOY': SIN_DATO,
+  'SCRUM-328.md#SCRUM-328 · F1 · EL AVISO DEL FALLO MUDO DE BIZUM': SIN_DATO,
+  'SCRUM-328.md#SCRUM-328 · F1 · ¿SE PUEDE ENCENDER `BIZUM_MANUAL_ENABLED` HOY?': SIN_DATO,
+  'SCRUM-397.md#SCRUM-397 · B · el código — ALCANCE MEDIDO, **no construido**. Y por qué paro.': SIN_DATO,
+  'SCRUM-397.md#SCRUM-397 · B · el código — ENTREGADO': SIN_DATO,
+  'SCRUM-445.md#SCRUM-445 · segunda entrega: las dos consultas (sin ejecutar) y el vínculo escrito': SIN_DATO,
+  'SCRUM-446.md#SCRUM-446 · segunda entrega: el constructor, y una QUINTA diferencia — paro otra vez': SIN_DATO,
+  'SCRUM-446.md#SCRUM-446 · tercera entrega: las 7 imperativas migradas · 17 pendientes': SIN_DATO,
+  'SCRUM-467.md#SCRUM-467 · CERRADO · los tres construidos': SIN_DATO,
+  'SCRUM-485.md#SCRUM-485 · SEGUNDA ENTREGA · la retirada que PARO, y el primer paso sobre los 189': SIN_DATO,
 
   // Con fecha pero sin hora
-  'SCRUM-268.md#2': SIN_HORA,
-  'SCRUM-273.md#2': SIN_HORA,
-  'SCRUM-406.md#2': SIN_HORA,
-  'SCRUM-409.md#2': SIN_HORA,
+  'SCRUM-268.md#SCRUM-268 · Punto 3 — un guard: nadie espera el turno en un bucle y lo toma': SIN_HORA,
+  'SCRUM-273.md#SCRUM-273 (parte 2) · el mensaje del guard enuncia LA ALTERNATIVA': SIN_HORA,
+  'SCRUM-406.md#SCRUM-406 (parte 2) · un canal prometido existe, y un «escríbenos» tiene destino': SIN_HORA,
+  'SCRUM-409.md#SCRUM-409 (fase 5) · Las tres ramas pesadas, leídas una a una': SIN_HORA,
 };
 
 // ── SCRUM-532 · EL SEGUNDO CENSO, Y VA APARTE A PROPÓSITO ────────────────────────────────
@@ -430,52 +534,79 @@ const OTRA_BASE = 'declara a propósito una base distinta de `origin/main`, y lo
 
 const TAPADAS_POR_EL_TROCEADOR = {
   // No declaran «Medido contra» (14)
-  'SCRUM-582.md#2': SIN_DATO,
-  'SCRUM-586.md#3': SIN_DATO,
-  'SCRUM-590.md#2': SIN_DATO,
-  'SCRUM-615.md#2': SIN_DATO,
-  'SCRUM-638.md#2': SIN_DATO,
-  'SCRUM-728.md#5': SIN_DATO,
-  'SCRUM-745.md#2': SIN_DATO,
-  'SCRUM-745.md#3': SIN_DATO,
-  'SCRUM-748.md#2': SIN_DATO,
-  'SCRUM-804.md#2': SIN_DATO,
-  'SCRUM-804.md#3': SIN_DATO,
-  'SCRUM-804.md#4': SIN_DATO,
-  'SCRUM-816.md#2': SIN_DATO,
-  'SCRUM-824.md#2': SIN_DATO,
+  'SCRUM-582.md#APÉNDICE · 6-sep-2026 — EL MECANISMO YA ESTABA. LO QUE FALTABA ERAN LAS MEDIDAS': SIN_DATO,
+  'SCRUM-586.md#APÉNDICE 2 · 6-sep-2026 — ✅ MICROCOPY FIRMADA POR EL ASESOR, Y EL MARCADOR RETIRADO': SIN_DATO,
+  'SCRUM-590.md#APÉNDICE · 7-sep-2026 — LA CONSTRUCCIÓN': SIN_DATO,
+  'SCRUM-615.md#APÉNDICE · 24-ago-2026 · EJECUTADAS LAS SALIDAS D y C': SIN_DATO,
+  'SCRUM-638.md#APÉNDICE · 1-sep-2026 · EL CÓDIGO DEL RUNNER **NO SE PUEDE LEER DESDE AQUÍ**': SIN_DATO,
+  'SCRUM-728.md#APÉNDICE · 8-sep-2026 · SCRUM-728d (2) · LA MEDICIÓN, EN LOOPBACK': SIN_DATO,
+  'SCRUM-745.md#APÉNDICE · SCRUM-745 (adopción) · Que ningún guard del censo pueda estar mudo sin que se vea': SIN_DATO,
+  'SCRUM-748.md#APÉNDICE · SCRUM-748 (2/2) · El guard nunca estuvo mudo. Lo estaba el rótulo.': SIN_DATO,
+  'SCRUM-804.md#APÉNDICE · 8-sep-2026 · La dimensión que le faltaba al censo: EN MAIN, EN RAMA VIVA, SIN RASTRO': SIN_DATO,
+  'SCRUM-804.md#APÉNDICE · 8-sep-2026 · SCRUM-804b · El caso INVERSO: trabajo vivo sobre tickets CERRADOS': SIN_DATO,
+  'SCRUM-804.md#APÉNDICE · 8-sep-2026 · SCRUM-804b (2ª parte) · La comparación por CONTENIDO': SIN_DATO,
+  'SCRUM-816.md#APÉNDICE · 8-sep-2026 · CERTIFICACIÓN POR UNA SEGUNDA SESIÓN, y un flaky cerrado': SIN_DATO,
+  'SCRUM-824.md#📎 APÉNDICE · SCRUM-824b': SIN_DATO,
 
   // Sha abreviado Y sin hora (6)
-  'SCRUM-600.md#3': SIN_HORA_Y_SHA_CORTO,
-  'SCRUM-630.md#3': SIN_HORA_Y_SHA_CORTO,
-  'SCRUM-631.md#2': SIN_HORA_Y_SHA_CORTO,
-  'SCRUM-631.md#3': SIN_HORA_Y_SHA_CORTO,
-  'SCRUM-728.md#4': SIN_HORA_Y_SHA_CORTO,
-  'SCRUM-762.md#2': SIN_HORA_Y_SHA_CORTO,
+  'SCRUM-600.md#APÉNDICE · 8-sep-2026 · DOC-10 CODIFICADO — la factura suelta usa la página del presupuesto': SIN_HORA_Y_SHA_CORTO,
+  'SCRUM-630.md#APÉNDICE · 8-sep-2026 — CERTIFICACIÓN Y CIERRE, tres semanas después': SIN_HORA_Y_SHA_CORTO,
+  'SCRUM-631.md#APÉNDICE · S2 (5-sep-2026) — EL CALLEJÓN PROVOCADO, Y UNA AFIRMACIÓN MÍA QUE LA MEDICIÓN TUMBA': SIN_HORA_Y_SHA_CORTO,
+  'SCRUM-631.md#APÉNDICE 2 · S2 (5-sep-2026) — LA OPCIÓN B, CON SU VIGILANTE': SIN_HORA_Y_SHA_CORTO,
+  'SCRUM-728.md#APÉNDICE · 8-sep-2026 · SCRUM-728d · LA FACTURA NO HACE CINCO VIAJES': SIN_HORA_Y_SHA_CORTO,
+  'SCRUM-762.md#APÉNDICE (7-sep-2026) · el control ya no vive en una sesión: vive en la tanda': SIN_HORA_Y_SHA_CORTO,
 
   // Con fecha pero sin hora (6)
-  'SCRUM-474.md#2': SIN_HORA,
-  'SCRUM-578.md#2': SIN_HORA,
-  'SCRUM-586.md#2': SIN_HORA,
-  'SCRUM-600.md#4': SIN_HORA,
-  'SCRUM-600.md#5': SIN_HORA,
-  'SCRUM-600.md#6': SIN_HORA,
+  'SCRUM-474.md#APÉNDICE · SCRUM-474 (2) · el LECTOR: el filtro deja de partir las tarjetas': SIN_HORA,
+  'SCRUM-578.md#APÉNDICE · 24-ago-2026 · ENTREGADOS (a) (b) (c) (d)': SIN_HORA,
+  'SCRUM-586.md#APÉNDICE · 6-sep-2026 — SE CONSTRUYE LA MITAD QUE NO DEPENDE DEL ESQUEMA': SIN_HORA,
+  'SCRUM-600.md#APÉNDICE · 8-sep-2026 · SCRUM-600c · ¿CUÁNTO FALTA? LAS DOS PANTALLAS COMO CONJUNTOS': SIN_HORA,
+  'SCRUM-600.md#APÉNDICE · 8-sep-2026 · SCRUM-600d · EL ENVÍO, QUE FALTABA POR UN `return`': SIN_HORA,
+  'SCRUM-600.md#APÉNDICE · 8-sep-2026 · SCRUM-600e · «3. CONDICIONES»: EL REPARTO ERA OTRO': SIN_HORA,
 
   // Miden contra otra base, y lo dicen (2)
-  'SCRUM-630.md#2': OTRA_BASE,
-  'SCRUM-821.md#2': OTRA_BASE,
+  'SCRUM-630.md#APÉNDICE · SCRUM-630 (2/2) — el test medía la máquina, no el defecto': OTRA_BASE,
+  'SCRUM-821.md#APÉNDICE · 8-sep-2026 — EL ✅ POSITIVO QUE FALTABA: las que ya se fotografiaban, por HASH DE IMAGEN': OTRA_BASE,
 };
 
 /**
  * Las exentas, las de los DOS censos. Se unen para preguntar «¿está exenta?» y NUNCA para contarlas:
  * cada censo declara su propio número y cada uno cae por su lado.
  */
-const EXENTAS = { ...HEREDADAS_SIN_ANCLA, ...TAPADAS_POR_EL_TROCEADOR };
+// 🔴 SCRUM-859 · EL MOTIVO QUE SE CIERRA SOLO
+//
+// Estas cinco NO están exentas porque les falte la hora: están exentas porque **el troceador
+// nunca las vio**. Eran secciones internas para el guard —`# 11-ago-2026 · …`, `# FASE B …`—
+// así que nadie pudo pedirles nunca su hora. SCRUM-859 las hace visibles, y su hora no está en
+// ninguna parte: escribirla ahora sería fabricar una medición, que es justo lo que este guard
+// existe para impedir.
+//
+// 🔴 Y EL MOTIVO ES UN CONJUNTO CERRADO, vigilado por el guard y no por la memoria de nadie:
+// **un SEXTO uso de `INVISIBLE_HASTA_859` lo tumba** (ver `TOPE_INVISIBLE_HASTA_859` abajo).
+// Después de SCRUM-859 ya nada es invisible hasta SCRUM-859, así que nada escrito a partir de
+// hoy puede alegar este motivo. Un límite declarado y no cerrado deja de ser advertencia y pasa
+// a ser permiso.
+const INVISIBLE_HASTA_859 = 'el troceador NUNCA la vio (era sección interna hasta SCRUM-859), '
+  + 'así que nadie pudo pedirle la hora — y la hora no se tomó: escribirla ahora sería inventarla';
+
+/** Cerrado a las CINCO que había el 15-sep-2026. Un sexto uso tumba el guard. */
+const TOPE_INVISIBLE_HASTA_859 = 5;
+
+const LAS_INVISIBLES_HASTA_859 = {
+  'SCRUM-358.md#11-ago-2026 · EL ALTA DE ALBARÁN, IDEMPOTENTE (mitad de SERVIDOR)': INVISIBLE_HASTA_859,
+  'SCRUM-655.md#FASE B (2-sep-2026) · `revision.ts` YA TIENE LLAMADOR — y era el último': INVISIBLE_HASTA_859,
+  'SCRUM-728.md#FASE D · 8-sep-2026 · LO QUE VE EL SEXTO PROFESIONAL': INVISIBLE_HASTA_859,
+  'SCRUM-814.md#7-sep-2026 · EL ARREGLO — camino B, y lo que se llevó por delante': INVISIBLE_HASTA_859,
+  'SCRUM-814.md#8-sep-2026 · LOS OTROS DOS CAMINOS — y lo que cedí al mezclar': INVISIBLE_HASTA_859,
+};
+
+const EXENTAS = { ...HEREDADAS_SIN_ANCLA, ...TAPADAS_POR_EL_TROCEADOR, ...LAS_INVISIBLES_HASTA_859 };
 
 // 🔴 SUELO DE LA UNIÓN: dos censos que compartieran una clave se taparían el uno al otro y la suma
 // de los números declarados dejaría de cuadrar con el total, en silencio.
 {
-  const repetidas = Object.keys(HEREDADAS_SIN_ANCLA).filter((k) => k in TAPADAS_POR_EL_TROCEADOR);
+  const tres = [HEREDADAS_SIN_ANCLA, TAPADAS_POR_EL_TROCEADOR, LAS_INVISIBLES_HASTA_859];
+  const repetidas = tres.flatMap((a, i) => Object.keys(a).filter((k) => tres.some((b, j) => j !== i && k in b)));
   if (repetidas.length) throw new Error(`🔴 los dos censos nombran la misma entrada: ${repetidas.join(', ')}`);
 }
 
@@ -612,21 +743,31 @@ test('SCRUM-267 · 🔴 los números CUADRAN: con ancla + sin ancla + eximidas =
   // segundo», que es justo la clase de compensación silenciosa que un censo existe para impedir.
   // Cada lista responde por su número y cae por su lado:
   //
-  //   · 27 · SCRUM-516, 19-ago-2026 — al mirar por ENTRADA en vez de por fichero (4 arregladas).
+  //   · 26 · SCRUM-516, 19-ago-2026 — al mirar por ENTRADA en vez de por fichero (4 arregladas).
+  //          SCRUM-859 baja una más: `SCRUM-313#SEGUNDA ENTREGA` YA tiene su ancla — la
+  //          reconoce el formato aprendido hoy. Que el censo baje por una MEJORA es lo que
+  //          este guard pide que se anote.
+  //   · 27 · SCRUM-532 — ídem: `SCRUM-745#APÉNDICE · FASE B` sale por la misma razón.
+  //   ·  5 · SCRUM-859 — las que el troceador NUNCA vio. Motivo CERRADO: un sexto uso cae.
   //   · 28 · SCRUM-532, 15-sep-2026 — al ver los `# APÉNDICE` que el delimitador no veía
   //          (1 arreglada: `SCRUM-814.md#2`, cuyo dato estaba completo y sólo mal formateado).
   const porCenso = (censo) => eximidas.filter((e) => e.clave in censo).length;
-  assert.equal(porCenso(HEREDADAS_SIN_ANCLA), 27,
-    `🔴 el censo de SCRUM-516 declara 27 exentas y se han medido ${porCenso(HEREDADAS_SIN_ANCLA)}.\n\n`
+  assert.equal(porCenso(HEREDADAS_SIN_ANCLA), 26,
+    `🔴 el censo de SCRUM-516 declara 26 exentas y se han medido ${porCenso(HEREDADAS_SIN_ANCLA)}.\n\n`
     + '  Si has ARREGLADO una entrada, enhorabuena: bájalo aquí y quítala de '
     + '`HEREDADAS_SIN_ANCLA`.\n  Si has AÑADIDO una, no es el sitio — una entrada nueva se mide '
     + 'al escribirla.');
-  assert.equal(porCenso(TAPADAS_POR_EL_TROCEADOR), 28,
-    `🔴 el censo de SCRUM-532 declara 28 exentas y se han medido ${porCenso(TAPADAS_POR_EL_TROCEADOR)}.\n\n`
+  assert.equal(porCenso(TAPADAS_POR_EL_TROCEADOR), 27,
+    `🔴 el censo de SCRUM-532 declara 27 exentas y se han medido ${porCenso(TAPADAS_POR_EL_TROCEADOR)}.\n\n`
     + '  Son las que el troceador viejo metía dentro de la entrada de arriba. Si has arreglado '
     + 'una,\n  bájalo aquí y quítala de `TAPADAS_POR_EL_TROCEADOR`.');
-  assert.equal(eximidas.length, 55,
-    `🔴 los dos censos suman 55 y se han medido ${eximidas.length}: alguna clave está en los dos, `
+    assert.equal(porCenso(LAS_INVISIBLES_HASTA_859), TOPE_INVISIBLE_HASTA_859,
+    `🔴 ${porCenso(LAS_INVISIBLES_HASTA_859)} entradas alegan INVISIBLE_HASTA_859 y el motivo `
+    + `está CERRADO en ${TOPE_INVISIBLE_HASTA_859}. Después de SCRUM-859 ya nada es invisible `
+    + 'hasta SCRUM-859: lo que se escriba a partir de hoy lleva su ancla entera o no entra. Un '
+    + 'límite declarado y no cerrado deja de ser advertencia y pasa a ser permiso.');
+  assert.equal(eximidas.length, 58,
+    `🔴 los TRES censos suman 58 y se han medido ${eximidas.length}: alguna clave está en los dos, `
     + 'o en ninguno.');
   assert.equal(conAncla.length + eximidas.length, todas.length,
     '🔴 «con ancla» + «exentas» no suman el total de entradas troceadas. O el troceador pierde '
