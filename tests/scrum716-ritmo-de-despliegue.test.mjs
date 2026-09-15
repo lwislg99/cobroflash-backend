@@ -350,9 +350,14 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'DESPLIEGA: producción se movió entre las dos lecturas',
   },
   {
-    // ③ El filtro de lo ilegible, apagado: un número del fallback de `env.ts` pasaría por sha.
+    // ③ El filtro de forma, apagado: basura como 'no-soy-un-sha' pasaría por sha legible.
+    // ⚠️ SCRUM-824b partió el `if` único en DOS líneas (la de forma y la del reloj de puros
+    // dígitos, con `LONGITUDES_DE_RELOJ`) y dejó esta ancla apuntando a un texto que ya no
+    // existe: el guard llevaba desde entonces CIEGO en este punto, sin que nadie lo mutara ni
+    // lo midiera. Sólo se apaga la de FORMA: la del reloj tiene su propia cobertura dedicada en
+    // `tests/scrum824b-el-sha-que-parecia-un-numero.test.mjs`.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
-    de: '  if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;',
+    de: '  if (!ES_SHA.test(s)) return null;',
     a: '  if (false) return null;',
     cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
   },
