@@ -572,6 +572,49 @@
   FAMILIA —la tanda no es determinista— con mecánica distinta, igual que el segundo caso del propio
   824 lo era del primero. Arreglarlo de paso sin medirlo sería justo lo que ese ticket prohíbe.
 
+### [x] P3-CI-824A · meta-guard CIEGO: el ancla de la mutación ③ de `scrum716` apuntaba a una línea que SCRUM-824b ya había partido en dos (15-sep-2026, hallazgo colateral de SCRUM-824)
+- **Síntoma:** el job `meta-guard · los guards caen cuando deben` del PR de SCRUM-824
+  (`scrum-824-temporales-dentro-del-arbol`) salía CIEGO: "el ancla no está en
+  `scripts/_ritmo-de-despliegue.mjs`: la declaración caducó". No es un rojo de SCRUM-824 —esa rama
+  no toca ese fichero.
+- **CAUSA RAÍZ:** la mutación ③ de `MUTACIONES_QUE_ME_TUMBAN`
+  (`tests/scrum716-ritmo-de-despliegue.test.mjs`) declaraba el ancla literal
+  `if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;`. SCRUM-824b partió esa línea en dos
+  (`scripts/_ritmo-de-despliegue.mjs:100-101`, para discriminar por longitud de reloj y no por
+  «ser todo dígitos») y no actualizó la declaración del meta-guard.
+- **CERRADO (15-sep-2026):** el ancla ahora apunta a la línea que hoy hace ese trabajo
+  (`if (TODO_DIGITOS.test(s) && LONGITUDES_DE_RELOJ.has(s.length)) return null;`), misma mutación
+  (apagar el filtro) y mismo test que debe caer. **No se ha podido correr `npm run build` /
+  `npm test` / `node scripts/meta-guard-mutaciones.mjs` en esta sesión** (Bash sin permiso de
+  ejecutar esos comandos): verificado por inspección — el literal nuevo es exacto, byte a byte,
+  al de `_ritmo-de-despliegue.mjs`. Pendiente de que el CI del PR lo confirme en verde.
+
+### [ ] P3-CI-824B · `guards de navegador (fuera de la tanda)` sin `origin/main`: CIEGO en `guard:lista-trabajos` desde que SCRUM-843 le añadió el comparador "las hermanas" 🔒 REQUIERE EDITAR `.github/workflows/ci.yml` (fuera del alcance de Claude vía PR: permisos de la app no permiten tocar workflows)
+- **Síntoma:** el mismo run del PR de SCRUM-824 también cae en `guards de navegador (fuera de la
+  tanda)`, con `guard:lista-trabajos` CIEGO: "NO SUPE MIRAR: no pude resolver el punto de partida
+  de la rama (`merge-base`). No se cae hacia `origin/main`: ese respaldo silencioso es el defecto
+  de SCRUM-723." El guard se porta bien: no midió nada y lo dice, en vez de inventar un respaldo.
+- **CAUSA RAÍZ:** el checkout de ese job (`.github/workflows/ci.yml`, job `guards-visuales`) es un
+  `actions/checkout@v4` a pelo — sin `fetch-depth: 0` ni traer `origin/main`. SCRUM-843 le añadió a
+  `guard-lista-trabajos.mjs` (sección ⑥, "las hermanas") un comparador que resuelve su punto de
+  partida con `arbolDePartida()` → `baseDeLaRama()` → `merge-base(HEAD, origin/main)`, y esa ref no
+  existe en un checkout somero de una sola rama. El job `meta-guard` de al lado ya tuvo EXACTAMENTE
+  este defecto (SCRUM-765/716b, documentado en sus propios comentarios) y lleva la solución medida:
+  hacen falta las DOS cosas, ninguna basta sola.
+- **Arreglo, medido y no aplicado (permiso):** en el job `guards-visuales`, sustituir
+  `- uses: actions/checkout@v4` por:
+  ```yaml
+  - uses: actions/checkout@v4
+    with:
+      fetch-depth: 0
+  - name: Traer `main` (el comparador de las hermanas lo consulta)
+    run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
+  ```
+  Mismo patrón, literal, que ya usan `meta-guard` (líneas 392-397) y `vigía del despliegue`
+  (líneas 461-497) de ese mismo fichero.
+- **Por qué queda `[ ]`:** las herramientas de esta sesión no permiten a Claude escribir en
+  `.github/workflows/*` desde un PR (permiso de la app). Lo aplica un humano.
+
 ### [x] P3-CENSO-402 · `CENSO` de SCRUM-402 tenia una CLAVE REPETIDA, y JavaScript se comia una
 - **Medido el 5-sep-2026** desde la rama de SCRUM-606, sobre `origin/main` = `28b04585` SIN
   ninguna rama encima: `tests/scrum402-marcador-no-se-pinta.test.mjs` salia **ROJO** en R4
