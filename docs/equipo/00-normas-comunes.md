@@ -96,6 +96,8 @@ arreglados.
   cosas distintas. Solo la segunda invalida una rama.
 - Mergear no es acabar: un ticket no está cerrado hasta que su
   despliegue está verde.
+- `git stash` NO se usa para apartar trabajo: su almacén es COMPARTIDO
+  entre worktrees y `stash@{0}` puede ser de otra sesión. Ver **A15**.
 
 ## A5 · El orden del esquema
 
@@ -175,6 +177,12 @@ Una pantalla se ordena por lo que se hace en ella, no por cómo están
 guardados los campos.
 La lista que decide qué se mira es la única que nadie mira.
 Contar no es avisar.
+Si el borrado de una rama puede cambiar tu medición, no estabas midiendo el
+trabajo: estabas midiendo el envase.
+Dos anclas para la misma comprobación no son redundancia: son la próxima
+contradicción esperando fecha.
+Un `git stash pop` a ciegas es un `git checkout` del trabajo de otro encima
+del tuyo.
 Un instrumento que solo sabe callar no es un instrumento.
 Si desactivas una comprobación de permisos para que tu robot pase, el
 permiso tiene que volver a preguntarse en la puerta siguiente.
@@ -239,6 +247,37 @@ basadas en un estado que había dejado de existir.
 
     🔒 Un informe sin hora no es una foto del ahora: es una foto sin fecha, y el
        orquestador la va a leer como si fuera de hoy.
+
+## A15 · `git stash` es estado COMPARTIDO: no se usa para apartar trabajo
+
+El almacén de `git stash` es **compartido entre todos los worktrees del
+mismo repositorio**, igual que los refs. `stash@{0}` puede ser de otra
+sesión.
+
+Por tanto: **NO se usa `git stash` para apartar trabajo.** Se usa un commit
+temporal en la propia rama, que es local a la rama y no lo puede tocar nadie
+más:
+
+```bash
+git commit -m "wip: apartado"
+# … lo que tuvieras que medir …
+git reset --soft HEAD~1
+```
+
+Si aun así hay que mirar un stash: `git stash list` PRIMERO, se comprueba de
+quién es por su mensaje, y **NUNCA se usa `pop` — solo `apply`**, que conserva
+la entrada.
+
+> Medido dos veces. La sesión 2 se llevó un stash ajeno hace unos días, y el
+> 8-sep-2026 la sesión 3 repitió: un `git stash push` de cuatro ficheros no
+> llegó a crear entrada, y el `pop` siguiente sacó al árbol el stash de la
+> sesión de SCRUM-713 —cuatro ficheros seguidos y tres sin seguir— con
+> conflictos encima del trabajo propio. No se perdió nada porque un `pop` con
+> conflictos CONSERVA la entrada, y porque se verificó `git stash list` antes
+> de tocar el árbol. Dos veces es un patrón, no un accidente.
+
+🔒 Un `git stash pop` a ciegas es un `git checkout` del trabajo de otro encima
+del tuyo.
 
 ## A17 · Un ticket, una rama, un PR, y se empuja el mismo día
 

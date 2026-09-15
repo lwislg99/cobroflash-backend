@@ -1,0 +1,25 @@
+CENSO SCRUM-752 ② · lecturas de Prisma SIN `select` de primer nivel
+============================================================================================
+lecturas de Prisma en src/ : 430
+  · con `select`           : 284
+  · SIN `select`           : 146   ← sirven TODA la tabla, hoy y mañana
+    de ellas, con `include`: 57
+
+POR MODELO (los diez primeros):
+     27  quote
+     25  invoice
+     19  charge
+     12  job
+     11  merchant
+      9  albaran
+      7  customer
+      7  teamMember
+      5  maintenancePlan
+      4  expense
+
+¿Y el sujeto del ticket?
+   src/modules/products/domain/products.service.ts:68  product.findMany  include=true
+   src/modules/products/domain/products.service.ts:263  product.findFirst  include=true
+   src/modules/products/domain/products.service.ts:292  product.findFirst  include=false
+
+modelos distintos afectados: 20

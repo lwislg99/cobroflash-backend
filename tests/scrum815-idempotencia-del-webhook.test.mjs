@@ -142,16 +142,41 @@ test('SCRUM-815 · 📌 el censo de EFECTOS del manejador no crece sin decirlo',
   // 🔴 De esta lista depende la decisión: qué es reversible y qué no. Si alguien añade un efecto
   // —otro correo, otra llamada fuera— la propuesta de columnas se queda corta y hay que rehacerla.
   // Se cuenta por AST desde donde empieza el trabajo, no por `grep`.
+  //
+  // ⚠️ SCRUM-815 (③) · EL CORTE ERA `linea >= 47`, Y ESO SE ROMPIÓ AL AÑADIR LÍNEAS ARRIBA.
+  // El 47 era «donde empieza el despacho» el día que se escribió esto. Al meter el registro de
+  // idempotencia, todo bajó unas líneas y de pronto entraron en el censo `constructEvent` y
+  // `isDuplicateStripeEvent` —que llevan ahí desde siempre y NO son efectos del trabajo: son la
+  // puerta—. El censo no midió un cambio del manejador: midió su propio desplazamiento.
+  //
+  // Ahora el corte se ancla al CONTENIDO: el despacho empieza donde se COMPARA `event.type` con
+  // un tipo concreto (`event.type === '…'`). Eso no se mueve porque alguien escriba encima.
+  //
+  // ⚠️ Y el ancla tuvo que afinarse: «el primer `if` que NOMBRA `event.type`» se enganchaba a la
+  // puerta del registro (`if (llevaRegistro(event.type))`), que la nombra sin despachar nada. La
+  // señal del despacho no es mencionar el tipo: es compararlo.
   const src = fs.readFileSync(path.join(RAIZ, RUTA), 'utf8');
   const sf = ts.createSourceFile('x.ts', src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+
+  let inicioDelDespacho = -1;
+  (function buscar(n) {
+    if (inicioDelDespacho === -1 && ts.isIfStatement(n)
+        && /event\.type\s*===/.test(n.expression.getText(sf))) {
+      inicioDelDespacho = n.getStart(sf);
+    }
+    ts.forEachChild(n, buscar);
+  })(sf);
+  assert.ok(inicioDelDespacho > -1,
+    '🔴 SUELO: no encuentro dónde empieza el despacho por `event.type`. Sin ese corte el censo '
+    + 'contaría la ruta entera —puerta incluida— y su veredicto no diría nada del manejador.');
 
   const PUROS = /^(Number|String|Boolean|console\.|res\.|new Date|internalHeaders|\()/;
   const efectos = [];
   (function walk(n) {
     if (ts.isCallExpression(n)) {
       const t = n.expression.getText(sf).replace(/\s+/g, ' ');
-      const linea = sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
-      if (linea >= 47 && !PUROS.test(t) && !/\.(toUpperCase|toISOString|isInteger|catch)$/.test(t)) {
+      if (n.getStart(sf) >= inicioDelDespacho && !PUROS.test(t)
+          && !/\.(toUpperCase|toISOString|isInteger|catch)$/.test(t)) {
         efectos.push(t);
       }
     }
@@ -168,6 +193,15 @@ test('SCRUM-815 · 📌 el censo de EFECTOS del manejador no crece sin decirlo',
     rewardReferralOnFirstPayment: 1, // BD, guardada por `referralRewardedAt` — SIN cerrojo
     conConstancia: 1,                // 🔴 CORREO, y sin `await`
     sendFirstPaymentEmail: 1,        // el correo de dentro, guardado por `lifecycleEmailsSent`
+    // ── SCRUM-815 (③), 15-sep-2026: las dos mitades del registro que CIERRAN la entrega ──
+    // No son efectos de negocio: no salen del proceso ni tocan al cliente. Escriben en
+    // `gateway_events`, que es la tabla que este ticket propuso. Se declaran porque el censo
+    // vigila lo que hace el manejador, y ahora hace esto — pero no cambian el reparto de
+    // reversibles: siguen siendo tres salidas fuera, cinco escrituras de plan, una recompensa y
+    // un correo. La APERTURA del registro no aparece aquí a propósito: vive en la puerta, antes
+    // del despacho, que es donde el corte de arriba deja de contar.
+    marcarEventoProcesado: 1,        // BD: `processed_at` al TERMINAR, y sólo entonces
+    anotarFalloDeEvento: 1,          // BD: `last_error` en el `catch`; `processed_at` sigue NULL
   }, '🔴 HA CAMBIADO LO QUE HACE EL MANEJADOR. La decisión de SCRUM-815 se tomó sobre estos '
     + 'efectos: tres salidas fuera del proceso, cinco escrituras de plan, una recompensa y un '
     + 'correo. Si la lista cambia, la propuesta de columnas hay que releerla antes de aplicarla.');

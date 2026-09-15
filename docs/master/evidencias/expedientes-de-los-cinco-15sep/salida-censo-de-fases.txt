@@ -1,0 +1,30 @@
+POBLACION: toda la historia de main — 2801 commits, 1220 merges de PR
+CONTROL POSITIVO — fases de SCRUM-834 por rama (deben ser 5): 5 ✅
+
+━━━━━━ SCRUM-842 ━━━━━━  FASES: 3   (commits suyos: 3 · ramas propias: 0)
+   2484eee7 PR#1227 2026-09-09 scrum-637-verificacion-s5  (1 fich., via asunto)
+       SCRUM-842: intente pasar la puerta 11 veces y no pasa ninguna — con el suelo que lo demuestra
+   19215875 PR#1229 2026-09-09 scrum-637-verificacion-s5  (1 fich., via asunto)
+       SCRUM-842: la puerta fiscal deja pasar los 20 ficheros de src/modules/fiscal/
+   5c35a66d PR#1234 2026-09-09 scrum-637-verificacion-s5  (2 fich., via asunto)
+       SCRUM-842 cerrado + censo: 19 de 95 instrumentos pueden dar un cero que nadie juzga
+
+━━━━━━ SCRUM-838 ━━━━━━  FASES: 1   (commits suyos: 1 · ramas propias: 0)
+   83eb0e40 PR#1221 2026-09-09 scrum-637-verificacion-s5  (7 fich., via asunto)
+       SCRUM-838: censo de tautologias — y encontro una de verdad en scrum587
+
+━━━━━━ SCRUM-833 ━━━━━━  FASES: 1   (commits suyos: 1 · ramas propias: 0)
+   ee13c63f PR#1204 2026-09-09 scrum-637-verificacion-s5  (7 fich., via asunto)
+       SCRUM-833: scrum637 deja de medir el envase — y el censo encontro un tercero dentro
+
+━━━━━━ SCRUM-722 ━━━━━━  FASES: 2   (commits suyos: 2 · ramas propias: 1)
+   d7db9499 PR#1140 2026-09-07 scrum-722-marcadores-a-la-vista  (13 fich., via rama)
+       SCRUM-722: el censo de marcadores sobre lo pintado, y el guard que faltaba
+   855562ac PR#1143 2026-09-07 scrum-818-parte-de-trabajo  (7 fich., via asunto)
+       SCRUM-722: el «vencimiento» de Charge dice, en el esquema, que no es el de la factura
+
+━━━━━━ SCRUM-601 ━━━━━━  FASES: 1   (commits suyos: 2 · ramas propias: 0)
+   16265c25 PR#1085 2026-09-06 scrum-776-una-sola-voz-factura-suelta  (13 fich., via asunto)
+       SCRUM-601: re-ancla tras mezclar main — el reparto NO se movió, y eso también se mide
+       SCRUM-601 (DOC-11): el copy del documento NO es función del flag — medido, no opinado
+
