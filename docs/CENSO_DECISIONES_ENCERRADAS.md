@@ -84,6 +84,13 @@ Por eso «vive en una vista» no es el hallazgo. **El hallazgo es la tercera col
 La máquina da 10. La tercera columna de la máquina es generosa (cualquier vista que pinte ese
 documento y no llame a la función), así que cada fila lleva **veredicto leído a mano**.
 
+> ✅ **HOY YA SON 9, y eso es el instrumento registrando su propia cura.** SCRUM-845 sacó
+> `ubicarAccion` de dentro de `renderInvoiceDetailView` a `invoiceAccion.js` —la fila 1, la única
+> que se convirtió en trabajo— y el censo bajó de **10 a 9**, con los resolutores encerrados de
+> **2 a 1**. El 10 de esta tabla NO se reescribe: era cierto sobre el árbol que dice la cabecera, y
+> un número CON SU ANCLA no caduca. Lo que se anota es el movimiento, comprobable hoy corriendo
+> `npm run censo:decisiones-encerradas`.
+
 | # | qué decide | dónde vive hoy | 🔴 quién la necesita y no la tiene | veredicto |
 | --- | --- | --- | --- | --- |
 | 1 | `ubicarAccion()` + `estadoFactura` + `ctxAcciones` — **qué se puede hacer con una factura** según su estado y si Bizum manual está disponible | `invoiceDetailView.js`, en **constantes locales dentro de `renderInvoiceDetailView`** | **`invoicesView.js`** (lista de Facturas) · `cobrosView.js` · `customerDetailView.js` · `renderInvoices()` de `quotesDetailView.js` | 🔨 **SE CONVIERTE EN TRABAJO** — hay mentira medida (§4) |
