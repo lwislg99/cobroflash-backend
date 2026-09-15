@@ -815,6 +815,24 @@
 
 ---
 
+## CI — infraestructura de guards
+
+### [ ] CI-1 · el job `guards-visuales` no trae `origin/main`, y `guard:lista-trabajos` sale CIEGO
+- **Síntoma:** en `.github/workflows/ci.yml`, el job `guards-visuales` (paso "Guards de navegador") sale rojo con `NINGUN guard llegó a medir: guard:lista-trabajos: CIEGO`. El control ⑥ de ese guard («las hermanas», que compara Clientes/Presupuestos/Albaranes/Facturas contra el punto de partida de la rama, SCRUM-816/831) dice: `NO SUPE MIRAR: no pude resolver el punto de partida de la rama (merge-base)`.
+- **Causa raíz:** ese job hace `actions/checkout@v4` DESNUDO (`.github/workflows/ci.yml:287`) — sin `fetch-depth: 0` y sin el `git fetch … origin/main` que sí llevan la tanda principal (línea ~110) y `meta-mutaciones` (líneas 392-397). `baseDeLaRama`/`arbolDePartida` (`tests/_censo-eol.mjs`, `scripts/_banco-lista.mjs`) prueban `merge-base HEAD origin/main|origin/HEAD|main` y, sin ese fetch, ninguna referencia existe en el checkout superficial → devuelven `null` a propósito (no hay respaldo silencioso a la punta, es la avería que SCRUM-723 existe para impedir) → CIEGO, no un veredicto inventado.
+- **Por qué no se arregla aquí:** el arreglo vive en `.github/workflows/*`, que esta sesión tiene bloqueado por permisos del GitHub App (no puede modificar ficheros de `.github/workflows/`).
+- **Arreglo propuesto (para quien tenga permiso):** añadir al job `guards-visuales`, igual que en `meta-mutaciones`:
+  ```yaml
+  - uses: actions/checkout@v4
+    with:
+      fetch-depth: 0
+  - name: Traer `main` (los guards de rama lo consultan)
+    run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
+  ```
+- **Done cuando:** `npm run guards:visuales` en CI mide `guard:lista-trabajos` con las cinco vistas (no CIEGO) en un PR normal.
+
+---
+
 ## P4 — Pre-lanzamiento (registrar, NO ahora)
 - [ ] Correr `/security-review` antes de exponer a clientes reales (el producto maneja pagos).
 - [ ] Autenticación + multi-tenant real (quitar `merchantId=1` hardcodeado).
