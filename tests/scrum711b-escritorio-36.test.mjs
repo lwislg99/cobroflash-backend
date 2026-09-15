@@ -120,7 +120,14 @@ test('SCRUM-711 · 🔴 ninguna medición se hace ya con el 44 fijo', () => {
 // ═══ ④ LAS SONDAS DE UMBRAL, DENTRO DEL GUARD ═══════════════════════════════════════════════
 
 test('SCRUM-711 · las tres sondas de umbral siguen en el guard, con su veredicto por ancho', () => {
-  for (const [nombre, alto] of [['SONDA_40', 40], ['SONDA_30', 30], ['SONDA_37', 37]]) {
+  // Un elemento por línea (SCRUM-710b): con los tres en la misma línea, dos tickets que cambien
+  // alturas distintas chocarían en el merge sin que el conflicto dijera que son independientes.
+  const SONDAS = [
+    ['SONDA_40', 40],
+    ['SONDA_30', 30],
+    ['SONDA_37', 37],
+  ];
+  for (const [nombre, alto] of SONDAS) {
     assert.match(GUARD, new RegExp(`const ${nombre} = 'sonda-${alto}'`),
       `🔴 falta \`${nombre}\`: sin ella, «${alto} px» no se comprueba en cada pasada del guard.`);
     assert.match(GUARD, new RegExp(`height:${alto}px`),
