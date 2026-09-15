@@ -536,6 +536,42 @@
 
 ## P3 — Técnico / raíz (registrar, abordar después de P1)
 
+### [ ] P3-FLAKY-451 · `scrum451-plazo-de-red` cae ~1 de cada 10 TANDAS COMPLETAS, y no se reproduce suelto (15-sep-2026, hallazgo colateral de SCRUM-824)
+- **Medido, no supuesto.** Diez tandas completas seguidas sobre la rama
+  `scrum-824-temporales-dentro-del-arbol` (`origin/main` = `07ccd16c`): **nueve verdes y la décima
+  roja**, siempre el mismo test.
+
+  ```
+  not ok 3086 - SCRUM-451 · el plazo cubre TAMBIÉN el cuerpo, no solo las cabeceras
+    tests/scrum451-plazo-de-red.test.mjs:133
+    suelo: las cabeceras tenían que haber llegado, o esto no prueba lo del cuerpo
+    (1 petición · 0 resueltas · 0 fallidas · 0 colgadas · 1 ABORTADAS · 0 cuerpos entregados)
+  ```
+- **NO es la carrera de temporales de SCRUM-824, y no lo causa su arreglo.** `scrum451` no importa
+  ninguno de los ficheros de ese diff, y hace **cero** `mkdtemp` / `writeFileSync` / `tmpdir`. Es un
+  plazo de red, no un fichero.
+- **El test se porta BIEN al caer.** No da un veredicto falso: su propio SUELO dice que no pudo
+  medir —la petición se abortó antes de que llegaran las cabeceras—. El defecto es que el plazo se
+  agota bajo carga, no que el aserto mienta.
+- **No se reproduce en aislamiento, y eso es lo que falta por entender:**
+
+  | escenario | fallos |
+  |---|---|
+  | `scrum451` solo, 30 pasadas | **0 / 30** |
+  | `scrum451` con 12 quemadores de CPU, 30 pasadas | **0 / 30** |
+  | dentro de la tanda completa (781 ficheros, concurrencia 12) | **1 / 10** |
+
+  La contención de CPU sola NO basta. La sospecha es presión de E/S o de sockets del resto de la
+  tanda —en la corrida medida había además un vigía golpeando el sistema de ficheros, que CI no
+  tiene—, pero **es una sospecha y no se ha medido**; quien lo coja, que la mida antes de creerla.
+- ⛔ **NO se arregla subiendo el plazo a ojo ni reintentando:** un reintento sobre una carrera la
+  esconde, y subir el número lo convierte en una foto de la máquina donde se subió. Y NO se baja a
+  `skip`: un test saltado se cuenta como pasado (SCRUM-754).
+- **Por qué se registra y no se arregla aquí:** SCRUM-824 iba de los temporales dentro del árbol, y
+  eso queda cerrado y vigilado por su trinquete. Éste es un tercer rojo intermitente de la misma
+  FAMILIA —la tanda no es determinista— con mecánica distinta, igual que el segundo caso del propio
+  824 lo era del primero. Arreglarlo de paso sin medirlo sería justo lo que ese ticket prohíbe.
+
 ### [x] P3-CENSO-402 · `CENSO` de SCRUM-402 tenia una CLAVE REPETIDA, y JavaScript se comia una
 - **Medido el 5-sep-2026** desde la rama de SCRUM-606, sobre `origin/main` = `28b04585` SIN
   ninguna rama encima: `tests/scrum402-marcador-no-se-pinta.test.mjs` salia **ROJO** en R4

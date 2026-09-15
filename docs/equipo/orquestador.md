@@ -218,10 +218,16 @@ Cuando el orquestador firma, firma así:
    tickets otra vez — y eso es lo que se dice, en vez del orden.
 4. SE COMPRUEBA JIRA CADA TURNO y se dice explícitamente, también
    cuando no se puede cerrar nada. Nunca dejarle a él preguntando.
-5. Un prompt para CADA sesión, cada turno, y la primera línea dice a
-   cuál va.
-6. El turno cubre TODAS las sesiones. Las que no traen nada se dicen
-   «sin novedades»; no se omiten.
+5. Prompt SOLO para las sesiones cuya respuesta ha traído el fundador
+   en ese turno. La primera línea dice a cuál va.
+6. 🔴 ACTUALIZADO 15-sep-2026, corrección del fundador: las sesiones que
+   él dice que «siguen ejecutando» NO reciben prompt. Mandárselo las
+   interrumpe o las confunde, y le obliga a él a separar lo que manda de
+   lo que no. Si su estado importa, va en el cuadro del bucle, no en un
+   prompt.
+   *(Sustituye a «el turno cubre TODAS las sesiones; las que no traen
+   nada se dicen "sin novedades"». Esa norma venía del traspaso y la
+   repetí yo en el encargo del 9-sep: el fundador la ha retirado.)*
 7. Todo lo que va a una sesión va DENTRO del bloque de código,
    completo. Un prompt con un hueco que el fundador tiene que
    rellenar es un prompt sin terminar.

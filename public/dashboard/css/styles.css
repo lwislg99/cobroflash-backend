@@ -2213,6 +2213,9 @@ html, body { overflow-x: clip; }
 /* Detalle de presupuesto — resumen integrado y menos escalonado */
 .detail-next { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
 .detail-next-label { font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+/* SCRUM-707 · el aviso del estado que no reconocemos. Con su regla desde el primer día: una
+   clase pintada sin regla se ve desnuda, y eso lo caza `scrum666b`. */
+.detail-estado-desconocido { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
 .detail-2col { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px 28px; }
 .sig-row { margin-top: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
