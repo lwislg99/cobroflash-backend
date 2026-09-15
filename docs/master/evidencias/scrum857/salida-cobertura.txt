@@ -1,0 +1,81 @@
+POBLACION: 400 merges leidos · 198 son de PR
+  con DOS padres (merge real, conserva los commits de la rama): 198
+  con UN padre (squash/rebase: la via «mensajes de commit» NO existiria): 0
+  el merge DEVUELVE commits de rama en 195/198 -> la via B se lee de `<merge>^1..<merge>`, y ahi SI estan.
+
+COBERTURA DE CADA VIA — «en cuantos merges produce AL MENOS un numero de ticket»
+  A · nombre de la rama .......... 186/198  (93.9 %)   <- lo que usa el guard HOY
+  B · SCRUM-n en CUALQUIER parte del mensaje ... 194/198  (98.0 %)
+  B'· SCRUM-n al INICIO del ASUNTO ............. 175/198  (88.4 %)
+  C · titulo del PR (cuerpo) ..... 100/198  (50.5 %)
+  D · ficheros tocados ........... 151/198  (76.3 %)
+
+🔴 EL NUMERO QUE DECIDE — merges donde otra via ve un ticket que la RAMA no ve:
+  B aporta un ticket que A no tiene: 157
+  C aporta un ticket que A no tiene: 11
+  B o C (la UNION ingenua) .........: 157  de 198  (79.3 %)  <- INSERVIBLE: pide entrada en 4 de cada 5 PR
+  B' (inicio del asunto) ...........: 18  de 198  (9.1 %)  <- el criterio candidato
+
+LOS MERGES QUE LA VIA DEL ASUNTO DELATA (rama dice un ticket, un commit ES de otro):
+     51a28288 PR#1248 scrum-637-verificacion-s5  ->  commits de: 846
+     d0ab360b PR#1238 scrum-637-verificacion-s5  ->  commits de: 846
+     5c35a66d PR#1234 scrum-637-verificacion-s5  ->  commits de: 842
+     19215875 PR#1229 scrum-637-verificacion-s5  ->  commits de: 842
+     2484eee7 PR#1227 scrum-637-verificacion-s5  ->  commits de: 842
+     83eb0e40 PR#1221 scrum-637-verificacion-s5  ->  commits de: 838
+     45e30121 PR#1214 scrum-831-albaranes-sin-acciones  ->  commits de: 823,816
+     ee13c63f PR#1204 scrum-637-verificacion-s5  ->  commits de: 833
+     0e8c589a PR#1200 scrum-paso0-dinero  ->  commits de: 728
+     a784eb1c PR#1189 scrum-637-verificacion-s5  ->  commits de: 822
+     ac0c71fa PR#1176 scrum-paso0-dinero  ->  commits de: 814
+     b07546cf PR#1149 scrum-805-que-firmo-el-cliente  ->  commits de: 797
+     855562ac PR#1143 scrum-818-parte-de-trabajo  ->  commits de: 722
+     96dcb7d9 PR#1137 scrum-paso0-dinero  ->  commits de: 814
+     07ec5bef PR#1109 scrum-796-el-ancla-que-se-mira  ->  commits de: 788
+     16265c25 PR#1085 scrum-776-una-sola-voz-factura-suelta  ->  commits de: 601
+     5af83d9e PR#1078 scrum-765-763-la-puerta-y-el-arbol  ->  commits de: 745
+     c5bd379f PR#1069 scrum-609-registro-del-alter-y-p-doc-8  ->  commits de: 610
+
+🔴 MERGES QUE NINGUNA VIA IDENTIFICA: 4
+     d9a05138 PR#1259 scrum-orquestador-prompt-solo-a-quien-habla
+     5dcf766a PR#1196 scrum-automerge-rojo-falso
+     fb7a1d78 PR#1179 scrum-paso6-pr-y-automerge
+     441c185c PR#1142 scrum-e6-recorrido-entre-vistas
+
+CONTROL POSITIVO — los merges donde viajo SCRUM-846 dentro de scrum-637-*:
+  d7117212 PR#1253 scrum-637-verificacion-s5
+      A(rama)=637  ASUNTOS=-  TODO-EL-MENSAJE=637  D(entradas)=-
+      tickets que la RAMA no ve: (ninguno)
+  51a28288 PR#1248 scrum-637-verificacion-s5
+      A(rama)=637  ASUNTOS=846  TODO-EL-MENSAJE=637,846,778,833  D(entradas)=-
+      tickets que la RAMA no ve: 846
+  d0ab360b PR#1238 scrum-637-verificacion-s5
+      A(rama)=637  ASUNTOS=846  TODO-EL-MENSAJE=637,846,533  D(entradas)=-
+      tickets que la RAMA no ve: 846
+  5c35a66d PR#1234 scrum-637-verificacion-s5
+      A(rama)=637  ASUNTOS=842  TODO-EL-MENSAJE=637,842  D(entradas)=-
+      tickets que la RAMA no ve: 842
+  19215875 PR#1229 scrum-637-verificacion-s5
+      A(rama)=637  ASUNTOS=842  TODO-EL-MENSAJE=637,842  D(entradas)=-
+      tickets que la RAMA no ve: 842
+  2484eee7 PR#1227 scrum-637-verificacion-s5
+      A(rama)=637  ASUNTOS=842  TODO-EL-MENSAJE=637,842  D(entradas)=-
+      tickets que la RAMA no ve: 842
+  83eb0e40 PR#1221 scrum-637-verificacion-s5
+      A(rama)=637  ASUNTOS=838  TODO-EL-MENSAJE=637,838,842,833,814,710  D(entradas)=-
+      tickets que la RAMA no ve: 838
+  ee13c63f PR#1204 scrum-637-verificacion-s5
+      A(rama)=637  ASUNTOS=833,637  TODO-EL-MENSAJE=637,833,804,723,753,829,821  D(entradas)=-
+      tickets que la RAMA no ve: 833
+  a784eb1c PR#1189 scrum-637-verificacion-s5
+      A(rama)=637  ASUNTOS=637,822  TODO-EL-MENSAJE=637,822,723,560,329,334  D(entradas)=822
+      tickets que la RAMA no ve: 822
+  02dd12b2 PR#1186 scrum-637-la-rama-que-nadie-mira
+      A(rama)=637  ASUNTOS=637  TODO-EL-MENSAJE=637,804,614,267,723  D(entradas)=587,624,637,666,668,700,701,705,710,714,716,718,719,738
+      tickets que la RAMA no ve: (ninguno)
+  d271d29a PR#1139 scrum-637-verificacion-s5
+      A(rama)=637  ASUNTOS=637  TODO-EL-MENSAJE=637,723,329,753,626,653,816,915,456  D(entradas)=-
+      tickets que la RAMA no ve: (ninguno)
+  f2d15890 PR#1138 scrum-637-verificacion-s5
+      A(rama)=637  ASUNTOS=637  TODO-EL-MENSAJE=637,721,699,815  D(entradas)=-
+      tickets que la RAMA no ve: (ninguno)
