@@ -8,7 +8,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  esAsuntoDelVigia, causaDelAtasco, haEmpeorado, sueloDeLaPasada, horasDesde,
+  esAsuntoDelVigia, causaDelAtasco, haEmpeorado, sueloDeLaPasada, horasDesde, validarSonda, GRACIA_MINUTOS,
   ETIQUETA_NO_MERGEAR, BOT,
 } from '../scripts/vigia-atascados.mjs';
 
@@ -168,4 +168,86 @@ test('🔴 el vigía NO usa la llave de la App: su token no debe crear ejecucion
 test('comenta solo al empeorar: el camino de «sin cambios» existe y no comenta', () => {
   const yml = fs.readFileSync(WF, 'utf8');
   assert.match(yml, /SIN CAMBIOS A PEOR/, 'tiene que haber una salida que reescribe sin notificar');
+});
+
+// ── SCRUM-839 · FASE 1: DETECTAR EL CONFLICTO, CON DOS SONDAS Y CON GRACIA ────────────────
+//
+// La señal de este ticket NO es «está rojo»: un PR en conflicto se queda SIN COLOR, y por eso
+// el avisador de rojos no lo ve y nadie lo despierta. Son dos ausencias —conflicto y cero
+// checks— y por eso el suelo importa más que de costumbre.
+
+test('🔴 la GRACIA: cero checks recién empujado NO es un atasco', () => {
+  // Sin esto, cada push sale como atascado durante un rato y el vigía se vuelve ruido.
+  const r = causaDelAtasco({ estado: 'UNKNOWN', checks: 0, minutosDesdePush: 2 });
+  assert.equal(r.causa, 'RECIEN-EMPUJADO');
+  assert.match(r.detalle, /gracia/);
+});
+
+test('pasada la gracia, cero checks SÍ es SIN-CHECKS', () => {
+  assert.equal(causaDelAtasco({ estado: 'UNKNOWN', checks: 0, minutosDesdePush: GRACIA_MINUTOS }).causa, 'SIN-CHECKS');
+  assert.equal(causaDelAtasco({ estado: 'UNKNOWN', checks: 0, minutosDesdePush: 240 }).causa, 'SIN-CHECKS');
+});
+
+test('sin dato de minutos NO se regala la gracia', () => {
+  // No saber cuándo se empujó no es «se empujó hace un momento».
+  assert.equal(causaDelAtasco({ estado: 'UNKNOWN', checks: 0 }).causa, 'SIN-CHECKS');
+});
+
+test('las dos sondas de acuerdo → DIRTY, y lo dice', () => {
+  const r = causaDelAtasco({ estado: 'DIRTY', checks: 5, sondaConflicto: true });
+  assert.equal(r.causa, 'DIRTY');
+  assert.match(r.detalle, /CONFIRMADO por las dos sondas/);
+});
+
+test('🔴 la sonda ve conflicto y el campo no → DISCREPA, no se elige en silencio', () => {
+  // Es el caso real: `mergeStateStatus` se calcula en diferido y la primera lectura da UNKNOWN.
+  const r = causaDelAtasco({ estado: 'UNKNOWN', checks: 5, sondaConflicto: true });
+  assert.equal(r.causa, 'CONFLICTO-DISCREPA');
+  assert.match(r.detalle, /merge-tree/);
+});
+
+test('🔴 el campo dice DIRTY y la sonda dice limpio → también DISCREPA', () => {
+  const r = causaDelAtasco({ estado: 'DIRTY', checks: 5, sondaConflicto: false });
+  assert.equal(r.causa, 'CONFLICTO-DISCREPA');
+});
+
+test('sin segunda sonda, el campo sigue mandando y se dice que faltaba', () => {
+  const r = causaDelAtasco({ estado: 'DIRTY', checks: 5, sondaConflicto: null });
+  assert.equal(r.causa, 'DIRTY');
+  assert.match(r.detalle, /segunda sonda no disponible/);
+});
+
+// ── EL CONTROL DE LA SONDA, QUE VA ANTES DE USARLA ───────────────────────────────────────
+
+test('🔴 validarSonda acepta una sonda que compara algo consigo mismo y da 0', () => {
+  assert.equal(validarSonda(() => 0).valida, true);
+});
+
+test('🔴 y RECHAZA una sonda que dice conflicto siempre', () => {
+  // Una sonda así marcaría conflicto en todo y parecería que funciona. Es el control que el
+  // orquestador pidió porque su primera versión daba 1 y no valía nada.
+  const r = validarSonda(() => 1);
+  assert.equal(r.valida, false);
+  assert.match(r.motivo, /consigo mismo/);
+});
+
+test('🔴 y RECHAZA una sonda que no se puede ejecutar', () => {
+  assert.equal(validarSonda(() => { throw new Error('no existe git'); }).valida, false);
+});
+
+test('🔴 RECIEN-EMPUJADO se DESCARTA de la lista, no se cuenta como atasco', () => {
+  // Se vio al correr la pasada entera, no leyéndola: entraba en la tabla, y con eso cada push
+  // haría «empeorar» el conjunto y dispararía un comentario. El vigía se silenciaría por su
+  // propio ruido. Aquí se fija que la pasada lo saca de la lista DICIENDO por qué.
+  const pasada = fs.readFileSync(PASADA, 'utf8');
+  assert.match(pasada, /RECIEN-EMPUJADO'\s*\)\s*\{\s*descartados\.push/,
+    'la pasada debe descartar RECIEN-EMPUJADO en vez de contarlo como atascado');
+});
+
+test('el workflow valida la sonda ANTES de usarla, y degrada si no pasa', () => {
+  const yml = fs.readFileSync(WF, 'utf8');
+  assert.match(yml, /merge-tree --write-tree origin\/main origin\/main/,
+    'el control de la sonda es compararla consigo misma');
+  assert.match(yml, /steps\.sonda\.outputs\.valida/,
+    'y su resultado tiene que gobernar si la sonda se usa o no');
 });

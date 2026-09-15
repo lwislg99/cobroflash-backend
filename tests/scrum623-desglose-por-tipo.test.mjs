@@ -27,6 +27,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { extraerTextoPdf, vecesEnPdf } from './_texto-del-pdf.mjs';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const MARCADOR = '[PENDIENTE microcopy oficial]';
 
@@ -247,9 +248,12 @@ test('SCRUM-623 · ENMIENDA · el fuente del documento no puede volver a grabar 
   // 🔴 DESNUDAR NO ES COSMÉTICA: los comentarios que explican esta enmienda nombran «IVA», «IGIC»
   // e «IPSI» muchas veces. Sin quitarlos, el guard se cazaría a sí mismo en la prosa que explica
   // la prohibición — ya pasó en SCRUM-614 y SCRUM-617.
-  const limpio = cuerpo
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .split('\n').map((l) => l.replace(/(^|[^:])\/\/.*$/, '$1')).join('\n');
+  // SCRUM-694b · filtro a mano retirado: `(^|[^:])//` libraba a `https://` por los dos
+  // puntos, pero se comia la linea entera ante un regex de URL (`/^https?:\/\//`), que es
+  // como las URLs aparecen en el codigo de verdad. `soloCodigo()` tokeniza y no depende de eso.
+  // Y se filtra el fichero ENTERO para cortar DESPUES con los MISMOS indices:
+  // `soloCodigo()` conserva posiciones a proposito, justo para que esto sea legal.
+  const limpio = soloCodigo(src, 'pdf.service.ts').slice(ini, fin);
 
   // SUELO, en las dos direcciones: que el desnudado quitó prosa Y que no se comió el código.
   assert.ok(cuerpo.includes('Canarias'), 'suelo: el comentario de la enmienda existe.');
