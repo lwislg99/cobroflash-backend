@@ -34,8 +34,24 @@
 // es que alguien mire un PR a mano; el de hablar de más es despertar a un agente con un
 // prompt que ha escrito un desconocido.
 
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 SCRUM-853 · EL CÍRCULO QUE ESTA PUERTA ALIMENTABA, MEDIDO EL 15-sep-2026
+//
+//   meta-guard ciego en main → rojo en cada PR → el avisador despierta a Claude → el PR entra
+//   antes de que Claude empiece → el arreglo se queda en una rama muda → main sigue ciego.
+//
+// Dos defectos de esta puerta lo cerraban, y los dos medidos:
+//   · despertaba con el workflow CI ENTERO en failure, sin mirar qué job cayó. En main solo es
+//     obligatorio «build + tests»: un meta-guard en rojo no impide el merge, y aun así despertaba;
+//   · no miraba si el PR seguía abierto. En los 7 PR medidos el aviso salió DESPUÉS del merge. El
+//     #1255: obligatorio verde 09:46:52, merge 09:46:56, meta-guard rojo 09:46:57, aviso 09:47:14.
+//     Con un PR cerrado, claude-code-action no escribe en él: crea `claude/pr-N-<fecha>`. Había 47.
+// La lista de obligatorios se lee con las MISMAS funciones que el vigía: una copia aquí sería
+// una segunda verdad sobre qué bloquea el merge, y dentro de seis meses no coincidirían.
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { checksObligatoriosDeReglas, checksEnRojo } from './vigia-atascados.mjs';
 
 /** El único bot que puede provocar un aviso. Literal, nunca un comodín. */
 export const BOT = 'yaqu-bot[bot]';
@@ -153,6 +169,35 @@ export function esDeFork({ repoBase, repoOrigen } = {}) {
 }
 
 /**
+ * SCRUM-853 · El estado del PR, normalizado en UN sitio a partir de `GET /pulls/{n}`: 'open',
+ * 'merged' o 'closed'. Cualquier otra cosa —respuesta vacía, 404, un estado que no se conoce— es
+ * `null`: no saber si el PR sigue abierto no es saber que lo está.
+ */
+export function estadoDelPR(pr) {
+  if (!pr || typeof pr !== 'object') return null;
+  if (pr.state === 'open') return 'open';
+  if (pr.state === 'closed') return pr.merged === true ? 'merged' : 'closed';
+  return null;
+}
+
+/**
+ * SCRUM-853 · La regla del PR abierto, una sola vez para los dos sitios que despiertan a Claude
+ * (este avisador y `claude.yml`). Devuelve `null` si el PR está abierto; si no, el código y el
+ * motivo del «no».
+ */
+export function prNoAbierto(estadoPR) {
+  if (estadoPR === 'open') return null;
+  if (estadoPR === 'merged' || estadoPR === 'closed') {
+    return {
+      codigo: 'PR-YA-CERRADO',
+      motivo: `el PR ya está ${estadoPR === 'merged' ? 'mergeado' : 'cerrado'}: lo que se escribiera ahora `
+            + 'acabaría en una rama claude/* sin PR, que nadie mira',
+    };
+  }
+  return { codigo: 'SIN-ESTADO-PR', motivo: 'no se pudo leer si el PR sigue abierto: no se despierta a nadie' };
+}
+
+/**
  * Decide si se publica el aviso. Devuelve SIEMPRE un código de vocabulario cerrado, para que
  * el workflow lo escriba tal cual en su veredicto y un verde diga cuál de los verdes es.
  *
@@ -166,11 +211,14 @@ export function esDeFork({ repoBase, repoOrigen } = {}) {
  * @param {string[]} e.marcasPrevias    marcas de avisos ya publicados en ese PR
  * @param {string} e.marcaActual        marca de ESTE rojo (head_sha + check)
  * @param {number} e.tope               máximo de avisos por PR
+ * @param {string} e.estadoPR           'open'|'merged'|'closed' (SCRUM-853; ver `estadoDelPR`)
+ * @param {object} e.reglas             respuesta de `GET /rules/branches/main` (SCRUM-853)
+ * @param {object[]} e.checkRuns        check-runs del head: {id, name, status, conclusion}
  */
 export function decidir(e = {}) {
   const {
     conclusionCI, repoBase, repoOrigen, autor, permisoAutor,
-    marcasPrevias = [], marcaActual = '', tope = 3,
+    marcasPrevias = [], marcaActual = '', tope = 3, estadoPR,
   } = e;
 
   // 1 · ¿Hay siquiera un rojo? Un CI verde, cancelado o saltado no es asunto del avisador.
@@ -211,6 +259,38 @@ export function decidir(e = {}) {
     };
   }
 
+  // 4b · SCRUM-853 · ¿SIGUE ABIERTO EL PR? En los 7 PR del círculo este aviso salió DESPUÉS del
+  //      merge: el obligatorio pasa, el auto-merge mergea, y el CI entero termina en rojo segundos
+  //      más tarde por un job que no bloquea. Va detrás de las puertas de seguridad a propósito:
+  //      un fork o un PR fiscal se rechazan por la razón más fuerte, y ése es el veredicto a leer.
+  const cerrado = prNoAbierto(estadoPR);
+  if (cerrado) return { avisar: false, ...cerrado };
+
+  // 4c · SCRUM-853 · ¿BLOQUEA EL MERGE ESE ROJO? Solo despierta un rojo en un check OBLIGATORIO,
+  //      con la lista leída de las reglas vivas de main. Sin lista NO se despierta: no saber si el
+  //      rojo bloquea no es saber que bloquea, y un robot despierto sobre un rojo que no importa
+  //      es exactamente el círculo.
+  const obligatorios = checksObligatoriosDeReglas(e.reglas);
+  if (!obligatorios) {
+    return {
+      avisar: false,
+      codigo: 'SIN-LISTA-OBLIGATORIOS',
+      motivo: 'no se pudo leer qué checks son obligatorios en main: sin esa lista no se sabe si el rojo bloquea, así que no se despierta',
+    };
+  }
+  if (!Array.isArray(e.checkRuns)) {
+    return { avisar: false, codigo: 'SIN-CHECKS-LEIDOS', motivo: 'no se pudieron leer los check-runs del commit: no se sabe qué cayó' };
+  }
+  const rojos = checksEnRojo(e.checkRuns);
+  const bloquean = rojos.filter((n) => obligatorios.includes(n));
+  if (bloquean.length === 0) {
+    return {
+      avisar: false,
+      codigo: 'SIN-ROJO-OBLIGATORIO',
+      motivo: `ningún check obligatorio en rojo (en rojo: ${rojos.join(', ') || 'ninguno'}): un rojo que no bloquea el merge no despierta a nadie`,
+    };
+  }
+
   // 5 · Sin marca no hay forma de saber si ya se avisó → no se avisa (falla cerrado).
   if (!marcaActual) {
     return { avisar: false, codigo: 'SIN-MARCA', motivo: 'no se pudo componer la marca del aviso' };
@@ -232,7 +312,11 @@ export function decidir(e = {}) {
     };
   }
 
-  return { avisar: true, codigo: 'AVISAR', motivo: `rojo nuevo (${marcaActual}) en un PR propio` };
+  return {
+    avisar: true,
+    codigo: 'AVISAR',
+    motivo: `rojo nuevo (${marcaActual}) en el check obligatorio «${bloquean.join('», «')}»`,
+  };
 }
 
 /**
@@ -300,6 +384,9 @@ if (esCli) {
     console.log('no se pudo leer el JSON de entrada: no se avisa');
     process.exit(1);
   }
+  // SCRUM-853 · el workflow pasa la respuesta de `GET /pulls/{n}` tal cual ({state, merged}). Se
+  // normaliza AQUÍ, con la misma función que usa `claude.yml`, y no con un `jq` en el YAML.
+  if (entrada && typeof entrada.estadoPR === 'object') entrada.estadoPR = estadoDelPR(entrada.estadoPR);
   const r = decidir(entrada);
   console.log(r.codigo);
   console.log(r.motivo);

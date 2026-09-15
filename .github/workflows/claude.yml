@@ -135,7 +135,88 @@ jobs:
           echo "con el GITHUB_TOKEN y sus commits NO dispararían CI: el PR quedaría enterrado."
           exit 1
 
+      # ── SCRUM-853 · ¿SIGUE ABIERTO EL PR? — LA PUERTA VA DONDE SE DESPIERTA ─────────────────
+      #
+      # MEDIDO el 15-sep-2026: 47 ramas `claude/pr-*` vivas y en TODAS la hora del nombre es
+      # POSTERIOR al merge de su PR. Con un PR cerrado la acción no escribe en él: crea una rama
+      # nueva (claude-code-action@v1, src/github/operations/branch.ts, «Fall through to create a
+      # new branch»). Sin PR, sin CI, sin nadie que la mire. El avisador era UNO de los que
+      # llamaban; una persona que comenta en un PR ya mergeado produce la misma rama.
+      #
+      # 🔴 Los scripts se toman de MAIN (`git show origin/main:`), NO del checkout: en un
+      # `pull_request_review_comment` el checkout trae el código del PR, y ejecutarlo sería
+      # ejecutar lo que ha escrito quien comenta, con `contents: write`.
+      #
+      # Aquí también se apuntan las ramas `claude/pr-<N>-*` que YA existen, para que el paso de
+      # después declare solo las que deje esta ejecución.
+      - id: puerta
+        name: ¿Sigue abierto el PR? (SCRUM-853)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          ES_PR: ${{ github.event.issue.pull_request != null || github.event_name == 'pull_request_review_comment' }}
+          NUM: ${{ github.event.issue.number || github.event.pull_request.number }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/puerta"
+          git show origin/main:scripts/puerta-claude.mjs > "$RUNNER_TEMP/puerta/puerta-claude.mjs"
+          git show origin/main:scripts/puerta-avisador-rojo.mjs > "$RUNNER_TEMP/puerta/puerta-avisador-rojo.mjs"
+          git show origin/main:scripts/vigia-atascados.mjs > "$RUNNER_TEMP/puerta/vigia-atascados.mjs"
+
+          PR_API=null
+          if [ "$ES_PR" = "true" ]; then
+            # Solo si sale bien: en un error `gh api -q` escribe el cuerpo del error por stdout.
+            if ! PR_API="$(gh api "repos/$REPO/pulls/$NUM" -q '{state, merged, ramaCabeza: .head.ref, cabezaPR: .head.sha}' 2>/dev/null)"; then PR_API=null; fi
+            gh api "repos/$REPO/git/matching-refs/heads/claude/pr-$NUM-" -q '[.[].ref]' \
+              > "$RUNNER_TEMP/ramas-antes.json" 2>/dev/null || echo null > "$RUNNER_TEMP/ramas-antes.json"
+          fi
+
+          ENTRADA="$(printf '{"esPR": %s, "numero": %s, "pr": %s}' "$ES_PR" "${NUM:-null}" "$PR_API")"
+          # Como condición de un `if`: los `run:` van con `bash -e`, y un `exit 1` de la puerta
+          # abortaría el paso antes de poder leer su código.
+          if SALIDA="$(printf '%s' "$ENTRADA" | CUERPO="$RUNNER_TEMP/respuesta.md" node "$RUNNER_TEMP/puerta/puerta-claude.mjs" antes)"; then
+            DESPERTAR=si
+          else
+            DESPERTAR=no
+          fi
+          CODIGO="$(printf '%s' "$SALIDA" | head -1)"
+          MOTIVO="$(printf '%s' "$SALIDA" | tail -1)"
+          echo "$CODIGO — $MOTIVO"
+          echo "despertar=$DESPERTAR" >> "$GITHUB_OUTPUT"
+          echo "es_pr=$ES_PR" >> "$GITHUB_OUTPUT"
+          echo "- **$CODIGO** — $MOTIVO" >> "$GITHUB_STEP_SUMMARY"
+
+      # Lo que no arranca CONTESTA. Con el `GITHUB_TOKEN`, que no crea ejecuciones: aunque el texto
+      # llevara la mención no despertaría a nadie. Y se comprueba igualmente.
+      - name: Contestar sin arrancar (SCRUM-853)
+        if: steps.puerta.outputs.despertar == 'no' && steps.puerta.outputs.es_pr == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUM: ${{ github.event.issue.number || github.event.pull_request.number }}
+        run: |
+          if [ ! -s "$RUNNER_TEMP/respuesta.md" ]; then
+            echo "::error::La puerta dijo que no y no dejó respuesta: la petición quedaría sin contestar."
+            exit 1
+          fi
+          # 1 es «lleva la mención» y 2 «no se pudo comprobar»: un fallo al leer no puede
+          # disfrazarse del otro (ver el paso de la rama muda, donde pasó).
+          set +e
+          node --input-type=module -e "
+            import fs from 'node:fs';
+            try {
+              const { cuerpoNoDebeDespertar } = await import((await import('node:url')).pathToFileURL(process.env.RUNNER_TEMP + '/puerta/puerta-avisador-rojo.mjs').href);
+              process.exit(cuerpoNoDebeDespertar(fs.readFileSync(process.env.RUNNER_TEMP + '/respuesta.md', 'utf8')) ? 0 : 1);
+            } catch (e) { console.error(String(e)); process.exit(2); }"
+          COMPROBACION=$?
+          set -e
+          if [ "$COMPROBACION" -ne 0 ]; then
+            echo "::error::La respuesta NO se publica: la comprobación de la mención dio $COMPROBACION (1 = lleva la mención · 2 = no se pudo comprobar)."
+            exit 1
+          fi
+          gh pr comment "$NUM" --body-file "$RUNNER_TEMP/respuesta.md"
+
       - uses: anthropics/claude-code-action@v1
+        id: accion
+        if: steps.puerta.outputs.despertar == 'si'
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           allowed_bots: "yaqu-bot[bot]"
@@ -144,3 +225,80 @@ jobs:
           # defecto se mantiene para no dejar el workflow muerto si la App no está: en ese
           # caso vuelve el defecto conocido, y por eso el paso de arriba lo declara.
           github_token: ${{ steps.token.outputs.token || github.token }}
+
+      # ── SCRUM-853 · ¿QUEDÓ UNA RAMA MUDA? ────────────────────────────────────────────────────
+      #
+      # La puerta de antes deja dos huecos que desde fuera de la acción no se pueden cerrar, solo
+      # DECLARAR: el PR puede entrar en los segundos entre la pregunta y el momento en que la acción
+      # lee su estado (→ rama `claude/pr-*`), y puede entrar mientras Claude trabaja (→ empuja a la
+      # rama del PR, que el repositorio borra al mergear, y la recrea). `always()`: si la acción
+      # falla a medias, la rama también puede haber quedado. Se declara a una PERSONA, y el run
+      # sale en rojo.
+      - name: ¿Quedó una rama muda? (SCRUM-853)
+        if: always() && steps.puerta.outputs.despertar == 'si' && steps.puerta.outputs.es_pr == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          NUM: ${{ github.event.issue.number || github.event.pull_request.number }}
+          DUENO: ${{ github.repository_owner }}
+          URL_RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          # `$(gh api … || echo X)` NO vale: en un error, `gh api -q` escribe el CUERPO del error por
+          # stdout y la sustitución se queda con él además del respaldo. Medido el 15-sep con la rama
+          # ya borrada del #1255: la «cabeza remota» salía `{"message":"Not Found",…}`, distinta de
+          # la del PR, y este paso declaraba una rama muda que no existía. Se captura solo si sale bien.
+          if ! PR_API="$(gh api "repos/$REPO/pulls/$NUM" -q '{state, merged, ramaCabeza: .head.ref, cabezaPR: .head.sha}' 2>/dev/null)"; then PR_API=null; fi
+          ANTES="$(cat "$RUNNER_TEMP/ramas-antes.json" 2>/dev/null || echo null)"
+          if ! DESPUES="$(gh api "repos/$REPO/git/matching-refs/heads/claude/pr-$NUM-" -q '[.[].ref]' 2>/dev/null)"; then DESPUES=null; fi
+          RAMA="$(PR_API="$PR_API" node -e "try{console.log(JSON.parse(process.env.PR_API).ramaCabeza||'')}catch{console.log('')}")"
+          # La cabeza remota, con `git ls-remote --exit-code`, que distingue justo lo que importa:
+          # 0 la rama existe · 2 no existe (lo normal tras un merge) · otro código = no se sabe.
+          CABEZA_REMOTA=null
+          if [ -n "$RAMA" ]; then
+            set +e
+            LS="$(git ls-remote --exit-code origin "refs/heads/$RAMA" 2>/dev/null)"
+            CODIGO_LS=$?
+            set -e
+            if [ "$CODIGO_LS" -eq 0 ]; then CABEZA_REMOTA="${LS%%[[:space:]]*}"; fi
+            if [ "$CODIGO_LS" -eq 2 ]; then CABEZA_REMOTA=''; fi
+          fi
+
+          ENTRADA="$(PR_API="$PR_API" ANTES="$ANTES" DESPUES="$DESPUES" CABEZA_REMOTA="$CABEZA_REMOTA" node -e "
+            const json=(t)=>{try{return JSON.parse(t)}catch{return null}};
+            process.stdout.write(JSON.stringify({
+              numero: Number(process.env.NUM), pr: json(process.env.PR_API),
+              ramasAntes: json(process.env.ANTES), ramasDespues: json(process.env.DESPUES),
+              cabezaRemota: process.env.CABEZA_REMOTA === 'null' ? null : process.env.CABEZA_REMOTA,
+              dueno: process.env.DUENO, urlRun: process.env.URL_RUN,
+            }));")"
+
+          CUERPO="$RUNNER_TEMP/aviso-rama-muda.md"
+          if SALIDA="$(printf '%s' "$ENTRADA" | CUERPO="$CUERPO" node "$RUNNER_TEMP/puerta/puerta-claude.mjs" despues)"; then
+            echo "- **$(printf '%s' "$SALIDA" | head -1)** — $(printf '%s' "$SALIDA" | tail -1)" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          CODIGO="$(printf '%s' "$SALIDA" | head -1)"
+          MOTIVO="$(printf '%s' "$SALIDA" | tail -1)"
+          echo "- **$CODIGO** — $MOTIVO" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$CODIGO" = "RAMA-MUDA" ] && [ -s "$CUERPO" ]; then
+            # La ruta va EXPLÍCITA en la orden. Lo cazó el laboratorio del 15-sep: sin ella,
+            # `process.env.CUERPO` llegaba vacío a este `node`, la lectura reventaba con código 1
+            # —el mismo que «lleva la mención»—, el paso lo decía así, y el aviso NO salía nunca.
+            # Por eso además: 1 es «lleva la mención» y 2 es «no se pudo comprobar», y se dicen distinto.
+            set +e
+            CUERPO="$CUERPO" node --input-type=module -e "
+              import fs from 'node:fs';
+              try {
+                const { cuerpoNoDebeDespertar } = await import((await import('node:url')).pathToFileURL(process.env.RUNNER_TEMP + '/puerta/puerta-avisador-rojo.mjs').href);
+                process.exit(cuerpoNoDebeDespertar(fs.readFileSync(process.env.CUERPO, 'utf8')) ? 0 : 1);
+              } catch (e) { console.error(String(e)); process.exit(2); }"
+            COMPROBACION=$?
+            set -e
+            if [ "$COMPROBACION" -ne 0 ]; then
+              echo "::error::El aviso de rama muda NO se publica: la comprobación de la mención dio $COMPROBACION (1 = lleva la mención · 2 = no se pudo comprobar)."
+              exit 1
+            fi
+            gh pr comment "$NUM" --body-file "$CUERPO"
+          fi
+          echo "::error::$CODIGO — $MOTIVO"
+          exit 1

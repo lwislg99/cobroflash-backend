@@ -40,6 +40,16 @@
 # ⚠️ `workflow_run` se ejecuta SIEMPRE con la versión de este fichero que está en la rama por
 # defecto, nunca con la de la rama del PR. Es a propósito: un fork no puede editar esta puerta
 # para abrírsela.
+#
+# ─────────────────────────────────────────────────────────────────────────────────────────
+# 🔴 SCRUM-853 · SOLO UN ROJO QUE BLOQUEA, Y SOLO EN UN PR QUE SIGUE ABIERTO
+#
+# Este workflow salta con el CI ENTERO en failure, y hasta el 853 despertaba igual. Medido el
+# 15-sep-2026: en main solo es obligatorio «build + tests»; con el meta-guard ciego, cada PR
+# entraba en verde por lo obligatorio y el CI terminaba en rojo SEGUNDOS DESPUÉS del merge. El
+# aviso llegaba a un PR mergeado, Claude arrancaba y dejaba su arreglo en una rama `claude/pr-*`
+# (47 vivas). Ahora la puerta recibe también las reglas vivas de main, los check-runs del head y el
+# estado del PR, y decide con ellos. El detalle, en `scripts/puerta-avisador-rojo.mjs`.
 name: Avisador de PR en rojo
 
 on:
@@ -132,6 +142,25 @@ jobs:
           fi
           echo "pr=$PR" >> "$GITHUB_OUTPUT"
 
+          # SCRUM-853 · ¿SIGUE ABIERTO? `commits/$SHA/pulls` devuelve también los PR ya mergeados, y
+          # en los 7 PR del círculo el aviso salió después del merge. Se lee en el momento; si falla
+          # queda `null` y la puerta no despierta.
+          #
+          # Las tres lecturas del 853 se capturan SOLO si la orden sale bien. `$(gh api … || echo X)`
+          # no vale: en un error `gh api -q` escribe el cuerpo del error por stdout, y la variable se
+          # queda con él además del respaldo (medido el 15-sep con un 404).
+          if ! ESTADO_PR="$(gh api "repos/$REPO/pulls/$PR" -q '{state, merged}' 2>/dev/null)"; then ESTADO_PR=null; fi
+
+          # SCRUM-853 · qué es OBLIGATORIO, de las reglas vivas de main. Aquí solo se reúne: lo lee
+          # `checksObligatoriosDeReglas`, la misma función que usa el vigía. Si falla, `null`, y la
+          # puerta dice SIN-LISTA-OBLIGATORIOS en vez de despertar.
+          if ! REGLAS="$(gh api "repos/$REPO/rules/branches/main" 2>/dev/null)"; then REGLAS=null; fi
+
+          # Y TODOS los check-runs del head, recortados a lo que se usa: el payload entero lleva la
+          # salida de cada check y no cabe en una variable de entorno. Si falla, `null`.
+          if ! CHECK_RUNS="$(gh api "repos/$REPO/commits/$SHA/check-runs?per_page=100" \
+                             -q '[.check_runs[] | {id, name, status, conclusion}]' 2>/dev/null)"; then CHECK_RUNS=null; fi
+
           AUTOR="$(gh api "repos/$REPO/pulls/$PR" -q .user.login)"
           # El permiso solo se pregunta para personas: la API devuelve 404 para un bot.
           PERMISO="$(gh api "repos/$REPO/collaborators/$AUTOR/permission" -q .permission 2>/dev/null || echo '')"
@@ -156,9 +185,14 @@ jobs:
                      | sed -E 's/<!-- avisador-rojo:(.*) -->/\1/' || true)"
 
           ENTRADA="$(MARCA="$MARCA" AUTOR="$AUTOR" PERMISO="$PERMISO" \
-                     PREVIAS="$PREVIAS" FICHEROS="$FICHEROS" node -e "
+                     PREVIAS="$PREVIAS" FICHEROS="$FICHEROS" \
+                     ESTADO_PR="$ESTADO_PR" REGLAS="$REGLAS" CHECK_RUNS="$CHECK_RUNS" node -e "
             const lineas=(t)=>(t||'').split('\n').map(s=>s.trim()).filter(Boolean);
+            const json=(t)=>{try{return JSON.parse(t)}catch{return null}};
             process.stdout.write(JSON.stringify({
+              estadoPR: json(process.env.ESTADO_PR),
+              reglas: json(process.env.REGLAS),
+              checkRuns: json(process.env.CHECK_RUNS),
               conclusionCI: process.env.CONCLUSION,
               repoBase: process.env.REPO,
               repoOrigen: process.env.REPO_ORIGEN,
@@ -182,6 +216,7 @@ jobs:
           echo "$CODIGO — $MOTIVO"
           echo "codigo=$CODIGO" >> "$GITHUB_OUTPUT"
           echo "avisar=$AVISAR" >> "$GITHUB_OUTPUT"
+          echo "motivo=$MOTIVO" >> "$GITHUB_OUTPUT"
           if [ "$AVISAR" = "no" ]; then
             echo "- **$CODIGO** — $MOTIVO (PR #$PR)." >> "$GITHUB_STEP_SUMMARY"
           fi
@@ -195,8 +230,11 @@ jobs:
           PR: ${{ steps.puerta.outputs.pr }}
           MARCA: ${{ steps.puerta.outputs.marca }}
           URL_RUN: ${{ github.event.workflow_run.html_url }}
+          MOTIVO: ${{ steps.puerta.outputs.motivo }}
         run: |
-          CUERPO="$(printf '@claude el CI de este PR está en ROJO.\n\nRun: %s\n\nMira POR QUÉ falla antes de tocar nada. Y la regla 41 del máster: se arregla el CÓDIGO, nunca lo que el guard exige — si el arreglo pasa por relajar un guard, paras y lo dices.\n\n<!-- avisador-rojo:%s -->\n' "$URL_RUN" "$MARCA")"
+          # SCRUM-853 · el aviso dice QUÉ check obligatorio cayó (el motivo de la puerta). Antes decía
+          # «el CI está en ROJO», y Claude arreglaba lo primero que veía en rojo: el meta-guard.
+          CUERPO="$(printf '@claude el CI de este PR está en ROJO en un check OBLIGATORIO: %s.\n\nRun: %s\n\nMira POR QUÉ falla antes de tocar nada. Y la regla 41 del máster: se arregla el CÓDIGO, nunca lo que el guard exige — si el arreglo pasa por relajar un guard, paras y lo dices.\n\n<!-- avisador-rojo:%s -->\n' "$MOTIVO" "$URL_RUN" "$MARCA")"
 
           # El invariante espejo del vigía, comprobado DENTRO del script: sin `@claude` el
           # comentario se publicaría y no despertaría a nadie, y parecería que funcionó.
