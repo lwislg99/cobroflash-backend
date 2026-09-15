@@ -26,6 +26,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
@@ -215,7 +216,7 @@ test('SCRUM-235 · un schema del que no sale ningún modelo NO puede dar verde',
   // la comparación es correcta y no compara nada. Misma forma que el suelo de SCRUM-239.
   // El fichero de sonda se escribe FUERA del repo: un `.prisma` suelto en el árbol lo vería
   // cualquier otra sesión, y un schema fantasma es justo lo que este guard existe para cazar.
-  const tmp = process.env.TMPDIR || process.env.TEMP || '.';
+  const tmp = os.tmpdir();
   const ruta = path.join(tmp, `scrum235-sin-modelos-${process.pid}.prisma`);
   fs.writeFileSync(ruta, ['generator client {', '  provider = "prisma-client-js"', '}', ''].join('\n'));
   try {
@@ -323,7 +324,7 @@ test('SCRUM-235 · EJECUTADO como script: exit 1 con un cliente divergente, 0 co
   // cadena, no la ejecución. Esto arranca el guard como subproceso, que es como corre en
   // `pretest`, y exige el código de salida. Es la diferencia entre «está el código» y «pasa lo
   // que quiero», que es justo lo que este ticket vino a arreglar.
-  const tmp = process.env.TMPDIR || process.env.TEMP || '.';
+  const tmp = os.tmpdir();
   const falso = path.join(tmp, `scrum235-cliente-falso-${process.pid}.mjs`);
   // Un cliente de mentira con la forma del DMMF: un solo modelo, con un campo que el schema real
   // no tiene. Barato y hermético — no hace falta generar un cliente de Prisma para esto.

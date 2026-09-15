@@ -27,6 +27,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
@@ -141,7 +142,7 @@ test('SCRUM-205 · `ensureInvoicePdf` NO sella: generar un PDF no es emitir', ()
 // ── autoprueba: el guard sabe distinguir ──────────────────────────────────────────────────
 
 test('SCRUM-205 (autoprueba) · el escáner ve una llamada de sellado sintética', () => {
-  const tmp = path.join(RAIZ, 'tests', '__tmp-sellado-sintetico.ts');
+  const tmp = path.join(os.tmpdir(), `yaqu-205-${process.pid}-sellado-sintetico.ts`);
   fs.writeFileSync(tmp, 'export async function x(i: any) { await applyVeriFactu(i, "B1", null as any); }\n');
   try {
     const encontradas = llamadasA(SELLADORAS, tmp);
@@ -155,7 +156,7 @@ test('SCRUM-205 (autoprueba) · el escáner ve una llamada de sellado sintética
 test('SCRUM-205 (autoprueba) · un COMENTARIO que nombra la función no dispara el guard', () => {
   // La trampa clásica: el literal prohibido vive en la prosa que explica la prohibición —
   // este mismo fichero la nombra decenas de veces. El AST solo ve nodos.
-  const tmp = path.join(RAIZ, 'tests', '__tmp-solo-comentario.ts');
+  const tmp = path.join(os.tmpdir(), `yaqu-205-${process.pid}-solo-comentario.ts`);
   fs.writeFileSync(tmp, '// PROHIBIDO: no llames a applyVeriFactu aquí, usa sellarTrasEmision.\nexport const a = 1;\n');
   try {
     assert.deepEqual(llamadasA(SELLADORAS, tmp), []);
