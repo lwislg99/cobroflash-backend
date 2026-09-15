@@ -50,7 +50,10 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'scripts/_invocaciones-de-la-tanda.mjs',
     de: "      if (!esRedireccion) { out.push({ texto: buf, sep: '&' }); buf = ''; continue; }",
     a: '      if (false) { /* el hueco del `&`, reabierto a proposito */ }',
-    cae: '🔴 `&` manda la tanda al segundo plano y el veredicto se pierde',
+    // ⚠️ SCRUM-836d · el `cae` ANTERIOR no nombraba ningún test de este fichero, así que el
+    // meta-guard no podía medir esta mutación: declaraba una cobertura que no se comprobaba. El
+    // nombre de ahora NO se eligió por plausible — se aplicó la mutación y se miró QUÉ cayó.
+    cae: 'el censo VE el `&` — era el hueco',
   },
 ];
 
