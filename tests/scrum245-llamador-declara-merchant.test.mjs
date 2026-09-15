@@ -38,6 +38,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import ts from 'typescript';
 import { fileURLToPath } from 'node:url';
 
@@ -251,4 +252,32 @@ test('SCRUM-245 · `merchantId` en un COMENTARIO no cuenta como declararlo', () 
   // El AST no ve comentarios, y este test es lo que impide que alguien lo reescriba con `grep`.
   const r = censarTexto('sendWhatsAppText({ to, text }); // TODO: pasar merchantId algún día');
   assert.deepEqual(r.pendientes, ['sendWhatsAppText'], '🔴 un comentario ha contado como declaración');
+});
+
+// ═══ SCRUM-846b · SIEMBRA: el censo, delante de un caso que sabe la respuesta ═════════════════
+// `censarLlamadas` recibía siempre los ficheros de `src/`, así que su cero no distinguía «todos
+// los envíos declaran su merchant» de «no sé mirar». Aquí recibe un fichero FABRICADO con cuatro
+// envíos: dos que tiene que acusar y dos que no. Se ha visto caer rompiéndolo en los dos sentidos:
+// `node scripts/verificacion-s5/romper-los-quince.mjs`.
+test('SCRUM-846b · siembra:245 · VE un envío sin merchant y NO acusa al que lo declara', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum846b-245-'));
+  try {
+    const fich = path.join(dir, 'envios.ts');
+    fs.writeFileSync(fich, [
+      "export async function a(to: string) { await sendWhatsAppText({ to, text: 'hola' }); }",
+      "export async function b(to: string) { await sendWhatsAppText({ merchantId: 7, to, text: 'hola' }); }",
+      "export async function c(to: string) { await sendWhatsAppTemplate({ sinMerchant: 'sistema', to }); }",
+      'export async function d(p: any) { await sendWhatsAppText({ ...p }); }',
+    ].join(String.fromCharCode(10)));
+    const r = censarLlamadas([fich]);
+
+    assert.equal(r.total, 4, `🔴 esperaba 4 envíos; cuenta ${r.total}`);
+    assert.deepEqual(r.pendientes.map((p) => p.linea), [1, 4],
+      '🔴 esperaba acusadas la línea 1 (sin merchant) y la 4 (un spread no se puede leer). Si no las ve, '
+      + 'su cero sobre `src/` no dice que todo envío deje rastro con su merchant.');
+    assert.ok(!r.pendientes.some((p) => p.linea === 2 || p.linea === 3),
+      '🔴 acusa a un envío que declara `merchantId` o `sinMerchant`.');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
