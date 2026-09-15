@@ -2,7 +2,7 @@
 
 **Fecha:** 15-sep-2026 · **Carril:** B (guard) · **Gate:** fase ① sin gate; fase ② PENDIENTE del fundador
 **Medido contra:** `origin/main` = `47f9180fe84b03db4badac03eea05969cdcfb4f2` · 2026-09-15T10:35:49+01:00
-**Tanda:** ver «Verificado en rojo»
+**Tanda:** 6511 tests, 6401 pass, 0 fail, 110 skipped · 188 s · exit 0 — medida DESPUÉS del último cambio.
 
 > **Una alarma que suena donde nadie está obligado a escucharla no es una alarma.**
 
