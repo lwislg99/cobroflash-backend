@@ -1424,3 +1424,111 @@ en futuros presupuestos.»*
 * **Ningún rótulo** nuevo, movido ni renombrado: P1 y P2 son **propuesta**, no están en el árbol.
 * **No se tocó `scrum-820b`**, ni «4. Envío», ni el modal muerto.
 * **Cero producción y cero staging.**
+
+---
+
+# APÉNDICE · 15-sep-2026 · SCRUM-600g · FASE 1 — LAS PLANTILLAS LLEGAN AL DOCUMENTO SUELTO
+
+**Medido contra:** `origin/main` = `c22b859568c8661bdf92cf6dcede40a1414b8759` · 2026-09-15T18:12:06+02:00
+**Rama:** `scrum-600g-plantillas-en-factura`, partida de ese `main`, con SCRUM-861 ya dentro (comprobado
+por contenido, no por Jira).
+**Cierra SCRUM-600**: decisión del fundador, se cierra cuando entre la Fase 1.
+
+## 0 · El nombre de la rama, y por qué no es `600b`
+
+El encargo decía `scrum-600b-<slug>`. **`600b` ya está usado**: es el #1158
+(`scrum-600b-la-factura-usa-el-front`, MERGED), con su propio test,
+`tests/scrum600b-la-factura-usa-el-front.test.mjs`. Reutilizarlo pondría dos trabajos distintos bajo el
+mismo identificador. El plan de 600f ya llamaba a esto «apéndice 600g», y `600g` estaba libre: ni
+rama, ni PR, ni fichero.
+
+## 1 · PASO 0 — el defecto seguía ahí
+
+Sobre `c22b8595`: puertas `if (!esDocumentoSuelto)` en `quotesView.js` l.1291 (`useTemplateBtn`) y
+l.1634 (`saveTemplateBtn`); las dos hojas nombraban el presupuesto (l.3972 y l.4040). Ningún PR
+abierto tocaba `quotesView.js` ni `rotulosDelDocumento.js`.
+
+**La comprobación que el plan pedía antes de la primera línea:** `POST /admin/templates` sólo exige
+`name` y un `lines` no vacío (`templates.routes.ts`), y el constructor de líneas es el mismo en los
+dos modos (`vatInput` no tiene puerta). No se queda en lectura: es una aserción del ⑤, donde el
+cuerpo guardado desde la factura tiene que ser **idéntico** al del presupuesto.
+
+## 2 · El cambio
+
+| fichero | cambio |
+| --- | --- |
+| `public/dashboard/js/quotesView.js` | fuera las dos puertas; las dos hojas leen `rotulosDelDocumento.hojaUsarPlantilla()` y `hojaGuardarPlantilla()` **sólo** con `esDocumentoSuelto`. El literal del presupuesto no se toca |
+| `public/dashboard/js/rotulosDelDocumento.js` | dos entradas **sin ternario**: neutras, sin variante justificante (SCRUM-825 lo retira) |
+| `docs/microcopy/2026-09-15-SCRUM-600-plantillas-en-el-documento-suelto.md` | la ficha, con la firma delegada que cita `SCRUM-600 comentario 15357`. Es la **primera** que usa SCRUM-861 |
+| `tests/scrum600b-la-factura-usa-el-front.test.mjs` | deja de exigir que los dos botones NO estén: esa exigencia **era** la parada |
+| `tests/_censo-dos-fronts.mjs` | el ancla F11 sigue a su línea |
+
+**«Sólo en modo factura», leído como «sólo en el documento suelto».** La página del documento suelto
+sirve a la factura y al justificante con el mismo código. Con dos frases neutras, la misma vale en
+los dos modos y no hay variante que escribir. El presupuesto conserva las suyas.
+
+## 3 · La verificación
+
+`tests/scrum600g-plantillas-en-el-documento-suelto.test.mjs` monta la pantalla en el banco y **pulsa**:
+
+| | qué exige |
+| --- | --- |
+| ⓪ | las dos frases constan aprobadas, con firmante `orquestador` y la referencia `SCRUM-600 comentario 15357` |
+| ① | en el documento suelto están los dos botones, y con cuatro plantillas se llega a «📋 Ver las 4» |
+| ② ③ | cada hoja dice su frase firmada, por identidad, y no dice «presupuesto» |
+| ④ | **NEGATIVO:** «3. Condiciones» y «4. Envío» siguen fuera, en factura y en justificante (suelo: en el presupuesto están) |
+| ⑤ | **REGLA 38 por mecanismo:** guardar hace un único POST a `/admin/templates` y **ninguna** petición a `/admin/invoices`, con el mismo cuerpo que desde el presupuesto. **Control positivo** en el mismo banco: emitir sí llega a `/admin/invoices` |
+| ⑥ | el presupuesto no cambia: sus dos hojas siguen con su frase. Es también el suelo del lector de hojas |
+| ⑦ | en modo justificante, las mismas dos frases |
+| ⑧ | fuente única: ninguna de las dos frases está escrita a pelo en la vista (suelo: el lector sí ve los literales del presupuesto), y la fuente las devuelve en los dos modos |
+
+**En rojo antes del cambio**, contra `c22b8595` y con la ficha ya escrita: caen **①②③⑤⑦⑧**, y
+pasan ⓪ (la ficha), ④ (el negativo) y ⑥ (el presupuesto). En el ⑤, el control positivo pasó antes de
+caer por falta de botón.
+**Después del cambio:** 9/9. Vecinos —24 ficheros: 600, 600b, 600d, 600e, 601, 776, 139, 514, 726,
+861, 836, 710b, 838, 824, 402, 632, colisión de declaraciones, 846* y 850*—: **175/175**.
+
+### Los once rojos, vistos caer
+
+Instrumento: `docs/master/evidencias/SCRUM-600g/rojos-600g.mjs`, sobre la feature ya comiteada
+(`b3fd0996`). Cada ancla se comprueba **única** antes de mutar, y después de cada mutación se
+restauran los tres ficheros **byte a byte** (`Buffer.compare`).
+
+| rojo | mutación | qué cayó |
+| --- | --- | --- |
+| a | vuelve la puerta de «📋 Usar plantilla» | **①** · ② · ⑦ |
+| b | vuelve la puerta de «💾 Guardar como plantilla» | **①** · ③ · ⑤ · ⑦ |
+| c | la hoja «Usar» dice la frase del presupuesto también en la factura | **②** · ⑦ |
+| d | la hoja «Guardar», ídem | **③** · ⑦ |
+| e | guardar la plantilla llama a `/admin/invoices` | **⑤** |
+| f | «3. Condiciones» se cuela en el documento suelto | **④** |
+| g | «4. Envío» se cuela en el documento suelto | **④** |
+| h | el presupuesto dice la frase del documento suelto | **⑥** |
+| i | aparece una variante justificante sin firmar | **⑦** · ⑧ |
+| j | la frase se escribe a pelo en la vista | **⑧** |
+| k | la firma delegada pierde la referencia al comentario de Jira | **⓪** |
+
+Tras los once: ficheros restaurados byte a byte y `scrum600g` en verde.
+
+## 4 · Lo que NO se ha tocado
+
+* **La zona «4. Envío»** (trabajo vivo en `scrum-820b`): los cuatro cambios de `quotesView.js` están en
+  l.1284, 1626, 3972 y 4040.
+* **La emisión:** el `POST /admin/invoices` de la vista, `cuerpoDelDocumentoSuelto.js`,
+  `validarFacturaSuelta`, `invoicesAdmin.routes.ts`, `prisma/schema.prisma`. Tampoco
+  `nuevaFacturaModal.js`.
+* **Guards de navegador:** ninguno monta esta página. `objetivo-tactil` sólo mide el editor de
+  presupuesto, y `caja-documento-suelto` mide el modal viejo.
+* **Cero producción y cero staging.**
+
+## 5 · Lo que queda fuera de SCRUM-600
+
+«3. Condiciones», dirección de obra y descuento global (STOP, regla 38), los 8 campos del grupo C y
+el `nuevaFacturaModal.js` muerto, tal como los describe el apéndice 600f. **No abren ticket salvo
+víctima hoy** (regla 37).
+
+## Tests que introduce esta entrada
+
+* `tests/scrum600g-plantillas-en-el-documento-suelto.test.mjs` — ⓪ a ⑧.
+* `tests/scrum600b-la-factura-usa-el-front.test.mjs` — **modificado**: «Guardar como plantilla» y
+  «Usar plantilla» salen de la lista de lo que NO debe estar en el documento suelto.

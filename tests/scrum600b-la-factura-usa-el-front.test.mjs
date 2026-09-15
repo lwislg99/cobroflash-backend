@@ -314,8 +314,9 @@ test('SCRUM-600b · 🔴 y el modo documento suelto NO arrastra lo que el emisor
     '3. Condiciones',          // plazos y formas de pago: no viajan
     '4. Envío',                // qué datos salen y textos libres: no viajan
     'Estado del presupuesto',  // el documento nace emitido y no cambia de estado (regla 29)
-    'Guardar como plantilla',  // parada declarada: su hoja nombra el documento
-    'Usar plantilla',          // idem
+    // «Guardar como plantilla» y «Usar plantilla» SALIERON de esta lista con SCRUM-600g. Eran
+    // parada declarada porque sus hojas nombraban el presupuesto, no porque su dato no viajara: una
+    // plantilla sólo guarda líneas. Firmadas las dos frases, están, y lo exige `scrum600g`.
     'Guardado automáticamente',// la ranura de borrador es UNA y es la del presupuesto
     'Dirección de la obra',    // `shippingAddress*`: no viajan
     'IVA del presupuesto',     // `ivaModo`: no viaja
