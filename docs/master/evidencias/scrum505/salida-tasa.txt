@@ -1,0 +1,26 @@
+CORPUS FABRICADO — ni un dato real de nadie
+   textos legitimos de obra: 25
+   textos con dato personal escondido: 6
+
+🔴 TASA DE FALSOS POSITIVOS (el numero que decide el criterio)
+   1 de 25  =  4.0 %
+     🔴 «Pedido 987654321 del proveedor, entrega en 48 horas.…» -> telefono
+
+TASA DE FALSOS NEGATIVOS (lo que se le escapa de lo que SI lleva dato)
+   0 de 6  =  0.0 %
+
+SUELO: el detector SI ve 6 de 6 con dato dentro, asi que
+       una tasa baja de falsos positivos significa algo.
+
+CONTROL DEL RANGO IMPOSIBLE (SCRUM-262) — y su «no» es informacion:
+   «Contacto interno de pruebas: 34000000011.…» -> no detectado ✅
+   Empieza por 34 y por eso NO tiene forma de movil espanol. Que no dispare dice que
+   el detector no salta sobre cualquier tirada larga de digitos — es el mismo motivo
+   por el que el «Pedido 987654321» de arriba SI dispara: aquel si tiene la forma.
+
+LIMITES DECLARADOS (lo que NO ve, dicho aqui y no descubierto en un rojo raro):
+   · correo enmascarado a mano: «ana [at] obra.example» o «ana(arroba)obra.example»
+   · teléfono escrito con letras: «seis cero cero...»
+   · nombres y apellidos de personas: no tienen forma reconocible y casarlos sería adivinar
+   · direcciones postales escritas en prosa
+   · un dato personal partido entre dos campos distintos

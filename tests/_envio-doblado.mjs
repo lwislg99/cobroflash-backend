@@ -26,6 +26,28 @@
 //
 // 🔴 LO QUE **NO** SE DOBLA es lo que se mide: el resolvedor del canal, los guards de envío y
 //    `sendQuoteWhatsAppToCustomer` entero son el código de producción tal cual.
+//
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 EL LÍMITE DE ESTE DOBLE: **NO TIENE ESTADO**
+//
+// Devuelve respuestas FIJAS, las que declare el banco por método (`{'quote.findUnique': …}`) o
+// lo vacío por defecto. No hay tabla detrás. En concreto, y medido:
+//
+//   · lo que se ESCRIBE no se puede LEER de vuelta — tras un `merchant.update`, el
+//     `merchant.findUnique` de la línea siguiente sigue devolviendo `null`;
+//   · `updateMany` devuelve `{ count: 0 }` **sin mirar el `where`**: el `count` no refleja
+//     cuántas filas habría tocado;
+//   · `{increment}` y `{decrement}` **se pasan tal cual**, no se interpretan.
+//
+// Se dice aquí porque el silencio de un instrumento se lee como capacidad. Dos ficheros
+// (`scrum815-referido-una-sola-vez`, `scrum856-canje-una-sola-vez`) necesitaron exactamente eso
+// —estado, `where` evaluado, `count` real y un cerrojo de fila— y se encontraron el muro sin que
+// nada se lo dijera, así que cada uno escribió su propio banco de concurrencia. Siguen ahí a
+// propósito: sus cabeceras explican qué modelan y por qué no usan éste.
+//
+// ⚠️ Si lo que necesitas es ESO, no lo fuerces aquí: mira esos dos. Y si eres el TERCERO que lo
+// necesita, ése es el momento de extraer un banco de concurrencia común — con tres instrumentos
+// vivos, no antes.
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 

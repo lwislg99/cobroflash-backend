@@ -194,3 +194,108 @@ RESTAURADO byte a byte: ✅ idéntico
 
 * `tests/scrum850-la-poblacion-del-instrumento.test.mjs` — el ancla reanclada SIN la sangría.
 * `tests/scrum836-ancla-de-mutacion-viva.test.mjs` — la red en la tanda que sí bloquea.
+
+---
+
+# APÉNDICE · 15-sep-2026 · SCRUM-836d · El otro extremo de la declaración: el `cae` caducado
+
+**Fecha:** 15-sep-2026 · **Carril:** B (guard) · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `5e0817eb093154075575efdc899f4c55419207ef` · 2026-09-15T15:44:12+01:00
+**Tanda:** 6725 tests, 6615 pass, 0 fail, 0 cancelled · **110 skipped, aparte** · POBLACIÓN 806 ficheros · 260 s · exit 0 — con tope duro, medida DESPUÉS del último cambio.
+
+> **Una mutación que nombra un test que no existe afirma una cobertura que no hay.**
+
+## El defecto, y por qué es la otra mitad del mismo
+
+Una declaración tiene DOS extremos y los dos caducan. La entrega anterior cerró el `de` —el texto
+anclado en el fichero que se muta—. Queda el `cae`: el nombre del test que la mutación debe tumbar.
+Si ese test se renombra, o nunca existió, `meta:mutaciones` **no puede medir la mutación** y sale
+CIEGO exactamente igual — sólo que el guard sigue pareciendo cubierto.
+
+Se reportó como hallazgo de otro carril y **el fundador mandó cerrarlo**: se decide midiendo.
+
+## Los DOS censos, con su población
+
+**Población: 178 mutaciones declaradas en 58 guards.**
+
+| pregunta | qué mide | fallan |
+| --- | --- | --- |
+| **(a)** ¿EXISTE el test que el `cae` nombra? | barato, por AST, sin ejecutar nada | **4** |
+| **(b)** ¿CAE de verdad al aplicar la mutación? | caro: aplicar y correr el guard | **0** ⟵ *ver abajo* |
+
+Las 4 de (a): **3 de `scrum850`** y **1 de `scrum850b`**, las dos mergeadas ese mismo día.
+
+🔴 **Y (b) da 0 sobre esas mismas 4, que es el dato que cambia el diagnóstico:** no eran mutaciones
+sin cobertura. **Las cuatro tumbaban tests de verdad.** Sólo el nombre estaba mal — que es
+precisamente lo que hace este defecto difícil de ver: el fichero parece cubierto y lo está; lo que
+no funciona es el mecanismo que lo comprueba.
+
+### ⚠️ 2 NO EVALUABLES, declaradas y NO acusadas
+
+`scrum785` construye los nombres de sus tests (`` test(`SCRUM-785 · 🔴 ${quien}: …`) ``) y sus dos
+declaraciones **son correctas**. El lector por AST no puede resolver una plantilla, y **no poder
+leer algo no es prueba de que esté mal**: van en su propio cubo. Contarlas como huérfanas sería
+acusar a quien no hizo nada mal — el defecto que SCRUM-757 cerró para el otro lector.
+
+## Cómo se decidió cada `cae` — midiendo, no adivinando
+
+Se aplicó cada mutación y se miró **qué caía**. Con dos cautelas, las dos del encargo:
+
+* **¿ENTRÓ la mutación?** Se comprueba que el fichero CAMBIA tras el `replace`. Una mutación que no
+  entra y una cobertura que no existe dan exactamente la misma salida.
+* **Restauración byte a byte** contra los bytes de DISCO en `finally`, verificada con
+  `Buffer.compare` (SCRUM-570 / SCRUM-808).
+
+| declaración | qué cayó al aplicarla | `cae` nuevo |
+| --- | --- | --- |
+| `scrum850` · tubería | 2 tests | `el detector ve cada forma que se come el código` |
+| `scrum850` · `//comentarios` | 2 tests | `ninguna invocación de la tanda descarta su código de salida` |
+| `scrum850` · comentario `#` | 1 test | `el último tramo y los comentarios NO se marcan` |
+| `scrum850b` · `&` | 1 test | `el censo VE el \`&\` — era el hueco` |
+
+**Ninguna se rellenó con un nombre plausible.** Si alguna no hubiera tumbado nada, el hallazgo
+habría sido que esa mutación no está cubierta, y se habría dicho.
+
+**Confirmado por el camino caro**, que es el que decide: con `aplicarUna` del meta-guard, las cuatro
+pasan de **CIEGAS a VIVAS**.
+
+## 🔴 Lo que este guard NO mira, y va escrito en su cabecera
+
+Sólo contesta **(a)**. La **(b)** exige aplicar cada mutación y correr su guard entero — es lo que
+hace `meta:mutaciones`, cuesta minutos y vive en su propio job; duplicarlo aquí convertiría
+`npm test` en el meta-guard.
+
+Es una **criba barata, no un veredicto de cobertura**. Se dice porque *un instrumento que no declara
+lo que no mira se lee como si lo mirara todo*, y eso convierte una criba en una falsa garantía.
+
+Y el criterio de comparación es **el del meta-guard, no uno propio**: `paso()` usa `includes`, así
+que al `cae` le basta ser **subcadena** del nombre de un test. Comparar por igualdad denunciaría
+declaraciones que el meta-guard acepta — un guard que contradice al que vigila.
+
+## Verificado en rojo
+
+* 🔴 **EL QUE DECIDE** · un `cae` que nombra un test inexistente **cae**, nombrando fichero y
+  declaración, y **acusa a la huérfana, no a la sana** que tiene al lado.
+* 🔴 **MUTACIÓN** · con la comprobación apagada, el mismo banco **no acusa a nadie**: el verde falso
+  vuelve. El rojo depende de la comprobación y no de otra cosa.
+* ✅ **POSITIVO** · las declaraciones sanas siguen pasando, y **basta con UN test** y con una
+  subcadena. Si exigiera que cada mutación tumbase varios, se volvería inservible y lo relajarían.
+* ⚠️ **NO EVALUABLE** · un guard con nombres construidos no se acusa **y tampoco se calla**: queda
+  declarado aparte.
+* **SUELO** · el censo exige ≥54 declaraciones (el suelo del propio meta-guard) antes de dar
+  veredicto. Cero huérfanas sobre cero declaraciones es ceguera, no salud.
+
+## Lo que NO cubre
+
+* **(b) sigue sin estar en la tanda**, a propósito y con su motivo. Un `cae` vivo no prueba que el
+  test caiga.
+* **No se toca `scrum785`**: sus declaraciones son correctas y el problema es del lector.
+* La **fase ②** del ticket (el meta-guard como check obligatorio) **sigue en la mesa del fundador**,
+  intacta. Y la propuesta de anclar `scrum716` por identidad sigue **propuesta, no aplicada**.
+
+## Ficheros
+
+* `tests/scrum836-ancla-de-mutacion-viva.test.mjs` — `nombresDeTest` y `caesHuerfanos`, con sus
+  cinco controles.
+* `tests/scrum850-la-poblacion-del-instrumento.test.mjs` — los tres `cae`, medidos.
+* `tests/scrum850b-las-formas-que-mienten.test.mjs` — el cuarto.
