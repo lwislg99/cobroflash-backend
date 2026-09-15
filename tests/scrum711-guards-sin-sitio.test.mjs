@@ -210,6 +210,11 @@ test('SCRUM-711 · 🔴 CASO CONOCIDO: el guard táctil del 3-sep, escrito y sin
   assert.ok(r.sinSitio.includes('scripts/guard-objetivo-tactil.mjs'),
     '🔴 el censo NO ve el guard que originó este ticket, en la situación exacta en que estaba. Si '
     + 'no ve éste, su cero sobre el árbol real no significa nada.\n     sinSitio: ' + JSON.stringify(r.sinSitio));
+  // La negación de abajo sólo dice algo si la librería SE LE OFRECIÓ al censo: sin este hermano,
+  // quitarla de la entrada la dejaría en verde para siempre (SCRUM-237).
+  assert.ok(FICHEROS_CON_TACTIL.includes('scripts/_utilidad.mjs'),
+    '🔴 CIEGO: el caso ya no le ofrece al censo la librería `scripts/_utilidad.mjs`, así que la '
+    + 'comprobación de abajo no está mirando nada.');
   assert.ok(!r.poblacion.includes('scripts/_utilidad.mjs'),
     '🔴 una librería `_*.mjs` que no ejecuta nadie ha entrado en la población de guards.');
 });
