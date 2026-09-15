@@ -351,9 +351,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // ③ El filtro de lo ilegible, apagado: un número del fallback de `env.ts` pasaría por sha.
+    // ⚠️ SCRUM-824b partió esta condición en dos líneas (distingue por LONGITUD, no por «ser
+    // todo dígitos»); el ancla se actualiza para seguir a esa forma. Sólo se apaga la segunda
+    // línea — la que 824b añadió — porque la primera (`!ES_SHA.test(s)`) ya basta para tumbar el
+    // resto de la basura de este test, y mutarla también dispararía otras declaraciones.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
-    de: '  if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;',
-    a: '  if (false) return null;',
+    de: "  if (!ES_SHA.test(s)) return null;\n  if (TODO_DIGITOS.test(s) && LONGITUDES_DE_RELOJ.has(s.length)) return null;",
+    a: '  if (!ES_SHA.test(s)) return null;\n  if (false) return null;',
     cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
   },
   {
