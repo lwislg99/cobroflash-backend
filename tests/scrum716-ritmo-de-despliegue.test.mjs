@@ -351,8 +351,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // ③ El filtro de lo ilegible, apagado: un número del fallback de `env.ts` pasaría por sha.
+    // ⚠️ Re-anclado en SCRUM-804c: SCRUM-824b partió este `if` en dos (distingue por LONGITUD,
+    // no por «ser todo dígitos» — ver el comentario de `LONGITUDES_DE_RELOJ`), y la declaración
+    // se quedó apuntando al `if` viejo. El meta-guard salía CIEGO: «el ancla no está» — no
+    // porque el guard estuviera mudo, sino porque el ancla había caducado. Se apunta al `if`
+    // que hoy hace el rechazo del reloj; el resto de la mutación (apagarlo) es el mismo.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
-    de: '  if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;',
+    de: '  if (TODO_DIGITOS.test(s) && LONGITUDES_DE_RELOJ.has(s.length)) return null;',
     a: '  if (false) return null;',
     cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
   },
