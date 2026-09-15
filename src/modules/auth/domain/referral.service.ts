@@ -64,32 +64,67 @@ export async function getReferralStats(merchantId: number) {
 
 // Canje manual de un mes gratis ganado por referidos (sin cupones de Stripe).
 // Extiende planExpiresAt +30 días (desde la expiración actual si está vigente,
-// o desde hoy si ya expiró) y descuenta un crédito. Idempotente por crédito.
+// o desde hoy si ya expiró) y descuenta un crédito.
+//
+// 🔴 UN CRÉDITO SE GASTA UNA VEZ, Y LO GARANTIZA LA BASE — no una comprobación en JavaScript.
+//
+// Aquí decía «Idempotente por crédito» mientras el código leía `freeMonthsEarned`, comprobaba
+// `< 1` y DESPUÉS descontaba. Entre el `if` y el `update` no había nada, y dos canjes simultáneos
+// pasaban los dos. Medido en SCRUM-856, con las dos caras:
+//   · con UN crédito, el saldo quedaba en **−1** — un estado al que no se llega canjeando;
+//   · con DOS créditos se gastaban los dos y la cuenta se extendía **30 días, no 60**, porque los
+//     dos calculaban la fecha nueva sobre la misma lectura y escribían el mismo valor absoluto.
+//     El merchant pagaba dos y se llevaba uno.
+//
+// 🔒 Un comentario que afirma una propiedad que el código no tiene es peor que no tenerlo: el
+// siguiente que lo lea no va a comprobarlo, ya se lo han dicho. Por eso esta cabecera ya no dice
+// «es idempotente»: dice QUÉ lo hace serlo, y si eso se quita, se sabe qué se está quitando.
+//
+// Lo que lo hace seguro, y no se puede simplificar sin traer la carrera de vuelta:
+//   ① la guarda viaja DENTRO del UPDATE (`updateMany` con `freeMonthsEarned: { gte: 1 }`), que la
+//      base ejecuta de una pieza — es el patrón de `recapitulativa.service.ts:118`;
+//   ② el código MIRA el `count`: es lo único que distingue «he reclamado yo» de «alguien se me
+//      adelantó», y un update condicional cuyo resultado no se mira descuenta igual;
+//   ③ la extensión se calcula DENTRO de la misma transacción y DESPUÉS de haber reclamado, para
+//      que el cerrojo de fila impida que otro canje se cuele entre el descuento y la fecha.
+//
 // Nota: para suscripciones Stripe activas, planExpiresAt lo refresca el webhook
 // de Stripe; el canje es plenamente efectivo en trial/acceso manual.
 export async function redeemFreeMonth(
   merchantId: number,
 ): Promise<{ ok: boolean; reason?: string; planExpiresAt?: Date | null; freeMonthsEarned?: number }> {
-  const m = await prisma.merchant.findUnique({
-    where: { id: merchantId },
-    select: { freeMonthsEarned: true, planExpiresAt: true },
-  });
-  if (!m) return { ok: false, reason: 'not_found' };
-  if ((m.freeMonthsEarned ?? 0) < 1) return { ok: false, reason: 'no_credit' };
-
   const now = new Date();
-  const base = m.planExpiresAt && m.planExpiresAt > now ? m.planExpiresAt : now;
-  const newExpiry = new Date(base.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-  const updated = await prisma.merchant.update({
-    where: { id: merchantId },
-    data: {
-      freeMonthsEarned: { decrement: 1 },
-      planExpiresAt: newExpiry,
-    },
-    select: { planExpiresAt: true, freeMonthsEarned: true },
+  const updated = await prisma.$transaction(async (tx) => {
+    const reclamo = await tx.merchant.updateMany({
+      where: { id: merchantId, freeMonthsEarned: { gte: 1 } },
+      data: { freeMonthsEarned: { decrement: 1 } },
+    });
+    if (reclamo.count !== 1) return null; // no existe, no hay crédito, o alguien se adelantó
+
+    const m = await tx.merchant.findUnique({
+      where: { id: merchantId },
+      select: { planExpiresAt: true, freeMonthsEarned: true },
+    });
+    const base = m?.planExpiresAt && m.planExpiresAt > now ? m.planExpiresAt : now;
+    const newExpiry = new Date(base.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    return tx.merchant.update({
+      where: { id: merchantId },
+      data: { planExpiresAt: newExpiry },
+      select: { planExpiresAt: true, freeMonthsEarned: true },
+    });
   });
-  console.log(`[referral] merchant ${merchantId} canjeó 1 mes gratis → expira ${newExpiry.toISOString()}`);
+
+  // `count: 0` no distingue «no existe» de «sin crédito», y la ruta SÍ los distingue
+  // (`app.ts:638`: no_credit → 409, el resto → 400). Se resuelve con una lectura barata y sólo
+  // en el camino de fallo, que es el que no corre a diario.
+  if (!updated) {
+    const existe = await prisma.merchant.findUnique({ where: { id: merchantId }, select: { id: true } });
+    return { ok: false, reason: existe ? 'no_credit' : 'not_found' };
+  }
+
+  console.log(`[referral] merchant ${merchantId} canjeó 1 mes gratis → expira ${updated.planExpiresAt?.toISOString()}`);
   return { ok: true, planExpiresAt: updated.planExpiresAt, freeMonthsEarned: updated.freeMonthsEarned };
 }
 
