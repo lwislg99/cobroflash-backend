@@ -223,3 +223,128 @@ Y este guard **suelto**, que es donde el `# skipped 0` significa algo:
 test relajado · ninguna rama ajena · Jira · producción ni staging · ninguna dependencia.
 Lo escrito: `scripts/_invocaciones-de-la-tanda.mjs`, `tests/scrum850-…test.mjs`, dos comandos
 corregidos (`CLAUDE.md`, `docs/RUNBOOKS.md`), la regla en las normas comunes y esta entrada.
+
+---
+
+# SCRUM-850b · Las formas, reproducidas — y el hueco que el banco destapó
+
+**Fecha:** 15-sep-2026 · **Carril:** instrumentos · **Gate:** sin gate — `npm test`
+
+**Medido contra:** `origin/main` = `0caafdcc1c34277d1883b5ce6c98ae924f736a8e` · 2026-09-15T13:22:26Z
+
+---
+
+## Por qué hay una segunda parte
+
+SCRUM-850 dejó el censo, el guard y la regla, y están bien. Lo que tenía era una **lista de
+formas escrita a mano** (`| tail`, `| head`, `; echo`…). Este apéndice las **ejecuta**: monta una
+tanda de verdad con un test rojo a propósito y la invoca de cada manera, mirando el código real.
+
+Y en cuanto se ejecutan, aparece lo que una lista no podía dar.
+
+## ① Las formas, MEDIDAS (tanda de 2 tests, uno rojo; el veredicto honesto es `exit 1`)
+
+| exit | forma | |
+|---|---|---|
+| 1 | a pelo | honesta (control) |
+| 0 | `\| tail` | 🔴 la del ticket |
+| 0 | `\| head` | 🔴 |
+| 0 | `\| cat` | 🔴 |
+| 0 | `\| tee fichero` | 🔴 **la que parece que conserva** |
+| 0 | `\| grep <patrón que CASA>` | 🔴 **la que yo he usado toda la sesión** |
+| 1 | `\| grep <patrón que NO casa>` | honesta **por accidente**: es el código de `grep`, no el de la tanda |
+| 0 | `; echo` | 🔴 |
+| 0 | `&` | 🔴 **el hueco — ver abajo** |
+| 0 | `if tanda; then …` | 🔴 el `if` se lo come |
+| 0 | `npm test` con la tubería DENTRO de `package.json` | 🔴 el sitio de la llamada parece limpio |
+| 1 | `> fichero 2>&1` | honesta — **la que la casa recomienda** |
+| 1 | `&& echo` · `$(…)` · `pipefail + \| tail` | honestas |
+
+🔴 **`\| grep` merece su línea**: su código de salida habla del PATRÓN, no de la tanda. Da 0
+cuando encuentra y 1 cuando no — o sea que una tanda VERDE cuyo patrón no aparezca sale en rojo,
+y una tanda ROJA cuyo patrón sí aparezca sale en verde. No está correlacionado con el veredicto.
+
+## ② El hueco: `&`
+
+    node --test rojo.test.mjs verde.test.mjs        -> exit 1   honesto
+    node --test rojo.test.mjs verde.test.mjs &      -> exit 0   🔴
+
+El censo lo daba por **SANO**: `segmentar` partía por `&&` pero no por `&`. No es una prohibición
+nueva — es el mismo criterio de `|` y `;` («este separador se come el veredicto») aplicado al
+separador que faltaba. Cerrado con el veredicto `SEGUNDO_PLANO`.
+
+## ⚠️ Un error propio, y casi cuesta el guard bueno
+
+La primera versión partía por **cualquier** `&`, y entonces marcaba `npm test > salida.txt 2>&1`
+—la forma SANA, la que la casa recomienda— como si se comiera el veredicto. Un guard que marca
+la forma buena es un guard que alguien apaga en dos semanas, que es justo el riesgo que el
+encargo señalaba. Lo cazó el propio banco al medir. El criterio final es de forma y no una lista:
+un `&` pegado a un `>` o un `<` es **redirección**, no segundo plano.
+
+## 🔴 Y una trampa una vuelta más adentro
+
+`node --test` marca a sus hijos con `NODE_TEST_CONTEXT` y, si la ve, **se niega a ejecutar**:
+*«run() is being called recursively within a test file. skipping running files»* — y sale con
+**0** y un aviso. O sea que un banco que lance una tanda desde dentro de la tanda mide un runner
+que no ha corrido, y todas sus filas serían ruido con forma de tabla. Es la familia de este
+ticket dentro del instrumento escrito para cazarla.
+
+Se limpia esa variable en el hijo, y el suelo del banco exige **ver el nombre del test rojo en la
+salida** antes de creerse una sola fila. Antes de eso, dos versiones del banco midieron un crash
+de resolución de rutas en Windows y dieron una tabla entera que no valía.
+
+## ③ Lo que NO se pudo reproducir tal cual, y se declara
+
+El caso ③ del ticket —contar CR con `grep` y obtener 0 sobre un fichero que los tiene— **sí se
+reproduce, pero depende del SHELL**, y eso el ticket no lo decía. Medido sobre un fichero con 3
+retornos de carro, contando con `grep -c` y el escape de CR:
+
+| forma | dice |
+|---|---|
+| con el escape de **bash** | **3** — correcto |
+| con el escape escrito **literal** (sin la comilla de bash) | **1** — 🔴 miente |
+| el escape de bash, ejecutado bajo **`sh`** | **0** — 🔴 miente, y es el caso del ticket |
+
+O sea: `$'…'` es sintaxis de bash y bajo `sh` no se expande, así que el patrón deja de ser un CR.
+
+### 🔴 Y una afirmación mía que duró diez minutos
+
+Escribí aquí que la barrera del punto 4 del ticket «no existe y merece su medición». **Es falsa,
+y me cazó el propio árbol**: `tests/scrum766-el-grep-que-cuenta-lineas.test.mjs` ya la tiene, ya
+cubre «instrumentos **y recetas**» — y saltó contra las tres líneas de ESTA entrada, nombrándolas
+con fichero y número, porque los ejemplos de arriba estaban escritos en su forma prohibida:
+
+    🔴 3 sitio(s) cuentan caracteres de control con grep en este entorno:
+       · docs/master/SCRUM-850.md:298 … 303 … 305
+
+Así que el punto 4 **estaba cerrado antes de que yo llegara**, y la prueba de que está cerrado es
+que me pilló a mí. Los ejemplos se reescriben en prosa; la forma correcta —`contarCR` sobre
+bytes, en `scripts/censo-cuenta-de-control-con-grep.mjs`— ya existe y no hace falta otra.
+
+## ⑤ Suelo
+
+El censo ve **10** invocaciones en el árbol y **0** que se coman el código. La población se
+declara, así que ese 0 es un cero medido. Y el banco declara el suyo: si no ve el test rojo en la
+salida, falla en vez de dar una tabla.
+
+## El rojo del control
+
+| mutación | resultado |
+|---|---|
+| apagar el cierre del `&` (`if (!esRedireccion)` → `if (false)`) | 🔴 cae `el censo VE el \`&\`` · restaurado byte a byte |
+
+## Lo que se reporta y NO se arregla
+
+- **`set -o pipefail; npm test \| tail` es honesta** (medido: exit 1) y el censo la marca TUBERIA.
+  Falso positivo real, pero **hoy no tiene víctima** (0 invocaciones se comen el código), así que
+  se declara y no se le fabrica una excepción: una excepción que nadie necesita es una puerta que
+  alguien usará. Hay un test que lo deja constado, para que si alguien se la mete venga con su
+  medición.
+- (Nada más: el punto 4 del ticket ya estaba cerrado por SCRUM-766, como se explica arriba.)
+
+## Lo que NO se hizo
+
+- **No se subió ningún tope ni se relajó ningún guard.**
+- **`src/` intacto**: esto es instrumento, no producto.
+- **Cero dependencias** (36), **cero estado o flag de producto** (27) — `SEGUNDO_PLANO` es
+  vocabulario del censo, no del producto.
