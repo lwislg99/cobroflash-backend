@@ -43,6 +43,22 @@ arreglados.
 
 ## A3 · Cómo se mide aquí
 
+- 🔴 **Un instrumento declara su POBLACIÓN, no sólo su resultado.**
+  «0 fail» sin «sobre cuántos» no es un verde: es una frase. Lo mismo
+  vale para cualquier censo, barrido o guard. Si tu salida no dice
+  sobre qué población se calculó, nadie —tú incluido— puede saber si
+  mide el proyecto o una esquina. Medido el 15-sep-2026: una tanda
+  dijo «2.681 pass · 0 fail» habiendo mirado 355 ficheros de 781, y el
+  verde era REAL para lo que miró. No lo cazó leer el resultado, sino
+  exigirle al instrumento que dijera cuántos ficheros había visto.
+  El mismo día, el primer censo de SCRUM-850 dijo «scripts: 0» sobre
+  una superficie que tenía tres: lo destapó declarar la población.
+- 🔴 **El código de salida es del ÚLTIMO tramo de la tubería.**
+  `npm test | tail`, `| head`, `| grep` devuelven el suyo, así que una
+  tanda EN ROJO sale `0`. Un `A; B` hace lo mismo. Si necesitas la
+  salida, escríbela a un fichero —FUERA del árbol— y léela en un
+  SEGUNDO comando. Lo vigila
+  `tests/scrum850-la-poblacion-del-instrumento.test.mjs`.
 - Un CERO nunca significa «está limpio»: significa «no he mirado».
   Todo barrido lleva un control que demuestre que el instrumento ve
   algo que sabemos que está.
@@ -140,6 +156,9 @@ confesado sin que nadie preguntara.
 
 ## A10 · Frases de la casa
 
+Un instrumento declara su población, no sólo su resultado.
+«0 fail» sin «sobre cuántos» no es un verde: es una frase.
+El código de salida es el del último tramo de la tubería.
 Un prefijo no es un nombre, y una subcadena tampoco.
 Cero no es «está limpio»: es «no he mirado».
 CI prueba el MERGE, no la rama.
