@@ -1127,6 +1127,18 @@ export function cargarDashboard(raiz, opciones = {}) {
     //
     // El segundo argumento va también: `apiRequest(ruta, opciones)` es su firma real, y un fixture
     // que quiera distinguir un POST de un GET necesita verlo.
+    //
+    // 🔴 SCRUM-848b · CORRECCIÓN MEDIDA, 15-sep-2026 — ESTA LÍNEA NO ERA LA CAUSA.
+    // Lo de arriba describe un arreglo real pero INERTE para las vistas, y conviene saberlo antes
+    // de volver a tocar aquí. Medido revirtiéndola y renderizando `renderCustomer360View` con un
+    // fixture por ruta: MISMO html (3.062 bytes) y el fixture recibiendo su ruta igual. El motivo
+    // está treinta líneas más arriba, escrito desde SCRUM-432: `api.js` declara su propio
+    // `apiRequest` y al cargarse PISA éste, así que las vistas piden por `fetch` — y a `fetch` el
+    // banco SIEMPRE le pasó la url. Los fixtures por ruta nunca estuvieron ciegos por aquí.
+    // Lo que curó la ficha de Trabajo fue el OTRO cambio de SCRUM-848: darle `datos` a la
+    // superficie `/__jobdetail`. La línea se queda —es correcta y es la firma buena—, pero si
+    // algún día una vista se mide con datos que nadie eligió, el defecto NO estará aquí.
+    // Lo fija `tests/scrum848b-el-fixture-llega-a-la-pantalla.test.mjs`.
     apiRequest: async (ruta, opts) => (typeof opciones.datos === 'function' ? opciones.datos(String(ruta), opts) : (opciones.datos ?? {})),
     // SCRUM-362 (H7): con escenario de red, el `fetch` es el suyo. Sin él, el de siempre —una red
     // que responde bien— para no cambiar lo que ya miden los demás tests.

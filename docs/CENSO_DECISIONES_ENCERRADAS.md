@@ -1,6 +1,8 @@
 # Censo de decisiones de producto encerradas dentro de una vista — SCRUM-837
 
-**Medido:** 2026-09-09T11:11:00+02:00 · `origin/main = 45e3012155ad5370a5404a5d725229cff7f55008`
+**Medido:** 2026-09-09T16:30:40+02:00 · `origin/main` = `54ad4a68b807b8f3e22c709947096fd48dd1d4ae`
+(primera medición sobre `45e3012155ad5370a5404a5d725229cff7f55008`; **recontado** tras fusionar
+`54ad4a68`, que trae SCRUM-832 tocando `quotesListView.js`. Las dos cuentas dan **10**.)
 **Instrumento:** `node scripts/censo-decisiones-encerradas.mjs` (AST, no `grep`)
 **Suelo:** `tests/scrum837-decisiones-encerradas.test.mjs` — corre en `npm test`
 
@@ -81,6 +83,13 @@ Por eso «vive en una vista» no es el hallazgo. **El hallazgo es la tercera col
 
 La máquina da 10. La tercera columna de la máquina es generosa (cualquier vista que pinte ese
 documento y no llame a la función), así que cada fila lleva **veredicto leído a mano**.
+
+> ✅ **HOY YA SON 9, y eso es el instrumento registrando su propia cura.** SCRUM-845 sacó
+> `ubicarAccion` de dentro de `renderInvoiceDetailView` a `invoiceAccion.js` —la fila 1, la única
+> que se convirtió en trabajo— y el censo bajó de **10 a 9**, con los resolutores encerrados de
+> **2 a 1**. El 10 de esta tabla NO se reescribe: era cierto sobre el árbol que dice la cabecera, y
+> un número CON SU ANCLA no caduca. Lo que se anota es el movimiento, comprobable hoy corriendo
+> `npm run censo:decisiones-encerradas`.
 
 | # | qué decide | dónde vive hoy | 🔴 quién la necesita y no la tiene | veredicto |
 | --- | --- | --- | --- | --- |
