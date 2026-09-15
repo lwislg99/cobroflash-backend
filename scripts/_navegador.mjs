@@ -245,6 +245,134 @@ export function topeDelIntento(n, base = topeDeArranque()) {
 // poder probar el arranque sin esperar, y esta rama aniadio los REINTENTOS. Son ortogonales y los
 // dos hacen falta: quedarse con uno habria borrado en silencio el trabajo del otro. En codigo no
 // se suma —se elige el correcto—, pero aqui no hay dos versiones de lo mismo: hay dos cosas.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-626 · CALENTAR EL NAVEGADOR ANTES DE LA FILA
+//
+// LA VÍCTIMA: `guard:contraste` es EL PRIMERO de los nueve y paga el arranque en frío de Edge en
+// el runner. Medido por S3 el 1 y 2-sep: 18,6 s · 23,6 s · 27,0 s · 38,1 s. **Todo el coste está
+// en `proceso+ws`**; `primera-página` mide 0,0. Y es UN SOLO arranque caro: cuando el primero
+// completa, el segundo baja a 0,4 s. Quien paga la factura del frío es siempre el mismo guard, y
+// lo paga por los otros ocho.
+//
+// ── POR QUÉ ESTO PUEDE TENER UN TOPE GENEROSO Y NO RELAJA NADA ──────────────────────────────
+// 🔴 Es el argumento entero del ticket, y por eso se escribe aquí y no en un commit:
+// **un calentamiento no mide nada, no da veredicto y no protege ningún verde.** No hay ningún
+// verde cuyo significado dependa de su tope. Por eso puede esperar 120 s sin que eso sea relajar
+// un límite — mientras que subir `TOPE_ARRANQUE_POR_DEFECTO` SÍ lo sería, porque ese tope sí
+// custodia veredictos. Ese número NO SE TOCA (SCRUM-617, con trinquete).
+//
+// ── Y POR QUÉ NO DEVUELVE VEREDICTO NI LLAMA A `process.exit` ─────────────────────────────────
+// Por la misma razón, leída al revés: si un calentamiento fallido pudiera tumbar la tanda, le
+// estaríamos dando exactamente el poder que acabamos de decir que no tiene. Un fallo transitorio
+// del calentamiento abortaría una tanda que los guards —que reintentan tres veces (SCRUM-673)—
+// habrían sacado adelante, y eso es fabricar un «NO MEDIDO» falso.
+//
+// Lo que SÍ hace es no callarse: devuelve el desenlace para que la puerta lo diga con todas las
+// letras y con la MISMA gramática que ya existe («esto NO es un hallazgo»). Quien da el veredicto
+// siguen siendo los nueve guards.
+//
+// ── MARCA PROPIA, NO `⟦arranque⟧` ────────────────────────────────────────────────────────────
+// Deliberado: `⟦arranque⟧` y sus tramos son de SCRUM-642 y los lee la tabla de la puerta
+// (`leerArranque`). Si el calentamiento emitiera esa marca, sus segundos se colarían en el
+// desglose de un guard y la tabla contaría como arranque de alguien un arranque que no es de nadie.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * El tope del calentamiento. Generoso A PROPÓSITO — ver arriba: no custodia ningún veredicto.
+ *
+ * 120 s sale de lo medido, no de una corazonada: el peor arranque en frío observado fue 38,1 s, y
+ * la escalera de reintentos de SCRUM-673 ya considera sano hasta 90 s. Por encima de eso, esperar
+ * más no calienta nada — significa que el runner no da para un navegador, y eso lo tiene que
+ * decir el guard, no el calentamiento.
+ */
+export const TOPE_CALENTAMIENTO_POR_DEFECTO = 120_000;
+
+/** El tope efectivo. Se puede subir por entorno SOLO para medir, igual que el de arranque. */
+export function topeDeCalentamiento(env = process.env) {
+  const v = Number(env.CALENTAMIENTO_TIMEOUT_MS);
+  return Number.isFinite(v) && v > 0 ? v : TOPE_CALENTAMIENTO_POR_DEFECTO;
+}
+
+/** La marca del calentamiento. NO es `MARCA_ARRANQUE`: ver el bloque de arriba. */
+export const MARCA_CALENTAMIENTO = '⟦calentamiento⟧';
+
+/**
+ * Arranca un navegador, espera su primera página y lo cierra. **No devuelve el navegador**: lo
+ * que deja caliente es la máquina, no un objeto que alguien pueda reutilizar por descuido —
+ * compartir sesión acopla nueve guards independientes, y eso ya se midió y se descartó (SCRUM-522).
+ *
+ * 🔴 CALIENTA EL CAMINO ENTERO —proceso Y primera página— aunque lo medido diga que el coste está
+ * sólo en `proceso+ws`. El motivo: es exactamente lo que hacen los nueve, así que calentar menos
+ * dejaría fuera un tramo por una inferencia; y si `primera-página` de verdad cuesta 0,0, incluirla
+ * no cuesta nada. Cuando el reparto esté medido EN EL RUNNER se podrá acortar con datos delante.
+ *
+ * `puppeteer` y el reloj se reciben, como en `lanzarNavegador`, para poder ejercitar los dos
+ * desenlaces con un doble y sin navegador — que es lo único que permite que esto tenga tests en
+ * `npm test`.
+ *
+ * @returns {{ok: true, ms: number, tProceso: number, tPagina: number}
+ *          | {ok: false, motivo: string, ms: number, tramo: string}}
+ */
+export async function calentarNavegador(puppeteer, opciones = {}, { tope, ahora = Date.now } = {}) {
+  const limite = tope ?? topeDeCalentamiento();
+  const ruta = rutaDelNavegador(); // sale con 2 si no hay ninguno, igual que en el arranque
+  const args = [...(opciones.args || []), ...argsDeAislamiento()];
+  const t0 = ahora();
+
+  let nav;
+  try {
+    nav = await puppeteer.launch({
+      ...opciones, executablePath: ruta, args, timeout: limite, waitForInitialPage: false,
+    });
+  } catch (e) {
+    return {
+      ok: false, tramo: TRAMO_PROCESO, ms: ahora() - t0,
+      motivo: String((e && e.message) || e).split(String.fromCharCode(10))[0],
+    };
+  }
+  const tProceso = ahora() - t0;
+
+  try {
+    await nav.waitForTarget((t) => t.type() === 'page', { timeout: limite });
+  } catch (e) {
+    await nav.close().catch(() => {});
+    return {
+      ok: false, tramo: TRAMO_PAGINA, ms: ahora() - t0,
+      motivo: String((e && e.message) || e).split(String.fromCharCode(10))[0],
+    };
+  }
+  const tPagina = ahora() - t0 - tProceso;
+
+  // Se cierra SIEMPRE: lo que queda caliente es la máquina (binario en caché, perfil creado), no
+  // un proceso vivo. Un navegador huérfano durante los nueve guards sería memoria que le quitamos
+  // justo a quien va a necesitarla.
+  await nav.close().catch(() => {});
+  return { ok: true, ms: tProceso + tPagina, tProceso, tPagina };
+}
+
+/** La línea que se imprime cuando el calentamiento SALE BIEN. Pura, para poder comprobarla. */
+export function lineaDeCalentamiento(r, marca = MARCA_CALENTAMIENTO) {
+  return `${marca} ${seg(r.ms)} s · ${TRAMO_PROCESO} ${seg(r.tProceso)} s · ${TRAMO_PAGINA} ${seg(r.tPagina)} s`;
+}
+
+/**
+ * Lo que se dice cuando el calentamiento FALLA. Varias líneas, y ninguna se puede confundir con
+ * un hallazgo: es la misma gramática que ya usa `lanzarNavegador` para su «NO MEDIDO».
+ *
+ * PURA a propósito: el encargo pide probar que el mensaje no se confunde con un hallazgo de
+ * accesibilidad, y eso se comprueba sobre el TEXTO, sin navegador.
+ */
+export function avisoDeCalentamientoFallido(r, marca = MARCA_CALENTAMIENTO) {
+  return [
+    `${marca} 🔴 NO PUDO CALENTAR (${seg(r.ms)} s, cortado en «${r.tramo}»): ${r.motivo}`,
+    '   ESTO NO ES UN HALLAZGO: el calentamiento no mide nada, no comprueba contraste ni',
+    '   accesibilidad, y no da veredicto. Que fallara no dice que haya defectos NI que no los haya.',
+    '   La tanda SIGUE: el veredicto lo dan los nueve guards, que reintentan por su cuenta.',
+    '   ⚠️ Pero si esto se repite, el runner no da para arrancar un navegador ni en frío ni caliente,',
+    '   y entonces lo que van a decir los guards es NO MEDIDO — no «todo bien».',
+  ].join(String.fromCharCode(10));
+}
+
 export async function lanzarNavegador(puppeteer, opciones = {}, ahora = Date.now) {
   const ruta = rutaDelNavegador(); // sale con 2 si no hay ninguno
   const args = [...(opciones.args || []), ...argsDeAislamiento()];

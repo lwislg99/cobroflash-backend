@@ -100,8 +100,13 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // no garantiza «decir y poder hacer lo mismo»: medido, el detalle pintaba el rótulo nuevo y se
   // quedaba en «Enviando…» para siempre. Eso sólo se ve pulsando en las dos.
   // Comprobado en rojo quitando la rama de `agendar` del detalle: cae ② nombrando el botón colgado.
-  assert.equal(fuera.length, 17,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ 17 → ${fuera.length}.\n`
+  // SCRUM-831 · 17 → 18: entra `guard:albaranes-con-acciones`. Sube por el motivo de SCRUM-816
+  // —PULSA— y por uno propio: es el único que juzga si una lista OFRECE el siguiente paso de cada
+  // fila, que no es una caja ni un rótulo sino una decisión de producto. Y lleva una comprobación
+  // que ninguno de los diecisiete tenía: que el rótulo no sea un IDENTIFICADOR. Su primera pasada
+  // salió verde con «btnConvertirFactura» en pantalla porque contaba acciones sin mirar qué dicen.
+  assert.equal(fuera.length, 18,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ 18 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);

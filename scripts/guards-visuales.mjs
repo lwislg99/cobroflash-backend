@@ -35,7 +35,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { resolverNavegador, SALIDA_NO_ENCONTRADO, SALIDA_NO_ARRANCA, MARCA_ARRANQUE, topeDeArranque } from './_navegador.mjs';
+import { resolverNavegador, SALIDA_NO_ENCONTRADO, SALIDA_NO_ARRANCA, MARCA_ARRANQUE, topeDeArranque,
+  calentarNavegador, lineaDeCalentamiento, avisoDeCalentamientoFallido, topeDeCalentamiento } from './_navegador.mjs';
 // Se REUSA en vez de escribir una tercera copia: ya vive exportada en los guards de Prisma, y
 // su import es inocuo por construccion (su propio cuerpo esta detras de esta misma guarda).
 import { esInvocacionDirecta } from './_prisma-client-guard.mjs';
@@ -301,6 +302,23 @@ if (!esInvocacionDirecta(import.meta.url, process.argv[1])) {
   await puerta();
 }
 
+/**
+ * `puppeteer-core` PEREZOSO, y con suelo. Hasta hoy esta puerta no lo necesitaba: lanza procesos
+ * hijo, y cada guard carga el suyo. Un import duro en la cabecera la volvería inarrancable allí
+ * donde no esté instalado, y entonces los nueve guards dejarían de correr **por culpa del
+ * calentamiento** — que es exactamente lo que un calentamiento no puede poder hacer.
+ *
+ * Si no está, no se cae: se devuelve `null` y el calentamiento se salta diciéndolo.
+ */
+export async function puppeteerDelCalentamiento(importar = (n) => import(n)) {
+  try {
+    const m = await importar('puppeteer-core');
+    return m.default || m;
+  } catch {
+    return null;
+  }
+}
+
 async function puerta() {
 const lista = fueraDeLaTanda();
 
@@ -324,6 +342,34 @@ if (!nav.ok) {
 
 console.log('guards de navegador FUERA de `npm test`: ' + lista.length);
 console.log('navegador: ' + nav.quien + ' → ' + nav.ruta + '\n');
+
+// ── 🔴 SCRUM-626 · SE CALIENTA EL NAVEGADOR ANTES DE LA FILA ─────────────────────────────────
+//
+// EL SITIO ES ÉSTE y no otro: ya se sabe que HAY navegador (`resolverNavegador`, justo arriba) y
+// todavía no ha arrancado ninguno. El primero de la fila —hoy `guard:contraste`— pagaba el
+// arranque en frío por los otros ocho: 18,6 · 23,6 · 27,0 · 38,1 s medidos en el runner, y TODO
+// en `proceso+ws`. Cuando el primero completa, el segundo baja a 0,4 s.
+//
+// 🔴 NO ABORTA, Y ES LA DECISIÓN DEL TICKET. Un calentamiento no mide nada y no da veredicto; si
+// pudiera tumbar la tanda le estaríamos dando justo el poder que decimos que no tiene. Un fallo
+// transitorio abortaría una tanda que los guards —tres intentos cada uno, SCRUM-673— habrían
+// sacado adelante: eso es fabricar un «NO MEDIDO» falso. Lo que sí hace es NO CALLARSE.
+const pptr = await puppeteerDelCalentamiento();
+if (!pptr) {
+  console.error('⟦calentamiento⟧ ⚠️ SALTADO: no hay `puppeteer-core` en este árbol.');
+  console.error('   No es un hallazgo y no cambia el veredicto: los nueve guards siguen igual,');
+  console.error('   simplemente el primero volverá a pagar el arranque en frío.\n');
+} else {
+  const calentamiento = await calentarNavegador(pptr, {
+    // Las MISMAS opciones que el primero de la fila: calentar con otra configuración calentaría
+    // otra cosa. El día que diverjan, esto deja de servir y hay que volver a medirlo.
+    headless: true,
+    args: ['--disable-gpu', '--hide-scrollbars', '--no-first-run'],
+  });
+  if (calentamiento.ok) console.log(lineaDeCalentamiento(calentamiento) + '  (tope ' + topeDeCalentamiento() + ' ms)\n');
+  else console.error(avisoDeCalentamientoFallido(calentamiento) + '\n');
+}
+
 
 let fallos = 0;
 let total = 0;

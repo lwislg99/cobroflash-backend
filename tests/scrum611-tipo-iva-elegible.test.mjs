@@ -23,13 +23,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require_ = createRequire(import.meta.url);
 const tipos = require_(path.join(RAIZ, 'public/dashboard/js/tiposDeIva.js'));
 
 const VISTA = path.join(RAIZ, 'public/dashboard/js/quotesView.js');
-const desnudar = (src) => src.split('\n').map((l) => l.replace(/(^|[^:])\/\/.*$/, '$1')).join('\n');
+// SCRUM-694b · el filtro a mano se retira; `soloCodigo()` tokeniza en vez de cortar en `//`.
+const desnudar = (src, nombre = 'quotesView.js') => soloCodigo(src, nombre);
 
 test('SCRUM-611 · SUELO: el módulo carga y la lista se puede EJECUTAR', () => {
   assert.deepEqual(tipos.TIPOS_ES, [21, 10, 4, 0]);

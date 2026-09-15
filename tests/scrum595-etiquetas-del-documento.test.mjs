@@ -312,10 +312,16 @@ test('SCRUM-595 · 🔴 REGLA 29: el camino de emisión NO escribe etiquetas', (
   const bloque = codigo.slice(i);
 
   // SUELO: se está mirando la emisión de verdad.
-  for (const campo of ['allocateInvoiceNumber', 'invoice.create']) {
-    assert.ok(bloque.includes(campo),
-      `🔴 CIEGO: el trozo acotado no contiene \`${campo}\`; no es el camino de emisión.`);
-  }
+  //
+  // SCRUM-729 · la creación de la fila pasó de `tx.invoice.create` al envoltorio
+  // `crearFacturaEmitida`, que es hoy el ÚNICO creador de facturas del backend. El suelo exige
+  // una de las dos formas —no las dos—, porque exigir la vieja dejaría este guard en rojo
+  // permanente y exigir sólo la nueva lo dejaría ciego si algún día se vuelve atrás.
+  assert.ok(bloque.includes('allocateInvoiceNumber'),
+    '🔴 CIEGO: el trozo acotado no contiene `allocateInvoiceNumber`; no es el camino de emisión.');
+  assert.ok(bloque.includes('invoice.create') || bloque.includes('crearFacturaEmitida'),
+    '🔴 CIEGO: el trozo acotado no crea ninguna factura (ni `invoice.create` ni '
+    + '`crearFacturaEmitida`); no es el camino de emisión.');
 
   assert.equal(/\btags\b/.test(bloque), false,
     '🔴 el camino de emisión escribe `tags`. Eso convierte la etiqueta en parte del documento que '

@@ -275,22 +275,23 @@ async function fetchInvoiceDetail(id) {
     actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center';
     actionsSec.appendChild(actions);
 
-    // pending · paid · annulled · R1 (Parte L). `expired` es un pending vencido → se trata como pending.
-    const estadoFactura = invoice.type === 'R1' ? 'R1'
-      : (st === 'annulled' ? 'annulled' : (st === 'paid' ? 'paid' : 'pending'));
-    // SCRUM-402: el contexto de la ranura ya no es solo «¿hay cobro en vuelo?». La primaria de
-    // `pending` depende también de si Bizum manual PUEDE funcionar: con la bandera apagada, el
-    // ocupante `con-chargeId` no es una acción, es un callejón. Los dos predicados son
-    // COMPLEMENTARIOS por construcción —uno es la negación del otro— así que la ranura nunca queda
-    // vacía: siempre hay exactamente una primaria. Un estado sin primaria es el callejón sin
-    // salida que C2 vino a quitar.
-    const bizumDisponible = !!invoice.chargeId && window.appBizumManualEnabled === true;
-    const ctxAcciones = {
-      hayCharge: !!invoice.chargeId,
-      'bizum-disponible': bizumDisponible,
-      'bizum-no-disponible': !bizumDisponible,
-    };
-    const REGISTRO_ACC = (typeof window !== 'undefined' && window.INVOICE_ACTION_REGISTRY) || [];
+    // ── SCRUM-845 · EL ESTADO Y EL CONTEXTO YA NO SE CALCULAN AQUÍ ──────────────────────────
+    //
+    // Vivían en estas constantes LOCALES, dentro de esta función, así que la lista de Facturas no
+    // tenía forma de preguntar qué se puede hacer con una factura: no había ni un nombre que
+    // llamar. Es la cuarta vez de la misma familia (366 · 823 · 831) y la primera que encontró un
+    // instrumento —`npm run censo:decisiones-encerradas`, SCRUM-837— en vez de una persona.
+    //
+    // Se han mudado VERBATIM a `js/invoiceAccion.js` (`estadoDeFactura` · `ctxAccionesFactura`):
+    // mismo mapeo de los cuatro estados de la Parte L —`R1` manda porque es el `type`, columna
+    // distinta de `status`; `expired` es un `pending` vencido— y los mismos dos predicados
+    // COMPLEMENTARIOS de Bizum de SCRUM-402, que garantizan que la ranura primaria nunca queda
+    // vacía. Aquí no cambia ni un destino.
+    // Sólo `estadoFactura` se queda, y NO para las acciones: lo lee el selector de método de cobro
+    // (l.711). El contexto ya no se calcula aquí — lo pide `destinoDeAccionFactura` cuando le toca.
+    // Dejarlo declarado «por si acaso» habría dejado en pantalla dos contextos donde hay uno, que
+    // es el mismo aspecto que tenía el defecto de este ticket.
+    const estadoFactura = window.estadoDeFactura(invoice);
     // `MARCA_MICRO` se BORRA el 17-ago-2026: ya no tenía ningún consumidor, y desde hoy los ocho
     // rótulos de acción de esta pantalla están aprobados. Dejar la constante habría dejado a mano
     // un marcador que alguien vuelve a enchufar sin querer.
@@ -299,11 +300,13 @@ async function fetchInvoiceDetail(id) {
     // Coloca un botón YA CREADO (con su handler intacto) según su destino en este estado. `oculta` no
     // se pinta; `seccion-propia` (Anular) lo pinta su propio código. El rótulo lo pone cada botón al
     // crearse, con el marcador (regla 30); el censo lo capta y el guard de microcopy lo verifica.
+    //
+    // SCRUM-845: el destino se PREGUNTA a `destinoDeAccionFactura` (`invoiceAccion.js`) en vez de
+    // resolverse aquí con una copia local del registro. El criterio es idéntico —el mismo registro
+    // y el mismo `destinoEfectivo`—; lo que cambia es que ahora la respuesta tiene un nombre que la
+    // lista de Facturas también puede decir.
     function ubicarAccion(btn, id) {
-      const a = REGISTRO_ACC.find((x) => x.id === id);
-      const destino = a && typeof window.destinoEfectivo === 'function'
-        ? window.destinoEfectivo(a, estadoFactura, ctxAcciones)
-        : 'oculta';
+      const destino = window.destinoDeAccionFactura(id, invoice);
       if (destino === 'oculta' || destino === 'seccion-propia') return;
       btn.className = destino === 'primaria' ? 'btn-primary btn-sm'
         : (destino === 'secundaria' ? 'btn-secondary btn-sm' : 'btn-ghost btn-sm');

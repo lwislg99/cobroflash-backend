@@ -28,6 +28,7 @@
 // arranca navegador. La red que SÍ corre siempre es `tests/scrum816-la-lista-no-miente.test.mjs`.
 //
 // Salidas: 0 de acuerdo · 1 he encontrado un defecto · 2 NO SUPE MIRAR · 3 no arrancó el navegador.
+import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -63,10 +64,23 @@ const RUTAS = [
   { ruta: '/albaranes', fnVista: 'renderAlbaranesView', datos: reglasDeDatos([]) },
   { ruta: '/facturas', fnVista: 'renderInvoicesView', datos: reglasDeDatos([]) },
 ];
+// ── ⚠️ SCRUM-831 · ALBARANES YA NO SE COMPARA POR HASH, Y SE DICE POR QUÉ ────────────────────
+//
+// Este control nació para responder UNA pregunta: ¿el tope de ancho que SCRUM-816 quitó de
+// Trabajos se ha llevado por delante a alguna hermana? Se contestaba exigiendo que las cuatro
+// salieran idénticas al punto de partida de la rama.
+//
+// SCRUM-831 cambia Albaranes A PROPÓSITO —le da la columna de acciones que no tenía—, así que su
+// hash tiene que cambiar. Dejarlo como estaba lo pondría rojo para siempre, y un guard que grita
+// sin motivo enseña a ignorar los rojos (SCRUM-822).
+//
+// 🔴 PERO NO SE RETIRA DEL CONTROL: se le cambia la PREGUNTA. A las otras tres se les sigue
+// exigiendo el hash; a Albaranes se le exige que su cambio sea EXACTAMENTE el declarado —una
+// acción en `.cell-actions` y el Trabajo en `.cell-trabajo`—, que es más fuerte que un hash: un
+// hash sólo dice «cambió», esto dice «cambió en lo que dijo y en nada más que importe».
 const HERMANAS = [
   { ruta: '/clientes', rotulo: 'Clientes' },
   { ruta: '/presupuestos', rotulo: 'Presupuestos' },
-  { ruta: '/albaranes', rotulo: 'Albaranes' },
   { ruta: '/facturas', rotulo: 'Facturas' },
 ];
 
@@ -312,8 +326,8 @@ for (const ancho of [390, 1280, 1700]) {
   }
 }
 
-// ═══ ⑥ LAS OTRAS CUATRO LISTAS, IDÉNTICAS POR HASH CONTRA origin/main ═══════════════════════
-titulo('⑥ las otras CUATRO listas siguen idénticas · hash del DOM pintado, contra la base de la rama');
+// ═══ ⑥ LAS HERMANAS, CONTRA EL PUNTO DE PARTIDA — Y EL COMPARADOR SE CALIBRA ANTES ══════
+titulo('⑥ las hermanas: TRES idénticas por hash · Albaranes trae LO DECLARADO · y el comparador se calibra primero (SCRUM-843)');
 {
   // 🔴 CONTRA `merge-base`, NO CONTRA LA PUNTA DE `origin/main`. El porqué está en
   // `arbolDePartida`: la punta se mueve con cada PR ajeno y acusaría a una rama limpia.
@@ -353,15 +367,97 @@ titulo('⑥ las otras CUATRO listas siguen idénticas · hash del DOM pintado, c
         di(`   ✅ ${h.rotulo} · ${a.sha} · ${a.largo} caracteres, idéntico`);
       }
     }
-    // CONTROL POSITIVO: la que SÍ se ha tocado tiene que salir DISTINTA. Si saliera igual, el
-    // comparador estaría mirando otra cosa y los cuatro verdes de arriba no significarían nada.
+    // ═══ SCRUM-843 · EL CONTROL POSITIVO NO PUEDE DEPENDER DE UN TICKET SIN MERGEAR ═══════════
+    //
+    // 🔴 QUÉ HABÍA AQUÍ, Y POR QUÉ CAMBIA. El control positivo era: «Trabajos —la lista que aquel
+    // ticket cambiaba— tiene que salir DISTINTA del punto de partida». La intención es CORRECTA y
+    // no se retira: sin ella, los tres «idéntico» de arriba podrían ser un verde por no haber
+    // mirado. Lo que estaba mal era DE QUÉ DEPENDÍA.
+    //
+    // Porque eso sólo es cierto en la rama de aquel ticket, y sólo mientras no se ha mergeado. En
+    // cuanto SCRUM-831 entró en `main`, el ancla se evaporó:
+    //   · sobre `main`, `merge-base(HEAD, origin/main)` **es** HEAD → comparaba main consigo
+    //     mismo, siempre idéntico;
+    //   · sobre cualquier otra rama, la base ya trae el cambio dentro → también idéntico.
+    // Medido el 9-sep-2026: salida 2 sobre `main`, y salida 2 en una rama que sólo tocaba un
+    // fichero de `docs/`. Así que no era «main está rojo»: era TODO PR rojo. Un tapón común.
+    //
+    // Es la misma familia que ya nos mordió con los suelos —uno que depende de que el defecto
+    // siga existiendo caduca el día que se arregla—, con una vuelta de tuerca: éste dependía de
+    // que el trabajo siguiera SIN MERGEAR, o sea que caducaba con el éxito.
+    //
+    // 🔒 EL ANCLA NUEVA NO DEPENDE DE NINGÚN TICKET: LA FABRICA EL GUARD. Son dos preguntas, y
+    // entre las dos cubren lo que cubría la vieja y algo más:
+    //   Ⓐ ¿este comparador DISTINGUE contenidos? Dos rutas del MISMO servidor que pintan listas
+    //     distintas tienen que dar huellas distintas. Caza un `huella` que lea el selector
+    //     equivocado, que lea antes de pintar, o que devuelva siempre lo mismo.
+    //   Ⓑ ¿son de verdad DOS árboles? El guard planta un centinela dentro de la copia de la base
+    //     —un fichero que sólo existe ahí— y exige que el servidor de la base lo sirva y el de
+    //     hoy NO. Caza el fallo que de verdad daba miedo: los dos servidores apuntando al mismo
+    //     sitio, que hace que todo salga «idéntico» sin haber comparado nada.
+    // Ninguna de las dos deja de ser cierta al mergear nada.
+
+    // Ⓐ el comparador distingue contenidos.
+    const calA = await huella(puertoMain, '/trabajos20');
+    const calB = await huella(puertoMain, '/clientes');
+    if (calA.sha === calB.sha) {
+      nosupe('   🔴 NO SUPE MIRAR · calibración Ⓐ: dos listas DISTINTAS del mismo servidor dan la\n'
+        + '      misma huella. El comparador no está leyendo lo que cree, así que los «idéntico»\n'
+        + '      de arriba no valdrían nada.');
+    } else {
+      di(`   ✅ calibración Ⓐ · el comparador distingue contenidos · ${calA.sha} != ${calB.sha}`);
+    }
+
+    // Ⓑ los dos servidores son dos árboles. El centinela vive SÓLO en la copia temporal de la
+    // base —nunca en el repositorio—, así que su ausencia en el de hoy es la prueba.
+    const CENTINELA = '/_centinela-843.txt';
+    const marca = 'ancla-que-no-caduca-' + partida.base.sha.slice(0, 12);
+    fs.writeFileSync(path.join(partida.publico, CENTINELA.slice(1)), marca);
+    const pide = async (pto, ruta) => {
+      const r = await fetch(`http://127.0.0.1:${pto}${ruta}`);
+      return { estado: r.status, cuerpo: r.ok ? (await r.text()).trim() : null };
+    };
+    const enLaBase = await pide(puertoMain, CENTINELA);
+    const enHoy = await pide(puerto, CENTINELA);
+    if (enLaBase.cuerpo !== marca) {
+      nosupe(`   🔴 NO SUPE MIRAR · calibración Ⓑ: el servidor de la BASE no sirve el centinela `
+        + `(estado ${enLaBase.estado}). No puedo afirmar que esté sirviendo el árbol de partida.`);
+    } else if (enHoy.estado !== 404) {
+      nosupe(`   🔴 NO SUPE MIRAR · calibración Ⓑ: el servidor de HOY también sirve el centinela `
+        + `(estado ${enHoy.estado}), y ése sólo existe en la copia de la base. Los dos servidores\n`
+        + '      están mirando el MISMO árbol: todo saldría «idéntico» sin haber comparado nada.');
+    } else {
+      di('   ✅ calibración Ⓑ · son dos árboles · la base sirve el centinela, hoy da 404');
+    }
+
+    // Trabajos: se DICE si cambió o no, y ninguna de las dos respuestas es un veredicto. En la
+    // rama que la toca cambiará; en `main` y en las demás, no. Eso es información, no un fallo.
     const tA = await huella(puertoMain, '/trabajos20');
     const tB = await huella(puerto, '/trabajos20');
-    if (tA.sha === tB.sha) {
-      nosupe('   🔴 NO SUPE MIRAR: Trabajos sale IDÉNTICA a origin/main. Este ticket la cambia entera,\n'
-        + '      así que el comparador no está leyendo lo que cree. Los cuatro verdes de arriba no valen.');
+    di(tA.sha === tB.sha
+      ? `   · Trabajos igual que en la base · ${tA.sha}`
+      : `   · Trabajos cambia respecto a la base · ${tA.sha} -> ${tB.sha}`);
+
+    // ── SCRUM-831 · a Albaranes se le exige que su cambio sea EL DECLARADO, no un hash ────────
+    //
+    // 🔴 SCRUM-843 · y ese examen se hace sobre el árbol de HOY, no contra la base. Las dos
+    // propiedades —una acción en `.cell-actions` y el Trabajo en `.cell-trabajo`— son ABSOLUTAS:
+    // o están en lo que se pinta hoy, o no están. Exigir ADEMÁS que difiera de la base era la
+    // segunda copia del mismo defecto de arriba —y ni siquiera llegaba a ejecutarse, porque la
+    // primera saltaba antes—. El examen NO se relaja: se le quita una condición que hablaba de
+    // git y no de la pantalla, y se le añade el suelo que le faltaba.
+    const b = await huella(puerto, '/albaranes');
+    const filasAlb = (b._html.match(/<tr[\s>]/g) || []).length;
+    const tieneAccion = /class="cell-actions"[^>]*>\s*<button/.test(b._html.replace(/\n/g, ''));
+    const tieneTrabajo = /class="cell-trabajo"/.test(b._html);
+    if (filasAlb < 2) {
+      nosupe(`   🔴 NO SUPE MIRAR: Albaranes pintó ${filasAlb} <tr> (${b.largo} caracteres). Sin filas,\n`
+        + '      «no tiene la acción» sería cierto por no haber pintado, que no es lo mismo.');
+    } else if (!tieneTrabajo || !tieneAccion) {
+      mal(`   🔴 Albaranes NO trae lo declarado · acción en la ranura: ${tieneAccion} · `
+        + `Trabajo en su celda: ${tieneTrabajo}`);
     } else {
-      di(`   ✅ control positivo · Trabajos SÍ cambia · ${tA.sha} → ${tB.sha}`);
+      di('   ✅ Albaranes trae LO DECLARADO: acción en `.cell-actions`, Trabajo en `.cell-trabajo`');
     }
     srvMain.close();
   }
@@ -374,4 +470,4 @@ srv.close();
 di('');
 if (ciego) { console.error(`🔴 NO SUPE MIRAR en ${ciego} sitio(s): un silencio así no es un verde.`); process.exit(2); }
 if (fallos) { console.error(`🔴 ${fallos} defecto(s).`); process.exit(1); }
-di('✅ el candado aguanta en las dos direcciones, el fallo revierte, no hay scroll horizontal y las cuatro hermanas están intactas.');
+di('✅ el candado aguanta en las dos direcciones, el fallo revierte, no hay scroll horizontal, y las hermanas están donde deben.');

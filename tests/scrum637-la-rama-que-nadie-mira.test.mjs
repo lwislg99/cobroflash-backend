@@ -24,6 +24,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { instantanea, alcanzabilidadDe } from '../scripts/_censo-alcanzabilidad.mjs';
 import { edadEnDias, urlDeCompare, ordenarPorEdad, suelo, INTOCABLES }
@@ -49,6 +50,43 @@ function arbol() {
   return INST;
 }
 
+const git = (...args) => execFileSync('git', args,
+  { cwd: RAIZ, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
+
+/**
+ * LA POBLACIÓN QUE EL AUTO-BORRADO NO PUEDE ENCOGER · SCRUM-833.
+ *
+ * 🔴 COPIADA DE `scrum804-la-rama-viva.test.mjs`, Y A PROPÓSITO. Aquel guard tenía por sujetos
+ * RAMAS VIVAS del remoto; el auto-borrado al mergear se llevó \~390 y, sin sujetos que interrogar,
+ * se puso rojo con el sistema sano y frenó todos los PR durante dos días. Este fichero tenía la
+ * MISMA forma en su control negativo. Dos formas distintas para el mismo problema es como nace la
+ * próxima contradicción, así que aquí no se inventa una tercera: se usa la que ganó.
+ *
+ *     🔒 Si el borrado de una rama puede cambiar tu medición, no estabas midiendo el trabajo:
+ *        estabas midiendo el envase.
+ *
+ * Un `git log --merges` es PERMANENTE: el commit de merge y su segundo padre siguen siendo
+ * alcanzables desde `main` aunque la rama se borrara del remoto el mismo día. Sólo puede CRECER.
+ *
+ * Devuelve `{ merge, p2, rama }`. `p2` —el segundo padre— es la punta que tenía la rama al
+ * mergearse: está dentro de `main` POR CONSTRUCCIÓN, y ésa es la respuesta conocida del árbitro.
+ */
+function ramasDeLaHistoriaDeMerges(sha) {
+  const filas = [];
+  for (const linea of git('log', '--merges', '--format=%H%x09%P%x09%s', sha).split('\n')) {
+    const [merge, padres, ...resto] = linea.split('\t');
+    if (!merge || !padres || resto.length === 0) continue;
+    // Sólo los merges de PR traen el NOMBRE de la rama en el asunto. Los `Merge … into <rama>`
+    // son la dirección contraria —main entrando en la rama— y no dicen qué se entregó.
+    const m = /^Merge pull request #\d+ from [^/\s]+\/(\S+)$/.exec(resto.join('\t').trim());
+    if (!m) continue;
+    const p2 = String(padres).trim().split(/\s+/)[1];
+    if (!p2) continue;
+    filas.push({ merge, p2, rama: m[1] });
+  }
+  return filas;
+}
+
 // ═══ ① SUELO — sin esto, todo lo de abajo sería cierto sobre un conjunto vacío ════════════
 
 test('SCRUM-637 · 🔴 SUELO: el módulo carga y sus cuatro decisiones se pueden EJECUTAR', () => {
@@ -62,9 +100,21 @@ test('SCRUM-637 · 🔴 SUELO: el módulo carga y sus cuatro decisiones se puede
 test('SCRUM-637 · 🔴 SUELO: este clon VE las refs, o lo de abajo no mide nada', () => {
   const inst = arbol();
   assert.equal(inst.incapaz, null, `🔴 no se pudo resolver origin/main: ${inst.incapaz}`);
-  assert.ok(inst.ramas.length > 50,
-    `🔴 CENSO CIEGO: sólo ${inst.ramas.length} refs de origin. Un clon superficial devuelve una\n`
-    + '   lista corta SIN fallar (SCRUM-388), y sobre ella los controles de abajo pasarían solos.');
+
+  // 🔴 AQUÍ HABÍA `inst.ramas.length > 50`, Y ERA EL TERCER MIEMBRO DE LA FAMILIA DE SCRUM-833.
+  // Lo cazó el censo de este mismo ticket, dentro del fichero que venía a arreglar: con 97 refs
+  // vivas quedaban 47 de margen, y el auto-borrado se lleva ramas cada día. Un número escrito a
+  // mano no envejece mejor por estar en un suelo.
+  //
+  // Lo que se quería vigilar sigue siendo verdad y sigue vigilado: un clon SUPERFICIAL devuelve
+  // una lista corta SIN fallar (SCRUM-388). Pero la señal buena de un clon superficial no es
+  // «pocas refs» —eso también lo produce una limpieza legítima—: es que **no hay historia**. Y un
+  // `git log --merges` vacío es exactamente eso, sin ninguna cifra que caduque.
+  const merges = ramasDeLaHistoriaDeMerges(inst.sha);
+  assert.ok(merges.length > 0,
+    '🔴 CENSO CIEGO: cero merges de PR en la historia de `main`. O el clon es superficial —un\n'
+    + '   `--depth` no trae merges— o el patrón del asunto dejó de casar. En los dos casos, los\n'
+    + '   controles de abajo pasarían solos sobre una lista corta.');
 });
 
 // ═══ ② EL DATO QUE FALTABA: LA EDAD ══════════════════════════════════════════════════════
@@ -155,23 +205,80 @@ test('SCRUM-637 · ✅ CONTROL NEGATIVO del suelo: con datos normales NO se decl
 
 // ═══ ⑤ CONTRA EL ÁRBOL DE VERDAD ═════════════════════════════════════════════════════════
 
+// 🔴 REESCRITO EN SCRUM-833, Y POR DOS MOTIVOS DISTINTOS. El de fuera y el de dentro.
+//
+// ① EL DE FUERA — el que traía el ticket. Exigía `dentro.length > 10` sobre RAMAS VIVAS ya
+//    mergeadas, y el auto-borrado se las lleva al mergear. Medido el 9-sep-2026: quedaban 17, o
+//    sea SIETE de margen. Es la misma bomba que en SCRUM-804 explotó y frenó 26 PR dos días.
+//    Ahora los sujetos salen de `git log --merges`, que sólo puede crecer.
+//
+// ② 🔴 EL DE DENTRO, QUE ERA PEOR Y NO ESTABA EN EL TICKET. El aserto que decía comprobar «una
+//    rama ya mergeada no aparece como pendiente» era UNA TAUTOLOGÍA: cruzaba `dentro` (alcanzable
+//    === true) con `fuera` (alcanzable === false), dos conjuntos complementarios por construcción.
+//    Su intersección es vacía SIEMPRE, pase lo que pase con el código. Medido: 0, y no puede ser
+//    otra cosa. Un control que no puede fallar no es un control: es un comentario que ocupa sitio
+//    en el recuento de tests.
+//
+//    Se sustituye por lo único que sí distingue: contrastar la clasificación del censo contra un
+//    ORÁCULO INDEPENDIENTE —`git merge-base --is-ancestor`, que no comparte código con
+//    `alcanzabilidadDe`—. Comparar algo consigo mismo siempre da «de acuerdo».
 test('SCRUM-637 · 🔴 NEGATIVO: una rama que SÍ está en main NO aparece como sin mergear', () => {
   const inst = arbol();
   const alcanzable = alcanzabilidadDe(inst);
-  const dentro = inst.ramas.filter((r) => alcanzable(r.nombre) === true);
-  const fuera = inst.ramas.filter((r) => !INTOCABLES.has(r.nombre) && alcanzable(r.nombre) === false);
 
-  assert.ok(dentro.length > 10,
-    `🔴 CENSO CIEGO: sólo ${dentro.length} ramas dentro de main. Sin mergeadas, el control de abajo\n`
-    + '   no distingue «filtra bien» de «no hay nada que filtrar».');
-  assert.ok(fuera.length > 0,
-    '🔴 CENSO CIEGO: cero ramas fuera de main (ver el suelo de arriba).');
+  // 🔴 A GRANEL, con UN `rev-list`. La primera versión llamaba a `merge-base --is-ancestor` por
+  // sujeto: 1.200 procesos y 366 s medidos. Un guard que tarda seis minutos se acaba sacando de
+  // la tanda, y entonces da igual lo bien que mida. Copiado de SCRUM-804, que ya lo resolvió.
+  const alcanzables = new Set(git('rev-list', inst.sha).split('\n').map((l) => l.trim()).filter(Boolean));
+  const esAncestro = (objeto) => alcanzables.has(String(objeto).trim());
 
-  const nombresFuera = new Set(fuera.map((r) => r.nombre));
-  const coladas = dentro.filter((r) => nombresFuera.has(r.nombre));
-  assert.deepEqual(coladas.map((r) => r.nombre), [],
-    '🔴 una rama YA MERGEADA aparece en la lista de pendientes. La lista dejaría de ser una lista\n'
-    + '   de trabajo esperando y pasaría a ser ruido que nadie lee.');
+  // …y el atajo NO se cree a sí mismo: se contrasta contra el mandato de git en los DOS sentidos,
+  // sobre una muestra. Si `rev-list` y `merge-base` discrepasen, todo lo de abajo sería humo.
+  const mandato = (objeto) => {
+    try {
+      execFileSync('git', ['merge-base', '--is-ancestor', objeto, inst.sha],
+        { cwd: RAIZ, stdio: ['ignore', 'ignore', 'ignore'] });
+      return true;
+    } catch { return false; }
+  };
+
+  // ── SUELO ①: la población PERMANENTE. No la puede vaciar ningún borrado de ramas.
+  const merges = ramasDeLaHistoriaDeMerges(inst.sha);
+  assert.ok(merges.length > 0,
+    '🔴 CIEGO: cero merges de PR en la historia de `main`. O este clon está superficial, o el\n'
+    + '   patrón del asunto dejó de casar. Sin sujetos, lo de abajo no distingue nada.');
+
+  // ── RESPUESTA CONOCIDA: el segundo padre de un merge de PR está dentro de `main` POR
+  //    CONSTRUCCIÓN. Si el oráculo no lo dice, el oráculo está roto — y entonces que censo y
+  //    oráculo «coincidan» no probaría nada: probaría que los dos callan igual.
+  const traidores = merges.filter((m) => !esAncestro(m.p2)).map((m) => m.rama);
+  assert.deepEqual(traidores, [],
+    '🔴 EL ORÁCULO ESTÁ ROTO: el segundo padre de estos merges NO sale como ancestro de `main`,\n'
+    + `   y por construcción tiene que serlo: ${traidores.slice(0, 5).join(', ')}.`);
+
+  // ── SUELO ②: que haya ramas vivas de las dos clases, o el contraste de abajo mide sobre vacío.
+  const vivas = inst.ramas.filter((r) => !INTOCABLES.has(r.nombre));
+  const fuera = vivas.filter((r) => alcanzable(r.nombre) === false);
+  assert.ok(vivas.length > 0 && fuera.length > 0,
+    `🔴 CENSO CIEGO: ${vivas.length} ramas vivas y ${fuera.length} fuera de main.`);
+
+  // ── SUELO ③: el atajo contra el mandato, en los DOS sentidos y sobre sujetos de las dos clases.
+  const muestra = [...merges.slice(0, 3).map((m) => m.p2), ...fuera.slice(0, 3).map((r) => r.objeto)];
+  const desacuerdo = muestra.filter((o) => esAncestro(o) !== mandato(o));
+  assert.deepEqual(desacuerdo, [],
+    '🔴 `rev-list` y `merge-base --is-ancestor` NO dicen lo mismo sobre estos objetos. El atajo a\n'
+    + '   granel dejaría de ser un atajo y pasaría a ser otra respuesta.');
+
+  // ── LO QUE DE VERDAD SE COMPRUEBA: para CADA rama viva, la clase que dice el censo y la que
+  //    dice `git` coinciden. Esto SÍ puede fallar: basta con que `alcanzabilidadDe` se equivoque
+  //    en una, y entonces una rama ya mergeada aparecería en la lista de pendientes.
+  const discrepan = vivas
+    .map((r) => ({ nombre: r.nombre, censo: alcanzable(r.nombre), git: esAncestro(r.objeto) }))
+    .filter((x) => x.censo !== null && x.censo !== x.git);
+  assert.deepEqual(discrepan, [],
+    '🔴 el censo y `git merge-base --is-ancestor` NO dicen lo mismo de estas ramas. Si el censo\n'
+    + '   dice «fuera» de una que SÍ está en main, esa rama aparece en la lista de pendientes y la\n'
+    + '   lista deja de ser trabajo esperando para ser ruido que nadie lee.');
 });
 
 test('SCRUM-637 · 🔴 `main` NUNCA sale como rama pendiente', () => {

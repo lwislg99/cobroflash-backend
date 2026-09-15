@@ -88,15 +88,29 @@ export const FACTURAS = Object.freeze([
  * haber mirado ni una fila: un verde por vacío, que es el que este repo persigue.
  */
 export const ALBARANES = Object.freeze({
+  // 🔴 SCRUM-831 · LOS CINCO CASOS QUE DECIDEN, no dos. La primaria de un albarán la elige el
+  // registro de SCRUM-302 por ESTADO, y `firmado` tiene DOS contextuales excluyentes más el caso
+  // sin siguiente paso. Con sólo `borrador` y `emitido`, un censo de acciones saldría verde sin
+  // haber visto la mitad de la tabla.
+  //
+  // `modoValoracion` y `quote` viajan desde SCRUM-831: sin ellos las dos condiciones de `firmado`
+  // dan `false` y la fila se queda sin acción POR FALTA DE DATO, que se pinta igual que «no hay
+  // nada que hacer» y significa lo contrario.
   filas: [
-    { id: 21, numero: 'A-2026-0021', estado: 'borrador', estadoFacturacion: 'sin_facturar', emisionAt: null, fecha: '2026-04-05T09:00:00.000Z', cliente: CLIENTES[0].name, jobId: 1, trabajo: 'Trabajo 1' },
-    { id: 22, numero: 'A-2026-0022', estado: 'emitido', estadoFacturacion: 'parcial', emisionAt: '2026-04-06T09:00:00.000Z', fecha: '2026-04-06T09:00:00.000Z', cliente: CLIENTES[1].name, jobId: 2, trabajo: 'Trabajo 2' },
+    { id: 21, numero: 'A-2026-0021', estado: 'borrador', estadoFacturacion: 'sin_facturar', modoValoracion: 'SIN_VALORAR', quote: { id: 11 }, emisionAt: null, fecha: '2026-04-05T09:00:00.000Z', cliente: CLIENTES[0].name, jobId: 1, trabajo: 'Trabajo 1' },
+    { id: 22, numero: 'A-2026-0022', estado: 'emitido', estadoFacturacion: 'parcial', modoValoracion: 'VALORADO', quote: { id: 12 }, emisionAt: '2026-04-06T09:00:00.000Z', fecha: '2026-04-06T09:00:00.000Z', cliente: CLIENTES[1].name, jobId: 2, trabajo: 'Trabajo 2' },
+    // firmado + VALORADO con algo pendiente → «Facturar lo entregado»
+    { id: 23, numero: 'A-2026-0023', estado: 'firmado', estadoFacturacion: 'parcial', modoValoracion: 'VALORADO', quote: { id: 11 }, emisionAt: '2026-04-07T09:00:00.000Z', fecha: '2026-04-07T09:00:00.000Z', cliente: CLIENTES[0].name, jobId: 1, trabajo: 'Trabajo 1' },
+    // firmado + SIN precios pero CON presupuesto detrás → «Convertir en factura»
+    { id: 24, numero: 'A-2026-0024', estado: 'firmado', estadoFacturacion: 'sin_facturar', modoValoracion: 'SIN_VALORAR', quote: { id: 12 }, emisionAt: '2026-04-08T09:00:00.000Z', fecha: '2026-04-08T09:00:00.000Z', cliente: CLIENTES[1].name, jobId: 2, trabajo: 'Trabajo 2' },
+    // firmado y YA FACTURADO del todo → NINGUNA acción, y esa celda vacía es información.
+    { id: 25, numero: 'A-2026-0025', estado: 'firmado', estadoFacturacion: 'facturado', modoValoracion: 'VALORADO', quote: { id: 11 }, emisionAt: '2026-04-09T09:00:00.000Z', fecha: '2026-04-09T09:00:00.000Z', cliente: CLIENTES[0].name, jobId: 1, trabajo: 'Trabajo 1' },
   ],
   ejes: { estado: ['borrador', 'emitido', 'firmado'], cobro: ['sin_facturar', 'parcial', 'facturado'] },
   contadores: {
-    total: 2,
-    porEstado: { borrador: 1, emitido: 1, firmado: 0 },
-    porCobro: { sin_facturar: 1, parcial: 1, facturado: 0 },
+    total: 5,
+    porEstado: { borrador: 1, emitido: 1, firmado: 3 },
+    porCobro: { sin_facturar: 2, parcial: 2, facturado: 1 },
   },
 });
 
