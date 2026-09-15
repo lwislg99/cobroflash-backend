@@ -204,13 +204,25 @@ test('SCRUM-861 · f) CONTROL: la firma del fundador sigue contando, con o sin d
 
 test('SCRUM-861 · f) CONTROL: todo lo que hoy firma el fundador en el árbol real sigue contando', () => {
   // Contra los registros REALES, sin opciones: cada ficha del fundador y el registro congelado.
+  //
+  // ⚠️ UN BARRIDO, NO UNO POR LITERAL. La primera versión llamaba a `constaAprobado` por cada
+  // literal (~195), y cada llamada vuelve a leer TODAS las fichas y `limites-del-fundador.md`:
+  // medido, 2051 ms en local para un solo test, en una tanda que en CI tiene 10 minutos de techo
+  // y se quedó sin tiempo en el PR de este ticket. La comprobación literal a literal se hace
+  // contra `literalesAprobados()` —la misma pregunta, `aprobada`— leída una vez; y la función
+  // pública `constaAprobado` se sigue ejercitando, una vez por registro.
   const reales = aprobacionesDeMicrocopy();
   const delFundador = reales.filter((a) => a.firmante === 'fundador');
   assert.ok(delFundador.length >= 10, `🔴 CIEGO: sólo ${delFundador.length} registros del fundador`);
+  const aprobados = new Set(literalesAprobados());
   for (const a of delFundador) {
     assert.equal(a.aprobada, true, `🔴 ${a.ruta} lo firma el fundador y ya no cuenta como aprobado`);
     for (const l of a.literales) {
-      assert.ok(constaAprobado(l).includes(a.ruta), `🔴 «${l}» (${a.ruta}) ha dejado de constar aprobado`);
+      assert.ok(aprobados.has(l), `🔴 «${l}» (${a.ruta}) ha dejado de constar aprobado`);
+    }
+    if (a.literales.length) {
+      assert.ok(constaAprobado(a.literales[0]).includes(a.ruta),
+        `🔴 «${a.literales[0]}» (${a.ruta}) no consta por la función pública que usan los guards`);
     }
   }
 });
