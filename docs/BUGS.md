@@ -606,6 +606,50 @@
   FAMILIA —la tanda no es determinista— con mecánica distinta, igual que el segundo caso del propio
   824 lo era del primero. Arreglarlo de paso sin medirlo sería justo lo que ese ticket prohíbe.
 
+### [ ] P3-CIEGO-850 · meta-guard sale CIEGO en `scrum850`/`scrum850b`: los `cae` declarados no casan con NINGÚN título de test real (hallazgo en PR #1283, 15-sep-2026)
+- **Síntoma, medido en el job `meta-guard · los guards caen cuando deben` del run
+  `34980767978`:** 4 de las declaraciones `MUTACIONES_QUE_ME_TUMBAN` salen **CIEGO** —no
+  MUDO, no ROJO— con el mensaje «el test «…» NO aparece EN VERDE en la pasada limpia»:
+  3 en `tests/scrum850-la-poblacion-del-instrumento.test.mjs` (`'el censo ve una tubería'`,
+  `'los //comentarios de package.json no son invocaciones'`, `'un comentario no cuenta como
+  invocación'`) y 1 en `tests/scrum850b-las-formas-que-mienten.test.mjs`
+  (`'🔴 \`&\` manda la tanda al segundo plano y el veredicto se pierde'`).
+- **Causa raíz, leída en `scripts/meta-guard-mutaciones.mjs` (`paso()`, `cayo()`):** el campo
+  `cae` de cada mutación tiene que ser un FRAGMENTO literal del título de un `test(...)` real
+  que pase en la pasada limpia — así decide `paso()` si hay algo que juzgar. Ninguna de las
+  cuatro cadenas anteriores es substring de ningún título de `test(...)` en esos dos ficheros
+  (comprobado leyendo los dos ficheros enteros: los títulos reales son, p. ej., `'SCRUM-850 ·
+  ✅ CONTROL POSITIVO: el detector ve cada forma que se come el código'` o `'SCRUM-850b · 🔴 el
+  censo VE el \`&\` — era el hueco'`). Son prosa descriptiva escrita al declarar la mutación,
+  no el título verdadero. **Esto NO es el guard fallando mal: es el fail-closed de SCRUM-748
+  funcionando — un guard cuya declaración no se puede casar con nada sale CIEGO por diseño.**
+- **No es de este PR.** `SCRUM-850` (`71636851`) y `SCRUM-850b` (`bd248dd1`) ya estaban en
+  `main` antes de que `scrum-665-el-pdf-que-se-reimprime` arrancara — el PR #1283 solo tocó
+  `docs/master/`. El rojo se hereda de `main`, no lo causan estos 3 ficheros de docs.
+- **Regla 41: no se toca `meta-guard-mutaciones.mjs`.** El arreglo, si se hace, es corregir el
+  `cae` de cada declaración (o el título del test) en los dos ficheros de SCRUM-850/850b.
+- **Hipótesis leída del código de `scripts/_invocaciones-de-la-tanda.mjs`, NO EJECUTADA —
+  falta MEDIR antes de tocar nada, y este sandbox no dejó correr `node --test` ni `npm test`
+  (todo intento de Bash de test salió "requires approval" sin que hubiera nadie para
+  aprobarlo; sólo `git *` estaba pre-aprobado)::**
+  - mutación 1 (apaga `sep === '|' → TUBERIA`): rompe la aserción directa de
+    `'SCRUM-850 · ✅ CONTROL POSITIVO: el detector ve cada forma que se come el código'`
+    (línea 68), que exige `TUBERIA` para `'npm test | tail'`.
+  - mutaciones 2 y 3 (dejan de saltar claves `//` de `package.json` / dejan de quitar
+    comentarios `#`): varias claves `//guard:*` de `package.json` traen la frase «Fuera de
+    \`npm test\` porque…; la red que SI corre siempre es…» — un `;` DESPUÉS de mencionar
+    `npm test` en la MISMA cadena. Sin el salto de comentario, `dePackageJson` procesaría esa
+    prosa como comando y `segmentar` la partiría por `;`, lo que convertiría esa entrada en
+    `SECUENCIA` y tumbaría `'SCRUM-850 · 🔴 ninguna invocación de la tanda descarta su código
+    de salida'` (línea 125) — ambas mutaciones podrían apuntar ahí, pero no se confirmó cuál
+    exactamente sin ejecutar la pasada limpia real.
+  - mutación 4 (850b, apaga la rama que reconoce `&` de segundo plano en `segmentar`): rompe
+    `'SCRUM-850b · 🔴 el censo VE el \`&\` — era el hueco'` (línea 152), que exige
+    `SEGUNDO_PLANO` para `'npm test &'`.
+- **Done cuando:** alguien con `node --test`/`npm run meta:mutaciones` disponible confirme cada
+  hipótesis contra la pasada limpia real y corrija el `cae` (o el título) — nunca el guard — y
+  el job `meta-guard · los guards caen cuando deben` vuelva a verde.
+
 ### [x] P3-CENSO-402 · `CENSO` de SCRUM-402 tenia una CLAVE REPETIDA, y JavaScript se comia una
 - **Medido el 5-sep-2026** desde la rama de SCRUM-606, sobre `origin/main` = `28b04585` SIN
   ninguna rama encima: `tests/scrum402-marcador-no-se-pinta.test.mjs` salia **ROJO** en R4
