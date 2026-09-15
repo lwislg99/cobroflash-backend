@@ -139,6 +139,48 @@ seguiría diciendo que sólo existe una firma, y la primera ficha delegada parec
 * **Ningún texto de pantalla**, ningún rótulo, `public/`, `src/` ni `prisma/`.
 * **Cero producción y cero staging.**
 
+---
+
+## 8 · 🔴 El CI del #1302 agotó los 10 minutos — lo medido, y lo que no se ha reproducido
+
+**Medido contra:** `origin/main` = `10987e08e7ff5b2f0fa4db0ecd2dda71d64215b5` · 2026-09-15T18:01:46+02:00
+
+Run `34989093746`, sobre el merge `23b0cd09` (`7cf056e6` dentro de `3e5f58db`): «build + tests (con
+banco desechable)» cancelado con *«The job has exceeded the maximum execution time of 10m0s»*. Cero
+`✖` en los 6335 resultados que llegó a imprimir.
+
+| | mi run | main `3e5f58db` (run `34988596962`, verde) |
+| --- | --- | --- |
+| último resultado de SCRUM-835 | 15:37:27 | 15:33:31 |
+| lo siguiente que imprime | **nada**: cancelado a las 15:42:22 | SCRUM-836, 0,02 s después |
+| de SCRUM-835 al final de la tanda | **más de 4 min 55 s sin una línea** | **8 s** |
+
+* **No es lentitud general: es algo que no terminó.** El reporter imprime por orden de fichero —la
+  secuencia del log lo confirma—, así que el primer fichero que no terminó es
+  `tests/scrum836-ancla-de-mutacion-viva.test.mjs`. `scrum861` ni siquiera llegó a imprimir.
+* **Sólo le pasó a este run.** Los otros cinco «build + tests» de la misma franja —main `3e5f58db` y
+  `10987e08`, y los PR de 675b, 829b y 860b— en verde, en 4–6 min.
+* **Descartado, midiéndolo:**
+  * `scrum836` sobre el árbol de ese merge extraído con finales LF, como lo ve el CI: termina en **4 s**.
+    Su único rojo allí es `dist/` ausente —`scrum608` ancla mutaciones en `dist/`, y `dist/` lo compila
+    `npm test`—, es decir, del montaje.
+  * `scrum836` no lanza procesos, y el meta-guard que importa sólo arranca su bloque de minutos si se
+    ejecuta directamente (`ejecutadoDirectamente`).
+  * Ningún test de la cola ejecuta instrumentos de `docs/master/evidencias/`: `rojos-861.mjs`, que
+    reescribe el oráculo en disco, **no corre dentro de la tanda**.
+  * `origin/main` no ha tocado ninguno de los ficheros de esta rama desde `cae27c2e` (A4).
+* **No reproducido, y no lo llamo intermitente por un solo run.** Lo dice el CI siguiente: si vuelve
+  a cortarse en el mismo sitio, es determinista y no es ruido.
+
+### Lo que sí era mío, y se arregla aunque no fuera la causa
+
+El control del árbol real de `scrum861` llamaba a `constaAprobado` **por cada literal**, y cada
+llamada vuelve a barrer `docs/microcopy/` entero: cuadrático. Ahora se pregunta a un `Set` de
+`literalesAprobados()`, y `constaAprobado` sólo una vez por registro, para seguir exigiendo la ruta.
+**2051 ms → 217 ms.** Lo exigido no cambia: todo literal firmado por el fundador sigue constando uno
+a uno. `scrum861` + `scrum824`: 17/17 en verde, y los seis rojos, **vueltos a ver caer** contra el
+test reescrito.
+
 ## Tests que introduce esta entrada
 
 * `tests/scrum861-firma-por-delegacion.test.mjs` — suelo, los seis casos (a–f) y el control del árbol
