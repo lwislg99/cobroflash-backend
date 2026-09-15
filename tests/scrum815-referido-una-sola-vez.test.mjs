@@ -8,13 +8,33 @@
 // dos incrementan `freeMonthsEarned`. El referidor cobra el doble. Está medido en
 // `docs/master/SCRUM-815.md`, paso ① §3; aquí no se re-mide: se fija y se cierra.
 //
-// ── POR QUÉ ESTE FICHERO NO USA `_envio-doblado.mjs` ─────────────────────────────────────────
-// 🔴 Su doble corta por lo sano con todo lo que empieza por `$`:
-//     if (nombre.startsWith('$')) return async () => undefined;   // _envio-doblado.mjs:66
-// O sea que `$transaction(cb)` **devuelve `undefined` SIN LLAMAR a `cb`**. Con ese doble, el
-// cuerpo de la transacción no se ejecuta y el test saldría verde sin haber probado nada — o rojo
-// por el motivo equivocado. Un doble que se traga la transacción no puede arbitrar una carrera
-// que vive DENTRO de la transacción. Por eso aquí hay un doble propio y pequeño.
+// ── QUÉ ES EL DOBLE DE ESTE FICHERO, Y POR QUÉ NO ES `_envio-doblado.mjs` ────────────────────
+//
+// **Es un banco de CONCURRENCIA CON ESTADO, no un rodeo.** Durante un tiempo esta cabecera dijo
+// que existía por `_envio-doblado.mjs:66` —el `startsWith('$')` que devolvía `undefined` sin
+// llamar al callback de `$transaction`—. Eso **ya no es cierto**: SCRUM-855 lo arregló y el doble
+// compartido ejecuta el cuerpo de la transacción. El motivo de que este banco siga aquí es otro,
+// y es el de abajo.
+//
+// LO QUE MODELA, enumerado:
+//   · **tabla con estado** — lo que se escribe se puede leer de vuelta;
+//   · **`{increment}` / `{decrement}`** — la semántica de escritura de Prisma, no un valor fijo;
+//   · **el `where`** — `null` y `not`;
+//   · **`updateMany` como UPDATE CONDICIONAL ATÓMICO**, que comprueba y escribe sin ceder el
+//     turno en medio y devuelve un `{count}` de verdad;
+//   · **`cede()`** antes de cada operación — obliga a que dos llamadas concurrentes se intercalen
+//     de forma DETERMINISTA, para que la carrera no dependa de la suerte.
+//
+// 🔴 POR QUÉ NO USA EL COMPARTIDO: **porque el compartido no tiene estado.** Devuelve respuestas
+// fijas declaradas por método — tras un `update`, su `findUnique` sigue devolviendo `null`, su
+// `updateMany` devuelve `{count: 0}` mirando el `where`, y un `{decrement}` lo pasa tal cual.
+// Sin estado, la carrera que este fichero mide **no se puede ni plantear**: no hay una segunda
+// lectura que pueda ver —o no ver— lo que escribió la primera.
+//
+// 🔴 CUÁNDO SE FUNDEN, y es criterio, no preferencia: **si un TERCER test necesita banco de
+// concurrencia, se extrae uno común.** Con tres instrumentos vivos la duplicación ya cuesta más
+// que la abstracción; con dos, extraer un común obligaría a darle estado al doble de envío —que
+// no lo necesita— y a que los tests que hoy lo usan bien cargaran con él. No antes de tres.
 //
 // ── LO QUE EL DOBLE MODELA, Y LO QUE NO ──────────────────────────────────────────────────────
 // Modela lo único que decide: que un UPDATE CONDICIONAL es **atómico** —comprueba y escribe sin
