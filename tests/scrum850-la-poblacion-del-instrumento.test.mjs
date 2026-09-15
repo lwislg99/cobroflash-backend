@@ -48,13 +48,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'scripts/_invocaciones-de-la-tanda.mjs',
     de: "    if (sep === '|') v = VEREDICTOS.TUBERIA;",
     a: '    if (false) v = VEREDICTOS.TUBERIA;',
-    cae: 'el censo ve una tubería',
+    cae: 'el detector ve cada forma que se come el código',
   },
   {
     fichero: 'scripts/_invocaciones-de-la-tanda.mjs',
     de: "    if (k.startsWith('//')) continue;",
     a: '    if (false) continue;',
-    cae: 'los //comentarios de package.json no son invocaciones',
+    cae: 'ninguna invocación de la tanda descarta su código de salida',
   },
   {
     fichero: 'scripts/_invocaciones-de-la-tanda.mjs',
@@ -64,7 +64,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     // indentación es anclar a cómo está formateado hoy el fichero, que es lo primero que cambia.
     de: "if (c === '#' && (i === 0 || /\\s/.test(linea[i - 1]))) return linea.slice(0, i);",
     a: 'if (false) return linea.slice(0, i);',
-    cae: 'un comentario no cuenta como invocación',
+    cae: 'el último tramo y los comentarios NO se marcan',
   },
 ];
 
