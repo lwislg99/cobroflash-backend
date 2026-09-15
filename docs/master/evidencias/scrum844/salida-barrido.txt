@@ -1,0 +1,71 @@
+BARRIDO SCRUM-844 §13 · «¿hay dentro de un gateado algún assert que no necesite base?»
+───────────────────────────────────────────────────────────────────────────────────────────────
+ficheros .test.mjs mirados : 798
+ficheros CON tests gateados: 64
+tests gateados             : 107
+
+🔴 SUELO · la respuesta CONOCIDA del §4 (auditada a mano allí):
+   ✅ ve173_1
+   ✅ ve173b
+   ✅ noSeñalaEl2
+   ✅ noSeñalaEl3
+   ✅ noSeñalaEl177
+      · tests/scrum173-cadena-verifactu-serializada.test.mjs:51 [B] SCRUM-173 ①: sellar DENTRO de una transacción está prohibido (rompería el lote)
+      · tests/scrum173-cadena-verifactu-serializada.test.mjs:188 [B] SCRUM-173b: sellar una ANULACIÓN dentro de una transacción está prohibido
+   → ✅ el instrumento distingue
+
+🔴 SIEMBRA · un defecto que SÉ que no está cubierto, en un test fabricado:
+   ✅ ve la mitad PURA (el assert que no necesita base)
+   ✅ y NO señala la mitad que sí la necesita
+      · :9 [A] ok(normalizado.includes('/storage/'))
+   → ✅ separa las dos mitades del mismo test
+
+LA LISTA · 29 asserts en 8 ficheros
+───────────────────────────────────────────────────────────────────────────────────────────────
+
+tests/a55-window-quote.test.mjs   (1)
+  :  39 [A] equal(process.env.WHATSAPP_DRY_RUN)
+
+tests/bot-suite.test.mjs   (17)
+  : 148 [A] equal(last()?.kind)
+  : 149 [A] ok(last().rows.includes('bot_quotes') && last().rows.includes('bot_human'))
+  : 176 [A] equal(outbox.length , len)
+  : 191 [A] equal(outbox.length , afterFirst)
+  : 217 [A] ok(/Cuéntame qué necesitas/i.test(last()?.text || ''))
+  : 224 [A] ok(!/aceptaci[oó]n|Perfecto|registrado tu/i.test(last()?.text || ''))
+  : 230 [A] equal(last()?.kind)
+  : 231 [A] ok(/En qué zona/i.test(last()?.bodyText || ''))
+  : 237 [A] ok(/Dime la zona/i.test(last()?.text || ''))
+  : 243 [A] equal(last()?.kind)
+  : 244 [A] ok(last().buttons.includes('bot_confirm_send') && last().buttons.includes('bot_confirm_edit'))
+  : 245 [A] ok((last().bodyText || '').includes(MARKER.slice(0, 15)))
+  : 252 [A] ok(/de nuevo|Cuéntame/i.test(last()?.text || ''))
+  : 255 [A] equal(last()?.kind)
+  : 299 [A] equal(last()?.kind)
+  : 301 [A] equal(last()?.kind)
+  : 324 [A] equal(outbox.length , len)
+
+tests/scrum106-trabajos-fecha.test.mjs   (1)
+  :  24 [A] equal(CAMPO_FECHA_TRABAJOS)
+
+tests/scrum115-wa-fallo-registrado.test.mjs   (2)
+  : 108 [A] equal(result.ok , false)
+  : 109 [A] equal(result.reason)
+
+tests/scrum173-cadena-verifactu-serializada.test.mjs   (2)
+  :  51 [B] match(err.message , /verifactu_seal_inside_transaction/ , `🔴 sellar dentro de una tx debe rechazarse; llegó: ${err.message}`)
+  : 188 [B] match(err.message , /verifactu_seal_inside_transaction/ , `🔴 la anulación dentro de una tx debe rechazarse; llegó: ${err.mess)
+
+tests/scrum222-deriva-arranque.test.mjs   (3)
+  : 291 [A] equal(r.estado , `staging debería estar en sync; salió ${r.estado}` + (r.estado === 'deriva' ? `: ${mensajeDeDeriva(r)}` : ` ()
+  : 298 [A] ok(r.tablas >= 20 , `pocas tablas comprobadas: ${r.tablas}`)
+  : 299 [A] ok(r.columnas >= 100 , `pocas columnas comprobadas: ${r.columnas}`)
+
+tests/scrum72-pdfs-privados.test.mjs   (2)
+  :  36 [A] ok(!/\/public\//.test(normalized) && !normalized.endsWith('/public') , `REGRESIÓN SCRUM-72: invoicesDir vuelve a estar bajo)
+  :  40 [A] ok(normalized.includes('/storage/') , `invoicesDir debe vivir en storage/ (actual: ${invoicesDir})`)
+
+tests/scrum728d-ms-en-loopback.test.mjs   (1)
+  : 133 [A] ok(rtt < 5 , `🔴 el RTT mediano es ${ms(rtt)}, que NO es loopback. Toda la medición de este fichero ` + 'separa trabajo de )
+
+A = ningún operando desciende de la base · B = comprueba el mensaje de un error contra un literal

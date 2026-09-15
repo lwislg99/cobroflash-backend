@@ -280,3 +280,118 @@ para no salir ciego.
   dejó la primera tanda.
 - La pregunta del §4 —«¿hay dentro de un gateado algún assert que no necesite base?»— sigue sin
   barrer en los otros 65 ficheros.
+
+---
+
+# SCRUM-844 · APÉNDICE · 15-sep-2026 · El §13 barrido: 29 asserts que no necesitan base
+
+**Medido contra:** `origin/main` = `c3dce7aa36e8a32cb34a2142269ac04d0845dcc2` · 2026-09-15T11:30:34Z
+**Rama:** `scrum-844-barrido-asserts-sin-base` · **Carril:** instrumentos · **Gate:** sin gate
+
+> 📌 Encabezado `# SCRUM-844` por el delimitador de `scrum267-ancla-de-medicion.test.mjs:147`.
+
+Cierra el hueco que el §13 dejó escrito: **«la pregunta del §4 sigue sin barrer en los otros 65
+ficheros»**. La pregunta se usa LITERAL, no reformulada:
+
+> **«¿hay dentro de un gateado algún assert que no necesite base?»**
+
+⛔ **Esto MIDE.** No arregla nada, no escribe tests (eso es otro ticket) y **no toca `src/`**. Los
+ficheros del camino fiscal se han **leído**: ni uno modificado, ni siquiera para medir (regla 38).
+
+**Instrumento:** `docs/master/evidencias/scrum844/barrido-asserts-sin-base.mjs` ·
+salida en `salida-barrido.txt`. Sin base, sin red, sin claves.
+
+---
+
+## 1 · La población: 64, no 65 ni 57
+
+| | |
+|---|---|
+| ficheros `.test.mjs` mirados | 798 |
+| ficheros **con tests gateados** | **64** |
+| tests gateados | 107 |
+
+⚠️ La entrada se contradice sobre el número: el §4 dice «para barrer **los 57**» y dos párrafos
+antes «los otros **65** ficheros»; el §13 dice **65**. Medido hoy por AST —resolviendo el `skip`
+hasta el `process.env`, porque los gates se escriben de cuatro formas (`!ENABLED`, `!GATE`, `!DB`,
+ternario)— salen **64**. No es corrección de nadie: los números venían de contar a ojo en momentos
+distintos. El que cuenta es el que se puede volver a medir.
+
+---
+
+## 2 · 🔴 EL SUELO, y encontró tres defectos MÍOS antes que ningún hallazgo
+
+Un barrido que dijera «todos cubiertos» no vale. Aquí el suelo es **doble**:
+
+**① La respuesta CONOCIDA.** El §4 auditó a mano siete tests de `scrum173` y dijo cuáles tienen
+mitad pura (① y 173b) y cuáles necesitan base de verdad (②, ③, ④, 177). El instrumento tiene que
+reproducir ESO:
+
+```
+✅ ve173_1   ✅ ve173b   ✅ noSeñalaEl2   ✅ noSeñalaEl3   ✅ noSeñalaEl177
+   → ✅ el instrumento distingue
+```
+
+**② La SIEMBRA.** Un test fabricado con las dos mitades dentro —una consulta a `prisma` y una
+transformación de cadena pura—. El instrumento tiene que **separarlas**, que es literalmente el
+fenómeno del §4. Se clasifica en memoria: no se escribe nada en el árbol.
+
+### Lo que el suelo cazó, y no fueron hallazgos sino errores del instrumento
+
+| # | defecto MÍO | lo cazó | la lista pasó de |
+|---|---|---|---|
+| 1 | sólo ensuciaba identificadores sueltos: `const [s1, s2] = await Promise.all(...)` y `for (const inv of ...)` escapaban | **el suelo del §4** (señalaba el ③, que sí necesita base) | 115 → 71 |
+| 2 | la RED no contaba como base: una cookie de `fetch(/auth/verify)` no existe sin merchant real | **leer la lista** (§4 no lo cazaba: sus siete tests no hacen HTTP) | 71 → 44 |
+| 3 | sólo miraba declaraciones: `let row; … row = await prisma…` dentro de un `try` escapaba | **leer la lista** | 44 → 29 |
+
+> 🔒 **Por eso el resultado es una LISTA y no un porcentaje.** Dos de los tres defectos de arriba
+> son invisibles en un número: sólo aparecen cuando alguien lee las líneas una por una. Un
+> porcentaje se celebra; una lista se arregla — y, de paso, arregla el instrumento.
+
+---
+
+## 3 · LA LISTA · 29 asserts en 8 ficheros
+
+`A` = ningún operando desciende de la base · `B` = comprueba el mensaje de un error contra un literal
+
+| fichero | línea | clase | assert |
+|---|---|---|---|
+| `tests/a55-window-quote.test.mjs` | 39 | A | `equal(process.env.WHATSAPP_DRY_RUN)` |
+| `tests/bot-suite.test.mjs` | 148, 149, 176, 191, 217, 224, 230, 231, 237, 243, 244, 245, 252, 255, 299, 301, 324 | A | 17 asserts sobre el `outbox` en memoria y sobre `last()` |
+| `tests/scrum106-trabajos-fecha.test.mjs` | 24 | A | `equal(CAMPO_FECHA_TRABAJOS)` — una constante |
+| `tests/scrum115-wa-fallo-registrado.test.mjs` | 108, 109 | A | `result.ok` / `result.reason` del sender |
+| `tests/scrum173-cadena-verifactu-serializada.test.mjs` | 51, 188 | B | `match(err.message, /verifactu_seal_inside_transaction/)` |
+| `tests/scrum222-deriva-arranque.test.mjs` | 291, 298, 299 | A | `r.estado`, `r.tablas`, `r.columnas` del comparador |
+| `tests/scrum72-pdfs-privados.test.mjs` | 36, 40 | A | `invoicesDir` no está bajo `public/` y sí bajo `storage/` |
+| `tests/scrum728d-ms-en-loopback.test.mjs` | 133 | A | `rtt < 5` |
+
+### Los dos que mejor ilustran el §4
+
+* **`scrum72:36` y `:40`** — comprueban que `invoicesDir` no cuelga de `public/`. Es una
+  **regresión de configuración**: una transformación de cadena sobre un valor importado. No hay
+  base por ningún lado, y está apagada detrás de `QA_DB_TEST` porque el gate se puso al FICHERO.
+  El propio comentario del test la llama «EL ASSERT DE REGRESIÓN (el que blinda esto para
+  siempre)» — y hoy sólo corre cuando alguien levanta Postgres a mano.
+* **`scrum173:51` y `:188`** (categoría B) — son los que §4 audita y declara «NO, a medias». Lo que
+  afirman es una **regla** (`verifactu_seal_inside_transaction`), no un dato.
+
+---
+
+## 4 · ⚠️ Lo que esta lista NO dice
+
+* **No dice que ningún assert sobre.** Dice «éste no parece necesitar base» y pone el dedo.
+  Separar la mitad pura de la que sí la necesita —extraerla, darle su test sin gate— es trabajo de
+  otro ticket, y de `src/` no se ha tocado nada.
+* **Las 17 de `bot-suite` van juntas a propósito**: son un cuerpo de conversación sobre un
+  `outbox` en memoria, y sacarlas del gate es una decisión de ese fichero, no de éste.
+* **La categoría B es un criterio de FORMA**, no una prueba de que la guarda sea pura: afirma que
+  se está comprobando una regla contra un literal. Para ① y 173b coincide con la auditoría a mano
+  del §4; para un caso nuevo, habría que mirarlo.
+* El barrido mira `assert.*`. Un `expect(...)` o un `throw` propio no los ve — aquí no hay, pero
+  si entraran, entrarían sin que esto avise.
+
+## 5 · Lo NO tocado
+
+`src/` entero · los ficheros del camino fiscal (**leídos**, regla 38) · `prisma/schema.prisma` ·
+los gates · ningún test nuevo. Ninguna base, ninguna clave. **Nada ejecutado contra producción ni
+contra staging.**
