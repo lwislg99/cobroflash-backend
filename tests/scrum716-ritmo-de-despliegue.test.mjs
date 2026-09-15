@@ -351,8 +351,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // ③ El filtro de lo ilegible, apagado: un número del fallback de `env.ts` pasaría por sha.
+    // 🔴 ANCLA REFRESCADA (SCRUM-824b, 278a8bd7): el filtro dejó de ser una sola línea
+    // (`!ES_SHA.test(s) || TODO_DIGITOS.test(s)`) y se partió en dos — el descarte por FORMA
+    // sigue en `shaLegible` sin tocar, y el que aquí se apaga es el de LONGITUD DE RELOJ, que es
+    // el que decide si `1788742571305` (el único caso de `basura` que dependía del filtro viejo)
+    // pasa por sha legible. El resto de `basura` ya lo cazaba la línea de forma, intacta.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
-    de: '  if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;',
+    de: '  if (TODO_DIGITOS.test(s) && LONGITUDES_DE_RELOJ.has(s.length)) return null;',
     a: '  if (false) return null;',
     cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
   },
