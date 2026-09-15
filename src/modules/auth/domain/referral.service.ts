@@ -104,23 +104,55 @@ export async function resolveReferrer(refCode: string): Promise<number | null> {
   return referrer?.id ?? null;
 }
 
-// Recompensa al referidor cuando el referido paga por primera vez. Idempotente.
+/**
+ * Recompensa al referidor cuando el referido paga por primera vez.
+ *
+ * 🔴 EL CERROJO ES EL `where` DEL UPDATE, NO LA LECTURA DE ARRIBA.
+ *
+ * Antes esto leía `referralRewardedAt`, comprobaba en JavaScript y DESPUÉS escribía. Dos entregas
+ * simultáneas del mismo primer pago leían `null` las dos, las dos pasaban la guarda y las dos
+ * incrementaban: **el referidor se llevaba dos meses gratis por un solo referido** (medido en
+ * `docs/master/SCRUM-815.md`, paso ① §3). Entre el `if` y el `update` no hay nada que impida que
+ * otro proceso haga exactamente lo mismo.
+ *
+ * Ahora la condición **viaja dentro del UPDATE**: `updateMany` con `referralRewardedAt: null`
+ * comprueba y escribe en una sola sentencia, que la base ejecuta de una pieza. El que llega
+ * segundo recibe `count: 0` y se va sin cobrar. Es el mismo patrón —y por el mismo motivo— que el
+ * guard anti-doble-consolidación de `recapitulativa.service.ts:118`, que el máster describe como
+ * «lo que hace segura la concurrencia».
+ *
+ * ⚠️ `count` NO es decorativo: es lo ÚNICO que distingue «he reclamado yo» de «alguien se me
+ * adelantó». Un update condicional cuyo resultado no se mira vuelve a tener el defecto con otra
+ * forma — escribiría la recompensa igual.
+ */
 export async function rewardReferralOnFirstPayment(referredMerchantId: number): Promise<void> {
   const referred = await prisma.merchant.findUnique({
     where: { id: referredMerchantId },
     select: { referredBy: true, referralRewardedAt: true },
   });
-  if (!referred?.referredBy || referred.referralRewardedAt) return; // sin referidor o ya recompensado
+  // Atajo BARATO para el caso normal (la entrega repetida de días después). NO es el cerrojo:
+  // el cerrojo está abajo, y por eso dos que pasen de aquí a la vez siguen siendo seguras.
+  if (!referred?.referredBy || referred.referralRewardedAt) return;
 
-  await prisma.$transaction([
-    prisma.merchant.update({
-      where: { id: referred.referredBy },
-      data: { freeMonthsEarned: { increment: 1 } },
-    }),
-    prisma.merchant.update({
-      where: { id: referredMerchantId },
+  const referrerId = referred.referredBy;
+  const cobrado = await prisma.$transaction(async (tx) => {
+    const reclamo = await tx.merchant.updateMany({
+      where: { id: referredMerchantId, referralRewardedAt: null },
       data: { referralRewardedAt: new Date() },
-    }),
-  ]);
-  console.log(`[referral] merchant ${referred.referredBy} +1 mes gratis (referido ${referredMerchantId} pagó)`);
+    });
+    // Otra entrega se adelantó y ya marcó al referido: ni se incrementa ni se deshace nada suyo.
+    if (reclamo.count !== 1) return false;
+
+    await tx.merchant.update({
+      where: { id: referrerId },
+      data: { freeMonthsEarned: { increment: 1 } },
+    });
+    return true;
+  });
+
+  if (!cobrado) {
+    console.log(`[referral] recompensa ya reclamada para el referido ${referredMerchantId} — no se paga dos veces`);
+    return;
+  }
+  console.log(`[referral] merchant ${referrerId} +1 mes gratis (referido ${referredMerchantId} pagó)`);
 }
