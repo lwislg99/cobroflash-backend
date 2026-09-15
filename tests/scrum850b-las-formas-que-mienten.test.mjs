@@ -50,7 +50,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'scripts/_invocaciones-de-la-tanda.mjs',
     de: "      if (!esRedireccion) { out.push({ texto: buf, sep: '&' }); buf = ''; continue; }",
     a: '      if (false) { /* el hueco del `&`, reabierto a proposito */ }',
-    cae: '🔴 `&` manda la tanda al segundo plano y el veredicto se pierde',
+    // 🔴 SCRUM-850b (avisador-rojo) · `cae` tiene que ser el NOMBRE del test, no una frase
+    // descriptiva: el meta-guard lo busca por `.includes()` contra los `test:pass` de la pasada
+    // limpia (PUERTA 1), y una frase que nunca fue el título de ningún `test(...)` sale CIEGA, no
+    // MUDA — nunca llega a mutar nada. El único test que ejercita esta mutación (comprobado
+    // leyendo el código: hace `assert.equal(…, VEREDICTOS.SEGUNDO_PLANO)` sobre líneas con `&`
+    // suelto) es el de abajo.
+    cae: '🔴 el censo VE el `&` — era el hueco',
   },
 ];
 
