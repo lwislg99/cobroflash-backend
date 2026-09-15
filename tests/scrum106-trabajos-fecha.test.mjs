@@ -16,13 +16,20 @@ import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-106: trabajos.csv por fecha de EJECUCIÓN — el de junio ejecutado en julio sale en julio', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
-  const { prisma } = await import('../dist/core/db/prisma.js');
-  const { buildTrabajos, CAMPO_FECHA_TRABAJOS } =
-    await import('../dist/modules/exports/domain/exportData.js');
-
+// 🔴 FUERA DEL GATE (SCRUM-844 §13). Este assert fija la DECISIÓN del fundador —el criterio es
+// `scheduledAt`, opción C— y para eso no hace falta base: es una constante del módulo. Estaba
+// apagado tras `QA_DB_TEST` porque el gate se puso al FICHERO, no al assert.
+// Ejecutado sin base: pasa. El texto del assert no ha cambiado.
+test('SCRUM-106: el criterio de trabajos.csv es la fecha de ejecución (sin base)', async () => {
+  const { CAMPO_FECHA_TRABAJOS } = await import('../dist/modules/exports/domain/exportData.js');
   assert.equal(CAMPO_FECHA_TRABAJOS, 'scheduledAt',
     'el criterio debe ser la fecha de ejecución prevista (SCRUM-106, opción C)');
+});
+
+test('SCRUM-106: trabajos.csv por fecha de EJECUCIÓN — el de junio ejecutado en julio sale en julio', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+  const { prisma } = await import('../dist/core/db/prisma.js');
+  const { buildTrabajos } =
+    await import('../dist/modules/exports/domain/exportData.js');
 
   const stamp = Date.now();
 

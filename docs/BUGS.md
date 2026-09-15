@@ -536,6 +536,40 @@
 
 ## P3 — Técnico / raíz (registrar, abordar después de P1)
 
+### [ ] P3-FLAKY-754 · `scrum754b` (el `fs.watch` mudo) cae en TANDA COMPLETA y no se reproduce suelto (15-sep-2026, hallazgo colateral de SCRUM-850)
+- **Hermano del P3-FLAKY-451 de aquí abajo**, y se registra aparte porque es OTRO test y otro
+  mecanismo. Se reporta, no se arregla: es de otro carril (regla 37) y **no se toca un test para
+  que la tanda pase**.
+- **Lo medido, las cuatro pasadas, sin redondear:**
+
+  | qué se corrió | resultado |
+  |---|---|
+  | tanda completa en `scrum-850-la-poblacion-del-instrumento` (base `9b1392b5`), con reporters `spec`+`tap` | **`exit 1` · 1 fail** |
+  | **la misma tanda, misma base, sólo reporter `tap`** | **`exit 0` · 0 fail** |
+  | tanda completa en `origin/main` limpio (`d9a05138`), reporter `tap` | `exit 0` · 0 fail |
+  | `tests/scrum754-el-juez-que-oscila.test.mjs` suelto (en `main` y en la rama) y junto al guard nuevo | 22/22 y 28/28, verde |
+
+  ```
+  not ok 5830 - SCRUM-754b · 🔴 con `fs.watch` MUDO (la condición de CI) el control positivo SIGUE pasando
+    location: 'tests/scrum754-el-juez-que-oscila.test.mjs:532:1'
+    error: 'con la vigilancia en vivo muda el control positivo NO pasa …'  false !== true
+  ```
+
+- **Pista, no causa:** el test compara **huellas de `readdir` + `stat` sobre `tests/`**, y el test
+  de al lado (`SCRUM-754b · EL CASO QUE DECIDE`) documenta que esta familia era no determinista
+  —*«2 fallos de 5 pasadas»*— porque `mkdirSync` y el transitorio pueden caer en el **mismo tic de
+  `mtime`**, y lo arregla empujando el directorio al pasado con `utimesSync`. **El que cae no hace
+  eso.** No se afirma que sea la causa: no se ha provocado.
+- **🔴 Una hipótesis MÍA que se cayó, y queda escrita para que nadie la repita:** propuse que lo
+  explicaba el arreglo de SCRUM-824 (temporales fuera de `tests/`, `ef5395bf`), que `main` limpio
+  tenía y mi base no. **La segunda pasada sobre esa misma base salió verde**, así que la hipótesis
+  no se sostiene: la atribución fue prematura. Lo único que las cuatro pasadas sostienen es que es
+  **intermitente**, y el único confundidor que cambió entre la roja y la verde fue el **número de
+  reporters** (dos contra uno), no el código.
+- **Done cuando:** se provoque el rojo a voluntad —N pasadas con y sin carga de reporters— y se
+  decida si es el tic de `mtime` o la carga de E/S. Mientras, **una tanda roja en este test no es
+  prueba de nada hasta repetirla**.
+
 ### [ ] P3-FLAKY-451 · `scrum451-plazo-de-red` cae ~1 de cada 10 TANDAS COMPLETAS, y no se reproduce suelto (15-sep-2026, hallazgo colateral de SCRUM-824)
 - **Medido, no supuesto.** Diez tandas completas seguidas sobre la rama
   `scrum-824-temporales-dentro-del-arbol` (`origin/main` = `07ccd16c`): **nueve verdes y la décima

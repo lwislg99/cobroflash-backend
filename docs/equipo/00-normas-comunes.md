@@ -43,6 +43,22 @@ arreglados.
 
 ## A3 · Cómo se mide aquí
 
+- 🔴 **Un instrumento declara su POBLACIÓN, no sólo su resultado.**
+  «0 fail» sin «sobre cuántos» no es un verde: es una frase. Lo mismo
+  vale para cualquier censo, barrido o guard. Si tu salida no dice
+  sobre qué población se calculó, nadie —tú incluido— puede saber si
+  mide el proyecto o una esquina. Medido el 15-sep-2026: una tanda
+  dijo «2.681 pass · 0 fail» habiendo mirado 355 ficheros de 781, y el
+  verde era REAL para lo que miró. No lo cazó leer el resultado, sino
+  exigirle al instrumento que dijera cuántos ficheros había visto.
+  El mismo día, el primer censo de SCRUM-850 dijo «scripts: 0» sobre
+  una superficie que tenía tres: lo destapó declarar la población.
+- 🔴 **El código de salida es del ÚLTIMO tramo de la tubería.**
+  `npm test | tail`, `| head`, `| grep` devuelven el suyo, así que una
+  tanda EN ROJO sale `0`. Un `A; B` hace lo mismo. Si necesitas la
+  salida, escríbela a un fichero —FUERA del árbol— y léela en un
+  SEGUNDO comando. Lo vigila
+  `tests/scrum850-la-poblacion-del-instrumento.test.mjs`.
 - Un CERO nunca significa «está limpio»: significa «no he mirado».
   Todo barrido lleva un control que demuestre que el instrumento ve
   algo que sabemos que está.
@@ -80,6 +96,8 @@ arreglados.
   cosas distintas. Solo la segunda invalida una rama.
 - Mergear no es acabar: un ticket no está cerrado hasta que su
   despliegue está verde.
+- `git stash` NO se usa para apartar trabajo: su almacén es COMPARTIDO
+  entre worktrees y `stash@{0}` puede ser de otra sesión. Ver **A15**.
 
 ## A5 · El orden del esquema
 
@@ -140,6 +158,9 @@ confesado sin que nadie preguntara.
 
 ## A10 · Frases de la casa
 
+Un instrumento declara su población, no sólo su resultado.
+«0 fail» sin «sobre cuántos» no es un verde: es una frase.
+El código de salida es el del último tramo de la tubería.
 Un prefijo no es un nombre, y una subcadena tampoco.
 Cero no es «está limpio»: es «no he mirado».
 CI prueba el MERGE, no la rama.
@@ -156,6 +177,12 @@ Una pantalla se ordena por lo que se hace en ella, no por cómo están
 guardados los campos.
 La lista que decide qué se mira es la única que nadie mira.
 Contar no es avisar.
+Si el borrado de una rama puede cambiar tu medición, no estabas midiendo el
+trabajo: estabas midiendo el envase.
+Dos anclas para la misma comprobación no son redundancia: son la próxima
+contradicción esperando fecha.
+Un `git stash pop` a ciegas es un `git checkout` del trabajo de otro encima
+del tuyo.
 Un instrumento que solo sabe callar no es un instrumento.
 Si desactivas una comprobación de permisos para que tu robot pase, el
 permiso tiene que volver a preguntarse en la puerta siguiente.
@@ -220,6 +247,37 @@ basadas en un estado que había dejado de existir.
 
     🔒 Un informe sin hora no es una foto del ahora: es una foto sin fecha, y el
        orquestador la va a leer como si fuera de hoy.
+
+## A15 · `git stash` es estado COMPARTIDO: no se usa para apartar trabajo
+
+El almacén de `git stash` es **compartido entre todos los worktrees del
+mismo repositorio**, igual que los refs. `stash@{0}` puede ser de otra
+sesión.
+
+Por tanto: **NO se usa `git stash` para apartar trabajo.** Se usa un commit
+temporal en la propia rama, que es local a la rama y no lo puede tocar nadie
+más:
+
+```bash
+git commit -m "wip: apartado"
+# … lo que tuvieras que medir …
+git reset --soft HEAD~1
+```
+
+Si aun así hay que mirar un stash: `git stash list` PRIMERO, se comprueba de
+quién es por su mensaje, y **NUNCA se usa `pop` — solo `apply`**, que conserva
+la entrada.
+
+> Medido dos veces. La sesión 2 se llevó un stash ajeno hace unos días, y el
+> 8-sep-2026 la sesión 3 repitió: un `git stash push` de cuatro ficheros no
+> llegó a crear entrada, y el `pop` siguiente sacó al árbol el stash de la
+> sesión de SCRUM-713 —cuatro ficheros seguidos y tres sin seguir— con
+> conflictos encima del trabajo propio. No se perdió nada porque un `pop` con
+> conflictos CONSERVA la entrada, y porque se verificó `git stash list` antes
+> de tocar el árbol. Dos veces es un patrón, no un accidente.
+
+🔒 Un `git stash pop` a ciegas es un `git checkout` del trabajo de otro encima
+del tuyo.
 
 ## A17 · Un ticket, una rama, un PR, y se empuja el mismo día
 
