@@ -139,3 +139,109 @@ haya mirado, es que no había.
 — cablearlos de vuelta al compartido es trabajo aparte, y se decide con esto ya mergeado ·
 **ningún `skip`** (SCRUM-754: un test saltado cuenta como pasado) · **ningún estado ni flag nuevo**
 (27) · **ninguna dependencia** (36) · el camino de emisión fiscal ni se abre.
+
+# SCRUM-855 · APENDICE · 15-sep-2026 · fase b — las dos copias SE QUEDAN, y sus cabeceras dejan de mentir
+
+**Medido contra:** `origin/main` = `b63ed4247d30c60314aa58ec1dd261e127953f05` · 2026-09-15T15:28:08+01:00
+**Y main siguió moviéndose mientras:** a `42dff021`. No se re-ancla porque **no se ha medido
+contra él**; comprobado que su diff no toca ninguno de los tres ficheros de este trabajo.
+**Rama:** `scrum-855b-las-dos-copias-de-vuelta`
+
+> ⛔ **No se cablea nada y no se sube el estado al compartido.** Este apéndice cambia
+> **COMENTARIOS**: 78 líneas añadidas y 14 quitadas, **cero** que no sean comentario o línea en
+> blanco — comprobado sobre el diff, no a ojo.
+
+---
+
+## 1 · La premisa con la que se abrió el encargo era falsa, y se midió antes de construir
+
+El encargo de esta fase decía que las dos copias del doble existían **sólo** para rodear
+`_envio-doblado.mjs:66`, y que con la fase a dentro se podían cablear de vuelta. Medidas punto por
+punto, **una de siete diferencias era el rodeo**:
+
+| | qué hace la copia propia | ¿era el rodeo de la 66? |
+|---|---|---|
+| 1 | tabla con **estado** — lo escrito se lee de vuelta | NO |
+| 2 | **`{increment}` / `{decrement}`** interpretados | NO |
+| 3 | el **`where`** evaluado: `null`, `not`, y `gte`/`gt` en el de 856 | NO |
+| 4 | **`updateMany` como UPDATE CONDICIONAL atómico**, con `{count}` real | NO |
+| 5 | **`cede()`**: dos llamadas concurrentes se intercalan de forma DETERMINISTA | NO |
+| 6 | `$transaction` con sus dos firmas | **SÍ** |
+| 7 | *(sólo 856)* **cerrojo de fila**: dos transacciones sobre la misma fila se serializan | NO |
+
+## 2 · Y no es una opinión: el compartido no puede sostenerlos, ejecutado
+
+Contra el doble compartido **ya arreglado por la fase a**:
+
+```
+① tras un update, findUnique devuelve : null          → no hay estado
+② updateMany con un where que casaría : {"count":0}   → el count no mira el where
+③ ¿interpreta {decrement}?            : {"freeMonths":{"decrement":1}} → lo pasa tal cual
+④ orden de dos transacciones          : A-entra B-entra A-sale B-sale → se intercalan
+```
+
+Esas cuatro respuestas son **exactamente lo que los dos tests miden**. Cablearlos no los migraría:
+los dejaría midiendo otra cosa — un test de carrera sobre un banco donde la carrera no se puede ni
+plantear. Sería cambiar el falso verde de la línea 66 por uno nuevo.
+
+**Decisión del fundador (15-sep-2026): las dos copias se quedan.** Lo que se arregla es lo único
+que era falso: sus cabeceras, que decían existir por un defecto que ya no existe.
+
+> 🔒 Una cabecera que afirma algo falso es peor que no tener cabecera: la siguiente sesión la lee,
+> se la cree, y «arregla» lo que no estaba roto.
+
+## 3 · La condición de fusión, escrita — el criterio, no sólo la decisión
+
+**Si un TERCER test necesita banco de concurrencia, se extrae uno común.** Con tres instrumentos
+vivos la duplicación cuesta más que la abstracción; con dos, extraer un común obligaría a darle
+estado al doble de envío —que no lo necesita— y a que los dos tests que hoy lo usan bien cargaran
+con él. **No antes de tres.**
+
+## 4 · El compartido declara lo que NO sabe hacer
+
+`_envio-doblado.mjs` gana en su cabecera el límite que no tenía: **no tiene estado**, lo escrito no
+se lee de vuelta, el `count` no mira el `where` y los `{increment}`/`{decrement}` pasan tal cual.
+
+Se dice porque **el silencio de un instrumento se lee como capacidad**. Dos sesiones necesitaron
+justo eso y se encontraron el muro sin que nada se lo dijera. Ahora la cabecera las nombra y manda
+al tercero a extraer el común.
+
+## 5 · Que no se ha roto nada: las cifras, antes y después
+
+| | ANTES | DESPUÉS |
+|---|---|---|
+| `npm test` | 6699 tests · 6589 pass · **0 fail** · 110 skipped | 6699 · 6588 · **1 fail** · 110 skipped |
+| `guards:entrada` | 22 · 22 pass · 0 fail · 0 skipped | 22 · 22 pass · 0 fail · 0 skipped |
+| `scrum815-referido` verde | 6 pass · 0 fail | 6 pass · 0 fail |
+| `scrum856-canje` verde | 9 pass · 0 fail | 9 pass · 0 fail |
+| 🔴 rotura C1 (carrera del referido) | caen **2** | caen **2**, los mismos |
+| 🔴 rotura C2 (canje doble) | caen **4** | caen **4**, los mismos |
+
+**Los 110 saltados van aparte a propósito: un test saltado no midió** (SCRUM-754). No se ha añadido
+ni quitado ninguno — siguen siendo los mismos 110 de antes.
+
+### 🔴 La cifra que SÍ se movió, y qué era
+
+`fail` pasó de 0 a 1: **`SCRUM-854 · esta rama, si toca código, trae su entrada de registro`**. No
+es un guard contando menciones —el riesgo que este encargo temía—: mira **qué ficheros toca la
+rama**, y la mía tocaba tres de `tests/` sin aportar su entrada. `docs/master/SCRUM-855.md` ya
+existía en main, pero el guard exige que la rama traiga la suya. Se cierra con **este apéndice**,
+no relajando el guard (norma A7).
+
+### ⚠️ Y un defecto de MI instrumento, que estuvo a punto de colarse
+
+El lector de cifras buscaba `tests (\d+)` sobre el fichero entero y cogía **la primera
+coincidencia**. En la tanda DESPUÉS el recuento no es lo último —detrás van los `failing tests`—,
+así que devolvió `fail: 0` **mientras listaba un fallo debajo**. Las dos afirmaciones se
+contradecían en la misma pantalla. Las cifras de la tabla salen del bloque de recuento localizado
+por su posición (línea 9708 de 9742), no de la primera coincidencia.
+
+> 🔒 Si el instrumento se contradice a sí mismo, la respuesta no es elegir la mitad que encaja.
+
+## ⛔ No tocado
+
+**Ningún cableado**: las dos copias siguen con su banco propio · **el compartido no cambia de
+comportamiento**: 0 líneas de código, sólo comentario · **ni un assert nuevo ni uno menos** en los
+dos tests · **`src/` intacto** — las dos roturas de los controles se restauraron byte a byte
+(`Buffer.compare === 0`, sha256 `1ed37322690dcede` antes y después) · ningún `skip`, ningún estado
+ni flag (27), ninguna dependencia (36).

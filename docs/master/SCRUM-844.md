@@ -681,3 +681,81 @@ la población era una foto, o redefinir los 6 antes de cerrar.
 salida de compilación, restaurado byte a byte) · ningún test nuevo ni uno menos · ningún punto
 cubierto de los que salieran sin cubrir (no salió ninguno). Ninguna base, ninguna clave. **Nada
 ejecutado contra producción ni contra staging.**
+
+---
+
+# SCRUM-844 · APÉNDICE · 15-sep-2026 · El hueco de la auditoría, cubierto: el tipo de IVA del libro de recibidas
+
+**Medido contra:** `origin/main` = `9070f3d780938b6b1f53cf6afbeb55f71221229b` · 2026-09-15T16:17:27+02:00
+**Rama:** `scrum-844b-el-tipo-de-lo-recibido` · **Carril:** fiscal (solo tests) · **Gate:** sin gate
+**Hora del ancla corregida** con la cabecera `Date:` de GitHub: el reloj de esta máquina iba 332 s adelantado.
+
+> ⛔ **Solo tests. `src/` no se toca.** Los rojos se inyectan en el FUENTE, se recompila, y se
+> restauran fuente y `dist/` byte a byte, con `git status src/` vacío después de cada uno.
+
+## 1 · El hueco
+
+La auditoría del 15-sep-2026 (comentario en SCRUM-844) midió dos operandos vivos en `tipo()`
+(`libroRecibidas.ts`), que es la función que da el `tipoIva` de cada asiento del libro de recibidas:
+
+```ts
+if (n === null || !Number.isInteger(n) || n < 0 || n > 100) return null;
+```
+
+* sin `n > 100` → un gasto con `vatRate: 150` salía con `tipoIva: 150`;
+* sin `n < 0` → un `vatRate: -5` salía con `tipoIva: -5`;
+
+y con cualquiera de los dos **la tanda completa —789 ficheros, por lotes— seguía con 0 fallos**. El
+tercer operando (`!Number.isInteger`) sí lo caza `scrum426` («una fracción NO se acepta»).
+
+No es un caso de laboratorio:
+
+* **alcanzable** — `Expense.vatRate` es `Int?` y `POST /admin/expenses` no lo valida (solo exige
+  `concept` y `amount`), así que `tipo()` es la ÚNICA defensa;
+* **declarado** — `librosAeat.ts:238` pinta ese `tipoIva` en la fila del libro de recibidas, que se
+  entrega.
+
+## 2 · Por qué no lo recogía el apéndice de la promesa (#1279)
+
+No es una contradicción: es otra población. Aquel apéndice cuenta **25 cubiertos · 0 descubiertos ·
+6 no medibles sobre los 31 del ticket**, y el rango de `tipo()` no está entre esos 31. Además se
+mergeó (14:05Z) antes de que existiera el comentario de la auditoría (15:59). No cubre esto con
+ningún test: su PR solo trae este fichero.
+
+## 3 · El test
+
+`tests/scrum844g-el-tipo-de-lo-recibido.test.mjs`, 3 pruebas, sin gate y sin base. En fichero propio:
+`scrum426` es de otro carril y no se amplía.
+
+| prueba | qué exige |
+|---|---|
+| ✅ control positivo | un 21 se declara como 21 — sin él, un `tipo()` que devolviera siempre `null` pasaría los dos rojos |
+| 🔴 150 % | sale `null` |
+| 🔴 −5 % | sale `null` |
+
+Las tres llevan **suelo**: el gasto tiene que producir asiento, porque sin asiento `tipo()` no se
+ejecuta y «sale `null`» se cumpliría por vacío.
+
+## 4 · Los dos rojos, por el FUENTE
+
+| mutación en `src/` | `tsc` | ¿llegó a `dist/`? | qué cae |
+|---|---|---|---|
+| sin `n > 100` | rc 0 | sí | **solo** «un tipo de 150 % NO se declara» |
+| sin `n < 0` | rc 0 | sí | **solo** «un tipo NEGATIVO (−5 %) NO se declara» |
+
+Tras cada uno: fuente **byte a byte** · `dist/libroRecibidas.js` **byte a byte** · **hash de todo
+`dist/` igual al de antes** (por si `tsc` hubiera reescrito algo más) · `git status src/` **vacío**.
+Control sin mutar, antes y después: 3 pass · 0 fail.
+
+## 5 · La tanda completa
+
+**805 ficheros · 6592 pass · 0 fail · 110 skipped**, corrida POR LOTES de 120 (nunca en una sola invocación: con 789 ficheros el límite de línea de comandos de Windows dejó al arnés sin salida y devolvió `null` con forma de resultado), con detección de lote ciego: **ninguno ciego**. `src/` limpio y `dist/` restaurado al terminar.
+
+## 6 · Lo NO tocado
+
+* **`src/`**: ni una línea.
+* **`scrum426` y `844e`**: intactos.
+* **`productor.ts:39`** (`"<Luis Lara Granado>"` en el XML): fiscal, lo decide el fundador.
+* Las dos precisiones de la auditoría —`vistaPreviaSerie` `seqF < 1` pierde el mensaje, y «`scrum426`
+  cubrió el libro de recibidas entero» no es cierto— quedan en su comentario del ticket: no son
+  objetivo de esta tanda.
