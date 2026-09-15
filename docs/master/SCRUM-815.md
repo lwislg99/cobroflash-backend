@@ -464,3 +464,111 @@ ninguna clave. **Nada ejecutado contra producción ni contra staging.**
 
 `docs/master/SCRUM-815.md` (las dos entradas de arriba) · `docs/master/SCRUM-358.md` ·
 `docs/equipo/00-normas-comunes.md` (A1, A2, A7, A8, A16) · `CLAUDE.md`
+
+---
+
+# SCRUM-815 · APÉNDICE · 15-sep-2026 · El efecto ③ cerrado: la disputa avisa UNA vez
+
+**Medido contra:** `origin/main` = `5359f41d9593c22cbba7926bbe5a41510d79f3a1` · 2026-09-15T10:28:46Z
+**Rama:** `scrum-815-disputa-una-sola-vez` · **Carril:** dinero · **Gate:** sin gate — corre en `npm test`
+
+> 📌 Encabezado `# SCRUM-815` y no `# APÉNDICE`, por el delimitador de
+> `tests/scrum267-ancla-de-medicion.test.mjs:147` (misma razón escrita en `SCRUM-825.md:590`).
+
+Este apéndice **no re-mide nada**: parte de la medición del 7-sep y del censo por tipo de evento
+del apéndice 815b, y construye **un solo efecto** — el que tiene víctima visible.
+
+---
+
+## 1 · Lo que estaba roto, con su víctima
+
+`charge.dispute.created` disparaba **dos efectos sin deduplicar**, y Stripe reentrega hasta 3 días:
+
+* un **WhatsApp al profesional** — «⚠️ El banco de X ha abierto una disputa por N €»;
+* una **fila de línea de tiempo** en la ficha del cliente.
+
+La memoria del proceso no lo tapaba: `isDuplicateStripeEvent` (`stripe.routes.ts:22`) es un `Set`
+del módulo con tope 500, y **el webhook de Connect no lo llama siquiera**. En tres días de
+reintentos el proceso se reinicia: cada entrada vuelve a encontrar un `Set` vacío.
+
+### 🔴 EL ROJO, EJECUTADO ANTES DEL ARREGLO
+
+```
+not ok 2 - SCRUM-815 · 🔴 tres entregas del MISMO evento → UN WhatsApp, no tres
+  error: 🔴 EL PROFESIONAL HA RECIBIDO 3 WHATSAPP POR LA MISMA DISPUTA. …
+  3 !== 1
+```
+
+---
+
+## 2 · El arreglo: la marca vive en DISCO, y se escribe AL TERMINAR
+
+La clave se **deriva** del evento (`event.id`, estable entre reintentos) y, si faltara, del id de
+la disputa — que también lo es. **Ninguna se inventa**, y ninguna vive en memoria.
+
+La marca es una fila de `events` —el registro por cobro que ya usan `paid`, `invoiced`,
+`emailed`— con `payload = { stripeEventId, disputeId }`.
+
+> 🔒 **SE ESCRIBE AL TERMINAR, NUNCA ANTES.** Es la semántica de `processed_at` que fija el paso ①
+> §4 de este mismo expediente: **marcar antes de hacer el trabajo es EL defecto del ticket**
+> (`isDuplicateStripeEvent` pregunta y marca en la misma llamada, antes de empezar). Marcando al
+> final, una entrega que muriese a medias no deja marca y el reintento vuelve a entrar: se paga con
+> un aviso repetido en un caso raro, en vez de con **silencio sobre una disputa**, que es dinero.
+
+Y `recordCustomerEvent` pasa a esperarse: una marca escrita mientras el trabajo sigue en vuelo no
+deduplica nada.
+
+### Las dos asimetrías, y las dos van hacia «avisa»
+
+Si la consulta de la marca falla, `yaAtendida` devuelve `false` — «no lo he visto, avisa». Es la
+misma asimetría y el mismo motivo que `existeEventoDePlan` (SCRUM-394), que está a tres funciones
+de distancia: equivocarse hacia un aviso repetido cuesta un WhatsApp; equivocarse hacia el silencio
+cuesta que el profesional no se entere de que le han disputado un cobro.
+
+---
+
+## 3 · El banco: `tests/scrum815-disputa-una-sola-vez.test.mjs`
+
+Sin base, sin claves, sin red — con el doble que YA existe (`tests/_envio-doblado.mjs`:
+`require.cache` para `prisma`, `WHATSAPP_DRY_RUN=1` + `__waDryRunOutbox` para Meta). En dry-run los
+senders pasan **todos** los guards y sólo se saltan el HTTP, así que `handleStripeDispute` entero
+es código de producción sin tocar.
+
+| control | qué fija |
+|---|---|
+| 🔴 SUELO | una entrega → **1** WhatsApp y **1** fila. Si el detector no ve ninguno, se declara CIEGO: lo de abajo se cumpliría sobre un buzón vacío |
+| 🔴 EL DEFECTO | tres entregas del mismo evento → **1**, no 3 |
+| ✅ POSITIVO | **dos disputas distintas siguen avisando DOS veces** — comerse la segunda sería romper el producto por el lado bueno |
+| ✅ POSITIVO | una disputa NUEVA sobre la MISMA charge vuelve a avisar: la clave es el evento, no el cobro |
+| 🔴 EN DISCO | se borra la marca de la base y **vuelve a avisar** — prueba de que lo que corta es la fila leída, no un residuo en memoria |
+
+**Mutación corrida** para probar que no es decoración: con `yaAtendida` devolviendo siempre `false`,
+caen los dos (`3 !== 1` y `2 !== 1`). Fuente restaurada byte a byte — sha256 `3b786ea84f53a40b`
+antes y después.
+
+---
+
+## 4 · ⚠️ Límite declarado: la ventana que esto NO cierra
+
+Entre leer la marca y escribirla hay ventana. **No se puede cerrar aquí sin
+`@@unique([provider, eventId])`**, y esa tabla (`gateway_events`) es de otra sesión y del paso ③.
+Los reintentos de Stripe van espaciados, así que la ventana es estrecha — y lo que este arreglo
+quita, *tres días de avisos repetidos*, no depende de ella.
+
+## 5 · Por qué esto NO es un estado nuevo (regla 27)
+
+`Event.type` **no es una FSM**. La Parte L enumera las máquinas de Quote, Invoice, Charge,
+QuoteRequest, Customer, WhatsAppMessage, VfSubmission, Subscription, Job y Albaran; `events` es un
+registro de **sólo-añadir** por cobro (`paid`, `invoiced`, `emailed`, `bizum_claimed`…). No se ha
+tocado ningún `status`, ninguna transición y ningún flag. Es la misma distinción que el master hace
+en SCRUM-170 —«VOCABULARIO DERIVADO, no una FSM»— y en SCRUM-17 —«FSM Parte L intacta, regla 27».
+
+Y `disputes.service.ts`, `stripe.routes.ts` y `connectWebhook.routes.ts` **no figuran en**
+`docs/legal/AUDITORIA_CAMINO_EMISION.md`: la regla 38 no se dispara.
+
+## 6 · Lo NO tocado
+
+`prisma/schema.prisma` (S1 está en él) · el escritor de `gateway_events` · `isDuplicateStripeEvent`
+y su `Set` · los otros tres efectos (correo de factura, referido, timeline de otros eventos) · **el
+texto del WhatsApp** (regla 30) · el 400 ante fallo · el camino de emisión. Ninguna base, ninguna
+clave. **Nada ejecutado contra producción ni contra staging.**
