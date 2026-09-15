@@ -689,7 +689,18 @@ al moverse a la 141 y lo que se acababa tocando era el guard.
 
 ## ⑤ Por qué «N pasadas en verde» es la evidencia DÉBIL
 
-El enunciado pide N ≥ 10 y están hechas. Pero conviene decir qué prueban y qué no, porque en la
+🔴 **DIEZ PASADAS CORRIDAS, NUEVE VERDES Y UNA ROJA. No son 10/10, y no se va a escribir que lo
+sean.** La décima cayó en `scrum451-plazo-de-red` — **otro** rojo intermitente, de mecánica
+distinta y ajeno a este arreglo (`scrum451` no importa nada de este diff y no usa un solo fichero
+temporal). Registrado y medido en `docs/BUGS.md` → **P3-FLAKY-451**, con lo que se probó y lo que
+no: 0/30 suelto, 0/30 con doce quemadores de CPU, 1/10 dentro de la tanda.
+
+Lo que eso significa, dicho sin adornos: **el arreglo de los temporales está verificado, y la tanda
+todavía no es determinista.** Son dos afirmaciones distintas y sólo la primera es mía. Una corrida
+posterior de diez pasadas SIN el vigía —que golpea el sistema de ficheros y que CI no tiene— es la
+que cierra el criterio del enunciado; su resultado va al final de esta sección.
+
+Y conviene decir qué prueban esas pasadas y qué no, porque en la
 primera mitad de este mismo ticket ocho pasadas verdes sobre un fallo de 1 entre 43 dejaban un
 **83 % de probabilidad de no ver nada**, y dos sesiones concluyeron mal por eso.
 
