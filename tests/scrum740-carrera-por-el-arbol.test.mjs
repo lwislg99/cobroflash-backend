@@ -153,7 +153,25 @@ function barreElArbol(src) {
  * Los números son suelos, no igualdades: si mañana entra otro escritor o otro barredor, el
  * trinquete de abajo exige que use el helper — no que el censo no crezca.
  */
-const ESCRITORES_MEDIDOS = 4;
+// 🔴 SCRUM-824 RETIRÓ `ESCRITORES_MEDIDOS = 4`, Y NO ES RELAJAR ESTE GUARD.
+//
+// El suelo exigía `escritores.length >= 4`: que SIGUIERAN EXISTIENDO cuatro tests escribiendo
+// dentro de `tests/`. SCRUM-824 los quitó —los diez, no los cuatro— moviéndolos a `os.tmpdir()`,
+// y el suelo pasó a pedir que el defecto no se arreglara. Un guard cuya premisa destruye el
+// arreglo no protege nada: afirma un hecho falso. Es la misma retirada que SCRUM-804 hizo con sus
+// tres cifras, por el mismo motivo, y con el mismo cuidado de no dejar el hueco sin vigilar.
+//
+// Lo que ese suelo quería impedir —que el detector se quedara CIEGO y su cero se leyera como «no
+// hay escritores»— sigue vigilado, y mejor: con FUENTE SINTÉTICA (§ SUELO), que no la puede vaciar
+// ningún arreglo futuro. El número real se imprime, no se assertea.
+//
+// ⚠️ Y queda medido que `escribeEnTests` tiene un FALSO POSITIVO: casa el literal `'tests'` sin
+// resolver la raíz, así que ve `scrum754-el-juez-que-oscila`, que hace
+// `mkdirSync(path.join(raiz, 'tests'))` sobre un `raiz` que es `mkdtempSync(os.tmpdir())`. Su
+// `tests/` está DENTRO de una maqueta, no en el repositorio. No se toca aquí —es el detector de
+// este ticket— pero que conste, porque el censo POR RAÍZ de
+// `scripts/_temporales-en-el-arbol.mjs` (SCRUM-824) dice de ese mismo fichero 24 sitios y los 24
+// `TMP`. Dos censos del mismo árbol: el que diverge en silencio es el que miente.
 const BARREDORES_MEDIDOS = 6;
 
 /** Los que barren el árbol y por tanto TIENEN que leer con el helper. */
@@ -170,9 +188,24 @@ test('SCRUM-740 · SUELO: el censo ve el corpus y encuentra el par que originó 
   const todos = fs.readdirSync(DIR_TESTS).filter((f) => f.endsWith('.test.mjs'));
   assert.ok(todos.length >= 300, `🔴 CIEGO: sólo ${todos.length} ficheros de test.`);
 
-  // Control positivo del detector, con los dos casos concretos del ticket.
-  const escritor = fs.readFileSync(path.join(DIR_TESTS, 'scrum206b-quien-emite-sella.test.mjs'), 'utf8');
-  assert.ok(escribeEnTests(escritor), '🔴 el detector no ve al escritor que originó el ticket.');
+  // 🔴 CONTROL POSITIVO DEL DETECTOR DE ESCRITORES, SOBRE FUENTE SINTÉTICA.
+  //
+  // Aquí se leía `scrum206b` —el escritor que originó el ticket— y se exigía que el detector lo
+  // viera. SCRUM-824 movió su fixture a `os.tmpdir()`, así que el detector ya NO lo ve, y hace
+  // bien. Atar el control positivo a un fichero real hace que ARREGLAR el defecto ponga el guard
+  // en rojo, y entonces lo que se acaba tocando para volver al verde es el guard.
+  //
+  // La fuente sintética prueba lo mismo —que el detector sabe decir que SÍ— y no la puede vaciar
+  // ningún arreglo. Es la forma exacta que tenía `scrum206b` antes de SCRUM-824.
+  const escritorSintetico = [
+    "const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');",
+    "const malo = path.join(RAIZ, 'tests', '__tmp-emite-sin-sellar.ts');",
+    "fs.writeFileSync(malo, 'export const x = 1;');",
+  ].join('\n');
+  assert.ok(escribeEnTests(escritorSintetico),
+    '🔴 el detector no ve a un escritor DENTRO de `tests/` ni sobre fuente sintética: está ciego, '
+    + 'y su cero no significaría «no hay escritores» sino «no he mirado».');
+
   const barredor = fs.readFileSync(path.join(DIR_TESTS, 'scrum226-url-credencial-en-argv.test.mjs'), 'utf8');
   assert.ok(barreElArbol(barredor), '🔴 el detector no ve al barredor que originó el ticket.');
 
@@ -190,9 +223,20 @@ test('SCRUM-740 · 🔴 el censo: escritores × barredores, y no ha bajado', () 
     if (f !== 'scrum740-carrera-por-el-arbol.test.mjs' && escribeEnTests(src)) escritores.push(f);
     if (barreElArbol(src)) barredores.push(f);
   }
-  assert.ok(escritores.length >= ESCRITORES_MEDIDOS,
-    `🔴 el detector de escritores ve ${escritores.length} y se midieron ${ESCRITORES_MEDIDOS}: `
-    + 'se ha quedado ciego, y su número dejaría de significar nada.');
+  // El número de escritores se DIAGNOSTICA, no se assertea: bajar es lo que pasa cuando alguien
+  // arregla el acoplamiento, y subir lo caza el trinquete de SCRUM-824
+  // (`tests/scrum824-temporales-fuera-del-arbol.test.mjs`), que exige CERO por raíz y nombra al
+  // que entre. Que el detector no esté ciego lo prueba el SUELO de arriba, con fuente sintética.
+  console.log(`    · escritores que ve este detector ahora: ${escritores.length} ${JSON.stringify(escritores)}`);
+
+  // 🔴 LOS BARREDORES SÍ SE EXIGEN, Y POR IDENTIDAD, NO POR CUENTA. La lista está ENUMERADA diez
+  // líneas más arriba: si el detector deja de ver a uno de los que ya están declarados, es que se
+  // ha quedado ciego — y eso no depende de cuántos haya en el árbol hoy.
+  const perdidos = BARREDORES.filter((f) => !barredores.includes(f));
+  assert.deepEqual(perdidos, [],
+    '🔴 el detector de barredores ha dejado de ver a estos, que están DECLARADOS arriba: '
+    + perdidos.join(', ') + '. Sin ellos, el trinquete de `leerSiSigueAhi` vigila sobre una lista '
+    + 'más corta que la real y su verde no significa nada.');
   assert.ok(barredores.length >= BARREDORES_MEDIDOS,
     `🔴 el detector de barredores ve ${barredores.length} y se midieron ${BARREDORES_MEDIDOS}.`);
 });

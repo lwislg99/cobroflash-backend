@@ -113,7 +113,12 @@ npm run build            # tsc → dist/
 npm test                 # compila + node --test (tests/*.test.mjs contra dist/)
 # ⚠️ `npm test` NO LO CORRE TODO, y su «0 fallos» no incluye lo que saltó (SCRUM-419/456).
 # Los saltos DECLARAN su motivo: búscalos con el reporter TAP, porque `spec` NO lo imprime.
-node --test --test-force-exit --test-reporter=tap tests/*.test.mjs | grep "# SKIP"
+# ⚠️ SCRUM-850: el TAP va a FICHERO y se lee después, en DOS comandos. Con `| grep` el código de
+# salida es el del `grep`, así que una tanda EN ROJO sale 0. Y el fichero va FUERA del árbol:
+# un temporal dentro del repo es el rojo intermitente que midió SCRUM-824.
+node --test --test-force-exit --test-reporter=spec --test-reporter-destination=stdout \
+     --test-reporter=tap --test-reporter-destination="${TMPDIR:-/tmp}/yaqu-tanda.tap" tests/*.test.mjs
+grep "# SKIP" "${TMPDIR:-/tmp}/yaqu-tanda.tap"
 npm run test:staging:gated   # los gateados por QA_DB_TEST / A55_DB_TEST / BOT_SUITE_TEST.
                              # Toma el TURNO de staging y lo suelta (detalle en RUNBOOKS y en
                              # docs/QA/SUITE_REGRESION.md). NO lo lances con `| tail`.

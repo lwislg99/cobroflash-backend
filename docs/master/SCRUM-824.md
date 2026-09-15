@@ -562,3 +562,246 @@ sha, como se hizo en SCRUM-821c con `_foto-antes-de-821.mjs`.
 ⚠️ **No es de esta rama**: lo único que toca este commit es
 `tests/scrum824b-el-mas-antiguo-no-es-el-primero.test.mjs`. En la tanda completa de hace una hora,
 sobre este mismo árbol, los tres estaban en verde; lo que cambió entre medias fue el remoto.
+
+---
+
+# SCRUM-824 · APÉNDICE · 15-sep-2026 · El OTRO rojo intermitente: temporales dentro del árbol
+
+**Medido contra:** `origin/main` = `07ccd16c92e37350e785526232d03b7f0c637684` · 2026-09-09T16:03:28Z
+**Rama:** `scrum-824-temporales-dentro-del-arbol` · **Carril:** instrumentos · **Gate:** sin gate
+
+> 📌 El encabezado empieza por `# SCRUM-824` a propósito, no por `# APÉNDICE`: es el delimitador
+> que `tests/scrum267-ancla-de-medicion.test.mjs:147` usa para trocear el fichero en entradas. Con
+> `# APÉNDICE` este bloque no sería una entrada y su ancla no se comprobaría — la daría por buena
+> la de la línea 5, que es de otra medición (la lección está escrita en `SCRUM-825.md:590`).
+
+Este ticket tenía **dos casos de rojo intermitente con síntoma idéntico y mecánica distinta**. El
+segundo —`scrum716c`, el sha corto que parecía un número— se arregló en `scrum-824b` y está en
+`main` (PR #1191); es de lo que trata todo lo de arriba de este fichero. **Este apéndice cierra el
+primero**, que era el del enunciado y se quedó sin tocar.
+
+---
+
+## ① El mecanismo, REPRODUCIDO — no supuesto
+
+| | |
+|---|---|
+| Quien escribe | `scrum549-nada-publicable-sin-marcar` creaba `tests/.tmp-549-XXXX` **dentro del repositorio** |
+| Quien recorre | `scrum494-export-que-sobra` → `tests/_export-que-sobra.mjs:79` lista `tests/` recursivamente |
+| El choque | uno lista el directorio, el otro lo borra, el primero entra → `ENOENT … scandir` |
+
+Reproducido con **los dos caminos reales** —el `censar()` que 494 ejecuta al importarse contra el
+ciclo exacto `mkdtemp`/`mkdir`/`write`/`rm` de 549—, no con una imitación:
+
+```
+ENOENT: no such file or directory, scandir 'C:\…\tests\.tmp-549-CP9zfR'
+ENOENT: no such file or directory, scandir 'C:\…\tests\.tmp-549-GT77mY'
+   → 2 rojos / 112 recorridos, con 11.087 ciclos de churn y contención de 12
+```
+
+🔴 **Lo que enseñó el intento fallido:** sin contención, **0 de 9**. La ventana son DOS llamadas al
+sistema (`existsSync` → `readdirSync`) y lo único que la ensancha es que el proceso pierda la CPU
+justo ahí. Por eso sale en la tanda —781 ficheros, concurrencia 12— y no sale al correr el par
+suelto. **El par suelto en verde no era evidencia de nada**, y es el mismo error de tamaño de
+muestra que costó dos sesiones en la primera mitad de este ticket.
+
+### 🔴 Y una SEGUNDA ventana que el enunciado no nombraba
+
+El enunciado decía «549 escribe, 494 recorre». Pero el recorrido de 494 no sólo LISTA: después
+**LEE** lo que listó (`_export-que-sobra.mjs:97`). Y `scrum205`, `scrum206b`, `scrum240` y
+`scrum538` dejaban ficheros **`.ts` y `.md`** en `tests/` — justo las extensiones que ese recorrido
+recoge. Un `.ts` que desaparece entre el listado y la lectura da el mismo rojo por `open` en vez de
+por `scandir`. No eran tres ficheros implicados: eran diez.
+
+---
+
+## ② El barrido, con su suelo
+
+`scripts/_temporales-en-el-arbol.mjs` clasifica **por AST** cada llamada que crea algo en disco,
+por la RAÍZ de la ruta que crea: `TMP` · `FUERA` · `ARBOL` · `DESCONOCIDO`.
+
+| | antes | después |
+|---|---|---|
+| creaciones vistas | 320 | 320 |
+| colgadas de `os.tmpdir()` | 217 | **262** |
+| 🔴 **dentro del árbol** | **41** | **0** |
+| sin poder probar | 59 | 55 |
+
+**Los 41, en 10 ficheros:** `scrum205` (2) · `scrum206b` (2) · `scrum235` (2) · `scrum240` (3) ·
+`scrum262` (2) · `scrum333` (2) · `scrum471` (18) · `scrum538` (2) · `scrum549` (6) · `scrum659` (2).
+
+**El `'.'` de reserva no era sólo de 659.** El enunciado lo citaba como caso suelto; el barrido lo
+encontró **tres veces** — `scrum235`, `scrum262` y `scrum659` llevaban
+`process.env.TMPDIR || process.env.TEMP || '.'`. En Windows nunca aterriza, porque `TEMP` existe;
+en el runner de Linux ese punto **es el repositorio**. Un defecto que no se puede ver en la máquina
+donde se desarrolla.
+
+### 🔴 Dos defectos MÍOS que el propio barrido destapó
+
+1. **El argumento que se mira no es siempre el primero.** `copyFileSync(origen, destino)` LEE el
+   primero. Mirando el arg 0, `copyFileSync(path.join(RAIZ, 'package.json'), …)` de `scrum471`
+   salía como infracción —es una lectura legítima del repo— y, peor, **el destino real se quedaba
+   sin mirar**. Ahora cada método declara su índice (`CREADORAS`), y hay un test que lo fija.
+2. **Un mapa global de nombres no vale para resolver.** `dir` se declara en veinte tests distintos
+   de un mismo fichero y el último ganaba. Se resuelve **por ámbito**, desde el uso hacia arriba.
+
+---
+
+## ③ El arreglo: dónde aterriza, y nada más
+
+```diff
+- const vacio = fs.mkdtempSync(path.join(RAIZ, 'tests', '.tmp-549-'));
++ const vacio = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-549-${process.pid}-`));
+```
+
+29 inserciones / 19 borrados en 10 ficheros, y **todas son la ubicación**. Ni una aserción tocada,
+ni un `skip`, ni un reintento, ni una espera, ni serializar la tanda. Los once ficheros implicados
+—los diez movidos más `scrum494`— siguen dando el mismo número de tests que antes.
+
+---
+
+## ④ El trinquete, y lo que NO promete
+
+`tests/scrum824-temporales-fuera-del-arbol.test.mjs`. Cae si cualquier test vuelve a crear dentro
+del árbol, **nombrando fichero y línea**. Probado en rojo de verdad, con un intruso real metido en
+`tests/` y retirado después:
+
+```
+🔴 HAY TESTS CREANDO FICHEROS DENTRO DEL REPOSITORIO:
+   · tests/_zz-intruso-824.mjs:4 · mkdtempSync(path.join(RAIZ, 'tests', '.tmp-intruso-'))
+   · tests/_zz-intruso-824.mjs:5 · writeFileSync(path.join(d, 'x.ts'))
+```
+
+Lleva dentro, por la lección de SCRUM-804, el control **por AST** que lo pone en rojo si aparece
+cualquier comparación relacional contra un literal distinto de 0 — el 0 es la única excepción
+(`x.length > 0` no es una magnitud del árbol, es «hay población o estoy ciego»). Por AST y no por
+`grep`, porque los párrafos de arriba llevan escritos «112», «781» y «12».
+
+**Los 55 sitios que NO se pueden probar** se congelan **por identidad de fichero** (13), nunca por
+línea ni por cuenta: es la lección literal de SCRUM-710b, donde un ancla atada a la línea 133 caía
+al moverse a la 141 y lo que se acababa tocando era el guard.
+
+> 🔒 **Lo que el arreglo NO hace, dicho claro.** No vuelve robusto al que recorre: el recorrido de
+> `_export-que-sobra.mjs` sigue pudiendo chocar con CUALQUIER fichero que aparezca y desaparezca en
+> `tests/`. Lo que se ha quitado es la fuente, y el trinquete es lo que impide que vuelva.
+
+---
+
+## ⑤ Por qué «N pasadas en verde» es la evidencia DÉBIL
+
+🔴 **DIEZ PASADAS CORRIDAS, NUEVE VERDES Y UNA ROJA. No son 10/10, y no se va a escribir que lo
+sean.** La décima cayó en `scrum451-plazo-de-red` — **otro** rojo intermitente, de mecánica
+distinta y ajeno a este arreglo (`scrum451` no importa nada de este diff y no usa un solo fichero
+temporal). Registrado y medido en `docs/BUGS.md` → **P3-FLAKY-451**, con lo que se probó y lo que
+no: 0/30 suelto, 0/30 con doce quemadores de CPU, 1/10 dentro de la tanda.
+
+Lo que eso significa, dicho sin adornos: **el arreglo de los temporales está verificado, y la tanda
+todavía no es determinista.** Son dos afirmaciones distintas y sólo la primera es mía. Una corrida
+posterior de diez pasadas SIN el vigía —que golpea el sistema de ficheros y que CI no tiene— es la
+que cierra el criterio del enunciado; su resultado va al final de esta sección.
+
+Y conviene decir qué prueban esas pasadas y qué no, porque en la
+primera mitad de este mismo ticket ocho pasadas verdes sobre un fallo de 1 entre 43 dejaban un
+**83 % de probabilidad de no ver nada**, y dos sesiones concluyeron mal por eso.
+
+Con *p* = 0,5 (lo que reportó el enunciado), 10 verdes dejan 0,1 %. Con *p* pequeña, 10 verdes no
+dicen casi nada. **La evidencia fuerte aquí no es probabilística: es que la PRECONDICIÓN ya no
+existe.** La carrera necesita un fichero temporal dentro de `tests/`. Un vigía que fotografía el
+árbol durante la tanda —71.867 muestras— veía seis fuentes distintas apareciendo y desapareciendo:
+
+```
+ANTES:   .tmp-471-0ZL5ds (67) · .tmp-471-BLzk7G (44) · tests/__tmp-sellado-sintetico.ts (40)
+         .tmp-471-7aUPTd (23) · tests/.tmp-scrum240 (18) · tests/__tmp-solo-comentario.ts (2)
+         tests/.tmp-gremios-8ThK1q (1) · tests/.tmp-549-YMmEgj (1)
+```
+
+```
+DESPUÉS: "muestras": 66.454 · "aparecidos": []
+```
+
+Sin fuente no hay carrera, y el trinquete es lo que mantiene el cero. El cero del vigía es lo que
+explica; las pasadas sólo confirman.
+
+### El resultado de las diez SIN vigía — las dos corridas, con sus condiciones
+
+| corrida | condición | resultado | duración media |
+|---|---|---|---|
+| 1ª | **con** vigía golpeando el sistema de ficheros | **9 verdes / 1 roja** (`scrum451`) | 461 s |
+| 2ª | sin vigía — lo que corre CI | ✅ **10 verdes / 10** | 159 s |
+
+La segunda es la que cumple el criterio del enunciado, y es además la condición representativa: el
+vigía es un instrumento mío, CI no lo tiene, y multiplicaba por 2,9 la duración de la tanda. La
+primera **no se descarta ni se esconde**: es la que destapó `scrum451`, y por eso está registrada
+en `docs/BUGS.md` → **P3-FLAKY-451** en vez de archivada como «ruido de la máquina».
+
+Y una comprobación más, por pasada y no al final: `git status --porcelain` después de cada una de
+las diez. **Las diez, cero líneas.** Ni un residuo dentro del árbol — que es lo que este ticket
+vino a conseguir, dicho por el estado del repositorio y no por un aserto.
+
+> 🔒 Lo que queda dicho, y no se adorna: **el arreglo de los temporales está verificado; la tanda
+> todavía no es determinista.** Son dos afirmaciones distintas y sólo la primera es de este ticket.
+
+---
+
+## ⑥ 🔴 SCRUM-740 YA HABÍA MIRADO ESTO, Y DECIDIÓ AL REVÉS
+
+Lo destapó la primera tanda completa, no una lectura previa: `scrum740-carrera-por-el-arbol` cayó
+con dos rojos **deterministas**, causados por este arreglo. Existía desde el 4-sep y ataca la misma
+familia — *«dos tests se pisan, y ninguno de los dos tiene un defecto»*, `scrum206b` contra
+`scrum226`, medido como **4 escritores × 6 barredores = 24 pares**.
+
+**Su decisión fue arreglar el BARREDOR, no los escritores**, y la dejó escrita:
+
+> «los cuatro escritores NO PUEDEN dejar de escribir ahí: son AUTOPRUEBAS… el fichero TIENE que
+> estar dentro del árbol que el guard barre — moverlo a `tmpdir` no arregla la carrera, DESACTIVA
+> el control positivo.»
+
+### La premisa es FALSA para los cuatro, y se comprueba leyendo qué hacen
+
+Ninguna de las cuatro autopruebas depende de estar dentro del árbol barrido: **las cuatro le pasan
+la ruta DIRECTAMENTE a su analizador.**
+
+| test | cómo consume su fichero sintético |
+|---|---|
+| `scrum205` | `llamadasA(SELLADORAS, tmp)` |
+| `scrum206b` | `llamadasConEnvolventes(EMBUDO, malo)` · `(EMBUDO, bueno)` |
+| `scrum240` | `abreElSobre(soloComentario)` |
+| `scrum538` | `rutasNombradas(tmp)` |
+
+Mover el fichero a `os.tmpdir()` **no desactiva nada**: el analizador recibe la misma ruta y ve el
+mismo defecto sintético. Las cuatro siguen en verde con el mismo número de tests, y el diff prueba
+que sólo cambió la ubicación. La afirmación de 740 era razonable y resultó equivocada; se retira
+con la medición delante, no de palabra.
+
+### Lo que se ha tocado de 740, y por qué NO es relajar un guard
+
+`ESCRITORES_MEDIDOS = 4` con `>=` exigía que **siguieran existiendo** cuatro tests escribiendo
+dentro de `tests/`. Al quitarlos, ese suelo pasó a pedir **que el defecto no se arreglara**. Es la
+misma retirada que SCRUM-804 hizo con sus tres cifras y por el mismo motivo: la regla 41 presupone
+que lo que el guard EXIGE sigue siendo cierto.
+
+Y el hueco no queda sin vigilar — queda vigilado **mejor**:
+
+| | antes | ahora |
+|---|---|---|
+| control positivo del detector | leía `scrum206b` del árbol | **fuente sintética**, que no la vacía ningún arreglo |
+| escritores | `>= 4` (el defecto tenía que seguir ahí) | se **imprime**; el cero lo exige SCRUM-824 por raíz |
+| barredores | `>= 6` | **por identidad**: los 6 declarados tienen que seguir viéndose |
+
+Mutación corrida para probar que el suelo nuevo no es decoración: cegando `escribeEnTests`
+(`if (true) return false`), el SUELO cae con su mensaje. Fuente restaurada byte a byte
+(sha256 `1607a20152023e95` antes y después).
+
+### Y los dos censos no se contradicen: uno tiene un falso positivo
+
+Tras el arreglo, el detector de 740 todavía ve **1** escritor: `scrum754-el-juez-que-oscila`. No lo
+es. Hace `mkdirSync(path.join(raiz, 'tests'))` sobre un `raiz` que es
+`fs.mkdtempSync(path.join(os.tmpdir(), 'scrum754-'))` — un `tests/` **dentro de una maqueta**. 740
+casa el literal `'tests'` sin resolver la raíz; el censo por raíz de SCRUM-824 dice de ese mismo
+fichero **24 sitios, los 24 `TMP`**. Se deja constancia y no se toca el detector ajeno, pero queda
+dicho: dos censos del mismo árbol, y el que diverge en silencio es el que miente.
+
+> 🔒 Los dos arreglos son **complementarios, no alternativos**. 740 hace tolerante al que barre
+> (`leerSiSigueAhi`); 824 quita la fuente y pone el trinquete. Ninguno sustituye al otro: el
+> barrido de 740 sigue pudiendo chocar con cualquier fichero que aparezca en `tests/`, y por eso su
+> trinquete se queda intacto.

@@ -107,7 +107,13 @@ test('SCRUM-742 · 🔴 el censo distingue USAR de NOMBRAR EN UN COMENTARIO', ()
  * fichero legítimo que se añada, y un guard que cae por lo normal se desactiva.
  */
 const TOPES = Object.freeze({
-  dmmf: 12,                  // hoy 9
+  // SCRUM-815 (15-sep-2026): sube de 12 a 16 — margen 3, el mismo que los demás. El sitio nuevo
+  // es `tests/scrum815-el-modelo-apunta-a-la-tabla.test.mjs`, que lee el DMMF para comprobar que
+  // el modelo `GatewayEvent` apunta a las columnas que `gateway_events` tiene DE VERDAD. Usa el
+  // interno a propósito y no hay alternativa pública: el `@map` de un campo no se puede preguntar
+  // desde la API estable del cliente, y sin él Prisma pediría una columna en camello que no
+  // existe. El comentario decía «hoy 9» y ya eran 12 cuando se midió esto.
+  dmmf: 16,                  // hoy 13
   'fichero-del-cliente': 3,  // hoy 1
   'paquete-interno': 1,      // hoy 0 — que suba a 1 significa una dependencia NUEVA (regla 36)
   'ruta-del-cli': 9,         // hoy 6

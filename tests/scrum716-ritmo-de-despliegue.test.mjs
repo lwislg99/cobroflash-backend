@@ -351,34 +351,12 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // ③ El filtro de lo ilegible, apagado: un número del fallback de `env.ts` pasaría por sha.
-    //
-    // ── SCRUM-836 · POR QUÉ EL ANCLA YA NO ES LA LÍNEA DEL `if` ──────────────────────────
-    //
-    // 🔴 Lo era, y se quedó CIEGA. El ancla decía
-    // `if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;` y SCRUM-824b (`278a8bd7`,
-    // 8-sep-2026 09:24) partió ese `||` en dos `if` **con todo el motivo del mundo**: el `||`
-    // producía un rojo INTERMITENTE en CI. El cambio era correcto; el ancla, no sobrevivió.
-    //
-    // Resultado medido: el meta-guard se declaró CIEGO sobre esta mutación y **así siguió 7 días**,
-    // mientras 54 PRs entraban en `main` — el check salía rojo y el auto-merge pasaba por delante.
-    //
-    // ── LO QUE CAMBIA, Y ES EL CRITERIO, NO EL TEXTO ─────────────────────────────────────
-    //
-    // Anclar a la línea del filtro es anclar a **cómo está escrito hoy** el filtro, y un filtro es
-    // justo lo que se reescribe cuando se afina. Así que el ancla pasa a ser **la identidad de la
-    // función que filtra** —`shaLegible` y su normalización, que es su contrato— y la mutación
-    // inserta un `return s;` que la corta ANTES de cualquier filtro.
-    //
-    // La propiedad que se gana: da igual cuántos filtros haya dentro, cómo estén escritos o en qué
-    // orden — **los apaga todos, los de hoy y los que se añadan**. El defecto imitado es el mismo
-    // de siempre: `shaLegible` deja de decir «no se sabe» ante una lectura que no entiende.
-    //
-    // ⚠️ El `return s;` deja el resto de la función como código inalcanzable, NO como código roto:
-    // comprobado con `node --check` que el fichero mutado parsea. Es la lección de la mutación ①
-    // de aquí arriba — una mutación con más radio que el defecto que imita no prueba nada.
+    // ⚠️ RE-ANCLADA tras SCRUM-824b: el `if` combinado se partió en dos (formato por un lado,
+    // reloj-por-longitud por otro). El ancla sigue el mismo defecto —el reloj cuela como sha—
+    // apagando sólo la línea que lo cazaba, no el filtro de formato (`ES_SHA`) que sigue vivo.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
-    de: "function shaLegible(v) {\n  const s = String(v == null ? '' : v).trim().toLowerCase();",
-    a: "function shaLegible(v) {\n  const s = String(v == null ? '' : v).trim().toLowerCase();\n  return s;",
+    de: '  if (TODO_DIGITOS.test(s) && LONGITUDES_DE_RELOJ.has(s.length)) return null;',
+    a: '  if (false) return null;',
     cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
   },
   {
