@@ -284,17 +284,7 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      # 🔴 `guard:lista-trabajos` (check ⑥, SCRUM-831/843) compara contra su `merge-base` vía
-      # `baseDeLaRama` (SCRUM-723), que se niega a caer hacia la punta de `origin/main` si no
-      # puede resolverlo. Con un checkout desnudo ese merge-base no existe y sale CIEGO — mismo
-      # patrón ya arreglado en meta-mutaciones (SCRUM-765) y vigia-despliegue (SCRUM-716b):
-      # `fetch-depth: 0` NO basta solo en un `pull_request`, hace falta también `origin/main`.
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Traer `main` (guard:lista-trabajos compara su merge-base contra él)
-        run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
 
       - uses: actions/setup-node@v4
         with:
