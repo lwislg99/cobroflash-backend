@@ -350,9 +350,38 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'DESPLIEGA: producción se movió entre las dos lecturas',
   },
   {
-    // ③ El filtro de lo ilegible, apagado: un número del fallback de `env.ts` pasaría por sha.
+    // ③a El filtro del RELOJ, apagado: un número del fallback de `env.ts` pasaría por sha.
+    //
+    // 🔴 SCRUM-836 · RE-ANCLADA, Y PARTIDA EN DOS. Esta declaración era UNA línea —el filtro
+    // `!ES_SHA || TODO_DIGITOS` de antes— y SCRUM-824b (278a8bd7) partió ese filtro en dos
+    // condiciones sin tocar el ancla. Desde entonces el meta-guard la declaraba CIEGA en CI:
+    // «el ancla no está: la declaración caducó». Llevaba así desde el 9-sep-2026.
+    //
+    // Había tres re-anclajes distintos escritos por bots y nunca mergeados, medidos el 15-sep-2026
+    // sobre 35 ramas: 17 apagaban las dos líneas, 14 sólo la del reloj y 3 sólo la de formato.
+    // No se eligió por votos: se midió cada variante contra el test de abajo el 15-sep-2026, y la
+    // entrada que lo tumba es lo que decide:
+    //
+    //     sólo la del reloj  → cae por el epoch de `env.ts`   (EL defecto que nombra este comentario)
+    //     sólo la de formato → cae por la cadena vacía        (un testigo DISTINTO, propio)
+    //     las dos a la vez   → cae por el epoch otra vez      (el mismo rojo que la del reloj, nada más)
+    //
+    // «Las dos» cae SIEMPRE por el epoch porque es la primera entrada de la basura y el bucle se
+    // para en el primer fallo: su rojo no dice nada de la línea de formato. Más radio sin más
+    // información, que es lo que la ① de este mismo array prohíbe. Y re-anclar sólo la del reloj
+    // dejaría sin vigilar la de formato, que el ancla original sí cubría. Por eso son DOS
+    // declaraciones, cada una con su testigo medido.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
-    de: '  if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;',
+    de: '  if (TODO_DIGITOS.test(s) && LONGITUDES_DE_RELOJ.has(s.length)) return null;',
+    a: '  if (false) return null;',
+    cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
+  },
+  {
+    // ③b El filtro de FORMATO, apagado: lo que ni siquiera tiene forma de sha pasaría por lectura.
+    // Su testigo medido es la cadena vacía —y el resto de la basura de formato del mismo test—, no
+    // el epoch: con esta mutación la línea del reloj sigue viva y lo sigue parando. Ver ③a.
+    fichero: 'scripts/_ritmo-de-despliegue.mjs',
+    de: '  if (!ES_SHA.test(s)) return null;',
     a: '  if (false) return null;',
     cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
   },
