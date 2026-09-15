@@ -292,3 +292,100 @@ defecto de hoy para que el arreglo tenga línea base.
 
 `prisma/schema.prisma` · el 400 ante fallo · `isDuplicateStripeEvent` y su `Set` · `psp.routes.ts` ·
 `referral.service.ts` · ninguna base · ninguna clave.
+
+# SCRUM-815 · APENDICE · 15-sep-2026 · paso ⑥ — el modelo entra en `schema.prisma`
+
+**Medido contra:** `origin/main` = `d9a05138cb61a30916300951a979db84121d8002` · 2026-09-15T11:19:51+01:00
+**Rama:** `scrum-815-el-modelo-del-evento`
+
+> El orden de la casa es ① decisión → ② DDL en las TRES bases → ③ PR con esquema y código.
+> ① está en la entrada de arriba; ② ya está aplicado (`gateway_events` existe en desarrollo,
+> staging y producción). Esto es **sólo la mitad de ③ que abre el sitio**: el modelo. El
+> protocolo del webhook —insertar, reintentar, decidir— NO se escribe aquí: toca el flujo de
+> cobro en producción y va en su propio trabajo.
+
+---
+
+## 1 · Lo que entra, y es todo
+
+18 líneas al final de `prisma/schema.prisma`: el `model GatewayEvent` del §4 de la entrada
+anterior, copiado de allí. **Cero borrados, cero reordenaciones, cero cambios de formato.** El
+fichero pasa de 1633 a 1651 líneas y el diff no tiene ni una línea de resta.
+
+Los cuatro `@map` **se verificaron contra el DDL que creó la tabla**
+(`docs/sql/scrum-815-el-evento-que-no-se-pierde.sql`), no contra la memoria: `event_id`,
+`received_at`, `processed_at`, `last_error`. Los otros cuatro campos (`id`, `provider`, `type`,
+`attempts`) van sin `@map` porque son de una palabra y ahí camello y guion bajo no se distinguen.
+
+## 2 · 🔴 FORMA CONTRA HECHO — y `validate` sólo contesta la primera
+
+`prisma validate` en verde dice que el fichero está **bien escrito**. No dice que los campos hayan
+llegado a ninguna parte. Lo que decide es el cliente generado, y se comprueba leyendo su DMMF:
+
+```
+modelo   : GatewayEvent -> tabla gateway_events
+  eventId      -> columna event_id        String
+  receivedAt   -> columna received_at      DateTime
+  processedAt  -> columna processed_at     DateTime?
+  lastError    -> columna last_error       String?
+unique   : [["provider","eventId"]]
+delegado en el cliente: object
+```
+
+### ⚠️ Y para que `validate` corriera hizo falta una `DATABASE_URL` que no existe
+
+Ningún worktree tiene `DATABASE_URL` —sólo `_DEV`, `_STAGING` y `_TESTS`, tal y como registra
+`CLAUDE.md`— y `validate` falla con `P1012` sin ella aunque **no conecte a nada**. Se le pasó una
+URL **sintética** (`127.0.0.1:1`, base inexistente) por ENTORNO, no en argv. Si hubiera intentado
+conectar, el puerto 1 del loopback lo habría rechazado al instante; contestó en verde sin demora.
+
+## 3 · 🔴 EL HALLAZGO: `scrum235` NO puede ver este fallo, y no es culpa suya
+
+`scrum235` compara el SCHEMA contra el CLIENTE en los dos sentidos, `@map` incluido. Es un buen
+guard. Pero **sus dos mitades salen del mismo fichero**: si alguien le quita el `@map("event_id")`
+a `eventId` y regenera, el schema y el cliente vuelven a cuadrar al instante.
+
+Medido, no supuesto — con el `@map` arrancado y el cliente regenerado:
+
+```
+pass=25 fail=3     (28 = 7 de scrum815 + 21 de scrum235)
+CAE · SCRUM-815 · 🔴 CADA campo del modelo apunta a una columna que la tabla TIENE
+CAE · SCRUM-815 · 🔴 CADA columna de la tabla tiene su campo (nada queda inalcanzable)
+CAE · SCRUM-815 · 🔴 el UNIQUE (provider, event_id) está en el modelo Y en la tabla
+```
+
+**Los tres que caen son de `scrum815`. Los 21 de `scrum235` siguen en verde.**
+
+> 🔒 Dos copias que se generan la una de la otra siempre cuadran. El tercer extremo —la BASE— es
+> el único que puede decir que el nombre está mal, y ningún guard lo estaba mirando.
+
+Por eso `tests/scrum815-el-modelo-apunta-a-la-tabla.test.mjs` no compara contra `schema.prisma`:
+compara el cliente generado contra el DDL, y **lee** los nombres físicos de ahí en vez de
+escribirlos a mano — una lista copiada sería una cuarta copia que puede divergir como las otras.
+
+Sin `@map`, Prisma pide una columna `"eventId"` que en `gateway_events` no existe. Eso no lo caza
+`tsc` ni `generate`: sale en la **primera consulta**, en ejecución, en el camino de un webhook de
+cobro.
+
+## 4 · Los cuatro rojos, y el árbol después
+
+| rojo | qué cae |
+|---|---|
+| a `eventId` se le quita el `@map` | 3 · los dos sentidos y el único |
+| desaparece el campo `attempts` | 2 · el suelo del modelo y la columna inalcanzable |
+| `processedAt` deja de ser NULLABLE | 1 · el que guarda el ticket entero |
+| se cae el `@@map` de la tabla | 1 · el suelo (el modelo buscaría `GatewayEvent`) |
+
+Cada uno REGENERÓ el cliente antes de juzgar —mutar el `.prisma` sin regenerar no le llega al
+test— y restauró después el fichero **y** el cliente: restaurar el fuente no es restaurar el
+árbol cuando hay un artefacto generado de por medio. `Buffer.compare === 0` sobre
+`prisma/schema.prisma`, y el sha256 al final es el mismo que al principio.
+
+## ⛔ No tocado
+
+**Ninguna base**: ni producción, ni staging, ni desarrollo. Ni con `--dry-run`.
+**Ningún comando de los prohibidos**: `migrate` (dev/deploy/reset/resolve), `db push` y
+`migrate diff` no se han ejecutado — tampoco «para comprobar». `npx` no se ha usado para el CLI de
+Prisma: el binario es el local de `node_modules`.
+**El protocolo del webhook**: ni una línea. El sitio queda abierto y ahí se para.
+**Ningún otro modelo** de `schema.prisma`, y ningún fichero de `src/`.
