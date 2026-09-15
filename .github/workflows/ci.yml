@@ -284,7 +284,21 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      # SCRUM-851 · SIN ESTAS DOS PIEZAS, `guard:lista-trabajos` NO HA MEDIDO NUNCA SU BLOQUE ⑥ EN
+      # UN PR. La comparación de las listas hermanas empieza por `merge-base(HEAD, origin/main)`, y
+      # en un `pull_request` el checkout desnudo trae UNA sola ref a profundidad 1: ni `origin/main`
+      # ni historia. `baseDeLaRama` no resuelve nada y el guard sale CIEGO antes de comparar — así
+      # en #1214, #1248 y #1250. En push a main el checkout sí crea `origin/main`, y por eso main
+      # salía verde y los PR no.
+      #
+      # Es la misma receta, y por el mismo motivo, que ya llevan los jobs del meta-guard y del
+      # vigía (ver su tabla medida más abajo): hacen falta LAS DOS cosas, y ninguna basta sola.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Traer `main` (guard:lista-trabajos compara contra su punto de partida)
+        run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
 
       - uses: actions/setup-node@v4
         with:
