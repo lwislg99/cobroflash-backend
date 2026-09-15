@@ -58,8 +58,12 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     fichero: 'scripts/_invocaciones-de-la-tanda.mjs',
-    de: "      if (c === '#' && (i === 0 || /\\s/.test(linea[i - 1]))) return linea.slice(0, i);",
-    a: '      if (false) return linea.slice(0, i);',
+    // ⚠️ SCRUM-836 · SIN LA SANGRÍA, a propósito. Esta ancla ya caducó una vez y no por un cambio
+    // de código: declaraba SEIS espacios y el fichero pasó a tener CUATRO. El texto era idéntico
+    // salvo el margen, y el meta-guard se quedó CIEGO sobre esta mutación. Anclar incluyendo la
+    // indentación es anclar a cómo está formateado hoy el fichero, que es lo primero que cambia.
+    de: "if (c === '#' && (i === 0 || /\\s/.test(linea[i - 1]))) return linea.slice(0, i);",
+    a: 'if (false) return linea.slice(0, i);',
     cae: 'un comentario no cuenta como invocación',
   },
 ];

@@ -6,7 +6,7 @@
 **Sha real del merge que entró sin expediente (SCRUM-267):**
 `16265c2521dff28e36a8f765bd048f105fb52e97` — PR #1085, 2026-09-06T08:47:49+01:00,
 rama `scrum-776-una-sola-voz-factura-suelta`
-**Rama de esta reconstrucción:** `scrum-858-expedientes-de-los-cinco`
+**Rama de esta reconstrucción:** `expedientes-de-los-cinco-15sep`
 
 ---
 
