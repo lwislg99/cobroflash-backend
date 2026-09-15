@@ -8,13 +8,35 @@
 //
 // Nace del censo de rebote de SCRUM-815, donde se midió y NO se tocó (regla 9).
 //
-// ── LA TRAMPA DEL BANCO, QUE AQUÍ MUERDE IGUAL ───────────────────────────────────────────────
-// 🔴 `tests/_envio-doblado.mjs:66` corta todo lo que empieza por `$`:
-//     if (nombre.startsWith('$')) return async () => undefined;
-// O sea que `$transaction(cb)` devuelve `undefined` **sin llamar a `cb`**. El arreglo mete el
-// trabajo DENTRO de una transacción: con ese doble, este fichero pasaría en verde sin ejecutar
-// una sola línea del arreglo. Por eso hay doble propio. (Ese defecto tiene su ticket, SCRUM-855;
-// aquí no se toca.)
+// ── QUÉ ES EL DOBLE DE ESTE FICHERO, Y POR QUÉ NO ES `_envio-doblado.mjs` ────────────────────
+//
+// **Es un banco de CONCURRENCIA CON ESTADO, no un rodeo.** Esta cabecera decía que el doble
+// propio existía por `_envio-doblado.mjs:66` —el `startsWith('$')` que devolvía `undefined` sin
+// llamar al callback de `$transaction`—. Eso **ya no es cierto**: SCRUM-855 lo arregló. El motivo
+// de que este banco siga aquí es otro, y es el de abajo.
+//
+// LO QUE MODELA, enumerado:
+//   · **tabla con estado** — lo que se escribe se puede leer de vuelta;
+//   · **`{increment}` / `{decrement}`** — la semántica de escritura de Prisma;
+//   · **el `where`** — `null`, `not`, y aquí además **`gte` / `gt`**, que es lo que hace falta
+//     para expresar la guarda de este ticket (`freeMonthsEarned: { gte: 1 }`);
+//   · **`updateMany` como UPDATE CONDICIONAL ATÓMICO**, con `{count}` real;
+//   · **`cede()`** antes de cada operación — dos llamadas concurrentes se intercalan de forma
+//     DETERMINISTA, no por suerte;
+//   · 🔴 **el CERROJO DE FILA** — `$transaction` encola: dos transacciones sobre la misma fila
+//     **no se intercalan**, la segunda espera a que la primera confirme y re-evalúa su `where`.
+//     Esto es lo que más lo separa del compartido, y es justo lo que este ticket mide.
+//
+// 🔴 POR QUÉ NO USA EL COMPARTIDO: **porque el compartido no tiene estado.** Devuelve respuestas
+// fijas declaradas por método — tras un `update`, su `findUnique` devuelve `null`; su `updateMany`
+// devuelve `{count: 0}` sin mirar el `where`; un `{decrement}` lo pasa tal cual; y dos
+// `$transaction` concurrentes se intercalan en vez de serializarse. Sin estado ni cerrojo, el
+// canje doble que este fichero mide **no se puede ni plantear**.
+//
+// 🔴 CUÁNDO SE FUNDEN, y es criterio, no preferencia: **si un TERCER test necesita banco de
+// concurrencia, se extrae uno común.** Con dos, extraer un común obligaría a darle estado al
+// doble de envío —que no lo necesita— y a que los tests que hoy lo usan bien cargaran con él.
+// No antes de tres.
 //
 // ── LO QUE EL DOBLE MODELA, Y LO QUE NO ──────────────────────────────────────────────────────
 //  · un UPDATE CONDICIONAL es ATÓMICO: comprueba y escribe sin que nadie se cuele, y devuelve
