@@ -146,7 +146,14 @@ function correrPaso(escenario = {}) {
   const guion = pasoPuerta();
   assert.ok(guion, '🔴 no encuentro el paso `puerta` en avisador-rojo.yml: el laboratorio no mide nada');
   const grifos = guion.split(TUBERIA).length - 1;
-  const { tmp, bin } = binDelGhFalso();
+  // El temporal se crea AQUÍ y a la vista (`os.tmpdir()`), no se recibe de un ayudante: el censo de
+  // SCRUM-824 no atraviesa el valor que devuelve una función, y un temporal del que no puede probar de
+  // dónde cuelga cuenta como «no lo sé». Lo cazó el CI del #1287 sobre 32cc4969.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-853-${process.pid}-`));
+  const bin = path.join(tmp, 'bin');
+  fs.mkdirSync(bin);
+  fs.writeFileSync(path.join(bin, 'gh'), GH_FALSO);
+  fs.chmodSync(path.join(bin, 'gh'), 0o755);
   const salida = path.join(tmp, 'output');
   const resumen = path.join(tmp, 'summary');
   const entrada = path.join(tmp, 'entrada.json');

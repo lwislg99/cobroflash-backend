@@ -106,6 +106,12 @@ falso que falla como el de verdad. Antes del arreglo: 5 rojos, uno por lectura, 
 cuatro controles). Después, 11/11. Cada lectura tiene su mutación, que le devuelve el `|| …`: las 5
 tumban su test.
 
+El primer push de este apéndice (`32cc49697fc5e78c51a0e3c1a634221d292bb0d8`) volvió a dejar `build +
+tests` en rojo, esta vez por SCRUM-824 (1 fallo de 6793): tres escrituras del test nuevo colgaban de un
+temporal devuelto por un ayudante, y el censo de temporales no atraviesa el valor de retorno de una
+función. Se le enseñó al censo de dónde cuelga —el temporal se crea a la vista, con `os.tmpdir()`— en vez
+de ampliar su lista de ficheros sin probar.
+
 ## Lo que NO cubre
 
 `AUTOR` se lee sin respaldo: si falla, el paso aborta y el veredicto final lo declara «SIN VEREDICTO».
