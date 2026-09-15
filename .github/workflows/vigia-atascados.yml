@@ -10,9 +10,11 @@
 # LAS DOS REGLAS QUE LO MANTIENEN LEGIBLE
 #
 #   · UN SOLO ISSUE, reescrito en cada pasada. Siempre al día, y reescribir no notifica.
-#   · COMENTARIO SOLO CUANDO LA LISTA EMPEORA (entra un PR nuevo, o uno cambia de causa).
-#     Un comentario por pasada es ruido, y el ruido se silencia el primer día. Si hay quince
-#     atascados, es UN aviso con los quince dentro.
+#   · COMENTARIO SOLO CUANDO LA LISTA EMPEORA: un PR entra o pasa a una causa que no se arregla
+#     esperando, o uno CRUZA UN UMBRAL DE EDAD (24 h, 72 h, 168 h y después cada semana —
+#     SCRUM-839b; el porqué de todo eso, en la cabecera de `scripts/vigia-atascados.mjs`). Un comentario por
+#     pasada es ruido, y el ruido se silencia el primer día. Si hay quince atascados, es UN
+#     aviso con los quince dentro.
 #
 # ─────────────────────────────────────────────────────────────────────────────────────────
 # 🔴 POR QUÉ ESTO USA EL `GITHUB_TOKEN` Y NO LA LLAVE DE LA APP — AL REVÉS QUE EL AVISADOR
@@ -92,6 +94,13 @@ jobs:
             --json number,title,author,isDraft,labels,autoMergeRequest,createdAt,updatedAt,headRefOid \
             > prs.json
 
+          # SCRUM-839b · La lista de checks OBLIGATORIOS se lee de las reglas VIVAS de `main`, no se
+          # escribe a mano: el día que se añada uno al ruleset, el vigía lo sabrá sin que nadie toque
+          # este fichero. Medido el 15-sep-2026: el endpoint es legible y hoy dice un obligatorio.
+          # Si falla queda `null`, y la pasada lo DICE (ROJO-SIN-LISTA) en vez de fingir que nada
+          # es obligatorio.
+          gh api "repos/$REPO/rules/branches/main" > reglas.json 2>/dev/null || echo 'null' > reglas.json
+          mkdir -p checks
           : > estados.txt
           for N in $(node -e "console.log(require('./prs.json').map(p=>p.number).join(' '))"); do
             # `mergeStateStatus` se calcula en diferido — medido: UNKNOWN en 13 de 16 PR a la
@@ -108,7 +117,12 @@ jobs:
             MINUTOS=''
             SONDA=null
             if [ -n "$SHA" ]; then
-              NCHECKS="$(gh api "repos/$REPO/commits/$SHA/check-runs" -q .total_count 2>/dev/null || echo 0)"
+              # El payload ENTERO de los check-runs, no solo el total: la pasada necesita saber
+              # CUÁLES están en rojo y cuál es la última ejecución de cada uno (SCRUM-839b).
+              # Si la llamada falla queda `{}` y cuenta como cero checks — que alarma, no calla.
+              gh api "repos/$REPO/commits/$SHA/check-runs?per_page=100" > "checks/$N.json" 2>/dev/null \
+                || echo '{}' > "checks/$N.json"
+              NCHECKS="$(node -p "require('./checks/$N.json').total_count||0" 2>/dev/null || echo 0)"
 
               # Cuándo se empujó esa cabeza. Sin este dato NO se regala la gracia: no saber
               # cuándo se empujó no es «se empujó hace un momento».
@@ -139,6 +153,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TITULO: '[vigía] PR atascados'
+          # A quién menciona el aviso. Escribir en un issue que nadie sigue no es avisar: medido
+          # el 15-sep-2026, el #1241 llevaba seis días abierto con cero comentarios.
+          DUENO: ${{ github.repository_owner }}
         run: |
           NUM="$(gh issue list --state open --search "$TITULO in:title" --json number,title \
                  -q "[.[] | select(.title==\"$TITULO\")] | .[0].number" 2>/dev/null || true)"
@@ -169,15 +186,16 @@ jobs:
 
           gh issue edit "$NUM" --body-file cuerpo.md > /dev/null
 
+          # El aviso lo compone Y LO COMPRUEBA la pasada (SCRUM-839b): aquí solo se publica. Si la
+          # pasada dice que empeora y no hay aviso, eso no es «nada que decir»: se declara.
           EMPEORA="$(node -p "require('./veredicto.json').empeora")"
-          if [ "$EMPEORA" = "true" ]; then
-            {
-              echo "La lista de PR atascados ha EMPEORADO. El detalle está arriba, en el cuerpo del issue."
-              echo
-              node -p "const v=require('./veredicto.json'); 'nuevos: '+(v.nuevos.join(', ')||'—')+' · cambiaron de causa: '+(v.cambiados.join(', ')||'—')"
-            } > aviso.md
+          if [ "$EMPEORA" = "true" ] && [ -s aviso.md ]; then
             gh issue comment "$NUM" --body-file aviso.md > /dev/null
             echo "- **EMPEORA** — comentado en #$NUM." >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$EMPEORA" = "true" ]; then
+            echo "::error::La pasada dice que la lista empeora pero no dejó aviso.md: NO se ha avisado a nadie."
+            echo "- **EMPEORA-SIN-AVISO** — #$NUM reescrito, pero el aviso no existe." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           else
             echo "- **SIN CAMBIOS A PEOR** — #$NUM reescrito en silencio, sin notificar." >> "$GITHUB_STEP_SUMMARY"
           fi
