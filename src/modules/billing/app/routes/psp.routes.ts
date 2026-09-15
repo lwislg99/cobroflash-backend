@@ -19,6 +19,8 @@ import { recalcJobCobradoForCharge } from '../../../jobs/domain/job.service'; //
 import { datosDeCobroPagado, resolverInstanteDeCobro } from '../../domain/instanteDeCobro'; // SCRUM-397
 // SCRUM-502: la guarda de anulada se CONSUME de donde vive, no se reescribe aqui.
 import { puedeCobrarPorPasarela } from '../../../system/invoiceAdmin';
+// SCRUM-815: la constancia EN DISCO de que el correo de la factura ya salio para este cobro.
+import { yaSeEnvioElCorreo, marcarCorreoEnviado } from '../../domain/correoDeFacturaEnviado';
 
 
 const router = Router();
@@ -57,16 +59,31 @@ router.post('/', async (req, res) => {
             config.AUTO_EMAIL_INVOICE_ON_PAID &&
             charge.customerId
           ) {
-            const cust = await prisma.customer.findUnique({
-              where: { id: charge.customerId },
-            });
-            if (cust?.email) {
-              await sendInvoiceEmail({
-                invoiceId: inv.id,
-                toEmail: cust.email,
-                toName: cust.name ?? '',
-                prisma,
+            // 🔴 SCRUM-815 · AQUÍ ESTABA EL CORREO DUPLICADO. Esta rama es un REINTENTO de un
+            // cobro ya pagado, y Stripe reentrega hasta tres días: sin esta guarda, cada entrega
+            // mandaba al cliente otro correo con LA MISMA factura. La marca vive en `events`, en
+            // DISCO, porque la memoria del proceso se vacía al reiniciar — que es el defecto
+            // entero de este expediente.
+            //
+            // No se envía «nunca»: se envía si NO consta que ya saliera. Así se conserva el caso
+            // en que el cobro llegó a `paid` por otro camino y esta entrega es la primera que
+            // puede mandarlo.
+            if (await yaSeEnvioElCorreo(chargeId, inv.id, prisma)) {
+              console.log(`[psp] reintento de ${chargeId}: el correo de la factura ${inv.id} ya salió, no se reenvía`);
+            } else {
+              const cust = await prisma.customer.findUnique({
+                where: { id: charge.customerId },
               });
+              if (cust?.email) {
+                await sendInvoiceEmail({
+                  invoiceId: inv.id,
+                  toEmail: cust.email,
+                  toName: cust.name ?? '',
+                  prisma,
+                });
+                // 🔒 AL TERMINAR, NUNCA ANTES: marcar antes de enviar es el defecto que se quita.
+                await marcarCorreoEnviado(chargeId, inv.id, prisma);
+              }
             }
           }
         } catch (e) {
@@ -187,6 +204,11 @@ router.post('/', async (req, res) => {
             toName: updated.customer.name ?? '',
             prisma,
           });
+          // 🔒 SCRUM-815 · la constancia EN DISCO de que este correo salió, escrita AL TERMINAR.
+          // Es lo que hace que el reintento de arriba sepa que no tiene que reenviarlo. Si se
+          // escribiera antes del envío, un fallo a mitad dejaría al cliente sin su factura y con
+          // la marca puesta — que es exactamente el defecto que este ticket quita.
+          await marcarCorreoEnviado(updated.id, inv.id, prisma);
         } catch (e) {
           console.error('auto-email error', (e as any)?.message || 'error desconocido'); // SCRUM-105
         }
