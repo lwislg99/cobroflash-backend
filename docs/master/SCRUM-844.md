@@ -280,3 +280,404 @@ para no salir ciego.
   dejó la primera tanda.
 - La pregunta del §4 —«¿hay dentro de un gateado algún assert que no necesite base?»— sigue sin
   barrer en los otros 65 ficheros.
+
+---
+
+# SCRUM-844 · APÉNDICE · 15-sep-2026 · El §13 barrido: 29 asserts que no necesitan base
+
+**Medido contra:** `origin/main` = `c3dce7aa36e8a32cb34a2142269ac04d0845dcc2` · 2026-09-15T11:30:34Z
+**Rama:** `scrum-844-barrido-asserts-sin-base` · **Carril:** instrumentos · **Gate:** sin gate
+
+> 📌 Encabezado `# SCRUM-844` por el delimitador de `scrum267-ancla-de-medicion.test.mjs:147`.
+
+Cierra el hueco que el §13 dejó escrito: **«la pregunta del §4 sigue sin barrer en los otros 65
+ficheros»**. La pregunta se usa LITERAL, no reformulada:
+
+> **«¿hay dentro de un gateado algún assert que no necesite base?»**
+
+⛔ **Esto MIDE.** No arregla nada, no escribe tests (eso es otro ticket) y **no toca `src/`**. Los
+ficheros del camino fiscal se han **leído**: ni uno modificado, ni siquiera para medir (regla 38).
+
+**Instrumento:** `docs/master/evidencias/scrum844/barrido-asserts-sin-base.mjs` ·
+salida en `salida-barrido.txt`. Sin base, sin red, sin claves.
+
+---
+
+## 1 · La población: 64, no 65 ni 57
+
+| | |
+|---|---|
+| ficheros `.test.mjs` mirados | 798 |
+| ficheros **con tests gateados** | **64** |
+| tests gateados | 107 |
+
+⚠️ La entrada se contradice sobre el número: el §4 dice «para barrer **los 57**» y dos párrafos
+antes «los otros **65** ficheros»; el §13 dice **65**. Medido hoy por AST —resolviendo el `skip`
+hasta el `process.env`, porque los gates se escriben de cuatro formas (`!ENABLED`, `!GATE`, `!DB`,
+ternario)— salen **64**. No es corrección de nadie: los números venían de contar a ojo en momentos
+distintos. El que cuenta es el que se puede volver a medir.
+
+---
+
+## 2 · 🔴 EL SUELO, y encontró tres defectos MÍOS antes que ningún hallazgo
+
+Un barrido que dijera «todos cubiertos» no vale. Aquí el suelo es **doble**:
+
+**① La respuesta CONOCIDA.** El §4 auditó a mano siete tests de `scrum173` y dijo cuáles tienen
+mitad pura (① y 173b) y cuáles necesitan base de verdad (②, ③, ④, 177). El instrumento tiene que
+reproducir ESO:
+
+```
+✅ ve173_1   ✅ ve173b   ✅ noSeñalaEl2   ✅ noSeñalaEl3   ✅ noSeñalaEl177
+   → ✅ el instrumento distingue
+```
+
+**② La SIEMBRA.** Un test fabricado con las dos mitades dentro —una consulta a `prisma` y una
+transformación de cadena pura—. El instrumento tiene que **separarlas**, que es literalmente el
+fenómeno del §4. Se clasifica en memoria: no se escribe nada en el árbol.
+
+### Lo que el suelo cazó, y no fueron hallazgos sino errores del instrumento
+
+| # | defecto MÍO | lo cazó | la lista pasó de |
+|---|---|---|---|
+| 1 | sólo ensuciaba identificadores sueltos: `const [s1, s2] = await Promise.all(...)` y `for (const inv of ...)` escapaban | **el suelo del §4** (señalaba el ③, que sí necesita base) | 115 → 71 |
+| 2 | la RED no contaba como base: una cookie de `fetch(/auth/verify)` no existe sin merchant real | **leer la lista** (§4 no lo cazaba: sus siete tests no hacen HTTP) | 71 → 44 |
+| 3 | sólo miraba declaraciones: `let row; … row = await prisma…` dentro de un `try` escapaba | **leer la lista** | 44 → 29 |
+
+> 🔒 **Por eso el resultado es una LISTA y no un porcentaje.** Dos de los tres defectos de arriba
+> son invisibles en un número: sólo aparecen cuando alguien lee las líneas una por una. Un
+> porcentaje se celebra; una lista se arregla — y, de paso, arregla el instrumento.
+
+---
+
+## 3 · LA LISTA · 29 asserts en 8 ficheros
+
+`A` = ningún operando desciende de la base · `B` = comprueba el mensaje de un error contra un literal
+
+| fichero | línea | clase | assert |
+|---|---|---|---|
+| `tests/a55-window-quote.test.mjs` | 39 | A | `equal(process.env.WHATSAPP_DRY_RUN)` |
+| `tests/bot-suite.test.mjs` | 148, 149, 176, 191, 217, 224, 230, 231, 237, 243, 244, 245, 252, 255, 299, 301, 324 | A | 17 asserts sobre el `outbox` en memoria y sobre `last()` |
+| `tests/scrum106-trabajos-fecha.test.mjs` | 24 | A | `equal(CAMPO_FECHA_TRABAJOS)` — una constante |
+| `tests/scrum115-wa-fallo-registrado.test.mjs` | 108, 109 | A | `result.ok` / `result.reason` del sender |
+| `tests/scrum173-cadena-verifactu-serializada.test.mjs` | 51, 188 | B | `match(err.message, /verifactu_seal_inside_transaction/)` |
+| `tests/scrum222-deriva-arranque.test.mjs` | 291, 298, 299 | A | `r.estado`, `r.tablas`, `r.columnas` del comparador |
+| `tests/scrum72-pdfs-privados.test.mjs` | 36, 40 | A | `invoicesDir` no está bajo `public/` y sí bajo `storage/` |
+| `tests/scrum728d-ms-en-loopback.test.mjs` | 133 | A | `rtt < 5` |
+
+### Los dos que mejor ilustran el §4
+
+* **`scrum72:36` y `:40`** — comprueban que `invoicesDir` no cuelga de `public/`. Es una
+  **regresión de configuración**: una transformación de cadena sobre un valor importado. No hay
+  base por ningún lado, y está apagada detrás de `QA_DB_TEST` porque el gate se puso al FICHERO.
+  El propio comentario del test la llama «EL ASSERT DE REGRESIÓN (el que blinda esto para
+  siempre)» — y hoy sólo corre cuando alguien levanta Postgres a mano.
+* **`scrum173:51` y `:188`** (categoría B) — son los que §4 audita y declara «NO, a medias». Lo que
+  afirman es una **regla** (`verifactu_seal_inside_transaction`), no un dato.
+
+---
+
+## 4 · ⚠️ Lo que esta lista NO dice
+
+* **No dice que ningún assert sobre.** Dice «éste no parece necesitar base» y pone el dedo.
+  Separar la mitad pura de la que sí la necesita —extraerla, darle su test sin gate— es trabajo de
+  otro ticket, y de `src/` no se ha tocado nada.
+* **Las 17 de `bot-suite` van juntas a propósito**: son un cuerpo de conversación sobre un
+  `outbox` en memoria, y sacarlas del gate es una decisión de ese fichero, no de éste.
+* **La categoría B es un criterio de FORMA**, no una prueba de que la guarda sea pura: afirma que
+  se está comprobando una regla contra un literal. Para ① y 173b coincide con la auditoría a mano
+  del §4; para un caso nuevo, habría que mirarlo.
+* El barrido mira `assert.*`. Un `expect(...)` o un `throw` propio no los ve — aquí no hay, pero
+  si entraran, entrarían sin que esto avise.
+
+## 5 · Lo NO tocado
+
+`src/` entero · los ficheros del camino fiscal (**leídos**, regla 38) · `prisma/schema.prisma` ·
+los gates · ningún test nuevo. Ninguna base, ninguna clave. **Nada ejecutado contra producción ni
+contra staging.**
+
+---
+
+# SCRUM-844 · APÉNDICE · 15-sep-2026 · Fuera del gate: de 29 candidatos salen 3
+
+**Medido contra:** `origin/main` = `c50c6a54b61d9518f6cb98ec14def5d3ed897222` · 2026-09-15T13:00:07Z
+**Rama:** `scrum-844-fuera-del-gate` · **Carril:** instrumentos · **Gate:** sin gate
+
+Cierra lo que el apéndice anterior midió. **`src/` intacto**: esto mueve asserts de sitio respecto
+al gate, no cambia producto. Ni una palabra del texto de ningún assert ha cambiado.
+
+---
+
+## 1 · 🔴 NO ME FIÉ DE MI PROPIA LISTA, y menos mal
+
+Los 29 salían de un análisis estático que ya se había equivocado tres veces esa mañana.
+«Estáticamente no necesita base» es una **hipótesis**. Se ejecutaron los 29 **sin base levantada**
+(`QA_DB_TEST` y `A55_DB_TEST` vacíos, sin `DATABASE_URL`):
+
+| candidato | veredicto ejecutado | por qué vuelve dentro |
+|---|---|---|
+| `scrum72:36`, `:40` | ✅ **PASA sin base** | — **sale** |
+| `scrum106:24` | ✅ **PASA sin base** | — **sale** |
+| `a55:39` | 🔴 FALLA | `process.env.WHATSAPP_DRY_RUN` no vale `'1'` fuera del arranque gateado. Es una **precondición del carril**, no una afirmación sobre el producto |
+| `scrum115:108`, `:109` | 🔴 FALLA | el sender escribe su fila de log; sin `DATABASE_URL` el resultado no llega a `demo_safe_numbers` |
+| `scrum173:51`, `:188` | 🔴 FALLA | `$transaction` revienta por falta de cliente **antes** de que salte la guarda |
+| `scrum222:291`, `:298`, `:299` | 🔴 FALLA | `comprobarDerivaDeSchema()` lee `information_schema` → `estado=no-pude-comprobar` |
+| `scrum728d:133` | 🔴 FALLA | el RTT se mide con `prisma.$queryRaw` |
+| `bot-suite` ×17 | 🔴 FALLA | los diecisiete viven en **UN** test que abre con `withMerchant(prisma, …)` |
+
+> **De 29: salen 3, vuelven 26.** El encargo avisaba «si volvieron 0, sospecha de ti mismo». Volvió
+> el 90 %: el sospechoso era el instrumento, y con razón.
+
+### Las correcciones que esto le hace al barrido — y son cinco más
+
+Las tres de la mañana salieron del suelo y de leer la lista. Éstas sólo podían salir de EJECUTAR:
+
+| # | por dónde se escapaba | caso |
+|---|---|---|
+| 4 | **mutación por método**: `rtts.push(<sucio>)` no es una asignación, así que `rtts` nunca se ensuciaba | `scrum728d` |
+| 5 | **función de dominio que abre su propia conexión**: no dice `prisma.` por ningún lado | `scrum222` |
+| 6 | **precondición del CARRIL**, no de la base: `WHATSAPP_DRY_RUN` no es un dato de Postgres y aun así no se cumple fuera del gate | `a55` |
+| 7 | la categoría **B acertaba sobre producción y fallaba sobre el test**: la guarda de `verifactu_seal_inside_transaction` *es* pura, pero el test no puede alcanzarla sin cliente vivo | `scrum173` |
+| 8 | **la unidad nunca fue el assert**: 17 de los 29 son un cuerpo de conversación dentro de un solo test | `bot-suite` |
+
+🔒 La nº 7 es la que más enseña: **§4 tenía razón sobre el código y aun así el assert no puede salir
+del gate.** «El rechazo no necesita base» describe la guarda de producción; el test, tal como está
+escrito, llega a ella a través de `prisma.$transaction`. Separar las dos mitades exigiría reescribir
+el test, y eso es otro ticket.
+
+---
+
+## 2 · Lo que sale, y por qué importa
+
+**`scrum72:36` y `:40`** — el caso que abrió todo esto. Su propio comentario los llama
+**«EL ASSERT DE REGRESIÓN (el que blinda esto para siempre)»**, y sólo corrían si alguien levantaba
+Postgres a mano. Comprueban que `invoicesDir` no ha vuelto bajo `public/` — una regresión de
+seguridad/RGPD (los PDFs servidos como estático con nombres enumerables). **Un assert que no corre
+no blinda nada.** Ahora corre en cada tanda.
+
+**`scrum106:24`** — fija la decisión del fundador (el criterio es `scheduledAt`, opción C). Es una
+constante del módulo.
+
+Los dos siguen con **su texto intacto**; lo único que cambia es dónde viven respecto al gate.
+
+---
+
+## 3 · ✅ CONTROL POSITIVO: ni un gateado se ha colado fuera
+
+| | antes | después |
+|---|---|---|
+| ficheros con tests gateados | 64 | **64** |
+| **tests gateados** | **107** | **107** |
+| asserts señalados dentro del gate | 29 | **26** |
+| tests gateados que aún contienen alguno | — | **7** |
+
+**Ninguno escapó.** Si uno se hubiera colado fuera, la tanda empezaría a dar rojos que no son
+defectos y alguien acabaría relajando el gate entero.
+
+### ⚠️ Corrección de unidades al enunciado: 107 − 29 ≠ 78
+
+El encargo dice «los 107 − 29 = 78 tests gateados que SÍ necesitan base». **29 son ASSERTS y 107
+son TESTS**: no se restan. Los 29 asserts vivían dentro de **9** tests gateados (de 107), no de 29.
+Tras el movimiento quedan **26 asserts en 7 tests**, y los **107** tests gateados siguen los 107.
+
+### ⚠️ Y «110 skipped» no es un verde
+
+La tanda salta 110 tests, y **un test saltado se cuenta como pasado** (SCRUM-754). Esos 110 no
+midieron nada: son los gateados esperando su carril. El verde de abajo es sobre los que SÍ
+corrieron.
+
+---
+
+## 4 · El límite declarado, cerrado en CERO
+
+El apéndice anterior dejó escrito que el barrido mira `assert.*` y que un `expect(` no lo vería.
+Censado sobre los **64** ficheros de la población: **0 ocurrencias de `expect(`, en 0 ficheros.**
+El límite era teórico. *(El censo lleva su propio suelo: sobre una fuente con dos `expect(`
+cuenta dos — si contara cero también ahí, su cero no significaría nada.)*
+
+---
+
+## 5 · Mover no es borrar, y se comprueba
+
+| fichero | asserts ejecutables antes → después | tests antes → después |
+|---|---|---|
+| `scrum72-pdfs-privados` | 27 → **27** | 1 → 2 |
+| `scrum106-trabajos-fecha` | 7 → **7** | 1 → 2 |
+
+Ni una aserción añadida ni perdida. El número de bloques `test()` sube en uno por fichero porque
+**sacar un assert del gate exige un `test()` que no esté gateado**: es el mecanismo del cambio, no
+cobertura nueva. No hay ni un assert que antes no existiera.
+
+> ⚠️ Contar esto también tuvo su trampa: `grep -c 'assert\.'` daba 7→**8** en `scrum106` y no había
+> ningún duplicado — contaba mi propio comentario, que termina en «no al assert.». Es la lección de
+> SCRUM-740 mordiendo otra vez: *un guard que cuenta menciones vigila la prosa*. Se recuenta
+> exigiendo que la línea EMPIECE por `assert.`.
+
+## 6 · Lo NO tocado
+
+`src/` entero · el camino de emisión fiscal (regla 38: `scrum173` es un TEST del camino, y ni él ni
+`src/` se han modificado) · el texto de ningún assert · los gates · `prisma/schema.prisma` · los 26
+asserts que volvieron dentro. Ninguna base, ninguna clave. **Nada ejecutado contra producción ni
+contra staging.**
+
+---
+
+# SCRUM-844 · APÉNDICE · 15-sep-2026 · ¿Está cumplida la promesa? 25 cubiertos, 0 descubiertos, 6 no medibles
+
+**Medido contra:** `origin/main` = `51fb635ca3391cc769a6583a8aab08945e1fb5e0` · 2026-09-15T13:29:27Z
+**Rama:** `scrum-844-promesa-cumplida` · **Carril:** medición · **Gate:** sin gate
+
+⛔ **Esta tanda NO construye nada.** No se cubre ningún punto que salga descubierto: se mide, se
+lista, y decide el fundador (regla 9). `src/` intacto, ni un test nuevo ni uno menos.
+
+---
+
+## 0 · 🔴 EL SUELO, Y VA ANTES QUE CUALQUIER CIFRA: los 31 NO se pueden enumerar desde el ticket
+
+El ticket promete «31 puntos … los 31 se cubren». Desglosado literalmente:
+
+| puesto | sujeto | puntos declarados |
+|---|---|---|
+| 1 | las dos puertas (`verifactu.service.ts:283`, `:398`) | 2 |
+| 2 | `exigirTipoDeclarable` (`:143·144·146`) | 3 |
+| 3 | `buildVerifactuRegistrosXml` (`:497×4·498·521·529·483`) | 8 |
+| 4 | `entraEnLaCadena` (`:68×3`) + `formatFechaHoraHuso` (`:58`) | 4 |
+| 5 | `construirLibroRegistro` (6) + `construirLibroRecibidas` (2) | 8 |
+| 6 | `calcularRecargo`, `leerTipoRetencion`, `clasificarPorCobro`, `leerMarcaSuplido`, `validarFacturaSuelta`, `vistaPreviaSerie`, `huecosSerie` | **sin reparto** |
+| | **identificables uno a uno** | **25** |
+
+Los 6 que faltan para 31 se reparten entre **SIETE** funciones **sin decir cuántos lleva cada una**.
+Siete no caben en seis, así que no hay forma de mapearlos uno a uno.
+
+Y hay una razón de fondo, escrita por la propia sesión que los trabajó (**§7 de este fichero**):
+
+> «El ticket pedía 31. Medidos hoy son **41 decisiones, 22 vivas**. […] SCRUM-840 enumeró **puntos
+> mutables en `dist/`** por número de línea […] **Los números de línea de `dist/` no se han vuelto
+> a usar: no son verificables desde el fuente.**»
+
+🔒 **Los «31» no son un inventario: son una foto de `dist/`.** Por eso los 6 sin reparto se declaran
+**NO MEDIBLES** y **no cuentan como cubiertos**: vacía y no-medida se leen igual y significan lo
+contrario.
+
+---
+
+## 1 · LOS TRES NÚMEROS, Y SUMAN 31
+
+| veredicto | nº |
+|---|---|
+| ✅ **CUBIERTO** — con test que CI corre y que CAE si se rompe | **25** |
+| 🔴 **NO CUBIERTO** | **0** |
+| ⚠️ **NO MEDIBLE** — no enumerable desde el ticket (puesto 6) | **6** |
+| | **31** |
+
+### El filtro que de verdad decide: ninguno está sólo escrito
+
+Un punto cuyo test esté gateado tras `QA_DB_TEST` **no está cubierto: está escrito**. Comprobado
+uno a uno — **todos los tests asignados salen `# skipped 0`**:
+
+`scrum844` (5) · `scrum844b` (6) · `scrum844c` (10) · `scrum844d` (9) · `scrum844e` (9) ·
+`scrum844f` (12) · `scrum426` (17) · `scrum294` (15) · `scrum291` (15) · `scrum293` (10).
+
+Eso es justo lo que denunciaba el ticket y ya no pasa: `scrum173` salía **7 skipped, 0 pass**, y las
+dos puertas las cubre ahora `scrum844`, sin base y sin gate.
+
+---
+
+## 2 · LOS 25, UNO A UNO, CON SU ROJO EJECUTADO
+
+Cada sujeto se rompió **en `dist/`** (salida de compilación — `src/` jamás se tocó) y se comprobó
+que el test asignado CAE. Restaurado y verificado por sha256: **los 7 ficheros idénticos**.
+
+| puesto | pts | sujeto | test que cae | rojos |
+|---|---|---|---|---|
+| 1 | 2 | las dos puertas del sellado | `tests/scrum844-sellar-dentro-de-transaccion.test.mjs` | **3** |
+| 2 | 3 | `exigirTipoDeclarable` | `tests/scrum844b-que-documento-se-declara.test.mjs` | **5** |
+| 3 | 8 | `buildVerifactuRegistrosXml` | `tests/scrum844c-el-xml-que-se-remite.test.mjs` | **8** |
+| 4 | 3 | `entraEnLaCadena` | `tests/scrum844d-quien-entra-en-la-cadena.test.mjs` | **5** |
+| 4 | 1 | `formatFechaHoraHuso` | `tests/scrum844d-quien-entra-en-la-cadena.test.mjs` | **4** |
+| 5 | 6 | `construirLibroRegistro` | `tests/scrum844e-el-libro-es-una-declaracion.test.mjs` | **7** |
+| 5 | 2 | `construirLibroRecibidas` | `tests/scrum426-libro-recibidas.test.mjs` | **15** |
+| | **25** | | | |
+
+### Puesto 6 — las siete funciones tienen cobertura, y los puntos siguen siendo NO MEDIBLES
+
+| función | test que cae | rojos |
+|---|---|---|
+| `calcularRecargo` | `tests/scrum294-recargo-caja.test.mjs` | **6** |
+| `leerTipoRetencion` | `tests/scrum293-retencion-irpf.test.mjs` | **1** |
+| `huecosDeLaSerie` | `tests/scrum291-series-huecos.test.mjs` | **6** |
+| `clasificarPorCobro` · `leerMarcaSuplido` · `validarFacturaSuelta` · `vistaPreviaSerie` | `tests/scrum844f-lo-que-cambia-el-importe.test.mjs` (12, `skipped 0`) | — |
+
+Las **siete** tienen test que CI corre. Pero el ticket no dice **cuáles 6 de las 7** son los puntos,
+así que no se pueden dar por cubiertos punto a punto. Se declara CIEGO sobre ellos, que es lo que
+pedía el suelo.
+
+---
+
+## 3 · 🔴 DOS DE MIS PROPIOS CONTROLES SALIERON MAL PRIMERO, Y ESO ES EL HALLAZGO
+
+**① El control POSITIVO dijo «no cae» sobre el punto nº 1 por gravedad de todo el ticket.**
+Sustituí `throw new Error('verifactu_seal_inside_transaction')` por `void 0`… y esa cadena **no
+existe**: el código real es `throw new Error('verifactu_seal_inside_transaction: applyVeriFactu
+debe…' + …)`. El `split().join()` casó **cero** veces, el fichero quedó intacto, y el test pasó en
+verde.
+
+> 🔒 **Una mutación que no se aplica y una cobertura que no existe dan EXACTAMENTE la misma
+> salida.** Sin comprobar que la mutación entró, habría declarado NO CUBIERTO el puesto 1.
+
+Rehecho contra el `if`, las dos puertas caen y tiran **3** tests — el mismo número que registró §1.
+
+**② La mutación del puesto 3 dio `pass 0 · fail 1`**, que parece «el test cae». No lo era: metí el
+`return` **dentro de una lista de parámetros de varias líneas**, rompí la sintaxis y el fichero no
+cargó. Rehecha sobre `opts = {}) {`, caen **8**.
+
+**③ Y el ayudante con aserción de ancla cazó otras dos.** `exigirTipoDeclarable(inv)` y
+`entraEnLaCadena(inv)` no existen —son `(tipo, numero)` y `(numero, merchant)`—. Al exigir que el
+ancla apareciera **exactamente una vez**, se negó a mutar y lo dijo, en vez de no hacer nada en
+silencio.
+
+🔒 La diferencia entre ① y ③ es la aserción del ancla. Es la lección de esta mañana —el `grep` que
+contaba mi propio comentario— en su versión cara: **un instrumento que no comprueba que ha hecho
+algo informa de lo que no midió.**
+
+---
+
+## 4 · La tanda, con su población
+
+| | |
+|---|---|
+| tests | **6681** |
+| pass | **6571** |
+| fail | **0** |
+| skipped | **110** ⚠️ |
+
+⚠️ **Los 110 saltados NO midieron nada**, y un test saltado se cuenta como pasado (SCRUM-754). El
+verde es sobre los **6571** que corrieron.
+
+> ⚠️ Antes de reconstruir salían **16 rojos**, y no eran del árbol: el cliente de Prisma estaba
+> desfasado respecto a un `schema.prisma` que se movió bajo mis pies (el `GatewayEvent` de otra
+> sesión). `prisma generate` + `build` y a cero. Se deja escrito porque es el segundo tropiezo igual
+> del día: **el cliente generado no es parte del árbol y caduca sin avisar.**
+
+---
+
+## 5 · Veredicto
+
+**La promesa no se puede declarar cumplida en sus términos literales** — y no porque falte trabajo:
+
+* **0 puntos descubiertos** de los que se pueden enumerar;
+* **25 de 25 cubiertos**, cada uno con test sin gate y rojo ejecutado;
+* **6 no medibles**, y la §7 explica por qué: los 31 eran líneas de `dist/`, no decisiones del
+  fuente.
+
+🔒 **Un ticket no se cierra porque haya trabajo suyo en main** (regla 23). Aquí hay bastante más que
+trabajo: hay 25 puntos cubiertos y vistos caer. Lo que no hay es forma de afirmar «los 31», porque
+los 31 nunca fueron enumerables. **Decide el fundador:** cerrar por los 25 dejando constancia de que
+la población era una foto, o redefinir los 6 antes de cerrar.
+
+## 6 · Lo NO tocado
+
+`src/` entero · el camino de emisión fiscal (regla 38: leído, y mutado sólo en `dist/`, que es
+salida de compilación, restaurado byte a byte) · ningún test nuevo ni uno menos · ningún punto
+cubierto de los que salieran sin cubrir (no salió ninguno). Ninguna base, ninguna clave. **Nada
+ejecutado contra producción ni contra staging.**

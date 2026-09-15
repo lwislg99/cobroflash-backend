@@ -177,7 +177,10 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     // `scrum-72` vuelve a dar 72 en vez de `null`, o sea que «72» vuelve a casar con el principio
     // de `scrum-727-x`. Con eso el censo propondría cerrar el ticket que no es — el peor resultado
     // que puede dar, peor que no tenerlo.
-    fichero: 'scripts/censo-tablero-vs-arbol.mjs',
+    // ⚠️ RE-ANCLADA tras SCRUM-829: `numeroDeRama` se mudó a `_numero-de-rama.mjs` (HOJA, sin
+    // tocarle un carácter al patrón) para que `_censo-reparto.mjs` la comparta sin cerrar el
+    // ciclo de imports que este fichero documenta arriba. Este fichero sólo la re-exporta.
+    fichero: 'scripts/_numero-de-rama.mjs',
     de: 'export function numeroDeRama(nombre) {',
     a: 'export function numeroDeRama(nombre) {\n  const mm = /^scrum-0*([0-9]+)/.exec(String(nombre ??0).trim()); return mm ? Number(mm[1]) : null;',
     cae: '«72» NO casa con 720, 727 ni 1727 — se compara el NÚMERO',

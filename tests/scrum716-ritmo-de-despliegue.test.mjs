@@ -350,27 +350,10 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'DESPLIEGA: producción se movió entre las dos lecturas',
   },
   {
-    // ③a El filtro del RELOJ, apagado: un número del fallback de `env.ts` pasaría por sha.
-    //
-    // 🔴 SCRUM-836 · RE-ANCLADA, Y PARTIDA EN DOS. Esta declaración era UNA línea —el filtro
-    // `!ES_SHA || TODO_DIGITOS` de antes— y SCRUM-824b (278a8bd7) partió ese filtro en dos
-    // condiciones sin tocar el ancla. Desde entonces el meta-guard la declaraba CIEGA en CI:
-    // «el ancla no está: la declaración caducó». Llevaba así desde el 9-sep-2026.
-    //
-    // Había tres re-anclajes distintos escritos por bots y nunca mergeados, medidos el 15-sep-2026
-    // sobre 35 ramas: 17 apagaban las dos líneas, 14 sólo la del reloj y 3 sólo la de formato.
-    // No se eligió por votos: se midió cada variante contra el test de abajo el 15-sep-2026, y la
-    // entrada que lo tumba es lo que decide:
-    //
-    //     sólo la del reloj  → cae por el epoch de `env.ts`   (EL defecto que nombra este comentario)
-    //     sólo la de formato → cae por la cadena vacía        (un testigo DISTINTO, propio)
-    //     las dos a la vez   → cae por el epoch otra vez      (el mismo rojo que la del reloj, nada más)
-    //
-    // «Las dos» cae SIEMPRE por el epoch porque es la primera entrada de la basura y el bucle se
-    // para en el primer fallo: su rojo no dice nada de la línea de formato. Más radio sin más
-    // información, que es lo que la ① de este mismo array prohíbe. Y re-anclar sólo la del reloj
-    // dejaría sin vigilar la de formato, que el ancla original sí cubría. Por eso son DOS
-    // declaraciones, cada una con su testigo medido.
+    // ③ El filtro de lo ilegible, apagado: un número del fallback de `env.ts` pasaría por sha.
+    // ⚠️ RE-ANCLADA tras SCRUM-824b: el `if` combinado se partió en dos (formato por un lado,
+    // reloj-por-longitud por otro). El ancla sigue el mismo defecto —el reloj cuela como sha—
+    // apagando sólo la línea que lo cazaba, no el filtro de formato (`ES_SHA`) que sigue vivo.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
     de: '  if (TODO_DIGITOS.test(s) && LONGITUDES_DE_RELOJ.has(s.length)) return null;',
     a: '  if (false) return null;',
@@ -378,8 +361,12 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // ③b El filtro de FORMATO, apagado: lo que ni siquiera tiene forma de sha pasaría por lectura.
-    // Su testigo medido es la cadena vacía —y el resto de la basura de formato del mismo test—, no
-    // el epoch: con esta mutación la línea del reloj sigue viva y lo sigue parando. Ver ③a.
+    // 🔴 SCRUM-836e · La ③ de arriba apaga sólo la línea del reloj y deja ésta viva en el código,
+    // pero SIN VIGILAR: el ancla de antes de SCRUM-824b cubría el filtro entero, y al re-anclarla
+    // sólo por el reloj la línea de formato se quedó sin nadie que la tumbe.
+    // Testigo medido el 15-sep-2026: la cadena vacía del mismo test, NO el epoch. Con esta mutación
+    // la línea del reloj sigue en pie y el epoch lo sigue parando; si el rojo saliera por el epoch,
+    // esta declaración estaría mirando la línea de la ③ y no la suya.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
     de: '  if (!ES_SHA.test(s)) return null;',
     a: '  if (false) return null;',

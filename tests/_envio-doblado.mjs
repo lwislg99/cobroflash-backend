@@ -60,14 +60,63 @@ export function dobleDeLaBase(respuestas) {
       },
     });
   const cache = new Map();
-  return new Proxy({}, {
+
+  /**
+   * El cliente que se le pasa al callback de `$transaction`.
+   *
+   * 🔴 NO LLEVA `$transaction`, y eso es fidelidad, no pereza: el `tx` de Prisma es
+   * `Omit<PrismaClient, ITXClientDenyList>` y `$transaction` está en esa lista. Hay código de
+   * producción que se apoya EXACTAMENTE en eso para negarse a trabajar dentro de una transacción
+   * —`applyVeriFactu` lanza `verifactu_seal_inside_transaction` si `typeof
+   * prismaClient.$transaction !== 'function'`—. Un `tx` que llevara `$transaction` haría pasar en
+   * verde justo el caso que esa guarda existe para impedir.
+   */
+  const tx = new Proxy({}, {
     get: (_t, prop) => {
       const nombre = String(prop);
-      if (nombre.startsWith('$')) return async () => undefined; // $disconnect, $transaction…
-      if (!cache.has(nombre)) cache.set(nombre, modelo(nombre));
-      return cache.get(nombre);
+      if (nombre === '$transaction') return undefined;
+      return clienteGet(nombre, 'el cliente de transacción');
     },
   });
+
+  function clienteGet(nombre, quien) {
+    if (nombre === '$transaction') {
+      // Las DOS firmas, porque son dos contratos distintos y el código de la casa usa los dos:
+      //   · `$transaction(cb)`   → interactiva: se LLAMA al callback y se devuelve su resultado
+      //   · `$transaction([...])`→ lote: se esperan las promesas y se devuelven sus resultados
+      return async (arg) => {
+        if (typeof arg === 'function') return arg(tx);
+        if (Array.isArray(arg)) return Promise.all(arg);
+        throw new Error(
+          `🔴 EL DOBLE NO SABE IMITAR ESTA FORMA DE $transaction: recibió ${typeof arg}. Prisma `
+          + 'acepta un callback o un array de promesas. Si el código de producción empezó a '
+          + 'llamarla de otra manera, el doble tiene que aprenderla — devolver `undefined` aquí '
+          + 'dejaría el test en verde sin haber ejecutado el trabajo.');
+      };
+    }
+    // Ciclo de vida: no mueven datos, así que imitarlos con un no-op es fiel.
+    if (nombre === '$connect' || nombre === '$disconnect') return async () => undefined;
+    if (nombre.startsWith('$')) {
+      // ④ EL SUELO QUE FALTABA. Un doble al que le piden algo que no sabe imitar TIENE QUE
+      // DECIRLO. Antes, todo lo que empezaba por `$` devolvía `undefined` en silencio: quien
+      // llamara a `$queryRaw` recibía `undefined` y seguía como si la consulta hubiera ido bien.
+      // Se puede declarar la respuesta en `respuestas` (`{'$queryRaw': () => [...]}`) — lo que no
+      // se puede es contestar sin saber.
+      const propia = respuestas[nombre];
+      if (propia !== undefined) return async (...a) => (typeof propia === 'function' ? propia(...a) : propia);
+      return async () => {
+        throw new Error(
+          `🔴 EL DOBLE NO SABE IMITAR \`prisma.${nombre}()\` y ${quien} se lo ha pedido. Antes `
+          + 'esto devolvía `undefined` en silencio y el test seguía en verde sobre una llamada '
+          + `que nunca ocurrió. Declara su respuesta en el banco (\`{'${nombre}': …}\`) o `
+          + 'enséñale a imitarlo aquí.');
+      };
+    }
+    if (!cache.has(nombre)) cache.set(nombre, modelo(nombre));
+    return cache.get(nombre);
+  }
+
+  return new Proxy({}, { get: (_t, prop) => clienteGet(String(prop), 'el cliente') });
 }
 
 /**

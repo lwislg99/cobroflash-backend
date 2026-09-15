@@ -1,0 +1,33 @@
+MERGES EXAMINADOS: 60 (ultimos 60)
+  · de PR (entradas a main): 37
+  · otros (merge de main HACIA una rama, etc.): 23
+
+VIAS PARA SABER A QUE TICKET PERTENECE UN MERGE (de 37):
+  ① nombre de la rama (scrum-<n>-…) ... 35
+  ② mensajes de sus commits ........... 36
+  ③ entrada docs/master tocada ........ 22
+  🔴 por NINGUNA de las tres .......... 1
+       d9a05138 PR#1259 scrum-orquestador-prompt-solo-a-quien-habla
+
+═══ MERGES QUE TOCAN CODIGO Y NO DEJAN ENTRADA: 8 de 37 ═══
+  5359f41d  PR#1261  scrum-839b-edad-y-rojo-obligatorio
+      4 ficheros · esperaba docs/master/SCRUM-839.md · SCRUM-839
+  658976f0  PR#1257  scrum-846-caso-conocido-por-ast
+      1 ficheros · esperaba docs/master/SCRUM-846.md · SCRUM-846
+  51a28288  PR#1248  scrum-637-verificacion-s5
+      1 ficheros · esperaba docs/master/SCRUM-637.md · SCRUM-637
+  07ccd16c  PR#1240  scrum-848-tactil-ficha-trabajo
+      4 ficheros · esperaba docs/master/SCRUM-848.md · SCRUM-848
+  85f4e0cb  PR#1239  scrum-839-detectar-conflicto
+      4 ficheros · esperaba docs/master/SCRUM-839.md · SCRUM-839
+  d0ab360b  PR#1238  scrum-637-verificacion-s5
+      3 ficheros · esperaba docs/master/SCRUM-637.md · SCRUM-637
+  5c35a66d  PR#1234  scrum-637-verificacion-s5
+      2 ficheros · esperaba docs/master/SCRUM-637.md · SCRUM-637
+  4dec28eb  PR#1233  scrum-834e-censo-de-modulos
+      2 ficheros · esperaba docs/master/SCRUM-834.md · SCRUM-834
+
+CONTROL POSITIVO — los tres shas del ticket, buscados en el censo:
+  404c0f59 -> PR#1240 (scrum-848-tactil-ficha-trabajo)  ✅ marcado sin entrada
+  d2990977 -> PR#1239 (scrum-839-detectar-conflicto)  ✅ marcado sin entrada
+  e91a3741 -> PR#1261 (scrum-839b-edad-y-rojo-obligatorio)  ✅ marcado sin entrada
