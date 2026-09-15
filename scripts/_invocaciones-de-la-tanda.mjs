@@ -41,8 +41,23 @@ export const INVOCA_LA_TANDA = [
   /\bnode\s+(--[\w=.-]+\s+)*--test\b/,
 ];
 
-/** Los verbos que NO propagan el código de salida del comando que tienen delante. */
-export const VEREDICTOS = { SANO: 'SANO', TUBERIA: 'TUBERIA', SECUENCIA: 'SECUENCIA' };
+/**
+ * Los verbos que NO propagan el código de salida del comando que tienen delante.
+ *
+ * 🔴 SCRUM-850b · `SEGUNDO_PLANO` entra MEDIDO, no por simetría. Una tanda lanzada con `&` no
+ * devuelve su veredicto: el shell devuelve el suyo, que es 0 siempre. Reproducido el
+ * 15-sep-2026 con una tanda de dos tests, uno rojo a propósito:
+ *
+ *     node --test rojo.test.mjs verde.test.mjs        -> exit 1   (honesto)
+ *     node --test rojo.test.mjs verde.test.mjs &      -> exit 0   🔴
+ *
+ * El censo lo daba por SANO porque `segmentar` no partía por `&` — sólo por `&&`. Es el mismo
+ * criterio que ya aplicaba a `|` y a `;`, extendido al separador que faltaba: no es una
+ * prohibición nueva, es el mismo «este separador se come el veredicto».
+ */
+export const VEREDICTOS = {
+  SANO: 'SANO', TUBERIA: 'TUBERIA', SECUENCIA: 'SECUENCIA', SEGUNDO_PLANO: 'SEGUNDO_PLANO',
+};
 
 const esInvocacion = (s) => INVOCA_LA_TANDA.some((r) => r.test(s));
 
@@ -59,6 +74,21 @@ export function segmentar(linea) {
     if (c === '"' || c === "'" || c === '`') { comilla = c; buf += c; continue; }
     if (c === '|' && sig === '|') { out.push({ texto: buf, sep: '||' }); buf = ''; i++; continue; }
     if (c === '&' && sig === '&') { out.push({ texto: buf, sep: '&&' }); buf = ''; i++; continue; }
+    // SCRUM-850b · un `&` SOLO —no `&&`— manda el comando al segundo plano, y entonces el
+    // código que sale es el del shell, no el de la tanda. Se parte igual que por `|` o `;`.
+    // Ojo al orden: esta rama va DESPUÉS de la de `&&`, o partiría `&&` por la mitad.
+    //
+    // 🔴 Y NO TODO `&` ES SEGUNDO PLANO: en `2>&1`, `>&2` y `&>log` es una REDIRECCIÓN. La
+    // primera versión de esto marcaba `npm test > salida.txt 2>&1` —que es la forma SANA, la
+    // que la casa recomienda— como si se comiera el veredicto. Lo cazó el banco de formas al
+    // medir: un guard que marca de más se acaba apagando, y habría apagado el bueno.
+    // El criterio es de forma, no una lista: es redirección si pega con un `>`/`<` por
+    // cualquiera de los dos lados.
+    if (c === '&' && sig !== '&') {
+      const izq = buf.trimEnd().slice(-1);
+      const esRedireccion = izq === '>' || izq === '<' || sig === '>' || sig === '<';
+      if (!esRedireccion) { out.push({ texto: buf, sep: '&' }); buf = ''; continue; }
+    }
     if (c === '|') { out.push({ texto: buf, sep: '|' }); buf = ''; continue; }
     if (c === ';') { out.push({ texto: buf, sep: ';' }); buf = ''; continue; }
     buf += c;
@@ -86,6 +116,9 @@ export function veredictoDeLinea(linea) {
     const haySiguiente = i + 1 < segs.length && segs[i + 1].texto.trim() !== '';
     let v = VEREDICTOS.SANO;
     if (sep === '|') v = VEREDICTOS.TUBERIA;
+    // SCRUM-850b · el `&` se come el veredicto HAYA O NO algo detrás: `npm test &` a secas ya
+    // sale 0. Por eso, al revés que `;`, no se pide `haySiguiente`.
+    else if (sep === '&') v = VEREDICTOS.SEGUNDO_PLANO;
     else if (sep === ';' && haySiguiente) v = VEREDICTOS.SECUENCIA;
     hallazgos.push({ veredicto: v, comando: segs[i].texto.trim(), linea });
   }
