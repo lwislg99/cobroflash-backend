@@ -118,6 +118,11 @@ const TABLES = [
   // restaura una cuenta donde nadie sabe de quién era cada presupuesto ni cada factura. Se
   // descubriría DESPUÉS de restaurar, que es cuando ya no tiene arreglo.
   'quote_assignees', 'invoice_assignees',
+  // SCRUM-815: qué eventos de la pasarela se han atendido YA, y cuáles llegaron y no terminaron.
+  // Entra porque es justo lo que no se puede reconstruir: restaurar sin ella deja el sistema sin
+  // memoria de lo procesado, y el siguiente reintento de Stripe —que los hay— se atendería como
+  // si fuera nuevo. Es la tabla que existe para que un cobro no se cuente dos veces.
+  'gateway_events',
 ];
 
 async function logicalDump(prisma) {
