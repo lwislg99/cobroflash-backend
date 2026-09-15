@@ -706,3 +706,68 @@ ANTES:   .tmp-471-0ZL5ds (67) · .tmp-471-BLzk7G (44) · tests/__tmp-sellado-sin
 
 Sin fuente no hay carrera, y el trinquete es lo que mantiene el cero. Las diez pasadas confirman;
 el cero del vigía es lo que explica.
+
+---
+
+## ⑥ 🔴 SCRUM-740 YA HABÍA MIRADO ESTO, Y DECIDIÓ AL REVÉS
+
+Lo destapó la primera tanda completa, no una lectura previa: `scrum740-carrera-por-el-arbol` cayó
+con dos rojos **deterministas**, causados por este arreglo. Existía desde el 4-sep y ataca la misma
+familia — *«dos tests se pisan, y ninguno de los dos tiene un defecto»*, `scrum206b` contra
+`scrum226`, medido como **4 escritores × 6 barredores = 24 pares**.
+
+**Su decisión fue arreglar el BARREDOR, no los escritores**, y la dejó escrita:
+
+> «los cuatro escritores NO PUEDEN dejar de escribir ahí: son AUTOPRUEBAS… el fichero TIENE que
+> estar dentro del árbol que el guard barre — moverlo a `tmpdir` no arregla la carrera, DESACTIVA
+> el control positivo.»
+
+### La premisa es FALSA para los cuatro, y se comprueba leyendo qué hacen
+
+Ninguna de las cuatro autopruebas depende de estar dentro del árbol barrido: **las cuatro le pasan
+la ruta DIRECTAMENTE a su analizador.**
+
+| test | cómo consume su fichero sintético |
+|---|---|
+| `scrum205` | `llamadasA(SELLADORAS, tmp)` |
+| `scrum206b` | `llamadasConEnvolventes(EMBUDO, malo)` · `(EMBUDO, bueno)` |
+| `scrum240` | `abreElSobre(soloComentario)` |
+| `scrum538` | `rutasNombradas(tmp)` |
+
+Mover el fichero a `os.tmpdir()` **no desactiva nada**: el analizador recibe la misma ruta y ve el
+mismo defecto sintético. Las cuatro siguen en verde con el mismo número de tests, y el diff prueba
+que sólo cambió la ubicación. La afirmación de 740 era razonable y resultó equivocada; se retira
+con la medición delante, no de palabra.
+
+### Lo que se ha tocado de 740, y por qué NO es relajar un guard
+
+`ESCRITORES_MEDIDOS = 4` con `>=` exigía que **siguieran existiendo** cuatro tests escribiendo
+dentro de `tests/`. Al quitarlos, ese suelo pasó a pedir **que el defecto no se arreglara**. Es la
+misma retirada que SCRUM-804 hizo con sus tres cifras y por el mismo motivo: la regla 41 presupone
+que lo que el guard EXIGE sigue siendo cierto.
+
+Y el hueco no queda sin vigilar — queda vigilado **mejor**:
+
+| | antes | ahora |
+|---|---|---|
+| control positivo del detector | leía `scrum206b` del árbol | **fuente sintética**, que no la vacía ningún arreglo |
+| escritores | `>= 4` (el defecto tenía que seguir ahí) | se **imprime**; el cero lo exige SCRUM-824 por raíz |
+| barredores | `>= 6` | **por identidad**: los 6 declarados tienen que seguir viéndose |
+
+Mutación corrida para probar que el suelo nuevo no es decoración: cegando `escribeEnTests`
+(`if (true) return false`), el SUELO cae con su mensaje. Fuente restaurada byte a byte
+(sha256 `1607a20152023e95` antes y después).
+
+### Y los dos censos no se contradicen: uno tiene un falso positivo
+
+Tras el arreglo, el detector de 740 todavía ve **1** escritor: `scrum754-el-juez-que-oscila`. No lo
+es. Hace `mkdirSync(path.join(raiz, 'tests'))` sobre un `raiz` que es
+`fs.mkdtempSync(path.join(os.tmpdir(), 'scrum754-'))` — un `tests/` **dentro de una maqueta**. 740
+casa el literal `'tests'` sin resolver la raíz; el censo por raíz de SCRUM-824 dice de ese mismo
+fichero **24 sitios, los 24 `TMP`**. Se deja constancia y no se toca el detector ajeno, pero queda
+dicho: dos censos del mismo árbol, y el que diverge en silencio es el que miente.
+
+> 🔒 Los dos arreglos son **complementarios, no alternativos**. 740 hace tolerante al que barre
+> (`leerSiSigueAhi`); 824 quita la fuente y pone el trinquete. Ninguno sustituye al otro: el
+> barrido de 740 sigue pudiendo chocar con cualquier fichero que aparezca en `tests/`, y por eso su
+> trinquete se queda intacto.
