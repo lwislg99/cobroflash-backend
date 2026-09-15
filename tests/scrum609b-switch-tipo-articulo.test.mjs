@@ -20,6 +20,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require_ = createRequire(import.meta.url);
@@ -83,8 +84,8 @@ test('SCRUM-609b · el rótulo es el APROBADO, y ya no lleva marcador (SCRUM-667
 
   // Y que no quede el prefijo en ningún rótulo del fichero. Se mira el CÓDIGO, no los comentarios:
   // la cabecera nombra el marcador para explicar que se retiró, y cazarla sería un rojo por nada.
-  const soloCodigo = src.split('\n').filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n');
-  assert.ok(!soloCodigo.includes('[PENDIENTE'),
+  const codigo = soloCodigo(src, 'switchTipoArticulo.js');
+  assert.ok(!codigo.includes('[PENDIENTE'),
     '🔴 ha vuelto un marcador al código de este switch, que ya tiene su copy aprobada.');
 });
 
@@ -93,7 +94,10 @@ test('SCRUM-609b · 🔴 la vista ESCRIBE el lado guardado al abrir, y REAPLICA'
   // ticket paró. Se comprueba sobre el fuente porque el modal necesita navegador; lo que la suite
   // sí ejecuta es la regla de arriba.
   const vista = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/productsView.js'), 'utf8');
-  const limpio = vista.split('\n').map((l) => l.replace(/(^|[^:])\/\/.*$/, '$1')).join('\n');
+  // SCRUM-694b · filtro a mano retirado: `(^|[^:])//` libraba a `https://` por los dos
+  // puntos, pero se comia la linea entera ante un regex de URL (`/^https?:\/\//`), que es
+  // como las URLs aparecen en el codigo de verdad. `soloCodigo()` tokeniza y no depende de eso.
+  const limpio = soloCodigo(vista, 'productsView.js');
   // Suelo: que el desnudado no se haya comido la vista.
   assert.ok(limpio.includes('openEditModal'), '🔴 el desnudado se llevó la vista por delante.');
 
