@@ -104,7 +104,7 @@ router.post('/', async (req, res) => {
 
     } else if (event.type === 'charge.dispute.created') {
       // A21.1 (R14): disputa → aviso WA/BO + paquete de evidencia en la factura
-      await handleStripeDispute(event.data.object as StripeLib.Dispute);
+      await handleStripeDispute(event.data.object as StripeLib.Dispute, event.id);
 
     } else if (event.type === 'payment_intent.payment_failed') {
       const pi = event.data.object as StripeLib.PaymentIntent;

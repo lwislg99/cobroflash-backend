@@ -46,7 +46,7 @@ router.post('/', async (req, res) => {
 
     if (event.type === 'charge.dispute.created') {
       // A21.1 (R14): tarjetas de HOY (cuenta plataforma) — mismo tratamiento
-      await handleStripeDispute(event.data.object as any);
+      await handleStripeDispute(event.data.object as any, event.id);
       return res.json({ received: true });
     }
 
