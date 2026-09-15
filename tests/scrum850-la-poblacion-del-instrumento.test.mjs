@@ -36,7 +36,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import {
-  censar, veredictoDeLinea, segmentar, sinComentario, deUnFicheroJs, VEREDICTOS,
+  censar, veredictoDeLinea, segmentar, sinComentario, deUnFicheroJs, dePackageJson, VEREDICTOS,
 } from '../scripts/_invocaciones-de-la-tanda.mjs';
 
 const RAIZ = path.join(import.meta.dirname, '..');
@@ -58,8 +58,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     fichero: 'scripts/_invocaciones-de-la-tanda.mjs',
-    de: "      if (c === '#' && (i === 0 || /\\s/.test(linea[i - 1]))) return linea.slice(0, i);",
-    a: '      if (false) return linea.slice(0, i);',
+    de: "    if (c === '#' && (i === 0 || /\\s/.test(linea[i - 1]))) return linea.slice(0, i);",
+    a: '    if (false) return linea.slice(0, i);',
     cae: 'un comentario no cuenta como invocación',
   },
 ];
@@ -103,6 +103,29 @@ test('SCRUM-850 · 🔴 CONTROL NEGATIVO: `&&`, el último tramo y los comentari
   // y por AST: un //comentario de un .mjs tampoco
   assert.equal(deUnFicheroJs('// execSync("npm test | tail")\nconst x = 1;', 'x.mjs').length, 0);
   assert.equal(deUnFicheroJs('execSync("npm test | tail");', 'x.mjs')[0].veredicto, VEREDICTOS.TUBERIA);
+});
+
+// ── 🔴 CADA MUTACIÓN DECLARADA ABAJO, CON SU PROPIO TEST DEDICADO ────────────────────────────
+// El arnés de SCRUM-745 exige que `cae` nombre un test que exista EN VERDE en la pasada limpia:
+// sin eso no hay nada que mutar ni que juzgar, y la mutación sale CIEGA. CONTROL POSITIVO y
+// CONTROL NEGATIVO ya ejercitan estas tres líneas, pero ninguno de sus títulos lleva el nombre
+// exacto que las tres declaraciones prometen — así que se dedican, uno por línea mutada.
+test('SCRUM-850 · el censo ve una tubería', () => {
+  const h = veredictoDeLinea('npm test | tail');
+  assert.equal(h.length, 1, 'no vio la invocación en: npm test | tail');
+  assert.equal(h[0].veredicto, VEREDICTOS.TUBERIA, 'una tubería detrás de la tanda no se reconoce');
+});
+
+test('SCRUM-850 · los //comentarios de package.json no son invocaciones', () => {
+  const deComentario = dePackageJson(RAIZ).filter((h) => h.donde.startsWith('scripts.//'));
+  assert.deepEqual(deComentario, [],
+    'una clave de comentario de package.json se coló como invocación: '
+    + JSON.stringify(deComentario));
+});
+
+test('SCRUM-850 · un comentario no cuenta como invocación', () => {
+  assert.equal(veredictoDeLinea(sinComentario('# npm test | tail')).length, 0);
+  assert.equal(veredictoDeLinea(sinComentario('  # ojo: npm test | grep x')).length, 0);
 });
 
 // ── 🔴 EL SUELO: cero no es «limpio», es «no he mirado» ──────────────────────────────────────
