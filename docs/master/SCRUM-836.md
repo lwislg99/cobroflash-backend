@@ -2,7 +2,7 @@
 
 **Fecha:** 15-sep-2026 · **Carril:** B (guard) · **Gate:** fase ① sin gate; fase ② PENDIENTE del fundador
 **Medido contra:** `origin/main` = `47f9180fe84b03db4badac03eea05969cdcfb4f2` · 2026-09-15T10:35:49+01:00
-**Tanda:** 6511 tests, 6401 pass, 0 fail, 110 skipped · 188 s · exit 0 — medida DESPUÉS del último cambio.
+**Tanda:** 6704 tests, 6594 pass, 0 fail, 110 skipped · 230 s · exit 0 — medida DESPUÉS del último cambio, con tope duro.
 
 > **Una alarma que suena donde nadie está obligado a escucharla no es una alarma.**
 
@@ -10,7 +10,7 @@
 
 | | promete | estado |
 | --- | --- | --- |
-| **①** | reparar el ancla de la mutación → `ciegas 0` | ✅ **entregado aquí** |
+| **①** | reparar el ancla de la mutación → `ciegas 0` | ✅ **hecho — pero por `faebb1e6` en `main`, no aquí: ver «la carrera»** |
 | **②** | el meta-guard pasa a check **OBLIGATORIO**, y su rojo bloquea el auto-merge | 🔴 **NO ES CÓDIGO** — ver abajo |
 
 Y lo que ya había en `main` con este número, medido antes de tocar nada — **ninguna de las dos
@@ -44,24 +44,36 @@ vivas 165 · mudas 0 · ciegas 1 · ficheros muertos 0
 * **Y no estaba tapando un guard muerto:** tras reparar, la mutación sale **VIVA**, no muda — el
   test que debe caer ejercita `'1788742571305'`, `'no-soy-un-sha'`, `''`, `null`…
 
-## La decisión, y por qué
+## 🔴 LA CARRERA: dos arreglos del mismo defecto, y el que gana NO es el mío
 
-**No se restaura el ancla vieja.** Volver al `||` desharía el arreglo de SCRUM-824b, que estaba
-bien hecho y por un motivo medido.
+Mientras se trabajaba esto, **el ancla de `scrum716` se arregló también en `main`**, por otra vía.
+Los hechos, datados, porque el orden es lo único que lo explica:
 
-**Anclar a la línea de un filtro es anclar a cómo está escrito HOY ese filtro** — y un filtro es
-justo lo que se reescribe cuando se afina. Por eso el ancla pasa a ser **la identidad de la función
-que filtra**: la cabecera de `shaLegible` y su normalización, que son su contrato. La mutación
-inserta un `return s;` que corta la función **antes de cualquier filtro**.
+| | |
+| --- | --- |
+| `faebb1e6` · **9-sep 08:04Z** · `claude[bot]` | re-ancló DOS mutaciones caducadas (`scrum716` y `scrum738`). Es la ejecución automática que el propio ticket 836 cuenta en su origen. |
+| **15-sep 09:14** | se mide `origin/main` = `319bbd99`. `faebb1e6` **NO es ancestro suyo**: el ancla estaba caducada de verdad, y la medición de este trabajo era correcta. |
+| **15-sep, durante la tanda** | `main` avanza **103 commits** y `faebb1e6` entra por fin. |
 
-La propiedad que se gana: da igual cuántos filtros haya dentro, cómo estén escritos o en qué orden
-— **los apaga todos, los de hoy y los que se añadan**. El defecto imitado sigue siendo el mismo:
-`shaLegible` deja de decir «no se sabe» ante una lectura que no entiende.
+**Por qué tardó seis días en entrar** y no es anécdota: ese commit vive en una rama
+`claude/pr-1211-…`, y el filtro `scrum-*` de `pr-automatico.yml` **no le abre PR** — exactamente lo
+que `836b` documentó el 9-sep. El aviso estaba escrito; lo que faltaba era que alguien lo mergease.
 
-Comprobado **antes** de escribirla: el ancla es **única** en el fichero, y `node --check` confirma
-que el fichero mutado **parsea** — el resto de la función queda como código inalcanzable, no como
-código roto. Es la lección escrita en la mutación ① de ese mismo guard: *una mutación con más radio
-que el defecto que imita no prueba nada.*
+**Se resuelve el conflicto a favor de `main`**, y a propósito: su arreglo ya está mergeado, funciona
+y tumba el guard igual. **Pisar trabajo ajeno ya integrado, para poner el propio, no es un criterio
+técnico.** Lo que va en este PR es lo que no colisiona con nadie: la red que faltaba.
+
+### La propuesta que SÍ queda escrita, sin aplicarse
+
+El ancla que queda en `main` es `if (TODO_DIGITOS.test(s) && LONGITUDES_DE_RELOJ.has(s.length))
+return null;`. Cumple su función **y conserva la fragilidad que causó esto**: está atada a la forma
+de una línea de filtro, y un filtro es justo lo que se reescribe al afinarlo.
+
+La alternativa que se construyó y se midió era anclar a **la identidad de `shaLegible`** —su
+cabecera y su normalización, que son su contrato— insertando un `return s;` que corta la función
+antes de cualquier filtro: sobrevive a que los filtros cambien, se añadan o se reordenen. Está
+comprobada (ancla única, `node --check` sobre el fichero mutado, mutación VIVA). **No se aplica
+aquí** porque hacerlo sería deshacer el arreglo de otro. Queda propuesta, no impuesta.
 
 ### La red que faltaba, y dónde faltaba
 
@@ -92,7 +104,44 @@ en rojo y comprobar que **no se mergea**. Hay precedente de cómo hacerlo limpio
 limpieza, no por su resultado* — rama borrada, PR cerrado **sin mergear**, y comprobado aparte que
 ni el commit ni el fichero llegaron a `main`.
 
+## 🔴 Lo que el guard nuevo cazó el día que nació — y no se lo inventó nadie
+
+Nada más entrar en la tanda, con `main` recién mezclado, **acusó a otra mutación caducada que
+llevaba mergeada desde hoy**:
+
+```
+scrum850-la-poblacion-del-instrumento.test.mjs → scripts/_invocaciones-de-la-tanda.mjs
+    el ancla `de` no está en el fichero
+```
+
+**Y no había cambiado el código: había cambiado la SANGRÍA.** La declaración pedía SEIS espacios y
+el fichero tiene CUATRO; el resto de la línea, idéntico byte a byte. Se reancla **sin la
+indentación** —el texto sin margen aparece 1 sola vez en el fichero— porque anclar incluyendo el
+margen es anclar a cómo está formateado hoy, que es lo primero que cambia. Cabía en el PR, es la
+misma zona y ponía mi guard en rojo: las tres de la regla 37.
+
+> Un caso cazado el primer día no prueba que el guard sea bueno, pero sí que el problema **no era
+> de un solo sitio**. Eran dos, y el segundo nadie lo estaba mirando.
+
+### ⚠️ HALLAZGO de otro carril, medido y NO arreglado (regla 9)
+
+Las **tres** declaraciones de `scrum850` tienen además el `cae` caducado: **ninguno de los tres
+nombres corresponde a un test suyo**, así que el meta-guard no puede medirlas ni con el `de` bien.
+Medido con control, no supuesto — `paso()` sobre la pasada limpia de cada guard:
+
+```
+scrum716 · 7 declaraciones → paso(): true  ×7      ← control: así se ve una sana
+scrum850 · 3 declaraciones → paso(): false ×3      ← las tres, inservibles
+```
+
+Arreglarlo exige decidir qué test debe tumbar cada mutación, y eso es diseño del guard ajeno. **Se
+reporta con su medida y no se toca.**
+
 ## Verificado en rojo
+
+⚠️ Los controles ① y ② se ejecutaron **antes** de que entrara `faebb1e6`, sobre el ancla por
+identidad que este trabajo construyó. Quedan aquí porque son la medida que demuestra que el defecto
+existía y que el meta-guard sabe distinguir las tres respuestas — no porque ese ancla vaya en el PR.
 
 **① El meta-guard, pasada completa** (`npm run meta:mutaciones`, exit 0):
 
@@ -100,6 +149,9 @@ ni el commit ni el fichero llegaron a `main`.
 ✔ scrum716-ritmo-de-despliegue.test.mjs · una lectura ilegible da NO SE SABE, no un veredicto a medias
 vivas 167 · mudas 0 · ciegas 0 · ficheros muertos 0
 ```
+
+Antes de tocar nada la misma pasada daba `vivas 165 · ciegas 1`. Y la mutación sale **VIVA**, no
+muda: el guard sí caza el defecto que promete: no se estaba tapando un guard muerto.
 
 **② El control positivo que exige el ticket**, con la función REAL del meta-guard (`aplicarUna`),
 sin pagar otra pasada entera:
@@ -110,6 +162,14 @@ ANCLA VIEJA  → ✔ CIEGO · el ancla no está en `scripts/_ritmo-de-despliegue
 ```
 
 Sabe volver a ponerse ciego: **no se ha apagado**.
+
+**②bis · El ancla que SÍ queda** (la de `faebb1e6`), medida aparte con `aplicarUna`, porque adoptar
+el arreglo de otro sin comprobarlo sería fiarse en vez de medir. Las **siete** declaraciones de
+`scrum716` tumban su guard:
+
+```
+1..7  ✔ VIVA   (ninguna ciega, ninguna muda)
+```
 
 **③ El guard nuevo, roto a propósito sobre el árbol real** (ancla devuelta a la forma caducada):
 
@@ -132,6 +192,5 @@ RESTAURADO byte a byte: ✅ idéntico
 
 ## Ficheros
 
-* `tests/scrum716-ritmo-de-despliegue.test.mjs` — la mutación ③, reanclada a la identidad de
-  `shaLegible`, con el motivo escrito al lado.
+* `tests/scrum850-la-poblacion-del-instrumento.test.mjs` — el ancla reanclada SIN la sangría.
 * `tests/scrum836-ancla-de-mutacion-viva.test.mjs` — la red en la tanda que sí bloquea.
