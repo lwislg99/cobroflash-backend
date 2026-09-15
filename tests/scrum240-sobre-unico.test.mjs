@@ -33,6 +33,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
@@ -186,7 +187,7 @@ test('GUARD · el sobre se abre en UN solo fichero de src/', () => {
 });
 
 test('AUTOPRUEBA · el guard distingue un literal de una mención en comentario', () => {
-  const tmp = path.join(RAIZ, 'tests', '.tmp-scrum240');
+  const tmp = path.join(os.tmpdir(), `yaqu-240-${process.pid}`);
   fs.mkdirSync(tmp, { recursive: true });
   const soloComentario = path.join(tmp, 'comentario.ts');
   const conLiteral = path.join(tmp, 'literal.ts');
