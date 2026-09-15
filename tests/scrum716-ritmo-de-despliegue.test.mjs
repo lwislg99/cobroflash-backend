@@ -351,8 +351,12 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // ③ El filtro de lo ilegible, apagado: un número del fallback de `env.ts` pasaría por sha.
+    // 🔴 SCRUM-824b partió el filtro en dos líneas (ver `_ritmo-de-despliegue.mjs`): la de
+    // `ES_SHA` sola ya no basta para colar el epoch del fallback (un decimal de 13 cifras SÍ
+    // casa con `[0-9a-f]{7,40}`), así que el ancla que apaga el defecto es la del filtro por
+    // LONGITUD, que es la mitad que de verdad distingue un reloj de un commit.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
-    de: '  if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;',
+    de: '  if (TODO_DIGITOS.test(s) && LONGITUDES_DE_RELOJ.has(s.length)) return null;',
     a: '  if (false) return null;',
     cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
   },
