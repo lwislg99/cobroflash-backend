@@ -134,8 +134,27 @@ test('SCRUM-694 · 🔴 CONTROL: el filtro VIEJO sí cegaba — la migración no
 // 🔴 EL TRINQUETE DEL HALLAZGO: los que aún filtran a mano NO PUEDEN CRECER
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-/** Medido el 2-sep-2026 sobre el árbol. Este número BAJA con motivo; si sube, salta. */
-const TOPE_FILTRAN_A_MANO = 56;
+/**
+ * Medido sobre el árbol. Este número BAJA con motivo; si sube, salta.
+ *
+ *   56 · 2-sep-2026  · SCRUM-694, censo de entrada.
+ *   42 · 15-sep-2026 · SCRUM-694b. Y la bajada de 14 no es de un solo sitio, así que se declara:
+ *        · **−9** migrados aquí a `soloCodigo()`: la familia `(^|[^:])//`, la que corta a MITAD
+ *          de línea y produce los verdes. Ese `[^:]` libraba a `https://` por los dos puntos,
+ *          pero no al regex que reconoce una URL —`/^https?:\/\//`—, donde las dos barras van
+ *          detrás de una CONTRABARRA. Detalle y caso real: `scrum694b-el-filtro-que-no-ve-la-url`.
+ *        · **−5** que ya no estaban: el árbol se movió entre el 2 y el 15 de septiembre. No los
+ *          migró este ticket y no se apunta el mérito; se apunta que el censo los remidió.
+ *
+ * Lo que QUEDA son 42, y quedan por familias distintas, no por descuido:
+ *   · 30 sólo borran la línea que EMPIEZA por `//` — no cortan a mitad de línea.
+ *   ·  9 cortan detrás de un espacio, `(^|\s)//` — y `https://` lleva `:` delante, no espacio.
+ *   ·  2 leen `prisma/schema.prisma`, que el scanner de TypeScript no parsea (ya declarado
+ *        «no aplica» en SCRUM-694, y sigue siéndolo).
+ *   ·  1 (`scripts/censo-anclas-bloque-f.mjs`) corta en cualquier `//`, pero medido el
+ *        15-sep-2026 no pierde NI UNA línea del fichero que lee (`src/core/flags.ts`).
+ */
+const TOPE_FILTRAN_A_MANO = 42;
 
 /** El corte que define la familia: un `replace` que trocea en `//` hasta el fin de línea. */
 const EL_CORTE = String.fromCharCode(92) + '/' + String.fromCharCode(92) + '/.*$';

@@ -24,6 +24,7 @@ import { fileURLToPath } from 'node:url';
 // SCRUM-598 · F9 no se retira, se MUDA: su detector nuevo vive en el censo, y aquí se prueba en
 // rojo. Ver el bloque «F9 · LA MUDANZA» al final de este fichero.
 import { F9_EN_EL_CATALOGO, faltaEnF9 } from './_censo-dos-fronts.mjs';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VISTA = path.join(RAIZ, 'public/dashboard/js/quotesView.js');
@@ -31,10 +32,11 @@ const require_ = createRequire(import.meta.url);
 const ts = require_('typescript');
 
 /** El fuente SIN comentarios: este fichero nombra «margen» muchas veces y no puede cazarse a sí mismo. */
-function desnudar(src) {
-  return src
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .split('\n').map((l) => l.replace(/(^|[^:])\/\/.*$/, '$1')).join('\n');
+function desnudar(src, nombre = 'x.ts') {
+  // SCRUM-694b · filtro a mano retirado: `(^|[^:])//` libraba a `https://` por los dos
+  // puntos, pero se comia la linea entera ante un regex de URL (`/^https?:\/\//`), que es
+  // como las URLs aparecen en el codigo de verdad. `soloCodigo()` tokeniza y no depende de eso.
+  return soloCodigo(src, nombre);
 }
 
 /**
