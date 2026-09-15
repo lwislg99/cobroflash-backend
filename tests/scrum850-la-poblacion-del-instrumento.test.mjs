@@ -33,10 +33,12 @@
 // ════════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import {
-  censar, veredictoDeLinea, segmentar, sinComentario, deUnFicheroJs, VEREDICTOS,
+  censar, veredictoDeLinea, segmentar, sinComentario, deUnFicheroJs, dePackageJson, VEREDICTOS,
 } from '../scripts/_invocaciones-de-la-tanda.mjs';
 
 const RAIZ = path.join(import.meta.dirname, '..');
@@ -63,6 +65,32 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'un comentario no cuenta como invocación',
   },
 ];
+
+// ── 🔴 SCRUM-850b · las tres de arriba estaban CIEGAS: el `cae` no nombraba ningún test de este
+// fichero, así que la línea base nunca las encontraba EN VERDE y `aplicarUna` no llegaba a
+// mutar nada (PUERTA 1). Cada una necesita su propio test, con el título exacto de su `cae`.
+test('SCRUM-850 · el censo ve una tubería', () => {
+  const [h] = veredictoDeLinea('npm test | tail');
+  assert.equal(h.veredicto, VEREDICTOS.TUBERIA, 'una invocación seguida de `|` tiene que caer TUBERIA');
+});
+
+test('SCRUM-850 · los //comentarios de package.json no son invocaciones', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum850-'));
+  fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({
+    scripts: {
+      test: 'node --test tests/*.test.mjs',
+      '//test': 'ejemplo de lo que NO hay que escribir: npm test | tail (esto es prosa, no un script)',
+    },
+  }));
+  const out = dePackageJson(dir);
+  assert.deepEqual(out.map((h) => h.donde), ['scripts.test'],
+    `una clave // se leyó como invocación: ${JSON.stringify(out)}`);
+});
+
+test('SCRUM-850 · un comentario no cuenta como invocación', () => {
+  assert.equal(veredictoDeLinea(sinComentario('# npm test | tail')).length, 0,
+    'un `#` de comentario tiene que desaparecer ANTES de buscar la invocación');
+});
 
 // ── ✅ CONTROL POSITIVO DEL DETECTOR: las formas que TIENE que ver ───────────────────────────
 test('SCRUM-850 · ✅ CONTROL POSITIVO: el detector ve cada forma que se come el código', () => {
