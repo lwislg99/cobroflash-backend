@@ -3,10 +3,15 @@ SCRUM-860 ① · clasificación de las lecturas SIN `select` de primer nivel
 lecturas de Prisma en src/ : 430  (con select 284 · sin select 146)
 
 🔴 HACIA FUERA (se serializan a una respuesta) :  81   ← EL NÚMERO QUE DECIDE
-   INTERNA   (no salen por la API)             :  36
-⚠️  NO CLASIFICADO (no lo sé — NO es sano)      :  29
+   INTERNA   (no salen por la API)             :  44
+⚠️  NO CLASIFICADO (no lo sé — NO es sano)      :  21
    ------------------------------------------------
    suma                                        : 146  ✅ cuadra con el censo
+
+🔒 EL SUELO DEL TRINQUETE = hacia fuera + no clasificado = 102
+   NO CLASIFICADO cae del lado MALO: si el suelo se derivara sólo de las que se
+   serializan, las que nadie ha sabido seguir quedarían fuera de la red sin que nadie
+   lo hubiera decidido — el defecto de este ticket una capa más arriba.
 
 🔴 HACIA FUERA · por modelo
     18  invoice
@@ -111,6 +116,10 @@ lecturas de Prisma en src/ : 430  (con select 284 · sin select 146)
    src/modules/whatsappBot/app/routes/botAdmin.routes.ts:14  botSession.findMany  [directo]  
    src/modules/whatsappBot/domain/botFlow.service.ts:47  botSession.findFirst  [por su llamador]  getSession
 
-⚠️ NO CLASIFICADO · por qué
+⚠️ NO CLASIFICADO · por qué (y NO son sanos)
     20  devuelve el dato y su llamador (1 salto) no serializa: la cadena sigue
-     9  devuelve el dato y no se le encuentran llamadores en src/
+     1  devuelve el dato desde un callback de `$transaction`: el valor vuelve a la función de fuera y el seguimiento por nombre no cruza esa frontera
+
+   INTERNA · por vía
+    22  handler terminal
+    22  no devuelve ni serializa
