@@ -195,7 +195,7 @@ pregunta 2 se creó **parcial y sobre un banco desechable**, y se tiró en la mi
 > Lo de arriba es el PASO 0: medir y decidir. Esto es lo que ENTRA en el PR. Nada de lo anterior
 > se borra ni se corrige: se confirma. Las dos mediciones se hicieron por separado y coinciden.
 
-**Medido contra:** `origin/main` = `eef60aa65fb74419bfbf28963179a433673509f3` · 2026-09-07 21:34:56 +0100
+**Medido contra:** `origin/main` = `eef60aa65fb74419bfbf28963179a433673509f3` · 2026-09-07T21:34:56+01:00
 **Base:** `acela.proxy.rlwy.net/yaqu_dev_javier` — BASE DE PRUEBAS DEL CARRIL del worktree
 `cobroflash-backend`, acreditada con `node scripts/comprobar-claves-bd.mjs` **antes** de correr nada.
 **No es staging y no es producción**, que era la prohibición del encargo.

@@ -434,6 +434,10 @@ export const DECLARADOS = [
   // rutas; estos dos son su CONTRATO, y se exportan para que el guard compare contra ellos por
   // identidad en vez de copiar el literal. Copiarlo seria tener dos fuentes del mismo texto
   // aprobado, que es justo lo que la regla 30 evita.
+  { modulo: 'src/modules/invoicing/domain/clienteCongelado.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-09',
+    motivo: 'SCRUM-729 · los cinco nombres del cliente congelado, en un solo sitio. Ningun otro modulo de `src/` los enumera a proposito: el codigo derrama el objeto entero. Su lector es el banco, que comprueba con esta lista que el envoltorio escribe LOS CINCO — una copia escrita a mano en el test podria quedarse atras sin que nadie lo notara, y congelar cuatro de cinco deja un documento mitad congelado y mitad vivo.',
+    exports: ['CAMPOS_CONGELADOS'] },
   { modulo: 'src/modules/invoicing/domain/cerrojoSaturado.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-08',
     motivo: 'Codigo y texto oficial del 503 `serie_ocupada`; su lector de fuera es el guard, que los compara por identidad para no duplicar el literal aprobado.',

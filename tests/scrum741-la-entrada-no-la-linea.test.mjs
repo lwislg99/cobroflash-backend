@@ -32,6 +32,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url'; // SCRUM-730
 import ts from 'typescript';
 import { leerCensoDelFichero, RUTA_SQL } from '../scripts/generar-sql-deriva.mjs';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VIGILANTE = path.join(RAIZ, 'tests', 'scrum461-censo-no-encoge.test.mjs');
@@ -199,9 +200,10 @@ test('SCRUM-741 · 🔴 TRINQUETE: el vigilante LEE con el lector compartido, y 
 
   // Y que no haya vuelto a nacer una regex anclada al final de línea sobre el censo. Se mira el
   // CÓDIGO desnudo, no el comentario que explica cuál era el defecto (que la contiene a propósito).
-  const desnudo = src
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .split('\n').map((l) => l.replace(/(^|[^:])\/\/.*$/, '$1')).join('\n');
+  // SCRUM-694b · filtro a mano retirado: `(^|[^:])//` libraba a `https://` por los dos
+  // puntos, pero se comia la linea entera ante un regex de URL (`/^https?:\/\//`), que es
+  // como las URLs aparecen en el codigo de verdad. `soloCodigo()` tokeniza y no depende de eso.
+  const desnudo = soloCodigo(src, path.basename(VIGILANTE));
   assert.ok(desnudo.includes('paresDelSql'), '🔴 el desnudado se llevó el código por delante.');
   assert.equal(/\\\(\'\(\[\^\'\]\+\)\',\'\(\[\^\'\]\+\)\'\\\),\?\$/.test(desnudo), false,
     '🔴 ha vuelto una regex anclada en `$` para leer el censo: es exactamente el defecto de este '

@@ -88,7 +88,7 @@ import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL } from './_medidor-de-toque
 // SCRUM-782 · la vista del panel, montada por el banco y serializada. `scripts/` importando de
 // `tests/` no es nuevo: ya lo hacen censo-internos-de-prisma, censo-tablero-vs-arbol y
 // diagnostico-dependencias.
-import { paginaDeClientes, paginaDeVista, CLIENTES_DE_MUESTRA, DETALLE_360_DE_MUESTRA, ARGUMENTOS_DE_VISTA } from './_pagina-panel.mjs';
+import { paginaDeClientes, paginaDeVista, CLIENTES_DE_MUESTRA, DETALLE_360_DE_MUESTRA, TRABAJO_DE_MUESTRA, ARGUMENTOS_DE_VISTA } from './_pagina-panel.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
@@ -226,7 +226,23 @@ const SUPERFICIES_791 = [
   // eso nunca estuvo entre los cortos. O sea que la vista no ha dejado de pintar nada que
   // debiera: hay un objetivo menos porque hay un botón menos, y encima uno que no cumplía AB6.
   { ruta: '/__quotes', vista: 'renderQuotesView', titulo: 'editor de presupuesto', distintosEsperados: 7 },
-  { ruta: '/__jobdetail', vista: 'renderJobDetailView', titulo: 'ficha de Trabajo', distintosEsperados: 6 },
+  // 🔴 SCRUM-848 · `datos` NO es una excepción nueva ni un número tocado: es la SUPERFICIE.
+  //
+  // Sin él, el banco montaba esta ficha con `{}` — un Trabajo SIN `status`, que el producto no
+  // puede producir. Mientras `jobNextAction` caía al nivel 5 con cualquier estado eso pasaba por
+  // una pantalla normal; SCRUM-823 le puso puerta por estado y el CTA del héroe desapareció, así
+  // que el suelo saltó: 5 cortos donde el censo midió 6, y `BUTTON.btn-primary` «caducada».
+  //
+  // El guard tenía razón en ponerse rojo. Lo que no era medible es lo que se ha arreglado: se le
+  // da un Trabajo que EXISTE. `distintosEsperados` sigue en 6 y las cinco excepciones están
+  // intactas — y con la superficie real vuelven a salir exactamente 6, con `BUTTON.btn-primary
+  // «+ Nuevo albarán»` a 37,0 px, que es literalmente lo que su excepción decía. Si el diagnóstico
+  // fuera otro, el número no habría caído justo ahí.
+  //
+  // El fixture es el COMPARTIDO con el censo de SCRUM-787 (`_pagina-panel.mjs`): con uno propio,
+  // el veredicto del guard y el número del censo dejarían de hablar de la misma pantalla.
+  { ruta: '/__jobdetail', vista: 'renderJobDetailView', titulo: 'ficha de Trabajo',
+    distintosEsperados: 6, datos: TRABAJO_DE_MUESTRA },
   // 🔴 SCRUM-795 · LA FICHA 360, y por qué entra AHORA y no en SCRUM-791.
   //
   // El censo de SCRUM-787 no pudo proponerla: la 360 nunca llegó a montarse. El banco llamaba a

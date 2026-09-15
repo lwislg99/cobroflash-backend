@@ -75,7 +75,9 @@ const LO_QUE_VEIA_LA_LISTA_VIEJA = [
 
 test('SCRUM-778 · SUELO: la población derivada ni está vacía ni ha encogido, y cuadra con SCRUM-203', () => {
   const bocas = bocasDeEmision({ raiz: RAIZ });
-  const creaciones = analizarArbol(path.join(RAIZ, 'src'));
+  // SCRUM-729 · fuera la IMPLEMENTACIÓN del envoltorio `crearFacturaEmitida`: es el `create` que
+  // ejecuta la creación, no una boca que pida número. La marca viene del analizador de SCRUM-203.
+  const creaciones = analizarArbol(path.join(RAIZ, 'src')).filter((c) => !c.implementacion);
   const motivos = motivosParaNoFiarse({
     bocas, creaciones, minimoEmbudo: MINIMO_EMBUDO, minimoEmisor: MINIMO_EMISOR,
   });
