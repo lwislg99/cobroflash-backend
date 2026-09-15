@@ -351,9 +351,11 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // ③ El filtro de lo ilegible, apagado: un número del fallback de `env.ts` pasaría por sha.
+    // ⚠️ SCRUM-824b partió el `if` combinado en DOS (ES_SHA y TODO_DIGITOS+LONGITUDES_DE_RELOJ, para
+    // distinguir por longitud y no por «todo dígitos»): el ancla se actualiza a las dos líneas.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
-    de: '  if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;',
-    a: '  if (false) return null;',
+    de: '  if (!ES_SHA.test(s)) return null;\n  if (TODO_DIGITOS.test(s) && LONGITUDES_DE_RELOJ.has(s.length)) return null;',
+    a: '  if (false) return null;\n  if (false) return null;',
     cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
   },
   {
