@@ -1061,3 +1061,201 @@ trabajo entró en `main`, y eso lo sacaría de esta clase por construcción.
 Jira (ni una transición, ni un comentario) · ninguna rama ajena · ningún `git stash` ·
 `prisma/schema.prisma` · `src/` · los instrumentos del censo · ningún guard. Sólo `fetch`, `ls-remote`,
 `merge-base`, `log` y `for-each-ref`: lectura. El único fichero escrito es éste.
+
+---
+
+# APÉNDICE · 15-sep-2026 · SCRUM-804d · Los tres filtros sobre los 40 🟢 — y sobreviven 5
+
+**Medido contra:** `origin/main` = `7bae70d0e15c18326b19cb75d23b5d47b5110402` · 2026-09-15T08:03:37Z
+**Rama:** `scrum-804d-criterio-e1-e2` · **Mezclado `main`** hasta `319bbd9928b6e828e9af213d51240f3aa8aace1b` antes de empujar · **Carril:** proceso · censo · **Gate:** sin gate
+
+> ⛔ **NO TOCA EL TABLERO Y NO TOCA `src/`.** Cierra los dos huecos que 804c declaró abiertos
+> —E1/E2 sin aplicar, y el filtro de «cero construcción» leído sólo donde disparó— y añade el
+> tercero, que es el que de verdad decide: **lo construido contra lo que el ticket PROMETE.**
+
+---
+
+## 0 · El titular
+
+| filtro | qué exige | sobreviven |
+|---|---|---|
+| ① 804c | trabajo en `main` con sha + entrada de máster + ninguna rama viva | **40** |
+| ② E1/E2 | mutación declarada, **o** guard vivo que asevera sobre producto y pasa sin saltar | **19** |
+| ③ **la promesa** | lo construido cubre lo que el ticket prometió, y **ningún hueco propio sigue abierto** | **19** |
+| **los tres a la vez** | | **5** |
+
+**Los cinco: `626 · 632 · 764 · 766 · 845`.**
+
+> 🔒 El tercer filtro es el que cambia el resultado, y ninguno de los otros dos lo ve: **un guard
+> vivo demuestra que hay guard, no que cubra lo prometido.** SCRUM-694 tiene 24 tests en verde y
+> migró **9 de 56**; sus tests pasan porque sólo miran los nueve.
+
+## 1 · Los tres filtros, y de dónde sale cada medición
+
+| | qué exige | instrumento |
+|---|---|---|
+| **E1** | el arnés **NOMBRA** el test que cae si se deshace | `censoDeDeclaraciones()` de `meta-guard-mutaciones.mjs` (SCRUM-745), por AST |
+| **E2** | un test suyo **asevera sobre producto** y **pasa sin saltar** | `aseveraSobreProducto()` + `parteDeLaTanda()` de `censo-abiertos-vs-guards.mjs` (SCRUM-804) |
+| **promesa** | el texto del ticket en Jira contra los huecos que su propia entrada declara | lectura, ticket a ticket |
+
+Censo E1 de hoy: **55 guards · 167 declaraciones · 0 ilegibles**, suelo OK (20/54), en modo
+`--solo-censo`: **ni una mutación ejecutada**, ni un fichero del árbol tocado.
+
+## 2 · 🔴 La tanda: cuatro formas de invocarla, tres daban cifras falsas
+
+| intento | decía | de verdad miró |
+|---|---|---|
+| `node --test … tests/*.test.mjs` | **exit 126** (el compuesto reportaba 0) | *Argument list too long*: 781 rutas no caben |
+| `node --test … tests/` | 1 «test» llamado `tests` | **1** fichero de 781 |
+| `node --test … "tests/*.test.mjs"` | 99 pass · 0 fail | **15** de 781 — esta versión no expande el glob |
+| descubrimiento por defecto | **2.681 pass · 0 fail** | **355** de 781 |
+| **troceado en lotes de 100** | ver abajo | **726** de 781 |
+
+> 🔒 **Un «2.681 en verde» es igual de creíble mirando 355 ficheros que mirando 781.** Lo único que
+> los separa es preguntarle al instrumento cuántos ficheros ha visto, y por eso ese control va
+> DELANTE del veredicto. Leer el resultado no habría cazado ninguno de los tres.
+
+**La tanda que sostiene E2:** `726` ficheros · **7665 pass sin saltar · 0 fail · 112 skipped**.
+
+⚠️ **Hueco declarado: 55 ficheros no llegaron a emitir eventos**, todos del rango `scrum003…scrum320` —los
+gateados por base—: en un árbol sin `.env` se quedan esperando una conexión que no existe.
+**Ninguno de los 55 pertenece a ninguno de los 40**, así que la cobertura sobre los tickets que
+se juzgan aquí es completa; sobre la suite entera, no. Queda dicho en vez de redondear.
+
+⚠️ **Y la tanda va TROCEADA**, no en una invocación como `npm test`. Para E2 —«¿pasa este test sin
+saltar?»— da igual; para un defecto de interferencia entre ficheros (el que midió SCRUM-824) no.
+No es la tanda oficial y no se presenta como tal.
+
+⚠️ **Un susto, declarado:** el descubrimiento por defecto arrastró `scripts/test-staging-gated.mjs`,
+que TOMA EL TURNO de staging. **No llegó**: el árbol aislado nace sin `.env`, así que
+`DATABASE_URL_TESTS` estaba ausente y murió antes de conectarse. Comprobado con `git status` vacío.
+
+## 3 · El filtro de «cero construcción», leído en las 49 — acertó cero y falló doce
+
+804c declaró el hueco: *«lo leí sólo donde disparó, 8 de 49»*. **Leídas las 49.** Sobre los 40 🟢:
+
+| | |
+|---|---|
+| entradas de 🟢 que SÍ se autodeclaran medición | **12** |
+| de ésas, que el filtro automático vio | **0** |
+| 🟢 que el filtro señaló | **2** (634 y 827) — **los dos falsos positivos** ya retirados |
+
+No dicen «cero construcción». Dicen **«ESTE TICKET MIDE. NO CONSTRUYE»** (762), **«Esto MIDE. La
+decisión es del fundador»** (811), **«no entra código, no entra test»** (613), **«NO arregla ni un
+botón»** (787). Doce formas distintas. **Un filtro con esa hoja de servicios no es un censo: es una
+muestra**, y queda dicho aquí para que nadie lo vuelva a usar como si lo fuera.
+
+## 4 · LOS CUATRO PRIORITARIOS
+
+| ticket | ② E1/E2 | ③ promesa | veredicto |
+|---|---|---|---|
+| **SCRUM-694** | ❌ ningún test suyo asevera sobre producto | ❌ | 🟡 **NO cerrable** |
+| **SCRUM-824** | ✅ `scrum824b-el-sha-que-parecia-un-numero.test.mjs` → `../scripts/_ritmo-de-despliegue.mjs:33` | ❌ | 🟡 **NO cerrable** |
+| **SCRUM-844** | ✅ `scrum844-sellar-dentro-de-transaccion.test.mjs` → `../dist/modules/invoicing/domain/verifactu.service.js:51` | ❌ | 🟡 **NO cerrable** |
+| **SCRUM-845** | ✅ `scrum845-la-lista-pregunta-lo-que-el-servidor-contesta.test.mjs` → `public/dashboard/js/invoiceAccion.js:38` | ✅ | 🟢 **CERRABLE** |
+
+Los tres que caen, con el motivo exacto:
+
+- **SCRUM-694** — Migro 9 de 56 y su entrada dice «No se migraron los 47 restantes». Y mientras se escribia esto entro SCRUM-694b en `main` (PR #1244): migra NUEVE MAS y deja el trinquete en 42 — con la misma frase al final, «No se migraron los 42 restantes». La promesa sigue sin cubrirse; sus tests pasan porque solo miran los migrados.
+- **SCRUM-824** — 🔴 El `SCRUM-824` que esta en main es OTRO SUJETO: la entrada se titula «El vigia que no deja pasar» y dice «No se toca el vigia». El titulo del ticket es el rojo intermitente por ficheros temporales dentro de tests/. Patologia del SCRUM-727, confirmada.
+- **SCRUM-844** — «El resto de la lista (puestos 3 a 6): sin escribir, a la espera de la medicion del CI». La promesa eran los 31 puntos; hay dos puestos.
+
+**Las dos sesiones que midieron su propio ticket tenían razón**, y el criterio de aquí llega a lo
+mismo por otro camino: 694 por su «no se migraron los 47 restantes», y 824 porque la entrada que
+hay en `main` **habla de otro sujeto** que el título del ticket. Es la patología del SCRUM-727 que
+el propio 804 declaró como hueco nº 1 el 7-sep — **ahora con un caso confirmado y con nombre.**
+
+## 5 · 🟢 A · PASAN LOS TRES FILTROS — **5**
+
+| ticket | estado en el tablero | la prueba viva | por qué la promesa está cubierta |
+|---|---|---|---|
+| **SCRUM-626** | Tareas por hacer | `scrum626-calentar-el-navegador.test.mjs` → `../scripts/_navegador.mjs:23` | El porque quedo contestado con el dato del fundador (8-sep): `guard:contraste` arranca en 32,5 s contra un tope de 30.000 ms. Y la mitigacion esta construida y vigilada. |
+| **SCRUM-632** | Tareas por hacer | `scrum632-la-descripcion-de-la-linea.test.mjs` → `public/dashboard/js/quotesView.js:30` | Las dos salidas que necesitaban texto salen con `[PENDIENTE microcopy oficial]` y la subida del censo declarada — que es literalmente lo que el ticket ordenaba hacer. |
+| **SCRUM-764** | En curso | **E1** `scrum764-margen-negativo.test.mjs(6)` | El margen negativo se ve, con seis mutaciones declaradas que lo tumban. El unico punto abierto (`margenCatalogo.js` → `reportsView.js`) quedo RESUELTO el 7-sep. |
+| **SCRUM-766** | En curso | **E1** `scrum766-el-grep-que-cuenta-lineas.test.mjs(2)` | El instrumento pasa a AFIRMAR POR PLATAFORMA. Lo que no se hizo —ni skip ni retirar el aviso— va razonado, no pendiente. |
+| **SCRUM-845** | En curso | `scrum845-la-lista-pregunta-lo-que-el-servidor-contesta.test.mjs` → `public/dashboard/js/invoiceAccion.js:38` | El defecto era de la pantalla y la pantalla queda arreglada; el servidor ya filtraba y se comprobo. No hay hueco propio abierto. |
+
+## 6 · 🟡 B · Promesa cubierta, pero E1/E2 **no puede verlos** — **9**
+
+**No es que estén mal.** E2 llama «producto» a `src|dist|public|scripts|docs|prisma`, así que un
+guard que vigila **otros guards** (lee `tests/`) no cuenta, y un guard que corre **fuera de la
+tanda** (navegador) tampoco. Son decisión tuya: el trabajo está y la promesa también, lo que falta
+es que algo de la tanda lo sujete.
+
+| ticket | estado | por qué E1/E2 no lo ve | promesa |
+|---|---|---|---|
+| SCRUM-273 | Tareas por hacer | sus tests vigilan instrumentos o documentos, no `src/`/`public/` | Sus tres exclusiones (no migrar el historico, no impedir editar, no validar contenido) las declara FUERA DE ALCANCE el propio ticket en Jira. Exclusio |
+| SCRUM-567 | En revisión | no existe ningún `tests/scrum567*` | El defecto era el censo contando literales HTML; se cambio a AST y el tope baja de 29 a 23. Los 7 nuevos se dejan sin arreglar A PROPOSITO, y la ficha |
+| SCRUM-644 | Tareas por hacer | sus tests vigilan instrumentos o documentos, no `src/`/`public/` | El trinquete entra y las dos rutas que siguen tragandose el P2002 son idempotencia deliberada de ONBOARD-2, con test que lo pincha. |
+| SCRUM-726 | En curso | sus tests vigilan instrumentos o documentos, no `src/`/`public/` | Entra `pendientesDeFirma()`, los seis registros reales cuentan y devuelve cero pendientes. El mecanismo que faltaba esta puesto. |
+| SCRUM-782 | En revisión | no existe ningún `tests/scrum782*` | Toca `styles.css` (`.casilla-seleccion::before`, inset -16px), `customersView.js`, el medidor y el guard: arregla la casilla Y amplia el guard a la se |
+| SCRUM-816 | En curso | sus tests vigilan instrumentos o documentos, no `src/`/`public/` | La segunda vuelta entra entera: la tabla, la accion por fila y el chip de cobro. «Lo que NO se ha tocado» es una lista de no-tocar deliberados, no de  |
+| SCRUM-827 | Tareas por hacer | sus tests vigilan instrumentos o documentos, no `src/`/`public/` | Cierra un limite que los propios guards tenian declarado por escrito con fichero y linea: el trinquete pasa a vigilar el VALOR. |
+| SCRUM-828 | Tareas por hacer | no existe ningún `tests/scrum828*` | Su unico hueco («el mensaje no puede leer Settings») esta declarado como corto A PROPOSITO: lo que pide es volver a medir, no ampliar la lista de memo |
+| SCRUM-831 | En curso | sus tests vigilan instrumentos o documentos, no `src/`/`public/` | Ademas de las acciones de la fila, cierra los dos huecos que destapo: el contexto a medias de `jobDetailView` y los datos que no viajaban a la lista. |
+
+## 7 · 🔴 C · La promesa NO está cubierta — **14**
+
+**Éstos NO se cierran.** Cada uno declara, con sus palabras, un hueco propio que sigue abierto.
+
+| ticket | estado | ② E1/E2 | qué falta, según su propia entrada |
+|---|---|---|---|
+| SCRUM-331 | Acción del fundador | ✅ | El heroe entra `hidden` y con `data-microcopy=PENDIENTE_FUNDADOR`: el texto no esta firmado, asi que la promesa no esta viva. Y el CLS de la primera pantalla queda por encima de 0,1, aislado. |
+| SCRUM-333 | Acción del fundador | ✅ | Tres huecos declarados por la entrada: «Talleres no existe» (vertical VETADO, exige cambio de master), las seis van al MISMO destino, y las seis siguen en `draft_pendiente_validacion`. |
+| SCRUM-512 | Acción del fundador | — | La entrada se titula «(mitad independiente)». La mitad que promete el ticket —que el contador no vaya hacia atras— cuelga de SCRUM-340, que sigue con rama viva sin mergear. |
+| SCRUM-568 | En revisión | ✅ | El propio ticket deja sin marcar «Esto tiene que aparecer en la lista de comprobacion del lanzamiento, no solo en el repo». Sin eso el mecanismo dira «0 de 9» el dia del go y nadie lo habra mirado. |
+| SCRUM-600 | En curso | ✅ | «No hecho, con su motivo: la unificacion (bloqueo A) · el vencimiento (bloqueos A y B) · los ganchos del punto 5». La unificacion ES la promesa del ticket. |
+| SCRUM-634 | Tareas por hacer | — | «Lo que NO cubre — huecos DECLARADOS»: el reflejo va en un solo sentido, `n.name` sigue valiendo `''`, y `value`/`checked` quedan fuera. La promesa decia CUALQUIER atributo. |
+| SCRUM-637 | En curso | ✅ | «El punto 1 completo —que la rama se publique en Jira— sigue sin resolverse: se ha cerrado la mitad barata». |
+| SCRUM-674 | En curso | — | El orden de la casa es ① decision → ② ALTER en las TRES bases → ③ PR. La entrada declara que lo que espera son «las cinco columnas y partes_trabajo»: el ALTER no esta aplicado. |
+| SCRUM-694 | Tareas por hacer | — | Migro 9 de 56 y su entrada dice «No se migraron los 47 restantes». Y mientras se escribia esto entro SCRUM-694b en `main` (PR #1244): migra NUEVE MAS y deja el trinquete en 42 — con la misma frase al final, «No se migraron los 42 restantes». La promesa sigue sin cubrirse; sus tests pasan porque solo miran los migrados. |
+| SCRUM-780 | En revisión | ✅ | Es una DECISION DEL FUNDADOR sin tomar («¿se adopta F260001?»), y ademas destapa un hueco nuevo que queda abierto: `huecosDeLaSerie` compone sin fecha y reportara todas las `F26…` como ajenas. |
+| SCRUM-801 | En curso | ✅ | «11 de las 21 no estan medidas» en la pregunta central, y la ruta completa con sesion sigue sin ejercitarse. |
+| SCRUM-805 | En revisión | ✅ | Su propia seccion «Verificacion pendiente»: 0 presupuestos firmados en dev, «la poblacion real no esta medida y hace falta el dato de produccion». Y el carril es DECISION DEL FUNDADOR. |
+| SCRUM-824 | Tareas por hacer | ✅ | 🔴 El `SCRUM-824` que esta en main es OTRO SUJETO: la entrada se titula «El vigia que no deja pasar» y dice «No se toca el vigia». El titulo del ticket es el rojo intermitente por ficheros temporales dentro de tests/. Patologia de |
+| SCRUM-844 | En curso | ✅ | «El resto de la lista (puestos 3 a 6): sin escribir, a la espera de la medicion del CI». La promesa eran los 31 puntos; hay dos puestos. |
+
+> 🔴 **Nueve de estos catorce PASAN E1/E2.** Ésa es la medida exacta de lo que el criterio del
+> 7-sep no alcanzaba: tienen guard vivo y verde, y no cubren lo que prometieron.
+
+## 8 · ⬜ D · Medición declarada — E1/E2 no aplica — **12**
+
+Su encargo ERA un informe. No construyeron comportamiento, así que no hay guard posible y el
+criterio no puede opinar. **Se cierran —o no— leyendo si el informe contesta lo que se pidió**, y
+eso es tuyo, no del árbol. Van aparte a propósito: mezclarlos con los de la clase C sería llamar
+«no hecho» a un trabajo entregado.
+
+| ticket | estado | lo que declara su entrada |
+|---|---|---|
+| SCRUM-613 | Acción del fundador | «Gate: sin gate — no entra codigo, no entra test». Cinco mediciones que desbloquean un lote. |
+| SCRUM-638 | Tareas por hacer | «Gate: medicion — NO se ha arreglado nada». Averigua de quien es el rojo; no lo arregla. |
+| SCRUM-654 | Acción del fundador | «PASO 0 de medicion: ¿sirve lo que ya hay?» — y el propio ticket esta BLOQUEADO por la regla 36. |
+| SCRUM-762 | En revisión | «ESTE TICKET MIDE. NO CONSTRUYE.» literal en su cabecera. |
+| SCRUM-787 | En curso | «Esta entrada NO arregla ni un boton. Trae el numero; la decision es del fundador.» |
+| SCRUM-788 | En revisión | «Este ticket MIDE.» No cambia ningun veredicto del arnes. |
+| SCRUM-790 | En revisión | «Documentacion e instrumentacion... el unico cambio de codigo es el texto de dos comentarios de package.json.» |
+| SCRUM-804 | En curso | «ESTE TICKET NO CIERRA NADA. Es una medicion.» literal en su cabecera. |
+| SCRUM-811 | En curso | «Esto MIDE. La decision es del fundador.» No se toca una linea de CSS. |
+| SCRUM-815 | Acción del fundador | «Esto es medir, no arreglar.» PASO 0 sobre el webhook de Stripe. |
+| SCRUM-825 | Tareas por hacer | «Gate: medicion, cero rotulos cambiados». Propone una tabla; la firma el fundador. |
+| SCRUM-840 | En curso | Censo de que se puede romper sin que caiga ningun test. La entrega es la lista. |
+
+## 9 · Límites declarados
+
+1. **El filtro ③ es JUICIO, no medición.** Lo he leído ticket a ticket y cada fila lleva su cita,
+   pero no hay instrumento detrás: donde una entrada dice «lo que NO se ha hecho» he tenido que
+   decidir si eso era **exclusión prometida** (273, 567, 644) o **hueco abierto** (694, 844). Esa
+   frontera la he puesto yo y se puede discutir fila a fila — para eso va la cita.
+2. **La patología del 727 sigue sin instrumento.** La cacé en 824 leyendo, no midiendo. Puede
+   quedar en otros.
+3. **55 ficheros de la tanda sin eventos** (§2). Ninguno de los 40, pero la suite no está entera.
+4. **E2 no ve el trabajo sobre instrumentos** (§6), y son 9 de los 40.
+5. **Mi propio error, otra vez:** di por bueno un `2.681 pass · 0 fail` que había mirado **355
+   ficheros de 781**. No lo cazó leer el resultado —era creíble— sino exigirle al instrumento que
+   dijera cuántos ficheros había visto. Es la tercera vez en este ticket que el control de
+   cobertura caza lo que la cifra escondía.
+
+## 10 · Lo que NO se ha tocado
+
+Jira · `src/` · `prisma/schema.prisma` · ninguna mutación ejecutada · ningún guard · ninguna rama
+ajena · staging. El único fichero escrito es éste.
