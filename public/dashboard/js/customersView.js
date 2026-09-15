@@ -102,7 +102,7 @@ function renderCustomersView(container) {
   }
   // SCRUM-599 (que ABSORBE CONT-12): el mismo atajo que las otras tres listas, del mismo
   // registro. Dos implementaciones del atajo habrían sido el ticket mal hecho.
-  const newBtn = createElement("button", "btn-primary btn-sm", "Nuevo cliente");
+  const newBtn = createElement("button", "btn-primary", "Nuevo cliente");
   if (window.atajoNuevo) {
     window.atajoNuevo.etiquetar(newBtn, "customers");
     window.atajoNuevo.registrar("customers", () => newBtn.click());

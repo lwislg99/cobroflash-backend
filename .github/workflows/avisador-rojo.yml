@@ -40,6 +40,16 @@
 # ⚠️ `workflow_run` se ejecuta SIEMPRE con la versión de este fichero que está en la rama por
 # defecto, nunca con la de la rama del PR. Es a propósito: un fork no puede editar esta puerta
 # para abrírsela.
+#
+# ─────────────────────────────────────────────────────────────────────────────────────────
+# 🔴 SCRUM-853 · SOLO UN ROJO QUE BLOQUEA, Y SOLO EN UN PR QUE SIGUE ABIERTO
+#
+# Este workflow salta con el CI ENTERO en failure, y hasta el 853 despertaba igual. Medido el
+# 15-sep-2026: en main solo es obligatorio «build + tests»; con el meta-guard ciego, cada PR
+# entraba en verde por lo obligatorio y el CI terminaba en rojo SEGUNDOS DESPUÉS del merge. El
+# aviso llegaba a un PR mergeado, Claude arrancaba y dejaba su arreglo en una rama `claude/pr-*`
+# (47 vivas). Ahora la puerta recibe también las reglas vivas de main, los check-runs del head y el
+# estado del PR, y decide con ellos. El detalle, en `scripts/puerta-avisador-rojo.mjs`.
 name: Avisador de PR en rojo
 
 on:
@@ -124,7 +134,16 @@ jobs:
 
           # El PR se resuelve por el sha del commit: `workflow_run.pull_requests` viene vacío
           # para los PR de fork, y ésos son justo los que hay que reconocer para rechazarlos.
-          PR="$(gh api "repos/$REPO/commits/$SHA/pulls" -q '.[0].number' 2>/dev/null || true)"
+          #
+          # SCRUM-853 · y se captura SOLO si la orden sale bien. En un error `gh api -q` escribe el
+          # cuerpo del error por stdout (medido: 422 con un sha que no existe) y `$(… || true)` lo
+          # tomaba por el número del PR: el paso reventaba más abajo sin dejar veredicto. No poder
+          # leer el PR no es lo mismo que que no haya PR, y se dice distinto.
+          if ! PR="$(gh api "repos/$REPO/commits/$SHA/pulls" -q '.[0].number' 2>/dev/null)"; then
+            echo "codigo=PR-ILEGIBLE" >> "$GITHUB_OUTPUT"
+            echo "- **PR-ILEGIBLE** — no se pudo leer a qué PR pertenece este rojo: no se avisa (y no es lo mismo que no tener PR)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           if [ -z "$PR" ]; then
             echo "codigo=SIN-PR" >> "$GITHUB_OUTPUT"
             echo "- **SIN-PR** — el rojo no pertenece a ningún PR abierto (rama suelta o push a main)." >> "$GITHUB_STEP_SUMMARY"
@@ -132,33 +151,77 @@ jobs:
           fi
           echo "pr=$PR" >> "$GITHUB_OUTPUT"
 
+          # SCRUM-853 · ¿SIGUE ABIERTO? `commits/$SHA/pulls` devuelve también los PR ya mergeados, y
+          # en los 7 PR del círculo el aviso salió después del merge. Se lee en el momento; si falla
+          # queda `null` y la puerta no despierta.
+          #
+          # Las tres lecturas del 853 se capturan SOLO si la orden sale bien. `$(gh api … || echo X)`
+          # no vale: en un error `gh api -q` escribe el cuerpo del error por stdout, y la variable se
+          # queda con él además del respaldo (medido el 15-sep con un 404).
+          if ! ESTADO_PR="$(gh api "repos/$REPO/pulls/$PR" -q '{state, merged}' 2>/dev/null)"; then ESTADO_PR=null; fi
+
+          # SCRUM-853 · qué es OBLIGATORIO, de las reglas vivas de main. Aquí solo se reúne: lo lee
+          # `checksObligatoriosDeReglas`, la misma función que usa el vigía. Si falla, `null`, y la
+          # puerta dice SIN-LISTA-OBLIGATORIOS en vez de despertar.
+          if ! REGLAS="$(gh api "repos/$REPO/rules/branches/main" 2>/dev/null)"; then REGLAS=null; fi
+
+          # Y TODOS los check-runs del head, recortados a lo que se usa: el payload entero lleva la
+          # salida de cada check y no cabe en una variable de entorno. Si falla, `null`.
+          if ! CHECK_RUNS="$(gh api "repos/$REPO/commits/$SHA/check-runs?per_page=100" \
+                             -q '[.check_runs[] | {id, name, status, conclusion}]' 2>/dev/null)"; then CHECK_RUNS=null; fi
+
           AUTOR="$(gh api "repos/$REPO/pulls/$PR" -q .user.login)"
-          # El permiso solo se pregunta para personas: la API devuelve 404 para un bot.
-          PERMISO="$(gh api "repos/$REPO/collaborators/$AUTOR/permission" -q .permission 2>/dev/null || echo '')"
+          # El permiso de escritura. Medido el 15-sep-2026 (SCRUM-853): para `yaqu-bot[bot]` la API
+          # responde `none` —no 404, como decía aquí antes—, para una persona que no colabora `read`,
+          # y para un usuario que no existe 404. En un error `gh api -q` deja el cuerpo del error en
+          # stdout: se captura solo si sale bien, y si no el permiso queda VACÍO, que no es escritura.
+          if ! PERMISO="$(gh api "repos/$REPO/collaborators/$AUTOR/permission" -q .permission 2>/dev/null)"; then PERMISO=''; fi
 
           # 🔴 Los ficheros que toca el PR, para la PUERTA FISCAL (regla 38). Si esta lista
           # llega vacía la puerta falla CERRADO y escala: no poder mirar no es haber mirado.
           # `--paginate` a propósito: un PR grande trae los ficheros en varias páginas, y
           # quedarse con la primera podría dejar fuera justo el fichero fiscal.
-          FICHEROS="$(gh api "repos/$REPO/pulls/$PR/files" --paginate -q '.[].filename' 2>/dev/null || true)"
+          #
+          # 🔴 SCRUM-853 · Y ESA PROMESA NO SE CUMPLÍA: en un error `gh api -q` escribe el cuerpo del
+          # error por stdout (medido: 404), `$(… || true)` se lo quedaba, y la lista llegaba con UN
+          # «fichero» —el error— que no es fiscal. La puerta ABRÍA. Se captura solo si sale bien; si
+          # no, la lista queda vacía y la puerta hace lo que dice su diseño: escalar.
+          if ! FICHEROS="$(gh api "repos/$REPO/pulls/$PR/files" --paginate -q '.[].filename' 2>/dev/null)"; then FICHEROS=''; fi
 
-          # Qué check cayó, para que la marca distinga un rojo de otro en el mismo commit.
-          CHECK="$(gh api "repos/$REPO/commits/$SHA/check-runs" \
-                   -q '[.check_runs[] | select(.conclusion=="failure")] | .[0].name' 2>/dev/null || echo 'ci')"
+          # Qué check cayó, para que la marca distinga un rojo de otro en el mismo commit. SCRUM-853:
+          # capturado solo si sale bien; antes, un error dejaba `{…cuerpo del error…}ci` dentro de
+          # la marca. El respaldo es el de siempre, `ci`: la marca no cambia de forma.
+          if ! CHECK="$(gh api "repos/$REPO/commits/$SHA/check-runs" \
+                        -q '[.check_runs[] | select(.conclusion=="failure")] | .[0].name' 2>/dev/null)"; then CHECK='ci'; fi
           MARCA="${SHA:0:12}:${CHECK}"
           echo "marca=$MARCA" >> "$GITHUB_OUTPUT"
 
           # El tope y la dedupe viven en el PR, no en el job: un workflow no recuerda nada
           # entre ejecuciones y un contador dentro del job es un adorno.
-          PREVIAS="$(gh api "repos/$REPO/issues/$PR/comments" --paginate \
-                     -q '.[].body' 2>/dev/null \
+          #
+          # 🔴 SCRUM-853 · Y SI NO SE PUEDEN LEER, NO SE AVISA. La lectura iba en una tubería con
+          # `grep`: un error de la API dejaba el cuerpo del error, `grep` no encontraba marcas y los
+          # avisos previos salían VACÍOS — el tope contaba cero y dejaba pasar. Ahora se leen primero,
+          # solo si la orden sale bien, y después se buscan las marcas. El tope no cambia: cambia que
+          # no se le dé un cero que nadie ha medido.
+          if ! COMENTARIOS="$(gh api "repos/$REPO/issues/$PR/comments" --paginate -q '.[].body' 2>/dev/null)"; then
+            echo "codigo=AVISOS-PREVIOS-ILEGIBLES" >> "$GITHUB_OUTPUT"
+            echo "- **AVISOS-PREVIOS-ILEGIBLES** — no se pudieron leer los avisos previos del PR #$PR: sin ellos el tope no cuenta, así que no se avisa." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          PREVIAS="$(printf '%s\n' "$COMENTARIOS" \
                      | grep -oE '<!-- avisador-rojo:[^>]+ -->' \
                      | sed -E 's/<!-- avisador-rojo:(.*) -->/\1/' || true)"
 
           ENTRADA="$(MARCA="$MARCA" AUTOR="$AUTOR" PERMISO="$PERMISO" \
-                     PREVIAS="$PREVIAS" FICHEROS="$FICHEROS" node -e "
+                     PREVIAS="$PREVIAS" FICHEROS="$FICHEROS" \
+                     ESTADO_PR="$ESTADO_PR" REGLAS="$REGLAS" CHECK_RUNS="$CHECK_RUNS" node -e "
             const lineas=(t)=>(t||'').split('\n').map(s=>s.trim()).filter(Boolean);
+            const json=(t)=>{try{return JSON.parse(t)}catch{return null}};
             process.stdout.write(JSON.stringify({
+              estadoPR: json(process.env.ESTADO_PR),
+              reglas: json(process.env.REGLAS),
+              checkRuns: json(process.env.CHECK_RUNS),
               conclusionCI: process.env.CONCLUSION,
               repoBase: process.env.REPO,
               repoOrigen: process.env.REPO_ORIGEN,
@@ -182,6 +245,7 @@ jobs:
           echo "$CODIGO — $MOTIVO"
           echo "codigo=$CODIGO" >> "$GITHUB_OUTPUT"
           echo "avisar=$AVISAR" >> "$GITHUB_OUTPUT"
+          echo "motivo=$MOTIVO" >> "$GITHUB_OUTPUT"
           if [ "$AVISAR" = "no" ]; then
             echo "- **$CODIGO** — $MOTIVO (PR #$PR)." >> "$GITHUB_STEP_SUMMARY"
           fi
@@ -195,8 +259,11 @@ jobs:
           PR: ${{ steps.puerta.outputs.pr }}
           MARCA: ${{ steps.puerta.outputs.marca }}
           URL_RUN: ${{ github.event.workflow_run.html_url }}
+          MOTIVO: ${{ steps.puerta.outputs.motivo }}
         run: |
-          CUERPO="$(printf '@claude el CI de este PR está en ROJO.\n\nRun: %s\n\nMira POR QUÉ falla antes de tocar nada. Y la regla 41 del máster: se arregla el CÓDIGO, nunca lo que el guard exige — si el arreglo pasa por relajar un guard, paras y lo dices.\n\n<!-- avisador-rojo:%s -->\n' "$URL_RUN" "$MARCA")"
+          # SCRUM-853 · el aviso dice QUÉ check obligatorio cayó (el motivo de la puerta). Antes decía
+          # «el CI está en ROJO», y Claude arreglaba lo primero que veía en rojo: el meta-guard.
+          CUERPO="$(printf '@claude el CI de este PR está en ROJO en un check OBLIGATORIO: %s.\n\nRun: %s\n\nMira POR QUÉ falla antes de tocar nada. Y la regla 41 del máster: se arregla el CÓDIGO, nunca lo que el guard exige — si el arreglo pasa por relajar un guard, paras y lo dices.\n\n<!-- avisador-rojo:%s -->\n' "$MOTIVO" "$URL_RUN" "$MARCA")"
 
           # El invariante espejo del vigía, comprobado DENTRO del script: sin `@claude` el
           # comentario se publicaría y no despertaría a nadie, y parecería que funcionó.
