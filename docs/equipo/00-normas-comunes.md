@@ -62,6 +62,15 @@ arreglados.
 - Un CERO nunca significa «está limpio»: significa «no he mirado».
   Todo barrido lleva un control que demuestre que el instrumento ve
   algo que sabemos que está.
+- 🔴 **Un cero que depende de que yo sepa leer la entrada es una COTA
+  INFERIOR, no una prueba.** Afina el de arriba, no lo repite: aquél
+  habla del cero de quien NO miró; éste, del de quien miró sólo lo
+  que supo leer. Medido el 15-sep-2026: un censo de SCRUM-694c dijo
+  «0 guards ciegan código» cuando en 21 de los 42 no había sabido
+  resolver qué fichero leía cada uno. El número era cierto y no valía
+  como prueba. Se sale por arriba: se mide por una vía que no dependa
+  de esa lectura —allí, preguntar por la FORMA del filtro en vez de
+  por sus ficheros— o se declara cuántos se quedaron fuera.
 - Contar texto no es contar cosas. Un prefijo no es un nombre, y una
   subcadena tampoco.
 - Un control positivo que se cumple sobre el VACÍO no es un control:
@@ -190,6 +199,9 @@ Un control que no se puede usar y no puede explicar por qué, no se
 deshabilita: se quita.
 Un acto irreversible no es nunca la acción principal.
 Si tu medición tumba una decisión firmada, gana tu medición.
+Ordenar fechas como texto es ordenar por cómo se escribieron, no por cuándo
+pasaron.
+Medir un lado de una relación no autoriza a concluir sobre el otro.
 
 ## A16 · Repite el encargo en una línea antes de empezar
 
