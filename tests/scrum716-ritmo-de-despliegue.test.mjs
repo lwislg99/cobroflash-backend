@@ -351,8 +351,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // ③ El filtro de lo ilegible, apagado: un número del fallback de `env.ts` pasaría por sha.
+    // 🔴 SCRUM-824b partió el filtro original (`!ES_SHA.test(s) || TODO_DIGITOS.test(s)`) en dos
+    // líneas — el formato por un lado, el descarte del epoch de `Date.now()` por longitud
+    // (`LONGITUDES_DE_RELOJ`) por otro. El ancla apunta ahora a esa segunda línea: es la que sigue
+    // cazando el mismo defecto (un epoch pasando por sha), porque `ES_SHA` por sí solo acepta
+    // cualquier cadena de dígitos de 7 a 40 caracteres.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
-    de: '  if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;',
+    de: '  if (TODO_DIGITOS.test(s) && LONGITUDES_DE_RELOJ.has(s.length)) return null;',
     a: '  if (false) return null;',
     cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
   },
