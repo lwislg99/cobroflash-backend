@@ -1,6 +1,6 @@
 SCRUM-860 ① · clasificación de las lecturas SIN `select` de primer nivel
 ==============================================================================================
-lecturas de Prisma en src/ : 430  (con select 284 · sin select 146)
+lecturas de Prisma en src/ : 431  (con select 285 · sin select 146)
 
 🔴 HACIA FUERA (se serializan a una respuesta) :  81   ← EL NÚMERO QUE DECIDE
    INTERNA   (no salen por la API)             :  44
@@ -45,7 +45,7 @@ lecturas de Prisma en src/ : 430  (con select 284 · sin select 146)
    src/modules/billing/app/routes/payBizum.routes.ts:124  charge.findUnique +include  [por su llamador]  loadBizumCharge
    src/modules/billing/app/routes/payInvoice.routes.ts:23  charge.findUnique +include  [directo]  
    src/modules/billing/app/routes/payMp.routes.ts:84  charge.findUnique  [directo]  
-   src/modules/billing/app/routes/psp.routes.ts:35  charge.findUnique  [directo]  
+   src/modules/billing/app/routes/psp.routes.ts:37  charge.findUnique  [directo]  
    src/modules/billing/app/routes/receipt.routes.ts:28  charge.findUnique +include  [directo]  
    src/modules/billing/app/routes/receipt.routes.ts:64  charge.findUnique +include  [directo]  
    src/modules/billing/app/routes/receipt.routes.ts:81  quote.findFirst  [directo]  

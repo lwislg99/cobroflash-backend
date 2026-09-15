@@ -147,7 +147,9 @@ clave. **Nada ejecutado contra producción ni contra staging.**
 # SCRUM-860 · FASE b · 15-sep-2026 · El trinquete, con suelo 102 y los 9 resueltos
 
 **Medido contra:** `origin/main` = `f5720e41e44a8445f51773b9879df277cc7ef946` · 2026-09-15T15:32:18+01:00
-**Rama:** `scrum-860b-trinquete-del-select` (sobre la fase a, que sigue sin mergear)
+**Rama:** `scrum-860b-trinquete-del-select`, con `origin/main` = `cae27c2e6dc1482db0567a8561ebeb6863c996b8`
+(2026-09-15T15:05:39Z) mergeado dentro. **La fase a YA está en `main`** (PR #1286): cuando esta
+sección se escribió aún no lo estaba, y decirlo hoy sería afirmar algo que dejó de ser cierto.
 
 ⛔ **No se arregla ninguna de las 146.** El trinquete entra **con el suelo puesto**; cerrarlas es
 trabajo posterior y puede ser de otro (regla 9). `src/` y `prisma/` intactos: **0 líneas de diff**.
