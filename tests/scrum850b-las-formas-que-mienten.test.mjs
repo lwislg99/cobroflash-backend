@@ -44,13 +44,15 @@ import { veredictoDeLinea, segmentar, VEREDICTOS, censar } from '../scripts/_inv
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Lo que el meta-guard de la casa EJECUTA contra este fichero. */
+// 🔴 SCRUM-844 · `cae` tiene que ser el NOMBRE (o un trozo) de un `test()` real de ESTE fichero
+// que se ponga en rojo con la mutación (contrato de `meta-guard-mutaciones.mjs`, PUERTA 1). Citaba
+// la mutación en vez del test, así que nunca se encontraba «en verde»: salía CIEGO.
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     fichero: 'scripts/_invocaciones-de-la-tanda.mjs',
     de: "      if (!esRedireccion) { out.push({ texto: buf, sep: '&' }); buf = ''; continue; }",
     a: '      if (false) { /* el hueco del `&`, reabierto a proposito */ }',
-    cae: '🔴 `&` manda la tanda al segundo plano y el veredicto se pierde',
+    cae: 'el censo VE el `&` — era el hueco',
   },
 ];
 

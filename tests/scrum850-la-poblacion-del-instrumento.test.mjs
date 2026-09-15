@@ -33,34 +33,40 @@
 // ════════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import {
-  censar, veredictoDeLinea, segmentar, sinComentario, deUnFicheroJs, VEREDICTOS,
+  censar, veredictoDeLinea, segmentar, sinComentario, deUnFicheroJs, dePackageJson, VEREDICTOS,
 } from '../scripts/_invocaciones-de-la-tanda.mjs';
 
 const RAIZ = path.join(import.meta.dirname, '..');
 const CENSO = censar(RAIZ);
 
-/** El arnés de SCRUM-745: estas mutaciones tienen que TUMBAR este fichero. */
+// 🔴 SCRUM-844 · `cae` tiene que ser el NOMBRE (o un trozo) de un `test()` real de ESTE fichero
+// que se ponga en rojo con la mutación — así lo exige `meta-guard-mutaciones.mjs`, PUERTA 1. Las
+// tres declaraciones de abajo nacieron citando la MUTACIÓN en vez del TEST, y sobre eso PUERTA 1
+// nunca encuentra nada «en verde»: salía CIEGO, no MUDO ni VIVO. No se toca el meta-guard (regla
+// 41): se corrigen sus declaraciones para que cumplan el contrato que ellas mismas describen.
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     fichero: 'scripts/_invocaciones-de-la-tanda.mjs',
     de: "    if (sep === '|') v = VEREDICTOS.TUBERIA;",
     a: '    if (false) v = VEREDICTOS.TUBERIA;',
-    cae: 'el censo ve una tubería',
+    cae: 'CONTROL POSITIVO: el detector ve cada forma que se come el código',
   },
   {
     fichero: 'scripts/_invocaciones-de-la-tanda.mjs',
     de: "    if (k.startsWith('//')) continue;",
     a: '    if (false) continue;',
-    cae: 'los //comentarios de package.json no son invocaciones',
+    cae: 'un //comentario de package.json con una tubería dentro NO cuenta como invocación',
   },
   {
     fichero: 'scripts/_invocaciones-de-la-tanda.mjs',
     de: "      if (c === '#' && (i === 0 || /\\s/.test(linea[i - 1]))) return linea.slice(0, i);",
     a: '      if (false) return linea.slice(0, i);',
-    cae: 'un comentario no cuenta como invocación',
+    cae: 'CONTROL NEGATIVO: `&&`, el último tramo y los comentarios NO se marcan',
   },
 ];
 
@@ -119,6 +125,20 @@ test('SCRUM-850 · 🔴 SUELO: el censo DECLARA su población, y una población 
       `CIEGO en la superficie «${s}»: 0 invocaciones. Población por superficie: `
       + JSON.stringify(CENSO.superficies));
   }
+});
+
+// ── 🔴 EL //COMENTARIO: una clave de package.json que empieza por `//` no es un script ──────
+test('SCRUM-844 · 🔴 un //comentario de package.json con una tubería dentro NO cuenta como invocación', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum850-pkg-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({
+      scripts: { '//censurado': 'npm test | tail', real: 'npm test' },
+    }));
+    const h = dePackageJson(dir);
+    assert.equal(h.length, 1,
+      `el //comentario se contó como invocación: ${JSON.stringify(h)}`);
+    assert.equal(h[0].donde, 'scripts.real');
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
 // ── 🔴 EL QUE DECIDE ─────────────────────────────────────────────────────────────────────────
