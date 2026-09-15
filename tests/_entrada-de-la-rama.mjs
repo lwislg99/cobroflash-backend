@@ -94,6 +94,99 @@ export function numeroDelTicket(raiz, { rama = null, env = process.env } = {}) {
 }
 
 /**
+ * 🔴 SCRUM-857 · EL CRITERIO, PURO — para poder aplicarlo a un merge que YA ESTÁ en `main`.
+ *
+ * `veredictoDeLaRama` sólo sabe mirar la rama de HOY. El caso que este ticket cierra ocurrió en
+ * septiembre y está en la historia, así que el control que decide tiene que poder alimentarse con
+ * los datos REALES de aquel merge —sacados de git, no inventados— y contestar qué habría dicho el
+ * guard antes y qué dice ahora. Sin esto, «el guard ya lo ve» sería una afirmación, no una prueba.
+ *
+ * `usarAsuntos: false` **apaga la vía nueva** y deja el criterio de SCRUM-854 exacto. Es lo que
+ * hace posible la mutación obligatoria: si apagándola no vuelve el verde falso, la vía nueva no
+ * es lo que decide y el guard estaría pasando por otra razón.
+ */
+export function veredictoDeDatos({ rama, asuntos = [], ficheros = [] }, { usarAsuntos = true } = {}) {
+  const codigo = ficheros.filter((r) => CARPETAS_DE_CODIGO.some((c) => r.startsWith(c)));
+  if (!codigo.length) return { veredicto: CUMPLE, tickets: [], faltan: [], motivo: 'no toca código' };
+
+  const deRama = numeroDeRama(rama);
+  const deAsuntos = usarAsuntos
+    ? [...new Set(asuntos.map((s) => (String(s).trim().match(/^SCRUM-([0-9]+)/i) || [])[1]).filter(Boolean))]
+    : [];
+  const tickets = [...new Set([deRama, ...deAsuntos].filter(Boolean))];
+  if (!tickets.length) {
+    return { veredicto: NO_SE_PUDO_DETERMINAR, tickets, faltan: [], motivo: 'ninguna vía identifica el ticket' };
+  }
+
+  const faltan = tickets.filter((n) => !ficheros.some((r) => r.toLowerCase() === entradaDe(n).toLowerCase()));
+  return {
+    veredicto: faltan.length ? FALTA : CUMPLE,
+    tickets,
+    faltan,
+    motivo: faltan.length ? `falta ${faltan.map(entradaDe).join(', ')}` : 'trae todas sus entradas',
+  };
+}
+
+/**
+ * 🔴 SCRUM-857 · TODOS los tickets de los que esta rama trae TRABAJO, no sólo el de su nombre.
+ *
+ * ── EL DEFECTO QUE CIERRA ─────────────────────────────────────────────────────────────────
+ *
+ * El criterio de SCRUM-854 derivaba el ticket del NOMBRE DE LA RAMA, y el nombre no es el único
+ * sitio donde vive esa información. **Medido:** dos commits de SCRUM-846 entraron dentro de PRs
+ * de la rama `scrum-637-*`, que traían la entrada de la 637 — así que el guard decía CUMPLE y la
+ * entrada de la 846 no existió hasta seis días después.
+ *
+ * ── 🔴 POR QUÉ EL ASUNTO Y NO «EL MENSAJE», Y ESTO SE MIDIÓ ANTES DE ELEGIR ────────────────
+ *
+ * Sobre **198 merges de PR** (los de los últimos 400 merges de `main`), cobertura de cada vía:
+ *
+ *   A · nombre de la rama ....................... 186/198  (93,9 %)  ← lo que usaba el guard
+ *   B · `SCRUM-n` en CUALQUIER parte del mensaje . 194/198  (98,0 %)
+ *   B'· `SCRUM-n` al INICIO del ASUNTO ........... 175/198  (88,4 %)  ← el elegido
+ *   C · título del PR (cuerpo del merge) ......... 100/198  (50,5 %)
+ *   D · ficheros tocados ......................... 151/198  (76,3 %)
+ *
+ * Y el número que decidió, «en cuántos merges esa vía ve un ticket que la rama NO ve»:
+ *
+ *   B  (cualquier parte del mensaje) ... **157 de 198 — 79,3 %**  → INSERVIBLE
+ *   B' (inicio del asunto) ............. **18 de 198 — 9,1 %**    → accionable
+ *
+ * La vía B cuenta las MENCIONES DE PASADA. Medido en el PR #1248: sus commits nombran 778 y 833
+ * en el CUERPO —citas a trabajo ajeno— y su único asunto es `SCRUM-846: …`. Un guard que pidiera
+ * entrada de todo lo mencionado la pediría en **4 de cada 5 PR**, y *un guard demasiado amplio
+ * acaba relajado*: ése es el riesgo real, no el falso negativo.
+ *
+ * **El asunto es la línea entre SER trabajo de un ticket y MENCIONARLO.** No es una convención
+ * inventada aquí: 175 de 198 merges ya la siguen.
+ *
+ * ⚠️ El squash rompería esta vía —el commit de la rama no llegaría a `main` tal cual— y por eso
+ * se midió: de los 198 merges de PR, **198 tienen dos padres y 0 son squash**, y los commits se
+ * leen de `<base>..HEAD`, donde están. Si algún día se pasa a squash, esta cifra cambia y hay que
+ * volver a medirla antes de fiarse.
+ */
+export function ticketsDeLaRama(raiz, { rama = null, env = process.env } = {}) {
+  const porVia = { rama: null, asuntos: [] };
+
+  const deRama = numeroDelTicket(raiz, { rama, env });
+  if (deRama.num && deRama.via === 'rama') porVia.rama = deRama.num;
+
+  const base = baseDeLaRama(raiz);
+  if (base) {
+    try {
+      const salida = git(raiz, 'log', `${base.sha}..HEAD`, '--no-merges', '--format=%s');
+      for (const linea of salida.split(String.fromCharCode(10))) {
+        const m = linea.trim().match(/^SCRUM-([0-9]+)/i);
+        if (m && !porVia.asuntos.includes(m[1])) porVia.asuntos.push(m[1]);
+      }
+    } catch { /* sin historia utilizable */ }
+  }
+
+  const tickets = [...new Set([porVia.rama, ...porVia.asuntos].filter(Boolean))];
+  return { tickets, porVia, nombre: deRama.nombre, baseResuelta: !!base };
+}
+
+/**
  * El veredicto de ESTA rama.
  *
  * Las dos exenciones son CRITERIOS derivados del contenido, no una lista de ramas que envejece:
@@ -123,24 +216,38 @@ export function veredictoDeLaRama(raiz, opciones = {}) {
   }
 
   const t = numeroDelTicket(raiz, opciones);
-  if (!t.num) {
+  // 🔴 SCRUM-857 · TODOS los tickets con trabajo en la rama, no sólo el de su nombre.
+  const { tickets, porVia } = ticketsDeLaRama(raiz, opciones);
+
+  if (!tickets.length) {
     return {
       veredicto: NO_SE_PUDO_DETERMINAR,
       motivo: t.via === 'ambiguo'
         ? `los commits nombran varios tickets (${t.candidatos.join(', ')}) y la rama no desempata: `
           + 'elegir uno sería acusar de faltar una entrada que quizá no le toca'
-        : 'ni el nombre de la rama ni los commits dicen a qué ticket pertenece esto',
-      tocadas, codigo, ticket: t,
+        : 'ni el nombre de la rama ni el asunto de ningún commit dicen a qué ticket pertenece esto',
+      tocadas, codigo, ticket: t, tickets, porVia,
     };
   }
 
-  const esperada = entradaDe(t.num);
-  const traeEntrada = tocadas.some((r) => r.toLowerCase() === esperada.toLowerCase());
+  // Cada ticket con trabajo aquí necesita SU entrada. La de otro no vale por él.
+  const faltan = tickets.filter((n) => !tocadas.some((r) => r.toLowerCase() === entradaDe(n).toLowerCase()));
+
+  if (faltan.length) {
+    return {
+      veredicto: FALTA,
+      motivo: `toca ${codigo.length} fichero(s) de código y NO trae ${faltan.map(entradaDe).join(', ')}`,
+      tocadas, codigo, ticket: t, tickets, porVia,
+      faltan,
+      esperada: entradaDe(faltan[0]),
+      esperadas: faltan.map(entradaDe),
+    };
+  }
   return {
-    veredicto: traeEntrada ? CUMPLE : FALTA,
-    motivo: traeEntrada
-      ? `toca código y trae ${esperada}`
-      : `toca ${codigo.length} fichero(s) de código y NO trae ni toca ${esperada}`,
-    tocadas, codigo, ticket: t, esperada,
+    veredicto: CUMPLE,
+    motivo: `toca código y trae la entrada de ${tickets.map((n) => `SCRUM-${n}`).join(', ')}`,
+    tocadas, codigo, ticket: t, tickets, porVia,
+    esperada: entradaDe(tickets[0]),
+    esperadas: tickets.map(entradaDe),
   };
 }
