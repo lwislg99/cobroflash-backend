@@ -87,15 +87,66 @@ for (const [fichero] of porModulo) {
   const src = fs.readFileSync(fichero, 'utf8');
   todasLasExportadas.set(fichero, [...src.matchAll(/export (?:async )?function (\w+)/g)].map((m) => m[1]));
 }
+// 🔴 TERCERA CORRECCION, Y ESTA ERA LA GRAVE — la cazo el control negativo poniendose en rojo.
+// «Mirar TODAS las exportadas» era demasiado ancho: un modulo pasaba a CON porque CUALQUIER
+// exportada suya recibia un literal en algun sitio, aunque fuese un ayudante trivial.
+// `_censo-new-url` salia CON por `parseBDSegura` —que su censo ni siquiera llama: busca su
+// NOMBRE con una regex— y `_censo-peticiones-panel` por `repartoPorMetodo`, que consume la
+// SALIDA del censo sobre el arbol de verdad. Ninguno de los dos demuestra nada del detector.
+//
+// Lo que separa a la hermana buena de la trivial es DERIVABLE, no de ojo: una ARISTA DE LLAMADA
+// dentro del modulo, en cualquiera de los dos sentidos. `censoDeLaFrontera` LLAMA a
+// `correspondencia`; `revisarCondicionesContraEmisor` llama a `censarInsercionesDelSuelto`. Si
+// hay arista, la entrada fabricada LLEGA al detector. Comprobado a mano en los 5 candidatos: el
+// criterio reproduce el juicio 5/5, y deja fuera a `parseBDSegura` y `repartoPorMetodo`.
+function aristasDe(fuente) {
+  const sf = ts.createSourceFile('x.mjs', fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const mapa = new Map();
+  const v = (n) => {
+    if (ts.isFunctionDeclaration(n) && n.name) {
+      const llamadas = new Set();
+      const w = (m) => {
+        if (ts.isCallExpression(m) && ts.isIdentifier(m.expression)) llamadas.add(m.expression.text);
+        ts.forEachChild(m, w);
+      };
+      ts.forEachChild(n, w);
+      mapa.set(n.name.text, llamadas);
+    }
+    ts.forEachChild(n, v);
+  };
+  v(sf);
+  return mapa;
+}
+
+/**
+ * ¿Ha DEMOSTRADO este módulo que ve? Una sola función, usada por el censo real y por su suelo
+ * sembrado, porque un suelo que corre por otro camino no prueba el camino que importa.
+ * Devuelve `null`, `'propio'` (la censada misma) o `'hermana'` (una hermana con arista).
+ */
+function moduloDemuestraQueVe(fuenteModulo, censadas, exportadas, corpusDado) {
+  const conCaso = (fn) => corpusDado.some((t) => t.s.includes(fn) && tieneCasoFabricado(t.s, fn));
+  if (censadas.some(conCaso)) return 'propio';
+  const mapa = aristasDe(fuenteModulo);
+  for (const h of exportadas.filter((f) => !censadas.includes(f))) {
+    if (!conCaso(h)) continue;
+    const hayArista = censadas.some((f) => (mapa.get(f) || new Set()).has(h) || (mapa.get(h) || new Set()).has(f));
+    if (hayArista) return 'hermana';
+  }
+  return null;
+}
+
 const con = [], sin = [];
+let porHermana = 0;
 for (const [fichero, fns] of porModulo) {
-  const candidatas = todasLasExportadas.get(fichero) || fns;
-  const hay = candidatas.some((fn) => corpus.some((t) => t.s.includes(fn) && tieneCasoFabricado(t.s, fn)));
-  (hay ? con : sin).push(`${fichero} :: ${fns.join(', ')}`);
+  const via = moduloDemuestraQueVe(fs.readFileSync(fichero, 'utf8'), fns,
+    todasLasExportadas.get(fichero) || fns, corpus);
+  if (via === 'hermana') porHermana += 1;
+  (via ? con : sin).push(`${fichero} :: ${fns.join(', ')}`);
 }
 
 console.log(`INSTRUMENTOS censados: ${inst.length} funciones en ${porModulo.size} modulos`);
-console.log(`  CON caso fabricado delante: ${con.length}`);
+console.log(`  CON caso fabricado delante: ${con.length}  (${con.length - porHermana} en la función censada`
+  + ` misma, ${porHermana} en una hermana que ella llama o que la llama)`);
 console.log(`  SIN ninguno:                ${sin.length}`);
 
 console.log('\nSUELO — los tres que YA sé que lo tienen:');
@@ -105,13 +156,34 @@ for (const n of ['tautologiasDe', 'enPatronPeligroso', 'censarReferenciaMovil'])
   if (!ok) sueloOk = false;
   console.log(`  ${ok ? '✅ CON' : (sin.some((x) => x.includes(n)) ? '🔴 SIN' : '🔴 no censado')}  ${n}`);
 }
-console.log('\nCONTROL NEGATIVO — uno que sé que NO lo tiene tiene que salir SIN:');
-const neg = sin.some((x) => /rastroDe|clasificarSentencias|medirMargen/.test(x));
-console.log(`  ${neg ? '✅' : '🔴'} al menos uno de los conocidos-sin-caso sale en la lista SIN`);
+// ── CONTROL NEGATIVO, AHORA SEMBRADO ────────────────────────────────────────────────────────
+// Antes era una LISTA DE NOMBRES que yo sabía sin caso. Caducó: los tres tienen caso hoy, así
+// que el control se puso en rojo sin que hubiera nada roto — y al seguirlo encontré que lo roto
+// era otra cosa (la hermana trivial). Una lista cableada mide el pasado; un módulo SEMBRADO mide
+// el censo. Se juzgan con la MISMA función que los de verdad, o el suelo no prueba este suelo.
+const MODULO_SEMBRADO = [
+  'export function censarInventado(raiz) { return leerElArbol(raiz); }',
+  'export function ayudanteTrivial(t) { return t.trim(); }',
+].join('\n');
+const seSiembra = (llamada) => moduloDemuestraQueVe(MODULO_SEMBRADO, ['censarInventado'],
+  ['censarInventado', 'ayudanteTrivial'], [{ f: 'sembrado.mjs', s: llamada }]);
 
-if (!sueloOk) {
-  console.log('\n🔴 CENSO CIEGO: no reconoce casos fabricados que sé que existen.');
-  console.log('   La lista de abajo NO se puede leer como «éstos no tienen caso».');
+console.log('\nCONTROL NEGATIVO — sembrado, en los dos sentidos:');
+const negTrivial = seSiembra("ayudanteTrivial('literal'); censarInventado(RAIZ);");
+const negNada = seSiembra('censarInventado(RAIZ);');
+const posPropio = seSiembra("censarInventado('fuente fabricada');");
+const negOk = negTrivial === null && negNada === null;
+console.log(`  ${negNada === null ? '✅' : '🔴'} un censo que sólo recibe la raíz sale SIN`);
+console.log(`  ${negTrivial === null ? '✅' : '🔴'} una HERMANA trivial con literal, sin arista, NO lo salva`
+  + (negTrivial ? `  (dice «${negTrivial}»)` : ''));
+console.log(`  ${posPropio === 'propio' ? '✅' : '🔴'} y sí lo salva un literal en la censada misma`);
+const neg = negOk && posPropio === 'propio';
+
+if (!sueloOk || !neg) {
+  console.log(`\n🔴 CENSO ${sueloOk ? 'DEMASIADO GENEROSO' : 'CIEGO'}: ${sueloOk
+    ? 'da por bueno un módulo sembrado que no tiene caso.'
+    : 'no reconoce casos fabricados que sé que existen.'}`);
+  console.log('   La lista de abajo NO se puede leer como «éstos son exactamente los que no tienen caso».');
   process.exit(2);
 }
 console.log(`\nSIN CASO CONOCIDO (${sin.length}) — pueden dar un cero y nadie sabrá si es real:`);
