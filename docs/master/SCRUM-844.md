@@ -395,3 +395,127 @@ fenómeno del §4. Se clasifica en memoria: no se escribe nada en el árbol.
 `src/` entero · los ficheros del camino fiscal (**leídos**, regla 38) · `prisma/schema.prisma` ·
 los gates · ningún test nuevo. Ninguna base, ninguna clave. **Nada ejecutado contra producción ni
 contra staging.**
+
+---
+
+# SCRUM-844 · APÉNDICE · 15-sep-2026 · Fuera del gate: de 29 candidatos salen 3
+
+**Medido contra:** `origin/main` = `c50c6a54b61d9518f6cb98ec14def5d3ed897222` · 2026-09-15T13:00:07Z
+**Rama:** `scrum-844-fuera-del-gate` · **Carril:** instrumentos · **Gate:** sin gate
+
+Cierra lo que el apéndice anterior midió. **`src/` intacto**: esto mueve asserts de sitio respecto
+al gate, no cambia producto. Ni una palabra del texto de ningún assert ha cambiado.
+
+---
+
+## 1 · 🔴 NO ME FIÉ DE MI PROPIA LISTA, y menos mal
+
+Los 29 salían de un análisis estático que ya se había equivocado tres veces esa mañana.
+«Estáticamente no necesita base» es una **hipótesis**. Se ejecutaron los 29 **sin base levantada**
+(`QA_DB_TEST` y `A55_DB_TEST` vacíos, sin `DATABASE_URL`):
+
+| candidato | veredicto ejecutado | por qué vuelve dentro |
+|---|---|---|
+| `scrum72:36`, `:40` | ✅ **PASA sin base** | — **sale** |
+| `scrum106:24` | ✅ **PASA sin base** | — **sale** |
+| `a55:39` | 🔴 FALLA | `process.env.WHATSAPP_DRY_RUN` no vale `'1'` fuera del arranque gateado. Es una **precondición del carril**, no una afirmación sobre el producto |
+| `scrum115:108`, `:109` | 🔴 FALLA | el sender escribe su fila de log; sin `DATABASE_URL` el resultado no llega a `demo_safe_numbers` |
+| `scrum173:51`, `:188` | 🔴 FALLA | `$transaction` revienta por falta de cliente **antes** de que salte la guarda |
+| `scrum222:291`, `:298`, `:299` | 🔴 FALLA | `comprobarDerivaDeSchema()` lee `information_schema` → `estado=no-pude-comprobar` |
+| `scrum728d:133` | 🔴 FALLA | el RTT se mide con `prisma.$queryRaw` |
+| `bot-suite` ×17 | 🔴 FALLA | los diecisiete viven en **UN** test que abre con `withMerchant(prisma, …)` |
+
+> **De 29: salen 3, vuelven 26.** El encargo avisaba «si volvieron 0, sospecha de ti mismo». Volvió
+> el 90 %: el sospechoso era el instrumento, y con razón.
+
+### Las correcciones que esto le hace al barrido — y son cinco más
+
+Las tres de la mañana salieron del suelo y de leer la lista. Éstas sólo podían salir de EJECUTAR:
+
+| # | por dónde se escapaba | caso |
+|---|---|---|
+| 4 | **mutación por método**: `rtts.push(<sucio>)` no es una asignación, así que `rtts` nunca se ensuciaba | `scrum728d` |
+| 5 | **función de dominio que abre su propia conexión**: no dice `prisma.` por ningún lado | `scrum222` |
+| 6 | **precondición del CARRIL**, no de la base: `WHATSAPP_DRY_RUN` no es un dato de Postgres y aun así no se cumple fuera del gate | `a55` |
+| 7 | la categoría **B acertaba sobre producción y fallaba sobre el test**: la guarda de `verifactu_seal_inside_transaction` *es* pura, pero el test no puede alcanzarla sin cliente vivo | `scrum173` |
+| 8 | **la unidad nunca fue el assert**: 17 de los 29 son un cuerpo de conversación dentro de un solo test | `bot-suite` |
+
+🔒 La nº 7 es la que más enseña: **§4 tenía razón sobre el código y aun así el assert no puede salir
+del gate.** «El rechazo no necesita base» describe la guarda de producción; el test, tal como está
+escrito, llega a ella a través de `prisma.$transaction`. Separar las dos mitades exigiría reescribir
+el test, y eso es otro ticket.
+
+---
+
+## 2 · Lo que sale, y por qué importa
+
+**`scrum72:36` y `:40`** — el caso que abrió todo esto. Su propio comentario los llama
+**«EL ASSERT DE REGRESIÓN (el que blinda esto para siempre)»**, y sólo corrían si alguien levantaba
+Postgres a mano. Comprueban que `invoicesDir` no ha vuelto bajo `public/` — una regresión de
+seguridad/RGPD (los PDFs servidos como estático con nombres enumerables). **Un assert que no corre
+no blinda nada.** Ahora corre en cada tanda.
+
+**`scrum106:24`** — fija la decisión del fundador (el criterio es `scheduledAt`, opción C). Es una
+constante del módulo.
+
+Los dos siguen con **su texto intacto**; lo único que cambia es dónde viven respecto al gate.
+
+---
+
+## 3 · ✅ CONTROL POSITIVO: ni un gateado se ha colado fuera
+
+| | antes | después |
+|---|---|---|
+| ficheros con tests gateados | 64 | **64** |
+| **tests gateados** | **107** | **107** |
+| asserts señalados dentro del gate | 29 | **26** |
+| tests gateados que aún contienen alguno | — | **7** |
+
+**Ninguno escapó.** Si uno se hubiera colado fuera, la tanda empezaría a dar rojos que no son
+defectos y alguien acabaría relajando el gate entero.
+
+### ⚠️ Corrección de unidades al enunciado: 107 − 29 ≠ 78
+
+El encargo dice «los 107 − 29 = 78 tests gateados que SÍ necesitan base». **29 son ASSERTS y 107
+son TESTS**: no se restan. Los 29 asserts vivían dentro de **9** tests gateados (de 107), no de 29.
+Tras el movimiento quedan **26 asserts en 7 tests**, y los **107** tests gateados siguen los 107.
+
+### ⚠️ Y «110 skipped» no es un verde
+
+La tanda salta 110 tests, y **un test saltado se cuenta como pasado** (SCRUM-754). Esos 110 no
+midieron nada: son los gateados esperando su carril. El verde de abajo es sobre los que SÍ
+corrieron.
+
+---
+
+## 4 · El límite declarado, cerrado en CERO
+
+El apéndice anterior dejó escrito que el barrido mira `assert.*` y que un `expect(` no lo vería.
+Censado sobre los **64** ficheros de la población: **0 ocurrencias de `expect(`, en 0 ficheros.**
+El límite era teórico. *(El censo lleva su propio suelo: sobre una fuente con dos `expect(`
+cuenta dos — si contara cero también ahí, su cero no significaría nada.)*
+
+---
+
+## 5 · Mover no es borrar, y se comprueba
+
+| fichero | asserts ejecutables antes → después | tests antes → después |
+|---|---|---|
+| `scrum72-pdfs-privados` | 27 → **27** | 1 → 2 |
+| `scrum106-trabajos-fecha` | 7 → **7** | 1 → 2 |
+
+Ni una aserción añadida ni perdida. El número de bloques `test()` sube en uno por fichero porque
+**sacar un assert del gate exige un `test()` que no esté gateado**: es el mecanismo del cambio, no
+cobertura nueva. No hay ni un assert que antes no existiera.
+
+> ⚠️ Contar esto también tuvo su trampa: `grep -c 'assert\.'` daba 7→**8** en `scrum106` y no había
+> ningún duplicado — contaba mi propio comentario, que termina en «no al assert.». Es la lección de
+> SCRUM-740 mordiendo otra vez: *un guard que cuenta menciones vigila la prosa*. Se recuenta
+> exigiendo que la línea EMPIECE por `assert.`.
+
+## 6 · Lo NO tocado
+
+`src/` entero · el camino de emisión fiscal (regla 38: `scrum173` es un TEST del camino, y ni él ni
+`src/` se han modificado) · el texto de ningún assert · los gates · `prisma/schema.prisma` · los 26
+asserts que volvieron dentro. Ninguna base, ninguna clave. **Nada ejecutado contra producción ni
+contra staging.**
