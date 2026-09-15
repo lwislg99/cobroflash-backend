@@ -351,9 +351,12 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // ③ El filtro de lo ilegible, apagado: un número del fallback de `env.ts` pasaría por sha.
+    // 🔴 SCRUM-824b partió el filtro en DOS líneas (`ES_SHA` por un lado, `TODO_DIGITOS` +
+    // `LONGITUDES_DE_RELOJ` por otro) y no actualizó este ancla: quedó apuntando a la forma de
+    // una sola línea que ya no existe, y el meta-guard lo cazó como declaración caducada.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
-    de: '  if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;',
-    a: '  if (false) return null;',
+    de: '  if (!ES_SHA.test(s)) return null;\n  if (TODO_DIGITOS.test(s) && LONGITUDES_DE_RELOJ.has(s.length)) return null;',
+    a: '  if (false) return null;\n  if (false) return null;',
     cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
   },
   {
