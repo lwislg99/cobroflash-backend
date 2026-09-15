@@ -1259,3 +1259,136 @@ eso es tuyo, no del árbol. Van aparte a propósito: mezclarlos con los de la cl
 
 Jira · `src/` · `prisma/schema.prisma` · ninguna mutación ejecutada · ningún guard · ninguna rama
 ajena · staging. El único fichero escrito es éste.
+
+---
+
+# APÉNDICE · 15-sep-2026 · SCRUM-804e · Las listas para transicionar, y quién queda sin vigilancia
+
+**Medido contra:** `origin/main` = `78215b9ff35a1456f832c47db0ac81bc425ff415` · 2026-09-15T10:30:00+02:00
+**Rama:** `scrum-804e-la-lista-sin-vigilancia` · **Carril:** proceso · censo · **Gate:** sin gate
+
+> ⛔ **NO TOCA JIRA.** Las transiciones las hace el fundador con estas listas delante.
+
+**Decisión del fundador (15-sep-2026):** el grupo **B se cierra** —promesa cubierta basta; E1/E2
+mide si algo de la tanda lo sujeta, y eso es **deseable, no la definición de «hecho»**— y del
+grupo **D se cierran los que pasen ① y ③**, porque E1/E2 no les aplica.
+
+---
+
+## 1 · GRUPO B — se cierran los 9
+
+Promesa cubierta (filtro ③) y trabajo en `main` con sha y entrada (filtro ①).
+
+| clave | estado hoy | por qué la promesa está cubierta |
+|---|---|---|
+| **SCRUM-273** | Tareas por hacer | Sus tres exclusiones (no migrar el historico, no impedir editar, no validar contenido) las declara FUERA DE ALCANCE el propio ticket en Jira. Exclusion prometida, no hueco. |
+| **SCRUM-567** | En revisión | El defecto era el censo contando literales HTML; se cambio a AST y el tope baja de 29 a 23. Los 7 nuevos se dejan sin arreglar A PROPOSITO, y la ficha lo prohibia expresamente. |
+| **SCRUM-644** | Tareas por hacer | El trinquete entra y las dos rutas que siguen tragandose el P2002 son idempotencia deliberada de ONBOARD-2, con test que lo pincha. |
+| **SCRUM-726** | En curso | Entra `pendientesDeFirma()`, los seis registros reales cuentan y devuelve cero pendientes. El mecanismo que faltaba esta puesto. |
+| **SCRUM-782** | En revisión | Toca `styles.css` (`.casilla-seleccion::before`, inset -16px), `customersView.js`, el medidor y el guard: arregla la casilla Y amplia el guard a la segunda superficie. |
+| **SCRUM-816** | En curso | La segunda vuelta entra entera: la tabla, la accion por fila y el chip de cobro. «Lo que NO se ha tocado» es una lista de no-tocar deliberados, no de pendientes. |
+| **SCRUM-827** | Tareas por hacer | Cierra un limite que los propios guards tenian declarado por escrito con fichero y linea: el trinquete pasa a vigilar el VALOR. |
+| **SCRUM-828** | Tareas por hacer | Su unico hueco («el mensaje no puede leer Settings») esta declarado como corto A PROPOSITO: lo que pide es volver a medir, no ampliar la lista de memoria. |
+| **SCRUM-831** | En curso | Ademas de las acciones de la fila, cierra los dos huecos que destapo: el contexto a medias de `jobDetailView` y los datos que no viajaban a la lista. |
+
+## 2 · GRUPO D — de los 12, pasan ① y ③ **cinco**
+
+① lo pasan los doce: todos tienen trabajo en `main` con sha y entrada de máster. El que decide es ③.
+
+### ✅ Pasan ① y ③ — **se cierran**
+
+| clave | estado hoy | qué entregó |
+|---|---|---|
+| **SCRUM-638** | Tareas por hacer | Su entrada tiene **«LA RESPUESTA, EN UNA LÍNEA»**: el guard pasa en local en las tres configuraciones y sólo cae en el runner, así que **se une a SCRUM-626 en vez de duplicarlo**. Contestado. |
+| **SCRUM-762** | En revisión | Entrega los siete apartados, incluidas **«Las tres salidas, escritas como tales»** y el coste medido. El único hueco (`ensureQuotePdf`) queda fuera por declaración: el presupuesto no está bajo la regla 29, y aun así lo cubre su §⑤. |
+| **SCRUM-788** | En revisión | Contesta el número que decide y clasifica los 33. Los **2 INDETERMINADOS** van declarados y **sin repartir al montón mayoritario**, que es residuo dicho, no promesa incumplida. |
+| **SCRUM-790** | En revisión | Mide la dispersión real y corrige el texto que ya no describía la máquina. El guard que no se añadió va **propuesto con su dato**, y es más de lo que el ticket pedía. |
+| **SCRUM-840** | En curso | Entrega **«LA LISTA · lo que se rompe sin que caiga nadie, ordenado por lo que pasa si se rompe»**, con 500 de 500 puntos y 31/31 ficheros, más dos hallazgos que no se le pedían. |
+
+### ❌ NO pasan ③ — **no se cierran**, con la cita
+
+| clave | estado hoy | la cita que lo impide |
+|---|---|---|
+| SCRUM-613 | Acción del fundador | Su entrada: **«PRODUCCIÓN NO SE HA MEDIDO, y no por olvido: en este árbol no hay credencial de producción»** — y el ticket prometía cinco mediciones. |
+| SCRUM-654 | Acción del fundador | Es un **PASO 0** de un ticket cuya promesa es la función («Rellenar el parte por voz»), y el propio título dice **BLOQUEADO por la regla 36**. Cuatro decisiones son del fundador y los límites del plan gratuito van como **NO MEDIDO**. |
+| SCRUM-787 | En curso | Su entrada: **«Ocho vistas sin medir por falta de fixture. Es el hueco más grande: el 76 es un SUELO, no el total del panel»** — contra una promesa que decía «la aplicación entera». |
+| SCRUM-804 | En curso | Sus **tres huecos declarados**, entre ellos **«Sólo leí las 14 entradas de menor acuerdo. No las 51»**. Y sigue recibiendo apéndices — éste es el cuarto. |
+| SCRUM-811 | En curso | Su §3: **«lo que NO se pudo medir (8 vistas), declarado»**, y lo dice con todas las letras: **«Una vista que no se pudo montar no es una vista sin defectos»**. |
+| SCRUM-815 | Acción del fundador | El ticket promete que el webhook **falla por los dos lados**; su entrada abre con **«⛔ Aquí no hay arreglo»**: es el paso ① del orden decisión → ALTER → PR. |
+| SCRUM-825 | Tareas por hacer | Su propia sección: **«🔴 Y sigue pendiente lo del NIF, que ahora pesa más»**. |
+
+## 3 · 🔴 LA LISTA QUE CONDICIONA EL CIERRE DE B: qué sujeta a cada uno de los 14
+
+La pregunta no es «¿tiene un test con su número?» —eso no mide nada— sino: **¿algún test de la
+suite asevera sobre los ficheros de producto que ese ticket cambió, y pasa?** Los ficheros salen
+de sus commits de autoría en `main`; lo que asevera cada test, del AST de SCRUM-804; y «pasa» de
+la tanda del apéndice 804d.
+
+**Ninguno de los 14 queda sin nada.** Pero hay dos niveles, y la diferencia importa:
+
+| nivel | qué significa | tickets |
+|---|---|---|
+| **① fuerte** | un test **suyo** asevera sobre producto y pasa | 626 · 632 · 764 · 766 · 845 |
+| **② por fichero** | ningún test con su número lo hace, pero **otros tests de la casa** aseveran sobre los ficheros que tocó y pasan | 273 · 567 · 644 · 726 · 782 · 816 · 827 · 828 · 831 |
+| **③ nada** | ningún test asevera sobre ninguno de sus ficheros | **(ninguno)** |
+
+| ticket | nivel | ficheros de producto que tocó | tests que los aseveran y pasan |
+|---|---|---|---|
+| SCRUM-273 | ② | 8 | 15 — p. ej. `scrum235-cliente-por-columnas.test.mjs` |
+| SCRUM-567 | ② | 1 | 1 — p. ej. `scrum553-etiquetas-pegadas.test.mjs` |
+| SCRUM-626 | **①** | 4 | 11 — p. ej. `scrum452-pdf-lo-que-se-sello.test.mjs` |
+| SCRUM-632 | **①** | 2 | 30 — p. ej. `scrum195-loop-adicional.test.mjs` |
+| SCRUM-644 | ② | 16 | 44 — p. ej. `dashboard-colision-declaraciones.test.mjs` |
+| SCRUM-726 | ② | 11 | 59 — p. ej. `albaran.test.mjs` |
+| SCRUM-764 | **①** | 4 | 23 — p. ej. `scrum228-desglose-empleado-suma.test.mjs` |
+| SCRUM-766 | **①** | 2 | 2 — p. ej. `scrum570-cr-en-disco.test.mjs` |
+| SCRUM-782 | ② | 5 | 25 — p. ej. `scrum285-pantalla-cobros.test.mjs` |
+| SCRUM-816 | ② | 19 | 45 — p. ej. `dashboard-colision-declaraciones.test.mjs` |
+| SCRUM-827 | ② | 1 | 9 — p. ej. `scrum285-pantalla-cobros.test.mjs` |
+| SCRUM-828 | ② | 0 | — |
+| SCRUM-831 | ② | 12 | 41 — p. ej. `dashboard-colision-declaraciones.test.mjs` |
+| SCRUM-845 | **①** | 5 | 23 — p. ej. `dashboard-colision-declaraciones.test.mjs` |
+
+### 🔴 Y LO QUE PASA SI REGRESIONAN — la frase, sin adornos
+
+> **Un ticket del nivel ② está sujeto POR FICHERO, no por comportamiento.** Si alguien borra o
+> rompe de forma gruesa uno de los ficheros que tocó, la tanda cae y alguien se entera. **Pero si
+> alguien deshace exactamente su cambio dejando el fichero en pie, la tanda sigue VERDE y nadie se
+> entera** — porque el test que pasa por ahí está mirando otra cosa. Nueve de los catorce que se
+> cierran hoy están en esa situación, y se cierran igual porque el fundador ha decidido que la
+> promesa cumplida basta. Queda escrito para que el día que uno de los nueve reaparezca, **no se
+> busque el defecto en el código: se busque aquí.**
+
+## 4 · ⚠️ El caso 828, que estuvo a punto de salir «sin nada» y era falso
+
+El instrumento le dio **0 ficheros de producto**. Falso: su código está en `main` como
+`2cbb16bd2…` —`.github/workflows/pr-automatico.yml`, 115 líneas— y lo vigila
+`tests/pr-automatico-el-mensaje-del-automerge.test.mjs`, **10 pass · 0 skip · 0 fail** en la tanda.
+
+No lo vio porque **ni el commit ni el test llevan el número**: la entrega se hizo en la rama
+`automerge-el-mensaje-que-manda-a-mirar-donde-no-es` cuando el ticket todavía no tenía número, y su
+propia entrada lo dice. Es el reverso exacto de la patología del SCRUM-727: allí el número estaba
+y el sujeto era otro; aquí el sujeto está y el número no aparece por ningún lado.
+
+> 🔒 **Un censo por número no puede ver el trabajo que no lleva número.** Se arregla mirando, no
+> ensanchando el patrón.
+
+## 5 · Límites declarados
+
+1. **El nivel ② es cobertura por FICHERO, no por comportamiento.** Ver la frase del §3. Es más
+   débil que E1/E2 y se presenta como tal.
+2. **El juicio ③ sobre los 12 de D es lectura, no medición**, igual que en 804d. Cada fila lleva
+   su cita para que se pueda discutir.
+3. **La tanda que sostiene esto es la de 804d**: troceada en lotes de 100 y con **55 ficheros sin
+   eventos**, ninguno de los 40. No es la tanda oficial.
+4. **🔴 Y mi propio error, el tercero de este ticket:** la primera pasada de este censo dio
+   **«SIN NADA: los catorce»**, y era falso — el `--format` de git estaba mal y la lista de
+   ficheros salía VACÍA para todos. El control positivo del detector de aserciones pasaba, así que
+   el instrumento parecía sano: **el control estaba en la mitad equivocada.** Lo cazó que el
+   resultado fuera demasiado redondo, y se arregló poniéndole suelo a la OTRA mitad — cero
+   ficheros tocados es `NO MEDIBLE`, nunca «sin vigilancia».
+
+## 6 · Lo que NO se ha tocado
+
+Jira · `src/` · `prisma/schema.prisma` · ningún guard · ninguna rama ajena · staging.
+El único fichero escrito es éste.
