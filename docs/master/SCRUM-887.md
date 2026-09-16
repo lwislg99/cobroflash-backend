@@ -61,7 +61,7 @@ ningún documento emitido (regla 29).
 - **Mutantes en `src/` real**, cada uno compilado y revertido: albarán sin la pieza → 3 rojos ·
   la pieza conserva `dto` → 1 · aplica con global → 1 (el negativo) · vista con líneas crudas → 3 ·
   un factor 1,0004 sin dto → 4 (entre ellos la huella) · la pieza no aplica nada → 6. Revertido: 39/39.
-- **Suite:** 7.113 tests · 7.002 pass · 0 fail (salvo el registro, que es este fichero) · 110 skipped.
+- **Suite completa con este registro dentro:** 7.113 tests · 7.003 pass · **0 fail** · 110 skipped.
 
 ## Suelo y huecos, dichos
 
