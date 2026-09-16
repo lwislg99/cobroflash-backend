@@ -567,6 +567,10 @@ async function fetchInvoiceDetail(id) {
             throw new Error(msgs[d.error] || 'No se pudo confirmar. Inténtalo de nuevo.');
           }
           setStatus('success', '✓ Bizum confirmado: factura cobrada.');
+          // SCRUM-885 · el documento del cobro no ha salido ni por email ni por WhatsApp. Va en un
+          // toast porque la pantalla se repinta justo debajo y se llevaría el aviso de estado.
+          const avisoEnvio = avisoDocumentoSinEnviar(d.envioDocumento);
+          if (avisoEnvio.mostrar) showToast(avisoEnvio.texto, 'warn');
           if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: invoice.id });
         } catch (e) {
           setStatus('error', e.message || 'No se pudo confirmar el Bizum.');

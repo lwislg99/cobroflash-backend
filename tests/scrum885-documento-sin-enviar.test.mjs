@@ -301,3 +301,99 @@ test('SCRUM-885 · NINGÚN envío nuevo: los envíos son los de hoy en todos los
     assert.equal(b.filasWa.length, caso.telefono ? 1 : 0, `WhatsApps en ${JSON.stringify(caso)}`);
   }
 });
+
+// ═══ ⑤ LA VISTA PINTA DESDE LA REGLA — por AST, no por texto ═════════════════════════════════
+// Los casos de arriba juzgan con `avisoDocumentoSinEnviar`, así que pasarían aunque ninguna
+// pantalla la llamara. Esto ata las TRES superficies a esa misma regla: la llamada existe, recibe
+// el `envioDocumento` de la respuesta que toca, y lo que pinta es su `.texto`. Por AST: un comentario
+// que nombre la función no cuenta como llamada (SCRUM-203), y una copia del literal en la vista sí
+// se ve aunque vaya partida en un template.
+import ts from 'typescript';
+
+function arbolDe(rel) {
+  const fuente = fs.readFileSync(path.join(RAIZ, rel), 'utf8');
+  return ts.createSourceFile(rel, fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+}
+
+function nodos(raiz, filtro) {
+  const out = [];
+  (function visita(n) { if (filtro(n)) out.push(n); ts.forEachChild(n, (h) => { visita(h); }); })(raiz);
+  return out;
+}
+
+/** Las funciones que envuelven a `n`, de dentro afuera. */
+function funcionesQueEnvuelven(n) {
+  const out = [];
+  for (let p = n.parent; p; p = p.parent) if (ts.isFunctionLike(p)) out.push(p);
+  return out;
+}
+
+const textoPlano = (n) => (ts.isStringLiteralLike(n) ? n.text : ts.isTemplateExpression(n)
+  ? n.head.text + n.templateSpans.map((s) => s.literal.text).join('') : null);
+
+/**
+ * Cada llamada a la regla con: de qué objeto lee `envioDocumento`, qué variable recibe el resultado,
+ * dónde acaba su `.texto` y si la función que la envuelve es la del `confirm-bizum`.
+ */
+function llamadasALaRegla(rel) {
+  const sf = arbolDe(rel);
+  return nodos(sf, (n) => ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'avisoDocumentoSinEnviar')
+    .map((llamada) => {
+      const lectura = nodos(llamada.arguments[0] ?? llamada, (n) => ts.isPropertyAccessExpression(n) && n.name.text === 'envioDocumento')[0];
+      const decl = ts.isVariableDeclaration(llamada.parent) ? llamada.parent : null;
+      const variable = decl && ts.isIdentifier(decl.name) ? decl.name.text : null;
+      const ambito = funcionesQueEnvuelven(llamada)[0];
+      // Dónde se usa `<variable>.texto`: argumento de showToast, o asignado a textContent.
+      const destinos = variable ? nodos(ambito, (n) => ts.isPropertyAccessExpression(n) && ts.isIdentifier(n.expression)
+        && n.expression.text === variable && n.name.text === 'texto'
+        // En SU función: el manejador del botón, anidado en la fila, declara otra variable con el
+        // mismo nombre, y por nombre a secas sus usos se contarían como de la fila.
+        && funcionesQueEnvuelven(n)[0] === ambito).map((t) => {
+        const p = t.parent;
+        if (ts.isCallExpression(p) && ts.isIdentifier(p.expression) && p.expression.text === 'showToast') return 'showToast';
+        if (ts.isBinaryExpression(p) && p.right === t && ts.isPropertyAccessExpression(p.left) && p.left.name.text === 'textContent') return 'textContent';
+        return 'otro';
+      }) : [];
+      // La MISMA función que hace la petición: la fila vive en el forEach que TAMBIÉN envuelve al
+      // manejador del botón, así que «alguna función de fuera la contiene» confundiría las dos.
+      const confirmaBizum = nodos(sf, (n) => (textoPlano(n) ?? '').includes('/confirm-bizum'))
+        .some((t) => funcionesQueEnvuelven(t)[0] === ambito);
+      // ¿El objeto del que lee es la respuesta de ESE confirm-bizum?
+      const objeto = lectura && ts.isIdentifier(lectura.expression) ? lectura.expression.text : null;
+      const origen = objeto ? nodos(ambito, (n) => ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.name.text === objeto)[0] : null;
+      return { sf, llamada, objeto, origen, destinos, confirmaBizum, dentroDeInvoicesForEach: funcionesQueEnvuelven(llamada).some((f) =>
+        ts.isCallExpression(f.parent) && ts.isPropertyAccessExpression(f.parent.expression)
+          && f.parent.expression.name.text === 'forEach' && f.parent.expression.expression.getText() === 'invoices') };
+    });
+}
+
+function sinCopiaDelLiteral(rel) {
+  const sf = arbolDe(rel);
+  const copias = nodos(sf, (n) => (textoPlano(n) ?? '').includes('el cliente no tiene email'));
+  assert.equal(copias.length, 0, `🔴 SEGUNDA COPIA: ${rel} escribe el literal del aviso en vez de pedírselo a la regla `
+    + `(línea ${copias[0] && sf.getLineAndCharacterOfPosition(copias[0].getStart()).line + 1}).`);
+}
+
+test('SCRUM-885 · la fila de la factura del trabajo pinta el aviso DESDE la regla, con el envioDocumento de la factura', () => {
+  const rel = 'public/dashboard/js/jobDetailView.js';
+  const fila = llamadasALaRegla(rel).filter((c) => c.dentroDeInvoicesForEach && !c.confirmaBizum);
+  assert.equal(fila.length, 1, '🔴 la fila de cada factura (invoices.forEach) no llama a avisoDocumentoSinEnviar');
+  assert.equal(fila[0].objeto, 'inv', '🔴 la fila tiene que juzgar el envioDocumento de SU factura (inv.envioDocumento)');
+  assert.deepEqual(fila[0].destinos, ['textContent'], '🔴 lo que se pinta en la fila tiene que ser el .texto de la regla');
+  sinCopiaDelLiteral(rel);
+});
+
+for (const rel of ['public/dashboard/js/jobDetailView.js', 'public/dashboard/js/invoiceDetailView.js']) {
+  test(`SCRUM-885 · «Confirmar Bizum» en ${path.basename(rel)} avisa DESDE la regla, con la respuesta del confirm-bizum`, () => {
+    const toast = llamadasALaRegla(rel).filter((c) => c.confirmaBizum);
+    assert.equal(toast.length, 1, `🔴 ${rel}: el manejador de confirm-bizum no llama a avisoDocumentoSinEnviar`);
+    const [c] = toast;
+    assert.ok(c.origen, `🔴 ${rel}: no encuentro de dónde sale «${c.objeto}», el objeto del que se lee envioDocumento`);
+    // La respuesta: o el `await apiRequest(`…/confirm-bizum`)` o el `await r.json()` de ese fetch.
+    const init = c.origen.initializer?.getText() ?? '';
+    assert.ok(/confirm-bizum/.test(init) || /\.json\(\)/.test(init),
+      `🔴 ${rel}: «${c.objeto}» no es la respuesta de confirm-bizum (${init.slice(0, 80)})`);
+    assert.deepEqual(c.destinos, ['showToast'], `🔴 ${rel}: el .texto de la regla tiene que ir al toast`);
+    sinCopiaDelLiteral(rel);
+  });
+}

@@ -90,6 +90,7 @@ const SHELL = [
   '/dashboard/js/patronDetalleAcciones.js',
   '/dashboard/js/invoiceActionsRegistry.js',
   '/dashboard/js/quoteActionsRegistry.js',
+  '/dashboard/js/avisoDocumentoSinEnviar.js', // SCRUM-885
   '/dashboard/js/invoiceDetailView.js',
   '/dashboard/js/jobActionsRegistry.js', // SCRUM-316 (G1)
   '/dashboard/js/jobDocsReparto.js', // SCRUM-319 (G4)
