@@ -87,6 +87,11 @@
     // que falta le obliga a adivinar. El control negativo de SCRUM-653 exige que se diga cuál.
     faltaLaFirmaDelCliente: 'Falta la firma del cliente para cerrar el parte.',
     faltaLaFirmaDelTecnico: 'Falta la firma del técnico para cerrar el parte.',
+
+    // SCRUM-890 · por qué no se firma un parte vacío y qué hacer. FIRMADO el 16-sep-2026 por
+    // delegación del fundador (SCRUM-890, comentario 15623). Consta en
+    // `docs/microcopy/2026-09-16-SCRUM-890-parte-vacio-no-se-firma.md`.
+    parteVacioNoSeFirma: 'Este parte está vacío y no se puede firmar. Apunta lo que has hecho y vuelve a intentarlo.',
   };
 
   // El vocabulario CERRADO del dominio (`parteTrabajo.ts`). No se inventa aquí ni se amplía:
@@ -154,6 +159,28 @@
   }
 
   /**
+   * SCRUM-889 · La línea que el técnico acaba de añadir y TODAVÍA NO SE HA GUARDADO.
+   *
+   * Los mismos dos campos y la misma «×» que una línea guardada (misma clase, mismo aspecto), pero
+   * con sus propias marcas: no lleva índice porque aún no está en la lista del servidor, y así los
+   * escuchadores de las líneas guardadas no la confunden con ninguna.
+   */
+  function filaNueva(bloque) {
+    return (
+      '<tr data-parte-linea-nueva="' + esc(bloque) + '">' +
+      '<td class="parte-col-unds">' +
+      '<input class="parte-linea-unds" type="number" inputmode="decimal" step="any" min="0"' +
+      ' data-nueva-unds="1" value="" aria-label="' + esc(TEXTOS.unds) + '"></td>' +
+      '<td><input class="parte-linea-desc" type="text" data-nueva-desc="1" value=""' +
+      ' aria-label="' + esc(TEXTOS.descripcion) + '"></td>' +
+      '<td class="parte-col-quitar">' +
+      '<button type="button" class="parte-quitar-linea" data-quitar-nueva="1" ' +
+      'aria-label="Quitar línea">&times;</button></td>' +
+      '</tr>'
+    );
+  }
+
+  /**
    * Un bloque del papel. Los DOS se pintan SIEMPRE, aunque estén vacíos.
    *
    * El impreso tiene los dos recuadros impresos aunque el técnico solo use uno, y esconder el
@@ -166,7 +193,7 @@
     }
     var filas = suyas.length
       ? suyas.map(function (x) { return filaDeLinea(x.linea, x.indice, editable); }).join('')
-      : '<tr><td colspan="' + (editable ? 3 : 2) + '" style="padding:6px 0;color:var(--muted)">' +
+      : '<tr data-parte-sin-lineas="' + esc(bloque) + '"><td colspan="' + (editable ? 3 : 2) + '" style="padding:6px 0;color:var(--muted)">' +
         esc(TEXTOS.sinLineas) + '</td></tr>';
 
     return (
@@ -180,7 +207,7 @@
       '<thead><tr><th class="parte-col-unds">' + esc(TEXTOS.unds) + '</th>' +
       '<th>' + esc(TEXTOS.descripcion) + '</th>' +
       (editable ? '<th class="parte-col-quitar"></th>' : '') +
-      '</tr></thead><tbody>' + filas + '</tbody></table>' +
+      '</tr></thead><tbody data-parte-filas="' + esc(bloque) + '">' + filas + '</tbody></table>' +
       (editable
         ? '<button type="button" class="parte-anadir" data-bloque="' + esc(bloque) + '" ' +
           'style="margin-top:6px;font-size:13px">' + esc(TEXTOS.anadirLinea) + '</button>'
@@ -561,6 +588,14 @@
     var lineas = lineasOCeguera(parte);
     if (lineas === null) return false;
 
+    // 🔴 SCRUM-890 · UN PARTE VACÍO NO ABRE EL PAD. El servidor lo rechaza seguro (409
+    // `parte_vacio`), así que abrirlo era pedirle al cliente que firmara delante del profesional
+    // para nada. Se dice por qué y qué hacer, junto al botón.
+    if (lineas.length === 0) {
+      if (typeof o.avisar === 'function') o.avisar(TEXTOS.parteVacioNoSeFirma);
+      return false;
+    }
+
     abrirPad({
       title: quien === 'tecnico' ? TEXTOS.firmarTecnico : TEXTOS.tituloFirma,
       hint: TEXTOS.pistaFirma,
@@ -586,6 +621,13 @@
         // Repinta con lo que dice el SERVIDOR. Se llama también cuando la firma se quedó en la
         // cola: el parte sigue en borrador y la pantalla tiene que seguir diciéndolo.
         if (typeof o.alFirmar === 'function') { try { await o.alFirmar(); } catch (_e) {} }
+        // 🔴 SCRUM-890 · UN RECHAZO SUBE. `firmar` lo devuelve DENTRO del resultado y el pad sólo
+        // avisa si esto lanza: sin el `throw` se cerraba como si el cliente hubiera firmado. La
+        // pantalla traía líneas y el servidor ya no (las quitó la oficina): el 409 llega aquí.
+        if (r && r.rechazada) {
+          var codigo = r.error && r.error.code;
+          throw new Error(codigo === 'parte_vacio' ? TEXTOS.parteVacioNoSeFirma : ((r.error && r.error.message) || ''));
+        }
         return r;
       },
     });
@@ -739,6 +781,108 @@
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-889 · EL CABLE DE «AÑADIR LÍNEA». Se pintaba y nada lo escuchaba: el técnico no podía
+    // apuntar ni una línea a mano, y sin el dictado no le quedaba otra.
+    //
+    // El patrón es el de «Añadir estas líneas» del dictado (`confirmarLoDictado`), no uno nuevo:
+    //   · pulsar AÑADE UNA FILA en su bloque y no escribe nada — vacía no hay nada que guardar;
+    //   · se guarda cuando tiene cantidad (> 0) Y descripción, igual que `lineasConfirmadas`: una
+    //     línea sin cantidad no sale, y así no se viaja para volver con un 400;
+    //   · se manda la lista ENTERA —las que había más la nueva—, porque el `PATCH` la reemplaza;
+    //   · y se RELEE del servidor. Si el guardado falla NO se relee: se perdería lo tecleado. Se
+    //     dice con el texto aprobado y la fila se queda como estaba.
+    //
+    // ⚠️ La «×» de una línea YA GUARDADA sigue sin cablear, y no es un olvido: el `PATCH` conserva
+    // los precios de la oficina casando por ÍNDICE, y los precios se pueden poner con el parte en
+    // borrador. Quitar una línea corre las de detrás y les movería o borraría el precio en silencio.
+    // Está en docs/master/SCRUM-889.md como hallazgo. La «×» de la fila NUEVA sí va: sólo la quita
+    // de la pantalla, porque nunca llegó al servidor.
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    var lineasGuardadas = function () {
+      return (Array.isArray(parte.lineas) ? parte.lineas : []).map(function (l) {
+        return { bloque: l.bloque, unds: l.unds, descripcion: l.descripcion };
+      });
+    };
+    var laNueva = function () {
+      return {
+        fila: contenedor.querySelector('[data-parte-linea-nueva]'),
+        unds: contenedor.querySelector('[data-nueva-unds]'),
+        desc: contenedor.querySelector('[data-nueva-desc]'),
+      };
+    };
+    var quitarAvisoNoGuardada = function () {
+      var avisos = contenedor.querySelectorAll('[data-linea-no-guardada]');
+      for (var a = 0; a < avisos.length; a++) avisos[a].remove();
+    };
+    var quitarLaNueva = function () {
+      var n = laNueva();
+      quitarAvisoNoGuardada();
+      if (n.fila) n.fila.remove();
+    };
+    var guardandoLaNueva = false;
+    var guardarLaNueva = async function () {
+      var n = laNueva();
+      if (!n.fila || !n.unds || !n.desc || guardandoLaNueva) return;
+      var bloque = n.fila.getAttribute('data-parte-linea-nueva');
+      var unds = Number(n.unds.value);
+      var descripcion = String(n.desc.value || '').trim();
+      if (BLOQUES.indexOf(bloque) === -1) return;
+      if (n.unds.value === '' || !isFinite(unds) || unds <= 0 || descripcion === '') return;
+
+      guardandoLaNueva = true;
+      quitarAvisoNoGuardada();
+      try {
+        await pedir('/admin/partes/' + parteId, {
+          method: 'PATCH',
+          body: JSON.stringify({ lineas: lineasGuardadas().concat([{ bloque: bloque, unds: unds, descripcion: descripcion }]) }),
+        });
+      } catch (e) {
+        guardandoLaNueva = false;
+        var filas = contenedor.querySelector('[data-parte-filas="' + bloque + '"]');
+        if (filas) {
+          filas.insertAdjacentHTML('beforeend',
+            '<tr><td colspan="3" data-linea-no-guardada="1">' + esc(TEXTOS.noSeGuardo) + '</td></tr>');
+        }
+        return;
+      }
+      await renderParteDetailView(contenedor, parteId, o);
+    };
+    var anadirLinea = function (bloque) {
+      var n = laNueva();
+      if (n.fila) {
+        var vacia = (!n.unds || n.unds.value === '') && (!n.desc || String(n.desc.value || '').trim() === '');
+        // Una sola fila nueva a la vez: con algo escrito, pulsar otra vez la guarda si ya está
+        // completa (es la forma de reintentar tras un fallo) y si no, devuelve el foco a ella.
+        if (!vacia || n.fila.getAttribute('data-parte-linea-nueva') === bloque) {
+          guardarLaNueva();
+          if (n.unds && n.unds.focus) n.unds.focus();
+          return;
+        }
+        quitarLaNueva();   // vacía y en el otro bloque: se muda al bloque que ha pulsado
+      }
+      var filas = contenedor.querySelector('[data-parte-filas="' + bloque + '"]');
+      if (!filas) return;
+      var huecos = contenedor.querySelectorAll('[data-parte-sin-lineas]');
+      for (var h = 0; h < huecos.length; h++) {
+        if (huecos[h].getAttribute('data-parte-sin-lineas') === bloque) huecos[h].remove();
+      }
+      filas.insertAdjacentHTML('beforeend', filaNueva(bloque));
+      var nueva = laNueva();
+      if (nueva.unds) nueva.unds.addEventListener('change', guardarLaNueva);
+      if (nueva.desc) nueva.desc.addEventListener('change', guardarLaNueva);
+      var equis = contenedor.querySelector('[data-quitar-nueva]');
+      if (equis) equis.addEventListener('click', quitarLaNueva);
+      // Al campo de la cantidad: es la primera columna del papel y abre el teclado numérico.
+      if (nueva.unds && nueva.unds.focus) nueva.unds.focus();
+    };
+    var botonesAnadir = contenedor.querySelectorAll ? contenedor.querySelectorAll('.parte-anadir') : [];
+    for (var b = 0; b < botonesAnadir.length; b++) {
+      (function (boton) {
+        boton.addEventListener('click', function () { anadirLinea(boton.getAttribute('data-bloque')); });
+      }(botonesAnadir[b]));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════════
     // SCRUM-706 · EL CABLE DEL DICTADO. Es el salto 4 de la cadena, y era el único roto.
     //
     // 🔴 Lo que faltaba no era la función: era el `addEventListener`. `ordenarElDictado` estaba
@@ -784,6 +928,21 @@
       boton.addEventListener('click', function () {
         firmarParte(parte, Object.assign({}, o, {
           alFirmar: function () { return renderParteDetailView(contenedor, parteId, o); },
+          // SCRUM-890 · el aviso va DENTRO de la sección de firmas, junto al botón que se pulsó.
+          // `.alert warning` y no `error`: no se ha roto nada, al parte le falta contenido.
+          avisar: function (texto) {
+            var seccion = contenedor.querySelector && contenedor.querySelector('[data-parte-firmas]');
+            if (!seccion) return;
+            var previo = seccion.querySelector('[data-parte-firma-rechazada]');
+            if (previo && previo.remove) previo.remove();
+            var aviso = document.createElement('div');
+            aviso.className = 'alert warning';
+            aviso.setAttribute('role', 'alert');
+            aviso.setAttribute('data-parte-firma-rechazada', '1');
+            aviso.style.marginTop = '8px';
+            aviso.textContent = texto;
+            seccion.appendChild(aviso);
+          },
         }), par[1]);
       });
     });
