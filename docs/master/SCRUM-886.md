@@ -76,4 +76,6 @@ decía 68. Es el producto, no el banco. Nodo **por identidad**: `a.btn-secondary
 siendo exacta; sube la línea base con su motivo escrito en el test.
 
 **Segundo error propio:** mis logs de medición usaban `"$TMPDIR/.."`, y `$TMPDIR` está vacío en
-este shell. Fueron a la raíz `D:\`, fuera del árbol pero no al scratchpad. Se limpiaron.
+este shell. Primero escribí que habían ido a `D:\`, y también era una deducción: medido, fueron a
+la raíz de MSYS (`/`, la carpeta de instalación de Git). Fuera del árbol, pero no en el scratchpad.
+Borrados los 26 por nombre, con recuento 0 después.
