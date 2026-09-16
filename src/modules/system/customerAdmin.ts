@@ -129,7 +129,7 @@ export async function getCustomer(merchantId: number, id: number) {
  * una lista y no se copia la línea: dos copias son dos sitios donde divergir.
  */
 type ConNumeros = { phone?: string | null; mobile?: string | null };
-function normalizarIdentificadores<T extends ConNumeros>(data: T): T {
+export function normalizarIdentificadores<T extends ConNumeros>(data: T): T {
   // 🔴 SE ACUMULA APARTE Y SE ESPARCE `...data` AL FINAL, en vez de reasignar en el bucle. El
   // guard ④ de SCRUM-579 lo exige literalmente, y tiene razón de fondo: un normalizador que
   // construye su salida campo a campo se come en silencio todo lo que no nombre —la dirección

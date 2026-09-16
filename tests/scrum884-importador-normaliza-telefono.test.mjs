@@ -121,6 +121,14 @@ test('SCRUM-884 · los duplicados EXACTOS se siguen detectando (dentro del CSV y
   assert.equal(r.omitidos, 2, '🔴 un duplicado exacto dejó de detectarse');
 });
 
+test('SCRUM-884 · una fila VIEJA guardada sin normalizar se sigue reconociendo con su mismo texto', async () => {
+  // Antes de SCRUM-578 el alta guardaba lo tecleado. Hoy la igualdad exacta encuentra esa fila; el
+  // arreglo no puede perderla por buscar sólo la forma limpia.
+  const t = tabla([{ merchantId: MERCHANT, name: 'Viejo', phone: '+34 000 000 001' }]);
+  const r = await importar(csv(['Viejo', '+34 000 000 001'], ['Ana', '34000000002']), t);
+  assert.equal(r.omitidos, 1, '🔴 una fila guardada con espacios dejó de encontrarse con el mismo texto');
+});
+
 test('SCRUM-884 · un texto que no es teléfono y ya estaba guardado igual se sigue reconociendo', async () => {
   // `normalizePhone` lo rechaza (''), así que se guarda tal cual — y tal cual tiene que encontrarse.
   const t = tabla([{ merchantId: MERCHANT, name: 'Raro', phone: 'ext. 12' }]);
