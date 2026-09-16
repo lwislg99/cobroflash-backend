@@ -98,7 +98,7 @@ const README = path.join(DIR_REGISTRO, 'README.md');
 //      («(anclado con `git ls-remote`; main se movió cuatro veces…)»). Lo llevan SCRUM-296 y
 //      297. Se acepta sólo si abre paréntesis: cualquier otra cosa detrás del instante sigue
 //      rompiendo el ancla, que es lo que impide que el `$` deje de servir para nada.
-const RE_ANCLA = /\*\*Medido contra:\*\*\s+`origin\/main`\s*=\s*`([0-9a-f]{40})`[\s\S]{0,160}?·\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:Z|[+-]\d{2}:\d{2}))(?:\s*\(.*)?\s*$/m;
+export const RE_ANCLA = /\*\*Medido contra:\*\*\s+`origin\/main`\s*=\s*`([0-9a-f]{40})`[\s\S]{0,160}?·\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:Z|[+-]\d{2}:\d{2}))(?:\s*\(.*)?\s*$/m;
 
 /** Las entradas del registro (no el README, que no es una entrada). */
 function entradas() {
@@ -319,7 +319,7 @@ export function identidadDeEntrada(titulo) {
   return String(titulo).replace(/^#+\s*/, '').replace(/\s+/g, ' ').trim();
 }
 
-function entradasTroceadas() {
+export function entradasTroceadas() {
   return entradas().flatMap((f) => {
     const vistos = new Map();
     return trocearEntradas(f.texto).map((e) => {
@@ -915,8 +915,8 @@ test('SCRUM-267 · el formato declarado en el README incluye el ancla', () => {
 // alcanzable localmente. Por eso lo que este guard exige es **resolver en el clon donde corre**,
 // y lo que NO resuelve se lista abajo con su veredicto de la segunda sonda, no se acusa a ciegas.
 //
-// Censo del 15-sep-2026: **511 ficheros · 800 líneas «Medido contra» · 790 con sha de 40 ·
-// 389 shas distintos · 388 resuelven en el clon · 1 no**, y ése tampoco existe en `origin`
+// Censo del 16-sep-2026: **513 ficheros · 808 líneas «Medido contra» · 797 con sha de 40 ·
+// 395 shas distintos · 394 resuelven en el clon · 1 no**, y ése tampoco existe en `origin`
 // (la API contesta 422 donde para uno real contesta 200).
 const SHA_NO_RESUELVE = 'el sha tiene forma válida pero NO existe: ni en el clon ni en origin — '
   + 'la medición que declara no se puede reproducir. Se LISTA, no se corrige (regla 9): sólo '
@@ -955,9 +955,36 @@ test('SCRUM-649 · 🔴 SUELO: la sonda de existencia pasa su control antes de a
     + 'clona con `fetch-depth: 0` (CI ya lo hace desde SCRUM-388).');
 });
 
+/**
+ * LA DECISIÓN, separada de dónde se lee y de quién resuelve.
+ *
+ * Está aparte a propósito: así el control que decide puede ejercerla sobre el registro REAL con
+ * una sonda que él controla, **sin escribir un solo byte en el árbol**. La primera versión de ese
+ * control mutaba un fichero de `docs/master/` de verdad y corría el guard en un hijo — y SCRUM-824
+ * la tumbó con toda la razón: la tanda corre a concurrencia 12 y otro fichero puede estar leyendo
+ * ese mismo directorio. Un control que fabrica rojos intermitentes no prueba nada; se apaga.
+ *
+ * `resuelve(sha) -> boolean` es la sonda inyectada. `exentas` es la lista declarada.
+ */
+export function anclasMuertas(entradas, resuelve, exentas = ANCLAS_QUE_NO_RESUELVEN) {
+  return entradas
+    .map((e) => ({ ...e, sha: (RE_ANCLA.exec(e.cuerpo) || [])[1] }))
+    .filter((e) => e.sha && !resuelve(e.sha) && !(e.clave in exentas))
+    .map((e) => `${e.fichero}:${e.linea} — \`${e.sha}\` no resuelve\n        ${e.titulo}`);
+}
+
+/** Los shas que este clon reconoce como commit, de una tacada. */
+export function shasVivos(shas, correr) {
+  if (!shas.length) return new Set();
+  const salida = String(correr(['cat-file', '--batch-check'], shas.join('\n') + '\n'));
+  return new Set(salida.trim().split('\n')
+    .filter((l) => /\bcommit\b/.test(l)).map((l) => l.split(' ')[0]));
+}
+
 test('SCRUM-649 · 🔴 TODO ancla apunta a un commit que EXISTE', () => {
-  const s = sondaDeExistencia((args, input) =>
-    execFileSync('git', args, { cwd: RAIZ, encoding: 'utf8', input, stdio: 'pipe' }));
+  const correr = (args, input) =>
+    execFileSync('git', args, { cwd: RAIZ, encoding: 'utf8', input, stdio: 'pipe' });
+  const s = sondaDeExistencia(correr);
   assert.equal(s.vale, true, `🔴 CIEGO: ${s.motivo}`);
 
   const conAncla = entradasTroceadas()
@@ -969,14 +996,8 @@ test('SCRUM-649 · 🔴 TODO ancla apunta a un commit que EXISTE', () => {
     `🔴 CIEGO: sólo ${conAncla.length} entradas con ancla. Un cero sobre eso no dice nada.`);
 
   const shas = [...new Set(conAncla.map((e) => e.sha))];
-  const salida = execFileSync('git', ['cat-file', '--batch-check'],
-    { cwd: RAIZ, encoding: 'utf8', input: shas.join('\n') + '\n', stdio: 'pipe' });
-  const vivo = new Set(salida.trim().split('\n')
-    .filter((l) => /\bcommit\b/.test(l)).map((l) => l.split(' ')[0]));
-
-  const muertas = conAncla
-    .filter((e) => !vivo.has(e.sha) && !(e.clave in ANCLAS_QUE_NO_RESUELVEN))
-    .map((e) => `${e.fichero}:${e.linea} — \`${e.sha}\` no resuelve\n        ${e.titulo}`);
+  const vivo = shasVivos(shas, correr);
+  const muertas = anclasMuertas(conAncla, (sha) => vivo.has(sha));
 
   assert.deepEqual(muertas, [],
     `🔴 HAY ANCLAS QUE NO APUNTAN A NINGÚN COMMIT (sobre ${shas.length} shas distintos de `

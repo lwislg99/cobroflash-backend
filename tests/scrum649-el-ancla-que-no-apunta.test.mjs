@@ -10,6 +10,12 @@
 // Aquí no se re-prueba lo que ya prueba `scrum267`: se prueba que el arreglo distingue, que no
 // tumba anclas buenas, y que lo que cerró SCRUM-859 sigue cerrado.
 //
+// ⚠️ TODO SE EJERCE EN MEMORIA, sobre el registro real y sin escribir un byte en el árbol. La
+// primera versión mutaba un fichero de `docs/master/` y corría el guard en un proceso hijo; la
+// tumbó SCRUM-824 con toda la razón (la tanda va a concurrencia 12: otro fichero puede estar
+// leyendo ese directorio) y de paso me mordió `NODE_TEST_CONTEXT`, que hace que el hijo se niegue
+// a ejecutar y salga con 0. Las dos cosas están contadas en `docs/master/SCRUM-649.md`.
+//
 // ⚠️ NOTA DE TANDA: este fichero importa del guard —es donde viven `trocearEntradas` y
 // `sondaDeExistencia`—, e importar un fichero de tests EJECUTA sus tests. Los 14 de
 // `scrum267` corren también dentro de éste y el total de la tanda sube en 14. Se dice.
@@ -20,7 +26,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { trocearEntradas, sondaDeExistencia } from './scrum267-ancla-de-medicion.test.mjs';
+import {
+  trocearEntradas, sondaDeExistencia, anclasMuertas, shasVivos, entradasTroceadas, RE_ANCLA,
+} from './scrum267-ancla-de-medicion.test.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const GUARD = path.join(RAIZ, 'tests/scrum267-ancla-de-medicion.test.mjs');
@@ -30,8 +38,8 @@ const DIR = path.join(RAIZ, 'docs/master');
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     fichero: 'tests/scrum267-ancla-de-medicion.test.mjs',
-    de: "  const muertas = conAncla",
-    a: "  const muertas = [].concat(conAncla).slice(0, 0)",
+    de: "    .filter((e) => e.sha && !resuelve(e.sha) && !(e.clave in exentas))",
+    a: "    .filter((e) => false && e.sha && !resuelve(e.sha) && !(e.clave in exentas))",
     cae: 'SCRUM-649 · 🔴 EL QUE DECIDE: un sha bien formado e INEXISTENTE hace caer el guard',
   },
 ];
@@ -49,23 +57,22 @@ test('SCRUM-649 · SUELO: hay anclas que mirar, y la sonda pasa su control', () 
   const s = sondaDeExistencia((args, input) => git(args, input));
   assert.equal(s.vale, true, `🔴 CIEGO: ${s.motivo}`);
 
-  const anclas = anclasDelRegistro();
+  const anclas = entradasDelRegistro();
   assert.ok(anclas.length > 300,
     `🔴 CIEGO: sólo ${anclas.length} anclas censadas. Un verde sobre eso no significa nada.`);
 });
 
-/** Todas las anclas del registro, con su sha, fichero y línea. */
-function anclasDelRegistro() {
-  const out = [];
-  for (const f of fs.readdirSync(DIR).filter((x) => /^SCRUM-\d+\.md$/.test(x))) {
-    const lineas = fs.readFileSync(path.join(DIR, f), 'utf8').split('\n');
-    for (let i = 0; i < lineas.length; i++) {
-      if (!/\*\*Medido contra:\*\*/.test(lineas[i])) continue;
-      const sha = (/`([0-9a-f]{40})`/.exec(lineas.slice(i, i + 2).join('\n')) || [])[1];
-      if (sha) out.push({ f, linea: i + 1, sha });
-    }
-  }
-  return out;
+/**
+ * Las entradas del registro que llevan ancla, LEÍDAS CON EL LECTOR DEL GUARD.
+ *
+ * No con una réplica propia: una réplica se escribe igual hoy y distinta en dos meses, y entonces
+ * este control estaría midiendo un árbol que el guard no ve. Es el defecto que SCRUM-700 cazó en
+ * mi tanda de esta misma semana.
+ */
+function entradasDelRegistro() {
+  return entradasTroceadas()
+    .map((e) => ({ ...e, sha: (RE_ANCLA.exec(e.cuerpo) || [])[1] }))
+    .filter((e) => e.sha);
 }
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -73,56 +80,60 @@ function anclasDelRegistro() {
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-649 · 🔴 EL QUE DECIDE: un sha bien formado e INEXISTENTE hace caer el guard', () => {
-  // Se toma un ancla REAL del árbol, se le cambia un dígito del sha manteniendo la forma, y se
-  // corre el guard de verdad. El fichero se restaura byte a byte pase lo que pase.
-  const real = anclasDelRegistro().find((a) => resuelve(a.sha));
-  assert.ok(real, '🔴 CIEGO: no encuentro ningún ancla cuyo sha resuelva.');
+  // Se ejerce la decisión del guard sobre el registro REAL —las 797 anclas del árbol, no una
+  // maqueta—, cambiándole UN dígito a una de ellas **en memoria**. Las dos direcciones en la
+  // misma pasada: con el sha bueno no sale nada, con el inventado sale ése y sólo ése.
+  //
+  // ⚠️ Y NO SE ESCRIBE UN BYTE EN EL ÁRBOL, a propósito. La primera versión de este control
+  // mutaba el fichero de verdad y corría el guard en un hijo. SCRUM-824 la tumbó, y tenía razón:
+  // la tanda corre a concurrencia 12 y otro fichero puede estar leyendo `docs/master/` en ese
+  // mismo instante. Un control que fabrica rojos intermitentes acaba apagado, y con él el guard.
+  const entradas = entradasDelRegistro();
+  assert.ok(entradas.length > 300,
+    `🔴 CIEGO: sólo ${entradas.length} entradas con ancla: un rojo aquí no diría gran cosa.`);
 
-  const inventado = (real.sha[0] === '0' ? '1' : '0') + real.sha.slice(1);
-  assert.match(inventado, /^[0-9a-f]{40}$/, 'el sustituto tiene que tener la MISMA forma');
+  const victima = entradas.find((e) => e.sha && resuelve(e.sha));
+  assert.ok(victima, '🔴 CIEGO: no encuentro ningún ancla cuyo sha resuelva.');
+
+  const inventado = (victima.sha[0] === '0' ? '1' : '0') + victima.sha.slice(1);
+  assert.match(inventado, /^[0-9a-f]{40}$/,
+    '🔴 el sustituto tiene que tener la MISMA forma: si no, no se prueba nada de SCRUM-649.');
   assert.equal(resuelve(inventado), false,
     '🔴 CONTROL ROTO: el sha inventado resuelve. Con eso, lo de abajo no probaría nada.');
 
-  const abs = path.join(DIR, real.f);
-  const original = fs.readFileSync(abs, 'utf8');
-  let salida = '';
-  let code = 0;
-  try {
-    const l = original.split('\n');
-    l[real.linea - 1] = l[real.linea - 1].replace(real.sha, inventado);
-    const mutado = l.join('\n');
-    // 🔴 Y SE COMPRUEBA QUE LA MUTACIÓN ENTRÓ: si no, el rojo de abajo sería de otra cosa.
-    assert.notEqual(mutado, original, '🔴 la mutación no ha cambiado nada.');
-    assert.ok(mutado.includes(inventado), '🔴 el sha inventado no está en el fichero mutado.');
-    fs.writeFileSync(abs, mutado);
-    // 🔴 `NODE_TEST_CONTEXT` SE QUITA DEL HIJO, y no es cosmética: `node --test` marca así a sus
-    // hijos y, si la ve, SE NIEGA a ejecutar («run() is being called recursively… skipping
-    // running files») **y sale con 0**. La primera versión de este control leía ese 0 como «el
-    // guard pasa» y daba por vivo un defecto ya arreglado. Es la familia de SCRUM-850 dentro del
-    // instrumento escrito para cazarla, y por eso abajo se exige ver el NOMBRE del fichero en la
-    // salida: sin eso, un 0 no se distingue de un runner que no corrió.
-    const entorno = { ...process.env };
-    delete entorno.NODE_TEST_CONTEXT;
-    try {
-      salida = execFileSync(process.execPath,
-        ['--test', '--test-force-exit', '--test-reporter=tap', 'tests/scrum267-ancla-de-medicion.test.mjs'],
-        { cwd: RAIZ, encoding: 'utf8', stdio: 'pipe', env: entorno });
-    } catch (e) { code = e.status ?? -1; salida = String(e.stdout || ''); }
-    assert.doesNotMatch(salida, /skipping running files/,
-      '🔴 el runner hijo NO ejecutó nada: lo de abajo mediría un proceso que no corrió.');
-  } finally {
-    fs.writeFileSync(abs, original);
-  }
-  assert.equal(fs.readFileSync(abs, 'utf8'), original, '🔴 el fichero NO quedó restaurado.');
+  const vivo = new Set(shasVivos([...new Set(entradas.map((e) => e.sha))],
+    (args, input) => git(args, input)));
+  const sonda = (sha) => vivo.has(sha);
 
-  assert.notEqual(code, 0,
+  // ✅ La mitad POSITIVA, primero: tal cual está el árbol, esta entrada NO sale.
+  assert.deepEqual(anclasMuertas([victima], sonda), [],
+    `🔴 el guard acusa a ${victima.fichero}:${victima.linea}, cuyo sha SÍ resuelve. Un control `
+    + 'que acusa a los buenos no distingue nada.');
+
+  // 🔴 Y ahora la misma entrada con un dígito cambiado — y se comprueba que el cambio ENTRÓ.
+  const mutada = { ...victima, cuerpo: victima.cuerpo.replace(victima.sha, inventado) };
+  assert.notEqual(mutada.cuerpo, victima.cuerpo, '🔴 la mutación no ha cambiado nada.');
+  assert.ok(mutada.cuerpo.includes(inventado), '🔴 el sha inventado no está en el cuerpo mutado.');
+
+  const caidas = anclasMuertas([mutada], sonda);
+  assert.equal(caidas.length, 1,
     '🔴 el guard sigue en VERDE con un ancla que no apunta a ningún sitio. Eso es exactamente '
-    + 'el defecto de SCRUM-649.');
-  assert.match(salida, new RegExp(real.f.replace('.', '\\.')),
-    `🔴 el guard cae pero NO NOMBRA el fichero (${real.f}): un rojo que no dice dónde cuesta la `
-    + 'vuelta entera.');
-  assert.match(salida, new RegExp(inventado),
+    + 'el defecto de SCRUM-649: tener FORMA de sha no es existir.');
+  assert.match(caidas[0], new RegExp(victima.fichero.replace('.', '\\.')),
+    `🔴 el guard cae pero NO NOMBRA el fichero (${victima.fichero}): un rojo que no dice dónde `
+    + 'cuesta la vuelta entera.');
+  assert.match(caidas[0], new RegExp(':' + victima.linea + '\\b'),
+    '🔴 el guard cae pero no dice en qué LÍNEA.');
+  assert.match(caidas[0], new RegExp(inventado),
     '🔴 el guard cae pero no nombra el SHA que no resuelve.');
+
+  // Y sobre el registro ENTERO: exactamente una más que ahora mismo, no un rojo genérico.
+  const antes = anclasMuertas(entradas, sonda);
+  const despues = anclasMuertas(entradas.map((e) => (e === victima ? mutada : e)), sonda);
+  assert.equal(despues.length, antes.length + 1,
+    `🔴 sobre las ${entradas.length} entradas reales, cambiar UN dígito pasa de ${antes.length} a `
+    + `${despues.length} hallazgos. Tenía que subir en exactamente uno: ni cero (no lo ve) ni más `
+    + '(está acusando a otros de paso).');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -132,17 +143,16 @@ test('SCRUM-649 · 🔴 EL QUE DECIDE: un sha bien formado e INEXISTENTE hace ca
 test('SCRUM-649 · ✅ POSITIVO: TODAS las anclas reales resuelven — ni un rojo intermitente', () => {
   // Si el arreglo tumbara anclas buenas porque no sabe resolverlas, habría fabricado un rojo
   // intermitente y alguien lo relajaría. Se comprueba una por una, no «en general».
-  const anclas = anclasDelRegistro();
+  const anclas = entradasDelRegistro();
   const shas = [...new Set(anclas.map((a) => a.sha))];
-  const vivo = new Set(git(['cat-file', '--batch-check'], shas.join('\n') + '\n')
-    .trim().split('\n').filter((l) => /\bcommit\b/.test(l)).map((l) => l.split(' ')[0]));
+  const vivo = shasVivos(shas, (args, input) => git(args, input));
 
   // La lista declarada de las que NO resuelven, leída del guard (no copiada aquí).
   const declaradas = new Set([...fs.readFileSync(GUARD, 'utf8')
-    .matchAll(/'(SCRUM-\d+\.md)#[^']*':\s*SHA_NO_RESUELVE,/g)].map((m) => m[1]));
+    .matchAll(/'([^']+\.md#[^']*)':\s*SHA_NO_RESUELVE,/g)].map((m) => m[1]));
 
-  const rotas = anclas.filter((a) => !vivo.has(a.sha) && !declaradas.has(a.f))
-    .map((a) => `${a.f}:${a.linea} — ${a.sha}`);
+  const rotas = anclas.filter((a) => !vivo.has(a.sha) && !declaradas.has(a.clave))
+    .map((a) => `${a.fichero}:${a.linea} — ${a.sha}`);
   assert.deepEqual(rotas, [],
     `🔴 hay anclas buenas que este guard no sabe resolver:\n  ${rotas.join('\n  ')}\n`
     + '  Eso no es un ancla mala: es un guard que no sabe mirar, y se relaja en dos semanas.');
