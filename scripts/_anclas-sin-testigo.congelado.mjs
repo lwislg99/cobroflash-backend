@@ -107,3 +107,37 @@ export const PARES_SIN_TESTIGO_CONGELADOS = new Set([
   'docs/legal/PREGUNTAS_ASESOR.md # src/modules/invoicing/domain/modoVisible.ts',
   'docs/legal/PREGUNTAS_ASESOR.md # src/modules/invoicing/domain/portonDocumento.ts',
 ]);
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// EL OTRO LADO DEL TRINQUETE · LOS TESTIGOS QUE YA ESTÁN PUESTOS, Y NO SE PUEDEN QUITAR.
+//
+// 🔴 ESTE CONJUNTO SÓLO PUEDE CRECER. El de arriba impide que la deuda suba; éste impide que
+// la cobertura BAJE, que es la otra mitad y faltaba. Sin él, la forma barata de apagar un
+// rojo de «esta ancla no apunta a lo que dice» es BORRAR EL TESTIGO: el ancla deja de ser
+// comprobable, el guard calla, y el documento queda peor que antes con mejor cara.
+//
+// Lo detectó el fundador leyendo la entrega: yo había declarado «cero umbrales a mano» —que
+// es cierto— como si eso cubriera esta mitad, y no la cubre. Medido al comprobarlo: el par
+// de `selladoEstado.ts` YA estaba congelado arriba (la auditoría lo cita dos veces, una con
+// testigo y otra sin), así que quitarle el testigo no ponía nada rojo.
+//
+// 🔴 LA IDENTIDAD ES EL TESTIGO, no su línea (SCRUM-710b). Mover la coordenada no toca esta
+// lista; quitar el símbolo, sí. Por eso es un trinquete de COBERTURA y no de proporción: una
+// proporción se mantiene quitando un testigo aquí y poniendo otro allá, y eso no es lo mismo.
+//
+// Medido el 16-sep-2026 sobre `origin/main` = `5135683049a0d002f9aea5efdf13fd9ba837b280`.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+export const TESTIGOS_PUESTOS = new Set([
+  'docs/legal/AUDITLOG_FISCAL_CONTRATO.md # invoicesAdmin.routes.ts # /pay',
+  'docs/legal/AUDITLOG_FISCAL_CONTRATO.md # invoicesAdmin.routes.ts # /unpay',
+  'docs/legal/AUDITLOG_FISCAL_CONTRATO.md # invoicesAdmin.routes.ts # meta.ids',
+  'docs/legal/AUDITORIA_CAMINO_EMISION.md # prisma/schema.prisma # vf_hash',
+  'docs/legal/AUDITORIA_CAMINO_EMISION.md # prisma/schema.prisma # vf_prev_hash',
+  'docs/legal/AUDITORIA_CAMINO_EMISION.md # src/lib/invoicing.ts # exigirDocumentoEmitible',
+  'docs/legal/AUDITORIA_CAMINO_EMISION.md # src/modules/fiscal/verifactu/registro.builder.ts # construirSobreRegFactu',
+  'docs/legal/AUDITORIA_CAMINO_EMISION.md # src/modules/invoicing/domain/facturaSuelta.ts # modoDocumentoSuelto',
+  'docs/legal/AUDITORIA_CAMINO_EMISION.md # src/modules/invoicing/domain/invoiceNumber.service.ts # allocateInvoiceNumber',
+  'docs/legal/AUDITORIA_CAMINO_EMISION.md # src/modules/invoicing/domain/selladoEstado.ts # sellarTrasEmision',
+  'docs/legal/AUDITORIA_CAMINO_EMISION.md # src/modules/invoicing/domain/verifactu.service.ts # buildVeriFactuQrUrl',
+  'docs/legal/AUDITORIA_CAMINO_EMISION.md # src/modules/invoicing/domain/verifactu.service.ts # buildVerifactuRegistrosXml',
+]);

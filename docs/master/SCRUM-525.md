@@ -510,3 +510,60 @@ El **contenido** de la auditoría (salvo 6a, ordenado) · `src/` · el camino de
 `prisma/schema.prisma` (leído, no modificado — regla 40) · los 3 ficheros con citas rotas de otros
 documentos · ningún estado ni flag (27) · ninguna dependencia (36). **Nada ejecutado contra
 producción ni contra staging.**
+
+---
+
+# SCRUM-525 · APÉNDICE d · 16-sep-2026 · Faltaba la otra mitad del trinquete, y la vio el fundador
+
+**Medido contra:** `origin/main` = `5135683049a0d002f9aea5efdf13fd9ba837b280` · 2026-09-16T10:05:32Z
+**Rama:** `scrum-525c-anclas-que-apuntan` · **Carril:** documentación + guard · **Gate:** sin gate
+
+---
+
+## 1 · 🔴 LA PREGUNTA QUE NO CONTESTÉ, Y LA RESPUESTA ES «NO ESTABA»
+
+El encargo pedía **trinquete sobre la proporción con testigo** (12 de 195). Yo entregué «cero
+umbrales escritos a mano, 13 comparaciones todas contra `0`» —que es cierto— **como si eso cubriera
+esta mitad. No la cubre.** El fundador lo leyó y preguntó si estaba o no estaba.
+
+**Medido antes de contestar**, en vez de repasar el código de memoria: la auditoría cita
+`selladoEstado.ts` **dos veces**, una con testigo y otra sin, así que su par ya estaba congelado en
+la lista de «sin testigo». **Quitarle el testigo a `sellarTrasEmision` no ponía nada rojo.**
+
+> 🔒 Mi trinquete sólo vigilaba el lado que CRECE. La forma barata de apagar un rojo de «esta ancla
+> no apunta a lo que dice» seguía siendo **borrar el testigo**: el ancla deja de ser comprobable, el
+> guard calla, y el documento queda peor que antes con mejor cara.
+
+## 2 · Puesto — y por IDENTIDAD, que es más fuerte que una proporción
+
+`TESTIGOS_PUESTOS` en `scripts/_anclas-sin-testigo.congelado.mjs`: **12 triples**
+`documento # ruta # testigo`, un conjunto que **sólo puede CRECER**.
+
+* **La identidad es el símbolo, no su línea** (SCRUM-710b): mover la coordenada no toca esta lista;
+  quitar el símbolo, sí.
+* **No es un trinquete de proporción, es de cobertura.** Una proporción se mantiene quitando un
+  testigo aquí y poniendo otro allá, y eso no es lo mismo.
+* **Con su mutación**, porque un trinquete sin prueba de que sabe dispararse es una declaración de
+  intenciones: se borra un testigo real sobre una copia y se exige que su triple desaparezca, con la
+  sustitución comprobada. El guard pasa de 7 a **8 tests**.
+
+## 3 · ⓪ El caso 1, cerrado con una línea
+
+Rótulo de la fila 1: «Puerta de emisión **(usuario y admin)**», conservando las **dos** coordenadas.
+Decisión del fundador —documentación interna de auditoría, no microcopy de producto—, así que no
+hay ticket aparte y lo anotado en el apéndice c queda resuelto aquí.
+
+## 4 · Lo que el fundador corrigió de su propio instrumento
+
+Su plantilla de OBLIGACIÓN 0 usaba `refs/heads/scrum-<n>(-|$)`, que **no casa las ramas de fase**
+(`scrum-525b`). Llevaba semanas devolviendo cero sobre las ramas que más usamos. Corregido a
+`([^0-9]|$)`.
+
+> 🔒 **Un cero producido por un criterio que no alcanza al caso no es un veredicto: es la forma del
+> criterio.** Es la misma lección que este ticket lleva tres tandas midiendo, en otra superficie.
+
+## 5 · Lo NO tocado
+
+El contenido de la auditoría · `src/` · el camino de emisión (regla 38) · `prisma/schema.prisma`
+(leído, no modificado — regla 40) · ningún estado ni flag (27) · ninguna dependencia (36).
+**Nada ejecutado contra producción ni contra staging.**
