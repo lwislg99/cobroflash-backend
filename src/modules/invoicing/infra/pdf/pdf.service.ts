@@ -14,6 +14,8 @@ import { partirConceptoYDescripcion } from './conceptoLinea'; // SCRUM-603 (DOC-
 // cálculo sigue siendo `calcVatBreakdown`; estos módulos solo deciden qué se pinta.
 import { pieDePresupuesto, leerModoIva } from '../../../quotes/domain/presentacionIva';
 import { clausulasParaDocumento } from '../../../quotes/domain/clausulas';
+// SCRUM-688 · el número con su revisión lo forma el DOMINIO, no este documento.
+import { numeroConRevision } from '../../../quotes/domain/revision';
 // SCRUM-602 (DOC-12) · el resolvedor de los tres modos y el rótulo, del dominio: la maqueta no decide.
 import { resolverDireccionObra, ROTULO_DIRECCION_OBRA_PDF, type ClienteConFacturacion } from '../../../../core/documentos/direccionObra';
 
@@ -155,6 +157,18 @@ export type ParamsPdfPresupuesto = {
   // A1.2: número visible por merchant (el fichero sigue nombrándose con el id
   // global para no romper pdfUrl existentes). Si falta, se muestra el id.
   quoteNumber?: number | null;
+  // SCRUM-688 · LA REVISIÓN, COMO DATO PROPIO — y por eso `quoteNumber` sigue siendo `number`.
+  //
+  // El papel tenía que poder decir `#2004226.1`, y la salida fácil era ensanchar `quoteNumber` a
+  // texto. Eso es lo que habría arrastrado a la FACTURA al cambio, porque un número que a veces
+  // es texto deja de poder sumarse, ordenarse ni compararse en ningún sitio. Se pasa la revisión
+  // aparte y el rótulo se compone abajo, dentro de `generateQuotePdf`.
+  //
+  // ⚠️ OPCIONAL AQUÍ, OBLIGATORIO PARA QUIEN CONSTRUYE LOS PARÁMETROS: `presupuestoParaPdf.ts`
+  // deriva su tipo con `Completo<ParamsPdfPresupuesto>`, que quita el `?` de todas las claves. Así
+  // que este campo no se puede olvidar en el constructor —no compila— y a la vez no rompe a nadie
+  // que llame a este generador con un objeto de antes. La `?` es compatibilidad, no laxitud.
+  revision?: number | null;
   merchant: {
     name: string | null;
     legalName?: string | null;
@@ -727,6 +741,28 @@ export async function generateQuotePdf(params: ParamsPdfPresupuesto) {
   const impuesto = params.taxName || NOMBRE_IMPUESTO_POR_DEFECTO;
   const QUOTE_LABEL = locale.quote; // "Presupuesto" o "Cotización"
 
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-688 · EL NÚMERO QUE VE EL CLIENTE, CON SU REVISIÓN
+  //
+  // Antes esto era `params.quoteNumber ?? params.quoteId` a pelo, y el papel de una revisión
+  // salía con el MISMO `#2004226` que el original. Medido el 16-sep-2026 generando los dos:
+  // las dos hojas idénticas. El cliente recibía dos documentos que se llaman igual, que es
+  // exactamente lo que las revisiones existen para evitar.
+  //
+  // 🔴 EL NÚMERO NO SE COMPONE AQUÍ: lo compone `numeroConRevision`, que es donde ya vivía.
+  // Escribir `${base}.${revision}` en este fichero sería el segundo sitio que forma el mismo
+  // número, y dos sitios que forman un número acaban formándolo distinto. La regla «sólo con
+  // `revision > 0`» también es suya —devuelve el número pelado cuando no la hay—, así que el
+  // original sigue siendo `#2004226` sin que este documento tenga que saber por qué.
+  //
+  // El respaldo al `quoteId` se conserva igual que estaba: un presupuesto sin número visible
+  // sigue enseñando su id, y sobre un id NO se pinta revisión —no sería un número de documento
+  // sino una clave interna con un sufijo pegado.
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  const numeroVisible = params.quoteNumber == null
+    ? String(params.quoteId)
+    : numeroConRevision({ numero: String(params.quoteNumber), revision: Number(params.revision ?? 0) });
+
   const logoBuf = await loadLogoBuffer(params.merchant.logoUrl);
 
   const doc = new PDFDocument({ size: 'A4', margin: 50 });
@@ -746,7 +782,7 @@ export async function generateQuotePdf(params: ParamsPdfPresupuesto) {
   doc.fontSize(18).font('Helvetica-Bold').fillColor('#0f172a')
     .text(QUOTE_LABEL, M, hY, { width: W, align: 'right' });
   doc.fontSize(11).font('Helvetica').fillColor('#64748b')
-    .text(`${QUOTE_LABEL} #${params.quoteNumber ?? params.quoteId}`, { align: 'right' });
+    .text(`${QUOTE_LABEL} #${numeroVisible}`, { align: 'right' });
   doc.fillColor('#000');
 
   doc.y = Math.max(doc.y, hY + (logoBuf ? 46 : 0));
