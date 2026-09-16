@@ -294,7 +294,13 @@ test('SCRUM-889b · 🔴 la «×» de una línea guardada la quita: lista entera
     ],
   }, '🔴 la lista mandada no es la de antes sin la línea quitada, con sus ids');
   assert.ok(srv.lecturas() > leidas, '🔴 tras quitarla no se relee el parte del servidor');
-  assert.equal(equisGuardadas(cont).length, 2, '🔴 la línea quitada sigue en pantalla');
+  // Sobre el ÚLTIMO marcado pintado y no sobre `querySelectorAll`: el banco añade los nodos de cada
+  // `innerHTML` a los de antes (no reemplaza), así que tras releer seguiría viendo las 3 filas viejas.
+  const pintado = cont.innerHTML;
+  assert.equal((pintado.match(/data-parte-linea="/g) || []).length, 2, '🔴 la línea quitada sigue en pantalla');
+  assert.ok(!pintado.includes('Cablear línea'), '🔴 la línea quitada sigue en pantalla');
+  assert.ok(pintado.includes('Desmontar cuadro') && pintado.includes('Magnetotérmico 16 A'),
+    '🔴 al quitar una línea han desaparecido otras');
 });
 
 test('SCRUM-889b · editar una línea también devuelve los ids', async () => {
