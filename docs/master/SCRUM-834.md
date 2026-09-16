@@ -158,3 +158,74 @@ fundador exigiría constancia de la decisión, no del fichero. Ver §6.
 
 Ni una línea de `scripts/puerta-avisador-rojo.mjs`, de su test, ni de ningún workflow. Esto es
 **sólo el registro que faltaba**.
+
+---
+
+# SCRUM-834 · APÉNDICE S5 · 16-sep-2026 · La contradicción con SCRUM-853: 834 HA CADUCADO
+
+**Medido contra:** `origin/main` = `1be773a3e6d929d2f033ae94bc1654855a68731a` · 2026-09-16T07:52:06Z
+**Rama:** `scrum-834-853-contradiccion-medida` · **Carril:** proceso · **Gate:** sin gate
+
+⛔ No se construye nada, no se toca el máster, no se cierra ni se reabre ningún ticket. `src/` y
+`prisma/` a 0 líneas. **SCRUM-853 la lleva Luis y está EN CURSO: aquí no se toca su trabajo.**
+
+---
+
+## 1 · 🔴 EL VEREDICTO: no son dos mecanismos, y ningún número mide otra cosa. **834 caducó.**
+
+Las dos mediciones son ciertas **en su fecha**, y esa es toda la contradicción:
+
+| | SCRUM-834 | SCRUM-853 |
+|---|---|---|
+| medido | **9-sep-2026 07:33Z** sobre `0269e8cd` | **15-sep-2026 10:37Z** sobre `5359f41d` |
+| dice | «**nada** avisa a una sesión de que su PR se ha puesto rojo» | «**58 despertares hoy**» |
+| qué es | la **ausencia** del mecanismo | el **exceso** del mismo mecanismo |
+
+**Seis días separan las dos.** No se contradicen: son **consecutivas**. 834 midió el hueco, el hueco
+se cerró, y 853 mide cómo se comporta lo que 834 pidió.
+
+### La prueba, en `main` de hoy — no en el texto de los tickets
+
+| lo que 834 decía que faltaba | en `main` hoy |
+|---|---|
+| el avisador no existe | ✅ `.github/workflows/avisador-rojo.yml` · `scripts/puerta-avisador-rojo.mjs` |
+| «un bot NO puede despertar a Claude» sin `allowed_bots` | ✅ `claude.yml:232` → `allowed_bots: "yaqu-bot[bot]"` |
+
+---
+
+## 2 · 🔴 LO QUE ESTO CAMBIA PARA EL FUNDADOR: la decisión ya no está parada
+
+SCRUM-834 termina con: *«Siguiente acción concreta: decidir si se acepta `allowed_bots: yaqu-bot[bot]`
+en `claude.yml` con el riesgo declarado arriba. Sin eso, nada de lo demás llega a ejecutarse.»*
+
+> 🔒 **Esa decisión YA ESTÁ TOMADA Y EN `main`.** Y tomada exactamente como 834 la pedía: **lista
+> explícita, nunca `'*'`**, sobre el paso activo de `claude-code-action`, y con el riesgo escrito al
+> lado (`claude.yml:66-76`, que cita la doc: «Allowed bots are NOT checked for repository
+> permissions… este repositorio es PÚBLICO, así que el comodín dejaría que la App de cualquiera
+> despertase a Claude con un prompt que él controla»).
+
+**No hay nada que decidir sobre `allowed_bots`.** Lo que queda abierto es otra cosa, y es lo de
+SCRUM-853: **a quién despierta y por qué rojo**, no si puede despertar.
+
+La prueba de que está activo no es el fichero: son **los 58 despertares** que cuenta 853. Un
+`allowed_bots` ausente habría dado **silencio**, que es el modo de fallo que 834 temía.
+
+---
+
+## 3 · Cómo encaja lo que 853 pide encima de lo que 834 dejó
+
+834 construyó la puerta y le puso dos frenos —tope por PR y deduplicación por `head_sha` + check—.
+853 mide que **faltaba un tercer freno**: distinguir un rojo que **bloquea el merge** de uno que no.
+
+> 🔒 Los dos frenos de 834 evitan **repetir el mismo aviso**. Ninguno evita **avisar de lo que no
+> importa**, porque en 9-sep no había con qué compararlo: el mecanismo aún no existía.
+
+Y parte de lo que 853 pide **ya está empezado** en `main`:
+`scripts/puerta-avisador-rojo.mjs` exporta **`estadoDelPR`**, que distingue `open` / `merged` /
+`closed` y devuelve `null` cuando no lo sabe —«no saber si el PR sigue abierto no es saber que lo
+está»—. Es su punto 2. **No se toca: es trabajo en curso de Luis.**
+
+## 4 · Lo NO tocado
+
+`.github/` entero · `scripts/puerta-avisador-rojo.mjs` · el máster · `src/` · `prisma/` · ningún
+ticket cerrado ni reabierto. **Nada ejecutado contra producción ni contra staging.**

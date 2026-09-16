@@ -253,3 +253,66 @@ tocó `.gitattributes`.
 **`npm run guards:entrada`: 4 guards, 26 tests, 0 fallos.**
 **Tanda completa (con main dentro): 6937 tests · 6827 pass · 0 fail · 110 skipped** (los gateados de siempre —
 `QA_DB_TEST`, `LIBRO_PG_URL`, staging—; este ticket **no añade ni un salto**).
+
+---
+
+# APÉNDICE · 16-sep-2026 · EL MICROCOPY, FIRMADO
+
+**Medido contra:** `origin/main` = `8dac4cd52eda32fa0ebed21ea7050cfdc643658d` · 2026-09-16T09:34:50+01:00
+**Qué cambia respecto al §7 de arriba:** aquel decía que los dos textos estaban MARCADOS, y era
+cierto cuando se escribió. El fundador los ha firmado, así que el centinela se retira.
+
+## Los dos literales aprobados
+
+| ranura | literal |
+|---|---|
+| `crearRevision` | `Crear revisión` |
+| `errorCrear` | `No se ha podido crear la revisión. Vuelve a intentarlo.` |
+
+Ficha: `docs/microcopy/2026-09-16-SCRUM-688-crear-revision.md`. El registro
+`MICROCOPY_APROBADA_SIN_APLICAR.md` está **congelado** desde SCRUM-709 — un fichero por
+aprobación, para que dos sesiones que firman el mismo día no choquen.
+
+## El bloque de pendientes se va ENTERO
+
+No se queda vacío. Una caja que ya no distingue nada sólo puede engañar al que la lea después, y
+`TEXTOS` pasa de 6 a **8** entradas: las seis del 3-sep-2026 más estas dos.
+
+`errorCrear` sólo se pinta cuando **el servidor no manda motivo propio**. Cuando lo manda
+—`quote_not_found`, `quote_sin_numero`, `revisiones_ambiguas`— se enseña el suyo: el motivo no se
+inventa.
+
+## El test se GIRÓ, no se borró
+
+Es la misma disciplina que se dejó escrita para el caso del PDF. El de ayer exigía que el centinela
+siguiera puesto; hoy exige el literal firmado, y **no se fía de mi palabra**: contrasta los dos
+textos contra el registro con `constaAprobado()` —la única función que barre `docs/microcopy/` y el
+congelado— y lleva su propio **suelo**, probando primero con uno de los seis del 3-sep-2026. Sin ese
+suelo, un buscador ciego diría «no consta» sin haber mirado, y eso se lee igual que «falta firma».
+
+**Centinelas vivos de SCRUM-688 en código: 0.** Lo que queda del literal está en la ficha de
+aprobación (que narra de dónde venía), en las aserciones que exigen que NO aparezca, y en el §7 de
+arriba, que es registro fechado.
+
+## 🔴 Y el rótulo firmado tumbó un guard — cuyo verde de ayer era SUERTE
+
+`scrum655c-pantalla-revisiones` exigía que la pantalla **no ofreciera crear** una revisión, con
+este motivo escrito: *«el POST que la crea NO está aprobado, y un botón que el servidor no atiende
+es peor que no tenerlo»*. Era cierto al escribirlo. El fundador aprobó el POST el 15-sep-2026, así
+que **la premisa está anulada**: el botón sí tiene quien lo atienda.
+
+Lo que importa no es eso, sino **por qué siguió verde un día de más**. Su patrón nombraba
+`data-revision-editar`, `data-revision-nueva` y el rótulo `Crear revisi`. El botón de SCRUM-688 se
+llama `data-revision-crear` y el 15-sep llevaba por texto un **centinela de microcopy**, así que no
+casaba con ninguno de los tres. **La pantalla ya ofrecía crear y el test decía que no.** No cayó al
+añadir el botón: cayó hoy, al ponerle su texto firmado.
+
+Un `!/…/` sólo dice que no vio lo que buscaba — no distingue «no está» de «se llama de otra
+forma». Por eso el caso se parte en dos y el segundo se afirma **en positivo**:
+
+- **EDITAR sigue prohibido** (`data-revision-editar`, `data-revision-nueva`), y esa mitad no se
+  toca: un presupuesto firmado no se reescribe.
+- **CREAR ahora se EXIGE** (`data-revision-crear=`): es la única salida cuando la vigente está
+  firmada.
+
+**Tanda completa: 6938 tests · 6828 pass · 0 fail · 110 skipped.**

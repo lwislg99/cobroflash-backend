@@ -31,7 +31,9 @@
 (function () {
   'use strict';
 
-  // ✅ MICROCOPY APROBADA por el fundador el 3-sep-2026 (regla 30), LAS SEIS SIN UN CAMBIO.
+  // ✅ MICROCOPY APROBADA por el fundador (regla 30). OCHO rótulos, en DOS firmas:
+  //    · las SEIS primeras, el 3-sep-2026, SIN UN CAMBIO;
+  //    · `crearRevision` y `errorCrear`, el 16-sep-2026 (SCRUM-688).
   // Consta en `docs/MICROCOPY_APROBADA_SIN_APLICAR.md`, addendum «Revisiones del presupuesto
   // (3-sep-2026)», con su ancla contra `origin/main` y comparadas byte a byte con estas.
   //
@@ -42,6 +44,14 @@
   // vacía en pantalla y significan lo contrario, y por eso son dos textos y no uno. Es el suelo de
   // ceguera aplicado a un rótulo: decir mal esa frase manda al cliente una versión creyendo que no
   // hay otra. Va en voz pasiva, como los avisos del dictado y los de las cláusulas.
+  // SCRUM-688 (16-sep-2026) · `crearRevision` y `errorCrear` ENTRAN AQUÍ. Nacieron el día antes
+  // en un bloque de pendientes aparte, con un centinela que se leía en pantalla, porque el
+  // microcopy es del fundador y esta sesión no lo escribe (regla 30). Los firmó, así que ese
+  // bloque desaparece ENTERO: dejarlo vacío sería mantener puesta una caja que ya no distingue
+  // nada. Ancla: `docs/microcopy/2026-09-16-SCRUM-688-crear-revision.md`.
+  //
+  // `errorCrear` va en la MISMA voz que los otros avisos de la casa —«no se ha podido», nunca
+  // «no hemos podido»—, igual que el de abrir el parte (SCRUM-402).
   var TEXTOS = {
     titulo: 'Revisiones',
     vigente: 'Vigente',
@@ -49,23 +59,8 @@
     verEsta: 'Ver',
     sinOtras: 'Esta es la única versión.',
     ciego: 'No se ha podido leer el historial de revisiones.',
-  };
-
-  // ⛔⛔ PENDIENTE DE MICROCOPY DEL FUNDADOR · SCRUM-688 · regla 30 ⛔⛔
-  //
-  // El botón de crear revisión necesita SU TEXTO, y el microcopy es del fundador: esta sesión NO
-  // lo escribe. Va aparte de `TEXTOS` a propósito —ese bloque son las SEIS aprobadas el
-  // 3-sep-2026 y no se mezcla lo aprobado con lo que no lo está— y lleva un centinela que se ve
-  // en pantalla: si esto llega a producción sin sustituir, se lee solo.
-  //
-  // Lo mismo para `errorCrear`: el aviso de que no se ha podido crear también es microcopy.
-  //
-  // 🔴 `tests/scrum688-crear-revision.test.mjs` exige que el centinela siga aquí mientras el texto
-  // no esté aprobado, y que NO se cuele en `TEXTOS`. Cuando el fundador los escriba, se mueven a
-  // `TEXTOS` con su ancla en `docs/MICROCOPY_APROBADA_SIN_APLICAR.md` como las otras seis.
-  var TEXTOS_SIN_APROBAR = {
-    crearRevision: '⛔ PENDIENTE DE MICROCOPY (SCRUM-688)',
-    errorCrear: '⛔ PENDIENTE DE MICROCOPY (SCRUM-688)',
+    crearRevision: 'Crear revisión',
+    errorCrear: 'No se ha podido crear la revisión. Vuelve a intentarlo.',
   };
 
   function esc(v) {
@@ -167,7 +162,7 @@
   function botonCrearRevision(vigente) {
     if (!vigente || vigente.id == null) return '';
     return '<button type="button" class="btn btn-ghost" data-revision-crear="' + esc(vigente.id) + '"' +
-      ' style="margin-top:8px;font-size:13px">' + esc(TEXTOS_SIN_APROBAR.crearRevision) + '</button>';
+      ' style="margin-top:8px;font-size:13px">' + esc(TEXTOS.crearRevision) + '</button>';
   }
 
   /**
@@ -191,7 +186,7 @@
         .catch(function (e) {
           btn.disabled = false;
           // El motivo NO se inventa: si el servidor manda uno, se enseña el suyo.
-          var msg = (e && e.message) ? e.message : TEXTOS_SIN_APROBAR.errorCrear;
+          var msg = (e && e.message) ? e.message : TEXTOS.errorCrear;
           var aviso = document.createElement('p');
           aviso.setAttribute('data-revision-error', '1');
           // La clase vive en `styles.css` (regla 4: ni un estilo en línea, y `style.cssText`
@@ -210,8 +205,6 @@
   window.revisionesOCeguera = revisionesOCeguera;
   window.puedeEditarseLaRevision = puedeEditarse;
   window.REVISIONES_TEXTOS = TEXTOS;
-  // SCRUM-688 · el cableado de crear, y el bloque de textos que AÚN NO están aprobados —se
-  // publica para que el guard pueda comprobar que el centinela sigue puesto.
+  // SCRUM-688 · el cableado de crear.
   window.cablearCrearRevision = cablearCrearRevision;
-  window.REVISIONES_TEXTOS_SIN_APROBAR = TEXTOS_SIN_APROBAR;
 })();
