@@ -77,12 +77,14 @@ const SHELL = [
   '/dashboard/js/productsView.js',
   '/dashboard/js/providersView.js',
   '/dashboard/js/tipoDestinatarioPendiente.js', // SCRUM-615
-  // SCRUM-776: la fuente única de cómo se llama el documento; va ANTES de invoicesView y
-  // nuevaFacturaModal, igual que en el índice — los dos la leen al pintar.
+  // SCRUM-776: la fuente única de cómo se llama el documento; la leen al pintar `invoicesView` y
+  // `quotesView`, y en el índice va por delante de las dos (SCRUM-867).
   '/dashboard/js/rotulosDelDocumento.js',
   '/dashboard/js/invoicesView.js',
   '/dashboard/js/cobrosView.js', // SCRUM-285 (B4)
-  '/dashboard/js/nuevaFacturaModal.js', // SCRUM-289 (A0.3)
+  // SCRUM-867: aquí estaba `/dashboard/js/nuevaFacturaModal.js` (SCRUM-289 A0.3). Salió con el
+  // fichero, y tenía que salir a la vez: `addAll` es ATÓMICO y una ruta que ya no resuelve tumba
+  // el precache ENTERO, dejando sin cobertura la primera visita (SCRUM-274).
   // SCRUM-302 (C2): la LEY del patrón va antes que los registros que la consumen — el mismo
   // orden que en el shell HTML, porque el registro lee sus globales al cargarse.
   '/dashboard/js/patronDetalleAcciones.js',

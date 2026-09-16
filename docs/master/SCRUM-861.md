@@ -181,6 +181,17 @@ llamada vuelve a barrer `docs/microcopy/` entero: cuadrático. Ahora se pregunta
 a uno. `scrum861` + `scrum824`: 17/17 en verde, y los seis rojos, **vueltos a ver caer** contra el
 test reescrito.
 
+### 🟢 EPÍLOGO · lo que dijo el CI siguiente (escrito el 16-sep-2026, desde la rama de SCRUM-867)
+
+Arriba quedó una frase pendiente de respuesta: *«lo dice el CI siguiente»*. **Lo dijo: no se
+repitió.** El push del arreglo (`8090b611`) lanzó el run `34992955857`, y «build + tests (con banco
+desechable)» pasó en **3 min 54 s** (16:07:20 → 16:11:14), con los guards de navegador también en
+verde. El PR #1302 entró con auto-merge a las 16:11:21Z.
+
+O sea que aquel corte fue **de una vez**, sobre el mismo diff y sin tocar nada de lo que se
+sospechó. No lo llamo «intermitente» con dos datos: lo llamo *no reproducido*, y queda escrito aquí
+con su run para el día que vuelva a pasar — que es justo lo que este epílogo existe para permitir.
+
 ## Tests que introduce esta entrada
 
 * `tests/scrum861-firma-por-delegacion.test.mjs` — suelo, los seis casos (a–f) y el control del árbol

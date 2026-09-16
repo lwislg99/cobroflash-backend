@@ -77,9 +77,14 @@
       const cerrar = document.createElement('button');
       cerrar.className = 'modal-close';
       cerrar.type = 'button';
-      // `etiquetaCierre` existe por UN caso, y no se quita: `nuevaFacturaModal` pone ahí su
-      // MARCADOR de microcopy sin aprobar. Forzarle «Cerrar» resolvería en silencio una aprobación
-      // pendiente — el guard de marcadores existe justo para que eso no pase (regla 30).
+      // `etiquetaCierre` existía por UN caso: `nuevaFacturaModal` ponía ahí su MARCADOR de microcopy
+      // sin aprobar, y forzarle «Cerrar» habría resuelto en silencio una aprobación pendiente
+      // (regla 30).
+      //
+      // 🔴 SCRUM-867 · ESE MODAL SE RETIRÓ, así que HOY NADIE pasa `etiquetaCierre`: todas las
+      // cabeceras caen al «Cerrar» por defecto. La opción se queda —quitarla toca esta pieza
+      // compartida y el censo de ranuras que la declara, y eso es otro ticket—, pero queda escrito
+      // que ya no la sostiene ningún caso vivo. Si sigue sin llegar ninguno, sobra.
       cerrar.setAttribute('aria-label', opciones.etiquetaCierre || 'Cerrar');
       cerrar.textContent = '×';
       if (opciones.idCierre) cerrar.id = opciones.idCierre;

@@ -126,7 +126,11 @@ jobs:
 
               # Cuándo se empujó esa cabeza. Sin este dato NO se regala la gracia: no saber
               # cuándo se empujó no es «se empujó hace un momento».
-              FECHA="$(gh api "repos/$REPO/commits/$SHA" -q .commit.committer.date 2>/dev/null || echo '')"
+              # SCRUM-853c · capturada SOLO si la orden sale bien. `gh api -q`, en un error, sale con 1
+              # PERO escribe el cuerpo JSON del error por stdout, y `$(… || echo '')` se lo quedaba:
+              # la fecha era ese texto, los minutos salían `NaN` y el vigía medía la edad desde la
+              # apertura del PR sin decirlo — con lo que la gracia del push reciente no se aplicaba.
+              if ! FECHA="$(gh api "repos/$REPO/commits/$SHA" -q .commit.committer.date 2>/dev/null)"; then FECHA=''; fi
               if [ -n "$FECHA" ]; then
                 MINUTOS="$(FECHA="$FECHA" node -pe "Math.round((Date.now()-new Date(process.env.FECHA))/60000)")"
               fi
@@ -157,14 +161,32 @@ jobs:
           # el 15-sep-2026, el #1241 llevaba seis días abierto con cero comentarios.
           DUENO: ${{ github.repository_owner }}
         run: |
-          NUM="$(gh issue list --state open --search "$TITULO in:title" --json number,title \
-                 -q "[.[] | select(.title==\"$TITULO\")] | .[0].number" 2>/dev/null || true)"
+          # SCRUM-853c · si la BÚSQUEDA del issue falla, la pasada para. Con `|| true`, un fallo
+          # pasajero dejaba `NUM` vacío, y el paso de publicar lee un `NUM` vacío como «todavía no hay
+          # issue» y CREA otro: el vigía acabaría con dos, y su memoria partida entre los dos. Que no
+          # exista todavía (vacío legítimo) y que no se haya podido mirar son cosas distintas.
+          if ! NUM="$(gh issue list --state open --search "$TITULO in:title" --json number,title \
+                      -q "[.[] | select(.title==\"$TITULO\")] | .[0].number" 2>/dev/null)"; then
+            echo "::error::No se pudo buscar el issue del vigía. No se sigue: un NUM vacío haría que se creara otro."
+            echo "- **ISSUE-ILEGIBLE** — no se pudo buscar «$TITULO»: la pasada para sin publicar nada." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
           [ "$NUM" = "null" ] && NUM=""
           echo "issue=$NUM" >> "$GITHUB_OUTPUT"
 
           ANTES='[]'
           if [ -n "$NUM" ]; then
-            ANTES="$(gh issue view "$NUM" --json body -q .body \
+            # 🔴 SCRUM-853c · LA MEMORIA SE LEE PRIMERO, Y SOLO SI LA ORDEN SALE BIEN. Iba en una
+            # tubería con `sed`: si la lectura fallaba, el resultado era vacío y eso se tomaba por
+            # «memoria vacía». Con la memoria en blanco, TODO atasco cuenta como nuevo y el vigía
+            # comenta la lista entera — y la regla «solo cuando empeora» descansa justo ahí.
+            # Un cuerpo SIN la marca sí es memoria vacía de verdad, y ése sigue pasando.
+            if ! CUERPO_ISSUE="$(gh issue view "$NUM" --json body -q .body 2>/dev/null)"; then
+              echo "::error::No se pudo leer la memoria del issue #$NUM. La pasada NO vale: sin memoria, todo saldría como nuevo."
+              echo "- **MEMORIA-ILEGIBLE** — no se pudo leer el cuerpo de #$NUM: la pasada para sin publicar nada." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+            ANTES="$(printf '%s\n' "$CUERPO_ISSUE" \
                      | sed -nE 's/.*<!-- vigia-atascados:estado (.*) -->.*/\1/p' | head -1)"
             [ -z "$ANTES" ] && ANTES='[]'
           fi
