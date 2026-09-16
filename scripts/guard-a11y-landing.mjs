@@ -35,7 +35,7 @@ import puppeteer from 'puppeteer-core';
 // SCRUM-562 · el área que recibe el toque se mide en UN solo sitio. Aquí vivía una copia
 // con el idioma viejo (`elementsFromPoint(...).includes(el)`), que da por bueno lo que otro
 // elemento tapa. El porqué, en la cabecera de `_medidor-de-toque.mjs`.
-import { FUENTE_MEDIDOR, INTERACTIVOS } from './_medidor-de-toque.mjs';
+import { FUENTE_MEDIDOR, INTERACTIVOS, CORTE_MOVIL, MINIMO_TACTIL, MINIMO_ESCRITORIO, minimoPara } from './_medidor-de-toque.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
@@ -73,13 +73,39 @@ const REGIONES = {
   'reg-cta': 'Tu próxima cotización',
 };
 
-/** ③ Los táctiles, con el mínimo de AB6. */
+/**
+ * ③ Los táctiles. El mínimo NO se escribe aquí: sale de `minimoPara(ancho)`, en el medidor común.
+ *
+ * 🔴 SCRUM-865 · AQUÍ HABÍA UN `44` PROPIO, y eso hacía que DOS guards pidieran cosas distintas a la
+ * MISMA página. SCRUM-711 alineó `guard-objetivo-tactil` con DESIGN.md —«≥44px en móvil; el
+ * escritorio se queda en 36px a propósito»— y éste se quedó exigiendo 44 a 1280. Un número repetido
+ * a mano es lo que dejó que divergieran, así que no se repite: se importa.
+ */
 const TACTILES = [
   { sel: 'header a.logo', nombre: 'el logo' },
   { sel: '#announce a',   nombre: '«Ver planes →»', destapar: '#announce' },
 ];
-const MINIMO_TACTIL = 44;
 
+/**
+ * 🔒 SCRUM-865 · LAS SONDAS DE UMBRAL. Los dos táctiles de esta landing cumplen de sobra (45 y 47 px),
+ * así que un mínimo mal aplicado NO se notaría aquí: el guard seguiría verde con 44, con 36 o con 12.
+ * Estas tres lo hacen notar, en cada pasada y en cada ancho:
+ *     40 px a 360 → CAE   ·   30 px a 1280 → CAE   ·   37 px a 1280 → PASA
+ * Se inyectan en la página cargada y se miden con el MISMO árbitro que el resto.
+ */
+const SONDAS_HTML = '<div id="__sondas-865">'
+  + '<button id="__sonda-40" style="display:block;box-sizing:border-box;width:120px;height:40px;min-height:0;padding:0;border:0;margin:12px 0">40</button>'
+  + '<button id="__sonda-30" style="display:block;box-sizing:border-box;width:120px;height:30px;min-height:0;padding:0;border:0;margin:12px 0">30</button>'
+  + '<button id="__sonda-37" style="display:block;box-sizing:border-box;width:120px;height:37px;min-height:0;padding:0;border:0;margin:12px 0">37</button>'
+  + '</div>';
+/** Qué se le exige a cada sonda según el ancho: `debePasar` es el veredicto que TIENE que salir. */
+const SONDAS_MOVIL = [
+  { id: '__sonda-40', debePasar: false },
+];
+const SONDAS_ESCRITORIO = [
+  { id: '__sonda-30', debePasar: false },
+  { id: '__sonda-37', debePasar: true },
+];
 const TIPOS = { '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/html', '.png': 'image/png', '.json': 'application/json', '.svg': 'image/svg+xml' };
 
 const srv = http.createServer((req, res) => {
@@ -168,6 +194,7 @@ try {
   for (const ancho of ANCHOS) {
     const page = await navegador.newPage();
     await page.setViewport({ width: ancho, height: 900 });
+    const MIN = minimoPara(ancho);
     await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'load' });
     // La barra de anuncio nace oculta (se enciende por JS con las plazas). Se destapa AQUÍ, en la
     // página cargada, nunca en el fichero.
@@ -225,14 +252,38 @@ try {
       const medida = await page.evaluate(async (sel, sel2, min) => {
         const m = await window.__areaDeToque(document.querySelector(sel), sel2, { scroll: true });
         return m.error ? m : { ...m, cumple: m.tocable >= min };
-      }, t.sel, INTERACTIVOS, MINIMO_TACTIL);
+      }, t.sel, INTERACTIVOS, MIN);
 
       if (medida.error) { console.error(`   🔴 NO SUPE MIRAR ${t.nombre}: ${medida.error}`); fallos++; continue; }
       if (!medida.cumple) {
-        console.error(`   ✖ ${t.nombre}: área tocable ${medida.tocable}px < ${MINIMO_TACTIL} (AB6)`);
+        console.error(`   ✖ ${t.nombre}: área tocable ${medida.tocable}px < ${MIN} (AB6/DESIGN.md)`);
         fallos++;
       } else {
         log(`   ✔ ${t.nombre}: ${medida.tocable}px tocables (caja ${medida.caja}px)`);
+      }
+    }
+
+    // ── ④ LAS SONDAS DE UMBRAL ───────────────────────────────────────────────
+    await page.evaluate((html) => {
+      const caja = document.createElement('div');
+      caja.innerHTML = html;
+      document.body.appendChild(caja);
+    }, SONDAS_HTML);
+    for (const sonda of (ancho <= CORTE_MOVIL ? SONDAS_MOVIL : SONDAS_ESCRITORIO)) {
+      const m = await page.evaluate(async (sel, sel2, min) => {
+        const r = await window.__areaDeToque(document.querySelector(sel), sel2, { scroll: true });
+        return r.error ? r : { ...r, cumple: r.tocable >= min };
+      }, `#${sonda.id}`, INTERACTIVOS, MIN);
+      if (m.error) {
+        console.error(`   🔴 NO SUPE MIRAR la sonda ${sonda.id}: ${m.error}`);
+        fallos++;
+      } else if (m.cumple !== sonda.debePasar) {
+        console.error(`   ✖ UMBRAL MAL APLICADO @${ancho}px: «${sonda.id}» mide ${m.tocable}px contra un `
+          + `mínimo de ${MIN} y ${m.cumple ? 'PASA' : 'CAE'}. Con los dos táctiles de esta página por `
+          + 'encima de 44, sin esta sonda el mínimo podría estar mal y el guard seguiría verde.');
+        fallos++;
+      } else {
+        log(`   ✔ umbral ${sonda.id}: ${m.tocable}px ${m.cumple ? 'pasa' : 'cae'} contra ${MIN}`);
       }
     }
     log('');
@@ -247,4 +298,5 @@ if (fallos) {
   console.error(`\n🔴 ${fallos} problema(s) de accesibilidad en la landing publicada.`);
   process.exit(1);
 }
-console.log('✓ En los dos anchos: nada suena pegado, las 7 regiones tienen nombre y los táctiles llegan a 44.');
+console.log(`✓ En los dos anchos: nada suena pegado, las 7 regiones tienen nombre y los táctiles llegan a su `
+  + `mínimo — ${MINIMO_TACTIL} px en móvil, ${MINIMO_ESCRITORIO} en escritorio, como dice DESIGN.md.`);
