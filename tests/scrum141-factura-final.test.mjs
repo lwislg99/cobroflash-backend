@@ -87,7 +87,7 @@ test('SCRUM-141: casos degenerados — sin líneas, sin plan o índice fuera de 
 
 test('SCRUM-141: billingPlanView muestra el MISMO importe que emitirá el endpoint', () => {
   const lines = [{ concept: 'Obra', qty: 1, price: 82.65, tax: 0.21 }];
-  const quote = { total: '100.01', currency: 'EUR', paymentTerms: 'FIFTY_FIFTY', lines };
+  const quote = { total: '100.01', currency: 'EUR', paymentTerms: 'FIFTY_FIFTY', lines, discountGlobalAmount: null }; // SCRUM-887: la fila real lo trae siempre
   const view = buildBillingPlanView(quote, 0);
   const plan = getBillingPlan('FIFTY_FIFTY');
   const objetivos = distributeStageAmounts('100.01', plan);
