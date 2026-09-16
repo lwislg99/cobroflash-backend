@@ -243,3 +243,151 @@ tope y conté **4 abiertos donde había 15**, sin ningún aviso. Lo destapó el 
 reunidos: 15». Repetida con `--limit 2000` y comprobando el número de PR más alto y más bajo traídos, la
 cuenta cuadra con la del vigía. Queda escrito porque el tope silencioso de `gh pr list` muerde igual a
 quien venga detrás.
+
+---
+
+# APÉNDICE · SCRUM-839d (16-sep-2026) · Fase 2, pieza A: el conflicto de solo registro se resuelve solo
+
+**Medido contra:** `origin/main` = `b42c220648790e8318664dc15fc15139c7e10f23` · 2026-09-16T14:22:25Z
+
+**Tanda:** __TANDA__
+
+**Rama:** `scrum-839d-conflicto-de-registro-solo` · Sesión 5 · encargo del orquestador (16-sep ~15:40, `origin/main` `e5e67c01`).
+
+---
+
+## ① Constancia del experimento (hecho y limpiado antes de construir)
+
+**Pregunta:** ¿basta con poner `docs/master/*.md merge=union` en `.gitattributes` para que GitHub deje de
+marcar en conflicto un PR que solo choca en el registro?
+
+**Respuesta medida: NO.** GitHub no respeta `merge=union`. Git por línea de comandos, con las mismas ramas, sí.
+
+Dos PR gemelos, idénticos salvo la regla, los dos partiendo de `origin/main` `550f365b95bab33b46534824b31a091db01d8e52`:
+
+| | base | rama del PR | PR | `mergeable` en GitHub | git CLI |
+|---|---|---|---|---|---|
+| CON la regla | `exp-union-base` = `97a44c42a4bf04a2c57d6c5e0cc8a55de5ccc79d` (padre `70ee6efa9ede8d1146f3b576794cda6b68ac334f`, que solo añade la línea a `.gitattributes`) | `exp-union-b` = `d68de03558ff061efc0eb49889bc808525c056f0` | **#1353** | **CONFLICTING** (DIRTY) | **limpio** (A=1, B=1) |
+| SIN la regla (control) | `exp-union-sin-base` = `5d3e9f02871de422d042a656685cd71e312f2710` (padre `2241654c41031dda1b850b8dd2b4940446af1334`, commit vacío) | `exp-union-sin-b` = `f1614572d2a80019302c38427927068b828a2d6b` | **#1354** | **CONFLICTING** (DIRTY) | conflicto en `docs/master/SCRUM-853.md` |
+
+Los dos lados añaden un apéndice distinto al final de `docs/master/SCRUM-853.md`: el choque típico del registro.
+
+**Horas (reloj de GitHub, de la API):** #1353 abierto `2026-09-16T12:59:56Z`, #1354 abierto `2026-09-16T13:00:04Z`;
+`mergeable` leído `CONFLICTING` en los dos a las `13:00:21Z`; cerrados SIN mergear `13:01:44Z` y `13:01:46Z`.
+Las seis ramas `exp-union*` borradas (`git ls-remote --heads origin | grep -c exp-union` → `0`, re-medido en esta sesión).
+
+⚠️ La fecha de committer de esos commits dice `13:05:22Z`/`13:05:30Z`, **después** de abrir los PR: no es un
+error del experimento, es el reloj local adelantado ~5 min 33 s. Las horas buenas son las de la API.
+
+**Re-ejecución con el instrumento que se construye aquí** (`node scripts/conflicto-de-registro.mjs`), sobre esos commits reales:
+
+```
+#1353 (cabeza d68de035, main 97a44c42) → {"accion":"EMPUJAR","ficheros":["docs/master/SCRUM-853.md"]}
+#1354 (cabeza f1614572, main 5d3e9f02) → {"accion":"NO-EMPUJA","causa":"UNION-NO-RESUELVE","ficheros":["docs/master/SCRUM-853.md"]}
+#1318 (padres de e5be315b, el merge a mano) → {"accion":"NO-EMPUJA","causa":"UNION-NO-RESUELVE","ficheros":["docs/master/SCRUM-609.md"]}
+```
+
+El #1318 lo reconoce como choque SOLO de registro (cerradura 1), y no lo empuja porque el `main` de aquel
+momento no traía la regla (cerradura 2). Es lo correcto: la regla la pone `main`, no la rama.
+
+**Consecuencia para el diseño:** la línea de `.gitattributes` no arregla ningún PR por sí sola; ayuda a quien
+mergea con git en local. Hace falta un job que haga el merge con git y lo empuje. Y el push tiene que ir con
+la llave de la App: con el `GITHUB_TOKEN` no arranca CI (medido el 9-sep, #1212: 0 check-runs).
+
+---
+
+## ② Qué se construyó
+
+| pieza | qué |
+|---|---|
+| `.gitattributes` | `docs/master/*.md merge=union`, al final, y nada más |
+| `scripts/conflicto-de-registro.mjs` | la DECISIÓN, fuera del YAML: `NADA` · `EMPUJAR` · `NO-EMPUJA` (con causa) · `NO-PUDE-MIRAR` |
+| `.github/workflows/conflicto-de-registro.yml` | en cada push a `main`: PR `scrum-*` abiertos del propio repo → decisión → `git push` (sin forzar) con la llave de la App solo si `EMPUJAR` |
+| `tests/scrum839d-union-solo-en-el-registro.test.mjs` | el guard de `.gitattributes` y la decisión ejercida contra repositorios git de verdad |
+
+### Dos cerraduras independientes
+
+1. **La lista.** El merge se mira como lo ve GitHub, SIN ningún atributo (`--attr-source` = árbol vacío), y
+   TODOS los ficheros en conflicto tienen que casar `^docs/master/[^/]+\.md$`. Uno fuera → `FUERA-DE-REGISTRO`.
+2. **El merge.** Se rehace con los atributos de `main` y tiene que salir limpio. Como union solo existe en
+   `docs/master/*.md` (guard), un conflicto de código sigue siendo conflicto aunque la cerradura 1 fallara.
+
+El commit resultante es hijo de la cabeza del PR y de `main`: el push es fast-forward, y si la rama se movió
+entre medias se rechaza solo.
+
+### 🔴 Dos trampas medidas antes de escribir (y una cazada en rojo)
+
+- **`git merge-tree` lee los atributos del ÁRBOL DE TRABAJO**, no de los commits que mezcla. En un repo de
+  prueba con la regla solo en `main`: sacada `main` → limpio; sacada la rama del PR → conflicto. Mismo merge,
+  dos veredictos. Por eso la fuente se fija siempre con `--attr-source` y `core.attributesFile` se anula.
+- **«Salida 1» no significa «hay conflicto».** `git merge-tree` con una ref inexistente sale con **1** —el
+  mismo código que un conflicto— y stdout vacío. Un conflicto solo se cree con árbol válido Y lista no vacía.
+- **Cazada por el test, no leyendo:** `git rev-parse --git-path info/attributes` devuelve la ruta RELATIVA al
+  repo y yo la resolvía contra el cwd del proceso, así que el suelo de `info/attributes` no miraba nada y un
+  `* merge=union` local daba `NADA`. Arreglado con `--path-format=absolute`.
+
+---
+
+## ③ POSITIVO · NEGATIVO · SUELO
+
+| | caso | resultado |
+|---|---|---|
+| POSITIVO | el #1318 fabricado: los dos lados añaden a `docs/master/SCRUM-609.md` | `EMPUJAR`; commit con los dos padres, las dos entradas, sin marcadores |
+| POSITIVO | la rama del PR anterior a la regla, sacada en el árbol | `EMPUJAR` (manda la regla de `main`) |
+| NEGATIVO | registro + UN fichero de código en conflicto | `NO-EMPUJA`, `FUERA-DE-REGISTRO`, `fuera: [src/a.ts]`, sin commit |
+| NEGATIVO | solo código | `NO-EMPUJA` |
+| NEGATIVO | `docs/master/sub/*.md`, `docs/YAQU_MASTER.md`, `docs/BUGS.md` | `NO-EMPUJA` |
+| NEGATIVO | `main` sin la regla (cerradura 2 sola) | `NO-EMPUJA`, `UNION-NO-RESUELVE` |
+| NEGATIVO | borrado en un lado, editado en otro | `NO-EMPUJA`, `UNION-NO-RESUELVE` |
+| SUELO | salida 1 sin lista · árbol sin ficheros · salida 129 · git ausente | `NO-PUDE-MIRAR` (+ control: con lista SÍ cree el conflicto) |
+| SUELO | cabeza inexistente, de verdad | `NO-PUDE-MIRAR` |
+| SUELO | `info/attributes` local con driver de merge | `NO-PUDE-MIRAR` |
+| SUELO del workflow | no se puede leer la lista de PR / traer una cabeza / push rechazado | `::error::` «no pude mirar», no empuja, run en rojo |
+
+Guard de `.gitattributes`, por las dos mitades: la DECLARACIÓN (ninguna otra línea con `merge=union`) y el
+EFECTO (`git check-attr merge` sobre los 2.853 ficheros rastreados (16-sep-2026) y rutas centinela que aún no existen:
+`src/`, `tests/`, `scripts/`, `public/`, `prisma/schema.prisma`, `package.json`, `YAQU_MASTER.md`, `BUGS.md`).
+
+### El rojo, ejecutado
+
+`npm run meta:mutaciones` aplica cada mutación declarada en `MUTACIONES_QUE_ME_TUMBAN`, exige ver caer el test
+nombrado, restaura y verifica byte a byte. Las seis cayeron (pasada del 16-sep-2026, árbol limpio después):
+
+| mutación | test que cae |
+|---|---|
+| `.gitattributes`: añadir `src/**/*.ts merge=union` | DECLARACIÓN (+1) |
+| `.gitattributes`: macro `[attr]registro merge=union` + `*.json registro` | EFECTO (+1: también la DECLARACIÓN, porque la macro escribe la regla literal; una macro que no la escribiera en `.gitattributes` solo la vería el efecto) |
+| cerradura 1 apagada (`const fuera = []`) | NEGATIVO un fichero fuera (+4) — la cerradura 2 sigue parando el push, por eso el test exige la CAUSA |
+| la regex acepta subdirectorios | NEGATIVO subdirectorio |
+| suelo apagado (`if (false)`) | SUELO salida 1 sin lista |
+| detección con los atributos de `main` en vez del árbol vacío | POSITIVO #1318 (+1) |
+
+⚠️ En esa misma pasada salió **MUDO** `tests/scrum859-identidad-y-motivo-cerrado.test.mjs` («insertar una entrada
+en medio NO mueve ninguna clave»). No es de este ticket ni toca nada de lo que cambia aquí: se reporta, no se
+arregla (regla 37). Y la pasada corrió en un worktree sin `node_modules`/`dist`, así que decenas de guards
+ajenos salieron CIEGOS: ese dato no dice nada de ellos.
+
+### Lo que la tanda cazó, y cómo se arregló (sin tocar ningún umbral)
+
+| guard | qué vio | arreglo |
+|---|---|---|
+| SCRUM-258 | ruta fija en el temporal para anular `core.attributesFile` | `-c core.attributesFile=` VACÍO — medido: con un global `* merge=union`, sin la opción `union`, con ella `unspecified` |
+| SCRUM-723 | `rev-parse` contra la punta, sin declarar | declarado con motivo: la pregunta del job ES sobre la punta de `main` (es lo que GitHub mira); el test, repos sintéticos |
+| SCRUM-737 | «38 de sus 42 ficheros» en un comentario sin ancla | reformulado sin cifra |
+| SCRUM-824 | `info/attributes` del test escrito fuera de donde el censo prueba que cuelga de `mkdtemp` | escrito dentro de `repo()` |
+
+---
+
+## ④ Lo que NO se hizo, y lo que queda abierto
+
+- **No se tocó** la protección de rama, los checks obligatorios ni el filtro `scrum-*` de `pr-automatico.yml`.
+- **No avisa en el PR.** El aviso (único por cabeza, tope 6/h, un intento) es la **pieza B**, en otro PR, después.
+- 🔴 **RIESGO ABIERTO — sin observar todavía:** el push de la App del 16-sep dejó ejecuciones en
+  `action_required` con 0 jobs; el fundador cambió la política de aprobación. El job solo corre en push a
+  `main`, así que su **primer push real** llegará con el primer conflicto de solo registro tras el merge de
+  este PR. Si el CI de ese push sale retenido (0 jobs), se PARA y se dice; no se rodea.
+- ⚠️ **Límite conocido:** si `main` trae cambios en `.github/workflows/` que la rama no tiene, el push de la
+  App puede rechazarse por falta del permiso `workflows`. El job lo dice (`PUSH RECHAZADO`, run en rojo) y no
+  reintenta. No se ha ensanchado el permiso de la App: eso es decisión del fundador.
+- Hallazgo de otro carril, sin arreglar: `tests/_banco-vistas.mjs` acumula 16 conflictos en el censo; candidato
+  a partirse (anotado en el traspaso, no es de este ticket).
