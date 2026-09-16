@@ -93,7 +93,12 @@ test('SCRUM-886 · la entrada de Informes sigue como estaba', async () => {
 
 test('SCRUM-886 · un técnico NO ve la entrada en Clientes', async () => {
   const r = await montar('renderCustomersView', 'tecnico', cabeceraDeClientes);
-  assert.deepEqual(entradas(r), [], '🔴 un técnico ve la exportación de clientes: la ruta le daría 403.');
+  // 🔴 SE COMPARA UNA CUENTA, NUNCA LOS NODOS. Con `deepEqual(entradas(r), [])` el rojo inyectado
+  // no llegó a salir: al fallar, `assert` intenta pintar el nodo del banco —un grafo circular con
+  // su padre y su registro— y el proceso murió sin memoria a los 128 s. Parecía un rojo y era un
+  // cuelgue.
+  const n = entradas(r).length;
+  assert.equal(n, 0, `🔴 un técnico ve ${n} entrada(s) a la exportación de clientes: la ruta le daría 403.`);
 });
 
 test('SCRUM-886 · la ruta de exportación sigue siendo sólo del admin (403 al técnico)', async () => {
