@@ -68,7 +68,14 @@ test('SCRUM-865 · 🔴 la landing ya no escribe su propio umbral', () => {
 
 test('SCRUM-865 · las tres sondas de umbral siguen en el guard, con su veredicto por ancho', () => {
   const src = leer(LANDING);
-  for (const [id, alto] of [['__sonda-40', 40], ['__sonda-30', 30], ['__sonda-37', 37]]) {
+  // Un elemento por línea (SCRUM-710b): con las tres alturas en la misma línea física, dos tickets
+  // que cambiaran números distintos chocarían sin que el conflicto dijera que son independientes.
+  const SONDAS = [
+    ['__sonda-40', 40],
+    ['__sonda-30', 30],
+    ['__sonda-37', 37],
+  ];
+  for (const [id, alto] of SONDAS) {
     assert.ok(src.includes(id),
       `🔴 falta la sonda \`${id}\`: sin ella, este guard sale verde con el mínimo mal puesto, porque sus `
       + 'dos táctiles (45 y 47 px) están muy por encima de cualquier umbral.');
