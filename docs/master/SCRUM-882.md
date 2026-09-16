@@ -115,3 +115,94 @@ Gravedad: 🔴 no puede seguir · 🟠 le frena o confunde · 🟡 se ve sin ter
 
 `docs/master/evidencias/scrum882/`: 19 capturas de Playwright (`movil-*`, `cliente-*`, `escritorio-*`),
 2 del banco (`banco-*`) y el conductor de la sonda 1 (`sonda-playwright.mjs`).
+
+---
+
+# 882b · Lo que el recorrido dejó «no recorrido»: pago de la cliente, albarán y «3 opciones»
+
+**Medido contra:** `origin/main` = `e7f155755446b2a848688cd59ba25c8d9bb9fb26` · 2026-09-16T18:57:54Z (al redactar)
+**Staging recorrido:** servía `7cab3165369cfd29eadced8e5cb59ab447fe4867` al empezar (≈18:25Z) y `e7f155755446b2a848688cd59ba25c8d9bb9fb26` al acabar (18:57Z). Entre los dos solo cambian `parteDetailView.js`, `invoiceDetailView.js`, `invoicesAdmin.routes.ts` y `styles.css`: ninguna pantalla de las recorridas aquí salvo, quizá, el CSS (2 líneas)
+**Rama:** `scrum-882b-lo-no-recorrido` · **Carril:** producto (Sesión 0) · **NO se arregla nada.** Los 🔴 nuevos los abre el orquestador
+
+⏱ Horas de GitHub (cabecera `Date:` de `gh api -i zen`). Todo a **390×844 táctil**; escritorio no.
+
+> Una cliente que elige una de las «3 opciones» firma con el dedo y no ve su firma, y queda
+> guardada vacía aunque el panel diga «Firmado digitalmente». Cuando luego va a pagar, la única
+> forma que se le ofrece, la tarjeta, le dice que pague por Bizum o transferencia, y esas dos
+> formas no están. Y un albarán firmado acaba en un botón que se llama «[PENDIENTE microcopy oficial]».
+
+## 882b.0 · Cómo se midió
+
+- Mismo método que el recorrido 882: staging, cuenta `qa@staging.yaqu` (merchant 2, plan `trial`, que **no se tocó**),
+  Playwright conduciendo Chromium como un usuario, y la BD de staging **solo leída** para distinguir «la pantalla
+  miente» de «el dato está mal».
+- **WhatsApp simulado, comprobado en `WhatsAppMessage`:** `quote_decision_es`, `payment_request_es` y
+  `albaran_para_firmar_es` con `wamid.dryrun.*`. Cliente con el teléfono de demo `34611000885`.
+- Datos propios, para no confundirlos con los de otras sesiones: cliente **Lucía Romero**, presupuesto **#7**
+  (id 1878), justificante **J-20260916-GXNV** (factura 1971, cobro 894), trabajo 3104, albarán **AB260001** (id 1634).
+- Única sonda: Playwright. El banco no se pasó (sus vistas son del panel, no de las páginas públicas de la cliente).
+
+## 882b.1 · La lista, ordenada por gravedad × frecuencia
+
+| # | | Pantalla | Qué pasa | Veces/día | Cómo se vio | Captura |
+| --- | --- | --- | --- | --- | --- | --- |
+| b1 | 🔴 | Página de la cliente · «3 opciones» → firma | **La firma no se ve y se guarda vacía.** El bloque de firma nace oculto (`quoteDecisionLanding.routes.ts:594`, `display:none` con tramos) y el lienzo se dimensiona al cargar (`:409`), así que se queda en **0×0** (medido: «interno 0x0» antes y después de elegir). La cliente dibuja y no aparece trazo; al pulsar «Firmar y aceptar — Básico (380,00 €)» se manda `signatureData` = `data:,` (**6 caracteres**) y el servidor responde 200 y guarda «Aceptado con firma digital». El panel dice «✅ Firmado digitalmente · La firma va incluida en el PDF», y el PDF del #7 tiene **0 imágenes**; el del #5, firmado sin tramos, tiene 2. Además, cada `resize` de la ventana lanza `getImageData… source width is 0`. ⚠️ Es la prueba de la aceptación: decide el fundador | 1-3 (cada aceptación con tramos) | Playwright + BD + PDF | `882b-cliente-c01e-firmada.png`, `882b-movil-t02a-detalle-aceptado-full.png` |
+| b2 | 🔴 | Página de pago de la cliente | **La única forma de pago ofrecida no funciona, y la salida lleva al mismo sitio.** Negocio sin Connect y sin IBAN: la página solo pinta «Pagar con tarjeta» (`payInvoice.routes.ts:62-65` la pinta siempre que `PAYMENTS_CONNECT_ENABLED` está apagado). Al pulsar, `/pay/card` responde **409**: «El pago con tarjeta no está disponible. Este negocio aún no ha activado los cobros con tarjeta. Puedes pagar por transferencia o Bizum» (`payCard.routes.ts:60`). «← Ver otras formas de pago» vuelve a la misma página, otra vez solo con tarjeta. Con IBAN puesto, la tarjeta sigue saliendo y además con la etiqueta **RECOMENDADO**. ⚠️ Toca el flujo de cobro: STOP del fundador. Qué valor tiene el flag en producción: **no medido** | 3-5 (cada cobro de un negocio sin Connect) | Playwright + código | `882b-cliente-c03a-pagar.png`, `882b-cliente-c04a-tras-pulsar-tarjeta.png`, `882b-cliente-c06a-pagar-con-iban-y-bizum.png` |
+| b3 | 🔴 | Configuración → Cobros | **«Guardar cambios» no guarda y no dice nada.** Con el NIF/CIF vacío, que es obligatorio (`settingsView.js:278`) y está en OTRA pestaña (Empresa), el navegador bloquea el formulario: `An invalid form control with name='taxId' is not focusable`. No sale ningún aviso y la BD sigue sin IBAN ni Bizum. Es justo el paso «Configura cómo cobras» de la lista de inicio, la única salida del b2. Con el NIF puesto, el PUT da 200 y guarda | 1 (al configurar, pero bloquea el cobro) | Playwright + BD | `882b-movil-m01b-tras-guardar.png` |
+| b4 | 🔴 | Albarán firmado | **El siguiente paso es un botón sin nombre que no hace nada.** El botón principal dice literalmente «[PENDIENTE microcopy oficial]». Al pulsarlo, `POST …/convertir-en-factura` → **409** `facturacion_no_disponible`, y sale una franja roja con el mismo texto (`albaranes.routes.ts:1334`). Con `INVOICING_ES_ENABLED` apagado, que es lo que tienen hoy los negocios ES reales (regla 7), eso es todo lo que ofrece un albarán firmado. «Facturar lo entregado» no aparece | 3-5 (cada albarán firmado) | Playwright | `882b-movil-a06c-convertir-en-factura.png` |
+| b5 | 🟠 | Albarán → copia firmada | **La copia firmada no le llega a la cliente, y nadie se entera.** Su pantalla dice «¡Parte firmado! Recibirás tu copia por WhatsApp», pero `albaran_firmado_es` quedó `failed` con `customer_daily_cap` (18:55:48Z). Era su cuarto mensaje del día: presupuesto, enlace de pago, albarán para firmar y la copia. El detalle del albarán no avisa | 1-3 (trabajos de un solo día) | Playwright + BD | `882b-cliente-c07d-albaran-tras-firmar.png` |
+| b6 | 🟠 | Página de la cliente · «3 opciones» | La tabla de arriba dice «Renovación del cuadro eléctrico · 1 · **590,00 €**» (el precio de Estándar) justo encima de «Desde 380,00 €». Tras elegir Básico, el total pasa a 380,00 € pero la tabla **sigue en 590,00 €** | 1-3 | Playwright | `882b-cliente-c01a-cliente-3-opciones.png` |
+| b7 | 🟠 | Página de la cliente · «3 opciones» | Cada tarjeta dice «**IVA incluido**» (`quoteDecisionLanding.routes.ts:216`, sin condición), con las líneas a IVA 0. SCRUM-212 quitó esa frase del total, no de las tarjetas. ⚠️ Texto fiscal: STOP del fundador | 1-3 | Playwright + código | `882b-cliente-c01a-cliente-3-opciones.png` |
+| b8 | 🟠 | Panel · presupuesto de «3 opciones» antes de que elija | TOTAL 590,00 €, CONCEPTOS con una sola línea a 590,00 € e INGRESOS/MARGEN 590,00 €, como si la cliente ya hubiera elegido Estándar | 1-3 | Playwright | `882b-movil-t01d-detalle-full.png` |
+| b9 | 🟠 | Pago por transferencia (390 px) | Los pasos 2 y 3 se parten en columnas: «380, / 00 €», el IBAN en una tercera columna, «REF- / 894». **No aparece el titular de la cuenta.** No hay «ya he pagado» ni forma de volver a las otras formas de pago. El IBAN va sin espacios | 1-3 (cada pago por transferencia) | Playwright | `882b-cliente-c06c-transferencia-full.png` |
+| b10 | 🟠 | Detalle del albarán | **No enseña las líneas** (qué se entregó) ni la fecha. «TRABAJO —» aunque cuelga del trabajo 3104, y «FACTURACIÓN `sin_facturar`» tal cual sale del código | 3-5 | Playwright | `882b-movil-a04b-albaran-borrador-full.png` |
+| b11 | 🟠 | Nuevo albarán (buscador) | Se ve el marcador «[PENDIENTE microcopy oficial] Todavía no tiene trabajo…» (`albaranDesdePresupuestoModal.js:59`), los estados en inglés `accepted` / `draft` y los presupuestos como «P7» | 3-5 | Playwright | `882b-movil-a01b-nuevo-albaran-modal.png` |
+| b12 | 🟠 | Albarán ↔ parte | El profesional envía un **albarán**; la cliente abre «**Parte de trabajo** AB260001» y pulsa «Firmar el parte de trabajo». La hoja «Nuevo albarán» empieza con «Incluir precios en el parte · El parte sigue sin ser una factura». Amplía el #10 | 3-5 | Playwright | `882b-cliente-c07b-albaran-cliente-full.png`, `882b-movil-a01d-tras-elegir.png` |
+| b13 | 🟡 | Panel · presupuesto (390 px) | El botón «Solo disponible tras aceptar el presupu…» se sale de la tarjeta y queda cortado. La línea de pasos marca «Aceptada» en azul con el estado todavía ENVIADO | 1-3 | Playwright | `882b-movil-t01d-detalle-full.png` |
+| b14 | 🟡 | Página de la cliente · «3 opciones» | Cada tarjeta repite el mismo concepto y pone el precio dos veces (en la línea y en el total) | 1-3 | Playwright | `882b-cliente-c01a-cliente-3-opciones.png` |
+| b15 | 🟡 | Página de pago | Lo único que dice qué se paga es «Justificante J-20260916-GXNV»: ni el trabajo ni el presupuesto. El pie dice «Procesado por Stripe» aunque la tarjeta no funcione (b2) | 3-5 | Playwright | `882b-cliente-c03a-pagar.png` |
+| b16 | 🟡 | Configuración → Cobros | A un negocio de España le sale «CLABE interbancaria (México)». Y el texto «El cliente verá este móvil en la página Pagar por Bizum» no se cumple en staging: con el móvil guardado, Bizum no aparece. Por el código es el flag `BIZUM_MANUAL_ENABLED`, que **no se ha leído**: es una deducción | 1 | Playwright + BD | `882b-cliente-c06a-pagar-con-iban-y-bizum.png` |
+| b17 | 🟡 | Hoja «Nuevo albarán» | La línea no tiene rótulos (concepto / cantidad / unidad) y el concepto se ve cortado por el principio («el cuadro eléctrico»). Hay dos cajas de texto, «Añadir texto en el documento» y «Notas del albarán», sin decir cuál ve la cliente | 3-5 | Playwright | `882b-movil-a01d-tras-elegir.png` |
+| b18 | 🟡 | Detalle del albarán | El estado y los botones tienen otro margen izquierdo que el resto de la tarjeta. Tras «Enviar para firmar» no hay confirmación y ese botón sigue siendo el principal. En el trabajo, «1 línea del presupuesto sin entregar» con el albarán ya creado | 3-5 | Playwright | `882b-movil-a04d-tras-enviar-para-firmar.png` |
+
+## 882b.2 · Lo recorrido y sin aspereza
+
+- Modal de «3 opciones» a 390 px: cambio de modo, concepto, tres precios con «qué incluye» y envío (el presupuesto #7 sale con su WhatsApp).
+- Elegir una opción cambia el total y el botón («Firmar y aceptar — Básico (380,00 €)»), y el servidor reescribe el
+  presupuesto a 380 €. El panel dice «Cliente eligió: Básico».
+- Con «100% al aceptar», el enlace de pago sale por WhatsApp **un segundo** después de aceptar (`payment_request_es`, 18:37:25Z).
+- Transferencia: «Copiar IBAN» confirma que se ha copiado.
+- Albarán: crear desde el buscador, emitir y enviar para firmar (200 las tres). En la página de la cliente el lienzo
+  funciona (304×150), pregunta «¿En calidad de qué firma?», explica el tratamiento de datos y confirma «¡Parte firmado!».
+  Los filtros de la lista cuentan bien. El PDF del albarán se descarga (200).
+
+## 882b.3 · NO RECORRIDO (suelo: esto no es «limpio»)
+
+| Tramo | Por qué no |
+| --- | --- |
+| Bizum: «Pagar por Bizum» y «He pagado por Bizum» | No aparece en la página de pago de staging (b16) |
+| Pagar con tarjeta de verdad (Stripe Checkout) | El negocio no tiene Connect: la ruta lo rechaza (b2). Sin cambiar el negocio no hay otra vía |
+| El mensaje de WhatsApp tal como lo ve la cliente | Envío simulado: hay fila en BD, no hay teléfono donde mirarlo |
+| Condiciones 50 % · 50 % | No entraban en los tres tramos pedidos |
+| «Firmar aquí mismo» (albarán en el móvil del técnico) y «Facturar lo entregado» | Se firmó por enlace; «Facturar lo entregado» no aparece (b4) |
+| Qué dicen los PDF por dentro | Se descargaron y solo se contaron sus imágenes; no se renderizaron (el texto va codificado) |
+| El profesional confirmando el cobro de la transferencia | Es del lado del profesional, y ya estaba medido en el #5 del 882 |
+| Escritorio | Todo a 390 px |
+| Técnicos (asignar, su día, su firma) | Esperan a que se active Equipo a mano; el plan no se toca |
+
+## 882b.4 · Errores propios y límites, declarados
+
+- **Un clic que caducó no era un defecto:** busqué el botón «Firmar y aceptar presupuesto» y con tramos cambia de
+  texto al elegir. Con el texto real, pasó.
+- **Mi extracción de texto de los PDF no llegó a correr** (el heredoc de Git Bash se comió las barras de la
+  expresión regular). Por eso del contenido de los PDF no se afirma nada: solo el recuento de imágenes.
+- **Staging se redesplegó a mitad del recorrido** (ver cabecera). Los ficheros que cambiaron no son los de estas pantallas.
+- **Datos que dejé en staging:** cliente Lucía Romero; presupuesto #7 aceptado (Básico) con la firma vacía del b1;
+  justificante J-20260916-GXNV y cobro 894, pendientes; trabajo 3104; albarán AB260001 firmado. En el merchant 2:
+  NIF `B12345674` (CIF de prueba con dígito de control válido), IBAN `ES91 2100 0418 4502 0005 1332` (el del ejemplo
+  del propio campo) y móvil Bizum `+34 611 000 882`. **El plan no se tocó** (sigue en `trial`).
+
+## 882b.5 · Evidencias
+
+`docs/master/evidencias/scrum882/882b-*.png`: 17 capturas de Playwright, todas a 390 px. El conductor es el
+mismo `sonda-playwright.mjs` del 882, con otras rutas de perfil y capturas, y con los tokens de las URL tapados en su registro de errores.
