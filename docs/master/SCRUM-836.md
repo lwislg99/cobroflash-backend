@@ -194,3 +194,214 @@ RESTAURADO byte a byte: ✅ idéntico
 
 * `tests/scrum850-la-poblacion-del-instrumento.test.mjs` — el ancla reanclada SIN la sangría.
 * `tests/scrum836-ancla-de-mutacion-viva.test.mjs` — la red en la tanda que sí bloquea.
+
+---
+
+# APÉNDICE · 15-sep-2026 · SCRUM-836d · El otro extremo de la declaración: el `cae` caducado
+
+**Fecha:** 15-sep-2026 · **Carril:** B (guard) · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `5e0817eb093154075575efdc899f4c55419207ef` · 2026-09-15T15:44:12+01:00
+**Tanda:** 6725 tests, 6615 pass, 0 fail, 0 cancelled · **110 skipped, aparte** · POBLACIÓN 806 ficheros · 260 s · exit 0 — con tope duro, medida DESPUÉS del último cambio.
+
+> **Una mutación que nombra un test que no existe afirma una cobertura que no hay.**
+
+## El defecto, y por qué es la otra mitad del mismo
+
+Una declaración tiene DOS extremos y los dos caducan. La entrega anterior cerró el `de` —el texto
+anclado en el fichero que se muta—. Queda el `cae`: el nombre del test que la mutación debe tumbar.
+Si ese test se renombra, o nunca existió, `meta:mutaciones` **no puede medir la mutación** y sale
+CIEGO exactamente igual — sólo que el guard sigue pareciendo cubierto.
+
+Se reportó como hallazgo de otro carril y **el fundador mandó cerrarlo**: se decide midiendo.
+
+## Los DOS censos, con su población
+
+**Población: 178 mutaciones declaradas en 58 guards.**
+
+| pregunta | qué mide | fallan |
+| --- | --- | --- |
+| **(a)** ¿EXISTE el test que el `cae` nombra? | barato, por AST, sin ejecutar nada | **4** |
+| **(b)** ¿CAE de verdad al aplicar la mutación? | caro: aplicar y correr el guard | **0** ⟵ *ver abajo* |
+
+Las 4 de (a): **3 de `scrum850`** y **1 de `scrum850b`**, las dos mergeadas ese mismo día.
+
+🔴 **Y (b) da 0 sobre esas mismas 4, que es el dato que cambia el diagnóstico:** no eran mutaciones
+sin cobertura. **Las cuatro tumbaban tests de verdad.** Sólo el nombre estaba mal — que es
+precisamente lo que hace este defecto difícil de ver: el fichero parece cubierto y lo está; lo que
+no funciona es el mecanismo que lo comprueba.
+
+### ⚠️ 2 NO EVALUABLES, declaradas y NO acusadas
+
+`scrum785` construye los nombres de sus tests (`` test(`SCRUM-785 · 🔴 ${quien}: …`) ``) y sus dos
+declaraciones **son correctas**. El lector por AST no puede resolver una plantilla, y **no poder
+leer algo no es prueba de que esté mal**: van en su propio cubo. Contarlas como huérfanas sería
+acusar a quien no hizo nada mal — el defecto que SCRUM-757 cerró para el otro lector.
+
+## Cómo se decidió cada `cae` — midiendo, no adivinando
+
+Se aplicó cada mutación y se miró **qué caía**. Con dos cautelas, las dos del encargo:
+
+* **¿ENTRÓ la mutación?** Se comprueba que el fichero CAMBIA tras el `replace`. Una mutación que no
+  entra y una cobertura que no existe dan exactamente la misma salida.
+* **Restauración byte a byte** contra los bytes de DISCO en `finally`, verificada con
+  `Buffer.compare` (SCRUM-570 / SCRUM-808).
+
+| declaración | qué cayó al aplicarla | `cae` nuevo |
+| --- | --- | --- |
+| `scrum850` · tubería | 2 tests | `el detector ve cada forma que se come el código` |
+| `scrum850` · `//comentarios` | 2 tests | `ninguna invocación de la tanda descarta su código de salida` |
+| `scrum850` · comentario `#` | 1 test | `el último tramo y los comentarios NO se marcan` |
+| `scrum850b` · `&` | 1 test | `el censo VE el \`&\` — era el hueco` |
+
+**Ninguna se rellenó con un nombre plausible.** Si alguna no hubiera tumbado nada, el hallazgo
+habría sido que esa mutación no está cubierta, y se habría dicho.
+
+**Confirmado por el camino caro**, que es el que decide: con `aplicarUna` del meta-guard, las cuatro
+pasan de **CIEGAS a VIVAS**.
+
+## 🔴 Lo que este guard NO mira, y va escrito en su cabecera
+
+Sólo contesta **(a)**. La **(b)** exige aplicar cada mutación y correr su guard entero — es lo que
+hace `meta:mutaciones`, cuesta minutos y vive en su propio job; duplicarlo aquí convertiría
+`npm test` en el meta-guard.
+
+Es una **criba barata, no un veredicto de cobertura**. Se dice porque *un instrumento que no declara
+lo que no mira se lee como si lo mirara todo*, y eso convierte una criba en una falsa garantía.
+
+Y el criterio de comparación es **el del meta-guard, no uno propio**: `paso()` usa `includes`, así
+que al `cae` le basta ser **subcadena** del nombre de un test. Comparar por igualdad denunciaría
+declaraciones que el meta-guard acepta — un guard que contradice al que vigila.
+
+## Verificado en rojo
+
+* 🔴 **EL QUE DECIDE** · un `cae` que nombra un test inexistente **cae**, nombrando fichero y
+  declaración, y **acusa a la huérfana, no a la sana** que tiene al lado.
+* 🔴 **MUTACIÓN** · con la comprobación apagada, el mismo banco **no acusa a nadie**: el verde falso
+  vuelve. El rojo depende de la comprobación y no de otra cosa.
+* ✅ **POSITIVO** · las declaraciones sanas siguen pasando, y **basta con UN test** y con una
+  subcadena. Si exigiera que cada mutación tumbase varios, se volvería inservible y lo relajarían.
+* ⚠️ **NO EVALUABLE** · un guard con nombres construidos no se acusa **y tampoco se calla**: queda
+  declarado aparte.
+* **SUELO** · el censo exige ≥54 declaraciones (el suelo del propio meta-guard) antes de dar
+  veredicto. Cero huérfanas sobre cero declaraciones es ceguera, no salud.
+
+## Lo que NO cubre
+
+* **(b) sigue sin estar en la tanda**, a propósito y con su motivo. Un `cae` vivo no prueba que el
+  test caiga.
+* **No se toca `scrum785`**: sus declaraciones son correctas y el problema es del lector.
+* La **fase ②** del ticket (el meta-guard como check obligatorio) **sigue en la mesa del fundador**,
+  intacta. Y la propuesta de anclar `scrum716` por identidad sigue **propuesta, no aplicada**.
+
+## Ficheros
+
+* `tests/scrum836-ancla-de-mutacion-viva.test.mjs` — `nombresDeTest` y `caesHuerfanos`, con sus
+  cinco controles.
+* `tests/scrum850-la-poblacion-del-instrumento.test.mjs` — los tres `cae`, medidos.
+* `tests/scrum850b-las-formas-que-mienten.test.mjs` — el cuarto.
+
+---
+
+# SCRUM-836e · La línea de FORMATO de `shaLegible`, vigilada otra vez: la ③b de `scrum716`
+
+**Medido contra:** `origin/main` = `38fc6815b7678650c1e96995500b72a8b5705c7c` · 2026-09-15T15:09:33Z
+**Rama:** `scrum-836e-la-linea-de-formato` · **Carril:** `tests/` (Sesión 3) · **Decisión:** del orquestador, 15-sep-2026, opción (b)
+
+> Re-anclar por UNA de las dos líneas en que se partió un filtro cura el ciego y deja la otra sin
+> nadie que la tumbe. El meta-guard no puede verlo: no hay ancla caducada que acusar, hay una
+> ausencia.
+
+⏱ Las horas de esta sección son **de GitHub**: el reloj de esta máquina va 334 s adelantado
+(medido el 15-sep-2026 contra la cabecera `Date:` de la API).
+
+## 0 · Por qué `836e`
+
+El encargo decía `scrum-836b-<slug>`. Los sufijos, medidos contra los PR en cualquier estado el
+15-sep-2026:
+
+| sufijo | de quién |
+|---|---|
+| `836b` | `scrum-836b-filtro-de-rama-escrito` — PR #1216 |
+| `836c` | `scrum-836c-canon-sesion-5` — PR #1218 y #1219 |
+| `836d` | `scrum-836d-el-cae-caducado` — PR #1294, el apéndice de **justo encima** |
+
+Los tres están citados en este mismo fichero. `836d` estaba **libre** cuando se comprobó por primera
+vez: el #1294 se abrió a las 14:52Z del 15-sep-2026, con esta rama todavía en local. Por eso se
+volvió a mirar antes de empujar, y por eso `836e`.
+
+## 1 · El hueco, con el lector oficial del meta-guard
+
+| | `origin/main` | esta rama |
+|---|---|---|
+| declaraciones legibles de `scrum716` | 7 | **8** |
+| cojas | 0 | 0 |
+| declaraciones que apagan la línea del **reloj** | 1 | 1 — la ③ de main, intacta byte a byte |
+| declaraciones que apagan la línea de **formato** (`if (!ES_SHA.test(s)) return null;`) | **0** | **1** — la ③b |
+
+Antes de SCRUM-824b el ancla de la ③ apagaba el filtro **entero**. `faebb1e6` la re-ancló sólo por
+el reloj, y su propio comentario lo dice: «no el filtro de formato (`ES_SHA`) que sigue vivo». Vivo
+en el código y **sin vigilar**. El «②bis» de la primera entrada —las siete declaraciones de
+`scrum716` tumban su guard— es cierto y lo sigue siendo: lo que faltaba era la octava.
+
+La propuesta de anclar a la identidad de `shaLegible` cubriría las dos líneas a la vez. La ③b no la
+impide: si algún día se adopta, la ③ y la ③b se funden en ella.
+
+## 2 · EN ROJO, y la entrada que lo tumba
+
+Con la mutación puesta, contra el test que declara («una lectura ilegible da NO SE SABE, no un
+veredicto a medias»), anotando **con qué entrada** cae:
+
+| mutación | ¿cae? | entrada que lo tumba |
+|---|---|---|
+| **③b** · formato → `if (false) return null;` | 🔴 **VIVA** | `""` — la cadena vacía |
+| ③ de main · reloj (control) | 🔴 VIVA | `1788742571305` — el epoch de `env.ts` |
+
+Pasada limpia antes y después: 17/17. Fichero restaurado y verificado **byte a byte**, con copia de
+los bytes fuera del worktree y sin `git stash` (A15).
+
+**La entrada es lo que prueba que la ③b mira SU línea.** Si cayera por el epoch, estaría repitiendo
+el rojo de la ③. Medido **tres veces**, una por cada `main` mezclado (`8b9b0d9b`, `f5720e41`,
+`38fc6815`), y la última sobre el árbol final: el mismo resultado las tres.
+
+## 3 · Verificación
+
+| | |
+|---|---|
+| lector oficial | 7 → **8** declaraciones, 0 cojas, el ancla de la ③b presente **una** vez |
+| `scrum716` · `745` · `753` · `737` · `810b` · `836` · `267` · `711` · `850` · `850b` | **109/109** |
+| `guards:entrada` | **22/22** |
+| `meta-guard --solo-censo` | 58 guards · **179** declaraciones |
+| **meta-guard entero** · base `f5720e41` | **`vivas 175 · mudas 0 · ciegas 4 · ficheros muertos 0`** — la ③ y la ③b, las dos **VIVAS** · 16:44:30 → 17:02:07 |
+| tanda completa | **6748 tests · 6638 pass · 0 fail · 0 cancelled** · 110 skipped, aparte · 231 s · exit 0 — con esta sección ya dentro · 15:10:17Z → 15:14:29Z |
+
+**El número se predijo antes de correrlo**, y por eso vale como control: CI sobre `f5720e41` (run
+`34982320622`) dio `vivas 174 · mudas 0 · ciegas 4`, 178 declaraciones, y la rama añade una. Salió
+exactamente `vivas 175 · mudas 0 · ciegas 4`, y los cuatro ciegos eran **los mismos** de `main`.
+
+## 4 · Los 4 ciegos de esa pasada ya no están en `main`
+
+Eran `scrum850` ×3 y `scrum850b` ×1, y el orquestador los dejó en el carril de Javier. **Los cerró
+el #1294** (el apéndice de encima) corrigiendo sus `cae`, y entró en `main` mientras la pasada local
+corría. Esta rama no los ha tocado.
+
+No se repitió la pasada entera sobre `38fc6815`, y se dice: **la población no ha cambiado** —179
+declaraciones en los dos árboles, medido con `--solo-censo`— y lo único que cambió en ellas son esos
+cuatro `cae`. Lo que se espera del job del meta-guard en el PR es, por tanto,
+**`vivas 179 · mudas 0 · ciegas 0`**. Un número distinto diría que algo no es lo que se cree.
+
+## 5 · La historia de la rama, sin reescribir nada empujado
+
+La rama nació como `scrum-836-el-ancla-de-scrum716`, partiendo la ③ en ③a + ③b. Antes de empujarla
+entró en `main` el #1212 con `faebb1e6`, que es la ③a. Decisión (b): **merge** de `main` dentro
+—nunca rebase—, quedándose con la ③ de main y añadiendo sólo la ③b.
+
+Se renombró **dos veces** antes de su primer push (`836b` → `836d` → `836e`), y su historia local se
+rehízo con `git commit-tree` para que ningún commit llevara un sufijo ajeno: **mismos padres**, y
+árboles que sólo difieren en la etiqueta del comentario de la ③b, comprobado commit a commit. Nada
+de eso había llegado al remoto.
+
+## ⛔ No tocado
+
+`scripts/_ritmo-de-despliegue.mjs` · `scripts/meta-guard-mutaciones.mjs` · la ③ de main (idéntica
+byte a byte) y las otras seis declaraciones de `scrum716` · `scrum850` y `scrum850b` · ninguna rama
+`claude/*` · ningún stash.

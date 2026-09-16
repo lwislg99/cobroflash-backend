@@ -132,7 +132,7 @@ cierta para su base.
 
 # Segunda vuelta · GO del fundador a los cuatro guards parados
 
-**Medido contra:** `origin/main` = `7bdb3a90` (ya mergeado en la rama) · 2026-09-02T17:10:00+02:00
+**Medido contra:** `origin/main` = `7bdb3a9012fd5f53dc5f2f44f4939b20964397b0` (ya mergeado en la rama) · 2026-09-02T17:10:00+02:00
 **Commit previo a inyectar rojos:** `55406151bb0672ca73e2aba4bff4e85910de7437`
 
 **Suite VERDE ENTERA: 4495 tests · 4416 pass · 0 fail · 79 skipped · `exit 0`.**

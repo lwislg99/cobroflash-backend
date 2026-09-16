@@ -1260,3 +1260,275 @@ el grafo marcada como excluida —lo conservador— y se reporta aparte.
 * `tests/_condiciones-vs-emisor.mjs` — el censo de los dos lados (helper).
 * `tests/scrum600e-condiciones-contra-el-emisor.test.mjs` — 10 casos: 3 de suelo, el control que
   decide, la medición del reparto, 3 rojos, el negativo apuntado y el positivo del presupuesto.
+
+---
+
+# APÉNDICE · 15-sep-2026 · SCRUM-600f · PASO 0 Y PLAN DE CIERRE — sin código
+
+**Medido contra:** `origin/main` = `9070f3d780938b6b1f53cf6afbeb55f71221229b` · 2026-09-15T16:16:21+02:00
+
+**Alcance:** sólo PASO 0 y plan de ficheros, por encargo. **Ni una línea de `public/`, `src/` ni
+`prisma/`.** Se para aquí hasta que el orquestador lo vea.
+
+> ⚠️ **Jira estaba desconectado** durante esta medición: ni se leyó el ticket ni se pasó a «En
+> curso» (A13). La premisa se contrasta contra este registro y **contra el DOM**, no contra Jira.
+
+Instrumento: `docs/master/evidencias/SCRUM-600f/censo-600-paso0.mjs` (monta las pantallas con el
+banco de vistas de `main`; se ejecuta desde la raíz con `node docs/master/evidencias/SCRUM-600f/censo-600-paso0.mjs`).
+
+---
+
+## ① ¿LA PREMISA SIGUE SIENDO VERDAD HOY? — medido en el DOM, con suelo
+
+El ticket dice: *«Nueva factura» abre un modal estrecho sin vista previa, sin condiciones, sin
+envío y sin plantillas.* Montando las pantallas **con el presupuesto como control** (que sí tiene
+Condiciones y Envío, así que un 0 en factura es ausencia real y no ceguera):
+
+| afirmación del ticket | medido hoy | veredicto |
+| --- | --- | --- |
+| «Nueva factura» abre **un modal estrecho** | el botón llama `renderAppView("invoices-new")` → `renderDocumentoSueltoView`: **página de 157 nodos, 0 `modal-overlay`**. `openNuevaFacturaModal` no tiene NINGÚN llamador en `public/` | ❌ **FALSO** |
+| **sin vista previa** | «Vista previa del documento» presente en factura y en justificante | ❌ **FALSO** |
+| **sin condiciones** | bloque «3. Condiciones»: **0** en factura · 1 en presupuesto *(se cuenta el título del bloque; un primer censo que buscaba sólo «Condiciones» contaba 3 y metía otras apariciones — se corrigió para que el número sea el que reproduce el instrumento subido)* | ✅ **CIERTO** |
+| **sin envío** | bloque «4. Envío»: **0** en la página · 1 en presupuesto. El envío real llega por la **ficha** tras emitir (600d) | ✅ **CIERTO en la página** · cubierto fuera de ella |
+| **sin plantillas** | **con plantillas guardadas**, la factura pinta la tira de fichas rápidas **igual que el presupuesto de control** («Empieza con una plantilla» + fichas). Pero «📋 Ver las N» y «💾 Guardar como plantilla» están cortados por `esDocumentoSuelto` | ⚠️ **FALSO A MEDIAS**: se USAN las 3 primeras; no se llega a la 4ª ni se GUARDA |
+
+🔴 **Una sospecha propia que la medición tumbó:** leyendo `renderPreview()` parecía que el pie
+*«Presupuesto válido durante 30 días…»* (`quotesView.js:2515`) no tenía puerta y se colaría en la
+factura. **Montado: 0 nodos `.preview-footer` en factura, 1 en presupuesto, y 0 «Presupuesto» en
+toda la página de factura.** No ocurre. Se deja escrito porque el primer censo (sin plantillas)
+también parecía decir «sin plantillas» y **estaba ciego**: la tira sólo se pinta si hay plantillas,
+y el banco no las servía.
+
+**Límites del instrumento, declarados:** el mini-DOM no agrega el texto de los `span` hijos de un
+botón (las fichas salen «»), y el serializador no conserva el `value` de los inputs, así que no
+confirma el contenido de la línea cargada. En los dos casos **factura y control dan idéntico**, que
+es lo que sostiene la equivalencia.
+
+---
+
+## ② ¿QUIÉN MÁS TOCA ESOS FICHEROS AHORA?
+
+Ficheros vigilados: las vistas de factura y de presupuesto, `cuerpoDelDocumentoSuelto`,
+`facturaPreEmision`, `invoiceAccion`, `textoDelDocumento`, `rotulosDelDocumento`, `app.js`,
+`index.html`, `sw.js`, `styles.css`, el banco, los instrumentos de 600, y del servidor
+`modules/invoicing`, `invoicesAdmin.routes.ts` e `invoiceAdmin.ts`.
+
+| fuente | resultado |
+| --- | --- |
+| commits en `main`, últimas 48 h | **2**: `62b41e5d` SCRUM-848b (Javier · `tests/_banco-vistas.mjs`) y `818d32b6` SCRUM-707 (`invoiceDetailView.js`) |
+| PR mergeados hoy | **43** merges (44 commits de Javier, 11 de Luis). Tocan estos ficheros sólo **#1252** (848b, el banco) y **#1190** (707) |
+| PR abiertos | **ninguno** toca estos ficheros |
+| ramas sin mergear | casi todas de jul–ago. 🔴 **`scrum-820b-una-sola-forma`** (`ca50c08d`, 8-sep, **sin PR ni worktree**) toca `quotesView.js` en `openQuoteModal` (~l.260 y 302), **la zona de «4. Envío»** (~l.1671–1694) y el constructor de líneas (~l.4409) |
+
+**Consecuencia para el plan:** la Fase 1 de abajo toca `quotesView.js` en l.1291, 1634, 3972 y
+4040 — **ninguna se solapa con 820b**. Pero **«4. Envío» NO se abre en este ticket**, y también
+por eso: hay trabajo vivo sin mergear justo ahí.
+
+---
+
+## ③ QUÉ SE REUTILIZA TAL CUAL, Y QUÉ NO
+
+Las puertas de hoy son TODAS `if (!esDocumentoSuelto)` (`quotesView.js:55`):
+
+| pieza del presupuesto | puerta | ¿se reutiliza en la factura? | por qué |
+| --- | --- | --- | --- |
+| cliente, líneas, IA, cuerpo, vista previa | — | ✅ **ya se reutiliza** | 600 / 600b |
+| envío (WhatsApp, email, PDF) | — | ✅ **ya se llega** por la ficha tras emitir | 600d — sin texto nuevo |
+| «📋 Usar plantilla» / «Ver las N» | l.1291 | ✅ **TAL CUAL, salvo UNA frase** | llama a `/admin/templates`, no a emisión; la hoja dice «…en el presupuesto actual» (l.3972) |
+| «💾 Guardar como plantilla» | l.1634 | ✅ **TAL CUAL, salvo UNA frase** | `POST /admin/templates`, no emisión; la hoja dice «…en futuros presupuestos» (l.4040) |
+| fichas rápidas de plantillas | — (sin puerta) | ✅ **ya salen** | medido arriba |
+| «3. Condiciones» | l.421 | ❌ **NO** | 600e: 3 🔴 sin columna en `Invoice`, y `validUntil` no es una caducidad sino un `dueDate` que arrastra los recordatorios de 7 y 14 días |
+| «4. Envío» (datos del cliente, textos libres) | l.429 | ❌ **NO** | sus campos (`docFields`, `docHeaderText`, `docFooterText`) no existen en `Invoice` — y 820b vive ahí |
+| dirección de obra · descuento global | l.521/539 · l.1471 | ❌ **NO** | la columna existe pero **escribirla es tocar `emitInvoice`** → **STOP, regla 38** |
+| modo de IVA del documento | l.618 | ❌ **NO** | `ivaModo` no existe en `Invoice` → esquema |
+| propuesta · borrador | l.1518 · l.1921/1976 | ❌ **NO** | el borrador es UNO por merchant y machacaría el presupuesto a medias (ya cortado en el mecanismo) |
+
+**Lo único construible sin esquema y sin tocar la emisión son las plantillas**, y lo único que las
+bloquea son **dos frases**.
+
+---
+
+## PLAN DE FICHEROS · FASE 1 — sólo si se firman los literales
+
+| fichero | cambio | líneas |
+| --- | --- | --- |
+| `public/dashboard/js/quotesView.js` | quitar la puerta de «📋 Usar plantilla» y de «💾 Guardar como plantilla» | l.1291 · l.1634 |
+| `public/dashboard/js/quotesView.js` | las dos frases de las hojas se leen de `rotulosDelDocumento` **sólo cuando `esDocumentoSuelto`**; el literal del presupuesto NO se toca | l.3972 · l.4040 |
+| `public/dashboard/js/rotulosDelDocumento.js` | **dos entradas nuevas**, con el literal firmado (fuente única, SCRUM-776) | — |
+| un test nuevo en la tanda *(nombre al construirlo: una constancia no escribe la ruta de un fichero que aún no existe — SCRUM-391)* | monta la factura CON plantillas (`apiRequest` ya recibe la ruta, SCRUM-848): ① los dos botones existen · ② con más de 3 se llega a «Ver las N» · ③ las hojas no dicen «presupuesto» · ④ **negativo**: «3. Condiciones» y «4. Envío» siguen fuera · ⑤ **regla 38 por mecanismo**: guardar sólo llama a `/admin/templates` y **nunca** a `/admin/invoices`. Todos probados en rojo | — |
+| `docs/master/SCRUM-600.md` | apéndice 600g con la verificación | — |
+
+**No se toca:** `cuerpoDelDocumentoSuelto.js`, `validarFacturaSuelta` (`facturaSuelta.ts:101`), el
+`POST /admin/invoices` (`quotesView.js:4310`), `invoicesAdmin.routes.ts`, `prisma/schema.prisma`,
+los bloques 3 y 4, ni `nuevaFacturaModal.js`.
+
+⚠️ **Una comprobación que va ANTES de la primera línea de la Fase 1:** que las líneas que guarda la
+hoja desde una factura tengan la **misma forma** que `POST /admin/templates` espera de un
+presupuesto. Si difieren, adaptarlas en el front es legítimo; si obliga a tocar la ruta, se para.
+
+---
+
+## 🛑 MICROCOPY — propuesta LITERAL, y se PARA (regla 30)
+
+Dos frases. Todo lo demás de las plantillas ya es neutro y se reutiliza tal cual («Empieza con una
+plantilla», «Añadir las N líneas de "X"», «Plantilla "X" cargada — N líneas añadidas.», «Escribe un
+nombre para la plantilla.», «Guardar plantilla»).
+
+**P1 · hoja «Usar plantilla»** — hoy: *«Elige una plantilla para cargar sus líneas en el
+presupuesto actual.»*
+
+* factura: **«Elige una plantilla para cargar sus líneas en la factura.»**
+* justificante: **«Elige una plantilla para cargar sus líneas en el justificante.»**
+
+**P2 · hoja «Guardar como plantilla»** — hoy: *«Dale un nombre a esta plantilla para reutilizarla
+en futuros presupuestos.»*
+
+* factura: **«Dale un nombre a esta plantilla para reutilizarla en otras facturas.»**
+* justificante: **«Dale un nombre a esta plantilla para reutilizarla en otros justificantes.»**
+
+> Una plantilla guarda **líneas** y sirve igual para presupuestos que para facturas. Si se prefiere
+> no atar la frase al tipo, la alternativa neutra para las dos es: **«Dale un nombre a esta
+> plantilla para reutilizar sus líneas más adelante.»**
+
+⚠️ La variante «justificante» sólo tiene sentido mientras exista el documento: **SCRUM-825**
+(retirada de JUST) sigue parado. Si se retira, sobra.
+
+---
+
+## FUERA DE SCRUM-600 — cada uno a su ticket, con su puerta
+
+| hueco | por qué no entra aquí | puerta |
+| --- | --- | --- |
+| **«3. Condiciones»** (`paymentTerms`, `customBillingPlan`, vencimiento) | producto antes que esquema: ¿qué es una condición de pago en un documento que nace emitido? `validUntil` sería un `dueDate` y arrastra los recordatorios 7/14 | fundador + ALTER |
+| **dirección de obra · descuento global** | columna existente, pero escribirla es tocar `emitInvoice` | **STOP regla 38** con el diff delante |
+| **los 8 campos del grupo C** | no existen en `Invoice` | fundador + ALTER |
+| **`nuevaFacturaModal.js`, muerto y servido** | se sigue cargando (`index.html:301`) y precacheando (`sw.js:85`), pero de él dependen `guard:caja-documento-suelto`, la población del banco y **6 tests** (289b, 350, 600, 600b —que exige que siga publicado—, 601, 713). No es borrar un `<script>` | ticket aparte |
+| comentarios caducados del índice | `index.html:288` y `:297` siguen diciendo que el modal «llama» a cosas | con el ticket anterior |
+
+---
+
+## DECISIONES QUE SE PIDEN
+
+1. **Firmar P1 y P2** (o dar otro literal). Sin firma, la Fase 1 no empieza.
+2. **Criterio de cierre:** ¿se cierra SCRUM-600 al entrar la Fase 1, con los cuatro huecos de la
+   tabla anterior como tickets propios? DOC-10 decía *«la factura usa el front del presupuesto»*:
+   con la Fase 1, todo lo que de ese front **cabe** en una factura ya lo usa; lo que falta no es
+   «usar el front», son **datos que la factura no tiene**.
+3. **Variante justificante:** ¿se escribe, o se omite a la espera de SCRUM-825?
+
+---
+
+## LO QUE ESTE APÉNDICE NO HA HECHO
+
+* **Ni una línea de producto.** El aporte sobre `main` es este texto y el instrumento de evidencia.
+* **Ningún rótulo** nuevo, movido ni renombrado: P1 y P2 son **propuesta**, no están en el árbol.
+* **No se tocó `scrum-820b`**, ni «4. Envío», ni el modal muerto.
+* **Cero producción y cero staging.**
+
+---
+
+# APÉNDICE · 15-sep-2026 · SCRUM-600g · FASE 1 — LAS PLANTILLAS LLEGAN AL DOCUMENTO SUELTO
+
+**Medido contra:** `origin/main` = `c22b859568c8661bdf92cf6dcede40a1414b8759` · 2026-09-15T18:12:06+02:00
+**Rama:** `scrum-600g-plantillas-en-factura`, partida de ese `main`, con SCRUM-861 ya dentro (comprobado
+por contenido, no por Jira).
+**Cierra SCRUM-600**: decisión del fundador, se cierra cuando entre la Fase 1.
+
+## 0 · El nombre de la rama, y por qué no es `600b`
+
+El encargo decía `scrum-600b-<slug>`. **`600b` ya está usado**: es el #1158
+(`scrum-600b-la-factura-usa-el-front`, MERGED), con su propio test,
+`tests/scrum600b-la-factura-usa-el-front.test.mjs`. Reutilizarlo pondría dos trabajos distintos bajo el
+mismo identificador. El plan de 600f ya llamaba a esto «apéndice 600g», y `600g` estaba libre: ni
+rama, ni PR, ni fichero.
+
+## 1 · PASO 0 — el defecto seguía ahí
+
+Sobre `c22b8595`: puertas `if (!esDocumentoSuelto)` en `quotesView.js` l.1291 (`useTemplateBtn`) y
+l.1634 (`saveTemplateBtn`); las dos hojas nombraban el presupuesto (l.3972 y l.4040). Ningún PR
+abierto tocaba `quotesView.js` ni `rotulosDelDocumento.js`.
+
+**La comprobación que el plan pedía antes de la primera línea:** `POST /admin/templates` sólo exige
+`name` y un `lines` no vacío (`templates.routes.ts`), y el constructor de líneas es el mismo en los
+dos modos (`vatInput` no tiene puerta). No se queda en lectura: es una aserción del ⑤, donde el
+cuerpo guardado desde la factura tiene que ser **idéntico** al del presupuesto.
+
+## 2 · El cambio
+
+| fichero | cambio |
+| --- | --- |
+| `public/dashboard/js/quotesView.js` | fuera las dos puertas; las dos hojas leen `rotulosDelDocumento.hojaUsarPlantilla()` y `hojaGuardarPlantilla()` **sólo** con `esDocumentoSuelto`. El literal del presupuesto no se toca |
+| `public/dashboard/js/rotulosDelDocumento.js` | dos entradas **sin ternario**: neutras, sin variante justificante (SCRUM-825 lo retira) |
+| `docs/microcopy/2026-09-15-SCRUM-600-plantillas-en-el-documento-suelto.md` | la ficha, con la firma delegada que cita `SCRUM-600 comentario 15357`. Es la **primera** que usa SCRUM-861 |
+| `tests/scrum600b-la-factura-usa-el-front.test.mjs` | deja de exigir que los dos botones NO estén: esa exigencia **era** la parada |
+| `tests/_censo-dos-fronts.mjs` | el ancla F11 sigue a su línea |
+
+**«Sólo en modo factura», leído como «sólo en el documento suelto».** La página del documento suelto
+sirve a la factura y al justificante con el mismo código. Con dos frases neutras, la misma vale en
+los dos modos y no hay variante que escribir. El presupuesto conserva las suyas.
+
+## 3 · La verificación
+
+`tests/scrum600g-plantillas-en-el-documento-suelto.test.mjs` monta la pantalla en el banco y **pulsa**:
+
+| | qué exige |
+| --- | --- |
+| ⓪ | las dos frases constan aprobadas, con firmante `orquestador` y la referencia `SCRUM-600 comentario 15357` |
+| ① | en el documento suelto están los dos botones, y con cuatro plantillas se llega a «📋 Ver las 4» |
+| ② ③ | cada hoja dice su frase firmada, por identidad, y no dice «presupuesto» |
+| ④ | **NEGATIVO:** «3. Condiciones» y «4. Envío» siguen fuera, en factura y en justificante (suelo: en el presupuesto están) |
+| ⑤ | **REGLA 38 por mecanismo:** guardar hace un único POST a `/admin/templates` y **ninguna** petición a `/admin/invoices`, con el mismo cuerpo que desde el presupuesto. **Control positivo** en el mismo banco: emitir sí llega a `/admin/invoices` |
+| ⑥ | el presupuesto no cambia: sus dos hojas siguen con su frase. Es también el suelo del lector de hojas |
+| ⑦ | en modo justificante, las mismas dos frases |
+| ⑧ | fuente única: ninguna de las dos frases está escrita a pelo en la vista (suelo: el lector sí ve los literales del presupuesto), y la fuente las devuelve en los dos modos |
+
+**En rojo antes del cambio**, contra `c22b8595` y con la ficha ya escrita: caen **①②③⑤⑦⑧**, y
+pasan ⓪ (la ficha), ④ (el negativo) y ⑥ (el presupuesto). En el ⑤, el control positivo pasó antes de
+caer por falta de botón.
+**Después del cambio:** 9/9. Vecinos —24 ficheros: 600, 600b, 600d, 600e, 601, 776, 139, 514, 726,
+861, 836, 710b, 838, 824, 402, 632, colisión de declaraciones, 846* y 850*—: **175/175**.
+
+### Los once rojos, vistos caer
+
+Instrumento: `docs/master/evidencias/SCRUM-600g/rojos-600g.mjs`, sobre la feature ya comiteada
+(`b3fd0996`). Cada ancla se comprueba **única** antes de mutar, y después de cada mutación se
+restauran los tres ficheros **byte a byte** (`Buffer.compare`).
+
+| rojo | mutación | qué cayó |
+| --- | --- | --- |
+| a | vuelve la puerta de «📋 Usar plantilla» | **①** · ② · ⑦ |
+| b | vuelve la puerta de «💾 Guardar como plantilla» | **①** · ③ · ⑤ · ⑦ |
+| c | la hoja «Usar» dice la frase del presupuesto también en la factura | **②** · ⑦ |
+| d | la hoja «Guardar», ídem | **③** · ⑦ |
+| e | guardar la plantilla llama a `/admin/invoices` | **⑤** |
+| f | «3. Condiciones» se cuela en el documento suelto | **④** |
+| g | «4. Envío» se cuela en el documento suelto | **④** |
+| h | el presupuesto dice la frase del documento suelto | **⑥** |
+| i | aparece una variante justificante sin firmar | **⑦** · ⑧ |
+| j | la frase se escribe a pelo en la vista | **⑧** |
+| k | la firma delegada pierde la referencia al comentario de Jira | **⓪** |
+
+Tras los once: ficheros restaurados byte a byte y `scrum600g` en verde.
+
+## 4 · Lo que NO se ha tocado
+
+* **La zona «4. Envío»** (trabajo vivo en `scrum-820b`): los cuatro cambios de `quotesView.js` están en
+  l.1284, 1626, 3972 y 4040.
+* **La emisión:** el `POST /admin/invoices` de la vista, `cuerpoDelDocumentoSuelto.js`,
+  `validarFacturaSuelta`, `invoicesAdmin.routes.ts`, `prisma/schema.prisma`. Tampoco
+  `nuevaFacturaModal.js`.
+* **Guards de navegador:** ninguno monta esta página. `objetivo-tactil` sólo mide el editor de
+  presupuesto, y `caja-documento-suelto` mide el modal viejo.
+* **Cero producción y cero staging.**
+
+## 5 · Lo que queda fuera de SCRUM-600
+
+«3. Condiciones», dirección de obra y descuento global (STOP, regla 38), los 8 campos del grupo C y
+el `nuevaFacturaModal.js` muerto, tal como los describe el apéndice 600f. **No abren ticket salvo
+víctima hoy** (regla 37).
+
+## Tests que introduce esta entrada
+
+* `tests/scrum600g-plantillas-en-el-documento-suelto.test.mjs` — ⓪ a ⑧.
+* `tests/scrum600b-la-factura-usa-el-front.test.mjs` — **modificado**: «Guardar como plantilla» y
+  «Usar plantilla» salen de la lista de lo que NO debe estar en el documento suelto.

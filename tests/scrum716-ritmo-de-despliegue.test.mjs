@@ -360,6 +360,19 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
   },
   {
+    // ③b El filtro de FORMATO, apagado: lo que ni siquiera tiene forma de sha pasaría por lectura.
+    // 🔴 SCRUM-836e · La ③ de arriba apaga sólo la línea del reloj y deja ésta viva en el código,
+    // pero SIN VIGILAR: el ancla de antes de SCRUM-824b cubría el filtro entero, y al re-anclarla
+    // sólo por el reloj la línea de formato se quedó sin nadie que la tumbe.
+    // Testigo medido el 15-sep-2026: la cadena vacía del mismo test, NO el epoch. Con esta mutación
+    // la línea del reloj sigue en pie y el epoch lo sigue parando; si el rojo saliera por el epoch,
+    // esta declaración estaría mirando la línea de la ③ y no la suya.
+    fichero: 'scripts/_ritmo-de-despliegue.mjs',
+    de: '  if (!ES_SHA.test(s)) return null;',
+    a: '  if (false) return null;',
+    cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
+  },
+  {
     // ④ El 6-sep vuelve a pasar: el retraso que se cierra solo se pone otra vez en rojo.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
     de: "      salida: SALIDA_OK, califica: true,\n      titulo: 'RETRASADO, PERO DESPLEGANDO',",
