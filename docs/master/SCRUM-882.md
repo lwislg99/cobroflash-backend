@@ -1,7 +1,8 @@
 # SCRUM-882 · El recorrido del electricista: lo que no está pulido, medido en staging
 
-**Medido contra:** staging `https://yaqu-staging-production.up.railway.app` sirviendo `4b0d5739bc19e7bad5109a32822ef7039d9ca860` (`/version`) · recorrido 2026-09-16T13:36Z → 14:06Z
-**Rama:** `scrum-882-recorrido-del-electricista` · `origin/main` al redactar = `7fad98579f2fec757313562b4ab198216ebf15f9` · 2026-09-16T14:06:06Z
+**Medido contra:** `origin/main` = `7fad98579f2fec757313562b4ab198216ebf15f9` · 2026-09-16T14:06:06Z (al redactar)
+**Staging recorrido:** `https://yaqu-staging-production.up.railway.app` sirviendo `4b0d5739bc19e7bad5109a32822ef7039d9ca860` (`/version`) · recorrido 2026-09-16T13:36Z → 14:06Z
+**Rama:** `scrum-882-recorrido-del-electricista`
 **Carril:** producto (Sesión 0) · **Gate:** sin gate · **NO se arregla nada en este ticket.**
 
 ⏱ Horas **de GitHub** (cabecera `Date:` de `gh api -i zen`), no del reloj local.
