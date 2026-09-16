@@ -31,7 +31,10 @@ import { createRequire } from 'node:module';
 import {
   analizar, coordenadasDe, veredictoDe, identidad, ficherosDe, dosCifras, POBLACION,
 } from '../scripts/_anclas-con-testigo.mjs';
-import { PARES_SIN_TESTIGO_CONGELADOS } from '../scripts/_anclas-sin-testigo.congelado.mjs';
+import { PARES_SIN_TESTIGO_CONGELADOS, TESTIGOS_PUESTOS } from '../scripts/_anclas-sin-testigo.congelado.mjs';
+
+/** `documento # ruta # testigo`. La identidad de un testigo es el SÍMBOLO, nunca su línea. */
+const triples = (c) => (c.testigo || []).map((t) => `${c.doc} # ${c.ruta} # ${t}`);
 
 /** El par documento↔fichero citado. SIN la línea: es la lección de SCRUM-710b, que tumbó la
  *  primera versión de este guard por congelar identidades con la posición dentro. */
@@ -206,6 +209,61 @@ test('SCRUM-525d · 🔴 TRINQUETE: ninguna coordenada NUEVA sin testigo', () =>
     for (const p of muertos.slice(0, 8)) console.log(`        · ${p}`);
   }
   console.log(`    · ✅ 0 pares nuevos sin testigo · congelados ${PARES_SIN_TESTIGO_CONGELADOS.size}`);
+});
+
+// ═══ ⑥bis TRINQUETE DE COBERTURA — un testigo puesto NO se puede quitar ════════════════════
+//
+// 🔴 ESTA ES LA MITAD QUE FALTABA, y la señaló el fundador leyendo la entrega. El trinquete de
+// arriba impide que la deuda suba; éste impide que la cobertura BAJE. Sin él, la forma barata de
+// apagar un rojo de «esta ancla no apunta a lo que dice» es BORRAR EL TESTIGO: el ancla deja de
+// ser comprobable, el guard calla, y el documento queda peor que antes con mejor cara.
+//
+// Y no es un trinquete de PROPORCIÓN, es de IDENTIDAD, que es más fuerte: una proporción se
+// mantiene quitando un testigo aquí y poniendo otro allá, y eso no es lo mismo.
+test('SCRUM-525d · 🔴 TRINQUETE DE COBERTURA: un testigo puesto no se quita', () => {
+  const vivos = new Set(R.juzgadas.flatMap(triples));
+  assert.ok(vivos.size > 0, '🔴 CIEGO: no veo ni un testigo vivo. El extractor está roto.');
+
+  const desaparecidos = [...TESTIGOS_PUESTOS].filter((t) => !vivos.has(t));
+  if (desaparecidos.length) {
+    assert.fail(
+      `\n🔴 ${desaparecidos.length} testigo(s) que estaban puestos han DESAPARECIDO:\n\n`
+      + `${desaparecidos.map((t) => `    · ${t}`).join('\n')}\n\n`
+      + '  Un testigo que se quita deja su ancla sin poder comprobarse: seguirá resolviendo, y\n'
+      + '  nadie volverá a saber si apunta a lo que dice. Ese es el defecto entero de este ticket.\n\n'
+      + '  ① Si el símbolo se RENOMBRÓ, pon el nombre nuevo en la cita y actualiza la línea de\n'
+      + '     `scripts/_anclas-sin-testigo.congelado.mjs` en este mismo commit: es un cambio de\n'
+      + '     nombre, no una pérdida de cobertura.\n'
+      + '  ② Si la afirmación desapareció, quita también su línea de ese fichero, y dilo en el\n'
+      + '     mensaje del commit.\n\n'
+      + '  ⛔ Lo que NO vale es quitar el testigo para que el guard calle: sería arreglar el guard\n'
+      + '     en vez del código, que es la regla 41 del máster (`docs/YAQU_MASTER.md`) al revés.\n',
+    );
+  }
+  const nuevos = [...vivos].filter((t) => !TESTIGOS_PUESTOS.has(t));
+  if (nuevos.length) {
+    console.log(`    · ✅ la cobertura SUBIÓ en ${nuevos.length}: añade estas líneas a `
+      + '`scripts/_anclas-sin-testigo.congelado.mjs` en este mismo commit — sólo crece, y así '
+      + 'ya no se pueden quitar.');
+    for (const t of nuevos.slice(0, 8)) console.log(`        · ${t}`);
+  }
+  // 🔴 Y LA PRUEBA DE QUE SABE DISPARARSE. Un trinquete sin mutación es una declaración de
+  // intenciones: se borra un testigo real sobre una COPIA y se exige que su triple desaparezca.
+  const victima = R.juzgadas.find((c) => c.testigo?.length === 1 && c.ruta.includes('/'));
+  assert.ok(victima, '🔴 EL CONTROL NO SE PUEDE EJECUTAR: no hay ninguna cita con un solo testigo.');
+  const txt = fs.readFileSync(path.join(RAIZ, victima.doc), 'utf8');
+  const conTestigo = `(\`${victima.testigo[0]}\`)`;
+  const antes = txt.split(conTestigo).length - 1;
+  assert.ok(antes > 0, `🔴 LA MUTACIÓN NO CASA: ${conTestigo} no está en ${victima.doc}.`);
+  const mutado = txt.split(conTestigo).join('');
+  assert.notEqual(mutado, txt, '🔴 la mutación no ha cambiado el texto.');
+  const tras = new Set(coordenadasDe(mutado).filter((c) => !c.tachada)
+    .flatMap((c) => (c.testigo || []).map((t) => `${victima.doc} # ${c.ruta} # ${t}`)));
+  assert.ok(!tras.has(`${victima.doc} # ${victima.ruta} # ${victima.testigo[0]}`),
+    `🔴 se ha borrado el testigo \`${victima.testigo[0]}\` y el censo SIGUE viéndolo. Este\n`
+    + '   trinquete no protegería nada.');
+  console.log(`    · ✅ los ${TESTIGOS_PUESTOS.size} testigos puestos siguen puestos `
+    + `· 🔴 borrar \`${victima.testigo[0]}\` lo haría caer`);
 });
 
 // ═══ ⑦ NINGÚN UMBRAL ESCRITO A MANO EN ESTE FICHERO (SCRUM-804) ═════════════════════════════
