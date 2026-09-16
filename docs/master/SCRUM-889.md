@@ -112,3 +112,85 @@ dictado. Mientras, el técnico apunta las líneas a mano con «Añadir línea»,
 
 Se reabre cuando el fundador lo pida; entonces la acción es sólo poner la clave en Railway (la pega él,
 regla 9) y medir el dictado en producción, que hoy está **no medido**.
+
+## Segundo PR · la «×» de una línea guardada (16-sep-2026, 21:50 CEST)
+
+**Rama:** `scrum-889b-quitar-linea-guardada`, desde `origin/main` = `787d5716`. **Decisión** (orquestador, opción 1):
+los precios de la oficina se casan por **identidad** de línea, no por índice.
+
+### PASO 0
+
+Las líneas **no tenían id**. `ParteTrabajo.lineas` es `Json`, así que el id va **dentro del JSON**: sin
+schema, y por eso no se para (la opción 2 no hace falta). El sello no lo ve: `lineasCanonicasParte` escribe
+tres campos a mano (lo vigila un test). El id no es dinero y viaja al técnico: la lista cerrada de claves
+de 652/652c pasa a `bloque, descripcion, id, unds` y cualquier otra clave sigue cayendo.
+
+### El arreglo
+
+* `parteTrabajo.ts` · `idDeLinea` (la línea de antes, sin id, viaja con uno derivado `pos-N` que no se
+  guarda) y `casarLineasPorIdentidad`: con id casa con esa línea, cada una UNA vez (un id repetido no
+  clona el precio) y un id desconocido es línea nueva; sin id casa por posición como antes. El precio se
+  conserva con el mismo bloque y la misma descripción, **igual que antes**. Toda línea se guarda con un
+  UUID propio.
+* `partes.routes.ts` · el `PATCH` de `lineas` usa esa regla; en `precios`, con `id` se busca la línea por
+  id: si ya no está, 400 `precio_sin_linea` (mensaje existente) en vez de caer en la de detrás. Sin id,
+  por índice como antes (pantalla de la oficina en caché).
+* `parteDetailView.js` · las líneas se devuelven **con** su id (edición, «Añadir línea», dictado) y la «×»
+  guardada ya tiene cable: lista sin ella, relee; si falla, `noSeGuardo` (literal ya aprobado).
+  `parteOficinaView.js` manda el id con cada precio.
+
+Textos: ninguno nuevo. Schema: ninguno. Dependencias: ninguna.
+
+### Commits
+
+| sha | qué |
+|---|---|
+| `3f0d4f515775b0b342adc36f935bf4842193100f` | registro: el dictado queda aparcado |
+| `455110d389bdfb1f4096448b5d93bb0a03d19908` | ROJO: 8 caen por aserción (la tercera pierde su precio o hereda el de la segunda; la oficina con pantalla vieja valora la de detrás; un id desconocido hereda por posición; la «×» sin escuchador) |
+| `befc005e9bd29995b5de624d11a1e2b0feb844ee` | el arreglo: 17/17 |
+
+**Suelo:** si el banco no guarda las 3 líneas con precio, o el técnico no las recibe, «NO PUDE MIRAR».
+
+### Rojos por mutación (9, todos ROJOS; reverso 17/17)
+
+| mutante | caen |
+|---|---|
+| sin casado por id | 8 |
+| un id repetido reutiliza la línea | 1 (id repetido) |
+| un id desconocido cae a posición | 1 |
+| la oficina ignora el id | 1 |
+| el técnico sin id | 5 (incluido 652) |
+| el id entra en el sello | 1 |
+| la vista devuelve las líneas sin id | 2 |
+| la vista no relee tras quitar | 1 |
+| el precio se conserva aunque cambie la descripción | 1 |
+
+Dos mediciones se repitieron por inválidas: la del técnico sin id no compilaba (el tipo exige `id`), y
+dos de la vista corrieron con el `dist/` del mutante anterior aún puesto.
+
+### Hallazgo · el banco de vistas no reemplaza en `innerHTML`
+
+`tests/_banco-vistas.mjs` **añade** los nodos de cada `innerHTML = …` a los de antes. Tras releer, el banco
+veía las 3 filas viejas más las 2 nuevas. Arreglarlo es una línea, pero mueve trinquetes ajenos
+(SCRUM-697/698: presupuestos pasa de 261 a 237 nodos) → no cabe aquí (regla 37). El test mide sobre el
+último marcado pintado (`cont.innerHTML`), que es fiel. Queda por abrir un ticket con ese dato.
+
+### QA · app real de la rama, Postgres desechable
+
+`node dist/index.js` de la rama contra `127.0.0.1:55889/yaqu_889_test`; dos partes en borrador con 3 líneas
+valoradas **sin id** (como están hoy): 10, 20, 30, con la 2.ª y la 3.ª llamadas igual («Hora de oficial»,
+el caso en que la tercera heredaba el precio de la segunda). Edge headless, service worker saltado.
+
+| | 390 px (toque) | 1280 px (clic) |
+|---|---|---|
+| «×» de la 2.ª línea | un `PATCH` con `pos-0` y `pos-2` | igual |
+| precios en la oficina después | **10 y 30** | **10 y 30** |
+| en pantalla | 2 líneas | 2 líneas |
+| en la base | UUID propio en cada línea, precio en la suya | igual |
+| claves que recibe el técnico | `bloque, descripcion, id, unds` | igual |
+| errores de página · scroll horizontal | 0 · no | 0 · no |
+
+### Suite completa
+
+Con `origin/main` mergeado (`999b556e`): **7139 tests, 1 rojo, de esta rama** — SCRUM-237: la negación
+«la línea quitada ya no está» no tenía su control positivo. Añadido (`ac1bcfd49ab25e5101c18402f5b35c8975a1ac6e`): 237 + 889b, 25/25.
