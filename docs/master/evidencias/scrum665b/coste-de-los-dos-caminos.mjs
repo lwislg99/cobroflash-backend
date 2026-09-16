@@ -23,12 +23,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { temporal } from '../../../../tests/_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 
 const RAIZ = new URL('../../../../', import.meta.url).href;
 const { generateInvoicePdf } = await import(RAIZ + 'dist/modules/invoicing/infra/pdf/pdf.service.js');
 const { textoDePdf, contiene } = await import(RAIZ + 'tests/_pdf-texto.mjs');
 
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum665b-'));
+const TMP = temporal('scrum665b-');
 const salida = [];
 const di = (s = '') => { salida.push(s); console.log(s); };
 

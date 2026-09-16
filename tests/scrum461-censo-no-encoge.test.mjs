@@ -43,6 +43,7 @@ import {
   leerCensoDelFichero, // SCRUM-741: el lector que NO ancla, de S6 en SCRUM-733
 } from '../scripts/generar-sql-deriva.mjs';
 import { comprobarProcedencia, mensaje } from '../scripts/_prisma-procedencia-guard.mjs';
+import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SCHEMA = path.join(RAIZ, 'prisma', 'schema.prisma');
@@ -223,7 +224,7 @@ test('SCRUM-461 · ✅ CONTROL NEGATIVO: con el cliente al día el generador NO 
 test('SCRUM-461 · 🔴 con el cliente ATRASADO se niega, y NOMBRA los campos que faltan', () => {
   // Se ejercita el mecanismo REAL —`comprobarProcedencia`— contra dos ficheros sintéticos, sin
   // tocar `prisma/schema.prisma`, que es del fundador.
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum461-'));
+  const dir = temporal('scrum461-');
   const delRepo = path.join(dir, 'schema.prisma');
   const delCliente = path.join(dir, 'cliente.prisma');
 

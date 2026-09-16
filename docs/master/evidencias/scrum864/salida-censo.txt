@@ -1,0 +1,105 @@
+═══ CENSO DE `mkdtempSync` · por AST, no por grep ═══
+   ficheros mirados: 1663
+   llamadas encontradas: 89
+
+   de ellas NUESTRAS: 84  ·  de terceros (`.claude/`, `.agents/`, skill impeccable): 4  ·  DECLARADAS: 1
+     · tests/_temporal.mjs — ES el mecanismo de limpieza: su borrado va por el registro del módulo, no por su variable.
+
+   ✅ GARANTIZADA (finally / hook after / process.on) : 69
+   ⚠️ NO GARANTIZADA (sólo por el camino feliz) ......: 0
+   🔴 SIN LIMPIEZA (no se borra en ninguna parte) ....: 0
+   ↗️ ESCAPA por `return` (lo limpia quien lo recibe) .: 13
+   ⚙️ FÁBRICA (la limpia quien la llama; no se juzga) .: 2
+   ------------------------------------------------------------
+   suman: 84 de 84  ✅ cuadra
+
+── ↗️ ESCAPA (13) ───────────────────────────────────────────────────
+   tests/scrum289-censo-origen-factura.test.mjs:23  → dir
+   tests/scrum351-diagnostico-dependencias.test.mjs:29  → dir
+   tests/scrum670-un-solo-extractor.test.mjs:40  → dir
+   tests/scrum723-guard-contra-su-base.test.mjs:63  → raiz
+   tests/scrum778-la-lista-cableada.test.mjs:167  → raiz
+   tests/scrum846-instrumentos-con-caso-conocido.test.mjs:40  → raiz
+   tests/scrum846b-siembras-a-los-quince.test.mjs:53  → raiz
+   tests/scrum846c-trinquete-instrumentos-con-caso.test.mjs:57  → raiz
+   tests/scrum853-lecturas-que-fallan-cerrado.test.mjs:137  → tmp
+   tests/scrum853c-el-vigia-no-se-cree-un-error.test.mjs:138  → tmp
+   tests/scrum853d-cortacircuitos.test.mjs:219  → tmp
+   tests/scrum861-firma-por-delegacion.test.mjs:75  → raiz
+   tests/_censo-fixture.mjs:81  → raiz
+
+── ⚙️ FÁBRICA (2) ──────────────────────────────────────────────────
+   tests/scrum182-arbol-movido.test.mjs:34  → tmp
+   tests/scrum766-el-grep-que-cuenta-lineas.test.mjs:50  → tempPropio
+
+── ✅ GARANTIZADA (69) ───────────────────────────────────────────────
+   scripts/diagnostico-dependencias.mjs:160  → base  [finally]  borra en 181
+   tests/pr-automatico-el-mensaje-del-automerge.test.mjs:212  → dir  [finally]  borra en 250
+   tests/scrum234-censo-reserva-serie.test.mjs:227  → dir  [finally]  borra en 251, 274
+   tests/scrum234-censo-reserva-serie.test.mjs:258  → dir  [finally]  borra en 251, 274
+   tests/scrum245-llamador-declara-merchant.test.mjs:263  → dir  [finally]  borra en 283
+   tests/scrum252-procedencia-cliente.test.mjs:60  → dir  [finally]  borra en 63, 136
+   tests/scrum252-procedencia-cliente.test.mjs:131  → dir  [finally]  borra en 63, 136
+   tests/scrum253-adopcion.test.mjs:208  → base  [finally]  borra en 232
+   tests/scrum258-nota-por-sesion.test.mjs:65  → base  [finally]  borra en 81
+   tests/scrum293-cero-literales-retencion.test.mjs:110  → vacio  [finally]  borra en 122
+   tests/scrum293-cero-literales-retencion.test.mjs:159  → dir  [finally]  borra en 178
+   tests/scrum332-comparativa-anclas.test.mjs:108  → tmp  [hook after]  borra en 109
+   tests/scrum333-tarjetas-gremio.test.mjs:63  → vacio  [finally]  borra en 73
+   tests/scrum351-topologia-node-modules.test.mjs:451  → fuera  [finally]  borra en 459
+   tests/scrum388-censo-mecanismo.test.mjs:45  → tmp  [finally]  borra en 53, 67
+   tests/scrum388-censo-mecanismo.test.mjs:60  → tmp  [finally]  borra en 53, 67
+   tests/scrum429-cliente-privado.test.mjs:51  → dir  [finally]  borra en 69
+   tests/scrum454-destructivo-sin-comprobacion.test.mjs:144  → dir  [hook after]  borra en 176
+   tests/scrum471-node-modules-al-dia.test.mjs:46  → vacio  [finally]  borra en 53
+   tests/scrum471-node-modules-al-dia.test.mjs:75  → falso  [finally]  borra en 101, 123, 139
+   tests/scrum471-node-modules-al-dia.test.mjs:106  → falso  [finally]  borra en 101, 123, 139
+   tests/scrum471-node-modules-al-dia.test.mjs:128  → falso  [finally]  borra en 101, 123, 139
+   tests/scrum476-reconciliar-censos.test.mjs:248  → fuera  [finally]  borra en 254
+   tests/scrum476-reconciliar-censos.test.mjs:271  → vacio  [finally]  borra en 277
+   tests/scrum521-resolvedor-de-importadores.test.mjs:52  → raiz  [finally]  borra en 63
+   tests/scrum521-resolvedor-de-importadores.test.mjs:161  → vacio  [finally]  borra en 167
+   tests/scrum548-peaje-package-json.test.mjs:68  → dir  [finally]  borra en 95
+   tests/scrum549-nada-publicable-sin-marcar.test.mjs:24  → vacio  [finally]  borra en 31
+   tests/scrum549-nada-publicable-sin-marcar.test.mjs:100  → dir  [finally]  borra en 111
+   tests/scrum558-ancla-alcanzable.test.mjs:174  → dir  [finally]  borra en 189
+   tests/scrum570-cr-en-disco.test.mjs:78  → dir  [finally]  borra en 98, 110
+   tests/scrum570-cr-en-disco.test.mjs:103  → dir  [finally]  borra en 98, 110
+   tests/scrum628-cobertura-visual-del-dashboard.test.mjs:261  → dir  [finally]  borra en 287
+   tests/scrum694c-el-corte-a-pelo.test.mjs:195  → tmp  [finally]  borra en 212
+   tests/scrum709-microcopy-por-fichero.test.mjs:84  → dir  [finally]  borra en 140
+   tests/scrum716c-la-memoria-del-vigia.test.mjs:224  → dir  [finally]  borra en 322, 345, 368, 395, 485
+   tests/scrum726-quien-firma-la-microcopy.test.mjs:36  → dir  [finally]  borra en 70, 89, 169
+   tests/scrum746-barrera-y-punto-de-conexion.test.mjs:206  → dir  [finally]  borra en 226
+   tests/scrum754-el-juez-que-oscila.test.mjs:107  → dir  [finally]  borra en 134, 375, 387, 396, 702
+   tests/scrum754-el-juez-que-oscila.test.mjs:197  → raiz  [finally]  borra en 211, 540, 574, 598, 608, 629
+   tests/scrum754-el-juez-que-oscila.test.mjs:345  → dir  [finally]  borra en 134, 375, 387, 396, 702
+   tests/scrum754-el-juez-que-oscila.test.mjs:533  → raiz  [finally]  borra en 211, 540, 574, 598, 608, 629
+   tests/scrum754-el-juez-que-oscila.test.mjs:544  → raiz  [finally]  borra en 211, 540, 574, 598, 608, 629
+   tests/scrum754-el-juez-que-oscila.test.mjs:578  → raiz  [finally]  borra en 211, 540, 574, 598, 608, 629
+   tests/scrum754-el-juez-que-oscila.test.mjs:602  → raiz  [finally]  borra en 211, 540, 574, 598, 608, 629
+   tests/scrum754-el-juez-que-oscila.test.mjs:612  → raiz  [finally]  borra en 211, 540, 574, 598, 608, 629
+   tests/scrum754-el-juez-que-oscila.test.mjs:699  → dir  [finally]  borra en 134, 375, 387, 396, 702
+   tests/scrum757-la-declaracion-que-nadie-lee.test.mjs:41  → dir  [finally]  borra en 44, 136, 208
+   tests/scrum757-la-declaracion-que-nadie-lee.test.mjs:124  → dir  [finally]  borra en 44, 136, 208
+   tests/scrum757-la-declaracion-que-nadie-lee.test.mjs:200  → dir  [finally]  borra en 44, 136, 208
+   tests/scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs:107  → dir  [finally]  borra en 122, 259, 298
+   tests/scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs:240  → dir  [finally]  borra en 122, 259, 298
+   tests/scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs:281  → dir  [finally]  borra en 122, 259, 298
+   tests/scrum762-el-pdf-emitido-se-rehace.test.mjs:475  → tmp  [finally]  borra en 508
+   tests/scrum765-la-puerta-y-el-suelo.test.mjs:62  → tmp  [finally]  borra en 96
+   tests/scrum784-el-cuarto-veredicto.test.mjs:103  → tmp  [finally]  borra en 123
+   tests/scrum801-el-respaldo-de-la-n.test.mjs:74  → dir  [finally]  borra en 91, 155
+   tests/scrum801-el-respaldo-de-la-n.test.mjs:135  → dir  [finally]  borra en 91, 155
+   tests/scrum835-credenciales-en-el-historial.test.mjs:128  → raiz  [finally]  borra en 145, 163
+   tests/scrum836-ancla-de-mutacion-viva.test.mjs:65  → dir  [finally]  borra en 69, 324, 339
+   tests/scrum836-ancla-de-mutacion-viva.test.mjs:308  → dir  [finally]  borra en 69, 324, 339
+   tests/scrum836-ancla-de-mutacion-viva.test.mjs:329  → dir  [finally]  borra en 69, 324, 339
+   tests/scrum839c-la-pasada-se-ejecuta.test.mjs:102  → dir  [finally]  borra en 140
+   tests/scrum850b-las-formas-que-mienten.test.mjs:73  → dir  [finally]  borra en 120, 148
+   tests/_alcance-desde-entradas.mjs:385  → raiz  [finally]  borra en 410
+   tests/_censo-literales-retencion.mjs:124  → dir  [finally]  borra en 155
+   tests/_comparador-alcance.mjs:261  → raiz  [finally]  borra en 286
+   tests/_export-que-sobra.mjs:239  → raiz  [finally]  borra en 278
+   tests/_huerfanos-en-modulos-vivos.mjs:195  → raiz  [finally]  borra en 234
+

@@ -42,6 +42,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';   // SCRUM-730
 import { analizarArbol } from './_embudo-factura.mjs';
+import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 import {
   bocasDeEmision, motivosParaNoFiarse, desprotegidas, fuentesTs, EMBUDO, EMISOR, DELEGA,
 } from './_bocas-de-emision.mjs';
@@ -224,7 +225,7 @@ test('SCRUM-778 · 🔴 EL QUE DECIDE: una tercera boca SIN portón en un ficher
 test('SCRUM-778 · 🔴 la DIRECCIÓN del portón importa: llamarlo DESPUÉS no protege', () => {
   // Un portón que se ejecuta después de pedir número no protege nada: el número ya está gastado,
   // y las dos salidas son malas (modificar una factura numerada, o dejar un hueco en la serie).
-  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum778b-'));
+  const raiz = temporal('scrum778b-');
   const dir = path.join(raiz, 'src');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'tarde.ts'), [

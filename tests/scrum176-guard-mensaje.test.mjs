@@ -27,6 +27,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { evaluar, descontarTexto } from '../.claude/hooks/guard-dangerous.mjs';
+import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const HOOK_MJS = path.join(AQUI, '..', '.claude', 'hooks', 'guard-dangerous.mjs');
@@ -144,7 +145,7 @@ test('SCRUM-176 · tool_input sin command: fail-closed', () => {
 // que volver a darlo — o creerse que lo había gastado. Fallo preexistente (venía del bash con
 // el mismo orden) que la portación conservó; lo encontró la sesión 1 comparando las dos.
 test('SCRUM-176 · el sentinel NO se quema si otra regla bloquea el comando', () => {
-  const sentinel = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-176b-')), 'allow-db-push');
+  const sentinel = path.join(temporal('yaqu-176b-'), 'allow-db-push');
   fs.writeFileSync(sentinel, '');
 
   const { bloqueado, motivo } = evaluar(llamada('npx prisma db push --force-reset'), sentinel);
@@ -167,7 +168,7 @@ test('SCRUM-176 · sin sentinel y con otra regla, gana el mensaje de db push (or
 });
 
 test('SCRUM-176 · el sentinel autoriza UN db push y se consume', () => {
-  const sentinel = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-176-')), 'allow-db-push');
+  const sentinel = path.join(temporal('yaqu-176-'), 'allow-db-push');
   fs.writeFileSync(sentinel, '');
 
   const entrada = llamada('npx prisma db push --accept-data-loss');

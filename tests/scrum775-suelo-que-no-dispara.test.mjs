@@ -41,6 +41,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { ejecutableDe } from './_guard-texto.mjs';
 import { comprobarSuelo } from './_censo-tickets.mjs';
 import { repoFixture } from './_censo-fixture.mjs';
+import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 import {
   censar, ficherosDe, motivosParaNoFiarse, DEL_ARRAY,
 } from '../scripts/_censo-suelos.mjs';
@@ -59,7 +60,7 @@ let cacheEncogido = null;
 function arbolEncogido() {
   if (cacheEncogido && fs.existsSync(cacheEncogido)) return cacheEncogido;
   const base = repoFixture();
-  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'suelo-'));
+  const raiz = temporal('suelo-');
   fs.rmSync(raiz, { recursive: true, force: true });
   execFileSync('git', ['clone', '--quiet', base, raiz], { stdio: ['ignore', 'pipe', 'pipe'] });
   execFileSync('git', ['config', 'remote.origin.fetch', '+refs/heads/*:refs/remotes/origin/*'],

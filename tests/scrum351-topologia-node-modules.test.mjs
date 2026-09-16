@@ -21,6 +21,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import ts from 'typescript';
+import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 import {
   resolverNodeModules,
   topologia,
@@ -32,7 +33,7 @@ const RAIZ = path.resolve(import.meta.dirname, '..');
 
 /** Un banco de árboles de mentira. Devuelve la base y una función para hacer worktrees. */
 function banco() {
-  const base = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'scrum351-')));
+  const base = fs.realpathSync.native(temporal('scrum351-'));
   const arbol = (nombre) => {
     const d = path.join(base, nombre);
     fs.mkdirSync(d, { recursive: true });

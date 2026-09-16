@@ -27,6 +27,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { repoFixture } from './_censo-fixture.mjs';
+import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 
 /**
  * Cada caso declara QUÉ imita y QUÉ tiene que dar. La expectativa vive con el caso: un banco cuyo
@@ -97,7 +98,7 @@ let cache = null;
 export function repoAlcanzabilidad() {
   if (cache && fs.existsSync(cache)) return cache;
   const base = repoFixture();
-  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'alcanzabilidad-'));
+  const raiz = temporal('alcanzabilidad-');
   fs.rmSync(raiz, { recursive: true, force: true });
 
   const gEn = (cwd) => (...args) =>

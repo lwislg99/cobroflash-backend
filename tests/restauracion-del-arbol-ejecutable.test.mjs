@@ -24,13 +24,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 import {
   censoDeLectoresDeDist, leeDistEnTexto, piezasARestaurar, rastroDeDist, restaurarYVerificar,
 } from '../scripts/meta-guard-mutaciones.mjs';
 
 /** Un par de ficheros de mentira que hacen de «fuente» y «árbol ejecutable». */
 function bancoDePiezas() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'restauracion-'));
+  const dir = temporal('restauracion-');
   const fuente = path.join(dir, 'x.ts');
   const dist = path.join(dir, 'x.js');
   fs.writeFileSync(fuente, 'const a = 1;\n');

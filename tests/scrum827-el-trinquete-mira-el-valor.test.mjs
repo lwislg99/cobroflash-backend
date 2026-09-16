@@ -37,6 +37,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 import {
   censarLiteralesDeIva, esNombreFiscal, esTipoConocido, segmentos, NOMBRES_FISCALES,
 } from './_censo-literales-de-iva.mjs';
@@ -152,7 +153,7 @@ test('SCRUM-827 · 🔴 el NOMBRE se compara por SEGMENTOS: `defaultVat` SÍ es 
 // árbol de verdad dejaría el rojo dependiendo de que alguien acuerde deshacerlo.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 test('SCRUM-827 · 🔴 EL ROJO: un `0.21` a mano en un sitio nuevo CAE, con fichero y línea', () => {
-  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum827-'));
+  const raiz = temporal('scrum827-');
   fs.mkdirSync(path.join(raiz, 'src'), { recursive: true });
   const f = path.join(raiz, 'src', 'algunServicio.ts');
   fs.writeFileSync(f,
@@ -181,7 +182,7 @@ test('SCRUM-827 · 🔴 EL ROJO: un `0.21` a mano en un sitio nuevo CAE, con fic
 test('SCRUM-827 · 🔴 el rojo también cae con el PORCENTAJE ENTERO, no sólo con la fracción', () => {
   // Las pantallas enseñan enteros y la tabla guarda fracciones: vigilar sólo una forma dejaría la
   // otra abierta, y el front es justo donde estaba el caso real.
-  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum827b-'));
+  const raiz = temporal('scrum827b-');
   fs.mkdirSync(path.join(raiz, 'public'), { recursive: true });
   fs.writeFileSync(path.join(raiz, 'public', 'vista.js'),
     'const fila = { concepto: "X", tipoIva: 21 };\n');

@@ -36,6 +36,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 import {
   controlPositivo,
   previewMigracion,
@@ -93,7 +94,7 @@ test('SCRUM-385 · CONTROL NEGATIVO: dos esquemas idénticos dan vacío, y ese v
   // Con el CLI de verdad y el mismo fichero a los dos lados. Sin este test, la reacción natural
   // al incidente sería «todo vacío es sospechoso», y entonces el preview daría la alarma cada vez
   // que no hubiera nada que migrar — una alarma que salta siempre se acaba ignorando.
-  const copia = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'scrum385-')), 'igual.prisma');
+  const copia = path.join(temporal('scrum385-'), 'igual.prisma');
   fs.copyFileSync(SCHEMA_POR_DEFECTO, copia);
 
   const r = previewMigracion({ desde: copia });
