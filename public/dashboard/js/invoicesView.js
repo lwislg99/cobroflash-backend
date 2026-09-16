@@ -229,10 +229,14 @@ async function fetchInvoices(options = {}) {
       // rótulo del botón no se toca: sigue saliendo del veredicto, como en las tres líneas de
       // arriba.
       //
-      // `nuevaFacturaModal.js` se queda en el árbol y DEJA DE TENER PUERTA. No es un descuido:
-      // es la referencia contra la que `scrum600b` comprueba que la página emite exactamente lo
-      // mismo, y es lo que `guard:caja-documento-suelto` sigue midiendo en navegador. Su borrado
-      // es una decisión aparte, del día que esa equivalencia deje de hacer falta.
+      // `nuevaFacturaModal.js` se quedó SIN PUERTA pero dentro del árbol, como la referencia contra
+      // la que `scrum600b` comprobaba que la página emite exactamente lo mismo. Aquí decía que su
+      // borrado era «una decisión aparte, del día que esa equivalencia deje de hacer falta».
+      //
+      // 🔴 SCRUM-867 · ESE DÍA LLEGÓ. La equivalencia no se pierde: está CONGELADA Y MEDIDA
+      // (`CUERPO_DEL_MODAL`, en `scrum600b`, con su instrumento). El fichero se retiró porque el
+      // panel lo descargaba y lo ejecutaba en cada visita —266 líneas— para una pantalla a la que
+      // nadie llegaba. Que no vuelva lo vigila `tests/scrum867-el-modal-muerto.test.mjs`.
       nuevaFacturaBtn.addEventListener('click', () => {
         if (window.renderAppView) window.renderAppView('invoices-new');
       });

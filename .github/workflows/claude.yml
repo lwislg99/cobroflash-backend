@@ -170,7 +170,17 @@ jobs:
               > "$RUNNER_TEMP/ramas-antes.json" 2>/dev/null || echo null > "$RUNNER_TEMP/ramas-antes.json"
           fi
 
-          ENTRADA="$(printf '{"esPR": %s, "numero": %s, "pr": %s}' "$ES_PR" "${NUM:-null}" "$PR_API")"
+          # 🔴 SCRUM-853d · EL CORTACIRCUITOS. Cuántos despertares van en la ventana, contados AQUÍ
+          # —donde se despierta— y sean de quien sean. Se captura SOLO si la orden sale bien: `gh api`,
+          # al fallar, escribe el cuerpo del error por stdout, y una cuenta hecha sobre eso daría CERO,
+          # que es justo el número con el que un tope no corta nunca. `null` = no se sabe = no se arranca.
+          if ! EJECUCIONES="$(gh api "repos/$REPO/actions/workflows/claude.yml/runs?per_page=100" \
+                              -q '[.workflow_runs[] | {id, createdAt: .created_at, conclusion}]' 2>/dev/null)"; then
+            EJECUCIONES=null
+          fi
+
+          ENTRADA="$(printf '{"esPR": %s, "numero": %s, "pr": %s, "idActual": %s, "ejecuciones": %s}' \
+                     "$ES_PR" "${NUM:-null}" "$PR_API" "${GITHUB_RUN_ID:-null}" "$EJECUCIONES")"
           # Como condición de un `if`: los `run:` van con `bash -e`, y un `exit 1` de la puerta
           # abortaría el paso antes de poder leer su código.
           if SALIDA="$(printf '%s' "$ENTRADA" | CUERPO="$RUNNER_TEMP/respuesta.md" node "$RUNNER_TEMP/puerta/puerta-claude.mjs" antes)"; then

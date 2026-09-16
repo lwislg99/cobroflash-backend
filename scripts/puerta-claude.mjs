@@ -51,6 +51,91 @@ export function antesDeDespertar({ esPR, estadoPR } = {}) {
   return { despertar: true, codigo: 'PR-ABIERTO', motivo: 'el PR sigue abierto' };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 SCRUM-853d · EL CORTACIRCUITOS: UN TOPE DE DESPERTARES POR VENTANA DE TIEMPO
+//
+// De dónde sale el número, decidido el 16-sep-2026 sobre datos medidos:
+//   · 15-sep: 116 ejecuciones de `claude.yml`, 58 despertares reales, y un PICO DE 34 EN UNA HORA.
+//   · 16-sep, primera muestra de extremo a extremo con el avisador encendido: UN despertar legítimo
+//     costó 0,7369 USD (31 turnos, 137,7 s, claude-sonnet-5).
+//   · A ese precio, el pico de ayer habrían sido ~25 USD en una hora; con el tope, ~4,4 USD.
+//   · Y la demanda legítima de un día malo entero fueron 4 rojos obligatorios: 6 por hora es más que
+//     todo un día concentrado en sesenta minutos.
+//
+// QUÉ NO ES: no sustituye al tope del avisador (3 avisos por PR, intacto). Aquél cuenta avisos
+// publicados en UN PR; éste cuenta DESPERTARES en el repositorio entero, los pida quien los pida.
+// 🔒 «El tope va donde se despierta, no donde se llama.»
+//
+// FALLA CERRADO, y es la mitad que decide: si no se puede leer cuántos van, NO se despierta. Es la
+// misma familia que ya mordió dos veces — `gh api` escribe el CUERPO del error por stdout, así que
+// una cuenta hecha sobre una lectura fallida daría CERO y el tope no cortaría nunca.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+
+/** El tope y la ventana. El porqué de los dos números, justo aquí arriba. */
+export const TOPE_POR_VENTANA = 6;
+export const VENTANA_MINUTOS = 60;
+
+/**
+ * ¿Queda hueco en la ventana? Recibe las ejecuciones de `claude.yml` tal como las da la API
+ * (`{id, createdAt, conclusion}`), la de AHORA para no contarse a sí misma, y el instante.
+ *
+ * No cuentan: la ejecución actual, ni las SALTADAS —el `if` del job dio falso, no gastaron nada—,
+ * ni las que ya salieron de la ventana. Sí cuentan las que están EN MARCHA: ya están gastando.
+ */
+export function cortacircuitos({ ejecuciones, idActual, ahora = Date.now() } = {}) {
+  const sinCuenta = (motivo) => {
+    return { despertar: false, codigo: 'SIN-CUENTA-DE-DESPERTARES', motivo, previos: null, cuando: null };
+  };
+  if (!Array.isArray(ejecuciones)) {
+    return sinCuenta('no se pudo leer la lista de despertares de la ventana: no se despierta');
+  }
+  if (ejecuciones.some((e) => !e || !Number.isFinite(Date.parse(e.createdAt)))) {
+    return sinCuenta('alguna ejecución llegó sin fecha legible: no saber CUÁNDO fue un despertar no es saber que fue hace mucho');
+  }
+
+  const previos = ejecuciones
+    .filter((e) => e.id !== idActual && e.conclusion !== 'skipped')
+    .filter((e) => Date.parse(e.createdAt) > ahora - VENTANA_MINUTOS * 60000);
+
+  if (previos.length >= TOPE_POR_VENTANA) {
+    const masViejo = Math.min(...previos.map((e) => Date.parse(e.createdAt)));
+    const cuando = new Date(masViejo + VENTANA_MINUTOS * 60000).toISOString();
+    return {
+      despertar: false,
+      codigo: 'TOPE-POR-VENTANA',
+      motivo: `ya van ${previos.length} despertares en los últimos ${VENTANA_MINUTOS} min (tope `
+            + `${TOPE_POR_VENTANA}): el próximo hueco se abre a las ${cuando.slice(11, 19)}Z`,
+      previos: previos.length,
+      cuando,
+    };
+  }
+  return {
+    despertar: true,
+    codigo: 'BAJO-TOPE',
+    motivo: `van ${previos.length} de ${TOPE_POR_VENTANA} despertares en los últimos ${VENTANA_MINUTOS} min`,
+    previos: previos.length,
+    cuando: null,
+  };
+}
+
+/** Lo que se le contesta a quien llamó cuando el tope corta. Sin la mención: no despierta a nadie. */
+export function respuestaTopeAlcanzado({ numero, previos, cuando } = {}) {
+  const hora = typeof cuando === 'string' && cuando.length >= 19 ? `${cuando.slice(11, 19)}Z` : 'dentro de un rato';
+  return `No arranco sobre el #${numero}: ya van ${previos} despertares en los últimos ${VENTANA_MINUTOS} `
+    + `minutos y el tope son ${TOPE_POR_VENTANA} (SCRUM-853d).\n\n`
+    + `El próximo hueco se abre a las ${hora}. Vuelve a pedírmelo después de esa hora y arranco; si no `
+    + 'puede esperar, lo mira una persona. El tope existe porque un bucle de despertares se come la '
+    + 'cuota de todas las sesiones, y cada despertar cuesta dinero.\n';
+}
+
+/** Y cuando ni siquiera se pudo contar. Tampoco despierta a nadie. */
+export function respuestaSinCuenta({ numero } = {}) {
+  return `No arranco sobre el #${numero}: no he podido leer cuántas veces se ha despertado a Claude en `
+    + `los últimos ${VENTANA_MINUTOS} minutos (SCRUM-853d).\n\n`
+    + 'Sin esa cuenta no hay tope que valga, y un tope que no puede contar no es un tope. Vuelve a '
+    + 'pedírmelo en un rato: si la API responde, arranco.\n';
+}
+
 /** La respuesta a quien llamó cuando no se arranca. No lleva la mención: no despierta a nadie. */
 export function respuestaSinDespertar({ numero, estadoPR } = {}) {
   const estado = estadoPR === 'merged' || estadoPR === 'closed'
@@ -147,9 +232,19 @@ if (esCli) {
   const estadoPR = estadoDelPR(e.pr);
 
   if (modo === 'antes') {
-    const r = antesDeDespertar({ esPR: e.esPR, estadoPR });
+    // Primero la puerta del PR —la razón más concreta— y solo si ésa abre, el cortacircuitos: un PR
+    // ya cerrado no gasta hueco de la ventana, porque nunca se llega a despertar.
+    const abierto = antesDeDespertar({ esPR: e.esPR, estadoPR });
+    const r = abierto.despertar
+      ? cortacircuitos({ ejecuciones: e.ejecuciones, idActual: e.idActual })
+      : abierto;
     if (!r.despertar && e.esPR === true && cuerpo) {
-      fs.writeFileSync(cuerpo, respuestaSinDespertar({ numero: e.numero, estadoPR }));
+      const texto = r.codigo === 'TOPE-POR-VENTANA'
+        ? respuestaTopeAlcanzado({ numero: e.numero, previos: r.previos, cuando: r.cuando })
+        : r.codigo === 'SIN-CUENTA-DE-DESPERTARES'
+          ? respuestaSinCuenta({ numero: e.numero })
+          : respuestaSinDespertar({ numero: e.numero, estadoPR });
+      fs.writeFileSync(cuerpo, texto);
     }
     console.log(r.codigo);
     console.log(r.motivo);

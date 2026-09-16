@@ -1,0 +1,142 @@
+POBLACION DEL CENSO
+  carpetas            : src, public, scripts, tests, prisma, docs
+  ficheros leidos     : 2183
+  ilegibles           : 0
+
+CONTROL DEL INSTRUMENTO
+  ve «declaracion responsable» en src/ : 2  OK
+  no ve una cadena inventada           : 0  OK
+
+════════════════════════════════════════════════════════════════════════════════════════
+A · UBICACION INTERNA — una pantalla dentro del producto
+════════════════════════════════════════════════════════════════════════════════════════
+
+A1 · «declaracion responsable» en lo que ve el usuario (public/):
+   (CERO — y el instrumento pasa su control, arriba)
+
+A2 · el titulo fijo que exige el art. 15.1, en cualquier sitio:
+   · docs/legal/DECLARACION_RESPONSABLE.md:1   # Declaración Responsable del Sistema Informático de Facturación
+
+A3 · un menu «Acerca de» o «Ayuda» en el panel (patron que sugiere la AEAT):
+   (CERO — y el instrumento pasa su control, arriba)
+
+A4 · una ruta que sirva la declaracion:
+   · docs/PENDIENTES_FUNDADOR.md:193   `docs/legal/DECLARACION_RESPONSABLE.md`. Te falta: datos del productor (B2), validar con
+   · docs/PENDIENTES_FUNDADOR.md:224   - `docs/legal/DECLARACION_RESPONSABLE.md` — declaración responsable del SIF (S1-E, borrador).
+   · docs/YAQU_MASTER.md:959   > **SIF-1** (U1.3): S1-0 🟡 HUMANO (cert FNMT ✅ conseguido 15-jun con copia `.pfx`; falta alta en el entorno d
+   · docs/YAQU_MASTER.md:1040   - **S1-E · Declaración responsable REAL** (art. 13 RRSIF: nombre del SIF, versión, componentes, productor y NI
+   · docs/historico/YAQU_MASTER_v5.3_pre-14jun_con-progreso.md:449   - **S1-E · Declaración responsable REAL** (art. 13 RRSIF: nombre del SIF, versión, componentes, productor y NI
+   · docs/legal/DECLARACION_RESPONSABLE.md:83   > (p. ej. `yaqu.app/legal/declaracion-responsable`, versionada) y enlace de descarga desde
+   · docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md:61   `DECLARACION_RESPONSABLE.md`, `PACK_GESTORIA.md`, `ALCANCE_BETA.md`, `EMAIL_ASESOR.md`,
+   · docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md:67   `DECLARACION_RESPONSABLE.md`, las tres de `SEMAFORO_CALIBRACION.md` y la fila `SIF_ENABLED` de
+   · docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md:200   **A16 · `DECLARACION_RESPONSABLE.md:11-12` — documento que se FIRMA (art. 13 RRSIF)**
+   · docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md:206   **A17 · `DECLARACION_RESPONSABLE.md:39-40`**
+   · docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md:213   **A18 · `DECLARACION_RESPONSABLE.md:48-49`**
+   · docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md:219   **A19 · `DECLARACION_RESPONSABLE.md:53`**
+   … y 43 mas
+
+════════════════════════════════════════════════════════════════════════════════════════
+B · UBICACION EXTERNA — accesible a cliente y potencial cliente
+════════════════════════════════════════════════════════════════════════════════════════
+
+B1 · ficheros cuyo NOMBRE la nombre (pdf, txt, md, html):
+   · docs/legal/DECLARACION_RESPONSABLE.md
+   · tests/dashboard-colision-declaraciones.test.mjs
+   · tests/scrum757-la-declaracion-que-nadie-lee.test.mjs
+   · tests/scrum844e-el-libro-es-una-declaracion.test.mjs
+
+B2 · en la landing publica:
+   (CERO — y el instrumento pasa su control, arriba)
+
+════════════════════════════════════════════════════════════════════════════════════════
+C · LAS DOCE LETRAS DEL ART. 15.1 — que existe ya como dato
+════════════════════════════════════════════════════════════════════════════════════════
+
+  a) Nombre del sistema informatico   → 3 sitio(s) en src/
+   · src/modules/fiscal/verifactu/registro.builder.ts:379   <sum1:NombreSistemaInformatico>${esc(s.nombreSistema)}</sum1:NombreSistemaInformatico>
+   · src/modules/invoicing/domain/verifactu.service.ts:760   <sum1:NombreSistemaInformatico>YaQu</sum1:NombreSistemaInformatico>
+   · src/modules/invoicing/domain/verifactu.service.ts:855   <sum1:NombreSistemaInformatico>YaQu</sum1:NombreSistemaInformatico>
+
+  b) Codigo identificador del sistema (2 car.)   → 9 sitio(s) en src/
+   · src/core/config/env.ts:3   import { VERIFACTU_ID_SISTEMA } from '../../modules/fiscal/verifactu/productor';
+   · src/core/config/env.ts:219   * SCRUM-217 (AEAT 1177) — `VERIFACTU_ID_SISTEMA` es fail-open de manual arriba: el `|| ''`
+   · src/core/config/env.ts:253   const motivo = invalidVerifactuIdSistema(VERIFACTU_ID_SISTEMA);
+   · src/core/config/env.ts:256   `🚨 [verifactu] VERIFACTU_ID_SISTEMA ${motivo}. La AEAT lo rechaza con el error 1177 y el ` +
+   … y 5 mas
+
+  c) Identificador completo de la version   → 4 sitio(s) en src/
+   · src/modules/fiscal/verifactu/productor.ts:48   export const VERIFACTU_VERSION = "1.0.0";
+   · src/modules/fiscal/verifactu/productor.ts:58   VERIFACTU_VERSION,
+   · src/modules/invoicing/domain/verifactu.service.ts:20   VERIFACTU_VERSION, VERIFACTU_NUM_INSTALACION,
+   · src/modules/invoicing/domain/verifactu.service.ts:590   version: VERIFACTU_VERSION,
+
+  d) Componentes hardware y software
+      → NO BUSCABLE por una cadena: es prosa de la declaracion, no un dato del codigo.
+
+  e) Solo VERI*FACTU (S/N)   → 3 sitio(s) en src/
+   · src/modules/fiscal/verifactu/registro.builder.ts:383   <sum1:TipoUsoPosibleSoloVerifactu>${s.soloVerifactu}</sum1:TipoUsoPosibleSoloVerifactu>
+   · src/modules/invoicing/domain/verifactu.service.ts:764   <sum1:TipoUsoPosibleSoloVerifactu>S</sum1:TipoUsoPosibleSoloVerifactu>
+   · src/modules/invoicing/domain/verifactu.service.ts:859   <sum1:TipoUsoPosibleSoloVerifactu>S</sum1:TipoUsoPosibleSoloVerifactu>
+
+  f) Multiples obligados tributarios (S/N)   → 3 sitio(s) en src/
+   · src/modules/fiscal/verifactu/registro.builder.ts:384   <sum1:TipoUsoPosibleMultiOT>${s.multiOT}</sum1:TipoUsoPosibleMultiOT>
+   · src/modules/invoicing/domain/verifactu.service.ts:765   <sum1:TipoUsoPosibleMultiOT>S</sum1:TipoUsoPosibleMultiOT>
+   · src/modules/invoicing/domain/verifactu.service.ts:860   <sum1:TipoUsoPosibleMultiOT>S</sum1:TipoUsoPosibleMultiOT>
+
+  g) Tipos de firma (solo si NO VERI*FACTU)   → CERO en src/
+   (CERO — y el instrumento pasa su control, arriba)
+
+  h) Nombre o razon social del productor   → 4 sitio(s) en src/
+   · src/modules/fiscal/verifactu/productor.ts:39   export const VERIFACTU_PRODUCTOR_NOMBRE = "<Luis Lara Granado>";
+   · src/modules/fiscal/verifactu/productor.ts:55   VERIFACTU_PRODUCTOR_NOMBRE,
+   · src/modules/invoicing/domain/verifactu.service.ts:19   VERIFACTU_PRODUCTOR_NOMBRE, VERIFACTU_PRODUCTOR_NIF, VERIFACTU_ID_SISTEMA,
+   · src/modules/invoicing/domain/verifactu.service.ts:587   nombre: VERIFACTU_PRODUCTOR_NOMBRE,
+
+  i) NIF del productor   → 4 sitio(s) en src/
+   · src/modules/fiscal/verifactu/productor.ts:42   export const VERIFACTU_PRODUCTOR_NIF = "02290074X";
+   · src/modules/fiscal/verifactu/productor.ts:56   VERIFACTU_PRODUCTOR_NIF,
+   · src/modules/invoicing/domain/verifactu.service.ts:19   VERIFACTU_PRODUCTOR_NOMBRE, VERIFACTU_PRODUCTOR_NIF, VERIFACTU_ID_SISTEMA,
+   · src/modules/invoicing/domain/verifactu.service.ts:588   nif: VERIFACTU_PRODUCTOR_NIF,
+
+  j) Direccion postal del productor
+      → NO BUSCABLE por una cadena: es prosa de la declaracion, no un dato del codigo.
+
+  k) Constancia de cumplimiento (art. 29.2.j LGT, RRSIF, Orden)
+      → NO BUSCABLE por una cadena: es prosa de la declaracion, no un dato del codigo.
+
+  l) Fecha y lugar de suscripcion
+      → NO BUSCABLE por una cadena: es prosa de la declaracion, no un dato del codigo.
+
+════════════════════════════════════════════════════════════════════════════════════════
+D · «UNA POR VERSION» — de donde sale la version que viaja en cada registro
+════════════════════════════════════════════════════════════════════════════════════════
+
+D1 · la constante declarada:
+   · src/modules/fiscal/verifactu/productor.ts:48   export const VERIFACTU_VERSION = "1.0.0";
+
+D2 · ¿la toca algo del despliegue (package.json, sha, CI)?
+   (CERO — y el instrumento pasa su control, arriba)
+
+D3 · version de package.json : 1.0.0
+      VERIFACTU_VERSION       : 1.0.0
+      ¿coinciden?             : true
+
+D4 · ¿existe archivo historico de versiones declaradas?
+   (CERO — y el instrumento pasa su control, arriba)
+
+════════════════════════════════════════════════════════════════════════════════════════
+E · QUIEN CONSTRUYE EL BLOQUE `SistemaInformatico`
+════════════════════════════════════════════════════════════════════════════════════════
+   · src/modules/fiscal/verifactu/registro.builder.ts:376   return `<sum1:SistemaInformatico>
+   · src/modules/invoicing/domain/verifactu.service.ts:757   <sum1:SistemaInformatico>
+   · src/modules/invoicing/domain/verifactu.service.ts:852   <sum1:SistemaInformatico>
+
+E2 · valores CABLEADOS como literal en el XML (no parametrizados):
+   🔴 src/modules/invoicing/domain/verifactu.service.ts:760   <sum1:NombreSistemaInformatico>YaQu</sum1:NombreSistemaInformatico>
+   🔴 src/modules/invoicing/domain/verifactu.service.ts:764   <sum1:TipoUsoPosibleSoloVerifactu>S</sum1:TipoUsoPosibleSoloVerifactu>
+   🔴 src/modules/invoicing/domain/verifactu.service.ts:765   <sum1:TipoUsoPosibleMultiOT>S</sum1:TipoUsoPosibleMultiOT>
+   🔴 src/modules/invoicing/domain/verifactu.service.ts:766   <sum1:IndicadorMultiplesOT>S</sum1:IndicadorMultiplesOT>
+   🔴 src/modules/invoicing/domain/verifactu.service.ts:855   <sum1:NombreSistemaInformatico>YaQu</sum1:NombreSistemaInformatico>
+   🔴 src/modules/invoicing/domain/verifactu.service.ts:859   <sum1:TipoUsoPosibleSoloVerifactu>S</sum1:TipoUsoPosibleSoloVerifactu>
+   🔴 src/modules/invoicing/domain/verifactu.service.ts:860   <sum1:TipoUsoPosibleMultiOT>S</sum1:TipoUsoPosibleMultiOT>
+   🔴 src/modules/invoicing/domain/verifactu.service.ts:861   <sum1:IndicadorMultiplesOT>S</sum1:IndicadorMultiplesOT>
