@@ -40,7 +40,7 @@ import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; //
 // es `pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)`, el de SCRUM-234/728, y esta función lo
 // expone desde SCRUM-358 para exactamente este uso (comprobar ANTES de consumir número).
 import { tomarCerrojoDeSerie } from '../../../jobs/domain/albaranIdempotencia';
-import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
+import { stageLinesReconciled, grossOfLines, lineasParaFacturar } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: emitir factura = admin)
 
 import fetch from 'node-fetch';
@@ -203,7 +203,7 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     // `distributeStageAmounts` y las líneas se escalaban aparte: dos redondeos independientes que
     // podían diferir 1 cént., y esa diferencia quedaba SELLADA en la huella VeriFactu
     // (`importeTotal` del total vs `cuotaTotal` de las líneas). Ver invoiceLines.service.ts.
-    const quoteLines = Array.isArray(quote.lines) ? quote.lines as any[] : [];
+    const quoteLines = lineasParaFacturar(quote); // SCRUM-887: el dto de línea, aplicado
 
     // ── SCRUM-814 · EL TRAMO ES UNA FUNCIÓN DEL RECUENTO, no un valor decidido una vez ──────
     //
@@ -510,7 +510,7 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
     // FAIL-CLOSED 3 — sin líneas no se emite. El guard de SCRUM-149 ya impide SELLAR una factura
     // sin líneas, pero para entonces la factura ya existe y ha consumido número de serie. Aquí se
     // para antes: mejor no crear el documento que crear uno que no se puede sellar.
-    const quoteLines = Array.isArray(quote.lines) ? (quote.lines as any[]) : [];
+    const quoteLines = lineasParaFacturar(quote); // SCRUM-887: el dto de línea, aplicado
     if (quoteLines.length === 0) {
       return res.status(409).json({
         error: 'quote_without_lines',
