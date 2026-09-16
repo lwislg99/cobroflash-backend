@@ -319,6 +319,33 @@
 
 ## P1 — Bugs visibles al cliente / datos incorrectos
 
+### [ ] P1-WA-TASA · La tasa de entrega de WhatsApp lee **100 %** con 9 de 10 mensajes FALLIDOS (15-sep-2026, hallazgo colateral de SCRUM-530)
+- **Medido sobre el servicio real**, con la base doblada y filas fabricadas (ni una base, ni una
+  clave, ni un byte de red). `getWhatsAppMetrics`, ventana de 7 días:
+
+  | filas de la semana | `sample` | `deliveryRate7d` | `alert.active` |
+  |---|---|---|---|
+  | 1 entregado + 2 fallidos | **1** | **100** | false |
+  | **1 entregado + 9 fallidos** | **1** | **100** | false |
+  | 20 enviados, 10 entregados | 20 | 50 | true |
+
+- **Causa raíz, con fichero y línea.** En `src/modules/messaging/domain/whatsappLog.service.ts`:
+  `SENT_OR_MORE = {sent, delivered, read}` y `DELIVERED_OR_MORE = {delivered, read}`. El estado
+  `failed` **no está en ninguno de los dos**, así que un mensaje fallido no entra en el
+  denominador. La «tasa de entrega» no mide entregas sobre envíos: mide entregas sobre **los que
+  no fallaron**, y por construcción no puede bajar por culpa de un fallo.
+- **La víctima.** Es la misma de SCRUM-530 y es peor de lo que decía el ticket: al fontanero cuyos
+  mensajes fallan no sólo no le salta la alerta — **la pantalla le enseña un 100 %**. Y explica por
+  qué bajar el umbral de 10 no habría arreglado nada: con 9 fallos, `sample` sigue valiendo 1.
+- **Por qué NO se arregla en SCRUM-530.** Cambiar el denominador cambia **a quién se avisa**, y eso
+  es decisión de producto (regla 9, otro carril). Además el mes SÍ cuenta los fallos por separado
+  (`month.failed`), así que puede que la separación fuera deliberada y haya que leer por qué antes
+  de uniformar.
+- **Tampoco se ha pinchado en un test**, a propósito: un límite declarado y fijado con un assert
+  deja de ser una advertencia y pasa a ser un permiso (SCRUM-827). Queda aquí, sin `[x]`.
+- **Done cuando:** se decida si `failed` entra en el denominador, y —si entra— se mida a cuántos
+  merchants empieza a alertar. Una alerta que salta para todos se apaga, y entonces no protege a nadie.
+
 ### [x] P1-BIZUM-PAIDVIA · El webhook de Connect grava `method:'card'` a fuego: un Bizum se registraría como tarjeta
 - **✅ ARREGLADO 28-jul-2026 (SCRUM-191, con la decisión del fundador):** se añade `bizum_auto` al conjunto cerrado de la regla 22 —`bizum_manual` sería falso (nadie confirmó a mano) y `card` era el bug— y el webhook **lee** el método real (`payment_method_details.type` del cargo, expandiendo `latest_charge`). Si no se puede resolver, se OMITE en vez de inventarlo. **Apareció una hermana** que no estaba en el diagnóstico: el camino de `payment_intent.payment_failed` fijaba el método igual, y la cazó el guard, no la vista.
 - **Encontrado:** 28-jul-2026, al ir a hacer visible el Bizum automático en el selector (SCRUM-3 / W4). **Bloquea ese cambio**, no es un hallazgo lateral.

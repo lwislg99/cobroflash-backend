@@ -535,9 +535,25 @@ async function loadWhatsAppMetrics(card) {
   // se veían a la vez. Además forzaba «€» ignorando la moneda y daba «NaN €» con un dato ilegible.
   const fmtEur = (n) => fmtMoneyEs(n);
 
-  const alertHtml = data.alert && data.alert.active
-    ? `<div class="alert warning" style="display:block;margin:0 0 14px">⚠ Tasa de entrega de los últimos 7 días: <strong>${data.alert.deliveryRate7d}%</strong> (por debajo del 90%). Revisa el runbook R1/R2.</div>`
-    : '';
+  // 🔴 SCRUM-530 · TRES CASOS, NO DOS. Aquí sólo se pintaba cuando la alerta estaba ACTIVA, y la
+  // alerta exige una muestra mínima (`alert.minimo`, hoy 10 envíos en 7 días). Para un fontanero
+  // del Pioneer que manda 3 mensajes en una semana eso era SILENCIO — con 2 fallos de 3 dentro.
+  //
+  //   🔒 Una alerta que nunca se activa y una alerta que no tiene datos se leen IGUAL
+  //      y significan lo contrario.
+  //
+  // El mínimo NO se escribe aquí: viaja en el DTO, porque la misma regla en dos sitios es cómo
+  // una de las dos se queda atrás. Y el texto de este tercer caso es del fundador (regla 30):
+  // va MARCADO y sin escribir.
+  const al = data.alert || {};
+  const muestraCorta = al.active !== true
+    && typeof al.minimo === 'number'
+    && Number(al.sample || 0) < al.minimo;
+  const alertHtml = al.active
+    ? `<div class="alert warning" style="display:block;margin:0 0 14px">⚠ Tasa de entrega de los últimos 7 días: <strong>${al.deliveryRate7d}%</strong> (por debajo del 90%). Revisa el runbook R1/R2.</div>`
+    : muestraCorta
+      ? `<div class="alert" data-microcopy="PENDIENTE_FUNDADOR" style="display:block;margin:0 0 14px">[PENDIENTE microcopy oficial] · <strong>${Number(al.sample || 0)}/${al.minimo}</strong></div>`
+      : '';
 
   // A5.4: plantilla (pagada) vs ventana (gratis) — el ahorro se enseña
   const savedHtml = ch.windowMonth > 0
