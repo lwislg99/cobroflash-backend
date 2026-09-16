@@ -345,6 +345,17 @@
   deja de ser una advertencia y pasa a ser un permiso (SCRUM-827). Queda aquí, sin `[x]`.
 - **Done cuando:** se decida si `failed` entra en el denominador, y —si entra— se mida a cuántos
   merchants empieza a alertar. Una alerta que salta para todos se apaga, y entonces no protege a nadie.
+- **ARREGLADO EN CÓDIGO (16-sep-2026, SCRUM-862) — pero NO marcado `[x]`.** La regla de este
+  fichero dice `[x]` cuando está *hecho **y verificado*** en `yaqu.app`, y esa comprobación es de
+  producción: desde una sesión no se toca. Queda a medias a propósito, no por olvido.
+  - **Causa raíz / qué se cambió:** el denominador de las dos tasas (7 días y por plantilla) pasa a
+    contar INTENTOS con `esIntentoDeEntrega` = `SENT_OR_MORE` ∪ `{failed}`. **No** se metió
+    `failed` dentro de `SENT_OR_MORE`, que era lo obvio: ese conjunto alimenta `month.sent` y la
+    tarjeta habría enseñado «Enviados 10 · Fallidos 9» contando los mismos nueve dos veces.
+  - **Medido:** 1 entregado + 9 fallidos pasa de `sample 1 · 100 % · alerta apagada` a
+    `sample 10 · 10 % · alerta ACTIVA`. 20/10 sigue en 50 % y todo-entregado sigue en 100 % sin
+    alerta, así que **no empieza a alertar a todo el mundo**: lo que se movió es lo que estaba mal.
+  - **Falta:** verlo en `yaqu.app` con datos reales, y entonces marcar `[x]`.
 
 ### [x] P1-BIZUM-PAIDVIA · El webhook de Connect grava `method:'card'` a fuego: un Bizum se registraría como tarjeta
 - **✅ ARREGLADO 28-jul-2026 (SCRUM-191, con la decisión del fundador):** se añade `bizum_auto` al conjunto cerrado de la regla 22 —`bizum_manual` sería falso (nadie confirmó a mano) y `card` era el bug— y el webhook **lee** el método real (`payment_method_details.type` del cargo, expandiendo `latest_charge`). Si no se puede resolver, se OMITE en vez de inventarlo. **Apareció una hermana** que no estaba en el diagnóstico: el camino de `payment_intent.payment_failed` fijaba el método igual, y la cazó el guard, no la vista.
