@@ -51,6 +51,23 @@
     ciego: 'No se ha podido leer el historial de revisiones.',
   };
 
+  // ⛔⛔ PENDIENTE DE MICROCOPY DEL FUNDADOR · SCRUM-688 · regla 30 ⛔⛔
+  //
+  // El botón de crear revisión necesita SU TEXTO, y el microcopy es del fundador: esta sesión NO
+  // lo escribe. Va aparte de `TEXTOS` a propósito —ese bloque son las SEIS aprobadas el
+  // 3-sep-2026 y no se mezcla lo aprobado con lo que no lo está— y lleva un centinela que se ve
+  // en pantalla: si esto llega a producción sin sustituir, se lee solo.
+  //
+  // Lo mismo para `errorCrear`: el aviso de que no se ha podido crear también es microcopy.
+  //
+  // 🔴 `tests/scrum688-crear-revision.test.mjs` exige que el centinela siga aquí mientras el texto
+  // no esté aprobado, y que NO se cuele en `TEXTOS`. Cuando el fundador los escriba, se mueven a
+  // `TEXTOS` con su ancla en `docs/MICROCOPY_APROBADA_SIN_APLICAR.md` como las otras seis.
+  var TEXTOS_SIN_APROBAR = {
+    crearRevision: '⛔ PENDIENTE DE MICROCOPY (SCRUM-688)',
+    errorCrear: '⛔ PENDIENTE DE MICROCOPY (SCRUM-688)',
+  };
+
   function esc(v) {
     return String(v === null || v === undefined ? '' : v)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -105,8 +122,11 @@
    * Pinta el bloque de revisiones. Devuelve `true` si pintó la lista, `false` si tuvo que declarar
    * que no puede leerla — para que el llamador sepa cuál de las dos cosas pasó.
    *
-   * ⛔ SOLO LECTURA Y SELECTOR. Aquí no hay ningún camino que CREE una revisión: ese POST no está
-   * aprobado, y una pantalla que ofrece un botón que el servidor no atiende es peor que no tenerla.
+   * ⛔ ESTA PANTALLA NO DECIDE, PINTA — y desde SCRUM-688 ofrece UNA acción: crear una revisión.
+   * El POST está aprobado por el fundador (15-sep-2026) y lo atiende
+   * `POST /admin/quotes/:id/revisiones`. Sigue sin haber aquí ningún camino que EDITE una versión:
+   * la revisión no es un rodeo a `puedeEditarse`, es la salida que faltaba cuando la anterior ya
+   * está firmada y no se puede tocar.
    */
   function pintarRevisiones(contenedor, datos, idAbierta) {
     if (!contenedor) return false;
@@ -118,10 +138,17 @@
       return false;
     }
 
-    // Una sola versión: se dice, y no se pinta un selector de una cosa.
+    // 🔴 SOBRE LA VIGENTE, NO SOBRE LA ABIERTA. Revisar una versión vieja heredaría SU contenido y
+    // perdería lo que se cambió después sin decir nada. La vigente la decide el SERVIDOR
+    // (`vigenteId`), igual que el resto de este fichero: aquí no se recalcula.
+    var vigente = null;
+    for (var k = 0; k < filas.length; k += 1) if (filas[k].vigente) vigente = filas[k];
+
+    // Una sola versión: se dice, y no se pinta un selector de una cosa. Pero SÍ se puede revisar:
+    // es el caso más común —un presupuesto con una única versión a la que el cliente pide cambios.
     if (filas.length === 1) {
       contenedor.innerHTML = '<p data-revisiones-unica="1" style="font-size:13px;color:var(--muted)">' +
-        esc(TEXTOS.sinOtras) + '</p>';
+        esc(TEXTOS.sinOtras) + '</p>' + botonCrearRevision(vigente || filas[0]);
       return true;
     }
 
@@ -129,7 +156,49 @@
       '<h4 style="margin:12px 0 4px;font-size:13px;color:var(--muted)">' + esc(TEXTOS.titulo) + '</h4>' +
       '<ul data-revisiones-lista="1" style="list-style:none;margin:0;padding:0">' +
       filas.map(function (f) { return filaDeRevision(f, f.id === idAbierta); }).join('') +
-      '</ul>';
+      '</ul>' + botonCrearRevision(vigente);
+    return true;
+  }
+
+  /**
+   * El botón que crea una revisión de la VIGENTE. Sin vigente no se pinta: un botón que no sabe
+   * sobre qué versión actúa es peor que no tenerlo.
+   */
+  function botonCrearRevision(vigente) {
+    if (!vigente || vigente.id == null) return '';
+    return '<button type="button" class="btn btn-ghost" data-revision-crear="' + esc(vigente.id) + '"' +
+      ' style="margin-top:8px;font-size:13px">' + esc(TEXTOS_SIN_APROBAR.crearRevision) + '</button>';
+  }
+
+  /**
+   * Cablea el botón: POST a la ruta y, si sale bien, se avisa al llamador con la revisión creada.
+   *
+   * `pedir` se inyecta para poder ejercitarlo sin red; en la pantalla real es `window.apiRequest`.
+   * Devuelve `false` si no había botón que cablear, para que quien lo llame sepa cuál de las dos
+   * cosas pasó en vez de suponerlo.
+   */
+  function cablearCrearRevision(contenedor, alCrear, pedir) {
+    if (!contenedor) return false;
+    var btn = contenedor.querySelector('[data-revision-crear]');
+    if (!btn) return false;
+    var api = pedir || (typeof window !== 'undefined' ? window.apiRequest : null);
+    btn.addEventListener('click', function () {
+      var id = btn.getAttribute('data-revision-crear');
+      btn.disabled = true; // que dos clics no creen dos revisiones
+      Promise.resolve()
+        .then(function () { return api('/admin/quotes/' + id + '/revisiones', { method: 'POST' }); })
+        .then(function (r) { if (typeof alCrear === 'function') alCrear(r); })
+        .catch(function (e) {
+          btn.disabled = false;
+          // El motivo NO se inventa: si el servidor manda uno, se enseña el suyo.
+          var msg = (e && e.message) ? e.message : TEXTOS_SIN_APROBAR.errorCrear;
+          var aviso = document.createElement('p');
+          aviso.setAttribute('data-revision-error', '1');
+          aviso.style.cssText = 'font-size:13px;color:var(--danger,#b3261e)';
+          aviso.textContent = msg;
+          contenedor.appendChild(aviso);
+        });
+    });
     return true;
   }
 
@@ -138,4 +207,8 @@
   window.revisionesOCeguera = revisionesOCeguera;
   window.puedeEditarseLaRevision = puedeEditarse;
   window.REVISIONES_TEXTOS = TEXTOS;
+  // SCRUM-688 · el cableado de crear, y el bloque de textos que AÚN NO están aprobados —se
+  // publica para que el guard pueda comprobar que el centinela sigue puesto.
+  window.cablearCrearRevision = cablearCrearRevision;
+  window.REVISIONES_TEXTOS_SIN_APROBAR = TEXTOS_SIN_APROBAR;
 })();

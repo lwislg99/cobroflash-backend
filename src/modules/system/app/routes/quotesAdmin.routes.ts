@@ -15,6 +15,7 @@ import {
   acceptQuoteAdmin,
   rejectQuoteAdmin,
   setQuoteTags,
+  crearRevisionDeQuote, // SCRUM-688
 } from '../../quoteAdmin';
 
 import { prisma } from '../../../../core/db/prisma';
@@ -393,6 +394,47 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
  *
  * Aquí no se emite nada: esto solo reordena lo que aún no existe como documento.
  */
+// ── SCRUM-688 · CREAR UNA REVISIÓN DEL PRESUPUESTO ──────────────────────────────────────────
+//
+// El motor (`nuevaRevisionDe`) llevaba desde SCRUM-655 construido, probado y SIN LLAMADOR: el
+// profesional podía VER las revisiones de un presupuesto y no podía CREAR ninguna. Medido antes
+// de cablear: 0 rutas POST de revisión sobre las 93 de la app.
+//
+// 🔴 LO QUE ESTA RUTA NO HACE, y es la mitad del diseño: **no edita nada**. Crea una fila NUEVA.
+// Un presupuesto FIRMADO sigue sin poder tocarse —`puedeEditarse` en la pantalla lo cierra— y
+// esta ruta no es un rodeo a esa puerta: es la salida que faltaba. El cliente pidió cambios sobre
+// algo que ya firmó; se le hace otra versión, y la que firmó se queda exactamente como estaba.
+//
+// 🔴 EL ROL LO PUSO EL GUARD, NO YO. La red de SCRUM-55 cazó esta ruta recién nacida sin declarar
+// rol y dio rojo: es el default de S1 («ruta nueva = declara rol mínimo; default Admin-only»).
+// Se elige `admin` y no `TECNICO_ALLOWED` por una razón medida, no por comodidad: crear una
+// revisión **crea un presupuesto**, y `POST /admin/quotes` tampoco está en la lista del Operario.
+// Lo que él sí tiene sobre un presupuesto —verlo, su PDF, notas, accept/reject y los envíos— se
+// queda igual: esto no le quita nada, le cierra una puerta que hoy no existía.
+router.post('/:id/revisiones', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_quote_id' });
+
+    const creada = await crearRevisionDeQuote(req.merchantId, id);
+    return res.status(201).json({ ok: true, ...creada });
+  } catch (err: any) {
+    // Los motivos que el dominio distingue viajan tal cual: «no existe» y «no tiene número» son
+    // cosas distintas y la pantalla las cuenta distinto.
+    if (err?.name === 'RevisionNoCreable') {
+      const status = err.motivo === 'quote_not_found' ? 404 : 409;
+      return res.status(status).json({ error: err.motivo, message: err.message });
+    }
+    // `RevisionesAmbiguas` / `CensoDeRevisionesCiego`: el grupo no puede contestar cuál está
+    // vigente. No se elige una por el profesional — se dice que no se sabe.
+    if (err?.name === 'RevisionesAmbiguas' || err?.name === 'CensoDeRevisionesCiego') {
+      return res.status(409).json({ error: 'revisiones_ambiguas', message: err.message });
+    }
+    console.error('[POST /admin/quotes/:id/revisiones]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 router.patch('/:id/billing-plan', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
