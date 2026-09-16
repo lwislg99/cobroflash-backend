@@ -33,10 +33,10 @@ y el envío— no se han construido nunca.**
 | 1 | Puerta de emisión (el usuario pulsa emitir) | **EXISTE** | `src/modules/invoicing/app/routes/invoice.routes.ts:12` · `src/modules/system/app/routes/invoicesAdmin.routes.ts:81` |
 | 2 | Decide qué documento sale (factura / justificante / ninguno) | **EXISTE** | `src/modules/invoicing/domain/facturaSuelta.ts:74-78` (`modoDocumentoSuelto`) |
 | 3 | Numeración de serie | **EXISTE** | `src/modules/invoicing/domain/invoiceNumber.service.ts:390` (`allocateInvoiceNumber`) |
-| 4 | Huella SHA-256 y encadenado a la anterior | **EXISTE** | `prisma/schema.prisma:102-103` (`vf_hash`, `vf_prev_hash`) |
+| 4 | Huella SHA-256 y encadenado a la anterior | **EXISTE** | `prisma/schema.prisma:865-866` (`vf_hash`, `vf_prev_hash`) |
 | 5 | Sellado en el momento de emitir | **EXISTE** | `src/modules/invoicing/domain/selladoEstado.ts:116` (`sellarTrasEmision`), invocado desde `src/lib/invoicing.ts:17` |
 | 6 | QR de cotejo para el cliente | **EXISTE** | `src/modules/invoicing/domain/verifactu.service.ts:152` |
-| 7 | XML del registro, con el sobre oficial | **EXISTE — pero su destino es una DESCARGA** | `src/modules/fiscal/verifactu/registro.builder.ts:558` (`construirSobreRegFactu`) → `src/modules/invoicing/domain/verifactu.service.ts:535` (`buildVerifactuRegistrosXml`) → consumido en `src/modules/exports/app/routes/exports.routes.ts:252` y `:556` |
+| 7 | XML del registro, con el sobre oficial | **EXISTE — pero su destino es una DESCARGA** | `src/modules/fiscal/verifactu/registro.builder.ts:558` (`construirSobreRegFactu`) → `src/modules/invoicing/domain/verifactu.service.ts:536` (`buildVerifactuRegistrosXml`) → consumido en `src/modules/exports/app/routes/exports.routes.ts:252` y `:556` |
 | 8 | Cola de remisión (`VfSubmission`) | **NO EXISTE** | ningún modelo del esquema; ver medición abajo |
 | 9 | Envío telemático a la AEAT | **NO EXISTE** | ninguna llamada de red; ver medición abajo |
 
@@ -63,7 +63,7 @@ pinta el QR. **No se encola y no se envía.**
 * **Instrumento AST.** Contando llamadas de red en `src/modules/fiscal/` y `src/modules/invoicing/`:
   18 aciertos, y al mirarlos uno a uno **ninguno sale a la AEAT** — son definiciones de rutas de
   Express (`router.get` / `router.post`), lecturas de `Map` (`.get`) y una sola llamada real,
-  `src/modules/invoicing/infra/pdf/pdf.service.ts:24`, que es un `axios.get` **para descargar el
+  `src/modules/invoicing/infra/pdf/pdf.service.ts:120`, que es un `axios.get` **para descargar el
   logo del profesional** y ponerlo en el PDF.
 * **Control positivo del detector:** el mismo instrumento encuentra **16** llamadas de red en
   `src/integrations/` (por ejemplo `src/integrations/enviarCorreo.ts:112`, `src/integrations/gemini.ts:43`, `src/integrations/mercadopago.ts:51`). Si
@@ -97,7 +97,7 @@ porque no remite.**
 * `src/modules/invoicing/domain/verifactu.service.ts:527` — otro **comentario** con el mismo aviso.
 * `src/modules/jobs/domain/albaranFirmante.ts:53-63` — «representante» referido a **quién firma un
   albarán en obra**, no a representación ante la AEAT.
-* `src/modules/jobs/infra/albaranPdf.service.ts:72-73` y `src/modules/jobs/domain/albaran.service.ts:843` — «certificado de
+* `src/modules/jobs/infra/albaranPdf.service.ts:72-73` y `src/modules/jobs/domain/albaran.service.ts:896` — «certificado de
   evidencias» de una **firma en obra**, nada que ver con un certificado digital de la FNMT.
 
 **No hay lectura de ningún fichero de certificado, ni configuración de mTLS, ni ningún campo que
@@ -134,9 +134,9 @@ existe, porque no hay envío.**
 
 | Comprobación | Estado | Fichero y línea |
 |---|---|---|
-| Validación contra los XSD oficiales | **CONSTRUIDA** | `tests/scrum240-sobre-unico.test.mjs` (citado en `src/modules/invoicing/domain/verifactu.service.ts:919`); espacios de nombres en `src/modules/fiscal/verifactu/registro.builder.ts:10-11` |
-| Huella encadenada (cada factura apunta a la anterior) | **CONSTRUIDA** | `prisma/schema.prisma:102-103`; sellado en `src/modules/invoicing/domain/selladoEstado.ts:116` |
-| Estado de sellado explícito (`pendiente_de_sellado` / `sellado`) | **CONSTRUIDA** | `prisma/schema.prisma:98-99` |
+| Validación contra los XSD oficiales | **CONSTRUIDA** | `tests/scrum240-sobre-unico.test.mjs` (citado en `src/modules/invoicing/domain/verifactu.service.ts:947`); espacios de nombres en `src/modules/fiscal/verifactu/registro.builder.ts:10-11` |
+| Huella encadenada (cada factura apunta a la anterior) | **CONSTRUIDA** | `prisma/schema.prisma:865-866`; sellado en `src/modules/invoicing/domain/selladoEstado.ts:116` |
+| Estado de sellado explícito (`pendiente_de_sellado` / `sellado`) | **CONSTRUIDA** | `prisma/schema.prisma:864` |
 | Campos obligatorios del registro | **CONSTRUIDA** | `src/modules/fiscal/verifactu/registro.builder.ts:536` (generador único del contenido) |
 | Puerta que impide producir documento sin huella | **CONSTRUIDA** | `src/lib/invoicing.ts:97` y `:228` (`exigirDocumentoEmitible`) |
 | `Subsanacion` / `RechazoPrevio` / `SinRegistroPrevio` | **NO MEDIDO** | no se buscaron una a una en esta tanda |
