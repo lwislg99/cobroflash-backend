@@ -95,3 +95,91 @@ encaja con un rojo intermitente que no es un crash.
 
 `src/` · `tests/scrum206b` · ningún test · la tanda · ningún proceso ajeno · el árbol compartido.
 Esta tarea sólo mide.
+
+---
+
+# APÉNDICE · 16-sep-2026 · SCRUM-873b · La hipótesis se cae por ③, y el mecanismo de ② existe pero no tiene disparador
+
+**Medido contra:** `origin/main` = `94e9a6b4e928e611f7585c941e09db21d73e2006` · 2026-09-16T09:54:47Z
+**Rama:** `scrum-873-el-intermitente-de-206b` · **Sigue sin reproducirse: el ticket NO se cierra.**
+
+## ③ · El censo afinado — y ahí se cae la hipótesis
+
+Mi censo de ayer era grueso y lo dije: *«35 ficheros escriben y nombran rutas de `src/`»*. Afinado
+**reusando el instrumento de la casa** (`scripts/_temporales-en-el-arbol.mjs`, SCRUM-824), que ya
+clasifica cada escritura en `ARBOL` / `TMP` / `FUERA` / `DESCONOCIDO`:
+
+```
+POBLACIÓN: 956 ficheros · 403 sitios de escritura
+  TMP 345 · FUERA 3 · ARBOL 0 · DESCONOCIDO 55
+escriben DENTRO del árbol ......... 0
+con "src/" en la ruta escrita ..... 0
+```
+
+**Y el cero no se entrega solo:** los **55 DESCONOCIDO** se revisaron uno a uno, agrupados en 13
+ficheros. **Doce** escriben en bancos propios de `mkdtempSync`; el decimotercero
+(`scrum778-la-lista-cableada`) es el único que compone rutas desde la raíz real hacia `src/` —
+y **sólo para LEER** (`analizarArbol(path.join(RAIZ, 'src'))`); lo que escribe va a su
+`mkdtempSync`. Comprobado línea a línea.
+
+> 🔴 **NADIE ESCRIBE EN `src/` DURANTE LA TANDA.** La hipótesis del barredor que lee mientras otro
+> escribe **se cae por falta de escritor**, que es exactamente la salida que el encargo anticipaba.
+> Mi 35 de ayer no era un dato: era el número de ficheros que escriben *en algún sitio* **y además**
+> mencionan una ruta de `src/`. El número bueno es **0**.
+
+## ② · El mecanismo de la lectura truncada: **existe, y es facilísimo de alcanzar**
+
+Aunque ③ deja la hipótesis sin disparador, el suelo que pedía el encargo se midió igual, porque el
+dato sirve el día que alguien SÍ escriba ahí. Escritor y lector en **procesos distintos**,
+alternando un fichero de 508 KB con uno de 20 bytes:
+
+```
+lecturas 7.652 · completas-grande 1 · completas-pequeño 2.243 · ENOENT 0
+LECTURAS TRUNCADAS: 5.408  (70,7 %)
+```
+
+**Suelo del escritor confirmado** (se vieron las dos versiones completas, así que alternaba de
+verdad). O sea: **`writeFileSync` no es atómico y un lector ve contenido truncado el 70 % de las
+veces**. Queda anotado junto a la fragilidad de `fuentesTs` —`readFileSync` sin `try/catch`— como
+lo que pasaría **si** algún día un test escribe bajo `src/`. Hoy no lo hace ninguno.
+
+## ④ · La tanda parcial con los escritores: tampoco cae
+
+`scrum206b` + `scrum205` (su hermano) + `scrum778` + `restauracion-del-arbol-ejecutable` +
+`scrum808` + `scrum476` + `scrum766` + `scrum716c` — los ocho que más escriben, aunque sea a
+temporal — **8 ficheros × 15 pasadas → 0 rojos.**
+
+## 🔴 Y tres arneses míos rotos, los tres cazados por imprimir la población
+
+Esto es lo que más vale de la tanda de hoy, y va entero:
+
+| intento | lo que decía | por qué no valía |
+|---|---|---|
+| fichero transitorio bajo `src/` (ayer) | 0 rojos de 20 | la carrera «listado y luego ausente» ocurrió **0 veces en 71 barridos** |
+| suelo de la lectura truncada, 1ª | 0 truncadas de 2.478 | **`escrituras: 0`** — un `setInterval` dentro de un `while` síncrono no corre NUNCA |
+| suelo de la lectura truncada, 2ª | 0 truncadas de 6.382 | el hijo no llegó a arrancar; `stdio:"ignore"` se tragó su error, y el lector veía siempre el fichero original |
+
+Los tres habrían pasado por «descarte» si hubiera leído sólo el resultado. Los tres los cazó la
+misma pregunta: **¿cuántas veces ocurrió lo que tenía que ocurrir?** A la cuarta, con el escritor
+en otro proceso y su error a la vista, el suelo salió **70,7 %**.
+
+> 🔒 **Un cero no se apunta hasta que el banco demuestra que sabe producir un uno.**
+
+## Lo que queda, y por qué el ticket sigue abierto
+
+1. **No se ha reproducido.** Ni solo (0/40), ni con carga (0/20), ni en tanda parcial (0/15).
+2. **La hipótesis del encargo queda TUMBADA** por ③: no hay escritor en `src/`.
+3. **Sigue sin contestar** «¿cae siempre en el mismo punto?»: eso pide la tanda ENTERA en bucle, y
+   son 40 min por pasada con seis sesiones compartiendo máquina.
+4. **Y una pista que NO he perseguido:** `scrum206b` escribe dos ficheros en `os.tmpdir()` con su
+   `process.pid` en el nombre. Los PID se reciclan. Con ~26 worktrees lanzando tandas todo el día,
+   dos procesos con el mismo PID en el mismo `tmpdir` es una colisión posible — y encaja con
+   «aislado pasa, en tanda no». **No lo he medido**, y por eso va como pista y no como hallazgo.
+
+## Sobre el segundo intermitente (SCRUM-804), que me avisaste de no confundir
+
+**No lo he tocado.** Y con lo medido hoy **no puedo decir que sean el mismo mecanismo**: el suyo es
+una carrera entre sus dos lecturas con ~26 worktrees empujando —o sea, estado COMPARTIDO de git—,
+y el mío, hasta donde llega esta medición, no tiene escritor concurrente ninguno. Lo único que
+comparten es el síntoma. Si mi pista del `tmpdir` se confirmara, entonces sí serían familia
+—los dos serían estado compartido entre worktrees— y ése sería el hallazgo. **Hoy no está medido.**
