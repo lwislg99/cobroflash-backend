@@ -42,8 +42,22 @@ import { calcVatBreakdown } from '../dist/modules/invoicing/domain/vat.service.j
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PAGINA = 'public/dashboard/js/quotesView.js';
-const MODAL = 'public/dashboard/js/nuevaFacturaModal.js';
+const MODAL = 'public/dashboard/js/nuevaFacturaModal.js';   // SCRUM-867: RETIRADO. Se sigue nombrando para exigir que NO vuelva.
 const PIEZA = 'public/dashboard/js/cuerpoDelDocumentoSuelto.js';
+
+/**
+ * 🔴 SCRUM-867 · EL CUERPO DEL MODAL, CONGELADO Y MEDIDO — no recordado.
+ *
+ * El control que decidía este ticket comparaba, byte a byte, lo que emite la PÁGINA con lo que
+ * emitía el MODAL. Al retirar el modal (nadie lo abría) ese comparador desaparece, y con él la
+ * prueba de que reutilizar la pantalla no cambió el camino de emisión (regla 38). No se borra: se
+ * congela lo que el modal emitía.
+ *
+ * MEDIDO, no escrito de memoria: `docs/master/evidencias/SCRUM-867/cuerpo-congelado.mjs` restaura
+ * el modal desde `77ce9d1e`, emite con las DOS pantallas la misma entrada y compara. Las tres
+ * medidas —página hoy, modal antes, página antes— dieron esta misma cadena.
+ */
+const CUERPO_DEL_MODAL = '{"customerId":7,"lines":[{"concept":"Mano de obra","qty":2,"price":50,"tax":0.21}]}';
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
 
 // La entrada que se teclea EN LAS DOS PANTALLAS. Un solo sitio: si las dos recibieran entradas
@@ -105,32 +119,8 @@ async function emitirPorLaPagina(precio = LINEA.precio) {
   return enviado.filter((x) => /\/admin\/invoices/.test(x.url));
 }
 
-/** Lo mismo, en EL MODAL de siempre. */
-async function emitirPorElModal(precio = LINEA.precio) {
-  const { banco, enviado } = bancoConRed();
-  banco.ctx.openNuevaFacturaModal(function () {});
-  await respirar();
-  const n = todos(banco.ctx.document.body);
-
-  const sel = n.find((x) => x.tagName === 'SELECT');
-  assert.ok(sel, '🔴 SUELO: no se encuentra el selector de cliente del modal');
-  sel.value = CLIENTE;
-
-  const pon = (clase, v) => {
-    const e = n.find((x) => String(x.className || '').includes(clase));
-    assert.ok(e, `🔴 SUELO: el modal no tiene el campo .${clase}`);
-    e.value = v;
-  };
-  pon('nf-concepto', LINEA.concepto);
-  pon('nf-cantidad', LINEA.cantidad);
-  pon('nf-precio', precio);
-
-  const emitir = n.find((x) => x.tagName === 'BUTTON' && /^Emitir/.test(texto(x)));
-  assert.ok(emitir, '🔴 SUELO: el modal no tiene acción primaria de emisión');
-  emitir.disparar('click');
-  await respirar();
-  return enviado.filter((x) => /\/admin\/invoices/.test(x.url));
-}
+// SCRUM-867 · aquí vivía `emitirPorElModal`, que tecleaba lo mismo en el modal viejo. Se fue con
+// el modal; lo que emitía está congelado y medido en `CUERPO_DEL_MODAL`, arriba.
 
 /** Todo lo que un humano puede LEER en una pantalla montada, ranura por ranura. */
 function ranurasLegibles(raiz) {
@@ -159,14 +149,17 @@ async function pintarPagina(documentoSuelto, tercerArgumento) {
 // SUELO · si el banco no encuentra las dos pantallas, se declara CIEGO y no da verde
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-600b · SUELO: existen LAS DOS pantallas y el escáner las ve (si no, ciego)', () => {
-  for (const rel of [PAGINA, MODAL, PIEZA]) {
-    assert.ok(fs.existsSync(path.join(RAIZ, rel)), `🔴 CIEGO: no existe ${rel}. Sin las dos pantallas y su pieza común no hay nada que comparar, y un verde aquí significaría «no supe mirar».`);
+test('SCRUM-600b · SUELO: la página y su pieza existen, y el modal retirado NO vuelve', () => {
+  for (const rel of [PAGINA, PIEZA]) {
+    assert.ok(fs.existsSync(path.join(RAIZ, rel)), `🔴 CIEGO: no existe ${rel}. Sin la pantalla y su pieza común no hay nada que medir, y un verde aquí significaría «no supe mirar».`);
   }
+  // SCRUM-867: el modal se retiró. Que NO esté es parte de lo vigilado: si vuelve, vuelven dos
+  // pantallas emitiendo, que es justo lo que este ticket unificó.
+  assert.equal(fs.existsSync(path.join(RAIZ, MODAL)), false,
+    `🔴 ${MODAL} ha vuelto al árbol. Se retiró en SCRUM-867 por muerto; si hace falta otra vez, es `
+    + 'cambio de máster antes de código, no un fichero que reaparece.');
   const p = censarControles(leer(PAGINA), 'quotesView.js').controles;
-  const m = censarControles(leer(MODAL), 'nuevaFacturaModal.js').controles;
   assert.ok(p.length >= 25, `🔴 CIEGO sobre la PÁGINA: ${p.length} controles`);
-  assert.ok(m.length >= 8, `🔴 CIEGO sobre el MODAL: ${m.length} controles`);
 });
 
 test('SCRUM-600b · SUELO: el banco MONTA las dos pantallas sin errores', async () => {
@@ -176,35 +169,36 @@ test('SCRUM-600b · SUELO: el banco MONTA las dos pantallas sin errores', async 
   assert.equal(r.error, null, `🔴 la PÁGINA revienta al montarse: ${r.error && r.error.message}`);
   assert.deepEqual(r.rechazos, [], `🔴 la página deja promesas sueltas: ${JSON.stringify(r.rechazos)}`);
   assert.ok(r.nodos > 80, `🔴 la página pinta ${r.nodos} nodos: eso no es la pantalla entera`);
-  assert.equal(typeof banco.ctx.openNuevaFacturaModal, 'function', '🔴 el modal ya no se publica: la referencia contra la que se compara ha desaparecido');
+  // SCRUM-867: antes se exigía lo contrario —que el modal SIGUIERA publicado, porque era el
+  // comparador—. Ahora el comparador es `CUERPO_DEL_MODAL`, congelado y medido, y lo que se exige
+  // es que el panel ya no publique aquella global.
+  assert.equal(typeof banco.ctx.openNuevaFacturaModal, 'undefined',
+    '🔴 `openNuevaFacturaModal` vuelve a publicarse en el panel: el modal retirado ha vuelto a cargarse.');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // 🔴 EL CONTROL QUE DECIDE EL TICKET
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-600b · 🔴 EL CONTROL QUE DECIDE: la PÁGINA emite EXACTAMENTE lo mismo que el MODAL', async () => {
+test('SCRUM-600b · 🔴 EL CONTROL QUE DECIDE: la PÁGINA emite EXACTAMENTE lo que emitía el MODAL', async () => {
   const dePagina = await emitirPorLaPagina();
-  const deModal = await emitirPorElModal();
 
   assert.equal(dePagina.length, 1, `🔴 la página no hizo UN alta: hizo ${dePagina.length}`);
-  assert.equal(deModal.length, 1, `🔴 el modal no hizo UN alta: hizo ${deModal.length}`);
-  assert.equal(dePagina[0].url, deModal[0].url, '🔴 no van al mismo sitio');
   assert.equal(dePagina[0].url, '/admin/invoices', '🔴 el alta ha cambiado de ruta');
 
   // BYTE A BYTE. No `deepEqual`: el orden de las claves también viaja, y dos cuerpos con las
   // mismas claves en otro orden no son «el mismo cuerpo» para nadie que lea un log.
-  assert.equal(dePagina[0].body, deModal[0].body,
-    '🔴 LA PÁGINA NUEVA NO EMITE LO MISMO QUE EL MODAL VIEJO.\n'
-    + `  página: ${dePagina[0].body}\n  modal : ${deModal[0].body}`);
+  assert.equal(dePagina[0].body, CUERPO_DEL_MODAL,
+    '🔴 LA PÁGINA YA NO EMITE LO QUE EMITÍA EL MODAL VIEJO. El camino de emisión no se toca al\n'
+    + '  cambiar el front (regla 38): si el cuerpo tenía que cambiar, es cambio con diff delante.\n'
+    + `  página : ${dePagina[0].body}\n  congelado: ${CUERPO_DEL_MODAL}`);
 });
 
-test('SCRUM-600b · ✅ CONTROL NEGATIVO: si las dos pantallas divergieran, esto CAERÍA', async () => {
-  // 🔴 La comparación de arriba da verde también si las dos pantallas están rotas IGUAL, o si el
-  // recolector no recoge nada. Se le cambia el precio a UNA y se exige que deje de cuadrar.
-  const dePagina = await emitirPorLaPagina('50');
-  const deModal = await emitirPorElModal('999');
-  assert.notEqual(dePagina[0].body, deModal[0].body,
+test('SCRUM-600b · ✅ CONTROL NEGATIVO: si la página divergiera del cuerpo congelado, esto CAERÍA', async () => {
+  // 🔴 La comparación de arriba da verde también si el recolector no recoge nada o si el cuerpo se
+  // compone solo con constantes. Se teclea OTRO precio y se exige que deje de cuadrar.
+  const otra = await emitirPorLaPagina('999');
+  assert.notEqual(otra[0].body, CUERPO_DEL_MODAL,
     '🔴 el comparador da IGUAL con precios distintos: no está comparando nada.');
 });
 
@@ -221,10 +215,13 @@ test('SCRUM-600b · 🔴 y lo que se GUARDA es lo mismo: mismas líneas y mismo 
     `🔴 el total guardado sería ${doc.total} y no 121.00 (2 × 50 = 100 + 21 % de IVA)`);
 });
 
-test('SCRUM-600b · 🔴 DIVERGENCIA IMPOSIBLE: las dos pantallas llaman a la MISMA pieza', () => {
-  // Que hoy emitan lo mismo es un hecho; que no puedan dejar de hacerlo es la propiedad. Se
-  // comprueba que NINGUNA de las dos compone el cuerpo por su cuenta.
-  for (const rel of [PAGINA, MODAL]) {
+test('SCRUM-600b · 🔴 DIVERGENCIA IMPOSIBLE: la pantalla llama a la MISMA pieza', () => {
+  // Que hoy emita lo congelado es un hecho; que no pueda dejar de hacerlo es la propiedad. Se
+  // comprueba que NO compone el cuerpo por su cuenta.
+  //
+  // SCRUM-867: este bucle recorría las DOS pantallas. Queda una, y la propiedad es la misma: si la
+  // página compusiera el cuerpo a mano, el control de arriba pasaría a ser una casualidad.
+  for (const rel of [PAGINA]) {
     const fuente = leer(rel);
     const sf = ts.createSourceFile(rel, fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
     let llama = 0;

@@ -81,7 +81,16 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // con el flag OFF sigue siendo cierto. NO va a `PENDIENTES_DE_FIRMA`: es copy YA APROBADA
 // (SCRUM-67), copiada byte a byte del PDF del albarán y refirmada por el fundador para este uso.
 
-const VEREDICTO_AL_MEDIR = { flag: 16, tipo: 7, aPelo: 152 };
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 16 → 12 · 152 → 151 · 16-sep-2026 (SCRUM-867) · CUÁL SE MOVIÓ Y POR QUÉ. No es un trasvase
+// entre categorías ni un rótulo que se haya estropeado: es un FICHERO QUE SALIÓ DEL ÁRBOL.
+// `nuevaFacturaModal.js` estaba muerto (nadie lo abría) y se retiró. Con él se fueron:
+//   · sus CUATRO literales que derivaban del flag —los rótulos que leía de `rotulosDelDocumento`—,
+//     que es todo lo que baja de `flag`;
+//   · su ÚNICO literal a pelo, el `aria-label` «Cliente al que facturas», que nadie llegó a firmar.
+// La cifra NO se dedujo: se regeneró con el censo sobre el árbol resultante.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+const VEREDICTO_AL_MEDIR = { flag: 12, tipo: 7, aPelo: 151 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
@@ -133,11 +142,15 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
     'positivo caído, un «ninguno depende» significaría «no supe mirar».');
   assert.equal(boton[0].via, 'WINDOW::appDocumentoSuelto');
 
-  // NEGATIVO, del árbol real: el título del modal NO deriva, y está en la misma pantalla.
-  const modal = en('public/dashboard/js/nuevaFacturaModal.js', 108);
-  assert.equal(modal.length, 1, 'no se encuentra el aria-label sin firmar donde se midió');
-  assert.equal(modal[0].texto, 'Cliente al que facturas');
-  assert.equal(modal[0].dependeDelFlag, false);
+  // NEGATIVO, del árbol real: un rótulo del panel que NO deriva del flag.
+  //
+  // 🔴 SCRUM-867 · ANTES ERA EL `aria-label` DEL MODAL (`nuevaFacturaModal.js:108`, «Cliente al que
+  // facturas»). Ese modal se retiró por muerto y su literal se fue con él, así que el negativo se
+  // reancla en otro que sí sigue en el árbol: el rótulo de Facturas del menú.
+  const menu = en('public/dashboard/js/app.js', 349);
+  assert.equal(menu.length, 1, 'no se encuentra el rótulo del menú donde se midió');
+  assert.equal(menu[0].texto, 'Facturas');
+  assert.equal(menu[0].dependeDelFlag, false);
 });
 
 test('SCRUM-601 · EL VEREDICTO: las tres categorías, ancladas, y SUMAN', () => {
@@ -210,14 +223,25 @@ const PENDIENTES_DE_FIRMA = [
   // `rotulosDelDocumento`, y se han borrado de aquí EN EL MISMO COMMIT que los arregla — que es
   // lo que este trinquete exige y por lo que sirve de algo.
   //
-  // 🔴 EL QUE QUEDA NO ES UN OLVIDO: el asesor NO lo firmó, y a propósito. «Cliente al que
-  // justificas» no existe en castellano, así que necesita redacción nueva y eso no se firma de
-  // pasada. Sigue con su texto aprobado de 17-ago-2026 y su marcador en el fuente.
-  { fichero: 'public/dashboard/js/nuevaFacturaModal.js', linea: 108, texto: 'Cliente al que facturas' },
+  // 🔴 SCRUM-867 · Y DE UNO A NINGUNO, PERO NO POR FIRMA. El que quedaba —el `aria-label` «Cliente
+  // al que facturas», que el asesor no firmó porque «cliente al que justificas» no existe en
+  // castellano— vivía en `nuevaFacturaModal.js`, y ese modal se retiró por muerto. La deuda se
+  // cierra por DESAPARICIÓN de la pantalla, no porque nadie la firmara: si el texto vuelve al
+  // panel, `scrum776` lo caza.
+  //
+  // 🔴 LO QUE QUEDA DECLARADO es de otra clase, y por eso lleva su motivo: el censo lo ve «a pelo»
+  // porque contiene la diana, pero NO nombra el documento que se emite.
+  { fichero: 'public/dashboard/js/quotesView.js', linea: 672, texto: 'Solo presupuesto (facturación manual)',
+    motivo: 'opción del selector de propuesta, firmada en su ticket: dice cómo se facturará DESPUÉS, '
+      + 'no cómo se llama el documento que sale. En modo justificante sigue siendo cierta.' },
 ];
 
-test('SCRUM-601 · 🔴 el flujo de la factura suelta NO habla con una sola voz (defecto ATADO)', () => {
-  const FLUJO = 'public/dashboard/js/nuevaFacturaModal.js';
+test('SCRUM-601 · 🔴 el flujo del documento suelto NO habla con una sola voz (defecto ATADO)', () => {
+  // 🔴 SCRUM-867 · EL FLUJO SE MUDÓ, Y EL TRINQUETE CON ÉL. Hasta ahora el flujo eran el botón de
+  // Facturas y el MODAL que abría. Retirado el modal, el gesto termina en la PÁGINA del documento
+  // suelto: es ahí donde un rótulo nuevo escrito a pelo le diría «factura» a quien emite
+  // justificantes. Vigilar el fichero retirado sería vigilar un sitio donde ya no puede pasar nada.
+  const FLUJO = 'public/dashboard/js/quotesView.js';
 
   // Premisa: el botón que ABRE este modal sí deriva del flag. Si dejara de hacerlo, la
   // contradicción desaparecería por el lado malo y este test tiene que enterarse.

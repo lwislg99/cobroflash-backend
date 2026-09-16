@@ -889,7 +889,8 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'margenCatalogo.js',
   'modalHeader.js',
   'nifEspanol.js',
-  'nuevaFacturaModal.js',
+  // SCRUM-867: aquí estaba `nuevaFacturaModal.js`. Se retiró del índice y del SHELL con su
+  // fichero: el panel ya no lo carga, así que el banco tampoco puede esperarlo.
   'onboardingView.js',
   'paidViaEtiquetas.js',
   'parteDetailView.js',
