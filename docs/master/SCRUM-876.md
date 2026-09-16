@@ -444,3 +444,41 @@ a cada fichero (o el Sensor de almacenamiento lo borra), `initdb` y `pg_ctl` con
 esquema con `migrate diff --from-empty` desde un worktree sin `.env`. Una base plantilla y
 `CREATE DATABASE x_test TEMPLATE plantilla` por pasada da bases recién creadas en un segundo. ⚠️ Nombres
 de base **en minúsculas**: `psql` las crea así sin comillas y la URL no perdona.
+
+---
+
+# APÉNDICE · SCRUM-876d · El verde de T2, leído — y T3/T4 APARCADOS
+
+**Medido contra:** `origin/main` = `364e7d3a267d8babc49a92244168dc12096ce996` · 2026-09-16T18:10:12Z (cabecera `Date:` de GitHub)
+**Rama:** `scrum-876d-aparcado` · **Carril:** `tests/` (Sesión 3) · **Resultado:** T2 cerrada con su verde; ticket a «Por hacer»
+
+## El verde de T2, dentro de la tanda de CI — leído en el LOG
+
+Run **35108073567**, job `build + tests (con banco desechable)` (id `104834351937`), sobre
+`e44e09caa68ba140a6ed1b4a55c9c8149111b133` — la cabeza del PR #1360, que entró en `main` con el merge
+`71ebef052621b460d1ea89b46abf054942337115` (2026-09-16T14:30:21Z). Job en `success`; paso 11 («Por qué
+cayó») `skipped`, como debe cuando la tanda no falla.
+
+| lo que había que comprobar | lo que dice el log |
+|---|---|
+| `scrum13-cobrado` pasa **ejecutado**, no saltado | `✔ SCRUM-13/28: totalCobrado = Σ Invoices paid — webhook + manual, idempotente (453.842673ms)`, precedido de su traza `50/Parcial (webhook) → idempotente → 100/Pagado (Bizum manual)` |
+| `scrum52-operario` idem | `✔ SCRUM-52: operarioId = quote.teamMemberId (+ null owner) + audit único + índice (412.565959ms)`, con su traza `operarioId poblado …` |
+| `scrum692-guardado-parcial-en-base` idem | `✔ SCRUM-692 · guardar desde la ficha 360 no borra lo que sólo vive en el modal (407.861788ms)` |
+| ninguno lleva el motivo de skip | `grep "sin QA_DB_TEST=1 ni LIBRO_PG_URL"` sobre el log: **0 líneas** (los saltados del log llevan el motivo viejo `sin QA_DB_TEST=1 · npm run test:staging:gated`, y ninguno de los tres está entre ellos) |
+| `scrum419` ve el banco | `ℹ ✅ LIBRO_PG_URL presente: los 15 tests de banco SÍ se han ejecutado.` |
+| la tanda entera | `tests 7065 · pass 6972 · fail 0 · cancelled 0 · skipped 93` |
+
+Lo que haría este verde si el sistema estuviera roto ya está medido arriba: el run **35105775083** puso
+los tres en rojo con su defecto inyectado **en el mismo destino**. Y la duración (400-450 ms cada uno,
+frente a los ~0,1 ms de un skip) es coherente con que tocaron la base.
+
+⚠️ El run acaba en `failure` por `meta-guard · los guards caen cuando deben`:
+`✖ scrum859-identidad-y-motivo-cerrado.test.mjs · MUDO` — la misma muda de SCRUM-866 que ya caía en
+`main` (run 35102401285). No es de esta rama ni un check obligatorio.
+
+## T3 y T4: APARCADOS por decisión del orquestador (2026-09-16, 19:55 CEST)
+
+Es orden de tests y ahora va antes el producto. El ticket vuelve a «Por hacer». **Nada de lo escrito
+en el TRASPASO de 876c caduca con el aparcado**: los avisos de T3 (`scrum234` y `scrum781` son de
+carrera; `scrum781` lee `.env` a mano) y la regla de T4 (no se desgatea nada sin causa) siguen siendo
+el punto de partida para quien lo retome.

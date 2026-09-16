@@ -154,6 +154,28 @@
   }
 
   /**
+   * SCRUM-889 · La línea que el técnico acaba de añadir y TODAVÍA NO SE HA GUARDADO.
+   *
+   * Los mismos dos campos y la misma «×» que una línea guardada (misma clase, mismo aspecto), pero
+   * con sus propias marcas: no lleva índice porque aún no está en la lista del servidor, y así los
+   * escuchadores de las líneas guardadas no la confunden con ninguna.
+   */
+  function filaNueva(bloque) {
+    return (
+      '<tr data-parte-linea-nueva="' + esc(bloque) + '">' +
+      '<td class="parte-col-unds">' +
+      '<input class="parte-linea-unds" type="number" inputmode="decimal" step="any" min="0"' +
+      ' data-nueva-unds="1" value="" aria-label="' + esc(TEXTOS.unds) + '"></td>' +
+      '<td><input class="parte-linea-desc" type="text" data-nueva-desc="1" value=""' +
+      ' aria-label="' + esc(TEXTOS.descripcion) + '"></td>' +
+      '<td class="parte-col-quitar">' +
+      '<button type="button" class="parte-quitar-linea" data-quitar-nueva="1" ' +
+      'aria-label="Quitar línea">&times;</button></td>' +
+      '</tr>'
+    );
+  }
+
+  /**
    * Un bloque del papel. Los DOS se pintan SIEMPRE, aunque estén vacíos.
    *
    * El impreso tiene los dos recuadros impresos aunque el técnico solo use uno, y esconder el
@@ -166,7 +188,7 @@
     }
     var filas = suyas.length
       ? suyas.map(function (x) { return filaDeLinea(x.linea, x.indice, editable); }).join('')
-      : '<tr><td colspan="' + (editable ? 3 : 2) + '" style="padding:6px 0;color:var(--muted)">' +
+      : '<tr data-parte-sin-lineas="' + esc(bloque) + '"><td colspan="' + (editable ? 3 : 2) + '" style="padding:6px 0;color:var(--muted)">' +
         esc(TEXTOS.sinLineas) + '</td></tr>';
 
     return (
@@ -180,7 +202,7 @@
       '<thead><tr><th class="parte-col-unds">' + esc(TEXTOS.unds) + '</th>' +
       '<th>' + esc(TEXTOS.descripcion) + '</th>' +
       (editable ? '<th class="parte-col-quitar"></th>' : '') +
-      '</tr></thead><tbody>' + filas + '</tbody></table>' +
+      '</tr></thead><tbody data-parte-filas="' + esc(bloque) + '">' + filas + '</tbody></table>' +
       (editable
         ? '<button type="button" class="parte-anadir" data-bloque="' + esc(bloque) + '" ' +
           'style="margin-top:6px;font-size:13px">' + esc(TEXTOS.anadirLinea) + '</button>'
@@ -736,6 +758,108 @@
           }
         });
       }(deLinea[d]));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-889 · EL CABLE DE «AÑADIR LÍNEA». Se pintaba y nada lo escuchaba: el técnico no podía
+    // apuntar ni una línea a mano, y sin el dictado no le quedaba otra.
+    //
+    // El patrón es el de «Añadir estas líneas» del dictado (`confirmarLoDictado`), no uno nuevo:
+    //   · pulsar AÑADE UNA FILA en su bloque y no escribe nada — vacía no hay nada que guardar;
+    //   · se guarda cuando tiene cantidad (> 0) Y descripción, igual que `lineasConfirmadas`: una
+    //     línea sin cantidad no sale, y así no se viaja para volver con un 400;
+    //   · se manda la lista ENTERA —las que había más la nueva—, porque el `PATCH` la reemplaza;
+    //   · y se RELEE del servidor. Si el guardado falla NO se relee: se perdería lo tecleado. Se
+    //     dice con el texto aprobado y la fila se queda como estaba.
+    //
+    // ⚠️ La «×» de una línea YA GUARDADA sigue sin cablear, y no es un olvido: el `PATCH` conserva
+    // los precios de la oficina casando por ÍNDICE, y los precios se pueden poner con el parte en
+    // borrador. Quitar una línea corre las de detrás y les movería o borraría el precio en silencio.
+    // Está en docs/master/SCRUM-889.md como hallazgo. La «×» de la fila NUEVA sí va: sólo la quita
+    // de la pantalla, porque nunca llegó al servidor.
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    var lineasGuardadas = function () {
+      return (Array.isArray(parte.lineas) ? parte.lineas : []).map(function (l) {
+        return { bloque: l.bloque, unds: l.unds, descripcion: l.descripcion };
+      });
+    };
+    var laNueva = function () {
+      return {
+        fila: contenedor.querySelector('[data-parte-linea-nueva]'),
+        unds: contenedor.querySelector('[data-nueva-unds]'),
+        desc: contenedor.querySelector('[data-nueva-desc]'),
+      };
+    };
+    var quitarAvisoNoGuardada = function () {
+      var avisos = contenedor.querySelectorAll('[data-linea-no-guardada]');
+      for (var a = 0; a < avisos.length; a++) avisos[a].remove();
+    };
+    var quitarLaNueva = function () {
+      var n = laNueva();
+      quitarAvisoNoGuardada();
+      if (n.fila) n.fila.remove();
+    };
+    var guardandoLaNueva = false;
+    var guardarLaNueva = async function () {
+      var n = laNueva();
+      if (!n.fila || !n.unds || !n.desc || guardandoLaNueva) return;
+      var bloque = n.fila.getAttribute('data-parte-linea-nueva');
+      var unds = Number(n.unds.value);
+      var descripcion = String(n.desc.value || '').trim();
+      if (BLOQUES.indexOf(bloque) === -1) return;
+      if (n.unds.value === '' || !isFinite(unds) || unds <= 0 || descripcion === '') return;
+
+      guardandoLaNueva = true;
+      quitarAvisoNoGuardada();
+      try {
+        await pedir('/admin/partes/' + parteId, {
+          method: 'PATCH',
+          body: JSON.stringify({ lineas: lineasGuardadas().concat([{ bloque: bloque, unds: unds, descripcion: descripcion }]) }),
+        });
+      } catch (e) {
+        guardandoLaNueva = false;
+        var filas = contenedor.querySelector('[data-parte-filas="' + bloque + '"]');
+        if (filas) {
+          filas.insertAdjacentHTML('beforeend',
+            '<tr><td colspan="3" data-linea-no-guardada="1">' + esc(TEXTOS.noSeGuardo) + '</td></tr>');
+        }
+        return;
+      }
+      await renderParteDetailView(contenedor, parteId, o);
+    };
+    var anadirLinea = function (bloque) {
+      var n = laNueva();
+      if (n.fila) {
+        var vacia = (!n.unds || n.unds.value === '') && (!n.desc || String(n.desc.value || '').trim() === '');
+        // Una sola fila nueva a la vez: con algo escrito, pulsar otra vez la guarda si ya está
+        // completa (es la forma de reintentar tras un fallo) y si no, devuelve el foco a ella.
+        if (!vacia || n.fila.getAttribute('data-parte-linea-nueva') === bloque) {
+          guardarLaNueva();
+          if (n.unds && n.unds.focus) n.unds.focus();
+          return;
+        }
+        quitarLaNueva();   // vacía y en el otro bloque: se muda al bloque que ha pulsado
+      }
+      var filas = contenedor.querySelector('[data-parte-filas="' + bloque + '"]');
+      if (!filas) return;
+      var huecos = contenedor.querySelectorAll('[data-parte-sin-lineas]');
+      for (var h = 0; h < huecos.length; h++) {
+        if (huecos[h].getAttribute('data-parte-sin-lineas') === bloque) huecos[h].remove();
+      }
+      filas.insertAdjacentHTML('beforeend', filaNueva(bloque));
+      var nueva = laNueva();
+      if (nueva.unds) nueva.unds.addEventListener('change', guardarLaNueva);
+      if (nueva.desc) nueva.desc.addEventListener('change', guardarLaNueva);
+      var equis = contenedor.querySelector('[data-quitar-nueva]');
+      if (equis) equis.addEventListener('click', quitarLaNueva);
+      // Al campo de la cantidad: es la primera columna del papel y abre el teclado numérico.
+      if (nueva.unds && nueva.unds.focus) nueva.unds.focus();
+    };
+    var botonesAnadir = contenedor.querySelectorAll ? contenedor.querySelectorAll('.parte-anadir') : [];
+    for (var b = 0; b < botonesAnadir.length; b++) {
+      (function (boton) {
+        boton.addEventListener('click', function () { anadirLinea(boton.getAttribute('data-bloque')); });
+      }(botonesAnadir[b]));
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════════
