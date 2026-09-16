@@ -246,7 +246,7 @@ test('🔴 FECHA · si no se puede leer cuándo se empujó, no se inventa un NaN
   assert.equal(r.status, 0, `el paso no terminó bien: ${r.stderr}`);
   assert.equal(r.estados.trim(), '1212|DIRTY|1||null',
     'con el cuerpo del error como fecha, los minutos desde el push salían NaN y el vigía medía la edad desde otro sitio');
-  assert.ok(!/NaN|message/.test(r.estados), `🔴 en estados.txt hay basura: ${JSON.stringify(r.estados)}`);
+  assert.ok(!/NaN|message/.test(r.estados.trim()), `🔴 en estados.txt hay basura: ${JSON.stringify(r.estados)}`);
 });
 
 // ── EST y SHA · medidas y NO rotas: el control que lo deja escrito ──────────────────────────────
