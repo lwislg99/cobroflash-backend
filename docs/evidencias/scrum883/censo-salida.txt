@@ -1,0 +1,110 @@
+control positivo/negativo OK: Intl.NumberFormat, String(importe), concat€, formateador:fmtEuroX, interpola-crudo, interpola-crudo, plantilla€, toFixed2, toLocaleString
+formateadores de dinero derivados del árbol (25): eur euros eurosJobs fmt fmtEur fmtEuro fmtImporte fmtImporteEs fmtInvMoney fmtMoney fmtMoneyAlbaran fmtMoneyEs fmtMoneyEsOAusente fmtNumeroEs fmtPairs fmtQty fmtQuoteMoney formatDate formatImporteEs formatMoney formatMoneyEs formatNumeroEs importe money parteOficinaEuros
+ficheros examinados: 386
+
+## 1-profesional · 208 sitios en 28 ficheros
+    42  public/dashboard/js/reportsView.js
+    23  public/dashboard/js/jobDetailView.js
+    21  public/dashboard/js/homeView.js
+    18  public/dashboard/js/quotesView.js
+    15  public/dashboard/js/quotesDetailView.js
+    11  public/dashboard/js/api.js
+    10  public/dashboard/js/jobsView.js
+     8  public/dashboard/js/customerDetailView.js
+     8  public/dashboard/js/plansView.js
+     6  public/dashboard/js/invoiceDetailView.js
+     5  public/dashboard/js/parteOficinaView.js
+     4  public/dashboard/js/expensesView.js
+     4  public/dashboard/js/libroRegistroView.js
+     4  public/dashboard/js/productsView.js
+     4  public/dashboard/js/quotesListView.js
+     3  public/dashboard/js/globalSearch.js
+     3  public/dashboard/js/invoicesView.js
+     3  public/dashboard/js/jobNextAction.js
+     3  public/dashboard/js/settingsView.js
+     3  public/dashboard/js/teamView.js
+     2  public/dashboard/js/albaranDesdePresupuestoModal.js
+     2  public/dashboard/js/jobRailBlocks.js
+     1  public/dashboard/js/aiQuoteAssistant.js
+     1  public/dashboard/js/cobrosView.js
+     1  public/dashboard/js/cuerpoDelDocumentoSuelto.js
+     1  public/dashboard/js/exportView.js
+     1  public/dashboard/js/quoteMargen.js
+     1  public/dashboard/js/quoteRequestsView.js
+
+## 2-whatsapp · 62 sitios en 13 ficheros
+    10  src/integrations/whatsapp.ts
+    10  src/modules/billing/domain/invoiceReminder.service.ts
+     8  src/modules/billing/domain/invoiceWhatsApp.service.ts
+     7  src/modules/whatsappBot/domain/botFlow.service.ts
+     6  src/modules/quotes/domain/sendQuote.service.ts
+     4  src/integrations/whatsappNotifications.ts
+     4  src/modules/messaging/domain/merchantNotifications.ts
+     3  src/modules/messaging/domain/emailLayout.ts
+     3  src/modules/messaging/domain/weeklyDigest.service.ts
+     2  src/modules/messaging/domain/email.service.ts
+     2  src/modules/quotes/domain/reminder.service.ts
+     2  src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts
+     1  src/modules/jobs/domain/albaranWhatsApp.service.ts
+
+## 3-firma · 26 sitios en 3 ficheros
+     9  src/modules/quotes/app/routes/quotes.routes.ts
+     9  src/modules/system/app/routes/quoteDecisionLanding.routes.ts
+     8  src/modules/system/app/routes/customerPortal.routes.ts
+
+## 4-cobro · 45 sitios en 14 ficheros
+     7  src/modules/billing/app/routes/payBizum.routes.ts
+     6  src/modules/payments/disputes.service.ts
+     4  src/modules/billing/app/routes/charges.routes.ts
+     4  src/modules/billing/app/routes/payMp.routes.ts
+     4  src/modules/payments/connect/connect.routes.ts
+     3  src/modules/billing/app/routes/mpWebhook.routes.ts
+     3  src/modules/billing/app/routes/payBank.routes.ts
+     3  src/modules/billing/app/routes/payInvoice.routes.ts
+     3  src/modules/billing/app/routes/stripe.routes.ts
+     2  src/modules/billing/app/routes/payCard.routes.ts
+     2  src/modules/billing/domain/cobros.service.ts
+     2  src/modules/payments/connect/connectWebhook.routes.ts
+     1  src/modules/billing/app/routes/chargesAdmin.routes.ts
+     1  src/modules/billing/app/routes/psp.routes.ts
+
+## 5-justificante-pdf · 38 sitios en 4 ficheros
+    18  src/modules/invoicing/infra/pdf/pdf.service.ts
+    10  src/modules/billing/app/routes/receipt.routes.ts
+     9  src/modules/jobs/infra/albaranPdf.service.ts
+     1  src/modules/quotes/domain/presupuestoParaPdf.ts
+
+## fuera · 116 sitios en 31 ficheros
+    18  src/modules/system/app/routes/invoicesAdmin.routes.ts
+    11  src/modules/fiscal/evidencias/paquete.ts
+     9  src/modules/invoicing/domain/verifactu.service.ts
+     9  src/modules/jobs/app/routes/albaranPublicVista.ts
+     8  src/modules/jobs/app/routes/albaranes.routes.ts
+     6  src/lib/invoicing.ts
+     6  src/modules/system/app/routes/quotesAdmin.routes.ts
+     5  src/core/utils/utils.ts
+     5  src/modules/invoicing/domain/libroRecibidas.ts
+     5  src/modules/quotes/domain/presupuestoSello.ts
+     3  src/modules/ai/domain/ai.service.ts
+     3  src/modules/exports/domain/exportData.ts
+     3  src/modules/fiscal/verifactu/registro.builder.ts
+     3  src/modules/maintenance/domain/maintenance.service.ts
+     3  src/modules/system/app/routes/dev.routes.ts
+     2  src/modules/auth/domain/referral.service.ts
+     2  src/modules/invoicing/domain/libroRegistro.ts
+     2  src/modules/system/domain/puertaClienteReal.ts
+     1  src/app.ts
+     1  src/core/data/catalogLoader.ts
+     1  src/integrations/gemini.ts
+     1  src/modules/ai/app/routes/ai.routes.ts
+     1  src/modules/exports/app/routes/exports.routes.ts
+     1  src/modules/invoicing/app/routes/invoice.routes.ts
+     1  src/modules/invoicing/domain/invoiceNumber.service.ts
+     1  src/modules/invoicing/domain/vistaPreviaSerie.ts
+     1  src/modules/jobs/app/routes/jobs.routes.ts
+     1  src/modules/jobs/domain/albaranAFactura.ts
+     1  src/modules/jobs/domain/albaranFacturacion.ts
+     1  src/modules/jobs/domain/recapitulativa.service.ts
+     1  src/modules/system/domain/publicProfile.service.ts
+
+control positivo sobre el árbol real OK
